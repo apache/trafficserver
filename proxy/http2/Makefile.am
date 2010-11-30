@@ -70,5 +70,8 @@ libhttp_a_SOURCES = \
   HttpTunnel.cc \
   HttpTunnel.h \
   HttpUpdateSM.cc \
-  HttpUpdateSM.h \
-  HttpUpdateTester.cc
+  HttpUpdateSM.h
+
+if BUILD_TESTS
+  libhttp_a_SOURCES += HttpUpdateTester.cc
+endif

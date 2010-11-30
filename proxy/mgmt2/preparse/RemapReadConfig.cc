@@ -167,16 +167,6 @@ parseRemapFile(int fd)
           toPath++;
           toPathLen--;
         }
-
-        // INKqa09603
-        // check to see if there's an extra tag(RNI/QT/WMT) for Media-IXT
-        if (numToks == 4) {     // there's a tag
-          if (strcmp(whiteTok[3], "RNI") != 0 && strcmp(whiteTok[3], "QT") != 0 && strcmp(whiteTok[3], "WMT") != 0) {
-            err = "Invalid Tag";
-            goto FAIL;
-          }
-        }
-
       }
     }
   }

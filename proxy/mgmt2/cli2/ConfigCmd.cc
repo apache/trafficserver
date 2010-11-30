@@ -775,7 +775,7 @@ Cmd_ConfigPorts(ClientData clientData, Tcl_Interp * interp, int argc, const char
     } else {                    // set
       switch (argtable->parsed_args) {
       case CMD_CONFIG_PORTS_HTTP_OTHER:
-      case CMD_CONFIG_PORTS_SSL:
+      case CMD_CONFIG_PORTS_CONNECT:
         return (ConfigPortsSet(argtable[0].parsed_args, argtable[0].data));
         break;
       case CMD_CONFIG_PORTS_HTTP_SERVER:
@@ -818,8 +818,8 @@ CmdArgs_ConfigPorts()
                  (char *) NULL, CMD_CONFIG_PORTS_CLUSTER_RS, "Set Ports for cluster-rs", (char *) NULL);
   createArgument("cluster-mc", 1, CLI_ARGV_OPTION_INT_VALUE,
                  (char *) NULL, CMD_CONFIG_PORTS_CLUSTER_MC, "Set Ports for cluster-mc", (char *) NULL);
-  createArgument("ssl", 1, CLI_ARGV_OPTION_NAME_VALUE,
-                 (char *) NULL, CMD_CONFIG_PORTS_SSL, "Set Ports for ssl", (char *) NULL);
+  createArgument("connect", 1, CLI_ARGV_OPTION_NAME_VALUE,
+                 (char *) NULL, CMD_CONFIG_PORTS_CONNECT, "Set Ports for allowed CONNECT", (char *) NULL);
   createArgument("socks-server", 1, CLI_ARGV_OPTION_INT_VALUE,
                  (char *) NULL, CMD_CONFIG_PORTS_SOCKS_SERVER, "Set Ports for socks-server", (char *) NULL);
   return 0;
@@ -2002,13 +2002,13 @@ Cmd_ConfigLogging(ClientData clientData, Tcl_Interp * interp, int argc, const ch
       }
       return (ConfigLoggingEvent(argtable[1].parsed_args, setvar));
     case CMD_CONFIG_LOGGING_MGMT_DIRECTORY:
-      return (Cli_RecordString_Action((argc == 3), "proxy.config.log2.logfile_dir", argtable->arg_string));
+      return (Cli_RecordString_Action((argc == 3), "proxy.config.log.logfile_dir", argtable->arg_string));
 
     case CMD_CONFIG_LOGGING_SPACE_LIMIT:
-      return (Cli_RecordInt_Action((argc == 3), "proxy.config.log2.max_space_mb_for_logs", argtable->arg_int));
+      return (Cli_RecordInt_Action((argc == 3), "proxy.config.log.max_space_mb_for_logs", argtable->arg_int));
 
     case CMD_CONFIG_LOGGING_SPACE_HEADROOM:
-      return (Cli_RecordInt_Action((argc == 3), "proxy.config.log2.max_space_mb_headroom", argtable->arg_int));
+      return (Cli_RecordInt_Action((argc == 3), "proxy.config.log.max_space_mb_headroom", argtable->arg_int));
 
     case CMD_CONFIG_LOGGING_COLLATION_STATUS:
       if (argc == 3) {
@@ -2016,7 +2016,7 @@ Cmd_ConfigLogging(ClientData clientData, Tcl_Interp * interp, int argc, const ch
       }
       return (ConfigLoggingCollationStatus(argtable[1].parsed_args, setvar));
     case CMD_CONFIG_LOGGING_COLLATION_HOST:
-      return (Cli_RecordString_Action((argc == 3), "proxy.config.log2.collation_host", argtable->arg_string));
+      return (Cli_RecordString_Action((argc == 3), "proxy.config.log.collation_host", argtable->arg_string));
 
     case CMD_CONFIG_LOGGING_COLLATION:
       if (argc == 8) {
@@ -2177,14 +2177,7 @@ CmdArgs_ConfigLogging()
 
   createArgument("custom", 1, CLI_ARGV_CONST_OPTION,
                  (char *) NULL, CMD_CONFIG_LOGGING_CUSTOM,
-                 "Custom Logging <on | off> format <traditional | xml>", (char *) NULL);
-
-  createArgument("traditional", CMD_CONFIG_LOGGING_AND_CUSTOM_FORMAT, CLI_ARGV_CONSTANT,
-                 (char *) NULL, CMD_CONFIG_LOGGING_CUSTOM_FORMAT_TRADITIONAL,
-                 "Custom logging in traditional format", (char *) NULL);
-
-  createArgument("xml", CMD_CONFIG_LOGGING_AND_CUSTOM_FORMAT, CLI_ARGV_CONSTANT,
-                 (char *) NULL, CMD_CONFIG_LOGGING_CUSTOM_FORMAT_XML, "Custom logging in XML", (char *) NULL);
+                 "Custom Logging <on | off>", (char *) NULL);
 
   createArgument("rolling", 1, CLI_ARGV_CONST_OPTION,
                  (char *) NULL, CMD_CONFIG_LOGGING_ROLLING,
@@ -2516,7 +2509,7 @@ ConfigPortsSet(int arg_ref, void *valuePtr)
 
   switch (arg_ref) {
   case CMD_CONFIG_PORTS_HTTP_OTHER:
-  case CMD_CONFIG_PORTS_SSL:
+  case CMD_CONFIG_PORTS_CONNECT:
     Cli_Debug("ConfigPortsSet: arg_ref %d value %s\n", arg_ref, (char *) valuePtr);
     break;
   default:
@@ -2549,8 +2542,8 @@ ConfigPortsSet(int arg_ref, void *valuePtr)
   case CMD_CONFIG_PORTS_CLUSTER_MC:
     status = Cli_RecordSetInt("proxy.config.cluster.mcport", *(INKInt *) valuePtr, &action_need);
     break;
-  case CMD_CONFIG_PORTS_SSL:
-    status = Cli_RecordSetString("proxy.config.http.ssl_ports", (INKString) valuePtr, &action_need);
+  case CMD_CONFIG_PORTS_CONNECT:
+    status = Cli_RecordSetString("proxy.config.http.connect_ports", (INKString) valuePtr, &action_need);
     break;
   case CMD_CONFIG_PORTS_SOCKS_SERVER:
     status = Cli_RecordSetInt("proxy.config.socks.socks_server_port", *(INKInt *) valuePtr, &action_need);
@@ -2634,8 +2627,8 @@ ConfigPortsGet(int arg_ref)
     }
     Cli_Printf("%d\n", int_val);
     break;
-  case CMD_CONFIG_PORTS_SSL:
-    status = Cli_RecordGetString("proxy.config.http.ssl_ports", &str_val);
+  case CMD_CONFIG_PORTS_CONNECT:
+    status = Cli_RecordGetString("proxy.config.http.connect_ports", &str_val);
     if (status) {
       return status;
     }
@@ -4338,7 +4331,7 @@ ConfigLoggingEvent(int arg_ref, int setvar)
   switch (setvar) {
   case 0:                      //get
 
-    status = Cli_RecordGetInt("proxy.config.log2.logging_enabled", &int_val);
+    status = Cli_RecordGetInt("proxy.config.log.logging_enabled", &int_val);
     if (status) {
       return status;
     }
@@ -4378,7 +4371,7 @@ ConfigLoggingEvent(int arg_ref, int setvar)
       default:
         Cli_Printf("ERROR in arg\n");
       }
-      status = Cli_RecordSetInt("proxy.config.log2.logging_enabled", (INKInt) int_val, &action_need);
+      status = Cli_RecordSetInt("proxy.config.log.logging_enabled", (INKInt) int_val, &action_need);
       if (status) {
         return status;
       }
@@ -4406,7 +4399,7 @@ ConfigLoggingCollationStatus(int arg_ref, int setvar)
   switch (setvar) {
   case 0:                      //get
 
-    status = Cli_RecordGetInt("proxy.local.log2.collation_mode", &int_val);
+    status = Cli_RecordGetInt("proxy.local.log.collation_mode", &int_val);
     if (status) {
       return status;
     }
@@ -4453,7 +4446,7 @@ ConfigLoggingCollationStatus(int arg_ref, int setvar)
         Cli_Printf("ERROR in arg\n");
       }
       Cli_Debug("ConfigLoggingCollationStatus: %d set?%d\n", int_val, setvar);
-      status = Cli_RecordSetInt("proxy.local.log2.collation_mode", (INKInt) int_val, &action_need);
+      status = Cli_RecordSetInt("proxy.local.log.collation_mode", (INKInt) int_val, &action_need);
       if (status) {
         return status;
       }
@@ -4481,7 +4474,7 @@ ConfigLoggingCollation(INKString secret, int arg_ref, INKInt orphan, int setvar)
   switch (setvar) {
   case 0:                      //get
 
-    status = Cli_RecordGetString("proxy.config.log2.collation_secret", &str_val);
+    status = Cli_RecordGetString("proxy.config.log.collation_secret", &str_val);
     if (status) {
       return status;
     }
@@ -4490,7 +4483,7 @@ ConfigLoggingCollation(INKString secret, int arg_ref, INKInt orphan, int setvar)
     else
       Cli_Printf("none\n");
 
-    status = Cli_RecordGetInt("proxy.config.log2.collation_host_tagged", &int_val);
+    status = Cli_RecordGetInt("proxy.config.log.collation_host_tagged", &int_val);
     if (status) {
       return status;
     }
@@ -4499,7 +4492,7 @@ ConfigLoggingCollation(INKString secret, int arg_ref, INKInt orphan, int setvar)
       return CLI_ERROR;
     }
 
-    status = Cli_RecordGetInt("proxy.config.log2.collation_port", &int_val);
+    status = Cli_RecordGetInt("proxy.config.log.collation_port", &int_val);
     if (status) {
       return status;
     }
@@ -4510,7 +4503,7 @@ ConfigLoggingCollation(INKString secret, int arg_ref, INKInt orphan, int setvar)
   case 1:                      //set
     {
 
-      status = Cli_RecordSetString("proxy.config.log2.collation_secret", (INKString) secret, &action_need);
+      status = Cli_RecordSetString("proxy.config.log.collation_secret", (INKString) secret, &action_need);
       if (status) {
         return status;
       }
@@ -4525,12 +4518,12 @@ ConfigLoggingCollation(INKString secret, int arg_ref, INKInt orphan, int setvar)
         Cli_Printf("ERROR in arg\n");
       }
 
-      status = Cli_RecordSetInt("proxy.config.log2.collation_host_tagged", (INKInt) int_val, &action_need);
+      status = Cli_RecordSetInt("proxy.config.log.collation_host_tagged", (INKInt) int_val, &action_need);
       if (status) {
         return status;
       }
 
-      status = Cli_RecordSetInt("proxy.config.log2.collation_port", (INKInt) orphan, &action_need);
+      status = Cli_RecordSetInt("proxy.config.log.collation_port", (INKInt) orphan, &action_need);
       if (status) {
         return status;
       }
@@ -4562,14 +4555,14 @@ ConfigLoggingFormatTypeFile(int arg_ref_format, int arg_ref,
 
     switch (arg_ref_format) {
     case CMD_CONFIG_LOGGING_FORMAT_SQUID:
-      status = Cli_RecordGetInt("proxy.config.log2.squid_log_enabled", &int_val);
+      status = Cli_RecordGetInt("proxy.config.log.squid_log_enabled", &int_val);
       if (status) {
         return status;
       }
       if (Cli_PrintEnable("", int_val) == CLI_ERROR) {
         return CLI_ERROR;
       }
-      status = Cli_RecordGetInt("proxy.config.log2.squid_log_is_ascii", &int_val);
+      status = Cli_RecordGetInt("proxy.config.log.squid_log_is_ascii", &int_val);
       if (status) {
         return status;
       }
@@ -4581,7 +4574,7 @@ ConfigLoggingFormatTypeFile(int arg_ref_format, int arg_ref,
         Cli_Printf("ascii\n");
         break;
       }
-      status = Cli_RecordGetString("proxy.config.log2.squid_log_name", &str_val);
+      status = Cli_RecordGetString("proxy.config.log.squid_log_name", &str_val);
       if (status) {
         return status;
       }
@@ -4591,7 +4584,7 @@ ConfigLoggingFormatTypeFile(int arg_ref_format, int arg_ref,
         Cli_Printf("none\n");
       }
 
-      status = Cli_RecordGetString("proxy.config.log2.squid_log_header", &str_val);
+      status = Cli_RecordGetString("proxy.config.log.squid_log_header", &str_val);
       if (status) {
         return status;
       }
@@ -4603,14 +4596,14 @@ ConfigLoggingFormatTypeFile(int arg_ref_format, int arg_ref,
       return CLI_OK;
 
     case CMD_CONFIG_LOGGING_FORMAT_NETSCAPE_COMMON:
-      status = Cli_RecordGetInt("proxy.config.log2.common_log_enabled", &int_val);
+      status = Cli_RecordGetInt("proxy.config.log.common_log_enabled", &int_val);
       if (status) {
         return status;
       }
       if (Cli_PrintEnable("", int_val) == CLI_ERROR) {
         return CLI_ERROR;
       }
-      status = Cli_RecordGetInt("proxy.config.log2.common_log_is_ascii", &int_val);
+      status = Cli_RecordGetInt("proxy.config.log.common_log_is_ascii", &int_val);
       if (status) {
         return status;
       }
@@ -4622,26 +4615,26 @@ ConfigLoggingFormatTypeFile(int arg_ref_format, int arg_ref,
         Cli_Printf("ascii\n");
         break;
       }
-      status = Cli_RecordGetString("proxy.config.log2.common_log_name", &str_val);
+      status = Cli_RecordGetString("proxy.config.log.common_log_name", &str_val);
       if (status) {
         return status;
       }
       Cli_Printf("%s\n", str_val);
-      status = Cli_RecordGetString("proxy.config.log2.common_log_header", &str_val);
+      status = Cli_RecordGetString("proxy.config.log.common_log_header", &str_val);
       if (status) {
         return status;
       }
       Cli_Printf("%s\n", str_val);
       return CLI_OK;
     case CMD_CONFIG_LOGGING_FORMAT_NETSCAPE_EXT:
-      status = Cli_RecordGetInt("proxy.config.log2.extended_log_enabled", &int_val);
+      status = Cli_RecordGetInt("proxy.config.log.extended_log_enabled", &int_val);
       if (status) {
         return status;
       }
       if (Cli_PrintEnable("", int_val) == CLI_ERROR) {
         return CLI_ERROR;
       }
-      status = Cli_RecordGetInt("proxy.config.log2.extended_log_is_ascii", &int_val);
+      status = Cli_RecordGetInt("proxy.config.log.extended_log_is_ascii", &int_val);
       if (status) {
         return status;
       }
@@ -4653,12 +4646,12 @@ ConfigLoggingFormatTypeFile(int arg_ref_format, int arg_ref,
         Cli_Printf("ascii\n");
         break;
       }
-      status = Cli_RecordGetString("proxy.config.log2.extended_log_name", &str_val);
+      status = Cli_RecordGetString("proxy.config.log.extended_log_name", &str_val);
       if (status) {
         return status;
       }
       Cli_Printf("%s\n", str_val);
-      status = Cli_RecordGetString("proxy.config.log2.extended_log_header", &str_val);
+      status = Cli_RecordGetString("proxy.config.log.extended_log_header", &str_val);
       if (status) {
         return status;
       }
@@ -4666,14 +4659,14 @@ ConfigLoggingFormatTypeFile(int arg_ref_format, int arg_ref,
       return CLI_OK;
 
     case CMD_CONFIG_LOGGING_FORMAT_NETSCAPE_EXT2:
-      status = Cli_RecordGetInt("proxy.config.log2.extended2_log_enabled", &int_val);
+      status = Cli_RecordGetInt("proxy.config.log.extended2_log_enabled", &int_val);
       if (status) {
         return status;
       }
       if (Cli_PrintEnable("", int_val) == CLI_ERROR) {
         return CLI_ERROR;
       }
-      status = Cli_RecordGetInt("proxy.config.log2.extended2_log_is_ascii", &int_val);
+      status = Cli_RecordGetInt("proxy.config.log.extended2_log_is_ascii", &int_val);
       if (status) {
         return status;
       }
@@ -4685,12 +4678,12 @@ ConfigLoggingFormatTypeFile(int arg_ref_format, int arg_ref,
         Cli_Printf("ascii\n");
         break;
       }
-      status = Cli_RecordGetString("proxy.config.log2.extended2_log_name", &str_val);
+      status = Cli_RecordGetString("proxy.config.log.extended2_log_name", &str_val);
       if (status) {
         return status;
       }
       Cli_Printf("%s\n", str_val);
-      status = Cli_RecordGetString("proxy.config.log2.extended2_log_header", &str_val);
+      status = Cli_RecordGetString("proxy.config.log.extended2_log_header", &str_val);
       if (status) {
         return status;
       }
@@ -4715,7 +4708,7 @@ ConfigLoggingFormatTypeFile(int arg_ref_format, int arg_ref,
           return CLI_ERROR;
         }
 
-        status = Cli_RecordSetInt("proxy.config.log2.squid_log_enabled", (INKInt) int_val, &action_need);
+        status = Cli_RecordSetInt("proxy.config.log.squid_log_enabled", (INKInt) int_val, &action_need);
         if (status) {
           return status;
         }
@@ -4731,18 +4724,18 @@ ConfigLoggingFormatTypeFile(int arg_ref_format, int arg_ref,
           Cli_Printf("ERROR in arg\n");
           return CLI_ERROR;
         }
-        status = Cli_RecordSetInt("proxy.config.log2.squid_log_is_ascii", (INKInt) int_val, &action_need);
+        status = Cli_RecordSetInt("proxy.config.log.squid_log_is_ascii", (INKInt) int_val, &action_need);
         if (status) {
           return status;
         }
 
-        status = Cli_RecordSetString("proxy.config.log2.squid_log_name", (INKString) file, &action_need);
+        status = Cli_RecordSetString("proxy.config.log.squid_log_name", (INKString) file, &action_need);
 
         if (status) {
           return status;
         }
 
-        status = Cli_RecordSetString("proxy.config.log2.squid_log_header", (INKString) header, &action_need);
+        status = Cli_RecordSetString("proxy.config.log.squid_log_header", (INKString) header, &action_need);
         if (status) {
           return status;
         }
@@ -4761,7 +4754,7 @@ ConfigLoggingFormatTypeFile(int arg_ref_format, int arg_ref,
           return CLI_ERROR;
         }
 
-        status = Cli_RecordSetInt("proxy.config.log2.common_log_enabled", (INKInt) int_val, &action_need);
+        status = Cli_RecordSetInt("proxy.config.log.common_log_enabled", (INKInt) int_val, &action_need);
         if (status) {
           return status;
         }
@@ -4778,18 +4771,18 @@ ConfigLoggingFormatTypeFile(int arg_ref_format, int arg_ref,
           return CLI_ERROR;
         }
 
-        status = Cli_RecordSetInt("proxy.config.log2.common_log_is_ascii", (INKInt) int_val, &action_need);
+        status = Cli_RecordSetInt("proxy.config.log.common_log_is_ascii", (INKInt) int_val, &action_need);
         if (status) {
           return status;
         }
 
-        status = Cli_RecordSetString("proxy.config.log2.common_log_name", (INKString) file, &action_need);
+        status = Cli_RecordSetString("proxy.config.log.common_log_name", (INKString) file, &action_need);
 
         if (status) {
           return status;
         }
 
-        status = Cli_RecordSetString("proxy.config.log2.common_log_header", (INKString) header, &action_need);
+        status = Cli_RecordSetString("proxy.config.log.common_log_header", (INKString) header, &action_need);
         if (status) {
           return status;
         }
@@ -4810,7 +4803,7 @@ ConfigLoggingFormatTypeFile(int arg_ref_format, int arg_ref,
           return CLI_ERROR;
         }
 
-        status = Cli_RecordSetInt("proxy.config.log2.extended_log_enabled", (INKInt) int_val, &action_need);
+        status = Cli_RecordSetInt("proxy.config.log.extended_log_enabled", (INKInt) int_val, &action_need);
 
         if (status) {
           return status;
@@ -4826,18 +4819,18 @@ ConfigLoggingFormatTypeFile(int arg_ref_format, int arg_ref,
           Cli_Printf("ERROR in arg\n");
           return CLI_ERROR;
         }
-        status = Cli_RecordSetInt("proxy.config.log2.extended_log_is_ascii", (INKInt) int_val, &action_need);
+        status = Cli_RecordSetInt("proxy.config.log.extended_log_is_ascii", (INKInt) int_val, &action_need);
         if (status) {
           return status;
         }
 
-        status = Cli_RecordSetString("proxy.config.log2.extended_log_name", (INKString) file, &action_need);
+        status = Cli_RecordSetString("proxy.config.log.extended_log_name", (INKString) file, &action_need);
 
         if (status) {
           return status;
         }
 
-        status = Cli_RecordSetString("proxy.config.log2.extended_log_header", (INKString) header, &action_need);
+        status = Cli_RecordSetString("proxy.config.log.extended_log_header", (INKString) header, &action_need);
         if (status) {
           return status;
         }
@@ -4856,7 +4849,7 @@ ConfigLoggingFormatTypeFile(int arg_ref_format, int arg_ref,
           return CLI_ERROR;
         }
 
-        status = Cli_RecordSetInt("proxy.config.log2.extended2_log_enabled", (INKInt) int_val, &action_need);
+        status = Cli_RecordSetInt("proxy.config.log.extended2_log_enabled", (INKInt) int_val, &action_need);
         if (status) {
           return status;
         }
@@ -4871,18 +4864,18 @@ ConfigLoggingFormatTypeFile(int arg_ref_format, int arg_ref,
           Cli_Printf("ERROR in arg\n");
           return CLI_ERROR;
         }
-        status = Cli_RecordSetInt("proxy.config.log2.extended2_log_is_ascii", (INKInt) int_val, &action_need);
+        status = Cli_RecordSetInt("proxy.config.log.extended2_log_is_ascii", (INKInt) int_val, &action_need);
         if (status) {
           return status;
         }
 
-        status = Cli_RecordSetString("proxy.config.log2.extended2_log_name", (INKString) file, &action_need);
+        status = Cli_RecordSetString("proxy.config.log.extended2_log_name", (INKString) file, &action_need);
 
         if (status) {
           return status;
         }
 
-        status = Cli_RecordSetString("proxy.config.log2.extended2_log_header", (INKString) header, &action_need);
+        status = Cli_RecordSetString("proxy.config.log.extended2_log_header", (INKString) header, &action_need);
         if (status) {
           return status;
         }
@@ -4910,7 +4903,7 @@ ConfigLoggingSplitting(int arg_ref_protocol, int arg_ref_on_off, int setvar)
 
     switch (arg_ref_protocol) {
     case CMD_CONFIG_LOGGING_SPLITTING_ICP:
-      status = Cli_RecordGetInt("proxy.config.log2.separate_icp_logs", &int_val);
+      status = Cli_RecordGetInt("proxy.config.log.separate_icp_logs", &int_val);
       if (status) {
         return status;
       }
@@ -4919,7 +4912,7 @@ ConfigLoggingSplitting(int arg_ref_protocol, int arg_ref_on_off, int setvar)
       }
       return CLI_OK;
     case CMD_CONFIG_LOGGING_SPLITTING_HTTP:
-      status = Cli_RecordGetInt("proxy.config.log2.separate_host_logs", &int_val);
+      status = Cli_RecordGetInt("proxy.config.log.separate_host_logs", &int_val);
       if (status) {
         return status;
       }
@@ -4949,14 +4942,14 @@ ConfigLoggingSplitting(int arg_ref_protocol, int arg_ref_on_off, int setvar)
 
       switch (arg_ref_protocol) {
       case CMD_CONFIG_LOGGING_SPLITTING_ICP:
-        status = Cli_RecordSetInt("proxy.config.log2.separate_icp_logs", int_val, &action_need);
+        status = Cli_RecordSetInt("proxy.config.log.separate_icp_logs", int_val, &action_need);
         if (status) {
           return status;
         }
         return (Cli_ConfigEnactChanges(action_need));
 
       case CMD_CONFIG_LOGGING_SPLITTING_HTTP:
-        status = Cli_RecordSetInt("proxy.config.log2.separate_host_logs", int_val, &action_need);
+        status = Cli_RecordSetInt("proxy.config.log.separate_host_logs", int_val, &action_need);
         if (status) {
           return status;
         }
@@ -4984,22 +4977,14 @@ ConfigLoggingCustomFormat(int arg_ref_on_off, int arg_ref_format, int setvar)
   switch (setvar) {
   case 0:                      //get
 
-    status = Cli_RecordGetInt("proxy.config.log2.custom_logs_enabled", &int_val);
+    status = Cli_RecordGetInt("proxy.config.log.custom_logs_enabled", &int_val);
     if (status) {
       return status;
     }
     if (Cli_PrintEnable("", int_val) == CLI_ERROR) {
       return CLI_ERROR;
     }
-    status = Cli_RecordGetInt("proxy.config.log2.xml_logs_config", &int_val);
-    switch (int_val) {
-    case 0:
-      Cli_Printf("traditional\n");
-      break;
-    case 1:
-      Cli_Printf("xml\n");
-      break;
-    }
+    Cli_Printf("xml\n");
     return CLI_OK;
   case 1:
     {
@@ -5015,24 +5000,11 @@ ConfigLoggingCustomFormat(int arg_ref_on_off, int arg_ref_format, int setvar)
         return CLI_ERROR;
       }
 
-      status = Cli_RecordSetInt("proxy.config.log2.custom_logs_enabled", int_val, &action_need);
-      if (status) {
-        return status;
-      }
-      switch (arg_ref_format) {
-      case CMD_CONFIG_LOGGING_CUSTOM_FORMAT_TRADITIONAL:
-        int_val = 0;
-        break;
-      case CMD_CONFIG_LOGGING_CUSTOM_FORMAT_XML:
-        int_val = 1;
-        break;
-      }
-      status = Cli_RecordSetInt("proxy.config.log2.xml_logs_config", int_val, &action_need);
+      status = Cli_RecordSetInt("proxy.config.log.custom_logs_enabled", int_val, &action_need);
       if (status) {
         return status;
       }
       return (Cli_ConfigEnactChanges(action_need));
-
     }
 
   default:
@@ -5059,24 +5031,24 @@ ConfigLoggingRollingOffsetIntervalAutodelete(int arg_ref_rolling,
   switch (setvar) {
   case 0:                      //get
 
-    status = Cli_RecordGetInt("proxy.config.log2.rolling_enabled", &int_val);
+    status = Cli_RecordGetInt("proxy.config.log.rolling_enabled", &int_val);
     if (status) {
       return status;
     }
     if (Cli_PrintEnable("", int_val) == CLI_ERROR) {
       return CLI_ERROR;
     }
-    status = Cli_RecordGetInt("proxy.config.log2.rolling_offset_hr", &int_val);
+    status = Cli_RecordGetInt("proxy.config.log.rolling_offset_hr", &int_val);
     if (status) {
       return status;
     }
     Cli_Printf("%d\n", int_val);
-    status = Cli_RecordGetInt("proxy.config.log2.rolling_interval_sec", &int_val);
+    status = Cli_RecordGetInt("proxy.config.log.rolling_interval_sec", &int_val);
     if (status) {
       return status;
     }
     Cli_Printf("%d\n", int_val);
-    status = Cli_RecordGetInt("proxy.config.log2.auto_delete_rolled_files", &int_val);
+    status = Cli_RecordGetInt("proxy.config.log.auto_delete_rolled_files", &int_val);
     if (status) {
       return status;
     }
@@ -5099,15 +5071,15 @@ ConfigLoggingRollingOffsetIntervalAutodelete(int arg_ref_rolling,
         return CLI_ERROR;
       }
 
-      status = Cli_RecordSetInt("proxy.config.log2.rolling_enabled", int_val, &action_need);
+      status = Cli_RecordSetInt("proxy.config.log.rolling_enabled", int_val, &action_need);
       if (status) {
         return status;
       }
-      status = Cli_RecordSetInt("proxy.config.log2.rolling_offset_hr", offset, &action_need);
+      status = Cli_RecordSetInt("proxy.config.log.rolling_offset_hr", offset, &action_need);
       if (status) {
         return status;
       }
-      status = Cli_RecordSetInt("proxy.config.log2.rolling_interval_sec", num_hours, &action_need);
+      status = Cli_RecordSetInt("proxy.config.log.rolling_interval_sec", num_hours, &action_need);
       if (status) {
         return status;
       }
@@ -5124,7 +5096,7 @@ ConfigLoggingRollingOffsetIntervalAutodelete(int arg_ref_rolling,
         return CLI_ERROR;
       }
 
-      status = Cli_RecordSetInt("proxy.config.log2.auto_delete_rolled_files", int_val, &action_need);
+      status = Cli_RecordSetInt("proxy.config.log.auto_delete_rolled_files", int_val, &action_need);
       if (status) {
         return status;
       }

@@ -74,7 +74,7 @@ extern "C"
 
   typedef union
   {
-#if defined(__i386__)
+#if (defined(__i386__) || defined(__arm__)) && (SIZEOF_VOIDP == 4)
     struct
     {
       void *pointer;
@@ -104,7 +104,7 @@ extern "C"
 #define TO_PTR(_x) ((void*)(_x))
 #endif
 
-#if defined(__i386__) || defined(__i386)
+#if (defined(__i386__) || defined(__arm__)) && (SIZEOF_VOIDP == 4)
 #define FREELIST_POINTER(_x) (_x).s.pointer
 #define FREELIST_VERSION(_x) (_x).s.version
 #define SET_FREELIST_POINTER_VERSION(_x,_p,_v) \
@@ -165,10 +165,11 @@ extern "C"
   static inline void *ink_freelist_new(InkFreeList * f)
   {
     void *retval = NULL;
-      ink_mutex_acquire(&(f->inkfreelist_mutex));
-      retval = ink_freelist_new_wrap(f);
-      ink_mutex_release(&(f->inkfreelist_mutex));
-      return retval;
+
+    ink_mutex_acquire(&(f->inkfreelist_mutex));
+    retval = ink_freelist_new_wrap(f);
+    ink_mutex_release(&(f->inkfreelist_mutex));
+    return retval;
   }
 
   inkcoreapi void ink_freelist_free_wrap(InkFreeList * f, void *item);

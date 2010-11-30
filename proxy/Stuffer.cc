@@ -50,7 +50,6 @@ connAllowed(uint32 ip)
 
 struct StufferAccepter:Continuation
 {
-
   StufferAccepter():Continuation(NULL)
   {
     SET_HANDLER(&StufferAccepter::mainEvent);
@@ -84,20 +83,15 @@ readIPs(ParentRecord * parentRec, uint32 * ip_arr, int max)
     return 0;
 
   int n = 0;
-
   pRecord *pr = parentRec->parents;
   int n_parents = parentRec->num_parents;
 
   for (int i = 0; i < n_parents && n < max; i++) {
-
-#if !defined(VxWorks)
     ink_gethostbyname_r_data data;
+
     struct hostent *ent = ink_gethostbyname_r(pr[i].hostname, &data);
     if (ent)
       ip_arr[n++] = *(uint32 *) ent->h_addr_list[0];
-#else
-    ip_arr[n++] = inet_addr(pr[i].hostname);
-#endif
   }
 
   return n;
@@ -147,16 +141,8 @@ StufferInitialize(void)
 
   int stuffer_port;
   ReadConfigInteger(stuffer_port, proxy_config_stuffer_port);
-
   Debug("stuffer", "stuffer initialized (port = %d%s)", stuffer_port, stuffer_port ? "" : " accept disabled");
-
   buildParentIPTable();
-
-#ifdef VxWorks
-  extern void *ts_udp_receiver(void *);
-  Debug("stuffer", "starting udp listener");
-  ink_thread_create(ts_udp_receiver, (void *) stuffer_port);
-#endif
 
   if (stuffer_port > 0)
     netProcessor.main_accept(NEW(new StufferAccepter), NO_FD, stuffer_port);
@@ -183,6 +169,7 @@ inline int
 StufferCacheWriter::addData(int max)
 {
   int nwritten = buf->write(stuffer->reader, max);
+
   nadded += nwritten;
   return nwritten;
 }
@@ -379,8 +366,7 @@ StufferCacheWriter::initCacheLookupConfig()
   HttpConfigParams *http_config_params = HttpConfig::acquire();
 
   cache_lookup_config.cache_global_user_agent_header = http_config_params->global_user_agent_header ? true : false;
-  cache_lookup_config.cache_enable_default_vary_headers =
-    http_config_params->cache_enable_default_vary_headers ? true : false;
+  cache_lookup_config.cache_enable_default_vary_headers = http_config_params->cache_enable_default_vary_headers ? true : false;
   cache_lookup_config.cache_vary_default_text = http_config_params->cache_vary_default_text;
   cache_lookup_config.cache_vary_default_images = http_config_params->cache_vary_default_images;
   cache_lookup_config.cache_vary_default_other = http_config_params->cache_vary_default_other;
@@ -435,7 +421,6 @@ responseIsNewer(HTTPHdr * old_resp, HTTPHdr * new_resp)
 int
 StufferCacheWriter::mainEvent(int event, void *data)
 {
-
   switch (event) {
 
   case VC_EVENT_READ_COMPLETE:{

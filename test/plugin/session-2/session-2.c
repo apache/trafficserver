@@ -23,16 +23,16 @@
 
 /********************************************************************************
 * This plugin tries to cover the APIs in the following categories:
-* -- INKHttpSsn*
-* -- INKConfig*
-* -- INKStat*
-* -- INKThread*
+* -- TSHttpSsn*
+* -- TSConfig*
+* -- TSStat*
+* -- TSThread*
 *
 * It does the following things:
-* 1. Create a thread and destroy it in INKPluginInit()
-* 2. Create three INKStat statistic variables transaction_count, session_count
+* 1. Create a thread and destroy it in TSPluginInit()
+* 2. Create three TSStat statistic variables transaction_count, session_count
 *    and avg_transactions and update them at every new session or transaction.
-* 3. Play with INKConfig family of functions to set and get config data.
+* 3. Play with TSConfig family of functions to set and get config data.
 ******************************************************************************/
 #include <stdio.h>
 #include <pthread.h>
@@ -42,10 +42,10 @@
 #define SLEEP_TIME 10
 
 #define PLUGIN_NAME "session-2"
-#define VALID_POINTER(X) ((X != NULL) && (X != INK_ERROR_PTR))
+#define VALID_POINTER(X) ((X != NULL) && (X != TS_ERROR_PTR))
 #define LOG_SET_FUNCTION_NAME(NAME) const char * FUNCTION_NAME = NAME
 #define LOG_ERROR(API_NAME) { \
-    INKDebug(PLUGIN_NAME, "%s: %s %s %s File %s, line number %d", PLUGIN_NAME, API_NAME, "APIFAIL", \
+    TSDebug(PLUGIN_NAME, "%s: %s %s %s File %s, line number %d", PLUGIN_NAME, API_NAME, "APIFAIL", \
 	     FUNCTION_NAME, __FILE__, __LINE__); \
 }
 #define LOG_ERROR_AND_RETURN(API_NAME) { \
@@ -58,26 +58,26 @@
 }
 #define LOG_ERROR_AND_REENABLE(API_NAME) { \
   LOG_ERROR(API_NAME); \
-  INKHttpTxnReenable(txnp, INK_EVENT_HTTP_CONTINUE); \
+  TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE); \
 }
 #define LOG_ERROR_NEG(API_NAME) { \
-    INKDebug(PLUGIN_NAME, "%s: %s %s %s File %s, line number %d",PLUGIN_NAME, API_NAME, "NEGAPIFAIL", \
+    TSDebug(PLUGIN_NAME, "%s: %s %s %s File %s, line number %d",PLUGIN_NAME, API_NAME, "NEGAPIFAIL", \
              FUNCTION_NAME, __FILE__, __LINE__); \
 }
 
 
-INKThread ink_tid;
+TSThread ink_tid;
 
 typedef struct
 {
-  INK64 num_ssns;
+  TS64 num_ssns;
 } ConfigData;
 
 static unsigned int my_id = 0;
 
-static INKStat transaction_count;
-static INKStat session_count;
-static INKStat avg_transactions;
+static TSStat transaction_count;
+static TSStat session_count;
+static TSStat avg_transactions;
 
 /*********************************************************************
  * constructor for plugin config data
@@ -87,7 +87,7 @@ plugin_config_constructor()
 {
   ConfigData *data;
 
-  data = (ConfigData *) INKmalloc(sizeof(ConfigData));
+  data = (ConfigData *) TSmalloc(sizeof(ConfigData));
   data->num_ssns = 0;
   return data;
 }
@@ -98,100 +98,100 @@ plugin_config_constructor()
 static void
 plugin_config_destructor(void *data)
 {
-  INKfree((ConfigData *) data);
+  TSfree((ConfigData *) data);
 }
 
 /**********************************************************************
- * Update the statistic variables using the INKStat family of functions
+ * Update the statistic variables using the TSStat family of functions
  *********************************************************************/
 static void
-txn_handler(INKHttpTxn txnp, INKCont contp)
+txn_handler(TSHttpTxn txnp, TSCont contp)
 {
   LOG_SET_FUNCTION_NAME("txn_handler");
-  INK64 num_txns;
-  INK64 num_ssns;
+  TS64 num_txns;
+  TS64 num_ssns;
   float old_avg_txns, new_avg_txns;
 
-  /* negative test for INKStatIncrement */
+  /* negative test for TSStatIncrement */
 #ifdef DEBUG
-  if (INKStatIncrement(NULL) != INK_ERROR)
-    LOG_ERROR_NEG("INKStatIncrement");
+  if (TSStatIncrement(NULL) != TS_ERROR)
+    LOG_ERROR_NEG("TSStatIncrement");
 
 #endif
 
-  if (INKStatIncrement(transaction_count) == INK_ERROR)
-    LOG_ERROR("INKStatIncrement");
+  if (TSStatIncrement(transaction_count) == TS_ERROR)
+    LOG_ERROR("TSStatIncrement");
 
-  if (INKStatIntGet(transaction_count, &num_txns) == INK_ERROR)
-    LOG_ERROR("INKStatIntGet");
-  if (INKStatIntGet(session_count, &num_ssns) == INK_ERROR)
-    LOG_ERROR("INKStatIntGet");
-  if (INKStatFloatGet(avg_transactions, &old_avg_txns) == INK_ERROR)
-    LOG_ERROR("INKStatFloatGet");
+  if (TSStatIntGet(transaction_count, &num_txns) == TS_ERROR)
+    LOG_ERROR("TSStatIntGet");
+  if (TSStatIntGet(session_count, &num_ssns) == TS_ERROR)
+    LOG_ERROR("TSStatIntGet");
+  if (TSStatFloatGet(avg_transactions, &old_avg_txns) == TS_ERROR)
+    LOG_ERROR("TSStatFloatGet");
 
   if (num_ssns > 0) {
     new_avg_txns = (float) num_txns / num_ssns;
   } else {
     new_avg_txns = 0;
   }
-  if (INKStatFloatSet(avg_transactions, new_avg_txns) == INK_ERROR)
-    LOG_ERROR("INKStatFloatSet");
+  if (TSStatFloatSet(avg_transactions, new_avg_txns) == TS_ERROR)
+    LOG_ERROR("TSStatFloatSet");
 
-  /*negative test for INKStatFloatSet */
+  /*negative test for TSStatFloatSet */
 #ifdef DEBUG
-  if (INKStatFloatSet(NULL, new_avg_txns) != INK_ERROR)
-    LOG_ERROR_NEG("INKStatFloatSet");
+  if (TSStatFloatSet(NULL, new_avg_txns) != TS_ERROR)
+    LOG_ERROR_NEG("TSStatFloatSet");
 #endif
 
-  INKDebug(DEBUG_TAG, "The number of transactions is %ld\n", (long) num_txns);
-  INKDebug(DEBUG_TAG, "The previous number of average transactions per session is %.2f\n", old_avg_txns);
-  INKDebug(DEBUG_TAG, "The current number of average transactions per session is %.2f\n", new_avg_txns);
+  TSDebug(DEBUG_TAG, "The number of transactions is %ld\n", (long) num_txns);
+  TSDebug(DEBUG_TAG, "The previous number of average transactions per session is %.2f\n", old_avg_txns);
+  TSDebug(DEBUG_TAG, "The current number of average transactions per session is %.2f\n", new_avg_txns);
 
 }
 
 /**********************************************************************
- * Update session_count with both INKStat* and INKConfig* functions
+ * Update session_count with both TSStat* and TSConfig* functions
  *********************************************************************/
 static void
-handle_session(INKHttpSsn ssnp, INKCont contp)
+handle_session(TSHttpSsn ssnp, TSCont contp)
 {
   LOG_SET_FUNCTION_NAME("handle_session");
-  INK64 num_ssns;
-  INKConfig config_ptr;
+  TS64 num_ssns;
+  TSConfig config_ptr;
   ConfigData *config_data;
 
-  /* negative test for INKStatIntAddTo */
+  /* negative test for TSStatIntAddTo */
 #ifdef DEBUG
-  if (INKStatIntAddTo(NULL, 1) != INK_ERROR)
-    LOG_ERROR_NEG("INKStatIntAddTo");
+  if (TSStatIntAddTo(NULL, 1) != TS_ERROR)
+    LOG_ERROR_NEG("TSStatIntAddTo");
 #endif
 
-  /* update the session_count with INKStat functions */
-  if (INKStatIntAddTo(session_count, 1) == INK_ERROR)
-    LOG_ERROR("INKStatIntAddTo");
-  if (INKStatIntGet(session_count, &num_ssns) == INK_ERROR)
-    LOG_ERROR("INKStatIntGet");
-  INKDebug(DEBUG_TAG, "The number of sessions from INKStat is %ld\n", (long) num_ssns);
+  /* update the session_count with TSStat functions */
+  if (TSStatIntAddTo(session_count, 1) == TS_ERROR)
+    LOG_ERROR("TSStatIntAddTo");
+  if (TSStatIntGet(session_count, &num_ssns) == TS_ERROR)
+    LOG_ERROR("TSStatIntGet");
+  TSDebug(DEBUG_TAG, "The number of sessions from TSStat is %ld\n", (long) num_ssns);
 
 
   /* get the config data and update it */
-  config_ptr = INKConfigGet(my_id);
-  config_data = (ConfigData *) INKConfigDataGet(config_ptr);
+  config_ptr = TSConfigGet(my_id);
+  config_data = (ConfigData *) TSConfigDataGet(config_ptr);
   config_data->num_ssns++;
-  INKDebug(DEBUG_TAG, "The number of sessions from INKConfig is %ld\n", (long) config_data->num_ssns);
-  INKConfigRelease(my_id, config_ptr);
+  TSDebug(DEBUG_TAG, "The number of sessions from TSConfig is %ld\n", (long) config_data->num_ssns);
+  TSConfigRelease(my_id, config_ptr);
 
 
   /* add the session hook */
-  if (INKHttpSsnHookAdd(ssnp, INK_HTTP_TXN_START_HOOK, contp) == INK_ERROR)
-    LOG_ERROR("INKHttpSsnHookAdd");
+  if (TSHttpSsnHookAdd(ssnp, TS_HTTP_TXN_START_HOOK, contp) == TS_ERROR)
+    LOG_ERROR("TSHttpSsnHookAdd");
 
-  /* negative test for INKHttpSsnHookAdd */
+  /* negative test for TSHttpSsnHookAdd */
 #ifdef DEBUG
-  if (INKHttpSsnHookAdd(NULL, INK_HTTP_TXN_START_HOOK, contp) != INK_ERROR)
-    LOG_ERROR_NEG("INKHttpSsnHookAdd");
-  if (INKHttpSsnHookAdd(ssnp, INK_HTTP_TXN_START_HOOK, NULL) != INK_ERROR)
-    LOG_ERROR_NEG("INKHttpSsnHookAdd");
+  if (TSHttpSsnHookAdd(NULL, TS_HTTP_TXN_START_HOOK, contp) != TS_ERROR)
+    LOG_ERROR_NEG("TSHttpSsnHookAdd");
+  if (TSHttpSsnHookAdd(ssnp, TS_HTTP_TXN_START_HOOK, NULL) != TS_ERROR)
+    LOG_ERROR_NEG("TSHttpSsnHookAdd");
 #endif
 }
 
@@ -203,12 +203,12 @@ thread_func(void *arg)
 {
   LOG_SET_FUNCTION_NAME("thread_func");
   int sleep_time = (int) arg;
-  INKThread self;
+  TSThread self;
 
-  if ((ink_tid = INKThreadInit()) == INK_ERROR_PTR || ink_tid == NULL)
-    LOG_ERROR("INKThreadInit");
-  if ((self = INKThreadSelf()) == INK_ERROR_PTR || self == NULL)
-    LOG_ERROR("INKThreadSelf");
+  if ((ink_tid = TSThreadInit()) == TS_ERROR_PTR || ink_tid == NULL)
+    LOG_ERROR("TSThreadInit");
+  if ((self = TSThreadSelf()) == TS_ERROR_PTR || self == NULL)
+    LOG_ERROR("TSThreadSelf");
   sleep(sleep_time);
   return NULL;
 }
@@ -224,81 +224,81 @@ thread_handler()
 
   pthread_create(&tid, NULL, thread_func, (void *) SLEEP_TIME);
   sleep(5);
-  if (INKThreadDestroy(ink_tid) == INK_ERROR)
-    LOG_ERROR("INKThreadDestroy");
+  if (TSThreadDestroy(ink_tid) == TS_ERROR)
+    LOG_ERROR("TSThreadDestroy");
 }
 
 static int
-ssn_handler(INKCont contp, INKEvent event, void *edata)
+ssn_handler(TSCont contp, TSEvent event, void *edata)
 {
   LOG_SET_FUNCTION_NAME("ssn_handler");
-  INKHttpSsn ssnp;
-  INKHttpTxn txnp;
+  TSHttpSsn ssnp;
+  TSHttpTxn txnp;
 
   switch (event) {
-  case INK_EVENT_HTTP_SSN_START:
-    ssnp = (INKHttpSsn) edata;
+  case TS_EVENT_HTTP_SSN_START:
+    ssnp = (TSHttpSsn) edata;
     handle_session(ssnp, contp);
-    if (INKHttpSsnReenable(ssnp, INK_EVENT_HTTP_CONTINUE) == INK_ERROR)
-      LOG_ERROR("INKHttpSsnReenable");
+    if (TSHttpSsnReenable(ssnp, TS_EVENT_HTTP_CONTINUE) == TS_ERROR)
+      LOG_ERROR("TSHttpSsnReenable");
 
-    /* negative test for INKHttpSsnReenable */
+    /* negative test for TSHttpSsnReenable */
 #ifdef DEBUG
-    if (INKHttpSsnReenable(NULL, INK_EVENT_HTTP_CONTINUE) != INK_ERROR)
-      LOG_ERROR_NEG("INKHttpSsnReenable");
+    if (TSHttpSsnReenable(NULL, TS_EVENT_HTTP_CONTINUE) != TS_ERROR)
+      LOG_ERROR_NEG("TSHttpSsnReenable");
 #endif
     return 0;
 
-  case INK_EVENT_HTTP_TXN_START:
-    txnp = (INKHttpTxn) edata;
+  case TS_EVENT_HTTP_TXN_START:
+    txnp = (TSHttpTxn) edata;
     txn_handler(txnp, contp);
-    if (INKHttpTxnReenable(txnp, INK_EVENT_HTTP_CONTINUE) == INK_ERROR)
-      LOG_ERROR("INKHttpTxnReenable");
+    if (TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE) == TS_ERROR)
+      LOG_ERROR("TSHttpTxnReenable");
     return 0;
 
   default:
-    INKDebug(DEBUG_TAG, "In the default case: event = %d\n", event);
+    TSDebug(DEBUG_TAG, "In the default case: event = %d\n", event);
     break;
   }
   return 0;
 }
 
 void
-INKPluginInit(int argc, const char *argv[])
+TSPluginInit(int argc, const char *argv[])
 {
-  LOG_SET_FUNCTION_NAME("INKPluginInit");
-  INKCont contp;
+  LOG_SET_FUNCTION_NAME("TSPluginInit");
+  TSCont contp;
   ConfigData *config_data;
 
   thread_handler();
 
   /* create the statistic variables */
-  transaction_count = INKStatCreate("transaction.count", INKSTAT_TYPE_INT64);
-  session_count = INKStatCreate("session.count", INKSTAT_TYPE_INT64);
-  avg_transactions = INKStatCreate("avg.transactions", INKSTAT_TYPE_FLOAT);
-  if ((transaction_count == INK_ERROR_PTR) || (session_count == INK_ERROR_PTR) || (avg_transactions == INK_ERROR_PTR)) {
-    LOG_ERROR("INKStatCreate");
+  transaction_count = TSStatCreate("transaction.count", TSSTAT_TYPE_INT64);
+  session_count = TSStatCreate("session.count", TSSTAT_TYPE_INT64);
+  avg_transactions = TSStatCreate("avg.transactions", TSSTAT_TYPE_FLOAT);
+  if ((transaction_count == TS_ERROR_PTR) || (session_count == TS_ERROR_PTR) || (avg_transactions == TS_ERROR_PTR)) {
+    LOG_ERROR("TSStatCreate");
     return;
   }
 
-  /* negative test for INKStatCreate */
+  /* negative test for TSStatCreate */
 #ifdef DEBUG
-  if (INKStatCreate(NULL, INKSTAT_TYPE_INT64) != INK_ERROR_PTR) {
-    LOG_ERROR_NEG("INKStatCreate");
+  if (TSStatCreate(NULL, TSSTAT_TYPE_INT64) != TS_ERROR_PTR) {
+    LOG_ERROR_NEG("TSStatCreate");
   }
-  if (INKStatCreate("transaction.negtest", -1) != INK_ERROR_PTR) {
-    LOG_ERROR_NEG("INKStatCreate");
+  if (TSStatCreate("transaction.negtest", -1) != TS_ERROR_PTR) {
+    LOG_ERROR_NEG("TSStatCreate");
   }
 #endif
 
-  /* create config data for plugin and assign it an identifier with INKConfigSet */
+  /* create config data for plugin and assign it an identifier with TSConfigSet */
   config_data = plugin_config_constructor();
 
-  my_id = INKConfigSet(my_id, config_data, plugin_config_destructor);
+  my_id = TSConfigSet(my_id, config_data, plugin_config_destructor);
 
   /* create the continuation */
-  if ((contp = INKContCreate(ssn_handler, NULL)) == INK_ERROR_PTR)
-    LOG_ERROR("INKContCreate")
+  if ((contp = TSContCreate(ssn_handler, NULL)) == TS_ERROR_PTR)
+    LOG_ERROR("TSContCreate")
       else
-    INKHttpHookAdd(INK_HTTP_SSN_START_HOOK, contp);
+    TSHttpHookAdd(TS_HTTP_SSN_START_HOOK, contp);
 }

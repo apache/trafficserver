@@ -32,7 +32,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-/* INKAction
+/* TSAction
  *
  * TODO send and receive data on the connection
 */
@@ -43,7 +43,7 @@
 char *
 uint2ddip(unsigned int addr)
 {
-  char *ptr = (char *) INKmalloc(64);
+  char *ptr = (char *) TSmalloc(64);
   if (!ptr)
     return NULL;
 
@@ -59,7 +59,7 @@ uint2ddip(unsigned int addr)
 #define TIMEOUT_VAL (30000)
 
 
-/* Set in INKPluginInit */
+/* Set in TSPluginInit */
 typedef struct clientInfo
 {
   char clientBuff[BUFSIZ];
@@ -70,25 +70,25 @@ typedef struct clientInfo
  * connections) is running on a client machine
 */
 static int
-handle_INKAction(INKCont contp, INKEvent event, void *eData)
+handle_TSAction(TSCont contp, TSEvent event, void *eData)
 {
-  INKHttpTxn txnp = (INKHttpTxn *) eData;
+  TSHttpTxn txnp = (TSHttpTxn *) eData;
   char *clientName = NULL;
   unsigned int clientAddr = 0;
   int err = 0;
   char *ipAddrp = NULL;
   clientInfo_t *clientInfop = NULL;
   struct in_addr *inAddrp = NULL;
-  INKAction inkAction;
+  TSAction inkAction;
   struct hostent *hostEntp;
 
   switch (event) {
-  case INK_EVENT_IMMEDIATE:
+  case TS_EVENT_IMMEDIATE:
     /* event scheduled at plugIn-init
      */
-    clientInfop = (clientInfo_t *) INKContDataGet(contp);
+    clientInfop = (clientInfo_t *) TSContDataGet(contp);
     if (!clientInfop) {
-      INKDebug("INKAction", "INKContDataGet returned NULL ptr");
+      TSDebug("TSAction", "TSContDataGet returned NULL ptr");
       return 1;
     }
 
@@ -96,10 +96,10 @@ handle_INKAction(INKCont contp, INKEvent event, void *eData)
      * Get hostname/port name: ip str :
      * unsigned int  inet_addr(ip str)
      */
-    INKDebug("INKAction", "gethostbyname( %s )", clientInfop->clientBuff);
+    TSDebug("TSAction", "gethostbyname( %s )", clientInfop->clientBuff);
     hostEntp = gethostbyname(clientInfop->clientBuff);
     if (!hostEntp) {
-      INKDebug("INKAction", "failed: gethostbyname( %s )", clientInfop->clientBuff);
+      TSDebug("TSAction", "failed: gethostbyname( %s )", clientInfop->clientBuff);
       return ++err;
     }
     inAddrp = (struct in_addr *) *hostEntp->h_addr_list;
@@ -108,54 +108,54 @@ handle_INKAction(INKCont contp, INKEvent event, void *eData)
     clientName = inet_ntoa(*inAddrp);
     /* string clientName in inet std dot not. to integer value */
     clientAddr = inet_addr(clientName);
-    INKDebug("INKAction",
-             "INKNetConnect(contp, client=(%s/%d), port=(%d))",
+    TSDebug("TSAction",
+             "TSNetConnect(contp, client=(%s/%d), port=(%d))",
              clientName, htonl(clientAddr), ntohl(clientInfop->port));
 
     /* We should get NET_CONNECT or NET_CONNECT_FAILED before
      * this schedule timeout event
      */
-    INKContSchedule(contp, TIMEOUT_VAL);
+    TSContSchedule(contp, TIMEOUT_VAL);
 
-    inkAction = INKNetConnect(contp, htonl(clientAddr), ntohl(clientInfop->port));
-    if (!INKActionDone(inkAction)) {
-      INKDebug("INKAction", "INKNetConnect: not called back yet, action not done");
-      INKContDataSet(contp, (void *) inkAction);
+    inkAction = TSNetConnect(contp, htonl(clientAddr), ntohl(clientInfop->port));
+    if (!TSActionDone(inkAction)) {
+      TSDebug("TSAction", "TSNetConnect: not called back yet, action not done");
+      TSContDataSet(contp, (void *) inkAction);
     } else {
-      INKDebug("INKAction", "INKNetConnect: plug-in has been called ");
+      TSDebug("TSAction", "TSNetConnect: plug-in has been called ");
     }
     break;
 
-  case INK_EVENT_TIMEOUT:
-    inkAction = INKContDataGet(contp);
+  case TS_EVENT_TIMEOUT:
+    inkAction = TSContDataGet(contp);
 
-    /* INK_EVENT_NET_CONNECT_FAILED or
-     * INK_EVENT_NET_CONNECT have been received
+    /* TS_EVENT_NET_CONNECT_FAILED or
+     * TS_EVENT_NET_CONNECT have been received
      * then action should be considered  done
      */
-    if (inkAction && !INKActionDone(inkAction)) {
-      INKActionCancel(inkAction);
+    if (inkAction && !TSActionDone(inkAction)) {
+      TSActionCancel(inkAction);
       err++;                    /* timed out w/no event */
       /* no error */
-      INKDebug("INKAction", "INKAction: INK_EVENT_TIMEOUT action not done");
+      TSDebug("TSAction", "TSAction: TS_EVENT_TIMEOUT action not done");
     } else {
       /* no error */
-      INKDebug("INKAction", "INKAction: INK_EVENT_TIMEOUT");
+      TSDebug("TSAction", "TSAction: TS_EVENT_TIMEOUT");
     }
     break;
 
-  case INK_EVENT_NET_CONNECT_FAILED:
-    INKDebug("INKAction", "INKNetConnect: INK_EVENT_NET_CONNECT_FAILED ***** ");
-    INKContDataSet(contp, NULL);  /* TODO determine what does this do */
+  case TS_EVENT_NET_CONNECT_FAILED:
+    TSDebug("TSAction", "TSNetConnect: TS_EVENT_NET_CONNECT_FAILED ***** ");
+    TSContDataSet(contp, NULL);  /* TODO determine what does this do */
     break;
 
-  case INK_EVENT_NET_CONNECT:
-    INKDebug("INKAction", "INKNetConnect: INK_EVENT_NET_CONNECT");
-    INKContDataSet(contp, NULL);  /* TODO determine what does this do */
+  case TS_EVENT_NET_CONNECT:
+    TSDebug("TSAction", "TSNetConnect: TS_EVENT_NET_CONNECT");
+    TSContDataSet(contp, NULL);  /* TODO determine what does this do */
     break;
 
   default:
-    INKDebug("INKAction", "handle_INKAction: undefined event ");
+    TSDebug("TSAction", "handle_TSAction: undefined event ");
     break;
   }
   return err;
@@ -164,36 +164,36 @@ handle_INKAction(INKCont contp, INKEvent event, void *eData)
 
 
 /* Usage:
- * INKAction.so clientName clientPort
+ * TSAction.so clientName clientPort
 */
 void
-INKPluginInit(int argc, const char *argv[])
+TSPluginInit(int argc, const char *argv[])
 {
   int err = 0;
   int length = 0, argCnt = 0;
   clientInfo_t *clientp = NULL;
-  INKCont contp;
+  TSCont contp;
   struct hostent *hostEntp = NULL;
   char *hostName = NULL;
   int port = 0;
 
   ink_assert(argc == 3);
-  clientp = (clientInfo_t *) INKmalloc(sizeof(clientInfo_t));
+  clientp = (clientInfo_t *) TSmalloc(sizeof(clientInfo_t));
   ink_assert(clientp != NULL);
 
-  contp = INKContCreate(handle_INKAction, INKMutexCreate());
+  contp = TSContCreate(handle_TSAction, TSMutexCreate());
 
   hostEntp = gethostbyname(argv[++argCnt]);
   if (!hostEntp) {
-    INKDebug("INKAction", "Failed: gethostbyname returned null pointer");
+    TSDebug("TSAction", "Failed: gethostbyname returned null pointer");
     return;
   }
   strncpy(clientp->clientBuff, hostEntp->h_name, strlen(hostEntp->h_name));
 
   clientp->port = atoi(argv[++argCnt]);
 
-  INKContDataSet(contp, (void *) clientp);
+  TSContDataSet(contp, (void *) clientp);
 
-  INKContSchedule(contp, 0);
-  /* INKHttpHookAdd(INK_HTTP_SSN_START_HOOK, contp); */
+  TSContSchedule(contp, 0);
+  /* TSHttpHookAdd(TS_HTTP_SSN_START_HOOK, contp); */
 }

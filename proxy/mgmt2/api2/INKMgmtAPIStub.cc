@@ -379,18 +379,6 @@ INKIcpEleDestory(INKIcpEle * ele)
   return;
 }
 
-inkapi INKLdapSrvrEle *
-INKLdapSrvrEleCreate()
-{
-  return NULL;
-}
-
-inkapi void
-INKLdapSrvrEleDestroy(INKLdapSrvrEle * ele)
-{
-  return;
-}
-
 inkapi INKLogFilterEle *
 INKLogFilterEleCreate()
 {

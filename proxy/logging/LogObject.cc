@@ -70,7 +70,7 @@ LogBufferManager::flush_buffers(LogBufferSink * sink, size_t * to_disk, size_t *
       _head = _head % DELAY_DELETE_SIZE;
       delcnt++;
     }
-    Debug("log2-logbuffer", "flushed %d buffers: %lu bytes", delcnt, (unsigned long) total_bytes_flushed);
+    Debug("log-logbuffer", "flushed %d buffers: %lu bytes", delcnt, (unsigned long) total_bytes_flushed);
   }
   return total_bytes_flushed;
 }
@@ -137,15 +137,15 @@ LogObject::LogObject(LogFormat * format, const char *log_dir,
   _setup_rolling(rolling_enabled, rolling_interval_sec, rolling_offset_hr, rolling_size_mb);
   m_last_roll_time = LogUtils::timestamp();
 
-  Debug("log2-config", "exiting LogObject constructor, filename=%s this=%p", m_filename, this);
+  Debug("log-config", "exiting LogObject constructor, filename=%s this=%p", m_filename, this);
 }
 
 LogObject::~LogObject()
 {
-  Debug("log2-config", "entering LogObject destructor, this=%p", this);
+  Debug("log-config", "entering LogObject destructor, this=%p", this);
 
   while (m_ref_count > 0) {
-    Debug("log2-config", "LogObject refcount = %d, waiting for zero", m_ref_count);
+    Debug("log-config", "LogObject refcount = %d, waiting for zero", m_ref_count);
   }
 
   flush_buffers(0, 0, 0);
@@ -320,12 +320,7 @@ LogObject::display(FILE * fd)
 {
   fprintf(fd, "++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n");
   fprintf(fd, "LogObject [%p]: format = %s (%p)\nbasename = %s\n" "flags = %u\n"
-#ifdef __alpha
-          // the DEC does not like %llu
-          "signature = %lu\n",
-#else
           "signature = %llu\n",
-#endif
           this, m_format->name(), m_format, m_basename, m_flags, m_signature);
 #ifndef TS_MICRO
   if (is_collation_client()) {
@@ -407,7 +402,7 @@ LogObject::_checkout_write(size_t * write_offset, size_t bytes_needed)
       if (result_code == LogBuffer::LB_FULL_NO_WRITERS) {
         // there are no writers, move the buffer to the flush list
         //
-        Debug("log2-logbuffer", "adding buffer %d to flush list after checkout", buffer->get_id());
+        Debug("log-logbuffer", "adding buffer %d to flush list after checkout", buffer->get_id());
 
         m_buffer_manager.add_to_flush_queue(buffer);
         ink_mutex_acquire(&Log::flush_mutex);
@@ -459,22 +454,22 @@ LogObject::log(LogAccess * lad, char *text_entry)
   // likewise, send data to a remote client even if local space is exhausted
   // (if there is a remote client, m_logFile will be NULL
   if (Log::config->logging_space_exhausted && !writes_to_pipe() && m_logFile) {
-    LOG_INCREMENT_DYN_STAT(log2_stat_event_log_access_fail_stat);
+    LOG_INCREMENT_DYN_STAT(log_stat_event_log_access_fail_stat);
     return Log::FULL;
   }
   // this verification must be done here in order to avoid 'dead' LogBuffers
   // with none zero 'in usage' counters (see _checkout_write for more details)
   if (!lad && !text_entry) {
     Note("Call to LogAccess without LAD or text entry; skipping");
-    LOG_INCREMENT_DYN_STAT(log2_stat_event_log_access_fail_stat);
+    LOG_INCREMENT_DYN_STAT(log_stat_event_log_access_fail_stat);
     return Log::FAIL;
   }
 
   RefCounter counter(&m_ref_count);     // scope exit will decrement
 
   if (lad && m_filter_list.toss_this_entry(lad)) {
-    Debug("log2", "entry filtered, skipping ...");
-    LOG_INCREMENT_DYN_STAT(log2_stat_event_log_access_skip_stat);
+    Debug("log", "entry filtered, skipping ...");
+    LOG_INCREMENT_DYN_STAT(log_stat_event_log_access_skip_stat);
     return Log::SKIP;
   }
 
@@ -483,7 +478,7 @@ LogObject::log(LogAccess * lad, char *text_entry)
     // LogFormat object for aggregate formats
     if (m_format->m_agg_marshal_space == NULL) {
       Note("No temp space to marshal aggregate fields into");
-      LOG_INCREMENT_DYN_STAT(log2_stat_event_log_access_fail_stat);
+      LOG_INCREMENT_DYN_STAT(log_stat_event_log_access_fail_stat);
       return Log::FAIL;
     }
 
@@ -504,7 +499,7 @@ LogObject::log(LogAccess * lad, char *text_entry)
     }
 
     if (time_now < m_format->m_interval_next) {
-      Debug("log2-agg", "Time now = %d, next agg = %d; not time "
+      Debug("log-agg", "Time now = %d, next agg = %d; not time "
             "for aggregate entry", time_now, m_format->m_interval_next);
       return Log::LOG_OK;
     }
@@ -518,8 +513,8 @@ LogObject::log(LogAccess * lad, char *text_entry)
   }
 
   if (bytes_needed == 0) {
-    Debug("log2-buffer", "Nothing to log, bytes_needed = 0");
-    LOG_INCREMENT_DYN_STAT(log2_stat_event_log_access_skip_stat);
+    Debug("log-buffer", "Nothing to log, bytes_needed = 0");
+    LOG_INCREMENT_DYN_STAT(log_stat_event_log_access_skip_stat);
     return Log::SKIP;
   }
   // Now try to place this entry in the current LogBuffer.
@@ -529,7 +524,7 @@ LogObject::log(LogAccess * lad, char *text_entry)
   if (!buffer) {
     Note("Traffic Server is skipping the current log entry for %s because "
          "its size (%d) exceeds the maximum payload space in a " "log buffer", m_basename, bytes_needed);
-    LOG_INCREMENT_DYN_STAT(log2_stat_event_log_access_fail_stat);
+    LOG_INCREMENT_DYN_STAT(log_stat_event_log_access_fail_stat);
     return Log::FAIL;
   }
   //
@@ -544,7 +539,7 @@ LogObject::log(LogAccess * lad, char *text_entry)
     bytes_used = m_format->m_field_list.marshal_agg(&(*buffer)[offset]);
     ink_assert(bytes_needed >= bytes_used);
     m_format->m_interval_next += m_format->m_interval_sec;
-    Debug("log2-agg", "Aggregate entry created; next time is %d", m_format->m_interval_next);
+    Debug("log-agg", "Aggregate entry created; next time is %d", m_format->m_interval_next);
   } else if (lad) {
     bytes_used = m_format->m_field_list.marshal(lad, &(*buffer)[offset]);
     ink_assert(bytes_needed >= bytes_used);
@@ -556,7 +551,7 @@ LogObject::log(LogAccess * lad, char *text_entry)
 
   if (result_code == LogBuffer::LB_ALL_WRITERS_DONE) {
     // all checkins completed, put this buffer in the flush list
-    Debug("log2-logbuffer", "adding buffer %d to flush list after checkin", buffer->get_id());
+    Debug("log-logbuffer", "adding buffer %d to flush list after checkin", buffer->get_id());
 
     m_buffer_manager.add_to_flush_queue(buffer);
     ink_mutex_acquire(&Log::flush_mutex);
@@ -565,7 +560,7 @@ LogObject::log(LogAccess * lad, char *text_entry)
     ink_mutex_release(&Log::flush_mutex);
   }
 
-  LOG_INCREMENT_DYN_STAT(log2_stat_event_log_access_stat);
+  LOG_INCREMENT_DYN_STAT(log_stat_event_log_access_stat);
 
   return Log::LOG_OK;
 }
@@ -895,7 +890,7 @@ LogObjectManager::_manage_object(LogObject * log_object, bool is_api_object, int
           _add_object(log_object);
         }
 
-        Debug("log2", "LogObjectManager managing object %s (%s) "
+        Debug("log", "LogObjectManager managing object %s (%s) "
               "[signature = %llu, address = %p]",
               log_object->get_base_filename(),
               col_client ? "collation client" :
@@ -961,7 +956,7 @@ LogObjectManager::_solve_filename_conflicts(LogObject * log_object, int maxConfl
         if (got_sig && signature == obj_sig) {
           conflicts = false;
         }
-        Debug("log2", "LogObjectManager::_solve_filename_conflicts\n"
+        Debug("log", "LogObjectManager::_solve_filename_conflicts\n"
               "\tfilename = %s\n"
               "\tmeta file signature = %llu\n"
               "\tlog object signature = %llu\n" "\tconflicts = %d", filename, signature, obj_sig, conflicts);
@@ -1231,15 +1226,15 @@ LogObjectManager::transfer_objects(LogObjectManager & old_mgr)
   size_t i;
   size_t num_kept_objects = 0;
 
-  if (is_debug_tag_set("log2-config-transfer")) {
-    Debug("log2-config-transfer", "TRANSFER OBJECTS: list of old objects");
+  if (is_debug_tag_set("log-config-transfer")) {
+    Debug("log-config-transfer", "TRANSFER OBJECTS: list of old objects");
     for (i = 0; i < old_mgr._numObjects; i++) {
-      Debug("log2-config-transfer", "%s", old_mgr._objects[i]->get_original_filename());
+      Debug("log-config-transfer", "%s", old_mgr._objects[i]->get_original_filename());
     }
 
-    Debug("log2-config-transfer", "TRANSFER OBJECTS : list of new objects");
+    Debug("log-config-transfer", "TRANSFER OBJECTS : list of new objects");
     for (i = 0; i < _numObjects; i++) {
-      Debug("log2-config-transfer", "%s", _objects[i]->get_original_filename());
+      Debug("log-config-transfer", "%s", _objects[i]->get_original_filename());
     }
   }
 
@@ -1251,7 +1246,7 @@ LogObjectManager::transfer_objects(LogObjectManager & old_mgr)
   for (i = 0; i < old_mgr._numObjects; i++) {
     old_obj = old_objects[i];
 
-    Debug("log2-config-transfer", "examining existing object %s", old_obj->get_base_filename());
+    Debug("log-config-transfer", "examining existing object %s", old_obj->get_base_filename());
 
     // see if any of the new objects is just a copy of an old one,
     // if so, keep the old one and delete the new one
@@ -1262,11 +1257,11 @@ LogObjectManager::transfer_objects(LogObjectManager & old_mgr)
       for (j = 0; j < _numObjects; j++) {
         obj = _objects[j];
 
-        Debug("log2-config-transfer",
+        Debug("log-config-transfer",
               "comparing existing object %s to new object %s", old_obj->get_base_filename(), obj->get_base_filename());
 
         if (*obj == *old_obj) {
-          Debug("log2-config-transfer", "keeping existing object %s", old_obj->get_base_filename());
+          Debug("log-config-transfer", "keeping existing object %s", old_obj->get_base_filename());
 
           _objects[j] = old_obj;
           delete obj;
@@ -1279,14 +1274,14 @@ LogObjectManager::transfer_objects(LogObjectManager & old_mgr)
     // inactive objects
     //
     if (j == _numObjects) {
-      Debug("log2-config-transfer", "moving existing object %s to inactive list", old_obj->get_base_filename());
+      Debug("log-config-transfer", "moving existing object %s to inactive list", old_obj->get_base_filename());
 
       Log::add_to_inactive(old_obj);
     }
   }
 
-  if (is_debug_tag_set("log2-config-transfer")) {
-    Debug("log2-config-transfer", "Log Object List after transfer:");
+  if (is_debug_tag_set("log-config-transfer")) {
+    Debug("log-config-transfer", "Log Object List after transfer:");
     display();
   }
 }

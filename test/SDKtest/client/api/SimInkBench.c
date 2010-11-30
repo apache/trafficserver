@@ -81,23 +81,23 @@ typedef struct
 SimInkbenchPlugin my_plugin;
 
 void
-INKPluginInit(int client_id)
+TSPluginInit(int client_id)
 {
   my_plugin.requests = 0;
   my_plugin.successful_requests = 0;
 
-  INKFuncRegister(INK_FID_OPTIONS_PROCESS);
-  INKFuncRegister(INK_FID_OPTIONS_PROCESS_FINISH);
-  INKFuncRegister(INK_FID_CONNECTION_FINISH);
-  INKFuncRegister(INK_FID_PLUGIN_FINISH);
-  INKFuncRegister(INK_FID_REQUEST_CREATE);
-  INKFuncRegister(INK_FID_HEADER_PROCESS);
-  INKFuncRegister(INK_FID_PARTIAL_BODY_PROCESS);
-  INKFuncRegister(INK_FID_REPORT);
+  TSFuncRegister(TS_FID_OPTIONS_PROCESS);
+  TSFuncRegister(TS_FID_OPTIONS_PROCESS_FINISH);
+  TSFuncRegister(TS_FID_CONNECTION_FINISH);
+  TSFuncRegister(TS_FID_PLUGIN_FINISH);
+  TSFuncRegister(TS_FID_REQUEST_CREATE);
+  TSFuncRegister(TS_FID_HEADER_PROCESS);
+  TSFuncRegister(TS_FID_PARTIAL_BODY_PROCESS);
+  TSFuncRegister(TS_FID_REPORT);
 }
 
 void
-INKOptionsProcess(char *option, char *value)
+TSOptionsProcess(char *option, char *value)
 {
   if (strcmp(option, "target_host") == 0) {
     my_plugin.target_host = strdup(value);
@@ -123,7 +123,7 @@ INKOptionsProcess(char *option, char *value)
 }
 
 void
-INKOptionsProcessFinish()
+TSOptionsProcessFinish()
 {
   read_docsize_dist();
   ((strlen(my_plugin.target_host) == 0) || (strlen(my_plugin.target_port) == 0)) ?
@@ -131,15 +131,15 @@ INKOptionsProcessFinish()
 }
 
 void
-INKConnectionFinish(void *req_id, INKConnectionStatus conn_status)
+TSConnectionFinish(void *req_id, TSConnectionStatus conn_status)
 {
-  if (conn_status == INK_TIME_EXPIRE)
+  if (conn_status == TS_TIME_EXPIRE)
     my_plugin.unfinished_requests++;
   free(req_id);
 }
 
 void
-INKPluginFinish()
+TSPluginFinish()
 {
   int i;
   free(my_plugin.target_host);
@@ -152,7 +152,7 @@ INKPluginFinish()
 
 
 int
-INKRequestCreate(char *origin_server_host /* return */ , int max_hostname_size,
+TSRequestCreate(char *origin_server_host /* return */ , int max_hostname_size,
                  char *origin_server_port /* return */ , int max_portname_size,
                  char *request_buf /* return */ , int max_request_size,
                  void **req_id /* return */ )
@@ -184,16 +184,16 @@ INKRequestCreate(char *origin_server_host /* return */ , int max_hostname_size,
 }
 
 
-INKRequestAction
-INKHeaderProcess(void *req_id, char *header, int length, char *request_str)
+TSRequestAction
+TSHeaderProcess(void *req_id, char *header, int length, char *request_str)
 {
   ((User *) req_id)->header_bytes = length;
-  return INK_KEEP_GOING;
+  return TS_KEEP_GOING;
 }
 
 
-INKRequestAction
-INKPartialBodyProcess(void *req_id, void *partial_content, int partial_length, int accum_length)
+TSRequestAction
+TSPartialBodyProcess(void *req_id, void *partial_content, int partial_length, int accum_length)
 {
   if (partial_length == 0) {
     if (accum_length >= ((User *) req_id)->doc_size_requested) {
@@ -203,19 +203,19 @@ INKPartialBodyProcess(void *req_id, void *partial_content, int partial_length, i
       fprintf(stderr, "ERROR: received bytes < requested bytes");
     }
   }
-  return INK_KEEP_GOING;
+  return TS_KEEP_GOING;
 }
 
 
 #define safediv(top,bottom) ((bottom) ? (((double)(top))/((double)(bottom))) : (bottom))
 void
-INKReport()
+TSReport()
 {
-  INKReportSingleData("Total Requests", "count", INK_SUM, (double) my_plugin.requests);
-  INKReportSingleData("Successful Documents", "count", INK_SUM, (double) my_plugin.successful_requests);
-  INKReportSingleData("Unfinished Documents", "count", INK_SUM, (double) my_plugin.unfinished_requests);
-  INKReportSingleData("Total Bytes Received", "count", INK_SUM, (double) my_plugin.total_bytes_received);
-  INKReportSingleData("Average Bytes Per Request", "bytes/req", INK_AVE,
+  TSReportSingleData("Total Requests", "count", TS_SUM, (double) my_plugin.requests);
+  TSReportSingleData("Successful Documents", "count", TS_SUM, (double) my_plugin.successful_requests);
+  TSReportSingleData("Unfinished Documents", "count", TS_SUM, (double) my_plugin.unfinished_requests);
+  TSReportSingleData("Total Bytes Received", "count", TS_SUM, (double) my_plugin.total_bytes_received);
+  TSReportSingleData("Average Bytes Per Request", "bytes/req", TS_AVE,
                       (double) safediv(my_plugin.total_bytes_received, my_plugin.successful_requests));
 }
 

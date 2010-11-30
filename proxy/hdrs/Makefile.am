@@ -27,8 +27,6 @@ EXTRA_PROGRAMS = load_http_hdr
 libhdrs_a_SOURCES = \
   HdrHeap.cc \
   HdrHeap.h \
-  HdrTest.cc \
-  HdrTest.h \
   HdrToken.cc \
   HdrToken.h \
   HdrTSOnly.cc \
@@ -44,6 +42,11 @@ libhdrs_a_SOURCES = \
   SDKAllocator.h \
   URL.cc \
   URL.h
+
+if BUILD_TESTS
+  libhdrs_a_SOURCES += HdrTest.cc \
+    HdrTest.h
+endif
 
 load_http_hdr_SOURCES = \
   HdrHeap.h \

@@ -29,14 +29,14 @@
 #include <stdio.h>
 
 void
-INKPluginInit(int clientid)
+TSPluginInit(int clientid)
 {
-  fprintf(stderr, "*** INKOptionsProcess Test for Client ***\n");
-  INKFuncRegister(INK_FID_OPTIONS_PROCESS);
+  fprintf(stderr, "*** TSOptionsProcess Test for Client ***\n");
+  TSFuncRegister(TS_FID_OPTIONS_PROCESS);
 }
 
 void
-INKOptionsProcess(char *option, char *value)
+TSOptionsProcess(char *option, char *value)
 {
   fprintf(stderr, "%s = %s\n", option, value);
 }

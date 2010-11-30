@@ -29,8 +29,6 @@ bin_PROGRAMS = \
   traffic_logcat \
   traffic_logstats \
   traffic_sac
-
-noinst_PROGRAMS =  traffic_cust_log_fmt_cnvrt
 endif
 
 AM_CPPFLAGS = \
@@ -51,9 +49,7 @@ includedir=$(prefix)/include/ts
 include_HEADERS = \
   api/ts/ts.h \
   api/ts/remap.h \
-  api/ts/experimental.h \
-  api/ts/ts_private.h \
-  api/ts/ts_private_frozen.h
+  api/ts/experimental.h
 
 noinst_HEADERS = \
   api/ts/InkAPIHughes.h \
@@ -78,8 +74,6 @@ traffic_server_SOURCES = \
   AbstractBuffer.h \
   CacheControl.cc \
   CacheControl.h \
-  CacheInspectorAllow.cc \
-  CacheInspectorAllow.h \
   ProxyConfig.cc \
   ProxyConfig.h \
   ControlBase.cc \
@@ -106,7 +100,6 @@ traffic_server_SOURCES = \
   InkAPI.cc \
   FetchSM.cc \
   InkAPIInternal.h \
-  InkAPITest.cc \
   InkIOCoreAPI.cc \
   InkXml.cc \
   InkXml.h \
@@ -125,8 +118,6 @@ traffic_server_SOURCES = \
   Prefetch.cc \
   Prefetch.h \
   Raf.h \
-  RegressionSM.h \
-  RegressionSM.cc \
   ReverseProxy.cc \
   ReverseProxy.h \
   RniTransStats.h \
@@ -138,7 +129,6 @@ traffic_server_SOURCES = \
   StatSystem.cc \
   StatSystem.h \
   StatAPITypes.cc \
-  TestHook.cc \
   Transform.cc \
   Transform.h \
   TransformInternal.h \
@@ -149,6 +139,12 @@ if BUILD_V2STATS
   traffic_server_SOURCES += StatSystemV2.cc
 endif
 
+if BUILD_TESTS
+  traffic_server_SOURCES +=  InkAPITest.cc  \
+    RegressionSM.h \
+    RegressionSM.cc \
+    TestHook.cc
+endif
 
 traffic_server_LDFLAGS = @EXTRA_CXX_LDFLAGS@
 traffic_server_LDADD = \
@@ -192,7 +188,6 @@ traffic_logcat_LDADD = \
   ControlMatcher.o CacheControl.o  \
   StatSystem.o \
   StatAPITypes.o \
-  CacheInspectorAllow.o \
   ReverseProxy.o \
   ProxyConfig.o \
   signals.o \
@@ -205,8 +200,6 @@ traffic_logcat_LDADD = \
   Transform.o \
   Prefetch.o \
   Update.o \
-  TestHook.o \
-  RegressionSM.o \
   Plugin.o \
   PluginDB.o \
   InkAPI.o \
@@ -244,6 +237,11 @@ if BUILD_V2STATS
   traffic_logcat_LDADD += StatSystemV2.o
 endif
 
+if BUILD_TESTS
+  traffic_logcat_LDADD += RegressionSM.o \
+      TestHook.o
+endif
+
 traffic_logstats_SOURCES = logstats.cc
 traffic_logstats_LDFLAGS = @EXTRA_CXX_LDFLAGS@
 traffic_logstats_LDADD = \
@@ -258,7 +256,6 @@ traffic_logstats_LDADD = \
   CacheControl.o  \
   StatSystem.o \
   StatAPITypes.o \
-  CacheInspectorAllow.o \
   ReverseProxy.o \
   ProxyConfig.o \
   signals.o \
@@ -271,8 +268,6 @@ traffic_logstats_LDADD = \
   Transform.o \
   Prefetch.o \
   Update.o \
-  TestHook.o \
-  RegressionSM.o \
   Plugin.o \
   PluginDB.o \
   InkAPI.o \
@@ -311,6 +306,11 @@ if BUILD_V2STATS
   traffic_logstats_LDADD += StatSystemV2.o
 endif
 
+if BUILD_TESTS
+  traffic_logstats_LDADD += RegressionSM.o \
+    TestHook.o
+endif
+
 traffic_sac_SOURCES = sac.cc
 traffic_sac_LDFLAGS = @EXTRA_CXX_LDFLAGS@
 traffic_sac_LDADD = \
@@ -325,7 +325,6 @@ traffic_sac_LDADD = \
   CacheControl.o \
   StatSystem.o \
   StatAPITypes.o \
-  CacheInspectorAllow.o \
   ReverseProxy.o \
   ProxyConfig.o \
   signals.o \
@@ -338,8 +337,6 @@ traffic_sac_LDADD = \
   Transform.o \
   Prefetch.o \
   Update.o \
-  TestHook.o \
-  RegressionSM.o \
   Plugin.o \
   PluginDB.o \
   InkAPI.o \
@@ -376,12 +373,10 @@ if BUILD_V2STATS
   traffic_sac_LDADD += StatSystemV2.o
 endif
 
-traffic_cust_log_fmt_cnvrt_SOURCES = cust_log_fmt_cnvrt.cc
-traffic_cust_log_fmt_cnvrt_LDADD = \
-  $(top_builddir)/iocore/utils/libinkutils.a \
-  $(top_builddir)/libinktomi++/libinktomi++.a \
-  @LIBTHREAD@ \
-  @LIBTCL@ @LIBRT@ @LIBICONV@ @LIBDL@ @LIBEXECINFO@
+if BUILD_TESTS
+  traffic_sac_LDADD += RegressionSM.o \
+    TestHook.o
+endif
 
 libClusterHashStandalone_a_SOURCES = \
   ClusterHashStandalone.cc \

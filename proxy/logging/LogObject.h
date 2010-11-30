@@ -60,11 +60,11 @@
 
 #define ACQUIRE_API_MUTEX(_f) \
 ink_mutex_acquire(_APImutex); \
-Debug("log2-api-mutex", _f)
+Debug("log-api-mutex", _f)
 
 #define RELEASE_API_MUTEX(_f) \
 ink_mutex_release(_APImutex); \
-Debug("log2-api-mutex", _f)
+Debug("log-api-mutex", _f)
 
 class LogBufferManager
 {

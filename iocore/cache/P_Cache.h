@@ -50,7 +50,4 @@
 #include "P_CacheInternal.h"
 #include "P_CacheHosting.h"
 #include "P_CacheHttp.h"
-#ifdef HTTP_CACHE
-#include "NewCacheVC.h"
-#endif
 #endif /* _P_CACHE_H */

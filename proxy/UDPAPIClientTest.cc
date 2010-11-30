@@ -36,13 +36,13 @@ FILE *fp;
 void
 UDPClientTestInit()
 {
-  INKCont cont;
+  TSCont cont;
   unsigned long ip;
-  INKMutex readMutexp;
+  TSMutex readMutexp;
 
   ip = inet_addr("209.131.48.79");
-  readMutexp = INKMutexCreate();
-  cont = INKContCreate(&UDPClient_handle_callbacks, readMutexp);
+  readMutexp = TSMutexCreate();
+  cont = TSContCreate(&UDPClient_handle_callbacks, readMutexp);
   fp = fopen("UDPAPI.dbg", "a+");
   fprintf(fp, "UDPClient Init called\n");
   fclose(fp);
@@ -51,16 +51,16 @@ UDPClientTestInit()
 }
 
 int
-UDPClient_handle_callbacks(INKCont cont, INKEvent event, void *e)
+UDPClient_handle_callbacks(TSCont cont, TSEvent event, void *e)
 {
   INKUDPacketQueue packetQueue;
   INKUDPPacket packet;
-  INKIOBufferBlock recvBuffBlock;
+  TSIOBufferBlock recvBuffBlock;
   unsigned int destIp = inet_addr("209.131.48.79");
   int destPort = 1813;
   INKUDPConn UDPConn;
-  INKIOBufferReader reader;
-  INKIOBuffer iobuffer;
+  TSIOBufferReader reader;
+  TSIOBuffer iobuffer;
   const char *buf;
   int avail, total_len = 0;
   char recvBuff[1024];
@@ -68,7 +68,7 @@ UDPClient_handle_callbacks(INKCont cont, INKEvent event, void *e)
 
   switch (event) {
 
-  case INK_NET_EVENT_DATAGRAM_OPEN:
+  case TS_NET_EVENT_DATAGRAM_OPEN:
     UDPConn = (INKUDPConn) e;
     INKUDPRecvFrom(cont, UDPConn);
     INKUDPSendTo(cont, UDPConn, destIp, destPort, sendBuff, strlen(sendBuff));
@@ -76,17 +76,17 @@ UDPClient_handle_callbacks(INKCont cont, INKEvent event, void *e)
 
     break;
 
-  case INK_NET_EVENT_DATAGRAM_READ_READY:
+  case TS_NET_EVENT_DATAGRAM_READ_READY:
     fprintf(fp, "read ready called\n.");
     packetQueue = (INKUDPacketQueue) e;
 
     while ((packet = INKUDPPacketGet(packetQueue)) != NULL) {
       recvBuffBlock = INKUDPPacketBufferBlockGet(packet);
 
-      iobuffer = INKIOBufferCreate();
-      reader = INKIOBufferReaderAlloc(iobuffer);
-      INKIOBufferAppend(iobuffer, recvBuffBlock);
-      buf = INKIOBufferBlockReadStart(recvBuffBlock, reader, &avail);
+      iobuffer = TSIOBufferCreate();
+      reader = TSIOBufferReaderAlloc(iobuffer);
+      TSIOBufferAppend(iobuffer, recvBuffBlock);
+      buf = TSIOBufferBlockReadStart(recvBuffBlock, reader, &avail);
 
       if (avail > 0) {
 
@@ -95,22 +95,22 @@ UDPClient_handle_callbacks(INKCont cont, INKEvent event, void *e)
 
 
         memcpy((char *) &recvBuff + total_len, buf, avail);
-        INKIOBufferReaderConsume(reader, avail);
+        TSIOBufferReaderConsume(reader, avail);
         total_len += avail;
       }
 
       /* INKqa10255: we'd free the memory  - jinsheng */
       INKUDPPacketDestroy(packet);
-      INKIOBufferReaderFree(reader);
-      INKIOBufferDestroy(iobuffer);
+      TSIOBufferReaderFree(reader);
+      TSIOBufferDestroy(iobuffer);
     }
 
     break;
 
-  case INK_NET_EVENT_DATAGRAM_WRITE_COMPLETE:
+  case TS_NET_EVENT_DATAGRAM_WRITE_COMPLETE:
     break;
 
   }
   fclose(fp);
-  return INK_EVENT_CONTINUE;
+  return TS_EVENT_CONTINUE;
 }

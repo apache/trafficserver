@@ -36,7 +36,6 @@ dist_sysconf_DATA =	\
   icp.config \
   ip_allow.config \
   log_hosts.config \
-  logs.config \
   logs_xml.config \
   mgmt_allow.config \
   mgr.cnf \

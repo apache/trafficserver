@@ -29,6 +29,9 @@
 
 x_pthread_mutexattr_t _g_mattr;
 
+ProcessMutex __global_death = PTHREAD_MUTEX_INITIALIZER;
+ProcessMutex *gobal_death_mutex = &__global_death;
+
 void
 ink_ProcessMutex_init(ProcessMutex * m, const char *name)
 {
@@ -71,5 +74,8 @@ ink_ProcessMutex_print(FILE * out, ProcessMutex * m)
 {
   (void) out;
   (void) m;
-  fprintf(out, "ProcessMutex\n");
+  if(m == gobal_death_mutex)
+    fprintf(out, "Global ProcessMutex\n");
+  else
+    fprintf(out, "ProcessMutex\n");
 }

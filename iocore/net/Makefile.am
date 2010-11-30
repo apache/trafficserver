@@ -50,7 +50,6 @@ libinknet_a_SOURCES = \
   Net.cc \
   NetConfig.cc \
   NetVConnection.cc \
-  NetVCTest.cc \
   P_CompletionUtil.h \
   P_Connection.h \
   P_InkBulkIO.h \
@@ -58,7 +57,6 @@ libinknet_a_SOURCES = \
   P_NetAccept.h \
   P_Net.h \
   P_NetVConnection.h \
-  P_NetVCTest.h \
   P_Socks.h \
   P_SSLCertLookup.h \
   P_SSLConfig.h \
@@ -92,6 +90,12 @@ libinknet_a_SOURCES = \
   UnixUDPConnection.cc \
   UnixUDPNet.cc \
   Inline.cc
+
+if BUILD_TESTS
+  libinknet_a_SOURCES += NetVCTest.cc \
+    P_NetVCTest.h
+endif
+
 
 # TODO: These two should probably be moved to somewhere else (libintkomi++?)
 if BUILD_DETAILED_LOG

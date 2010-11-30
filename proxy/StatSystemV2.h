@@ -43,12 +43,12 @@ class Event;
 class StatSystemV2
 {
 public:
-    static bool increment(uint32_t stat_num, INK64 stat_val = 1);
-    static bool increment(const char *stat_name, INK64 stat_val = 1);
-    static bool get(uint32_t stat_num, INK64 *stat_val);
-    static bool get(const char *stat_name, INK64 *stat_val);
-    static bool get_current(uint32_t stat_num, INK64 *stat_val);
-    static bool get_current(const char *stat_name, INK64 *stat_val);
+    static bool increment(uint32_t stat_num, int64 stat_val = 1);
+    static bool increment(const char *stat_name, int64 stat_val = 1);
+    static bool get(uint32_t stat_num, int64 *stat_val);
+    static bool get(const char *stat_name, int64 *stat_val);
+    static bool get_current(uint32_t stat_num, int64 *stat_val);
+    static bool get_current(const char *stat_name, int64 *stat_val);
     
     static bool registerStat(const char *stat_name, uint32_t *stat_num);
     static void setMaxStatsAllowed(uint32_t max_stats_allowed);
@@ -58,13 +58,13 @@ public:
 private:
     // These must be called after acquiring a lock
     // Since these are private, only methods in StatCollectorContinuation can call them
-    static void incrementGlobal(uint32_t stat_num, INK64 stat_val = 1);
+    static void incrementGlobal(uint32_t stat_num, int64 stat_val = 1);
     static void clear();
     static void collect();
 
     static bool getStatNum(const char *stat_name, uint32_t &stat_num);
     static std::map<std::string, uint32_t> stat_name_to_num;
-    static std::vector< std::pair<std::string, INK64> > global_stats;
+    static std::vector< std::pair<std::string, int64> > global_stats;
     static uint32_t MAX_STATS_ALLOWED;
     static uint32_t NUM_STATS_ESTIMATE;
 
@@ -76,7 +76,7 @@ class StatCollectorContinuation : public Continuation
 public:
     StatCollectorContinuation();
     static void setStatCommandPort(int port);
-    static void setReadTimeout(int secs = 1, long usecs = 0);
+    static void setReadTimeout(int secs = 1, int usecs = 0);
     
 private:
     int mainEvent(int event, Event *e);
@@ -93,7 +93,7 @@ private:
     static int _statCommandPort;
     static time_t _startTime;
     static int _readTimeout;
-    static long _readTimeoutUSecs;
+    static int _readTimeoutUSecs;
 };
 
 #endif // STAT_SYSTEM_V2

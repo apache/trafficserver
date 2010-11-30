@@ -51,7 +51,7 @@ to create
    <pre>[storage.config]</pre>
    <p> With exception of <code>[records.config]</code>,
    <code>[remap.config]</code>,
-   <code>[filter.config]</code>, and <code>[meta]</code>
+   and <code>[meta]</code>
    the contents between that tag and next 
    file tag  (or end of file) are written verbatim
    to a file of that name in that <b>run_dir</b>/config for that
@@ -78,14 +78,6 @@ to create
    Example:</p>
    <pre>map http://%%(ts1):&&(proxy.config.http.server_port)/ \
 http://%%(load1):%%(load1:server)/ </pre>
-   <p> <code>[filter.config]</code> section allows for the evaluation
-   of perl expressions in writing the config file.
-   The syntax is <pre>&&(eval|&lt perl expression &gt|)</pre>
-   One use is to specify time based access control scheme.
-   Example:</p>
-   <pre>dest_ip=0.0.0.0-255.255.255.255 \
-time=&&(eval|{my \$t=time; my (\$s1,\$m1,\$h1)=localtime(\$t-3600); my (\$s2,\$m2,\$h2)=localtime(\$t+3600); "\$h1:\$m1-\$h2:\$m2"}|) \
-action=deny </pre>
    <p> The <code>[meta]</code> sections is where the instantiator is
    told about attributes that affect its work.  The there is only
    currently one option which is tell the instantiator to start up
@@ -103,7 +95,6 @@ run_manager: 1
    <li> <b> rafPort </b> - RAF service port</b> </li>
    <li> <b> tsHttpPort </b> - HTTP Proxy Port </b> </li>
    <li> <b> tsRtspPort </b> - RTSP Proxy Port</b> </li>
-   <li> <b> tsWmtPort </b> - WMT Proxy Port </li>
    </ul>
    </td>
 </tr>   

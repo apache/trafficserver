@@ -25,10 +25,10 @@
 /*
 Tests for registering/processing:
 
-        INK_HTTP_SESSION_START
-        INK_HTTP_TXN_START
-        INK_HTTP_SESSION_CLOSE
-        INK_HTTP_TXN_CLOSE
+        TS_HTTP_SESSION_START
+        TS_HTTP_TXN_START
+        TS_HTTP_SESSION_CLOSE
+        TS_HTTP_TXN_CLOSE
 */
 
 
@@ -36,29 +36,29 @@ Tests for registering/processing:
 #include <sys/types.h>
 #include <stdio.h>
 
-const char *const INKEventStrId[] = {
-  "INK_EVENT_HTTP_CONTINUE",    /* 60000 */
-  "INK_EVENT_HTTP_ERROR",       /* 60001 */
-  "INK_EVENT_HTTP_READ_REQUEST_HDR",    /* 60002 */
-  "INK_EVENT_HTTP_OS_DNS",      /* 60003 */
-  "INK_EVENT_HTTP_SEND_REQUEST_HDR",    /* 60004 */
-  "INK_EVENT_HTTP_READ_CACHE_HDR",      /* 60005 */
-  "INK_EVENT_HTTP_READ_RESPONSE_HDR",   /* 60006 */
-  "INK_EVENT_HTTP_SEND_RESPONSE_HDR",   /* 60007 */
-  "INK_EVENT_HTTP_REQUEST_TRANSFORM",   /* 60008 */
-  "INK_EVENT_HTTP_RESPONSE_TRANSFORM",  /* 60009 */
-  "INK_EVENT_HTTP_SELECT_ALT",  /* 60010 */
-  "INK_EVENT_HTTP_TXN_START",   /* 60011 */
-  "INK_EVENT_HTTP_TXN_CLOSE",   /* 60012 */
-  "INK_EVENT_HTTP_SSN_START",   /* 60013 */
-  "INK_EVENT_HTTP_SSN_CLOSE",   /* 60014 */
+const char *const TSEventStrId[] = {
+  "TS_EVENT_HTTP_CONTINUE",    /* 60000 */
+  "TS_EVENT_HTTP_ERROR",       /* 60001 */
+  "TS_EVENT_HTTP_READ_REQUEST_HDR",    /* 60002 */
+  "TS_EVENT_HTTP_OS_DNS",      /* 60003 */
+  "TS_EVENT_HTTP_SEND_REQUEST_HDR",    /* 60004 */
+  "TS_EVENT_HTTP_READ_CACHE_HDR",      /* 60005 */
+  "TS_EVENT_HTTP_READ_RESPONSE_HDR",   /* 60006 */
+  "TS_EVENT_HTTP_SEND_RESPONSE_HDR",   /* 60007 */
+  "TS_EVENT_HTTP_REQUEST_TRANSFORM",   /* 60008 */
+  "TS_EVENT_HTTP_RESPONSE_TRANSFORM",  /* 60009 */
+  "TS_EVENT_HTTP_SELECT_ALT",  /* 60010 */
+  "TS_EVENT_HTTP_TXN_START",   /* 60011 */
+  "TS_EVENT_HTTP_TXN_CLOSE",   /* 60012 */
+  "TS_EVENT_HTTP_SSN_START",   /* 60013 */
+  "TS_EVENT_HTTP_SSN_CLOSE",   /* 60014 */
 
-  "INK_EVENT_MGMT_UPDATE"       /* 60100 */
+  "TS_EVENT_MGMT_UPDATE"       /* 60100 */
 };
 
 /*
  * We track that each hook was called using this array. We start with
- * all values set to zero, meaning that the INKEvent has not been
+ * all values set to zero, meaning that the TSEvent has not been
  * received.
  * There 16 entries.
 */
@@ -71,12 +71,12 @@ static int
 ChkEvents(const int event)
 {
   int i, re = 0;
-  /* INKDebug("INKHttpHook",  */
-  printf("ChkEvents: -- %s -- \n", INKEventStrId[index(event)]);
+  /* TSDebug("TSHttpHook",  */
+  printf("ChkEvents: -- %s -- \n", TSEventStrId[index(event)]);
 
   for (i = 0; i < inktHookTblSize; i++) {
     if (!inktHookTbl[i]) {
-      printf("Event [%d] %s registered and not called back\n", i, INKEventStrId[i]);
+      printf("Event [%d] %s registered and not called back\n", i, TSEventStrId[i]);
       re = 1;
     }
   }
@@ -84,19 +84,19 @@ ChkEvents(const int event)
 }
 
 
-/* event routine: for each INKHttpHookID this routine should be called
+/* event routine: for each TSHttpHookID this routine should be called
  * with a matching event.
 */
 static int
-INKHttpHook(INKCont contp, INKEvent event, void *eData)
+TSHttpHook(TSCont contp, TSEvent event, void *eData)
 {
-  INKHttpSsn ssnp = (INKHttpSsn) eData;
-  INKHttpTxn txnp = (INKHttpTxn) eData;
+  TSHttpSsn ssnp = (TSHttpSsn) eData;
+  TSHttpTxn txnp = (TSHttpTxn) eData;
 
   switch (event) {
-  case INK_EVENT_HTTP_TXN_START:
-    inktHookTbl[index(INK_EVENT_HTTP_TXN_START)] = 1;
-    ChkEvents(INK_EVENT_HTTP_TXN_START);
+  case TS_EVENT_HTTP_TXN_START:
+    inktHookTbl[index(TS_EVENT_HTTP_TXN_START)] = 1;
+    ChkEvents(TS_EVENT_HTTP_TXN_START);
 
     /*
      * We do have a transaction.
@@ -105,48 +105,48 @@ INKHttpHook(INKCont contp, INKEvent event, void *eData)
      * live, session or transaction ? Should be transparent.
      */
     /* OK */
-    INKHttpTxnHookAdd(txnp, INK_HTTP_TXN_CLOSE_HOOK, contp);
+    TSHttpTxnHookAdd(txnp, TS_HTTP_TXN_CLOSE_HOOK, contp);
 
     /* Event lives in the session. Transaction is deleted before
      * the session. Event will not be received
-     * INKHttpSsnHookAdd(ssnp,INK_HTTP_TXN_CLOSE_HOOK,contp);
+     * TSHttpSsnHookAdd(ssnp,TS_HTTP_TXN_CLOSE_HOOK,contp);
      */
 
     /* Since this is a transaction level event, activate the
      * transaction.
      */
-    INKHttpTxnReenable(txnp, INK_EVENT_HTTP_CONTINUE);
+    TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
     break;
 
-  case INK_EVENT_HTTP_TXN_CLOSE:
-    inktHookTbl[index(INK_EVENT_HTTP_TXN_CLOSE)] = 1;
-    ChkEvents(INK_EVENT_HTTP_TXN_CLOSE);
-    INKHttpTxnReenable(txnp, INK_EVENT_HTTP_CONTINUE);
+  case TS_EVENT_HTTP_TXN_CLOSE:
+    inktHookTbl[index(TS_EVENT_HTTP_TXN_CLOSE)] = 1;
+    ChkEvents(TS_EVENT_HTTP_TXN_CLOSE);
+    TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
     break;
 
-  case INK_EVENT_HTTP_SSN_START:
+  case TS_EVENT_HTTP_SSN_START:
     /* Reged at the "session" level, all but
-     * INK_HTTP_TXN_CLOSE_HOOK is received.
+     * TS_HTTP_TXN_CLOSE_HOOK is received.
      */
-    inktHookTbl[index(INK_EVENT_HTTP_SSN_START)] = 1;
-    ChkEvents(INK_EVENT_HTTP_SSN_START);
+    inktHookTbl[index(TS_EVENT_HTTP_SSN_START)] = 1;
+    ChkEvents(TS_EVENT_HTTP_SSN_START);
 
     /* There has to be some way to get from the session to
      * the transaction. This is how:
      * No transaction yet, register TXN_START with the session
      */
-    INKHttpSsnHookAdd(ssnp, INK_HTTP_TXN_START_HOOK, contp);
+    TSHttpSsnHookAdd(ssnp, TS_HTTP_TXN_START_HOOK, contp);
 
     /* session level event with the session */
-    INKHttpSsnHookAdd(ssnp, INK_HTTP_SSN_CLOSE_HOOK, contp);
-    INKHttpSsnReenable(ssnp, INK_EVENT_HTTP_CONTINUE);
+    TSHttpSsnHookAdd(ssnp, TS_HTTP_SSN_CLOSE_HOOK, contp);
+    TSHttpSsnReenable(ssnp, TS_EVENT_HTTP_CONTINUE);
     break;
 
-  case INK_EVENT_HTTP_SSN_CLOSE:
+  case TS_EVENT_HTTP_SSN_CLOSE:
     /* Here as a result of:
-     * INKHTTPHookAdd(INK_HTTP_SSN_CLOSE_HOOK)
+     * TSHTTPHookAdd(TS_HTTP_SSN_CLOSE_HOOK)
      */
-    inktHookTbl[index(INK_EVENT_HTTP_SSN_CLOSE)] = 1;
+    inktHookTbl[index(TS_EVENT_HTTP_SSN_CLOSE)] = 1;
 
     /* Assumption: at this point all other events have
      * have been called. Since a session can have one or
@@ -154,34 +154,34 @@ INKHttpHook(INKCont contp, INKEvent event, void *eData)
      * prompt us to check that all events have been called back
      * CAUTION: can a single request trigger all events?
      */
-    if (ChkEvents(INK_EVENT_HTTP_SSN_CLOSE))
-      INKError("INKHttpHook: Fail: All events not called back.\n");
+    if (ChkEvents(TS_EVENT_HTTP_SSN_CLOSE))
+      TSError("TSHttpHook: Fail: All events not called back.\n");
     else
-      INKError("INKHttpHook: Pass: All events called back.\n");
+      TSError("TSHttpHook: Pass: All events called back.\n");
 
-    INKHttpSsnReenable(ssnp, INK_EVENT_HTTP_CONTINUE);
+    TSHttpSsnReenable(ssnp, TS_EVENT_HTTP_CONTINUE);
     break;
 
   default:
-    INKError("INKHttpHook: undefined event [%d] received\n", event);
+    TSError("TSHttpHook: undefined event [%d] received\n", event);
     break;
   }
 }
 
 void
-INKPluginInit(int argc, const char *argv[])
+TSPluginInit(int argc, const char *argv[])
 {
-  INKCont myCont = NULL;
+  TSCont myCont = NULL;
   inktHookTblSize = sizeof(inktHookTbl) / sizeof(int);
 
   /* Create continuation */
-  myCont = INKContCreate(INKHttpHook, NULL);
+  myCont = TSContCreate(TSHttpHook, NULL);
   if (myCont != NULL) {
 
     /* Reged at the "global" level, these 4 events are
      * received.
      */
-    INKHttpHookAdd(INK_HTTP_SSN_START_HOOK, myCont);
+    TSHttpHookAdd(TS_HTTP_SSN_START_HOOK, myCont);
   } else
-    INKError("INKHttpHook: INKContCreate() failed \n");
+    TSError("TSHttpHook: TSContCreate() failed \n");
 }

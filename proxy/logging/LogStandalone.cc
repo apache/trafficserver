@@ -46,7 +46,6 @@
 #define HttpBodyFactory		int
 
 // globals the rest of the system depends on
-extern int use_accept_thread;
 extern int fds_limit;
 extern int cluster_port_number;
 

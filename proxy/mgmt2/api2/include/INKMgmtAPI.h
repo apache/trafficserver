@@ -347,7 +347,7 @@ typedef enum
     INK_METHOD_POST,
     INK_METHOD_PUT,
     INK_METHOD_TRACE,
-    INK_METHOD_PUSH,            /* only valid with filter.config */
+    INK_METHOD_PUSH,
     INK_METHOD_UNDEFINED
   } INKMethodT;
 

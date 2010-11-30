@@ -36,6 +36,8 @@ EXTRA_DIST=CHANGES INSTALL STATUS NOTICE LAYOUT LICENSE example contrib README.l
 installcheck-local:
 	$(DESTDIR)$(bindir)/traffic_server -R 1
 
+install-exec-local:
+	$(INSTALL) -m 0755 tsxs $(DESTDIR)$(bindir)/tsxs
 
 doxygen:
 	$(MAKE) -C doc doxygen

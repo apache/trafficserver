@@ -247,10 +247,8 @@ template<class C> inline
 }
 
 template<class C> inline
-  SparceClassAllocator<C>::SparceClassAllocator(const char *name, unsigned int chunk_size, unsigned int alignment,
-                                                   void (*instantiate_func) (C * proto, C * instance)):
-  ClassAllocator <
-C > (name, chunk_size, alignment)
+SparceClassAllocator<C>::SparceClassAllocator(const char *name, unsigned int chunk_size, unsigned int alignment,
+                                              void (*instantiate_func) (C * proto, C * instance)) : ClassAllocator <C> (name, chunk_size, alignment)
 {
   instantiate = instantiate_func;       // NULL by default
 }

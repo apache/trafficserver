@@ -472,8 +472,7 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.http.share_server_sessions
  proxy.config.http.slow.log.threshold
  proxy.config.http.snarf_username_from_authorization
- proxy.config.http.ssl_ports
- proxy.config.http.streaming_connect_attempts_timeout
+ proxy.config.http.connect_ports
  proxy.config.http.transaction_active_timeout_in
  proxy.config.http.transaction_active_timeout_out
  proxy.config.http.transaction_no_activity_timeout_in
@@ -498,63 +497,61 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.lm.pserver_timeout_secs
  proxy.config.lm.sem_id
  proxy.config.local_state_dir
- proxy.config.log2.ascii_buffer_size
- proxy.config.log2.auto_delete_rolled_files
- proxy.config.log2.collation_host
- proxy.config.log2.collation_host_tagged
- proxy.config.log2.collation_max_send_buffers
- proxy.config.log2.collation_port
- proxy.config.log2.collation_retry_sec
- proxy.config.log2.collation_secret
- proxy.config.log2.common_log_enabled
- proxy.config.log2.common_log_header
- proxy.config.log2.common_log_is_ascii
- proxy.config.log2.common_log_name
- proxy.config.log2.config_file
- proxy.config.log2.custom_logs_enabled
- proxy.config.log2.extended2_log_enabled
- proxy.config.log2.extended2_log_header
- proxy.config.log2.extended2_log_is_ascii
- proxy.config.log2.extended2_log_name
- proxy.config.log2.extended_log_enabled
- proxy.config.log2.extended_log_header
- proxy.config.log2.extended_log_is_ascii
- proxy.config.log2.extended_log_name
- proxy.config.log2.file_stat_frequency
- proxy.config.log2.hostname
- proxy.config.log2.hosts_config_file
- proxy.config.log2.log_buffer_size
- proxy.config.log2.logfile_dir
- proxy.config.log2.logfile_perm
- proxy.config.log2.logging_enabled
- proxy.config.log2.max_entries_per_buffer
- proxy.config.log2.max_line_size
- proxy.config.log2.max_secs_per_buffer
- proxy.config.log2.max_space_mb_for_logs
- proxy.config.log2.max_space_mb_for_orphan_logs
- proxy.config.log2.max_space_mb_headroom
- proxy.config.log2.overspill_report_count
- proxy.config.log2.rolling_enabled
- proxy.config.log2.rolling_interval_sec
- proxy.config.log2.rolling_offset_hr
- proxy.config.log2.rolling_size_mb
- proxy.config.log2.sampling_frequency
- proxy.config.log2.search_log_enabled
- proxy.config.log2.search_log_filters
- proxy.config.log2.search_rolling_interval_sec
- proxy.config.log2.search_server_ip_addr
- proxy.config.log2.search_server_port
- proxy.config.log2.search_top_sites
- proxy.config.log2.search_url_filter
- proxy.config.log2.separate_host_logs
- proxy.config.log2.separate_icp_logs
- proxy.config.log2.space_used_frequency
- proxy.config.log2.squid_log_enabled
- proxy.config.log2.squid_log_header
- proxy.config.log2.squid_log_is_ascii
- proxy.config.log2.squid_log_name
- proxy.config.log2.xml_config_file
- proxy.config.log2.xml_logs_config
+ proxy.config.log.ascii_buffer_size
+ proxy.config.log.auto_delete_rolled_files
+ proxy.config.log.collation_host
+ proxy.config.log.collation_host_tagged
+ proxy.config.log.collation_max_send_buffers
+ proxy.config.log.collation_port
+ proxy.config.log.collation_retry_sec
+ proxy.config.log.collation_secret
+ proxy.config.log.common_log_enabled
+ proxy.config.log.common_log_header
+ proxy.config.log.common_log_is_ascii
+ proxy.config.log.common_log_name
+ proxy.config.log.custom_logs_enabled
+ proxy.config.log.extended2_log_enabled
+ proxy.config.log.extended2_log_header
+ proxy.config.log.extended2_log_is_ascii
+ proxy.config.log.extended2_log_name
+ proxy.config.log.extended_log_enabled
+ proxy.config.log.extended_log_header
+ proxy.config.log.extended_log_is_ascii
+ proxy.config.log.extended_log_name
+ proxy.config.log.file_stat_frequency
+ proxy.config.log.hostname
+ proxy.config.log.hosts_config_file
+ proxy.config.log.log_buffer_size
+ proxy.config.log.logfile_dir
+ proxy.config.log.logfile_perm
+ proxy.config.log.logging_enabled
+ proxy.config.log.max_entries_per_buffer
+ proxy.config.log.max_line_size
+ proxy.config.log.max_secs_per_buffer
+ proxy.config.log.max_space_mb_for_logs
+ proxy.config.log.max_space_mb_for_orphan_logs
+ proxy.config.log.max_space_mb_headroom
+ proxy.config.log.overspill_report_count
+ proxy.config.log.rolling_enabled
+ proxy.config.log.rolling_interval_sec
+ proxy.config.log.rolling_offset_hr
+ proxy.config.log.rolling_size_mb
+ proxy.config.log.sampling_frequency
+ proxy.config.log.search_log_enabled
+ proxy.config.log.search_log_filters
+ proxy.config.log.search_rolling_interval_sec
+ proxy.config.log.search_server_ip_addr
+ proxy.config.log.search_server_port
+ proxy.config.log.search_top_sites
+ proxy.config.log.search_url_filter
+ proxy.config.log.separate_host_logs
+ proxy.config.log.separate_icp_logs
+ proxy.config.log.space_used_frequency
+ proxy.config.log.squid_log_enabled
+ proxy.config.log.squid_log_header
+ proxy.config.log.squid_log_is_ascii
+ proxy.config.log.squid_log_name
+ proxy.config.log.xml_config_file
  proxy.config.manager_binary
  proxy.config.manager_name
  proxy.config.net.accept_throttle
@@ -616,7 +613,6 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.raft.server_port
  proxy.config.remap.num_remap_threads
  proxy.config.remap.use_remap_processor
- proxy.config.resource.target_maxmem_mb
  proxy.config.res_track_memory
  proxy.config.reverse_proxy.enabled
  proxy.config.reverse_proxy.oldasxbehavior
@@ -672,7 +668,6 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.stat_systemV2.max_stats_allowed
  proxy.config.stat_systemV2.num_stats_estimate
  proxy.config.syslog_facility
- proxy.config.system.memalign_heap
  proxy.config.system.mmap_max
  proxy.config.temp_dir
  proxy.config.thread.default.stacksize

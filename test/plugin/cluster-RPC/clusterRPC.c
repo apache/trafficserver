@@ -37,7 +37,7 @@
 
 #include <stdio.h>
 #include "ts.h"
-#include "ts_private.h"
+#include "experimental.h"
 
 /****************************************************************************
  *  Declarations.
@@ -46,8 +46,8 @@
 typedef struct hello_msg
 {
   int hm_version;
-  INKNodeHandle_t hm_source_handle;
-  INKNodeHandle_t hm_dest_handle;
+  TSNodeHandle_t hm_source_handle;
+  TSNodeHandle_t hm_dest_handle;
   int hm_instance;
   int hm_data_size;
   int hm_data;
@@ -55,7 +55,7 @@ typedef struct hello_msg
 
 typedef struct msg_log
 {
-  INKNodeHandle_t ml_nh;
+  TSNodeHandle_t ml_nh;
   int ml_msgs_received;
   int ml_last_msgs_received;
   int ml_bytes_received;
@@ -72,16 +72,16 @@ typedef struct msg_log
  *  Global data declarations.
  ****************************************************************************/
 int clusterRPC_plugin_shutdown;
-static INKMutex node_status_mutex;
-static INKClusterStatusHandle_t status_callout_handle;
-static INKClusterRPCHandle_t rpc_wireless_f10_handle;
+static TSMutex node_status_mutex;
+static TSClusterStatusHandle_t status_callout_handle;
+static TSClusterRPCHandle_t rpc_wireless_f10_handle;
 
-static INKCont periodic_event_cont;
-static INKAction periodic_event_action;
+static TSCont periodic_event_cont;
+static TSAction periodic_event_action;
 static int periodic_event_callouts;
 
-static INKNodeHandle_t my_node_handle;
-static INKNodeHandle_t nodes[MAX_CLUSTER_NODES + 1];    /* entry 0 not used */
+static TSNodeHandle_t my_node_handle;
+static TSNodeHandle_t nodes[MAX_CLUSTER_NODES + 1];    /* entry 0 not used */
 static int online_nodes;
 
 static int msg_instance;
@@ -94,7 +94,7 @@ int
 check_ts_version()
 {
 
-  const char *ts_version = INKTrafficServerVersionGet();
+  const char *ts_version = TSTrafficServerVersionGet();
   int result = 0;
 
   if (ts_version) {
@@ -117,20 +117,20 @@ check_ts_version()
 }
 
 void
-INKPluginInit(int argc, const char *argv[])
+TSPluginInit(int argc, const char *argv[])
 {
-  INKPluginRegistrationInfo info;
+  TSPluginRegistrationInfo info;
 
   info.plugin_name = "cluster-RPC";
   info.vendor_name = "MyCompany";
   info.support_email = "ts-api-support@MyCompany.com";
 
-  if (!INKPluginRegister(INK_SDK_VERSION_2_0, &info)) {
-    INKError("Plugin registration failed. \n");
+  if (!TSPluginRegister(TS_SDK_VERSION_2_0, &info)) {
+    TSError("Plugin registration failed. \n");
   }
 
   if (!check_ts_version()) {
-    INKError("Plugin requires Traffic Server 2.0 or later\n");
+    TSError("Plugin requires Traffic Server 2.0 or later\n");
     return;
   }
   clusterRPC_init();
@@ -139,13 +139,13 @@ INKPluginInit(int argc, const char *argv[])
 static void
 shutdown()
 {
-  INKActionCancel(periodic_event_action);
-  INKDeleteClusterStatusFunction(&status_callout_handle);
-  INKDeleteClusterRPCFunction(&rpc_wireless_f10_handle);
+  TSActionCancel(periodic_event_action);
+  TSDeleteClusterStatusFunction(&status_callout_handle);
+  TSDeleteClusterRPCFunction(&rpc_wireless_f10_handle);
 }
 
 static int
-find_node_entry(INKNodeHandle_t nh)
+find_node_entry(TSNodeHandle_t nh)
 {
   int n;
 
@@ -174,16 +174,16 @@ find_free_node_entry()
  *  Handler for node status callouts.
  *****************************************************************************/
 static void
-status_callout(INKNodeHandle_t * nhp, INKNodeStatus_t status)
+status_callout(TSNodeHandle_t * nhp, TSNodeStatus_t status)
 {
     /*************************************************************************
      *  Note: Cluster always calls us with 'node_status_mutex' held.
      *************************************************************************/
   int found, n;
-  INKNodeHandle_t nh = *nhp;
+  TSNodeHandle_t nh = *nhp;
   struct in_addr in;
 
-  INKNodeHandleToIPAddr(&nh, &in);
+  TSNodeHandleToIPAddr(&nh, &in);
   found = find_node_entry(nh);
 
   if (status == NODE_ONLINE) {
@@ -193,25 +193,25 @@ status_callout(INKNodeHandle_t * nhp, INKNodeStatus_t status)
         nodes[n] = nh;
         online_nodes++;
 
-        INKDebug(PLUGIN_DEBUG_TAG, "Node [%u.%u.%u.%u] online, nodes=%d\n", DOT_SEPARATED(in.s_addr), online_nodes);
+        TSDebug(PLUGIN_DEBUG_TAG, "Node [%u.%u.%u.%u] online, nodes=%d\n", DOT_SEPARATED(in.s_addr), online_nodes);
       } else {
         /* Should never happen */
-        INKDebug(PLUGIN_DEBUG_ERR_TAG, "clusterRPC plugin: No free entries.\n");
+        TSDebug(PLUGIN_DEBUG_ERR_TAG, "clusterRPC plugin: No free entries.\n");
 
-        INKDebug(PLUGIN_DEBUG_TAG,
+        TSDebug(PLUGIN_DEBUG_TAG,
                  "Node [%u.%u.%u.%u] online observed, nodes=%d\n", DOT_SEPARATED(in.s_addr), online_nodes);
       }
     } else {
-      INKDebug(PLUGIN_DEBUG_TAG,
+      TSDebug(PLUGIN_DEBUG_TAG,
                "Duplicate node [%u.%u.%u.%u] online, nodes=%d\n", DOT_SEPARATED(in.s_addr), online_nodes);
     }
   } else {
     if (found) {
       nodes[found] = 0;
       online_nodes--;
-      INKDebug(PLUGIN_DEBUG_TAG, "Node [%u.%u.%u.%u] offline, nodes=%d\n", DOT_SEPARATED(in.s_addr), online_nodes);
+      TSDebug(PLUGIN_DEBUG_TAG, "Node [%u.%u.%u.%u] offline, nodes=%d\n", DOT_SEPARATED(in.s_addr), online_nodes);
     } else {
-      INKDebug(PLUGIN_DEBUG_TAG,
+      TSDebug(PLUGIN_DEBUG_TAG,
                "Unexpected node [%u.%u.%u.%u] offline, nodes=%d\n", DOT_SEPARATED(in.s_addr), online_nodes);
     }
   }
@@ -235,7 +235,7 @@ check_data(char *p, int size)
 
   for (n = 0; n < size; ++n, ++val) {
     if (p[n] != val) {
-      INKDebug(PLUGIN_DEBUG_ERR_TAG, "check_data fail actual %d expected %d n %d data 0x%x\n", p[n], val, n, &p[n]);
+      TSDebug(PLUGIN_DEBUG_ERR_TAG, "check_data fail actual %d expected %d n %d data 0x%x\n", p[n], val, n, &p[n]);
       return 1;
     }
   }
@@ -272,8 +272,8 @@ log_msg(hello_msg_t * h, int msg_data_len)
   for (n = 0; n < MAX_CLUSTER_NODES; ++n) {
     if (log[n].ml_nh && (log[n].ml_msgs_received != log[n].ml_last_msgs_received)) {
       log[n].ml_last_msgs_received = log[n].ml_msgs_received;
-      INKNodeHandleToIPAddr(&log[n].ml_nh, &in);
-      INKDebug(PLUGIN_DEBUG_ERR_TAG,
+      TSNodeHandleToIPAddr(&log[n].ml_nh, &in);
+      TSDebug(PLUGIN_DEBUG_ERR_TAG,
                "[%u.%u.%u.%u] msgs rcvd: %d total bytes rcvd: %d\n",
                DOT_SEPARATED(in.s_addr), log[n].ml_msgs_received, log[n].ml_bytes_received);
 
@@ -285,7 +285,7 @@ log_msg(hello_msg_t * h, int msg_data_len)
  *  RPC Handler for key RPC_API_WIRELESS_F10.
  *****************************************************************************/
 static void
-rpc_wireless_f10_func(INKNodeHandle_t * nh, INKClusterRPCMsg_t * msg, int msg_data_len)
+rpc_wireless_f10_func(TSNodeHandle_t * nh, TSClusterRPCMsg_t * msg, int msg_data_len)
 {
   hello_msg_t hello_msg;
   struct in_addr in;
@@ -299,37 +299,37 @@ rpc_wireless_f10_func(INKNodeHandle_t * nh, INKClusterRPCMsg_t * msg, int msg_da
         /*********************************************************************
   	 *  Message consistency checks.
 	 *********************************************************************/
-    INKNodeHandleToIPAddr(&hello_msg.hm_source_handle, &in);
+    TSNodeHandleToIPAddr(&hello_msg.hm_source_handle, &in);
     if (hello_msg.hm_version != HELLO_MSG_VERSION) {
-      INKDebug(PLUGIN_DEBUG_ERR_TAG,
+      TSDebug(PLUGIN_DEBUG_ERR_TAG,
                "rpc_wireless_f10_func() vers, actual %d expected %d \n", hello_msg.hm_version, HELLO_MSG_VERSION);
       return;
     }
     if (hello_msg.hm_source_handle != *nh) {
-      INKDebug(PLUGIN_DEBUG_ERR_TAG,
+      TSDebug(PLUGIN_DEBUG_ERR_TAG,
                "rpc_wireless_f10_func() src, actual %d expected %d \n", hello_msg.hm_source_handle, *nh);
       return;
     }
     if (hello_msg.hm_data_size != msg_data_len) {
-      INKDebug(PLUGIN_DEBUG_ERR_TAG,
+      TSDebug(PLUGIN_DEBUG_ERR_TAG,
                "rpc_wireless_f10_func() len, actual %d expected %d \n", msg_data_len, hello_msg.hm_data_size);
       return;
     }
     if (check_data(msg->m_data +
                    sizeof(hello_msg) - sizeof(hello_msg.hm_data_size),
                    msg_data_len - sizeof(hello_msg) + sizeof(hello_msg.hm_data))) {
-      INKDebug(PLUGIN_DEBUG_ERR_TAG,
+      TSDebug(PLUGIN_DEBUG_ERR_TAG,
                "rpc_wireless_f10_func() data check failed, "
                "[%u.%u.%u.%u] len %d data 0x%x\n", DOT_SEPARATED(in.s_addr), msg_data_len, msg->m_data);
     }
     log_msg(&hello_msg, msg_data_len);
-    INKFreeRPCMsg(msg, msg_data_len);
+    TSFreeRPCMsg(msg, msg_data_len);
 
-    INKDebug(PLUGIN_DEBUG_TAG,
+    TSDebug(PLUGIN_DEBUG_TAG,
              "Received hello from [%u.%u.%u.%u] instance %d\n", DOT_SEPARATED(in.s_addr), hello_msg.hm_instance);
   } else {
-    INKFreeRPCMsg(msg, msg_data_len);
-    INKDebug(PLUGIN_DEBUG_ERR_TAG,
+    TSFreeRPCMsg(msg, msg_data_len);
+    TSDebug(PLUGIN_DEBUG_ERR_TAG,
              "rpc_wireless_f10_func() msglen, actual %d expect >= %d \n", msg_data_len, sizeof(hello_msg_t));
   }
 }
@@ -338,20 +338,20 @@ rpc_wireless_f10_func(INKNodeHandle_t * nh, INKClusterRPCMsg_t * msg, int msg_da
  *  Periodic handler to send RPC messages.
  *****************************************************************************/
 static int
-periodic_event(INKCont contp, INKEvent event, void *e)
+periodic_event(TSCont contp, TSEvent event, void *e)
 {
     /*************************************************************************
      *  Note: Event subsystem always calls us with 'node_status_mutex' held.
      *************************************************************************/
   int n, size, ret;
 
-  INKClusterRPCMsg_t *rmsg;
+  TSClusterRPCMsg_t *rmsg;
   hello_msg_t hello_msg;
   struct in_addr in;
 
   if (clusterRPC_plugin_shutdown) {
     shutdown();
-    INKContDestroy(contp);
+    TSContDestroy(contp);
     return 0;
   }
     /*************************************************************************
@@ -359,7 +359,7 @@ periodic_event(INKCont contp, INKEvent event, void *e)
      *************************************************************************/
   for (n = 1; n <= MAX_CLUSTER_NODES; ++n) {
     if (nodes[n]) {
-      INKNodeHandleToIPAddr(&nodes[n], &in);
+      TSNodeHandleToIPAddr(&nodes[n], &in);
 
       hello_msg.hm_version = HELLO_MSG_VERSION;
       hello_msg.hm_source_handle = my_node_handle;
@@ -370,7 +370,7 @@ periodic_event(INKCont contp, INKEvent event, void *e)
       if (size < sizeof(hello_msg_t)) {
         size = sizeof(hello_msg_t);
       }
-      rmsg = INKAllocClusterRPCMsg(&rpc_wireless_f10_handle, size);
+      rmsg = TSAllocClusterRPCMsg(&rpc_wireless_f10_handle, size);
       hello_msg.hm_data_size = size;
             /******************************************************************
  	     *  Marshal data into message.
@@ -380,17 +380,17 @@ periodic_event(INKCont contp, INKEvent event, void *e)
                 sizeof(hello_msg) - sizeof(hello_msg.hm_data_size),
                 size - sizeof(hello_msg) + sizeof(hello_msg.hm_data));
 
-      INKDebug(PLUGIN_DEBUG_TAG,
+      TSDebug(PLUGIN_DEBUG_TAG,
                "Sending hello to [%u.%u.%u.%u] instance %d bytes %d\n",
                DOT_SEPARATED(in.s_addr), hello_msg.hm_instance, size);
 
-      ret = INKSendClusterRPC(&nodes[n], rmsg);
+      ret = TSSendClusterRPC(&nodes[n], rmsg);
       if (ret) {
-        INKDebug(PLUGIN_DEBUG_ERR_TAG, "INKSendClusterRPC failed\n");
+        TSDebug(PLUGIN_DEBUG_ERR_TAG, "TSSendClusterRPC failed\n");
       }
     }
   }
-  periodic_event_action = INKContSchedule(periodic_event_cont, (1 * 1000) /* 1 sec */ );
+  periodic_event_action = TSContSchedule(periodic_event_cont, (1 * 1000) /* 1 sec */ );
   return 0;
 }
 
@@ -398,55 +398,57 @@ static void
 clusterRPC_init()
 {
   int ret;
+  int lock;
 
     /***********************************************************************
      *  Create plugin mutex
      ***********************************************************************/
-  node_status_mutex = INKMutexCreate();
+  node_status_mutex = TSMutexCreate();
   if (!node_status_mutex) {
-    INKDebug(PLUGIN_DEBUG_ERR_TAG, "INKMutexCreate for node_status failed\n");
+    TSDebug(PLUGIN_DEBUG_ERR_TAG, "TSMutexCreate for node_status failed\n");
     return;
   }
-  if (!INKMutexTryLock(node_status_mutex)) {
+  TSMutexLockTry(node_status_mutex, &lock);
+  if (!lock) {
     /* Should never fail */
-    INKDebug(PLUGIN_DEBUG_ERR_TAG, "INKMutexTryLock failed\n");
+    TSDebug(PLUGIN_DEBUG_ERR_TAG, "TSMutexLockTry failed\n");
   }
     /***********************************************************************
      *  Register our RPC handler.
      ***********************************************************************/
-  ret = INKAddClusterRPCFunction(RPC_API_WIRELESS_F10, rpc_wireless_f10_func, &rpc_wireless_f10_handle);
+  ret = TSAddClusterRPCFunction(RPC_API_WIRELESS_F10, rpc_wireless_f10_func, &rpc_wireless_f10_handle);
   if (ret) {
-    INKDebug(PLUGIN_DEBUG_ERR_TAG, "INKAddClusterRPCFunction failed\n");
+    TSDebug(PLUGIN_DEBUG_ERR_TAG, "TSAddClusterRPCFunction failed\n");
     return;
   }
     /***********************************************************************
      *  Subscribe to cluster node status callouts.
      ***********************************************************************/
-  ret = INKAddClusterStatusFunction(status_callout, node_status_mutex, &status_callout_handle);
+  ret = TSAddClusterStatusFunction(status_callout, node_status_mutex, &status_callout_handle);
   if (ret) {
-    INKDebug(PLUGIN_DEBUG_ERR_TAG, "INKAddClusterStatusFunction failed\n");
+    TSDebug(PLUGIN_DEBUG_ERR_TAG, "TSAddClusterStatusFunction failed\n");
     return;
   }
     /***********************************************************************
      *  Perform node status initializations.
      ***********************************************************************/
-  INKGetMyNodeHandle(&my_node_handle);
+  TSGetMyNodeHandle(&my_node_handle);
 
     /***********************************************************************
      *  Enable cluster node status callouts.
      ***********************************************************************/
-  INKEnableClusterStatusCallout(&status_callout_handle);
+  TSEnableClusterStatusCallout(&status_callout_handle);
 
     /***********************************************************************
      *  Establish the periodic event.
      ***********************************************************************/
-  periodic_event_cont = INKContCreate(periodic_event, node_status_mutex);
+  periodic_event_cont = TSContCreate(periodic_event, node_status_mutex);
   if (!periodic_event_cont) {
-    INKDebug(PLUGIN_DEBUG_ERR_TAG, "INKContCreate for periodic_event failed\n");
+    TSDebug(PLUGIN_DEBUG_ERR_TAG, "TSContCreate for periodic_event failed\n");
     return;
   }
-  periodic_event_action = INKContSchedule(periodic_event_cont, (1 * 1000) /* 1 sec */ );
-  INKMutexUnlock(node_status_mutex);
+  periodic_event_action = TSContSchedule(periodic_event_cont, (1 * 1000) /* 1 sec */ );
+  TSMutexUnlock(node_status_mutex);
 }
 
 /*

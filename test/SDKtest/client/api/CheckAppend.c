@@ -97,7 +97,7 @@ typedef struct
 CheckAppendPlugin my_plugin;
 
 void
-INKPluginInit(int client_id)
+TSPluginInit(int client_id)
 {
   my_plugin.requests = 0;
   my_plugin.successful_requests = 0;
@@ -107,21 +107,21 @@ INKPluginInit(int client_id)
   fprintf(stderr, "*** CheckAppend Test for append-transform-plugin v1.0***\n");
   /* register the plugin functions that are called back
    * later in the program */
-  INKFuncRegister(INK_FID_OPTIONS_PROCESS);
-  INKFuncRegister(INK_FID_OPTIONS_PROCESS_FINISH);
-  INKFuncRegister(INK_FID_CONNECTION_FINISH);
-  INKFuncRegister(INK_FID_PLUGIN_FINISH);
-  INKFuncRegister(INK_FID_REQUEST_CREATE);
-  INKFuncRegister(INK_FID_HEADER_PROCESS);
-  INKFuncRegister(INK_FID_PARTIAL_BODY_PROCESS);
-  INKFuncRegister(INK_FID_REPORT);
+  TSFuncRegister(TS_FID_OPTIONS_PROCESS);
+  TSFuncRegister(TS_FID_OPTIONS_PROCESS_FINISH);
+  TSFuncRegister(TS_FID_CONNECTION_FINISH);
+  TSFuncRegister(TS_FID_PLUGIN_FINISH);
+  TSFuncRegister(TS_FID_REQUEST_CREATE);
+  TSFuncRegister(TS_FID_HEADER_PROCESS);
+  TSFuncRegister(TS_FID_PARTIAL_BODY_PROCESS);
+  TSFuncRegister(TS_FID_REPORT);
 
 }
 
 void
-INKConnectionFinish(void *req_id, INKConnectionStatus conn_status)
+TSConnectionFinish(void *req_id, TSConnectionStatus conn_status)
 {
-  if (conn_status == INK_TIME_EXPIRE)
+  if (conn_status == TS_TIME_EXPIRE)
     my_plugin.unfinished_requests++;
   free(((CONN_DATA *) req_id)->tail_of_resp);
   free(req_id);
@@ -129,7 +129,7 @@ INKConnectionFinish(void *req_id, INKConnectionStatus conn_status)
 
 /* process options specified in SDKtest_client.config */
 void
-INKOptionsProcess(char *option, char *value)
+TSOptionsProcess(char *option, char *value)
 {
   if (strcmp(option, "url_file") == 0) {        /* get the live URL file here */
     if (!(my_plugin.url_file = fopen(value, "r"))) {
@@ -154,7 +154,7 @@ INKOptionsProcess(char *option, char *value)
 }
 
 void
-INKOptionsProcessFinish()
+TSOptionsProcessFinish()
 {
   int n;
 
@@ -211,7 +211,7 @@ INKOptionsProcessFinish()
 }
 
 void
-INKPluginFinish()
+TSPluginFinish()
 {
   int i;
 
@@ -228,7 +228,7 @@ INKPluginFinish()
  *     i.e. GET URL HTTP/1.0 ....
  */
 int
-INKRequestCreate(char *origin_server_host /* return */ , int max_hostname_size,
+TSRequestCreate(char *origin_server_host /* return */ , int max_hostname_size,
                  char *origin_server_port /* return */ , int max_portname_size,
                  char *request_buf /* return */ , int max_request_size,
                  void **req_id /* return */ )
@@ -280,8 +280,8 @@ INKRequestCreate(char *origin_server_host /* return */ , int max_hostname_size,
 /* process response header returned either from synthetic
  * server or from proxy server
  */
-INKRequestAction
-INKHeaderProcess(void *req_id, char *header, int length, char *request_str)
+TSRequestAction
+TSHeaderProcess(void *req_id, char *header, int length, char *request_str)
 {
   char *content_type;
   CONN_DATA *p_conn = (CONN_DATA *) req_id;
@@ -311,12 +311,12 @@ INKHeaderProcess(void *req_id, char *header, int length, char *request_str)
     p_conn->check_this_response = 0;
   }
 
-  return INK_KEEP_GOING;
+  return TS_KEEP_GOING;
 }
 
 
-INKRequestAction
-INKPartialBodyProcess(void *request_id, void *partial_content, int partial_length, int accum_length)
+TSRequestAction
+TSPartialBodyProcess(void *request_id, void *partial_content, int partial_length, int accum_length)
 {
   char *src;
   int room, bytes_to_move;
@@ -325,7 +325,7 @@ INKPartialBodyProcess(void *request_id, void *partial_content, int partial_lengt
 
   req_id = (CONN_DATA *) request_id;
   if (req_id == NULL || (req_id->check_this_response == 0))
-    return INK_STOP_FAIL;
+    return TS_STOP_FAIL;
 
   /*print_debug((stderr, "req_id %x accum_length %d", req_id, accum_length));
      print_debug((stderr, "Rx response %d bytes\n", partial_length)); */
@@ -334,12 +334,12 @@ INKPartialBodyProcess(void *request_id, void *partial_content, int partial_lengt
 
     if (memcmp(req_id->tail_of_resp, my_plugin.append_content, my_plugin.append_len) == 0) {
 
-      return INK_STOP_SUCCESS;
+      return TS_STOP_SUCCESS;
     }
 
     fprintf(stdout, "TEST_FAILED: appended content doesn't match for req_id %x\n", req_id);
     print_debug((stderr, "append: [%s] tail_of_resp [%s]\n", my_plugin.append_content, req_id->tail_of_resp));
-    return INK_STOP_FAIL;
+    return TS_STOP_FAIL;
   }
 
 /* Response not complete. Copy last _useful_ bytes to tail_of_file buffer */
@@ -369,17 +369,17 @@ INKPartialBodyProcess(void *request_id, void *partial_content, int partial_lengt
   req_id->tail_of_resp_index += partial_length;
   req_id->tail_of_resp[req_id->tail_of_resp_index + 1] = '\0';
 
-  return INK_KEEP_GOING;
+  return TS_KEEP_GOING;
 
 }
 
 
 /* output report data after the SDKtest report */
 void
-INKReport()
+TSReport()
 {
-  INKReportSingleData("Total Requests", "count", INK_SUM, (double) my_plugin.requests);
-  INKReportSingleData("Successful Documents", "count", INK_SUM, (double) my_plugin.successful_requests);
-  INKReportSingleData("Unfinished Documents", "count", INK_SUM, (double) my_plugin.unfinished_requests);
-  INKReportSingleData("Total Bytes Received", "count", INK_SUM, (double) my_plugin.total_bytes_received);
+  TSReportSingleData("Total Requests", "count", TS_SUM, (double) my_plugin.requests);
+  TSReportSingleData("Successful Documents", "count", TS_SUM, (double) my_plugin.successful_requests);
+  TSReportSingleData("Unfinished Documents", "count", TS_SUM, (double) my_plugin.unfinished_requests);
+  TSReportSingleData("Total Bytes Received", "count", TS_SUM, (double) my_plugin.total_bytes_received);
 }

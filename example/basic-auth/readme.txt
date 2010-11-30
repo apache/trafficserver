@@ -3,12 +3,12 @@ The basic-auth.c plugin performs basic HTTP proxy authentication.
 -- The plugin checks all client request headers for the Proxy-Authorization
    MIME field, which should contain the user name and password.
 
-     INKPluginInit sets up a global HTTP hook that calls the plugin
+     TSPluginInit sets up a global HTTP hook that calls the plugin
      whenever there is a host DNS lookup. The plugin's continuation
      handler, auth-plugin, calls handle_dns to check the 
      Proxy-Authorization field. 
 
-     handle_dns uses INKHttpTxnClientReqGet and INKMimeHdrFieldRetrieve
+     handle_dns uses TSHttpTxnClientReqGet and TSMimeHdrFieldFind
      to obtain the Proxy-Authorization field. 
 
 -- If the request does not have the Proxy-Authorization field,
@@ -23,7 +23,7 @@ The basic-auth.c plugin performs basic HTTP proxy authentication.
      plugin back when sending the client response. 
 
      handle_dns also reenables the transaction with
-     INK_EVENT_HTTP_ERROR, which means that the plugin wants 
+     TS_EVENT_HTTP_ERROR, which means that the plugin wants 
      Traffic Server to terminate the transaction.
 
      When Traffic Server terminates the transaction, it 
@@ -38,7 +38,7 @@ The basic-auth.c plugin performs basic HTTP proxy authentication.
 -- If the Proxy-Authorization MIME field is present, the plugin
    checks that the authentication scheme is "Basic".
 
-     handle_dns uses INKMimeFieldValueGet to get the value
+     handle_dns uses TSMimeFieldValueStringGet to get the value
      of the Proxy-Authorization field.
 
 -- The plugin then obtains the base64-encoded user name and password

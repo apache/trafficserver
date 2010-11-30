@@ -56,17 +56,17 @@ typedef struct
 LogRequestPlugin my_plugin;
 
 void
-INKPluginInit()
+TSPluginInit()
 {
   fprintf(stderr, "*** LogRequest Test for Synthetic Server ***\n");
-  INKFuncRegister(INK_FID_OPTIONS_PROCESS);
-  INKFuncRegister(INK_FID_OPTIONS_PROCESS_FINISH);
-  INKFuncRegister(INK_FID_PLUGIN_FINISH);
-  INKFuncRegister(INK_FID_RESPONSE_PREPARE);
+  TSFuncRegister(TS_FID_OPTIONS_PROCESS);
+  TSFuncRegister(TS_FID_OPTIONS_PROCESS_FINISH);
+  TSFuncRegister(TS_FID_PLUGIN_FINISH);
+  TSFuncRegister(TS_FID_RESPONSE_PREPARE);
 }
 
 void
-INKOptionsProcess(char *option, char *value)
+TSOptionsProcess(char *option, char *value)
 {
   if (strcmp(option, "log_path") == 0) {
     if (strlen(value) < MAX_PATH_SIZE) {
@@ -79,7 +79,7 @@ INKOptionsProcess(char *option, char *value)
 }
 
 void
-INKOptionsProcessFinish()
+TSOptionsProcessFinish()
 {
   if (!(my_plugin.request_log = fopen(my_plugin.log_path, "a"))) {
     fprintf(stderr, "Error: Unable to open %s\n", my_plugin.log_path);
@@ -88,14 +88,14 @@ INKOptionsProcessFinish()
 }
 
 void
-INKPluginFinish()
+TSPluginFinish()
 {
   fclose(my_plugin.request_log);
 }
 
 
 int
-INKResponsePrepare(char *req_hdr, int req_len, void **response_id)
+TSResponsePrepare(char *req_hdr, int req_len, void **response_id)
 {
   char log_string[MAX_LOG_STR_SIZE + 1];
   char *time_string;

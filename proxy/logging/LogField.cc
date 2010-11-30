@@ -416,7 +416,7 @@ LogField::update_aggregate(int64 val)
     return;
   }
 
-  Debug("log2-agg", "Aggregate field %s updated with val %d, "
+  Debug("log-agg", "Aggregate field %s updated with val %d, "
         "new val = %d, cnt = %d", m_symbol, val, m_agg_val, m_agg_cnt);
 }
 
@@ -524,7 +524,7 @@ LogFieldList::find_by_symbol(const char *symbol) const
 
   if (Log::field_symbol_hash) {
     if (ink_hash_table_lookup(Log::field_symbol_hash, (char *) symbol, (InkHashTableValue *) & field) && field) {
-      Debug("log2-field-hash", "Field %s found", field->symbol());
+      Debug("log-field-hash", "Field %s found", field->symbol());
       return field;
     }
   }

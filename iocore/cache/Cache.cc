@@ -101,14 +101,26 @@ CacheProcessor cacheProcessor;
 Part **gpart = NULL;
 volatile int gnpart = 0;
 ClassAllocator<CacheVC> cacheVConnectionAllocator("cacheVConnection");
-#ifdef NON_MODULAR
-ClassAllocator<NewCacheVC> newCacheVConnectionAllocator("newCacheVConnection");
-#endif
 ClassAllocator<EvacuationBlock> evacuationBlockAllocator("evacuationBlock");
 ClassAllocator<CacheRemoveCont> cacheRemoveContAllocator("cacheRemoveCont");
 ClassAllocator<EvacuationKey> evacuationKeyAllocator("evacuationKey");
 int CacheVC::size_to_init = -1;
 CacheKey zero_key(0, 0);
+
+void verify_cache_api() {
+  ink_assert((int)TS_EVENT_CACHE_OPEN_READ == (int)CACHE_EVENT_OPEN_READ);
+  ink_assert((int)TS_EVENT_CACHE_OPEN_READ_FAILED == (int)CACHE_EVENT_OPEN_READ_FAILED);
+  ink_assert((int)TS_EVENT_CACHE_OPEN_WRITE == (int)CACHE_EVENT_OPEN_WRITE);
+  ink_assert((int)TS_EVENT_CACHE_OPEN_WRITE_FAILED == (int)CACHE_EVENT_OPEN_WRITE_FAILED);
+  ink_assert((int)TS_EVENT_CACHE_REMOVE == (int)CACHE_EVENT_REMOVE);
+  ink_assert((int)TS_EVENT_CACHE_REMOVE_FAILED == (int)CACHE_EVENT_REMOVE_FAILED);
+  ink_assert((int)TS_EVENT_CACHE_SCAN == (int)CACHE_EVENT_SCAN);
+  ink_assert((int)TS_EVENT_CACHE_SCAN_FAILED == (int)CACHE_EVENT_SCAN_FAILED);
+  ink_assert((int)TS_EVENT_CACHE_SCAN_OBJECT == (int)CACHE_EVENT_SCAN_OBJECT);
+  ink_assert((int)TS_EVENT_CACHE_SCAN_OPERATION_BLOCKED == (int)CACHE_EVENT_SCAN_OPERATION_BLOCKED);
+  ink_assert((int)TS_EVENT_CACHE_SCAN_OPERATION_FAILED == (int)CACHE_EVENT_SCAN_OPERATION_FAILED);
+  ink_assert((int)TS_EVENT_CACHE_SCAN_DONE == (int)CACHE_EVENT_SCAN_DONE);
+}
 
 struct PartInitInfo
 {
@@ -326,7 +338,7 @@ bool CacheVC::get_data(int i, void *data)
   return false;
 }
 
-int
+int64
 CacheVC::get_object_size()
 {
   return ((CacheVC *) this)->doc_len;
@@ -2736,37 +2748,6 @@ CacheProcessor::open_read(Continuation *cont, URL *url, CacheHTTPHdr *request,
                               url, request, params, (CacheKey *) 0, pin_in_cache, type, (char *) 0, 0);
   }
 #endif
-  if (cache_global_hooks != NULL && cache_global_hooks->hooks_set > 0) {
-    Debug("cache_plugin", "[CacheProcessor::open_read] Cache hooks are set");
-    APIHook *cache_lookup = cache_global_hooks->get(INK_CACHE_PLUGIN_HOOK);
-
-    if (cache_lookup != NULL) {
-      HttpCacheSM *sm = (HttpCacheSM *) cont;
-      if (sm != NULL) {
-        if (sm->master_sm && sm->master_sm->t_state.cache_vc) {
-          Debug("cache_plugin", "[CacheProcessor::open_read] Freeing existing cache_vc");
-          sm->master_sm->t_state.cache_vc->free();
-          sm->master_sm->t_state.cache_vc = NULL;
-        }
-        NewCacheVC *vc = NewCacheVC::alloc(cont, url, sm);
-        vc->setConfigParams(params);
-        vc->set_cache_http_hdr(request);
-        if (sm->master_sm) {
-          sm->master_sm->t_state.cache_vc = vc;
-        }
-        //vc->setCtrlInPlugin(true);
-        int rval = cache_lookup->invoke(INK_EVENT_CACHE_LOOKUP, (void *) vc);
-        if (rval == INK_SUCCESS) {
-          return ACTION_RESULT_DONE;
-        } else {
-          abort();
-        }
-      } else {
-        Error("[CacheProcessor::open_read] cache sm is NULL");
-      }
-    }
-  }
-
   return caches[type]->open_read(cont, url, request, params, type);
 }
 
@@ -2793,26 +2774,6 @@ CacheProcessor::open_write(Continuation *cont, int expected_size, URL *url,
     }
   }
 #endif
-  // cache plugin
-  if (cache_global_hooks != NULL && cache_global_hooks->hooks_set > 0) {
-    Debug("cache_plugin", "[CacheProcessor::open_write] Cache hooks are set, old_info=%p", old_info);
-
-    HttpCacheSM *sm = (HttpCacheSM *) cont;
-    if (sm->master_sm && sm->master_sm->t_state.cache_vc) {
-      // use NewCacheVC from lookup
-      NewCacheVC *vc = sm->master_sm->t_state.cache_vc;
-      vc->setWriteVC(old_info);
-      //vc->setCtrlInPlugin(true);
-      // since we are reusing the read vc, set it to NULL to prevent double io_close
-      sm->cache_read_vc = NULL;
-      sm->handleEvent(CACHE_EVENT_OPEN_WRITE, (void *) vc);
-      return ACTION_RESULT_DONE;
-    } else {
-      DDebug("cache_plugin", "[CacheProcessor::open_write] Error: NewCacheVC not set");
-      sm->handleEvent(CACHE_EVENT_OPEN_WRITE_FAILED, (void *) -ECACHE_WRITE_FAIL);
-      return ACTION_RESULT_DONE;
-    }
-  }
   return caches[type]->open_write(cont, url, request, old_info, pin_in_cache, type);
 }
 
@@ -2824,22 +2785,6 @@ CacheProcessor::remove(Continuation *cont, URL *url, CacheFragType frag_type)
   if (cache_clustering_enabled > 0) {
   }
 #endif
-  if (cache_global_hooks != NULL && cache_global_hooks->hooks_set > 0) {
-    DDebug("cache_plugin", "[CacheProcessor::remove] Cache hooks are set");
-    APIHook *cache_lookup = cache_global_hooks->get(INK_CACHE_PLUGIN_HOOK);
-    if (cache_lookup != NULL) {
-      NewCacheVC *vc = NewCacheVC::alloc(cont, url, NULL);
-      int rval = cache_lookup->invoke(INK_EVENT_CACHE_DELETE, (void *) vc);
-      if (vc) {
-        vc->free();
-      }
-      if (rval == INK_SUCCESS) {
-        return ACTION_RESULT_DONE;
-      } else {
-        abort();
-      }
-    }
-  }
   return caches[frag_type]->remove(cont, url, frag_type);
 }
 

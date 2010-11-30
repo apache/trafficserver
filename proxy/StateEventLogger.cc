@@ -253,13 +253,8 @@ test_thread(void *i)
   for (j = 0; j < calls; j++) {
     (*sel) (TestStateEvent(pi, j));
   }
-#ifdef __alpha
-#define LL_FMT "%ld"
-#else
-#define LL_FMT "%lld"
-#endif
   finish = ink_get_hrtime();
-  printf("StateEventLogger cost = " LL_FMT "ns\n", (finish - start) / (N_THREADS * calls));
+  printf("StateEventLogger cost = %lldns\n", (finish - start) / (N_THREADS * calls));
   return NULL;
 }
 

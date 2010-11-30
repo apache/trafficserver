@@ -66,7 +66,7 @@ readIntoBuffer(char *file_path, const char *module_name, int *read_size_ptr)
   }
 
   if (file_info.st_size < 0) {
-    Error("%s Can not get correct file size for %s file : %lld", module_name, file_path, (long long) file_info.st_size);
+    Error("%s Can not get correct file size for %s file : %lld", module_name, file_path, (int64) file_info.st_size);
     close(fd);
     return NULL;
   }
@@ -115,15 +115,13 @@ unescapifyStr(char *buffer)
   char *read = buffer;
   char *write = buffer;
   char subStr[3];
-  long charVal;
 
   subStr[2] = '\0';
   while (*read != '\0') {
     if (*read == '%' && *(read + 1) != '\0' && *(read + 2) != '\0') {
       subStr[0] = *(++read);
       subStr[1] = *(++read);
-      charVal = strtol(subStr, (char **) NULL, 16);
-      *write = (char) charVal;
+      *write = (char)strtol(subStr, (char **) NULL, 16);
       read++;
       write++;
     } else if (*read == '+') {

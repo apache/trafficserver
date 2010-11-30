@@ -36,11 +36,7 @@ enum URLType
 {
   URL_TYPE_NONE,
   URL_TYPE_HTTP,
-  URL_TYPE_HTTPS,
-  URL_TYPE_MMS,
-  URL_TYPE_MMSU,
-  URL_TYPE_MMST,
-  URL_TYPE_RTSP
+  URL_TYPE_HTTPS
 };
 
 struct URLImpl:public HdrHeapObjImpl
@@ -217,10 +213,6 @@ url_canonicalize_port(int type, int port)
       port = 80;
     else if (type == URL_TYPE_HTTPS)
       port = 443;
-    else if (type == URL_TYPE_MMS || type == URL_TYPE_MMSU || type == URL_TYPE_MMST)
-      port = 1755;
-    else if (type == URL_TYPE_RTSP)
-      port = 554;
   }
   return (port);
 }

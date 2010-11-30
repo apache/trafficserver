@@ -137,7 +137,7 @@ init_system_dirs(void)
     if ((err = stat(system_log_dir, &s)) < 0) {
       fprintf(stderr,"unable to stat() log dir'%s': %d %d, %s\n",
               system_log_dir, err, errno, strerror(errno));
-      fprintf(stderr,"please set 'proxy.config.log2.logfile_dir'\n");
+      fprintf(stderr,"please set 'proxy.config.log.logfile_dir'\n");
       _exit(1);
     }
   }
@@ -202,23 +202,6 @@ init_system_core_size(void)
   }
 }
 
-void
-init_system_memalign_heap(void)
-{
-  int64 ram_cache_max = -1;
-  int enable_preallocation = 1;
-
-  REC_ReadConfigInteger(enable_preallocation, "proxy.config.system.memalign_heap");
-  if (enable_preallocation) {
-    REC_ReadConfigInteger(ram_cache_max, "proxy.config.cache.ram_cache.size");
-    if (ram_cache_max > 0) {
-      if (!ink_memalign_heap_init(ram_cache_max))
-        Warning("Unable to init memalign heap");
-    } else {
-      Warning("Unable to read proxy.config.cache.ram_cache.size var from config");
-    }
-  }
-}
 
 int system_syslog_facility = LOG_DAEMON;
 
@@ -399,7 +382,6 @@ char action_tags[1024] = "";
 int  diags_init = 0;
 
 //int command_flag = 0;
-extern int use_accept_thread;
 int num_of_net_threads = ink_number_of_processors();
 //int num_of_cache_threads = 1;
 

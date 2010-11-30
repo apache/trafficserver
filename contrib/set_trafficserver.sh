@@ -46,7 +46,7 @@ function recordsConfig() {
     traffic_line -s proxy.config.exec_thread.autoconfig.scale -v 1.000000
 
 	traffic_line -s proxy.config.accept_threads -v 1
-    traffic_line -s proxy.config.log2.logging_enabled -v 0
+    traffic_line -s proxy.config.log.logging_enabled -v 0
     traffic_line -s proxy.config.http.server_port -v 8080
     traffic_line -s proxy.config.url_remap.pristine_host_hdr -v 1
 

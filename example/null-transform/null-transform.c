@@ -38,9 +38,9 @@
 
 typedef struct
 {
-  INKVIO output_vio;
-  INKIOBuffer output_buffer;
-  INKIOBufferReader output_reader;
+  TSVIO output_vio;
+  TSIOBuffer output_buffer;
+  TSIOBufferReader output_reader;
 } MyData;
 
 static MyData *
@@ -48,7 +48,7 @@ my_data_alloc()
 {
   MyData *data;
 
-  data = (MyData *) INKmalloc(sizeof(MyData));
+  data = (MyData *) TSmalloc(sizeof(MyData));
   data->output_vio = NULL;
   data->output_buffer = NULL;
   data->output_reader = NULL;
@@ -61,25 +61,26 @@ my_data_destroy(MyData * data)
 {
   if (data) {
     if (data->output_buffer) {
-      INKAssert(INKIOBufferDestroy(data->output_buffer) == INK_SUCCESS);
+      TSAssert(TSIOBufferDestroy(data->output_buffer) == TS_SUCCESS);
     }
-    INKfree(data);
+    TSfree(data);
   }
 }
 
 static void
-handle_transform(INKCont contp)
+handle_transform(TSCont contp)
 {
-  INKVConn output_conn;
-  INKIOBuffer buf_test;
-  INKVIO input_vio;
+  TSVConn output_conn;
+  TSIOBuffer buf_test;
+  TSVIO input_vio;
   MyData *data;
-  int towrite;
-  int avail;
+  int64 towrite;
+  int64 avail;
 
+  TSDebug("null-transform", "Entering handle_transform()");
   /* Get the output (downstream) vconnection where we'll write data to. */
 
-  output_conn = INKTransformOutputVConnGet(contp);
+  output_conn = TSTransformOutputVConnGet(contp);
 
   /* Get the write VIO for the write operation that was performed on
    * ourself. This VIO contains the buffer that we are to read from
@@ -87,9 +88,9 @@ handle_transform(INKCont contp)
    * empty. This is the input VIO (the write VIO for the upstream
    * vconnection).
    */
-  input_vio = INKVConnWriteVIOGet(contp);
-  if (input_vio == INK_ERROR_PTR) {
-    INKError("[null-transform] Unable to fetching input VIO\n");
+  input_vio = TSVConnWriteVIOGet(contp);
+  if (input_vio == TS_ERROR_PTR) {
+    TSError("[null-transform] Unable to fetching input VIO\n");
     goto Lerror;
   }
 
@@ -98,14 +99,15 @@ handle_transform(INKCont contp)
    * private data structure pointer is NULL, then we'll create it
    * and initialize its internals.
    */
-  data = INKContDataGet(contp);
+  data = TSContDataGet(contp);
   if (!data) {
     data = my_data_alloc();
-    data->output_buffer = INKIOBufferCreate();
-    data->output_reader = INKIOBufferReaderAlloc(data->output_buffer);
-    data->output_vio = INKVConnWrite(output_conn, contp, data->output_reader, INKVIONBytesGet(input_vio));
-    if (INKContDataSet(contp, data) == INK_ERROR) {
-      INKError("[null-transform] unable to set continuation " "data!\n");
+    data->output_buffer = TSIOBufferCreate();
+    data->output_reader = TSIOBufferReaderAlloc(data->output_buffer);
+    TSDebug("null-transform", "\tWriting %d bytes on VConn", TSVIONBytesGet(input_vio));
+    data->output_vio = TSVConnWrite(output_conn, contp, data->output_reader, TSVIONBytesGet(input_vio));
+    if (TSContDataSet(contp, data) == TS_ERROR) {
+      TSError("[null-transform] unable to set continuation " "data!\n");
       goto Lerror;
     }
   }
@@ -118,21 +120,21 @@ handle_transform(INKCont contp)
    * transformation we might have to finish writing the transformed
    * data to our output connection.
    */
-  buf_test = INKVIOBufferGet(input_vio);
+  buf_test = TSVIOBufferGet(input_vio);
 
   if (buf_test) {
-    if (buf_test == INK_ERROR_PTR) {
-      INKError("[null-transform] error fetching buffer\n");
+    if (buf_test == TS_ERROR_PTR) {
+      TSError("[null-transform] error fetching buffer\n");
       goto Lerror;
     }
   } else {
-    if (INKVIONBytesSet(data->output_vio, INKVIONDoneGet(input_vio)) == INK_ERROR) {
-      INKError("[null-transform] error seting output VIO nbytes\n");
+    if (TSVIONBytesSet(data->output_vio, TSVIONDoneGet(input_vio)) == TS_ERROR) {
+      TSError("[null-transform] error seting output VIO nbytes\n");
       goto Lerror;
     }
 
-    if (INKVIOReenable(data->output_vio) == INK_ERROR) {
-      INKError("[null-transform] error reenabling output VIO\n");
+    if (TSVIOReenable(data->output_vio) == TS_ERROR) {
+      TSError("[null-transform] error reenabling output VIO\n");
       goto Lerror;
     }
 
@@ -143,64 +145,65 @@ handle_transform(INKCont contp)
    * transform plugin this is also the amount of data we have left
    * to write to the output connection.
    */
-  towrite = INKVIONTodoGet(input_vio);
+  towrite = TSVIONTodoGet(input_vio);
+  TSDebug("null-transform", "\ttoWrite is %lld", towrite);
 
   if (towrite > 0) {
     /* The amount of data left to read needs to be truncated by
      * the amount of data actually in the read buffer.
      */
-    avail = INKIOBufferReaderAvail(INKVIOReaderGet(input_vio));
+    avail = TSIOBufferReaderAvail(TSVIOReaderGet(input_vio));
+    TSDebug("null-transform", "\tavail is %lld", avail);
     if (towrite > avail) {
       towrite = avail;
     }
 
     if (towrite > 0) {
       /* Copy the data from the read buffer to the output buffer. */
-      if (INKIOBufferCopy(INKVIOBufferGet(data->output_vio), INKVIOReaderGet(input_vio), towrite, 0) == INK_ERROR) {
-        INKError("[null-plugin] unable to copy IO buffers\n");
+      if (TSIOBufferCopy(TSVIOBufferGet(data->output_vio), TSVIOReaderGet(input_vio), towrite, 0) == TS_ERROR) {
+        TSError("[null-plugin] unable to copy IO buffers\n");
         goto Lerror;
       }
 
       /* Tell the read buffer that we have read the data and are no
        * longer interested in it.
        */
-      if (INKIOBufferReaderConsume(INKVIOReaderGet(input_vio), towrite)
-          == INK_ERROR) {
-        INKError("[null-plugin] unable to update VIO reader\n");
+      if (TSIOBufferReaderConsume(TSVIOReaderGet(input_vio), towrite) == TS_ERROR) {
+        TSError("[null-plugin] unable to update VIO reader\n");
         goto Lerror;
       }
 
       /* Modify the input VIO to reflect how much data we've
        * completed.
        */
-      if (INKVIONDoneSet(input_vio, INKVIONDoneGet(input_vio) + towrite) == INK_ERROR) {
-        INKError("[null-plugin] unable to update VIO\n");
+      if (TSVIONDoneSet(input_vio, TSVIONDoneGet(input_vio) + towrite) == TS_ERROR) {
+        TSError("[null-plugin] unable to update VIO\n");
         goto Lerror;
       }
     }
-  } else if (towrite == INK_ERROR) {
-    INKError("[null-plugin] error fetching VIO to-do amount\n");
+  } else if (towrite == TS_ERROR) {
+    TSError("[null-plugin] error fetching VIO to-do amount\n");
     goto Lerror;
   }
 
   /* Now we check the input VIO to see if there is data left to
    * read.
    */
-  if (INKVIONTodoGet(input_vio) > 0) {
+  if (TSVIONTodoGet(input_vio) > 0) {
     if (towrite > 0) {
       /* If there is data left to read, then we reenable the output
        * connection by reenabling the output VIO. This will wake up
        * the output connection and allow it to consume data from the
        * output buffer.
        */
-      if (INKVIOReenable(data->output_vio) == INK_ERROR) {
-        INKError("[null-plugin] error reenabling transaction\n");
+      if (TSVIOReenable(data->output_vio) == TS_ERROR) {
+        TSError("[null-plugin] error reenabling transaction\n");
         goto Lerror;
       }
       /* Call back the input VIO continuation to let it know that we
        * are ready for more data.
        */
-      INKContCall(INKVIOContGet(input_vio), INK_EVENT_VCONN_WRITE_READY, input_vio);
+      TSContCall(TSVIOContGet(input_vio), TS_EVENT_VCONN_WRITE_READY, input_vio);
     }
   } else {
     /* If there is no data left to read, then we modify the output
@@ -209,16 +212,16 @@ handle_transform(INKCont contp)
      * is done reading. We then reenable the output connection so
      * that it can consume the data we just gave it.
      */
-    INKVIONBytesSet(data->output_vio, INKVIONDoneGet(input_vio));
-    if (INKVIOReenable(data->output_vio) == INK_ERROR) {
-      INKError("[null-plugin] error reenabling transaction\n");
+    TSVIONBytesSet(data->output_vio, TSVIONDoneGet(input_vio));
+    if (TSVIOReenable(data->output_vio) == TS_ERROR) {
+      TSError("[null-plugin] error reenabling transaction\n");
       goto Lerror;
     }
 
     /* Call back the input VIO continuation to let it know that we
      * have completed the write operation.
      */
-    INKContCall(INKVIOContGet(input_vio), INK_EVENT_VCONN_WRITE_COMPLETE, input_vio);
+    TSContCall(TSVIOContGet(input_vio), TS_EVENT_VCONN_WRITE_COMPLETE, input_vio);
   }
 
 
@@ -227,43 +230,50 @@ Lerror:
 }
 
 static int
-null_transform(INKCont contp, INKEvent event, void *edata)
+null_transform(TSCont contp, TSEvent event, void *edata)
 {
   /* Check to see if the transformation has been closed by a call to
-   * INKVConnClose.
+   * TSVConnClose.
    */
-  if (INKVConnClosedGet(contp)) {
-    my_data_destroy(INKContDataGet(contp));
-    INKAssert(INKContDestroy(contp) == INK_SUCCESS);
+  TSDebug("null-transform", "Entering null_transform()");
+
+  if (TSVConnClosedGet(contp)) {
+    TSDebug("null-transform", "\tVConn is closed");
+    my_data_destroy(TSContDataGet(contp));
+    TSAssert(TSContDestroy(contp) == TS_SUCCESS);
     return 0;
   } else {
     switch (event) {
-    case INK_EVENT_ERROR:
+    case TS_EVENT_ERROR:
       {
-        INKVIO input_vio;
+        TSVIO input_vio;
 
+        TSDebug("null-transform", "\tEvent is TS_EVENT_ERROR");
         /* Get the write VIO for the write operation that was
          * performed on ourself. This VIO contains the continuation of
          * our parent transformation. This is the input VIO.
          */
-        input_vio = INKVConnWriteVIOGet(contp);
+        input_vio = TSVConnWriteVIOGet(contp);
 
         /* Call back the write VIO continuation to let it know that we
          * have completed the write operation.
          */
-        INKContCall(INKVIOContGet(input_vio), INK_EVENT_ERROR, input_vio);
+        TSContCall(TSVIOContGet(input_vio), TS_EVENT_ERROR, input_vio);
       }
       break;
-    case INK_EVENT_VCONN_WRITE_COMPLETE:
+    case TS_EVENT_VCONN_WRITE_COMPLETE:
+      TSDebug("null-transform", "\tEvent is TS_EVENT_VCONN_WRITE_COMPLETE");
       /* When our output connection says that it has finished
        * reading all the data we've written to it then we should
        * shutdown the write portion of its connection to
        * indicate that we don't want to hear about it anymore.
        */
-      INKAssert(INKVConnShutdown(INKTransformOutputVConnGet(contp), 0, 1) != INK_ERROR);
+      TSAssert(TSVConnShutdown(TSTransformOutputVConnGet(contp), 0, 1) != TS_ERROR);
       break;
-    case INK_EVENT_VCONN_WRITE_READY:
+    case TS_EVENT_VCONN_WRITE_READY:
+      TSDebug("null-transform", "\tEvent is TS_EVENT_VCONN_WRITE_READY");
     default:
+      TSDebug("null-transform", "\t(event is %d)", event);
       /* If we get a WRITE_READY event or any other type of
        * event (sent, perhaps, because we were reenabled) then
        * we'll attempt to transform more data.
@@ -277,54 +287,58 @@ null_transform(INKCont contp, INKEvent event, void *edata)
 }
 
 static int
-transformable(INKHttpTxn txnp)
+transformable(TSHttpTxn txnp)
 {
   /*
    *  We are only interested in transforming "200 OK" responses.
    */
 
-  INKMBuffer bufp;
-  INKMLoc hdr_loc;
-  INKHttpStatus resp_status;
+  TSMBuffer bufp;
+  TSMLoc hdr_loc;
+  TSHttpStatus resp_status;
   int retv;
 
-  INKHttpTxnServerRespGet(txnp, &bufp, &hdr_loc);
-  resp_status = INKHttpHdrStatusGet(bufp, hdr_loc);
-  retv = (resp_status == INK_HTTP_STATUS_OK);
+  TSDebug("null-transform", "Entering transformable()");
 
-  if (INKHandleMLocRelease(bufp, INK_NULL_MLOC, hdr_loc) == INK_ERROR) {
-    INKError("[null-transform] Error releasing MLOC while checking " "header status\n");
+  TSHttpTxnServerRespGet(txnp, &bufp, &hdr_loc);
+  resp_status = TSHttpHdrStatusGet(bufp, hdr_loc);
+  retv = (resp_status == TS_HTTP_STATUS_OK);
+
+  if (TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc) == TS_ERROR) {
+    TSError("[null-transform] Error releasing MLOC while checking " "header status\n");
   }
 
+  TSDebug("null-transform", "Exiting transformable with return %d", retv);
   return retv;
 }
 
 static void
-transform_add(INKHttpTxn txnp)
+transform_add(TSHttpTxn txnp)
 {
-  INKVConn connp;
+  TSVConn connp;
 
-  connp = INKTransformCreate(null_transform, txnp);
-
-  if (INKHttpTxnHookAdd(txnp, INK_HTTP_RESPONSE_TRANSFORM_HOOK, connp)
-      == INK_ERROR) {
-    INKError("[null-plugin] Unable to attach plugin to transaction\n");
+  TSDebug("null-transform", "Entering transform_add()");
+  connp = TSTransformCreate(null_transform, txnp);
+  if (TSHttpTxnHookAdd(txnp, TS_HTTP_RESPONSE_TRANSFORM_HOOK, connp) == TS_ERROR) {
+    TSError("[null-plugin] Unable to attach plugin to transaction\n");
   }
 }
 
 static int
-transform_plugin(INKCont contp, INKEvent event, void *edata)
+transform_plugin(TSCont contp, TSEvent event, void *edata)
 {
-  INKHttpTxn txnp = (INKHttpTxn) edata;
+  TSHttpTxn txnp = (TSHttpTxn) edata;
 
+  TSDebug("null-transform", "Entering transform_plugin()");
   switch (event) {
-  case INK_EVENT_HTTP_READ_RESPONSE_HDR:
+  case TS_EVENT_HTTP_READ_RESPONSE_HDR:
+    TSDebug("null-transform", "\tEvent is TS_EVENT_HTTP_READ_RESPONSE_HDR");
     if (transformable(txnp)) {
       transform_add(txnp);
     }
 
-    if (INKHttpTxnReenable(txnp, INK_EVENT_HTTP_CONTINUE) == INK_ERROR) {
-      INKError("[null-plugin] Alert! unable to continue " "the HTTP transaction\n");
+    if (TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE) == TS_ERROR) {
+      TSError("[null-plugin] Alert! unable to continue " "the HTTP transaction\n");
       return -1;
     }
     return 0;
@@ -339,7 +353,7 @@ int
 check_ts_version()
 {
 
-  const char *ts_version = INKTrafficServerVersionGet();
+  const char *ts_version = TSTrafficServerVersionGet();
   int result = 0;
 
   if (ts_version) {
@@ -362,31 +376,31 @@ check_ts_version()
 }
 
 void
-INKPluginInit(int argc, const char *argv[])
+TSPluginInit(int argc, const char *argv[])
 {
-  INKPluginRegistrationInfo info;
+  TSPluginRegistrationInfo info;
 
   info.plugin_name = "null-transform";
   info.vendor_name = "MyCompany";
   info.support_email = "ts-api-support@MyCompany.com";
 
-  if (!INKPluginRegister(INK_SDK_VERSION_2_0, &info)) {
-    INKError("[null-transform] Plugin registration failed.\n");
+  if (!TSPluginRegister(TS_SDK_VERSION_2_0, &info)) {
+    TSError("[null-transform] Plugin registration failed.\n");
     goto Lerror;
   }
 
   if (!check_ts_version()) {
-    INKError("[null-transform] Plugin requires Traffic Server 2.0 " "or later\n");
+    TSError("[null-transform] Plugin requires Traffic Server 2.0 " "or later\n");
     goto Lerror;
   }
 
-  if (INKHttpHookAdd(INK_HTTP_READ_RESPONSE_HDR_HOOK, INKContCreate(transform_plugin, NULL)) == INK_ERROR) {
-    INKError("[null-transform] Unable to set READ_RESPONSE_HDR_HOOK\n");
+  if (TSHttpHookAdd(TS_HTTP_READ_RESPONSE_HDR_HOOK, TSContCreate(transform_plugin, NULL)) == TS_ERROR) {
+    TSError("[null-transform] Unable to set READ_RESPONSE_HDR_HOOK\n");
     goto Lerror;
   }
 
   return;
 
 Lerror:
-  INKError("[null-tranform] Unable to initialize plugin (disabled).\n");
+  TSError("[null-tranform] Unable to initialize plugin (disabled).\n");
 }

@@ -323,10 +323,8 @@ main(int argc, char **argv)
 /* Argument description table used to describe how to parse command line args, */
 /* see 'ink_args.h' for meanings of the various fields */
   ArgumentDescription argument_descriptions[] = {
-#ifndef RNI_ONLY
     // INKqa10516
     /*{ "interactive", 'i', "Interactive Mode", "F", &interactiveMode, "CLI_INTERACTIVE", NULL}, */
-#endif /* RNI_ONLY */
 #ifndef _WIN32
     {"query_deadhosts", 'q', "Query congested sites", "F", &QueryDeadhosts, NULL, NULL},
     {"socket_path", 'p', "Socket Path", "S255", &cli->sockPath, "CLI_SOCKPATH", NULL},
@@ -393,17 +391,12 @@ main(int argc, char **argv)
   }
 #endif
 
-#ifndef RNI_ONLY
   // Interactive or batch mode
   if (interactiveMode == 1) {
     runInteractive(cli);
   } else {
     handleArgInvocation(cli);
   }
-#else /* RNI_ONLY */
-  /* Interactive mode not allowed */
-  handleArgInvocation(cli);
-#endif /* RNI_ONLY */
 
   delete cli;
 

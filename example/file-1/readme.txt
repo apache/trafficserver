@@ -22,15 +22,15 @@ If you use a relative pathname, the path must be specified with
 respect to the Traffic Server install directory.  (That is, the path 
 contained in /etc/traffic_server.)
 
-The only function defined is INKPluginInit.
+The only function defined is TSPluginInit.
 
 It does the following:
 
 - opens the file specified in plugin.config, using
-	INKfopen
+	TSfopen
 
 - reads the content of the file into a buffer using 
-	INKfgets
+	TSfgets
 
 - closes the file using 
-	INKfclose
+	TSfclose

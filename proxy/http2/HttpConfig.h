@@ -60,6 +60,12 @@
 
 #include "P_RecProcess.h"
 
+
+/* Some defines that might be candidates for configurable settings later.
+ */
+#define HTTP_SSN_TXN_MAX_USER_ARG         16   /* max number of user arguments for Transactions and Sessions */
+
+
 /* Instead of enumerating the stats in DynamicStats.h, each module needs
    to enumerate its stats separately and register them with librecords
    */
@@ -83,7 +89,14 @@ enum
   http_ua_msecs_counts_errors_early_hangups_stat,
 
   // Http Total Connections Stats
+  //
+  // it is assumed that this inequality will always be satisifed:
+  //   http_total_client_connections_stat >=
+  //     http_total_client_connections_ipv4_stat +
+  //     http_total_client_connections_ipv6_stat
   http_total_client_connections_stat,
+  http_total_client_connections_ipv4_stat,
+  http_total_client_connections_ipv6_stat,
   http_total_server_connections_stat,
   http_total_parent_proxy_connections_stat,
   http_current_parent_proxy_connections_stat,
@@ -292,13 +305,51 @@ enum
   http_cache_write_errors,
   http_cache_read_errors,
 
-  // jg specific stats
-  http_jg_cache_hits_stat,
-  http_jg_cache_misses_stat,
-  http_jg_client_aborts_stat,
-  http_jg_cache_hit_time_stat,
-  http_jg_cache_miss_time_stat,
-
+  // status code stats
+  http_response_status_100_count_stat,
+  http_response_status_101_count_stat,
+  http_response_status_1xx_count_stat,
+  http_response_status_200_count_stat,
+  http_response_status_201_count_stat,
+  http_response_status_202_count_stat,
+  http_response_status_203_count_stat,
+  http_response_status_204_count_stat,
+  http_response_status_205_count_stat,
+  http_response_status_206_count_stat,
+  http_response_status_2xx_count_stat,
+  http_response_status_300_count_stat,
+  http_response_status_301_count_stat,
+  http_response_status_302_count_stat,
+  http_response_status_303_count_stat,
+  http_response_status_304_count_stat,
+  http_response_status_305_count_stat,
+  http_response_status_307_count_stat,
+  http_response_status_3xx_count_stat,
+  http_response_status_400_count_stat,
+  http_response_status_401_count_stat,
+  http_response_status_402_count_stat,
+  http_response_status_403_count_stat,
+  http_response_status_404_count_stat,
+  http_response_status_405_count_stat,
+  http_response_status_406_count_stat,
+  http_response_status_407_count_stat,
+  http_response_status_408_count_stat,
+  http_response_status_409_count_stat,
+  http_response_status_410_count_stat,
+  http_response_status_411_count_stat,
+  http_response_status_412_count_stat,
+  http_response_status_413_count_stat,
+  http_response_status_414_count_stat,
+  http_response_status_415_count_stat,
+  http_response_status_416_count_stat,
+  http_response_status_4xx_count_stat,
+  http_response_status_500_count_stat,
+  http_response_status_501_count_stat,
+  http_response_status_502_count_stat,
+  http_response_status_503_count_stat,
+  http_response_status_504_count_stat,
+  http_response_status_505_count_stat,
+  http_response_status_5xx_count_stat,
 
   http_stat_count
 };
@@ -306,31 +357,19 @@ enum
 extern RecRawStatBlock *http_rsb;
 
 /* Stats should only be accessed using these macros */
+#define HTTP_INCREMENT_DYN_STAT(x) RecIncrRawStat(http_rsb, mutex->thread_holding, (int) x, 1)
+#define HTTP_DECREMENT_DYN_STAT(x) RecIncrRawStat(http_rsb, mutex->thread_holding, (int) x, -1)
+#define HTTP_SUM_DYN_STAT(x, y) RecIncrRawStat(http_rsb, mutex->thread_holding, (int) x, (int) y)
+#define HTTP_SUM_GLOBAL_DYN_STAT(x, y) RecIncrGlobalRawStatSum(http_rsb, x, y)
 
-#define HTTP_SET_DYN_STAT(x,C, S) \
-do { \
-        RecSetRawStatSum(http_rsb, x, S); \
-        RecSetRawStatCount(http_rsb, x, C); \
-} while (0);
-#define HTTP_INCREMENT_DYN_STAT(x) \
-        RecIncrRawStat(http_rsb, mutex->thread_holding, (int) x, 1);
-#define HTTP_DECREMENT_DYN_STAT(x) \
-        RecIncrRawStat(http_rsb, mutex->thread_holding, (int) x, -1);
-#define HTTP_SUM_DYN_STAT(x, y) \
-        RecIncrRawStat(http_rsb, mutex->thread_holding, (int) x, (int) y);
-#define HTTP_SUM_GLOBAL_DYN_STAT(x, y) \
-        RecIncrGlobalRawStatSum(http_rsb,x,y)
 #define HTTP_CLEAR_DYN_STAT(x) \
 do { \
         RecSetRawStatSum(http_rsb, x, 0); \
         RecSetRawStatCount(http_rsb, x, 0); \
-} while (0);
-#define HTTP_READ_DYN_STAT(x, C, S)             \
-  RecGetRawStatCount(http_rsb, (int) x, &C);    \
-  RecGetRawStatSum(http_rsb, (int) x, &S);
+ } while (0);
 
-#define HTTP_READ_DYN_SUM(x, S)             \
-  RecGetRawStatSum(http_rsb, (int) x, &S);
+#define HTTP_READ_DYN_SUM(x, S) RecGetRawStatSum(http_rsb, (int)x, &S) // This aggregates threads too
+#define HTTP_READ_GLOBAL_DYN_SUM(x, S) RecGetGlobalRawStatSum(http_rsb, (int)x, &S)
 
 #define HTTP_ConfigReadInteger         REC_ConfigReadInteger
 #define HTTP_ConfigReadString          REC_ConfigReadString
@@ -467,7 +506,6 @@ public:
   MgmtInt connect_attempts_max_retries_dead_server;
   MgmtInt connect_attempts_rr_retries;
   MgmtInt connect_attempts_timeout;
-  MgmtInt streaming_connect_attempts_timeout;
   MgmtInt post_connect_attempts_timeout;
   MgmtInt parent_connect_attempts;
   MgmtInt per_parent_connect_attempts;
@@ -568,12 +606,6 @@ public:
   MgmtInt cache_when_to_add_no_cache_to_msie_requests;
   MgmtInt cache_required_headers;
   MgmtInt cache_range_lookup;
-
-  /////////
-  // SSL //
-  /////////
-  char *ssl_ports_string;
-  HttpConfigPortRange *ssl_ports;
 
   ////////////////////////////////////////////
   // CONNECT ports (used to be == ssl_ports //
@@ -814,7 +846,7 @@ public:
   static void dump_config();
 
   // parse ssl ports configuration string
-  static HttpConfigPortRange *parse_ports_list(char *ssl_ports_str);
+  static HttpConfigPortRange *parse_ports_list(char *ports_str);
 
   // parse DNS URL expansions string
   static char **parse_url_expansions(char *url_expansions_str, int *num_expansions);
@@ -892,7 +924,6 @@ connect_attempts_max_retries(0),
 connect_attempts_max_retries_dead_server(0),
 connect_attempts_rr_retries(0),
 connect_attempts_timeout(0),
-streaming_connect_attempts_timeout(0),
 post_connect_attempts_timeout(0),
 parent_connect_attempts(0),
 per_parent_connect_attempts(0),
@@ -948,8 +979,6 @@ cache_enable_default_vary_headers(false),
 cache_when_to_revalidate(0),
 cache_when_to_add_no_cache_to_msie_requests(0),
 cache_required_headers(CACHE_REQUIRED_HEADERS_NONE),
-ssl_ports_string(0),
-ssl_ports(0),
 connect_ports_string(0),
 connect_ports(0),
 request_hdr_max_size(0),
@@ -1018,13 +1047,8 @@ HttpConfigParams()
   xfree(cache_vary_default_text);
   xfree(cache_vary_default_images);
   xfree(cache_vary_default_other);
-  xfree(ssl_ports_string);
   xfree(connect_ports_string);
   xfree(reverse_proxy_no_host_redirect);
-
-  if (ssl_ports) {
-    delete ssl_ports;
-  }
 
   if (connect_ports) {
     delete connect_ports;

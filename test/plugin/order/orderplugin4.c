@@ -50,43 +50,43 @@
 int value;
 
 static int
-plugin4(INKCont contp, INKEvent event, void *edata)
+plugin4(TSCont contp, TSEvent event, void *edata)
 {
 
-  INKMBuffer bufp;
-  INKMLoc hdr_loc;
-  INKMLoc field_loc;
+  TSMBuffer bufp;
+  TSMLoc hdr_loc;
+  TSMLoc field_loc;
 
-  int count;
+  TSHttpTxn txnp = (TSHttpTxn) edata;
 
-  INKHttpTxn txnp = (INKHttpTxn) edata;
-
-  if (!INKHttpTxnClientReqGet(txnp, &bufp, &hdr_loc)) {
+  if (!TSHttpTxnClientReqGet(txnp, &bufp, &hdr_loc)) {
     printf("Couldn't retrieve Client Request Header\n");
-    INKHttpTxnReenable(txnp, INK_EVENT_HTTP_CONTINUE);
+    TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
     return 0;
   }
 
-  if ((field_loc = INKMimeHdrFieldFind(bufp, hdr_loc, FIELD_NAME, -1)) != 0) {
-    count = INKMimeFieldValueGetInt(bufp, field_loc, 0);
+  if ((field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, FIELD_NAME, -1)) != 0) {
+    int count;
+    
+    TSMimeHdrFieldValueIntGet(bufp, hdr_loc, field_loc, 0, &count);
     if (value != ++count) {
-      INKError("Incorrect sequence of calling...orderplugin4\n");
+      TSError("Incorrect sequence of calling...orderplugin4\n");
     }
-    INKMimeFieldValueSetInt(bufp, field_loc, 0, value);
+    TSMimeHdrFieldValueIntSet(bufp, hdr_loc, field_loc, 0, value);
 
   }
 
-  INKHttpTxnReenable(txnp, INK_EVENT_HTTP_CONTINUE);
+  TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
   return 0;
 }
 
 void
-INKPluginInit(int argc, const char *argv[])
+TSPluginInit(int argc, const char *argv[])
 {
 
-  INKMutex lock1;
+  TSMutex lock1;
 
-  INKCont contp;
+  TSCont contp;
 
   if (argc != 2) {
     printf("Usage: orderplugin4.so <valuei>\n");
@@ -95,16 +95,16 @@ INKPluginInit(int argc, const char *argv[])
 
   sscanf(argv[1], "%d", &value);
 
-  lock1 = INKMutexCreate();
+  lock1 = TSMutexCreate();
 
-  contp = INKContCreate(plugin4, lock1);
+  contp = TSContCreate(plugin4, lock1);
 
-  INKHttpHookAdd(INK_HTTP_READ_REQUEST_HDR_HOOK, contp);
-  INKHttpHookAdd(INK_HTTP_OS_DNS_HOOK, contp);
-  INKHttpHookAdd(INK_HTTP_SEND_REQUEST_HDR_HOOK, contp);
-  INKHttpHookAdd(INK_HTTP_READ_CACHE_HDR_HOOK, contp);
-  INKHttpHookAdd(INK_HTTP_READ_RESPONSE_HDR_HOOK, contp);
-  INKHttpHookAdd(INK_HTTP_SEND_RESPONSE_HDR_HOOK, contp);
+  TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, contp);
+  TSHttpHookAdd(TS_HTTP_OS_DNS_HOOK, contp);
+  TSHttpHookAdd(TS_HTTP_SEND_REQUEST_HDR_HOOK, contp);
+  TSHttpHookAdd(TS_HTTP_READ_CACHE_HDR_HOOK, contp);
+  TSHttpHookAdd(TS_HTTP_READ_RESPONSE_HDR_HOOK, contp);
+  TSHttpHookAdd(TS_HTTP_SEND_RESPONSE_HDR_HOOK, contp);
 
 
 }

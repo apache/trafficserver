@@ -53,7 +53,7 @@ WebHttpLogInit()
   char log_file[PATH_NAME_MAX+1];
 
   if ((err = stat(system_log_dir, &s)) < 0) {
-    ink_assert(RecGetRecordString_Xmalloc("proxy.config.log2.logfile_dir", &log_dir)
+    ink_assert(RecGetRecordString_Xmalloc("proxy.config.log.logfile_dir", &log_dir)
 	       == REC_ERR_OKAY);
     if ((err = stat(log_dir, &s)) < 0) {
       // Try 'system_root_dir/var/log/trafficserver' directory
@@ -62,7 +62,7 @@ WebHttpLogInit()
       if ((err = stat(system_log_dir, &s)) < 0) {
         mgmt_elog("unable to stat() log dir'%s': %d %d, %s\n",
                 system_log_dir, err, errno, strerror(errno));
-        mgmt_elog("please set 'proxy.config.log2.logfile_dir'\n");
+        mgmt_elog("please set 'proxy.config.log.logfile_dir'\n");
         //_exit(1);
       }
     } else {

@@ -165,14 +165,14 @@ int
 InkXmlConfigFile::parse(int fd)
 {
   ink_assert(fd >= 0);
-  Debug("log2", "Parsing XML config info from memory..");
+  Debug("log", "Parsing XML config info from memory..");
 
   m_line = 1;
   m_col = 0;
 
   InkXmlObject *obj;
   while ((obj = get_next_xml_object(fd)) != NULL) {
-    Debug("log2", "Adding XML object <%s>", obj->object_name());
+    Debug("log", "Adding XML object <%s>", obj->object_name());
     add_object(obj);
   }
 

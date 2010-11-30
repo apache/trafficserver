@@ -68,7 +68,6 @@
 #include "ink_resource.h"
 #include "ink_sock.h"
 #include "ink_inet.h"
-#include "ink_spill.h"
 #include "ink_sprintf.h"
 #include "ink_stack_trace.h"
 #include "ink_string++.h"

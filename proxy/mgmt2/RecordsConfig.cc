@@ -129,9 +129,6 @@ RecordElement RecordsConfig[] = {
   // The maximum number of chunks to allocate with mmap. Setting this to zero disables all use of mmap. (Unix only)
   {CONFIG, "proxy.config.system.mmap_max", "", INK_INT, "1073741823", RU_RESTART_TS, RR_NULL, RC_INT, NULL, RA_READ_ONLY}
   ,
-  // Enable/disable memalign preallocation memory
-  {CONFIG, "proxy.config.system.memalign_heap", "", INK_INT, "0", RU_NULL, RR_NULL, RC_INT, NULL, RA_READ_ONLY}
-  ,
   // Traffic Server Execution threads configuration
   // By default Traffic Server set number of execution threads equal to total CPUs
   {CONFIG, "proxy.config.exec_thread.autoconfig", "", INK_INT, "1", RU_RESTART_TS, RR_NULL, RC_INT, "[0-65535]",
@@ -815,9 +812,6 @@ RecordElement RecordsConfig[] = {
   {CONFIG, "proxy.config.http.connect_attempts_rr_retries", "", INK_INT, "2", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
   {CONFIG, "proxy.config.http.connect_attempts_timeout", "", INK_INT, "30", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-  {CONFIG, "proxy.config.http.streaming_connect_attempts_timeout", "", INK_INT, "1800", RU_REREAD, RR_NULL, RC_NULL,
-   NULL, RA_NULL}
   ,
   {CONFIG, "proxy.config.http.post_connect_attempts_timeout", "", INK_INT, "1800", RU_REREAD, RR_NULL, RC_NULL, NULL,
    RA_NULL}
@@ -1915,7 +1909,7 @@ RecordElement RecordsConfig[] = {
   ,
   {CONFIG, "proxy.config.cache.max_agg_delay", "", INK_INT, "1000", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
-  {CONFIG, "proxy.config.cache.threads_per_disk", "", INK_INT, "4", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
+  {CONFIG, "proxy.config.cache.threads_per_disk", "", INK_INT, "8", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
   {CONFIG, "proxy.config.cache.aio_sleep_time", "", INK_INT, "100", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
@@ -2053,6 +2047,8 @@ RecordElement RecordsConfig[] = {
   ,
   {CONFIG, "proxy.config.dns.round_robin_nameservers", "", INK_INT, "0", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
+  {CONFIG, "proxy.config.dns.dedicated_thread", "", INK_INT, "0", RU_RESTART_TS, RR_NULL, RC_NULL, "[0-1]", RA_NULL}
+  ,
   {PROCESS, "proxy.process.dns.total_dns_lookups", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
   {PROCESS, "proxy.process.dns.lookup_avg_time", "", INK_FLOAT, "0.00", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
@@ -2140,12 +2136,6 @@ RecordElement RecordsConfig[] = {
   //# HTTP
   //#
   //##########################################################################
-  //        #######
-  //        # SSL #
-  //        #######
-  {CONFIG, "proxy.config.http.ssl_ports", "", INK_STRING, "443 563", RU_REREAD, RR_NULL, RC_STR,
-   "^[[:digit:][:space:]]+$", RA_NULL}
-  ,
   //##########################################################################
   //        ###########
   //        # CONNECT #
@@ -2176,136 +2166,134 @@ RecordElement RecordsConfig[] = {
   //# 0: no logging at all
   //# 1: log errors only
   //# 2: full logging
-  {CONFIG, "proxy.config.log2.logging_enabled", "", INK_INT, "2", RU_REREAD, RR_NULL, RC_INT, "[0-4]", RA_NULL}
+  {CONFIG, "proxy.config.log.logging_enabled", "", INK_INT, "2", RU_REREAD, RR_NULL, RC_INT, "[0-4]", RA_NULL}
   ,
-  {CONFIG, "proxy.config.log2.log_buffer_size", "", INK_INT, "9216", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
+  {CONFIG, "proxy.config.log.log_buffer_size", "", INK_INT, "9216", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
-  {CONFIG, "proxy.config.log2.max_entries_per_buffer", "", INK_INT, "100", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
+  {CONFIG, "proxy.config.log.max_entries_per_buffer", "", INK_INT, "100", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
-  {CONFIG, "proxy.config.log2.max_secs_per_buffer", "", INK_INT, "5", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
+  {CONFIG, "proxy.config.log.max_secs_per_buffer", "", INK_INT, "5", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
-  {CONFIG, "proxy.config.log2.max_space_mb_for_logs", "", INK_INT, "2000", RU_REREAD, RR_NULL, RC_STR, "^[0-9]+$",
+  {CONFIG, "proxy.config.log.max_space_mb_for_logs", "", INK_INT, "2000", RU_REREAD, RR_NULL, RC_STR, "^[0-9]+$",
    RA_NULL}
   ,
-  {CONFIG, "proxy.config.log2.max_space_mb_for_orphan_logs", "", INK_INT, "25", RU_REREAD, RR_NULL, RC_STR, "^[0-9]+$",
+  {CONFIG, "proxy.config.log.max_space_mb_for_orphan_logs", "", INK_INT, "25", RU_REREAD, RR_NULL, RC_STR, "^[0-9]+$",
    RA_NULL}
   ,
-  {CONFIG, "proxy.config.log2.max_space_mb_headroom", "", INK_INT, "10", RU_REREAD, RR_NULL, RC_STR, "^[0-9]+$", RA_NULL}
+  {CONFIG, "proxy.config.log.max_space_mb_headroom", "", INK_INT, "10", RU_REREAD, RR_NULL, RC_STR, "^[0-9]+$", RA_NULL}
   ,
-  {CONFIG, "proxy.config.log2.hostname", "", INK_STRING, "localhost", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
+  {CONFIG, "proxy.config.log.hostname", "", INK_STRING, "localhost", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
-  {CONFIG, "proxy.config.log2.logfile_dir", "", INK_STRING, "var/log/trafficserver", RU_REREAD, RR_NULL, RC_STR, "^[^[:space:]]+$",
+  {CONFIG, "proxy.config.log.logfile_dir", "", INK_STRING, "var/log/trafficserver", RU_REREAD, RR_NULL, RC_STR, "^[^[:space:]]+$",
    RA_NULL}
   ,
-  {CONFIG, "proxy.config.log2.logfile_perm", "", INK_STRING, "rw-r--r--", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
+  {CONFIG, "proxy.config.log.logfile_perm", "", INK_STRING, "rw-r--r--", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
-  {CONFIG, "proxy.config.log2.custom_logs_enabled", "", INK_INT, "0", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
+  {CONFIG, "proxy.config.log.custom_logs_enabled", "", INK_INT, "0", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
-  {CONFIG, "proxy.config.log2.xml_logs_config", "", INK_INT, "1", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-  {CONFIG, "proxy.config.log2.config_file", "", INK_STRING, "logs.config", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-  {CONFIG, "proxy.config.log2.xml_config_file", "", INK_STRING, "logs_xml.config", RU_REREAD, RR_NULL, RC_NULL, NULL,
+  {CONFIG, "proxy.config.log.xml_config_file", "", INK_STRING, "logs_xml.config", RU_REREAD, RR_NULL, RC_NULL, NULL,
    RA_NULL}
   ,
-  {CONFIG, "proxy.config.log2.hosts_config_file", "", INK_STRING, "log_hosts.config", RU_REREAD, RR_NULL, RC_NULL, NULL,
+  {CONFIG, "proxy.config.log.hosts_config_file", "", INK_STRING, "log_hosts.config", RU_REREAD, RR_NULL, RC_NULL, NULL,
    RA_NULL}
   ,
-  {CONFIG, "proxy.config.log2.squid_log_enabled", "", INK_INT, "1", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
+  {CONFIG, "proxy.config.log.squid_log_enabled", "", INK_INT, "1", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
-  {CONFIG, "proxy.config.log2.squid_log_is_ascii", "", INK_INT, "1", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
+  {CONFIG, "proxy.config.log.squid_log_is_ascii", "", INK_INT, "1", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
-  {CONFIG, "proxy.config.log2.squid_log_name", "", INK_STRING, "squid", RU_REREAD, RR_NULL, RC_STR, "^[^[:space:]]*$",
+  {CONFIG, "proxy.config.log.squid_log_name", "", INK_STRING, "squid", RU_REREAD, RR_NULL, RC_STR, "^[^[:space:]]*$",
    RA_NULL}
   ,
-  {CONFIG, "proxy.config.log2.squid_log_header", "", INK_STRING, NULL, RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
+  {CONFIG, "proxy.config.log.squid_log_header", "", INK_STRING, NULL, RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
-  {CONFIG, "proxy.config.log2.common_log_enabled", "", INK_INT, "0", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
+  {CONFIG, "proxy.config.log.common_log_enabled", "", INK_INT, "0", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
-  {CONFIG, "proxy.config.log2.common_log_is_ascii", "", INK_INT, "1", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
+  {CONFIG, "proxy.config.log.common_log_is_ascii", "", INK_INT, "1", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
-  {CONFIG, "proxy.config.log2.common_log_name", "", INK_STRING, "common", RU_REREAD, RR_NULL, RC_STR, "^[^[:space:]]*$",
+  {CONFIG, "proxy.config.log.common_log_name", "", INK_STRING, "common", RU_REREAD, RR_NULL, RC_STR, "^[^[:space:]]*$",
    RA_NULL}
   ,
-  {CONFIG, "proxy.config.log2.common_log_header", "", INK_STRING, NULL, RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
+  {CONFIG, "proxy.config.log.common_log_header", "", INK_STRING, NULL, RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
-  {CONFIG, "proxy.config.log2.extended_log_enabled", "", INK_INT, "0", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
+  {CONFIG, "proxy.config.log.extended_log_enabled", "", INK_INT, "0", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
-  {CONFIG, "proxy.config.log2.extended_log_is_ascii", "", INK_INT, "1", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
+  {CONFIG, "proxy.config.log.extended_log_is_ascii", "", INK_INT, "1", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
-  {CONFIG, "proxy.config.log2.extended_log_name", "", INK_STRING, "extended", RU_REREAD, RR_NULL, RC_STR,
+  {CONFIG, "proxy.config.log.extended_log_name", "", INK_STRING, "extended", RU_REREAD, RR_NULL, RC_STR,
    "^[^[:space:]]*$", RA_NULL}
   ,
-  {CONFIG, "proxy.config.log2.extended_log_header", "", INK_STRING, NULL, RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
+  {CONFIG, "proxy.config.log.extended_log_header", "", INK_STRING, NULL, RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
-  {CONFIG, "proxy.config.log2.extended2_log_enabled", "", INK_INT, "0", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
+  {CONFIG, "proxy.config.log.extended2_log_enabled", "", INK_INT, "0", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
-  {CONFIG, "proxy.config.log2.extended2_log_is_ascii", "", INK_INT, "1", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
+  {CONFIG, "proxy.config.log.extended2_log_is_ascii", "", INK_INT, "1", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
-  {CONFIG, "proxy.config.log2.extended2_log_name", "", INK_STRING, "extended2", RU_REREAD, RR_NULL, RC_STR,
+  {CONFIG, "proxy.config.log.extended2_log_name", "", INK_STRING, "extended2", RU_REREAD, RR_NULL, RC_STR,
    "^[^[:space:]]*$", RA_NULL}
   ,
-  {CONFIG, "proxy.config.log2.extended2_log_header", "", INK_STRING, NULL, RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
+  {CONFIG, "proxy.config.log.extended2_log_header", "", INK_STRING, NULL, RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
-  {CONFIG, "proxy.config.log2.separate_icp_logs", "", INK_INT, "0", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
+  {CONFIG, "proxy.config.log.separate_icp_logs", "", INK_INT, "0", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
-  {CONFIG, "proxy.config.log2.separate_host_logs", "", INK_INT, "0", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
+  {CONFIG, "proxy.config.log.separate_host_logs", "", INK_INT, "0", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
-  {CONFIG, "proxy.config.log2.collation_host", "", INK_STRING, NULL, RU_REREAD, RR_NULL, RC_STR, "^[^[:space:]]*$",
+  {CONFIG, "proxy.config.log.collation_host", "", INK_STRING, NULL, RU_REREAD, RR_NULL, RC_STR, "^[^[:space:]]*$",
    RA_NULL}
   ,
-  {CONFIG, "proxy.config.log2.collation_port", "", INK_INT, "8085", RU_REREAD, RR_REQUIRED, RC_INT,
+  {CONFIG, "proxy.config.log.collation_port", "", INK_INT, "8085", RU_REREAD, RR_REQUIRED, RC_INT,
    "[0-65535]", RA_NULL}
   ,
-  {CONFIG, "proxy.config.log2.collation_secret", "", INK_STRING, "foobar", RU_REREAD, RR_NULL, RC_STR, ".*", RA_NULL}
+  {CONFIG, "proxy.config.log.collation_secret", "", INK_STRING, "foobar", RU_REREAD, RR_NULL, RC_STR, ".*", RA_NULL}
   ,
-  {CONFIG, "proxy.config.log2.collation_host_tagged", "", INK_INT, "0", RU_REREAD, RR_NULL, RC_INT, "[0-1]", RA_NULL}
+  {CONFIG, "proxy.config.log.collation_host_tagged", "", INK_INT, "0", RU_REREAD, RR_NULL, RC_INT, "[0-1]", RA_NULL}
   ,
-  {CONFIG, "proxy.config.log2.collation_retry_sec", "", INK_INT, "5", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
+  {CONFIG, "proxy.config.log.collation_retry_sec", "", INK_INT, "5", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
-  {CONFIG, "proxy.config.log2.collation_max_send_buffers", "", INK_INT, "16", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
+  {CONFIG, "proxy.config.log.collation_max_send_buffers", "", INK_INT, "16", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
-  {CONFIG, "proxy.config.log2.rolling_enabled", "", INK_INT, "1", RU_REREAD, RR_NULL, RC_INT, "[0-4]", RA_NULL}
+  {CONFIG, "proxy.config.log.rolling_enabled", "", INK_INT, "1", RU_REREAD, RR_NULL, RC_INT, "[0-4]", RA_NULL}
   ,
-  {CONFIG, "proxy.config.log2.rolling_interval_sec", "", INK_INT, "86400", RU_REREAD, RR_NULL, RC_STR, "^[0-9]+$",
+  {CONFIG, "proxy.config.log.rolling_interval_sec", "", INK_INT, "86400", RU_REREAD, RR_NULL, RC_STR, "^[0-9]+$",
    RA_NULL}
   ,
-  {CONFIG, "proxy.config.log2.rolling_offset_hr", "", INK_INT, "0", RU_REREAD, RR_NULL, RC_STR, "^[0-9]+$", RA_NULL}
+  {CONFIG, "proxy.config.log.rolling_offset_hr", "", INK_INT, "0", RU_REREAD, RR_NULL, RC_STR, "^[0-9]+$", RA_NULL}
   ,
-  {CONFIG, "proxy.config.log2.rolling_size_mb", "", INK_INT, "10", RU_REREAD, RR_NULL, RC_STR, "^0*[1-9][0-9]*$",
+  {CONFIG, "proxy.config.log.rolling_size_mb", "", INK_INT, "10", RU_REREAD, RR_NULL, RC_STR, "^0*[1-9][0-9]*$",
    RA_NULL}
   ,
-  {CONFIG, "proxy.config.log2.auto_delete_rolled_files", "", INK_INT, "1", RU_REREAD, RR_NULL, RC_INT, "[0-1]", RA_NULL}
+  {CONFIG, "proxy.config.log.auto_delete_rolled_files", "", INK_INT, "1", RU_REREAD, RR_NULL, RC_INT, "[0-1]", RA_NULL}
   ,
-  {CONFIG, "proxy.config.log2.sampling_frequency", "", INK_INT, "1", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
+  {CONFIG, "proxy.config.log.sampling_frequency", "", INK_INT, "1", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
-  {CONFIG, "proxy.config.log2.space_used_frequency", "", INK_INT, "2", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
+  {CONFIG, "proxy.config.log.space_used_frequency", "", INK_INT, "2", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
-  {CONFIG, "proxy.config.log2.file_stat_frequency", "", INK_INT, "32", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
+  {CONFIG, "proxy.config.log.file_stat_frequency", "", INK_INT, "32", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
-  {CONFIG, "proxy.config.log2.ascii_buffer_size", "", INK_INT, "36864", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
+  {CONFIG, "proxy.config.log.ascii_buffer_size", "", INK_INT, "36864", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
-  {CONFIG, "proxy.config.log2.max_line_size", "", INK_INT, "9216", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
+  {CONFIG, "proxy.config.log.max_line_size", "", INK_INT, "9216", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
-  {CONFIG, "proxy.config.log2.overspill_report_count", "", INK_INT, "500", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
+  {CONFIG, "proxy.config.log.overspill_report_count", "", INK_INT, "500", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
+  ,
+  {CONFIG, "proxy.config.log.xuid_logging_enabled", "", INK_INT, "1", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
   /*                                                                             */
   /* Begin  HCL Modifications.                                                   */
   /*                                                                             */
-  {CONFIG, "proxy.config.log2.search_rolling_interval_sec", "", INK_INT, "86400", RU_REREAD, RR_NULL, RC_NULL, NULL,
+  {CONFIG, "proxy.config.log.search_rolling_interval_sec", "", INK_INT, "86400", RU_REREAD, RR_NULL, RC_NULL, NULL,
    RA_NULL}
   ,
-  {CONFIG, "proxy.config.log2.search_log_enabled", "", INK_INT, "0", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
+  {CONFIG, "proxy.config.log.search_log_enabled", "", INK_INT, "0", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
-  {CONFIG, "proxy.config.log2.search_server_ip_addr", "", INK_STRING, NULL, RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
+  {CONFIG, "proxy.config.log.search_server_ip_addr", "", INK_STRING, NULL, RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
-  {CONFIG, "proxy.config.log2.search_server_port", "", INK_INT, "8080", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
+  {CONFIG, "proxy.config.log.search_server_port", "", INK_INT, "8080", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
-  {CONFIG, "proxy.config.log2.search_top_sites", "", INK_INT, "100", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
+  {CONFIG, "proxy.config.log.search_top_sites", "", INK_INT, "100", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
-  {CONFIG, "proxy.config.log2.search_url_filter", "", INK_STRING, NULL, RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
+  {CONFIG, "proxy.config.log.search_url_filter", "", INK_STRING, NULL, RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
-  {CONFIG, "proxy.config.log2.search_log_filters", "", INK_STRING, NULL, RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
+  {CONFIG, "proxy.config.log.search_log_filters", "", INK_STRING, NULL, RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
   /*                                                                             */
   /* End    HCL Modifications.                                                   */
@@ -2316,37 +2304,29 @@ RecordElement RecordsConfig[] = {
   //#
   //##############################################################################
   //# bytes moved
-  {PROCESS, "proxy.process.log2.bytes_buffered", "", INK_INT, "0", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
+  {PROCESS, "proxy.process.log.bytes_buffered", "", INK_INT, "0", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
-  {PROCESS, "proxy.process.log2.bytes_written_to_disk", "", INK_INT, "0", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
+  {PROCESS, "proxy.process.log.bytes_written_to_disk", "", INK_INT, "0", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
-  {PROCESS, "proxy.process.log2.bytes_sent_to_network", "", INK_INT, "0", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
+  {PROCESS, "proxy.process.log.bytes_sent_to_network", "", INK_INT, "0", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
-  {PROCESS, "proxy.process.log2.bytes_received_from_network", "", INK_INT, "0", RU_REREAD, RR_NULL, RC_NULL, NULL,
+  {PROCESS, "proxy.process.log.bytes_received_from_network", "", INK_INT, "0", RU_REREAD, RR_NULL, RC_NULL, NULL,
    RA_NULL}
   ,
   //# I/O
-  {PROCESS, "proxy.process.log2.log_files_open", "", INK_COUNTER, "0", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
+  {PROCESS, "proxy.process.log.log_files_open", "", INK_COUNTER, "0", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
-  {PROCESS, "proxy.process.log2.log_files_space_used", "", INK_INT, "0", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
+  {PROCESS, "proxy.process.log.log_files_space_used", "", INK_INT, "0", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
   //# events, should be COUNTERs
-  {PROCESS, "proxy.process.log2.event_log_error", "", INK_COUNTER, "0", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
+  {PROCESS, "proxy.process.log.event_log_error", "", INK_COUNTER, "0", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
-  {PROCESS, "proxy.process.log2.event_log_access", "", INK_COUNTER, "0", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
+  {PROCESS, "proxy.process.log.event_log_access", "", INK_COUNTER, "0", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
-  {PROCESS, "proxy.process.log2.event_log_access_fail", "", INK_COUNTER, "0", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
+  {PROCESS, "proxy.process.log.event_log_access_fail", "", INK_COUNTER, "0", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
-  {PROCESS, "proxy.process.log2.event_log_access_skip", "", INK_COUNTER, "0", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
+  {PROCESS, "proxy.process.log.event_log_access_skip", "", INK_COUNTER, "0", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
-  //#
-  //# Some resource settings, currently only obeyed by MIXT
-  //#
-  //##############################################################################
-  {CONFIG, "proxy.config.resource.target_maxmem_mb", "", INK_INT, "0", RU_RESTART_TS, RR_NULL, RC_INT, "[0-65536]",
-   RA_NULL}
-  ,
-
 
   //##############################################################################
   //#
@@ -3171,7 +3151,7 @@ RecordElement RecordsConfig[] = {
   ,
   {LOCAL, "proxy.local.outgoing_ip_to_bind", "", INK_STRING, NULL, RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
-  {LOCAL, "proxy.local.log2.collation_mode", "", INK_INT, "0", RU_REREAD, RR_NULL, RC_INT, "[0-4]", RA_NULL}
+  {LOCAL, "proxy.local.log.collation_mode", "", INK_INT, "0", RU_REREAD, RR_NULL, RC_INT, "[0-4]", RA_NULL}
   ,
 
   //#Prefetch configuration

@@ -32,10 +32,10 @@
 #include "ClientAPI.h"
 #include <stdio.h>
 
-/* INKPluginInit() must be provided */
+/* TSPluginInit() must be provided */
 
 void
-INKPluginInit(int clientid)
+TSPluginInit(int clientid)
 {
   fprintf(stderr, "hello world!!!\n");
 }

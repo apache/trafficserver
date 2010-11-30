@@ -29,42 +29,523 @@
  *   Traffic Server, DO NOT USE anything in this file.
  */
 
-#ifndef __INK_API_EXPERIMENTAL_H__
-#define __INK_API_EXPERIMENTAL_H__
+#ifndef __TS_API_EXPERIMENTAL_H__
+#define __TS_API_EXPERIMENTAL_H__
 
 #ifdef __cplusplus
 extern "C"
 {
 #endif                          /* __cplusplus */
 
-
   /* Cache APIs that are not yet fully supported and/or frozen nor complete. */
-  inkapi INKReturnCode INKCacheBufferInfoGet(INKCacheTxn txnp, INKU64 * length, INKU64 * offset);
+  tsapi TSReturnCode TSCacheBufferInfoGet(TSCacheTxn txnp, uint64 * length, uint64 * offset);
 
-  inkapi INKCacheHttpInfo INKCacheHttpInfoCreate();
-  inkapi void INKCacheHttpInfoReqGet(INKCacheHttpInfo infop, INKMBuffer * bufp, INKMLoc * obj);
-  inkapi void INKCacheHttpInfoRespGet(INKCacheHttpInfo infop, INKMBuffer * bufp, INKMLoc * obj);
-  inkapi void INKCacheHttpInfoReqSet(INKCacheHttpInfo infop, INKMBuffer bufp, INKMLoc obj);
-  inkapi void INKCacheHttpInfoRespSet(INKCacheHttpInfo infop, INKMBuffer bufp, INKMLoc obj);
-  inkapi void INKCacheHttpInfoKeySet(INKCacheHttpInfo infop, INKCacheKey key);
-  inkapi void INKCacheHttpInfoSizeSet(INKCacheHttpInfo infop, INKU64 size);
-  inkapi int INKCacheHttpInfoVector(INKCacheHttpInfo infop, void *data, int length);
+  tsapi TSCacheHttpInfo TSCacheHttpInfoCreate();
+  tsapi void TSCacheHttpInfoReqGet(TSCacheHttpInfo infop, TSMBuffer * bufp, TSMLoc * obj);
+  tsapi void TSCacheHttpInfoRespGet(TSCacheHttpInfo infop, TSMBuffer * bufp, TSMLoc * obj);
+  tsapi void TSCacheHttpInfoReqSet(TSCacheHttpInfo infop, TSMBuffer bufp, TSMLoc obj);
+  tsapi void TSCacheHttpInfoRespSet(TSCacheHttpInfo infop, TSMBuffer bufp, TSMLoc obj);
+  tsapi void TSCacheHttpInfoKeySet(TSCacheHttpInfo infop, TSCacheKey key);
+  tsapi void TSCacheHttpInfoSizeSet(TSCacheHttpInfo infop, int64 size);
+  tsapi int TSCacheHttpInfoVector(TSCacheHttpInfo infop, void *data, int length);
 
   /* --------------------------------------------------------------------------
      This is an experimental stat system, which is not compatible with standard
      TS stats. It is disabled by default, enable it with --with_v2_stats at
      configure time. */
-  inkapi INKReturnCode     INKStatCreateV2(const char *name, uint32_t *stat_num);
-  inkapi INKReturnCode     INKStatIncrementV2(uint32_t stat_num, INK64 inc_by);
-  inkapi INKReturnCode     INKStatIncrementByNameV2(const char *stat_name, INK64 inc_by);
-  inkapi INKReturnCode     INKStatDecrementV2(uint32_t stat_num, INK64 dec_by);
-  inkapi INKReturnCode     INKStatDecrementByNameV2(const char *stat_name, INK64 dec_by);
-  inkapi INKReturnCode     INKStatGetCurrentV2(uint32_t stat_num, INK64 *stat_val);
-  inkapi INKReturnCode     INKStatGetCurrentByNameV2(const char *stat_name, INK64 *stat_val);
-  inkapi INKReturnCode     INKStatGetV2(uint32_t stat_num, INK64 *stat_val);
-  inkapi INKReturnCode     INKStatGetByNameV2(const char *stat_name, INK64 *stat_val);
+  tsapi TSReturnCode     TSStatCreateV2(const char *name, uint32_t *stat_num);
+  tsapi TSReturnCode     TSStatIncrementV2(uint32_t stat_num, int64 inc_by);
+  tsapi TSReturnCode     TSStatIncrementByNameV2(const char *stat_name, int64 inc_by);
+  tsapi TSReturnCode     TSStatDecrementV2(uint32_t stat_num, int64 dec_by);
+  tsapi TSReturnCode     TSStatDecrementByNameV2(const char *stat_name, int64 dec_by);
+  tsapi TSReturnCode     TSStatGetCurrentV2(uint32_t stat_num, int64 *stat_val);
+  tsapi TSReturnCode     TSStatGetCurrentByNameV2(const char *stat_name, int64 *stat_val);
+  tsapi TSReturnCode     TSStatGetV2(uint32_t stat_num, int64 *stat_val);
+  tsapi TSReturnCode     TSStatGetByNameV2(const char *stat_name, int64 *stat_val);
+
+
+  /* Do not edit these apis, used internally */
+  tsapi int TSMimeHdrFieldEqual(TSMBuffer bufp, TSMLoc hdr_obj, TSMLoc field1, TSMLoc field2);
+  tsapi int TSHttpTxnHookRegisteredFor(TSHttpTxn txnp, TSHttpHookID id, TSEventFunc funcp);
+
+  /* IP Lookup */
+  typedef void *TSIPLookup;
+  typedef void *TSIPLookupState;
+  typedef void (*TSIPLookupPrintFunc) (void *data);
+
+  tsapi void TSIPLookupPrint(TSIPLookup iplu, TSIPLookupPrintFunc pf);
+  tsapi void TSIPLookupNewEntry(TSIPLookup iplu, uint32 addr1, uint32 addr2, void *data);
+  tsapi int TSIPLookupMatch(TSIPLookup iplu, uint32 addr, void **data);
+  tsapi int TSIPLookupMatchFirst(TSIPLookup iplu, uint32 addr, TSIPLookupState iplus, void **data);
+  tsapi int TSIPLookupMatchNext(TSIPLookup iplu, TSIPLookupState iplus, void **data);
+
+  /* for Media-IXT mms over http */
+  typedef enum
+    {
+      TS_HTTP_CNTL_GET_LOGGING_MODE,
+      TS_HTTP_CNTL_SET_LOGGING_MODE,
+      TS_HTTP_CNTL_GET_INTERCEPT_RETRY_MODE,
+      TS_HTTP_CNTL_SET_INTERCEPT_RETRY_MODE
+    } TSHttpCntlType;
+
+#define TS_HTTP_CNTL_OFF  (void*) 0
+#define TS_HTTP_CNTL_ON   (void*) 1
+  /* usage:
+     void *onoff = 0;
+     TSHttpTxnCntl(.., TS_HTTP_CNTL_GET_LOGGING_MODE, &onoff);
+     if (onoff == TS_HTTP_CNTL_ON) ....
+  */
+  tsapi int TSHttpTxnCntl(TSHttpTxn txnp, TSHttpCntlType cntl, void *data);
+
+
+  /* Protocols APIs */
+  tsapi void TSVConnCacheHttpInfoSet(TSVConn connp, TSCacheHttpInfo infop);
+
+  /* ICP freshness functions */
+  typedef int (*TSPluginFreshnessCalcFunc) (TSCont contp);
+  tsapi void TSICPFreshnessFuncSet(TSPluginFreshnessCalcFunc funcp);
+
+  tsapi int TSICPCachedReqGet(TSCont contp, TSMBuffer * bufp, TSMLoc * obj);
+  tsapi int TSICPCachedRespGet(TSCont contp, TSMBuffer * bufp, TSMLoc * obj);
+
+
+  /* The rest is from the old "froze" private API include, we should consider
+     moving some of these over to ts/ts.h as well. TODO */
+
+
+  /****************************************************************************
+   *  Create a new field and assign it a name
+   ****************************************************************************/
+  tsapi TSMLoc TSMimeHdrFieldCreateNamed(TSMBuffer bufp, TSMLoc mh_mloc, const char *name, int name_len);
+
+  /****************************************************************************
+   *  Test if cache ready to accept request for a specific type of data
+   ****************************************************************************/
+  tsapi TSReturnCode TSCacheDataTypeReady(TSCacheDataType type, int *is_ready);
+
+  /****************************************************************************
+   *  When reenabling a txn in error, keep the connection open in case
+   *  of keepalive.
+   ****************************************************************************/
+  tsapi int TSHttpTxnClientKeepaliveSet(TSHttpTxn txnp);
+
+  /****************************************************************************
+   *  Allow to set the body of a POST request.
+   ****************************************************************************/
+  tsapi void TSHttpTxnServerRequestBodySet(TSHttpTxn txnp, char *buf, int64 buflength);
+
+  /* ===== High Resolution Time ===== */
+#define TS_HRTIME_FOREVER  HRTIME_FOREVER
+#define TS_HRTIME_DECADE   HRTIME_DECADE
+#define TS_HRTIME_YEAR     HRTIME_YEAR
+#define TS_HRTIME_WEEK     HRTIME_WEEK
+#define TS_HRTIME_DAY      HRTIME_DAY
+#define TS_HRTIME_HOUR     HRTIME_HOUR
+#define TS_HRTIME_MINUTE   HRTIME_MINUTE
+#define TS_HRTIME_SECOND   HRTIME_SECOND
+#define TS_HRTIME_MSECOND  HRTIME_MSECOND
+#define TS_HRTIME_USECOND  HRTIME_USECOND
+#define TS_HRTIME_NSECOND  HRTIME_NSECOND
+
+#define TS_HRTIME_APPROX_SECONDS(_x) HRTIME_APPROX_SECONDS(_x)
+#define TS_HRTIME_APPROX_FACTOR      HRTIME_APPROX_FACTOR
+
+  /*
+////////////////////////////////////////////////////////////////////
+//
+//	Map from units to ts_hrtime values
+//
+////////////////////////////////////////////////////////////////////
+*/
+#define TS_HRTIME_YEARS(_x)    HRTIME_YEARS(_x)
+#define TS_HRTIME_WEEKS(_x)    HRTIME_WEEKS(_x)
+#define TS_HRTIME_DAYS(_x)     HRTIME_DAYS(_x)
+#define TS_HRTIME_HOURS(_x)    HRTIME_HOURS(_x)
+#define TS_HRTIME_MINUTES(_x)  HRTIME_MINUTES(_x)
+#define TS_HRTIME_SECONDS(_x)  HRTIME_SECONDS(_x)
+#define TS_HRTIME_MSECONDS(_x) HRTIME_MSECONDS(_x)
+#define TS_HRTIME_USECONDS(_x) HRTIME_USECONDS(_x)
+#define TS_HRTIME_NSECONDS(_x) HRTIME_NSECONDS(_x)
+
+  /* ===== Time ===== */
+  tsapi TSHRTime TSBasedTimeGet();
+
+  /****************************************************************************
+   *  Get time when Http TXN started
+   ****************************************************************************/
+  tsapi int TSHttpTxnStartTimeGet(TSHttpTxn txnp, TSHRTime * start_time);
+
+  /****************************************************************************
+   *  Get time when Http TXN ended
+   ****************************************************************************/
+  tsapi int TSHttpTxnEndTimeGet(TSHttpTxn txnp, TSHRTime * end_time);
+
+  tsapi int TSHttpTxnCachedRespTimeGet(TSHttpTxn txnp, time_t *resp_time);
+
+  /* ===== Cache ===== */
+  tsapi TSReturnCode TSCacheKeyDataTypeSet(TSCacheKey key, TSCacheDataType type);
+
+
+  /* ===== Utility ===== */
+  /****************************************************************************
+   *  Create a random number
+   *  Return random integer between <X> and <Y>
+   ****************************************************************************/
+  tsapi unsigned int TSrandom(void);
+
+  /****************************************************************************
+   *  Create a random double
+   *  Return random double between <X> and <Y>
+   ****************************************************************************/
+  tsapi double TSdrandom(void);
+
+  /****************************************************************************
+   *  Return Hi-resolution current time. (int64)
+   ****************************************************************************/
+  tsapi TSHRTime TShrtime(void);
+
+  /* ===== global http stats ===== */
+  /****************************************************************************
+   *  Get number of current client http connections
+   ****************************************************************************/
+  tsapi int TSHttpCurrentClientConnectionsGet(int *num_connections);
+
+  /****************************************************************************
+   *  Get number of current active client http connections
+   ****************************************************************************/
+  tsapi int TSHttpCurrentActiveClientConnectionsGet(int *num_connections);
+
+  /****************************************************************************
+   *  Get number of current idle client http connections
+   ****************************************************************************/
+  tsapi int TSHttpCurrentIdleClientConnectionsGet(int *num_connections);
+
+  /****************************************************************************
+   *  Get number of current http connections to cache
+   ****************************************************************************/
+  tsapi int TSHttpCurrentCacheConnectionsGet(int *num_connections);
+
+  /****************************************************************************
+   *  Get number of current http server connections
+   ****************************************************************************/
+  tsapi int TSHttpCurrentServerConnectionsGet(int *num_connections);
+
+  /****************************************************************************
+   *  Get size of response header
+   ****************************************************************************/
+  tsapi int TSHttpTxnServerRespHdrBytesGet(TSHttpTxn txnp, int *bytes);
+
+  /****************************************************************************
+   *  Get size of response body
+   ****************************************************************************/
+  tsapi int TSHttpTxnServerRespBodyBytesGet(TSHttpTxn txnp, int64 *bytes);
+
+  /* =====  CacheHttpInfo =====  */
+
+  tsapi TSCacheHttpInfo TSCacheHttpInfoCopy(TSCacheHttpInfo infop);
+  tsapi void TSCacheHttpInfoReqGet(TSCacheHttpInfo infop, TSMBuffer * bufp, TSMLoc * offset);
+  tsapi void TSCacheHttpInfoRespGet(TSCacheHttpInfo infop, TSMBuffer * bufp, TSMLoc * offset);
+  tsapi void TSCacheHttpInfoDestroy(TSCacheHttpInfo infop);
+
+
+  /* =====  ICP =====  */
+  tsapi void TSHttpIcpDynamicSet(int value);
+
+  /* =====  Http Transactions =====  */
+  tsapi int TSHttpTxnCachedRespModifiableGet(TSHttpTxn txnp, TSMBuffer * bufp, TSMLoc * offset);
+  tsapi int TSHttpTxnCacheLookupStatusSet(TSHttpTxn txnp, int cachelookup);
+  tsapi int TSHttpTxnCacheLookupUrlGet(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc obj);
+  tsapi int TSHttpTxnCachedUrlSet(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc obj);
+
+  /****************************************************************************
+   *  TSHttpTxnCacheLookupCountGet
+   *  Return: TS_SUCESS/TS_ERROR
+   ****************************************************************************/
+  TSReturnCode TSHttpTxnCacheLookupCountGet(TSHttpTxn txnp, int *lookup_count);
+  tsapi int TSHttpTxnNewCacheLookupDo(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc url_loc);
+  tsapi int TSHttpTxnSecondUrlTryLock(TSHttpTxn txnp);
+  tsapi int TSHttpTxnRedirectRequest(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc url_loc);
+  tsapi int TSHttpTxnCacheLookupSkip(TSHttpTxn txnp);
+  tsapi int TSHttpTxnServerRespNoStore(TSHttpTxn txnp);
+  tsapi int TSHttpTxnServerRespIgnore(TSHttpTxn txnp);
+  tsapi int TSHttpTxnShutDown(TSHttpTxn txnp, TSEvent event);
+
+  /****************************************************************************
+   *  ??
+   *  Return ??
+   ****************************************************************************/
+  tsapi int TSHttpTxnAborted(TSHttpTxn txnp);
+
+  /****************************************************************************
+   *  ??
+   *  Return ??
+   ****************************************************************************/
+  tsapi int TSHttpTxnClientReqIsServerStyle(TSHttpTxn txnp);
+
+  /****************************************************************************
+   *  ??
+   *  Return ??
+   ****************************************************************************/
+  tsapi int TSHttpTxnOverwriteExpireTime(TSHttpTxn txnp, time_t expire_time);
+
+  /****************************************************************************
+   *  ??
+   *  Return ??
+   ****************************************************************************/
+  tsapi int TSHttpTxnUpdateCachedObject(TSHttpTxn txnp);
+
+  /****************************************************************************
+   *  ??
+   *  Return ??
+   ****************************************************************************/
+  tsapi int TSHttpTxnLookingUpTypeGet(TSHttpTxn txnp);
+
+  /****************************************************************************
+   *  ??
+   *  Return ??
+   ****************************************************************************/
+  tsapi int TSHttpTxnClientRespHdrBytesGet(TSHttpTxn txnp, int *bytes);
+
+  /****************************************************************************
+   *  ??
+   *  Return ??
+   ****************************************************************************/
+  tsapi int TSHttpTxnClientRespBodyBytesGet(TSHttpTxn txnp, int64 *bytes);
+
+
+  /* =====  Matcher Utils =====  */
+#define               TS_MATCHER_LINE_INVALID 0
+  typedef void *TSMatcherLine;
+
+  /****************************************************************************
+   *  ??
+   *  Return
+   ****************************************************************************/
+  tsapi char *TSMatcherReadIntoBuffer(char *file_name, int *file_len);
+
+  /****************************************************************************
+   *  ??
+   *  Return
+   ****************************************************************************/
+  tsapi char *TSMatcherTokLine(char *buffer, char **last);
+
+  /****************************************************************************
+   *  ??
+   *  Return
+   ****************************************************************************/
+  tsapi char *TSMatcherExtractIPRange(char *match_str, uint32 * addr1, uint32 * addr2);
+
+  /****************************************************************************
+   *  ??
+   *  Return
+   ****************************************************************************/
+  tsapi TSMatcherLine TSMatcherLineCreate();
+
+  /****************************************************************************
+   *  ??
+   *  Return
+   ****************************************************************************/
+  tsapi void TSMatcherLineDestroy(TSMatcherLine ml);
+
+  /****************************************************************************
+   *  ??
+   *  Return
+   ****************************************************************************/
+  tsapi const char *TSMatcherParseSrcIPConfigLine(char *line, TSMatcherLine ml);
+
+  /****************************************************************************
+   *  ??
+   *  Return
+   ****************************************************************************/
+  tsapi char *TSMatcherLineName(TSMatcherLine ml, int element);
+
+  /****************************************************************************
+   *  ??
+   *  Return
+   ****************************************************************************/
+  tsapi char *TSMatcherLineValue(TSMatcherLine ml, int element);
+
+  /****************************************************************************
+   *  Set a records.config integer variable
+   ****************************************************************************/
+  tsapi int TSMgmtConfigIntSet(const char *var_name, TSMgmtInt value);
+
+  /* ----------------------------------------------------------------------
+   * Interfaces used by Wireless group
+   * ---------------------------------------------------------------------- */
+
+#define TS_NET_EVENT_DATAGRAM_READ_COMPLETE  TS_EVENT_INTERNAL_206
+#define TS_NET_EVENT_DATAGRAM_READ_ERROR     TS_EVENT_INTERNAL_207
+#define TS_NET_EVENT_DATAGRAM_WRITE_COMPLETE TS_EVENT_INTERNAL_208
+#define TS_NET_EVENT_DATAGRAM_WRITE_ERROR    TS_EVENT_INTERNAL_209
+#define TS_NET_EVENT_DATAGRAM_READ_READY     TS_EVENT_INTERNAL_210
+#define TS_NET_EVENT_DATAGRAM_OPEN	      TS_EVENT_INTERNAL_211
+#define TS_NET_EVENT_DATAGRAM_ERROR          TS_EVENT_INTERNAL_212
+
+  typedef enum
+    {
+      TS_SIGNAL_WDA_BILLING_CONNECTION_DIED = 100,
+      TS_SIGNAL_WDA_BILLING_CORRUPTED_DATA = 101,
+      TS_SIGNAL_WDA_XF_ENGINE_DOWN = 102,
+      TS_SIGNAL_WDA_RADIUS_CORRUPTED_PACKETS = 103
+    } TSAlarmType;
+
+  /* ===== Alarm ===== */
+  /****************************************************************************
+   *  ??
+   *  Return ??
+   *  contact: OXYGEN
+   ****************************************************************************/
+  tsapi int TSSignalWarning(TSAlarmType code, char *msg);
+
+  /*****************************************************************************
+   * 			Cluster RPC API support 			     *
+   *****************************************************************************/
+  /*
+   *  Usage notes:
+   *    1) User is responsible for marshalling and unmarshaling data.
+   *    2) RPC message incompatiblities due to different plugin versions
+   *	 must be dealt with by the user.
+   *    3) Upon receipt of a machine offline, no guarantees are made about
+   *	 messages sent prior to the machine offline.
+   *    4) A node transitioning to the online state in an active cluster,
+   *	 is assumed to have no prior knowledge of messages processed in
+   *	 the past.
+   *    5) Key point to reiterate, actions taken in the functions specified in
+   *	 TSAddClusterStatusFunction() and TSAddClusterRPCFunction() must
+   *       be non-blocking (i.e. usage of TSMutexLock() and file i/o is
+   *       not allowed).
+   *    6) TSSendClusterRPC() can only process TSClusterRPCMsg_t generated
+   *	 by TSAllocClusterRPCMsg().  Failure to adhere to this rule will
+   *	 result in heap corruption.
+   *    7) Messages sent via TSSendClusterRPC() must be at least 4 bytes in
+   * 	 length.
+   *    8) The user is not provided with any alignment guarantees on the
+   *	 'm_data' field in the TSClusterRPCMsg_t returned via
+   *	 TSAllocClusterRPCMsg().  Assume byte alignment.
+   *    9) TSSendClusterRPC() interface owns the memory and is responsible
+   *       for freeing the memory.
+   *   10) RPC functions defined via TSAddClusterRPCFunction() own the
+   *       memory when invoked and are responsible for freeing it via
+   *	 TSFreeRPCMsg().
+   */
+#define MAX_CLUSTER_NODES 256
+
+  typedef struct TSClusterRPCHandle
+  {
+    int opaque[2];
+  } TSClusterRPCHandle_t;
+
+  typedef int TSClusterStatusHandle_t;
+  typedef int TSNodeHandle_t;
+
+  typedef struct TSClusterRPCMsg
+  {
+    TSClusterRPCHandle_t m_handle;
+    char m_data[4];
+  } TSClusterRPCMsg_t;
+
+  typedef enum
+    {
+      NODE_ONLINE = 1,
+      NODE_OFFLINE
+    } TSNodeStatus_t;
+
+  typedef enum
+    {
+      RPC_API_WIRELESS_F01 = 51,
+      RPC_API_WIRELESS_F02,
+      RPC_API_WIRELESS_F03,
+      RPC_API_WIRELESS_F04,
+      RPC_API_WIRELESS_F05,
+      RPC_API_WIRELESS_F06,
+      RPC_API_WIRELESS_F07,
+      RPC_API_WIRELESS_F08,
+      RPC_API_WIRELESS_F09,
+      RPC_API_WIRELESS_F10
+    } TSClusterRPCKey_t;
+
+  typedef void (*TSClusterRPCFunction) (TSNodeHandle_t * node, TSClusterRPCMsg_t * msg, int msg_data_len);
+  typedef void (*TSClusterStatusFunction) (TSNodeHandle_t * node, TSNodeStatus_t s);
+
+  /****************************************************************************
+   *  Subscribe to node up/down status notification.     			    *
+   *	Return == 0 Success						    *
+   *	Return != 0 Failure						    *
+   * contact: OXY, DY
+   ****************************************************************************/
+  tsapi int TSAddClusterStatusFunction(TSClusterStatusFunction Status_Function, TSMutex m, TSClusterStatusHandle_t * h);
+  /****************************************************************************
+   *  Cancel subscription to node up/down status notification. 		    *
+   *	Return == 0 Success						    *
+   *	Return != 0 Failure						    *
+   * contact: OXY, DY
+   ****************************************************************************/
+  tsapi int TSDeleteClusterStatusFunction(TSClusterStatusHandle_t * h);
+
+  /****************************************************************************
+   *  Get the struct in_addr associated with the TSNodeHandle_t.	    	    *
+   *	Return == 0 Success						    *
+   *	Return != 0 Failure						    *
+   * contact: OXY, DY
+   ****************************************************************************/
+  tsapi int TSNodeHandleToIPAddr(TSNodeHandle_t * h, struct in_addr *in);
+
+  /****************************************************************************
+   *  Get the TSNodeHandle_t for the local node.	    	    		    *
+   *  contact: OXY, DY
+   ****************************************************************************/
+  tsapi void TSGetMyNodeHandle(TSNodeHandle_t * h);
+
+  /****************************************************************************
+   *  Enable node up/down notification for subscription added via 	    *
+   *  TSAddClusterStatusFunction().					    *
+   *  contact: OXY, DY
+   ****************************************************************************/
+  tsapi void TSEnableClusterStatusCallout(TSClusterStatusHandle_t * h);
+
+  /****************************************************************************
+   *  Associate the given key with the given RPC function.		    *
+   *	Return == 0 Success						    *
+   *	Return != 0 Failure						    *
+   *  contact: OXY, DY
+   ****************************************************************************/
+  tsapi int TSAddClusterRPCFunction(TSClusterRPCKey_t k, TSClusterRPCFunction RPC_Function, TSClusterRPCHandle_t * h);
+
+  /****************************************************************************
+   *  Delete the key to function association created via 			    *
+   *  TSAddClusterRPCFunction().						    *
+   *	Return == 0 Success						    *
+   *	Return != 0 Failure						    *
+   *  contact: OXY, DY
+   ****************************************************************************/
+  tsapi int TSDeleteClusterRPCFunction(TSClusterRPCHandle_t * h);
+
+  /****************************************************************************
+   *  Free TSClusterRPCMsg_t received via RPC function		    	    *
+   *  contact: OXY, DY
+   ****************************************************************************/
+  tsapi void TSFreeRPCMsg(TSClusterRPCMsg_t * msg, int msg_data_len);
+
+  /****************************************************************************
+   *  Allocate TSClusterRPCMsg_t for use in TSSendClusterRPC() 		    *
+   *	Return != 0 Success						    *
+   *	Return == 0 Allocation failed					    *
+   *  contact: OXY, DY
+   ****************************************************************************/
+  tsapi TSClusterRPCMsg_t *TSAllocClusterRPCMsg(TSClusterRPCHandle_t * h, int data_size);
+
+  /****************************************************************************
+   *  Send the RPC message to the specified node.			    	    *
+   *    Cluster frees the given memory on send.				    *
+   *    RPC function frees memory on receive.				    *
+   *	Return == 0 Success						    *
+   *	Return != 0 Failure						    *
+   *  contact: OXY, DY
+   ****************************************************************************/
+  tsapi int TSSendClusterRPC(TSNodeHandle_t * nh, TSClusterRPCMsg_t * msg);
 
 #ifdef __cplusplus
 }
 #endif                          /* __cplusplus */
-#endif                          /* __INK_API_EXPERIMENTAL_H__ */
+#endif                          /* __TS_API_EXPERIMENTAL_H__ */

@@ -1,4 +1,4 @@
-A sample internal plugin to use the HdrPrint functions and the INKIOBuffers 
+A sample internal plugin to use the HdrPrint functions and the TSIOBuffers 
 that the functions untilize.  
 
 The plugin simply prints all the incoming request headers

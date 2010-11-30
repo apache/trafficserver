@@ -82,7 +82,7 @@ inkcoreapi volatile int64 fastalloc_mem_total = 0;
 #define MEMPROTECT_SIZE  0x200
 
 #ifdef MEMPROTECT
-static long page_size = 8192;   /* sysconf (_SC_PAGESIZE); */
+static const int page_size = 8192;   /* sysconf (_SC_PAGESIZE); */
 #endif
 
 static ink_freelist_list *freelists = NULL;

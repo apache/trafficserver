@@ -23,16 +23,15 @@
 
 /*
  * This plugin is used to test the following APIs:
- * -- INKHttpTxnUntransformedRespCache
- * -- INKHttpTxnTransformedRespCache
- * -- INKHttpTxnTransformRespGet
- * -- INKIOBufferBlockNext
- * -- INKIOBufferBlockReadAvail
- * -- INKIOBufferBlockWriteAvail
- * -- INKVConnCreate
- * -- INKVConnReadVIOGet
- * -- INKVIOMutexGet
- * -- INKVIOVConnGet
+ * -- TSHttpTxnUntransformedRespCache
+ * -- TSHttpTxnTransformedRespCache
+ * -- TSHttpTxnTransformRespGet
+ * -- TSIOBufferBlockNext
+ * -- TSIOBufferBlockReadAvail
+ * -- TSIOBufferBlockWriteAvail
+ * -- TSVConnReadVIOGet
+ * -- TSVIOMutexGet
+ * -- TSVIOVConnGet
  *
  * It is based on the null-transform plugin. The above function calls are inserted into the appropriate places.
  */
@@ -43,10 +42,10 @@
 #define DBG_TAG "test-transform-dbg"
 
 #define PLUGIN_NAME "test-transform"
-#define VALID_POINTER(X) ((X != NULL) && (X != INK_ERROR_PTR))
+#define VALID_POINTER(X) ((X != NULL) && (X != TS_ERROR_PTR))
 #define LOG_SET_FUNCTION_NAME(NAME) const char * FUNCTION_NAME = NAME
 #define LOG_ERROR(API_NAME) { \
-    INKDebug(PLUGIN_NAME, "%s: %s %s %s File %s, line number %d", PLUGIN_NAME, API_NAME, "APIFAIL", \
+    TSDebug(PLUGIN_NAME, "%s: %s %s %s File %s, line number %d", PLUGIN_NAME, API_NAME, "APIFAIL", \
 	     FUNCTION_NAME, __FILE__, __LINE__); \
 }
 #define LOG_ERROR_AND_RETURN(API_NAME) { \
@@ -59,20 +58,20 @@
 }
 #define LOG_ERROR_AND_REENABLE(API_NAME) { \
   LOG_ERROR(API_NAME); \
-  INKHttpTxnReenable(txnp, INK_EVENT_HTTP_CONTINUE); \
+  TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE); \
 }
 #define LOG_ERROR_NEG(API_NAME) { \
-    INKDebug(PLUGIN_NAME, "%s: %s %s %s File %s, line number %d",PLUGIN_NAME, API_NAME, "NEGAPIFAIL", \
+    TSDebug(PLUGIN_NAME, "%s: %s %s %s File %s, line number %d",PLUGIN_NAME, API_NAME, "NEGAPIFAIL", \
              FUNCTION_NAME, __FILE__, __LINE__); \
 }
 
 
 typedef struct
 {
-  INKVIO output_vio;
-  INKIOBuffer output_buffer;
-  INKIOBufferReader output_reader;
-  INKHttpTxn txn;
+  TSVIO output_vio;
+  TSIOBuffer output_buffer;
+  TSIOBufferReader output_reader;
+  TSHttpTxn txn;
   int init_done;
 } MyData;
 
@@ -81,7 +80,7 @@ my_data_alloc()
 {
   MyData *data;
 
-  data = (MyData *) INKmalloc(sizeof(MyData));
+  data = (MyData *) TSmalloc(sizeof(MyData));
   data->output_vio = NULL;
   data->output_buffer = NULL;
   data->output_reader = NULL;
@@ -96,47 +95,47 @@ my_data_destroy(MyData * data)
 {
   if (data) {
     if (data->output_buffer) {
-      INKIOBufferDestroy(data->output_buffer);
+      TSIOBufferDestroy(data->output_buffer);
     }
-    INKfree(data);
+    TSfree(data);
   }
 }
 
 /*
  * test the following VIO functions:
- * -- INKVIOMutexGet
- * -- INKVIOVConnGet
+ * -- TSVIOMutexGet
+ * -- TSVIOVConnGet
  */
 static void
-test_vio(INKCont contp)
+test_vio(TSCont contp)
 {
   LOG_SET_FUNCTION_NAME("test_vio");
-  INKVConn vio_vconn;
-  INKVIO output_vio;
-  INKVIO input_vio;
-  INKMutex m1, m2;
+  TSVConn vio_vconn;
+  TSVIO output_vio;
+  TSVIO input_vio;
+  TSMutex m1, m2;
 
   /* Get the read (output) VIO for the vconnection */
-  if ((output_vio = INKVConnReadVIOGet(contp)) == INK_ERROR_PTR)
-    LOG_ERROR("INKVConnReadVIOGet");
-  if ((input_vio = INKVConnWriteVIOGet(contp)) == INK_ERROR_PTR)
-    LOG_ERROR("INKVConnWriteVIOGet")
+  if ((output_vio = TSVConnReadVIOGet(contp)) == TS_ERROR_PTR)
+    LOG_ERROR("TSVConnReadVIOGet");
+  if ((input_vio = TSVConnWriteVIOGet(contp)) == TS_ERROR_PTR)
+    LOG_ERROR("TSVConnWriteVIOGet")
 
       /* get the mutex of the VIO */
-      if ((m1 = INKVIOMutexGet(input_vio)) == INK_ERROR_PTR)
-      LOG_ERROR("INKVIOMutexGet");
+      if ((m1 = TSVIOMutexGet(input_vio)) == TS_ERROR_PTR)
+      LOG_ERROR("TSVIOMutexGet");
 
   /* get the vio mutex */
-  if ((m2 = INKContMutexGet(contp)) == INK_ERROR_PTR)
-    LOG_ERROR("INKContMutexGet");
+  if ((m2 = TSContMutexGet(contp)) == TS_ERROR_PTR)
+    LOG_ERROR("TSContMutexGet");
 
   /* the VIO mutex should equal to the VConn mutex */
   if (m1 != m2)
-    LOG_ERROR("INKVIOMutexGet");
+    LOG_ERROR("TSVIOMutexGet");
 
   /* get the VConn of the VIO */
-  if ((vio_vconn = INKVIOVConnGet(input_vio)) == INK_ERROR_PTR)
-    LOG_ERROR("INKVIOVConnGet");
+  if ((vio_vconn = TSVIOVConnGet(input_vio)) == TS_ERROR_PTR)
+    LOG_ERROR("TSVIOVConnGet");
 
   /* the vconn should equal to the continuation */
   if (vio_vconn != contp)
@@ -144,14 +143,14 @@ test_vio(INKCont contp)
 
   /* negative test */
 #ifdef DEBUG
-  if (INKVConnReadVIOGet(NULL) != INK_ERROR_PTR)
-    LOG_ERROR_NEG("INKVConnReadVIOGet");
-  if (INKVConnWriteVIOGet(NULL) != INK_ERROR_PTR)
-    LOG_ERROR_NEG("INKVConnWriteVIOGet")
-      if (INKVIOMutexGet(NULL) != INK_ERROR_PTR)
-      LOG_ERROR_NEG("INKVIOMutexGet");
-  if (INKContMutexGet(NULL) != INK_ERROR_PTR)
-    LOG_ERROR_NEG("INKContMutexGet");
+  if (TSVConnReadVIOGet(NULL) != TS_ERROR_PTR)
+    LOG_ERROR_NEG("TSVConnReadVIOGet");
+  if (TSVConnWriteVIOGet(NULL) != TS_ERROR_PTR)
+    LOG_ERROR_NEG("TSVConnWriteVIOGet")
+      if (TSVIOMutexGet(NULL) != TS_ERROR_PTR)
+      LOG_ERROR_NEG("TSVIOMutexGet");
+  if (TSContMutexGet(NULL) != TS_ERROR_PTR)
+    LOG_ERROR_NEG("TSContMutexGet");
 #endif
 
 }
@@ -162,23 +161,23 @@ test_iobuffer()
 {
   LOG_SET_FUNCTION_NAME("test_iobuffer");
 
-  INKIOBuffer bufp = NULL;
-  INKIOBufferBlock blockp = NULL;
-  INKIOBufferReader readerp = NULL;
+  TSIOBuffer bufp = NULL;
+  TSIOBufferBlock blockp = NULL;
+  TSIOBufferReader readerp = NULL;
   int read_avail = 0, write_avail = 0, writestart = 0, avail = 0, towrite = 0;
   char *start;
   const char *STRING_CONSTANT = "constant string to be copied into an iobuffer";
 
   /* create an IOBuffer */
-  if ((bufp = INKIOBufferCreate()) == INK_ERROR_PTR)
-    LOG_ERROR_AND_CLEANUP("INKIOBufferCreate");
+  if ((bufp = TSIOBufferCreate()) == TS_ERROR_PTR)
+    LOG_ERROR_AND_CLEANUP("TSIOBufferCreate");
 
 
   /* Write STRING_CONSTANT at the beginning of the iobuffer */
-  if ((blockp = INKIOBufferStart(bufp)) == INK_ERROR_PTR)
-    LOG_ERROR_AND_CLEANUP("INKIOBufferStart");
-  if ((start = INKIOBufferBlockWriteStart(blockp, &avail)) == INK_ERROR_PTR)
-    LOG_ERROR_AND_CLEANUP("INKIOBufferBlockWriteStart");
+  if ((blockp = TSIOBufferStart(bufp)) == TS_ERROR_PTR)
+    LOG_ERROR_AND_CLEANUP("TSIOBufferStart");
+  if ((start = TSIOBufferBlockWriteStart(blockp, &avail)) == TS_ERROR_PTR)
+    LOG_ERROR_AND_CLEANUP("TSIOBufferBlockWriteStart");
 
   towrite = strlen(STRING_CONSTANT);
   while (start && towrite > 0) {
@@ -186,139 +185,139 @@ test_iobuffer()
       memcpy(start, &STRING_CONSTANT[writestart], avail);
       writestart += avail;
       towrite -= avail;
-      if ((INKIOBufferProduce(bufp, avail)) == INK_ERROR)
-        LOG_ERROR_AND_CLEANUP("INKIOBufferProduce");
-      if ((blockp = INKIOBufferStart(bufp)) == INK_ERROR_PTR)
-        LOG_ERROR_AND_CLEANUP("INKIOBufferStart");
-      if ((start = INKIOBufferBlockWriteStart(blockp, &avail)) == INK_ERROR_PTR)
-        LOG_ERROR_AND_CLEANUP("INKIOBufferBlockWriteStart");
+      if ((TSIOBufferProduce(bufp, avail)) == TS_ERROR)
+        LOG_ERROR_AND_CLEANUP("TSIOBufferProduce");
+      if ((blockp = TSIOBufferStart(bufp)) == TS_ERROR_PTR)
+        LOG_ERROR_AND_CLEANUP("TSIOBufferStart");
+      if ((start = TSIOBufferBlockWriteStart(blockp, &avail)) == TS_ERROR_PTR)
+        LOG_ERROR_AND_CLEANUP("TSIOBufferBlockWriteStart");
     } else {
       memcpy(start, &STRING_CONSTANT[writestart], towrite);
       writestart += towrite;
-      if (INKIOBufferProduce(bufp, towrite) == INK_ERROR)
-        LOG_ERROR_AND_CLEANUP("INKIOBufferProduce");
+      if (TSIOBufferProduce(bufp, towrite) == TS_ERROR)
+        LOG_ERROR_AND_CLEANUP("TSIOBufferProduce");
       towrite = 0;
     }
   }
 
 
   /* get the next block in the IOBuffer */
-  if (INKIOBufferBlockNext(blockp) == INK_ERROR_PTR) {
-    LOG_ERROR_AND_CLEANUP("INKIOBufferBlockNext");
+  if (TSIOBufferBlockNext(blockp) == TS_ERROR_PTR) {
+    LOG_ERROR_AND_CLEANUP("TSIOBufferBlockNext");
   }
 
   /* print the read avail and write avail of the iobuffer */
-  if ((readerp = INKIOBufferReaderAlloc(bufp)) == INK_ERROR_PTR)
-    LOG_ERROR_AND_CLEANUP("INKIOBufferReaderAlloc");
-  if ((read_avail = INKIOBufferBlockReadAvail(blockp, readerp)) == INK_ERROR)
-    LOG_ERROR_AND_CLEANUP("INKIOBufferBlockReadAvail");
-  if ((write_avail = INKIOBufferBlockWriteAvail(blockp)) == INK_ERROR)
-    LOG_ERROR_AND_CLEANUP("INKIOBufferBlockWriteAvail");
+  if ((readerp = TSIOBufferReaderAlloc(bufp)) == TS_ERROR_PTR)
+    LOG_ERROR_AND_CLEANUP("TSIOBufferReaderAlloc");
+  if ((read_avail = TSIOBufferBlockReadAvail(blockp, readerp)) == TS_ERROR)
+    LOG_ERROR_AND_CLEANUP("TSIOBufferBlockReadAvail");
+  if ((write_avail = TSIOBufferBlockWriteAvail(blockp)) == TS_ERROR)
+    LOG_ERROR_AND_CLEANUP("TSIOBufferBlockWriteAvail");
 
-  INKDebug(DBG_TAG, "read_avail = %d", read_avail);
-  INKDebug(DBG_TAG, "write_avail = %d", write_avail);
+  TSDebug(DBG_TAG, "read_avail = %d", read_avail);
+  TSDebug(DBG_TAG, "write_avail = %d", write_avail);
 
   /* negative test */
 #ifdef DEBUG
-  if (INKIOBufferStart(NULL) != INK_ERROR_PTR)
-    LOG_ERROR_NEG("INKIOBufferStart");
-  if (INKIOBufferBlockWriteStart(NULL, &avail) != INK_ERROR_PTR)
-    LOG_ERROR_NEG("INKIOBufferBlockWriteStart");
-  if (INKIOBufferProduce(NULL, 0) != INK_ERROR)
-    LOG_ERROR_NEG("INKIOBufferProduce");
-  if (INKIOBufferBlockNext(NULL) != INK_ERROR_PTR)
-    LOG_ERROR_NEG("INKIOBufferBlockNext");
+  if (TSIOBufferStart(NULL) != TS_ERROR_PTR)
+    LOG_ERROR_NEG("TSIOBufferStart");
+  if (TSIOBufferBlockWriteStart(NULL, &avail) != TS_ERROR_PTR)
+    LOG_ERROR_NEG("TSIOBufferBlockWriteStart");
+  if (TSIOBufferProduce(NULL, 0) != TS_ERROR)
+    LOG_ERROR_NEG("TSIOBufferProduce");
+  if (TSIOBufferBlockNext(NULL) != TS_ERROR_PTR)
+    LOG_ERROR_NEG("TSIOBufferBlockNext");
 
-  if (INKIOBufferBlockReadAvail(NULL, readerp) != INK_ERROR)
-    LOG_ERROR_NEG("INKIOBufferBlockReadAvail");
-  if (INKIOBufferBlockReadAvail(blockp, NULL) != INK_ERROR)
-    LOG_ERROR_NEG("INKIOBufferBlockReadAvail");
+  if (TSIOBufferBlockReadAvail(NULL, readerp) != TS_ERROR)
+    LOG_ERROR_NEG("TSIOBufferBlockReadAvail");
+  if (TSIOBufferBlockReadAvail(blockp, NULL) != TS_ERROR)
+    LOG_ERROR_NEG("TSIOBufferBlockReadAvail");
 
-  if (INKIOBufferBlockWriteAvail(NULL) != INK_ERROR)
-    LOG_ERROR_NEG("INKIOBufferBlockWriteAvail");
+  if (TSIOBufferBlockWriteAvail(NULL) != TS_ERROR)
+    LOG_ERROR_NEG("TSIOBufferBlockWriteAvail");
 
 #endif
 
   /* cleanup */
 Lcleanup:
-  INKIOBufferDestroy(bufp);
+  TSIOBufferDestroy(bufp);
 }
 
 
 static int
-transform_init(INKCont contp, MyData * data)
+transform_init(TSCont contp, MyData * data)
 {
   LOG_SET_FUNCTION_NAME("transform_init");
 
-  INKVConn output_conn;
-  INKVIO input_vio;
+  TSVConn output_conn;
+  TSVIO input_vio;
 
-  INKMBuffer bufp;
-  INKMLoc hdr_loc = NULL;
-  INKMLoc ce_loc = NULL;        /* for the content encoding mime field */
+  TSMBuffer bufp;
+  TSMLoc hdr_loc = NULL;
+  TSMLoc ce_loc = NULL;        /* for the content encoding mime field */
 
 
-  if ((output_conn = INKTransformOutputVConnGet(contp)) == INK_ERROR_PTR)
-    LOG_ERROR_AND_RETURN("INKTransformOutputVConnGet");
-  if ((input_vio = INKVConnWriteVIOGet(contp)) == INK_ERROR_PTR)
-    LOG_ERROR_AND_RETURN("INKVConnWriteVIOGet");
+  if ((output_conn = TSTransformOutputVConnGet(contp)) == TS_ERROR_PTR)
+    LOG_ERROR_AND_RETURN("TSTransformOutputVConnGet");
+  if ((input_vio = TSVConnWriteVIOGet(contp)) == TS_ERROR_PTR)
+    LOG_ERROR_AND_RETURN("TSVConnWriteVIOGet");
 
-  if ((data->output_buffer = INKIOBufferCreate()) == INK_ERROR_PTR)
-    LOG_ERROR_AND_RETURN("INKIOBufferCreate");
-  if ((data->output_reader = INKIOBufferReaderAlloc(data->output_buffer)) == INK_ERROR_PTR)
-    LOG_ERROR_AND_RETURN("INKIOBufferReaderAlloc");
-  if ((data->output_vio = INKVConnWrite(output_conn, contp, data->output_reader,
-                                        INKVIONBytesGet(input_vio))) == INK_ERROR_PTR)
-    LOG_ERROR_AND_RETURN("INKVConnWrite");
+  if ((data->output_buffer = TSIOBufferCreate()) == TS_ERROR_PTR)
+    LOG_ERROR_AND_RETURN("TSIOBufferCreate");
+  if ((data->output_reader = TSIOBufferReaderAlloc(data->output_buffer)) == TS_ERROR_PTR)
+    LOG_ERROR_AND_RETURN("TSIOBufferReaderAlloc");
+  if ((data->output_vio = TSVConnWrite(output_conn, contp, data->output_reader,
+                                        TSVIONBytesGet(input_vio))) == TS_ERROR_PTR)
+    LOG_ERROR_AND_RETURN("TSVConnWrite");
 
   /*
    * Mark the output data as having null content encoding
    */
-  if (INKHttpTxnTransformRespGet(data->txn, &bufp, &hdr_loc) != 1) {
-    LOG_ERROR_AND_CLEANUP("INKHttpTxnTransformRespGet");
+  if (TSHttpTxnTransformRespGet(data->txn, &bufp, &hdr_loc) != 1) {
+    LOG_ERROR_AND_CLEANUP("TSHttpTxnTransformRespGet");
   }
 
-  INKDebug(DBG_TAG, "Adding Content-Encoding mime field");
-  if ((ce_loc = INKMimeHdrFieldCreate(bufp, hdr_loc)) == INK_ERROR_PTR)
-    LOG_ERROR_AND_CLEANUP("INKMimeHdrFieldCreate");
-  if (INKMimeHdrFieldNameSet(bufp, hdr_loc, ce_loc, "Content-Encoding", -1) == INK_ERROR)
-    LOG_ERROR_AND_CLEANUP("INKMimeHdrFieldNameSet");
-  if (INKMimeHdrFieldValueStringInsert(bufp, hdr_loc, ce_loc, -1, "null", -1) == INK_ERROR)
-    LOG_ERROR_AND_CLEANUP("INKMimeHdrFieldValueStringInsert");
-  if (INKMimeHdrFieldAppend(bufp, hdr_loc, ce_loc) == INK_ERROR)
-    LOG_ERROR_AND_CLEANUP("INKMimeHdrFieldAppend");
+  TSDebug(DBG_TAG, "Adding Content-Encoding mime field");
+  if ((ce_loc = TSMimeHdrFieldCreate(bufp, hdr_loc)) == TS_ERROR_PTR)
+    LOG_ERROR_AND_CLEANUP("TSMimeHdrFieldCreate");
+  if (TSMimeHdrFieldNameSet(bufp, hdr_loc, ce_loc, "Content-Encoding", -1) == TS_ERROR)
+    LOG_ERROR_AND_CLEANUP("TSMimeHdrFieldNameSet");
+  if (TSMimeHdrFieldValueStringInsert(bufp, hdr_loc, ce_loc, -1, "null", -1) == TS_ERROR)
+    LOG_ERROR_AND_CLEANUP("TSMimeHdrFieldValueStringInsert");
+  if (TSMimeHdrFieldAppend(bufp, hdr_loc, ce_loc) == TS_ERROR)
+    LOG_ERROR_AND_CLEANUP("TSMimeHdrFieldAppend");
 
   /* negative test */
 #ifdef DEBUG
-  if (INKTransformOutputVConnGet(NULL) != INK_ERROR_PTR)
-    LOG_ERROR_NEG("INKTransformOutputVConnGet");
+  if (TSTransformOutputVConnGet(NULL) != TS_ERROR_PTR)
+    LOG_ERROR_NEG("TSTransformOutputVConnGet");
 #endif
 
 Lcleanup:
   if (VALID_POINTER(ce_loc))
-    INKHandleMLocRelease(bufp, hdr_loc, ce_loc);
+    TSHandleMLocRelease(bufp, hdr_loc, ce_loc);
   if (VALID_POINTER(hdr_loc))
-    INKHandleMLocRelease(bufp, INK_NULL_MLOC, hdr_loc);
+    TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
 
   data->init_done = 1;
   return 1;
 }
 
 static int
-handle_transform(INKCont contp)
+handle_transform(TSCont contp)
 {
   LOG_SET_FUNCTION_NAME("handle_transform");
 
-  INKVConn output_conn;
-  INKVIO input_vio;
-  INKIOBuffer input_buffer;
+  TSVConn output_conn;
+  TSVIO input_vio;
+  TSIOBuffer input_buffer;
   MyData *data;
   int towrite, avail, ntodo;
 
   /* Get the output (downstream) vconnection where we'll write data to. */
 
-  if ((output_conn = INKTransformOutputVConnGet(contp)) == INK_ERROR_PTR)
-    LOG_ERROR_AND_RETURN("INKTransformOutputVConnGet");
+  if ((output_conn = TSTransformOutputVConnGet(contp)) == TS_ERROR_PTR)
+    LOG_ERROR_AND_RETURN("TSTransformOutputVConnGet");
 
   /* Get the write VIO for the write operation that was performed on
    * ourself. This VIO contains the buffer that we are to read from
@@ -326,8 +325,8 @@ handle_transform(INKCont contp)
    * empty. This is the input VIO (the write VIO for the upstream
    * vconnection).
    */
-  if ((input_vio = INKVConnWriteVIOGet(contp)) == INK_ERROR_PTR)
-    LOG_ERROR_AND_RETURN("INKVConnWriteVIOGet");
+  if ((input_vio = TSVConnWriteVIOGet(contp)) == TS_ERROR_PTR)
+    LOG_ERROR_AND_RETURN("TSVConnWriteVIOGet");
 
   /* test VIO */
   test_vio(contp);
@@ -337,8 +336,8 @@ handle_transform(INKCont contp)
    * private data structure pointer is NULL, then we'll create it
    * and initialize its internals.
    */
-  if ((data = INKContDataGet(contp)) == INK_ERROR_PTR)
-    LOG_ERROR_AND_RETURN("INKContDataGet");
+  if ((data = TSContDataGet(contp)) == TS_ERROR_PTR)
+    LOG_ERROR_AND_RETURN("TSContDataGet");
 
   if (data->init_done == 0) {
     transform_init(contp, data);
@@ -352,36 +351,36 @@ handle_transform(INKCont contp)
    * transformation we might have to finish writing the transformed
    * data to our output connection.
    */
-  if ((input_buffer = INKVIOBufferGet(input_vio)) == INK_ERROR_PTR)
-    LOG_ERROR_AND_RETURN("INKVIOBufferGet");
+  if ((input_buffer = TSVIOBufferGet(input_vio)) == TS_ERROR_PTR)
+    LOG_ERROR_AND_RETURN("TSVIOBufferGet");
 
   /* negative test */
 #ifdef DEBUG
-  if (INKVIOBufferGet(NULL) != INK_ERROR_PTR)
-    LOG_ERROR_NEG("INKVIOBufferGet");
-  if (INKVIOReaderGet(NULL) != INK_ERROR_PTR)
-    LOG_ERROR_NEG("INKVIOReaderGet");
-  if (INKVIONTodoGet(NULL) != INK_ERROR)
-    LOG_ERROR_NEG("INKVIONTodoGet");
-  if (INKVIONDoneGet(NULL) != INK_ERROR)
-    LOG_ERROR_NEG("INKVIONDoneGet");
+  if (TSVIOBufferGet(NULL) != TS_ERROR_PTR)
+    LOG_ERROR_NEG("TSVIOBufferGet");
+  if (TSVIOReaderGet(NULL) != TS_ERROR_PTR)
+    LOG_ERROR_NEG("TSVIOReaderGet");
+  if (TSVIONTodoGet(NULL) != TS_ERROR)
+    LOG_ERROR_NEG("TSVIONTodoGet");
+  if (TSVIONDoneGet(NULL) != TS_ERROR)
+    LOG_ERROR_NEG("TSVIONDoneGet");
 
-  if (INKVIONBytesSet(NULL, 1) != INK_ERROR)
-    LOG_ERROR_NEG("INKVIONBytesSet");
-  if (INKVIONBytesSet(data->output_vio, -1) != INK_ERROR)
-    LOG_ERROR_NEG("INKVIONBytesSet");
+  if (TSVIONBytesSet(NULL, 1) != TS_ERROR)
+    LOG_ERROR_NEG("TSVIONBytesSet");
+  if (TSVIONBytesSet(data->output_vio, -1) != TS_ERROR)
+    LOG_ERROR_NEG("TSVIONBytesSet");
 
-  if (INKVIONDoneSet(NULL, 1) != INK_ERROR)
-    LOG_ERROR_NEG("INKVIONDoneSet");
-  if (INKVIONDoneSet(input_vio, -1) != INK_ERROR)
-    LOG_ERROR_NEG("INKVIONDoneSet");
+  if (TSVIONDoneSet(NULL, 1) != TS_ERROR)
+    LOG_ERROR_NEG("TSVIONDoneSet");
+  if (TSVIONDoneSet(input_vio, -1) != TS_ERROR)
+    LOG_ERROR_NEG("TSVIONDoneSet");
 #endif
 
   if (!input_buffer) {
-    if (INKVIONBytesSet(data->output_vio, INKVIONDoneGet(input_vio)) == INK_ERROR)
-      LOG_ERROR_AND_RETURN("INKVIONBytesSet");
-    if (INKVIOReenable(data->output_vio) == INK_ERROR)
-      LOG_ERROR_AND_RETURN("INKVIOReenable");
+    if (TSVIONBytesSet(data->output_vio, TSVIONDoneGet(input_vio)) == TS_ERROR)
+      LOG_ERROR_AND_RETURN("TSVIONBytesSet");
+    if (TSVIOReenable(data->output_vio) == TS_ERROR)
+      LOG_ERROR_AND_RETURN("TSVIOReenable");
     return;
   }
 
@@ -389,14 +388,14 @@ handle_transform(INKCont contp)
    * transform plugin this is also the amount of data we have left
    * to write to the output connection.
    */
-  if ((towrite = INKVIONTodoGet(input_vio)) == INK_ERROR)
-    LOG_ERROR_AND_RETURN("INKVIONTodoGet");
+  if ((towrite = TSVIONTodoGet(input_vio)) == TS_ERROR)
+    LOG_ERROR_AND_RETURN("TSVIONTodoGet");
   if (towrite > 0) {
     /* The amount of data left to read needs to be truncated by
      * the amount of data actually in the read buffer.
      */
-    if ((avail = INKIOBufferReaderAvail(INKVIOReaderGet(input_vio))) == INK_ERROR)
-      LOG_ERROR_AND_RETURN("INKIOBufferReaderAvail");
+    if ((avail = TSIOBufferReaderAvail(TSVIOReaderGet(input_vio))) == TS_ERROR)
+      LOG_ERROR_AND_RETURN("TSIOBufferReaderAvail");
 
     if (towrite > avail) {
       towrite = avail;
@@ -404,40 +403,40 @@ handle_transform(INKCont contp)
 
     if (towrite > 0) {
       /* Copy the data from the read buffer to the output buffer. */
-      if (INKIOBufferCopy(INKVIOBufferGet(data->output_vio), INKVIOReaderGet(input_vio), towrite, 0) == INK_ERROR)
-        LOG_ERROR_AND_RETURN("INKIOBufferCopy");
+      if (TSIOBufferCopy(TSVIOBufferGet(data->output_vio), TSVIOReaderGet(input_vio), towrite, 0) == TS_ERROR)
+        LOG_ERROR_AND_RETURN("TSIOBufferCopy");
 
-      /* negative test for INKIOBufferCopy */
+      /* negative test for TSIOBufferCopy */
 #ifdef DEBUG
-      if (INKIOBufferCopy(NULL, INKVIOReaderGet(input_vio), towrite, 0) != INK_ERROR)
-        LOG_ERROR_NEG("INKIOBufferCopy");
-      if (INKIOBufferCopy(INKVIOBufferGet(data->output_vio), NULL, towrite, 0) != INK_ERROR)
-        LOG_ERROR_NEG("INKIOBufferCopy");
-      if (INKIOBufferCopy(INKVIOBufferGet(data->output_vio), INKVIOReaderGet(input_vio), -1, 0) != INK_ERROR)
-        LOG_ERROR_NEG("INKIOBufferCopy");
-      if (INKIOBufferCopy(INKVIOBufferGet(data->output_vio), INKVIOReaderGet(input_vio), towrite, -1) != INK_ERROR)
-        LOG_ERROR_NEG("INKIOBufferCopy");
+      if (TSIOBufferCopy(NULL, TSVIOReaderGet(input_vio), towrite, 0) != TS_ERROR)
+        LOG_ERROR_NEG("TSIOBufferCopy");
+      if (TSIOBufferCopy(TSVIOBufferGet(data->output_vio), NULL, towrite, 0) != TS_ERROR)
+        LOG_ERROR_NEG("TSIOBufferCopy");
+      if (TSIOBufferCopy(TSVIOBufferGet(data->output_vio), TSVIOReaderGet(input_vio), -1, 0) != TS_ERROR)
+        LOG_ERROR_NEG("TSIOBufferCopy");
+      if (TSIOBufferCopy(TSVIOBufferGet(data->output_vio), TSVIOReaderGet(input_vio), towrite, -1) != TS_ERROR)
+        LOG_ERROR_NEG("TSIOBufferCopy");
 #endif
 
       /* Tell the read buffer that we have read the data and are no
        * longer interested in it.
        */
-      if (INKIOBufferReaderConsume(INKVIOReaderGet(input_vio), towrite) == INK_ERROR)
-        LOG_ERROR_AND_RETURN("INKIOBufferReaderConsume");
+      if (TSIOBufferReaderConsume(TSVIOReaderGet(input_vio), towrite) == TS_ERROR)
+        LOG_ERROR_AND_RETURN("TSIOBufferReaderConsume");
 
       /* Modify the input VIO to reflect how much data we've
        * completed.
        */
-      if (INKVIONDoneSet(input_vio, INKVIONDoneGet(input_vio) + towrite) == INK_ERROR)
-        LOG_ERROR_AND_RETURN("INKVIONDoneSet");
+      if (TSVIONDoneSet(input_vio, TSVIONDoneGet(input_vio) + towrite) == TS_ERROR)
+        LOG_ERROR_AND_RETURN("TSVIONDoneSet");
     }
   }
 
   /* Now we check the input VIO to see if there is data left to
    * read.
    */
-  if ((ntodo = INKVIONTodoGet(input_vio)) == INK_ERROR)
-    LOG_ERROR_AND_RETURN("INKVIONTodoGet");
+  if ((ntodo = TSVIONTodoGet(input_vio)) == TS_ERROR)
+    LOG_ERROR_AND_RETURN("TSVIONTodoGet");
 
   if (ntodo > 0) {
     if (towrite > 0) {
@@ -446,13 +445,13 @@ handle_transform(INKCont contp)
        * the output connection and allow it to consume data from the
        * output buffer.
        */
-      if (INKVIOReenable(data->output_vio) == INK_ERROR)
-        LOG_ERROR_AND_RETURN("INKVIOReenable");
+      if (TSVIOReenable(data->output_vio) == TS_ERROR)
+        LOG_ERROR_AND_RETURN("TSVIOReenable");
 
       /* Call back the input VIO continuation to let it know that we
        * are ready for more data.
        */
-      INKContCall(INKVIOContGet(input_vio), INK_EVENT_VCONN_WRITE_READY, input_vio);
+      TSContCall(TSVIOContGet(input_vio), TS_EVENT_VCONN_WRITE_READY, input_vio);
     }
   } else {
     /* If there is no data left to read, then we modify the output
@@ -461,65 +460,65 @@ handle_transform(INKCont contp)
      * is done reading. We then reenable the output connection so
      * that it can consume the data we just gave it.
      */
-    if (INKVIONBytesSet(data->output_vio, INKVIONDoneGet(input_vio)) == INK_ERROR)
-      LOG_ERROR_AND_RETURN("INKVIONBytesSet");
-    if (INKVIOReenable(data->output_vio) == INK_ERROR)
-      LOG_ERROR_AND_RETURN("INKVIOReenable");
+    if (TSVIONBytesSet(data->output_vio, TSVIONDoneGet(input_vio)) == TS_ERROR)
+      LOG_ERROR_AND_RETURN("TSVIONBytesSet");
+    if (TSVIOReenable(data->output_vio) == TS_ERROR)
+      LOG_ERROR_AND_RETURN("TSVIOReenable");
 
     /* Call back the input VIO continuation to let it know that we
      * have completed the write operation.
      */
-    INKContCall(INKVIOContGet(input_vio), INK_EVENT_VCONN_WRITE_COMPLETE, input_vio);
+    TSContCall(TSVIOContGet(input_vio), TS_EVENT_VCONN_WRITE_COMPLETE, input_vio);
   }
 
 }
 
 static int
-null_transform(INKCont contp, INKEvent event, void *edata)
+null_transform(TSCont contp, TSEvent event, void *edata)
 {
   LOG_SET_FUNCTION_NAME("null_transform");
 
   /* Check to see if the transformation has been closed by a call to
-   * INKVConnClose.
+   * TSVConnClose.
    */
-  if (INKVConnClosedGet(contp)) {
-    my_data_destroy(INKContDataGet(contp));
-    if (INKContDestroy(contp) == INK_ERROR)
-      LOG_ERROR("INKContDestroy");
+  if (TSVConnClosedGet(contp)) {
+    my_data_destroy(TSContDataGet(contp));
+    if (TSContDestroy(contp) == TS_ERROR)
+      LOG_ERROR("TSContDestroy");
     return 0;
   } else {
     switch (event) {
-    case INK_EVENT_ERROR:
+    case TS_EVENT_ERROR:
       {
-        INKVIO input_vio;
+        TSVIO input_vio;
 
         /* Get the write VIO for the write operation that was
          * performed on ourself. This VIO contains the continuation of
          * our parent transformation. This is the input VIO.
          */
-        if ((input_vio = INKVConnWriteVIOGet(contp)) == INK_ERROR_PTR)
-          LOG_ERROR_AND_RETURN("INKVConnWriteVIOGet");
+        if ((input_vio = TSVConnWriteVIOGet(contp)) == TS_ERROR_PTR)
+          LOG_ERROR_AND_RETURN("TSVConnWriteVIOGet");
 
         /* Call back the write VIO continuation to let it know that we
          * have completed the write operation.
          */
-        INKContCall(INKVIOContGet(input_vio), INK_EVENT_ERROR, input_vio);
+        TSContCall(TSVIOContGet(input_vio), TS_EVENT_ERROR, input_vio);
       }
       break;
-    case INK_EVENT_VCONN_WRITE_COMPLETE:
+    case TS_EVENT_VCONN_WRITE_COMPLETE:
       /* When our output connection says that it has finished
        * reading all the data we've written to it then we should
        * shutdown the write portion of its connection to
        * indicate that we don't want to hear about it anymore.
        */
-      if (INKVConnShutdown(INKTransformOutputVConnGet(contp), 0, 1) == INK_ERROR)
-        LOG_ERROR_AND_RETURN("INKVConnShutdown");
+      if (TSVConnShutdown(TSTransformOutputVConnGet(contp), 0, 1) == TS_ERROR)
+        LOG_ERROR_AND_RETURN("TSVConnShutdown");
       break;
-    case INK_EVENT_VCONN_WRITE_READY:
+    case TS_EVENT_VCONN_WRITE_READY:
       handle_transform(contp);
       break;
 
-    case INK_EVENT_IMMEDIATE:
+    case TS_EVENT_IMMEDIATE:
       handle_transform(contp);
       break;
 
@@ -531,11 +530,11 @@ null_transform(INKCont contp, INKEvent event, void *edata)
 
   /* negative test */
 #ifdef DEBUG
-  if (INKVConnClosedGet(NULL) != INK_ERROR) {
-    LOG_ERROR_NEG("INKVConnClosedGet");
+  if (TSVConnClosedGet(NULL) != TS_ERROR) {
+    LOG_ERROR_NEG("TSVConnClosedGet");
   }
-  if (INKVIOContGet(NULL) != INK_ERROR_PTR) {
-    LOG_ERROR_NEG("INKVIOContGet");
+  if (TSVIOContGet(NULL) != TS_ERROR_PTR) {
+    LOG_ERROR_NEG("TSVIOContGet");
   }
 #endif
 
@@ -543,78 +542,78 @@ null_transform(INKCont contp, INKEvent event, void *edata)
 }
 
 static int
-transformable(INKHttpTxn txnp)
+transformable(TSHttpTxn txnp)
 {
   LOG_SET_FUNCTION_NAME("transformable");
 
   /*
    *  We are only interested in transforming "200 OK" responses.
    */
-  INKMBuffer bufp;
-  INKMLoc hdr_loc;
-  INKHttpStatus resp_status;
+  TSMBuffer bufp;
+  TSMLoc hdr_loc;
+  TSHttpStatus resp_status;
 
-  if (!INKHttpTxnServerRespGet(txnp, &bufp, &hdr_loc))
-    LOG_ERROR_AND_RETURN("INKHttpTxnServerRespGet");
+  if (!TSHttpTxnServerRespGet(txnp, &bufp, &hdr_loc))
+    LOG_ERROR_AND_RETURN("TSHttpTxnServerRespGet");
 
-  if ((resp_status = INKHttpHdrStatusGet(bufp, hdr_loc)) == INK_ERROR)
-    LOG_ERROR_AND_RETURN("INKHttpHdrStatusGet");
+  if ((resp_status = TSHttpHdrStatusGet(bufp, hdr_loc)) == TS_ERROR)
+    LOG_ERROR_AND_RETURN("TSHttpHdrStatusGet");
 
-  INKHandleMLocRelease(bufp, INK_NULL_MLOC, hdr_loc);
+  TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
 
-  return ((resp_status == INK_HTTP_STATUS_OK) ? 1 : 0);
+  return ((resp_status == TS_HTTP_STATUS_OK) ? 1 : 0);
 }
 
 static int
-transform_add(INKHttpTxn txnp)
+transform_add(TSHttpTxn txnp)
 {
   LOG_SET_FUNCTION_NAME("transform_add");
   MyData *data;
-  INKVConn connp;
+  TSVConn connp;
 
-  if ((connp = INKTransformCreate(null_transform, txnp)) == INK_ERROR_PTR)
-    LOG_ERROR_AND_RETURN("INKTransformCreate");
+  if ((connp = TSTransformCreate(null_transform, txnp)) == TS_ERROR_PTR)
+    LOG_ERROR_AND_RETURN("TSTransformCreate");
 
-  if (INKHttpTxnHookAdd(txnp, INK_HTTP_RESPONSE_TRANSFORM_HOOK, connp) == INK_ERROR)
-    LOG_ERROR_AND_RETURN("INKHttpTxnHookAdd");
+  if (TSHttpTxnHookAdd(txnp, TS_HTTP_RESPONSE_TRANSFORM_HOOK, connp) == TS_ERROR)
+    LOG_ERROR_AND_RETURN("TSHttpTxnHookAdd");
 
   data = my_data_alloc();
   data->txn = txnp;
-  if (INKContDataSet(connp, data) == INK_ERROR)
-    LOG_ERROR_AND_RETURN("INKContDataSet");
+  if (TSContDataSet(connp, data) == TS_ERROR)
+    LOG_ERROR_AND_RETURN("TSContDataSet");
 
   /* Cache the transformed content */
-  if (INKHttpTxnUntransformedRespCache(txnp, 0) == INK_ERROR)
-    LOG_ERROR_AND_RETURN("INKHttpTxnUntransformedRespCache");
-  if (INKHttpTxnTransformedRespCache(txnp, 1) == INK_ERROR)
-    LOG_ERROR_AND_RETURN("INKHttpTxnTransformedRespCache");
+  if (TSHttpTxnUntransformedRespCache(txnp, 0) == TS_ERROR)
+    LOG_ERROR_AND_RETURN("TSHttpTxnUntransformedRespCache");
+  if (TSHttpTxnTransformedRespCache(txnp, 1) == TS_ERROR)
+    LOG_ERROR_AND_RETURN("TSHttpTxnTransformedRespCache");
 
-  /* negative test for INKHttpTxnTransformedRespCache */
+  /* negative test for TSHttpTxnTransformedRespCache */
 #ifdef DEBUG
-  if (INKHttpTxnUntransformedRespCache(NULL, 0) != INK_ERROR)
-    LOG_ERROR_NEG("INKHttpTxnUntransformedRespCache");
+  if (TSHttpTxnUntransformedRespCache(NULL, 0) != TS_ERROR)
+    LOG_ERROR_NEG("TSHttpTxnUntransformedRespCache");
 
-  if (INKHttpTxnTransformedRespCache(NULL, 1) != INK_ERROR)
-    LOG_ERROR_NEG("INKHttpTxnTransformedRespCache");
+  if (TSHttpTxnTransformedRespCache(NULL, 1) != TS_ERROR)
+    LOG_ERROR_NEG("TSHttpTxnTransformedRespCache");
 
-  if (INKTransformCreate(null_transform, NULL) != INK_ERROR_PTR)
-    LOG_ERROR_NEG("INKTransformCreate");
+  if (TSTransformCreate(null_transform, NULL) != TS_ERROR_PTR)
+    LOG_ERROR_NEG("TSTransformCreate");
 #endif
 }
 
 static int
-transform_plugin(INKCont contp, INKEvent event, void *edata)
+transform_plugin(TSCont contp, TSEvent event, void *edata)
 {
   LOG_SET_FUNCTION_NAME("transform_plugin");
-  INKHttpTxn txnp = (INKHttpTxn) edata;
+  TSHttpTxn txnp = (TSHttpTxn) edata;
 
   switch (event) {
-  case INK_EVENT_HTTP_READ_RESPONSE_HDR:
+  case TS_EVENT_HTTP_READ_RESPONSE_HDR:
     if (transformable(txnp)) {
       transform_add(txnp);
     }
-    if (INKHttpTxnReenable(txnp, INK_EVENT_HTTP_CONTINUE) == INK_ERROR)
-      LOG_ERROR_AND_RETURN("INKHttpTxnReenable");
+    if (TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE) == TS_ERROR)
+      LOG_ERROR_AND_RETURN("TSHttpTxnReenable");
 
     return 0;
   default:
@@ -628,7 +627,7 @@ int
 check_ts_version()
 {
 
-  const char *ts_version = INKTrafficServerVersionGet();
+  const char *ts_version = TSTrafficServerVersionGet();
   int result = 0;
 
   if (ts_version) {
@@ -651,26 +650,26 @@ check_ts_version()
 }
 
 void
-INKPluginInit(int argc, const char *argv[])
+TSPluginInit(int argc, const char *argv[])
 {
-  LOG_SET_FUNCTION_NAME("INKPlugiInit");
-  INKPluginRegistrationInfo info;
+  LOG_SET_FUNCTION_NAME("TSPlugiInit");
+  TSPluginRegistrationInfo info;
 
   info.plugin_name = "null-transform";
   info.vendor_name = "MyCompany";
   info.support_email = "ts-api-support@MyCompany.com";
 
-  if (!INKPluginRegister(INK_SDK_VERSION_2_0, &info)) {
-    INKError("Plugin registration failed.\n");
+  if (!TSPluginRegister(TS_SDK_VERSION_2_0, &info)) {
+    TSError("Plugin registration failed.\n");
   }
 
   if (!check_ts_version()) {
-    INKError("Plugin requires Traffic Server 2.0 or later\n");
+    TSError("Plugin requires Traffic Server 2.0 or later\n");
     return;
   }
 
   test_iobuffer();
 
-  if (INKHttpHookAdd(INK_HTTP_READ_RESPONSE_HDR_HOOK, INKContCreate(transform_plugin, NULL)) == INK_ERROR)
-    LOG_ERROR("INKHttpHookAdd");
+  if (TSHttpHookAdd(TS_HTTP_READ_RESPONSE_HDR_HOOK, TSContCreate(transform_plugin, NULL)) == TS_ERROR)
+    LOG_ERROR("TSHttpHookAdd");
 }

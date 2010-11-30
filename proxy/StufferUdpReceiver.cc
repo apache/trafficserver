@@ -67,7 +67,7 @@ static int number_of_packets_dropped = 0;
 static int number_of_connections_to_ts = 0;
 static int number_of_timeouts = 0;
 
-/*this functions should be a signal handler on OSs other than VxWorks*/
+/* TODO: this functions should be a signal handler ... */
 int
 stufferUdpStatShow()
 {

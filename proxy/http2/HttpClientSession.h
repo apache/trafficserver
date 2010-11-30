@@ -27,7 +27,6 @@
 
    Description:
 
-
  ****************************************************************************/
 
 #ifndef _HTTP_CLIENT_SESSION_H_
@@ -37,6 +36,7 @@
 #include "P_Net.h"
 #include "InkAPIInternal.h"
 #include "HTTP.h"
+#include "HttpConfig.h"
 
 extern ink_mutex debug_cs_list_mutex;
 
@@ -66,38 +66,29 @@ public:
   virtual void do_io_shutdown(ShutdownHowTo_t howto);
   virtual void reenable(VIO * vio);
 
-  void set_half_close_flag()
-  {
-    half_close = true;
-  };
+  void set_half_close_flag() { half_close = true; };
   virtual void release(IOBufferReader * r);
-  NetVConnection *get_netvc()
-  {
-    return client_vc;
-  };
+  NetVConnection *get_netvc() const { return client_vc;  };
 
   virtual void attach_server_session(HttpServerSession * ssession, bool transaction_done = true);
-  HttpServerSession *get_server_session()
-  {
-    return bound_ss;
-  };
+  HttpServerSession *get_server_session() const { return bound_ss; };
 
   // Used for the cache authenticated HTTP content feature
   HttpServerSession *get_bound_ss();
 
   // Functions for manipulating api hooks
-  void ssn_hook_append(INKHttpHookID id, INKContInternal * cont);
-  void ssn_hook_prepend(INKHttpHookID id, INKContInternal * cont);
-  APIHook *ssn_hook_get(INKHttpHookID id);
+  void ssn_hook_append(TSHttpHookID id, INKContInternal * cont);
+  void ssn_hook_prepend(TSHttpHookID id, INKContInternal * cont);
+  APIHook *ssn_hook_get(TSHttpHookID id);
 
   // Used to verify we are recording the current
   //   client transaction stat properly
-  int client_trans_stat;
-#ifndef VxWorks
   int64 con_id;
-#else
-  int32 con_id;
-#endif
+
+  int get_transact_count() const { return  transact_count; }
+
+  void* get_user_arg(int ix) const { return user_args[ix]; }
+  void set_user_arg(int ix, void* arg) { user_args[ix] = arg; }
 
 private:
   HttpClientSession(HttpClientSession &);
@@ -108,7 +99,7 @@ private:
 
   void handle_api_return(int event);
   int state_api_callout(int event, void *data);
-  void do_api_callout(INKHttpHookID id);
+  void do_api_callout(TSHttpHookID id);
 
   virtual void new_transaction();
 
@@ -126,6 +117,7 @@ private:
   int transact_count;
   bool half_close;
   bool conn_decrease;
+  void *user_args[HTTP_SSN_TXN_MAX_USER_ARG];
 
   HttpServerSession *bound_ss;
 
@@ -139,7 +131,7 @@ private:
 
   Link<HttpClientSession> debug_link;
 
-  INKHttpHookID cur_hook_id;
+  TSHttpHookID cur_hook_id;
   APIHook *cur_hook;
   int cur_hooks;
 
@@ -165,7 +157,7 @@ public:
 };
 
 inline APIHook *
-HttpClientSession::ssn_hook_get(INKHttpHookID id)
+HttpClientSession::ssn_hook_get(TSHttpHookID id)
 {
   return api_hooks.get(id);
 }

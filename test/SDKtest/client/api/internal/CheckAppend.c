@@ -78,19 +78,19 @@ typedef struct
 CheckAppendPlugin my_plugin;
 
 void
-INKPluginInit(int clientid)
+TSPluginInit(int clientid)
 {
   fprintf(stderr, "*** CheckAppend Test for append-transform-plugin v0.0***\n");
-  INKFuncRegister(INK_FID_REQUEST_CREATE);
-  INKFuncRegister(INK_FID_CONNECTION_FINISH);
-  INKFuncRegister(INK_FID_OPTIONS_PROCESS);
-  INKFuncRegister(INK_FID_OPTIONS_PROCESS_FINISH);
-  INKFuncRegister(INK_FID_HEADER_PROCESS);
-  INKFuncRegister(INK_FID_PARTIAL_BODY_PROCESS);
+  TSFuncRegister(TS_FID_REQUEST_CREATE);
+  TSFuncRegister(TS_FID_CONNECTION_FINISH);
+  TSFuncRegister(TS_FID_OPTIONS_PROCESS);
+  TSFuncRegister(TS_FID_OPTIONS_PROCESS_FINISH);
+  TSFuncRegister(TS_FID_HEADER_PROCESS);
+  TSFuncRegister(TS_FID_PARTIAL_BODY_PROCESS);
 }
 
 void
-INKConnectionFinish(void *request_id, INKConnectionStatus status)
+TSConnectionFinish(void *request_id, TSConnectionStatus status)
 {
 
   /*print_debug((stderr, "Freeing %x\n", request_id)); */
@@ -99,31 +99,31 @@ INKConnectionFinish(void *request_id, INKConnectionStatus status)
 
   /*fprintf(stderr, "CONN %x FINISH with status", request_id);
      switch(status) {
-     case INK_CONN_COMPLETE:
-     fprintf(stderr, "INK_CONN_COMPLETE\n");
+     case TS_CONN_COMPLETE:
+     fprintf(stderr, "TS_CONN_COMPLETE\n");
      break;
 
-     case INK_CONN_ERR:
-     fprintf(stderr, "INK_CONN_ERR\n");
+     case TS_CONN_ERR:
+     fprintf(stderr, "TS_CONN_ERR\n");
      break;
 
-     case INK_READ_ERR:
-     fprintf(stderr, "INK_READ_ERR\n");
+     case TS_READ_ERR:
+     fprintf(stderr, "TS_READ_ERR\n");
      break;
 
-     case INK_WRITE_ERR:
-     fprintf(stderr, "INK_WRITE_ERR\n");
+     case TS_WRITE_ERR:
+     fprintf(stderr, "TS_WRITE_ERR\n");
      break;
 
-     case INK_TIME_EXPIRE:
-     fprintf(stderr, "INK_TIME_EXPIRE\n");
+     case TS_TIME_EXPIRE:
+     fprintf(stderr, "TS_TIME_EXPIRE\n");
      break;
      } */
 }
 
 
 int
-INKRequestCreate(char *server_host, int max_host_size, char *server_port,
+TSRequestCreate(char *server_host, int max_host_size, char *server_port,
                  int max_port_size, char *request_buf, int max_request_size, void **request_id)
 {
 
@@ -156,7 +156,7 @@ INKRequestCreate(char *server_host, int max_host_size, char *server_port,
 
 
 void
-INKOptionsProcess(char *option, char *value)
+TSOptionsProcess(char *option, char *value)
 {
   if (strcmp(option, "append-file-path") == 0) {
     if (strlen(value) < MAX_PATH_SIZE) {
@@ -169,7 +169,7 @@ INKOptionsProcess(char *option, char *value)
 }
 
 void
-INKOptionsProcessFinish()
+TSOptionsProcessFinish()
 {
   int n;
 
@@ -218,14 +218,14 @@ INKOptionsProcessFinish()
 
 }
 
-INKRequestAction
-INKHeaderProcess(void *req_id, char *header, int length, char *request_str)
+TSRequestAction
+TSHeaderProcess(void *req_id, char *header, int length, char *request_str)
 {
-  return INK_KEEP_GOING;
+  return TS_KEEP_GOING;
 }
 
-INKRequestAction
-INKPartialBodyProcess(void *request_id, void *partial_content, int partial_length, int accum_length)
+TSRequestAction
+TSPartialBodyProcess(void *request_id, void *partial_content, int partial_length, int accum_length)
 {
   char *src;
   int room;
@@ -237,18 +237,18 @@ INKPartialBodyProcess(void *request_id, void *partial_content, int partial_lengt
 
   req_id = (CONN_DATA *) request_id;
   if (req_id == NULL)
-    return INK_STOP_FAIL;
+    return TS_STOP_FAIL;
 
   if (partial_length == 0) {    /* Response is now complete. */
 
     if (memcmp(req_id->tail_of_resp, my_plugin.append_content, my_plugin.append_len) == 0) {
 
-      return INK_STOP_SUCCESS;
+      return TS_STOP_SUCCESS;
     }
 
     fprintf(stderr, "Test Failed: appended content doesn't match\n");
     fprintf(stderr, "append: [%s] tail_of_resp [%s]\n", my_plugin.append_content, req_id->tail_of_resp);
-    return INK_STOP_FAIL;
+    return TS_STOP_FAIL;
   }
 
 /* Response not complete. Copy last _useful_ bytes to tail_of_file buffer */
@@ -273,6 +273,6 @@ INKPartialBodyProcess(void *request_id, void *partial_content, int partial_lengt
   req_id->tail_of_resp_index += partial_length;
   req_id->tail_of_resp[req_id->tail_of_resp_index + 1] = '\0';
 
-  return INK_KEEP_GOING;
+  return TS_KEEP_GOING;
 
 }

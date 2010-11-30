@@ -1058,11 +1058,7 @@ remove_round_robin(HostDBInfo * r, char *hostname, unsigned int ip)
             for (int n = 0; n < rr->good; n++) {
               unsigned int rr_ip = rr->info[n].ip();
               unsigned char *pip = (unsigned char *) &rr_ip;
-#ifdef __alpha
-              int nbytes = sprintf(p, "%hhu.%hhu.%hhu.%hhu ", pip[0], pip[1], pip[2], pip[3]);
-#else
               int nbytes = snprintf(p, bufsize, "%hhu.%hhu.%hhu.%hhu ", pip[0], pip[1], pip[2], pip[3]);
-#endif
               p += nbytes;
               bufsize -= nbytes;
             }
@@ -2120,15 +2116,15 @@ struct ShowHostDB: public ShowCont
   int showMain(int event, Event * e)
   {
     CHECK_SHOW(begin("HostDB"));
-    CHECK_SHOW(show("<form method = GET action = \"/name\">\n"
+    CHECK_SHOW(show("<form method = GET action = \"./name\">\n"
                     "Lookup by name (e.g. www.inktomi.com):<br>\n"
                     "<input type=text name=name size=64 maxlength=256>\n"
                     "</form>\n"
-                    "<form method = GET action = \"/ip\">\n"
+                    "<form method = GET action = \"./ip\">\n"
                     "Lookup by IP (e.g. 127.0.0.1):<br>\n"
                     "<input type=text name=ip size=64 maxlength=256>\n"
                     "</form>\n"
-                    "<form method = GET action = \"/nameforce\">\n"
+                    "<form method = GET action = \"./nameforce\">\n"
                     "Force DNS by name (e.g. www.inktomi.com):<br>\n"
                     "<input type=text name=name size=64 maxlength=256>\n" "</form>\n"));
     return complete(event, e);
@@ -2305,7 +2301,7 @@ HostDBTestReverse():Continuation(new_ProxyMutex()), outstanding(0), total(0) {
 };
 
 
-#ifdef NON_MODULAR
+#if TS_HAS_TESTS
 void
 run_HostDBTest()
 {
@@ -2319,7 +2315,6 @@ run_HostDBTest()
 
 
 RecRawStatBlock *hostdb_rsb;
-
 
 void
 ink_hostdb_init(ModuleVersion v)

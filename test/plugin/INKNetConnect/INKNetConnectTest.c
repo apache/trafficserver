@@ -24,22 +24,22 @@
 #include <string.h>
 #include "ts.h"
 
-static const char *g_strPluginName = "INKNetConnectTest plugin";
+static const char *g_strPluginName = "TSNetConnectTest plugin";
 static unsigned int g_ConnectionAddress;
 static int g_ConnectionPort = 0;
 
 typedef struct
 {
-  INKCont m_MainCont;
-  INKCont m_CheckCont;
-  INKVConn m_VConn;
-  INKHttpTxn m_Txnp;
-  INKMBuffer m_Buffer;
-  INKMLoc m_ClientHeaderLoc;
-  INKMLoc m_ClientURLLoc;
-  INKIOBuffer m_ReadIOBuffer;
-  INKIOBuffer m_SendIOBuffer;
-  INKAction m_Action;
+  TSCont m_MainCont;
+  TSCont m_CheckCont;
+  TSVConn m_VConn;
+  TSHttpTxn m_Txnp;
+  TSMBuffer m_Buffer;
+  TSMLoc m_ClientHeaderLoc;
+  TSMLoc m_ClientURLLoc;
+  TSIOBuffer m_ReadIOBuffer;
+  TSIOBuffer m_SendIOBuffer;
+  TSAction m_Action;
   unsigned int m_ClientIP;
   char *m_strClientURL;
 } CheckData_T;
@@ -53,7 +53,7 @@ Log(const char *strLogMessage)
 static CheckData_T *
 CheckDataCreate()
 {
-  CheckData_T *pCheckData = (CheckData_T *) INKmalloc(sizeof(CheckData_T));
+  CheckData_T *pCheckData = (CheckData_T *) TSmalloc(sizeof(CheckData_T));
   pCheckData->m_Action = NULL;
   pCheckData->m_Buffer = NULL;
   pCheckData->m_CheckCont = NULL;
@@ -76,134 +76,134 @@ CheckDataDestroy(CheckData_T * pCheckData)
   if (pCheckData) {
     /* free strings... */
     if (pCheckData->m_strClientURL) {
-      INKfree(pCheckData->m_strClientURL);
+      TSfree(pCheckData->m_strClientURL);
     }
 
     /* free IOBuffer... */
     if (pCheckData->m_ReadIOBuffer) {
-      INKIOBufferDestroy(pCheckData->m_ReadIOBuffer);
+      TSIOBufferDestroy(pCheckData->m_ReadIOBuffer);
     }
     if (pCheckData->m_SendIOBuffer) {
-      INKIOBufferDestroy(pCheckData->m_SendIOBuffer);
+      TSIOBufferDestroy(pCheckData->m_SendIOBuffer);
     }
 
     if (pCheckData->m_Action) {
-      INKActionCancel(pCheckData->m_Action);
+      TSActionCancel(pCheckData->m_Action);
     }
 
     if (pCheckData->m_VConn) {
-      INKVConnClose(pCheckData->m_VConn);
+      TSVConnClose(pCheckData->m_VConn);
     }
 
     if (pCheckData->m_CheckCont) {
-      INKContDestroy(pCheckData->m_CheckCont);
+      TSContDestroy(pCheckData->m_CheckCont);
     }
 
-    INKfree(pCheckData);
+    TSfree(pCheckData);
     pCheckData = NULL;
   }
 }
 
 static void
-SendCheck(INKCont contp, CheckData_T * pCheckData)
+SendCheck(TSCont contp, CheckData_T * pCheckData)
 {
-  char *strRequestData = (char *) INKmalloc(4096);
+  char *strRequestData = (char *) TSmalloc(4096);
   int RequestLength = 0;
 
-  strcpy(strRequestData, "INKNetConnect CHECK");
+  strcpy(strRequestData, "TSNetConnect CHECK");
 
   RequestLength = strlen(strRequestData);
-  pCheckData->m_SendIOBuffer = INKIOBufferCreate();
-  INKIOBufferAppend(pCheckData->m_SendIOBuffer,
-                    INKIOBufferBlockCreate(INKIOBufferDataCreate(strRequestData, RequestLength, INK_DATA_MALLOCED),
+  pCheckData->m_SendIOBuffer = TSIOBufferCreate();
+  TSIOBufferAppend(pCheckData->m_SendIOBuffer,
+                    TSIOBufferBlockCreate(TSIOBufferDataCreate(strRequestData, RequestLength, TS_DATA_MALLOCED),
                                            RequestLength, 0));
 
-  INKVConnWrite(pCheckData->m_VConn, contp, INKIOBufferReaderAlloc(pCheckData->m_SendIOBuffer), RequestLength);
+  TSVConnWrite(pCheckData->m_VConn, contp, TSIOBufferReaderAlloc(pCheckData->m_SendIOBuffer), RequestLength);
 
-  pCheckData->m_ReadIOBuffer = INKIOBufferCreate();
-  INKVConnRead(pCheckData->m_VConn, contp, pCheckData->m_ReadIOBuffer, 4096);
+  pCheckData->m_ReadIOBuffer = TSIOBufferCreate();
+  TSVConnRead(pCheckData->m_VConn, contp, pCheckData->m_ReadIOBuffer, 4096);
 }
 
 static void
-ReadCheck(INKCont contp, CheckData_T * pCheckData)
+ReadCheck(TSCont contp, CheckData_T * pCheckData)
 {
-  INKIOBufferReader IOBufferReader = INKIOBufferReaderAlloc(pCheckData->m_ReadIOBuffer);
-  INKIOBufferBlock IOBufferBlock = INKIOBufferReaderStart(IOBufferReader);
+  TSIOBufferReader IOBufferReader = TSIOBufferReaderAlloc(pCheckData->m_ReadIOBuffer);
+  TSIOBufferBlock IOBufferBlock = TSIOBufferReaderStart(IOBufferReader);
   const char *strBuffer = NULL;
   int Avail;
 
-  if (INK_HTTP_TYPE_REQUEST != INKHttpHdrTypeGet(pCheckData->m_Buffer, pCheckData->m_ClientHeaderLoc)) {
+  if (TS_HTTP_TYPE_REQUEST != TSHttpHdrTypeGet(pCheckData->m_Buffer, pCheckData->m_ClientHeaderLoc)) {
     /* If the function returns something else, the transaction was canceled.
        Therefore don't do anything...simply exit... */
-    Log("HTTP header was not a INK_HTTP_TYPE_REQUEST (in ReadCheck)");
+    Log("HTTP header was not a TS_HTTP_TYPE_REQUEST (in ReadCheck)");
     /*fwrite (pCheckData->m_Buffer, pCheckData->m_ClientHeaderLoc, 1,stderr); */
-    fprintf(stderr, " TYPE = %d \n", (int) INKHttpHdrTypeGet(pCheckData->m_Buffer, pCheckData->m_ClientHeaderLoc));
+    fprintf(stderr, " TYPE = %d \n", (int) TSHttpHdrTypeGet(pCheckData->m_Buffer, pCheckData->m_ClientHeaderLoc));
   } else {
     if (IOBufferBlock) {
       /* get a pointer to the data... */
-      strBuffer = INKIOBufferBlockReadStart(IOBufferBlock, IOBufferReader, &Avail);
+      strBuffer = TSIOBufferBlockReadStart(IOBufferBlock, IOBufferReader, &Avail);
 
       if (Avail) {
-        if (strncmp("INKNetConnect CHECK", strBuffer, Avail) == 0) {
+        if (strncmp("TSNetConnect CHECK", strBuffer, Avail) == 0) {
           Log("Succeeded");
         } else {
           Log("Failed");
         }
         /* indicate consumption of data... */
-        INKIOBufferReaderConsume(IOBufferReader, Avail);
+        TSIOBufferReaderConsume(IOBufferReader, Avail);
       } else {
         Log("Avail was zero!!!");
       }
     }
   }
 
-  INKHttpTxnReenable(pCheckData->m_Txnp, INK_EVENT_HTTP_CONTINUE);
-  INKVConnShutdown(pCheckData->m_VConn, 1, 0);
+  TSHttpTxnReenable(pCheckData->m_Txnp, TS_EVENT_HTTP_CONTINUE);
+  TSVConnShutdown(pCheckData->m_VConn, 1, 0);
   CheckDataDestroy(pCheckData);
 }
 
 static int
-CheckAccessHandler(INKCont contp, INKEvent event, void *edata)
+CheckAccessHandler(TSCont contp, TSEvent event, void *edata)
 {
-  CheckData_T *pCheckData = (CheckData_T *) INKContDataGet(contp);
+  CheckData_T *pCheckData = (CheckData_T *) TSContDataGet(contp);
 
   switch (event) {
-  case INK_EVENT_NET_CONNECT:  /* Connection established */
-    Log("INK_EVENT_NET_CONNECT");
-    pCheckData->m_VConn = (INKVConn) edata;
+  case TS_EVENT_NET_CONNECT:  /* Connection established */
+    Log("TS_EVENT_NET_CONNECT");
+    pCheckData->m_VConn = (TSVConn) edata;
     SendCheck(contp, pCheckData);
     break;
 
-  case INK_EVENT_NET_CONNECT_FAILED:   /* Connection failed */
-    Log("INK_EVENT_NET_CONNECT_FAILED");
+  case TS_EVENT_NET_CONNECT_FAILED:   /* Connection failed */
+    Log("TS_EVENT_NET_CONNECT_FAILED");
     CheckDataDestroy(pCheckData);
     break;
 
-  case INK_EVENT_VCONN_WRITE_READY:    /* VConnection is ready for writing */
-    Log("INK_EVENT_VCONN_WRITE_READY");
+  case TS_EVENT_VCONN_WRITE_READY:    /* VConnection is ready for writing */
+    Log("TS_EVENT_VCONN_WRITE_READY");
     break;
 
-  case INK_EVENT_VCONN_WRITE_COMPLETE: /* VConnection has done its writing */
-    Log("INK_EVENT_VCONN_WRITE_COMPLETE");
-    INKVConnShutdown(pCheckData->m_VConn, 0, 1);
+  case TS_EVENT_VCONN_WRITE_COMPLETE: /* VConnection has done its writing */
+    Log("TS_EVENT_VCONN_WRITE_COMPLETE");
+    TSVConnShutdown(pCheckData->m_VConn, 0, 1);
     break;
 
-  case INK_EVENT_VCONN_READ_READY:     /* VConnection is ready for reading */
-    Log("INK_EVENT_VCONN_READ_READY");
+  case TS_EVENT_VCONN_READ_READY:     /* VConnection is ready for reading */
+    Log("TS_EVENT_VCONN_READ_READY");
     ReadCheck(contp, pCheckData);
     break;
 
-  case INK_EVENT_VCONN_READ_COMPLETE:  /* VConnection has read all data */
-    Log("INK_EVENT_VCONN_READ_COMPLETE");
+  case TS_EVENT_VCONN_READ_COMPLETE:  /* VConnection has read all data */
+    Log("TS_EVENT_VCONN_READ_COMPLETE");
     break;
 
-  case INK_EVENT_VCONN_EOS:
-    Log("INK_EVENT_VCONN_EOS");
+  case TS_EVENT_VCONN_EOS:
+    Log("TS_EVENT_VCONN_EOS");
     CheckDataDestroy(pCheckData);
     break;
 
-  case INK_EVENT_ERROR:
-    Log("INK_EVENT_ERROR");
+  case TS_EVENT_ERROR:
+    Log("TS_EVENT_ERROR");
     CheckDataDestroy(pCheckData);
     break;
 
@@ -218,60 +218,60 @@ CheckAccessHandler(INKCont contp, INKEvent event, void *edata)
 
 
 static void
-HandleRequest(INKHttpTxn txnp, INKCont contp)
+HandleRequest(TSHttpTxn txnp, TSCont contp)
 {
-  INKAction Action;
+  TSAction Action;
   const char *ClientURLScheme = NULL;
   CheckData_T *pCheckData = CheckDataCreate();
-  pCheckData->m_CheckCont = INKContCreate(CheckAccessHandler, INKMutexCreate());
+  pCheckData->m_CheckCont = TSContCreate(CheckAccessHandler, TSMutexCreate());
   pCheckData->m_Txnp = txnp;
   pCheckData->m_MainCont = contp;
 
-  if (!INKHttpTxnClientReqGet(pCheckData->m_Txnp, &pCheckData->m_Buffer, &pCheckData->m_ClientHeaderLoc)) {
+  if (!TSHttpTxnClientReqGet(pCheckData->m_Txnp, &pCheckData->m_Buffer, &pCheckData->m_ClientHeaderLoc)) {
     Log("couldn't retrieve client request header!\n");
     goto done;
   }
 
-  if (INK_HTTP_TYPE_REQUEST != INKHttpHdrTypeGet(pCheckData->m_Buffer, pCheckData->m_ClientHeaderLoc)) {
+  if (TS_HTTP_TYPE_REQUEST != TSHttpHdrTypeGet(pCheckData->m_Buffer, pCheckData->m_ClientHeaderLoc)) {
     /* If the function returns something else, the transaction was canceled.
        Therefore don't do anything...simply exit... */
-    Log("HTTP header was not a INK_HTTP_TYPE_REQUEST (in HandleRequest)");
+    Log("HTTP header was not a TS_HTTP_TYPE_REQUEST (in HandleRequest)");
     return;
   }
 
-  pCheckData->m_ClientURLLoc = INKHttpHdrUrlGet(pCheckData->m_Buffer, pCheckData->m_ClientHeaderLoc);
+  pCheckData->m_ClientURLLoc = TSHttpHdrUrlGet(pCheckData->m_Buffer, pCheckData->m_ClientHeaderLoc);
   if (!pCheckData->m_ClientURLLoc) {
     Log("couldn't retrieve request url!\n");
     goto done;
   }
 
   /* check if the request-scheme is HTTP */
-  ClientURLScheme = INKUrlSchemeGet(pCheckData->m_Buffer, pCheckData->m_ClientURLLoc, NULL);
+  ClientURLScheme = TSUrlSchemeGet(pCheckData->m_Buffer, pCheckData->m_ClientURLLoc, NULL);
   if (!ClientURLScheme) {
     Log("couldn't retrieve request url scheme!\n");
     goto done;
   }
-  if (strcmp(ClientURLScheme, INK_URL_SCHEME_HTTP) != 0) {
+  if (strcmp(ClientURLScheme, TS_URL_SCHEME_HTTP) != 0) {
     /* it's not a HTTP request... */
     goto done;
   }
 
 
   /* get client-ip */
-  pCheckData->m_ClientIP = INKHttpTxnClientIPGet(pCheckData->m_Txnp);
+  pCheckData->m_ClientIP = TSHttpTxnClientIPGet(pCheckData->m_Txnp);
 
   /* get client-url */
-  pCheckData->m_strClientURL = INKUrlStringGet(pCheckData->m_Buffer, pCheckData->m_ClientURLLoc, NULL);
+  pCheckData->m_strClientURL = TSUrlStringGet(pCheckData->m_Buffer, pCheckData->m_ClientURLLoc, NULL);
   if (!pCheckData->m_strClientURL) {
     Log("couldn't retrieve request url string!\n");
     goto done;
   }
 
-  INKContDataSet(pCheckData->m_CheckCont, pCheckData);
+  TSContDataSet(pCheckData->m_CheckCont, pCheckData);
 
-  Action = INKNetConnect(pCheckData->m_CheckCont, g_ConnectionAddress, g_ConnectionPort);
+  Action = TSNetConnect(pCheckData->m_CheckCont, g_ConnectionAddress, g_ConnectionPort);
 
-  if (!INKActionDone(Action)) {
+  if (!TSActionDone(Action)) {
     pCheckData->m_Action = Action;
   }
 
@@ -279,17 +279,17 @@ HandleRequest(INKHttpTxn txnp, INKCont contp)
 
 done:
   CheckDataDestroy(pCheckData);
-  INKHttpTxnReenable(txnp, INK_EVENT_HTTP_CONTINUE);
+  TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
 }
 
 static int
-MediaACEPlugin(INKCont contp, INKEvent event, void *edata)
+MediaACEPlugin(TSCont contp, TSEvent event, void *edata)
 {
-  INKHttpTxn txnp = NULL;
+  TSHttpTxn txnp = NULL;
 
   switch (event) {
-  case INK_EVENT_HTTP_READ_REQUEST_HDR:        /* after reading the request... */
-    txnp = (INKHttpTxn) edata;
+  case TS_EVENT_HTTP_READ_REQUEST_HDR:        /* after reading the request... */
+    txnp = (TSHttpTxn) edata;
     printf("Transaction:%x\n", txnp);
     HandleRequest(txnp, contp);
     break;
@@ -301,7 +301,7 @@ MediaACEPlugin(INKCont contp, INKEvent event, void *edata)
 }
 
 void
-INKPluginInit(int argc, const char *argv[])
+TSPluginInit(int argc, const char *argv[])
 {
   /* Localhost */
   g_ConnectionAddress = (127 << 24) | (0 << 16) | (0 << 8) | (1);
@@ -309,7 +309,7 @@ INKPluginInit(int argc, const char *argv[])
   g_ConnectionPort = 7;
 
   if (g_ConnectionAddress > 0) {
-    INKHttpHookAdd(INK_HTTP_READ_REQUEST_HDR_HOOK, INKContCreate(MediaACEPlugin, NULL));
+    TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, TSContCreate(MediaACEPlugin, NULL));
   }
   Log("Loaded");
 }

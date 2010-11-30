@@ -408,13 +408,13 @@ LogFormat::format_from_specification(char *spec, char **file_name, char **file_h
   //
   token = tok.getNext();
   if (token == NULL) {
-    Debug("log2-format", "token expected");
+    Debug("log-format", "token expected");
     return NULL;
   }
   if (strcasecmp(token, "format") == 0) {
-    Debug("log2-format", "this is a format");
+    Debug("log-format", "this is a format");
   } else {
-    Debug("log2-format", "should be 'format'");
+    Debug("log-format", "should be 'format'");
     return NULL;
   }
 
@@ -424,16 +424,16 @@ LogFormat::format_from_specification(char *spec, char **file_name, char **file_h
   //
   token = tok.getNext();
   if (token == NULL) {
-    Debug("log2-format", "token expected");
+    Debug("log-format", "token expected");
     return NULL;
   }
   if (!strcasecmp(token, "disabled")) {
-    Debug("log2-format", "format not enabled, skipping ...");
+    Debug("log-format", "format not enabled, skipping ...");
     return NULL;
   } else if (!strcasecmp(token, "enabled")) {
-    Debug("log2-format", "enabled format");
+    Debug("log-format", "enabled format");
   } else {
-    Debug("log2-format", "should be 'enabled' or 'disabled', not %s", token);
+    Debug("log-format", "should be 'enabled' or 'disabled', not %s", token);
     return NULL;
   }
 
@@ -442,7 +442,7 @@ LogFormat::format_from_specification(char *spec, char **file_name, char **file_h
   //
   token = tok.getNext();
   if (token == NULL) {
-    Debug("log2-format", "token expected");
+    Debug("log-format", "token expected");
     return NULL;
   }
   format_id = atoi(token);
@@ -453,7 +453,7 @@ LogFormat::format_from_specification(char *spec, char **file_name, char **file_h
   //
   token = tok.getNext();
   if (token == NULL) {
-    Debug("log2-format", "token expected");
+    Debug("log-format", "token expected");
     return NULL;
   }
   format_name = token;
@@ -463,7 +463,7 @@ LogFormat::format_from_specification(char *spec, char **file_name, char **file_h
   //
   token = tok.getNext();
   if (token == NULL) {
-    Debug("log2-format", "token expected");
+    Debug("log-format", "token expected");
     return NULL;
   }
   format_str = token;
@@ -473,7 +473,7 @@ LogFormat::format_from_specification(char *spec, char **file_name, char **file_h
   //
   token = tok.getNext();
   if (token == NULL) {
-    Debug("log2-format", "token expected");
+    Debug("log-format", "token expected");
     return NULL;
   }
   *file_name = xstrdup(token);
@@ -483,7 +483,7 @@ LogFormat::format_from_specification(char *spec, char **file_name, char **file_h
   //
   token = tok.getNext();
   if (token == NULL) {
-    Debug("log2-format", "token expected");
+    Debug("log-format", "token expected");
     return NULL;
   }
   if (!strcasecmp(token, "ASCII")) {
@@ -491,7 +491,7 @@ LogFormat::format_from_specification(char *spec, char **file_name, char **file_h
   } else if (!strcasecmp(token, "BINARY")) {
     *file_type = BINARY_LOG;
   } else {
-    Debug("log2-format", "%s is not a valid file format (ASCII or BINARY)", token);
+    Debug("log-format", "%s is not a valid file format (ASCII or BINARY)", token);
     return NULL;
   }
 
@@ -500,7 +500,7 @@ LogFormat::format_from_specification(char *spec, char **file_name, char **file_h
   //
   token = tok.getRest();
   if (token == NULL) {
-    Debug("log2-format", "token expected");
+    Debug("log-format", "token expected");
     return NULL;
   }
   // set header to NULL if "none" was specified (a NULL header means
@@ -508,7 +508,7 @@ LogFormat::format_from_specification(char *spec, char **file_name, char **file_h
   //
   *file_header = strcmp(token, "none") == 0 ? NULL : xstrdup(token);
 
-  Debug("log2-format", "custom:%d:%s:%s:%s:%d:%s", format_id, format_name, format_str, *file_name, *file_type, token);
+  Debug("log-format", "custom:%d:%s:%s:%s:%d:%s", format_id, format_name, format_str, *file_name, *file_type, token);
 
   format = NEW(new LogFormat(format_name, format_str));
   ink_assert(format != NULL);
@@ -560,12 +560,12 @@ LogFormat::parse_symbol_string(const char *symbol_string, LogFieldList *field_li
     if (begin_paren) {
       char *end_paren = strchr(symbol, ')');
       if (end_paren) {
-        Debug("log2-agg", "Aggregate symbol: %s", symbol);
+        Debug("log-agg", "Aggregate symbol: %s", symbol);
         *begin_paren = '\0';
         *end_paren = '\0';
         name = begin_paren + 1;
         sym = symbol;
-        Debug("log2-agg", "Aggregate = %s, field = %s", sym, name);
+        Debug("log-agg", "Aggregate = %s, field = %s", sym, name);
         aggregate = LogField::valid_aggregate_name(sym);
         if (aggregate == LogField::NO_AGGREGATE) {
           Note("Invalid aggregate specification: %s", sym);
@@ -585,7 +585,7 @@ LogFormat::parse_symbol_string(const char *symbol_string, LogFieldList *field_li
             field_list->add(new_f, false);
             field_count++;
             *contains_aggregates = true;
-            Debug("log2-agg", "Aggregate field %s(%s) added", sym, name);
+            Debug("log-agg", "Aggregate field %s(%s) added", sym, name);
           }
         }
       } else {
@@ -596,14 +596,14 @@ LogFormat::parse_symbol_string(const char *symbol_string, LogFieldList *field_li
     // Now check for a container field, which starts with '{'
     //
     else if (*symbol == '{') {
-      Debug("log2-format", "Container symbol: %s", symbol);
+      Debug("log-format", "Container symbol: %s", symbol);
       f = NULL;
       char *name_end = strchr(symbol, '}');
       if (name_end != NULL) {
         name = symbol + 1;
         *name_end = 0;          // changes '}' to '\0'
         sym = name_end + 1;     // start of container symbol
-        Debug("log2-format", "Name = %s, symbol = %s", name, sym);
+        Debug("log-format", "Name = %s, symbol = %s", name, sym);
         container = LogField::valid_container_name(sym);
         if (container == LogField::NO_CONTAINER) {
           Note("Invalid container specification: %s", sym);
@@ -612,7 +612,7 @@ LogFormat::parse_symbol_string(const char *symbol_string, LogFieldList *field_li
           ink_assert(f != NULL);
           field_list->add(f, false);
           field_count++;
-          Debug("log2-format", "Container field {%s}%s added", name, sym);
+          Debug("log-format", "Container field {%s}%s added", name, sym);
         }
       } else {
         Note("Invalid container field specification: no trailing " "'}' in %s", symbol);
@@ -622,12 +622,12 @@ LogFormat::parse_symbol_string(const char *symbol_string, LogFieldList *field_li
     // treat this like a regular field symbol
     //
     else {
-      Debug("log2-format", "Regular field symbol: %s", symbol);
+      Debug("log-format", "Regular field symbol: %s", symbol);
       f = Log::global_field_list.find_by_symbol(symbol);
       if (f != NULL) {
         field_list->add(f);
         field_count++;
-        Debug("log2-format", "Regular field %s added", symbol);
+        Debug("log-format", "Regular field %s added", symbol);
       } else {
         Note("The log format symbol %s was not found in the " "list of known symbols.", symbol);
       }
@@ -737,8 +737,7 @@ LogFormat::parse_format_string(const char *format_str, char **printf_str, char *
   (*fields_str)[fields_pos] = '\0';
   (*printf_str)[printf_pos] = '\0';
 
-  Debug("log2-format", "LogFormat::parse_format_string: field_count=%d, \"%s\", \"%s\"",
-        field_count, *fields_str, *printf_str);
+  Debug("log-format", "LogFormat::parse_format_string: field_count=%d, \"%s\", \"%s\"", field_count, *fields_str, *printf_str);
   return field_count;
 }
 

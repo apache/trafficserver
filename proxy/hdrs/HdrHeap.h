@@ -55,8 +55,9 @@
 //  to fix the unrolled operations
 #define HDR_BUF_RONLY_HEAPS   3
 
-#define HDR_HEAP_DEFAULT_SIZE   1024
-#define HDR_STR_HEAP_DEFAULT_SIZE   1024
+// Changed these so they for sure fit one normal TCP packet full of headers.
+#define HDR_HEAP_DEFAULT_SIZE   2048
+#define HDR_STR_HEAP_DEFAULT_SIZE   2048
 
 enum
 {

@@ -25,12 +25,12 @@
  * test-mgmt:
  * This sample plugins calls the Plugin Management APIs
  * The API covered in this plugin are -
- * 		- INKMgmtCounterGet
- *		- INKMgmtFloatGet
- * 		- INKMgmtIntGet
- * 		- INKMgmtSringGet
- * 		- INKInstallDirGet
- *		- INKPluginDirGet
+ * 		- TSMgmtCounterGet
+ *		- TSMgmtFloatGet
+ * 		- TSMgmtIntGet
+ * 		- TSMgmtSringGet
+ * 		- TSInstallDirGet
+ *		- TSPluginDirGet
  **************************************************************/
 
 #include <stdio.h>
@@ -54,11 +54,11 @@
 const char *counterVariables[] = {
   "proxy.process.socks.connections_unsuccessful",
   "proxy.process.socks.connections_successful",
-  "proxy.process.log2.log_files_open",
-  "proxy.process.log2.event_log_error",
-  "proxy.process.log2.event_log_access",
-  "proxy.process.log2.event_log_access_fail",
-  "proxy.process.log2.event_log_access_skip",
+  "proxy.process.log.log_files_open",
+  "proxy.process.log.event_log_error",
+  "proxy.process.log.event_log_access",
+  "proxy.process.log.event_log_access_fail",
+  "proxy.process.log.event_log_access_skip",
   '\0'
 };
 
@@ -223,32 +223,31 @@ const char *intVariables[] = {
   "proxy.config.hostdb.ttl_mode",
   "proxy.config.hostdb.timeout",
   "proxy.config.hostdb.strict_round_robin",
-  "proxy.config.log2.logging_enabled",
-  "proxy.config.log2.max_secs_per_buffer",
-  "proxy.config.log2.max_space_mb_for_logs",
-  "proxy.config.log2.max_space_mb_for_orphan_logs",
-  "proxy.config.log2.max_space_mb_headroom",
-  "proxy.config.log2.custom_logs_enabled",
-  "proxy.config.log2.xml_logs_config",
-  "proxy.config.log2.squid_log_enabled",
-  "proxy.config.log2.squid_log_is_ascii",
-  "proxy.config.log2.common_log_enabled",
-  "proxy.config.log2.common_log_is_ascii",
-  "proxy.config.log2.extended_log_enabled",
-  "proxy.config.log2.extended_log_is_ascii",
-  "proxy.config.log2.extended2_log_enabled",
-  "proxy.config.log2.extended2_log_is_ascii",
-  "proxy.config.log2.separate_icp_logs",
-  "proxy.config.log2.separate_host_logs",
-  "roxy.local.log2.collation_mode",
-  "proxy.config.log2.collation_port",
-  "proxy.config.log2.collation_host_tagged",
-  "proxy.config.log2.collation_retry_sec",
-  "proxy.config.log2.rolling_enabled",
-  "proxy.config.log2.rolling_interval_sec",
-  "proxy.config.log2.rolling_offset_hr",
-  "proxy.config.log2.auto_delete_rolled_files",
-  "proxy.config.log2.sampling_frequency",
+  "proxy.config.log.logging_enabled",
+  "proxy.config.log.max_secs_per_buffer",
+  "proxy.config.log.max_space_mb_for_logs",
+  "proxy.config.log.max_space_mb_for_orphan_logs",
+  "proxy.config.log.max_space_mb_headroom",
+  "proxy.config.log.custom_logs_enabled",
+  "proxy.config.log.squid_log_enabled",
+  "proxy.config.log.squid_log_is_ascii",
+  "proxy.config.log.common_log_enabled",
+  "proxy.config.log.common_log_is_ascii",
+  "proxy.config.log.extended_log_enabled",
+  "proxy.config.log.extended_log_is_ascii",
+  "proxy.config.log.extended2_log_enabled",
+  "proxy.config.log.extended2_log_is_ascii",
+  "proxy.config.log.separate_icp_logs",
+  "proxy.config.log.separate_host_logs",
+  "proxy.local.log.collation_mode",
+  "proxy.config.log.collation_port",
+  "proxy.config.log.collation_host_tagged",
+  "proxy.config.log.collation_retry_sec",
+  "proxy.config.log.rolling_enabled",
+  "proxy.config.log.rolling_interval_sec",
+  "proxy.config.log.rolling_offset_hr",
+  "proxy.config.log.auto_delete_rolled_files",
+  "proxy.config.log.sampling_frequency",
   "proxy.config.reverse_proxy.enabled",
   "proxy.config.url_remap.default_to_server_pac",
   "proxy.config.url_remap.default_to_server_pac_port",
@@ -299,7 +298,7 @@ const char *stringVariables[] = {
   "proxy.config.header.parse.no_host_url_redirect",
   "proxy.config.http.server_port_attr",
   "proxy.config.http.server_other_ports",
-  "proxy.config.http.ssl_ports",
+  "proxy.config.http.connect_ports",
   "proxy.config.http.parent_proxies",
   "proxy.config.http.anonymize_other_header_list",
   "proxy.config.http.cache.vary_default_text",
@@ -309,19 +308,19 @@ const char *stringVariables[] = {
   "proxy.config.cluster.ethernet_interface",
   "proxy.config.dns.splitdns.def_domain",
   "proxy.config.dns.url_expansions",
-  "proxy.config.log2.hostname",
-  "proxy.config.log2.logfile_dir",
-  "proxy.config.log2.logfile_perm",
-  "proxy.config.log2.squid_log_name",
-  "proxy.config.log2.squid_log_header",
-  "proxy.config.log2.common_log_name",
-  "proxy.config.log2.common_log_header",
-  "proxy.config.log2.extended_log_name",
-  "proxy.config.log2.extended_log_header",
-  "proxy.config.log2.extended2_log_name",
-  "proxy.config.log2.extended2_log_header",
-  "proxy.config.log2.collation_host",
-  "proxy.config.log2.collation_secret",
+  "proxy.config.log.hostname",
+  "proxy.config.log.logfile_dir",
+  "proxy.config.log.logfile_perm",
+  "proxy.config.log.squid_log_name",
+  "proxy.config.log.squid_log_header",
+  "proxy.config.log.common_log_name",
+  "proxy.config.log.common_log_header",
+  "proxy.config.log.extended_log_name",
+  "proxy.config.log.extended_log_header",
+  "proxy.config.log.extended2_log_name",
+  "proxy.config.log.extended2_log_header",
+  "proxy.config.log.collation_host",
+  "proxy.config.log.collation_secret",
   "proxy.config.ssl.server.cert.filename",
   "proxy.config.ssl.server.cert.path",
   "proxy.config.ssl.server.private_key.filename",
@@ -355,10 +354,10 @@ static void
 handleTxnStart()
 {
   const char **p;
-  INKMgmtCounter counterValue = 0;
-  INKMgmtFloat floatValue = 0.0;
-  INKMgmtInt intValue = 0;
-  INKMgmtString stringValue = '\0';
+  TSMgmtCounter counterValue = 0;
+  TSMgmtFloat floatValue = 0.0;
+  TSMgmtInt intValue = 0;
+  TSMgmtString stringValue = '\0';
 
   char errorLine[STRING_SIZE];
 
@@ -367,16 +366,16 @@ handleTxnStart()
 
   /* Print each of the COUNTER variables */
 
-  INKDebug(PLUGIN_NAME, "\n============= COUNTER =============");
+  TSDebug(PLUGIN_NAME, "\n============= COUNTER =============");
 
   p = counterVariables;
 
   while (*p) {
-    if (!INKMgmtCounterGet(*p, &counterValue)) {
+    if (!TSMgmtCounterGet(*p, &counterValue)) {
       sprintf(errorLine, "ERROR: couldn't retrieve [%s] ", *p);
-      LOG_AUTO_ERROR("INKMgmtCounterGet", errorLine);
+      LOG_AUTO_ERROR("TSMgmtCounterGet", errorLine);
     } else {
-      INKDebug(PLUGIN_NAME, "%s = %lld", *p, counterValue);
+      TSDebug(PLUGIN_NAME, "%s = %lld", *p, counterValue);
     }
 
     *p++;
@@ -384,16 +383,16 @@ handleTxnStart()
 
   /* Print each of the FLOAT variables */
 
-  INKDebug(PLUGIN_NAME, "\n============= FLOAT =============");
+  TSDebug(PLUGIN_NAME, "\n============= FLOAT =============");
 
   p = floatVariables;
 
   while (*p) {
-    if (!INKMgmtFloatGet(*p, &floatValue)) {
+    if (!TSMgmtFloatGet(*p, &floatValue)) {
       sprintf(errorLine, "ERROR: couldn't retrieve [%s] ", *p);
-      LOG_AUTO_ERROR("INKMgmtFloatGet", errorLine);
+      LOG_AUTO_ERROR("TSMgmtFloatGet", errorLine);
     } else {
-      INKDebug(PLUGIN_NAME, "%s = %f", *p, floatValue);
+      TSDebug(PLUGIN_NAME, "%s = %f", *p, floatValue);
     }
 
     *p++;
@@ -401,16 +400,16 @@ handleTxnStart()
 
   /* Print each of the FLOAT variables */
 
-  INKDebug(PLUGIN_NAME, "\n============= INT =============");
+  TSDebug(PLUGIN_NAME, "\n============= INT =============");
 
   p = intVariables;
 
   while (*p) {
-    if (!INKMgmtIntGet(*p, &intValue)) {
+    if (!TSMgmtIntGet(*p, &intValue)) {
       sprintf(errorLine, "ERROR: couldn't retrieve [%s] ", *p);
-      LOG_AUTO_ERROR("INKMgmtIntGet", errorLine);
+      LOG_AUTO_ERROR("TSMgmtIntGet", errorLine);
     } else {
-      INKDebug(PLUGIN_NAME, "%s = %lld", *p, intValue);
+      TSDebug(PLUGIN_NAME, "%s = %lld", *p, intValue);
     }
 
     *p++;
@@ -418,16 +417,16 @@ handleTxnStart()
 
   /* Print each of the FLOAT variables */
 
-  INKDebug(PLUGIN_NAME, "\n============= STRING =============");
+  TSDebug(PLUGIN_NAME, "\n============= STRING =============");
 
   p = stringVariables;
 
   while (*p) {
-    if (INKMgmtStringGet(*p, &stringValue)) {
+    if (TSMgmtStringGet(*p, &stringValue)) {
       sprintf(errorLine, "ERROR: couldn't retrieve [%s] ", *p);
-      LOG_AUTO_ERROR("INKMgmtStringGet", errorLine);
+      LOG_AUTO_ERROR("TSMgmtStringGet", errorLine);
     } else {
-      INKDebug(PLUGIN_NAME, "%s = %s", *p, stringValue);
+      TSDebug(PLUGIN_NAME, "%s = %s", *p, stringValue);
     }
 
     *p++;
@@ -437,10 +436,10 @@ handleTxnStart()
 
 
 void
-INKPluginInit(int argc, const char *argv[])
+TSPluginInit(int argc, const char *argv[])
 {
-  const char *ts_install_dir = INKInstallDirGet();
-  const char *plugin_dir = INKPluginDirGet();
+  const char *ts_install_dir = TSInstallDirGet();
+  const char *plugin_dir = TSPluginDirGet();
 
   /* Print the Traffic Server install and the plugin directory */
   printf("TS install dir: %s\n", ts_install_dir);

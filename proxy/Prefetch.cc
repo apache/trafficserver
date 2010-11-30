@@ -289,7 +289,7 @@ ClassAllocator<PrefetchUrlEntry> prefetchUrlEntryAllocator("prefetchUrlEntryAllo
 
 
 PrefetchTransform::PrefetchTransform(HttpSM * sm, HTTPHdr * resp)
-:INKVConnInternal(NULL, sm->mutex), m_output_buf(NULL), m_output_vio(NULL), m_sm(sm)
+  : INKVConnInternal(NULL, sm->mutex), m_output_buf(NULL), m_output_vio(NULL), m_sm(sm)
 {
   refcount_inc();
 
@@ -638,7 +638,7 @@ check_n_attach_prefetch_transform(HttpSM * sm, HTTPHdr * resp, bool from_cache)
   Debug("PrefetchParserCT", "Content type is text/html\n");
 
   if (prefetch_config.pre_parse_hook) {
-    INKPrefetchInfo info;
+    TSPrefetchInfo info;
 
     HTTPHdr *req = &sm->t_state.hdr_info.client_request;
     info.request_buf = req;
@@ -654,11 +654,10 @@ check_n_attach_prefetch_transform(HttpSM * sm, HTTPHdr * resp, bool from_cache)
 
     info.object_buf = 0;
     info.object_buf_reader = 0;
-    info.object_buf_status = INK_PREFETCH_OBJ_BUF_NOT_NEEDED;
+    info.object_buf_status = TS_PREFETCH_OBJ_BUF_NOT_NEEDED;
 
-    int ret = (prefetch_config.pre_parse_hook) (INK_PREFETCH_PRE_PARSE_HOOK,
-                                                &info);
-    if (ret == INK_PREFETCH_DISCONTINUE)
+    int ret = (prefetch_config.pre_parse_hook) (TS_PREFETCH_PRE_PARSE_HOOK, &info);
+    if (ret == TS_PREFETCH_DISCONTINUE)
       return;
   }
   //now insert the parser
@@ -666,7 +665,7 @@ check_n_attach_prefetch_transform(HttpSM * sm, HTTPHdr * resp, bool from_cache)
 
   if (prefetch_trans) {
     Debug("PrefetchParser", "Adding Prefetch Parser 0x%p\n", prefetch_trans);
-    INKHttpTxnHookAdd(sm, INK_HTTP_RESPONSE_TRANSFORM_HOOK, prefetch_trans);
+    TSHttpTxnHookAdd(sm, TS_HTTP_RESPONSE_TRANSFORM_HOOK, prefetch_trans);
 
     DUMP_HEADER("PrefetchParserHdrs", &sm->t_state.hdr_info.client_request, (int64)0,
                 "Request Header given for  Prefetch Parser");
@@ -675,7 +674,7 @@ check_n_attach_prefetch_transform(HttpSM * sm, HTTPHdr * resp, bool from_cache)
 
 
 static int
-PrefetchPlugin(INKCont contp, INKEvent event, void *edata)
+PrefetchPlugin(TSCont contp, TSEvent event, void *edata)
 {
   NOWARN_UNUSED(contp);
   HttpSM *sm = (HttpSM *) edata;
@@ -684,13 +683,13 @@ PrefetchPlugin(INKCont contp, INKEvent event, void *edata)
 
   switch (event) {
 
-  case INK_EVENT_HTTP_CACHE_LOOKUP_COMPLETE:{
+  case TS_EVENT_HTTP_CACHE_LOOKUP_COMPLETE:{
 
-      Debug("PrefetchPlugin", "Received INK_HTTP_CACHE_LOOKUP_COMPLETE_HOOK " "event (sm = 0x%p)\n", sm);
+      Debug("PrefetchPlugin", "Received TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK " "event (sm = 0x%p)\n", sm);
       int status;
-      INKHttpTxnCacheLookupStatusGet((INKHttpTxn) sm, &status);
+      TSHttpTxnCacheLookupStatusGet((TSHttpTxn) sm, &status);
 
-      if (status == INK_CACHE_LOOKUP_HIT_FRESH) {
+      if (status == TS_CACHE_LOOKUP_HIT_FRESH) {
         Debug("PrefetchPlugin", "Cached object is fresh\n");
         resp = sm->t_state.cache_info.object_read->response_get();
         from_cache = true;
@@ -700,8 +699,8 @@ PrefetchPlugin(INKCont contp, INKEvent event, void *edata)
 
       break;
     }
-  case INK_EVENT_HTTP_READ_RESPONSE_HDR:
-    Debug("PrefetchPlugin", "Received INK_EVENT_HTTP_READ_RESPONSE_HDR " "event (sm = 0x%p)\n", sm);
+  case TS_EVENT_HTTP_READ_RESPONSE_HDR:
+    Debug("PrefetchPlugin", "Received TS_EVENT_HTTP_READ_RESPONSE_HDR " "event (sm = 0x%p)\n", sm);
     resp = &sm->t_state.hdr_info.server_response;
 
     break;
@@ -714,7 +713,7 @@ PrefetchPlugin(INKCont contp, INKEvent event, void *edata)
   if (resp && resp->valid())
     check_n_attach_prefetch_transform(sm, resp, from_cache);
 
-  INKHttpTxnReenable(sm, INK_EVENT_HTTP_CONTINUE);
+  TSHttpTxnReenable(sm, TS_EVENT_HTTP_CONTINUE);
 
   //Debug("PrefetchPlugin", "Returning after check_n_attach_prefetch_transform()\n");
 
@@ -739,9 +738,9 @@ PrefetchProcessor::start()
 
     prefetch_udp_fd = socketManager.socket(PF_INET, SOCK_DGRAM, 0);
 
-    INKCont contp = INKContCreate(PrefetchPlugin, NULL);
-    INKHttpHookAdd(INK_HTTP_CACHE_LOOKUP_COMPLETE_HOOK, contp);
-    INKHttpHookAdd(INK_HTTP_READ_RESPONSE_HDR_HOOK, contp);
+    TSCont contp = TSContCreate(PrefetchPlugin, NULL);
+    TSHttpHookAdd(TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK, contp);
+    TSHttpHookAdd(TS_HTTP_READ_RESPONSE_HDR_HOOK, contp);
 
     Note("PrefetchProcessor: Started the prefetch processor\n");
   } else {
@@ -1330,8 +1329,7 @@ PrefetchBlaster::handleCookieHeaders(HTTPHdr * req_hdr,
 
     // INKqa11823 - now add the old Cookies back based on the new cookies
     if (add_cookies && existing_req_cookies) {
-      MIMEField *o_cookie = req_hdr->field_find(MIME_FIELD_COOKIE,
-                                                MIME_LEN_COOKIE);
+      MIMEField *o_cookie = req_hdr->field_find(MIME_FIELD_COOKIE, MIME_LEN_COOKIE);
       const char *iter_cookie;
       int iter_cookie_len;
 
@@ -1622,23 +1620,23 @@ PrefetchBlaster::blastObject(int event, void *data)
 
     setup_object_header(reader->start(), reader->read_avail(), obj_cancelled);
 
-    if (url_ent->object_buf_status != INK_PREFETCH_OBJ_BUF_NOT_NEEDED &&
+    if (url_ent->object_buf_status != TS_PREFETCH_OBJ_BUF_NOT_NEEDED &&
         prefetch_config.embedded_obj_hook && !obj_cancelled) {
-      INKPrefetchInfo info;
+      TSPrefetchInfo info;
       memset(&info, 0, sizeof(info));
 
       info.embedded_url = url_ent->url;
       info.object_buf_status = url_ent->object_buf_status;
 
-      info.object_buf = INKIOBufferCreate();
-      info.object_buf_reader = INKIOBufferReaderAlloc(info.object_buf);
+      info.object_buf = TSIOBufferCreate();
+      info.object_buf_reader = TSIOBufferReaderAlloc(info.object_buf);
 
       ((MIOBuffer *) info.object_buf)->write(reader);
 
-      prefetch_config.embedded_obj_hook(INK_PREFETCH_EMBEDDED_OBJECT_HOOK, &info);
+      prefetch_config.embedded_obj_hook(TS_PREFETCH_EMBEDDED_OBJECT_HOOK, &info);
     }
 
-    if (url_ent->object_buf_status == INK_PREFETCH_OBJ_BUF_NEEDED) {
+    if (url_ent->object_buf_status == TS_PREFETCH_OBJ_BUF_NEEDED) {
       //we need not send this to the child
       free();
       break;
@@ -1709,14 +1707,14 @@ int
 PrefetchBlaster::invokeBlaster()
 {
   int ret = (cache_http_info && !prefetch_config.push_cached_objects)
-    ? INK_PREFETCH_DISCONTINUE : INK_PREFETCH_CONTINUE;
+    ? TS_PREFETCH_DISCONTINUE : TS_PREFETCH_CONTINUE;
 
   unsigned int url_proto = prefetch_config.default_url_proto;
   data_proto = prefetch_config.default_data_proto;
 
   if (prefetch_config.embedded_url_hook) {
 
-    INKPrefetchInfo info;
+    TSPrefetchInfo info;
 
     info.request_buf = request;
     info.request_loc = request->m_http;
@@ -1725,7 +1723,7 @@ PrefetchBlaster::invokeBlaster()
 
     info.object_buf = 0;
     info.object_buf_reader = 0;
-    info.object_buf_status = INK_PREFETCH_OBJ_BUF_NOT_NEEDED;
+    info.object_buf_status = TS_PREFETCH_OBJ_BUF_NOT_NEEDED;
 
     info.client_ip = url_ent->child_ip;
     info.embedded_url = url_ent->url;
@@ -1734,7 +1732,7 @@ PrefetchBlaster::invokeBlaster()
     info.url_response_proto = data_proto;
 
     ret = (*prefetch_config.embedded_url_hook)
-      (INK_PREFETCH_EMBEDDED_URL_HOOK, &info);
+      (TS_PREFETCH_EMBEDDED_URL_HOOK, &info);
 
     url_proto = info.url_proto;
     data_proto = info.url_response_proto;
@@ -1742,14 +1740,14 @@ PrefetchBlaster::invokeBlaster()
     url_ent->object_buf_status = info.object_buf_status;
   }
 
-  if (ret == INK_PREFETCH_CONTINUE) {
+  if (ret == TS_PREFETCH_CONTINUE) {
 
     if (url_proto != TCP_BLAST && url_proto != UDP_BLAST)
       url_ent->url_multicast_ip = url_proto;
     if (data_proto != TCP_BLAST && data_proto != UDP_BLAST)
       url_ent->data_multicast_ip = data_proto;
 
-    if (url_ent->object_buf_status != INK_PREFETCH_OBJ_BUF_NEEDED) {
+    if (url_ent->object_buf_status != TS_PREFETCH_OBJ_BUF_NEEDED) {
       if (url_proto == TCP_BLAST)
         url_list = transform->tcp_url_list;
       else
@@ -2175,26 +2173,26 @@ KeepAliveLockHandler::handleEvent(int event, void *data)
 
 /* API */
 int
-INKPrefetchStart()
+TSPrefetchStart()
 {
-  printf("INKPrefetchStart() is called\n");
+  printf("TSPrefetchStart() is called\n");
   return 0;
 }
 
 int
-INKPrefetchHookSet(int hook_no, INKPrefetchHook hook)
+TSPrefetchHookSet(int hook_no, TSPrefetchHook hook)
 {
   switch (hook_no) {
 
-  case INK_PREFETCH_PRE_PARSE_HOOK:
+  case TS_PREFETCH_PRE_PARSE_HOOK:
     prefetch_config.pre_parse_hook = hook;
     return 0;
 
-  case INK_PREFETCH_EMBEDDED_URL_HOOK:
+  case TS_PREFETCH_EMBEDDED_URL_HOOK:
     prefetch_config.embedded_url_hook = hook;
     return 0;
 
-  case INK_PREFETCH_EMBEDDED_OBJECT_HOOK:
+  case TS_PREFETCH_EMBEDDED_OBJECT_HOOK:
     prefetch_config.embedded_obj_hook = hook;
     return 0;
 

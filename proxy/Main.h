@@ -56,7 +56,6 @@
 // Global Data
 //
 // Global Configuration
-extern int use_accept_thread;
 extern int accept_till_done;
 //extern int ssl_accept_port_number;
 //extern int ssl_enabled;
@@ -123,6 +122,7 @@ extern AppVersionInfo appVersionInfo;
 struct HttpOtherPortEntry
 {
   int port;
+  int domain;
   HttpPortTypes type;
   /// Set if outbound connections (to origin servers) are transparent.
   bool f_outbound_transparent;

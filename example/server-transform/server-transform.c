@@ -73,37 +73,37 @@
 typedef struct
 {
   int state;
-  INKHttpTxn txn;
+  TSHttpTxn txn;
 
-  INKIOBuffer input_buf;
-  INKIOBufferReader input_reader;
+  TSIOBuffer input_buf;
+  TSIOBufferReader input_reader;
 
-  INKIOBuffer output_buf;
-  INKIOBufferReader output_reader;
-  INKVConn output_vc;
-  INKVIO output_vio;
+  TSIOBuffer output_buf;
+  TSIOBufferReader output_reader;
+  TSVConn output_vc;
+  TSVIO output_vio;
 
-  INKAction pending_action;
-  INKVConn server_vc;
-  INKVIO server_vio;
+  TSAction pending_action;
+  TSVConn server_vc;
+  TSVIO server_vio;
 
   int content_length;
 } TransformData;
 
-static INKCont transform_create(INKHttpTxn txnp);
-static void transform_destroy(INKCont contp);
-static int transform_connect(INKCont contp, TransformData * data);
-static int transform_write(INKCont contp, TransformData * data);
-static int transform_read_status(INKCont contp, TransformData * data);
-static int transform_read(INKCont contp, TransformData * data);
-static int transform_bypass(INKCont contp, TransformData * data);
-static int transform_buffer_event(INKCont contp, TransformData * data, INKEvent event, void *edata);
-static int transform_connect_event(INKCont contp, TransformData * data, INKEvent event, void *edata);
-static int transform_write_event(INKCont contp, TransformData * data, INKEvent event, void *edata);
-static int transform_read_status_event(INKCont contp, TransformData * data, INKEvent event, void *edata);
-static int transform_read_event(INKCont contp, TransformData * data, INKEvent event, void *edata);
-static int transform_bypass_event(INKCont contp, TransformData * data, INKEvent event, void *edata);
-static int transform_handler(INKCont contp, INKEvent event, void *edata);
+static TSCont transform_create(TSHttpTxn txnp);
+static void transform_destroy(TSCont contp);
+static int transform_connect(TSCont contp, TransformData * data);
+static int transform_write(TSCont contp, TransformData * data);
+static int transform_read_status(TSCont contp, TransformData * data);
+static int transform_read(TSCont contp, TransformData * data);
+static int transform_bypass(TSCont contp, TransformData * data);
+static int transform_buffer_event(TSCont contp, TransformData * data, TSEvent event, void *edata);
+static int transform_connect_event(TSCont contp, TransformData * data, TSEvent event, void *edata);
+static int transform_write_event(TSCont contp, TransformData * data, TSEvent event, void *edata);
+static int transform_read_status_event(TSCont contp, TransformData * data, TSEvent event, void *edata);
+static int transform_read_event(TSCont contp, TransformData * data, TSEvent event, void *edata);
+static int transform_bypass_event(TSCont contp, TransformData * data, TSEvent event, void *edata);
+static int transform_handler(TSCont contp, TSEvent event, void *edata);
 
 #if !defined (_WIN32)
 static in_addr_t server_ip;
@@ -113,18 +113,18 @@ static unsigned int server_ip;
 
 static int server_port;
 
-static INKCont
-transform_create(INKHttpTxn txnp)
+static TSCont
+transform_create(TSHttpTxn txnp)
 {
-  INKCont contp;
+  TSCont contp;
   TransformData *data;
 
-  if ((contp = INKTransformCreate(transform_handler, txnp)) == INK_ERROR_PTR) {
-    INKError("Error in creating Transformation. Retyring...");
+  if ((contp = TSTransformCreate(transform_handler, txnp)) == TS_ERROR_PTR) {
+    TSError("Error in creating Transformation. Retyring...");
     return NULL;
   }
 
-  data = (TransformData *) INKmalloc(sizeof(TransformData));
+  data = (TransformData *) TSmalloc(sizeof(TransformData));
   data->state = STATE_BUFFER;
   data->txn = txnp;
   data->input_buf = NULL;
@@ -138,64 +138,64 @@ transform_create(INKHttpTxn txnp)
   data->server_vio = NULL;
   data->content_length = 0;
 
-  if (INKContDataSet(contp, data) != INK_SUCCESS) {
-    INKError("Error in setting continuation's data. INKContDataSet doesn't return INK_SUCCESS");
+  if (TSContDataSet(contp, data) != TS_SUCCESS) {
+    TSError("Error in setting continuation's data. TSContDataSet doesn't return TS_SUCCESS");
   }
 
   return contp;
 }
 
 static void
-transform_destroy(INKCont contp)
+transform_destroy(TSCont contp)
 {
   TransformData *data;
 
-  data = INKContDataGet(contp);
-  if ((data != INK_ERROR_PTR) || (data != NULL)) {
+  data = TSContDataGet(contp);
+  if ((data != TS_ERROR_PTR) || (data != NULL)) {
     if (data->input_buf) {
-      if (INKIOBufferDestroy(data->input_buf) != INK_SUCCESS) {
-        INKError("Unable to destroy input IO buffer");
+      if (TSIOBufferDestroy(data->input_buf) != TS_SUCCESS) {
+        TSError("Unable to destroy input IO buffer");
       }
     }
 
     if (data->output_buf) {
-      if (INKIOBufferDestroy(data->output_buf) != INK_SUCCESS) {
-        INKError("Unable to destroy output IO buffer");
+      if (TSIOBufferDestroy(data->output_buf) != TS_SUCCESS) {
+        TSError("Unable to destroy output IO buffer");
       }
     }
 
     if (data->pending_action) {
-      if (INKActionCancel(data->pending_action) != INK_SUCCESS) {
-        INKError("Unable to cancel the pending action");
+      if (TSActionCancel(data->pending_action) != TS_SUCCESS) {
+        TSError("Unable to cancel the pending action");
       }
     }
 
     if (data->server_vc) {
-      if (INKVConnAbort(data->server_vc, 1) != INK_SUCCESS) {
-        INKError("Unable to abort server VConnection. INKVConnAbort doesn't return INK_SUCESS");
+      if (TSVConnAbort(data->server_vc, 1) != TS_SUCCESS) {
+        TSError("Unable to abort server VConnection. TSVConnAbort doesn't return TS_SUCESS");
       }
     }
 
-    INKfree(data);
+    TSfree(data);
   } else {
-    INKError("Unable to get Continuation's Data. INKContDataGet returns INK_ERROR_PTR or NULL");
+    TSError("Unable to get Continuation's Data. TSContDataGet returns TS_ERROR_PTR or NULL");
   }
 
-  if (INKContDestroy(contp) != INK_SUCCESS) {
-    INKError("Error in Destroying the continuation");
+  if (TSContDestroy(contp) != TS_SUCCESS) {
+    TSError("Error in Destroying the continuation");
   }
 }
 
 static int
-transform_connect(INKCont contp, TransformData * data)
+transform_connect(TSCont contp, TransformData * data)
 {
-  INKAction action;
+  TSAction action;
   int content_length;
 
   data->state = STATE_CONNECT;
 
-  content_length = INKIOBufferReaderAvail(data->input_reader);
-  if (content_length != INK_ERROR) {
+  content_length = TSIOBufferReaderAvail(data->input_reader);
+  if (content_length != TS_ERROR) {
     data->content_length = content_length;
     data->content_length = htonl(data->content_length);
 
@@ -206,146 +206,146 @@ transform_connect(INKCont contp, TransformData * data)
      */
 
     {
-      INKIOBuffer temp;
-      INKIOBufferReader tempReader;
+      TSIOBuffer temp;
+      TSIOBufferReader tempReader;
 
-      temp = INKIOBufferCreate();
-      if (temp != INK_ERROR_PTR) {
-        tempReader = INKIOBufferReaderAlloc(temp);
+      temp = TSIOBufferCreate();
+      if (temp != TS_ERROR_PTR) {
+        tempReader = TSIOBufferReaderAlloc(temp);
 
-        if (tempReader != INK_ERROR_PTR) {
+        if (tempReader != TS_ERROR_PTR) {
 
-          if (INKIOBufferWrite(temp, (const char *) &data->content_length, sizeof(int)) == INK_ERROR) {
-            INKError("INKIOBufferWrite returns INK_ERROR");
-            if (INKIOBufferReaderFree(tempReader) == INK_ERROR) {
-              INKError("INKIOBufferReaderFree returns INK_ERROR");
+          if (TSIOBufferWrite(temp, (const char *) &data->content_length, sizeof(int)) == TS_ERROR) {
+            TSError("TSIOBufferWrite returns TS_ERROR");
+            if (TSIOBufferReaderFree(tempReader) == TS_ERROR) {
+              TSError("TSIOBufferReaderFree returns TS_ERROR");
             }
-            if (INKIOBufferDestroy(temp) == INK_ERROR) {
-              INKError("INKIOBufferDestroy returns INK_ERROR");
-            }
-            return 0;
-          }
-
-          if (INKIOBufferCopy(temp, data->input_reader, data->content_length, 0) == INK_ERROR) {
-            INKError("INKIOBufferCopy returns INK_ERROR");
-            if (INKIOBufferReaderFree(tempReader) == INK_ERROR) {
-              INKError("INKIOBufferReaderFree returns INK_ERROR");
-            }
-            if (INKIOBufferDestroy(temp) == INK_ERROR) {
-              INKError("INKIOBufferDestroy returns INK_ERROR");
+            if (TSIOBufferDestroy(temp) == TS_ERROR) {
+              TSError("TSIOBufferDestroy returns TS_ERROR");
             }
             return 0;
           }
 
-          if (INKIOBufferReaderFree(data->input_reader) == INK_ERROR) {
-            INKError("Unable to free IOBuffer Reader");
+          if (TSIOBufferCopy(temp, data->input_reader, data->content_length, 0) == TS_ERROR) {
+            TSError("TSIOBufferCopy returns TS_ERROR");
+            if (TSIOBufferReaderFree(tempReader) == TS_ERROR) {
+              TSError("TSIOBufferReaderFree returns TS_ERROR");
+            }
+            if (TSIOBufferDestroy(temp) == TS_ERROR) {
+              TSError("TSIOBufferDestroy returns TS_ERROR");
+            }
+            return 0;
           }
 
-          if (INKIOBufferDestroy(data->input_buf) == INK_ERROR) {
-            INKError("Trying to destroy IOBuffer returns INK_ERROR");
+          if (TSIOBufferReaderFree(data->input_reader) == TS_ERROR) {
+            TSError("Unable to free IOBuffer Reader");
+          }
+
+          if (TSIOBufferDestroy(data->input_buf) == TS_ERROR) {
+            TSError("Trying to destroy IOBuffer returns TS_ERROR");
           }
 
           data->input_buf = temp;
           data->input_reader = tempReader;
 
         } else {
-          INKError("Unable to allocate a reader for buffer");
-          if (INKIOBufferDestroy(temp) == INK_ERROR) {
-            INKError("Unable to destroy IOBuffer");
+          TSError("Unable to allocate a reader for buffer");
+          if (TSIOBufferDestroy(temp) == TS_ERROR) {
+            TSError("Unable to destroy IOBuffer");
           }
           return 0;
         }
       } else {
-        INKError("Unable to create IOBuffer.");
+        TSError("Unable to create IOBuffer.");
         return 0;
       }
     }
   } else {
-    INKError("INKIOBufferReaderAvail returns INK_ERROR");
+    TSError("TSIOBufferReaderAvail returns TS_ERROR");
     return 0;
   }
 
-  action = INKNetConnect(contp, server_ip, server_port);
-  if (action != INK_ERROR_PTR) {
-    if (!INKActionDone(action)) {
+  action = TSNetConnect(contp, server_ip, server_port);
+  if (action != TS_ERROR_PTR) {
+    if (!TSActionDone(action)) {
       data->pending_action = action;
     }
   } else {
-    INKError("Unable to connect to server. INKNetConnect returns INK_ERROR_PTR");
+    TSError("Unable to connect to server. TSNetConnect returns TS_ERROR_PTR");
   }
 
   return 0;
 }
 
 static int
-transform_write(INKCont contp, TransformData * data)
+transform_write(TSCont contp, TransformData * data)
 {
   int content_length;
 
   data->state = STATE_WRITE;
 
-  content_length = INKIOBufferReaderAvail(data->input_reader);
-  if (content_length != INK_ERROR) {
+  content_length = TSIOBufferReaderAvail(data->input_reader);
+  if (content_length != TS_ERROR) {
 
     data->server_vio =
-      INKVConnWrite(data->server_vc, contp, INKIOBufferReaderClone(data->input_reader), content_length);
-    if (data->server_vio == INK_ERROR_PTR) {
-      INKError("INKVConnWrite returns INK_ERROR_PTR");
+      TSVConnWrite(data->server_vc, contp, TSIOBufferReaderClone(data->input_reader), content_length);
+    if (data->server_vio == TS_ERROR_PTR) {
+      TSError("TSVConnWrite returns TS_ERROR_PTR");
     }
   } else {
-    INKError("INKIOBufferReaderAvail returns INK_ERROR");
+    TSError("TSIOBufferReaderAvail returns TS_ERROR");
   }
   return 0;
 }
 
 static int
-transform_read_status(INKCont contp, TransformData * data)
+transform_read_status(TSCont contp, TransformData * data)
 {
   data->state = STATE_READ_STATUS;
 
-  data->output_buf = INKIOBufferCreate();
-  if ((data->output_buf != NULL) && (data->output_buf != INK_ERROR_PTR)) {
-    data->output_reader = INKIOBufferReaderAlloc(data->output_buf);
-    if ((data->output_reader != NULL) && (data->output_reader != INK_ERROR_PTR)) {
-      data->server_vio = INKVConnRead(data->server_vc, contp, data->output_buf, sizeof(int));
-      if (data->server_vio == INK_ERROR_PTR) {
-        INKError("INKVConnRead returns INK_ERROR_PTR");
+  data->output_buf = TSIOBufferCreate();
+  if ((data->output_buf != NULL) && (data->output_buf != TS_ERROR_PTR)) {
+    data->output_reader = TSIOBufferReaderAlloc(data->output_buf);
+    if ((data->output_reader != NULL) && (data->output_reader != TS_ERROR_PTR)) {
+      data->server_vio = TSVConnRead(data->server_vc, contp, data->output_buf, sizeof(int));
+      if (data->server_vio == TS_ERROR_PTR) {
+        TSError("TSVConnRead returns TS_ERROR_PTR");
       }
 
     } else {
-      INKError("Error in Allocating a Reader to output buffer. INKIOBufferReaderAlloc returns NULL or INK_ERROR_PTR");
+      TSError("Error in Allocating a Reader to output buffer. TSIOBufferReaderAlloc returns NULL or TS_ERROR_PTR");
     }
   } else {
-    INKError("Error in creating output buffer. INKIOBufferCreate returns INK_ERROR_PTR");
+    TSError("Error in creating output buffer. TSIOBufferCreate returns TS_ERROR_PTR");
   }
   return 0;
 }
 
 static int
-transform_read(INKCont contp, TransformData * data)
+transform_read(TSCont contp, TransformData * data)
 {
   data->state = STATE_READ;
 
-  if (INKIOBufferDestroy(data->input_buf) != INK_SUCCESS) {
-    INKError("Unable to destroy input IO Buffer. INKIOBuffer doesn't return INK_SUCCESS");
+  if (TSIOBufferDestroy(data->input_buf) != TS_SUCCESS) {
+    TSError("Unable to destroy input IO Buffer. TSIOBuffer doesn't return TS_SUCCESS");
   }
   data->input_buf = NULL;
   data->input_reader = NULL;
 
-  data->server_vio = INKVConnRead(data->server_vc, contp, data->output_buf, data->content_length);
+  data->server_vio = TSVConnRead(data->server_vc, contp, data->output_buf, data->content_length);
 
-  if (data->server_vio == INK_ERROR_PTR) {
-    INKError("INKVConnRead returns INK_ERROR_PTR");
+  if (data->server_vio == TS_ERROR_PTR) {
+    TSError("TSVConnRead returns TS_ERROR_PTR");
     return -1;
   }
 
-  data->output_vc = INKTransformOutputVConnGet((INKVConn) contp);
-  if ((data->output_vc == INK_ERROR_PTR) || (data->output_vc == NULL)) {
-    INKError("INKTransformOutputVConnGet returns NULL or INK_ERROR_PTR");
+  data->output_vc = TSTransformOutputVConnGet((TSVConn) contp);
+  if ((data->output_vc == TS_ERROR_PTR) || (data->output_vc == NULL)) {
+    TSError("TSTransformOutputVConnGet returns NULL or TS_ERROR_PTR");
   } else {
-    data->output_vio = INKVConnWrite(data->output_vc, contp, data->output_reader, data->content_length);
-    if ((data->output_vio == INK_ERROR_PTR) || (data->output_vio == NULL)) {
-      INKError("INKVConnWrite returns NULL or INK_ERROR_PTR");
+    data->output_vio = TSVConnWrite(data->output_vc, contp, data->output_reader, data->content_length);
+    if ((data->output_vio == TS_ERROR_PTR) || (data->output_vio == NULL)) {
+      TSError("TSVConnWrite returns NULL or TS_ERROR_PTR");
     }
   }
 
@@ -353,59 +353,59 @@ transform_read(INKCont contp, TransformData * data)
 }
 
 static int
-transform_bypass(INKCont contp, TransformData * data)
+transform_bypass(TSCont contp, TransformData * data)
 {
   data->state = STATE_BYPASS;
 
   if (data->server_vc) {
-    if (INKVConnAbort(data->server_vc, 1) != INK_SUCCESS) {
-      INKError("Error in destroy server vc. INKVConnAbort doesn't return INK_SUCCESS");
+    if (TSVConnAbort(data->server_vc, 1) != TS_SUCCESS) {
+      TSError("Error in destroy server vc. TSVConnAbort doesn't return TS_SUCCESS");
     }
     data->server_vc = NULL;
     data->server_vio = NULL;
   }
 
   if (data->output_buf) {
-    if (INKIOBufferDestroy(data->output_buf) != INK_SUCCESS) {
-      INKError("Error in destroy output IO buffer. INKIOBufferDestroy doesn't return INK_SUCCESS");
+    if (TSIOBufferDestroy(data->output_buf) != TS_SUCCESS) {
+      TSError("Error in destroy output IO buffer. TSIOBufferDestroy doesn't return TS_SUCCESS");
     }
     data->output_buf = NULL;
     data->output_reader = NULL;
   }
 
-  if (INKIOBufferReaderConsume(data->input_reader, sizeof(int)) != INK_SUCCESS) {
-    INKError("Error in Consuming bytes from Reader. INKIObufferReaderConsume doesn't return INK_SUCCESS");
+  if (TSIOBufferReaderConsume(data->input_reader, sizeof(int)) != TS_SUCCESS) {
+    TSError("Error in Consuming bytes from Reader. TSIObufferReaderConsume doesn't return TS_SUCCESS");
   }
 
-  data->output_vc = INKTransformOutputVConnGet((INKVConn) contp);
-  if ((data->output_vc == INK_ERROR_PTR) || (data->output_vc == NULL)) {
-    INKError("INKTransformOutputVConnGet returns NULL or INK_ERROR_PTR");
+  data->output_vc = TSTransformOutputVConnGet((TSVConn) contp);
+  if ((data->output_vc == TS_ERROR_PTR) || (data->output_vc == NULL)) {
+    TSError("TSTransformOutputVConnGet returns NULL or TS_ERROR_PTR");
   } else {
     data->output_vio =
-      INKVConnWrite(data->output_vc, contp, data->input_reader, INKIOBufferReaderAvail(data->input_reader));
-    if ((data->output_vio == INK_ERROR_PTR) || (data->output_vio == NULL)) {
-      INKError("INKVConnWrite returns NULL or INK_ERROR_PTR");
+      TSVConnWrite(data->output_vc, contp, data->input_reader, TSIOBufferReaderAvail(data->input_reader));
+    if ((data->output_vio == TS_ERROR_PTR) || (data->output_vio == NULL)) {
+      TSError("TSVConnWrite returns NULL or TS_ERROR_PTR");
     }
   }
   return 1;
 }
 
 static int
-transform_buffer_event(INKCont contp, TransformData * data, INKEvent event, void *edata)
+transform_buffer_event(TSCont contp, TransformData * data, TSEvent event, void *edata)
 {
-  INKVIO write_vio;
+  TSVIO write_vio;
   int towrite;
   int avail;
 
   if (!data->input_buf) {
-    data->input_buf = INKIOBufferCreate();
-    if ((data->input_buf == NULL) || (data->input_buf == INK_ERROR_PTR)) {
-      INKError("Error in Creating buffer");
+    data->input_buf = TSIOBufferCreate();
+    if ((data->input_buf == NULL) || (data->input_buf == TS_ERROR_PTR)) {
+      TSError("Error in Creating buffer");
       return -1;
     }
-    data->input_reader = INKIOBufferReaderAlloc(data->input_buf);
-    if ((data->input_reader == NULL) || (data->input_reader == INK_ERROR_PTR)) {
-      INKError("Unable to allocate a reader to input buffer.");
+    data->input_reader = TSIOBufferReaderAlloc(data->input_buf);
+    if ((data->input_reader == NULL) || (data->input_reader == TS_ERROR_PTR)) {
+      TSError("Unable to allocate a reader to input buffer.");
       return -1;
     }
   }
@@ -414,9 +414,9 @@ transform_buffer_event(INKCont contp, TransformData * data, INKEvent event, void
      ourself. This VIO contains the buffer that we are to read from
      as well as the continuation we are to call when the buffer is
      empty. */
-  write_vio = INKVConnWriteVIOGet(contp);
-  if (write_vio == INK_ERROR_PTR) {
-    INKError("Corrupted write VIO received.");
+  write_vio = TSVConnWriteVIOGet(contp);
+  if (write_vio == TS_ERROR_PTR) {
+    TSError("Corrupted write VIO received.");
   }
 
   /* We also check to see if the write VIO's buffer is non-NULL. A
@@ -424,20 +424,20 @@ transform_buffer_event(INKCont contp, TransformData * data, INKEvent event, void
      shutdown and that the continuation does not want us to send any
      more WRITE_READY or WRITE_COMPLETE events. For this buffered
      transformation that means we're done buffering data. */
-  if (!INKVIOBufferGet(write_vio)) {
+  if (!TSVIOBufferGet(write_vio)) {
     return transform_connect(contp, data);
   }
 
   /* Determine how much data we have left to read. For this server
      transform plugin this is also the amount of data we have left
      to write to the output connection. */
-  towrite = INKVIONTodoGet(write_vio);
+  towrite = TSVIONTodoGet(write_vio);
   if (towrite > 0) {
     /* The amount of data left to read needs to be truncated by
        the amount of data actually in the read buffer. */
-    avail = INKIOBufferReaderAvail(INKVIOReaderGet(write_vio));
-    if (avail == INK_ERROR) {
-      INKError("Unable to get the number of bytes availabe for reading");
+    avail = TSIOBufferReaderAvail(TSVIOReaderGet(write_vio));
+    if (avail == TS_ERROR) {
+      TSError("Unable to get the number of bytes availabe for reading");
     } else {
       if (towrite > avail) {
         towrite = avail;
@@ -445,41 +445,41 @@ transform_buffer_event(INKCont contp, TransformData * data, INKEvent event, void
 
       if (towrite > 0) {
         /* Copy the data from the read buffer to the input buffer. */
-        if (INKIOBufferCopy(data->input_buf, INKVIOReaderGet(write_vio), towrite, 0) == INK_ERROR) {
-          INKError("Error in Copying the buffer");
+        if (TSIOBufferCopy(data->input_buf, TSVIOReaderGet(write_vio), towrite, 0) == TS_ERROR) {
+          TSError("Error in Copying the buffer");
         } else {
 
           /* Tell the read buffer that we have read the data and are no
              longer interested in it. */
-          if (INKIOBufferReaderConsume(INKVIOReaderGet(write_vio), towrite) != INK_SUCCESS) {
-            INKError("Unable to consume bytes from the buffer");
+          if (TSIOBufferReaderConsume(TSVIOReaderGet(write_vio), towrite) != TS_SUCCESS) {
+            TSError("Unable to consume bytes from the buffer");
           }
 
           /* Modify the write VIO to reflect how much data we've
              completed. */
-          if (INKVIONDoneSet(write_vio, INKVIONDoneGet(write_vio) + towrite) != INK_SUCCESS) {
-            INKError("Unable to modify the write VIO to reflect how much data we have completed");
+          if (TSVIONDoneSet(write_vio, TSVIONDoneGet(write_vio) + towrite) != TS_SUCCESS) {
+            TSError("Unable to modify the write VIO to reflect how much data we have completed");
           }
         }
       }
     }
   } else {
-    if (towrite == INK_ERROR) {
-      INKError("INKVIONTodoGet returns INK_ERROR");
+    if (towrite == TS_ERROR) {
+      TSError("TSVIONTodoGet returns TS_ERROR");
       return 0;
     }
   }
 
   /* Now we check the write VIO to see if there is data left to
      read. */
-  if (INKVIONTodoGet(write_vio) > 0) {
+  if (TSVIONTodoGet(write_vio) > 0) {
     /* Call back the write VIO continuation to let it know that we
        are ready for more data. */
-    INKContCall(INKVIOContGet(write_vio), INK_EVENT_VCONN_WRITE_READY, write_vio);
+    TSContCall(TSVIOContGet(write_vio), TS_EVENT_VCONN_WRITE_READY, write_vio);
   } else {
     /* Call back the write VIO continuation to let it know that we
        have completed the write operation. */
-    INKContCall(INKVIOContGet(write_vio), INK_EVENT_VCONN_WRITE_COMPLETE, write_vio);
+    TSContCall(TSVIOContGet(write_vio), TS_EVENT_VCONN_WRITE_COMPLETE, write_vio);
 
     /* start compression... */
     return transform_connect(contp, data);
@@ -489,14 +489,14 @@ transform_buffer_event(INKCont contp, TransformData * data, INKEvent event, void
 }
 
 static int
-transform_connect_event(INKCont contp, TransformData * data, INKEvent event, void *edata)
+transform_connect_event(TSCont contp, TransformData * data, TSEvent event, void *edata)
 {
   switch (event) {
-  case INK_EVENT_NET_CONNECT:
+  case TS_EVENT_NET_CONNECT:
     data->pending_action = NULL;
-    data->server_vc = (INKVConn) edata;
+    data->server_vc = (TSVConn) edata;
     return transform_write(contp, data);
-  case INK_EVENT_NET_CONNECT_FAILED:
+  case TS_EVENT_NET_CONNECT_FAILED:
     data->pending_action = NULL;
     return transform_bypass(contp, data);
   default:
@@ -507,15 +507,15 @@ transform_connect_event(INKCont contp, TransformData * data, INKEvent event, voi
 }
 
 static int
-transform_write_event(INKCont contp, TransformData * data, INKEvent event, void *edata)
+transform_write_event(TSCont contp, TransformData * data, TSEvent event, void *edata)
 {
   switch (event) {
-  case INK_EVENT_VCONN_WRITE_READY:
-    if (INKVIOReenable(data->server_vio) != INK_SUCCESS) {
-      INKError("Unable to reenable the server vio in INK_EVENT_VCONN_WRITE_READY");
+  case TS_EVENT_VCONN_WRITE_READY:
+    if (TSVIOReenable(data->server_vio) != TS_SUCCESS) {
+      TSError("Unable to reenable the server vio in TS_EVENT_VCONN_WRITE_READY");
     }
     break;
-  case INK_EVENT_VCONN_WRITE_COMPLETE:
+  case TS_EVENT_VCONN_WRITE_COMPLETE:
     return transform_read_status(contp, data);
   default:
     /* An error occurred while writing to the server. Close down
@@ -527,34 +527,34 @@ transform_write_event(INKCont contp, TransformData * data, INKEvent event, void 
 }
 
 static int
-transform_read_status_event(INKCont contp, TransformData * data, INKEvent event, void *edata)
+transform_read_status_event(TSCont contp, TransformData * data, TSEvent event, void *edata)
 {
   switch (event) {
-  case INK_EVENT_ERROR:
-  case INK_EVENT_VCONN_EOS:
+  case TS_EVENT_ERROR:
+  case TS_EVENT_VCONN_EOS:
     return transform_bypass(contp, data);
-  case INK_EVENT_VCONN_READ_COMPLETE:
-    if (INKIOBufferReaderAvail(data->output_reader) == sizeof(int)) {
-      INKIOBufferBlock blk;
+  case TS_EVENT_VCONN_READ_COMPLETE:
+    if (TSIOBufferReaderAvail(data->output_reader) == sizeof(int)) {
+      TSIOBufferBlock blk;
       char *buf;
       void *buf_ptr;
-      int avail;
-      int read_nbytes = sizeof(int);
-      int read_ndone = 0;
+      int64 avail;
+      int64 read_nbytes = sizeof(int);
+      int64 read_ndone = 0;
 
       buf_ptr = &data->content_length;
       while (read_nbytes > 0) {
-        blk = INKIOBufferReaderStart(data->output_reader);
-        if (blk == INK_ERROR_PTR) {
-          INKError("Error in Getting the pointer to starting of reader block");
+        blk = TSIOBufferReaderStart(data->output_reader);
+        if (blk == TS_ERROR_PTR) {
+          TSError("Error in Getting the pointer to starting of reader block");
         } else {
-          buf = (char *) INKIOBufferBlockReadStart(blk, data->output_reader, &avail);
-          if (buf != INK_ERROR_PTR) {
+          buf = (char *) TSIOBufferBlockReadStart(blk, data->output_reader, &avail);
+          if (buf != TS_ERROR_PTR) {
             read_ndone = (avail >= read_nbytes) ? read_nbytes : avail;
             memcpy(buf_ptr, buf, read_ndone);
             if (read_ndone > 0) {
-              if (INKIOBufferReaderConsume(data->output_reader, read_ndone) != INK_SUCCESS) {
-                INKError("Error in consuming data from the buffer");
+              if (TSIOBufferReaderConsume(data->output_reader, read_ndone) != TS_SUCCESS) {
+                TSError("Error in consuming data from the buffer");
               } else {
                 read_nbytes -= read_ndone;
                 /* move ptr frwd by read_ndone bytes */
@@ -562,7 +562,7 @@ transform_read_status_event(INKCont contp, TransformData * data, INKEvent event,
               }
             }
           } else {
-            INKError("INKIOBufferBlockReadStart returns INK_ERROR_PTR");
+            TSError("TSIOBufferBlockReadStart returns TS_ERROR_PTR");
           }
         }
       }
@@ -578,59 +578,59 @@ transform_read_status_event(INKCont contp, TransformData * data, INKEvent event,
 }
 
 static int
-transform_read_event(INKCont contp, TransformData * data, INKEvent event, void *edata)
+transform_read_event(TSCont contp, TransformData * data, TSEvent event, void *edata)
 {
   switch (event) {
-  case INK_EVENT_ERROR:
-    if (INKVConnAbort(data->server_vc, 1) != INK_SUCCESS) {
-      INKError("INKVConnAbort doesn't return INK_SUCCESS on server VConnection during INK_EVENT_ERROR");
+  case TS_EVENT_ERROR:
+    if (TSVConnAbort(data->server_vc, 1) != TS_SUCCESS) {
+      TSError("TSVConnAbort doesn't return TS_SUCCESS on server VConnection during TS_EVENT_ERROR");
     }
     data->server_vc = NULL;
     data->server_vio = NULL;
 
-    if (INKVConnAbort(data->output_vc, 1) != INK_SUCCESS) {
-      INKError("INKVConnAbort doesn't return INK_SUCCESS on output VConnection during INK_EVENT_ERROR");
+    if (TSVConnAbort(data->output_vc, 1) != TS_SUCCESS) {
+      TSError("TSVConnAbort doesn't return TS_SUCCESS on output VConnection during TS_EVENT_ERROR");
     }
     data->output_vc = NULL;
     data->output_vio = NULL;
     break;
-  case INK_EVENT_VCONN_EOS:
-    if (INKVConnAbort(data->server_vc, 1) != INK_SUCCESS) {
-      INKError("INKVConnAbort doesn't return INK_SUCCESS on server VConnection during INK_EVENT_VCONN_EOS");
+  case TS_EVENT_VCONN_EOS:
+    if (TSVConnAbort(data->server_vc, 1) != TS_SUCCESS) {
+      TSError("TSVConnAbort doesn't return TS_SUCCESS on server VConnection during TS_EVENT_VCONN_EOS");
     }
     data->server_vc = NULL;
     data->server_vio = NULL;
 
-    if (INKVConnAbort(data->output_vc, 1) != INK_SUCCESS) {
-      INKError("INKVConnAbort doesn't return INK_SUCCESS on output VConnection during INK_EVENT_VCONN_EOS");
+    if (TSVConnAbort(data->output_vc, 1) != TS_SUCCESS) {
+      TSError("TSVConnAbort doesn't return TS_SUCCESS on output VConnection during TS_EVENT_VCONN_EOS");
     }
     data->output_vc = NULL;
     data->output_vio = NULL;
     break;
-  case INK_EVENT_VCONN_READ_COMPLETE:
-    if (INKVConnClose(data->server_vc) != INK_SUCCESS) {
-      INKError("INKVConnClose doesn't return INK_SUCCESS on INK_EVENT_VCONN_READ_COMPLETE");
+  case TS_EVENT_VCONN_READ_COMPLETE:
+    if (TSVConnClose(data->server_vc) != TS_SUCCESS) {
+      TSError("TSVConnClose doesn't return TS_SUCCESS on TS_EVENT_VCONN_READ_COMPLETE");
     }
     data->server_vc = NULL;
     data->server_vio = NULL;
 
-    if (INKVIOReenable(data->output_vio) != INK_SUCCESS) {
-      INKError("INKVIOReneable doesn't return INK_SUCCESS on INK_EVENT_VCONN_READ_COMPLETE");
+    if (TSVIOReenable(data->output_vio) != TS_SUCCESS) {
+      TSError("TSVIOReneable doesn't return TS_SUCCESS on TS_EVENT_VCONN_READ_COMPLETE");
     }
     break;
-  case INK_EVENT_VCONN_READ_READY:
-    if (INKVIOReenable(data->output_vio) != INK_SUCCESS) {
-      INKError("INKVIOReneable doesn't return INK_SUCCESS on INK_EVENT_VCONN_READ_READY");
+  case TS_EVENT_VCONN_READ_READY:
+    if (TSVIOReenable(data->output_vio) != TS_SUCCESS) {
+      TSError("TSVIOReneable doesn't return TS_SUCCESS on TS_EVENT_VCONN_READ_READY");
     }
     break;
-  case INK_EVENT_VCONN_WRITE_COMPLETE:
-    if (INKVConnShutdown(data->output_vc, 0, 1) != INK_SUCCESS) {
-      INKError("INKVConnShutdown doesn't return INK_SUCCESS during INK_EVENT_VCONN_WRITE_COMPLETE");
+  case TS_EVENT_VCONN_WRITE_COMPLETE:
+    if (TSVConnShutdown(data->output_vc, 0, 1) != TS_SUCCESS) {
+      TSError("TSVConnShutdown doesn't return TS_SUCCESS during TS_EVENT_VCONN_WRITE_COMPLETE");
     }
     break;
-  case INK_EVENT_VCONN_WRITE_READY:
-    if (INKVIOReenable(data->server_vio) != INK_SUCCESS) {
-      INKError("INKVIOReneable doesn't return INK_SUCCESS while reenabling on INK_EVENT_VCONN_WRITE_READY");
+  case TS_EVENT_VCONN_WRITE_READY:
+    if (TSVIOReenable(data->server_vio) != TS_SUCCESS) {
+      TSError("TSVIOReneable doesn't return TS_SUCCESS while reenabling on TS_EVENT_VCONN_WRITE_READY");
     }
     break;
   default:
@@ -641,18 +641,18 @@ transform_read_event(INKCont contp, TransformData * data, INKEvent event, void *
 }
 
 static int
-transform_bypass_event(INKCont contp, TransformData * data, INKEvent event, void *edata)
+transform_bypass_event(TSCont contp, TransformData * data, TSEvent event, void *edata)
 {
   switch (event) {
-  case INK_EVENT_VCONN_WRITE_COMPLETE:
-    if (INKVConnShutdown(data->output_vc, 0, 1) != INK_SUCCESS) {
-      INKError("Error in shutting down the VConnection while bypassing the event");
+  case TS_EVENT_VCONN_WRITE_COMPLETE:
+    if (TSVConnShutdown(data->output_vc, 0, 1) != TS_SUCCESS) {
+      TSError("Error in shutting down the VConnection while bypassing the event");
     }
     break;
-  case INK_EVENT_VCONN_WRITE_READY:
+  case TS_EVENT_VCONN_WRITE_READY:
   default:
-    if (INKVIOReenable(data->output_vio) != INK_SUCCESS) {
-      INKError("Error in re-enabling the VIO while bypassing the event");
+    if (TSVIOReenable(data->output_vio) != TS_SUCCESS) {
+      TSError("Error in re-enabling the VIO while bypassing the event");
     }
     break;
   }
@@ -661,20 +661,20 @@ transform_bypass_event(INKCont contp, TransformData * data, INKEvent event, void
 }
 
 static int
-transform_handler(INKCont contp, INKEvent event, void *edata)
+transform_handler(TSCont contp, TSEvent event, void *edata)
 {
   /* Check to see if the transformation has been closed by a call to
-     INKVConnClose. */
-  if (INKVConnClosedGet(contp)) {
+     TSVConnClose. */
+  if (TSVConnClosedGet(contp)) {
     transform_destroy(contp);
     return 0;
   } else {
     TransformData *data;
     int val = 0;
 
-    data = (TransformData *) INKContDataGet(contp);
-    if ((data == NULL) && (data == INK_ERROR_PTR)) {
-      INKError("Didn't get Continuation's Data. Ignoring Event..");
+    data = (TransformData *) TSContDataGet(contp);
+    if ((data == NULL) && (data == TS_ERROR_PTR)) {
+      TSError("Didn't get Continuation's Data. Ignoring Event..");
       return 0;
     }
     do {
@@ -705,7 +705,7 @@ transform_handler(INKCont contp, INKEvent event, void *edata)
 }
 
 static int
-request_ok(INKHttpTxn txnp)
+request_ok(TSHttpTxn txnp)
 {
   /* Is the initial client request OK for transformation. This is a
      good place to check accept headers to see if the client can
@@ -714,7 +714,7 @@ request_ok(INKHttpTxn txnp)
 }
 
 static int
-cache_response_ok(INKHttpTxn txnp)
+cache_response_ok(TSHttpTxn txnp)
 {
   /* Is the response we're reading from cache OK for
    * transformation. This is a good place to check the cached
@@ -727,7 +727,7 @@ cache_response_ok(INKHttpTxn txnp)
 }
 
 static int
-server_response_ok(INKHttpTxn txnp)
+server_response_ok(TSHttpTxn txnp)
 {
   /* Is the response the server sent OK for transformation. This is
    * a good place to check the server's response to see if it is
@@ -735,73 +735,73 @@ server_response_ok(INKHttpTxn txnp)
    * responses.
    */
 
-  INKMBuffer bufp;
-  INKMLoc hdr_loc;
-  INKHttpStatus resp_status;
+  TSMBuffer bufp;
+  TSMLoc hdr_loc;
+  TSHttpStatus resp_status;
 
-  if (INKHttpTxnServerRespGet(txnp, &bufp, &hdr_loc) == 0) {
-    INKError("Unable to get handle to Server Response");
+  if (TSHttpTxnServerRespGet(txnp, &bufp, &hdr_loc) == 0) {
+    TSError("Unable to get handle to Server Response");
     return 0;
   }
 
-  if ((resp_status = INKHttpHdrStatusGet(bufp, hdr_loc)) == (INKHttpStatus)INK_ERROR) {
-    INKError("Error in Getting Status from Server response");
-    if (INKHandleMLocRelease(bufp, INK_NULL_MLOC, hdr_loc) != INK_SUCCESS) {
-      INKError("Unable to release handle to server request");
+  if ((resp_status = TSHttpHdrStatusGet(bufp, hdr_loc)) == (TSHttpStatus)TS_ERROR) {
+    TSError("Error in Getting Status from Server response");
+    if (TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc) != TS_SUCCESS) {
+      TSError("Unable to release handle to server request");
     }
     return 0;
   }
 
-  if (INK_HTTP_STATUS_OK == resp_status) {
-    if (INKHandleMLocRelease(bufp, INK_NULL_MLOC, hdr_loc) != INK_SUCCESS) {
-      INKError("Unable to release handle to server request");
+  if (TS_HTTP_STATUS_OK == resp_status) {
+    if (TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc) != TS_SUCCESS) {
+      TSError("Unable to release handle to server request");
     }
     return 1;
   } else {
-    if (INKHandleMLocRelease(bufp, INK_NULL_MLOC, hdr_loc) != INK_SUCCESS) {
-      INKError("Unable to release handle to server request");
+    if (TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc) != TS_SUCCESS) {
+      TSError("Unable to release handle to server request");
     }
     return 0;
   }
 }
 
 static int
-transform_plugin(INKCont contp, INKEvent event, void *edata)
+transform_plugin(TSCont contp, TSEvent event, void *edata)
 {
-  INKHttpTxn txnp = (INKHttpTxn) edata;
+  TSHttpTxn txnp = (TSHttpTxn) edata;
 
   switch (event) {
-  case INK_EVENT_HTTP_READ_REQUEST_HDR:
+  case TS_EVENT_HTTP_READ_REQUEST_HDR:
     if (request_ok(txnp)) {
-      if (INKHttpTxnHookAdd(txnp, INK_HTTP_READ_CACHE_HDR_HOOK, contp) != INK_SUCCESS) {
-        INKError("Unable to add continuation to hook " "INK_HTTP_READ_CACHE_HDR_HOOK for this transaction");
+      if (TSHttpTxnHookAdd(txnp, TS_HTTP_READ_CACHE_HDR_HOOK, contp) != TS_SUCCESS) {
+        TSError("Unable to add continuation to hook " "TS_HTTP_READ_CACHE_HDR_HOOK for this transaction");
       }
-      if (INKHttpTxnHookAdd(txnp, INK_HTTP_READ_RESPONSE_HDR_HOOK, contp) != INK_SUCCESS) {
-        INKError("Unable to add continuation to hook " "INK_HTTP_READ_RESPONSE_HDR_HOOK for this transaction");
+      if (TSHttpTxnHookAdd(txnp, TS_HTTP_READ_RESPONSE_HDR_HOOK, contp) != TS_SUCCESS) {
+        TSError("Unable to add continuation to hook " "TS_HTTP_READ_RESPONSE_HDR_HOOK for this transaction");
       }
     }
-    if (INKHttpTxnReenable(txnp, INK_EVENT_HTTP_CONTINUE) != INK_SUCCESS) {
-      INKError("Error in re-enabling transaction at INK_HTTP_READ_REQUEST_HDR_HOOK");
+    if (TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE) != TS_SUCCESS) {
+      TSError("Error in re-enabling transaction at TS_HTTP_READ_REQUEST_HDR_HOOK");
     }
     break;
-  case INK_EVENT_HTTP_READ_CACHE_HDR:
+  case TS_EVENT_HTTP_READ_CACHE_HDR:
     if (cache_response_ok(txnp)) {
-      if (INKHttpTxnHookAdd(txnp, INK_HTTP_RESPONSE_TRANSFORM_HOOK, transform_create(txnp)) != INK_SUCCESS) {
-        INKError("Unable to add continuation to tranformation hook " "for this transaction");
+      if (TSHttpTxnHookAdd(txnp, TS_HTTP_RESPONSE_TRANSFORM_HOOK, transform_create(txnp)) != TS_SUCCESS) {
+        TSError("Unable to add continuation to tranformation hook " "for this transaction");
       }
     }
-    if (INKHttpTxnReenable(txnp, INK_EVENT_HTTP_CONTINUE) != INK_SUCCESS) {
-      INKError("Error in re-enabling transaction at INK_HTTP_READ_CACHE_HDR_HOOK");
+    if (TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE) != TS_SUCCESS) {
+      TSError("Error in re-enabling transaction at TS_HTTP_READ_CACHE_HDR_HOOK");
     }
     break;
-  case INK_EVENT_HTTP_READ_RESPONSE_HDR:
+  case TS_EVENT_HTTP_READ_RESPONSE_HDR:
     if (server_response_ok(txnp)) {
-      if (INKHttpTxnHookAdd(txnp, INK_HTTP_RESPONSE_TRANSFORM_HOOK, transform_create(txnp)) != INK_SUCCESS) {
-        INKError("Unable to add continuation to tranformation hook " "for this transaction");
+      if (TSHttpTxnHookAdd(txnp, TS_HTTP_RESPONSE_TRANSFORM_HOOK, transform_create(txnp)) != TS_SUCCESS) {
+        TSError("Unable to add continuation to tranformation hook " "for this transaction");
       }
     }
-    if (INKHttpTxnReenable(txnp, INK_EVENT_HTTP_CONTINUE) != INK_SUCCESS) {
-      INKError("Error in re-enabling transaction at INK_HTTP_READ_RESPONSE_HDR_HOOK");
+    if (TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE) != TS_SUCCESS) {
+      TSError("Error in re-enabling transaction at TS_HTTP_READ_RESPONSE_HDR_HOOK");
     }
     break;
   default:
@@ -814,7 +814,7 @@ int
 check_ts_version()
 {
 
-  const char *ts_version = INKTrafficServerVersionGet();
+  const char *ts_version = TSTrafficServerVersionGet();
   int result = 0;
 
   if (ts_version) {
@@ -837,21 +837,21 @@ check_ts_version()
 }
 
 void
-INKPluginInit(int argc, const char *argv[])
+TSPluginInit(int argc, const char *argv[])
 {
-  INKPluginRegistrationInfo info;
-  INKCont cont;
+  TSPluginRegistrationInfo info;
+  TSCont cont;
 
   info.plugin_name = "server-transform";
   info.vendor_name = "MyCompany";
   info.support_email = "ts-api-support@MyCompany.com";
 
-  if (!INKPluginRegister(INK_SDK_VERSION_2_0, &info)) {
-    INKError("Plugin registration failed.\n");
+  if (!TSPluginRegister(TS_SDK_VERSION_2_0, &info)) {
+    TSError("Plugin registration failed.\n");
   }
 
   if (!check_ts_version()) {
-    INKError("Plugin requires Traffic Server 2.0 or later\n");
+    TSError("Plugin requires Traffic Server 2.0 or later\n");
     return;
   }
 
@@ -860,15 +860,15 @@ INKPluginInit(int argc, const char *argv[])
   server_ip = htonl(server_ip);
   server_port = 7;
 
-  if ((cont = INKContCreate(transform_plugin, NULL)) == INK_ERROR_PTR) {
-    INKError("Unable to create continuation. Aborting...");
+  if ((cont = TSContCreate(transform_plugin, NULL)) == TS_ERROR_PTR) {
+    TSError("Unable to create continuation. Aborting...");
     return;
   }
 
-  if (INKHttpHookAdd(INK_HTTP_READ_REQUEST_HDR_HOOK, cont) == INK_ERROR) {
-    INKError("Unable to add the continuation to the hook. Aborting...");
-    if (INKContDestroy(cont) == INK_ERROR) {
-      INKError("Error in Destroying the continuation.");
+  if (TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, cont) == TS_ERROR) {
+    TSError("Unable to add the continuation to the hook. Aborting...");
+    if (TSContDestroy(cont) == TS_ERROR) {
+      TSError("Error in Destroying the continuation.");
     }
   }
 }

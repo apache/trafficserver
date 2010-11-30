@@ -39,24 +39,6 @@
 static int64 next_ss_id = (int64) 0;
 ClassAllocator<HttpServerSession> httpServerSessionAllocator("httpServerSessionAllocator");
 
-enum
-{
-  HTTP_SS_MAGIC_ALIVE = 0x0123FEED,
-  HTTP_SS_MAGIC_DEAD = 0xDEADFEED
-};
-
-HttpServerSession::HttpServerSession():
-VConnection(NULL),
-server_ip(0), server_port(0), hostname_hash(),
-host_hash_computed(false), con_id(0), transact_count(0),
-state(HSS_INIT), to_parent_proxy(false), server_trans_stat(0),
-private_session(false),
-enable_origin_connection_limiting(false),
-connection_count(NULL),
-read_buffer(NULL), server_vc(NULL), magic(HTTP_SS_MAGIC_DEAD), buf_reader(NULL)
-{
-}
-
 void
 HttpServerSession::destroy()
 {
@@ -84,7 +66,6 @@ HttpServerSession::allocate()
 void
 HttpServerSession::new_connection(NetVConnection * new_vc)
 {
-
   ink_assert(new_vc != NULL);
   server_vc = new_vc;
 
@@ -98,7 +79,7 @@ HttpServerSession::new_connection(NetVConnection * new_vc)
   con_id = ink_atomic_increment64((int64 *) (&next_ss_id), 1);
 
   magic = HTTP_SS_MAGIC_ALIVE;
-  HTTP_INCREMENT_DYN_STAT(http_current_server_connections_stat);
+  HTTP_SUM_GLOBAL_DYN_STAT(http_current_server_connections_stat, 1); // Update the true global stat
   HTTP_INCREMENT_DYN_STAT(http_total_server_connections_stat);
   // Check to see if we are limiting the number of connections
   // per host
@@ -106,8 +87,7 @@ HttpServerSession::new_connection(NetVConnection * new_vc)
     if(connection_count == NULL)
       connection_count = ConnectionCount::getInstance();
     connection_count->incrementCount(server_ip);
-    Debug("http_ss", "[%lld] new connection, ip: %u, count: %u",
-          con_id, server_ip, connection_count->getCount(server_ip));
+    Debug("http_ss", "[%lld] new connection, ip: %u, count: %u", con_id, server_ip, connection_count->getCount(server_ip));
   }
 #ifdef LAZY_BUF_ALLOC
   read_buffer = new_empty_MIOBuffer(HTTP_SERVER_RESP_HDR_BUFFER_INDEX);
@@ -144,17 +124,13 @@ HttpServerSession::do_io_close(int alerrno)
     HTTP_DECREMENT_DYN_STAT(http_current_server_transactions_stat);
     this->server_trans_stat--;
   }
+
   server_vc->do_io_close(alerrno);
   Debug("http_ss", "[%lld] session closed", con_id);
   server_vc = NULL;
 
-//  Have to a taken mutex to use normal stat stuff now, we don't
-//    so use funny macros here....
-//    HTTP_DECREMENT_DYN_STAT(http_current_server_connections_stat);
-//    HTTP_SUM_DYN_STAT(http_transactions_per_server_con, transact_count);
-
-  HTTP_SUM_GLOBAL_DYN_STAT(http_current_server_connections_stat, -1);
-  HTTP_SUM_GLOBAL_DYN_STAT(http_transactions_per_server_con, transact_count);
+  HTTP_SUM_GLOBAL_DYN_STAT(http_current_server_connections_stat, -1); // Make sure to work on the global stat
+  HTTP_SUM_DYN_STAT(http_transactions_per_server_con, transact_count);
 
   // Check to see if we are limiting the number of connections
   // per host
@@ -171,7 +147,7 @@ HttpServerSession::do_io_close(int alerrno)
   }
 
   if (to_parent_proxy) {
-    HTTP_SUM_GLOBAL_DYN_STAT(http_current_parent_proxy_connections_stat, -1);
+    HTTP_DECREMENT_DYN_STAT(http_current_parent_proxy_connections_stat);
   }
   destroy();
 }

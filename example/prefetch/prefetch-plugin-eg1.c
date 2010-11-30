@@ -30,33 +30,33 @@
 #include <stdio.h>
 #include <string.h>
 #include <ts/ts.h>
-#include <ts/ts_private.h>
+#include <ts/experimental.h>
 
 /* We will register the following two hooks */
 
-int my_preparse_hook(int hook, INKPrefetchInfo * info);
-int my_embedded_url_hook(int hook, INKPrefetchInfo * info);
+int my_preparse_hook(int hook, TSPrefetchInfo * info);
+int my_embedded_url_hook(int hook, TSPrefetchInfo * info);
 
 void
-INKPluginInit(int argc, const char *argv[])
+TSPluginInit(int argc, const char *argv[])
 {
-  INKPluginRegistrationInfo info;
+  TSPluginRegistrationInfo info;
 
   info.plugin_name = "prefetch_plugin_eg1";
   info.vendor_name = "MyCompany";
   info.support_email = "ts-api-support@MyCompany.com";
 
-  if (!INKPluginRegister(INK_SDK_VERSION_2_0, &info)) {
-    INKError("Plugin registration failed.\n");
+  if (!TSPluginRegister(TS_SDK_VERSION_2_0, &info)) {
+    TSError("Plugin registration failed.\n");
   }
 
   /* register our hooks */
-  INKPrefetchHookSet(INK_PREFETCH_PRE_PARSE_HOOK, &my_preparse_hook);
-  INKPrefetchHookSet(INK_PREFETCH_EMBEDDED_URL_HOOK, &my_embedded_url_hook);
+  TSPrefetchHookSet(TS_PREFETCH_PRE_PARSE_HOOK, &my_preparse_hook);
+  TSPrefetchHookSet(TS_PREFETCH_EMBEDDED_URL_HOOK, &my_embedded_url_hook);
 }
 
 int
-my_preparse_hook(int hook, INKPrefetchInfo * info)
+my_preparse_hook(int hook, TSPrefetchInfo * info)
 {
   unsigned char *ip = (unsigned char *) &info->client_ip;
 
@@ -64,11 +64,11 @@ my_preparse_hook(int hook, INKPrefetchInfo * info)
 
 
   /* we will let TS parse the page */
-  return INK_PREFETCH_CONTINUE;
+  return TS_PREFETCH_CONTINUE;
 }
 
 int
-my_embedded_url_hook(int hook, INKPrefetchInfo * info)
+my_embedded_url_hook(int hook, TSPrefetchInfo * info)
 {
 
   unsigned char *ip = (unsigned char *) &info->client_ip;
@@ -80,11 +80,11 @@ my_embedded_url_hook(int hook, INKPrefetchInfo * info)
      We will select UDP for sending url and TCP for sending object
    */
 
-  info->url_proto = INK_PREFETCH_PROTO_UDP;
-  info->url_response_proto = INK_PREFETCH_PROTO_TCP;
+  info->url_proto = TS_PREFETCH_PROTO_UDP;
+  info->url_response_proto = TS_PREFETCH_PROTO_TCP;
 
-  /* we can return INK_PREFETCH_DISCONTINUE if we dont want TS to prefetch
+  /* we can return TS_PREFETCH_DISCONTINUE if we dont want TS to prefetch
      this url */
 
-  return INK_PREFETCH_CONTINUE;
+  return TS_PREFETCH_CONTINUE;
 }

@@ -20,7 +20,7 @@ On Solaris: append-transform.so path/to/file
 Specify an absolute path to the text file, or a relative path as
 described in the file-plugin README.
 
-INKPluginInit does the following:
+TSPluginInit does the following:
 
 - makes sure that there is a text file specified in plugin.config
 	(if not, it returns an error message)
@@ -29,57 +29,57 @@ INKPluginInit does the following:
 	a buffer to be appended to HTML response bodies
 
 - sets up the global hook to call back the plugin:
-	INKHttpHookAdd(INK_HTTP_READ_RESPONSE_HDR_HOOK, 
-INKContCreate (transform_plugin, NULL)); 
+	TSHttpHookAdd(TS_HTTP_READ_RESPONSE_HDR_HOOK, 
+TSContCreate (transform_plugin, NULL)); 
 
 The load function does the following (similar to file-1.c):
 
 - opens the file specified in plugin.config using
-	INKfopen
+	TSfopen
 
 - creates a buffer for the text to be appended using
-	INKIOBufferCreate
+	TSIOBufferCreate
 
 - creates a buffer reader for the text to be appended using
-	INKIOBufferReaderAlloc
+	TSIOBufferReaderAlloc
 
 - reads the contents of the file in to the buffer using:
-	INKIOBufferStart
-	INKIOBufferBlockWriteStart
-	INKfread	
-	INKIOBufferProduce
-	INKIOBufferReaderAvail
+	TSIOBufferStart
+	TSIOBufferBlockWriteStart
+	TSfread	
+	TSIOBufferProduce
+	TSIOBufferReaderAvail
 
 - closes the file using
-	INKfclose
+	TSfclose
 
 The transform_plugin function does the following:
 
 - tests the response body to make sure it is text/html, using 
 	the function "transformable". The transformable function
 	uses the following API calls:
-	INKHttpTxnServerRespGet
-	INKHttpHdrStatusGet	
-	INKMimeHdrFieldFind
-	INKMimeFieldValueGet
+	TSHttpTxnServerRespGet
+	TSHttpHdrStatusGet	
+	TSMimeHdrFieldFind
+	TSMimeHdrFieldValueStringGet
 
 - if the response body is deemed transformable, transform_plugin calls
 	transform_add 
 
 - continues the HTTP transaction using
-	INKHttpTxnReenable
+	TSHttpTxnReenable
 
 The transform_add function does the following:
 
 - creates a continuation for the append transform, using
-	INKTransformCreate (append_transform, txnp); 
+	TSTransformCreate (append_transform, txnp); 
 	The handler function for this continuation is 
 	append_transform.
 
 - adds a transaction hook for the append transform, using
-	INKHttpTxnHookAdd(txnp, INK_HTTP_RESPONSE_TRANSFORM_HOOK, connp);
+	TSHttpTxnHookAdd(txnp, TS_HTTP_RESPONSE_TRANSFORM_HOOK, connp);
 	This transaction hook sets up a callback during transactions. 
-	When the event INK_HTTP_RESPONSE_TRANSFORM_HOOK happens,
+	When the event TS_HTTP_RESPONSE_TRANSFORM_HOOK happens,
 	the append_transform function is called back.
 
 The remaining functions in the plugin, append_transform and 

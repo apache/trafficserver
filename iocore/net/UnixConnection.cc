@@ -72,10 +72,10 @@ Connection::setup_mc_send(unsigned int mc_ip, int mc_port,
     goto Lerror;
   }
 
-  sa.sin_family = AF_INET;
-  sa.sin_port = htons(mc_port);
-  sa.sin_addr.s_addr = mc_ip;
-  memset(&sa.sin_zero, 0, 8);
+  sa.ss_family = AF_INET;
+  ((struct sockaddr_in *)(&sa))->sin_port = htons(mc_port);
+  ((struct sockaddr_in *)(&sa))->sin_addr.s_addr = mc_ip;
+  memset(&(((struct sockaddr_in *)(&sa))->sin_zero), 0, 8);
 
 #ifdef SET_CLOSE_ON_EXEC
   if ((res = safe_fcntl(fd, F_SETFD, 1)) < 0)
@@ -131,9 +131,9 @@ Connection::setup_mc_receive(unsigned int mc_ip, int mc_port,
     goto Lerror;
 
   memset(&sa, 0, sizeof(sa));
-  sa.sin_family = AF_INET;
-  sa.sin_addr.s_addr = mc_ip;
-  sa.sin_port = htons(mc_port);
+  sa.ss_family = AF_INET;
+  ((struct sockaddr_in *)(&sa))->sin_addr.s_addr = mc_ip;
+  ((struct sockaddr_in *)(&sa))->sin_port = htons(mc_port);
 
   if ((res = socketManager.ink_bind(fd, (struct sockaddr *) &sa, sizeof(sa), IPPROTO_TCP)) < 0)
     goto Lerror;
@@ -255,7 +255,7 @@ Connection::open(NetVCOptions const& opt)
       int rbufsz = ROUNDUP(opt.socket_recv_bufsize, 1024);
       while (rbufsz && !socketManager.set_rcvbuf_size(fd, rbufsz))
 	rbufsz -= 1024;
-      NetDebug("socket", "::open: recv_bufsize = %d of %d\n", rbufsz, opt.socket_recv_bufsize);
+      Debug("socket", "::open: recv_bufsize = %d of %d\n", rbufsz, opt.socket_recv_bufsize);
     }
   }
   if (opt.socket_send_bufsize > 0) {
@@ -264,18 +264,18 @@ Connection::open(NetVCOptions const& opt)
       int sbufsz = ROUNDUP(opt.socket_send_bufsize, 1024);
       while (sbufsz && !socketManager.set_sndbuf_size(fd, sbufsz))
 	sbufsz -= 1024;
-      NetDebug("socket", "::open: send_bufsize = %d of %d\n", sbufsz, opt.socket_send_bufsize);
+      Debug("socket", "::open: send_bufsize = %d of %d\n", sbufsz, opt.socket_send_bufsize);
     }
   }
 
   if (SOCK_STREAM == sock_type) {
     if (opt.sockopt_flags & NetVCOptions::SOCK_OPT_NO_DELAY) {
       safe_setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, ON, sizeof(int));
-      NetDebug("socket", "::open: setsockopt() TCP_NODELAY on socket");
+      Debug("socket", "::open: setsockopt() TCP_NODELAY on socket");
     }
     if (opt.sockopt_flags & NetVCOptions::SOCK_OPT_KEEP_ALIVE) {
       safe_setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, ON, sizeof(int));
-      NetDebug("socket", "::open: setsockopt() SO_KEEPALIVE on socket");
+      Debug("socket", "::open: setsockopt() SO_KEEPALIVE on socket");
     }
   }
 
@@ -286,13 +286,13 @@ Connection::open(NetVCOptions const& opt)
     if (-1 == safe_setsockopt(fd, SOL_IP, TS_IP_TRANSPARENT,
 			      reinterpret_cast<char*>(&value), sizeof(value)
 			      )) {
-      NetDebug("socket", "%s - fail %d:%s", DEBUG_TEXT, errno, strerror(errno));
+      Debug("socket", "%s - fail %d:%s", DEBUG_TEXT, errno, strerror(errno));
       return -errno;
     } else {
-      NetDebug("socket", "%s set", DEBUG_TEXT);
+      Debug("socket", "%s set", DEBUG_TEXT);
     }
 #else
-    NetDebug("socket", "%s - requested but TPROXY not configured", DEBUG_TEXT);
+    Debug("socket", "%s - requested but TPROXY not configured", DEBUG_TEXT);
 #endif
   }
 

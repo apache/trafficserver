@@ -46,7 +46,6 @@ int
 SSL_CTX_add_extra_chain_cert_file(SSL_CTX * ctx, const char *file)
 {
   BIO *in;
-  int j;
   int ret = 0;
   X509 *x = NULL;
 
@@ -61,14 +60,22 @@ SSL_CTX_add_extra_chain_cert_file(SSL_CTX * ctx, const char *file)
     goto end;
   }
 
-  j = ERR_R_PEM_LIB;
-  x = PEM_read_bio_X509(in, NULL, ctx->default_passwd_callback, ctx->default_passwd_callback_userdata);
+  // j = ERR_R_PEM_LIB;
+  while ((x = PEM_read_bio_X509(in, NULL, ctx->default_passwd_callback, ctx->default_passwd_callback_userdata)) != NULL) {
+    ret = SSL_CTX_add_extra_chain_cert(ctx, x);
+    if (!ret) {
+        X509_free(x);
+        BIO_free(in);
+	return -1;
+     }
+    }
+/*  x = PEM_read_bio_X509(in, NULL, ctx->default_passwd_callback, ctx->default_passwd_callback_userdata);
   if (x == NULL) {
     SSLerr(SSL_F_SSL_USE_CERTIFICATE_FILE, j);
     goto end;
   }
 
-  ret = SSL_CTX_add_extra_chain_cert(ctx, x);
+  ret = SSL_CTX_add_extra_chain_cert(ctx, x);*/
 end:
   //  if (x != NULL) X509_free(x);
   if (in != NULL)
@@ -237,9 +244,9 @@ SSLNetProcessor::initSSL(SslConfigParams * param)
     randBuff[irand] += rand();
   }
 
-  long *rbp = (long *) randBuff;
-  *rbp++ += (long) serverKeyPtr;
-  *rbp++ ^= *((long *) (&meth));
+  uintptr_t *rbp = (uintptr_t *) randBuff;
+  *rbp++ += (uintptr_t) serverKeyPtr;
+  *rbp++ ^= *((uintptr_t *) (&meth));
   srand((unsigned) time(NULL));
 
   for (irand = 32; irand < 64; irand++)
@@ -518,9 +525,9 @@ SSLNetProcessor::initSSLClient(SslConfigParams * param)
     randBuff[irand] += rand();
   }
 
-  long *rbp = (long *) randBuff;
-  *rbp++ += (long) clientKeyPtr;
-  *rbp++ ^= *((long *) (&meth));
+  uintptr_t *rbp = (uintptr_t *) randBuff;
+  *rbp++ += (uintptr_t) clientKeyPtr;
+  *rbp++ ^= *((uintptr_t *) (&meth));
   srand((unsigned) time(NULL));
 
   for (irand = 64; irand < 128; irand++)

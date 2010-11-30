@@ -29,39 +29,39 @@
  * code into it's own section.
 */
 static int
-INKProto(INKCont contp, INKEvent event, void *eData)
+TSProto(TSCont contp, TSEvent event, void *eData)
 {
 
-  INKHttpTxn txnp = (INKHttpTxn) eData;
-  INKHttpSsn ssnp = (INKHttpSsn) eData;
+  TSHttpTxn txnp = (TSHttpTxn) eData;
+  TSHttpSsn ssnp = (TSHttpSsn) eData;
 
   switch (event) {
 
-  case INK_EVENT_HTTP_READ_RESPONSE_HDR:
-    INKDebug("tag", "event %d received\n", event);
-    /* INKHttpSsnReenable(ssnp, INK_EVENT_HTTP_CONTINUE); */
-    INKHttpTxnReenable(txnp, INK_EVENT_HTTP_CONTINUE);
+  case TS_EVENT_HTTP_READ_RESPONSE_HDR:
+    TSDebug("tag", "event %d received\n", event);
+    /* TSHttpSsnReenable(ssnp, TS_EVENT_HTTP_CONTINUE); */
+    TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
     break;
 
-  case INK_EVENT_HTTP_RESPONSE_TRANSFORM:
-    INKDebug("tag", "event %d received\n", event);
-    INKHttpSsnReenable(ssnp, INK_EVENT_HTTP_CONTINUE);
+  case TS_EVENT_HTTP_RESPONSE_TRANSFORM:
+    TSDebug("tag", "event %d received\n", event);
+    TSHttpSsnReenable(ssnp, TS_EVENT_HTTP_CONTINUE);
     break;
   default:
-    INKDebug("tag", "Undefined event %d received\n");
+    TSDebug("tag", "Undefined event %d received\n");
     break;
   }
 
 }
 
 void
-INKPluginInit(int argc, const char *argv[])
+TSPluginInit(int argc, const char *argv[])
 {
-  INKCont contp = INKContCreate(INKProto, NULL);
+  TSCont contp = TSContCreate(TSProto, NULL);
 
-  /* Context: INKHttpTxnTransformRespGet():
+  /* Context: TSHttpTxnTransformRespGet():
    * Q: are both of these received and if so, in what order?
    */
-  INKHttpHookAdd(INK_HTTP_READ_RESPONSE_HDR_HOOK, contp);
-  INKHttpHookAdd(INK_HTTP_RESPONSE_TRANSFORM_HOOK, contp);
+  TSHttpHookAdd(TS_HTTP_READ_RESPONSE_HDR_HOOK, contp);
+  TSHttpHookAdd(TS_HTTP_RESPONSE_TRANSFORM_HOOK, contp);
 }

@@ -80,8 +80,6 @@ Config_SetHostname(char *hostname)
   int status = -1;
 #if !defined(freebsd) && !defined(darwin) && !defined(solaris)
   char old_hostname[256];
-  INKInt val;
-  bool rni = false;
 
   //printf("Inside Config_SetHostname(), hostname = %s\n", hostname);
 
@@ -113,41 +111,7 @@ Config_SetHostname(char *hostname)
 
     return -1;
   }
-  //check if rmserver is installed
-  INKRecordGetInt("proxy.config.rni.enabled", &val);
-  rni = val;
-  if (rni) {
-    DPRINTF(("Config_SetHostname: calling INKSetRmRealm\n"));
-    status = INKSetRmRealm(hostname);
-    //status = rm_change_hostname(hostname); This is the old way
-    if (status) {
-      // If this fails, we need to restore old machine hostname
-      // at this poing we already have TS and network configured
-      Net_GetHostname(old_hostname, sizeof(old_hostname));
-      if (!strlen(old_hostname)) {
-        DPRINTF(("Config_SetHostname: FATAL: recovery failed - failed to get old_hostname\n"));
-        return -1;
-      }
-      DPRINTF(("Config_SetHostname: new hostname setup failed - reverting to  old hostname\n"));
-      status = Net_SetHostname(old_hostname);
-      if (status) {
-        DPRINTF(("Config_SetHostname: FATAL: failed reverting to old hostname - network\n"));
-        return status;
-      }
-      status = INKSetHostname(old_hostname);
-      if (status) {
-        DPRINTF(("Config_SetHostname: FATAL: failed reverting to old hostname - TS\n"));
-        return status;
-      }
-      return -1;
-    }
-    DPRINTF(("Config_SetHostname: calling rm_start_proxy\n"));
-    status = rm_start_proxy();
 
-    if (status) {
-      DPRINTF(("Config_SetHostname: Failed starting rm proxy in rm_start_proxy\n"));
-    }
-  }
 #endif /* !freebsd && !darwin */
   return status;
 }
@@ -489,8 +453,6 @@ Config_SetNIC_Up(char *interface, char *onboot, char *protocol, char *ip, char *
   int status = -1;
 #if !defined(freebsd) && !defined(darwin)
   char old_ip[80];
-  INKInt val;
-  bool rni = false;
 
   Config_GetNIC_IP(interface, old_ip, sizeof(old_ip));
 
@@ -512,25 +474,6 @@ Config_SetNIC_Up(char *interface, char *onboot, char *protocol, char *ip, char *
     DPRINTF(("Config_SetNIC_Up: INKSetNICUp returned %d\n", status));
     //roll back??
     return status;
-  }
-  //check if real proxy is installed
-  INKRecordGetInt("proxy.config.rni.enabled", &val);
-  rni = val;
-
-  if ((strcmp(interface, "eth0") == 0) && rni) {
-    DPRINTF(("Config_SetNIC_Up: calling INKSetRmPNA_RDT_IP %s\n", ip));
-
-    status = INKSetRmPNA_RDT_IP(ip);
-    //status = rm_change_ip(1, &ip); This is the old way
-    if (status) {
-      DPRINTF(("Config_SetNIC_Up: Failed chaging ip for rm proxy\n"));  //roll back?
-      return -1;
-    }
-    status = rm_start_proxy();
-    if (status) {
-      DPRINTF(("Config_SetNIC_Up: FATAL: Failed starting rm_proxy after ip change - %s\n", ip));        //roll back?
-      return -1;
-    }
   }
 #endif /* !freebsd && !darwin */
   return status;

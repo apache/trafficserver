@@ -35,40 +35,40 @@
 #include "ts.h"
 
 static int
-test_destroy_plugin(INKCont contp, INKEvent event, void *edata)
+test_destroy_plugin(TSCont contp, TSEvent event, void *edata)
 {
-  INKHttpTxn txnp = (INKHttpTxn) edata;
+  TSHttpTxn txnp = (TSHttpTxn) edata;
 
-  if (event == INK_EVENT_HTTP_TXN_CLOSE) {
-    INKContDestroy(contp);
-    INKHttpTxnReenable(txnp, INK_EVENT_HTTP_CONTINUE);
+  if (event == TS_EVENT_HTTP_TXN_CLOSE) {
+    TSContDestroy(contp);
+    TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
   } else {
-    INKAssert(0);
+    TSAssert(0);
   }
   return 0;
 }
 
 static int
-attach_test(INKCont contp, INKEvent event, void *edata)
+attach_test(TSCont contp, TSEvent event, void *edata)
 {
-  INKHttpTxn txnp = (INKHttpTxn) edata;
-  INKCont new_cont;
+  TSHttpTxn txnp = (TSHttpTxn) edata;
+  TSCont new_cont;
 
   switch (event) {
-  case INK_EVENT_HTTP_READ_REQUEST_HDR:
-    new_cont = INKContCreate(test_destroy_plugin, INKMutexCreate());
-    INKHttpTxnHookAdd(txnp, INK_HTTP_TXN_CLOSE_HOOK, new_cont);
-    INKHttpTxnReenable(txnp, INK_EVENT_HTTP_CONTINUE);
+  case TS_EVENT_HTTP_READ_REQUEST_HDR:
+    new_cont = TSContCreate(test_destroy_plugin, TSMutexCreate());
+    TSHttpTxnHookAdd(txnp, TS_HTTP_TXN_CLOSE_HOOK, new_cont);
+    TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
     break;
   default:
-    INKAssert(0);
+    TSAssert(0);
   }
   return 0;
 }
 
 void
-INKPluginInit(int argc, const char *argv[])
+TSPluginInit(int argc, const char *argv[])
 {
 
-  INKHttpHookAdd(INK_HTTP_READ_REQUEST_HDR_HOOK, INKContCreate(attach_test, NULL));
+  TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, TSContCreate(attach_test, NULL));
 }

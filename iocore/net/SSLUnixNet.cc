@@ -71,11 +71,10 @@ SSLNetProcessor::createNetAccept()
   return ((NetAccept *) NEW(new SSLNetAccept));
 }
 
-// Virtual function allows etype
-// to be set to ET_SSL for SSLNetProcessor.  Does
+// Virtual function allows etype to be upgraded to ET_SSL for SSLNetProcessor.  Does
 // nothing for NetProcessor
 void
-SSLNetProcessor::setEtype(EventType & etype)
+SSLNetProcessor::upgradeEtype(EventType & etype)
 {
   if (etype == ET_NET) {
     etype = ET_SSL;
@@ -103,7 +102,15 @@ SSLNetAccept::allocateThread(EThread * t)
 void
 SSLNetAccept::freeThread(UnixNetVConnection * vc, EThread * t)
 {
+  ink_assert(!vc->from_accept_thread);
   THREAD_FREE((SSLNetVConnection *) vc, sslNetVCAllocator, t);
+}
+
+// This allocates directly on the class allocator, used for accept threads.
+UnixNetVConnection *
+SSLNetAccept::allocateGlobal()
+{
+  return (UnixNetVConnection *)sslNetVCAllocator.alloc();
 }
 
 // Functions all THREAD_FREE and THREAD_ALLOC to be performed
@@ -120,6 +127,7 @@ SSLNetProcessor::allocateThread(EThread * t)
 void
 SSLNetProcessor::freeThread(UnixNetVConnection * vc, EThread * t)
 {
+  ink_assert(!vc->from_accept_thread);
   THREAD_FREE((SSLNetVConnection *) vc, sslNetVCAllocator, t);
 }
 

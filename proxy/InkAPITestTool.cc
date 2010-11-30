@@ -61,20 +61,20 @@
 // STRUCTURES
 //////////////////////////////////////////////////////////////////////////////
 
-typedef int (*TxnHandler) (INKCont contp, INKEvent event, void *data);
+typedef int (*TxnHandler) (TSCont contp, TSEvent event, void *data);
 
 /* Server transaction structure */
 typedef struct
 {
-  INKVConn vconn;
+  TSVConn vconn;
 
-  INKVIO read_vio;
-  INKIOBuffer req_buffer;
-  INKIOBufferReader req_reader;
+  TSVIO read_vio;
+  TSIOBuffer req_buffer;
+  TSIOBufferReader req_reader;
 
-  INKVIO write_vio;
-  INKIOBuffer resp_buffer;
-  INKIOBufferReader resp_reader;
+  TSVIO write_vio;
+  TSIOBuffer resp_buffer;
+  TSIOBufferReader resp_reader;
 
   char request[REQUEST_MAX_SIZE + 1];
   int request_len;
@@ -87,8 +87,8 @@ typedef struct
 typedef struct
 {
   int accept_port;
-  INKAction accept_action;
-  INKCont accept_cont;
+  TSAction accept_action;
+  TSCont accept_cont;
   unsigned int magic;
 } SocketServer;
 
@@ -102,15 +102,15 @@ typedef enum
 /* Client structure */
 typedef struct
 {
-  INKVConn vconn;
+  TSVConn vconn;
 
-  INKVIO read_vio;
-  INKIOBuffer req_buffer;
-  INKIOBufferReader req_reader;
+  TSVIO read_vio;
+  TSIOBuffer req_buffer;
+  TSIOBufferReader req_reader;
 
-  INKVIO write_vio;
-  INKIOBuffer resp_buffer;
-  INKIOBufferReader resp_reader;
+  TSVIO write_vio;
+  TSIOBuffer resp_buffer;
+  TSIOBufferReader resp_reader;
 
   char *request;
   char response[RESPONSE_MAX_SIZE + 1];
@@ -120,8 +120,8 @@ typedef struct
 
   int connect_port;
   int local_port;
-  INKU64 connect_ip;
-  INKAction connect_action;
+  uint64 connect_ip;
+  TSAction connect_action;
 
   TxnHandler current_handler;
 
@@ -137,34 +137,34 @@ typedef struct
 static char *get_body_ptr(const char *request);
 static char *generate_request(int test_case);
 static char *generate_response(const char *request);
-static int get_request_id(INKHttpTxn txnp);
+static int get_request_id(TSHttpTxn txnp);
 
 
 /* client side */
 static ClientTxn *synclient_txn_create(void);
 static int synclient_txn_delete(ClientTxn * txn);
-static int synclient_txn_close(INKCont contp);
+static int synclient_txn_close(TSCont contp);
 static int synclient_txn_send_request(ClientTxn * txn, char *request);
-static int synclient_txn_send_request_to_vc(ClientTxn * txn, char *request, INKVConn vc);
-static int synclient_txn_read_response(INKCont contp);
-static int synclient_txn_read_response_handler(INKCont contp, INKEvent event, void *data);
-static int synclient_txn_write_request(INKCont contp);
-static int synclient_txn_write_request_handler(INKCont contp, INKEvent event, void *data);
-static int synclient_txn_connect_handler(INKCont contp, INKEvent event, void *data);
-static int synclient_txn_main_handler(INKCont contp, INKEvent event, void *data);
+static int synclient_txn_send_request_to_vc(ClientTxn * txn, char *request, TSVConn vc);
+static int synclient_txn_read_response(TSCont contp);
+static int synclient_txn_read_response_handler(TSCont contp, TSEvent event, void *data);
+static int synclient_txn_write_request(TSCont contp);
+static int synclient_txn_write_request_handler(TSCont contp, TSEvent event, void *data);
+static int synclient_txn_connect_handler(TSCont contp, TSEvent event, void *data);
+static int synclient_txn_main_handler(TSCont contp, TSEvent event, void *data);
 
 /* Server side */
 SocketServer *synserver_create(int port);
 static int synserver_start(SocketServer * s);
 static int synserver_stop(SocketServer * s);
 static int synserver_delete(SocketServer * s);
-static int synserver_accept_handler(INKCont contp, INKEvent event, void *data);
-static int synserver_txn_close(INKCont contp);
-static int synserver_txn_write_response(INKCont contp);
-static int synserver_txn_write_response_handler(INKCont contp, INKEvent event, void *data);
-static int synserver_txn_read_request(INKCont contp);
-static int synserver_txn_read_request_handler(INKCont contp, INKEvent event, void *data);
-static int synserver_txn_main_handler(INKCont contp, INKEvent event, void *data);
+static int synserver_accept_handler(TSCont contp, TSEvent event, void *data);
+static int synserver_txn_close(TSCont contp);
+static int synserver_txn_write_response(TSCont contp);
+static int synserver_txn_write_response_handler(TSCont contp, TSEvent event, void *data);
+static int synserver_txn_read_request(TSCont contp);
+static int synserver_txn_read_request_handler(TSCont contp, TSEvent event, void *data);
+static int synserver_txn_main_handler(TSCont contp, TSEvent event, void *data);
 
 //////////////////////////////////////////////////////////////////////////////
 // REQUESTS/RESPONSES GENERATION
@@ -185,39 +185,39 @@ generate_request(int test_case)
 
 // We define request formats.
 // Each format has an X-Request-ID field that contains the id of the testcase
-#define HTTP_REQUEST_DEFAULT_FORMAT  "GET http://localhost:%d/default.html HTTP/1.0\r\n" \
+#define HTTP_REQUEST_DEFAULT_FORMAT  "GET http://127.0.0.1:%d/default.html HTTP/1.0\r\n" \
                                      "X-Request-ID: %d\r\n" \
 				     "\r\n"
 
-#define HTTP_REQUEST_FORMAT1 "GET http://localhost:%d/format1.html HTTP/1.0\r\n" \
+#define HTTP_REQUEST_FORMAT1 "GET http://127.0.0.1:%d/format1.html HTTP/1.0\r\n" \
 			     "X-Request-ID: %d\r\n" \
 			     "\r\n"
 
-#define HTTP_REQUEST_FORMAT2 "GET http://localhost:%d/format2.html HTTP/1.0\r\n" \
+#define HTTP_REQUEST_FORMAT2 "GET http://127.0.0.1:%d/format2.html HTTP/1.0\r\n" \
 			     "X-Request-ID: %d\r\n" \
                              "Content-Type: text/html\r\n" \
 			     "\r\n"
-#define HTTP_REQUEST_FORMAT3 "GET http://localhost:%d/format3.html/ HTTP/1.0\r\n" \
+#define HTTP_REQUEST_FORMAT3 "GET http://127.0.0.1:%d/format3.html/ HTTP/1.0\r\n" \
 			     "X-Request-ID: %d\r\n" \
 			     "Response: Error\r\n" \
 			     "\r\n"
-#define HTTP_REQUEST_FORMAT4 "GET http://localhost:%d/format4.html/ HTTP/1.0\r\n" \
+#define HTTP_REQUEST_FORMAT4 "GET http://127.0.0.1:%d/format4.html/ HTTP/1.0\r\n" \
 			     "X-Request-ID: %d\r\n" \
                              "Request:%d\r\n" \
                              "\r\n"
-#define HTTP_REQUEST_FORMAT5 "GET http://localhost:%d/format5.html/ HTTP/1.0\r\n" \
+#define HTTP_REQUEST_FORMAT5 "GET http://127.0.0.1:%d/format5.html/ HTTP/1.0\r\n" \
 			     "X-Request-ID: %d\r\n" \
                              "Request:%d\r\n" \
                              "\r\n"
-#define HTTP_REQUEST_FORMAT6 "GET http://localhost:%d/format.html/ HTTP/1.0\r\n" \
+#define HTTP_REQUEST_FORMAT6 "GET http://127.0.0.1:%d/format.html/ HTTP/1.0\r\n" \
 			     "X-Request-ID: %d\r\n" \
                              "Accept-Language:English\r\n" \
                              "\r\n"
-#define HTTP_REQUEST_FORMAT7 "GET http://localhost:%d/format.html/ HTTP/1.0\r\n" \
+#define HTTP_REQUEST_FORMAT7 "GET http://127.0.0.1:%d/format.html/ HTTP/1.0\r\n" \
 			     "X-Request-ID: %d\r\n" \
                              "Accept-Language:French\r\n" \
                              "\r\n"
-#define HTTP_REQUEST_FORMAT8 "GET http://localhost:%d/format.html/ HTTP/1.0\r\n" \
+#define HTTP_REQUEST_FORMAT8 "GET http://127.0.0.1:%d/format.html/ HTTP/1.0\r\n" \
 			     "X-Request-ID: %d\r\n" \
                              "Accept-Language:English,French\r\n" \
                              "\r\n"
@@ -228,7 +228,7 @@ generate_request(int test_case)
 			      "X-Request-ID: %d\r\n" \
                               "\r\n"
 
-  char *request = (char *) INKmalloc(REQUEST_MAX_SIZE + 1);
+  char *request = (char *) TSmalloc(REQUEST_MAX_SIZE + 1);
 
   switch (test_case) {
   case 1:
@@ -337,7 +337,7 @@ generate_response(const char *request)
 
   int test_case, match, http_version;
 
-  char *response = (char *) INKmalloc(RESPONSE_MAX_SIZE + 1);
+  char *response = (char *) TSmalloc(RESPONSE_MAX_SIZE + 1);
   char url[1024];
 
   // coverity[secure_coding]
@@ -388,32 +388,32 @@ generate_response(const char *request)
 // to figure out the id of a test message
 // Returns id/-1 in case of error
 static int
-get_request_id(INKHttpTxn txnp)
+get_request_id(TSHttpTxn txnp)
 {
-  INKMBuffer bufp;
-  INKMLoc hdr_loc, id_loc;
+  TSMBuffer bufp;
+  TSMLoc hdr_loc, id_loc;
   int id = -1;
   int ret_val;
 
-  if (!INKHttpTxnClientReqGet(txnp, &bufp, &hdr_loc)) {
+  if (!TSHttpTxnClientReqGet(txnp, &bufp, &hdr_loc)) {
     return -1;
   }
 
-  id_loc = INKMimeHdrFieldFind(bufp, hdr_loc, X_REQUEST_ID, -1);
-  if ((id_loc == INK_NULL_MLOC) || (id_loc == INK_ERROR_PTR)) {
-    INKHandleMLocRelease(bufp, INK_NULL_MLOC, hdr_loc);
+  id_loc = TSMimeHdrFieldFind(bufp, hdr_loc, X_REQUEST_ID, -1);
+  if ((id_loc == TS_NULL_MLOC) || (id_loc == TS_ERROR_PTR)) {
+    TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
     return -1;
   }
 
-  ret_val = INKMimeHdrFieldValueIntGet(bufp, hdr_loc, id_loc, 0, &id);
-  if (ret_val == INK_ERROR) {
-    INKHandleMLocRelease(bufp, hdr_loc, id_loc);
-    INKHandleMLocRelease(bufp, INK_NULL_MLOC, hdr_loc);
+  ret_val = TSMimeHdrFieldValueIntGet(bufp, hdr_loc, id_loc, 0, &id);
+  if (ret_val == TS_ERROR) {
+    TSHandleMLocRelease(bufp, hdr_loc, id_loc);
+    TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
     return -1;
   }
 
-  INKHandleMLocRelease(bufp, hdr_loc, id_loc);
-  INKHandleMLocRelease(bufp, INK_NULL_MLOC, hdr_loc);
+  TSHandleMLocRelease(bufp, hdr_loc, id_loc);
+  TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
   return id;
 }
 
@@ -426,10 +426,10 @@ get_request_id(INKHttpTxn txnp)
 static ClientTxn *
 synclient_txn_create(void)
 {
-  INKMgmtInt proxy_port;
+  TSMgmtInt proxy_port;
 
-  ClientTxn *txn = (ClientTxn *) INKmalloc(sizeof(ClientTxn));
-  if (!INKMgmtIntGet(PROXY_CONFIG_NAME_HTTP_PORT, &proxy_port)) {
+  ClientTxn *txn = (ClientTxn *) TSmalloc(sizeof(ClientTxn));
+  if (!TSMgmtIntGet(PROXY_CONFIG_NAME_HTTP_PORT, &proxy_port)) {
     proxy_port = PROXY_HTTP_DEFAULT_PORT;
   }
   txn->connect_port = (int) proxy_port;
@@ -445,150 +445,150 @@ synclient_txn_create(void)
   txn->magic = MAGIC_ALIVE;
   txn->connect_action = NULL;
 
-  INKDebug(CDBG_TAG, "Connecting to proxy localhost on port %d", (int) proxy_port);
+  TSDebug(CDBG_TAG, "Connecting to proxy 127.0.0.1 on port %d", (int) proxy_port);
   return txn;
 }
 
 static int
 synclient_txn_delete(ClientTxn * txn)
 {
-  INKAssert(txn->magic == MAGIC_ALIVE);
-  if (txn->connect_action && !INKActionDone(txn->connect_action)) {
-    INKActionCancel(txn->connect_action);
+  TSAssert(txn->magic == MAGIC_ALIVE);
+  if (txn->connect_action && !TSActionDone(txn->connect_action)) {
+    TSActionCancel(txn->connect_action);
     txn->connect_action = NULL;
   }
   if (txn->request) {
     free(txn->request);
   }
   txn->magic = MAGIC_DEAD;
-  INKfree(txn);
+  TSfree(txn);
   return 1;
 }
 
 static int
-synclient_txn_close(INKCont contp)
+synclient_txn_close(TSCont contp)
 {
-  ClientTxn *txn = (ClientTxn *) INKContDataGet(contp);
-  INKAssert(txn->magic == MAGIC_ALIVE);
+  ClientTxn *txn = (ClientTxn *) TSContDataGet(contp);
+  TSAssert(txn->magic == MAGIC_ALIVE);
 
   if (txn->vconn != NULL) {
-    INKVConnClose(txn->vconn);
+    TSVConnClose(txn->vconn);
   }
   if (txn->req_buffer != NULL) {
-    INKIOBufferDestroy(txn->req_buffer);
+    TSIOBufferDestroy(txn->req_buffer);
   }
   if (txn->resp_buffer != NULL) {
-    INKIOBufferDestroy(txn->resp_buffer);
+    TSIOBufferDestroy(txn->resp_buffer);
   }
 
-  INKContDestroy(contp);
+  TSContDestroy(contp);
 
-  INKDebug(CDBG_TAG, "Client Txn destroyed");
-  return INK_EVENT_IMMEDIATE;
+  TSDebug(CDBG_TAG, "Client Txn destroyed");
+  return TS_EVENT_IMMEDIATE;
 }
 
 static int
 synclient_txn_send_request(ClientTxn * txn, char *request)
 {
-  INKCont cont;
-  INKAssert(txn->magic == MAGIC_ALIVE);
+  TSCont cont;
+  TSAssert(txn->magic == MAGIC_ALIVE);
   txn->request = strdup(request);
   SET_TEST_HANDLER(txn->current_handler, synclient_txn_connect_handler);
 
-  cont = INKContCreate(synclient_txn_main_handler, INKMutexCreate());
-  INKContDataSet(cont, txn);
-  INKNetConnect(cont, txn->connect_ip, txn->connect_port);
+  cont = TSContCreate(synclient_txn_main_handler, TSMutexCreate());
+  TSContDataSet(cont, txn);
+  TSNetConnect(cont, txn->connect_ip, txn->connect_port);
   return 1;
 }
 
 /* This can be used to send a request to a specific VC */
 static int
-synclient_txn_send_request_to_vc(ClientTxn * txn, char *request, INKVConn vc)
+synclient_txn_send_request_to_vc(ClientTxn * txn, char *request, TSVConn vc)
 {
-  INKCont cont;
-  INKAssert(txn->magic == MAGIC_ALIVE);
+  TSCont cont;
+  TSAssert(txn->magic == MAGIC_ALIVE);
   txn->request = strdup(request);
   SET_TEST_HANDLER(txn->current_handler, synclient_txn_connect_handler);
 
-  cont = INKContCreate(synclient_txn_main_handler, INKMutexCreate());
-  INKContDataSet(cont, txn);
+  cont = TSContCreate(synclient_txn_main_handler, TSMutexCreate());
+  TSContDataSet(cont, txn);
 
-  INKContCall(cont, INK_EVENT_NET_CONNECT, vc);
+  TSContCall(cont, TS_EVENT_NET_CONNECT, vc);
   return 1;
 }
 
 
 static int
-synclient_txn_read_response(INKCont contp)
+synclient_txn_read_response(TSCont contp)
 {
-  ClientTxn *txn = (ClientTxn *) INKContDataGet(contp);
-  INKAssert(txn->magic == MAGIC_ALIVE);
+  ClientTxn *txn = (ClientTxn *) TSContDataGet(contp);
+  TSAssert(txn->magic == MAGIC_ALIVE);
 
-  INKIOBufferBlock block = INKIOBufferReaderStart(txn->resp_reader);
+  TSIOBufferBlock block = TSIOBufferReaderStart(txn->resp_reader);
   while (block != NULL) {
-    int blocklen;
-    const char *blockptr = INKIOBufferBlockReadStart(block, txn->resp_reader, &blocklen);
+    int64 blocklen;
+    const char *blockptr = TSIOBufferBlockReadStart(block, txn->resp_reader, &blocklen);
 
     if (txn->response_len+blocklen <= RESPONSE_MAX_SIZE) {
       memcpy((char *) (txn->response + txn->response_len), blockptr, blocklen);
       txn->response_len += blocklen;
     } else {
-      INKError("Error: Response length %d > response buffer size %d", txn->response_len+blocklen, RESPONSE_MAX_SIZE);
+      TSError("Error: Response length %d > response buffer size %d", txn->response_len+blocklen, RESPONSE_MAX_SIZE);
     }
 
-    block = INKIOBufferBlockNext(block);
+    block = TSIOBufferBlockNext(block);
   }
 
   txn->response[txn->response_len + 1] = '\0';
-  INKDebug(CDBG_TAG, "Response = |%s|, req len = %d", txn->response, txn->response_len);
+  TSDebug(CDBG_TAG, "Response = |%s|, req len = %d", txn->response, txn->response_len);
 
   return 1;
 }
 
 static int
-synclient_txn_read_response_handler(INKCont contp, INKEvent event, void *data)
+synclient_txn_read_response_handler(TSCont contp, TSEvent event, void *data)
 {
   NOWARN_UNUSED(data);
-  ClientTxn *txn = (ClientTxn *) INKContDataGet(contp);
-  INKAssert(txn->magic == MAGIC_ALIVE);
+  ClientTxn *txn = (ClientTxn *) TSContDataGet(contp);
+  TSAssert(txn->magic == MAGIC_ALIVE);
 
   int avail;
 
   switch (event) {
-  case INK_EVENT_VCONN_READ_READY:
-  case INK_EVENT_VCONN_READ_COMPLETE:
-    if (event == INK_EVENT_VCONN_READ_READY) {
-      INKDebug(CDBG_TAG, "READ_READY");
+  case TS_EVENT_VCONN_READ_READY:
+  case TS_EVENT_VCONN_READ_COMPLETE:
+    if (event == TS_EVENT_VCONN_READ_READY) {
+      TSDebug(CDBG_TAG, "READ_READY");
     } else {
-      INKDebug(CDBG_TAG, "READ_COMPLETE");
+      TSDebug(CDBG_TAG, "READ_COMPLETE");
     }
 
-    avail = INKIOBufferReaderAvail(txn->resp_reader);
-    INKDebug(CDBG_TAG, "%d bytes available in buffer", avail);
+    avail = TSIOBufferReaderAvail(txn->resp_reader);
+    TSDebug(CDBG_TAG, "%d bytes available in buffer", avail);
 
     if (avail > 0) {
       synclient_txn_read_response(contp);
-      INKIOBufferReaderConsume(txn->resp_reader, avail);
+      TSIOBufferReaderConsume(txn->resp_reader, avail);
     }
 
-    INKVIOReenable(txn->read_vio);
+    TSVIOReenable(txn->read_vio);
     break;
 
-  case INK_EVENT_VCONN_EOS:
-    INKDebug(CDBG_TAG, "READ_EOS");
+  case TS_EVENT_VCONN_EOS:
+    TSDebug(CDBG_TAG, "READ_EOS");
     // Connection closed. In HTTP/1.0 it means we're done for this request.
     txn->status = REQUEST_SUCCESS;
     return synclient_txn_close(contp);
     break;
 
-  case INK_EVENT_ERROR:
-    INKDebug(CDBG_TAG, "READ_ERROR");
+  case TS_EVENT_ERROR:
+    TSDebug(CDBG_TAG, "READ_ERROR");
     txn->status = REQUEST_FAILURE;
     return synclient_txn_close(contp);
     break;
 
   default:
-    INKAssert(!"Invalid event");
+    TSAssert(!"Invalid event");
     break;
   }
   return 1;
@@ -596,99 +596,99 @@ synclient_txn_read_response_handler(INKCont contp, INKEvent event, void *data)
 
 
 static int
-synclient_txn_write_request(INKCont contp)
+synclient_txn_write_request(TSCont contp)
 {
-  ClientTxn *txn = (ClientTxn *) INKContDataGet(contp);
-  INKAssert(txn->magic == MAGIC_ALIVE);
+  ClientTxn *txn = (ClientTxn *) TSContDataGet(contp);
+  TSAssert(txn->magic == MAGIC_ALIVE);
 
-  INKIOBufferBlock block;
+  TSIOBufferBlock block;
   char *ptr_block;
-  int len, ndone, ntodo, towrite, avail;
+  int64 len, ndone, ntodo, towrite, avail;
 
   len = strlen(txn->request);
 
   ndone = 0;
   ntodo = len;
   while (ntodo > 0) {
-    block = INKIOBufferStart(txn->req_buffer);
-    ptr_block = INKIOBufferBlockWriteStart(block, &avail);
+    block = TSIOBufferStart(txn->req_buffer);
+    ptr_block = TSIOBufferBlockWriteStart(block, &avail);
     towrite = MIN(ntodo, avail);
     memcpy(ptr_block, txn->request + ndone, towrite);
-    INKIOBufferProduce(txn->req_buffer, towrite);
+    TSIOBufferProduce(txn->req_buffer, towrite);
     ntodo -= towrite;
     ndone += towrite;
   }
 
   /* Start writing the response */
-  INKDebug(CDBG_TAG, "Writing |%s| (%d) bytes", txn->request, len);
-  txn->write_vio = INKVConnWrite(txn->vconn, contp, txn->req_reader, len);
+  TSDebug(CDBG_TAG, "Writing |%s| (%d) bytes", txn->request, len);
+  txn->write_vio = TSVConnWrite(txn->vconn, contp, txn->req_reader, len);
 
   return 1;
 }
 
 static int
-synclient_txn_write_request_handler(INKCont contp, INKEvent event, void *data)
+synclient_txn_write_request_handler(TSCont contp, TSEvent event, void *data)
 {
   NOWARN_UNUSED(data);
-  ClientTxn *txn = (ClientTxn *) INKContDataGet(contp);
-  INKAssert(txn->magic == MAGIC_ALIVE);
+  ClientTxn *txn = (ClientTxn *) TSContDataGet(contp);
+  TSAssert(txn->magic == MAGIC_ALIVE);
 
   switch (event) {
-  case INK_EVENT_VCONN_WRITE_READY:
-    INKDebug(CDBG_TAG, "WRITE_READY");
-    INKVIOReenable(txn->write_vio);
+  case TS_EVENT_VCONN_WRITE_READY:
+    TSDebug(CDBG_TAG, "WRITE_READY");
+    TSVIOReenable(txn->write_vio);
     break;
 
-  case INK_EVENT_VCONN_WRITE_COMPLETE:
-    INKDebug(CDBG_TAG, "WRITE_COMPLETE");
+  case TS_EVENT_VCONN_WRITE_COMPLETE:
+    TSDebug(CDBG_TAG, "WRITE_COMPLETE");
     // Weird: synclient should not close the write part of vconn.
     // Otherwise some strangeness...
 
     /* Start reading */
     SET_TEST_HANDLER(txn->current_handler, synclient_txn_read_response_handler);
-    txn->read_vio = INKVConnRead(txn->vconn, contp, txn->resp_buffer, INT_MAX);
+    txn->read_vio = TSVConnRead(txn->vconn, contp, txn->resp_buffer, INT_MAX);
     break;
 
-  case INK_EVENT_VCONN_EOS:
-    INKDebug(CDBG_TAG, "WRITE_EOS");
+  case TS_EVENT_VCONN_EOS:
+    TSDebug(CDBG_TAG, "WRITE_EOS");
     txn->status = REQUEST_FAILURE;
     return synclient_txn_close(contp);
     break;
 
-  case INK_EVENT_ERROR:
-    INKDebug(CDBG_TAG, "WRITE_ERROR");
+  case TS_EVENT_ERROR:
+    TSDebug(CDBG_TAG, "WRITE_ERROR");
     txn->status = REQUEST_FAILURE;
     return synclient_txn_close(contp);
     break;
 
   default:
-    INKAssert(!"Invalid event");
+    TSAssert(!"Invalid event");
     break;
   }
-  return INK_EVENT_IMMEDIATE;
+  return TS_EVENT_IMMEDIATE;
 }
 
 
 static int
-synclient_txn_connect_handler(INKCont contp, INKEvent event, void *data)
+synclient_txn_connect_handler(TSCont contp, TSEvent event, void *data)
 {
-  INKAssert((event == INK_EVENT_NET_CONNECT) || (event == INK_EVENT_NET_CONNECT_FAILED));
+  TSAssert((event == TS_EVENT_NET_CONNECT) || (event == TS_EVENT_NET_CONNECT_FAILED));
 
-  ClientTxn *txn = (ClientTxn *) INKContDataGet(contp);
-  INKAssert(txn->magic == MAGIC_ALIVE);
+  ClientTxn *txn = (ClientTxn *) TSContDataGet(contp);
+  TSAssert(txn->magic == MAGIC_ALIVE);
 
-  if (event == INK_EVENT_NET_CONNECT) {
-    INKDebug(CDBG_TAG, "NET_CONNECT");
+  if (event == TS_EVENT_NET_CONNECT) {
+    TSDebug(CDBG_TAG, "NET_CONNECT");
 
-    txn->req_buffer = INKIOBufferCreate();
-    txn->req_reader = INKIOBufferReaderAlloc(txn->req_buffer);
-    txn->resp_buffer = INKIOBufferCreate();
-    txn->resp_reader = INKIOBufferReaderAlloc(txn->resp_buffer);
+    txn->req_buffer = TSIOBufferCreate();
+    txn->req_reader = TSIOBufferReaderAlloc(txn->req_buffer);
+    txn->resp_buffer = TSIOBufferCreate();
+    txn->resp_reader = TSIOBufferReaderAlloc(txn->resp_buffer);
 
     txn->response[0] = '\0';
     txn->response_len = 0;
 
-    txn->vconn = (INKVConn) data;
+    txn->vconn = (TSVConn) data;
     txn->local_port = (int) ((NetVConnection *) data)->get_local_port();
 
     txn->write_vio = NULL;
@@ -698,22 +698,22 @@ synclient_txn_connect_handler(INKCont contp, INKEvent event, void *data)
     SET_TEST_HANDLER(txn->current_handler, synclient_txn_write_request_handler);
     synclient_txn_write_request(contp);
 
-    return INK_EVENT_IMMEDIATE;
+    return TS_EVENT_IMMEDIATE;
   } else {
-    INKDebug(CDBG_TAG, "NET_CONNECT_FAILED");
+    TSDebug(CDBG_TAG, "NET_CONNECT_FAILED");
     txn->status = REQUEST_FAILURE;
     synclient_txn_close(contp);
   }
 
-  return INK_EVENT_IMMEDIATE;
+  return TS_EVENT_IMMEDIATE;
 }
 
 
 static int
-synclient_txn_main_handler(INKCont contp, INKEvent event, void *data)
+synclient_txn_main_handler(TSCont contp, TSEvent event, void *data)
 {
-  ClientTxn *txn = (ClientTxn *) INKContDataGet(contp);
-  INKAssert(txn->magic == MAGIC_ALIVE);
+  ClientTxn *txn = (ClientTxn *) TSContDataGet(contp);
+  TSAssert(txn->magic == MAGIC_ALIVE);
 
   TxnHandler handler = txn->current_handler;
   return (*handler) (contp, event, data);
@@ -727,134 +727,134 @@ synclient_txn_main_handler(INKCont contp, INKEvent event, void *data)
 SocketServer *
 synserver_create(int port)
 {
-  SocketServer *s = (SocketServer *) INKmalloc(sizeof(SocketServer));
+  SocketServer *s = (SocketServer *) TSmalloc(sizeof(SocketServer));
   s->magic = MAGIC_ALIVE;
   s->accept_port = port;
   s->accept_action = NULL;
-  s->accept_cont = INKContCreate(synserver_accept_handler, INKMutexCreate());
-  INKContDataSet(s->accept_cont, s);
+  s->accept_cont = TSContCreate(synserver_accept_handler, TSMutexCreate());
+  TSContDataSet(s->accept_cont, s);
   return s;
 }
 
 static int
 synserver_start(SocketServer * s)
 {
-  INKAssert(s->magic == MAGIC_ALIVE);
-  s->accept_action = INKNetAccept(s->accept_cont, s->accept_port);
+  TSAssert(s->magic == MAGIC_ALIVE);
+  s->accept_action = TSNetAccept(s->accept_cont, s->accept_port);
   return 1;
 }
 
 static int
 synserver_stop(SocketServer * s)
 {
-  INKAssert(s->magic == MAGIC_ALIVE);
-  if (s->accept_action && !INKActionDone(s->accept_action)) {
-    INKActionCancel(s->accept_action);
+  TSAssert(s->magic == MAGIC_ALIVE);
+  if (s->accept_action && !TSActionDone(s->accept_action)) {
+    TSActionCancel(s->accept_action);
     s->accept_action = NULL;
-    INKDebug(SDBG_TAG, "Had to cancel action");
+    TSDebug(SDBG_TAG, "Had to cancel action");
   }
-  INKDebug(SDBG_TAG, "stopped");
+  TSDebug(SDBG_TAG, "stopped");
   return 1;
 }
 
 static int
 synserver_delete(SocketServer * s)
 {
-  INKAssert(s->magic == MAGIC_ALIVE);
+  TSAssert(s->magic == MAGIC_ALIVE);
   synserver_stop(s);
 
   if (s->accept_cont) {
-    INKContDestroy(s->accept_cont);
+    TSContDestroy(s->accept_cont);
     s->accept_cont = NULL;
-    INKDebug(SDBG_TAG, "destroyed accept cont");
+    TSDebug(SDBG_TAG, "destroyed accept cont");
   }
   s->magic = MAGIC_DEAD;
-  INKfree(s);
-  INKDebug(SDBG_TAG, "deleted server");
+  TSfree(s);
+  TSDebug(SDBG_TAG, "deleted server");
   return 1;
 }
 
 static int
-synserver_accept_handler(INKCont contp, INKEvent event, void *data)
+synserver_accept_handler(TSCont contp, TSEvent event, void *data)
 {
-  INKAssert((event == INK_EVENT_NET_ACCEPT) || (event == INK_EVENT_NET_ACCEPT_FAILED));
+  TSAssert((event == TS_EVENT_NET_ACCEPT) || (event == TS_EVENT_NET_ACCEPT_FAILED));
 
-  SocketServer *s = (SocketServer *) INKContDataGet(contp);
-  INKAssert(s->magic == MAGIC_ALIVE);
+  SocketServer *s = (SocketServer *) TSContDataGet(contp);
+  TSAssert(s->magic == MAGIC_ALIVE);
 
-  if (event == INK_EVENT_NET_ACCEPT_FAILED) {
+  if (event == TS_EVENT_NET_ACCEPT_FAILED) {
     ink_release_assert(!"Synserver must be able to bind to a port, check system netstat");
-    INKDebug(SDBG_TAG, "NET_ACCEPT_FAILED");
-    return INK_EVENT_IMMEDIATE;
+    TSDebug(SDBG_TAG, "NET_ACCEPT_FAILED");
+    return TS_EVENT_IMMEDIATE;
   }
 
-  INKDebug(SDBG_TAG, "NET_ACCEPT");
+  TSDebug(SDBG_TAG, "NET_ACCEPT");
 
   /* Create a new transaction */
-  ServerTxn *txn = (ServerTxn *) INKmalloc(sizeof(ServerTxn));
+  ServerTxn *txn = (ServerTxn *) TSmalloc(sizeof(ServerTxn));
   txn->magic = MAGIC_ALIVE;
 
   SET_TEST_HANDLER(txn->current_handler, synserver_txn_read_request_handler);
 
-  INKCont txn_cont = INKContCreate(synserver_txn_main_handler, INKMutexCreate());
-  INKContDataSet(txn_cont, txn);
+  TSCont txn_cont = TSContCreate(synserver_txn_main_handler, TSMutexCreate());
+  TSContDataSet(txn_cont, txn);
 
-  txn->req_buffer = INKIOBufferCreate();
-  txn->req_reader = INKIOBufferReaderAlloc(txn->req_buffer);
+  txn->req_buffer = TSIOBufferCreate();
+  txn->req_reader = TSIOBufferReaderAlloc(txn->req_buffer);
 
-  txn->resp_buffer = INKIOBufferCreate();
-  txn->resp_reader = INKIOBufferReaderAlloc(txn->resp_buffer);
+  txn->resp_buffer = TSIOBufferCreate();
+  txn->resp_reader = TSIOBufferReaderAlloc(txn->resp_buffer);
 
   txn->request[0] = '\0';
   txn->request_len = 0;
 
-  txn->vconn = (INKVConn) data;
+  txn->vconn = (TSVConn) data;
 
   txn->write_vio = NULL;
 
   /* start reading */
-  txn->read_vio = INKVConnRead(txn->vconn, txn_cont, txn->req_buffer, INT_MAX);
+  txn->read_vio = TSVConnRead(txn->vconn, txn_cont, txn->req_buffer, INT_MAX);
 
-  return INK_EVENT_IMMEDIATE;
+  return TS_EVENT_IMMEDIATE;
 }
 
 
 static int
-synserver_txn_close(INKCont contp)
+synserver_txn_close(TSCont contp)
 {
-  ServerTxn *txn = (ServerTxn *) INKContDataGet(contp);
-  INKAssert(txn->magic == MAGIC_ALIVE);
+  ServerTxn *txn = (ServerTxn *) TSContDataGet(contp);
+  TSAssert(txn->magic == MAGIC_ALIVE);
 
   if (txn->vconn != NULL) {
-    INKVConnClose(txn->vconn);
+    TSVConnClose(txn->vconn);
   }
   if (txn->req_buffer) {
-    INKIOBufferDestroy(txn->req_buffer);
+    TSIOBufferDestroy(txn->req_buffer);
   }
   if (txn->resp_buffer) {
-    INKIOBufferDestroy(txn->resp_buffer);
+    TSIOBufferDestroy(txn->resp_buffer);
   }
 
   txn->magic = MAGIC_DEAD;
-  INKfree(txn);
-  INKContDestroy(contp);
+  TSfree(txn);
+  TSContDestroy(contp);
 
-  INKDebug(SDBG_TAG, "Server Txn destroyed");
-  return INK_EVENT_IMMEDIATE;
+  TSDebug(SDBG_TAG, "Server Txn destroyed");
+  return TS_EVENT_IMMEDIATE;
 }
 
 
 static int
-synserver_txn_write_response(INKCont contp)
+synserver_txn_write_response(TSCont contp)
 {
-  ServerTxn *txn = (ServerTxn *) INKContDataGet(contp);
-  INKAssert(txn->magic == MAGIC_ALIVE);
+  ServerTxn *txn = (ServerTxn *) TSContDataGet(contp);
+  TSAssert(txn->magic == MAGIC_ALIVE);
 
   SET_TEST_HANDLER(txn->current_handler, synserver_txn_write_response_handler);
 
-  INKIOBufferBlock block;
+  TSIOBufferBlock block;
   char *ptr_block;
-  int len, ndone, ntodo, towrite, avail;
+  int64 len, ndone, ntodo, towrite, avail;
   char *response;
 
   response = generate_response(txn->request);
@@ -863,147 +863,147 @@ synserver_txn_write_response(INKCont contp)
   ndone = 0;
   ntodo = len;
   while (ntodo > 0) {
-    block = INKIOBufferStart(txn->resp_buffer);
-    ptr_block = INKIOBufferBlockWriteStart(block, &avail);
+    block = TSIOBufferStart(txn->resp_buffer);
+    ptr_block = TSIOBufferBlockWriteStart(block, &avail);
     towrite = MIN(ntodo, avail);
     memcpy(ptr_block, response + ndone, towrite);
-    INKIOBufferProduce(txn->resp_buffer, towrite);
+    TSIOBufferProduce(txn->resp_buffer, towrite);
     ntodo -= towrite;
     ndone += towrite;
   }
 
   /* Start writing the response */
-  INKDebug(SDBG_TAG, "Writing response: |%s| (%d) bytes)", response, len);
-  txn->write_vio = INKVConnWrite(txn->vconn, contp, txn->resp_reader, len);
+  TSDebug(SDBG_TAG, "Writing response: |%s| (%d) bytes)", response, len);
+  txn->write_vio = TSVConnWrite(txn->vconn, contp, txn->resp_reader, len);
 
   /* Now that response is in IOBuffer, free up response */
-  INKfree(response);
+  TSfree(response);
 
-  return INK_EVENT_IMMEDIATE;
+  return TS_EVENT_IMMEDIATE;
 }
 
 
 static int
-synserver_txn_write_response_handler(INKCont contp, INKEvent event, void *data)
+synserver_txn_write_response_handler(TSCont contp, TSEvent event, void *data)
 {
   NOWARN_UNUSED(data);
-  ServerTxn *txn = (ServerTxn *) INKContDataGet(contp);
-  INKAssert(txn->magic == MAGIC_ALIVE);
+  ServerTxn *txn = (ServerTxn *) TSContDataGet(contp);
+  TSAssert(txn->magic == MAGIC_ALIVE);
 
   switch (event) {
-  case INK_EVENT_VCONN_WRITE_READY:
-    INKDebug(SDBG_TAG, "WRITE_READY");
-    INKVIOReenable(txn->write_vio);
+  case TS_EVENT_VCONN_WRITE_READY:
+    TSDebug(SDBG_TAG, "WRITE_READY");
+    TSVIOReenable(txn->write_vio);
     break;
 
-  case INK_EVENT_VCONN_WRITE_COMPLETE:
-    INKDebug(SDBG_TAG, "WRITE_COMPLETE");
-    INKVConnShutdown(txn->vconn, 0, 1);
+  case TS_EVENT_VCONN_WRITE_COMPLETE:
+    TSDebug(SDBG_TAG, "WRITE_COMPLETE");
+    TSVConnShutdown(txn->vconn, 0, 1);
     return synserver_txn_close(contp);
     break;
 
-  case INK_EVENT_VCONN_EOS:
-    INKDebug(SDBG_TAG, "WRITE_EOS");
+  case TS_EVENT_VCONN_EOS:
+    TSDebug(SDBG_TAG, "WRITE_EOS");
     return synserver_txn_close(contp);
     break;
 
-  case INK_EVENT_ERROR:
-    INKDebug(SDBG_TAG, "WRITE_ERROR");
+  case TS_EVENT_ERROR:
+    TSDebug(SDBG_TAG, "WRITE_ERROR");
     return synserver_txn_close(contp);
     break;
 
   default:
-    INKAssert(!"Invalid event");
+    TSAssert(!"Invalid event");
     break;
   }
-  return INK_EVENT_IMMEDIATE;
+  return TS_EVENT_IMMEDIATE;
 }
 
 
 static int
-synserver_txn_read_request(INKCont contp)
+synserver_txn_read_request(TSCont contp)
 {
-  ServerTxn *txn = (ServerTxn *) INKContDataGet(contp);
-  INKAssert(txn->magic == MAGIC_ALIVE);
+  ServerTxn *txn = (ServerTxn *) TSContDataGet(contp);
+  TSAssert(txn->magic == MAGIC_ALIVE);
 
   int end;
-  INKIOBufferBlock block = INKIOBufferReaderStart(txn->req_reader);
+  TSIOBufferBlock block = TSIOBufferReaderStart(txn->req_reader);
 
   while (block != NULL) {
-    int blocklen;
-    const char *blockptr = INKIOBufferBlockReadStart(block, txn->req_reader, &blocklen);
+    int64 blocklen;
+    const char *blockptr = TSIOBufferBlockReadStart(block, txn->req_reader, &blocklen);
 
     if (txn->request_len+blocklen <= REQUEST_MAX_SIZE) {
       memcpy((char *) (txn->request + txn->request_len), blockptr, blocklen);
       txn->request_len += blocklen;
     } else {
-      INKError("Error: Request length %d > request buffer size %d", txn->request_len+blocklen, REQUEST_MAX_SIZE);
+      TSError("Error: Request length %d > request buffer size %d", txn->request_len+blocklen, REQUEST_MAX_SIZE);
     }
 
-    block = INKIOBufferBlockNext(block);
+    block = TSIOBufferBlockNext(block);
   }
 
   txn->request[txn->request_len] = '\0';
-  INKDebug(SDBG_TAG, "Request = |%s|, req len = %d", txn->request, txn->request_len);
+  TSDebug(SDBG_TAG, "Request = |%s|, req len = %d", txn->request, txn->request_len);
 
   end = (strstr(txn->request, HTTP_REQUEST_END) != NULL);
-  INKDebug(SDBG_TAG, "End of request = %d", end);
+  TSDebug(SDBG_TAG, "End of request = %d", end);
 
   return end;
 }
 
 static int
-synserver_txn_read_request_handler(INKCont contp, INKEvent event, void *data)
+synserver_txn_read_request_handler(TSCont contp, TSEvent event, void *data)
 {
   NOWARN_UNUSED(data);
-  ServerTxn *txn = (ServerTxn *) INKContDataGet(contp);
-  INKAssert(txn->magic == MAGIC_ALIVE);
+  ServerTxn *txn = (ServerTxn *) TSContDataGet(contp);
+  TSAssert(txn->magic == MAGIC_ALIVE);
 
   int avail, end_of_request;
 
   switch (event) {
-  case INK_EVENT_VCONN_READ_READY:
-  case INK_EVENT_VCONN_READ_COMPLETE:
-    INKDebug(SDBG_TAG, (event == INK_EVENT_VCONN_READ_READY) ? "READ_READY" : "READ_COMPLETE");
-    avail = INKIOBufferReaderAvail(txn->req_reader);
-    INKDebug(SDBG_TAG, "%d bytes available in buffer", avail);
+  case TS_EVENT_VCONN_READ_READY:
+  case TS_EVENT_VCONN_READ_COMPLETE:
+    TSDebug(SDBG_TAG, (event == TS_EVENT_VCONN_READ_READY) ? "READ_READY" : "READ_COMPLETE");
+    avail = TSIOBufferReaderAvail(txn->req_reader);
+    TSDebug(SDBG_TAG, "%d bytes available in buffer", avail);
 
     if (avail > 0) {
       end_of_request = synserver_txn_read_request(contp);
-      INKIOBufferReaderConsume(txn->req_reader, avail);
+      TSIOBufferReaderConsume(txn->req_reader, avail);
 
       if (end_of_request) {
-        INKVConnShutdown(txn->vconn, 1, 0);
+        TSVConnShutdown(txn->vconn, 1, 0);
         return synserver_txn_write_response(contp);
       }
     }
 
-    INKVIOReenable(txn->read_vio);
+    TSVIOReenable(txn->read_vio);
     break;
 
-  case INK_EVENT_VCONN_EOS:
-    INKDebug(SDBG_TAG, "READ_EOS");
+  case TS_EVENT_VCONN_EOS:
+    TSDebug(SDBG_TAG, "READ_EOS");
     return synserver_txn_close(contp);
     break;
 
-  case INK_EVENT_ERROR:
-    INKDebug(SDBG_TAG, "READ_ERROR");
+  case TS_EVENT_ERROR:
+    TSDebug(SDBG_TAG, "READ_ERROR");
     return synserver_txn_close(contp);
     break;
 
   default:
-    INKAssert(!"Invalid event");
+    TSAssert(!"Invalid event");
     break;
   }
-  return INK_EVENT_IMMEDIATE;
+  return TS_EVENT_IMMEDIATE;
 }
 
 
 static int
-synserver_txn_main_handler(INKCont contp, INKEvent event, void *data)
+synserver_txn_main_handler(TSCont contp, TSEvent event, void *data)
 {
-  ServerTxn *txn = (ServerTxn *) INKContDataGet(contp);
-  INKAssert(txn->magic == MAGIC_ALIVE);
+  ServerTxn *txn = (ServerTxn *) TSContDataGet(contp);
+  TSAssert(txn->magic == MAGIC_ALIVE);
 
   TxnHandler handler = txn->current_handler;
   return (*handler) (contp, event, data);

@@ -269,7 +269,7 @@ n_byte_bank(0), byte_bank_size(0), missed(0), missed_msg(false), read_state_t(RE
   iob_iov = new_IOBufferData(BUFFER_SIZE_FOR_XMALLOC(size));
   char *addr = (char *) align_pointer_forward(iob_iov->data(), pagesize);
 
-#if (defined(__sparc) || defined(__alpha))
+#if defined(__sparc)
   if (mprotect(addr, pagesize, PROT_NONE))
     perror("ClusterState mprotect0 failed");
 #endif
@@ -285,7 +285,7 @@ n_byte_bank(0), byte_bank_size(0), missed(0), missed_msg(false), read_state_t(RE
 
   addr = (char *) align_pointer_forward(msg.iob_descriptor_block->data->data(), pagesize);
 
-#if (defined(__sparc) || defined(__alpha))
+#if defined(__sparc)
   if (mprotect(addr, pagesize, PROT_NONE))
     perror("ClusterState mprotect failed");
 #endif
@@ -299,11 +299,11 @@ n_byte_bank(0), byte_bank_size(0), missed(0), missed_msg(false), read_state_t(RE
 ClusterState::~ClusterState()
 {
   mutex = 0;
-#if (defined(__sparc) || defined(__alpha))
+#if defined(__sparc)
   int pagesize = getpagesize();
 #endif
   if (iov) {
-#if (defined(__sparc) || defined(__alpha))
+#if defined(__sparc)
     iov = (IOVec *) ((char *) iov - pagesize);
     if (mprotect((char *) iov, pagesize, (PROT_READ | PROT_WRITE)))
       perror("~ClusterState mprotect0 failed");
@@ -312,7 +312,7 @@ ClusterState::~ClusterState()
   }
 
   if (msg.descriptor) {
-#if (defined(__sparc) || defined(__alpha))
+#if defined(__sparc)
     char *a = (char *) msg.descriptor - (sizeof(ClusterMsgHeader) + pagesize);
     if (mprotect(a, pagesize, (PROT_READ | PROT_WRITE)))
       perror("~ClusterState mprotect failed");
@@ -1388,7 +1388,7 @@ ClusterHandler::dump_write_msg(int res)
   // Debug support for inter cluster message trace
   unsigned char x[4];
   memset(x, 0, sizeof(x));
-  *(uint32 *) & x = (uint32) net_vc->get_remote_addr().sin_addr.s_addr;
+  *(uint32 *) & x = (uint32) ((struct sockaddr_in *)&(net_vc->get_remote_addr()))->sin_addr.s_addr;
 
   fprintf(stderr,
           "[W] %hhu.%hhu.%hhu.%hhu SeqNo=%u, Cnt=%d, CntlCnt=%d Todo=%d, Res=%d\n",
@@ -1407,7 +1407,7 @@ ClusterHandler::dump_read_msg()
   // Debug support for inter cluster message trace
   unsigned char x[4];
   memset(x, 0, sizeof(x));
-  *(uint32 *) & x = (uint32) net_vc->get_remote_addr().sin_addr.s_addr;
+  *(uint32 *) & x = (uint32) ((struct sockaddr_in *)&(net_vc->get_remote_addr()))->sin_addr.s_addr;
 
   fprintf(stderr, "[R] %hhu.%hhu.%hhu.%hhu  SeqNo=%u, Cnt=%d, CntlCnt=%d\n",
           x[0], x[1], x[2], x[3], read.sequence_number, read.msg.count, read.msg.control_bytes);

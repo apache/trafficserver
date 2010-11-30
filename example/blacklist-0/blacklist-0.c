@@ -38,110 +38,110 @@ static char **sites;
 static int nsites;
 
 static void
-handle_dns(INKHttpTxn txnp, INKCont contp)
+handle_dns(TSHttpTxn txnp, TSCont contp)
 {
-  INKMBuffer bufp;
-  INKMLoc hdr_loc;
-  INKMLoc url_loc;
+  TSMBuffer bufp;
+  TSMLoc hdr_loc;
+  TSMLoc url_loc;
   const char *host;
   int i;
   int host_length;
 
-  if (!INKHttpTxnClientReqGet(txnp, &bufp, &hdr_loc)) {
-    INKError("couldn't retrieve client request header\n");
+  if (!TSHttpTxnClientReqGet(txnp, &bufp, &hdr_loc)) {
+    TSError("couldn't retrieve client request header\n");
     goto done;
   }
 
-  url_loc = INKHttpHdrUrlGet(bufp, hdr_loc);
+  url_loc = TSHttpHdrUrlGet(bufp, hdr_loc);
   if (!url_loc) {
-    INKError("couldn't retrieve request url\n");
-    INKHandleMLocRelease(bufp, INK_NULL_MLOC, hdr_loc);
+    TSError("couldn't retrieve request url\n");
+    TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
     goto done;
   }
 
-  host = INKUrlHostGet(bufp, url_loc, &host_length);
+  host = TSUrlHostGet(bufp, url_loc, &host_length);
   if (!host) {
-    INKError("couldn't retrieve request hostname\n");
-    INKHandleMLocRelease(bufp, hdr_loc, url_loc);
-    INKHandleMLocRelease(bufp, INK_NULL_MLOC, hdr_loc);
+    TSError("couldn't retrieve request hostname\n");
+    TSHandleMLocRelease(bufp, hdr_loc, url_loc);
+    TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
     goto done;
   }
   for (i = 0; i < nsites; i++) {
     if (strncmp(host, sites[i], host_length) == 0) {
       printf("blacklisting site: %s\n", sites[i]);
-      INKHttpTxnHookAdd(txnp, INK_HTTP_SEND_RESPONSE_HDR_HOOK, contp);
-      INKHandleStringRelease(bufp, url_loc, host);
-      INKHandleMLocRelease(bufp, hdr_loc, url_loc);
-      INKHandleMLocRelease(bufp, INK_NULL_MLOC, url_loc);
-      INKHttpTxnReenable(txnp, INK_EVENT_HTTP_ERROR);
+      TSHttpTxnHookAdd(txnp, TS_HTTP_SEND_RESPONSE_HDR_HOOK, contp);
+      TSHandleStringRelease(bufp, url_loc, host);
+      TSHandleMLocRelease(bufp, hdr_loc, url_loc);
+      TSHandleMLocRelease(bufp, TS_NULL_MLOC, url_loc);
+      TSHttpTxnReenable(txnp, TS_EVENT_HTTP_ERROR);
       return;
     }
   }
-  INKHandleStringRelease(bufp, url_loc, host);
-  INKHandleMLocRelease(bufp, hdr_loc, url_loc);
-  INKHandleMLocRelease(bufp, INK_NULL_MLOC, hdr_loc);
+  TSHandleStringRelease(bufp, url_loc, host);
+  TSHandleMLocRelease(bufp, hdr_loc, url_loc);
+  TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
 
 done:
-  INKHttpTxnReenable(txnp, INK_EVENT_HTTP_CONTINUE);
+  TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
 }
 
 static void
-handle_response(INKHttpTxn txnp)
+handle_response(TSHttpTxn txnp)
 {
-  INKMBuffer bufp;
-  INKMLoc hdr_loc;
-  INKMLoc url_loc;
+  TSMBuffer bufp;
+  TSMLoc hdr_loc;
+  TSMLoc url_loc;
   char *url_str;
   char *buf;
   int url_length;
 
-  if (!INKHttpTxnClientRespGet(txnp, &bufp, &hdr_loc)) {
-    INKError("couldn't retrieve client response header\n");
+  if (!TSHttpTxnClientRespGet(txnp, &bufp, &hdr_loc)) {
+    TSError("couldn't retrieve client response header\n");
     goto done;
   }
 
-  INKHttpHdrStatusSet(bufp, hdr_loc, INK_HTTP_STATUS_FORBIDDEN);
-  INKHttpHdrReasonSet(bufp, hdr_loc,
-                      INKHttpHdrReasonLookup(INK_HTTP_STATUS_FORBIDDEN),
-                      strlen(INKHttpHdrReasonLookup(INK_HTTP_STATUS_FORBIDDEN)));
+  TSHttpHdrStatusSet(bufp, hdr_loc, TS_HTTP_STATUS_FORBIDDEN);
+  TSHttpHdrReasonSet(bufp, hdr_loc,
+                      TSHttpHdrReasonLookup(TS_HTTP_STATUS_FORBIDDEN),
+                      strlen(TSHttpHdrReasonLookup(TS_HTTP_STATUS_FORBIDDEN)));
 
-  if (!INKHttpTxnClientReqGet(txnp, &bufp, &hdr_loc)) {
-    INKError("couldn't retrieve client request header\n");
-    INKHandleMLocRelease(bufp, INK_NULL_MLOC, hdr_loc);
+  if (!TSHttpTxnClientReqGet(txnp, &bufp, &hdr_loc)) {
+    TSError("couldn't retrieve client request header\n");
+    TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
     goto done;
   }
 
-  url_loc = INKHttpHdrUrlGet(bufp, hdr_loc);
+  url_loc = TSHttpHdrUrlGet(bufp, hdr_loc);
   if (!url_loc) {
-    INKError("couldn't retrieve request url\n");
-    INKHandleMLocRelease(bufp, INK_NULL_MLOC, hdr_loc);
+    TSError("couldn't retrieve request url\n");
+    TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
     goto done;
   }
 
-  buf = INKmalloc(4096);
+  buf = TSmalloc(4096);
 
-  url_str = INKUrlStringGet(bufp, url_loc, &url_length);
+  url_str = TSUrlStringGet(bufp, url_loc, &url_length);
   sprintf(buf, "You are forbidden from accessing \"%s\"\n", url_str);
-  INKfree(url_str);
-  INKHandleMLocRelease(bufp, hdr_loc, url_loc);
-  INKHandleMLocRelease(bufp, INK_NULL_MLOC, hdr_loc);
+  TSfree(url_str);
+  TSHandleMLocRelease(bufp, hdr_loc, url_loc);
+  TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
 
-  INKHttpTxnErrorBodySet(txnp, buf, strlen(buf), NULL);
+  TSHttpTxnErrorBodySet(txnp, buf, strlen(buf), NULL);
 
 done:
-  INKHttpTxnReenable(txnp, INK_EVENT_HTTP_CONTINUE);
+  TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
 }
 
 static int
-blacklist_plugin(INKCont contp, INKEvent event, void *edata)
+blacklist_plugin(TSCont contp, TSEvent event, void *edata)
 {
-  INKHttpTxn txnp = (INKHttpTxn) edata;
+  TSHttpTxn txnp = (TSHttpTxn) edata;
 
   switch (event) {
-  case INK_EVENT_HTTP_OS_DNS:
+  case TS_EVENT_HTTP_OS_DNS:
     handle_dns(txnp, contp);
     return 0;
-  case INK_EVENT_HTTP_SEND_RESPONSE_HDR:
+  case TS_EVENT_HTTP_SEND_RESPONSE_HDR:
     handle_response(txnp);
     return 0;
   default:
@@ -154,7 +154,7 @@ int
 check_ts_version()
 {
 
-  const char *ts_version = INKTrafficServerVersionGet();
+  const char *ts_version = TSTrafficServerVersionGet();
   int result = 0;
 
   if (ts_version) {
@@ -177,34 +177,34 @@ check_ts_version()
 }
 
 void
-INKPluginInit(int argc, const char *argv[])
+TSPluginInit(int argc, const char *argv[])
 {
   int i;
-  INKPluginRegistrationInfo info;
+  TSPluginRegistrationInfo info;
 
   info.plugin_name = "blacklist-0";
   info.vendor_name = "MyCompany";
   info.support_email = "ts-api-support@MyCompany.com";
 
-  if (!INKPluginRegister(INK_SDK_VERSION_2_0, &info)) {
-    INKError("Plugin registration failed.\n");
+  if (!TSPluginRegister(TS_SDK_VERSION_2_0, &info)) {
+    TSError("Plugin registration failed.\n");
 
   }
 
   if (!check_ts_version()) {
-    INKError("Plugin requires Traffic Server 2.0 or later\n");
+    TSError("Plugin requires Traffic Server 2.0 or later\n");
     return;
   }
 
 
   nsites = argc - 1;
   if (nsites > 0) {
-    sites = (char **) INKmalloc(sizeof(char *) * nsites);
+    sites = (char **) TSmalloc(sizeof(char *) * nsites);
 
     for (i = 0; i < nsites; i++) {
-      sites[i] = INKstrdup(argv[i + 1]);
+      sites[i] = TSstrdup(argv[i + 1]);
     }
 
-    INKHttpHookAdd(INK_HTTP_OS_DNS_HOOK, INKContCreate(blacklist_plugin, NULL));
+    TSHttpHookAdd(TS_HTTP_OS_DNS_HOOK, TSContCreate(blacklist_plugin, NULL));
   }
 }

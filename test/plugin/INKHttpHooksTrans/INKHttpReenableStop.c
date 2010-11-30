@@ -38,16 +38,16 @@ TODO tests of stoping an event at the session and transaction level
  *************************************************************************/
 
 /*
-1. inkapi void INKHttpHookAdd(INKHttpHookID id, INKCont contp);
-   Covered in INKHttpHookAdd.c
-2. inkapi void INKHttpSsnHookAdd(INKHttpSsn ssnp, INKHttpHookID id, INKCont contp);
-   Called for all events except INK_HTTP_SESSION_START, INK_EVENT_MGMT_UPDATE.
-3. inkapi void INKHttpSsnReenable(INKHttpSsn ssnp, INKEvent event);
-   INK_EVENT_HTTP_CONTINUE
-TODO build a test case for event INK_EVENT_HTTP_ERROR HTTP Transactions
-4. void INKHttpTxnReenable(INKHttpTxn txnp, INKEvent INK_EVENT_HTTP_ERROR)
-   INK_EVENT_HTTP_CONTINUE
-TODO build a test case for event INK_EVENT_HTTP_ERROR
+1. inkapi void TSHttpHookAdd(TSHttpHookID id, TSCont contp);
+   Covered in TSHttpHookAdd.c
+2. inkapi void TSHttpSsnHookAdd(TSHttpSsn ssnp, TSHttpHookID id, TSCont contp);
+   Called for all events except TS_HTTP_SESSION_START, TS_EVENT_MGMT_UPDATE.
+3. inkapi void TSHttpSsnReenable(TSHttpSsn ssnp, TSEvent event);
+   TS_EVENT_HTTP_CONTINUE
+TODO build a test case for event TS_EVENT_HTTP_ERROR HTTP Transactions
+4. void TSHttpTxnReenable(TSHttpTxn txnp, TSEvent TS_EVENT_HTTP_ERROR)
+   TS_EVENT_HTTP_CONTINUE
+TODO build a test case for event TS_EVENT_HTTP_ERROR
 */
 
 /**************************************************************************

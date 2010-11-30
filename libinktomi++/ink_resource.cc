@@ -419,7 +419,7 @@ _xmalloc(unsigned int size, const char *path)
   -------------------------------------------------------------------------*/
 
 char *
-_xstrdup(const char *str, int length, const char *path)
+_xstrdup(const char *str, int64 length, const char *path)
 {
   char *newstr;
 

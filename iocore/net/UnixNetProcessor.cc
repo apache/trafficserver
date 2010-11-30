@@ -28,15 +28,13 @@
 #include "StatPages.h"
 #endif
 
-// Globals
-int use_accept_thread = 0;
-
 NetProcessor::AcceptOptions const NetProcessor::DEFAULT_ACCEPT_OPTIONS;
 
 NetProcessor::AcceptOptions&
 NetProcessor::AcceptOptions::reset()
 {
   port = 0;
+  accept_threads = 0;
   domain = AF_INET;
   etype = ET_NET;
   f_callback_on_open = false;
@@ -64,8 +62,10 @@ net_next_connection_number()
 Action *
 NetProcessor::accept(Continuation * cont,
                      int port,
+                     int domain,
                      bool frequent_accept,
                      unsigned int accept_ip,
+                     char *accept_ip_str,
                      bool callback_on_open,
                      SOCKET listen_socket_in,
                      int accept_pool_size,
@@ -79,13 +79,14 @@ NetProcessor::accept(Continuation * cont,
   (void) accept_only;           // NT only
   (void) bound_sockaddr;        // NT only
   (void) bound_sockaddr_size;   // NT only
-  NetDebug("iocore_net_processor",
-	   "NetProcessor::accept - port %d,recv_bufsize %d, send_bufsize %d, sockopt 0x%0lX",
-	   port, recv_bufsize, send_bufsize, sockopt_flags
-	   );
+  Debug("iocore_net_processor",
+           "NetProcessor::accept - port %d,recv_bufsize %d, send_bufsize %d, sockopt 0x%0lX",
+           port, recv_bufsize, send_bufsize, sockopt_flags
+           );
 
   AcceptOptions opt;
   opt.port = port;
+  opt.domain = domain;
   opt.etype = etype;
   opt.f_callback_on_open = callback_on_open;
   opt.recv_bufsize = recv_bufsize;
@@ -97,19 +98,20 @@ NetProcessor::accept(Continuation * cont,
                                                       frequent_accept,
                                                       net_accept,
                                                       accept_ip,
-						      opt
-						      );
+                                                      accept_ip_str,
+                                                      opt
+                                                      );
 }
 
 Action *
 NetProcessor::main_accept(Continuation * cont, SOCKET fd,
                           sockaddr * bound_sockaddr, int *bound_sockaddr_size,
                           bool accept_only,
-			  AcceptOptions const& opt
-			  )
+                          AcceptOptions const& opt
+                          )
 {
   (void) accept_only;           // NT only
-  NetDebug("iocore_net_processor", "NetProcessor::main_accept - port %d,recv_bufsize %d, send_bufsize %d, sockopt 0x%0lX",
+  Debug("iocore_net_processor", "NetProcessor::main_accept - port %d,recv_bufsize %d, send_bufsize %d, sockopt 0x%0lX",
         opt.port, opt.recv_bufsize, opt.send_bufsize, opt.sockopt_flags);
   return ((UnixNetProcessor *) this)->accept_internal(cont, fd,
                                                       bound_sockaddr,
@@ -117,8 +119,9 @@ NetProcessor::main_accept(Continuation * cont, SOCKET fd,
                                                       true,
                                                       net_accept,
                                                       ((UnixNetProcessor *) this)->incoming_ip_to_bind_saddr,
-						      opt
-						      );
+                                                      ((UnixNetProcessor *) this)->incoming_ip_to_bind,
+                                                      opt
+                                                      );
 }
 
 
@@ -131,20 +134,25 @@ UnixNetProcessor::accept_internal(Continuation * cont,
                                   bool frequent_accept,
                                   AcceptFunction fn,
                                   unsigned int accept_ip,
-				  AcceptOptions const& opt
-				  )
+                                  char *accept_ip_str,
+                                  AcceptOptions const& opt
+                                  )
 {
   EventType et = opt.etype; // setEtype requires non-const ref.
-  setEtype(et);
   NetAccept *na = createNetAccept();
-
   EThread *thread = this_ethread();
   ProxyMutex *mutex = thread->mutex;
+
+  // Potentially upgrade to SSL.
+  upgradeEtype(et);
+
   NET_INCREMENT_DYN_STAT(net_accepts_currently_open_stat);
   na->port = opt.port;
+  na->domain = opt.domain;
   na->accept_fn = fn;
   na->server.fd = fd;
   na->server.accept_ip = accept_ip;
+  na->server.accept_ip_str = accept_ip_str;
   na->server.f_outbound_transparent = opt.f_outbound_transparent;
   na->server.f_inbound_transparent = opt.f_inbound_transparent;
   if (opt.f_outbound_transparent) Debug("http_tproxy", "Marking accept server %x on port %d as outbound transparent.\n", na, opt.port);
@@ -159,10 +167,23 @@ UnixNetProcessor::accept_internal(Continuation * cont,
   if (na->callback_on_open)
     na->mutex = cont->mutex;
   if (frequent_accept) { // true
-    if (use_accept_thread) // 0
-      na->init_accept_loop();
-    else
+    if (opt.accept_threads > 0)  {
+      if (0 == na->do_listen(BLOCKING)) {
+        NetAccept *a;
+
+        for (int i=1; i < opt.accept_threads; ++i) {
+          a = NEW(new NetAccept);
+          *a = *na;
+          a->init_accept_loop();
+          Debug("iocore_net_accept", "Created accept thread #%d for port %d", i, opt.port);
+        }
+        // Start the "template" accept thread last.
+        Debug("iocore_net_accept", "Created accept thread #%d for port %d", opt.accept_threads, opt.port);
+        na->init_accept_loop();
+      }
+    } else {
       na->init_accept_per_thread();
+    }
   } else
     na->init_accept();
   if (bound_sockaddr && bound_sockaddr_size)
@@ -184,18 +205,17 @@ Action *
 UnixNetProcessor::connect_re_internal(Continuation * cont,
                                       unsigned int ip, int port,  NetVCOptions * opt)
 {
-
   ProxyMutex *mutex = cont->mutex;
   EThread *t = mutex->thread_holding;
   UnixNetVConnection *vc = allocateThread(t);
+
   if (opt)
     vc->options = *opt;
   else
     opt = &vc->options;
 
-  // virtual function used to set etype to ET_SSL
-  // for SSLNetProcessor.  Does nothing if not overwritten.
-  setEtype(opt->etype);
+  // virtual function used to upgrade etype to ET_SSL for SSLNetProcessor.
+  upgradeEtype(opt->etype);
 
 #ifndef INK_NO_SOCKS
   bool using_socks = (socks_conf_stuff->socks_needed && opt->socks_support != NO_SOCKS
@@ -210,7 +230,7 @@ UnixNetProcessor::connect_re_internal(Continuation * cont,
     );
   SocksEntry *socksEntry = NULL;
 #endif
-  NET_INCREMENT_DYN_STAT(net_connections_currently_open_stat);
+  NET_SUM_GLOBAL_DYN_STAT(net_connections_currently_open_stat, 1);
   vc->id = net_next_connection_number();
   vc->submit_time = ink_get_hrtime();
   vc->setSSLClientConnection(true);
@@ -220,7 +240,7 @@ UnixNetProcessor::connect_re_internal(Continuation * cont,
   Action *result = &vc->action_;
 #ifndef INK_NO_SOCKS
   if (using_socks) {
-    NetDebug("Socks", "Using Socks ip: %u.%u.%u.%u:%d\n", PRINT_IP(ip), port);
+    Debug("Socks", "Using Socks ip: %u.%u.%u.%u:%d\n", PRINT_IP(ip), port);
     socksEntry = socksAllocator.alloc();
     socksEntry->init(cont->mutex, vc, opt->socks_support, opt->socks_version);        /*XXXX remove last two args */
     socksEntry->action_ = cont;
@@ -235,7 +255,7 @@ UnixNetProcessor::connect_re_internal(Continuation * cont,
     result = &socksEntry->action_;
     vc->action_ = socksEntry;
   } else {
-    NetDebug("Socks", "Not Using Socks %d \n", socks_conf_stuff->socks_needed);
+    Debug("Socks", "Not Using Socks %d \n", socks_conf_stuff->socks_needed);
     vc->action_ = cont;
   }
 #else
@@ -292,7 +312,7 @@ struct CheckConnect:public Continuation
     switch (event) {
     case NET_EVENT_OPEN:
       vc = (UnixNetVConnection *) e;
-      NetDebug("iocore_net_connect", "connect Net open");
+      Debug("iocore_net_connect", "connect Net open");
       vc->do_io_write(this, 10, /* some non-zero number just to get the poll going */
                       reader);
       /* dont wait for more than timeout secs */
@@ -301,7 +321,7 @@ struct CheckConnect:public Continuation
       break;
 
       case NET_EVENT_OPEN_FAILED:
-	NetDebug("iocore_net_connect", "connect Net open failed");
+        Debug("iocore_net_connect", "connect Net open failed");
       if (!action_.cancelled)
         action_.continuation->handleEvent(NET_EVENT_OPEN_FAILED, (void *) e);
       break;
@@ -314,7 +334,7 @@ struct CheckConnect:public Continuation
           ret = getsockopt(vc->con.fd, SOL_SOCKET, SO_ERROR, (char *) &sl, &sz);
         if (!ret && sl == 0)
         {
-          NetDebug("iocore_net_connect", "connection established");
+          Debug("iocore_net_connect", "connection established");
           /* disable write on vc */
           vc->write.enabled = 0;
           vc->cancel_inactivity_timeout();
@@ -335,7 +355,7 @@ struct CheckConnect:public Continuation
         action_.continuation->handleEvent(NET_EVENT_OPEN_FAILED, (void *) -ENET_CONNECT_FAILED);
       break;
     case VC_EVENT_INACTIVITY_TIMEOUT:
-      NetDebug("iocore_net_connect", "connect timed out");
+      Debug("iocore_net_connect", "connect timed out");
       vc->do_io_close();
       if (!action_.cancelled)
         action_.continuation->handleEvent(NET_EVENT_OPEN_FAILED, (void *) -ENET_CONNECT_TIMEOUT);
@@ -384,7 +404,7 @@ Action *
 NetProcessor::connect_s(Continuation * cont, unsigned int ip,
                         int port, int timeout, NetVCOptions * opt)
 {
-  NetDebug("iocore_net_connect", "NetProcessor::connect_s called");
+  Debug("iocore_net_connect", "NetProcessor::connect_s called");
   CheckConnect *c = NEW(new CheckConnect(cont->mutex));
   return c->connect_s(cont, ip, port, timeout, opt);
 }
@@ -397,13 +417,14 @@ int
 UnixNetProcessor::start(int)
 {
   EventType etype = ET_NET;
+
   netHandler_offset = eventProcessor.allocate(sizeof(NetHandler));
   pollCont_offset = eventProcessor.allocate(sizeof(PollCont));
 
-  // customize the threads for net
-  setEtype(etype);
   // etype is ET_NET for netProcessor
   // and      ET_SSL for sslNetProcessor
+  upgradeEtype(etype);
+
   n_netthreads = eventProcessor.n_threads_for_type[etype];
   netthreads = eventProcessor.eventthread[etype];
   for (int i = 0; i < n_netthreads; i++) {
@@ -447,7 +468,8 @@ UnixNetProcessor::start(int)
  */
 #ifdef NON_MODULAR
   extern Action *register_ShowNet(Continuation * c, HTTPHdr * h);
-  statPagesManager.register_http("net", register_ShowNet);
+  if (etype == ET_NET)
+    statPagesManager.register_http("net", register_ShowNet);
 #endif
   return 1;
 }
@@ -466,9 +488,9 @@ UnixNetProcessor::allocateThread(EThread * t)
 void
 UnixNetProcessor::freeThread(UnixNetVConnection * vc, EThread * t)
 {
+  ink_assert(!vc->from_accept_thread);
   THREAD_FREE(vc, netVCAllocator, t);
 }
-
 
 // Virtual function allows creation of an
 // SSLNetAccept or NetAccept transparent to NetProcessor.

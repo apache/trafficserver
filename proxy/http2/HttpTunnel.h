@@ -122,7 +122,8 @@ struct ChunkedHandler
   int running_sum;
   int num_digits;
 
-    ChunkedHandler();
+  ChunkedHandler();
+
   void init(IOBufferReader * buffer_in, HttpTunnelProducer * p);
 
   // Returns true if complete, false otherwise
@@ -195,12 +196,10 @@ struct HttpTunnelProducer
 class PostDataBuffers
 {
 public:
-  PostDataBuffers():postdata_producer_buffer(NULL), postdata_copy_buffer(NULL), postdata_producer_reader(NULL),
-    postdata_copy_buffer_start(NULL), ua_buffer_reader(NULL)
-  {
-    Debug("http_redirect", "[PostDataBuffers::PostDataBuffers]");
-  }
-
+  PostDataBuffers()
+    : postdata_producer_buffer(NULL), postdata_copy_buffer(NULL), postdata_producer_reader(NULL),
+      postdata_copy_buffer_start(NULL), ua_buffer_reader(NULL)
+  { Debug("http_redirect", "[PostDataBuffers::PostDataBuffers]");  }
 
   MIOBuffer *postdata_producer_buffer;
   MIOBuffer *postdata_copy_buffer;
@@ -214,15 +213,12 @@ class HttpTunnel:public Continuation
   friend class HttpPagesHandler;
   friend class CoreUtils;
 public:
-    HttpTunnel();
+  HttpTunnel();
 
   void init(HttpSM * sm_arg, ProxyMutex * amutex);
   void reset();
   void kill_tunnel();
-  bool is_tunnel_active()
-  {
-    return active;
-  };
+  bool is_tunnel_active() { return active; }
   bool is_tunnel_alive();
   bool is_there_cache_write();
 

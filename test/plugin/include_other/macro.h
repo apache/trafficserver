@@ -28,16 +28,16 @@
 
 #define LOG_AUTO_ERROR(API_NAME, COMMENT) \
 { \
-    INKDebug(AUTO_TAG, "%s %s [%s: line %d] (%s)", PLUGIN_NAME, API_NAME, FUNCTION_NAME, \
+    TSDebug(AUTO_TAG, "%s %s [%s: line %d] (%s)", PLUGIN_NAME, API_NAME, FUNCTION_NAME, \
             __LINE__, COMMENT); \
 }
 #define LOG_API_ERROR(API_NAME) { \
-    INKDebug(DEBUG_TAG, "%s: %s %s [%s] File %s, line number %d", PLUGIN_NAME, API_NAME, "APIFAIL", \
+    TSDebug(DEBUG_TAG, "%s: %s %s [%s] File %s, line number %d", PLUGIN_NAME, API_NAME, "APIFAIL", \
 	     FUNCTION_NAME, __FILE__, __LINE__); \
 }
 
 #define LOG_API_ERROR_COMMENT(API_NAME, COMMENT) { \
-    INKDebug(DEBUG_TAG, "%s: %s %s [%s] File %s, line number %d (%s)", PLUGIN_NAME, API_NAME, "APIFAIL", \
+    TSDebug(DEBUG_TAG, "%s: %s %s [%s] File %s, line number %d (%s)", PLUGIN_NAME, API_NAME, "APIFAIL", \
 	     FUNCTION_NAME, __FILE__, __LINE__, COMMENT); \
 }
 
@@ -54,27 +54,27 @@
 #define LOG_ERROR_AND_REENABLE(API_NAME) \
 { \
     LOG_API_ERROR(API_NAME); \
-    INKHttpTxnReenable(txnp, INK_EVENT_HTTP_CONTINUE); \
+    TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE); \
 }
 
 #define LOG_ERROR_NEG(API_NAME) { \
-    INKDebug(PLUGIN_NAME, "%s: %s %s %s File %s, line number %d",PLUGIN_NAME, API_NAME, "NEGAPIFAIL", \
+    TSDebug(PLUGIN_NAME, "%s: %s %s %s File %s, line number %d",PLUGIN_NAME, API_NAME, "NEGAPIFAIL", \
              FUNCTION_NAME, __FILE__, __LINE__); \
 }
 
 /* added by nkale for internal plugins */
 #define LOG_NEG_ERROR(API_NAME) { \
-    INKDebug(NEG_ERROR_TAG, "%s: %s %s %s File %s, line number %d",PLUGIN_NAME, API_NAME, "NEGAPIFAIL", \
+    TSDebug(NEG_ERROR_TAG, "%s: %s %s %s File %s, line number %d",PLUGIN_NAME, API_NAME, "NEGAPIFAIL", \
              FUNCTION_NAME, __FILE__, __LINE__); \
 }
 
 /* Release macros */
-#define VALID_PTR(X) ((X != NULL) && (X != INK_ERROR_PTR))
+#define VALID_PTR(X) ((X != NULL) && (X != TS_ERROR_PTR))
 
 #define FREE(X) \
 { \
     if (VALID_PTR(X)) { \
-        INKfree((void *)X); \
+        TSfree((void *)X); \
         X = NULL; \
     } \
 } \
@@ -82,10 +82,10 @@
 #define HANDLE_RELEASE(P_BUFFER, P_PARENT, P_MLOC) \
 { \
     if (VALID_PTR(P_MLOC)) { \
-        if (INKHandleMLocRelease(P_BUFFER, P_PARENT, P_MLOC) == INK_ERROR) { \
-            LOG_API_ERROR("INKHandleMLocRelease"); \
+        if (TSHandleMLocRelease(P_BUFFER, P_PARENT, P_MLOC) == TS_ERROR) { \
+            LOG_API_ERROR("TSHandleMLocRelease"); \
         } else { \
-            P_MLOC = (INKMLoc)NULL; \
+            P_MLOC = (TSMLoc)NULL; \
         } \
     } \
 }\
@@ -93,8 +93,8 @@
 #define STR_RELEASE(P_BUFFER, P_PARENT, P_STR) \
 { \
     if (VALID_PTR(P_STR)) { \
-        if (INKHandleStringRelease(P_BUFFER, P_PARENT, P_STR) == INK_ERROR) { \
-            LOG_API_ERROR("INKHandleStringRelease"); \
+        if (TSHandleStringRelease(P_BUFFER, P_PARENT, P_STR) == TS_ERROR) { \
+            LOG_API_ERROR("TSHandleStringRelease"); \
         } else  { \
             P_STR = NULL; \
         } \
@@ -104,24 +104,24 @@
 #define URL_DESTROY(P_BUFFER, P_MLOC) \
 { \
     if (VALID_PTR(P_MLOC)) {\
-        INKUrlDestroy (P_BUFFER, P_MLOC); \
+        TSUrlDestroy (P_BUFFER, P_MLOC); \
     } else { \
-        P_MLOC = (INKMLoc)NULL; \
+        P_MLOC = (TSMLoc)NULL; \
     } \
 }\
 
 #define HDR_DESTROY(P_BUFFER, P_MLOC) \
 { \
     if (VALID_PTR(P_MLOC)) \
-        if (INKHttpHdrDestroy (P_BUFFER, P_MLOC) == INK_ERROR) \
-            LOG_API_ERROR("INKHttpHdrDestroy"); \
+        if (TSHttpHdrDestroy (P_BUFFER, P_MLOC) == TS_ERROR) \
+            LOG_API_ERROR("TSHttpHdrDestroy"); \
 }\
 
 #define BUFFER_DESTROY(P_BUFFER) \
 { \
     if (VALID_PTR(P_BUFFER)) \
-        if (INKMBufferDestroy (P_BUFFER) == INK_ERROR) \
-            LOG_API_ERROR("INKMBufferDestroy"); \
+        if (TSMBufferDestroy (P_BUFFER) == TS_ERROR) \
+            LOG_API_ERROR("TSMBufferDestroy"); \
 }\
 
 #endif

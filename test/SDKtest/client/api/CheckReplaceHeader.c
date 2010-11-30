@@ -48,18 +48,18 @@
 int replace_hdr_test_failed;
 
 void
-INKPluginInit(int clientid)
+TSPluginInit(int clientid)
 {
 
   replace_hdr_test_failed = 0;
 
   fprintf(stderr, "*** CheckReplaceHeader Test for replace-header-plugin ***\n");
-  INKFuncRegister(INK_FID_HEADER_PROCESS);
+  TSFuncRegister(TS_FID_HEADER_PROCESS);
 }
 
 
-INKRequestAction
-INKHeaderProcess(void *req_id, char *header, int length, char *request_str)
+TSRequestAction
+TSHeaderProcess(void *req_id, char *header, int length, char *request_str)
 {
 
   char *accept_ranges_loc;
@@ -72,7 +72,7 @@ INKHeaderProcess(void *req_id, char *header, int length, char *request_str)
       /*fprintf(stdout, "Response header is:\n%s\n", header); */
     }
     replace_hdr_test_failed = (replace_hdr_test_failed + 1) % 200;
-    return INK_KEEP_GOING;
+    return TS_KEEP_GOING;
   }
 
   while (*accept_ranges_loc != ':')
@@ -90,10 +90,10 @@ INKHeaderProcess(void *req_id, char *header, int length, char *request_str)
       /*fprintf(stdout, "Response header is:\n%s\n", header); */
     }
     replace_hdr_test_failed = (replace_hdr_test_failed + 1) % 200;
-    return INK_KEEP_GOING;
+    return TS_KEEP_GOING;
   }
 
   /*fprintf(stdout, "Test PASSED!!!\n"); */
 
-  return INK_STOP_SUCCESS;
+  return TS_STOP_SUCCESS;
 }

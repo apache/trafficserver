@@ -1570,7 +1570,7 @@ handle_select_access_logs(WebHttpContext * whc, char *tag, char *arg)
              == REC_ERR_OKAY);
 
   if ((err = stat(system_log_dir, &s)) < 0) {
-    ink_assert(RecGetRecordString_Xmalloc("proxy.config.log2.logfile_dir", &logdir)
+    ink_assert(RecGetRecordString_Xmalloc("proxy.config.log.logfile_dir", &logdir)
 	       == REC_ERR_OKAY);
     if ((err = stat(logdir, &s)) < 0) {
       // Try 'system_root_dir/var/log/trafficserver' directory
@@ -1579,7 +1579,7 @@ handle_select_access_logs(WebHttpContext * whc, char *tag, char *arg)
       if ((err = stat(system_log_dir, &s)) < 0) {
         mgmt_elog("unable to stat() log dir'%s': %d %d, %s\n",
                 system_log_dir, err, errno, strerror(errno));
-        mgmt_elog("please set 'proxy.config.log2.logfile_dir'\n");
+        mgmt_elog("please set 'proxy.config.log.logfile_dir'\n");
         //_exit(1);
       }
     } else {
@@ -1652,7 +1652,7 @@ handle_select_debug_logs(WebHttpContext * whc, char *tag, char *arg)
              == REC_ERR_OKAY);
 
   if ((err = stat(system_log_dir, &s)) < 0) {
-    ink_assert(RecGetRecordString_Xmalloc("proxy.config.log2.logfile_dir", &logdir)
+    ink_assert(RecGetRecordString_Xmalloc("proxy.config.log.logfile_dir", &logdir)
 	       == REC_ERR_OKAY);
     if ((err = stat(logdir, &s)) < 0) {
       // Try 'system_root_dir/var/log/trafficserver' directory
@@ -1661,7 +1661,7 @@ handle_select_debug_logs(WebHttpContext * whc, char *tag, char *arg)
       if ((err = stat(system_log_dir, &s)) < 0) {
         mgmt_elog("unable to stat() log dir'%s': %d %d, %s\n",
                 system_log_dir, err, errno, strerror(errno));
-        mgmt_elog("please set 'proxy.config.log2.logfile_dir'\n");
+        mgmt_elog("please set 'proxy.config.log.logfile_dir'\n");
         //_exit(1);
       }
     } else {

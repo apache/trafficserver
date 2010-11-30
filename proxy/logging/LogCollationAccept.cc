@@ -47,7 +47,7 @@ m_pending_event(NULL)
   // appended to itself if multiple do_io_reads are called requesting
   // small amounts of data.  Most arguments are default except for the
   // last one which we will set to true.
-  m_accept_action = netProcessor.accept(this, m_port, false, INADDR_ANY, false, NO_FD, ACCEPTEX_POOL_SIZE, true);
+  m_accept_action = netProcessor.accept(this, m_port, AF_INET, false, INADDR_ANY, false, NO_FD, ACCEPTEX_POOL_SIZE, true);
   //m_accept_action = netProcessor.accept(this, m_port);
   ink_assert(NULL != m_accept_action);
 
@@ -60,14 +60,14 @@ m_pending_event(NULL)
 LogCollationAccept::~LogCollationAccept()
 {
 
-  Debug("log2-collation", "LogCollationAccept::~LogCollationAccept");
+  Debug("log-collation", "LogCollationAccept::~LogCollationAccept");
 
   // stop the netProcessor
   if (m_accept_action) {
     m_accept_action->cancel();
     m_accept_action = NULL;
 
-    Debug("log2-collation", "closing Log::collation_accept_file_descriptor "
+    Debug("log-collation", "closing Log::collation_accept_file_descriptor "
           "(%d)", Log::collation_accept_file_descriptor);
     if (::close(Log::collation_accept_file_descriptor) < 0) {
       Error("error closing collate listen file descriptor [%d]: %s",

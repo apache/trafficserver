@@ -242,21 +242,21 @@ typedef __ink_res_state *ink_res_state;
 
 
 struct __ink_res_state_ext {
-        union ink_res_sockaddr_union nsaddrs[INK_MAXNS];
-        struct sort_list {
-                int     af;
-                union {
-                        struct in_addr  ina;
-                        struct in6_addr in6a;
-                } addr, mask;
-        } sort_list[MAXRESOLVSORT];
-        char nsuffix[64];
-        char nsuffix2[64];
+  union ink_res_sockaddr_union nsaddrs[INK_MAXNS];
+  struct sort_list {
+    int     af;
+    union {
+      struct in_addr  ina;
+      struct in6_addr in6a;
+    } addr, mask;
+  } sort_list[MAXRESOLVSORT];
+  char nsuffix[64];
+  char nsuffix2[64];
 };
 
 
-int ink_res_init(ink_res_state, unsigned int *pHostList, int *pPort = NULL, char *pDefDomain = NULL,
-                 char *pSearchList = NULL, char *pResolvConf = NULL);
+int ink_res_init(ink_res_state, const unsigned int *pHostList, const int *pPort = NULL, const char *pDefDomain = NULL,
+                 const char *pSearchList = NULL, const char *pResolvConf = NULL);
 int ink_res_mkquery(ink_res_state, int, const char *, int, int,
                     const unsigned char *, int, const unsigned char *, unsigned char *, int);
 

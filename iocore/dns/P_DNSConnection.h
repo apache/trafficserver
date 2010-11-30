@@ -55,6 +55,7 @@
 //
 // Connection
 //
+struct DNSHandler;
 
 struct DNSConnection
 {
@@ -64,12 +65,13 @@ struct DNSConnection
   LINK(DNSConnection, link);
   EventIO eio;
   InkRand generator;
+  DNSHandler* handler;
 
   int connect(unsigned int ip, int port,
               bool non_blocking_connect = NON_BLOCKING_CONNECT,
               bool use_tcp = CONNECT_WITH_TCP, bool non_blocking = NON_BLOCKING, bool bind_random_port = BIND_ANY_PORT);
-
-  int close();                  // 0 on success, -errno on failure
+  int close();
+  void trigger();
 
   virtual ~DNSConnection();
   DNSConnection();

@@ -32,15 +32,7 @@
 
 #define NEW(mem)        _xtrack_helper (mem, RES_MEM_PATH)
 
-
-#if defined(__alpha)
-extern void *operator
-new(size_t size)
-throw();
-extern void operator
-delete(void *p)
-throw();
-#elif defined(__SUNPRO_CC) && (__SUNPRO_CC >= 0x500)
+#if defined(__SUNPRO_CC) && (__SUNPRO_CC >= 0x500)
 void *operator
 new(size_t)
 throw(std::bad_alloc);
@@ -52,19 +44,10 @@ extern void *operator  new(size_t size);
 extern void operator  delete(void *p);
 #endif
 
-
-#ifndef __SUNPRO_CC
-
-#ifdef __alpha
-extern void *operator  new[] (size_t size) throw();
-extern void operator  delete[] (void *p) throw();
-#elif !defined (_WIN64)
+#if !defined(__SUNPRO_CC) && !defined (_WIN64)
 extern void *operator  new[] (size_t size);
 extern void operator  delete[] (void *p);
 #endif
-
-#endif /* __SUNPRO_CC */
-
 
 template<class T> static inline T *
 _xtrack_helper(T * ptr, const char *path)
@@ -72,20 +55,9 @@ _xtrack_helper(T * ptr, const char *path)
   return (T *) _xtrack(ptr, path);
 }
 
-#elif defined(USE_PARTITION_MEMORY)     /* VxWorks */
-
-#define NEW(mem)        mem
-
-inkcoreapi extern void *operator  new(size_t size);
-inkcoreapi extern void operator  delete(void *p);
-inkcoreapi extern void *operator  new[] (size_t size);
-inkcoreapi extern void operator  delete[] (void *p);
-
-#else /* USE_PARTITION_MEMORY */
+#else
 
 #define NEW(mem)  mem
 
-#endif /* USE_PARTITION_MEMORY */
-
-
+#endif
 #endif /* __RESOURCE_H__ */

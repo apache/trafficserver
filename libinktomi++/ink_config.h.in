@@ -38,14 +38,6 @@
  */
 #include "ink_autoconf.h"
 
-/* Version info
- */
-#define TS_VERSION_STRING             "@TS_VERSION_STRING@"
-#define TS_VERSION_NUMBER              @TS_VERSION_NUMBER@
-#define TS_VERSION_MAJOR               @TS_VERSION_MAJOR@
-#define TS_VERSION_MINOR               @TS_VERSION_MINOR@
-#define TS_VERSION_MICRO               @TS_VERSION_MICRO@
-
 #define BUILD_MACHINE                  "@build_machine@"
 #define BUILD_PERSON                   "@build_person@"
 #define BUILD_GROUP                    "@build_group@"
@@ -133,21 +125,21 @@
 #define TS_HAS_V2STATS                 @has_v2stats@
 #define TS_HAS_PURIFY                  @has_purify@
 #define TS_HAS_DEMANGLE                @has_demangle@
+#define TS_HAS_TESTS                   @has_tests@
 
 /* XXX: Should make those individually selectable ? */
-/* TODO: Use ATS prefix instead no prefix or INK    */
+/* TODO: Use TS prefix instead no prefix or INK    */
 #if TS_IS_MICRO_BUILD
 # define TS_MICRO                       1
 # define INK_NO_ACL                     1
 # define INK_NO_CLUSTER                 1
-# define INK_NO_DIAGS                   1
+# define TS_USE_DIAGS                   0
 # define INK_NO_HOSTDB                  1
 # define INK_NO_ICP                     1
 # define INK_NO_LOG                     1
 # define INK_NO_REVERSE                 1
 # define INK_NO_SOCKS                   1
 # define INK_NO_STAT_PAGES              1
-# define INK_NO_TESTS                   1
 # define INK_USE_MUTEX_FOR_ATOMICLISTS  1
 # define INK_USE_MUTEX_FOR_FREELISTS    1
 # define USE_MD5_FOR_MMH                1
@@ -158,8 +150,8 @@
 #define TS_MAX_API_STATS               @max_api_stats@
 /* XXX: Should make those individually selectable ? */
 #else
-# define INK_NO_TRANSFORM               1
-# define INK_NO_API                     1
+# define TS_NO_TRANSFORM                1
+# define TS_NO_API                      1
 # define INK_SINGLE_THREADED            1
 #endif
 

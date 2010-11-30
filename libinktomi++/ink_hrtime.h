@@ -250,7 +250,7 @@ ink_get_hrtime_internal()
   timespec ts;
   clock_gettime(CLOCK_REALTIME, &ts);
   return (ts.tv_sec * HRTIME_SECOND + ts.tv_nsec * HRTIME_NSECOND);
-#else /* !defined (__alpha) */
+#else
   timeval tv;
   gettimeofday(&tv, NULL);
   return (tv.tv_sec * HRTIME_SECOND + tv.tv_usec * HRTIME_USECOND);

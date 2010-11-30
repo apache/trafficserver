@@ -51,9 +51,9 @@
 #include "ParseRules.h"
 #include "Ptr.h"
 #include "Tokenizer.h"
-#define INK_LOCKFILE_INCLUDE_REDUCED
+#define TS_LOCKFILE_INCLUDE_REDUCED
 #include "ink_lockfile.h"
-#undef INK_LOCKFILE_INCLUDE_REDUCED
+#undef TS_LOCKFILE_INCLUDE_REDUCED
 
 /* Globals */
 int num_active_process = 0;

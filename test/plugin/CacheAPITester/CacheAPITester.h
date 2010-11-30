@@ -37,10 +37,10 @@
 #define DEBUG_TAG "CacheAPITester-dbg"
 
 #define PLUGIN_NAME "CacheAPITester"
-#define VALID_POINTER(X) ((X != NULL) && (X != INK_ERROR_PTR))
+#define VALID_POINTER(X) ((X != NULL) && (X != TS_ERROR_PTR))
 #define LOG_SET_FUNCTION_NAME(NAME) const char * FUNCTION_NAME = NAME
 
-#define LOG_ERROR(API_NAME) { INKDebug(PLUGIN_NAME, "%s: %s %s %s File %s, line number %d",\
+#define LOG_ERROR(API_NAME) { TSDebug(PLUGIN_NAME, "%s: %s %s %s File %s, line number %d",\
         PLUGIN_NAME, API_NAME, "APIFAIL", FUNCTION_NAME, __FILE__, __LINE__); }
 
 #define LOG_ERROR_AND_RETURN(API_NAME) { LOG_ERROR(API_NAME); return -1; }
@@ -49,10 +49,10 @@
 /* for the foll. macro make sure a var of txnp is defined and in scope */
 #define LOG_ERROR_AND_REENABLE(API_NAME) { \
   LOG_ERROR(API_NAME); \
-  INKHttpTxnReenable(txnp, INK_EVENT_HTTP_CONTINUE); \
+  TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE); \
 }
 
-#define LOG_ERROR_NEG(API_NAME) { INKDebug(PLUGIN_NAME, "%s: %s %s %s File %s, line number %d",\
+#define LOG_ERROR_NEG(API_NAME) { TSDebug(PLUGIN_NAME, "%s: %s %s %s File %s, line number %d",\
         PLUGIN_NAME, API_NAME, "NEGAPIFAIL", FUNCTION_NAME, __FILE__, __LINE__); }
 
 #define MAX_URL_LEN 255
@@ -67,16 +67,16 @@ typedef struct
   char *url;
   int url_len;
   int pin_time;
-  INKCacheKey key;
-  INKIOBuffer bufp;
-  INKIOBufferReader bufp_reader;
-  INKHttpTxn txnp;
+  TSCacheKey key;
+  TSIOBuffer bufp;
+  TSIOBufferReader bufp_reader;
+  TSHttpTxn txnp;
   int write_again_after_remove;
 } CACHE_URL_DATA;
 
-int get_client_req(INKHttpTxn, char **, char **, int *, int *);
-int insert_in_response(INKHttpTxn, char *);
-void cache_exercise(INKHttpTxn, char *, int, int, INKCont);
-static int handle_cache_events(INKCont, INKEvent, void *);
+int get_client_req(TSHttpTxn, char **, char **, int *, int *);
+int insert_in_response(TSHttpTxn, char *);
+void cache_exercise(TSHttpTxn, char *, int, int, TSCont);
+static int handle_cache_events(TSCont, TSEvent, void *);
 
 #endif

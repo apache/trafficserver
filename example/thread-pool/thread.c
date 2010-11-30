@@ -46,7 +46,7 @@ init_queue(Queue * q)
   q->head = NULL;               /* Pointer on head cell */
   q->tail = NULL;               /* Pointer on tail cell */
   q->nb_elem = 0;               /* Nb elem in the queue */
-  q->mutex = INKMutexCreate();
+  q->mutex = TSMutexCreate();
 }
 
 void
@@ -56,9 +56,9 @@ add_to_queue(Queue * q, void *data)
   int n;
 
   if (data != NULL) {
-    INKMutexLock(q->mutex);
+    TSMutexLock(q->mutex);
     /* Init the new cell */
-    new_cell = INKmalloc(sizeof(Cell));
+    new_cell = TSmalloc(sizeof(Cell));
     new_cell->magic = MAGIC_ALIVE;
     new_cell->ptr_data = data;
     new_cell->ptr_next = q->tail;
@@ -66,20 +66,20 @@ add_to_queue(Queue * q, void *data)
 
     /* Add this new cell to the queue */
     if (q->tail == NULL) {
-      INKAssert(q->head == NULL);
-      INKAssert(q->nb_elem == 0);
+      TSAssert(q->head == NULL);
+      TSAssert(q->nb_elem == 0);
       q->tail = new_cell;
       q->head = new_cell;
     } else {
-      INKAssert(q->tail->magic == MAGIC_ALIVE);
+      TSAssert(q->tail->magic == MAGIC_ALIVE);
       q->tail->ptr_prev = new_cell;
       q->tail = new_cell;
     }
     n = q->nb_elem++;
-    INKMutexUnlock(q->mutex);
+    TSMutexUnlock(q->mutex);
 
     if (n > MAX_JOBS_ALARM) {
-      INKError("Warning:Too many jobs in plugin thread pool queue (%d). Maximum allowed is %d", n, MAX_JOBS_ALARM);
+      TSError("Warning:Too many jobs in plugin thread pool queue (%d). Maximum allowed is %d", n, MAX_JOBS_ALARM);
     }
   }
 }
@@ -90,28 +90,28 @@ remove_from_queue(Queue * q)
   void *data = NULL;
   Cell *remove_cell;
 
-  INKMutexLock(q->mutex);
+  TSMutexLock(q->mutex);
   if (q->nb_elem > 0) {
 
     remove_cell = q->head;
-    INKAssert(remove_cell->magic == MAGIC_ALIVE);
+    TSAssert(remove_cell->magic == MAGIC_ALIVE);
 
     data = remove_cell->ptr_data;
     q->head = remove_cell->ptr_prev;
     if (q->head == NULL) {
-      INKAssert(q->nb_elem == 1);
+      TSAssert(q->nb_elem == 1);
       q->tail = NULL;
     } else {
-      INKAssert(q->head->magic == MAGIC_ALIVE);
+      TSAssert(q->head->magic == MAGIC_ALIVE);
       q->head->ptr_next = NULL;
     }
 
     remove_cell->magic = MAGIC_DEAD;
-    INKfree(remove_cell);
+    TSfree(remove_cell);
     q->nb_elem--;
 
   }
-  INKMutexUnlock(q->mutex);
+  TSMutexUnlock(q->mutex);
   return data;
 }
 
@@ -119,19 +119,19 @@ int
 get_nbelem_queue(Queue * q)
 {
   int nb;
-  INKMutexLock(q->mutex);
+  TSMutexLock(q->mutex);
   nb = q->nb_elem;
-  INKMutexUnlock(q->mutex);
+  TSMutexUnlock(q->mutex);
 
   return nb;
 }
 
 Job *
-job_create(INKCont contp, ExecFunc func, void *data)
+job_create(TSCont contp, ExecFunc func, void *data)
 {
   Job *new_job;
 
-  new_job = INKmalloc(sizeof(Job));
+  new_job = TSmalloc(sizeof(Job));
   new_job->magic = MAGIC_ALIVE;
   new_job->cont = contp;
   new_job->func = func;
@@ -143,7 +143,7 @@ void
 job_delete(Job * job)
 {
   job->magic = MAGIC_DEAD;
-  INKfree(job);
+  TSfree(job);
 }
 
 void
@@ -171,7 +171,7 @@ thread_loop(void *arg)
     job_todo = remove_from_queue(&job_queue);
 
     if (job_todo != NULL) {
-      INKAssert(job_todo->magic == MAGIC_ALIVE);
+      TSAssert(job_todo->magic == MAGIC_ALIVE);
 
       /* Simply execute the job function */
       job_todo->func(job_todo->cont, job_todo->data);

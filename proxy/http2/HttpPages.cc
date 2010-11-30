@@ -415,8 +415,8 @@ HttpPagesHandler::handle_smlist(int event, void *data)
       }
 
       resp_begin_item();
-      resp_add("id: <a href=\"http://{http}/sm_details?id=%lld\"> "
-               "%lld </a> | %s %s | %s\n", sm->sm_id, sm->sm_id, method ? method : "", url, sm_state ? sm_state : "");
+      resp_add("id: <a href=\"./sm_details?id=%lld\"> %lld </a> | %s %s | %s\n",
+               sm->sm_id, sm->sm_id, method ? method : "", url, sm_state ? sm_state : "");
       resp_end_item();
       arena.str_free(url);
 

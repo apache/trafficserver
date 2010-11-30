@@ -36,29 +36,29 @@ TODO TRANSFORM hooks are not "global" but transactional--address this
 
 
 
-const char *const INKEventStrId[] = {
-  "INK_EVENT_HTTP_CONTINUE",    /* 60000 */
-  "INK_EVENT_HTTP_ERROR",       /* 60001 */
-  "INK_EVENT_HTTP_READ_REQUEST_HDR",    /* 60002 */
-  "INK_EVENT_HTTP_OS_DNS",      /* 60003 */
-  "INK_EVENT_HTTP_SEND_REQUEST_HDR",    /* 60004 */
-  "INK_EVENT_HTTP_READ_CACHE_HDR",      /* 60005 */
-  "INK_EVENT_HTTP_READ_RESPONSE_HDR",   /* 60006 */
-  "INK_EVENT_HTTP_SEND_RESPONSE_HDR",   /* 60007 */
-  "INK_EVENT_HTTP_REQUEST_TRANSFORM",   /* 60008 */
-  "INK_EVENT_HTTP_RESPONSE_TRANSFORM",  /* 60009 */
-  "INK_EVENT_HTTP_SELECT_ALT",  /* 60010 */
-  "INK_EVENT_HTTP_TXN_START",   /* 60011 */
-  "INK_EVENT_HTTP_TXN_CLOSE",   /* 60012 */
-  "INK_EVENT_HTTP_SSN_START",   /* 60013 */
-  "INK_EVENT_HTTP_SSN_CLOSE",   /* 60014 */
+const char *const TSEventStrId[] = {
+  "TS_EVENT_HTTP_CONTINUE",    /* 60000 */
+  "TS_EVENT_HTTP_ERROR",       /* 60001 */
+  "TS_EVENT_HTTP_READ_REQUEST_HDR",    /* 60002 */
+  "TS_EVENT_HTTP_OS_DNS",      /* 60003 */
+  "TS_EVENT_HTTP_SEND_REQUEST_HDR",    /* 60004 */
+  "TS_EVENT_HTTP_READ_CACHE_HDR",      /* 60005 */
+  "TS_EVENT_HTTP_READ_RESPONSE_HDR",   /* 60006 */
+  "TS_EVENT_HTTP_SEND_RESPONSE_HDR",   /* 60007 */
+  "TS_EVENT_HTTP_REQUEST_TRANSFORM",   /* 60008 */
+  "TS_EVENT_HTTP_RESPONSE_TRANSFORM",  /* 60009 */
+  "TS_EVENT_HTTP_SELECT_ALT",  /* 60010 */
+  "TS_EVENT_HTTP_TXN_START",   /* 60011 */
+  "TS_EVENT_HTTP_TXN_CLOSE",   /* 60012 */
+  "TS_EVENT_HTTP_SSN_START",   /* 60013 */
+  "TS_EVENT_HTTP_SSN_CLOSE",   /* 60014 */
 
-  "INK_EVENT_MGMT_UPDATE"       /* 60100 */
+  "TS_EVENT_MGMT_UPDATE"       /* 60100 */
 };
 
 /*
  * We track that each hook was called using this array. We start with
- * all values set to zero, meaning that the INKEvent has not been
+ * all values set to zero, meaning that the TSEvent has not been
  * received.
  * There 16 entries.
 */
@@ -71,11 +71,11 @@ static int
 ChkEvents(const int event)
 {
   int i, re = 0;
-  INKDebug("INKHttpHook", "ChkEvents: -- %s -- ", INKEventStrId[index(event)]);
+  TSDebug("TSHttpHook", "ChkEvents: -- %s -- ", TSEventStrId[index(event)]);
 
   for (i = 0; i < inktHookTblSize; i++) {
     if (!inktHookTbl[i]) {
-      printf("Event [%d] %s registered and not called back\n", i, INKEventStrId[i]);
+      printf("Event [%d] %s registered and not called back\n", i, TSEventStrId[i]);
       re = 1;
     }
   }
@@ -83,98 +83,98 @@ ChkEvents(const int event)
 }
 
 
-/* event routine: for each INKHttpHookID this routine should be called
+/* event routine: for each TSHttpHookID this routine should be called
  * with a matching event.
 */
 static int
-INKHttpHook(INKCont contp, INKEvent event, void *eData)
+TSHttpHook(TSCont contp, TSEvent event, void *eData)
 {
-  INKHttpSsn ssnp = (INKHttpSsn) eData;
-  INKHttpTxn txnp = (INKHttpTxn) eData;
+  TSHttpSsn ssnp = (TSHttpSsn) eData;
+  TSHttpTxn txnp = (TSHttpTxn) eData;
 
   switch (event) {
-  case INK_EVENT_HTTP_READ_REQUEST_HDR:
-    inktHookTbl[index(INK_EVENT_HTTP_READ_REQUEST_HDR)] = 1;
+  case TS_EVENT_HTTP_READ_REQUEST_HDR:
+    inktHookTbl[index(TS_EVENT_HTTP_READ_REQUEST_HDR)] = 1;
     /* List what events have been called back at
      * this point in procesing
      */
-    ChkEvents(INK_EVENT_HTTP_READ_REQUEST_HDR);
-    INKHttpTxnReenable(txnp, INK_EVENT_HTTP_CONTINUE);
+    ChkEvents(TS_EVENT_HTTP_READ_REQUEST_HDR);
+    TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
     break;
 
-  case INK_EVENT_HTTP_OS_DNS:
-    inktHookTbl[index(INK_EVENT_HTTP_OS_DNS)] = 1;
-    ChkEvents(INK_EVENT_HTTP_OS_DNS);
-    INKHttpTxnReenable(txnp, INK_EVENT_HTTP_CONTINUE);
+  case TS_EVENT_HTTP_OS_DNS:
+    inktHookTbl[index(TS_EVENT_HTTP_OS_DNS)] = 1;
+    ChkEvents(TS_EVENT_HTTP_OS_DNS);
+    TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
     break;
 
-  case INK_EVENT_HTTP_SEND_REQUEST_HDR:
-    inktHookTbl[index(INK_EVENT_HTTP_SEND_REQUEST_HDR)] = 1;
-    ChkEvents(INK_EVENT_HTTP_SEND_REQUEST_HDR);
-    INKHttpTxnReenable(txnp, INK_EVENT_HTTP_CONTINUE);
+  case TS_EVENT_HTTP_SEND_REQUEST_HDR:
+    inktHookTbl[index(TS_EVENT_HTTP_SEND_REQUEST_HDR)] = 1;
+    ChkEvents(TS_EVENT_HTTP_SEND_REQUEST_HDR);
+    TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
     break;
 
-  case INK_EVENT_HTTP_READ_CACHE_HDR:
-    inktHookTbl[index(INK_EVENT_HTTP_READ_CACHE_HDR)] = 1;
-    ChkEvents(INK_EVENT_HTTP_READ_CACHE_HDR);
-    INKHttpTxnReenable(txnp, INK_EVENT_HTTP_CONTINUE);
+  case TS_EVENT_HTTP_READ_CACHE_HDR:
+    inktHookTbl[index(TS_EVENT_HTTP_READ_CACHE_HDR)] = 1;
+    ChkEvents(TS_EVENT_HTTP_READ_CACHE_HDR);
+    TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
     break;
 
-  case INK_EVENT_HTTP_READ_RESPONSE_HDR:
-    inktHookTbl[index(INK_EVENT_HTTP_READ_RESPONSE_HDR)] = 1;
-    ChkEvents(INK_EVENT_HTTP_READ_RESPONSE_HDR);
-    INKHttpTxnReenable(txnp, INK_EVENT_HTTP_CONTINUE);
+  case TS_EVENT_HTTP_READ_RESPONSE_HDR:
+    inktHookTbl[index(TS_EVENT_HTTP_READ_RESPONSE_HDR)] = 1;
+    ChkEvents(TS_EVENT_HTTP_READ_RESPONSE_HDR);
+    TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
     break;
 
-  case INK_EVENT_HTTP_SEND_RESPONSE_HDR:
-    inktHookTbl[index(INK_EVENT_HTTP_SEND_RESPONSE_HDR)] = 1;
-    ChkEvents(INK_EVENT_HTTP_SEND_RESPONSE_HDR);
-    INKHttpTxnReenable(txnp, INK_EVENT_HTTP_CONTINUE);
+  case TS_EVENT_HTTP_SEND_RESPONSE_HDR:
+    inktHookTbl[index(TS_EVENT_HTTP_SEND_RESPONSE_HDR)] = 1;
+    ChkEvents(TS_EVENT_HTTP_SEND_RESPONSE_HDR);
+    TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
     break;
 
-  case INK_EVENT_HTTP_REQUEST_TRANSFORM:
-    inktHookTbl[index(INK_EVENT_HTTP_REQUEST_TRANSFORM)] = 1;
-    ChkEvents(INK_EVENT_HTTP_REQUEST_TRANSFORM);
-    INKHttpTxnReenable(txnp, INK_EVENT_HTTP_CONTINUE);
+  case TS_EVENT_HTTP_REQUEST_TRANSFORM:
+    inktHookTbl[index(TS_EVENT_HTTP_REQUEST_TRANSFORM)] = 1;
+    ChkEvents(TS_EVENT_HTTP_REQUEST_TRANSFORM);
+    TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
     break;
 
-  case INK_EVENT_HTTP_RESPONSE_TRANSFORM:
-    inktHookTbl[index(INK_EVENT_HTTP_RESPONSE_TRANSFORM)] = 1;
-    ChkEvents(INK_EVENT_HTTP_RESPONSE_TRANSFORM);
-    INKHttpTxnReenable(txnp, INK_EVENT_HTTP_CONTINUE);
+  case TS_EVENT_HTTP_RESPONSE_TRANSFORM:
+    inktHookTbl[index(TS_EVENT_HTTP_RESPONSE_TRANSFORM)] = 1;
+    ChkEvents(TS_EVENT_HTTP_RESPONSE_TRANSFORM);
+    TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
     break;
 
-  case INK_EVENT_HTTP_SELECT_ALT:
-    inktHookTbl[index(INK_EVENT_HTTP_SELECT_ALT)] = 1;
-    ChkEvents(INK_EVENT_HTTP_SELECT_ALT);
-    INKHttpTxnReenable(txnp, INK_EVENT_HTTP_CONTINUE);
+  case TS_EVENT_HTTP_SELECT_ALT:
+    inktHookTbl[index(TS_EVENT_HTTP_SELECT_ALT)] = 1;
+    ChkEvents(TS_EVENT_HTTP_SELECT_ALT);
+    TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
     break;
 
-  case INK_EVENT_HTTP_TXN_START:
-    inktHookTbl[index(INK_EVENT_HTTP_TXN_START)] = 1;
-    ChkEvents(INK_EVENT_HTTP_TXN_START);
-    INKHttpTxnReenable(txnp, INK_EVENT_HTTP_CONTINUE);
+  case TS_EVENT_HTTP_TXN_START:
+    inktHookTbl[index(TS_EVENT_HTTP_TXN_START)] = 1;
+    ChkEvents(TS_EVENT_HTTP_TXN_START);
+    TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
     break;
 
-  case INK_EVENT_HTTP_TXN_CLOSE:
-    inktHookTbl[index(INK_EVENT_HTTP_TXN_CLOSE)] = 1;
-    ChkEvents(INK_EVENT_HTTP_TXN_CLOSE);
-    INKHttpTxnReenable(txnp, INK_EVENT_HTTP_CONTINUE);
+  case TS_EVENT_HTTP_TXN_CLOSE:
+    inktHookTbl[index(TS_EVENT_HTTP_TXN_CLOSE)] = 1;
+    ChkEvents(TS_EVENT_HTTP_TXN_CLOSE);
+    TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
     break;
 
-  case INK_EVENT_HTTP_SSN_START:
+  case TS_EVENT_HTTP_SSN_START:
 
-    inktHookTbl[index(INK_EVENT_HTTP_SSN_START)] = 1;
-    ChkEvents(INK_EVENT_HTTP_SSN_START);
-    INKHttpTxnReenable(txnp, INK_EVENT_HTTP_CONTINUE);
+    inktHookTbl[index(TS_EVENT_HTTP_SSN_START)] = 1;
+    ChkEvents(TS_EVENT_HTTP_SSN_START);
+    TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
 
     break;
 
-  case INK_EVENT_HTTP_SSN_CLOSE:
+  case TS_EVENT_HTTP_SSN_CLOSE:
     /* Here as a result of:
-     * INKHTTPHookAdd(INK_HTTP_SSN_CLOSE_HOOK)
+     * TSHTTPHookAdd(TS_HTTP_SSN_CLOSE_HOOK)
      */
-    inktHookTbl[index(INK_EVENT_HTTP_SSN_CLOSE)] = 1;
+    inktHookTbl[index(TS_EVENT_HTTP_SSN_CLOSE)] = 1;
 
     /* Assumption: at this point all other events have
      * have been called. Since a session can have one or
@@ -182,51 +182,51 @@ INKHttpHook(INKCont contp, INKEvent event, void *eData)
      * prompt us to check that all events have been called back
      * CAUTION: can a single request trigger all events?
      */
-    if (ChkEvents(INK_EVENT_HTTP_SSN_CLOSE))
-      INKError("INKHttpHook: Fail: All events not called back.\n");
+    if (ChkEvents(TS_EVENT_HTTP_SSN_CLOSE))
+      TSError("TSHttpHook: Fail: All events not called back.\n");
     else
-      INKError("INKHttpHook: Pass: All events called back.\n");
+      TSError("TSHttpHook: Pass: All events called back.\n");
 
-    INKHttpTxnReenable(txnp, INK_EVENT_HTTP_CONTINUE);
+    TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
 
     break;
 
   default:
-    INKError("INKHttpHook: undefined event [%d] received\n", event);
+    TSError("TSHttpHook: undefined event [%d] received\n", event);
     break;
   }
 }
 
 void
-INKPluginInit(int argc, const char *argv[])
+TSPluginInit(int argc, const char *argv[])
 {
-  INKCont myCont = NULL;
+  TSCont myCont = NULL;
   inktHookTblSize = sizeof(inktHookTbl) / sizeof(int);
 
   /* Create continuation */
-  myCont = INKContCreate(INKHttpHook, NULL);
+  myCont = TSContCreate(TSHttpHook, NULL);
   if (myCont != NULL) {
-    INKHttpHookAdd(INK_HTTP_READ_REQUEST_HDR_HOOK, myCont);
-    INKHttpHookAdd(INK_HTTP_OS_DNS_HOOK, myCont);
-    INKHttpHookAdd(INK_HTTP_SEND_REQUEST_HDR_HOOK, myCont);
-    INKHttpHookAdd(INK_HTTP_READ_CACHE_HDR_HOOK, myCont);
-    INKHttpHookAdd(INK_HTTP_READ_RESPONSE_HDR_HOOK, myCont);
-    INKHttpHookAdd(INK_HTTP_SEND_RESPONSE_HDR_HOOK, myCont);
+    TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, myCont);
+    TSHttpHookAdd(TS_HTTP_OS_DNS_HOOK, myCont);
+    TSHttpHookAdd(TS_HTTP_SEND_REQUEST_HDR_HOOK, myCont);
+    TSHttpHookAdd(TS_HTTP_READ_CACHE_HDR_HOOK, myCont);
+    TSHttpHookAdd(TS_HTTP_READ_RESPONSE_HDR_HOOK, myCont);
+    TSHttpHookAdd(TS_HTTP_SEND_RESPONSE_HDR_HOOK, myCont);
 
     /* These are transactional
-     * INKHttpHookAdd(INK_HTTP_REQUEST_TRANSFORM_HOOK, myCont);
-     * INKHttpHookAdd(INK_HTTP_RESPONSE_TRANSFORM_HOOK, myCont);
+     * TSHttpHookAdd(TS_HTTP_REQUEST_TRANSFORM_HOOK, myCont);
+     * TSHttpHookAdd(TS_HTTP_RESPONSE_TRANSFORM_HOOK, myCont);
      */
 
-    INKHttpHookAdd(INK_HTTP_SELECT_ALT_HOOK, myCont);
+    TSHttpHookAdd(TS_HTTP_SELECT_ALT_HOOK, myCont);
     /* TODO this is transactional and not global */
-    INKHttpHookAdd(INK_HTTP_TXN_START_HOOK, myCont);
-    INKHttpHookAdd(INK_HTTP_TXN_CLOSE_HOOK, myCont);
+    TSHttpHookAdd(TS_HTTP_TXN_START_HOOK, myCont);
+    TSHttpHookAdd(TS_HTTP_TXN_CLOSE_HOOK, myCont);
 
-    /* INKqa08194:
-     * INKHttpHookAdd(INK_HTTP_SSN_START_HOOK, myCont);
+    /* TSqa08194:
+     * TSHttpHookAdd(TS_HTTP_SSN_START_HOOK, myCont);
      */
-    INKHttpHookAdd(INK_HTTP_SSN_CLOSE_HOOK, myCont);
+    TSHttpHookAdd(TS_HTTP_SSN_CLOSE_HOOK, myCont);
   } else
-    INKError("INKHttpHook: INKContCreate() failed \n");
+    TSError("TSHttpHook: TSContCreate() failed \n");
 }

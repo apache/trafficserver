@@ -29,12 +29,12 @@ typedef struct
 {
 
   /*request header */
-  INKMBuffer request_buf;
-  INKMLoc request_loc;
+  TSMBuffer request_buf;
+  TSMLoc request_loc;
 
   /*response header */
-  INKMBuffer response_buf;
-  INKMLoc response_loc;
+  TSMBuffer response_buf;
+  TSMLoc response_loc;
 
   /*child ip addr in network order */
   unsigned int client_ip;
@@ -46,8 +46,8 @@ typedef struct
   int present_in_cache;
 
   /* Reader for the buffer which contains the prefetched object */
-  INKIOBuffer object_buf;
-  INKIOBufferReader object_buf_reader;
+  TSIOBuffer object_buf;
+  TSIOBufferReader object_buf_reader;
 
   /* This specifies if we need to invoke the OBJECT_HOOK and whether we
      need to send the buffer to child as well
@@ -59,51 +59,51 @@ typedef struct
   unsigned int url_proto;
   unsigned int url_response_proto;
 
-} INKPrefetchInfo;
+} TSPrefetchInfo;
 
-typedef int (*INKPrefetchHook) (int hook, INKPrefetchInfo * prefetch_info);
+typedef int (*TSPrefetchHook) (int hook, TSPrefetchInfo * prefetch_info);
 
 enum
-{                               /* return type for INKPrefetchHook */
-  INK_PREFETCH_CONTINUE,
-  INK_PREFETCH_DISCONTINUE
+{                               /* return type for TSPrefetchHook */
+  TS_PREFETCH_CONTINUE,
+  TS_PREFETCH_DISCONTINUE
 };
 
 enum
 {
-  INK_PREFETCH_PROTO_TCP = 1,
-  INK_PREFETCH_PROTO_UDP
+  TS_PREFETCH_PROTO_TCP = 1,
+  TS_PREFETCH_PROTO_UDP
 };
 
 enum
 {
-  INK_PREFETCH_OBJ_BUF_NOT_NEEDED = 0,
-  INK_PREFETCH_OBJ_BUF_NEEDED,  /* The user wants the buffer but does not
+  TS_PREFETCH_OBJ_BUF_NOT_NEEDED = 0,
+  TS_PREFETCH_OBJ_BUF_NEEDED,  /* The user wants the buffer but does not
                                    want it to be transmitted to the child */
-  INK_PREFETCH_OBJ_BUF_NEEDED_N_TRANSMITTED     /* The object should
+  TS_PREFETCH_OBJ_BUF_NEEDED_N_TRANSMITTED     /* The object should
                                                    be transmitted as well */
 };
 
 enum
 {                               /* prefetch hooks */
-  INK_PREFETCH_PRE_PARSE_HOOK,
+  TS_PREFETCH_PRE_PARSE_HOOK,
   /* This hook is invoked just before we begin to parse a document
      request and response headers are available.
-     Return value: INK_PREFETCH_CONTINUE  :continue parsing
-     INK_PREFETCH_DISCONTIUE: don't bother parser
+     Return value: TS_PREFETCH_CONTINUE  :continue parsing
+     TS_PREFETCH_DISCONTIUE: don't bother parser
    */
 
-  INK_PREFETCH_EMBEDDED_URL_HOOK,
+  TS_PREFETCH_EMBEDDED_URL_HOOK,
   /* This hook is invoked when a URL is extracted.
      url_proto and url_response_proto contain the default protocols used
      for sending the url and actual url object respectively to the child.
      The hook can change thes to one of the 3 methods mentioned above.
-     Return value: INK_PREFETCH_CONTINUE  : prefetch this url.
-     INK_PREFETCH_DISCONTIUE: don't bother prefetching this
+     Return value: TS_PREFETCH_CONTINUE  : prefetch this url.
+     TS_PREFETCH_DISCONTIUE: don't bother prefetching this
      url
    */
 
-  INK_PREFETCH_EMBEDDED_OBJECT_HOOK
+  TS_PREFETCH_EMBEDDED_OBJECT_HOOK
     /* This hook is invoked when the user wants to have access to the buffer
        of the embedded object we prefetched. We pass in the buffer reader.
        The reader contains the data in the format specified in the Prefetch
@@ -111,16 +111,16 @@ enum
        It is the users responsibility to free the reader.
        The only valid field in the PrefetchInfo structure object_buf_reader.
        embedded_url, object_buf, object_buf_reader, and object_buf_status are
-       set in INKPrefetchInfo passed as arguments
+       set in TSPrefetchInfo passed as arguments
      */
     /* more hooks */
 };
 
-inkapi int INKPrefetchStart();
+tsapi int TSPrefetchStart();
 /* This starts the Prefetch engine in Traffic Server
    Return value 0 indicates success.*/
 
-inkapi int INKPrefetchHookSet(int hook_no, INKPrefetchHook hook_fn);
+tsapi int TSPrefetchHookSet(int hook_no, TSPrefetchHook hook_fn);
 /* Registers a hook for the given hook_no.
    A hook is already present, it is replace by hook_fn
    return value 0 indicates success */

@@ -39,21 +39,20 @@ public:
   void start();
 
 public:
-    VConnection * open(Continuation * cont, APIHook * hooks);
-
+  VConnection * open(Continuation * cont, APIHook * hooks);
   INKVConnInternal *null_transform(ProxyMutex * mutex);
-
-  INKVConnInternal *range_transform(ProxyMutex * mutex,
-                                    MIMEField * range_field, HTTPInfo * cache_obj, HTTPHdr * transform_resp, bool & b);
-
+  INKVConnInternal *range_transform(ProxyMutex * mutex, MIMEField * range_field, HTTPInfo * cache_obj,
+                                    HTTPHdr * transform_resp, bool & b);
 };
 
 
+#ifdef TS_HAS_TESTS
 class TransformTest
 {
 public:
   static void run();
 };
+#endif
 
 
 extern TransformProcessor transformProcessor;

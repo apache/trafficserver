@@ -54,17 +54,17 @@ static unsigned int ip_deny;
 /*
  * uncoupled statistics variables:
  */
-static INKStat method_count_redirected_connect;
-static INKStat method_count_redirected_delete;
-static INKStat method_count_redirected_get;
-static INKStat method_count_redirected_head;
-static INKStat method_count_redirected_icp_query;
-static INKStat method_count_redirected_options;
-static INKStat method_count_redirected_post;
-static INKStat method_count_redirected_purge;
-static INKStat method_count_redirected_put;
-static INKStat method_count_redirected_trace;
-static INKStat method_count_redirected_unknown;
+static TSStat method_count_redirected_connect;
+static TSStat method_count_redirected_delete;
+static TSStat method_count_redirected_get;
+static TSStat method_count_redirected_head;
+static TSStat method_count_redirected_icp_query;
+static TSStat method_count_redirected_options;
+static TSStat method_count_redirected_post;
+static TSStat method_count_redirected_purge;
+static TSStat method_count_redirected_put;
+static TSStat method_count_redirected_trace;
+static TSStat method_count_redirected_unknown;
 
 
 /*
@@ -73,13 +73,13 @@ static INKStat method_count_redirected_unknown;
  *              is request_outcomes. The relationship among the stats is:
  *		requests_all = requests_redirects + requests_unchanged
  */
-static INKCoupledStat request_outcomes;
-static INKStat requests_all;
-static INKStat requests_redirects;
-static INKStat requests_unchanged;
+static TSCoupledStat request_outcomes;
+static TSStat requests_all;
+static TSStat requests_redirects;
+static TSStat requests_unchanged;
 
 
-void update_redirected_method_stats(INKMBuffer bufp, INKMLoc hdr_loc);
+void update_redirected_method_stats(TSMBuffer bufp, TSMLoc hdr_loc);
 
 static char *url_redirect;
 static char *uri_redirect;
@@ -89,15 +89,15 @@ static char *block_ip;
 #define LOG_SET_FUNCTION_NAME(NAME) const char * FUNCTION_NAME = NAME
 
 #define LOG_ERROR_NEG(API_NAME) { \
-    INKDebug(PLUGIN_NAME, "%s: %s %s %s File %s, line number %d",PLUGIN_NAME, API_NAME, "NEGAPIFAIL", \
+    TSDebug(PLUGIN_NAME, "%s: %s %s %s File %s, line number %d",PLUGIN_NAME, API_NAME, "NEGAPIFAIL", \
              FUNCTION_NAME, __FILE__, __LINE__); \
 }
 
 static void
-handle_client_lookup(INKHttpTxn txnp, INKCont contp)
+handle_client_lookup(TSHttpTxn txnp, TSCont contp)
 {
-  INKMBuffer bufp;
-  INKMLoc hdr_loc, url_loc;
+  TSMBuffer bufp;
+  TSMLoc hdr_loc, url_loc;
   int host_length;
 
 #if !defined (_WIN32)
@@ -113,27 +113,27 @@ handle_client_lookup(INKHttpTxn txnp, INKCont contp)
   /*
    * Here we declare local coupled statistics variables:
    */
-  INKCoupledStat local_request_outcomes;
-  INKStat local_requests_all;
-  INKStat local_requests_redirects;
-  INKStat local_requests_unchanged;
+  TSCoupledStat local_request_outcomes;
+  TSStat local_requests_all;
+  TSStat local_requests_redirects;
+  TSStat local_requests_unchanged;
 
   LOG_SET_FUNCTION_NAME("handle_client_lookup");
 
   /*
    *  Create local copy of the global coupled stat category:
    */
-  local_request_outcomes = INKStatCoupledLocalCopyCreate("local_request_outcomes", request_outcomes);
+  local_request_outcomes = TSStatCoupledLocalCopyCreate("local_request_outcomes", request_outcomes);
 
 
   /*
    * Create the local copies of the global coupled stats:
    */
-  local_requests_all = INKStatCoupledLocalAdd(local_request_outcomes, "requests.all.local", INKSTAT_TYPE_FLOAT);
-  local_requests_redirects = INKStatCoupledLocalAdd(local_request_outcomes,
-                                                    "requests.redirects.local", INKSTAT_TYPE_INT64);
-  local_requests_unchanged = INKStatCoupledLocalAdd(local_request_outcomes,
-                                                    "requests.unchanged.local", INKSTAT_TYPE_INT64);
+  local_requests_all = TSStatCoupledLocalAdd(local_request_outcomes, "requests.all.local", TSSTAT_TYPE_FLOAT);
+  local_requests_redirects = TSStatCoupledLocalAdd(local_request_outcomes,
+                                                    "requests.redirects.local", TSSTAT_TYPE_INT64);
+  local_requests_unchanged = TSStatCoupledLocalAdd(local_request_outcomes,
+                                                    "requests.unchanged.local", TSSTAT_TYPE_INT64);
 
 
   /*
@@ -142,60 +142,60 @@ handle_client_lookup(INKHttpTxn txnp, INKCont contp)
    *      integer, but we declare this a FLOAT in order to demonstrate
    *      how to increment coupled FLOAT stats)
    */
-  INKStatFloatAddTo(local_requests_all, 1.0);
+  TSStatFloatAddTo(local_requests_all, 1.0);
 
   /* negative test */
 #ifdef DEBUG
-  if (INKStatCoupledLocalCopyCreate(NULL, request_outcomes) != INK_ERROR_PTR) {
-    LOG_ERROR_NEG("INKStatCoupledLocalCopyCreate");
+  if (TSStatCoupledLocalCopyCreate(NULL, request_outcomes) != TS_ERROR_PTR) {
+    LOG_ERROR_NEG("TSStatCoupledLocalCopyCreate");
   }
-  if (INKStatCoupledLocalCopyCreate("my_local_copy", NULL) != INK_ERROR_PTR) {
-    LOG_ERROR_NEG("INKStatCoupledLocalCopyCreate");
-  }
-
-  if (INKStatCoupledLocalAdd(NULL, "requests.negtest", INKSTAT_TYPE_INT64) != INK_ERROR_PTR) {
-    LOG_ERROR_NEG("INKStatCoupledLocalAdd");
-  }
-  if (INKStatCoupledLocalAdd(local_request_outcomes, NULL, INKSTAT_TYPE_INT64) != INK_ERROR_PTR) {
-    LOG_ERROR_NEG("INKStatCoupledLocalAdd");
+  if (TSStatCoupledLocalCopyCreate("my_local_copy", NULL) != TS_ERROR_PTR) {
+    LOG_ERROR_NEG("TSStatCoupledLocalCopyCreate");
   }
 
-  if (INKStatFloatAddTo(NULL, 1.0) != INK_ERROR) {
-    LOG_ERROR_NEG("INKStatFloatAddTo");
+  if (TSStatCoupledLocalAdd(NULL, "requests.negtest", TSSTAT_TYPE_INT64) != TS_ERROR_PTR) {
+    LOG_ERROR_NEG("TSStatCoupledLocalAdd");
+  }
+  if (TSStatCoupledLocalAdd(local_request_outcomes, NULL, TSSTAT_TYPE_INT64) != TS_ERROR_PTR) {
+    LOG_ERROR_NEG("TSStatCoupledLocalAdd");
   }
 
-  if (INKHttpTxnClientIPGet(NULL) != 0) {
-    LOG_ERROR_NEG("INKHttpTxnClientIPGet");
+  if (TSStatFloatAddTo(NULL, 1.0) != TS_ERROR) {
+    LOG_ERROR_NEG("TSStatFloatAddTo");
+  }
+
+  if (TSHttpTxnClientIPGet(NULL) != 0) {
+    LOG_ERROR_NEG("TSHttpTxnClientIPGet");
   }
 #endif
 
 #if !defined (_WIN32)
-  clientip = (in_addr_t) INKHttpTxnClientIPGet(txnp);
+  clientip = (in_addr_t) TSHttpTxnClientIPGet(txnp);
 #else
-  clientip = INKHttpTxnClientIPGet(txnp);
+  clientip = TSHttpTxnClientIPGet(txnp);
 #endif
 
   tempstruct.s_addr = clientip;
   clientstring = inet_ntoa(tempstruct);
-  INKDebug("redirect", "clientip is %s and block_ip is %s", clientstring, block_ip);
+  TSDebug("redirect", "clientip is %s and block_ip is %s", clientstring, block_ip);
 
-  if (!INKHttpTxnClientReqGet(txnp, &bufp, &hdr_loc)) {
-    INKError("couldn't retrieve client request header\n");
+  if (!TSHttpTxnClientReqGet(txnp, &bufp, &hdr_loc)) {
+    TSError("couldn't retrieve client request header\n");
     goto done;
   }
 
-  url_loc = INKHttpHdrUrlGet(bufp, hdr_loc);
+  url_loc = TSHttpHdrUrlGet(bufp, hdr_loc);
   if (!url_loc) {
-    INKError("couldn't retrieve request url\n");
-    INKHandleMLocRelease(bufp, INK_NULL_MLOC, hdr_loc);
+    TSError("couldn't retrieve request url\n");
+    TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
     goto done;
   }
 
-  host = INKUrlHostGet(bufp, url_loc, &host_length);
+  host = TSUrlHostGet(bufp, url_loc, &host_length);
   if (!host) {
-    INKError("couldn't retrieve request hostname\n");
-    INKHandleMLocRelease(bufp, hdr_loc, url_loc);
-    INKHandleMLocRelease(bufp, INK_NULL_MLOC, hdr_loc);
+    TSError("couldn't retrieve request hostname\n");
+    TSHandleMLocRelease(bufp, hdr_loc, url_loc);
+    TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
     goto done;
   }
 
@@ -203,30 +203,30 @@ handle_client_lookup(INKHttpTxn txnp, INKCont contp)
    *   Check to see if the client is already headed to the redirect site.
    */
   if (strncmp(host, url_redirect, host_length) == 0) {
-    INKHandleStringRelease(bufp, url_loc, host);
-    INKHandleMLocRelease(bufp, hdr_loc, url_loc);
-    INKHandleMLocRelease(bufp, INK_NULL_MLOC, hdr_loc);
+    TSHandleStringRelease(bufp, url_loc, host);
+    TSHandleMLocRelease(bufp, hdr_loc, url_loc);
+    TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
     goto done;
   }
 
   if (ip_deny == clientip) {
 
-    INKHttpTxnHookAdd(txnp, INK_HTTP_SEND_RESPONSE_HDR_HOOK, contp);
-    INKHandleStringRelease(bufp, url_loc, host);
+    TSHttpTxnHookAdd(txnp, TS_HTTP_SEND_RESPONSE_HDR_HOOK, contp);
+    TSHandleStringRelease(bufp, url_loc, host);
 
     update_redirected_method_stats(bufp, hdr_loc);
 
-    INKHandleMLocRelease(bufp, hdr_loc, url_loc);
-    INKHandleMLocRelease(bufp, INK_NULL_MLOC, hdr_loc);
+    TSHandleMLocRelease(bufp, hdr_loc, url_loc);
+    TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
 
     /*
      *   Increment the local redirect stat and do global update:
      */
-    INKStatIncrement(local_requests_redirects);
-    INKStatsCoupledUpdate(local_request_outcomes);
-    INKStatCoupledLocalCopyDestroy(local_request_outcomes);
+    TSStatIncrement(local_requests_redirects);
+    TSStatsCoupledUpdate(local_request_outcomes);
+    TSStatCoupledLocalCopyDestroy(local_request_outcomes);
 
-    INKHttpTxnReenable(txnp, INK_EVENT_HTTP_ERROR);
+    TSHttpTxnReenable(txnp, TS_EVENT_HTTP_ERROR);
     return;
   }
 
@@ -234,81 +234,81 @@ done:
   /*
    * Increment the local number unchanged stat and do global update:
    */
-  INKStatIncrement(local_requests_unchanged);
-  INKStatsCoupledUpdate(local_request_outcomes);
-  INKStatCoupledLocalCopyDestroy(local_request_outcomes);
+  TSStatIncrement(local_requests_unchanged);
+  TSStatsCoupledUpdate(local_request_outcomes);
+  TSStatCoupledLocalCopyDestroy(local_request_outcomes);
 
   /* negative test */
 #ifdef DEBUG
-  if (INKStatsCoupledUpdate(NULL) != INK_ERROR) {
-    LOG_ERROR_NEG("INKStatsCoupledUpdate");
+  if (TSStatsCoupledUpdate(NULL) != TS_ERROR) {
+    LOG_ERROR_NEG("TSStatsCoupledUpdate");
   }
-  if (INKStatCoupledLocalCopyDestroy(NULL) != INK_ERROR) {
-    LOG_ERROR_NEG("INKStatCoupledLocalCopyDestroy");
+  if (TSStatCoupledLocalCopyDestroy(NULL) != TS_ERROR) {
+    LOG_ERROR_NEG("TSStatCoupledLocalCopyDestroy");
   }
 #endif
 
-  INKHttpTxnReenable(txnp, INK_EVENT_HTTP_CONTINUE);
+  TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
 }
 
 
 
 static void
-handle_response(INKHttpTxn txnp)
+handle_response(TSHttpTxn txnp)
 {
-  INKMBuffer bufp;
-  INKMLoc hdr_loc, newfield_loc;
-  INKMLoc url_loc;
+  TSMBuffer bufp;
+  TSMLoc hdr_loc, newfield_loc;
+  TSMLoc url_loc;
   char *url_str;
   char *buf;
   char *errormsg_body = "All requests from this IP address are redirected.\n";
   char *tmp_body;
 
-  if (!INKHttpTxnClientRespGet(txnp, &bufp, &hdr_loc)) {
-    INKError("couldn't retrieve client response header\n");
+  if (!TSHttpTxnClientRespGet(txnp, &bufp, &hdr_loc)) {
+    TSError("couldn't retrieve client response header\n");
     goto done;
   }
 
-  INKHttpHdrStatusSet(bufp, hdr_loc, INK_HTTP_STATUS_MOVED_PERMANENTLY);
-  INKHttpHdrReasonSet(bufp, hdr_loc,
-                      INKHttpHdrReasonLookup(INK_HTTP_STATUS_MOVED_PERMANENTLY),
-                      strlen(INKHttpHdrReasonLookup(INK_HTTP_STATUS_MOVED_PERMANENTLY)));
+  TSHttpHdrStatusSet(bufp, hdr_loc, TS_HTTP_STATUS_MOVED_PERMANENTLY);
+  TSHttpHdrReasonSet(bufp, hdr_loc,
+                      TSHttpHdrReasonLookup(TS_HTTP_STATUS_MOVED_PERMANENTLY),
+                      strlen(TSHttpHdrReasonLookup(TS_HTTP_STATUS_MOVED_PERMANENTLY)));
 
-  newfield_loc = INKMimeHdrFieldCreate(bufp, hdr_loc);
-  INKMimeHdrFieldNameSet(bufp, hdr_loc, newfield_loc, INK_MIME_FIELD_LOCATION, INK_MIME_LEN_LOCATION);
-  INKMimeHdrFieldValueInsert(bufp, hdr_loc, newfield_loc, uri_redirect, strlen(uri_redirect), -1);
-  INKMimeHdrFieldInsert(bufp, hdr_loc, newfield_loc, -1);
+  newfield_loc = TSMimeHdrFieldCreate(bufp, hdr_loc);
+  TSMimeHdrFieldNameSet(bufp, hdr_loc, newfield_loc, TS_MIME_FIELD_LOCATION, TS_MIME_LEN_LOCATION);
+  TSMimeHdrFieldValueStringInsert(bufp, hdr_loc, newfield_loc, uri_redirect, strlen(uri_redirect), -1);
+  TSMimeHdrFieldAppend(bufp, hdr_loc, newfield_loc);
 
 
   /*
-   *  Note that we can't directly use errormsg_body, as INKHttpTxnErrorBodySet()
-   *  will try to free the passed buffer with INKfree().
+   *  Note that we can't directly use errormsg_body, as TSHttpTxnErrorBodySet()
+   *  will try to free the passed buffer with TSfree().
    */
-  tmp_body = INKstrdup(errormsg_body);
-  INKHttpTxnErrorBodySet(txnp, tmp_body, strlen(tmp_body), NULL);
-  INKHandleMLocRelease(bufp, hdr_loc, newfield_loc);
-  INKHandleMLocRelease(bufp, INK_NULL_MLOC, hdr_loc);
+  tmp_body = TSstrdup(errormsg_body);
+  TSHttpTxnErrorBodySet(txnp, tmp_body, strlen(tmp_body), NULL);
+  TSHandleMLocRelease(bufp, hdr_loc, newfield_loc);
+  TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
 
 
 done:
-  INKHttpTxnReenable(txnp, INK_EVENT_HTTP_CONTINUE);
+  TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
 }
 
 
 
 static int
-redirect_plugin(INKCont contp, INKEvent event, void *edata)
+redirect_plugin(TSCont contp, TSEvent event, void *edata)
 {
 
-  INKHttpTxn txnp = (INKHttpTxn) edata;
+  TSHttpTxn txnp = (TSHttpTxn) edata;
 
   switch (event) {
-  case INK_EVENT_HTTP_READ_REQUEST_HDR:
+  case TS_EVENT_HTTP_READ_REQUEST_HDR:
 
     handle_client_lookup(txnp, contp);
     return 0;
 
-  case INK_EVENT_HTTP_SEND_RESPONSE_HDR:
+  case TS_EVENT_HTTP_SEND_RESPONSE_HDR:
 
     handle_response(txnp);
     return 0;
@@ -332,35 +332,35 @@ init_stats(void)
   LOG_SET_FUNCTION_NAME("init_stats");
 
   /* noncoupled: */
-  method_count_redirected_connect = INKStatCreate("method.count.redirected.connect", INKSTAT_TYPE_INT64);
-  method_count_redirected_delete = INKStatCreate("method.count.redirected.delete", INKSTAT_TYPE_INT64);
-  method_count_redirected_get = INKStatCreate("method.count.redirected.get", INKSTAT_TYPE_INT64);
-  method_count_redirected_head = INKStatCreate("method.count.redirected.head", INKSTAT_TYPE_FLOAT);
-  method_count_redirected_icp_query = INKStatCreate("method.count.redirected.icp_query", INKSTAT_TYPE_FLOAT);
-  method_count_redirected_options = INKStatCreate("method.count.redirected.options", INKSTAT_TYPE_INT64);
-  method_count_redirected_post = INKStatCreate("method.count.redirected.post", INKSTAT_TYPE_INT64);
-  method_count_redirected_purge = INKStatCreate("method.count.redirected.purge", INKSTAT_TYPE_INT64);
-  method_count_redirected_put = INKStatCreate("method.count.redirected.put", INKSTAT_TYPE_INT64);
-  method_count_redirected_trace = INKStatCreate("method.count.redirected.trace", INKSTAT_TYPE_INT64);
-  method_count_redirected_unknown = INKStatCreate("method.count.redirected.unknown", INKSTAT_TYPE_INT64);
+  method_count_redirected_connect = TSStatCreate("method.count.redirected.connect", TSSTAT_TYPE_INT64);
+  method_count_redirected_delete = TSStatCreate("method.count.redirected.delete", TSSTAT_TYPE_INT64);
+  method_count_redirected_get = TSStatCreate("method.count.redirected.get", TSSTAT_TYPE_INT64);
+  method_count_redirected_head = TSStatCreate("method.count.redirected.head", TSSTAT_TYPE_FLOAT);
+  method_count_redirected_icp_query = TSStatCreate("method.count.redirected.icp_query", TSSTAT_TYPE_FLOAT);
+  method_count_redirected_options = TSStatCreate("method.count.redirected.options", TSSTAT_TYPE_INT64);
+  method_count_redirected_post = TSStatCreate("method.count.redirected.post", TSSTAT_TYPE_INT64);
+  method_count_redirected_purge = TSStatCreate("method.count.redirected.purge", TSSTAT_TYPE_INT64);
+  method_count_redirected_put = TSStatCreate("method.count.redirected.put", TSSTAT_TYPE_INT64);
+  method_count_redirected_trace = TSStatCreate("method.count.redirected.trace", TSSTAT_TYPE_INT64);
+  method_count_redirected_unknown = TSStatCreate("method.count.redirected.unknown", TSSTAT_TYPE_INT64);
 
   /* coupled: */
-  request_outcomes = INKStatCoupledGlobalCategoryCreate("request_outcomes");
-  requests_all = INKStatCoupledGlobalAdd(request_outcomes, "requests.all", INKSTAT_TYPE_FLOAT);
-  requests_redirects = INKStatCoupledGlobalAdd(request_outcomes, "requests.redirects", INKSTAT_TYPE_INT64);
-  requests_unchanged = INKStatCoupledGlobalAdd(request_outcomes, "requests.unchanged", INKSTAT_TYPE_INT64);
+  request_outcomes = TSStatCoupledGlobalCategoryCreate("request_outcomes");
+  requests_all = TSStatCoupledGlobalAdd(request_outcomes, "requests.all", TSSTAT_TYPE_FLOAT);
+  requests_redirects = TSStatCoupledGlobalAdd(request_outcomes, "requests.redirects", TSSTAT_TYPE_INT64);
+  requests_unchanged = TSStatCoupledGlobalAdd(request_outcomes, "requests.unchanged", TSSTAT_TYPE_INT64);
 
   /* negative test */
 #ifdef DEBUG
-  if (INKStatCoupledGlobalCategoryCreate(NULL) != INK_ERROR_PTR) {
-    LOG_ERROR_NEG("INKStatCoupledGlobalCategoryCreate");
+  if (TSStatCoupledGlobalCategoryCreate(NULL) != TS_ERROR_PTR) {
+    LOG_ERROR_NEG("TSStatCoupledGlobalCategoryCreate");
   }
 
-  if (INKStatCoupledGlobalAdd(NULL, "requests.mytest", INKSTAT_TYPE_INT64) != INK_ERROR_PTR) {
-    LOG_ERROR_NEG("INKStatCoupledGlobalAdd");
+  if (TSStatCoupledGlobalAdd(NULL, "requests.mytest", TSSTAT_TYPE_INT64) != TS_ERROR_PTR) {
+    LOG_ERROR_NEG("TSStatCoupledGlobalAdd");
   }
-  if (INKStatCoupledGlobalAdd(request_outcomes, NULL, INKSTAT_TYPE_INT64) != INK_ERROR_PTR) {
-    LOG_ERROR_NEG("INKStatCoupledGlobalAdd");
+  if (TSStatCoupledGlobalAdd(request_outcomes, NULL, TSSTAT_TYPE_INT64) != TS_ERROR_PTR) {
+    LOG_ERROR_NEG("TSStatCoupledGlobalAdd");
   }
 #endif
 }
@@ -368,61 +368,61 @@ init_stats(void)
 /*
  *	This function is only called for redirected requests.  It illustrates
  *	several different ways of updating INT64 stats.  Some may consider
- *	the particular use of INKDecrementStat() shown below somewhat contrived.
+ *	the particular use of TSDecrementStat() shown below somewhat contrived.
  */
 void
-update_redirected_method_stats(INKMBuffer bufp, INKMLoc hdr_loc)
+update_redirected_method_stats(TSMBuffer bufp, TSMLoc hdr_loc)
 {
   const char *txn_method;
   int length;
-  INK64 tempint;
+  TS64 tempint;
 
   LOG_SET_FUNCTION_NAME("update_redirected_method_stats");
 
-  txn_method = INKHttpHdrMethodGet(bufp, hdr_loc, &length);
+  txn_method = TSHttpHdrMethodGet(bufp, hdr_loc, &length);
 
   if (NULL != txn_method) {
-    if (0 == strncmp(txn_method, INK_HTTP_METHOD_CONNECT, length))
-      INKStatIncrement(method_count_redirected_connect);
-    else if (0 == strncmp(txn_method, INK_HTTP_METHOD_DELETE, length))
-      INKStatIncrement(method_count_redirected_delete);
-    else if (0 == strncmp(txn_method, INK_HTTP_METHOD_GET, length))
-      INKStatIncrement(method_count_redirected_get);
+    if (0 == strncmp(txn_method, TS_HTTP_METHOD_CONNECT, length))
+      TSStatIncrement(method_count_redirected_connect);
+    else if (0 == strncmp(txn_method, TS_HTTP_METHOD_DELETE, length))
+      TSStatIncrement(method_count_redirected_delete);
+    else if (0 == strncmp(txn_method, TS_HTTP_METHOD_GET, length))
+      TSStatIncrement(method_count_redirected_get);
 
-    else if (0 == strncmp(txn_method, INK_HTTP_METHOD_HEAD, length))
-      INKStatFloatAddTo(method_count_redirected_head, 1);
-    else if (0 == strncmp(txn_method, INK_HTTP_METHOD_ICP_QUERY, length))
-      INKStatFloatAddTo(method_count_redirected_icp_query, 1);
+    else if (0 == strncmp(txn_method, TS_HTTP_METHOD_HEAD, length))
+      TSStatFloatAddTo(method_count_redirected_head, 1);
+    else if (0 == strncmp(txn_method, TS_HTTP_METHOD_ICP_QUERY, length))
+      TSStatFloatAddTo(method_count_redirected_icp_query, 1);
 
-    else if (0 == strncmp(txn_method, INK_HTTP_METHOD_OPTIONS, length)) {
-      tempint = INKStatIntRead(method_count_redirected_options);
+    else if (0 == strncmp(txn_method, TS_HTTP_METHOD_OPTIONS, length)) {
+      TSStatIntGet(method_count_redirected_options, tempint);
       tempint++;
-      INKStatIntSet(method_count_redirected_options, tempint);
-    } else if (0 == strncmp(txn_method, INK_HTTP_METHOD_POST, length)) {
-      INKStatDecrement(method_count_redirected_post);
-      INKStatIncrement(method_count_redirected_post);
-      INKStatIncrement(method_count_redirected_post);
+      TSStatIntSet(method_count_redirected_options, tempint);
+    } else if (0 == strncmp(txn_method, TS_HTTP_METHOD_POST, length)) {
+      TSStatDecrement(method_count_redirected_post);
+      TSStatIncrement(method_count_redirected_post);
+      TSStatIncrement(method_count_redirected_post);
     }
 
-    else if (0 == strncmp(txn_method, INK_HTTP_METHOD_PURGE, length))
-      INKStatIncrement(method_count_redirected_purge);
-    else if (0 == strncmp(txn_method, INK_HTTP_METHOD_PUT, length))
-      INKStatIncrement(method_count_redirected_put);
-    else if (0 == strncmp(txn_method, INK_HTTP_METHOD_TRACE, length))
-      INKStatIncrement(method_count_redirected_trace);
+    else if (0 == strncmp(txn_method, TS_HTTP_METHOD_PURGE, length))
+      TSStatIncrement(method_count_redirected_purge);
+    else if (0 == strncmp(txn_method, TS_HTTP_METHOD_PUT, length))
+      TSStatIncrement(method_count_redirected_put);
+    else if (0 == strncmp(txn_method, TS_HTTP_METHOD_TRACE, length))
+      TSStatIncrement(method_count_redirected_trace);
     else
-      INKStatIncrement(method_count_redirected_unknown);
+      TSStatIncrement(method_count_redirected_unknown);
   }
-  INKHandleStringRelease(bufp, hdr_loc, txn_method);
+  TSHandleStringRelease(bufp, hdr_loc, txn_method);
 
   /* negative test */
 #ifdef DEBUG
-  if (INKStatIntSet(NULL, 0) != INK_ERROR) {
-    LOG_ERROR_NEG("INKStatIntSet");
+  if (TSStatIntSet(NULL, 0) != TS_ERROR) {
+    LOG_ERROR_NEG("TSStatIntSet");
   }
 
-  if (INKStatDecrement(NULL) != INK_ERROR) {
-    LOG_ERROR_NEG("INKStatDecrement");
+  if (TSStatDecrement(NULL) != TS_ERROR) {
+    LOG_ERROR_NEG("TSStatDecrement");
   }
 #endif
 
@@ -432,7 +432,7 @@ int
 check_ts_version()
 {
 
-  const char *ts_version = INKTrafficServerVersionGet();
+  const char *ts_version = TSTrafficServerVersionGet();
   int result = 0;
 
   if (ts_version) {
@@ -455,52 +455,52 @@ check_ts_version()
 }
 
 void
-INKPluginInit(int argc, const char *argv[])
+TSPluginInit(int argc, const char *argv[])
 {
   const char prefix[] = "http://";
   int uri_len;
-  INKPluginRegistrationInfo info;
+  TSPluginRegistrationInfo info;
 
   info.plugin_name = "redirect-1";
   info.vendor_name = "MyCompany";
   info.support_email = "ts-api-support@MyCompany.com";
 
-  if (!INKPluginRegister(INK_SDK_VERSION_2_0, &info)) {
-    INKError("Plugin registration failed.\n");
+  if (!TSPluginRegister(TS_SDK_VERSION_2_0, &info)) {
+    TSError("Plugin registration failed.\n");
   }
 
   if (!check_ts_version()) {
-    INKError("Plugin requires Traffic Server 2.0 or later\n");
+    TSError("Plugin requires Traffic Server 2.0 or later\n");
     return;
   }
 
   if (argc == 3) {
-    block_ip = INKstrdup(argv[1]);
+    block_ip = TSstrdup(argv[1]);
 
     /*
      *   The Location header must contain an absolute URI:
      */
 
-    url_redirect = INKstrdup(argv[2]);
+    url_redirect = TSstrdup(argv[2]);
     uri_len = strlen(prefix) + strlen(url_redirect) + 1;
-    uri_redirect = INKmalloc(uri_len);
+    uri_redirect = TSmalloc(uri_len);
     strcpy(uri_redirect, prefix);
     strcat(uri_redirect, url_redirect);
 
   } else {
-    INKError("Incorrect syntax in plugin.conf:  correct usage is" "redirect-1.so ip_deny url_redirect");
+    TSError("Incorrect syntax in plugin.conf:  correct usage is" "redirect-1.so ip_deny url_redirect");
     return;
   }
 
   ip_deny = inet_addr(block_ip);
 
-  INKHttpHookAdd(INK_HTTP_READ_REQUEST_HDR_HOOK, INKContCreate(redirect_plugin, NULL));
+  TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, TSContCreate(redirect_plugin, NULL));
 
-  INKDebug("redirect_init", "block_ip is %s, url_redirect is %s, and uri_redirect is %s",
+  TSDebug("redirect_init", "block_ip is %s, url_redirect is %s, and uri_redirect is %s",
            block_ip, url_redirect, uri_redirect);
-  INKDebug("redirect_init", "ip_deny is %ld\n", ip_deny);
+  TSDebug("redirect_init", "ip_deny is %ld\n", ip_deny);
 
-  INKDebug("redirect_init", "initializing stats...");
+  TSDebug("redirect_init", "initializing stats...");
   init_stats();
 
 
@@ -510,8 +510,8 @@ INKPluginInit(int argc, const char *argv[])
    *  be done in debug mode.
    */
 
-  if (INKIsDebugTagSet("redirect_demo"))
-    INKDebug("redirect_init", "The redirect_demo tag is set");
+  if (TSIsDebugTagSet("redirect_demo"))
+    TSDebug("redirect_init", "The redirect_demo tag is set");
   else
-    INKDebug("redirect_init", "The redirect_demo tag is not set");
+    TSDebug("redirect_init", "The redirect_demo tag is not set");
 }

@@ -75,8 +75,8 @@ struct ShowCache: public ShowCont
 
       unescapifyStr(query);
 
-      INKDebug("cache_inspector", "query params: %s [unescaped]", unescapedQuery);
-      INKDebug("cache_inspector", "query params: %s [escaped]", query);
+      Debug("cache_inspector", "query params: %s [unescaped]", unescapedQuery);
+      Debug("cache_inspector", "query params: %s [escaped]", query);
       // remove 'C-m' s
       int l, m;
       for (l = 0, m = 0; l < query_len; l++)
@@ -121,13 +121,13 @@ struct ShowCache: public ShowCont
         }
       }
 
-      INKDebug("cache_inspector", "there were %d url(s) passed in", nstrings == 1 ? 1 : nstrings - 1);
+      Debug("cache_inspector", "there were %d url(s) passed in", nstrings == 1 ? 1 : nstrings - 1);
 
       for (int i = 0; i < nstrings; i++) {
         if (show_cache_urlstrs[i][0] == '\0')
           continue;
         unescapifyStr(show_cache_urlstrs[i]);
-        INKDebug("cache_inspector", "URL %d: %s", i + 1, &show_cache_urlstrs[i]);
+        Debug("cache_inspector", "URL %d: %s", i + 1, &show_cache_urlstrs[i]);
       }
 
     }

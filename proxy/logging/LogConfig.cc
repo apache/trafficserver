@@ -158,8 +158,6 @@ LogConfig::setup_default_values()
   roll_log_files_now = FALSE;
 
   custom_logs_enabled = FALSE;
-  xml_logs_config = FALSE;
-  config_file = xstrdup("logs.config");
   xml_config_file = xstrdup("logs_xml.config");
   hosts_config_file = xstrdup("log_hosts.config");
 
@@ -213,37 +211,37 @@ LogConfig::read_configuration_variables()
   int val;
   char *ptr;
 
-  val = (int) LOG_ConfigReadInteger("proxy.config.log2.log_buffer_size");
+  val = (int) LOG_ConfigReadInteger("proxy.config.log.log_buffer_size");
   if (val > 0) {
     log_buffer_size = val;
   };
 
-  val = (int) LOG_ConfigReadInteger("proxy.config.log2.max_entries_per_buffer");
+  val = (int) LOG_ConfigReadInteger("proxy.config.log.max_entries_per_buffer");
   if (val > 0) {
     max_entries_per_buffer = val;
   };
 
-  val = (int) LOG_ConfigReadInteger("proxy.config.log2.max_secs_per_buffer");
+  val = (int) LOG_ConfigReadInteger("proxy.config.log.max_secs_per_buffer");
   if (val > 0) {
     max_secs_per_buffer = val;
   };
 
-  val = (int) LOG_ConfigReadInteger("proxy.config.log2.max_space_mb_for_logs");
+  val = (int) LOG_ConfigReadInteger("proxy.config.log.max_space_mb_for_logs");
   if (val > 0) {
     max_space_mb_for_logs = val;
   };
 
-  val = (int) LOG_ConfigReadInteger("proxy.config.log2.max_space_mb_for_" "orphan_logs");
+  val = (int) LOG_ConfigReadInteger("proxy.config.log.max_space_mb_for_" "orphan_logs");
   if (val > 0) {
     max_space_mb_for_orphan_logs = val;
   };
 
-  val = (int) LOG_ConfigReadInteger("proxy.config.log2.max_space_mb_headroom");
+  val = (int) LOG_ConfigReadInteger("proxy.config.log.max_space_mb_headroom");
   if (val > 0) {
     max_space_mb_headroom = val;
   };
 
-  ptr = LOG_ConfigReadString("proxy.config.log2.logfile_perm");
+  ptr = LOG_ConfigReadString("proxy.config.log.logfile_perm");
   if (ptr && strlen(ptr) == 9) {
     logfile_perm = 0;
     char *c = ptr;
@@ -276,13 +274,13 @@ LogConfig::read_configuration_variables()
     xfree(ptr);
   }
 
-  ptr = LOG_ConfigReadString("proxy.config.log2.hostname");
+  ptr = LOG_ConfigReadString("proxy.config.log.hostname");
   if (ptr != NULL) {
     xfree(hostname);
     hostname = ptr;
   };
 
-  ptr = LOG_ConfigReadString("proxy.config.log2.logfile_dir");
+  ptr = LOG_ConfigReadString("proxy.config.log.logfile_dir");
   if (ptr != NULL) {
     xfree(logfile_dir);
     // Make it relative from Layout
@@ -295,7 +293,7 @@ LogConfig::read_configuration_variables()
         // Try 'system_root_dir/var/log/trafficserver' directory
         fprintf(stderr,"unable to access() log dir'%s': %d, %s\n",
                 system_log_dir, errno, strerror(errno));
-        fprintf(stderr,"please set 'proxy.config.log2.logfile_dir'\n");
+        fprintf(stderr,"please set 'proxy.config.log.logfile_dir'\n");
         _exit(1);
       }
       logfile_dir = xstrdup(system_log_dir);
@@ -311,106 +309,106 @@ LogConfig::read_configuration_variables()
   //   - what header should be written down at the start of each file for
   //     this format
   // this is accomplished with four config variables per format:
-  //   "proxy.config.log2.<format>_log_enabled" INT
-  //   "proxy.config.log2.<format>_log_is_ascii" INT
-  //   "proxy.config.log2.<format>_log_name" STRING
-  //   "proxy.config.log2.<format>_log_header" STRING
+  //   "proxy.config.log.<format>_log_enabled" INT
+  //   "proxy.config.log.<format>_log_is_ascii" INT
+  //   "proxy.config.log.<format>_log_name" STRING
+  //   "proxy.config.log.<format>_log_header" STRING
   //
 
 
   // SQUID
-  val = (int) LOG_ConfigReadInteger("proxy.config.log2.squid_log_enabled");
+  val = (int) LOG_ConfigReadInteger("proxy.config.log.squid_log_enabled");
   if (val == 0 || val == 1) {
     squid_log_enabled = val;
   };
 
   // X-UID logging enabled.
-  val = (int) LOG_ConfigReadInteger("proxy.config.log2.xuid_logging_enabledq");
+  val = (int) LOG_ConfigReadInteger("proxy.config.log.xuid_logging_enabledq");
   if (val == 0 || val == 1) {
     xuid_logging_enabled = val;
   };
 
-  val = (int) LOG_ConfigReadInteger("proxy.config.log2.squid_log_is_ascii");
+  val = (int) LOG_ConfigReadInteger("proxy.config.log.squid_log_is_ascii");
   if (val == 0 || val == 1) {
     squid_log_is_ascii = val;
   };
 
-  ptr = LOG_ConfigReadString("proxy.config.log2.squid_log_name");
+  ptr = LOG_ConfigReadString("proxy.config.log.squid_log_name");
   if (ptr != NULL) {
     xfree(squid_log_name);
     squid_log_name = ptr;
   };
 
-  ptr = LOG_ConfigReadString("proxy.config.log2.squid_log_header");
+  ptr = LOG_ConfigReadString("proxy.config.log.squid_log_header");
   if (ptr != NULL) {
     xfree(squid_log_header);
     squid_log_header = ptr;
   };
 
   // COMMON
-  val = (int) LOG_ConfigReadInteger("proxy.config.log2.common_log_enabled");
+  val = (int) LOG_ConfigReadInteger("proxy.config.log.common_log_enabled");
   if (val == 0 || val == 1) {
     common_log_enabled = val;
   };
 
-  val = (int) LOG_ConfigReadInteger("proxy.config.log2.common_log_is_ascii");
+  val = (int) LOG_ConfigReadInteger("proxy.config.log.common_log_is_ascii");
   if (val == 0 || val == 1) {
     common_log_is_ascii = val;
   };
 
-  ptr = LOG_ConfigReadString("proxy.config.log2.common_log_name");
+  ptr = LOG_ConfigReadString("proxy.config.log.common_log_name");
   if (ptr != NULL) {
     xfree(common_log_name);
     common_log_name = ptr;
   };
 
-  ptr = LOG_ConfigReadString("proxy.config.log2.common_log_header");
+  ptr = LOG_ConfigReadString("proxy.config.log.common_log_header");
   if (ptr != NULL) {
     xfree(common_log_header);
     common_log_header = ptr;
   };
 
   // EXTENDED
-  val = (int) LOG_ConfigReadInteger("proxy.config.log2.extended_log_enabled");
+  val = (int) LOG_ConfigReadInteger("proxy.config.log.extended_log_enabled");
   if (val == 0 || val == 1) {
     extended_log_enabled = val;
   };
 
-  val = (int) LOG_ConfigReadInteger("proxy.config.log2.extended_log_is_ascii");
+  val = (int) LOG_ConfigReadInteger("proxy.config.log.extended_log_is_ascii");
   if (val == 0 || val == 1) {
     extended_log_is_ascii = val;
   };
 
-  ptr = LOG_ConfigReadString("proxy.config.log2.extended_log_name");
+  ptr = LOG_ConfigReadString("proxy.config.log.extended_log_name");
   if (ptr != NULL) {
     xfree(extended_log_name);
     extended_log_name = ptr;
   };
 
-  ptr = LOG_ConfigReadString("proxy.config.log2.extended_log_header");
+  ptr = LOG_ConfigReadString("proxy.config.log.extended_log_header");
   if (ptr != NULL) {
     xfree(extended_log_header);
     extended_log_header = ptr;
   };
 
   // EXTENDED2
-  val = (int) LOG_ConfigReadInteger("proxy.config.log2.extended2_log_enabled");
+  val = (int) LOG_ConfigReadInteger("proxy.config.log.extended2_log_enabled");
   if (val == 0 || val == 1) {
     extended2_log_enabled = val;
   };
 
-  val = (int) LOG_ConfigReadInteger("proxy.config.log2.extended2_log_is_ascii");
+  val = (int) LOG_ConfigReadInteger("proxy.config.log.extended2_log_is_ascii");
   if (val == 0 || val == 1) {
     extended2_log_is_ascii = val;
   };
 
-  ptr = LOG_ConfigReadString("proxy.config.log2.extended2_log_name");
+  ptr = LOG_ConfigReadString("proxy.config.log.extended2_log_name");
   if (ptr != NULL) {
     xfree(extended2_log_name);
     extended2_log_name = ptr;
   };
 
-  ptr = LOG_ConfigReadString("proxy.config.log2.extended2_log_header");
+  ptr = LOG_ConfigReadString("proxy.config.log.extended2_log_header");
   if (ptr != NULL) {
     xfree(extended2_log_header);
     extended2_log_header = ptr;
@@ -422,51 +420,51 @@ LogConfig::read_configuration_variables()
   // 1 means splitting
   // for icp
   //   -1 means filter out (do not log and do not create split file)
-  val = (int) LOG_ConfigReadInteger("proxy.config.log2.separate_icp_logs");
+  val = (int) LOG_ConfigReadInteger("proxy.config.log.separate_icp_logs");
   if (val == 0 || val == 1 || val == -1) {
     separate_icp_logs = val;
   };
 
-  val = (int) LOG_ConfigReadInteger("proxy.config.log2.separate_host_logs");
+  val = (int) LOG_ConfigReadInteger("proxy.config.log.separate_host_logs");
   if (val == 0 || val == 1) {
     separate_host_logs = val;
   };
 
 
   // COLLATION
-  val = (int) LOG_LocalReadInteger("proxy.local.log2.collation_mode");
+  val = (int) LOG_LocalReadInteger("proxy.local.log.collation_mode");
   // do not restrict value so that error message is logged if
   // collation_mode is out of range
   collation_mode = val;
 
-  ptr = LOG_ConfigReadString("proxy.config.log2.collation_host");
+  ptr = LOG_ConfigReadString("proxy.config.log.collation_host");
   if (ptr != NULL) {
     xfree(collation_host);
     collation_host = ptr;
   };
 
-  val = (int) LOG_ConfigReadInteger("proxy.config.log2.collation_port");
+  val = (int) LOG_ConfigReadInteger("proxy.config.log.collation_port");
   if (val >= 0) {
     collation_port = val;
   };
 
-  val = (int) LOG_ConfigReadInteger("proxy.config.log2.collation_host_tagged");
+  val = (int) LOG_ConfigReadInteger("proxy.config.log.collation_host_tagged");
   if (val == 0 || val == 1) {
     collation_host_tagged = val;
   };
 
-  ptr = LOG_ConfigReadString("proxy.config.log2.collation_secret");
+  ptr = LOG_ConfigReadString("proxy.config.log.collation_secret");
   if (ptr != NULL) {
     xfree(collation_secret);
     collation_secret = ptr;
   };
 
-  val = (int) LOG_ConfigReadInteger("proxy.config.log2.collation_retry_sec");
+  val = (int) LOG_ConfigReadInteger("proxy.config.log.collation_retry_sec");
   if (val >= 0) {
     collation_retry_sec = val;
   };
 
-  val = (int) LOG_ConfigReadInteger("proxy.config.log2.collation_max_send_buffers");
+  val = (int) LOG_ConfigReadInteger("proxy.config.log.collation_max_send_buffers");
   if (val >= 0) {
     collation_max_send_buffers = val;
   };
@@ -477,76 +475,65 @@ LogConfig::read_configuration_variables()
   // we don't check for valid values of rolling_enabled, rolling_interval_sec,
   // rolling_offset_hr, or rolling_size_mb because the LogObject takes care of this
   //
-  rolling_enabled = (int) LOG_ConfigReadInteger("proxy.config.log2.rolling_enabled");
+  rolling_enabled = (int) LOG_ConfigReadInteger("proxy.config.log.rolling_enabled");
 
-  rolling_interval_sec = (int) LOG_ConfigReadInteger("proxy.config.log2.rolling_interval_sec");
+  rolling_interval_sec = (int) LOG_ConfigReadInteger("proxy.config.log.rolling_interval_sec");
 
-  rolling_offset_hr = (int) LOG_ConfigReadInteger("proxy.config.log2.rolling_offset_hr");
+  rolling_offset_hr = (int) LOG_ConfigReadInteger("proxy.config.log.rolling_offset_hr");
 
-  rolling_size_mb = (int) LOG_ConfigReadInteger("proxy.config.log2.rolling_size_mb");
+  rolling_size_mb = (int) LOG_ConfigReadInteger("proxy.config.log.rolling_size_mb");
 
-  val = (int) LOG_ConfigReadInteger("proxy.config.log2." "auto_delete_rolled_files");
+  val = (int) LOG_ConfigReadInteger("proxy.config.log." "auto_delete_rolled_files");
   if (val == 0 || val == 1) {
     auto_delete_rolled_files = val;
   };
 
   // CUSTOM LOGGING
-  val = (int) LOG_ConfigReadInteger("proxy.config.log2.custom_logs_enabled");
+  val = (int) LOG_ConfigReadInteger("proxy.config.log.custom_logs_enabled");
   if (val == 0 || val == 1) {
     custom_logs_enabled = val;
   };
 
-  val = (int) LOG_ConfigReadInteger("proxy.config.log2.xml_logs_config");
-  if (val == 0 || val == 1) {
-    xml_logs_config = val;
-  };
-
-  ptr = LOG_ConfigReadString("proxy.config.log2.config_file");
-  if (ptr != NULL) {
-    xfree(config_file);
-    config_file = ptr;
-  };
-
-  ptr = LOG_ConfigReadString("proxy.config.log2.xml_config_file");
+  ptr = LOG_ConfigReadString("proxy.config.log.xml_config_file");
   if (ptr != NULL) {
     xfree(xml_config_file);
     xml_config_file = ptr;
   };
 
-  ptr = LOG_ConfigReadString("proxy.config.log2.hosts_config_file");
+  ptr = LOG_ConfigReadString("proxy.config.log.hosts_config_file");
   if (ptr != NULL) {
     xfree(hosts_config_file);
     hosts_config_file = ptr;
   };
 
   // PERFORMANCE
-  val = (int) LOG_ConfigReadInteger("proxy.config.log2.sampling_frequency");
+  val = (int) LOG_ConfigReadInteger("proxy.config.log.sampling_frequency");
   if (val > 0) {
     sampling_frequency = val;
   };
 
-  val = (int) LOG_ConfigReadInteger("proxy.config.log2.file_stat_frequency");
+  val = (int) LOG_ConfigReadInteger("proxy.config.log.file_stat_frequency");
   if (val > 0) {
     file_stat_frequency = val;
   };
 
-  val = (int) LOG_ConfigReadInteger("proxy.config.log2.space_used_frequency");
+  val = (int) LOG_ConfigReadInteger("proxy.config.log.space_used_frequency");
   if (val > 0) {
     space_used_frequency = val;
   };
 
   // ASCII BUFFER
-  val = (int) LOG_ConfigReadInteger("proxy.config.log2.ascii_buffer_size");
+  val = (int) LOG_ConfigReadInteger("proxy.config.log.ascii_buffer_size");
   if (val > 0) {
     ascii_buffer_size = val;
   };
 
-  val = (int) LOG_ConfigReadInteger("proxy.config.log2.max_line_size");
+  val = (int) LOG_ConfigReadInteger("proxy.config.log.max_line_size");
   if (val > 0) {
     max_line_size = val;
   };
 
-  val = (int) LOG_ConfigReadInteger("proxy.config.log2.overspill_report_count");
+  val = (int) LOG_ConfigReadInteger("proxy.config.log.overspill_report_count");
   if (val > 0) {
     overspill_report_count = val;
   };
@@ -554,7 +541,7 @@ LogConfig::read_configuration_variables()
 /* The following variables are initialized after reading the     */
 /* variable values from records.config                           */
 
-  val = (int) LOG_ConfigReadInteger("proxy.config.log2.search_log_enabled");
+  val = (int) LOG_ConfigReadInteger("proxy.config.log.search_log_enabled");
   if (val == 0 || val == 1) {
     if (Log::logging_mode == Log::FULL_LOGGING)
       search_log_enabled = val;
@@ -565,7 +552,7 @@ LogConfig::read_configuration_variables()
 /* log object. User can define the filter to exclude URLs with   */
 /* certain file extensions from being logged.                    */
 /*                                                               */
-  ptr = LOG_ConfigReadString("proxy.config.log2.search_log_filters");
+  ptr = LOG_ConfigReadString("proxy.config.log.search_log_filters");
   if (ptr != NULL) {
     search_log_filters = ptr;
   }
@@ -577,17 +564,17 @@ LogConfig::read_configuration_variables()
 /* sites. This file is sent to search server mentioned by the    */
 /* pair ip-address & port.                                       */
 /*                                                               */
-  ptr = LOG_ConfigReadString("proxy.config.log2.search_url_filter");
+  ptr = LOG_ConfigReadString("proxy.config.log.search_url_filter");
   if (ptr != NULL) {
     search_url_filter = ptr;
   }
 
-  val = (int) LOG_ConfigReadInteger("proxy.config.log2.search_top_sites");
+  val = (int) LOG_ConfigReadInteger("proxy.config.log.search_top_sites");
   if (val > 0) {
     search_top_sites = val;
   }
 
-  ptr = LOG_ConfigReadString("proxy.config.log2.search_server_ip_addr");
+  ptr = LOG_ConfigReadString("proxy.config.log.search_server_ip_addr");
   if (ptr != NULL) {
     unsigned int ipaddr;
     ipaddr = inet_addr(ptr);
@@ -597,13 +584,13 @@ LogConfig::read_configuration_variables()
       search_server_ip_addr = 0;
   }
 
-  val = (int) LOG_ConfigReadInteger("proxy.config.log2.search_server_port");
+  val = (int) LOG_ConfigReadInteger("proxy.config.log.search_server_port");
   if (val > 0) {
     search_server_port = val;
   }
 
 /*  Rolling interval is taken care in LogObject.                 */
-  val = (int) LOG_ConfigReadInteger("proxy.config.log2.search_rolling_interval_sec");
+  val = (int) LOG_ConfigReadInteger("proxy.config.log.search_rolling_interval_sec");
   if (val > 0) {
     search_rolling_interval_sec = val;
   }
@@ -665,7 +652,6 @@ LogConfig::~LogConfig()
   xfree(extended2_log_header);
   xfree(collation_host);
   xfree(collation_secret);
-  xfree(config_file);
   xfree(xml_config_file);
   xfree(hosts_config_file);
   xfree(search_log_file_one);
@@ -684,7 +670,7 @@ LogConfig::setup_collation(LogConfig * prev_config)
   // there are valid entries for the collation host and port.
   //
   if (collation_mode<NO_COLLATION || collation_mode>= N_COLLATION_MODES) {
-    Note("Invalid value %d for proxy.local.log2.collation_mode"
+    Note("Invalid value %d for proxy.local.log.collation_mode"
          " configuration variable (valid range is from %d to %d)\n"
          "Log collation disabled", collation_mode, NO_COLLATION, N_COLLATION_MODES - 1);
   } else if (collation_mode == NO_COLLATION) {
@@ -723,16 +709,16 @@ LogConfig::setup_collation(LogConfig * prev_config)
         //
         ink_cond_signal(&Log::collate_cond);
 #endif
-        Debug("log2", "I am a collation host listening on port %d.", collation_port);
+        Debug("log", "I am a collation host listening on port %d.", collation_port);
       } else {
-        Debug("log2", "I am a collation client (%d)."
+        Debug("log", "I am a collation client (%d)."
               " My collation host is %s:%d", collation_mode, collation_host, collation_port);
       }
 
 #ifdef IOCORE_LOG_COLLATION
-      Debug("log2", "using iocore log collation");
+      Debug("log", "using iocore log collation");
 #else
-      Debug("log2", "using socket log collation");
+      Debug("log", "using socket log collation");
 #endif
       if (collation_host_tagged) {
         LogFormat::turn_tagging_on();
@@ -834,7 +820,6 @@ LogConfig::display(FILE * fd)
   fprintf(fd, "   hostname = %s\n", hostname);
   fprintf(fd, "   logfile_dir = %s\n", logfile_dir);
   fprintf(fd, "   logfile_perm = 0%o\n", logfile_perm);
-  fprintf(fd, "   config_file = %s\n", config_file);
   fprintf(fd, "   xml_config_file = %s\n", xml_config_file);
   fprintf(fd, "   hosts_config_file = %s\n", hosts_config_file);
   fprintf(fd, "   squid_log_enabled = %d\n", squid_log_enabled);
@@ -899,7 +884,7 @@ LogConfig::setup_pre_defined_info(PreDefinedFormatInfoList * preDefInfoList)
 
   ink_assert(fmt != 0);
   global_format_list.add(fmt, false);
-  Debug("log2", "squid format added to the global format list");
+  Debug("log", "squid format added to the global format list");
 
 
   if (squid_log_enabled) {
@@ -910,7 +895,7 @@ LogConfig::setup_pre_defined_info(PreDefinedFormatInfoList * preDefInfoList)
   fmt = NEW(new LogFormat(COMMON_LOG));
   ink_assert(fmt != 0);
   global_format_list.add(fmt, false);
-  Debug("log2", "common format added to the global format list");
+  Debug("log", "common format added to the global format list");
 
   if (common_log_enabled) {
     pdfi = NEW(new PreDefinedFormatInfo(fmt, common_log_name, common_log_is_ascii, common_log_header));
@@ -920,7 +905,7 @@ LogConfig::setup_pre_defined_info(PreDefinedFormatInfoList * preDefInfoList)
   fmt = NEW(new LogFormat(EXTENDED_LOG));
   ink_assert(fmt != 0);
   global_format_list.add(fmt, false);
-  Debug("log2", "extended format added to the global format list");
+  Debug("log", "extended format added to the global format list");
 
   if (extended_log_enabled) {
     pdfi = NEW(new PreDefinedFormatInfo(fmt, extended_log_name, extended_log_is_ascii, extended_log_header));
@@ -930,7 +915,7 @@ LogConfig::setup_pre_defined_info(PreDefinedFormatInfoList * preDefInfoList)
   fmt = NEW(new LogFormat(EXTENDED2_LOG));
   ink_assert(fmt != 0);
   global_format_list.add(fmt, false);
-  Debug("log2", "extended2 format added to the global format list");
+  Debug("log", "extended2 format added to the global format list");
 
   if (extended2_log_enabled) {
     pdfi = NEW(new PreDefinedFormatInfo(fmt, extended2_log_name, extended2_log_is_ascii, extended2_log_header));
@@ -1170,7 +1155,7 @@ size_t
 void
 LogConfig::setup_log_objects()
 {
-  Debug("log2", "creating objects...");
+  Debug("log", "creating objects...");
 
   // ----------------------------------------------------------------------
   // Construct the LogObjects for the pre-defined formats.
@@ -1217,19 +1202,14 @@ LogConfig::setup_log_objects()
   /* records.config file                                           */
   /*                                                               */
   if (search_log_enabled) {
-    Debug("log2", "creating search log object");
+    Debug("log", "creating search log object");
     /* Read xml configuration for search log from memory.            */
     read_xml_log_config(1);
   }
 
   if (custom_logs_enabled) {
-
-    if (xml_logs_config) {
-      /* Read xml configuration from logs_xml.config file.             */
-      read_xml_log_config(0);
-    } else {
-      read_old_log_config();
-    }
+    /* Read xml configuration from logs_xml.config file.             */
+    read_xml_log_config(0);
   }
 
   /*                                                               */
@@ -1245,7 +1225,7 @@ LogConfig::setup_log_objects()
   //
   log_object_manager.open_local_pipes();
 
-  if (is_debug_tag_set("log2")) {
+  if (is_debug_tag_set("log")) {
     log_object_manager.display();
   }
 }
@@ -1267,158 +1247,9 @@ LogConfig::reconfigure(const char *name, RecDataT data_type, RecData data, void 
   NOWARN_UNUSED(data_type);
   NOWARN_UNUSED(data);
   NOWARN_UNUSED(cookie);
-  Debug("log2-config", "Reconfiguration request accepted");
+  Debug("log-config", "Reconfiguration request accepted");
   Log::config->reconfiguration_needed = true;
   return 0;
-}
-
-void
-LogConfig::register_configs()
-{
-  //##############################################################################
-  //#
-  //# New Logging Config
-  //#
-  //##############################################################################
-  //# possible values for logging_enabled
-  //# 0: no logging at all
-  //# 1: log errors only
-  //# 2: full logging
-
-  RecRegisterConfigInt(RECT_CONFIG, "proxy.config.log2.logging_enabled", 2, RECU_DYNAMIC, RECC_INT, "[0-4]");
-
-  RecRegisterConfigInt(RECT_CONFIG, "proxy.config.log2.log_buffer_size", 9216, RECU_DYNAMIC, RECC_NULL, NULL);
-
-  RecRegisterConfigInt(RECT_CONFIG, "proxy.config.log2.max_entries_per_buffer", 100, RECU_DYNAMIC, RECC_NULL, NULL);
-
-  RecRegisterConfigInt(RECT_CONFIG, "proxy.config.log2.max_secs_per_buffer", 5, RECU_DYNAMIC, RECC_NULL, NULL);
-
-  RecRegisterConfigInt(RECT_CONFIG,
-                       "proxy.config.log2.max_space_mb_for_logs", 2000, RECU_DYNAMIC, RECC_STR, "^[0-9]+$");
-
-  RecRegisterConfigInt(RECT_CONFIG,
-                       "proxy.config.log2.max_space_mb_for_orphan_logs", 25, RECU_DYNAMIC, RECC_STR, "^[0-9]+$");
-
-  RecRegisterConfigInt(RECT_CONFIG, "proxy.config.log2.max_space_mb_headroom", 10, RECU_DYNAMIC, RECC_STR, "^[0-9]+$");
-
-  RecRegisterConfigString(RECT_CONFIG, "proxy.config.log2.hostname", "localhost", RECU_DYNAMIC, RECC_NULL, NULL);
-
-  RecRegisterConfigString(RECT_CONFIG,
-                          "proxy.config.log2.logfile_dir", "var/log/trafficserver", RECU_DYNAMIC, RECC_STR, "^[^[:space:]]+$");
-
-  RecRegisterConfigString(RECT_CONFIG, "proxy.config.log2.logfile_perm", "rw-r--r--", RECU_DYNAMIC, RECC_NULL, NULL);
-
-  RecRegisterConfigInt(RECT_CONFIG, "proxy.config.log2.custom_logs_enabled", 0, RECU_DYNAMIC, RECC_NULL, NULL);
-
-  RecRegisterConfigInt(RECT_CONFIG, "proxy.config.log2.xml_logs_config", 1, RECU_DYNAMIC, RECC_NULL, NULL);
-
-  RecRegisterConfigString(RECT_CONFIG, "proxy.config.log2.config_file", "logs.config", RECU_DYNAMIC, RECC_NULL, NULL);
-
-  RecRegisterConfigString(RECT_CONFIG,
-                          "proxy.config.log2.xml_config_file", "logs_xml.config", RECU_DYNAMIC, RECC_NULL, NULL);
-
-  RecRegisterConfigString(RECT_CONFIG,
-                          "proxy.config.log2.hosts_config_file", "log_hosts.config", RECU_DYNAMIC, RECC_NULL, NULL);
-
-  RecRegisterConfigInt(RECT_CONFIG, "proxy.config.log2.squid_log_enabled", 1, RECU_DYNAMIC, RECC_NULL, NULL);
-
-  RecRegisterConfigInt(RECT_CONFIG, "proxy.config.log2.xuid_logging_enabled", 1, RECU_DYNAMIC, RECC_NULL, NULL);
-
-  RecRegisterConfigInt(RECT_CONFIG, "proxy.config.log2.squid_log_is_ascii", 1, RECU_DYNAMIC, RECC_NULL, NULL);
-
-  RecRegisterConfigString(RECT_CONFIG,
-                          "proxy.config.log2.squid_log_name", "squid", RECU_DYNAMIC, RECC_STR, "^[^[:space:]]*$");
-
-  RecRegisterConfigString(RECT_CONFIG, "proxy.config.log2.squid_log_header", NULL, RECU_DYNAMIC, RECC_NULL, NULL);
-
-  RecRegisterConfigInt(RECT_CONFIG, "proxy.config.log2.common_log_enabled", 0, RECU_DYNAMIC, RECC_NULL, NULL);
-
-  RecRegisterConfigInt(RECT_CONFIG, "proxy.config.log2.common_log_is_ascii", 1, RECU_DYNAMIC, RECC_NULL, NULL);
-
-  RecRegisterConfigString(RECT_CONFIG,
-                          "proxy.config.log2.common_log_name", "common", RECU_DYNAMIC, RECC_STR, "^[^[:space:]]*$");
-
-  RecRegisterConfigString(RECT_CONFIG, "proxy.config.log2.common_log_header", NULL, RECU_DYNAMIC, RECC_NULL, NULL);
-
-  RecRegisterConfigInt(RECT_CONFIG, "proxy.config.log2.extended_log_enabled", 0, RECU_DYNAMIC, RECC_NULL, NULL);
-
-  RecRegisterConfigInt(RECT_CONFIG, "proxy.config.log2.extended_log_is_ascii", 1, RECU_DYNAMIC, RECC_NULL, NULL);
-
-  RecRegisterConfigString(RECT_CONFIG,
-                          "proxy.config.log2.extended_log_name", "extended", RECU_DYNAMIC, RECC_STR, "^[^[:space:]]*$");
-
-  RecRegisterConfigString(RECT_CONFIG, "proxy.config.log2.extended_log_header", NULL, RECU_DYNAMIC, RECC_NULL, NULL);
-
-  RecRegisterConfigInt(RECT_CONFIG, "proxy.config.log2.extended2_log_enabled", 0, RECU_DYNAMIC, RECC_NULL, NULL);
-
-  RecRegisterConfigInt(RECT_CONFIG, "proxy.config.log2.extended2_log_is_ascii", 1, RECU_DYNAMIC, RECC_NULL, NULL);
-
-  RecRegisterConfigString(RECT_CONFIG,
-                          "proxy.config.log2.extended2_log_name",
-                          "extended2", RECU_DYNAMIC, RECC_STR, "^[^[:space:]]*$");
-
-  RecRegisterConfigString(RECT_CONFIG, "proxy.config.log2.extended2_log_header", NULL, RECU_DYNAMIC, RECC_NULL, NULL);
-
-  RecRegisterConfigInt(RECT_CONFIG, "proxy.config.log2.separate_icp_logs", 0, RECU_DYNAMIC, RECC_NULL, NULL);
-
-  RecRegisterConfigInt(RECT_CONFIG, "proxy.config.log2.separate_host_logs", 0, RECU_DYNAMIC, RECC_NULL, NULL);
-
-  RecRegisterConfigString(RECT_CONFIG,
-                          "proxy.config.log2.collation_host", NULL, RECU_DYNAMIC, RECC_STR, "^[^[:space:]]*$");
-
-  RecRegisterConfigInt(RECT_CONFIG, "proxy.config.log2.collation_port", 0,      /* <log2_collation_port>, */
-                       RECU_DYNAMIC, RECC_INT, "[0-65535]");
-
-  RecRegisterConfigString(RECT_CONFIG, "proxy.config.log2.collation_secret", "foobar", RECU_DYNAMIC, RECC_STR, ".*");
-
-  RecRegisterConfigInt(RECT_CONFIG, "proxy.config.log2.collation_host_tagged", 0, RECU_DYNAMIC, RECC_INT, "[0-1]");
-
-  RecRegisterConfigInt(RECT_CONFIG, "proxy.config.log2.collation_retry_sec", 5, RECU_DYNAMIC, RECC_NULL, NULL);
-
-  RecRegisterConfigInt(RECT_CONFIG, "proxy.config.log2.collation_max_send_buffers", 16, RECU_DYNAMIC, RECC_NULL, NULL);
-
-  RecRegisterConfigInt(RECT_CONFIG, "proxy.config.log2.rolling_enabled", 1, RECU_DYNAMIC, RECC_INT, "[0-1]");
-
-  RecRegisterConfigInt(RECT_CONFIG,
-                       "proxy.config.log2.rolling_interval_sec", 86400, RECU_DYNAMIC, RECC_STR, "^[0-9]+$");
-
-  RecRegisterConfigInt(RECT_CONFIG, "proxy.config.log2.rolling_offset_hr", 0, RECU_DYNAMIC, RECC_STR, "^[0-9]+$");
-
-  RecRegisterConfigInt(RECT_CONFIG, "proxy.config.log2.rolling_size_mb", 10, RECU_DYNAMIC, RECC_STR, "^0*[1-9][0-9]*$");
-
-  RecRegisterConfigInt(RECT_CONFIG, "proxy.config.log2.auto_delete_rolled_files", 1, RECU_DYNAMIC, RECC_INT, "[0-1]");
-
-  RecRegisterConfigInt(RECT_CONFIG, "proxy.config.log2.sampling_frequency", 1, RECU_DYNAMIC, RECC_NULL, NULL);
-
-  RecRegisterConfigInt(RECT_CONFIG, "proxy.config.log2.space_used_frequency", 2, RECU_DYNAMIC, RECC_NULL, NULL);
-
-  RecRegisterConfigInt(RECT_CONFIG, "proxy.config.log2.file_stat_frequency", 32, RECU_DYNAMIC, RECC_NULL, NULL);
-
-  RecRegisterConfigInt(RECT_CONFIG, "proxy.config.log2.ascii_buffer_size", 36864, RECU_DYNAMIC, RECC_NULL, NULL);
-
-  RecRegisterConfigInt(RECT_CONFIG, "proxy.config.log2.max_line_size", 9216, RECU_DYNAMIC, RECC_NULL, NULL);
-
-  RecRegisterConfigInt(RECT_CONFIG, "proxy.config.log2.overspill_report_count", 500, RECU_DYNAMIC, RECC_NULL, NULL);
-  /*                                                                             */
-  /* Begin  HCL Modifications.                                                   */
-  /*                                                                             */
-  RecRegisterConfigInt(RECT_CONFIG,
-                       "proxy.config.log2.search_rolling_interval_sec", 86400, RECU_DYNAMIC, RECC_NULL, NULL);
-
-  RecRegisterConfigInt(RECT_CONFIG, "proxy.config.log2.search_log_enabled", 0, RECU_DYNAMIC, RECC_NULL, NULL);
-
-  RecRegisterConfigString(RECT_CONFIG, "proxy.config.log2.search_server_ip_addr", NULL, RECU_DYNAMIC, RECC_NULL, NULL);
-
-  RecRegisterConfigInt(RECT_CONFIG, "proxy.config.log2.search_server_port", 8080, RECU_DYNAMIC, RECC_NULL, NULL);
-
-  RecRegisterConfigInt(RECT_CONFIG, "proxy.config.log2.search_top_sites", 100, RECU_DYNAMIC, RECC_NULL, NULL);
-
-  RecRegisterConfigString(RECT_CONFIG, "proxy.config.log2.search_url_filter", NULL, RECU_DYNAMIC, RECC_NULL, NULL);
-
-  RecRegisterConfigString(RECT_CONFIG, "proxy.config.log2.search_log_filters", NULL, RECU_DYNAMIC, RECC_NULL, NULL);
-  /*                                                                             */
-  /* End    HCL Modifications.                                                   */
-  /*                                                                             */
 }
 
 /*-------------------------------------------------------------------------
@@ -1433,88 +1264,86 @@ LogConfig::register_config_callbacks()
 {
   // Note: variables that are not exposed in the UI are commented out
   //
-  LOG_RegisterConfigUpdateFunc("proxy.config.log2.log_buffer_size", &LogConfig::reconfigure, NULL);
-  LOG_RegisterConfigUpdateFunc("proxy.config.log2.max_entries_per_buffer", &LogConfig::reconfigure, NULL);
-//    LOG_RegisterConfigUpdateFunc ("proxy.config.log2.max_secs_per_buffer",
+  LOG_RegisterConfigUpdateFunc("proxy.config.log.log_buffer_size", &LogConfig::reconfigure, NULL);
+  LOG_RegisterConfigUpdateFunc("proxy.config.log.max_entries_per_buffer", &LogConfig::reconfigure, NULL);
+//    LOG_RegisterConfigUpdateFunc ("proxy.config.log.max_secs_per_buffer",
 //                            &LogConfig::reconfigure, NULL);
-  LOG_RegisterConfigUpdateFunc("proxy.config.log2.max_space_mb_for_logs", &LogConfig::reconfigure, NULL);
-  LOG_RegisterConfigUpdateFunc("proxy.config.log2.max_space_mb_for_orphan_logs", &LogConfig::reconfigure, NULL);
-  LOG_RegisterConfigUpdateFunc("proxy.config.log2.max_space_mb_headroom", &LogConfig::reconfigure, NULL);
-//    LOG_RegisterConfigUpdateFunc ("proxy.config.log2.logfile_perm",
+  LOG_RegisterConfigUpdateFunc("proxy.config.log.max_space_mb_for_logs", &LogConfig::reconfigure, NULL);
+  LOG_RegisterConfigUpdateFunc("proxy.config.log.max_space_mb_for_orphan_logs", &LogConfig::reconfigure, NULL);
+  LOG_RegisterConfigUpdateFunc("proxy.config.log.max_space_mb_headroom", &LogConfig::reconfigure, NULL);
+//    LOG_RegisterConfigUpdateFunc ("proxy.config.log.logfile_perm",
 //                            &LogConfig::reconfigure, NULL);
-//    LOG_RegisterConfigUpdateFunc ("proxy.config.log2.hostname",
+//    LOG_RegisterConfigUpdateFunc ("proxy.config.log.hostname",
 //                            &LogConfig::reconfigure, NULL);
-  LOG_RegisterConfigUpdateFunc("proxy.config.log2.logfile_dir", &LogConfig::reconfigure, NULL);
+  LOG_RegisterConfigUpdateFunc("proxy.config.log.logfile_dir", &LogConfig::reconfigure, NULL);
 
   // SQUID
-  LOG_RegisterConfigUpdateFunc("proxy.config.log2.squid_log_enabled", &LogConfig::reconfigure, NULL);
-  LOG_RegisterConfigUpdateFunc("proxy.config.log2.xuid_logging_enabled", &LogConfig::reconfigure, NULL);
-  LOG_RegisterConfigUpdateFunc("proxy.config.log2.squid_log_is_ascii", &LogConfig::reconfigure, NULL);
-  LOG_RegisterConfigUpdateFunc("proxy.config.log2.squid_log_name", &LogConfig::reconfigure, NULL);
-  LOG_RegisterConfigUpdateFunc("proxy.config.log2.squid_log_header", &LogConfig::reconfigure, NULL);
+  LOG_RegisterConfigUpdateFunc("proxy.config.log.squid_log_enabled", &LogConfig::reconfigure, NULL);
+  LOG_RegisterConfigUpdateFunc("proxy.config.log.xuid_logging_enabled", &LogConfig::reconfigure, NULL);
+  LOG_RegisterConfigUpdateFunc("proxy.config.log.squid_log_is_ascii", &LogConfig::reconfigure, NULL);
+  LOG_RegisterConfigUpdateFunc("proxy.config.log.squid_log_name", &LogConfig::reconfigure, NULL);
+  LOG_RegisterConfigUpdateFunc("proxy.config.log.squid_log_header", &LogConfig::reconfigure, NULL);
 
   // COMMON
-  LOG_RegisterConfigUpdateFunc("proxy.config.log2.common_log_enabled", &LogConfig::reconfigure, NULL);
-  LOG_RegisterConfigUpdateFunc("proxy.config.log2.common_log_is_ascii", &LogConfig::reconfigure, NULL);
-  LOG_RegisterConfigUpdateFunc("proxy.config.log2.common_log_name", &LogConfig::reconfigure, NULL);
-  LOG_RegisterConfigUpdateFunc("proxy.config.log2.common_log_header", &LogConfig::reconfigure, NULL);
+  LOG_RegisterConfigUpdateFunc("proxy.config.log.common_log_enabled", &LogConfig::reconfigure, NULL);
+  LOG_RegisterConfigUpdateFunc("proxy.config.log.common_log_is_ascii", &LogConfig::reconfigure, NULL);
+  LOG_RegisterConfigUpdateFunc("proxy.config.log.common_log_name", &LogConfig::reconfigure, NULL);
+  LOG_RegisterConfigUpdateFunc("proxy.config.log.common_log_header", &LogConfig::reconfigure, NULL);
 
   // EXTENDED
-  LOG_RegisterConfigUpdateFunc("proxy.config.log2.extended_log_enabled", &LogConfig::reconfigure, NULL);
-  LOG_RegisterConfigUpdateFunc("proxy.config.log2.extended_log_is_ascii", &LogConfig::reconfigure, NULL);
-  LOG_RegisterConfigUpdateFunc("proxy.config.log2.extended_log_name", &LogConfig::reconfigure, NULL);
-  LOG_RegisterConfigUpdateFunc("proxy.config.log2.extended_log_header", &LogConfig::reconfigure, NULL);
+  LOG_RegisterConfigUpdateFunc("proxy.config.log.extended_log_enabled", &LogConfig::reconfigure, NULL);
+  LOG_RegisterConfigUpdateFunc("proxy.config.log.extended_log_is_ascii", &LogConfig::reconfigure, NULL);
+  LOG_RegisterConfigUpdateFunc("proxy.config.log.extended_log_name", &LogConfig::reconfigure, NULL);
+  LOG_RegisterConfigUpdateFunc("proxy.config.log.extended_log_header", &LogConfig::reconfigure, NULL);
 
   // EXTENDED2
-  LOG_RegisterConfigUpdateFunc("proxy.config.log2.extended2_log_enabled", &LogConfig::reconfigure, NULL);
-  LOG_RegisterConfigUpdateFunc("proxy.config.log2.extended2_log_is_ascii", &LogConfig::reconfigure, NULL);
-  LOG_RegisterConfigUpdateFunc("proxy.config.log2.extended2_log_name", &LogConfig::reconfigure, NULL);
-  LOG_RegisterConfigUpdateFunc("proxy.config.log2.extended2_log_header", &LogConfig::reconfigure, NULL);
+  LOG_RegisterConfigUpdateFunc("proxy.config.log.extended2_log_enabled", &LogConfig::reconfigure, NULL);
+  LOG_RegisterConfigUpdateFunc("proxy.config.log.extended2_log_is_ascii", &LogConfig::reconfigure, NULL);
+  LOG_RegisterConfigUpdateFunc("proxy.config.log.extended2_log_name", &LogConfig::reconfigure, NULL);
+  LOG_RegisterConfigUpdateFunc("proxy.config.log.extended2_log_header", &LogConfig::reconfigure, NULL);
 
   // SPLITTING
-  LOG_RegisterConfigUpdateFunc("proxy.config.log2.separate_icp_logs", &LogConfig::reconfigure, NULL);
-  LOG_RegisterConfigUpdateFunc("proxy.config.log2.separate_host_logs", &LogConfig::reconfigure, NULL);
+  LOG_RegisterConfigUpdateFunc("proxy.config.log.separate_icp_logs", &LogConfig::reconfigure, NULL);
+  LOG_RegisterConfigUpdateFunc("proxy.config.log.separate_host_logs", &LogConfig::reconfigure, NULL);
 
   // COLLATION
-  LOG_RegisterLocalUpdateFunc("proxy.local.log2.collation_mode", &LogConfig::reconfigure, NULL);
-  LOG_RegisterConfigUpdateFunc("proxy.config.log2.collation_host", &LogConfig::reconfigure, NULL);
-  LOG_RegisterConfigUpdateFunc("proxy.config.log2.collation_port", &LogConfig::reconfigure, NULL);
-  LOG_RegisterConfigUpdateFunc("proxy.config.log2.collation_host_tagged", &LogConfig::reconfigure, NULL);
-  LOG_RegisterConfigUpdateFunc("proxy.config.log2.collation_secret", &LogConfig::reconfigure, NULL);
-//    LOG_RegisterConfigUpdateFunc ("proxy.config.log2.collation_retry_sec",
+  LOG_RegisterLocalUpdateFunc("proxy.local.log.collation_mode", &LogConfig::reconfigure, NULL);
+  LOG_RegisterConfigUpdateFunc("proxy.config.log.collation_host", &LogConfig::reconfigure, NULL);
+  LOG_RegisterConfigUpdateFunc("proxy.config.log.collation_port", &LogConfig::reconfigure, NULL);
+  LOG_RegisterConfigUpdateFunc("proxy.config.log.collation_host_tagged", &LogConfig::reconfigure, NULL);
+  LOG_RegisterConfigUpdateFunc("proxy.config.log.collation_secret", &LogConfig::reconfigure, NULL);
+//    LOG_RegisterConfigUpdateFunc ("proxy.config.log.collation_retry_sec",
 //                                  &LogConfig::reconfigure, NULL);
-//    LOG_RegisterConfigUpdateFunc ("proxy.config.log2.collation_max_send_buffers",
+//    LOG_RegisterConfigUpdateFunc ("proxy.config.log.collation_max_send_buffers",
 //                                  &LogConfig::reconfigure, NULL);
 
   // ROLLING
-  LOG_RegisterConfigUpdateFunc("proxy.config.log2.rolling_enabled", &LogConfig::reconfigure, NULL);
-  LOG_RegisterConfigUpdateFunc("proxy.config.log2.rolling_interval_sec", &LogConfig::reconfigure, NULL);
-  LOG_RegisterConfigUpdateFunc("proxy.config.log2.rolling_offset_hr", &LogConfig::reconfigure, NULL);
-  LOG_RegisterConfigUpdateFunc("proxy.config.log2.rolling_size_mb", &LogConfig::reconfigure, NULL);
-  LOG_RegisterConfigUpdateFunc("proxy.config.log2.auto_delete_rolled_files", &LogConfig::reconfigure, NULL);
+  LOG_RegisterConfigUpdateFunc("proxy.config.log.rolling_enabled", &LogConfig::reconfigure, NULL);
+  LOG_RegisterConfigUpdateFunc("proxy.config.log.rolling_interval_sec", &LogConfig::reconfigure, NULL);
+  LOG_RegisterConfigUpdateFunc("proxy.config.log.rolling_offset_hr", &LogConfig::reconfigure, NULL);
+  LOG_RegisterConfigUpdateFunc("proxy.config.log.rolling_size_mb", &LogConfig::reconfigure, NULL);
+  LOG_RegisterConfigUpdateFunc("proxy.config.log.auto_delete_rolled_files", &LogConfig::reconfigure, NULL);
 
   // CUSTOM LOGGING
-  LOG_RegisterConfigUpdateFunc("proxy.config.log2.custom_logs_enabled", &LogConfig::reconfigure, NULL);
-  LOG_RegisterConfigUpdateFunc("proxy.config.log2.xml_logs_config", &LogConfig::reconfigure, NULL);
-  LOG_RegisterConfigUpdateFunc("proxy.config.log2.config_file", &LogConfig::reconfigure, NULL);
-  LOG_RegisterConfigUpdateFunc("proxy.config.log2.xml_config_file", &LogConfig::reconfigure, NULL);
-  LOG_RegisterConfigUpdateFunc("proxy.config.log2.hosts_config_file", &LogConfig::reconfigure, NULL);
+  LOG_RegisterConfigUpdateFunc("proxy.config.log.custom_logs_enabled", &LogConfig::reconfigure, NULL);
+  LOG_RegisterConfigUpdateFunc("proxy.config.log.xml_config_file", &LogConfig::reconfigure, NULL);
+  LOG_RegisterConfigUpdateFunc("proxy.config.log.hosts_config_file", &LogConfig::reconfigure, NULL);
 
   // PERFORMANCE
-//    LOG_RegisterConfigUpdateFunc ("proxy.config.log2.sampling_frequency",
+//    LOG_RegisterConfigUpdateFunc ("proxy.config.log.sampling_frequency",
 //                            &LogConfig::reconfigure, NULL);
-//    LOG_RegisterConfigUpdateFunc ("proxy.config.log2.file_stat_frequency",
+//    LOG_RegisterConfigUpdateFunc ("proxy.config.log.file_stat_frequency",
 //                            &LogConfig::reconfigure, NULL);
-//    LOG_RegisterConfigUpdateFunc ("proxy.config.log2.space_used_frequency",
+//    LOG_RegisterConfigUpdateFunc ("proxy.config.log.space_used_frequency",
 //                            &LogConfig::reconfigure, NULL);
 
 /* These are the call back function connectivities               */
-  LOG_RegisterConfigUpdateFunc("proxy.config.log2.search_rolling_interval_sec", &LogConfig::reconfigure, NULL);
-  LOG_RegisterConfigUpdateFunc("proxy.config.log2.search_log_enabled", &LogConfig::reconfigure, NULL);
-  LOG_RegisterConfigUpdateFunc("proxy.config.log2.search_top_sites", &LogConfig::reconfigure, NULL);
-  LOG_RegisterConfigUpdateFunc("proxy.config.log2.search_server_ip_addr", &LogConfig::reconfigure, NULL);
-  LOG_RegisterConfigUpdateFunc("proxy.config.log2.search_server_port", &LogConfig::reconfigure, NULL);
-  LOG_RegisterConfigUpdateFunc("proxy.config.log2.search_url_filter", &LogConfig::reconfigure, NULL);
+  LOG_RegisterConfigUpdateFunc("proxy.config.log.search_rolling_interval_sec", &LogConfig::reconfigure, NULL);
+  LOG_RegisterConfigUpdateFunc("proxy.config.log.search_log_enabled", &LogConfig::reconfigure, NULL);
+  LOG_RegisterConfigUpdateFunc("proxy.config.log.search_top_sites", &LogConfig::reconfigure, NULL);
+  LOG_RegisterConfigUpdateFunc("proxy.config.log.search_server_ip_addr", &LogConfig::reconfigure, NULL);
+  LOG_RegisterConfigUpdateFunc("proxy.config.log.search_server_port", &LogConfig::reconfigure, NULL);
+  LOG_RegisterConfigUpdateFunc("proxy.config.log.search_url_filter", &LogConfig::reconfigure, NULL);
 
 }
 
@@ -1537,51 +1366,51 @@ do { \
   // bytes moved
   //
   RecRegisterRawStat(log_rsb, RECT_PROCESS,
-                     "proxy.process.log2.bytes_buffered",
-                     RECD_INT, RECP_PERSISTENT, (int) log2_stat_bytes_buffered_stat, RecRawStatSyncSum);
+                     "proxy.process.log.bytes_buffered",
+                     RECD_INT, RECP_PERSISTENT, (int) log_stat_bytes_buffered_stat, RecRawStatSyncSum);
 
   RecRegisterRawStat(log_rsb, RECT_PROCESS,
-                     "proxy.process.log2.bytes_written_to_disk",
-                     RECD_INT, RECP_PERSISTENT, (int) log2_stat_bytes_written_to_disk_stat, RecRawStatSyncSum);
+                     "proxy.process.log.bytes_written_to_disk",
+                     RECD_INT, RECP_PERSISTENT, (int) log_stat_bytes_written_to_disk_stat, RecRawStatSyncSum);
 
   RecRegisterRawStat(log_rsb, RECT_PROCESS,
-                     "proxy.process.log2.bytes_sent_to_network",
-                     RECD_INT, RECP_PERSISTENT, (int) log2_stat_bytes_sent_to_network_stat, RecRawStatSyncSum);
+                     "proxy.process.log.bytes_sent_to_network",
+                     RECD_INT, RECP_PERSISTENT, (int) log_stat_bytes_sent_to_network_stat, RecRawStatSyncSum);
 
   RecRegisterRawStat(log_rsb, RECT_PROCESS,
-                     "proxy.process.log2.bytes_received_from_network",
-                     RECD_INT, RECP_PERSISTENT, (int) log2_stat_bytes_received_from_network_stat, RecRawStatSyncSum);
+                     "proxy.process.log.bytes_received_from_network",
+                     RECD_INT, RECP_PERSISTENT, (int) log_stat_bytes_received_from_network_stat, RecRawStatSyncSum);
 
   //
   // I/O
   //
   RecRegisterRawStat(log_rsb, RECT_PROCESS,
-                     "proxy.process.log2.log_files_open",
-                     RECD_COUNTER, RECP_NON_PERSISTENT, (int) log2_stat_log_files_open_stat, RecRawStatSyncSum);
-  LOG_CLEAR_DYN_STAT(log2_stat_log_files_open_stat);
+                     "proxy.process.log.log_files_open",
+                     RECD_COUNTER, RECP_NON_PERSISTENT, (int) log_stat_log_files_open_stat, RecRawStatSyncSum);
+  LOG_CLEAR_DYN_STAT(log_stat_log_files_open_stat);
 
   RecRegisterRawStat(log_rsb, RECT_PROCESS,
-                     "proxy.process.log2.log_files_space_used",
-                     RECD_INT, RECP_NON_PERSISTENT, (int) log2_stat_log_files_space_used_stat, RecRawStatSyncSum);
+                     "proxy.process.log.log_files_space_used",
+                     RECD_INT, RECP_NON_PERSISTENT, (int) log_stat_log_files_space_used_stat, RecRawStatSyncSum);
 
   //
   // events
   //
   RecRegisterRawStat(log_rsb, RECT_PROCESS,
-                     "proxy.process.log2.event_log_error",
-                     RECD_COUNTER, RECP_PERSISTENT, (int) log2_stat_event_log_error_stat, RecRawStatSyncCount);
+                     "proxy.process.log.event_log_error",
+                     RECD_COUNTER, RECP_PERSISTENT, (int) log_stat_event_log_error_stat, RecRawStatSyncCount);
 
   RecRegisterRawStat(log_rsb, RECT_PROCESS,
-                     "proxy.process.log2.event_log_access",
-                     RECD_COUNTER, RECP_PERSISTENT, (int) log2_stat_event_log_access_stat, RecRawStatSyncCount);
+                     "proxy.process.log.event_log_access",
+                     RECD_COUNTER, RECP_PERSISTENT, (int) log_stat_event_log_access_stat, RecRawStatSyncCount);
 
   RecRegisterRawStat(log_rsb, RECT_PROCESS,
-                     "proxy.process.log2.event_log_access_fail",
-                     RECD_COUNTER, RECP_PERSISTENT, (int) log2_stat_event_log_access_fail_stat, RecRawStatSyncCount);
+                     "proxy.process.log.event_log_access_fail",
+                     RECD_COUNTER, RECP_PERSISTENT, (int) log_stat_event_log_access_fail_stat, RecRawStatSyncCount);
 
   RecRegisterRawStat(log_rsb, RECT_PROCESS,
-                     "proxy.process.log2.event_log_access_skip",
-                     RECD_COUNTER, RECP_PERSISTENT, (int) log2_stat_event_log_access_skip_stat, RecRawStatSyncCount);
+                     "proxy.process.log.event_log_access_skip",
+                     RECD_COUNTER, RECP_PERSISTENT, (int) log_stat_event_log_access_skip_stat, RecRawStatSyncCount);
 }
 
 /*-------------------------------------------------------------------------
@@ -1762,10 +1591,10 @@ LogConfig::update_space_used()
   //
   m_space_used = total_space_used;
   m_partition_space_left = partition_space_left;
-  LOG_SET_DYN_STAT(log2_stat_log_files_space_used_stat, 1, m_space_used);
+  LOG_SET_DYN_STAT(log_stat_log_files_space_used_stat, 1, m_space_used);
 
-  Debug("log2space", "%lld bytes being used for logs", m_space_used);
-  Debug("log2space", "%lld bytes left on parition", m_partition_space_left);
+  Debug("logspace", "%lld bytes being used for logs", m_space_used);
+  Debug("logspace", "%lld bytes left on parition", m_partition_space_left);
 
   //
   // Now that we have an accurate picture of the amount of space being
@@ -1783,19 +1612,19 @@ LogConfig::update_space_used()
 
   if (candidate_count > 0 && !space_to_write(headroom)) {
 
-    Debug("log2space", "headroom reached, trying to clear space ...");
-    Debug("log2space", "sorting %d delete candidates ...", candidate_count);
+    Debug("logspace", "headroom reached, trying to clear space ...");
+    Debug("logspace", "sorting %d delete candidates ...", candidate_count);
     qsort(candidates, candidate_count, sizeof(LogDeleteCandidate),
           (int (*)(const void *, const void *)) delete_candidate_compare);
 
     for (victim = 0; victim < candidate_count; victim++) {
 
       if (space_to_write(headroom + log_buffer_size)) {
-        Debug("log2space", "low water mark reached; stop deleting");
+        Debug("logspace", "low water mark reached; stop deleting");
         break;
       }
 
-      Debug("log2space", "auto-deleting %s", candidates[victim].name);
+      Debug("logspace", "auto-deleting %s", candidates[victim].name);
 
       if (unlink(candidates[victim].name) < 0) {
         Note("Traffic Server was Unable to auto-delete rolled "
@@ -1882,154 +1711,6 @@ LogConfig::update_space_used()
 
 
 /*-------------------------------------------------------------------------
-  LogConfig::read_old_log_config
-  -------------------------------------------------------------------------*/
-
-void
-LogConfig::read_old_log_config()
-{
-  char config_path[PATH_MAX];
-  char line[LOG_MAX_FORMAT_LINE];
-  char copy[LOG_MAX_FORMAT_LINE];
-  int line_num = 0;
-
-  if (config_file == NULL) {
-    Note("No log config file to read");
-    return;
-  }
-
-  snprintf(config_path, PATH_MAX, "%s/%s", system_config_directory, config_file);
-
-  Debug("log2-config", "Reading log config file %s", config_path);
-
-  int fd =::open(config_path, O_RDONLY);
-  if (fd < 0) {
-    Warning("Traffic Server can't open %s for reading custom " "formats: %s.", config_path, strerror(errno));
-    return;
-  }
-
-  while (ink_file_fd_readline(fd, LOG_MAX_FORMAT_LINE, line) > 0) {
-
-    //
-    // Ignore blank Lines and lines that begin with a '#'.
-    //
-    line_num++;
-    if (*line == '\n' || *line == '#') {
-      continue;
-    }
-    //
-    // Tokenize the line; ':' is the field separator character
-    //
-    LogUtils::strip_trailing_newline(line);
-    ink_strncpy(copy, line, sizeof(copy));
-    char *entry_type = strtok(copy, ":");
-
-    if (entry_type) {
-
-      // format
-      //
-      if (strcasecmp(entry_type, "format") == 0) {
-
-        char *file_name = NULL;
-        char *file_header = NULL;
-        LogFileFormat file_type;
-
-        LogFormat *new_format = LogFormat::format_from_specification(line, &file_name, &file_header, &file_type);
-
-        bool valid_format = false;
-        if (new_format != NULL) {
-          if (global_format_list.find_by_name(new_format->name())) {
-            Status(DUP_FORMAT_MESSAGE, new_format->name());
-            valid_format = false;
-          } else {
-            valid_format = true;
-          }
-        }
-
-        if (valid_format) {
-          LogObject *obj = NEW(new LogObject(new_format,
-                                             logfile_dir,
-                                             file_name, file_type,
-                                             file_header,
-                                             rolling_enabled,
-                                             rolling_interval_sec,
-                                             rolling_offset_hr,
-                                             rolling_size_mb));
-
-          if (collation_mode == SEND_NON_XML_CUSTOM_FMTS || collation_mode == SEND_STD_AND_NON_XML_CUSTOM_FMTS) {
-
-            LogHost *loghost = NEW(new LogHost(obj->get_full_filename(),
-                                               obj->get_signature()));
-            ink_assert(loghost != NULL);
-
-            loghost->set_name_port(collation_host, collation_port);
-            obj->add_loghost(loghost, false);
-
-          }
-
-          global_format_list.add(new_format, false);
-
-          // give object to object manager
-          //
-          log_object_manager.manage_object(obj);
-        }
-
-        xfree(file_name);
-        xfree(file_header);
-
-        if (valid_format) {
-          continue;
-        }
-      }
-      // filter
-      //
-      if (strcasecmp(entry_type, "filter") == 0) {
-        char *fmt_name = NULL;
-        LogFilter *filter = LogFilter::filter_from_specification(line, global_format_list, Log::global_field_list,
-                                                                 &fmt_name);
-        if (filter) {
-          if (global_filter_list.find_by_name(filter->name())) {
-            Warning("Ignoring duplicate filter definition at " "line %d", line_num);
-            delete filter;
-          } else {
-            LogObject *obj;
-            if (strcmp(fmt_name, "_global_") == 0) {
-              // apply filter to all objects
-              //
-              log_object_manager.add_filter_to_all(filter);
-            } else {
-              // apply filter to object with format fmt_name
-              //
-              obj = log_object_manager.find_by_format_name(fmt_name);
-              if (!obj) {
-                Warning("There is no format named %s for " "filter at line %d", fmt_name, line_num);
-                delete filter;
-                xfree(fmt_name);
-                continue;
-              } else {
-                obj->add_filter(filter);
-              }
-            }
-          }
-          if (fmt_name) {
-            xfree(fmt_name);
-          }
-          global_filter_list.add(filter, false);
-          continue;
-        }
-        if (fmt_name) {
-          xfree(fmt_name);
-        }
-      }
-    }
-
-    Warning("Traffic Server failed to parse line %d of the " "logging config file: %s.", line_num, config_path);
-  }
-
-  ::close(fd);
-}
-
-/*-------------------------------------------------------------------------
   LogConfig::read_xml_log_config
 
   This is a new routine for reading the XML-based log config file.
@@ -2083,7 +1764,7 @@ LogConfig::read_xml_log_config(int from_memory)
 
   if (from_memory) {
     snprintf(config_path, PATH_MAX, "%s", "from_memory");
-    Debug("log2", "Reading from memory %s", config_path);
+    Debug("log", "Reading from memory %s", config_path);
   } else {
     if (xml_config_file == NULL) {
       Note("No log config file to read");
@@ -2093,7 +1774,7 @@ LogConfig::read_xml_log_config(int from_memory)
   }
 
 
-  Debug("log2-config", "Reading log config file %s", config_path);
+  Debug("log-config", "Reading log config file %s", config_path);
   Debug("xml", "%s is an XML-based config file", config_path);
 
   InkXmlConfigFile log_config(config_path);
@@ -2654,7 +2335,7 @@ LogConfig::read_log_hosts_file(size_t * num_hosts)
 
   snprintf(config_path, PATH_MAX, "%s/%s", system_config_directory, hosts_config_file);
 
-  Debug("log2-config", "Reading log hosts from %s", config_path);
+  Debug("log-config", "Reading log hosts from %s", config_path);
 
   size_t nhosts = 0;
   int fd = open(config_path, O_RDONLY);

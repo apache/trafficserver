@@ -900,7 +900,7 @@ ICPPeerReadCont::PeerReadStateMachine(PeerReadData * s, Event * e)
         s->_peer->writeAction = NULL;
         int len = completionUtil::getBytesTransferred(e);
 
-        if (len == ntohs(s->_rICPmsg->h.msglen)) {
+        if (len == (int)ntohs(s->_rICPmsg->h.msglen)) {
           ICP_INCREMENT_DYN_STAT(query_response_write_stat);
           s->_peer->LogSendMsg(s->_rICPmsg, &s->_sender);       // log query reply
         } else {

@@ -1118,9 +1118,6 @@ public:
    ~ICPRequestCont();
   void *operator  new(size_t size, void *mem);
   void operator  delete(void *mem);
-#ifdef __alpha
-  void operator  delete(void *p, void *mem);
-#endif
   inline void SetRequestStartTime()
   {
     _start_time = ink_get_hrtime();
@@ -1238,15 +1235,6 @@ delete(void *mem)
 {
   ICPRequestCont_allocator.free((ICPRequestCont *) mem);
 }
-
-#ifdef __alpha
-inline void
-  ICPRequestCont::operator
-delete(void *p, void *mem)
-{
-  ink_release_assert(!"invalid ICPRequestCont::operator delete(void *p, void *mem)");
-}
-#endif
 
 extern struct RecRawStatBlock *icp_rsb;
 

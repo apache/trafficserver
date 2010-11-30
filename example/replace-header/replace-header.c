@@ -36,51 +36,51 @@
 #include <ts/ts.h>
 
 static void
-replace_header(INKHttpTxn txnp, INKCont contp)
+replace_header(TSHttpTxn txnp, TSCont contp)
 {
-  INKMBuffer resp_bufp;
-  INKMLoc resp_loc;
-  INKMLoc field_loc;
+  TSMBuffer resp_bufp;
+  TSMLoc resp_loc;
+  TSMLoc field_loc;
 
-  if (!INKHttpTxnServerRespGet(txnp, &resp_bufp, &resp_loc)) {
-    INKError("couldn't retrieve server response header.\n");
+  if (!TSHttpTxnServerRespGet(txnp, &resp_bufp, &resp_loc)) {
+    TSError("couldn't retrieve server response header.\n");
     goto done;
   }
 
-  field_loc = INKMimeHdrFieldRetrieve(resp_bufp, resp_loc, INK_MIME_FIELD_ACCEPT_RANGES);
+  field_loc = TSMimeHdrFieldFind(resp_bufp, resp_loc, TS_MIME_FIELD_ACCEPT_RANGES, TS_MIME_LEN_ACCEPT_RANGES);
   if (field_loc == 0) {
     /* field was not found */
 
     /* create a new field in the header */
-    field_loc = INKMimeHdrFieldCreate(resp_bufp, resp_loc);
+    field_loc = TSMimeHdrFieldCreate(resp_bufp, resp_loc);
     /* set its name */
-    INKMimeHdrFieldNameSet(resp_bufp, resp_loc, field_loc, INK_MIME_FIELD_ACCEPT_RANGES, INK_MIME_LEN_ACCEPT_RANGES);
+    TSMimeHdrFieldNameSet(resp_bufp, resp_loc, field_loc, TS_MIME_FIELD_ACCEPT_RANGES, TS_MIME_LEN_ACCEPT_RANGES);
     /* set its value */
-    INKMimeHdrFieldValueAppend(resp_bufp, resp_loc, field_loc, -1, "none", 4);
+    TSMimeHdrFieldValueAppend(resp_bufp, resp_loc, field_loc, -1, "none", 4);
     /* insert it into the header */
-    INKMimeHdrFieldAppend(resp_bufp, resp_loc, field_loc);
-    INKHandleMLocRelease(resp_bufp, resp_loc, field_loc);
-    INKHandleMLocRelease(resp_bufp, INK_NULL_MLOC, resp_loc);
+    TSMimeHdrFieldAppend(resp_bufp, resp_loc, field_loc);
+    TSHandleMLocRelease(resp_bufp, resp_loc, field_loc);
+    TSHandleMLocRelease(resp_bufp, TS_NULL_MLOC, resp_loc);
   } else {
     /* clear the field */
-    INKMimeHdrFieldValuesClear(resp_bufp, resp_loc, field_loc);
+    TSMimeHdrFieldValuesClear(resp_bufp, resp_loc, field_loc);
     /* set the value to "none" */
-    INKMimeHdrFieldValueStringInsert(resp_bufp, resp_loc, field_loc, -1, "none", 4);
-    INKHandleMLocRelease(resp_bufp, resp_loc, field_loc);
-    INKHandleMLocRelease(resp_bufp, INK_NULL_MLOC, resp_loc);
+    TSMimeHdrFieldValueStringInsert(resp_bufp, resp_loc, field_loc, -1, "none", 4);
+    TSHandleMLocRelease(resp_bufp, resp_loc, field_loc);
+    TSHandleMLocRelease(resp_bufp, TS_NULL_MLOC, resp_loc);
   }
 
 done:
-  INKHttpTxnReenable(txnp, INK_EVENT_HTTP_CONTINUE);
+  TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
 }
 
 static int
-replace_header_plugin(INKCont contp, INKEvent event, void *edata)
+replace_header_plugin(TSCont contp, TSEvent event, void *edata)
 {
-  INKHttpTxn txnp = (INKHttpTxn) edata;
+  TSHttpTxn txnp = (TSHttpTxn) edata;
 
   switch (event) {
-  case INK_EVENT_HTTP_READ_RESPONSE_HDR:
+  case TS_EVENT_HTTP_READ_RESPONSE_HDR:
     replace_header(txnp, contp);
     return 0;
   default:
@@ -93,7 +93,7 @@ int
 check_ts_version()
 {
 
-  const char *ts_version = INKTrafficServerVersionGet();
+  const char *ts_version = TSTrafficServerVersionGet();
   int result = 0;
 
   if (ts_version) {
@@ -116,22 +116,22 @@ check_ts_version()
 }
 
 void
-INKPluginInit(int argc, const char *argv[])
+TSPluginInit(int argc, const char *argv[])
 {
-  INKPluginRegistrationInfo info;
+  TSPluginRegistrationInfo info;
 
   info.plugin_name = "replace-header";
   info.vendor_name = "MyCompany";
   info.support_email = "ts-api-support@MyCompany.com";
 
-  if (!INKPluginRegister(INK_SDK_VERSION_2_0, &info)) {
-    INKError("Plugin registration failed. \n");
+  if (!TSPluginRegister(TS_SDK_VERSION_2_0, &info)) {
+    TSError("Plugin registration failed. \n");
   }
 
   if (!check_ts_version()) {
-    INKError("Plugin requires Traffic Server 2.0 or later\n");
+    TSError("Plugin requires Traffic Server 2.0 or later\n");
     return;
   }
 
-  INKHttpHookAdd(INK_HTTP_READ_RESPONSE_HDR_HOOK, INKContCreate(replace_header_plugin, NULL));
+  TSHttpHookAdd(TS_HTTP_READ_RESPONSE_HDR_HOOK, TSContCreate(replace_header_plugin, NULL));
 }

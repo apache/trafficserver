@@ -55,9 +55,10 @@ struct InactivityCop:public Continuation
       vc_next = (UnixNetVConnection*)vc->link.next;
       if (vc->inactivity_timeout_in && vc->next_inactivity_timeout_at && vc->next_inactivity_timeout_at < now){
         vc->handleEvent(EVENT_IMMEDIATE, e);
-      } else
+      } else {
         if (vc->closed)
           close_UnixNetVConnection(vc, e->ethread);
+      }
       vc = vc_next;
     }
     return 0;
@@ -102,8 +103,8 @@ PollCont::pollEvent(int event, Event *e)
         (!net_handler->read_ready_list.empty() || !net_handler->read_ready_list.empty() ||
          !net_handler->read_enable_list.empty() || !net_handler->write_enable_list.empty())) {
       NetDebug("iocore_net_poll", "rrq: %d, wrq: %d, rel: %d, wel: %d", net_handler->read_ready_list.empty(),
-            net_handler->write_ready_list.empty(), net_handler->read_enable_list.empty(),
-            net_handler->write_enable_list.empty());
+               net_handler->write_ready_list.empty(), net_handler->read_enable_list.empty(),
+               net_handler->write_enable_list.empty());
       poll_timeout = 0;         //poll immediately returns -- we have triggered stuff to process right now
     } else {
       poll_timeout = net_config_poll_timeout;
@@ -121,7 +122,7 @@ PollCont::pollEvent(int event, Event *e)
   pollDescriptor->result = epoll_wait(pollDescriptor->epoll_fd,
                                       pollDescriptor->ePoll_Triggered_Events, POLL_DESCRIPTOR_SIZE, poll_timeout);
   NetDebug("iocore_net_poll", "[PollCont::pollEvent] epoll_fd: %d, timeout: %d, results: %d", pollDescriptor->epoll_fd, poll_timeout,
-        pollDescriptor->result);
+           pollDescriptor->result);
 #elif TS_USE_KQUEUE
   struct timespec tv;
   tv.tv_sec = poll_timeout / 1000;
@@ -131,7 +132,7 @@ PollCont::pollEvent(int event, Event *e)
                                   POLL_DESCRIPTOR_SIZE,
                                   &tv);
   NetDebug("iocore_net_poll", "[PollCont::pollEvent] kueue_fd: %d, timeout: %d, results: %d", pollDescriptor->kqueue_fd, poll_timeout,
-        pollDescriptor->result);
+           pollDescriptor->result);
 #elif TS_USE_PORT
   int retval;
   timespec_t ptimeout;
@@ -139,15 +140,15 @@ PollCont::pollEvent(int event, Event *e)
   ptimeout.tv_nsec = 1000000 * (poll_timeout % 1000);
   unsigned nget = 1;
   if((retval = port_getn(pollDescriptor->port_fd,
-			pollDescriptor->Port_Triggered_Events,
-			POLL_DESCRIPTOR_SIZE, &nget, &ptimeout)) < 0) {
+                         pollDescriptor->Port_Triggered_Events,
+                         POLL_DESCRIPTOR_SIZE, &nget, &ptimeout)) < 0) {
     pollDescriptor->result = 0;
     switch(errno) {
     case EINTR:
     case EAGAIN:
     case ETIME:
       if (nget > 0) {
-	pollDescriptor->result = (int)nget;
+        pollDescriptor->result = (int)nget;
       }
       break;
     default:
@@ -158,9 +159,9 @@ PollCont::pollEvent(int event, Event *e)
     pollDescriptor->result = (int)nget;
   }
   NetDebug("iocore_net_poll", "[PollCont::pollEvent] %d[%s]=port_getn(%d,%p,%d,%d,%d),results(%d)",
-	   retval,retval < 0 ? strerror(errno) : "ok",
-	   pollDescriptor->port_fd, pollDescriptor->Port_Triggered_Events,
-	   POLL_DESCRIPTOR_SIZE, nget, poll_timeout, pollDescriptor->result);
+           retval,retval < 0 ? strerror(errno) : "ok",
+           pollDescriptor->port_fd, pollDescriptor->Port_Triggered_Events,
+           POLL_DESCRIPTOR_SIZE, nget, poll_timeout, pollDescriptor->result);
 #else
 #error port me
 #endif
@@ -299,8 +300,7 @@ NetHandler::mainNetEvent(int event, Event *e)
   NET_INCREMENT_DYN_STAT(net_handler_run_stat);
 
   process_enabled_list(this, e->ethread);
-  if (likely(!read_ready_list.empty() || !write_ready_list.empty() ||
-             !read_enable_list.empty() || !write_enable_list.empty()))
+  if (likely(!read_ready_list.empty() || !write_ready_list.empty() || !read_enable_list.empty() || !write_enable_list.empty()))
     poll_timeout = 0; // poll immediately returns -- we have triggered stuff to process right now
   else
     poll_timeout = net_config_poll_timeout;
@@ -321,9 +321,7 @@ NetHandler::mainNetEvent(int event, Event *e)
   struct timespec tv;
   tv.tv_sec = poll_timeout / 1000;
   tv.tv_nsec = 1000000 * (poll_timeout % 1000);
-  pd->result = kevent(pd->kqueue_fd, NULL, 0,
-                      pd->kq_Triggered_Events, POLL_DESCRIPTOR_SIZE,
-                      &tv);
+  pd->result = kevent(pd->kqueue_fd, NULL, 0, pd->kq_Triggered_Events, POLL_DESCRIPTOR_SIZE, &tv);
   NetDebug("iocore_net_main_poll", "[NetHandler::mainNetEvent] kevent(%d,%f), result=%d", pd->kqueue_fd,poll_timeout,pd->result);
 #elif TS_USE_PORT
   int retval;
@@ -331,15 +329,14 @@ NetHandler::mainNetEvent(int event, Event *e)
   ptimeout.tv_sec = poll_timeout / 1000;
   ptimeout.tv_nsec = 1000000 * (poll_timeout % 1000);
   unsigned nget = 1;
-  if((retval = port_getn(pd->port_fd, pd->Port_Triggered_Events,
-			POLL_DESCRIPTOR_SIZE, &nget, &ptimeout)) < 0) {
+  if((retval = port_getn(pd->port_fd, pd->Port_Triggered_Events, POLL_DESCRIPTOR_SIZE, &nget, &ptimeout)) < 0) {
     pd->result = 0;
     switch(errno) {
     case EINTR:
     case EAGAIN:
     case ETIME:
       if (nget > 0) {
-	pd->result = (int)nget;
+        pd->result = (int)nget;
       }
       break;
     default:
@@ -350,9 +347,10 @@ NetHandler::mainNetEvent(int event, Event *e)
     pd->result = (int)nget;
   }
   NetDebug("iocore_net_main_poll", "[NetHandler::mainNetEvent] %d[%s]=port_getn(%d,%p,%d,%d,%d),results(%d)",
-	   retval,retval < 0 ? strerror(errno) : "ok",
-	   pd->port_fd, pd->Port_Triggered_Events,
-	   POLL_DESCRIPTOR_SIZE, nget, poll_timeout, pd->result);
+           retval,retval < 0 ? strerror(errno) : "ok",
+           pd->port_fd, pd->Port_Triggered_Events,
+           POLL_DESCRIPTOR_SIZE, nget, poll_timeout, pd->result);
+
 #else
 #error port me
 #endif
@@ -369,7 +367,7 @@ NetHandler::mainNetEvent(int event, Event *e)
           read_ready_list.enqueue(vc);
         else if (get_ev_events(pd,x) & EVENTIO_ERROR) {
           // check for unhandled epoll events that should be handled
-          NetDebug("iocore_net_main", "Unhandled epoll event on read: 0x%04x read.enabled=%d closed=%d read.netready_queue=%d",
+          Debug("iocore_net_main", "Unhandled epoll event on read: 0x%04x read.enabled=%d closed=%d read.netready_queue=%d",
                 get_ev_events(pd,x), vc->read.enabled, vc->closed, read_ready_list.in(vc));
         }
       }
@@ -381,22 +379,21 @@ NetHandler::mainNetEvent(int event, Event *e)
           write_ready_list.enqueue(vc);
         else if (get_ev_events(pd,x) & EVENTIO_ERROR) {
           // check for unhandled epoll events that should be handled
-          NetDebug("iocore_net_main",
+          Debug("iocore_net_main",
                 "Unhandled epoll event on write: 0x%04x write.enabled=%d closed=%d write.netready_queue=%d",
                 get_ev_events(pd,x), vc->write.enabled, vc->closed, write_ready_list.in(vc));
         }
       } else if (!get_ev_events(pd,x) & EVENTIO_ERROR) {
-        NetDebug("iocore_net_main", "Unhandled epoll event: 0x%04x", get_ev_events(pd,x));
+        Debug("iocore_net_main", "Unhandled epoll event: 0x%04x", get_ev_events(pd,x));
       }
     } else if (epd->type == EVENTIO_DNS_CONNECTION) {
       if (epd->data.dnscon != NULL) {
-        dnsqueue.enqueue(epd->data.dnscon);
+        epd->data.dnscon->trigger(); // Make sure the DNSHandler for this con knows we triggered
 #if defined(USE_EDGE_TRIGGER)
         epd->refresh(EVENTIO_READ);
 #endif
       }
-    }
-    else if (epd->type == EVENTIO_ASYNC_SIGNAL)
+    } else if (epd->type == EVENTIO_ASYNC_SIGNAL)
       net_signal_hook_callback(trigger_event->ethread);
     ev_next_event(pd,x);
   }

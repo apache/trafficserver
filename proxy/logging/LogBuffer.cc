@@ -276,7 +276,7 @@ LogBuffer::LogBuffer(LogObject * owner, size_t size, size_t buf_align, size_t wr
 {
   size_t hdr_size;
 
-//    Debug("log2-logbuffer","LogBuffer::LogBuffer(owner,size=%ld, buf_align=%ld,write_align=%ld)",
+//    Debug("log-logbuffer","LogBuffer::LogBuffer(owner,size=%ld, buf_align=%ld,write_align=%ld)",
 //          size,buf_align,write_align);
 
   // create the buffer: size + LB_DEFAULT_ALIGN(512)
@@ -298,7 +298,7 @@ LogBuffer::LogBuffer(LogObject * owner, size_t size, size_t buf_align, size_t wr
 
   m_expiration_time = LogUtils::timestamp() + Log::config->max_secs_per_buffer;
 
-//    Debug("log2-logbuffer","[%p] Created buffer %u for %s at address %p, size %d",
+//    Debug("log-logbuffer","[%p] Created buffer %u for %s at address %p, size %d",
 //        this_ethread(), m_id, m_owner->get_base_filename(), m_buffer, (int)size);
 }
 
@@ -318,7 +318,7 @@ LogBuffer::LogBuffer(LogObject * owner, LogBufferHeader * header):
   // no checkout writes or checkin writes are allowed. This is enforced
   // by the asserts in checkout_write and checkin_write
 
-//    Debug("log2-logbuffer","LogBuffer::LogBuffer(owner,header)");
+//    Debug("log-logbuffer","LogBuffer::LogBuffer(owner,header)");
 
   m_new_buffer = (char *) header;       /* must be deleted inside destructor */
 
@@ -326,7 +326,7 @@ LogBuffer::LogBuffer(LogObject * owner, LogBufferHeader * header):
   //
   m_id = (uint32) ink_atomic_increment((pvint32) & M_ID, 1);
 
-//    Debug("log2-logbuffer","[%p] Created buffer %u for %s at address %p",
+//    Debug("log-logbuffer","[%p] Created buffer %u for %s at address %p",
 //        this_ethread(), m_id, m_owner->get_base_filename(), m_buffer);
 }
 
@@ -342,10 +342,10 @@ LogBuffer::~LogBuffer()
       m_new_buffer = 0;
     }
     m_bb = iLogBufferBuffer::Delete_iLogBufferBuffer(m_bb);
-//      Debug("log2-logbuffer", "[%p] Deleted buffer %u", this_ethread(), m_id);
+//      Debug("log-logbuffer", "[%p] Deleted buffer %u", this_ethread(), m_id);
   }
 //    else
-//      Debug("log2-logbuffer", "Incorrect signature 0x%08lX inside LogBuffer::~LogBuffer()", sign);
+//      Debug("log-logbuffer", "Incorrect signature 0x%08lX inside LogBuffer::~LogBuffer()", sign);
 }
 
 /*-------------------------------------------------------------------------
@@ -443,7 +443,7 @@ LogBuffer::LB_ResultCode LogBuffer::checkout_write(size_t * write_offset, size_t
     // disable statistics for now
     //ProxyMutex *mutex = this_ethread()->mutex;
     //ink_release_assert(mutex->thread_holding == this_ethread());
-    //SUM_DYN_STAT(log2_stat_bytes_buffered_stat, actual_write_size);
+    //SUM_DYN_STAT(log_stat_bytes_buffered_stat, actual_write_size);
 
     LogEntryHeader *
       entry_header = (LogEntryHeader *) & m_buffer[offset];
@@ -457,7 +457,7 @@ LogBuffer::LB_ResultCode LogBuffer::checkout_write(size_t * write_offset, size_t
 
     *write_offset = offset + sizeof(LogEntryHeader);
   }
-//    Debug("log2-logbuffer","[%p] %s for buffer %u (%s) returning %d",
+//    Debug("log-logbuffer","[%p] %s for buffer %u (%s) returning %d",
 //        this_ethread(),
 //        (write_offset ? "checkout_write" : "force_new_buffer"),
 //        m_id, m_owner->get_base_filename(), ret_val);
@@ -497,7 +497,7 @@ LogBuffer::LB_ResultCode LogBuffer::checkin_write(size_t write_offset)
 
   } while (!switch_state(old_s, new_s));
 
-//    Debug("log2-logbuffer","[%p] checkin_write for buffer %u (%s) "
+//    Debug("log-logbuffer","[%p] checkin_write for buffer %u (%s) "
 //        "returning %d (%u writers left)", this_ethread(),
 //        m_id, m_owner->get_base_filename(), ret_val, writers_left);
 
@@ -856,21 +856,21 @@ LogBuffer::to_ascii(LogEntryHeader * entry, LogFormatType type,
 
   for (i = 0; i < fieldlist_cache_entries; i++) {
     if (strcmp(symbol_str, fieldlist_cache[i].symbol_str) == 0) {
-      Debug("log2-fieldlist", "Fieldlist for %s found in cache, #%d", symbol_str, i);
+      Debug("log-fieldlist", "Fieldlist for %s found in cache, #%d", symbol_str, i);
       fieldlist = fieldlist_cache[i].fieldlist;
       break;
     }
   }
 
   if (!fieldlist) {
-    Debug("log2-fieldlist", "Fieldlist for %s not found; creating ...", symbol_str);
+    Debug("log-fieldlist", "Fieldlist for %s not found; creating ...", symbol_str);
     fieldlist = NEW(new LogFieldList);
     ink_assert(fieldlist != NULL);
     bool contains_aggregates = false;
     LogFormat::parse_symbol_string(symbol_str, fieldlist, &contains_aggregates);
 
     if (fieldlist_cache_entries < FIELDLIST_CACHE_SIZE) {
-      Debug("log2-fieldlist", "Fieldlist cached as entry %d", fieldlist_cache_entries);
+      Debug("log-fieldlist", "Fieldlist cached as entry %d", fieldlist_cache_entries);
       fieldlist_cache[fieldlist_cache_entries].fieldlist = fieldlist;
       fieldlist_cache[fieldlist_cache_entries].symbol_str = xstrdup(symbol_str);
       fieldlist_cache_entries++;
@@ -948,7 +948,7 @@ LogBuffer::convert_to_network_order()
 void
 LogBuffer::convert_to_network_order(LogBufferHeader * header)
 {
-  Debug("log2-sock", "Converting buffer to network byte order");
+  Debug("log-sock", "Converting buffer to network byte order");
   ink_assert(header != NULL);
   //
   // First, change each of the entry headers.  Order is important,
@@ -1011,7 +1011,7 @@ LogBuffer::convert_to_host_order()
 void
 LogBuffer::convert_to_host_order(LogBufferHeader * header)
 {
-  Debug("log2-sock", "Converting buffer to host byte order");
+  Debug("log-sock", "Converting buffer to host byte order");
   ink_assert(header != NULL);
 
   header->cookie = ntohl(header->cookie);

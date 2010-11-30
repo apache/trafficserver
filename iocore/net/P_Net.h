@@ -77,6 +77,8 @@ RecIncrRawStatSum(net_rsb, mutex->thread_holding, (int)_x, -1)
 #define NET_SUM_DYN_STAT(_x, _r) \
 RecIncrRawStatSum(net_rsb, mutex->thread_holding, (int)_x, _r)
 
+#define NET_READ_DYN_SUM(_x, _sum)  RecGetRawStatSum(net_rsb, (int)_x, &_sum)
+
 #define NET_READ_DYN_STAT(_x, _count, _sum) do {\
 RecGetRawStatSum(net_rsb, (int)_x, &_sum);          \
 RecGetRawStatCount(net_rsb, (int)_x, &_count);         \
@@ -88,17 +90,9 @@ do { \
 	RecSetRawStatCount(net_rsb, x, 0); \
 } while (0);
 
-#define NET_INCREMENT_THREAD_DYN_STAT(_s, _t) \
-  RecIncrRawStatSum(net_rsb, _t, (int) _s, 1);
-
-#define NET_DECREMENT_THREAD_DYN_STAT(_s, _t) \
-  RecIncrRawStatSum(net_rsb, _t, (int) _s, -1);
-
-#ifndef DEBUG
-#define NetDebug if (0) dummy_debug
-#else
-#define NetDebug Debug
-#endif
+// For global access
+#define NET_SUM_GLOBAL_DYN_STAT(_x, _r) RecIncrGlobalRawStatSum(net_rsb, (_x), (_r))
+#define NET_READ_GLOBAL_DYN_SUM(_x, _sum) RecGetGlobalRawStatSum(net_rsb, _x, &_sum)
 
 #include "inktomi++.h"
 #include "P_EventSystem.h"
@@ -132,5 +126,13 @@ do { \
 #else
   #define LIBEV_BACKEND_LIST 0 /* auto */
 #endif
+
+// For very verbose iocore debugging.
+#ifndef DEBUG
+#define NetDebug if (0) dummy_debug
+#else
+#define NetDebug Debug
+#endif
+
 
 #endif

@@ -96,8 +96,7 @@ net_accept(NetAccept * na, void *ep, bool blockable)
     vc = (UnixNetVConnection *) na->alloc_cache;
     if (!vc) {
       vc = na->allocateThread(e->ethread);
-      ProxyMutex *mutex = e->ethread->mutex;
-      NET_INCREMENT_DYN_STAT(net_connections_currently_open_stat);
+      NET_SUM_GLOBAL_DYN_STAT(net_connections_currently_open_stat, 1);
       vc->id = net_next_connection_number();
       na->alloc_cache = vc;
 #if TS_USE_DETAILED_LOG
@@ -122,9 +121,9 @@ net_accept(NetAccept * na, void *ep, bool blockable)
     na->alloc_cache = NULL;
 
     vc->submit_time = ink_get_hrtime();
-    vc->ip = vc->con.sa.sin_addr.s_addr;
-    vc->port = ntohs(vc->con.sa.sin_port);
-    vc->accept_port = ntohs(na->server.sa.sin_port);
+    vc->ip = ((struct sockaddr_in *)(&(vc->con.sa)))->sin_addr.s_addr;
+    vc->port = ntohs(((struct sockaddr_in *)(&(vc->con.sa)))->sin_port);
+    vc->accept_port = ntohs(((struct sockaddr_in *)(&(na->server.sa)))->sin_port);
     vc->mutex = new_ProxyMutex();
     vc->action_ = *na->action_;
     vc->set_is_transparent(na->server.f_inbound_transparent);
@@ -167,21 +166,25 @@ net_accept_main_blocking(NetAccept * na, Event * e, bool blockable)
 }
 
 
-// Functions all THREAD_FREE and THREAD_ALLOC to be performed
-// for both SSL and regular UnixNetVConnection transparent to
-// accept functions.
 UnixNetVConnection *
 NetAccept::allocateThread(EThread * t)
 {
-  return ((UnixNetVConnection *) THREAD_ALLOC(netVCAllocator, t));
+  return ((UnixNetVConnection *)THREAD_ALLOC(netVCAllocator, t));
 }
 
 void
 NetAccept::freeThread(UnixNetVConnection * vc, EThread * t)
 {
+  ink_assert(!vc->from_accept_thread);
   THREAD_FREE(vc, netVCAllocator, t);
 }
 
+// This allocates directly on the class allocator, used for accept threads.
+UnixNetVConnection *
+NetAccept::allocateGlobal()
+{
+  return (UnixNetVConnection *)netVCAllocator.alloc();
+}
 
 // Virtual function allows the correct
 // etype to be used in NetAccept functions (ET_SSL
@@ -203,8 +206,6 @@ NetAccept::init_accept_loop()
     action_->continuation->mutex = new_ProxyMutex();
     action_->mutex = action_->continuation->mutex;
   }
-  do_listen(BLOCKING);
-  unix_netProcessor.accepts_on_thread.push(this);
   SET_CONTINUATION_HANDLER(this, &NetAccept::acceptLoopEvent);
   eventProcessor.spawn_thread(this);
 }
@@ -247,7 +248,8 @@ NetAccept::init_accept_per_thread()
   else
     SET_HANDLER((NetAcceptHandler) & NetAccept::acceptEvent);
   period = ACCEPT_PERIOD;
-  NetAccept *a = this;
+
+  NetAccept *a;
   n = eventProcessor.n_threads_for_type[ET_NET];
   for (i = 0; i < n; i++) {
     if (i < n - 1) {
@@ -277,7 +279,7 @@ NetAccept::do_listen(bool non_blocking)
     }
   } else {
   Lretry:
-    if ((res = server.listen(port, non_blocking, recv_bufsize, send_bufsize)))
+    if ((res = server.listen(port, domain, non_blocking, recv_bufsize, send_bufsize)))
       Warning("unable to listen on port %d: %d %d, %s", port, res, errno, strerror(errno));
   }
   if (callback_on_open && !action_->cancelled) {
@@ -302,8 +304,10 @@ NetAccept::do_blocking_accept(NetAccept * master_na, EThread * t)
   //added by YTS Team, yamsat
   do {
     vc = (UnixNetVConnection *) master_na->alloc_cache;
-    if (!vc) {
-      vc = allocateThread(t);
+    if (likely(!vc)) {
+      //vc = allocateThread(t);
+      vc = allocateGlobal(); // Bypass proxy / thread allocator
+      vc->from_accept_thread = true;
       vc->id = net_next_connection_number();
       master_na->alloc_cache = vc;
 #if TS_USE_DETAILED_LOG
@@ -342,11 +346,11 @@ NetAccept::do_blocking_accept(NetAccept * master_na, EThread * t)
     check_emergency_throttle(vc->con);
     master_na->alloc_cache = NULL;
 
-    RecIncrGlobalRawStatSum(net_rsb, net_connections_currently_open_stat, 1);
+    NET_SUM_GLOBAL_DYN_STAT(net_connections_currently_open_stat, 1);
     vc->submit_time = now;
-    vc->ip = vc->con.sa.sin_addr.s_addr;
-    vc->port = ntohs(vc->con.sa.sin_port);
-    vc->accept_port = ntohs(server.sa.sin_port);
+    vc->ip = ((struct sockaddr_in *)(&(vc->con.sa)))->sin_addr.s_addr;
+    vc->port = ntohs(((struct sockaddr_in *)(&(vc->con.sa)))->sin_port);
+    vc->accept_port = ntohs(((struct sockaddr_in *)(&(server.sa)))->sin_port);
     vc->set_is_transparent(master_na->server.f_inbound_transparent);
     vc->set_is_other_side_transparent(master_na->server.f_outbound_transparent);
     Debug("http_tproxy", "Marking accepted %sconnect on %x as%s outbound transparent.\n",
@@ -392,8 +396,8 @@ NetAccept::acceptEvent(int event, void *ep)
       if ((res = accept_fn(this, e, false)) < 0) {
         NET_DECREMENT_DYN_STAT(net_accepts_currently_open_stat);
         /* INKqa11179 */
-        Warning("Accept on port %d failed with error no %d", ntohs(server.sa.sin_port), res);
-        Warning("Traffic Server may be unable to accept more network" "connections on %d", ntohs(server.sa.sin_port));
+        Warning("Accept on port %d failed with error no %d", ntohs(((struct sockaddr_in *)(&(server.sa)))->sin_port), res);
+        Warning("Traffic Server may be unable to accept more network" "connections on %d", ntohs(((struct sockaddr_in *)(&(server.sa)))->sin_port));
         e->cancel();
         delete this;
         return EVENT_DONE;
@@ -433,7 +437,7 @@ NetAccept::acceptFastEvent(int event, void *ep)
     if (likely(fd >= 0)) {
       vc->addLogMessage("accepting the connection");
 
-      NetDebug("iocore_net", "accepted a new socket: %d", fd);
+      Debug("iocore_net", "accepted a new socket: %d", fd);
       if (send_bufsize > 0) {
         if (unlikely(socketManager.set_sndbuf_size(fd, send_bufsize))) {
           bufsz = ROUNDUP(send_bufsize, 1024);
@@ -456,11 +460,11 @@ NetAccept::acceptFastEvent(int event, void *ep)
       }
       if (sockopt_flags & 1) {  // we have to disable Nagle
         safe_setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, ON, sizeof(int));
-        NetDebug("socket", "::acceptFastEvent: setsockopt() TCP_NODELAY on socket");
+        Debug("socket", "::acceptFastEvent: setsockopt() TCP_NODELAY on socket");
       }
       if (sockopt_flags & 2) {
         safe_setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, ON, sizeof(int));
-        NetDebug("socket", "::acceptFastEvent: setsockopt() SO_KEEPALIVE on socket");
+        Debug("socket", "::acceptFastEvent: setsockopt() SO_KEEPALIVE on socket");
       }
       do {
         res = safe_nonblocking(fd);
@@ -490,13 +494,13 @@ NetAccept::acceptFastEvent(int event, void *ep)
     }
     vc->con.fd = fd;
 
-    NET_INCREMENT_DYN_STAT(net_connections_currently_open_stat);
+    NET_SUM_GLOBAL_DYN_STAT(net_connections_currently_open_stat, 1);
     vc->id = net_next_connection_number();
 
     vc->submit_time = ink_get_hrtime();
-    vc->ip = vc->con.sa.sin_addr.s_addr;
-    vc->port = ntohs(vc->con.sa.sin_port);
-    vc->accept_port = ntohs(server.sa.sin_port);
+    vc->ip = ((struct sockaddr_in *)(&(vc->con.sa)))->sin_addr.s_addr;
+    vc->port = ntohs(((struct sockaddr_in *)(&(vc->con.sa)))->sin_port);
+    vc->accept_port = ntohs(((struct sockaddr_in *)(&(server.sa)))->sin_port);
     vc->set_is_transparent(server.f_inbound_transparent);
     vc->set_is_other_side_transparent(server.f_outbound_transparent);
     Debug("http_tproxy", "Marking fast accepted %sconnection on as%s outbound transparent.\n",
@@ -520,7 +524,7 @@ NetAccept::acceptFastEvent(int event, void *ep)
 
 #ifdef USE_EDGE_TRIGGER
     // Set the vc as triggered and place it in the read ready queue in case there is already data on the socket.
-    NetDebug("iocore_net", "acceptEvent : Setting triggered and adding to the read ready queue");
+    Debug("iocore_net", "acceptEvent : Setting triggered and adding to the read ready queue");
     vc->read.triggered = 1;
     vc->nh->read_ready_list.enqueue(vc);
 #endif

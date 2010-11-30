@@ -56,7 +56,7 @@ typedef void (*init_func_t) (int argc, char *argv[]);
 typedef void (*init_func_w_handle_t) (void *handle, int argc, char *argv[]);
 typedef int (*lic_req_func_t) (void);
 
-inkapi int
+tsapi int
 load_in_export_symbols(int j)
 {
   int i = eight_bit_table[j];
@@ -142,7 +142,7 @@ plugin_load(int argc, char *argv[], bool internal)
     abort();
   }
 
-  lic_req = (lic_req_func_t) dll_findsym(handle, "INKPluginLicenseRequired");
+  lic_req = (lic_req_func_t) dll_findsym(handle, "TSPluginLicenseRequired");
   if (lic_req && lic_req() != 0) {
     PluginDB::CheckLicenseResult result = plugin_db->CheckLicense(argv[0]);
     if (result != PluginDB::license_ok) {
@@ -157,15 +157,15 @@ plugin_load(int argc, char *argv[], bool internal)
   plugin_reg_current = new PluginRegInfo;
   plugin_reg_current->plugin_path = xstrdup(path);
 
-  init_func_w_handle_t inith = (init_func_w_handle_t) dll_findsym(handle, "INKPluginInitwDLLHandle");
+  init_func_w_handle_t inith = (init_func_w_handle_t) dll_findsym(handle, "TSPluginInitwDLLHandle");
   if (inith) {
     inith(handle, argc, argv);
     return;
   }
 
-  init = (init_func_t) dll_findsym(handle, "INKPluginInit");
+  init = (init_func_t) dll_findsym(handle, "TSPluginInit");
   if (!init) {
-    Error("unable to find INKPluginInit function '%s': %s", path, dll_error(handle));
+    Error("unable to find TSPluginInit function '%s': %s", path, dll_error(handle));
     dll_close(handle);
     abort();
   }

@@ -486,7 +486,7 @@ public:
     TOTAL_RESPONSE_ERROR_TYPES
   };
 
-  // Please do not forget to fix INKServerState (ts/ts.h)
+  // Please do not forget to fix TSServerState (ts/ts.h)
   // in case of any modifications in ServerState_t
   enum ServerState_t
   {
@@ -585,10 +585,13 @@ public:
     CONTINUE,
 
     HTTP_API_SM_START,
-    HTTP_API_READ_REQUEST_PRE_REMAP,
-    HTTP_REMAP_REQUEST,
-    HTTP_END_REMAP_REQUEST,
+    
     HTTP_API_READ_REQUEST_HDR,
+    HTTP_API_PRE_REMAP,
+    HTTP_REMAP_REQUEST,
+    HTTP_API_POST_REMAP,
+    HTTP_POST_REMAP_SKIP,
+    
     HTTP_API_OS_DNS,
     HTTP_API_SEND_REQUEST_HDR,
     HTTP_API_READ_CACHE_HDR,
@@ -785,6 +788,7 @@ public:
     // components is a byte, so:
     // 0x25364758 = 0x25.0x36.0x47.0x58 = 37.54.71.88 in decimal.
     unsigned int ip;
+    struct sockaddr_storage addr;
 
     // port to connect to, except for client
     // connection where it is port on proxy
@@ -812,7 +816,9 @@ public:
         abort(ABORT_UNDEFINED),
         port_attribute(SERVER_PORT_DEFAULT),
         is_transparent(false)
-    { }
+    {
+      memset(&addr, 0, sizeof(addr));
+    }
   } ConnectionAttributes;
 
   typedef struct _CurrentInfo
@@ -896,7 +902,6 @@ public:
   } SquidLogInfo;
 
 
-#define HTTP_TRANSACT_STATE_MAX_USER_ARG         16     /* max number of user arguments inside HttpTransact::State structure */
 #define HTTP_TRANSACT_STATE_MAX_XBUF_SIZE  (1024*2)     /* max size of plugin exchange buffer */
 
   struct State
@@ -904,7 +909,6 @@ public:
     HttpTransactMagic_t m_magic;
 
     HttpSM *state_machine;
-    NewCacheVC *cache_vc;
 
     Arena arena;
 
@@ -1007,7 +1011,7 @@ public:
     int return_xbuf_size;
     bool return_xbuf_plain;
     char return_xbuf[HTTP_TRANSACT_STATE_MAX_XBUF_SIZE];
-    void *user_args[HTTP_TRANSACT_STATE_MAX_USER_ARG];
+    void *user_args[HTTP_SSN_TXN_MAX_USER_ARG];
 
     int api_txn_active_timeout_value;
     int api_txn_connect_timeout_value;
@@ -1054,7 +1058,8 @@ public:
 
     bool already_downgraded;
     URL pristine_url;  // pristine url is the url before remap
-
+    
+    bool api_skip_all_remapping;
 
     // Methods
     void
@@ -1066,7 +1071,7 @@ public:
 
     // Constructor
     State()
-      : m_magic(HTTP_TRANSACT_MAGIC_ALIVE), state_machine(NULL), cache_vc(NULL), http_config_param(NULL), force_dns(false),
+      : m_magic(HTTP_TRANSACT_MAGIC_ALIVE), state_machine(NULL), http_config_param(NULL), force_dns(false),
         updated_server_version(HostDBApplicationInfo::HTTP_VERSION_UNDEFINED), is_revalidation_necessary(false),
         HashTable_Tries(0),             //YTS Team, yamsat
         request_will_not_selfloop(false),       //YTS Team, yamsat
@@ -1146,7 +1151,8 @@ public:
         congestion_congested_or_failed(0),
         congestion_connection_opened(0),
         reverse_proxy(false), url_remap_success(false), remap_redirect(NULL), filter_mask(0), already_downgraded(false),
-        pristine_url()
+        pristine_url(),
+        api_skip_all_remapping(false)
     {
       int i;
       char *via_ptr = via_string;
@@ -1199,11 +1205,6 @@ public:
     {
       record_transaction_stats();
       m_magic = HTTP_TRANSACT_MAGIC_DEAD;
-
-      if (cache_vc) {
-        cache_vc->free();
-        cache_vc = NULL;
-      }
 
       if (internal_msg_buffer) {
         free_internal_msg_buffer(internal_msg_buffer, internal_msg_buffer_fast_allocator_size);
@@ -1259,6 +1260,7 @@ public:
   static void StartRemapRequest(State * s);
   static void RemapRequest(State * s);
   static void EndRemapRequest(State * s);
+  static void PerformRemap(State * s);
   static void ModifyRequest(State * s);
   static void HandleRequest(State * s);
   static bool handleIfRedirect(State * s);
@@ -1401,7 +1403,6 @@ public:
                                          int origin_server_request_header_size, int64 origin_server_request_body_size,
                                          int origin_server_response_header_size, int64 origin_server_response_body_size,
                                          int pushed_response_header_size, int64 pushed_response_body_size, CacheAction_t cache_action);
-  static void update_aol_stats(State * s, ink_hrtime cache_lookup_time);
   static void histogram_request_document_size(State * s, int64 size);
   static void histogram_response_document_size(State * s, int64 size);
   static void user_agent_connection_speed(State * s, ink_hrtime transfer_time, int64 nbytes);

@@ -30,8 +30,8 @@
 
   Basic design:
 
-  1. INK_HTTP_TXN_START_HOOK is added to the main plug-in
-  continuation as a global hook in INKPluginInit().
+  1. TS_HTTP_TXN_START_HOOK is added to the main plug-in
+  continuation as a global hook in TSPluginInit().
 
   2. global_http_handler() is called for each transaction.
 
@@ -39,10 +39,10 @@
   each transaction, register transaction hooks and
   allocates data.
 
-  4. INK_HTTP_(READ|SEND)_(REQUEST|RESPONSE)_HDR_HOOKs log
+  4. TS_HTTP_(READ|SEND)_(REQUEST|RESPONSE)_HDR_HOOKs log
   timing information.
 
-  5. INK_HTTP_TXN_CLOSE retrieves and logs transaction
+  5. TS_HTTP_TXN_CLOSE retrieves and logs transaction
   information,  client request/server response headers
   and timing information.
 
@@ -53,7 +53,7 @@
 #include <sys/time.h>
 
 #include "ts.h"
-#include "ts_private.h"
+#include "experimental.h"
 
 #include "events.h"
 
@@ -77,7 +77,7 @@ typedef struct
 {
   unsigned int txn_id;
 
-  INKAction pending_action;
+  TSAction pending_action;
 
   unsigned int client_ip;
   char *method;
@@ -120,15 +120,15 @@ typedef struct
 
 
 /* Event handler management */
-typedef int (*TransactionStateHandler) (INKCont contp, INKEvent event, void *edata, TransactionData * data);
+typedef int (*TransactionStateHandler) (TSCont contp, TSEvent event, void *edata, TransactionData * data);
 
 
 
 /* Unique txn ID management */
 static unsigned int id = 0;
-static INKMutex id_mutex;
-#define INIT_TXN_ID {id=0; id_mutex=INKMutexCreate(); }
-#define INC_AND_GET_TXN_ID(_x) {INKMutexLock(id_mutex); _x = id++; INKMutexUnlock(id_mutex); }
+static TSMutex id_mutex;
+#define INIT_TXN_ID {id=0; id_mutex=TSMutexCreate(); }
+#define INC_AND_GET_TXN_ID(_x) {TSMutexLock(id_mutex); _x = id++; TSMutexUnlock(id_mutex); }
 
 
 /* Log stuff */
@@ -136,13 +136,13 @@ static INKMutex id_mutex;
 /* The plugin can roll manually its log if this feature is not enabled in TS */
 #ifdef LOG_ROLL
 #define DEFAULT_LOG_NBMAX_ENTRIES 1000000       /* default number max of entries in one transaction log */
-static INKMutex log_mutex;
+static TSMutex log_mutex;
 static int log_nb_rollover;
 static int log_nb_entries;
 static int log_nbmax_entries;
 #endif /* LOG_ROLL */
 
-static INKTextLogObject log;
+static TSTextLogObject log;
 
 
 /*------------------------------------------------------
@@ -151,20 +151,20 @@ FUNCTIONS
 
 TransactionData *transaction_data_alloc();
 void transaction_data_destroy(TransactionData * data);
-int delete_transaction(INKCont contp, TransactionData * data);
-void INKPluginInit(int argc, const char *argv[]);
+int delete_transaction(TSCont contp, TransactionData * data);
+void TSPluginInit(int argc, const char *argv[]);
 void create_new_log();
-int global_http_handler(INKCont contp, INKEvent event, void *edata);
-void new_transaction(INKHttpTxn txnp);
-int transaction_handler(INKCont contp, INKEvent event, void *edata);
-int read_request_hdr_handler(INKCont contp, INKEvent event, void *edata, TransactionData * data);
-int send_request_hdr_handler(INKCont contp, INKEvent event, void *edata, TransactionData * data);
-int read_response_hdr_handler(INKCont contp, INKEvent event, void *edata, TransactionData * data);
-int send_response_hdr_handler(INKCont contp, INKEvent event, void *edata, TransactionData * data);
-int txn_close_handler(INKCont contp, INKEvent event, void *edata, TransactionData * data);
-int retrieve_transaction_info(INKHttpTxn txnp, TransactionData * data);
-int log_transaction_info(INKCont contp, TransactionData * data);
-void print_mime_headers(INKMBuffer bufp, INKMLoc hdr_loc, char **output_string);
+int global_http_handler(TSCont contp, TSEvent event, void *edata);
+void new_transaction(TSHttpTxn txnp);
+int transaction_handler(TSCont contp, TSEvent event, void *edata);
+int read_request_hdr_handler(TSCont contp, TSEvent event, void *edata, TransactionData * data);
+int send_request_hdr_handler(TSCont contp, TSEvent event, void *edata, TransactionData * data);
+int read_response_hdr_handler(TSCont contp, TSEvent event, void *edata, TransactionData * data);
+int send_response_hdr_handler(TSCont contp, TSEvent event, void *edata, TransactionData * data);
+int txn_close_handler(TSCont contp, TSEvent event, void *edata, TransactionData * data);
+int retrieve_transaction_info(TSHttpTxn txnp, TransactionData * data);
+int log_transaction_info(TSCont contp, TransactionData * data);
+void print_mime_headers(TSMBuffer bufp, TSMLoc hdr_loc, char **output_string);
 
 
 
@@ -175,7 +175,7 @@ transaction_data_alloc()
 {
   TransactionData *data;
 
-  data = (TransactionData *) INKmalloc(sizeof(TransactionData));
+  data = (TransactionData *) TSmalloc(sizeof(TransactionData));
 
   data->txn_id = -1;
 
@@ -225,46 +225,46 @@ transaction_data_destroy(TransactionData * data)
 {
   if (data) {
 
-    if ((data->pending_action) && (!INKActionDone(data->pending_action))) {
-      INKActionCancel(data->pending_action);
+    if ((data->pending_action) && (!TSActionDone(data->pending_action))) {
+      TSActionCancel(data->pending_action);
       data->pending_action = NULL;
     }
 
     if (data->method) {
-      INKfree(data->method);
+      TSfree(data->method);
       data->method = NULL;
     }
 
     if (data->full_url) {
-      INKfree(data->full_url);
+      TSfree(data->full_url);
       data->full_url = NULL;
     }
 
     if (data->content_type) {
-      INKfree(data->content_type);
+      TSfree(data->content_type);
       data->content_type = NULL;
     }
 
     if (data->client_request_header) {
-      INKfree(data->client_request_header);
+      TSfree(data->client_request_header);
     }
 
     if (data->server_response_header) {
-      INKfree(data->server_response_header);
+      TSfree(data->server_response_header);
     }
 
-    INKfree(data);
+    TSfree(data);
   }
 }
 
 
 static int
-delete_transaction(INKCont contp, TransactionData * data)
+delete_transaction(TSCont contp, TransactionData * data)
 {
-  INKDebug(HIGH, "[%u] Transaction shutdown", data->txn_id);
+  TSDebug(HIGH, "[%u] Transaction shutdown", data->txn_id);
 
   transaction_data_destroy(data);
-  INKContDestroy(contp);
+  TSContDestroy(contp);
 
   return SUCCESS;
 }
@@ -275,7 +275,7 @@ delete_transaction(INKCont contp, TransactionData * data)
  *
  */
 void
-INKPluginInit(int argc, const char *argv[])
+TSPluginInit(int argc, const char *argv[])
 {
 
   INIT_TXN_ID;                  /* init stuff related to unique txn id */
@@ -288,10 +288,10 @@ INKPluginInit(int argc, const char *argv[])
       log_nbmax_entries = ival;
     }
   }
-  INKDebug(HIGH, "Nb max entries in log set to %d", log_nbmax_entries);
+  TSDebug(HIGH, "Nb max entries in log set to %d", log_nbmax_entries);
 
   /* create mutex, used when we roll over logs */
-  log_mutex = INKMutexCreate();
+  log_mutex = TSMutexCreate();
   log_nb_rollover = 0;
   log_nb_entries = 0;
 #endif /* LOG_ROLL */
@@ -299,7 +299,7 @@ INKPluginInit(int argc, const char *argv[])
   log = NULL;
   create_new_log();
 
-  INKHttpHookAdd(INK_HTTP_TXN_START_HOOK, INKContCreate(global_http_handler, NULL));
+  TSHttpHookAdd(TS_HTTP_TXN_START_HOOK, TSContCreate(global_http_handler, NULL));
 }
 
 
@@ -315,11 +315,11 @@ create_new_log()
   struct timeval t;
 
 #ifdef LOG_ROLL
-  INKDebug(HIGH, "Rolling over transaction logs");
+  TSDebug(HIGH, "Rolling over transaction logs");
 
   /* If there is an already existing log object, close it. */
   if (log) {
-    INKTextLogObjectDestroy(log);
+    TSTextLogObjectDestroy(log);
   }
 
   /* Then create a new one with a different name */
@@ -333,55 +333,55 @@ create_new_log()
   sprintf(logname, "climate.log");
 #endif /* LOG_ROLL */
 
-  error = INKTextLogObjectCreate(logname, INK_LOG_MODE_ADD_TIMESTAMP, &log);
+  error = TSTextLogObjectCreate(logname, TS_LOG_MODE_ADD_TIMESTAMP, &log);
 }
 
 
 static int
-global_http_handler(INKCont contp, INKEvent event, void *edata)
+global_http_handler(TSCont contp, TSEvent event, void *edata)
 {
-  INKHttpTxn txnp = (INKHttpTxn) edata;
+  TSHttpTxn txnp = (TSHttpTxn) edata;
 
   switch (event) {
 
-  case INK_EVENT_HTTP_TXN_START:
-    INKDebug(LOW, "Event INK_EVENT_HTTP_TXN_START");
+  case TS_EVENT_HTTP_TXN_START:
+    TSDebug(LOW, "Event TS_EVENT_HTTP_TXN_START");
     new_transaction(txnp);
     break;
 
   default:
-    INKAssert(!"Unexpected Event");
+    TSAssert(!"Unexpected Event");
     break;
   }
 
-  INKHttpTxnReenable(txnp, INK_EVENT_HTTP_CONTINUE);
+  TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
   return 0;
 }
 
 
 static void
-new_transaction(INKHttpTxn txnp)
+new_transaction(TSHttpTxn txnp)
 {
-  INKCont p_contp;
+  TSCont p_contp;
   TransactionData *p_data;
 
   /* Create transaction structure */
-  p_contp = INKContCreate(transaction_handler, INKMutexCreate());
+  p_contp = TSContCreate(transaction_handler, TSMutexCreate());
   p_data = transaction_data_alloc();
-  INKContDataSet(p_contp, p_data);
+  TSContDataSet(p_contp, p_data);
 
   INC_AND_GET_TXN_ID(p_data->txn_id);
 
   /* Register transaction to HTTP hooks */
-  INKHttpTxnHookAdd(txnp, INK_HTTP_READ_REQUEST_HDR_HOOK, p_contp);
-  INKHttpTxnHookAdd(txnp, INK_HTTP_SEND_REQUEST_HDR_HOOK, p_contp);
-  INKHttpTxnHookAdd(txnp, INK_HTTP_READ_RESPONSE_HDR_HOOK, p_contp);
-  INKHttpTxnHookAdd(txnp, INK_HTTP_SEND_RESPONSE_HDR_HOOK, p_contp);
-  INKHttpTxnHookAdd(txnp, INK_HTTP_TXN_CLOSE_HOOK, p_contp);
+  TSHttpTxnHookAdd(txnp, TS_HTTP_READ_REQUEST_HDR_HOOK, p_contp);
+  TSHttpTxnHookAdd(txnp, TS_HTTP_SEND_REQUEST_HDR_HOOK, p_contp);
+  TSHttpTxnHookAdd(txnp, TS_HTTP_READ_RESPONSE_HDR_HOOK, p_contp);
+  TSHttpTxnHookAdd(txnp, TS_HTTP_SEND_RESPONSE_HDR_HOOK, p_contp);
+  TSHttpTxnHookAdd(txnp, TS_HTTP_TXN_CLOSE_HOOK, p_contp);
 
-  p_data->txn_start_time = INKBasedTimeGetD();
+  p_data->txn_start_time = TSBasedTimeGetD();
 
-  INKDebug(HIGH, "[%u] Added transaction !", p_data->txn_id);
+  TSDebug(HIGH, "[%u] Added transaction !", p_data->txn_id);
 }
 
 
@@ -392,27 +392,27 @@ new_transaction(INKHttpTxn txnp)
   Returns SUCCESS/FAILURE
   -------------------------------------------------------------------------*/
 int
-transaction_handler(INKCont contp, INKEvent event, void *edata)
+transaction_handler(TSCont contp, TSEvent event, void *edata)
 {
   TransactionData *data;
   TransactionStateHandler handler;
 
-  data = (TransactionData *) INKContDataGet(contp);
+  data = (TransactionData *) TSContDataGet(contp);
 
   switch (event) {
-  case INK_EVENT_HTTP_READ_REQUEST_HDR:
+  case TS_EVENT_HTTP_READ_REQUEST_HDR:
     handler = (TransactionStateHandler) & read_request_hdr_handler;
     break;
-  case INK_EVENT_HTTP_SEND_REQUEST_HDR:
+  case TS_EVENT_HTTP_SEND_REQUEST_HDR:
     handler = (TransactionStateHandler) & send_request_hdr_handler;
     break;
-  case INK_EVENT_HTTP_READ_RESPONSE_HDR:
+  case TS_EVENT_HTTP_READ_RESPONSE_HDR:
     handler = (TransactionStateHandler) & read_response_hdr_handler;
     break;
-  case INK_EVENT_HTTP_SEND_RESPONSE_HDR:
+  case TS_EVENT_HTTP_SEND_RESPONSE_HDR:
     handler = (TransactionStateHandler) & send_response_hdr_handler;
     break;
-  case INK_EVENT_HTTP_TXN_CLOSE:
+  case TS_EVENT_HTTP_TXN_CLOSE:
     handler = (TransactionStateHandler) & txn_close_handler;
     break;
   }
@@ -427,11 +427,11 @@ transaction_handler(INKCont contp, INKEvent event, void *edata)
   Return SUCCESS/FAILURE
   -------------------------------------------------------------------------*/
 static int
-read_request_hdr_handler(INKCont contp, INKEvent event, void *edata, TransactionData * data)
+read_request_hdr_handler(TSCont contp, TSEvent event, void *edata, TransactionData * data)
 {
-  INKHttpTxn txnp = (INKHttpTxn) edata;
-  data->read_request_hdr_time = INKBasedTimeGetD();
-  INKHttpTxnReenable(txnp, INK_EVENT_HTTP_CONTINUE);
+  TSHttpTxn txnp = (TSHttpTxn) edata;
+  data->read_request_hdr_time = TSBasedTimeGetD();
+  TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
   return SUCCESS;
 }
 
@@ -441,11 +441,11 @@ read_request_hdr_handler(INKCont contp, INKEvent event, void *edata, Transaction
   Return SUCCESS/FAILURE
   -------------------------------------------------------------------------*/
 static int
-send_request_hdr_handler(INKCont contp, INKEvent event, void *edata, TransactionData * data)
+send_request_hdr_handler(TSCont contp, TSEvent event, void *edata, TransactionData * data)
 {
-  INKHttpTxn txnp = (INKHttpTxn) edata;
-  data->send_request_hdr_time = INKBasedTimeGetD();
-  INKHttpTxnReenable(txnp, INK_EVENT_HTTP_CONTINUE);
+  TSHttpTxn txnp = (TSHttpTxn) edata;
+  data->send_request_hdr_time = TSBasedTimeGetD();
+  TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
   return SUCCESS;
 }
 
@@ -456,11 +456,11 @@ send_request_hdr_handler(INKCont contp, INKEvent event, void *edata, Transaction
   Return SUCCESS/FAILURE
   -------------------------------------------------------------------------*/
 static int
-read_response_hdr_handler(INKCont contp, INKEvent event, void *edata, TransactionData * data)
+read_response_hdr_handler(TSCont contp, TSEvent event, void *edata, TransactionData * data)
 {
-  INKHttpTxn txnp = (INKHttpTxn) edata;
-  data->read_response_hdr_time = INKBasedTimeGetD();
-  INKHttpTxnReenable(txnp, INK_EVENT_HTTP_CONTINUE);
+  TSHttpTxn txnp = (TSHttpTxn) edata;
+  data->read_response_hdr_time = TSBasedTimeGetD();
+  TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
   return SUCCESS;
 }
 
@@ -471,11 +471,11 @@ read_response_hdr_handler(INKCont contp, INKEvent event, void *edata, Transactio
   Return SUCCESS/FAILURE
   -------------------------------------------------------------------------*/
 static int
-send_response_hdr_handler(INKCont contp, INKEvent event, void *edata, TransactionData * data)
+send_response_hdr_handler(TSCont contp, TSEvent event, void *edata, TransactionData * data)
 {
-  INKHttpTxn txnp = (INKHttpTxn) edata;
-  data->send_response_hdr_time = INKBasedTimeGetD();
-  INKHttpTxnReenable(txnp, INK_EVENT_HTTP_CONTINUE);
+  TSHttpTxn txnp = (TSHttpTxn) edata;
+  data->send_response_hdr_time = TSBasedTimeGetD();
+  TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
   return SUCCESS;
 }
 
@@ -486,11 +486,11 @@ send_response_hdr_handler(INKCont contp, INKEvent event, void *edata, Transactio
   Return SUCCESS/FAILURE
   -------------------------------------------------------------------------*/
 static int
-txn_close_handler(INKCont contp, INKEvent event, void *edata, TransactionData * data)
+txn_close_handler(TSCont contp, TSEvent event, void *edata, TransactionData * data)
 {
-  INKHttpTxn txnp = (INKHttpTxn) edata;
+  TSHttpTxn txnp = (TSHttpTxn) edata;
 
-  data->txn_close_time = INKBasedTimeGetD();
+  data->txn_close_time = TSBasedTimeGetD();
 
   /* Retrieve transaction information and headers */
 
@@ -502,7 +502,7 @@ txn_close_handler(INKCont contp, INKEvent event, void *edata, TransactionData * 
 
   delete_transaction(contp, data);
 
-  INKHttpTxnReenable(txnp, INK_EVENT_HTTP_CONTINUE);
+  TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
 
   return SUCCESS;
 }
@@ -515,18 +515,18 @@ txn_close_handler(INKCont contp, INKEvent event, void *edata, TransactionData * 
   Returns SUCCESS/FAILURE
   -------------------------------------------------------------------------*/
 static int
-retrieve_transaction_info(INKHttpTxn txnp, TransactionData * data)
+retrieve_transaction_info(TSHttpTxn txnp, TransactionData * data)
 {
   char *bp_url;
-  INKMBuffer buf_resp, buf_req;
-  INKMLoc hdr_resp_loc, hdr_req_loc, str_loc;
+  TSMBuffer buf_resp, buf_req;
+  TSMLoc hdr_resp_loc, hdr_req_loc, str_loc;
   const char *path;
   const char *host;
   int l_host = 0;
   int l_path = 0;
-  INKMLoc cookie_loc;
+  TSMLoc cookie_loc;
   const char *cookie_value = NULL;
-  INKMLoc ctype_loc;
+  TSMLoc ctype_loc;
   const char *ctype_value = NULL;
   int str_len, cookie_len, ctype_len;
   int req_by_TS, resp_by_TS, req_by_FP, resp_by_FP;
@@ -535,73 +535,73 @@ retrieve_transaction_info(INKHttpTxn txnp, TransactionData * data)
 
   /* Retrieve information about the transaction */
 
-  INKHttpTxnStartTimeGetD(txnp, &(data->txn_time_start));
-  INKHttpTxnEndTimeGetD(txnp, &(data->txn_time_end));
+  TSHttpTxnStartTimeGetD(txnp, &(data->txn_time_start));
+  TSHttpTxnEndTimeGetD(txnp, &(data->txn_time_end));
 
   /* Retrieve headers */
 
-  if (!INKHttpTxnClientReqGet(txnp, &buf_req, &hdr_req_loc)) {
-    INKError("Could not access to client's request http header");
+  if (!TSHttpTxnClientReqGet(txnp, &buf_req, &hdr_req_loc)) {
+    TSError("Could not access to client's request http header");
   } else {
     print_mime_headers(buf_req, hdr_req_loc, &(data->client_request_header));
 
     /* Compute HTTP method */
-    str = (char *) INKHttpHdrMethodGet(buf_req, hdr_req_loc, &str_len);
-    data->method = INKmalloc(str_len + 1);
+    str = (char *) TSHttpHdrMethodGet(buf_req, hdr_req_loc, &str_len);
+    data->method = TSmalloc(str_len + 1);
     memcpy(data->method, str, str_len);
     data->method[str_len] = '\0';
-    INKHandleStringRelease(buf_req, hdr_req_loc, str);
+    TSHandleStringRelease(buf_req, hdr_req_loc, str);
 
     /* Get client HTTP version */
-    data->client_version = INKHttpHdrVersionGet(buf_req, hdr_req_loc);
+    data->client_version = TSHttpHdrVersionGet(buf_req, hdr_req_loc);
 
     /* Compute Full URL */
-    str_loc = INKHttpHdrUrlGet(buf_req, hdr_req_loc);
-    str = INKUrlStringGet(buf_req, str_loc, &str_len);
-    data->full_url = INKmalloc(str_len + 1);
+    str_loc = TSHttpHdrUrlGet(buf_req, hdr_req_loc);
+    str = TSUrlStringGet(buf_req, str_loc, &str_len);
+    data->full_url = TSmalloc(str_len + 1);
     memcpy(data->full_url, str, str_len);
     data->full_url[str_len] = '\0';
-    INKfree(str);
+    TSfree(str);
 
-    INKHandleMLocRelease(buf_req, INK_NULL_MLOC, hdr_req_loc);
+    TSHandleMLocRelease(buf_req, TS_NULL_MLOC, hdr_req_loc);
   }
 
-  if (!INKHttpTxnServerRespGet(txnp, &buf_resp, &hdr_resp_loc)) {
-    INKError("Could not access to server response header");
+  if (!TSHttpTxnServerRespGet(txnp, &buf_resp, &hdr_resp_loc)) {
+    TSError("Could not access to server response header");
   } else {
     print_mime_headers(buf_resp, hdr_resp_loc, &(data->server_response_header));
 
     /* Get response status code */
-    data->resp_status_code = INKHttpHdrStatusGet(buf_resp, hdr_resp_loc);
+    data->resp_status_code = TSHttpHdrStatusGet(buf_resp, hdr_resp_loc);
 
     /* Get server HTTP version */
-    data->server_version = INKHttpHdrVersionGet(buf_resp, hdr_resp_loc);
+    data->server_version = TSHttpHdrVersionGet(buf_resp, hdr_resp_loc);
 
-    INKHandleMLocRelease(buf_resp, INK_NULL_MLOC, hdr_resp_loc);
+    TSHandleMLocRelease(buf_resp, TS_NULL_MLOC, hdr_resp_loc);
   }
 
   /* Compute client ip */
-  data->client_ip = INKHttpTxnClientIPGet(txnp);
+  data->client_ip = TSHttpTxnClientIPGet(txnp);
 
   /* Compute server ip */
-  data->server_ip = INKHttpTxnServerIPGet(txnp);
+  data->server_ip = TSHttpTxnServerIPGet(txnp);
 
   /* Get cache lookup status */
-  INKHttpTxnCacheLookupStatusGet(txnp, &(data->cache_lookup_status));
+  TSHttpTxnCacheLookupStatusGet(txnp, &(data->cache_lookup_status));
 
   /* Get client abort */
-  data->client_abort = INKHttpTxnClientAborted(txnp);
+  data->client_abort = TSHttpTxnClientAborted(txnp);
 
   /* Get number of header and body bytes for all transfers */
 
-  INKHttpTxnClientReqHdrBytesGet(txnp, &(data->client_req_hdr_bytes));
-  INKHttpTxnClientReqBodyBytesGet(txnp, &(data->client_req_body_bytes));
-  INKHttpTxnClientRespHdrBytesGet(txnp, &(data->client_resp_hdr_bytes));
-  INKHttpTxnClientRespBodyBytesGet(txnp, &(data->client_resp_body_bytes));
-  INKHttpTxnServerReqHdrBytesGet(txnp, &(data->server_req_hdr_bytes));
-  INKHttpTxnServerReqBodyBytesGet(txnp, &(data->server_req_body_bytes));
-  INKHttpTxnServerRespHdrBytesGet(txnp, &(data->server_resp_hdr_bytes));
-  INKHttpTxnServerRespBodyBytesGet(txnp, &(data->server_resp_body_bytes));
+  TSHttpTxnClientReqHdrBytesGet(txnp, &(data->client_req_hdr_bytes));
+  TSHttpTxnClientReqBodyBytesGet(txnp, &(data->client_req_body_bytes));
+  TSHttpTxnClientRespHdrBytesGet(txnp, &(data->client_resp_hdr_bytes));
+  TSHttpTxnClientRespBodyBytesGet(txnp, &(data->client_resp_body_bytes));
+  TSHttpTxnServerReqHdrBytesGet(txnp, &(data->server_req_hdr_bytes));
+  TSHttpTxnServerReqBodyBytesGet(txnp, &(data->server_req_body_bytes));
+  TSHttpTxnServerRespHdrBytesGet(txnp, &(data->server_resp_hdr_bytes));
+  TSHttpTxnServerRespBodyBytesGet(txnp, &(data->server_resp_body_bytes));
 
 }
 
@@ -613,11 +613,11 @@ retrieve_transaction_info(INKHttpTxn txnp, TransactionData * data)
   Returns SUCCESS/FAILURE
   -------------------------------------------------------------------------*/
 static int
-log_transaction_info(INKCont contp, TransactionData * data)
+log_transaction_info(TSCont contp, TransactionData * data)
 {
   double txn_time = 0;
 
-  INKDebug(MED, "[%u] Logging stats", data->txn_id);
+  TSDebug(MED, "[%u] Logging stats", data->txn_id);
 
   if (!log) {
     return FAILURE;
@@ -628,7 +628,7 @@ log_transaction_info(INKCont contp, TransactionData * data)
   txn_time = txn_time / 1000000.0;      /* convert nanosec to msec */
 
 #ifdef LOG_ROLL
-  INKMutexLock(log_mutex);
+  TSMutexLock(log_mutex);
 
   log_nb_entries++;
   if (log_nb_entries > log_nbmax_entries) {
@@ -636,7 +636,7 @@ log_transaction_info(INKCont contp, TransactionData * data)
   }
 #endif /* LOG_ROLL */
 
-  INKTextLogObjectWrite(log,
+  TSTextLogObjectWrite(log,
                         "|%d.%d.%d.%d|%s|%d|%s|%d|%d|%d.%d.%d.%d|%d|%d|%s|%d|%d|%d|%d|%d|%d|%d|%d|%ld|%0.f|%0.f|%0.f|%0.f|%0.f|%0.f|%s|%s",
 /*    client                     server               bytes                       time                    */
                         IP_a(data->client_ip), IP_b(data->client_ip),
@@ -670,7 +670,7 @@ log_transaction_info(INKCont contp, TransactionData * data)
 
 
 #ifdef LOG_ROLL
-  INKMutexUnlock(log_mutex);
+  TSMutexUnlock(log_mutex);
 #endif /* LOG_ROLL */
 
   return SUCCESS;
@@ -683,52 +683,52 @@ log_transaction_info(INKCont contp, TransactionData * data)
   Outputs the full header to a string
   -------------------------------------------------------------------------*/
 static void
-print_mime_headers(INKMBuffer bufp, INKMLoc hdr_loc, char **output_string)
+print_mime_headers(TSMBuffer bufp, TSMLoc hdr_loc, char **output_string)
 {
 
-  INKIOBuffer output_buffer;
-  INKIOBufferReader reader;
+  TSIOBuffer output_buffer;
+  TSIOBufferReader reader;
   int total_avail;
 
-  INKIOBufferBlock block;
+  TSIOBufferBlock block;
   const char *block_start;
   int block_avail;
 
   int output_len;
   char *line_feed;
 
-  output_buffer = INKIOBufferCreate();
+  output_buffer = TSIOBufferCreate();
 
   if (!output_buffer) {
-    INKError("couldn't allocate IOBuffer\n");
+    TSError("couldn't allocate IOBuffer\n");
   }
 
-  reader = INKIOBufferReaderAlloc(output_buffer);
+  reader = TSIOBufferReaderAlloc(output_buffer);
 
   /* This will print  just MIMEFields and not
      the http request line */
-  INKMimeHdrPrint(bufp, hdr_loc, output_buffer);
+  TSMimeHdrPrint(bufp, hdr_loc, output_buffer);
 
-  INKHandleMLocRelease(bufp, INK_NULL_MLOC, hdr_loc);
+  TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
 
   /* Find out how the big the complete header is by
      seeing the total bytes in the buffer.  We need to
      look at the buffer rather than the first block to
      see the size of the entire header */
-  total_avail = INKIOBufferReaderAvail(reader);
+  total_avail = TSIOBufferReaderAvail(reader);
 
   /* Allocate the string with an extra byte for the string
      terminator */
-  *output_string = (char *) INKmalloc(total_avail + 1);
+  *output_string = (char *) TSmalloc(total_avail + 1);
   output_len = 0;
 
   /* We need to loop over all the buffer blocks to make
      sure we get the complete header since the header can
      be in multiple blocks */
-  block = INKIOBufferReaderStart(reader);
+  block = TSIOBufferReaderStart(reader);
   while (block) {
 
-    block_start = INKIOBufferBlockReadStart(block, reader, &block_avail);
+    block_start = TSIOBufferBlockReadStart(block, reader, &block_avail);
 
     /* We'll get a block pointer back even if there is no data
        left to read so check for this condition and break out of
@@ -743,11 +743,11 @@ print_mime_headers(INKMBuffer bufp, INKMLoc hdr_loc, char **output_string)
     output_len += block_avail;
 
     /* Consume the data so that we get to the next block */
-    INKIOBufferReaderConsume(reader, block_avail);
+    TSIOBufferReaderConsume(reader, block_avail);
 
     /* Get the next block now that we've consumed the
        data off the last block */
-    block = INKIOBufferReaderStart(reader);
+    block = TSIOBufferReaderStart(reader);
   }
 
   /* Terminate the string */
@@ -774,7 +774,7 @@ print_mime_headers(INKMBuffer bufp, INKMLoc hdr_loc, char **output_string)
   }
 
 
-  /* Free up the INKIOBuffer that we used to print out the header */
-  INKIOBufferReaderFree(reader);
-  INKIOBufferDestroy(output_buffer);
+  /* Free up the TSIOBuffer that we used to print out the header */
+  TSIOBufferReaderFree(reader);
+  TSIOBufferDestroy(output_buffer);
 }

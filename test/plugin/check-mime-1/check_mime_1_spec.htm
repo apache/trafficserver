@@ -27,12 +27,12 @@
 <p><font size="+1"><b>Overview</b></font></p>
 <p> This plugin is composed of three parts:</p>
 <ol>
-  <li>Test the functions in INKMimeHdr* and INKMimeParser* categories.</li>
-  <li>Test the functions in INKHttpHdr* and INKUrl* categories.</li>
-  <li>Call INKHttpHdrReasonLookup and print out the default reason for each status.</li>
+  <li>Test the functions in TSMimeHdr* and TSMimeParser* categories.</li>
+  <li>Test the functions in TSHttpHdr* and TSUrl* categories.</li>
+  <li>Call TSHttpHdrReasonLookup and print out the default reason for each status.</li>
 </ol>
 <p><font size="+1"><b>Feature Description</b></font></p>
-<p>In INKPluginInit(), the plugin calls three functions:</p>
+<p>In TSPluginInit(), the plugin calls three functions:</p>
 <ul>
   <li> mimeHdrHandler()</li>
   <li>httpHdrHandler()</li>
@@ -45,7 +45,7 @@
 <p>httpHdrHandler() parses a MIME header, parsed a URL and set the parsed URL 
   to the parsed HTTP header and prints out the modified HTTP header. It then clones 
   the HTTP header and the URL, and prints out the cloned URL.</p>
-<p>httpHdrReasonHandler() calls INKHttpHdrReasonLookup for each status and prints 
+<p>httpHdrReasonHandler() calls TSHttpHdrReasonLookup for each status and prints 
   out the default reason.</p>
 </body>
 </html>

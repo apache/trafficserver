@@ -32,10 +32,9 @@
 #include "ProxyConfig.h"
 #include "StatPages.h"
 #include "HdrUtils.h"
-#include "CacheInspectorAllow.h"
 #include "MatcherUtils.h"
 
-#define MAX_STAT_PAGES      100
+#define MAX_STAT_PAGES      32
 
 
 // Globals
@@ -47,8 +46,7 @@ static struct
   StatPagesFunc func;
 } stat_pages[MAX_STAT_PAGES];
 
-static int n_stat_pages = 0;
-
+volatile static int n_stat_pages = 0;
 
 void
 StatPagesManager::init()
@@ -71,17 +69,15 @@ StatPagesManager::handle_http(Continuation * cont, HTTPHdr * header, int client_
 {
   URL *url = header->url_get();
 
-  if (((m_enabled == 1 || m_enabled == 3) &&
-       is_cache_inspector_page(url) &&
-       (!cache_inspector_allow_table || cache_inspector_allow_table->match(client_ip))) ||
+  if (((m_enabled == 1 || m_enabled == 3) && is_cache_inspector_page(url)) ||
       ((m_enabled == 2 || m_enabled == 3) && is_stat_page(url) && !is_cache_inspector_page(url))) {
     int host_len;
     char host[1024];
     const char *h;
     int i;
+
     h = url->host_get(&host_len);
-    strncpy(host, h, host_len);
-    host[host_len] = '\0';
+    ink_strncpy(host, h, host_len >= 1023 ? 1024 : host_len + 1);
     unescapifyStr(host);
     host_len = strlen(host);
 
@@ -98,48 +94,33 @@ StatPagesManager::handle_http(Continuation * cont, HTTPHdr * header, int client_
 
 bool StatPagesManager::is_stat_page(URL * url)
 {
-  int
-    length;
-  const char *
-    h = url->host_get(&length);
-  //Bug fixed by YTS Team, yamsat BZ58899
-  char *
-    host = (char *) xmalloc(length + 1);
-  if (h == NULL || length < 2) {
-    xfree(host);
-    return false;
-  }
+  int length;
+  const char *h = url->host_get(&length);
+  char host[1024];
 
-  strncpy(host, h, length);
-  host[length] = '\0';
+  if (h == NULL || length < 2)
+    return false;
+
+  ink_strncpy(host, h, length >= 1023 ? 1024 : length + 1);
   unescapifyStr(host);
   length = strlen(host);
-//return ((host[0] == '{') && (host[length-1] == '}'));
-//Bug fixed by YTS Team, yamsat BZ58899
-  bool
-    retVal;
-  if ((host[0] == '{') && (host[length - 1] == '}'))
-    retVal = true;
-  else
-    retVal = false;
-  xfree(host);
-  return retVal;
 
+  if ((host[0] == '{') && (host[length - 1] == '}'))
+    return true;
+
+  return false;
 }
 
 bool StatPagesManager::is_cache_inspector_page(URL * url)
 {
-  int
-    length;
-  const char *
-    h = url->host_get(&length);
-  char
-    host[1024];
-  if (h == NULL || length < 2) {
-    return false;
-  }
+  int length;
+  const char *h = url->host_get(&length);
+  char host[1024];
 
-  strncpy(host, h, length);
+  if (h == NULL || length < 2)
+    return false;
+
+  ink_strncpy(host, h, length >= 1023 ? 1024 : length + 1);
   host[length] = '\0';
   unescapifyStr(host);
   length = strlen(host);

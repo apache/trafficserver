@@ -43,10 +43,7 @@
 //#include "ink_ctype.h"
 #include "SimpleTokenizer.h"
 
-const char *LogFilter::OPERATOR_NAME[] = { "MATCH", "CASE_INSENSITIVE_MATCH",
-  "CONTAIN", "CASE_INSENSITIVE_CONTAIN"
-};
-
+const char *LogFilter::OPERATOR_NAME[] = { "MATCH", "CASE_INSENSITIVE_MATCH","CONTAIN", "CASE_INSENSITIVE_CONTAIN" };
 const char *LogFilter::ACTION_NAME[] = { "REJECT", "ACCEPT" };
 
 /*-------------------------------------------------------------------------
@@ -56,20 +53,8 @@ const char *LogFilter::ACTION_NAME[] = { "REJECT", "ACCEPT" };
   global_field_list to get the log field, but this is an unnecessary dependency
   between the classes and I think should be removed.     ltavera
   -------------------------------------------------------------------------*/
-
 LogFilter::LogFilter(const char *name, LogField * field, LogFilter::Action action, LogFilter::Operator oper)
-  :
-m_name(xstrdup(name))
-  ,
-m_field(NULL)
-  ,
-m_action(action)
-  ,
-m_operator(oper)
-  ,
-m_type(INT_FILTER)
-  ,
-m_num_values(0)
+  : m_name(xstrdup(name)), m_field(NULL) , m_action(action), m_operator(oper), m_type(INT_FILTER), m_num_values(0)
 {
   m_field = NEW(new LogField(*field));
   ink_assert(m_field);
@@ -78,177 +63,16 @@ m_num_values(0)
 /*-------------------------------------------------------------------------
   LogFilter::~LogFilter
   -------------------------------------------------------------------------*/
-
 LogFilter::~LogFilter()
 {
   xfree(m_name);
   delete m_field;
 }
 
-/*-------------------------------------------------------------------------
-  LogFilter::filter_from_specification
-
-  Build a LogFilter object from the given logs.config specification.
-  -------------------------------------------------------------------------*/
-
-LogFilter *
-LogFilter::filter_from_specification(char *spec,
-                                     const LogFormatList & format_list,
-                                     const LogFieldList & field_list, char **format_name)
-{
-  LogFilter *filter;
-  LogFormat *format;
-  LogField *field;
-  char *token;
-  char *field_name;
-  char *value;
-  Operator oper = MATCH;        /* lv: just to make gcc happy */
-
-
-  // default action is REJECT to conform to semantics of old format
-  //
-  Action action = REJECT;
-
-  // First is the word "filter"
-  //
-  token = strtok(spec, ":");
-  if (token == NULL) {
-    Debug("log2-filter", "token expected");
-    return NULL;
-  }
-  if (!strcasecmp(token, "filter")) {
-    Debug("log2-filter", "this is a filter");
-  } else {
-    Debug("log2-filter", "should be 'filter'");
-    return NULL;
-  }
-
-  // Next is the name of a format
-  //
-  token = strtok(NULL, ":");
-  if (token == NULL) {
-    Debug("log2-filter", "token expected");
-    return NULL;
-  }
-
-  *format_name = xstrdup(token);
-  if (strcasecmp(*format_name, "_global_") != 0) {
-    format = format_list.find_by_name(*format_name);
-    if (format == NULL) {
-      Warning("There is no format named %s for this filter", *format_name);
-      return NULL;
-    }
-  }
-  // Next is the field name
-  //
-  token = strtok(NULL, ":");
-  if (token == NULL) {
-    Debug("log2-filter", "token expected");
-    return NULL;
-  }
-  field_name = token;
-  char *end = field_name + strlen(token);
-  field_name += 2;              // get past "%<"
-  if (field_name >= end) {
-    Warning("Invalid field specification in filter: %s", token);
-    return NULL;
-  }
-  char *p = end;
-  if (*(p - 1) != '>') {
-    Warning("Invalid field specification in filter: %s", token);
-    return NULL;
-  }
-  *(p - 1) = '\0';
-
-  field = field_list.find_by_symbol(field_name);
-
-  if (field == NULL) {
-    Warning("There is no field named %s ", field_name);
-    return NULL;
-  }
-  // Next is the operator
-  //
-  token = strtok(NULL, ":");
-  if (token == NULL) {
-    Debug("log2-filter", "token expected");
-    return NULL;
-  }
-  int op;
-  for (op = 0; op < N_OPERATORS; ++op) {
-    if (strcasecmp(token, OPERATOR_NAME[op]) == 0) {
-      oper = (Operator) op;
-      break;
-    }
-  }
-  if (op == N_OPERATORS) {
-    // NOMATCH is no longer a valid operator, but it is supported
-    // for backward compatibility (for traditional config only)
-    //
-    if (strcasecmp(token, "NOMATCH") == 0) {
-      action = ACCEPT;
-      oper = MATCH;
-    } else {
-      Warning("Invalid operator \"$s\" for this filter.", token);
-      return NULL;
-    }
-  }
-  // Last is the comparison value
-  //
-  token = strtok(NULL, ":");
-  if (token == NULL) {
-    Debug("log2-filter", "token expected");
-    return NULL;
-  }
-  value = token;
-
-  // create a unique filter name
-  //
-  const size_t buff_size = 256;
-  char filter_name[buff_size];
-
-  snprintf(filter_name, buff_size, "%s: %s %s %s", *format_name, field_name, OPERATOR_NAME[oper], value);
-
-  // Ok, now create the LogFilter.  There are two types: int and string
-  // filters.  Look at the field type to determine which is the one to
-  // use.
-  //
-  switch (field->type()) {
-
-  case LogField::sINT:
-    filter = NEW(new LogFilterInt(filter_name, field, action, oper, value));
-    ink_assert(filter != NULL);
-    if (filter->get_num_values() == 0) {
-      Warning("No valid comparison value(s) (%s) for field %s while "
-              "defining filter %s\nFilter will not be used", value, field_name, filter_name);
-      delete filter;
-      return NULL;
-    }
-    break;
-
-  case LogField::dINT:
-    // FIXME: This is a double-int for http-version fields and
-    // should have its own filter type.
-    //
-    Warning("Cannot create filter for double-int field: %s", field_name);
-    return NULL;
-
-  case LogField::STRING:
-    filter = NEW(new LogFilterString(filter_name, field, action, oper, value));
-    ink_assert(filter != NULL);
-    break;
-
-  default:
-    Warning("Invalid log field type for field %s", field_name);
-    return NULL;
-  }
-
-  return filter;
-}
 
 /*-------------------------------------------------------------------------
   LogFilterString::LogFilterString
   -------------------------------------------------------------------------*/
-
 void
 LogFilterString::_setValues(size_t n, char **value)
 {
@@ -275,8 +99,7 @@ LogFilterString::_setValues(size_t n, char **value)
 
 LogFilterString::LogFilterString(const char *name, LogField * field,
                                  LogFilter::Action action, LogFilter::Operator oper, char *values)
-  :
-LogFilter(name, field, action, oper)
+  : LogFilter(name, field, action, oper)
 {
   // parse the comma-separated list of values and construct array
   //
@@ -301,15 +124,13 @@ LogFilter(name, field, action, oper)
 
 LogFilterString::LogFilterString(const char *name, LogField * field,
                                  LogFilter::Action action, LogFilter::Operator oper, size_t num_values, char **value)
-  :
-LogFilter(name, field, action, oper)
+  : LogFilter(name, field, action, oper)
 {
   _setValues(num_values, value);
 }
 
 LogFilterString::LogFilterString(const LogFilterString & rhs)
-  :
-LogFilter(rhs.m_name, rhs.m_field, rhs.m_action, rhs.m_operator)
+  : LogFilter(rhs.m_name, rhs.m_field, rhs.m_action, rhs.m_operator)
 {
   _setValues(rhs.m_num_values, rhs.m_value);
 }

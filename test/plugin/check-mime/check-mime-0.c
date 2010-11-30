@@ -52,11 +52,11 @@
 
 
 static void
-printMimeFields(INKMBuffer hdrBuf, INKMLoc mimeHdrLoc, char *debugTag, float section)
+printMimeFields(TSMBuffer hdrBuf, TSMLoc mimeHdrLoc, char *debugTag, float section)
 {
   LOG_SET_FUNCTION_NAME("printMimeFields");
 
-  INKMLoc fieldLoc = NULL, nextFieldLoc = NULL, nextDupFieldLoc = NULL;
+  TSMLoc fieldLoc = NULL, nextFieldLoc = NULL, nextDupFieldLoc = NULL;
 
   int iFieldIndex, iFieldNameLength, iFieldValueLength, iFieldCount, iHdrLength;
   char *outputString = NULL;
@@ -64,90 +64,90 @@ printMimeFields(INKMBuffer hdrBuf, INKMLoc mimeHdrLoc, char *debugTag, float sec
 
   iFieldIndex = -1;
 
-  INKDebug(debugTag, "***********************( %g )***********************", section);
+  TSDebug(debugTag, "***********************( %g )***********************", section);
 
   /* Get the total MIME field count */
-  if ((iFieldCount = INKMimeHdrFieldsCount(hdrBuf, mimeHdrLoc)) == INK_ERROR) {
-    LOG_API_ERROR("INKMimeHdrFieldsCount");
+  if ((iFieldCount = TSMimeHdrFieldsCount(hdrBuf, mimeHdrLoc)) == TS_ERROR) {
+    LOG_API_ERROR("TSMimeHdrFieldsCount");
   } else {
-    INKDebug(debugTag, "(%g) Total # of MIME fields = %d", section, iFieldCount);
+    TSDebug(debugTag, "(%g) Total # of MIME fields = %d", section, iFieldCount);
   }
 
   /* Get the MIME header length */
-  if ((iHdrLength = INKMimeHdrLengthGet(hdrBuf, mimeHdrLoc)) == INK_ERROR) {
-    LOG_API_ERROR("INKMimeHdrLengthGet");
+  if ((iHdrLength = TSMimeHdrLengthGet(hdrBuf, mimeHdrLoc)) == TS_ERROR) {
+    LOG_API_ERROR("TSMimeHdrLengthGet");
   } else {
-    INKDebug(debugTag, "(%g) MIME header length = %d", section, iHdrLength);
+    TSDebug(debugTag, "(%g) MIME header length = %d", section, iHdrLength);
   }
 
-  if ((fieldLoc = INKMimeHdrFieldGet(hdrBuf, mimeHdrLoc, 0)) == INK_ERROR_PTR) {
-    LOG_API_ERROR("INKMimeHdrFieldGet");
+  if ((fieldLoc = TSMimeHdrFieldGet(hdrBuf, mimeHdrLoc, 0)) == TS_ERROR_PTR) {
+    LOG_API_ERROR("TSMimeHdrFieldGet");
   }
 
   /* negative test */
 #ifdef DEBUG
-  if (INKMimeHdrFieldsCount(NULL, mimeHdrLoc) != INK_ERROR) {
-    LOG_ERROR_NEG("INKMimeHdrFieldsCount");
+  if (TSMimeHdrFieldsCount(NULL, mimeHdrLoc) != TS_ERROR) {
+    LOG_ERROR_NEG("TSMimeHdrFieldsCount");
   }
-  if (INKMimeHdrFieldsCount(hdrBuf, NULL) != INK_ERROR) {
-    LOG_ERROR_NEG("INKMimeHdrFieldsCount");
-  }
-
-  if (INKMimeHdrLengthGet(NULL, mimeHdrLoc) != INK_ERROR) {
-    LOG_ERROR_NEG("INKMimeHdrLengthGet");
-  }
-  if (INKMimeHdrLengthGet(hdrBuf, NULL) != INK_ERROR) {
-    LOG_ERROR_NEG("INKMimeHdrLengthGet");
+  if (TSMimeHdrFieldsCount(hdrBuf, NULL) != TS_ERROR) {
+    LOG_ERROR_NEG("TSMimeHdrFieldsCount");
   }
 
-  if (INKMimeHdrFieldNext(NULL, mimeHdrLoc, fieldLoc) != INK_ERROR_PTR) {
-    LOG_ERROR_NEG("INKMimeHdrFieldNext");
+  if (TSMimeHdrLengthGet(NULL, mimeHdrLoc) != TS_ERROR) {
+    LOG_ERROR_NEG("TSMimeHdrLengthGet");
   }
-  if (INKMimeHdrFieldNext(hdrBuf, NULL, fieldLoc) != INK_ERROR_PTR) {
-    LOG_ERROR_NEG("INKMimeHdrFieldNext");
+  if (TSMimeHdrLengthGet(hdrBuf, NULL) != TS_ERROR) {
+    LOG_ERROR_NEG("TSMimeHdrLengthGet");
   }
-  if (INKMimeHdrFieldNext(hdrBuf, mimeHdrLoc, NULL) != INK_ERROR_PTR) {
-    LOG_ERROR_NEG("INKMimeHdrFieldNext");
+
+  if (TSMimeHdrFieldNext(NULL, mimeHdrLoc, fieldLoc) != TS_ERROR_PTR) {
+    LOG_ERROR_NEG("TSMimeHdrFieldNext");
+  }
+  if (TSMimeHdrFieldNext(hdrBuf, NULL, fieldLoc) != TS_ERROR_PTR) {
+    LOG_ERROR_NEG("TSMimeHdrFieldNext");
+  }
+  if (TSMimeHdrFieldNext(hdrBuf, mimeHdrLoc, NULL) != TS_ERROR_PTR) {
+    LOG_ERROR_NEG("TSMimeHdrFieldNext");
   }
 #endif
 
   /* Print all the Mime Field in the MIME header */
   while (fieldLoc) {
     /* store the next field loc here */
-    if ((nextFieldLoc = INKMimeHdrFieldNext(hdrBuf, mimeHdrLoc, fieldLoc)) == INK_ERROR_PTR) {
-      LOG_API_ERROR("INKMimeHdrFieldNext");
+    if ((nextFieldLoc = TSMimeHdrFieldNext(hdrBuf, mimeHdrLoc, fieldLoc)) == TS_ERROR_PTR) {
+      LOG_API_ERROR("TSMimeHdrFieldNext");
     }
 
-    INKDebug(debugTag, "-----------------------");
-    if ((sFieldName = INKMimeHdrFieldNameGet(hdrBuf, mimeHdrLoc, fieldLoc, &iFieldNameLength))
-        == INK_ERROR_PTR) {
-      LOG_API_ERROR("INKMimeHdrFieldNameGet");
+    TSDebug(debugTag, "-----------------------");
+    if ((sFieldName = TSMimeHdrFieldNameGet(hdrBuf, mimeHdrLoc, fieldLoc, &iFieldNameLength))
+        == TS_ERROR_PTR) {
+      LOG_API_ERROR("TSMimeHdrFieldNameGet");
     } else {
-      outputString = INKstrndup(sFieldName, iFieldNameLength);
-      INKDebug(debugTag, "(%g) Field Name[%d] = %s", section, iFieldNameLength, outputString);
+      outputString = TSstrndup(sFieldName, iFieldNameLength);
+      TSDebug(debugTag, "(%g) Field Name[%d] = %s", section, iFieldNameLength, outputString);
       FREE(outputString);
       STR_RELEASE(hdrBuf, mimeHdrLoc, sFieldName);
     }
 
     do {
-      if (INKMimeHdrFieldValueStringGet(hdrBuf, mimeHdrLoc, fieldLoc, iFieldIndex, &sFieldValue,
-                                        &iFieldValueLength) == INK_ERROR) {
-        LOG_API_ERROR("INKMimeHdrFieldValueStringGet");
+      if (TSMimeHdrFieldValueStringGet(hdrBuf, mimeHdrLoc, fieldLoc, iFieldIndex, &sFieldValue,
+                                        &iFieldValueLength) == TS_ERROR) {
+        LOG_API_ERROR("TSMimeHdrFieldValueStringGet");
       } else {
-        outputString = INKstrndup(sFieldValue, iFieldValueLength);
-        INKDebug(debugTag, "(%g) Field Value[%d] = %s", section, iFieldValueLength, outputString);
+        outputString = TSstrndup(sFieldValue, iFieldValueLength);
+        TSDebug(debugTag, "(%g) Field Value[%d] = %s", section, iFieldValueLength, outputString);
         FREE(outputString);
         STR_RELEASE(hdrBuf, mimeHdrLoc, sFieldValue);
       }
 
-      if ((nextDupFieldLoc = INKMimeHdrFieldNextDup(hdrBuf, mimeHdrLoc, fieldLoc)) == INK_ERROR_PTR) {
-        LOG_API_ERROR("INKMimeHdrFieldNextDup");
+      if ((nextDupFieldLoc = TSMimeHdrFieldNextDup(hdrBuf, mimeHdrLoc, fieldLoc)) == TS_ERROR_PTR) {
+        LOG_API_ERROR("TSMimeHdrFieldNextDup");
       }
 
       HANDLE_RELEASE(hdrBuf, mimeHdrLoc, fieldLoc);
       fieldLoc = nextDupFieldLoc;
 
-    } while (nextDupFieldLoc && nextDupFieldLoc != INK_ERROR_PTR);
+    } while (nextDupFieldLoc && nextDupFieldLoc != TS_ERROR_PTR);
 
     fieldLoc = nextFieldLoc;
   }
@@ -156,42 +156,42 @@ printMimeFields(INKMBuffer hdrBuf, INKMLoc mimeHdrLoc, char *debugTag, float sec
 
 /* added by ymou */
 static void
-printField(INKMBuffer bufp, INKMLoc hdr, char *name, char *debugTag, float section)
+printField(TSMBuffer bufp, TSMLoc hdr, char *name, char *debugTag, float section)
 {
   LOG_SET_FUNCTION_NAME("printField");
 
   int i;
   unsigned int j;
   int length, count;
-  INKMLoc field = NULL;
+  TSMLoc field = NULL;
 
-  if ((field = INKMimeHdrFieldFind(bufp, hdr, name, strlen(name))) == INK_ERROR_PTR) {
-    LOG_API_ERROR("INKMimeHdrFieldFind");
+  if ((field = TSMimeHdrFieldFind(bufp, hdr, name, strlen(name))) == TS_ERROR_PTR) {
+    LOG_API_ERROR("TSMimeHdrFieldFind");
   }
   /* FIXME: Error code? */
-  length = INKMimeHdrFieldLengthGet(bufp, hdr, field);
+  length = TSMimeHdrFieldLengthGet(bufp, hdr, field);
 
-  if ((count = INKMimeHdrFieldValuesCount(bufp, hdr, field)) == INK_ERROR) {
-    LOG_API_ERROR("INKMimeHdrFieldValuesCount");
+  if ((count = TSMimeHdrFieldValuesCount(bufp, hdr, field)) == TS_ERROR) {
+    LOG_API_ERROR("TSMimeHdrFieldValuesCount");
   }
-  i = INKMimeHdrFieldValueGetInt(bufp, hdr, field, 0);
-  j = INKMimeHdrFieldValueGetUint(bufp, hdr, field, 1);
+  TSMimeHdrFieldValueIntGet(bufp, hdr, field, 0, &i);
+  TSMimeHdrFieldValueUintGet(bufp, hdr, field, 1, &j);
 
-  INKDebug(debugTag, "***********************( %g )***********************", section);
-  INKDebug(debugTag, "(%g) The length of the field %s = %d", section, name, length);
-  INKDebug(debugTag, "(%g) The count of the field values = %d", section, count);
-  INKDebug(debugTag, "(%g) The values of the field %s are %d and %u", section, name, i, j);
+  TSDebug(debugTag, "***********************( %g )***********************", section);
+  TSDebug(debugTag, "(%g) The length of the field %s = %d", section, name, length);
+  TSDebug(debugTag, "(%g) The count of the field values = %d", section, count);
+  TSDebug(debugTag, "(%g) The values of the field %s are %d and %u", section, name, i, j);
 
-  /* negative test for INKMimeHdrFieldLengthGet */
+  /* negative test for TSMimeHdrFieldLengthGet */
 #ifdef DEBUG
-  if (INKMimeHdrFieldLengthGet(NULL, hdr, field) != INK_ERROR) {
-    LOG_ERROR_NEG("INKMimeHdrFieldLengthGet");
+  if (TSMimeHdrFieldLengthGet(NULL, hdr, field) != TS_ERROR) {
+    LOG_ERROR_NEG("TSMimeHdrFieldLengthGet");
   }
-  if (INKMimeHdrFieldLengthGet(bufp, NULL, field) != INK_ERROR) {
-    LOG_ERROR_NEG("INKMimeHdrFieldLengthGet");
+  if (TSMimeHdrFieldLengthGet(bufp, NULL, field) != TS_ERROR) {
+    LOG_ERROR_NEG("TSMimeHdrFieldLengthGet");
   }
-  if (INKMimeHdrFieldLengthGet(bufp, hdr, NULL) != INK_ERROR) {
-    LOG_ERROR_NEG("INKMimeHdrFieldLengthGet");
+  if (TSMimeHdrFieldLengthGet(bufp, hdr, NULL) != TS_ERROR) {
+    LOG_ERROR_NEG("TSMimeHdrFieldLengthGet");
   }
 #endif
 
@@ -202,35 +202,34 @@ printField(INKMBuffer bufp, INKMLoc hdr, char *name, char *debugTag, float secti
 
 /* added by ymou */
 static void
-printDateDifference(INKMBuffer bufp, INKMLoc hdr, char *name, time_t currentTime, char *debugTag, float section)
+printDateDifference(TSMBuffer bufp, TSMLoc hdr, char *name, time_t currentTime, char *debugTag, float section)
 {
   LOG_SET_FUNCTION_NAME("printDateDifference");
 
   time_t fieldTime;
   int length, count;
-  INKMLoc field = NULL;
+  TSMLoc field = NULL;
 
-  if ((field = INKMimeHdrFieldFind(bufp, hdr, name, strlen(name))) == INK_ERROR_PTR) {
-    LOG_API_ERROR("INKMimeHdrFieldFind");
+  if ((field = TSMimeHdrFieldFind(bufp, hdr, name, strlen(name))) == TS_ERROR_PTR) {
+    LOG_API_ERROR("TSMimeHdrFieldFind");
   }
   /* FIXME: Error code? */
-  length = INKMimeHdrFieldLengthGet(bufp, hdr, field);
+  length = TSMimeHdrFieldLengthGet(bufp, hdr, field);
 
-  if ((count = INKMimeHdrFieldValuesCount(bufp, hdr, field)) == INK_ERROR) {
-    LOG_API_ERROR("INKMimeHdrFieldValuesCount");
+  if ((count = TSMimeHdrFieldValuesCount(bufp, hdr, field)) == TS_ERROR) {
+    LOG_API_ERROR("TSMimeHdrFieldValuesCount");
   }
-  /* FIXME: Deprecated? Error code? */
-  fieldTime = INKMimeHdrFieldValueGetDate(bufp, hdr, field, 0);
+  TSMimeHdrFieldValueDateGet(bufp, hdr, field, 0, &fieldTime);
 
-  INKDebug(debugTag, "***********************( %g )***********************", section);
-  INKDebug(debugTag, "(%g) The length of the field %s = %d", section, name, length);
-  INKDebug(debugTag, "(%g) The count of the field values = %d", section, count);
+  TSDebug(debugTag, "***********************( %g )***********************", section);
+  TSDebug(debugTag, "(%g) The length of the field %s = %d", section, name, length);
+  TSDebug(debugTag, "(%g) The count of the field values = %d", section, count);
 
   if (fieldTime != currentTime) {
-    LOG_AUTO_ERROR("INKMimeHdrFieldValueInsert",
+    LOG_AUTO_ERROR("TSMimeHdrFieldValueStringInsert",
                    "The retrieved Date field value is different from the Date field value set");
   } else {
-    INKDebug(debugTag, "(%g) The retrieved Date field value is the same as the Date field value set", section);
+    TSDebug(debugTag, "(%g) The retrieved Date field value is the same as the Date field value set", section);
   }
   HANDLE_RELEASE(bufp, hdr, field);
 }
@@ -238,13 +237,13 @@ printDateDifference(INKMBuffer bufp, INKMLoc hdr, char *name, time_t currentTime
 
 /* added by ymou */
 static void
-printHeader(INKMBuffer bufp, INKMLoc hdr_loc)
+printHeader(TSMBuffer bufp, TSMLoc hdr_loc)
 {
-  INKIOBuffer output_buffer;
-  INKIOBufferReader reader;
+  TSIOBuffer output_buffer;
+  TSIOBufferReader reader;
   int total_avail;
 
-  INKIOBufferBlock block;
+  TSIOBufferBlock block;
   const char *block_start;
   int block_avail;
 
@@ -253,28 +252,28 @@ printHeader(INKMBuffer bufp, INKMLoc hdr_loc)
 
   LOG_SET_FUNCTION_NAME("printHeader");
 
-  output_buffer = INKIOBufferCreate();
+  output_buffer = TSIOBufferCreate();
 
   if (!output_buffer) {
-    INKError("couldn't allocate IOBuffer\n");
+    TSError("couldn't allocate IOBuffer\n");
   }
 
-  reader = INKIOBufferReaderAlloc(output_buffer);
+  reader = TSIOBufferReaderAlloc(output_buffer);
 
   /* This will print  just MIMEFields and not
      the http request line */
-  INKMimeHdrPrint(bufp, hdr_loc, output_buffer);
+  TSMimeHdrPrint(bufp, hdr_loc, output_buffer);
 
-  /* negative test for INKMimeHdrPrint */
+  /* negative test for TSMimeHdrPrint */
 #ifdef DEBUG
-  if (INKMimeHdrPrint(NULL, hdr_loc, output_buffer) != INK_ERROR) {
-    LOG_ERROR_NEG("INKMimeHdrPrint");
+  if (TSMimeHdrPrint(NULL, hdr_loc, output_buffer) != TS_ERROR) {
+    LOG_ERROR_NEG("TSMimeHdrPrint");
   }
-  if (INKMimeHdrPrint(bufp, NULL, output_buffer) != INK_ERROR) {
-    LOG_ERROR_NEG("INKMimeHdrPrint");
+  if (TSMimeHdrPrint(bufp, NULL, output_buffer) != TS_ERROR) {
+    LOG_ERROR_NEG("TSMimeHdrPrint");
   }
-  if (INKMimeHdrPrint(bufp, hdr_loc, NULL) != INK_ERROR) {
-    LOG_ERROR_NEG("INKMimeHdrPrint");
+  if (TSMimeHdrPrint(bufp, hdr_loc, NULL) != TS_ERROR) {
+    LOG_ERROR_NEG("TSMimeHdrPrint");
   }
 #endif
 
@@ -282,20 +281,20 @@ printHeader(INKMBuffer bufp, INKMLoc hdr_loc)
      seeing the total bytes in the buffer.  We need to
      look at the buffer rather than the first block to
      see the size of the entire header */
-  total_avail = INKIOBufferReaderAvail(reader);
+  total_avail = TSIOBufferReaderAvail(reader);
 
   /* Allocate the string with an extra byte for the string
      terminator */
-  output_string = (char *) INKmalloc(total_avail + 1);
+  output_string = (char *) TSmalloc(total_avail + 1);
   output_len = 0;
 
   /* We need to loop over all the buffer blocks to make
      sure we get the complete header since the header can
      be in multiple blocks */
-  block = INKIOBufferReaderStart(reader);
+  block = TSIOBufferReaderStart(reader);
   while (block) {
 
-    block_start = INKIOBufferBlockReadStart(block, reader, &block_avail);
+    block_start = TSIOBufferBlockReadStart(block, reader, &block_avail);
 
     /* We'll get a block pointer back even if there is no data
        left to read so check for this condition and break out of
@@ -310,114 +309,114 @@ printHeader(INKMBuffer bufp, INKMLoc hdr_loc)
     output_len += block_avail;
 
     /* Consume the data so that we get to the next block */
-    INKIOBufferReaderConsume(reader, block_avail);
+    TSIOBufferReaderConsume(reader, block_avail);
 
     /* Get the next block now that we've consumed the
        data off the last block */
-    block = INKIOBufferReaderStart(reader);
+    block = TSIOBufferReaderStart(reader);
   }
 
   /* Terminate the string */
   output_string[output_len] = '\0';
   output_len++;
 
-  /* Free up the INKIOBuffer that we used to print out the header */
-  INKIOBufferReaderFree(reader);
-  INKIOBufferDestroy(output_buffer);
+  /* Free up the TSIOBuffer that we used to print out the header */
+  TSIOBufferReaderFree(reader);
+  TSIOBufferDestroy(output_buffer);
 
   /* Although I'd never do this a production plugin, printf
      the header so that we can see it's all there */
-  INKDebug(RESP, "**************** output header ****************");
-  INKDebug(RESP, "%s", output_string);
+  TSDebug(RESP, "**************** output header ****************");
+  TSDebug(RESP, "%s", output_string);
 
   FREE(output_string);
 }
 
 
 static void
-addDupFields(INKMBuffer hdrBuf, INKMLoc httpHdrLoc, char *debugTag, int section)
+addDupFields(TSMBuffer hdrBuf, TSMLoc httpHdrLoc, char *debugTag, int section)
 {
   LOG_SET_FUNCTION_NAME("addDupFields");
 
-  INKMBuffer tmpBuf = NULL;
-  INKMLoc tmpMimeHdrLoc = NULL;
-  INKMLoc tmpFieldLoc = NULL, newFieldLoc = NULL, tmpNextDupFieldLoc = NULL;
+  TSMBuffer tmpBuf = NULL;
+  TSMLoc tmpMimeHdrLoc = NULL;
+  TSMLoc tmpFieldLoc = NULL, newFieldLoc = NULL, tmpNextDupFieldLoc = NULL;
 
   int iFieldNameLength;
   const char *tmpFieldValue = NULL;
 
 
-  INKDebug(GENERAL, ">>>>>> addDupField <<<<<<");
+  TSDebug(GENERAL, ">>>>>> addDupField <<<<<<");
 
-  if ((tmpBuf = INKMBufferCreate()) == INK_ERROR_PTR) {
-    LOG_API_ERROR("INKMBufferCreate");
-  } else if ((tmpMimeHdrLoc = INKMimeHdrCreate(tmpBuf)) == INK_ERROR_PTR) {
-    LOG_API_ERROR("INKMimeHdrCreate");
+  if ((tmpBuf = TSMBufferCreate()) == TS_ERROR_PTR) {
+    LOG_API_ERROR("TSMBufferCreate");
+  } else if ((tmpMimeHdrLoc = TSMimeHdrCreate(tmpBuf)) == TS_ERROR_PTR) {
+    LOG_API_ERROR("TSMimeHdrCreate");
   }
 
   /* Copy the resp MIME Header to the tmp MIME Header */
-  if (INKMimeHdrCopy(tmpBuf, tmpMimeHdrLoc, hdrBuf, httpHdrLoc) == INK_ERROR) {
-    LOG_API_ERROR("INKMimeHdrCopy");
+  if (TSMimeHdrCopy(tmpBuf, tmpMimeHdrLoc, hdrBuf, httpHdrLoc) == TS_ERROR) {
+    LOG_API_ERROR("TSMimeHdrCopy");
   }
 
-  /* negative test for INKMimeHdrCopy */
+  /* negative test for TSMimeHdrCopy */
 #ifdef DEBUG
-  if (INKMimeHdrCopy(NULL, tmpMimeHdrLoc, hdrBuf, httpHdrLoc) != INK_ERROR) {
-    LOG_ERROR_NEG("INKMimeHdrCopy");
+  if (TSMimeHdrCopy(NULL, tmpMimeHdrLoc, hdrBuf, httpHdrLoc) != TS_ERROR) {
+    LOG_ERROR_NEG("TSMimeHdrCopy");
   }
-  if (INKMimeHdrCopy(tmpBuf, NULL, hdrBuf, httpHdrLoc) != INK_ERROR) {
-    LOG_ERROR_NEG("INKMimeHdrCopy");
+  if (TSMimeHdrCopy(tmpBuf, NULL, hdrBuf, httpHdrLoc) != TS_ERROR) {
+    LOG_ERROR_NEG("TSMimeHdrCopy");
   }
-  if (INKMimeHdrCopy(tmpBuf, tmpMimeHdrLoc, NULL, httpHdrLoc) != INK_ERROR) {
-    LOG_ERROR_NEG("INKMimeHdrCopy");
+  if (TSMimeHdrCopy(tmpBuf, tmpMimeHdrLoc, NULL, httpHdrLoc) != TS_ERROR) {
+    LOG_ERROR_NEG("TSMimeHdrCopy");
   }
-  if (INKMimeHdrCopy(tmpBuf, tmpMimeHdrLoc, hdrBuf, NULL) != INK_ERROR) {
-    LOG_ERROR_NEG("INKMimeHdrCopy");
+  if (TSMimeHdrCopy(tmpBuf, tmpMimeHdrLoc, hdrBuf, NULL) != TS_ERROR) {
+    LOG_ERROR_NEG("TSMimeHdrCopy");
   }
 #endif
 
   /* Create a MIME field */
-  if ((newFieldLoc = INKMimeHdrFieldCreate(tmpBuf, tmpMimeHdrLoc)) == INK_ERROR_PTR) {
-    LOG_API_ERROR("INKMimeHdrFieldCreate");
+  if ((newFieldLoc = TSMimeHdrFieldCreate(tmpBuf, tmpMimeHdrLoc)) == TS_ERROR_PTR) {
+    LOG_API_ERROR("TSMimeHdrFieldCreate");
   }
 
-  /* negative test for INKMimeHdrFieldCreate */
+  /* negative test for TSMimeHdrFieldCreate */
 #ifdef DEBUG
-  if (INKMimeHdrFieldCreate(NULL, tmpMimeHdrLoc) != INK_ERROR_PTR) {
-    LOG_ERROR_NEG("INKMimeHdrFieldCreate");
+  if (TSMimeHdrFieldCreate(NULL, tmpMimeHdrLoc) != TS_ERROR_PTR) {
+    LOG_ERROR_NEG("TSMimeHdrFieldCreate");
   }
-  if (INKMimeHdrFieldCreate(tmpBuf, NULL) != INK_ERROR_PTR) {
-    LOG_ERROR_NEG("INKMimeHdrFieldCreate");
+  if (TSMimeHdrFieldCreate(tmpBuf, NULL) != TS_ERROR_PTR) {
+    LOG_ERROR_NEG("TSMimeHdrFieldCreate");
   }
 #endif
 
-  if (INKMimeHdrFieldNameSet(tmpBuf, tmpMimeHdrLoc, newFieldLoc, "Field-1", strlen("Field-1"))
-      == INK_ERROR) {
-    LOG_API_ERROR("INKMimeHdrFieldNameSet");
-  } else if (INKMimeHdrFieldValueInsert(tmpBuf, tmpMimeHdrLoc, newFieldLoc, "field-1-value-1",
-                                        strlen("field-1-value-1"), -1) == INK_ERROR) {
-    LOG_API_ERROR("INKMimeHdrFieldValueInsert");
-  } else if (INKMimeHdrFieldInsert(tmpBuf, tmpMimeHdrLoc, newFieldLoc, -1) == INK_ERROR) {
-    LOG_API_ERROR("INKMimeHdrFieldInsert");
+  if (TSMimeHdrFieldNameSet(tmpBuf, tmpMimeHdrLoc, newFieldLoc, "Field-1", strlen("Field-1"))
+      == TS_ERROR) {
+    LOG_API_ERROR("TSMimeHdrFieldNameSet");
+  } else if (TSMimeHdrFieldValueStringInsert(tmpBuf, tmpMimeHdrLoc, newFieldLoc, "field-1-value-1",
+                                        strlen("field-1-value-1"), -1) == TS_ERROR) {
+    LOG_API_ERROR("TSMimeHdrFieldValueStringInsert");
+  } else if (TSMimeHdrFieldAppend(tmpBuf, tmpMimeHdrLoc, newFieldLoc) == TS_ERROR) {
+    LOG_API_ERROR("TSMimeHdrFieldAppend");
   }
   HANDLE_RELEASE(tmpBuf, tmpMimeHdrLoc, newFieldLoc);
 
   /* auto: Now retrieve the field value back */
-  if ((tmpFieldLoc = INKMimeHdrFieldFind(tmpBuf, tmpMimeHdrLoc, "Field-1", strlen("Field-1")))
-      == INK_ERROR_PTR) {
-    LOG_API_ERROR("INKMimeHdrFieldFind");
+  if ((tmpFieldLoc = TSMimeHdrFieldFind(tmpBuf, tmpMimeHdrLoc, "Field-1", strlen("Field-1")))
+      == TS_ERROR_PTR) {
+    LOG_API_ERROR("TSMimeHdrFieldFind");
   } else if (tmpFieldLoc == NULL) {
-    LOG_AUTO_ERROR("INKMimeHdrFieldFind", "Cannot find the newly created field");
+    LOG_AUTO_ERROR("TSMimeHdrFieldFind", "Cannot find the newly created field");
   } else {
     /* CAUTION: idx == -1 is UNDOCUMENTED but valid argument */
-    if (INKMimeHdrFieldValueStringGet(tmpBuf, tmpMimeHdrLoc, tmpFieldLoc, 0, &tmpFieldValue,
-                                      &iFieldNameLength) == INK_ERROR) {
-      LOG_API_ERROR("INKMimeHdrFieldValueStringGet");
+    if (TSMimeHdrFieldValueStringGet(tmpBuf, tmpMimeHdrLoc, tmpFieldLoc, 0, &tmpFieldValue,
+                                      &iFieldNameLength) == TS_ERROR) {
+      LOG_API_ERROR("TSMimeHdrFieldValueStringGet");
     } else if (!tmpFieldValue) {
-      LOG_AUTO_ERROR("INKMimeHdrFieldValueStringGet", "can't retrieve the field value");
+      LOG_AUTO_ERROR("TSMimeHdrFieldValueStringGet", "can't retrieve the field value");
     } else {
       if (strncmp(tmpFieldValue, "field-1-value-1", iFieldNameLength)) {
-        LOG_AUTO_ERROR("INKMimeHdrFieldValueInsert", "Field value different from the inserted one");
+        LOG_AUTO_ERROR("TSMimeHdrFieldValueStringInsert", "Field value different from the inserted one");
       }
       STR_RELEASE(tmpBuf, newFieldLoc, tmpFieldValue);
     }
@@ -425,87 +424,87 @@ addDupFields(INKMBuffer hdrBuf, INKMLoc httpHdrLoc, char *debugTag, int section)
   }
 
   /* Insert another field */
-  if ((newFieldLoc = INKMimeHdrFieldCreate(tmpBuf, tmpMimeHdrLoc)) == INK_ERROR_PTR) {
-    LOG_API_ERROR("INKMimeHdrFieldCreate");
-  } else if (INKMimeHdrFieldInsert(tmpBuf, tmpMimeHdrLoc, newFieldLoc, -1) == INK_ERROR) {
-    LOG_API_ERROR("INKMimeHdrFieldInsert");
-  } else if (INKMimeHdrFieldNameSet(tmpBuf, tmpMimeHdrLoc, newFieldLoc, "Dup-Field-1", strlen("Dup-Field-1"))
-             == INK_ERROR) {
-    LOG_API_ERROR("INKMimeHdrFieldNameSet");
-  } else if (INKMimeHdrFieldValueInsert(tmpBuf, tmpMimeHdrLoc, newFieldLoc, "dup-field-1-value-1",
-                                        strlen("dup-field-1-value-1"), -1) == INK_ERROR) {
-    LOG_API_ERROR("INKMimeHdrFieldValueInsert");
+  if ((newFieldLoc = TSMimeHdrFieldCreate(tmpBuf, tmpMimeHdrLoc)) == TS_ERROR_PTR) {
+    LOG_API_ERROR("TSMimeHdrFieldCreate");
+  } else if (TSMimeHdrFieldAppend(tmpBuf, tmpMimeHdrLoc, newFieldLoc) == TS_ERROR) {
+    LOG_API_ERROR("TSMimeHdrFieldAppend");
+  } else if (TSMimeHdrFieldNameSet(tmpBuf, tmpMimeHdrLoc, newFieldLoc, "Dup-Field-1", strlen("Dup-Field-1"))
+             == TS_ERROR) {
+    LOG_API_ERROR("TSMimeHdrFieldNameSet");
+  } else if (TSMimeHdrFieldValueStringInsert(tmpBuf, tmpMimeHdrLoc, newFieldLoc, "dup-field-1-value-1",
+                                        strlen("dup-field-1-value-1"), -1) == TS_ERROR) {
+    LOG_API_ERROR("TSMimeHdrFieldValueStringInsert");
   }
   HANDLE_RELEASE(tmpBuf, tmpMimeHdrLoc, newFieldLoc);
 
   /* auto: Now retrieve it back to check if its been insered */
-  if ((tmpFieldLoc = INKMimeHdrFieldFind(tmpBuf, tmpMimeHdrLoc, "Dup-Field-1", strlen("Dup-Field-1")))
-      == INK_ERROR_PTR) {
-    LOG_API_ERROR("INKMimeHdrFieldFind");
+  if ((tmpFieldLoc = TSMimeHdrFieldFind(tmpBuf, tmpMimeHdrLoc, "Dup-Field-1", strlen("Dup-Field-1")))
+      == TS_ERROR_PTR) {
+    LOG_API_ERROR("TSMimeHdrFieldFind");
   } else if (!tmpFieldLoc) {
-    LOG_AUTO_ERROR("INKMimeHdrFieldFind", "Cannot find the newly inserted field");
+    LOG_AUTO_ERROR("TSMimeHdrFieldFind", "Cannot find the newly inserted field");
   } else {
-    if (INKMimeHdrFieldValueStringGet(tmpBuf, tmpMimeHdrLoc, tmpFieldLoc, 0, &tmpFieldValue, &iFieldNameLength)
-        == INK_ERROR) {
-      LOG_API_ERROR("INKMimeHdrFieldValueStringGet");
+    if (TSMimeHdrFieldValueStringGet(tmpBuf, tmpMimeHdrLoc, tmpFieldLoc, 0, &tmpFieldValue, &iFieldNameLength)
+        == TS_ERROR) {
+      LOG_API_ERROR("TSMimeHdrFieldValueStringGet");
     } else if (!tmpFieldValue) {
-      LOG_AUTO_ERROR("INKMimeHdrFieldValueStringGet", "can't retrieve the field value");
+      LOG_AUTO_ERROR("TSMimeHdrFieldValueStringGet", "can't retrieve the field value");
     } else {
       if (strncmp(tmpFieldValue, "dup-field-1-value-1", iFieldNameLength)) {
-        LOG_AUTO_ERROR("INKMimeHdrFieldValueInsert", "Field value different from the inserted one");
+        LOG_AUTO_ERROR("TSMimeHdrFieldValueStringInsert", "Field value different from the inserted one");
       }
       STR_RELEASE(tmpBuf, tmpFieldLoc, tmpFieldValue);
     }
   }
   HANDLE_RELEASE(tmpBuf, tmpMimeHdrLoc, tmpFieldLoc);
 
-  if ((newFieldLoc = INKMimeHdrFieldCreate(tmpBuf, tmpMimeHdrLoc)) == INK_ERROR_PTR) {
-    LOG_API_ERROR("INKMimeHdrFieldCreate");
-  } else if (INKMimeHdrFieldInsert(tmpBuf, tmpMimeHdrLoc, newFieldLoc, -1) == INK_ERROR) {
-    LOG_API_ERROR("INKMimeHdrFieldInsert");
-  } else if (INKMimeHdrFieldNameSet(tmpBuf, tmpMimeHdrLoc, newFieldLoc, "Dup-Field-1", strlen("Dup-Field-1"))
-             == INK_ERROR) {
-    LOG_API_ERROR("INKMimeHdrFieldNameSet");
-  } else if (INKMimeHdrFieldValueInsert(tmpBuf, tmpMimeHdrLoc, newFieldLoc, "dup-field-1-value-2",
-                                        strlen("dup-field-1-value-2"), -1) == INK_ERROR) {
-    LOG_API_ERROR("INKMimeHdrFieldValueInsert");
+  if ((newFieldLoc = TSMimeHdrFieldCreate(tmpBuf, tmpMimeHdrLoc)) == TS_ERROR_PTR) {
+    LOG_API_ERROR("TSMimeHdrFieldCreate");
+  } else if (TSMimeHdrFieldAppend(tmpBuf, tmpMimeHdrLoc, newFieldLoc) == TS_ERROR) {
+    LOG_API_ERROR("TSMimeHdrFieldAppend");
+  } else if (TSMimeHdrFieldNameSet(tmpBuf, tmpMimeHdrLoc, newFieldLoc, "Dup-Field-1", strlen("Dup-Field-1"))
+             == TS_ERROR) {
+    LOG_API_ERROR("TSMimeHdrFieldNameSet");
+  } else if (TSMimeHdrFieldValueStringInsert(tmpBuf, tmpMimeHdrLoc, newFieldLoc, "dup-field-1-value-2",
+                                        strlen("dup-field-1-value-2"), -1) == TS_ERROR) {
+    LOG_API_ERROR("TSMimeHdrFieldValueStringInsert");
   }
   HANDLE_RELEASE(tmpBuf, tmpMimeHdrLoc, newFieldLoc);
 
 
   /* auto: Now retrieve the 1st duplicate field and check its value for correctness */
-  if ((tmpFieldLoc = INKMimeHdrFieldFind(tmpBuf, tmpMimeHdrLoc, "Dup-Field-1", strlen("Dup-Field-1")))
-      == INK_ERROR_PTR) {
-    LOG_API_ERROR("INKMimeHdrFieldFind");
+  if ((tmpFieldLoc = TSMimeHdrFieldFind(tmpBuf, tmpMimeHdrLoc, "Dup-Field-1", strlen("Dup-Field-1")))
+      == TS_ERROR_PTR) {
+    LOG_API_ERROR("TSMimeHdrFieldFind");
   } else if (tmpFieldLoc == NULL) {     /* check for NULL -- if the field is not found */
-    LOG_AUTO_ERROR("INKMimeHdrFieldFind", "cannot find the newly inserted field");
+    LOG_AUTO_ERROR("TSMimeHdrFieldFind", "cannot find the newly inserted field");
   } else {
-    /* negative test for INKMimeHdrFieldNextDup */
+    /* negative test for TSMimeHdrFieldNextDup */
 #ifdef DEBUG
-    if (INKMimeHdrFieldNextDup(NULL, tmpMimeHdrLoc, tmpFieldLoc) != INK_ERROR_PTR) {
-      LOG_ERROR_NEG("INKMimeHdrFieldNextDup");
+    if (TSMimeHdrFieldNextDup(NULL, tmpMimeHdrLoc, tmpFieldLoc) != TS_ERROR_PTR) {
+      LOG_ERROR_NEG("TSMimeHdrFieldNextDup");
     }
-    if (INKMimeHdrFieldNextDup(tmpBuf, NULL, tmpFieldLoc) != INK_ERROR_PTR) {
-      LOG_ERROR_NEG("INKMimeHdrFieldNextDup");
+    if (TSMimeHdrFieldNextDup(tmpBuf, NULL, tmpFieldLoc) != TS_ERROR_PTR) {
+      LOG_ERROR_NEG("TSMimeHdrFieldNextDup");
     }
-    if (INKMimeHdrFieldNextDup(tmpBuf, tmpMimeHdrLoc, NULL) != INK_ERROR_PTR) {
-      LOG_ERROR_NEG("INKMimeHdrFieldNextDup");
+    if (TSMimeHdrFieldNextDup(tmpBuf, tmpMimeHdrLoc, NULL) != TS_ERROR_PTR) {
+      LOG_ERROR_NEG("TSMimeHdrFieldNextDup");
     }
 #endif
-    if ((tmpNextDupFieldLoc = INKMimeHdrFieldNextDup(tmpBuf, tmpMimeHdrLoc, tmpFieldLoc))
-        == INK_ERROR_PTR) {
-      LOG_API_ERROR("INKMimeHdrFieldNextDup");
+    if ((tmpNextDupFieldLoc = TSMimeHdrFieldNextDup(tmpBuf, tmpMimeHdrLoc, tmpFieldLoc))
+        == TS_ERROR_PTR) {
+      LOG_API_ERROR("TSMimeHdrFieldNextDup");
     } else if (tmpNextDupFieldLoc == NULL) {    /* check for NULL -- if NOT found */
-      LOG_AUTO_ERROR("INKMimeHdrFieldNextDup", "cannot retrieve the 1st dup field loc");
+      LOG_AUTO_ERROR("TSMimeHdrFieldNextDup", "cannot retrieve the 1st dup field loc");
     } else {
-      if (INKMimeHdrFieldValueStringGet(tmpBuf, tmpMimeHdrLoc, tmpNextDupFieldLoc, 0, &tmpFieldValue,
-                                        &iFieldNameLength) == INK_ERROR) {
-        LOG_API_ERROR("INKMimeHdrFieldValueStringGet");
+      if (TSMimeHdrFieldValueStringGet(tmpBuf, tmpMimeHdrLoc, tmpNextDupFieldLoc, 0, &tmpFieldValue,
+                                        &iFieldNameLength) == TS_ERROR) {
+        LOG_API_ERROR("TSMimeHdrFieldValueStringGet");
       } else if (!tmpFieldValue) {
-        LOG_AUTO_ERROR("INKMimeHdrFieldValueStringGet", "can't retrieve the 1st dup field value");
+        LOG_AUTO_ERROR("TSMimeHdrFieldValueStringGet", "can't retrieve the 1st dup field value");
       } else {
         if (strncmp(tmpFieldValue, "dup-field-1-value-2", iFieldNameLength)) {
-          LOG_AUTO_ERROR("INKMimeHdrFieldValueInsert", "Field value different from the inserted one");
+          LOG_AUTO_ERROR("TSMimeHdrFieldValueStringInsert", "Field value different from the inserted one");
         }
         STR_RELEASE(tmpBuf, newFieldLoc, tmpFieldValue);
       }
@@ -516,16 +515,16 @@ addDupFields(INKMBuffer hdrBuf, INKMLoc httpHdrLoc, char *debugTag, int section)
   }
 
 
-  if ((newFieldLoc = INKMimeHdrFieldCreate(tmpBuf, tmpMimeHdrLoc)) == INK_ERROR_PTR) {
-    LOG_API_ERROR("INKMimeHdrFieldCreate");
-  } else if (INKMimeHdrFieldInsert(tmpBuf, tmpMimeHdrLoc, newFieldLoc, 1) == INK_ERROR) {
-    LOG_API_ERROR("INKMimeHdrFieldInsert");
-  } else if (INKMimeHdrFieldNameSet(tmpBuf, tmpMimeHdrLoc, newFieldLoc, "Dup-Field-1", strlen("Dup-Field-1"))
-             == INK_ERROR) {
-    LOG_API_ERROR("INKMimeHdrFieldNameSet");
-  } else if (INKMimeHdrFieldValueInsert(tmpBuf, tmpMimeHdrLoc, newFieldLoc, "dup-field-1-value-3",
-                                        strlen("dup-field-1-value-3"), -1) == INK_ERROR) {
-    LOG_API_ERROR("INKMimeHdrFieldValueInsert");
+  if ((newFieldLoc = TSMimeHdrFieldCreate(tmpBuf, tmpMimeHdrLoc)) == TS_ERROR_PTR) {
+    LOG_API_ERROR("TSMimeHdrFieldCreate");
+  } else if (TSMimeHdrFieldAppend(tmpBuf, tmpMimeHdrLoc, newFieldLoc) == TS_ERROR) {
+    LOG_API_ERROR("TSMimeHdrFieldAppend");
+  } else if (TSMimeHdrFieldNameSet(tmpBuf, tmpMimeHdrLoc, newFieldLoc, "Dup-Field-1", strlen("Dup-Field-1"))
+             == TS_ERROR) {
+    LOG_API_ERROR("TSMimeHdrFieldNameSet");
+  } else if (TSMimeHdrFieldValueStringInsert(tmpBuf, tmpMimeHdrLoc, newFieldLoc, "dup-field-1-value-3",
+                                        strlen("dup-field-1-value-3"), -1) == TS_ERROR) {
+    LOG_API_ERROR("TSMimeHdrFieldValueStringInsert");
   }
   HANDLE_RELEASE(tmpBuf, tmpMimeHdrLoc, newFieldLoc);
 
@@ -533,20 +532,20 @@ addDupFields(INKMBuffer hdrBuf, INKMLoc httpHdrLoc, char *debugTag, int section)
   /* auto: Now retrieve the 2nd duplicate (using the "preserved" field loc from above) field
    * value back and check for correctness */
 
-  if ((tmpNextDupFieldLoc = INKMimeHdrFieldNextDup(tmpBuf, tmpMimeHdrLoc, tmpFieldLoc))
-      == INK_ERROR_PTR) {
-    LOG_API_ERROR("INKMimeHdrFieldNextDup");
+  if ((tmpNextDupFieldLoc = TSMimeHdrFieldNextDup(tmpBuf, tmpMimeHdrLoc, tmpFieldLoc))
+      == TS_ERROR_PTR) {
+    LOG_API_ERROR("TSMimeHdrFieldNextDup");
   } else if (!tmpNextDupFieldLoc) {
-    LOG_AUTO_ERROR("INKMimeHdrFieldNextDup", "cannot retrieve the 2nd dup field loc");
+    LOG_AUTO_ERROR("TSMimeHdrFieldNextDup", "cannot retrieve the 2nd dup field loc");
   } else {
-    if (INKMimeHdrFieldValueStringGet(tmpBuf, tmpMimeHdrLoc, tmpNextDupFieldLoc, 0, &tmpFieldValue,
-                                      &iFieldNameLength) == INK_ERROR) {
-      LOG_API_ERROR("INKMimeHdrFieldValueStringGet");
+    if (TSMimeHdrFieldValueStringGet(tmpBuf, tmpMimeHdrLoc, tmpNextDupFieldLoc, 0, &tmpFieldValue,
+                                      &iFieldNameLength) == TS_ERROR) {
+      LOG_API_ERROR("TSMimeHdrFieldValueStringGet");
     } else if (!tmpFieldValue) {
-      LOG_AUTO_ERROR("INKMimeHdrFieldValueStringGet", "can't retrieve the 2nd dup field value");
+      LOG_AUTO_ERROR("TSMimeHdrFieldValueStringGet", "can't retrieve the 2nd dup field value");
     } else {
       if (strncmp(tmpFieldValue, "dup-field-1-value-3", iFieldNameLength)) {
-        LOG_AUTO_ERROR("INKMimeHdrFieldValueInsert", "Field value different from the inserted one");
+        LOG_AUTO_ERROR("TSMimeHdrFieldValueStringInsert", "Field value different from the inserted one");
       }
       STR_RELEASE(tmpBuf, tmpNextDupFieldLoc, tmpFieldValue);
     }
@@ -557,7 +556,7 @@ addDupFields(INKMBuffer hdrBuf, INKMLoc httpHdrLoc, char *debugTag, int section)
 
   /* clean-up */
   HANDLE_RELEASE(tmpBuf, tmpMimeHdrLoc, tmpFieldLoc);
-  HANDLE_RELEASE(tmpBuf, INK_NULL_MLOC, tmpMimeHdrLoc);
+  HANDLE_RELEASE(tmpBuf, TS_NULL_MLOC, tmpMimeHdrLoc);
 
   BUFFER_DESTROY(tmpBuf);
 }                               /* addDupFields */
@@ -568,13 +567,13 @@ addDupFields(INKMBuffer hdrBuf, INKMLoc httpHdrLoc, char *debugTag, int section)
  * sectionMimeHdr:
  ****************************************************************************/
 static void
-sectionMimeHdr(INKMBuffer hdrBuf, INKMLoc httpHdrLoc)
+sectionMimeHdr(TSMBuffer hdrBuf, TSMLoc httpHdrLoc)
 {
   LOG_SET_FUNCTION_NAME("sectionMimeHdr");
 
-  INKMBuffer tmpBuf = NULL;
-  INKMLoc fieldLoc = NULL, tmpFieldLoc = NULL, newFieldLoc = NULL, tmpMimeHdrLoc = NULL;
-  INKHttpType httpType;
+  TSMBuffer tmpBuf = NULL;
+  TSMLoc fieldLoc = NULL, tmpFieldLoc = NULL, newFieldLoc = NULL, tmpMimeHdrLoc = NULL;
+  TSHttpType httpType;
 
   const char *tmpFieldValueString;
   const char *tmpFieldName = NULL, *tmpFieldValue1 = NULL, *tmpFieldValue2 = NULL;
@@ -582,32 +581,32 @@ sectionMimeHdr(INKMBuffer hdrBuf, INKMLoc httpHdrLoc)
   time_t tmpDate1, tmpDate2;
 
   /* added by ymou */
-  INKMLoc fieldLoc1 = NULL, fieldLoc2 = NULL, fieldLoc3 = NULL;
+  TSMLoc fieldLoc1 = NULL, fieldLoc2 = NULL, fieldLoc3 = NULL;
   time_t currentTime, fieldTime, retrievedDate;
   int valueInt, idx, retrievedInt;
   unsigned int valueUint, retrievedUint;
 
   /* Get the field location */
-  fieldLoc = INKMimeHdrFieldGet(hdrBuf, httpHdrLoc, 0);
+  fieldLoc = TSMimeHdrFieldGet(hdrBuf, httpHdrLoc, 0);
 
-  /* negative test for INKMimeHdrFieldGet */
+  /* negative test for TSMimeHdrFieldGet */
 #ifdef DEBUG
-  if (INKMimeHdrFieldGet(NULL, httpHdrLoc, 0) != INK_ERROR_PTR) {
-    LOG_ERROR_NEG("INKMimeHdrFieldGet");
+  if (TSMimeHdrFieldGet(NULL, httpHdrLoc, 0) != TS_ERROR_PTR) {
+    LOG_ERROR_NEG("TSMimeHdrFieldGet");
   }
-  if (INKMimeHdrFieldGet(hdrBuf, NULL, 0) != INK_ERROR_PTR) {
-    LOG_ERROR_NEG("INKMimeHdrFieldGet");
+  if (TSMimeHdrFieldGet(hdrBuf, NULL, 0) != TS_ERROR_PTR) {
+    LOG_ERROR_NEG("TSMimeHdrFieldGet");
   }
 #endif
 
-  httpType = INKHttpHdrTypeGet(hdrBuf, httpHdrLoc);
+  httpType = TSHttpHdrTypeGet(hdrBuf, httpHdrLoc);
 
-  INKDebug(GENERAL, "\n>>> sectionMimeHdr <<<<");
+  TSDebug(GENERAL, "\n>>> sectionMimeHdr <<<<");
 
 
-        /************* INK_HTTP_TYPE_REQUEST ******************/
-  if (httpType == INK_HTTP_TYPE_REQUEST) {
-    INKDebug(REQ, "\n>>> REQUEST <<<<");
+        /************* TS_HTTP_TYPE_REQUEST ******************/
+  if (httpType == TS_HTTP_TYPE_REQUEST) {
+    TSDebug(REQ, "\n>>> REQUEST <<<<");
 
                 /***** (1): simply print the request header *****/
     printMimeFields(hdrBuf, httpHdrLoc, REQ, 1);
@@ -615,10 +614,10 @@ sectionMimeHdr(INKMBuffer hdrBuf, INKMLoc httpHdrLoc)
   }
 
 
-  /* httpType == INK_HTTP_TYPE_REQUEST */
- /************ INK_HTTP_TYPE_RESPONSE ******************/
-  if (httpType == INK_HTTP_TYPE_RESPONSE) {
-    INKDebug(RESP, "\n>>> RESPONSE <<<<");
+  /* httpType == TS_HTTP_TYPE_REQUEST */
+ /************ TS_HTTP_TYPE_RESPONSE ******************/
+  if (httpType == TS_HTTP_TYPE_RESPONSE) {
+    TSDebug(RESP, "\n>>> RESPONSE <<<<");
 
                 /****** (1): Simply print the response header ****/
     printMimeFields(hdrBuf, httpHdrLoc, RESP, 1);
@@ -631,22 +630,22 @@ sectionMimeHdr(INKMBuffer hdrBuf, INKMLoc httpHdrLoc)
                 /****** (3): Do MIME hdr copy and print *****/
     /* Copy the respHdrBuf MIME Headers to a tmp buf and print the details */
 
-    /* CAUTION: (reference - INKqa8336)
-     * Here we are doing a INKMimeHdrCopy without creating a HTTP header first.
+    /* CAUTION: (reference - TSqa8336)
+     * Here we are doing a TSMimeHdrCopy without creating a HTTP header first.
      * So the dest MIME header (tmpMimeHdrLoc) is not associated with any HTTP header.
      * This is hardly ever the case, and should NOT be practised in general.  I am
      * doing so merely to test the API's functional correctness and NOT to suggest
      * a possible usage of the API */
 
-    if ((tmpBuf = INKMBufferCreate()) == INK_ERROR_PTR) {
-      LOG_API_ERROR_COMMENT("INKMBufferCreate", "abnormal exit to 'done'");
+    if ((tmpBuf = TSMBufferCreate()) == TS_ERROR_PTR) {
+      LOG_API_ERROR_COMMENT("TSMBufferCreate", "abnormal exit to 'done'");
       goto done;
     }
 
-    if ((tmpMimeHdrLoc = INKMimeHdrCreate(tmpBuf)) == INK_ERROR_PTR) {
-      LOG_API_ERROR("INKMimeHdrCreate");
-    } else if (INKMimeHdrCopy(tmpBuf, tmpMimeHdrLoc, hdrBuf, httpHdrLoc) == INK_ERROR) {
-      LOG_API_ERROR("INKMimeHdrCopy");
+    if ((tmpMimeHdrLoc = TSMimeHdrCreate(tmpBuf)) == TS_ERROR_PTR) {
+      LOG_API_ERROR("TSMimeHdrCreate");
+    } else if (TSMimeHdrCopy(tmpBuf, tmpMimeHdrLoc, hdrBuf, httpHdrLoc) == TS_ERROR) {
+      LOG_API_ERROR("TSMimeHdrCopy");
     } else {
       printMimeFields(tmpBuf, tmpMimeHdrLoc, RESP, 3);
     }
@@ -654,60 +653,60 @@ sectionMimeHdr(INKMBuffer hdrBuf, INKMLoc httpHdrLoc)
 
                 /****** (4): Remove some MIME field *****/
     /* Remove the "Via" field */
-    if ((tmpFieldLoc = INKMimeHdrFieldFind(tmpBuf, tmpMimeHdrLoc, "Via", strlen("Via")))
-        == INK_ERROR_PTR) {
-      LOG_API_ERROR("INKMimeHdrFieldFind");
-    } else if (INKMimeHdrFieldRemove(tmpBuf, tmpMimeHdrLoc, tmpFieldLoc) == INK_ERROR) {
-      LOG_API_ERROR("INKMimeHdrFieldRemove");
-    } else if (INKMimeHdrFieldValueStringGet(tmpBuf, tmpMimeHdrLoc, tmpFieldLoc, -1, &tmpFieldValue1,
-                                             &tmpFieldValueLength) == INK_ERROR) {
-      LOG_API_ERROR("INKMimeHdrFieldValueStringGet");
+    if ((tmpFieldLoc = TSMimeHdrFieldFind(tmpBuf, tmpMimeHdrLoc, "Via", strlen("Via")))
+        == TS_ERROR_PTR) {
+      LOG_API_ERROR("TSMimeHdrFieldFind");
+    } else if (TSMimeHdrFieldRemove(tmpBuf, tmpMimeHdrLoc, tmpFieldLoc) == TS_ERROR) {
+      LOG_API_ERROR("TSMimeHdrFieldRemove");
+    } else if (TSMimeHdrFieldValueStringGet(tmpBuf, tmpMimeHdrLoc, tmpFieldLoc, -1, &tmpFieldValue1,
+                                             &tmpFieldValueLength) == TS_ERROR) {
+      LOG_API_ERROR("TSMimeHdrFieldValueStringGet");
     }
 
     /* negative test */
 #ifdef DEBUG
-    if (INKMimeHdrFieldFind(NULL, tmpMimeHdrLoc, "Via", strlen("Via")) != INK_ERROR_PTR) {
-      LOG_ERROR_NEG("INKMimeHdrFieldFind");
+    if (TSMimeHdrFieldFind(NULL, tmpMimeHdrLoc, "Via", strlen("Via")) != TS_ERROR_PTR) {
+      LOG_ERROR_NEG("TSMimeHdrFieldFind");
     }
-    if (INKMimeHdrFieldFind(tmpBuf, NULL, "Via", strlen("Via")) != INK_ERROR_PTR) {
-      LOG_ERROR_NEG("INKMimeHdrFieldFind");
+    if (TSMimeHdrFieldFind(tmpBuf, NULL, "Via", strlen("Via")) != TS_ERROR_PTR) {
+      LOG_ERROR_NEG("TSMimeHdrFieldFind");
     }
-    if (INKMimeHdrFieldFind(tmpBuf, tmpMimeHdrLoc, NULL, 0) != INK_ERROR_PTR) {
-      LOG_ERROR_NEG("INKMimeHdrFieldFind");
+    if (TSMimeHdrFieldFind(tmpBuf, tmpMimeHdrLoc, NULL, 0) != TS_ERROR_PTR) {
+      LOG_ERROR_NEG("TSMimeHdrFieldFind");
     }
 
-    if (INKMimeHdrFieldRemove(NULL, tmpMimeHdrLoc, tmpFieldLoc) != INK_ERROR) {
-      LOG_ERROR_NEG("INKMimeHdrFieldRemove");
+    if (TSMimeHdrFieldRemove(NULL, tmpMimeHdrLoc, tmpFieldLoc) != TS_ERROR) {
+      LOG_ERROR_NEG("TSMimeHdrFieldRemove");
     }
-    if (INKMimeHdrFieldRemove(tmpBuf, NULL, tmpFieldLoc) != INK_ERROR) {
-      LOG_ERROR_NEG("INKMimeHdrFieldRemove");
+    if (TSMimeHdrFieldRemove(tmpBuf, NULL, tmpFieldLoc) != TS_ERROR) {
+      LOG_ERROR_NEG("TSMimeHdrFieldRemove");
     }
-    if (INKMimeHdrFieldRemove(tmpBuf, tmpMimeHdrLoc, NULL) != INK_ERROR) {
-      LOG_ERROR_NEG("INKMimeHdrFieldRemove");
+    if (TSMimeHdrFieldRemove(tmpBuf, tmpMimeHdrLoc, NULL) != TS_ERROR) {
+      LOG_ERROR_NEG("TSMimeHdrFieldRemove");
     }
 #endif
 
     /* auto: now FINDing the field should STILL pass */
-    if (INKMimeHdrFieldFind(tmpBuf, tmpMimeHdrLoc, "Via", strlen("Via")) == INK_ERROR_PTR) {
-      LOG_API_ERROR("INKMimeHdrFieldFind");
-      LOG_AUTO_ERROR("INKMimeHdrFieldRemove", "INK_Find failing afterINK_Remove");
+    if (TSMimeHdrFieldFind(tmpBuf, tmpMimeHdrLoc, "Via", strlen("Via")) == TS_ERROR_PTR) {
+      LOG_API_ERROR("TSMimeHdrFieldFind");
+      LOG_AUTO_ERROR("TSMimeHdrFieldRemove", "TS_Find failing afterTS_Remove");
     }
 
     printMimeFields(tmpBuf, tmpMimeHdrLoc, RESP, 4.1);
 
     /* Re-attach the "removed" field */
-    if (INKMimeHdrFieldInsert(tmpBuf, tmpMimeHdrLoc, tmpFieldLoc, -1) == INK_ERROR) {
-      LOG_API_ERROR("INKMimeHdrFieldInset");
+    if (TSMimeHdrFieldAppend(tmpBuf, tmpMimeHdrLoc, tmpFieldLoc) == TS_ERROR) {
+      LOG_API_ERROR("TSMimeHdrFieldInset");
     }
-    if ((tmpFieldLoc = INKMimeHdrFieldFind(tmpBuf, tmpMimeHdrLoc, "Via", strlen("Via")))
-        == INK_ERROR_PTR) {
-      LOG_API_ERROR("INKMimeHdrFieldFind");
-    } else if (INKMimeHdrFieldValueStringGet(tmpBuf, tmpMimeHdrLoc, tmpFieldLoc, -1, &tmpFieldValue2,
-                                             &tmpFieldValueLength) == INK_ERROR) {
-      LOG_API_ERROR("INKMimeHdrFieldValueStringGet");
+    if ((tmpFieldLoc = TSMimeHdrFieldFind(tmpBuf, tmpMimeHdrLoc, "Via", strlen("Via")))
+        == TS_ERROR_PTR) {
+      LOG_API_ERROR("TSMimeHdrFieldFind");
+    } else if (TSMimeHdrFieldValueStringGet(tmpBuf, tmpMimeHdrLoc, tmpFieldLoc, -1, &tmpFieldValue2,
+                                             &tmpFieldValueLength) == TS_ERROR) {
+      LOG_API_ERROR("TSMimeHdrFieldValueStringGet");
     }
     if (strncmp(tmpFieldValue1, tmpFieldValue2, tmpFieldValueLength)) {
-      LOG_AUTO_ERROR("INKMimeHdrFieldInsert", "Field value different w/ the re-attach after INK_Remove");
+      LOG_AUTO_ERROR("TSMimeHdrFieldAppend", "Field value different w/ the re-attach after TS_Remove");
     }
 
     printMimeFields(tmpBuf, tmpMimeHdrLoc, RESP, 4.2);
@@ -720,19 +719,19 @@ sectionMimeHdr(INKMBuffer hdrBuf, INKMLoc httpHdrLoc)
 
                 /****** (5): delete some MIME fields ****/
     /* Delete the "Via" field */
-    if ((tmpFieldLoc = INKMimeHdrFieldFind(tmpBuf, tmpMimeHdrLoc, "Via", strlen("Via")))
-        == INK_ERROR_PTR) {
-      LOG_API_ERROR("INKMimeHdrFieldFind");
-    } else if (INKMimeHdrFieldDelete(tmpBuf, tmpMimeHdrLoc, tmpFieldLoc) == INK_ERROR) {
-      LOG_API_ERROR("INKMimeHdrFieldDelete");
+    if ((tmpFieldLoc = TSMimeHdrFieldFind(tmpBuf, tmpMimeHdrLoc, "Via", strlen("Via")))
+        == TS_ERROR_PTR) {
+      LOG_API_ERROR("TSMimeHdrFieldFind");
+    } else if (TSMimeHdrFieldDestroy(tmpBuf, tmpMimeHdrLoc, tmpFieldLoc) == TS_ERROR) {
+      LOG_API_ERROR("TSMimeHdrFieldDestroy");
     }
 
     /* auto: now FINDing the field should fail */
-    if ((tmpFieldLoc = INKMimeHdrFieldFind(tmpBuf, tmpMimeHdrLoc, "Via", strlen("Via")))
-        == INK_ERROR_PTR) {
-      LOG_API_ERROR("INKMimeHdrFieldFind");
+    if ((tmpFieldLoc = TSMimeHdrFieldFind(tmpBuf, tmpMimeHdrLoc, "Via", strlen("Via")))
+        == TS_ERROR_PTR) {
+      LOG_API_ERROR("TSMimeHdrFieldFind");
     } else if (tmpFieldLoc) {
-      LOG_AUTO_ERROR("INKMimeHdrFieldRemove", "Can STILL INK_Find after INK_Delete");
+      LOG_AUTO_ERROR("TSMimeHdrFieldRemove", "Can STILL TS_Find after TS_Delete");
     }
 
     printMimeFields(tmpBuf, tmpMimeHdrLoc, RESP, 5);
@@ -743,76 +742,76 @@ sectionMimeHdr(INKMBuffer hdrBuf, INKMLoc httpHdrLoc)
     /* -----------------------------------------------------------------------
      * Now, insert some fields into the MIME buffer
      * Note:
-     *      1. Field name can be set before and/or after INKMimeHdrFieldInsert
-     *      2. Field value could be set *only* after INKMimeHdrFieldValueInsert
+     *      1. Field name can be set before and/or after TSMimeHdrFieldAppend
+     *      2. Field value could be set *only* after TSMimeHdrFieldValueStringInsert
      *
      * (point 1. and 2. implies that its possible to insert fields with empty
      * name and values)
      * -----------------------------------------------------------------------*/
 
-    INKDebug(RESP, "***********************( 6.2 )***********************");
+    TSDebug(RESP, "***********************( 6.2 )***********************");
 
         /*** (6.2): append some *field value* ******/
-    if ((newFieldLoc = INKMimeHdrFieldCreate(tmpBuf, tmpMimeHdrLoc)) == INK_ERROR_PTR) {
-      LOG_API_ERROR_COMMENT("INKMimeHdrFieldCreate", "Skip to section 6.3");
+    if ((newFieldLoc = TSMimeHdrFieldCreate(tmpBuf, tmpMimeHdrLoc)) == TS_ERROR_PTR) {
+      LOG_API_ERROR_COMMENT("TSMimeHdrFieldCreate", "Skip to section 6.3");
       goto section_63;
-    } else if (INKMimeHdrFieldNameSet(tmpBuf, tmpMimeHdrLoc, newFieldLoc, "Append-Field",
-                                      strlen("Append-Field")) == INK_ERROR) {
-      LOG_API_ERROR("INKMimeHdrFieldNameSet");
-    } else if (INKMimeHdrFieldValueInsert(tmpBuf, tmpMimeHdrLoc, newFieldLoc, "append-field-value",
-                                          strlen("append-field-value"), -1) == INK_ERROR) {
-      LOG_API_ERROR("INKMimeHdrFieldValueInsert");
+    } else if (TSMimeHdrFieldNameSet(tmpBuf, tmpMimeHdrLoc, newFieldLoc, "Append-Field",
+                                      strlen("Append-Field")) == TS_ERROR) {
+      LOG_API_ERROR("TSMimeHdrFieldNameSet");
+    } else if (TSMimeHdrFieldValueStringInsert(tmpBuf, tmpMimeHdrLoc, newFieldLoc, "append-field-value",
+                                          strlen("append-field-value"), -1) == TS_ERROR) {
+      LOG_API_ERROR("TSMimeHdrFieldValueStringInsert");
     }
 
-    /* negative test for INKMimeHdrFieldNameSet */
+    /* negative test for TSMimeHdrFieldNameSet */
 #ifdef DEBUG
-    if (INKMimeHdrFieldNameSet(NULL, tmpMimeHdrLoc, newFieldLoc, "Append-Field", strlen("Append-Field")) != INK_ERROR) {
-      LOG_ERROR_NEG("INKMimeHdrFieldNameSet");
+    if (TSMimeHdrFieldNameSet(NULL, tmpMimeHdrLoc, newFieldLoc, "Append-Field", strlen("Append-Field")) != TS_ERROR) {
+      LOG_ERROR_NEG("TSMimeHdrFieldNameSet");
     }
-    if (INKMimeHdrFieldNameSet(tmpBuf, NULL, newFieldLoc, "Append-Field", strlen("Append-Field")) != INK_ERROR) {
-      LOG_ERROR_NEG("INKMimeHdrFieldNameSet");
+    if (TSMimeHdrFieldNameSet(tmpBuf, NULL, newFieldLoc, "Append-Field", strlen("Append-Field")) != TS_ERROR) {
+      LOG_ERROR_NEG("TSMimeHdrFieldNameSet");
     }
-    if (INKMimeHdrFieldNameSet(tmpBuf, tmpMimeHdrLoc, NULL, "Append-Field", strlen("Append-Field")) != INK_ERROR) {
-      LOG_ERROR_NEG("INKMimeHdrFieldNameSet");
+    if (TSMimeHdrFieldNameSet(tmpBuf, tmpMimeHdrLoc, NULL, "Append-Field", strlen("Append-Field")) != TS_ERROR) {
+      LOG_ERROR_NEG("TSMimeHdrFieldNameSet");
     }
-    if (INKMimeHdrFieldNameSet(tmpBuf, tmpMimeHdrLoc, newFieldLoc, NULL, 0) != INK_ERROR) {
-      LOG_ERROR_NEG("INKMimeHdrFieldNameSet");
+    if (TSMimeHdrFieldNameSet(tmpBuf, tmpMimeHdrLoc, newFieldLoc, NULL, 0) != TS_ERROR) {
+      LOG_ERROR_NEG("TSMimeHdrFieldNameSet");
     }
-    if (INKMimeHdrFieldNameSet(tmpBuf, tmpMimeHdrLoc, newFieldLoc, NULL, -1) != INK_ERROR) {
-      LOG_ERROR_NEG("INKMimeHdrFieldNameSet");
+    if (TSMimeHdrFieldNameSet(tmpBuf, tmpMimeHdrLoc, newFieldLoc, NULL, -1) != TS_ERROR) {
+      LOG_ERROR_NEG("TSMimeHdrFieldNameSet");
     }
 #endif
 
     /* Now, do the insert : append to the list of fields */
-    if (INKMimeHdrFieldInsert(tmpBuf, tmpMimeHdrLoc, newFieldLoc, -1) == INK_ERROR) {
-      LOG_API_ERROR("INKMimeHdrFieldInsert");
+    if (TSMimeHdrFieldAppend(tmpBuf, tmpMimeHdrLoc, newFieldLoc) == TS_ERROR) {
+      LOG_API_ERROR("TSMimeHdrFieldAppend");
     }
 
     /* auto: check the appended field using the last idx value */
-    if ((idx = INKMimeHdrFieldsCount(tmpBuf, tmpMimeHdrLoc)) == INK_ERROR) {
-      LOG_API_ERROR("INKMimeHdrFieldsCount");
-    } else if ((tmpFieldLoc = INKMimeHdrFieldGet(tmpBuf, tmpMimeHdrLoc, --idx)) == INK_ERROR_PTR) {
-      LOG_API_ERROR("INKMimeHdrFieldGet");
+    if ((idx = TSMimeHdrFieldsCount(tmpBuf, tmpMimeHdrLoc)) == TS_ERROR) {
+      LOG_API_ERROR("TSMimeHdrFieldsCount");
+    } else if ((tmpFieldLoc = TSMimeHdrFieldGet(tmpBuf, tmpMimeHdrLoc, --idx)) == TS_ERROR_PTR) {
+      LOG_API_ERROR("TSMimeHdrFieldGet");
     } else {
-      if ((tmpFieldName = INKMimeHdrFieldNameGet(tmpBuf, tmpMimeHdrLoc, tmpFieldLoc,
-                                                 &tmpFieldNameLength)) == INK_ERROR_PTR) {
-        LOG_API_ERROR("INKMimeHdrFieldNameGet");
+      if ((tmpFieldName = TSMimeHdrFieldNameGet(tmpBuf, tmpMimeHdrLoc, tmpFieldLoc,
+                                                 &tmpFieldNameLength)) == TS_ERROR_PTR) {
+        LOG_API_ERROR("TSMimeHdrFieldNameGet");
       } else {
         if (strncmp(tmpFieldName, "Append-Field", strlen("Append-Field"))) {
-          LOG_AUTO_ERROR("INKMimeHdrFieldInsert", "New field not appended!");
+          LOG_AUTO_ERROR("TSMimeHdrFieldAppend", "New field not appended!");
         }
         STR_RELEASE(tmpBuf, tmpMimeHdrLoc, tmpFieldName);
       }
-      /* negative test for INKMimeHdrFieldNameGet */
+      /* negative test for TSMimeHdrFieldNameGet */
 #ifdef DEBUG
-      if (INKMimeHdrFieldNameGet(NULL, tmpMimeHdrLoc, tmpFieldLoc, &tmpFieldNameLength) != INK_ERROR_PTR) {
-        LOG_ERROR_NEG("INKMimeHdrFieldNameGet");
+      if (TSMimeHdrFieldNameGet(NULL, tmpMimeHdrLoc, tmpFieldLoc, &tmpFieldNameLength) != TS_ERROR_PTR) {
+        LOG_ERROR_NEG("TSMimeHdrFieldNameGet");
       }
-      if (INKMimeHdrFieldNameGet(tmpBuf, NULL, tmpFieldLoc, &tmpFieldNameLength) != INK_ERROR_PTR) {
-        LOG_ERROR_NEG("INKMimeHdrFieldNameGet");
+      if (TSMimeHdrFieldNameGet(tmpBuf, NULL, tmpFieldLoc, &tmpFieldNameLength) != TS_ERROR_PTR) {
+        LOG_ERROR_NEG("TSMimeHdrFieldNameGet");
       }
-      if (INKMimeHdrFieldNameGet(tmpBuf, tmpMimeHdrLoc, NULL, &tmpFieldNameLength) != INK_ERROR_PTR) {
-        LOG_ERROR_NEG("INKMimeHdrFieldNameGet");
+      if (TSMimeHdrFieldNameGet(tmpBuf, tmpMimeHdrLoc, NULL, &tmpFieldNameLength) != TS_ERROR_PTR) {
+        LOG_ERROR_NEG("TSMimeHdrFieldNameGet");
       }
 #endif
 
@@ -822,27 +821,27 @@ sectionMimeHdr(INKMBuffer hdrBuf, INKMLoc httpHdrLoc)
     HANDLE_RELEASE(tmpBuf, tmpMimeHdrLoc, newFieldLoc);
 
   section_63:
-    INKDebug(RESP, "***********************( 6.3 )***********************");
+    TSDebug(RESP, "***********************( 6.3 )***********************");
 
                 /**** (6.3): append field-values (comma seperated) to "Append-Field" ***/
 
-    if ((newFieldLoc = INKMimeHdrFieldFind(tmpBuf, tmpMimeHdrLoc, "Append-Field",
-                                           strlen("Append-Field"))) == INK_ERROR_PTR) {
-      LOG_API_ERROR_COMMENT("INKMimeHdrFieldFind", "Skip to section 7");
+    if ((newFieldLoc = TSMimeHdrFieldFind(tmpBuf, tmpMimeHdrLoc, "Append-Field",
+                                           strlen("Append-Field"))) == TS_ERROR_PTR) {
+      LOG_API_ERROR_COMMENT("TSMimeHdrFieldFind", "Skip to section 7");
       goto section_7;
-    } else if (INKMimeHdrFieldValueInsert(tmpBuf, tmpMimeHdrLoc, newFieldLoc, "append-field-value-2",
-                                          strlen("append-field-value-2"), -1) == INK_ERROR) {
-      LOG_API_ERROR("INKMimeHdrFieldValueInsert");
+    } else if (TSMimeHdrFieldValueStringInsert(tmpBuf, tmpMimeHdrLoc, newFieldLoc, "append-field-value-2",
+                                          strlen("append-field-value-2"), -1) == TS_ERROR) {
+      LOG_API_ERROR("TSMimeHdrFieldValueStringInsert");
     }
 
     /* auto: check the newly appended field value w/ idx == 1 */
-    if (INKMimeHdrFieldValueStringGet(tmpBuf, tmpMimeHdrLoc, newFieldLoc, 1, &tmpFieldValueString,
-                                      &tmpFieldNameLength) == INK_ERROR) {
-      LOG_API_ERROR("INKMimeHdrFieldValueStringGet");
-      INKDebug(RESP, "string = %s", tmpFieldValueString);
+    if (TSMimeHdrFieldValueStringGet(tmpBuf, tmpMimeHdrLoc, newFieldLoc, 1, &tmpFieldValueString,
+                                      &tmpFieldNameLength) == TS_ERROR) {
+      LOG_API_ERROR("TSMimeHdrFieldValueStringGet");
+      TSDebug(RESP, "string = %s", tmpFieldValueString);
     } else {
       if (strncmp(tmpFieldValueString, "append-field-value-2", strlen("append-field-value-2"))) {
-        LOG_AUTO_ERROR("INKMimeHdrFieldValueInsert", "New field value not appended!");
+        LOG_AUTO_ERROR("TSMimeHdrFieldValueStringInsert", "New field value not appended!");
       }
       STR_RELEASE(tmpBuf, tmpMimeHdrLoc, tmpFieldValueString);
     }
@@ -851,30 +850,30 @@ sectionMimeHdr(INKMBuffer hdrBuf, INKMLoc httpHdrLoc)
     HANDLE_RELEASE(tmpBuf, tmpMimeHdrLoc, newFieldLoc);
 
   section_7:
-    INKDebug(RESP, "***********************( 7 )***********************");
+    TSDebug(RESP, "***********************( 7 )***********************");
 
                 /****** (7): Now modify the field values ******/
 
                 /*** (7.1): Totally change the field value *****/
-    if ((newFieldLoc = INKMimeHdrFieldFind(tmpBuf, tmpMimeHdrLoc, "Append-Field",
-                                           strlen("Append-Field"))) == INK_ERROR_PTR) {
-      LOG_API_ERROR_COMMENT("INKMimeHdrFieldFind", "Skip to section 7.2");
+    if ((newFieldLoc = TSMimeHdrFieldFind(tmpBuf, tmpMimeHdrLoc, "Append-Field",
+                                           strlen("Append-Field"))) == TS_ERROR_PTR) {
+      LOG_API_ERROR_COMMENT("TSMimeHdrFieldFind", "Skip to section 7.2");
       goto section_8;
     }
 
-    /* FIXME: INKqa8060: check if idx == -1 is an unpublised behaviour still */
-    if (INKMimeHdrFieldValueStringSet(tmpBuf, tmpMimeHdrLoc, newFieldLoc, -1, "new-append-field-value",
-                                      strlen("new-append-field-value")) == INK_ERROR) {
-      LOG_API_ERROR("INKMimeHdrFieldValueStringSet");
+    /* FIXME: TSqa8060: check if idx == -1 is an unpublised behaviour still */
+    if (TSMimeHdrFieldValueStringSet(tmpBuf, tmpMimeHdrLoc, newFieldLoc, -1, "new-append-field-value",
+                                      strlen("new-append-field-value")) == TS_ERROR) {
+      LOG_API_ERROR("TSMimeHdrFieldValueStringSet");
     }
 
     /* auto: check the newly changed field value */
-    if (INKMimeHdrFieldValueStringGet(tmpBuf, tmpMimeHdrLoc, newFieldLoc, -1, &tmpFieldValueString,
-                                      &tmpFieldNameLength) == INK_ERROR) {
-      LOG_API_ERROR("INKMimeHdrFieldValueStringGet");
+    if (TSMimeHdrFieldValueStringGet(tmpBuf, tmpMimeHdrLoc, newFieldLoc, -1, &tmpFieldValueString,
+                                      &tmpFieldNameLength) == TS_ERROR) {
+      LOG_API_ERROR("TSMimeHdrFieldValueStringGet");
     } else {
       if (strncmp(tmpFieldValueString, "new-append-field-value", strlen("new-append-field-value"))) {
-        LOG_AUTO_ERROR("INKMimeHdrFieldValueInsert", "New field value not replaced properly !");
+        LOG_AUTO_ERROR("TSMimeHdrFieldValueStringInsert", "New field value not replaced properly !");
       }
       STR_RELEASE(tmpBuf, tmpMimeHdrLoc, tmpFieldValueString);
     }
@@ -883,89 +882,89 @@ sectionMimeHdr(INKMBuffer hdrBuf, INKMLoc httpHdrLoc)
 
     /* negative test */
 #ifdef DEBUG
-    if (INKMimeHdrFieldValueStringSet(NULL, tmpMimeHdrLoc, newFieldLoc, 0, "neg-test-field-value",
-                                      strlen("neg-test-field-value")) != INK_ERROR) {
-      LOG_ERROR_NEG("INKMimeHdrFieldValueStringSet");
+    if (TSMimeHdrFieldValueStringSet(NULL, tmpMimeHdrLoc, newFieldLoc, 0, "neg-test-field-value",
+                                      strlen("neg-test-field-value")) != TS_ERROR) {
+      LOG_ERROR_NEG("TSMimeHdrFieldValueStringSet");
     }
-    if (INKMimeHdrFieldValueStringSet(tmpBuf, NULL, newFieldLoc, 0, "neg-test-field-value",
-                                      strlen("neg-test-field-value")) != INK_ERROR) {
-      LOG_ERROR_NEG("INKMimeHdrFieldValueStringSet");
+    if (TSMimeHdrFieldValueStringSet(tmpBuf, NULL, newFieldLoc, 0, "neg-test-field-value",
+                                      strlen("neg-test-field-value")) != TS_ERROR) {
+      LOG_ERROR_NEG("TSMimeHdrFieldValueStringSet");
     }
-    if (INKMimeHdrFieldValueStringSet(tmpBuf, tmpMimeHdrLoc, NULL, 0, "neg-test-field-value",
-                                      strlen("neg-test-field-value")) != INK_ERROR) {
-      LOG_ERROR_NEG("INKMimeHdrFieldValueStringSet");
+    if (TSMimeHdrFieldValueStringSet(tmpBuf, tmpMimeHdrLoc, NULL, 0, "neg-test-field-value",
+                                      strlen("neg-test-field-value")) != TS_ERROR) {
+      LOG_ERROR_NEG("TSMimeHdrFieldValueStringSet");
     }
-    if (INKMimeHdrFieldValueStringSet(tmpBuf, tmpMimeHdrLoc, newFieldLoc, 0, NULL, -1) != INK_ERROR) {
-      LOG_ERROR_NEG("INKMimeHdrFieldValueStringSet");
-    }
-
-    if (INKMimeHdrFieldValueStringInsert(NULL, tmpMimeHdrLoc, newFieldLoc, 0, "neg-test-field-value",
-                                         strlen("neg-test-field-value")) != INK_ERROR) {
-      LOG_ERROR_NEG("INKMimeHdrFieldValueStringInsert");
-    }
-    if (INKMimeHdrFieldValueStringInsert(tmpBuf, NULL, newFieldLoc, 0, "neg-test-field-value",
-                                         strlen("neg-test-field-value")) != INK_ERROR) {
-      LOG_ERROR_NEG("INKMimeHdrFieldValueStringInsert");
-    }
-    if (INKMimeHdrFieldValueStringInsert(tmpBuf, tmpMimeHdrLoc, NULL, 0, "neg-test-field-value",
-                                         strlen("neg-test-field-value")) != INK_ERROR) {
-      LOG_ERROR_NEG("INKMimeHdrFieldValueStringInsert");
-    }
-    if (INKMimeHdrFieldValueStringInsert(tmpBuf, tmpMimeHdrLoc, newFieldLoc, 0, NULL, -1) != INK_ERROR) {
-      LOG_ERROR_NEG("INKMimeHdrFieldValueStringInsert");
+    if (TSMimeHdrFieldValueStringSet(tmpBuf, tmpMimeHdrLoc, newFieldLoc, 0, NULL, -1) != TS_ERROR) {
+      LOG_ERROR_NEG("TSMimeHdrFieldValueStringSet");
     }
 
-    if (INKMimeHdrFieldValueStringGet(NULL, tmpMimeHdrLoc, newFieldLoc, -1, &tmpFieldValueString,
-                                      &tmpFieldNameLength) != INK_ERROR) {
-      LOG_ERROR_NEG("INKMimeHdrFieldValueStringGet");
+    if (TSMimeHdrFieldValueStringInsert(NULL, tmpMimeHdrLoc, newFieldLoc, 0, "neg-test-field-value",
+                                         strlen("neg-test-field-value")) != TS_ERROR) {
+      LOG_ERROR_NEG("TSMimeHdrFieldValueStringInsert");
     }
-    if (INKMimeHdrFieldValueStringGet(tmpBuf, NULL, newFieldLoc, -1, &tmpFieldValueString,
-                                      &tmpFieldNameLength) != INK_ERROR) {
-      LOG_ERROR_NEG("INKMimeHdrFieldValueStringGet");
+    if (TSMimeHdrFieldValueStringInsert(tmpBuf, NULL, newFieldLoc, 0, "neg-test-field-value",
+                                         strlen("neg-test-field-value")) != TS_ERROR) {
+      LOG_ERROR_NEG("TSMimeHdrFieldValueStringInsert");
     }
-    if (INKMimeHdrFieldValueStringGet(tmpBuf, tmpMimeHdrLoc, NULL, -1, &tmpFieldValueString,
-                                      &tmpFieldNameLength) != INK_ERROR) {
-      LOG_ERROR_NEG("INKMimeHdrFieldValueStringGet");
+    if (TSMimeHdrFieldValueStringInsert(tmpBuf, tmpMimeHdrLoc, NULL, 0, "neg-test-field-value",
+                                         strlen("neg-test-field-value")) != TS_ERROR) {
+      LOG_ERROR_NEG("TSMimeHdrFieldValueStringInsert");
     }
-    if (INKMimeHdrFieldValueStringGet(tmpBuf, tmpMimeHdrLoc, newFieldLoc, -1, NULL, &tmpFieldNameLength) != INK_ERROR) {
-      LOG_ERROR_NEG("INKMimeHdrFieldValueStringGet");
+    if (TSMimeHdrFieldValueStringInsert(tmpBuf, tmpMimeHdrLoc, newFieldLoc, 0, NULL, -1) != TS_ERROR) {
+      LOG_ERROR_NEG("TSMimeHdrFieldValueStringInsert");
     }
-    if (INKMimeHdrFieldValueStringGet(tmpBuf, tmpMimeHdrLoc, newFieldLoc, -1, &tmpFieldValueString, NULL) != INK_ERROR) {
-      LOG_ERROR_NEG("INKMimeHdrFieldValueStringGet");
+
+    if (TSMimeHdrFieldValueStringGet(NULL, tmpMimeHdrLoc, newFieldLoc, -1, &tmpFieldValueString,
+                                      &tmpFieldNameLength) != TS_ERROR) {
+      LOG_ERROR_NEG("TSMimeHdrFieldValueStringGet");
+    }
+    if (TSMimeHdrFieldValueStringGet(tmpBuf, NULL, newFieldLoc, -1, &tmpFieldValueString,
+                                      &tmpFieldNameLength) != TS_ERROR) {
+      LOG_ERROR_NEG("TSMimeHdrFieldValueStringGet");
+    }
+    if (TSMimeHdrFieldValueStringGet(tmpBuf, tmpMimeHdrLoc, NULL, -1, &tmpFieldValueString,
+                                      &tmpFieldNameLength) != TS_ERROR) {
+      LOG_ERROR_NEG("TSMimeHdrFieldValueStringGet");
+    }
+    if (TSMimeHdrFieldValueStringGet(tmpBuf, tmpMimeHdrLoc, newFieldLoc, -1, NULL, &tmpFieldNameLength) != TS_ERROR) {
+      LOG_ERROR_NEG("TSMimeHdrFieldValueStringGet");
+    }
+    if (TSMimeHdrFieldValueStringGet(tmpBuf, tmpMimeHdrLoc, newFieldLoc, -1, &tmpFieldValueString, NULL) != TS_ERROR) {
+      LOG_ERROR_NEG("TSMimeHdrFieldValueStringGet");
     }
 #endif
 
                 /*** (7.2): Now append a string to a field value ***/
 
-    if (INKMimeHdrFieldValueAppend(tmpBuf, tmpMimeHdrLoc, newFieldLoc, 0, "<appended-text>",
-                                   strlen("<appended-text>")) == INK_ERROR) {
-      LOG_API_ERROR("INKMimeHdrFieldValueAppend");
+    if (TSMimeHdrFieldValueAppend(tmpBuf, tmpMimeHdrLoc, newFieldLoc, 0, "<appended-text>",
+                                   strlen("<appended-text>")) == TS_ERROR) {
+      LOG_API_ERROR("TSMimeHdrFieldValueAppend");
     }
 
-    /* negative test for INKMimeHdrFieldValueAppend */
+    /* negative test for TSMimeHdrFieldValueAppend */
 #ifdef DEBUG
-    if (INKMimeHdrFieldValueAppend(NULL, tmpMimeHdrLoc, newFieldLoc, 0, "<appended-text>", strlen("<appended-text>")) !=
-        INK_ERROR) {
-      LOG_ERROR_NEG("INKMimeHdrFieldValueAppend");
+    if (TSMimeHdrFieldValueAppend(NULL, tmpMimeHdrLoc, newFieldLoc, 0, "<appended-text>", strlen("<appended-text>")) !=
+        TS_ERROR) {
+      LOG_ERROR_NEG("TSMimeHdrFieldValueAppend");
     }
-    if (INKMimeHdrFieldValueAppend(tmpBuf, NULL, newFieldLoc, 0, "<appended-text>", strlen("<appended-text>")) !=
-        INK_ERROR) {
-      LOG_ERROR_NEG("INKMimeHdrFieldValueAppend");
+    if (TSMimeHdrFieldValueAppend(tmpBuf, NULL, newFieldLoc, 0, "<appended-text>", strlen("<appended-text>")) !=
+        TS_ERROR) {
+      LOG_ERROR_NEG("TSMimeHdrFieldValueAppend");
     }
-    if (INKMimeHdrFieldValueAppend(tmpBuf, tmpMimeHdrLoc, NULL, 0, "<appended-text>", strlen("<appended-text>")) !=
-        INK_ERROR) {
-      LOG_ERROR_NEG("INKMimeHdrFieldValueAppend");
+    if (TSMimeHdrFieldValueAppend(tmpBuf, tmpMimeHdrLoc, NULL, 0, "<appended-text>", strlen("<appended-text>")) !=
+        TS_ERROR) {
+      LOG_ERROR_NEG("TSMimeHdrFieldValueAppend");
     }
 #endif
 
     /* auto: check the newly changed field value */
     /* FIXME: check if idx == -1 is still undocumented ?? */
-    if (INKMimeHdrFieldValueStringGet(tmpBuf, tmpMimeHdrLoc, newFieldLoc, -1, &tmpFieldValueString,
-                                      &tmpFieldNameLength) == INK_ERROR) {
-      LOG_API_ERROR("INKMimeHdrFieldValueStringGet");
+    if (TSMimeHdrFieldValueStringGet(tmpBuf, tmpMimeHdrLoc, newFieldLoc, -1, &tmpFieldValueString,
+                                      &tmpFieldNameLength) == TS_ERROR) {
+      LOG_API_ERROR("TSMimeHdrFieldValueStringGet");
     } else {
       if (!strstr(tmpFieldValueString, "<appended-text>")) {
-        LOG_AUTO_ERROR("INKMimeHdrFieldValueInsert", "Cannot located the appended text to field value!");
+        LOG_AUTO_ERROR("TSMimeHdrFieldValueStringInsert", "Cannot located the appended text to field value!");
       }
       STR_RELEASE(tmpBuf, tmpMimeHdrLoc, tmpFieldValueString);
     }
@@ -976,72 +975,72 @@ sectionMimeHdr(INKMBuffer hdrBuf, INKMLoc httpHdrLoc)
     HANDLE_RELEASE(tmpBuf, tmpMimeHdrLoc, newFieldLoc);
 
   section_8:
-    INKDebug(RESP, "***********************( 8 )***********************");
+    TSDebug(RESP, "***********************( 8 )***********************");
 
                 /****** (8): clear values for few fields ******/
-    /* fieldLoc = INKMimeHdrFieldFind (tmpBuf, tmpMimeHdrLoc, "Date", strlen("Date")); */
+    /* fieldLoc = TSMimeHdrFieldFind (tmpBuf, tmpMimeHdrLoc, "Date", strlen("Date")); */
 
-    if ((fieldLoc = INKMimeHdrFieldRetrieve(tmpBuf, tmpMimeHdrLoc, INK_MIME_FIELD_DATE))
-        == INK_ERROR_PTR) {
-      LOG_API_ERROR("INKMimeHdrFieldRetrieve");
+    if ((fieldLoc = TSMimeHdrFieldFind(tmpBuf, tmpMimeHdrLoc, TS_MIME_FIELD_DATE, TS_MIME_LEN_DATE))
+        == TS_ERROR_PTR) {
+      LOG_API_ERROR("TSMimeHdrFieldFind");
     } else {
-      if (INKMimeHdrFieldValueDateGet(tmpBuf, tmpMimeHdrLoc, fieldLoc, &tmpDate1) == INK_ERROR) {
-        LOG_API_ERROR("INKMimeHdrFieldValueDateGet");
-      } else if (INKMimeHdrFieldValuesClear(tmpBuf, tmpMimeHdrLoc, fieldLoc) == INK_ERROR) {
-        LOG_API_ERROR("INKMimeHdrFieldValuesClear");
+      if (TSMimeHdrFieldValueDateGet(tmpBuf, tmpMimeHdrLoc, fieldLoc, &tmpDate1) == TS_ERROR) {
+        LOG_API_ERROR("TSMimeHdrFieldValueDateGet");
+      } else if (TSMimeHdrFieldValuesClear(tmpBuf, tmpMimeHdrLoc, fieldLoc) == TS_ERROR) {
+        LOG_API_ERROR("TSMimeHdrFieldValuesClear");
       }
     }
 
-    /* negative test for INKMimeHdrFieldValuesClear */
+    /* negative test for TSMimeHdrFieldValuesClear */
 #ifdef DEBUG
-    if (INKMimeHdrFieldValuesClear(NULL, tmpMimeHdrLoc, fieldLoc) != INK_ERROR) {
-      LOG_ERROR_NEG("INKMimeHdrFieldValuesClear");
+    if (TSMimeHdrFieldValuesClear(NULL, tmpMimeHdrLoc, fieldLoc) != TS_ERROR) {
+      LOG_ERROR_NEG("TSMimeHdrFieldValuesClear");
     }
-    if (INKMimeHdrFieldValuesClear(tmpBuf, NULL, fieldLoc) != INK_ERROR) {
-      LOG_ERROR_NEG("INKMimeHdrFieldValuesClear");
+    if (TSMimeHdrFieldValuesClear(tmpBuf, NULL, fieldLoc) != TS_ERROR) {
+      LOG_ERROR_NEG("TSMimeHdrFieldValuesClear");
     }
-    if (INKMimeHdrFieldValuesClear(tmpBuf, tmpMimeHdrLoc, NULL) != INK_ERROR) {
-      LOG_ERROR_NEG("INKMimeHdrFieldValuesClear");
+    if (TSMimeHdrFieldValuesClear(tmpBuf, tmpMimeHdrLoc, NULL) != TS_ERROR) {
+      LOG_ERROR_NEG("TSMimeHdrFieldValuesClear");
     }
 #endif
 
     /* auto: RETRIEVing the DATE field back after CLEAR should fail */
-    if ((fieldLoc = INKMimeHdrFieldRetrieve(tmpBuf, tmpMimeHdrLoc, INK_MIME_FIELD_DATE))
-        == INK_ERROR_PTR) {
-      LOG_API_ERROR("INKMimeHdrFieldRetrieve");
+    if ((fieldLoc = TSMimeHdrFieldFind(tmpBuf, tmpMimeHdrLoc, TS_MIME_FIELD_DATE, TS_MIME_LEN_DATE))
+        == TS_ERROR_PTR) {
+      LOG_API_ERROR("TSMimeHdrFieldFind");
     } else {
-      if (INKMimeHdrFieldValueDateGet(tmpBuf, tmpMimeHdrLoc, fieldLoc, &tmpDate2) != INK_ERROR) {
-        /*LOG_AUTO_ERROR("INKMimeHdrFieldValuesClear", "Can STILL retrieve DATE value after INK_CLEAR"); */
+      if (TSMimeHdrFieldValueDateGet(tmpBuf, tmpMimeHdrLoc, fieldLoc, &tmpDate2) != TS_ERROR) {
+        /*LOG_AUTO_ERROR("TSMimeHdrFieldValuesClear", "Can STILL retrieve DATE value after TS_CLEAR"); */
         if (tmpDate1 == tmpDate2) {
-          LOG_AUTO_ERROR("INKMimeHdrFieldValuesClear", "DATE value STILL the same after INK_CLEAR");
+          LOG_AUTO_ERROR("TSMimeHdrFieldValuesClear", "DATE value STILL the same after TS_CLEAR");
         }
       }
     }
 
-    if ((fieldLoc = INKMimeHdrFieldRetrieve(tmpBuf, tmpMimeHdrLoc, INK_MIME_FIELD_CONTENT_TYPE))
-        == INK_ERROR_PTR) {
-      LOG_API_ERROR("INKMimeHdrFieldRetrieve");
+    if ((fieldLoc = TSMimeHdrFieldFind(tmpBuf, tmpMimeHdrLoc, TS_MIME_FIELD_CONTENT_TYPE, TS_MIME_LEN_CONTENT_TYPE))
+        == TS_ERROR_PTR) {
+      LOG_API_ERROR("TSMimeHdrFieldFind");
     } else if (fieldLoc) {
-      if (INKMimeHdrFieldValueStringGet(tmpBuf, tmpMimeHdrLoc, fieldLoc, -1,
-                                        &tmpFieldValue1, &tmpFieldValueLength) == INK_ERROR) {
-        LOG_API_ERROR("INKMimeHdrFieldValueStringGet");
+      if (TSMimeHdrFieldValueStringGet(tmpBuf, tmpMimeHdrLoc, fieldLoc, -1,
+                                        &tmpFieldValue1, &tmpFieldValueLength) == TS_ERROR) {
+        LOG_API_ERROR("TSMimeHdrFieldValueStringGet");
       }
-      if (INKMimeHdrFieldValuesClear(tmpBuf, tmpMimeHdrLoc, fieldLoc) == INK_ERROR) {
-        LOG_API_ERROR("INKMimeHdrFieldValuesClear");
+      if (TSMimeHdrFieldValuesClear(tmpBuf, tmpMimeHdrLoc, fieldLoc) == TS_ERROR) {
+        LOG_API_ERROR("TSMimeHdrFieldValuesClear");
       }
     }
     HANDLE_RELEASE(tmpBuf, tmpMimeHdrLoc, fieldLoc);
 
     /* auto: */
-    if ((fieldLoc = INKMimeHdrFieldRetrieve(tmpBuf, tmpMimeHdrLoc, INK_MIME_FIELD_CONTENT_TYPE))
-        == INK_ERROR_PTR) {
-      LOG_API_ERROR("INKMimeHdrFieldRetrieve");
+    if ((fieldLoc = TSMimeHdrFieldFind(tmpBuf, tmpMimeHdrLoc, TS_MIME_FIELD_CONTENT_TYPE, TS_MIME_LEN_CONTENT_TYPE))
+        == TS_ERROR_PTR) {
+      LOG_API_ERROR("TSMimeHdrFieldFind");
     } else if (fieldLoc) {
-      if (INKMimeHdrFieldValueStringGet(tmpBuf, tmpMimeHdrLoc, fieldLoc, -1,
-                                        &tmpFieldValue2, &tmpFieldValueLength) != INK_ERROR) {
-        /*LOG_AUTO_ERROR("INKMimeHdrFieldValuesClear", "Can STILL retrieve CONTENT_TYPE value after INK_CLEAR"); */
+      if (TSMimeHdrFieldValueStringGet(tmpBuf, tmpMimeHdrLoc, fieldLoc, -1,
+                                        &tmpFieldValue2, &tmpFieldValueLength) != TS_ERROR) {
+        /*LOG_AUTO_ERROR("TSMimeHdrFieldValuesClear", "Can STILL retrieve CONTENT_TYPE value after TS_CLEAR"); */
         if (strcmp(tmpFieldValue2, "\0") && !strncmp(tmpFieldValue1, tmpFieldValue2, tmpFieldValueLength)) {
-          LOG_AUTO_ERROR("INKMimeHdrFieldValuesClear", "CONTENT_TYPE value STILL same after INK_CLEAR");
+          LOG_AUTO_ERROR("TSMimeHdrFieldValuesClear", "CONTENT_TYPE value STILL same after TS_CLEAR");
         }
       }
     }
@@ -1052,28 +1051,28 @@ sectionMimeHdr(INKMBuffer hdrBuf, INKMLoc httpHdrLoc)
     STR_RELEASE(tmpBuf, tmpMimeHdrLoc, tmpFieldValue2);
     HANDLE_RELEASE(tmpBuf, tmpMimeHdrLoc, fieldLoc);
 
-                /******* (9): Desotroy ALL the MIME fields using INK_Clear *******/
-    if (INKMimeHdrFieldsClear(tmpBuf, tmpMimeHdrLoc) == INK_ERROR) {
-      LOG_API_ERROR("INKMimeHdrFieldsClear");
+                /******* (9): Desotroy ALL the MIME fields using TS_Clear *******/
+    if (TSMimeHdrFieldsClear(tmpBuf, tmpMimeHdrLoc) == TS_ERROR) {
+      LOG_API_ERROR("TSMimeHdrFieldsClear");
     }
     HANDLE_RELEASE(tmpBuf, tmpMimeHdrLoc, fieldLoc);
 
-    /* negative test for INKMimeHdrFieldsClear */
+    /* negative test for TSMimeHdrFieldsClear */
 #ifdef DEBUG
-    if (INKMimeHdrFieldsClear(NULL, tmpMimeHdrLoc) != INK_ERROR) {
-      LOG_ERROR_NEG("INKMimeHdrFieldsClear");
+    if (TSMimeHdrFieldsClear(NULL, tmpMimeHdrLoc) != TS_ERROR) {
+      LOG_ERROR_NEG("TSMimeHdrFieldsClear");
     }
-    if (INKMimeHdrFieldsClear(tmpBuf, NULL) != INK_ERROR) {
-      LOG_ERROR_NEG("INKMimeHdrFieldsClear");
+    if (TSMimeHdrFieldsClear(tmpBuf, NULL) != TS_ERROR) {
+      LOG_ERROR_NEG("TSMimeHdrFieldsClear");
     }
 #endif
 
-    /* auto: INK_Retrieve'ing field after INK_Clear should fail */
-    if ((fieldLoc = INKMimeHdrFieldRetrieve(tmpBuf, tmpMimeHdrLoc, INK_MIME_FIELD_AGE)) != INK_ERROR_PTR && fieldLoc) {
-      LOG_AUTO_ERROR("INKMimeHdrFieldsClear", "Can STILL retrieve AGE fieldLoc afer INK_FieldsClear");
-      if (INKMimeHdrFieldValueStringGet(tmpBuf, tmpMimeHdrLoc, fieldLoc, -1, &tmpFieldValueString,
-                                        &tmpFieldValueLength) != INK_ERROR) {
-        LOG_AUTO_ERROR("INKMimeHdrFieldsClear", "Can STILL retrieve AGE fieldValue afer INK_FieldsClear");
+    /* auto: TS_Retrieve'ing field after TS_Clear should fail */
+    if ((fieldLoc = TSMimeHdrFieldFind(tmpBuf, tmpMimeHdrLoc, TS_MIME_FIELD_AGE, TS_MIME_LEN_AGE)) != TS_ERROR_PTR && fieldLoc) {
+      LOG_AUTO_ERROR("TSMimeHdrFieldsClear", "Can STILL retrieve AGE fieldLoc afer TS_FieldsClear");
+      if (TSMimeHdrFieldValueStringGet(tmpBuf, tmpMimeHdrLoc, fieldLoc, -1, &tmpFieldValueString,
+                                        &tmpFieldValueLength) != TS_ERROR) {
+        LOG_AUTO_ERROR("TSMimeHdrFieldsClear", "Can STILL retrieve AGE fieldValue afer TS_FieldsClear");
         STR_RELEASE(tmpBuf, tmpMimeHdrLoc, tmpFieldValueString);
       }
     }
@@ -1084,36 +1083,36 @@ sectionMimeHdr(INKMBuffer hdrBuf, INKMLoc httpHdrLoc)
     HANDLE_RELEASE(tmpBuf, tmpMimeHdrLoc, fieldLoc);
 
     /* Final clean-up */
-    HANDLE_RELEASE(tmpBuf, INK_NULL_MLOC, tmpMimeHdrLoc);
+    HANDLE_RELEASE(tmpBuf, TS_NULL_MLOC, tmpMimeHdrLoc);
     BUFFER_DESTROY(tmpBuf);
 
     /* added by ymou */
-                /***** (10): create a new mime header and play with INKMimeHdrFieldValue[Insert|Get]Date *****/
+                /***** (10): create a new mime header and play with TSMimeHdrFieldValue[Insert|Get]Date *****/
     /* create a new mime header */
-    tmpBuf = INKMBufferCreate();
-    tmpMimeHdrLoc = INKMimeHdrCreate(tmpBuf);
+    tmpBuf = TSMBufferCreate();
+    tmpMimeHdrLoc = TSMimeHdrCreate(tmpBuf);
 
     /* create a new field */
-    fieldLoc1 = INKMimeHdrFieldCreate(tmpBuf, tmpMimeHdrLoc);
-    INKMimeHdrFieldInsert(tmpBuf, tmpMimeHdrLoc, fieldLoc1, -1);
-    INKMimeHdrFieldNameSet(tmpBuf, tmpMimeHdrLoc, fieldLoc1, MY_TEST_HDR_1, strlen(MY_TEST_HDR_1));
+    fieldLoc1 = TSMimeHdrFieldCreate(tmpBuf, tmpMimeHdrLoc);
+    TSMimeHdrFieldAppend(tmpBuf, tmpMimeHdrLoc, fieldLoc1);
+    TSMimeHdrFieldNameSet(tmpBuf, tmpMimeHdrLoc, fieldLoc1, MY_TEST_HDR_1, strlen(MY_TEST_HDR_1));
 
     /* insert (append) a Date value into the new field */
     currentTime = time(&currentTime);
-    if (INKMimeHdrFieldValueDateInsert(tmpBuf, tmpMimeHdrLoc, fieldLoc1, currentTime) != INK_SUCCESS) {
-      LOG_API_ERROR("INKMimeHdrFieldValueDateInsert");
+    if (TSMimeHdrFieldValueDateInsert(tmpBuf, tmpMimeHdrLoc, fieldLoc1, currentTime) != TS_SUCCESS) {
+      LOG_API_ERROR("TSMimeHdrFieldValueDateInsert");
     }
 
-    /* negative test for INKMimeHdrFieldValueDateInsert */
+    /* negative test for TSMimeHdrFieldValueDateInsert */
 #ifdef DEBUG
-    if (INKMimeHdrFieldValueDateInsert(NULL, tmpMimeHdrLoc, fieldLoc1, currentTime) != INK_ERROR) {
-      LOG_ERROR_NEG("INKMimeHdrFieldValueDateInsert");
+    if (TSMimeHdrFieldValueDateInsert(NULL, tmpMimeHdrLoc, fieldLoc1, currentTime) != TS_ERROR) {
+      LOG_ERROR_NEG("TSMimeHdrFieldValueDateInsert");
     }
-    if (INKMimeHdrFieldValueDateInsert(tmpBuf, NULL, fieldLoc1, currentTime) != INK_ERROR) {
-      LOG_ERROR_NEG("INKMimeHdrFieldValueDateInsert");
+    if (TSMimeHdrFieldValueDateInsert(tmpBuf, NULL, fieldLoc1, currentTime) != TS_ERROR) {
+      LOG_ERROR_NEG("TSMimeHdrFieldValueDateInsert");
     }
-    if (INKMimeHdrFieldValueDateInsert(tmpBuf, tmpMimeHdrLoc, NULL, currentTime) != INK_ERROR) {
-      LOG_ERROR_NEG("INKMimeHdrFieldValueDateInsert");
+    if (TSMimeHdrFieldValueDateInsert(tmpBuf, tmpMimeHdrLoc, NULL, currentTime) != TS_ERROR) {
+      LOG_ERROR_NEG("TSMimeHdrFieldValueDateInsert");
     }
 #endif
 
@@ -1122,264 +1121,272 @@ sectionMimeHdr(INKMBuffer hdrBuf, INKMLoc httpHdrLoc)
     /* auto */
     printDateDifference(tmpBuf, tmpMimeHdrLoc, MY_TEST_HDR_1, currentTime, RESP, 10);
 
-                /***** (11): create a new mime field and play with INKMimeHdrFieldValue[Insert|Set|Get]* *****/
+                /***** (11): create a new mime field and play with TSMimeHdrFieldValue[Insert|Set|Get]* *****/
     /* create the second new field */
-    if ((fieldLoc2 = INKMimeHdrFieldCreate(tmpBuf, tmpMimeHdrLoc)) == INK_ERROR_PTR) {
-      LOG_API_ERROR("INKMimeHdrFieldCreate");
+    if ((fieldLoc2 = TSMimeHdrFieldCreate(tmpBuf, tmpMimeHdrLoc)) == TS_ERROR_PTR) {
+      LOG_API_ERROR("TSMimeHdrFieldCreate");
     }
-    if (INKMimeHdrFieldAppend(tmpBuf, tmpMimeHdrLoc, fieldLoc2) != INK_SUCCESS) {
-      LOG_API_ERROR("INKMimeHdrFieldAppend");
+    if (TSMimeHdrFieldAppend(tmpBuf, tmpMimeHdrLoc, fieldLoc2) != TS_SUCCESS) {
+      LOG_API_ERROR("TSMimeHdrFieldAppend");
     }
-    if (INKMimeHdrFieldNameSet(tmpBuf, tmpMimeHdrLoc, fieldLoc2, MY_TEST_HDR_2, strlen(MY_TEST_HDR_2)) != INK_SUCCESS) {
-      LOG_API_ERROR("INKMimeHdrFieldNameSet");
+    if (TSMimeHdrFieldNameSet(tmpBuf, tmpMimeHdrLoc, fieldLoc2, MY_TEST_HDR_2, strlen(MY_TEST_HDR_2)) != TS_SUCCESS) {
+      LOG_API_ERROR("TSMimeHdrFieldNameSet");
     }
 
     /* insert values into the new field */
     valueInt = -1;
     valueUint = 2;
-    if (INKMimeHdrFieldValueIntInsert(tmpBuf, tmpMimeHdrLoc, fieldLoc2, -1, valueInt) != INK_SUCCESS) {
-      LOG_API_ERROR("INKMimeHdrFieldValueIntInsert");
+    if (TSMimeHdrFieldValueIntInsert(tmpBuf, tmpMimeHdrLoc, fieldLoc2, -1, valueInt) != TS_SUCCESS) {
+      LOG_API_ERROR("TSMimeHdrFieldValueIntInsert");
     }
     /* auto: retrive the newly inserted (last) Int value and check */
-    idx = INKMimeHdrFieldValuesCount(tmpBuf, tmpMimeHdrLoc, fieldLoc2) - 1;
-    if (INKMimeHdrFieldValueGetInt(tmpBuf, tmpMimeHdrLoc, fieldLoc2, idx) != valueInt) {
-      LOG_AUTO_ERROR("INKMimeHdrFieldValueInsertInt",
-                     "INKMimeHdrFieldValueGetInt different from INKMimeHdrFieldValueInsertInt");
+    idx = TSMimeHdrFieldValuesCount(tmpBuf, tmpMimeHdrLoc, fieldLoc2) - 1;
+    int tmp_int;
+
+    TSMimeHdrFieldValueIntGet(tmpBuf, tmpMimeHdrLoc, fieldLoc2, idx, &tmp_int)
+    if (tmp_int != valueInt) {
+      LOG_AUTO_ERROR("TSMimeHdrFieldValueIntInsert",
+                     "TSMimeHdrFieldValueIntGet different from TSMimeHdrFieldValueIntInsert");
     }
 
-    if (INKMimeHdrFieldValueIntSet(tmpBuf, tmpMimeHdrLoc, fieldLoc2, 0, 10) != INK_SUCCESS) {
-      LOG_API_ERROR("INKMimeHdrFieldValueIntSet");
+    if (TSMimeHdrFieldValueIntSet(tmpBuf, tmpMimeHdrLoc, fieldLoc2, 0, 10) != TS_SUCCESS) {
+      LOG_API_ERROR("TSMimeHdrFieldValueIntSet");
     }
-    idx = INKMimeHdrFieldValuesCount(tmpBuf, tmpMimeHdrLoc, fieldLoc2) - 1;
-    if (INKMimeHdrFieldValueGetInt(tmpBuf, tmpMimeHdrLoc, fieldLoc2, idx) != 10) {
-      LOG_AUTO_ERROR("INKMimeHdrFieldValueSetInt",
-                     "INKMimeHdrFieldValueGetInt different from INKMimeHdrFieldValueInsertInt");
+    idx = TSMimeHdrFieldValuesCount(tmpBuf, tmpMimeHdrLoc, fieldLoc2) - 1;
+    TSMimeHdrFieldValueIntGet(tmpBuf, tmpMimeHdrLoc, fieldLoc2, idx, &tmp_int);
+    if (tmp_int != 10) {
+      LOG_AUTO_ERROR("TSMimeHdrFieldValueIntSet",
+                     "TSMimeHdrFieldValueIntGet different from TSMimeHdrFieldValueIntInsert");
     }
 
-    if (INKMimeHdrFieldValueUintInsert(tmpBuf, tmpMimeHdrLoc, fieldLoc2, -1, valueUint) != INK_SUCCESS) {
-      LOG_API_ERROR("INKMimeHdrFieldValueUintInsert");
+    if (TSMimeHdrFieldValueUintInsert(tmpBuf, tmpMimeHdrLoc, fieldLoc2, -1, valueUint) != TS_SUCCESS) {
+      LOG_API_ERROR("TSMimeHdrFieldValueUintInsert");
     }
 
     /* auto: retrive the newly inserted (last) Uint value and check */
-    idx = INKMimeHdrFieldValuesCount(tmpBuf, tmpMimeHdrLoc, fieldLoc2) - 1;
-    if (INKMimeHdrFieldValueGetUint(tmpBuf, tmpMimeHdrLoc, fieldLoc2, idx) != valueUint) {
-      LOG_AUTO_ERROR("INKMimeHdrFieldValueInsertUint",
-                     "INKMimeHdrFieldValueGetUint different from INKMimeHdrFieldValueInsertUint");
+    idx = TSMimeHdrFieldValuesCount(tmpBuf, tmpMimeHdrLoc, fieldLoc2) - 1;
+
+    unsigned int tmp_uint;
+
+    TSMimeHdrFieldValueUintGet(tmpBuf, tmpMimeHdrLoc, fieldLoc2, idx, &tmp_uint)
+    if (tmp_uint != valueUint) {
+      LOG_AUTO_ERROR("TSMimeHdrFieldValueUintInsert",
+                     "TSMimeHdrFieldValueUintGet different from TSMimeHdrFieldValueUintInsert");
     }
     printField(tmpBuf, tmpMimeHdrLoc, MY_TEST_HDR_2, RESP, 11);
 
-    /* negative test for INKMimeHdrFieldValue[Int|Uint]Insert */
+    /* negative test for TSMimeHdrFieldValue[Int|Uint]Insert */
 #ifdef DEBUG
-    if (INKMimeHdrFieldValueIntInsert(NULL, tmpMimeHdrLoc, fieldLoc2, valueInt, -1) != INK_ERROR) {
-      LOG_ERROR_NEG("INKMimeHdrFieldValueIntInsert");
+    if (TSMimeHdrFieldValueIntInsert(NULL, tmpMimeHdrLoc, fieldLoc2, valueInt, -1) != TS_ERROR) {
+      LOG_ERROR_NEG("TSMimeHdrFieldValueIntInsert");
     }
-    if (INKMimeHdrFieldValueIntInsert(tmpBuf, NULL, fieldLoc2, valueInt, -1) != INK_ERROR) {
-      LOG_ERROR_NEG("INKMimeHdrFieldValueIntInsert");
+    if (TSMimeHdrFieldValueIntInsert(tmpBuf, NULL, fieldLoc2, valueInt, -1) != TS_ERROR) {
+      LOG_ERROR_NEG("TSMimeHdrFieldValueIntInsert");
     }
-    if (INKMimeHdrFieldValueIntInsert(tmpBuf, tmpMimeHdrLoc, NULL, valueInt, -1) != INK_ERROR) {
-      LOG_ERROR_NEG("INKMimeHdrFieldValueIntInsert");
+    if (TSMimeHdrFieldValueIntInsert(tmpBuf, tmpMimeHdrLoc, NULL, valueInt, -1) != TS_ERROR) {
+      LOG_ERROR_NEG("TSMimeHdrFieldValueIntInsert");
     }
 
-    if (INKMimeHdrFieldValueUintInsert(NULL, tmpMimeHdrLoc, fieldLoc2, valueUint, -1) != INK_ERROR) {
-      LOG_ERROR_NEG("INKMimeHdrFieldValueUintInsert");
+    if (TSMimeHdrFieldValueUintInsert(NULL, tmpMimeHdrLoc, fieldLoc2, valueUint, -1) != TS_ERROR) {
+      LOG_ERROR_NEG("TSMimeHdrFieldValueUintInsert");
     }
-    if (INKMimeHdrFieldValueUintInsert(tmpBuf, NULL, fieldLoc2, valueUint, -1) != INK_ERROR) {
-      LOG_ERROR_NEG("INKMimeHdrFieldValueUintInsert");
+    if (TSMimeHdrFieldValueUintInsert(tmpBuf, NULL, fieldLoc2, valueUint, -1) != TS_ERROR) {
+      LOG_ERROR_NEG("TSMimeHdrFieldValueUintInsert");
     }
-    if (INKMimeHdrFieldValueUintInsert(tmpBuf, tmpMimeHdrLoc, NULL, valueUint, -1) != INK_ERROR) {
-      LOG_ERROR_NEG("INKMimeHdrFieldValueUintInsert");
+    if (TSMimeHdrFieldValueUintInsert(tmpBuf, tmpMimeHdrLoc, NULL, valueUint, -1) != TS_ERROR) {
+      LOG_ERROR_NEG("TSMimeHdrFieldValueUintInsert");
     }
 #endif
 
-                /***** (12): play with INKMimeHdrFieldCopyValues *****/
+                /***** (12): play with TSMimeHdrFieldCopyValues *****/
     /* create the third new field */
-    if ((fieldLoc3 = INKMimeHdrFieldCreate(tmpBuf, tmpMimeHdrLoc)) == INK_ERROR_PTR) {
-      LOG_API_ERROR("INKMimeHdrFieldCreate");
+    if ((fieldLoc3 = TSMimeHdrFieldCreate(tmpBuf, tmpMimeHdrLoc)) == TS_ERROR_PTR) {
+      LOG_API_ERROR("TSMimeHdrFieldCreate");
     }
-    if (INKMimeHdrFieldAppend(tmpBuf, tmpMimeHdrLoc, fieldLoc3) != INK_SUCCESS) {
-      LOG_API_ERROR("INKMimeHdrFieldAppend");
+    if (TSMimeHdrFieldAppend(tmpBuf, tmpMimeHdrLoc, fieldLoc3) != TS_SUCCESS) {
+      LOG_API_ERROR("TSMimeHdrFieldAppend");
     }
-    if (INKMimeHdrFieldNameSet(tmpBuf, tmpMimeHdrLoc, fieldLoc3, MY_TEST_HDR_3, strlen(MY_TEST_HDR_3)) != INK_SUCCESS) {
-      LOG_API_ERROR("INKMimeHdrFieldNameSet");
+    if (TSMimeHdrFieldNameSet(tmpBuf, tmpMimeHdrLoc, fieldLoc3, MY_TEST_HDR_3, strlen(MY_TEST_HDR_3)) != TS_SUCCESS) {
+      LOG_API_ERROR("TSMimeHdrFieldNameSet");
     }
 
     /* copy the values from the second header field to the third one */
-    if (INKMimeHdrFieldCopyValues(tmpBuf, tmpMimeHdrLoc, fieldLoc3, tmpBuf, tmpMimeHdrLoc, fieldLoc2) != INK_SUCCESS) {
-      LOG_API_ERROR("INKMimeHdrFieldCopyValues");
+    if (TSMimeHdrFieldCopyValues(tmpBuf, tmpMimeHdrLoc, fieldLoc3, tmpBuf, tmpMimeHdrLoc, fieldLoc2) != TS_SUCCESS) {
+      LOG_API_ERROR("TSMimeHdrFieldCopyValues");
     }
     printField(tmpBuf, tmpMimeHdrLoc, MY_TEST_HDR_3, RESP, 12);
 
-    /* negative test for INKMimeHdrFieldCopyValues */
+    /* negative test for TSMimeHdrFieldCopyValues */
 #ifdef DEBUG
-    if (INKMimeHdrFieldCopyValues(NULL, tmpMimeHdrLoc, fieldLoc3, tmpBuf, tmpMimeHdrLoc, fieldLoc2) != INK_ERROR) {
-      LOG_ERROR_NEG("INKMimeHdrFieldCopyValues");
+    if (TSMimeHdrFieldCopyValues(NULL, tmpMimeHdrLoc, fieldLoc3, tmpBuf, tmpMimeHdrLoc, fieldLoc2) != TS_ERROR) {
+      LOG_ERROR_NEG("TSMimeHdrFieldCopyValues");
     }
-    if (INKMimeHdrFieldCopyValues(tmpBuf, NULL, fieldLoc3, tmpBuf, tmpMimeHdrLoc, fieldLoc2) != INK_ERROR) {
-      LOG_ERROR_NEG("INKMimeHdrFieldCopyValues");
+    if (TSMimeHdrFieldCopyValues(tmpBuf, NULL, fieldLoc3, tmpBuf, tmpMimeHdrLoc, fieldLoc2) != TS_ERROR) {
+      LOG_ERROR_NEG("TSMimeHdrFieldCopyValues");
     }
-    if (INKMimeHdrFieldCopyValues(tmpBuf, tmpMimeHdrLoc, NULL, tmpBuf, tmpMimeHdrLoc, fieldLoc2) != INK_ERROR) {
-      LOG_ERROR_NEG("INKMimeHdrFieldCopyValues");
+    if (TSMimeHdrFieldCopyValues(tmpBuf, tmpMimeHdrLoc, NULL, tmpBuf, tmpMimeHdrLoc, fieldLoc2) != TS_ERROR) {
+      LOG_ERROR_NEG("TSMimeHdrFieldCopyValues");
     }
-    if (INKMimeHdrFieldCopyValues(tmpBuf, tmpMimeHdrLoc, fieldLoc3, NULL, tmpMimeHdrLoc, fieldLoc2) != INK_ERROR) {
-      LOG_ERROR_NEG("INKMimeHdrFieldCopyValues");
+    if (TSMimeHdrFieldCopyValues(tmpBuf, tmpMimeHdrLoc, fieldLoc3, NULL, tmpMimeHdrLoc, fieldLoc2) != TS_ERROR) {
+      LOG_ERROR_NEG("TSMimeHdrFieldCopyValues");
     }
-    if (INKMimeHdrFieldCopyValues(tmpBuf, tmpMimeHdrLoc, fieldLoc3, tmpBuf, NULL, fieldLoc2) != INK_ERROR) {
-      LOG_ERROR_NEG("INKMimeHdrFieldCopyValues");
+    if (TSMimeHdrFieldCopyValues(tmpBuf, tmpMimeHdrLoc, fieldLoc3, tmpBuf, NULL, fieldLoc2) != TS_ERROR) {
+      LOG_ERROR_NEG("TSMimeHdrFieldCopyValues");
     }
-    if (INKMimeHdrFieldCopyValues(tmpBuf, tmpMimeHdrLoc, fieldLoc3, tmpBuf, tmpMimeHdrLoc, NULL) != INK_ERROR) {
-      LOG_ERROR_NEG("INKMimeHdrFieldCopyValues");
+    if (TSMimeHdrFieldCopyValues(tmpBuf, tmpMimeHdrLoc, fieldLoc3, tmpBuf, tmpMimeHdrLoc, NULL) != TS_ERROR) {
+      LOG_ERROR_NEG("TSMimeHdrFieldCopyValues");
     }
 #endif
 
     /* auto: Get the field value of fieldLoc3 and compare w/ fieldLoc2 */
     /* CAUTION: using idx = -1 is an undocumented internal usage */
-    tmpFieldValue1 = INKMimeHdrFieldValueGet(tmpBuf, tmpMimeHdrLoc, fieldLoc2, -1, &tmpFieldValueLength);
-    tmpFieldValue2 = INKMimeHdrFieldValueGet(tmpBuf, tmpMimeHdrLoc, fieldLoc3, -1, &tmpFieldValueLength);
+    TSMimeHdrFieldValueStringGet(tmpBuf, tmpMimeHdrLoc, fieldLoc2, -1, &tmpFieldValue1, &tmpFieldValueLength);
+    TSMimeHdrFieldValueStringGet(tmpBuf, tmpMimeHdrLoc, fieldLoc3, -1, &tmpFieldValue2, &tmpFieldValueLength);
 
     if (strncmp(tmpFieldValue1, tmpFieldValue2, tmpFieldValueLength)) {
-      LOG_AUTO_ERROR("INKMimeHdrFieldCopy", "New copy of field values different from original");
+      LOG_AUTO_ERROR("TSMimeHdrFieldCopy", "New copy of field values different from original");
     }
 
     STR_RELEASE(tmpBuf, tmpMimeHdrLoc, tmpFieldValue1);
     STR_RELEASE(tmpBuf, tmpMimeHdrLoc, tmpFieldValue2);
 
 
-        /***** (13): play with INKMimeHdrFieldValueSet* *****/
+        /***** (13): play with TSMimeHdrFieldValueSet* *****/
     currentTime = time(&currentTime);
 
     /* set other values to the field */
     valueInt = -2;
     valueUint = 1;
-    if (INKMimeHdrFieldValueIntSet(tmpBuf, tmpMimeHdrLoc, fieldLoc3, 0, valueInt) != INK_SUCCESS) {
-      LOG_API_ERROR("INKMimeHdrFieldValueIntSet");
+    if (TSMimeHdrFieldValueIntSet(tmpBuf, tmpMimeHdrLoc, fieldLoc3, 0, valueInt) != TS_SUCCESS) {
+      LOG_API_ERROR("TSMimeHdrFieldValueIntSet");
     }
-    if (INKMimeHdrFieldValueUintSet(tmpBuf, tmpMimeHdrLoc, fieldLoc3, 1, valueUint) != INK_SUCCESS) {
-      LOG_API_ERROR("INKMimeHdrFieldValueUintSet");
+    if (TSMimeHdrFieldValueUintSet(tmpBuf, tmpMimeHdrLoc, fieldLoc3, 1, valueUint) != TS_SUCCESS) {
+      LOG_API_ERROR("TSMimeHdrFieldValueUintSet");
     }
-    if (INKMimeHdrFieldValueDateSet(tmpBuf, tmpMimeHdrLoc, fieldLoc1, currentTime) != INK_SUCCESS) {
-      LOG_API_ERROR("INKMimeHdrFieldValueDateSet");
+    if (TSMimeHdrFieldValueDateSet(tmpBuf, tmpMimeHdrLoc, fieldLoc1, currentTime) != TS_SUCCESS) {
+      LOG_API_ERROR("TSMimeHdrFieldValueDateSet");
     }
     printDateDifference(tmpBuf, tmpMimeHdrLoc, MY_TEST_HDR_1, currentTime, RESP, 13);
     printField(tmpBuf, tmpMimeHdrLoc, MY_TEST_HDR_3, RESP, 13);
 
     /* auto: Get the field values again and check */
-    if (INKMimeHdrFieldValueIntGet(tmpBuf, tmpMimeHdrLoc, fieldLoc3, 0, &retrievedInt) != INK_SUCCESS) {
-      LOG_API_ERROR("INKMimeHdrFieldValueIntGet");
+    if (TSMimeHdrFieldValueIntGet(tmpBuf, tmpMimeHdrLoc, fieldLoc3, 0, &retrievedInt) != TS_SUCCESS) {
+      LOG_API_ERROR("TSMimeHdrFieldValueIntGet");
     }
     if (retrievedInt != valueInt) {
-      LOG_AUTO_ERROR("INKMimeHdrFieldValueIntSet",
-                     "INKMimeHdrFieldValueIntGet different from INKMimeHdrFieldValueIntSet");
+      LOG_AUTO_ERROR("TSMimeHdrFieldValueIntSet",
+                     "TSMimeHdrFieldValueIntGet different from TSMimeHdrFieldValueIntSet");
     }
-    if (INKMimeHdrFieldValueUintGet(tmpBuf, tmpMimeHdrLoc, fieldLoc3, 1, &retrievedUint) != INK_SUCCESS) {
-      LOG_API_ERROR("INKMimeHdrFieldValueUintGet");
+    if (TSMimeHdrFieldValueUintGet(tmpBuf, tmpMimeHdrLoc, fieldLoc3, 1, &retrievedUint) != TS_SUCCESS) {
+      LOG_API_ERROR("TSMimeHdrFieldValueUintGet");
     }
     if (retrievedUint != valueUint) {
-      LOG_AUTO_ERROR("INKMimeHdrFieldValueUintSet",
-                     "INKMimeHdrFieldValueUintGet different from INKMimeHdrFieldValueUintSet");
+      LOG_AUTO_ERROR("TSMimeHdrFieldValueUintSet",
+                     "TSMimeHdrFieldValueUintGet different from TSMimeHdrFieldValueUintSet");
     }
-    if (INKMimeHdrFieldValueDateGet(tmpBuf, tmpMimeHdrLoc, fieldLoc1, &retrievedDate) != INK_SUCCESS) {
-      LOG_API_ERROR("INKMimeHdrFieldValueDateGet");
+    if (TSMimeHdrFieldValueDateGet(tmpBuf, tmpMimeHdrLoc, fieldLoc1, &retrievedDate) != TS_SUCCESS) {
+      LOG_API_ERROR("TSMimeHdrFieldValueDateGet");
     }
     if (retrievedDate != currentTime) {
-      LOG_AUTO_ERROR("INKMimeHdrFieldValueSetDate",
-                     "INKMimeHdrFieldValueDateGet different from INKMimeHdrFieldValueDateSet");
+      LOG_AUTO_ERROR("TSMimeHdrFieldValueDateSet",
+                     "TSMimeHdrFieldValueDateGet different from TSMimeHdrFieldValueDateSet");
     }
 
     /* negative test */
 #ifdef DEBUG
-    if (INKMimeHdrFieldValueIntSet(NULL, tmpMimeHdrLoc, fieldLoc3, 0, valueInt) != INK_ERROR) {
-      LOG_ERROR_NEG("INKMimeHdrFieldValueIntSet");
+    if (TSMimeHdrFieldValueIntSet(NULL, tmpMimeHdrLoc, fieldLoc3, 0, valueInt) != TS_ERROR) {
+      LOG_ERROR_NEG("TSMimeHdrFieldValueIntSet");
     }
-    if (INKMimeHdrFieldValueIntSet(tmpBuf, NULL, fieldLoc3, 0, valueInt) != INK_ERROR) {
-      LOG_ERROR_NEG("INKMimeHdrFieldValueIntSet");
+    if (TSMimeHdrFieldValueIntSet(tmpBuf, NULL, fieldLoc3, 0, valueInt) != TS_ERROR) {
+      LOG_ERROR_NEG("TSMimeHdrFieldValueIntSet");
     }
-    if (INKMimeHdrFieldValueIntSet(tmpBuf, tmpMimeHdrLoc, NULL, 0, valueInt) != INK_ERROR) {
-      LOG_ERROR_NEG("INKMimeHdrFieldValueIntSet");
-    }
-
-    if (INKMimeHdrFieldValueUintSet(NULL, tmpMimeHdrLoc, fieldLoc3, 1, valueUint) != INK_ERROR) {
-      LOG_ERROR_NEG("INKMimeHdrFieldValueUintSet");
-    }
-    if (INKMimeHdrFieldValueUintSet(tmpBuf, NULL, fieldLoc3, 1, valueUint) != INK_ERROR) {
-      LOG_ERROR_NEG("INKMimeHdrFieldValueUintSet");
-    }
-    if (INKMimeHdrFieldValueUintSet(tmpBuf, tmpMimeHdrLoc, NULL, 1, valueUint) != INK_ERROR) {
-      LOG_ERROR_NEG("INKMimeHdrFieldValueUintSet");
+    if (TSMimeHdrFieldValueIntSet(tmpBuf, tmpMimeHdrLoc, NULL, 0, valueInt) != TS_ERROR) {
+      LOG_ERROR_NEG("TSMimeHdrFieldValueIntSet");
     }
 
-    if (INKMimeHdrFieldValueDateSet(NULL, tmpMimeHdrLoc, fieldLoc1, currentTime) != INK_ERROR) {
-      LOG_ERROR_NEG("INKMimeHdrFieldValueDateSet");
+    if (TSMimeHdrFieldValueUintSet(NULL, tmpMimeHdrLoc, fieldLoc3, 1, valueUint) != TS_ERROR) {
+      LOG_ERROR_NEG("TSMimeHdrFieldValueUintSet");
     }
-    if (INKMimeHdrFieldValueDateSet(tmpBuf, NULL, fieldLoc1, currentTime) != INK_ERROR) {
-      LOG_ERROR_NEG("INKMimeHdrFieldValueDateSet");
+    if (TSMimeHdrFieldValueUintSet(tmpBuf, NULL, fieldLoc3, 1, valueUint) != TS_ERROR) {
+      LOG_ERROR_NEG("TSMimeHdrFieldValueUintSet");
     }
-    if (INKMimeHdrFieldValueDateSet(tmpBuf, tmpMimeHdrLoc, NULL, currentTime) != INK_ERROR) {
-      LOG_ERROR_NEG("INKMimeHdrFieldValueDateSet");
-    }
-
-    if (INKMimeHdrFieldValueIntGet(NULL, tmpMimeHdrLoc, fieldLoc3, 0, &retrievedInt) != INK_ERROR) {
-      LOG_ERROR_NEG("INKMimeHdrFieldValueIntGet");
-    }
-    if (INKMimeHdrFieldValueIntGet(tmpBuf, NULL, fieldLoc3, 0, &retrievedInt) != INK_ERROR) {
-      LOG_ERROR_NEG("INKMimeHdrFieldValueIntGet");
-    }
-    if (INKMimeHdrFieldValueIntGet(tmpBuf, tmpMimeHdrLoc, NULL, 0, &retrievedInt) != INK_ERROR) {
-      LOG_ERROR_NEG("INKMimeHdrFieldValueIntGet");
+    if (TSMimeHdrFieldValueUintSet(tmpBuf, tmpMimeHdrLoc, NULL, 1, valueUint) != TS_ERROR) {
+      LOG_ERROR_NEG("TSMimeHdrFieldValueUintSet");
     }
 
-    if (INKMimeHdrFieldValueUintGet(NULL, tmpMimeHdrLoc, fieldLoc3, 1, &retrievedUint) != INK_ERROR) {
-      LOG_ERROR_NEG("INKMimeHdrFieldValueUintGet");
+    if (TSMimeHdrFieldValueDateSet(NULL, tmpMimeHdrLoc, fieldLoc1, currentTime) != TS_ERROR) {
+      LOG_ERROR_NEG("TSMimeHdrFieldValueDateSet");
     }
-    if (INKMimeHdrFieldValueUintGet(tmpBuf, NULL, fieldLoc3, 1, &retrievedUint) != INK_ERROR) {
-      LOG_ERROR_NEG("INKMimeHdrFieldValueUintGet");
+    if (TSMimeHdrFieldValueDateSet(tmpBuf, NULL, fieldLoc1, currentTime) != TS_ERROR) {
+      LOG_ERROR_NEG("TSMimeHdrFieldValueDateSet");
     }
-    if (INKMimeHdrFieldValueUintGet(tmpBuf, tmpMimeHdrLoc, NULL, 1, &retrievedUint) != INK_ERROR) {
-      LOG_ERROR_NEG("INKMimeHdrFieldValueUintGet");
+    if (TSMimeHdrFieldValueDateSet(tmpBuf, tmpMimeHdrLoc, NULL, currentTime) != TS_ERROR) {
+      LOG_ERROR_NEG("TSMimeHdrFieldValueDateSet");
     }
 
-    if (INKMimeHdrFieldValueDateGet(NULL, tmpMimeHdrLoc, fieldLoc1, &retrievedDate) != INK_ERROR) {
-      LOG_ERROR_NEG("INKMimeHdrFieldValueDateGet");
+    if (TSMimeHdrFieldValueIntGet(NULL, tmpMimeHdrLoc, fieldLoc3, 0, &retrievedInt) != TS_ERROR) {
+      LOG_ERROR_NEG("TSMimeHdrFieldValueIntGet");
     }
-    if (INKMimeHdrFieldValueDateGet(tmpBuf, NULL, fieldLoc1, &retrievedDate) != INK_ERROR) {
-      LOG_ERROR_NEG("INKMimeHdrFieldValueDateGet");
+    if (TSMimeHdrFieldValueIntGet(tmpBuf, NULL, fieldLoc3, 0, &retrievedInt) != TS_ERROR) {
+      LOG_ERROR_NEG("TSMimeHdrFieldValueIntGet");
     }
-    if (INKMimeHdrFieldValueDateGet(tmpBuf, tmpMimeHdrLoc, NULL, &retrievedDate) != INK_ERROR) {
-      LOG_ERROR_NEG("INKMimeHdrFieldValueDateGet");
+    if (TSMimeHdrFieldValueIntGet(tmpBuf, tmpMimeHdrLoc, NULL, 0, &retrievedInt) != TS_ERROR) {
+      LOG_ERROR_NEG("TSMimeHdrFieldValueIntGet");
+    }
+
+    if (TSMimeHdrFieldValueUintGet(NULL, tmpMimeHdrLoc, fieldLoc3, 1, &retrievedUint) != TS_ERROR) {
+      LOG_ERROR_NEG("TSMimeHdrFieldValueUintGet");
+    }
+    if (TSMimeHdrFieldValueUintGet(tmpBuf, NULL, fieldLoc3, 1, &retrievedUint) != TS_ERROR) {
+      LOG_ERROR_NEG("TSMimeHdrFieldValueUintGet");
+    }
+    if (TSMimeHdrFieldValueUintGet(tmpBuf, tmpMimeHdrLoc, NULL, 1, &retrievedUint) != TS_ERROR) {
+      LOG_ERROR_NEG("TSMimeHdrFieldValueUintGet");
+    }
+
+    if (TSMimeHdrFieldValueDateGet(NULL, tmpMimeHdrLoc, fieldLoc1, &retrievedDate) != TS_ERROR) {
+      LOG_ERROR_NEG("TSMimeHdrFieldValueDateGet");
+    }
+    if (TSMimeHdrFieldValueDateGet(tmpBuf, NULL, fieldLoc1, &retrievedDate) != TS_ERROR) {
+      LOG_ERROR_NEG("TSMimeHdrFieldValueDateGet");
+    }
+    if (TSMimeHdrFieldValueDateGet(tmpBuf, tmpMimeHdrLoc, NULL, &retrievedDate) != TS_ERROR) {
+      LOG_ERROR_NEG("TSMimeHdrFieldValueDateGet");
     }
 #endif
 
-                /***** (14): play with INKMimeHdrFieldValueDelete *****/
+                /***** (14): play with TSMimeHdrFieldValueDelete *****/
     /* delete a field value */
-    count = INKMimeHdrFieldValuesCount(tmpBuf, tmpMimeHdrLoc, fieldLoc3);
+    count = TSMimeHdrFieldValuesCount(tmpBuf, tmpMimeHdrLoc, fieldLoc3);
 
-    INKMimeHdrFieldValueDelete(tmpBuf, tmpMimeHdrLoc, fieldLoc3, 1);
+    TSMimeHdrFieldValueDelete(tmpBuf, tmpMimeHdrLoc, fieldLoc3, 1);
     printField(tmpBuf, tmpMimeHdrLoc, MY_TEST_HDR_3, RESP, 14);
 
     /* auto: try retrieving the deleted value now */
-    if (INKMimeHdrFieldValuesCount(tmpBuf, tmpMimeHdrLoc, fieldLoc3) == count) {
-      LOG_AUTO_ERROR("INKMimeHdrFieldValueDelete", "Field value count still the same after delete");
+    if (TSMimeHdrFieldValuesCount(tmpBuf, tmpMimeHdrLoc, fieldLoc3) == count) {
+      LOG_AUTO_ERROR("TSMimeHdrFieldValueDelete", "Field value count still the same after delete");
     }
 
-    /* negative test for INKMimeHdrFieldValuesCount and INKMimeHdrFieldValueDelete */
+    /* negative test for TSMimeHdrFieldValuesCount and TSMimeHdrFieldValueDelete */
 #ifdef DEBUG
-    if (INKMimeHdrFieldValuesCount(NULL, tmpMimeHdrLoc, fieldLoc3) != INK_ERROR) {
-      LOG_ERROR_NEG("INKMimeHdrFieldValuesCount");
+    if (TSMimeHdrFieldValuesCount(NULL, tmpMimeHdrLoc, fieldLoc3) != TS_ERROR) {
+      LOG_ERROR_NEG("TSMimeHdrFieldValuesCount");
     }
-    if (INKMimeHdrFieldValuesCount(tmpBuf, NULL, fieldLoc3) != INK_ERROR) {
-      LOG_ERROR_NEG("INKMimeHdrFieldValuesCount");
+    if (TSMimeHdrFieldValuesCount(tmpBuf, NULL, fieldLoc3) != TS_ERROR) {
+      LOG_ERROR_NEG("TSMimeHdrFieldValuesCount");
     }
-    if (INKMimeHdrFieldValuesCount(tmpBuf, tmpMimeHdrLoc, NULL) != INK_ERROR) {
-      LOG_ERROR_NEG("INKMimeHdrFieldValuesCount");
+    if (TSMimeHdrFieldValuesCount(tmpBuf, tmpMimeHdrLoc, NULL) != TS_ERROR) {
+      LOG_ERROR_NEG("TSMimeHdrFieldValuesCount");
     }
 
-    if (INKMimeHdrFieldValueDelete(NULL, tmpMimeHdrLoc, fieldLoc3, 1) != INK_ERROR) {
-      LOG_ERROR_NEG("INKMimeHdrFieldValueDelete");
+    if (TSMimeHdrFieldValueDelete(NULL, tmpMimeHdrLoc, fieldLoc3, 1) != TS_ERROR) {
+      LOG_ERROR_NEG("TSMimeHdrFieldValueDelete");
     }
-    if (INKMimeHdrFieldValueDelete(tmpBuf, NULL, fieldLoc3, 1) != INK_ERROR) {
-      LOG_ERROR_NEG("INKMimeHdrFieldValueDelete");
+    if (TSMimeHdrFieldValueDelete(tmpBuf, NULL, fieldLoc3, 1) != TS_ERROR) {
+      LOG_ERROR_NEG("TSMimeHdrFieldValueDelete");
     }
-    if (INKMimeHdrFieldValueDelete(tmpBuf, tmpMimeHdrLoc, NULL, 1) != INK_ERROR) {
-      LOG_ERROR_NEG("INKMimeHdrFieldValueDelete");
+    if (TSMimeHdrFieldValueDelete(tmpBuf, tmpMimeHdrLoc, NULL, 1) != TS_ERROR) {
+      LOG_ERROR_NEG("TSMimeHdrFieldValueDelete");
     }
 #endif
 
@@ -1388,32 +1395,32 @@ sectionMimeHdr(INKMBuffer hdrBuf, INKMLoc httpHdrLoc)
     HANDLE_RELEASE(tmpBuf, tmpMimeHdrLoc, fieldLoc1);
     HANDLE_RELEASE(tmpBuf, tmpMimeHdrLoc, fieldLoc2);
     HANDLE_RELEASE(tmpBuf, tmpMimeHdrLoc, fieldLoc3);
-    HANDLE_RELEASE(tmpBuf, INK_NULL_MLOC, tmpMimeHdrLoc);
+    HANDLE_RELEASE(tmpBuf, TS_NULL_MLOC, tmpMimeHdrLoc);
     BUFFER_DESTROY(tmpBuf);
   }
-  /* httpType == INK_HTTP_TYPE_RESPONSE */
+  /* httpType == TS_HTTP_TYPE_RESPONSE */
 }                               /* sectionMimeHdr */
 
 
 /****************************************************************************
  * handleReadRequest:
  *
- * Description: handler for INK_HTTP_READ_REQUEST_HDR_HOOK
+ * Description: handler for TS_HTTP_READ_REQUEST_HDR_HOOK
  ****************************************************************************/
 
 static void
-handleReadRequest(INKCont pCont, INKHttpTxn pTxn)
+handleReadRequest(TSCont pCont, TSHttpTxn pTxn)
 {
   LOG_SET_FUNCTION_NAME("handleReadRequest");
 
-  INKMBuffer reqHdrBuf = NULL;
-  INKMLoc reqHttpHdrLoc = NULL;
+  TSMBuffer reqHdrBuf = NULL;
+  TSMLoc reqHttpHdrLoc = NULL;
 
-  INKDebug(REQ, ">>>>>> handleReadRequest <<<<<<<");
+  TSDebug(REQ, ">>>>>> handleReadRequest <<<<<<<");
 
   /* Get Request Marshall Buffer */
-  if (!INKHttpTxnClientReqGet(pTxn, &reqHdrBuf, &reqHttpHdrLoc)) {
-    LOG_AUTO_ERROR("INKHttpTxnClientReqGet", "ERROR: Can't retrieve client req hdr")
+  if (!TSHttpTxnClientReqGet(pTxn, &reqHdrBuf, &reqHttpHdrLoc)) {
+    LOG_AUTO_ERROR("TSHttpTxnClientReqGet", "ERROR: Can't retrieve client req hdr")
       goto done;
   }
 
@@ -1421,10 +1428,10 @@ handleReadRequest(INKCont pCont, INKHttpTxn pTxn)
   sectionMimeHdr(reqHdrBuf, reqHttpHdrLoc);
 
 done:
-  HANDLE_RELEASE(reqHdrBuf, INK_NULL_MLOC, reqHttpHdrLoc);
+  HANDLE_RELEASE(reqHdrBuf, TS_NULL_MLOC, reqHttpHdrLoc);
 
-  if (INKHttpTxnReenable(pTxn, INK_EVENT_HTTP_CONTINUE) == INK_ERROR) {
-    LOG_API_ERROR("INKHttpTxnReenable");
+  if (TSHttpTxnReenable(pTxn, TS_EVENT_HTTP_CONTINUE) == TS_ERROR) {
+    LOG_API_ERROR("TSHttpTxnReenable");
   }
 
 }
@@ -1433,22 +1440,22 @@ done:
 /************************************************************************
  * handleSendResponse:
  *
- * Description:	handler for INK_HTTP_SEND_RESPONSE_HOOK
+ * Description:	handler for TS_HTTP_SEND_RESPONSE_HOOK
  ************************************************************************/
 
 static void
-handleSendResponse(INKCont pCont, INKHttpTxn pTxn)
+handleSendResponse(TSCont pCont, TSHttpTxn pTxn)
 {
   LOG_SET_FUNCTION_NAME("handleSendResponse");
 
-  INKMBuffer respHdrBuf = NULL;
-  INKMLoc respHttpHdrLoc = NULL;
+  TSMBuffer respHdrBuf = NULL;
+  TSMLoc respHttpHdrLoc = NULL;
 
-  INKDebug(RESP, "\n>>> handleSendResponse <<<<");
+  TSDebug(RESP, "\n>>> handleSendResponse <<<<");
 
   /* Get Response Marshall Buffer */
-  if (!INKHttpTxnClientRespGet(pTxn, &respHdrBuf, &respHttpHdrLoc)) {
-    LOG_AUTO_ERROR("INKHttpTxnClientRespGet", "ERROR: Can't retrieve client resp hdr")
+  if (!TSHttpTxnClientRespGet(pTxn, &respHdrBuf, &respHttpHdrLoc)) {
+    LOG_AUTO_ERROR("TSHttpTxnClientRespGet", "ERROR: Can't retrieve client resp hdr")
       goto done;
   }
 
@@ -1456,10 +1463,10 @@ handleSendResponse(INKCont pCont, INKHttpTxn pTxn)
   sectionMimeHdr(respHdrBuf, respHttpHdrLoc);
 
 done:
-  HANDLE_RELEASE(respHdrBuf, INK_NULL_MLOC, respHttpHdrLoc);
+  HANDLE_RELEASE(respHdrBuf, TS_NULL_MLOC, respHttpHdrLoc);
 
-  if (INKHttpTxnReenable(pTxn, INK_EVENT_HTTP_CONTINUE) == INK_ERROR) {
-    LOG_API_ERROR("INKHttpTxnReenable");
+  if (TSHttpTxnReenable(pTxn, TS_EVENT_HTTP_CONTINUE) == TS_ERROR) {
+    LOG_API_ERROR("TSHttpTxnReenable");
   }
 }
 
@@ -1467,36 +1474,36 @@ done:
 
 
 static void
-handleTxnStart(INKCont pCont, INKHttpTxn pTxn)
+handleTxnStart(TSCont pCont, TSHttpTxn pTxn)
 {
   LOG_SET_FUNCTION_NAME("handleTxnStart");
 
-  if (INKHttpTxnHookAdd(pTxn, INK_HTTP_READ_REQUEST_HDR_HOOK, pCont) == INK_ERROR) {
-    LOG_API_ERROR("INKHttpHookAdd");
+  if (TSHttpTxnHookAdd(pTxn, TS_HTTP_READ_REQUEST_HDR_HOOK, pCont) == TS_ERROR) {
+    LOG_API_ERROR("TSHttpHookAdd");
   }
-  if (INKHttpTxnHookAdd(pTxn, INK_HTTP_SEND_RESPONSE_HDR_HOOK, pCont) == INK_ERROR) {
-    LOG_API_ERROR("INKHttpHookAdd");
+  if (TSHttpTxnHookAdd(pTxn, TS_HTTP_SEND_RESPONSE_HDR_HOOK, pCont) == TS_ERROR) {
+    LOG_API_ERROR("TSHttpHookAdd");
   }
 
-  if (INKHttpTxnReenable(pTxn, INK_EVENT_HTTP_CONTINUE) == INK_ERROR) {
-    LOG_API_ERROR("INKHttpTxnReenable");
+  if (TSHttpTxnReenable(pTxn, TS_EVENT_HTTP_CONTINUE) == TS_ERROR) {
+    LOG_API_ERROR("TSHttpTxnReenable");
   }
 }
 
 
 static int
-contHandler(INKCont pCont, INKEvent event, void *edata)
+contHandler(TSCont pCont, TSEvent event, void *edata)
 {
-  INKHttpTxn pTxn = (INKHttpTxn) edata;
+  TSHttpTxn pTxn = (TSHttpTxn) edata;
 
   switch (event) {
-  case INK_EVENT_HTTP_TXN_START:
+  case TS_EVENT_HTTP_TXN_START:
     handleTxnStart(pCont, pTxn);
     return 0;
-  case INK_EVENT_HTTP_SEND_RESPONSE_HDR:
+  case TS_EVENT_HTTP_SEND_RESPONSE_HDR:
     handleSendResponse(pCont, pTxn);
     return 0;
-  case INK_EVENT_HTTP_READ_REQUEST_HDR:
+  case TS_EVENT_HTTP_READ_REQUEST_HDR:
     handleReadRequest(pCont, pTxn);
     return 0;
   default:
@@ -1508,15 +1515,15 @@ contHandler(INKCont pCont, INKEvent event, void *edata)
 
 
 void
-INKPluginInit(int argc, const char *argv[])
+TSPluginInit(int argc, const char *argv[])
 {
-  LOG_SET_FUNCTION_NAME("INKPluginInit");
+  LOG_SET_FUNCTION_NAME("TSPluginInit");
 
-  INKCont pCont;
+  TSCont pCont;
 
-  if ((pCont = INKContCreate(contHandler, NULL)) == INK_ERROR_PTR) {
-    LOG_API_ERROR("INKContCreate");
-  } else if (INKHttpHookAdd(INK_HTTP_TXN_START_HOOK, pCont) == INK_ERROR) {
-    LOG_API_ERROR("INKHttpHookAdd");
+  if ((pCont = TSContCreate(contHandler, NULL)) == TS_ERROR_PTR) {
+    LOG_API_ERROR("TSContCreate");
+  } else if (TSHttpHookAdd(TS_HTTP_TXN_START_HOOK, pCont) == TS_ERROR) {
+    LOG_API_ERROR("TSHttpHookAdd");
   }
 }

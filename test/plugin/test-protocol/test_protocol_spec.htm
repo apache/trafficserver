@@ -28,27 +28,27 @@
 <p>test-protocol is a plugin to test the following categories of APIs:</p>
 <p><b>Net Processor API</b></p>
 <ul>
-  <li>INKNetAccept</li>
+  <li>TSNetAccept</li>
 </ul>
 <p><b>Protocol API</b></p>
 <ul>
-  <li>INKNetVConnRemoteIPGet</li>
-  <li>INKNetVConnRemotePortGet</li>
-  <li>INKIOBufferSizedCreate</li>
-  <li>INKIOBufferWaterMarkGet</li>
-  <li>INKIOBufferWaterMarkSet</li>
-  <li>INKIOBufferWrite</li>
+  <li>TSNetVConnRemoteIPGet</li>
+  <li>TSNetVConnRemotePortGet</li>
+  <li>TSIOBufferSizedCreate</li>
+  <li>TSIOBufferWaterMarkGet</li>
+  <li>TSIOBufferWaterMarkSet</li>
+  <li>TSIOBufferWrite</li>
 </ul>
 <p><b>Logging API</b></p>
 <ul>
-  <li>INKTextLogObjectCreate</li>
-  <li>INKTextLogObjectHeaderSet</li>
-  <li>INKTextLogObjectRollingEnabledSet</li>
-  <li>INKTextLogObjectRollingIntervalSecSet</li>
-  <li>INKTextLogObjectRollingOffsetHrSet</li>
-  <li>INKTextLogObjectWrite</li>
-  <li>INKTextLogObjectFlush</li>
-  <li>INKTextLogObjectDestroy</li>
+  <li>TSTextLogObjectCreate</li>
+  <li>TSTextLogObjectHeaderSet</li>
+  <li>TSTextLogObjectRollingEnabledSet</li>
+  <li>TSTextLogObjectRollingIntervalSecSet</li>
+  <li>TSTextLogObjectRollingOffsetHrSet</li>
+  <li>TSTextLogObjectWrite</li>
+  <li>TSTextLogObjectFlush</li>
+  <li>TSTextLogObjectDestroy</li>
 </ul>
 <p>It basically simulates the the server side in a client/server connection. We'll 
   have a separate synthetic client which keeps sending requests to this server. 
@@ -83,36 +83,36 @@
   client's requests.</p>
 <p>The following are the steps the plugin performs:</p>
 <p>1) Create a text log object</p>
-<p>Create a text log object with INKTextLogObjectCreate, set its header with INKTextLogObjectHeaderSet, 
-  and set the rolling parameters with INKTextLogObjectRollingEnabledSet, INKTextLogObjectRollingIntervalSecSet 
-  and INKTextLogObjectRollingOffsetHrSet.</p>
+<p>Create a text log object with TSTextLogObjectCreate, set its header with TSTextLogObjectHeaderSet, 
+  and set the rolling parameters with TSTextLogObjectRollingEnabledSet, TSTextLogObjectRollingIntervalSecSet 
+  and TSTextLogObjectRollingOffsetHrSet.</p>
 <p>2) Listen for and accept client requests</p>
-<p>It calls INKNetAccept to listen on a specific port and accepts the requests 
-  from the client. The handler function of the callback continuation for INKNetAccept 
+<p>It calls TSNetAccept to listen on a specific port and accepts the requests 
+  from the client. The handler function of the callback continuation for TSNetAccept 
   checks if the connection has been established successfully (by checking if it's 
-  called back with the event INK_EVENT_NET_ACCEPT). The caller also checks the 
-  return value of INKNetAccept to see if it makes sense. </p>
+  called back with the event TS_EVENT_NET_ACCEPT). The caller also checks the 
+  return value of TSNetAccept to see if it makes sense. </p>
 <p>3) Get the remote IP and port of the net vconnection.</p>
-<p>The callback function of INKNetAccept calls INKNetVConnRemoteIPGet and INKNetVConnRemotePortGet 
+<p>The callback function of TSNetAccept calls TSNetVConnRemoteIPGet and TSNetVConnRemotePortGet 
   to get the remote IP and port of the net vconnection. It then schedules another 
   continuation call to handle the following work.</p>
 <p>4) Read the client request content into a buffer</p>
-<p>Call INKVConnRead to read the client's request into an IOBuffer. Set the watermark 
-  of the client request IOBuffer with INKIOBufferWaterMarkSet. The IOBuffer calls 
-  back the continuation only when watermark amount of data is available. Use INKIOBufferWaterMarkGet 
+<p>Call TSVConnRead to read the client's request into an IOBuffer. Set the watermark 
+  of the client request IOBuffer with TSIOBufferWaterMarkSet. The IOBuffer calls 
+  back the continuation only when watermark amount of data is available. Use TSIOBufferWaterMarkGet 
   to check if the watermark is set correctly.</p>
 <p>5) Parse the client's request</p>
 <p>Get the <i>pattern</i> and <i>number</i> from the client request and check 
   if they exceed the length limits.</p>
 <p>6) Log the client's request</p>
-<p>Write the client request into the log with INKTextLogObjectWrite, flush the 
-  log with INKTextLogObjectFlush and destroy the log object with INKTextLogObjectDestroy.</p>
+<p>Write the client request into the log with TSTextLogObjectWrite, flush the 
+  log with TSTextLogObjectFlush and destroy the log object with TSTextLogObjectDestroy.</p>
 <p>7) Create the response being sent to the client</p>
 <p>Repeat the <i>pattern</i> for <i>number</i> of times and saves it in a buffer. 
   This will be the response sent back to the client.</p>
 <p>8) Send the response to the client</p>
-<p>Create an IOBuffer for client response with INKIOBufferSizedCreate, write the 
-  response to the IOBuffer with INKIOBufferWrite, then call INKVConnWrite to send 
+<p>Create an IOBuffer for client response with TSIOBufferSizedCreate, write the 
+  response to the IOBuffer with TSIOBufferWrite, then call TSVConnWrite to send 
   the response to the client.</p>
 <p><b><font size="+1">Plugin Structure</font></b></p>
 <p><img src="test-protocol.JPG" width="959" height="719"></p>

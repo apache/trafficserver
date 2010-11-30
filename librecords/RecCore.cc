@@ -878,39 +878,49 @@ RecForceInsert(RecRecord * record)
 //-------------------------------------------------------------------------
 // RecDumpRecordsHt
 //-------------------------------------------------------------------------
+
+static void
+debug_record_callback(RecT rec_type, void *edata, int registered, const char *name, int data_type, RecData *datum)
+{
+  switch(data_type) {
+  case RECD_INT:
+    RecDebug(DL_Note, "  ([%d] '%s', '%lld')", registered, name, datum->rec_int);
+    break;
+  case RECD_FLOAT:
+    RecDebug(DL_Note, "  ([%d] '%s', '%f')", registered, name, datum->rec_float);
+    break;
+  case RECD_STRING:
+    RecDebug(DL_Note, "  ([%d] '%s', '%s')",
+             registered, name, datum->rec_string ? datum->rec_string : "NULL");
+    break;
+  case RECD_COUNTER:
+    RecDebug(DL_Note, "  ([%d] '%s', '%lld')", registered, name, datum->rec_counter);
+    break;
+  default:
+    RecDebug(DL_Note, "  ([%d] '%s', <? ? ?>)", registered, name);
+    break;
+  }
+}
 void
-RecDumpRecordsHt(RecT rec_type)
+RecDumpRecords(RecT rec_type, RecDumpEntryCb callback, void *edata)
 {
   int i, num_records;
-
-  RecDebug(DL_Note, "Dumping Records:");
 
   num_records = g_num_records;
   for (i = 0; i < num_records; i++) {
     RecRecord *r = &(g_records[i]);
     if ((rec_type == RECT_NULL) || (rec_type == r->rec_type)) {
       rec_mutex_acquire(&(r->lock));
-      switch (r->data_type) {
-      case RECD_INT:
-        RecDebug(DL_Note, "  ([%d] '%s', '%lld')", r->registered, r->name, r->data.rec_int);
-        break;
-      case RECD_FLOAT:
-        RecDebug(DL_Note, "  ([%d] '%s', '%f')", r->registered, r->name, r->data.rec_float);
-        break;
-      case RECD_STRING:
-        RecDebug(DL_Note, "  ([%d] '%s', '%s')",
-                 r->registered, r->name, r->data.rec_string ? r->data.rec_string : "NULL");
-        break;
-      case RECD_COUNTER:
-        RecDebug(DL_Note, "  ([%d] '%s', '%lld')", r->registered, r->name, r->data.rec_counter);
-        break;
-      default:
-        RecDebug(DL_Note, "  ([%d] '%s', <? ? ?>)", r->registered, r->name);
-        break;
-      }
+      callback(rec_type, edata, r->registered, r->name, r->data_type, &r->data);
       rec_mutex_release(&(r->lock));
     }
   }
+}
+
+void
+RecDumpRecordsHt(RecT rec_type) {
+  RecDebug(DL_Note, "Dumping Records:");
+  RecDumpRecords(rec_type, debug_record_callback, NULL);
 }
 
 void

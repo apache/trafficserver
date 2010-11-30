@@ -779,15 +779,8 @@ ICPConfiguration::icp_config_change_callback(void *data, void *value, int startu
   close(fd);
 
   if (!error) {
-    for (int i = 0; i <= MAX_DEFINED_PEERS; i++) {
-#if defined (alpha) || defined(__alpha)
-      PeerConfigData *p_cur;
-      p_cur = ICPconfig->_peer_cdata_current[i];
-      *p_cur = P[i];
-#else
-      *ICPconfig->_peer_cdata_current[i] = P[i];        // Broken on DEC
-#endif
-    }
+    for (int i = 0; i <= MAX_DEFINED_PEERS; i++)
+      *ICPconfig->_peer_cdata_current[i] = P[i];
   }
   delete[]P;                    // free working buffer
   if (!startup)
@@ -955,7 +948,7 @@ ParentSiblingPeer::ValidSender(struct sockaddr_in *fr)
   } else {
     // Make sure the sockaddr_in corresponds to this peer
     if ((GetIP()->s_addr == fr->sin_addr.s_addr)
-        && (GetPort() == ntohs(fr->sin_port))) {
+        && (GetPort() == (int)ntohs(fr->sin_port))) {
       return 1;                 // Sender is this peer
     } else {
       return 0;                 // Sender is not this peer
@@ -1090,7 +1083,7 @@ MultiCastPeer::ValidSender(struct sockaddr_in *sa)
   Peer *P = _next;
   while (P) {
     if ((P->GetIP()->s_addr == sa->sin_addr.s_addr)
-        && (P->GetPort() == ntohs(sa->sin_port))) {
+        && (P->GetPort() == (int)ntohs(sa->sin_port))) {
       return 1;
     } else {
       P = P->GetNext();

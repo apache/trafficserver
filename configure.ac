@@ -32,8 +32,8 @@
 # Version number is calculated as MAJOR * 1000000 + MINOR * 1000 + MICRO
 # Version string is in the form of MAJOR.MINOR.MICRO[sufix]
 #
-m4_define([TS_VERSION_S],[2.1.4-unstable])
-m4_define([TS_VERSION_N],[2001004])
+m4_define([TS_VERSION_S],[2.1.5-unstable])
+m4_define([TS_VERSION_N],[2001005])
 
 AC_INIT([Apache Traffic Server], TS_VERSION_S(), [dev@trafficserver.apache.org], [trafficserver],[http://trafficserver.apache.org])
 AC_PREREQ([2.59])
@@ -98,6 +98,8 @@ TS_PARSE_ARGUMENTS
 # Host detection
 #
 AC_CANONICAL_HOST
+HOST_GUESS="$host"
+AC_SUBST(HOST_GUESS)
 
 #
 # Build environment
@@ -159,6 +161,23 @@ AC_ARG_ENABLE([diags],
 )
 AC_MSG_RESULT([$enable_diags])
 AC_SUBST(use_diags)
+
+#
+# Build regression tests?
+#
+
+has_tests=0
+AC_MSG_CHECKING([whether to enable regression tests])
+AC_ARG_ENABLE([tests],
+  [AS_HELP_STRING([--disable-tests],[turn off regression tests])],
+  [],
+  [enable_tests="yes"
+   has_tests=1
+  ]
+)
+AC_MSG_RESULT([$enable_tests])
+AC_SUBST(has_tests)
+AM_CONDITIONAL([BUILD_TESTS], [test "x$enable_tests" = "xyes"])
 
 #
 # Purify
@@ -1172,6 +1191,8 @@ AC_SUBST([TFW_PACKAGE_SUFFIX])
 # -----------------------------------------------------------------------------
 # 6. OUTPUT FILES
 
+AC_CONFIG_FILES([libinktomi++/ink_config.h proxy/api/ts/ts.h])
+AC_CONFIG_FILES([tsxs])
 AC_CONFIG_FILES([doc/Doxyfile])
 AC_CONFIG_FILES([doc/Makefile])
 AC_CONFIG_FILES([rc/Makefile])
@@ -1185,14 +1206,12 @@ AC_CONFIG_FILES([iocore/hostdb/Makefile])
 AC_CONFIG_FILES([iocore/Makefile])
 AC_CONFIG_FILES([iocore/net/Makefile])
 AC_CONFIG_FILES([iocore/utils/Makefile])
-AC_CONFIG_FILES([libinktomi++/ink_config.h])
 AC_CONFIG_FILES([libinktomi++/Makefile])
 AC_CONFIG_FILES([librecords/Makefile])
 AC_CONFIG_FILES([Makefile])
 AC_CONFIG_FILES([proxy/config/body_factory/default/Makefile])
 AC_CONFIG_FILES([proxy/config/body_factory/Makefile])
-AC_CONFIG_FILES([proxy/config/records.config])
-AC_CONFIG_FILES([proxy/config/storage.config])
+AC_CONFIG_FILES([proxy/config/records.config proxy/config/storage.config])
 AC_CONFIG_FILES([proxy/config/Makefile])
 AC_CONFIG_FILES([proxy/congest/Makefile])
 AC_CONFIG_FILES([proxy/hdrs/Makefile])
@@ -1235,10 +1254,8 @@ AC_CONFIG_FILES([example/basic-auth/Makefile])
 AC_CONFIG_FILES([example/blacklist-0/Makefile])
 AC_CONFIG_FILES([example/blacklist-1/Makefile])
 AC_CONFIG_FILES([example/bnull-transform/Makefile])
-AC_CONFIG_FILES([example/cache_plugin/Makefile])
 AC_CONFIG_FILES([example/cache_scan/Makefile])
 AC_CONFIG_FILES([example/file-1/Makefile])
-AC_CONFIG_FILES([example/file_system_cache/Makefile])
 AC_CONFIG_FILES([example/gzip-transform/Makefile])
 AC_CONFIG_FILES([example/hello/Makefile])
 AC_CONFIG_FILES([example/null-transform/Makefile])
@@ -1255,8 +1272,7 @@ AC_CONFIG_FILES([example/session-1/Makefile])
 AC_CONFIG_FILES([example/thread-1/Makefile])
 AC_CONFIG_FILES([example/thread-pool/Makefile])
 # example app w/ standalone iocore
-AC_CONFIG_FILES([example/app-template/Makefile])
-AC_CONFIG_FILES([example/app-template/records.config])
+AC_CONFIG_FILES([example/app-template/Makefile example/app-template/records.config])
 
 # -----------------------------------------------------------------------------
 # 7. autoheader TEMPLATES

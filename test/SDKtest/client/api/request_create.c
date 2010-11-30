@@ -31,14 +31,14 @@
 #define TRUE 1
 
 void
-INKPluginInit(int clientid)
+TSPluginInit(int clientid)
 {
-  fprintf(stderr, "*** INKRequestCreate Test for Client ***\n");
-  INKFuncRegister(INK_FID_REQUEST_CREATE);
+  fprintf(stderr, "*** TSRequestCreate Test for Client ***\n");
+  TSFuncRegister(TS_FID_REQUEST_CREATE);
 }
 
 int
-INKRequestCreate(char *origin_server_host /* return */ , int max_hostname_size,
+TSRequestCreate(char *origin_server_host /* return */ , int max_hostname_size,
                  char *origin_server_port /* return */ , int max_portname_size,
                  char *request_buf /* return */ , int max_request_size,
                  void **req_id /* return */ )

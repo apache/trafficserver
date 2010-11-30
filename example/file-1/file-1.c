@@ -41,7 +41,7 @@ int
 check_ts_version()
 {
 
-  const char *ts_version = INKTrafficServerVersionGet();
+  const char *ts_version = TSTrafficServerVersionGet();
   int result = 0;
 
   if (ts_version) {
@@ -63,37 +63,37 @@ check_ts_version()
 }
 
 void
-INKPluginInit(int argc, const char *argv[])
+TSPluginInit(int argc, const char *argv[])
 {
-  INKFile filep;
+  TSFile filep;
   char buf[4096];
   int i;
-  INKPluginRegistrationInfo info;
+  TSPluginRegistrationInfo info;
 
   info.plugin_name = "file_plugin";
   info.vendor_name = "MyCompany";
   info.support_email = "ts-api-support@MyCompany.com";
 
-  if (!INKPluginRegister(INK_SDK_VERSION_2_0, &info)) {
-    INKError("Plugin registration failed.\n");
+  if (!TSPluginRegister(TS_SDK_VERSION_2_0, &info)) {
+    TSError("Plugin registration failed.\n");
   }
 
   if (!check_ts_version()) {
-    INKError("Plugin requires Traffic Server 2.0 or later\n");
+    TSError("Plugin requires Traffic Server 2.0 or later\n");
     return;
   }
 
   for (i = 1; i < argc; i++) {
-    filep = INKfopen(argv[i], "r");
+    filep = TSfopen(argv[i], "r");
     if (!filep) {
       continue;
     }
 
-    while (INKfgets(filep, buf, 4096)) {
-      INKDebug("debug-file", "%s", buf);
+    while (TSfgets(filep, buf, 4096)) {
+      TSDebug("debug-file", "%s", buf);
     }
 
-    INKfclose(filep);
+    TSfclose(filep);
   }
 }
 

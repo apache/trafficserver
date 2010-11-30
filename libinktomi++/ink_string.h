@@ -694,4 +694,87 @@ ptr_len_pbrk(const char *p1, int l1, const char *str)
   return NULL;
 }
 
+// Specialized "itoa", that is optimized for small integers, and use snprintf() otherwise.
+// On error, we'll return 0, and nothing is written to the buffer.
+// TODO: Do these really need to be inline?
+inline int
+ink_small_itoa(int32 val, char* buf, int buf_len)
+{
+  ink_assert(buf_len > 5);
+  ink_assert((val >= 0) && (val < 100000));
+
+  if (val < 10) {               // 0 - 9
+    buf[0] = '0' + val;
+    return 1;
+  } else if (val < 100) {       // 10 - 99
+    buf[1] = '0' + (val % 10);
+    val /= 10;
+    buf[0] = '0' + (val % 10);
+    return 2;
+  } else if (val < 1000) {      // 100 - 999
+    buf[2] = '0' + (val % 10);
+    val /= 10;
+    buf[1] = '0' + (val % 10);
+    val /= 10;
+    buf[0] = '0' + (val % 10);
+    return 3;
+  } else if (val < 10000) {     // 1000 - 9999
+    buf[3] = '0' + (val % 10);
+    val /= 10;
+    buf[2] = '0' + (val % 10);
+    val /= 10;
+    buf[1] = '0' + (val % 10);
+    val /= 10;
+    buf[0] = '0' + (val % 10);
+    return 4;
+  } else {                      // 10000 - 99999
+    buf[4] = '0' + (val % 10);
+    val /= 10;
+    buf[3] = '0' + (val % 10);
+    val /= 10;
+    buf[2] = '0' + (val % 10);
+    val /= 10;
+    buf[1] = '0' + (val % 10);
+    val /= 10;
+    buf[0] = '0' + (val % 10);
+    return 5;
+  }
+}
+
+inline int
+ink_fast_itoa(int32 val, char* buf, int buf_len)
+{
+  if ((val < 0) || (val > 99999)) {
+    int ret = snprintf(buf, buf_len, "%d", val);
+
+    return (ret >= 0 ? ret : 0);
+  }
+
+  return ink_small_itoa(val, buf, buf_len);
+}
+
+inline int
+ink_fast_uitoa(uint32 val, char* buf, int buf_len)
+{
+  if (val > 99999) {
+    int ret = snprintf(buf, buf_len, "%u", val);
+
+    return (ret >= 0 ? ret : 0);
+  }
+
+  return ink_small_itoa(val, buf, buf_len);
+}
+
+inline int
+ink_fast_ltoa(int64 val, char* buf, int buf_len)
+{
+  if ((val < 0) || (val > 99999)) {
+    int ret = snprintf(buf, buf_len, "%lld", val);
+
+    return (ret >= 0 ? ret : 0);
+  }
+
+  return ink_small_itoa(val, buf, buf_len);
+}
+
 #endif

@@ -61,6 +61,7 @@
 
 #define FLUSH_THREAD_SLEEP_TIMEOUT (1)
 #define FLUSH_THREAD_MIN_FLUSH_COUNTER (FLUSH_ARRAY_SIZE/4)
+#define PERIODIC_TASKS_INTERVAL 5 // TODO: Maybe this should be done as a config option
 
 // Log global objects
 inkcoreapi TextLogObject *Log::error_log = NULL;
@@ -110,7 +111,7 @@ RecRawStatBlock *log_rsb;
 void
 Log::change_configuration()
 {
-  Debug("log2-config", "Changing configuration ...");
+  Debug("log-config", "Changing configuration ...");
 
   LogConfig *new_config = NEW(new LogConfig);
   ink_assert(new_config != NULL);
@@ -120,7 +121,7 @@ Log::change_configuration()
   // the new config
   //
   ink_mutex_acquire(Log::config->log_object_manager._APImutex);
-  Debug("log2-api-mutex", "Log::change_configuration acquired api mutex");
+  Debug("log-api-mutex", "Log::change_configuration acquired api mutex");
 
   new_config->init(Log::config);
 
@@ -135,9 +136,9 @@ Log::change_configuration()
   }
 
   ink_mutex_release(Log::config->log_object_manager._APImutex);
-  Debug("log2-api-mutex", "Log::change_configuration released api mutex");
+  Debug("log-api-mutex", "Log::change_configuration released api mutex");
 
-  Debug("log2-config", "... new configuration in place");
+  Debug("log-config", "... new configuration in place");
 }
 
 void
@@ -183,7 +184,7 @@ Log::add_to_inactive(LogObject * object)
   Log::periodic_tasks
 
   This function contains all of the tasks that need to be done each
-  second.
+  PERIODIC_TASKS_INTERVAL seconds.
   -------------------------------------------------------------------------*/
 
 void
@@ -196,28 +197,28 @@ Log::periodic_tasks(long time_now)
   // it to be zero; we will get a chance to delete it next time
   //
 
-  Debug("log2-api-mutex", "entering Log::periodic_tasks");
+  Debug("log-api-mutex", "entering Log::periodic_tasks");
   if (numInactiveObjects) {
     ink_mutex_acquire(Log::config->log_object_manager._APImutex);
-    Debug("log2-api-mutex", "Log::periodic_tasks acquired api mutex");
-    Debug("log2-periodic", "Deleting inactive_objects");
+    Debug("log-api-mutex", "Log::periodic_tasks acquired api mutex");
+    Debug("log-periodic", "Deleting inactive_objects");
     for (size_t i = 0; i < numInactiveObjects; i++) {
       delete inactive_objects[i];
     }
     numInactiveObjects = 0;
     ink_mutex_release(Log::config->log_object_manager._APImutex);
-    Debug("log2-api-mutex", "Log::periodic_tasks released api mutex");
+    Debug("log-api-mutex", "Log::periodic_tasks released api mutex");
   }
 
   if (logging_mode_changed || Log::config->reconfiguration_needed) {
-
-    Debug("log2-config", "Performing reconfiguration, init status = %d", init_status);
+    Debug("log-config", "Performing reconfiguration, init status = %d", init_status);
 
     if (logging_mode_changed) {
-      int val = (int) LOG_ConfigReadInteger("proxy.config.log2.logging_enabled");
+      int val = (int) LOG_ConfigReadInteger("proxy.config.log.logging_enabled");
+
       if (val<LOG_NOTHING || val> FULL_LOGGING) {
         logging_mode = FULL_LOGGING;
-        Warning("proxy.config.log2.logging_enabled has an invalid " "value setting it to %d", logging_mode);
+        Warning("proxy.config.log.logging_enabled has an invalid " "value setting it to %d", logging_mode);
       } else {
         logging_mode = (LoggingMode) val;
       }
@@ -227,11 +228,9 @@ Log::periodic_tasks(long time_now)
     // so that log objects are flushed
     //
     change_configuration();
-
-  } else if (logging_mode > LOG_NOTHING ||
-             config->collation_mode == LogConfig::COLLATION_HOST || config->has_api_objects()) {
-
-    Debug("log2-periodic", "Performing periodic tasks");
+  } else if (logging_mode > LOG_NOTHING || config->collation_mode == LogConfig::COLLATION_HOST ||
+             config->has_api_objects()) {
+    Debug("log-periodic", "Performing periodic tasks");
 
     // Check if space is ok and update the space used
     //
@@ -248,6 +247,7 @@ Log::periodic_tasks(long time_now)
     // give objects a chance to roll if they need to
     //
     int num_rolled = 0;
+
     if (Log::config->roll_log_files_now) {
       if (error_log) {
         num_rolled += error_log->roll_files(time_now);
@@ -334,9 +334,9 @@ Log::init_fields()
 
   Ptr<LogFieldAliasIP> ip_map = NEW(new LogFieldAliasIP);
   field = NEW(new LogField("client_host_ip", "chi",
-                           LogField::sINT,
+                           LogField::STRING,
                            &LogAccess::marshal_client_host_ip,
-                           &LogAccess::unmarshal_ip, (Ptr<LogFieldAliasMap>) ip_map));
+                           &LogAccess::unmarshal_str));
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "chi", field);
 
@@ -510,73 +510,72 @@ Log::init_fields()
   ink_hash_table_insert(field_symbol_hash, "pfsc", field);
 
   Ptr<LogFieldAliasTable> cache_code_map = NEW(new LogFieldAliasTable);
-  cache_code_map->
-    init(62,
-         SQUID_LOG_EMPTY, "UNDEFINED",
-         SQUID_LOG_TCP_HIT, "TCP_HIT",
-         SQUID_LOG_TCP_DISK_HIT, "TCP_DISK_HIT",
-         SQUID_LOG_TCP_MEM_HIT, "TCP_MEM_HIT",
-         SQUID_LOG_TCP_MISS, "TCP_MISS",
-         SQUID_LOG_TCP_EXPIRED_MISS, "TCP_EXPIRED_MISS",
-         SQUID_LOG_TCP_REFRESH_HIT, "TCP_REFRESH_HIT",
-         SQUID_LOG_TCP_REF_FAIL_HIT, "TCP_REF_FAIL_HIT",
-         SQUID_LOG_TCP_REFRESH_MISS, "TCP_REFRESH_MISS",
-         SQUID_LOG_TCP_CLIENT_REFRESH, "TCP_CLIENT_REFRESH",
-         SQUID_LOG_TCP_IMS_HIT, "TCP_IMS_HIT",
-         SQUID_LOG_TCP_IMS_MISS, "TCP_IMS_MISS",
-         SQUID_LOG_TCP_SWAPFAIL, "TCP_SWAPFAIL",
-         SQUID_LOG_TCP_DENIED, "TCP_DENIED",
-         SQUID_LOG_TCP_WEBFETCH_MISS, "TCP_WEBFETCH_MISS",
-         SQUID_LOG_TCP_SPIDER_BYPASS, "TCP_SPIDER_BYPASS",
-         SQUID_LOG_TCP_FUTURE_2, "TCP_FUTURE_2",
-         SQUID_LOG_TCP_HIT_REDIRECT, "TCP_HIT_REDIRECT",
-         SQUID_LOG_TCP_MISS_REDIRECT, "TCP_MISS_REDIRECT",
-         SQUID_LOG_TCP_HIT_X_REDIRECT, "TCP_HIT_X_REDIRECT",
-         SQUID_LOG_TCP_MISS_X_REDIRECT, "TCP_MISS_X_REDIRECT",
-         SQUID_LOG_UDP_HIT, "UDP_HIT",
-         SQUID_LOG_UDP_WEAK_HIT, "UDP_WEAK_HIT",
-         SQUID_LOG_UDP_HIT_OBJ, "UDP_HIT_OBJ",
-         SQUID_LOG_UDP_MISS, "UDP_MISS",
-         SQUID_LOG_UDP_DENIED, "UDP_DENIED",
-         SQUID_LOG_UDP_INVALID, "UDP_INVALID",
-         SQUID_LOG_UDP_RELOADING, "UDP_RELOADING",
-         SQUID_LOG_UDP_FUTURE_1, "UDP_FUTURE_1",
-         SQUID_LOG_UDP_FUTURE_2, "UDP_FUTURE_2",
-         SQUID_LOG_ERR_READ_TIMEOUT, "ERR_READ_TIMEOUT",
-         SQUID_LOG_ERR_LIFETIME_EXP, "ERR_LIFETIME_EXP",
-         SQUID_LOG_ERR_NO_CLIENTS_BIG_OBJ, "ERR_NO_CLIENTS_BIG_OBJ",
-         SQUID_LOG_ERR_READ_ERROR, "ERR_READ_ERROR",
-         SQUID_LOG_ERR_CLIENT_ABORT, "ERR_CLIENT_ABORT",
-         SQUID_LOG_ERR_CONNECT_FAIL, "ERR_CONNECT_FAIL",
-         SQUID_LOG_ERR_INVALID_REQ, "ERR_INVALID_REQ",
-         SQUID_LOG_ERR_UNSUP_REQ, "ERR_UNSUP_REQ",
-         SQUID_LOG_ERR_INVALID_URL, "ERR_INVALID_URL",
-         SQUID_LOG_ERR_NO_FDS, "ERR_NO_FDS",
-         SQUID_LOG_ERR_DNS_FAIL, "ERR_DNS_FAIL",
-         SQUID_LOG_ERR_NOT_IMPLEMENTED, "ERR_NOT_IMPLEMENTED",
-         SQUID_LOG_ERR_CANNOT_FETCH, "ERR_CANNOT_FETCH",
-         SQUID_LOG_ERR_NO_RELAY, "ERR_NO_RELAY",
-         SQUID_LOG_ERR_DISK_IO, "ERR_DISK_IO",
-         SQUID_LOG_ERR_ZERO_SIZE_OBJECT, "ERR_ZERO_SIZE_OBJECT",
-         SQUID_LOG_ERR_PROXY_DENIED, "ERR_PROXY_DENIED",
-         SQUID_LOG_ERR_WEBFETCH_DETECTED, "ERR_WEBFETCH_DETECTED",
-         SQUID_LOG_ERR_FUTURE_1, "ERR_FUTURE_1",
-         SQUID_LOG_ERR_SPIDER_MEMBER_ABORTED, "ERR_SPIDER_MEMBER_ABORTED",
-         SQUID_LOG_ERR_SPIDER_PARENTAL_CONTROL_RESTRICTION, "ERR_SPIDER_PARENTAL_CONTROL_RESTRICTION",
-         SQUID_LOG_ERR_SPIDER_UNSUPPORTED_HTTP_VERSION, "ERR_SPIDER_UNSUPPORTED_HTTP_VERSION",
-         SQUID_LOG_ERR_SPIDER_UIF, "ERR_SPIDER_UIF",
-         SQUID_LOG_ERR_SPIDER_FUTURE_USE_1, "ERR_SPIDER_FUTURE_USE_1",
-         SQUID_LOG_ERR_SPIDER_TIMEOUT_WHILE_PASSING, "ERR_SPIDER_TIMEOUT_WHILE_PASSING",
-         SQUID_LOG_ERR_SPIDER_TIMEOUT_WHILE_DRAINING, "ERR_SPIDER_TIMEOUT_WHILE_DRAINING",
-         SQUID_LOG_ERR_SPIDER_GENERAL_TIMEOUT, "ERR_SPIDER_GENERAL_TIMEOUT",
-         SQUID_LOG_ERR_SPIDER_CONNECT_FAILED, "ERR_SPIDER_CONNECT_FAILED",
-         SQUID_LOG_ERR_SPIDER_FUTURE_USE_2, "ERR_SPIDER_FUTURE_USE_2",
-         SQUID_LOG_ERR_SPIDER_NO_RESOURCES, "ERR_SPIDER_NO_RESOURCES",
-         SQUID_LOG_ERR_SPIDER_INTERNAL_ERROR, "ERR_SPIDER_INTERNAL_ERROR",
-         SQUID_LOG_ERR_SPIDER_INTERNAL_IO_ERROR, "ERR_SPIDER_INTERNAL_IO_ERROR",
-         SQUID_LOG_ERR_SPIDER_DNS_TEMP_ERROR, "ERR_SPIDER_DNS_TEMP_ERROR",
-         SQUID_LOG_ERR_SPIDER_DNS_HOST_NOT_FOUND, "ERR_SPIDER_DNS_HOST_NOT_FOUND",
-         SQUID_LOG_ERR_SPIDER_DNS_NO_ADDRESS, "ERR_SPIDER_DNS_NO_ADDRESS", SQUID_LOG_ERR_UNKNOWN, "ERR_UNKNOWN");
+  cache_code_map->init(62,
+                       SQUID_LOG_EMPTY, "UNDEFINED",
+                       SQUID_LOG_TCP_HIT, "TCP_HIT",
+                       SQUID_LOG_TCP_DISK_HIT, "TCP_DISK_HIT",
+                       SQUID_LOG_TCP_MEM_HIT, "TCP_MEM_HIT",
+                       SQUID_LOG_TCP_MISS, "TCP_MISS",
+                       SQUID_LOG_TCP_EXPIRED_MISS, "TCP_EXPIRED_MISS",
+                       SQUID_LOG_TCP_REFRESH_HIT, "TCP_REFRESH_HIT",
+                       SQUID_LOG_TCP_REF_FAIL_HIT, "TCP_REF_FAIL_HIT",
+                       SQUID_LOG_TCP_REFRESH_MISS, "TCP_REFRESH_MISS",
+                       SQUID_LOG_TCP_CLIENT_REFRESH, "TCP_CLIENT_REFRESH",
+                       SQUID_LOG_TCP_IMS_HIT, "TCP_IMS_HIT",
+                       SQUID_LOG_TCP_IMS_MISS, "TCP_IMS_MISS",
+                       SQUID_LOG_TCP_SWAPFAIL, "TCP_SWAPFAIL",
+                       SQUID_LOG_TCP_DENIED, "TCP_DENIED",
+                       SQUID_LOG_TCP_WEBFETCH_MISS, "TCP_WEBFETCH_MISS",
+                       SQUID_LOG_TCP_SPIDER_BYPASS, "TCP_SPIDER_BYPASS",
+                       SQUID_LOG_TCP_FUTURE_2, "TCP_FUTURE_2",
+                       SQUID_LOG_TCP_HIT_REDIRECT, "TCP_HIT_REDIRECT",
+                       SQUID_LOG_TCP_MISS_REDIRECT, "TCP_MISS_REDIRECT",
+                       SQUID_LOG_TCP_HIT_X_REDIRECT, "TCP_HIT_X_REDIRECT",
+                       SQUID_LOG_TCP_MISS_X_REDIRECT, "TCP_MISS_X_REDIRECT",
+                       SQUID_LOG_UDP_HIT, "UDP_HIT",
+                       SQUID_LOG_UDP_WEAK_HIT, "UDP_WEAK_HIT",
+                       SQUID_LOG_UDP_HIT_OBJ, "UDP_HIT_OBJ",
+                       SQUID_LOG_UDP_MISS, "UDP_MISS",
+                       SQUID_LOG_UDP_DENIED, "UDP_DENIED",
+                       SQUID_LOG_UDP_INVALID, "UDP_INVALID",
+                       SQUID_LOG_UDP_RELOADING, "UDP_RELOADING",
+                       SQUID_LOG_UDP_FUTURE_1, "UDP_FUTURE_1",
+                       SQUID_LOG_UDP_FUTURE_2, "UDP_FUTURE_2",
+                       SQUID_LOG_ERR_READ_TIMEOUT, "ERR_READ_TIMEOUT",
+                       SQUID_LOG_ERR_LIFETIME_EXP, "ERR_LIFETIME_EXP",
+                       SQUID_LOG_ERR_NO_CLIENTS_BIG_OBJ, "ERR_NO_CLIENTS_BIG_OBJ",
+                       SQUID_LOG_ERR_READ_ERROR, "ERR_READ_ERROR",
+                       SQUID_LOG_ERR_CLIENT_ABORT, "ERR_CLIENT_ABORT",
+                       SQUID_LOG_ERR_CONNECT_FAIL, "ERR_CONNECT_FAIL",
+                       SQUID_LOG_ERR_INVALID_REQ, "ERR_INVALID_REQ",
+                       SQUID_LOG_ERR_UNSUP_REQ, "ERR_UNSUP_REQ",
+                       SQUID_LOG_ERR_INVALID_URL, "ERR_INVALID_URL",
+                       SQUID_LOG_ERR_NO_FDS, "ERR_NO_FDS",
+                       SQUID_LOG_ERR_DNS_FAIL, "ERR_DNS_FAIL",
+                       SQUID_LOG_ERR_NOT_IMPLEMENTED, "ERR_NOT_IMPLEMENTED",
+                       SQUID_LOG_ERR_CANNOT_FETCH, "ERR_CANNOT_FETCH",
+                       SQUID_LOG_ERR_NO_RELAY, "ERR_NO_RELAY",
+                       SQUID_LOG_ERR_DISK_IO, "ERR_DISK_IO",
+                       SQUID_LOG_ERR_ZERO_SIZE_OBJECT, "ERR_ZERO_SIZE_OBJECT",
+                       SQUID_LOG_ERR_PROXY_DENIED, "ERR_PROXY_DENIED",
+                       SQUID_LOG_ERR_WEBFETCH_DETECTED, "ERR_WEBFETCH_DETECTED",
+                       SQUID_LOG_ERR_FUTURE_1, "ERR_FUTURE_1",
+                       SQUID_LOG_ERR_SPIDER_MEMBER_ABORTED, "ERR_SPIDER_MEMBER_ABORTED",
+                       SQUID_LOG_ERR_SPIDER_PARENTAL_CONTROL_RESTRICTION, "ERR_SPIDER_PARENTAL_CONTROL_RESTRICTION",
+                       SQUID_LOG_ERR_SPIDER_UNSUPPORTED_HTTP_VERSION, "ERR_SPIDER_UNSUPPORTED_HTTP_VERSION",
+                       SQUID_LOG_ERR_SPIDER_UIF, "ERR_SPIDER_UIF",
+                       SQUID_LOG_ERR_SPIDER_FUTURE_USE_1, "ERR_SPIDER_FUTURE_USE_1",
+                       SQUID_LOG_ERR_SPIDER_TIMEOUT_WHILE_PASSING, "ERR_SPIDER_TIMEOUT_WHILE_PASSING",
+                       SQUID_LOG_ERR_SPIDER_TIMEOUT_WHILE_DRAINING, "ERR_SPIDER_TIMEOUT_WHILE_DRAINING",
+                       SQUID_LOG_ERR_SPIDER_GENERAL_TIMEOUT, "ERR_SPIDER_GENERAL_TIMEOUT",
+                       SQUID_LOG_ERR_SPIDER_CONNECT_FAILED, "ERR_SPIDER_CONNECT_FAILED",
+                       SQUID_LOG_ERR_SPIDER_FUTURE_USE_2, "ERR_SPIDER_FUTURE_USE_2",
+                       SQUID_LOG_ERR_SPIDER_NO_RESOURCES, "ERR_SPIDER_NO_RESOURCES",
+                       SQUID_LOG_ERR_SPIDER_INTERNAL_ERROR, "ERR_SPIDER_INTERNAL_ERROR",
+                       SQUID_LOG_ERR_SPIDER_INTERNAL_IO_ERROR, "ERR_SPIDER_INTERNAL_IO_ERROR",
+                       SQUID_LOG_ERR_SPIDER_DNS_TEMP_ERROR, "ERR_SPIDER_DNS_TEMP_ERROR",
+                       SQUID_LOG_ERR_SPIDER_DNS_HOST_NOT_FOUND, "ERR_SPIDER_DNS_HOST_NOT_FOUND",
+                       SQUID_LOG_ERR_SPIDER_DNS_NO_ADDRESS, "ERR_SPIDER_DNS_NO_ADDRESS", SQUID_LOG_ERR_UNKNOWN, "ERR_UNKNOWN");
   field = NEW(new LogField("cache_result_code", "crc",
                            LogField::sINT,
                            &LogAccess::marshal_cache_result_code,
@@ -621,44 +620,43 @@ Log::init_fields()
   ink_hash_table_insert(field_symbol_hash, "pqsi", field);
 
   Ptr<LogFieldAliasTable> hierarchy_map = NEW(new LogFieldAliasTable);
-  hierarchy_map->
-    init(36,
-         SQUID_HIER_EMPTY, "EMPTY",
-         SQUID_HIER_NONE, "NONE",
-         SQUID_HIER_DIRECT, "DIRECT",
-         SQUID_HIER_SIBLING_HIT, "SIBLING_HIT",
-         SQUID_HIER_PARENT_HIT, "PARENT_HIT",
-         SQUID_HIER_DEFAULT_PARENT, "DEFAULT_PARENT",
-         SQUID_HIER_SINGLE_PARENT, "SINGLE_PARENT",
-         SQUID_HIER_FIRST_UP_PARENT, "FIRST_UP_PARENT",
-         SQUID_HIER_NO_PARENT_DIRECT, "NO_PARENT_DIRECT",
-         SQUID_HIER_FIRST_PARENT_MISS, "FIRST_PARENT_MISS",
-         SQUID_HIER_LOCAL_IP_DIRECT, "LOCAL_IP_DIRECT",
-         SQUID_HIER_FIREWALL_IP_DIRECT, "FIREWALL_IP_DIRECT",
-         SQUID_HIER_NO_DIRECT_FAIL, "NO_DIRECT_FAIL",
-         SQUID_HIER_SOURCE_FASTEST, "SOURCE_FASTEST",
-         SQUID_HIER_SIBLING_UDP_HIT_OBJ, "SIBLING_UDP_HIT_OBJ",
-         SQUID_HIER_PARENT_UDP_HIT_OBJ, "PARENT_UDP_HIT_OBJ",
-         SQUID_HIER_PASSTHROUGH_PARENT, "PASSTHROUGH_PARENT",
-         SQUID_HIER_SSL_PARENT_MISS, "SSL_PARENT_MISS",
-         SQUID_HIER_INVALID_CODE, "INVALID_CODE",
-         SQUID_HIER_TIMEOUT_DIRECT, "TIMEOUT_DIRECT",
-         SQUID_HIER_TIMEOUT_SIBLING_HIT, "TIMEOUT_SIBLING_HIT",
-         SQUID_HIER_TIMEOUT_PARENT_HIT, "TIMEOUT_PARENT_HIT",
-         SQUID_HIER_TIMEOUT_DEFAULT_PARENT, "TIMEOUT_DEFAULT_PARENT",
-         SQUID_HIER_TIMEOUT_SINGLE_PARENT, "TIMEOUT_SINGLE_PARENT",
-         SQUID_HIER_TIMEOUT_FIRST_UP_PARENT, "TIMEOUT_FIRST_UP_PARENT",
-         SQUID_HIER_TIMEOUT_NO_PARENT_DIRECT, "TIMEOUT_NO_PARENT_DIRECT",
-         SQUID_HIER_TIMEOUT_FIRST_PARENT_MISS, "TIMEOUT_FIRST_PARENT_MISS",
-         SQUID_HIER_TIMEOUT_LOCAL_IP_DIRECT, "TIMEOUT_LOCAL_IP_DIRECT",
-         SQUID_HIER_TIMEOUT_FIREWALL_IP_DIRECT, "TIMEOUT_FIREWALL_IP_DIRECT",
-         SQUID_HIER_TIMEOUT_NO_DIRECT_FAIL, "TIMEOUT_NO_DIRECT_FAIL",
-         SQUID_HIER_TIMEOUT_SOURCE_FASTEST, "TIMEOUT_SOURCE_FASTEST",
-         SQUID_HIER_TIMEOUT_SIBLING_UDP_HIT_OBJ, "TIMEOUT_SIBLING_UDP_HIT_OBJ",
-         SQUID_HIER_TIMEOUT_PARENT_UDP_HIT_OBJ, "TIMEOUT_PARENT_UDP_HIT_OBJ",
-         SQUID_HIER_TIMEOUT_PASSTHROUGH_PARENT, "TIMEOUT_PASSTHROUGH_PARENT",
-         SQUID_HIER_TIMEOUT_TIMEOUT_SSL_PARENT_MISS, "TIMEOUT_TIMEOUT_SSL_PARENT_MISS",
-         SQUID_HIER_INVALID_ASSIGNED_CODE, "INVALID_ASSIGNED_CODE");
+  hierarchy_map->init(36,
+                      SQUID_HIER_EMPTY, "EMPTY",
+                      SQUID_HIER_NONE, "NONE",
+                      SQUID_HIER_DIRECT, "DIRECT",
+                      SQUID_HIER_SIBLING_HIT, "SIBLING_HIT",
+                      SQUID_HIER_PARENT_HIT, "PARENT_HIT",
+                      SQUID_HIER_DEFAULT_PARENT, "DEFAULT_PARENT",
+                      SQUID_HIER_SINGLE_PARENT, "SINGLE_PARENT",
+                      SQUID_HIER_FIRST_UP_PARENT, "FIRST_UP_PARENT",
+                      SQUID_HIER_NO_PARENT_DIRECT, "NO_PARENT_DIRECT",
+                      SQUID_HIER_FIRST_PARENT_MISS, "FIRST_PARENT_MISS",
+                      SQUID_HIER_LOCAL_IP_DIRECT, "LOCAL_IP_DIRECT",
+                      SQUID_HIER_FIREWALL_IP_DIRECT, "FIREWALL_IP_DIRECT",
+                      SQUID_HIER_NO_DIRECT_FAIL, "NO_DIRECT_FAIL",
+                      SQUID_HIER_SOURCE_FASTEST, "SOURCE_FASTEST",
+                      SQUID_HIER_SIBLING_UDP_HIT_OBJ, "SIBLING_UDP_HIT_OBJ",
+                      SQUID_HIER_PARENT_UDP_HIT_OBJ, "PARENT_UDP_HIT_OBJ",
+                      SQUID_HIER_PASSTHROUGH_PARENT, "PASSTHROUGH_PARENT",
+                      SQUID_HIER_SSL_PARENT_MISS, "SSL_PARENT_MISS",
+                      SQUID_HIER_INVALID_CODE, "INVALID_CODE",
+                      SQUID_HIER_TIMEOUT_DIRECT, "TIMEOUT_DIRECT",
+                      SQUID_HIER_TIMEOUT_SIBLING_HIT, "TIMEOUT_SIBLING_HIT",
+                      SQUID_HIER_TIMEOUT_PARENT_HIT, "TIMEOUT_PARENT_HIT",
+                      SQUID_HIER_TIMEOUT_DEFAULT_PARENT, "TIMEOUT_DEFAULT_PARENT",
+                      SQUID_HIER_TIMEOUT_SINGLE_PARENT, "TIMEOUT_SINGLE_PARENT",
+                      SQUID_HIER_TIMEOUT_FIRST_UP_PARENT, "TIMEOUT_FIRST_UP_PARENT",
+                      SQUID_HIER_TIMEOUT_NO_PARENT_DIRECT, "TIMEOUT_NO_PARENT_DIRECT",
+                      SQUID_HIER_TIMEOUT_FIRST_PARENT_MISS, "TIMEOUT_FIRST_PARENT_MISS",
+                      SQUID_HIER_TIMEOUT_LOCAL_IP_DIRECT, "TIMEOUT_LOCAL_IP_DIRECT",
+                      SQUID_HIER_TIMEOUT_FIREWALL_IP_DIRECT, "TIMEOUT_FIREWALL_IP_DIRECT",
+                      SQUID_HIER_TIMEOUT_NO_DIRECT_FAIL, "TIMEOUT_NO_DIRECT_FAIL",
+                      SQUID_HIER_TIMEOUT_SOURCE_FASTEST, "TIMEOUT_SOURCE_FASTEST",
+                      SQUID_HIER_TIMEOUT_SIBLING_UDP_HIT_OBJ, "TIMEOUT_SIBLING_UDP_HIT_OBJ",
+                      SQUID_HIER_TIMEOUT_PARENT_UDP_HIT_OBJ, "TIMEOUT_PARENT_UDP_HIT_OBJ",
+                      SQUID_HIER_TIMEOUT_PASSTHROUGH_PARENT, "TIMEOUT_PASSTHROUGH_PARENT",
+                      SQUID_HIER_TIMEOUT_TIMEOUT_SSL_PARENT_MISS, "TIMEOUT_TIMEOUT_SSL_PARENT_MISS",
+                      SQUID_HIER_INVALID_ASSIGNED_CODE, "INVALID_ASSIGNED_CODE");
   field = NEW(new LogField("proxy_hierarchy_route", "phr",
                            LogField::sINT,
                            &LogAccess::marshal_proxy_hierarchy_route,
@@ -784,7 +782,7 @@ Log::init_fields()
   Ptr<LogFieldAliasTable> entry_type_map = NEW(new LogFieldAliasTable);
   entry_type_map->init(N_LOG_ENTRY_TYPES,
                        LOG_ENTRY_HTTP, "LOG_ENTRY_HTTP",
-                       LOG_ENTRY_ICP, "LOG_ENTRY_ICP", LOG_ENTRY_MIXT, "LOG_ENTRY_MIXT");
+                       LOG_ENTRY_ICP, "LOG_ENTRY_ICP");
   field = NEW(new LogField("log_entry_type", "etype",
                            LogField::sINT,
                            &LogAccess::marshal_entry_type,
@@ -829,79 +827,55 @@ Log::init_fields()
     ink_hash_table_insert(field_symbol_hash, symbol, field)
 
   // This field is for the client DNS name.
-  // For some protocols (such as WMT), the client itself sends the DNS
-  // name to the server in a logging message. This field logs that.
   // It's probably expensive to do DNS lookups, so this field should normally
   // be blank unless the protocol allows an inexpensive way to determine
   // the client DNS name.
-  //
-  // For WMT, this is equivalent to c-dns
   //
   ADD_LOG_FIELD("client_dns_name", "cdns", LogField::STRING,
                 &LogAccess::marshal_client_dns_name, &LogAccess::unmarshal_str);
 
   // This field is for the client operating system name.
   //
-  // For WMT, this is equivalent to c-os
-  //
   ADD_LOG_FIELD("client_dns_name", "cos", LogField::STRING, &LogAccess::marshal_client_os, &LogAccess::unmarshal_str);
 
   // This field is for the client operating system version.
-  //
-  // For WMT, this is equivalent to c-osversion
   //
   ADD_LOG_FIELD("client_os_version", "cosv", LogField::STRING,
                 &LogAccess::marshal_client_os_version, &LogAccess::unmarshal_str);
 
   // This field is for the client CPU type.
   //
-  // For WMT, this is equivalent to c-cpu
-  //
   ADD_LOG_FIELD("client_cpu", "ccpu", LogField::STRING, &LogAccess::marshal_client_cpu, &LogAccess::unmarshal_str);
 
   // This field is for the client player version.
-  //
-  // For WMT, this is equivalent to c-playerversion
   //
   ADD_LOG_FIELD("client_player_version", "cplyv", LogField::STRING,
                 &LogAccess::marshal_client_player_version, &LogAccess::unmarshal_str);
 
   // This field is for the client player lanaguage.
   //
-  // For WMT, this is equivalent to c-playerlanguage.
-  //
   ADD_LOG_FIELD("client_player_language", "clang", LogField::STRING,
                 &LogAccess::marshal_client_player_language, &LogAccess::unmarshal_str);
 
   // This field is for the client user agent.
-  //
-  // For WMT, this is equivalent to c(User-Agent)
   //
   ADD_LOG_FIELD("client_user_agent", "cua", LogField::STRING,
                 &LogAccess::marshal_client_user_agent, &LogAccess::unmarshal_str);
 
   // This field is for the URL of the referrer.
   //
-  // For WMT, this is equivalent to c(Referer)
-  //
   ADD_LOG_FIELD("referer_url", "rfurl", LogField::STRING, &LogAccess::marshal_referer_url, &LogAccess::unmarshal_str);
 
   // This field is for the audio codec used by the player.
-  //
-  // For WMT, this is equivalent to audiocodec
   //
   ADD_LOG_FIELD("audio_codec", "audcdc", LogField::STRING, &LogAccess::marshal_audio_codec, &LogAccess::unmarshal_str);
 
   // This field is for the video codec used by the player.
   //
-  // For WMT, this is equivalent to videocodec
-  //
   ADD_LOG_FIELD("video_codec", "vidcdc", LogField::STRING, &LogAccess::marshal_video_codec, &LogAccess::unmarshal_str);
 
   // This field is for the number of bytes received by the client
   // as reported by the client.
-  //
-  // For WMT, this is equivalent to c-bytes
   //
   ADD_LOG_FIELD("client_bytes_received", "cbytr", LogField::sINT,
                 &LogAccess::marshal_client_bytes_received, &LogAccess::unmarshal_int_to_str);
@@ -909,23 +883,17 @@ Log::init_fields()
   // This field is for the number of packets received by the client
   // as reported by the client.
   //
-  // For WMT, this is equivalent to c-pkts-received
-  //
   ADD_LOG_FIELD("client_pkts_received", "cpktr", LogField::sINT,
                 &LogAccess::marshal_client_pkts_received, &LogAccess::unmarshal_int_to_str);
 
   // This field is for the number of lost packets during transmission
   // from server to client as reported by the client.
   //
-  // For WMT, this is equivalent to c-pkts-lost-client
-  //
   ADD_LOG_FIELD("client_lost_pkts", "cpktl", LogField::sINT,
                 &LogAccess::marshal_client_lost_pkts, &LogAccess::unmarshal_int_to_str);
 
   // This field is for the number of lost packets in the network layer
   // as reported by the client.
-  //
-  // For WMT, this is equivalent to c-pkts-lost-net
   //
   ADD_LOG_FIELD("client_lost_net_pkts", "cpktln", LogField::sINT,
                 &LogAccess::marshal_client_lost_net_pkts, &LogAccess::unmarshal_int_to_str);
@@ -934,15 +902,11 @@ Log::init_fields()
   // transmission from the server to a client on the network layer as
   // reported by the client.
   //
-  // For WMT, this is equivalent to c-lost-cont-net
-  //
   ADD_LOG_FIELD("client_lost_continuous_pkts", "cpktlcn", LogField::sINT,
                 &LogAccess::marshal_client_lost_continuous_pkts, &LogAccess::unmarshal_int_to_str);
 
   // This field is for the number of packets recovered using ECC
   // as reported by the client.
-  //
-  // For WMT, this is equivalent to c-pkts-recovered-ECC
   //
   ADD_LOG_FIELD("client_pkts_ecc_recover", "cpktecc", LogField::sINT,
                 &LogAccess::marshal_client_pkts_ecc_recover, &LogAccess::unmarshal_int_to_str);
@@ -950,15 +914,11 @@ Log::init_fields()
   // This field is for the number of packets recovered from resent
   // requests as reported by the client.
   //
-  // For WMT, this is equivalent to c-pkts-recovered-resent
-  //
   ADD_LOG_FIELD("client_pkts_resent_recover", "crstrc", LogField::sINT,
                 &LogAccess::marshal_client_pkts_resent_recover, &LogAccess::unmarshal_int_to_str);
 
   // This field is for the number of resend requests sent by the client
   // as reported by the client.
-  //
-  // For WMT, this is equivalent to c-pkt-resendreqs
   //
   ADD_LOG_FIELD("client_resend_request", "crstrq", LogField::sINT,
                 &LogAccess::marshal_client_resend_request, &LogAccess::unmarshal_int_to_str);
@@ -966,21 +926,15 @@ Log::init_fields()
   // This field is for the number of rebuffers as reported by the
   // client.
   //
-  // For WMT, this is equivalent to c-buffercount
-  //
   ADD_LOG_FIELD("client_buffer_count", "cbufc", LogField::sINT,
                 &LogAccess::marshal_client_buffer_count, &LogAccess::unmarshal_int_to_str);
 
   // This field is the total buffer time of a client in seconds.
   //
-  // For WMT, this is equivalent to c-totalbuffertime
-  //
   ADD_LOG_FIELD("client_buffer_ts", "cbufs", LogField::sINT,
                 &LogAccess::marshal_client_buffer_ts, &LogAccess::unmarshal_int_to_str);
 
   // This field is the percent quality as reported by the client.
-  //
-  // For WMT, this is equivalent to c-quality
   //
   ADD_LOG_FIELD("client_quality_per", "cqalp", LogField::sINT,
                 &LogAccess::marshal_client_quality_per, &LogAccess::unmarshal_int_to_str);
@@ -1003,7 +957,7 @@ Log::handle_logging_mode_change(const char *name, RecDataT data_type, RecData da
   NOWARN_UNUSED(data_type);
   NOWARN_UNUSED(data);
   NOWARN_UNUSED(cookie);
-  Debug("log2-config", "Enabled status changed");
+  Debug("log-config", "Enabled status changed");
   logging_mode_changed = true;
   return 0;
 }
@@ -1040,7 +994,6 @@ Log::init(int flags)
   } else {
 
     log_rsb = RecAllocateRawStatBlock((int) log_stat_count);
-    LogConfig::register_configs();
     LogConfig::register_stat_callbacks();
 
     config->read_configuration_variables();
@@ -1050,10 +1003,10 @@ Log::init(int flags)
       logging_mode = LOG_TRANSACTIONS_ONLY;
       config->collation_mode = LogConfig::COLLATION_HOST;
     } else {
-      int val = (int) LOG_ConfigReadInteger("proxy.config.log2.logging_enabled");
+      int val = (int) LOG_ConfigReadInteger("proxy.config.log.logging_enabled");
       if (val<LOG_NOTHING || val> FULL_LOGGING) {
         logging_mode = FULL_LOGGING;
-        Warning("proxy.config.log2.logging_enabled has an invalid " "value, setting it to %d", logging_mode);
+        Warning("proxy.config.log.logging_enabled has an invalid " "value, setting it to %d", logging_mode);
       } else {
         logging_mode = (LoggingMode) val;
       }
@@ -1064,8 +1017,8 @@ Log::init(int flags)
 
     // Clear any stat values that need to be reset on startup
     //
-    LOG_CLEAR_DYN_STAT(log2_stat_log_files_open_stat);
-    LOG_CLEAR_DYN_STAT(log2_stat_log_files_space_used_stat);
+    LOG_CLEAR_DYN_STAT(log_stat_log_files_open_stat);
+    LOG_CLEAR_DYN_STAT(log_stat_log_files_space_used_stat);
 /*
         The following variables are not cleared at startup, although
 	we probably should because otherwise their meaning is not very
@@ -1073,21 +1026,21 @@ Log::init(int flags)
 	these values since the Traffic Server was setup on the
 	machine?
 
-	LOG_CLEAR_DYN_STAT(log2_stat_bytes_written_to_disk_stat);
-	LOG_CLEAR_DYN_STAT(log2_stat_bytes_sent_to_network_stat);
-	LOG_CLEAR_DYN_STAT(log2_stat_bytes_received_from_network_stat);
-	LOG_CLEAR_DYN_STAT(log2_stat_event_log_access_stat);
-	LOG_CLEAR_DYN_STAT(log2_stat_event_log_access_skip_stat);
-	LOG_CLEAR_DYN_STAT(log2_stat_event_log_access_fail_stat);
-	LOG_CLEAR_DYN_STAT(log2_stat_event_log_error_stat);
+	LOG_CLEAR_DYN_STAT(log_stat_bytes_written_to_disk_stat);
+	LOG_CLEAR_DYN_STAT(log_stat_bytes_sent_to_network_stat);
+	LOG_CLEAR_DYN_STAT(log_stat_bytes_received_from_network_stat);
+	LOG_CLEAR_DYN_STAT(log_stat_event_log_access_stat);
+	LOG_CLEAR_DYN_STAT(log_stat_event_log_access_skip_stat);
+	LOG_CLEAR_DYN_STAT(log_stat_event_log_access_fail_stat);
+	LOG_CLEAR_DYN_STAT(log_stat_event_log_error_stat);
 */
     // if remote management is enabled, do all necessary initialization to
     // be able to handle a logging mode change
     //
     if (!(config_flags & NO_REMOTE_MANAGEMENT)) {
 
-      LOG_RegisterConfigUpdateFunc("proxy.config.log2.logging_enabled", &Log::handle_logging_mode_change, NULL);
-      LOG_RegisterLocalUpdateFunc("proxy.local.log2.collation_mode", &Log::handle_logging_mode_change, NULL);
+      LOG_RegisterConfigUpdateFunc("proxy.config.log.logging_enabled", &Log::handle_logging_mode_change, NULL);
+      LOG_RegisterLocalUpdateFunc("proxy.local.log.collation_mode", &Log::handle_logging_mode_change, NULL);
     }
   }
 }
@@ -1133,7 +1086,7 @@ Log::_init()
   }
 
   Note("logging initialized[%d], logging_mode = %d", init_status, logging_mode);
-  if (is_debug_tag_set("log2-config")) {
+  if (is_debug_tag_set("log-config")) {
     config->display();
   }
 }
@@ -1202,17 +1155,17 @@ Log::access(LogAccess * lad)
   if (Log::config->sampling_frequency > 1) {
     this_sample = sample++;
     if (this_sample && this_sample % Log::config->sampling_frequency) {
-      Debug("log2", "sampling, skipping this entry ...");
+      Debug("log", "sampling, skipping this entry ...");
       ret = Log::SKIP;
       goto done;
     } else {
-      Debug("log2", "sampling, LOGGING this entry ...");
+      Debug("log", "sampling, LOGGING this entry ...");
       sample = 1;
     }
   }
 
   if (Log::config->log_object_manager.get_num_objects() == 0) {
-    Debug("log2", "no log objects, skipping this entry ...");
+    Debug("log", "no log objects, skipping this entry ...");
     ret = Log::SKIP;
     goto done;
   }
@@ -1252,7 +1205,7 @@ Log::error(const char *format, ...)
 
     if (ret_val == Log::LOG_OK) {
       ProxyMutex *mutex = this_ethread()->mutex;
-      LOG_INCREMENT_DYN_STAT(log2_stat_event_log_error_stat);
+      LOG_INCREMENT_DYN_STAT(log_stat_event_log_error_stat);
     }
   }
   return ret_val;
@@ -1269,7 +1222,7 @@ Log::va_error(char *format, va_list ap)
 
     if (ret_val == Log::LOG_OK) {
       ProxyMutex *mutex = this_ethread()->mutex;
-      LOG_INCREMENT_DYN_STAT(log2_stat_event_log_error_stat);
+      LOG_INCREMENT_DYN_STAT(log_stat_event_log_error_stat);
     }
   }
   return ret_val;
@@ -1289,7 +1242,7 @@ Log::flush_thread_main(void *args)
   time_t now, last_time = 0;
   size_t total_bytes, bytes_to_disk, bytes_to_net, bytes_to_pipe;
 
-  Debug("log2-flush", "Log flush thread is alive ...");
+  Debug("log-flush", "Log flush thread is alive ...");
 
   while (true) {
     ink_timestruc timeout_time;
@@ -1304,18 +1257,20 @@ Log::flush_thread_main(void *args)
 
     // Update statistics
     //
-    LOG_SUM_GLOBAL_DYN_STAT(log2_stat_bytes_written_to_disk_stat, bytes_to_disk);
-    LOG_SUM_GLOBAL_DYN_STAT(log2_stat_bytes_sent_to_network_stat, bytes_to_net);
+    LOG_SUM_GLOBAL_DYN_STAT(log_stat_bytes_written_to_disk_stat, bytes_to_disk);
+    LOG_SUM_GLOBAL_DYN_STAT(log_stat_bytes_sent_to_network_stat, bytes_to_net);
 
-    Debug("log2-flush", "%d bytes flushed this round [ %d to disk, %d to net, %d to pipe]",
+    Debug("log-flush", "%d bytes flushed this round [ %d to disk, %d to net, %d to pipe]",
           total_bytes, bytes_to_disk, bytes_to_net, bytes_to_pipe);
 
     // Time to work on periodic events??
     //
     now = time(NULL);
     if (now > last_time) {
-      Debug("log2-flush", "periodic tasks for %ld", now);
-      periodic_tasks(now);
+      if ((now % PERIODIC_TASKS_INTERVAL) == 0) {
+        Debug("log-flush", "periodic tasks for %ld", now);
+        periodic_tasks(now);
+      }
       last_time = (now = time(NULL));
     }
     // wait for more work; a spurious wake-up is ok since we'll just
@@ -1360,7 +1315,7 @@ Log::collate_thread_main(void *args)
   int new_client;
 
 
-  Debug("log2-thread", "Log collation thread is alive ...");
+  Debug("log-thread", "Log collation thread is alive ...");
 
   while (true) {
     ink_assert(Log::config != NULL);
@@ -1377,7 +1332,7 @@ Log::collate_thread_main(void *args)
     // work.  We still need to keep checking whether we're a collation
     // host to account for a reconfiguration.
     //
-    Debug("log2-sock", "collation thread starting, creating LogSock");
+    Debug("log-sock", "collation thread starting, creating LogSock");
     sock = NEW(new LogSock(LogSock::LS_CONST_CLUSTER_MAX_MACHINES));
     ink_assert(sock != NULL);
 
@@ -1400,11 +1355,11 @@ Log::collate_thread_main(void *args)
       }
 
       if (sock->pending_connect(0)) {
-        Debug("log2-sock", "pending connection ...");
+        Debug("log-sock", "pending connection ...");
         if ((new_client = sock->accept()) < 0) {
-          Debug("log2-sock", "error accepting new collation client");
+          Debug("log-sock", "error accepting new collation client");
         } else {
-          Debug("log2-sock", "connection %d accepted", new_client);
+          Debug("log-sock", "connection %d accepted", new_client);
           if (!sock->authorized_client(new_client, Log::config->collation_secret)) {
             Warning("Unauthorized client connecting to " "log collation port; connection refused.");
             sock->close(new_client);
@@ -1418,10 +1373,10 @@ Log::collate_thread_main(void *args)
         continue;
       }
 
-      Debug("log2-sock", "pending message ...");
+      Debug("log-sock", "pending message ...");
       header = (LogBufferHeader *) sock->read_alloc(sock_id, &bytes_read);
       if (!header) {
-        Debug("log2-sock", "Error reading LogBuffer from collation client");
+        Debug("log-sock", "Error reading LogBuffer from collation client");
         continue;
       }
 
@@ -1433,8 +1388,8 @@ Log::collate_thread_main(void *args)
         continue;
       }
 
-      Debug("log2-sock", "message accepted, size = %d", bytes_read);
-      LOG_SUM_GLOBAL_DYN_STAT(log2_stat_bytes_received_from_network_stat, bytes_read);
+      Debug("log-sock", "message accepted, size = %d", bytes_read);
+      LOG_SUM_GLOBAL_DYN_STAT(log_stat_bytes_received_from_network_stat, bytes_read);
 
       obj = match_logobject(header);
       if (!obj) {
@@ -1443,7 +1398,7 @@ Log::collate_thread_main(void *args)
       }
 
       format = obj->m_format;
-      Debug("log2-sock", "Using format '%s'", format->name());
+      Debug("log-sock", "Using format '%s'", format->name());
 
       delete[]header;
 
@@ -1456,7 +1411,7 @@ Log::collate_thread_main(void *args)
 //          ink_mutex_release (&flush_mutex);
     }
 
-    Debug("log2", "no longer collation host, deleting LogSock");
+    Debug("log", "no longer collation host, deleting LogSock");
     delete sock;
   }
   /* NOTREACHED */

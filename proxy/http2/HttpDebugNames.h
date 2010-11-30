@@ -34,7 +34,7 @@ public:
   static const char *get_action_name(HttpTransact::StateMachineAction_t e);
   static const char *get_method_name(const char *method);
   static const char *get_cache_action_name(HttpTransact::CacheAction_t t);
-  static const char *get_api_hook_name(INKHttpHookID t);
+  static const char *get_api_hook_name(TSHttpHookID t);
   static const char *get_server_state_name(HttpTransact::ServerState_t state);
 };
 

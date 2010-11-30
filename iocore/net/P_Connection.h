@@ -81,7 +81,7 @@ struct NetVCOptions;
 struct Connection
 {
   SOCKET fd; ///< Socket for connection.
-  struct sockaddr_in sa; ///< Remote address.
+  struct sockaddr_storage sa; ///< Remote address.
   bool is_bound; ///< Flag for already bound to a local address.
   bool is_connected; ///< Flag for already connected.
 
@@ -124,7 +124,7 @@ struct Connection
 		 uint16 port ///< Remote port.
 	     ) {
     sockaddr_in* sa_in = reinterpret_cast<sockaddr_in*>(&sa);
-    sa.sin_family = AF_INET;
+    sa.ss_family = AF_INET;
     sa_in->sin_port = htons(port);
     sa_in->sin_addr.s_addr = addr;
     memset(&(sa_in->sin_zero), 0, 8);
@@ -161,6 +161,7 @@ struct Server: public Connection
   // IP address in network byte order
   //
   unsigned int accept_ip;
+  char *accept_ip_str;
 
   /// If set, transparently connect to origin server for requests.
   bool f_outbound_transparent;
@@ -180,12 +181,13 @@ struct Server: public Connection
   // converted into network byte order
   //
 
-  int listen(int port, bool non_blocking = false, int recv_bufsize = 0, int send_bufsize = 0);
+  int listen(int port, int domain = AF_INET, bool non_blocking = false, int recv_bufsize = 0, int send_bufsize = 0);
   int setup_fd_for_listen(bool non_blocking = false, int recv_bufsize = 0, int send_bufsize = 0);
 
   Server()
     : Connection()
     , accept_ip(INADDR_ANY)
+    , accept_ip_str(NULL)
     , f_outbound_transparent(false)
   { }
 };

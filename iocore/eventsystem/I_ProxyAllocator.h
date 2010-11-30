@@ -35,7 +35,7 @@
 
 class EThread;
 
-#define MAX_ON_THREAD_FREELIST 200
+#define MAX_ON_THREAD_FREELIST 512
 
 struct ProxyAllocator
 {

@@ -45,7 +45,7 @@
 typedef struct
 {
   /* Req line Method */
-  INKHttpType httpType;
+  TSHttpType httpType;
   char *httpMethod;
 
   /* Req line URL */
@@ -71,9 +71,9 @@ initMsgLine()
 {
   HttpMsgLine_T *msgLine = NULL;
 
-  msgLine = (HttpMsgLine_T *) INKmalloc(sizeof(HttpMsgLine_T));
+  msgLine = (HttpMsgLine_T *) TSmalloc(sizeof(HttpMsgLine_T));
 
-  msgLine->httpType = INK_HTTP_TYPE_UNKNOWN;
+  msgLine->httpType = TS_HTTP_TYPE_UNKNOWN;
   msgLine->httpMethod = NULL;
   msgLine->urlHost = NULL;
   msgLine->urlFragment = NULL;
@@ -115,34 +115,34 @@ identicalURL(HttpMsgLine_T * pHttpMsgLine1, HttpMsgLine_T * pHttpMsgLine2)
   LOG_SET_FUNCTION_NAME("identicalURL");
 
 if (pHttpMsgLine1->urlHost && strcmp(pHttpMsgLine1->urlHost, pHttpMsgLine2->urlHost)) {
-    LOG_AUTO_ERROR("INKHttpUrlCopy", "urlHost different");
+    LOG_AUTO_ERROR("TSHttpUrlCopy", "urlHost different");
     return 0;
   } else if (pHttpMsgLine1->urlFragment && strcmp(pHttpMsgLine1->urlFragment, pHttpMsgLine2->urlFragment)) {
-    LOG_AUTO_ERROR("INKHttpUrlCopy", "urlFragement different");
+    LOG_AUTO_ERROR("TSHttpUrlCopy", "urlFragement different");
     return 0;
   } else if (pHttpMsgLine1->urlParams && strcmp(pHttpMsgLine1->urlParams, pHttpMsgLine2->urlParams)) {
-    LOG_AUTO_ERROR("INKHttpUrlCopy", "urlParams different");
+    LOG_AUTO_ERROR("TSHttpUrlCopy", "urlParams different");
     return 0;
   } else if (pHttpMsgLine1->urlQuery && strcmp(pHttpMsgLine1->urlQuery, pHttpMsgLine2->urlQuery)) {
-    LOG_AUTO_ERROR("INKHttpUrlCopy", "urlQuery different");
+    LOG_AUTO_ERROR("TSHttpUrlCopy", "urlQuery different");
     return 0;
   } else if ((pHttpMsgLine1->urlLength != pHttpMsgLine2->urlLength)) {
-    LOG_AUTO_ERROR("INKHttpUrlCopy", "urlLength type different");
+    LOG_AUTO_ERROR("TSHttpUrlCopy", "urlLength type different");
     return 0;
   } else if (pHttpMsgLine1->urlPassword && strcmp(pHttpMsgLine1->urlPassword, pHttpMsgLine2->urlPassword)) {
-    LOG_AUTO_ERROR("INKHttpUrlCopy", "urlPassword different");
+    LOG_AUTO_ERROR("TSHttpUrlCopy", "urlPassword different");
     return 0;
   } else if (pHttpMsgLine1->urlPath && strcmp(pHttpMsgLine1->urlPath, pHttpMsgLine2->urlPath)) {
-    LOG_AUTO_ERROR("INKHttpUrlCopy", "urlPath different");
+    LOG_AUTO_ERROR("TSHttpUrlCopy", "urlPath different");
     return 0;
   } else if ((pHttpMsgLine1->urlPort != pHttpMsgLine2->urlPort)) {
-    LOG_AUTO_ERROR("INKHttpUrlCopy", "urlLength type different");
+    LOG_AUTO_ERROR("TSHttpUrlCopy", "urlLength type different");
     return 0;
   } else if (pHttpMsgLine1->urlScheme && strcmp(pHttpMsgLine1->urlScheme, pHttpMsgLine2->urlScheme)) {
-    LOG_AUTO_ERROR("INKHttpUrlCopy", "urlScheme different");
+    LOG_AUTO_ERROR("TSHttpUrlCopy", "urlScheme different");
     return 0;
   } else if (pHttpMsgLine1->urlUser && strcmp(pHttpMsgLine1->urlUser, pHttpMsgLine2->urlUser)) {
-    LOG_AUTO_ERROR("INKHttpUrlCopy", "urlUser different");
+    LOG_AUTO_ERROR("TSHttpUrlCopy", "urlUser different");
     return 0;
   }
 
@@ -150,8 +150,8 @@ if (pHttpMsgLine1->urlHost && strcmp(pHttpMsgLine1->urlHost, pHttpMsgLine2->urlH
 }
 
 static void
-storeHdrInfo(HttpMsgLine_T * pHttpMsgLine, INKMBuffer hdrBuf, INKMLoc hdrLoc,
-             INKMLoc urlLoc, char *debugTag, float section)
+storeHdrInfo(HttpMsgLine_T * pHttpMsgLine, TSMBuffer hdrBuf, TSMLoc hdrLoc,
+             TSMLoc urlLoc, char *debugTag, float section)
 {
   LOG_SET_FUNCTION_NAME("storeHdrInfo");
 
@@ -162,89 +162,89 @@ storeHdrInfo(HttpMsgLine_T * pHttpMsgLine, INKMBuffer hdrBuf, INKMLoc hdrLoc,
   int iUrlHostLength, iUrlPasswordLength, iUrlPathLength, iUrlSchemeLength, iUrlUserLength;
 
   if (hdrLoc) {
-    if ((pHttpMsgLine->hdrLength = INKHttpHdrLengthGet(hdrBuf, hdrLoc)) == INK_ERROR) {
-      LOG_API_ERROR("INKHttpHdrLengthGet");
+    if ((pHttpMsgLine->hdrLength = TSHttpHdrLengthGet(hdrBuf, hdrLoc)) == TS_ERROR) {
+      LOG_API_ERROR("TSHttpHdrLengthGet");
     }
-    if ((pHttpMsgLine->httpVersion = INKHttpHdrVersionGet(hdrBuf, hdrLoc)) == INK_ERROR) {
-      LOG_API_ERROR("INKHttpHdrVersionGet");
+    if ((pHttpMsgLine->httpVersion = TSHttpHdrVersionGet(hdrBuf, hdrLoc)) == TS_ERROR) {
+      LOG_API_ERROR("TSHttpHdrVersionGet");
     }
 
-    if ((sHttpMethod = INKHttpHdrMethodGet(hdrBuf, hdrLoc, &iHttpMethodLength)) == INK_ERROR_PTR) {
-      LOG_API_ERROR("INKHttpHdrMethodGet");
+    if ((sHttpMethod = TSHttpHdrMethodGet(hdrBuf, hdrLoc, &iHttpMethodLength)) == TS_ERROR_PTR) {
+      LOG_API_ERROR("TSHttpHdrMethodGet");
     } else {
-      pHttpMsgLine->httpMethod = INKstrndup(sHttpMethod, iHttpMethodLength);
-      INKDebug(debugTag, "(%g) HTTP Method = %s", section, pHttpMsgLine->httpMethod);
+      pHttpMsgLine->httpMethod = TSstrndup(sHttpMethod, iHttpMethodLength);
+      TSDebug(debugTag, "(%g) HTTP Method = %s", section, pHttpMsgLine->httpMethod);
       STR_RELEASE(hdrBuf, urlLoc, sHttpMethod);
     }
   }
 
-  /*urlLoc = INKHttpHdrUrlGet (hdrBuf, hdrLoc); */
-  if ((sUrlHostName = INKUrlHostGet(hdrBuf, urlLoc, &iUrlHostLength)) == INK_ERROR_PTR) {
-    LOG_API_ERROR("INKUrlHostGet");
+  /*urlLoc = TSHttpHdrUrlGet (hdrBuf, hdrLoc); */
+  if ((sUrlHostName = TSUrlHostGet(hdrBuf, urlLoc, &iUrlHostLength)) == TS_ERROR_PTR) {
+    LOG_API_ERROR("TSUrlHostGet");
   } else {
-    pHttpMsgLine->urlHost = INKstrndup(sUrlHostName, iUrlHostLength);
-    INKDebug(debugTag, "(%g) URL Host = %s", section, pHttpMsgLine->urlHost);
+    pHttpMsgLine->urlHost = TSstrndup(sUrlHostName, iUrlHostLength);
+    TSDebug(debugTag, "(%g) URL Host = %s", section, pHttpMsgLine->urlHost);
   }
 
-  if ((sUrlFragment = INKUrlHttpFragmentGet(hdrBuf, urlLoc, &iUrlFragmentLength)) == INK_ERROR_PTR) {
-    LOG_API_ERROR("INKUrlHttpFragment");
+  if ((sUrlFragment = TSUrlHttpFragmentGet(hdrBuf, urlLoc, &iUrlFragmentLength)) == TS_ERROR_PTR) {
+    LOG_API_ERROR("TSUrlHttpFragment");
   } else {
-    pHttpMsgLine->urlFragment = INKstrndup(sUrlFragment, iUrlFragmentLength);
-    INKDebug(debugTag, "(%g) URL HTTP Fragment = %s", section, pHttpMsgLine->urlFragment);
+    pHttpMsgLine->urlFragment = TSstrndup(sUrlFragment, iUrlFragmentLength);
+    TSDebug(debugTag, "(%g) URL HTTP Fragment = %s", section, pHttpMsgLine->urlFragment);
   }
 
-  if ((sUrlParams = INKUrlHttpParamsGet(hdrBuf, urlLoc, &iUrlParamsLength)) == INK_ERROR_PTR) {
-    LOG_API_ERROR("INKUrlHttpParmsGet");
+  if ((sUrlParams = TSUrlHttpParamsGet(hdrBuf, urlLoc, &iUrlParamsLength)) == TS_ERROR_PTR) {
+    LOG_API_ERROR("TSUrlHttpParmsGet");
   } else {
-    pHttpMsgLine->urlParams = INKstrndup(sUrlParams, iUrlParamsLength);
-    INKDebug(debugTag, "(%g) URL HTTP Params = %s", section, pHttpMsgLine->urlParams);
+    pHttpMsgLine->urlParams = TSstrndup(sUrlParams, iUrlParamsLength);
+    TSDebug(debugTag, "(%g) URL HTTP Params = %s", section, pHttpMsgLine->urlParams);
   }
 
-  if ((sUrlQuery = INKUrlHttpQueryGet(hdrBuf, urlLoc, &iUrlQueryLength)) == INK_ERROR_PTR) {
-    LOG_API_ERROR("INKUrlHttpQueryGet");
+  if ((sUrlQuery = TSUrlHttpQueryGet(hdrBuf, urlLoc, &iUrlQueryLength)) == TS_ERROR_PTR) {
+    LOG_API_ERROR("TSUrlHttpQueryGet");
   } else {
-    pHttpMsgLine->urlQuery = INKstrndup(sUrlQuery, iUrlQueryLength);
-    INKDebug(debugTag, "(%g) URL HTTP Query = %s", section, pHttpMsgLine->urlQuery);
+    pHttpMsgLine->urlQuery = TSstrndup(sUrlQuery, iUrlQueryLength);
+    TSDebug(debugTag, "(%g) URL HTTP Query = %s", section, pHttpMsgLine->urlQuery);
   }
 
-  if ((pHttpMsgLine->urlLength = INKUrlLengthGet(hdrBuf, urlLoc)) == INK_ERROR) {
-    LOG_API_ERROR("INKUrlLengthGet");
+  if ((pHttpMsgLine->urlLength = TSUrlLengthGet(hdrBuf, urlLoc)) == TS_ERROR) {
+    LOG_API_ERROR("TSUrlLengthGet");
   } else {
-    INKDebug(debugTag, "(%g) URL Length = %d", section, pHttpMsgLine->urlLength);
+    TSDebug(debugTag, "(%g) URL Length = %d", section, pHttpMsgLine->urlLength);
   }
 
-  if ((sUrlPassword = INKUrlPasswordGet(hdrBuf, urlLoc, &iUrlPasswordLength)) == INK_ERROR_PTR) {
-    LOG_API_ERROR("INKUrlPasswordGet");
+  if ((sUrlPassword = TSUrlPasswordGet(hdrBuf, urlLoc, &iUrlPasswordLength)) == TS_ERROR_PTR) {
+    LOG_API_ERROR("TSUrlPasswordGet");
   } else {
-    pHttpMsgLine->urlPassword = INKstrndup(sUrlPassword, iUrlPasswordLength);
-    INKDebug(debugTag, "(%g) URL Password = %s", section, pHttpMsgLine->urlPassword);
+    pHttpMsgLine->urlPassword = TSstrndup(sUrlPassword, iUrlPasswordLength);
+    TSDebug(debugTag, "(%g) URL Password = %s", section, pHttpMsgLine->urlPassword);
   }
 
-  if ((sUrlPath = INKUrlPathGet(hdrBuf, urlLoc, &iUrlPathLength)) == INK_ERROR_PTR) {
-    LOG_API_ERROR("INKUrlPathGet");
+  if ((sUrlPath = TSUrlPathGet(hdrBuf, urlLoc, &iUrlPathLength)) == TS_ERROR_PTR) {
+    LOG_API_ERROR("TSUrlPathGet");
   } else {
-    pHttpMsgLine->urlPath = INKstrndup(sUrlPath, iUrlPathLength);
-    INKDebug(debugTag, "(%g) URL Path = %s", section, pHttpMsgLine->urlPath);
+    pHttpMsgLine->urlPath = TSstrndup(sUrlPath, iUrlPathLength);
+    TSDebug(debugTag, "(%g) URL Path = %s", section, pHttpMsgLine->urlPath);
   }
 
-  if ((pHttpMsgLine->urlPort = INKUrlPortGet(hdrBuf, urlLoc)) == INK_ERROR) {
-    LOG_API_ERROR("INKUrlPortGet");
+  if ((pHttpMsgLine->urlPort = TSUrlPortGet(hdrBuf, urlLoc)) == TS_ERROR) {
+    LOG_API_ERROR("TSUrlPortGet");
   } else {
-    INKDebug(debugTag, "(%g) URL Port = %d", section, pHttpMsgLine->urlPort);
+    TSDebug(debugTag, "(%g) URL Port = %d", section, pHttpMsgLine->urlPort);
   }
 
-  if ((sUrlScheme = INKUrlSchemeGet(hdrBuf, urlLoc, &iUrlSchemeLength)) == INK_ERROR_PTR) {
-    LOG_API_ERROR("INKUrlSchemeGet");
+  if ((sUrlScheme = TSUrlSchemeGet(hdrBuf, urlLoc, &iUrlSchemeLength)) == TS_ERROR_PTR) {
+    LOG_API_ERROR("TSUrlSchemeGet");
   } else {
-    pHttpMsgLine->urlScheme = INKstrndup(sUrlScheme, iUrlSchemeLength);
-    INKDebug(debugTag, "(%g) URL Scheme = %s", section, pHttpMsgLine->urlScheme);
+    pHttpMsgLine->urlScheme = TSstrndup(sUrlScheme, iUrlSchemeLength);
+    TSDebug(debugTag, "(%g) URL Scheme = %s", section, pHttpMsgLine->urlScheme);
   }
 
-  if ((sUrlUser = INKUrlUserGet(hdrBuf, urlLoc, &iUrlUserLength)) == INK_ERROR_PTR) {
-    LOG_API_ERROR("INKUrlUserGet");
+  if ((sUrlUser = TSUrlUserGet(hdrBuf, urlLoc, &iUrlUserLength)) == TS_ERROR_PTR) {
+    LOG_API_ERROR("TSUrlUserGet");
   } else {
-    pHttpMsgLine->urlUser = INKstrndup(sUrlUser, iUrlUserLength);
-    INKDebug(debugTag, "(%g) URL User = %s", section, pHttpMsgLine->urlUser);
+    pHttpMsgLine->urlUser = TSstrndup(sUrlUser, iUrlUserLength);
+    TSDebug(debugTag, "(%g) URL User = %s", section, pHttpMsgLine->urlUser);
   }
 
   /* Clean-up */
@@ -263,11 +263,11 @@ storeHdrInfo(HttpMsgLine_T * pHttpMsgLine, INKMBuffer hdrBuf, INKMLoc hdrLoc,
 
 
 static void
-setCustomUrl(INKMBuffer hdrBuf, INKMLoc httpHdrLoc)
+setCustomUrl(TSMBuffer hdrBuf, TSMLoc httpHdrLoc)
 {
   LOG_SET_FUNCTION_NAME("setCustomUrl");
 
-  INKMLoc urlLoc;
+  TSMLoc urlLoc;
 
   const char *sUrlHostName = NULL, *sUrlFragment = NULL, *sUrlParams = NULL, *sUrlQuery = NULL;
   const char *sUrlPassword = NULL, *sUrlPath = NULL, *sUrlScheme = NULL, *sUrlUser = NULL;
@@ -276,95 +276,95 @@ setCustomUrl(INKMBuffer hdrBuf, INKMLoc httpHdrLoc)
   int i = 0;
 
   static HttpMsgLine_T custUrl[] =
-    { {INK_HTTP_TYPE_REQUEST, "\0", 'a', "www.testing-host.com", "testing-fragment", "testing-params", "testing-query",
+    { {TS_HTTP_TYPE_REQUEST, "\0", 'a', "www.testing-host.com", "testing-fragment", "testing-params", "testing-query",
        100, "testing-password", "testing/path", 19000, "testing-scheme", "testing-user", 0, 0} };
 
 
-  if ((urlLoc = INKHttpHdrUrlGet(hdrBuf, httpHdrLoc)) == INK_ERROR_PTR) {
-    LOG_API_ERROR("INKHttpHdrUrlGet");
+  if ((urlLoc = TSHttpHdrUrlGet(hdrBuf, httpHdrLoc)) == TS_ERROR_PTR) {
+    LOG_API_ERROR("TSHttpHdrUrlGet");
   }
 
-  if (INKHttpHdrTypeGet(hdrBuf, httpHdrLoc) == INK_ERROR) {
-    LOG_API_ERROR("INKHttpHdrTypeGet");
-  } else if (INKHttpHdrTypeGet(hdrBuf, httpHdrLoc) != INK_HTTP_TYPE_REQUEST) {
-    LOG_AUTO_ERROR("INKHttpHdrTypeSet", "Type not set to INK_HTTP_TYPE_REQUEST");
+  if (TSHttpHdrTypeGet(hdrBuf, httpHdrLoc) == TS_ERROR) {
+    LOG_API_ERROR("TSHttpHdrTypeGet");
+  } else if (TSHttpHdrTypeGet(hdrBuf, httpHdrLoc) != TS_HTTP_TYPE_REQUEST) {
+    LOG_AUTO_ERROR("TSHttpHdrTypeSet", "Type not set to TS_HTTP_TYPE_REQUEST");
   }
 
-  if (INKUrlHostSet(hdrBuf, urlLoc, custUrl[i].urlHost, strlen(custUrl[i].urlHost)) == INK_ERROR) {
-    LOG_API_ERROR("INKUrlHostSet");
-  } else if ((sUrlHostName = INKUrlHostGet(hdrBuf, urlLoc, &iHostLength)) == INK_ERROR_PTR) {
-    LOG_API_ERROR("INKUrlHostGet");
+  if (TSUrlHostSet(hdrBuf, urlLoc, custUrl[i].urlHost, strlen(custUrl[i].urlHost)) == TS_ERROR) {
+    LOG_API_ERROR("TSUrlHostSet");
+  } else if ((sUrlHostName = TSUrlHostGet(hdrBuf, urlLoc, &iHostLength)) == TS_ERROR_PTR) {
+    LOG_API_ERROR("TSUrlHostGet");
   } else if (strncmp(sUrlHostName, custUrl[i].urlHost, iHostLength)) {
-    LOG_AUTO_ERROR("INKUrlHostSet/Get", "GET different from SET");
+    LOG_AUTO_ERROR("TSUrlHostSet/Get", "GET different from SET");
   }
 
-  if (INKUrlHttpFragmentSet(hdrBuf, urlLoc, custUrl[i].urlFragment, strlen(custUrl[i].urlFragment))
-      == INK_ERROR) {
-    LOG_API_ERROR("INKUrlHttpFragmentSet");
-  } else if ((sUrlFragment = INKUrlHttpFragmentGet(hdrBuf, urlLoc, &iUrlFragmentLength))
-             == INK_ERROR_PTR) {
-    LOG_API_ERROR("INKUrlHttpFragmentGet");
+  if (TSUrlHttpFragmentSet(hdrBuf, urlLoc, custUrl[i].urlFragment, strlen(custUrl[i].urlFragment))
+      == TS_ERROR) {
+    LOG_API_ERROR("TSUrlHttpFragmentSet");
+  } else if ((sUrlFragment = TSUrlHttpFragmentGet(hdrBuf, urlLoc, &iUrlFragmentLength))
+             == TS_ERROR_PTR) {
+    LOG_API_ERROR("TSUrlHttpFragmentGet");
   } else if (strncmp(sUrlFragment, custUrl[i].urlFragment, iUrlFragmentLength)) {
-    LOG_AUTO_ERROR("INKUrlHttpFragmentSet/Get", "GET different from SET");
+    LOG_AUTO_ERROR("TSUrlHttpFragmentSet/Get", "GET different from SET");
   }
 
-  if (INKUrlHttpParamsSet(hdrBuf, urlLoc, custUrl[i].urlParams, strlen(custUrl[i].urlParams))
-      == INK_ERROR) {
-    LOG_API_ERROR("INKUrlHttpParamsSet");
-  } else if ((sUrlParams = INKUrlHttpParamsGet(hdrBuf, urlLoc, &iUrlParamsLength)) == INK_ERROR_PTR) {
-    LOG_API_ERROR("INKUrlHttpParamsGet");
+  if (TSUrlHttpParamsSet(hdrBuf, urlLoc, custUrl[i].urlParams, strlen(custUrl[i].urlParams))
+      == TS_ERROR) {
+    LOG_API_ERROR("TSUrlHttpParamsSet");
+  } else if ((sUrlParams = TSUrlHttpParamsGet(hdrBuf, urlLoc, &iUrlParamsLength)) == TS_ERROR_PTR) {
+    LOG_API_ERROR("TSUrlHttpParamsGet");
   } else if (strncmp(sUrlParams, custUrl[i].urlParams, iUrlParamsLength)) {
-    LOG_AUTO_ERROR("INKUrlHttpParamsSet/Get", "GET different from SET");
+    LOG_AUTO_ERROR("TSUrlHttpParamsSet/Get", "GET different from SET");
   }
 
-  if (INKUrlHttpQuerySet(hdrBuf, urlLoc, custUrl[i].urlQuery, strlen(custUrl[i].urlQuery))
-      == INK_ERROR) {
-    LOG_API_ERROR("INKUrlHttpQuerySet");
-  } else if ((sUrlQuery = INKUrlHttpQueryGet(hdrBuf, urlLoc, &iUrlQueryLength)) == INK_ERROR_PTR) {
-    LOG_API_ERROR("INKUrlHttpQueryGet");
+  if (TSUrlHttpQuerySet(hdrBuf, urlLoc, custUrl[i].urlQuery, strlen(custUrl[i].urlQuery))
+      == TS_ERROR) {
+    LOG_API_ERROR("TSUrlHttpQuerySet");
+  } else if ((sUrlQuery = TSUrlHttpQueryGet(hdrBuf, urlLoc, &iUrlQueryLength)) == TS_ERROR_PTR) {
+    LOG_API_ERROR("TSUrlHttpQueryGet");
   } else if (strncmp(sUrlQuery, custUrl[i].urlQuery, iUrlQueryLength)) {
-    LOG_AUTO_ERROR("INKUrlHttpQuerySet/Get", "GET different from SET");
+    LOG_AUTO_ERROR("TSUrlHttpQuerySet/Get", "GET different from SET");
   }
 
-  if (INKUrlPasswordSet(hdrBuf, urlLoc, custUrl[i].urlPassword, strlen(custUrl[i].urlPassword))
-      == INK_ERROR) {
-    LOG_API_ERROR("INKUrlPasswordSet");
-  } else if ((sUrlPassword = INKUrlPasswordGet(hdrBuf, urlLoc, &iUrlPasswordLength)) == INK_ERROR_PTR) {
-    LOG_API_ERROR("INKUrlPasswordGet");
+  if (TSUrlPasswordSet(hdrBuf, urlLoc, custUrl[i].urlPassword, strlen(custUrl[i].urlPassword))
+      == TS_ERROR) {
+    LOG_API_ERROR("TSUrlPasswordSet");
+  } else if ((sUrlPassword = TSUrlPasswordGet(hdrBuf, urlLoc, &iUrlPasswordLength)) == TS_ERROR_PTR) {
+    LOG_API_ERROR("TSUrlPasswordGet");
   } else if (strncmp(sUrlPassword, custUrl[i].urlPassword, iUrlPasswordLength)) {
-    LOG_AUTO_ERROR("INKUrlHttpPasswordSet/Get", "GET different from SET");
+    LOG_AUTO_ERROR("TSUrlHttpPasswordSet/Get", "GET different from SET");
   }
 
-  if (INKUrlPathSet(hdrBuf, urlLoc, custUrl[i].urlPath, strlen(custUrl[i].urlPath)) == INK_ERROR) {
-    LOG_API_ERROR("INKUrlPathSet");
-  } else if ((sUrlPath = INKUrlPathGet(hdrBuf, urlLoc, &iUrlPathLength)) == INK_ERROR_PTR) {
-    LOG_API_ERROR("INKUrlPathGet");
+  if (TSUrlPathSet(hdrBuf, urlLoc, custUrl[i].urlPath, strlen(custUrl[i].urlPath)) == TS_ERROR) {
+    LOG_API_ERROR("TSUrlPathSet");
+  } else if ((sUrlPath = TSUrlPathGet(hdrBuf, urlLoc, &iUrlPathLength)) == TS_ERROR_PTR) {
+    LOG_API_ERROR("TSUrlPathGet");
   } else if (strncmp(sUrlPath, custUrl[i].urlPath, iUrlPathLength)) {
-    LOG_AUTO_ERROR("INKUrlHttpPathSet/Get", "GET different from SET");
+    LOG_AUTO_ERROR("TSUrlHttpPathSet/Get", "GET different from SET");
   }
 
-  if (INKUrlPortSet(hdrBuf, urlLoc, custUrl[i].urlPort) == INK_ERROR) {
-    LOG_API_ERROR("INKUrlPortSet");
-  } else if (INKUrlPortGet(hdrBuf, urlLoc) == INK_ERROR) {
-    LOG_API_ERROR("INKUrlPortGet");
-  } else if (INKUrlPortGet(hdrBuf, urlLoc) != custUrl[i].urlPort) {
-    LOG_AUTO_ERROR("INKUrlHttpPortSet/Get", "GET different from SET");
+  if (TSUrlPortSet(hdrBuf, urlLoc, custUrl[i].urlPort) == TS_ERROR) {
+    LOG_API_ERROR("TSUrlPortSet");
+  } else if (TSUrlPortGet(hdrBuf, urlLoc) == TS_ERROR) {
+    LOG_API_ERROR("TSUrlPortGet");
+  } else if (TSUrlPortGet(hdrBuf, urlLoc) != custUrl[i].urlPort) {
+    LOG_AUTO_ERROR("TSUrlHttpPortSet/Get", "GET different from SET");
   }
 
-  if (INKUrlSchemeSet(hdrBuf, urlLoc, custUrl[i].urlScheme, strlen(custUrl[i].urlScheme)) == INK_ERROR) {
-    LOG_API_ERROR("INKUrlSchemeSet");
-  } else if ((sUrlScheme = INKUrlSchemeGet(hdrBuf, urlLoc, &iUrlSchemeLength)) == INK_ERROR_PTR) {
-    LOG_API_ERROR("INKUrlSchemeGet");
+  if (TSUrlSchemeSet(hdrBuf, urlLoc, custUrl[i].urlScheme, strlen(custUrl[i].urlScheme)) == TS_ERROR) {
+    LOG_API_ERROR("TSUrlSchemeSet");
+  } else if ((sUrlScheme = TSUrlSchemeGet(hdrBuf, urlLoc, &iUrlSchemeLength)) == TS_ERROR_PTR) {
+    LOG_API_ERROR("TSUrlSchemeGet");
   } else if (strncmp(sUrlScheme, custUrl[i].urlScheme, iUrlSchemeLength)) {
-    LOG_AUTO_ERROR("INKUrlHttpSchemeSet/Get", "GET different from SET");
+    LOG_AUTO_ERROR("TSUrlHttpSchemeSet/Get", "GET different from SET");
   }
 
-  if (INKUrlUserSet(hdrBuf, urlLoc, custUrl[i].urlUser, strlen(custUrl[i].urlUser)) == INK_ERROR) {
-    LOG_API_ERROR("INKUrlUserSet");
-  } else if ((sUrlUser = INKUrlUserGet(hdrBuf, urlLoc, &iUrlUserLength)) == INK_ERROR_PTR) {
-    LOG_API_ERROR("INKUrlUserGet");
+  if (TSUrlUserSet(hdrBuf, urlLoc, custUrl[i].urlUser, strlen(custUrl[i].urlUser)) == TS_ERROR) {
+    LOG_API_ERROR("TSUrlUserSet");
+  } else if ((sUrlUser = TSUrlUserGet(hdrBuf, urlLoc, &iUrlUserLength)) == TS_ERROR_PTR) {
+    LOG_API_ERROR("TSUrlUserGet");
   } else if (strncmp(sUrlUser, custUrl[i].urlUser, iUrlUserLength)) {
-    LOG_AUTO_ERROR("INKUrlHttpUserSet/Get", "GET different from SET");
+    LOG_AUTO_ERROR("TSUrlHttpUserSet/Get", "GET different from SET");
   }
 
   /* Clean-up */
@@ -382,15 +382,15 @@ setCustomUrl(INKMBuffer hdrBuf, INKMLoc httpHdrLoc)
 
 
 void
-negTesting(INKMBuffer hdrBuf, INKMLoc urlLoc)
+negTesting(TSMBuffer hdrBuf, TSMLoc urlLoc)
 {
   LOG_SET_FUNCTION_NAME("negTesting");
 
-  INKMBuffer negHdrBuf = NULL;
-  INKMLoc negHttpHdrLoc = NULL, negUrlLoc = NULL;
+  TSMBuffer negHdrBuf = NULL;
+  TSMLoc negHttpHdrLoc = NULL, negUrlLoc = NULL;
 
-  INKHttpType negType, hdrHttpType;
-  INKHttpStatus httpStatus;
+  TSHttpType negType, hdrHttpType;
+  TSHttpStatus httpStatus;
 
   const char *sHttpReason = NULL, *pUrlParseStart = NULL, *pUrlParseEnd = NULL;
   int iHttpMethodLength, iHttpHdrReasonLength, iUrlHostLength, iUrlFragmentLength, iUrlParamsLength;
@@ -398,292 +398,292 @@ negTesting(INKMBuffer hdrBuf, INKMLoc urlLoc)
   const char *urlParseStr = "http://joe:bolts4USA@www.joes-hardware.com/cgi-bin/inventory?product=hammer43";
 
   static HttpMsgLine_T custUrl[] =
-    { {INK_HTTP_TYPE_REQUEST, "\0", 'a', "www.testing-host.com", "testing-fragment", "testing-params", "testing-query",
+    { {TS_HTTP_TYPE_REQUEST, "\0", 'a', "www.testing-host.com", "testing-fragment", "testing-params", "testing-query",
        100, "testing-password", "testing/path", 19000, "testing-scheme", "testing-user", 0, 0} };
 
-  /* valid INKMBufferCreate */
-  if ((negHdrBuf = INKMBufferCreate()) == INK_ERROR_PTR) {
-    LOG_API_ERROR("INKHttpHdrCreate");
+  /* valid TSMBufferCreate */
+  if ((negHdrBuf = TSMBufferCreate()) == TS_ERROR_PTR) {
+    LOG_API_ERROR("TSHttpHdrCreate");
   }
 
-  /* INKUrlCreate */
-  if (INKUrlCreate(NULL) != INK_ERROR_PTR) {
-    LOG_NEG_ERROR("INKUrlCreate");
+  /* TSUrlCreate */
+  if (TSUrlCreate(NULL) != TS_ERROR_PTR) {
+    LOG_NEG_ERROR("TSUrlCreate");
   }
 
-  /* valid INKUrlCreate */
-  if ((negUrlLoc = INKUrlCreate(negHdrBuf)) == INK_ERROR_PTR) {
-    LOG_NEG_ERROR("INKUrlCreate");
+  /* valid TSUrlCreate */
+  if ((negUrlLoc = TSUrlCreate(negHdrBuf)) == TS_ERROR_PTR) {
+    LOG_NEG_ERROR("TSUrlCreate");
   }
 
-  /* INKUrlCopy */
-  if (INKUrlCopy(NULL, negUrlLoc, hdrBuf, urlLoc) != INK_ERROR) {
-    LOG_NEG_ERROR("INKUrlCopy");
+  /* TSUrlCopy */
+  if (TSUrlCopy(NULL, negUrlLoc, hdrBuf, urlLoc) != TS_ERROR) {
+    LOG_NEG_ERROR("TSUrlCopy");
   }
-  if (INKUrlCopy(negHdrBuf, NULL, hdrBuf, urlLoc) != INK_ERROR) {
-    LOG_NEG_ERROR("INKUrlCopy");
-  }
-
-  /* valid INKUrlCopy */
-  if (INKUrlCopy(negHdrBuf, negUrlLoc, hdrBuf, urlLoc) == INK_ERROR) {
-    LOG_NEG_ERROR("INKUrlCopy");
+  if (TSUrlCopy(negHdrBuf, NULL, hdrBuf, urlLoc) != TS_ERROR) {
+    LOG_NEG_ERROR("TSUrlCopy");
   }
 
-  /* INKUrlHostGet */
-  if (INKUrlHostGet(NULL, negUrlLoc, &iUrlHostLength) != INK_ERROR_PTR) {
-    LOG_NEG_ERROR("INKUrlHostGet");
-  }
-  if (INKUrlHostGet(negHdrBuf, NULL, &iUrlHostLength) != INK_ERROR_PTR) {
-    LOG_NEG_ERROR("INKUrlHostGet");
-  }
-  if (INKUrlHostGet(negHdrBuf, negUrlLoc, NULL) != INK_ERROR_PTR) {
-    LOG_NEG_ERROR("INKUrlHostGet");
+  /* valid TSUrlCopy */
+  if (TSUrlCopy(negHdrBuf, negUrlLoc, hdrBuf, urlLoc) == TS_ERROR) {
+    LOG_NEG_ERROR("TSUrlCopy");
   }
 
-  /* INKUrlHostSet */
-  if (INKUrlHostSet(NULL, negUrlLoc, "www.inktomi.com", strlen("www.inktomi.com")) != INK_ERROR) {
-    LOG_NEG_ERROR("INKUrlHostSet");
+  /* TSUrlHostGet */
+  if (TSUrlHostGet(NULL, negUrlLoc, &iUrlHostLength) != TS_ERROR_PTR) {
+    LOG_NEG_ERROR("TSUrlHostGet");
   }
-  if (INKUrlHostSet(negHdrBuf, NULL, "www.inktomi.com", strlen("www.inktomi.com")) != INK_ERROR) {
-    LOG_NEG_ERROR("INKUrlHostSet");
+  if (TSUrlHostGet(negHdrBuf, NULL, &iUrlHostLength) != TS_ERROR_PTR) {
+    LOG_NEG_ERROR("TSUrlHostGet");
   }
-  if (INKUrlHostSet(negHdrBuf, negUrlLoc, NULL, 0) != INK_ERROR) {
-    LOG_NEG_ERROR("INKUrlHostSet");
-  }
-  /* INKqa12722 */
-  if (INKUrlHostSet(hdrBuf, urlLoc, NULL, -1) != INK_ERROR) {
-    LOG_NEG_ERROR("INKUrlHostSet");
+  if (TSUrlHostGet(negHdrBuf, negUrlLoc, NULL) != TS_ERROR_PTR) {
+    LOG_NEG_ERROR("TSUrlHostGet");
   }
 
-  /* INKUrlHttpFragmentGet */
-  if (INKUrlHttpFragmentGet(NULL, negUrlLoc, &iUrlFragmentLength) != INK_ERROR_PTR) {
-    LOG_NEG_ERROR("INKUrlHttpFragment");
+  /* TSUrlHostSet */
+  if (TSUrlHostSet(NULL, negUrlLoc, "www.inktomi.com", strlen("www.inktomi.com")) != TS_ERROR) {
+    LOG_NEG_ERROR("TSUrlHostSet");
   }
-  if (INKUrlHttpFragmentGet(negHdrBuf, NULL, &iUrlFragmentLength) != INK_ERROR_PTR) {
-    LOG_NEG_ERROR("INKUrlHttpFragment");
+  if (TSUrlHostSet(negHdrBuf, NULL, "www.inktomi.com", strlen("www.inktomi.com")) != TS_ERROR) {
+    LOG_NEG_ERROR("TSUrlHostSet");
   }
-  if (INKUrlHttpFragmentGet(negHdrBuf, negUrlLoc, NULL) != INK_ERROR_PTR) {
-    LOG_NEG_ERROR("INKUrlHttpFragment");
+  if (TSUrlHostSet(negHdrBuf, negUrlLoc, NULL, 0) != TS_ERROR) {
+    LOG_NEG_ERROR("TSUrlHostSet");
   }
-
-  /* INKUrlHttpFragmentSet */
-  if (INKUrlHttpFragmentSet(NULL, negUrlLoc, "testing-fragment", strlen("testing-fragment"))
-      != INK_ERROR) {
-    LOG_NEG_ERROR("INKUrlHttpFragmentSet");
-  }
-  if (INKUrlHttpFragmentSet(negHdrBuf, NULL, "testing-fragment", strlen("testing-fragment"))
-      != INK_ERROR) {
-    LOG_NEG_ERROR("INKUrlHttpFragmentSet");
-  }
-  if (INKUrlHttpFragmentSet(negHdrBuf, negUrlLoc, NULL, strlen("testing-fragment")) != INK_ERROR) {
-    LOG_NEG_ERROR("INKUrlHttpFragmentSet");
-  }
-  /* INKqa12722 */
-  if (INKUrlHttpFragmentSet(negHdrBuf, negUrlLoc, NULL, -1) != INK_ERROR) {
-    LOG_NEG_ERROR("INKUrlHttpFragmentSet");
+  /* TSqa12722 */
+  if (TSUrlHostSet(hdrBuf, urlLoc, NULL, -1) != TS_ERROR) {
+    LOG_NEG_ERROR("TSUrlHostSet");
   }
 
-  /* INKUrlHttpParamsGet */
-  if (INKUrlHttpParamsGet(NULL, negUrlLoc, &iUrlParamsLength) != INK_ERROR_PTR) {
-    LOG_NEG_ERROR("INKUrlHttpParmsGet");
+  /* TSUrlHttpFragmentGet */
+  if (TSUrlHttpFragmentGet(NULL, negUrlLoc, &iUrlFragmentLength) != TS_ERROR_PTR) {
+    LOG_NEG_ERROR("TSUrlHttpFragment");
   }
-  if (INKUrlHttpParamsGet(negHdrBuf, NULL, &iUrlParamsLength) != INK_ERROR_PTR) {
-    LOG_NEG_ERROR("INKUrlHttpParmsGet");
+  if (TSUrlHttpFragmentGet(negHdrBuf, NULL, &iUrlFragmentLength) != TS_ERROR_PTR) {
+    LOG_NEG_ERROR("TSUrlHttpFragment");
   }
-  if (INKUrlHttpParamsGet(negHdrBuf, negUrlLoc, NULL) != INK_ERROR_PTR) {
-    LOG_NEG_ERROR("INKUrlHttpParmsGet");
-  }
-
-  /* INKUrlHttpParamsSet */
-  if (INKUrlHttpParamsSet(NULL, negUrlLoc, "test-params", strlen("test-params")) != INK_ERROR) {
-    LOG_NEG_ERROR("INKUrlHttpParamsSet");
-  }
-  if (INKUrlHttpParamsSet(negHdrBuf, NULL, "test-params", strlen("test-params")) != INK_ERROR) {
-    LOG_NEG_ERROR("INKUrlHttpParamsSet");
-  }
-  if (INKUrlHttpParamsSet(negHdrBuf, negUrlLoc, NULL, 0) != INK_ERROR) {
-    LOG_NEG_ERROR("INKUrlHttpParamsSet");
-  }
-  /* INKqa12722 */
-  if (INKUrlHttpParamsSet(negHdrBuf, negUrlLoc, NULL, -1) != INK_ERROR) {
-    LOG_NEG_ERROR("INKUrlHttpParamsSet");
+  if (TSUrlHttpFragmentGet(negHdrBuf, negUrlLoc, NULL) != TS_ERROR_PTR) {
+    LOG_NEG_ERROR("TSUrlHttpFragment");
   }
 
-  /* INKUrlHttpQueryGet(); */
-  if (INKUrlHttpQueryGet(NULL, negUrlLoc, &iUrlQueryLength) != INK_ERROR_PTR) {
-    LOG_NEG_ERROR("INKUrlHttpQueryGet");
+  /* TSUrlHttpFragmentSet */
+  if (TSUrlHttpFragmentSet(NULL, negUrlLoc, "testing-fragment", strlen("testing-fragment"))
+      != TS_ERROR) {
+    LOG_NEG_ERROR("TSUrlHttpFragmentSet");
   }
-  if (INKUrlHttpQueryGet(negHdrBuf, NULL, &iUrlQueryLength) != INK_ERROR_PTR) {
-    LOG_NEG_ERROR("INKUrlHttpQueryGet");
+  if (TSUrlHttpFragmentSet(negHdrBuf, NULL, "testing-fragment", strlen("testing-fragment"))
+      != TS_ERROR) {
+    LOG_NEG_ERROR("TSUrlHttpFragmentSet");
   }
-
-  /* INKUrlHttpQuerySet */
-  if (INKUrlHttpQuerySet(NULL, negUrlLoc, "test-query", strlen("test-query")) != INK_ERROR) {
-    LOG_NEG_ERROR("INKUrlHttpQuerySet");
+  if (TSUrlHttpFragmentSet(negHdrBuf, negUrlLoc, NULL, strlen("testing-fragment")) != TS_ERROR) {
+    LOG_NEG_ERROR("TSUrlHttpFragmentSet");
   }
-  if (INKUrlHttpQuerySet(negHdrBuf, NULL, "test-query", strlen("test-query")) != INK_ERROR) {
-    LOG_NEG_ERROR("INKUrlHttpQuerySet");
-  }
-  if (INKUrlHttpQuerySet(negHdrBuf, negUrlLoc, NULL, 0) != INK_ERROR) {
-    LOG_NEG_ERROR("INKUrlHttpQuerySet");
-  }
-  if (INKUrlHttpQuerySet(negHdrBuf, negUrlLoc, NULL, -1) != INK_ERROR) {
-    LOG_NEG_ERROR("INKUrlHttpQuerySet");
+  /* TSqa12722 */
+  if (TSUrlHttpFragmentSet(negHdrBuf, negUrlLoc, NULL, -1) != TS_ERROR) {
+    LOG_NEG_ERROR("TSUrlHttpFragmentSet");
   }
 
-  /* INKUrlLengthGet */
-  if (INKUrlLengthGet(NULL, negUrlLoc) != INK_ERROR) {
-    LOG_NEG_ERROR("INKUrlLengthGet");
+  /* TSUrlHttpParamsGet */
+  if (TSUrlHttpParamsGet(NULL, negUrlLoc, &iUrlParamsLength) != TS_ERROR_PTR) {
+    LOG_NEG_ERROR("TSUrlHttpParmsGet");
   }
-  if (INKUrlLengthGet(negHdrBuf, NULL) != INK_ERROR) {
-    LOG_NEG_ERROR("INKUrlLengthGet");
+  if (TSUrlHttpParamsGet(negHdrBuf, NULL, &iUrlParamsLength) != TS_ERROR_PTR) {
+    LOG_NEG_ERROR("TSUrlHttpParmsGet");
   }
-
-  /* INKUrlPasswordGet */
-  if (INKUrlPasswordGet(NULL, negUrlLoc, &iUrlPasswordLength) != INK_ERROR_PTR) {
-    LOG_NEG_ERROR("INKUrlPasswordGet");
-  }
-  if (INKUrlPasswordGet(negHdrBuf, NULL, &iUrlPasswordLength) != INK_ERROR_PTR) {
-    LOG_NEG_ERROR("INKUrlPasswordGet");
-  }
-  if (INKUrlPasswordGet(negHdrBuf, negUrlLoc, NULL) != INK_ERROR_PTR) {
-    LOG_NEG_ERROR("INKUrlPasswordGet");
+  if (TSUrlHttpParamsGet(negHdrBuf, negUrlLoc, NULL) != TS_ERROR_PTR) {
+    LOG_NEG_ERROR("TSUrlHttpParmsGet");
   }
 
-  /* INKUrlPasswordSet */
-  if (INKUrlPasswordSet(NULL, negUrlLoc, "clear-text-password", strlen("clear-text-password"))
-      != INK_ERROR) {
-    LOG_NEG_ERROR("INKUrlPasswordSet");
+  /* TSUrlHttpParamsSet */
+  if (TSUrlHttpParamsSet(NULL, negUrlLoc, "test-params", strlen("test-params")) != TS_ERROR) {
+    LOG_NEG_ERROR("TSUrlHttpParamsSet");
   }
-  if (INKUrlPasswordSet(negHdrBuf, NULL, "clear-text-password", strlen("clear-text-password"))
-      != INK_ERROR) {
-    LOG_NEG_ERROR("INKUrlPasswordSet");
+  if (TSUrlHttpParamsSet(negHdrBuf, NULL, "test-params", strlen("test-params")) != TS_ERROR) {
+    LOG_NEG_ERROR("TSUrlHttpParamsSet");
   }
-  if (INKUrlPasswordSet(negHdrBuf, negUrlLoc, NULL, 0) != INK_ERROR) {
-    LOG_NEG_ERROR("INKUrlPasswordSet");
+  if (TSUrlHttpParamsSet(negHdrBuf, negUrlLoc, NULL, 0) != TS_ERROR) {
+    LOG_NEG_ERROR("TSUrlHttpParamsSet");
   }
-  if (INKUrlPasswordSet(negHdrBuf, negUrlLoc, NULL, -1) != INK_ERROR) {
-    LOG_NEG_ERROR("INKUrlPasswordSet");
-  }
-
-  /* INKUrlPathGet */
-  if (INKUrlPathGet(NULL, negUrlLoc, &iUrlPathLength) != INK_ERROR_PTR) {
-    LOG_NEG_ERROR("INKUrlPathGet");
-  }
-  if (INKUrlPathGet(negHdrBuf, NULL, &iUrlPathLength) != INK_ERROR_PTR) {
-    LOG_NEG_ERROR("INKUrlPathGet");
-  }
-  if (INKUrlPathGet(negHdrBuf, negUrlLoc, NULL) != INK_ERROR_PTR) {
-    LOG_NEG_ERROR("INKUrlPathGet");
+  /* TSqa12722 */
+  if (TSUrlHttpParamsSet(negHdrBuf, negUrlLoc, NULL, -1) != TS_ERROR) {
+    LOG_NEG_ERROR("TSUrlHttpParamsSet");
   }
 
-  /* INKUrlPathSet */
-  if (INKUrlPathSet(NULL, negUrlLoc, "testing/sample/path", strlen("testing/sample/path")) != INK_ERROR) {
-    LOG_NEG_ERROR("INKUrlPathSet");
+  /* TSUrlHttpQueryGet(); */
+  if (TSUrlHttpQueryGet(NULL, negUrlLoc, &iUrlQueryLength) != TS_ERROR_PTR) {
+    LOG_NEG_ERROR("TSUrlHttpQueryGet");
   }
-  if (INKUrlPathSet(negHdrBuf, NULL, "testing/sample/path", strlen("testing/sample/path")) != INK_ERROR) {
-    LOG_NEG_ERROR("INKUrlPathSet");
-  }
-  if (INKUrlPathSet(negHdrBuf, negUrlLoc, NULL, 0) != INK_ERROR) {
-    LOG_NEG_ERROR("INKUrlPathSet");
-  }
-  if (INKUrlPathSet(negHdrBuf, negUrlLoc, NULL, -1) != INK_ERROR) {
-    LOG_NEG_ERROR("INKUrlPathSet");
+  if (TSUrlHttpQueryGet(negHdrBuf, NULL, &iUrlQueryLength) != TS_ERROR_PTR) {
+    LOG_NEG_ERROR("TSUrlHttpQueryGet");
   }
 
-  /* INKUrlPortGet */
-  if (INKUrlPortGet(NULL, negUrlLoc) != INK_ERROR) {
-    LOG_NEG_ERROR("INKUrlPortGet");
+  /* TSUrlHttpQuerySet */
+  if (TSUrlHttpQuerySet(NULL, negUrlLoc, "test-query", strlen("test-query")) != TS_ERROR) {
+    LOG_NEG_ERROR("TSUrlHttpQuerySet");
   }
-  if (INKUrlPortGet(negHdrBuf, NULL) != INK_ERROR) {
-    LOG_NEG_ERROR("INKUrlPortGet");
+  if (TSUrlHttpQuerySet(negHdrBuf, NULL, "test-query", strlen("test-query")) != TS_ERROR) {
+    LOG_NEG_ERROR("TSUrlHttpQuerySet");
   }
-
-  /* INKUrlPortSet */
-  if (INKUrlPortSet(NULL, negUrlLoc, 13150) != INK_ERROR) {
-    LOG_NEG_ERROR("INKUrlPortSet");
+  if (TSUrlHttpQuerySet(negHdrBuf, negUrlLoc, NULL, 0) != TS_ERROR) {
+    LOG_NEG_ERROR("TSUrlHttpQuerySet");
   }
-  if (INKUrlPortSet(negHdrBuf, NULL, 13150) != INK_ERROR) {
-    LOG_NEG_ERROR("INKUrlPortSet");
-  }
-  /* FIXME: INKqa12722 */
-  if (INKUrlPortSet(negHdrBuf, negUrlLoc, -1) != INK_ERROR) {
-    LOG_NEG_ERROR("INKUrlPortSet");
+  if (TSUrlHttpQuerySet(negHdrBuf, negUrlLoc, NULL, -1) != TS_ERROR) {
+    LOG_NEG_ERROR("TSUrlHttpQuerySet");
   }
 
-  /* INKUrlSchemeGet */
-  if (INKUrlSchemeGet(NULL, negUrlLoc, &iUrlSchemeLength) != INK_ERROR_PTR) {
-    LOG_NEG_ERROR("INKUrlSchemeGet");
+  /* TSUrlLengthGet */
+  if (TSUrlLengthGet(NULL, negUrlLoc) != TS_ERROR) {
+    LOG_NEG_ERROR("TSUrlLengthGet");
   }
-  if (INKUrlSchemeGet(negHdrBuf, NULL, &iUrlSchemeLength) != INK_ERROR_PTR) {
-    LOG_NEG_ERROR("INKUrlSchemeGet");
-  }
-  if (INKUrlSchemeGet(negHdrBuf, negUrlLoc, NULL) != INK_ERROR_PTR) {
-    LOG_NEG_ERROR("INKUrlSchemeGet");
+  if (TSUrlLengthGet(negHdrBuf, NULL) != TS_ERROR) {
+    LOG_NEG_ERROR("TSUrlLengthGet");
   }
 
-  /* INKUrlSchemeSet */
-  if (INKUrlSchemeSet(NULL, negUrlLoc, "test-scheme", strlen("test-scheme")) != INK_ERROR) {
-    LOG_NEG_ERROR("INKUrlSchemeSet");
+  /* TSUrlPasswordGet */
+  if (TSUrlPasswordGet(NULL, negUrlLoc, &iUrlPasswordLength) != TS_ERROR_PTR) {
+    LOG_NEG_ERROR("TSUrlPasswordGet");
   }
-  if (INKUrlSchemeSet(negHdrBuf, NULL, "test-scheme", strlen("test-scheme")) != INK_ERROR) {
-    LOG_NEG_ERROR("INKUrlSchemeSet");
+  if (TSUrlPasswordGet(negHdrBuf, NULL, &iUrlPasswordLength) != TS_ERROR_PTR) {
+    LOG_NEG_ERROR("TSUrlPasswordGet");
   }
-  if (INKUrlSchemeSet(negHdrBuf, negUrlLoc, NULL, 0) != INK_ERROR) {
-    LOG_NEG_ERROR("INKUrlSchemeSet");
-  }
-  if (INKUrlSchemeSet(negHdrBuf, negUrlLoc, NULL, -1) != INK_ERROR) {
-    LOG_NEG_ERROR("INKUrlSchemeSet");
+  if (TSUrlPasswordGet(negHdrBuf, negUrlLoc, NULL) != TS_ERROR_PTR) {
+    LOG_NEG_ERROR("TSUrlPasswordGet");
   }
 
-  /* INKUrlUserGet */
-  if (INKUrlUserGet(NULL, negUrlLoc, &iUrlUserLength) != INK_ERROR_PTR) {
-    LOG_NEG_ERROR("INKUrlUserGet");
+  /* TSUrlPasswordSet */
+  if (TSUrlPasswordSet(NULL, negUrlLoc, "clear-text-password", strlen("clear-text-password"))
+      != TS_ERROR) {
+    LOG_NEG_ERROR("TSUrlPasswordSet");
   }
-  if (INKUrlUserGet(negHdrBuf, NULL, &iUrlUserLength) != INK_ERROR_PTR) {
-    LOG_NEG_ERROR("INKUrlUserGet");
+  if (TSUrlPasswordSet(negHdrBuf, NULL, "clear-text-password", strlen("clear-text-password"))
+      != TS_ERROR) {
+    LOG_NEG_ERROR("TSUrlPasswordSet");
   }
-  if (INKUrlUserGet(negHdrBuf, negUrlLoc, NULL) != INK_ERROR_PTR) {
-    LOG_NEG_ERROR("INKUrlUserGet");
+  if (TSUrlPasswordSet(negHdrBuf, negUrlLoc, NULL, 0) != TS_ERROR) {
+    LOG_NEG_ERROR("TSUrlPasswordSet");
   }
-
-  /* INKUrlUserSet */
-  if (INKUrlUserSet(NULL, negUrlLoc, "test-user", strlen("test-user")) != INK_ERROR) {
-    LOG_NEG_ERROR("INKUrlUserSet");
-  }
-  if (INKUrlUserSet(negHdrBuf, NULL, "test-user", strlen("test-user")) != INK_ERROR) {
-    LOG_NEG_ERROR("INKUrlUserSet");
-  }
-  /* FIXME: INKqa12722 */
-  if (INKUrlUserSet(negHdrBuf, negUrlLoc, NULL, 0) != INK_ERROR) {
-    LOG_NEG_ERROR("INKUrlUserSet");
-  }
-  /* FIXME: INKqa12722: This cause TS crash */
-  if (INKUrlUserSet(negHdrBuf, negUrlLoc, NULL, -1) != INK_ERROR) {
-    LOG_NEG_ERROR("INKUrlUserSet");
+  if (TSUrlPasswordSet(negHdrBuf, negUrlLoc, NULL, -1) != TS_ERROR) {
+    LOG_NEG_ERROR("TSUrlPasswordSet");
   }
 
-  /* INKUrlParse */
+  /* TSUrlPathGet */
+  if (TSUrlPathGet(NULL, negUrlLoc, &iUrlPathLength) != TS_ERROR_PTR) {
+    LOG_NEG_ERROR("TSUrlPathGet");
+  }
+  if (TSUrlPathGet(negHdrBuf, NULL, &iUrlPathLength) != TS_ERROR_PTR) {
+    LOG_NEG_ERROR("TSUrlPathGet");
+  }
+  if (TSUrlPathGet(negHdrBuf, negUrlLoc, NULL) != TS_ERROR_PTR) {
+    LOG_NEG_ERROR("TSUrlPathGet");
+  }
+
+  /* TSUrlPathSet */
+  if (TSUrlPathSet(NULL, negUrlLoc, "testing/sample/path", strlen("testing/sample/path")) != TS_ERROR) {
+    LOG_NEG_ERROR("TSUrlPathSet");
+  }
+  if (TSUrlPathSet(negHdrBuf, NULL, "testing/sample/path", strlen("testing/sample/path")) != TS_ERROR) {
+    LOG_NEG_ERROR("TSUrlPathSet");
+  }
+  if (TSUrlPathSet(negHdrBuf, negUrlLoc, NULL, 0) != TS_ERROR) {
+    LOG_NEG_ERROR("TSUrlPathSet");
+  }
+  if (TSUrlPathSet(negHdrBuf, negUrlLoc, NULL, -1) != TS_ERROR) {
+    LOG_NEG_ERROR("TSUrlPathSet");
+  }
+
+  /* TSUrlPortGet */
+  if (TSUrlPortGet(NULL, negUrlLoc) != TS_ERROR) {
+    LOG_NEG_ERROR("TSUrlPortGet");
+  }
+  if (TSUrlPortGet(negHdrBuf, NULL) != TS_ERROR) {
+    LOG_NEG_ERROR("TSUrlPortGet");
+  }
+
+  /* TSUrlPortSet */
+  if (TSUrlPortSet(NULL, negUrlLoc, 13150) != TS_ERROR) {
+    LOG_NEG_ERROR("TSUrlPortSet");
+  }
+  if (TSUrlPortSet(negHdrBuf, NULL, 13150) != TS_ERROR) {
+    LOG_NEG_ERROR("TSUrlPortSet");
+  }
+  /* FIXME: TSqa12722 */
+  if (TSUrlPortSet(negHdrBuf, negUrlLoc, -1) != TS_ERROR) {
+    LOG_NEG_ERROR("TSUrlPortSet");
+  }
+
+  /* TSUrlSchemeGet */
+  if (TSUrlSchemeGet(NULL, negUrlLoc, &iUrlSchemeLength) != TS_ERROR_PTR) {
+    LOG_NEG_ERROR("TSUrlSchemeGet");
+  }
+  if (TSUrlSchemeGet(negHdrBuf, NULL, &iUrlSchemeLength) != TS_ERROR_PTR) {
+    LOG_NEG_ERROR("TSUrlSchemeGet");
+  }
+  if (TSUrlSchemeGet(negHdrBuf, negUrlLoc, NULL) != TS_ERROR_PTR) {
+    LOG_NEG_ERROR("TSUrlSchemeGet");
+  }
+
+  /* TSUrlSchemeSet */
+  if (TSUrlSchemeSet(NULL, negUrlLoc, "test-scheme", strlen("test-scheme")) != TS_ERROR) {
+    LOG_NEG_ERROR("TSUrlSchemeSet");
+  }
+  if (TSUrlSchemeSet(negHdrBuf, NULL, "test-scheme", strlen("test-scheme")) != TS_ERROR) {
+    LOG_NEG_ERROR("TSUrlSchemeSet");
+  }
+  if (TSUrlSchemeSet(negHdrBuf, negUrlLoc, NULL, 0) != TS_ERROR) {
+    LOG_NEG_ERROR("TSUrlSchemeSet");
+  }
+  if (TSUrlSchemeSet(negHdrBuf, negUrlLoc, NULL, -1) != TS_ERROR) {
+    LOG_NEG_ERROR("TSUrlSchemeSet");
+  }
+
+  /* TSUrlUserGet */
+  if (TSUrlUserGet(NULL, negUrlLoc, &iUrlUserLength) != TS_ERROR_PTR) {
+    LOG_NEG_ERROR("TSUrlUserGet");
+  }
+  if (TSUrlUserGet(negHdrBuf, NULL, &iUrlUserLength) != TS_ERROR_PTR) {
+    LOG_NEG_ERROR("TSUrlUserGet");
+  }
+  if (TSUrlUserGet(negHdrBuf, negUrlLoc, NULL) != TS_ERROR_PTR) {
+    LOG_NEG_ERROR("TSUrlUserGet");
+  }
+
+  /* TSUrlUserSet */
+  if (TSUrlUserSet(NULL, negUrlLoc, "test-user", strlen("test-user")) != TS_ERROR) {
+    LOG_NEG_ERROR("TSUrlUserSet");
+  }
+  if (TSUrlUserSet(negHdrBuf, NULL, "test-user", strlen("test-user")) != TS_ERROR) {
+    LOG_NEG_ERROR("TSUrlUserSet");
+  }
+  /* FIXME: TSqa12722 */
+  if (TSUrlUserSet(negHdrBuf, negUrlLoc, NULL, 0) != TS_ERROR) {
+    LOG_NEG_ERROR("TSUrlUserSet");
+  }
+  /* FIXME: TSqa12722: This cause TS crash */
+  if (TSUrlUserSet(negHdrBuf, negUrlLoc, NULL, -1) != TS_ERROR) {
+    LOG_NEG_ERROR("TSUrlUserSet");
+  }
+
+  /* TSUrlParse */
   pUrlParseStart = urlParseStr;
   pUrlParseEnd = pUrlParseStart + strlen(pUrlParseStart);
 
-  if (INKUrlParse(NULL, negUrlLoc, &pUrlParseStart, pUrlParseEnd) != INK_PARSE_ERROR) {
-    LOG_NEG_ERROR("INKUrlParse");
+  if (TSUrlParse(NULL, negUrlLoc, &pUrlParseStart, pUrlParseEnd) != TS_PARSE_ERROR) {
+    LOG_NEG_ERROR("TSUrlParse");
   }
-  if (INKUrlParse(negHdrBuf, NULL, &pUrlParseStart, pUrlParseEnd) != INK_PARSE_ERROR) {
-    LOG_NEG_ERROR("INKUrlParse");
+  if (TSUrlParse(negHdrBuf, NULL, &pUrlParseStart, pUrlParseEnd) != TS_PARSE_ERROR) {
+    LOG_NEG_ERROR("TSUrlParse");
   }
 
-  if (INKUrlParse(negHdrBuf, negUrlLoc, NULL, pUrlParseEnd) != INK_PARSE_ERROR) {
-    LOG_NEG_ERROR("INKUrlParse");
+  if (TSUrlParse(negHdrBuf, negUrlLoc, NULL, pUrlParseEnd) != TS_PARSE_ERROR) {
+    LOG_NEG_ERROR("TSUrlParse");
   }
-  /* FIXME: INKqa12929: */
-  if (INKUrlParse(negHdrBuf, negUrlLoc, &pUrlParseStart, NULL) != INK_PARSE_ERROR) {
-    LOG_NEG_ERROR("INKUrlParse");
+  /* FIXME: TSqa12929: */
+  if (TSUrlParse(negHdrBuf, negUrlLoc, &pUrlParseStart, NULL) != TS_PARSE_ERROR) {
+    LOG_NEG_ERROR("TSUrlParse");
   }
 
   /* Clean-up */
-  HANDLE_RELEASE(negHdrBuf, INK_NULL_MLOC, negUrlLoc);
+  HANDLE_RELEASE(negHdrBuf, TS_NULL_MLOC, negUrlLoc);
 
   URL_DESTROY(negHdrBuf, negUrlLoc);
   BUFFER_DESTROY(negHdrBuf);
@@ -692,19 +692,19 @@ negTesting(INKMBuffer hdrBuf, INKMLoc urlLoc)
 /****************************************************************************
  * handleReadRequest:
  *
- * Description: handler for INK_HTTP_READ_REQUEST_HDR_HOOK
+ * Description: handler for TS_HTTP_READ_REQUEST_HDR_HOOK
  ****************************************************************************/
 
 static void
-handleReadRequest(INKCont pCont, INKHttpTxn pTxn)
+handleReadRequest(TSCont pCont, TSHttpTxn pTxn)
 {
   LOG_SET_FUNCTION_NAME("handleReadRequest");
 
-  INKMBuffer reqHdrBuf = NULL, parseBuffer = NULL, newHdrBuf1 = NULL, newHdrBuf2 = NULL;
-  INKMLoc reqHttpHdrLoc = NULL, newHttpHdrLoc1 = NULL, parseHttpHdrLoc = NULL;
-  INKMLoc reqUrlLoc = NULL, newUrlLoc1 = NULL, newUrlLoc2 = NULL, parseUrlLoc = NULL;
+  TSMBuffer reqHdrBuf = NULL, parseBuffer = NULL, newHdrBuf1 = NULL, newHdrBuf2 = NULL;
+  TSMLoc reqHttpHdrLoc = NULL, newHttpHdrLoc1 = NULL, parseHttpHdrLoc = NULL;
+  TSMLoc reqUrlLoc = NULL, newUrlLoc1 = NULL, newUrlLoc2 = NULL, parseUrlLoc = NULL;
 
-  INKHttpType httpType;
+  TSHttpType httpType;
 
   HttpMsgLine_T *pReqMsgLine = NULL, *pNewReqMsgLine = NULL, *pParseReqMsgLine = NULL;
 
@@ -713,24 +713,24 @@ handleReadRequest(INKCont pCont, INKHttpTxn pTxn)
   const char *urlParseStr = "http://joe:bolts4USA@www.joes-hardware.com/cgi-bin/inventory?product=hammer43";
 
 
-  INKDebug(REQ, "\n>>>>>> handleReadRequest <<<<<<<");
+  TSDebug(REQ, "\n>>>>>> handleReadRequest <<<<<<<");
 
   /* Get Request Marshall Buffer */
-  if (!INKHttpTxnClientReqGet(pTxn, &reqHdrBuf, &reqHttpHdrLoc)) {
-    LOG_API_ERROR_COMMENT("INKHttpTxnClientReqGet", "ERROR: Can't retrieve client req hdr; abnormal exit");
+  if (!TSHttpTxnClientReqGet(pTxn, &reqHdrBuf, &reqHttpHdrLoc)) {
+    LOG_API_ERROR_COMMENT("TSHttpTxnClientReqGet", "ERROR: Can't retrieve client req hdr; abnormal exit");
     goto done;
   }
 
 
         /******** (1): Simply print the URL details of the request header **************/
 
-  INKDebug(REQ, "--------------------------------");
+  TSDebug(REQ, "--------------------------------");
 
   pReqMsgLine = initMsgLine();
 
-        /*** INKHttpHdrUrlGet ***/
-  if ((reqUrlLoc = INKHttpHdrUrlGet(reqHdrBuf, reqHttpHdrLoc)) == INK_ERROR_PTR) {
-    LOG_API_ERROR_COMMENT("INKHttpHdrUrlGet", "ERROR: abnormal exit");
+        /*** TSHttpHdrUrlGet ***/
+  if ((reqUrlLoc = TSHttpHdrUrlGet(reqHdrBuf, reqHttpHdrLoc)) == TS_ERROR_PTR) {
+    LOG_API_ERROR_COMMENT("TSHttpHdrUrlGet", "ERROR: abnormal exit");
     goto done;
   }
   storeHdrInfo(pReqMsgLine, reqHdrBuf, reqHttpHdrLoc, reqUrlLoc, REQ, 1);
@@ -744,57 +744,57 @@ handleReadRequest(INKCont pCont, INKHttpTxn pTxn)
 
   /* Header copy also copies the URL, so we can still print URL pieces */
 
-  INKDebug(REQ, "--------------------------------");
+  TSDebug(REQ, "--------------------------------");
   pNewReqMsgLine = initMsgLine();
 
-  if ((newHdrBuf1 = INKMBufferCreate()) == INK_ERROR_PTR) {
-    LOG_API_ERROR_COMMENT("INKMBufferCreate", "skipping to section 5");
+  if ((newHdrBuf1 = TSMBufferCreate()) == TS_ERROR_PTR) {
+    LOG_API_ERROR_COMMENT("TSMBufferCreate", "skipping to section 5");
     goto section_5;             /* Skip to section (5) down the line directly; I hate GOTOs too :-) */
   }
 
-        /*** INKHttpHdrCreate ***/
-  if ((newHttpHdrLoc1 = INKHttpHdrCreate(newHdrBuf1)) == INK_ERROR_PTR) {
-    LOG_API_ERROR_COMMENT("INKHttpHdrCreate", "skipping to section 5");
+        /*** TSHttpHdrCreate ***/
+  if ((newHttpHdrLoc1 = TSHttpHdrCreate(newHdrBuf1)) == TS_ERROR_PTR) {
+    LOG_API_ERROR_COMMENT("TSHttpHdrCreate", "skipping to section 5");
     goto section_5;             /* Skip to section (5) down the line directly; */
   }
 
-  /* Make sure the newly created HTTP header has INKHttpType value of INK_HTTP_TYPE_UNKNOWN */
-  if ((httpType = INKHttpHdrTypeGet(newHdrBuf1, newHttpHdrLoc1)) == INK_ERROR) {
-    LOG_API_ERROR_COMMENT("INKHttpHdrTypeGet", "still continuing");
-  } else if (httpType != INK_HTTP_TYPE_UNKNOWN) {
-    LOG_API_ERROR_COMMENT("INKHttpHdrTypeGet", "New created hdr not of type INK_HTTP_TYPE_UNKNOWN");
+  /* Make sure the newly created HTTP header has TSHttpType value of TS_HTTP_TYPE_UNKNOWN */
+  if ((httpType = TSHttpHdrTypeGet(newHdrBuf1, newHttpHdrLoc1)) == TS_ERROR) {
+    LOG_API_ERROR_COMMENT("TSHttpHdrTypeGet", "still continuing");
+  } else if (httpType != TS_HTTP_TYPE_UNKNOWN) {
+    LOG_API_ERROR_COMMENT("TSHttpHdrTypeGet", "New created hdr not of type TS_HTTP_TYPE_UNKNOWN");
   }
 
-  /* set the HTTP header type: a new buffer has a type INK_HTTP_TYPE_UNKNOWN by default */
-  if (INKHttpHdrTypeSet(newHdrBuf1, newHttpHdrLoc1, INK_HTTP_TYPE_REQUEST) == INK_ERROR) {
-    LOG_API_ERROR_COMMENT("INKHttpHdrTypeSet", "continuing");
+  /* set the HTTP header type: a new buffer has a type TS_HTTP_TYPE_UNKNOWN by default */
+  if (TSHttpHdrTypeSet(newHdrBuf1, newHttpHdrLoc1, TS_HTTP_TYPE_REQUEST) == TS_ERROR) {
+    LOG_API_ERROR_COMMENT("TSHttpHdrTypeSet", "continuing");
   }
-  if (INKHttpHdrTypeGet(newHdrBuf1, newHttpHdrLoc1) != INK_HTTP_TYPE_REQUEST) {
-    LOG_AUTO_ERROR("INKHttpHdrTypeGet", "Type not set to INK_HTTP_TYPE_REQUEST");
+  if (TSHttpHdrTypeGet(newHdrBuf1, newHttpHdrLoc1) != TS_HTTP_TYPE_REQUEST) {
+    LOG_AUTO_ERROR("TSHttpHdrTypeGet", "Type not set to TS_HTTP_TYPE_REQUEST");
   }
 
-        /*** INKHttpHdrCopy ***/
+        /*** TSHttpHdrCopy ***/
   /* Note: This should also copy the URL string */
-  if (INKHttpHdrCopy(newHdrBuf1, newHttpHdrLoc1, reqHdrBuf, reqHttpHdrLoc) == INK_ERROR) {
-    LOG_API_ERROR_COMMENT("INKHttpHdrCopy", "continuing");
+  if (TSHttpHdrCopy(newHdrBuf1, newHttpHdrLoc1, reqHdrBuf, reqHttpHdrLoc) == TS_ERROR) {
+    LOG_API_ERROR_COMMENT("TSHttpHdrCopy", "continuing");
   }
 
-        /*** INKHttpHdrUrlGet ***/
-  if ((newUrlLoc1 = INKHttpHdrUrlGet(newHdrBuf1, newHttpHdrLoc1)) == INK_ERROR_PTR) {
-    LOG_API_ERROR_COMMENT("INKHttpHdrUrlGet", "skipping to section 5");
+        /*** TSHttpHdrUrlGet ***/
+  if ((newUrlLoc1 = TSHttpHdrUrlGet(newHdrBuf1, newHttpHdrLoc1)) == TS_ERROR_PTR) {
+    LOG_API_ERROR_COMMENT("TSHttpHdrUrlGet", "skipping to section 5");
     goto section_5;
   }
   storeHdrInfo(pNewReqMsgLine, newHdrBuf1, newHttpHdrLoc1, newUrlLoc1, REQ, 2);
   if (!identicalURL(pNewReqMsgLine, pReqMsgLine)) {
-    LOG_AUTO_ERROR("INKHttpHdrCopy", "New req buffer not identical to the original");
+    LOG_AUTO_ERROR("TSHttpHdrCopy", "New req buffer not identical to the original");
   }
 
 
         /******* (3): Now tweak some of the URL components of the same new header *******/
-  INKDebug(REQ, "--------------------------------");
+  TSDebug(REQ, "--------------------------------");
 
-  if ((newUrlLoc1 = INKHttpHdrUrlGet(newHdrBuf1, newHttpHdrLoc1)) == INK_ERROR_PTR) {
-    LOG_API_ERROR_COMMENT("INKHttpHdrUrlGet", "skipping to section 5");
+  if ((newUrlLoc1 = TSHttpHdrUrlGet(newHdrBuf1, newHttpHdrLoc1)) == TS_ERROR_PTR) {
+    LOG_API_ERROR_COMMENT("TSHttpHdrUrlGet", "skipping to section 5");
     goto section_5;
   }
 
@@ -806,93 +806,93 @@ handleReadRequest(INKCont pCont, INKHttpTxn pTxn)
 
 
         /********* (4): Now do a *URL* copy from request to the above buffer and print the details **********/
-  INKDebug(REQ, "--------------------------------");
+  TSDebug(REQ, "--------------------------------");
 
-  if ((reqUrlLoc = INKHttpHdrUrlGet(reqHdrBuf, reqHttpHdrLoc)) == INK_ERROR_PTR) {
-    LOG_API_ERROR_COMMENT("INKHttpHdrUrlGet", "skipping to section 5");
+  if ((reqUrlLoc = TSHttpHdrUrlGet(reqHdrBuf, reqHttpHdrLoc)) == TS_ERROR_PTR) {
+    LOG_API_ERROR_COMMENT("TSHttpHdrUrlGet", "skipping to section 5");
     goto section_5;
   }
 
-  if ((newUrlLoc1 = INKUrlCreate(newHdrBuf1)) == INK_ERROR_PTR) {
-    LOG_API_ERROR_COMMENT("INKUrlCreate", "skipping to section 5");
+  if ((newUrlLoc1 = TSUrlCreate(newHdrBuf1)) == TS_ERROR_PTR) {
+    LOG_API_ERROR_COMMENT("TSUrlCreate", "skipping to section 5");
     goto section_5;
   }
 
 
-        /*** INKUrlCopy ***/
-  if (INKUrlCopy(newHdrBuf1, newUrlLoc1, reqHdrBuf, reqUrlLoc) == INK_ERROR) {
-    LOG_API_ERROR_COMMENT("INKUrlCopy", "skipping to section 5");
+        /*** TSUrlCopy ***/
+  if (TSUrlCopy(newHdrBuf1, newUrlLoc1, reqHdrBuf, reqUrlLoc) == TS_ERROR) {
+    LOG_API_ERROR_COMMENT("TSUrlCopy", "skipping to section 5");
     goto section_5;
   }
 
   freeMsgLine(pNewReqMsgLine);
-  storeHdrInfo(pNewReqMsgLine, newHdrBuf1, (INKMLoc) NULL, newUrlLoc1, REQ, 4);
+  storeHdrInfo(pNewReqMsgLine, newHdrBuf1, (TSMLoc) NULL, newUrlLoc1, REQ, 4);
   if (!identicalURL(pNewReqMsgLine, pReqMsgLine)) {
-    LOG_AUTO_ERROR("INKHttpHdrCopy", "New req buffer not identical to the original");
+    LOG_AUTO_ERROR("TSHttpHdrCopy", "New req buffer not identical to the original");
   }
 
 
 section_5:
 
         /********* (5): Create a new buffer and do a URL copy immediately from req buffer *********/
-  INKDebug(REQ, "--------------------------------");
+  TSDebug(REQ, "--------------------------------");
 
-  if ((reqUrlLoc = INKHttpHdrUrlGet(reqHdrBuf, reqHttpHdrLoc)) == INK_ERROR_PTR) {
-    LOG_API_ERROR_COMMENT("INKHttpHdrUrlGet", "abnormal exit");
+  if ((reqUrlLoc = TSHttpHdrUrlGet(reqHdrBuf, reqHttpHdrLoc)) == TS_ERROR_PTR) {
+    LOG_API_ERROR_COMMENT("TSHttpHdrUrlGet", "abnormal exit");
     goto done;
   }
 
-  if ((newHdrBuf2 = INKMBufferCreate()) == INK_ERROR_PTR) {
-    LOG_API_ERROR_COMMENT("INKMBufferCreate", "abnormal exit");
+  if ((newHdrBuf2 = TSMBufferCreate()) == TS_ERROR_PTR) {
+    LOG_API_ERROR_COMMENT("TSMBufferCreate", "abnormal exit");
     goto done;
   }
-  if ((newUrlLoc2 = INKUrlCreate(newHdrBuf2)) == INK_ERROR_PTR) {
-    LOG_API_ERROR_COMMENT("INKUrlCreate", "abnormal exit");
+  if ((newUrlLoc2 = TSUrlCreate(newHdrBuf2)) == TS_ERROR_PTR) {
+    LOG_API_ERROR_COMMENT("TSUrlCreate", "abnormal exit");
     goto done;
   }
 
-        /*** INKUrlCopy ***/
-  if (INKUrlCopy(newHdrBuf2, newUrlLoc2, reqHdrBuf, reqUrlLoc) == INK_ERROR) {
-    LOG_API_ERROR_COMMENT("INKUrlCopy", "abnormal exit");
+        /*** TSUrlCopy ***/
+  if (TSUrlCopy(newHdrBuf2, newUrlLoc2, reqHdrBuf, reqUrlLoc) == TS_ERROR) {
+    LOG_API_ERROR_COMMENT("TSUrlCopy", "abnormal exit");
     goto done;
   }
 
   freeMsgLine(pNewReqMsgLine);
-  storeHdrInfo(pNewReqMsgLine, newHdrBuf2, (INKMLoc) NULL, newUrlLoc2, REQ, 5);
+  storeHdrInfo(pNewReqMsgLine, newHdrBuf2, (TSMLoc) NULL, newUrlLoc2, REQ, 5);
   if (!identicalURL(pNewReqMsgLine, pReqMsgLine)) {
-    LOG_AUTO_ERROR("INKHttpHdrCopy", "New req buffer not identical to the original");
+    LOG_AUTO_ERROR("TSHttpHdrCopy", "New req buffer not identical to the original");
   }
 
 
         /*********** (6): Parse Buffer *************/
 
-  INKDebug(REQ, "--------------------------------");
+  TSDebug(REQ, "--------------------------------");
 
   pParseReqMsgLine = initMsgLine();
 
   /* Create a parser Buffer and header location */
-  if ((parseBuffer = INKMBufferCreate()) == INK_ERROR_PTR) {
-    LOG_API_ERROR_COMMENT("INKMBufferCreate", "abnormal exit");
+  if ((parseBuffer = TSMBufferCreate()) == TS_ERROR_PTR) {
+    LOG_API_ERROR_COMMENT("TSMBufferCreate", "abnormal exit");
     goto done;
-  } else if ((parseHttpHdrLoc = INKHttpHdrCreate(parseBuffer)) == INK_ERROR_PTR) {
-    LOG_API_ERROR_COMMENT("INKHttpHdrCreate", "abnormal exit");
+  } else if ((parseHttpHdrLoc = TSHttpHdrCreate(parseBuffer)) == TS_ERROR_PTR) {
+    LOG_API_ERROR_COMMENT("TSHttpHdrCreate", "abnormal exit");
     goto done;
-  } else if ((parseUrlLoc = INKUrlCreate(parseBuffer)) == INK_ERROR_PTR) {
-    LOG_API_ERROR_COMMENT("INKUrlCreate", "abnormal exit");
+  } else if ((parseUrlLoc = TSUrlCreate(parseBuffer)) == TS_ERROR_PTR) {
+    LOG_API_ERROR_COMMENT("TSUrlCreate", "abnormal exit");
     goto done;
   }
 
   /* Set the hdr type to REQUEST */
-  if (INKHttpHdrTypeSet(parseBuffer, parseHttpHdrLoc, INK_HTTP_TYPE_REQUEST) == INK_ERROR) {
-    LOG_API_ERROR("INKHttHdrTypeSet");
+  if (TSHttpHdrTypeSet(parseBuffer, parseHttpHdrLoc, TS_HTTP_TYPE_REQUEST) == TS_ERROR) {
+    LOG_API_ERROR("TSHttHdrTypeSet");
   }
 
   pUrlParseStart = urlParseStr;
   pUrlParseEnd = pUrlParseStart + strlen(pUrlParseStart);
 
-  if ((parseStatus = INKUrlParse(parseBuffer, parseUrlLoc, &pUrlParseStart, pUrlParseEnd))
-      == INK_PARSE_ERROR) {
-    LOG_API_ERROR_COMMENT("INKUrlParse", "abnormal exit");
+  if ((parseStatus = TSUrlParse(parseBuffer, parseUrlLoc, &pUrlParseStart, pUrlParseEnd))
+      == TS_PARSE_ERROR) {
+    LOG_API_ERROR_COMMENT("TSUrlParse", "abnormal exit");
     goto done;
   }
 
@@ -911,17 +911,17 @@ done:
 
   /* release */
   HANDLE_RELEASE(reqHdrBuf, reqHttpHdrLoc, reqUrlLoc);
-  HANDLE_RELEASE(reqHdrBuf, INK_NULL_MLOC, reqHttpHdrLoc);
+  HANDLE_RELEASE(reqHdrBuf, TS_NULL_MLOC, reqHttpHdrLoc);
 
   HANDLE_RELEASE(newHdrBuf1, newHttpHdrLoc1, newUrlLoc1);
-  HANDLE_RELEASE(newHdrBuf1, INK_NULL_MLOC, newHttpHdrLoc1);
+  HANDLE_RELEASE(newHdrBuf1, TS_NULL_MLOC, newHttpHdrLoc1);
 
-  /*INKHandleMLocRelease (newHdrBuf2, newHttpHdrLoc2, newUrlLoc2); */
-  /*INKHandleMLocRelease (newHdrBuf2, INK_NULL_MLOC, newHttpHdrLoc2); */
-  HANDLE_RELEASE(newHdrBuf2, INK_NULL_MLOC, newUrlLoc2);
+  /*TSHandleMLocRelease (newHdrBuf2, newHttpHdrLoc2, newUrlLoc2); */
+  /*TSHandleMLocRelease (newHdrBuf2, TS_NULL_MLOC, newHttpHdrLoc2); */
+  HANDLE_RELEASE(newHdrBuf2, TS_NULL_MLOC, newUrlLoc2);
 
   HANDLE_RELEASE(parseBuffer, parseHttpHdrLoc, parseUrlLoc);
-  HANDLE_RELEASE(parseBuffer, INK_NULL_MLOC, parseHttpHdrLoc);
+  HANDLE_RELEASE(parseBuffer, TS_NULL_MLOC, parseHttpHdrLoc);
 
   /* urlLoc destroy */
   URL_DESTROY(reqHdrBuf, reqUrlLoc);
@@ -939,11 +939,11 @@ done:
   BUFFER_DESTROY(newHdrBuf2);
   BUFFER_DESTROY(parseBuffer);
 
-  if (INKHttpTxnReenable(pTxn, INK_EVENT_HTTP_CONTINUE) == INK_ERROR) {
-    LOG_API_ERROR("INKHttpTxnReenable");
+  if (TSHttpTxnReenable(pTxn, TS_EVENT_HTTP_CONTINUE) == TS_ERROR) {
+    LOG_API_ERROR("TSHttpTxnReenable");
   }
 
-  INKDebug(REQ, "..... exiting handleReadRequest ......");
+  TSDebug(REQ, "..... exiting handleReadRequest ......");
 
 }                               /* handleReadReadRequest */
 
@@ -951,30 +951,30 @@ done:
 
 
 static void
-handleTxnStart(INKCont pCont, INKHttpTxn pTxn)
+handleTxnStart(TSCont pCont, TSHttpTxn pTxn)
 {
   LOG_SET_FUNCTION_NAME("handleTxnStart");
 
-  if (INKHttpTxnHookAdd(pTxn, INK_HTTP_READ_REQUEST_HDR_HOOK, pCont) == INK_ERROR) {
-    LOG_API_ERROR("INKHttpHookAdd");
+  if (TSHttpTxnHookAdd(pTxn, TS_HTTP_READ_REQUEST_HDR_HOOK, pCont) == TS_ERROR) {
+    LOG_API_ERROR("TSHttpHookAdd");
   }
 
-  if (INKHttpTxnReenable(pTxn, INK_EVENT_HTTP_CONTINUE) == INK_ERROR) {
-    LOG_API_ERROR("INKHttpTxnReenable");
+  if (TSHttpTxnReenable(pTxn, TS_EVENT_HTTP_CONTINUE) == TS_ERROR) {
+    LOG_API_ERROR("TSHttpTxnReenable");
   }
 }
 
 
 static int
-contHandler(INKCont pCont, INKEvent event, void *edata)
+contHandler(TSCont pCont, TSEvent event, void *edata)
 {
-  INKHttpTxn pTxn = (INKHttpTxn) edata;
+  TSHttpTxn pTxn = (TSHttpTxn) edata;
 
   switch (event) {
-  case INK_EVENT_HTTP_TXN_START:
+  case TS_EVENT_HTTP_TXN_START:
     handleTxnStart(pCont, pTxn);
     break;
-  case INK_EVENT_HTTP_READ_REQUEST_HDR:
+  case TS_EVENT_HTTP_READ_REQUEST_HDR:
     handleReadRequest(pCont, pTxn);
     break;
   default:
@@ -987,16 +987,16 @@ contHandler(INKCont pCont, INKEvent event, void *edata)
 
 
 void
-INKPluginInit(int argc, const char *argv[])
+TSPluginInit(int argc, const char *argv[])
 {
-  INKCont pCont;
+  TSCont pCont;
 
-  LOG_SET_FUNCTION_NAME("INKPluginInit");
+  LOG_SET_FUNCTION_NAME("TSPluginInit");
 
-  if ((pCont = INKContCreate(contHandler, NULL)) == INK_ERROR_PTR) {
-    LOG_API_ERROR("INKContCreate")
-  } else if (INKHttpHookAdd(INK_HTTP_TXN_START_HOOK, pCont) == INK_ERROR) {
-    LOG_API_ERROR("INKHttpHookAdd");
+  if ((pCont = TSContCreate(contHandler, NULL)) == TS_ERROR_PTR) {
+    LOG_API_ERROR("TSContCreate")
+  } else if (TSHttpHookAdd(TS_HTTP_TXN_START_HOOK, pCont) == TS_ERROR) {
+    LOG_API_ERROR("TSHttpHookAdd");
   }
 
 }

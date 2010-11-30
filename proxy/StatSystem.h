@@ -169,37 +169,9 @@ struct HttpTransactionStatsString_t
   char *name;
 };
 
-
-//
-// RNI Transaction Stats
-//
-#define _HEADER \
-typedef enum { \
-    NO_RNI_TRANS_STATS = 0,
-
-#define _FOOTER \
-    MAX_RNI_TRANS_STATS \
-} RniTransactionStat_t;
-
-#define _D(_x) _x,
-
-#include "RniTransStats.h"
-
-#undef _HEADER
-#undef _FOOTER
-#undef _D
-
-struct RniTransactionStatsString_t
-{
-  RniTransactionStat_t i;
-  const char *name;
-};
-
-
 //
 // Note: DYN_STAT_START needs to be at least the next
-// power of 2 bigger than the value of MAX_HTTP_TRANS_STATS,
-// MAX_NTTP_TRANS_STATS, MAX_RNI_TRANS_STATS
+// power of 2 bigger than the value of MAX_HTTP_TRANS_STATS
 //
 #define DYN_STAT_START 2048
 #define DYN_STAT_MASK (~(2047UL))
@@ -229,7 +201,6 @@ struct DynamicStatsString_t
 };
 
 extern HttpTransactionStatsString_t HttpTransactionStatsStrings[];
-extern RniTransactionStatsString_t RniTransactionStatsStrings[];
 extern DynamicStatsString_t DynamicStatsStrings[];
 
 //---------------------------------------------------------------------//
@@ -252,7 +223,9 @@ struct ink_prot_global_stat_t
   ink_stat_lock_t access_lock;
   ink_statval_t count;
   ink_statval_t sum;
-    ink_prot_global_stat_t():count(0), sum(0)
+
+  ink_prot_global_stat_t()
+    : count(0), sum(0)
   {
     ink_mutex_init(&access_lock, "Stats Access Lock");
   }
@@ -382,11 +355,6 @@ struct ink_unprot_global_stat_t
     ink_assert (!(X & DYN_STAT_MASK)); \
     READ_GLOBAL_HTTP_TRANS_STAT(X,C,S); \
 }
-#define READ_RNI_TRANS_STAT(X,C,S) \
-{ \
-    ink_assert (!(X & DYN_STAT_MASK)); \
-    READ_GLOBAL_RNI_TRANS_STAT(X,C,S); \
-}
 
 // set the stat.count to a specific value
 #define __SET_TRANS_COUNT(local_stat_struct_, X, V) \
@@ -421,17 +389,6 @@ struct ink_unprot_global_stat_t
 	global_http_trans_stats[i].sum += local_stat_struct_[i].value; \
     } \
     STAT_LOCK_RELEASE(&(global_http_trans_stat_lock)); \
-}
-
-#define UPDATE_RNI_TRANS_STATS(local_stat_struct_) \
-{ \
-    int i; \
-    STAT_LOCK_ACQUIRE(&(global_rni_trans_stat_lock)); \
-    for (i=NO_RNI_TRANS_STATS; i<MAX_RNI_TRANS_STATS; i++) { \
-	global_rni_trans_stats[i].count += (ink_statval_t)1; \
-	global_rni_trans_stats[i].sum += local_stat_struct_[i].value; \
-    } \
-    STAT_LOCK_RELEASE(&(global_rni_trans_stat_lock)); \
 }
 
 #define STAT_LOCK_ACQUIRE(X) (ink_mutex_acquire(X))
@@ -531,11 +488,6 @@ global_dyn_stats[X].sum = 0
     C = global_http_trans_stats[X].count; \
     S = global_http_trans_stats[X].sum; \
 }
-#define READ_GLOBAL_RNI_TRANS_STAT(X,C,S) \
-{ \
-    C = global_rni_trans_stats[X].count; \
-    S = global_rni_trans_stats[X].sum; \
-}
 
 #define SET_GLOBAL_DYN_COUNT(X,V) \
 global_dyn_stats[X].count = V
@@ -585,11 +537,6 @@ S = global_dyn_stats[X].sum;
 { \
     C = global_http_trans_stats[X].count; \
     S = global_http_trans_stats[X].sum; \
-}
-#define READ_GLOBAL_RNI_TRANS_STAT(X,C,S) \
-{ \
-    C = global_rni_trans_stats[X].count; \
-    S = global_rni_trans_stats[X].sum; \
 }
 
 #define SET_GLOBAL_DYN_COUNT(X,V) \
@@ -655,11 +602,6 @@ global_dyn_stats[X].sum = S
     C = global_http_trans_stats[X].count; \
     S = global_http_trans_stats[X].sum; \
 }
-#define READ_GLOBAL_RNI_TRANS_STAT(X,C,S) \
-{ \
-    C = global_rni_trans_stats[X].count; \
-    S = global_rni_trans_stats[X].sum; \
-}
 #define SET_GLOBAL_DYN_COUNT(X,V) \
 { \
     STAT_LOCK_ACQUIRE(&(global_dyn_stats[X].access_lock)); \
@@ -703,15 +645,6 @@ void *http_trans_stats_time_seconds_cb(void *data, void *res);
 void *http_trans_stats_time_mseconds_cb(void *data, void *res);
 void *http_trans_stats_time_useconds_cb(void *data, void *res);
 
-void *rni_trans_stats_count_cb(void *data, void *res);
-inkcoreapi void *rni_trans_stats_sum_cb(void *data, void *res);
-void *rni_trans_stats_avg_cb(void *data, void *res);
-void *rni_trans_stats_fsum_cb(void *data, void *res);
-void *rni_trans_stats_favg_cb(void *data, void *res);
-void *rni_trans_stats_time_seconds_cb(void *data, void *res);
-void *rni_trans_stats_time_mseconds_cb(void *data, void *res);
-void *rni_trans_stats_time_useconds_cb(void *data, void *res);
-
 void *dyn_stats_count_cb(void *data, void *res);
 inkcoreapi void *dyn_stats_sum_cb(void *data, void *res);
 void *dyn_stats_avg_cb(void *data, void *res);
@@ -726,8 +659,6 @@ void *dyn_stats_int_msecs_to_float_seconds_cb(void *data, void *res);
 //---------------------------------------------------------------------//
 extern ink_stat_lock_t global_http_trans_stat_lock;
 extern ink_unprot_global_stat_t global_http_trans_stats[MAX_HTTP_TRANS_STATS];
-extern inkcoreapi ink_stat_lock_t global_rni_trans_stat_lock;
-extern inkcoreapi ink_unprot_global_stat_t global_rni_trans_stats[MAX_RNI_TRANS_STATS];
 #ifndef USE_LOCKS_FOR_DYN_STATS
 extern inkcoreapi ink_unprot_global_stat_t global_dyn_stats[MAX_DYN_STATS - DYN_STAT_START];
 #else

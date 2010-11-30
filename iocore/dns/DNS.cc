@@ -33,6 +33,7 @@
 #define SRV_SERVER  (RRFIXEDSZ+6)
 #define SRV_FIXEDSZ (RRFIXEDSZ+6)
 
+EventType ET_DNS = ET_CALL;
 
 //
 // Config
@@ -50,6 +51,7 @@ int dns_ns_rr = 0;
 int dns_ns_rr_init_down = 1;
 char *dns_ns_list = NULL;
 char *dns_resolv_conf = NULL;
+int dns_threads = 0;
 
 DNSProcessor dnsProcessor;
 ClassAllocator<DNSEntry> dnsEntryAllocator("dnsEntryAllocator");
@@ -106,9 +108,6 @@ DNSProcessor::free_hostent(HostEnt * ent)
 int
 DNSProcessor::start(int)
 {
-  // Initialize the first event thread for DNS.
-  dnsProcessor.thread = eventProcessor.eventthread[ET_DNS][0];
-
   //
   // Read configuration
   //
@@ -122,11 +121,24 @@ DNSProcessor::start(int)
   IOCORE_EstablishStaticConfigInt32(dns_ns_rr, "proxy.config.dns.round_robin_nameservers");
   IOCORE_ReadConfigStringAlloc(dns_ns_list, "proxy.config.dns.nameservers");
   IOCORE_ReadConfigStringAlloc(dns_resolv_conf, "proxy.config.dns.resolv_conf");
+  IOCORE_EstablishStaticConfigInt32(dns_threads, "proxy.config.dns.dedicated_thread");
+
+  if (dns_threads > 0) {
+    ET_DNS = eventProcessor.spawn_event_threads(dns_threads);
+    initialize_thread_for_net(eventProcessor.eventthread[ET_DNS][0], -1);
+  } else {
+    // Initialize the first event thread for DNS.
+    ET_DNS = ET_CALL;
+  }
+  dnsProcessor.thread = eventProcessor.eventthread[ET_DNS][0];
 
   dns_failover_try_period = dns_timeout + 1;    // Modify the "default" accordingly
 
-  dns_init();
-  open();
+  // The SplitDNS "processor" has it's own default servers, so don't need that here ...
+  if (!SplitDNSConfig::gsplit_dns_enabled) {
+    dns_init();
+    open();
+  }
 
   return 0;
 }
@@ -236,7 +248,6 @@ void
 DNSEntry::init(const char *x, int len, int qtype_arg,
                Continuation * acont, HostEnt ** wait, DNSHandler * adnsH, int dns_lookup_timeout)
 {
-  (void) adnsH;
   qtype = qtype_arg;
   submit_time = ink_get_hrtime();
   action = acont;
@@ -244,8 +255,10 @@ DNSEntry::init(const char *x, int len, int qtype_arg,
   submit_thread = acont->mutex->thread_holding;
 
 #ifdef SPLIT_DNS
-  dnsH = SplitDNSConfig::gsplit_dns_enabled && adnsH ? adnsH : dnsProcessor.handler;
+  dnsH = SplitDNSConfig::gsplit_dns_enabled ? adnsH : dnsProcessor.handler;
+  ink_release_assert(dnsH); // TODO: Should probably remove this at some point?
 #else
+  INK_NOWARN(adnsH);
   dnsH = dnsProcessor.handler;
 #endif // SPLIT_DNS
 
@@ -355,7 +368,7 @@ DNSHandler::open_con(unsigned int aip, int aport, bool failed, int icon)
 
 /**
   Initial state of the DNSHandler. Can reinitialize the running DNS
-  hander to a new nameserver.
+  handler to a new nameserver.
 
 */
 int
@@ -365,7 +378,7 @@ DNSHandler::startEvent(int event, Event * e)
   //
   // If this is for the default server, get it
   //
-  Debug("dns", "DNSHandler::startEvent: on thread%d\n", e->ethread->id);
+  Debug("dns", "DNSHandler::startEvent: on thread %d\n", e->ethread->id);
   if (ip == DEFAULT_DOMAIN_NAME_SERVER) {
     // seems that res_init always sets m_res.nscount to at least 1!
     if (!m_res->nscount)
@@ -421,12 +434,7 @@ int
 DNSHandler::startEvent_sdns(int event, Event * e)
 {
   NOWARN_UNUSED(event);
-  //
-  // If this is for the default server, get it
-  //
-
-  //added by YTS Team, yamsat
-  Debug("dns", "DNSHandler::startEvent_sdns: on thread%d\n", e->ethread->id);
+  Debug("dns", "DNSHandler::startEvent_sdns: on thread %d\n", e->ethread->id);
 
   if (ip == DEFAULT_DOMAIN_NAME_SERVER) {
     // seems that res_init always sets m_res.nscount to at least 1!
@@ -632,24 +640,23 @@ good_rcode(char *buf)
 }
 
 
-//changed by YTS Team, yamsat
 void
 DNSHandler::recv_dns(int event, Event * e)
 {
   NOWARN_UNUSED(event);
-  NetHandler *nh = get_NetHandler(e->ethread);  //added by YTS Team, yamsat
-  DNSConnection *dnsc = NULL;   //added by YTS Team, yamsat
+  DNSConnection *dnsc = NULL;
 
-  while ((dnsc = (DNSConnection *) nh->dnsqueue.dequeue())) {
+  while ((dnsc = (DNSConnection *) triggered.dequeue())) {
     while (1) {
       struct sockaddr_in sa_from;
-      socklen_t sa_length = sizeof(sa_from);
+      socklen_t sa_length = sizeof(sa_from); // TODO: I'm guessing when we support IPv6,this will have to change.
+
       if (!hostent_cache)
         hostent_cache = dnsBufAllocator.alloc();
+
       HostEnt *buf = hostent_cache;
-      int res =
-        socketManager.recvfrom(dnsc->fd, buf->buf, MAX_DNS_PACKET_LEN, 0, (struct sockaddr *) &sa_from, &sa_length);
-      // verify that this response came from the correct server
+      int res = socketManager.recvfrom(dnsc->fd, buf->buf, MAX_DNS_PACKET_LEN, 0, (struct sockaddr *) &sa_from, &sa_length);
+
       if (res == -EAGAIN)
         break;
       if (res <= 0) {
@@ -660,6 +667,8 @@ DNSHandler::recv_dns(int event, Event * e)
           failover();
         break;
       }
+
+      // verify that this response came from the correct server
       if (dnsc->sa.sin_addr.s_addr != sa_from.sin_addr.s_addr) {
         Warning("received DNS response from unexpected named %d.%d.%d.%d", DOT_SEPARATED(sa_from.sin_addr.s_addr));
         continue;
@@ -674,6 +683,7 @@ DNSHandler::recv_dns(int event, Event * e)
           received_one(dnsc->num);
           if (ns_down[dnsc->num]) {
             struct sockaddr_in *sa = &m_res->nsaddr_list[dnsc->num].sin;
+
             Warning("connection to DNS server %d.%d.%d.%d restored", DOT_SEPARATED(sa->sin_addr.s_addr));
             ns_down[dnsc->num] = 0;
           }
@@ -689,11 +699,12 @@ DNSHandler::recv_dns(int event, Event * e)
           }
         }
       }
+
       if (dns_process(this, buf, res)) {
         if (dnsc->num == name_server)
           received_one(name_server);
       }
-    }                           /* end of while(1) */
+    }
   }
 }
 
@@ -790,7 +801,7 @@ write_dns(DNSHandler * h)
   if (h->in_write_dns)
     return;
   h->in_write_dns = true;
-  Debug("dns", "in_flight: %d, dns_max_dns_in_flight: %d", h->in_flight, dns_max_dns_in_flight);
+  // Debug("dns", "in_flight: %d, dns_max_dns_in_flight: %d", h->in_flight, dns_max_dns_in_flight);
   if (h->in_flight < dns_max_dns_in_flight) {
     DNSEntry *e = h->entries.head;
     while (e) {
@@ -867,7 +878,7 @@ write_dns_event(DNSHandler * h, DNSEntry * e)
 
   uint16 i = h->get_query_id();
   ((HEADER *) (buffer))->id = htons(i);
-  if(e->id[dns_retries - e->retries] >= 0) {
+  if (e->id[dns_retries - e->retries] >= 0) {
     //clear previous id in case named was switched or domain was expanded
     h->release_query_id(e->id[dns_retries - e->retries]);
   }
@@ -987,7 +998,9 @@ DNSProcessor::getby(const char *x, int len, int type,
   if (type == T_SRV) {
     Debug("dns_srv", "DNSProcessor::getby attempting an SRV lookup for %s, timeout = %d", x, timeout);
   }
+
   DNSEntry *e = dnsEntryAllocator.alloc();
+
   e->retries = dns_retries;
   e->init(x, len, type, cont, wait, adnsH, timeout);
   MUTEX_TRY_LOCK(lock, e->mutex, this_ethread());
@@ -1562,7 +1575,7 @@ ink_dns_init(ModuleVersion v)
 }
 
 
-
+#ifdef TS_HAS_TESTS
 struct DNSRegressionContinuation;
 typedef int (DNSRegressionContinuation::*DNSRegContHandler) (int, void *);
 
@@ -1581,15 +1594,14 @@ struct DNSRegressionContinuation: public Continuation
   {
     (void) event;
     if (event == DNS_EVENT_LOOKUP) {
-      if (he)
-        ++found;
-      if (he)
-      {
+      if (he) {
         struct in_addr in;
-          in.s_addr = *(unsigned int *) he->ent.h_addr_list[0];
-          rprintf(test, "host %s [%s] = %s\n", hostnames[i - 1], he->ent.h_name, inet_ntoa(in));
-      } else
-          rprintf(test, "host %s not found\n", hostnames[i - 1]);
+        ++found;
+        in.s_addr = *(unsigned int *) he->ent.h_addr_list[0];
+        rprintf(test, "host %s [%s] = %s\n", hostnames[i - 1], he->ent.h_name, inet_ntoa(in));
+      } else {
+        rprintf(test, "host %s not found\n", hostnames[i - 1]);
+      }
     }
     if (i < hosts) {
       dnsProcessor.gethostbyname(this, hostnames[i]);
@@ -1605,8 +1617,8 @@ struct DNSRegressionContinuation: public Continuation
   }
 
   DNSRegressionContinuation(int ahosts, int atofind, const char **ahostnames, RegressionTest * t, int atype, int *astatus)
-:  Continuation(new_ProxyMutex()), hosts(ahosts), hostnames(ahostnames), type(atype),
-    status(astatus), found(0), tofind(atofind), i(0), test(t) {
+   :  Continuation(new_ProxyMutex()), hosts(ahosts), hostnames(ahostnames), type(atype),
+      status(astatus), found(0), tofind(atofind), i(0), test(t) {
     SET_HANDLER((DNSRegContHandler) & DNSRegressionContinuation::mainEvent);
   }
 };
@@ -1622,3 +1634,5 @@ REGRESSION_TEST(DNS) (RegressionTest * t, int atype, int *pstatus) {
   eventProcessor.schedule_in(NEW(new DNSRegressionContinuation(4, 4, dns_test_hosts, t, atype, pstatus)),
                              HRTIME_SECONDS(1));
 }
+
+#endif

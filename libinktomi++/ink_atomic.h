@@ -44,6 +44,7 @@
 #include "ink_port.h"
 
 #include "ink_apidefs.h"
+#include "ink_mutex.h"
 
 typedef volatile int32 vint32;
 typedef volatile int64 vint64;
@@ -88,14 +89,44 @@ static inline void *ink_atomic_increment_ptr(pvvoidp mem, intptr_t value) { retu
 /* see http://gcc.gnu.org/onlinedocs/gcc-4.1.2/gcc/Atomic-Builtins.html */
 
 static inline int32 ink_atomic_swap(pvint32 mem, int32 value) { return __sync_lock_test_and_set(mem, value); }
-static inline int64 ink_atomic_swap64(pvint64 mem, int64 value) { return __sync_lock_test_and_set(mem, value); }
 static inline void *ink_atomic_swap_ptr(vvoidp mem, void *value) { return __sync_lock_test_and_set((void**)mem, value); }
 static inline int ink_atomic_cas(pvint32 mem, int old, int new_value) { return __sync_bool_compare_and_swap(mem, old, new_value); }
-static inline int64 ink_atomic_cas64(pvint64 mem, int64 old, int64 new_value) { return __sync_bool_compare_and_swap(mem, old, new_value); }
 static inline int ink_atomic_cas_ptr(pvvoidp mem, void* old, void* new_value) { return __sync_bool_compare_and_swap(mem, old, new_value); }
 static inline int ink_atomic_increment(pvint32 mem, int value) { return __sync_fetch_and_add(mem, value); }
-static inline int64 ink_atomic_increment64(pvint64 mem, int64 value) { return __sync_fetch_and_add(mem, value); }
 static inline void *ink_atomic_increment_ptr(pvvoidp mem, intptr_t value) { return __sync_fetch_and_add((void**)mem, value); }
+#if defined(__arm__) && (SIZEOF_VOIDP == 4)
+extern ProcessMutex __global_death;
+
+static inline int64 ink_atomic_swap64(pvint64 mem, int64 value) {
+  int64 old;
+  ink_mutex_acquire(&__global_death);
+  old = *mem;
+  *mem = value;
+  ink_mutex_release(&__global_death);
+  return old;
+}
+static inline int64 ink_atomic_cas64(pvint64 mem, int64 old, int64 new_value) {
+  int64 curr;
+  ink_mutex_acquire(&__global_death);
+  curr = *mem;
+  if(old == curr) *mem = new_value;
+  ink_mutex_release(&__global_death);
+  if(old == curr) return 1;
+  return 0;
+}
+static inline int64 ink_atomic_increment64(pvint64 mem, int64 value) {
+  int64 curr;
+  ink_mutex_acquire(&__global_death);
+  curr = *mem;
+  *mem = curr + value;
+  ink_mutex_release(&__global_death);
+  return curr + value;
+}
+#else
+static inline int64 ink_atomic_swap64(pvint64 mem, int64 value) { return __sync_lock_test_and_set(mem, value); }
+static inline int64 ink_atomic_cas64(pvint64 mem, int64 old, int64 new_value) { return __sync_bool_compare_and_swap(mem, old, new_value); }
+static inline int64 ink_atomic_increment64(pvint64 mem, int64 value) { return __sync_fetch_and_add(mem, value); }
+#endif
 
 /* not used for Intel Processors which have sequential(esque) consistency */
 #define INK_WRITE_MEMORY_BARRIER

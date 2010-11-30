@@ -1533,7 +1533,7 @@ test_read_url(bool valid)
 /* ------------------------------------------------------------------------
  * test_read_file
  * ------------------------------------------------------------------------
- * reads filter.config file and prints it out
+ * reads hosting.config file and prints it out
  */
 void
 test_read_file()
@@ -1555,7 +1555,7 @@ test_read_file()
 /* ------------------------------------------------------------------------
  * test_write_file
  * ------------------------------------------------------------------------
- * writes filter.config with some garbage text then reads the file and
+ * writes hosting.config with some garbage text then reads the file and
  * prints the new file to stdout
  */
 void

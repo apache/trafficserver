@@ -123,7 +123,6 @@ enum LogEntryType
 {
   LOG_ENTRY_HTTP = 0,
   LOG_ENTRY_ICP,
-  LOG_ENTRY_MIXT,
   N_LOG_ENTRY_TYPES
 };
 
@@ -162,7 +161,7 @@ public:
   //
   // client -> proxy fields
   //
-  inkcoreapi virtual int marshal_client_host_ip(char *);        // INT
+  inkcoreapi virtual int marshal_client_host_ip(char *);        // STR
   inkcoreapi virtual int marshal_client_auth_user_name(char *); // STR
   int marshal_client_req_timestamp_sec(char *); // INT
 

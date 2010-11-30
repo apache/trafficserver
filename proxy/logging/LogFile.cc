@@ -104,7 +104,7 @@ m_overspill_report_count(overspill_report_count)
   m_ascii_buffer = NEW(new char[m_ascii_buffer_size]);
   m_overspill_buffer = NEW(new char[m_max_line_size]);
 
-  Debug("log2-file", "exiting LogFile constructor, m_name=%s, this=%p", m_name, this);
+  Debug("log-file", "exiting LogFile constructor, m_name=%s, this=%p", m_name, this);
 }
 
 void
@@ -131,7 +131,7 @@ LogFile::init()
 
 LogFile::~LogFile()
 {
-  Debug("log2-file", "entering LogFile destructor, this=%p", this);
+  Debug("log-file", "entering LogFile destructor, this=%p", this);
   close_file();
 
   xfree(m_name);
@@ -141,7 +141,7 @@ LogFile::~LogFile()
   m_ascii_buffer = 0;
   delete[]m_overspill_buffer;
   m_overspill_buffer = 0;
-  Debug("log2-file", "exiting LogFile destructor, this=%p", this);
+  Debug("log-file", "exiting LogFile destructor, this=%p", this);
 }
 
 /*-------------------------------------------------------------------------
@@ -225,7 +225,7 @@ LogFile::open_file()
         return LOG_FILE_COULD_NOT_CREATE_PIPE;
       }
     } else {
-      Debug("log2-file", "Created named pipe %s for logging", m_name);
+      Debug("log-file", "Created named pipe %s for logging", m_name);
     }
     flags = O_WRONLY | O_NDELAY;
     perms = 0;
@@ -238,7 +238,7 @@ LogFile::open_file()
     perms = Log::config->logfile_perm;
   }
 
-  Debug("log2-file", "attempting to open %s", m_name);
+  Debug("log-file", "attempting to open %s", m_name);
   m_fd =::open(m_name, flags, perms);
 
   if (m_fd < 0) {
@@ -249,7 +249,7 @@ LogFile::open_file()
       Error("Error opening log file %s: %s", m_name, strerror(errno));
       return LOG_FILE_COULD_NOT_OPEN_FILE;
     }
-    Debug("log2-file", "no readers for pipe %s", m_name);
+    Debug("log-file", "no readers for pipe %s", m_name);
     return LOG_FILE_NO_PIPE_READERS;
   }
 
@@ -259,7 +259,7 @@ LogFile::open_file()
     return LOG_FILE_FILESYSTEM_CHECKS_FAILED;
   }
 
-  Debug("log2-file", "LogFile %s is now open (fd=%d)", m_name, m_fd);
+  Debug("log-file", "LogFile %s is now open (fd=%d)", m_name, m_fd);
 
   //
   // If we've opened the file and it didn't already exist, then this is a
@@ -269,14 +269,14 @@ LogFile::open_file()
   //
   if (!file_exists) {
     if (m_file_format != BINARY_LOG && m_header != NULL) {
-      Debug("log2-file", "writing header to LogFile %s", m_name);
+      Debug("log-file", "writing header to LogFile %s", m_name);
       writeln(m_header, strlen(m_header), m_fd, m_name);
     }
   }
   // we use SUM_GLOBAL_DYN_STAT because INCREMENT_DYN_STAT
   // would increment only the statistics for the flush thread (where we
   // are running) and these won't be visible Traffic Manager
-  LOG_SUM_GLOBAL_DYN_STAT(log2_stat_log_files_open_stat, 1);
+  LOG_SUM_GLOBAL_DYN_STAT(log_stat_log_files_open_stat, 1);
 
   return LOG_FILE_NO_ERROR;
 }
@@ -292,13 +292,13 @@ LogFile::close_file()
 {
   if (is_open()) {
     ::close(m_fd);
-    Debug("log2-file", "LogFile %s (fd=%d) is closed", m_name, m_fd);
+    Debug("log-file", "LogFile %s (fd=%d) is closed", m_name, m_fd);
     m_fd = -1;
 
     // we use SUM_GLOBAL_DYN_STAT because DECREMENT_DYN_STAT
     // would decrement only the statistics for the flush thread (where we
     // are running) and these won't be visible in Traffic Manager
-    LOG_SUM_GLOBAL_DYN_STAT(log2_stat_log_files_open_stat, -1);
+    LOG_SUM_GLOBAL_DYN_STAT(log_stat_log_files_open_stat, -1);
   }
   m_filesystem_checks_done = false;
 }
@@ -359,7 +359,7 @@ LogFile::roll(long interval_start, long interval_end)
   // First, let's see if a roll is even needed.
   //
   if (m_name == NULL || !LogFile::exists(m_name)) {
-    Debug("log2-file", "Roll not needed for %s; file doesn't exist", (m_name) ? m_name : "no_name");
+    Debug("log-file", "Roll not needed for %s; file doesn't exist", (m_name) ? m_name : "no_name");
     return 0;
   }
   // Read meta info if needed (if file was not opened)
@@ -524,7 +524,7 @@ LogFile::write(LogBuffer * lb, size_t * to_disk, size_t * to_net, size_t * to_pi
       *to_disk += bytes;
     }
 #if defined(LOG_BUFFER_TRACKING)
-    Debug("log2-buftrak", "[%d]LogFile::write - ascii write complete", buffer_header->id);
+    Debug("log-buftrak", "[%d]LogFile::write - ascii write complete", buffer_header->id);
 #endif // defined(LOG_BUFFER_TRACKING)
   } else if (m_file_format == ASCII_PIPE) {
     bytes = write_ascii_logbuffer3(buffer_header);
@@ -532,7 +532,7 @@ LogFile::write(LogBuffer * lb, size_t * to_disk, size_t * to_net, size_t * to_pi
       *to_pipe += bytes;
     }
 #if defined(LOG_BUFFER_TRACKING)
-    Debug("log2-buftrak", "[%d]LogFile::write - ascii pipe write complete", buffer_header->id);
+    Debug("log-buftrak", "[%d]LogFile::write - ascii pipe write complete", buffer_header->id);
 #endif // defined(LOG_BUFFER_TRACKING)
   } else {
     Error("Cannot write LogBuffer to LogFile %s; invalid file format: %d", m_name, m_file_format);
@@ -645,7 +645,7 @@ LogFile::write_ascii_logbuffer(LogBufferHeader * buffer_header, int fd, const ch
 int
 LogFile::write_ascii_logbuffer3(LogBufferHeader * buffer_header, char *alt_format)
 {
-  Debug("log2-file", "entering LogFile::write_ascii_logbuffer3 for %s " "(this=%p)", m_name, this);
+  Debug("log-file", "entering LogFile::write_ascii_logbuffer3 for %s " "(this=%p)", m_name, this);
   ink_debug_assert(buffer_header != NULL);
   ink_debug_assert(m_fd >= 0);
 
@@ -942,7 +942,7 @@ MetaInfo::_read_from_file()
           if (t) {
             _log_object_signature = ink_atoi64(t);
             _flags |= VALID_SIGNATURE;
-            Debug("log2-meta", "MetaInfo::_read_from_file\n"
+            Debug("log-meta", "MetaInfo::_read_from_file\n"
                   "\tfilename = %s\n"
                   "\tsignature string = %s\n" "\tsignature value = %llu", _filename, t, _log_object_signature);
           }
@@ -982,7 +982,7 @@ MetaInfo::_write_to_file()
       if (write(fd, _buffer, n) == -1) {
         Warning("Could not write object_signaure");
       }
-      Debug("log2-meta", "MetaInfo::_write_to_file\n"
+      Debug("log-meta", "MetaInfo::_write_to_file\n"
             "\tfilename = %s\n"
             "\tsignature value = %llu\n" "\tsignature string = %s", _filename, _log_object_signature, _buffer);
     }

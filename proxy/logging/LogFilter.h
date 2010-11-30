@@ -75,31 +75,18 @@ public:
   LogFilter(const char *name, LogField * field, Action action, Operator oper);
   virtual ~ LogFilter();
 
-  char *name()
-  {
-    return m_name;
-  }
-  Type type()
-  {
-    return m_type;
-  }
+  char *name() const { return m_name; }
+  Type type() const { return m_type; }
+  size_t get_num_values() const { return m_num_values; };
 
-  size_t get_num_values() const
-  {
-    return m_num_values;
-  };
   virtual bool toss_this_entry(LogAccess * lad) = 0;
   virtual void display(FILE * fd = stdout) = 0;
   virtual void display_as_XML(FILE * fd = stdout) = 0;
+
   void reverse()
   {
     m_action = (m_action == REJECT ? ACCEPT : REJECT);
   };
-
-  static
-    LogFilter *filter_from_specification(char *spec,
-                                         const LogFormatList & format_list,
-                                         const LogFieldList & field_list, char **format_name);
 
 protected:
   char *m_name;
@@ -201,16 +188,16 @@ private:
   int _convertStringToInt(char *val, unsigned *ival, LogFieldAliasMap * map);
 
   // -- member functions that are not allowed --
-    LogFilterInt();
-    LogFilterInt & operator=(LogFilterInt & rhs);
+  LogFilterInt();
+  LogFilterInt & operator=(LogFilterInt & rhs);
 };
 
 bool filters_are_equal(LogFilter * filt1, LogFilter * filt2);
 
+
 /*-------------------------------------------------------------------------
   LogFilterList
   -------------------------------------------------------------------------*/
-
 class LogFilterList
 {
 public:
@@ -223,25 +210,15 @@ public:
   LogFilter *find_by_name(char *name);
   void clear();
 
-  LogFilter *first() const
-  {
-    return m_filter_list.head;
-  }
-  LogFilter *next(LogFilter * here) const
-  {
-    return (here->link).next;
-  }
+  LogFilter *first() const { return m_filter_list.head; }
+  LogFilter *next(LogFilter * here) const { return (here->link).next; }
+
   unsigned count();
   void display(FILE * fd = stdout);
   void display_as_XML(FILE * fd = stdout);
-  bool does_conjunction() const
-  {
-    return m_does_conjunction;
-  };
-  void set_conjunction(bool c)
-  {
-    m_does_conjunction = c;
-  };
+
+  bool does_conjunction() const { return m_does_conjunction;  };
+  void set_conjunction(bool c) { m_does_conjunction = c;  };
 
 private:
   Queue<LogFilter> m_filter_list;

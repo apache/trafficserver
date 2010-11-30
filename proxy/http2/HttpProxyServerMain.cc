@@ -186,6 +186,7 @@ parse_http_server_other_ports()
     Attributes attr;
     get_connection_attributes(attr_str, &attr);
     additional_ports_array[accept_index].type = attr.type;
+    additional_ports_array[accept_index].domain = attr.domain;
     additional_ports_array[accept_index].f_outbound_transparent = attr.f_outbound_transparent;
     additional_ports_array[accept_index].f_inbound_transparent = attr.f_inbound_transparent;
 
@@ -222,7 +223,7 @@ init_HttpProxyServer(void)
   // INKqa11918
   init_max_chunk_buf();
 
-#ifndef INK_NO_API
+#ifndef TS_NO_API
   // Used to give plugins the ability to create http requests
   //   The equivalent of the connecting to localhost on the  proxy
   //   port but without going through the operating system
@@ -236,7 +237,7 @@ init_HttpProxyServer(void)
 
 
 void
-start_HttpProxyServer(int fd, int port, int ssl_fd)
+start_HttpProxyServer(int fd, int port, int ssl_fd, int accept_threads)
 {
   char *dump_every_str = 0;
   static bool called_once = false;
@@ -275,6 +276,7 @@ start_HttpProxyServer(int fd, int port, int ssl_fd)
   static HttpPortTypes type = SERVER_PORT_DEFAULT;
   NetProcessor::AcceptOptions opt;
   opt.port = port;
+  opt.accept_threads = accept_threads;
 
   if (!called_once) {
     // function can be called several times : do memory allocation once
@@ -289,11 +291,11 @@ start_HttpProxyServer(int fd, int port, int ssl_fd)
       type = attr.type;
       opt.domain = attr.domain;
       Debug("http_tproxy", "Primary listen socket transparency is %s\n",
-	    attr.f_inbound_transparent &&  attr.f_outbound_transparent ? "bidirectional"
-	      : attr.f_inbound_transparent ? "inbound"
-	        : attr.f_outbound_transparent ? "outbound"
-                  : "off"
-	    );
+            attr.f_inbound_transparent &&  attr.f_outbound_transparent ? "bidirectional"
+            : attr.f_inbound_transparent ? "inbound"
+            : attr.f_outbound_transparent ? "outbound"
+            : "off"
+            );
       opt.f_outbound_transparent = attr.f_outbound_transparent;
       opt.f_inbound_transparent = attr.f_inbound_transparent;
       xfree(attr_string);
@@ -312,8 +314,7 @@ start_HttpProxyServer(int fd, int port, int ssl_fd)
     }
   }
   if (!http_port_attr_array) {
-    netProcessor.main_accept(NEW(new HttpAccept(type)), fd,  NULL, NULL, false,
-                             opt);
+    netProcessor.main_accept(NEW(new HttpAccept(type)), fd,  NULL, NULL, false, opt);
 
     if (http_other_port_array) {
       for (int i = 0; http_other_port_array[i].port != -1; i++) {
@@ -321,21 +322,18 @@ start_HttpProxyServer(int fd, int port, int ssl_fd)
         if ((e.port<1) || (e.port> 65535))
           Warning("additional port out of range ignored: %d", e.port);
         else {
-	  opt.port = e.port;
-	  opt.f_outbound_transparent = e.f_outbound_transparent;
-          netProcessor.main_accept(NEW(new HttpAccept(e.type)),
-				   fd, NULL, NULL, false, opt
-				   );
-	}
+          opt.port = e.port;
+          opt.domain = e.domain;
+          opt.f_outbound_transparent = e.f_outbound_transparent;
+          netProcessor.main_accept(NEW(new HttpAccept(e.type)), fd, NULL, NULL, false, opt);
+        }
       }
     }
   } else {
     for (int i = 0; http_port_attr_array[i].fd != NO_FD; i++) {
       HttpPortEntry & e = http_port_attr_array[i];
       if (!e.fd) {
-        netProcessor.main_accept(NEW(new HttpAccept(type)),
-				 fd, NULL, NULL, false, opt
-				 );
+        netProcessor.main_accept(NEW(new HttpAccept(type)), fd, NULL, NULL, false, opt);
       }
     }
   }
@@ -345,8 +343,8 @@ start_HttpProxyServer(int fd, int port, int ssl_fd)
   if (sslParam->getTerminationMode() & sslParam->SSL_TERM_MODE_CLIENT) {
     opt.reset();
     opt.port = sslParam->getAcceptPort();
-    sslNetProcessor.main_accept(NEW(new HttpAccept(SERVER_PORT_SSL)), ssl_fd, 
-				0, 0, false, opt);
+    opt.accept_threads = accept_threads;
+    sslNetProcessor.main_accept(NEW(new HttpAccept(SERVER_PORT_SSL)), ssl_fd, 0, 0, false, opt);
   }
 
   sslTerminationConfig.release(sslParam);
@@ -356,7 +354,7 @@ start_HttpProxyServer(int fd, int port, int ssl_fd)
 //      HttpStateMachine::dump_state_machines();
   }
 #endif
-#ifndef INK_NO_TESTS
+#if TS_HAS_TESTS
   if (is_action_tag_set("http_update_test")) {
     init_http_update_test();
   }
@@ -364,10 +362,11 @@ start_HttpProxyServer(int fd, int port, int ssl_fd)
 }
 
 void
-start_HttpProxyServerBackDoor(int port)
+start_HttpProxyServerBackDoor(int port, int accept_threads)
 {
   NetProcessor::AcceptOptions opt;
+
   opt.port = port;
-  netProcessor.main_accept(NEW(new HttpAccept(SERVER_PORT_DEFAULT, true)),
-			   NO_FD, 0, 0, false, opt);
+  opt.accept_threads = accept_threads;
+  netProcessor.main_accept(NEW(new HttpAccept(SERVER_PORT_DEFAULT, true)), NO_FD, 0, 0, false, opt);
 }

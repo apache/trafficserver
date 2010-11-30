@@ -31,8 +31,6 @@
 #ifndef _FETCH_SM_H
 #define _FETCH_SM_H
 
-#include <string>
-
 #include "P_Net.h"
 #include "ts.h"
 #include "HttpSM.h"
@@ -43,10 +41,10 @@ public:
   FetchSM()
   {
   };
-  void init(INKCont cont, INKFetchWakeUpOptions options, INKFetchEvent events, const char* headers, int length,unsigned int ip, int port)
+  void init(TSCont cont, TSFetchWakeUpOptions options, TSFetchEvent events, const char* headers, int length,unsigned int ip, int port)
   {
     //_headers.assign(headers);
-    INKDebug("FetchSM", "[%s] FetchSM initialized for request with headers\n--\n%s\n--", __FUNCTION__, headers);
+    Debug("FetchSM", "[%s] FetchSM initialized for request with headers\n--\n%s\n--", __FUNCTION__, headers);
     req_finished = 0;
     resp_finished = 0;
     header_done = 0;
@@ -73,7 +71,7 @@ public:
   void process_fetch_write(int event);
   void httpConnect();
   void cleanUp();
-  void get_info_from_buffer(INKIOBufferReader reader);
+  void get_info_from_buffer(TSIOBufferReader reader);
   char* resp_get(int* length);
 private:
   int InvokePlugin(int event, void*data);
@@ -89,7 +87,7 @@ private:
     return req_reader->read_avail();
   }
 
-  INKVConn http_vc;
+  TSVConn http_vc;
   VIO *read_vio;
   VIO *write_vio;
   MIOBuffer *response_buffer;   // response to FetchSM call
@@ -100,17 +98,16 @@ private:
   int  client_bytes;
   MIOBuffer *resp_buffer;       // response to HttpConnect Call
   IOBufferReader *resp_reader;
-  INKCont contp;
+  TSCont contp;
   HTTPParser http_parser;
   HTTPHdr client_response_hdr;
-  INKFetchEvent callback_events;
-  INKFetchWakeUpOptions callback_options;
+  TSFetchEvent callback_events;
+  TSFetchWakeUpOptions callback_options;
   bool req_finished;
   bool header_done;
   bool resp_finished;
   unsigned int _ip;
   int _port;
-  //std::string _headers;
 };
 
 #endif

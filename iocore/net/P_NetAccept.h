@@ -84,6 +84,7 @@ struct NetAcceptAction:public Action, public RefCountObj
 struct NetAccept:public Continuation
 {
   int port;
+  int domain;
   ink_hrtime period;
   Server server;
   void *alloc_cache;
@@ -102,8 +103,9 @@ struct NetAccept:public Continuation
   // Functions all THREAD_FREE and THREAD_ALLOC to be performed
   // for both SSL and regular NetVConnection transparent to
   // accept functions.
-  virtual UnixNetVConnection *allocateThread(EThread * t);
-  virtual void freeThread(UnixNetVConnection * vc, EThread * t);
+  virtual UnixNetVConnection *allocateThread(EThread *t);
+  virtual void freeThread(UnixNetVConnection *vc, EThread *t);
+  virtual UnixNetVConnection *allocateGlobal();
   virtual EventType getEtype();
 
   void init_accept_loop();

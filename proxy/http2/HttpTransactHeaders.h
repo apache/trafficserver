@@ -68,7 +68,6 @@ public:
   static bool does_server_allow_response_to_be_stored(HTTPHdr * resp);
   static bool downgrade_request(bool * origin_server_keep_alive, HTTPHdr * outgoing_request);
 
-  static bool generate_basic_authorization_from_request(Arena *arena, HTTPHdr *h, char **username, char **password);
   static bool get_wuts_code(HTTPHdr * hdr, WUTSCode * w);
   static void set_wuts_codes(HTTPHdr * hdr, WUTSCode * code);
   static void set_wuts_codes(HTTPHdr * hdr, SquidHitMissCode hit_miss_code,

@@ -318,7 +318,7 @@ read_from_net(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
     buf.writer()->fill(r);
 #ifdef DEBUG
     if (buf.writer()->write_avail() <= 0)
-      NetDebug("iocore_net", "read_from_net, read buffer full");
+      Debug("iocore_net", "read_from_net, read buffer full");
 #endif
     s->vio.ndone += r;
     net_activity(vc, thread);
@@ -331,7 +331,7 @@ read_from_net(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
     ink_assert(ntodo >= 0);
     if (s->vio.ntodo() <= 0) {
       read_signal_done(VC_EVENT_READ_COMPLETE, nh, vc);
-      NetDebug("iocore_net", "read_from_net, read finished - signal done");
+      Debug("iocore_net", "read_from_net, read finished - signal done");
       return;
     } else {
       if (read_signal_and_update(VC_EVENT_READ_READY, vc) != EVENT_CONT)
@@ -784,15 +784,16 @@ UnixNetVConnection::reenable_re(VIO *vio)
 }
 
 
-UnixNetVConnection::UnixNetVConnection():
-closed(0), inactivity_timeout_in(0), active_timeout_in(0),
+UnixNetVConnection::UnixNetVConnection()
+  : closed(0), inactivity_timeout_in(0), active_timeout_in(0),
 #ifdef INACTIVITY_TIMEOUT
-  inactivity_timeout(NULL),
+    inactivity_timeout(NULL),
 #else
-  next_inactivity_timeout_at(0),
+    next_inactivity_timeout_at(0),
 #endif
-  active_timeout(NULL), nh(NULL),
-  id(0), ip(0), accept_port(0), port(0), flags(0), recursion(0), submit_time(0), oob_ptr(0)
+    active_timeout(NULL), nh(NULL),
+    id(0), ip(0), accept_port(0), port(0), flags(0), recursion(0), submit_time(0), oob_ptr(0),
+    from_accept_thread(false)
 {
   memset(&local_sa, 0, sizeof local_sa);
   SET_HANDLER((NetVConnHandler) & UnixNetVConnection::startEvent);
@@ -961,7 +962,7 @@ UnixNetVConnection::acceptEvent(int event, Event *e)
   nh = get_NetHandler(thread);
   PollDescriptor *pd = get_PollDescriptor(thread);
   if (ep.start(pd, this, EVENTIO_READ|EVENTIO_WRITE) < 0) {
-    NetDebug("iocore_net", "acceptEvent : failed EventIO::start\n");
+    Debug("iocore_net", "acceptEvent : failed EventIO::start\n");
     close_UnixNetVConnection(this, e->ethread);
     return EVENT_DONE;
   }
@@ -1074,7 +1075,7 @@ UnixNetVConnection::connectUp(EThread *t)
   // Initialize this UnixNetVConnection
   //
   int res = 0;
-  NetDebug("iocore_net", "connectUp:: local_addr=%u.%u.%u.%u [%s]\n",
+  Debug("iocore_net", "connectUp:: local_addr=%u.%u.%u.%u [%s]\n",
 	   PRINT_IP(options.local_addr),
 	   NetVCOptions::toString(options.addr_binding)
 	   );
@@ -1087,7 +1088,7 @@ UnixNetVConnection::connectUp(EThread *t)
     // when edge triggering is used.
     if (ep.start(get_PollDescriptor(t), this, EVENTIO_READ|EVENTIO_WRITE) < 0) {
       lerrno = errno;
-      NetDebug("iocore_net", "connectUp : Failed to add to epoll list\n");
+      Debug("iocore_net", "connectUp : Failed to add to epoll list\n");
       action_.continuation->handleEvent(NET_EVENT_OPEN_FAILED, (void *) res);
       free(t);
       return CONNECT_FAILURE;
@@ -1123,7 +1124,7 @@ UnixNetVConnection::connectUp(EThread *t)
 void
 UnixNetVConnection::free(EThread *t)
 {
-  NET_DECREMENT_THREAD_DYN_STAT(net_connections_currently_open_stat, t);
+  NET_SUM_GLOBAL_DYN_STAT(net_connections_currently_open_stat, -1);
   // clear variables for reuse
   got_remote_addr = 0;
   got_local_addr = 0;
@@ -1147,5 +1148,10 @@ UnixNetVConnection::free(EThread *t)
   ink_debug_assert(!active_timeout);
   ink_debug_assert(con.fd == NO_FD);
   ink_debug_assert(t == this_ethread());
-  THREAD_FREE(this, netVCAllocator, t);
+
+  if (from_accept_thread) {
+    netVCAllocator.free(this);  
+  } else {
+    THREAD_FREE(this, netVCAllocator, t);
+  }
 }

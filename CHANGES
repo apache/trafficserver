@@ -1,6 +1,191 @@
                                                          -*- coding: utf-8 -*-
 
+Changes with Apache Traffic Server 2.1.5
+
+  *) The old logs.config custom log format is no longer supported. Only
+   the XML custom logs are now supported. This eliminates the config
+
+       proxy.config.log.xml_logs_config
+
+   as well, since it's the only option for custom logs [TS-556].
+
+  *) All log configurations (and stats) are renamed from log2.* to
+   log.*. This is to avoid confusion, since Apache Traffic Server never
+   had the old (obsolete) log system. There's now only one log system,
+   log [TS-555].
+
+  *) Many fixes and improvements on the Stats pages subsystem. This now
+   properly supports (if configured) various internal URLs, like
+   http://{net}, http://{hostdb} etc. [TS-554]. 
+
+  *) The NewCacheVC is removed [TS-551].
+
+  *) Support for the Alpha processor is eliminated [TS-552].
+
+  *) A number of unecessary memory allocations are removed, improving
+   performance under heavy load. [TS-550, TS-549]
+
+  *) All streaming media (MIXT) configurations are now properly removed
+   from code and default configs [TS-544].
+
+  *) URL scheme was case sensitive in the cache key [TS-474].
+
+  *) Fixes for broken API signatures, additions / modifications to the
+   following API:
+
+     TSReturnCode TSHttpTxnArgSet(TSHttpTxn txnp, int arg_idx, void *arg);
+     TSReturnCode TSHttpTxnArgGet(TSHttpTxn txnp, int arg_idx, void **argp);
+     TSReturnCode TSHttpSsnArgSet(TSHttpSsn ssnp, int arg_idx, void *arg);
+     TSReturnCode TSHttpSsnArgGet(TSHttpSsn ssnp, int arg_idx, void **argp);
+
+     TSReturnCode TSHttpArgIndexReserve(const char* name, const char* description, int* arg_idx);
+     TSReturnCode TSHttpArgIndexNameLookup(const char* name, int* arg_idx, const char** description);
+     TSReturnCode TSHttpArgIndexLookup(int arg_idx, const char** name, const char** description);
+
+     TSReturnCode TSHttpSsnTransactionCount(TSHttpSsn ssnp, int* count);
+
+   This was all combine into [TS-504], but also see [TS-503].
+
+  *) Many fixes for broken regression tests!
+
+  *) RNI is now completely cleaned out [TS-536].
+
+  *) Fixes for SplitDNS (co-author: mohan_zl) [TS-435].
+
+  *) HTTPS to origin servers, with Chunked responses, would hang [TS-540].
+
+  *) Mismatched APIs using "unsigned char*" [TS-458].
+
+  *) Rename / modify TSSetCacheUrl() API, the new prototype is
+
+     TSReturnCode TSCacheUrlSet(TSHttpTxn txnp, const char *url, int length);
+
+   If length == -1, then the API will calculate it using strlen() [TS-520].
+
+  *) All public APIs, structs and defines are now prefixed with "TS"
+   instead of the old "INK". There are two exceptions, for the
+   deprecated INKStats* and INKCoupledStats* APIs [TS-521].
+
+  *) The hooks around "remap" has been organized, and a new hook as been
+   added (for post-remap). New / renamed hooks are
+
+     TS_HTTP_PRE_REMAP_HOOK
+     TS_HTTP_POST_REMAP_HOOK
+
+   In addition, a new API was added, to allow a plugin to skip the remap
+   phase completely:
+
+     TSReturnCode TSSkipRemappingSet(TSHttpTxn txnp, int flag);
+
+   These fixes went in with [TS-529] and [TS-530].
+
+  *) INKHttpTxnSetHttpRetStatus not honored when an API transaction is
+   reenabled with INK_EVENT_HTTP_ERROR [TS-535].
+
+  *) Various defines for version identification has been moved to the
+   public ts/ts.h include file, e.g.
+
+     #define TS_VERSION_STRING             "2.1.5-unstable"
+     #define TS_VERSION_NUMBER              2001005
+     #define TS_VERSION_MAJOR               2
+     #define TS_VERSION_MINOR               1
+     #define TS_VERSION_MICRO               5
+
+   The intended use is for plugins to be able to verify available APIs
+   at compile time (vs the existing runtime checks) [TS-534].
+
+  *) Traffic Server should now build on ARM processors. Commit message
+   is appropriately describing the situation with this CPU:
+
+   This is a sad day of defeat.  Not my defeat, but more a collective
+   human defeat.
+    
+   Question: "Chips fabricated today don't have 64bit atomic primitives?"
+   Answer: "Be sad."
+    
+   The ARM box we're working on (armv5tejl) doesn't support any 64bit
+   primitives.
+    
+   This means we need a method of using a global (yes, giant lock of
+   death) to protect modifications of arbitrary 64bit integers in
+   process space.  We could make this less contentious by allocating
+   pagesize/8 mutexs and then protecting an int64 based on its page
+   offset.  Instead, I think we should mobilize to burn these
+   architectures to the ground and use public embarrassment to fix 
+   future instruction sets. If another platform has this issue, we'll
+   want to change the define to: 
+
+   TS_ARCHITECTURE_LACKS_64BIT_INSTRUCTIONS and turn on the global death
+   lock based on that.
+    
+   This does not change performance on any other platform -- it's
+   compile time capital punishment. [TS-533] and [TS-135].
+
+  *) Very old APIs, that have been deprecated since long before the
+   Apache Open Source project, are removed. Also, only three public
+   include files are now available:
+
+     ts/ts.h
+     ts/experimental.h
+     ts/remap.h
+
+  Various other cleanup related to the APIs was also done [TS-522].
+
+
 Changes with Apache Traffic Server 2.1.4
+
+  *) Fixes to clustering, that caused an assert to trigger after the
+   stats changes [TS-519].
+
+  *) Make the checks when to honor the Content-Length: header less
+   strict, against origins without Keep-Alive [TS-500].
+
+  *) Eliminate old ssl_ports feature, it's completely replaced with the
+   connect_ports configuration [TS-517].
+
+  *) New script available to help build plugins, tsxs [TS-512].
+
+  *) Simple, brute force (and efficient) status code stats counters
+   [TS-509].
+
+  *) Generalize RecDumpRecordsHt to use RecDumpRecords which is a
+   callback/map pattern [TS-508].
+
+  *) Fix plugin APIs to be compatible with the 64-bit changes in the
+   core. This is an incompatible change with previous releases [TS-14].
+
+  *) Fixes for stats around origin connection counters, used when
+   allowing for origin connections to be reused between clients [TS-501].
+
+  *) Experimental supoprt for a dedicated DNS thread. This can be
+   enabled with the records.config option
+
+   	   CONFIG proxy.config.dns.dedicated_thread INT 1
+
+  This feature is possibly useful for very busy forward or transparent
+  proxies [TS-307].
+
+  *) Accept threads can leak some amount of memory. This patch also
+   supports multiple accept threads (very experimental!) [TS-496].
+
+  *) HttpSM has an assertion that checks the client URL against the
+   cache URL, which breaks INKSetCacheUrl [TS-495].
+
+  *) Return value from pcre_exec tested incorrectly [TS-493].
+
+  *) Improved loop detection using the Via header [TS-490].
+
+  *) Fixes for Solaris build (yay, it builds!).
+
+  *) Remove filter.config remnants [TS-486].
+
+  *) Cleanup in InkAPI [TS-485].
+
+  *) Move PKGSYSUSER to ink_config.h.in [TS-482].
+
+  *) Unresponsive server can stall ATS [TS-480].
+
+  *) UrlRewrite cleanup [TS-434].
 
   *) Build TS with clang (author: Igor Galic) [TS-427].
 
@@ -19,6 +204,7 @@ Changes with Apache Traffic Server 2.1.4
 
   *) Cleanup / optimize Via: string generation [TS-460]. Also make the
    default for Via: on responses to be disabled (it can leak info).
+
 
 Changes with Apache Traffic Server 2.1.3
 
@@ -94,6 +280,7 @@ Changes with Apache Traffic Server 2.1.3
 
   *) Duplication of RAM cache hits and miss statistics (reading 2x) (author: John
    Plevyak) [TS-453].
+
 
 Changes with Apache Traffic Server 2.1.2
 

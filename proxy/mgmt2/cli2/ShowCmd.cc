@@ -1231,7 +1231,7 @@ ShowPorts()
   INKInt cluster_mc = -1;
   INKInt socks_server = -1;
   INKInt icp = -1;
-  INKString ssl = NULL;
+  INKString connect = NULL;
 
   // retrieve values
 
@@ -1242,7 +1242,7 @@ ShowPorts()
   Cli_RecordGetInt("proxy.config.cluster.cluster_port", &cluster);
   Cli_RecordGetInt("proxy.config.cluster.rsport", &cluster_rs);
   Cli_RecordGetInt("proxy.config.cluster.mcport", &cluster_mc);
-  Cli_RecordGetString("proxy.config.http.ssl_ports", &ssl);
+  Cli_RecordGetString("proxy.config.http.connect_ports", &connect);
   Cli_RecordGetInt("proxy.config.socks.socks_server_port", &socks_server);
   Cli_RecordGetInt("proxy.config.icp.icp_port", &icp);
 
@@ -1255,7 +1255,7 @@ ShowPorts()
   Cli_Printf("Cluster Port ----------- %d\n", cluster);
   Cli_Printf("Cluster RS Port -------- %d\n", cluster_rs);
   Cli_Printf("Cluster MC Port -------- %d\n", cluster_mc);
-  Cli_Printf("SSL Ports -------------- %s\n", (ssl != NULL) ? ssl : "none");
+  Cli_Printf("Allowed CONNECT Ports -- %s\n", (connect != NULL) ? connect : "none");
   Cli_Printf("SOCKS Server Port ------ %d\n", socks_server);
   Cli_Printf("ICP Port --------------- %d\n", icp);
   Cli_Printf("\n");
@@ -1756,45 +1756,44 @@ ShowLogging()
   INKInt auto_delete = 0;
   // retrieve value
 
-  Cli_RecordGetInt("proxy.config.log2.logging_enabled", &logging_enabled);
-  Cli_RecordGetInt("proxy.config.log2.max_space_mb_for_logs", &log_space);
-  Cli_RecordGetInt("proxy.config.log2.max_space_mb_headroom", &headroom_space);
-  Cli_RecordGetInt("proxy.local.log2.collation_mode", &collation_mode);
-  Cli_RecordGetString("proxy.config.log2.collation_host", (char**)&collation_host);
-  Cli_RecordGetInt("proxy.config.log2.collation_port", &collation_port);
-  Cli_RecordGetString("proxy.config.log2.collation_secret", &collation_secret);
-  Cli_RecordGetInt("proxy.config.log2.collation_host_tagged", &host_tag);
-  Cli_RecordGetInt("proxy.config.log2.max_space_mb_for_orphan_logs", &orphan_space);
+  Cli_RecordGetInt("proxy.config.log.logging_enabled", &logging_enabled);
+  Cli_RecordGetInt("proxy.config.log.max_space_mb_for_logs", &log_space);
+  Cli_RecordGetInt("proxy.config.log.max_space_mb_headroom", &headroom_space);
+  Cli_RecordGetInt("proxy.local.log.collation_mode", &collation_mode);
+  Cli_RecordGetString("proxy.config.log.collation_host", (char**)&collation_host);
+  Cli_RecordGetInt("proxy.config.log.collation_port", &collation_port);
+  Cli_RecordGetString("proxy.config.log.collation_secret", &collation_secret);
+  Cli_RecordGetInt("proxy.config.log.collation_host_tagged", &host_tag);
+  Cli_RecordGetInt("proxy.config.log.max_space_mb_for_orphan_logs", &orphan_space);
 
-  Cli_RecordGetInt("proxy.config.log2.squid_log_enabled", &squid_log);
-  Cli_RecordGetInt("proxy.config.log2.squid_log_is_ascii", &is_ascii);
-  Cli_RecordGetString("proxy.config.log2.squid_log_name", &file_name);
-  Cli_RecordGetString("proxy.config.log2.squid_log_header", &file_header);
+  Cli_RecordGetInt("proxy.config.log.squid_log_enabled", &squid_log);
+  Cli_RecordGetInt("proxy.config.log.squid_log_is_ascii", &is_ascii);
+  Cli_RecordGetString("proxy.config.log.squid_log_name", &file_name);
+  Cli_RecordGetString("proxy.config.log.squid_log_header", &file_header);
 
-  Cli_RecordGetInt("proxy.config.log2.common_log_enabled", &common_log);
-  Cli_RecordGetInt("proxy.config.log2.common_log_is_ascii", &common_is_ascii);
-  Cli_RecordGetString("proxy.config.log2.common_log_name", &common_file_name);
-  Cli_RecordGetString("proxy.config.log2.common_log_header", &common_file_header);
+  Cli_RecordGetInt("proxy.config.log.common_log_enabled", &common_log);
+  Cli_RecordGetInt("proxy.config.log.common_log_is_ascii", &common_is_ascii);
+  Cli_RecordGetString("proxy.config.log.common_log_name", &common_file_name);
+  Cli_RecordGetString("proxy.config.log.common_log_header", &common_file_header);
 
-  Cli_RecordGetInt("proxy.config.log2.extended_log_enabled", &extended_log);
-  Cli_RecordGetInt("proxy.config.log2.extended_log_is_ascii", &extended_is_ascii);
-  Cli_RecordGetString("proxy.config.log2.extended_log_name", &extended_file_name);
-  Cli_RecordGetString("proxy.config.log2.extended_log_header", &extended_file_header);
+  Cli_RecordGetInt("proxy.config.log.extended_log_enabled", &extended_log);
+  Cli_RecordGetInt("proxy.config.log.extended_log_is_ascii", &extended_is_ascii);
+  Cli_RecordGetString("proxy.config.log.extended_log_name", &extended_file_name);
+  Cli_RecordGetString("proxy.config.log.extended_log_header", &extended_file_header);
 
-  Cli_RecordGetInt("proxy.config.log2.extended2_log_enabled", &extended2_log);
-  Cli_RecordGetInt("proxy.config.log2.extended2_log_is_ascii", &extended2_is_ascii);
-  Cli_RecordGetString("proxy.config.log2.extended2_log_name", &extended2_file_name);
-  Cli_RecordGetString("proxy.config.log2.extended2_log_header", &extended2_file_header);
+  Cli_RecordGetInt("proxy.config.log.extended2_log_enabled", &extended2_log);
+  Cli_RecordGetInt("proxy.config.log.extended2_log_is_ascii", &extended2_is_ascii);
+  Cli_RecordGetString("proxy.config.log.extended2_log_name", &extended2_file_name);
+  Cli_RecordGetString("proxy.config.log.extended2_log_header", &extended2_file_header);
 
-  Cli_RecordGetInt("proxy.config.log2.separate_icp_logs", &icp_log);
-  Cli_RecordGetInt("proxy.config.log2.separate_host_logs", &http_host_log);
-  Cli_RecordGetInt("proxy.config.log2.separate_host_logs", &custom_log);
-  Cli_RecordGetInt("proxy.config.log2.xml_logs_config", &xml_log);
+  Cli_RecordGetInt("proxy.config.log.separate_icp_logs", &icp_log);
+  Cli_RecordGetInt("proxy.config.log.separate_host_logs", &http_host_log);
+  Cli_RecordGetInt("proxy.config.log.separate_host_logs", &custom_log);
 
-  Cli_RecordGetInt("proxy.config.log2.rolling_enabled", &rolling);
-  Cli_RecordGetInt("proxy.config.log2.rolling_offset_hr", &roll_offset_hr);
-  Cli_RecordGetInt("proxy.config.log2.rolling_interval_sec", &roll_interval);
-  Cli_RecordGetInt("proxy.config.log2.auto_delete_rolled_files", &auto_delete);
+  Cli_RecordGetInt("proxy.config.log.rolling_enabled", &rolling);
+  Cli_RecordGetInt("proxy.config.log.rolling_offset_hr", &roll_offset_hr);
+  Cli_RecordGetInt("proxy.config.log.rolling_interval_sec", &roll_interval);
+  Cli_RecordGetInt("proxy.config.log.auto_delete_rolled_files", &auto_delete);
 
   // display results
   Cli_Printf("\n");
@@ -1890,15 +1889,15 @@ ShowSsl()
 {
   // declare and initialize variables
 
-  INKString ssl_ports = NULL;
+  INKString connect_ports = NULL;
 
   // retrieve value
 
-  Cli_RecordGetString("proxy.config.http.ssl_ports", &ssl_ports);
+  Cli_RecordGetString("proxy.config.http.connect_ports", &connect_ports);
 
   // display results
   Cli_Printf("\n");
-  Cli_Printf("Restrict SSL Connections to Ports -- %s\n", ssl_ports);
+  Cli_Printf("Restrict CONNECT connections to Ports -- %s\n", connect_ports);
   Cli_Printf("\n");
 
   return CLI_OK;
@@ -2454,11 +2453,11 @@ ShowLoggingStats()
   INKCounter event_log_access_skip = -1;
   INKCounter event_log_error = -1;
 
-  Cli_RecordGetCounter("proxy.process.log2.log_files_open", &log_file_open);
-  Cli_RecordGetInt("proxy.process.log2.log_files_space_used", &log_files_space_used);
-  Cli_RecordGetCounter("proxy.process.log2.event_log_access", &event_log_access);
-  Cli_RecordGetCounter("proxy.process.log2.event_log_access_skip", &event_log_access_skip);
-  Cli_RecordGetCounter("proxy.process.log2.event_log_error", &event_log_error);
+  Cli_RecordGetCounter("proxy.process.log.log_files_open", &log_file_open);
+  Cli_RecordGetInt("proxy.process.log.log_files_space_used", &log_files_space_used);
+  Cli_RecordGetCounter("proxy.process.log.event_log_access", &event_log_access);
+  Cli_RecordGetCounter("proxy.process.log.event_log_access_skip", &event_log_access_skip);
+  Cli_RecordGetCounter("proxy.process.log.event_log_error", &event_log_error);
 
   Cli_Printf("\n");
   Cli_Printf("Current Open Log Files ----------- %d\n", log_file_open);

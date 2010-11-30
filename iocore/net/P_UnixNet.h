@@ -246,7 +246,6 @@ public:
   QueM(UnixNetVConnection, NetState, read, ready_link) read_ready_list;
   QueM(UnixNetVConnection, NetState, write, ready_link) write_ready_list;
   Que(UnixNetVConnection, link) open_list;
-  Que(DNSConnection, link) dnsqueue;
   ASLLM(UnixNetVConnection, NetState, read, enable_link) read_enable_list;
   ASLLM(UnixNetVConnection, NetState, write, enable_link) write_enable_list;
 
@@ -287,18 +286,9 @@ net_connections_to_throttle(ThrottleType t)
 {
 
   double headroom = t == ACCEPT ? NET_THROTTLE_ACCEPT_HEADROOM : NET_THROTTLE_CONNECT_HEADROOM;
-  int64 sval = 0, cval = 0;
+  int64 sval = 0;
 
-#ifdef HTTP_NET_THROTTLE
-  NET_READ_DYN_STAT(http_current_client_connections_stat, cval, sval);
-  int http_user_agents = sval;
-  // one origin server connection for each user agent
-  int http_use_estimate = http_user_agents * 2;
-  // be conservative, bound by number currently open
-  if (http_use_estimate > currently_open)
-    return (int) (http_use_estimate * headroom);
-#endif
-  NET_READ_DYN_STAT(net_connections_currently_open_stat, cval, sval);
+  NET_READ_GLOBAL_DYN_SUM(net_connections_currently_open_stat, sval);
   int currently_open = (int) sval;
   // deal with race if we got to multiple net threads
   if (currently_open < 0)
@@ -589,7 +579,7 @@ TS_INLINE int EventIO::start(EventLoop l, int afd, Continuation *c, int e) {
 #if TS_USE_PORT
   events = e;
   int retval = port_associate(event_loop->port_fd, PORT_SOURCE_FD, fd, events, this);
-  NetDebug("iocore_eventio", "[EventIO::start] e(%d), events(%d), %d[%s]=port_associate(%d,%d,%d,%d,%p)", e, events, retval, retval<0? strerror(errno) : "ok", event_loop->port_fd, PORT_SOURCE_FD, fd, events, this);
+  Debug("iocore_eventio", "[EventIO::start] e(%d), events(%d), %d[%s]=port_associate(%d,%d,%d,%d,%p)", e, events, retval, retval<0? strerror(errno) : "ok", event_loop->port_fd, PORT_SOURCE_FD, fd, events, this);
   return retval;
 #endif
 }
@@ -659,7 +649,7 @@ TS_INLINE int EventIO::modify(int e) {
   if (n && ne && event_loop) {
     events = ne;
     int retval = port_associate(event_loop->port_fd, PORT_SOURCE_FD, fd, events, this);
-    NetDebug("iocore_eventio", "[EventIO::modify] e(%d), ne(%d), events(%d), %d[%s]=port_associate(%d,%d,%d,%d,%p)", e, ne, events, retval, retval<0? strerror(errno) : "ok", event_loop->port_fd, PORT_SOURCE_FD, fd, events, this);
+    Debug("iocore_eventio", "[EventIO::modify] e(%d), ne(%d), events(%d), %d[%s]=port_associate(%d,%d,%d,%d,%p)", e, ne, events, retval, retval<0? strerror(errno) : "ok", event_loop->port_fd, PORT_SOURCE_FD, fd, events, this);
     return retval;
   }
   return 0;
@@ -695,7 +685,8 @@ TS_INLINE int EventIO::refresh(int e) {
     if (n && ne && event_loop) {
       events = ne;
       int retval = port_associate(event_loop->port_fd, PORT_SOURCE_FD, fd, events, this);
-      NetDebug("iocore_eventio", "[EventIO::refresh] e(%d), ne(%d), events(%d), %d[%s]=port_associate(%d,%d,%d,%d,%p)", e, ne, events, retval, retval<0? strerror(errno) : "ok", event_loop->port_fd, PORT_SOURCE_FD, fd, events, this);
+      Debug("iocore_eventio", "[EventIO::refresh] e(%d), ne(%d), events(%d), %d[%s]=port_associate(%d,%d,%d,%d,%p)",
+            e, ne, events, retval, retval<0? strerror(errno) : "ok", event_loop->port_fd, PORT_SOURCE_FD, fd, events, this);
       return retval;
     }
   }
@@ -717,7 +708,7 @@ TS_INLINE int EventIO::stop() {
 #endif
 #if TS_USE_PORT
     int retval = port_dissociate(event_loop->port_fd, PORT_SOURCE_FD, fd);
-    NetDebug("iocore_eventio", "[EventIO::stop] %d[%s]=port_dissociate(%d,%d,%d)", retval, retval<0? strerror(errno) : "ok", event_loop->port_fd, PORT_SOURCE_FD, fd);
+    Debug("iocore_eventio", "[EventIO::stop] %d[%s]=port_dissociate(%d,%d,%d)", retval, retval<0? strerror(errno) : "ok", event_loop->port_fd, PORT_SOURCE_FD, fd);
     return retval;
 #endif
     event_loop = 0;

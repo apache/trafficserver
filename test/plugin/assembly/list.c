@@ -76,7 +76,7 @@ getNextValue(const char *list, char **offset)
     *offset = end;
   }
 
-  ret = INKmalloc(len + 1);
+  ret = TSmalloc(len + 1);
   memcpy(ret, begin, len);
   ret[len] = '\0';
 

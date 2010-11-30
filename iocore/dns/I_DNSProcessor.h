@@ -26,12 +26,6 @@
 
 #include "SRV.h"
 
-/*
-  #include "I_EventSystem.h"
-  #include "I_HostDB.h"
-  #include "I_Net.h"
-*/
-
 #define  MAX_DNS_PACKET_LEN         8192
 #define  DNS_MAX_ALIASES              35
 #define  DNS_MAX_ADDRS                35
@@ -59,13 +53,13 @@ struct HostEnt
 
   SRVHosts srv_hosts;
 
-    HostEnt()
+  HostEnt()
   {
     memset(this, 0, sizeof(*this));
   }
 };
 
-const EventType ET_DNS = ET_CALL;
+extern EventType ET_DNS;
 
 struct DNSHandler;
 
@@ -124,7 +118,6 @@ struct DNSProcessor: public Processor
 // Global data
 //
 extern DNSProcessor dnsProcessor;
-
 
 //
 // Inline Functions

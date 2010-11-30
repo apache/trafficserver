@@ -25,13 +25,13 @@
 Verification of INKqa06643
 
 Schedule a continuation that is simply called back with a later timeout
-value. Explicitly call INKContSchedule() without a mutex, the mutex should
-be created in InkAPI.cc/INKContSchedule. 
+value. Explicitly call TSContSchedule() without a mutex, the mutex should
+be created in InkAPI.cc/TSContSchedule. 
 
 This plug-in will not complete the client request (request times-out), 
-since the event routine calls INKContSchedule() in the event handler.  
-A simple change to the event routine can be made so that INKHttpTxnReenable() 
-is called in place of INKContSchedule().
+since the event routine calls TSContSchedule() in the event handler.  
+A simple change to the event routine can be made so that TSHttpTxnReenable() 
+is called in place of TSContSchedule().
 
 Entry points to the core now use either 
 	FORCE_PLUGIN_MUTEX 
@@ -48,73 +48,73 @@ to create/init a mutex.
 
 #include <ts/ts.h> 
 
-/* Verification code for: INKqa06643 */
+/* Verification code for: TSqa06643 */
 static int
-EventHandler(INKCont contp, INKEvent event, void *eData) 
+EventHandler(TSCont contp, TSEvent event, void *eData) 
 {
-	INKHttpTxn txn = (INKHttpTxn)eData; 
+	TSHttpTxn txn = (TSHttpTxn)eData; 
 	int iVal; 
 	time_t tVal ;
 
 	if (time(&tVal) != (time_t)(-1)) {
-		INKDebug("tag_sched6643",
-			"INKContSchedule: EventHandler: called at %s\n",
+		TSDebug("tag_sched6643",
+			"TSContSchedule: EventHandler: called at %s\n",
 			ctime(&tVal));
 	}
 
-	iVal = (int)INKContDataGet(contp);
+	iVal = (int)TSContDataGet(contp);
 
-	INKDebug("tag_sched6643",
-	"INKContSchedule: handler called with value %d\n",iVal); 
+	TSDebug("tag_sched6643",
+	"TSContSchedule: handler called with value %d\n",iVal); 
 	
 	switch (event) {
 
-	case INK_EVENT_HTTP_OS_DNS:
-		INKDebug("tag_sched6643", 
-		"INKContSchedule: Seed event %s\n", "INK_EVENT_HTTP_OS_DNS");
+	case TS_EVENT_HTTP_OS_DNS:
+		TSDebug("tag_sched6643", 
+		"TSContSchedule: Seed event %s\n", "TS_EVENT_HTTP_OS_DNS");
 		break;
 
-	case INK_EVENT_TIMEOUT:
-		INKDebug("tag_sched6643",
-		"INKContSchedule: TIMEOUT event\n");
+	case TS_EVENT_TIMEOUT:
+		TSDebug("tag_sched6643",
+		"TSContSchedule: TIMEOUT event\n");
 		break;
 
 	default: 
-		INKDebug("tag_sched6643",
-		"INKContSchedule: Error: default event\n");
+		TSDebug("tag_sched6643",
+		"TSContSchedule: Error: default event\n");
 		break;
 	}
 	
 	iVal += 100;	 /* seed + timeout val */
-	INKContDataSet(contp, (void*)iVal); 
-	INKContSchedule(contp,iVal); 
+	TSContDataSet(contp, (void*)iVal); 
+	TSContSchedule(contp,iVal); 
 
-	/* INKHttpTxnReenable(txn, INK_EVENT_HTTP_CONTINUE); */
+	/* TSHttpTxnReenable(txn, TS_EVENT_HTTP_CONTINUE); */
 }
 
 static int
-EventHandler2(INKCont contp, INKEvent event, void *eData) 
+EventHandler2(TSCont contp, TSEvent event, void *eData) 
 {
 }
 
 void
-INKPluginInit(int argc, const char* argv[])
+TSPluginInit(int argc, const char* argv[])
 {
-	INKCont	contp, contp2;
+	TSCont	contp, contp2;
 	int	timeOut = 10 ; 	
 
-	INKDebug("tag_sched6643",
-	"INKContSchedule: Initial data value for contp is %d\n",timeOut); 
+	TSDebug("tag_sched6643",
+	"TSContSchedule: Initial data value for contp is %d\n",timeOut); 
 
-	/* contp = INKContCreate(EventHandler, INKMutexCreate() ); */
-	mymUtex = INKMutexCreate() ;
+	/* contp = TSContCreate(EventHandler, TSMutexCreate() ); */
+	mymUtex = TSMutexCreate() ;
 
-	contp = INKContCreate(EventHandler, myMutex);
-	INKContDataSet(contp, (void*)timeOut); 
+	contp = TSContCreate(EventHandler, myMutex);
+	TSContDataSet(contp, (void*)timeOut); 
 
-	contp2 = INKContCreate(EventHandler2, myMutex);
-	INKContDataSet(contp2, (void*)contp); 
+	contp2 = TSContCreate(EventHandler2, myMutex);
+	TSContDataSet(contp2, (void*)contp); 
 
-	/* INKHttpHookAdd(INK_HTTP_OS_DNS_HOOK, contp); */
-	INKHttpHookAdd(INK_HTTP_OS_DNS_HOOK, contp2);
+	/* TSHttpHookAdd(TS_HTTP_OS_DNS_HOOK, contp); */
+	TSHttpHookAdd(TS_HTTP_OS_DNS_HOOK, contp2);
 }

@@ -12,25 +12,25 @@ see my responses below.
 >Q: If a transformation is occuring, the default is
 >to not cache the transformed content. A call to:
 >
->	INKHttpTxnUntransformedRespCache(txnp, 1)
+>	TSHttpTxnUntransformedRespCache(txnp, 1)
 >
 >should allow caching of both types of content.
 
 I don't follow. My recollection is that if a transformation
 is occurring, the default is
 that transformed content, and only transformed content,
-is cached. (See the description of INKHttpTxnTransformedRespCache.)
+is cached. (See the description of TSHttpTxnTransformedRespCache.)
 
-If you set INKHttpTxnUntransformedRespCache(txnp, 1),
+If you set TSHttpTxnUntransformedRespCache(txnp, 1),
 then untransformed content is cached. I believe the way
 to make sure that both transformed and untransformed
 content is cached is: to set both
 
-INKHttpTxnUntransformedRespCache(txnp, 1)
+TSHttpTxnUntransformedRespCache(txnp, 1)
 and
-INKHttpTxnTransformedRespCache(txnp, 1)
+TSHttpTxnTransformedRespCache(txnp, 1)
 
-This is what the description of INKHttpTxnUntransformedRespCache
+This is what the description of TSHttpTxnUntransformedRespCache
 seems to be saying. (It's directly from the engineer who designed it).
 - but I could be wrong. this part of the api has not been
 tested.
@@ -38,11 +38,11 @@ tested.
 >
 >Is this the same as:
 >
->	INKHttpTxnTransformedRespCache(txnp, 1)
+>	TSHttpTxnTransformedRespCache(txnp, 1)
 >
 >Q:
 >Transformed/non-transformed content is made by
->using INK_HTTP_SELECT_ALT hook. The "infop"
+>using TS_HTTP_SELECT_ALT hook. The "infop"
 >is passed in as a data parameter to the event
 >handler.
 >
@@ -54,11 +54,11 @@ tested.
 >seem to be wrong about this:
 >
 >OK:
->INKHttpAltInfoCachedReqGet()
+>TSHttpAltInfoCachedReqGet()
 >Get the cached client req  hdr for this pAltInfo/multiplier value
 >
 >
->INKHttpAltInfoCachedRespGet()
+>TSHttpAltInfoCachedRespGet()
 >Wrong:
 >  Get the cached client resp hdr for this pAltInfo/multiplier value
 >Should be:
@@ -68,7 +68,7 @@ I agree. This is a mistake. I'll fix it.
 
 >
 >OK:
->INKHttpAltInfoClientReqGet
+>TSHttpAltInfoClientReqGet
 >Get the        client request hdr for this pAltInfo/multiplier value
 >
 >
@@ -113,7 +113,7 @@ book.
 >>  >Hi,
 >>  >	I am writting a plug-in that uses all of the
 >>  >	global events of the api. Would you have any
->>  >	coding samples for processing INK_HTTP_SELECT_ALT_HOOK.
+>>  >	coding samples for processing TS_HTTP_SELECT_ALT_HOOK.
 >>  >
 >>  >	I can register and receive the event, but I don't have
 >>  >	any other details on how to actually process this

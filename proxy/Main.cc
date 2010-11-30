@@ -75,11 +75,7 @@ extern "C" int plock(int);
 //#include "ClusterTest.h"
 #include "CacheControl.h"
 #include "IPAllow.h"
-#include "CacheInspectorAllow.h"
 #include "ParentSelection.h"
-#ifdef RNI_STATIC_LINK
-#include "RniProcessor.h"
-#endif
 //#include "simple/Simple.h"
 
 #include "MgmtUtils.h"
@@ -117,13 +113,11 @@ extern "C" int plock(int);
 #define DEFAULT_NUMBER_OF_THREADS         ink_number_of_processors()
 #define DEFAULT_NUMBER_OF_UDP_THREADS     1
 #define DEFAULT_NUMBER_OF_CLUSTER_THREADS 1
-//#define DEFAULT_NUMBER_OF_AUTH_THREADS    (ink_number_of_processors() + 1)
 #define DEFAULT_NUMBER_OF_SSL_THREADS     0
-#define DEFAULT_USE_ACCEPT_THREAD         0
+#define DEFAULT_NUM_ACCEPT_THREADS        0
 #define DEFAULT_HTTP_ACCEPT_PORT_NUMBER   0
 #define DEFAULT_COMMAND_FLAG              0
 #define DEFAULT_LOCK_PROCESS              0
-#define MAX_NUMBER_OF_THREADS             1024
 
 #define DEFAULT_VERBOSE_FLAG              0
 #define DEFAULT_VERSION_FLAG              0
@@ -145,8 +139,7 @@ int num_of_net_threads = DEFAULT_NUMBER_OF_THREADS;
 int num_of_cluster_threads = DEFAULT_NUMBER_OF_CLUSTER_THREADS;
 int num_of_udp_threads = DEFAULT_NUMBER_OF_UDP_THREADS;
 int num_of_ssl_threads = DEFAULT_NUMBER_OF_SSL_THREADS;
-extern int use_accept_thread;
-//           = DEFAULT_USE_ACCEPT_THREAD;
+int num_accept_threads  = DEFAULT_NUM_ACCEPT_THREADS;
 int run_test_hook = 0;
 int http_accept_port_number = DEFAULT_HTTP_ACCEPT_PORT_NUMBER;
 int http_accept_file_descriptor = NO_FD;
@@ -154,7 +147,7 @@ int ssl_accept_file_descriptor = NO_FD;
 char accept_fd_list[1024] = "";
 char core_file[255] = "";
 int command_flag = DEFAULT_COMMAND_FLAG;
-#ifndef INK_NO_TESTS
+#if TS_HAS_TESTS
 char regression_test[1024] = "";
 #endif
 int auto_clear_hostdb_flag = 0;
@@ -196,10 +189,10 @@ static int cmd_line_dprintf_level = 0;  // default debug output level fro ink_dp
 AppVersionInfo appVersionInfo;  // Build info for this application
 
 
-#ifndef INK_NO_TESTS
-extern int test_net_processor();
-
+#if TS_HAS_TESTS
 extern int run_TestHook();
+// TODO: Maybe review and "fix" this test at some point?
+//
 //extern void run_SimpleHttp();
 #endif
 void deinitSubAgent();
@@ -220,7 +213,7 @@ ArgumentDescription argument_descriptions[] = {
    &num_of_cluster_threads, "PROXY_CLUSTER_THREADS", NULL},
   {"udp_threads", 'U', "Number of UDP Threads", "I",
    &num_of_udp_threads, "PROXY_UDP_THREADS", NULL},
-  {"accept_thread", 'a', "Use an Accept Thread", "T", &use_accept_thread,
+  {"accept_thread", 'a', "Use an Accept Thread", "T", &num_accept_threads,
    "PROXY_ACCEPT_THREAD", NULL},
   {"accept_till_done", 'b', "Accept Till Done", "T", &accept_till_done,
    "PROXY_ACCEPT_TILL_DONE", NULL},
@@ -234,7 +227,7 @@ ArgumentDescription argument_descriptions[] = {
    "PROXY_DPRINTF_LEVEL", NULL},
   {"version", 'V', "Print Version String", "T", &version_flag,
    NULL, NULL},
-#ifndef INK_NO_TESTS
+#if TS_HAS_TESTS
   {"regression", 'R',
 #ifdef DEBUG
    "Regression Level (quick:1..long:3)",
@@ -257,7 +250,7 @@ ArgumentDescription argument_descriptions[] = {
 #endif
    "T",
    &run_test_hook, "PROXY_RUN_TEST_HOOK", NULL},
-#endif //INK_NO_TESTS
+#endif //TS_HAS_TESTS
 #if TS_USE_DIAGS
   {"debug_tags", 'T', "Vertical-bar-separated Debug Tags", "S1023", error_tags,
    "PROXY_DEBUG_TAGS", NULL},
@@ -450,12 +443,12 @@ init_dirs(void)
   }
 
   if (access(system_log_dir, W_OK) == -1) {
-    REC_ReadConfigString(buf, "proxy.config.log2.logfile_dir", PATH_NAME_MAX);
+    REC_ReadConfigString(buf, "proxy.config.log.logfile_dir", PATH_NAME_MAX);
     Layout::get()->relative(system_log_dir, PATH_NAME_MAX, buf);
     if (access(system_log_dir, W_OK) == -1) {
       fprintf(stderr,"unable to access() log dir'%s':%d, %s\n",
               system_log_dir, errno, strerror(errno));
-      fprintf(stderr,"please set 'proxy.config.log2.logfile_dir'\n");
+      fprintf(stderr,"please set 'proxy.config.log.logfile_dir'\n");
       _exit(1);
     }
   }
@@ -987,8 +980,8 @@ parse_accept_fd_list()
     if (attr_str == NULL) {
       attr = SERVER_PORT_DEFAULT;
     } else {
-      if (strlen(attr_str) > 1) {
-        Warning("too many port attribute fields (more than 1) '%s'", attr);
+      if (strlen(attr_str) > 2) {
+        Warning("too many port attribute fields (more than 2) '%s'", attr);
         attr = SERVER_PORT_DEFAULT;
       } else {
         switch (*attr_str) {
@@ -1091,24 +1084,6 @@ init_core_size()
   }
 }
 
-static void
-init_ink_memalign_heap(void)
-{
-  int64 ram_cache_max = -1;
-  int enable_preallocation = 1;
-
-  TS_ReadConfigInteger(enable_preallocation, "proxy.config.system.memalign_heap");
-  if (enable_preallocation) {
-    TS_ReadConfigInteger(ram_cache_max, "proxy.config.cache.ram_cache.size");
-    if (ram_cache_max > 0) {
-      if (!ink_memalign_heap_init(ram_cache_max))
-        Warning("Unable to init memalign heap");
-    } else {
-      Warning("Unable to read proxy.config.cache.ram_cache.size var from config");
-    }
-  }
-}
-
 #if TS_USE_POSIX_CAP
 // Restore the effective capabilities that we need.
 int
@@ -1188,43 +1163,43 @@ struct ShowStats: public Continuation
       printf("r:rr w:ww r:rbs w:wbs open polls\n");
     ink_statval_t sval, cval;
 
-      NET_READ_DYN_STAT(net_calls_to_readfromnet_stat, sval, cval);
+    NET_READ_DYN_SUM(net_calls_to_readfromnet_stat, sval);
     int64 d_rb = sval - last_rb;
-      last_rb += d_rb;
-      NET_READ_DYN_STAT(net_calls_to_readfromnet_afterpoll_stat, sval, cval);
+    last_rb += d_rb;
+    NET_READ_DYN_SUM(net_calls_to_readfromnet_afterpoll_stat, sval);
     int64 d_r = sval - last_r;
-      last_r += d_r;
+    last_r += d_r;
 
-      NET_READ_DYN_STAT(net_calls_to_writetonet_stat, sval, cval);
+    NET_READ_DYN_SUM(net_calls_to_writetonet_stat, sval);
     int64 d_wb = sval - last_wb;
-      last_wb += d_wb;
-      NET_READ_DYN_STAT(net_calls_to_writetonet_afterpoll_stat, sval, cval);
+    last_wb += d_wb;
+    NET_READ_DYN_SUM(net_calls_to_writetonet_afterpoll_stat, sval);
     int64 d_w = sval - last_w;
-      last_w += d_w;
+    last_w += d_w;
 
-      NET_READ_DYN_STAT(net_read_bytes_stat, sval, cval);
+    NET_READ_DYN_STAT(net_read_bytes_stat, sval, cval);
     int64 d_nrb = sval - last_nrb;
-      last_nrb += d_nrb;
+    last_nrb += d_nrb;
     int64 d_nr = cval - last_nr;
-      last_nr += d_nr;
+    last_nr += d_nr;
 
-      NET_READ_DYN_STAT(net_write_bytes_stat, sval, cval);
+    NET_READ_DYN_STAT(net_write_bytes_stat, sval, cval);
     int64 d_nwb = sval - last_nwb;
-      last_nwb += d_nwb;
+    last_nwb += d_nwb;
     int64 d_nw = cval - last_nw;
-      last_nw += d_nw;
+    last_nw += d_nw;
 
-      NET_READ_DYN_STAT(net_connections_currently_open_stat, sval, cval);
-    int64 d_o = cval;
+    NET_READ_GLOBAL_DYN_SUM(net_connections_currently_open_stat, sval);
+    int64 d_o = sval;
 
-      NET_READ_DYN_STAT(net_handler_run_stat, sval, cval);
+    NET_READ_DYN_STAT(net_handler_run_stat, sval, cval);
     int64 d_p = cval - last_p;
-      last_p += d_p;
-      printf("%lld:%lld %lld:%lld %lld:%lld %lld:%lld %lld %lld\n",
-                 d_rb, d_r, d_wb, d_w, d_nrb, d_nr, d_nwb, d_nw, d_o, d_p);
+    last_p += d_p;
+    printf("%lld:%lld %lld:%lld %lld:%lld %lld:%lld %lld %lld\n",
+           d_rb, d_r, d_wb, d_w, d_nrb, d_nr, d_nwb, d_nw, d_o, d_p);
 #ifdef ENABLE_TIME_TRACE
     int i;
-      fprintf(fp, "immediate_events_time_dist\n");
+    fprintf(fp, "immediate_events_time_dist\n");
     for (i = 0; i < TIME_DIST_BUCKETS_SIZE; i++)
     {
       if ((i % 10) == 0)
@@ -1422,7 +1397,7 @@ run_AutoStop()
     eventProcessor.schedule_in(NEW(new AutoStopCont), HRTIME_SECONDS(atoi(getenv("PROXY_AUTO_EXIT"))));
 }
 
-#ifndef INK_NO_TESTS
+#if TS_HAS_TESTS
 struct RegressionCont: public Continuation
 {
   int initialized;
@@ -1460,7 +1435,7 @@ run_RegressionTest()
   if (regression_level)
     eventProcessor.schedule_every(NEW(new RegressionCont), HRTIME_SECONDS(1));
 }
-#endif //INK_NO_TESTS
+#endif //TS_HAS_TESTS
 
 
 static void
@@ -1530,8 +1505,8 @@ adjust_num_of_net_threads(void)
     TS_ReadConfigInteger(num_of_threads_tmp, "proxy.config.exec_thread.limit");
     if (num_of_threads_tmp <= 0)
       num_of_threads_tmp = 1;
-    else if (num_of_threads_tmp > MAX_NUMBER_OF_THREADS)
-      num_of_threads_tmp = MAX_NUMBER_OF_THREADS;
+    else if (num_of_threads_tmp > MAX_EVENT_THREADS)
+      num_of_threads_tmp = MAX_EVENT_THREADS;
     num_of_net_threads = num_of_threads_tmp;
     if (is_debug_tag_set("threads")) {
       fprintf(stderr, "# net threads Auto config - disabled - use config file settings\n");
@@ -1543,8 +1518,8 @@ adjust_num_of_net_threads(void)
     if (num_of_threads_tmp) {
       num_of_net_threads = num_of_threads_tmp;
     }
-    if (unlikely(num_of_threads_tmp > MAX_NUMBER_OF_THREADS)) {
-      num_of_threads_tmp = MAX_NUMBER_OF_THREADS;
+    if (unlikely(num_of_threads_tmp > MAX_EVENT_THREADS)) {
+      num_of_threads_tmp = MAX_EVENT_THREADS;
     }
     if (is_debug_tag_set("threads")) {
       fprintf(stderr, "# net threads Auto config - enabled\n");
@@ -1682,7 +1657,6 @@ main(int argc, char **argv)
 #if TS_HAS_PROFILER
   ProfilerStart("/tmp/ts.prof");
 #endif
-  int mem_throttling;
 
   NOWARN_UNUSED(argc);
 
@@ -1752,8 +1726,6 @@ main(int argc, char **argv)
   init_core_size();
 
   init_system();
-  // Init memalign heaps
-  init_ink_memalign_heap();
 
   // Adjust system and process settings
   adjust_sys_settings();
@@ -1761,8 +1733,8 @@ main(int argc, char **argv)
   // Restart syslog now that we have configuration info
   syslog_log_configure();
 
-  if (!use_accept_thread)
-    TS_ReadConfigInteger(use_accept_thread, "proxy.config.accept_threads");
+  if (!num_accept_threads)
+    TS_ReadConfigInteger(num_accept_threads, "proxy.config.accept_threads");
 
   // This call is required for win_9xMe
   //without this this_ethread() is failing when
@@ -1792,13 +1764,7 @@ main(int argc, char **argv)
   // before calling RecProcessInit()
 
   TS_ReadConfigInteger(history_info_enabled, "proxy.config.history_info_enabled");
-  TS_ReadConfigInteger(mem_throttling, "proxy.config.resource.target_maxmem_mb");
   TS_ReadConfigInteger(res_track_memory, "proxy.config.res_track_memory");
-
-  if (!res_track_memory && mem_throttling > 0) {
-    Warning("Cannot disable proxy.config.res_track_memory when " "proxy.config.resource.target_maxmem_mb is enabled");
-    res_track_memory = 1;
-  }
 
   {
     XMLDom schema;
@@ -1913,24 +1879,16 @@ main(int argc, char **argv)
         _exit(1);               // in error
     }
   } else {
-#ifndef RNI_ONLY
 #ifndef INK_NO_ACL
     initCacheControl();
 #endif
     initCongestionControl();
-
-    //initMixtAPIInternal();
-    // #ifndef INK_NO_ACL
-    //     initContentControl();
-    // #endif
     initIPAllow();
-    initCacheInspectorAllow();
     ParentConfig::startup();
-#ifndef INK_NO_HOSTDB
-    // fixme
+#ifdef SPLIT_DNS
     SplitDNSConfig::startup();
 #endif
-#endif
+
 
     if (!accept_mss)
       TS_ReadConfigInteger(accept_mss, "proxy.config.net.sock_mss_in");
@@ -1959,7 +1917,7 @@ main(int argc, char **argv)
     Log::init(remote_management_flag ? 0 : Log::NO_REMOTE_MANAGEMENT);
 #endif
 
-#if !defined(RNI_ONLY) && !defined(INK_NO_API)
+#if !defined(TS_NO_API)
     plugin_init(system_config_directory, true); // extensions.config
 #endif
 
@@ -1973,14 +1931,6 @@ main(int argc, char **argv)
 
     // Initialize Response Body Factory
     body_factory = NEW(new HttpBodyFactory);
-
-    // Initialize the system for RNI support
-    // All this is handled by plugin support code
-    //Rni::init ();
-#ifdef RNI_STATIC_LINK
-    rniProcessor.start();
-#endif
-
 
     // Start IP to userName cache processor used
     // by RADIUS and FW1 plug-ins.
@@ -2002,7 +1952,7 @@ main(int argc, char **argv)
     // if in test hook mode, run the test hook //
     /////////////////////////////////////////////
 
-#ifndef INK_NO_TESTS
+#if TS_HAS_TESTS
     if (run_test_hook) {
       Note("Running TestHook Instead of Main Server");
       run_TestHook();
@@ -2013,8 +1963,7 @@ main(int argc, char **argv)
     // main server logic initiated here //
     //////////////////////////////////////
 
-#ifndef RNI_ONLY
-#ifndef INK_NO_API
+#ifndef TS_NO_API
     plugin_init(system_config_directory, false);        // plugin.config
 #else
     api_init();                 // we still need to initialize some of the data structure other module needs.
@@ -2022,7 +1971,7 @@ main(int argc, char **argv)
     init_inkapi_stat_system();
     // i.e. http_global_hooks
 #endif
-#ifndef INK_NO_TRANSFORM
+#ifndef TS_NO_TRANSFORM
     transformProcessor.start();
 #endif
 
@@ -2040,7 +1989,7 @@ main(int argc, char **argv)
     TS_ReadConfigInteger(http_enabled, "proxy.config.http.enabled");
 
     if (http_enabled) {
-      start_HttpProxyServer(http_accept_file_descriptor, http_accept_port_number, ssl_accept_file_descriptor);
+      start_HttpProxyServer(http_accept_file_descriptor, http_accept_port_number, ssl_accept_file_descriptor, num_accept_threads);
       int hashtable_enabled = 0;
       TS_ReadConfigInteger(hashtable_enabled, "proxy.config.connection_collapsing.hashtable_enabled");
       if (hashtable_enabled) {
@@ -2050,12 +1999,11 @@ main(int argc, char **argv)
 #ifndef INK_NO_ICP
     icpProcessor.start();
 #endif
-#endif
 
     int back_door_port = NO_FD;
     TS_ReadConfigInteger(back_door_port, "proxy.config.process_manager.mgmt_port");
     if (back_door_port != NO_FD)
-      start_HttpProxyServerBackDoor(back_door_port);
+      start_HttpProxyServerBackDoor(back_door_port, num_accept_threads > 0 ? 1 : 0); // One accept thread is enough
 
 #ifndef INK_NO_SOCKS
     if (netProcessor.socks_conf_stuff->accept_enabled) {
@@ -2079,17 +2027,15 @@ main(int argc, char **argv)
 
     Note("traffic server running");
 
-#ifndef INK_NO_TESTS
+#if TS_HAS_TESTS
     TransformTest::run();
-#endif
-
 #ifndef INK_NO_HOSTDB
     run_HostDBTest();
 #endif
     //  run_SimpleHttp();
-#ifndef INK_NO_TESTS
     run_RegressionTest();
 #endif
+
     run_AutoStop();
 
   }
@@ -2187,7 +2133,7 @@ xmlBandwidthSchemaRead(XMLNode * node)
 }
 
 
-#ifndef INK_NO_TESTS
+#if TS_HAS_TESTS
 //////////////////////////////
 // Unit Regresion Test Hook //
 //////////////////////////////

@@ -234,6 +234,7 @@ public:
   int recursion;
   ink_hrtime submit_time;
   OOB_callback *oob_ptr;
+  bool from_accept_thread;
 
   int startEvent(int event, Event *e);
   int acceptEvent(int event, Event *e);
@@ -256,9 +257,7 @@ typedef int (UnixNetVConnection::*NetVConnHandler) (int, void *);
 TS_INLINE void
 UnixNetVConnection::set_remote_addr()
 {
-  remote_addr.sin_family = con.sa.sin_family;
-  remote_addr.sin_port = htons(port);
-  remote_addr.sin_addr.s_addr = ip;
+  remote_addr = con.sa;
 }
 
 TS_INLINE void

@@ -785,9 +785,7 @@ mgmt_sleep_sec(int seconds)
 void
 mgmt_sleep_msec(int msec)
 {
-#if !defined (alpha) && !defined(__alpha)
   usleep(msec * 1000);
-#endif
 }
 #else
 void

@@ -70,7 +70,6 @@
 #define HTTP_NET_VCONNECTION_EVENT_EVENTS_START   1500
 #define GC_EVENT_EVENTS_START                     1600
 #define ICP_EVENT_EVENTS_START                    1800
-#define RNI_EVENT_EVENTS_START                    1900
 #define TRANSFORM_EVENTS_START                    2000
 #define STAT_PAGES_EVENTS_START                   2100
 #define HTTP_SESSION_EVENTS_START                 2200
@@ -80,19 +79,13 @@
 #define NT_ASYNC_IO_EVENT_EVENTS_START            3100
 #define RAFT_EVENT_EVENTS_START                   3200
 #define SIMPLE_EVENT_EVENTS_START                 3300
-#define LDAP_EVENT_EVENTS_START                   3400
 #define UPDATE_EVENT_EVENTS_START                 3500
-#define NTLM_EVENT_EVENTS_START                   3700
 #define LOG_COLLATION_EVENT_EVENTS_START          3800
 #define AIO_EVENT_EVENTS_START                    3900
 #define BLOCK_CACHE_EVENT_EVENTS_START            4000
 #define UTILS_EVENT_EVENTS_START                  5000
 #define CONGESTION_EVENT_EVENTS_START             5100
-#define MIXT_API_EVENT_EVENTS_START               50000
-#define QT_EVENT_EVENTS_START                     58000
-#define WMT_EVENT_EVENTS_START                    59000
 #define INK_API_EVENT_EVENTS_START                60000
-#define RADIUS_EVENT_EVENTS_START                 61000
 #define SRV_EVENT_EVENTS_START	                  62000
 #define REMAP_EVENT_EVENTS_START                  63000
 
@@ -109,7 +102,7 @@ const int N_EVENT_TYPES = ET_LAST;
 
 typedef int EventType;
 const int ET_CALL = 0;
-const int MAX_EVENT_TYPES = 17;
+const int MAX_EVENT_TYPES = 8; // TODO: How is this sized? Where does 8 come from? Or 17 ?
 
 class EThread;
 

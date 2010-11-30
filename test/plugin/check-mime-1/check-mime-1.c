@@ -23,9 +23,9 @@
 
 /******************************************************************************
  * This plugin is composed of three parts:
- * 1. Play with the functions in INKMimeHdr* and INKMimeParser* categories.
- * 2. Play with the functions in INKHttpHdr* and INKUrl* categories.
- * 3. Call INKHttpHdrReasonLookup and print out the default reason for each
+ * 1. Play with the functions in TSMimeHdr* and TSMimeParser* categories.
+ * 2. Play with the functions in TSHttpHdr* and TSUrl* categories.
+ * 3. Call TSHttpHdrReasonLookup and print out the default reason for each
  *    status.
  ******************************************************************************/
 
@@ -48,10 +48,10 @@ int sect = 0;
 
 
 #define PLUGIN_NAME "check-mime-1"
-#define VALID_POINTER(X) ((X != NULL) && (X != INK_ERROR_PTR))
+#define VALID_POINTER(X) ((X != NULL) && (X != TS_ERROR_PTR))
 #define LOG_SET_FUNCTION_NAME(NAME) const char * FUNCTION_NAME = NAME
 #define LOG_ERROR(API_NAME) { \
-    INKDebug(PLUGIN_NAME, "%s: %s %s %s File %s, line number %d", PLUGIN_NAME, API_NAME, "APIFAIL", \
+    TSDebug(PLUGIN_NAME, "%s: %s %s %s File %s, line number %d", PLUGIN_NAME, API_NAME, "APIFAIL", \
 	     FUNCTION_NAME, __FILE__, __LINE__); \
 }
 #define LOG_ERROR_AND_RETURN(API_NAME) { \
@@ -64,10 +64,10 @@ int sect = 0;
 }
 #define LOG_ERROR_AND_REENABLE(API_NAME) { \
   LOG_ERROR(API_NAME); \
-  INKHttpTxnReenable(txnp, INK_EVENT_HTTP_CONTINUE); \
+  TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE); \
 }
 #define LOG_ERROR_NEG(API_NAME) { \
-    INKDebug(PLUGIN_NAME, "%s: %s %s %s File %s, line number %d",PLUGIN_NAME, API_NAME, "NEGAPIFAIL", \
+    TSDebug(PLUGIN_NAME, "%s: %s %s %s File %s, line number %d",PLUGIN_NAME, API_NAME, "NEGAPIFAIL", \
              FUNCTION_NAME, __FILE__, __LINE__); \
 }
 
@@ -76,44 +76,44 @@ int sect = 0;
  * print out the header information in the output buffer.
  ******************************************************************************/
 static void
-printHeader(INKMBuffer bufp, INKMLoc hdr_loc, INKIOBuffer output_buffer, int section, const char *str)
+printHeader(TSMBuffer bufp, TSMLoc hdr_loc, TSIOBuffer output_buffer, int section, const char *str)
 {
   LOG_SET_FUNCTION_NAME("printHeader");
 
-  INKIOBufferReader reader = NULL;
+  TSIOBufferReader reader = NULL;
   int total_avail;
 
-  INKIOBufferBlock block;
+  TSIOBufferBlock block;
   const char *block_start;
   int block_avail;
 
   char *output_string = NULL;
   int output_len;
 
-  if ((reader = INKIOBufferReaderAlloc(output_buffer)) == INK_ERROR_PTR)
-    LOG_ERROR_AND_CLEANUP("INKIOBufferReaderAlloc");
+  if ((reader = TSIOBufferReaderAlloc(output_buffer)) == TS_ERROR_PTR)
+    LOG_ERROR_AND_CLEANUP("TSIOBufferReaderAlloc");
 
   /* Find out how the big the complete header is by
      seeing the total bytes in the buffer.  We need to
      look at the buffer rather than the first block to
      see the size of the entire header */
-  if ((total_avail = INKIOBufferReaderAvail(reader)) == INK_ERROR)
-    LOG_ERROR_AND_CLEANUP("INKIOBufferReaderAvail");
+  if ((total_avail = TSIOBufferReaderAvail(reader)) == TS_ERROR)
+    LOG_ERROR_AND_CLEANUP("TSIOBufferReaderAvail");
 
   /* Allocate the string with an extra byte for the string
      terminator */
-  output_string = (char *) INKmalloc(total_avail + 1);
+  output_string = (char *) TSmalloc(total_avail + 1);
   output_len = 0;
 
   /* We need to loop over all the buffer blocks to make
      sure we get the complete header since the header can
      be in multiple blocks */
-  if ((block = INKIOBufferReaderStart(reader)) == INK_ERROR_PTR)
-    LOG_ERROR_AND_CLEANUP("INKIOBufferReaderStart");
+  if ((block = TSIOBufferReaderStart(reader)) == TS_ERROR_PTR)
+    LOG_ERROR_AND_CLEANUP("TSIOBufferReaderStart");
   while (block) {
 
-    if ((block_start = INKIOBufferBlockReadStart(block, reader, &block_avail)) == INK_ERROR_PTR)
-      LOG_ERROR_AND_CLEANUP("INKIOBufferBlockReadStart");
+    if ((block_start = TSIOBufferBlockReadStart(block, reader, &block_avail)) == TS_ERROR_PTR)
+      LOG_ERROR_AND_CLEANUP("TSIOBufferBlockReadStart");
 
     /* We'll get a block pointer back even if there is no data
        left to read so check for this condition and break out of
@@ -128,13 +128,13 @@ printHeader(INKMBuffer bufp, INKMLoc hdr_loc, INKIOBuffer output_buffer, int sec
     output_len += block_avail;
 
     /* Consume the data so that we get to the next block */
-    if (INKIOBufferReaderConsume(reader, block_avail) == INK_ERROR)
-      LOG_ERROR_AND_CLEANUP("INKIOBufferBlockReadStart");
+    if (TSIOBufferReaderConsume(reader, block_avail) == TS_ERROR)
+      LOG_ERROR_AND_CLEANUP("TSIOBufferBlockReadStart");
 
     /* Get the next block now that we've consumed the
        data off the last block */
-    if ((block = INKIOBufferReaderStart(reader)) == INK_ERROR_PTR)
-      LOG_ERROR_AND_CLEANUP("INKIOBufferReaderStart");
+    if ((block = TSIOBufferReaderStart(reader)) == TS_ERROR_PTR)
+      LOG_ERROR_AND_CLEANUP("TSIOBufferReaderStart");
   }
 
   /* Terminate the string */
@@ -143,48 +143,48 @@ printHeader(INKMBuffer bufp, INKMLoc hdr_loc, INKIOBuffer output_buffer, int sec
 
   /* Although I'd never do this a production plugin, printf
      the header so that we can see it's all there */
-  INKDebug(DEBUG_TAG, "(%d) **************** output header ****************", section);
-  INKDebug(DEBUG_TAG, "%s", output_string);
+  TSDebug(DEBUG_TAG, "(%d) **************** output header ****************", section);
+  TSDebug(DEBUG_TAG, "%s", output_string);
 
   /* compare the output_string and the str passed in */
   if (strcmp(output_string, str) != 0) {
-    INKDebug(DEBUG_TAG, "(%d) Some errors occurred in the above output header\n", section);
+    TSDebug(DEBUG_TAG, "(%d) Some errors occurred in the above output header\n", section);
   }
 
   /* Clean up */
 Lcleanup:
   if (VALID_POINTER(reader))
-    INKIOBufferReaderFree(reader);
+    TSIOBufferReaderFree(reader);
   if (VALID_POINTER(output_string))
-    INKfree(output_string);
+    TSfree(output_string);
 }
 
 /*
- * Play with the functions in INKMimeHdr* and INKMimeParser* categories.
+ * Play with the functions in TSMimeHdr* and TSMimeParser* categories.
  * This function covers the following functions:
- *   - INKMimeHdrParse
- *   - INKMimeParserClear
- *   - INKMimeParserCreate
- *   - INKMimeParserDestroy
+ *   - TSMimeHdrParse
+ *   - TSMimeParserClear
+ *   - TSMimeParserCreate
+ *   - TSMimeParserDestroy
  *
- *   - INKMimeHdrClone
- *   - INKMimeHdrFieldClone
- *   - INKMimeHdrFieldCopy
- *   - INKMimeHdrDestroy
- *   - INKMimeHdrFieldDestroy
+ *   - TSMimeHdrClone
+ *   - TSMimeHdrFieldClone
+ *   - TSMimeHdrFieldCopy
+ *   - TSMimeHdrDestroy
+ *   - TSMimeHdrFieldDestroy
  */
 static int
 mimeHdrHandler()
 {
   LOG_SET_FUNCTION_NAME("mimeHdrHandler");
-  INKMBuffer parseBuffer = NULL;
-  INKMBuffer destBuffer = NULL;
-  INKMLoc parseHdrLoc = NULL;
-  INKMLoc destHdrLoc = NULL;
-  INKMLoc srcViaFieldLoc = NULL, destViaFieldLoc = NULL, srcCLFieldLoc = NULL, destCLFieldLoc = NULL;
-  INKMimeParser mimeParser = NULL;
+  TSMBuffer parseBuffer = NULL;
+  TSMBuffer destBuffer = NULL;
+  TSMLoc parseHdrLoc = NULL;
+  TSMLoc destHdrLoc = NULL;
+  TSMLoc srcViaFieldLoc = NULL, destViaFieldLoc = NULL, srcCLFieldLoc = NULL, destCLFieldLoc = NULL;
+  TSMimeParser mimeParser = NULL;
   int status;
-  INKIOBuffer outBuf1 = NULL, outBuf2 = NULL, outBuf3 = NULL;
+  TSIOBuffer outBuf1 = NULL, outBuf2 = NULL, outBuf3 = NULL;
 
   const char *mime_hdr_str =
     "Server: Netscape-Enterprise/4.1\r\nDate: Tue, 31 Oct 2000 03:38:19 GMT\r\nContent-type: text/html\r\nAge: 3476\r\nContent-Length: 1024\r\nVia: HTTP/1.1 ts-lnx12 (Traffic-Server/4.0.0 [cHs f ])\r\n\r\n";
@@ -198,114 +198,114 @@ mimeHdrHandler()
   const char *via = "HTTP/1.1 ts-sun26 (Traffic-Server/4.0.0 [cHs f ])";
   int content_len = 2048;
 
-  /* Create a INKMBuffer and parse a mime header for it */
-  if ((mimeParser = INKMimeParserCreate()) == INK_ERROR_PTR || mimeParser == NULL)
-    LOG_ERROR_AND_CLEANUP("INKMimeParserCreate");
-  if ((parseBuffer = INKMBufferCreate()) == INK_ERROR_PTR || parseBuffer == NULL)
-    LOG_ERROR_AND_CLEANUP("INKMBufferCreate");
-  if ((parseHdrLoc = INKMimeHdrCreate(parseBuffer)) == INK_ERROR_PTR || parseHdrLoc == NULL)
-    LOG_ERROR_AND_CLEANUP("INKMimeHdrCreate");
+  /* Create a TSMBuffer and parse a mime header for it */
+  if ((mimeParser = TSMimeParserCreate()) == TS_ERROR_PTR || mimeParser == NULL)
+    LOG_ERROR_AND_CLEANUP("TSMimeParserCreate");
+  if ((parseBuffer = TSMBufferCreate()) == TS_ERROR_PTR || parseBuffer == NULL)
+    LOG_ERROR_AND_CLEANUP("TSMBufferCreate");
+  if ((parseHdrLoc = TSMimeHdrCreate(parseBuffer)) == TS_ERROR_PTR || parseHdrLoc == NULL)
+    LOG_ERROR_AND_CLEANUP("TSMimeHdrCreate");
 
-  status = INKMimeHdrParse(mimeParser, parseBuffer, parseHdrLoc, &mime_hdr_str, mime_hdr_str + strlen(mime_hdr_str));
-  if (status != INK_PARSE_DONE)
-    LOG_ERROR_AND_CLEANUP("INKMimeHdrParse");
+  status = TSMimeHdrParse(mimeParser, parseBuffer, parseHdrLoc, &mime_hdr_str, mime_hdr_str + strlen(mime_hdr_str));
+  if (status != TS_PARSE_DONE)
+    LOG_ERROR_AND_CLEANUP("TSMimeHdrParse");
 
   /* clear the parser and parse another mime header for it */
-  if (INKMimeParserClear(mimeParser) == INK_ERROR)
-    LOG_ERROR_AND_CLEANUP("INKMimeParserClear");
+  if (TSMimeParserClear(mimeParser) == TS_ERROR)
+    LOG_ERROR_AND_CLEANUP("TSMimeParserClear");
 
   /* (0) output the parsed mime header */
-  if ((outBuf1 = INKIOBufferCreate()) == INK_ERROR_PTR || outBuf1 == NULL)
-    LOG_ERROR_AND_CLEANUP("INKIOBufferCreate");
-  if (INKMimeHdrPrint(parseBuffer, parseHdrLoc, outBuf1) == INK_ERROR)
-    LOG_ERROR_AND_CLEANUP("INKMimeHdrPrint");
+  if ((outBuf1 = TSIOBufferCreate()) == TS_ERROR_PTR || outBuf1 == NULL)
+    LOG_ERROR_AND_CLEANUP("TSIOBufferCreate");
+  if (TSMimeHdrPrint(parseBuffer, parseHdrLoc, outBuf1) == TS_ERROR)
+    LOG_ERROR_AND_CLEANUP("TSMimeHdrPrint");
 
   printHeader(parseBuffer, parseHdrLoc, outBuf1, sect++, str1);
 
 
-  /* create another INKMBuffer and clone the mime header in the previous INKMBuffer to it */
-  if ((destBuffer = INKMBufferCreate()) == INK_ERROR_PTR || destBuffer == NULL)
-    LOG_ERROR_AND_CLEANUP("INKMBufferCreate");
-  if ((destHdrLoc = INKMimeHdrClone(destBuffer, parseBuffer, parseHdrLoc)) == INK_ERROR_PTR || destHdrLoc == NULL)
-    LOG_ERROR_AND_CLEANUP("INKMimeHdrClone");
+  /* create another TSMBuffer and clone the mime header in the previous TSMBuffer to it */
+  if ((destBuffer = TSMBufferCreate()) == TS_ERROR_PTR || destBuffer == NULL)
+    LOG_ERROR_AND_CLEANUP("TSMBufferCreate");
+  if ((destHdrLoc = TSMimeHdrClone(destBuffer, parseBuffer, parseHdrLoc)) == TS_ERROR_PTR || destHdrLoc == NULL)
+    LOG_ERROR_AND_CLEANUP("TSMimeHdrClone");
 
   /* (1) output the cloned mime header */
-  if ((outBuf2 = INKIOBufferCreate()) == INK_ERROR_PTR || outBuf2 == NULL)
-    LOG_ERROR_AND_CLEANUP("INKIOBufferCreate");
-  if ((INKMimeHdrPrint(destBuffer, destHdrLoc, outBuf2)) == INK_ERROR)
-    LOG_ERROR_AND_CLEANUP("INKMimeHdrPrint");
+  if ((outBuf2 = TSIOBufferCreate()) == TS_ERROR_PTR || outBuf2 == NULL)
+    LOG_ERROR_AND_CLEANUP("TSIOBufferCreate");
+  if ((TSMimeHdrPrint(destBuffer, destHdrLoc, outBuf2)) == TS_ERROR)
+    LOG_ERROR_AND_CLEANUP("TSMimeHdrPrint");
 
   printHeader(destBuffer, destHdrLoc, outBuf2, sect++, str1);
 
 
   /* clone the Via field */
-  if ((srcViaFieldLoc = INKMimeHdrFieldRetrieve(parseBuffer, parseHdrLoc, INK_MIME_FIELD_VIA)) == INK_ERROR_PTR ||
+  if ((srcViaFieldLoc = TSMimeHdrFieldFind(parseBuffer, parseHdrLoc, TS_MIME_FIELD_VIA, TS_MIME_LEN_VIA)) == TS_ERROR_PTR ||
       srcViaFieldLoc == NULL)
-    LOG_ERROR_AND_CLEANUP("INKMimeHdrFieldRetrieve");
+    LOG_ERROR_AND_CLEANUP("TSMimeHdrFieldFind");
 
-  if (INKMimeHdrFieldLengthGet(parseBuffer, parseHdrLoc, srcViaFieldLoc) == INK_ERROR) {
-    LOG_ERROR("INKMimeHdrFieldLengthGet");
+  if (TSMimeHdrFieldLengthGet(parseBuffer, parseHdrLoc, srcViaFieldLoc) == TS_ERROR) {
+    LOG_ERROR("TSMimeHdrFieldLengthGet");
   }
 
-  if (INKMimeHdrFieldValueStringSet(parseBuffer, parseHdrLoc, srcViaFieldLoc, 0, via, strlen(via)) == INK_ERROR)
-    LOG_ERROR_AND_CLEANUP("INKMimeHdrFieldValueStringSet");
-  if ((destViaFieldLoc = INKMimeHdrFieldClone(destBuffer, destHdrLoc, parseBuffer,
-                                              parseHdrLoc, srcViaFieldLoc)) == INK_ERROR_PTR || destViaFieldLoc == NULL)
-    LOG_ERROR_AND_CLEANUP("INKMimeHdrFieldClone");
-  if ((INKMimeHdrFieldAppend(destBuffer, destHdrLoc, destViaFieldLoc)) == INK_ERROR)
-    LOG_ERROR_AND_CLEANUP("INKMimeHdrFieldAppend");
+  if (TSMimeHdrFieldValueStringSet(parseBuffer, parseHdrLoc, srcViaFieldLoc, 0, via, strlen(via)) == TS_ERROR)
+    LOG_ERROR_AND_CLEANUP("TSMimeHdrFieldValueStringSet");
+  if ((destViaFieldLoc = TSMimeHdrFieldClone(destBuffer, destHdrLoc, parseBuffer,
+                                              parseHdrLoc, srcViaFieldLoc)) == TS_ERROR_PTR || destViaFieldLoc == NULL)
+    LOG_ERROR_AND_CLEANUP("TSMimeHdrFieldClone");
+  if ((TSMimeHdrFieldAppend(destBuffer, destHdrLoc, destViaFieldLoc)) == TS_ERROR)
+    LOG_ERROR_AND_CLEANUP("TSMimeHdrFieldAppend");
 
   /* copy the Content-Length field */
   if ((srcCLFieldLoc =
-       INKMimeHdrFieldRetrieve(parseBuffer, parseHdrLoc, INK_MIME_FIELD_CONTENT_LENGTH)) == INK_ERROR_PTR ||
+       TSMimeHdrFieldFind(parseBuffer, parseHdrLoc, TS_MIME_FIELD_CONTENT_LENGTH, TS_MIME_LEN_CONTENT_LENGTH)) == TS_ERROR_PTR ||
       srcCLFieldLoc == NULL)
-    LOG_ERROR_AND_CLEANUP("INKMimeHdrFieldRetrieve");
-  if (INKMimeHdrFieldValueIntSet(parseBuffer, parseHdrLoc, srcCLFieldLoc, 0, content_len) == INK_ERROR)
-    LOG_ERROR_AND_CLEANUP("INKMimeHdrFieldValueIntSet");
-  if ((destCLFieldLoc = INKMimeHdrFieldRetrieve(destBuffer, destHdrLoc, INK_MIME_FIELD_CONTENT_LENGTH)) == INK_ERROR_PTR
+    LOG_ERROR_AND_CLEANUP("TSMimeHdrFieldFind");
+  if (TSMimeHdrFieldValueIntSet(parseBuffer, parseHdrLoc, srcCLFieldLoc, 0, content_len) == TS_ERROR)
+    LOG_ERROR_AND_CLEANUP("TSMimeHdrFieldValueIntSet");
+  if ((destCLFieldLoc = TSMimeHdrFieldFind(destBuffer, destHdrLoc, TS_MIME_FIELD_CONTENT_LENGTH, TS_MIME_LEN_CONTENT_LENGTH)) == TS_ERROR_PTR
       || destCLFieldLoc == NULL)
-    LOG_ERROR_AND_CLEANUP("INKMimeHdrFieldRetrieve");
-  if (INKMimeHdrFieldCopy(destBuffer, destHdrLoc, destCLFieldLoc, parseBuffer, parseHdrLoc, srcCLFieldLoc) == INK_ERROR)
-    LOG_ERROR_AND_CLEANUP("INKMimeHdrFieldCopy(");
+    LOG_ERROR_AND_CLEANUP("TSMimeHdrFieldFind");
+  if (TSMimeHdrFieldCopy(destBuffer, destHdrLoc, destCLFieldLoc, parseBuffer, parseHdrLoc, srcCLFieldLoc) == TS_ERROR)
+    LOG_ERROR_AND_CLEANUP("TSMimeHdrFieldCopy(");
 
 
   /* (2) output the modified cloned mime header */
-  if ((outBuf3 = INKIOBufferCreate()) == INK_ERROR_PTR || outBuf3 == NULL)
-    LOG_ERROR_AND_CLEANUP("INKIOBufferCreate");
-  if (INKMimeHdrPrint(destBuffer, destHdrLoc, outBuf3) == INK_ERROR)
-    LOG_ERROR_AND_CLEANUP("INKMimeHdrPrint");
+  if ((outBuf3 = TSIOBufferCreate()) == TS_ERROR_PTR || outBuf3 == NULL)
+    LOG_ERROR_AND_CLEANUP("TSIOBufferCreate");
+  if (TSMimeHdrPrint(destBuffer, destHdrLoc, outBuf3) == TS_ERROR)
+    LOG_ERROR_AND_CLEANUP("TSMimeHdrPrint");
 
   printHeader(destBuffer, destHdrLoc, outBuf3, sect++, str2);
 
   /* negative test */
 #ifdef DEBUG
-  if (INKMimeHdrCreate(NULL) != INK_ERROR_PTR)
-    LOG_ERROR_NEG("INKMimeHdrCreate");
+  if (TSMimeHdrCreate(NULL) != TS_ERROR_PTR)
+    LOG_ERROR_NEG("TSMimeHdrCreate");
 
-  if (INKMimeHdrClone(NULL, parseBuffer, parseHdrLoc) != INK_ERROR_PTR)
-    LOG_ERROR_NEG("INKMimeHdrClone");
-  if (INKMimeHdrClone(destBuffer, NULL, parseHdrLoc) != INK_ERROR_PTR)
-    LOG_ERROR_NEG("INKMimeHdrClone");
-  if (INKMimeHdrClone(destBuffer, parseBuffer, NULL) != INK_ERROR_PTR)
-    LOG_ERROR_NEG("INKMimeHdrClone");
+  if (TSMimeHdrClone(NULL, parseBuffer, parseHdrLoc) != TS_ERROR_PTR)
+    LOG_ERROR_NEG("TSMimeHdrClone");
+  if (TSMimeHdrClone(destBuffer, NULL, parseHdrLoc) != TS_ERROR_PTR)
+    LOG_ERROR_NEG("TSMimeHdrClone");
+  if (TSMimeHdrClone(destBuffer, parseBuffer, NULL) != TS_ERROR_PTR)
+    LOG_ERROR_NEG("TSMimeHdrClone");
 
-  if (INKMimeHdrFieldClone(NULL, NULL, NULL, NULL, NULL) != INK_ERROR_PTR)
-    LOG_ERROR_NEG("INKMimeHdrFieldClone");
+  if (TSMimeHdrFieldClone(NULL, NULL, NULL, NULL, NULL) != TS_ERROR_PTR)
+    LOG_ERROR_NEG("TSMimeHdrFieldClone");
 
-  if (INKMimeHdrFieldCopy(NULL, NULL, NULL, NULL, NULL, NULL) != INK_ERROR)
-    LOG_ERROR_NEG("INKMimeHdrFieldCopy");
+  if (TSMimeHdrFieldCopy(NULL, NULL, NULL, NULL, NULL, NULL) != TS_ERROR)
+    LOG_ERROR_NEG("TSMimeHdrFieldCopy");
 
-  if (INKMimeParserClear(NULL) != INK_ERROR)
-    LOG_ERROR_NEG("INKMimeParserClear");
+  if (TSMimeParserClear(NULL) != TS_ERROR)
+    LOG_ERROR_NEG("TSMimeParserClear");
 
-  if (INKMimeHdrFieldLengthGet(NULL, parseHdrLoc, srcViaFieldLoc) != INK_ERROR) {
-    LOG_ERROR_NEG("INKMimeHdrFieldLengthGet");
+  if (TSMimeHdrFieldLengthGet(NULL, parseHdrLoc, srcViaFieldLoc) != TS_ERROR) {
+    LOG_ERROR_NEG("TSMimeHdrFieldLengthGet");
   }
-  if (INKMimeHdrFieldLengthGet(parseBuffer, NULL, srcViaFieldLoc) != INK_ERROR) {
-    LOG_ERROR_NEG("INKMimeHdrFieldLengthGet");
+  if (TSMimeHdrFieldLengthGet(parseBuffer, NULL, srcViaFieldLoc) != TS_ERROR) {
+    LOG_ERROR_NEG("TSMimeHdrFieldLengthGet");
   }
-  if (INKMimeHdrFieldLengthGet(parseBuffer, parseHdrLoc, NULL) != INK_ERROR) {
-    LOG_ERROR_NEG("INKMimeHdrFieldLengthGet");
+  if (TSMimeHdrFieldLengthGet(parseBuffer, parseHdrLoc, NULL) != TS_ERROR) {
+    LOG_ERROR_NEG("TSMimeHdrFieldLengthGet");
   }
 #endif
 
@@ -314,80 +314,80 @@ Lcleanup:
 
   /* negative test for cleanup functions */
 #ifdef DEBUG
-  if (INKMimeParserDestroy(NULL) != INK_ERROR) {
-    LOG_ERROR_NEG("INKMimeParserDestroy");
+  if (TSMimeParserDestroy(NULL) != TS_ERROR) {
+    LOG_ERROR_NEG("TSMimeParserDestroy");
   }
 
-  if (INKMimeHdrFieldDestroy(NULL, destHdrLoc, destViaFieldLoc) != INK_ERROR) {
-    LOG_ERROR_NEG("INKMimerHdrFieldDestroy");
+  if (TSMimeHdrFieldDestroy(NULL, destHdrLoc, destViaFieldLoc) != TS_ERROR) {
+    LOG_ERROR_NEG("TSMimerHdrFieldDestroy");
   }
-  if (INKMimeHdrFieldDestroy(destBuffer, NULL, destViaFieldLoc) != INK_ERROR) {
-    LOG_ERROR_NEG("INKMimerHdrFieldDestroy");
+  if (TSMimeHdrFieldDestroy(destBuffer, NULL, destViaFieldLoc) != TS_ERROR) {
+    LOG_ERROR_NEG("TSMimerHdrFieldDestroy");
   }
-  if (INKMimeHdrFieldDestroy(destBuffer, destHdrLoc, NULL) != INK_ERROR) {
-    LOG_ERROR_NEG("INKMimerHdrFieldDestroy");
+  if (TSMimeHdrFieldDestroy(destBuffer, destHdrLoc, NULL) != TS_ERROR) {
+    LOG_ERROR_NEG("TSMimerHdrFieldDestroy");
   }
 
-  if (INKMimeHdrDestroy(NULL, parseHdrLoc) != INK_ERROR) {
-    LOG_ERROR_NEG("INKMimerHdrDestroy");
+  if (TSMimeHdrDestroy(NULL, parseHdrLoc) != TS_ERROR) {
+    LOG_ERROR_NEG("TSMimerHdrDestroy");
   }
-  if (INKMimeHdrDestroy(parseBuffer, NULL) != INK_ERROR) {
-    LOG_ERROR_NEG("INKMimerHdrDestroy");
+  if (TSMimeHdrDestroy(parseBuffer, NULL) != TS_ERROR) {
+    LOG_ERROR_NEG("TSMimerHdrDestroy");
   }
 #endif
 
   /* destroy the parser */
   if (VALID_POINTER(mimeParser))
-    INKMimeParserDestroy(mimeParser);
+    TSMimeParserDestroy(mimeParser);
 
   /* destroy the output buffers */
   if (VALID_POINTER(outBuf1))
-    INKIOBufferDestroy(outBuf1);
+    TSIOBufferDestroy(outBuf1);
   if (VALID_POINTER(outBuf2))
-    INKIOBufferDestroy(outBuf2);
+    TSIOBufferDestroy(outBuf2);
   if (VALID_POINTER(outBuf3))
-    INKIOBufferDestroy(outBuf3);
+    TSIOBufferDestroy(outBuf3);
 
   /* release the field handles */
   if (VALID_POINTER(srcViaFieldLoc))
-    INKHandleMLocRelease(parseBuffer, parseHdrLoc, srcViaFieldLoc);
+    TSHandleMLocRelease(parseBuffer, parseHdrLoc, srcViaFieldLoc);
   if (VALID_POINTER(destViaFieldLoc))
-    INKMimeHdrFieldDestroy(destBuffer, destHdrLoc, destViaFieldLoc);
+    TSMimeHdrFieldDestroy(destBuffer, destHdrLoc, destViaFieldLoc);
   if (VALID_POINTER(destViaFieldLoc))
-    INKHandleMLocRelease(destBuffer, destHdrLoc, destViaFieldLoc);
+    TSHandleMLocRelease(destBuffer, destHdrLoc, destViaFieldLoc);
   if (VALID_POINTER(srcCLFieldLoc))
-    INKHandleMLocRelease(parseBuffer, parseHdrLoc, srcCLFieldLoc);
+    TSHandleMLocRelease(parseBuffer, parseHdrLoc, srcCLFieldLoc);
   if (VALID_POINTER(destCLFieldLoc))
-    INKHandleMLocRelease(destBuffer, destHdrLoc, destCLFieldLoc);
+    TSHandleMLocRelease(destBuffer, destHdrLoc, destCLFieldLoc);
 
   /* destroy the mime headers and buffers */
   if (VALID_POINTER(parseHdrLoc))
-    INKMimeHdrDestroy(parseBuffer, parseHdrLoc);
+    TSMimeHdrDestroy(parseBuffer, parseHdrLoc);
   if (VALID_POINTER(parseHdrLoc))
-    INKHandleMLocRelease(parseBuffer, INK_NULL_MLOC, parseHdrLoc);
+    TSHandleMLocRelease(parseBuffer, TS_NULL_MLOC, parseHdrLoc);
   if (VALID_POINTER(parseBuffer))
-    INKMBufferDestroy(parseBuffer);
+    TSMBufferDestroy(parseBuffer);
 
   if (VALID_POINTER(destHdrLoc))
-    INKMimeHdrDestroy(destBuffer, destHdrLoc);
+    TSMimeHdrDestroy(destBuffer, destHdrLoc);
   if (VALID_POINTER(destHdrLoc))
-    INKHandleMLocRelease(destBuffer, INK_NULL_MLOC, destHdrLoc);
+    TSHandleMLocRelease(destBuffer, TS_NULL_MLOC, destHdrLoc);
   if (VALID_POINTER(destBuffer))
-    INKMBufferDestroy(destBuffer);
+    TSMBufferDestroy(destBuffer);
 }
 
 /******************************************************************************
- * play with the functions in INKHttpHdr* and INKUrl* categories.
+ * play with the functions in TSHttpHdr* and TSUrl* categories.
  ******************************************************************************/
 static void
 httpHdrHandler()
 {
   LOG_SET_FUNCTION_NAME("httpHdrHandler");
 
-  INKMBuffer srcBuffer = NULL, destBuffer = NULL;
-  INKMLoc srcHdrLoc = NULL, destHdrLoc = NULL, srcUrl = NULL, destUrl = NULL;
-  INKHttpParser parser = NULL;
-  INKIOBuffer outBuf1 = NULL, outBuf2 = NULL;
+  TSMBuffer srcBuffer = NULL, destBuffer = NULL;
+  TSMLoc srcHdrLoc = NULL, destHdrLoc = NULL, srcUrl = NULL, destUrl = NULL;
+  TSHttpParser parser = NULL;
+  TSIOBuffer outBuf1 = NULL, outBuf2 = NULL;
 
   int status;
 
@@ -403,110 +403,110 @@ httpHdrHandler()
 
 
   /* create a http header */
-  if ((srcBuffer = INKMBufferCreate()) == INK_ERROR_PTR || srcBuffer == NULL)
-    LOG_ERROR_AND_CLEANUP("INKMBufferCreate");
-  if ((srcHdrLoc = INKHttpHdrCreate(srcBuffer)) == INK_ERROR_PTR || srcHdrLoc == NULL)
-    LOG_ERROR_AND_CLEANUP("INKHttpHdrCreate");
+  if ((srcBuffer = TSMBufferCreate()) == TS_ERROR_PTR || srcBuffer == NULL)
+    LOG_ERROR_AND_CLEANUP("TSMBufferCreate");
+  if ((srcHdrLoc = TSHttpHdrCreate(srcBuffer)) == TS_ERROR_PTR || srcHdrLoc == NULL)
+    LOG_ERROR_AND_CLEANUP("TSHttpHdrCreate");
 
   /* parse the http header */
-  if ((parser = INKHttpParserCreate()) == INK_ERROR_PTR || parser == NULL)
-    LOG_ERROR_AND_CLEANUP("INKHttpParserCreate");
-  status = INKHttpHdrParseReq(parser, srcBuffer, srcHdrLoc, &request_header_str,
+  if ((parser = TSHttpParserCreate()) == TS_ERROR_PTR || parser == NULL)
+    LOG_ERROR_AND_CLEANUP("TSHttpParserCreate");
+  status = TSHttpHdrParseReq(parser, srcBuffer, srcHdrLoc, &request_header_str,
                               request_header_str + strlen(request_header_str));
-  if (status != INK_PARSE_DONE) {
-    LOG_ERROR_AND_CLEANUP("INKHttpHdrParseReq");
+  if (status != TS_PARSE_DONE) {
+    LOG_ERROR_AND_CLEANUP("TSHttpHdrParseReq");
   }
 
 
   /* create a url */
-  if ((srcUrl = INKUrlCreate(srcBuffer)) == INK_ERROR_PTR || srcUrl == NULL)
-    LOG_ERROR_AND_CLEANUP("INKUrlCreate");
+  if ((srcUrl = TSUrlCreate(srcBuffer)) == TS_ERROR_PTR || srcUrl == NULL)
+    LOG_ERROR_AND_CLEANUP("TSUrlCreate");
 
   /* parse the str to srcUrl and set srcUrl to the http header */
-  status = INKUrlParse(srcBuffer, srcUrl, &url_str, url_str + strlen(url_str));
-  if (status != INK_PARSE_DONE) {
-    LOG_ERROR_AND_CLEANUP("INKUrlParse");
+  status = TSUrlParse(srcBuffer, srcUrl, &url_str, url_str + strlen(url_str));
+  if (status != TS_PARSE_DONE) {
+    LOG_ERROR_AND_CLEANUP("TSUrlParse");
   }
 
-  if (INKHttpHdrUrlSet(srcBuffer, srcHdrLoc, srcUrl) == INK_ERROR)
-    LOG_ERROR_AND_CLEANUP("INKHttpHdrUrlSet");
+  if (TSHttpHdrUrlSet(srcBuffer, srcHdrLoc, srcUrl) == TS_ERROR)
+    LOG_ERROR_AND_CLEANUP("TSHttpHdrUrlSet");
 
-  /* negative test for INKHttpHdrUrlSet */
+  /* negative test for TSHttpHdrUrlSet */
 #ifdef DEBUG
-  if (INKHttpHdrUrlSet(NULL, srcHdrLoc, srcUrl) != INK_ERROR)
-    LOG_ERROR_NEG("INKHttpHdrUrlSet");
-  if (INKHttpHdrUrlSet(srcBuffer, NULL, srcUrl) != INK_ERROR)
-    LOG_ERROR_NEG("INKHttpHdrUrlSet");
-  if (INKHttpHdrUrlSet(srcBuffer, srcHdrLoc, NULL) != INK_ERROR)
-    LOG_ERROR_NEG("INKHttpHdrUrlSet");
+  if (TSHttpHdrUrlSet(NULL, srcHdrLoc, srcUrl) != TS_ERROR)
+    LOG_ERROR_NEG("TSHttpHdrUrlSet");
+  if (TSHttpHdrUrlSet(srcBuffer, NULL, srcUrl) != TS_ERROR)
+    LOG_ERROR_NEG("TSHttpHdrUrlSet");
+  if (TSHttpHdrUrlSet(srcBuffer, srcHdrLoc, NULL) != TS_ERROR)
+    LOG_ERROR_NEG("TSHttpHdrUrlSet");
 #endif
 
   /* (3) output the http header */
-  if ((outBuf1 = INKIOBufferCreate()) == INK_ERROR_PTR || outBuf1 == NULL)
-    LOG_ERROR_AND_CLEANUP("INKIOBufferCreate");
-  if (INKHttpHdrPrint(srcBuffer, srcHdrLoc, outBuf1) == INK_ERROR)
-    LOG_ERROR_AND_CLEANUP("INKHttpHdrPrint");
+  if ((outBuf1 = TSIOBufferCreate()) == TS_ERROR_PTR || outBuf1 == NULL)
+    LOG_ERROR_AND_CLEANUP("TSIOBufferCreate");
+  if (TSHttpHdrPrint(srcBuffer, srcHdrLoc, outBuf1) == TS_ERROR)
+    LOG_ERROR_AND_CLEANUP("TSHttpHdrPrint");
 
   printHeader(srcBuffer, srcHdrLoc, outBuf1, sect++, str3);
 
-  /* negative test for INKHttpHdrPrint */
+  /* negative test for TSHttpHdrPrint */
 #ifdef DEBUG
-  if (INKHttpHdrPrint(NULL, srcHdrLoc, outBuf1) != INK_ERROR)
-    LOG_ERROR_NEG("INKHttpHdrPrint");
-  if (INKHttpHdrPrint(srcBuffer, NULL, outBuf1) != INK_ERROR)
-    LOG_ERROR_NEG("INKHttpHdrPrint");
-  if (INKHttpHdrPrint(srcBuffer, srcHdrLoc, NULL) != INK_ERROR)
-    LOG_ERROR_NEG("INKHttpHdrPrint");
+  if (TSHttpHdrPrint(NULL, srcHdrLoc, outBuf1) != TS_ERROR)
+    LOG_ERROR_NEG("TSHttpHdrPrint");
+  if (TSHttpHdrPrint(srcBuffer, NULL, outBuf1) != TS_ERROR)
+    LOG_ERROR_NEG("TSHttpHdrPrint");
+  if (TSHttpHdrPrint(srcBuffer, srcHdrLoc, NULL) != TS_ERROR)
+    LOG_ERROR_NEG("TSHttpHdrPrint");
 #endif
 
   /* clone the http header and url */
-  if ((destBuffer = INKMBufferCreate()) == INK_ERROR_PTR || destBuffer == NULL)
-    LOG_ERROR_AND_CLEANUP("INKMBufferCreate");
+  if ((destBuffer = TSMBufferCreate()) == TS_ERROR_PTR || destBuffer == NULL)
+    LOG_ERROR_AND_CLEANUP("TSMBufferCreate");
 
-  if ((destHdrLoc = INKHttpHdrClone(destBuffer, srcBuffer, srcHdrLoc)) == INK_ERROR_PTR || destHdrLoc == NULL)
-    LOG_ERROR_AND_CLEANUP("INKHttpHdrClone");
-  if ((destUrl = INKUrlClone(destBuffer, srcBuffer, srcUrl)) == INK_ERROR_PTR || destUrl == NULL)
-    LOG_ERROR_AND_CLEANUP("INKUrlClone");
+  if ((destHdrLoc = TSHttpHdrClone(destBuffer, srcBuffer, srcHdrLoc)) == TS_ERROR_PTR || destHdrLoc == NULL)
+    LOG_ERROR_AND_CLEANUP("TSHttpHdrClone");
+  if ((destUrl = TSUrlClone(destBuffer, srcBuffer, srcUrl)) == TS_ERROR_PTR || destUrl == NULL)
+    LOG_ERROR_AND_CLEANUP("TSUrlClone");
 
-  /* negative test for INKHttpHdrClone and INKUrlClone */
+  /* negative test for TSHttpHdrClone and TSUrlClone */
 #ifdef DEBUG
-  if (INKHttpHdrClone(NULL, srcBuffer, srcHdrLoc) != INK_ERROR_PTR) {
-    LOG_ERROR_NEG("INKHttpHdrClone");
+  if (TSHttpHdrClone(NULL, srcBuffer, srcHdrLoc) != TS_ERROR_PTR) {
+    LOG_ERROR_NEG("TSHttpHdrClone");
   }
-  if (INKHttpHdrClone(destBuffer, NULL, srcHdrLoc) != INK_ERROR_PTR) {
-    LOG_ERROR_NEG("INKHttpHdrClone");
+  if (TSHttpHdrClone(destBuffer, NULL, srcHdrLoc) != TS_ERROR_PTR) {
+    LOG_ERROR_NEG("TSHttpHdrClone");
   }
-  if (INKHttpHdrClone(destBuffer, srcBuffer, NULL) != INK_ERROR_PTR) {
-    LOG_ERROR_NEG("INKHttpHdrClone");
+  if (TSHttpHdrClone(destBuffer, srcBuffer, NULL) != TS_ERROR_PTR) {
+    LOG_ERROR_NEG("TSHttpHdrClone");
   }
 
-  if (INKUrlClone(NULL, srcBuffer, srcUrl) != INK_ERROR_PTR) {
-    LOG_ERROR_NEG("INKUrlClone");
+  if (TSUrlClone(NULL, srcBuffer, srcUrl) != TS_ERROR_PTR) {
+    LOG_ERROR_NEG("TSUrlClone");
   }
-  if (INKUrlClone(destBuffer, NULL, srcUrl) != INK_ERROR_PTR) {
-    LOG_ERROR_NEG("INKUrlClone");
+  if (TSUrlClone(destBuffer, NULL, srcUrl) != TS_ERROR_PTR) {
+    LOG_ERROR_NEG("TSUrlClone");
   }
-  if (INKUrlClone(destBuffer, srcBuffer, NULL) != INK_ERROR_PTR) {
-    LOG_ERROR_NEG("INKUrlClone");
+  if (TSUrlClone(destBuffer, srcBuffer, NULL) != TS_ERROR_PTR) {
+    LOG_ERROR_NEG("TSUrlClone");
   }
 #endif
 
   /* (4) output the cloned url */
-  if ((outBuf2 = INKIOBufferCreate()) == INK_ERROR_PTR || outBuf2 == NULL)
-    LOG_ERROR_AND_CLEANUP("INKIOBufferCreate");
-  if (INKUrlPrint(destBuffer, destUrl, outBuf2) == INK_ERROR)
-    LOG_ERROR_AND_CLEANUP("INKUrlPrint");
+  if ((outBuf2 = TSIOBufferCreate()) == TS_ERROR_PTR || outBuf2 == NULL)
+    LOG_ERROR_AND_CLEANUP("TSIOBufferCreate");
+  if (TSUrlPrint(destBuffer, destUrl, outBuf2) == TS_ERROR)
+    LOG_ERROR_AND_CLEANUP("TSUrlPrint");
 
   printHeader(destBuffer, destUrl, outBuf2, sect++, str4);
 
-  /* negative test for INKUrlPrint */
+  /* negative test for TSUrlPrint */
 #ifdef DEBUG
-  if (INKUrlPrint(NULL, destUrl, outBuf2) != INK_ERROR)
-    LOG_ERROR_NEG("INKUrlPrint");
-  if (INKUrlPrint(destBuffer, NULL, outBuf2) != INK_ERROR)
-    LOG_ERROR_NEG("INKUrlPrint");
-  if (INKUrlPrint(destBuffer, destUrl, NULL) != INK_ERROR)
-    LOG_ERROR_NEG("INKUrlPrint");
+  if (TSUrlPrint(NULL, destUrl, outBuf2) != TS_ERROR)
+    LOG_ERROR_NEG("TSUrlPrint");
+  if (TSUrlPrint(destBuffer, NULL, outBuf2) != TS_ERROR)
+    LOG_ERROR_NEG("TSUrlPrint");
+  if (TSUrlPrint(destBuffer, destUrl, NULL) != TS_ERROR)
+    LOG_ERROR_NEG("TSUrlPrint");
 #endif
 
   /* clean up */
@@ -514,57 +514,57 @@ Lcleanup:
 
   /* negative test for cleanup functions */
 #ifdef DEBUG
-  if (INKHttpParserDestroy(NULL) != INK_ERROR) {
-    LOG_ERROR_NEG("INKHttpParserDestroy");
+  if (TSHttpParserDestroy(NULL) != TS_ERROR) {
+    LOG_ERROR_NEG("TSHttpParserDestroy");
   }
 
-  if (INKUrlDestroy(srcBuffer, NULL) != INK_ERROR) {
-    LOG_ERROR_NEG("INKUrlDestroy");
+  if (TSUrlDestroy(srcBuffer, NULL) != TS_ERROR) {
+    LOG_ERROR_NEG("TSUrlDestroy");
   }
 
-  if (INKHttpHdrDestroy(srcBuffer, NULL) != INK_ERROR) {
-    LOG_ERROR_NEG("INKHttpHdrDestroy");
+  if (TSHttpHdrDestroy(srcBuffer, NULL) != TS_ERROR) {
+    LOG_ERROR_NEG("TSHttpHdrDestroy");
   }
 #endif
 
   /* destroy the parser */
   if (VALID_POINTER(parser))
-    INKHttpParserDestroy(parser);
+    TSHttpParserDestroy(parser);
 
   /* destroy the output buffers */
   if (VALID_POINTER(outBuf1))
-    INKIOBufferDestroy(outBuf1);
+    TSIOBufferDestroy(outBuf1);
   if (VALID_POINTER(outBuf2))
-    INKIOBufferDestroy(outBuf2);
+    TSIOBufferDestroy(outBuf2);
 
   if (VALID_POINTER(srcUrl))
-    INKUrlDestroy(srcBuffer, srcUrl);
+    TSUrlDestroy(srcBuffer, srcUrl);
   if (VALID_POINTER(srcUrl))
-    INKHandleMLocRelease(srcBuffer, srcHdrLoc, srcUrl);
+    TSHandleMLocRelease(srcBuffer, srcHdrLoc, srcUrl);
 
   if (VALID_POINTER(destUrl))
-    INKUrlDestroy(destBuffer, destUrl);
+    TSUrlDestroy(destBuffer, destUrl);
   if (VALID_POINTER(destUrl))
-    INKHandleMLocRelease(destBuffer, INK_NULL_MLOC, destUrl);
+    TSHandleMLocRelease(destBuffer, TS_NULL_MLOC, destUrl);
 
   if (VALID_POINTER(srcHdrLoc))
-    INKHttpHdrDestroy(srcBuffer, srcHdrLoc);
+    TSHttpHdrDestroy(srcBuffer, srcHdrLoc);
   if (VALID_POINTER(srcHdrLoc))
-    INKHandleMLocRelease(srcBuffer, INK_NULL_MLOC, srcHdrLoc);
+    TSHandleMLocRelease(srcBuffer, TS_NULL_MLOC, srcHdrLoc);
 
   if (VALID_POINTER(destHdrLoc))
-    INKHttpHdrDestroy(destBuffer, destHdrLoc);
+    TSHttpHdrDestroy(destBuffer, destHdrLoc);
   if (VALID_POINTER(destHdrLoc))
-    INKHandleMLocRelease(destBuffer, INK_NULL_MLOC, destHdrLoc);
+    TSHandleMLocRelease(destBuffer, TS_NULL_MLOC, destHdrLoc);
 
   if (VALID_POINTER(srcBuffer))
-    INKMBufferDestroy(srcBuffer);
+    TSMBufferDestroy(srcBuffer);
   if (VALID_POINTER(destBuffer))
-    INKMBufferDestroy(destBuffer);
+    TSMBufferDestroy(destBuffer);
 }
 
 /******************************************************************************
- * call INKHttpHdrReasonLookup for each status and print out the default reason
+ * call TSHttpHdrReasonLookup for each status and print out the default reason
  ******************************************************************************/
 static int
 httpHdrReasonHandler()
@@ -573,56 +573,56 @@ httpHdrReasonHandler()
   const char *str;
 
 #define CHECK_REASON_LOOKUP(R) {\
-	str = INKHttpHdrReasonLookup(R); \
-	if (str == INK_ERROR_PTR) \
+	str = TSHttpHdrReasonLookup(R); \
+	if (str == TS_ERROR_PTR) \
 	    LOG_ERROR_AND_RETURN(#R); \
-	INKDebug(REASON_DEBUG_TAG, "%s: %s", #R, str); \
+	TSDebug(REASON_DEBUG_TAG, "%s: %s", #R, str); \
     }
 
-  INKDebug(REASON_DEBUG_TAG, "********************** INK_HTTP_STATUS Reason ********************");
+  TSDebug(REASON_DEBUG_TAG, "********************** TS_HTTP_STATUS Reason ********************");
 
-  CHECK_REASON_LOOKUP(INK_HTTP_STATUS_NONE);
-  CHECK_REASON_LOOKUP(INK_HTTP_STATUS_CONTINUE);
-  CHECK_REASON_LOOKUP(INK_HTTP_STATUS_SWITCHING_PROTOCOL);
-  CHECK_REASON_LOOKUP(INK_HTTP_STATUS_OK);
-  CHECK_REASON_LOOKUP(INK_HTTP_STATUS_CREATED);
-  CHECK_REASON_LOOKUP(INK_HTTP_STATUS_ACCEPTED);
-  CHECK_REASON_LOOKUP(INK_HTTP_STATUS_NON_AUTHORITATIVE_INFORMATION);
-  CHECK_REASON_LOOKUP(INK_HTTP_STATUS_NO_CONTENT);
-  CHECK_REASON_LOOKUP(INK_HTTP_STATUS_RESET_CONTENT);
-  CHECK_REASON_LOOKUP(INK_HTTP_STATUS_PARTIAL_CONTENT);
-  CHECK_REASON_LOOKUP(INK_HTTP_STATUS_MULTIPLE_CHOICES);
-  CHECK_REASON_LOOKUP(INK_HTTP_STATUS_MOVED_PERMANENTLY);
-  CHECK_REASON_LOOKUP(INK_HTTP_STATUS_MOVED_TEMPORARILY);
-  CHECK_REASON_LOOKUP(INK_HTTP_STATUS_SEE_OTHER);
-  CHECK_REASON_LOOKUP(INK_HTTP_STATUS_NOT_MODIFIED);
-  CHECK_REASON_LOOKUP(INK_HTTP_STATUS_USE_PROXY);
-  CHECK_REASON_LOOKUP(INK_HTTP_STATUS_BAD_REQUEST);
-  CHECK_REASON_LOOKUP(INK_HTTP_STATUS_UNAUTHORIZED);
-  CHECK_REASON_LOOKUP(INK_HTTP_STATUS_PAYMENT_REQUIRED);
-  CHECK_REASON_LOOKUP(INK_HTTP_STATUS_FORBIDDEN);
-  CHECK_REASON_LOOKUP(INK_HTTP_STATUS_NOT_FOUND);
-  CHECK_REASON_LOOKUP(INK_HTTP_STATUS_METHOD_NOT_ALLOWED);
-  CHECK_REASON_LOOKUP(INK_HTTP_STATUS_NOT_ACCEPTABLE);
-  CHECK_REASON_LOOKUP(INK_HTTP_STATUS_PROXY_AUTHENTICATION_REQUIRED);
-  CHECK_REASON_LOOKUP(INK_HTTP_STATUS_REQUEST_TIMEOUT);
-  CHECK_REASON_LOOKUP(INK_HTTP_STATUS_CONFLICT);
-  CHECK_REASON_LOOKUP(INK_HTTP_STATUS_GONE);
-  CHECK_REASON_LOOKUP(INK_HTTP_STATUS_LENGTH_REQUIRED);
-  CHECK_REASON_LOOKUP(INK_HTTP_STATUS_PRECONDITION_FAILED);
-  CHECK_REASON_LOOKUP(INK_HTTP_STATUS_REQUEST_ENTITY_TOO_LARGE);
-  CHECK_REASON_LOOKUP(INK_HTTP_STATUS_REQUEST_URI_TOO_LONG);
-  CHECK_REASON_LOOKUP(INK_HTTP_STATUS_UNSUPPORTED_MEDIA_TYPE);
-  CHECK_REASON_LOOKUP(INK_HTTP_STATUS_INTERNAL_SERVER_ERROR);
-  CHECK_REASON_LOOKUP(INK_HTTP_STATUS_NOT_IMPLEMENTED);
-  CHECK_REASON_LOOKUP(INK_HTTP_STATUS_BAD_GATEWAY);
-  CHECK_REASON_LOOKUP(INK_HTTP_STATUS_SERVICE_UNAVAILABLE);
-  CHECK_REASON_LOOKUP(INK_HTTP_STATUS_GATEWAY_TIMEOUT);
-  CHECK_REASON_LOOKUP(INK_HTTP_STATUS_HTTPVER_NOT_SUPPORTED);
+  CHECK_REASON_LOOKUP(TS_HTTP_STATUS_NONE);
+  CHECK_REASON_LOOKUP(TS_HTTP_STATUS_CONTINUE);
+  CHECK_REASON_LOOKUP(TS_HTTP_STATUS_SWITCHING_PROTOCOL);
+  CHECK_REASON_LOOKUP(TS_HTTP_STATUS_OK);
+  CHECK_REASON_LOOKUP(TS_HTTP_STATUS_CREATED);
+  CHECK_REASON_LOOKUP(TS_HTTP_STATUS_ACCEPTED);
+  CHECK_REASON_LOOKUP(TS_HTTP_STATUS_NON_AUTHORITATIVE_INFORMATION);
+  CHECK_REASON_LOOKUP(TS_HTTP_STATUS_NO_CONTENT);
+  CHECK_REASON_LOOKUP(TS_HTTP_STATUS_RESET_CONTENT);
+  CHECK_REASON_LOOKUP(TS_HTTP_STATUS_PARTIAL_CONTENT);
+  CHECK_REASON_LOOKUP(TS_HTTP_STATUS_MULTIPLE_CHOICES);
+  CHECK_REASON_LOOKUP(TS_HTTP_STATUS_MOVED_PERMANENTLY);
+  CHECK_REASON_LOOKUP(TS_HTTP_STATUS_MOVED_TEMPORARILY);
+  CHECK_REASON_LOOKUP(TS_HTTP_STATUS_SEE_OTHER);
+  CHECK_REASON_LOOKUP(TS_HTTP_STATUS_NOT_MODIFIED);
+  CHECK_REASON_LOOKUP(TS_HTTP_STATUS_USE_PROXY);
+  CHECK_REASON_LOOKUP(TS_HTTP_STATUS_BAD_REQUEST);
+  CHECK_REASON_LOOKUP(TS_HTTP_STATUS_UNAUTHORIZED);
+  CHECK_REASON_LOOKUP(TS_HTTP_STATUS_PAYMENT_REQUIRED);
+  CHECK_REASON_LOOKUP(TS_HTTP_STATUS_FORBIDDEN);
+  CHECK_REASON_LOOKUP(TS_HTTP_STATUS_NOT_FOUND);
+  CHECK_REASON_LOOKUP(TS_HTTP_STATUS_METHOD_NOT_ALLOWED);
+  CHECK_REASON_LOOKUP(TS_HTTP_STATUS_NOT_ACCEPTABLE);
+  CHECK_REASON_LOOKUP(TS_HTTP_STATUS_PROXY_AUTHENTICATION_REQUIRED);
+  CHECK_REASON_LOOKUP(TS_HTTP_STATUS_REQUEST_TIMEOUT);
+  CHECK_REASON_LOOKUP(TS_HTTP_STATUS_CONFLICT);
+  CHECK_REASON_LOOKUP(TS_HTTP_STATUS_GONE);
+  CHECK_REASON_LOOKUP(TS_HTTP_STATUS_LENGTH_REQUIRED);
+  CHECK_REASON_LOOKUP(TS_HTTP_STATUS_PRECONDITION_FAILED);
+  CHECK_REASON_LOOKUP(TS_HTTP_STATUS_REQUEST_ENTITY_TOO_LARGE);
+  CHECK_REASON_LOOKUP(TS_HTTP_STATUS_REQUEST_URI_TOO_LONG);
+  CHECK_REASON_LOOKUP(TS_HTTP_STATUS_UNSUPPORTED_MEDIA_TYPE);
+  CHECK_REASON_LOOKUP(TS_HTTP_STATUS_INTERNAL_SERVER_ERROR);
+  CHECK_REASON_LOOKUP(TS_HTTP_STATUS_NOT_IMPLEMENTED);
+  CHECK_REASON_LOOKUP(TS_HTTP_STATUS_BAD_GATEWAY);
+  CHECK_REASON_LOOKUP(TS_HTTP_STATUS_SERVICE_UNAVAILABLE);
+  CHECK_REASON_LOOKUP(TS_HTTP_STATUS_GATEWAY_TIMEOUT);
+  CHECK_REASON_LOOKUP(TS_HTTP_STATUS_HTTPVER_NOT_SUPPORTED);
 }
 
 void
-INKPluginInit(int argc, const char *argv[])
+TSPluginInit(int argc, const char *argv[])
 {
   mimeHdrHandler();
   httpHdrHandler();

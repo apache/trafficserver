@@ -1527,13 +1527,13 @@ char*
 HTTPHdr::url_string_get(Arena* arena, int* length) {
   char *zret = 0;
 
+  if (length) *length = 0;
+  this->_test_and_fill_target_cache();
   if (m_url_cached.valid()) {
     URLImpl* ui = m_url_cached.m_url_impl;
     bool should_reset_host = false;
     bool should_reset_port = false;
     char port_buff[10];
-
-    this->_test_and_fill_target_cache();
 
     /* Get dirty. We reach in to the URL implementation to
        set the host and port if

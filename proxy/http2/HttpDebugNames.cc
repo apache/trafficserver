@@ -391,10 +391,12 @@ HttpDebugNames::get_action_name(HttpTransact::StateMachineAction_t e)
     return ("HTTP_API_SM_SHUTDOWN");
   case HttpTransact::HTTP_REMAP_REQUEST:
     return ("HTTP_REMAP_REQUEST");
-  case HttpTransact::HTTP_API_READ_REQUEST_PRE_REMAP:
-    return ("HTTP_API_READ_REQUEST_PRE_REMAP");
-  case HttpTransact::HTTP_END_REMAP_REQUEST:
-    return ("HTTP_END_REMAP_REQUEST");
+  case HttpTransact::HTTP_API_PRE_REMAP:
+    return ("HTTP_API_PRE_REMAP");
+  case HttpTransact::HTTP_API_POST_REMAP:
+    return ("HTTP_API_POST_REMAP");
+  case HttpTransact::HTTP_POST_REMAP_SKIP:
+    return ("HTTP_POST_REMAP_SKIP");
 
   }
 
@@ -450,42 +452,43 @@ HttpDebugNames::get_cache_action_name(HttpTransact::CacheAction_t t)
 //
 //////////////////////////////////////////////////////////////////
 const char *
-HttpDebugNames::get_api_hook_name(INKHttpHookID t)
+HttpDebugNames::get_api_hook_name(TSHttpHookID t)
 {
-
   switch (t) {
-  case INK_HTTP_READ_REQUEST_HDR_HOOK:
-    return "INK_HTTP_READ_REQUEST_HDR_HOOK";
-  case INK_HTTP_OS_DNS_HOOK:
-    return "INK_HTTP_OS_DNS_HOOK";
-  case INK_HTTP_SEND_REQUEST_HDR_HOOK:
-    return "INK_HTTP_SEND_REQUEST_HDR_HOOK";
-  case INK_HTTP_READ_CACHE_HDR_HOOK:
-    return "INK_HTTP_READ_CACHE_HDR_HOOK";
-  case INK_HTTP_CACHE_LOOKUP_COMPLETE_HOOK:
-    return "INK_HTTP_CACHE_LOOKUP_COMPLETE_HOOK";
-  case INK_HTTP_READ_RESPONSE_HDR_HOOK:
-    return "INK_HTTP_READ_RESPONSE_HDR_HOOK";
-  case INK_HTTP_SEND_RESPONSE_HDR_HOOK:
-    return "INK_HTTP_SEND_RESPONSE_HDR_HOOK";
-  case INK_HTTP_REQUEST_TRANSFORM_HOOK:
-    return "INK_HTTP_REQUEST_TRANSFORM_HOOK";
-  case INK_HTTP_RESPONSE_TRANSFORM_HOOK:
-    return "INK_HTTP_RESPONSE_TRANSFORM_HOOK";
-  case INK_HTTP_SELECT_ALT_HOOK:
-    return "INK_HTTP_SELECT_ALT_HOOK";
-  case INK_HTTP_TXN_START_HOOK:
-    return "INK_HTTP_TXN_START_HOOK";
-  case INK_HTTP_TXN_CLOSE_HOOK:
-    return "INK_HTTP_TXN_CLOSE_HOOK";
-  case INK_HTTP_SSN_START_HOOK:
-    return "INK_HTTP_SSN_START_HOOK";
-  case INK_HTTP_SSN_CLOSE_HOOK:
-    return "INK_HTTP_SSN_CLOSE_HOOK";
-  case INK_HTTP_READ_REQUEST_PRE_REMAP_HOOK:
-    return "INK_HTTP_READ_REQUEST_PRE_REMAP_HOOK";
-  case INK_HTTP_LAST_HOOK:
-    return "INK_HTTP_LAST_HOOK";
+  case TS_HTTP_READ_REQUEST_HDR_HOOK:
+    return "TS_HTTP_READ_REQUEST_HDR_HOOK";
+  case TS_HTTP_OS_DNS_HOOK:
+    return "TS_HTTP_OS_DNS_HOOK";
+  case TS_HTTP_SEND_REQUEST_HDR_HOOK:
+    return "TS_HTTP_SEND_REQUEST_HDR_HOOK";
+  case TS_HTTP_READ_CACHE_HDR_HOOK:
+    return "TS_HTTP_READ_CACHE_HDR_HOOK";
+  case TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK:
+    return "TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK";
+  case TS_HTTP_READ_RESPONSE_HDR_HOOK:
+    return "TS_HTTP_READ_RESPONSE_HDR_HOOK";
+  case TS_HTTP_SEND_RESPONSE_HDR_HOOK:
+    return "TS_HTTP_SEND_RESPONSE_HDR_HOOK";
+  case TS_HTTP_REQUEST_TRANSFORM_HOOK:
+    return "TS_HTTP_REQUEST_TRANSFORM_HOOK";
+  case TS_HTTP_RESPONSE_TRANSFORM_HOOK:
+    return "TS_HTTP_RESPONSE_TRANSFORM_HOOK";
+  case TS_HTTP_SELECT_ALT_HOOK:
+    return "TS_HTTP_SELECT_ALT_HOOK";
+  case TS_HTTP_TXN_START_HOOK:
+    return "TS_HTTP_TXN_START_HOOK";
+  case TS_HTTP_TXN_CLOSE_HOOK:
+    return "TS_HTTP_TXN_CLOSE_HOOK";
+  case TS_HTTP_SSN_START_HOOK:
+    return "TS_HTTP_SSN_START_HOOK";
+  case TS_HTTP_SSN_CLOSE_HOOK:
+    return "TS_HTTP_SSN_CLOSE_HOOK";
+  case TS_HTTP_PRE_REMAP_HOOK:
+    return "TS_HTTP_PRE_REMAP_HOOK";
+  case TS_HTTP_POST_REMAP_HOOK:
+    return "TS_HTTP_POST_REMAP_HOOK";
+  case TS_HTTP_LAST_HOOK:
+    return "TS_HTTP_LAST_HOOK";
   }
 
   return "unknown hook";

@@ -35,24 +35,24 @@
 #include <stdlib.h>
 
 void
-INKPluginInit(int clientid)
+TSPluginInit(int clientid)
 {
   fprintf(stderr, "*** CheckContentClient Test for Client    ***\n");
   fprintf(stderr, "*** needs to work with CheckContentServer *** \n");
-  INKFuncRegister(INK_FID_HEADER_PROCESS);
-  INKFuncRegister(INK_FID_PARTIAL_BODY_PROCESS);
+  TSFuncRegister(TS_FID_HEADER_PROCESS);
+  TSFuncRegister(TS_FID_PARTIAL_BODY_PROCESS);
 }
 
 
-INKRequestAction
-INKHeaderProcess(void *req_id, char *header, int length, char *request_str)
+TSRequestAction
+TSHeaderProcess(void *req_id, char *header, int length, char *request_str)
 {
-  return INK_KEEP_GOING;
+  return TS_KEEP_GOING;
 }
 
 
-INKRequestAction
-INKPartialBodyProcess(void *req_id, void *partial_content, int partial_length, int accum_length)
+TSRequestAction
+TSPartialBodyProcess(void *req_id, void *partial_content, int partial_length, int accum_length)
 {
   int i, code;
 
@@ -68,5 +68,5 @@ INKPartialBodyProcess(void *req_id, void *partial_content, int partial_length, i
     }
     i--;
   }
-  return INK_KEEP_GOING;
+  return TS_KEEP_GOING;
 }

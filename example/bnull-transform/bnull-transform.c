@@ -38,16 +38,16 @@
 #include <stdio.h>
 #include <ts/ts.h>
 
-#define INK_NULL_MUTEX      NULL
+#define TS_NULL_MUTEX      NULL
 #define STATE_BUFFER_DATA   0
 #define STATE_OUTPUT_DATA   1
 
 typedef struct
 {
   int state;
-  INKVIO output_vio;
-  INKIOBuffer output_buffer;
-  INKIOBufferReader output_reader;
+  TSVIO output_vio;
+  TSIOBuffer output_buffer;
+  TSIOBufferReader output_reader;
 } MyData;
 
 static MyData *
@@ -55,7 +55,7 @@ my_data_alloc()
 {
   MyData *data;
 
-  data = (MyData *) INKmalloc(sizeof(MyData));
+  data = (MyData *) TSmalloc(sizeof(MyData));
   data->state = STATE_BUFFER_DATA;
   data->output_vio = NULL;
   data->output_buffer = NULL;
@@ -69,16 +69,16 @@ my_data_destroy(MyData * data)
 {
   if (data) {
     if (data->output_buffer) {
-      INKIOBufferDestroy(data->output_buffer);
+      TSIOBufferDestroy(data->output_buffer);
     }
-    INKfree(data);
+    TSfree(data);
   }
 }
 
 static int
-handle_buffering(INKCont contp, MyData * data)
+handle_buffering(TSCont contp, MyData * data)
 {
-  INKVIO write_vio;
+  TSVIO write_vio;
   int towrite;
   int avail;
 
@@ -86,14 +86,14 @@ handle_buffering(INKCont contp, MyData * data)
      ourself. This VIO contains the buffer that we are to read from
      as well as the continuation we are to call when the buffer is
      empty. */
-  write_vio = INKVConnWriteVIOGet(contp);
+  write_vio = TSVConnWriteVIOGet(contp);
 
   /* Create the output buffer and its associated reader */
   if (!data->output_buffer) {
-    data->output_buffer = INKIOBufferCreate();
-    INKAssert(data->output_buffer);
-    data->output_reader = INKIOBufferReaderAlloc(data->output_buffer);
-    INKAssert(data->output_reader);
+    data->output_buffer = TSIOBufferCreate();
+    TSAssert(data->output_buffer);
+    data->output_reader = TSIOBufferReaderAlloc(data->output_buffer);
+    TSAssert(data->output_reader);
   }
 
   /* We also check to see if the write VIO's buffer is non-NULL. A
@@ -102,7 +102,7 @@ handle_buffering(INKCont contp, MyData * data)
      more WRITE_READY or WRITE_COMPLETE events. For this buffered
      transformation that means we're done buffering data. */
 
-  if (!INKVIOBufferGet(write_vio)) {
+  if (!TSVIOBufferGet(write_vio)) {
     data->state = STATE_OUTPUT_DATA;
     return 0;
   }
@@ -111,53 +111,53 @@ handle_buffering(INKCont contp, MyData * data)
      transform plugin this is also the amount of data we have left
      to write to the output connection. */
 
-  towrite = INKVIONTodoGet(write_vio);
+  towrite = TSVIONTodoGet(write_vio);
   if (towrite > 0) {
     /* The amount of data left to read needs to be truncated by
        the amount of data actually in the read buffer. */
 
-    avail = INKIOBufferReaderAvail(INKVIOReaderGet(write_vio));
+    avail = TSIOBufferReaderAvail(TSVIOReaderGet(write_vio));
     if (towrite > avail) {
       towrite = avail;
     }
 
     if (towrite > 0) {
       /* Copy the data from the read buffer to the input buffer. */
-      if (INKIOBufferCopy(data->output_buffer, INKVIOReaderGet(write_vio), towrite, 0) == INK_ERROR) {
-        INKError("[bnull-transform] Unable to copy read buffer\n");
+      if (TSIOBufferCopy(data->output_buffer, TSVIOReaderGet(write_vio), towrite, 0) == TS_ERROR) {
+        TSError("[bnull-transform] Unable to copy read buffer\n");
         goto Lerror;
       }
 
       /* Tell the read buffer that we have read the data and are no
          longer interested in it. */
-      if (INKIOBufferReaderConsume(INKVIOReaderGet(write_vio), towrite) == INK_ERROR) {
-        INKError("[bnull-transform] Unable to copy read buffer\n");
+      if (TSIOBufferReaderConsume(TSVIOReaderGet(write_vio), towrite) == TS_ERROR) {
+        TSError("[bnull-transform] Unable to copy read buffer\n");
         goto Lerror;
       }
 
       /* Modify the write VIO to reflect how much data we've
          completed. */
-      if (INKVIONDoneSet(write_vio, INKVIONDoneGet(write_vio)
-                         + towrite) == INK_ERROR) {
-        INKError("[bnull-transform] Unable to copy read buffer\n");
+      if (TSVIONDoneSet(write_vio, TSVIONDoneGet(write_vio)
+                         + towrite) == TS_ERROR) {
+        TSError("[bnull-transform] Unable to copy read buffer\n");
         goto Lerror;
       }
     }
   }
 
   /* Now we check the write VIO to see if there is data left to read. */
-  if (INKVIONTodoGet(write_vio) > 0) {
+  if (TSVIONTodoGet(write_vio) > 0) {
     if (towrite > 0) {
       /* Call back the write VIO continuation to let it know that we
          are ready for more data. */
-      INKContCall(INKVIOContGet(write_vio), INK_EVENT_VCONN_WRITE_READY, write_vio);
+      TSContCall(TSVIOContGet(write_vio), TS_EVENT_VCONN_WRITE_READY, write_vio);
     }
   } else {
     data->state = STATE_OUTPUT_DATA;
 
     /* Call back the write VIO continuation to let it know that we
        have completed the write operation. */
-    INKContCall(INKVIOContGet(write_vio), INK_EVENT_VCONN_WRITE_COMPLETE, write_vio);
+    TSContCall(TSVIOContGet(write_vio), TS_EVENT_VCONN_WRITE_COMPLETE, write_vio);
   }
 
   return 1;
@@ -165,31 +165,31 @@ handle_buffering(INKCont contp, MyData * data)
 Lerror:
 
   /* If we are in this code path then something is seriously wrong. */
-  INKError("[bnull-transform] Fatal error in plugin");
-  INKReleaseAssert(!"[bnull-transform] Fatal error in plugin\n");
+  TSError("[bnull-transform] Fatal error in plugin");
+  TSReleaseAssert(!"[bnull-transform] Fatal error in plugin\n");
   return 0;
 }
 
 static int
-handle_output(INKCont contp, MyData * data)
+handle_output(TSCont contp, MyData * data)
 {
   /* Check to see if we need to initiate the output operation. */
   if (!data->output_vio) {
-    INKVConn output_conn;
+    TSVConn output_conn;
 
     /* Get the output connection where we'll write data to. */
-    output_conn = INKTransformOutputVConnGet(contp);
+    output_conn = TSTransformOutputVConnGet(contp);
 
     data->output_vio =
-      INKVConnWrite(output_conn, contp, data->output_reader, INKIOBufferReaderAvail(data->output_reader));
+      TSVConnWrite(output_conn, contp, data->output_reader, TSIOBufferReaderAvail(data->output_reader));
 
-    INKAssert(data->output_vio);
+    TSAssert(data->output_vio);
   }
   return 1;
 }
 
 static void
-handle_transform(INKCont contp)
+handle_transform(TSCont contp)
 {
   MyData *data;
   int done;
@@ -199,10 +199,10 @@ handle_transform(INKCont contp)
      private data structure pointer is NULL, then we'll create it
      and initialize its internals. */
 
-  data = INKContDataGet(contp);
+  data = TSContDataGet(contp);
   if (!data) {
     data = my_data_alloc();
-    INKContDataSet(contp, data);
+    TSContDataSet(contp, data);
   }
 
   do {
@@ -221,40 +221,40 @@ handle_transform(INKCont contp)
 }
 
 static int
-bnull_transform(INKCont contp, INKEvent event, void *edata)
+bnull_transform(TSCont contp, TSEvent event, void *edata)
 {
   /* Check to see if the transformation has been closed by a
-     call to INKVConnClose. */
+     call to TSVConnClose. */
 
-  if (INKVConnClosedGet(contp)) {
-    my_data_destroy(INKContDataGet(contp));
-    INKAssert(INKContDestroy(contp) == INK_SUCCESS);
+  if (TSVConnClosedGet(contp)) {
+    my_data_destroy(TSContDataGet(contp));
+    TSAssert(TSContDestroy(contp) == TS_SUCCESS);
   } else {
     switch (event) {
-    case INK_EVENT_ERROR:{
-        INKVIO write_vio;
+    case TS_EVENT_ERROR:{
+        TSVIO write_vio;
 
         /* Get the write VIO for the write operation that was
            performed on ourself. This VIO contains the continuation of
            our parent transformation. */
-        write_vio = INKVConnWriteVIOGet(contp);
+        write_vio = TSVConnWriteVIOGet(contp);
 
         /* Call back the write VIO continuation to let it know that we
            have completed the write operation. */
-        INKContCall(INKVIOContGet(write_vio), INK_EVENT_ERROR, write_vio);
+        TSContCall(TSVIOContGet(write_vio), TS_EVENT_ERROR, write_vio);
         break;
       }
 
-    case INK_EVENT_VCONN_WRITE_COMPLETE:
+    case TS_EVENT_VCONN_WRITE_COMPLETE:
       /* When our output connection says that it has finished
          reading all the data we've written to it then we should
          shutdown the write portion of its connection to
          indicate that we don't want to hear about it anymore. */
 
-      INKAssert(INKVConnShutdown(INKTransformOutputVConnGet(contp), 0, 1) != INK_ERROR);
+      TSAssert(TSVConnShutdown(TSTransformOutputVConnGet(contp), 0, 1) != TS_ERROR);
       break;
 
-    case INK_EVENT_VCONN_WRITE_READY:
+    case TS_EVENT_VCONN_WRITE_READY:
     default:
       /* If we get a WRITE_READY event or any other type of event
          (sent, perhaps, because we were reenabled) then we'll attempt
@@ -268,52 +268,52 @@ bnull_transform(INKCont contp, INKEvent event, void *edata)
 }
 
 static int
-transformable(INKHttpTxn txnp)
+transformable(TSHttpTxn txnp)
 {
-  INKMBuffer bufp;
-  INKMLoc hdr_loc;
-  INKHttpStatus resp_status;
+  TSMBuffer bufp;
+  TSMLoc hdr_loc;
+  TSHttpStatus resp_status;
   int retv;
 
   /* We are only interested in transforming "200 OK" responses. */
 
-  INKHttpTxnServerRespGet(txnp, &bufp, &hdr_loc);
-  resp_status = INKHttpHdrStatusGet(bufp, hdr_loc);
-  retv = (resp_status == INK_HTTP_STATUS_OK);
+  TSHttpTxnServerRespGet(txnp, &bufp, &hdr_loc);
+  resp_status = TSHttpHdrStatusGet(bufp, hdr_loc);
+  retv = (resp_status == TS_HTTP_STATUS_OK);
 
-  if (INKHandleMLocRelease(bufp, INK_NULL_MLOC, hdr_loc) == INK_ERROR) {
-    INKError("[bnull-transform] Error releasing MLOC while checking " "header status\n");
+  if (TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc) == TS_ERROR) {
+    TSError("[bnull-transform] Error releasing MLOC while checking " "header status\n");
   }
 
   return retv;
 }
 
 static void
-transform_add(INKHttpTxn txnp)
+transform_add(TSHttpTxn txnp)
 {
-  INKVConn connp;
+  TSVConn connp;
 
-  connp = INKTransformCreate(bnull_transform, txnp);
-  if (INKHttpTxnHookAdd(txnp, INK_HTTP_RESPONSE_TRANSFORM_HOOK, connp)
-      == INK_ERROR) {
+  connp = TSTransformCreate(bnull_transform, txnp);
+  if (TSHttpTxnHookAdd(txnp, TS_HTTP_RESPONSE_TRANSFORM_HOOK, connp)
+      == TS_ERROR) {
     /* this should not happen */
-    INKError("[bnull-transform] Error adding transform to transaction\n");
+    TSError("[bnull-transform] Error adding transform to transaction\n");
   }
 
   return;
 }
 
 static int
-transform_plugin(INKCont contp, INKEvent event, void *edata)
+transform_plugin(TSCont contp, TSEvent event, void *edata)
 {
-  INKHttpTxn txnp = (INKHttpTxn) edata;
+  TSHttpTxn txnp = (TSHttpTxn) edata;
 
   switch (event) {
-  case INK_EVENT_HTTP_READ_RESPONSE_HDR:
+  case TS_EVENT_HTTP_READ_RESPONSE_HDR:
     if (transformable(txnp)) {
       transform_add(txnp);
     }
-    INKHttpTxnReenable(txnp, INK_EVENT_HTTP_CONTINUE);
+    TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
     return 0;
   default:
     break;
@@ -325,7 +325,7 @@ transform_plugin(INKCont contp, INKEvent event, void *edata)
 int
 check_ts_version()
 {
-  const char *ts_version = INKTrafficServerVersionGet();
+  const char *ts_version = TSTrafficServerVersionGet();
   int result = 0;
 
   if (ts_version) {
@@ -349,35 +349,35 @@ check_ts_version()
 }
 
 void
-INKPluginInit(int argc, const char *argv[])
+TSPluginInit(int argc, const char *argv[])
 {
-  INKPluginRegistrationInfo info;
-  INKMutex mutex = INK_NULL_MUTEX;
+  TSPluginRegistrationInfo info;
+  TSMutex mutex = TS_NULL_MUTEX;
 
   info.plugin_name = "buffered-null-transform";
   info.vendor_name = "MyCompany";
   info.support_email = "ts-api-support@MyCompany.com";
 
-  if (!INKPluginRegister(INK_SDK_VERSION_2_0, &info)) {
-    INKError("[bnull-transform] Plugin registration failed.\n");
+  if (!TSPluginRegister(TS_SDK_VERSION_2_0, &info)) {
+    TSError("[bnull-transform] Plugin registration failed.\n");
     goto Lerror;
   }
 
   if (!check_ts_version()) {
-    INKError("[bnull-transform] Plugin requires Traffic Server 2.0" " or later\n");
+    TSError("[bnull-transform] Plugin requires Traffic Server 2.0" " or later\n");
     goto Lerror;
   }
 
   /* This is call we could use if we need to protect global data */
-  /* INKReleaseAssert ((mutex = INKMutexCreate()) != INK_NULL_MUTEX); */
+  /* TSReleaseAssert ((mutex = TSMutexCreate()) != TS_NULL_MUTEX); */
 
-  if (INKHttpHookAdd(INK_HTTP_READ_RESPONSE_HDR_HOOK, INKContCreate(transform_plugin, mutex)) == INK_ERROR) {
-    INKError("[bnull-transform] Unable to add READ_RESPONSE_HDR_HOOK\n");
+  if (TSHttpHookAdd(TS_HTTP_READ_RESPONSE_HDR_HOOK, TSContCreate(transform_plugin, mutex)) == TS_ERROR) {
+    TSError("[bnull-transform] Unable to add READ_RESPONSE_HDR_HOOK\n");
     goto Lerror;
   }
 
   return;
 
 Lerror:
-  INKError("[bnull-transform] Plugin disabled\n");
+  TSError("[bnull-transform] Plugin disabled\n");
 }

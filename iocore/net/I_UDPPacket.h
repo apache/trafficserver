@@ -56,7 +56,6 @@ public:
   void setArrivalTime(ink_hrtime t);
   IOBufferBlock *getIOBlockChain();
   void setReliabilityPkt();
-  void setPktTSSeq(int64 seqno);
   int getPktLength();
   /**
      Add IOBufferBlock (chain) to end of packet.

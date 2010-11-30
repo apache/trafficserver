@@ -29,15 +29,12 @@
 #include "StatSystem.h"
 #include "P_Net.h"
 #include "api/ts/ts.h"
-#include "api/ts/ts_private_frozen.h"
+#include "api/ts/experimental.h"
 #include "api/ts/InkAPIPrivateIOCore.h"
 #include "HTTP.h"
 #include "List.h"
 #include "ProxyConfig.h"
 #include "P_Cache.h"
-class CacheAPIHooks;
-extern CacheAPIHooks *cache_global_hooks;
-
 
 
 /* ****** Cache Structure ********* */
@@ -100,7 +97,7 @@ public:
 struct INKConfigImpl:public ConfigInfo
 {
   void *mdata;
-  INKConfigDestroyFunc m_destroy_func;
+  TSConfigDestroyFunc m_destroy_func;
 
     virtual ~ INKConfigImpl()
   {
@@ -147,36 +144,16 @@ public:
   ~HttpAPIHooks();
 
   void clear();
-  void prepend(INKHttpHookID id, INKContInternal * cont);
-  void append(INKHttpHookID id, INKContInternal * cont);
-  APIHook *get(INKHttpHookID id);
+  void prepend(TSHttpHookID id, INKContInternal * cont);
+  void append(TSHttpHookID id, INKContInternal * cont);
+  APIHook *get(TSHttpHookID id);
 
   // A boolean value to quickly see if
   //   any hooks are set
   int hooks_set;
 
 private:
-  APIHooks m_hooks[INK_HTTP_LAST_HOOK];
-};
-
-
-class CacheAPIHooks
-{
-public:
-  CacheAPIHooks();
-  ~CacheAPIHooks();
-
-  void clear();
-  void prepend(INKCacheHookID id, INKContInternal * cont);
-  void append(INKCacheHookID id, INKContInternal * cont);
-  APIHook *get(INKCacheHookID id);
-
-  // A boolean value to quickly see if
-  //   any hooks are set
-  int hooks_set;
-
-private:
-    APIHooks m_hooks[INK_HTTP_LAST_HOOK];
+  APIHooks m_hooks[TS_HTTP_LAST_HOOK];
 };
 
 
@@ -196,11 +173,11 @@ public:
       if (!trylock) {
         eventProcessor.schedule_in(this, HRTIME_MSECONDS(10), ET_NET);
       } else {
-        m_cont->handleEvent(INK_EVENT_MGMT_UPDATE, NULL);
+        m_cont->handleEvent(TS_EVENT_MGMT_UPDATE, NULL);
         delete this;
       }
     } else {
-      m_cont->handleEvent(INK_EVENT_MGMT_UPDATE, NULL);
+      m_cont->handleEvent(TS_EVENT_MGMT_UPDATE, NULL);
       delete this;
     }
 
@@ -229,7 +206,5 @@ void api_init();
 
 extern HttpAPIHooks *http_global_hooks;
 extern ConfigUpdateCbTable *global_config_cbs;
-
-//extern inkcoreapi INKMCOPreload_fp MCOPreload_fp;
 
 #endif /* __INK_API_INTERNAL_H__ */

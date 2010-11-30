@@ -31,6 +31,8 @@
 #include "Diags.h"
 #include "HTTP.h"
 
+// TODO: This should be changed later to use TS_HAS_TESTS, but currently, the test
+// most likely isn't functional.
 #if COMPILE_SIMPLE_HTTP
 
 #define HISTORY_SIZE     0

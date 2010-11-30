@@ -71,11 +71,15 @@ overviewRecord::overviewRecord(unsigned long inet_addr, bool local, ClusterPeerI
     node_rec_data.num_recs = 0;
     node_rec_data.recs = NULL;
     recordArraySize = 0;
+    node_rec_first_ix = 0;
   } else {
     node_rec_data.num_recs = cpi->node_rec_data.num_recs;
     recordArraySize = node_rec_data.num_recs * sizeof(RecRecord);
     node_rec_data.recs = new RecRecord[recordArraySize];
     memcpy(node_rec_data.recs, cpi->node_rec_data.recs, recordArraySize);
+
+    // Recaculate the old relative index
+    RecGetRecordOrderAndId(node_rec_data.recs[0].name, &node_rec_first_ix, NULL);
   }
 
 
@@ -192,6 +196,7 @@ overviewRecord::updateStatus(time_t currentTime, ClusterPeerInfo * cpi)
   //  (remote nodes only)
   if (localNode == false) {
     memcpy(node_rec_data.recs, cpi->node_rec_data.recs, recordArraySize);
+    RecGetRecordOrderAndId(node_rec_data.recs[0].name, &node_rec_first_ix, NULL);
   }
 }
 
@@ -274,9 +279,9 @@ overviewRecord::readCounter(const char *name, bool * found)
   int rec_status = REC_ERR_OKAY;
   int order = -1;
   if (localNode == false) {
-    // TODO: Not sure if this is correct now after we eliminated the relative order. Do we care?
     rec_status = RecGetRecordOrderAndId(name, &order, NULL);
     if (rec_status == REC_ERR_OKAY) {
+      order -= node_rec_first_ix; // Offset
       ink_release_assert(order < node_rec_data.num_recs);
       ink_debug_assert(order < node_rec_data.num_recs);
       rec = node_rec_data.recs[order].data.rec_counter;
@@ -300,9 +305,9 @@ overviewRecord::readInteger(const char *name, bool * found)
   int rec_status = REC_ERR_OKAY;
   int order = -1;
   if (localNode == false) {
-    // TODO: Not sure if this is correct now after we eliminated the relative order. Do we care?
     rec_status = RecGetRecordOrderAndId(name, &order, NULL);
     if (rec_status == REC_ERR_OKAY) {
+      order -= node_rec_first_ix; // Offset
       ink_release_assert(order < node_rec_data.num_recs);
       ink_debug_assert(order < node_rec_data.num_recs);
       rec = node_rec_data.recs[order].data.rec_int;
@@ -326,9 +331,9 @@ overviewRecord::readFloat(const char *name, bool * found)
   int rec_status = REC_ERR_OKAY;
   int order = -1;
   if (localNode == false) {
-    // TODO: Not sure if this is correct now after we eliminated the relative order. Do we care?
     rec_status = RecGetRecordOrderAndId(name, &order, NULL);
     if (rec_status == REC_ERR_OKAY) {
+      order -= node_rec_first_ix; // Offset
       ink_release_assert(order < node_rec_data.num_recs);
       ink_debug_assert(order < node_rec_data.num_recs);
       rec = node_rec_data.recs[order].data.rec_float;
@@ -352,9 +357,10 @@ overviewRecord::readString(const char *name, bool * found)
   int rec_status = REC_ERR_OKAY;
   int order = -1;
   if (localNode == false) {
-    // TODO: Not sure if this is correct now after we eliminated the relative order. Do we care?
     rec_status = RecGetRecordOrderAndId(name, &order, NULL);
     if (rec_status == REC_ERR_OKAY) {
+      order -= node_rec_first_ix; // Offset
+      printf("LOCAL NAME IS %s\n", node_rec_data.recs[order].name);
       ink_release_assert(order < node_rec_data.num_recs);
       ink_debug_assert(order < node_rec_data.num_recs);
       rec = xstrdup(node_rec_data.recs[order].data.rec_string);

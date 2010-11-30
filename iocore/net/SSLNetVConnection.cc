@@ -53,12 +53,13 @@ do_SSL_write(SSL * ssl, void *buf, int size)
     else
       r = -errno;
   } while (r == -EINTR || r == -ENOBUFS || r == -ENOMEM);
+
   return r;
 }
 
 
 static int
-ssl_read_from_net(NetHandler * nh, UnixNetVConnection * vc, EThread * lthread, int &ret)
+ssl_read_from_net(NetHandler * nh, UnixNetVConnection * vc, EThread * lthread, int64 &ret)
 {
   NOWARN_UNUSED(nh);
   NetState *s = &vc->read;
@@ -66,8 +67,8 @@ ssl_read_from_net(NetHandler * nh, UnixNetVConnection * vc, EThread * lthread, i
   MIOBufferAccessor & buf = s->vio.buffer;
   IOBufferBlock *b = buf.mbuf->_writer;
   int event = SSL_READ_ERROR_NONE;
-  int bytes_read;
-  int block_write_avail;
+  int64 bytes_read;
+  int64 block_write_avail;
   int sslErr = SSL_ERROR_NONE;
 
   for (bytes_read = 0; (b != 0) && (sslErr == SSL_ERROR_NONE); b = b->next) {
@@ -75,11 +76,11 @@ ssl_read_from_net(NetHandler * nh, UnixNetVConnection * vc, EThread * lthread, i
 
     Debug("ssl", "[SSL_NetVConnection::ssl_read_from_net] b->write_avail()=%d", block_write_avail);
 
-    int offset = 0;
+    int64 offset = 0;
     // while can be replaced with if - need to test what works faster with openssl
     while (block_write_avail > 0) {
       sslvc->read_calls++;
-      int rres = SSL_read(sslvc->ssl, b->end() + offset, block_write_avail);
+      int rres = SSL_read(sslvc->ssl, b->end() + offset, (int)block_write_avail);
 
       Debug("ssl", "[SSL_NetVConnection::ssl_read_from_net] rres=%d", rres);
 
@@ -164,8 +165,8 @@ void
 SSLNetVConnection::net_read_io(NetHandler * nh, EThread * lthread)
 {
   int ret;
-  int r = 0;
-  int bytes = 0;
+  int64 r = 0;
+  int64 bytes = 0;
   NetState *s = &this->read;
   MIOBufferAccessor & buf = s->vio.buffer;
   MUTEX_TRY_LOCK_FOR(lock, s->vio.mutex, lthread, s->vio._cont);
@@ -186,6 +187,7 @@ SSLNetVConnection::net_read_io(NetHandler * nh, EThread * lthread)
   // vc is an SSLNetVConnection.
   if (!getSSLHandShakeComplete()) {
     int err;
+
     if (getSSLClientConnection()) {
       ret = sslStartHandShake(SSL_EVENT_CLIENT, err);
     } else {
@@ -210,7 +212,7 @@ SSLNetVConnection::net_read_io(NetHandler * nh, EThread * lthread)
     return;
   }
   // If there is nothing to do, disable connection
-  int ntodo = s->vio.ntodo();
+  int64 ntodo = s->vio.ntodo();
   if (ntodo <= 0) {
     read_disable(nh, this);
     return;
@@ -281,11 +283,12 @@ SSLNetVConnection::net_read_io(NetHandler * nh, EThread * lthread)
 }
 
 
-int64 SSLNetVConnection::load_buffer_and_write(int64 towrite, int64 &wattempted, int64 &total_wrote, MIOBufferAccessor & buf) {
+int64
+SSLNetVConnection::load_buffer_and_write(int64 towrite, int64 &wattempted, int64 &total_wrote, MIOBufferAccessor & buf) {
   ProxyMutex *mutex = this_ethread()->mutex;
-  int r = 0;
+  int64 r = 0;
   int64 l = 0;
-  int offset = buf.entry->start_offset;
+  int64 offset = buf.entry->start_offset;
   IOBufferBlock *b = buf.entry->block;
 
   do {
@@ -299,6 +302,7 @@ int64 SSLNetVConnection::load_buffer_and_write(int64 towrite, int64 &wattempted,
     }
     // check if to amount to write exceeds that in this buffer
     int64 wavail = towrite - total_wrote;
+
     if (l > wavail)
       l = wavail;
     if (!l)
@@ -308,7 +312,7 @@ int64 SSLNetVConnection::load_buffer_and_write(int64 towrite, int64 &wattempted,
     Debug("ssl", "SSLNetVConnection::loadBufferAndCallWrite, before do_SSL_write, l = %d, towrite = %d, b = %x", l,
           towrite, b);
     write_calls++;
-    r = do_SSL_write(ssl, b->start() + offset, l);
+    r = do_SSL_write(ssl, b->start() + offset, (int)l);
     if (r == l) {
       wattempted = total_wrote;
     }
@@ -328,6 +332,7 @@ int64 SSLNetVConnection::load_buffer_and_write(int64 towrite, int64 &wattempted,
     }
   } else {
     int err = SSL_get_error(ssl, r);
+
     switch (err) {
     case SSL_ERROR_NONE:
       Debug("ssl", "SSL_write-SSL_ERROR_NONE");
@@ -387,8 +392,7 @@ SSLNetVConnection::SSLNetVConnection():
 
 void
 SSLNetVConnection::free(EThread * t) {
-  ProxyMutex *mutex = t->mutex;
-  NET_DECREMENT_DYN_STAT(net_connections_currently_open_stat);
+  NET_SUM_GLOBAL_DYN_STAT(net_connections_currently_open_stat, -1);
   got_remote_addr = 0;
   got_local_addr = 0;
   read.vio.mutex.clear();
@@ -397,8 +401,12 @@ SSLNetVConnection::free(EThread * t) {
   this->mutex.clear();
   flags = 0;
   SET_CONTINUATION_HANDLER(this, (SSLNetVConnHandler) & SSLNetVConnection::startEvent);
-  ink_assert(con.fd == NO_FD);
   nh = NULL;
+  read.triggered = 0;
+  write.triggered = 0;
+  options.reset();
+  closed = 0;
+  ink_assert(con.fd == NO_FD);
   read_calls = 0;
   write_calls = 0;
   connect_calls = 0;
@@ -431,7 +439,12 @@ SSLNetVConnection::free(EThread * t) {
   }
   sslHandShakeComplete = 0;
   sslClientConnection = 0;
-  THREAD_FREE(this, sslNetVCAllocator, t);
+
+  if (from_accept_thread) {
+    sslNetVCAllocator.free(this);  
+  } else {
+    THREAD_FREE(this, sslNetVCAllocator, t);
+  }
 }
 
 int
@@ -478,8 +491,8 @@ SSLNetVConnection::sslStartHandShake(int event, int &err)
 int
 SSLNetVConnection::sslServerHandShakeEvent(int &err)
 {
-
   int ret;
+
   accept_calls++;
   //printf("calling SSL_accept for fd %d\n",con.fd);
   ret = SSL_accept(ssl);
@@ -547,6 +560,7 @@ int
 SSLNetVConnection::sslClientHandShakeEvent(int &err)
 {
   int ret;
+
   connect_calls++;
   //printf("calling connect for fd %d\n",con.fd);
   ret = SSL_connect(ssl);

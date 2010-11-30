@@ -16,12 +16,12 @@ The parameter passed to the plugin should be its position with respective to the
 
 These plugins gets the counter from the header, checks if it is invoked in the correct sequence and then updates the counter. The above plugins are added to the following hooks:
 
-INK_HTTP_READ_REQUEST_HDR_HOOK
-INK_HTTP_OS_DNS_HOOK
-INK_HTTP_SEND_REQUEST_HDR_HOOK
-INK_HTTP_READ_CACHE_HDR_HOOK
-INK_HTTP_READ_RESPONSE_HDR_HOOK
-INK_HTTP_SEND_RESPONSE_HDR_HOOK
+TS_HTTP_READ_REQUEST_HDR_HOOK
+TS_HTTP_OS_DNS_HOOK
+TS_HTTP_SEND_REQUEST_HDR_HOOK
+TS_HTTP_READ_CACHE_HDR_HOOK
+TS_HTTP_READ_RESPONSE_HDR_HOOK
+TS_HTTP_SEND_RESPONSE_HDR_HOOK
 
 At each hook the sequence of invoking the plugins is checked. If the plugins are not invoked in the sequnce of their listing in plugin.config file, then an error message is logged in logs/error.log file.
 

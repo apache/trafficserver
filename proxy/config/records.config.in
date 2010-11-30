@@ -37,7 +37,6 @@ CONFIG proxy.config.cop.linux_min_swapfree_kb INT 10240
 CONFIG proxy.config.cop.linux_min_memfree_kb INT 10240
 CONFIG proxy.config.snapshot_dir STRING snapshots
 CONFIG proxy.config.system.mmap_max INT 2097152
-CONFIG proxy.config.system.memalign_heap INT 0
 CONFIG proxy.config.exec_thread.autoconfig INT 1
 CONFIG proxy.config.exec_thread.autoconfig.scale FLOAT 2.0
 CONFIG proxy.config.exec_thread.limit INT 2
@@ -104,8 +103,10 @@ CONFIG proxy.config.alarm.abs_path STRING NULL
    # server_other_ports STRING 1234:X 12345:X
 CONFIG proxy.config.http.server_port INT 8080
 CONFIG proxy.config.http.server_port_attr STRING X
+# to enable IPv6 listening on port 8080:
+# CONFIG proxy.config.http.server_other_ports STRING 8080:X6
 CONFIG proxy.config.http.server_other_ports STRING NULL
-CONFIG proxy.config.http.ssl_ports STRING 443 563
+CONFIG proxy.config.http.connect_ports STRING 443 563
 CONFIG proxy.config.http.insert_request_via_str INT 1
 CONFIG proxy.config.http.insert_response_via_str INT 0
 CONFIG proxy.config.http.response_server_enabled INT 1
@@ -130,7 +131,7 @@ CONFIG proxy.config.http.user_agent_pipeline INT 8
    ##########################
 CONFIG proxy.config.http.referer_filter INT 0
 CONFIG proxy.config.http.referer_format_redirect INT 1
-CONFIG proxy.config.http.referer_default_redirect STRING http://www.apache.org/
+CONFIG proxy.config.http.referer_default_redirect STRING http://www.example.com/
    ##############################
    # parent proxy configuration #
    ##############################
@@ -147,13 +148,13 @@ CONFIG proxy.config.http.forward.proxy_auth_to_parent INT 0
    ###################################
    # HTTP connection timeouts (secs) #
    ###################################
-   # out: proxy -> os connection
+   # out: proxy -> origin server connection
    # in : ua -> proxy connection
-CONFIG proxy.config.http.keep_alive_no_activity_timeout_in INT 15
-CONFIG proxy.config.http.keep_alive_no_activity_timeout_out INT 30
+CONFIG proxy.config.http.keep_alive_no_activity_timeout_in INT 115
+CONFIG proxy.config.http.keep_alive_no_activity_timeout_out INT 120
 CONFIG proxy.config.http.transaction_no_activity_timeout_in INT 30
-CONFIG proxy.config.http.transaction_no_activity_timeout_out INT 60
-CONFIG proxy.config.http.transaction_active_timeout_in INT 60
+CONFIG proxy.config.http.transaction_no_activity_timeout_out INT 30
+CONFIG proxy.config.http.transaction_active_timeout_in INT 900
 CONFIG proxy.config.http.transaction_active_timeout_out INT 0
 CONFIG proxy.config.http.accept_no_activity_timeout INT 120
 CONFIG proxy.config.http.background_fill_active_timeout INT 60
@@ -299,6 +300,7 @@ CONFIG proxy.config.body_factory.response_suppression_mode INT 0
 ##############################################################################
 CONFIG proxy.config.net.connections_throttle INT 10000
    # timeout in seconds for defering the accept, 0 is disabled
+   # (this enables/disables TCP_DEFER_ACCEPT)
 CONFIG proxy.config.net.tcp_accept_defer_timeout INT 0
 ##############################################################################
 #
@@ -346,6 +348,9 @@ CONFIG proxy.config.cache.enable_read_while_writer INT 0
    # This controls how many objects (average) the disk caches can hold, and
    # how much memory it'll consume for the directory structure.
 CONFIG proxy.config.cache.min_average_object_size INT 8000
+   # How many I/O threads to allocate per disk (spindle). Be aware that RAID
+   # disks would show up to TS as a single spindle.
+CONFIG proxy.config.cache.threads_per_disk INT 8
 ##############################################################################
 #
 # DNS
@@ -395,48 +400,46 @@ CONFIG proxy.config.hostdb.strict_round_robin INT 0
    #   1: log errors only
    #   2: log transactions only
    #   3: full logging (errors + transactions)
-CONFIG proxy.config.log2.logging_enabled INT 3
-CONFIG proxy.config.log2.max_secs_per_buffer INT 5
-CONFIG proxy.config.log2.max_space_mb_for_logs INT 25000
-CONFIG proxy.config.log2.max_space_mb_for_orphan_logs INT 25
-CONFIG proxy.config.log2.max_space_mb_headroom INT 3000
-CONFIG proxy.config.log2.hostname STRING localhost
-CONFIG proxy.config.log2.logfile_dir STRING @rel_logdir@
-CONFIG proxy.config.log2.logfile_perm STRING rw-r--r--
-CONFIG proxy.config.log2.custom_logs_enabled INT 0
-# 0: old log format, 1: new xml log format (default)
-CONFIG proxy.config.log2.xml_logs_config INT 1
-CONFIG proxy.config.log2.squid_log_enabled INT 1
-CONFIG proxy.config.log2.squid_log_is_ascii INT 0
-CONFIG proxy.config.log2.squid_log_name STRING squid
-CONFIG proxy.config.log2.squid_log_header STRING NULL
-CONFIG proxy.config.log2.common_log_enabled INT 0
-CONFIG proxy.config.log2.common_log_is_ascii INT 1
-CONFIG proxy.config.log2.common_log_name STRING common
-CONFIG proxy.config.log2.common_log_header STRING NULL
-CONFIG proxy.config.log2.extended_log_enabled INT 0
-CONFIG proxy.config.log2.extended_log_is_ascii INT 0
-CONFIG proxy.config.log2.extended_log_name STRING extended
-CONFIG proxy.config.log2.extended_log_header STRING NULL
-CONFIG proxy.config.log2.extended2_log_enabled INT 0
-CONFIG proxy.config.log2.extended2_log_is_ascii INT 1
-CONFIG proxy.config.log2.extended2_log_name STRING extended2
-CONFIG proxy.config.log2.extended2_log_header STRING NULL
-CONFIG proxy.config.log2.separate_icp_logs INT 0
-CONFIG proxy.config.log2.separate_mixt_logs INT 0
-CONFIG proxy.config.log2.separate_host_logs INT 0
-LOCAL proxy.local.log2.collation_mode INT 0
-CONFIG proxy.config.log2.collation_host STRING NULL
-CONFIG proxy.config.log2.collation_port INT 8085
-CONFIG proxy.config.log2.collation_secret STRING foobar
-CONFIG proxy.config.log2.collation_host_tagged INT 0
-CONFIG proxy.config.log2.collation_retry_sec INT 5
-CONFIG proxy.config.log2.rolling_enabled INT 1
-CONFIG proxy.config.log2.rolling_interval_sec INT 86400
-CONFIG proxy.config.log2.rolling_offset_hr INT 0
-CONFIG proxy.config.log2.rolling_size_mb INT 10
-CONFIG proxy.config.log2.auto_delete_rolled_files INT 1
-CONFIG proxy.config.log2.sampling_frequency INT 1
+CONFIG proxy.config.log.logging_enabled INT 3
+CONFIG proxy.config.log.max_secs_per_buffer INT 5
+CONFIG proxy.config.log.max_space_mb_for_logs INT 25000
+CONFIG proxy.config.log.max_space_mb_for_orphan_logs INT 25
+CONFIG proxy.config.log.max_space_mb_headroom INT 3000
+CONFIG proxy.config.log.hostname STRING localhost
+CONFIG proxy.config.log.logfile_dir STRING @rel_logdir@
+CONFIG proxy.config.log.logfile_perm STRING rw-r--r--
+CONFIG proxy.config.log.custom_logs_enabled INT 0
+CONFIG proxy.config.log.squid_log_enabled INT 1
+CONFIG proxy.config.log.squid_log_is_ascii INT 0
+CONFIG proxy.config.log.squid_log_name STRING squid
+CONFIG proxy.config.log.squid_log_header STRING NULL
+CONFIG proxy.config.log.common_log_enabled INT 0
+CONFIG proxy.config.log.common_log_is_ascii INT 1
+CONFIG proxy.config.log.common_log_name STRING common
+CONFIG proxy.config.log.common_log_header STRING NULL
+CONFIG proxy.config.log.extended_log_enabled INT 0
+CONFIG proxy.config.log.extended_log_is_ascii INT 0
+CONFIG proxy.config.log.extended_log_name STRING extended
+CONFIG proxy.config.log.extended_log_header STRING NULL
+CONFIG proxy.config.log.extended2_log_enabled INT 0
+CONFIG proxy.config.log.extended2_log_is_ascii INT 1
+CONFIG proxy.config.log.extended2_log_name STRING extended2
+CONFIG proxy.config.log.extended2_log_header STRING NULL
+CONFIG proxy.config.log.separate_icp_logs INT 0
+CONFIG proxy.config.log.separate_mixt_logs INT 0
+CONFIG proxy.config.log.separate_host_logs INT 0
+LOCAL proxy.local.log.collation_mode INT 0
+CONFIG proxy.config.log.collation_host STRING NULL
+CONFIG proxy.config.log.collation_port INT 8085
+CONFIG proxy.config.log.collation_secret STRING foobar
+CONFIG proxy.config.log.collation_host_tagged INT 0
+CONFIG proxy.config.log.collation_retry_sec INT 5
+CONFIG proxy.config.log.rolling_enabled INT 1
+CONFIG proxy.config.log.rolling_interval_sec INT 86400
+CONFIG proxy.config.log.rolling_offset_hr INT 0
+CONFIG proxy.config.log.rolling_size_mb INT 10
+CONFIG proxy.config.log.auto_delete_rolled_files INT 1
+CONFIG proxy.config.log.sampling_frequency INT 1
 ##############################################################################
 #
 # Reverse Proxy
@@ -452,7 +455,7 @@ CONFIG proxy.config.header.parse.no_host_url_redirect STRING NULL
 CONFIG proxy.config.url_remap.default_to_server_pac INT 0
 CONFIG proxy.config.url_remap.default_to_server_pac_port INT -1
 CONFIG proxy.config.url_remap.remap_required INT 1
-CONFIG proxy.config.url_remap.pristine_host_hdr INT 0
+CONFIG proxy.config.url_remap.pristine_host_hdr INT 1
 ##############################################################################
 #
 # SSL Termination

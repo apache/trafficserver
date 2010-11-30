@@ -346,13 +346,13 @@ init_dirs(bool use_librecords = true)
 
   if (access(system_log_dir, W_OK) == -1) {
     if (use_librecords) {
-      REC_ReadConfigString(buf, "proxy.config.log2.logfile_dir", PATH_NAME_MAX);
+      REC_ReadConfigString(buf, "proxy.config.log.logfile_dir", PATH_NAME_MAX);
       Layout::get()->relative(system_log_dir, PATH_NAME_MAX, buf);
     }
     if (access(system_log_dir, W_OK) == -1) {
       mgmt_elog("unable to access() log dir'%s': %d, %s\n",
               system_log_dir, errno, strerror(errno));
-      mgmt_elog("please set 'proxy.config.log2.logfile_dir'\n");
+      mgmt_elog("please set 'proxy.config.log.logfile_dir'\n");
       _exit(1);
     }
   }
@@ -1150,9 +1150,6 @@ SignalHandler(int sig)
 
   if (lmgmt && !clean) {
     clean = 1;
-#ifdef __alpha
-    lmgmt->clean_up = true;
-#endif
     if (lmgmt->watched_process_pid != -1) {
 
       if (sig == SIGTERM || sig == SIGINT) {
@@ -1262,15 +1259,11 @@ printUsage()
 void
 fileUpdated(char *fname)
 {
-
   if (strcmp(fname, "cluster.config") == 0) {
     lmgmt->signalFileChange("proxy.config.cluster.cluster_configuration");
 
   } else if (strcmp(fname, "remap.config") == 0) {
     lmgmt->signalFileChange("proxy.config.url_remap.filename");
-
-  } else if (strcmp(fname, "logs.config") == 0) {
-    lmgmt->signalFileChange("proxy.config.log2.config_file");
 
   } else if (strcmp(fname, "socks.config") == 0) {
     lmgmt->signalFileChange("proxy.config.socks.socks_config_file");
@@ -1335,10 +1328,10 @@ fileUpdated(char *fname)
     mgmt_log(stderr, "[fileUpdated] mgr.cnf file has been modified\n");
 
   } else if (strcmp(fname, "log_hosts.config") == 0) {
-    lmgmt->signalFileChange("proxy.config.log2.hosts_config_file");
+    lmgmt->signalFileChange("proxy.config.log.hosts_config_file");
 
   } else if (strcmp(fname, "logs_xml.config") == 0) {
-    lmgmt->signalFileChange("proxy.config.log2.xml_config_file");
+    lmgmt->signalFileChange("proxy.config.log.xml_config_file");
 
   } else if (strcmp(fname, "splitdns.config") == 0) {
     mgmt_log(stderr, "[fileUpdated] splitdns.config file has been modified\n");

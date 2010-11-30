@@ -78,9 +78,12 @@ rc/trafficserver
 rc/update_records
 
 proxy/api/include/ts
+proxy/api/ts/ts.h
 example/*/.libs
 example/app-template/tsapp
 example/app-template/records.config
+
+tsxs
 
 GPATH
 GRTAGS
