@@ -31,7 +31,7 @@
 #ifndef _RawHashTable_h_
 #define	_RawHashTable_h_
 
-#include "inktomi++.h"
+#include "libts.h"
 
 #include "ink_apidefs.h"
 

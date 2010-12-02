@@ -33,7 +33,7 @@
 #if TS_HAS_V2STATS
 #include <string> // TODO: Get rid of string here, why do we need it ?
 #include <vector> // TODO: Is the vector really necessary ? 
-#include "inktomi++.h"
+#include "libts.h"
 
 class HistogramStats
 {

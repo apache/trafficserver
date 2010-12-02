@@ -29,7 +29,7 @@
  *
  ****************************************************************/
 
-#include "inktomi++.h"
+#include "libts.h"
 #include "CliDisplay.h"
 #include "definitions.h"
 #include <string.h>

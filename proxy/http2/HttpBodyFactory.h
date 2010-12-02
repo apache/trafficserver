@@ -57,7 +57,7 @@
 
 #include <strings.h>
 #include <sys/types.h>
-#include "inktomi++.h"
+#include "libts.h"
 #include "HTTP.h"
 #include "HttpConfig.h"
 #include "HttpCompat.h"

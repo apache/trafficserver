@@ -22,7 +22,7 @@
  */
 
 
-#include "inktomi++.h"
+#include "libts.h"
 #include "I_Layout.h"
 
 #ifdef HAVE_PCRE_PCRE_H

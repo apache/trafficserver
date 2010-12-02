@@ -23,7 +23,7 @@
 
 #ifndef _ssl_Cert_Lookup_h_
 #define _ssl_Cert_Lookup_h_
-#include "inktomi++.h"
+#include "libts.h"
 #include "P_SSLNetProcessor.h"
 
 #define PATH_NAME_MAX         511

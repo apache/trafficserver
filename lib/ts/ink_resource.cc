@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "inktomi++.h"
+#include "libts.h"
 
 #include "ink_assert.h"
 #include "ink_atomic.h"

@@ -24,7 +24,7 @@
 #ifndef _I_EventProcessor_h_
 #define _I_EventProcessor_h_
 
-#include "inktomi++.h"
+#include "libts.h"
 #include "I_Continuation.h"
 #include "I_Processor.h"
 #include "I_Event.h"

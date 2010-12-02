@@ -25,7 +25,7 @@
 #ifndef _I_Action_h_
 #define _I_Action_h_
 
-#include "inktomi++.h"
+#include "libts.h"
 #include "I_Thread.h"
 #include "I_Continuation.h"
 

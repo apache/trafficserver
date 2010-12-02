@@ -25,7 +25,7 @@
 #include <stdlib.h>
 
 #include "P_Net.h"
-#include "inktomi++.h"
+#include "libts.h"
 
 //Diags stuff from test_I_Net.cc:
 Diags *diags;

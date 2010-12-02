@@ -26,7 +26,7 @@
  *
  ****************************************************************************/
 
-#include "inktomi++.h"
+#include "libts.h"
 #include "MgmtConverter.h"
 #include "RecordsConfig.h"
 #include "Main.h"

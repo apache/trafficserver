@@ -24,7 +24,7 @@
 #ifndef _I_PriorityEventQueue_h_
 #define _I_PriorityEventQueue_h_
 
-#include "inktomi++.h"
+#include "libts.h"
 #include "I_ProxyAllocator.h"
 #include "I_Event.h"
 

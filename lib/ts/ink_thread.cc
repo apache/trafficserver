@@ -28,7 +28,7 @@
   Generic threads interface.
 **************************************************************************/
 
-#include "inktomi++.h"
+#include "libts.h"
 #include "ink_unused.h"  /* MAGIC_EDITING_TAG */
 
 // // ignore the compiler warning... so that this can be used

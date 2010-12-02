@@ -25,7 +25,7 @@
 #define __ABSTRACT_BUFFER_H__
 
 
-#include "inktomi++.h"
+#include "libts.h"
 
 
 enum ABError

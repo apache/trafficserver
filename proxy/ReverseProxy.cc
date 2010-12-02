@@ -27,7 +27,7 @@
 
  */
 
-#include "inktomi++.h"
+#include "libts.h"
 #include <dlfcn.h>
 #include "Main.h"
 #include "Error.h"

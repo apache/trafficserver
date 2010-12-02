@@ -47,7 +47,7 @@
 #include <ctype.h>
 #endif
 
-#include "inktomi++.h"
+#include "libts.h"
 #include "ProxyConfig.h"
 
 #undef MgmtInt

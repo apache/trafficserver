@@ -29,7 +29,7 @@
  *
  ****************************************************************************/
 
-#include "inktomi++.h"
+#include "libts.h"
 #include "I_Layout.h"
 #include "Tokenizer.h"
 #include "TextBuffer.h"

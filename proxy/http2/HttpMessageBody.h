@@ -24,7 +24,7 @@
 #ifndef _HttpMessageBody_h_
 #define _HttpMessageBody_h_
 
-#include "inktomi++.h"
+#include "libts.h"
 #include "HTTP.h"
 #include "HttpConfig.h"
 #include "Error.h"

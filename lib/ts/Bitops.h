@@ -23,7 +23,7 @@
 
 #ifndef __BITOPS_H__
 #define __BITOPS_H__
-#include "inktomi++.h"
+#include "libts.h"
 
 /**
   Find First (bit) Set. Index starts at 1.

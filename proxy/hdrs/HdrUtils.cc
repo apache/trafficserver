@@ -31,7 +31,7 @@
 
  ****************************************************************************/
 
-#include "inktomi++.h"
+#include "libts.h"
 #include "HdrUtils.h"
 
 #define GETNEXT() {      \

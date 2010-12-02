@@ -29,7 +29,7 @@
    SSL Configurations
  ****************************************************************************/
 
-#include "inktomi++.h"
+#include "libts.h"
 #include "I_Layout.h"
 
 #include <string.h>

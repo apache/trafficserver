@@ -25,7 +25,7 @@
 #ifndef _EThread_h_
 #define _EThread_h_
 
-#include "inktomi++.h"
+#include "libts.h"
 #include "I_Thread.h"
 #include "I_PriorityEventQueue.h"
 #include "I_ProxyAllocator.h"

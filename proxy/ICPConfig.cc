@@ -28,7 +28,7 @@
 
 ****************************************************************************/
 
-#include "inktomi++.h"
+#include "libts.h"
 #include "P_EventSystem.h"
 #include "P_Cache.h"
 #include "P_Net.h"

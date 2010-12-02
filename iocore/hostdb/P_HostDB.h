@@ -36,7 +36,7 @@
 #define TS_INLINE inline
 #endif
 
-#include "inktomi++.h"
+#include "libts.h"
 
 #ifdef SPLIT_DNS
 #include "P_SplitDNS.h"

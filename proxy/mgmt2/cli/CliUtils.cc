@@ -30,7 +30,7 @@
  ****************************************************************************/
 
 #include "ink_unused.h"        /* MAGIC_EDITING_TAG */
-#include "inktomi++.h"
+#include "libts.h"
 #include "I_Layout.h"
 #include "CliUtils.h"
 #include "clientCLI.h"

@@ -23,7 +23,7 @@
 
 #if !defined (_REMAPPLUGININFO_h_)
 #define _REMAPPLUGININFO_h_
-#include "inktomi++.h"
+#include "libts.h"
 #include "api/ts/remap.h"
 
 // Remap inline options

@@ -26,7 +26,7 @@
 
 **************************************************************************/
 
-#include "inktomi++.h"
+#include "libts.h"
 #include "signals.h"
 #include "ProxyConfig.h"
 #include "P_EventSystem.h"

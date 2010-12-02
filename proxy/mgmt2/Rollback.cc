@@ -22,7 +22,7 @@
  */
 
 /****************************************************************************/
-#include "inktomi++.h"
+#include "libts.h"
 #include "LocalManager.h"
 #include "Rollback.h"
 #include "WebMgmtUtils.h"

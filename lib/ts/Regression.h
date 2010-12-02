@@ -24,7 +24,7 @@
 #ifndef _Regression_h
 #define _Regression_h
 
-#include "inktomi++.h"
+#include "libts.h"
 #include "Regex.h"
 
 //   Each module should provide one or more regression tests

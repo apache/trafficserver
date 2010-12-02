@@ -29,7 +29,7 @@
  *
  *
  ***************************************************************************/
-#include "inktomi++.h"
+#include "libts.h"
 #include <limits.h>
 #include "I_Layout.h"
 

@@ -32,7 +32,7 @@
 #ifndef __P_SSLNETPROCESSOR_H
 #define __P_SSLNETPROCESSOR_H
 
-#include "inktomi++.h"
+#include "libts.h"
 #include "P_Net.h"
 #include <openssl/ssl.h>
 #include <openssl/err.h>

@@ -28,7 +28,7 @@
 #define TS_INLINE
 #endif
 
-#include "inktomi++.h"
+#include "libts.h"
 #include "I_EventSystem.h"
 #include "I_AIO.h"
 #include "I_CacheDefs.h"

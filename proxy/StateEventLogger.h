@@ -68,7 +68,7 @@
 // (e.g. writing out data and freeing up buffer space) is constant
 // cost, and append is constant.  The only cost is that sequential
 // acces gets split into possibly two non-contiguous operations.
-#include "inktomi++.h"
+#include "libts.h"
 #include "ink_platform.h"
 #include <time.h>
 

@@ -30,7 +30,7 @@
 #endif
 
 #define PATH_NAME_MAX 511
-#include "inktomi++.h"
+#include "libts.h"
 #include "P_EventSystem.h"
 #include "P_AIO.h"
 #include "I_RecProcess.h"

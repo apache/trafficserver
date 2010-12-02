@@ -26,7 +26,7 @@
 #ifndef LOG_SOCK_H
 #define LOG_SOCK_H
 
-#include "inktomi++.h"
+#include "libts.h"
 #include "LogLimits.h"
 
 /*-------------------------------------------------------------------------

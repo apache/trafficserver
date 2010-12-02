@@ -31,7 +31,7 @@
 
 ****************************************************************************/
 
-#include "inktomi++.h"
+#include "libts.h"
 #include "Main.h"
 #include "P_EventSystem.h"
 #include "P_Cache.h"

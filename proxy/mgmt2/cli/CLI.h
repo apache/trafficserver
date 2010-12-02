@@ -33,7 +33,7 @@
 #define _CLI_H_
 
 void handleOverseer(int cliFD, int mode);
-#include "inktomi++.h"
+#include "libts.h"
 #include "TextBuffer.h"
 #include "CLIeventHandler.h"
 

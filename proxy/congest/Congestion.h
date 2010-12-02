@@ -31,7 +31,7 @@
 #ifndef CONGESTION_H_
 #define CONGESTION_H_
 
-#include "inktomi++.h"
+#include "libts.h"
 #include "P_EventSystem.h"
 #include "ControlBase.h"
 #include "ControlMatcher.h"

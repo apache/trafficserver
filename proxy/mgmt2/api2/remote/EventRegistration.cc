@@ -31,7 +31,7 @@
  *
  ***************************************************************************/
 
-#include "inktomi++.h"
+#include "libts.h"
 #include <stdio.h>
 #include <sys/time.h>
 #include <sys/socket.h>

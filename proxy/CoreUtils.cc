@@ -105,7 +105,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <math.h>
-#include "inktomi++.h"
+#include "libts.h"
 #include "DynArray.h"
 #include "ink_bool.h"
 #include "CoreUtils.h"
@@ -138,7 +138,7 @@ int program_counter = 0;
 #include <stdlib.h>
 #include <stdint.h>
 #include <math.h>
-#include "inktomi++.h"
+#include "libts.h"
 #include "CoreUtils.h"
 #endif /* darwin || freebsd || solaris */
 

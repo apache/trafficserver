@@ -34,7 +34,7 @@
 #if !defined _Error_h_
 #define	_Error_h_
 
-#include "inktomi++.h"
+#include "libts.h"
 #include "Diags.h"
 
 //////////////////////////////////////////////////////////////////////////////

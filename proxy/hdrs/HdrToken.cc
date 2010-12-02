@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "inktomi++.h"
+#include "libts.h"
 #include <stdio.h>
 #include "Allocator.h"
 #include "Compatability.h"

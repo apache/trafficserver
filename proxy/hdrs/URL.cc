@@ -22,7 +22,7 @@
  */
 
 #include <assert.h>
-#include "inktomi++.h"
+#include "libts.h"
 #include "URL.h"
 #include "MIME.h"
 #include "HTTP.h"

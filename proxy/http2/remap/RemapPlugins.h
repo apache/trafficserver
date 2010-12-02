@@ -28,7 +28,7 @@
 #if !defined (_REMAPPLUGINS_h_)
 #define _REMAPPLUGINS_h_
 
-#include "inktomi++.h"
+#include "libts.h"
 #include "I_EventSystem.h"
 #include "RemapProcessor.h"
 #include "api/ts/remap.h"

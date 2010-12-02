@@ -29,7 +29,7 @@
 
  ****************************************************************************/
 
-#include "inktomi++.h"
+#include "libts.h"
 
 #include <assert.h>
 #if defined(linux)

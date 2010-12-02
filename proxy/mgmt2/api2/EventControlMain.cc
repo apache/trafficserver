@@ -29,7 +29,7 @@
  *
  ***************************************************************************/
 
-#include "inktomi++.h"
+#include "libts.h"
 #include "LocalManager.h"
 #include "MgmtSocket.h"
 #include "EventControlMain.h"

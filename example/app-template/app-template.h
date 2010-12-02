@@ -24,7 +24,7 @@
 #ifndef _app_template_h_
 #define _app_template_h_
 
-#include "inktomi++.h"
+#include "libts.h"
 
 #define DEFAULT_ROOT_DIRECTORY            PREFIX
 #define DEFAULT_LOCAL_STATE_DIRECTORY     "var/trafficserver"

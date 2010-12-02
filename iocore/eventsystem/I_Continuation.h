@@ -36,7 +36,7 @@
 #ifndef _I_Continuation_h_
 #define _I_Continuation_h_
 
-#include "inktomi++.h"
+#include "libts.h"
 #include "I_Lock.h"
 
 class Continuation;

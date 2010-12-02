@@ -32,7 +32,7 @@
 
  ***************************************************************************/
 #ifndef TS_MICRO
-#include "inktomi++.h"
+#include "libts.h"
 #include "Error.h"
 #include "HTTP.h"
 #include "ICP.h"

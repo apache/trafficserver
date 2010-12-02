@@ -27,7 +27,7 @@
 
  ***************************************************************************/
 
-#include "inktomi++.h"
+#include "libts.h"
 #include "signals.h"
 #include "DiagsConfig.h"
 #include "Main.h"

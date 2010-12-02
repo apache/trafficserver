@@ -35,7 +35,7 @@
 #define _HTTP_PAGES_H_
 
 #ifndef INK_NO_STAT_PAGES
-#include "inktomi++.h"
+#include "libts.h"
 #include "P_EventSystem.h"
 #include "DynArray.h"
 #include "HTTP.h"

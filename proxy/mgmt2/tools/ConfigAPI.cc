@@ -23,7 +23,7 @@
 
 #if defined(linux) || defined(solaris) || defined(freebsd) || defined(darwin)
 
-#include "inktomi++.h"
+#include "libts.h"
 #include "I_Layout.h"
 #include "ConfigAPI.h"
 #include "SysAPI.h"

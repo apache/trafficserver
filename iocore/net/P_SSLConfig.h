@@ -31,7 +31,7 @@
 #ifndef __P_SSLCONFIG_H__
 #define __P_SSLCONFIG_H__
 
-#include "inktomi++.h"
+#include "libts.h"
 
 #define	    SSL_NO_ACCEL	    0
 #define     SSL_NCIPHER_ACCEL	    1

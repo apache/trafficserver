@@ -32,7 +32,7 @@
 #ifndef _CLI_LINEBUFFER_H_
 #define _CLI_LINEBUFFER_H_
 
-#include "inktomi++.h"
+#include "libts.h"
 #include "DynArray.h"
 
 /* Class to handle formatted line output from CLI */

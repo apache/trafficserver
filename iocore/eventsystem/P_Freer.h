@@ -25,7 +25,7 @@
 #define _P_Freer_h_
 
 
-#include "inktomi++.h"
+#include "libts.h"
 
 template<class C> struct DeleterContinuation: public Continuation
 {

@@ -26,7 +26,7 @@
  *
  */
 
-#include "inktomi++.h"
+#include "libts.h"
 
 #include "I_Version.h"
 #include "I_EventSystem.h"

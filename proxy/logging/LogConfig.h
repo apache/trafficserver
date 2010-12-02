@@ -26,7 +26,7 @@
 #ifndef LOG_CONFIG_H
 #define LOG_CONFIG_H
 
-#include "inktomi++.h"
+#include "libts.h"
 
 #include "P_RecProcess.h"
 

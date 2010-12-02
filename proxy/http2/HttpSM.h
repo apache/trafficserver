@@ -33,7 +33,7 @@
 #ifndef _HTTP_SM_H_
 #define _HTTP_SM_H_
 
-#include "inktomi++.h"
+#include "libts.h"
 #include "P_EventSystem.h"
 #include "HttpCacheSM.h"
 #include "HttpTransact.h"

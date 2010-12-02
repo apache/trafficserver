@@ -31,7 +31,7 @@
 #if !defined (_HttpTransactCache_h_)
 #define _HttpTransactCache_h_
 
-#include "inktomi++.h"
+#include "libts.h"
 
 struct CacheHTTPInfoVector;
 

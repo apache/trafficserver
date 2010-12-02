@@ -37,7 +37,7 @@
 #ifndef _P_NET_VC_TEST_H_
 #define _P_NET_VC_TEST_H_
 
-#include "inktomi++.h"
+#include "libts.h"
 
 class VIO;
 class MIOBuffer;

@@ -32,7 +32,7 @@
 
 #include "ink_config.h"
 
-#include "inktomi++.h"
+#include "libts.h"
 #if !defined(linux)
 #include <sys/lock.h>
 #endif

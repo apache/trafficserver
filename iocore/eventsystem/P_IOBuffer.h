@@ -25,7 +25,7 @@
 
 #if !defined (_P_IOBuffer_h)
 #define _P_IOBuffer_h
-#include "inktomi++.h"
+#include "libts.h"
 
 // TODO: I think we're overly aggressive here on making MIOBuffer 64-bit
 // but not sure it's worthwhile changing anything to 32-bit honestly.

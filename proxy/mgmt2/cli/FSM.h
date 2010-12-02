@@ -32,7 +32,7 @@
 #ifndef _FSM_H
 #define _FSM_H
 
-#include "inktomi++.h"
+#include "libts.h"
 #include "AbsEventHandler.h"
 
 /* A simple queue for FSM events, borrowed from "SimpleQueue.h"

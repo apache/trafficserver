@@ -22,7 +22,7 @@
  */
 
 
-#include "inktomi++.h"
+#include "libts.h"
 #include "Hash_Table.h"
 #include "HttpSM.h"
 #include "HttpTransactCache.h"

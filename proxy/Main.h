@@ -33,7 +33,7 @@
 #ifndef _Main_h_
 #define	_Main_h_
 
-#include "inktomi++.h"
+#include "libts.h"
 #include "Regression.h"
 #include "I_Version.h"
 

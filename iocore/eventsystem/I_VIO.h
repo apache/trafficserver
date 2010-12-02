@@ -25,7 +25,7 @@
 #if !defined (I_VIO_h)
 #define I_VIO_h
 
-#include "inktomi++.h"
+#include "libts.h"
 #include "I_EventSystem.h"
 #if !defined(I_IOBuffer_h)
 #error "include I_IOBuffer.h"

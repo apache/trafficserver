@@ -29,7 +29,7 @@
 #if !defined (INK_NO_LOG)
 #ifndef LOG_ACCESS_H
 #define LOG_ACCESS_H
-#include "inktomi++.h"
+#include "libts.h"
 #include "LogField.h"
 
 /*-------------------------------------------------------------------------

@@ -39,7 +39,7 @@
 #if !defined (I_IOBuffer_h)
 #define I_IOBuffer_h
 
-#include "inktomi++.h"
+#include "libts.h"
 
 struct MIOBufferAccessor;
 

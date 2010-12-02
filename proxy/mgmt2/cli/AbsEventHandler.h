@@ -32,7 +32,7 @@
 #ifndef _ABS_EVENTHANDLER_H
 #define _ABS_EVENTHANDLER_H
 
-#include "inktomi++.h"
+#include "libts.h"
 
 #define INTERNAL_ERROR	0       /* Internal error event, must define */
                                 /* 'application events' > 0 but must */

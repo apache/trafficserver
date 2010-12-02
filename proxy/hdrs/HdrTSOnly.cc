@@ -37,7 +37,7 @@
 
  ****************************************************************************/
 
-#include "inktomi++.h"
+#include "libts.h"
 #include "HTTP.h"
 #include "P_EventSystem.h"
 

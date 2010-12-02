@@ -29,7 +29,7 @@
 
 *****************************************************************************/
 
-#include "inktomi++.h"
+#include "libts.h"
 #include "Allocator.h"
 #include "ink_align.h"
 

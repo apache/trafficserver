@@ -22,7 +22,7 @@
 
  */
 
-#include "inktomi++.h"
+#include "libts.h"
 #include "ink_error.h"
 #include "ink_stack_trace.h"
 

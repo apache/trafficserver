@@ -29,7 +29,7 @@
  ****************************************************************/
 
 
-#include "inktomi++.h"
+#include "libts.h"
 #include <ConfigCmd.h>
 #include <CliDisplay.h>
 #include <CliMgmtUtils.h>

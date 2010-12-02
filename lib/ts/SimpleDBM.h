@@ -43,7 +43,7 @@
 #ifndef _SimpleDBM_h_
 #define	_SimpleDBM_h_
 
-#include "inktomi++.h"
+#include "libts.h"
 
 class SimpleDBM;
 

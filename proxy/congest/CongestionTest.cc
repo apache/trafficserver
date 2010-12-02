@@ -27,7 +27,7 @@
  *
  *
  ****************************************************************************/
-#include "inktomi++.h"
+#include "libts.h"
 #include <math.h>
 #include "Main.h"
 #include "CongestionDB.h"

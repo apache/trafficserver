@@ -32,7 +32,7 @@
  *
  ****************************************************************************/
 
-//#include "inktomi++.h"
+//#include "libts.h"
 #include "WebGlobals.h"
 
 class ExpandingArray;

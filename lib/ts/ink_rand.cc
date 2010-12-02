@@ -50,7 +50,7 @@
 */
 
 
-#include "inktomi++.h"
+#include "libts.h"
 
 
 #define N              (624)    // length of state vector

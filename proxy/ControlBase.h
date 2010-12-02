@@ -33,7 +33,7 @@
 #ifndef _CONTROL_BASE_H_
 #define _CONTROL_BASE_H_
 
-#include "inktomi++.h"
+#include "libts.h"
 #include "DynArray.h"
 class HttpRequestData;
 class Tokenizer;

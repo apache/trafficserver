@@ -35,7 +35,7 @@
 #define TS_INLINE inline
 #endif
 
-#include "inktomi++.h"
+#include "libts.h"
 #include "I_DNS.h"
 #include "P_EventSystem.h"
 #include "I_Cache.h"

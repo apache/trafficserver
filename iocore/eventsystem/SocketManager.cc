@@ -25,7 +25,7 @@
 
   SocketManager.cc
  ****************************************************************************/
-#include "inktomi++.h"
+#include "libts.h"
 
 #if !defined(linux)
 #include <sys/filio.h>

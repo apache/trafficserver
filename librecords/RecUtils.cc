@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "inktomi++.h"
+#include "libts.h"
 #include "P_RecUtils.h"
 #include "P_RecCore.h"
 #include "P_RecTree.h"

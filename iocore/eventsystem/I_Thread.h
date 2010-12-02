@@ -63,7 +63,7 @@
 #error "include I_EventSystem.h or P_EventSystem.h"
 -- -include I_Event.h or P_Event.h
 #endif
-#include "inktomi++.h"
+#include "libts.h"
   class Thread;
 class ProxyMutex;
 

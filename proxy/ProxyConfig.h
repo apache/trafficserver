@@ -31,7 +31,7 @@
 #ifndef _Proxy_Config_h
 #define _Proxy_Config_h
 
-#include "inktomi++.h"
+#include "libts.h"
 #include "ProcessManager.h"
 #include "Error.h"
 

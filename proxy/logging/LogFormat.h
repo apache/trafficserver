@@ -28,7 +28,7 @@
 
 #define LOG_FIELD_MARKER      	'\377'
 
-#include "inktomi++.h"
+#include "libts.h"
 #include "LogField.h"
 #include "LogFormatType.h"
 #include "InkXml.h"

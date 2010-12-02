@@ -41,7 +41,7 @@
 #include "ink_bool.h"
 #include "ink_hash_table.h"
 #include "ink_mutex.h"
-/*#include "inktomi++.h"*/
+/*#include "libts.h"*/
 
 /***********************************************************************
  *

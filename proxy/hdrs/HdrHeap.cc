@@ -30,7 +30,7 @@
 
  ****************************************************************************/
 
-#include "inktomi++.h"
+#include "libts.h"
 #include "HdrHeap.h"
 #include "URL.h"
 #include "MIME.h"

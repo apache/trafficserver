@@ -27,7 +27,7 @@
  *
  *
  ****************************************************************************/
-#include "inktomi++.h"
+#include "libts.h"
 #include "I_Net.h"
 #include "CongestionDB.h"
 #include "Congestion.h"

@@ -27,7 +27,7 @@
  This file implements the LogConfig object.
 
  ***************************************************************************/
-#include "inktomi++.h"
+#include "libts.h"
 #include "I_Layout.h"
 
 #ifdef HAVE_SYS_PARAM_H

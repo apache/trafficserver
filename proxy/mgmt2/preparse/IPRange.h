@@ -24,7 +24,7 @@
 #ifndef _IPRange_h_
 #define _IPRange_h_
 
-#include "inktomi++.h"
+#include "libts.h"
 
 #define MAX_IP 400
 #define MAX_IP_RANGES 400

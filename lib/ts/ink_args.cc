@@ -26,7 +26,7 @@ Process arguments
 
 ****************************************************************************/
 
-#include "inktomi++.h"
+#include "libts.h"
 #include "ink_unused.h"  /* MAGIC_EDITING_TAG */
 
 //

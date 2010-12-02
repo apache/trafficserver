@@ -33,7 +33,7 @@
 #include <stdarg.h>
 #include <string.h>
 
-#include "inktomi++.h"
+#include "libts.h"
 #include "Ptr.h"
 #include "LogUtils.h"
 #include "ink_string.h"

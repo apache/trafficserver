@@ -24,7 +24,7 @@
 #if !defined (_HttpAccept_h_)
 #define _HttpAccept_h_
 
-#include "inktomi++.h"
+#include "libts.h"
 #include "P_EventSystem.h"
 #include "HttpConfig.h"
 #include "HTTP.h"

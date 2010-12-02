@@ -28,7 +28,7 @@
 
  ****************************************************************************/
 
-#include "inktomi++.h"
+#include "libts.h"
 #include "I_Layout.h"
 #ifdef NON_MODULAR
 #include "P_HostDB.h"

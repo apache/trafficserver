@@ -28,7 +28,7 @@
 
 #include <stdio.h>
 
-#include "inktomi++.h"
+#include "libts.h"
 #include "I_Layout.h"
 
 #include "ts.h"

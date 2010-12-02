@@ -30,7 +30,7 @@
                   (char*)NULL);
  ****************************************************************/
 
-#include "inktomi++.h"
+#include "libts.h"
 #include "I_Layout.h"
 #include "INKMgmtAPI.h"
 #include "ShowCmd.h"

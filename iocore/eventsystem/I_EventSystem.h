@@ -29,7 +29,7 @@
 #define TS_INLINE
 #endif
 
-#include "inktomi++.h"
+#include "libts.h"
 
 #include "I_IOBuffer.h"
 #include "I_Action.h"

@@ -36,7 +36,7 @@
 #define TS_INLINE inline
 #endif
 
-#include "inktomi++.h"
+#include "libts.h"
 
 #include "I_EventSystem.h"
 

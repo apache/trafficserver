@@ -33,7 +33,7 @@
 #ifndef _I_SocketManager_h_
 #define _I_SocketManager_h_
 
-#include "inktomi++.h"
+#include "libts.h"
 #include "I_EventSystem.h"
 #include "I_Thread.h"
 

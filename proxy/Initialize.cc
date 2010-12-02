@@ -30,7 +30,7 @@
 
 
  ****************************************************************************/
-#include "inktomi++.h"
+#include "libts.h"
 
 #include "Diags.h"
 #include "I_EventSystem.h"

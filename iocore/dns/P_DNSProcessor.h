@@ -26,7 +26,7 @@
 
 /*
   #include "I_DNS.h"
-  #include "inktomi++.h"
+  #include "libts.h"
   #include <arpa/nameser.h>
   #include "I_Cache.h"
   #include "P_Net.h"

@@ -32,7 +32,7 @@
  ***************************************************************************/
 #include "ink_unused.h"
 
-#include "inktomi++.h"
+#include "libts.h"
 #include "Error.h"
 #include "LogAccessHttp.h"
 #include "http2/HttpSM.h"

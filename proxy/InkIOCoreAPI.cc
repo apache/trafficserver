@@ -27,7 +27,7 @@
  * file to ensure that it gets exported as a global symbol in TS
  */
 
-#include "inktomi++.h"
+#include "libts.h"
 #include "api/ts/InkAPIPrivateIOCore.h"
 #if defined(solaris) && !defined(__GNUC__)
 #include "P_EventSystem.h" // I_EventSystem.h

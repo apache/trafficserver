@@ -25,7 +25,7 @@
 #ifndef LOG_FILTER_H
 #define LOG_FILTER_H
 
-#include "inktomi++.h"
+#include "libts.h"
 #include "LogAccess.h"
 #include "LogField.h"
 #include "LogFormat.h"

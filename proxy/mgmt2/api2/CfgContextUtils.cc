@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "inktomi++.h"
+#include "libts.h"
 #include "ink_platform.h"
 #include "CfgContextUtils.h"
 #include "Tokenizer.h"

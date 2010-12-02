@@ -33,7 +33,7 @@
 #ifndef _MGMT_HASH_TABLE_H
 #define _MGMT_HASH_TABLE_H
 
-//#include "inktomi++.h"
+//#include "libts.h"
 #include "ink_hash_table.h"
 #include "ink_mutex.h"
 

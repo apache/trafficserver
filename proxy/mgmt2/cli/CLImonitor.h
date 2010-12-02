@@ -32,7 +32,7 @@
 #ifndef _CLI_MONITOR_H_
 #define _CLI_MONITOR_H_
 
-#include "inktomi++.h"
+#include "libts.h"
 #include "CLIeventHandler.h"    /* CLI_DATA */
 
 /* Containter for monitor global variables/fcns */

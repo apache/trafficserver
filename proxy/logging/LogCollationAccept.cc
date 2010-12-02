@@ -25,7 +25,7 @@
 // include files
 //-------------------------------------------------------------------------
 
-#include "inktomi++.h"
+#include "libts.h"
 #include "P_EventSystem.h"
 
 #include "Log.h"

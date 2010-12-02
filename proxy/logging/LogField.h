@@ -26,7 +26,7 @@
 #ifndef LOG_FIELD_H
 #define LOG_FIELD_H
 
-#include "inktomi++.h"
+#include "libts.h"
 #include "LogFieldAliasMap.h"
 
 class LogAccess;

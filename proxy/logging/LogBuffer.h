@@ -26,7 +26,7 @@
 #ifndef LOG_BUFFER_H
 #define LOG_BUFFER_H
 
-#include "inktomi++.h"
+#include "libts.h"
 #include "LogFormatType.h"
 #include "LogLimits.h"
 

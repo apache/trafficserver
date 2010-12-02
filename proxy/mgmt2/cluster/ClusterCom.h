@@ -43,7 +43,7 @@
 #define _CLUSTER_COM_H
 
 #include "ink_platform.h"
-//#include "inktomi++.h"
+//#include "libts.h"
 #include "BaseRecords.h"
 #include "Rollback.h"
 

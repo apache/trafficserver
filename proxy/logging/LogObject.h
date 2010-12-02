@@ -26,7 +26,7 @@
 #ifndef LOG_OBJECT_H
 #define LOG_OBJECT_H
 
-#include "inktomi++.h"
+#include "libts.h"
 #include "Log.h"
 #include "LogFile.h"
 #include "LogFormat.h"

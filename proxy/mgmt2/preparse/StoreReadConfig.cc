@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "inktomi++.h"
+#include "libts.h"
 /****************************************************************************
 
   StoreReadConfig.cc

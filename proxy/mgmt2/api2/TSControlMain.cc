@@ -30,7 +30,7 @@
  *
  ***************************************************************************/
 
-#include "inktomi++.h"
+#include "libts.h"
 #include "LocalManager.h"
 #include "Main.h"
 #include "MgmtSocket.h"

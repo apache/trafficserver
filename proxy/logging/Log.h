@@ -294,7 +294,7 @@
 #define LOG_H
 
 #include <stdarg.h>
-#include "inktomi++.h"
+#include "libts.h"
 #include "P_RecProcess.h"
 
 class LogAccess;

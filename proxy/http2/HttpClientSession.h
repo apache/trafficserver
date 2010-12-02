@@ -32,7 +32,7 @@
 #ifndef _HTTP_CLIENT_SESSION_H_
 #define _HTTP_CLIENT_SESSION_H_
 
-#include "inktomi++.h"
+#include "libts.h"
 #include "P_Net.h"
 #include "InkAPIInternal.h"
 #include "HTTP.h"

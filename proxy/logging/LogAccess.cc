@@ -38,7 +38,7 @@
  ***************************************************************************/
 #include "ink_unused.h"
 
-#include "inktomi++.h"
+#include "libts.h"
 
 #include "Error.h"
 #include "HTTP.h"

@@ -23,7 +23,7 @@
 
 #include <limits.h>
 #include <string.h>
-#include "inktomi++.h"
+#include "libts.h"
 #include "P_Cache.h"
 #include "P_Net.h"
 #include "P_HostDB.h"

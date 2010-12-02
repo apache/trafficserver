@@ -29,7 +29,7 @@
 
 
  ***************************************************************************/
-#include "inktomi++.h"
+#include "libts.h"
 
 #include "Error.h"
 #include "Resource.h"

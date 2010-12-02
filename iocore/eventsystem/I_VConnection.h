@@ -25,7 +25,7 @@
 #if !defined (_I_VConnection_h_)
 #define _I_VConnection_h_
 
-#include "inktomi++.h"
+#include "libts.h"
 #include "I_EventSystem.h"
 #if !defined(I_VIO_h)
 #error "include I_VIO.h"

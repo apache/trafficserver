@@ -31,7 +31,7 @@
  *
  */
 
-#include "inktomi++.h"
+#include "libts.h"
 #include "Main.h"
 #include "Alarms.h"
 #include "Diags.h"

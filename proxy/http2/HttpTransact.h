@@ -25,7 +25,7 @@
 #if !defined (_HttpTransact_h_)
 #define _HttpTransact_h_
 
-#include "inktomi++.h"
+#include "libts.h"
 #include "P_HostDB.h"
 #include "P_Net.h"
 #include "HttpConfig.h"

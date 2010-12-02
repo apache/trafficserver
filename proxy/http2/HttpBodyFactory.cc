@@ -28,7 +28,7 @@
 
  ****************************************************************************/
 
-#include "inktomi++.h"
+#include "libts.h"
 #include "HttpBodyFactory.h"
 #include <unistd.h>
 #include <dirent.h>

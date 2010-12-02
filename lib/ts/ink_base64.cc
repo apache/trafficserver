@@ -31,7 +31,7 @@
  * These routines return char*'s to malloc-ed strings.  The caller is
  * responsible for freeing the strings.
  */
-#include "inktomi++.h"
+#include "libts.h"
 
 #include "ink_assert.h"
 #include "ink_bool.h"

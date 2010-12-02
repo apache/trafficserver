@@ -24,7 +24,7 @@
 
 
 #include "I_RadixSort.h"
-#include "inktomi++.h"          // for xmalloc
+#include "libts.h"          // for xmalloc
 
 #undef NEW
 #define NEW(x) x

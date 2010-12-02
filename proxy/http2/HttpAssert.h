@@ -24,7 +24,7 @@
 #if !defined (_HttpAssert_h_)
 #define _HttpAssert_h_
 
-#include "inktomi++.h"
+#include "libts.h"
 
 #define HTTP_ASSERT(_e) ink_release_assert(_e)
 #define HTTP_DEBUG_ASSERT(_e) ink_debug_assert(_e)

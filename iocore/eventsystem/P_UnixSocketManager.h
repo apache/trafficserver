@@ -32,7 +32,7 @@
 #ifndef _P_UnixSocketManager_h_
 #define _P_UnixSocketManager_h_
 
-#include "inktomi++.h"
+#include "libts.h"
 #include "I_SocketManager.h"
 
 

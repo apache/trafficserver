@@ -26,7 +26,7 @@
 
 
  ***************************************************************************/
-#include "inktomi++.h"
+#include "libts.h"
 
 #include "Resource.h"
 #include "Error.h"

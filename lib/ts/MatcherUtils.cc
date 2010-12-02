@@ -29,7 +29,7 @@
  *
  ****************************************************************************/
 
-#include "inktomi++.h"      /* MAGIC_EDITING_TAG */
+#include "libts.h"      /* MAGIC_EDITING_TAG */
 
 // char* readIntoBuffer(const char* file_path, const char* module_name,
 //                          int* read_size_ptr)

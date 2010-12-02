@@ -33,7 +33,7 @@
 #define _CLIENT_CLI_H_
 
 #include "ink_platform.h"
-#include "inktomi++.h"
+#include "libts.h"
 
 class textBuffer;
 

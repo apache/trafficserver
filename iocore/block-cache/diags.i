@@ -24,7 +24,7 @@
 /* -*- c++ -*- */
 
 /* boilerplate diags stuff */
-#include "inktomi++.h"
+#include "libts.h"
 #include <iostream.h>
 #include <fstream.h>
 

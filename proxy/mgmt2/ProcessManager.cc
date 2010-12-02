@@ -32,7 +32,7 @@
  *
  */
 
-#include "inktomi++.h"
+#include "libts.h"
 #undef HTTP_CACHE
 #include "InkAPIInternal.h"
 #include "MgmtUtils.h"

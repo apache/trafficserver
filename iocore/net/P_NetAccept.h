@@ -39,7 +39,7 @@
 #ifndef __P_NETACCEPT_H__
 #define __P_NETACCEPT_H__
 
-#include "inktomi++.h"
+#include "libts.h"
 #include "P_Connection.h"
 
 

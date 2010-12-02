@@ -29,7 +29,7 @@
 
  ****************************************************************************/
 
-#include "inktomi++.h"
+#include "libts.h"
 #include "Regression.h"
 
 static RegressionTest *test = NULL;

@@ -28,7 +28,7 @@
  *
  ****************************************************************************/
 
-#include "inktomi++.h"
+#include "libts.h"
 
 #ifdef SPLIT_DNS
 #include <sys/types.h>

@@ -50,7 +50,7 @@
 #ifndef __CONNECTION_H__
 #define __CONNECTION_H__
 
-#include "inktomi++.h"
+#include "libts.h"
 
 struct NetVCOptions;
 

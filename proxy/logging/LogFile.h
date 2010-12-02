@@ -29,7 +29,7 @@
 #include <stdarg.h>
 #include <stdio.h>
 
-#include "inktomi++.h"
+#include "libts.h"
 #include "LogFormatType.h"
 #include "LogBufferSink.h"
 
