@@ -16,4 +16,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+# TsConfig is only built for WCCP until the bugs are worked out.
+if BUILD_WCCP
 SUBDIRS = tsconfig
+endif
