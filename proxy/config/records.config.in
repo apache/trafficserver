@@ -299,9 +299,8 @@ CONFIG proxy.config.body_factory.response_suppression_mode INT 0
 #
 ##############################################################################
 CONFIG proxy.config.net.connections_throttle INT 10000
-   # timeout in seconds for defering the accept, 0 is disabled
-   # (this enables/disables TCP_DEFER_ACCEPT)
-CONFIG proxy.config.net.tcp_accept_defer_timeout INT 0
+   # Enable defer accept / accept filtering. On Linux, this is a timeout, sec.
+CONFIG proxy.config.net.defer_accept INT @defer_accept@
 ##############################################################################
 #
 # Cluster Subsystem

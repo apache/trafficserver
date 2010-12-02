@@ -571,7 +571,7 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.net.sock_recv_buffer_size_out
  proxy.config.net.sock_send_buffer_size_in
  proxy.config.net.sock_send_buffer_size_out
- proxy.config.net.tcp_accept_defer_timeout
+ proxy.config.net.defer_accept
  proxy.config.net.throttle_enabled
  proxy.config.output.logfile
  proxy.config.ping.npacks_to_trans

@@ -193,7 +193,7 @@ UnixNetProcessor::accept_internal(Continuation * cont,
   // set tcp defer accept timeout if it is configured, this will not trigger an accept until there is
   // data on the socket ready to be read
   int accept_timeout = 0;
-  IOCORE_ReadConfigInteger(accept_timeout, "proxy.config.net.tcp_accept_defer_timeout");
+  IOCORE_ReadConfigInteger(accept_timeout, "proxy.config.net.defer_accept");
   if (accept_timeout > 0) {
     setsockopt(na->server.fd, IPPROTO_TCP, TCP_DEFER_ACCEPT, &accept_timeout, sizeof(int));
   }

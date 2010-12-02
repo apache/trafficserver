@@ -619,6 +619,19 @@ if test "x$ac_cv_sizeof_voidp" == "x"; then
 fi
 AC_SUBST(ac_cv_sizeof_voidp)
 
+
+# Checks for TCP defer accept
+case $host_os in
+  linux*)
+    defer_accept=45
+    ;;
+  *)
+    defer_accept=1
+    ;;
+esac
+AC_SUBST(defer_accept)
+
+
 #
 # Here are all the extra linux-specific C(XX)FLAGS additions and
 # so forth.
