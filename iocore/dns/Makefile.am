@@ -19,11 +19,11 @@
 if STANDALONE_IOCORE
 AM_CPPFLAGS = \
   $(iocore_include_dirs) \
-  -I$(top_srcdir)/librecords
+  -I$(top_srcdir)/lib/records
 else
 AM_CPPFLAGS = \
   $(iocore_include_dirs) \
-  -I$(top_srcdir)/librecords \
+  -I$(top_srcdir)/lib/records \
   -I$(top_srcdir)/proxy \
   -I$(top_srcdir)/proxy/http2 \
   -I$(top_srcdir)/proxy/mgmt2/preparse \

@@ -27,7 +27,7 @@ DIST_SUBDIRS = $(SUBDIRS)
 
 AM_CPPFLAGS = \
   $(iocore_include_dirs) \
-  -I$(top_srcdir)/librecords \
+  -I$(top_srcdir)/lib/records \
   -I$(top_srcdir)/proxy \
   -I$(top_srcdir)/proxy/hdrs \
   -I$(top_srcdir)/proxy/mgmt2 \
@@ -112,7 +112,7 @@ traffic_manager_LDADD = \
   api2/libmgmtapilocal.a \
   utils/libutils_lm.a \
   $(top_builddir)/proxy/hdrs/libhdrs.a \
-  $(top_builddir)/librecords/libreclocal.a \
+  $(top_builddir)/lib/records/libreclocal.a \
   $(top_builddir)/proxy/mgmt2/tools/libinksysapi.a \
   $(top_builddir)/proxy/mgmt2/tools/libinkconfigapi.a \
   $(top_builddir)/iocore/utils/libinkutils.a \

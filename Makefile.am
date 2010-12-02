@@ -22,9 +22,9 @@
 ACLOCAL_AMFLAGS = -I build
 
 if STANDALONE_IOCORE
-SUBDIRS =  librecords iocore lib @hdr_dirs@ proxy
+SUBDIRS =  iocore lib @hdr_dirs@ proxy
 else
-SUBDIRS =  librecords iocore lib proxy doc rc
+SUBDIRS =  iocore lib proxy doc rc
 endif
 
 DIST_BUILD_USER=`id -nu`

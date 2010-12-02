@@ -69,7 +69,7 @@ iocore/aio/sample.cfg
 iocore/cache/Notes
 iocore/cache/cache_test.config
 iocore/fastio/tools/advbmark/runme
-librecords/test_records.config
+lib/records/test_records.config
 proxy/mgmt2/stats/spec
 proxy/mime.types
 proxy/msgs/TSMessages.mc

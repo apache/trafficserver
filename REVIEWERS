@@ -26,6 +26,10 @@ lib/ts
         zwoop@apache.org
         bcall@apache.org
         georgep@apache.org
+lib/records
+        bcall@apache.org
+        georgep@apache.org
+	zwoop@apache.org
 Event System/Buffering/VIO/VConnection
         jplevyak@apache.org
         bcall@apache.org
@@ -60,10 +64,6 @@ Docs
 Examples/Plugins
         zwoop@apache.org
         bcall@apache.org
-librecords
-        bcall@apache.org
-        georgep@apache.org
-	zwoop@apache.org
 HDRs
         bcall@apache.org
 	zwoop@apache.org

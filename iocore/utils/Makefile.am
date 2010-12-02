@@ -17,7 +17,7 @@
 #  limitations under the License.
 
 AM_CPPFLAGS = \
-  -I$(top_srcdir)/librecords \
+  -I$(top_srcdir)/lib/records \
   -I$(top_srcdir)/iocore/eventsystem \
   -DPREFIX=\"$(prefix)\" \
   -DEXEC_PREFIX=\"$(rel_exec_prefix)\" \

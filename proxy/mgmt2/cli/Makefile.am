@@ -19,7 +19,7 @@
 
 AM_CPPFLAGS = \
   $(iocore_include_dirs) \
-  -I$(top_srcdir)/librecords \
+  -I$(top_srcdir)/lib/records \
   -I$(top_srcdir)/proxy/mgmt2 \
   -I$(top_srcdir)/proxy/mgmt2/api2/include \
   -I$(top_srcdir)/proxy/mgmt2/cluster \
@@ -66,7 +66,7 @@ traffic_line_LDFLAGS = @EXTRA_CXX_LDFLAGS@
 traffic_line_LDADD = \
   libcli_tl.a \
   $(top_builddir)/lib/ts/libts.a \
-  $(top_builddir)/librecords/libreclocal.a \
+  $(top_builddir)/lib/records/libreclocal.a \
   $(top_builddir)/iocore/utils/libinkutils.a \
   @LIBTHREAD@ @LIBSOCKET@ @LIBNSL@ @LIBRESOLV@ \
   @LIBTCL@ @LIBRT@ @LIBDL@ @LIBICONV@ @LIBEXECINFO@

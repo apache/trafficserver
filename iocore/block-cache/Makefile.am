@@ -17,7 +17,7 @@
 #  limitations under the License.
 
 INCLUDES += -I$(top_srcdir)/iocore/cluster
-INCLUDES += -I$(top_srcdir)/librecords
+INCLUDES += -I$(top_srcdir)/lib/records
 INCLUDES += -I$(top_srcdir)/proxy/http2
 INCLUDES += -I$(top_srcdir)/proxy/hdrs
 INCLUDES += -I$(top_srcdir)/proxy

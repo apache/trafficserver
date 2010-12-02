@@ -1,4 +1,4 @@
-# Makefile.am for the traffic/librecords
+# Makefile.am for the lib/records
 #
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file

@@ -15,7 +15,7 @@
 #  limitations under the License.
 
 AM_CPPFLAGS = -I$(iocore_include_dirs) \
-              -I$(top_srcdir)/librecords \
+              -I$(top_srcdir)/lib/records \
               -I$(top_srcdir)/proxy
 #             -I$(top_srcdir)/proxy/hdrs
 #             I$(top_srcdir)/proxy/logging
@@ -38,7 +38,7 @@ tsapp_LDADD =  \
 	$(top_builddir)/iocore/net/libinknet.a \
         $(top_builddir)/iocore/utils/libinkutils.a \
         $(top_builddir)/iocore/eventsystem/libinkevent.a \
-        $(top_builddir)/librecords/librecprocess.a \
+        $(top_builddir)/lib/records/librecprocess.a \
         $(top_builddir)/lib/ts/libts.a \
 	  @LIBTHREAD@ @LIBSOCKET@ @LIBNSL@ @LIBRESOLV@ @LIBRT@ \
 	  @LIBPCRE@ @LIBDB@ @LIBSQLITE3@ @LIBSSL@ @LIBTCL@ @LIBDL@ \

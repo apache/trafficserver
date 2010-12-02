@@ -18,7 +18,7 @@
 
 AM_CPPFLAGS = \
   $(iocore_include_dirs) \
-  -I$(top_srcdir)/librecords
+  -I$(top_srcdir)/lib/records
 
 noinst_LIBRARIES = libhdrs.a
 EXTRA_PROGRAMS = load_http_hdr

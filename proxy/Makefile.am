@@ -37,7 +37,7 @@ endif
 
 AM_CPPFLAGS = \
   $(iocore_include_dirs) \
-  -I$(top_srcdir)/librecords \
+  -I$(top_srcdir)/lib/records \
   -I$(srcdir)/http2 \
   -I$(srcdir)/logging \
   -I$(srcdir)/http2/remap  \
@@ -171,7 +171,7 @@ traffic_server_LDADD = \
   $(top_builddir)/iocore/aio/libinkaio.a \
   $(top_builddir)/iocore/net/libinknet.a \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
-  $(top_builddir)/librecords/librecprocess.a \
+  $(top_builddir)/lib/records/librecprocess.a \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
   $(top_builddir)/lib/ts/libts.a \
   @LIBTHREAD@ @LIBSOCKET@ @LIBNSL@ @LIBRESOLV@ @LIBRT@ \
@@ -229,7 +229,7 @@ traffic_logcat_LDADD = \
   $(top_builddir)/iocore/aio/libinkaio.a \
   $(top_builddir)/iocore/net/libinknet.a \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
-  $(top_builddir)/librecords/librecprocess.a \
+  $(top_builddir)/lib/records/librecprocess.a \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
   $(top_builddir)/lib/ts/libts.a \
   @LIBTHREAD@ @LIBSOCKET@ @LIBNSL@ @LIBRESOLV@ @LIBRT@ \
@@ -298,7 +298,7 @@ traffic_logstats_LDADD = \
   $(top_builddir)/iocore/aio/libinkaio.a \
   $(top_builddir)/iocore/net/libinknet.a \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
-  $(top_builddir)/librecords/librecprocess.a \
+  $(top_builddir)/lib/records/librecprocess.a \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
   $(top_builddir)/lib/ts/libts.a \
   @LIBTHREAD@ @LIBSOCKET@ @LIBNSL@ @LIBRESOLV@ @LIBRT@ \
@@ -366,7 +366,7 @@ traffic_sac_LDADD = \
   $(top_builddir)/iocore/aio/libinkaio.a \
   $(top_builddir)/iocore/net/libinknet.a \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
-  $(top_builddir)/librecords/librecprocess.a \
+  $(top_builddir)/lib/records/librecprocess.a \
   $(top_builddir)/lib/ts/libts.a \
   @LIBTHREAD@ @LIBSOCKET@ @LIBNSL@ @LIBRESOLV@ @LIBRT@ \
   @LIBPCRE@ @LIBDB@ @LIBSQLITE3@ @LIBSSL@ @LIBTCL@ @LIBDL@ @LIBEV@ \

@@ -11,10 +11,10 @@ plugins to build large scale web applications.
   |-- example/ ........... example plugins
   |-- install/ ........... installation programs and scripts
   |-- iocore/ ............ IO core
-  |-- lib ................ 
-      |-- ts ............. Base / core library
-      |-- tsconfig........ New config parser and library (experimental)
-  |-- librecords/ ........ library for config files
+  |-- lib/ ............... 
+      |-- ts/ ............ Base / core library
+      |-- tsconfig/....... New config parser and library (experimental)
+      |-- records/ ....... library for config files
   |-- m4/ ................ custom macros for configure.ac
   |-- proxy/ ............. HTTP proxy logic
   |-- test/ .............. functional tests
