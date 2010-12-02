@@ -1826,9 +1826,9 @@ TSTrafficServerVersionGet(void)
 {
   return traffic_server_version;
 }
-int INKTrafficServerVersionGetMajor() { return ts_major_version; }
-int INKTrafficServerVersionGetMinor() { return ts_minor_version; }
-int INKTrafficServerVersionGetPatch() { return ts_patch_version; }
+int TSTrafficServerVersionGetMajor() { return ts_major_version; }
+int TSTrafficServerVersionGetMinor() { return ts_minor_version; }
+int TSTrafficServerVersionGetPatch() { return ts_patch_version; }
 
 const char *
 TSPluginDirGet(void)

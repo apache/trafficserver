@@ -894,6 +894,30 @@ extern "C"
    */
   tsapi const char *TSTrafficServerVersionGet(void);
 
+  /**  Get the major version of Traffic Server currently running.
+       This is the same as the first element of the string
+       returned by @c TSTrafficServerVersionGet
+
+       @return The major version as an integer.
+   */
+  int TSTrafficServerVersionGetMajor(void);
+
+  /**  Get the minor version of Traffic Server currently running.
+       This is the same as the second element of the string
+       returned by @c TSTrafficServerVersionGet
+
+       @return The minor version as an integer.
+   */
+  int TSTrafficServerVersionGetMinor(void);
+
+  /**  Get the patch version of Traffic Server currently running.
+       This is the same as the third element of the string
+       returned by @c TSTrafficServerVersionGet
+
+       @return The patch version as an integer.
+   */
+  int TSTrafficServerVersionGetPatch(void);
+
   /* --------------------------------------------------------------------------
      Plugin registration */
 
