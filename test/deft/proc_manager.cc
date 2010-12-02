@@ -30,7 +30,7 @@
 
  ****************************************************************************/
 
-// Avoiding getting the whole libinktomi++ header file since
+// Avoiding getting the whole libts header file since
 //  it causes problems with Sunpro 5.0
 #define	_inktomiplus_h_
 

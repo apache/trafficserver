@@ -173,7 +173,7 @@ traffic_server_LDADD = \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
   $(top_builddir)/librecords/librecprocess.a \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
-  $(top_builddir)/libinktomi++/libinktomi++.a \
+  $(top_builddir)/lib/ts/libts.a \
   @LIBTHREAD@ @LIBSOCKET@ @LIBNSL@ @LIBRESOLV@ @LIBRT@ \
   @LIBPCRE@ @LIBDB@ @LIBSQLITE3@ @LIBSSL@ @LIBTCL@ @LIBDL@ \
   @LIBEXPAT@ @LIBDEMANGLE@ @LIBICONV@ @LIBCAP@ \
@@ -231,7 +231,7 @@ traffic_logcat_LDADD = \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
   $(top_builddir)/librecords/librecprocess.a \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
-  $(top_builddir)/libinktomi++/libinktomi++.a \
+  $(top_builddir)/lib/ts/libts.a \
   @LIBTHREAD@ @LIBSOCKET@ @LIBNSL@ @LIBRESOLV@ @LIBRT@ \
   @LIBPCRE@ @LIBDB@ @LIBSQLITE3@ @LIBSSL@ @LIBTCL@ @LIBDL@ @LIBEV@ \
   @LIBEXPAT@ @LIBDEMANGLE@ @LIBMLD@ @LIBEXC@ @LIBICONV@ @LIBM@ @LIBPROFILER@ \
@@ -300,7 +300,7 @@ traffic_logstats_LDADD = \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
   $(top_builddir)/librecords/librecprocess.a \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
-  $(top_builddir)/libinktomi++/libinktomi++.a \
+  $(top_builddir)/lib/ts/libts.a \
   @LIBTHREAD@ @LIBSOCKET@ @LIBNSL@ @LIBRESOLV@ @LIBRT@ \
   @LIBPCRE@ @LIBDB@ @LIBSQLITE3@ @LIBSSL@ @LIBTCL@ @LIBDL@ @LIBEV@ \
   @LIBEXPAT@ @LIBDEMANGLE@ @LIBMLD@ @LIBEXC@ @LIBICONV@ @LIBM@ @LIBPROFILER@ \
@@ -367,7 +367,7 @@ traffic_sac_LDADD = \
   $(top_builddir)/iocore/net/libinknet.a \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
   $(top_builddir)/librecords/librecprocess.a \
-  $(top_builddir)/libinktomi++/libinktomi++.a \
+  $(top_builddir)/lib/ts/libts.a \
   @LIBTHREAD@ @LIBSOCKET@ @LIBNSL@ @LIBRESOLV@ @LIBRT@ \
   @LIBPCRE@ @LIBDB@ @LIBSQLITE3@ @LIBSSL@ @LIBTCL@ @LIBDL@ @LIBEV@ \
   @LIBEXPAT@ @LIBDEMANGLE@ @LIBMLD@ @LIBEXC@ @LIBICONV@ @LIBM@ @LIBPROFILER@ \
@@ -384,7 +384,7 @@ endif
 
 libClusterHashStandalone_a_SOURCES = \
   ClusterHashStandalone.cc \
-  $(top_srcdir)/libinktomi++/ParseRules.cc
+  $(top_srcdir)/lib/ts/ParseRules.cc
 
 libTrafficServerStandalone_a_SOURCES = \
   signals.cc \

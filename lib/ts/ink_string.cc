@@ -25,7 +25,7 @@
 
   ink_string.c
 
-  String and text processing routines for libinktomi.a.
+  String and text processing routines for libts.a.
 
  ****************************************************************************/
 

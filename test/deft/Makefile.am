@@ -14,7 +14,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-INCLUDES = -I$(top_srcdir)/libinktomi++
+INCLUDES = -I$(top_srcdir)/lib/ts
 
 noinst_PROGRAMS = proc_manager test_exec test_log_collate
 
@@ -27,7 +27,7 @@ proc_manager_SOURCES = proc_manager.cc \
 		       test_utils.cc
 
 proc_manager_LDFLAGS = @EXTRA_CXX_LDFLAGS@
-proc_manager_LDADD = $(top_builddir)/libinktomi++/libinktomi++.a \
+proc_manager_LDADD = $(top_builddir)/lib/ts/libts.a \
 		     @LIBSOCKET@ @LIBNSL@ \
 		     @LIBRESOLV@ @LIBRT@ @LIBTHREAD@ -lm @LIBDL@
 
@@ -41,7 +41,7 @@ test_log_collate_SOURCES = test_log_collate.cc \
 		           test_utils.cc
 
 test_log_collate_LDFLAGS = @EXTRA_CXX_LDFLAGS@
-test_log_collate_LDADD = $(top_builddir)/libinktomi++/libinktomi++.a \
+test_log_collate_LDADD = $(top_builddir)/lib/ts/libts.a \
 		     	 @LIBSOCKET@ @LIBNSL@ \
 		     	 @LIBRESOLV@ @LIBRT@ @LIBTHREAD@ -lm @LIBDL@
 
@@ -57,7 +57,7 @@ test_exec_SOURCES = test_exec.cc \
 	            test_utils.cc
 
 test_exec_LDFLAGS = @EXTRA_CXX_LDFLAGS@
-test_exec_LDADD = $(top_builddir)/libinktomi++/libinktomi++.a \
+test_exec_LDADD = $(top_builddir)/lib/ts/libts.a \
 		     -L/usr/local/lib  \
 		     $(top_builddir)/f_pkg/misc/perl5.6.1/lib/DynaLoader.a \
 		     -L$(top_builddir)/f_pkg/misc/perl5.6.1/lib -lperl \

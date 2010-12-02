@@ -50,6 +50,6 @@ endif
 traffic_api_cli_remote_LDADD = \
   libmgmtapiremote.a \
   $(top_builddir)/iocore/utils/libinkutils.a \
-  $(top_builddir)/libinktomi++/libinktomi++.a \
+  $(top_builddir)/lib/ts/libts.a \
   @LIBTHREAD@ @LIBSOCKET@ @LIBNSL@ @LIBRESOLV@ \
   @LIBTCL@ @LIBDB@ @LIBRT@ @LIBDL@ @LIBSSL@ @LIBICONV@ @LIBEXECINFO@

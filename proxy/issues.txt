@@ -242,7 +242,7 @@ void * buf;
 		
 
 +---------------------------+
-| libinktomi++/ink_hrtime.h |
+| lib/ts/ink_hrtime.h |
 +---------------------------+
 
 conversion routines

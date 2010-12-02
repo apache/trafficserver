@@ -23,7 +23,7 @@ LD=ld
 CFLAGS=@CFLAGS@ @SHARED_CFLAGS@
 LDFLAGS=@LDFLAGS@ @SHARED_LDFLAGS@
 API_INC=../../../proxy/api/include
-LIBINK_INC=../../../../../ts-libinktomi
+LIBINK_INC=../../../../../lib/ts
 
 default: INKAction.so
 

@@ -65,7 +65,7 @@ traffic_line_SOURCES = \
 traffic_line_LDFLAGS = @EXTRA_CXX_LDFLAGS@
 traffic_line_LDADD = \
   libcli_tl.a \
-  $(top_builddir)/libinktomi++/libinktomi++.a \
+  $(top_builddir)/lib/ts/libts.a \
   $(top_builddir)/librecords/libreclocal.a \
   $(top_builddir)/iocore/utils/libinkutils.a \
   @LIBTHREAD@ @LIBSOCKET@ @LIBNSL@ @LIBRESOLV@ \

@@ -41,7 +41,7 @@ AC_CONFIG_AUX_DIR([build/aux])
 AC_CONFIG_SRCDIR([proxy/Main.cc])
 AC_CONFIG_MACRO_DIR([build])
 AM_INIT_AUTOMAKE([-Wall -Werror foreign no-installinfo no-installman 1.9.2])
-AM_CONFIG_HEADER([libinktomi++/ink_autoconf.h])
+AM_CONFIG_HEADER([lib/ts/ink_autoconf.h])
 
 # Libtool versioning uses different conventions on different
 # platforms.  At least on FreeBSD, libtool uses an overly complex
@@ -916,7 +916,7 @@ AC_SUBST(has_profiler)
 
 has_demangle=0
 # For SunPro 5.2 - we need the demangle symbol for
-#  ink_stack_trace.cc in libinktomi++.  Because this
+#  ink_stack_trace.cc in lib/ts.  Because this
 #  library is part of the SunPro distribution, we need
 #  check with the C++ compiler since we might be using
 #  SunPro CC for the C++ compiler and gcc for the C compiler
@@ -1217,7 +1217,7 @@ AC_SUBST([TFW_PACKAGE_SUFFIX])
 # -----------------------------------------------------------------------------
 # 6. OUTPUT FILES
 
-AC_CONFIG_FILES([libinktomi++/ink_config.h proxy/api/ts/ts.h])
+AC_CONFIG_FILES([lib/ts/ink_config.h proxy/api/ts/ts.h])
 AC_CONFIG_FILES([tsxs])
 AC_CONFIG_FILES([doc/Doxyfile])
 AC_CONFIG_FILES([doc/Makefile])
@@ -1232,7 +1232,7 @@ AC_CONFIG_FILES([iocore/hostdb/Makefile])
 AC_CONFIG_FILES([iocore/Makefile])
 AC_CONFIG_FILES([iocore/net/Makefile])
 AC_CONFIG_FILES([iocore/utils/Makefile])
-AC_CONFIG_FILES([libinktomi++/Makefile])
+AC_CONFIG_FILES([lib/ts/Makefile])
 AC_CONFIG_FILES([librecords/Makefile])
 AC_CONFIG_FILES([lib/Makefile])
 AC_CONFIG_FILES([lib/tsconfig/Makefile])

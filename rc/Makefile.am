@@ -33,6 +33,6 @@ update_records_SOURCES = update_records.cc
 update_records_LDFLAGS = @EXTRA_CXX_LDFLAGS@
 update_records_LDADD =	\
 			$(top_builddir)/proxy/mgmt2/librecords.a \
-			$(top_builddir)/libinktomi++/libinktomi++.a \
+			$(top_builddir)/lib/ts/libts.a \
 			@LIBICONV@ @LIBTHREAD@ @LIBRT@ @LIBTCL@ @LIBDL@ @LIBSSL@ @LIBEXECINFO@
 

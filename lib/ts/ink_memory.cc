@@ -25,7 +25,7 @@
 
   ink_memory.c
 
-  Memory allocation routines for libinktomi.a.
+  Memory allocation routines for libts.a.
 
  ****************************************************************************/
 
@@ -52,7 +52,7 @@ ink_malloc(size_t size)
   void *ptr = NULL;
 
   /*
-   * There's some nasty code in libinktomi that expects
+   * There's some nasty code in libts that expects
    * a MALLOC of a zero-sized item to wotk properly. Rather
    * than allocate any space, we simply return a NULL to make
    * certain they die quickly & don't trash things.

@@ -39,7 +39,7 @@ tsapp_LDADD =  \
         $(top_builddir)/iocore/utils/libinkutils.a \
         $(top_builddir)/iocore/eventsystem/libinkevent.a \
         $(top_builddir)/librecords/librecprocess.a \
-        $(top_builddir)/libinktomi++/libinktomi++.a \
+        $(top_builddir)/lib/ts/libts.a \
 	  @LIBTHREAD@ @LIBSOCKET@ @LIBNSL@ @LIBRESOLV@ @LIBRT@ \
 	  @LIBPCRE@ @LIBDB@ @LIBSQLITE3@ @LIBSSL@ @LIBTCL@ @LIBDL@ \
 	  @LIBEXPAT@ @LIBDEMANGLE@ @LIBICONV@ \

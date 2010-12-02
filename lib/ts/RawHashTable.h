@@ -1,6 +1,6 @@
 /** @file
 
-  C++ wrapper around libinktomi hash tables
+  C++ wrapper around libts hash tables
 
   @section license License
 
@@ -22,7 +22,7 @@
 
   @section details Details
 
-  These C++ RawHashTables are a C++ wrapper around libinktomi hash tables.
+  These C++ RawHashTables are a C++ wrapper around libts hash tables.
   They expose an interface very analogous to ink_hash_table, for better
   or for worse. See HashTable for a more C++-oriented hash table.
 

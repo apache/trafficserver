@@ -33,14 +33,14 @@ doc/Doxyfile
 doc/html/
 doc/warn.log
 
-libinktomi++/ink_autoconf.h
-libinktomi++/ink_config.h
-libinktomi++/stamp-h1
-libinktomi++/CompileParseRules
-libinktomi++/ParseRulesCType
-libinktomi++/ParseRulesCTypeToLower
-libinktomi++/ParseRulesCTypeToUpper
-libinktomi++/mkdfa
+lib/ts/ink_autoconf.h
+lib/ts/ink_config.h
+lib/ts/stamp-h1
+lib/ts/CompileParseRules
+lib/ts/ParseRulesCType
+lib/ts/ParseRulesCTypeToLower
+lib/ts/ParseRulesCTypeToUpper
+lib/ts/mkdfa
 proxy/config/records.config
 proxy/config/storage.config
 

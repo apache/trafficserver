@@ -27,7 +27,7 @@ bin_PROGRAMS = traffic_cop
 traffic_cop_SOURCES = TrafficCop.cc
 traffic_cop_LDFLAGS = @EXTRA_CXX_LDFLAGS@
 traffic_cop_LDADD = \
-  $(top_builddir)/libinktomi++/libinktomi++.a \
+  $(top_builddir)/lib/ts/libts.a \
   $(top_builddir)/iocore/utils/libinkutils.a \
   @LIBTCL@ \
   @LIBSOCKET@ @LIBNSL@ @LIBRESOLV@ \

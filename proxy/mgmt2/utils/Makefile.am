@@ -38,7 +38,7 @@ noinst_LIBRARIES = libutils_lm.a libutils_p.a
 
 libutils_lm_a_CPPFLAGS = -DLOCAL_MANAGER $(AM_CPPFLAGS)
 libutils_lm_a_SOURCES = \
-  $(top_srcdir)/libinktomi++/MatcherUtils.cc \
+  $(top_srcdir)/lib/ts/MatcherUtils.cc \
   $(top_srcdir)/proxy/DiagsConfig.cc \
   EnvBlock.cc \
   EnvBlock.h \

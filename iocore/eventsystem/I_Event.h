@@ -146,7 +146,7 @@ class EThread;
 
   The schedulling functions use a time parameter typed as ink_hrtime
   for specifying the timeouts or periods. This is a nanosecond value
-  supported by libinktomi and you should use the time functions and
+  supported by libts and you should use the time functions and
   macros defined in ink_hrtime.h.
 
   The difference between the timeout specified for schedule_at and

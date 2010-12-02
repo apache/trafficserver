@@ -21,7 +21,7 @@ all/general interest
         mturk@apache.org
         zwoop@apache.org
         jim@apache.org
-libinktomi++
+lib/ts
         jplevyak@apache.org
         zwoop@apache.org
         bcall@apache.org
@@ -35,6 +35,7 @@ Network I/O
         bcall@apache.org
         georgep@apache.org
         jim@apache.org
+	zwoop@apache.org
 Raw Cache and AIO
         jplevyak@apache.org
         bcall@apache.org
@@ -42,8 +43,7 @@ Raw Cache and AIO
 HTTP Caching
         bcall@apache.org
         jim@apache.org
-Pluggable Cache/NewCacheVC
-        bcall@apache.org
+	zwoop@apache.org
 Block-Cache
 Clustering
         jplevyak@apache.org
@@ -63,8 +63,10 @@ Examples/Plugins
 librecords
         bcall@apache.org
         georgep@apache.org
+	zwoop@apache.org
 HDRs
         bcall@apache.org
+	zwoop@apache.org
 HTTP
         bcall@apache.org
         zwoop@apache.org
@@ -89,6 +91,7 @@ MGMT
 Stats
         bcall@apache.org
         georgep@apache.org
+	zwoop@apache.org
 Build System
         zwoop@apache.org
         bcall@apache.org

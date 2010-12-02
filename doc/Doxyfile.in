@@ -475,7 +475,7 @@ WARN_LOGFILE           = warn.log
 
 INPUT                  = @abs_top_srcdir@/doc/mainpage.doc \
                          @abs_top_srcdir@/iocore \
-                         @abs_top_srcdir@/libinktomi++ \
+                         @abs_top_srcdir@/lib/ts \
                          @abs_top_srcdir@/librecords \
                          @abs_top_srcdir@/proxy \
                          @abs_top_srcdir@/test

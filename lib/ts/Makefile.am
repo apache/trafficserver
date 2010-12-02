@@ -1,4 +1,4 @@
-# libinktomi++ Makefile.am
+# libts Makefile.am
 #
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
@@ -19,10 +19,10 @@
 noinst_PROGRAMS = mkdfa CompileParseRules
 check_PROGRAMS = test_atomic test_freelist test_arena test_List
 TESTS = $(check_PROGRAMS)
-noinst_LIBRARIES = libinktomi++.a
+noinst_LIBRARIES = libts.a
 
-#libinktomi___a_CCASFLAGS = -Wa,-32
-libinktomi___a_SOURCES = \
+#libts_a_CCASFLAGS = -Wa,-32
+libts_a_SOURCES = \
   Allocator.cc \
   Allocator.h \
   Arena.cc \
@@ -144,23 +144,23 @@ libinktomi___a_SOURCES = \
 if SUPPORT_ATOMICS
 # support in header
 else
-libinktomi___a_SOURCES += ink_atomic_solaris_i86pc.s
+libts_a_SOURCES += ink_atomic_solaris_i86pc.s
 endif
 
-libinktomi___a_LIBADD = ParseRules.o @LIBOBJS@
+libts_a_LIBADD = ParseRules.o @LIBOBJS@
 
 mkdfa_SOURCES = mkdfa.c
 
 test_atomic_SOURCES = test_atomic.cc
-test_atomic_LDADD = libinktomi++.a @LIBTHREAD@ @LIBTCL@ @LIBICONV@ @LIBEXECINFO@
+test_atomic_LDADD = libts.a @LIBTHREAD@ @LIBTCL@ @LIBICONV@ @LIBEXECINFO@
 test_atomic_LDFLAGS = @EXTRA_CXX_LDFLAGS@
 
 test_freelist_SOURCES = test_freelist.cc
-test_freelist_LDADD = libinktomi++.a @LIBTHREAD@ @LIBTCL@ @LIBICONV@ @LIBEXECINFO@
+test_freelist_LDADD = libts.a @LIBTHREAD@ @LIBTCL@ @LIBICONV@ @LIBEXECINFO@
 test_freelist_LDFLAGS = @EXTRA_CXX_LDFLAGS@
 
 test_arena_SOURCES = test_arena.cc
-test_arena_LDADD = libinktomi++.a @LIBTHREAD@ @LIBTCL@ @LIBICONV@ @LIBEXECINFO@
+test_arena_LDADD = libts.a @LIBTHREAD@ @LIBTCL@ @LIBICONV@ @LIBEXECINFO@
 test_arena_LDFLAGS = @EXTRA_CXX_LDFLAGS@
 
 test_List_SOURCES = test_List.cc

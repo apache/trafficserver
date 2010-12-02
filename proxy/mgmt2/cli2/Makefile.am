@@ -76,7 +76,7 @@ traffic_shell_LDADD = \
   $(top_builddir)/proxy/mgmt2/tools/libinksysapi.a \
   $(top_builddir)/proxy/mgmt2/tools/libinkconfigapi.a \
   $(top_builddir)/proxy/mgmt2/utils/libutils_lm.a \
-  $(top_builddir)/libinktomi++/libinktomi++.a \
+  $(top_builddir)/lib/ts/libts.a \
   $(top_builddir)/iocore/utils/libinkutils.a \
   $(LIBTCL) \
   @LIBDL@ \

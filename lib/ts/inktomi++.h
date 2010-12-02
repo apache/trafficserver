@@ -1,6 +1,6 @@
 /** @file
 
-  Primary include file for the libinktomi++ C++ library
+  Primary include file for the libts C++ library
 
   @section license License
 
@@ -22,7 +22,7 @@
 
   @section details Details
 
-  Libinktomi++ is a collection of useful functions and methods. It
+  libts is a collection of useful functions and methods. It
   includes commonly used:
     - data structures like queues, dynamic arrays atomic queues, etc.
     - string manipulation functions

@@ -59,7 +59,7 @@ private:
      Note the positive implications of using INK_MD5 * instead of
      INK_MD5 directly.
      The implementation (or anyone who includes this header file) is
-     now not forced to be coupled to the libinktomi library headers
+     now not forced to be coupled to the libts library headers
      (and transitively potentially coupled to any headers that it is
      dependent on...).
   */

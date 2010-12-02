@@ -38,7 +38,7 @@
 //      definitions.  Prepend "..\proxy" to directories in proxy.
 //      Add "..\proxy".
 //   5) Replace C/C++ project option "/MLd" with "/MTd"
-//   6) Add libinktomi++ as dependency.
+//   6) Add libts as dependency.
 ////////////////////////////////////////////////////////////////////////////
 
 #include <unistd.h>

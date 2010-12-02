@@ -11,7 +11,9 @@ plugins to build large scale web applications.
   |-- example/ ........... example plugins
   |-- install/ ........... installation programs and scripts
   |-- iocore/ ............ IO core
-  |-- libinktomi++/ ...... base library
+  |-- lib ................ 
+      |-- ts ............. Base / core library
+      |-- tsconfig........ New config parser and library (experimental)
   |-- librecords/ ........ library for config files
   |-- m4/ ................ custom macros for configure.ac
   |-- proxy/ ............. HTTP proxy logic
