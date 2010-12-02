@@ -19,8 +19,8 @@
 noinst_LIBRARIES = libtsconfig.a
 
 libtsconfig_a_SOURCES = \
-  TsConfig.lex.c TsConfig.lex.h \
   TsConfig.tab.c TsConfig.tab.h \
+  TsConfig.lex.c TsConfig.lex.h \
   Errata.cc \
   Errata.h \
   TsErrataUtil.cc \
