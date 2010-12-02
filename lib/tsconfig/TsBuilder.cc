@@ -20,14 +20,30 @@
 # include "TsBuilder.h"
 # include <TsErrataUtil.h>
 # include "TsConfigLexer.h"
+# include "TsConfigGrammar.hpp"
+# include <stdlib.h>
 
-// Access to terminal token values.
-extern "C" {
-# include "TsConfig.tab.h"
-  extern ts::config::Location TsConfig_Lex_Location;
-};
-
+// Prefix for text of our messages.
 # define PRE "Configuration Parser: "
+
+namespace {
+/** Compress a string by removing escape characters.
+    @return The new length of the string.
+*/
+size_t unescape_string(char* text, size_t len) {
+  size_t zret = len;
+  // quick check - if no escape char, do nothing.
+  char* dst = static_cast<char*>(memchr(text, '\\', len));
+  if (dst) {
+    char* limit = text + len;
+    char* src = dst + 1; // skip escape char
+    for ( *dst++ = *src++ ; src < limit ; ++src )
+      if ('\\' != *src) *dst++ = *src;
+    zret = dst - text;
+  }
+  return zret;
+}
+} // anon namespace
 
 namespace ts { namespace config {
 
@@ -91,12 +107,21 @@ Builder::syntaxErrorDispatch(void* data, char const* text) {
 
 int
 Builder::syntaxError(char const* text) {
-  msg::logf(_errata, msg::WARN, "Syntax error '%s' near line %d, column %d.", text, TsConfig_Lex_Location._line, TsConfig_Lex_Location._col);
+  msg::logf(_errata, msg::WARN,
+    "Syntax error '%s' near line %d, column %d.",
+    text, tsconfiglex_current_line(), tsconfiglex_current_col()
+  );
   return 0;
 }
 
 Rv<Configuration>
 Builder::build(Buffer const& buffer) {
+# if 1
+  _v = _config.getRoot(); // seed current value.
+  _errata.clear(); // no errors yet.
+  tsconfig_parse_buffer(&_handlers, buffer._ptr, buffer._size);
+  return MakeRv(_config, _errata);
+# else
     yyscan_t lexer;
     YY_BUFFER_STATE lexer_buffer_state;
 
@@ -111,6 +136,7 @@ Builder::build(Buffer const& buffer) {
     tsconfiglex_destroy(lexer);
 
     return MakeRv(_config, _errata);
+# endif
 }
 
 void
@@ -168,7 +194,7 @@ void Builder::pathClose(Token const&) {
 
 void Builder::literalValue(Token const& token) {
     Rv<Value> cv;
-    ConstBuffer text(token._s, token._n);
+    Buffer text(token._s, token._n);
 
     // It's just too painful to use these strings with standard
     // libraries without nul terminating. For strings we convert the
@@ -182,8 +208,8 @@ void Builder::literalValue(Token const& token) {
         cv = _v.makeInteger(text, _name);
         token._s[token._n] = 0;
     } else if (STRING == token._type) {
-        // Don't include the quotes.
-        ++text._ptr, text._size -= 2;
+        ++text._ptr, text._size -= 2;  // Don't include the quotes.
+        text._size = unescape_string(text._ptr, text._size);
         cv = _v.makeString(text, _name);
         token._s[token._n-1] = 0;
     } else {

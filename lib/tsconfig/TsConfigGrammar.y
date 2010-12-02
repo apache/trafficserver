@@ -19,23 +19,37 @@
  */
 
 # include "TsConfigTypes.h"
+# include <malloc.h>
 
 // Inhibit Bison definitions.
 # define YYMALLOC malloc
 # define YYFREE free
 
 # include "TsConfigParseEvents.h"
-# include "TsConfig.lex.h"
+
+// Types we need for the lexer.
+typedef void* yyscan_t;
+extern int tsconfiglex(YYSTYPE* yylval, yyscan_t lexer);
+
 }
 
 %code {
-# define HANDLE_EVENT(x,y) if (handlers) { \
-                             struct TsConfigEventHandler* h = &(handlers->handler[TsConfigEvent##x]); \
-                             if (h->_f) h->_f(h->_data, &(y)); \
-                           }
 
-int tsconfigerror(yyscan_t lexer, struct TsConfigHandlers* handlers, char const* text) {
-	return (handlers && handlers->error._f) ? handlers->error._f(handlers->error._data, text) : 0;
+# define HANDLE_EVENT(x,y)                                                   \
+  if (handlers) {                                                            \
+    struct TsConfigEventHandler* h = &(handlers->handler[TsConfigEvent##x]); \
+    if (h->_f) h->_f(h->_data, &(y));                                        \
+  }
+
+int tsconfigerror(
+  yyscan_t lexer,
+  struct TsConfigHandlers* handlers,
+  char const* text
+) {
+  return (handlers && handlers->error._f)
+    ? handlers->error._f(handlers->error._data, text)
+    : 0
+    ;
 }
 
 }

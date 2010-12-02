@@ -18,9 +18,17 @@
 
 noinst_LIBRARIES = libtsconfig.a
 
+AM_YFLAGS = -d -p tsconfig
+
+BUILT_SOURCES = \
+  TsConfigGrammar.c TsConfigGrammar.h TsConfigGrammar.hpp \
+  TsConfigSyntax.c 
+
+CLEANFILES = $(BUILT_SOURCES)
+
 libtsconfig_a_SOURCES = \
-  TsConfig.tab.c TsConfig.tab.h \
-  TsConfig.lex.c TsConfig.lex.h \
+  TsConfigGrammar.y \
+  TsConfigSyntax.l \
   Errata.cc \
   Errata.h \
   TsErrataUtil.cc \
@@ -32,14 +40,7 @@ libtsconfig_a_SOURCES = \
   TsValue.cc \
   TsValue.h
 
-TsConfig.tab.c TsConfig.tab.h: TsConfig.y
-	$(YACC) -d -b TsConfig --name-prefix tsconfig TsConfig.y
-
-TsConfig.lex.c TsConfig.lex.h: TsConfig.flex
-	$(LEX) --outfile TsConfig.lex.c TsConfig.flex
-
-
-clean-local: clean-local-check
-.PHONY: clean-local-check
-clean-local-check:
-	-rm -f TsConfig.lex.c TsConfig.lex.h TsConfig.tab.h TsConfig.tab.c
+# Strip to just the enum in the ts::config namespace so we can use
+# it more easily in C++.
+TsConfigGrammar.hpp: TsConfigGrammar.h
+	$(SED) -f BisonHeaderToC++.sed $< > $@
