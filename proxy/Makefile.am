@@ -17,12 +17,12 @@
 #  limitations under the License.
 
 if STANDALONE_IOCORE
-SUBDIRS =
+SUBDIRS = api/ts
 noinst_LIBRARIES = libTrafficServerStandalone.a
 bin_PROGRAMS =
 noinst_PROGRAMS =
 else
-SUBDIRS = congest http2 hdrs logging
+SUBDIRS = congest http2 hdrs logging api/ts
 if BUILD_WCCP
 SUBDIRS += wccp
 endif
@@ -47,17 +47,7 @@ AM_CPPFLAGS = \
   -I$(srcdir)/mgmt2/utils \
   -I$(srcdir)/api/ts
 
-
-includedir=$(prefix)/include/ts
-
-include_HEADERS = \
-  api/ts/ts.h \
-  api/ts/remap.h \
-  api/ts/experimental.h
-
 noinst_HEADERS = \
-  api/ts/InkAPIHughes.h \
-  api/ts/InkAPIPrivateIOCore.h \
   ConfigParse.h \
   NTDefs.h \
   Show.h

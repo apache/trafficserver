@@ -32,12 +32,10 @@ DIST_BUILD_USER_GROUP=`id -ng`
 DISTCHECK_CONFIGURE_FLAGS=--with-user=${DIST_BUILD_USER} --with-group=${DIST_BUILD_USER_GROUP}
 
 EXTRA_DIST=CHANGES INSTALL STATUS NOTICE LAYOUT LICENSE example contrib README.libev README-EC2 REVIEWERS
+bin_SCRIPTS = tsxs
 
 installcheck-local:
 	$(DESTDIR)$(bindir)/traffic_server -R 1
-
-install-exec-local:
-	$(INSTALL) -m 0755 tsxs $(DESTDIR)$(bindir)/tsxs
 
 doxygen:
 	$(MAKE) -C doc doxygen
