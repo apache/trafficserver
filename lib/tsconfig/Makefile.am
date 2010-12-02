@@ -24,7 +24,6 @@ libtsconfig_a_SOURCES = \
   Errata.cc \
   Errata.h \
   TsErrataUtil.cc \
-  TsErrata.h \
   TsBuffer.h \
   NumericType.h \
   IntrusivePtr.h \
@@ -38,3 +37,9 @@ TsConfig.tab.c TsConfig.tab.h: TsConfig.y
 
 TsConfig.lex.c TsConfig.lex.h: TsConfig.flex
 	$(LEX) --outfile TsConfig.lex.c TsConfig.flex
+
+
+clean-local: clean-local-check
+.PHONY: clean-local-check
+clean-local-check:
+	-rm -f TsConfig.lex.c TsConfig.lex.h TsConfig.tab.h TsConfig.tab.c
