@@ -337,7 +337,7 @@ AC_ARG_ENABLE([wccp],
   [
     has_wccp=1
     AC_SUBST([LIBWCCP], ["\$(top_builddir)/proxy/wccp/libwccp.a"])
-    AC_SUBST([LIBTSCONFIG], ["\$(top_builddir)/proxy/tsconfig/libtsconfig.a"])
+    AC_SUBST([LIBTSCONFIG], ["\$(top_builddir)/lib/tsconfig/libtsconfig.a"])
   ],
   [enable_wccp=no]
 )
@@ -1234,6 +1234,8 @@ AC_CONFIG_FILES([iocore/net/Makefile])
 AC_CONFIG_FILES([iocore/utils/Makefile])
 AC_CONFIG_FILES([libinktomi++/Makefile])
 AC_CONFIG_FILES([librecords/Makefile])
+AC_CONFIG_FILES([lib/Makefile])
+AC_CONFIG_FILES([lib/tsconfig/Makefile])
 AC_CONFIG_FILES([Makefile])
 AC_CONFIG_FILES([proxy/config/body_factory/default/Makefile])
 AC_CONFIG_FILES([proxy/config/body_factory/Makefile])
@@ -1270,7 +1272,6 @@ AC_CONFIG_FILES([proxy/mgmt2/tools/Makefile])
 AC_CONFIG_FILES([proxy/mgmt2/utils/Makefile])
 AC_CONFIG_FILES([proxy/mgmt2/web2/Makefile])
 AC_CONFIG_FILES([proxy/stats/Makefile])
-AC_CONFIG_FILES([proxy/tsconfig/Makefile])
 AC_CONFIG_FILES([proxy/wccp/Makefile])
 AC_CONFIG_FILES([example/Makefile])
 # example plugins

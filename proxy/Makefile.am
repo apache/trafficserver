@@ -24,7 +24,7 @@ noinst_PROGRAMS =
 else
 SUBDIRS = congest http2 hdrs logging
 if BUILD_WCCP
-SUBDIRS += tsconfig wccp
+SUBDIRS += wccp
 endif
 SUBDIRS += mgmt2 config stats
 noinst_LIBRARIES =

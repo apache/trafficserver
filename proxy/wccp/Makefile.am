@@ -18,7 +18,7 @@
 #  limitations under the License.
 
 AM_CPPFLAGS = \
-  -I$(top_srcdir)/proxy/tsconfig \
+  -I$(top_srcdir)/lib/tsconfig \
   -I$(top_srcdir)/proxy/api/ts
 
 

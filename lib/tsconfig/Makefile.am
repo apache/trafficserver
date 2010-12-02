@@ -1,4 +1,3 @@
-#
 # Makefile.am for TS Config module.
 #
 #  Licensed to the Apache Software Foundation (ASF) under one
@@ -16,10 +15,6 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-
-AM_CPPFLAGS = \
-  -I$(top_srcdir)/proxy/mgmt2/api2/include \
-  -DPKGSYSUSER=\"$(pkgsysuser)\"
 
 noinst_LIBRARIES = libtsconfig.a
 
