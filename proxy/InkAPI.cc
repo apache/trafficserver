@@ -736,18 +736,6 @@ sdk_free_field_handle(TSMBuffer bufp, MIMEFieldSDKHandle *field_handle)
   }
 }
 
-static void
-sdk_free_standalone_field(TSMBuffer bufp, MIMEField *sa_field)
-{
-  if (sdk_sanity_check_mbuffer(bufp) == TS_SUCCESS) {
-    HdrHeapSDKHandle *sdk_heap = (HdrHeapSDKHandle *) bufp;
-
-    // TODO/ FIX: can remove memset once debugged --- only here to help catch bugs
-    // memset(sa_field, NUL, sizeof(MIMEField));
-    sa_field->m_readiness = MIME_FIELD_SLOT_READINESS_DELETED;
-    sdk_heap->m_sdk_alloc.free_mfield(sa_field);
-  }
-}
 
 ////////////////////////////////////////////////////////////////////
 //
@@ -2875,11 +2863,9 @@ TSMimeHdrFieldDestroy(TSMBuffer bufp, TSMLoc mh_mloc, TSMLoc field_mloc)
       (sdk_sanity_check_field_handle(field_mloc, mh_mloc) == TS_SUCCESS) && isWriteable(bufp)) {
     MIMEFieldSDKHandle *field_handle = (MIMEFieldSDKHandle *) field_mloc;
 
-    if (field_handle->mh == NULL) {      // standalone field
-      MIMEField *field_ptr = field_handle->field_ptr;
-      ink_assert(field_ptr->m_readiness != MIME_FIELD_SLOT_READINESS_DELETED);
-      sdk_free_standalone_field(bufp, field_ptr);
-    } else if (field_handle->mh != NULL) {
+    if (field_handle->mh == NULL) { // NOT SUPPORTED!!
+      ink_release_assert(0);
+    } else {
       MIMEHdrImpl *mh = _hdr_mloc_to_mime_hdr_impl(mh_mloc);
       HdrHeap *heap = (HdrHeap *) (((HdrHeapSDKHandle *) bufp)->m_heap);
 

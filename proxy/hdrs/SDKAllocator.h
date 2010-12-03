@@ -42,7 +42,6 @@ enum
 {
   SDK_ALLOC_MAGIC_DEAD = 0xDEADFFEE,
   SDK_ALLOC_MAGIC_MIME_FIELD_HANDLE = 0xFFEEABCB,
-  SDK_ALLOC_MAGIC_STAND_ALONE_FIELD = 0xFFEEABCC
 };
 
 class SDKAllocator;
@@ -51,8 +50,10 @@ struct MIMEFieldSDKHandle;
 
 struct SDKAllocHdr
 {
+#ifdef DEBUG
   uint32 m_magic;
   SDKAllocator *m_source;
+#endif
   LINK(SDKAllocHdr, link);
 };
 
@@ -61,13 +62,11 @@ class SDKAllocator:public DLL<SDKAllocHdr>
 public:
   SDKAllocator();
   void init();
-  MIMEField *allocate_mfield();
   MIMEFieldSDKHandle *allocate_mhandle();
 
   // Object free functions return 1 if
   //   the object has a valid magic number and is
   //   acutually free'd and zero otherize
-  int free_mfield(MIMEField * f);
   int free_mhandle(MIMEFieldSDKHandle * h);
 
   // Free all the objects on the list

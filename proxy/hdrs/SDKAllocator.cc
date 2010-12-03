@@ -38,34 +38,16 @@ static const int SDKAllocHdrSize = ROUND(sizeof(SDKAllocHdr), sizeof(char *));
 ////////////////////////////////////////////////////////////////////
 //    SDK Allocator
 ////////////////////////////////////////////////////////////////////
-MIMEField *
-SDKAllocator::allocate_mfield()
-{
-  int size = SDKAllocHdrSize + sizeof(MIMEField);
-  SDKAllocHdr *r = (SDKAllocHdr *) xmalloc(size);
-
-  r->m_magic = SDK_ALLOC_MAGIC_STAND_ALONE_FIELD;
-  r->m_source = this;
-  r->link.prev = NULL;
-  r->link.next = NULL;
-
-  // Put the object on the list so that we can
-  //  deallocate it later
-  this->push(r);
-
-  MIMEField *f = (MIMEField *) (((char *) r) + SDKAllocHdrSize);
-
-  return f;
-}
-
 MIMEFieldSDKHandle *
 SDKAllocator::allocate_mhandle()
 {
   int size = SDKAllocHdrSize + sizeof(MIMEFieldSDKHandle);
   SDKAllocHdr *r = (SDKAllocHdr *) xmalloc(size);
 
+#ifdef DEBUG
   r->m_magic = SDK_ALLOC_MAGIC_MIME_FIELD_HANDLE;
   r->m_source = this;
+#endif
   r->link.prev = NULL;
   r->link.next = NULL;
 
@@ -79,39 +61,14 @@ SDKAllocator::allocate_mhandle()
 }
 
 int
-SDKAllocator::free_mfield(MIMEField * f)
-{
-  SDKAllocHdr *obj = (SDKAllocHdr *) (((char *) f) - SDKAllocHdrSize);
-
-  // Sanity check the object to make sure it's
-  //   good and from the correct allocator
-  if (obj->m_magic != SDK_ALLOC_MAGIC_STAND_ALONE_FIELD) {
-    return 0;
-  }
-
-  if (obj->m_source != this) {
-    return 0;
-  }
-
-  this->remove(obj);
-  xfree(obj);
-  return 1;
-}
-
-int
 SDKAllocator::free_mhandle(MIMEFieldSDKHandle * h)
 {
   SDKAllocHdr *obj = (SDKAllocHdr *) (((char *) h) - SDKAllocHdrSize);
 
-  // Sanity check the object to make sure it's
-  //   good and from the correct allocator
-  if (obj->m_magic != SDK_ALLOC_MAGIC_MIME_FIELD_HANDLE) {
-    return 0;
-  }
-
-  if (obj->m_source != this) {
-    return 0;
-  }
+#if DEBUG
+  ink_assert(obj->m_magic == SDK_ALLOC_MAGIC_MIME_FIELD_HANDLE);
+  ink_assert(obj->m_source == this);
+#endif
 
   this->remove(obj);
   xfree(obj);
@@ -124,21 +81,11 @@ SDKAllocator::free_all()
   SDKAllocHdr *obj;
 
   while ((obj = this->pop())) {
+#ifdef DEBUG
+    ink_assert(obj->m_source == this);
+    ink_assert(obj->m_magic == SDK_ALLOC_MAGIC_MIME_FIELD_HANDLE); // Only one type supported now
+#endif
 
-    if (obj->m_source != this) {
-      // Bad element in list
-      ink_assert(0);
-    }
-
-    switch (obj->m_magic) {
-    case SDK_ALLOC_MAGIC_MIME_FIELD_HANDLE:
-    case SDK_ALLOC_MAGIC_STAND_ALONE_FIELD:
-      xfree(obj);
-      break;
-    case SDK_ALLOC_MAGIC_DEAD:
-    default:
-      // Bad element
-      ink_assert(0);
-    }
+    xfree(obj);
   }
 }
