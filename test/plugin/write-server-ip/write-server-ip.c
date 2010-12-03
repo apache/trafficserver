@@ -109,7 +109,6 @@ handle_cache_hdr(TSHttpTxn txnp)
     /* concatenate the field to output_str */
     if (my_hdr) {
       snprintf(output_str, 1024, "%s MY_HDR(%d): %.*s \n", output_str, i, length, my_hdr);
-      TSHandleStringRelease(cache_bufp, field_loc, my_hdr);
     }
   }
 
@@ -242,16 +241,7 @@ Lcleanup:
   if (VALID_POINTER(r_method))
     TSfree(r_method);
 
-  /* negative test for TSHandleStringRelease */
-#ifdef DEBUG
-  if (TSHandleStringRelease(NULL, req_loc, request_method) != TS_ERROR) {
-    LOG_ERROR_NEG("TSHandleStringRelease");
-  }
-#endif
-
   /* release the buffer handles */
-  if (VALID_POINTER(request_method))
-    TSHandleStringRelease(req_bufp, req_loc, request_method);
   if (VALID_POINTER(req_loc))
     TSHandleMLocRelease(req_bufp, TS_NULL_MLOC, req_loc);
 

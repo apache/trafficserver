@@ -126,7 +126,6 @@ printMimeFields(TSMBuffer hdrBuf, TSMLoc mimeHdrLoc, char *debugTag, float secti
       outputString = TSstrndup(sFieldName, iFieldNameLength);
       TSDebug(debugTag, "(%g) Field Name[%d] = %s", section, iFieldNameLength, outputString);
       FREE(outputString);
-      STR_RELEASE(hdrBuf, mimeHdrLoc, sFieldName);
     }
 
     do {
@@ -137,7 +136,6 @@ printMimeFields(TSMBuffer hdrBuf, TSMLoc mimeHdrLoc, char *debugTag, float secti
         outputString = TSstrndup(sFieldValue, iFieldValueLength);
         TSDebug(debugTag, "(%g) Field Value[%d] = %s", section, iFieldValueLength, outputString);
         FREE(outputString);
-        STR_RELEASE(hdrBuf, mimeHdrLoc, sFieldValue);
       }
 
       if ((nextDupFieldLoc = TSMimeHdrFieldNextDup(hdrBuf, mimeHdrLoc, fieldLoc)) == TS_ERROR_PTR) {
@@ -418,7 +416,6 @@ addDupFields(TSMBuffer hdrBuf, TSMLoc httpHdrLoc, char *debugTag, int section)
       if (strncmp(tmpFieldValue, "field-1-value-1", iFieldNameLength)) {
         LOG_AUTO_ERROR("TSMimeHdrFieldValueStringInsert", "Field value different from the inserted one");
       }
-      STR_RELEASE(tmpBuf, newFieldLoc, tmpFieldValue);
     }
     HANDLE_RELEASE(tmpBuf, tmpMimeHdrLoc, tmpFieldLoc);
   }
@@ -453,7 +450,6 @@ addDupFields(TSMBuffer hdrBuf, TSMLoc httpHdrLoc, char *debugTag, int section)
       if (strncmp(tmpFieldValue, "dup-field-1-value-1", iFieldNameLength)) {
         LOG_AUTO_ERROR("TSMimeHdrFieldValueStringInsert", "Field value different from the inserted one");
       }
-      STR_RELEASE(tmpBuf, tmpFieldLoc, tmpFieldValue);
     }
   }
   HANDLE_RELEASE(tmpBuf, tmpMimeHdrLoc, tmpFieldLoc);
@@ -506,7 +502,6 @@ addDupFields(TSMBuffer hdrBuf, TSMLoc httpHdrLoc, char *debugTag, int section)
         if (strncmp(tmpFieldValue, "dup-field-1-value-2", iFieldNameLength)) {
           LOG_AUTO_ERROR("TSMimeHdrFieldValueStringInsert", "Field value different from the inserted one");
         }
-        STR_RELEASE(tmpBuf, newFieldLoc, tmpFieldValue);
       }
       HANDLE_RELEASE(tmpBuf, tmpMimeHdrLoc, tmpFieldLoc);
       tmpFieldLoc = tmpNextDupFieldLoc; /* preserve the fieldLoc here */
@@ -547,7 +542,6 @@ addDupFields(TSMBuffer hdrBuf, TSMLoc httpHdrLoc, char *debugTag, int section)
       if (strncmp(tmpFieldValue, "dup-field-1-value-3", iFieldNameLength)) {
         LOG_AUTO_ERROR("TSMimeHdrFieldValueStringInsert", "Field value different from the inserted one");
       }
-      STR_RELEASE(tmpBuf, tmpNextDupFieldLoc, tmpFieldValue);
     }
     HANDLE_RELEASE(tmpBuf, tmpMimeHdrLoc, tmpNextDupFieldLoc);
   }
@@ -712,8 +706,6 @@ sectionMimeHdr(TSMBuffer hdrBuf, TSMLoc httpHdrLoc)
     printMimeFields(tmpBuf, tmpMimeHdrLoc, RESP, 4.2);
 
     /* cleanup */
-    STR_RELEASE(tmpBuf, tmpFieldLoc, tmpFieldValue1);
-    STR_RELEASE(tmpBuf, tmpFieldLoc, tmpFieldValue2);
     HANDLE_RELEASE(tmpBuf, tmpMimeHdrLoc, tmpFieldLoc);
 
 
@@ -800,7 +792,6 @@ sectionMimeHdr(TSMBuffer hdrBuf, TSMLoc httpHdrLoc)
         if (strncmp(tmpFieldName, "Append-Field", strlen("Append-Field"))) {
           LOG_AUTO_ERROR("TSMimeHdrFieldAppend", "New field not appended!");
         }
-        STR_RELEASE(tmpBuf, tmpMimeHdrLoc, tmpFieldName);
       }
       /* negative test for TSMimeHdrFieldNameGet */
 #ifdef DEBUG
@@ -843,7 +834,6 @@ sectionMimeHdr(TSMBuffer hdrBuf, TSMLoc httpHdrLoc)
       if (strncmp(tmpFieldValueString, "append-field-value-2", strlen("append-field-value-2"))) {
         LOG_AUTO_ERROR("TSMimeHdrFieldValueStringInsert", "New field value not appended!");
       }
-      STR_RELEASE(tmpBuf, tmpMimeHdrLoc, tmpFieldValueString);
     }
 
     printMimeFields(tmpBuf, tmpMimeHdrLoc, RESP, 6.3);
@@ -875,7 +865,6 @@ sectionMimeHdr(TSMBuffer hdrBuf, TSMLoc httpHdrLoc)
       if (strncmp(tmpFieldValueString, "new-append-field-value", strlen("new-append-field-value"))) {
         LOG_AUTO_ERROR("TSMimeHdrFieldValueStringInsert", "New field value not replaced properly !");
       }
-      STR_RELEASE(tmpBuf, tmpMimeHdrLoc, tmpFieldValueString);
     }
 
     printMimeFields(tmpBuf, tmpMimeHdrLoc, RESP, 7.1);
@@ -966,7 +955,6 @@ sectionMimeHdr(TSMBuffer hdrBuf, TSMLoc httpHdrLoc)
       if (!strstr(tmpFieldValueString, "<appended-text>")) {
         LOG_AUTO_ERROR("TSMimeHdrFieldValueStringInsert", "Cannot located the appended text to field value!");
       }
-      STR_RELEASE(tmpBuf, tmpMimeHdrLoc, tmpFieldValueString);
     }
 
     printMimeFields(tmpBuf, tmpMimeHdrLoc, RESP, 7.2);
@@ -1047,8 +1035,6 @@ sectionMimeHdr(TSMBuffer hdrBuf, TSMLoc httpHdrLoc)
     printMimeFields(tmpBuf, tmpMimeHdrLoc, RESP, 8);
 
     /* clean-up */
-    STR_RELEASE(tmpBuf, tmpMimeHdrLoc, tmpFieldValue1);
-    STR_RELEASE(tmpBuf, tmpMimeHdrLoc, tmpFieldValue2);
     HANDLE_RELEASE(tmpBuf, tmpMimeHdrLoc, fieldLoc);
 
                 /******* (9): Desotroy ALL the MIME fields using TS_Clear *******/
@@ -1073,7 +1059,6 @@ sectionMimeHdr(TSMBuffer hdrBuf, TSMLoc httpHdrLoc)
       if (TSMimeHdrFieldValueStringGet(tmpBuf, tmpMimeHdrLoc, fieldLoc, -1, &tmpFieldValueString,
                                         &tmpFieldValueLength) != TS_ERROR) {
         LOG_AUTO_ERROR("TSMimeHdrFieldsClear", "Can STILL retrieve AGE fieldValue afer TS_FieldsClear");
-        STR_RELEASE(tmpBuf, tmpMimeHdrLoc, tmpFieldValueString);
       }
     }
 
@@ -1246,9 +1231,6 @@ sectionMimeHdr(TSMBuffer hdrBuf, TSMLoc httpHdrLoc)
     if (strncmp(tmpFieldValue1, tmpFieldValue2, tmpFieldValueLength)) {
       LOG_AUTO_ERROR("TSMimeHdrFieldCopy", "New copy of field values different from original");
     }
-
-    STR_RELEASE(tmpBuf, tmpMimeHdrLoc, tmpFieldValue1);
-    STR_RELEASE(tmpBuf, tmpMimeHdrLoc, tmpFieldValue2);
 
 
         /***** (13): play with TSMimeHdrFieldValueSet* *****/

@@ -425,7 +425,6 @@ public:
 
   void set(const HdrHeapSDKHandle * from);
   const char *make_sdk_string(const char *raw_str, int raw_str_len);
-  int destroy_sdk_string(char *sdk_str);
 
 private:
   // In order to prevent gratitous refcounting,
@@ -473,26 +472,6 @@ HdrHeapSDKHandle::set(const HdrHeapSDKHandle * from)
 {
   clear();
   m_heap = from->m_heap;
-}
-
-// This routine can be modified to allow strings to be passed back
-// raw, if the callers are able to handle non-terminated strings
-
-inline const char *
-HdrHeapSDKHandle::make_sdk_string(const char *raw_str, int raw_str_len)
-{
-  if (raw_str == NULL)
-    return (NULL);
-  char *str = m_sdk_alloc.allocate_str(raw_str_len + 1);
-  memcpy(str, raw_str, raw_str_len);
-  str[raw_str_len] = '\0';
-  return str;
-}
-
-inline int
-HdrHeapSDKHandle::destroy_sdk_string(char *sdk_str)
-{
-  return m_sdk_alloc.free_str(sdk_str);
 }
 
 inkcoreapi HdrHeap *new_HdrHeap(int size = HDR_HEAP_DEFAULT_SIZE);

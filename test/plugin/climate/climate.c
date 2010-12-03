@@ -550,7 +550,6 @@ retrieve_transaction_info(TSHttpTxn txnp, TransactionData * data)
     data->method = TSmalloc(str_len + 1);
     memcpy(data->method, str, str_len);
     data->method[str_len] = '\0';
-    TSHandleStringRelease(buf_req, hdr_req_loc, str);
 
     /* Get client HTTP version */
     data->client_version = TSHttpHdrVersionGet(buf_req, hdr_req_loc);

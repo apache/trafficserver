@@ -202,7 +202,6 @@ modify_header(TSHttpTxn txnp, TSCont contp)
 
     TSMimeHdrFieldValueUintInsert(resp_bufp, resp_loc, new_field_loc, -1, num_refreshes);
 
-    TSHandleStringRelease(cached_bufp, cached_loc, chkptr);
     TSHandleMLocRelease(resp_bufp, resp_loc, new_field_loc);
     TSHandleMLocRelease(cached_bufp, cached_loc, cached_field_loc);
     TSHandleMLocRelease(cached_bufp, TS_NULL_MLOC, cached_loc);

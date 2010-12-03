@@ -66,9 +66,7 @@ private:
   int test_delete_comma_vals();
   int test_extend_comma_vals();
   int test_insert_comma_vals();
-  int test_comma_val_slice();
   int test_parse_comma_list();
-  int test_str_replace_slice();
   int test_mime();
   int test_http();
   int test_http_mutation();

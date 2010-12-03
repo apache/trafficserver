@@ -124,7 +124,6 @@ handle_dns(TSHttpTxn txnp, TSCont contp)
 
   if (!lock) {
     TSDebug("blacklist-1", "Unable to get lock. Will retry after some time");
-    TSHandleStringRelease(bufp, url_loc, host);
     TSHandleMLocRelease(bufp, hdr_loc, url_loc);
     TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
     TSContSchedule(contp, RETRY_TIME);
@@ -139,7 +138,6 @@ handle_dns(TSHttpTxn txnp, TSCont contp)
         TSDebug("blacklist-1", "blacklisting site: %s\n", sites[i]);
       }
       TSHttpTxnHookAdd(txnp, TS_HTTP_SEND_RESPONSE_HDR_HOOK, contp);
-      TSHandleStringRelease(bufp, url_loc, host);
       TSHandleMLocRelease(bufp, hdr_loc, url_loc);
       TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
       TSHttpTxnReenable(txnp, TS_EVENT_HTTP_ERROR);
@@ -149,7 +147,6 @@ handle_dns(TSHttpTxn txnp, TSCont contp)
   }
 
   TSMutexUnlock(sites_mutex);
-  TSHandleStringRelease(bufp, url_loc, host);
   TSHandleMLocRelease(bufp, hdr_loc, url_loc);
   TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
 

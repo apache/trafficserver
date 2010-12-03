@@ -275,13 +275,11 @@ transformable(TSHttpTxn txnp)
 #else
       if (value && (strnicmp(value, "text/html", sizeof("text/html") - 1) == 0)) {
 #endif
-        ASSERT_SUCCESS(TSHandleStringRelease(bufp, field_loc, value));
         ASSERT_SUCCESS(TSHandleMLocRelease(bufp, hdr_loc, field_loc));
         ASSERT_SUCCESS(TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc));
 
         return 1;
       } else {
-        ASSERT_SUCCESS(TSHandleStringRelease(bufp, field_loc, value));
         ASSERT_SUCCESS(TSHandleMLocRelease(bufp, hdr_loc, field_loc));
         ASSERT_SUCCESS(TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc));
 

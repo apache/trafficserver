@@ -174,7 +174,6 @@ storeHdrInfo(HttpMsgLine_T * pHttpMsgLine, TSMBuffer hdrBuf, TSMLoc hdrLoc,
     } else {
       pHttpMsgLine->httpMethod = TSstrndup(sHttpMethod, iHttpMethodLength);
       TSDebug(debugTag, "(%g) HTTP Method = %s", section, pHttpMsgLine->httpMethod);
-      STR_RELEASE(hdrBuf, urlLoc, sHttpMethod);
     }
   }
 
@@ -248,16 +247,6 @@ storeHdrInfo(HttpMsgLine_T * pHttpMsgLine, TSMBuffer hdrBuf, TSMLoc hdrLoc,
   }
 
   /* Clean-up */
-  STR_RELEASE(hdrBuf, urlLoc, sHttpMethod);
-  STR_RELEASE(hdrBuf, urlLoc, sUrlHostName);
-  STR_RELEASE(hdrBuf, urlLoc, sUrlFragment);
-  STR_RELEASE(hdrBuf, urlLoc, sUrlParams);
-  STR_RELEASE(hdrBuf, urlLoc, sUrlQuery);
-  STR_RELEASE(hdrBuf, urlLoc, sUrlPassword);
-  STR_RELEASE(hdrBuf, urlLoc, sUrlPath);
-  STR_RELEASE(hdrBuf, urlLoc, sUrlScheme);
-  STR_RELEASE(hdrBuf, urlLoc, sUrlUser);
-
   HANDLE_RELEASE(hdrBuf, hdrLoc, urlLoc);
 }
 
@@ -368,15 +357,6 @@ setCustomUrl(TSMBuffer hdrBuf, TSMLoc httpHdrLoc)
   }
 
   /* Clean-up */
-  STR_RELEASE(hdrBuf, urlLoc, sUrlHostName);
-  STR_RELEASE(hdrBuf, urlLoc, sUrlFragment);
-  STR_RELEASE(hdrBuf, urlLoc, sUrlParams);
-  STR_RELEASE(hdrBuf, urlLoc, sUrlQuery);
-  STR_RELEASE(hdrBuf, urlLoc, sUrlPassword);
-  STR_RELEASE(hdrBuf, urlLoc, sUrlPath);
-  STR_RELEASE(hdrBuf, urlLoc, sUrlScheme);
-  STR_RELEASE(hdrBuf, urlLoc, sUrlUser);
-
   HANDLE_RELEASE(hdrBuf, httpHdrLoc, urlLoc);
 }                               /* setCustomUrl */
 

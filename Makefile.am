@@ -21,10 +21,12 @@
 # http://www.gnu.org/software/automake/manual/automake.html#Local-Macros
 ACLOCAL_AMFLAGS = -I build
 
+# proxy/api/ts has to be built first, since so much of libraries and "core
+# depends on the generates ts/ts.h include file.
 if STANDALONE_IOCORE
-SUBDIRS =  iocore lib @hdr_dirs@ proxy
+SUBDIRS =  proxy/api/ts iocore lib @hdr_dirs@ proxy
 else
-SUBDIRS =  iocore lib proxy doc rc
+SUBDIRS =  proxy/api/ts iocore lib proxy rc doc
 endif
 
 DIST_BUILD_USER=`id -nu`

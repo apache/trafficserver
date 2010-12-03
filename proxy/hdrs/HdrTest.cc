@@ -64,9 +64,7 @@ HdrTest::go(RegressionTest * t, int atype)
   status = status & test_error_page_selection();
   status = status & test_http_hdr_print_and_copy();
   status = status & test_comma_vals();
-  status = status & test_str_replace_slice();
   status = status & test_parse_comma_list();
-  status = status & test_comma_val_slice();
   status = status & test_set_comma_vals();
   status = status & test_delete_comma_vals();
   status = status & test_extend_comma_vals();
@@ -1966,137 +1964,6 @@ HdrTest::test_insert_comma_vals()
   bri_box("test_insert_comma_vals");
   rprintf(rtest, "  HdrTest test_insert_comma_vals: TEST NOT IMPLEMENTED\n");
   return (1);
-}
-
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
-
-int
-HdrTest::test_comma_val_slice()
-{
-  static struct
-  {
-    const char *str;
-    int idx;
-    int correct_offset;
-    int correct_len;
-  } tests[] = {
-    {
-    ",", 1, 1, 0}, {
-    ",", 1, 1, 0}, {
-    ",", 1, 1, 0}, {
-    "a,b,c", 0, 0, 1}, {
-    "a,b,c", 1, 2, 1}, {
-    "a,b,c", 2, 4, 1}, {
-    "", 0, 0, 0}, {
-    "", 1, -1, 0}, {
-    " ", 0, 0, 1}, {
-    " ", 1, -1, 0}, {
-    ",", 0, 0, 0}, {
-    ",", 1, 1, 0}, {
-    ",,", 0, 0, 0}, {
-    ",,", 1, 1, 0}, {
-    ",,", 2, 2, 0}, {
-    ",,", 3, -1, 0}, {
-    "foo", 0, 0, 3}, {
-    " foo", 0, 0, 4}, {
-    " foo ", 0, 0, 5}, {
-    " a , b , c", 0, 0, 3}, {
-    " a , b , c", 1, 5, 2}, {
-    " a , b , c", 2, 9, 1}, {
-    " a ,b , c", 1, 4, 2}, {
-    " a ,b, c", 1, 4, 1}, {
-    "    a   ,   b ", 0, 0, 8}, {
-    "    a   ,   b ", 1, 10, 4}, {
-    "    a   , b ", 1, 10, 2}, {
-    "    a   ,b ", 1, 9, 2}, {
-    "    a   ,b", 1, 9, 1}, {
-    "    a   ,", 1, 9, 0}, {
-    "    a   ,,", 1, 9, 0}, {
-    "    a   ,b,", 1, 9, 1}, {
-    "a, \"boo,foo\", c", 0, 0, 1}, {
-    "a, \"boo,foo\", c", 1, 3, 9}, {
-    "a, \"boo,foo\", c", 2, 14, 1}
-  };
-
-  bri_box("test_comma_val_slice");
-
-  HTTPHdr hdr;
-  char field_name[32];
-  int i, len, offset, failures, ntests;
-
-  failures = 0;
-  ntests = sizeof(tests) / sizeof(tests[0]);
-
-  hdr.create(HTTP_TYPE_REQUEST);
-
-  for (i = 0; i < ntests; i++) {
-    snprintf(field_name, sizeof(field_name), "Test%d", i);
-
-    MIMEField *f = hdr.field_create(field_name, (int) strlen(field_name));
-    hdr.field_value_set(f, tests[i].str, strlen(tests[i].str));
-
-    const char *slice = mime_field_value_get_comma_val_slice(f, &len, tests[i].idx);
-    offset = (slice == NULL ? -1 : (slice - f->m_ptr_value));
-
-    if ((offset != tests[i].correct_offset) || (len != tests[i].correct_len)) {
-      ++failures;
-      printf("FAILED:  test #%d (slice idx %d of '%s') expected offset %d len %d, got offset %d len %d\n",
-             i + 1, tests[i].idx, tests[i].str, tests[i].correct_offset, tests[i].correct_len, offset, len);
-    }
-  }
-
-  hdr.destroy();
-  return (failures_to_status("test_comma_val_slice", failures));
-}
-
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
-
-int
-HdrTest::test_str_replace_slice()
-{
-  bri_box("test_str_replace_slice");
-
-  int len;
-  char buff[256];
-  HdrHeap *heap = new_HdrHeap();
-  const char *targ, *repl, *good, *retr;
-  int failures = 0;
-
-  // (1) prepend
-  ink_strncpy(buff, "de, fr, en", sizeof(buff));
-  targ = buff + 0;
-  repl = "oo, ";
-  good = "oo, de, fr, en";
-  retr = mime_field_value_str_replace_slice(heap, &len, buff, (int) strlen(buff), targ, 0, repl, (int) strlen(repl));
-  if ((len != (int) strlen(good)) || (memcmp(good, retr, len) != 0)) {
-    printf("FAILED: expected %d byte str \"%s\", got %d byte str \"%.*s\"\n", (int)strlen(good), good, len, len, retr);
-    ++failures;
-  }
-  // (2) append
-  ink_strncpy(buff, "de, fr, en", sizeof(buff));
-  targ = buff + 10;
-  repl = ", bloop";
-  good = "de, fr, en, bloop";
-  retr = mime_field_value_str_replace_slice(heap, &len, buff, (int)strlen(buff), targ, 0, repl, (int)strlen(repl));
-  if ((len != (int) strlen(good)) || (memcmp(good, retr, len) != 0)) {
-    printf("FAILED: expected %d byte str \"%s\", got %d byte str \"%.*s\"\n", (int) strlen(good), good, len, len, retr);
-    ++failures;
-  }
-  // (3) delete middle
-  ink_strncpy(buff, "de, fr, en", sizeof(buff));
-  targ = buff + 4;
-  repl = "";
-  good = "de, en";
-  retr = mime_field_value_str_replace_slice(heap, &len, buff, (int) strlen(buff), targ, 4, repl, (int) strlen(repl));
-  if ((len != (int) strlen(good)) || (memcmp(good, retr, len) != 0)) {
-    printf("FAILED: expected %d byte str \"%s\", got %d byte str \"%.*s\"\n", (int) strlen(good), good, len, len, retr);
-    ++failures;
-  }
-
-  heap->destroy();
-  return (failures_to_status("test_str_replace_slice", failures));
 }
 
 /*-------------------------------------------------------------------------

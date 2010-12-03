@@ -151,7 +151,6 @@ handle_dns(TSHttpTxn txnp, TSCont contp)
 
   if (strncmp(ptr, "Basic", 5) != 0) {
     TSError("no Basic auth type in Proxy-Authorization\n");
-    TSHandleStringRelease(bufp, field_loc, val);
     TSHandleMLocRelease(bufp, hdr_loc, field_loc);
     TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
     goto done;
@@ -167,7 +166,6 @@ handle_dns(TSHttpTxn txnp, TSCont contp)
   if (!password) {
     TSError("no password in authorization information\n");
     TSfree(user);
-    TSHandleStringRelease(bufp, field_loc, val);
     TSHandleMLocRelease(bufp, hdr_loc, field_loc);
     TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
     goto done;
@@ -178,14 +176,12 @@ handle_dns(TSHttpTxn txnp, TSCont contp)
   if (!authorized(user, password)) {
     TSError("%s:%s not authorized\n", user, password);
     TSfree(user);
-    TSHandleStringRelease(bufp, field_loc, val);
     TSHandleMLocRelease(bufp, hdr_loc, field_loc);
     TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
     goto done;
   }
 
   TSfree(user);
-  TSHandleStringRelease(bufp, field_loc, val);
   TSHandleMLocRelease(bufp, hdr_loc, field_loc);
   TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
   TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);

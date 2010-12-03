@@ -643,16 +643,6 @@ handle_read_request(TSHttpTxn txnp, TSCont txn_contp)
   }
 
 Lcleanup:
-  if (VALID_POINTER(hostnameString)) {
-    if (TSHandleStringRelease(clientReqBuf, hostnameLoc, hostnameString) == TS_ERROR) {
-      LOG_ERROR("TSHandleStringRelease");
-    }
-  }
-  if (VALID_POINTER(hostnameLengthString)) {
-    if (TSHandleStringRelease(clientReqBuf, hostnameLengthLoc, hostnameLengthString) == TS_ERROR) {
-      LOG_ERROR("TSHandleStringRelease");
-    }
-  }
   if (VALID_POINTER(hostnameLoc)) {
     if (TSHandleMLocRelease(clientReqBuf, clientReqLoc, hostnameLoc) == TS_ERROR) {
       LOG_ERROR("TSHandleMLocRelease");

@@ -631,16 +631,6 @@ time_t mime_field_value_get_date(MIMEField * field);
 const char *mime_field_value_get_comma_val(MIMEField * field, int *length, int idx);
 int mime_field_value_get_comma_val_count(MIMEField * field);
 int mime_field_value_get_comma_list(MIMEField * field, StrList * list);
-const char *mime_field_value_get_comma_val_slice(MIMEField * field, int *len_ptr, int idx);
-
-void _mime_field_value_str_replace_slice(char *new_str, int new_str_len,
-                                         const char *old_str, int old_str_len,
-                                         const char *old_slice, int old_slice_len,
-                                         const char *new_slice, int new_slice_len, int l1, int l2, int l3);
-const char *mime_field_value_str_replace_slice(HdrHeap * heap, int *new_str_len_return,
-                                               const char *old_str, int old_str_len,
-                                               const char *old_slice, int old_slice_len,
-                                               const char *new_slice, int new_slice_len);
 
 void mime_field_value_set_comma_val(HdrHeap * heap, MIMEHdrImpl * mh, MIMEField * field, int idx,
                                     const char *new_piece_str, int new_piece_len);

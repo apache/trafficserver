@@ -149,15 +149,11 @@ handle_select_alt(TSHttpAltInfo infop)
 
   /* cleanup */
 Lcleanup:
-  if (VALID_POINTER(accept_value))
-    TSHandleStringRelease(client_req_buf, accept_language_field, accept_value);
   if (VALID_POINTER(accept_language_field))
     TSHandleMLocRelease(client_req_buf, client_req_hdr, accept_language_field);
   if (VALID_POINTER(client_req_hdr))
     TSHandleMLocRelease(client_req_buf, TS_NULL_MLOC, client_req_hdr);
 
-  if (VALID_POINTER(content_value))
-    TSHandleStringRelease(cache_resp_buf, content_language_field, content_value);
   if (VALID_POINTER(content_language_field))
     TSHandleMLocRelease(cache_resp_buf, cache_resp_hdr, content_language_field);
   if (VALID_POINTER(cache_resp_hdr))

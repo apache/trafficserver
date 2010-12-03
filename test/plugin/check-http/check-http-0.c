@@ -330,8 +330,6 @@ negTesting(TSMBuffer hdrBuf, TSMLoc httpHdrLoc)
     if (TSHttpHdrReasonSet(negHdrBuf, negHttpHdrLoc, NULL, -1) != TS_ERROR) {
       LOG_NEG_ERROR("TSHttpHdrReasonSet");
     }
-
-    STR_RELEASE(negHdrBuf, negHttpHdrLoc, sHttpReason);
   }
 
   /* Clean-up */
@@ -432,8 +430,6 @@ getHdrInfo(HdrInfo_T * pHdrInfo, TSMBuffer hdrBuf, TSMLoc hdrLoc)
     }
 
     /* Clean-up */
-    STR_RELEASE(hdrBuf, urlLoc, sHostName);
-    STR_RELEASE(hdrBuf, urlLoc, sHttpMethod);
     HANDLE_RELEASE(hdrBuf, hdrLoc, urlLoc);
 
   } else if (pHdrInfo->httpType == TS_HTTP_TYPE_RESPONSE) {
@@ -448,7 +444,6 @@ getHdrInfo(HdrInfo_T * pHdrInfo, TSMBuffer hdrBuf, TSMLoc hdrLoc)
     }
 
     /* clean-up */
-    STR_RELEASE(hdrBuf, hdrLoc, sHttpHdrReason);
   } else {
     LOG_AUTO_ERROR("getHdrInfo", "httpType unknown");
   }
@@ -498,7 +493,6 @@ printHttpHeader(TSMBuffer hdrBuf, TSMLoc hdrLoc, char *debugTag, float section)
       outputString = TSstrndup(sHttpMethod, iHttpMethodLength);
       TSDebug(debugTag, "(%g) HTTP Header Method = %s", section, outputString);
       FREE(outputString);
-      STR_RELEASE(hdrBuf, urlLoc, sHttpMethod);
     }
 
         /*** TSHttpHdrUrlGet ***/
@@ -510,7 +504,6 @@ printHttpHeader(TSMBuffer hdrBuf, TSMLoc hdrLoc, char *debugTag, float section)
       outputString = TSstrndup(sHostName, iHostLength);
       TSDebug(debugTag, "(%g) HTTP Host = %s", section, outputString);
       FREE(outputString);
-      STR_RELEASE(hdrBuf, urlLoc, sHostName);
     }
 
     /* Clean-up */
@@ -526,7 +519,6 @@ printHttpHeader(TSMBuffer hdrBuf, TSMLoc hdrLoc, char *debugTag, float section)
       outputString = TSstrndup(sHttpHdrReason, iHttpHdrReasonLength);
       TSDebug(debugTag, "(%g) HTTP Header Reason = %s", section, outputString);
       FREE(outputString);
-      STR_RELEASE(hdrBuf, hdrLoc, sHttpHdrReason);
     }
 
         /*** TSHttpHdrStatusGet ***/
@@ -673,7 +665,6 @@ handleSendResponse(TSCont pCont, TSHttpTxn pTxn)
     } else if (sTmpHttpHdrReason && strncmp(sTmpHttpHdrReason, "dummy reason", iTmpHttpHdrReasonLength)) {
       LOG_AUTO_ERROR("TSHttpHdrReasonSet/Get", "GET reason different from the SET reason");
     }
-    STR_RELEASE(newHttpHdrBuf, newHttpHdrLoc, sTmpHttpHdrReason);
   }
 
     /*** TSHttpStatusSet ***/
@@ -729,7 +720,6 @@ handleSendResponse(TSCont pCont, TSHttpTxn pTxn)
   }
 
   /* (3): clean-up */
-  STR_RELEASE(newHttpHdrBuf, newHttpHdrLoc, sHttpHdrReason);
   FREE(sOldHttpReason);
 
 resp_4:
@@ -756,7 +746,6 @@ resp_4:
   } else if (sTmpHttpHdrReason && strncmp(sTmpHttpHdrReason, "dummy reason", iTmpHttpHdrReasonLength)) {
     LOG_AUTO_ERROR("TSHttpHdrReasonSet/Get", "GET reason string different from SET reason");
   }
-  STR_RELEASE(respHdrBuf, respHttpHdrLoc, sTmpHttpHdrReason);
 
     /*** TSHttpStatusSet ***/
   /* save the original value */
@@ -825,7 +814,6 @@ resp_4:
   }
 
   /* (4): clean-up */
-  STR_RELEASE(respHdrBuf, respHttpHdrLoc, sHttpHdrReason);
   FREE(sOldHttpReason);
 
     /********************************/
@@ -1045,7 +1033,6 @@ section_3:
   outputString = TSstrndup(sHttpMethod, iHttpMethodLength);
   TSDebug(REQ, "(3): new HTTP Header Method = %s", outputString);
   FREE(outputString);
-  STR_RELEASE(reqHdrBuf, reqHdrLoc, sHttpMethod);
 
   printHttpHeader(reqHdrBuf, reqHdrLoc, REQ, 3);
 
@@ -1062,7 +1049,6 @@ section_3:
   outputString = TSstrndup(sHttpMethod, iHttpMethodLength);
   TSDebug(REQ, "(3): original HTTP Header Method = %s", outputString);
   FREE(outputString);
-  STR_RELEASE(reqHdrBuf, reqHdrLoc, sHttpMethod);
 
 
     /*** TSHttpHdrVersionSet ***/

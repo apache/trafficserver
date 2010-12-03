@@ -17,12 +17,11 @@
 #  limitations under the License.
 
 if STANDALONE_IOCORE
-SUBDIRS = api/ts
 noinst_LIBRARIES = libTrafficServerStandalone.a
 bin_PROGRAMS =
 noinst_PROGRAMS =
 else
-SUBDIRS = congest http2 hdrs logging api/ts
+SUBDIRS = congest http2 hdrs logging
 if BUILD_WCCP
 SUBDIRS += wccp
 endif

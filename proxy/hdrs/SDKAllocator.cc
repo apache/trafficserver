@@ -38,35 +38,12 @@ static const int SDKAllocHdrSize = ROUND(sizeof(SDKAllocHdr), sizeof(char *));
 ////////////////////////////////////////////////////////////////////
 //    SDK Allocator
 ////////////////////////////////////////////////////////////////////
-char *
-SDKAllocator::allocate_str(int len)
-{
-  int size = SDKAllocHdrSize + len;
-
-  SDKAllocHdr *r = (SDKAllocHdr *) xmalloc(size);
-  r->m_magic = SDK_ALLOC_MAGIC_STR;
-  r->m_source = this;
-  r->link.prev = NULL;
-  r->link.next = NULL;
-
-  char *str = ((char *) r) + SDKAllocHdrSize;
-
-  if (len > 0) {
-    *str = '\0';
-  }
-  // Put the object on the list so that we can
-  //  deallocate it later
-  this->push(r);
-
-  return str;
-}
-
 MIMEField *
 SDKAllocator::allocate_mfield()
 {
-
   int size = SDKAllocHdrSize + sizeof(MIMEField);
   SDKAllocHdr *r = (SDKAllocHdr *) xmalloc(size);
+
   r->m_magic = SDK_ALLOC_MAGIC_STAND_ALONE_FIELD;
   r->m_source = this;
   r->link.prev = NULL;
@@ -84,9 +61,9 @@ SDKAllocator::allocate_mfield()
 MIMEFieldSDKHandle *
 SDKAllocator::allocate_mhandle()
 {
-
   int size = SDKAllocHdrSize + sizeof(MIMEFieldSDKHandle);
   SDKAllocHdr *r = (SDKAllocHdr *) xmalloc(size);
+
   r->m_magic = SDK_ALLOC_MAGIC_MIME_FIELD_HANDLE;
   r->m_source = this;
   r->link.prev = NULL;
@@ -102,30 +79,8 @@ SDKAllocator::allocate_mhandle()
 }
 
 int
-SDKAllocator::free_str(char *str)
-{
-
-  SDKAllocHdr *obj = (SDKAllocHdr *) (str - SDKAllocHdrSize);
-
-  // Sanity check the object to make sure it's
-  //   good and from the correct allocator
-  if (obj->m_magic != SDK_ALLOC_MAGIC_STR) {
-    return 0;
-  }
-
-  if (obj->m_source != this) {
-    return 0;
-  }
-
-  this->remove(obj);
-  xfree(obj);
-  return 1;
-}
-
-int
 SDKAllocator::free_mfield(MIMEField * f)
 {
-
   SDKAllocHdr *obj = (SDKAllocHdr *) (((char *) f) - SDKAllocHdrSize);
 
   // Sanity check the object to make sure it's
@@ -146,8 +101,6 @@ SDKAllocator::free_mfield(MIMEField * f)
 int
 SDKAllocator::free_mhandle(MIMEFieldSDKHandle * h)
 {
-
-
   SDKAllocHdr *obj = (SDKAllocHdr *) (((char *) h) - SDKAllocHdrSize);
 
   // Sanity check the object to make sure it's
@@ -168,7 +121,6 @@ SDKAllocator::free_mhandle(MIMEFieldSDKHandle * h)
 void
 SDKAllocator::free_all()
 {
-
   SDKAllocHdr *obj;
 
   while ((obj = this->pop())) {
@@ -179,7 +131,6 @@ SDKAllocator::free_all()
     }
 
     switch (obj->m_magic) {
-    case SDK_ALLOC_MAGIC_STR:
     case SDK_ALLOC_MAGIC_MIME_FIELD_HANDLE:
     case SDK_ALLOC_MAGIC_STAND_ALONE_FIELD:
       xfree(obj);

@@ -64,7 +64,6 @@ query_string_extract(TxnData * txn_data, char **query_store)
     *query_store = TSmalloc(len + 1);
     strncpy(*query_store, query_string, len);
     (*query_store)[len] = '\0';
-    TSHandleStringRelease(bufp, url_loc, query_string);
   } else {
     *query_store = NULL;
   }
@@ -161,9 +160,6 @@ query_and_cookies_extract(TSHttpTxn txnp, TxnData * txn_data, PairList * query, 
     } while (separator != NULL);
 
     TSfree(str);
-
-    /* old implementation TSHandleStringRelease(bufp, url_loc, query_string); */
-    TSHandleStringRelease(txn_data->request_url_buf, txn_data->request_url_loc, query_string);
   }
   /* old implementation TSHandleMLocRelease(bufp, hdr_loc, url_loc); */
 
@@ -279,11 +275,9 @@ is_template_header(TSMBuffer bufp, TSMLoc hdr_loc)
   if (strncasecmp(str, CONTENT_TYPE_TEXT_HTML, CONTENT_TYPE_TEXT_HTML_LEN) != 0) {
     TSDebug(LOW, "Not a template: could value of header %s is %s, not %s",
              TS_MIME_FIELD_CONTENT_TYPE, str, CONTENT_TYPE_TEXT_HTML);
-    TSHandleStringRelease(bufp, hdr_loc, str);
     TSHandleMLocRelease(bufp, hdr_loc, field_loc);
     return 0;
   }
-  TSHandleStringRelease(bufp, hdr_loc, str);
   TSHandleMLocRelease(bufp, hdr_loc, field_loc);
 
   /* Check out that header X-Include is present */
@@ -356,16 +350,13 @@ request_looks_dynamic(TSMBuffer bufp, TSMLoc hdr_loc)
     str[len] = '\0';
 
     if ((strstr(str, ASP_EXTENSION) != NULL) || (strstr(str, JSP_EXTENSION) != NULL) || (strstr(str, CGI_BIN) != NULL)) {
-      TSHandleStringRelease(bufp, url_loc, path);
       TSHandleMLocRelease(bufp, hdr_loc, url_loc);
       return 1;
     }
-    TSHandleStringRelease(bufp, url_loc, path);
   }
 
   query = TSUrlHttpQueryGet(bufp, url_loc, &len);
   if ((query != NULL) && (len > 0)) {
-    TSHandleStringRelease(bufp, url_loc, query);
     TSHandleMLocRelease(bufp, hdr_loc, url_loc);
     return 1;
   }
@@ -439,17 +430,14 @@ modify_request_url(TSMBuffer bufp, TSMLoc url_loc, TxnData * txn_data)
   user = TSUrlUserGet(bufp, url_loc, &len);
   if ((user != NULL) && (len > 0)) {
     TSUrlUserSet(template_url_buf, template_url_loc, user, len);
-    TSHandleStringRelease(bufp, url_loc, user);
   }
   password = TSUrlPasswordGet(bufp, url_loc, &len);
   if ((password != NULL) && (len > 0)) {
     TSUrlPasswordSet(template_url_buf, template_url_loc, password, len);
-    TSHandleStringRelease(bufp, url_loc, password);
   }
   host = TSUrlHostGet(bufp, url_loc, &len);
   if ((host != NULL) && (len > 0)) {
     TSUrlHostSet(template_url_buf, template_url_loc, host, len);
-    TSHandleStringRelease(bufp, url_loc, host);
   }
   port = TSUrlPortGet(bufp, url_loc);
   if (port != HTTP_DEFAULT_PORT) {
@@ -462,17 +450,14 @@ modify_request_url(TSMBuffer bufp, TSMLoc url_loc, TxnData * txn_data)
     sprintf(new_path, "%s%s", path, TEMPLATE_CACHE_SUFFIX);
     TSUrlPathSet(template_url_buf, template_url_loc, new_path, -1);
     TSfree(new_path);
-    TSHandleStringRelease(bufp, url_loc, path);
   }
   params = TSUrlHttpParamsGet(bufp, url_loc, &len);
   if ((params != NULL) && (len > 0)) {
     TSUrlHttpParamsSet(template_url_buf, template_url_loc, params, len);
-    TSHandleStringRelease(bufp, url_loc, params);
   }
   fragment = TSUrlHttpFragmentGet(bufp, url_loc, &len);
   if ((fragment != NULL) && (len > 0)) {
     TSUrlHttpFragmentSet(template_url_buf, template_url_loc, fragment, len);
-    TSHandleStringRelease(bufp, url_loc, fragment);
   }
 
   /* Replace the original url by the template url */

@@ -27,7 +27,6 @@
 
    Description:
 
-
  ****************************************************************************/
 
 #ifndef _SDK_ALLOCATOR_H_
@@ -42,7 +41,6 @@
 enum
 {
   SDK_ALLOC_MAGIC_DEAD = 0xDEADFFEE,
-  SDK_ALLOC_MAGIC_STR = 0xFFEEABCA,
   SDK_ALLOC_MAGIC_MIME_FIELD_HANDLE = 0xFFEEABCB,
   SDK_ALLOC_MAGIC_STAND_ALONE_FIELD = 0xFFEEABCC
 };
@@ -63,14 +61,12 @@ class SDKAllocator:public DLL<SDKAllocHdr>
 public:
   SDKAllocator();
   void init();
-  char *allocate_str(int len);
   MIMEField *allocate_mfield();
   MIMEFieldSDKHandle *allocate_mhandle();
 
   // Object free functions return 1 if
   //   the object has a valid magic number and is
   //   acutually free'd and zero otherize
-  int free_str(char *str);
   int free_mfield(MIMEField * f);
   int free_mhandle(MIMEFieldSDKHandle * h);
 

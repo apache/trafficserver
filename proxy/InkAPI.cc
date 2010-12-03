@@ -2020,23 +2020,6 @@ TSHandleMLocRelease(TSMBuffer bufp, TSMLoc parent, TSMLoc mloc)
   }
 }
 
-TSReturnCode
-TSHandleStringRelease(TSMBuffer bufp, TSMLoc parent, const char *str)
-{
-  NOWARN_UNUSED(parent);
-  if (str == NULL)
-    return TS_SUCCESS;
-  if (bufp == NULL)
-    return TS_ERROR;
-
-  if (hdrtoken_is_wks(str))
-    return TS_SUCCESS;
-
-  HdrHeapSDKHandle *sdk_h = (HdrHeapSDKHandle *) bufp;
-  int r = sdk_h->destroy_sdk_string((char *) str);
-
-  return ((r == 0) ? TS_ERROR : TS_SUCCESS);
-}
 
 ////////////////////////////////////////////////////////////////////
 //
@@ -2257,15 +2240,7 @@ URLPartGet(TSMBuffer bufp, TSMLoc obj, int *length, URLPartGetF url_f)
   u.m_heap = ((HdrHeapSDKHandle *) bufp)->m_heap;
   u.m_url_impl = (URLImpl *) obj;
 
-  int str_len;
-  const char *str_ptr = (u.*url_f) (&str_len);
-
-  if (length)
-    *length = str_len;
-  if (str_ptr == NULL)
-    return NULL;
-
-  return ((HdrHeapSDKHandle *) bufp)->make_sdk_string(str_ptr, str_len);
+  return (u.*url_f) (length);
 }
 
 static TSReturnCode
@@ -2698,71 +2673,55 @@ TSMimeHdrFieldsCount(TSMBuffer bufp, TSMLoc obj)
   return TS_ERROR;
 }
 
-/* TODO: These are supposedly obsoleted, but yet used all over the place in here ... */
-
-/*************/
-/* MimeField */
-/*************/
+// The following three helper functions should not be used in plugins! Since they are not used
+// by plugins, there's no need to validate the input.
 const char *
 TSMimeFieldValueGet(TSMBuffer bufp, TSMLoc field_obj, int idx, int *value_len_ptr)
 {
-  if ((sdk_sanity_check_mbuffer(bufp) == TS_SUCCESS) && (sdk_sanity_check_field_handle(field_obj) == TS_SUCCESS)) {
-    MIMEFieldSDKHandle *handle = (MIMEFieldSDKHandle *) field_obj;
-    const char *value_str;
-    int compat_length = 0;
+  MIMEFieldSDKHandle *handle = (MIMEFieldSDKHandle *) field_obj;
 
-    if (value_len_ptr == NULL)
-      value_len_ptr = &compat_length;
-
-    if (idx >= 0) {
-      value_str = mime_field_value_get_comma_val(handle->field_ptr, value_len_ptr, idx);
-    } else {
-      value_str = mime_field_value_get(handle->field_ptr, value_len_ptr);
-      if (value_str == NULL)
-        value_str = "";           // don't return NULL for whole value
-    }
-
-    return ((HdrHeapSDKHandle *) bufp)->make_sdk_string(value_str, *value_len_ptr);
+  if (idx >= 0) {
+    return mime_field_value_get_comma_val(handle->field_ptr, value_len_ptr, idx);
+  } else {
+    return mime_field_value_get(handle->field_ptr, value_len_ptr);
   }
+
+  *value_len_ptr = 0;
   return NULL;
 }
 
 void
 TSMimeFieldValueSet(TSMBuffer bufp, TSMLoc field_obj, int idx, const char *value, int length)
 {
-  if ((sdk_sanity_check_mbuffer(bufp) == TS_SUCCESS) && (sdk_sanity_check_field_handle(field_obj) == TS_SUCCESS)) {
-    if (value == NULL) {
-      value = "";
-      length = 0;
-    }
-    if (length == -1)
-      length = strlen(value);
+  MIMEFieldSDKHandle *handle = (MIMEFieldSDKHandle *) field_obj;
+  HdrHeap *heap = ((HdrHeapSDKHandle *) bufp)->m_heap;
 
-    MIMEFieldSDKHandle *handle = (MIMEFieldSDKHandle *) field_obj;
-    HdrHeap *heap = ((HdrHeapSDKHandle *) bufp)->m_heap;
+  if (length == -1)
+    length = strlen(value);
 
-    if (idx >= 0)
-      mime_field_value_set_comma_val(heap, handle->mh, handle->field_ptr, idx, value, length);
-    else
-      mime_field_value_set(heap, handle->mh, handle->field_ptr, value, length, true);
-  }
+  if (idx >= 0)
+    mime_field_value_set_comma_val(heap, handle->mh, handle->field_ptr, idx, value, length);
+  else
+    mime_field_value_set(heap, handle->mh, handle->field_ptr, value, length, true);
 }
 
-TSMLoc
+void
 TSMimeFieldValueInsert(TSMBuffer bufp, TSMLoc field_obj, const char *value, int length, int idx)
 {
-  if ((sdk_sanity_check_mbuffer(bufp) == TS_SUCCESS) && (sdk_sanity_check_field_handle(field_obj) == TS_SUCCESS)) {
-    if (length == -1)
-      length = strlen(value);
+  MIMEFieldSDKHandle *handle = (MIMEFieldSDKHandle *) field_obj;
+  HdrHeap *heap = ((HdrHeapSDKHandle *) bufp)->m_heap;
 
-    MIMEFieldSDKHandle *handle = (MIMEFieldSDKHandle *) field_obj;
-    HdrHeap *heap = ((HdrHeapSDKHandle *) bufp)->m_heap;
+  if (length == -1)
+    length = strlen(value);
 
-    mime_field_value_insert_comma_val(heap, handle->mh, handle->field_ptr, idx, value, length);
-    return TS_NULL_MLOC;
-  }
+  mime_field_value_insert_comma_val(heap, handle->mh, handle->field_ptr, idx, value, length);
+}
 
-  return TS_NULL_MLOC; // TODO: ??? What should this be ?
+// This is completely deprecated (never needed)
+TSReturnCode
+TSHandleStringRelease(TSMBuffer bufp, TSMLoc parent, const char *str)
+{
+  return TS_SUCCESS;
 }
 
 
@@ -3157,7 +3116,7 @@ TSMimeHdrFieldNameGet(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int *length)
   name_ptr = mime_field_name_get(handle->field_ptr, &name_len);
   if (length)
     *length = name_len;
-  return (((HdrHeapSDKHandle *)bufp)->make_sdk_string(name_ptr, name_len));
+  return name_ptr;
 }
 
 TSReturnCode
@@ -3253,7 +3212,6 @@ TSMimeHdrFieldValueDateGet(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, time_t *val
       *value_ptr = (time_t) 0;
     } else {
       *value_ptr = mime_parse_date(value_str, value_str + value_len);
-      ((HdrHeapSDKHandle *) bufp)->destroy_sdk_string((char *) value_str);
     }
     return TS_SUCCESS;
   }
@@ -3273,7 +3231,6 @@ TSMimeHdrFieldValueIntGet(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int idx, int
       *value_ptr = 0;  // TODO: Hmmm, this is weird, but it's the way it worked before ...
     } else{
       *value_ptr = mime_parse_int(value_str, value_str + value_len);
-      ((HdrHeapSDKHandle *) bufp)->destroy_sdk_string((char *) value_str);
     }
     return TS_SUCCESS;
   }
@@ -3293,7 +3250,6 @@ TSMimeHdrFieldValueUintGet(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int idx, un
       *value_ptr = 0;
     } else {
       *value_ptr = mime_parse_uint(value_str, value_str + value_len);
-      ((HdrHeapSDKHandle *) bufp)->destroy_sdk_string((char *) value_str);
     }
     return TS_SUCCESS;
   }
@@ -3430,7 +3386,7 @@ TSMimeHdrFieldValueIntInsert(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int idx, 
     char tmp[16];
     int len = mime_format_int(tmp, value, sizeof(tmp));
 
-    (void)TSMimeFieldValueInsert(bufp, field, tmp, len, idx);
+    TSMimeFieldValueInsert(bufp, field, tmp, len, idx);
     return TS_SUCCESS;
   }
   return TS_ERROR;
@@ -3448,7 +3404,7 @@ TSMimeHdrFieldValueUintInsert(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int idx,
     char tmp[16];
     int len = mime_format_uint(tmp, value, sizeof(tmp));
 
-    (void)TSMimeFieldValueInsert(bufp, field, tmp, len, idx);
+    TSMimeFieldValueInsert(bufp, field, tmp, len, idx);
     return TS_SUCCESS;
   }
   return TS_ERROR;
@@ -3807,24 +3763,9 @@ TSHttpHdrMethodGet(TSMBuffer bufp, TSMLoc obj, int *length)
   }
 
   HTTPHdr h;
-  int value_len;
 
   SET_HTTP_HDR(h, bufp, obj);
-  const char *value_ptr = h.method_get(&value_len);
-
-  if (length) {
-    *length = value_len;
-  }
-
-  if (value_ptr == NULL) {
-    return NULL;
-  }
-
-  if (hdrtoken_is_wks(value_ptr)) {
-    return value_ptr;
-  } else {
-    return ((HdrHeapSDKHandle *) bufp)->make_sdk_string(value_ptr, value_len);
-  }
+  return h.method_get(length);
 }
 
 TSReturnCode
@@ -3926,19 +3867,7 @@ TSHttpHdrReasonGet(TSMBuffer bufp, TSMLoc obj, int *length)
   HTTPHdr h;
 
   SET_HTTP_HDR(h, bufp, obj);
-  /* Don't need the assert as the check is done in sdk_sanity_check_http_hdr_handle
-     ink_assert(h.m_http->m_type == HDR_HEAP_OBJ_HTTP_HEADER);
-   */
-
-  int value_len;
-  const char *value_ptr = h.reason_get(&value_len);
-
-  if (length)
-    *length = value_len;
-  if (value_ptr == NULL)
-    return NULL;
-
-  return ((HdrHeapSDKHandle *) bufp)->make_sdk_string(value_ptr, value_len);
+  return h.reason_get(length);
 }
 
 TSReturnCode

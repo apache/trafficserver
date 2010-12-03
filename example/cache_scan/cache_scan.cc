@@ -505,8 +505,6 @@ setup_request(TSCont contp, TSHttpTxn txnp)
   }
 
 Ldone:
-  TSHandleStringRelease(bufp, url_loc, path);
-  TSHandleStringRelease(bufp, url_loc, query);
   TSHandleMLocRelease(bufp, hdr_loc, url_loc);
   TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
 

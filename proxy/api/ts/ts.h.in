@@ -835,17 +835,11 @@ extern "C"
   tsapi TSReturnCode TSHandleMLocRelease(TSMBuffer bufp, TSMLoc parent, TSMLoc mloc);
 
   /**
-      Releases the string str created from the TSMLoc parent. Do not use
-      TSHandleStringRelease() for strings created by TSUrlStringGet();
-      in that special case, free the string with TSfree().
-
-      @param bufp marshal buffer containing the string to be released.
-      @param parent location of the parent object from which the string
-        handle was created.
-      @param str pointer to the string to be released.
-
+      This API is no longer necessary, all strings from the marshal buffers
+      are on a simple lease, read-only, and do not need to be released.
    */
-  tsapi TSReturnCode TSHandleStringRelease(TSMBuffer bufp, TSMLoc parent, const char *str);
+  /** @deprecated */
+  tsapi TS_DEPRECATED TSReturnCode TSHandleStringRelease(TSMBuffer bufp, TSMLoc parent, const char *str);
 
   /* --------------------------------------------------------------------------
      Install and plugin locations */
@@ -1214,8 +1208,7 @@ extern "C"
   /**
       Retrieves the user portion of the URL located at url_loc
       within bufp. Note: the returned string is not guaranteed to
-      be null-terminated. Release the returned string with a call to
-      TSHandleStringRelease().
+      be null-terminated.
 
       @param bufp marshal buffer containing the URL.
       @param offset location of the URL.
@@ -1245,8 +1238,7 @@ extern "C"
       Retrieves the password portion of the URL located at url_loc
       within bufp. TSUrlPasswordGet() places the length of the returned
       string in the length argument. Note: the returned string is
-      not guaranteed to be null-terminated. Release with a call to
-      TSHandleStringRelease().
+      not guaranteed to be null-terminated.
 
       @param bufp marshal buffer containing the URL.
       @param offset
@@ -1275,7 +1267,7 @@ extern "C"
   /**
       Retrieves the host portion of the URL located at url_loc
       within bufp. Note: the returned string is not guaranteed to be
-      null-terminated. Release with a call to TSHandleStringRelease().
+      null-terminated.
 
       @param bufp marshal buffer containing the URL.
       @param offset location of the URL.
@@ -1326,7 +1318,7 @@ extern "C"
       Retrieves the path portion of the URL located at url_loc within
       bufp. TSUrlPathGet() places the length of the returned string in
       the length argument. Note: the returned string is not guaranteed to
-      be null-terminated. Release with a call to TSHandleStringRelease().
+      be null-terminated.
 
       @param bufp marshal buffer containing the URL.
       @param offset location of the URL.
@@ -1380,7 +1372,7 @@ extern "C"
       Retrieves the HTTP params portion of the URL located at url_loc
       within bufp. The length of the returned string is in the length
       argument. Note: the returned string is not guaranteed to be
-      null-terminated. Release with a call to TSHandleStringRelease().
+      null-terminated.
 
       @param bufp marshal buffer containing the URL.
       @param offset location of the URL.
@@ -1410,7 +1402,7 @@ extern "C"
       Retrieves the HTTP query portion of the URL located at url_loc
       within bufp. The length of the returned string is in the length
       argument. Note: the returned string is not guaranteed to be
-      null-terminated. Release with a call to TSHandleStringRelease().
+      null-terminated.
 
       @param bufp marshal buffer containing the URL.
       @param offset location of the URL.
@@ -1439,7 +1431,7 @@ extern "C"
       Retrieves the HTTP fragment portion of the URL located at url_loc
       within bufp. The length of the returned string is in the length
       argument. Note: the returned string is not guaranteed to be
-      null-terminated. Release with a call to TSHandleStringRelease().
+      null-terminated.
 
       @param bufp marshal buffer containing the URL.
       @param offset location of the URL.
@@ -1597,10 +1589,7 @@ extern "C"
 
   /**
       Removes and destroys all the MIME fields within the MIME header
-      located at hdr_loc within the marshal buffer bufp. Important:
-      do not forget to release any corresponding MIME field string
-      values or TSMLoc handles using TSHandleStringRelease() or
-      TSHandleMLocRelease().
+      located at hdr_loc within the marshal buffer bufp.
 
       @param bufp marshal buffer containing the MIME header.
       @param offset location of the MIME header.

@@ -172,16 +172,13 @@ handle_client_lookup(TSHttpTxn txnp, TSCont contp)
    *   Check to see if the client is already headed to the redirect site.
    */
   if (strncmp(host, url_redirect, host_length) == 0) {
-    TSHandleStringRelease(bufp, url_loc, host);
     TSHandleMLocRelease(bufp, hdr_loc, url_loc);
     TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
     goto done;
   }
 
   if (ip_deny == clientip) {
-
     TSHttpTxnHookAdd(txnp, TS_HTTP_SEND_RESPONSE_HDR_HOOK, contp);
-    TSHandleStringRelease(bufp, url_loc, host);
 
     update_redirected_method_stats(bufp, hdr_loc);
 
@@ -352,8 +349,6 @@ update_redirected_method_stats(TSMBuffer bufp, TSMLoc hdr_loc)
     else
       INKStatIncrement(method_count_redirected_unknown);
   }
-  TSHandleStringRelease(bufp, hdr_loc, txn_method);
-
 }
 
 int

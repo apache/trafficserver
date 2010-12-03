@@ -90,17 +90,6 @@
     } \
 }\
 
-#define STR_RELEASE(P_BUFFER, P_PARENT, P_STR) \
-{ \
-    if (VALID_PTR(P_STR)) { \
-        if (TSHandleStringRelease(P_BUFFER, P_PARENT, P_STR) == TS_ERROR) { \
-            LOG_API_ERROR("TSHandleStringRelease"); \
-        } else  { \
-            P_STR = NULL; \
-        } \
-    } \
-}\
-
 #define URL_DESTROY(P_BUFFER, P_MLOC) \
 { \
     if (VALID_PTR(P_MLOC)) {\
