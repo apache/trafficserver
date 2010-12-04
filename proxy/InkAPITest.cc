@@ -1605,7 +1605,7 @@ REGRESSION_TEST(SDK_API_TSIOBufferProduce) (RegressionTest * test, int atype, in
 
   TSIOBufferProduce(bufp, 10);
 
-  int reader_avail = TSIOBufferReaderAvail(readerp);
+  int64 reader_avail = TSIOBufferReaderAvail(readerp);
   if (reader_avail == 10) {
     SDK_RPRINT(test, "TSIOBufferProduce", "TestCase1", TC_PASS, "ok");
     SDK_RPRINT(test, "TSIOBufferReaderAlloc", "TestCase1", TC_PASS, "ok");
@@ -1642,7 +1642,7 @@ REGRESSION_TEST(SDK_API_TSIOBufferReaderConsume) (RegressionTest * test, int aty
   TSIOBufferProduce(bufp, 10);
   TSIOBufferReaderConsume(readerp, 10);
 
-  int reader_avail = TSIOBufferReaderAvail(readerp);
+  int64 reader_avail = TSIOBufferReaderAvail(readerp);
   if (reader_avail == 0) {
     SDK_RPRINT(test, "TSIOBufferReaderConsume", "TestCase1", TC_PASS, "ok");
     test_passed = true;
@@ -1676,7 +1676,7 @@ REGRESSION_TEST(SDK_API_TSIOBufferReaderClone) (RegressionTest * test, int atype
 
   TSIOBufferReader readerp2 = TSIOBufferReaderClone(readerp);
 
-  int reader_avail = TSIOBufferReaderAvail(readerp2);
+  int64 reader_avail = TSIOBufferReaderAvail(readerp2);
   if (reader_avail == 5) {
     SDK_RPRINT(test, "TSIOBufferReaderClone", "TestCase1", TC_PASS, "ok");
     test_passed = true;
@@ -2754,7 +2754,7 @@ test_url_print(TSMBuffer bufp, TSMLoc hdr_loc)
 {
   TSIOBuffer output_buffer;
   TSIOBufferReader reader;
-  int total_avail;
+  int64 total_avail;
 
   TSIOBufferBlock block;
   const char *block_start;
@@ -3990,7 +3990,7 @@ REGRESSION_TEST(SDK_API_TSHttpHdr) (RegressionTest * test, int atype, int *pstat
             } else {
 
               TSIOBufferBlock iobufblock;
-              int bytes_read;
+              int64 bytes_read;
 
               memset(actual_iobuf, 0, (actual_length + 1) * sizeof(char));
               bytes_read = 0;
@@ -5120,7 +5120,7 @@ convert_http_hdr_to_string(TSMBuffer bufp, TSMLoc hdr_loc)
 {
   TSIOBuffer output_buffer;
   TSIOBufferReader reader;
-  int total_avail;
+  int64 total_avail;
 
   TSIOBufferBlock block;
   const char *block_start;
@@ -5378,7 +5378,7 @@ convert_mime_hdr_to_string(TSMBuffer bufp, TSMLoc hdr_loc)
 {
   TSIOBuffer output_buffer;
   TSIOBufferReader reader;
-  int total_avail;
+  int64 total_avail;
 
   TSIOBufferBlock block;
   const char *block_start;
@@ -7194,7 +7194,7 @@ typedef struct
 
 static TSIOBuffer append_buffer;
 static TSIOBufferReader append_buffer_reader;
-static int append_buffer_length;
+static int64 append_buffer_length;
 
 static MyTransformData *
 my_data_alloc()
@@ -7228,8 +7228,8 @@ handle_transform(TSCont contp)
   TSVIO write_vio;
   TransformTestData *contData;
   MyTransformData *data;
-  int towrite;
-  int avail;
+  int64 towrite;
+  int64 avail;
 
   /* Get the output connection where we'll write data to. */
   output_conn = TSTransformOutputVConnGet(contp);
@@ -7248,7 +7248,7 @@ handle_transform(TSCont contp)
   data = contData->transformData;
   if (!data) {
     towrite = TSVIONBytesGet(write_vio);
-    if (towrite != INT_MAX) {
+    if (towrite != INT64_MAX) {
       towrite += append_buffer_length;
     }
     contData->transformData = my_data_alloc();

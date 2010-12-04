@@ -552,7 +552,7 @@ synclient_txn_read_response_handler(TSCont contp, TSEvent event, void *data)
   ClientTxn *txn = (ClientTxn *) TSContDataGet(contp);
   TSAssert(txn->magic == MAGIC_ALIVE);
 
-  int avail;
+  int64 avail;
 
   switch (event) {
   case TS_EVENT_VCONN_READ_READY:
@@ -646,7 +646,7 @@ synclient_txn_write_request_handler(TSCont contp, TSEvent event, void *data)
 
     /* Start reading */
     SET_TEST_HANDLER(txn->current_handler, synclient_txn_read_response_handler);
-    txn->read_vio = TSVConnRead(txn->vconn, contp, txn->resp_buffer, INT_MAX);
+    txn->read_vio = TSVConnRead(txn->vconn, contp, txn->resp_buffer, INT64_MAX);
     break;
 
   case TS_EVENT_VCONN_EOS:
@@ -813,7 +813,7 @@ synserver_accept_handler(TSCont contp, TSEvent event, void *data)
   txn->write_vio = NULL;
 
   /* start reading */
-  txn->read_vio = TSVConnRead(txn->vconn, txn_cont, txn->req_buffer, INT_MAX);
+  txn->read_vio = TSVConnRead(txn->vconn, txn_cont, txn->req_buffer, INT64_MAX);
 
   return TS_EVENT_IMMEDIATE;
 }
@@ -959,7 +959,8 @@ synserver_txn_read_request_handler(TSCont contp, TSEvent event, void *data)
   ServerTxn *txn = (ServerTxn *) TSContDataGet(contp);
   TSAssert(txn->magic == MAGIC_ALIVE);
 
-  int avail, end_of_request;
+  int64 avail;
+  int end_of_request;
 
   switch (event) {
   case TS_EVENT_VCONN_READ_READY:
