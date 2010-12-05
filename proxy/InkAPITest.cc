@@ -7480,7 +7480,6 @@ transform_hook_handler(TSCont contp, TSEvent event, void *edata)
     return 0;
   }
 
-
   switch (event) {
   case TS_EVENT_HTTP_READ_REQUEST_HDR:
     txnp = (TSHttpTxn) edata;
@@ -7604,7 +7603,6 @@ transform_hook_handler(TSCont contp, TSEvent event, void *edata)
         return 0;
       }
       data->req_no++;
-      synserver_delete(data->os);
       Debug(UTDBG_TAG "_transform", "Running Browser 3");
       synclient_txn_send_request(data->browser3, data->request1);
       TSContSchedule(contp, 25);
@@ -7624,6 +7622,7 @@ transform_hook_handler(TSCont contp, TSEvent event, void *edata)
         TSContSchedule(contp, 25);
         return 0;
       }
+      synserver_delete(data->os);
       data->req_no++;
       TSfree(data->request1);
       TSfree(data->request2);

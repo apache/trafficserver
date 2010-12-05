@@ -281,6 +281,7 @@ generate_response(const char *request)
 
 #define HTTP_RESPONSE_DEFAULT_FORMAT "HTTP/1.0 200 OK\r\n" \
 			      "X-Response-ID: %d\r\n" \
+                              "Cache-Control: max-age=31536000\r\n" \
                               "Content-Type: text/html\r\n" \
 			      "\r\n" \
 			      "Default body"
@@ -294,11 +295,13 @@ generate_response(const char *request)
 
 #define HTTP_RESPONSE_FORMAT2 "HTTP/1.0 200 OK\r\n" \
 			      "X-Response-ID: %d\r\n" \
+                              "Cache-Control: max-age=31536000\r\n" \
                               "Content-Type: text/html\r\n" \
 			      "\r\n" \
 			      "Body for response 2"
 #define HTTP_RESPONSE_FORMAT4 "HTTP/1.0 200 OK\r\n" \
 			      "X-Response-ID: %d\r\n" \
+                              "Cache-Control: max-age=31536000\r\n" \
                               "Content-Type: text/html\r\n" \
                               "\r\n" \
                               "Body for response 4"
@@ -309,27 +312,32 @@ generate_response(const char *request)
                               "Body for response 5"
 #define HTTP_RESPONSE_FORMAT6 "HTTP/1.0 200 OK\r\n" \
 			      "X-Response-ID: %d\r\n" \
+                              "Cache-Control: max-age=31536000\r\n" \
                               "Content-Language:English\r\n" \
                               "\r\n" \
                               "Body for response 6"
 #define HTTP_RESPONSE_FORMAT7 "HTTP/1.0 200 OK\r\n" \
 			      "X-Response-ID: %d\r\n" \
+                              "Cache-Control: max-age=31536000\r\n" \
                               "Content-Language:French\r\n" \
                               "\r\n" \
                               "Body for response 7"
 
 #define HTTP_RESPONSE_FORMAT8 "HTTP/1.0 200 OK\r\n" \
 			      "X-Response-ID: %d\r\n" \
+                              "Cache-Control: max-age=31536000\r\n" \
                               "Content-Language:French, English\r\n" \
                               "\r\n" \
                               "Body for response 8"
 
 #define HTTP_RESPONSE_FORMAT9 "HTTP/1.0 200 OK\r\n" \
+                              "Cache-Control: max-age=31536000\r\n" \
 			      "X-Response-ID: %d\r\n" \
                               "\r\n" \
                               "Body for response 9"
 
 #define HTTP_RESPONSE_FORMAT10 "HTTP/1.0 200 OK\r\n" \
+                              "Cache-Control: max-age=31536000\r\n" \
 			      "X-Response-ID: %d\r\n" \
                               "\r\n" \
                               "Body for response 10"
