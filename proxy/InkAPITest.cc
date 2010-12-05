@@ -1327,7 +1327,6 @@ REGRESSION_TEST(SDK_API_TSContCreate) (RegressionTest * test, int atype, int *ps
     TSMutexUnlock(mutexp);
   } else                        //mutex has problems
   {
-
     SDK_RPRINT(SDK_ContCreate_test, "TSContCreate", "TestCase1", TC_FAIL, "continuation creation has problems");
     SDK_RPRINT(SDK_ContCreate_test, "TSContCall", "TestCase1", TC_FAIL, "continuation has problems");
 
@@ -7463,7 +7462,6 @@ load(const char *append_string)
 static int
 transform_hook_handler(TSCont contp, TSEvent event, void *edata)
 {
-
   TSHttpTxn txnp = NULL;
   TransformTestData *data = NULL;
   data = (TransformTestData *) TSContDataGet(contp);
@@ -7798,8 +7796,9 @@ typedef struct
 static int
 altinfo_hook_handler(TSCont contp, TSEvent event, void *edata)
 {
-
   AltInfoTestData *data = NULL;
+  TSHttpTxn txnp = NULL;
+
   data = (AltInfoTestData *) TSContDataGet(contp);
   if ((data == TS_ERROR_PTR) || (data == NULL)) {
     switch (event) {
@@ -7816,6 +7815,12 @@ altinfo_hook_handler(TSCont contp, TSEvent event, void *edata)
   }
 
   switch (event) {
+  case TS_EVENT_HTTP_READ_REQUEST_HDR:
+    txnp = (TSHttpTxn) edata;
+    TSSkipRemappingSet(txnp,1);
+    TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
+    break;
+
   case TS_EVENT_HTTP_SELECT_ALT:
     {
       TSMBuffer clientreqbuf;
@@ -7889,8 +7894,7 @@ altinfo_hook_handler(TSCont contp, TSEvent event, void *edata)
   case TS_EVENT_TIMEOUT:
     /* Browser still waiting the response ? */
     if (data->first_time == true) {
-      if ((data->browser1->status == REQUEST_INPROGRESS) || (data->browser2->status == REQUEST_INPROGRESS)
-        ) {
+      if ((data->browser1->status == REQUEST_INPROGRESS) || (data->browser2->status == REQUEST_INPROGRESS)) {
         TSContSchedule(contp, 25);
         return 0;
       }
@@ -7973,6 +7977,8 @@ EXCLUSIVE_REGRESSION_TEST(SDK_API_HttpAltInfo) (RegressionTest * test, int atype
     *pstatus = REGRESSION_TEST_FAILED;
     return;
   }
+
+  TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, cont); //so we can skip remapping
 
   AltInfoTestData *socktest = (AltInfoTestData *) TSmalloc(sizeof(AltInfoTestData));
   socktest->test = test;
@@ -8096,7 +8102,6 @@ cont_test_handler(TSCont contp, TSEvent event, void *edata)
     }
     /* Browser got the response */
     else {
-
       /* Check if browser response body is the one we expected */
       char *body_response = get_body_ptr(data->browser->response);
       const char *body_expected;

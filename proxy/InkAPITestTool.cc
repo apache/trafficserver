@@ -197,29 +197,29 @@ generate_request(int test_case)
 			     "X-Request-ID: %d\r\n" \
                              "Content-Type: text/html\r\n" \
 			     "\r\n"
-#define HTTP_REQUEST_FORMAT3 "GET http://127.0.0.1:%d/format3.html/ HTTP/1.0\r\n" \
+#define HTTP_REQUEST_FORMAT3 "GET http://127.0.0.1:%d/format3.html HTTP/1.0\r\n" \
 			     "X-Request-ID: %d\r\n" \
 			     "Response: Error\r\n" \
 			     "\r\n"
-#define HTTP_REQUEST_FORMAT4 "GET http://127.0.0.1:%d/format4.html/ HTTP/1.0\r\n" \
+#define HTTP_REQUEST_FORMAT4 "GET http://127.0.0.1:%d/format4.html HTTP/1.0\r\n" \
 			     "X-Request-ID: %d\r\n" \
                              "Request:%d\r\n" \
                              "\r\n"
-#define HTTP_REQUEST_FORMAT5 "GET http://127.0.0.1:%d/format5.html/ HTTP/1.0\r\n" \
+#define HTTP_REQUEST_FORMAT5 "GET http://127.0.0.1:%d/format5.html HTTP/1.0\r\n" \
 			     "X-Request-ID: %d\r\n" \
                              "Request:%d\r\n" \
                              "\r\n"
-#define HTTP_REQUEST_FORMAT6 "GET http://127.0.0.1:%d/format.html/ HTTP/1.0\r\n" \
+#define HTTP_REQUEST_FORMAT6 "GET http://127.0.0.1:%d/format.html HTTP/1.0\r\n" \
 			     "X-Request-ID: %d\r\n" \
-                             "Accept-Language:English\r\n" \
+                             "Accept-Language: English\r\n" \
                              "\r\n"
-#define HTTP_REQUEST_FORMAT7 "GET http://127.0.0.1:%d/format.html/ HTTP/1.0\r\n" \
+#define HTTP_REQUEST_FORMAT7 "GET http://127.0.0.1:%d/format.html HTTP/1.0\r\n" \
 			     "X-Request-ID: %d\r\n" \
-                             "Accept-Language:French\r\n" \
+                             "Accept-Language: French\r\n" \
                              "\r\n"
-#define HTTP_REQUEST_FORMAT8 "GET http://127.0.0.1:%d/format.html/ HTTP/1.0\r\n" \
+#define HTTP_REQUEST_FORMAT8 "GET http://127.0.0.1:%d/format.html HTTP/1.0\r\n" \
 			     "X-Request-ID: %d\r\n" \
-                             "Accept-Language:English,French\r\n" \
+                             "Accept-Language: English,French\r\n" \
                              "\r\n"
 #define HTTP_REQUEST_FORMAT9 "GET http://www.inktomi.com/format9.html HTTP/1.0\r\n" \
 			     "X-Request-ID: %d\r\n" \
@@ -281,7 +281,7 @@ generate_response(const char *request)
 
 #define HTTP_RESPONSE_DEFAULT_FORMAT "HTTP/1.0 200 OK\r\n" \
 			      "X-Response-ID: %d\r\n" \
-                              "Cache-Control: max-age=31536000\r\n" \
+                              "Cache-Control: max-age=86400\r\n" \
                               "Content-Type: text/html\r\n" \
 			      "\r\n" \
 			      "Default body"
@@ -295,13 +295,13 @@ generate_response(const char *request)
 
 #define HTTP_RESPONSE_FORMAT2 "HTTP/1.0 200 OK\r\n" \
 			      "X-Response-ID: %d\r\n" \
-                              "Cache-Control: max-age=31536000\r\n" \
+                              "Cache-Control: max-age=86400\r\n" \
                               "Content-Type: text/html\r\n" \
 			      "\r\n" \
 			      "Body for response 2"
 #define HTTP_RESPONSE_FORMAT4 "HTTP/1.0 200 OK\r\n" \
 			      "X-Response-ID: %d\r\n" \
-                              "Cache-Control: max-age=31536000\r\n" \
+                              "Cache-Control: max-age=86400\r\n" \
                               "Content-Type: text/html\r\n" \
                               "\r\n" \
                               "Body for response 4"
@@ -312,32 +312,32 @@ generate_response(const char *request)
                               "Body for response 5"
 #define HTTP_RESPONSE_FORMAT6 "HTTP/1.0 200 OK\r\n" \
 			      "X-Response-ID: %d\r\n" \
-                              "Cache-Control: max-age=31536000\r\n" \
-                              "Content-Language:English\r\n" \
+                              "Cache-Control: max-age=86400\r\n" \
+                              "Content-Language: English\r\n" \
                               "\r\n" \
                               "Body for response 6"
 #define HTTP_RESPONSE_FORMAT7 "HTTP/1.0 200 OK\r\n" \
 			      "X-Response-ID: %d\r\n" \
-                              "Cache-Control: max-age=31536000\r\n" \
-                              "Content-Language:French\r\n" \
+                              "Cache-Control: max-age=86400\r\n" \
+                              "Content-Language: French\r\n" \
                               "\r\n" \
                               "Body for response 7"
 
 #define HTTP_RESPONSE_FORMAT8 "HTTP/1.0 200 OK\r\n" \
 			      "X-Response-ID: %d\r\n" \
-                              "Cache-Control: max-age=31536000\r\n" \
-                              "Content-Language:French, English\r\n" \
+                              "Cache-Control: max-age=86400\r\n" \
+                              "Content-Language: French, English\r\n" \
                               "\r\n" \
                               "Body for response 8"
 
 #define HTTP_RESPONSE_FORMAT9 "HTTP/1.0 200 OK\r\n" \
-                              "Cache-Control: max-age=31536000\r\n" \
+                              "Cache-Control: max-age=86400\r\n" \
 			      "X-Response-ID: %d\r\n" \
                               "\r\n" \
                               "Body for response 9"
 
 #define HTTP_RESPONSE_FORMAT10 "HTTP/1.0 200 OK\r\n" \
-                              "Cache-Control: max-age=31536000\r\n" \
+                              "Cache-Control: max-age=86400\r\n" \
 			      "X-Response-ID: %d\r\n" \
                               "\r\n" \
                               "Body for response 10"
