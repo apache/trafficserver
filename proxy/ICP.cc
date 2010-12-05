@@ -339,12 +339,10 @@ ICPPeerReadCont::reset(int full_reset)
     PeerReadDataAllocator.free(this->_state);
   }
   if (_cache_req_hdr_heap_handle) {
-    _cache_req_hdr_heap_handle->m_sdk_alloc.free_all();
     xfree(_cache_req_hdr_heap_handle);
     _cache_req_hdr_heap_handle = NULL;
   }
   if (_cache_resp_hdr_heap_handle) {
-    _cache_resp_hdr_heap_handle->m_sdk_alloc.free_all();
     xfree(_cache_resp_hdr_heap_handle);
     _cache_resp_hdr_heap_handle = NULL;
   }

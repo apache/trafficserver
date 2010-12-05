@@ -38,8 +38,6 @@ libhdrs_a_SOURCES = \
   HttpCompat.h \
   MIME.cc \
   MIME.h \
-  SDKAllocator.cc \
-  SDKAllocator.h \
   URL.cc \
   URL.h
 

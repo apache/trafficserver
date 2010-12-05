@@ -2964,22 +2964,6 @@ HttpTransact::handle_cache_write_lock(State * s)
 
   if (s->cache_info.write_lock_state == CACHE_WL_READ_RETRY) {
     s->hdr_info.server_request.destroy();
-
-    // We need to cleanup SDK handles to cached hdrs
-    //   since those headers are no longer good as we've closed
-    //   the orginal cache read vc and replaced it with a new cache
-    //   read vc on the write lock read retry loop
-    if (s->cache_req_hdr_heap_handle) {
-      s->cache_req_hdr_heap_handle->m_sdk_alloc.free_all();
-      s->arena.free(s->cache_req_hdr_heap_handle, sizeof(HdrHeapSDKHandle));
-      s->cache_req_hdr_heap_handle = NULL;
-    }
-    if (s->cache_resp_hdr_heap_handle) {
-      s->cache_resp_hdr_heap_handle->m_sdk_alloc.free_all();
-      s->arena.free(s->cache_resp_hdr_heap_handle, sizeof(HdrHeapSDKHandle));
-      s->cache_resp_hdr_heap_handle = NULL;
-    }
-
     HandleCacheOpenReadHitFreshness(s);
   } else {
     StateMachineAction_t next;

@@ -39,7 +39,6 @@
 #include "ink_assert.h"
 #include "Arena.h"
 #include "HdrToken.h"
-#include "SDKAllocator.h"
 
 // Objects in the heap must currently be aligned to 8 byte boundaries,
 // so their (address & HDR_PTR_ALIGNMENT_MASK) == 0
@@ -400,20 +399,11 @@ if (ptr) { \
 struct HdrHeapSDKHandle
 {
 public:
-  //  For the SDK, we need to copy strings to add
-  //    NULL termination, allocate standalone fields
-  //    and allocate field handles, we need an allocator.
-  //  To maintain compatibility with previous releases,
-  //    everything allocated should go away when the
-  //    hdr heap is deallocated so we need to keep
-  //    a list of the live objects
-  //  SDKAllocator accomplishes both these tasks
-  SDKAllocator m_sdk_alloc;
-  HdrHeap *m_heap;
+  HdrHeapSDKHandle()
+    : m_heap(NULL)
+  { }
 
-public:
-    HdrHeapSDKHandle();
-   ~HdrHeapSDKHandle();
+  ~HdrHeapSDKHandle() { clear(); }
 
   // clear() only deallocates chained SDK return values
   //   The underlying MBuffer is left untouched
@@ -426,20 +416,14 @@ public:
   void set(const HdrHeapSDKHandle * from);
   const char *make_sdk_string(const char *raw_str, int raw_str_len);
 
+  HdrHeap *m_heap;
+
 private:
   // In order to prevent gratitous refcounting,
   //  automatic C++ copies are disabled!
     HdrHeapSDKHandle(const HdrHeapSDKHandle & r);
     HdrHeapSDKHandle & operator =(const HdrHeapSDKHandle & r);
 };
-
-
-inline
-HdrHeapSDKHandle::HdrHeapSDKHandle():
-m_sdk_alloc(),
-m_heap(NULL)
-{
-}
 
 inline void
 HdrHeapSDKHandle::destroy()
@@ -454,17 +438,6 @@ inline void
 HdrHeapSDKHandle::clear()
 {
   m_heap = NULL;
-
-  if (m_sdk_alloc.head) {
-    m_sdk_alloc.free_all();
-  }
-}
-
-inline
-HdrHeapSDKHandle::~
-HdrHeapSDKHandle()
-{
-  clear();
 }
 
 inline void

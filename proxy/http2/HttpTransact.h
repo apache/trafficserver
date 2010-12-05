@@ -1237,14 +1237,6 @@ public:
         }
         pCongestionEntry->put(), pCongestionEntry = NULL;
       }
-      // if cache_*_hdr_heap_handles have been allocated by the SDK functions
-      // INKHttpTxnCachedReqGet and INKHttpTxnCachedRespGet, let's free their data.
-      if (cache_req_hdr_heap_handle) {
-        cache_req_hdr_heap_handle->m_sdk_alloc.free_all();
-      }
-      if (cache_resp_hdr_heap_handle) {
-        cache_resp_hdr_heap_handle->m_sdk_alloc.free_all();
-      }
 
       url_map.clear();
       arena.reset();

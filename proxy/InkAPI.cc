@@ -358,6 +358,7 @@ static int ts_patch_version = 0;
 static ClassAllocator<APIHook> apiHookAllocator("apiHookAllocator");
 static ClassAllocator<INKContInternal> INKContAllocator("INKContAllocator");
 static ClassAllocator<INKVConnInternal> INKVConnAllocator("INKVConnAllocator");
+static ClassAllocator<MIMEFieldSDKHandle> mHandleAllocator("MIMEFieldSDKHandle");
 
 // Error Ptr.
 tsapi const void *TS_ERROR_PTR = (const void *) 0x00000bad;
@@ -712,9 +713,8 @@ static MIMEFieldSDKHandle *
 sdk_alloc_field_handle(TSMBuffer bufp, MIMEHdrImpl *mh)
 {
   if (sdk_sanity_check_mbuffer(bufp) == TS_SUCCESS) {
-    HdrHeapSDKHandle *sdk_heap = (HdrHeapSDKHandle *) bufp;
+    MIMEFieldSDKHandle *handle = mHandleAllocator.alloc();
 
-    MIMEFieldSDKHandle *handle = sdk_heap->m_sdk_alloc.allocate_mhandle();
     obj_init_header(handle, HDR_HEAP_OBJ_FIELD_SDK_HANDLE, sizeof(MIMEFieldSDKHandle), 0);
     handle->mh = mh;
     return handle;
@@ -726,13 +726,7 @@ static void
 sdk_free_field_handle(TSMBuffer bufp, MIMEFieldSDKHandle *field_handle)
 {
   if (sdk_sanity_check_mbuffer(bufp) == TS_SUCCESS) {
-    HdrHeapSDKHandle *sdk_heap = (HdrHeapSDKHandle *) bufp;
-
-    field_handle->m_type = HDR_HEAP_OBJ_EMPTY;
-    field_handle->mh = NULL;
-    field_handle->field_ptr = NULL;
-
-    sdk_heap->m_sdk_alloc.free_mhandle(field_handle);
+    mHandleAllocator.free(field_handle);
   }
 }
 
@@ -4616,7 +4610,6 @@ TSHttpTxnCachedReqGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *obj)
   if (*handle == NULL) {
     *handle = (HdrHeapSDKHandle *) sm->t_state.arena.alloc(sizeof(HdrHeapSDKHandle));
     (*handle)->m_heap = cached_hdr->m_heap;
-    (*handle)->m_sdk_alloc.init();
   }
 
   *bufp = *handle;
@@ -4656,7 +4649,6 @@ TSHttpTxnCachedRespGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *obj)
   if (*handle == NULL) {
     *handle = (HdrHeapSDKHandle *) sm->t_state.arena.alloc(sizeof(HdrHeapSDKHandle));
     (*handle)->m_heap = cached_hdr->m_heap;
-    (*handle)->m_sdk_alloc.init();
   }
 
   *bufp = *handle;
@@ -7082,7 +7074,6 @@ TSICPCachedReqGet(TSCont contp, TSMBuffer *bufp, TSMLoc *obj)
   if (*handle == NULL) {
     *handle = (HdrHeapSDKHandle *) xmalloc(sizeof(HdrHeapSDKHandle));
     (*handle)->m_heap = cached_hdr->m_heap;
-    (*handle)->m_sdk_alloc.init();
   }
 
   *bufp = *handle;
@@ -7115,7 +7106,6 @@ TSICPCachedRespGet(TSCont contp, TSMBuffer *bufp, TSMLoc *obj)
   if (*handle == NULL) {
     *handle = (HdrHeapSDKHandle *) xmalloc(sizeof(HdrHeapSDKHandle));
     (*handle)->m_heap = cached_hdr->m_heap;
-    (*handle)->m_sdk_alloc.init();
   }
 
   *bufp = *handle;
