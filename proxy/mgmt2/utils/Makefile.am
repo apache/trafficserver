@@ -52,8 +52,6 @@ libutils_lm_a_SOURCES = \
   MgmtPing.h \
   MgmtSchema.cc \
   MgmtSchema.h \
-  MgmtServerRPC.cc \
-  MgmtServerRPC.h \
   MgmtUtils.cc \
   MgmtUtils.h \
   SimpleQueue.cc \

@@ -36,8 +36,7 @@ our $bin_dir;
 our $run_dir;
 
 our $base_port = 0;
-our @additional_config_entries = ("CONFIG proxy.config.raf.enabled INT 1",
-				  "CONFIG proxy.config.raf.port INT <alloc_port>");
+our @additional_config_entries = ();
 our %override;
 our @remap_lines;
 our @filter_lines;
@@ -178,13 +177,11 @@ our %defaults =
  "proxy.config.hostdb.size" => 200000,
  "proxy.config.reverse_proxy.enabled" => 0,
  "proxy.config.loadshedding.max_connections" => 0,
- "proxy.config.raf.enabled" => 1
  );
 
 our %export_ports =
 (
  "proxy.config.http.server_port" => "tsHttpPort",
- "proxy.config.raf.port" => "rafPort",
 );
 
 our %base_port_hash  =
@@ -198,8 +195,6 @@ our %base_port_hash  =
  "proxy.config.cluster.cluster_port" => 8,
  "proxy.config.cluster.rsport" => 10,
  "proxy.config.cluster.mcport" => 11,
- "proxy.config.raf.port" => 15,
- "proxy.config.raf.manager.port" => 16,
  );
 
 our %config_meta = ();

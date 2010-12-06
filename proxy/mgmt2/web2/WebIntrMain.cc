@@ -43,7 +43,6 @@
 #include "MgmtAllow.h"
 #include "Diags.h"
 #include "MgmtSocket.h"
-#include "MgmtRaf.h"
 
 //INKqa09866
 #include "TSControlMain.h"
@@ -582,7 +581,6 @@ webIntr_main(void *x)
   fd overseerFD = -1;
   fd mgmtapiFD = -1;            // FD for the api interface to issue commands
   fd eventapiFD = -1;           // FD for the api and clients to handle event callbacks
-  fd rafFD = -1;                // FD for RAF protocol (for integration into SF testing framework)
 
   // dg: added init to get rid of compiler warnings
   fd acceptFD = 0;              // FD that is ready for accept
@@ -596,8 +594,6 @@ webIntr_main(void *x)
   int loggingEnabled;           // Whether to log accesses the mgmt server
   int cliEnabled;               // Whether cli server should be enabled
   int overseerPort = -1;
-  int rafEnabled = -1;
-  int rafPort = -1;
 #if !defined(linux)
   sigset_t allSigs;             // Set of all signals
 #endif
@@ -912,24 +908,6 @@ webIntr_main(void *x)
       xfree(cliPath);
   }
 
-  found = (RecGetRecordInt("proxy.config.raf.manager.enabled", &tempInt) == REC_ERR_OKAY);
-  rafEnabled = (int) tempInt;
-  ink_assert(found);
-  if (found && rafEnabled) {
-    found = (RecGetRecordInt("proxy.config.raf.manager.port", &tempInt) == REC_ERR_OKAY);
-    rafPort = (int) tempInt;
-    ink_assert(found);
-    if (!found || rafPort <= 0) {
-      rafEnabled = rafPort = -1;
-    } else {
-      if ((rafFD = newTcpSocket(rafPort)) < 0) {
-        mgmt_elog("[WebIntrMain] Unable to start raf interface\n");
-        rafEnabled = rafPort = -1;
-      }
-    }
-  }
-
-
   if (overseerMode > 0) {
     if (overseerPort > 0 && (overseerFD = newTcpSocket(overseerPort)) < 0) {
       mgmt_elog("[WebIntrMain] Unable to start overseer interface\n");
@@ -965,10 +943,6 @@ webIntr_main(void *x)
       FD_SET(autoconfFD, &selectFDs);
     }
 
-    if (rafFD >= 0) {
-      FD_SET(rafFD, &selectFDs);
-    }
-
     // TODO: Should we check return value?
     mgmt_select(32, &selectFDs, (fd_set *) NULL, (fd_set *) NULL, NULL);
 
@@ -985,9 +959,6 @@ webIntr_main(void *x)
     } else if (overseerFD >= 0 && FD_ISSET(overseerFD, &selectFDs)) {
       acceptFD = overseerFD;
       serviceThr = OVERSEER_THR;
-    } else if (rafFD >= 0 && FD_ISSET(rafFD, &selectFDs)) {
-      acceptFD = rafFD;
-      serviceThr = RAF_THR;
     } else {
       ink_assert(!"[webIntrMain] Error on mgmt_select()\n");
     }
@@ -1052,8 +1023,6 @@ webIntr_main(void *x)
           // Fix for INKqa10514
           || (serviceThr == AUTOCONF_THR && autoconf_localhost_only != 0 &&
               strcmp(inet_ntoa(clientInfo->sin_addr), "127.0.0.1") != 0)
-          // Only allow RAF from localhost
-          || (serviceThr == RAF_THR && strcmp(inet_ntoa(clientInfo->sin_addr), "127.0.0.1") != 0)
 #if defined(OEM_INTEL) || defined(OEM_SUN)
           // Fix INKqa08148: on OEM boxes, we need to allow localhost to
           //   connect so that CLI will function correctly

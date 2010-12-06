@@ -2586,27 +2586,6 @@ RecordElement RecordsConfig[] = {
 
   //##############################################################################
   //#
-  //# Remote Access Framework (RAF) config - (for integration into SF test harness)
-  //#
-  //# ** TM raf is *NOW* disabled by default with port 20098 (see am-1/tcl/common/defaults.tcl)
-  //##############################################################################
-  {CONFIG, "proxy.config.raf.enabled", "", INK_INT, "0", RU_RESTART_TS, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-  {CONFIG, "proxy.config.raf.port", "", INK_INT, "0", RU_RESTART_TS, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-  {CONFIG, "proxy.config.raf.manager.enabled", "", INK_INT, "0", RU_RESTART_TS, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-  {CONFIG, "proxy.config.raf.manager.port", "", INK_INT, "20098", RU_RESTART_TS, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-
-  //##############################################################################
-  //#
-  //# lm.config items
-  //#
-  //##############################################################################
-
-  //##############################################################################
-  //#
   //# Local Manager Specific Records File
   //#
   //# <RECORD-TYPE> <NAME> <TYPE> <VALUE (till end of line)>

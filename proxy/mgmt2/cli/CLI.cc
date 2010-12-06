@@ -41,7 +41,6 @@
 #include "MgmtUtils.h"
 #include "CliUtils.h"
 #include "CLI.h"
-#include "MgmtServerRPC.h"
 
 #include "FSM.h"                /* Finite State Machine */
 #include "CLIeventHandler.h"
@@ -500,6 +499,7 @@ CLI_globals::QueryDeadhosts(char *largs,        /*     IN: arguments */
                             cmdline_states plevel /*     IN: command level */ )
 {
   NOWARN_UNUSED(largs);
+#ifdef NOT_WORKING  
   int fd = send_cli_congest_request("list");
   if (fd < 0) {                 // error
     CLI_globals::set_response(output, CLI_globals::failStr, "query for congested servers failed", plevel);
@@ -520,6 +520,9 @@ CLI_globals::QueryDeadhosts(char *largs,        /*     IN: arguments */
       Debug("cli", "[QueryDeadhosts] error closing RAF connection");
     }
   }
+#else
+  CLI_globals::set_response(output, CLI_globals::failStr, "query for congested servers failed", plevel);
+#endif
 }
 
 const int MaxNumTransitions = 367;      // Maximum number of transitions in table

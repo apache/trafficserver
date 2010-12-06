@@ -562,14 +562,6 @@ CONFIG proxy.config.update.concurrent_updates INT 100
 CONFIG proxy.config.plugin.plugin_dir STRING @rel_libexecdir@
 ##############################################################################
 #
-# Remote Access Framework
-#
-##############################################################################
-CONFIG proxy.config.raf.enabled INT 0
-CONFIG proxy.config.raf.port INT 9000
-CONFIG proxy.config.raf.manager.port INT 20098
-##############################################################################
-#
 # Socket send/recv buffer sizes (0 == don't call setsockopt() )
 #
 ##############################################################################

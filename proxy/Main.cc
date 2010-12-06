@@ -83,7 +83,6 @@ extern "C" int plock(int);
 #include "HTTP.h"
 #include "Plugin.h"
 #include "DiagsConfig.h"
-#include "Raf.h"
 
 //#include "UserNameCache.h"
 //#include "MixtAPIInternal.h"

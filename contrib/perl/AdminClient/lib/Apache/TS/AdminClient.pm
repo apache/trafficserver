@@ -602,10 +602,6 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.proxy_binary
  proxy.config.proxy_binary_opts
  proxy.config.proxy_name
- proxy.config.raf.enabled
- proxy.config.raf.manager.enabled
- proxy.config.raf.manager.port
- proxy.config.raf.port
  proxy.config.raft.accept_port
  proxy.config.raft.enabled
  proxy.config.raft.proxy_version_max

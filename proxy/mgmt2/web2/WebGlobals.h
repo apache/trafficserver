@@ -55,8 +55,13 @@ extern "C"
 
 // DG: Added NO_THR state for init in compile warning
 enum UIthr_t
-{ NO_THR = 0, HTTP_THR, GRAPH_THR, CLI_THR, AUTOCONF_THR,
-  OVERSEER_THR, RAF_THR
+{
+  NO_THR = 0,
+  HTTP_THR,
+  GRAPH_THR,
+  CLI_THR,
+  AUTOCONF_THR,
+  OVERSEER_THR
 };
 
 struct serviceThr_t
