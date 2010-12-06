@@ -256,7 +256,7 @@ int main(int argc, char * argv[])
   MyAccept *a = new MyAccept;
   a->accept_port = tsapp_port;
   a->mutex = new_ProxyMutex();
-  Action *act= netProcessor.accept(a, a->accept_port, true);
+  Action *act= netProcessor.accept(a, a->accept_port, AF_INET, true);
 
   RecDumpRecordsHt(RECT_NULL); // debugging, specify '-T "rec.*"' to see records
 

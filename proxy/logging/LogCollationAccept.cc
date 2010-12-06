@@ -47,8 +47,7 @@ m_pending_event(NULL)
   // appended to itself if multiple do_io_reads are called requesting
   // small amounts of data.  Most arguments are default except for the
   // last one which we will set to true.
-  m_accept_action = netProcessor.accept(this, m_port, AF_INET, false, INADDR_ANY, false, NO_FD, ACCEPTEX_POOL_SIZE, true);
-  //m_accept_action = netProcessor.accept(this, m_port);
+  m_accept_action = netProcessor.accept(this, m_port, AF_INET, false, INADDR_ANY, NULL, false, NO_FD, ACCEPTEX_POOL_SIZE, true);
   ink_assert(NULL != m_accept_action);
 
 }
