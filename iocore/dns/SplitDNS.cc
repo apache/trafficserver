@@ -38,6 +38,7 @@
 
 SplitDNSConfigProcessor SplitDNSconfigProcessor;
 
+
 /* --------------------------------------------------------------
    this file is built using "ParentSelection.cc as a template.
    -------------    ------------------------------------------------- */
@@ -141,7 +142,9 @@ SplitDNSConfig::startup()
 {
   reconfig_mutex = new_ProxyMutex();
   dnsHandler_mutex = new_ProxyMutex();
-  reconfigure();
+
+  //startup just check gsplit_dns_enabled
+  IOCORE_ReadConfigInt32(gsplit_dns_enabled, "proxy.config.dns.splitDNS.enabled");
 }
 
 
@@ -153,7 +156,6 @@ SplitDNSConfig::reconfigure()
 {
   SplitDNS *params = NEW(new SplitDNS);
 
-  IOCORE_ReadConfigInt32(gsplit_dns_enabled, "proxy.config.dns.splitDNS.enabled");
   params->m_SplitDNSlEnable = gsplit_dns_enabled;
 
   if (0 == gsplit_dns_enabled)
@@ -597,9 +599,7 @@ SplitDNSRecord::Init(matcher_line * line_info)
   m_servers.x_dnsH = dnsH;
 
   SET_CONTINUATION_HANDLER(dnsH, &DNSHandler::startEvent_sdns);
-  EThread *thread = eventProcessor.eventthread[ET_DNS][0];
-
-  thread->schedule_imm(dnsH, ET_DNS);
+  (eventProcessor.eventthread[ET_DNS][0])->schedule_imm(dnsH);
 
   /* -----------------------------------------------------
      Process any modifiers to the directive, if they exist
@@ -689,31 +689,13 @@ createDefaultServer()
   newRec->m_servers.x_dnsH->port = DOMAIN_SERVICE_PORT;
 
   SET_CONTINUATION_HANDLER(newRec->m_servers.x_dnsH, &DNSHandler::startEvent_sdns);
-  EThread *thread = eventProcessor.eventthread[ET_DNS][0];
-
-  thread->schedule_imm(newRec->m_servers.x_dnsH, ET_DNS);
-
+  (eventProcessor.eventthread[ET_DNS][0])->schedule_imm(newRec->m_servers.x_dnsH);
   newRec->m_dnsSrvr_cnt = res->nscount;
   ink_strncpy(newRec->m_servers.x_def_domain, res->defdname, MAXDNAME);
 
   newRec->m_domain_srch_list = 0;
   return newRec;
 }
-
-
-/* --------------------------------------------------------------
-    void * splitDNS_CB()
-   -------------------------------------------------------------- */
-void
-splitDNS_CB(const char *token, RecDataT data_type, RecData value, void *data)
-{
-  NOWARN_UNUSED(token);
-  NOWARN_UNUSED(data_type);
-  NOWARN_UNUSED(value);
-  NOWARN_UNUSED(data);
-  eventProcessor.schedule_imm(NEW(new SDNS_UpdateContinuation(reconfig_mutex)), ET_CALL);
-}
-
 
 class SplitDNSConfigInfoReleaser:public Continuation
 {

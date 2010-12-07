@@ -172,7 +172,6 @@ char logging_server_override[256] = " do not override";
 char error_tags[1024] = "";
 char action_tags[1024] = "";
 int show_statistics = 0;
-int gsplitDNS_enabled = 0;
 int history_info_enabled = 1;
 inkcoreapi Diags *diags = NULL;
 inkcoreapi DiagsConfig *diagsConfig = NULL;

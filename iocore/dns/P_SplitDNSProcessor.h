@@ -344,6 +344,5 @@ SDNS_UpdateContinuation::handle_event(int event, void *data)
 SplitDNSRecord *createDefaultServer();
 void reloadDefaultParent(char *val);
 void reloadParentFile();
-void *splitDNS_CB(void *token, void *data);
 
 #endif

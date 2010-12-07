@@ -51,7 +51,7 @@ int dns_ns_rr = 0;
 int dns_ns_rr_init_down = 1;
 char *dns_ns_list = NULL;
 char *dns_resolv_conf = NULL;
-int dns_threads = 0;
+int dns_thread = 0;
 
 DNSProcessor dnsProcessor;
 ClassAllocator<DNSEntry> dnsEntryAllocator("dnsEntryAllocator");
@@ -121,16 +121,16 @@ DNSProcessor::start(int)
   IOCORE_EstablishStaticConfigInt32(dns_ns_rr, "proxy.config.dns.round_robin_nameservers");
   IOCORE_ReadConfigStringAlloc(dns_ns_list, "proxy.config.dns.nameservers");
   IOCORE_ReadConfigStringAlloc(dns_resolv_conf, "proxy.config.dns.resolv_conf");
-  IOCORE_EstablishStaticConfigInt32(dns_threads, "proxy.config.dns.dedicated_thread");
+  IOCORE_EstablishStaticConfigInt32(dns_thread, "proxy.config.dns.dedicated_thread");
 
-  if (dns_threads > 0) {
-    ET_DNS = eventProcessor.spawn_event_threads(dns_threads);
+  if (dns_thread > 0) {
+    ET_DNS = eventProcessor.spawn_event_threads(1); // TODO: Hmmm, should we just get a single thread some other way?
     initialize_thread_for_net(eventProcessor.eventthread[ET_DNS][0], -1);
   } else {
     // Initialize the first event thread for DNS.
     ET_DNS = ET_CALL;
   }
-  dnsProcessor.thread = eventProcessor.eventthread[ET_DNS][0];
+  thread = eventProcessor.eventthread[ET_DNS][0];
 
   dns_failover_try_period = dns_timeout + 1;    // Modify the "default" accordingly
 
@@ -138,6 +138,9 @@ DNSProcessor::start(int)
   if (!SplitDNSConfig::gsplit_dns_enabled) {
     dns_init();
     open();
+  } else {
+    //reconfigure after threads start
+    SplitDNSConfig::reconfigure();
   }
 
   return 0;
@@ -155,10 +158,10 @@ DNSProcessor::open(unsigned int aip, int aport, int aoptions)
   h->port = aport;
 
   if (!dns_handler_initialized)
-    dnsProcessor.handler = h;
+    handler = h;
 
   SET_CONTINUATION_HANDLER(h, &DNSHandler::startEvent);
-  thread->schedule_imm(h, ET_DNS);
+  thread->schedule_imm(h);
 }
 
 //
@@ -407,17 +410,17 @@ DNSHandler::startEvent(int event, Event * e)
         ip = sa->sin_addr.s_addr;
         if (ip) {
           port = ntohs(sa->sin_port);
-          dnsProcessor.handler->open_con(ip, port, false, n_con);
+          open_con(ip, port, false, n_con);
           ++n_con;
           Debug("dns_pas", "opened connection to %d.%d.%d.%d:%d, n_con = %d", DOT_SEPARATED(ip), port, n_con);
         }
       }
       dns_ns_rr_init_down = 0;
     } else {
-      dnsProcessor.handler->open_con(ip, port);
+      open_con(ip, port);
       n_con = 1;
     }
-    dnsProcessor.thread->schedule_every(this, DNS_PERIOD);
+    e->ethread->schedule_every(this, DNS_PERIOD);
 
     return EVENT_CONT;
   } else {
@@ -1003,11 +1006,12 @@ DNSProcessor::getby(const char *x, int len, int type,
 
   e->retries = dns_retries;
   e->init(x, len, type, cont, wait, adnsH, timeout);
-  MUTEX_TRY_LOCK(lock, e->mutex, this_ethread());
-  if (!lock)
-    dnsProcessor.thread->schedule_imm(e);
-  else
+  MUTEX_TRY_LOCK(lock, e->mutex, thread);
+  if (!lock) {
+    thread->schedule_imm(e);
+  } else {
     e->handleEvent(EVENT_IMMEDIATE, 0);
+  }
   if (wait) {
 #if defined(darwin)
     ink_sem_wait(e->sem);
