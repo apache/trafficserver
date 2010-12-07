@@ -20,13 +20,13 @@ CFLAGS=@CFLAGS@ @SHARED_CFLAGS@
 LDFLAGS=@LDFLAGS@ @SHARED_LDFLAGS@
 API_INC=../../../proxy/api/include
 
-default: INKFopen.so
+default: TSFopen.so
 
-INKFopen.o: INKFopen.c $(API_INC)/ts.h
-	$(CC) -g $(CFLAGS) -I$(API_INC) -o INKFopen.o -c INKFopen.c
+TSFopen.o: TSFopen.c $(API_INC)/ts.h
+	$(CC) -g $(CFLAGS) -I$(API_INC) -o TSFopen.o -c TSFopen.c
 
-INKFopen.so: INKFopen.o
-	$(CC) $(LDFLAGS) -o INKFopen.so INKFopen.o
+TSFopen.so: TSFopen.o
+	$(CC) $(LDFLAGS) -o TSFopen.so TSFopen.o
 
 clean:
-	rm -f INKFopen.so INKFopen.o
+	rm -f TSFopen.so TSFopen.o
