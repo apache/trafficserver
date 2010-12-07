@@ -94,6 +94,8 @@ const int HTML_AS_INT = 1819112552;
 const int ZIP_AS_INT = 7367034;
 
 const int JAVA_AS_INT = 1635148138;     // For "javascript"
+const int X_JA_AS_INT = 1634348408;     // For "x-javascript"
+const int RSSp_AS_INT = 728986482;      // For "RSS+"
 const int PLAI_AS_INT = 1767992432;     // For "plain"
 const int IMAG_AS_INT = 1734438249;     // For "image"
 const int HTTP_AS_INT = 1886680168;     // For "http" followed by "s://" or "://"
@@ -181,23 +183,49 @@ struct OriginStats
   struct
   {
     StatsCounter c_000;         // Bad
+    StatsCounter c_100;
     StatsCounter c_200;
+    StatsCounter c_201;
+    StatsCounter c_202;
+    StatsCounter c_203;
     StatsCounter c_204;
+    StatsCounter c_205;
     StatsCounter c_206;
     StatsCounter c_2xx;
+    StatsCounter c_300;
     StatsCounter c_301;
     StatsCounter c_302;
+    StatsCounter c_303;
     StatsCounter c_304;
+    StatsCounter c_305;
+    StatsCounter c_307;
     StatsCounter c_3xx;
     StatsCounter c_400;
+    StatsCounter c_401;
+    StatsCounter c_402;
     StatsCounter c_403;
     StatsCounter c_404;
+    StatsCounter c_405;
+    StatsCounter c_406;
+    StatsCounter c_407;
+    StatsCounter c_408;
+    StatsCounter c_409;
+    StatsCounter c_410;
+    StatsCounter c_411;
+    StatsCounter c_412;
+    StatsCounter c_413;
+    StatsCounter c_414;
+    StatsCounter c_415;
+    StatsCounter c_416;
+    StatsCounter c_417;
     StatsCounter c_4xx;
+    StatsCounter c_500;
     StatsCounter c_501;
     StatsCounter c_502;
     StatsCounter c_503;
+    StatsCounter c_504;
+    StatsCounter c_505;
     StatsCounter c_5xx;
-    StatsCounter c_999;         // YDoD, very bad
   } codes;
 
   struct
@@ -221,13 +249,15 @@ struct OriginStats
 
   struct
   {
+    StatsCounter options;
     StatsCounter get;
-    StatsCounter put;
     StatsCounter head;
     StatsCounter post;
+    StatsCounter put;
     StatsCounter del;
+    StatsCounter trace;
+    StatsCounter connect;
     StatsCounter purge;
-    StatsCounter options;
     StatsCounter none;
     StatsCounter other;
   } methods;
@@ -260,6 +290,9 @@ struct OriginStats
       StatsCounter javascript;
       StatsCounter zip;
       StatsCounter other;
+      StatsCounter rss_xml;
+      StatsCounter rss_atom;
+      StatsCounter rss_other;
       StatsCounter total;
     } application;
     struct
@@ -285,8 +318,8 @@ struct eqstr
   }
 };
 
-typedef hash_map < const char *, OriginStats *, hash < const char *>, eqstr > OriginStorage;
-typedef hash_set < const char *, hash < const char *>, eqstr > OriginSet;
+typedef hash_map <const char *, OriginStats *, hash <const char *>, eqstr> OriginStorage;
+typedef hash_set <const char *, hash <const char *>, eqstr> OriginSet;
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -309,9 +342,8 @@ static struct
   int line_len;
   int incremental;              // Do an incremental run
   int tail;                     // Tail the log file
-  int ymon;                     // Report in ymon format
-  int ysar;                     // Report in ysar format
   int summary;                  // Summary only
+  int json;			// JSON output
   int version;
   int help;
 } cl;
@@ -325,8 +357,7 @@ ArgumentDescription argument_descriptions[] = {
   {"statetag", 'S', "Name of the state file to use", "S1023", cl.state_tag, NULL, NULL},
   {"tail", 't', "Parse the last <sec> seconds of log", "I", &cl.tail, NULL, NULL},
   {"summary", 's', "Only produce the summary", "T", &cl.summary, NULL, NULL},
-  {"ymon", 'y', "Output is formatted for YMon/Nagios", "T", &cl.ymon, NULL, NULL},
-  {"ysar", 'Y', "Output is formatted for YSAR", "T", &cl.ysar, NULL, NULL},
+  {"json", 'j', "Produce JSON formatted output", "T", &cl.json, NULL, NULL},
   {"min_hits", 'm', "Minimum total hits for an Origin", "L", &cl.min_hits, NULL, NULL},
   {"max_age", 'a', "Max age for log entries to be considered", "I", &cl.max_age, NULL, NULL},
   {"line_len", 'l', "Output line length", "I", &cl.line_len, NULL, NULL},
@@ -339,13 +370,13 @@ static const char *USAGE_LINE =
   "Usage: " PROGRAM_NAME " [-l logfile] [-o origin[,...]] [-O originfile] [-m minhits] [-inshv]";
 
 
-// Enum for YMON return code levels.
-enum YmonLevel
+// Enum for return code levels.
+enum ExitLevel
 {
-  YMON_OK = 0,
-  YMON_WARNING = 1,
-  YMON_CRITICAL = 2,
-  YMON_UNKNOWN = 3
+  EXIT_OK = 0,
+  EXIT_WARNING = 1,
+  EXIT_CRITICAL = 2,
+  EXIT_UNKNOWN = 3
 };
 
 // Enum for parsing a log line
@@ -368,13 +399,15 @@ enum ParseStates
 // Enum for HTTP methods
 enum HTTPMethod
 {
+  METHOD_OPTIONS,
   METHOD_GET,
-  METHOD_PUT,
   METHOD_HEAD,
   METHOD_POST,
-  METHOD_PURGE,
+  METHOD_PUT,
   METHOD_DELETE,
-  METHOD_OPTIONS,
+  METHOD_TRACE,
+  METHOD_CONNECT,
+  METHOD_PURGE,
   METHOD_NONE,
   METHOD_OTHER
 };
@@ -409,7 +442,7 @@ init_elapsed(OriginStats & stats)
 
 // Update the counters for one StatsCounter
 inline void
-update_counter(StatsCounter & counter, int size)
+update_counter(StatsCounter& counter, int size)
 {
   counter.count++;
   counter.bytes += size;
@@ -551,47 +584,146 @@ update_results_elapsed(OriginStats * stat, int result, int elapsed, int size)
 inline void
 update_codes(OriginStats * stat, int code, int size)
 {
-  // Special case for "200", most common.
-  if (code == 200)
+  switch (code) {
+  case 100:
+    update_counter(stat->codes.c_100, size);
+    break;
+
+  // 200's
+  case 200:
     update_counter(stat->codes.c_200, size);
-  else if ((code > 199) && (code < 299)) {
-    if (code == 204)
-      update_counter(stat->codes.c_204, size);
-    else if (code == 206)
-      update_counter(stat->codes.c_206, size);
-    else
-      update_counter(stat->codes.c_2xx, size);
-  } else if ((code > 299) && (code < 399)) {
-    if (code == 301)
-      update_counter(stat->codes.c_301, size);
-    else if (code == 302)
-      update_counter(stat->codes.c_302, size);
-    else if (code == 304)
-      update_counter(stat->codes.c_304, size);
-    else
-      update_counter(stat->codes.c_3xx, size);
-  } else if ((code > 399) && (code < 499)) {
-    if (code == 400)
-      update_counter(stat->codes.c_400, size);
-    else if (code == 403)
-      update_counter(stat->codes.c_403, size);
-    else if (code == 404)
-      update_counter(stat->codes.c_404, size);
-    else
-      update_counter(stat->codes.c_4xx, size);
-  } else if ((code > 499) && (code < 599)) {
-    if (code == 501)
-      update_counter(stat->codes.c_501, size);
-    else if (code == 502)
-      update_counter(stat->codes.c_502, size);
-    else if (code == 503)
-      update_counter(stat->codes.c_503, size);
-    else
+    break;
+  case 201:
+    update_counter(stat->codes.c_201, size);
+    break;
+  case 202:
+    update_counter(stat->codes.c_202, size);
+    break;
+  case 203:
+    update_counter(stat->codes.c_203, size);
+    break;
+  case 204:
+    update_counter(stat->codes.c_204, size);
+    break;
+  case 205:
+    update_counter(stat->codes.c_205, size);
+    break;
+  case 206:
+    update_counter(stat->codes.c_206, size);
+    break;
+
+  // 300's
+  case 300:
+    update_counter(stat->codes.c_300, size);
+    break;
+  case 301:
+    update_counter(stat->codes.c_301, size);
+    break;
+  case 302:
+    update_counter(stat->codes.c_302, size);
+    break;
+  case 303:
+    update_counter(stat->codes.c_303, size);
+    break;
+  case 304:
+    update_counter(stat->codes.c_304, size);
+    break;
+  case 305:
+    update_counter(stat->codes.c_305, size);
+    break;
+  case 307:
+    update_counter(stat->codes.c_307, size);
+    break;
+
+  // 400's
+  case 400:
+    update_counter(stat->codes.c_400, size);
+    break;
+  case 401:
+    update_counter(stat->codes.c_401, size);
+    break;
+  case 402:
+    update_counter(stat->codes.c_402, size);
+    break;
+  case 403:
+    update_counter(stat->codes.c_403, size);
+    break;
+  case 404:
+    update_counter(stat->codes.c_404, size);
+    break;
+  case 405:
+    update_counter(stat->codes.c_405, size);
+    break;
+  case 406:
+    update_counter(stat->codes.c_406, size);
+    break;
+  case 407:
+    update_counter(stat->codes.c_407, size);
+    break;
+  case 408:
+    update_counter(stat->codes.c_408, size);
+    break;
+  case 409:
+    update_counter(stat->codes.c_409, size);
+    break;
+  case 410:
+    update_counter(stat->codes.c_410, size);
+    break;
+  case 411:
+    update_counter(stat->codes.c_411, size);
+    break;
+  case 412:
+    update_counter(stat->codes.c_412, size);
+    break;
+  case 413:
+    update_counter(stat->codes.c_413, size);
+    break;
+  case 414:
+    update_counter(stat->codes.c_414, size);
+    break;
+  case 415:
+    update_counter(stat->codes.c_415, size);
+    break;
+  case 416:
+    update_counter(stat->codes.c_416, size);
+    break;
+  case 417:
+    update_counter(stat->codes.c_417, size);
+    break;
+
+  // 500's
+  case 500:
+    update_counter(stat->codes.c_500, size);
+    break;
+  case 501:
+    update_counter(stat->codes.c_501, size);
+    break;
+  case 502:
+    update_counter(stat->codes.c_502, size);
+    break;
+  case 503:
+    update_counter(stat->codes.c_503, size);
+    break;
+  case 504:
+    update_counter(stat->codes.c_504, size);
+    break;
+  case 505:
+    update_counter(stat->codes.c_505, size);
+    break;
+
+  default:
+    if (code > 500)
       update_counter(stat->codes.c_5xx, size);
-  } else if (code == 999)
-    update_counter(stat->codes.c_999, size);
-  else if (code == 0)
-    update_counter(stat->codes.c_000, size);
+    else if (code > 400)
+      update_counter(stat->codes.c_4xx, size);
+    else if (code > 300)
+      update_counter(stat->codes.c_3xx, size);
+    else if (code > 200)
+      update_counter(stat->codes.c_2xx, size);
+    else
+      update_counter(stat->codes.c_000, size);
+    break;
+  }      
 }
 
 
@@ -600,25 +732,52 @@ update_codes(OriginStats * stat, int code, int size)
 inline void
 update_methods(OriginStats * stat, int method, int size)
 {
-  // We're so loppsides on GETs, so makes most sense to test 'out of order'.
-  if (method == METHOD_GET)
+  // We're so loppsided on GETs, so makes most sense to test 'out of order'.
+  switch (method) {
+  case METHOD_GET:
     update_counter(stat->methods.get, size);
-  else if (method == METHOD_PUT)
-    update_counter(stat->methods.put, size);
-  else if (method == METHOD_HEAD)
-    update_counter(stat->methods.head, size);
-  else if (method == METHOD_POST)
-    update_counter(stat->methods.post, size);
-  else if (method == METHOD_DELETE)
-    update_counter(stat->methods.del, size);
-  else if (method == METHOD_PURGE)
-    update_counter(stat->methods.purge, size);
-  else if (method == METHOD_OPTIONS)
+    break;
+
+  case METHOD_OPTIONS:
     update_counter(stat->methods.options, size);
-  else if (method == METHOD_NONE)
+    break;
+
+  case METHOD_HEAD:
+    update_counter(stat->methods.head, size);
+    break;
+
+  case METHOD_POST:
+    update_counter(stat->methods.post, size);
+    break;
+
+  case METHOD_PUT:
+    update_counter(stat->methods.put, size);
+    break;
+
+  case METHOD_DELETE:
+    update_counter(stat->methods.del, size);
+    break;
+
+  case METHOD_TRACE:
+    update_counter(stat->methods.trace, size);
+    break;
+
+  case METHOD_CONNECT:
+    update_counter(stat->methods.connect, size);
+    break;
+
+  case METHOD_PURGE:
+    update_counter(stat->methods.purge, size);
+    break;
+
+  case METHOD_NONE:
     update_counter(stat->methods.none, size);
-  else
+    break;
+
+  default:
     update_counter(stat->methods.other, size);
+    break;
+  }
 }
 
 
@@ -715,7 +874,7 @@ parse_log_buff(LogBufferHeader * buf_header, bool summary = false)
         state = P_STATE_CODE;
         result = *((int64 *) (read_from));
         read_from += INK_MIN_ALIGN;
-        if ((result<32) || (result> 255)) {
+        if ((result<32) || (result>255)) {
           flag = 1;
           state = P_STATE_END;
         }
@@ -725,7 +884,7 @@ parse_log_buff(LogBufferHeader * buf_header, bool summary = false)
         state = P_STATE_SIZE;
         http_code = *((int64 *) (read_from));
         read_from += INK_MIN_ALIGN;
-        if ((http_code<0) || (http_code> 999)) {
+        if ((http_code<0) || (http_code>999)) {
           flag = 1;
           state = P_STATE_END;
         }
@@ -747,7 +906,7 @@ parse_log_buff(LogBufferHeader * buf_header, bool summary = false)
         flag = 0;
 
         // Small optimization for common (3-4 char) cases
-        switch (*reinterpret_cast < int *>(read_from)) {
+        switch (*reinterpret_cast <int*>(read_from)) {
         case GET_AS_INT:
           method = METHOD_GET;
           read_from += LogAccess::round_strlen(3 + 1);
@@ -795,7 +954,7 @@ parse_log_buff(LogBufferHeader * buf_header, bool summary = false)
         // TODO check for read_from being empty string
         if (flag == 0) {
           tok = read_from;
-          if (*reinterpret_cast < int *>(tok) == HTTP_AS_INT) {
+          if (*reinterpret_cast <int*>(tok) == HTTP_AS_INT) {
             tok += 4;
             if (*tok == ':') {
               scheme = SCHEME_HTTP;
@@ -920,14 +1079,12 @@ parse_log_buff(LogBufferHeader * buf_header, bool summary = false)
 
       case P_STATE_TYPE:
         state = P_STATE_END;
-        //printf("TYPE == %s\n", read_from);
-        if (*reinterpret_cast < int *>(read_from) == IMAG_AS_INT) {
+        if (*reinterpret_cast <int*>(read_from) == IMAG_AS_INT) {
           update_counter(totals.content.image.total, size);
           if (o_stats != NULL)
             update_counter(o_stats->content.image.total, size);
           tok = read_from + 6;
-          //printf("SUBTYPE == %s\n", tok);
-          switch (*reinterpret_cast < int *>(tok)) {
+          switch (*reinterpret_cast <int*>(tok)) {
           case JPEG_AS_INT:
             tok_len = 10;
             update_counter(totals.content.image.jpeg, size);
@@ -965,13 +1122,12 @@ parse_log_buff(LogBufferHeader * buf_header, bool summary = false)
               update_counter(o_stats->content.image.other, size);
             break;
           }
-        } else if (*reinterpret_cast < int *>(read_from) == TEXT_AS_INT) {
+        } else if (*reinterpret_cast <int*>(read_from) == TEXT_AS_INT) {
           tok = read_from + 5;
-          //printf("SUBTYPE == %s\n", tok);
           update_counter(totals.content.text.total, size);
           if (o_stats != NULL)
             update_counter(o_stats->content.text.total, size);
-          switch (*reinterpret_cast < int *>(tok)) {
+          switch (*reinterpret_cast <int*>(tok)) {
           case JAVA_AS_INT:
             // TODO verify if really "javascript"
             tok_len = 15;
@@ -1011,46 +1167,70 @@ parse_log_buff(LogBufferHeader * buf_header, bool summary = false)
             break;
           }
         } else if (strncmp(read_from, "application", 11) == 0) {
-          // TODO optimize token acquisition
           tok = read_from + 12;
-          //printf("SUBTYPE == %s\n", tok);
           update_counter(totals.content.application.total, size);
           if (o_stats != NULL)
             update_counter(o_stats->content.application.total, size);
-          if (strcmp(tok, "x-shockwave-flash") == 0) {
-            tok_len = 29;
-            update_counter(totals.content.application.shockwave_flash, size);
-            if (o_stats != NULL)
-              update_counter(o_stats->content.application.shockwave_flash, size);
-          } else if (strcmp(tok, "x-javascript") == 0) {
-            tok_len = 24;
-            update_counter(totals.content.application.javascript, size);
-            if (o_stats != NULL)
-              update_counter(o_stats->content.application.javascript, size);
-          } else if (strcmp(tok, "x-quicktimeplayer") == 0) {
-            tok_len = 29;
-            update_counter(totals.content.application.quicktime, size);
-            if (o_stats != NULL)
-              update_counter(o_stats->content.application.quicktime, size);
-          } else if (*reinterpret_cast < int *>(tok) == ZIP_AS_INT) {
+          switch (*reinterpret_cast <int*>(tok)) {
+          case ZIP_AS_INT:
             tok_len = 15;
             update_counter(totals.content.application.zip, size);
             if (o_stats != NULL)
               update_counter(o_stats->content.application.zip, size);
-          } else {
-            tok_len = 12 + strlen(tok);
-            update_counter(totals.content.application.other, size);
+            break;
+          case JAVA_AS_INT:
+            tok_len = 22;
+            update_counter(totals.content.application.javascript, size);
             if (o_stats != NULL)
-              update_counter(o_stats->content.application.other, size);
+              update_counter(o_stats->content.application.javascript, size);
+          case X_JA_AS_INT:
+            tok_len = 24;
+            update_counter(totals.content.application.javascript, size);
+            if (o_stats != NULL)
+              update_counter(o_stats->content.application.javascript, size);
+            break;
+          case RSSp_AS_INT:
+            if (strcmp(tok+4, "xml") == 0) {
+              tok_len = 19;
+              update_counter(totals.content.application.rss_xml, size);
+              if (o_stats != NULL)
+                update_counter(o_stats->content.application.rss_xml, size);
+            } else if (strcmp(tok+4,"atom") == 0) {
+              tok_len = 20;
+              update_counter(totals.content.application.rss_atom, size);
+              if (o_stats != NULL)
+                update_counter(o_stats->content.application.rss_atom, size);
+            } else {
+              tok_len = 12 + strlen(tok);
+              update_counter(totals.content.application.rss_other, size);
+              if (o_stats != NULL)
+                update_counter(o_stats->content.application.rss_other, size);
+            }
+            break;
+          default:
+            if (strcmp(tok, "x-shockwave-flash") == 0) {
+              tok_len = 29;
+              update_counter(totals.content.application.shockwave_flash, size);
+              if (o_stats != NULL)
+                update_counter(o_stats->content.application.shockwave_flash, size);
+            } else if (strcmp(tok, "x-quicktimeplayer") == 0) {
+              tok_len = 29;
+              update_counter(totals.content.application.quicktime, size);
+              if (o_stats != NULL)
+                update_counter(o_stats->content.application.quicktime, size);
+            } else {
+              tok_len = 12 + strlen(tok);
+              update_counter(totals.content.application.other, size);
+              if (o_stats != NULL)
+                update_counter(o_stats->content.application.other, size);
+            }
           }
         } else if (strncmp(read_from, "audio", 5) == 0) {
-          // TODO use strcmp()
           tok = read_from + 6;
           tok_len = 6 + strlen(tok);
           update_counter(totals.content.audio.total, size);
           if (o_stats != NULL)
             update_counter(o_stats->content.audio.total, size);
-          //printf("SUBTYPE == %s\n", tok);
           if ((strcmp(tok, "x-wav") == 0) || (strcmp(tok, "wav") == 0)) {
             update_counter(totals.content.audio.wav, size);
             if (o_stats != NULL)
@@ -1218,9 +1398,9 @@ format_int(int64 num, std::ostream & out)
 void
 format_elapsed_header(std::ostream & out)
 {
-  out << std::left << std::setw(20) << "Elapsed time stats";
-  out << std::right << std::setw(6) << "Min" << std::setw(10) << "Max";
-  out << std::right << std::setw(20) << "Avg" << std::setw(24) << "Std Deviation" << std::endl;
+  out << std::left << std::setw(24) << "Elapsed time stats";
+  out << std::right << std::setw(7) << "Min" << std::setw(13) << "Max";
+  out << std::right << std::setw(17) << "Avg" << std::setw(17) << "Std Deviation" << std::endl;
   out << std::setw(cl.line_len) << std::setfill('-') << '-' << std::setfill(' ') << std::endl;
 }
 
@@ -1228,14 +1408,14 @@ inline void
 format_elapsed_line(const char *desc, const ElapsedStats & stat, std::ostream & out)
 {
   static char buf[64];
-  out << std::left << std::setw(20) << desc;
-  out << std::right << std::setw(6);
+  out << std::left << std::setw(24) << desc;
+  out << std::right << std::setw(7);
   format_int(stat.min, out);
-  out << std::right << std::setw(10);
+  out << std::right << std::setw(13);
   format_int(stat.max, out);
-  snprintf(buf, sizeof(buf), "%20.10f", stat.avg);
+  snprintf(buf, sizeof(buf), "%17.3f", stat.avg);
   out << std::right << buf;
-  snprintf(buf, sizeof(buf), "%24.12f", stat.stddev);
+  snprintf(buf, sizeof(buf), "%17.3f", stat.stddev);
   out << std::right << buf << std::endl;
 }
 
@@ -1318,35 +1498,62 @@ print_detail_stats(const OriginStats * stat, std::ostream & out)
   // HTTP codes
   format_detail_header("HTTP return codes", out);
 
+  format_line("100 Continue", stat->codes.c_100, stat->total, out);
+
   format_line("200 OK", stat->codes.c_200, stat->total, out);
+  format_line("201 Created", stat->codes.c_201, stat->total, out);
+  format_line("202 Accepted", stat->codes.c_202, stat->total, out);
+  format_line("203 Non-Authoritative Info", stat->codes.c_203, stat->total, out);
   format_line("204 No content", stat->codes.c_204, stat->total, out);
+  format_line("205 Reset Content", stat->codes.c_205, stat->total, out);
   format_line("206 Partial content", stat->codes.c_206, stat->total, out);
   format_line("2xx other success", stat->codes.c_2xx, stat->total, out);
 
   out << std::endl;
 
+  format_line("300 Multiple Choices", stat->codes.c_300, stat->total, out);
   format_line("301 Moved permanently", stat->codes.c_301, stat->total, out);
   format_line("302 Found", stat->codes.c_302, stat->total, out);
+  format_line("303 See Other", stat->codes.c_303, stat->total, out);
   format_line("304 Not modified", stat->codes.c_304, stat->total, out);
+  format_line("305 Use Proxy", stat->codes.c_305, stat->total, out);
+  format_line("307 Temporary Redirect", stat->codes.c_307, stat->total, out);
   format_line("3xx other redirects", stat->codes.c_3xx, stat->total, out);
 
   out << std::endl;
 
   format_line("400 Bad request", stat->codes.c_400, stat->total, out);
+  format_line("401 Unauthorized", stat->codes.c_401, stat->total, out);
+  format_line("402 Payment Required", stat->codes.c_402, stat->total, out);
   format_line("403 Forbidden", stat->codes.c_403, stat->total, out);
   format_line("404 Not found", stat->codes.c_404, stat->total, out);
+  format_line("405 Method Not Allowed", stat->codes.c_405, stat->total, out);
+  format_line("406 Not Acceptable", stat->codes.c_406, stat->total, out);
+  format_line("407 Proxy Auth Required", stat->codes.c_407, stat->total, out);
+  format_line("408 Request Timeout", stat->codes.c_408, stat->total, out);
+  format_line("409 Conflict", stat->codes.c_409, stat->total, out);
+  format_line("410 Gone", stat->codes.c_410, stat->total, out);
+  format_line("411 Length Required", stat->codes.c_411, stat->total, out);
+  format_line("412 Precondition Failed", stat->codes.c_412, stat->total, out);
+  format_line("413 Request Entity Too Large", stat->codes.c_413, stat->total, out);
+  format_line("414 Request-URI Too Long", stat->codes.c_414, stat->total, out);
+  format_line("415 Unsupported Media Type", stat->codes.c_415, stat->total, out);
+  format_line("416 Req Range Not Satisfiable", stat->codes.c_416, stat->total, out);
+  format_line("417 Expectation Failed", stat->codes.c_417, stat->total, out);
   format_line("4xx other client errors", stat->codes.c_4xx, stat->total, out);
 
   out << std::endl;
 
+  format_line("500 Internal Server Error", stat->codes.c_500, stat->total, out);
   format_line("501 Not implemented", stat->codes.c_501, stat->total, out);
   format_line("502 Bad gateway", stat->codes.c_502, stat->total, out);
   format_line("503 Service unavailable", stat->codes.c_503, stat->total, out);
+  format_line("504 Gateway Timeout", stat->codes.c_504, stat->total, out);
+  format_line("505 HTTP Ver. Not Supported", stat->codes.c_505, stat->total, out);
   format_line("5xx other server errors", stat->codes.c_5xx, stat->total, out);
 
   out << std::endl;
 
-  format_line("999 YDoD rejection", stat->codes.c_999, stat->total, out);
   format_line("000 Unknown", stat->codes.c_000, stat->total, out);
 
   out << std::endl << std::endl;
@@ -1367,13 +1574,15 @@ print_detail_stats(const OriginStats * stat, std::ostream & out)
   // HTTP methods
   format_detail_header("HTTP Methods", out);
 
+  format_line("OPTIONS", stat->methods.options, stat->total, out);
   format_line("GET", stat->methods.get, stat->total, out);
-  format_line("PUT", stat->methods.put, stat->total, out);
   format_line("HEAD", stat->methods.head, stat->total, out);
   format_line("POST", stat->methods.post, stat->total, out);
+  format_line("PUT", stat->methods.put, stat->total, out);
   format_line("DELETE", stat->methods.del, stat->total, out);
+  format_line("TRACE", stat->methods.trace, stat->total, out);
+  format_line("CONNECT", stat->methods.connect, stat->total, out);
   format_line("PURGE", stat->methods.purge, stat->total, out);
-  format_line("OPTIONS", stat->methods.options, stat->total, out);
   format_line("none (-)", stat->methods.none, stat->total, out);
   format_line("other", stat->methods.other, stat->total, out);
 
@@ -1419,9 +1628,11 @@ print_detail_stats(const OriginStats * stat, std::ostream & out)
   out << std::endl;
 
   format_line("application/x-shockwave", stat->content.application.shockwave_flash, stat->total, out);
-  format_line("application/x-javascript", stat->content.application.javascript, stat->total, out);
+  format_line("application/[x-]javascript", stat->content.application.javascript, stat->total, out);
   format_line("application/x-quicktime", stat->content.application.quicktime, stat->total, out);
   format_line("application/zip", stat->content.application.zip, stat->total, out);
+  format_line("application/rss+xml", stat->content.application.rss_xml, stat->total, out);
+  format_line("application/rss+atom", stat->content.application.rss_atom, stat->total, out);
   format_line("application/ other", stat->content.application.other, stat->total, out);
   format_line("application/ total", stat->content.application.total, stat->total, out);
 
@@ -1453,220 +1664,26 @@ print_detail_stats(const OriginStats * stat, std::ostream & out)
 
 
 ///////////////////////////////////////////////////////////////////////////////
-// Produce metrics in YMon format for a particular Origin.
-inline void
-format_ymon(const char *subsys, const char *desc, const char *server, const StatsCounter & stat, std::ostream & out)
-{
-  out << subsys << ".'" << server << "'." << desc << "_cnt=" << stat.count << " ";
-  out << subsys << ".'" << server << "'." << desc << "_bytes=" << stat.bytes << " ";
-}
-
-// Produce "elapsed" metrics in YMon format for a particular Origin.
-inline void
-format_elapsed_ymon(const char *subsys, const char *desc, const char *server, const ElapsedStats & stat,
-                    std::ostream & out)
-{
-  out << subsys << ".'" << server << "'." << desc << "_min=" << stat.min << " ";
-  out << subsys << ".'" << server << "'." << desc << "_max=" << stat.max << " ";
-  out << subsys << ".'" << server << "'." << desc << "_avg=" << stat.avg << " ";
-  out << subsys << ".'" << server << "'." << desc << "_stddev=" << stat.stddev << " ";
-}
-
+// Little wrapper around exit, to allow us to exit gracefully
 void
-print_ymon_metrics(const OriginStats * stat, std::ostream & out)
-{
-  // Results (hits, misses, errors and a total
-  format_ymon("result", "hit", stat->server, stat->results.hits.hit, out);
-  format_ymon("result", "hit_ims", stat->server, stat->results.hits.ims, out);
-  format_ymon("result", "hit_refresh", stat->server, stat->results.hits.refresh, out);
-  format_ymon("result", "hit_other", stat->server, stat->results.hits.other, out);
-  format_ymon("result", "hit_total", stat->server, stat->results.hits.total, out);
-
-  format_ymon("result", "miss", stat->server, stat->results.misses.miss, out);
-  format_ymon("result", "miss_ims", stat->server, stat->results.misses.ims, out);
-  format_ymon("result", "miss_refresh", stat->server, stat->results.misses.refresh, out);
-  format_ymon("result", "miss_other", stat->server, stat->results.misses.other, out);
-  format_ymon("result", "miss_total", stat->server, stat->results.misses.total, out);
-
-  format_ymon("result", "err_abort", stat->server, stat->results.errors.client_abort, out);
-  format_ymon("result", "err_conn", stat->server, stat->results.errors.connect_fail, out);
-  format_ymon("result", "err_invalid", stat->server, stat->results.errors.invalid_req, out);
-  format_ymon("result", "err_unknown", stat->server, stat->results.errors.unknown, out);
-  format_ymon("result", "err_other", stat->server, stat->results.errors.other, out);
-  format_ymon("result", "err_total", stat->server, stat->results.errors.total, out);
-
-  format_ymon("result", "total", stat->server, stat->total, out);
-
-  // HTTP codes
-  format_ymon("http", "200", stat->server, stat->codes.c_200, out);
-  format_ymon("http", "204", stat->server, stat->codes.c_204, out);
-  format_ymon("http", "206", stat->server, stat->codes.c_206, out);
-  format_ymon("http", "2xx", stat->server, stat->codes.c_2xx, out);
-
-  format_ymon("http", "301", stat->server, stat->codes.c_301, out);
-  format_ymon("http", "302", stat->server, stat->codes.c_302, out);
-  format_ymon("http", "304", stat->server, stat->codes.c_304, out);
-  format_ymon("http", "3xx", stat->server, stat->codes.c_3xx, out);
-
-  format_ymon("http", "400", stat->server, stat->codes.c_400, out);
-  format_ymon("http", "403", stat->server, stat->codes.c_403, out);
-  format_ymon("http", "404", stat->server, stat->codes.c_404, out);
-  format_ymon("http", "4xx", stat->server, stat->codes.c_4xx, out);
-
-  format_ymon("http", "501", stat->server, stat->codes.c_501, out);
-  format_ymon("http", "502", stat->server, stat->codes.c_502, out);
-  format_ymon("http", "503", stat->server, stat->codes.c_503, out);
-  format_ymon("http", "5xx", stat->server, stat->codes.c_5xx, out);
-
-  format_ymon("http", "999", stat->server, stat->codes.c_999, out);
-  format_ymon("http", "000", stat->server, stat->codes.c_000, out);
-
-  // Origin hierarchies
-  format_ymon("hier", "none", stat->server, stat->hierarchies.none, out);
-  format_ymon("hier", "direct", stat->server, stat->hierarchies.direct, out);
-  format_ymon("hier", "sibling", stat->server, stat->hierarchies.sibling, out);
-  format_ymon("hier", "parent", stat->server, stat->hierarchies.parent, out);
-  format_ymon("hier", "empty", stat->server, stat->hierarchies.empty, out);
-  format_ymon("hier", "invalid", stat->server, stat->hierarchies.invalid, out);
-  format_ymon("hier", "other", stat->server, stat->hierarchies.other, out);
-
-  // HTTP methods
-  format_ymon("method", "get", stat->server, stat->methods.get, out);
-  format_ymon("method", "put", stat->server, stat->methods.put, out);
-  format_ymon("method", "head", stat->server, stat->methods.head, out);
-  format_ymon("method", "post", stat->server, stat->methods.post, out);
-  format_ymon("method", "delete", stat->server, stat->methods.del, out);
-  format_ymon("method", "purge", stat->server, stat->methods.purge, out);
-  format_ymon("method", "options", stat->server, stat->methods.options, out);
-  format_ymon("method", "none", stat->server, stat->methods.none, out);
-  format_ymon("method", "other", stat->server, stat->methods.other, out);
-
-  // URL schemes (HTTP/HTTPs)
-  format_ymon("scheme", "http", stat->server, stat->schemes.http, out);
-  format_ymon("scheme", "https", stat->server, stat->schemes.https, out);
-  format_ymon("scheme", "none", stat->server, stat->schemes.none, out);
-  format_ymon("scheme", "other", stat->server, stat->schemes.other, out);
-
-  // Content types
-  format_ymon("ctype", "text_js", stat->server, stat->content.text.javascript, out);
-  format_ymon("ctype", "text_css", stat->server, stat->content.text.css, out);
-  format_ymon("ctype", "text_html", stat->server, stat->content.text.html, out);
-  format_ymon("ctype", "text_xml", stat->server, stat->content.text.xml, out);
-  format_ymon("ctype", "text_plain", stat->server, stat->content.text.plain, out);
-  format_ymon("ctype", "text_other", stat->server, stat->content.text.other, out);
-  format_ymon("ctype", "text_total", stat->server, stat->content.text.total, out);
-
-  format_ymon("ctype", "image_jpeg", stat->server, stat->content.image.jpeg, out);
-  format_ymon("ctype", "image_gif", stat->server, stat->content.image.gif, out);
-  format_ymon("ctype", "image_png", stat->server, stat->content.image.png, out);
-  format_ymon("ctype", "image_bmp", stat->server, stat->content.image.bmp, out);
-  format_ymon("ctype", "image_other", stat->server, stat->content.image.other, out);
-  format_ymon("ctype", "image_total", stat->server, stat->content.image.total, out);
-
-  format_ymon("ctype", "audio_xwav", stat->server, stat->content.audio.wav, out);
-  format_ymon("ctype", "audio_xmpeg", stat->server, stat->content.audio.mpeg, out);
-  format_ymon("ctype", "audio_other", stat->server, stat->content.audio.other, out);
-  format_ymon("ctype", "audio_total", stat->server, stat->content.audio.total, out);
-
-  format_ymon("ctype", "app_shock", stat->server, stat->content.application.shockwave_flash, out);
-  format_ymon("ctype", "app_js", stat->server, stat->content.application.javascript, out);
-  format_ymon("ctype", "app_qt", stat->server, stat->content.application.quicktime, out);
-  format_ymon("ctype", "app_zip", stat->server, stat->content.application.zip, out);
-  format_ymon("ctype", "app_other", stat->server, stat->content.application.other, out);
-  format_ymon("ctype", "app_total", stat->server, stat->content.application.total, out);
-
-  format_ymon("ctype", "none", stat->server, stat->content.none, out);
-  format_ymon("ctype", "other", stat->server, stat->content.other, out);
-
-  // Elapsed stats
-  format_elapsed_ymon("elapsed", "hit", stat->server, stat->elapsed.hits.hit, out);
-  format_elapsed_ymon("elapsed", "hit_ims", stat->server, stat->elapsed.hits.ims, out);
-  format_elapsed_ymon("elapsed", "hit_refresh", stat->server, stat->elapsed.hits.refresh, out);
-  format_elapsed_ymon("elapsed", "hit_other", stat->server, stat->elapsed.hits.other, out);
-  format_elapsed_ymon("elapsed", "hit_total", stat->server, stat->elapsed.hits.total, out);
-
-  format_elapsed_ymon("elapsed", "miss", stat->server, stat->elapsed.misses.miss, out);
-  format_elapsed_ymon("elapsed", "miss_ims", stat->server, stat->elapsed.misses.ims, out);
-  format_elapsed_ymon("elapsed", "miss_refresh", stat->server, stat->elapsed.misses.refresh, out);
-  format_elapsed_ymon("elapsed", "miss_other", stat->server, stat->elapsed.misses.other, out);
-  format_elapsed_ymon("elapsed", "miss_total", stat->server, stat->elapsed.misses.total, out);
-}
-
-
-///////////////////////////////////////////////////////////////////////////////
-// Format one value for ysar output
-inline void
-format_ysar(const StatsCounter & stat, const StatsCounter & tot, bool last = false)
-{
-  if (last)
-    std::cout << 100 * (double) stat.count / tot.count;
-  else
-    std::cout << 100 * (double) stat.count / tot.count << ',';
-}
-
-///////////////////////////////////////////////////////////////////////////////
-// Little wrapper around exit, to allow us to exit like a YMon plugin.
-void
-my_exit(YmonLevel status, const char *notice)
+my_exit(ExitLevel status, const char *notice)
 {
   vector<OriginPair> vec;
 
-  if (cl.ysar) {
-    std::cout.precision(2);
-    std::cout.setf(std::ios::fixed);
-
-    format_ysar(totals.codes.c_200, totals.total);
-    format_ysar(totals.codes.c_204, totals.total);
-    format_ysar(totals.codes.c_206, totals.total);
-    format_ysar(totals.codes.c_2xx, totals.total);
-
-    format_ysar(totals.codes.c_301, totals.total);
-    format_ysar(totals.codes.c_302, totals.total);
-    format_ysar(totals.codes.c_304, totals.total);
-    format_ysar(totals.codes.c_3xx, totals.total);
-
-    format_ysar(totals.codes.c_400, totals.total);
-    format_ysar(totals.codes.c_403, totals.total);
-    format_ysar(totals.codes.c_404, totals.total);
-    format_ysar(totals.codes.c_4xx, totals.total);
-
-    format_ysar(totals.codes.c_501, totals.total);
-    format_ysar(totals.codes.c_502, totals.total);
-    format_ysar(totals.codes.c_503, totals.total);
-    format_ysar(totals.codes.c_5xx, totals.total);
-
-    format_ysar(totals.codes.c_999, totals.total);
-    format_ysar(totals.codes.c_000, totals.total);
-
-    format_ysar(totals.content.text.total, totals.total);
-    format_ysar(totals.content.image.total, totals.total);
-    format_ysar(totals.content.application.total, totals.total);
-    format_ysar(totals.content.audio.total, totals.total);
-    format_ysar(totals.content.other, totals.total);
-    format_ysar(totals.content.none, totals.total, true);
-  } else if (cl.ymon) {
-    std::cout << hostname << '\t' << "yts_origins\t" << status << '\t' << "ver. " << PACKAGE_VERSION << notice << std::
-      endl;
-    for (OriginStorage::iterator i = origins.begin(); i != origins.end(); i++) {
-      if (use_origin(i->second)) {
-        std::cout << hostname << '\t' << "yts_origins" << '\t' <<
-          status << '\t' << "ver. " << PACKAGE_VERSION << notice << "|";
-        print_ymon_metrics(i->second, std::cout);
-        std::cout << std::endl;
-      }
-    }
+  if (cl.json) {
+    // TODO: Add JSON output
   } else {
     switch (status) {
-    case YMON_OK:
+    case EXIT_OK:
       break;
-    case YMON_WARNING:
+    case EXIT_WARNING:
       std::cout << "warning: " << notice << std::endl;
       break;
-    case YMON_CRITICAL:
+    case EXIT_CRITICAL:
       std::cout << "critical: " << notice << std::endl;
       _exit(status);
       break;
-    case YMON_UNKNOWN:
+    case EXIT_UNKNOWN:
       std::cout << "unknown: " << notice << std::endl;
       _exit(status);
       break;
@@ -1720,7 +1737,7 @@ my_exit(YmonLevel status, const char *notice)
 ///////////////////////////////////////////////////////////////////////////////
 // Open the "default" log file (squid.blog), allow for it to be rotated.
 int
-open_main_log(char *ymon_notice, const size_t ymon_notice_size)
+open_main_log(char *exit_notice, const size_t exit_notice_size)
 {
   int cnt = 3;
   int main_fd;
@@ -1732,13 +1749,13 @@ open_main_log(char *ymon_notice, const size_t ymon_notice_size)
       sleep(5);
       break;
     default:
-      strncat(ymon_notice, " can't open squid.blog", ymon_notice_size - strlen(ymon_notice) - 1);
+      strncat(exit_notice, " can't open squid.blog", exit_notice_size - strlen(exit_notice) - 1);
       return -1;
     }
   }
 
   if (main_fd < 0) {
-    strncat(ymon_notice, " squid.blog not enabled", ymon_notice_size - strlen(ymon_notice) - 1);
+    strncat(exit_notice, " squid.blog not enabled", exit_notice_size - strlen(exit_notice) - 1);
     return -1;
   }
 #if TS_HAS_POSIX_FADVISE
@@ -1754,8 +1771,8 @@ open_main_log(char *ymon_notice, const size_t ymon_notice_size)
 int
 main(int argc, char *argv[])
 {
-  YmonLevel ymon_status = YMON_OK;
-  char ymon_notice[4096];
+  ExitLevel exit_status = EXIT_OK;
+  char exit_notice[4096];
   struct utsname uts_buf;
   int res, cnt;
   int main_fd;
@@ -1763,17 +1780,19 @@ main(int argc, char *argv[])
   struct flock lck;
 
   // build the application information structure
-  appVersionInfo.setup(PACKAGE_NAME,PROGRAM_NAME, PACKAGE_VERSION, __DATE__,
-                       __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
+  appVersionInfo.setup(PACKAGE_NAME,PROGRAM_NAME, PACKAGE_VERSION, __DATE__, __TIME__,
+                       BUILD_MACHINE, BUILD_PERSON, "");
 
   // Before accessing file system initialize Layout engine
   Layout::create();
-  // Initialize some globals
-  memset(&totals, 0, sizeof(totals));   // Make sure counters are zero
+
+  // Initialize the totals, all counters to zero
+  memset(&totals, 0, sizeof(totals));
+
   // Initialize "elapsed" field
   init_elapsed(totals);
   memset(&cl, 0, sizeof(cl));
-  memset(ymon_notice, 0, sizeof(ymon_notice));
+  memset(exit_notice, 0, sizeof(exit_notice));
   cl.line_len = DEFAULT_LINE_LEN;
   origin_set = NULL;
   parse_errors = 0;
@@ -1789,18 +1808,6 @@ main(int argc, char *argv[])
   // process command-line arguments
   process_args(argument_descriptions, n_argument_descriptions, argv, USAGE_LINE);
 
-  // Post processing
-  if (cl.ysar) {
-    cl.summary = 1;
-    cl.ymon = 0;
-    cl.incremental = 1;
-    if (cl.state_tag[0] == '\0')
-      ink_strncpy(cl.state_tag, "ysar", sizeof(cl.state_tag));
-  }
-  if (cl.ymon) {
-    cl.ysar = 0;
-    cl.summary = 0;
-  }
   // check for the version number request
   if (cl.version) {
     std::cerr << appVersionInfo.FullVersionInfoStr << std::endl;
@@ -1876,15 +1883,15 @@ main(int argc, char *argv[])
   }
   // Get the hostname
   if (uname(&uts_buf) < 0) {
-    strncat(ymon_notice, " can't get hostname", sizeof(ymon_notice) - strlen(ymon_notice) - 1);
-    my_exit(YMON_CRITICAL, ymon_notice);
+    strncat(exit_notice, " can't get hostname", sizeof(exit_notice) - strlen(exit_notice) - 1);
+    my_exit(EXIT_CRITICAL, exit_notice);
   }
   hostname = xstrdup(uts_buf.nodename);
 
   // Change directory to the log dir
   if (chdir(system_log_dir) < 0) {
-    snprintf(ymon_notice, sizeof(ymon_notice), "can't chdir to %s", system_log_dir);
-    my_exit(YMON_CRITICAL, ymon_notice);
+    snprintf(exit_notice, sizeof(exit_notice), "can't chdir to %s", system_log_dir);
+    my_exit(EXIT_CRITICAL, exit_notice);
   }
 
   if (cl.incremental) {
@@ -1905,14 +1912,14 @@ main(int argc, char *argv[])
         sf_name.append(".");
         sf_name.append(pwd->pw_name);
       } else {
-        strncat(ymon_notice, " can't get current UID", sizeof(ymon_notice) - strlen(ymon_notice) - 1);
-        my_exit(YMON_CRITICAL, ymon_notice);
+        strncat(exit_notice, " can't get current UID", sizeof(exit_notice) - strlen(exit_notice) - 1);
+        my_exit(EXIT_CRITICAL, exit_notice);
       }
     }
 
     if ((state_fd = open(sf_name.c_str(), O_RDWR | O_CREAT, S_IRUSR | S_IWUSR)) < 0) {
-      strncat(ymon_notice, " can't open state file", sizeof(ymon_notice) - strlen(ymon_notice) - 1);
-      my_exit(YMON_CRITICAL, ymon_notice);
+      strncat(exit_notice, " can't open state file", sizeof(exit_notice) - strlen(exit_notice) - 1);
+      my_exit(EXIT_CRITICAL, exit_notice);
     }
     // Get an exclusive lock, if possible. Try for up to 20 seconds.
     // Use more portable & standard fcntl() over flock()
@@ -1929,15 +1936,15 @@ main(int argc, char *argv[])
         sleep(2);
         break;
       default:
-        strncat(ymon_notice, " locking failure", sizeof(ymon_notice) - strlen(ymon_notice) - 1);
-        my_exit(YMON_CRITICAL, ymon_notice);
+        strncat(exit_notice, " locking failure", sizeof(exit_notice) - strlen(exit_notice) - 1);
+        my_exit(EXIT_CRITICAL, exit_notice);
         break;
       }
     }
 
     if (res < 0) {
-      strncat(ymon_notice, " can't lock state file", sizeof(ymon_notice) - strlen(ymon_notice) - 1);
-      my_exit(YMON_CRITICAL, ymon_notice);
+      strncat(exit_notice, " can't lock state file", sizeof(exit_notice) - strlen(exit_notice) - 1);
+      my_exit(EXIT_CRITICAL, exit_notice);
     }
     // Fetch previous state information, allow for concurrent accesses.
     cnt = 10;
@@ -1948,8 +1955,8 @@ main(int argc, char *argv[])
         sleep(1);
         break;
       default:
-        strncat(ymon_notice, " can't read state file", sizeof(ymon_notice) - strlen(ymon_notice) - 1);
-        my_exit(YMON_CRITICAL, ymon_notice);
+        strncat(exit_notice, " can't read state file", sizeof(exit_notice) - strlen(exit_notice) - 1);
+        my_exit(EXIT_CRITICAL, exit_notice);
         break;
       }
     }
@@ -1960,13 +1967,13 @@ main(int argc, char *argv[])
       last_state.st_ino = 0;
     }
 
-    if ((main_fd = open_main_log(ymon_notice, sizeof(ymon_notice))) < 0)
-      my_exit(YMON_CRITICAL, ymon_notice);
+    if ((main_fd = open_main_log(exit_notice, sizeof(exit_notice))) < 0)
+      my_exit(EXIT_CRITICAL, exit_notice);
 
     // Get stat's from the main log file.
     if (fstat(main_fd, &stat_buf) < 0) {
-      strncat(ymon_notice, " can't stat squid.blog", sizeof(ymon_notice) - strlen(ymon_notice) - 1);
-      my_exit(YMON_CRITICAL, ymon_notice);
+      strncat(exit_notice, " can't stat squid.blog", sizeof(exit_notice) - strlen(exit_notice) - 1);
+      my_exit(EXIT_CRITICAL, exit_notice);
     }
     // Make sure the last_state.st_ino is sane.
     if (last_state.st_ino <= 0)
@@ -1985,32 +1992,32 @@ main(int argc, char *argv[])
       // Find the old log file.
       dirp = opendir(system_log_dir);
       if (dirp == NULL) {
-        strncat(ymon_notice, " can't read log directory", sizeof(ymon_notice) - strlen(ymon_notice) - 1);
-        if (ymon_status == YMON_OK)
-          ymon_status = YMON_WARNING;
+        strncat(exit_notice, " can't read log directory", sizeof(exit_notice) - strlen(exit_notice) - 1);
+        if (exit_status == EXIT_OK)
+          exit_status = EXIT_WARNING;
       } else {
         while ((dp = readdir(dirp)) != NULL) {
           if (stat(dp->d_name, &stat_buf) < 0) {
-            strncat(ymon_notice, " can't stat ", sizeof(ymon_notice) - strlen(ymon_notice) - 1);
-            strncat(ymon_notice, dp->d_name, sizeof(ymon_notice) - strlen(ymon_notice) - 1);
-            if (ymon_status == YMON_OK)
-              ymon_status = YMON_WARNING;
+            strncat(exit_notice, " can't stat ", sizeof(exit_notice) - strlen(exit_notice) - 1);
+            strncat(exit_notice, dp->d_name, sizeof(exit_notice) - strlen(exit_notice) - 1);
+            if (exit_status == EXIT_OK)
+              exit_status = EXIT_WARNING;
           } else if (stat_buf.st_ino == old_inode) {
             int old_fd = open(dp->d_name, O_RDONLY);
 
             if (old_fd < 0) {
-              strncat(ymon_notice, " can't open ", sizeof(ymon_notice) - strlen(ymon_notice) - 1);
-              strncat(ymon_notice, dp->d_name, sizeof(ymon_notice) - strlen(ymon_notice) - 1);
-              if (ymon_status == YMON_OK)
-                ymon_status = YMON_WARNING;
+              strncat(exit_notice, " can't open ", sizeof(exit_notice) - strlen(exit_notice) - 1);
+              strncat(exit_notice, dp->d_name, sizeof(exit_notice) - strlen(exit_notice) - 1);
+              if (exit_status == EXIT_OK)
+                exit_status = EXIT_WARNING;
               break;            // Don't attempt any more files
             }
             // Process it
             if (process_file(old_fd, last_state.offset, max_age) != 0) {
-              strncat(ymon_notice, " can't read ", sizeof(ymon_notice) - strlen(ymon_notice) - 1);
-              strncat(ymon_notice, dp->d_name, sizeof(ymon_notice) - strlen(ymon_notice) - 1);
-              if (ymon_status == YMON_OK)
-                ymon_status = YMON_WARNING;
+              strncat(exit_notice, " can't read ", sizeof(exit_notice) - strlen(exit_notice) - 1);
+              strncat(exit_notice, dp->d_name, sizeof(exit_notice) - strlen(exit_notice) - 1);
+              if (exit_status == EXIT_OK)
+                exit_status = EXIT_WARNING;
             }
             close(old_fd);
             break;              // Don't attempt any more files
@@ -2027,8 +2034,8 @@ main(int argc, char *argv[])
 
     // Process the main file (always)
     if (process_file(main_fd, last_state.offset, max_age) != 0) {
-      strncat(ymon_notice, " can't parse log", sizeof(ymon_notice) - strlen(ymon_notice) - 1);
-      ymon_status = YMON_CRITICAL;
+      strncat(exit_notice, " can't parse log", sizeof(exit_notice) - strlen(exit_notice) - 1);
+      exit_status = EXIT_CRITICAL;
 
       last_state.offset = 0;
       last_state.st_ino = 0;
@@ -2036,23 +2043,23 @@ main(int argc, char *argv[])
       // Save the current file offset.
       last_state.offset = lseek(main_fd, 0, SEEK_CUR);
       if (last_state.offset < 0) {
-        strncat(ymon_notice, " can't lseek squid.blog", sizeof(ymon_notice) - strlen(ymon_notice) - 1);
-        if (ymon_status == YMON_OK)
-          ymon_status = YMON_WARNING;
+        strncat(exit_notice, " can't lseek squid.blog", sizeof(exit_notice) - strlen(exit_notice) - 1);
+        if (exit_status == EXIT_OK)
+          exit_status = EXIT_WARNING;
         last_state.offset = 0;
       }
     }
 
     // Save the state, release the lock, and close the FDs.
     if (lseek(state_fd, 0, SEEK_SET) < 0) {
-      strncat(ymon_notice, " can't lseek state file", sizeof(ymon_notice) - strlen(ymon_notice) - 1);
-      if (ymon_status == YMON_OK)
-        ymon_status = YMON_WARNING;
+      strncat(exit_notice, " can't lseek state file", sizeof(exit_notice) - strlen(exit_notice) - 1);
+      if (exit_status == EXIT_OK)
+        exit_status = EXIT_WARNING;
     } else {
       if (write(state_fd, &last_state, sizeof(last_state)) == (-1)) {
-        strncat(ymon_notice, " can't write state_fd ", sizeof(ymon_notice) - strlen(ymon_notice) - 1);
-        if (ymon_status == YMON_OK)
-          ymon_status = YMON_WARNING;
+        strncat(exit_notice, " can't write state_fd ", sizeof(exit_notice) - strlen(exit_notice) - 1);
+        if (exit_status == EXIT_OK)
+          exit_status = EXIT_WARNING;
       }
     }
     //flock(state_fd, LOCK_UN);
@@ -2064,33 +2071,33 @@ main(int argc, char *argv[])
     if (cl.log_file[0] != '\0') {
       main_fd = open(cl.log_file, O_RDONLY);
       if (main_fd < 0) {
-        strncat(ymon_notice, " can't open log file ", sizeof(ymon_notice) - strlen(ymon_notice) - 1);
-        strncat(ymon_notice, cl.log_file, sizeof(ymon_notice) - strlen(ymon_notice) - 1);
-        my_exit(YMON_CRITICAL, ymon_notice);
+        strncat(exit_notice, " can't open log file ", sizeof(exit_notice) - strlen(exit_notice) - 1);
+        strncat(exit_notice, cl.log_file, sizeof(exit_notice) - strlen(exit_notice) - 1);
+        my_exit(EXIT_CRITICAL, exit_notice);
       }
     } else {
-      main_fd = open_main_log(ymon_notice, sizeof(ymon_notice));
+      main_fd = open_main_log(exit_notice, sizeof(exit_notice));
     }
 
     if (cl.tail > 0) {
       if (lseek(main_fd, 0, SEEK_END) < 0) {
-        strncat(ymon_notice, " can't lseek squid.blog", sizeof(ymon_notice) - strlen(ymon_notice) - 1);
-        my_exit(YMON_CRITICAL, ymon_notice);
+        strncat(exit_notice, " can't lseek squid.blog", sizeof(exit_notice) - strlen(exit_notice) - 1);
+        my_exit(EXIT_CRITICAL, exit_notice);
       }
       sleep(cl.tail);
     }
 
     if (process_file(main_fd, 0, max_age) != 0) {
       close(main_fd);
-      strncat(ymon_notice, " can't parse log file ", sizeof(ymon_notice) - strlen(ymon_notice) - 1);
-      strncat(ymon_notice, cl.log_file, sizeof(ymon_notice) - strlen(ymon_notice) - 1);
-      my_exit(YMON_CRITICAL, ymon_notice);
+      strncat(exit_notice, " can't parse log file ", sizeof(exit_notice) - strlen(exit_notice) - 1);
+      strncat(exit_notice, cl.log_file, sizeof(exit_notice) - strlen(exit_notice) - 1);
+      my_exit(EXIT_CRITICAL, exit_notice);
     }
     close(main_fd);
   }
 
   // All done.
-  if (ymon_status == YMON_OK)
-    strncat(ymon_notice, " OK", sizeof(ymon_notice) - strlen(ymon_notice) - 1);
-  my_exit(ymon_status, ymon_notice);
+  if (exit_status == EXIT_OK)
+    strncat(exit_notice, " OK", sizeof(exit_notice) - strlen(exit_notice) - 1);
+  my_exit(exit_status, exit_notice);
 }
