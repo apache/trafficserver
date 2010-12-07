@@ -41,6 +41,10 @@ lib/ts/ParseRulesCType
 lib/ts/ParseRulesCTypeToLower
 lib/ts/ParseRulesCTypeToUpper
 lib/ts/mkdfa
+lib/ts/test_List
+lib/ts/test_arena
+lib/ts/test_atomic
+lib/ts/test_freelist
 proxy/config/records.config
 proxy/config/storage.config
 
