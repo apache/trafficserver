@@ -134,14 +134,14 @@ DNSProcessor::start(int)
 
   dns_failover_try_period = dns_timeout + 1;    // Modify the "default" accordingly
 
-  // The SplitDNS "processor" has it's own default servers, so don't need that here ...
   if (!SplitDNSConfig::gsplit_dns_enabled) {
-    dns_init();
-    open();
-  } else {
     //reconfigure after threads start
     SplitDNSConfig::reconfigure();
   }
+
+  // Setup the default DNSHandler, it's used both by normal DNS, and SplitDNS (for PTR lookups etc.)
+  dns_init();
+  open();
 
   return 0;
 }
@@ -258,8 +258,11 @@ DNSEntry::init(const char *x, int len, int qtype_arg,
   submit_thread = acont->mutex->thread_holding;
 
 #ifdef SPLIT_DNS
-  dnsH = SplitDNSConfig::gsplit_dns_enabled ? adnsH : dnsProcessor.handler;
-  ink_release_assert(dnsH); // TODO: Should probably remove this at some point?
+  if (SplitDNSConfig::gsplit_dns_enabled) {
+    dnsH = adnsH ? adnsH : dnsProcessor.handler;
+  } else {
+    dnsH = dnsProcessor.handler;
+  }
 #else
   INK_NOWARN(adnsH);
   dnsH = dnsProcessor.handler;
