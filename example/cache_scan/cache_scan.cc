@@ -366,26 +366,24 @@ cache_intercept(TSCont contp, TSEvent event, void *edata)
   }
 }
 
-// void unescapifyStr(char* buffer)
+// int unescapifyStr(char* buffer)
 //
 //   Unescapifies a URL without a making a copy.
 //    The passed in string is modified
 //
-void
+int
 unescapifyStr(char *buffer)
 {
   char *read = buffer;
   char *write = buffer;
   char subStr[3];
-  long charVal;
 
   subStr[2] = '\0';
   while (*read != '\0') {
     if (*read == '%' && *(read + 1) != '\0' && *(read + 2) != '\0') {
       subStr[0] = *(++read);
       subStr[1] = *(++read);
-      charVal = strtol(subStr, (char **) NULL, 16);
-      *write = (char) charVal;
+      *write = (char)strtol(subStr, (char **) NULL, 16);
       read++;
       write++;
     } else if (*read == '+') {
@@ -399,8 +397,9 @@ unescapifyStr(char *buffer)
     }
   }
   *write = '\0';
-}
 
+  return (write - buffer);
+}
 
 //----------------------------------------------------------------------------
 static int
@@ -464,8 +463,7 @@ setup_request(TSCont contp, TSHttpTxn txnp)
         start += 11;
         if ((end = strstr(start, "&")) != NULL)
           *end = '\0';
-        unescapifyStr(start);
-        del_url_len = strlen(start);
+        del_url_len = unescapifyStr(start);
         end = start + del_url_len;
 
         if (TSCacheKeyCreate(&cstate->key_to_delete) != TS_SUCCESS) {

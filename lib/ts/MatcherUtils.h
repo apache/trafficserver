@@ -36,7 +36,7 @@
 // Look in MatcherUtils.cc for comments on function usage
 char *readIntoBuffer(char *file_path, const char *module_name, int *read_size_ptr);
 
-void unescapifyStr(char *buffer);
+int unescapifyStr(char *buffer);
 
 typedef unsigned long ip_addr_t;
 const char *ExtractIpRange(char *match_str, ip_addr_t * addr1, ip_addr_t * addr2);

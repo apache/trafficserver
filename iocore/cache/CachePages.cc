@@ -62,7 +62,7 @@ struct ShowCache: public ShowCont
     int query_len;
     char query[4096];
     char unescapedQuery[4096];
-      show_cache_urlstrs = NULL;
+    show_cache_urlstrs = NULL;
     URL *u = h->url_get();
 
     // process the query string
@@ -73,7 +73,7 @@ struct ShowCache: public ShowCont
       strncpy(unescapedQuery, query, query_len);
       unescapedQuery[query_len] = '\0';
 
-      unescapifyStr(query);
+      query_len = unescapifyStr(query);
 
       Debug("cache_inspector", "query params: %s [unescaped]", unescapedQuery);
       Debug("cache_inspector", "query params: %s [escaped]", query);

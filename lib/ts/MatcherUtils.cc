@@ -104,12 +104,12 @@ readIntoBuffer(char *file_path, const char *module_name, int *read_size_ptr)
   return file_buf;
 }
 
-// void unescapifyStr(char* buffer)
+// int unescapifyStr(char* buffer)
 //
 //   Unescapifies a URL without a making a copy.
 //    The passed in string is modified
 //
-void
+int
 unescapifyStr(char *buffer)
 {
   char *read = buffer;
@@ -135,6 +135,8 @@ unescapifyStr(char *buffer)
     }
   }
   *write = '\0';
+
+  return (write - buffer);
 }
 
 //   char* ExtractIpRange(char* match_str, ip_addr_t* addr1,

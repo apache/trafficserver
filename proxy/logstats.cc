@@ -432,7 +432,6 @@ enum URLScheme
 };
 
 
-
 ///////////////////////////////////////////////////////////////////////////////
 // Initialize the elapsed field
 inline void
@@ -1863,6 +1862,29 @@ main(int argc, char *argv[])
   init_elapsed(totals);
   memset(&cl, 0, sizeof(cl));
   memset(exit_notice, 0, sizeof(exit_notice));
+
+  if (strstr(argv[0], ".cgi")) {
+    char *query;
+    char *pos1, *pos2;
+    int len;
+
+    cl.json = 1;
+    cl.cgi = 1;
+
+    query = getenv("QUERY_STRING");
+    if (query) {
+      char buffer[2048];
+
+      ink_strncpy(buffer, query, sizeof(buffer));
+      buffer[2047] = '\0';
+      len = unescapifyStr(buffer);
+      if (NULL != (pos1 = strstr(buffer, "origins="))) {
+        if (NULL == (pos2 = strchr(pos1, '&')))
+          pos2 = query + len;
+        strncpy(cl.origin_list, pos1, (pos2 - pos1));
+      }
+    }
+  }
 
   cl.line_len = DEFAULT_LINE_LEN;
   origin_set = NULL;
