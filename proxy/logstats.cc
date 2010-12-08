@@ -984,10 +984,11 @@ parse_log_buff(LogBufferHeader * buf_header, bool summary = false)
           if (*tok == '/')      // This is to handle crazy stuff like http:///origin.com
             tok++;
           ptr = strchr(tok, '/');
-          if (ptr && !summary)  // Find the origin
-          {
+          if (ptr && !summary) { // Find the origin
             *ptr = '\0';
 
+            // TODO: If we save state (struct) for a run, we might need to always
+            // update the origin data, no matter what the origin_set is.
             if (origin_set ? (origin_set->find(tok) != origin_set->end()) : 1) {
               //printf("ORIGIN = %s\n", tok);
               o_iter = origins.find(tok);
@@ -1708,6 +1709,8 @@ print_detail_stats(const OriginStats * stat, std::ostream & out, bool json=false
   if (!json) {
     out << std::endl;
     out << std::setw(cl.line_len) << std::setfill('_') << '_' << std::setfill(' ') << std::endl;
+  } else {
+    std::cout << "    \"_timestamp\" : \"" << static_cast<int>(ink_time_wall_seconds()) << '"' << std::endl;
   }
 }
 
@@ -1718,6 +1721,7 @@ void
 my_exit(ExitLevel status, const char *notice)
 {
   vector<OriginPair> vec;
+  bool first = true;
 
   if (cl.cgi) {
     std::cout << "Content-Type: application/javascript\r\n";
@@ -1775,22 +1779,30 @@ my_exit(ExitLevel status, const char *notice)
     }
   }
 
-  // Next the totals for all Origins
-  if (cl.json) {
-    std::cout << "{ \"total\": {" << std::endl;
-    print_detail_stats(&totals, std::cout, cl.json);
-    std::cout << "  }";
-  } else {
-    format_center("Totals (all Origins combined)", std::cout);
-    print_detail_stats(&totals, std::cout);
-    std::cout << std::endl << std::endl << std::endl;
+  // Next the totals for all Origins, unless we specified a list of origins to filter.
+  if (!origin_set) {
+    first = false;
+    if (cl.json) {
+      std::cout << "{ \"total\": {" << std::endl;
+      print_detail_stats(&totals, std::cout, cl.json);
+      std::cout << "  }";
+    } else {
+      format_center("Totals (all Origins combined)", std::cout);
+      print_detail_stats(&totals, std::cout);
+      std::cout << std::endl << std::endl << std::endl;
+    }
   }
 
   // And finally the individual Origin Servers.
   for (vector<OriginPair>::iterator i = vec.begin(); i != vec.end(); i++) {
     if (cl.json) {
-      std::cout << "," << std::endl;
-      std::cout << "  \"" <<  i->first << "\": {" << std::endl;
+      if (first) {
+        std::cout << "{ ";
+        first = false;
+      } else {
+        std::cout << "," << std::endl << "  ";
+      }
+      std::cout << '"' <<  i->first << "\": {" << std::endl;
       print_detail_stats(i->second, std::cout, cl.json);
       std::cout << "  }";
     } else {
@@ -1800,8 +1812,9 @@ my_exit(ExitLevel status, const char *notice)
     }
   }
 
-  if (cl.json)
+  if (cl.json) {
     std::cout << std::endl << "}" << std::endl;
+  }
 
   _exit(status);
 }
@@ -1863,7 +1876,23 @@ main(int argc, char *argv[])
   memset(&cl, 0, sizeof(cl));
   memset(exit_notice, 0, sizeof(exit_notice));
 
-  if (strstr(argv[0], ".cgi")) {
+  cl.line_len = DEFAULT_LINE_LEN;
+  origin_set = NULL;
+  parse_errors = 0;
+
+  // Get log directory
+  ink_strlcpy(system_log_dir, Layout::get()->logdir, PATH_NAME_MAX);
+  if (access(system_log_dir, R_OK) == -1) {
+    fprintf(stderr, "unable to change to log directory \"%s\" [%d '%s']\n", system_log_dir, errno, strerror(errno));
+    fprintf(stderr, " please set correct path in env variable TS_ROOT \n");
+    exit(1);
+  }
+
+  // process command-line arguments
+  process_args(argument_descriptions, n_argument_descriptions, argv, USAGE_LINE);
+
+  // Process as "CGI" ?
+  if (strstr(argv[0], ".cgi") || cl.cgi) {
     char *query;
     char *pos1, *pos2;
     int len;
@@ -1879,27 +1908,13 @@ main(int argc, char *argv[])
       buffer[2047] = '\0';
       len = unescapifyStr(buffer);
       if (NULL != (pos1 = strstr(buffer, "origins="))) {
+        pos1 += 8;
         if (NULL == (pos2 = strchr(pos1, '&')))
-          pos2 = query + len;
+          pos2 = buffer + len;
         strncpy(cl.origin_list, pos1, (pos2 - pos1));
       }
     }
   }
-
-  cl.line_len = DEFAULT_LINE_LEN;
-  origin_set = NULL;
-  parse_errors = 0;
-
-  // Get log directory
-  ink_strlcpy(system_log_dir, Layout::get()->logdir, PATH_NAME_MAX);
-  if (access(system_log_dir, R_OK) == -1) {
-    fprintf(stderr, "unable to change to log directory \"%s\" [%d '%s']\n", system_log_dir, errno, strerror(errno));
-    fprintf(stderr, " please set correct path in env variable TS_ROOT \n");
-    exit(1);
-  }
-
-  // process command-line arguments
-  process_args(argument_descriptions, n_argument_descriptions, argv, USAGE_LINE);
 
   // check for the version number request
   if (cl.version) {
