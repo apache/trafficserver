@@ -73,6 +73,7 @@ using namespace std;
 const int MAX_LOGBUFFER_SIZE = 65536;
 const int DEFAULT_LINE_LEN = 78;
 const double LOG10_1024 = 3.0102999566398116;
+const int MAX_ORIG_STRING = 4096;
 
 
 // Optimizations for "strcmp()", treat some fixed length (3 or 4 bytes) strings
@@ -343,7 +344,7 @@ static struct
 {
   char log_file[1024];
   char origin_file[1024];
-  char origin_list[2048];
+  char origin_list[MAX_ORIG_STRING];
   int max_origins;
   char state_tag[1024];
   int64 min_hits;
@@ -361,7 +362,7 @@ static struct
 ArgumentDescription argument_descriptions[] = {
   {"help", 'h', "Give this help", "T", &cl.help, NULL, NULL},
   {"log_file", 'f', "Specific logfile to parse", "S1023", cl.log_file, NULL, NULL},
-  {"origin_list", 'o', "Only show stats for listed Origins", "S2047", cl.origin_list, NULL, NULL},
+  {"origin_list", 'o', "Only show stats for listed Origins", "S4095", cl.origin_list, NULL, NULL},
   {"origin_file", 'O', "File listing Origins to show", "S1023", cl.origin_file, NULL, NULL},
   {"max_orgins", 'M', "Max number of Origins to show", "I", &cl.max_origins, NULL, NULL},
   {"incremental", 'i', "Incremental log parsing", "T", &cl.incremental, NULL, NULL},
@@ -961,7 +962,6 @@ parse_log_buff(LogBufferHeader * buf_header, bool summary = false)
       case P_STATE_URL:
         state = P_STATE_RFC931;
 
-        //printf("URL == %s\n", tok);
         // TODO check for read_from being empty string
         if (flag == 0) {
           tok = read_from;
@@ -982,17 +982,15 @@ parse_log_buff(LogBufferHeader * buf_header, bool summary = false)
               scheme = SCHEME_NONE;
             tok_len = strlen(tok);
           }
-          //printf("SCHEME = %d\n", scheme);
           if (*tok == '/')      // This is to handle crazy stuff like http:///origin.com
             tok++;
           ptr = strchr(tok, '/');
           if (ptr && !summary) { // Find the origin
             *ptr = '\0';
 
-            // TODO: If we save state (struct) for a run, we might need to always
+            // TODO: If we save state (struct) for a run, we probably need to always
             // update the origin data, no matter what the origin_set is.
             if (origin_set ? (origin_set->find(tok) != origin_set->end()) : 1) {
-              //printf("ORIGIN = %s\n", tok);
               o_iter = origins.find(tok);
               if (o_iter == origins.end()) {
                 o_stats = (OriginStats *) xmalloc(sizeof(OriginStats));
@@ -1732,7 +1730,7 @@ my_exit(ExitLevel status, const char *notice)
   }
 
   if (cl.json) {
-    // TODO: Add JSON output
+    // TODO: Add JSON output?
   } else {
     switch (status) {
     case EXIT_OK:
@@ -1899,28 +1897,38 @@ main(int argc, char *argv[])
   // Process as "CGI" ?
   if (strstr(argv[0], ".cgi") || cl.cgi) {
     char *query;
-    char *pos1, *pos2;
     int len;
 
     cl.json = 1;
     cl.cgi = 1;
 
-    query = getenv("QUERY_STRING");
-    if (query) {
-      char buffer[2048];
+    if (NULL != (query = getenv("QUERY_STRING"))) {
+      char buffer[MAX_ORIG_STRING];
+      char *tok, *sep_ptr, *val;
 
-      ink_strncpy(buffer, query, sizeof(buffer));
-      buffer[2047] = '\0';
+      ink_strncpy(buffer, query, MAX_ORIG_STRING);
+      buffer[MAX_ORIG_STRING-1] = '\0';
       len = unescapifyStr(buffer);
-      if (NULL != (pos1 = strstr(buffer, "origin_list="))) {
-        pos1 += 12;
-        if (NULL == (pos2 = strchr(pos1, '&')))
-          pos2 = buffer + len;
-        strncpy(cl.origin_list, pos1, (pos2 - pos1));
-      }
-      if (NULL != (pos1 = strstr(buffer, "max_origins="))) {
-        pos1 += 12;
-        cl.max_origins = strtol(pos1, NULL, 10); // Up until EOS or non-numeric
+
+      for (tok = strtok_r(buffer, "&", &sep_ptr); tok != NULL;) {
+        val = strchr(tok, '=');
+        if (val)
+          *(val++) = '\0';
+        if (0 == strncmp(tok, "origin_list", 11)) {
+          ink_strncpy(cl.origin_list, val, MAX_ORIG_STRING-1);
+        } else if (0 == strncmp(tok, "state_tag", 9)) {
+          ink_strncpy(cl.state_tag, val, 1023);
+        } else if (0 == strncmp(tok, "max_origins", 11)) {
+          cl.max_origins = strtol(val, NULL, 10);
+        } else if (0 == strncmp(tok, "min_hits", 8)) {
+          cl.min_hits = strtol(val, NULL, 10);
+        } else if (0 == strncmp(tok, "incremental", 11)) {
+          cl.incremental = strtol(val, NULL, 10);
+        } else {
+          // Unknown query arg.
+        }
+
+        tok = strtok_r(NULL, "&", &sep_ptr);
       }
     }
   }
