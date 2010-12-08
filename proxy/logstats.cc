@@ -74,6 +74,7 @@ const int MAX_LOGBUFFER_SIZE = 65536;
 const int DEFAULT_LINE_LEN = 78;
 const double LOG10_1024 = 3.0102999566398116;
 
+
 // Optimizations for "strcmp()", treat some fixed length (3 or 4 bytes) strings
 // as integers.
 const int GET_AS_INT = 5522759;
@@ -99,6 +100,13 @@ const int RSSp_AS_INT = 728986482;      // For "RSS+"
 const int PLAI_AS_INT = 1767992432;     // For "plain"
 const int IMAG_AS_INT = 1734438249;     // For "image"
 const int HTTP_AS_INT = 1886680168;     // For "http" followed by "s://" or "://"
+
+/*
+#include <stdio.h>
+int main(int argc, char** argv) {
+  printf("%s is %d\n", argv[1], *((int*)argv[1]));
+}
+*/
 
 
 // Store our "state" (position in log file etc.)
@@ -710,20 +718,20 @@ update_codes(OriginStats * stat, int code, int size)
   case 505:
     update_counter(stat->codes.c_505, size);
     break;
-
   default:
-    if (code > 500)
-      update_counter(stat->codes.c_5xx, size);
-    else if (code > 400)
-      update_counter(stat->codes.c_4xx, size);
-    else if (code > 300)
-      update_counter(stat->codes.c_3xx, size);
-    else if (code > 200)
-      update_counter(stat->codes.c_2xx, size);
-    else
-      update_counter(stat->codes.c_000, size);
     break;
-  }      
+  }
+
+  if (code >= 500)
+    update_counter(stat->codes.c_5xx, size);
+  else if (code >= 400)
+    update_counter(stat->codes.c_4xx, size);
+  else if (code >= 300)
+    update_counter(stat->codes.c_3xx, size);
+  else if (code >= 200)
+    update_counter(stat->codes.c_2xx, size);
+  else
+    update_counter(stat->codes.c_000, size);
 }
 
 
@@ -1405,18 +1413,27 @@ format_elapsed_header(std::ostream & out)
 }
 
 inline void
-format_elapsed_line(const char *desc, const ElapsedStats & stat, std::ostream & out)
+format_elapsed_line(const char *desc, const ElapsedStats & stat, std::ostream & out, bool json=false)
 {
   static char buf[64];
-  out << std::left << std::setw(24) << desc;
-  out << std::right << std::setw(7);
-  format_int(stat.min, out);
-  out << std::right << std::setw(13);
-  format_int(stat.max, out);
-  snprintf(buf, sizeof(buf), "%17.3f", stat.avg);
-  out << std::right << buf;
-  snprintf(buf, sizeof(buf), "%17.3f", stat.stddev);
-  out << std::right << buf << std::endl;
+
+  if (json) {
+    out << "    " << '"' << desc << "\" : " << "{ ";
+    out << "\"min\": \"" << stat.min << "\", ";
+    out << "\"max\": \"" << stat.max << "\", ";
+    out << "\"avg\": \"" << std::setiosflags(ios::fixed) << std::setprecision(2) << stat.avg << "\", ";
+    out << "\"dev\": \"" << std::setiosflags(ios::fixed) << std::setprecision(2) << stat.stddev << "\" }," << std::endl;
+  } else {
+    out << std::left << std::setw(24) << desc;
+    out << std::right << std::setw(7);
+    format_int(stat.min, out);
+    out << std::right << std::setw(13);
+    format_int(stat.max, out);
+    snprintf(buf, sizeof(buf), "%17.3f", stat.avg);
+    out << std::right << buf;
+    snprintf(buf, sizeof(buf), "%17.3f", stat.stddev);
+    out << std::right << buf << std::endl;
+  }
 }
 
 
@@ -1430,25 +1447,33 @@ format_detail_header(const char *desc, std::ostream & out)
 }
 
 inline void
-format_line(const char *desc, const StatsCounter & stat, const StatsCounter & total, std::ostream & out)
+format_line(const char *desc, const StatsCounter & stat, const StatsCounter & total, std::ostream & out, bool json=false)
 {
   static char metrics[] = "KKMGTP";
   static char buf[64];
   int ix = (stat.bytes > 1024 ? (int) (log10((double)stat.bytes) / LOG10_1024) : 1);
 
-  out << std::left << std::setw(29) << desc;
+  if (json) {
+    out << "    " << '"' << desc << "\" : " << "{ ";
+    out << "\"req\": \"" << stat.count << "\", ";
+    out << "\"req_pct\": \"" << std::setiosflags(ios::fixed) << std::setprecision(2) << (double)stat.count / total.count * 100 << "\", ";
+    out << "\"bytes\": \"" << stat.bytes << "\", ";
+    out << "\"bytes_pct\": \"" << std::setiosflags(ios::fixed) << std::setprecision(2) << (double)stat.bytes / total.bytes * 100 << "\" }," << std::endl;
+  } else {
+    out << std::left << std::setw(29) << desc;
 
-  out << std::right << std::setw(15);
-  format_int(stat.count, out);
+    out << std::right << std::setw(15);
+    format_int(stat.count, out);
 
-  snprintf(buf, sizeof(buf), "%10.2f%%", ((double) stat.count / total.count * 100));
-  out << std::right << buf;
+    snprintf(buf, sizeof(buf), "%10.2f%%", ((double) stat.count / total.count * 100));
+    out << std::right << buf;
 
-  snprintf(buf, sizeof(buf), "%10.2f%cB", stat.bytes / pow((double)1024, ix), metrics[ix]);
-  out << std::right << buf;
+    snprintf(buf, sizeof(buf), "%10.2f%cB", stat.bytes / pow((double)1024, ix), metrics[ix]);
+    out << std::right << buf;
 
-  snprintf(buf, sizeof(buf), "%10.2f%%", ((double) stat.bytes / total.bytes * 100));
-  out << std::right << buf << std::endl;
+    snprintf(buf, sizeof(buf), "%10.2f%%", ((double) stat.bytes / total.bytes * 100));
+    out << std::right << buf << std::endl;
+  }
 }
 
 
@@ -1461,205 +1486,228 @@ operator<(const OriginPair & a, const OriginPair & b)
 }
 
 void
-print_detail_stats(const OriginStats * stat, std::ostream & out)
+print_detail_stats(const OriginStats * stat, std::ostream & out, bool json=false)
 {
   // Cache hit/misses etc.
-  format_detail_header("Request Result", out);
+  if (!json)
+    format_detail_header("Request Result", out);
 
-  format_line("Cache hit", stat->results.hits.hit, stat->total, out);
-  format_line("Cache hit IMS", stat->results.hits.ims, stat->total, out);
-  format_line("Cache hit refresh", stat->results.hits.refresh, stat->total, out);
-  format_line("Cache hit other", stat->results.hits.other, stat->total, out);
-  format_line("Cache hit total", stat->results.hits.total, stat->total, out);
+  format_line(json ? "hit.direct" : "Cache hit", stat->results.hits.hit, stat->total, out, json);
+  format_line(json ? "hit.ims" : "Cache hit IMS", stat->results.hits.ims, stat->total, out, json);
+  format_line(json ? "hit.refresh" : "Cache hit refresh", stat->results.hits.refresh, stat->total, out, json);
+  format_line(json ? "hit.other" : "Cache hit other", stat->results.hits.other, stat->total, out, json);
+  format_line(json ? "hit.total" : "Cache hit total", stat->results.hits.total, stat->total, out, json);
 
-  out << std::endl;
+  if (!json)
+    out << std::endl;
 
-  format_line("Cache miss", stat->results.misses.miss, stat->total, out);
-  format_line("Cache miss IMS", stat->results.misses.ims, stat->total, out);
-  format_line("Cache miss refresh", stat->results.misses.refresh, stat->total, out);
-  format_line("Cache miss other", stat->results.misses.other, stat->total, out);
-  format_line("Cache miss total", stat->results.misses.total, stat->total, out);
+  format_line(json ? "miss.direct" : "Cache miss", stat->results.misses.miss, stat->total, out, json);
+  format_line(json ? "miss.ims" : "Cache miss IMS", stat->results.misses.ims, stat->total, out, json);
+  format_line(json ? "miss.refresh" : "Cache miss refresh", stat->results.misses.refresh, stat->total, out, json);
+  format_line(json ? "miss.other" : "Cache miss other", stat->results.misses.other, stat->total, out, json);
+  format_line(json ? "miss.total" : "Cache miss total", stat->results.misses.total, stat->total, out, json);
 
-  out << std::endl;
+  if (!json)
+    out << std::endl;
 
-  format_line("Client aborted", stat->results.errors.client_abort, stat->total, out);
-  format_line("Connect failed", stat->results.errors.connect_fail, stat->total, out);
-  format_line("Invalid request", stat->results.errors.invalid_req, stat->total, out);
-  format_line("Unknown error(99)", stat->results.errors.unknown, stat->total, out);
-  format_line("Other errors", stat->results.errors.other, stat->total, out);
-  format_line("Errors total", stat->results.errors.total, stat->total, out);
+  format_line(json ? "error.client_abort" : "Client aborted", stat->results.errors.client_abort, stat->total, out, json);
+  format_line(json ? "error.conenct_failed" : "Connect failed", stat->results.errors.connect_fail, stat->total, out, json);
+  format_line(json ? "error.invalid_request" : "Invalid request", stat->results.errors.invalid_req, stat->total, out, json);
+  format_line(json ? "error.unknown" : "Unknown error(99)", stat->results.errors.unknown, stat->total, out, json);
+  format_line(json ? "error.other" : "Other errors", stat->results.errors.other, stat->total, out, json);
+  format_line(json ? "error.total" : "Errors total", stat->results.errors.total, stat->total, out, json);
 
-  out << std::setw(cl.line_len) << std::setfill('.') << '.' << std::setfill(' ') << std::endl;
+  if (!json) {
+    out << std::setw(cl.line_len) << std::setfill('.') << '.' << std::setfill(' ') << std::endl;
+    format_line("Total requests", stat->total, stat->total, out);
+    out << std::endl << std::endl;
 
-  format_line("Total requests", stat->total, stat->total, out);
+    // HTTP codes
+    format_detail_header("HTTP return codes", out);
+  }
 
-  out << std::endl << std::endl;
+  format_line(json ? "status.100" : "100 Continue", stat->codes.c_100, stat->total, out, json);
 
-  // HTTP codes
-  format_detail_header("HTTP return codes", out);
+  format_line(json ? "status.200" : "200 OK", stat->codes.c_200, stat->total, out, json);
+  format_line(json ? "status.201" : "201 Created", stat->codes.c_201, stat->total, out, json);
+  format_line(json ? "status.202" : "202 Accepted", stat->codes.c_202, stat->total, out, json);
+  format_line(json ? "status.203" : "203 Non-Authoritative Info", stat->codes.c_203, stat->total, out, json);
+  format_line(json ? "status.204" : "204 No content", stat->codes.c_204, stat->total, out, json);
+  format_line(json ? "status.205" : "205 Reset Content", stat->codes.c_205, stat->total, out, json);
+  format_line(json ? "status.206" : "206 Partial content", stat->codes.c_206, stat->total, out, json);
+  format_line(json ? "status.2xx" : "2xx other success", stat->codes.c_2xx, stat->total, out, json);
 
-  format_line("100 Continue", stat->codes.c_100, stat->total, out);
+  if (!json)
+    out << std::endl;
 
-  format_line("200 OK", stat->codes.c_200, stat->total, out);
-  format_line("201 Created", stat->codes.c_201, stat->total, out);
-  format_line("202 Accepted", stat->codes.c_202, stat->total, out);
-  format_line("203 Non-Authoritative Info", stat->codes.c_203, stat->total, out);
-  format_line("204 No content", stat->codes.c_204, stat->total, out);
-  format_line("205 Reset Content", stat->codes.c_205, stat->total, out);
-  format_line("206 Partial content", stat->codes.c_206, stat->total, out);
-  format_line("2xx other success", stat->codes.c_2xx, stat->total, out);
+  format_line(json ? "status.300" : "300 Multiple Choices", stat->codes.c_300, stat->total, out, json);
+  format_line(json ? "status.301" : "301 Moved permanently", stat->codes.c_301, stat->total, out, json);
+  format_line(json ? "status.302" : "302 Found", stat->codes.c_302, stat->total, out, json);
+  format_line(json ? "status.303" : "303 See Other", stat->codes.c_303, stat->total, out, json);
+  format_line(json ? "status.304" : "304 Not modified", stat->codes.c_304, stat->total, out, json);
+  format_line(json ? "status.305" : "305 Use Proxy", stat->codes.c_305, stat->total, out, json);
+  format_line(json ? "status.307" : "307 Temporary Redirect", stat->codes.c_307, stat->total, out, json);
+  format_line(json ? "status.3xx" : "3xx other redirects", stat->codes.c_3xx, stat->total, out, json);
 
-  out << std::endl;
+  if (!json)
+    out << std::endl;
 
-  format_line("300 Multiple Choices", stat->codes.c_300, stat->total, out);
-  format_line("301 Moved permanently", stat->codes.c_301, stat->total, out);
-  format_line("302 Found", stat->codes.c_302, stat->total, out);
-  format_line("303 See Other", stat->codes.c_303, stat->total, out);
-  format_line("304 Not modified", stat->codes.c_304, stat->total, out);
-  format_line("305 Use Proxy", stat->codes.c_305, stat->total, out);
-  format_line("307 Temporary Redirect", stat->codes.c_307, stat->total, out);
-  format_line("3xx other redirects", stat->codes.c_3xx, stat->total, out);
+  format_line(json ? "status.400" : "400 Bad request", stat->codes.c_400, stat->total, out, json);
+  format_line(json ? "status.401" : "401 Unauthorized", stat->codes.c_401, stat->total, out, json);
+  format_line(json ? "status.402" : "402 Payment Required", stat->codes.c_402, stat->total, out, json);
+  format_line(json ? "status.403" : "403 Forbidden", stat->codes.c_403, stat->total, out, json);
+  format_line(json ? "status.404" : "404 Not found", stat->codes.c_404, stat->total, out, json);
+  format_line(json ? "status.405" : "405 Method Not Allowed", stat->codes.c_405, stat->total, out, json);
+  format_line(json ? "status.406" : "406 Not Acceptable", stat->codes.c_406, stat->total, out, json);
+  format_line(json ? "status.407" : "407 Proxy Auth Required", stat->codes.c_407, stat->total, out, json);
+  format_line(json ? "status.408" : "408 Request Timeout", stat->codes.c_408, stat->total, out, json);
+  format_line(json ? "status.409" : "409 Conflict", stat->codes.c_409, stat->total, out, json);
+  format_line(json ? "status.410" : "410 Gone", stat->codes.c_410, stat->total, out, json);
+  format_line(json ? "status.411" : "411 Length Required", stat->codes.c_411, stat->total, out, json);
+  format_line(json ? "status.412" : "412 Precondition Failed", stat->codes.c_412, stat->total, out, json);
+  format_line(json ? "status.413" : "413 Request Entity Too Large", stat->codes.c_413, stat->total, out, json);
+  format_line(json ? "status.414" : "414 Request-URI Too Long", stat->codes.c_414, stat->total, out, json);
+  format_line(json ? "status.415" : "415 Unsupported Media Type", stat->codes.c_415, stat->total, out, json);
+  format_line(json ? "status.416" : "416 Req Range Not Satisfiable", stat->codes.c_416, stat->total, out, json);
+  format_line(json ? "status.417" : "417 Expectation Failed", stat->codes.c_417, stat->total, out, json);
+  format_line(json ? "status.4xx" : "4xx other client errors", stat->codes.c_4xx, stat->total, out, json);
 
-  out << std::endl;
+  if (!json)
+    out << std::endl;
 
-  format_line("400 Bad request", stat->codes.c_400, stat->total, out);
-  format_line("401 Unauthorized", stat->codes.c_401, stat->total, out);
-  format_line("402 Payment Required", stat->codes.c_402, stat->total, out);
-  format_line("403 Forbidden", stat->codes.c_403, stat->total, out);
-  format_line("404 Not found", stat->codes.c_404, stat->total, out);
-  format_line("405 Method Not Allowed", stat->codes.c_405, stat->total, out);
-  format_line("406 Not Acceptable", stat->codes.c_406, stat->total, out);
-  format_line("407 Proxy Auth Required", stat->codes.c_407, stat->total, out);
-  format_line("408 Request Timeout", stat->codes.c_408, stat->total, out);
-  format_line("409 Conflict", stat->codes.c_409, stat->total, out);
-  format_line("410 Gone", stat->codes.c_410, stat->total, out);
-  format_line("411 Length Required", stat->codes.c_411, stat->total, out);
-  format_line("412 Precondition Failed", stat->codes.c_412, stat->total, out);
-  format_line("413 Request Entity Too Large", stat->codes.c_413, stat->total, out);
-  format_line("414 Request-URI Too Long", stat->codes.c_414, stat->total, out);
-  format_line("415 Unsupported Media Type", stat->codes.c_415, stat->total, out);
-  format_line("416 Req Range Not Satisfiable", stat->codes.c_416, stat->total, out);
-  format_line("417 Expectation Failed", stat->codes.c_417, stat->total, out);
-  format_line("4xx other client errors", stat->codes.c_4xx, stat->total, out);
+  format_line(json ? "status.500" : "500 Internal Server Error", stat->codes.c_500, stat->total, out, json);
+  format_line(json ? "status.501" : "501 Not implemented", stat->codes.c_501, stat->total, out, json);
+  format_line(json ? "status.502" : "502 Bad gateway", stat->codes.c_502, stat->total, out, json);
+  format_line(json ? "status.503" : "503 Service unavailable", stat->codes.c_503, stat->total, out, json);
+  format_line(json ? "status.504" : "504 Gateway Timeout", stat->codes.c_504, stat->total, out, json);
+  format_line(json ? "status.505" : "505 HTTP Ver. Not Supported", stat->codes.c_505, stat->total, out, json);
+  format_line(json ? "status.5xx" : "5xx other server errors", stat->codes.c_5xx, stat->total, out, json);
 
-  out << std::endl;
+  if (!json)
+    out << std::endl;
 
-  format_line("500 Internal Server Error", stat->codes.c_500, stat->total, out);
-  format_line("501 Not implemented", stat->codes.c_501, stat->total, out);
-  format_line("502 Bad gateway", stat->codes.c_502, stat->total, out);
-  format_line("503 Service unavailable", stat->codes.c_503, stat->total, out);
-  format_line("504 Gateway Timeout", stat->codes.c_504, stat->total, out);
-  format_line("505 HTTP Ver. Not Supported", stat->codes.c_505, stat->total, out);
-  format_line("5xx other server errors", stat->codes.c_5xx, stat->total, out);
+  format_line(json ? "status.000" : "000 Unknown", stat->codes.c_000, stat->total, out, json);
 
-  out << std::endl;
+  if (!json) {
+    out << std::endl << std::endl;
 
-  format_line("000 Unknown", stat->codes.c_000, stat->total, out);
+    // Origin hierarchies
+    format_detail_header("Origin hierarchies", out);
+  }
 
-  out << std::endl << std::endl;
+  format_line(json ? "hier.none" : "NONE", stat->hierarchies.none, stat->total, out, json);
+  format_line(json ? "hier.direct" : "DIRECT", stat->hierarchies.direct, stat->total, out, json);
+  format_line(json ? "hier.sibling" : "SIBLING", stat->hierarchies.sibling, stat->total, out, json);
+  format_line(json ? "hier.parent" : "PARENT", stat->hierarchies.parent, stat->total, out, json);
+  format_line(json ? "hier.empty" : "EMPTY", stat->hierarchies.empty, stat->total, out, json);
+  format_line(json ? "hier.invalid" : "invalid", stat->hierarchies.invalid, stat->total, out, json);
+  format_line(json ? "hier.other" : "other", stat->hierarchies.other, stat->total, out, json);
 
-  // Origin hierarchies
-  format_detail_header("Origin hierarchies", out);
+  if (!json) {
+    out << std::endl << std::endl;
 
-  format_line("NONE", stat->hierarchies.none, stat->total, out);
-  format_line("DIRECT", stat->hierarchies.direct, stat->total, out);
-  format_line("SIBLING", stat->hierarchies.sibling, stat->total, out);
-  format_line("PARENT", stat->hierarchies.parent, stat->total, out);
-  format_line("EMPTY", stat->hierarchies.empty, stat->total, out);
-  format_line("invalid", stat->hierarchies.invalid, stat->total, out);
-  format_line("other", stat->hierarchies.other, stat->total, out);
+    // HTTP methods
+    format_detail_header("HTTP Methods", out);
+  }
 
-  out << std::endl << std::endl;
+  format_line(json ? "method.options" : "OPTIONS", stat->methods.options, stat->total, out, json);
+  format_line(json ? "method.get" : "GET", stat->methods.get, stat->total, out, json);
+  format_line(json ? "method.head" : "HEAD", stat->methods.head, stat->total, out, json);
+  format_line(json ? "method.post" : "POST", stat->methods.post, stat->total, out, json);
+  format_line(json ? "method.put" : "PUT", stat->methods.put, stat->total, out, json);
+  format_line(json ? "method.delete" : "DELETE", stat->methods.del, stat->total, out, json);
+  format_line(json ? "method.trace" : "TRACE", stat->methods.trace, stat->total, out, json);
+  format_line(json ? "method.connect" : "CONNECT", stat->methods.connect, stat->total, out, json);
+  format_line(json ? "method.purge" : "PURGE", stat->methods.purge, stat->total, out, json);
+  format_line(json ? "method.none" : "none (-)", stat->methods.none, stat->total, out, json);
+  format_line(json ? "method.other" : "other", stat->methods.other, stat->total, out, json);
 
-  // HTTP methods
-  format_detail_header("HTTP Methods", out);
+  if (!json) {
+    out << std::endl << std::endl;
 
-  format_line("OPTIONS", stat->methods.options, stat->total, out);
-  format_line("GET", stat->methods.get, stat->total, out);
-  format_line("HEAD", stat->methods.head, stat->total, out);
-  format_line("POST", stat->methods.post, stat->total, out);
-  format_line("PUT", stat->methods.put, stat->total, out);
-  format_line("DELETE", stat->methods.del, stat->total, out);
-  format_line("TRACE", stat->methods.trace, stat->total, out);
-  format_line("CONNECT", stat->methods.connect, stat->total, out);
-  format_line("PURGE", stat->methods.purge, stat->total, out);
-  format_line("none (-)", stat->methods.none, stat->total, out);
-  format_line("other", stat->methods.other, stat->total, out);
+    // URL schemes (HTTP/HTTPs)
+    format_detail_header("URL Schemes", out);
+  }
 
-  out << std::endl << std::endl;
+  format_line(json ? "scheme.http" : "HTTP (port 80)", stat->schemes.http, stat->total, out, json);
+  format_line(json ? "scheme.https" : "HTTPS (port 443)", stat->schemes.https, stat->total, out, json);
+  format_line(json ? "scheme.none" : "none", stat->schemes.none, stat->total, out, json);
+  format_line(json ? "scheme.other" : "other", stat->schemes.other, stat->total, out, json);
 
-  // URL schemes (HTTP/HTTPs)
-  format_detail_header("URL Schemes", out);
+  if (!json) {
+    out << std::endl << std::endl;
 
-  format_line("HTTP (port 80)", stat->schemes.http, stat->total, out);
-  format_line("HTTPS (port 443)", stat->schemes.https, stat->total, out);
-  format_line("none", stat->schemes.none, stat->total, out);
-  format_line("other", stat->schemes.other, stat->total, out);
+    // Content types
+    format_detail_header("Content Types", out);
+  }
 
-  out << std::endl << std::endl;
+  format_line(json ? "content.text.javascript" : "text/javascript", stat->content.text.javascript, stat->total, out, json);
+  format_line(json ? "content.text.css" : "text/css", stat->content.text.css, stat->total, out, json);
+  format_line(json ? "content.text.html" : "text/html", stat->content.text.html, stat->total, out, json);
+  format_line(json ? "content.text.xml" : "text/xml", stat->content.text.xml, stat->total, out, json);
+  format_line(json ? "content.text.plain" : "text/plain", stat->content.text.plain, stat->total, out, json);
+  format_line(json ? "content.text.other" : "text/ other", stat->content.text.other, stat->total, out, json);
+  format_line(json ? "content.text.total" : "text/ total", stat->content.text.total, stat->total, out, json);
 
-  // Content types
-  format_detail_header("Content Types", out);
+  if (!json)
+    out << std::endl;
 
-  format_line("text/javascript", stat->content.text.javascript, stat->total, out);
-  format_line("text/css", stat->content.text.css, stat->total, out);
-  format_line("text/html", stat->content.text.html, stat->total, out);
-  format_line("text/xml", stat->content.text.xml, stat->total, out);
-  format_line("text/plain", stat->content.text.plain, stat->total, out);
-  format_line("text/ other", stat->content.text.other, stat->total, out);
-  format_line("text/ total", stat->content.text.total, stat->total, out);
+  format_line(json ? "content.image.jpeg" : "image/jpeg", stat->content.image.jpeg, stat->total, out, json);
+  format_line(json ? "content.image.gif" : "image/gif", stat->content.image.gif, stat->total, out, json);
+  format_line(json ? "content.image.png" : "image/png", stat->content.image.png, stat->total, out, json);
+  format_line(json ? "content.image.bmp" : "image/bmp", stat->content.image.bmp, stat->total, out, json);
+  format_line(json ? "content.image.other" : "image/ other", stat->content.image.other, stat->total, out, json);
+  format_line(json ? "content.image.total" : "image/ total", stat->content.image.total, stat->total, out, json);
 
-  out << std::endl;
+  if (!json)
+    out << std::endl;
 
-  format_line("image/jpeg", stat->content.image.jpeg, stat->total, out);
-  format_line("image/gif", stat->content.image.gif, stat->total, out);
-  format_line("image/png", stat->content.image.png, stat->total, out);
-  format_line("image/bmp", stat->content.image.bmp, stat->total, out);
-  format_line("image/ other", stat->content.image.other, stat->total, out);
-  format_line("image/ total", stat->content.image.total, stat->total, out);
+  format_line(json ? "content.audio.x-wav" : "audio/x-wav", stat->content.audio.wav, stat->total, out, json);
+  format_line(json ? "content.audio.x-mpeg" : "audio/x-mpeg", stat->content.audio.mpeg, stat->total, out, json);
+  format_line(json ? "content.audio.other" : "audio/ other", stat->content.audio.other, stat->total, out, json);
+  format_line(json ? "content.audio.total": "audio/ total", stat->content.audio.total, stat->total, out, json);
 
-  out << std::endl;
+  if (!json)
+    out << std::endl;
 
-  format_line("audio/x-wav", stat->content.audio.wav, stat->total, out);
-  format_line("audio/x-mpeg", stat->content.audio.mpeg, stat->total, out);
-  format_line("audio/ other", stat->content.audio.other, stat->total, out);
-  format_line("audio/ total", stat->content.audio.total, stat->total, out);
+  format_line(json ? "content.application.shockwave" : "application/x-shockwave", stat->content.application.shockwave_flash, stat->total, out, json);
+  format_line(json ? "content.application.javascript" : "application/[x-]javascript", stat->content.application.javascript, stat->total, out, json);
+  format_line(json ? "content.application.quicktime" : "application/x-quicktime", stat->content.application.quicktime, stat->total, out, json);
+  format_line(json ? "content.application.zip" : "application/zip", stat->content.application.zip, stat->total, out, json);
+  format_line(json ? "content.application.rss_xml" : "application/rss+xml", stat->content.application.rss_xml, stat->total, out, json);
+  format_line(json ? "content.application.rss_atom" : "application/rss+atom", stat->content.application.rss_atom, stat->total, out, json);
+  format_line(json ? "content.application.other" : "application/ other", stat->content.application.other, stat->total, out, json);
+  format_line(json ? "content.application.total": "application/ total", stat->content.application.total, stat->total, out, json);
 
-  out << std::endl;
+  if (!json)
+    out << std::endl;
 
-  format_line("application/x-shockwave", stat->content.application.shockwave_flash, stat->total, out);
-  format_line("application/[x-]javascript", stat->content.application.javascript, stat->total, out);
-  format_line("application/x-quicktime", stat->content.application.quicktime, stat->total, out);
-  format_line("application/zip", stat->content.application.zip, stat->total, out);
-  format_line("application/rss+xml", stat->content.application.rss_xml, stat->total, out);
-  format_line("application/rss+atom", stat->content.application.rss_atom, stat->total, out);
-  format_line("application/ other", stat->content.application.other, stat->total, out);
-  format_line("application/ total", stat->content.application.total, stat->total, out);
+  format_line(json ? "content.none" : "none", stat->content.none, stat->total, out, json);
+  format_line(json ? "content.other" : "other", stat->content.other, stat->total, out, json);
 
-  out << std::endl;
-
-  format_line("none", stat->content.none, stat->total, out);
-  format_line("other", stat->content.other, stat->total, out);
-
-  out << std::endl << std::endl;
+  if (!json)
+    out << std::endl << std::endl;
 
   // Elapsed time
-  format_elapsed_header(out);
+  if (!json)
+    format_elapsed_header(out);
 
-  format_elapsed_line("Cache hit", stat->elapsed.hits.hit, out);
-  format_elapsed_line("Cache hit IMS", stat->elapsed.hits.ims, out);
-  format_elapsed_line("Cache hit refresh", stat->elapsed.hits.refresh, out);
-  format_elapsed_line("Cache hit other", stat->elapsed.hits.other, out);
-  format_elapsed_line("Cache hit total", stat->elapsed.hits.total, out);
+  format_elapsed_line(json ? "hit.direct.latency" : "Cache hit", stat->elapsed.hits.hit, out, json);
+  format_elapsed_line(json ? "hit.ims.latency" : "Cache hit IMS", stat->elapsed.hits.ims, out, json);
+  format_elapsed_line(json ? "hit.refresh.latency" : "Cache hit refresh", stat->elapsed.hits.refresh, out, json);
+  format_elapsed_line(json ? "hit.other.latency" : "Cache hit other", stat->elapsed.hits.other, out, json);
+  format_elapsed_line(json ? "hit.total.latency" : "Cache hit total", stat->elapsed.hits.total, out, json);
 
-  format_elapsed_line("Cache miss", stat->elapsed.misses.miss, out);
-  format_elapsed_line("Cache miss IMS", stat->elapsed.misses.ims, out);
-  format_elapsed_line("Cache miss refresh", stat->elapsed.misses.refresh, out);
-  format_elapsed_line("Cache miss other", stat->elapsed.misses.other, out);
-  format_elapsed_line("Cache miss total", stat->elapsed.misses.total, out);
+  format_elapsed_line(json ? "miss.direct.latency" : "Cache miss", stat->elapsed.misses.miss, out, json);
+  format_elapsed_line(json ? "miss.ims.latency" : "Cache miss IMS", stat->elapsed.misses.ims, out, json);
+  format_elapsed_line(json ? "miss.refresh.latency" : "Cache miss refresh", stat->elapsed.misses.refresh, out, json);
+  format_elapsed_line(json ? "miss.other.latency" : "Cache miss other", stat->elapsed.misses.other, out, json);
+  format_elapsed_line(json ? "miss.total.latency" : "Cache miss total", stat->elapsed.misses.total, out, json);
 
-  out << std::endl;
-  out << std::setw(cl.line_len) << std::setfill('_') << '_' << std::setfill(' ') << std::endl;
+  if (!json) {
+    out << std::endl;
+    out << std::setw(cl.line_len) << std::setfill('_') << '_' << std::setfill(' ') << std::endl;
+  }
 }
 
 
@@ -1688,14 +1736,16 @@ my_exit(ExitLevel status, const char *notice)
       _exit(status);
       break;
     }
+  }
 
-    if (!origins.empty()) {
-      // Sort the Origins by 'traffic'
-      for (OriginStorage::iterator i = origins.begin(); i != origins.end(); i++)
-        if (use_origin(i->second))
-          vec.push_back(*i);
-      sort(vec.begin(), vec.end());
+  if (!origins.empty()) {
+    // Sort the Origins by 'traffic'
+    for (OriginStorage::iterator i = origins.begin(); i != origins.end(); i++)
+      if (use_origin(i->second))
+        vec.push_back(*i);
+    sort(vec.begin(), vec.end());
 
+    if (!cl.json) {
       // Produce a nice summary first
       format_center("Traffic summary", std::cout);
       std::cout << std::left << std::setw(33) << "Origin Server";
@@ -1717,19 +1767,35 @@ my_exit(ExitLevel status, const char *notice)
       std::cout << std::setw(cl.line_len) << std::setfill('=') << '=' << std::setfill(' ') << std::endl;
       std::cout << std::endl << std::endl << std::endl;
     }
-    // Next the totals for all Origins
+  }
+
+  // Next the totals for all Origins
+  if (cl.json) {
+    std::cout << "{ \"total\": {" << std::endl;
+    print_detail_stats(&totals, std::cout, cl.json);
+    std::cout << "  }";
+  } else {
     format_center("Totals (all Origins combined)", std::cout);
     print_detail_stats(&totals, std::cout);
-
     std::cout << std::endl << std::endl << std::endl;
+  }
 
-    // And finally the individual Origin Servers.
-    for (vector<OriginPair>::iterator i = vec.begin(); i != vec.end(); i++) {
+  // And finally the individual Origin Servers.
+  for (vector<OriginPair>::iterator i = vec.begin(); i != vec.end(); i++) {
+    if (cl.json) {
+      std::cout << "," << std::endl;
+      std::cout << "  \"" <<  i->first << "\": {" << std::endl;
+      print_detail_stats(i->second, std::cout, cl.json);
+      std::cout << "  }";
+    } else {
       format_center(i->first, std::cout);
       print_detail_stats(i->second, std::cout);
       std::cout << std::endl << std::endl << std::endl;
     }
   }
+
+  if (cl.json)
+    std::cout << std::endl << "}" << std::endl;
 
   _exit(status);
 }
@@ -1786,13 +1852,11 @@ main(int argc, char *argv[])
   // Before accessing file system initialize Layout engine
   Layout::create();
 
-  // Initialize the totals, all counters to zero
   memset(&totals, 0, sizeof(totals));
-
-  // Initialize "elapsed" field
   init_elapsed(totals);
   memset(&cl, 0, sizeof(cl));
   memset(exit_notice, 0, sizeof(exit_notice));
+
   cl.line_len = DEFAULT_LINE_LEN;
   origin_set = NULL;
   parse_errors = 0;
