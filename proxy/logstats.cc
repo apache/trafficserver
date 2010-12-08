@@ -352,6 +352,7 @@ static struct
   int tail;                     // Tail the log file
   int summary;                  // Summary only
   int json;			// JSON output
+  int cgi;			// CGI output (typically with json)
   int version;
   int help;
 } cl;
@@ -366,6 +367,7 @@ ArgumentDescription argument_descriptions[] = {
   {"tail", 't', "Parse the last <sec> seconds of log", "I", &cl.tail, NULL, NULL},
   {"summary", 's', "Only produce the summary", "T", &cl.summary, NULL, NULL},
   {"json", 'j', "Produce JSON formatted output", "T", &cl.json, NULL, NULL},
+  {"cgi", 'c', "Produce HTTP headers suitable as a CGI", "T", &cl.cgi, NULL, NULL},
   {"min_hits", 'm', "Minimum total hits for an Origin", "L", &cl.min_hits, NULL, NULL},
   {"max_age", 'a', "Max age for log entries to be considered", "I", &cl.max_age, NULL, NULL},
   {"line_len", 'l', "Output line length", "I", &cl.line_len, NULL, NULL},
@@ -1717,6 +1719,11 @@ void
 my_exit(ExitLevel status, const char *notice)
 {
   vector<OriginPair> vec;
+
+  if (cl.cgi) {
+    std::cout << "Content-Type: application/javascript\r\n";
+    std::cout << "Cache-Control: no-cache\r\n\r\n";
+  }
 
   if (cl.json) {
     // TODO: Add JSON output
