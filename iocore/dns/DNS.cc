@@ -134,7 +134,7 @@ DNSProcessor::start(int)
 
   dns_failover_try_period = dns_timeout + 1;    // Modify the "default" accordingly
 
-  if (!SplitDNSConfig::gsplit_dns_enabled) {
+  if (SplitDNSConfig::gsplit_dns_enabled) {
     //reconfigure after threads start
     SplitDNSConfig::reconfigure();
   }
