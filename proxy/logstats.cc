@@ -344,6 +344,7 @@ static struct
   char log_file[1024];
   char origin_file[1024];
   char origin_list[2048];
+  int max_origins;
   char state_tag[1024];
   int64 min_hits;
   int max_age;
@@ -362,6 +363,7 @@ ArgumentDescription argument_descriptions[] = {
   {"log_file", 'f', "Specific logfile to parse", "S1023", cl.log_file, NULL, NULL},
   {"origin_list", 'o', "Only show stats for listed Origins", "S2047", cl.origin_list, NULL, NULL},
   {"origin_file", 'O', "File listing Origins to show", "S1023", cl.origin_file, NULL, NULL},
+  {"max_orgins", 'M', "Max number of Origins to show", "I", &cl.max_origins, NULL, NULL},
   {"incremental", 'i', "Incremental log parsing", "T", &cl.incremental, NULL, NULL},
   {"statetag", 'S', "Name of the state file to use", "S1023", cl.state_tag, NULL, NULL},
   {"tail", 't', "Parse the last <sec> seconds of log", "I", &cl.tail, NULL, NULL},
@@ -1722,6 +1724,7 @@ my_exit(ExitLevel status, const char *notice)
 {
   vector<OriginPair> vec;
   bool first = true;
+  int max_origins;
 
   if (cl.cgi) {
     std::cout << "Content-Type: application/javascript\r\n";
@@ -1764,7 +1767,8 @@ my_exit(ExitLevel status, const char *notice)
       std::cout << std::right << std::setw(15) << "Errors" << std::endl;
       std::cout << std::setw(cl.line_len) << std::setfill('-') << '-' << std::setfill(' ') << std::endl;
 
-      for (vector<OriginPair>::iterator i = vec.begin(); i != vec.end(); i++) {
+      max_origins = cl.max_origins > 0 ? cl.max_origins : INT_MAX;
+      for (vector<OriginPair>::iterator i = vec.begin(); (i != vec.end()) && (max_origins > 0); ++i, --max_origins) {
         std::cout << std::left << std::setw(33) << i->first;
         std::cout << std::right << std::setw(15);
         format_int(i->second->results.hits.total.count, std::cout);
@@ -1794,7 +1798,8 @@ my_exit(ExitLevel status, const char *notice)
   }
 
   // And finally the individual Origin Servers.
-  for (vector<OriginPair>::iterator i = vec.begin(); i != vec.end(); i++) {
+  max_origins = cl.max_origins > 0 ? cl.max_origins : INT_MAX;
+  for (vector<OriginPair>::iterator i = vec.begin(); (i != vec.end()) && (max_origins > 0); ++i, --max_origins) {
     if (cl.json) {
       if (first) {
         std::cout << "{ ";
@@ -1907,11 +1912,15 @@ main(int argc, char *argv[])
       ink_strncpy(buffer, query, sizeof(buffer));
       buffer[2047] = '\0';
       len = unescapifyStr(buffer);
-      if (NULL != (pos1 = strstr(buffer, "origins="))) {
-        pos1 += 8;
+      if (NULL != (pos1 = strstr(buffer, "origin_list="))) {
+        pos1 += 12;
         if (NULL == (pos2 = strchr(pos1, '&')))
           pos2 = buffer + len;
         strncpy(cl.origin_list, pos1, (pos2 - pos1));
+      }
+      if (NULL != (pos1 = strstr(buffer, "max_origins="))) {
+        pos1 += 12;
+        cl.max_origins = strtol(pos1, NULL, 10); // Up until EOS or non-numeric
       }
     }
   }
