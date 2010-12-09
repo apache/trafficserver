@@ -141,6 +141,8 @@ RecordElement RecordsConfig[] = {
   ,
   {CONFIG, "proxy.config.accept_threads", "", INK_INT, "0", RU_RESTART_TS, RR_NULL, RC_INT, "[0-1]", RA_READ_ONLY}
   ,
+  {CONFIG, "proxy.config.task_threads", "", INK_INT, "0", RU_RESTART_TS, RR_NULL, RC_INT, "[0-99999]", RA_READ_ONLY}
+  ,
   {CONFIG, "proxy.config.thread.default.stacksize", "", INK_INT, "1048576", RU_RESTART_TS, RR_NULL, RC_INT,
    "[131072-104857600]", RA_READ_ONLY}
   ,

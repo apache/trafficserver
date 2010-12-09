@@ -125,7 +125,7 @@ DNSProcessor::start(int)
 
   if (dns_thread > 0) {
     ET_DNS = eventProcessor.spawn_event_threads(1); // TODO: Hmmm, should we just get a single thread some other way?
-    initialize_thread_for_net(eventProcessor.eventthread[ET_DNS][0], -1);
+    initialize_thread_for_net(eventProcessor.eventthread[ET_DNS][0], 0);
   } else {
     // Initialize the first event thread for DNS.
     ET_DNS = ET_CALL;

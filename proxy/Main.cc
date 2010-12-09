@@ -84,12 +84,7 @@ extern "C" int plock(int);
 #include "Plugin.h"
 #include "DiagsConfig.h"
 
-//#include "UserNameCache.h"
-//#include "MixtAPIInternal.h"
 #include "CoreUtils.h"
-
-// Including the new Auth Work Include File.
-//#include "I_ACC.h"
 
 #include "Update.h"
 #include "congest/Congestion.h"
@@ -97,6 +92,8 @@ extern "C" int plock(int);
 #include "RemapProcessor.h"
 
 #include "XmlUtils.h"
+
+#include "I_Tasks.h"
 
 #if TS_HAS_V2STATS
 #include "StatSystemV2.h"
@@ -114,6 +111,7 @@ extern "C" int plock(int);
 #define DEFAULT_NUMBER_OF_CLUSTER_THREADS 1
 #define DEFAULT_NUMBER_OF_SSL_THREADS     0
 #define DEFAULT_NUM_ACCEPT_THREADS        0
+#define DEFAULT_NUM_TASK_THREADS          0
 #define DEFAULT_HTTP_ACCEPT_PORT_NUMBER   0
 #define DEFAULT_COMMAND_FLAG              0
 #define DEFAULT_LOCK_PROCESS              0
@@ -139,6 +137,7 @@ int num_of_cluster_threads = DEFAULT_NUMBER_OF_CLUSTER_THREADS;
 int num_of_udp_threads = DEFAULT_NUMBER_OF_UDP_THREADS;
 int num_of_ssl_threads = DEFAULT_NUMBER_OF_SSL_THREADS;
 int num_accept_threads  = DEFAULT_NUM_ACCEPT_THREADS;
+int num_task_threads = DEFAULT_NUM_TASK_THREADS;
 int run_test_hook = 0;
 int http_accept_port_number = DEFAULT_HTTP_ACCEPT_PORT_NUMBER;
 int http_accept_file_descriptor = NO_FD;
@@ -1734,6 +1733,9 @@ main(int argc, char **argv)
   if (!num_accept_threads)
     TS_ReadConfigInteger(num_accept_threads, "proxy.config.accept_threads");
 
+  if (!num_task_threads)
+    TS_ReadConfigInteger(num_task_threads, "proxy.config.task_threads");
+
   // This call is required for win_9xMe
   //without this this_ethread() is failing when
   //start_HttpProxyServer is called from main thread
@@ -1982,7 +1984,7 @@ main(int argc, char **argv)
                    "please check your Traffic Server configurations", http_accept_port_number);
       return (1);
     }
-    //Creating Hash table - YTS Team, yamsat
+
     int http_enabled = 1;
     TS_ReadConfigInteger(http_enabled, "proxy.config.http.enabled");
 
@@ -1998,6 +2000,9 @@ main(int argc, char **argv)
     icpProcessor.start();
 #endif
 
+    // "Task" processor, possibly with its own set of task threads
+    tasksProcessor.start(num_task_threads);
+
     int back_door_port = NO_FD;
     TS_ReadConfigInteger(back_door_port, "proxy.config.process_manager.mgmt_port");
     if (back_door_port != NO_FD)
@@ -2008,9 +2013,6 @@ main(int argc, char **argv)
       start_SocksProxy(netProcessor.socks_conf_stuff->accept_port);
     }
 #endif
-    ////////////////////////////////////
-    // regression stubs (deprecated?) //
-    ////////////////////////////////////
     ///////////////////////////////////////////
     // Initialize Scheduled Update subsystem
     ///////////////////////////////////////////
@@ -2020,8 +2022,6 @@ main(int argc, char **argv)
     pmgmt->registerMgmtCallback(MGMT_EVENT_SHUTDOWN, mgmt_restart_shutdown_callback, NULL);
 
     pmgmt->registerMgmtCallback(MGMT_EVENT_RESTART, mgmt_restart_shutdown_callback, NULL);
-
-
 
     Note("traffic server running");
 
@@ -2035,7 +2035,6 @@ main(int argc, char **argv)
 #endif
 
     run_AutoStop();
-
   }
 
   // change the user of the process

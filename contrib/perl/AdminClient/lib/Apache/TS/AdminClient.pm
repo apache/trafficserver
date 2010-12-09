@@ -184,6 +184,7 @@ get to this information, traffic_line is your tool.
 The Apache Traffic Server Administration Manual will explain what these strings represent.  (http://trafficserver.apache.org/docs/)
 
  proxy.config.accept_threads
+ proxy.config.task_threads
  proxy.config.admin.access_control_file
  proxy.config.admin.admin_password
  proxy.config.admin.admin_user
