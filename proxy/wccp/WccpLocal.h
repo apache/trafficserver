@@ -479,8 +479,8 @@ protected:
     component in the WCCP message. The component instance points at
     its corresponding data in the message. Values in the message are
     accessed through accessor methods which have the form @c
-    getf_NAME and @c setf_NAME for "get field" and "set field". The
-    @c setf_ methods return a reference to the component so that
+    getNAME and @c setNAME for "get field" and "set field". The
+    @c set methods return a reference to the component so that
     they can be chained.
 
     Most components will have an internal typedef @c raw_t which is a
@@ -960,7 +960,7 @@ public:
   /// Directly access assignment key.
   AssignmentKeyElt const& key_elt() const;
   /// Get address in assignment key.
-  uint32 getf_key_addr() const;
+  uint32 getKeyAddr() const;
   /// Set address in assignment key.
   self& setKeyAddr(uint32 addr);
   /// Get change number in assignment key.
@@ -979,6 +979,10 @@ public:
   CacheIdElt& cacheElt(
     int idx ///< Index of target element.
   );
+  /// Access cache element.
+  CacheIdElt const& cacheElt(
+    int idx ///< Index of target element.
+  ) const;
   /// Get router count field.
   /// @note No @c setf method because this cannot be changed independently.
   /// @see fill
@@ -1144,7 +1148,7 @@ public:
   /// Directly access assignment key.
   AssignmentKeyElt const& keyElt() const;
   /// Get address in assignment key.
-  uint32 getf_key_addr() const;
+  uint32 getKeyAddr() const;
   /// Set address in assignment key.
   self& setKeyAddr(uint32 addr);
   /// Get change number in assignment key.
@@ -1180,6 +1184,12 @@ public:
   /// Access a bucket.
   Bucket const& bucket(
     int idx ///< Index of target bucket.
+  ) const;
+  /** Compare a set of buckets.
+      @return @c true if the buckets are the same, @c false otherwise.
+  */
+  bool compare(
+    Bucket const buckets[N_BUCKETS] ///< Buckets to compare.
   ) const;
   //@}
 
@@ -1409,6 +1419,55 @@ public:
   );
 };
 
+/// Sect 5.6.8: Router Query Info Component.
+class QueryComp
+  : public CompWithHeader<QueryComp> {
+public:
+  typedef QueryComp self; ///< Self reference type.
+  typedef CompWithHeader<self> super; ///< Parent type.
+
+  /// Component type ID for this component.
+  static CompType const COMP_TYPE = QUERY_INFO;
+
+  /// Internal layout.
+  struct raw_t : public super::raw_t {
+    uint32 m_router_addr; ///< Identifying router address.
+    uint32 m_recv_id; ///< Receive ID router expects in reply.
+    uint32 m_to_addr; ///< Destination address of query.
+    uint32 m_cache_addr; ///< Identifying address of cache.
+  };
+
+  /// @name Accessors.
+  //@{
+  /// Directly access mask value element.
+  uint32 getRouterAddr() const; ///< Get identifying router address.
+  self& setRouterAddr(uint32 addr); ///< Set identifying router address.
+  uint32 getToAddr() const; ///< Get target address.
+  self& setToAddr(uint32 addr); ///< Set target address.
+  uint32 getCacheAddr() const; ///< Get identifying cache address.
+  self& setCacheAddr(uint32 addr); ///< Set identifying cache address.
+  uint32 getRecvId() const; ///< Get receive ID.
+  self& setRecvId(uint32 data); ///< Set receive ID.
+  //@}
+
+  /// Write serialization data.
+  /// This fills in all fields.
+  self& fill(
+    MsgBuffer& buffer, ///< Component storage.
+    uint32 routerAddr, ///< Router identifying address.
+    uint32 toAddr, ///< Destination address.
+    uint32 cacheAddr, ///< Cache identifying address.
+    uint32 recvId ///< Recieve ID.
+  );
+
+  /// Validate an existing structure.
+  /// @return Parse result.
+  int parse(MsgBuffer& buffer);
+
+  /// Compute the total size of the component.
+  static size_t calcSize();
+};
+
 /// Cache assignment hash function.
 inline uint8
 assignment_hash(
@@ -1477,6 +1536,20 @@ namespace detail {
     void pour(
       MsgBuffer& base, ///< Target storage.
       AssignInfoComp& comp ///< Component to fill.
+    ) const;
+
+    /** Test this assignment against a component.
+        @return @c true if the assignments are the same, @c false otherwise.
+    */
+    bool compare(AssignInfoComp const& comp) const;
+
+    /// Access a bucket.
+    Bucket& operator [] (
+      size_t idx ///< Bucket index (0..N_BUCKETS-1)
+    );
+    /// Access a bucket.
+    Bucket const& operator [] (
+      size_t idx ///< Bucket index (0..N_BUCKETS-1)
     ) const;
 
   protected:
@@ -1629,13 +1702,17 @@ public:
 
   RouterIdComp m_router_id; ///< Router ID.
   RouterViewComp m_router_view; ///< Router view data.
+  // The rest of these are optional. The spec says we should get
+  // an assignment or map, but in practice that doesn't happen with
+  // actual Cisco routers in the hash case. Perhaps it happens with
+  // a map.
   AssignInfoComp m_assignment; ///< Assignment data.
   AssignMapComp m_map; ///< Assignment map.
   CapComp m_capabilities; ///< Capabilities data.
   CmdComp m_command; ///< Command extension.
 };
 
-/// Sect 5.1: Layout and control for @c WCCP2_HERE_I_AM
+/// Sect 5.1: Layout and control for @c WCCP2_REDIRECT_ASSIGN
 class RedirectAssignMsg
   : public BaseMsg {
 public:
@@ -1664,6 +1741,35 @@ public:
   // Only one of these should be present in an instance.
   AssignInfoComp m_assign; ///< Primary assignment data.
   AssignMapComp m_alt_assign; ///< Alternate assignment data.
+};
+
+/// Sect 5.4: @c WCCP_REMOVAL_QUERY
+class RemovalQueryMsg
+  : public BaseMsg {
+public:
+  typedef RemovalQueryMsg self; ///< Self reference type.
+
+  /** Fill in the basic message structure.
+      This expects @c setBuffer to have already been called
+      with an appropriate buffer.
+      The actual router and cache data must be filled in
+      after this call, which will allocate the appropriate spaces
+      in the message layou.
+  */
+  void fill(
+    detail::cache::GroupData const& group, ///< Service group for message.
+    SecurityOption sec_opt, ///< Security option to use.
+    AssignmentKeyElt const& key, ///< Assignment key.
+    int n_routers, ///< Number of routers expected.
+    int n_caches ///< Number of caches expected.
+  );
+
+  /// Parse message data, presumed to be of this type.
+  int parse(
+    ts::Buffer const& buffer ///< Raw message data.
+  );
+
+  QueryComp m_query; ///< Router Removal Query component.
 };
 
 // ------------------------------------------------------
@@ -1896,7 +2002,7 @@ namespace detail {
 
       /// Find a router by IP @a addr.
       /// @return A pointer to the router, or @c NULL if not found.
-      CacheData* findRouter(
+      RouterBag::iterator findRouter(
         uint32 addr ///< IP address of cache.
       );
 
@@ -2004,6 +2110,14 @@ public:
   /// Perform all scheduled housekeeping functions.
   /// @return 0 for success, -errno on error.
   virtual int housekeeping();
+
+  /** Check cache assignment reported by a router against internal assign.
+      @return @c true if they are the same, @c false otherwise.
+  */
+  virtual bool checkRouterAssignment(
+    GroupData const& group, ///< Group with assignment.
+    RouterViewComp const& comp ///< Assignment reported by router.
+  ) const;
 protected:
   /// Generate contents in HERE_I_AM @a msg for seed router.
   void generateHereIAm(
@@ -2026,6 +2140,11 @@ protected:
   virtual ts::Errata handleISeeYou(
     IpHeader const& header, ///< IP packet data.
     ts::Buffer const& data ///< Buffer with message data.
+  );
+  /// Process REMOVAL_QUERY message.
+  virtual ts::Errata handleRemovalQuery(
+    IpHeader const& header, ///< IP packet data.
+    ts::Buffer const& data ///< Message data.
   );
 
   /// Map Service Group ID to Service Group Data.
@@ -2361,7 +2480,7 @@ RouterIdComp::calcSize(int n) {
 }
 
 inline uint32
-RouterViewComp::getf_key_addr() const {
+RouterViewComp::getKeyAddr() const {
   return this->key_elt().getAddr();
 }
 inline RouterViewComp&
@@ -2377,6 +2496,10 @@ inline RouterViewComp&
 RouterViewComp::setKeyChangeNumber(uint32 change_number) {
   this->key_elt().setChangeNumber(change_number);
   return *this;
+}
+inline CacheIdElt const&
+RouterViewComp::cacheElt(int idx) const {
+  return const_cast<self*>(this)->cacheElt(idx);
 }
 
 inline CacheIdElt&
@@ -2453,6 +2576,15 @@ inline detail::Assignment&
 detail::Assignment::setActive(bool state) {
   m_active = state;
   return *this;
+}
+inline bool detail::Assignment::compare(AssignInfoComp const& comp) const {
+  return comp.compare(m_buckets);
+}
+inline detail::Assignment::Bucket& detail::Assignment::operator[] (size_t idx) {
+  return m_buckets[idx];
+}
+inline detail::Assignment::Bucket const& detail::Assignment::operator[] (size_t idx) const {
+  return m_buckets[idx];
 }
 
 inline MsgBuffer::MsgBuffer() : super(0,0), _count(0) { }
@@ -2564,6 +2696,9 @@ CompWithHeader<T>::checkHeader(MsgBuffer const& buffer, CompType ect) {
 
 inline AssignInfoComp::Bucket& AssignInfoComp::bucket(int idx) { return m_buckets[idx]; }
 inline AssignInfoComp::Bucket const& AssignInfoComp::bucket(int idx) const{ return m_buckets[idx]; }
+inline bool AssignInfoComp::compare(Bucket const buckets[N_BUCKETS]) const {
+  return 0 == memcmp(buckets, m_buckets, sizeof(buckets));
+}
 
 inline CapComp::CapComp() : m_count(0), m_cached(false) { }
 inline CapComp& CapComp::invalidate() { m_cached = false; return *this; }
@@ -2584,6 +2719,36 @@ CapComp::getCacheAssignmentStyle() const {
   if (!m_cached) this->cache();
   return m_cache_assign;
 }
+
+inline uint32 QueryComp::getRouterAddr() const {
+  return access_field(&raw_t::m_router_addr, m_base);
+}
+inline QueryComp& QueryComp::setRouterAddr(uint32 addr) {
+  access_field(&raw_t::m_router_addr, m_base) = addr;
+  return *this;
+}
+inline uint32 QueryComp::getToAddr() const {
+  return access_field(&raw_t::m_to_addr, m_base);
+}
+inline QueryComp& QueryComp::setToAddr(uint32 addr) {
+  access_field(&raw_t::m_to_addr, m_base) = addr;
+  return *this;
+}
+inline uint32 QueryComp::getCacheAddr() const {
+  return access_field(&raw_t::m_cache_addr, m_base);
+}
+inline QueryComp& QueryComp::setCacheAddr(uint32 addr) {
+  access_field(&raw_t::m_cache_addr, m_base) = addr;
+  return *this;
+}
+inline uint32 QueryComp::getRecvId() const {
+  return get_field(&raw_t::m_recv_id, m_base);
+}
+inline QueryComp& QueryComp::setRecvId(uint32 data) {
+  set_field(&raw_t::m_recv_id, m_base, data);
+  return *this;
+}
+inline size_t QueryComp::calcSize() { return sizeof(raw_t); }
 
 inline detail::cache::SeedRouter::SeedRouter() { }
 

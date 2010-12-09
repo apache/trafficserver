@@ -336,15 +336,11 @@ AC_ARG_ENABLE([wccp],
   [AS_HELP_STRING([--enable-wccp],[enable WCCP v2])],
   [
     has_wccp=1
-    AC_SUBST([LIBWCCP], ["\$(top_builddir)/proxy/wccp/libwccp.a"])
-    AC_SUBST([LIBTSCONFIG], ["\$(top_builddir)/lib/tsconfig/libtsconfig.a"])
   ],
   [enable_wccp=no]
 )
 AC_MSG_RESULT([$enable_wccp])
 AC_SUBST(has_wccp)
-AC_SUBST(LIBWCCP)
-AC_SUBST(LIBTSCONFIG)
 AM_CONDITIONAL([BUILD_WCCP], [test "x$enable_wccp" = "xyes"])
 
 # Google profiler

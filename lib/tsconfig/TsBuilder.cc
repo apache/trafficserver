@@ -49,35 +49,36 @@ namespace ts { namespace config {
 
 Builder&
 Builder::init() {
-    // Simple: Resize the vector and then fill in each element to
-    // dispatch through the static method. Callback data is a pointer
-    // to an entry in @c dispatch which contains pointer to this object
-    // and a pointer to the appropriate dispatch method.
+  // Fill in each element to dispatch through the static
+  // method. Callback data is a pointer to an entry in @c dispatch
+  // which contains pointer to this object and a pointer to the
+  // appropriate dispatch method.
 
-    _dispatch.resize(TS_CONFIG_N_EVENT_TYPES);
+  // Zero everything first, just to be safe.
+  memset(_dispatch, 0, sizeof(_dispatch));
 
-    for ( size_t i = 0 ; i < TS_CONFIG_N_EVENT_TYPES ; ++i) {
-        _dispatch[i]._ptr = this;
-        _handlers.handler[i]._f = &self::dispatch;
-        _handlers.handler[i]._data = &(_dispatch[i]);
-    }
+  for ( size_t i = 0 ; i < TS_CONFIG_N_EVENT_TYPES ; ++i) {
+    _dispatch[i]._ptr = this;
+    _handlers.handler[i]._f = &self::dispatch;
+    _handlers.handler[i]._data = &(_dispatch[i]);
+  }
 
-    _dispatch[TsConfigEventGroupOpen]._method = &self::groupOpen;
-    _dispatch[TsConfigEventGroupName]._method = &self::groupName;
-    _dispatch[TsConfigEventGroupClose]._method = &self::groupClose;
-    _dispatch[TsConfigEventListOpen]._method = &self::listOpen;
-    _dispatch[TsConfigEventListClose]._method = &self::listClose;
-    _dispatch[TsConfigEventPathOpen]._method = &self::pathOpen;
-    _dispatch[TsConfigEventPathTag]._method = &self::pathTag;
-    _dispatch[TsConfigEventPathIndex]._method = &self::pathIndex;
-    _dispatch[TsConfigEventPathClose]._method = &self::pathClose;
-    _dispatch[TsConfigEventLiteralValue]._method = &self::literalValue;
-    _dispatch[TsConfigEventInvalidToken]._method = &self::invalidToken;
+  _dispatch[TsConfigEventGroupOpen]._method = &self::groupOpen;
+  _dispatch[TsConfigEventGroupName]._method = &self::groupName;
+  _dispatch[TsConfigEventGroupClose]._method = &self::groupClose;
+  _dispatch[TsConfigEventListOpen]._method = &self::listOpen;
+  _dispatch[TsConfigEventListClose]._method = &self::listClose;
+  _dispatch[TsConfigEventPathOpen]._method = &self::pathOpen;
+  _dispatch[TsConfigEventPathTag]._method = &self::pathTag;
+  _dispatch[TsConfigEventPathIndex]._method = &self::pathIndex;
+  _dispatch[TsConfigEventPathClose]._method = &self::pathClose;
+  _dispatch[TsConfigEventLiteralValue]._method = &self::literalValue;
+  _dispatch[TsConfigEventInvalidToken]._method = &self::invalidToken;
 
-    _handlers.error._data = this;
-    _handlers.error._f = &self::syntaxErrorDispatch;
+  _handlers.error._data = this;
+  _handlers.error._f = &self::syntaxErrorDispatch;
 
-    return *this;
+  return *this;
 }
 
 // Error messages here have to just be logged, as they effectively report that
@@ -116,27 +117,10 @@ Builder::syntaxError(char const* text) {
 
 Rv<Configuration>
 Builder::build(Buffer const& buffer) {
-# if 1
   _v = _config.getRoot(); // seed current value.
   _errata.clear(); // no errors yet.
   tsconfig_parse_buffer(&_handlers, buffer._ptr, buffer._size);
   return MakeRv(_config, _errata);
-# else
-    yyscan_t lexer;
-    YY_BUFFER_STATE lexer_buffer_state;
-
-    _v = _config.getRoot();
-    _errata.clear();
-
-    tsconfiglex_init(&lexer);
-    tsconfigset_extra(&_handlers, lexer);
-    lexer_buffer_state = tsconfig_scan_buffer(buffer._ptr, buffer._size, lexer);
-    tsconfigparse(lexer, &_handlers);
-    tsconfig_delete_buffer(lexer_buffer_state, lexer);
-    tsconfiglex_destroy(lexer);
-
-    return MakeRv(_config, _errata);
-# endif
 }
 
 void

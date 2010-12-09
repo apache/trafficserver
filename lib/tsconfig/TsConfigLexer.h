@@ -7,8 +7,6 @@ struct TsConfigHandlers; // forward declare.
     extern "C" {
 # endif
 
-// extern int tsconfigparse(yyscan_t lexer, struct TsConfigHandlers* handlers);
-
 /// Get the current line in the buffer during parsing.
 /// @return 1 based line number.
 extern int tsconfiglex_current_line(void);

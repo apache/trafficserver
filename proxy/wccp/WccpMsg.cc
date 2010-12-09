@@ -942,7 +942,7 @@ AssignInfoComp::setKeyChangeNumber(uint32 n) {
 }
   
 uint32
-AssignInfoComp::getf_key_addr() const {
+AssignInfoComp::getKeyAddr() const {
   return access_field(&raw_t::m_key, m_base).getAddr();
 }
 
@@ -1215,6 +1215,20 @@ CapComp::parse(MsgBuffer& buffer) {
   return zret;
 }
 // ------------------------------------------------------
+int
+QueryComp::parse(MsgBuffer& buffer) {
+  int zret = PARSE_SUCCESS;
+  if (buffer.getSpace()< sizeof(raw_t)) 
+    zret = PARSE_BUFFER_TOO_SMALL;
+  else {
+    m_base = buffer.getTail();
+    zret = this->checkHeader(buffer, COMP_TYPE);
+    if (PARSE_SUCCESS == zret)
+      buffer.use(this->calcSize());
+  }
+  return zret;
+}
+// ------------------------------------------------------
 MaskValueSetElt&
 AssignMapComp::elt(int idx) {
   return access_array<MaskValueSetElt>(m_base + sizeof(raw_t))[idx];
@@ -1331,8 +1345,6 @@ detail::Assignment::fill(cache::GroupData& group, uint32 addr) {
   size_t v_caches = 0; // valid caches
 
   this->m_dirty = true;
-
-  logf(LVL_DEBUG, "Generating assignment for group %d.", group.m_svc.getSvcId());
 
   // We need both routers and caches to do something useful.
   if (! (n_routers && n_caches)) return false;
@@ -1538,6 +1550,28 @@ ISeeYouMsg::parse(ts::Buffer const& buffer) {
   // Optional components.
   m_capabilities.parse(m_buffer);
   m_command.parse(m_buffer);
+
+  return m_buffer.getSpace() ? PARSE_DATA_OVERRUN : PARSE_SUCCESS;
+}
+// ------------------------------------------------------
+int
+RemovalQueryMsg::parse(ts::Buffer const& buffer) {
+  int zret;
+  this->setBuffer(buffer);
+  if (!m_buffer.getBase()) return -EINVAL;
+  zret = m_header.parse(m_buffer);
+  if (PARSE_SUCCESS != zret) return zret;
+  if (REMOVAL_QUERY != m_header.getType()) return PARSE_MSG_WRONG_TYPE;
+
+  // Get the components.
+  zret = m_security.parse(m_buffer);
+  if (PARSE_SUCCESS != zret) return zret;
+
+  zret = m_service.parse(m_buffer);
+  if (PARSE_SUCCESS != zret) return zret;
+
+  zret = m_query.parse(m_buffer);
+  if (PARSE_SUCCESS != zret) return zret;
 
   return m_buffer.getSpace() ? PARSE_DATA_OVERRUN : PARSE_SUCCESS;
 }

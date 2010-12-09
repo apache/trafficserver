@@ -120,4 +120,11 @@ traffic_manager_LDADD = \
   @LIBEXPAT@ @LIBPCRE@ \
   @LIBSSL@ @LIBDB@ @LIBSQLITE3@ @LIBTCL@ @LIBICONV@ \
   @LIBM@ @LIBDL@ @LIBSOCKET@ @LIBNSL@ @LIBRESOLV@ \
-  @LIBTHREAD@ @LIBRT@ @LIBEXECINFO@ @LIBCAP@ @LIBWCCP@ @LIBTSCONFIG@
+  @LIBTHREAD@ @LIBRT@ @LIBEXECINFO@ @LIBCAP@
+
+# Must do it this way or the dependencies aren't detected.
+if BUILD_WCCP
+traffic_manager_LDADD += \
+  $(top_builddir)/proxy/wccp/libwccp.a \
+  $(top_builddir)/lib/tsconfig/libtsconfig.a
+endif

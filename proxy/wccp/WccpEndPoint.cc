@@ -275,6 +275,15 @@ CacheImpl::GroupData::findCache(uint32 addr) {
   );
 }
 
+CacheImpl::RouterBag::iterator
+CacheImpl::GroupData::findRouter(uint32 addr) {
+  return std::find_if(
+    m_routers.begin(),
+    m_routers.end(),
+    ts::predicate(&RouterData::m_addr, addr)
+  );
+}
+
 void
 CacheImpl::GroupData::resizeCacheSources() {
   int count = m_routers.size();
@@ -556,6 +565,27 @@ CacheImpl::generateRedirectAssign(
   msg.finalize();
 }
 
+bool
+CacheImpl::checkRouterAssignment(
+  GroupData const& group,
+  RouterViewComp const& comp
+) const {
+  // If group doesn't have an active assignment, always match w/o checking.
+  bool zret = ! group.m_assign_info.isActive();
+  if (! zret && ! comp.isEmpty()) { // invalid component doesn't match.
+    uint32 nc = comp.getCacheCount();
+    // Nothing for it but simple brute force - iterate over every bucket
+    // in the assignment and verify the corresponding bucket in the
+    // cache bit array is set.
+    zret = true;
+    for ( size_t b = 0 ; zret && b < N_BUCKETS ; ++b ) {
+      unsigned int c = group.m_assign_info[b].m_idx;
+      if (c >= nc || ! comp.cacheElt(c).getBucket(b)) zret = false;
+    }
+  }
+  return zret;
+}
+
 int
 CacheImpl::housekeeping() {
   int zret = 0;
@@ -586,8 +616,12 @@ CacheImpl::housekeeping() {
       && group.m_generation_time + ASSIGN_WAIT <= now
     ) {
       // Is a valid assignment possible?
-      if (group.m_assign_info.fill(group, m_addr))
-        ts::for_each(group.m_routers, ts::assign_member(&RouterData::m_assign, true));
+      if (group.m_assign_info.fill(group, m_addr)) {
+        group.m_assign_info.setActive(true);
+        ts::for_each(group.m_routers,
+          ts::assign_member(&RouterData::m_assign, true)
+        );
+      }
 
       // Always clear because no point in sending an assign we can't generate.
       group.m_assignment_pending = false;
@@ -756,6 +790,17 @@ CacheImpl::handleISeeYou(IpHeader const& ip_hdr, ts::Buffer const& chunk) {
     ar_spot = group.m_routers.end() - 1;
     view_changed = true;
     logf(LVL_INFO, "Added source router %s to view %d", ip_addr_to_str(router_addr), group.m_svc.getSvcId());
+  } else {
+    // Existing router. If we have a valid assignment, check it and
+    // send again if this router hasn't updated.
+    if (!this->checkRouterAssignment(group, msg.m_router_view)) {
+      ar_spot->m_assign = true; // schedule an assignment message.
+      logf(LVL_INFO, "Router assignment reported from "
+        ATS_IP_PRINTF_CODE
+        " did not match local assignment. Resending assignment.\n ",
+        ATS_IP_OCTETS(router_addr)
+      );
+    }
   }
   ar_spot->m_recv.set(now, recv_id);
   ar_spot->m_generation = msg.m_router_view.getChangeNumber();
@@ -794,6 +839,61 @@ CacheImpl::handleISeeYou(IpHeader const& ip_hdr, ts::Buffer const& chunk) {
   return zret;
 }
 
+ts::Errata
+CacheImpl::handleRemovalQuery(IpHeader const& ip_hdr, ts::Buffer const& chunk) {
+  ts::Errata zret;
+  RemovalQueryMsg msg;
+  time_t now = time(0);
+  int parse = msg.parse(chunk);
+
+  if (PARSE_SUCCESS != parse)
+    return log(LVL_INFO, "Ignored malformed WCCP2_REMOVAL_QUERY message.");
+
+  ServiceGroup svc(msg.m_service);
+  GroupMap::iterator spot = m_groups.find(svc.getSvcId());
+  if (spot == m_groups.end())
+    return logf(LVL_INFO, "WCCP2_REMOVAL_QUERY ignored - service group %d not found.", svc.getSvcId());
+
+  GroupData& group = spot->second;
+
+  if (!this->validateSecurity(msg, group))
+    return log(LVL_INFO, "Ignored WCCP2_REMOVAL_QUERY with invalid security.\n");
+
+  if (svc != group.m_svc)
+    return logf(LVL_INFO, "WCCP2_REMOVAL_QUERY ignored - service group definition %d does not match.\n", svc.getSvcId());
+
+  uint32 target_addr = msg.m_query.getCacheAddr(); // intended cache
+  if (m_addr == target_addr) {
+    uint32 raddr = msg.m_query.getRouterAddr();
+    RouterBag::iterator router = group.findRouter(raddr);
+    if (group.m_routers.end() != router) {
+      router->m_rapid = true; // do rapid responses.
+      router->m_recv.set(now, msg.m_query.getRecvId());
+      logf(LVL_DEBUG, "WCCP2_REMOVAL_QUERY from router "
+        ATS_IP_PRINTF_CODE ".\n",
+        ATS_IP_OCTETS(raddr)
+      );
+    } else {
+      logf(LVL_INFO, "WCCP2_REMOVAL_QUERY from unknown router "
+        ATS_IP_PRINTF_CODE ".\n",
+        ATS_IP_OCTETS(raddr)
+      );
+    }
+  } else {
+    // Not an error in the multi-cast case, so just log under debug.
+    logf(LVL_DEBUG, "WCCP2_REMOVAL_QUERY ignored -- target cache address "
+      ATS_IP_PRINTF_CODE
+      " did not match local address "
+      ATS_IP_PRINTF_CODE
+      "\n.",
+      ATS_IP_OCTETS(target_addr), ATS_IP_OCTETS(m_addr)
+    );
+  }
+
+  logf(LVL_DEBUG, "Received WCCP2_REMOVAL_QUERY for group %d.", group.m_svc.getSvcId());
+
+  return zret;
+}
 // ------------------------------------------------------
 inline uint32
 RouterImpl::CacheData::idAddr() const {

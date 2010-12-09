@@ -51,7 +51,7 @@ public:
     );
 protected:
     /// Dispatch table for parse events.
-    std::vector<Handler> _dispatch;
+    Handler _dispatch[TS_CONFIG_N_EVENT_TYPES];
     /// Event handler table for the parser.
     TsConfigHandlers _handlers;
     /// Dispatch methods
