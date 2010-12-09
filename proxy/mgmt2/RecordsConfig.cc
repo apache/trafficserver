@@ -2352,7 +2352,7 @@ RecordElement RecordsConfig[] = {
   ,
   {CONFIG, "proxy.config.url_remap.remap_required", "", INK_INT, "0", RU_REREAD, RR_NULL, RC_INT, "[0-1]", RA_NULL}
   ,
-  {CONFIG, "proxy.config.url_remap.pristine_host_hdr", "", INK_INT, "0", RU_REREAD, RR_NULL, RC_INT, "[0-1]", RA_NULL}
+  {CONFIG, "proxy.config.url_remap.pristine_host_hdr", "", INK_INT, "1", RU_REREAD, RR_NULL, RC_INT, "[0-1]", RA_NULL}
   ,
   // url remap mode
   // # 0 - same as URL_REMAP_ALL (instead of disabling all remapping)

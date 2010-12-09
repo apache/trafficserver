@@ -109,14 +109,13 @@ int main(int argc, char** argv) {
 }
 */
 
-
 // Store our "state" (position in log file etc.)
 struct LastState
 {
   off_t offset;
   ino_t st_ino;
 };
-LastState last_state;
+static LastState last_state;
 
 
 // Store the collected counters and stats, per Origin Server (or total)
@@ -340,7 +339,7 @@ static int parse_errors;
 static char *hostname;
 
 // Command line arguments (parsing)
-static struct
+struct CommandLineArgs
 {
   char log_file[1024];
   char origin_file[1024];
@@ -357,9 +356,23 @@ static struct
   int cgi;			// CGI output (typically with json)
   int version;
   int help;
-} cl;
 
-ArgumentDescription argument_descriptions[] = {
+  CommandLineArgs()
+    : max_origins(0), min_hits(0), max_age(0), line_len(DEFAULT_LINE_LEN), incremental(0),
+      tail(0), summary(0), json(0), cgi(0), version(0), help(0)
+  {
+    log_file[0] = '\0';
+    origin_file[0] = '\0';
+    origin_list[0] = '\0';
+    state_tag[0] = '\0';
+  }
+
+  void parse_arguments(char** argv);
+};
+
+static CommandLineArgs cl;
+
+static ArgumentDescription argument_descriptions[] = {
   {"help", 'h', "Give this help", "T", &cl.help, NULL, NULL},
   {"log_file", 'f', "Specific logfile to parse", "S1023", cl.log_file, NULL, NULL},
   {"origin_list", 'o', "Only show stats for listed Origins", "S4095", cl.origin_list, NULL, NULL},
@@ -377,10 +390,67 @@ ArgumentDescription argument_descriptions[] = {
   {"debug_tags", 'T', "Colon-Separated Debug Tags", "S1023", &error_tags, NULL, NULL},
   {"version", 'V', "Print Version Id", "T", &cl.version, NULL, NULL},
 };
-int n_argument_descriptions = SIZE(argument_descriptions);
+
+static int n_argument_descriptions = SIZE(argument_descriptions);
 
 static const char *USAGE_LINE =
   "Usage: " PROGRAM_NAME " [-l logfile] [-o origin[,...]] [-O originfile] [-m minhits] [-inshv]";
+
+void
+CommandLineArgs::parse_arguments(char** argv) {
+  // process command-line arguments
+  process_args(argument_descriptions, n_argument_descriptions, argv, USAGE_LINE);
+
+  // Process as "CGI" ?
+  if (strstr(argv[0], ".cgi") || cgi) {
+    char *query;
+    int len;
+
+    json = 1;
+    cgi = 1;
+
+    if (NULL != (query = getenv("QUERY_STRING"))) {
+      char buffer[MAX_ORIG_STRING];
+      char *tok, *sep_ptr, *val;
+
+      ink_strlcpy(buffer, query, MAX_ORIG_STRING);
+      len = unescapifyStr(buffer);
+
+      for (tok = strtok_r(buffer, "&", &sep_ptr); tok != NULL;) {
+        val = strchr(tok, '=');
+        if (val)
+          *(val++) = '\0';
+        if (0 == strncmp(tok, "origin_list", 11)) {
+          ink_strlcpy(origin_list, val, MAX_ORIG_STRING);
+        } else if (0 == strncmp(tok, "state_tag", 9)) {
+          ink_strlcpy(state_tag, val, sizeof(state_tag));
+        } else if (0 == strncmp(tok, "max_origins", 11)) {
+          max_origins = strtol(val, NULL, 10);
+        } else if (0 == strncmp(tok, "min_hits", 8)) {
+          min_hits = strtol(val, NULL, 10);
+        } else if (0 == strncmp(tok, "incremental", 11)) {
+          incremental = strtol(val, NULL, 10);
+        } else {
+          // Unknown query arg.
+        }
+
+        tok = strtok_r(NULL, "&", &sep_ptr);
+      }
+    }
+  }
+
+  // check for the version number request
+  if (version) {
+    std::cerr << appVersionInfo.FullVersionInfoStr << std::endl;
+    _exit(0);
+  }
+
+  // check for help request
+  if (help) {
+    usage(argument_descriptions, n_argument_descriptions, USAGE_LINE);
+    _exit(0);
+  }
+}
 
 
 // Enum for return code levels.
@@ -391,6 +461,30 @@ enum ExitLevel
   EXIT_CRITICAL = 2,
   EXIT_UNKNOWN = 3
 };
+
+struct ExitStatus
+{
+  ExitLevel level;
+  char notice[1024];
+
+  ExitStatus()
+    : level(EXIT_OK)
+  {
+    memset(notice, 0, sizeof(notice));
+  }
+
+  void set(ExitLevel l, const char* n=NULL) {
+    if (l > level)
+      level = l;
+    if (n)
+      strncat(notice, n, sizeof(notice) - strlen(notice) - 1);
+  }
+
+  void append(const char *n) {
+    strncat(notice, n, sizeof(notice) - strlen(notice) - 1);
+  }
+};
+
 
 // Enum for parsing a log line
 enum ParseStates
@@ -1718,7 +1812,7 @@ print_detail_stats(const OriginStats * stat, std::ostream & out, bool json=false
 ///////////////////////////////////////////////////////////////////////////////
 // Little wrapper around exit, to allow us to exit gracefully
 void
-my_exit(ExitLevel status, const char *notice)
+my_exit(const ExitStatus& status)
 {
   vector<OriginPair> vec;
   bool first = true;
@@ -1732,19 +1826,19 @@ my_exit(ExitLevel status, const char *notice)
   if (cl.json) {
     // TODO: Add JSON output?
   } else {
-    switch (status) {
+    switch (status.level) {
     case EXIT_OK:
       break;
     case EXIT_WARNING:
-      std::cout << "warning: " << notice << std::endl;
+      std::cout << "warning: " << status.notice << std::endl;
       break;
     case EXIT_CRITICAL:
-      std::cout << "critical: " << notice << std::endl;
-      _exit(status);
+      std::cout << "critical: " << status.notice << std::endl;
+      _exit(status.level);
       break;
     case EXIT_UNKNOWN:
-      std::cout << "unknown: " << notice << std::endl;
-      _exit(status);
+      std::cout << "unknown: " << status.notice << std::endl;
+      _exit(status.level);
       break;
     }
   }
@@ -1819,13 +1913,13 @@ my_exit(ExitLevel status, const char *notice)
     std::cout << std::endl << "}" << std::endl;
   }
 
-  _exit(status);
+  _exit(status.level);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 // Open the "default" log file (squid.blog), allow for it to be rotated.
 int
-open_main_log(char *exit_notice, const size_t exit_notice_size)
+open_main_log(ExitStatus& status)
 {
   int cnt = 3;
   int main_fd;
@@ -1837,13 +1931,13 @@ open_main_log(char *exit_notice, const size_t exit_notice_size)
       sleep(5);
       break;
     default:
-      strncat(exit_notice, " can't open squid.blog", exit_notice_size - strlen(exit_notice) - 1);
+      status.append(" can't open squid.blog");
       return -1;
     }
   }
 
   if (main_fd < 0) {
-    strncat(exit_notice, " squid.blog not enabled", exit_notice_size - strlen(exit_notice) - 1);
+    status.append(" squid.blog not enabled");
     return -1;
   }
 #if TS_HAS_POSIX_FADVISE
@@ -1859,8 +1953,7 @@ open_main_log(char *exit_notice, const size_t exit_notice_size)
 int
 main(int argc, char *argv[])
 {
-  ExitLevel exit_status = EXIT_OK;
-  char exit_notice[4096];
+  ExitStatus exit_status;
   struct utsname uts_buf;
   int res, cnt;
   int main_fd;
@@ -1876,10 +1969,7 @@ main(int argc, char *argv[])
 
   memset(&totals, 0, sizeof(totals));
   init_elapsed(totals);
-  memset(&cl, 0, sizeof(cl));
-  memset(exit_notice, 0, sizeof(exit_notice));
 
-  cl.line_len = DEFAULT_LINE_LEN;
   origin_set = NULL;
   parse_errors = 0;
 
@@ -1891,58 +1981,9 @@ main(int argc, char *argv[])
     exit(1);
   }
 
-  // process command-line arguments
-  process_args(argument_descriptions, n_argument_descriptions, argv, USAGE_LINE);
+  // Command line parsing
+  cl.parse_arguments(argv);
 
-  // Process as "CGI" ?
-  if (strstr(argv[0], ".cgi") || cl.cgi) {
-    char *query;
-    int len;
-
-    cl.json = 1;
-    cl.cgi = 1;
-
-    if (NULL != (query = getenv("QUERY_STRING"))) {
-      char buffer[MAX_ORIG_STRING];
-      char *tok, *sep_ptr, *val;
-
-      ink_strncpy(buffer, query, MAX_ORIG_STRING);
-      buffer[MAX_ORIG_STRING-1] = '\0';
-      len = unescapifyStr(buffer);
-
-      for (tok = strtok_r(buffer, "&", &sep_ptr); tok != NULL;) {
-        val = strchr(tok, '=');
-        if (val)
-          *(val++) = '\0';
-        if (0 == strncmp(tok, "origin_list", 11)) {
-          ink_strncpy(cl.origin_list, val, MAX_ORIG_STRING-1);
-        } else if (0 == strncmp(tok, "state_tag", 9)) {
-          ink_strncpy(cl.state_tag, val, 1023);
-        } else if (0 == strncmp(tok, "max_origins", 11)) {
-          cl.max_origins = strtol(val, NULL, 10);
-        } else if (0 == strncmp(tok, "min_hits", 8)) {
-          cl.min_hits = strtol(val, NULL, 10);
-        } else if (0 == strncmp(tok, "incremental", 11)) {
-          cl.incremental = strtol(val, NULL, 10);
-        } else {
-          // Unknown query arg.
-        }
-
-        tok = strtok_r(NULL, "&", &sep_ptr);
-      }
-    }
-  }
-
-  // check for the version number request
-  if (cl.version) {
-    std::cerr << appVersionInfo.FullVersionInfoStr << std::endl;
-    _exit(0);
-  }
-  // check for help request
-  if (cl.help) {
-    usage(argument_descriptions, n_argument_descriptions, USAGE_LINE);
-    _exit(0);
-  }
   // Calculate the max age of acceptable log entries, if necessary
   if (cl.max_age > 0) {
     struct timeval tv;
@@ -2008,15 +2049,16 @@ main(int argc, char *argv[])
   }
   // Get the hostname
   if (uname(&uts_buf) < 0) {
-    strncat(exit_notice, " can't get hostname", sizeof(exit_notice) - strlen(exit_notice) - 1);
-    my_exit(EXIT_CRITICAL, exit_notice);
+    exit_status.set(EXIT_CRITICAL, " can't get hostname");
+    my_exit(exit_status);
   }
   hostname = xstrdup(uts_buf.nodename);
 
   // Change directory to the log dir
   if (chdir(system_log_dir) < 0) {
-    snprintf(exit_notice, sizeof(exit_notice), "can't chdir to %s", system_log_dir);
-    my_exit(EXIT_CRITICAL, exit_notice);
+    exit_status.set(EXIT_CRITICAL, " can't chdir to ");
+    exit_status.append(system_log_dir);
+    my_exit(exit_status);
   }
 
   if (cl.incremental) {
@@ -2037,14 +2079,14 @@ main(int argc, char *argv[])
         sf_name.append(".");
         sf_name.append(pwd->pw_name);
       } else {
-        strncat(exit_notice, " can't get current UID", sizeof(exit_notice) - strlen(exit_notice) - 1);
-        my_exit(EXIT_CRITICAL, exit_notice);
+        exit_status.set(EXIT_CRITICAL, " can't get current UID");
+        my_exit(exit_status);
       }
     }
 
     if ((state_fd = open(sf_name.c_str(), O_RDWR | O_CREAT, S_IRUSR | S_IWUSR)) < 0) {
-      strncat(exit_notice, " can't open state file", sizeof(exit_notice) - strlen(exit_notice) - 1);
-      my_exit(EXIT_CRITICAL, exit_notice);
+      exit_status.set(EXIT_CRITICAL, " can't open state file");
+      my_exit(exit_status);
     }
     // Get an exclusive lock, if possible. Try for up to 20 seconds.
     // Use more portable & standard fcntl() over flock()
@@ -2061,15 +2103,15 @@ main(int argc, char *argv[])
         sleep(2);
         break;
       default:
-        strncat(exit_notice, " locking failure", sizeof(exit_notice) - strlen(exit_notice) - 1);
-        my_exit(EXIT_CRITICAL, exit_notice);
+        exit_status.set(EXIT_CRITICAL, " locking failure");
+        my_exit(exit_status);
         break;
       }
     }
 
     if (res < 0) {
-      strncat(exit_notice, " can't lock state file", sizeof(exit_notice) - strlen(exit_notice) - 1);
-      my_exit(EXIT_CRITICAL, exit_notice);
+      exit_status.set(EXIT_CRITICAL, " can't lock state file");
+      my_exit(exit_status);
     }
     // Fetch previous state information, allow for concurrent accesses.
     cnt = 10;
@@ -2080,8 +2122,8 @@ main(int argc, char *argv[])
         sleep(1);
         break;
       default:
-        strncat(exit_notice, " can't read state file", sizeof(exit_notice) - strlen(exit_notice) - 1);
-        my_exit(EXIT_CRITICAL, exit_notice);
+        exit_status.set(EXIT_CRITICAL, " can't read state file");
+        my_exit(exit_status);
         break;
       }
     }
@@ -2092,13 +2134,15 @@ main(int argc, char *argv[])
       last_state.st_ino = 0;
     }
 
-    if ((main_fd = open_main_log(exit_notice, sizeof(exit_notice))) < 0)
-      my_exit(EXIT_CRITICAL, exit_notice);
+    if ((main_fd = open_main_log(exit_status)) < 0) {
+      exit_status.set(EXIT_CRITICAL);
+      my_exit(exit_status);
+    }
 
     // Get stat's from the main log file.
     if (fstat(main_fd, &stat_buf) < 0) {
-      strncat(exit_notice, " can't stat squid.blog", sizeof(exit_notice) - strlen(exit_notice) - 1);
-      my_exit(EXIT_CRITICAL, exit_notice);
+      exit_status.set(EXIT_CRITICAL, " can't stat squid.blog");
+      my_exit(exit_status);
     }
     // Make sure the last_state.st_ino is sane.
     if (last_state.st_ino <= 0)
@@ -2117,32 +2161,24 @@ main(int argc, char *argv[])
       // Find the old log file.
       dirp = opendir(system_log_dir);
       if (dirp == NULL) {
-        strncat(exit_notice, " can't read log directory", sizeof(exit_notice) - strlen(exit_notice) - 1);
-        if (exit_status == EXIT_OK)
-          exit_status = EXIT_WARNING;
+        exit_status.set(EXIT_WARNING, " can't read log directory");
       } else {
         while ((dp = readdir(dirp)) != NULL) {
           if (stat(dp->d_name, &stat_buf) < 0) {
-            strncat(exit_notice, " can't stat ", sizeof(exit_notice) - strlen(exit_notice) - 1);
-            strncat(exit_notice, dp->d_name, sizeof(exit_notice) - strlen(exit_notice) - 1);
-            if (exit_status == EXIT_OK)
-              exit_status = EXIT_WARNING;
+            exit_status.set(EXIT_WARNING, " can't stat ");
+            exit_status.append(dp->d_name);
           } else if (stat_buf.st_ino == old_inode) {
             int old_fd = open(dp->d_name, O_RDONLY);
 
             if (old_fd < 0) {
-              strncat(exit_notice, " can't open ", sizeof(exit_notice) - strlen(exit_notice) - 1);
-              strncat(exit_notice, dp->d_name, sizeof(exit_notice) - strlen(exit_notice) - 1);
-              if (exit_status == EXIT_OK)
-                exit_status = EXIT_WARNING;
+              exit_status.set(EXIT_WARNING, " can't open ");
+              exit_status.append(dp->d_name);
               break;            // Don't attempt any more files
             }
             // Process it
             if (process_file(old_fd, last_state.offset, max_age) != 0) {
-              strncat(exit_notice, " can't read ", sizeof(exit_notice) - strlen(exit_notice) - 1);
-              strncat(exit_notice, dp->d_name, sizeof(exit_notice) - strlen(exit_notice) - 1);
-              if (exit_status == EXIT_OK)
-                exit_status = EXIT_WARNING;
+              exit_status.set(EXIT_WARNING, " can't read ");
+              exit_status.append(dp->d_name);
             }
             close(old_fd);
             break;              // Don't attempt any more files
@@ -2159,32 +2195,24 @@ main(int argc, char *argv[])
 
     // Process the main file (always)
     if (process_file(main_fd, last_state.offset, max_age) != 0) {
-      strncat(exit_notice, " can't parse log", sizeof(exit_notice) - strlen(exit_notice) - 1);
-      exit_status = EXIT_CRITICAL;
-
+      exit_status.set(EXIT_CRITICAL, " can't parse log");
       last_state.offset = 0;
       last_state.st_ino = 0;
     } else {
       // Save the current file offset.
       last_state.offset = lseek(main_fd, 0, SEEK_CUR);
       if (last_state.offset < 0) {
-        strncat(exit_notice, " can't lseek squid.blog", sizeof(exit_notice) - strlen(exit_notice) - 1);
-        if (exit_status == EXIT_OK)
-          exit_status = EXIT_WARNING;
+        exit_status.set(EXIT_WARNING, " can't lseek squid.blog");
         last_state.offset = 0;
       }
     }
 
     // Save the state, release the lock, and close the FDs.
     if (lseek(state_fd, 0, SEEK_SET) < 0) {
-      strncat(exit_notice, " can't lseek state file", sizeof(exit_notice) - strlen(exit_notice) - 1);
-      if (exit_status == EXIT_OK)
-        exit_status = EXIT_WARNING;
+      exit_status.set(EXIT_WARNING, " can't lseek state file");
     } else {
       if (write(state_fd, &last_state, sizeof(last_state)) == (-1)) {
-        strncat(exit_notice, " can't write state_fd ", sizeof(exit_notice) - strlen(exit_notice) - 1);
-        if (exit_status == EXIT_OK)
-          exit_status = EXIT_WARNING;
+        exit_status.set(EXIT_WARNING, " can't write state_fd ");
       }
     }
     //flock(state_fd, LOCK_UN);
@@ -2196,33 +2224,33 @@ main(int argc, char *argv[])
     if (cl.log_file[0] != '\0') {
       main_fd = open(cl.log_file, O_RDONLY);
       if (main_fd < 0) {
-        strncat(exit_notice, " can't open log file ", sizeof(exit_notice) - strlen(exit_notice) - 1);
-        strncat(exit_notice, cl.log_file, sizeof(exit_notice) - strlen(exit_notice) - 1);
-        my_exit(EXIT_CRITICAL, exit_notice);
+        exit_status.set(EXIT_CRITICAL, " can't open log file ");
+        exit_status.append(cl.log_file);
+        my_exit(exit_status);
       }
     } else {
-      main_fd = open_main_log(exit_notice, sizeof(exit_notice));
+      main_fd = open_main_log(exit_status);
     }
 
     if (cl.tail > 0) {
       if (lseek(main_fd, 0, SEEK_END) < 0) {
-        strncat(exit_notice, " can't lseek squid.blog", sizeof(exit_notice) - strlen(exit_notice) - 1);
-        my_exit(EXIT_CRITICAL, exit_notice);
+        exit_status.set(EXIT_CRITICAL, " can't lseek squid.blog");
+        my_exit(exit_status);
       }
       sleep(cl.tail);
     }
 
     if (process_file(main_fd, 0, max_age) != 0) {
       close(main_fd);
-      strncat(exit_notice, " can't parse log file ", sizeof(exit_notice) - strlen(exit_notice) - 1);
-      strncat(exit_notice, cl.log_file, sizeof(exit_notice) - strlen(exit_notice) - 1);
-      my_exit(EXIT_CRITICAL, exit_notice);
+      exit_status.set(EXIT_CRITICAL, " can't parse log file ");
+      exit_status.append(cl.log_file);
+      my_exit(exit_status);
     }
     close(main_fd);
   }
 
   // All done.
-  if (exit_status == EXIT_OK)
-    strncat(exit_notice, " OK", sizeof(exit_notice) - strlen(exit_notice) - 1);
-  my_exit(exit_status, exit_notice);
+  if (exit_status.level == EXIT_OK)
+    exit_status.append(" OK");
+  my_exit(exit_status);
 }
