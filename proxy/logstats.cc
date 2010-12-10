@@ -1631,7 +1631,7 @@ print_detail_stats(const OriginStats * stat, std::ostream & out, bool json=false
   format_line(json ? "status.204" : "204 No content", stat->codes.c_204, stat->total, out, json);
   format_line(json ? "status.205" : "205 Reset Content", stat->codes.c_205, stat->total, out, json);
   format_line(json ? "status.206" : "206 Partial content", stat->codes.c_206, stat->total, out, json);
-  format_line(json ? "status.2xx" : "2xx other success", stat->codes.c_2xx, stat->total, out, json);
+  format_line(json ? "status.2xx" : "2xx Total", stat->codes.c_2xx, stat->total, out, json);
 
   if (!json)
     out << std::endl;
@@ -1643,7 +1643,7 @@ print_detail_stats(const OriginStats * stat, std::ostream & out, bool json=false
   format_line(json ? "status.304" : "304 Not modified", stat->codes.c_304, stat->total, out, json);
   format_line(json ? "status.305" : "305 Use Proxy", stat->codes.c_305, stat->total, out, json);
   format_line(json ? "status.307" : "307 Temporary Redirect", stat->codes.c_307, stat->total, out, json);
-  format_line(json ? "status.3xx" : "3xx other redirects", stat->codes.c_3xx, stat->total, out, json);
+  format_line(json ? "status.3xx" : "3xx Total", stat->codes.c_3xx, stat->total, out, json);
 
   if (!json)
     out << std::endl;
@@ -1666,7 +1666,7 @@ print_detail_stats(const OriginStats * stat, std::ostream & out, bool json=false
   format_line(json ? "status.415" : "415 Unsupported Media Type", stat->codes.c_415, stat->total, out, json);
   format_line(json ? "status.416" : "416 Req Range Not Satisfiable", stat->codes.c_416, stat->total, out, json);
   format_line(json ? "status.417" : "417 Expectation Failed", stat->codes.c_417, stat->total, out, json);
-  format_line(json ? "status.4xx" : "4xx other client errors", stat->codes.c_4xx, stat->total, out, json);
+  format_line(json ? "status.4xx" : "4xx Total", stat->codes.c_4xx, stat->total, out, json);
 
   if (!json)
     out << std::endl;
@@ -1677,7 +1677,7 @@ print_detail_stats(const OriginStats * stat, std::ostream & out, bool json=false
   format_line(json ? "status.503" : "503 Service unavailable", stat->codes.c_503, stat->total, out, json);
   format_line(json ? "status.504" : "504 Gateway Timeout", stat->codes.c_504, stat->total, out, json);
   format_line(json ? "status.505" : "505 HTTP Ver. Not Supported", stat->codes.c_505, stat->total, out, json);
-  format_line(json ? "status.5xx" : "5xx other server errors", stat->codes.c_5xx, stat->total, out, json);
+  format_line(json ? "status.5xx" : "5xx Total", stat->codes.c_5xx, stat->total, out, json);
 
   if (!json)
     out << std::endl;
