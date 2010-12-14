@@ -112,7 +112,7 @@ AC_SUBST([build_person])
 AC_SUBST([build_group])
 
 AC_ARG_WITH([user],
-  [AS_HELP_STRING([--with-user],[specify the system user])],
+  [AS_HELP_STRING([--with-user],[specify the system user [default: nobody]])],
   [
   with_user="$withval"
   ],[
@@ -121,7 +121,7 @@ AC_ARG_WITH([user],
 )
 
 AC_ARG_WITH([group],
-  [AS_HELP_STRING([--with-group],[specify the system group])],
+  [AS_HELP_STRING([--with-group],[specify the system group [default: nogroup]])],
   [
   with_group="$withval"
   ],[
@@ -211,7 +211,7 @@ AC_MSG_RESULT([$enable_libev])
 is_micro_build=0
 AC_MSG_CHECKING([whether to enable micro-TS])
 AC_ARG_ENABLE([micro],
-  [AS_HELP_STRING([--enable-micro],[enable micro-TS build])],
+  [AS_HELP_STRING([--enable-micro],[enable micro-TS build [default: no]])],
   [is_micro_build=1],
   [enable_micro=no]
 )
@@ -262,7 +262,7 @@ AC_SUBST([enable_remote_cov_commit])
 has_webui=0
 AC_MSG_CHECKING([whether to enable Web UI])
 AC_ARG_ENABLE([webui],
-  [AS_HELP_STRING([--enable-webui],[enable Web UI])],
+  [AS_HELP_STRING([--enable-webui],[enable Web UI [default: no]])],
   [has_webui=1],
   [enable_webui=no]
 )
