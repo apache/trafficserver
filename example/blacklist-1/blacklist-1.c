@@ -1,6 +1,6 @@
 /** @file
 
-  A brief file description
+  An example plugin that denies client access to blacklisted sites (blacklist.txt).
 
   @section license License
 
@@ -19,20 +19,6 @@
   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   See the License for the specific language governing permissions and
   limitations under the License.
- */
-
-/* blacklist-1.c:  an example program that denies client access
- *                 to blacklisted sites. This plugin illustrates
- *                 how to use configuration information from a
- *                 configuration file (blacklist.txt) that can be
- *                 updated through the Traffic Manager UI.
- *
- *
- *	Usage:
- *	(NT) : BlackList.dll
- *	(Solaris) : blacklist-1.so
- *
- *
  */
 
 #include <stdio.h>
@@ -307,6 +293,7 @@ blacklist_plugin(TSCont contp, TSEvent event, void *edata)
         handle_response(cd->txnp, contp);
         return 0;
       default:
+	TSDebug("blacklist_plugin", "This event was unexpected: %d\n", event);
         break;
       }
     } else {

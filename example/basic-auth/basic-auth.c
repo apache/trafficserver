@@ -1,6 +1,6 @@
 /** @file
 
-  A brief file description
+  A plugin that performs basic HTTP proxy authentication
 
   @section license License
 
@@ -19,16 +19,6 @@
   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   See the License for the specific language governing permissions and
   limitations under the License.
- */
-
-/* basic-auth.c: a plugin that performs basic HTTP proxy
- *               authentication
- *
- *
- * Usage:
- * (NT): BasicAuth.dll
- * (Solaris): basic-auth.so
- *
  */
 
 

@@ -1,6 +1,6 @@
 /** @file
 
-  A brief file description
+  an example hello world plugin
 
   @section license License
 
@@ -19,17 +19,6 @@
   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   See the License for the specific language governing permissions and
   limitations under the License.
- */
-
-/* hello.c:  an example hello world program
- *
- *
- *
- *	Usage:
- * 	(NT): Hello.dll
- * 	(Solaris): hello.so
- *
- *
  */
 
 #include <stdio.h>
