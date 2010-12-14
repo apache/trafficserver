@@ -161,8 +161,8 @@ REGRESSION_TEST(SDK_API_TSPluginDirGet) (RegressionTest * test, int atype, int *
   // XXX: This doesn't have to be true
   //      since the location can be anywhere
   //
-  if (strstr(plugin_dir, "libexec/trafficserver") == NULL) {
-    SDK_RPRINT(test, "TSPluginDirGet", "TestCase2", TC_FAIL, "plugin dir(%s) is incorrect, expected (%s) in path",plugin_dir,"libexec/trafficserver");
+  if (strstr(plugin_dir, LIBEXECDIR) == NULL) {
+    SDK_RPRINT(test, "TSPluginDirGet", "TestCase2", TC_FAIL, "plugin dir(%s) is incorrect, expected (%s) in path",plugin_dir, LIBEXECDIR);
     *pstatus = REGRESSION_TEST_FAILED;
     return;
   }
