@@ -292,13 +292,6 @@ blacklist_plugin(TSCont contp, TSEvent event, void *edata)
     } else {
       break;
     }
-  case TS_EVENT_MGMT_UPDATE:
-    if (contp == global_contp) {
-      read_blacklist(contp);
-      return 0;
-    } else {
-      break;
-    }
   case TS_EVENT_TIMEOUT:
     /* when mutex lock is not acquired and continuation is rescheduled,
        the plugin is called back with TS_EVENT_TIMEOUT with a NULL
@@ -410,6 +403,4 @@ TSPluginInit(int argc, const char *argv[])
 
   /*TSHttpHookAdd (TS_HTTP_OS_DNS_HOOK, contp); */
   TSHttpHookAdd(TS_HTTP_TXN_START_HOOK, global_contp);
-
-  TSMgmtUpdateRegister(global_contp, "Inktomi Blacklist Plugin", "blacklist.cgi");
 }

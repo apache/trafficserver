@@ -1,2 +1,2 @@
-www.inktomi.com
+www.example.com
 <some-nonsense-url>
