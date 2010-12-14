@@ -362,7 +362,7 @@ dnl TS_ENABLE_LAYOUT(default layout name [, extra vars])
 dnl
 AC_DEFUN([TS_ENABLE_LAYOUT], [
 AC_ARG_ENABLE(layout,
-  [TS_HELP_STRING([--enable-layout=LAYOUT],[Enable LAYOUT specified inside config.layout file (defaults to Trafficserver)])],[
+  [TS_HELP_STRING([--enable-layout=LAYOUT],[Enable LAYOUT specified inside config.layout file (defaults to TrafficServer)])],[
   LAYOUT=$enableval
 ])
 
