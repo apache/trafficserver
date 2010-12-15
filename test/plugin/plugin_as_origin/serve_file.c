@@ -416,17 +416,17 @@ TSPluginInit(int argc, const char *argv[])
 
 /* NEGATIVE TEST for TSPluginRegister */
 #ifdef DEBUG
-  if (TSPluginRegister(TS_SDK_VERSION_2_0, NULL) != 0) {
+  if (TSPluginRegister(TS_SDK_VERSION_3_0, NULL) != 0) {
     LOG_ERROR_NEG("TSPluginRegister");
   } else
     TSDebug(NEG_DEBUG_TAG, "Negative Test TSPluginRegister 1 passed");
 #endif
-  if (!TSPluginRegister(TS_SDK_VERSION_2_0, &info)) {
+  if (!TSPluginRegister(TS_SDK_VERSION_3_0, &info)) {
     TSError("Plugin registration failed.\n");
   }
 
   if (!check_ts_version()) {
-    TSError("Plugin requires Traffic Server 2.0 or later\n");
+    TSError("Plugin requires Traffic Server 3.0 or later\n");
     return;
   }
 

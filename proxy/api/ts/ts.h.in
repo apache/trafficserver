@@ -431,7 +431,8 @@ extern "C"
    */
   typedef enum
   {
-    TS_SDK_VERSION_2_0 = 0
+    TS_SDK_VERSION_2_0 = 0,
+    TS_SDK_VERSION_3_0
   } TSSDKVersion;
 
   typedef enum

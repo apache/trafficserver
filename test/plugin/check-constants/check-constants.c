@@ -187,6 +187,7 @@ typedef enum
 typedef enum
 {
   ORIG_TS_SDK_VERSION_2_0 = 0,
+  ORIG_TS_SDK_VERSION_3_0
 } ORIG_TSSDKVersion;
 
 
@@ -317,6 +318,7 @@ TSPluginInit(int argc, const char *argv[])
   PRINT_DIFF("TS_VC_CLOSE_NORMAL", TS_VC_CLOSE_NORMAL, ORIG_TS_VC_CLOSE_NORMAL);
 
   PRINT_DIFF("TS_SDK_VERSION_2_0", TS_SDK_VERSION_2_0, ORIG_TS_SDK_VERSION_2_0);
+  PRINT_DIFF("TS_SDK_VERSION_3_0", TS_SDK_VERSION_3_0, ORIG_TS_SDK_VERSION_3_0);
 
   if (file_changed) {
     printf("\n***************************************************************************************");

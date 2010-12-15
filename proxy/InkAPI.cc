@@ -1841,6 +1841,7 @@ TSPluginDirGet(void)
 int
 TSPluginRegister(TSSDKVersion sdk_version, TSPluginRegistrationInfo *plugin_info)
 {
+  PluginSDKVersion version = (PluginSDKVersion)sdk_version;
 
   ink_assert(plugin_reg_current != NULL);
   if (!plugin_reg_current)
@@ -1851,8 +1852,9 @@ TSPluginRegister(TSSDKVersion sdk_version, TSPluginRegistrationInfo *plugin_info
 
   plugin_reg_current->plugin_registered = true;
 
-  if (sdk_version >= TS_SDK_VERSION_2_0 && sdk_version <= TS_SDK_VERSION_2_0) {
-    plugin_reg_current->sdk_version = (PluginSDKVersion) sdk_version;
+  // We're compatible only within the 3.x release
+  if (version >= PLUGIN_SDK_VERSION_3_0 && version < PLUGIN_SDK_VERSION_4_0) {
+    plugin_reg_current->sdk_version = version;
   } else {
     plugin_reg_current->sdk_version = PLUGIN_SDK_VERSION_UNKNOWN;
   }

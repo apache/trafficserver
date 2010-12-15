@@ -26,15 +26,14 @@
 
 #include "List.h"
 
-// need to keep syncronized with INKSDKVersion
-//   in ts/ts.h
+// need to keep syncronized with TSSDKVersion
+//   in ts/ts.h.in
 typedef enum
 {
   PLUGIN_SDK_VERSION_UNKNOWN = -1,
-  PLUGIN_SDK_VERSION_1_0 = 0,
-  PLUGIN_SDK_VERSION_1_1,
   PLUGIN_SDK_VERSION_2_0,
-  PLUGIN_SDK_VERSION_3_0
+  PLUGIN_SDK_VERSION_3_0,
+  PLUGIN_SDK_VERSION_4_0
 } PluginSDKVersion;
 
 struct PluginRegInfo

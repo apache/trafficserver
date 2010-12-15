@@ -388,13 +388,13 @@ TSPluginInit(int argc, const char *argv[])
   info.vendor_name = "MyCompany";
   info.support_email = "ts-api-support@MyCompany.com";
 
-  if (!TSPluginRegister(TS_SDK_VERSION_2_0, &info)) {
+  if (!TSPluginRegister(TS_SDK_VERSION_3_0, &info)) {
     TSError("[null-transform] Plugin registration failed.\n");
     goto Lerror;
   }
 
   if (!check_ts_version()) {
-    TSError("[null-transform] Plugin requires Traffic Server 2.0 " "or later\n");
+    TSError("[null-transform] Plugin requires Traffic Server 3.0 " "or later\n");
     goto Lerror;
   }
 

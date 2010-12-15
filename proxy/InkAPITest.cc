@@ -6479,7 +6479,8 @@ typedef enum
 
 typedef enum
 {
-  ORIG_TS_SDK_VERSION_2_0 = 0
+  ORIG_TS_SDK_VERSION_2_0 = 0,
+  ORIG_TS_SDK_VERSION_3_0,
 } ORIG_TSSDKVersion;
 
 typedef enum
@@ -6632,6 +6633,7 @@ REGRESSION_TEST(SDK_API_TSConstant) (RegressionTest * test, int atype, int *psta
   PRINT_DIFF(TS_VC_CLOSE_NORMAL);
 
   PRINT_DIFF(TS_SDK_VERSION_2_0);
+  PRINT_DIFF(TS_SDK_VERSION_3_0);
 
   PRINT_DIFF(TS_ERROR);
   PRINT_DIFF(TS_SUCCESS);
