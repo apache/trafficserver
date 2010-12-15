@@ -26,6 +26,8 @@
 
 # if !defined(_MSC_VER)
 # define _fileno fileno
+# define __STDC_FORMAT_MACROS 1
+# include <inttypes.h>
 # endif
 
 // ---------------------------------------------------------------------------
