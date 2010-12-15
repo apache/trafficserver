@@ -86,7 +86,7 @@ struct hostent *ink_gethostbyaddr_r(char *ip, int len, int type, ink_gethostbyad
   @param s IP address in the Internet standard dot notation.
 
 */
-inkcoreapi uint32 ink_inet_addr(const char *s);
+inkcoreapi uint32_t ink_inet_addr(const char *s);
 
 const char *ink_inet_ntop(const struct sockaddr *addr, char *dst, size_t size);
 uint16_t ink_inet_port(const struct sockaddr *addr);

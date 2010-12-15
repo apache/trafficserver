@@ -259,7 +259,7 @@ struct HTTPHdrImpl:public HdrHeapObjImpl
 {
   // HdrHeapObjImpl is 4 bytes
   HTTPType m_polarity;          // request or response or unknown
-  int32 m_version;              // cooked version number
+  int32_t m_version;              // cooked version number
   // 12 bytes means 4 bytes padding here on 64-bit architectures
   union
   {
@@ -267,15 +267,15 @@ struct HTTPHdrImpl:public HdrHeapObjImpl
     {
       URLImpl *m_url_impl;
       const char *m_ptr_method;
-      uint16 m_len_method;
-      int16 m_method_wks_idx;
+      uint16_t m_len_method;
+      int16_t m_method_wks_idx;
     } req;
 
     struct
     {
       const char *m_ptr_reason;
-      uint16 m_len_reason;
-      int16 m_status;
+      uint16_t m_len_reason;
+      int16_t m_status;
     } resp;
   } u;
 
@@ -445,7 +445,7 @@ extern int HTTP_LEN_S_MAXAGE;
 extern int HTTP_LEN_NEED_REVALIDATE_ONCE;
 
 /* Private */
-void http_hdr_adjust(HTTPHdrImpl * hdrp, int32 offset, int32 length, int32 delta);
+void http_hdr_adjust(HTTPHdrImpl * hdrp, int32_t offset, int32_t length, int32_t delta);
 
 /* Public */
 void http_init(const char *path);
@@ -462,12 +462,12 @@ void http_hdr_describe(HdrHeapObjImpl * obj, bool recurse = true);
 int http_hdr_length_get(HTTPHdrImpl * hh);
 // HTTPType               http_hdr_type_get (HTTPHdrImpl *hh);
 
-// int32                  http_hdr_version_get (HTTPHdrImpl *hh);
-inkcoreapi void http_hdr_version_set(HTTPHdrImpl * hh, int32 ver);
+// int32_t                  http_hdr_version_get (HTTPHdrImpl *hh);
+inkcoreapi void http_hdr_version_set(HTTPHdrImpl * hh, int32_t ver);
 
 const char *http_hdr_method_get(HTTPHdrImpl * hh, int *length);
 inkcoreapi void http_hdr_method_set(HdrHeap * heap, HTTPHdrImpl * hh,
-                                    const char *method, int16 method_wks_idx, int method_length, bool must_copy);
+                                    const char *method, int16_t method_wks_idx, int method_length, bool must_copy);
 
 void http_hdr_url_set(HdrHeap * heap, HTTPHdrImpl * hh, URLImpl * url);
 
@@ -486,7 +486,7 @@ MIMEParseResult http_parser_parse_resp(HTTPParser * parser, HdrHeap * heap,
                                        HTTPHdrImpl * hh, const char **start,
                                        const char *end, bool must_copy_strings, bool eof);
 HTTPStatus http_parse_status(const char *start, const char *end);
-int32 http_parse_version(const char *start, const char *end);
+int32_t http_parse_version(const char *start, const char *end);
 
 
 /*
@@ -505,7 +505,7 @@ class HTTPVersion
 {
 public:
   HTTPVersion();
-  HTTPVersion(int32 version);
+  HTTPVersion(int32_t version);
   HTTPVersion(int ver_major, int ver_minor);
 
   void set(HTTPVersion ver);
@@ -520,7 +520,7 @@ public:
   int operator <=(const HTTPVersion & hv);
 
 public:
-    int32 m_version;
+    int32_t m_version;
 };
 
 class IOBufferReader;
@@ -671,7 +671,7 @@ inline HTTPVersion::HTTPVersion()
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-inline HTTPVersion::HTTPVersion(int32 version)
+inline HTTPVersion::HTTPVersion(int32_t version)
 :m_version(version)
 {
 }
@@ -970,7 +970,7 @@ HTTPHdr::type_get() const
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-inline int32
+inline int32_t
 http_hdr_version_get(HTTPHdrImpl * hh)
 {
   return (hh->m_version);
@@ -1218,7 +1218,7 @@ HTTPHdr::is_cache_control_set(const char *cc_directive_wks)
   HdrTokenHeapPrefix *prefix = hdrtoken_wks_to_prefix(cc_directive_wks);
   ink_debug_assert(prefix->wks_token_type == HDRTOKEN_TYPE_CACHE_CONTROL);
 
-  uint32 cc_mask = prefix->wks_type_specific.u.cache_control.cc_mask;
+  uint32_t cc_mask = prefix->wks_type_specific.u.cache_control.cc_mask;
   if (get_cooked_cc_mask() & cc_mask)
     return (true);
   else
@@ -1252,21 +1252,21 @@ struct HTTPCacheAlt
   void copy(HTTPCacheAlt * to_copy);
   void destroy();
 
-  uint32 m_magic;
+  uint32_t m_magic;
 
   // Writeable is set to true is we reside
   //  in a buffer owned by this structure.
   // INVARIENT: if own the buffer this HttpCacheAlt
   //   we also own the buffers for the request &
   //   response headers
-  int32 m_writeable;
-  int32 m_unmarshal_len;
+  int32_t m_writeable;
+  int32_t m_unmarshal_len;
 
-  int32 m_id;
-  int32 m_rid;
+  int32_t m_id;
+  int32_t m_rid;
 
-  int32 m_object_key[4];
-  int32 m_object_size[2];
+  int32_t m_object_key[4];
+  int32_t m_object_size[2];
 
   HTTPHdr m_request_hdr;
   HTTPHdr m_response_hdr;
@@ -1307,18 +1307,18 @@ public:
   void set_buffer_reference(RefCountObj * block_ref);
   int get_handle(char *buf, int len);
 
-  int32 id_get()
+  int32_t id_get()
   {
     return m_alt->m_id;
   };
-  int32 rid_get()
+  int32_t rid_get()
   {
     return m_alt->m_rid;
   };
   INK_MD5 object_key_get();
   void object_key_get(INK_MD5 *);
   bool compare_object_key(const INK_MD5 *);
-  int64 object_size_get();
+  int64_t object_size_get();
   void request_get(HTTPHdr * hdr)
   {
     hdr->copy_shallow(&m_alt->m_request_hdr);
@@ -1348,16 +1348,16 @@ public:
     return m_alt->m_response_received_time;
   };
 
-  void id_set(int32 id)
+  void id_set(int32_t id)
   {
     m_alt->m_id = id;
   };
-  void rid_set(int32 id)
+  void rid_set(int32_t id)
   {
     m_alt->m_rid = id;
   };
   void object_key_set(INK_MD5 & md5);
-  void object_size_set(int64 size);
+  void object_size_set(int64_t size);
   void request_set(const HTTPHdr * req)
   {
     m_alt->m_request_hdr.copy(req);
@@ -1440,10 +1440,10 @@ HTTPInfo::object_key_get()
 {
   INK_MD5 val;
 
-  ((int32 *) & val)[0] = m_alt->m_object_key[0];
-  ((int32 *) & val)[1] = m_alt->m_object_key[1];
-  ((int32 *) & val)[2] = m_alt->m_object_key[2];
-  ((int32 *) & val)[3] = m_alt->m_object_key[3];
+  ((int32_t *) & val)[0] = m_alt->m_object_key[0];
+  ((int32_t *) & val)[1] = m_alt->m_object_key[1];
+  ((int32_t *) & val)[2] = m_alt->m_object_key[2];
+  ((int32_t *) & val)[3] = m_alt->m_object_key[3];
 
   return val;
 }
@@ -1451,44 +1451,44 @@ HTTPInfo::object_key_get()
 inline void
 HTTPInfo::object_key_get(INK_MD5 * md5)
 {
-  ((int32 *) md5)[0] = m_alt->m_object_key[0];
-  ((int32 *) md5)[1] = m_alt->m_object_key[1];
-  ((int32 *) md5)[2] = m_alt->m_object_key[2];
-  ((int32 *) md5)[3] = m_alt->m_object_key[3];
+  ((int32_t *) md5)[0] = m_alt->m_object_key[0];
+  ((int32_t *) md5)[1] = m_alt->m_object_key[1];
+  ((int32_t *) md5)[2] = m_alt->m_object_key[2];
+  ((int32_t *) md5)[3] = m_alt->m_object_key[3];
 }
 
 inline bool
 HTTPInfo::compare_object_key(const INK_MD5 * md5)
 {
-  return ((m_alt->m_object_key[0] == ((int32 *) md5)[0]) &&
-          (m_alt->m_object_key[1] == ((int32 *) md5)[1]) &&
-          (m_alt->m_object_key[2] == ((int32 *) md5)[2]) && (m_alt->m_object_key[3] == ((int32 *) md5)[3]));
+  return ((m_alt->m_object_key[0] == ((int32_t *) md5)[0]) &&
+          (m_alt->m_object_key[1] == ((int32_t *) md5)[1]) &&
+          (m_alt->m_object_key[2] == ((int32_t *) md5)[2]) && (m_alt->m_object_key[3] == ((int32_t *) md5)[3]));
 }
 
-inline int64
+inline int64_t
 HTTPInfo::object_size_get()
 {
-  int64 val;
+  int64_t val;
 
-  ((int32 *) & val)[0] = m_alt->m_object_size[0];
-  ((int32 *) & val)[1] = m_alt->m_object_size[1];
+  ((int32_t *) & val)[0] = m_alt->m_object_size[0];
+  ((int32_t *) & val)[1] = m_alt->m_object_size[1];
   return val;
 }
 
 inline void
 HTTPInfo::object_key_set(INK_MD5 & md5)
 {
-  m_alt->m_object_key[0] = ((int32 *) & md5)[0];
-  m_alt->m_object_key[1] = ((int32 *) & md5)[1];
-  m_alt->m_object_key[2] = ((int32 *) & md5)[2];
-  m_alt->m_object_key[3] = ((int32 *) & md5)[3];
+  m_alt->m_object_key[0] = ((int32_t *) & md5)[0];
+  m_alt->m_object_key[1] = ((int32_t *) & md5)[1];
+  m_alt->m_object_key[2] = ((int32_t *) & md5)[2];
+  m_alt->m_object_key[3] = ((int32_t *) & md5)[3];
 }
 
 inline void
-HTTPInfo::object_size_set(int64 size)
+HTTPInfo::object_size_set(int64_t size)
 {
-  m_alt->m_object_size[0] = ((int32 *) & size)[0];
-  m_alt->m_object_size[1] = ((int32 *) & size)[1];
+  m_alt->m_object_size[0] = ((int32_t *) & size)[0];
+  m_alt->m_object_size[1] = ((int32_t *) & size)[1];
 }
 
 

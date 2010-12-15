@@ -125,27 +125,27 @@ logf_errno(
 */
 
 template < typename R>
-uint8 get_field(uint8 R::*M, char* buffer) {
+uint8_t get_field(uint8_t R::*M, char* buffer) {
   return reinterpret_cast<R*>(buffer)->*M;
 }
 
 template < typename R>
-uint16 get_field(uint16 R::*M, char* buffer) {
+uint16_t get_field(uint16_t R::*M, char* buffer) {
   return ntohs(reinterpret_cast<R*>(buffer)->*M);
 }
 
 template < typename R>
-uint32 get_field(uint32 R::*M, char* buffer) {
+uint32_t get_field(uint32_t R::*M, char* buffer) {
   return ntohl(reinterpret_cast<R*>(buffer)->*M);
 }
 
 template < typename R>
-void set_field(uint16 R::*M, char* buffer, uint16 value) {
+void set_field(uint16_t R::*M, char* buffer, uint16_t value) {
   reinterpret_cast<R*>(buffer)->*M = htons(value);
 }
 
 template < typename R>
-void set_field(uint32 R::*M, char* buffer, uint32 value) {
+void set_field(uint32_t R::*M, char* buffer, uint32_t value) {
   reinterpret_cast<R*>(buffer)->*M = htonl(value);
 }
 
@@ -186,7 +186,7 @@ find_by_member(
 }
 // ------------------------------------------------------
 /// Find a non-loop back IP address from an open socket.
-uint32 Get_Local_Address(
+uint32_t Get_Local_Address(
   int s ///< Open socket.
 );
 // ------------------------------------------------------
@@ -194,12 +194,12 @@ uint32 Get_Local_Address(
 /// @note Uses a static buffer so won't work across threads or
 /// twice in the same argument list.
 char const* ip_addr_to_str(
-  uint32 addr ///< Address to convert.
+  uint32_t addr ///< Address to convert.
 );
 
 /** Used for printing IP address.
     @code
-    uint32 addr; // IP address.
+    uint32_t addr; // IP address.
     printf("IP address = " ATS_IP_PRINTF_CODE,ATS_IP_OCTETS(addr));
     @endcode
  */

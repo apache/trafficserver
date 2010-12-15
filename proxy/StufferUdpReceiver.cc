@@ -51,8 +51,8 @@ typedef unsigned int uint32;
 struct prefetch_udp_header
 {
   //uint32 response_flag:1, last_pkt:1, pkt_no:30;
-  uint32 pkt;
-  uint32 md5[4];
+  uint32_t pkt;
+  uint32_t md5[4];
 };
 
 #define RESPONSE_FLAG (1<<31)
@@ -208,7 +208,7 @@ int
 processPacket(const char *packet, int pkt_sz)
 {
   prefetch_udp_header *hdr = (prefetch_udp_header *) packet;
-  uint32 flags = ntohl(hdr->pkt);
+  uint32_t flags = ntohl(hdr->pkt);
 
   int close_socket = 1;
   int sock_fd = -1;
@@ -222,7 +222,7 @@ processPacket(const char *packet, int pkt_sz)
 
   if (flags & RESPONSE_FLAG) {
     Stream *s = stream_hash_table->lookup(hdr);
-    uint32 pkt_no = flags & PKT_NUM_MASK;
+    uint32_t pkt_no = flags & PKT_NUM_MASK;
 
     if (pkt_no == 0 && !(flags & LAST_PKT_FLAG)) {
       if (s || !(s = new Stream)) {

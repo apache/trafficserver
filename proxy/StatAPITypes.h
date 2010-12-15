@@ -40,10 +40,10 @@ class HistogramStats
 public:
   // TODO: Eliminate STL strings ?
     HistogramStats() { }
-    HistogramStats(const std::string &stat_prefix, int64 max_stat) { init(stat_prefix, max_stat); }
-    void init(const std::string &stat_prefix, int64 max_stat);
-    void inc(int64 stat_val);
-    int64 get_bucket(int64 theNumber);
+    HistogramStats(const std::string &stat_prefix, int64_t max_stat) { init(stat_prefix, max_stat); }
+    void init(const std::string &stat_prefix, int64_t max_stat);
+    void inc(int64_t stat_val);
+    int64_t get_bucket(int64_t theNumber);
 private:
     std::vector<uint32_t> buckets; // TODO: Do we need a vector here?
 };

@@ -123,7 +123,7 @@ main()
   bzero(&req->startTime, sizeof(hrtime_t));     /* start now */
   req++;
 
-  printf("Now: %lld.\n", gethrtime());
+  printf("Now: %" PRId64 ".\n", gethrtime());
   pkt = (struct fastIO_pkt *) req;
   pkt->pktsize = 1466;
   pkt->blockID = blocks[0]->id;

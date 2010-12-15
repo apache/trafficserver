@@ -106,7 +106,7 @@ link_int32(const char *name, RecDataT data_type, RecData data, void *cookie)
 {
   REC_NOWARN_UNUSED(name);
   REC_NOWARN_UNUSED(data_type);
-  *((int32 *) cookie) = (int32) data.rec_int;
+  *((int32_t *) cookie) = (int32_t) data.rec_int;
   return REC_ERR_OKAY;
 }
 
@@ -115,7 +115,7 @@ link_uint32(const char *name, RecDataT data_type, RecData data, void *cookie)
 {
   REC_NOWARN_UNUSED(name);
   REC_NOWARN_UNUSED(data_type);
-  *((uint32 *) cookie) = (uint32) data.rec_int;
+  *((uint32_t *) cookie) = (uint32_t) data.rec_int;
   return REC_ERR_OKAY;
 }
 
@@ -259,13 +259,13 @@ RecLinkConfigInt(const char *name, RecInt * rec_int)
 }
 
 int
-RecLinkConfigInk32(const char *name, int32 * p_int32)
+RecLinkConfigInk32(const char *name, int32_t * p_int32)
 {
   return RecRegisterConfigUpdateCb(name, link_int32, (void *) p_int32);
 }
 
 int
-RecLinkConfigInkU32(const char *name, uint32 * p_uint32)
+RecLinkConfigInkU32(const char *name, uint32_t * p_uint32)
 {
   return RecRegisterConfigUpdateCb(name, link_uint32, (void *) p_uint32);
 }
@@ -445,7 +445,7 @@ RecGetRecordGeneric_Xmalloc(const char *name, RecString * rec_string, bool lock)
   memset(*rec_string, 0, 1024);
   switch (data_type) {
   case RECD_INT:
-    snprintf(*rec_string, 1023, "%lld", data.rec_int);
+    snprintf(*rec_string, 1023, "%" PRId64 "", data.rec_int);
     break;
   case RECD_FLOAT:
     snprintf(*rec_string, 1023, "%f", data.rec_float);
@@ -454,7 +454,7 @@ RecGetRecordGeneric_Xmalloc(const char *name, RecString * rec_string, bool lock)
     snprintf(*rec_string, 1023, "%s", data.rec_string);
     break;
   case RECD_COUNTER:
-    snprintf(*rec_string, 1023, "%lld", data.rec_counter);
+    snprintf(*rec_string, 1023, "%" PRId64 "", data.rec_counter);
     break;
   default:
     return REC_ERR_FAIL;
@@ -655,7 +655,7 @@ RecGetRecordDefaultDataString_Xmalloc(char *name, char **buf, bool lock)
 
     switch (r->data_type) {
     case RECD_INT:
-      snprintf(*buf, 1023, "%lld", r->data_default.rec_int);
+      snprintf(*buf, 1023, "%" PRId64 "", r->data_default.rec_int);
       break;
     case RECD_FLOAT:
       snprintf(*buf, 1023, "%f", r->data_default.rec_float);
@@ -670,7 +670,7 @@ RecGetRecordDefaultDataString_Xmalloc(char *name, char **buf, bool lock)
       }
       break;
     case RECD_COUNTER:
-      snprintf(*buf, 1023, "%lld", r->data_default.rec_counter);
+      snprintf(*buf, 1023, "%" PRId64 "", r->data_default.rec_counter);
       break;
     default:
       ink_debug_assert(!"Unexpected RecD type");
@@ -882,9 +882,12 @@ RecForceInsert(RecRecord * record)
 static void
 debug_record_callback(RecT rec_type, void *edata, int registered, const char *name, int data_type, RecData *datum)
 {
+  NOWARN_UNUSED(edata);
+  NOWARN_UNUSED(rec_type);
+
   switch(data_type) {
   case RECD_INT:
-    RecDebug(DL_Note, "  ([%d] '%s', '%lld')", registered, name, datum->rec_int);
+    RecDebug(DL_Note, "  ([%d] '%s', '%" PRId64 "')", registered, name, datum->rec_int);
     break;
   case RECD_FLOAT:
     RecDebug(DL_Note, "  ([%d] '%s', '%f')", registered, name, datum->rec_float);
@@ -894,7 +897,7 @@ debug_record_callback(RecT rec_type, void *edata, int registered, const char *na
              registered, name, datum->rec_string ? datum->rec_string : "NULL");
     break;
   case RECD_COUNTER:
-    RecDebug(DL_Note, "  ([%d] '%s', '%lld')", registered, name, datum->rec_counter);
+    RecDebug(DL_Note, "  ([%d] '%s', '%" PRId64 "')", registered, name, datum->rec_counter);
     break;
   default:
     RecDebug(DL_Note, "  ([%d] '%s', <? ? ?>)", registered, name);
@@ -965,7 +968,7 @@ RecGetRecordPrefix_Xmalloc(char *prefix, char **buf, int *buf_len)
       switch (r->data_type) {
       case RECD_INT:
         num_matched++;
-        sprintf(&result[strlen(result)], "%s=%lld\r\n", r->name, r->data.rec_int);
+        sprintf(&result[strlen(result)], "%s=%" PRId64 "\r\n", r->name, r->data.rec_int);
         break;
       case RECD_FLOAT:
         num_matched++;
@@ -977,7 +980,7 @@ RecGetRecordPrefix_Xmalloc(char *prefix, char **buf, int *buf_len)
         break;
       case RECD_COUNTER:
         num_matched++;
-        sprintf(&result[strlen(result)], "%s=%lld\r\n", r->name, r->data.rec_int);
+        sprintf(&result[strlen(result)], "%s=%" PRId64 "\r\n", r->name, r->data.rec_int);
         break;
       default:
         break;
@@ -1108,7 +1111,7 @@ REC_setFloat(const char *name, float value, bool dirty)
 }
 
 bool
-REC_setCounter(const char *name, int64 value, bool dirty)
+REC_setCounter(const char *name, int64_t value, bool dirty)
 {
   REC_NOWARN_UNUSED(dirty);
   return RecSetRecordCounter(name, value);

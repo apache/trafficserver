@@ -189,7 +189,7 @@ public:
     @return VIO representing the scheduled IO operation.
 
   */
-  virtual VIO *do_io_read(Continuation *c = NULL, int64 nbytes = INT64_MAX, MIOBuffer *buf = 0) = 0;
+  virtual VIO *do_io_read(Continuation *c = NULL, int64_t nbytes = INT64_MAX, MIOBuffer *buf = 0) = 0;
 
   /**
     Write data to the VConnection.
@@ -240,7 +240,7 @@ public:
 
   */
   virtual VIO *do_io_write(Continuation *c = NULL,
-                           int64 nbytes = INT64_MAX, IOBufferReader *buf = 0, bool owner = false) = 0;
+                           int64_t nbytes = INT64_MAX, IOBufferReader *buf = 0, bool owner = false) = 0;
 
   /**
     Indicate that the VConnection is no longer needed.
@@ -305,11 +305,11 @@ public:
     VConnection(ProxyMutex *aMutex);
 
 #if defined (_IOCORE_WIN32_WINNT)
-  virtual void set_nbytes(VIO *vio, int64 nbytes);
+  virtual void set_nbytes(VIO *vio, int64_t nbytes);
 #endif
 
   /** @deprecated */
-  VIO *do_io(int op, Continuation *c = NULL, int64 nbytes = INT64_MAX, MIOBuffer *buf = 0, int data = 0);
+  VIO *do_io(int op, Continuation *c = NULL, int64_t nbytes = INT64_MAX, MIOBuffer *buf = 0, int data = 0);
 
   // Private
   // Set continuation on a given vio. The public interface
@@ -379,7 +379,7 @@ public:
 
 struct DummyVConnection: public VConnection
 {
-  virtual VIO *do_io_write(Continuation *c = NULL, int64 nbytes = INT64_MAX, IOBufferReader *buf = 0, bool owner = false) {
+  virtual VIO *do_io_write(Continuation *c = NULL, int64_t nbytes = INT64_MAX, IOBufferReader *buf = 0, bool owner = false) {
     (void) c;
     (void) nbytes;
     (void) buf;
@@ -387,7 +387,7 @@ struct DummyVConnection: public VConnection
     ink_debug_assert(!"VConnection::do_io_write -- " "cannot use default implementation");
     return NULL;
   }
-  virtual VIO *do_io_read(Continuation *c = NULL, int64 nbytes = INT64_MAX, MIOBuffer *buf = 0) {
+  virtual VIO *do_io_read(Continuation *c = NULL, int64_t nbytes = INT64_MAX, MIOBuffer *buf = 0) {
     (void) c;
     (void) nbytes;
     (void) buf;
@@ -404,7 +404,7 @@ struct DummyVConnection: public VConnection
     ink_debug_assert(!"VConnection::do_io_shutdown -- " "cannot use default implementation");
   }
 #ifdef _IOCORE_WIN32_WINNT
-  virtual void set_nbytes(VIO *vio, int64 nbytes)
+  virtual void set_nbytes(VIO *vio, int64_t nbytes)
   {
     (void) vio;
     (void) nbytes;

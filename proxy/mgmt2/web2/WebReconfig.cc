@@ -271,7 +271,7 @@ configAuthOtherUsers()
 {
   char fpath[FILE_NAME_MAX];
   char *fbuf;
-  int64 fsize;
+  int64_t fsize;
   MgmtHashTable *ht;
   InkHashTableEntry *hte;
   InkHashTableIteratorState htis;

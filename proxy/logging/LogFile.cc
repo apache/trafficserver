@@ -89,7 +89,7 @@ static const int FILESIZE_SAFE_THRESHOLD_FACTOR = 10;
   -------------------------------------------------------------------------*/
 
 LogFile::LogFile(const char *name, const char *header, LogFileFormat format,
-                 uint64 signature, size_t ascii_buffer_size, size_t max_line_size, size_t overspill_report_count)
+                 uint64_t signature, size_t ascii_buffer_size, size_t max_line_size, size_t overspill_report_count)
   :
 m_file_format(format),
 m_name(xstrdup(name)),
@@ -866,7 +866,7 @@ LogFile::do_filesystem_checks()
     Error("Filesystem checks for log file %s failed: %s", m_name, strerror(errno));
     ret_val = -1;
   } else if (m_has_size_limit) {
-    uint64 safe_threshold =
+    uint64_t safe_threshold =
       (m_file_format == ASCII_PIPE ? 0 : Log::config->log_buffer_size * FILESIZE_SAFE_THRESHOLD_FACTOR);
     if (safe_threshold > m_size_limit_bytes) {
       Error("Filesize limit is too low for log file %s", m_name);
@@ -944,7 +944,7 @@ MetaInfo::_read_from_file()
             _flags |= VALID_SIGNATURE;
             Debug("log-meta", "MetaInfo::_read_from_file\n"
                   "\tfilename = %s\n"
-                  "\tsignature string = %s\n" "\tsignature value = %llu", _filename, t, _log_object_signature);
+                  "\tsignature string = %s\n" "\tsignature value = %" PRIu64 "", _filename, t, _log_object_signature);
           }
         } else if (line_number == 1) {
           _creation_time = (time_t) atol(t);
@@ -976,7 +976,7 @@ MetaInfo::_write_to_file()
       }
     }
     if (_flags & VALID_SIGNATURE) {
-      n = snprintf(_buffer, BUF_SIZE, "object_signature = %llu\n", _log_object_signature);
+      n = snprintf(_buffer, BUF_SIZE, "object_signature = %" PRIu64 "\n", _log_object_signature);
       // TODO modify this runtime check so that it is not an assertion
       ink_release_assert(n <= BUF_SIZE);
       if (write(fd, _buffer, n) == -1) {
@@ -984,7 +984,7 @@ MetaInfo::_write_to_file()
       }
       Debug("log-meta", "MetaInfo::_write_to_file\n"
             "\tfilename = %s\n"
-            "\tsignature value = %llu\n" "\tsignature string = %s", _filename, _log_object_signature, _buffer);
+            "\tsignature value = %" PRIu64 "\n" "\tsignature string = %s", _filename, _log_object_signature, _buffer);
     }
   }
   close(fd);

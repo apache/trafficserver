@@ -451,7 +451,7 @@ MgmtRecordSetInt(const char *rec_name, MgmtInt int_val, INKActionNeedT * action_
   char str_val[MAX_RECORD_SIZE];
 
   memset(str_val, 0, MAX_RECORD_SIZE);
-  snprintf(str_val, sizeof(str_val), "%lld", int_val);
+  snprintf(str_val, sizeof(str_val), "%" PRId64 "", int_val);
 
   return MgmtRecordSet(rec_name, str_val, action_need);
 
@@ -481,7 +481,7 @@ MgmtRecordSetCounter(const char *rec_name, MgmtIntCounter counter_val, INKAction
   char str_val[MAX_RECORD_SIZE];
 
   memset(str_val, 0, MAX_RECORD_SIZE);
-  snprintf(str_val, sizeof(str_val), "%lld", counter_val);
+  snprintf(str_val, sizeof(str_val), "%" PRId64 "", counter_val);
 
   return MgmtRecordSet(rec_name, str_val, action_need);
 

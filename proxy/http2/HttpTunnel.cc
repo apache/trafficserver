@@ -164,12 +164,12 @@ ChunkedHandler::init(IOBufferReader * buffer_in, HttpTunnelProducer * p)
 void
 ChunkedHandler::read_size()
 {
-  int64 bytes_used;
+  int64_t bytes_used;
   bool done = false;
 
   while (chunked_reader->read_avail() > 0 && !done) {
     const char *tmp = chunked_reader->start();
-    int64 data_size = chunked_reader->block_read_avail();
+    int64_t data_size = chunked_reader->block_read_avail();
 
     ink_assert(data_size > 0);
     bytes_used = 0;
@@ -231,10 +231,10 @@ ChunkedHandler::read_size()
 #undef MIN
 #define MIN(x,y) ((x) <= (y)) ? (x) : (y);
 
-int64
+int64_t
 ChunkedHandler::transfer_bytes()
 {
-  int64 block_read_avail, moved, to_move, total_moved = 0;
+  int64_t block_read_avail, moved, to_move, total_moved = 0;
 
   // Handle the case where we are doing chunked passthrough.
   if (!dechunked_buffer) {
@@ -276,7 +276,7 @@ ChunkedHandler::transfer_bytes()
 void
 ChunkedHandler::read_chunk()
 {
-  int64 b = transfer_bytes();
+  int64_t b = transfer_bytes();
 
   ink_assert(bytes_left >= 0);
   if (bytes_left == 0) {
@@ -299,12 +299,12 @@ ChunkedHandler::read_chunk()
 void
 ChunkedHandler::read_trailer()
 {
-  int64 bytes_used;
+  int64_t bytes_used;
   bool done = false;
 
   while (chunked_reader->read_avail() > 0 && !done) {
     const char *tmp = chunked_reader->start();
-    int64 data_size = chunked_reader->block_read_avail();
+    int64_t data_size = chunked_reader->block_read_avail();
 
     ink_assert(data_size > 0);
     for (bytes_used = 0; data_size > 0; data_size--) {
@@ -556,7 +556,7 @@ HttpTunnel::deallocate_buffers()
 }
 
 void
-HttpTunnel::set_producer_chunking_action(HttpTunnelProducer * p, int64 skip_bytes, TunnelChunkingAction_t action)
+HttpTunnel::set_producer_chunking_action(HttpTunnelProducer * p, int64_t skip_bytes, TunnelChunkingAction_t action)
 {
   p->chunked_handler.skip_bytes = skip_bytes;
   p->chunking_action = action;
@@ -580,13 +580,13 @@ HttpTunnel::set_producer_chunking_action(HttpTunnelProducer * p, int64 skip_byte
 //
 HttpTunnelProducer *
 HttpTunnel::add_producer(VConnection * vc,
-                         int64 nbytes_arg,
+                         int64_t nbytes_arg,
                          IOBufferReader * reader_start,
                          HttpProducerHandler sm_handler, HttpTunnelType_t vc_type, const char *name_arg)
 {
   HttpTunnelProducer *p;
 
-  Debug("http_tunnel", "[%lld] adding producer '%s'", sm->sm_id, name_arg);
+  Debug("http_tunnel", "[%" PRId64 "] adding producer '%s'", sm->sm_id, name_arg);
 
   ink_assert(reader_start->mbuf);
   if ((p = alloc_producer()) != NULL) {
@@ -640,9 +640,9 @@ HttpTunnel::add_producer(VConnection * vc,
 HttpTunnelConsumer *
 HttpTunnel::add_consumer(VConnection * vc,
                          VConnection * producer,
-                         HttpConsumerHandler sm_handler, HttpTunnelType_t vc_type, const char *name_arg, int64 skip_bytes)
+                         HttpConsumerHandler sm_handler, HttpTunnelType_t vc_type, const char *name_arg, int64_t skip_bytes)
 {
-  Debug("http_tunnel", "[%lld] adding consumer '%s'", sm->sm_id, name_arg);
+  Debug("http_tunnel", "[%" PRId64 "] adding consumer '%s'", sm->sm_id, name_arg);
 
   // Find the producer entry
   HttpTunnelProducer *p = get_producer(producer);
@@ -651,7 +651,7 @@ HttpTunnel::add_consumer(VConnection * vc,
   // Check to see if the producer terminated
   //  without sending all of its data
   if (p->alive == false && p->read_success == false) {
-    Debug("http_tunnel", "[%lld] consumer '%s' not added due to producer failure", sm->sm_id, name_arg);
+    Debug("http_tunnel", "[%" PRId64 "] consumer '%s' not added due to producer failure", sm->sm_id, name_arg);
     return NULL;
   }
   // Initialize the consumer structure
@@ -748,8 +748,8 @@ HttpTunnel::producer_run(HttpTunnelProducer * p)
     }
   }
 
-  int64 consumer_n;
-  int64 producer_n;
+  int64_t consumer_n;
+  int64_t producer_n;
 
   ink_assert(p->vc != NULL);
   active = true;
@@ -825,7 +825,7 @@ HttpTunnel::producer_run(HttpTunnelProducer * p)
       ink_assert(c->skip_bytes <= c->buffer_reader->read_avail());
       c->buffer_reader->consume(c->skip_bytes);
     }
-    int64 c_write = consumer_n;
+    int64_t c_write = consumer_n;
 
     // INKqa05109 - if we don't know the length leave it at
     //  INT64_MAX or else the cache may bounce the write
@@ -921,7 +921,7 @@ HttpTunnel::producer_run(HttpTunnelProducer * p)
       // done but we didn't do anything
       p->alive = false;
       p->read_success = true;
-      Debug("http_tunnel", "[%lld] [tunnel_run] producer already done", sm->sm_id);
+      Debug("http_tunnel", "[%" PRId64 "] [tunnel_run] producer already done", sm->sm_id);
       producer_handler(HTTP_TUNNEL_EVENT_PRECOMPLETE, p);
     } else {
       p->read_vio = p->vc->do_io_read(this, producer_n, p->read_buffer);
@@ -939,7 +939,7 @@ HttpTunnel::producer_handler_dechunked(int event, HttpTunnelProducer * p)
 {
   ink_assert(p->do_chunking);
 
-  Debug("http_tunnel", "[%lld] producer_handler_dechunked [%s %s]", sm->sm_id, p->name, HttpDebugNames::get_event_name(event));
+  Debug("http_tunnel", "[%" PRId64 "] producer_handler_dechunked [%s %s]", sm->sm_id, p->name, HttpDebugNames::get_event_name(event));
 
   // We only interested in translating certain events
   switch (event) {
@@ -969,7 +969,7 @@ HttpTunnel::producer_handler_chunked(int event, HttpTunnelProducer * p)
 {
   ink_assert(p->do_dechunking || p->do_chunked_passthru);
 
-  Debug("http_tunnel", "[%lld] producer_handler_chunked [%s %s]", sm->sm_id, p->name, HttpDebugNames::get_event_name(event));
+  Debug("http_tunnel", "[%" PRId64 "] producer_handler_chunked [%s %s]", sm->sm_id, p->name, HttpDebugNames::get_event_name(event));
 
   // We only interested in translating certain events
   switch (event) {
@@ -988,7 +988,7 @@ HttpTunnel::producer_handler_chunked(int event, HttpTunnelProducer * p)
   // If we couldn't understand the encoding, return
   //   an error
   if (p->chunked_handler.state == ChunkedHandler::CHUNK_READ_ERROR) {
-    Debug("http_tunnel", "[%lld] producer_handler_chunked [%s chunk decoding error]", sm->sm_id, p->name);
+    Debug("http_tunnel", "[%" PRId64 "] producer_handler_chunked [%s chunk decoding error]", sm->sm_id, p->name);
     p->chunked_handler.truncation = true;
     // FIX ME: we return EOS here since it will cause the
     //  the client to be reenabled.  ERROR makes more
@@ -1043,7 +1043,7 @@ bool HttpTunnel::producer_handler(int event, HttpTunnelProducer * p)
   HttpProducerHandler jump_point;
   bool sm_callback = false;
 
-  Debug("http_tunnel", "[%lld] producer_handler [%s %s]", sm->sm_id, p->name, HttpDebugNames::get_event_name(event));
+  Debug("http_tunnel", "[%" PRId64 "] producer_handler [%s %s]", sm->sm_id, p->name, HttpDebugNames::get_event_name(event));
 
   // Handle chunking/dechunking/chunked-passthrough if necessary.
   if (p->do_chunking) {
@@ -1183,7 +1183,7 @@ bool HttpTunnel::consumer_handler(int event, HttpTunnelConsumer * c)
   bool sm_callback = false;
   HttpConsumerHandler jump_point;
 
-  Debug("http_tunnel", "[%lld] consumer_handler [%s %s]", sm->sm_id, c->name, HttpDebugNames::get_event_name(event));
+  Debug("http_tunnel", "[%" PRId64 "] consumer_handler [%s %s]", sm->sm_id, c->name, HttpDebugNames::get_event_name(event));
 
   ink_assert(c->alive == true);
 
@@ -1313,7 +1313,7 @@ HttpTunnel::finish_all_internal(HttpTunnelProducer * p, bool chain)
 {
   ink_assert(p->alive == false);
   HttpTunnelConsumer *c = p->consumer_list.head;
-  int64 total_bytes = 0;
+  int64_t total_bytes = 0;
   TunnelChunkingAction_t action = p->chunking_action;
 
   while (c) {
@@ -1344,8 +1344,8 @@ HttpTunnel::finish_all_internal(HttpTunnelProducer * p, bool chain)
       if (c->write_vio->nbytes < 0) {
         // TODO: Wtf, printf?
         fprintf(stderr,
-                "[HttpTunnel::finish_all_internal] ERROR: Incorrect total_bytes - c->skip_bytes = %lld\n",
-                (int64) (total_bytes - c->skip_bytes));
+                "[HttpTunnel::finish_all_internal] ERROR: Incorrect total_bytes - c->skip_bytes = %" PRId64 "\n",
+                (int64_t) (total_bytes - c->skip_bytes));
       }
 
       if (chain == true && c->self_producer) {

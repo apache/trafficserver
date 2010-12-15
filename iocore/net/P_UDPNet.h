@@ -80,7 +80,7 @@ public:
   void BulkIOSend();
   // In the absence of bulk-io, we are down sending packet after packet
   void SendPackets();
-  void SendUDPPacket(UDPPacketInternal * p, int32 pktLen);
+  void SendUDPPacket(UDPPacketInternal * p, int32_t pktLen);
 
   // Interface exported to the outside world
   void send(UDPPacket * p);
@@ -105,7 +105,7 @@ public:
 #define SLOT_TIME HRTIME_MSECONDS(SLOT_TIME_MSEC)
 #define N_SLOTS 2048
 
-extern uint64 g_udp_bytesPending;
+extern uint64_t g_udp_bytesPending;
 
 class PacketQueue
 {
@@ -267,7 +267,7 @@ public:
     }
 
     if (s != now_slot)
-      Debug("udpnet-service", "Advancing by (%d slots): behind by %lld ms",
+      Debug("udpnet-service", "Advancing by (%d slots): behind by %" PRId64 " ms",
             s - now_slot, ink_hrtime_to_msec(t - delivery_time[now_slot]));
     now_slot = s;
   };
@@ -414,14 +414,14 @@ struct InkSinglePipeInfo
 
   double wt;
   // all are in bps (bits per sec.) so that we can do ink_atomic_increment
-  int64 bwLimit;
-  int64 bwAlloc;
+  int64_t bwLimit;
+  int64_t bwAlloc;
   // this is in Mbps
   double bwUsed;
-  int32 destIP;
-  uint32 count;
-  uint64 bytesSent;
-  uint64 pktsSent;
+  int32_t destIP;
+  uint32_t count;
+  uint64_t bytesSent;
+  uint64_t pktsSent;
   PacketQueue *queue;
 };
 

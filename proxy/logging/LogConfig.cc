@@ -608,7 +608,7 @@ LogConfig::LogConfig()
 :
 initialized(false),
 reconfiguration_needed(false),
-logging_space_exhausted(false), m_space_used(0), m_partition_space_left((int64) UINT_MAX),
+logging_space_exhausted(false), m_space_used(0), m_partition_space_left((int64_t) UINT_MAX),
 #if defined (IOCORE_LOG_COLLATION)
   m_log_collation_accept(NULL),
 #endif
@@ -1038,12 +1038,12 @@ LogConfig::split_by_protocol(const PreDefinedFormatInfoList & pre_def_info_list)
          http
   };
 
-  int64 value[] = { LOG_ENTRY_ICP,
+  int64_t value[] = { LOG_ENTRY_ICP,
                     LOG_ENTRY_HTTP
   };
   const char *name[] = { "icp", "http" };
   const char *filter_name[] = { "__icp__", "__http__" };
-  int64 filter_val[http];    // protocols to reject
+  int64_t filter_val[http];    // protocols to reject
   size_t n = 0;
 
   LogFilter *filter[1];
@@ -1434,23 +1434,23 @@ LogConfig::register_mgmt_callbacks()
   given number of bytes, false otherwise.
   -------------------------------------------------------------------------*/
 
-bool LogConfig::space_to_write(int64 bytes_to_write)
+bool LogConfig::space_to_write(int64_t bytes_to_write)
 {
-  int64
+  int64_t
     config_space,
     partition_headroom;
-  int64
+  int64_t
     logical_space_used,
     physical_space_left;
   bool
     space;
 
-  config_space = (int64) get_max_space_mb() * LOG_MEGABYTE;
-  partition_headroom = (int64) PARTITION_HEADROOM_MB *
+  config_space = (int64_t) get_max_space_mb() * LOG_MEGABYTE;
+  partition_headroom = (int64_t) PARTITION_HEADROOM_MB *
     LOG_MEGABYTE;
 
   logical_space_used = m_space_used + bytes_to_write;
-  physical_space_left = m_partition_space_left - (int64) bytes_to_write;
+  physical_space_left = m_partition_space_left - (int64_t) bytes_to_write;
 
   space = ((logical_space_used<config_space) && (physical_space_left> partition_headroom));
 
@@ -1488,7 +1488,7 @@ LogConfig::update_space_used()
   static const int MAX_CANDIDATES = 128;
   LogDeleteCandidate candidates[MAX_CANDIDATES];
   int i, victim, candidate_count;
-  int64 total_space_used, partition_space_left;
+  int64_t total_space_used, partition_space_left;
   char path[MAXPATHLEN];
   int sret;
   struct dirent *result;
@@ -1554,14 +1554,14 @@ LogConfig::update_space_used()
     sret =::stat(path, &sbuf);
     if (sret != -1 && S_ISREG(sbuf.st_mode)) {
 
-      total_space_used += (int64) sbuf.st_size;
+      total_space_used += (int64_t) sbuf.st_size;
 
       if (auto_delete_rolled_files && LogFile::rolled_logfile(m_dir_entry->d_name) && candidate_count < MAX_CANDIDATES) {
         //
         // then add this entry to the candidate list
         //
         candidates[candidate_count].name = xstrdup(path);
-        candidates[candidate_count].size = (int64) sbuf.st_size;
+        candidates[candidate_count].size = (int64_t) sbuf.st_size;
         candidates[candidate_count].mtime = sbuf.st_mtime;
         candidate_count++;
       }
@@ -1583,7 +1583,7 @@ LogConfig::update_space_used()
   int ret =::statfs(logfile_dir, &fs);
 #endif
   if (ret >= 0) {
-    partition_space_left = (int64) fs.f_bavail * (int64) fs.f_bsize;
+    partition_space_left = (int64_t) fs.f_bavail * (int64_t) fs.f_bsize;
   }
 
   //
@@ -1593,8 +1593,8 @@ LogConfig::update_space_used()
   m_partition_space_left = partition_space_left;
   LOG_SET_DYN_STAT(log_stat_log_files_space_used_stat, 1, m_space_used);
 
-  Debug("logspace", "%lld bytes being used for logs", m_space_used);
-  Debug("logspace", "%lld bytes left on parition", m_partition_space_left);
+  Debug("logspace", "%" PRId64 " bytes being used for logs", m_space_used);
+  Debug("logspace", "%" PRId64 " bytes left on parition", m_partition_space_left);
 
   //
   // Now that we have an accurate picture of the amount of space being
@@ -1607,8 +1607,8 @@ LogConfig::update_space_used()
   // selected).
   //
 
-  int64 max_space = (int64) get_max_space_mb() * LOG_MEGABYTE;
-  int64 headroom = (int64) max_space_mb_headroom * LOG_MEGABYTE;
+  int64_t max_space = (int64_t) get_max_space_mb() * LOG_MEGABYTE;
+  int64_t headroom = (int64_t) max_space_mb_headroom * LOG_MEGABYTE;
 
   if (candidate_count > 0 && !space_to_write(headroom)) {
 
@@ -1631,7 +1631,7 @@ LogConfig::update_space_used()
              "logfile %s: %s.", candidates[victim].name, strerror(errno));
       } else {
         Status("The rolled logfile, %s, was auto-deleted; "
-               "%lld bytes were reclaimed.", candidates[victim].name, candidates[victim].size);
+               "%" PRId64 " bytes were reclaimed.", candidates[victim].name, candidates[victim].size);
         m_space_used -= candidates[victim].size;
         m_partition_space_left += candidates[victim].size;
       }
@@ -2240,7 +2240,7 @@ LogConfig::read_xml_log_config(int from_memory)
         size_t n = tok.getNumTokensRemaining();
 
         if (n) {
-          int64 *val_array = NEW(new int64[n]);
+          int64_t *val_array = NEW(new int64_t[n]);
           size_t numValid = 0;
           char *t;
           while (t = tok.getNext(), t != NULL) {

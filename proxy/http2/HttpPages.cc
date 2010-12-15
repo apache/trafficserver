@@ -64,11 +64,11 @@ HttpPagesHandler::~HttpPagesHandler()
 {
 }
 
-int64
+int64_t
 HttpPagesHandler::extract_id(const char *query)
 {
   char *p;
-  int64 id;
+  int64_t id;
 
   p = (char *) strstr(query, "id=");
   if (!p) {
@@ -306,7 +306,7 @@ HttpPagesHandler::handle_smdetails(int event, void *data)
 
     resp_begin("Http:SM Details");
     resp_begin_item();
-    resp_add("Details for SM id  %lld", sm_id);
+    resp_add("Details for SM id  %" PRId64 "", sm_id);
     resp_end_item();
   }
 
@@ -344,7 +344,7 @@ HttpPagesHandler::handle_smdetails(int event, void *data)
 
 
   // If we got here, we did not find our state machine
-  resp_add("<h2>Id %lld not found</h2>", sm_id);
+  resp_add("<h2>Id %" PRId64 " not found</h2>", sm_id);
   resp_end();
   return handle_callback(EVENT_NONE, NULL);
 }
@@ -415,7 +415,7 @@ HttpPagesHandler::handle_smlist(int event, void *data)
       }
 
       resp_begin_item();
-      resp_add("id: <a href=\"./sm_details?id=%lld\"> %lld </a> | %s %s | %s\n",
+      resp_add("id: <a href=\"./sm_details?id=%" PRId64 "\"> %" PRId64 " </a> | %s %s | %s\n",
                sm->sm_id, sm->sm_id, method ? method : "", url, sm_state ? sm_state : "");
       resp_end_item();
       arena.str_free(url);

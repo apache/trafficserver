@@ -38,7 +38,7 @@ extern "C"
 #endif                          /* __cplusplus */
 
   /* Cache APIs that are not yet fully supported and/or frozen nor complete. */
-  tsapi TSReturnCode TSCacheBufferInfoGet(TSCacheTxn txnp, uint64 * length, uint64 * offset);
+  tsapi TSReturnCode TSCacheBufferInfoGet(TSCacheTxn txnp, uint64_t * length, uint64_t * offset);
 
   tsapi TSCacheHttpInfo TSCacheHttpInfoCreate();
   tsapi void TSCacheHttpInfoReqGet(TSCacheHttpInfo infop, TSMBuffer * bufp, TSMLoc * obj);
@@ -46,7 +46,7 @@ extern "C"
   tsapi void TSCacheHttpInfoReqSet(TSCacheHttpInfo infop, TSMBuffer bufp, TSMLoc obj);
   tsapi void TSCacheHttpInfoRespSet(TSCacheHttpInfo infop, TSMBuffer bufp, TSMLoc obj);
   tsapi void TSCacheHttpInfoKeySet(TSCacheHttpInfo infop, TSCacheKey key);
-  tsapi void TSCacheHttpInfoSizeSet(TSCacheHttpInfo infop, int64 size);
+  tsapi void TSCacheHttpInfoSizeSet(TSCacheHttpInfo infop, int64_t size);
   tsapi int TSCacheHttpInfoVector(TSCacheHttpInfo infop, void *data, int length);
 
   /* --------------------------------------------------------------------------
@@ -54,14 +54,14 @@ extern "C"
      TS stats. It is disabled by default, enable it with --with_v2_stats at
      configure time. */
   tsapi TSReturnCode     TSStatCreateV2(const char *name, uint32_t *stat_num);
-  tsapi TSReturnCode     TSStatIncrementV2(uint32_t stat_num, int64 inc_by);
-  tsapi TSReturnCode     TSStatIncrementByNameV2(const char *stat_name, int64 inc_by);
-  tsapi TSReturnCode     TSStatDecrementV2(uint32_t stat_num, int64 dec_by);
-  tsapi TSReturnCode     TSStatDecrementByNameV2(const char *stat_name, int64 dec_by);
-  tsapi TSReturnCode     TSStatGetCurrentV2(uint32_t stat_num, int64 *stat_val);
-  tsapi TSReturnCode     TSStatGetCurrentByNameV2(const char *stat_name, int64 *stat_val);
-  tsapi TSReturnCode     TSStatGetV2(uint32_t stat_num, int64 *stat_val);
-  tsapi TSReturnCode     TSStatGetByNameV2(const char *stat_name, int64 *stat_val);
+  tsapi TSReturnCode     TSStatIncrementV2(uint32_t stat_num, int64_t inc_by);
+  tsapi TSReturnCode     TSStatIncrementByNameV2(const char *stat_name, int64_t inc_by);
+  tsapi TSReturnCode     TSStatDecrementV2(uint32_t stat_num, int64_t dec_by);
+  tsapi TSReturnCode     TSStatDecrementByNameV2(const char *stat_name, int64_t dec_by);
+  tsapi TSReturnCode     TSStatGetCurrentV2(uint32_t stat_num, int64_t *stat_val);
+  tsapi TSReturnCode     TSStatGetCurrentByNameV2(const char *stat_name, int64_t *stat_val);
+  tsapi TSReturnCode     TSStatGetV2(uint32_t stat_num, int64_t *stat_val);
+  tsapi TSReturnCode     TSStatGetByNameV2(const char *stat_name, int64_t *stat_val);
 
 
   /* Do not edit these apis, used internally */
@@ -74,9 +74,9 @@ extern "C"
   typedef void (*TSIPLookupPrintFunc) (void *data);
 
   tsapi void TSIPLookupPrint(TSIPLookup iplu, TSIPLookupPrintFunc pf);
-  tsapi void TSIPLookupNewEntry(TSIPLookup iplu, uint32 addr1, uint32 addr2, void *data);
-  tsapi int TSIPLookupMatch(TSIPLookup iplu, uint32 addr, void **data);
-  tsapi int TSIPLookupMatchFirst(TSIPLookup iplu, uint32 addr, TSIPLookupState iplus, void **data);
+  tsapi void TSIPLookupNewEntry(TSIPLookup iplu, uint32_t addr1, uint32_t addr2, void *data);
+  tsapi int TSIPLookupMatch(TSIPLookup iplu, uint32_t addr, void **data);
+  tsapi int TSIPLookupMatchFirst(TSIPLookup iplu, uint32_t addr, TSIPLookupState iplus, void **data);
   tsapi int TSIPLookupMatchNext(TSIPLookup iplu, TSIPLookupState iplus, void **data);
 
   /* for Media-IXT mms over http */
@@ -132,7 +132,7 @@ extern "C"
   /****************************************************************************
    *  Allow to set the body of a POST request.
    ****************************************************************************/
-  tsapi void TSHttpTxnServerRequestBodySet(TSHttpTxn txnp, char *buf, int64 buflength);
+  tsapi void TSHttpTxnServerRequestBodySet(TSHttpTxn txnp, char *buf, int64_t buflength);
 
   /* ===== High Resolution Time ===== */
 #define TS_HRTIME_FOREVER  HRTIME_FOREVER
@@ -200,7 +200,7 @@ extern "C"
   tsapi double TSdrandom(void);
 
   /****************************************************************************
-   *  Return Hi-resolution current time. (int64)
+   *  Return Hi-resolution current time. (int64_t)
    ****************************************************************************/
   tsapi TSHRTime TShrtime(void);
 
@@ -238,7 +238,7 @@ extern "C"
   /****************************************************************************
    *  Get size of response body
    ****************************************************************************/
-  tsapi int TSHttpTxnServerRespBodyBytesGet(TSHttpTxn txnp, int64 *bytes);
+  tsapi int TSHttpTxnServerRespBodyBytesGet(TSHttpTxn txnp, int64_t *bytes);
 
   /* =====  CacheHttpInfo =====  */
 
@@ -310,7 +310,7 @@ extern "C"
    *  ??
    *  Return ??
    ****************************************************************************/
-  tsapi int TSHttpTxnClientRespBodyBytesGet(TSHttpTxn txnp, int64 *bytes);
+  tsapi int TSHttpTxnClientRespBodyBytesGet(TSHttpTxn txnp, int64_t *bytes);
 
 
   /* =====  Matcher Utils =====  */
@@ -333,7 +333,7 @@ extern "C"
    *  ??
    *  Return
    ****************************************************************************/
-  tsapi char *TSMatcherExtractIPRange(char *match_str, uint32 * addr1, uint32 * addr2);
+  tsapi char *TSMatcherExtractIPRange(char *match_str, uint32_t * addr1, uint32_t * addr2);
 
   /****************************************************************************
    *  ??

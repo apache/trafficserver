@@ -70,7 +70,7 @@ void
 ink_queue_load_64(void *dst, void *src)
 {
 #if (defined(__i386__) || defined(__arm__)) && (SIZEOF_VOIDP == 4)
-  int32 src_version = (*(head_p *) src).s.version;
+  int32_t src_version = (*(head_p *) src).s.version;
   void *src_pointer = (*(head_p *) src).s.pointer;
 
   (*(head_p *) dst).s.version = src_version;

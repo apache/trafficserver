@@ -39,7 +39,7 @@
 ClassAllocator<HttpUpdateSM> httpUpdateSMAllocator("httpUpdateSMAllocator");
 
 #define STATE_ENTER(state_name, event, vio) { \
-        Debug("http", "[%lld] [%s, %s]", sm_id, \
+        Debug("http", "[%" PRId64 "] [%s, %s]", sm_id, \
         #state_name, HttpDebugNames::get_event_name(event)); }
 
 HttpUpdateSM::HttpUpdateSM():
@@ -129,7 +129,7 @@ HttpUpdateSM::handle_api_return()
         // We aren't caching the transformed response abort the
         //  transform
 
-        Debug("http", "[%lld] [HttpUpdateSM] aborting " "transform since result is not cached", sm_id);
+        Debug("http", "[%" PRId64 "] [HttpUpdateSM] aborting " "transform since result is not cached", sm_id);
         HttpTunnelConsumer *c = tunnel.get_consumer(transform_info.vc);
         ink_release_assert(c != NULL);
 
@@ -225,7 +225,7 @@ HttpUpdateSM::kill_this_async_hook(int event, void *data)
   }
 
   if (!cb_action.cancelled) {
-    Debug("http", "[%lld] [HttpUpdateSM] calling back user with event %s",
+    Debug("http", "[%" PRId64 "] [HttpUpdateSM] calling back user with event %s",
           sm_id, HttpDebugNames::get_event_name(cb_event));
     cb_cont->handleEvent(cb_event, NULL);
   }

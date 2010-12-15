@@ -64,14 +64,14 @@ private:
   static volatile int top_stat;
 
 public:
-  static StatDescriptor *CreateDescriptor(const char *category, char *name, size_t name_len, int64 init_value);
+  static StatDescriptor *CreateDescriptor(const char *category, char *name, size_t name_len, int64_t init_value);
   static StatDescriptor *CreateDescriptor(const char *category, char *name, size_t name_len, float init_value);
-  static StatDescriptor *CreateDescriptor(const char *name, int64 init_value);
+  static StatDescriptor *CreateDescriptor(const char *name, int64_t init_value);
   static StatDescriptor *CreateDescriptor(const char *name, float init_value);
   static void initialize();
   const char *name() const { return m_name; }
 
-  int64 int_value() const;
+  int64_t int_value() const;
   float flt_value() const;
 
   bool int_type() const { return m_type == RECD_INT; }
@@ -82,7 +82,7 @@ public:
   void increment()
   {
     if (m_type == RECD_INT)
-      add((int64) 1);
+      add((int64_t) 1);
     else
       add((float) 1.0);
   }
@@ -90,12 +90,12 @@ public:
   void decrement()
   {
     if (m_type == RECD_INT)
-      add((int64) - 1);
+      add((int64_t) - 1);
     else
       add((float) -1.0);
   }
 
-  void subtract(int64 val)
+  void subtract(int64_t val)
   {
     add(-val);
   }
@@ -103,9 +103,9 @@ public:
   {
     add(-val);
   }
-  void set(int64 val);
+  void set(int64_t val);
   void set(float val);
-  void add(int64 val);
+  void add(int64_t val);
   void add(float val);
   void commit();
 
@@ -172,7 +172,7 @@ StatDescriptor::operator=(const StatDescriptor & rhs)
   return *this;
 }
 
-ST_INLINE int64
+ST_INLINE int64_t
 StatDescriptor::int_value() const
 {
   if (m_magic == NULL_VALUE || m_magic == IN_ERROR) {
@@ -184,7 +184,7 @@ StatDescriptor::int_value() const
 
   RecData tmp = (m_magic == SHALLOW_COPY) ? m_value : const_cast<StatDescriptor *>(this)->update_value();
 
-  return m_type == RECD_INT ? tmp.rec_int : (int64) tmp.rec_float;
+  return m_type == RECD_INT ? tmp.rec_int : (int64_t) tmp.rec_float;
 }
 
 ST_INLINE float

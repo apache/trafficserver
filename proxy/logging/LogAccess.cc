@@ -177,8 +177,8 @@ int
 LogAccess::marshal_client_req_http_version(char *buf)
 {
   if (buf) {
-    int64 major = 0;
-    int64 minor = 0;
+    int64_t major = 0;
+    int64_t minor = 0;
     marshal_int(buf, major);
     marshal_int((buf + INK_MIN_ALIGN), minor);
   }
@@ -460,8 +460,8 @@ int
 LogAccess::marshal_server_resp_http_version(char *buf)
 {
   if (buf) {
-    int64 major = 0;
-    int64 minor = 0;
+    int64_t major = 0;
+    int64_t minor = 0;
     marshal_int(buf, major);
     marshal_int((buf + INK_MIN_ALIGN), minor);
   }
@@ -774,7 +774,7 @@ int
 LogAccess::marshal_entry_type(char *buf)
 {
   if (buf) {
-    int64 val = (int64) entry_type();
+    int64_t val = (int64_t) entry_type();
     marshal_int(buf, val);
   }
   return INK_MIN_ALIGN;
@@ -787,7 +787,7 @@ int
 LogAccess::marshal_config_int_var(char *config_var, char *buf)
 {
   if (buf) {
-    int64 val = (int64) LOG_ConfigReadInteger(config_var);
+    int64_t val = (int64_t) LOG_ConfigReadInteger(config_var);
     marshal_int(buf, val);
   }
   return INK_MIN_ALIGN;
@@ -841,7 +841,8 @@ LogAccess::marshal_record(char *record, char *buf)
 #define LOG_COUNTER RECD_COUNTER
 #define LOG_FLOAT   RECD_FLOAT
 #define LOG_STRING  RECD_STRING
-  typedef RecInt LogInt; // TODO/XXX: This needs to match changes made for uint64
+
+  typedef RecInt LogInt;
   typedef RecCounter LogCounter;
   typedef RecFloat LogFloat;
   typedef RecString LogString;
@@ -859,17 +860,17 @@ LogAccess::marshal_record(char *record, char *buf)
 
     if (LOG_INTEGER == stype || LOG_COUNTER == stype) {
 
-      // we assume MgmtInt and MgmtIntCounter are int64 for the
+      // we assume MgmtInt and MgmtIntCounter are int64_t for the
       // conversion below, if this ever changes we should modify
       // accordingly
       //
-      ink_debug_assert(sizeof(int64) >= sizeof(LogInt) && sizeof(int64) >= sizeof(LogCounter));
+      ink_debug_assert(sizeof(int64_t) >= sizeof(LogInt) && sizeof(int64_t) >= sizeof(LogCounter));
 
       // so that a 64 bit integer will fit (including sign and eos)
       //
       ink_debug_assert(max_chars > 21);
 
-      int64 val = (int64) (LOG_INTEGER == stype ? REC_readInteger(record, &found) : REC_readCounter(record, &found));
+      int64_t val = (int64_t) (LOG_INTEGER == stype ? REC_readInteger(record, &found) : REC_readCounter(record, &found));
 
       if (found) {
 
@@ -1034,7 +1035,7 @@ LogAccess::marshal_mem(char *dest, const char *source, int actual_len, int padde
 }
 
 inline int
-LogAccess::unmarshal_with_map(int64 code, char *dest, int len, Ptr<LogFieldAliasMap> map, const char *msg)
+LogAccess::unmarshal_with_map(int64_t code, char *dest, int len, Ptr<LogFieldAliasMap> map, const char *msg)
 {
   int codeStrLen;
 
@@ -1044,7 +1045,7 @@ LogAccess::unmarshal_with_map(int64 code, char *dest, int len, Ptr<LogFieldAlias
     if (msg) {
       const int bufSize = 64;
       char invalidCodeMsg[bufSize];
-      codeStrLen = snprintf(invalidCodeMsg, 64, "%s(%lld)", msg, code);
+      codeStrLen = snprintf(invalidCodeMsg, 64, "%s(%" PRId64 ")", msg, code);
       if (codeStrLen < bufSize && codeStrLen < len) {
         ink_strncpy(dest, invalidCodeMsg, len);
       } else {
@@ -1069,15 +1070,15 @@ LogAccess::unmarshal_with_map(int64 code, char *dest, int len, Ptr<LogFieldAlias
   pointer past the int.  The int will be converted back to host byte order.
   -------------------------------------------------------------------------*/
 
-int64
+int64_t
 LogAccess::unmarshal_int(char **buf)
 {
   ink_assert(buf != NULL);
   ink_assert(*buf != NULL);
-  int64 val;
+  int64_t val;
 
   // TODO: this used to do nthol, do we need to worrry?
-  val = *((int64 *)(*buf));
+  val = *((int64_t *)(*buf));
   *buf += INK_MIN_ALIGN;
   return val;
 }
@@ -1092,7 +1093,7 @@ LogAccess::unmarshal_int(char **buf)
   -------------------------------------------------------------------------*/
 
 int
-LogAccess::unmarshal_itoa(int64 val, char *dest, int field_width, char leading_char)
+LogAccess::unmarshal_itoa(int64_t val, char *dest, int field_width, char leading_char)
 {
   ink_assert(dest != NULL);
 
@@ -1126,14 +1127,14 @@ LogAccess::unmarshal_itoa(int64 val, char *dest, int field_width, char leading_c
   -------------------------------------------------------------------------*/
 
 int
-LogAccess::unmarshal_itox(int64 val, char *dest, int field_width, char leading_char)
+LogAccess::unmarshal_itox(int64_t val, char *dest, int field_width, char leading_char)
 {
   ink_assert(dest != NULL);
 
   char *p = dest;
   static char table[] = "0123456789abcdef?";
 
-  for (int i = 0; i < (int)(sizeof(int64) * 2); i++) {
+  for (int i = 0; i < (int)(sizeof(int64_t) * 2); i++) {
     *p-- = table[val & 0xf];
     val >>= 4;
   }
@@ -1141,7 +1142,7 @@ LogAccess::unmarshal_itox(int64 val, char *dest, int field_width, char leading_c
     *p-- = leading_char;
   }
 
-  return (int64)(dest - p);
+  return (int64_t)(dest - p);
 }
 
 /*-------------------------------------------------------------------------
@@ -1158,7 +1159,7 @@ LogAccess::unmarshal_int_to_str(char **buf, char *dest, int len)
   ink_assert(dest != NULL);
 
   char val_buf[128];
-  int64 val = unmarshal_int(buf);
+  int64_t val = unmarshal_int(buf);
   int val_len = unmarshal_itoa(val, val_buf + 127);
 
   if (val_len < len) {
@@ -1182,7 +1183,7 @@ LogAccess::unmarshal_int_to_str_hex(char **buf, char *dest, int len)
   ink_assert(dest != NULL);
 
   char val_buf[128];
-  int64 val = unmarshal_int(buf);
+  int64_t val = unmarshal_int(buf);
   int val_len = unmarshal_itox(val, val_buf + 127);
 
   if (val_len < len) {
@@ -1228,7 +1229,7 @@ LogAccess::unmarshal_ttmsf(char **buf, char *dest, int len)
   ink_assert(*buf != NULL);
   ink_assert(dest != NULL);
 
-  int64 val = unmarshal_int(buf);
+  int64_t val = unmarshal_int(buf);
   float secs = (float) val / 1000;
   int val_len = snprintf(dest, len, "%.3f", secs);
   return val_len;
@@ -1343,7 +1344,7 @@ LogAccess::unmarshal_http_status(char **buf, char *dest, int len)
   ink_assert(dest != NULL);
 
   char val_buf[128];
-  int64 val = unmarshal_int(buf);
+  int64_t val = unmarshal_int(buf);
   int val_len = unmarshal_itoa(val, val_buf + 127, 3, '0');
   if (val_len < len) {
     memcpy(dest, val_buf + 128 - val_len, val_len);

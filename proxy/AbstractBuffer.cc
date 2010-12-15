@@ -33,7 +33,7 @@
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-ABError AbstractBuffer::checkout_write(int *write_offset, int write_size, uint64 retries)
+ABError AbstractBuffer::checkout_write(int *write_offset, int write_size, uint64_t retries)
 {
   VolatileState
     old_vs;
@@ -62,7 +62,7 @@ ABError AbstractBuffer::checkout_write(int *write_offset, int write_size, uint64
       return AB_ERROR_STATE;
     }
 
-    if ((uint32) (new_vs.s.offset + write_size) > (uint32) size) {
+    if ((uint32_t) (new_vs.s.offset + write_size) > (uint32_t) size) {
       new_vs.s.state = AB_STATE_READ_ONLY;
       if (switch_state(old_vs, new_vs)) {
         vs_history[AB_STATE_READ_ONLY] = old_vs;
@@ -103,7 +103,7 @@ ABError AbstractBuffer::checkout_read(int read_offset, int read_size)
       return AB_ERROR_STATE;
     }
 
-    if ((uint32) (read_offset + read_size) > new_vs.s.offset) {
+    if ((uint32_t) (read_offset + read_size) > new_vs.s.offset) {
       return AB_ERROR_OFFSET;
     }
 
@@ -129,7 +129,7 @@ ABError AbstractBuffer::checkin_write(int write_offset)
 
     ink_assert(new_vs.s.writer_count > 0);
     ink_assert((new_vs.s.state == AB_STATE_READ_WRITE) || (new_vs.s.state == AB_STATE_READ_ONLY));
-    ink_assert((uint32) write_offset < new_vs.s.offset);
+    ink_assert((uint32_t) write_offset < new_vs.s.offset);
 
     new_vs.s.writer_count -= 1;
   } while (!switch_state(old_vs, new_vs));
@@ -168,7 +168,7 @@ ABError AbstractBuffer::checkin_read(int read_offset)
 
     ink_assert(new_vs.s.reader_count > 0);
     ink_assert(new_vs.s.state != AB_STATE_UNUSED);
-    ink_assert((uint32) read_offset < new_vs.s.offset);
+    ink_assert((uint32_t) read_offset < new_vs.s.offset);
 
     new_vs.s.reader_count -= 1;
   } while (!switch_state(old_vs, new_vs));

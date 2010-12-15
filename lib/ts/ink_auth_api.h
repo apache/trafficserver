@@ -31,10 +31,10 @@
 
 typedef union
 {
-  uint64 u64[2];
-  uint32 u32[4];
-  uint16 u16[8];
-  uint8 u8[16];
+  uint64_t u64[2];
+  uint32_t u32[4];
+  uint16_t u16[8];
+  uint8_t u8[16];
 } INK_AUTH_TOKEN;
 
 class INK_AUTH_SEED
@@ -54,35 +54,35 @@ public:
     init(x, ln);
   }
 
-  inline INK_AUTH_SEED(const uint8 & x)
+  inline INK_AUTH_SEED(const uint8_t & x)
   {
     init((const void *) &x, sizeof(x));
   }
-  inline INK_AUTH_SEED(const uint16 & x)
+  inline INK_AUTH_SEED(const uint16_t & x)
   {
     init((const void *) &x, sizeof(x));
   }
-  inline INK_AUTH_SEED(const uint32 & x)
+  inline INK_AUTH_SEED(const uint32_t & x)
   {
     init((const void *) &x, sizeof(x));
   }
-  inline INK_AUTH_SEED(const uint64 & x)
+  inline INK_AUTH_SEED(const uint64_t & x)
   {
     init((const void *) &x, sizeof(x));
   }
-  inline INK_AUTH_SEED(const int8 & x)
+  inline INK_AUTH_SEED(const int8_t & x)
   {
     init((const void *) &x, sizeof(x));
   }
-  inline INK_AUTH_SEED(const int16 & x)
+  inline INK_AUTH_SEED(const int16_t & x)
   {
     init((const void *) &x, sizeof(x));
   }
-  inline INK_AUTH_SEED(const int32 & x)
+  inline INK_AUTH_SEED(const int32_t & x)
   {
     init((const void *) &x, sizeof(x));
   }
-  inline INK_AUTH_SEED(const int64 & x)
+  inline INK_AUTH_SEED(const int64_t & x)
   {
     init((const void *) &x, sizeof(x));
   }
@@ -127,47 +127,47 @@ protected:
 
 void ink_make_token(INK_AUTH_TOKEN * tok, const INK_AUTH_TOKEN & mask, const INK_AUTH_SEED * const *seeds, int slen);
 
-uint32 ink_make_token32(uint32 mask, const INK_AUTH_SEED * const *seeds, int slen);
-uint64 ink_make_token64(uint64 mask, const INK_AUTH_SEED * const *seeds, int slen);
+uint32_t ink_make_token32(uint32_t mask, const INK_AUTH_SEED * const *seeds, int slen);
+uint64_t ink_make_token64(uint64_t mask, const INK_AUTH_SEED * const *seeds, int slen);
 
-uint32 ink_get_rand();
+uint32_t ink_get_rand();
 
 #define INK_TOKENS_EQUAL(m,t1,t2) ((((t1)^(t2))&(~(m))) == 0)
 
 //
 // Helper functions - wiil create INK_AUTH_SEEDs from base types on fly
 //
-inline uint32
-ink_make_token32(uint32 mask, const INK_AUTH_SEED & s1)
+inline uint32_t
+ink_make_token32(uint32_t mask, const INK_AUTH_SEED & s1)
 {
   const INK_AUTH_SEED *s[] = { &s1 };
   return ink_make_token32(mask, s, sizeof(s) / sizeof(*s));
 }
 
-inline uint32
-ink_make_token32(uint32 mask, const INK_AUTH_SEED & s1, const INK_AUTH_SEED & s2)
+inline uint32_t
+ink_make_token32(uint32_t mask, const INK_AUTH_SEED & s1, const INK_AUTH_SEED & s2)
 {
   const INK_AUTH_SEED *s[] = { &s1, &s2 };
   return ink_make_token32(mask, s, sizeof(s) / sizeof(*s));
 }
 
-inline uint32
-ink_make_token32(uint32 mask, const INK_AUTH_SEED & s1, const INK_AUTH_SEED & s2, const INK_AUTH_SEED & s3)
+inline uint32_t
+ink_make_token32(uint32_t mask, const INK_AUTH_SEED & s1, const INK_AUTH_SEED & s2, const INK_AUTH_SEED & s3)
 {
   const INK_AUTH_SEED *s[] = { &s1, &s2, &s3 };
   return ink_make_token32(mask, s, sizeof(s) / sizeof(*s));
 }
 
-inline uint32
-ink_make_token32(uint32 mask,
+inline uint32_t
+ink_make_token32(uint32_t mask,
                  const INK_AUTH_SEED & s1, const INK_AUTH_SEED & s2, const INK_AUTH_SEED & s3, const INK_AUTH_SEED & s4)
 {
   const INK_AUTH_SEED *s[] = { &s1, &s2, &s3, &s4 };
   return ink_make_token32(mask, s, sizeof(s) / sizeof(*s));
 }
 
-inline uint32
-ink_make_token32(uint32 mask,
+inline uint32_t
+ink_make_token32(uint32_t mask,
                  const INK_AUTH_SEED & s1,
                  const INK_AUTH_SEED & s2, const INK_AUTH_SEED & s3, const INK_AUTH_SEED & s4, const INK_AUTH_SEED & s5)
 {
@@ -175,37 +175,37 @@ ink_make_token32(uint32 mask,
   return ink_make_token32(mask, s, sizeof(s) / sizeof(*s));
 }
 
-inline uint64
-ink_make_token64(uint64 mask, const INK_AUTH_SEED & s1)
+inline uint64_t
+ink_make_token64(uint64_t mask, const INK_AUTH_SEED & s1)
 {
   const INK_AUTH_SEED *s[] = { &s1 };
   return ink_make_token64(mask, s, sizeof(s) / sizeof(*s));
 }
 
-inline uint64
-ink_make_token64(uint64 mask, const INK_AUTH_SEED & s1, const INK_AUTH_SEED & s2)
+inline uint64_t
+ink_make_token64(uint64_t mask, const INK_AUTH_SEED & s1, const INK_AUTH_SEED & s2)
 {
   const INK_AUTH_SEED *s[] = { &s1, &s2 };
   return ink_make_token64(mask, s, sizeof(s) / sizeof(*s));
 }
 
-inline uint64
-ink_make_token64(uint64 mask, const INK_AUTH_SEED & s1, const INK_AUTH_SEED & s2, const INK_AUTH_SEED & s3)
+inline uint64_t
+ink_make_token64(uint64_t mask, const INK_AUTH_SEED & s1, const INK_AUTH_SEED & s2, const INK_AUTH_SEED & s3)
 {
   const INK_AUTH_SEED *s[] = { &s1, &s2, &s3 };
   return ink_make_token64(mask, s, sizeof(s) / sizeof(*s));
 }
 
-inline uint64
-ink_make_token64(uint64 mask,
+inline uint64_t
+ink_make_token64(uint64_t mask,
                  const INK_AUTH_SEED & s1, const INK_AUTH_SEED & s2, const INK_AUTH_SEED & s3, const INK_AUTH_SEED & s4)
 {
   const INK_AUTH_SEED *s[] = { &s1, &s2, &s3, &s4 };
   return ink_make_token64(mask, s, sizeof(s) / sizeof(*s));
 }
 
-inline uint64
-ink_make_token64(uint64 mask,
+inline uint64_t
+ink_make_token64(uint64_t mask,
                  const INK_AUTH_SEED & s1,
                  const INK_AUTH_SEED & s2, const INK_AUTH_SEED & s3, const INK_AUTH_SEED & s4, const INK_AUTH_SEED & s5)
 {
@@ -213,14 +213,14 @@ ink_make_token64(uint64 mask,
   return ink_make_token64(mask, s, sizeof(s) / sizeof(*s));
 }
 
-inline int64
-INK_AUTH_MAKE_INT_64(uint32 h, uint32 l)
+inline int64_t
+INK_AUTH_MAKE_INT_64(uint32_t h, uint32_t l)
 {
-  return int64((((uint64) h) << 32) + (uint32) l);
+  return int64_t((((uint64_t) h) << 32) + (uint32_t) l);
 }
 
-inline int64
-INK_AUTH_MAKE_INT_64(uint32 u)
+inline int64_t
+INK_AUTH_MAKE_INT_64(uint32_t u)
 {
   return INK_AUTH_MAKE_INT_64(u, u);
 }

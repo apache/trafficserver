@@ -39,7 +39,7 @@
 
 #define STATE_ENTER(state_name, event, vio) { \
     /*HTTP_DEBUG_ASSERT (magic == HTTP_SM_MAGIC_ALIVE);  REMEMBER (event, NULL, reentrancy_count); */ \
-        Debug("http_cs", "[%lld] [%s, %s]", con_id, \
+        Debug("http_cs", "[%" PRId64 "] [%s, %s]", con_id, \
         #state_name, HttpDebugNames::get_event_name(event)); }
 
 enum
@@ -53,7 +53,7 @@ enum
 DLL<HttpClientSession> debug_cs_list;
 ink_mutex debug_cs_list_mutex;
 
-static int64 next_cs_id = (int64) 0;
+static int64_t next_cs_id = (int64_t) 0;
 ClassAllocator<HttpClientSession> httpClientSessionAllocator("httpClientSessionAllocator");
 
 HttpClientSession::HttpClientSession()
@@ -72,7 +72,7 @@ HttpClientSession::HttpClientSession()
 void
 HttpClientSession::cleanup()
 {
-  Debug("http_cs", "[%lld] session destroy", con_id);
+  Debug("http_cs", "[%" PRId64 "] session destroy", con_id);
 
   ink_release_assert(client_vc == NULL);
   ink_release_assert(bound_ss == NULL);
@@ -155,14 +155,14 @@ HttpClientSession::new_transaction()
   /////////////////////////
   // set up timeouts     //
   /////////////////////////
-  Debug("http_cs", "[%lld] using accept inactivity timeout [%d seconds]",
+  Debug("http_cs", "[%" PRId64 "] using accept inactivity timeout [%d seconds]",
         con_id, HttpConfig::m_master.accept_no_activity_timeout);
   client_vc->set_inactivity_timeout(HRTIME_SECONDS(HttpConfig::m_master.accept_no_activity_timeout));
 
   client_vc->set_active_timeout(HRTIME_SECONDS(HttpConfig::m_master.transaction_active_timeout_in));
 
   transact_count++;
-  Debug("http_cs", "[%lld] Starting transaction %d using sm [%lld]", con_id, transact_count, current_reader->sm_id);
+  Debug("http_cs", "[%" PRId64 "] Starting transaction %d using sm [%" PRId64 "]", con_id, transact_count, current_reader->sm_id);
 
   current_reader->attach_client_session(this, sm_reader);
 }
@@ -198,7 +198,7 @@ HttpClientSession::new_connection(NetVConnection * new_vc, bool backdoor)
   this->backdoor_connect = backdoor;
 
   // Unique client session identifier.
-  con_id = ink_atomic_increment64((int64 *) (&next_cs_id), 1);
+  con_id = ink_atomic_increment64((int64_t *) (&next_cs_id), 1);
 
   HTTP_INCREMENT_DYN_STAT(http_current_client_connections_stat);
   conn_decrease = true;
@@ -233,7 +233,7 @@ HttpClientSession::new_connection(NetVConnection * new_vc, bool backdoor)
   ink_mutex_release(&debug_cs_list_mutex);
 #endif
 
-  Debug("http_cs", "[%lld] session born, netvc %p", con_id, new_vc);
+  Debug("http_cs", "[%" PRId64 "] session born, netvc %p", con_id, new_vc);
 
   read_buffer = new_MIOBuffer(HTTP_HEADER_BUFFER_SIZE_INDEX);
   sm_reader = read_buffer->alloc_reader();
@@ -250,13 +250,13 @@ HttpClientSession::new_connection(NetVConnection * new_vc, bool backdoor)
 }
 
 VIO *
-HttpClientSession::do_io_read(Continuation * c, int64 nbytes, MIOBuffer * buf)
+HttpClientSession::do_io_read(Continuation * c, int64_t nbytes, MIOBuffer * buf)
 {
   return client_vc->do_io_read(c, nbytes, buf);
 }
 
 VIO *
-HttpClientSession::do_io_write(Continuation * c, int64 nbytes, IOBufferReader * buf, bool owner)
+HttpClientSession::do_io_write(Continuation * c, int64_t nbytes, IOBufferReader * buf, bool owner)
 {
   return client_vc->do_io_write(c, nbytes, buf, owner);
 }
@@ -292,7 +292,7 @@ HttpClientSession::do_io_close(int alerrno)
   if (half_close) {
     read_state = HCS_HALF_CLOSED;
     SET_HANDLER(&HttpClientSession::state_wait_for_close);
-    Debug("http_cs", "[%lld] session half close", con_id);
+    Debug("http_cs", "[%" PRId64 "] session half close", con_id);
 
     // We want the client to know that that we're finished
     //  writing.  The write shutdown accomplishes this.  Unfortuantely,
@@ -317,7 +317,7 @@ HttpClientSession::do_io_close(int alerrno)
   } else {
     read_state = HCS_CLOSED;
     client_vc->do_io_close(alerrno);
-    Debug("http_cs", "[%lld] session closed", con_id);
+    Debug("http_cs", "[%" PRId64 "] session closed", con_id);
     client_vc = NULL;
     HTTP_SUM_DYN_STAT(http_transactions_per_client_con, transact_count);
     HTTP_DECREMENT_DYN_STAT(http_current_client_connections_stat);
@@ -541,7 +541,7 @@ HttpClientSession::attach_server_session(HttpServerSession * ssession, bool tran
     ink_assert(bound_ss == NULL);
     ssession->state = HSS_KA_CLIENT_SLAVE;
     bound_ss = ssession;
-    Debug("http_cs", "[%lld] attaching server session [%lld] as slave", con_id, ssession->con_id);
+    Debug("http_cs", "[%" PRId64 "] attaching server session [%" PRId64 "] as slave", con_id, ssession->con_id);
     ink_assert(ssession->get_reader()->read_avail() == 0);
     ink_assert(ssession->get_netvc() != client_vc);
 
@@ -583,7 +583,7 @@ HttpClientSession::release(IOBufferReader * r)
   ink_assert(read_state == HCS_ACTIVE_READER);
   ink_assert(current_reader != NULL);
 
-  Debug("http_cs", "[%lld] session released by sm [%lld]", con_id, current_reader->sm_id);
+  Debug("http_cs", "[%" PRId64 "] session released by sm [%" PRId64 "]", con_id, current_reader->sm_id);
   current_reader = NULL;
 
   // handling potential keep-alive here
@@ -606,10 +606,10 @@ HttpClientSession::release(IOBufferReader * r)
   //  machine to process it.  Otherwise, issue an
   //  IO to wait for new data
   if (sm_reader->read_avail() > 0) {
-    Debug("http_cs", "[%lld] data already in buffer, starting new transaction", con_id);
+    Debug("http_cs", "[%" PRId64 "] data already in buffer, starting new transaction", con_id);
     new_transaction();
   } else {
-    Debug("http_cs", "[%lld] initiating io for next header", con_id);
+    Debug("http_cs", "[%" PRId64 "] initiating io for next header", con_id);
     read_state = HCS_KEEP_ALIVE;
     SET_HANDLER(&HttpClientSession::state_keep_alive);
     ka_vio = this->do_io_read(this, INT_MAX, read_buffer);

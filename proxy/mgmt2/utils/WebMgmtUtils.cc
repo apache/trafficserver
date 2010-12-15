@@ -76,14 +76,14 @@ varSetFromStr(const char *varName, const char *value)
 
   switch (varDataType) {
   case RECD_INT:
-    if (sscanf(value, "%lld", &data.rec_int) == 1) {
+    if (sscanf(value, "%" PRId64 "", &data.rec_int) == 1) {
       RecSetRecordInt((char *) varName, data.rec_int);
     } else {
       found = false;
     }
     break;
   case RECD_COUNTER:
-    if (sscanf(value, "%lld", &data.rec_counter) == 1) {
+    if (sscanf(value, "%" PRId64 "", &data.rec_counter) == 1) {
       RecSetRecordCounter((char *) varName, data.rec_counter);
     } else {
       found = false;
@@ -421,7 +421,7 @@ commaStrFromInt(RecInt bytes, char *bufVal)
   int numCommas;
   char *curPtr;
 
-  sprintf(bufVal, "%lld", bytes);
+  sprintf(bufVal, "%" PRId64 "", bytes);
   len = strlen(bufVal);
 
   // The string is too short to need commas
@@ -458,7 +458,7 @@ MbytesFromInt(RecInt bytes, char *bufVal)
 {
   RecInt mBytes = bytes / 1048576;
 
-  sprintf(bufVal, "%lld", mBytes);
+  sprintf(bufVal, "%" PRId64 "", mBytes);
 }
 
 // void bytesFromInt(RecInt bytes, char* bufVal)
@@ -470,7 +470,7 @@ MbytesFromInt(RecInt bytes, char *bufVal)
 void
 bytesFromInt(RecInt bytes, char *bufVal)
 {
-  const int64 gb = 1073741824;
+  const int64_t gb = 1073741824;
   const long int mb = 1048576;
   const long int kb = 1024;
   int bytesP;
@@ -564,7 +564,7 @@ varStrFromName(const char *varNameConst, char *bufVal, int bufLen)
     } else if (formatOption == 'c') {
       commaStrFromInt(data.rec_int, bufVal);
     } else {
-      sprintf(bufVal, "%lld", data.rec_int);
+      sprintf(bufVal, "%" PRId64 "", data.rec_int);
     }
     break;
 
@@ -577,7 +577,7 @@ varStrFromName(const char *varNameConst, char *bufVal, int bufLen)
     } else if (formatOption == 'c') {
       commaStrFromInt(data.rec_counter, bufVal);
     } else {
-      sprintf(bufVal, "%lld", data.rec_counter);
+      sprintf(bufVal, "%" PRId64 "", data.rec_counter);
     }
     break;
   case RECD_FLOAT:

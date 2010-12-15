@@ -538,9 +538,9 @@ transform_read_status_event(TSCont contp, TransformData * data, TSEvent event, v
       TSIOBufferBlock blk;
       char *buf;
       void *buf_ptr;
-      int64 avail;
-      int64 read_nbytes = sizeof(int);
-      int64 read_ndone = 0;
+      int64_t avail;
+      int64_t read_nbytes = sizeof(int);
+      int64_t read_ndone = 0;
 
       buf_ptr = &data->content_length;
       while (read_nbytes > 0) {

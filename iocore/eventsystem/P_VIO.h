@@ -84,7 +84,7 @@ VIO::get_reader()
 {
   return (buffer.reader());
 }
-TS_INLINE int64
+TS_INLINE int64_t
 VIO::ntodo()
 {
   return nbytes - ndone;

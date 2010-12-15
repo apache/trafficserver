@@ -45,12 +45,12 @@
  *===========================================================================*/
 
 /*---------------------------------------------------------------------------*
-  uint64 microseconds(which)
+  uint64_t microseconds(which)
 
   returns microsecond-resolution clock info
  *---------------------------------------------------------------------------*/
 
-uint64
+uint64_t
 ink_microseconds(int which)
 {
   struct timeval tp;

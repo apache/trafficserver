@@ -36,7 +36,7 @@
 
 #define STATE_ENTER(state_name, event) { \
         REMEMBER(event, -1); \
-        Debug("http_cache", "[%lld] [%s, %s]", master_sm->sm_id, \
+        Debug("http_cache", "[%" PRId64 "] [%s, %s]", master_sm->sm_id, \
         #state_name, HttpDebugNames::get_event_name(event)); }
 
 #define __REMEMBER(x)  #x
@@ -142,7 +142,7 @@ HttpCacheSM::state_cache_open_read(int event, void *data)
     // than or equal to the max number of open read retries,
     // else treat as a cache miss.
     ink_assert(open_read_tries <= master_sm->t_state.http_config_param->max_cache_open_read_retries || write_locked);
-    Debug("http_cache", "[%lld] [state_cache_open_read] cache open read failure %d. "
+    Debug("http_cache", "[%" PRId64 "] [state_cache_open_read] cache open read failure %d. "
           "retrying cache open read...", master_sm->sm_id, open_read_tries);
 
     do_cache_open_read();

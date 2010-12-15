@@ -90,7 +90,7 @@ END:
  * OUTPUT: bool -- true if everything went well. false otherwise
  */
 INKError
-readHTTPResponse(int sock, char *buffer, int bufsize, uint64 timeout)
+readHTTPResponse(int sock, char *buffer, int bufsize, uint64_t timeout)
 {
 #ifdef _WIN32
   TimedIOStatus ret;
@@ -158,7 +158,7 @@ error:                         /* "Houston, we have a problem!" (Apollo 13) */
  *                 closed)
  */
 INKError
-sendHTTPRequest(int sock, char *req, uint64 timeout)
+sendHTTPRequest(int sock, char *req, uint64_t timeout)
 {
   char request[BUFSIZ];
   char *requestPtr;
@@ -218,7 +218,7 @@ error:                         /* "Houston, we have a problem!" (Apollo 13) */
 
 /* Modified from TrafficCop.cc (open_socket) */
 int
-connectDirect(const char *host, int port, uint64 timeout)
+connectDirect(const char *host, int port, uint64_t timeout)
 {
   NOWARN_UNUSED(timeout);
 #ifdef _WIN32

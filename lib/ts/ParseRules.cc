@@ -41,10 +41,10 @@ const char parseRulesCTypeToLower[256] = {
 };
 
 unsigned char *
-ParseRules::scan_while(unsigned char *ptr, unsigned int n, uint32 bitmask)
+ParseRules::scan_while(unsigned char *ptr, unsigned int n, uint32_t bitmask)
 {
   unsigned int i;
-  uint32 *wptr;
+  uint32_t *wptr;
   unsigned char *align_ptr;
   uintptr_t f_bytes, b_bytes, words, align_off;
 
@@ -60,7 +60,7 @@ ParseRules::scan_while(unsigned char *ptr, unsigned int n, uint32 bitmask)
       if (!is_type(ptr[i], bitmask))
         return (&ptr[i]);
   } else {
-    wptr = ((uint32 *) align_ptr) + (align_off ? 1 : 0);
+    wptr = ((uint32_t *) align_ptr) + (align_off ? 1 : 0);
     switch (align_off) {
     case 1:
       if (!is_type(align_ptr[1], bitmask))
@@ -79,8 +79,8 @@ ParseRules::scan_while(unsigned char *ptr, unsigned int n, uint32 bitmask)
     b_bytes = n - ((words << 2) + f_bytes);
 
     for (i = 0; i < words; i++) {
-      uint32 word = wptr[i];
-      uint32 result = (is_type(((word >> 0) & 0xFF), bitmask) &
+      uint32_t word = wptr[i];
+      uint32_t result = (is_type(((word >> 0) & 0xFF), bitmask) &
                        is_type(((word >> 8) & 0xFF), bitmask) &
                        is_type(((word >> 16) & 0xFF), bitmask) & is_type(((word >> 24) & 0xFF), bitmask));
       if (result == 0) {
@@ -151,9 +151,9 @@ ParseRules::ink_tolower_buffer(char *ptr, unsigned int n)
       break;
     }
 
-    uint32 *wptr = (uint32 *) ptr;
+    uint32_t *wptr = (uint32_t *) ptr;
     for (i = 0; i < words; i++) {
-      uint32 word = *wptr;
+      uint32_t word = *wptr;
       ((unsigned char *) &word)[0] = ParseRules::ink_tolower(((unsigned char *) &word)[0]);
       ((unsigned char *) &word)[1] = ParseRules::ink_tolower(((unsigned char *) &word)[1]);
       ((unsigned char *) &word)[2] = ParseRules::ink_tolower(((unsigned char *) &word)[2]);

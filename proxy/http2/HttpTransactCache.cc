@@ -1482,7 +1482,7 @@ L1:
 int
 CacheLookupHttpConfig::marshal_length()
 {
-  int len = (int) sizeof(int32);
+  int len = (int) sizeof(int32_t);
   len += (cache_vary_default_text ? strlen(cache_vary_default_text) + 1 : 1);
   len += (cache_vary_default_images ? strlen(cache_vary_default_images) + 1 : 1);
   len += (cache_vary_default_other ? strlen(cache_vary_default_other) + 1 : 1);
@@ -1492,16 +1492,16 @@ CacheLookupHttpConfig::marshal_length()
 int
 CacheLookupHttpConfig::marshal(char *buf, int length)
 {
-  int32 i32_tmp;
+  int32_t i32_tmp;
   char *p = buf;
   int len;
 
-  if ((length -= sizeof(int32)) < 0)
+  if ((length -= sizeof(int32_t)) < 0)
     return -1;
 
-  i32_tmp = (int32) cache_enable_default_vary_headers;
-  memcpy(p, &i32_tmp, sizeof(int32));
-  p += sizeof(int32);
+  i32_tmp = (int32_t) cache_enable_default_vary_headers;
+  memcpy(p, &i32_tmp, sizeof(int32_t));
+  p += sizeof(int32_t);
 
   len = (cache_vary_default_text ? strlen(cache_vary_default_text) + 1 : 1);
   if ((length -= len) < 0)
@@ -1530,14 +1530,14 @@ CacheLookupHttpConfig::unmarshal(Arena * arena, const char *buf, int buflen)
   const char *p = buf;
   int length = buflen;
   int len;
-  int32 i32_tmp;
+  int32_t i32_tmp;
 
-  if ((length -= sizeof(int32)) < 0)
+  if ((length -= sizeof(int32_t)) < 0)
     return -1;
 
-  memcpy(&i32_tmp, p, sizeof(int32));
+  memcpy(&i32_tmp, p, sizeof(int32_t));
   cache_enable_default_vary_headers = (bool) i32_tmp;
-  p += sizeof(int32);
+  p += sizeof(int32_t);
 
   len = strlen(p) + 1;
   if ((length -= len) < 0)

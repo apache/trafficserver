@@ -457,7 +457,7 @@ HttpTransactHeaders::calculate_document_age(ink_time_t request_time,
 bool
 HttpTransactHeaders::does_server_allow_response_to_be_stored(HTTPHdr * resp)
 {
-  uint32 cc_mask = (MIME_COOKED_MASK_CC_NO_CACHE | MIME_COOKED_MASK_CC_NO_STORE | MIME_COOKED_MASK_CC_PRIVATE);
+  uint32_t cc_mask = (MIME_COOKED_MASK_CC_NO_CACHE | MIME_COOKED_MASK_CC_NO_STORE | MIME_COOKED_MASK_CC_PRIVATE);
 
   if ((resp->get_cooked_cc_mask() & cc_mask) || (resp->get_cooked_pragma_no_cache()))
     return false;
@@ -892,7 +892,7 @@ HttpTransactHeaders::handle_conditional_headers(HttpTransact::CacheLookupInfo * 
     HTTPHdr *c_response = cache_info->object_read->response_get();
 
     // wouldn't be updating cache for range requests (would be writing)
-    uint64 mask = (MIME_PRESENCE_RANGE | MIME_PRESENCE_IF_RANGE);
+    uint64_t mask = (MIME_PRESENCE_RANGE | MIME_PRESENCE_IF_RANGE);
     HTTP_ASSERT(header->presence(mask) == mask);
 
     /*
@@ -1052,7 +1052,7 @@ HttpTransactHeaders::insert_via_header_in_request(HttpConfigParams * http_config
 
     ink_assert(scheme >= 0);
     int scheme_len = hdrtoken_index_to_length(scheme);
-    int32 hversion = header->version_get().m_version;
+    int32_t hversion = header->version_get().m_version;
 
     memcpy(via_string, hdrtoken_index_to_wks(scheme), scheme_len);
     via_string += scheme_len;
@@ -1117,7 +1117,7 @@ HttpTransactHeaders::insert_via_header_in_response(HttpConfigParams * http_confi
 
     ink_assert(scheme >= 0);
     int scheme_len = hdrtoken_index_to_length(scheme);
-    int32 hversion = header->version_get().m_version;
+    int32_t hversion = header->version_get().m_version;
 
     memcpy(via_string, hdrtoken_index_to_wks(scheme), scheme_len);
     via_string += scheme_len;

@@ -86,11 +86,11 @@ SocketManager::open(const char *path, int oflag, mode_t mode)
   return s;
 }
 
-TS_INLINE int64
+TS_INLINE int64_t
 SocketManager::read(int fd, void *buf, int size, void *pOLP)
 {
   NOWARN_UNUSED(pOLP);
-  int64 r;
+  int64_t r;
   do {
     r =::read(fd, buf, size);
     if (likely(r >= 0))
@@ -100,11 +100,11 @@ SocketManager::read(int fd, void *buf, int size, void *pOLP)
   return r;
 }
 
-TS_INLINE int64
+TS_INLINE int64_t
 SocketManager::pread(int fd, void *buf, int size, off_t offset, char *tag)
 {
   NOWARN_UNUSED(tag);
-  int64 r;
+  int64_t r;
   do {
     r =::pread(fd, buf, size, offset);
     if (r < 0)
@@ -113,10 +113,10 @@ SocketManager::pread(int fd, void *buf, int size, off_t offset, char *tag)
   return r;
 }
 
-TS_INLINE int64
+TS_INLINE int64_t
 SocketManager::readv(int fd, struct iovec *vector, size_t count)
 {
-  int64 r;
+  int64_t r;
   do {
     // coverity[tainted_data_argument]
     if (likely((r =::readv(fd, vector, count)) >= 0))
@@ -126,17 +126,17 @@ SocketManager::readv(int fd, struct iovec *vector, size_t count)
   return r;
 }
 
-TS_INLINE int64
+TS_INLINE int64_t
 SocketManager::vector_io(int fd, struct iovec *vector, size_t count, int read_request, void *pOLP)
 {
   NOWARN_UNUSED(pOLP);
   const int max_iovecs_per_request = 16;
   int n;
-  int64 r = 0;
+  int64_t r = 0;
   int n_vec;
-  int64 bytes_xfered = 0;
+  int64_t bytes_xfered = 0;
   int current_count;
-  int64 current_request_bytes;
+  int64_t current_request_bytes;
 
   for (n_vec = 0; n_vec < (int) count; n_vec += max_iovecs_per_request) {
     current_count = min(max_iovecs_per_request, ((int) (count - n_vec)));
@@ -168,7 +168,7 @@ SocketManager::vector_io(int fd, struct iovec *vector, size_t count, int read_re
   return bytes_xfered;
 }
 
-TS_INLINE int64
+TS_INLINE int64_t
 SocketManager::read_vector(int fd, struct iovec *vector, size_t count, void *pOLP)
 {
   return vector_io(fd, vector, count, 1, pOLP);
@@ -198,11 +198,11 @@ SocketManager::recvfrom(int fd, void *buf, int size, int flags, struct sockaddr 
   return r;
 }
 
-TS_INLINE int64
+TS_INLINE int64_t
 SocketManager::write(int fd, void *buf, int size, void *pOLP)
 {
   NOWARN_UNUSED(pOLP);
-  int64 r;
+  int64_t r;
   do {
     if (likely((r =::write(fd, buf, size)) >= 0))
       break;
@@ -211,11 +211,11 @@ SocketManager::write(int fd, void *buf, int size, void *pOLP)
   return r;
 }
 
-TS_INLINE int64
+TS_INLINE int64_t
 SocketManager::pwrite(int fd, void *buf, int size, off_t offset, char *tag)
 {
   NOWARN_UNUSED(tag);
-  int64 r;
+  int64_t r;
   do {
     if (unlikely((r =::pwrite(fd, buf, size, offset)) < 0))
       r = -errno;
@@ -223,10 +223,10 @@ SocketManager::pwrite(int fd, void *buf, int size, off_t offset, char *tag)
   return r;
 }
 
-TS_INLINE int64
+TS_INLINE int64_t
 SocketManager::writev(int fd, struct iovec *vector, size_t count)
 {
-  int64 r;
+  int64_t r;
   do {
     if (likely((r =::writev(fd, vector, count)) >= 0))
       break;
@@ -235,7 +235,7 @@ SocketManager::writev(int fd, struct iovec *vector, size_t count)
   return r;
 }
 
-TS_INLINE int64
+TS_INLINE int64_t
 SocketManager::write_vector(int fd, struct iovec *vector, size_t count, void *pOLP)
 {
   return vector_io(fd, vector, count, 0, pOLP);
@@ -276,10 +276,10 @@ SocketManager::sendmsg(int fd, struct msghdr *m, int flags, void *pOLP)
   return r;
 }
 
-TS_INLINE int64
+TS_INLINE int64_t
 SocketManager::lseek(int fd, off_t offset, int whence)
 {
-  int64 r;
+  int64_t r;
   do {
     if ((r =::lseek(fd, offset, whence)) < 0)
       r = -errno;

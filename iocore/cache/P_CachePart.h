@@ -65,11 +65,11 @@
 
 // Documents
 
-#define DOC_MAGIC                       ((uint32)0x5F129B13)
-#define DOC_CORRUPT                     ((uint32)0xDEADBABE)
-#define DOC_NO_CHECKSUM                 ((uint32)0xA0B0C0D0)
+#define DOC_MAGIC                       ((uint32_t)0x5F129B13)
+#define DOC_CORRUPT                     ((uint32_t)0xDEADBABE)
+#define DOC_NO_CHECKSUM                 ((uint32_t)0xA0B0C0D0)
 
-#define sizeofDoc (((uint32)(uintptr_t)&((Doc*)0)->checksum)+(uint32)sizeof(uint32))
+#define sizeofDoc (((uint32_t)(uintptr_t)&((Doc*)0)->checksum)+(uint32_t)sizeof(uint32_t))
 
 struct Cache;
 struct Part;
@@ -86,15 +86,15 @@ struct PartHeaderFooter
   off_t write_pos;
   off_t last_write_pos;
   off_t agg_pos;
-  uint32 generation;            // token generation (vary), this cannot be 0
-  uint32 phase;
-  uint32 cycle;
-  uint32 sync_serial;
-  uint32 write_serial;
-  uint32 dirty;
-  uint32 sector_size;
-  uint32 unused;                // pad out to 8 byte boundary
-  uint16 freelist[1];
+  uint32_t generation;            // token generation (vary), this cannot be 0
+  uint32_t phase;
+  uint32_t cycle;
+  uint32_t sync_serial;
+  uint32_t write_serial;
+  uint32_t dirty;
+  uint32_t sector_size;
+  uint32_t unused;                // pad out to 8 byte boundary
+  uint16_t freelist[1];
 };
 
 // Key and Earliest key for each fragment that needs to be evacuated
@@ -171,16 +171,16 @@ struct Part:public Continuation
   CacheDisk *disk;
   Cache *cache;
   CachePart *cache_part;
-  uint32 last_sync_serial;
-  uint32 last_write_serial;
-  uint32 sector_size;
+  uint32_t last_sync_serial;
+  uint32_t last_write_serial;
+  uint32_t sector_size;
   bool recover_wrapped;
   bool dir_sync_waiting;
   bool dir_sync_in_progress;
   bool writing_end_marker;
 
   CacheKey first_fragment_key;
-  int64 first_fragment_offset;
+  int64_t first_fragment_offset;
   Ptr<IOBufferData> first_fragment_data;
 
   void cancel_trigger();
@@ -246,7 +246,7 @@ struct Part:public Continuation
   void evacuate_cleanup();
   EvacuationBlock *force_evacuate_head(Dir *dir, int pinned);
   int within_hit_evacuate_window(Dir *dir);
-  uint32 round_to_approx_size(uint32 l);
+  uint32_t round_to_approx_size(uint32_t l);
 
   Part():Continuation(new_ProxyMutex()), path(NULL), fd(-1),
          dir(0), buckets(0), recover_pos(0), prev_recover_pos(0), scan_pos(0), skip(0), start(0),
@@ -294,31 +294,31 @@ struct CachePart
 
 // element of the fragment table in the head of a multi-fragment document
 struct Frag {
-  uint64 offset; // start offset of data stored in this fragment
+  uint64_t offset; // start offset of data stored in this fragment
 };
 
 // Note : hdr() needs to be 8 byte aligned.
 // If you change this, change sizeofDoc above
 struct Doc
 {
-  uint32 magic;         // DOC_MAGIC
-  uint32 len;           // length of this segment (including hlen, flen & sizeof(Doc), unrounded)
-  uint64 total_len;     // total length of document
+  uint32_t magic;         // DOC_MAGIC
+  uint32_t len;           // length of this segment (including hlen, flen & sizeof(Doc), unrounded)
+  uint64_t total_len;     // total length of document
   INK_MD5 first_key;    // first key in document (http: vector)
   INK_MD5 key;
-  uint32 hlen;          // header length
-  uint32 ftype:8;       // fragment type CACHE_FRAG_TYPE_XX
-  uint32 flen:24;       // fragment table length
-  uint32 sync_serial;
-  uint32 write_serial;
-  uint32 pinned;        // pinned until
-  uint32 checksum;
+  uint32_t hlen;          // header length
+  uint32_t ftype:8;       // fragment type CACHE_FRAG_TYPE_XX
+  uint32_t flen:24;       // fragment table length
+  uint32_t sync_serial;
+  uint32_t write_serial;
+  uint32_t pinned;        // pinned until
+  uint32_t checksum;
 
-  uint32 data_len();
-  uint32 prefix_len();
+  uint32_t data_len();
+  uint32_t prefix_len();
   int single_fragment();
   int no_data_in_fragment();
-  uint32 nfrags();
+  uint32_t nfrags();
   char *hdr();
   Frag *frags();
   char *data();
@@ -337,7 +337,7 @@ extern unsigned short *part_hash_table;
 
 TS_INLINE int
 part_headerlen(Part *d) {
-  return ROUND_TO_STORE_BLOCK(sizeof(PartHeaderFooter) + sizeof(uint16) * (d->segments-1));
+  return ROUND_TO_STORE_BLOCK(sizeof(PartHeaderFooter) + sizeof(uint16_t) * (d->segments-1));
 }
 TS_INLINE int
 part_dirlen(Part * d)
@@ -396,12 +396,12 @@ part_in_phase_agg_buf_valid(Part * d, Dir * e)
 {
   return (part_offset(d, e) >= d->header->write_pos && part_offset(d, e) < (d->header->write_pos + d->agg_buf_pos));
 }
-TS_INLINE uint32
+TS_INLINE uint32_t
 Doc::prefix_len()
 {
   return sizeofDoc + hlen + flen;
 }
-TS_INLINE uint32
+TS_INLINE uint32_t
 Doc::data_len()
 {
   return len - sizeofDoc - hlen - flen;
@@ -411,7 +411,7 @@ Doc::single_fragment()
 {
   return (total_len && (data_len() == total_len));
 }
-TS_INLINE uint32
+TS_INLINE uint32_t
 Doc::nfrags() {
   return flen / sizeof(Frag);
 }
@@ -496,9 +496,9 @@ Part::within_hit_evacuate_window(Dir * xdir)
     return -delta > (data_blocks - hit_evacuate_window) && -delta < data_blocks;
 }
 
-TS_INLINE uint32
-Part::round_to_approx_size(uint32 l) {
-  uint32 ll = round_to_approx_dir_size(l);
+TS_INLINE uint32_t
+Part::round_to_approx_size(uint32_t l) {
+  uint32_t ll = round_to_approx_dir_size(l);
   return ROUND_TO_SECTOR(this, ll);
 }
 

@@ -469,7 +469,7 @@ newTcpSocket(int port)
 
 // Keep track of the number of service threads for debugging
 //  purposes
-static volatile int32 numServiceThr = 0;
+static volatile int32_t numServiceThr = 0;
 
 void
 printServiceThr(int sig)
@@ -545,7 +545,7 @@ serviceThrReaper(void *arg)
 #else
           ink_sem_post(&wGlobals.serviceThrCount);
 #endif
-          ink_atomic_increment((int32 *) & numServiceThr, -1);
+          ink_atomic_increment((int32_t *) & numServiceThr, -1);
 
           wGlobals.serviceThrArray[i].alreadyShutdown = true;
           Debug("ui", "%s %d %s %d\n", "Shuting Down Socket FD ",
@@ -562,7 +562,7 @@ serviceThrReaper(void *arg)
 #else
       ink_sem_post(&wGlobals.serviceThrCount);
 #endif
-      ink_atomic_increment((int32 *) & numServiceThr, -1);
+      ink_atomic_increment((int32_t *) & numServiceThr, -1);
     }
 
     usleep(300000);
@@ -967,7 +967,7 @@ webIntr_main(void *x)
 #else
     ink_sem_wait(&wGlobals.serviceThrCount);
 #endif
-    ink_atomic_increment((int32 *) & numServiceThr, 1);
+    ink_atomic_increment((int32_t *) & numServiceThr, 1);
 
     // INKqa11624 - setup sockaddr struct for unix/tcp socket in different sizes
     if (acceptFD == cliFD) {
@@ -987,7 +987,7 @@ webIntr_main(void *x)
 #else
       ink_sem_post(&wGlobals.serviceThrCount);
 #endif
-      ink_atomic_increment((int32 *) & numServiceThr, -1);
+      ink_atomic_increment((int32_t *) & numServiceThr, -1);
     } else {                    // Accept succeeded
 
       if (serviceThr == HTTP_THR) {
@@ -1035,7 +1035,7 @@ webIntr_main(void *x)
 #else
         ink_sem_post(&wGlobals.serviceThrCount);
 #endif
-        ink_atomic_increment((int32 *) & numServiceThr, -1);
+        ink_atomic_increment((int32_t *) & numServiceThr, -1);
         xfree(clientInfo);
         close_socket(clientFD);
       } else {                  // IP is allowed
@@ -1065,7 +1065,7 @@ webIntr_main(void *x)
 #else
               ink_sem_post(&wGlobals.serviceThrCount);
 #endif
-              ink_atomic_increment((int32 *) & numServiceThr, -1);
+              ink_atomic_increment((int32_t *) & numServiceThr, -1);
             }
 
             break;

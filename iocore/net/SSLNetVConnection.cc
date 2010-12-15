@@ -59,7 +59,7 @@ do_SSL_write(SSL * ssl, void *buf, int size)
 
 
 static int
-ssl_read_from_net(NetHandler * nh, UnixNetVConnection * vc, EThread * lthread, int64 &ret)
+ssl_read_from_net(NetHandler * nh, UnixNetVConnection * vc, EThread * lthread, int64_t &ret)
 {
   NOWARN_UNUSED(nh);
   NetState *s = &vc->read;
@@ -67,8 +67,8 @@ ssl_read_from_net(NetHandler * nh, UnixNetVConnection * vc, EThread * lthread, i
   MIOBufferAccessor & buf = s->vio.buffer;
   IOBufferBlock *b = buf.mbuf->_writer;
   int event = SSL_READ_ERROR_NONE;
-  int64 bytes_read;
-  int64 block_write_avail;
+  int64_t bytes_read;
+  int64_t block_write_avail;
   int sslErr = SSL_ERROR_NONE;
 
   for (bytes_read = 0; (b != 0) && (sslErr == SSL_ERROR_NONE); b = b->next) {
@@ -76,7 +76,7 @@ ssl_read_from_net(NetHandler * nh, UnixNetVConnection * vc, EThread * lthread, i
 
     Debug("ssl", "[SSL_NetVConnection::ssl_read_from_net] b->write_avail()=%d", block_write_avail);
 
-    int64 offset = 0;
+    int64_t offset = 0;
     // while can be replaced with if - need to test what works faster with openssl
     while (block_write_avail > 0) {
       sslvc->read_calls++;
@@ -165,8 +165,8 @@ void
 SSLNetVConnection::net_read_io(NetHandler * nh, EThread * lthread)
 {
   int ret;
-  int64 r = 0;
-  int64 bytes = 0;
+  int64_t r = 0;
+  int64_t bytes = 0;
   NetState *s = &this->read;
   MIOBufferAccessor & buf = s->vio.buffer;
   MUTEX_TRY_LOCK_FOR(lock, s->vio.mutex, lthread, s->vio._cont);
@@ -212,7 +212,7 @@ SSLNetVConnection::net_read_io(NetHandler * nh, EThread * lthread)
     return;
   }
   // If there is nothing to do, disable connection
-  int64 ntodo = s->vio.ntodo();
+  int64_t ntodo = s->vio.ntodo();
   if (ntodo <= 0) {
     read_disable(nh, this);
     return;
@@ -283,12 +283,12 @@ SSLNetVConnection::net_read_io(NetHandler * nh, EThread * lthread)
 }
 
 
-int64
-SSLNetVConnection::load_buffer_and_write(int64 towrite, int64 &wattempted, int64 &total_wrote, MIOBufferAccessor & buf) {
+int64_t
+SSLNetVConnection::load_buffer_and_write(int64_t towrite, int64_t &wattempted, int64_t &total_wrote, MIOBufferAccessor & buf) {
   ProxyMutex *mutex = this_ethread()->mutex;
-  int64 r = 0;
-  int64 l = 0;
-  int64 offset = buf.entry->start_offset;
+  int64_t r = 0;
+  int64_t l = 0;
+  int64_t offset = buf.entry->start_offset;
   IOBufferBlock *b = buf.entry->block;
 
   do {
@@ -301,7 +301,7 @@ SSLNetVConnection::load_buffer_and_write(int64 towrite, int64 &wattempted, int64
       continue;
     }
     // check if to amount to write exceeds that in this buffer
-    int64 wavail = towrite - total_wrote;
+    int64_t wavail = towrite - total_wrote;
 
     if (l > wavail)
       l = wavail;

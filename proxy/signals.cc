@@ -86,12 +86,12 @@ public:
       //       This is not error condition at the first place
       //       so why stderr?
       //
-      fprintf(stderr, "sbrk 0x%llux from first %llu from last %llu\n",
-              (uint64) ((ptrdiff_t) now), (uint64) ((ptrdiff_t) (now - end)),
-              (uint64) ((ptrdiff_t) (now - snap)));
+      fprintf(stderr, "sbrk 0x%" PRIu64 "x from first %" PRIu64 " from last %" PRIu64 "\n",
+              (uint64_t) ((ptrdiff_t) now), (uint64_t) ((ptrdiff_t) (now - end)),
+              (uint64_t) ((ptrdiff_t) (now - snap)));
 #ifdef DEBUG
       int fmdelta = fastmemtotal - fastmemsnap;
-      fprintf(stderr, "fastmem %lld from last %lld\n", (int64) fastmemtotal, (int64) fmdelta);
+      fprintf(stderr, "fastmem %" PRId64 " from last %" PRId64 "\n", (int64_t) fastmemtotal, (int64_t) fmdelta);
       fastmemsnap += fmdelta;
 #endif
       snap = now;

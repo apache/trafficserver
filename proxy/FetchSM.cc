@@ -76,7 +76,7 @@ FetchSM::get_info_from_buffer(TSIOBufferReader the_reader)
   char *info;
 //  char *info_start;
 
-  int64 read_avail, read_done;
+  int64_t read_avail, read_done;
   TSIOBufferBlock blk;
   char *buf;
 

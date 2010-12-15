@@ -69,9 +69,9 @@ int
 LogAccessICP::marshal_client_host_ip(char *buf)
 {
   if (buf) {
-    int64 ip = m_icp_log->GetClientIP()->s_addr;
+    int64_t ip = m_icp_log->GetClientIP()->s_addr;
     // ip is already in network order
-    marshal_int(buf, (int64)ntohl(ip));
+    marshal_int(buf, (int64_t)ntohl(ip));
   }
   return INK_MIN_ALIGN;
 }
@@ -186,7 +186,7 @@ int
 LogAccessICP::marshal_proxy_resp_squid_len(char *buf)
 {
   if (buf) {
-    int64 val = m_icp_log->GetSize();
+    int64_t val = m_icp_log->GetSize();
     marshal_int(buf, val);
   }
   return INK_MIN_ALIGN;
@@ -199,7 +199,7 @@ int
 LogAccessICP::marshal_proxy_resp_content_len(char *buf)
 {
   if (buf) {
-    int64 val = m_icp_log->GetSize();
+    int64_t val = m_icp_log->GetSize();
     marshal_int(buf, val);
   }
   return INK_MIN_ALIGN;
@@ -212,7 +212,7 @@ int
 LogAccessICP::marshal_proxy_resp_status_code(char *buf)
 {
   if (buf) {
-    int64 status = 0;         // '000' for ICP
+    int64_t status = 0;         // '000' for ICP
     marshal_int(buf, status);
   }
   return INK_MIN_ALIGN;
@@ -226,7 +226,7 @@ LogAccessICP::marshal_cache_result_code(char *buf)
 {
   if (buf) {
     SquidLogCode code = m_icp_log->GetAction();
-    marshal_int(buf, (int64) code);
+    marshal_int(buf, (int64_t) code);
   }
   return INK_MIN_ALIGN;
 }
@@ -239,7 +239,7 @@ LogAccessICP::marshal_proxy_hierarchy_route(char *buf)
 {
   if (buf) {
     SquidHierarchyCode code = m_icp_log->GetHierarchy();
-    marshal_int(buf, (int64) code);
+    marshal_int(buf, (int64_t) code);
   }
   return INK_MIN_ALIGN;
 }
@@ -267,7 +267,7 @@ LogAccessICP::marshal_transfer_time_ms(char *buf)
   if (buf) {
     ink_hrtime elapsed = m_icp_log->GetElapsedTime();
     elapsed /= HRTIME_MSECOND;
-    int64 val = (int64) elapsed;
+    int64_t val = (int64_t) elapsed;
     marshal_int(buf, val);
   }
   return INK_MIN_ALIGN;
@@ -279,7 +279,7 @@ LogAccessICP::marshal_transfer_time_s(char *buf)
   if (buf) {
     ink_hrtime elapsed = m_icp_log->GetElapsedTime();
     elapsed /= HRTIME_SECOND;
-    int64 val = (int64) elapsed;
+    int64_t val = (int64_t) elapsed;
     marshal_int(buf, val);
   }
   return INK_MIN_ALIGN;

@@ -41,7 +41,7 @@
 #include "ink_unused.h"  /* MAGIC_EDITING_TAG */
 
 char *
-int64_to_str(char *buf, unsigned int buf_size, int64 val,
+int64_to_str(char *buf, unsigned int buf_size, int64_t val,
              unsigned int *total_chars, unsigned int req_width, char pad_char)
 {
   const int local_buf_size = 32;
@@ -51,7 +51,7 @@ int64_to_str(char *buf, unsigned int buf_size, int64 val,
   char *out_buf;
 
   if (buf_size < 22) {
-    // int64 may not fit in provided buffer, use the local one
+    // int64_t may not fit in provided buffer, use the local one
     out_buf = &local_buf[local_buf_size - 1];
     using_local_buffer = 1;
   } else {
@@ -138,7 +138,7 @@ int64_to_str(char *buf, unsigned int buf_size, int64 val,
 
 
 int
-squid_timestamp_to_buf(char *buf, uint32 buf_size, uint64 timestamp_sec, uint64 timestamp_usec)
+squid_timestamp_to_buf(char *buf, uint32_t buf_size, uint64_t timestamp_sec, uint64_t timestamp_usec)
 {
   int res;
   const int tmp_buf_size = 32;
@@ -170,7 +170,7 @@ squid_timestamp_to_buf(char *buf, uint32 buf_size, uint64 timestamp_sec, uint64 
 }
 
 #ifdef USE_TIME_STAMP_COUNTER_HRTIME
-uint32
+uint32_t
 init_hrtime_TCS()
 {
   int freqlen = sizeof(hrtime_freq);
@@ -183,7 +183,7 @@ init_hrtime_TCS()
 }
 
 double hrtime_freq_float = 0.5; // 500 Mhz
-uint32 hrtime_freq = init_hrtime_TCS();
+uint32_t hrtime_freq = init_hrtime_TCS();
 #endif
 
 #ifdef NEED_HRTIME_BASIS

@@ -2,6 +2,59 @@
 
 Changes with Apache Traffic Server 2.1.5
 
+  *) Migrate from our own int64 (et.al) to int64_t / stdint types. This also
+   changes the SDK, so ts/ts.h users should now use int64_t etc. [TS-594].
+
+  *)./configure will now tell us more about its defaults.
+
+  *) Add better tests for eventfd, making sure sys/eventfd.h exists
+   [TS-515].
+
+  *) Stub / base implementation for the Task thread pool [TS-589].
+
+  *) Cleanup of traffic_logstats, and also add support for JSON
+   output. Several new options and query args added to select output format
+   and data [TS-587].
+
+  *) Add back support for using the default DNSHandler from DNS.cc
+   This helps with SplitDNS [TS-580].
+
+  *) Fixes for DNS to properly schedule and initialize [TS-570].
+
+  *) Fix make check so it actually compiles [TS-586].
+
+  *) Remove RAF pieces [TS-584].
+
+  *) Replace the SDKAllocator with a ClassAllocator [TS-577].
+
+     This reduces the amount of memory allocation for plugins,
+     but requires that plugins now religiously release the
+     handles that they are expected to release (i.e. no automatic
+     gc is done for lazy developers).
+
+
+  *) Fixes for getting the altinfo regression check to succeeds [TS-171].
+
+  *) Fixes for some transform, and other, mismatches of int vs int64 in the
+   new APIs and underlying cache [TS-456].
+
+  *) Eliminate misguided string copies in the SDK [TS-579].
+
+  *) Fix build of ts.h and tsxs when the .in files changes [TS-574].
+
+  *) Move libinktomi++ and librecords to lib/ts and lib/records [TS-571].
+
+  *) Add SDK API calls to directly get the elements of the running TS
+   version [TS-568].
+
+  *) Added WCCP support.
+
+  *) Bring IPv6 functionality back to trunk, for incoming (client)
+   connections [TS-18]. Original author: Tsunayoshi Egawa.
+
+  *) Segfault with HTTPS, fixed by correctly initializing SSLNetVConnection
+   being added to freelist [TS-559].
+
   *) The old logs.config custom log format is no longer supported. Only
    the XML custom logs are now supported. This eliminates the config
 

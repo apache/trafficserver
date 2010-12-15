@@ -602,9 +602,9 @@ UpdateConfigList::Add(UpdateEntry * e)
 int
 UpdateConfigList::HashAdd(UpdateEntry * e)
 {
-  uint64 folded64 = e->_url_md5.fold();
+  uint64_t folded64 = e->_url_md5.fold();
   ink_assert(folded64);
-  int32 index = folded64 % HASH_TABLE_SIZE;
+  int32_t index = folded64 % HASH_TABLE_SIZE;
 
   if (!_hash_table) {
     // One time initialization

@@ -33,16 +33,16 @@
 
 struct INK_MD5
 {
-  uint64 b[2];
+  uint64_t b[2];
   const INK_MD5 & operator =(const INK_MD5 & md5)
   {
     b[0] = md5.b[0];
     b[1] = md5.b[1];
     return md5;
   }
-  uint32 word(int i)
+  uint32_t word(int i)
   {
-    uint32 *p = (uint32 *) & b[0];
+    uint32_t *p = (uint32_t *) & b[0];
     return p[i];
   }
   unsigned char byte(int i)
@@ -112,7 +112,7 @@ struct INK_MD5
   {
     loadFromBuffer(p);
   }
-  void set(uint64 a1, uint64 a2)
+  void set(uint64_t a1, uint64_t a2)
   {
     b[0] = a1;
     b[1] = a2;
@@ -131,12 +131,12 @@ struct INK_MD5
     return buf;
   }
 
-  uint64 fold()
+  uint64_t fold()
   {
     return (b[0] ^ b[1]);
   }
 
-  uint64 operator[] (int i)
+  uint64_t operator[] (int i)
   {
     return b[i];
   }
@@ -148,7 +148,7 @@ struct INK_MD5
     b[0] = 0;
     b[1] = 0;
   }
-  INK_MD5(uint64 a1, uint64 a2) {
+  INK_MD5(uint64_t a1, uint64_t a2) {
     b[0] = a1;
     b[1] = a2;
   }

@@ -70,7 +70,7 @@ public:
 private:
   char *_filename;              // the name of the meta file
   time_t _creation_time;        // file creation time
-  uint64 _log_object_signature; // log object signature
+  uint64_t _log_object_signature; // log object signature
   int _flags;                   // metainfo status flags
   char _buffer[BUF_SIZE];       // read/write buffer
 
@@ -85,7 +85,7 @@ public:
     _read_from_file();
   };
 
-  MetaInfo(char *filename, time_t creation, uint64 signature):_creation_time(creation),
+  MetaInfo(char *filename, time_t creation, uint64_t signature):_creation_time(creation),
     _log_object_signature(signature), _flags(VALID_CREATION_TIME | VALID_SIGNATURE)
   {
 
@@ -106,7 +106,7 @@ public:
       return false;
     }
   };
-  bool get_log_object_signature(uint64 * signature)
+  bool get_log_object_signature(uint64_t * signature)
   {
     if (_flags & VALID_SIGNATURE) {
       *signature = _log_object_signature;
@@ -138,7 +138,7 @@ class LogFile:public LogBufferSink
 private:
   LogFile(const LogFile &);
 public:
-  LogFile(const char *name, const char *header, LogFileFormat format, uint64 signature,
+  LogFile(const char *name, const char *header, LogFileFormat format, uint64_t signature,
 #ifndef TS_MICRO
           size_t ascii_buffer_size = 4 * 9216, size_t max_line_size = 9216,
 #else
@@ -185,7 +185,7 @@ public:
     if (!m_filesystem_checks_done) {
       do_filesystem_checks();
     }
-    return (m_has_size_limit ? (uint64) m_size_bytes > m_size_limit_bytes : false);
+    return (m_has_size_limit ? (uint64_t) m_size_bytes > m_size_limit_bytes : false);
   };
   int do_filesystem_checks();
   off_t get_size_bytes()const
@@ -209,7 +209,7 @@ private:
   LogFileFormat m_file_format;
   char *m_name;
   char *m_header;
-  uint64 m_signature;           // signature of log object stored
+  uint64_t m_signature;           // signature of log object stored
   MetaInfo *m_meta_info;
 
   char *m_ascii_buffer;         // buffer for ascii output
@@ -230,10 +230,10 @@ private:
   int m_fd;
   long m_start_time;
   long m_end_time;
-  uint64 m_bytes_written;
+  uint64_t m_bytes_written;
   off_t m_size_bytes;           // current size of file in bytes
   bool m_has_size_limit;        // true if file has a size limit
-  uint64 m_size_limit_bytes;    // maximum file size in bytes
+  uint64_t m_size_limit_bytes;    // maximum file size in bytes
   bool m_filesystem_checks_done;        // file system checks have been done
 
 public:

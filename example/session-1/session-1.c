@@ -40,7 +40,7 @@ static INKStat av_transaction;
 static void
 txn_handler(TSHttpTxn txnp, TSCont contp)
 {
-  int64 num_txns = 0;
+  int64_t num_txns = 0;
 
   INKStatIncrement(transaction_count);
   INKStatIntGet(transaction_count, &num_txns);
@@ -52,7 +52,7 @@ txn_handler(TSHttpTxn txnp, TSCont contp)
 static void
 handle_session(TSHttpSsn ssnp, TSCont contp)
 {
-  int64 num_ssn = 0;
+  int64_t num_ssn = 0;
 
   INKStatIncrement(session_count);
   INKStatIntGet(session_count, &num_ssn);

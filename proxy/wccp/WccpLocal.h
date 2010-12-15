@@ -42,7 +42,7 @@ static unsigned int const DEFAULT_PORT = 2048;
 /// Number of buckets in WCCP hash allocation.
 static unsigned int const N_BUCKETS = 256;
 /// Unassigned bucket value (defined by protocol).
-static uint8 const UNASSIGNED_BUCKET = 0xFF;
+static uint8_t const UNASSIGNED_BUCKET = 0xFF;
 /// Size of group password in octets.
 static unsigned int const GROUP_PASSWORD_SIZE = 8;
 
@@ -171,12 +171,12 @@ struct RouterId {
   RouterId(); ///< Default constructor.
   /// Construct from address and sequence number.
   RouterId(
-    uint32 addr, ///< Router address.
-    uint32 recv_id ///< Receive ID (sequence number).
+    uint32_t addr, ///< Router address.
+    uint32_t recv_id ///< Receive ID (sequence number).
   );
 
-  uint32 m_addr; ///< Identifying router IP address.
-  uint32 m_recv_id; ///< Recieve ID (sequence #).
+  uint32_t m_addr; ///< Identifying router IP address.
+  uint32_t m_recv_id; ///< Recieve ID (sequence #).
 };
 
 /** Sect 5.7.1: Router Identity Element.
@@ -196,16 +196,16 @@ public:
   RouterIdElt();
   /// Construct from address and sequence number.
   RouterIdElt(
-    uint32 addr, ///< Router address.
-    uint32 recv_id ///< Receive ID (sequence number).
+    uint32_t addr, ///< Router address.
+    uint32_t recv_id ///< Receive ID (sequence number).
   );
 
   /// @name Accessors
   //@{
-  uint32 getAddr() const; ///< Get the address field.
-  self& setAddr(uint32 addr); ///< Set the address field to @a addr.
-  uint32 getRecvId() const; ///< Get the receive ID field.
-  self& setRecvId(uint32 id); ///< Set the receive ID field to @a id.
+  uint32_t getAddr() const; ///< Get the address field.
+  self& setAddr(uint32_t addr); ///< Set the address field to @a addr.
+  uint32_t getRecvId() const; ///< Get the receive ID field.
+  self& setRecvId(uint32_t id); ///< Set the receive ID field to @a id.
   //@}
 
   /// Assign from non-serialized variant.
@@ -216,12 +216,12 @@ public:
 struct CacheId {
   typedef CacheId self; ///< Self reference type.
   /// Container for hash assignment.
-  typedef uint8 HashBuckets[N_BUCKETS >> 3];
+  typedef uint8_t HashBuckets[N_BUCKETS >> 3];
   /// Hash revision (protocol required).
-  static uint16 const HASH_REVISION = 0;
+  static uint16_t const HASH_REVISION = 0;
 
-  uint32 m_addr; ///< Identifying cache IP address.
-  uint16 m_hash_rev; ///< Hash revision.
+  uint32_t m_addr; ///< Identifying cache IP address.
+  uint16_t m_hash_rev; ///< Hash revision.
   unsigned int m_reserved_0:7; ///< Reserved bits.
   /** Cache not assigned.
       If set the cache does not have an assignment in the redirection
@@ -232,8 +232,8 @@ struct CacheId {
   unsigned int m_reserved_1:8; ///< Reserved (unused).
   /// Bit vector of buckets assigned to this cache.
   HashBuckets m_buckets;
-  uint16 m_weight; ///< Assignment weight.
-  uint16 m_status; ///< Cache status.
+  uint16_t m_weight; ///< Assignment weight.
+  uint16_t m_status; ///< Cache status.
 };
 
 /** Sect 5.7.2: Web-Cache Identity Element
@@ -249,20 +249,20 @@ public:
   typedef super::HashBuckets HashBuckets; ///< Expose type.
 
   /// Hash revision (protocol required).
-  static uint16 const HASH_REVISION = super::HASH_REVISION;
+  static uint16_t const HASH_REVISION = super::HASH_REVISION;
 
   /// @name Accessors
   //@{
-  uint32 getAddr() const; ///< Get address field.
-  self& setAddr(uint32 addr); ///< Set address field to @a addr.
-  uint16 getHashRev() const; ///< Get hash revision field.
-  self& setHashRev(uint16 rev); ///< Set hash revision field to @a rev.
+  uint32_t getAddr() const; ///< Get address field.
+  self& setAddr(uint32_t addr); ///< Set address field to @a addr.
+  uint16_t getHashRev() const; ///< Get hash revision field.
+  self& setHashRev(uint16_t rev); ///< Set hash revision field to @a rev.
   bool getUnassigned() const; ///< Get unassigned field.
   self& setUnassigned(bool state); ///< Set unassigned field to @a state.
-  uint16 getWeight() const; ///< Get weight field.
-  self& setWeight(uint16 w); ///< Set weight field to @a w.
-  uint16 getStatus() const; ///< Get status field.
-  self& setStatus(uint16 s); ///< Set status field to @a s.
+  uint16_t getWeight() const; ///< Get weight field.
+  self& setWeight(uint16_t w); ///< Set weight field to @a w.
+  uint16_t getStatus() const; ///< Get status field.
+  self& setStatus(uint16_t s); ///< Set status field to @a s.
 
   bool getBucket(int idx) const; ///< Get bucket state at index @a idx.
   /// Set bucket at index @a idx to @a state.
@@ -283,20 +283,20 @@ public:
   AssignmentKeyElt(); ///< Default constructor. No member initialization.
   /// Construct from address and sequence number.
   AssignmentKeyElt(
-    uint32 addr, ///< Key address.
-    uint32 generation ///< Change number.
+    uint32_t addr, ///< Key address.
+    uint32_t generation ///< Change number.
   );
 
   /// @name Accessors
   //@{
-  uint32 getAddr() const; ///< Get the address field.
-  self& setAddr(uint32 addr); ///< Set the address field to @a addr.
-  uint32 getChangeNumber() const; ///< Get change number field.
-  self& setChangeNumber(uint32 n); ///< Set change number field to @a n.
+  uint32_t getAddr() const; ///< Get the address field.
+  self& setAddr(uint32_t addr); ///< Set the address field to @a addr.
+  uint32_t getChangeNumber() const; ///< Get change number field.
+  self& setChangeNumber(uint32_t n); ///< Set change number field to @a n.
   //@}
 protected:
-  uint32 m_addr; ///< Identifying router IP address.
-  uint32 m_change_number; ///< Change number (sequence #).
+  uint32_t m_addr; ///< Identifying router IP address.
+  uint32_t m_change_number; ///< Change number (sequence #).
 };
 
 /// Sect 5.7.4: Router Assignment Element
@@ -311,18 +311,18 @@ public:
   RouterAssignmentElt();
   /// Construct from address and sequence number.
   RouterAssignmentElt(
-    uint32 addr, ///< Router address.
-    uint32 recv_id, ///< Receive ID (sequence number).
-    uint32 change_number ///< Change number (sequence number).
+    uint32_t addr, ///< Router address.
+    uint32_t recv_id, ///< Receive ID (sequence number).
+    uint32_t change_number ///< Change number (sequence number).
   );
 
   /// @name Accessors
   //@{
-  uint32 getChangeNumber() const; ///< Get change number field.
-  self& setChangeNumber(uint32 n); ///< Set change number field to @a n.
+  uint32_t getChangeNumber() const; ///< Get change number field.
+  self& setChangeNumber(uint32_t n); ///< Set change number field to @a n.
   //@}
 protected:
-  uint32 m_change_number; ///< Change number (sequence #).
+  uint32_t m_change_number; ///< Change number (sequence #).
 };
 
 /// Sect 5.7.5: Capability Element
@@ -342,7 +342,7 @@ public:
   /// Construct from address and sequence number.
   CapabilityElt(
     Type type, ///< Capability type.
-    uint32 data ///< Capability data.
+    uint32_t data ///< Capability data.
   );
 
   /// @name Accessors
@@ -352,16 +352,16 @@ public:
   self& setCapType(
     Type cap ///< Capability type.
   );
-  uint32 getCapData() const; ///< Get capability data.
+  uint32_t getCapData() const; ///< Get capability data.
   /// Set capability data.
   self& setCapData(
-    uint32 data ///< Data value.
+    uint32_t data ///< Data value.
   );
   //@}
 protected:
-  uint16 m_cap_type; ///< Capability type.
-  uint16 m_cap_length; ///< Length of capability data.
-  uint32 m_cap_data; ///< Capability data.
+  uint16_t m_cap_type; ///< Capability type.
+  uint16_t m_cap_length; ///< Length of capability data.
+  uint32_t m_cap_data; ///< Capability data.
 };
 
 /// Sect 5.7.7: Mask element
@@ -372,28 +372,28 @@ public:
   /// @name Accessors
   //@{
   /// Get source address mask field.
-  uint32 getf_src_addr_mask() const;
+  uint32_t getf_src_addr_mask() const;
   /// Set source address mask field to @a mask.
-  self& setf_src_addr_mask(uint32 mask);
+  self& setf_src_addr_mask(uint32_t mask);
   /// Get destination address field.
-  uint32 getf_dst_addr_mask() const;
+  uint32_t getf_dst_addr_mask() const;
   /// Set destination address field to @a mask.
-  self& setf_dst_addr_mask(uint32 mask);
+  self& setf_dst_addr_mask(uint32_t mask);
   /// Get source port mask field.
-  uint16 getf_src_port_mask() const;
+  uint16_t getf_src_port_mask() const;
   /// Set source port mask field to @a mask.
-  self& setf_src_port_mask(uint16 mask);
+  self& setf_src_port_mask(uint16_t mask);
   /// Get destination port mask field.
-  uint16 getf_dst_port_mask() const;
+  uint16_t getf_dst_port_mask() const;
   /// Set destination port mask field to @a mask.
-  self& setf_dst_port_mask(uint16 mask);
+  self& setf_dst_port_mask(uint16_t mask);
   //@}
 
 protected:
-  uint32 m_src_addr_mask; ///< Source address mask.
-  uint32 m_dst_addr_mask; ///< Destination address mask.
-  uint16 m_src_port_mask; ///< Source port mask.
-  uint16 m_dst_port_mask; ///< Destination port mask.
+  uint32_t m_src_addr_mask; ///< Source address mask.
+  uint32_t m_dst_addr_mask; ///< Destination address mask.
+  uint16_t m_src_port_mask; ///< Source port mask.
+  uint16_t m_dst_port_mask; ///< Destination port mask.
 };
 
 /// Sect 5.7.8: Value element.
@@ -403,24 +403,24 @@ public:
 
   /// @name Accessors
   //@{
-  uint32 getf_src_addr() const; ///< Get source address field.
-  self& setf_src_addr(uint32 addr); ///< Set source address field to @a addr.
-  uint32 getf_dst_addr() const; ///< Get destination address field.
-  self& setf_dst_addr(uint32 addr); ///< Set destination address field to @a addr.
-  uint16 getf_src_port() const; ///< Get source port field.
-  self& setf_src_port(uint16 port); ///< Set source port field to @a port.
-  uint16 getf_dst_port() const; ///< Get destination port field.
-  self& setf_dst_port(uint16 port); ///< Set destination port field to @a port.
-  uint32 getCacheAddr() const; ///< Get cache address field.
-  self& setCacheAddr(uint32 addr); ///< Set cache address field to @a addr
+  uint32_t getf_src_addr() const; ///< Get source address field.
+  self& setf_src_addr(uint32_t addr); ///< Set source address field to @a addr.
+  uint32_t getf_dst_addr() const; ///< Get destination address field.
+  self& setf_dst_addr(uint32_t addr); ///< Set destination address field to @a addr.
+  uint16_t getf_src_port() const; ///< Get source port field.
+  self& setf_src_port(uint16_t port); ///< Set source port field to @a port.
+  uint16_t getf_dst_port() const; ///< Get destination port field.
+  self& setf_dst_port(uint16_t port); ///< Set destination port field to @a port.
+  uint32_t getCacheAddr() const; ///< Get cache address field.
+  self& setCacheAddr(uint32_t addr); ///< Set cache address field to @a addr
   //@}
 
 protected:
-  uint32 m_src_addr; ///< Source address.
-  uint32 m_dst_addr; ///< Destination address.
-  uint16 m_src_port; ///< Source port.
-  uint16 m_dst_port; ///< Destination port.
-  uint32 m_cache_addr; ///< Cache address.
+  uint32_t m_src_addr; ///< Source address.
+  uint32_t m_dst_addr; ///< Destination address.
+  uint16_t m_src_port; ///< Source port.
+  uint16_t m_dst_port; ///< Destination port.
+  uint32_t m_cache_addr; ///< Cache address.
 };
 
 /** Sect 5.7.6: Mask/Value Set Element
@@ -433,7 +433,7 @@ public:
   MaskValueSetElt(); ///< Default constructor.
   /// Construct from address and sequence number.
   MaskValueSetElt(
-    uint32 n ///< Value count.
+    uint32_t n ///< Value count.
   );
 
   /// @name Accessors
@@ -442,25 +442,25 @@ public:
   MaskElt& atf_mask();
 
   /// Get source address mask field.
-  uint32 getf_src_addr_mask() const;
+  uint32_t getf_src_addr_mask() const;
   /// Set source address mask field to @a mask.
-  self& setf_src_addr_mask(uint32 mask);
+  self& setf_src_addr_mask(uint32_t mask);
   /// Get destination address field.
-  uint32 getf_dst_addr_mask() const;
+  uint32_t getf_dst_addr_mask() const;
   /// Set destination address field to @a mask.
-  self& setf_dst_addr_mask(uint32 mask);
+  self& setf_dst_addr_mask(uint32_t mask);
   /// Get source port mask field.
-  uint16 getf_src_port_mask() const;
+  uint16_t getf_src_port_mask() const;
   /// Set source port mask field to @a mask.
-  self& setf_src_port_mask(uint16 mask);
+  self& setf_src_port_mask(uint16_t mask);
   /// Get destination port mask field.
-  uint16 getf_dst_port_mask() const;
+  uint16_t getf_dst_port_mask() const;
   /// Set destination port mask field to @a mask.
-  self& setf_dst_port_mask(uint16 mask);
+  self& setf_dst_port_mask(uint16_t mask);
 
   /// Get the value count.
   /// @note No corresponding @c setf_ because this cannot be safely changed.
-  uint32 getf_count() const;
+  uint32_t getf_count() const;
   /// Access value element.
   ValueElt& operator [] (
     int idx ///< Index of target element.
@@ -470,7 +470,7 @@ public:
   size_t calcSize() const;
 protected:
   MaskElt m_mask; ///< Base mask element.
-  uint32 m_count; ///< Number of value elements.
+  uint32_t m_count; ///< Number of value elements.
 };
 
 /** Base class for all components.
@@ -512,9 +512,9 @@ public:
   /// Sect 5.5:  Message Header
   /// Serialized layout of message header.
   struct raw_t {
-    uint32 m_type; ///< @c message_type_t
-    uint16 m_version; ///< Implementation version of sender
-    uint16 m_length; ///< Message body length (excluding header)
+    uint32_t m_type; ///< @c message_type_t
+    uint16_t m_version; ///< Implementation version of sender
+    uint16_t m_length; ///< Message body length (excluding header)
   };
 
   /// Default constructor.
@@ -523,11 +523,11 @@ public:
   /// @name Accessors
   //@{
   message_type_t getType(); ///< Get message type field.
-  uint16 getVersion(); ///< Get message version field.
-  uint16 getLength(); ///< Get message length field.
+  uint16_t getVersion(); ///< Get message version field.
+  uint16_t getLength(); ///< Get message length field.
   self& setType(message_type_t type); ///< Set message type field to @a type.
-  self& setVersion(uint16 version); ///< Set version field to @a version.
-  self& setLength(uint16 length); ///< Set length field to @a length.
+  self& setVersion(uint16_t version); ///< Set version field to @a version.
+  self& setLength(uint16_t length); ///< Set length field to @a length.
   //@}
 
   /// Write initial values to message data.
@@ -568,16 +568,16 @@ struct CompWithHeader : public ComponentBase {
       subclass this for their own @c raw_t.
   */
   struct raw_t {
-    uint16 m_type; ///< Serialized @ref CompType.
-    uint16 m_length; ///< length of rest of component (not including header).
+    uint16_t m_type; ///< Serialized @ref CompType.
+    uint16_t m_length; ///< length of rest of component (not including header).
   };
 
   /// @name Accessors
   //@{
   CompType getType() const; ///< Get component type field.
-  uint16 getLength() const; ///< Get component length field.
+  uint16_t getLength() const; ///< Get component length field.
   T& setType(CompType type); ///< Set component type field to @a type.
-  T& setLength(uint16 length); ///< Set length field to @a length.
+  T& setLength(uint16_t length); ///< Set length field to @a length.
   //@}
 
   /** Check the component header for type and length sanity.
@@ -618,7 +618,7 @@ public:
 
   /// Raw memory layout, no security.
   struct RawNone : public super::raw_t {
-    uint32 m_option; ///< @c Option
+    uint32_t m_option; ///< @c Option
   };
 
   /// Raw memory layout, with MD5.
@@ -626,7 +626,7 @@ public:
     /// Size of MD5 hash (in bytes).
     static size_t const HASH_SIZE = 16;
     /// Storage for MD5 hash.
-    typedef uint8 HashData[HASH_SIZE];
+    typedef uint8_t HashData[HASH_SIZE];
     /// MD5 hash value.
     HashData m_data;
   };
@@ -711,32 +711,32 @@ public:
   */
   self& setSvcType(ServiceGroup::Type svc);
 
-  uint8 getSvcId() const; ///< Get service ID field.
-  self& setSvcId(uint8 id); ///< Set service ID field to @a id.
+  uint8_t getSvcId() const; ///< Get service ID field.
+  self& setSvcId(uint8_t id); ///< Set service ID field to @a id.
 
-  uint8 getPriority() const; ///< Get priority field.
-  self& setPriority(uint8 pri); ///< Set priority field to @a p.
+  uint8_t getPriority() const; ///< Get priority field.
+  self& setPriority(uint8_t pri); ///< Set priority field to @a p.
 
-  uint8 getProtocol() const; ///< Get protocol field.
-  self& setProtocol(uint8 p); ///< Set protocol field to @a p.
+  uint8_t getProtocol() const; ///< Get protocol field.
+  self& setProtocol(uint8_t p); ///< Set protocol field to @a p.
 
-  uint32 getFlags() const; ///< Get flags field.
-  self& setFlags(uint32 f); ///< Set the flags flags in field to @a f.
+  uint32_t getFlags() const; ///< Get flags field.
+  self& setFlags(uint32_t f); ///< Set the flags flags in field to @a f.
   /// Set the flags in the flag field that are set in @a f.
   /// Other flags are unchanged.
-  self& enableFlags(uint32 f);
+  self& enableFlags(uint32_t f);
   /// Clear the flags in the flag field that are set in @a f.
   /// Other flags are unchanged.
-  self& disableFlags(uint32 f);
+  self& disableFlags(uint32_t f);
 
   /// Get a port value.
-  uint16 getPort(
+  uint16_t getPort(
     int idx ///< Index of target port.
   ) const;
   /// Set a port value.
   self& setPort(
     int idx, ///< Index of port.
-    uint16 port ///< Value for port.
+    uint16_t port ///< Value for port.
   );
   /// Zero (clear) all ports.
   self& clearPorts();
@@ -745,7 +745,7 @@ public:
       to add more than @c N_PORTS ports.
    */
   self& addPort(
-    uint16 port ///< Port value.
+    uint16_t port ///< Port value.
   );
   //@}
 
@@ -794,9 +794,9 @@ public:
     /// Source address.
     /// For response messages, this is the address to which the
     /// original message was sent.
-    uint32 m_to_addr;
+    uint32_t m_to_addr;
     /// # of target cache addresses.
-    uint32 m_from_count;
+    uint32_t m_from_count;
     // Addresses follow here.
   };
 
@@ -808,38 +808,38 @@ public:
   RouterIdElt const& idElt() const;
   /// Set the fields in the router ID element.
   self& setIdElt(
-    uint32 addr, ///< Identifying IP address for router.
-    uint32 recv_id ///< Receive count for router to target cache.
+    uint32_t addr, ///< Identifying IP address for router.
+    uint32_t recv_id ///< Receive count for router to target cache.
   );
-  uint32 getAddr() const; ///< Get the address field in the ID element.
-  self& setAddr(uint32 addr); ///< Set the address field in the ID element.
-  uint32 getRecvId() const; ///< Get the receive ID field in the ID element.
-  self& setRecvId(uint32 id); ///< Set the receive ID field in the ID element.
+  uint32_t getAddr() const; ///< Get the address field in the ID element.
+  self& setAddr(uint32_t addr); ///< Set the address field in the ID element.
+  uint32_t getRecvId() const; ///< Get the receive ID field in the ID element.
+  self& setRecvId(uint32_t id); ///< Set the receive ID field in the ID element.
 
   /// Get the sent to address.
-  uint32 getToAddr() const;
+  uint32_t getToAddr() const;
   /// Set the sent to address.
   self& setToAddr(
-    uint32 addr ///< Address value.
+    uint32_t addr ///< Address value.
   );
   /// Get router count field.
   /// @note No @c setf method because this cannot be changed independently.
   /// @see fill
-  uint32 getFromCount() const;
+  uint32_t getFromCount() const;
   /// Get received from address.
-  uint32 getFromAddr(
+  uint32_t getFromAddr(
     int idx ///< Index of address.
   ) const;
   /// Set received from address.
   self& setFromAddr(
     int idx, ///< Index of address.
-    uint32 addr ///< Address value.
+    uint32_t addr ///< Address value.
   );
   //@}
   /// Find an address in the from list.
   /// @return The index of the address, or -1 if not found.
   int findFromAddr(
-    uint32 addr ///< Search value.
+    uint32_t addr ///< Search value.
   );
 
   /** Write serialization data for single cache target.
@@ -847,10 +847,10 @@ public:
   */
   self& fillSingleton(
     MsgBuffer& base, ///< Target storage.
-    uint32 addr, ///< Identifying IP address.
-    uint32 recv_count, ///< Receive count for target cache.
-    uint32 to_addr, ///< Destination address in initial packet.
-    uint32 from_addr ///< Identifying IP address of target cache.
+    uint32_t addr, ///< Identifying IP address.
+    uint32_t recv_count, ///< Receive count for target cache.
+    uint32_t to_addr, ///< Destination address in initial packet.
+    uint32_t from_addr ///< Identifying IP address of target cache.
   );
 
   /** Write basic message structure.
@@ -899,16 +899,16 @@ public:
   CacheIdElt& idElt();
   CacheIdElt const& idElt() const;
 
-  uint32 getAddr() const; ///< Get address field.
-  self& setAddr(uint32 addr); ///< Set address field to @a addr.
-  uint16 getHashRev() const; ///< Get hash revision field.
-  self& setHashRev(uint16 rev); ///< Set hash revision field to @a rev.
+  uint32_t getAddr() const; ///< Get address field.
+  self& setAddr(uint32_t addr); ///< Set address field to @a addr.
+  uint16_t getHashRev() const; ///< Get hash revision field.
+  self& setHashRev(uint16_t rev); ///< Set hash revision field to @a rev.
   bool getUnassigned() const; ///< Get unassigned field.
   self& setUnassigned(bool state); ///< Set unassigned field to @a state.
-  uint16 getWeight() const; ///< Get weight field.
-  self& setWeight(uint16 w); ///< Set weight field to @a w.
-  uint16 getStatus() const; ///< Get status field.
-  self& setStatus(uint16 s); ///< Set status field to @a s.
+  uint16_t getWeight() const; ///< Get weight field.
+  self& setWeight(uint16_t w); ///< Set weight field to @a w.
+  uint16_t getStatus() const; ///< Get status field.
+  self& setStatus(uint16_t s); ///< Set status field to @a s.
 
   bool getBucket(int idx) const; ///< Get bucket state at index @a idx.
   /// Set bucket at index @a idx to @a state.
@@ -948,9 +948,9 @@ public:
   /// Stub of the serialized data.
   /// There is more variable sized data that must be handled specially.
   struct raw_t : public super::raw_t {
-    uint32 m_change_number; ///< Sequence number.
+    uint32_t m_change_number; ///< Sequence number.
     AssignmentKeyElt m_key; ///< Assignment data.
-    uint32 m_router_count; ///< # of router elements.
+    uint32_t m_router_count; ///< # of router elements.
   };
 
   /// @name Accessors
@@ -960,21 +960,21 @@ public:
   /// Directly access assignment key.
   AssignmentKeyElt const& key_elt() const;
   /// Get address in assignment key.
-  uint32 getKeyAddr() const;
+  uint32_t getKeyAddr() const;
   /// Set address in assignment key.
-  self& setKeyAddr(uint32 addr);
+  self& setKeyAddr(uint32_t addr);
   /// Get change number in assignment key.
-  uint32 getKeyChangeNumber() const;
+  uint32_t getKeyChangeNumber() const;
   /// Set change number in assignment key.
-  self& setKeyChangeNumber(uint32 n);
+  self& setKeyChangeNumber(uint32_t n);
 
-  uint32 getChangeNumber() const; ///< Get change number field.
-  self& setChangeNumber(uint32 n); ///< Set change number field to @a n
+  uint32_t getChangeNumber() const; ///< Get change number field.
+  self& setChangeNumber(uint32_t n); ///< Set change number field to @a n
 
   /// Get cache count field.
   /// @note No @c setf method because this cannot be changed independently.
   /// @see fill
-  uint32 getCacheCount() const;
+  uint32_t getCacheCount() const;
   /// Access cache element.
   CacheIdElt& cacheElt(
     int idx ///< Index of target element.
@@ -986,15 +986,15 @@ public:
   /// Get router count field.
   /// @note No @c setf method because this cannot be changed independently.
   /// @see fill
-  uint32 getRouterCount() const;
+  uint32_t getRouterCount() const;
   /// Get router address.
-  uint32 getRouterAddr(
+  uint32_t getRouterAddr(
     int idx ///< Index of router.
   ) const;
   /// Set router address.
   self& setRouterAddr(
     int idx, ///< Index of router.
-    uint32 addr ///< Address value.
+    uint32_t addr ///< Address value.
   );
   //@}
 
@@ -1022,11 +1022,11 @@ public:
 protected:
   /// Serialized count of cache addresses.
   /// The actual addresses start immediate after this.
-  uint32* m_cache_count;
+  uint32_t* m_cache_count;
 
   /// Compute the address of the cache count field.
   /// Assumes the router count field is set.
-  uint32* calc_cache_count_ptr();
+  uint32_t* calc_cache_count_ptr();
 };
 
 /** Sect 5.6.6: Web-Cache View Info Component
@@ -1044,19 +1044,19 @@ public:
   /// Stub of the serialized data.
   /// There is more variable sized data that must be handled specially.
   struct raw_t : public super::raw_t {
-    uint32 m_change_number; ///< Sequence number.
-    uint32 m_router_count; ///< # of router ID elements.
+    uint32_t m_change_number; ///< Sequence number.
+    uint32_t m_router_count; ///< # of router ID elements.
   };
 
   /// @name Accessors
   //@{
-  uint32 getChangeNumber() const; ///< Get change number field.
-  self& setChangeNumber(uint32 n); ///< Set change number field to @a n
+  uint32_t getChangeNumber() const; ///< Get change number field.
+  self& setChangeNumber(uint32_t n); ///< Set change number field to @a n
 
   /// Get router count field.
   /// @note No @c setf method because this cannot be changed independently.
   /// @see fill
-  uint32 getRouterCount() const;
+  uint32_t getRouterCount() const;
   /// Access a router ID element.
   RouterIdElt& routerElt(
     int idx ///< Index of target element.
@@ -1066,20 +1066,20 @@ public:
       if no router is identified by @a addr.
   */
   RouterIdElt* findf_router_elt(
-    uint32 addr ///< Router IP address.
+    uint32_t addr ///< Router IP address.
   );
   /// Get cache count field.
   /// @note No @c setf method because this cannot be changed independently.
   /// @see fill
-  uint32 getCacheCount() const;
+  uint32_t getCacheCount() const;
   /// Get a cache address.
-  uint32 getCacheAddr(
+  uint32_t getCacheAddr(
     int idx ///< Index of target address.
   ) const;
   /// Set a cache address.
   self& setCacheAddr(
     int idx, ///< Index of target address.
-    uint32 addr ///< Address value to set.
+    uint32_t addr ///< Address value to set.
   );
   //@}
 
@@ -1090,7 +1090,7 @@ public:
   */
   self& fill(
     MsgBuffer& buffer, ///< Target storage.
-    uint32 change_number, ///< Change number.
+    uint32_t change_number, ///< Change number.
     int n_routers, ///< Number of routers in view.
     int n_caches ///< Number of caches in view.
   );
@@ -1111,7 +1111,7 @@ protected:
   RouterIdElt* atf_router_array();
   /// Serialized count of cache addresses.
   /// The actual addresses start immediate after this.
-  uint32* m_cache_count;
+  uint32_t* m_cache_count;
 };
 
 /** Sect 5.6.7: Assignment Info Component
@@ -1130,7 +1130,7 @@ public:
   /// There is more variable sized data that must be handled specially.
   struct raw_t : public super::raw_t {
     AssignmentKeyElt m_key; ///< Assignment key data.
-    uint32 m_router_count; ///< # of router assignment elements.
+    uint32_t m_router_count; ///< # of router assignment elements.
   };
   /// Redirection bucket.
   struct Bucket {
@@ -1148,18 +1148,18 @@ public:
   /// Directly access assignment key.
   AssignmentKeyElt const& keyElt() const;
   /// Get address in assignment key.
-  uint32 getKeyAddr() const;
+  uint32_t getKeyAddr() const;
   /// Set address in assignment key.
-  self& setKeyAddr(uint32 addr);
+  self& setKeyAddr(uint32_t addr);
   /// Get change number in assignment key.
-  uint32 getKeyChangeNumber() const;
+  uint32_t getKeyChangeNumber() const;
   /// Set change number in assignment key.
-  self& setKeyChangeNumber(uint32 n);
+  self& setKeyChangeNumber(uint32_t n);
 
   /// Get router count field.
   /// @note No @c setf method because this cannot be changed independently.
   /// @see fill
-  uint32 getRouterCount() const;
+  uint32_t getRouterCount() const;
   /// Access a router assignment element.
   RouterAssignmentElt& routerElt(
     int idx ///< Index of target element.
@@ -1167,15 +1167,15 @@ public:
   /// Get cache count field.
   /// @note No @c setf method because this cannot be changed independently.
   /// @see fill
-  uint32 getCacheCount() const;
+  uint32_t getCacheCount() const;
   /// Get a cache address.
-  uint32 getCacheAddr(
+  uint32_t getCacheAddr(
     int idx ///< Index of target address.
   ) const;
   /// Set a cache address.
   self& setCacheAddr(
     int idx, ///< Index of target address.
-    uint32 addr ///< Address value to set.
+    uint32_t addr ///< Address value to set.
   );
   /// Access a bucket.
   Bucket& bucket(
@@ -1233,11 +1233,11 @@ public:
 protected:
   /// Serialized count of cache addresses.
   /// The actual addresses start immediate after this.
-  uint32* m_cache_count;
+  uint32_t* m_cache_count;
   /// Serialized bucket data.
   Bucket* m_buckets;
   /// Calculate the address of the cache count.
-  uint32* calcCacheCountPtr();
+  uint32_t* calcCacheCountPtr();
   /// Calculate the address of the bucket array.
   Bucket* calcBucketPtr();
 };
@@ -1271,7 +1271,7 @@ public:
   /// Get the element count.
   /// @note No corresponding @c setf_ because that cannot be changed once set.
   /// @see fill
-  uint32 getEltCount() const;
+  uint32_t getEltCount() const;
   //@}
 
   /** Write serialization data.
@@ -1343,9 +1343,9 @@ public:
   /// @internal Technically the command data is variable, but all currently
   /// defined commands have the same 32 bit data element.
   struct raw_t : public super::raw_t {
-    uint16 m_cmd; ///< Command type / code.
-    uint16 m_cmd_length; ///< Length of command data.
-    uint32 m_cmd_data; ///< Command data.
+    uint16_t m_cmd; ///< Command type / code.
+    uint16_t m_cmd_length; ///< Length of command data.
+    uint32_t m_cmd_data; ///< Command data.
   };
 
   /// @name Accessors.
@@ -1353,8 +1353,8 @@ public:
   /// Directly access mask value element.
   cmd_t getCmd() const; ///< Get command type.
   self& setCmd(cmd_t cmd); ///< Set command type.
-  uint32 getCmdData() const; ///< Get command data.
-  self& setCmdData(uint32 data); ///< Set command @a data.
+  uint32_t getCmdData() const; ///< Get command data.
+  self& setCmdData(uint32_t data); ///< Set command @a data.
   //@}
 
   /// Write basic serialization data.
@@ -1362,7 +1362,7 @@ public:
   self& fill(
     MsgBuffer& buffer, ///< Component storage.
     cmd_t cmd, ///< Command type.
-    uint32 data ///< Command data.
+    uint32_t data ///< Command data.
   );
 
   /// Validate an existing structure.
@@ -1387,7 +1387,7 @@ public:
   /// Serialized layout structure.
   /// Not complete, only a stub.
   struct raw_t : public super::raw_t {
-    uint32 m_count; ///< # of mask/value set elements.
+    uint32_t m_count; ///< # of mask/value set elements.
   };
 
   /// @name Accessors.
@@ -1399,7 +1399,7 @@ public:
   /// Get the element count.
   /// @note No corresponding @c setf_ because that cannot be changed once set.
   /// @see fill
-  uint32 getEltCount() const;
+  uint32_t getEltCount() const;
   //@}
 
   /// Write basic serialization data.
@@ -1431,33 +1431,33 @@ public:
 
   /// Internal layout.
   struct raw_t : public super::raw_t {
-    uint32 m_router_addr; ///< Identifying router address.
-    uint32 m_recv_id; ///< Receive ID router expects in reply.
-    uint32 m_to_addr; ///< Destination address of query.
-    uint32 m_cache_addr; ///< Identifying address of cache.
+    uint32_t m_router_addr; ///< Identifying router address.
+    uint32_t m_recv_id; ///< Receive ID router expects in reply.
+    uint32_t m_to_addr; ///< Destination address of query.
+    uint32_t m_cache_addr; ///< Identifying address of cache.
   };
 
   /// @name Accessors.
   //@{
   /// Directly access mask value element.
-  uint32 getRouterAddr() const; ///< Get identifying router address.
-  self& setRouterAddr(uint32 addr); ///< Set identifying router address.
-  uint32 getToAddr() const; ///< Get target address.
-  self& setToAddr(uint32 addr); ///< Set target address.
-  uint32 getCacheAddr() const; ///< Get identifying cache address.
-  self& setCacheAddr(uint32 addr); ///< Set identifying cache address.
-  uint32 getRecvId() const; ///< Get receive ID.
-  self& setRecvId(uint32 data); ///< Set receive ID.
+  uint32_t getRouterAddr() const; ///< Get identifying router address.
+  self& setRouterAddr(uint32_t addr); ///< Set identifying router address.
+  uint32_t getToAddr() const; ///< Get target address.
+  self& setToAddr(uint32_t addr); ///< Set target address.
+  uint32_t getCacheAddr() const; ///< Get identifying cache address.
+  self& setCacheAddr(uint32_t addr); ///< Set identifying cache address.
+  uint32_t getRecvId() const; ///< Get receive ID.
+  self& setRecvId(uint32_t data); ///< Set receive ID.
   //@}
 
   /// Write serialization data.
   /// This fills in all fields.
   self& fill(
     MsgBuffer& buffer, ///< Component storage.
-    uint32 routerAddr, ///< Router identifying address.
-    uint32 toAddr, ///< Destination address.
-    uint32 cacheAddr, ///< Cache identifying address.
-    uint32 recvId ///< Recieve ID.
+    uint32_t routerAddr, ///< Router identifying address.
+    uint32_t toAddr, ///< Destination address.
+    uint32_t cacheAddr, ///< Cache identifying address.
+    uint32_t recvId ///< Recieve ID.
   );
 
   /// Validate an existing structure.
@@ -1469,9 +1469,9 @@ public:
 };
 
 /// Cache assignment hash function.
-inline uint8
+inline uint8_t
 assignment_hash(
-  uint32 key ///< Key to hash.
+  uint32_t key ///< Key to hash.
 ) {
   key ^= key >> 16;
   key ^= key >> 8;
@@ -1480,8 +1480,8 @@ assignment_hash(
 
 /// IP header information for a receive message.
 struct IpHeader {
-  uint32 m_src; ///< Source address.
-  uint32 m_dst; ///< Destination address.
+  uint32_t m_src; ///< Source address.
+  uint32_t m_dst; ///< Destination address.
 };
 
 // Various static values.
@@ -1527,7 +1527,7 @@ namespace detail {
     */
     bool fill(
       cache::GroupData& group, ///< Service group data.
-      uint32 addr ///< Identifying IP address of designated cache.
+      uint32_t addr ///< Identifying IP address of designated cache.
     );
 
     /// Fill in a component from the data in this object.
@@ -1559,7 +1559,7 @@ namespace detail {
 
     typedef std::vector<RouterKey> RouterKeys; ///< Group of router keys.
     RouterKeys m_router_keys; ///< Routers participating in assignment.
-    typedef std::vector<uint32> CacheAddrs; ///< Vector of cache IP addresses.
+    typedef std::vector<uint32_t> CacheAddrs; ///< Vector of cache IP addresses.
     CacheAddrs m_cache_addrs; ///< Caches participating in assignment.
     /// Assignment buckets. Values are indices to @a m_caches.
     Bucket m_buckets[N_BUCKETS];
@@ -1579,7 +1579,7 @@ namespace detail {
       typedef GroupData self; ///< Self reference type.
 
       ServiceGroup m_svc; ///< The service definition.
-      uint32 m_generation; ///< Generation value (change number).
+      uint32_t m_generation; ///< Generation value (change number).
       time_t m_generation_time; ///< Time of last view change.
 
       bool m_use_security_opt; ///< Use group local security.
@@ -1779,10 +1779,10 @@ struct PacketStamp {
 
   PacketStamp(); ///< Default constructor (zero elements).
   /// Set the @a time and @a generation.
-  self& set(time_t time, uint32 generation);
+  self& set(time_t time, uint32_t generation);
 
   time_t m_time; ///< Time when packet was sent/received.
-  uint32 m_sn; ///< Sequence # of packet.
+  uint32_t m_sn; ///< Sequence # of packet.
 };
 
 /** Implementation class for EndPoint.
@@ -1820,7 +1820,7 @@ public:
   /// Open a socket for communications.
   /// @return 0 on success, -ERRNO on failure.
   virtual int open(
-    uint32 addr ///< Local IP address.
+    uint32_t addr ///< Local IP address.
   );
 
   /// Use MD5 security.
@@ -1871,7 +1871,7 @@ protected:
   /** Local address for this end point.
       This is set only when the socket is open.
    */
-  uint32 m_addr;
+  uint32_t m_addr;
   int m_fd; ///< Our socket.
 
   bool m_use_security_opt; ///< Use group local security.
@@ -1899,7 +1899,7 @@ namespace detail {
     /// Caches's view of caches.
     struct CacheData {
       /// Get the identifying IP address for this cache.
-      uint32 idAddr() const;
+      uint32_t idAddr() const;
       /// Cache identity data.
       CacheIdElt m_id;
       /// Last time this cache was mentioned by the routers.
@@ -1913,7 +1913,7 @@ namespace detail {
       RouterData();
       /// Construct with address.
       RouterData(
-        uint32 addr ///< Router identifying address.
+        uint32_t addr ///< Router identifying address.
       );
 
       /// Time until next packet.
@@ -1927,8 +1927,8 @@ namespace detail {
         time_t now ///< Current time.
       ) const;
 
-      uint32 m_addr; ///< Router identifying IP address.
-      uint32 m_generation; ///< Router's view change number.
+      uint32_t m_addr; ///< Router identifying IP address.
+      uint32_t m_generation; ///< Router's view change number.
       /** Most recent packet received from router.
        *  The sequence number @a m_sn is the receive ID of the router.
        */
@@ -1955,10 +1955,10 @@ namespace detail {
       /// Construct with address @a addr.
       /// Other members are zero initialized.
       SeedRouter(
-        uint32 addr
+        uint32_t addr
       );
-      uint32 m_addr; ///< Address of router.
-      uint32 m_count; ///< # of packets sent w/o response.
+      uint32_t m_addr; ///< Address of router.
+      uint32_t m_count; ///< # of packets sent w/o response.
       time_t m_xmit; ///< Time of last packet sent.
     };
 
@@ -2003,23 +2003,23 @@ namespace detail {
       /// Find a router by IP @a addr.
       /// @return A pointer to the router, or @c NULL if not found.
       RouterBag::iterator findRouter(
-        uint32 addr ///< IP address of cache.
+        uint32_t addr ///< IP address of cache.
       );
 
       /// Set an intial router for a service group.
       self& seedRouter(
-        uint32 addr ///< IP address for router.
+        uint32_t addr ///< IP address for router.
       );
       /// Remove a seed router.
       /// @return The last time a packet was sent to the router.
       time_t removeSeedRouter(
-        uint32 addr ///< Identifying router address.
+        uint32_t addr ///< Identifying router address.
       );
 
       /// Find a cache by IP @a addr.
       /// @return An iterator to the cache, or @c NULL if not found.
       CacheBag::iterator findCache(
-        uint32 addr ///< IP address of cache.
+        uint32_t addr ///< IP address of cache.
       );
       /// Adjust packet stamp vectors to track routers.
       void resizeCacheSources();
@@ -2089,8 +2089,8 @@ public:
       If the router is already seeded, this call is silently ignored.
   */
   self& seedRouter(
-    uint8 id, ///< Service group ID.
-    uint32 addr ///< IP address for router.
+    uint8_t id, ///< Service group ID.
+    uint32_t addr ///< IP address for router.
   );
 
   /// Define services from a configuration file.
@@ -2099,7 +2099,7 @@ public:
   );
 
   /// Override.
-  int open(uint32 addr);
+  int open(uint32_t addr);
 
   /// Time until next scheduled event.
   time_t waitTime() const;
@@ -2148,7 +2148,7 @@ protected:
   );
 
   /// Map Service Group ID to Service Group Data.
-  typedef std::map<uint8, GroupData> GroupMap;
+  typedef std::map<uint8_t, GroupData> GroupMap;
   /// Active service groups.
   GroupMap m_groups;
 };
@@ -2165,23 +2165,23 @@ namespace detail {
     */
     struct CacheData {
       /// Get the identifying IP address for this cache.
-      uint32 idAddr() const;
+      uint32_t idAddr() const;
 
       /// Received count for this cache.
-      uint32 m_recv_count;
+      uint32_t m_recv_count;
       /// Change number of last received message.
-      uint32 m_generation;
+      uint32_t m_generation;
       /// Need to send a response to this cache.
       bool m_pending;
       /// Address used by cache to send to this router.
-      uint32 m_to_addr;
+      uint32_t m_to_addr;
       /// Stamp for last pack transmitted to this cache.
       PacketStamp m_xmit;
       //// Stamp for last packet received from this cache.
       PacketStamp m_recv;
 
       CacheIdElt m_id; ///< Transmitted cache descriptor.
-      uint32 m_target_addr; ///< Target address of last packet.
+      uint32_t m_target_addr; ///< Target address of last packet.
     };
 
     /// Router's view of other routers.
@@ -2189,7 +2189,7 @@ namespace detail {
       typedef RouterData self; ///< Self reference type.
 
       /// Identifying IP address of router.
-      uint32 m_addr;
+      uint32_t m_addr;
       /** Stamp for last mention of this router from a cache.
           Indexed in parallel with the Caches.
           The sequence number @a m_sn is the cache's change #.
@@ -2223,7 +2223,7 @@ namespace detail {
       /// Find a cache by IP @a addr.
       /// @return An iterator to the cache, or @c NULL if not found.
       CacheBag::iterator findCache(
-        uint32 addr ///< IP address of cache.
+        uint32_t addr ///< IP address of cache.
       );
       /// Adjust packet stamp vectors to track caches.
       void resizeRouterSources();
@@ -2278,29 +2278,29 @@ protected:
   );
 
   /// Map Service Group ID to Service Group Data.
-  typedef std::map<uint8, GroupData> GroupMap;
+  typedef std::map<uint8_t, GroupData> GroupMap;
   /// Active service groups.
   GroupMap m_groups;
 };
 // ------------------------------------------------------
 inline RouterId::RouterId() : m_addr(0), m_recv_id(0) { }
-inline RouterId::RouterId(uint32 addr, uint32 recv_id)
+inline RouterId::RouterId(uint32_t addr, uint32_t recv_id)
   : m_addr(addr)
   , m_recv_id(recv_id) {
 }
 
-inline RouterIdElt::RouterIdElt(uint32 addr, uint32 recv_id)
+inline RouterIdElt::RouterIdElt(uint32_t addr, uint32_t recv_id)
   : super(addr, htonl(recv_id)) {
 }
-inline uint32 RouterIdElt::getAddr() const { return m_addr; }
+inline uint32_t RouterIdElt::getAddr() const { return m_addr; }
 inline RouterIdElt&
-RouterIdElt::setAddr(uint32 addr) {
+RouterIdElt::setAddr(uint32_t addr) {
   m_addr = addr;
   return *this;
 }
-inline uint32 RouterIdElt::getRecvId() const { return ntohl(m_recv_id); }
+inline uint32_t RouterIdElt::getRecvId() const { return ntohl(m_recv_id); }
 inline RouterIdElt&
-RouterIdElt::setRecvId(uint32 recv_id) {
+RouterIdElt::setRecvId(uint32_t recv_id) {
   m_recv_id = htonl(recv_id);
   return *this;
 }
@@ -2318,9 +2318,9 @@ SecurityComp::calcSize(Option opt) {
   return SECURITY_NONE == opt ? sizeof(RawNone) : sizeof(RawMD5);
 }
 
-inline uint32 CacheIdElt::getAddr() const { return m_addr; }
+inline uint32_t CacheIdElt::getAddr() const { return m_addr; }
 inline CacheIdElt&
-CacheIdElt::setAddr(uint32 addr) {
+CacheIdElt::setAddr(uint32_t addr) {
   m_addr = addr;
   return *this;
 }
@@ -2360,42 +2360,42 @@ CacheIdElt::clearReserved() {
 }
 
 inline AssignmentKeyElt::AssignmentKeyElt(
-  uint32 addr,
-  uint32 n
+  uint32_t addr,
+  uint32_t n
 )
   : m_addr(addr)
   , m_change_number(htonl(n)) {
 }
-inline uint32 AssignmentKeyElt::getAddr() const { return m_addr; }
+inline uint32_t AssignmentKeyElt::getAddr() const { return m_addr; }
 inline AssignmentKeyElt&
-AssignmentKeyElt::setAddr(uint32 addr) {
+AssignmentKeyElt::setAddr(uint32_t addr) {
   m_addr = addr;
   return *this;
 }
-inline uint32
+inline uint32_t
 AssignmentKeyElt::getChangeNumber() const {
   return ntohl(m_change_number);
 }
 inline AssignmentKeyElt&
-AssignmentKeyElt::setChangeNumber(uint32 n) {
+AssignmentKeyElt::setChangeNumber(uint32_t n) {
   m_change_number = htonl(n);
   return *this;
 }
 
 inline RouterAssignmentElt::RouterAssignmentElt(
-  uint32 addr,
-  uint32 recv_id,
-  uint32 change_number
+  uint32_t addr,
+  uint32_t recv_id,
+  uint32_t change_number
 )
   : super(addr, recv_id)
   , m_change_number(htonl(change_number)) {
 }
-inline uint32
+inline uint32_t
 RouterAssignmentElt::getChangeNumber() const {
   return ntohl(m_change_number);
 }
 inline RouterAssignmentElt&
-RouterAssignmentElt::setChangeNumber(uint32 n) {
+RouterAssignmentElt::setChangeNumber(uint32_t n) {
   m_change_number = htonl(n);
   return *this;
 }
@@ -2445,22 +2445,22 @@ ServiceComp::setProtocol(uint8_t proto) {
   this->access()->setProtocol(proto);
   return *this;
 }
-inline uint32
+inline uint32_t
 ServiceComp::getFlags() const {
   return this->access()->getFlags();
 }
 inline ServiceComp&
-ServiceComp::setFlags(uint32 flags) {
+ServiceComp::setFlags(uint32_t flags) {
   this->access()->setFlags(flags);
   return *this;
 }
 inline ServiceComp&
-ServiceComp::enableFlags(uint32 flags) {
+ServiceComp::enableFlags(uint32_t flags) {
   this->access()->enableFlags(flags);
   return *this;
 }
 inline ServiceComp&
-ServiceComp::disableFlags(uint32 flags) {
+ServiceComp::disableFlags(uint32_t flags) {
   this->access()->disableFlags(flags);
   return *this;
 }
@@ -2476,24 +2476,24 @@ ServiceComp::operator ServiceGroup const& () const {
 
 inline size_t
 RouterIdComp::calcSize(int n) {
-  return sizeof(raw_t) + n * sizeof(uint32);
+  return sizeof(raw_t) + n * sizeof(uint32_t);
 }
 
-inline uint32
+inline uint32_t
 RouterViewComp::getKeyAddr() const {
   return this->key_elt().getAddr();
 }
 inline RouterViewComp&
-RouterViewComp::setKeyAddr(uint32 addr) {
+RouterViewComp::setKeyAddr(uint32_t addr) {
   this->key_elt().setAddr(addr);
   return *this;
 }
-inline uint32
+inline uint32_t
 RouterViewComp::getKeyChangeNumber() const {
   return this->key_elt().getChangeNumber();
 }
 inline RouterViewComp&
-RouterViewComp::setKeyChangeNumber(uint32 change_number) {
+RouterViewComp::setKeyChangeNumber(uint32_t change_number) {
   this->key_elt().setChangeNumber(change_number);
   return *this;
 }
@@ -2510,12 +2510,12 @@ inline CacheIdElt const&
 CacheIdComp::idElt() const {
   return access_field(&raw_t::m_id, m_base);
 }
-inline uint32
+inline uint32_t
 CacheIdComp::getAddr() const {
   return this->idElt().getAddr();
 }
 inline CacheIdComp&
-CacheIdComp::setAddr(uint32 addr) {
+CacheIdComp::setAddr(uint32_t addr) {
   this->idElt().setAddr(addr);
   return *this;
 }
@@ -2630,7 +2630,7 @@ inline PacketStamp::PacketStamp()
   , m_sn(0) {
 }
 
-inline PacketStamp& PacketStamp::set(time_t time, uint32 sn) {
+inline PacketStamp& PacketStamp::set(time_t time, uint32_t sn) {
   m_time = time;
   m_sn = sn;
   return *this;
@@ -2668,7 +2668,7 @@ CompWithHeader<T>::setType(CompType t) {
   return static_cast<T&>(*this);
 }
 
-template < typename T > uint16
+template < typename T > uint16_t
 CompWithHeader<T>::getLength() const {
   return ntohs(
     reinterpret_cast<raw_t const*>(m_base)->m_length
@@ -2676,7 +2676,7 @@ CompWithHeader<T>::getLength() const {
 }
 
 template < typename T > T&
-CompWithHeader<T>::setLength(uint16 length) {
+CompWithHeader<T>::setLength(uint16_t length) {
   reinterpret_cast<raw_t*>(m_base)->m_length = htons(length);
   return static_cast<T&>(*this);
 }
@@ -2702,7 +2702,7 @@ inline bool AssignInfoComp::compare(Bucket const buckets[N_BUCKETS]) const {
 
 inline CapComp::CapComp() : m_count(0), m_cached(false) { }
 inline CapComp& CapComp::invalidate() { m_cached = false; return *this; }
-inline uint32 CapComp::getEltCount() const { return this->m_count; }
+inline uint32_t CapComp::getEltCount() const { return this->m_count; }
 inline size_t CapComp::calcSize(int n) { return sizeof(super::raw_t) + n * sizeof(CapabilityElt); }
 inline ServiceGroup::PacketStyle
 CapComp::getPacketForwardStyle() const {
@@ -2720,31 +2720,31 @@ CapComp::getCacheAssignmentStyle() const {
   return m_cache_assign;
 }
 
-inline uint32 QueryComp::getRouterAddr() const {
+inline uint32_t QueryComp::getRouterAddr() const {
   return access_field(&raw_t::m_router_addr, m_base);
 }
-inline QueryComp& QueryComp::setRouterAddr(uint32 addr) {
+inline QueryComp& QueryComp::setRouterAddr(uint32_t addr) {
   access_field(&raw_t::m_router_addr, m_base) = addr;
   return *this;
 }
-inline uint32 QueryComp::getToAddr() const {
+inline uint32_t QueryComp::getToAddr() const {
   return access_field(&raw_t::m_to_addr, m_base);
 }
-inline QueryComp& QueryComp::setToAddr(uint32 addr) {
+inline QueryComp& QueryComp::setToAddr(uint32_t addr) {
   access_field(&raw_t::m_to_addr, m_base) = addr;
   return *this;
 }
-inline uint32 QueryComp::getCacheAddr() const {
+inline uint32_t QueryComp::getCacheAddr() const {
   return access_field(&raw_t::m_cache_addr, m_base);
 }
-inline QueryComp& QueryComp::setCacheAddr(uint32 addr) {
+inline QueryComp& QueryComp::setCacheAddr(uint32_t addr) {
   access_field(&raw_t::m_cache_addr, m_base) = addr;
   return *this;
 }
-inline uint32 QueryComp::getRecvId() const {
+inline uint32_t QueryComp::getRecvId() const {
   return get_field(&raw_t::m_recv_id, m_base);
 }
-inline QueryComp& QueryComp::setRecvId(uint32 data) {
+inline QueryComp& QueryComp::setRecvId(uint32_t data) {
   set_field(&raw_t::m_recv_id, m_base, data);
   return *this;
 }
@@ -2752,7 +2752,7 @@ inline size_t QueryComp::calcSize() { return sizeof(raw_t); }
 
 inline detail::cache::SeedRouter::SeedRouter() { }
 
-inline detail::cache::SeedRouter::SeedRouter(uint32 addr)
+inline detail::cache::SeedRouter::SeedRouter(uint32_t addr)
   : m_addr(addr)
   , m_count(0)
   , m_xmit(0) {

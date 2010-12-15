@@ -698,7 +698,7 @@ ptr_len_pbrk(const char *p1, int l1, const char *str)
 // On error, we'll return 0, and nothing is written to the buffer.
 // TODO: Do these really need to be inline?
 inline int
-ink_small_itoa(int32 val, char* buf, int buf_len)
+ink_small_itoa(int32_t val, char* buf, int buf_len)
 {
   ink_assert(buf_len > 5);
   ink_assert((val >= 0) && (val < 100000));
@@ -742,7 +742,7 @@ ink_small_itoa(int32 val, char* buf, int buf_len)
 }
 
 inline int
-ink_fast_itoa(int32 val, char* buf, int buf_len)
+ink_fast_itoa(int32_t val, char* buf, int buf_len)
 {
   if ((val < 0) || (val > 99999)) {
     int ret = snprintf(buf, buf_len, "%d", val);
@@ -754,7 +754,7 @@ ink_fast_itoa(int32 val, char* buf, int buf_len)
 }
 
 inline int
-ink_fast_uitoa(uint32 val, char* buf, int buf_len)
+ink_fast_uitoa(uint32_t val, char* buf, int buf_len)
 {
   if (val > 99999) {
     int ret = snprintf(buf, buf_len, "%u", val);
@@ -766,10 +766,10 @@ ink_fast_uitoa(uint32 val, char* buf, int buf_len)
 }
 
 inline int
-ink_fast_ltoa(int64 val, char* buf, int buf_len)
+ink_fast_ltoa(int64_t val, char* buf, int buf_len)
 {
   if ((val < 0) || (val > 99999)) {
-    int ret = snprintf(buf, buf_len, "%lld", val);
+    int ret = snprintf(buf, buf_len, "%" PRId64 "", val);
 
     return (ret >= 0 ? ret : 0);
   }

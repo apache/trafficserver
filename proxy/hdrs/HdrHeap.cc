@@ -587,20 +587,20 @@ HdrHeap::marshal_length()
 }
 
 #ifdef HDR_HEAP_CHECKSUMS
-static uint32
+static uint32_t
 compute_checksum(void *buf, int len)
 {
 
-  uint32 cksum = 0;
+  uint32_t cksum = 0;
 
   while (len > 4) {
-    cksum += *((uint32 *) buf);
+    cksum += *((uint32_t *) buf);
     buf = ((char *) buf) + 4;
     len -= 4;
   }
 
   if (len > 0) {
-    uint32 tmp = 0;
+    uint32_t tmp = 0;
     memcpy((char *) &tmp, buf, len);
     cksum += tmp;
   }
@@ -811,7 +811,7 @@ HdrHeap::marshal(char *buf, int len)
 
 #ifdef HDR_HEAP_CHECKSUMS
   {
-    uint32 chksum = compute_checksum(buf, used);
+    uint32_t chksum = compute_checksum(buf, used);
     marshal_hdr->m_free_start = (char *) chksum;
   }
 #endif
@@ -830,14 +830,14 @@ Failed:
 //     to be sane.  Returns true is sane.  Returns false if corrupt
 //
 bool
-HdrHeap::check_marshalled(uint32 buf_length)
+HdrHeap::check_marshalled(uint32_t buf_length)
 {
 
   if (this->m_magic != HDR_BUF_MAGIC_MARSHALED) {
     return false;
   }
 
-  if (this->m_size < (uint32) HDR_HEAP_HDR_SIZE) {
+  if (this->m_size < (uint32_t) HDR_HEAP_HDR_SIZE) {
     return false;
   }
 
@@ -895,10 +895,10 @@ HdrHeap::unmarshal(int buf_length, int obj_type, HdrHeapObjImpl ** found_obj, Re
   }
 #ifdef HDR_HEAP_CHECKSUMS
   if (m_free_start != NULL) {
-    uint32 stored_sum = (uint32) m_free_start;
+    uint32_t stored_sum = (uint32_t) m_free_start;
     m_free_start = NULL;
     int sum_len = ROUND(unmarshal_size, HDR_PTR_SIZE);
-    uint32 new_sum = compute_checksum((void *) this, sum_len);
+    uint32_t new_sum = compute_checksum((void *) this, sum_len);
 
     if (stored_sum != new_sum) {
       fprintf(stderr, "WARNING: Unmarshal checksum comparison failed\n");
@@ -1111,24 +1111,24 @@ HdrHeap::dump_heap(int len)
   int count = 0;
   char *tmp = (char *) this;
   char *end;
-  uint32 content;
+  uint32_t content;
 
   if (len < 0) {
     len = m_size;
   }
   end = ((char *) this) + len;
 
-  fprintf(stderr, "---- Dumping header heap @ 0x%llx - len %d ------", (uint64) ((ptrdiff_t) this), len);
+  fprintf(stderr, "---- Dumping header heap @ 0x%" PRIx64 " - len %d ------", (uint64_t) ((ptrdiff_t) this), len);
 
   while (tmp < end) {
     if (count % 4 == 0) {
-      fprintf(stderr, "\n0x%llx: ", (uint64) ((ptrdiff_t) tmp));
+      fprintf(stderr, "\n0x%" PRIx64 ": ", (uint64_t) ((ptrdiff_t) tmp));
     }
     count++;
 
     // Load the content
     if (end - tmp > 4) {
-      content = *((uint32 *) tmp);
+      content = *((uint32_t *) tmp);
     } else {
       // Less than 4 bytes available so just
       //   grab the bytes we need

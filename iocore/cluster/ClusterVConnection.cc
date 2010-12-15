@@ -70,7 +70,7 @@ int
 #endif
 
 VIO *
-ClusterVConnectionBase::do_io_read(Continuation * acont, int64 anbytes, MIOBuffer * abuffer)
+ClusterVConnectionBase::do_io_read(Continuation * acont, int64_t anbytes, MIOBuffer * abuffer)
 {
   ink_assert(!closed);
   read.vio.buffer.writer_for(abuffer);
@@ -87,7 +87,7 @@ ClusterVConnectionBase::do_io_read(Continuation * acont, int64 anbytes, MIOBuffe
 }
 
 VIO *
-ClusterVConnectionBase::do_io_pread(Continuation * acont, int64 anbytes, MIOBuffer * abuffer, int64 off)
+ClusterVConnectionBase::do_io_pread(Continuation * acont, int64_t anbytes, MIOBuffer * abuffer, int64_t off)
 {
   NOWARN_UNUSED(acont);
   NOWARN_UNUSED(anbytes);
@@ -125,7 +125,7 @@ ClusterVConnection::get_single_data(void **ptr, int *len)
 }
 
 VIO *
-ClusterVConnectionBase::do_io_write(Continuation * acont, int64 anbytes, IOBufferReader * abuffer, bool owner)
+ClusterVConnectionBase::do_io_write(Continuation * acont, int64_t anbytes, IOBufferReader * abuffer, bool owner)
 {
   ink_assert(!closed);
   ink_assert(!owner);
@@ -458,7 +458,7 @@ bool ClusterVConnection::get_data(int id, void *data)
   switch (id) {
   case CACHE_DATA_SIZE:
     {
-      *((int64 *) data) = get_object_size();
+      *((int64_t *) data) = get_object_size();
       return true;
     }
   case CACHE_DATA_HTTP_INFO:
@@ -483,7 +483,7 @@ ClusterVConnection::get_http_info(CacheHTTPInfo ** info)
   *info = &alternate;
 }
 
-int64
+int64_t
 ClusterVConnection::get_object_size()
 {
   return alternate.object_size_get();

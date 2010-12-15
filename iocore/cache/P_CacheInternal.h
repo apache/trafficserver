@@ -68,8 +68,8 @@ struct EvacuationBlock;
 #else
 #define CACHE_TRY_LOCK(_l, _m, _t)                             \
   MUTEX_TRY_LOCK(_l, _m, _t);                                  \
-  if ((uint32)_t->generator.random() <                         \
-     (uint32)(UINT_MAX *CACHE_LOCK_FAIL_RATE))                 \
+  if ((uint32_t)_t->generator.random() <                         \
+     (uint32_t)(UINT_MAX *CACHE_LOCK_FAIL_RATE))                 \
     CACHE_MUTEX_RELEASE(_l)
 #endif
 
@@ -234,9 +234,9 @@ struct CacheVC: public CacheVConnection
 {
   CacheVC();
 
-  VIO *do_io_read(Continuation *c, int64 nbytes, MIOBuffer *buf);
-  VIO *do_io_pread(Continuation *c, int64 nbytes, MIOBuffer *buf, int64 offset);
-  VIO *do_io_write(Continuation *c, int64 nbytes, IOBufferReader *buf, bool owner = false);
+  VIO *do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf);
+  VIO *do_io_pread(Continuation *c, int64_t nbytes, MIOBuffer *buf, int64_t offset);
+  VIO *do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *buf, bool owner = false);
   void do_io_close(int lerrno = -1);
   void reenable(VIO *avio);
   void reenable_re(VIO *avio);
@@ -294,7 +294,7 @@ struct CacheVC: public CacheVConnection
   int do_write_call();
   int do_write_lock();
   int do_write_lock_call();
-  int do_sync(uint32 target_write_serial);
+  int do_sync(uint32_t target_write_serial);
 
   int openReadClose(int event, Event *e);
   int openReadReadDone(int event, Event *e);
@@ -352,7 +352,7 @@ struct CacheVC: public CacheVConnection
   int evacuateReadHead(int event, Event *e);
 
   void cancel_trigger();
-  virtual int64 get_object_size();
+  virtual int64_t get_object_size();
 #ifdef HTTP_CACHE
   virtual void set_http_info(CacheHTTPInfo *info);
   virtual void get_http_info(CacheHTTPInfo ** info);
@@ -422,9 +422,9 @@ struct CacheVC: public CacheVConnection
 #endif
   int header_len;       // for communicating with agg_copy
   int frag_len;         // for communicating with agg_copy
-  uint32 write_len;     // for communicating with agg_copy
-  uint32 agg_len;       // for communicating with aggWrite
-  uint32 write_serial;  // serial of the final write for SYNC
+  uint32_t write_len;     // for communicating with agg_copy
+  uint32_t agg_len;       // for communicating with aggWrite
+  uint32_t write_serial;  // serial of the final write for SYNC
   Frag *frag;           // arraylist of fragment offset
   Frag integral_frags[INTEGRAL_FRAGS];
   Part *part;
@@ -432,20 +432,20 @@ struct CacheVC: public CacheVConnection
   Event *trigger;
   CacheKey *read_key;
   ContinuationHandler save_handler;
-  uint32 pin_in_cache;
+  uint32_t pin_in_cache;
   ink_hrtime start_time;
   int base_stat;
   int recursive;
   int closed;
-  int64 seek_to;                // pread offset
-  int64 offset;                 // offset into 'blocks' of data to write
-  int64 writer_offset;          // offset of the writer for reading from a writer
-  int64 length;                 // length of data available to write
-  int64 doc_pos;                // read position in 'buf'
-  uint64 write_pos;             // length written
-  uint64 total_len;             // total length written and available to write
-  uint64 doc_len;               // total_length (of the selected alternate for HTTP)
-  uint64 update_len;
+  int64_t seek_to;                // pread offset
+  int64_t offset;                 // offset into 'blocks' of data to write
+  int64_t writer_offset;          // offset of the writer for reading from a writer
+  int64_t length;                 // length of data available to write
+  int64_t doc_pos;                // read position in 'buf'
+  uint64_t write_pos;             // length written
+  uint64_t total_len;             // total length written and available to write
+  uint64_t doc_len;               // total_length (of the selected alternate for HTTP)
+  uint64_t update_len;
   int fragment;
   int scan_msec_delay;
   CacheVC *write_vc;
@@ -457,7 +457,7 @@ struct CacheVC: public CacheVConnection
 
   union
   {
-    uint32 flags;
+    uint32_t flags;
     struct
     {
       unsigned int use_first_key:1;
@@ -751,8 +751,8 @@ Part::open_write(CacheVC *cont, int allow_if_writers, int max_writers)
   if (!cont->f.remove) {
     agg_error = (!cont->f.update && agg_todo_size > cache_config_agg_write_backlog);
 #ifdef CACHE_AGG_FAIL_RATE
-    agg_error = agg_error || ((uint32) mutex->thread_holding->generator.random() <
-                              (uint32) (UINT_MAX * CACHE_AGG_FAIL_RATE));
+    agg_error = agg_error || ((uint32_t) mutex->thread_holding->generator.random() <
+                              (uint32_t) (UINT_MAX * CACHE_AGG_FAIL_RATE));
 #endif
   }
   if (agg_error) {
@@ -858,28 +858,28 @@ dir_overwrite_lock(CacheKey *key, Part *d, Dir *to_part, ProxyMutex *m, Dir *ove
 void TS_INLINE
 rand_CacheKey(CacheKey *next_key, ProxyMutex *mutex)
 {
-  uint32 *b = (uint32 *) & next_key->b[0];
+  uint32_t *b = (uint32_t *) & next_key->b[0];
   InkRand & g = mutex->thread_holding->generator;
   for (int i = 0; i < 4; i++)
-    b[i] = (uint32) g.random();
+    b[i] = (uint32_t) g.random();
 }
 
-extern uint8 CacheKey_next_table[];
+extern uint8_t CacheKey_next_table[];
 void TS_INLINE
 next_CacheKey(CacheKey *next_key, CacheKey *key)
 {
-  uint8 *b = (uint8 *) next_key;
-  uint8 *k = (uint8 *) key;
+  uint8_t *b = (uint8_t *) next_key;
+  uint8_t *k = (uint8_t *) key;
   b[0] = CacheKey_next_table[k[0]];
   for (int i = 1; i < 16; i++)
     b[i] = CacheKey_next_table[(b[i - 1] + k[i]) & 0xFF];
 }
-extern uint8 CacheKey_prev_table[];
+extern uint8_t CacheKey_prev_table[];
 void TS_INLINE
 prev_CacheKey(CacheKey *prev_key, CacheKey *key)
 {
-  uint8 *b = (uint8 *) prev_key;
-  uint8 *k = (uint8 *) key;
+  uint8_t *b = (uint8_t *) prev_key;
+  uint8_t *k = (uint8_t *) key;
   for (int i = 15; i > 0; i--)
     b[i] = 256 + CacheKey_prev_table[k[i]] - k[i - 1];
   b[0] = CacheKey_prev_table[k[0]];
@@ -922,8 +922,8 @@ CacheRemoveCont::event_handler(int event, void *data)
   return EVENT_DONE;
 }
 
-int64 cache_bytes_used(void);
-int64 cache_bytes_total(void);
+int64_t cache_bytes_used(void);
+int64_t cache_bytes_total(void);
 
 #ifdef DEBUG
 #define CACHE_DEBUG_INCREMENT_DYN_STAT(_x) CACHE_INCREMENT_DYN_STAT(_x)
@@ -943,7 +943,7 @@ struct Cache
   volatile int total_good_npart;
   int total_npart;
   volatile int ready;
-  int64 cache_size;             //in store block size
+  int64_t cache_size;             //in store block size
   CacheHostTable *hosttable;
   volatile int total_initialized_part;
   int scheme;
@@ -1074,7 +1074,7 @@ Cache::open_write(Continuation *cont, CacheURL *url, CacheHTTPHdr *request,
 TS_INLINE unsigned int
 cache_hash(INK_MD5 & md5)
 {
-  uint64 f = md5.fold();
+  uint64_t f = md5.fold();
   unsigned int mhash = (unsigned int) (f >> 32);
   return mhash;
 }

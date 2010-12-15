@@ -53,9 +53,9 @@ public:
 
   SLINK(UDPPacketInternal, alink);  // atomic link
   // packet scheduling stuff: keep it a doubly linked list
-  uint64 pktSendStartTime;
-  uint64 pktSendFinishTime;
-  uint32 pktLength;
+  uint64_t pktSendStartTime;
+  uint64_t pktSendFinishTime;
+  uint32_t pktLength;
 
   bool isReliabilityPkt;
 

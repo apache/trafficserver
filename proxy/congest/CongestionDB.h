@@ -43,15 +43,15 @@
 class CongestionControlRecord;
 struct CongestionEntry;
 
-typedef MTHashTable<uint64, CongestionEntry *>CongestionTable;
-typedef HashTableIteratorState<uint64, CongestionEntry *>Iter;
+typedef MTHashTable<uint64_t, CongestionEntry *>CongestionTable;
+typedef HashTableIteratorState<uint64_t, CongestionEntry *>Iter;
 
 /* API to the outside world */
 // check whether key was congested, store the found entry into pEntry
 Action *get_congest_entry(Continuation * cont, HttpRequestData * data, CongestionEntry ** ppEntry);
 Action *get_congest_list(Continuation * cont, MIOBuffer * buffer, int format = 0);
 void remove_all_congested_entry(void);
-void remove_congested_entry(uint64 key);
+void remove_congested_entry(uint64_t key);
 void remove_congested_entry(char *buf, MIOBuffer * out_buffer);
 void revalidateCongestionDB();
 void initCongestionDB();
@@ -84,7 +84,7 @@ struct CongestRequestParam
   {
   }
 
-  uint64 m_key;
+  uint64_t m_key;
   Op_t m_op;
   CongestionEntry *m_pEntry;
 
@@ -97,12 +97,12 @@ class CongestionDB:public CongestionTable
 public:
   CongestionDB(int tablesize);
    ~CongestionDB();
-  bool congested(uint64 key);
+  bool congested(uint64_t key);
 
 // add an entry to the db
-  void addRecord(uint64 key, CongestionEntry * pEntry);
+  void addRecord(uint64_t key, CongestionEntry * pEntry);
 // remove an entry from the db
-  void removeRecord(uint64 key);
+  void removeRecord(uint64_t key);
   void removeAllRecords(void);
   InkAtomicList *todo_lists;
   void RunTodoList(int buckId);

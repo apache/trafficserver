@@ -35,8 +35,8 @@ class HttpMessageBody
 public:
   static const char *StatusCodeName(HTTPStatus status_code);
 
-  static char *MakeErrorBody(int64 max_buffer_length,
-                             int64 *resulting_buffer_length,
+  static char *MakeErrorBody(int64_t max_buffer_length,
+                             int64_t *resulting_buffer_length,
                              const HttpConfigParams * config,
                              HTTPStatus status_code, char *reason_or_null, char *format, ...)
   {
@@ -51,8 +51,8 @@ public:
       return ret;
   }
 
-  static char *MakeErrorBodyVA(int64 max_buffer_length,
-                               int64 *resulting_buffer_length,
+  static char *MakeErrorBodyVA(int64_t max_buffer_length,
+                               int64_t *resulting_buffer_length,
                                const HttpConfigParams * config,
                                HTTPStatus status_code, const char *reason_or_null, const char *format, va_list va);
 };

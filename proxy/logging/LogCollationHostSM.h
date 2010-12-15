@@ -99,8 +99,8 @@ private:
   // read_state stuff
   NetMsgHeader m_net_msg_header;
   char *m_read_buffer;
-  int64 m_read_bytes_wanted;
-  int64 m_read_bytes_received;
+  int64_t m_read_bytes_wanted;
+  int64_t m_read_bytes_received;
 
   // client info
   int m_client_ip;

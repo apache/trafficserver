@@ -1860,11 +1860,11 @@ BaseRecords::printRecord(Record rec)
   switch (rec.stype) {
   case INK_COUNTER:
     fprintf(stderr, "\tType: COUNTER\n");
-    fprintf(stderr, "\tValue: '%lld'\n", rec.data.counter_data);
+    fprintf(stderr, "\tValue: '%" PRId64 "'\n", rec.data.counter_data);
     break;
   case INK_INT:
     fprintf(stderr, "\tType: INT\n");
-    fprintf(stderr, "\tValue: '%lld'\n", rec.data.int_data);
+    fprintf(stderr, "\tValue: '%" PRId64 "'\n", rec.data.int_data);
     break;
   case INK_FLOAT:
     fprintf(stderr, "\tType: FLOAT\n");
@@ -2000,7 +2000,7 @@ BaseRecords::createRecordsFile(char *fname)
           if (type == PROCESS)
             tmp = 0;
           newFile->copyFrom("COUNTER ", strlen("COUNTER "));
-          snprintf(str_val, sizeof(str_val), "%lld\n", tmp);
+          snprintf(str_val, sizeof(str_val), "%" PRId64 "\n", tmp);
           newFile->copyFrom(str_val, strlen(str_val));
           break;
         }
@@ -2009,7 +2009,7 @@ BaseRecords::createRecordsFile(char *fname)
           if (type == PROCESS)
             tmp = 0;
           newFile->copyFrom("INT ", strlen("INT "));
-          snprintf(str_val, sizeof(str_val), "%lld\n", tmp);
+          snprintf(str_val, sizeof(str_val), "%" PRId64 "\n", tmp);
           newFile->copyFrom(str_val, strlen(str_val));
           break;
         }

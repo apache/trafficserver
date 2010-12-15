@@ -152,7 +152,7 @@ public:
   time_t xact_start;
   ip_addr_t src_ip;
   ip_addr_t dest_ip;
-  uint16 incoming_port;
+  uint16_t incoming_port;
   char *tag;
 };
 

@@ -335,7 +335,7 @@ TransformTerminus::handle_event(int event, void *edata)
   -------------------------------------------------------------------------*/
 
 VIO *
-TransformTerminus::do_io_read(Continuation *c, int64 nbytes, MIOBuffer *buf)
+TransformTerminus::do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf)
 {
   m_read_vio.buffer.writer_for(buf);
   m_read_vio.op = VIO::READ;
@@ -358,7 +358,7 @@ TransformTerminus::do_io_read(Continuation *c, int64 nbytes, MIOBuffer *buf)
   -------------------------------------------------------------------------*/
 
 VIO *
-TransformTerminus::do_io_write(Continuation *c, int64 nbytes, IOBufferReader *buf, bool owner)
+TransformTerminus::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *buf, bool owner)
 {
   // In the process of eliminating 'owner' mode so asserting against it
   ink_assert(!owner);
@@ -498,7 +498,7 @@ TransformVConnection::handle_event(int event, void *edata)
   -------------------------------------------------------------------------*/
 
 VIO *
-TransformVConnection::do_io_read(Continuation *c, int64 nbytes, MIOBuffer *buf)
+TransformVConnection::do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf)
 {
   Debug("transform", "TransformVConnection do_io_read: 0x%lx [0x%lx]", (long) c, (long) this);
 
@@ -509,7 +509,7 @@ TransformVConnection::do_io_read(Continuation *c, int64 nbytes, MIOBuffer *buf)
   -------------------------------------------------------------------------*/
 
 VIO *
-TransformVConnection::do_io_write(Continuation *c, int64 nbytes, IOBufferReader *buf, bool owner)
+TransformVConnection::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *buf, bool owner)
 {
   NOWARN_UNUSED(owner);
   Debug("transform", "TransformVConnection do_io_write: 0x%lx [0x%lx]", (long) c, (long) this);
@@ -1012,9 +1012,9 @@ RangeTransform::transform_to_range()
 {
   IOBufferReader *reader = m_write_vio.get_reader();
   int toskip, tosend, avail;
-  const int64 *end, *start;
-  int64 prev_end = 0;
-  int64 *done_byte;
+  const int64_t *end, *start;
+  int64_t prev_end = 0;
+  int64_t *done_byte;
 
   end = &m_ranges[m_current_range]._end;
   done_byte = &m_ranges[m_current_range]._done_byte;
@@ -1154,7 +1154,7 @@ RangeTransform::add_sub_header(int index)
   m_done += m_output_buf->write("\r\n", 2);
   m_done += m_output_buf->write(cont_range, sizeof(cont_range) - 1);
 
-  snprintf(numbers, sizeof(numbers), "%lldd-%lldd/%lldd", m_ranges[index]._start, m_ranges[index]._end, m_content_length);
+  snprintf(numbers, sizeof(numbers), "%" PRId64 "d-%" PRId64 "d/%" PRId64 "d", m_ranges[index]._start, m_ranges[index]._end, m_content_length);
   len = strlen(numbers);
   if (len < RANGE_NUMBERS_LENGTH)
     m_done += m_output_buf->write(numbers, len);
@@ -1201,7 +1201,7 @@ RangeTransform::change_response_header()
     char numbers[RANGE_NUMBERS_LENGTH];
 
     field = m_transform_resp->field_create(MIME_FIELD_CONTENT_RANGE, MIME_LEN_CONTENT_RANGE);
-    snprintf(numbers, sizeof(numbers), "bytes %lld-%lld/%lld", m_ranges[0]._start, m_ranges[0]._end, m_content_length);
+    snprintf(numbers, sizeof(numbers), "bytes %" PRId64 "-%" PRId64 "/%" PRId64 "", m_ranges[0]._start, m_ranges[0]._end, m_content_length);
     field->value_append(m_transform_resp->m_heap, m_transform_resp->m_mime, numbers, strlen(numbers));
     m_transform_resp->field_attach(field);
   }

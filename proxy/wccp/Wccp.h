@@ -104,10 +104,10 @@ public:
   /// @name Well known (standard) services.
   //@{
   /// HTTP
-  static uint8 const HTTP = 0;
+  static uint8_t const HTTP = 0;
   //@}
   /// Service IDs of this value or less are reserved.
-  static uint8 const RESERVED = 50;
+  static uint8_t const RESERVED = 50;
   
   /// Number of ports in component (defined by protocol).
   static size_t const N_PORTS = 8;
@@ -115,25 +115,25 @@ public:
   /// @name Flag mask values.
   //@{
   /// Source IP address hash
-  static uint32 const SRC_IP_HASH = 1<<0;
+  static uint32_t const SRC_IP_HASH = 1<<0;
   /// Destination IP address hash
-  static uint32 const DST_IP_HASH = 1<<1;
+  static uint32_t const DST_IP_HASH = 1<<1;
   /// Source port hash.
-  static uint32 const SRC_PORT_HASH = 1<<2;
+  static uint32_t const SRC_PORT_HASH = 1<<2;
   /// Destination port hash
-  static uint32 const DST_PORT_HASH = 1<<3;
+  static uint32_t const DST_PORT_HASH = 1<<3;
   /// @a m_ports has port information.
-  static uint32 const PORTS_DEFINED = 1<<4;
+  static uint32_t const PORTS_DEFINED = 1<<4;
   /// @a m_ports has source ports (otherwise destination ports).
-  static uint32 const PORTS_SOURCE = 1<<5;
+  static uint32_t const PORTS_SOURCE = 1<<5;
   /// Alternate source IP address hash
-  static uint32 const SRC_IP_ALT_HASH = 1<<8;
+  static uint32_t const SRC_IP_ALT_HASH = 1<<8;
   /// Alternate destination IP address hash
-  static uint32 const DST_IP_ALT_HASH = 1<<9;
+  static uint32_t const DST_IP_ALT_HASH = 1<<9;
   /// Alternate source port hash
-  static uint32 const SRC_PORT_ALT_HASH = 1<<10;
+  static uint32_t const SRC_PORT_ALT_HASH = 1<<10;
   /// Alternate destination port hash
-  static uint32 const DST_PORT_ALT_HASH = 1<<11;
+  static uint32_t const DST_PORT_ALT_HASH = 1<<11;
   //@}
 
   /// Default constructor - no member initialization.
@@ -153,44 +153,44 @@ public:
   */
   self& setSvcType(ServiceGroup::Type svc);
 
-  uint8 getSvcId() const; ///< Get service ID field.
-  self& setSvcId(uint8 id); ///< Set service ID field to @a id.
+  uint8_t getSvcId() const; ///< Get service ID field.
+  self& setSvcId(uint8_t id); ///< Set service ID field to @a id.
 
-  uint8 getPriority() const; ///< Get priority field.
-  self& setPriority(uint8 pri); ///< Set priority field to @a p.
+  uint8_t getPriority() const; ///< Get priority field.
+  self& setPriority(uint8_t pri); ///< Set priority field to @a p.
 
-  uint8 getProtocol() const; ///< Get protocol field.
-  self& setProtocol(uint8 p); ///< Set protocol field to @a p.
+  uint8_t getProtocol() const; ///< Get protocol field.
+  self& setProtocol(uint8_t p); ///< Set protocol field to @a p.
 
-  uint32 getFlags() const; ///< Get flags field.
-  self& setFlags(uint32 f); ///< Set the flags flags in field to @a f.
+  uint32_t getFlags() const; ///< Get flags field.
+  self& setFlags(uint32_t f); ///< Set the flags flags in field to @a f.
   /// Set the flags in the flag field that are set in @a f.
   /// Other flags are unchanged.
-  self& enableFlags(uint32 f);
+  self& enableFlags(uint32_t f);
   /// Clear the flags in the flag field that are set in @a f.
   /// Other flags are unchanged.
-  self& disableFlags(uint32 f);
+  self& disableFlags(uint32_t f);
 
   /// Get a port value.
-  uint16 getPort(
+  uint16_t getPort(
     int idx ///< Index of target port.
   ) const;
   /// Set a port value.
   self& setPort(
     int idx, ///< Index of port.
-    uint16 port ///< Value for port.
+    uint16_t port ///< Value for port.
   );
   /// Zero (clear) all ports.
   self& clearPorts();
   //@}
 
 protected:
-  uint8 m_svc_type; ///< @ref Type.
-  uint8 m_svc_id; ///< ID for service type.
-  uint8 m_priority; ///< Redirection priority ordering.
-  uint8 m_protocol; ///< IP protocol for service.
-  uint32 m_flags; ///< Flags.
-  uint16 m_ports[N_PORTS]; ///< Service ports.
+  uint8_t m_svc_type; ///< @ref Type.
+  uint8_t m_svc_id; ///< ID for service type.
+  uint8_t m_priority; ///< Redirection priority ordering.
+  uint8_t m_protocol; ///< IP protocol for service.
+  uint32_t m_flags; ///< Flags.
+  uint16_t m_ports[N_PORTS]; ///< Service ports.
 };
 
 /// Security component option (sub-type)
@@ -208,7 +208,7 @@ public:
       This is also used as the address for the socket.
   */
   self& setAddr(
-    uint32 addr ///< IP address.
+    uint32_t addr ///< IP address.
   );
 
   /** Check if this endpoint is ready to use.
@@ -229,7 +229,7 @@ public:
       @see setAddr
   */
   int open(
-    uint32 addr = INADDR_ANY ///< Local IP address for socket.
+    uint32_t addr = INADDR_ANY ///< Local IP address for socket.
   );
 
   /// Get the internal socket.
@@ -317,8 +317,8 @@ public:
 
   */
   self& addSeedRouter(
-    uint8 id, ///< Service group ID.
-    uint32 addr ///< IP address of router.
+    uint8_t id, ///< Service group ID.
+    uint32_t addr ///< IP address of router.
   );
 
   /// Number of seconds until next housekeeping activity is due.
@@ -347,7 +347,7 @@ public:
 
   /// Add an address for a seed router.
   self& addSeedRouter(
-    uint32 addr ///< Router IP address.
+    uint32_t addr ///< Router IP address.
   );
   /// Set the security key.
   self& setKey(
@@ -446,25 +446,25 @@ ServiceGroup::setProtocol(uint8_t proto) {
   return *this;
 }
 
-inline uint32
+inline uint32_t
 ServiceGroup::getFlags() const {
   return ntohl(m_flags);
 }
 
 inline ServiceGroup&
-ServiceGroup::setFlags(uint32 flags) {
+ServiceGroup::setFlags(uint32_t flags) {
   m_flags = htonl(flags);
   return *this;
 }
 
 inline ServiceGroup&
-ServiceGroup::enableFlags(uint32 flags) {
+ServiceGroup::enableFlags(uint32_t flags) {
   m_flags |= htonl(flags);
   return *this;
 }
 
 inline ServiceGroup&
-ServiceGroup::disableFlags(uint32 flags) {
+ServiceGroup::disableFlags(uint32_t flags) {
   m_flags &= ~htonl(flags);
   return *this;
 }

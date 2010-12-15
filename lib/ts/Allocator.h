@@ -152,7 +152,7 @@ public:
   struct _proto
   {
     C typeObject;
-    int64 space_holder;
+    int64_t space_holder;
   } proto;
 };
 
@@ -264,8 +264,8 @@ template<class C> inline C * ClassAllocator<C>::alloc()
   void *ptr = ink_freelist_new(&this->fl);
 #endif
   if (sizeof(C) < 512) {
-    for (unsigned int i = 0; i < RND16(sizeof(C)) / sizeof(int64); i++)
-      ((int64 *) ptr)[i] = ((int64 *) &this->proto.typeObject)[i];
+    for (unsigned int i = 0; i < RND16(sizeof(C)) / sizeof(int64_t); i++)
+      ((int64_t *) ptr)[i] = ((int64_t *) &this->proto.typeObject)[i];
   } else
     memcpy(ptr, &this->proto.typeObject, sizeof(C));
   return (C *) ptr;
@@ -280,8 +280,8 @@ template<class C> inline C * SparceClassAllocator<C>::alloc()
 #endif
   if (!instantiate) {
     if (sizeof(C) < 512) {
-      for (unsigned int i = 0; i < RND16(sizeof(C)) / sizeof(int64); i++)
-        ((int64 *) ptr)[i] = ((int64 *) &this->proto.typeObject)[i];
+      for (unsigned int i = 0; i < RND16(sizeof(C)) / sizeof(int64_t); i++)
+        ((int64_t *) ptr)[i] = ((int64_t *) &this->proto.typeObject)[i];
     } else
       memcpy(ptr, &this->proto.typeObject, sizeof(C));
   } else

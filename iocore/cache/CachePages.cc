@@ -326,7 +326,7 @@ ShowCache::handleCacheOpenRead(int event, Event * e)
       CacheKey obj_key = obj->object_key_get();
       HTTPHdr *cached_request = obj->request_get();
       HTTPHdr *cached_response = obj->response_get();
-      int64 obj_size = obj->object_size_get();
+      int64_t obj_size = obj->object_size_get();
       int offset, tmp, used, done;
       char b[4096];
 
@@ -355,7 +355,7 @@ ShowCache::handleCacheOpenRead(int event, Event * e)
         CHECK_SHOW(show("%s", b));
       } while (!done);
       CHECK_SHOW(show("</PRE></td></tr>\n"));
-      CHECK_SHOW(show("<tr><td>Size</td><td>%lld</td>\n", obj_size));
+      CHECK_SHOW(show("<tr><td>Size</td><td>%" PRId64 "</td>\n", obj_size));
       CHECK_SHOW(show("<tr><td>Key</td><td>%s</td>\n", obj_key.string(tmpstr)));
       t = obj->request_sent_time_get();
       ink_ctime_r(&t, tmpstr);

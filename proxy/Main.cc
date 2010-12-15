@@ -1141,17 +1141,17 @@ struct ShowStats: public Continuation
   FILE *fp;
 #endif
   int cycle;
-  int64 last_cc;
-  int64 last_rb;
-  int64 last_w;
-  int64 last_r;
-  int64 last_wb;
-  int64 last_nrb;
-  int64 last_nw;
-  int64 last_nr;
-  int64 last_nwb;
-  int64 last_p;
-  int64 last_o;
+  int64_t last_cc;
+  int64_t last_rb;
+  int64_t last_w;
+  int64_t last_r;
+  int64_t last_wb;
+  int64_t last_nrb;
+  int64_t last_nw;
+  int64_t last_nr;
+  int64_t last_nwb;
+  int64_t last_p;
+  int64_t last_o;
   int mainEvent(int event, Event * e)
   {
     (void) event;
@@ -1161,38 +1161,38 @@ struct ShowStats: public Continuation
     ink_statval_t sval, cval;
 
     NET_READ_DYN_SUM(net_calls_to_readfromnet_stat, sval);
-    int64 d_rb = sval - last_rb;
+    int64_t d_rb = sval - last_rb;
     last_rb += d_rb;
     NET_READ_DYN_SUM(net_calls_to_readfromnet_afterpoll_stat, sval);
-    int64 d_r = sval - last_r;
+    int64_t d_r = sval - last_r;
     last_r += d_r;
 
     NET_READ_DYN_SUM(net_calls_to_writetonet_stat, sval);
-    int64 d_wb = sval - last_wb;
+    int64_t d_wb = sval - last_wb;
     last_wb += d_wb;
     NET_READ_DYN_SUM(net_calls_to_writetonet_afterpoll_stat, sval);
-    int64 d_w = sval - last_w;
+    int64_t d_w = sval - last_w;
     last_w += d_w;
 
     NET_READ_DYN_STAT(net_read_bytes_stat, sval, cval);
-    int64 d_nrb = sval - last_nrb;
+    int64_t d_nrb = sval - last_nrb;
     last_nrb += d_nrb;
-    int64 d_nr = cval - last_nr;
+    int64_t d_nr = cval - last_nr;
     last_nr += d_nr;
 
     NET_READ_DYN_STAT(net_write_bytes_stat, sval, cval);
-    int64 d_nwb = sval - last_nwb;
+    int64_t d_nwb = sval - last_nwb;
     last_nwb += d_nwb;
-    int64 d_nw = cval - last_nw;
+    int64_t d_nw = cval - last_nw;
     last_nw += d_nw;
 
     NET_READ_GLOBAL_DYN_SUM(net_connections_currently_open_stat, sval);
-    int64 d_o = sval;
+    int64_t d_o = sval;
 
     NET_READ_DYN_STAT(net_handler_run_stat, sval, cval);
-    int64 d_p = cval - last_p;
+    int64_t d_p = cval - last_p;
     last_p += d_p;
-    printf("%lld:%lld %lld:%lld %lld:%lld %lld:%lld %lld %lld\n",
+    printf("%" PRId64 ":%" PRId64 " %" PRId64 ":%" PRId64 " %" PRId64 ":%" PRId64 " %" PRId64 ":%" PRId64 " %" PRId64 " %" PRId64 "\n",
            d_rb, d_r, d_wb, d_w, d_nrb, d_nr, d_nwb, d_nw, d_o, d_p);
 #ifdef ENABLE_TIME_TRACE
     int i;
@@ -2121,7 +2121,7 @@ xmlBandwidthSchemaRead(XMLNode * node)
   Debug("bw-mgmt", "Read in: limit_mbps = %lf\n", G_inkPipeInfo.interfaceMbps);
   for (i = 0; i < G_inkPipeInfo.numPipes + 1; i++) {
     G_inkPipeInfo.perPipeInfo[i].bwLimit =
-      (int64) (G_inkPipeInfo.perPipeInfo[i].wt * G_inkPipeInfo.interfaceMbps * 1024.0 * 1024.0);
+      (int64_t) (G_inkPipeInfo.perPipeInfo[i].wt * G_inkPipeInfo.interfaceMbps * 1024.0 * 1024.0);
     p = (unsigned char *) &(G_inkPipeInfo.perPipeInfo[i].destIP);
     Debug("bw-mgmt", "Pipe [%d]: wt = %lf, dest ip = %d.%d.%d.%d\n",
           i, G_inkPipeInfo.perPipeInfo[i].wt, p[0], p[1], p[2], p[3]);

@@ -408,7 +408,7 @@ cache_handler(TSCont contp, TSEvent event, void *data)
 
   TSIOBufferBlock blockp;
   char *ptr_block;
-  int64 ntodo, ndone, nbytes, towrite, avail, content_length;
+  int64_t ntodo, ndone, nbytes, towrite, avail, content_length;
 
   switch (event) {
   case TS_EVENT_CACHE_OPEN_WRITE:
@@ -832,7 +832,7 @@ REGRESSION_TEST(SDK_API_TSfopen) (RegressionTest * test, int atype, int *pstatus
   struct stat stat_buffer_pre, stat_buffer_post, stat_buffer_input;
   char *ret_val;
   int error_counter = 0, read = 0, wrote = 0;
-  int64 read_amount = 0;
+  int64_t read_amount = 0;
   char INPUT_TEXT_FILE[] = "plugin.config";
   char input_file_full_path[BUFSIZ];
 
@@ -1554,7 +1554,7 @@ REGRESSION_TEST(SDK_API_TSIOBufferCreate) (RegressionTest * test, int atype, int
   bool test_passed = false;
   *pstatus = REGRESSION_TEST_INPROGRESS;
 
-  int64 watermark = 1000;
+  int64_t watermark = 1000;
 
   TSIOBuffer bufp = TSIOBufferCreate();
 
@@ -1604,7 +1604,7 @@ REGRESSION_TEST(SDK_API_TSIOBufferProduce) (RegressionTest * test, int atype, in
 
   TSIOBufferProduce(bufp, 10);
 
-  int64 reader_avail = TSIOBufferReaderAvail(readerp);
+  int64_t reader_avail = TSIOBufferReaderAvail(readerp);
   if (reader_avail == 10) {
     SDK_RPRINT(test, "TSIOBufferProduce", "TestCase1", TC_PASS, "ok");
     SDK_RPRINT(test, "TSIOBufferReaderAlloc", "TestCase1", TC_PASS, "ok");
@@ -1641,7 +1641,7 @@ REGRESSION_TEST(SDK_API_TSIOBufferReaderConsume) (RegressionTest * test, int aty
   TSIOBufferProduce(bufp, 10);
   TSIOBufferReaderConsume(readerp, 10);
 
-  int64 reader_avail = TSIOBufferReaderAvail(readerp);
+  int64_t reader_avail = TSIOBufferReaderAvail(readerp);
   if (reader_avail == 0) {
     SDK_RPRINT(test, "TSIOBufferReaderConsume", "TestCase1", TC_PASS, "ok");
     test_passed = true;
@@ -1675,7 +1675,7 @@ REGRESSION_TEST(SDK_API_TSIOBufferReaderClone) (RegressionTest * test, int atype
 
   TSIOBufferReader readerp2 = TSIOBufferReaderClone(readerp);
 
-  int64 reader_avail = TSIOBufferReaderAvail(readerp2);
+  int64_t reader_avail = TSIOBufferReaderAvail(readerp2);
   if (reader_avail == 5) {
     SDK_RPRINT(test, "TSIOBufferReaderClone", "TestCase1", TC_PASS, "ok");
     test_passed = true;
@@ -1780,7 +1780,7 @@ REGRESSION_TEST(SDK_API_TSIOBufferBlockReadAvail) (RegressionTest * test, int at
   TSIOBufferWrite(bufp, (char*)&i, sizeof(int));
   TSIOBufferReader readerp = TSIOBufferReaderAlloc(bufp);
 
-  int64 avail_write, avail_read;
+  int64_t avail_write, avail_read;
 
   // TODO: This is probably not correct any more.
   TSIOBufferBlock blockp = TSIOBufferStart(bufp);
@@ -1870,7 +1870,7 @@ REGRESSION_TEST(SDK_API_INKStatIntSet) (RegressionTest * test, int atype, int *p
   INKStat stat = INKStatCreate("stat_is", INKSTAT_TYPE_INT64);
 
   INKStatIntSet(stat, 100);
-  int64 stat_val;
+  int64_t stat_val;
 
   INKStatIntGet(stat, &stat_val);
 
@@ -1901,7 +1901,7 @@ REGRESSION_TEST(SDK_API_INKStatIntAddTo) (RegressionTest * test, int atype, int 
   INKStat stat = INKStatCreate("stat_ia", INKSTAT_TYPE_INT64);
 
   INKStatIntAddTo(stat, 100);
-  int64 stat_val;
+  int64_t stat_val;
 
   INKStatIntGet(stat, &stat_val);
 
@@ -1998,7 +1998,7 @@ REGRESSION_TEST(SDK_API_INKStatIncrement) (RegressionTest * test, int atype, int
   INKStat stat_2 = INKStatCreate("stat_2", INKSTAT_TYPE_FLOAT);
 
   INKStatIncrement(stat_1);
-  int64 stat1_val;
+  int64_t stat1_val;
   INKStatIntGet(stat_1, &stat1_val);
 
   if (stat1_val == 1) {
@@ -2114,9 +2114,9 @@ REGRESSION_TEST(SDK_API_INKStatCoupled) (RegressionTest * test, int atype, int *
 
   float global_val_sum;
   INKStatFloatGet(global_stat_sum, &global_val_sum);
-  int64 global_val_1;
+  int64_t global_val_1;
   INKStatIntGet(global_stat_1, &global_val_1);
-  int64 global_val_2;
+  int64_t global_val_2;
   INKStatIntGet(global_stat_2, &global_val_2);
 
   if (local_val_1 == global_val_1 && local_val_2 == global_val_2 && local_val_sum == global_val_sum) {
@@ -2753,11 +2753,11 @@ test_url_print(TSMBuffer bufp, TSMLoc hdr_loc)
 {
   TSIOBuffer output_buffer;
   TSIOBufferReader reader;
-  int64 total_avail;
+  int64_t total_avail;
 
   TSIOBufferBlock block;
   const char *block_start;
-  int64 block_avail;
+  int64_t block_avail;
 
   char *output_string;
   int output_len;
@@ -3989,7 +3989,7 @@ REGRESSION_TEST(SDK_API_TSHttpHdr) (RegressionTest * test, int atype, int *pstat
             } else {
 
               TSIOBufferBlock iobufblock;
-              int64 bytes_read;
+              int64_t bytes_read;
 
               memset(actual_iobuf, 0, (actual_length + 1) * sizeof(char));
               bytes_read = 0;
@@ -3998,7 +3998,7 @@ REGRESSION_TEST(SDK_API_TSHttpHdr) (RegressionTest * test, int atype, int *pstat
 
               while ((iobufblock != NULL) && (iobufblock != TS_ERROR_PTR)) {
                 const char *block_start;
-                int64 block_size;
+                int64_t block_size;
                 block_start = TSIOBufferBlockReadStart(iobufblock, iobufreader, &block_size);
 
                 if ((block_start == TS_ERROR_PTR) || (block_size == 0) || (block_size == TS_ERROR)) {
@@ -4156,6 +4156,7 @@ TSReturnCode
 compare_field_names(RegressionTest * test, TSMBuffer bufp1, TSMLoc mime_loc1, TSMLoc field_loc1, TSMBuffer bufp2,
                     TSMLoc mime_loc2, TSMLoc field_loc2)
 {
+  NOWARN_UNUSED(test);
   const char *name1;
   const char *name2;
   int length1;
@@ -5119,11 +5120,11 @@ convert_http_hdr_to_string(TSMBuffer bufp, TSMLoc hdr_loc)
 {
   TSIOBuffer output_buffer;
   TSIOBufferReader reader;
-  int64 total_avail;
+  int64_t total_avail;
 
   TSIOBufferBlock block;
   const char *block_start;
-  int64 block_avail;
+  int64_t block_avail;
 
   char *output_string;
   int output_len;
@@ -5377,11 +5378,11 @@ convert_mime_hdr_to_string(TSMBuffer bufp, TSMLoc hdr_loc)
 {
   TSIOBuffer output_buffer;
   TSIOBufferReader reader;
-  int64 total_avail;
+  int64_t total_avail;
 
   TSIOBufferBlock block;
   const char *block_start;
-  int64 block_avail;
+  int64_t block_avail;
 
   char *output_string;
   int output_len;
@@ -7193,7 +7194,7 @@ typedef struct
 
 static TSIOBuffer append_buffer;
 static TSIOBufferReader append_buffer_reader;
-static int64 append_buffer_length;
+static int64_t append_buffer_length;
 
 static MyTransformData *
 my_data_alloc()
@@ -7227,8 +7228,8 @@ handle_transform(TSCont contp)
   TSVIO write_vio;
   TransformTestData *contData;
   MyTransformData *data;
-  int64 towrite;
-  int64 avail;
+  int64_t towrite;
+  int64_t avail;
 
   /* Get the output connection where we'll write data to. */
   output_conn = TSTransformOutputVConnGet(contp);
@@ -7439,7 +7440,7 @@ load(const char *append_string)
 {
   TSIOBufferBlock blk;
   char *p;
-  int64 avail;
+  int64_t avail;
 
   append_buffer = TSIOBufferCreate();
   append_buffer_reader = TSIOBufferReaderAlloc(append_buffer);

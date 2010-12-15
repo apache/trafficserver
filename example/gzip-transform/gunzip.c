@@ -167,7 +167,7 @@ gzip_transform_one(GzipData * data, TSIOBufferReader input_reader, int amount)
   TSIOBufferBlock blkp;
   const char *ibuf;
   char *obuf;
-  int64 ilength, olength;
+  int64_t ilength, olength;
   int err = Z_OK;
 
   while (amount > 0) {
@@ -236,7 +236,7 @@ gzip_transform_finish(GzipData * data)
   if (data->state == 1) {
     TSIOBufferBlock blkp;
     char *obuf;
-    int64 olength;
+    int64_t olength;
     int err;
 
     data->state = 2;

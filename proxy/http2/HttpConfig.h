@@ -733,7 +733,7 @@ public:
 
   // Cluster time delta is not a config variable,
   //  rather it is the time skew which the manager observes
-  int32 cluster_time_delta;
+  int32_t cluster_time_delta;
 
   ///////////////////////////////////////////////////////////////////////////
   // Added by YTS Team, yamsat                                                  //
@@ -860,7 +860,7 @@ public:
 };
 
 // DI's request to disable ICP on the fly
-extern volatile int32 icp_dynamic_enabled;
+extern volatile int32_t icp_dynamic_enabled;
 
 /////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////

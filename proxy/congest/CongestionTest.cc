@@ -407,7 +407,7 @@ CCCongestionDBTestCont::gen_CongestionEntry(ip_addr_t ip, int congested)
 {
   char *hostname;
   struct in_addr addr;
-  uint64 key;
+  uint64_t key;
   hostname = (addr.s_addr = htonl(ip), inet_ntoa(addr));
   key = make_key(hostname, strlen(hostname), ip, rule->pRecord);
   CongestionEntry *ret = new CongestionEntry(hostname,

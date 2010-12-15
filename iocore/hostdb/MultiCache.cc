@@ -82,7 +82,7 @@ buckets(0), totalelements(0), totalsize(0), nominal_elements(0), heap_size(0), h
 }
 
 static inline int
-bytes_to_blocks(int64 b)
+bytes_to_blocks(int64_t b)
 {
   return (int) ((b + (STORE_BLOCK_SIZE - 1)) / STORE_BLOCK_SIZE);
 }
@@ -90,11 +90,11 @@ bytes_to_blocks(int64 b)
 inline int
 MultiCacheBase::blocks_in_level(int level)
 {
-  int64 sumbytes = 0;
+  int64_t sumbytes = 0;
   int prevblocks = 0;
   int b = 0;
   for (int i = 0; i <= level; i++) {
-    sumbytes += buckets * ((int64) bucketsize[i]);
+    sumbytes += buckets * ((int64_t) bucketsize[i]);
     int sumblocks = bytes_to_blocks(sumbytes);
     b = sumblocks - prevblocks;
     prevblocks = sumblocks;
@@ -113,7 +113,7 @@ MultiCacheBase::initialize(Store * astore, char *afilename,
                            int level0_elements_per_bucket,
                            int level1_elements_per_bucket, int level2_elements_per_bucket)
 {
-  int64 size = 0;
+  int64_t size = 0;
 
   Debug("multicache", "initializing %s with %d elements, %d buckets and %d levels", afilename, aelements, abuckets, alevels);
   ink_assert(alevels < 4);
@@ -138,7 +138,7 @@ MultiCacheBase::initialize(Store * astore, char *afilename,
     elements[2] = level2_elements_per_bucket;
     totalelements += buckets * level2_elements_per_bucket;
     bucketsize[2] = elementsize * level2_elements_per_bucket;
-    size += (int64) bucketsize[2] * (int64) buckets;
+    size += (int64_t) bucketsize[2] * (int64_t) buckets;
 
     if (!(level2_elements_per_bucket / level1_elements_per_bucket)) {
       Warning("Size change too large, unable to reconfigure");
@@ -161,7 +161,7 @@ MultiCacheBase::initialize(Store * astore, char *afilename,
     elements[1] = level1_elements_per_bucket;
     totalelements += buckets * level1_elements_per_bucket;
     bucketsize[1] = elementsize * level1_elements_per_bucket;
-    size += (int64) bucketsize[1] * (int64) buckets;
+    size += (int64_t) bucketsize[1] * (int64_t) buckets;
     if (!(level1_elements_per_bucket / level0_elements_per_bucket)) {
       Warning("Size change too large, unable to reconfigure");
       return -2;
@@ -181,7 +181,7 @@ MultiCacheBase::initialize(Store * astore, char *afilename,
   elements[0] = level0_elements_per_bucket;
   totalelements += buckets * level0_elements_per_bucket;
   bucketsize[0] = elementsize * level0_elements_per_bucket;
-  size += (int64) bucketsize[0] * (int64) buckets;
+  size += (int64_t) bucketsize[0] * (int64_t) buckets;
 
   buckets_per_partitionF8 = (buckets << 8) / MULTI_CACHE_PARTITIONS;
   ink_release_assert(buckets_per_partitionF8);
@@ -193,7 +193,7 @@ MultiCacheBase::initialize(Store * astore, char *afilename,
 
   blocks += 1;                  // header
 
-  totalsize = (int64) blocks *(int64) STORE_BLOCK_SIZE;
+  totalsize = (int64_t) blocks *(int64_t) STORE_BLOCK_SIZE;
 
   //
   //  Spread alloc from the store (using storage that can be mmapped)
@@ -299,8 +299,8 @@ MultiCacheBase::unmap_data()
 struct zorch_info
 {
   int fd;
-  int64 size;
-  int64 fsize;
+  int64_t size;
+  int64_t fsize;
   int val;
 };
 
@@ -312,7 +312,7 @@ static void *
 _zorch_file(void *arg)
 {
   zorch_info *info = (zorch_info *) arg;
-  int64 amount;
+  int64_t amount;
   char *vals;
 
   if (info) {
@@ -336,10 +336,10 @@ _zorch_file(void *arg)
 }
 
 static int
-zorch_file(char *path, int fd, int64 size, int val)
+zorch_file(char *path, int fd, int64_t size, int val)
 {
   struct stat stat;
-  int64 fsize;
+  int64_t fsize;
 
   if (fstat(fd, &stat) < 0) {
     return -1;
@@ -402,9 +402,9 @@ MultiCacheBase::mmap_data(bool private_flag, bool zero_fill)
         fds[n_fds] = 0;
       }
       if (!d->file_pathname) {
-        if (zorch_file(path, fds[n_fds], (int64) d->blocks * (int64) STORE_BLOCK_SIZE, 0)) {
-          Warning("unable to set file size '%s' to %lld: %d, %s",
-                  (int64) d->blocks * STORE_BLOCK_SIZE, path, errno, strerror(errno));
+        if (zorch_file(path, fds[n_fds], (int64_t) d->blocks * (int64_t) STORE_BLOCK_SIZE, 0)) {
+          Warning("unable to set file size '%s' to %" PRId64 ": %d, %s",
+                  (int64_t) d->blocks * STORE_BLOCK_SIZE, path, errno, strerror(errno));
           goto Lvalloc;
         }
       }

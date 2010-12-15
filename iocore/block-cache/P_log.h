@@ -26,8 +26,7 @@
 #ifndef _CacheLog_H_
 #define _CacheLog_H_
 
-typedef int int32;
-typedef int32 XactId;
+typedef int32_t XactId;
 typedef int BlockOffset;
 typedef char Dir[8];
 

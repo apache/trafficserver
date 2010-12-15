@@ -375,7 +375,7 @@ handleTxnStart()
       sprintf(errorLine, "ERROR: couldn't retrieve [%s] ", *p);
       LOG_AUTO_ERROR("TSMgmtCounterGet", errorLine);
     } else {
-      TSDebug(PLUGIN_NAME, "%s = %lld", *p, counterValue);
+      TSDebug(PLUGIN_NAME, "%s = %" PRId64 "", *p, counterValue);
     }
 
     *p++;
@@ -409,7 +409,7 @@ handleTxnStart()
       sprintf(errorLine, "ERROR: couldn't retrieve [%s] ", *p);
       LOG_AUTO_ERROR("TSMgmtIntGet", errorLine);
     } else {
-      TSDebug(PLUGIN_NAME, "%s = %lld", *p, intValue);
+      TSDebug(PLUGIN_NAME, "%s = %" PRId64 "", *p, intValue);
     }
 
     *p++;

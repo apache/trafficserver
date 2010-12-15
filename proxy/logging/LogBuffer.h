@@ -77,7 +77,7 @@ struct LogBufferHeader
   unsigned low_timestamp;       // lowest timestamp value of entries
   unsigned high_timestamp;      // highest timestamp value of entries
   unsigned int log_object_flags;        // log object flags
-  uint64 log_object_signature;  // log object signature
+  uint64_t log_object_signature;  // log object signature
 #if defined(LOG_BUFFER_TRACKING)
   unsigned int id;
 #endif                          // defined(LOG_BUFFER_TRACKING)
@@ -120,14 +120,14 @@ union LB_State
     return *this;
   }
 
-  uint64 ival;
+  uint64_t ival;
   struct
   {
-    uint16 offset;              // buffer should be <= 64KB
-    uint16 num_entries;         // number of entries in buffer
-    uint16 byte_count;          // bytes in buffer
-    uint16 full:1;              // not accepting more checkouts
-    uint16 num_writers:15;      // number of writers
+    uint16_t offset;              // buffer should be <= 64KB
+    uint16_t num_entries;         // number of entries in buffer
+    uint16_t byte_count;          // bytes in buffer
+    uint16_t full:1;              // not accepting more checkouts
+    uint16_t num_writers:15;      // number of writers
   } s;
 };
 
@@ -256,7 +256,7 @@ public:
   int switch_state(LB_State & old_state, LB_State & new_state)
   {
     INK_WRITE_MEMORY_BARRIER;
-    return (ink_atomic_cas64((int64 *) & m_state.ival, old_state.ival, new_state.ival));
+    return (ink_atomic_cas64((int64_t *) & m_state.ival, old_state.ival, new_state.ival));
   };
 
   LB_ResultCode checkout_write(size_t * write_offset, size_t write_size);
@@ -276,7 +276,7 @@ public:
   void update_header_data();
   void convert_to_network_order();
   void convert_to_host_order();
-  uint32 get_id()
+  uint32_t get_id()
   {
     return m_id;
   };
@@ -320,7 +320,7 @@ private:
   LogObject *m_owner;           // the LogObject that owns this buf.
   LogBufferHeader *m_header;
 
-  uint32 m_id;                  // unique buffer id (for debugging)
+  uint32_t m_id;                  // unique buffer id (for debugging)
 
   // private functions
   size_t _add_buffer_header();

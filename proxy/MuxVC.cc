@@ -134,7 +134,7 @@ MuxClientVC::~MuxClientVC()
 }
 
 void
-MuxClientVC::init(MuxVC * mvc, int32 id_arg)
+MuxClientVC::init(MuxVC * mvc, int32_t id_arg)
 {
 
   ink_debug_assert(!closed);
@@ -198,7 +198,7 @@ MuxClientVC::kill()
 
 
 VIO *
-MuxClientVC::do_io_read(Continuation * c, int64 nbytes, MIOBuffer * buf)
+MuxClientVC::do_io_read(Continuation * c, int64_t nbytes, MIOBuffer * buf)
 {
 
   ink_debug_assert(!closed);
@@ -237,7 +237,7 @@ MuxClientVC::do_io_read(Continuation * c, int64 nbytes, MIOBuffer * buf)
 }
 
 VIO *
-MuxClientVC::do_io_write(Continuation * c, int64 nbytes, IOBufferReader * abuffer, bool owner)
+MuxClientVC::do_io_write(Continuation * c, int64_t nbytes, IOBufferReader * abuffer, bool owner)
 {
 
   ink_debug_assert(!closed);
@@ -1338,12 +1338,12 @@ MuxVC::try_processor_list_remove()
   return 0;
 }
 
-// MuxClientVC* MuxVC::new_client(int32 id_arg)
+// MuxClientVC* MuxVC::new_client(int32_t id_arg)
 //
 //   Caller MUST be holding MuxVC::mutex
 //
 MuxClientVC *
-MuxVC::new_client(int32 id_arg)
+MuxVC::new_client(int32_t id_arg)
 {
 
   ink_debug_assert(magic == MUX_VC_MAGIC_ALIVE);
@@ -1426,12 +1426,12 @@ MuxVC::remove_client(MuxClientVC * client)
   }
 }
 
-// void MuxVC::enqueue_control_message(int msg_id, int32 cid, int data_size)
+// void MuxVC::enqueue_control_message(int msg_id, int32_t cid, int data_size)
 //
 //   Builds a control message and inserts it on the write buffer
 //
 int
-MuxVC::enqueue_control_message(int msg_id, int32 cid, int data_size)
+MuxVC::enqueue_control_message(int msg_id, int32_t cid, int data_size)
 {
 
   ink_debug_assert(data_size + sizeof(MuxMessage) <= USHRT_MAX);
@@ -1439,9 +1439,9 @@ MuxVC::enqueue_control_message(int msg_id, int32 cid, int data_size)
   MuxMessage mm;
   Debug("mux_cntl", "enqueue_control_message: %s for %d", control_msg_id_to_string(msg_id), cid);
 
-  mm.version = (uint8) INKMUX_PROTO_VERSION_0_1;
-  mm.msg_type = (uint8) msg_id;
-  mm.msg_len = (uint16) (sizeof(MuxMessage) + data_size);
+  mm.version = (uint8_t) INKMUX_PROTO_VERSION_0_1;
+  mm.msg_type = (uint8_t) msg_id;
+  mm.msg_len = (uint16_t) (sizeof(MuxMessage) + data_size);
   mm.client_id = cid;
 
   write_buffer->write((char *) &mm, sizeof(MuxMessage));
@@ -1525,13 +1525,13 @@ MuxVC::process_clients()
   }
 }
 
-// MuxClientVC* MuxVC::find_client(int32 client_id)
+// MuxClientVC* MuxVC::find_client(int32_t client_id)
 //
 //   Search the client list of a MuxClientVC
 //    matching clinet_id
 //
 MuxClientVC *
-MuxVC::find_client(int32 client_id)
+MuxVC::find_client(int32_t client_id)
 {
 
   MuxClientVC *current = active_clients.head;
@@ -2568,7 +2568,7 @@ public:
   char *request;
 private:
     Arena arena;
-  int32 extract_id(const char *query);
+  int32_t extract_id(const char *query);
   void dump_mux(MuxVC * mvc);
   void dump_mux_client(MuxClientVC * client);
 };
@@ -2743,7 +2743,7 @@ MuxPagesHandler::handle_mux_details(int event, void *data)
   ink_debug_assert(event == EVENT_IMMEDIATE || event == EVENT_INTERVAL);
   Event *call_event = (Event *) data;
 
-  int32 mux_id = extract_id(request);
+  int32_t mux_id = extract_id(request);
 
   if (mux_id < 0) {
     resp_begin("Mux Pages Error");
@@ -2857,11 +2857,11 @@ MuxPagesHandler::handle_callback(int event, void *edata)
   return EVENT_DONE;
 }
 
-int32
+int32_t
 MuxPagesHandler::extract_id(const char *query)
 {
   char *p;
-  int32 id;
+  int32_t id;
 
   p = (char *) strstr(query, "id=");
   if (!p) {

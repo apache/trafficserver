@@ -59,10 +59,10 @@ handle_dns(TSHttpTxn txnp, TSCont contp)
 
   TSIOBufferBlock block;
   const char *block_start;
-  int64 block_avail;
+  int64_t block_avail;
 
   char *output_string;
-  int64 output_len;
+  int64_t output_len;
 
   if (!TSHttpTxnClientReqGet(txnp, &bufp, &hdr_loc)) {
     TSDebug(DEBUG_TAG, "couldn't retrieve client request header");

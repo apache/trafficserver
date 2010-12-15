@@ -63,7 +63,7 @@
     if (diags->on(T)) { \
     ACQUIRE_PRINT_LOCK() \
     fprintf(stderr, "+++++++++ %s +++++++++\n", S); \
-    fprintf(stderr, "-- State Machine Id: %lld\n", I); \
+    fprintf(stderr, "-- State Machine Id: %" PRId64 "\n", I); \
         char b[4096]; \
         int used, tmp, offset; \
         int done; \
@@ -618,8 +618,8 @@ public:
 
   struct StatRecord_t
   {
-    uint16 index;
-    int64 increment;
+    uint16_t index;
+    int64_t increment;
   };
 
   enum CacheLookupResult_t
@@ -688,7 +688,7 @@ public:
 
     StatRecord_t stats[StatBlockEntries];
     StatBlock *next;
-    uint16 next_insert;
+    uint16_t next_insert;
   };
 
   struct State;
@@ -861,10 +861,10 @@ public:
     HTTPHdr server_response;
     HTTPHdr transform_response;
     HTTPHdr transform_cached_request;
-    int64 request_content_length;
-    int64 response_content_length;
-    int64 transform_request_cl;
-    int64 transform_response_cl;
+    int64_t request_content_length;
+    int64_t response_content_length;
+    int64_t transform_request_cl;
+    int64_t transform_response_cl;
     bool client_req_is_server_style;
     bool trust_response_cl;
     ResponseError_t response_error;
@@ -960,7 +960,7 @@ public:
     void (*transact_return_point) (HttpTransact::State * s);    // out
     char *internal_msg_buffer;  // out
     char *internal_msg_buffer_type;     // out
-    int64 internal_msg_buffer_size;       // out
+    int64_t internal_msg_buffer_size;       // out
     int internal_msg_buffer_fast_allocator_size;
     int internal_msg_buffer_index;      // out
 
@@ -981,7 +981,7 @@ public:
 
     char via_string[MAX_VIA_INDICES + 1];
 
-    int64 state_machine_id;
+    int64_t state_machine_id;
 
     //HttpAuthParams auth_params;
 
@@ -1246,7 +1246,7 @@ public:
   }; // End of State struct.
 
 
-  static void free_internal_msg_buffer(char *buffer, int64 size);
+  static void free_internal_msg_buffer(char *buffer, int64_t size);
 
   static void HandleBlindTunnel(State * s);
   static void StartRemapRequest(State * s);
@@ -1390,15 +1390,15 @@ public:
   static void update_stat(State * s, int stat, ink_statval_t increment);
   static void update_size_and_time_stats(State * s, ink_hrtime total_time, ink_hrtime user_agent_write_time,
                                          ink_hrtime origin_server_read_time, ink_hrtime cache_lookup_time,
-                                         int user_agent_request_header_size, int64 user_agent_request_body_size,
-                                         int user_agent_response_header_size, int64 user_agent_response_body_size,
-                                         int origin_server_request_header_size, int64 origin_server_request_body_size,
-                                         int origin_server_response_header_size, int64 origin_server_response_body_size,
-                                         int pushed_response_header_size, int64 pushed_response_body_size, CacheAction_t cache_action);
-  static void histogram_request_document_size(State * s, int64 size);
-  static void histogram_response_document_size(State * s, int64 size);
-  static void user_agent_connection_speed(State * s, ink_hrtime transfer_time, int64 nbytes);
-  static void origin_server_connection_speed(State * s, ink_hrtime transfer_time, int64 nbytes);
+                                         int user_agent_request_header_size, int64_t user_agent_request_body_size,
+                                         int user_agent_response_header_size, int64_t user_agent_response_body_size,
+                                         int origin_server_request_header_size, int64_t origin_server_request_body_size,
+                                         int origin_server_response_header_size, int64_t origin_server_response_body_size,
+                                         int pushed_response_header_size, int64_t pushed_response_body_size, CacheAction_t cache_action);
+  static void histogram_request_document_size(State * s, int64_t size);
+  static void histogram_response_document_size(State * s, int64_t size);
+  static void user_agent_connection_speed(State * s, ink_hrtime transfer_time, int64_t nbytes);
+  static void origin_server_connection_speed(State * s, ink_hrtime transfer_time, int64_t nbytes);
   static void client_result_stat(State * s, ink_hrtime total_time, ink_hrtime request_process_time);
   static void initialize_bypass_variables(State * s);
   static void add_new_stat_block(State * s);
@@ -1409,7 +1409,7 @@ public:
 typedef void (*TransactEntryFunc_t) (HttpTransact::State * s);
 
 inline void
-HttpTransact::free_internal_msg_buffer(char *buffer, int64 size)
+HttpTransact::free_internal_msg_buffer(char *buffer, int64_t size)
 {
   HTTP_DEBUG_ASSERT(buffer);
   if (size >= 0) {
@@ -1488,7 +1488,7 @@ HttpTransact::update_stat(State * s, int stat, ink_statval_t increment)
     add_new_stat_block(s);
   }
 
-  uint16 *next_insert = &s->current_stats->next_insert;
+  uint16_t *next_insert = &s->current_stats->next_insert;
   s->current_stats->stats[*next_insert].index = stat;
   s->current_stats->stats[*next_insert].increment = increment;
   (*next_insert)++;

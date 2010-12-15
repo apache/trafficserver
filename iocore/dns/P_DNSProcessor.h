@@ -237,7 +237,7 @@ struct DNSHandler: public Continuation
 
   InkRand generator;
   // bitmap of query ids in use
-  uint64 qid_in_flight[(USHRT_MAX+1)/64];
+  uint64_t qid_in_flight[(USHRT_MAX+1)/64];
 
 
   void received_one(int i)
@@ -256,9 +256,9 @@ struct DNSHandler: public Continuation
   bool failover_now(int i)
   {
     if (is_debug_tag_set("dns")) {
-      Debug("dns", "failover_now: Considering immediate failover, target time is %lld",
+      Debug("dns", "failover_now: Considering immediate failover, target time is %" PRId64 "",
             HRTIME_SECONDS(dns_failover_period));
-      Debug("dns", "\tdelta time is %lld", (ink_get_hrtime() - crossed_failover_number[i]));
+      Debug("dns", "\tdelta time is %" PRId64 "", (ink_get_hrtime() - crossed_failover_number[i]));
     }
     return (crossed_failover_number[i] &&
             ((ink_get_hrtime() - crossed_failover_number[i]) > HRTIME_SECONDS(dns_failover_period)));
@@ -282,18 +282,18 @@ struct DNSHandler: public Continuation
   void retry_named(int ndx, ink_hrtime t, bool reopen = true);
   void try_primary_named(bool reopen = true);
   void switch_named(int ndx);
-  uint16 get_query_id();
+  uint16_t get_query_id();
 
-  void release_query_id(uint16 qid) {
-    qid_in_flight[qid >> 6] &= (uint64)~(0x1ULL << (qid & 0x3F));
+  void release_query_id(uint16_t qid) {
+    qid_in_flight[qid >> 6] &= (uint64_t)~(0x1ULL << (qid & 0x3F));
   };
 
-  void set_query_id_in_use(uint16 qid) {
-    qid_in_flight[qid >> 6] |= (uint64)(0x1ULL << (qid & 0x3F));
+  void set_query_id_in_use(uint16_t qid) {
+    qid_in_flight[qid >> 6] |= (uint64_t)(0x1ULL << (qid & 0x3F));
   };
 
-  bool query_id_in_use(uint16 qid) {
-    return (qid_in_flight[(uint16)(qid) >> 6] & (uint64)(0x1ULL << ((uint16)(qid) & 0x3F))) != 0;
+  bool query_id_in_use(uint16_t qid) {
+    return (qid_in_flight[(uint16_t)(qid) >> 6] & (uint64_t)(0x1ULL << ((uint16_t)(qid) & 0x3F))) != 0;
   };
 
   DNSHandler();
@@ -303,7 +303,7 @@ struct DNSHandler: public Continuation
 TS_INLINE DNSHandler::DNSHandler()
  : Continuation(NULL), ip(0), port(0), n_con(0), options(0), in_flight(0), name_server(0), in_write_dns(0),
   hostent_cache(0), last_primary_retry(0), last_primary_reopen(0),
-  m_res(0), txn_lookup_timeout(0), generator((uint32)((uintptr_t)time(NULL) ^ (uintptr_t)this))
+  m_res(0), txn_lookup_timeout(0), generator((uint32_t)((uintptr_t)time(NULL) ^ (uintptr_t)this))
 {
   for (int i = 0; i < MAX_NAMED; i++) {
     ifd[i] = -1;

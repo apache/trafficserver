@@ -50,10 +50,10 @@ EventType ET_UDP;
 UDPNetProcessorInternal udpNetInternal;
 UDPNetProcessor &udpNet = udpNetInternal;
 
-uint64 g_udp_bytesPending;
-int32 g_udp_periodicCleanupSlots;
-int32 g_udp_periodicFreeCancelledPkts;
-int32 g_udp_numSendRetries;
+uint64_t g_udp_bytesPending;
+int32_t g_udp_periodicCleanupSlots;
+int32_t g_udp_periodicFreeCancelledPkts;
+int32_t g_udp_numSendRetries;
 
 #include "P_LibBulkIO.h"
 void *G_bulkIOState = NULL;
@@ -700,7 +700,7 @@ bool
 UDPNetProcessor::AllocBandwidth(Continuation * udpConn, double desiredMbps)
 {
   UDPConnectionInternal *udpIntConn = (UDPConnectionInternal *) udpConn;
-  int64 desiredbps = (int64) (desiredMbps * 1024.0 * 1024.0);
+  int64_t desiredbps = (int64_t) (desiredMbps * 1024.0 * 1024.0);
 
   if (G_inkPipeInfo.numPipes == 0) {
     udpIntConn->flowRateBps = (desiredMbps * 1024.0 * 1024.0) / 8.0;
@@ -716,7 +716,7 @@ UDPNetProcessor::AllocBandwidth(Continuation * udpConn, double desiredMbps)
   udpIntConn->flowRateBps = (desiredMbps * 1024.0 * 1024.0) / 8.0;
   udpIntConn->allocedbps = desiredbps;
   ink_atomic_increment64(&G_inkPipeInfo.perPipeInfo[udpIntConn->pipe_class].bwAlloc, desiredbps);
-  Debug("udpnet-admit", "Admitting flow with %lf Mbps (a=%lld, lim=%lld)",
+  Debug("udpnet-admit", "Admitting flow with %lf Mbps (a=%" PRId64 ", lim=%" PRId64 ")",
         desiredMbps,
         G_inkPipeInfo.perPipeInfo[udpIntConn->pipe_class].bwAlloc,
         G_inkPipeInfo.perPipeInfo[udpIntConn->pipe_class].bwLimit);
@@ -727,8 +727,8 @@ bool
 UDPNetProcessor::ChangeBandwidth(Continuation * udpConn, double desiredMbps)
 {
   UDPConnectionInternal *udpIntConn = (UDPConnectionInternal *) udpConn;
-  int64 desiredbps = (int64) (desiredMbps * 1024.0 * 1024.0);
-  int64 oldbps = (int64) (udpIntConn->flowRateBps * 8.0);
+  int64_t desiredbps = (int64_t) (desiredMbps * 1024.0 * 1024.0);
+  int64_t oldbps = (int64_t) (udpIntConn->flowRateBps * 8.0);
 
   if (G_inkPipeInfo.numPipes == 0) {
     udpIntConn->flowRateBps = (desiredMbps * 1024.0 * 1024.0) / 8.0;
@@ -744,7 +744,7 @@ UDPNetProcessor::ChangeBandwidth(Continuation * udpConn, double desiredMbps)
   udpIntConn->flowRateBps = (desiredMbps * 1024.0 * 1024.0) / 8.0;
   udpIntConn->allocedbps = desiredbps;
   ink_atomic_increment64(&G_inkPipeInfo.perPipeInfo[udpIntConn->pipe_class].bwAlloc, desiredbps - oldbps);
-  Debug("udpnet-admit", "Changing flow's b/w from %lf Mbps to %lf Mbps (a=%lld, lim=%lld)",
+  Debug("udpnet-admit", "Changing flow's b/w from %lf Mbps to %lf Mbps (a=%" PRId64 ", lim=%" PRId64 ")",
         (double) oldbps / (1024.0 * 1024.0),
         desiredMbps,
         G_inkPipeInfo.perPipeInfo[udpIntConn->pipe_class].bwAlloc,
@@ -756,12 +756,12 @@ void
 UDPNetProcessor::FreeBandwidth(Continuation * udpConn)
 {
   UDPConnectionInternal *udpIntConn = (UDPConnectionInternal *) udpConn;
-  int64 bps;
+  int64_t bps;
 
   if (G_inkPipeInfo.numPipes == 0)
     return;
 
-  Debug("udpnet-free", "Trying to releasing %lf (%lld) Kbps", udpIntConn->flowRateBps, udpIntConn->allocedbps);
+  Debug("udpnet-free", "Trying to releasing %lf (%" PRId64 ") Kbps", udpIntConn->flowRateBps, udpIntConn->allocedbps);
 
   bps = udpIntConn->allocedbps;
   if (bps <= 0)
@@ -820,19 +820,19 @@ void
 UDPQueue::service(UDPNetHandler * nh)
 {
   ink_hrtime now = ink_get_hrtime_internal();
-  uint64 timeSpent = 0;
+  uint64_t timeSpent = 0;
   UDPPacketInternal *p;
   ink_hrtime pktSendTime;
   double minPktSpacing;
-  uint32 pktSize;
-  int32 pktLen;
+  uint32_t pktSize;
+  int32_t pktLen;
   int i;
   bool addToGuaranteedQ;
   (void) nh;
   static ink_hrtime lastPrintTime = ink_get_hrtime_internal();
   static ink_hrtime lastSchedTime = ink_get_hrtime_internal();
-  static uint32 schedJitter = 0;
-  static uint32 numTimesSched = 0;
+  static uint32_t schedJitter = 0;
+  static uint32_t numTimesSched = 0;
 
   schedJitter += ink_hrtime_to_msec(now - lastSchedTime);
   numTimesSched++;
@@ -870,14 +870,14 @@ UDPQueue::service(UDPNetHandler * nh)
           // NOTE: this is flow rate in Bytes per sec.; convert to milli-sec.
           minPktSpacing = 1000.0 / (p->conn->flowRateBps / p->conn->avgPktSize);
 
-          pktSendTime = p->conn->lastPktStartTime + ink_hrtime_from_msec((uint32) minPktSpacing);
+          pktSendTime = p->conn->lastPktStartTime + ink_hrtime_from_msec((uint32_t) minPktSpacing);
         } else {
           minPktSpacing = 0.0;
           pktSendTime = p->delivery_time;
         }
         p->pktSendStartTime = MAX(MAX(now, pktSendTime), p->delivery_time);
         if (p->conn->flowRateBps > 25600.0)
-          Debug("udpnet-pkt", "Pkt size = %.1lf now = %lld, send = %lld, del = %lld, Delay delta = %lld; delta = %lld",
+          Debug("udpnet-pkt", "Pkt size = %.1lf now = %" PRId64 ", send = %" PRId64 ", del = %" PRId64 ", Delay delta = %" PRId64 "; delta = %" PRId64 "",
                 p->conn->avgPktSize,
                 now, pktSendTime, p->delivery_time,
                 ink_hrtime_to_msec(p->pktSendStartTime - now),
@@ -902,7 +902,7 @@ UDPQueue::service(UDPNetHandler * nh)
   }
 
   if ((now - lastPrintTime) > ink_hrtime_from_sec(30)) {
-    Debug("udp-pending-packets", "udp bytes pending: %lld", g_udp_bytesPending);
+    Debug("udp-pending-packets", "udp bytes pending: %" PRId64 "", g_udp_bytesPending);
     Debug("udp-sched-jitter", "avg. udp sched jitter: %f", (double) schedJitter / numTimesSched);
     schedJitter = 0;
     numTimesSched = 0;
@@ -967,19 +967,19 @@ UDPQueue::SendPackets()
   // ink_hrtime send_threshold_time = now + HRTIME_MSECONDS(5);
   // send packets for SLOT_TIME per attempt
   ink_hrtime send_threshold_time = now + SLOT_TIME;
-  int32 bytesThisSlot = INT_MAX, bytesUsed = 0, reliabilityBytes = 0;
-  int32 bytesThisPipe, sentOne, i;
-  int32 pktLen;
+  int32_t bytesThisSlot = INT_MAX, bytesUsed = 0, reliabilityBytes = 0;
+  int32_t bytesThisPipe, sentOne, i;
+  int32_t pktLen;
   ink_hrtime timeDelta = 0;
 
   if (now > last_service)
     timeDelta = ink_hrtime_to_msec(now - last_service);
 
   if (G_inkPipeInfo.numPipes > 0) {
-    bytesThisSlot = (int32) (((G_inkPipeInfo.reliabilityMbps * 1024.0 * 1024.0) / (8.0 * 1000.0)) * timeDelta);
+    bytesThisSlot = (int32_t) (((G_inkPipeInfo.reliabilityMbps * 1024.0 * 1024.0) / (8.0 * 1000.0)) * timeDelta);
     if (bytesThisSlot == 0) {
       // use at most 10% for reliability
-      bytesThisSlot = (int32) (((G_inkPipeInfo.interfaceMbps * 1024.0 * 1024.0) / (8.0 * 1000.0)) * timeDelta * 0.1);
+      bytesThisSlot = (int32_t) (((G_inkPipeInfo.interfaceMbps * 1024.0 * 1024.0) / (8.0 * 1000.0)) * timeDelta * 0.1);
       reliabilityBytes = bytesThisSlot;
     }
   }
@@ -1006,7 +1006,7 @@ UDPQueue::SendPackets()
 
 
   if (G_inkPipeInfo.numPipes > 0)
-    bytesThisSlot = (int32) (((G_inkPipeInfo.interfaceMbps * 1024.0 * 1024.0) /
+    bytesThisSlot = (int32_t) (((G_inkPipeInfo.interfaceMbps * 1024.0 * 1024.0) /
                               (8.0 * 1000.0)) * timeDelta - reliabilityBytes);
   else
     bytesThisSlot = INT_MAX;
@@ -1015,7 +1015,7 @@ sendPackets:
   sentOne = false;
   send_threshold_time = now + SLOT_TIME;
   for (i = 0; i < G_inkPipeInfo.numPipes + 1; i++) {
-    bytesThisPipe = (int32) (bytesThisSlot * G_inkPipeInfo.perPipeInfo[i].wt);
+    bytesThisPipe = (int32_t) (bytesThisSlot * G_inkPipeInfo.perPipeInfo[i].wt);
     while ((bytesThisPipe > 0) && (G_inkPipeInfo.perPipeInfo[i].queue->firstPacket(send_threshold_time))) {
       p = G_inkPipeInfo.perPipeInfo[i].queue->getFirstPacket();
       pktLen = p->getPktLength();
@@ -1056,20 +1056,20 @@ sendPackets:
 
   if ((g_udp_periodicFreeCancelledPkts) &&
       (now - lastCleanupTime > ink_hrtime_from_sec(g_udp_periodicFreeCancelledPkts))) {
-    uint64 nbytes = g_udp_bytesPending;
+    uint64_t nbytes = g_udp_bytesPending;
     ink_hrtime startTime = ink_get_hrtime_internal(), endTime;
     for (i = 0; i < G_inkPipeInfo.numPipes + 1; i++) {
       G_inkPipeInfo.perPipeInfo[i].queue->FreeCancelledPackets(g_udp_periodicCleanupSlots);
     }
     endTime = ink_get_hrtime_internal();
-    Debug("udp-pending-packets", "Did cleanup of %d buckets: %lld bytes in %d m.sec",
+    Debug("udp-pending-packets", "Did cleanup of %d buckets: %" PRId64 " bytes in %d m.sec",
           g_udp_periodicCleanupSlots, nbytes - g_udp_bytesPending, ink_hrtime_to_msec(endTime - startTime));
     lastCleanupTime = now;
   }
 }
 
 void
-UDPQueue::SendUDPPacket(UDPPacketInternal * p, int32 pktLen)
+UDPQueue::SendUDPPacket(UDPPacketInternal * p, int32_t pktLen)
 {
   IOBufferBlock *b;
   struct msghdr msg;

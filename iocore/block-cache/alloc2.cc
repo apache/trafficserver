@@ -1415,7 +1415,7 @@ test3b()
 int
 main(int argc, char *argv[])
 {
-  printf("disksize = %lld MB, %lld blocks\n", DISKSIZE / (1 << 20), MAX_BLOCKS);
+  printf("disksize = %" PRId64 " MB, %" PRId64 " blocks\n", DISKSIZE / (1 << 20), MAX_BLOCKS);
   allocInit();
   check_rlestate();
   //test_rle0();
@@ -1553,8 +1553,8 @@ main(int argc, char *argv[])
   if (!print_fraginfo) {
     int usecs = (end.tv_sec - start.tv_sec) * 1000000 + end.tv_usec - start.tv_usec;
     printf("%d us\n", usecs);
-    printf("%lld ns (elapsed) per call (%d calls)\n", usecs * 1000LL / calls, calls);
-    printf("%lld ns (elapsed) per op (consisting of multiple free & alloc) (%d ops)\n", usecs * 1000LL / ops, ops);
+    printf("%" PRId64 " ns (elapsed) per call (%d calls)\n", usecs * 1000LL / calls, calls);
+    printf("%" PRId64 " ns (elapsed) per op (consisting of multiple free & alloc) (%d ops)\n", usecs * 1000LL / ops, ops);
     //dumpAllocState();
   }
   print_rlestate();

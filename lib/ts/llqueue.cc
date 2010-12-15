@@ -158,10 +158,10 @@ enqueue(LLQ * Q, void *data)
   return 1;
 }
 
-uint64
+uint64_t
 queue_len(LLQ * Q)
 {
-  uint64 len;
+  uint64_t len;
 
   /* Do I really need to grab the lock here? */
   /* ink_mutex_acquire(&(Q->mux)); */
@@ -170,10 +170,10 @@ queue_len(LLQ * Q)
   return len;
 }
 
-uint64
+uint64_t
 queue_highwater(LLQ * Q)
 {
-  uint64 highwater;
+  uint64_t highwater;
 
   /* Do I really need to grab the lock here? */
   /* ink_mutex_acquire(&(Q->mux)); */
@@ -206,7 +206,7 @@ queue_highwater(LLQ * Q)
 int
 queue_is_empty(LLQ * Q)
 {
-  uint64 len;
+  uint64_t len;
 
   len = queue_len(Q);
 

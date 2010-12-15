@@ -72,7 +72,7 @@ NetProcessor::accept(Continuation * cont,
                      bool accept_only,
                      sockaddr * bound_sockaddr,
                      int *bound_sockaddr_size,
-                     int recv_bufsize, int send_bufsize, uint32 sockopt_flags, EventType etype)
+                     int recv_bufsize, int send_bufsize, uint32_t sockopt_flags, EventType etype)
 {
   (void) listen_socket_in;      // NT only
   (void) accept_pool_size;      // NT only
@@ -245,7 +245,7 @@ UnixNetProcessor::connect_re_internal(Continuation * cont,
     socksEntry->init(cont->mutex, vc, opt->socks_support, opt->socks_version);        /*XXXX remove last two args */
     socksEntry->action_ = cont;
     cont = socksEntry;
-    if (socksEntry->server_ip == (uint32) - 1) {
+    if (socksEntry->server_ip == (uint32_t) - 1) {
       socksEntry->lerrno = ESOCK_NO_SOCK_SERVER_CONN;
       socksEntry->free();
       return ACTION_RESULT_DONE;

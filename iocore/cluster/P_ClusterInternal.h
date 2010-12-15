@@ -129,11 +129,11 @@
 #define WRITE_MESSAGE_ALREADY_BUILT -1
 
 #define MAGIC_COUNT(_x) \
-(0xBADBAD ^ ~(uint32)_x.msg.count \
- ^ ~(uint32)_x.msg.descriptor_cksum \
- ^ ~(uint32)_x.msg.control_bytes_cksum \
- ^ ~(uint32)_x.msg.unused \
- ^ ~((uint32)_x.msg.control_bytes << 16) ^_x.sequence_number)
+(0xBADBAD ^ ~(uint32_t)_x.msg.count \
+ ^ ~(uint32_t)_x.msg.descriptor_cksum \
+ ^ ~(uint32_t)_x.msg.control_bytes_cksum \
+ ^ ~(uint32_t)_x.msg.unused \
+ ^ ~((uint32_t)_x.msg.control_bytes << 16) ^_x.sequence_number)
 
 #define DOUBLE_ALIGN(_x)    ((((uintptr_t)_x)+7)&~7)
 
@@ -221,10 +221,10 @@ struct enter_exit_class
 //
 struct CloseMessage:public ClusterMessageHeader
 {
-  uint32 channel;
-  int32 status;
-  int32 lerrno;
-  uint32 sequence_number;
+  uint32_t channel;
+  int32_t status;
+  int32_t lerrno;
+  uint32_t sequence_number;
 
   enum
   {
@@ -233,7 +233,7 @@ struct CloseMessage:public ClusterMessageHeader
     CLOSE_CHAN_MESSAGE_VERSION = MAX_VERSION
   };
 
-    CloseMessage(uint16 vers = CLOSE_CHAN_MESSAGE_VERSION)
+    CloseMessage(uint16_t vers = CLOSE_CHAN_MESSAGE_VERSION)
 :  ClusterMessageHeader(vers), channel(0), status(0), lerrno(0), sequence_number(0) {
   }
   ////////////////////////////////////////////////////////////////////////////
@@ -246,15 +246,15 @@ struct CloseMessage:public ClusterMessageHeader
   {
     return sizeof(CloseMessage);
   }
-  void init(uint16 vers = CLOSE_CHAN_MESSAGE_VERSION) {
+  void init(uint16_t vers = CLOSE_CHAN_MESSAGE_VERSION) {
     _init(vers);
   }
   inline void SwapBytes()
   {
     if (NeedByteSwap()) {
       swap32(&channel);
-      swap32((uint32 *) & status);
-      swap32((uint32 *) & lerrno);
+      swap32((uint32_t *) & status);
+      swap32((uint32_t *) & lerrno);
       swap32(&sequence_number);
     }
   }
@@ -266,8 +266,8 @@ struct CloseMessage:public ClusterMessageHeader
 //
 struct MachineListMessage:public ClusterMessageHeader
 {
-  uint32 n_ip;                  // Valid entries in ip[]
-  uint32 ip[CLUSTER_MAX_MACHINES];      // variable length data
+  uint32_t n_ip;                  // Valid entries in ip[]
+  uint32_t ip[CLUSTER_MAX_MACHINES];      // variable length data
 
   enum
   {
@@ -290,7 +290,7 @@ struct MachineListMessage:public ClusterMessageHeader
   {
     return sizeof(ClusterMessageHeader);
   }
-  void init(uint16 vers = MACHINE_LIST_MESSAGE_VERSION) {
+  void init(uint16_t vers = MACHINE_LIST_MESSAGE_VERSION) {
     _init(vers);
   }
   inline void SwapBytes()
@@ -305,9 +305,9 @@ struct MachineListMessage:public ClusterMessageHeader
 //
 struct SetChanDataMessage:public ClusterMessageHeader
 {
-  uint32 channel;
-  uint32 sequence_number;
-  uint32 data_type;             // enum CacheDataType
+  uint32_t channel;
+  uint32_t sequence_number;
+  uint32_t data_type;             // enum CacheDataType
   char data[4];
 
   enum
@@ -317,7 +317,7 @@ struct SetChanDataMessage:public ClusterMessageHeader
     SET_CHANNEL_DATA_MESSAGE_VERSION = MAX_VERSION
   };
 
-    SetChanDataMessage(uint16 vers = SET_CHANNEL_DATA_MESSAGE_VERSION)
+    SetChanDataMessage(uint16_t vers = SET_CHANNEL_DATA_MESSAGE_VERSION)
 :  ClusterMessageHeader(vers), channel(0), sequence_number(0), data_type(0) {
     memset(data, 0, sizeof(data));
   }
@@ -330,9 +330,9 @@ struct SetChanDataMessage:public ClusterMessageHeader
   static int sizeof_fixedlen_msg()
   {
     SetChanDataMessage *p = 0;
-    return (int) DOUBLE_ALIGN((int64) ((char *) &p->data[0] - (char *) p));
+    return (int) DOUBLE_ALIGN((int64_t) ((char *) &p->data[0] - (char *) p));
   }
-  void init(uint16 vers = SET_CHANNEL_DATA_MESSAGE_VERSION) {
+  void init(uint16_t vers = SET_CHANNEL_DATA_MESSAGE_VERSION) {
     _init(vers);
   }
   inline void SwapBytes()
@@ -351,9 +351,9 @@ struct SetChanDataMessage:public ClusterMessageHeader
 //
 struct SetChanPinMessage:public ClusterMessageHeader
 {
-  uint32 channel;
-  uint32 sequence_number;
-  uint32 pin_time;
+  uint32_t channel;
+  uint32_t sequence_number;
+  uint32_t pin_time;
 
   enum
   {
@@ -362,7 +362,7 @@ struct SetChanPinMessage:public ClusterMessageHeader
     SET_CHANNEL_PIN_MESSAGE_VERSION = MAX_VERSION
   };
 
-    SetChanPinMessage(uint16 vers = SET_CHANNEL_PIN_MESSAGE_VERSION)
+    SetChanPinMessage(uint16_t vers = SET_CHANNEL_PIN_MESSAGE_VERSION)
 :  ClusterMessageHeader(vers), channel(0), sequence_number(0), pin_time(0) {
   }
   ////////////////////////////////////////////////////////////////////////////
@@ -375,7 +375,7 @@ struct SetChanPinMessage:public ClusterMessageHeader
   {
     return (int) sizeof(SetChanPinMessage);
   }
-  void init(uint16 vers = SET_CHANNEL_PIN_MESSAGE_VERSION) {
+  void init(uint16_t vers = SET_CHANNEL_PIN_MESSAGE_VERSION) {
     _init(vers);
   }
   inline void SwapBytes()
@@ -394,9 +394,9 @@ struct SetChanPinMessage:public ClusterMessageHeader
 //
 struct SetChanPriorityMessage:public ClusterMessageHeader
 {
-  uint32 channel;
-  uint32 sequence_number;
-  uint32 disk_priority;
+  uint32_t channel;
+  uint32_t sequence_number;
+  uint32_t disk_priority;
 
   enum
   {
@@ -405,7 +405,7 @@ struct SetChanPriorityMessage:public ClusterMessageHeader
     SET_CHANNEL_PRIORITY_MESSAGE_VERSION = MAX_VERSION
   };
 
-    SetChanPriorityMessage(uint16 vers = SET_CHANNEL_PRIORITY_MESSAGE_VERSION)
+    SetChanPriorityMessage(uint16_t vers = SET_CHANNEL_PRIORITY_MESSAGE_VERSION)
 :  ClusterMessageHeader(vers), channel(0), sequence_number(0), disk_priority(0) {
   }
   ////////////////////////////////////////////////////////////////////////////
@@ -418,7 +418,7 @@ struct SetChanPriorityMessage:public ClusterMessageHeader
   {
     return (int) sizeof(SetChanPriorityMessage);
   }
-  void init(uint16 vers = SET_CHANNEL_PRIORITY_MESSAGE_VERSION) {
+  void init(uint16_t vers = SET_CHANNEL_PRIORITY_MESSAGE_VERSION) {
     _init(vers);
   }
   inline void SwapBytes()

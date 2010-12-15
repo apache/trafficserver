@@ -828,8 +828,8 @@ handle_record_info(WebHttpContext * whc, bool statistic_type, bool rec)
           {
             RecInt data = g_records[r].data.rec_int;
             RecInt data_default = g_records[r].data_default.rec_int;
-            snprintf(cur_value, BUF_SIZE, "%lld", data);
-            snprintf(def_value_rec, BUF_SIZE, "%lld", data_default);
+            snprintf(cur_value, BUF_SIZE, "%" PRId64 "", data);
+            snprintf(def_value_rec, BUF_SIZE, "%" PRId64 "", data_default);
             same = (data == data_default);
           }
           break;
@@ -865,8 +865,8 @@ handle_record_info(WebHttpContext * whc, bool statistic_type, bool rec)
           {
             RecCounter data = g_records[r].data.rec_counter;
             RecCounter data_default = g_records[r].data_default.rec_counter;
-            snprintf(cur_value, BUF_SIZE, "%lld", data);
-            snprintf(def_value_rec, BUF_SIZE, "%lld", data_default);
+            snprintf(cur_value, BUF_SIZE, "%" PRId64 "", data);
+            snprintf(def_value_rec, BUF_SIZE, "%" PRId64 "", data_default);
             same = (data == data_default);
           }
           break;
@@ -998,7 +998,7 @@ handle_record_info(WebHttpContext * whc, bool statistic_type, bool rec)
           {
             MgmtInt i = lmgmt->record_data->readInteger(RecordsConfig[r].name, &found);
             if (found) {
-              snprintf(cur_value, BUF_SIZE, "%lld", i);
+              snprintf(cur_value, BUF_SIZE, "%" PRId64 "", i);
               if (i == ink_atoi64(RecordsConfig[r].value)) {
                 same = true;
               }
@@ -1047,7 +1047,7 @@ handle_record_info(WebHttpContext * whc, bool statistic_type, bool rec)
           {
             MgmtIntCounter ic = lmgmt->record_data->readCounter(RecordsConfig[r].name, &found);
             if (found) {
-              snprintf(cur_value, BUF_SIZE, "%lld", ic);
+              snprintf(cur_value, BUF_SIZE, "%" PRId64 "", ic);
               if (ic == ink_atoi64(RecordsConfig[r].value)) {
                 same = true;
               }

@@ -73,8 +73,8 @@ int RecRegisterConfigCounter(RecT rec_type, const char *name,
 //-------------------------------------------------------------------------
 
 int RecLinkConfigInt(const char *name, RecInt * rec_int);
-int RecLinkConfigInk32(const char *name, int32 * p_int32);
-int RecLinkConfigInkU32(const char *name, uint32 * p_uint32);
+int RecLinkConfigInk32(const char *name, int32_t * p_int32);
+int RecLinkConfigInkU32(const char *name, uint32_t * p_uint32);
 int RecLinkConfigFloat(const char *name, RecFloat * rec_float);
 int RecLinkConfigCounter(const char *name, RecCounter * rec_counter);
 int RecLinkConfigString(const char *name, RecString * rec_string);
@@ -142,7 +142,7 @@ void RecSignalAlarm(int, const char *);
 #define REC_ReadConfigInt32(_var,_config_var_name) do { \
   RecInt tmp = 0; \
   RecGetRecordInt(_config_var_name, (RecInt*) &tmp); \
-  _var = (int32)tmp; \
+  _var = (int32_t)tmp; \
 } while (0)
 
 #define REC_ReadConfigInteger(_var,_config_var_name) do { \
@@ -168,17 +168,17 @@ void RecSignalAlarm(int, const char *);
 
 #define REC_EstablishStaticConfigInteger(_var, _config_var_name) do{ \
   RecLinkConfigInt(_config_var_name, &_var); \
-  _var = (int64)REC_ConfigReadInteger(_config_var_name); \
+  _var = (int64_t)REC_ConfigReadInteger(_config_var_name); \
 } while (0)
 
 #define REC_EstablishStaticConfigInt32(_var, _config_var_name) do { \
   RecLinkConfigInk32(_config_var_name, &_var); \
-  _var = (int32)REC_ConfigReadInteger(_config_var_name); \
+  _var = (int32_t)REC_ConfigReadInteger(_config_var_name); \
 } while (0)
 
 #define REC_EstablishStaticConfigInt32U(_var, _config_var_name) do { \
   RecLinkConfigInkU32(_config_var_name, &_var); \
-  _var = (int32)REC_ConfigReadInteger(_config_var_name); \
+  _var = (int32_t)REC_ConfigReadInteger(_config_var_name); \
 } while (0)
 
 #define REC_EstablishStaticConfigStringAlloc(_var, _config_var_name) do { \
@@ -209,7 +209,7 @@ RecString REC_readString(const char *name, bool * found, bool lock = true);
 
 bool REC_setInteger(const char *name, RecInt value, bool dirty = true);
 bool REC_setFloat(const char *name, float value, bool dirty = true);
-bool REC_setCounter(const char *name, int64 value, bool dirty = true);
+bool REC_setCounter(const char *name, int64_t value, bool dirty = true);
 bool REC_setString(const char *name, char *value, bool dirty = true);
 
 

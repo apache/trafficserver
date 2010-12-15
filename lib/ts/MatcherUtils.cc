@@ -66,7 +66,7 @@ readIntoBuffer(char *file_path, const char *module_name, int *read_size_ptr)
   }
 
   if (file_info.st_size < 0) {
-    Error("%s Can not get correct file size for %s file : %lld", module_name, file_path, (int64) file_info.st_size);
+    Error("%s Can not get correct file size for %s file : %" PRId64 "", module_name, file_path, (int64_t) file_info.st_size);
     close(fd);
     return NULL;
   }

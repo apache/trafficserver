@@ -100,7 +100,7 @@ public:
   // character tests //
   /////////////////////
 
-  static CTypeResult is_type(char c, uint32 bit);
+  static CTypeResult is_type(char c, uint32_t bit);
 
   static CTypeResult is_char(char c);   // ASCII 0-127
   static CTypeResult is_upalpha(char c);        // A-Z
@@ -166,7 +166,7 @@ public:
   static const char *memchr(const char *s, char c, int max_length);
   static const char *strchr(const char *s, char c);
 
-  static unsigned char *scan_while(unsigned char *ptr, unsigned int n, uint32 bitmask);
+  static unsigned char *scan_while(unsigned char *ptr, unsigned int n, uint32_t bitmask);
 
 private:
     ParseRules(const ParseRules &);
@@ -178,7 +178,7 @@ private:
  * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 inline CTypeResult
-ParseRules::is_type(char c, uint32 bitmask)
+ParseRules::is_type(char c, uint32_t bitmask)
 {
   return (parseRulesCType[(unsigned char) c] & bitmask);
 }
@@ -494,7 +494,7 @@ ParseRules::is_pchar(const char *seq)
 {
 #ifndef COMPILE_PARSE_RULES
   if (*seq != '%')
-    return (parseRulesCType[(uint8)*seq] & is_pchar_BIT);
+    return (parseRulesCType[(uint8_t)*seq] & is_pchar_BIT);
   else
     return is_hex(seq[1]) && is_hex(seq[2]);
 #else
@@ -936,10 +936,10 @@ ink_atoui(const char *str)
   return num;
 }
 
-static inline int64
+static inline int64_t
 ink_atoi64(const char *str)
 {
-  int64 num = 0;
+  int64_t num = 0;
   int negative = 0;
 
   while (*str && ParseRules::is_wslfcr(*str))
@@ -979,10 +979,10 @@ ink_atoi64(const char *str)
   return num;
 }
 
-static inline uint64
+static inline uint64_t
 ink_atoui64(const char *str)
 {
-  uint64 num = 0;
+  uint64_t num = 0;
 
   while (*str && ParseRules::is_wslfcr(*str))
     str += 1;

@@ -36,6 +36,10 @@
 #include <stdio.h>
 #include <ts/ts.h>
 
+// This gets the PRI*64 types
+# define __STDC_FORMAT_MACROS 1
+# include <inttypes.h>
+
 typedef struct
 {
   TSVIO output_vio;
@@ -74,8 +78,8 @@ handle_transform(TSCont contp)
   TSIOBuffer buf_test;
   TSVIO input_vio;
   MyData *data;
-  int64 towrite;
-  int64 avail;
+  int64_t towrite;
+  int64_t avail;
 
   TSDebug("null-transform", "Entering handle_transform()");
   /* Get the output (downstream) vconnection where we'll write data to. */
@@ -146,14 +150,14 @@ handle_transform(TSCont contp)
    * to write to the output connection.
    */
   towrite = TSVIONTodoGet(input_vio);
-  TSDebug("null-transform", "\ttoWrite is %lld", towrite);
+  TSDebug("null-transform", "\ttoWrite is %" PRId64 "", towrite);
 
   if (towrite > 0) {
     /* The amount of data left to read needs to be truncated by
      * the amount of data actually in the read buffer.
      */
     avail = TSIOBufferReaderAvail(TSVIOReaderGet(input_vio));
-    TSDebug("null-transform", "\tavail is %lld", avail);
+    TSDebug("null-transform", "\tavail is %" PRId64 "", avail);
     if (towrite > avail) {
       towrite = avail;
     }

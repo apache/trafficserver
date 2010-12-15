@@ -564,9 +564,9 @@ CoreUtils::test_HdrHeap(void *arg)
 {
   HdrHeap *hheap_test = (HdrHeap *) arg;
 
-  uint32 *magic_ptr = &(hheap_test->m_magic);
-  uint32 magic = 0;
-  if (read_from_core((intptr_t) magic_ptr, sizeof(uint32), (char *) &magic) != 0) {
+  uint32_t *magic_ptr = &(hheap_test->m_magic);
+  uint32_t magic = 0;
+  if (read_from_core((intptr_t) magic_ptr, sizeof(uint32_t), (char *) &magic) != 0) {
     if (magic == HDR_BUF_MAGIC_ALIVE ||
         magic == HDR_BUF_MAGIC_DEAD || magic == HDR_BUF_MAGIC_CORRUPT || magic == HDR_BUF_MAGIC_MARSHALED) {
       // This is not 64-bit correct ... /leif
@@ -647,7 +647,7 @@ CoreUtils::process_HttpSM(HttpSM * core_ptr)
 #endif
       }
       // I don't think this is 64-bit correct. /leif
-      printf("---- Found HttpSM --- id %lld  ------ @ 0x%p -----\n\n", http_sm->sm_id, http_sm);
+      printf("---- Found HttpSM --- id %" PRId64 "  ------ @ 0x%p -----\n\n", http_sm->sm_id, http_sm);
 
       print_http_hdr(&http_sm->t_state.hdr_info.client_request, "Client Request");
       print_http_hdr(&http_sm->t_state.hdr_info.server_request, "Server Request");

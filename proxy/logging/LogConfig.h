@@ -162,7 +162,7 @@ public:
   {
     return collation_mode == COLLATION_HOST;
   };
-  bool space_to_write(int64 bytes_to_write);
+  bool space_to_write(int64_t bytes_to_write);
   bool space_is_short()
   {
     return !space_to_write(max_space_mb_headroom * LOG_MEGABYTE);
@@ -195,8 +195,8 @@ public:
   bool initialized;
   bool reconfiguration_needed;
   bool logging_space_exhausted;
-  int64 m_space_used;
-  int64 m_partition_space_left;
+  int64_t m_space_used;
+  int64_t m_partition_space_left;
   bool roll_log_files_now;      // signal that files must be rolled
 
   LogObjectManager log_object_manager;
@@ -332,7 +332,7 @@ struct LogDeleteCandidate
 {
   time_t mtime;
   char *name;
-  int64 size;
+  int64_t size;
 };
 
 #endif

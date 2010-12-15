@@ -94,10 +94,10 @@ public:
   {
     return (magic == HTTP_BODY_TEMPLATE_MAGIC);
   }
-  char *build_instantiated_buffer(HttpTransact::State * context, int64 *length_return);
+  char *build_instantiated_buffer(HttpTransact::State * context, int64_t *length_return);
 
   unsigned int magic;
-  int64 byte_count;
+  int64_t byte_count;
   char *template_buffer;
   char *template_pathname;
 };
@@ -157,7 +157,7 @@ public:
   // primary user APIs //
   ///////////////////////
   char *fabricate_with_old_api(const char *type, HttpTransact::State * context,
-                               int64 max_buffer_length, int64 *resulting_buffer_length,
+                               int64_t max_buffer_length, int64_t *resulting_buffer_length,
                                char* content_language_out_buf,
                                size_t content_language_buf_size,
                                char* content_type_out_buf,
@@ -165,7 +165,7 @@ public:
                                HTTPStatus status_code, const char *reason_or_null, const char *format, va_list ap);
 
   char *fabricate_with_old_api_build_va(const char *type, HttpTransact::State * context,
-                                        int64 max_buffer_length, int64 *resulting_buffer_length,
+                                        int64_t max_buffer_length, int64_t *resulting_buffer_length,
                                         char* content_language_out_buf,
                                         size_t content_language_buf_size,
                                         char* content_type_out_buf,
@@ -189,7 +189,7 @@ private:
   char *fabricate(StrList * acpt_language_list,
                   StrList * acpt_charset_list,
                   const char *type, HttpTransact::State * context,
-                  int64 *resulting_buffer_length,
+                  int64_t *resulting_buffer_length,
                   const char **content_language_return,
                   const char **content_charset_return, const char **set_return = NULL);
 

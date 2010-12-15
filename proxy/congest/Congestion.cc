@@ -454,7 +454,7 @@ CongestionControlled(RD * rdata)
   return NULL;
 }
 
-uint64
+uint64_t
 make_key(char *hostname, unsigned long ip, CongestionControlRecord * record)
 {
   int host_len = 0;
@@ -464,7 +464,7 @@ make_key(char *hostname, unsigned long ip, CongestionControlRecord * record)
   return make_key(hostname, host_len, ip, record);
 }
 
-uint64
+uint64_t
 make_key(char *hostname, int len, unsigned long ip, CongestionControlRecord * record)
 {
   INK_MD5 md5;
@@ -504,7 +504,7 @@ make_key(char *hostname, int len, unsigned long ip, CongestionControlRecord * re
   return md5.fold();
 }
 
-uint64
+uint64_t
 make_key(char *hostname, int len, unsigned long ip, char *prefix, int prelen, short port)
 {
   /* if the hostname != NULL, use hostname, else, use ip */
@@ -608,7 +608,7 @@ FailHistory::regist_event(long t, int n)
 //----------------------------------------------------------
 // CongestionEntry Implementation
 //----------------------------------------------------------
-CongestionEntry::CongestionEntry(const char *hostname, ip_addr_t ip, CongestionControlRecord * rule, uint64 key)
+CongestionEntry::CongestionEntry(const char *hostname, ip_addr_t ip, CongestionControlRecord * rule, uint64_t key)
 :m_key(key),
 m_ip(ip),
 m_last_congested(0),
@@ -647,7 +647,7 @@ CongestionEntry::validate()
     return false;
   }
 
-  uint64 key = make_key(m_hostname,
+  uint64_t key = make_key(m_hostname,
                         m_ip,
                         p);
   if (key != m_key) {
@@ -708,7 +708,7 @@ CongestionEntry::sprint(char *buf, int buflen, int format)
     timestamp = m_last_congested;
     state = (m_congested ? 'F' : ' ');
   }
-  len += snprintf(buf + len, buflen - len, "%lld|%d|%s|%s",
+  len += snprintf(buf + len, buflen - len, "%" PRId64 "|%d|%s|%s",
                       timestamp,
                       pRecord->line_num,
                       (m_hostname ? m_hostname : " "), (m_ip ? (addr.s_addr = htonl(m_ip), inet_ntoa(addr)) : " "));
@@ -734,7 +734,7 @@ CongestionEntry::sprint(char *buf, int buflen, int format)
     len += snprintf(buf + len, buflen - len, "|%s", str_time);
 
     if (format > 1) {
-      len += snprintf(buf + len, buflen - len, "|%llu", m_key);
+      len += snprintf(buf + len, buflen - len, "|%" PRIu64 "", m_key);
 
       if (format > 2) {
         len += snprintf(buf + len, buflen - len, "|%ld", m_history.last_event);
@@ -766,7 +766,7 @@ CongestionEntry::failed_at(ink_hrtime t)
   if (lock) {
     m_history.regist_event(time);
     if (!m_congested) {
-      int32 new_congested = compCongested();
+      int32_t new_congested = compCongested();
       // TODO: This used to signal via SNMP
       if (new_congested && !ink_atomic_swap(&m_congested, 1)) {
         m_last_congested = m_history.last_event;

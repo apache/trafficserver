@@ -434,7 +434,7 @@ ProcessManager::addPluginCounter(const char *name, MgmtIntCounter value)
 {
   if (record_data->addPluginCounter(name, value) == true) {
     char msg[512];
-    sprintf(msg, "%s %d %lld", name, INK_COUNTER, value);
+    sprintf(msg, "%s %d %" PRId64 "", name, INK_COUNTER, value);
     signalManager(MGMT_SIGNAL_PLUGIN_ADD_REC, msg);
     return true;
   }
@@ -447,7 +447,7 @@ ProcessManager::addPluginInteger(const char *name, MgmtInt value)
 {
   if (record_data->addPluginInteger(name, value) == true) {
     char msg[512];
-    sprintf(msg, "%s %d %lld", name, INK_INT, value);
+    sprintf(msg, "%s %d %" PRId64 "", name, INK_INT, value);
     pmgmt->signalManager(MGMT_SIGNAL_PLUGIN_ADD_REC, msg);
     return true;
   }
@@ -603,11 +603,11 @@ checkBackDoorP(int req_fd, char *message)
         Records *the_records = (Records *) hash_value;
         switch (the_records->recs[id].stype) {
         case INK_COUNTER:
-          sprintf(reply, "\nRecord '%s' Val: '%lld'\n", the_records->recs[id].name,
+          sprintf(reply, "\nRecord '%s' Val: '%" PRId64 "'\n", the_records->recs[id].name,
                       the_records->recs[id].data.counter_data);
           break;
         case INK_INT:
-          sprintf(reply, "\nRecord: '%s' Val: '%lld'\n", the_records->recs[id].name,
+          sprintf(reply, "\nRecord: '%s' Val: '%" PRId64 "'\n", the_records->recs[id].name,
                       the_records->recs[id].data.int_data);
           break;
         case INK_FLOAT:

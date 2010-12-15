@@ -341,10 +341,10 @@ Configuration::loadFromPath(char const* path) {
                     memset(buffer._ptr + n, 0, 2); // required by FLEX
                     zret = Builder(zret.result()).build(buffer);
                 } else {
-                    msg::logf_errno(zret, msg::WARN, "failed to read %llu bytes from configuration file '%s'", info.st_size, path);
+                    msg::logf_errno(zret, msg::WARN, "failed to read %" PRIu64 " bytes from configuration file '%s'", info.st_size, path);
                 }
             } else {
-                msg::logf_errno(zret, msg::WARN, "failed to allocate buffer for configuration file '%s' - needed %llu bytes.", path, info.st_size);
+                msg::logf_errno(zret, msg::WARN, "failed to allocate buffer for configuration file '%s' - needed %" PRIu64 " bytes.", path, info.st_size);
             }
         } else {
             msg::logf_errno(zret, msg::WARN, "failed to determine file information on '%s'", path);

@@ -108,9 +108,9 @@ public:
 
   int handle_event(int event, void *edata);
 
-  VIO *do_io_read(Continuation *c, int64 nbytes, MIOBuffer *buf);
+  VIO *do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf);
 
-  VIO *do_io_write(Continuation *c, int64 nbytes, IOBufferReader *buf, bool owner = false);
+  VIO *do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *buf, bool owner = false);
 
   void do_io_transform(VConnection *vc);
 
@@ -200,8 +200,8 @@ extern "C"
 
 
 /* IOBuffer */
-  tsapi void TSIOBufferReaderCopy(TSIOBufferReader readerp, const void *buf, int64 length);
-  tsapi int64 TSIOBufferBlockDataSizeGet(TSIOBufferBlock blockp);
+  tsapi void TSIOBufferReaderCopy(TSIOBufferReader readerp, const void *buf, int64_t length);
+  tsapi int64_t TSIOBufferBlockDataSizeGet(TSIOBufferBlock blockp);
   tsapi TSReturnCode TSIOBufferBlockDestroy(TSIOBufferBlock blockp);
   typedef void *INKUDPPacket;
   typedef void *INKUDPacketQueue;

@@ -1656,7 +1656,7 @@ url_MMH_get_fast(URLImpl * url, INK_MD5 * md5)
   // no query
 
   ink_debug_assert(sizeof(url->m_port) == 2);
-  uint16 port = (uint16) url_canonicalize_port(url->m_url_type, url->m_port);
+  uint16_t port = (uint16_t) url_canonicalize_port(url->m_url_type, url->m_port);
   *p++ = ((char *) &port)[0];
   *p++ = ((char *) &port)[1];
 
@@ -1678,7 +1678,7 @@ url_MD5_get_general(URLImpl * url, INK_MD5 * md5)
   char *p, *e;
   const char *strs[13], *ends[13];
   const char *t;
-  uint16 port;
+  uint16_t port;
   int i, s;
 
   strs[0] = url->m_ptr_scheme;

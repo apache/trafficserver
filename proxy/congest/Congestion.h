@@ -101,7 +101,7 @@ public:
   int max_connection;
 
   CongestionControlRecord *pRecord;
-  int32 ref_count;
+  int32_t ref_count;
 
   void get()
   {
@@ -202,7 +202,7 @@ struct FailHistory
 struct CongestionEntry: public RequestData
 {
   // key in the hash table;
-  uint64 m_key;
+  uint64_t m_key;
   // host info
   ip_addr_t m_ip;
   char *m_hostname;
@@ -228,7 +228,7 @@ struct CongestionEntry: public RequestData
   // Reference count
   int m_ref_count;
 
-    CongestionEntry(const char *hostname, ip_addr_t ip, CongestionControlRecord * rule, uint64 key);
+    CongestionEntry(const char *hostname, ip_addr_t ip, CongestionControlRecord * rule, uint64_t key);
     CongestionEntry();
     virtual ~ CongestionEntry();
 
@@ -453,9 +453,9 @@ void initCongestionControl();
 CongestionControlRecord *CongestionControlled(RD * rdata);
 void reloadCongestionControl();
 
-uint64 make_key(char *hostname, int len, unsigned long ip, CongestionControlRecord * record);
-uint64 make_key(char *hostname, unsigned long ip, CongestionControlRecord * record);
-uint64 make_key(char *hostname, int len, unsigned long ip, char *prefix, int prelen, short port = 0);
+uint64_t make_key(char *hostname, int len, unsigned long ip, CongestionControlRecord * record);
+uint64_t make_key(char *hostname, unsigned long ip, CongestionControlRecord * record);
+uint64_t make_key(char *hostname, int len, unsigned long ip, char *prefix, int prelen, short port = 0);
 
 //----------------------------------------------------
 // the following functions are actually declared in
@@ -465,7 +465,7 @@ uint64 make_key(char *hostname, int len, unsigned long ip, char *prefix, int pre
 //----------------------------------------------------
 extern Action *get_congest_entry(Continuation * cont, HttpRequestData * data, CongestionEntry ** ppEntry);
 extern Action *get_congest_list(Continuation * cont, MIOBuffer * buffer, int format);
-extern void remove_congested_entry(uint64 key);
+extern void remove_congested_entry(uint64_t key);
 
 extern void remove_all_congested_entry(void);
 

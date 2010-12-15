@@ -36,7 +36,7 @@
 #include "HttpSessionManager.h"
 #include "HttpSM.h"
 
-static int64 next_ss_id = (int64) 0;
+static int64_t next_ss_id = (int64_t) 0;
 ClassAllocator<HttpServerSession> httpServerSessionAllocator("httpServerSessionAllocator");
 
 void
@@ -76,7 +76,7 @@ HttpServerSession::new_connection(NetVConnection * new_vc)
 #endif
 
   // Unique client session identifier.
-  con_id = ink_atomic_increment64((int64 *) (&next_ss_id), 1);
+  con_id = ink_atomic_increment64((int64_t *) (&next_ss_id), 1);
 
   magic = HTTP_SS_MAGIC_ALIVE;
   HTTP_SUM_GLOBAL_DYN_STAT(http_current_server_connections_stat, 1); // Update the true global stat
@@ -87,7 +87,7 @@ HttpServerSession::new_connection(NetVConnection * new_vc)
     if(connection_count == NULL)
       connection_count = ConnectionCount::getInstance();
     connection_count->incrementCount(server_ip);
-    Debug("http_ss", "[%lld] new connection, ip: %u, count: %u", con_id, server_ip, connection_count->getCount(server_ip));
+    Debug("http_ss", "[%" PRId64 "] new connection, ip: %u, count: %u", con_id, server_ip, connection_count->getCount(server_ip));
   }
 #ifdef LAZY_BUF_ALLOC
   read_buffer = new_empty_MIOBuffer(HTTP_SERVER_RESP_HDR_BUFFER_INDEX);
@@ -95,18 +95,18 @@ HttpServerSession::new_connection(NetVConnection * new_vc)
   read_buffer = new_MIOBuffer(HTTP_SERVER_RESP_HDR_BUFFER_INDEX);
 #endif
   buf_reader = read_buffer->alloc_reader();
-  Debug("http_ss", "[%lld] session born, netvc %p", con_id, new_vc);
+  Debug("http_ss", "[%" PRId64 "] session born, netvc %p", con_id, new_vc);
   state = HSS_INIT;
 }
 
 VIO *
-HttpServerSession::do_io_read(Continuation * c, int64 nbytes, MIOBuffer * buf)
+HttpServerSession::do_io_read(Continuation * c, int64_t nbytes, MIOBuffer * buf)
 {
   return server_vc->do_io_read(c, nbytes, buf);
 }
 
 VIO *
-HttpServerSession::do_io_write(Continuation * c, int64 nbytes, IOBufferReader * buf, bool owner)
+HttpServerSession::do_io_write(Continuation * c, int64_t nbytes, IOBufferReader * buf, bool owner)
 {
   return server_vc->do_io_write(c, nbytes, buf, owner);
 }
@@ -126,7 +126,7 @@ HttpServerSession::do_io_close(int alerrno)
   }
 
   server_vc->do_io_close(alerrno);
-  Debug("http_ss", "[%lld] session closed", con_id);
+  Debug("http_ss", "[%" PRId64 "] session closed", con_id);
   server_vc = NULL;
 
   HTTP_SUM_GLOBAL_DYN_STAT(http_current_server_connections_stat, -1); // Make sure to work on the global stat
@@ -137,11 +137,11 @@ HttpServerSession::do_io_close(int alerrno)
   if (enable_origin_connection_limiting == true) {
     if (connection_count->getCount(server_ip) > 0) {
       connection_count->incrementCount(server_ip, -1);
-      Debug("http_ss", "[%lld] connection closed, ip: %u, count: %u",
+      Debug("http_ss", "[%" PRId64 "] connection closed, ip: %u, count: %u",
             con_id, server_ip, connection_count->getCount(server_ip));
     } else {
       Error("http_ss",
-            "[%lld] number of connections should be greater then zero: %u",
+            "[%" PRId64 "] number of connections should be greater then zero: %u",
             con_id, connection_count->getCount(server_ip));
     }
   }

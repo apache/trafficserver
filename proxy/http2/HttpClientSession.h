@@ -58,9 +58,9 @@ public:
 public:
   void new_connection(NetVConnection * new_vc, bool backdoor);
 
-  virtual VIO *do_io_read(Continuation * c, int64 nbytes = INT64_MAX, MIOBuffer * buf = 0);
+  virtual VIO *do_io_read(Continuation * c, int64_t nbytes = INT64_MAX, MIOBuffer * buf = 0);
 
-  virtual VIO *do_io_write(Continuation * c = NULL, int64 nbytes = INT64_MAX, IOBufferReader * buf = 0, bool owner = false);
+  virtual VIO *do_io_write(Continuation * c = NULL, int64_t nbytes = INT64_MAX, IOBufferReader * buf = 0, bool owner = false);
 
   virtual void do_io_close(int lerrno = -1);
   virtual void do_io_shutdown(ShutdownHowTo_t howto);
@@ -83,7 +83,7 @@ public:
 
   // Used to verify we are recording the current
   //   client transaction stat properly
-  int64 con_id;
+  int64_t con_id;
 
   int get_transact_count() const { return  transact_count; }
 

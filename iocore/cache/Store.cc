@@ -166,7 +166,7 @@ Store::sort()
 }
 
 int
-Span::path(char *filename, int64 * aoffset, char *buf, int buflen)
+Span::path(char *filename, int64_t * aoffset, char *buf, int buflen)
 {
   ink_assert(!aoffset);
   Span *ds = this;
@@ -208,7 +208,7 @@ Span::~Span()
 }
 
 inline int
-get_int64(int fd, int64 & data)
+get_int64(int fd, int64_t & data)
 {
   char buf[PATH_NAME_MAX + 1];
   if (ink_file_fd_readline(fd, PATH_NAME_MAX, buf) <= 0)
@@ -216,7 +216,7 @@ get_int64(int fd, int64 & data)
   // the above line will guarantee buf to be no longer than PATH_NAME_MAX
   // so the next statement should be a safe use of sscanf
   // coverity[secure_coding]
-  if (sscanf(buf, "%lld", &data) != 1) {
+  if (sscanf(buf, "%" PRId64 "", &data) != 1) {
     return (-1);
   }
   return 0;
@@ -299,7 +299,7 @@ Store::read_config(int fd)
     char *e = strpbrk(n, " \t\n");
     int len = e ? e - n : strlen(n);
     (void) len;
-    int64 size = -1;
+    int64_t size = -1;
     while (e && *e && !ParseRules::is_digit(*e))
       e++;
     if (e && *e) {
@@ -312,7 +312,7 @@ Store::read_config(int fd)
     n[len] = 0;
     char *pp = Layout::get()->relative(n);
     ns = NEW(new Span);
-    Debug("cache_init", "Store::read_config - ns = NEW (new Span); ns->init(\"%s\",%lld)", pp, size);
+    Debug("cache_init", "Store::read_config - ns = NEW (new Span); ns->init(\"%s\",%" PRId64 ")", pp, size);
     if ((err = ns->init(pp, size))) {
       char buf[4096];
       snprintf(buf, sizeof(buf), "could not initialize storage \"%s\" [%s]", pp, err);
@@ -364,7 +364,7 @@ Store::write_config_data(int fd)
   for (int i = 0; i < n_disks; i++)
     for (Span * sd = disk[i]; sd; sd = sd->link.next) {
       char buf[PATH_NAME_MAX + 64];
-      snprintf(buf, sizeof(buf), "%s %lld\n", sd->pathname, (int64) sd->blocks * (int64) STORE_BLOCK_SIZE);
+      snprintf(buf, sizeof(buf), "%s %" PRId64 "\n", sd->pathname, (int64_t) sd->blocks * (int64_t) STORE_BLOCK_SIZE);
       if (ink_file_fd_writestring(fd, buf) == -1)
         return (-1);
     }
@@ -390,7 +390,7 @@ Store::write_config_data(int fd)
 #include <string.h>
 
 const char *
-Span::init(char *an, int64 size)
+Span::init(char *an, int64_t size)
 {
   int devnum = 0;
   const char *err = NULL;
@@ -454,7 +454,7 @@ Span::init(char *an, int64 size)
 #endif
 
   hw_sector_size = fs.f_bsize;
-  int64 fsize = (int64) fs.f_blocks * (int64) fs.f_bsize;
+  int64_t fsize = (int64_t) fs.f_blocks * (int64_t) fs.f_bsize;
 
   switch ((s.st_mode & S_IFMT)) {
 
@@ -498,11 +498,11 @@ Span::init(char *an, int64 size)
             goto LpartError;
           if (slice >= (int) ds.dss_nslices || !ds.dss_slices[slice].ds_size)
             goto LpartError;
-          fsize = (int64) ds.dss_slices[slice].ds_size * dl.d_secsize;
+          fsize = (int64_t) ds.dss_slices[slice].ds_size * dl.d_secsize;
         } else {
           if (part < 0)
             goto LpartError;
-          fsize = (int64) dl.d_partitions[part].p_size * dl.d_secsize;
+          fsize = (int64_t) dl.d_partitions[part].p_size * dl.d_secsize;
         }
         devnum = s.st_rdev;
         if (size <= 0)
@@ -521,7 +521,7 @@ Span::init(char *an, int64 size)
   case S_IFDIR:
   case S_IFREG:
     if (size <= 0 || size > fsize) {
-      Warning("bad or missing size for '%s': size %lld fsize %lld", n, (int64) size, fsize);
+      Warning("bad or missing size for '%s': size %" PRId64 " fsize %" PRId64 "", n, (int64_t) size, fsize);
       err = "bad or missing size";
       goto Lfail;
     }
@@ -567,7 +567,7 @@ Lfail:
 
 
 const char *
-Span::init(char *filename, int64 size)
+Span::init(char *filename, int64_t size)
 {
   int devnum = 0, fd, arg;
   int ret = 0, is_disk = 0;
@@ -575,7 +575,7 @@ Span::init(char *filename, int64 size)
 
   /* Fetch file type */
   struct stat stat_buf;
-  Debug("cache_init", "Span::init(\"%s\",%lld)", filename, size);
+  Debug("cache_init", "Span::init(\"%s\",%" PRId64 ")", filename, size);
   if ((ret = stat(filename, &stat_buf)) < 0) {
     Warning("unable to stat '%s': %d %d, %s", filename, ret, errno, strerror(errno));
     return "cannot stat file";
@@ -630,7 +630,7 @@ Span::init(char *filename, int64 size)
 #endif
 
   if (is_disk) {
-    uint32 physsectors = 0;
+    uint32_t physsectors = 0;
 
     /* Disks cannot be mmapped */
     is_mmapable_internal = false;
@@ -656,8 +656,8 @@ Span::init(char *filename, int64 size)
     blocks = heads * sectors * cylinders;
 
     if (size > 0 && blocks * hw_sector_size != size) {
-      Warning("Warning: you specified a size of %lld for %s,\n", size, filename);
-      Warning("but the device size is %lld. Using minimum of the two.\n", blocks * hw_sector_size);
+      Warning("Warning: you specified a size of %" PRId64 " for %s,\n", size, filename);
+      Warning("but the device size is %" PRId64 ". Using minimum of the two.\n", blocks * hw_sector_size);
       if (blocks * hw_sector_size < size)
         size = blocks * hw_sector_size;
     } else {
@@ -669,8 +669,8 @@ Span::init(char *filename, int64 size)
      * code for other arches seems to.  Revisit this, perhaps. */
     blocks = size / STORE_BLOCK_SIZE;
     
-    Debug("cache_init", "Span::init physical sectors %u total size %lld geometry size %lld store blocks %lld", 
-          physsectors, hw_sector_size * (int64)physsectors, size, blocks);
+    Debug("cache_init", "Span::init physical sectors %u total size %" PRId64 " geometry size %" PRId64 " store blocks %" PRId64 "", 
+          physsectors, hw_sector_size * (int64_t)physsectors, size, blocks);
 
     pathname = xstrdup(filename);
     file_pathname = 1;
@@ -702,7 +702,7 @@ Span::init(char *filename, int64 size)
       if (!file_pathname)
         if (size <= 0)
           return "When using directories for cache storage, you must specify a size\n";
-      Debug("cache_init", "Span::init - mapped file \"%s\", %lld", pathname, size);
+      Debug("cache_init", "Span::init - mapped file \"%s\", %" PRId64 "", pathname, size);
     }
     blocks = size / STORE_BLOCK_SIZE;
   }
@@ -875,7 +875,7 @@ Span::write(int fd)
   if (ink_file_fd_writestring(fd, "\n") == -1)
     return (-1);
 
-  snprintf(buf, sizeof(buf), "%lld\n", blocks);
+  snprintf(buf, sizeof(buf), "%" PRId64 "\n", blocks);
   if (ink_file_fd_writestring(fd, buf) == -1)
     return (-1);
 
@@ -883,7 +883,7 @@ Span::write(int fd)
   if (ink_file_fd_writestring(fd, buf) == -1)
     return (-1);
 
-  snprintf(buf, sizeof(buf), "%lld\n", offset);
+  snprintf(buf, sizeof(buf), "%" PRId64 "\n", offset);
   if (ink_file_fd_writestring(fd, buf) == -1)
     return (-1);
 

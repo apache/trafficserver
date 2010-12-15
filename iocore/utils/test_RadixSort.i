@@ -124,13 +124,13 @@ test3()
   hrtime_t start = gethrvtime();
   s.sort();
   hrtime_t end = gethrvtime();
-  printf("%lld msec (radix sort)\n", ink_hrtime_to_msec(end - start));
+  printf("%" PRId64 " msec (radix sort)\n", ink_hrtime_to_msec(end - start));
 
   printf("sorting nums qsort\n");
   start = gethrvtime();
   qsort((char *) tosort, BENCH_NUM, 4, sort);
   end = gethrvtime();
-  printf("%lld msec (qsort)\n", ink_hrtime_to_msec(end - start));
+  printf("%" PRId64 " msec (qsort)\n", ink_hrtime_to_msec(end - start));
 
 }
 

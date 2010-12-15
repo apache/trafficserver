@@ -47,10 +47,10 @@ int thread_is_created = 0;
 
 
 // AIO Stats
-uint64 aio_num_read = 0;
-uint64 aio_bytes_read = 0;
-uint64 aio_num_write = 0;
-uint64 aio_bytes_written = 0;
+uint64_t aio_num_read = 0;
+uint64_t aio_bytes_read = 0;
+uint64_t aio_num_write = 0;
+uint64_t aio_bytes_written = 0;
 
 static void aio_move(AIO_Reqs *req);
 
@@ -64,9 +64,9 @@ aio_stats_cb(const char *name, RecDataT data_type, RecData *data, RecRawStatBloc
   NOWARN_UNUSED(name);
   (void) data_type;
   (void) rsb;
-  int64 new_val = 0;
-  int64 diff = 0;
-  int64 count, sum;
+  int64_t new_val = 0;
+  int64_t diff = 0;
+  int64_t count, sum;
   ink_hrtime now = ink_get_hrtime();
   // The RecGetGlobalXXX stat functions are cheaper than the
   // RecGetXXX functions. The Global ones are expensive
@@ -75,7 +75,7 @@ aio_stats_cb(const char *name, RecDataT data_type, RecData *data, RecRawStatBloc
   RecGetGlobalRawStatSum(aio_rsb, id, &sum);
   RecGetGlobalRawStatCount(aio_rsb, id, &count);
 
-  int64 time_diff = ink_hrtime_to_msec(now - count);
+  int64_t time_diff = ink_hrtime_to_msec(now - count);
   if (time_diff == 0) {
     data->rec_float = 0.0;
     return 0;

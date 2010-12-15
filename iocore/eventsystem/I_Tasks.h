@@ -29,7 +29,7 @@
 
 extern EventType ET_TASK;
 
-class TasksProcessor: Processor
+class TasksProcessor: public Processor
 {
  public: 
   int start(int task_threads = 0);

@@ -305,7 +305,7 @@ unsigned
 LogField::marshal_agg(char *buf)
 {
   ink_assert(buf != NULL);
-  int64 avg = 0;
+  int64_t avg = 0;
 
   switch (m_agg_op) {
 
@@ -388,7 +388,7 @@ LogField::set_aggregate_op(LogField::Aggregate agg_op)
   -------------------------------------------------------------------------*/
 
 void
-LogField::update_aggregate(int64 val)
+LogField::update_aggregate(int64_t val)
 {
   switch (m_agg_op) {
 

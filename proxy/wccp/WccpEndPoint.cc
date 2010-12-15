@@ -239,7 +239,7 @@ CacheImpl::GroupData::GroupData()
 }
 
 CacheImpl::GroupData&
-CacheImpl::GroupData::seedRouter(uint32 addr) {
+CacheImpl::GroupData::seedRouter(uint32_t addr) {
   // Be nice and don't add it if it's already there.
   if (m_seed_routers.end() == find_by_member(m_seed_routers, &SeedRouter::m_addr, addr))
     m_seed_routers.push_back(SeedRouter(addr));
@@ -247,7 +247,7 @@ CacheImpl::GroupData::seedRouter(uint32 addr) {
 }
 
 time_t
-CacheImpl::GroupData::removeSeedRouter(uint32 addr) {
+CacheImpl::GroupData::removeSeedRouter(uint32_t addr) {
   time_t zret = 0;
   std::vector<SeedRouter>::iterator begin = m_seed_routers.begin(); 
   std::vector<SeedRouter>::iterator end = m_seed_routers.end();
@@ -267,7 +267,7 @@ CacheImpl::GroupData& CacheImpl::GroupData::setKey(char const* key) { return sta
 CacheImpl::GroupData& CacheImpl::GroupData::setSecurity(SecurityOption style) { return static_cast<self&>(this->super::setSecurity(style)); }
 
 CacheImpl::CacheBag::iterator
-CacheImpl::GroupData::findCache(uint32 addr) {
+CacheImpl::GroupData::findCache(uint32_t addr) {
   return std::find_if(
     m_caches.begin(),
     m_caches.end(),
@@ -276,7 +276,7 @@ CacheImpl::GroupData::findCache(uint32 addr) {
 }
 
 CacheImpl::RouterBag::iterator
-CacheImpl::GroupData::findRouter(uint32 addr) {
+CacheImpl::GroupData::findRouter(uint32_t addr) {
   return std::find_if(
     m_routers.begin(),
     m_routers.end(),
@@ -304,7 +304,7 @@ inline CacheImpl::RouterData::RouterData()
   , m_send_caps(false) {
 }
 
-inline CacheImpl::RouterData::RouterData(uint32 addr)
+inline CacheImpl::RouterData::RouterData(uint32_t addr)
   : m_addr(addr)
   , m_generation(0)
   , m_rapid(0)
@@ -323,7 +323,7 @@ CacheImpl::RouterData::waitTime(time_t now) const {
   return m_assign ? 0 : this->pingTime(now);
 }
 
-inline uint32
+inline uint32_t
 CacheImpl::CacheData::idAddr() const {
   return m_id.getAddr();
 }
@@ -333,7 +333,7 @@ CacheImpl::defineServiceGroup(
   ServiceGroup const& svc,
   ServiceGroup::Result* result
 ) {
-  uint8 svc_id = svc.getSvcId();
+  uint8_t svc_id = svc.getSvcId();
   GroupMap::iterator spot = m_groups.find(svc_id);
   GroupData* group; // service with target ID.
   ServiceGroup::Result zret;
@@ -392,7 +392,7 @@ CacheImpl::GroupData::cullRouters(time_t now) {
   while ( idx < n ) {
     RouterData& router = m_routers[idx];
     if (router.m_recv.m_time + TIME_UNIT * 3 < now) {
-      uint32 addr = router.m_addr;
+      uint32_t addr = router.m_addr;
       // Clip the router by copying down and resizing.
       // Must do all caches as well.
       --n; // Decrement router counter first.
@@ -445,7 +445,7 @@ Cache::Service::setSecurity(SecurityOption opt) {
 }
 
 CacheImpl&
-CacheImpl::seedRouter(uint8 id, uint32 addr) {
+CacheImpl::seedRouter(uint8_t id, uint32_t addr) {
   GroupMap::iterator spot = m_groups.find(id);
   if (spot != m_groups.end()) spot->second.seedRouter(addr);
   return *this;
@@ -457,7 +457,7 @@ CacheImpl::isConfigured() const {
 }
 
 int
-CacheImpl::open(uint32 addr) {
+CacheImpl::open(uint32_t addr) {
   int zret = this->super::open(addr);
   // If the socket was successfully opened, go through the
   // services and update the local service descriptor.
@@ -573,7 +573,7 @@ CacheImpl::checkRouterAssignment(
   // If group doesn't have an active assignment, always match w/o checking.
   bool zret = ! group.m_assign_info.isActive();
   if (! zret && ! comp.isEmpty()) { // invalid component doesn't match.
-    uint32 nc = comp.getCacheCount();
+    uint32_t nc = comp.getCacheCount();
     // Nothing for it but simple brute force - iterate over every bucket
     // in the assignment and verify the corresponding bucket in the
     // cache bit array is set.
@@ -733,10 +733,10 @@ CacheImpl::handleISeeYou(IpHeader const& ip_hdr, ts::Buffer const& chunk) {
   logf(LVL_DEBUG, "Received WCCP2_I_SEE_YOU for group %d.", group.m_svc.getSvcId());
 
   // Prefered address for router.
-  uint32 router_addr = msg.m_router_id.idElt().getAddr();
+  uint32_t router_addr = msg.m_router_id.idElt().getAddr();
   // Where we sent our packet.
-  uint32 to_addr = msg.m_router_id.getToAddr();
-  uint32 recv_id = msg.m_router_id.idElt().getRecvId();
+  uint32_t to_addr = msg.m_router_id.getToAddr();
+  uint32_t recv_id = msg.m_router_id.idElt().getRecvId();
   RouterBag::iterator ar_spot; // active router
   int router_idx; // index in active routers.
   std::vector< SeedRouter >::iterator seed_spot;
@@ -808,9 +808,9 @@ CacheImpl::handleISeeYou(IpHeader const& ip_hdr, ts::Buffer const& chunk) {
 
   // For all the other listed routers, seed them if they're not
   // already active.
-  uint32 nr = msg.m_router_view.getRouterCount();
-  for ( uint32 idx = 0; idx < nr ; ++idx ) {
-    uint32 addr = msg.m_router_view.getRouterAddr(idx);
+  uint32_t nr = msg.m_router_view.getRouterCount();
+  for ( uint32_t idx = 0; idx < nr ; ++idx ) {
+    uint32_t addr = msg.m_router_view.getRouterAddr(idx);
     if (group.m_routers.end() == find_by_member(group.m_routers, &RouterData::m_addr, addr))
       group.seedRouter(addr);
   }
@@ -819,8 +819,8 @@ CacheImpl::handleISeeYou(IpHeader const& ip_hdr, ts::Buffer const& chunk) {
   // TBD: Must bump view if a router fails to report a cache it reported
   // in its last packet.
   group.resizeCacheSources();
-  uint32 nc = msg.m_router_view.getCacheCount();
-  for ( uint32 idx = 0 ; idx < nc ; ++idx ) {
+  uint32_t nc = msg.m_router_view.getCacheCount();
+  for ( uint32_t idx = 0 ; idx < nc ; ++idx ) {
     CacheIdElt& cache = msg.m_router_view.cacheElt(idx);
     CacheBag::iterator ac_spot = group.findCache(cache.getAddr());
     if (group.m_caches.end() == ac_spot) {
@@ -862,9 +862,9 @@ CacheImpl::handleRemovalQuery(IpHeader const& ip_hdr, ts::Buffer const& chunk) {
   if (svc != group.m_svc)
     return logf(LVL_INFO, "WCCP2_REMOVAL_QUERY ignored - service group definition %d does not match.\n", svc.getSvcId());
 
-  uint32 target_addr = msg.m_query.getCacheAddr(); // intended cache
+  uint32_t target_addr = msg.m_query.getCacheAddr(); // intended cache
   if (m_addr == target_addr) {
-    uint32 raddr = msg.m_query.getRouterAddr();
+    uint32_t raddr = msg.m_query.getRouterAddr();
     RouterBag::iterator router = group.findRouter(raddr);
     if (group.m_routers.end() != router) {
       router->m_rapid = true; // do rapid responses.
@@ -895,7 +895,7 @@ CacheImpl::handleRemovalQuery(IpHeader const& ip_hdr, ts::Buffer const& chunk) {
   return zret;
 }
 // ------------------------------------------------------
-inline uint32
+inline uint32_t
 RouterImpl::CacheData::idAddr() const {
   return m_id.getAddr();
 }
@@ -903,7 +903,7 @@ RouterImpl::CacheData::idAddr() const {
 RouterImpl::GroupData::GroupData() { }
 
 RouterImpl::CacheBag::iterator
-RouterImpl::GroupData::findCache(uint32 addr) {
+RouterImpl::GroupData::findCache(uint32_t addr) {
   return std::find_if(
     m_caches.begin(),
     m_caches.end(),
@@ -916,7 +916,7 @@ RouterImpl::defineServiceGroup(
   ServiceGroup const& svc,
   ServiceGroup::Result* result
 ) {
-  uint8 svc_id = svc.getSvcId();
+  uint8_t svc_id = svc.getSvcId();
   GroupMap::iterator spot = m_groups.find(svc_id);
   GroupData* group; // service with target ID.
   ServiceGroup::Result zret;
@@ -964,9 +964,9 @@ RouterImpl::handleHereIAm(IpHeader const& ip_hdr, ts::Buffer const& chunk) {
     return logf(LVL_INFO, "Service group %d defined by WCCP2_HERE_I_AM.\n", svc.getSvcId());
 
   // Check if this cache is already known.
-  uint32 cache_addr = msg.m_cache_id.getAddr();
+  uint32_t cache_addr = msg.m_cache_id.getAddr();
   int cache_idx;
-  uint32 cache_gen;
+  uint32_t cache_gen;
   CacheBag::iterator cache = group.findCache(cache_addr);
   if (cache == group.m_caches.end()) { // not known
     group.m_caches.push_back(CacheData());
@@ -994,7 +994,7 @@ RouterImpl::handleHereIAm(IpHeader const& ip_hdr, ts::Buffer const& chunk) {
   // Add any new routers
   i = msg.m_cache_view.getRouterCount();
   while(i-- > 0) {
-    uint32 addr = msg.m_cache_view.routerElt(i).getAddr();
+    uint32_t addr = msg.m_cache_view.routerElt(i).getAddr();
     RouterBag::iterator spot = find_by_member(group.m_routers, &RouterData::m_addr, addr);
     if (spot == group.m_routers.end()) {
       group.m_routers.push_back(RouterData());
@@ -1130,7 +1130,7 @@ EndPoint::instance() {
   return m_ptr ? m_ptr.get() : this->make();
 }
 
-EndPoint& EndPoint::setAddr(uint32 addr) {
+EndPoint& EndPoint::setAddr(uint32_t addr) {
   this->instance()->m_addr = addr;
   logf(LVL_DEBUG, "Endpoint address set to %s\n", ip_addr_to_str(addr));
   return *this;
@@ -1142,7 +1142,7 @@ EndPoint::isConfigured() const {
 }
 
 int
-EndPoint::open(uint32 addr) {
+EndPoint::open(uint32_t addr) {
   return this->instance()->open(addr);
 }
 
@@ -1207,7 +1207,7 @@ time_t Cache::waitTime() const {
 }
 
 Cache&
-Cache::addSeedRouter(uint8 id, uint32 addr) {
+Cache::addSeedRouter(uint8_t id, uint32_t addr) {
   this->instance()->seedRouter(id, addr);
   return *this;
 }

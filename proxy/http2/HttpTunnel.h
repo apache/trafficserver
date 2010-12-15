@@ -104,18 +104,18 @@ struct ChunkedHandler
 
   IOBufferReader *chunked_reader;
   MIOBuffer *dechunked_buffer;
-  int64 dechunked_size;
+  int64_t dechunked_size;
 
   IOBufferReader *dechunked_reader;
   MIOBuffer *chunked_buffer;
-  int64 chunked_size;
+  int64_t chunked_size;
 
   bool truncation;
-  int64 skip_bytes;
+  int64_t skip_bytes;
 
   ChunkedState state;
-  int64 cur_chunk_size;
-  int64 bytes_left;
+  int64_t cur_chunk_size;
+  int64_t bytes_left;
   int last_server_event;
 
   // Parsing Info
@@ -134,7 +134,7 @@ private:
   void read_size();
   void read_chunk();
   void read_trailer();
-  int64 transfer_bytes();
+  int64_t transfer_bytes();
 };
 
 struct HttpTunnelConsumer
@@ -151,8 +151,8 @@ struct HttpTunnelConsumer
   HttpConsumerHandler vc_handler;
   VIO *write_vio;
 
-  int64 skip_bytes;               // bytes to skip at beginning of stream
-  int64 bytes_written;            // total bytes written to the vc
+  int64_t skip_bytes;               // bytes to skip at beginning of stream
+  int64_t bytes_written;            // total bytes written to the vc
   int handler_state;              // state used the handlers
 
   bool alive;
@@ -180,10 +180,10 @@ struct HttpTunnelProducer
   bool do_dechunking;
   bool do_chunked_passthru;
 
-  int64 init_bytes_done;          // bytes passed in buffer
-  int64 nbytes;                   // total bytes (client's perspective)
-  int64 ntodo;                    // what this vc needs to do
-  int64 bytes_read;               // total bytes read from the vc
+  int64_t init_bytes_done;          // bytes passed in buffer
+  int64_t nbytes;                   // total bytes (client's perspective)
+  int64_t ntodo;                    // what this vc needs to do
+  int64_t bytes_read;               // total bytes read from the vc
   int handler_state;              // state used the handlers
 
   int num_consumers;
@@ -229,16 +229,16 @@ public:
   void deallocate_redirect_postdata_buffers();
 
   HttpTunnelProducer *add_producer(VConnection * vc,
-                                   int64 nbytes,
+                                   int64_t nbytes,
                                    IOBufferReader * reader_start,
                                    HttpProducerHandler sm_handler, HttpTunnelType_t vc_type, const char *name);
 
-  void set_producer_chunking_action(HttpTunnelProducer * p, int64 skip_bytes, TunnelChunkingAction_t action);
+  void set_producer_chunking_action(HttpTunnelProducer * p, int64_t skip_bytes, TunnelChunkingAction_t action);
 
   HttpTunnelConsumer *add_consumer(VConnection * vc,
                                    VConnection * producer,
                                    HttpConsumerHandler sm_handler,
-                                   HttpTunnelType_t vc_type, const char *name, int64 skip_bytes = 0);
+                                   HttpTunnelType_t vc_type, const char *name, int64_t skip_bytes = 0);
 
   int deallocate_buffers();
   DLL<HttpTunnelConsumer> *get_consumers(VConnection * vc);
@@ -256,7 +256,7 @@ public:
   void chain_abort_cache_write(HttpTunnelProducer * p);
   void chain_abort_all(HttpTunnelProducer * p);
   void abort_cache_write_finish_others(HttpTunnelProducer * p);
-  void append_message_to_producer_buffer(HttpTunnelProducer * p, const char *msg, int64 msg_len);
+  void append_message_to_producer_buffer(HttpTunnelProducer * p, const char *msg, int64_t msg_len);
 
   void close_vc(HttpTunnelProducer * p);
   void close_vc(HttpTunnelConsumer * c);
@@ -401,7 +401,7 @@ HttpTunnel::get_consumer(VIO * vio)
 }
 
 inline void
-HttpTunnel::append_message_to_producer_buffer(HttpTunnelProducer * p, const char *msg, int64 msg_len)
+HttpTunnel::append_message_to_producer_buffer(HttpTunnelProducer * p, const char *msg, int64_t msg_len)
 {
   if (p == NULL || p->read_buffer == NULL)
     return;

@@ -68,7 +68,7 @@ machine_list_ClusterFunction(ClusterMachine * from, void *data, int len)
   if (m->NeedByteSwap())
     m->SwapBytes();
 
-  ink_assert(m->n_ip == ((len - m->sizeof_fixedlen_msg()) / sizeof(uint32)));
+  ink_assert(m->n_ip == ((len - m->sizeof_fixedlen_msg()) / sizeof(uint32_t)));
 
   //
   // The machine list is a vector of ip's stored in network byte order.
@@ -127,7 +127,7 @@ test_ClusterFunction(ClusterMachine * m, void *data, int len)
 }
 
 CacheVC *
-ChannelToCacheWriteVC(ClusterHandler * ch, int channel, uint32 channel_seqno, ClusterVConnection ** cluster_vc)
+ChannelToCacheWriteVC(ClusterHandler * ch, int channel, uint32_t channel_seqno, ClusterVConnection ** cluster_vc)
 {
   EThread *thread = this_ethread();
   ProxyMutex *mutex = thread->mutex;
@@ -172,7 +172,7 @@ set_channel_data_ClusterFunction(ClusterMachine * from, void *tdata, int tlen)
   ic->len = tlen;
   ic->alloc_data();
 
-  data = ic->data + sizeof(int32);      // free_remote_data expects d+sizeof(int32)
+  data = ic->data + sizeof(int32_t);      // free_remote_data expects d+sizeof(int32_t)
   memcpy(data, tdata, tlen);
   len = tlen;
 

@@ -68,7 +68,7 @@ public:
 
 private:
 
-  int64 extract_id(const char *query);
+  int64_t extract_id(const char *query);
   void dump_hdr(HTTPHdr *hdr, const char *desc);
   void dump_tunnel_info(HttpSM * sm);
   void dump_history(HttpSM * sm);
@@ -84,7 +84,7 @@ private:
   HP_State_t state;
 
   // Info for SM details
-  int64 sm_id;
+  int64_t sm_id;
 };
 
 #endif //INK_NO_STAT_PAGES

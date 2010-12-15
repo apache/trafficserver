@@ -259,7 +259,7 @@ int
 state_handle_cache_lookup(TSCont contp, TSEvent event, TSVConn vc)
 {
   TxnSM *txn_sm = (TxnSM *) TSContDataGet(contp);
-  int64 response_size;
+  int64_t response_size;
   int ret_val;
 
   TSDebug("protocol", "enter state_handle_cache_lookup");
@@ -896,7 +896,7 @@ get_info_from_buffer(TSIOBufferReader the_reader)
   char *info;
   char *info_start;
 
-  int64 read_avail, read_done;
+  int64_t read_avail, read_done;
   TSIOBufferBlock blk;
   char *buf;
 

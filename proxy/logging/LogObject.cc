@@ -282,13 +282,13 @@ LogObject::add_loghost(LogHost * host, bool copy)
 // of the LogFormat rather than from the format_str because the format_str
 // is not part of a LogBuffer header
 //
-uint64 LogObject::compute_signature(LogFormat * format, char *filename, unsigned int flags)
+uint64_t LogObject::compute_signature(LogFormat * format, char *filename, unsigned int flags)
 {
   char *
     fl = format->fieldlist();
   char *
     ps = format->printf_str();
-  uint64
+  uint64_t
     signature = 0;
 
   if (fl && ps && filename) {
@@ -320,7 +320,7 @@ LogObject::display(FILE * fd)
 {
   fprintf(fd, "++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n");
   fprintf(fd, "LogObject [%p]: format = %s (%p)\nbasename = %s\n" "flags = %u\n"
-          "signature = %llu\n",
+          "signature = %" PRIu64 "\n",
           this, m_format->name(), m_format, m_basename, m_flags, m_signature);
 #ifndef TS_MICRO
   if (is_collation_client()) {
@@ -490,10 +490,10 @@ LogObject::log(LogAccess * lad, char *text_entry)
     LogFieldList *fl = &m_format->m_field_list;
     char *data_ptr = m_format->m_agg_marshal_space;
     LogField *f;
-    int64 val;
+    int64_t val;
     for (f = fl->first(); f; f = fl->next(f)) {
       // convert to host order to do computations
-      val = (f->is_time_field())? time_now : ntohl(*((int64 *) data_ptr));
+      val = (f->is_time_field())? time_now : ntohl(*((int64_t *) data_ptr));
       f->update_aggregate(val);
       data_ptr += INK_MIN_ALIGN;
     }
@@ -891,14 +891,14 @@ LogObjectManager::_manage_object(LogObject * log_object, bool is_api_object, int
         }
 
         Debug("log", "LogObjectManager managing object %s (%s) "
-              "[signature = %llu, address = %p]",
+              "[signature = %" PRIu64 ", address = %p]",
               log_object->get_base_filename(),
               col_client ? "collation client" :
               log_object->get_full_filename(), log_object->get_signature(), log_object);
 
         if (log_object->has_alternate_name()) {
           Warning("The full path for the (%s) LogObject %s "
-                  "with signature %llu "
+                  "with signature %" PRIu64 " "
                   "has been set to %s rather than %s because the latter "
                   "is being used by another LogObject",
                   log_object->receives_remote_data()? "remote" : "local",
@@ -934,7 +934,7 @@ LogObjectManager::_solve_filename_conflicts(LogObject * log_object, int maxConfl
   } else {
     // file exists, try to read metafile to get object signature
     //
-    uint64 signature = 0;
+    uint64_t signature = 0;
     MetaInfo meta_info(filename);
     bool conflicts = true;
 
@@ -952,14 +952,14 @@ LogObjectManager::_solve_filename_conflicts(LogObject * log_object, int maxConfl
         Note("Added object_signature to metafile of %s", filename);
       } else {
         bool got_sig = meta_info.get_log_object_signature(&signature);
-        uint64 obj_sig = log_object->get_signature();
+        uint64_t obj_sig = log_object->get_signature();
         if (got_sig && signature == obj_sig) {
           conflicts = false;
         }
         Debug("log", "LogObjectManager::_solve_filename_conflicts\n"
               "\tfilename = %s\n"
-              "\tmeta file signature = %llu\n"
-              "\tlog object signature = %llu\n" "\tconflicts = %d", filename, signature, obj_sig, conflicts);
+              "\tmeta file signature = %" PRIu64 "\n"
+              "\tlog object signature = %" PRIu64 "\n" "\tconflicts = %d", filename, signature, obj_sig, conflicts);
       }
     }
 
@@ -1029,7 +1029,7 @@ LogObjectManager::_solve_filename_conflicts(LogObject * log_object, int maxConfl
 #ifndef TS_MICRO
 bool
   LogObjectManager::_has_internal_filename_conflict(char *filename,
-                                                    uint64 signature, LogObject ** objects, int numObjects)
+                                                    uint64_t signature, LogObject ** objects, int numObjects)
 {
   NOWARN_UNUSED(signature);
   for (int i = 0; i < numObjects; i++) {
@@ -1055,7 +1055,7 @@ LogObjectManager::_solve_internal_filename_conflicts(LogObject * log_object, int
 
 #ifndef TS_MICRO
   char *filename = log_object->get_full_filename();
-  uint64 signature = log_object->get_signature();
+  uint64_t signature = log_object->get_signature();
 
   if (_has_internal_filename_conflict(filename, signature,
                                       _objects, _numObjects) ||
@@ -1108,7 +1108,7 @@ LogObjectManager::_roll_files(long time_now, bool roll_only_if_needed)
 }
 
 LogObject *
-LogObjectManager::get_object_with_signature(uint64 signature)
+LogObjectManager::get_object_with_signature(uint64_t signature)
 {
   for (size_t i = 0; i < _numObjects; i++) {
     LogObject *obj = _objects[i];

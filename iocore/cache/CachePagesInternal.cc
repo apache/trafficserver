@@ -216,7 +216,7 @@ ShowCacheInternal::showPartEvacuations(int event, Event * e)
   for (int i = 0; i < last; i++) {
     for (b = p->evacuate[i].head; b; b = b->link.next) {
       char offset[60];
-      sprintf(offset, "%llu", (uint64) part_offset(p, &b->dir));
+      sprintf(offset, "%" PRIu64 "", (uint64_t) part_offset(p, &b->dir));
       CHECK_SHOW(show("<tr>" "<td>%s</td>"      // offset
                       "<td>%d</td>"     // estimated size
                       "<td>%d</td>"     // reader count
@@ -271,9 +271,9 @@ ShowCacheInternal::showPartPartitions(int event, Event * e)
   for (c = p->agg.head; c; c = (CacheVC *) c->link.next)
     agg_todo++;
   CHECK_SHOW(show("<tr>" "<td>%s</td>"  // ID
-                  "<td>%lld</td>" // blocks
-                  "<td>%lld</td>" // directory entries
-                  "<td>%lld</td>" // write position
+                  "<td>%" PRId64 "</td>" // blocks
+                  "<td>%" PRId64 "</td>" // directory entries
+                  "<td>%" PRId64 "</td>" // write position
                   "<td>%d</td>" // write agg to do
                   "<td>%d</td>" // write agg to do size
                   "<td>%d</td>" // write agg done
@@ -283,9 +283,9 @@ ShowCacheInternal::showPartPartitions(int event, Event * e)
                   "<td>%u</td>" // write serial
                   "</tr>\n",
                   p->hash_id,
-                  (uint64)((p->len - (p->start - p->skip)) / CACHE_BLOCK_SIZE),
-                  (uint64)(p->buckets * DIR_DEPTH * p->segments),
-                  (uint64)((p->header->write_pos - p->start) / CACHE_BLOCK_SIZE),
+                  (uint64_t)((p->len - (p->start - p->skip)) / CACHE_BLOCK_SIZE),
+                  (uint64_t)(p->buckets * DIR_DEPTH * p->segments),
+                  (uint64_t)((p->header->write_pos - p->start) / CACHE_BLOCK_SIZE),
                   agg_todo,
                   p->agg_todo_size,
                   agg_done, p->header->phase, ctime, p->header->sync_serial, p->header->write_serial));

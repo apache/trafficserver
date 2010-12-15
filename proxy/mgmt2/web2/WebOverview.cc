@@ -446,7 +446,7 @@ overviewRecord::varStrFromName(const char *varNameConst, char *bufVal, int bufLe
     } else if (formatOption == 'c') {
       commaStrFromInt(data.int_data, bufVal);
     } else {
-      sprintf(bufVal, "%lld", data.int_data);
+      sprintf(bufVal, "%" PRId64 "", data.int_data);
     }
     break;
   case RECD_COUNTER:
@@ -458,7 +458,7 @@ overviewRecord::varStrFromName(const char *varNameConst, char *bufVal, int bufLe
     } else if (formatOption == 'c') {
       commaStrFromInt(data.counter_data, bufVal);
     } else {
-      sprintf(bufVal, "%lld", data.counter_data);
+      sprintf(bufVal, "%" PRId64 "", data.counter_data);
     }
     break;
   case RECD_FLOAT:
@@ -1099,14 +1099,14 @@ overviewPage::generateTable(WebHttpContext * whc)
     // hit latency
     HtmlRndrTdOpen(output, HTML_CSS_BODY_TEXT, HTML_ALIGN_NONE, HTML_VALIGN_NONE, NULL, NULL, 0);
     current->varIntFromName("proxy.node.http.transaction_msec_avg_10s.hit_fresh", &t_hit);
-    snprintf(outBuf, sizeof(outBuf), "%lld", t_hit);
+    snprintf(outBuf, sizeof(outBuf), "%" PRId64 "", t_hit);
     output->copyFrom(outBuf, strlen(outBuf));
     HtmlRndrTdClose(output);
 
     // miss latency
     HtmlRndrTdOpen(output, HTML_CSS_BODY_TEXT, HTML_ALIGN_NONE, HTML_VALIGN_NONE, NULL, NULL, 0);
     current->varIntFromName("proxy.node.http.transaction_msec_avg_10s.miss_cold", &t_miss);
-    snprintf(outBuf, sizeof(outBuf), "%lld", t_miss);
+    snprintf(outBuf, sizeof(outBuf), "%" PRId64 "", t_miss);
     output->copyFrom(outBuf, strlen(outBuf));
     HtmlRndrTdClose(output);
 
@@ -1219,8 +1219,8 @@ overviewPage::generateTableCLI(textBuffer * output)
       found = true;
     }
 
-    snprintf(docCountBuf, sizeof(docCountBuf), "%lld", docCount);
-    snprintf(loadMetricBuf, sizeof(loadMetricBuf), "%lld", loadMetric);
+    snprintf(docCountBuf, sizeof(docCountBuf), "%" PRId64 "", docCount);
+    snprintf(loadMetricBuf, sizeof(loadMetricBuf), "%" PRId64 "", loadMetric);
 
     // create output status line
     // coverity[non_const_printf_format_string]
@@ -1349,7 +1349,7 @@ overviewPage::addHostPanel(WebHttpContext * whc, overviewRecord * host)
   HtmlRndrTdClose(output);
   HtmlRndrTdOpen(output, HTML_CSS_BODY_TEXT, HTML_ALIGN_NONE, HTML_VALIGN_NONE, NULL, NULL, 0);
   SEPARATOR;
-  snprintf(tmp, sizeof(tmp), "%lld", clients);
+  snprintf(tmp, sizeof(tmp), "%" PRId64 "", clients);
   output->copyFrom(tmp, strlen(tmp));
   HtmlRndrTdClose(output);
   HtmlRndrTrClose(output);
@@ -1360,7 +1360,7 @@ overviewPage::addHostPanel(WebHttpContext * whc, overviewRecord * host)
   HtmlRndrTdClose(output);
   HtmlRndrTdOpen(output, HTML_CSS_BODY_TEXT, HTML_ALIGN_NONE, HTML_VALIGN_NONE, NULL, NULL, 0);
   SEPARATOR;
-  snprintf(tmp, sizeof(tmp), "%lld", servers);
+  snprintf(tmp, sizeof(tmp), "%" PRId64 "", servers);
   output->copyFrom(tmp, strlen(tmp));
   HtmlRndrTdClose(output);
   HtmlRndrTrClose(output);

@@ -465,10 +465,10 @@ CacheVC::openReadFromWriterMain(int event, Event * e)
     seek_to = 0;
   }
   IOBufferBlock *b = NULL;
-  int64 ntodo = vio.ntodo();
+  int64_t ntodo = vio.ntodo();
   if (ntodo <= 0)
     return EVENT_CONT;
-  if (length < ((int64)doc_len) - vio.ndone) {
+  if (length < ((int64_t)doc_len) - vio.ndone) {
     DDebug("cache_read_agg", "truncation %X", earliest_key.word(0));
     if (is_action_tag_set("cache")) {
       ink_release_assert(false);
@@ -478,14 +478,14 @@ CacheVC::openReadFromWriterMain(int event, Event * e)
   }
   /* its possible that the user did a do_io_close before
      openWriteWriteDone was called. */
-  if (length > ((int64)doc_len) - vio.ndone) {
-    int64 skip_bytes = length - (doc_len - vio.ndone);
+  if (length > ((int64_t)doc_len) - vio.ndone) {
+    int64_t skip_bytes = length - (doc_len - vio.ndone);
     iobufferblock_skip(writer_buf, &writer_offset, &length, skip_bytes);
   }
-  int64 bytes = length;
+  int64_t bytes = length;
   if (bytes > vio.ntodo())
     bytes = vio.ntodo();
-  if (vio.ndone >= (int64)doc_len) {
+  if (vio.ndone >= (int64_t)doc_len) {
     ink_assert(bytes <= 0);
     // reached the end of the document and the user still wants more
     return calluser(VC_EVENT_EOS);
@@ -612,8 +612,8 @@ CacheVC::openReadMain(int event, Event * e)
 
   cancel_trigger();
   Doc *doc = (Doc *) buf->data();
-  int64 ntodo = vio.ntodo();
-  int64 bytes = doc->len - doc_pos;
+  int64_t ntodo = vio.ntodo();
+  int64_t bytes = doc->len - doc_pos;
   IOBufferBlock *b = NULL;
   if (seek_to) { // handle do_io_pread
     if (seek_to >= (int)doc_len) {
@@ -630,7 +630,7 @@ CacheVC::openReadMain(int event, Event * e)
       } else {
         Frag *frag = doc->frags();
         // skip to correct key, key is already set to next fragment
-        for (uint32 i = 1; i <= doc->nfrags(); i++) {
+        for (uint32_t i = 1; i <= doc->nfrags(); i++) {
           if (seek_to < (int)frag[i].offset) break;
           next_CacheKey(&key, &key);
         }
@@ -665,7 +665,7 @@ CacheVC::openReadMain(int event, Event * e)
     return EVENT_CONT;
   }
 Lread: {
-    if ((uint32)vio.ndone >= doc_len)
+    if ((uint32_t)vio.ndone >= doc_len)
       // reached the end of the document and the user still wants more
       return calluser(VC_EVENT_EOS);
     last_collision = 0;
@@ -802,7 +802,7 @@ Lread:
       // don't want any writers while we are evacuating the vector
       if (!part->open_write(this, false, 1)) {
         Doc *doc1 = (Doc *) first_buf->data();
-        uint32 len = write_vector->get_handles(doc1->hdr(), doc1->hlen);
+        uint32_t len = write_vector->get_handles(doc1->hdr(), doc1->hlen);
         ink_assert(len == doc1->hlen && write_vector->count() > 0);
         write_vector->remove(alternate_index, true);
         // if the vector had one alternate, delete it's directory entry

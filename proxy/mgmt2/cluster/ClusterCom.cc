@@ -825,8 +825,8 @@ ClusterCom::handleMultiCastMessage(char *message)
   /* Their wall clock time and last config change time */
   if ((line = ink_strtok_r(NULL, "\n", &last)) == NULL)
     goto Lbogus;
-  int64 tt;
-  if (sscanf(line, "time: %lld", &tt) != 1) {
+  int64_t tt;
+  if (sscanf(line, "time: %" PRId64 "", &tt) != 1) {
     mgmt_elog("[ClusterCom::handleMultiCastMessage] Invalid message-line(%d) '%s'\n", __LINE__, line);
     return;
   }
@@ -834,7 +834,7 @@ ClusterCom::handleMultiCastMessage(char *message)
 
   if ((line = ink_strtok_r(NULL, "\n", &last)) == NULL)
     goto Lbogus;
-  if (sscanf(line, "ctime: %lld", &tt) != 1) {
+  if (sscanf(line, "ctime: %" PRId64 "", &tt) != 1) {
     mgmt_elog("[ClusterCom::handleMultiCastMessage] Invalid message-line(%d) '%s'\n", __LINE__, line);
     return;
   }
@@ -1141,7 +1141,7 @@ ClusterCom::handleMultiCastFilePacket(char *last, char *ip)
 {
   char *line, file[1024];
   version_t ver, our_ver;
-  int64 tt;
+  int64_t tt;
   InkHashTableValue hash_value;
   bool file_update_failure;
 
@@ -1150,7 +1150,7 @@ ClusterCom::handleMultiCastFilePacket(char *last, char *ip)
 
     file_update_failure = false;
     // coverity[secure_coding]
-    if (sscanf(line, "%1023s %d %lld\n", file, &ver, &tt) != 3) {
+    if (sscanf(line, "%1023s %d %" PRId64 "\n", file, &ver, &tt) != 3) {
       mgmt_elog("[ClusterCom::handleMultiCastFilePacket] Invalid message-line(%d) '%s'\n", __LINE__, line);
       return;
     }
@@ -1459,7 +1459,7 @@ ClusterCom::constructSharedGenericPacket(char *message, int max, int packet_type
 
   /* Current time stamp, for xntp like synching */
   if (time(NULL) > 0) {
-    snprintf(tmp, sizeof(tmp), "time: %lld\n", (int64)time(NULL));
+    snprintf(tmp, sizeof(tmp), "time: %" PRId64 "\n", (int64_t)time(NULL));
     ink_strncpy(&message[running_sum], tmp, (max - running_sum));
     running_sum += strlen(tmp);
   } else {
@@ -1485,7 +1485,7 @@ ClusterCom::constructSharedGenericPacket(char *message, int max, int packet_type
   }
 #endif
 
-  snprintf(tmp, sizeof(tmp), "ctime: %lld\n", (int64)lmgmt->record_data->time_last_config_change);
+  snprintf(tmp, sizeof(tmp), "ctime: %" PRId64 "\n", (int64_t)lmgmt->record_data->time_last_config_change);
   ink_strncpy(&message[running_sum], tmp, (max - running_sum));
   running_sum += strlen(tmp);
   ink_release_assert(running_sum < max);
@@ -1497,12 +1497,12 @@ ClusterCom::constructSharedGenericPacket(char *message, int max, int packet_type
     if (rec->rec_type == RECT_NODE) {
       switch (rec->data_type) {
       case RECD_COUNTER:
-        sprintf(tmp, "%d:%d: %lld\n", cnt, rec->data_type, rec->data.rec_counter);
+        sprintf(tmp, "%d:%d: %" PRId64 "\n", cnt, rec->data_type, rec->data.rec_counter);
         ink_strncpy(&message[running_sum], tmp, (max - running_sum));
         running_sum += strlen(tmp);
         break;
       case RECD_INT:
-        sprintf(tmp, "%d:%d: %lld\n", cnt, rec->data_type, rec->data.rec_int);
+        sprintf(tmp, "%d:%d: %" PRId64 "\n", cnt, rec->data_type, rec->data.rec_int);
         ink_strncpy(&message[running_sum], tmp, (max - running_sum));
         running_sum += strlen(tmp);
         break;
@@ -1620,7 +1620,7 @@ ClusterCom::constructSharedFilePacket(char *message, int max)
       //time_t mod = rb->versionTimeStamp(ver);
       time_t mod = 0;
 
-      snprintf(tmp, sizeof(tmp), "%s %d %lld\n", line, ver, (int64)mod);
+      snprintf(tmp, sizeof(tmp), "%s %d %" PRId64 "\n", line, ver, (int64_t)mod);
       ink_strncpy(&message[running_sum], tmp, (max - running_sum));
       running_sum += strlen(tmp);
       ink_release_assert(running_sum < max);
@@ -2423,9 +2423,9 @@ checkBackDoor(int req_fd, char *message)
       case RECD_COUNTER:
       case RECD_INT:
         {
-          int64 val = (stype == RECD_COUNTER ? REC_readCounter(variable, &found) : REC_readInteger(variable, &found));
+          int64_t val = (stype == RECD_COUNTER ? REC_readCounter(variable, &found) : REC_readInteger(variable, &found));
           if (found) {
-            rep_len = snprintf(reply, sizeof(reply), "\nRecord '%s' Val: '%lld'\n", variable, val);
+            rep_len = snprintf(reply, sizeof(reply), "\nRecord '%s' Val: '%" PRId64 "'\n", variable, val);
           }
           break;
         }
@@ -2517,8 +2517,8 @@ checkBackDoor(int req_fd, char *message)
       mgmt_writeline(req_fd, reply, strlen(reply));
 
       snprintf(reply, sizeof(reply),
-               "Idle-Our-WC: %lld   Peer-WC-Last-Time: %ld  Delta: %ld Mgmt-Idle: %lld M-Alive: %d",
-               (int64)tmp->idle_ticks, tmp->last_time_recorded, tmp->delta, (int64)tmp->manager_idle_ticks, tmp->manager_alive);
+               "Idle-Our-WC: %" PRId64 "   Peer-WC-Last-Time: %ld  Delta: %ld Mgmt-Idle: %" PRId64 " M-Alive: %d",
+               (int64_t)tmp->idle_ticks, tmp->last_time_recorded, tmp->delta, (int64_t)tmp->manager_idle_ticks, tmp->manager_alive);
       mgmt_writeline(req_fd, reply, strlen(reply));
 
 
@@ -2538,7 +2538,7 @@ checkBackDoor(int req_fd, char *message)
     snprintf(reply, sizeof(reply), "\tproxy_running: %s", (lmgmt->proxy_running ? "true" : "false"));
     mgmt_writeline(req_fd, reply, strlen(reply));
 
-    snprintf(reply, sizeof(reply), "\tproxy_started_at: %lld", (int64)lmgmt->proxy_started_at);
+    snprintf(reply, sizeof(reply), "\tproxy_started_at: %" PRId64 "", (int64_t)lmgmt->proxy_started_at);
     mgmt_writeline(req_fd, reply, strlen(reply));
 
     snprintf(reply, sizeof(reply), "\trun_proxy: %s", (lmgmt->run_proxy ? "true" : "false"));

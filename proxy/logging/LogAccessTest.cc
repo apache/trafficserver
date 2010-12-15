@@ -68,10 +68,10 @@ int
 LogAccessTest::marshal_client_host_ip(char *buf)
 {
   if (buf) {
-    int64 val = 0;
+    int64_t val = 0;
     marshal_int(buf, val);
   }
-  return sizeof(int64);
+  return sizeof(int64_t);
 }
 
 /*-------------------------------------------------------------------------
@@ -109,10 +109,10 @@ int
 LogAccessTest::marshal_client_req_http_method(char *buf)
 {
   if (buf) {
-    int64 val = 1;
+    int64_t val = 1;
     marshal_int(buf, val);
   }
-  return sizeof(int64);
+  return sizeof(int64_t);
 }
 
 /*-------------------------------------------------------------------------
@@ -136,10 +136,10 @@ int
 LogAccessTest::marshal_client_req_http_version(char *buf)
 {
   if (buf) {
-    int64 val = 2;
+    int64_t val = 2;
     marshal_int(buf, val);
   }
-  return sizeof(int64);
+  return sizeof(int64_t);
 }
 
 /*-------------------------------------------------------------------------
@@ -149,10 +149,10 @@ int
 LogAccessTest::marshal_client_req_header_len(char *buf)
 {
   if (buf) {
-    int64 val = 3;
+    int64_t val = 3;
     marshal_int(buf, val);
   }
-  return sizeof(int64);
+  return sizeof(int64_t);
 }
 
 /*-------------------------------------------------------------------------
@@ -162,10 +162,10 @@ int
 LogAccessTest::marshal_client_req_body_len(char *buf)
 {
   if (buf) {
-    int64 val = 4;
+    int64_t val = 4;
     marshal_int(buf, val);
   }
-  return sizeof(int64);
+  return sizeof(int64_t);
 }
 
 /*-------------------------------------------------------------------------
@@ -175,10 +175,10 @@ int
 LogAccessTest::marshal_client_finish_status_code(char *buf)
 {
   if (buf) {
-    int64 val = 5;
+    int64_t val = 5;
     marshal_int(buf, val);
   }
-  return sizeof(int64);
+  return sizeof(int64_t);
 }
 
 /*-------------------------------------------------------------------------
@@ -202,10 +202,10 @@ int
 LogAccessTest::marshal_proxy_resp_squid_len(char *buf)
 {
   if (buf) {
-    int64 val = 100;
+    int64_t val = 100;
     marshal_int(buf, val);
   }
-  return sizeof(int64);
+  return sizeof(int64_t);
 }
 
 /*-------------------------------------------------------------------------
@@ -215,10 +215,10 @@ int
 LogAccessTest::marshal_proxy_resp_content_len(char *buf)
 {
   if (buf) {
-    int64 val = 6;
+    int64_t val = 6;
     marshal_int(buf, val);
   }
-  return sizeof(int64);
+  return sizeof(int64_t);
 }
 
 /*-------------------------------------------------------------------------
@@ -228,10 +228,10 @@ int
 LogAccessTest::marshal_proxy_resp_status_code(char *buf)
 {
   if (buf) {
-    int64 val = 7;
+    int64_t val = 7;
     marshal_int(buf, val);
   }
-  return sizeof(int64);
+  return sizeof(int64_t);
 }
 
 /*-------------------------------------------------------------------------
@@ -241,10 +241,10 @@ int
 LogAccessTest::marshal_proxy_resp_header_len(char *buf)
 {
   if (buf) {
-    int64 val = 8;
+    int64_t val = 8;
     marshal_int(buf, val);
   }
-  return sizeof(int64);
+  return sizeof(int64_t);
 }
 
 /*-------------------------------------------------------------------------
@@ -254,10 +254,10 @@ int
 LogAccessTest::marshal_proxy_finish_status_code(char *buf)
 {
   if (buf) {
-    int64 val = 9;
+    int64_t val = 9;
     marshal_int(buf, val);
   }
-  return sizeof(int64);
+  return sizeof(int64_t);
 }
 
 /*-------------------------------------------------------------------------
@@ -267,10 +267,10 @@ int
 LogAccessTest::marshal_cache_result_code(char *buf)
 {
   if (buf) {
-    int64 val = 10;
+    int64_t val = 10;
     marshal_int(buf, val);
   }
-  return sizeof(int64);
+  return sizeof(int64_t);
 }
 
 /*-------------------------------------------------------------------------
@@ -280,10 +280,10 @@ int
 LogAccessTest::marshal_proxy_req_header_len(char *buf)
 {
   if (buf) {
-    int64 val = 11;
+    int64_t val = 11;
     marshal_int(buf, val);
   }
-  return sizeof(int64);
+  return sizeof(int64_t);
 }
 
 /*-------------------------------------------------------------------------
@@ -293,10 +293,10 @@ int
 LogAccessTest::marshal_proxy_req_body_len(char *buf)
 {
   if (buf) {
-    int64 val = 12;
+    int64_t val = 12;
     marshal_int(buf, val);
   }
-  return sizeof(int64);
+  return sizeof(int64_t);
 }
 
 /*-------------------------------------------------------------------------
@@ -306,10 +306,10 @@ int
 LogAccessTest::marshal_proxy_hierarchy_route(char *buf)
 {
   if (buf) {
-    int64 val = 13;
+    int64_t val = 13;
     marshal_int(buf, val);
   }
-  return sizeof(int64);
+  return sizeof(int64_t);
 }
 
 /*-------------------------------------------------------------------------
@@ -319,10 +319,10 @@ int
 LogAccessTest::marshal_server_host_ip(char *buf)
 {
   if (buf) {
-    int64 val = 14;
+    int64_t val = 14;
     marshal_int(buf, val);
   }
-  return sizeof(int64);
+  return sizeof(int64_t);
 }
 
 /*-------------------------------------------------------------------------
@@ -346,10 +346,10 @@ int
 LogAccessTest::marshal_server_resp_status_code(char *buf)
 {
   if (buf) {
-    int64 val = 15;
+    int64_t val = 15;
     marshal_int(buf, val);
   }
-  return sizeof(int64);
+  return sizeof(int64_t);
 }
 
 /*-------------------------------------------------------------------------
@@ -359,10 +359,10 @@ int
 LogAccessTest::marshal_server_resp_content_len(char *buf)
 {
   if (buf) {
-    int64 val = 16;
+    int64_t val = 16;
     marshal_int(buf, val);
   }
-  return sizeof(int64);
+  return sizeof(int64_t);
 }
 
 /*-------------------------------------------------------------------------
@@ -372,10 +372,10 @@ int
 LogAccessTest::marshal_server_resp_header_len(char *buf)
 {
   if (buf) {
-    int64 val = 17;
+    int64_t val = 17;
     marshal_int(buf, val);
   }
-  return sizeof(int64);
+  return sizeof(int64_t);
 }
 
 /*-------------------------------------------------------------------------
@@ -385,10 +385,10 @@ int
 LogAccessTest::marshal_transfer_time_ms(char *buf)
 {
   if (buf) {
-    int64 val = 18;
+    int64_t val = 18;
     marshal_int(buf, val);
   }
-  return sizeof(int64);
+  return sizeof(int64_t);
 }
 
 /*-------------------------------------------------------------------------

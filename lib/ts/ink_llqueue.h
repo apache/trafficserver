@@ -43,7 +43,7 @@ typedef struct llqrec_s
 typedef struct llq_s
 {
   LLQrec * head, *tail, *free;
-  uint64 len, highwater;
+  uint64_t len, highwater;
   ink_mutex mux;
 #if defined(darwin)
   ink_sem *sema;
@@ -56,8 +56,8 @@ LLQ *create_queue(void);
 int enqueue(LLQ * q, void *data);
 void *dequeue(LLQ * q);
 int queue_is_empty(LLQ * q);
-uint64 queue_len(LLQ * Q);
-uint64 queue_highwater(LLQ * Q);
+uint64_t queue_len(LLQ * Q);
+uint64_t queue_highwater(LLQ * Q);
 void delete_queue(LLQ * Q);     /* only deletes an empty queue but
                                    provides symmetry. */
 

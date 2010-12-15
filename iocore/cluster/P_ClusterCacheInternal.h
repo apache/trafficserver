@@ -110,7 +110,7 @@ struct CacheContinuation:public Continuation
   int result_error;             // error code associated with event
   ClusterVCToken token;
   unsigned int seq_number;
-  uint16 cfl_flags;             // Request flags; see CFL_XXX defines
+  uint16_t cfl_flags;             // Request flags; see CFL_XXX defines
   CacheFragType frag_type;
   int nbytes;
   unsigned int target_ip;
@@ -336,7 +336,7 @@ CacheContinuation():
   static int setup_local_vc(char *data, int data_len, CacheContinuation * cc, ClusterMachine * mp, Action **);
   static void disposeOfDataBuffer(void *buf);
   static int handleDisposeEvent(int event, CacheContinuation * cc);
-  static int32 getObjectSize(VConnection *, int, CacheHTTPInfo *);
+  static int32_t getObjectSize(VConnection *, int, CacheHTTPInfo *);
 };
 
 /////////////////////////////////////////
@@ -357,7 +357,7 @@ struct CacheOpArgs_General
   INK_MD5 *url_md5;
   time_t pin_in_cache;          // open_write() specific arg
   CacheFragType frag_type;
-  uint16 cfl_flags;
+  uint16_t cfl_flags;
 
     CacheOpArgs_General():url_md5(NULL), pin_in_cache(0), frag_type(CACHE_FRAG_TYPE_NONE), cfl_flags(0)
   {
@@ -368,7 +368,7 @@ struct CacheOpArgs_Link
 {
   INK_MD5 *from;
   INK_MD5 *to;
-  uint16 cfl_flags;             // see CFL_XXX defines
+  uint16_t cfl_flags;             // see CFL_XXX defines
   CacheFragType frag_type;
 
     CacheOpArgs_Link():from(NULL), to(NULL), cfl_flags(0), frag_type(CACHE_FRAG_TYPE_NONE)
@@ -379,7 +379,7 @@ struct CacheOpArgs_Link
 struct CacheOpArgs_Deref
 {
   INK_MD5 *md5;
-  uint16 cfl_flags;             // see CFL_XXX defines
+  uint16_t cfl_flags;             // see CFL_XXX defines
   CacheFragType frag_type;
 
     CacheOpArgs_Deref():md5(NULL), cfl_flags(0), frag_type(CACHE_FRAG_TYPE_NONE)
@@ -393,16 +393,16 @@ struct CacheOpArgs_Deref
 struct CacheLookupMsg:public ClusterMessageHeader
 {
   INK_MD5 url_md5;
-  uint32 seq_number;
-  uint32 frag_type;
-  uint8 moi[4];
+  uint32_t seq_number;
+  uint32_t frag_type;
+  uint8_t moi[4];
   enum
   {
     MIN_VERSION = 1,
     MAX_VERSION = 1,
     CACHE_LOOKUP_MESSAGE_VERSION = MAX_VERSION
   };
-  CacheLookupMsg(uint16 vers = CACHE_LOOKUP_MESSAGE_VERSION):
+  CacheLookupMsg(uint16_t vers = CACHE_LOOKUP_MESSAGE_VERSION):
   ClusterMessageHeader(vers), seq_number(0), frag_type(0) {
     memset(moi, 0, sizeof(moi));
   }
@@ -420,7 +420,7 @@ struct CacheLookupMsg:public ClusterMessageHeader
     // Maybe use offsetoff here instead. /leif
     return (int) ALIGN_DOUBLE(&p->moi[0]);
   }
-  void init(uint16 vers = CACHE_LOOKUP_MESSAGE_VERSION) {
+  void init(uint16_t vers = CACHE_LOOKUP_MESSAGE_VERSION) {
     _init(vers);
   }
   inline void SwapBytes()
@@ -436,24 +436,24 @@ struct CacheLookupMsg:public ClusterMessageHeader
 
 struct CacheOpMsg_long:public ClusterMessageHeader
 {
-  uint8 opcode;
-  uint8 frag_type;
-  uint16 cfl_flags;             // see CFL_XXX defines
+  uint8_t opcode;
+  uint8_t frag_type;
+  uint16_t cfl_flags;             // see CFL_XXX defines
   INK_MD5 url_md5;
-  uint32 seq_number;
-  uint32 nbytes;
-  uint32 data;                  // used by open_write()
-  int32 channel;                // used by open interfaces
+  uint32_t seq_number;
+  uint32_t nbytes;
+  uint32_t data;                  // used by open_write()
+  int32_t channel;                // used by open interfaces
   ClusterVCToken token;
-  int32 buffer_size;            // used by open read interface
-  uint8 moi[4];
+  int32_t buffer_size;            // used by open read interface
+  uint8_t moi[4];
   enum
   {
     MIN_VERSION = 1,
     MAX_VERSION = 1,
     CACHE_OP_LONG_MESSAGE_VERSION = MAX_VERSION
   };
-  CacheOpMsg_long(uint16 vers = CACHE_OP_LONG_MESSAGE_VERSION):
+  CacheOpMsg_long(uint16_t vers = CACHE_OP_LONG_MESSAGE_VERSION):
   ClusterMessageHeader(vers),
     opcode(0), frag_type(0), cfl_flags(0), seq_number(0), nbytes(0), data(0), channel(0), buffer_size(0) {
     memset(moi, 0, sizeof(moi));
@@ -472,7 +472,7 @@ struct CacheOpMsg_long:public ClusterMessageHeader
     // Change to offsetof maybe? /leif
     return (int) ALIGN_DOUBLE(&p->moi[0]);
   }
-  void init(uint16 vers = CACHE_OP_LONG_MESSAGE_VERSION) {
+  void init(uint16_t vers = CACHE_OP_LONG_MESSAGE_VERSION) {
     _init(vers);
   }
   inline void SwapBytes()
@@ -483,10 +483,10 @@ struct CacheOpMsg_long:public ClusterMessageHeader
       swap32(&seq_number);
       swap32(&nbytes);
       swap32(&data);
-      swap32((uint32 *) & channel);
+      swap32((uint32_t *) & channel);
       token.SwapBytes();
-      swap32((uint32 *) & buffer_size);
-      swap32((uint32 *) & frag_type);
+      swap32((uint32_t *) & buffer_size);
+      swap32((uint32_t *) & frag_type);
     }
   }
   //////////////////////////////////////////////////////////////////////////
@@ -494,26 +494,26 @@ struct CacheOpMsg_long:public ClusterMessageHeader
 
 struct CacheOpMsg_short:public ClusterMessageHeader
 {
-  uint8 opcode;
-  uint8 frag_type;              // currently used by open_write() (low level)
-  uint16 cfl_flags;             // see CFL_XXX defines
+  uint8_t opcode;
+  uint8_t frag_type;              // currently used by open_write() (low level)
+  uint16_t cfl_flags;             // see CFL_XXX defines
   INK_MD5 md5;
-  uint32 seq_number;
-  uint32 nbytes;
-  uint32 data;                  // currently used by open_write() (low level)
-  int32 channel;                // used by open interfaces
+  uint32_t seq_number;
+  uint32_t nbytes;
+  uint32_t data;                  // currently used by open_write() (low level)
+  int32_t channel;                // used by open interfaces
   ClusterVCToken token;         // used by open interfaces
-  int32 buffer_size;            // used by open read interface
+  int32_t buffer_size;            // used by open read interface
 
   // Variable portion of message
-  uint8 moi[4];
+  uint8_t moi[4];
   enum
   {
     MIN_VERSION = 1,
     MAX_VERSION = 1,
     CACHE_OP_SHORT_MESSAGE_VERSION = MAX_VERSION
   };
-  CacheOpMsg_short(uint16 vers = CACHE_OP_SHORT_MESSAGE_VERSION):
+  CacheOpMsg_short(uint16_t vers = CACHE_OP_SHORT_MESSAGE_VERSION):
   ClusterMessageHeader(vers),
     opcode(0), frag_type(0), cfl_flags(0), seq_number(0), nbytes(0), data(0), channel(0), buffer_size(0) {
     memset(moi, 0, sizeof(moi));
@@ -531,7 +531,7 @@ struct CacheOpMsg_short:public ClusterMessageHeader
     // Use offsetof. /leif
     return (int) ALIGN_DOUBLE(&p->moi[0]);
   }
-  void init(uint16 vers = CACHE_OP_SHORT_MESSAGE_VERSION) {
+  void init(uint16_t vers = CACHE_OP_SHORT_MESSAGE_VERSION) {
     _init(vers);
   }
   inline void SwapBytes()
@@ -543,8 +543,8 @@ struct CacheOpMsg_short:public ClusterMessageHeader
       swap32(&nbytes);
       swap32(&data);
       if (opcode == CACHE_OPEN_READ) {
-        swap32((uint32 *) & buffer_size);
-        swap32((uint32 *) & channel);
+        swap32((uint32_t *) & buffer_size);
+        swap32((uint32_t *) & channel);
         token.SwapBytes();
       }
     }
@@ -554,20 +554,20 @@ struct CacheOpMsg_short:public ClusterMessageHeader
 
 struct CacheOpMsg_short_2:public ClusterMessageHeader
 {
-  uint8 opcode;
-  uint8 frag_type;
-  uint16 cfl_flags;             // see CFL_XXX defines
+  uint8_t opcode;
+  uint8_t frag_type;
+  uint16_t cfl_flags;             // see CFL_XXX defines
   INK_MD5 md5_1;
   INK_MD5 md5_2;
-  uint32 seq_number;
-  uint8 moi[4];
+  uint32_t seq_number;
+  uint8_t moi[4];
   enum
   {
     MIN_VERSION = 1,
     MAX_VERSION = 1,
     CACHE_OP_SHORT_2_MESSAGE_VERSION = MAX_VERSION
   };
-    CacheOpMsg_short_2(uint16 vers = CACHE_OP_SHORT_2_MESSAGE_VERSION)
+    CacheOpMsg_short_2(uint16_t vers = CACHE_OP_SHORT_2_MESSAGE_VERSION)
 :  ClusterMessageHeader(vers), opcode(0), frag_type(0), cfl_flags(0), seq_number(0) {
     memset(moi, 0, sizeof(moi));
   }
@@ -583,7 +583,7 @@ struct CacheOpMsg_short_2:public ClusterMessageHeader
     // Use offsetof already. /leif
     return (int) ALIGN_DOUBLE(&p->moi[0]);
   }
-  void init(uint16 vers = CACHE_OP_SHORT_2_MESSAGE_VERSION) {
+  void init(uint16_t vers = CACHE_OP_SHORT_2_MESSAGE_VERSION) {
     _init(vers);
   }
   inline void SwapBytes()
@@ -600,17 +600,17 @@ struct CacheOpMsg_short_2:public ClusterMessageHeader
 
 struct CacheOpReplyMsg:public ClusterMessageHeader
 {
-  uint32 seq_number;
-  int32 result;
+  uint32_t seq_number;
+  int32_t result;
   ClusterVCToken token;
-  uint8 moi[4];                 // Used by CACHE_OPEN_READ & CACHE_LINK reply
+  uint8_t moi[4];                 // Used by CACHE_OPEN_READ & CACHE_LINK reply
   enum
   {
     MIN_VERSION = 1,
     MAX_VERSION = 1,
     CACHE_OP_REPLY_MESSAGE_VERSION = MAX_VERSION
   };
-  CacheOpReplyMsg(uint16 vers = CACHE_OP_REPLY_MESSAGE_VERSION):
+  CacheOpReplyMsg(uint16_t vers = CACHE_OP_REPLY_MESSAGE_VERSION):
   ClusterMessageHeader(vers), seq_number(0), result(0) {
     memset(moi, 0, sizeof(moi));
   }
@@ -627,14 +627,14 @@ struct CacheOpReplyMsg:public ClusterMessageHeader
     // Use offsetof. /leif
     return (int) ALIGN_DOUBLE(&p->moi[0]);
   }
-  void init(uint16 vers = CACHE_OP_REPLY_MESSAGE_VERSION) {
+  void init(uint16_t vers = CACHE_OP_REPLY_MESSAGE_VERSION) {
     _init(vers);
   }
   inline void SwapBytes()
   {
     if (NeedByteSwap()) {
       swap32(&seq_number);
-      swap32((uint32 *) & result);
+      swap32((uint32_t *) & result);
       token.SwapBytes();
     }
   }

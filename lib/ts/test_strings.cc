@@ -244,8 +244,6 @@ main(int argc, char *argv[])
   strcpy_tests();
 }
 
-typedef unsigned long long uint64;
-
 //
 // fast memchr
 //
@@ -306,15 +304,15 @@ ink_memchr(const void *as, int ac, size_t an)
     s += 4;
   }
   // next 8x bytes
-  uint64 m = 0x7efefefefefefeffLL;
-  uint64 b = ((uint64) ib);
+  uint64_t m = 0x7efefefefefefeffLL;
+  uint64_t b = ((uint64_t) ib);
   b |= (b << 32);
-  uint64 *p = (uint64 *) s;
+  uint64_t *p = (uint64_t *) s;
   unsigned int n = (((unsigned int) an) - (s - (unsigned char *) as)) >> 3;
-  uint64 *end = p + n;
+  uint64_t *end = p + n;
   while (p < end) {
-    uint64 bp = *p;
-    uint64 bb = bp ^ b;
+    uint64_t bp = *p;
+    uint64_t bb = bp ^ b;
     bb = ((bb + m) ^ ~bb) & ~m;
     if (bb) {
       s = (unsigned char *) p;

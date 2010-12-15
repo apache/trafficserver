@@ -694,7 +694,7 @@ LogUtils::seconds_to_next_roll(time_t time_now, int rolling_offset, int rolling_
   return ((tr >= sidl ? (tr - sidl) % rolling_interval : (86400 - (sidl - tr)) % rolling_interval));
 }
 
-// Converts the int64 val argument to a null terminated string, returning a
+// Converts the int64_t val argument to a null terminated string, returning a
 // pointer to the beginning of the string.
 //
 // The string is stored in the provided buffer if the buffer is large
@@ -711,7 +711,7 @@ LogUtils::seconds_to_next_roll(time_t time_now, int rolling_offset, int rolling_
 // and if there is room in the buffer to accomodate the padding.
 //
 char *
-LogUtils::int64_to_str(char *buf, unsigned int buf_size, int64 val,
+LogUtils::int64_to_str(char *buf, unsigned int buf_size, int64_t val,
                        unsigned int *total_chars, unsigned int req_width, char pad_char)
 {
   const int local_buf_size = 32;
@@ -721,7 +721,7 @@ LogUtils::int64_to_str(char *buf, unsigned int buf_size, int64 val,
   char *out_buf;
 
   if (buf_size < 22) {
-    // int64 may not fit in provided buffer, use the local one
+    // int64_t may not fit in provided buffer, use the local one
     out_buf = &local_buf[local_buf_size - 1];
     using_local_buffer = true;
   } else {
@@ -875,7 +875,7 @@ LogUtils::squid_timestamp_to_buf(char *buf, unsigned int buf_size, long timestam
 //
 int
 LogUtils::file_is_writeable(const char *full_filename,
-                            off_t * size_bytes, bool * has_size_limit, uint64 * current_size_limit_bytes)
+                            off_t * size_bytes, bool * has_size_limit, uint64_t * current_size_limit_bytes)
 {
   int ret_val = 0;
   int e;

@@ -73,7 +73,7 @@ public:
     } list_info;
     struct
     {
-      uint64 m_key;
+      uint64_t m_key;
       char *m_hostname;
       ip_addr_t m_ip;
       CongestionControlRecord *m_rule;
@@ -173,7 +173,7 @@ CongestionDB::~CongestionDB()
 }
 
 void
-CongestionDB::addRecord(uint64 key, CongestionEntry * pEntry)
+CongestionDB::addRecord(uint64_t key, CongestionEntry * pEntry)
 {
   ink_assert(key == pEntry->m_key);
   pEntry->get();
@@ -219,7 +219,7 @@ CongestionDB::removeAllRecords()
 }
 
 void
-CongestionDB::removeRecord(uint64 key)
+CongestionDB::removeRecord(uint64_t key)
 {
   CongestionEntry *tmp;
   ProxyMutex *bucket_mutex = lock_for_key(key);
@@ -488,8 +488,8 @@ get_congest_entry(Continuation * cont, HttpRequestData * data, CongestionEntry *
   if (p->max_connection_failures <= 0 && p->max_connection < 0) {
     return ACTION_RESULT_DONE;
   }
-  uint64 key = make_key((char *) data->get_host(), data->get_ip(), p);
-  Debug("congestion_control", "Key = %llu", key);
+  uint64_t key = make_key((char *) data->get_host(), data->get_ip(), p);
+  Debug("congestion_control", "Key = %" PRIu64 "", key);
 
   ProxyMutex *bucket_mutex = theCongestionDB->lock_for_key(key);
   MUTEX_TRY_LOCK(lock_bucket, bucket_mutex, this_ethread());
@@ -579,7 +579,7 @@ remove_all_congested_entry()
 }
 
 void
-remove_congested_entry(uint64 key)
+remove_congested_entry(uint64_t key)
 {
   if (theCongestionDB != NULL) {
     theCongestionDB->removeRecord(key);
@@ -602,14 +602,14 @@ remove_congested_entry(char *buf, MIOBuffer * out_buffer)
   const int MSG_LEN = 512;
   char msg[MSG_LEN + 1];
   int len = 0;
-  uint64 key;
+  uint64_t key;
   if (strcasecmp(buf, "all") == 0) {
     remove_all_congested_entry();
     len = snprintf(msg, MSG_LEN, "all entries in congestion control table removed\n");
     // coverity[secure_coding]
-  } else if (sscanf(buf, "key=%llu", &key) == 1) {
+  } else if (sscanf(buf, "key=%" PRIu64 "", &key) == 1) {
     remove_congested_entry(key);
-    len = snprintf(msg, MSG_LEN, "key %llu removed\n", key);
+    len = snprintf(msg, MSG_LEN, "key %" PRIu64 " removed\n", key);
   } else if (strncasecmp(buf, "host=", 5) == 0) {
     char *p = buf + 5;
     char *prefix = strchr(p, '/');

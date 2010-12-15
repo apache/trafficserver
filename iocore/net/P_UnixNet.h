@@ -213,7 +213,7 @@ extern int http_accept_port_number;
 #define NET_THROTTLE_DELAY                        50    /* mseconds */
 #define INK_MIN_PRIORITY                          0
 
-#define PRINT_IP(x) ((uint8*)&(x))[0],((uint8*)&(x))[1], ((uint8*)&(x))[2],((uint8*)&(x))[3]
+#define PRINT_IP(x) ((uint8_t*)&(x))[0],((uint8_t*)&(x))[1], ((uint8_t*)&(x))[2],((uint8_t*)&(x))[3]
 
 
 // function prototype needed for SSLUnixNetVConnection
@@ -286,7 +286,7 @@ net_connections_to_throttle(ThrottleType t)
 {
 
   double headroom = t == ACCEPT ? NET_THROTTLE_ACCEPT_HEADROOM : NET_THROTTLE_CONNECT_HEADROOM;
-  int64 sval = 0;
+  int64_t sval = 0;
 
   NET_READ_GLOBAL_DYN_SUM(net_connections_currently_open_stat, sval);
   int currently_open = (int) sval;

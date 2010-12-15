@@ -99,7 +99,7 @@ Machine::Machine(char *ahostname, unsigned int aip)
       unsigned char x[4];
 
       memset(x, 0, sizeof(x));
-      *(uint32 *) & x = (uint32) ip;
+      *(uint32_t *) & x = (uint32_t) ip;
       Debug("machine_debug", "unable to reverse DNS %hhu.%hhu.%hhu.%hhu: %d", x[0], x[1], x[2], x[3], data.herrno);
     } else
       hostname = xstrdup(r->h_name);
@@ -113,7 +113,7 @@ Machine::Machine(char *ahostname, unsigned int aip)
   unsigned char x[4];
 
   memset(x, 0, sizeof(x));
-  *(uint32 *) & x = (uint32) ip;
+  *(uint32_t *) & x = (uint32_t) ip;
   const size_t ip_string_size = sizeof(char) * 16;
   ip_string = (char *) xmalloc(ip_string_size);
   snprintf(ip_string, ip_string_size, "%hhu.%hhu.%hhu.%hhu", x[0], x[1], x[2], x[3]);

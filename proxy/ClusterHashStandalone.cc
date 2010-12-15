@@ -66,7 +66,7 @@ static ClusterConfiguration cc;
 inline unsigned int
 cache_hash(INK_MD5 & md5)
 {
-  uint64 f = md5.fold();
+  uint64_t f = md5.fold();
   unsigned int mhash = f >> 32;
   return mhash;
 }

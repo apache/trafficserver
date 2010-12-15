@@ -1128,7 +1128,7 @@ INKVConnInternal::handle_event(int event, void *edata)
 }
 
 VIO *
-INKVConnInternal::do_io_read(Continuation *c, int64 nbytes, MIOBuffer *buf)
+INKVConnInternal::do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf)
 {
   m_read_vio.buffer.writer_for(buf);
   m_read_vio.op = VIO::READ;
@@ -1146,7 +1146,7 @@ INKVConnInternal::do_io_read(Continuation *c, int64 nbytes, MIOBuffer *buf)
 }
 
 VIO *
-INKVConnInternal::do_io_write(Continuation *c, int64 nbytes, IOBufferReader *buf, bool owner)
+INKVConnInternal::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *buf, bool owner)
 {
   ink_assert(!owner);
   m_write_vio.buffer.reader_for(buf);
@@ -1748,9 +1748,9 @@ _TSrealloc(void *ptr, size_t size, const char *path)
   return _xrealloc(ptr, size, path);
 }
 
-// length has to be int64 and not size_t, since -1 means to call strlen() to get length
+// length has to be int64_t and not size_t, since -1 means to call strlen() to get length
 char *
-_TSstrdup(const char *str, int64 length, const char *path)
+_TSstrdup(const char *str, int64_t length, const char *path)
 {
   return _xstrdup(str, length, path);
 }
@@ -4314,7 +4314,7 @@ TSHttpHookAdd(TSHttpHookID id, TSCont contp)
 void
 TSHttpIcpDynamicSet(int value)
 {
-  int32 old_value, new_value;
+  int32_t old_value, new_value;
 
   new_value = (value == 0) ? 0 : 1;
   old_value = icp_dynamic_enabled;
@@ -5227,7 +5227,7 @@ TSHttpTxnErrorBodySet(TSHttpTxn txnp, char *buf, int buflength, char *mimetype)
 }
 
 void
-TSHttpTxnServerRequestBodySet(TSHttpTxn txnp, char *buf, int64 buflength)
+TSHttpTxnServerRequestBodySet(TSHttpTxn txnp, char *buf, int64_t buflength)
 {
   HttpSM *sm = (HttpSM *) txnp;
   HttpTransact::State *s = &(sm->t_state);
@@ -5575,7 +5575,7 @@ TSHttpTxnClientReqHdrBytesGet(TSHttpTxn txnp, int *bytes)
 }
 
 int
-TSHttpTxnClientReqBodyBytesGet(TSHttpTxn txnp, int64 *bytes)
+TSHttpTxnClientReqBodyBytesGet(TSHttpTxn txnp, int64_t *bytes)
 {
   HttpSM *sm = (HttpSM *) txnp;
 
@@ -5593,7 +5593,7 @@ TSHttpTxnServerReqHdrBytesGet(TSHttpTxn txnp, int *bytes)
 }
 
 int
-TSHttpTxnServerReqBodyBytesGet(TSHttpTxn txnp, int64 *bytes)
+TSHttpTxnServerReqBodyBytesGet(TSHttpTxn txnp, int64_t *bytes)
 {
   HttpSM *sm = (HttpSM *) txnp;
 
@@ -5611,7 +5611,7 @@ TSHttpTxnServerRespHdrBytesGet(TSHttpTxn txnp, int *bytes)
 }
 
 int
-TSHttpTxnServerRespBodyBytesGet(TSHttpTxn txnp, int64 *bytes)
+TSHttpTxnServerRespBodyBytesGet(TSHttpTxn txnp, int64_t *bytes)
 {
   HttpSM *sm = (HttpSM *) txnp;
 
@@ -5629,7 +5629,7 @@ TSHttpTxnClientRespHdrBytesGet(TSHttpTxn txnp, int *bytes)
 }
 
 int
-TSHttpTxnClientRespBodyBytesGet(TSHttpTxn txnp, int64 *bytes)
+TSHttpTxnClientRespBodyBytesGet(TSHttpTxn txnp, int64_t *bytes)
 {
   HttpSM *sm = (HttpSM *) txnp;
 
@@ -5647,7 +5647,7 @@ TSHttpTxnPushedRespHdrBytesGet(TSHttpTxn txnp, int *bytes)
 }
 
 int
-TSHttpTxnPushedRespBodyBytesGet(TSHttpTxn txnp, int64 *bytes)
+TSHttpTxnPushedRespBodyBytesGet(TSHttpTxn txnp, int64_t *bytes)
 {
   HttpSM *sm = (HttpSM *) txnp;
 
@@ -5706,7 +5706,7 @@ TSHttpTxnLookingUpTypeGet(TSHttpTxn txnp)
 int
 TSHttpCurrentClientConnectionsGet(int *num_connections)
 {
-  int64 S;
+  int64_t S;
 
   HTTP_READ_DYN_SUM(http_current_client_connections_stat, S);
   *num_connections = (int) S;
@@ -5716,7 +5716,7 @@ TSHttpCurrentClientConnectionsGet(int *num_connections)
 int
 TSHttpCurrentActiveClientConnectionsGet(int *num_connections)
 {
-  int64 S;
+  int64_t S;
 
   HTTP_READ_DYN_SUM(http_current_active_client_connections_stat, S);
   *num_connections = (int) S;
@@ -5726,8 +5726,8 @@ TSHttpCurrentActiveClientConnectionsGet(int *num_connections)
 int
 TSHttpCurrentIdleClientConnectionsGet(int *num_connections)
 {
-  int64 total = 0;
-  int64 active = 0;
+  int64_t total = 0;
+  int64_t active = 0;
 
   HTTP_READ_DYN_SUM(http_current_client_connections_stat, total);
   HTTP_READ_DYN_SUM(http_current_active_client_connections_stat, active);
@@ -5742,7 +5742,7 @@ TSHttpCurrentIdleClientConnectionsGet(int *num_connections)
 int
 TSHttpCurrentCacheConnectionsGet(int *num_connections)
 {
-  int64 S;
+  int64_t S;
 
   HTTP_READ_DYN_SUM(http_current_cache_connections_stat, S);
   *num_connections = (int) S;
@@ -5752,7 +5752,7 @@ TSHttpCurrentCacheConnectionsGet(int *num_connections)
 int
 TSHttpCurrentServerConnectionsGet(int *num_connections)
 {
-  int64 S;
+  int64_t S;
 
   HTTP_READ_GLOBAL_DYN_SUM(http_current_server_connections_stat, S);
   *num_connections = (int) S;
@@ -5978,7 +5978,7 @@ TSVConnClosedGet(TSVConn connp)
 }
 
 TSVIO
-TSVConnRead(TSVConn connp, TSCont contp, TSIOBuffer bufp, int64 nbytes)
+TSVConnRead(TSVConn connp, TSCont contp, TSIOBuffer bufp, int64_t nbytes)
 {
   if ((sdk_sanity_check_iocore_structure(connp) != TS_SUCCESS) ||
       (sdk_sanity_check_iocore_structure(contp) != TS_SUCCESS) ||
@@ -5991,7 +5991,7 @@ TSVConnRead(TSVConn connp, TSCont contp, TSIOBuffer bufp, int64 nbytes)
 }
 
 TSVIO
-TSVConnWrite(TSVConn connp, TSCont contp, TSIOBufferReader readerp, int64 nbytes)
+TSVConnWrite(TSVConn connp, TSCont contp, TSIOBufferReader readerp, int64_t nbytes)
 {
   if ((sdk_sanity_check_iocore_structure(connp) != TS_SUCCESS) ||
       (sdk_sanity_check_iocore_structure(contp) != TS_SUCCESS) ||
@@ -6044,7 +6044,7 @@ TSVConnShutdown(TSVConn connp, int read, int write)
 }
 
 TSReturnCode
-TSVConnCacheObjectSizeGet(TSVConn connp, int64 *obj_size)
+TSVConnCacheObjectSizeGet(TSVConn connp, int64_t *obj_size)
 {
   if ((sdk_sanity_check_iocore_structure(connp) != TS_SUCCESS) || (obj_size == NULL))
     return TS_ERROR;
@@ -6444,7 +6444,7 @@ INKStatCreate(const char *the_name, INKStatTypes the_type)
 
   switch (the_type) {
   case INKSTAT_TYPE_INT64:
-    n = StatDescriptor::CreateDescriptor(the_name, (int64) 0);
+    n = StatDescriptor::CreateDescriptor(the_name, (int64_t) 0);
     break;
 
   case INKSTAT_TYPE_FLOAT:
@@ -6460,7 +6460,7 @@ INKStatCreate(const char *the_name, INKStatTypes the_type)
 }
 
 TSReturnCode
-INKStatIntAddTo(INKStat the_stat, int64 amount)
+INKStatIntAddTo(INKStat the_stat, int64_t amount)
 {
   if (ink_sanity_check_stat_structure(the_stat) != TS_SUCCESS)
     return TS_ERROR;
@@ -6513,7 +6513,7 @@ TSStatCreateV2(const char *the_name, uint32_t *stat_num)
 }
 
 TSReturnCode
-TSStatIncrementV2(uint32_t stat_num, int64 inc_by)
+TSStatIncrementV2(uint32_t stat_num, int64_t inc_by)
 {
   if(StatSystemV2::increment(stat_num, inc_by))
     return TS_SUCCESS;
@@ -6521,7 +6521,7 @@ TSStatIncrementV2(uint32_t stat_num, int64 inc_by)
 }
 
 TSReturnCode
-TSStatIncrementByNameV2(const char *stat_name, int64 inc_by)
+TSStatIncrementByNameV2(const char *stat_name, int64_t inc_by)
 {
   if(StatSystemV2::increment(stat_name, inc_by))
     return TS_SUCCESS;
@@ -6529,19 +6529,19 @@ TSStatIncrementByNameV2(const char *stat_name, int64 inc_by)
 }
 
 TSReturnCode
-TSStatDecrementV2(uint32_t stat_num, int64 dec_by)
+TSStatDecrementV2(uint32_t stat_num, int64_t dec_by)
 {
   return TSStatIncrementV2(stat_num, (-1)*dec_by);
 }
 
 TSReturnCode
-TSStatDecrementByNameV2(const char *stat_name, int64 dec_by)
+TSStatDecrementByNameV2(const char *stat_name, int64_t dec_by)
 {
   return TSStatIncrementByNameV2(stat_name, (-1)*dec_by);
 }
 
 TSReturnCode
-TSStatGetCurrentV2(uint32_t stat_num, int64 *stat_val)
+TSStatGetCurrentV2(uint32_t stat_num, int64_t *stat_val)
 {
   if(StatSystemV2::get_current(stat_num, stat_val))
     return TS_SUCCESS;
@@ -6549,7 +6549,7 @@ TSStatGetCurrentV2(uint32_t stat_num, int64 *stat_val)
 }
 
 TSReturnCode
-TSStatGetCurrentByNameV2(const char *stat_name, int64 *stat_val)
+TSStatGetCurrentByNameV2(const char *stat_name, int64_t *stat_val)
 {
   if(StatSystemV2::get_current(stat_name, stat_val))
     return TS_SUCCESS;
@@ -6557,7 +6557,7 @@ TSStatGetCurrentByNameV2(const char *stat_name, int64 *stat_val)
 }
 
 TSReturnCode
-TSStatGetV2(uint32_t stat_num, int64 *stat_val)
+TSStatGetV2(uint32_t stat_num, int64_t *stat_val)
 {
   if(StatSystemV2::get(stat_num, stat_val))
     return TS_SUCCESS;
@@ -6565,7 +6565,7 @@ TSStatGetV2(uint32_t stat_num, int64 *stat_val)
 }
 
 TSReturnCode
-TSStatGetByNameV2(const char *stat_name, int64 *stat_val)
+TSStatGetByNameV2(const char *stat_name, int64_t *stat_val)
 {
   if(StatSystemV2::get(stat_name, stat_val))
     return TS_SUCCESS;
@@ -6574,7 +6574,7 @@ TSStatGetByNameV2(const char *stat_name, int64 *stat_val)
 #endif
 
 TSReturnCode
-INKStatIntGet(INKStat the_stat, int64 *value)
+INKStatIntGet(INKStat the_stat, int64_t *value)
 {
   if (ink_sanity_check_stat_structure(the_stat) != TS_SUCCESS)
     return TS_ERROR;
@@ -6598,7 +6598,7 @@ INKStatFloatGet(INKStat the_stat, float *value)
 }
 
 TSReturnCode
-INKStatIntSet(INKStat the_stat, int64 value)
+INKStatIntSet(INKStat the_stat, int64_t value)
 {
   if (ink_sanity_check_stat_structure(the_stat) != TS_SUCCESS)
     return TS_ERROR;
@@ -6672,7 +6672,7 @@ INKStatCoupledGlobalAdd(INKCoupledStat global_copy, const char *the_name, INKSta
 
   switch (the_type) {
   case INKSTAT_TYPE_INT64:
-    n = category->CreateStat(the_name, (int64) 0);
+    n = category->CreateStat(the_name, (int64_t) 0);
     break;
 
   case INKSTAT_TYPE_FLOAT:
@@ -6908,7 +6908,7 @@ TSHttpTxnClientRemotePortGet(TSHttpTxn txnp, int *port)
 
 
 void
-TSIPLookupNewEntry(TSIPLookup iplu, uint32 addr1, uint32 addr2, void *data)
+TSIPLookupNewEntry(TSIPLookup iplu, uint32_t addr1, uint32_t addr2, void *data)
 {
   IpLookup *my_iplu = (IpLookup *) iplu;
   if (my_iplu) {
@@ -6917,7 +6917,7 @@ TSIPLookupNewEntry(TSIPLookup iplu, uint32 addr1, uint32 addr2, void *data)
 }
 
 int
-TSIPLookupMatch(TSIPLookup iplu, uint32 addr, void **data)
+TSIPLookupMatch(TSIPLookup iplu, uint32_t addr, void **data)
 {
   void *dummy;
   IpLookup *my_iplu = (IpLookup *) iplu;
@@ -6928,7 +6928,7 @@ TSIPLookupMatch(TSIPLookup iplu, uint32 addr, void **data)
 }
 
 int
-TSIPLookupMatchFirst(TSIPLookup iplu, uint32 addr, TSIPLookupState iplus, void **data)
+TSIPLookupMatchFirst(TSIPLookup iplu, uint32_t addr, TSIPLookupState iplus, void **data)
 {
   IpLookup *my_iplu = (IpLookup *) iplu;
   IpLookupState *my_iplus = (IpLookupState *) iplus;
@@ -6972,7 +6972,7 @@ TSMatcherTokLine(char *buffer, char **last)
 }
 
 char *
-TSMatcherExtractIPRange(char *match_str, uint32 *addr1, uint32 *addr2)
+TSMatcherExtractIPRange(char *match_str, uint32_t *addr1, uint32_t *addr2)
 {
   return (char*)ExtractIpRange(match_str, (ip_addr_t *) addr1, (ip_addr_t *) addr2);
 }
@@ -7023,7 +7023,7 @@ TSMgmtConfigIntSet(const char *var_name, TSMgmtInt value)
   // construct a buffer
   int buffer_size = strlen(var_name) + 1 + 32 + 1 + 64 + 1;
   buffer = (char *) alloca(buffer_size);
-  snprintf(buffer, buffer_size, "%s %d %lld", var_name, INK_INT, value);
+  snprintf(buffer, buffer_size, "%s %d %" PRId64 "", var_name, INK_INT, value);
 
   // tell manager to set the configuration; note that this is not
   // transactional (e.g. we return control to the plugin before the
@@ -7146,7 +7146,7 @@ TSCacheHttpInfoKeySet(TSCacheHttpInfo infop, TSCacheKey keyp)
 }
 
 void
-TSCacheHttpInfoSizeSet(TSCacheHttpInfo infop, int64 size)
+TSCacheHttpInfoSizeSet(TSCacheHttpInfo infop, int64_t size)
 {
   CacheHTTPInfo *info = (CacheHTTPInfo *) infop;
 

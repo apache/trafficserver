@@ -60,7 +60,7 @@ int close_socket(int s);
 int write_socket(int s, const char *buffer, int length);
 int read_socket(int s, char *buffer, int length);
 
-inkcoreapi uint32 ink_inet_addr(const char *s);
+inkcoreapi uint32_t ink_inet_addr(const char *s);
 
 
 #endif /* _ink_sock_h_ */

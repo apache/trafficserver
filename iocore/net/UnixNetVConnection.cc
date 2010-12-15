@@ -218,7 +218,7 @@ read_from_net(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
   NetState *s = &vc->read;
   ProxyMutex *mutex = thread->mutex;
   MIOBufferAccessor & buf = s->vio.buffer;
-  int64 r = 0;
+  int64_t r = 0;
 
   MUTEX_TRY_LOCK_FOR(lock, s->vio.mutex, thread, s->vio._cont);
 
@@ -237,17 +237,17 @@ read_from_net(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
   ink_debug_assert(buf.writer());
 
   // if there is nothing to do, disable connection
-  int64 ntodo = s->vio.ntodo();
+  int64_t ntodo = s->vio.ntodo();
   if (ntodo <= 0) {
     read_disable(nh, vc);
     return;
   }
-  int64 toread = buf.writer()->write_avail();
+  int64_t toread = buf.writer()->write_avail();
   if (toread > ntodo)
     toread = ntodo;
 
   // read data
-  int64 rattempted = 0, total_read = 0;
+  int64_t rattempted = 0, total_read = 0;
   int niov = 0;
   IOVec tiovec[NET_MAX_IOV];
   if (toread) {
@@ -256,10 +256,10 @@ read_from_net(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
       niov = 0;
       rattempted = 0;
       while (b && niov < NET_MAX_IOV) {
-        int64 a = b->write_avail();
+        int64_t a = b->write_avail();
         if (a > 0) {
           tiovec[niov].iov_base = b->_end;
-          int64 togo = toread - total_read - rattempted;
+          int64_t togo = toread - total_read - rattempted;
           if (a > togo)
             a = togo;
           tiovec[niov].iov_len = a;
@@ -281,7 +281,7 @@ read_from_net(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
 
     if (vc->loggingEnabled()) {
       char message[256];
-      snprintf(message, sizeof(message), "rval: %lld toread: %lld ntodo: %lld total_read: %lld", r, toread, ntodo, total_read);
+      snprintf(message, sizeof(message), "rval: %" PRId64 " toread: %" PRId64 " ntodo: %" PRId64 " total_read: %" PRId64 "", r, toread, ntodo, total_read);
       vc->addLogMessage(message);
     }
     // if we have already moved some bytes successfully, summarize in r
@@ -419,7 +419,7 @@ write_to_net_io(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
     return;
   }
   // If there is nothing to do, disable
-  int64 ntodo = s->vio.ntodo();
+  int64_t ntodo = s->vio.ntodo();
   if (ntodo <= 0) {
     write_disable(nh, vc);
     return;
@@ -429,7 +429,7 @@ write_to_net_io(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
   ink_debug_assert(buf.writer());
 
   // Calculate amount to write
-  int64 towrite = buf.reader()->read_avail();
+  int64_t towrite = buf.reader()->read_avail();
   if (towrite > ntodo)
     towrite = ntodo;
   int signalled = 0;
@@ -457,11 +457,11 @@ write_to_net_io(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
     return;
   }
 
-  int64 total_wrote = 0, wattempted = 0;
-  int64 r = vc->load_buffer_and_write(towrite, wattempted, total_wrote, buf);
+  int64_t total_wrote = 0, wattempted = 0;
+  int64_t r = vc->load_buffer_and_write(towrite, wattempted, total_wrote, buf);
   if (vc->loggingEnabled()) {
     char message[256];
-    snprintf(message, sizeof(message), "rval: %lld towrite: %lld ntodo: %lld total_wrote: %lld",
+    snprintf(message, sizeof(message), "rval: %" PRId64 " towrite: %" PRId64 " ntodo: %" PRId64 " total_wrote: %" PRId64 "",
              r, towrite, ntodo, total_wrote);
     vc->addLogMessage(message);
   }
@@ -525,7 +525,7 @@ write_to_net_io(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
 
 
 VIO *
-UnixNetVConnection::do_io_read(Continuation *c, int64 nbytes, MIOBuffer *buf)
+UnixNetVConnection::do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf)
 {
   addLogMessage("do_io_read");
   ink_assert(!closed);
@@ -547,7 +547,7 @@ UnixNetVConnection::do_io_read(Continuation *c, int64 nbytes, MIOBuffer *buf)
 }
 
 VIO *
-UnixNetVConnection::do_io_write(Continuation *c, int64 nbytes, IOBufferReader *reader, bool owner)
+UnixNetVConnection::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *reader, bool owner)
 {
   addLogMessage("do_io_write");
   ink_assert(!closed);
@@ -826,18 +826,18 @@ UnixNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
 // I could overwrite it for the SSL implementation
 // (SSL read does not support overlapped i/o)
 // without duplicating all the code in write_to_net.
-int64
-UnixNetVConnection::load_buffer_and_write(int64 towrite, int64 &wattempted, int64 &total_wrote, MIOBufferAccessor & buf)
+int64_t
+UnixNetVConnection::load_buffer_and_write(int64_t towrite, int64_t &wattempted, int64_t &total_wrote, MIOBufferAccessor & buf)
 {
-  int64 r = 0;
-  int64 offset = buf.entry->start_offset;
+  int64_t r = 0;
+  int64_t offset = buf.entry->start_offset;
   IOBufferBlock *b = buf.entry->block;
   do {
     IOVec tiovec[NET_MAX_IOV];
     int niov = 0, total_wrote_last = total_wrote;
     while (b && niov < NET_MAX_IOV) {
       // check if we have done this block
-      int64 l = b->read_avail();
+      int64_t l = b->read_avail();
       l -= offset;
       if (l <= 0) {
         offset = -l;
@@ -845,7 +845,7 @@ UnixNetVConnection::load_buffer_and_write(int64 towrite, int64 &wattempted, int6
         continue;
       }
       // check if to amount to write exceeds that in this buffer
-      int64 wavail = towrite - total_wrote;
+      int64_t wavail = towrite - total_wrote;
       if (l > wavail)
         l = wavail;
       if (!l)

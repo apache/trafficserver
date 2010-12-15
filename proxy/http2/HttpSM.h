@@ -263,7 +263,7 @@ public:
   void add_cache_sm();
   bool decide_cached_url(URL * s_url);
 
-  int64 sm_id;
+  int64_t sm_id;
   unsigned int magic;
 
   //YTS Team, yamsat Plugin
@@ -272,7 +272,7 @@ public:
   char *redirect_url;           //url for force redirect (provide users a functionality to redirect to another url when needed)
   int redirect_url_len;
   int redirection_tries;        //To monitor number of redirections
-  int64 transfered_bytes;         //Added to calculate POST data
+  int64_t transfered_bytes;         //Added to calculate POST data
   bool post_failed;             //Added to identify post failure
 
   bool is_cache_enabled;        //To check if cache is enabled  - YTS Team, yamsat
@@ -453,7 +453,7 @@ protected:
   void setup_push_transfer_to_cache();
   void setup_transform_to_server_transfer();
   void setup_cache_write_transfer(HttpCacheSM * c_sm,
-                                  VConnection * source_vc, HTTPInfo * store_info, int64 skip_bytes, const char *name);
+                                  VConnection * source_vc, HTTPInfo * store_info, int64_t skip_bytes, const char *name);
   void issue_cache_update();
   void perform_cache_write_action();
   void perform_transform_cache_write_action();
@@ -472,21 +472,21 @@ protected:
   bool is_http_server_eos_truncation(HttpTunnelProducer *);
   bool is_bg_fill_necessary(HttpTunnelConsumer * c);
   int find_server_buffer_size();
-  int find_http_resp_buffer_size(int64 cl);
-  int64 server_transfer_init(MIOBuffer * buf, int hdr_size);
+  int find_http_resp_buffer_size(int64_t cl);
+  int64_t server_transfer_init(MIOBuffer * buf, int hdr_size);
 
 public:
   // Stats & Logging Info
   int client_request_hdr_bytes;
-  int64 client_request_body_bytes;
+  int64_t client_request_body_bytes;
   int server_request_hdr_bytes;
-  int64 server_request_body_bytes;
+  int64_t server_request_body_bytes;
   int server_response_hdr_bytes;
-  int64 server_response_body_bytes;
+  int64_t server_response_body_bytes;
   int client_response_hdr_bytes;
-  int64 client_response_body_bytes;
+  int64_t client_response_body_bytes;
   int pushed_response_hdr_bytes;
-  int64 pushed_response_body_bytes;
+  int64_t pushed_response_body_bytes;
   TransactionMilestones milestones;
 
   // hooks_set records whether there are any hooks relevant
@@ -500,7 +500,7 @@ protected:
 
   //
   // Continuation time keeper
-  int64 prev_hook_start_time;
+  int64_t prev_hook_start_time;
 
   // TODO: This needs to be supported with non-V2 APIs as well.
 #if TS_HAS_V2STATS

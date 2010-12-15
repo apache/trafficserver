@@ -161,7 +161,7 @@ make_cluster_connections(MachineList * l, MachineList * old)
   //
   // Connect to all new machines.
   //
-  uint32 ip = this_cluster_machine()->ip;
+  uint32_t ip = this_cluster_machine()->ip;
 
   if (l) {
     for (int i = 0; i < l->n; i++)

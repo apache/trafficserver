@@ -44,7 +44,7 @@ using namespace wccp;
 // Scratch global list of seed router addresses.
 // Yeah, not thread safe, but it's just during configuration load.
 // Logic somewhat changed - can we move in to the load method?
-std::vector<uint32> Seed_Router;
+std::vector<uint32_t> Seed_Router;
 
 // Names used for various elements and properties.
 static char const * const SVC_NAME = "service";
@@ -458,7 +458,7 @@ load_security (
 ts::Errata
 load_routers (
   Value const& setting, ///< Source of addresses.
-  std::vector<uint32>& addrs ///< Output list
+  std::vector<uint32_t>& addrs ///< Output list
 ) {
   ts::Errata zret;
   int src_line;
@@ -490,7 +490,7 @@ ts::Errata
 CacheImpl::loadServicesFromFile(char const* path) {
   ts::Errata zret;
   int src_line = 0; // scratch for local source line caching.
-  std::vector<uint32> routers; // scratch per service loop.
+  std::vector<uint32_t> routers; // scratch per service loop.
   Value prop; // scratch var.
 
   ts::Rv<Configuration> cv = Configuration::loadFromPath(path);
@@ -606,7 +606,7 @@ CacheImpl::loadServicesFromFile(char const* path) {
     svc_info.setFlags(0);
     if ((prop = svc_cfg[SVC_PROP_PRIMARY_HASH]).hasValue()) {
       ts::Errata status = load_option_set(prop, HASH_OPTS, N_OPTS(HASH_OPTS));
-      uint32 f = 0;
+      uint32_t f = 0;
       src_line = prop.getSourceLine();
       for ( size_t i = 0 ; i < N_OPTS(HASH_OPTS) ; ++i )
         if (HASH_OPTS[i].m_found) f |= ServiceGroup::SRC_IP_HASH << i;
@@ -622,7 +622,7 @@ CacheImpl::loadServicesFromFile(char const* path) {
 
     if ((prop = svc_cfg[SVC_PROP_ALT_HASH]).hasValue()) {
       ts::Errata status = load_option_set(prop, HASH_OPTS, N_OPTS(HASH_OPTS));
-      uint32 f = 0;
+      uint32_t f = 0;
       src_line = prop.getSourceLine();
       for ( size_t i = 0 ; i < N_OPTS(HASH_OPTS) ; ++i )
         if (HASH_OPTS[i].m_found) f |= ServiceGroup::SRC_IP_ALT_HASH << i;
@@ -720,7 +720,7 @@ CacheImpl::loadServicesFromFile(char const* path) {
     // Properties after this are optional so we can proceed if they fail.
     GroupData& svc = this->defineServiceGroup(svc_info);
     // Add seed routers.
-    std::vector<uint32>::iterator rspot, rlimit;
+    std::vector<uint32_t>::iterator rspot, rlimit;
     for ( rspot = routers.begin(), rlimit = routers.end() ; rspot != rlimit ; ++rspot )
       svc.seedRouter(*rspot);
     for ( rspot = Seed_Router.begin(), rlimit = Seed_Router.end() ; rspot != rlimit ; ++rspot )

@@ -70,13 +70,13 @@ protected:
       return *this;
     }
 
-    int64 ival;
+    int64_t ival;
     struct
     {
-      uint16 reader_count;
-      uint16 writer_count;
-      uint32 offset:29;
-      uint32 state:3;
+      uint16_t reader_count;
+      uint16_t writer_count;
+      uint32_t offset:29;
+      uint32_t state:3;
     } s;
   };
 
@@ -105,7 +105,7 @@ public:
     return vs.s.offset;
   }
 
-  virtual ABError checkout_write(int *write_offset, int write_size, uint64 retries = (uint64) - 1);
+  virtual ABError checkout_write(int *write_offset, int write_size, uint64_t retries = (uint64_t) - 1);
   virtual ABError checkout_read(int read_offset, int read_size);
   virtual ABError checkin_write(int write_offset);
   virtual ABError checkin_read(int read_offset);
@@ -174,7 +174,7 @@ private:
 inline bool
 AbstractBuffer::switch_state(VolatileState & old_vs, VolatileState & new_vs)
 {
-  if (ink_atomic_cas64((int64 *) & vs.ival, old_vs.ival, new_vs.ival)) {
+  if (ink_atomic_cas64((int64_t *) & vs.ival, old_vs.ival, new_vs.ival)) {
     return true;
   }
 

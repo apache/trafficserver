@@ -940,9 +940,9 @@ getaddrinfo_error:
 
 static int
 test_port(int port, const char *request, char *buffer, int bufsize,
-          int64 test_timeout, char *ip = NULL, char *ip_to_bind = NULL)
+          int64_t test_timeout, char *ip = NULL, char *ip_to_bind = NULL)
 {
-  int64 start_time, timeout;
+  int64_t start_time, timeout;
   int sock;
   size_t length = strlen(request);
   int err, idx;
@@ -956,7 +956,7 @@ test_port(int port, const char *request, char *buffer, int bufsize,
 
   timeout = milliseconds() - start_time;
   if (timeout >= test_timeout) {
-    cop_log(COP_WARNING, "(test) timeout occurred [%lld ms]\n", timeout);
+    cop_log(COP_WARNING, "(test) timeout occurred [%" PRId64 " ms]\n", timeout);
     goto error;
   }
   timeout = test_timeout - timeout;
@@ -966,7 +966,7 @@ test_port(int port, const char *request, char *buffer, int bufsize,
     cop_log(COP_WARNING, "(test) poll write failed [%d '%s']\n", errno, strerror(errno));
     goto error;
   } else if (err == 0) {
-    cop_log(COP_WARNING, "(test) write timeout [%lld ms]\n", timeout);
+    cop_log(COP_WARNING, "(test) write timeout [%" PRId64 " ms]\n", timeout);
     goto error;
   }
   // Write the request to the server.
@@ -993,7 +993,7 @@ test_port(int port, const char *request, char *buffer, int bufsize,
 
     timeout = milliseconds() - start_time;
     if (timeout >= test_timeout) {
-      cop_log(COP_WARNING, "(test) timeout occurred [%lld ms]\n", timeout);
+      cop_log(COP_WARNING, "(test) timeout occurred [%" PRId64 " ms]\n", timeout);
       goto error;
     }
     timeout = test_timeout - timeout;
@@ -1003,7 +1003,7 @@ test_port(int port, const char *request, char *buffer, int bufsize,
       cop_log(COP_WARNING, "(test) poll read failed [%d '%s']\n", errno, strerror(errno));
       goto error;
     } else if (err == 0) {
-      cop_log(COP_WARNING, "(test) read timeout [%lld ]\n", timeout);
+      cop_log(COP_WARNING, "(test) read timeout [%" PRId64 " ]\n", timeout);
       goto error;
     }
 

@@ -106,7 +106,7 @@ public:
   int sslServerHandShakeEvent(int &err);
   int sslClientHandShakeEvent(int &err);
   virtual void net_read_io(NetHandler * nh, EThread * lthread);
-  virtual int64 load_buffer_and_write(int64 towrite, int64 &wattempted, int64 &total_wrote, MIOBufferAccessor & buf);
+  virtual int64_t load_buffer_and_write(int64_t towrite, int64_t &wattempted, int64_t &total_wrote, MIOBufferAccessor & buf);
   virtual ~ SSLNetVConnection() { }
   ////////////////////////////////////////////////////////////
   // instances of NetVConnection should be allocated        //
@@ -137,6 +137,7 @@ extern ClassAllocator<SSLNetVConnection> sslNetVCAllocator;
 static inline SSLNetVConnection *
 new_SSLNetVConnection(EThread * thread)
 {
+  NOWARN_UNUSED(thread);
   NET_SUM_GLOBAL_DYN_STAT(net_connections_currently_open_stat, 1);
   SSLNetVConnection *vc = sslNetVCAllocator.alloc();
   vc->connect_calls = 0;

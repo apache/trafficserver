@@ -41,7 +41,7 @@ struct AIOCallback;
 #define NO_ETHREAD_ID                   -1
 
 EThread::EThread()
-  : generator((uint32)((uintptr_t)time(NULL) ^ (uintptr_t) this)),
+  : generator((uint32_t)((uintptr_t)time(NULL) ^ (uintptr_t) this)),
    ethreads_to_be_signalled(NULL),
    n_ethreads_to_be_signalled(0),
    main_accept_index(-1),
@@ -56,7 +56,7 @@ EThread::EThread()
 }
 
 EThread::EThread(ThreadType att, int anid)
-  : generator((uint32)((uintptr_t)time(NULL) ^ (uintptr_t) this)),
+  : generator((uint32_t)((uintptr_t)time(NULL) ^ (uintptr_t) this)),
     ethreads_to_be_signalled(NULL),
     n_ethreads_to_be_signalled(0),
     main_accept_index(-1),
@@ -94,7 +94,7 @@ EThread::EThread(ThreadType att, int anid)
 }
 
 EThread::EThread(ThreadType att, Event * e, ink_sem * sem)
- : generator((uint32)((uintptr_t)time(NULL) ^ (uintptr_t) this)),
+ : generator((uint32_t)((uintptr_t)time(NULL) ^ (uintptr_t) this)),
    ethreads_to_be_signalled(NULL),
    n_ethreads_to_be_signalled(0),
    main_accept_index(-1),

@@ -126,7 +126,7 @@ public:
   }
 
   void set_aggregate_op(Aggregate agg_op);
-  void update_aggregate(int64 val);
+  void update_aggregate(int64_t val);
 
   static Container valid_container_name(char *name);
   static Aggregate valid_aggregate_name(char *name);
@@ -141,8 +141,8 @@ private:
   UnmarshalFunc m_unmarshal_func;       // create a string of the data
   UnmarshalFuncWithMap m_unmarshal_func_map;
   Aggregate m_agg_op;
-  int64 m_agg_cnt;
-  int64 m_agg_val;
+  int64_t m_agg_cnt;
+  int64_t m_agg_val;
   bool m_time_field;
   Ptr<LogFieldAliasMap> m_alias_map; // map sINT <--> string
 

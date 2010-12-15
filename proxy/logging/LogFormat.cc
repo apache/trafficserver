@@ -115,9 +115,9 @@ LogFormat::setup(const char *name, const char *format_str, unsigned interval_sec
   LogFormat::id_from_name
   -------------------------------------------------------------------------*/
 
-int32 LogFormat::id_from_name(const char *name)
+int32_t LogFormat::id_from_name(const char *name)
 {
-  int32
+  int32_t
     id = 0;
   if (name) {
     INK_MD5
@@ -129,9 +129,9 @@ int32 LogFormat::id_from_name(const char *name)
      * This problem is only known to occur on Linux which
      * is a 32-bit OS.
      */
-    id = (int32) name_md5.fold() & 0x7fffffff;
+    id = (int32_t) name_md5.fold() & 0x7fffffff;
 #else
-    id = (int32) name_md5.fold();
+    id = (int32_t) name_md5.fold();
 #endif
   }
   return id;
@@ -831,7 +831,7 @@ LogFormatList::find_by_name(const char *name) const
 }
 
 LogFormat *
-LogFormatList::find_by_type(LogFormatType type, int32 id) const
+LogFormatList::find_by_type(LogFormatType type, int32_t id) const
 {
   for (LogFormat * f = first(); f; f = next(f)) {
     if ((f->type() == type) && (f->name_id() == id)) {

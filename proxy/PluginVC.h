@@ -83,9 +83,9 @@ public:
     PluginVC();
    ~PluginVC();
 
-  virtual VIO *do_io_read(Continuation * c = NULL, int64 nbytes = INT64_MAX, MIOBuffer * buf = 0);
+  virtual VIO *do_io_read(Continuation * c = NULL, int64_t nbytes = INT64_MAX, MIOBuffer * buf = 0);
 
-  virtual VIO *do_io_write(Continuation * c = NULL, int64 nbytes = INT64_MAX, IOBufferReader * buf = 0, bool owner = false);
+  virtual VIO *do_io_write(Continuation * c = NULL, int64_t nbytes = INT64_MAX, IOBufferReader * buf = 0, bool owner = false);
 
   virtual bool is_over_ssl()
   {
@@ -128,9 +128,9 @@ private:
   void setup_event_cb(ink_hrtime in, Event ** e_ptr);
 
   void update_inactive_time();
-  int64 transfer_bytes(MIOBuffer * transfer_to, IOBufferReader * transfer_from, int64 act_on);
+  int64_t transfer_bytes(MIOBuffer * transfer_to, IOBufferReader * transfer_from, int64_t act_on);
 
-  uint32 magic;
+  uint32_t magic;
   PluginVC_t vc_type;
   PluginVCCore *core_obj;
 
@@ -176,8 +176,8 @@ public:
   Action *connect_re(Continuation * c);
   void kill_no_connect();
 
-  void set_active_addr(uint32 ip, int port);
-  void set_passive_addr(uint32 ip, int port);
+  void set_active_addr(uint32_t ip, int port);
+  void set_passive_addr(uint32_t ip, int port);
 
   void set_active_data(void *data);
   void set_passive_data(void *data);

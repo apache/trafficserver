@@ -344,7 +344,7 @@ dir_clean_bucket(Dir *b, int s, Part *part)
 #endif
     if (!dir_valid(part, e) || !dir_offset(e)) {
       if (is_debug_tag_set("dir_clean"))
-        Debug("dir_clean", "cleaning %p tag %X boffset %lld b %p p %p l %d",
+        Debug("dir_clean", "cleaning %p tag %X boffset %" PRId64 " b %p p %p l %d",
               e, dir_tag(e), dir_offset(e), b, p, dir_bucket_length(b, s, part));
       if (dir_offset(e))
         CACHE_DEC_DIR_USED(part->mutex);
@@ -379,7 +379,7 @@ dir_clear_range(off_t start, off_t end, Part *part)
 {
   for (int i = 0; i < part->buckets * DIR_DEPTH * part->segments; i++) {
     Dir *e = dir_index(part, i);
-    if (!dir_token(e) && dir_offset(e) >= (int64)start && dir_offset(e) < (int64)end) {
+    if (!dir_token(e) && dir_offset(e) >= (int64_t)start && dir_offset(e) < (int64_t)end) {
       CACHE_DEC_DIR_USED(part->mutex);
       dir_set_offset(e, 0);     // delete
     }
@@ -448,7 +448,7 @@ dir_segment_accounted(int s, Part *d, int offby, int *f, int *u, int *et, int *v
   int free = dir_freelist_length(d, s);
   int used = 0, empty = 0;
   int valid = 0, agg_valid = 0;
-  int64 agg_size = 0;
+  int64_t agg_size = 0;
   Dir *seg = dir_segment(s, d);
   for (int bi = 0; bi < d->buckets; bi++) {
     Dir *b = dir_bucket(bi, seg);
@@ -535,7 +535,7 @@ Lagain:
           goto Lcont;
         }
         if (dir_valid(d, e)) {
-          DDebug("dir_probe_hit", "found %X %X part %d bucket %d boffset %lld", key->word(0), key->word(1), d->fd, b, dir_offset(e));
+          DDebug("dir_probe_hit", "found %X %X part %d bucket %d boffset %" PRId64 "", key->word(0), key->word(1), d->fd, b, dir_offset(e));
           dir_assign(result, e);
           *last_collision = e;
           ink_assert(dir_offset(e) * CACHE_BLOCK_SIZE < d->len);
@@ -607,7 +607,7 @@ Lfill:
   dir_set_tag(e, key->word(2));
   ink_assert(part_offset(d, e) < (d->skip + d->len));
   DDebug("dir_insert",
-        "insert %p %X into part %d bucket %d at %p tag %X %X boffset %lld",
+        "insert %p %X into part %d bucket %d at %p tag %X %X boffset %" PRId64 "",
          e, key->word(0), d->fd, bi, e, key->word(1), dir_tag(e), dir_offset(e));
   CHECK_DIR(d);
   d->header->dirty = 1;
@@ -681,7 +681,7 @@ Lfill:
   dir_set_tag(e, t);
   ink_assert(part_offset(d, e) < d->skip + d->len);
   DDebug("dir_overwrite",
-        "overwrite %p %X into part %d bucket %d at %p tag %X %X boffset %lld",
+        "overwrite %p %X into part %d bucket %d at %p tag %X %X boffset %" PRId64 "",
          e, key->word(0), d->fd, bi, e, t, dir_tag(e), dir_offset(e));
   CHECK_DIR(d);
   d->header->dirty = 1;
@@ -854,11 +854,11 @@ CacheSync::aio_write(int fd, char *b, int n, off_t o)
   ink_assert(ink_aio_write(&io) >= 0);
 }
 
-uint64
+uint64_t
 dir_entries_used(Part *d)
 {
-  uint64 full = 0;
-  uint64 sfull = 0;
+  uint64_t full = 0;
+  uint64_t sfull = 0;
   for (int s = 0; s < d->segments; full += sfull, s++) {
     Dir *seg = dir_segment(s, d);
     sfull = 0;
@@ -1040,7 +1040,7 @@ Lrestart:
           d->aggWrite(EVENT_IMMEDIATE, 0);
         return EVENT_CONT;
       }
-      Debug("cache_dir_sync", "pos: %llu Dir %s dirty...syncing to disk", d->header->write_pos, d->hash_id);
+      Debug("cache_dir_sync", "pos: %" PRIu64 " Dir %s dirty...syncing to disk", d->header->write_pos, d->hash_id);
       d->header->dirty = 0;
       if (buflen < dirlen) {
         if (buf)
@@ -1132,8 +1132,8 @@ Part::dir_check(bool fix)
   int total = buckets * segments * DIR_DEPTH;
   printf("    Directory for [%s]\n", hash_id);
   printf("        Bytes:     %d\n", total * SIZEOF_DIR);
-  printf("        Segments:  %llu\n", (uint64)segments);
-  printf("        Buckets:   %llu\n", (uint64)buckets);
+  printf("        Segments:  %" PRIu64 "\n", (uint64_t)segments);
+  printf("        Buckets:   %" PRIu64 "\n", (uint64_t)buckets);
   printf("        Entries:   %d\n", total);
   printf("        Full:      %d\n", full);
   printf("        Empty:     %d\n", empty);
@@ -1169,7 +1169,7 @@ Part::dir_check(bool fix)
 //
 
 // permutation table
-uint8 CacheKey_next_table[256] = {
+uint8_t CacheKey_next_table[256] = {
   21, 53, 167, 51, 255, 126, 241, 151,
   115, 66, 155, 174, 226, 215, 80, 188,
   12, 95, 8, 24, 162, 201, 46, 104,
@@ -1205,7 +1205,7 @@ uint8 CacheKey_next_table[256] = {
 };
 
 // permutation table
-uint8 CacheKey_prev_table[256] = {
+uint8_t CacheKey_prev_table[256] = {
   57, 55, 119, 141, 158, 152, 218, 165,
   18, 178, 89, 172, 16, 68, 34, 146,
   153, 233, 114, 48, 229, 0, 187, 154,
@@ -1338,11 +1338,11 @@ EXCLUSIVE_REGRESSION_TEST(Cache_dir) (RegressionTest *t, int atype, int *status)
     regress_rand_CacheKey(&key);
     dir_insert(&key, d, &dir);
   }
-  uint64 us = (ink_get_hrtime_internal() - ttime) / HRTIME_USECOND;
+  uint64_t us = (ink_get_hrtime_internal() - ttime) / HRTIME_USECOND;
   //On windows us is sometimes 0. I don't know why.
   //printout the insert rate only if its not 0
   if (us)
-    rprintf(t, "insert rate = %d / second\n", (int) ((newfree * (uint64) 1000000) / us));
+    rprintf(t, "insert rate = %d / second\n", (int) ((newfree * (uint64_t) 1000000) / us));
   regress_rand_init(13);
   ttime = ink_get_hrtime_internal();
   for (i = 0; i < newfree; i++) {
@@ -1355,7 +1355,7 @@ EXCLUSIVE_REGRESSION_TEST(Cache_dir) (RegressionTest *t, int atype, int *status)
   //On windows us is sometimes 0. I don't know why.
   //printout the probe rate only if its not 0
   if (us)
-    rprintf(t, "probe rate = %d / second\n", (int) ((newfree * (uint64) 1000000) / us));
+    rprintf(t, "probe rate = %d / second\n", (int) ((newfree * (uint64_t) 1000000) / us));
 
 
   for (int c = 0; c < part_direntries(d) * 0.75; c++) {

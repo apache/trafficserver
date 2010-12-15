@@ -199,7 +199,7 @@ NetVCTest::start_test()
 
 
 int
-NetVCTest::fill_buffer(MIOBuffer * buf, uint8 * seed, int bytes)
+NetVCTest::fill_buffer(MIOBuffer * buf, uint8_t * seed, int bytes)
 {
 
   char *space = (char *) xmalloc(bytes);
@@ -220,10 +220,10 @@ NetVCTest::fill_buffer(MIOBuffer * buf, uint8 * seed, int bytes)
 }
 
 int
-NetVCTest::consume_and_check_bytes(IOBufferReader * r, uint8 * seed)
+NetVCTest::consume_and_check_bytes(IOBufferReader * r, uint8_t * seed)
 {
 
-  uint8 *tmp, *end;
+  uint8_t *tmp, *end;
   int b_consumed = 0;
 
   if (actual_bytes_read >= bytes_to_read) {
@@ -233,7 +233,7 @@ NetVCTest::consume_and_check_bytes(IOBufferReader * r, uint8 * seed)
   while (r->read_avail() > 0) {
     int b_avail = r->block_read_avail();
 
-    tmp = (uint8 *) r->start();
+    tmp = (uint8_t *) r->start();
     end = tmp + b_avail;
     b_consumed = 0;
 

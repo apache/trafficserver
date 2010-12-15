@@ -121,8 +121,8 @@ static LastState last_state;
 // Store the collected counters and stats, per Origin Server (or total)
 struct StatsCounter
 {
-  int64 count;
-  int64 bytes;
+  int64_t count;
+  int64_t bytes;
 };
 
 struct ElapsedStats
@@ -336,7 +336,6 @@ static OriginStats totals;
 static OriginStorage origins;
 static OriginSet *origin_set;
 static int parse_errors;
-static char *hostname;
 
 // Command line arguments (parsing)
 struct CommandLineArgs
@@ -346,7 +345,7 @@ struct CommandLineArgs
   char origin_list[MAX_ORIG_STRING];
   int max_origins;
   char state_tag[1024];
-  int64 min_hits;
+  int64_t min_hits;
   int max_age;
   int line_len;
   int incremental;              // Do an incremental run
@@ -404,12 +403,12 @@ CommandLineArgs::parse_arguments(char** argv) {
   // Process as "CGI" ?
   if (strstr(argv[0], ".cgi") || cgi) {
     char *query;
-    int len;
 
     json = 1;
     cgi = 1;
 
     if (NULL != (query = getenv("QUERY_STRING"))) {
+      int len;
       char buffer[MAX_ORIG_STRING];
       char *tok, *sep_ptr, *val;
 
@@ -963,7 +962,7 @@ parse_log_buff(LogBufferHeader * buf_header, bool summary = false)
       switch (state) {
       case P_STATE_ELAPSED:
         state = P_STATE_IP;
-        elapsed = *((int64 *) (read_from));
+        elapsed = *((int64_t *) (read_from));
         read_from += INK_MIN_ALIGN;
         break;
 
@@ -978,7 +977,7 @@ parse_log_buff(LogBufferHeader * buf_header, bool summary = false)
 
       case P_STATE_RESULT:
         state = P_STATE_CODE;
-        result = *((int64 *) (read_from));
+        result = *((int64_t *) (read_from));
         read_from += INK_MIN_ALIGN;
         if ((result<32) || (result>255)) {
           flag = 1;
@@ -988,7 +987,7 @@ parse_log_buff(LogBufferHeader * buf_header, bool summary = false)
 
       case P_STATE_CODE:
         state = P_STATE_SIZE;
-        http_code = *((int64 *) (read_from));
+        http_code = *((int64_t *) (read_from));
         read_from += INK_MIN_ALIGN;
         if ((http_code<0) || (http_code>999)) {
           flag = 1;
@@ -1001,7 +1000,7 @@ parse_log_buff(LogBufferHeader * buf_header, bool summary = false)
         // Warning: This is not 64-bit safe, when converting the log format,
         // this needs to be fixed as well.
         state = P_STATE_METHOD;
-        size = *((int64 *) (read_from));
+        size = *((int64_t *) (read_from));
         read_from += INK_MIN_ALIGN;
         //printf("Size == %d\n", size)
         break;
@@ -1131,7 +1130,7 @@ parse_log_buff(LogBufferHeader * buf_header, bool summary = false)
 
       case P_STATE_HIERARCHY:
         state = P_STATE_PEER;
-        hier = *((int64 *) (read_from));
+        hier = *((int64_t *) (read_from));
         switch (hier) {
         case SQUID_HIER_NONE:
           update_counter(totals.hierarchies.none, size);
@@ -1479,11 +1478,11 @@ format_center(const char *str, std::ostream & out)
 }
 
 inline void
-format_int(int64 num, std::ostream & out)
+format_int(int64_t num, std::ostream & out)
 {
   if (num > 0) {
-    int64 mult = (int64) pow((double)10, (int) (log10((double)num) / 3) * 3);
-    int64 div;
+    int64_t mult = (int64_t) pow((double)10, (int) (log10((double)num) / 3) * 3);
+    int64_t div;
     std::stringstream ss;
 
     ss.fill('0');
@@ -1954,7 +1953,6 @@ int
 main(int argc, char *argv[])
 {
   ExitStatus exit_status;
-  struct utsname uts_buf;
   int res, cnt;
   int main_fd;
   unsigned max_age;
@@ -2047,12 +2045,6 @@ main(int argc, char *argv[])
       }
     }
   }
-  // Get the hostname
-  if (uname(&uts_buf) < 0) {
-    exit_status.set(EXIT_CRITICAL, " can't get hostname");
-    my_exit(exit_status);
-  }
-  hostname = xstrdup(uts_buf.nodename);
 
   // Change directory to the log dir
   if (chdir(system_log_dir) < 0) {

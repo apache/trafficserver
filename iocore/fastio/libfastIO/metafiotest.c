@@ -142,7 +142,7 @@ main()
     metareq[i] = blocks[10]->id;
     fastIO_metarequest_setup(vsession, blocks[10]->id);
 
-    printf("Now: %lld.\n", gethrtime());
+    printf("Now: %" PRId64 ".\n", gethrtime());
     pkt = (struct fastIO_pkt *) req;
     pkt->pktsize = 1466;
     pkt->blockID = blocks[0]->id;

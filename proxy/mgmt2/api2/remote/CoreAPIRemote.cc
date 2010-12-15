@@ -493,7 +493,7 @@ MgmtRecordSet(const char *rec_name, const char *val, INKActionNeedT * action_nee
 }
 
 // first convert the MgmtInt into a string
-// NOTE: use long long, not just long, MgmtInt = int64
+// NOTE: use long long, not just long, MgmtInt = int64_t
 INKError
 MgmtRecordSetInt(const char *rec_name, MgmtInt int_val, INKActionNeedT * action_need)
 {
@@ -504,7 +504,7 @@ MgmtRecordSetInt(const char *rec_name, MgmtInt int_val, INKActionNeedT * action_
     return INK_ERR_PARAMS;
 
   bzero(str_val, MAX_RECORD_SIZE);
-  snprintf(str_val, sizeof(str_val), "%lld", int_val);
+  snprintf(str_val, sizeof(str_val), "%" PRId64 "", int_val);
   ret = mgmt_record_set(rec_name, str_val, action_need);
 
   return ret;
@@ -521,7 +521,7 @@ MgmtRecordSetCounter(const char *rec_name, MgmtIntCounter counter_val, INKAction
     return INK_ERR_PARAMS;
 
   bzero(str_val, MAX_RECORD_SIZE);
-  snprintf(str_val, sizeof(str_val), "%lld", counter_val);
+  snprintf(str_val, sizeof(str_val), "%" PRId64 "", counter_val);
   ret = mgmt_record_set(rec_name, str_val, action_need);
 
   return ret;

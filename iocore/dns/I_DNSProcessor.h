@@ -43,7 +43,7 @@
 struct HostEnt
 {
   struct hostent ent;
-  uint32 ttl;
+  uint32_t ttl;
   int ref_count;
   int packet_size;
   char buf[MAX_DNS_PACKET_LEN];

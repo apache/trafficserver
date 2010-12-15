@@ -64,7 +64,7 @@ ClassAllocator<HostEnt> dnsBufAllocator("dnsBufAllocator", 2);
 // Function Prototypes
 //
 static bool dns_process(DNSHandler * h, HostEnt * ent, int len);
-static DNSEntry *get_dns(DNSHandler * h, uint16 id);
+static DNSEntry *get_dns(DNSHandler * h, uint16_t id);
 // returns true when e is done
 static void dns_result(DNSHandler * h, DNSEntry * e, HostEnt * ent, bool retry);
 static void write_dns(DNSHandler * h);
@@ -86,9 +86,9 @@ strnchr(char *s, char c, int len)
   return *s == c ? s : (char *) NULL;
 }
 
-static inline uint16
-ink_get16(const uint8 *src) {
-  uint16 dst;
+static inline uint16_t
+ink_get16(const uint8_t *src) {
+  uint16_t dst;
 
   NS_GET16(dst, src);
   return dst;
@@ -176,7 +176,7 @@ DNSProcessor::dns_init()
 
   if (dns_ns_list) {
     Debug("dns", "Nameserver list specified \"%s\"\n", dns_ns_list);
-    uint32 nameserver_ip[MAX_NAMED];
+    uint32_t nameserver_ip[MAX_NAMED];
     int nameserver_port[MAX_NAMED];
     int i, j;
     char *last, *ndx;
@@ -650,6 +650,7 @@ void
 DNSHandler::recv_dns(int event, Event * e)
 {
   NOWARN_UNUSED(event);
+  NOWARN_UNUSED(e);
   DNSConnection *dnsc = NULL;
 
   while ((dnsc = (DNSConnection *) triggered.dequeue())) {
@@ -764,7 +765,7 @@ DNSHandler::mainEvent(int event, Event * e)
 
 /** Find a DNSEntry by id. */
 inline static DNSEntry *
-get_dns(DNSHandler * h, uint16 id)
+get_dns(DNSHandler * h, uint16_t id)
 {
   for (DNSEntry * e = h->entries.head; e; e = (DNSEntry *) e->link.next) {
     if (e->once_written_flag)
@@ -830,15 +831,15 @@ write_dns(DNSHandler * h)
   h->in_write_dns = false;
 }
 
-uint16
+uint16_t
 DNSHandler::get_query_id()
 {
-  uint16 q1, q2;
-  q2 = q1 = (uint16)(generator.random() & 0xFFFF);
+  uint16_t q1, q2;
+  q2 = q1 = (uint16_t)(generator.random() & 0xFFFF);
   if (query_id_in_use(q2)) {
-    uint16 i = q2>>6;
+    uint16_t i = q2>>6;
     while (qid_in_flight[i] == INTU64_MAX) {
-      if (++i ==  sizeof(qid_in_flight)/sizeof(uint64)) {
+      if (++i ==  sizeof(qid_in_flight)/sizeof(uint64_t)) {
         i = 0;
       }
       if (i == q1>>6) {
@@ -882,7 +883,7 @@ write_dns_event(DNSHandler * h, DNSEntry * e)
     return true;
   }
 
-  uint16 i = h->get_query_id();
+  uint16_t i = h->get_query_id();
   ((HEADER *) (buffer))->id = htons(i);
   if (e->id[dns_retries - e->retries] >= 0) {
     //clear previous id in case named was switched or domain was expanded
@@ -1209,16 +1210,16 @@ dns_process(DNSHandler * handler, HostEnt * buf, int len)
 {
   ProxyMutex *mutex = handler->mutex;
   HEADER *h = (HEADER *) (buf->buf);
-  DNSEntry *e = get_dns(handler, (uint16) ntohs(h->id));
+  DNSEntry *e = get_dns(handler, (uint16_t) ntohs(h->id));
   bool retry = false;
   bool server_ok = true;
-  uint32 temp_ttl = 0;
+  uint32_t temp_ttl = 0;
 
   //
   // Do we have an entry for this id?
   //
   if (!e || !e->written_flag) {
-    Debug("dns", "unknown DNS id = %u", (uint16) ntohs(h->id));
+    Debug("dns", "unknown DNS id = %u", (uint16_t) ntohs(h->id));
     if (!handler->hostent_cache)
       handler->hostent_cache = buf;
     else

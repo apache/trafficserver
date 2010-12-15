@@ -873,7 +873,7 @@ RecSyncConfigToTB(textBuffer * tb)
             switch (r->data_type) {
             case RECD_INT:
               tb->copyFrom("INT ", 4);
-              snprintf(b, 1023, "%lld", r->data.rec_int);
+              snprintf(b, 1023, "%" PRId64 "", r->data.rec_int);
               tb->copyFrom(b, strlen(b));
               break;
             case RECD_FLOAT:
@@ -891,7 +891,7 @@ RecSyncConfigToTB(textBuffer * tb)
               break;
             case RECD_COUNTER:
               tb->copyFrom("COUNTER ", 8);
-              snprintf(b, 1023, "%lld", r->data.rec_counter);
+              snprintf(b, 1023, "%" PRId64 "", r->data.rec_counter);
               tb->copyFrom(b, strlen(b));
               break;
             default:

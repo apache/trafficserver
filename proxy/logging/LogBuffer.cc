@@ -294,7 +294,7 @@ LogBuffer::LogBuffer(LogObject * owner, size_t size, size_t buf_align, size_t wr
   m_state.s.byte_count = hdr_size;
 
   // update the buffer id (m_id gets the old value)
-  m_id = (uint32) ink_atomic_increment((pvint32) & M_ID, 1);
+  m_id = (uint32_t) ink_atomic_increment((pvint32) & M_ID, 1);
 
   m_expiration_time = LogUtils::timestamp() + Log::config->max_secs_per_buffer;
 
@@ -324,7 +324,7 @@ LogBuffer::LogBuffer(LogObject * owner, LogBufferHeader * header):
 
   // update the buffer id (m_id gets the old value)
   //
-  m_id = (uint32) ink_atomic_increment((pvint32) & M_ID, 1);
+  m_id = (uint32_t) ink_atomic_increment((pvint32) & M_ID, 1);
 
 //    Debug("log-logbuffer","[%p] Created buffer %u for %s at address %p",
 //        this_ethread(), m_id, m_owner->get_base_filename(), m_buffer);
@@ -374,8 +374,8 @@ LogBuffer::LB_ResultCode LogBuffer::checkout_write(size_t * write_offset, size_t
     offset = 0;
   size_t actual_write_size = INK_ALIGN(write_size + sizeof(LogEntryHeader), m_write_align);
 
-  uint64
-    retries = (uint64) - 1;
+  uint64_t
+    retries = (uint64_t) - 1;
   do {
     old_s = m_state;
     new_s = old_s;
@@ -983,10 +983,10 @@ LogBuffer::convert_to_network_order(LogBufferHeader * header)
 
   // signature 64 bits long, convert each 32 bit part separately
   //
-  uint32 sig[2];
-  sig[0] = htonl((uint32) header->log_object_signature);
-  sig[1] = htonl((uint32) (header->log_object_signature >> 32));
-  header->log_object_signature = ((uint64) sig[1] << 32) | sig[0];
+  uint32_t sig[2];
+  sig[0] = htonl((uint32_t) header->log_object_signature);
+  sig[1] = htonl((uint32_t) (header->log_object_signature >> 32));
+  header->log_object_signature = ((uint64_t) sig[1] << 32) | sig[0];
 }
 
 /*-------------------------------------------------------------------------
@@ -1034,10 +1034,10 @@ LogBuffer::convert_to_host_order(LogBufferHeader * header)
 
   // signature 64 bits long, convert each 32 bit part separately
   //
-  uint32 sig[2];
-  sig[0] = ntohl((uint32) header->log_object_signature);
-  sig[1] = ntohl((uint32) (header->log_object_signature >> 32));
-  header->log_object_signature = ((uint64) sig[1] << 32) | sig[0];
+  uint32_t sig[2];
+  sig[0] = ntohl((uint32_t) header->log_object_signature);
+  sig[1] = ntohl((uint32_t) (header->log_object_signature >> 32));
+  header->log_object_signature = ((uint64_t) sig[1] << 32) | sig[0];
 
   //
   // Next, convert the entry headers

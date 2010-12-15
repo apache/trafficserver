@@ -209,7 +209,7 @@ Diags::print_va(const char *debug_tag, DiagsLevel diags_level,
 
   // add the thread id
   pthread_t id = pthread_self();
-  end_of_format += snprintf(end_of_format, sizeof(format_buf), "{%llu} ", (uint64) id);
+  end_of_format += snprintf(end_of_format, sizeof(format_buf), "{%" PRIu64 "} ", (uint64_t) id);
 
   ////////////////////////////////
   // start with the user prefix //

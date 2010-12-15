@@ -50,7 +50,7 @@ struct cache_scan_state_t
   TSAction pending_action;
   TSCacheKey key_to_delete;
 
-  int64 total_bytes;
+  int64_t total_bytes;
   int total_items;
   int done;
 

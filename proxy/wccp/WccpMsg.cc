@@ -86,13 +86,13 @@ CapabilityElt::setCapType(Type cap) {
   return *this;
 }
 
-inline uint32
+inline uint32_t
 CapabilityElt::getCapData() const {
   return ntohl(m_cap_data);
 }
 
 inline CapabilityElt&
-CapabilityElt::setCapData(uint32 data) {
+CapabilityElt::setCapData(uint32_t data) {
   m_cap_data = htonl(data);
   return *this;
 }
@@ -100,30 +100,30 @@ CapabilityElt::setCapData(uint32 data) {
 CapabilityElt::CapabilityElt() {
 }
 
-CapabilityElt::CapabilityElt(Type cap, uint32 data) {
+CapabilityElt::CapabilityElt(Type cap, uint32_t data) {
   this->setCapType(cap);
   this->setCapData(data);
-  m_cap_length = htons(sizeof(uint32));
+  m_cap_length = htons(sizeof(uint32_t));
 }
 // ------------------------------------------------------
-inline uint32
+inline uint32_t
 MaskElt::getf_src_addr_mask() const {
   return ntohl(m_src_addr_mask);
 }
 
 inline MaskElt&
-MaskElt::setf_src_addr_mask(uint32 mask) {
+MaskElt::setf_src_addr_mask(uint32_t mask) {
   m_src_addr_mask = htonl(mask);
   return *this;
 }
 
-inline uint32
+inline uint32_t
 MaskElt::getf_dst_addr_mask() const {
   return ntohl(m_dst_addr_mask);
 }
 
 inline MaskElt&
-MaskElt::setf_dst_addr_mask(uint32 mask) {
+MaskElt::setf_dst_addr_mask(uint32_t mask) {
   m_dst_addr_mask = htonl(mask);
   return *this;
 }
@@ -150,24 +150,24 @@ MaskElt::setf_dst_port_mask(uint16_t mask) {
   return *this;
 }
 // ------------------------------------------------------
-inline uint32
+inline uint32_t
 ValueElt::getf_src_addr() const {
   return ntohl(m_src_addr);
 }
 
 inline ValueElt&
-ValueElt::setf_src_addr(uint32 addr) {
+ValueElt::setf_src_addr(uint32_t addr) {
   m_src_addr = htonl(addr);
   return *this;
 }
 
-inline uint32
+inline uint32_t
 ValueElt::getf_dst_addr() const {
   return ntohl(m_dst_addr);
 }
 
 inline ValueElt&
-ValueElt::setf_dst_addr(uint32 addr) {
+ValueElt::setf_dst_addr(uint32_t addr) {
   m_dst_addr = htonl(addr);
   return *this;
 }
@@ -194,13 +194,13 @@ ValueElt::setf_dst_port(uint16_t port) {
   return *this;
 }
 
-inline uint32
+inline uint32_t
 ValueElt::getCacheAddr() const {
   return ntohl(m_cache_addr);
 }
 
 inline ValueElt&
-ValueElt::setCacheAddr(uint32 addr) {
+ValueElt::setCacheAddr(uint32_t addr) {
   m_cache_addr = htonl(addr);
   return *this;
 }
@@ -208,7 +208,7 @@ ValueElt::setCacheAddr(uint32 addr) {
 MaskValueSetElt::MaskValueSetElt() {
 }
 
-MaskValueSetElt::MaskValueSetElt(uint32 count) 
+MaskValueSetElt::MaskValueSetElt(uint32_t count) 
   : m_count(count) {
 }
 
@@ -222,29 +222,29 @@ MaskValueSetElt::atf_mask() {
   return m_mask;
 }
 
-inline uint32
+inline uint32_t
 MaskValueSetElt::getf_count() const {
   return ntohl(m_count);
 }
 
-inline uint32
+inline uint32_t
 MaskValueSetElt::getf_src_addr_mask() const {
   return m_mask.getf_src_addr_mask();
 }
 
 inline MaskValueSetElt&
-MaskValueSetElt::setf_src_addr_mask(uint32 mask) {
+MaskValueSetElt::setf_src_addr_mask(uint32_t mask) {
   m_mask.setf_src_addr_mask(mask);
   return *this;
 }
 
-inline uint32
+inline uint32_t
 MaskValueSetElt::getf_dst_addr_mask() const {
   return m_mask.getf_dst_addr_mask();
 }
 
 inline MaskValueSetElt&
-MaskValueSetElt::setf_dst_addr_mask(uint32 mask) {
+MaskValueSetElt::setf_dst_addr_mask(uint32_t mask) {
   m_mask.setf_dst_addr_mask(mask);
   return *this;
 }
@@ -351,7 +351,7 @@ SecurityComp::getOption() const {
 
 SecurityComp&
 SecurityComp::setOption(Option opt) {
-  set_field(&RawNone::m_option, m_base, static_cast<uint32>(opt));
+  set_field(&RawNone::m_option, m_base, static_cast<uint32_t>(opt));
   return *this;
 }
 
@@ -533,57 +533,57 @@ RouterIdComp::idElt() const {
 }
 
 RouterIdComp&
-RouterIdComp::setIdElt(uint32 addr, uint32 recv_id) {
+RouterIdComp::setIdElt(uint32_t addr, uint32_t recv_id) {
   this->idElt().setAddr(addr).setRecvId(recv_id);
   return *this;
 }
 
-uint32 RouterIdComp::getAddr() const { return this->idElt().getAddr(); }
+uint32_t RouterIdComp::getAddr() const { return this->idElt().getAddr(); }
 
 RouterIdComp&
-RouterIdComp::setAddr(uint32 addr) {
+RouterIdComp::setAddr(uint32_t addr) {
   this->idElt().setAddr(addr);
   return *this;
 }
 
-uint32 RouterIdComp::getRecvId() const { return this->idElt().getRecvId();}
+uint32_t RouterIdComp::getRecvId() const { return this->idElt().getRecvId();}
 inline RouterIdComp&
-RouterIdComp::setRecvId(uint32 id) {
+RouterIdComp::setRecvId(uint32_t id) {
   this->idElt().setRecvId(id);
   return *this;
 }
 
-uint32
+uint32_t
 RouterIdComp::getToAddr() const {
   return access_field(&raw_t::m_to_addr, m_base);
 }
 
 RouterIdComp&
-RouterIdComp::setToAddr(uint32 addr) {
+RouterIdComp::setToAddr(uint32_t addr) {
   access_field(&raw_t::m_to_addr, m_base) = addr;
   return *this;
 }
 
-uint32
+uint32_t
 RouterIdComp::getFromCount() const {
   return get_field(&raw_t::m_from_count, m_base);
 }
 
-uint32
+uint32_t
 RouterIdComp::getFromAddr(int idx) const {
-  return access_array<uint32>(m_base + sizeof(raw_t))[idx];
+  return access_array<uint32_t>(m_base + sizeof(raw_t))[idx];
 }
 
 RouterIdComp&
-RouterIdComp::setFromAddr(int idx, uint32 addr) {
-  access_array<uint32>(m_base + sizeof(raw_t))[idx] =  addr;
+RouterIdComp::setFromAddr(int idx, uint32_t addr) {
+  access_array<uint32_t>(m_base + sizeof(raw_t))[idx] =  addr;
   return *this;
 }
 
 int
-RouterIdComp::findFromAddr(uint32 addr) {
+RouterIdComp::findFromAddr(uint32_t addr) {
   int n = this->getFromCount();
-  uint32* addrs = access_array<uint32>(m_base + sizeof(raw_t)) + n;
+  uint32_t* addrs = access_array<uint32_t>(m_base + sizeof(raw_t)) + n;
   while (n-- != 0 && *--addrs != addr)
     ;
   return n;
@@ -608,10 +608,10 @@ RouterIdComp::fill(MsgBuffer& buffer, size_t n_caches) {
 RouterIdComp&
 RouterIdComp::fillSingleton(
   MsgBuffer& buffer,
-  uint32 addr,
-  uint32 recv_count,
-  uint32 to_addr,
-  uint32 from_addr
+  uint32_t addr,
+  uint32_t recv_count,
+  uint32_t to_addr,
+  uint32_t from_addr
 ) {
   size_t comp_size = this->calcSize(1);
 
@@ -663,23 +663,23 @@ RouterViewComp::key_elt() const {
   return access_field(&raw_t::m_key, m_base);
 }
 
-uint32
+uint32_t
 RouterViewComp::getChangeNumber() const {
   return get_field(&raw_t::m_change_number, m_base);
 }
 
 RouterViewComp&
-RouterViewComp::setChangeNumber(uint32 n) {
+RouterViewComp::setChangeNumber(uint32_t n) {
   set_field(&raw_t::m_change_number, m_base, n);
   return *this;
 }
   
-uint32
+uint32_t
 RouterViewComp::getCacheCount() const {
   return ntohl(*m_cache_count);
 }
 
-uint32
+uint32_t
 RouterViewComp::getRouterCount() const {
   return get_field(&raw_t::m_router_count, m_base);
 }
@@ -689,30 +689,30 @@ RouterViewComp::cacheElt(int idx) {
   return reinterpret_cast<CacheIdElt*>(m_cache_count+1)[idx];
 }
 
-uint32
+uint32_t
 RouterViewComp::getRouterAddr(int idx) const {
-  return access_array<uint32>(m_base + sizeof(raw_t))[idx];
+  return access_array<uint32_t>(m_base + sizeof(raw_t))[idx];
 }
 
 RouterViewComp&
-RouterViewComp::setRouterAddr(int idx, uint32 addr) {
-  access_array<uint32>(m_base + sizeof(raw_t))[idx] = addr;
+RouterViewComp::setRouterAddr(int idx, uint32_t addr) {
+  access_array<uint32_t>(m_base + sizeof(raw_t))[idx] = addr;
   return *this;
 }
 
 size_t
 RouterViewComp::calcSize(int n_routers, int n_caches) {
   return sizeof(raw_t)
-    + n_routers * sizeof(uint32)
-    + sizeof(uint32) + n_caches * sizeof(CacheIdElt)
+    + n_routers * sizeof(uint32_t)
+    + sizeof(uint32_t) + n_caches * sizeof(CacheIdElt)
     ;
 }
 
-uint32*
+uint32_t*
 RouterViewComp::calc_cache_count_ptr() {
-  return reinterpret_cast<uint32*>(
+  return reinterpret_cast<uint32_t*>(
     m_base + sizeof(raw_t)
-    + this->getRouterCount() * sizeof(uint32)
+    + this->getRouterCount() * sizeof(uint32_t)
   );
 }
 
@@ -806,34 +806,34 @@ CacheIdComp::parse(MsgBuffer& buffer) {
   return zret;
 }
 // ------------------------------------------------------
-uint32
+uint32_t
 CacheViewComp::getChangeNumber() const {
   return get_field(&raw_t::m_change_number, m_base);
 }
 
 CacheViewComp&
-CacheViewComp::setChangeNumber(uint32 n) {
+CacheViewComp::setChangeNumber(uint32_t n) {
   set_field(&raw_t::m_change_number, m_base, n);
   return *this;
 }
   
-uint32
+uint32_t
 CacheViewComp::getRouterCount() const {
   return get_field(&raw_t::m_router_count, m_base);
 }
 
-uint32
+uint32_t
 CacheViewComp::getCacheCount() const {
   return ntohl(*m_cache_count);
 }
 
-uint32
+uint32_t
 CacheViewComp::getCacheAddr(int idx) const {
   return ntohl(m_cache_count[idx+1]);
 }
 
 CacheViewComp&
-CacheViewComp::setCacheAddr(int idx, uint32 addr) {
+CacheViewComp::setCacheAddr(int idx, uint32_t addr) {
   m_cache_count[idx+1] = addr;
   return *this;
 }
@@ -849,7 +849,7 @@ CacheViewComp::routerElt(int idx) {
 }
 
 RouterIdElt*
-CacheViewComp::findf_router_elt(uint32 addr) {
+CacheViewComp::findf_router_elt(uint32_t addr) {
   for ( RouterIdElt *rtr = this->atf_router_array(),
           *limit = rtr + this->getRouterCount() ;
         rtr < limit;
@@ -864,14 +864,14 @@ size_t
 CacheViewComp::calcSize(int n_routers, int n_caches) {
   return sizeof(raw_t)
     + n_routers * sizeof(RouterIdElt)
-    + sizeof(uint32) + n_caches * sizeof(uint32)
+    + sizeof(uint32_t) + n_caches * sizeof(uint32_t)
     ;
 }
 
 CacheViewComp&
 CacheViewComp::fill(
   MsgBuffer& buffer,
-  uint32 change_number,
+  uint32_t change_number,
   int n_routers,
   int n_caches
 ) {
@@ -887,7 +887,7 @@ CacheViewComp::fill(
   set_field(&raw_t::m_router_count, m_base, n_routers);
 //  reinterpret_cast<raw_t*>(m_base)->m_router_count = htonl(n_routers);
   // Set the pointer to the count of caches.
-  m_cache_count = reinterpret_cast<uint32*>(
+  m_cache_count = reinterpret_cast<uint32_t*>(
     m_base + sizeof(raw_t) + n_routers * sizeof(RouterIdElt)
   );
   *m_cache_count = htonl(n_caches); // set the actual count.
@@ -906,7 +906,7 @@ CacheViewComp::parse(MsgBuffer& buffer) {
     m_base = buffer.getTail();
     zret = this->checkHeader(buffer, COMP_TYPE);
     if (PARSE_SUCCESS == zret ) {
-      m_cache_count = reinterpret_cast<uint32*>(
+      m_cache_count = reinterpret_cast<uint32_t*>(
         m_base + sizeof(raw_t)
         + this->getRouterCount() * sizeof(RouterIdElt)
       );
@@ -930,29 +930,29 @@ AssignInfoComp::keyElt() const {
   return access_field(&raw_t::m_key, m_base);
 }
 
-uint32
+uint32_t
 AssignInfoComp::getKeyChangeNumber() const {
   return access_field(&raw_t::m_key, m_base).getChangeNumber();
 }
 
 AssignInfoComp&
-AssignInfoComp::setKeyChangeNumber(uint32 n) {
+AssignInfoComp::setKeyChangeNumber(uint32_t n) {
   access_field(&raw_t::m_key, m_base).setChangeNumber(n);
   return *this;
 }
   
-uint32
+uint32_t
 AssignInfoComp::getKeyAddr() const {
   return access_field(&raw_t::m_key, m_base).getAddr();
 }
 
 AssignInfoComp&
-AssignInfoComp::setKeyAddr(uint32 addr) {
+AssignInfoComp::setKeyAddr(uint32_t addr) {
   access_field(&raw_t::m_key, m_base).setAddr(addr);
   return *this;
 }
 
-uint32
+uint32_t
 AssignInfoComp::getRouterCount() const {
   return get_field(&raw_t::m_router_count, m_base);
 }
@@ -962,18 +962,18 @@ AssignInfoComp::routerElt(int idx) {
   return access_array<RouterAssignmentElt>(m_base + sizeof(raw_t))[idx];
 }
 
-uint32
+uint32_t
 AssignInfoComp::getCacheCount() const {
   return ntohl(*m_cache_count);
 }
 
-uint32
+uint32_t
 AssignInfoComp::getCacheAddr(int idx) const {
   return m_cache_count[idx+1];
 }
 
 AssignInfoComp&
-AssignInfoComp::setCacheAddr(int idx, uint32 addr) {
+AssignInfoComp::setCacheAddr(int idx, uint32_t addr) {
   m_cache_count[idx+1] = addr;
   return *this;
 }
@@ -982,19 +982,19 @@ size_t
 AssignInfoComp::calcSize(int n_routers, int n_caches) {
   return sizeof(raw_t)
     + n_routers * sizeof(RouterAssignmentElt)
-    + (1 + n_caches) * sizeof(uint32)
+    + (1 + n_caches) * sizeof(uint32_t)
     + sizeof(Bucket) * N_BUCKETS
     ;
 }
 
-uint32*
+uint32_t*
 AssignInfoComp::calcCacheCountPtr() {
-  return reinterpret_cast<uint32*>(m_base + sizeof(raw_t) + this->getRouterCount() * sizeof(RouterAssignmentElt));
+  return reinterpret_cast<uint32_t*>(m_base + sizeof(raw_t) + this->getRouterCount() * sizeof(RouterAssignmentElt));
 }
 
 AssignInfoComp::Bucket*
 AssignInfoComp::calcBucketPtr() {
-  return reinterpret_cast<Bucket*>(reinterpret_cast<char*>(m_cache_count) + sizeof(uint32) * (1 + this->getCacheCount()));
+  return reinterpret_cast<Bucket*>(reinterpret_cast<char*>(m_cache_count) + sizeof(uint32_t) * (1 + this->getCacheCount()));
 }  
 
 AssignInfoComp&
@@ -1084,13 +1084,13 @@ CmdComp::setCmd(cmd_t cmd) {
   return *this;
 }
 
-uint32
+uint32_t
 CmdComp::getCmdData() const {
   return get_field(&raw_t::m_cmd_data, m_base);
 }
 
 CmdComp&
-CmdComp::setCmdData(uint32 data) {
+CmdComp::setCmdData(uint32_t data) {
   set_field(&raw_t::m_cmd_data, m_base, data);
   return *this;
 }
@@ -1101,7 +1101,7 @@ CmdComp::calcSize() {
 }
 
 CmdComp&
-CmdComp::fill(MsgBuffer& buffer, cmd_t cmd, uint32 data) {
+CmdComp::fill(MsgBuffer& buffer, cmd_t cmd, uint32_t data) {
   size_t comp_size = this->calcSize();
 
   if (buffer.getSpace() < comp_size)
@@ -1115,8 +1115,8 @@ CmdComp::fill(MsgBuffer& buffer, cmd_t cmd, uint32 data) {
     .setLength(sizeof(raw_t) - sizeof(super::raw_t))
     ;
   // Command length is always the same.
-  set_field(&raw_t::m_length, m_base, sizeof(uint32));
-//  reinterpret_cast<raw_t*>(m_base)->m_length = htons(sizeof(uint32));
+  set_field(&raw_t::m_length, m_base, sizeof(uint32_t));
+//  reinterpret_cast<raw_t*>(m_base)->m_length = htons(sizeof(uint32_t));
   return *this;
 }
 
@@ -1148,14 +1148,14 @@ CapComp::elt(int idx) const {
 
 void
 CapComp::cache() const {
-  uint32 x; // scratch for bounds checking.
+  uint32_t x; // scratch for bounds checking.
   // Reset all values.
   m_packet_forward = ServiceGroup::NO_PACKET_STYLE;
   m_packet_return = ServiceGroup::NO_PACKET_STYLE;
   m_cache_assign = ServiceGroup::NO_CACHE_ASSIGN_STYLE;
   if (!m_base) return; // No data, everything is default.
   // Load from data.
-  for ( uint32 i = 0, n = this->getEltCount() ; i < n ; ++i ) {
+  for ( uint32_t i = 0, n = this->getEltCount() ; i < n ; ++i ) {
     CapabilityElt const& elt = this->elt(i);
     switch (elt.getCapType()) {
     case CapabilityElt::PACKET_FORWARD_METHOD:
@@ -1234,7 +1234,7 @@ AssignMapComp::elt(int idx) {
   return access_array<MaskValueSetElt>(m_base + sizeof(raw_t))[idx];
 }
 
-uint32
+uint32_t
 AssignMapComp::getEltCount() const {
   return get_field(&raw_t::m_count, m_base);
 }
@@ -1333,7 +1333,7 @@ detail::Assignment::pour(MsgBuffer& base, AssignInfoComp& comp) const {
 }
 
 bool
-detail::Assignment::fill(cache::GroupData& group, uint32 addr) {
+detail::Assignment::fill(cache::GroupData& group, uint32_t addr) {
   // Compute the last packet received times for the routers.
   // For each cache, compute how routers mentioned it in their
   // last packet. Prepare an assignment from those caches.

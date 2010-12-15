@@ -1180,13 +1180,13 @@ handleOverseer(int fd, int mode)
             case RECD_COUNTER:{
                 RecCounter val;
                 RecGetRecordCounter(cur, &val);
-                snprintf(reply, sizeof(reply), "%s = \"%lld\"", cur, val);
+                snprintf(reply, sizeof(reply), "%s = \"%" PRId64 "\"", cur, val);
                 break;
               }
             case RECD_INT:{
                 RecInt val;
                 RecGetRecordInt(cur, &val);
-                snprintf(reply, sizeof(reply), "%s = \"%lld\"", cur, val);
+                snprintf(reply, sizeof(reply), "%s = \"%" PRId64 "\"", cur, val);
                 break;
               }
             case RECD_FLOAT:{

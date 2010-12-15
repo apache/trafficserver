@@ -727,7 +727,7 @@ push_package(HostRecord * hrec, const char *pkg_name, const char *pkg_filename, 
   }
 
   length_buf = (char *) malloc(32);
-  sprintf(length_buf, "%lld", stat_info.st_size);
+  sprintf(length_buf, "%" PRId64 "", stat_info.st_size);
 
   // Send the raf request
   request(0) = hrec->get_id_str();

@@ -53,11 +53,11 @@ parseStorageFile(int fd)
     // parse
 
     char *e = strpbrk(n, " \t\n");
-    int64 size = -1;
+    int64_t size = -1;
     while (*e && !isdigit(*e))
       e++;
     if (e && *e) {
-      if (1 != sscanf(e, "%lld", &size)) {
+      if (1 != sscanf(e, "%" PRId64 "", &size)) {
         err = "error parsing size";
         goto Lfail;
       }

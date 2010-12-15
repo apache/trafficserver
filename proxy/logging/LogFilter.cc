@@ -308,17 +308,17 @@ LogFilterString::display_as_XML(FILE * fd)
   -------------------------------------------------------------------------*/
 
 void
-LogFilterInt::_setValues(size_t n, int64 *value)
+LogFilterInt::_setValues(size_t n, int64_t *value)
 {
   m_type = INT_FILTER;
   m_num_values = n;
   if (n) {
-    m_value = NEW(new int64[n]);
-    memcpy(m_value, value, n * sizeof(int64));
+    m_value = NEW(new int64_t[n]);
+    memcpy(m_value, value, n * sizeof(int64_t));
   }
 }
 
-// TODO: ival should be int64
+// TODO: ival should be int64_t
 int
 LogFilterInt::_convertStringToInt(char *value, unsigned *ival, LogFieldAliasMap * map)
 {
@@ -343,16 +343,16 @@ LogFilterInt::_convertStringToInt(char *value, unsigned *ival, LogFieldAliasMap 
 }
 
 LogFilterInt::LogFilterInt(const char *name, LogField * field,
-                           LogFilter::Action action, LogFilter::Operator oper, int64 value)
+                           LogFilter::Action action, LogFilter::Operator oper, int64_t value)
  : LogFilter(name, field, action, oper)
 {
-  int64 v[1];
+  int64_t v[1];
   v[0] = value;
   _setValues(1, v);
 }
 
 LogFilterInt::LogFilterInt(const char *name, LogField * field,
-                           LogFilter::Action action, LogFilter::Operator oper, size_t num_values, int64 *value)
+                           LogFilter::Action action, LogFilter::Operator oper, size_t num_values, int64_t *value)
   : LogFilter(name, field, action, oper)
 {
   _setValues(num_values, value);
@@ -364,13 +364,13 @@ LogFilterInt::LogFilterInt(const char *name, LogField * field,
 {
   // parse the comma-separated list of values and construct array
   //
-  int64 *val_array = 0;
+  int64_t *val_array = 0;
   size_t i = 0;
   SimpleTokenizer tok(values, ',');
   size_t n = tok.getNumTokensRemaining();
 
   if (n) {
-    val_array = NEW(new int64[n]);
+    val_array = NEW(new int64_t[n]);
     char *t;
     while (t = tok.getNext(), t != NULL) {
       unsigned ival;
@@ -449,7 +449,7 @@ bool LogFilterInt::toss_this_entry(LogAccess * lad)
   }
 
   bool cond_satisfied = false;
-  int64 value;
+  int64_t value;
 
   m_field->marshal(lad, (char *) &value);
   value = ntohl(value);
@@ -487,9 +487,9 @@ LogFilterInt::display(FILE * fd)
   } else {
     fprintf(fd, "Filter \"%s\" %sS records if %s %s ", m_name,
             ACTION_NAME[m_action], m_field->symbol(), OPERATOR_NAME[m_operator]);
-    fprintf(fd, "%lld", m_value[0]);
+    fprintf(fd, "%" PRId64 "", m_value[0]);
     for (size_t i = 1; i < m_num_values; ++i) {
-      fprintf(fd, ", %lld", m_value[i]);
+      fprintf(fd, ", %" PRId64 "", m_value[i]);
     }
     fprintf(fd, "\n");
   }
@@ -508,9 +508,9 @@ LogFilterInt::display_as_XML(FILE * fd)
   if (m_num_values == 0) {
     fprintf(fd, "<no values>\"\n");
   } else {
-    fprintf(fd, "%lld", m_value[0]);
+    fprintf(fd, "%" PRId64 "", m_value[0]);
     for (size_t i = 1; i < m_num_values; ++i) {
-      fprintf(fd, ", %lld", m_value[i]);
+      fprintf(fd, ", %" PRId64 "", m_value[i]);
     }
     fprintf(fd, "\"/>\n");
   }

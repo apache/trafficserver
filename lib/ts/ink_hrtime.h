@@ -35,15 +35,15 @@
 #include "ink_assert.h"
 #include "Compatability.h"
 
-int squid_timestamp_to_buf(char *buf, uint32 buf_size, uint64 timestamp_sec, uint64 timestamp_usec);
-char *int64_to_str(char *buf, int32 buf_size, int64 val,
-                   uint32 *total_chars, uint32 req_width, char pad_char);
+int squid_timestamp_to_buf(char *buf, uint32_t buf_size, uint64_t timestamp_sec, uint64_t timestamp_usec);
+char *int64_to_str(char *buf, int32_t buf_size, int64_t val,
+                   uint32_t *total_chars, uint32_t req_width, char pad_char);
 
 #ifdef NEED_HRTIME
 #include <time.h>
 #include <sys/time.h>
 #include <stdlib.h>
-typedef int64 ink_hrtime;
+typedef int64_t ink_hrtime;
 #else /* !defined (NEED_HRTIME) */
 #include <sys/time.h>
 typedef hrtime_t ink_hrtime;
@@ -57,7 +57,7 @@ typedef hrtime_t ink_hrtime;
 //////////////////////////////////////////////////////////////////////////////
 #ifdef USE_TIME_STAMP_COUNTER_HRTIME
 extern ink_hrtime init_hrtime_TSC();
-extern uint32 hrtime_freq;
+extern uint32_t hrtime_freq;
 extern double hrtime_freq_float;
 static inline ink_hrtime
 hrtime_rdtsc()
@@ -66,11 +66,11 @@ hrtime_rdtsc()
   asm volatile (".byte 0x0f, 0x31":"=A" (rv));
   return (rv);
 }
-static inline uint64
+static inline uint64_t
 get_hrtime_rdtsc()
 {
   // do it fixed point if you have better hardware support
-  return (uint64) (hrtime_freq_float * hrtime_rdtsc());
+  return (uint64_t) (hrtime_freq_float * hrtime_rdtsc());
 }
 #endif
 
@@ -159,7 +159,7 @@ ink_hrtime_from_nsec(unsigned int nsec)
 static inline ink_hrtime
 ink_hrtime_from_timeval(struct timeval *tv)
 {
-  int64 usecs;
+  int64_t usecs;
 
   usecs = tv->tv_sec * 1000000 + tv->tv_usec;
   return (ink_hrtime_from_usec((unsigned int) usecs));
@@ -215,7 +215,7 @@ ink_hrtime_to_nsec(ink_hrtime t)
 static inline struct timeval
 ink_hrtime_to_timeval(ink_hrtime t)
 {
-  int64 usecs;
+  int64_t usecs;
   struct timeval tv;
 
   usecs = ink_hrtime_to_usec(t);
@@ -227,7 +227,7 @@ ink_hrtime_to_timeval(ink_hrtime t)
 static inline int
 ink_hrtime_to_timeval2(ink_hrtime t, struct timeval *tv)
 {
-  int64 usecs = ink_hrtime_to_usec(t);
+  int64_t usecs = ink_hrtime_to_usec(t);
   tv->tv_sec = usecs / 1000000;
   tv->tv_usec = usecs % 1000000;
   return 0;

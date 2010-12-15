@@ -1231,12 +1231,12 @@ NetCmdHandler::process_stat_file_cmd(RafCmd * cmd)
   reply(1) = strdup("0");
   reply(2) = strdup("size");
 
-  snprintf(num_buf, 63, "%lld", (int64) stat_info.st_size);
+  snprintf(num_buf, 63, "%" PRId64 "", (int64_t) stat_info.st_size);
   num_buf[63] = '\0';
   reply(3) = strdup(num_buf);
 
   reply(4) = strdup("mod_date");
-  snprintf(num_buf, 63, "%d", (uint32) stat_info.st_mtime);
+  snprintf(num_buf, 63, "%d", (uint32_t) stat_info.st_mtime);
   num_buf[63] = '\0';
   reply(5) = strdup(num_buf);
 

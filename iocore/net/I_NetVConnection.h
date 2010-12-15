@@ -96,14 +96,14 @@ struct NetVCOptions {
   /// Port to use for local side of connection.
   /// @note Ignored if @a port_binding is @c ANY_PORT.
   /// @see port_binding
-  uint16 local_port;
+  uint16_t local_port;
   /// How to bind local port.
   /// @note Default is @c ANY_PORT.
   port_bind_style port_binding;
   /// Address to use for local side of connection.
   /// @note Ignored if @a addr_binding is @c ANY_ADDR.
   /// @see addr_binding
-  uint32 local_addr;
+  uint32_t local_addr;
   /// How to bind the local address.
   /// @note Default is @c ANY_ADDR.
   addr_bind_style addr_binding;
@@ -127,11 +127,11 @@ struct NetVCOptions {
   /// @note These are not identical to internal socket options but
   /// specifically defined for configuration. These are mask values
   /// and so must be powers of 2.
-  uint32 sockopt_flags;
+  uint32_t sockopt_flags;
   /// Value for TCP no delay for @c sockopt_flags.
-  static uint32 const SOCK_OPT_NO_DELAY = 1;
+  static uint32_t const SOCK_OPT_NO_DELAY = 1;
   /// Value for keep alive for @c sockopt_flags.
-  static uint32 const SOCK_OPT_KEEP_ALIVE = 2;
+  static uint32_t const SOCK_OPT_KEEP_ALIVE = 2;
 
   EventType etype;
 
@@ -187,7 +187,7 @@ public:
     @return vio
 
   */
-  virtual VIO * do_io_read(Continuation * c, int64 nbytes, MIOBuffer * buf) = 0;
+  virtual VIO * do_io_read(Continuation * c, int64_t nbytes, MIOBuffer * buf) = 0;
 
   /**
     Initiates write. Thread-safe, may be called when not handling
@@ -223,7 +223,7 @@ public:
     @return vio pointer
 
   */
-  virtual VIO *do_io_write(Continuation * c, int64 nbytes, IOBufferReader * buf, bool owner = false) = 0;
+  virtual VIO *do_io_write(Continuation * c, int64_t nbytes, IOBufferReader * buf, bool owner = false) = 0;
 
   /**
     Closes the vconnection. A state machine MUST call do_io_close()

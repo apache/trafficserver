@@ -59,7 +59,7 @@
 
 char *
 HttpBodyFactory::fabricate_with_old_api(const char *type, HttpTransact::State * context,
-                                        int64 max_buffer_length, int64 *resulting_buffer_length,
+                                        int64_t max_buffer_length, int64_t *resulting_buffer_length,
                                         char* content_language_out_buf,
                                         size_t content_language_buf_size,
                                         char* content_type_out_buf,
@@ -244,7 +244,7 @@ HttpBodyFactory::dump_template_tables(FILE * fp)
           v2 = table_of_sets->getValueFromBinding(b2);
           HttpBodyTemplate *t = (HttpBodyTemplate *) v2;
 
-          fprintf(fp, "  %-30s: %lld bytes\n", k2, t->byte_count);
+          fprintf(fp, "  %-30s: %" PRId64 " bytes\n", k2, t->byte_count);
         }
       }
     }
@@ -425,7 +425,7 @@ char *
 HttpBodyFactory::fabricate(StrList * acpt_language_list,
                            StrList * acpt_charset_list,
                            const char *type, HttpTransact::State * context,
-                           int64 *buffer_length_return,
+                           int64_t *buffer_length_return,
                            const char **content_language_return,
                            const char **content_charset_return, const char **set_return)
 {
@@ -975,7 +975,7 @@ HttpBodyTemplate::load_from_file(char *dir, char *file)
   struct stat stat_buf;
   char path[MAXPATHLEN + 1];
   char *new_template_buffer;
-  int64 new_byte_count;
+  int64_t new_byte_count;
 
   ////////////////////////////////////
   // ensure this is actually a file //
@@ -1036,7 +1036,7 @@ HttpBodyTemplate::load_from_file(char *dir, char *file)
 }
 
 char *
-HttpBodyTemplate::build_instantiated_buffer(HttpTransact::State * context, int64 *buflen_return)
+HttpBodyTemplate::build_instantiated_buffer(HttpTransact::State * context, int64_t *buflen_return)
 {
   char *buffer = NULL;
 #ifndef INK_NO_LOG

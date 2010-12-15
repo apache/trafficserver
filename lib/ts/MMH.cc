@@ -32,7 +32,7 @@
 #define MMH_X_SIZE	512
 
 /* BUG: INKqa11504: need it be to 64 bits...otherwise it overflows */
-static uint64 MMH_x[MMH_X_SIZE + 8] = {
+static uint64_t MMH_x[MMH_X_SIZE + 8] = {
   0x3ee18b32, 0x746d0d6b, 0x591be6a3, 0x760bd17f,
   0x363c765d, 0x4bf3d5c5, 0x10f0510a, 0x39a84605,
   0x2282b48f, 0x6903652e, 0x1b491170, 0x1ab8407a,
@@ -195,10 +195,10 @@ ink_code_incr_MMH_init(MMH_CTX * ctx)
 {
   ctx->buffer_size = 0;
   ctx->blocks = 0;
-  ctx->state[0] = ((uint64) MMH_x[MMH_X_SIZE + 0] << 32) + MMH_x[MMH_X_SIZE + 1];
-  ctx->state[1] = ((uint64) MMH_x[MMH_X_SIZE + 2] << 32) + MMH_x[MMH_X_SIZE + 3];
-  ctx->state[2] = ((uint64) MMH_x[MMH_X_SIZE + 4] << 32) + MMH_x[MMH_X_SIZE + 5];
-  ctx->state[3] = ((uint64) MMH_x[MMH_X_SIZE + 6] << 32) + MMH_x[MMH_X_SIZE + 7];
+  ctx->state[0] = ((uint64_t) MMH_x[MMH_X_SIZE + 0] << 32) + MMH_x[MMH_X_SIZE + 1];
+  ctx->state[1] = ((uint64_t) MMH_x[MMH_X_SIZE + 2] << 32) + MMH_x[MMH_X_SIZE + 3];
+  ctx->state[2] = ((uint64_t) MMH_x[MMH_X_SIZE + 4] << 32) + MMH_x[MMH_X_SIZE + 5];
+  ctx->state[3] = ((uint64_t) MMH_x[MMH_X_SIZE + 6] << 32) + MMH_x[MMH_X_SIZE + 7];
   return 0;
 }
 
@@ -215,7 +215,7 @@ ink_code_MMH(unsigned char *input, int len, unsigned char *sixteen_byte_hash)
 static inline void
 MMH_update(MMH_CTX * ctx, unsigned char *ab)
 {
-  uint32 *b = (uint32 *) ab;
+  uint32_t *b = (uint32_t *) ab;
   ctx->state[0] += b[0] * MMH_x[(ctx->blocks + 0) % MMH_X_SIZE];
   ctx->state[1] += b[1] * MMH_x[(ctx->blocks + 1) % MMH_X_SIZE];
   ctx->state[2] += b[2] * MMH_x[(ctx->blocks + 2) % MMH_X_SIZE];
@@ -226,8 +226,8 @@ MMH_update(MMH_CTX * ctx, unsigned char *ab)
 static inline void
 MMH_updateb1(MMH_CTX * ctx, unsigned char *ab)
 {
-  uint32 *b = (uint32 *) (ab - 1);
-  uint32 b0 = b[0], b1 = b[1], b2 = b[2], b3 = b[3], b4 = b[4];
+  uint32_t *b = (uint32_t *) (ab - 1);
+  uint32_t b0 = b[0], b1 = b[1], b2 = b[2], b3 = b[3], b4 = b[4];
   b0 = (b0 << 8) + (b1 >> 24);
   b1 = (b1 << 8) + (b2 >> 24);
   b2 = (b2 << 8) + (b3 >> 24);
@@ -242,8 +242,8 @@ MMH_updateb1(MMH_CTX * ctx, unsigned char *ab)
 static inline void
 MMH_updateb2(MMH_CTX * ctx, unsigned char *ab)
 {
-  uint32 *b = (uint32 *) (ab - 2);
-  uint32 b0 = b[0], b1 = b[1], b2 = b[2], b3 = b[3], b4 = b[4];
+  uint32_t *b = (uint32_t *) (ab - 2);
+  uint32_t b0 = b[0], b1 = b[1], b2 = b[2], b3 = b[3], b4 = b[4];
   b0 = (b0 << 16) + (b1 >> 16);
   b1 = (b1 << 16) + (b2 >> 16);
   b2 = (b2 << 16) + (b3 >> 16);
@@ -258,8 +258,8 @@ MMH_updateb2(MMH_CTX * ctx, unsigned char *ab)
 static inline void
 MMH_updateb3(MMH_CTX * ctx, unsigned char *ab)
 {
-  uint32 *b = (uint32 *) (ab - 3);
-  uint32 b0 = b[0], b1 = b[1], b2 = b[2], b3 = b[3], b4 = b[4];
+  uint32_t *b = (uint32_t *) (ab - 3);
+  uint32_t b0 = b[0], b1 = b[1], b2 = b[2], b3 = b[3], b4 = b[4];
   b0 = (b0 << 24) + (b1 >> 8);
   b1 = (b1 << 24) + (b2 >> 8);
   b2 = (b2 << 24) + (b3 >> 8);
@@ -274,8 +274,8 @@ MMH_updateb3(MMH_CTX * ctx, unsigned char *ab)
 static inline void
 MMH_updatel1(MMH_CTX * ctx, unsigned char *ab)
 {
-  uint32 *b = (uint32 *) (ab - 1);
-  uint32 b0 = b[0], b1 = b[1], b2 = b[2], b3 = b[3], b4 = b[4];
+  uint32_t *b = (uint32_t *) (ab - 1);
+  uint32_t b0 = b[0], b1 = b[1], b2 = b[2], b3 = b[3], b4 = b[4];
   b0 = (b0 >> 8) + (b1 << 24);
   b1 = (b1 >> 8) + (b2 << 24);
   b2 = (b2 >> 8) + (b3 << 24);
@@ -290,8 +290,8 @@ MMH_updatel1(MMH_CTX * ctx, unsigned char *ab)
 static inline void
 MMH_updatel2(MMH_CTX * ctx, unsigned char *ab)
 {
-  uint32 *b = (uint32 *) (ab - 2);
-  uint32 b0 = b[0], b1 = b[1], b2 = b[2], b3 = b[3], b4 = b[4];
+  uint32_t *b = (uint32_t *) (ab - 2);
+  uint32_t b0 = b[0], b1 = b[1], b2 = b[2], b3 = b[3], b4 = b[4];
   b0 = (b0 >> 16) + (b1 << 16);
   b1 = (b1 >> 16) + (b2 << 16);
   b2 = (b2 >> 16) + (b3 << 16);
@@ -306,8 +306,8 @@ MMH_updatel2(MMH_CTX * ctx, unsigned char *ab)
 static inline void
 MMH_updatel3(MMH_CTX * ctx, unsigned char *ab)
 {
-  uint32 *b = (uint32 *) (ab - 3);
-  uint32 b0 = b[0], b1 = b[1], b2 = b[2], b3 = b[3], b4 = b[4];
+  uint32_t *b = (uint32_t *) (ab - 3);
+  uint32_t b0 = b[0], b1 = b[1], b2 = b[2], b3 = b[3], b4 = b[4];
   b0 = (b0 >> 24) + (b1 << 8);
   b1 = (b1 >> 24) + (b2 << 8);
   b2 = (b2 >> 24) + (b3 << 8);
@@ -412,7 +412,7 @@ _memset(unsigned char *b, int c, int len)
   for (i = 0; i < o; i++)
     b[i] = 0;
   for (i = 0; i < (len - o) / 4; i++)
-    ((uint32 *) (b + o))[i] = 0;
+    ((uint32_t *) (b + o))[i] = 0;
 }
 #endif
 
@@ -432,12 +432,12 @@ ink_code_incr_MMH_final(char *presult, MMH_CTX * ctx)
   pbuffer[1] = pbuffer[2] = pbuffer[3] = pbuffer[0] = len;
   MMH_update(ctx, ctx->buffer);
   // final phase
-  uint32 *b = (uint32 *) presult;
-  uint64 d = (((uint64) 1) << 32) + 15;
-  uint32 b0 = uint32(ctx->state[0] % d);
-  uint32 b1 = uint32(ctx->state[1] % d);
-  uint32 b2 = uint32(ctx->state[2] % d);
-  uint32 b3 = uint32(ctx->state[3] % d);
+  uint32_t *b = (uint32_t *) presult;
+  uint64_t d = (((uint64_t) 1) << 32) + 15;
+  uint32_t b0 = uint32_t(ctx->state[0] % d);
+  uint32_t b1 = uint32_t(ctx->state[1] % d);
+  uint32_t b2 = uint32_t(ctx->state[2] % d);
+  uint32_t b3 = uint32_t(ctx->state[3] % d);
   // scramble the bits, losslessly (reversibly)
   b[0] = b0;
   b[1] = b1 ^ (b0 >> 24) ^ (b0 << 8);
@@ -466,7 +466,7 @@ ink_code_incr_MMH_final(char *presult, MMH_CTX * ctx)
 #define TEST_COLLISIONS 10000000
 
 static int
-xxcompar(uint32 ** x, uint32 ** y)
+xxcompar(uint32_t ** x, uint32_t ** y)
 {
   for (int i = 0; i < 4; i++) {
     if (x[i] > y[i])
@@ -477,7 +477,7 @@ xxcompar(uint32 ** x, uint32 ** y)
   return 0;
 }
 
-typedef uint32 i4_t[4];
+typedef uint32_t i4_t[4];
 i4_t *xxh;
 double *xf;
 
@@ -486,10 +486,10 @@ main()
   union
   {
     unsigned char hash[16];
-    uint32 h[4];
+    uint32_t h[4];
   } h;
 
-  xxh = (i4_t *) malloc(4 * sizeof(uint32) * TEST_COLLISIONS);
+  xxh = (i4_t *) malloc(4 * sizeof(uint32_t) * TEST_COLLISIONS);
   xf = (double *) malloc(sizeof(double) * TEST_COLLISIONS);
 
   printf("test collisions\n");

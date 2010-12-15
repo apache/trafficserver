@@ -111,8 +111,8 @@ struct Connection
       @see open
   */
   int connect(
-	   uint32 addr, ///< Remote address.
-	   uint16 port, ///< Remote port.
+	   uint32_t addr, ///< Remote address.
+	   uint16_t port, ///< Remote port.
 	   NetVCOptions const& opt = DEFAULT_OPTIONS ///< Socket options
 	   );
 
@@ -120,8 +120,8 @@ struct Connection
   /// Set the internal socket address struct.
   /// @internal Used only by ICP.
   void setRemote(
-		 uint32 addr, ///< Remote IP address.
-		 uint16 port ///< Remote port.
+		 uint32_t addr, ///< Remote IP address.
+		 uint16_t port ///< Remote port.
 	     ) {
     sockaddr_in* sa_in = reinterpret_cast<sockaddr_in*>(&sa);
     sa.ss_family = AF_INET;

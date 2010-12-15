@@ -81,10 +81,10 @@ enum
 
 struct MuxMessage
 {
-  uint8 version;
-  uint8 msg_type;
-  uint16 msg_len;
-  int32 client_id;
+  uint8_t version;
+  uint8_t msg_type;
+  uint16_t msg_len;
+  int32_t client_id;
 };
 
 struct MuxClientState
@@ -104,12 +104,12 @@ public:
     MuxClientVC();
    ~MuxClientVC();
 
-  void init(MuxVC * mvc, int32 id);
+  void init(MuxVC * mvc, int32_t id);
   void kill();
 
-  virtual VIO *do_io_read(Continuation * c = NULL, int64 nbytes = INT64_MAX, MIOBuffer * buf = 0);
+  virtual VIO *do_io_read(Continuation * c = NULL, int64_t nbytes = INT64_MAX, MIOBuffer * buf = 0);
 
-  virtual VIO *do_io_write(Continuation * c = NULL, int64 nbytes = INT64_MAX, IOBufferReader * buf = 0, bool owner = false);
+  virtual VIO *do_io_write(Continuation * c = NULL, int64_t nbytes = INT64_MAX, IOBufferReader * buf = 0, bool owner = false);
 
   virtual bool is_over_ssl()
   {
@@ -145,8 +145,8 @@ public:
   int main_handler(int event, void *data);
 
   Link<MuxClientVC> link;
-  int32 id;
-  uint32 magic;
+  int32_t id;
+  uint32_t magic;
 
 private:
 
@@ -163,7 +163,7 @@ private:
   int send_write_shutdown_message();
 
   bool closed;
-  uint32 other_side_closed;
+  uint32_t other_side_closed;
 
   int reentrancy_count;
   bool need_boost;
@@ -230,7 +230,7 @@ public:
   void init_from_accept(NetVConnection * nvc, Continuation * acceptc);
   void kill();
 
-  MuxClientVC *new_client(int32 id = 0);
+  MuxClientVC *new_client(int32_t id = 0);
   void remove_client(MuxClientVC * client_vc);
 
   int state_handle_mux(int event, void *data);
@@ -270,18 +270,18 @@ private:
   void process_read_msg_body();
   void reset_read_msg_state();
 
-  MuxClientVC *find_client(int32 client_id);
+  MuxClientVC *find_client(int32_t client_id);
   void process_control_message();
   void process_channel_open();
   void process_channel_close(MuxClientVC * client);
   void process_channel_inbound_shutdown(MuxClientVC * client);
-  int enqueue_control_message(int msg_id, int32 cid, int data_size = 0);
+  int enqueue_control_message(int msg_id, int32_t cid, int data_size = 0);
   void cleanup_on_error();
   int try_processor_list_remove();
 
-  uint32 magic;
-  int32 id;
-  int32 reentrancy_count;
+  uint32_t magic;
+  int32_t id;
+  int32_t reentrancy_count;
   bool terminate_vc;
   bool on_mux_list;
   bool clients_notified_of_error;
@@ -292,7 +292,7 @@ private:
   VIO *write_vio;
 
   // Vars for preventing overflow on the outbound channel
-  uint64 write_bytes_added;
+  uint64_t write_bytes_added;
   bool writes_blocked;
 
   Action *net_connect_action;

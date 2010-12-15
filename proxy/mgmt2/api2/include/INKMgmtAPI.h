@@ -142,8 +142,8 @@ extern "C"
  * Types
  ***************************************************************************/
 
-  typedef int64 INKInt;
-  typedef int64 INKCounter;
+  typedef int64_t INKInt;
+  typedef int64_t INKCounter;
   typedef float INKFloat;
   typedef char *INKString;
   typedef char *INKIpAddr;
@@ -548,7 +548,7 @@ typedef enum
  */
   typedef struct
   {
-    uint32 active;              /* valid field: INK_SSPEC_xxx */
+    uint32_t active;              /* valid field: INK_SSPEC_xxx */
     struct
     {                           /* time range */
       int hour_a;

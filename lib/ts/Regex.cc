@@ -1700,8 +1700,8 @@ re_build(REState ** states,
   delete[]counts;
 }
 
-static const int32 negative_one = -1;
-static const int32 zero = 0;
+static const int32_t negative_one = -1;
+static const int32_t zero = 0;
 
 DFA::DFA()
 :basetbl(&negative_one), accepttbl(&negative_one), nexttbl(&zero), checktbl(&negative_one)
@@ -1767,7 +1767,7 @@ DFA::compile(const char **patterns, int npatterns, REFlags flags)
 int
 DFA::compile(const char *filename, const char **patterns, int npatterns, REFlags flags)
 {
-  static int32 magic = 0x01020304;
+  static int32_t magic = 0x01020304;
   DynArray<int>*tables[4];
   int length;
   INK_DIGEST_CTX md5_context;
@@ -1795,7 +1795,7 @@ DFA::compile(const char *filename, const char **patterns, int npatterns, REFlags
 #endif
   if (fd > 0) {
     INK_MD5 old_md5;
-    int32 old_magic;
+    int32_t old_magic;
 
     tables[0] = &basetbl;
     tables[1] = &accepttbl;
@@ -1820,8 +1820,8 @@ DFA::compile(const char *filename, const char **patterns, int npatterns, REFlags
       tables[i]->set_length(length);
       (*tables[i]) (tables[i]->length() - 1) = tables[i]->defvalue();
 
-      err = read(fd, (int32 *) (*tables[i]), sizeof(int32) * (tables[i]->length()));
-      if (err != (int) (sizeof(int32) * (tables[i]->length()))) {
+      err = read(fd, (int32_t *) (*tables[i]), sizeof(int32_t) * (tables[i]->length()));
+      if (err != (int) (sizeof(int32_t) * (tables[i]->length()))) {
         goto fail;
       }
     }
@@ -1869,8 +1869,8 @@ DFA::compile(const char *filename, const char **patterns, int npatterns, REFlags
       goto done;
     }
 
-    err = write(fd, (int32 *) (*tables[i]), sizeof(int32) * (tables[i]->length()));
-    if (err != (int) (sizeof(int32) * (tables[i]->length()))) {
+    err = write(fd, (int32_t *) (*tables[i]), sizeof(int32_t) * (tables[i]->length()));
+    if (err != (int) (sizeof(int32_t) * (tables[i]->length()))) {
       goto done;
     }
   }

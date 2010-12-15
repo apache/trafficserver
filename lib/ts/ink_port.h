@@ -34,18 +34,19 @@
 
 #include "ink_config.h"
 #include <stddef.h>
+
 #ifdef HAVE_STDINT_H
 # include <stdint.h>
+#else
+// TODO: Add "standard" int types?
 #endif
 
-typedef char int8;
-typedef unsigned char uint8;
-typedef short int16;
-typedef unsigned short uint16;
-typedef int int32;
-typedef unsigned int uint32;
-typedef long long int64;
-typedef unsigned long long uint64;
+#ifdef HAVE_INTTYPES_H
+# define __STDC_FORMAT_MACROS 1
+# include <inttypes.h>
+#else
+// TODO: add PRI*64 stuff?
+#endif
 
 #ifndef INT64_MIN
 #define INT64_MAX (9223372036854775807LL)

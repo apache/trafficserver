@@ -742,7 +742,7 @@ handle_reconfigure(struct SocketInfo sock_info)
 INKError
 handle_restart(struct SocketInfo sock_info, char *req)
 {
-  int16 cluster;
+  int16_t cluster;
   INKError ret;
 
   if (!req) {

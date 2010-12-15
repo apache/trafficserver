@@ -80,7 +80,7 @@ process_arg(ArgumentDescription * argument_descriptions,
         *(double *) argument_descriptions[i].location = atof(arg);
         break;
       case 'L':
-        *(int64 *) argument_descriptions[i].location = ink_atoi64(arg);
+        *(int64_t *) argument_descriptions[i].location = ink_atoi64(arg);
         break;
       case 'S':
         strncpy((char *) argument_descriptions[i].location, arg, atoi(argument_descriptions[i].type + 1));
@@ -118,7 +118,7 @@ show_argument_configuration(ArgumentDescription * argument_descriptions, int n_a
         printf("%f", *(double *) argument_descriptions[i].location);
         break;
       case 'L':
-        printf("%lld", *(int64 *) argument_descriptions[i].location);
+        printf("%" PRId64 "", *(int64_t *) argument_descriptions[i].location);
         break;
       case 'S':
         printf("%s", (char *) argument_descriptions[i].location);
@@ -155,7 +155,7 @@ process_args(ArgumentDescription * argument_descriptions, int n_argument_descrip
         *(double *) argument_descriptions[i].location = atof(env);
         break;
       case 'L':
-        *(int64 *) argument_descriptions[i].location = atoll(env);
+        *(int64_t *) argument_descriptions[i].location = atoll(env);
         break;
       case 'S':
         strncpy((char *) argument_descriptions[i].location, env, atoi(argument_descriptions[i].type + 1));
@@ -223,7 +223,7 @@ usage(ArgumentDescription * argument_descriptions, int n_argument_descriptions, 
       fprintf(stderr, "          ");
       break;
     case 'L':
-      fprintf(stderr, " %-9lld", *(int64 *) argument_descriptions[i].location);
+      fprintf(stderr, " %-9" PRId64 "", *(int64_t *) argument_descriptions[i].location);
       break;
     case 'S':
       if (*(char *) argument_descriptions[i].location) {

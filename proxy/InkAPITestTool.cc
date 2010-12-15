@@ -120,7 +120,7 @@ typedef struct
 
   int connect_port;
   int local_port;
-  uint64 connect_ip;
+  uint64_t connect_ip;
   TSAction connect_action;
 
   TxnHandler current_handler;
@@ -534,7 +534,7 @@ synclient_txn_read_response(TSCont contp)
 
   TSIOBufferBlock block = TSIOBufferReaderStart(txn->resp_reader);
   while (block != NULL) {
-    int64 blocklen;
+    int64_t blocklen;
     const char *blockptr = TSIOBufferBlockReadStart(block, txn->resp_reader, &blocklen);
 
     if (txn->response_len+blocklen <= RESPONSE_MAX_SIZE) {
@@ -560,7 +560,7 @@ synclient_txn_read_response_handler(TSCont contp, TSEvent event, void *data)
   ClientTxn *txn = (ClientTxn *) TSContDataGet(contp);
   TSAssert(txn->magic == MAGIC_ALIVE);
 
-  int64 avail;
+  int64_t avail;
 
   switch (event) {
   case TS_EVENT_VCONN_READ_READY:
@@ -611,7 +611,7 @@ synclient_txn_write_request(TSCont contp)
 
   TSIOBufferBlock block;
   char *ptr_block;
-  int64 len, ndone, ntodo, towrite, avail;
+  int64_t len, ndone, ntodo, towrite, avail;
 
   len = strlen(txn->request);
 
@@ -862,7 +862,7 @@ synserver_txn_write_response(TSCont contp)
 
   TSIOBufferBlock block;
   char *ptr_block;
-  int64 len, ndone, ntodo, towrite, avail;
+  int64_t len, ndone, ntodo, towrite, avail;
   char *response;
 
   response = generate_response(txn->request);
@@ -938,7 +938,7 @@ synserver_txn_read_request(TSCont contp)
   TSIOBufferBlock block = TSIOBufferReaderStart(txn->req_reader);
 
   while (block != NULL) {
-    int64 blocklen;
+    int64_t blocklen;
     const char *blockptr = TSIOBufferBlockReadStart(block, txn->req_reader, &blocklen);
 
     if (txn->request_len+blocklen <= REQUEST_MAX_SIZE) {
@@ -967,7 +967,7 @@ synserver_txn_read_request_handler(TSCont contp, TSEvent event, void *data)
   ServerTxn *txn = (ServerTxn *) TSContDataGet(contp);
   TSAssert(txn->magic == MAGIC_ALIVE);
 
-  int64 avail;
+  int64_t avail;
   int end_of_request;
 
   switch (event) {

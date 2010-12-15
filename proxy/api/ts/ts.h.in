@@ -449,18 +449,13 @@ extern "C"
 
   extern tsapi const void *TS_ERROR_PTR;
 
-  typedef int int32;
-  typedef unsigned int uint32;
-  typedef long long int64;
-  typedef unsigned long long uint64;
-
-  typedef int64 TSHRTime;
+  typedef int64_t TSHRTime;
 
   /* These typedefs are used with the corresponding TSMgmt*Get functions
      for storing the values retrieved by those functions. For example,
      TSMgmtCounterGet() retrieves an TSMgmtCounter. */
-  typedef int64 TSMgmtInt;
-  typedef int64 TSMgmtCounter;
+  typedef int64_t TSMgmtInt;
+  typedef int64_t TSMgmtCounter;
   typedef float TSMgmtFloat;
   typedef char *TSMgmtString;
 
@@ -816,7 +811,7 @@ extern "C"
 
   tsapi void *_TSmalloc(size_t size, const char *path);
   tsapi void *_TSrealloc(void *ptr, size_t size, const char *path);
-  tsapi char *_TSstrdup(const char *str, int64 length, const char *path);
+  tsapi char *_TSstrdup(const char *str, int64_t length, const char *path);
   tsapi void _TSfree(void *ptr);
 
   /* --------------------------------------------------------------------------
@@ -2057,7 +2052,7 @@ extern "C"
 
    */
   tsapi TSReturnCode TSHttpTxnReenable(TSHttpTxn txnp, TSEvent event);
-  tsapi TSReturnCode TSHttpCacheReenable(TSCacheTxn txnp, const TSEvent event, const void *data, const uint64 size);
+  tsapi TSReturnCode TSHttpCacheReenable(TSCacheTxn txnp, const TSEvent event, const void *data, const uint64_t size);
   tsapi TSReturnCode TSHttpTxnFollowRedirect(TSHttpTxn txnp, int on);
 
   tsapi TSReturnCode TSHttpTxnArgSet(TSHttpTxn txnp, int arg_idx, void *arg);
@@ -2191,15 +2186,15 @@ extern "C"
   tsapi TSVIO TSVConnWriteVIOGet(TSVConn connp);
   tsapi int TSVConnClosedGet(TSVConn connp);
 
-  tsapi TSVIO TSVConnRead(TSVConn connp, TSCont contp, TSIOBuffer bufp, int64 nbytes);
-  tsapi TSVIO TSVConnWrite(TSVConn connp, TSCont contp, TSIOBufferReader readerp, int64 nbytes);
+  tsapi TSVIO TSVConnRead(TSVConn connp, TSCont contp, TSIOBuffer bufp, int64_t nbytes);
+  tsapi TSVIO TSVConnWrite(TSVConn connp, TSCont contp, TSIOBufferReader readerp, int64_t nbytes);
   tsapi TSReturnCode TSVConnClose(TSVConn connp);
   tsapi TSReturnCode TSVConnAbort(TSVConn connp, int error);
   tsapi TSReturnCode TSVConnShutdown(TSVConn connp, int read, int write);
 
   /* --------------------------------------------------------------------------
      Cache VConnections */
-  tsapi TSReturnCode TSVConnCacheObjectSizeGet(TSVConn connp, int64 *obj_size);
+  tsapi TSReturnCode TSVConnCacheObjectSizeGet(TSVConn connp, int64_t *obj_size);
 
   /* --------------------------------------------------------------------------
      Transformations */
@@ -2340,11 +2335,11 @@ extern "C"
   tsapi TSReturnCode TSVIOReenable(TSVIO viop);
   tsapi TSIOBuffer TSVIOBufferGet(TSVIO viop);
   tsapi TSIOBufferReader TSVIOReaderGet(TSVIO viop);
-  tsapi int64 TSVIONBytesGet(TSVIO viop);
-  tsapi TSReturnCode TSVIONBytesSet(TSVIO viop, int64 nbytes);
-  tsapi int64 TSVIONDoneGet(TSVIO viop);
-  tsapi TSReturnCode TSVIONDoneSet(TSVIO viop, int64 ndone);
-  tsapi int64 TSVIONTodoGet(TSVIO viop);
+  tsapi int64_t TSVIONBytesGet(TSVIO viop);
+  tsapi TSReturnCode TSVIONBytesSet(TSVIO viop, int64_t nbytes);
+  tsapi int64_t TSVIONDoneGet(TSVIO viop);
+  tsapi TSReturnCode TSVIONDoneSet(TSVIO viop, int64_t ndone);
+  tsapi int64_t TSVIONTodoGet(TSVIO viop);
   tsapi TSMutex TSVIOMutexGet(TSVIO viop);
   tsapi TSCont TSVIOContGet(TSVIO viop);
   tsapi TSVConn TSVIOVConnGet(TSVIO viop);
@@ -2377,7 +2372,7 @@ extern "C"
         provided TSIOBuffer.
 
    */
-  tsapi TSReturnCode TSIOBufferWaterMarkGet(TSIOBuffer bufp, int64 *water_mark);
+  tsapi TSReturnCode TSIOBufferWaterMarkGet(TSIOBuffer bufp, int64_t *water_mark);
 
   /**
       The watermark of an TSIOBuffer is the minimum number of bytes
@@ -2393,11 +2388,11 @@ extern "C"
       @param water_mark watermark setting, as a number of bytes.
 
    */
-  tsapi TSReturnCode TSIOBufferWaterMarkSet(TSIOBuffer bufp, int64 water_mark);
+  tsapi TSReturnCode TSIOBufferWaterMarkSet(TSIOBuffer bufp, int64_t water_mark);
 
   tsapi TSReturnCode TSIOBufferDestroy(TSIOBuffer bufp);
   tsapi TSIOBufferBlock TSIOBufferStart(TSIOBuffer bufp);
-  tsapi int64 TSIOBufferCopy(TSIOBuffer bufp, TSIOBufferReader readerp, int64 length, int64 offset);
+  tsapi int64_t TSIOBufferCopy(TSIOBuffer bufp, TSIOBufferReader readerp, int64_t length, int64_t offset);
 
   /**
       Writes length bytes of data contained in the string buf to the
@@ -2411,21 +2406,21 @@ extern "C"
         in bytes.
 
    */
-  tsapi int64 TSIOBufferWrite(TSIOBuffer bufp, const void *buf, int64 length);
-  tsapi TSReturnCode TSIOBufferProduce(TSIOBuffer bufp, int64 nbytes);
+  tsapi int64_t TSIOBufferWrite(TSIOBuffer bufp, const void *buf, int64_t length);
+  tsapi TSReturnCode TSIOBufferProduce(TSIOBuffer bufp, int64_t nbytes);
 
   tsapi TSIOBufferBlock TSIOBufferBlockNext(TSIOBufferBlock blockp);
-  tsapi const char *TSIOBufferBlockReadStart(TSIOBufferBlock blockp, TSIOBufferReader readerp, int64 *avail);
-  tsapi int64 TSIOBufferBlockReadAvail(TSIOBufferBlock blockp, TSIOBufferReader readerp);
-  tsapi char *TSIOBufferBlockWriteStart(TSIOBufferBlock blockp, int64 *avail);
-  tsapi int64 TSIOBufferBlockWriteAvail(TSIOBufferBlock blockp);
+  tsapi const char *TSIOBufferBlockReadStart(TSIOBufferBlock blockp, TSIOBufferReader readerp, int64_t *avail);
+  tsapi int64_t TSIOBufferBlockReadAvail(TSIOBufferBlock blockp, TSIOBufferReader readerp);
+  tsapi char *TSIOBufferBlockWriteStart(TSIOBufferBlock blockp, int64_t *avail);
+  tsapi int64_t TSIOBufferBlockWriteAvail(TSIOBufferBlock blockp);
 
   tsapi TSIOBufferReader TSIOBufferReaderAlloc(TSIOBuffer bufp);
   tsapi TSIOBufferReader TSIOBufferReaderClone(TSIOBufferReader readerp);
   tsapi TSReturnCode TSIOBufferReaderFree(TSIOBufferReader readerp);
   tsapi TSIOBufferBlock TSIOBufferReaderStart(TSIOBufferReader readerp);
-  tsapi TSReturnCode TSIOBufferReaderConsume(TSIOBufferReader readerp, int64 nbytes);
-  tsapi int64 TSIOBufferReaderAvail(TSIOBufferReader readerp);
+  tsapi TSReturnCode TSIOBufferReaderConsume(TSIOBufferReader readerp, int64_t nbytes);
+  tsapi int64_t TSIOBufferReaderAvail(TSIOBufferReader readerp);
 
 
   /* --------------------------------------------------------------------------
@@ -2491,7 +2486,7 @@ extern "C"
   /** @deprecated */
   tsapi INKStat INKStatCreate(const char *the_name, INKStatTypes the_type);
   /** @deprecated */
-  tsapi TSReturnCode INKStatIntAddTo(INKStat the_stat, int64 amount);
+  tsapi TSReturnCode INKStatIntAddTo(INKStat the_stat, int64_t amount);
   /** @deprecated */
   tsapi TSReturnCode INKStatFloatAddTo(INKStat the_stat, float amount);
   /** @deprecated */
@@ -2499,11 +2494,11 @@ extern "C"
   /** @deprecated */
   tsapi TSReturnCode INKStatIncrement(INKStat the_stat);
   /** @deprecated */
-  tsapi TSReturnCode INKStatIntGet(INKStat the_stat, int64 * value);
+  tsapi TSReturnCode INKStatIntGet(INKStat the_stat, int64_t * value);
   /** @deprecated */
   tsapi TSReturnCode INKStatFloatGet(INKStat the_stat, float *value);
   /** @deprecated */
-  tsapi TSReturnCode INKStatIntSet(INKStat the_stat, int64 value);
+  tsapi TSReturnCode INKStatIntSet(INKStat the_stat, int64_t value);
   /** @deprecated */
   tsapi TSReturnCode INKStatFloatSet(INKStat the_stat, float value);
 
@@ -2586,10 +2581,10 @@ extern "C"
 
   typedef union 
   {
-    int64 rec_int;
+    int64_t rec_int;
     float rec_float;
     char *rec_string;
-    int64 rec_counter;
+    int64_t rec_counter;
   } TSRecordData;
 
   typedef void (*TSRecordDumpCb) (TSRecordType rec_type, void *edata, int registered, const char *name, TSRecordDataType data_type, TSRecordData *datum);
@@ -2797,11 +2792,11 @@ extern "C"
   /* api functions to access stats */
   /* ClientResp APIs exist as well and are exposed in PrivateFrozen  */
   tsapi int TSHttpTxnClientReqHdrBytesGet(TSHttpTxn txnp, int *bytes);
-  tsapi int TSHttpTxnClientReqBodyBytesGet(TSHttpTxn txnp, int64 *bytes);
+  tsapi int TSHttpTxnClientReqBodyBytesGet(TSHttpTxn txnp, int64_t *bytes);
   tsapi int TSHttpTxnServerReqHdrBytesGet(TSHttpTxn txnp, int *bytes);
-  tsapi int TSHttpTxnServerReqBodyBytesGet(TSHttpTxn txnp, int64 *bytes);
+  tsapi int TSHttpTxnServerReqBodyBytesGet(TSHttpTxn txnp, int64_t *bytes);
   tsapi int TSHttpTxnPushedRespHdrBytesGet(TSHttpTxn txnp, int *bytes);
-  tsapi int TSHttpTxnPushedRespBodyBytesGet(TSHttpTxn txnp, int64 *bytes);
+  tsapi int TSHttpTxnPushedRespBodyBytesGet(TSHttpTxn txnp, int64_t *bytes);
 
   /* NetVC timeout APIs. */
   tsapi void TSVConnInactivityTimeoutSet(TSVConn connp, TSHRTime timeout);

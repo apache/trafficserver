@@ -76,8 +76,8 @@ class LogFieldAliasMap:public RefCountObj
 {
 public:
   // the logging system assumes log entries of type sINT are
-  // unsigned integers (int64 type) so we define IntType to be unsigned
-  // TODO/XXX: B0rken, need to fix this to int64
+  // unsigned integers (int64_t type) so we define IntType to be unsigned
+  // TODO/XXX: B0rken, need to fix this to int64_t
   typedef unsigned int IntType;
   enum
   { ALL_OK = 0, INVALID_INT, INVALID_STRING, BUFFER_TOO_SMALL };

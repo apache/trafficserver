@@ -3244,6 +3244,7 @@ writeVaddrsConfigForm(WebHttpContext * whc)
 int
 writeSecondarySpecsForm(WebHttpContext * whc, INKFileNameT file)
 {
+  NOWARN_UNUSED(file);
   textBuffer *output = whc->response_bdy;
 
   HtmlRndrTrOpen(output, HTML_CSS_NONE, HTML_ALIGN_NONE);

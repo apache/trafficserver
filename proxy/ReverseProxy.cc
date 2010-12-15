@@ -98,6 +98,12 @@ bool
 request_url_remap(HttpTransact::State * s, HTTPHdr * request_header, char **redirect_url, char **orig_url, char *tag,
                   unsigned int filter_mask)
 {
+  NOWARN_UNUSED(s);
+  NOWARN_UNUSED(request_header);
+  NOWARN_UNUSED(redirect_url);
+  NOWARN_UNUSED(orig_url);
+  NOWARN_UNUSED(tag);
+  NOWARN_UNUSED(filter_mask);
   return false;
   // return rewrite_table ? rewrite_table->Remap(s, request_header, redirect_url, orig_url, tag, filter_mask) : false;
 }

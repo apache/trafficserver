@@ -57,9 +57,9 @@ public:
     }
   };
 
-  virtual VIO *do_io_write(Continuation * c = NULL, int64 nbytes = 0, IOBufferReader * buf = NULL, bool owner = false);
+  virtual VIO *do_io_write(Continuation * c = NULL, int64_t nbytes = 0, IOBufferReader * buf = NULL, bool owner = false);
 
-  virtual VIO *do_io_read(Continuation * c, int64 nbytes, MIOBuffer * buf);
+  virtual VIO *do_io_read(Continuation * c, int64_t nbytes, MIOBuffer * buf);
 
   virtual void do_io_close(int err = -1) {
   };
@@ -89,7 +89,7 @@ BCSV_impl::~BCSV_impl()
 }
 
 VIO *
-BCSV_impl::do_io_write(Continuation * c, int64 nbytes, IOBufferReader * buf, bool owner)
+BCSV_impl::do_io_write(Continuation * c, int64_t nbytes, IOBufferReader * buf, bool owner)
 {
 
   // call into BC_OpenSegment for io strategy
@@ -109,7 +109,7 @@ BCSV_impl::do_io_write(Continuation * c, int64 nbytes, IOBufferReader * buf, boo
 }
 
 VIO *
-BCSV_impl::do_io_read(Continuation * c, int64 nbytes, MIOBuffer * buf)
+BCSV_impl::do_io_read(Continuation * c, int64_t nbytes, MIOBuffer * buf)
 {
   // call into BC_OpenSegment for io strategy
 

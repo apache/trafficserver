@@ -97,7 +97,7 @@ raw_stat_sync_to_global(RecRawStatBlock *rsb, int id)
   delta.count = total.count - rsb->global[id]->last_count;
 
   // This is too verbose now, so leaving it out / leif
-  //Debug("stats", "raw_stat_sync_to_global(): rsb pointer:%p id:%d delta:%lld total:%lld last:%lld global:%lld\n",
+  //Debug("stats", "raw_stat_sync_to_global(): rsb pointer:%p id:%d delta:%" PRId64 " total:%" PRId64 " last:%" PRId64 " global:%" PRId64 "\n",
   //rsb, id, delta.sum, total.sum, rsb->global[id]->last_sum, rsb->global[id]->sum);
 
   // increment the global values by the delta
@@ -583,7 +583,7 @@ RecIncrRawStatBlock(RecRawStatBlock *rsb, EThread *ethread, RecRawStat *stat_arr
 // RecSetRawStatXXX
 //-------------------------------------------------------------------------
 int
-RecSetRawStatSum(RecRawStatBlock *rsb, int id, int64 data)
+RecSetRawStatSum(RecRawStatBlock *rsb, int id, int64_t data)
 {
   raw_stat_clear_sum(rsb, id);
   ink_atomic_swap64(&(rsb->global[id]->sum), data);
@@ -591,7 +591,7 @@ RecSetRawStatSum(RecRawStatBlock *rsb, int id, int64 data)
 }
 
 int
-RecSetRawStatCount(RecRawStatBlock *rsb, int id, int64 data)
+RecSetRawStatCount(RecRawStatBlock *rsb, int id, int64_t data)
 {
   raw_stat_clear_count(rsb, id);
   ink_atomic_swap64(&(rsb->global[id]->count), data);
@@ -612,7 +612,7 @@ RecSetRawStatBlock(RecRawStatBlock *rsb, RecRawStat *stat_array)
 //-------------------------------------------------------------------------
 
 int
-RecGetRawStatSum(RecRawStatBlock *rsb, int id, int64 *data)
+RecGetRawStatSum(RecRawStatBlock *rsb, int id, int64_t *data)
 {
   RecRawStat total;
 
@@ -622,7 +622,7 @@ RecGetRawStatSum(RecRawStatBlock *rsb, int id, int64 *data)
 }
 
 int
-RecGetRawStatCount(RecRawStatBlock *rsb, int id, int64 *data)
+RecGetRawStatCount(RecRawStatBlock *rsb, int id, int64_t *data)
 {
   RecRawStat total;
 
@@ -636,7 +636,7 @@ RecGetRawStatCount(RecRawStatBlock *rsb, int id, int64 *data)
 // RecIncrGlobalRawStatXXX
 //-------------------------------------------------------------------------
 int
-RecIncrGlobalRawStat(RecRawStatBlock *rsb, int id, int64 incr)
+RecIncrGlobalRawStat(RecRawStatBlock *rsb, int id, int64_t incr)
 {
   ink_atomic_increment64(&(rsb->global[id]->sum), incr);
   ink_atomic_increment64(&(rsb->global[id]->count), 1);
@@ -644,14 +644,14 @@ RecIncrGlobalRawStat(RecRawStatBlock *rsb, int id, int64 incr)
 }
 
 int
-RecIncrGlobalRawStatSum(RecRawStatBlock *rsb, int id, int64 incr)
+RecIncrGlobalRawStatSum(RecRawStatBlock *rsb, int id, int64_t incr)
 {
   ink_atomic_increment64(&(rsb->global[id]->sum), incr);
   return REC_ERR_OKAY;
 }
 
 int
-RecIncrGlobalRawStatCount(RecRawStatBlock *rsb, int id, int64 incr)
+RecIncrGlobalRawStatCount(RecRawStatBlock *rsb, int id, int64_t incr)
 {
   ink_atomic_increment64(&(rsb->global[id]->count), incr);
   return REC_ERR_OKAY;
@@ -662,14 +662,14 @@ RecIncrGlobalRawStatCount(RecRawStatBlock *rsb, int id, int64 incr)
 // RecSetGlobalRawStatXXX
 //-------------------------------------------------------------------------
 int
-RecSetGlobalRawStatSum(RecRawStatBlock *rsb, int id, int64 data)
+RecSetGlobalRawStatSum(RecRawStatBlock *rsb, int id, int64_t data)
 {
   ink_atomic_swap64(&(rsb->global[id]->sum), data);
   return REC_ERR_OKAY;
 }
 
 int
-RecSetGlobalRawStatCount(RecRawStatBlock *rsb, int id, int64 data)
+RecSetGlobalRawStatCount(RecRawStatBlock *rsb, int id, int64_t data)
 {
   ink_atomic_swap64(&(rsb->global[id]->count), data);
   return REC_ERR_OKAY;
@@ -680,14 +680,14 @@ RecSetGlobalRawStatCount(RecRawStatBlock *rsb, int id, int64 data)
 // RecGetGlobalRawStatXXX
 //-------------------------------------------------------------------------
 int
-RecGetGlobalRawStatSum(RecRawStatBlock *rsb, int id, int64 *data)
+RecGetGlobalRawStatSum(RecRawStatBlock *rsb, int id, int64_t *data)
 {
   *data = rsb->global[id]->sum;
   return REC_ERR_OKAY;
 }
 
 int
-RecGetGlobalRawStatCount(RecRawStatBlock *rsb, int id, int64 *data)
+RecGetGlobalRawStatCount(RecRawStatBlock *rsb, int id, int64_t *data)
 {
   *data = rsb->global[id]->count;
   return REC_ERR_OKAY;
@@ -703,13 +703,13 @@ RecGetGlobalRawStatPtr(RecRawStatBlock *rsb, int id)
   return rsb->global[id];
 }
 
-int64 *
+int64_t *
 RecGetGlobalRawStatSumPtr(RecRawStatBlock *rsb, int id)
 {
   return &(rsb->global[id]->sum);
 }
 
-int64 *
+int64_t *
 RecGetGlobalRawStatCountPtr(RecRawStatBlock *rsb, int id)
 {
   return &(rsb->global[id]->count);

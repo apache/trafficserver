@@ -142,7 +142,7 @@ struct CacheProcessor:public Processor
 
   void cacheInitialized();
 
-  static volatile uint32 cache_ready;
+  static volatile uint32_t cache_ready;
   static volatile int initialized;
   static volatile int start_done;
   static int clear;
@@ -156,9 +156,9 @@ struct CacheProcessor:public Processor
 
 struct CacheVConnection:public VConnection
 {
-  VIO *do_io_read(Continuation *c, int64 nbytes, MIOBuffer *buf) = 0;
-  virtual VIO *do_io_pread(Continuation *c, int64 nbytes, MIOBuffer *buf, int64 offset) = 0;
-  VIO *do_io_write(Continuation *c, int64 nbytes, IOBufferReader *buf, bool owner = false) = 0;
+  VIO *do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf) = 0;
+  virtual VIO *do_io_pread(Continuation *c, int64_t nbytes, MIOBuffer *buf, int64_t offset) = 0;
+  VIO *do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *buf, bool owner = false) = 0;
   void do_io_close(int lerrno = -1) = 0;
   void reenable(VIO *avio) = 0;
   void reenable_re(VIO *avio) = 0;
@@ -183,7 +183,7 @@ struct CacheVConnection:public VConnection
   virtual int get_disk_io_priority() = 0;
   virtual bool set_pin_in_cache(time_t t) = 0;
   virtual time_t get_pin_in_cache() = 0;
-  virtual int64 get_object_size() = 0;
+  virtual int64_t get_object_size() = 0;
 
   CacheVConnection();
 };

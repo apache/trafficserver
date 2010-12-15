@@ -123,7 +123,7 @@ RecDataSet(RecDataT data_type, RecData * data_dst, RecData * data_src)
 // RecDataSetFromInk64
 //-------------------------------------------------------------------------
 bool
-RecDataSetFromInk64(RecDataT data_type, RecData * data_dst, int64 data_int64)
+RecDataSetFromInk64(RecDataT data_type, RecData * data_dst, int64_t data_int64)
 {
   switch (data_type) {
   case RECD_INT:
@@ -138,7 +138,7 @@ RecDataSetFromInk64(RecDataT data_type, RecData * data_dst, int64 data_int64)
       if (data_dst->rec_string) {
         xfree(data_dst->rec_string);
       }
-      snprintf(buf, 32, "%lld", data_int64);
+      snprintf(buf, 32, "%" PRId64 "", data_int64);
       data_dst->rec_string = xstrdup(buf);
       break;
     }

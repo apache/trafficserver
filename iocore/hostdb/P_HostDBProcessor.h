@@ -197,7 +197,7 @@ HostDBRoundRobin::select_best(unsigned int client_ip, HostDBInfo * r)
 }
 
 inline HostDBInfo *
-HostDBRoundRobin::select_best_http(unsigned int client_ip, time_t now, int32 fail_window)
+HostDBRoundRobin::select_best_http(unsigned int client_ip, time_t now, int32_t fail_window)
 {
   bool bad = (n <= 0 || n > HOST_DB_MAX_ROUND_ROBIN_INFO || good <= 0 || good > HOST_DB_MAX_ROUND_ROBIN_INFO);
   if (bad) {
@@ -234,7 +234,7 @@ HostDBRoundRobin::select_best_http(unsigned int client_ip, time_t now, int32 fai
         //  as to how far in the future we should tolerate bogus last
         //  failure times.  This sets the upper bound that we would ever
         //  consider a server down to 2*down_server_timeout
-        if (now + fail_window < (int32) (info[i].app.http_data.last_failure)) {
+        if (now + fail_window < (int32_t) (info[i].app.http_data.last_failure)) {
 #ifdef DEBUG
           // because this region is mmaped, I cann't get anything
           //   useful from the structure in core files,  therefore

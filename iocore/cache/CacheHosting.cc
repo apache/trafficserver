@@ -966,7 +966,7 @@ create_config(RegressionTest * t, int num)
       }
 
       // calculate the total free space
-      uint64 total_space = 0;
+      uint64_t total_space = 0;
       for (i = 0; i < gndisks; i++) {
         int part_blocks = gdisks[i]->num_usable_blocks;
         /* round down the blocks to the nearest
@@ -1006,7 +1006,7 @@ create_config(RegressionTest * t, int num)
     {
       /* calculate the total disk space */
       InkRand *gen = &this_ethread()->generator;
-      uint64 total_space = 0;
+      uint64_t total_space = 0;
       part_num = 1;
       if (num == 2) {
         rprintf(t, "Random Partitions after clearing the disks\n");

@@ -328,7 +328,7 @@ load(const char *filename)
   TSFile fp;
   TSIOBufferBlock blk;
   char *p;
-  int64 avail;
+  int64_t avail;
   int err;
 
   fp = TSfopen(filename, "r");

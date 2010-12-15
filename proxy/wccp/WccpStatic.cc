@@ -29,7 +29,7 @@ namespace wccp {
 
 struct CompileTimeChecks {
   static unsigned int const BUCKET_SIZE = sizeof(AssignInfoComp::Bucket);
-  static unsigned int const UINT8_SIZE = sizeof(uint8);
+  static unsigned int const UINT8_SIZE = sizeof(uint8_t);
   // A compiler error for the following line means that the size of
   // an assignment bucket is incorrect. It must be exactly 1 byte.
   ts::TEST_IF_TRUE< BUCKET_SIZE == UINT8_SIZE > m_check_bucket_size;
@@ -41,14 +41,14 @@ ts::Errata::Code LVL_INFO = 1; /// Interesting, not necessarily a problem.
 ts::Errata::Code LVL_DEBUG = 0; /// Debugging information.
 
 // Find a valid local IP address given an open socket.
-uint32
+uint32_t
 Get_Local_Address(int s) {
   // If we can't find a good address in the first 255, just give up
   // and make the user specify an address.
   static int const N_REQ = 255;
   ifconf conf;
   ifreq req[N_REQ];
-  uint32 zret;
+  uint32_t zret;
 
   conf.ifc_len = sizeof(req);
   conf.ifc_req = req;
@@ -65,7 +65,7 @@ Get_Local_Address(int s) {
 }
 
 // Cheap, can't even be used twice in the same argument list.
-char const* ip_addr_to_str(uint32 addr) {
+char const* ip_addr_to_str(uint32_t addr) {
   static char buff[4 * 3 + 3 + 1];
   unsigned char* octet = reinterpret_cast<unsigned char*>(&addr);
   sprintf(buff, "%d.%d.%d.%d", octet[0], octet[1], octet[2], octet[3]);

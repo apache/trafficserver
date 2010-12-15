@@ -94,7 +94,7 @@ SessionBucket::session_handler(int event, void *data)
         HttpConfig::release(http_config_params);
 
         if( connection_count_below_min ) {
-          Debug("http_ss", "[%lld] [session_bucket] session received io notice [%s], "
+          Debug("http_ss", "[%" PRId64 "] [session_bucket] session received io notice [%s], "
                 "reseting timeout to maintain minimum number of connections", s->con_id,
                 HttpDebugNames::get_event_name(event));
           s->get_netvc()->set_inactivity_timeout(HRTIME_SECONDS(
@@ -108,7 +108,7 @@ SessionBucket::session_handler(int event, void *data)
 
       // We've found our server session. Remove it from
       //   our lists and close it down
-      Debug("http_ss", "[%lld] [session_bucket] session received "
+      Debug("http_ss", "[%" PRId64 "] [session_bucket] session received "
             "io notice [%s]", s->con_id, HttpDebugNames::get_event_name(event));
       ink_assert(s->state == HSS_KA_SHARED);
       lru_list.remove(s);
@@ -197,7 +197,7 @@ HttpSessionManager::acquire_session(Continuation * cont, unsigned int ip, int po
       hash_computed = true;
 
       if (hostname_hash == to_return->hostname_hash) {
-        Debug("http_ss", "[%lld] [acquire session] returning attached session ", to_return->con_id);
+        Debug("http_ss", "[%" PRId64 "] [acquire session] returning attached session ", to_return->con_id);
         to_return->state = HSS_ACTIVE;
         sm->attach_server_session(to_return);
         return HSM_DONE;
@@ -205,7 +205,7 @@ HttpSessionManager::acquire_session(Continuation * cont, unsigned int ip, int po
     }
     // Release this session back to the main session pool and
     //   then continue looking for one from the shared pool
-    Debug("http_ss", "[%lld] [acquire session] " "session not a match, returning to shared pool", to_return->con_id);
+    Debug("http_ss", "[%" PRId64 "] [acquire session] " "session not a match, returning to shared pool", to_return->con_id);
     to_return->release();
     to_return = NULL;
   }
@@ -252,7 +252,7 @@ HttpSessionManager::acquire_session(Continuation * cont, unsigned int ip, int po
           bucket->l2_hash[l2_index].remove(b);
           b->state = HSS_ACTIVE;
           to_return = b;
-          Debug("http_ss", "[%lld] [acquire session] " "return session from shared pool", to_return->con_id);
+          Debug("http_ss", "[%" PRId64 "] [acquire session] " "return session from shared pool", to_return->con_id);
           sm->attach_server_session(to_return);
           return HSM_DONE;
         }
@@ -314,10 +314,10 @@ HttpSessionManager::release_session(HttpServerSession * to_release)
     to_release->get_netvc()->
       set_active_timeout(HRTIME_SECONDS(HttpConfig::m_master.keep_alive_no_activity_timeout_out));
 
-    Debug("http_ss", "[%lld] [release session] " "session placed into shared pool", to_release->con_id);
+    Debug("http_ss", "[%" PRId64 "] [release session] " "session placed into shared pool", to_release->con_id);
     return HSM_DONE;
   } else {
-    Debug("http_ss", "[%lld] [release session] "
+    Debug("http_ss", "[%" PRId64 "] [release session] "
           "could not release session due to lock contention", to_release->con_id);
     return HSM_RETRY;
   }

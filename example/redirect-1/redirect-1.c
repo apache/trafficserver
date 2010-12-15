@@ -313,7 +313,7 @@ update_redirected_method_stats(TSMBuffer bufp, TSMLoc hdr_loc)
 {
   const char *txn_method;
   int length;
-  int64 tempint;
+  int64_t tempint;
 
   txn_method = TSHttpHdrMethodGet(bufp, hdr_loc, &length);
 

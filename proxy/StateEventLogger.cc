@@ -254,7 +254,7 @@ test_thread(void *i)
     (*sel) (TestStateEvent(pi, j));
   }
   finish = ink_get_hrtime();
-  printf("StateEventLogger cost = %lldns\n", (finish - start) / (N_THREADS * calls));
+  printf("StateEventLogger cost = %" PRId64 "ns\n", (finish - start) / (N_THREADS * calls));
   return NULL;
 }
 

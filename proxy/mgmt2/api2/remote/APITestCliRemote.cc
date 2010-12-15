@@ -1060,7 +1060,7 @@ test_error_records()
   if (ret != INK_ERR_OKAY) {
     print_err("INKRecordGetInt", ret);
   } else
-    printf("[INKRecordGetInt] proxy.config.cop.core_signal=%lld \n", port1);
+    printf("[INKRecordGetInt] proxy.config.cop.core_signal=%" PRId64 " \n", port1);
 
   // test set integer
   ret = INKRecordSetInt("proy.config.cop.core_signal", new_port, &action);
@@ -1071,7 +1071,7 @@ test_error_records()
   if (INKRecordGetCounter("proxy.press.socks.connections_successful", &ctr1) != INK_ERR_OKAY)
     printf("INKRecordGetCounter FAILED!\n");
   else
-    printf("[INKRecordGetCounter]proxy.process.socks.connections_successful=%lld \n", ctr1);
+    printf("[INKRecordGetCounter]proxy.process.socks.connections_successful=%" PRId64 " \n", ctr1);
 
   printf("\n");
   if (INKRecordGetFloat("proxy.conig.http.cache.fuzz.probability", &flt1) != INK_ERR_OKAY)
@@ -1107,7 +1107,7 @@ test_records()
   if (INKRecordSetInt("proxy.config.cop.core_signal", new_port, &action) != INK_ERR_OKAY)
     printf("INKRecordSetInt FAILED!\n");
   else
-    printf("[INKRecordSetInt] proxy.config.cop.core_signal=%lld \n", new_port);
+    printf("[INKRecordSetInt] proxy.config.cop.core_signal=%" PRId64 " \n", new_port);
 #endif
 
 
@@ -1170,18 +1170,18 @@ test_records()
   if (INKRecordGetInt("proxy.config.cop.core_signal", &port1) != INK_ERR_OKAY)
     printf("INKRecordGetInt FAILED!\n");
   else
-    printf("[INKRecordGetInt] proxy.config.cop.core_signal=%lld \n", port1);
+    printf("[INKRecordGetInt] proxy.config.cop.core_signal=%" PRId64 " \n", port1);
 
   // test set integer
   if (INKRecordSetInt("proxy.config.cop.core_signal", new_port, &action) != INK_ERR_OKAY)
     printf("INKRecordSetInt FAILED!\n");
   else
-    printf("[INKRecordSetInt] proxy.config.cop.core_signal=%lld \n", new_port);
+    printf("[INKRecordSetInt] proxy.config.cop.core_signal=%" PRId64 " \n", new_port);
 
   if (INKRecordGetInt("proxy.config.cop.core_signal", &port2) != INK_ERR_OKAY)
     printf("INKRecordGetInt FAILED!\n");
   else
-    printf("[INKRecordGetInt] proxy.config.cop.core_signal=%lld \n", port2);
+    printf("[INKRecordGetInt] proxy.config.cop.core_signal=%" PRId64 " \n", port2);
   printf("\n");
 #endif
 
@@ -1191,17 +1191,17 @@ test_records()
   if (INKRecordGetCounter("proxy.process.socks.connections_successful", &ctr1) != INK_ERR_OKAY)
     printf("INKRecordGetCounter FAILED!\n");
   else
-    printf("[INKRecordGetCounter]proxy.process.socks.connections_successful=%lld \n", ctr1);
+    printf("[INKRecordGetCounter]proxy.process.socks.connections_successful=%" PRId64 " \n", ctr1);
 
   if (INKRecordSetCounter("proxy.process.socks.connections_successful", new_ctr, &action) != INK_ERR_OKAY)
     printf("INKRecordSetCounter FAILED!\n");
   else
-    printf("[INKRecordSetCounter] proxy.process.socks.connections_successful=%lld \n", new_ctr);
+    printf("[INKRecordSetCounter] proxy.process.socks.connections_successful=%" PRId64 " \n", new_ctr);
 
   if (INKRecordGetCounter("proxy.process.socks.connections_successful", &ctr2) != INK_ERR_OKAY)
     printf("INKRecordGetCounter FAILED!\n");
   else
-    printf("[INKRecordGetCounter]proxy.process.socks.connections_successful=%lld \n", ctr2);
+    printf("[INKRecordGetCounter]proxy.process.socks.connections_successful=%" PRId64 " \n", ctr2);
   printf("\n");
 #endif
 
@@ -1259,10 +1259,10 @@ test_rec_get(char *rec_name)
   else {
     switch (rec_ele->rec_type) {
     case INK_REC_INT:
-      printf("[INKRecordGet] %s=%lld\n", name, rec_ele->int_val);
+      printf("[INKRecordGet] %s=%" PRId64 "\n", name, rec_ele->int_val);
       break;
     case INK_REC_COUNTER:
-      printf("[INKRecordGet] %s=%lld\n", name, rec_ele->counter_val);
+      printf("[INKRecordGet] %s=%" PRId64 "\n", name, rec_ele->counter_val);
       break;
     case INK_REC_FLOAT:
       printf("[INKRecordGet] %s=%f\n", name, rec_ele->float_val);
@@ -1356,10 +1356,10 @@ test_record_get_mlt(void)
     printf("Record: %s = ", rec_ele->rec_name);
     switch (rec_ele->rec_type) {
     case INK_REC_INT:
-      printf("%lld\n", rec_ele->int_val);
+      printf("%" PRId64 "\n", rec_ele->int_val);
       break;
     case INK_REC_COUNTER:
-      printf("%lld\n", rec_ele->counter_val);
+      printf("%" PRId64 "\n", rec_ele->counter_val);
       break;
     case INK_REC_FLOAT:
       printf("%f\n", rec_ele->float_val);
@@ -2330,7 +2330,7 @@ print_stats()
   INKRecordGetInt("proxy.process.http.current_server_connections", &i7);
   INKRecordGetInt("proxy.process.http.current_server_transactions", &i8);
 
-  fprintf(stderr, "%lld, %lld, %lld, %lld, %lld, %lld, %lld, %lld\n", i1, i2, i3, i4, i5, i6, i7, i8);
+  fprintf(stderr, "%" PRId64 ", %" PRId64 ", %" PRId64 ", %" PRId64 ", %" PRId64 ", %" PRId64 ", %" PRId64 ", %" PRId64 "\n", i1, i2, i3, i4, i5, i6, i7, i8);
 
   INKRecordGetFloat("proxy.node.http.cache_hit_ratio", &f1);
   INKRecordGetFloat("proxy.node.http.bandwidth_hit_ratio", &f2);
@@ -2358,7 +2358,7 @@ print_stats()
   INKRecordGetInt("proxy.node.current_client_connections", &i9);
   INKRecordGetInt("proxy.node.current_cache_connections", &i10);
 
-  fprintf(stderr, "%lld, %lld, %lld, %lld, %lld, %lld, %lld, %lld, %lld, %lld\n",
+  fprintf(stderr, "%" PRId64 ", %" PRId64 ", %" PRId64 ", %" PRId64 ", %" PRId64 ", %" PRId64 ", %" PRId64 ", %" PRId64 ", %" PRId64 ", %" PRId64 "\n",
           i1, i2, i3, i4, i5, i6, i7, i8, i9, i10);
 
   INKRecordGetFloat("proxy.cluster.user_agent_total_bytes_avg_10s", &f1);
@@ -2376,11 +2376,11 @@ print_stats()
 
   fprintf(stderr, "CLUSTER stats: \n");
   fprintf(stderr, "%f, %f, %f, %f, %f, %f\n", f1, f2, f3, f4, f5, f6);
-  fprintf(stderr, "%lld, %lld, %lld, %lld, %lld\n", i1, i2, i3, i4, i5);
+  fprintf(stderr, "%" PRId64 ", %" PRId64 ", %" PRId64 ", %" PRId64 ", %" PRId64 "\n", i1, i2, i3, i4, i5);
 
   fprintf(stderr, "PROCESS stats: \n");
   fprintf(stderr, "%f, %f\n", f1, f2);
-  fprintf(stderr, "%lld, %lld, %lld, %lld\n", i1, i2, i3, i4);
+  fprintf(stderr, "%" PRId64 ", %" PRId64 ", %" PRId64 ", %" PRId64 "\n", i1, i2, i3, i4);
 
 }
 

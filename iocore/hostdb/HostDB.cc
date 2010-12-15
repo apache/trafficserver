@@ -402,10 +402,10 @@ HostDBProcessor::start(int)
   IOCORE_EstablishStaticConfigInt32(hostdb_re_dns_on_reload, "proxy.config.hostdb.re_dns_on_reload");
   IOCORE_EstablishStaticConfigInt32(hostdb_migrate_on_demand, "proxy.config.hostdb.migrate_on_demand");
   /* mgmt stuff
-     int64 ii = pmgmt->record_data->readConfigInteger(
+     int64_t ii = pmgmt->record_data->readConfigInteger(
      "proxy.config.hostdb.strict_round_robin", &found);
      if (found) {
-     hostdb_strict_round_robin = (int32) ii;
+     hostdb_strict_round_robin = (int32_t) ii;
      pmgmt->record_data->registerConfigUpdateFunc(
      "proxy.config.hostdb.strict_round_robin",config_int_cb,
      (void*)&hostdb_strict_round_robin);
@@ -564,7 +564,7 @@ probe(ProxyMutex * mutex,
 {
   ink_debug_assert(this_ethread() == hostDB.lock_for_bucket((int) (fold_md5(md5) % hostDB.buckets))->thread_holding);
   if (hostdb_enable) {
-    uint64 folded_md5 = fold_md5(md5);
+    uint64_t folded_md5 = fold_md5(md5);
     HostDBInfo *r = hostDB.lookup_block(folded_md5, hostDB.levels);
     Debug("hostdb", "probe %s %llX %d [ignore_timeout = %d]", hostname, folded_md5, !!r, ignore_timeout);
     if (r && md5[1] == r->md5_high) {
@@ -632,7 +632,7 @@ HostDBInfo *
 HostDBContinuation::insert(unsigned int attl)
 {
   ink_debug_assert(this_ethread() == hostDB.lock_for_bucket((int) (fold_md5(md5) % hostDB.buckets))->thread_holding);
-  uint64 folded_md5 = fold_md5(md5);
+  uint64_t folded_md5 = fold_md5(md5);
   // remove the old one to prevent buildup
   HostDBInfo *old_r = hostDB.lookup_block(folded_md5, 3);
   if (old_r)
@@ -708,11 +708,11 @@ HostDBProcessor::getby(Continuation * cont,
     // so that it does not intersect the string space
     //
     // suvasv: Changed from this
-    //    uint64 dummy = ip << 16;
-    //  to uint64 dummy = ip*64*1024 for bug INKqa10029.
+    //    uint64_t dummy = ip << 16;
+    //  to uint64_t dummy = ip*64*1024 for bug INKqa10029.
     //  Problem was that ip << 16 would not work for architectures with
     //  a different byte order. This takes cares of all byte orders.
-    uint64 dummy = ((uint64) ip) * 64 * 1024;
+    uint64_t dummy = ((uint64_t) ip) * 64 * 1024;
     md5.encodeBuffer((char *) &dummy, 8);
   }
 
@@ -984,11 +984,11 @@ HostDBProcessor::setby(char *hostname, int len, int port, unsigned int ip, HostD
     //
 
     // suvasv: Changed from this
-    //    uint64 dummy = ip << 16;
-    //  to uint64 dummy = ip*64*1024 for bug INKqa10029.
+    //    uint64_t dummy = ip << 16;
+    //  to uint64_t dummy = ip*64*1024 for bug INKqa10029.
     //  Problem was that ip << 16 would not work for architectures with
     //  a different byte order. This takes cares of all byte orders.
-    uint64 dummy = ((uint64) ip) * 64 * 1024;
+    uint64_t dummy = ((uint64_t) ip) * 64 * 1024;
     md5.encodeBuffer((char *) &dummy, 8);
   }
 
@@ -2016,9 +2016,9 @@ bool HostDBInfo::match(INK_MD5 & md5, int bucket, int buckets)
   if (md5[1] != md5_high)
     return false;
 
-  uint64
+  uint64_t
     folded_md5 = fold_md5(md5);
-  uint64
+  uint64_t
     ttag = folded_md5 / buckets;
 
   if (!ttag)

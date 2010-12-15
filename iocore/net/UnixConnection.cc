@@ -220,10 +220,10 @@ Connection::open(NetVCOptions const& opt)
   ink_assert(fd == NO_FD);
   int enable_reuseaddr = 1; // used for sockopt setting
   int res = 0; // temp result
-  uint32 local_addr = NetVCOptions::ANY_ADDR == opt.addr_binding
+  uint32_t local_addr = NetVCOptions::ANY_ADDR == opt.addr_binding
     ? INADDR_ANY
     : opt.local_addr;
-  uint16 local_port = NetVCOptions::ANY_PORT == opt.port_binding
+  uint16_t local_port = NetVCOptions::ANY_PORT == opt.port_binding
     ? 0
     : opt.local_port;
   int sock_type = NetVCOptions::USE_UDP == opt.ip_proto
@@ -313,7 +313,7 @@ Connection::open(NetVCOptions const& opt)
 }
 
 int
-Connection::connect(uint32 addr, uint16 port, NetVCOptions const& opt) {
+Connection::connect(uint32_t addr, uint16_t port, NetVCOptions const& opt) {
   ink_assert(fd != NO_FD);
   ink_assert(is_bound);
   ink_assert(!is_connected);

@@ -47,11 +47,11 @@ enum RecErrT
 //-------------------------------------------------------------------------
 #define RecStringNull NULL
 
-typedef int64 RecInt;
+typedef int64_t RecInt;
 typedef float RecFloat;
 typedef char *RecString;
 typedef const char *RecStringConst;
-typedef int64 RecCounter;
+typedef int64_t RecCounter;
 
 enum RecT
 {
@@ -137,13 +137,13 @@ union RecData
 //-------------------------------------------------------------------------
 struct RecRawStat
 {
-  int64 sum;
-  int64 count;
+  int64_t sum;
+  int64_t count;
   // XXX - these will waist some space because they are only needed for the globals
   // this is a fix for bug TS-162, so I am trying to do as few code changes as
   // possible, this should be revisted -bcall
-  int64 last_sum; // value from the last global sync
-  int64 last_count; // value from the last global sync
+  int64_t last_sum; // value from the last global sync
+  int64_t last_count; // value from the last global sync
 };
 
 
@@ -163,8 +163,7 @@ struct RecRawStatBlock
 // RecCore Callback Types
 //-------------------------------------------------------------------------
 typedef int (*RecConfigUpdateCb) (const char *name, RecDataT data_type, RecData data, void *cookie);
-typedef int (*RecStatUpdateFunc) (const char *name, RecDataT data_type,
-                                  RecData * data, RecRawStatBlock * rsb, int id, void *cookie);
+typedef int (*RecStatUpdateFunc) (const char *name, RecDataT data_type, RecData * data, RecRawStatBlock * rsb, int id, void *cookie);
 typedef int (*RecRawStatSyncCb) (const char *name, RecDataT data_type, RecData * data, RecRawStatBlock * rsb, int id);
 
 

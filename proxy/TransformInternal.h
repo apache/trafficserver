@@ -41,8 +41,8 @@ public:
 
   int handle_event(int event, void *edata);
 
-  VIO *do_io_read(Continuation * c, int64 nbytes, MIOBuffer * buf);
-  VIO *do_io_write(Continuation * c, int64 nbytes, IOBufferReader * buf, bool owner = false);
+  VIO *do_io_read(Continuation * c, int64_t nbytes, MIOBuffer * buf);
+  VIO *do_io_write(Continuation * c, int64_t nbytes, IOBufferReader * buf, bool owner = false);
   void do_io_close(int lerrno = -1);
   void do_io_shutdown(ShutdownHowTo_t howto);
 
@@ -67,8 +67,8 @@ public:
 
   int handle_event(int event, void *edata);
 
-  VIO *do_io_read(Continuation * c, int64 nbytes, MIOBuffer * buf);
-  VIO *do_io_write(Continuation * c, int64 nbytes, IOBufferReader * buf, bool owner = false);
+  VIO *do_io_read(Continuation * c, int64_t nbytes, MIOBuffer * buf);
+  VIO *do_io_write(Continuation * c, int64_t nbytes, IOBufferReader * buf, bool owner = false);
   void do_io_close(int lerrno = -1);
   void do_io_shutdown(ShutdownHowTo_t howto);
 
@@ -141,9 +141,9 @@ public:
     _start(-1), _end(-1), _done_byte(-1)
     { }
 
-    int64 _start;
-    int64 _end;
-    int64 _done_byte;
+    int64_t _start;
+    int64_t _end;
+    int64_t _done_byte;
   } RangeRecord;
 
 public:
@@ -154,15 +154,15 @@ public:
   VIO *m_output_vio;
   bool m_unsatisfiable_range;
   bool m_not_handle_range;
-  int64 m_content_length;
+  int64_t m_content_length;
   int m_num_chars_for_cl;
   int m_num_range_fields;
   int m_current_range;
   const char *m_content_type;
   int m_content_type_len;
   RangeRecord *m_ranges;
-  int64 m_output_cl;
-  int64 m_done;
+  int64_t m_output_cl;
+  int64_t m_done;
 };
 
 #define PREFETCH

@@ -207,7 +207,7 @@ int main(int argc, char * argv[])
   if (!use_accept_thread) {
     RecInt tmp = 0;
     RecGetRecordInt("proxy.config.accept_threads",(RecInt*) &tmp);
-    use_accept_thread = (int32)tmp;                          \
+    use_accept_thread = (int32_t)tmp;                          \
   }
 
   if (initialize_store()) { // cache

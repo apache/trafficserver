@@ -239,7 +239,7 @@ strsearch_ioreader(TSIOBufferReader reader, const char *pattern, int *nparse)
 
   /* Loop thru each block while we've not yet found the pattern */
   while ((block != NULL) && (index < slen)) {
-    int64 blocklen;
+    int64_t blocklen;
     const char *blockptr = TSIOBufferBlockReadStart(block, reader, &blocklen);
     const char *ptr;
 
@@ -320,7 +320,7 @@ strextract_ioreader(TSIOBufferReader reader, int offset, const char *end_pattern
 
   /* Now start extraction */
   while ((block != NULL) && (p_idx < plen) && (buf_idx < PSI_FILENAME_MAX_SIZE)) {
-    int64 blocklen;
+    int64_t blocklen;
     const char *blockptr = TSIOBufferBlockReadStart(block, reader, &blocklen);
 
     if (blockptr == TS_ERROR_PTR) {
@@ -547,7 +547,7 @@ psi_include(TSCont contp, void *edata)
 
     while (TSfgets(filep, buf, BUFFER_SIZE) != NULL) {
       TSIOBufferBlock block;
-      int64 len, avail, ndone, ntodo, towrite;
+      int64_t len, avail, ndone, ntodo, towrite;
       char *ptr_block;
 
       len = strlen(buf);

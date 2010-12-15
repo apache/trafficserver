@@ -72,7 +72,7 @@ SRVHosts::getWeightedHost(char *ret_val)
   int tmp[1024];
   int j = 0;
   int v;
-  uint32 xx;
+  uint32_t xx;
 
   if (hosts.empty() || getCount() == 0) {
     goto err;

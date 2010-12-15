@@ -55,13 +55,13 @@
 //*********************************************************************
 typedef struct ICPMsgHeader
 {
-  uint8 opcode;
-  uint8 version;
-  uint16 msglen;
-  uint32 requestno;
-  uint32 optionflags;
-  uint32 optiondata;
-  uint32 shostid;
+  uint8_t opcode;
+  uint8_t version;
+  uint16_t msglen;
+  uint32_t requestno;
+  uint32_t optionflags;
+  uint32_t optiondata;
+  uint32_t shostid;
 } ICPMsgHdr_t;
 
 //-----------------------
@@ -121,7 +121,7 @@ typedef enum
 //-----------------
 #define MAX_ICP_MSGSIZE		   (16 * 1024)
 #define MAX_ICP_MSG_PAYLOAD_SIZE   (MAX_ICP_MSGSIZE - sizeof(ICPmsgHdr_t))
-#define MAX_ICP_QUERY_PAYLOAD_SIZE (MAX_ICP_MSG_PAYLOAD_SIZE - sizeof(uint32))
+#define MAX_ICP_QUERY_PAYLOAD_SIZE (MAX_ICP_MSG_PAYLOAD_SIZE - sizeof(uint32_t))
 #define MAX_DEFINED_PEERS	   64
 #define MSG_IOVECS 16
 
@@ -130,7 +130,7 @@ typedef enum
 //------------
 typedef struct ICPData
 {
-  int8 *URL;                    // null terminated
+  char *URL;                    // null terminated
 } ICPData_t;
 
 //-------------
@@ -138,8 +138,8 @@ typedef struct ICPData
 //-------------
 typedef struct ICPQuery
 {
-  uint32 rhostid;
-  int8 *URL;                    // null terminated (outgoing)
+  uint32_t rhostid;
+  char *URL;                    // null terminated (outgoing)
 } ICPQuery_t;
 
 //------------
@@ -147,7 +147,7 @@ typedef struct ICPQuery
 //------------
 typedef struct ICPHit
 {
-  int8 *URL;                    // null terminated
+  char *URL;                    // null terminated
 } ICPHit_t;
 
 //------------
@@ -155,7 +155,7 @@ typedef struct ICPHit
 //------------
 typedef struct ICPMiss
 {
-  int8 *URL;                    // null terminated
+  char *URL;                    // null terminated
 } ICPMiss_t;
 
 //------------------
@@ -163,10 +163,10 @@ typedef struct ICPMiss
 //------------------
 typedef struct ICPHitObj
 {
-  int8 *URL;                    // null terminated
-  int8 *p_objsize;              // byte aligned uint16 immediately follows URL null
-  uint16 objsize;               // decoded object size
-  int8 *data;                   // object data
+  char *URL;                    // null terminated
+  char *p_objsize;              // byte aligned uint16_t immediately follows URL null
+  uint16_t objsize;               // decoded object size
+  char *data;                   // object data
 } ICPHitObj_t;
 
 //------------------------
@@ -232,7 +232,7 @@ public:
 private:
   enum
   { UNLOCKED = 0, LOCKED = 1 };
-  int32 _lock_word;
+  int32_t _lock_word;
 };
 #endif // USE_CAS_FOR_ATOMICLOCK
 
@@ -1184,7 +1184,7 @@ private:
   void remove_all_pendingActions();
 
   // Static data
-  static uint32 ICPRequestSeqno;
+  static uint32_t ICPRequestSeqno;
 
   // Passed request data
   Continuation *_cont;

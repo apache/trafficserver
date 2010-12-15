@@ -71,11 +71,11 @@ public:
   static bool valid_ipstr_format(char *ipstr);
   static int seconds_to_next_roll(time_t time_now, int rolling_offset, int rolling_interval);
   static char *int64_to_str(char *buf, unsigned int buf_size,
-                            int64 val, unsigned int *total_chars, unsigned int req_width = 0, char pad_char = '0');
+                            int64_t val, unsigned int *total_chars, unsigned int req_width = 0, char pad_char = '0');
   static int squid_timestamp_to_buf(char *buf, unsigned int buf_size, long timestamp_sec, long timestamp_usec);
   static int file_is_writeable(const char *full_filename,
                                off_t * size_bytes = 0,
-                               bool * has_size_limit = 0, uint64 * current_size_limit_bytes = 0);
+                               bool * has_size_limit = 0, uint64_t * current_size_limit_bytes = 0);
 
 private:
   LogUtils(const LogUtils &);

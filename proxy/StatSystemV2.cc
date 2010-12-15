@@ -30,12 +30,12 @@
 extern class EventProcessor eventProcessor;
 
 std::map<std::string, uint32_t> StatSystemV2::stat_name_to_num;
-std::vector< std::pair<std::string, int64> > StatSystemV2::global_stats;
+std::vector< std::pair<std::string, int64_t> > StatSystemV2::global_stats;
 uint32_t StatSystemV2::MAX_STATS_ALLOWED = 500000;
 uint32_t StatSystemV2::NUM_STATS_ESTIMATE = 5000;
 static TSMutex statsMutex = NULL;
 
-void StatSystemV2::incrementGlobal(uint32_t stat_num, int64 stat_val)
+void StatSystemV2::incrementGlobal(uint32_t stat_num, int64_t stat_val)
 {
     if(stat_num >= global_stats.size()) {
         Debug("http", "Cannot incrementing stat %u as it is greater than global_stats size", stat_num);
@@ -45,7 +45,7 @@ void StatSystemV2::incrementGlobal(uint32_t stat_num, int64 stat_val)
     global_stats[stat_num].second += stat_val;
 }
 
-bool StatSystemV2::increment(uint32_t stat_num, int64 stat_val)
+bool StatSystemV2::increment(uint32_t stat_num, int64_t stat_val)
 {
     if(stat_num >= MAX_STATS_ALLOWED) {
         return false;
@@ -64,7 +64,7 @@ bool StatSystemV2::increment(uint32_t stat_num, int64 stat_val)
     return true;
 }
 
-bool StatSystemV2::increment(const char *stat_name, int64 stat_val)
+bool StatSystemV2::increment(const char *stat_name, int64_t stat_val)
 {
     uint32_t stat_num;
     if(!getStatNum(stat_name, stat_num)) {
@@ -73,7 +73,7 @@ bool StatSystemV2::increment(const char *stat_name, int64 stat_val)
     return increment(stat_num, stat_val);
 }
 
-bool StatSystemV2::get(uint32_t stat_num, int64 *stat_val)
+bool StatSystemV2::get(uint32_t stat_num, int64_t *stat_val)
 {
     // Get stat lock
     if (TSMutexLock(statsMutex) != INK_SUCCESS) {
@@ -91,7 +91,7 @@ bool StatSystemV2::get(uint32_t stat_num, int64 *stat_val)
     return true;
 }
 
-bool StatSystemV2::get(const char *stat_name, int64 *stat_val)
+bool StatSystemV2::get(const char *stat_name, int64_t *stat_val)
 {
     // Get value of stat with name == stat_name
     // Returns value from the global stats map. does not walk threads 
@@ -102,7 +102,7 @@ bool StatSystemV2::get(const char *stat_name, int64 *stat_val)
     return get(stat_num, stat_val);
 }
 
-bool StatSystemV2::get_current(uint32_t stat_num, int64 *stat_val)
+bool StatSystemV2::get_current(uint32_t stat_num, int64_t *stat_val)
 {
     // Returns current value of stat. Walks all threads
     
@@ -122,7 +122,7 @@ bool StatSystemV2::get_current(uint32_t stat_num, int64 *stat_val)
     return true;
 }
 
-bool StatSystemV2::get_current(const char *stat_name, int64 *stat_val)
+bool StatSystemV2::get_current(const char *stat_name, int64_t *stat_val)
 {
     uint32_t stat_num;
     if(!getStatNum(stat_name, stat_num)) {
@@ -201,7 +201,7 @@ void StatSystemV2::init()
 
 void StatSystemV2::clear()
 {
-    for(std::vector< std::pair<std::string, int64> >::iterator it = StatSystemV2::global_stats.begin();
+    for(std::vector< std::pair<std::string, int64_t> >::iterator it = StatSystemV2::global_stats.begin();
             it != StatSystemV2::global_stats.end(); it++) {
         it->second = 0;
     }
@@ -220,7 +220,7 @@ void StatSystemV2::collect()
         // Lock thread stats to prevent resizing on increment
         TSMutexLock(t->thread_stats_mutex);
         int j = 0;
-        for(std::vector<int64>::iterator it = t->thread_stats.begin();
+        for(std::vector<int64_t>::iterator it = t->thread_stats.begin();
             it != t->thread_stats.end(); it++, j++) {
             if(*it != 0) {
                 incrementGlobal(j, *it);
@@ -289,7 +289,7 @@ void StatCollectorContinuation::print_stats(std::stringstream &printbuf) {
 
   printbuf << "TIME " << _startTime <<"\n";
   if (TSMutexLock(statsMutex) == INK_SUCCESS) {
-      for(std::vector< std::pair<std::string, int64> >::const_iterator it = StatSystemV2::global_stats.begin();
+      for(std::vector< std::pair<std::string, int64_t> >::const_iterator it = StatSystemV2::global_stats.begin();
           it != StatSystemV2::global_stats.end(); it++) {
           if(it->second != 0 ) {
               printbuf << "STAT " << it->first << " " << it->second << "\n";
@@ -302,7 +302,7 @@ void StatCollectorContinuation::print_stats(std::stringstream &printbuf) {
 
 void StatCollectorContinuation::print_stat(const char *stat_name, std::stringstream &printbuf, bool current) {
     // Print only non zero stats
-    int64 stat_val = 0;
+    int64_t stat_val = 0;
     bool stat_get_status;
     if(current) {
         stat_get_status = StatSystemV2::get_current(stat_name, &stat_val);
@@ -334,7 +334,7 @@ StatCollectorContinuation::get_stats_with_prefix(const std::string &stat_prefix,
     }
 
     // Get all stats which start with stat_prefix
-    for(std::vector< std::pair<std::string, int64> >::const_iterator it = StatSystemV2::global_stats.begin();
+    for(std::vector< std::pair<std::string, int64_t> >::const_iterator it = StatSystemV2::global_stats.begin();
         it != StatSystemV2::global_stats.end(); it++) {
         size_t found = it->first.find(stat_prefix);
         if(found == 0) {
@@ -564,7 +564,7 @@ void StatCollectorContinuation::setReadTimeout(int secs, int usecs)
 
 StatCollectorContinuation::StatCollectorContinuation() : Continuation(NULL)
 {
-    Debug("http", "YTS start time : %lld", (long long) StatCollectorContinuation::_startTime);
+    Debug("http", "YTS start time : %" PRId64 "", (long long) StatCollectorContinuation::_startTime);
     SET_HANDLER(&StatCollectorContinuation::mainEvent);
     statsCommandThread = TSThreadCreate(commandListen, &_statCommandPort);
 }

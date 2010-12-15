@@ -111,7 +111,7 @@ StatExprToken::assignTokenName(const char *name)
       if (!varIntFromName(m_token_name, &tempInt)) {
         tempInt = (RecInt) ERROR_VALUE;
       }
-      Debug(MODULE_INIT, "\tvar: %s, type: %d, value: %lld\n", m_token_name, m_token_type, tempInt);
+      Debug(MODULE_INIT, "\tvar: %s, type: %d, value: %" PRId64 "\n", m_token_name, m_token_type, tempInt);
     }
     break;
 
@@ -1000,7 +1000,7 @@ StatObjectList::Eval()
       delta = object->m_current_time - object->m_last_update;
 
       if (StatDebug) {
-        Debug(MODULE, "\tUPDATE:%lld THRESHOLD:%lld, DELTA:%lld\n", object->m_update_interval, threshold, delta);
+        Debug(MODULE, "\tUPDATE:%" PRId64 " THRESHOLD:%" PRId64 ", DELTA:%" PRId64 "\n", object->m_update_interval, threshold, delta);
       }
 
       /* Should we do the calculation? */

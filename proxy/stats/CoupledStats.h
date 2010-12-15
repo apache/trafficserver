@@ -90,7 +90,7 @@ private:
 public:
     CoupledStats(const char *name);
 
-  StatDescriptor *CreateStat(const char *name, int64 init_val);
+  StatDescriptor *CreateStat(const char *name, int64_t init_val);
 
   StatDescriptor *CreateStat(const char *name, float init_val);
 };
@@ -136,7 +136,7 @@ CoupledStats::grow_check(StatDescriptor * val)
 }
 
 CST_INLINE StatDescriptor *
-CoupledStats::CreateStat(const char *name, int64 init_val)
+CoupledStats::CreateStat(const char *name, int64_t init_val)
 {
   StatDescriptor *ret = NULL;
 

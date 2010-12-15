@@ -30,7 +30,7 @@
 
 extern int cluster_receive_buffer_size;
 extern int cluster_send_buffer_size;
-extern uint32 cluster_sockopt_flags;
+extern uint32_t cluster_sockopt_flags;
 
 ///////////////////////////////////////////////////////////////
 // Incoming message continuation for periodic callout threads
@@ -74,14 +74,14 @@ ClusterControl::real_alloc_data(int read_access, bool align_int32_on_non_int64_b
   ProxyMutex *mutex = thread->mutex;
 
   ink_assert(!data);
-  if ((len + DATA_HDR + sizeof(int32)) <= DEFAULT_MAX_BUFFER_SIZE) {
-    size_index = buffer_size_to_index(len + DATA_HDR + sizeof(int32), MAX_BUFFER_SIZE_INDEX);
+  if ((len + DATA_HDR + sizeof(int32_t)) <= DEFAULT_MAX_BUFFER_SIZE) {
+    size_index = buffer_size_to_index(len + DATA_HDR + sizeof(int32_t), MAX_BUFFER_SIZE_INDEX);
     iob_block = new_IOBufferBlock();
     iob_block->alloc(size_index);       // aligns on 8 byte boundary
-    real_data = (int64 *) iob_block->buf();
+    real_data = (int64_t *) iob_block->buf();
 
     if (align_int32_on_non_int64_boundary) {
-      data = ((char *) real_data) + sizeof(int32) + DATA_HDR;
+      data = ((char *) real_data) + sizeof(int32_t) + DATA_HDR;
     } else {
       data = ((char *) real_data) + DATA_HDR;
     }
@@ -89,14 +89,14 @@ ClusterControl::real_alloc_data(int read_access, bool align_int32_on_non_int64_b
     memset((char *) real_data, 0, BUFFER_SIZE_FOR_INDEX(size_index));
 #endif
   } else {
-    int size = sizeof(int64) * (((len + DATA_HDR + sizeof(int32) + sizeof(int64) - 1) / sizeof(int64)) + 1);
+    int size = sizeof(int64_t) * (((len + DATA_HDR + sizeof(int32_t) + sizeof(int64_t) - 1) / sizeof(int64_t)) + 1);
     size_index = -1;
     iob_block = new_IOBufferBlock();
     iob_block->alloc(BUFFER_SIZE_FOR_XMALLOC(size));
-    real_data = (int64 *) iob_block->buf();
+    real_data = (int64_t *) iob_block->buf();
 
     if (align_int32_on_non_int64_boundary) {
-      data = (char *) DOUBLE_ALIGN(real_data) + sizeof(int32) + DATA_HDR;
+      data = (char *) DOUBLE_ALIGN(real_data) + sizeof(int32_t) + DATA_HDR;
     } else {
       data = (char *) DOUBLE_ALIGN(real_data) + DATA_HDR;
     }
@@ -142,8 +142,8 @@ ClusterControl::free_data()
       return;
     }
     if (real_data) {
-      ink_release_assert(*(((uint8 *) data) - DATA_HDR + 1) == (uint8) ALLOC_DATA_MAGIC);
-      *(((uint8 *) data) - DATA_HDR + 1) = (uint8) ~ ALLOC_DATA_MAGIC;
+      ink_release_assert(*(((uint8_t *) data) - DATA_HDR + 1) == (uint8_t) ALLOC_DATA_MAGIC);
+      *(((uint8_t *) data) - DATA_HDR + 1) = (uint8_t) ~ ALLOC_DATA_MAGIC;
 
       if (size_index >= 0) {
         ink_release_assert(*(((char *) data) - DATA_HDR) == size_index);
@@ -207,8 +207,8 @@ OutgoingControl::startEvent(int event, Event * e)
   if (!ch || !ch->thread)
     return EVENT_DONE;
 
-  int32 cluster_fn = *(int32 *) this->data;
-  int32 pri = ClusterFuncToQpri(cluster_fn);
+  int32_t cluster_fn = *(int32_t *) this->data;
+  int32_t pri = ClusterFuncToQpri(cluster_fn);
   ink_atomiclist_push(&ch->outgoing_control_al[pri], (void *) this);
 
   return EVENT_DONE;
@@ -1341,7 +1341,7 @@ ClusterHandler::dump_internal_data()
   n += r;
 
   r = snprintf(&b[n], b_size - n,
-               "chans: %d vc_writes: %lld write_bytes: %lld(d)+%lld(c)=%lld\n",
+               "chans: %d vc_writes: %" PRId64 " write_bytes: %" PRId64 "(d)+%" PRId64 "(c)=%" PRId64 "\n",
                compute_active_channels(),
                _vc_writes, _vc_write_bytes, _control_write_bytes, _vc_write_bytes + _control_write_bytes);
 
@@ -1388,7 +1388,7 @@ ClusterHandler::dump_write_msg(int res)
   // Debug support for inter cluster message trace
   unsigned char x[4];
   memset(x, 0, sizeof(x));
-  *(uint32 *) & x = (uint32) ((struct sockaddr_in *)&(net_vc->get_remote_addr()))->sin_addr.s_addr;
+  *(uint32_t *) & x = (uint32_t) ((struct sockaddr_in *)&(net_vc->get_remote_addr()))->sin_addr.s_addr;
 
   fprintf(stderr,
           "[W] %hhu.%hhu.%hhu.%hhu SeqNo=%u, Cnt=%d, CntlCnt=%d Todo=%d, Res=%d\n",
@@ -1407,7 +1407,7 @@ ClusterHandler::dump_read_msg()
   // Debug support for inter cluster message trace
   unsigned char x[4];
   memset(x, 0, sizeof(x));
-  *(uint32 *) & x = (uint32) ((struct sockaddr_in *)&(net_vc->get_remote_addr()))->sin_addr.s_addr;
+  *(uint32_t *) & x = (uint32_t) ((struct sockaddr_in *)&(net_vc->get_remote_addr()))->sin_addr.s_addr;
 
   fprintf(stderr, "[R] %hhu.%hhu.%hhu.%hhu  SeqNo=%u, Cnt=%d, CntlCnt=%d\n",
           x[0], x[1], x[2], x[3], read.sequence_number, read.msg.count, read.msg.control_bytes);

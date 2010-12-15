@@ -66,7 +66,7 @@ typedef struct
 #define MICRO_REAL 3
 #define UNDEFINED_TIME ((time_t)0)
 
-uint64 ink_microseconds(int which);
+uint64_t ink_microseconds(int which);
 double ink_time_wall_seconds();
 
 int ink_time_gmt_string_to_tm(char *string, struct tm *bdt);

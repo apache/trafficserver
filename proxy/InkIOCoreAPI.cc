@@ -290,7 +290,7 @@ TSVIOReaderGet(TSVIO viop)
   return vio->get_reader();
 }
 
-int64
+int64_t
 TSVIONBytesGet(TSVIO viop)
 {
   if (sdk_sanity_check_iocore_structure(viop) != TS_SUCCESS)
@@ -301,7 +301,7 @@ TSVIONBytesGet(TSVIO viop)
 }
 
 TSReturnCode
-TSVIONBytesSet(TSVIO viop, int64 nbytes)
+TSVIONBytesSet(TSVIO viop, int64_t nbytes)
 {
   if ((sdk_sanity_check_iocore_structure(viop) != TS_SUCCESS) || nbytes < 0)
     return TS_ERROR;
@@ -311,7 +311,7 @@ TSVIONBytesSet(TSVIO viop, int64 nbytes)
   return TS_SUCCESS;
 }
 
-int64
+int64_t
 TSVIONDoneGet(TSVIO viop)
 {
   if (sdk_sanity_check_iocore_structure(viop) != TS_SUCCESS)
@@ -322,7 +322,7 @@ TSVIONDoneGet(TSVIO viop)
 }
 
 TSReturnCode
-TSVIONDoneSet(TSVIO viop, int64 ndone)
+TSVIONDoneSet(TSVIO viop, int64_t ndone)
 {
   if ((sdk_sanity_check_iocore_structure(viop) != TS_SUCCESS) || ndone < 0)
     return TS_ERROR;
@@ -332,7 +332,7 @@ TSVIONDoneSet(TSVIO viop, int64 ndone)
   return TS_SUCCESS;
 }
 
-int64
+int64_t
 TSVIONTodoGet(TSVIO viop)
 {
   if (sdk_sanity_check_iocore_structure(viop) != TS_SUCCESS)
@@ -390,7 +390,7 @@ INKUDPBind(TSCont contp, unsigned int ip, int port)
 }
 
 TSAction
-INKUDPSendTo(TSCont contp, INKUDPConn udp, unsigned int ip, int port, char *data, int64 len)
+INKUDPSendTo(TSCont contp, INKUDPConn udp, unsigned int ip, int port, char *data, int64_t len)
 {
   FORCE_PLUGIN_MUTEX(contp);
   UDPPacket *packet = new_UDPPacket();
@@ -570,8 +570,8 @@ TSIOBufferAppend(TSIOBuffer bufp, TSIOBufferBlock blockp)
   return TS_SUCCESS;
 }
 
-int64
-TSIOBufferCopy(TSIOBuffer bufp, TSIOBufferReader readerp, int64 length, int64 offset)
+int64_t
+TSIOBufferCopy(TSIOBuffer bufp, TSIOBufferReader readerp, int64_t length, int64_t offset)
 {
   if ((sdk_sanity_check_iocore_structure(bufp) != TS_SUCCESS) ||
       (sdk_sanity_check_iocore_structure(readerp) != TS_SUCCESS) || length < 0 || offset < 0)
@@ -583,8 +583,8 @@ TSIOBufferCopy(TSIOBuffer bufp, TSIOBufferReader readerp, int64 length, int64 of
   return b->write(r, length, offset);
 }
 
-int64
-TSIOBufferWrite(TSIOBuffer bufp, const void *buf, int64 length)
+int64_t
+TSIOBufferWrite(TSIOBuffer bufp, const void *buf, int64_t length)
 {
   if ((sdk_sanity_check_iocore_structure(bufp) != TS_SUCCESS) || (buf == NULL) || (length < 0)) {
     return TS_ERROR;
@@ -596,14 +596,14 @@ TSIOBufferWrite(TSIOBuffer bufp, const void *buf, int64 length)
 
 // not in SDK3.0
 void
-TSIOBufferReaderCopy(TSIOBufferReader readerp, const void *buf, int64 length)
+TSIOBufferReaderCopy(TSIOBufferReader readerp, const void *buf, int64_t length)
 {
   IOBufferReader *r = (IOBufferReader *) readerp;
   r->memcpy(buf, length);
 }
 
 TSReturnCode
-TSIOBufferProduce(TSIOBuffer bufp, int64 nbytes)
+TSIOBufferProduce(TSIOBuffer bufp, int64_t nbytes)
 {
   if ((sdk_sanity_check_iocore_structure(bufp) != TS_SUCCESS) || nbytes < 0)
     return TS_ERROR;
@@ -614,7 +614,7 @@ TSIOBufferProduce(TSIOBuffer bufp, int64 nbytes)
 }
 
 TSIOBufferData
-TSIOBufferDataCreate(void *data, int64 size, TSIOBufferDataFlags flags)
+TSIOBufferDataCreate(void *data, int64_t size, TSIOBufferDataFlags flags)
 {
 #ifdef DEBUG
   if (data == NULL || data == TS_ERROR_PTR || size <= 0 ||
@@ -643,7 +643,7 @@ TSIOBufferDataCreate(void *data, int64 size, TSIOBufferDataFlags flags)
 }
 
 TSIOBufferBlock
-TSIOBufferBlockCreate(TSIOBufferData datap, int64 size, int64 offset)
+TSIOBufferBlockCreate(TSIOBufferData datap, int64_t size, int64_t offset)
 {
   if ((sdk_sanity_check_iocore_structure(datap) != TS_SUCCESS) || size < 0 || offset < 0)
     return (TSIOBufferBlock) TS_ERROR;
@@ -673,7 +673,7 @@ TSIOBufferBlockNext(TSIOBufferBlock blockp)
 }
 
 // dev API, not exposed
-int64
+int64_t
 TSIOBufferBlockDataSizeGet(TSIOBufferBlock blockp)
 {
   IOBufferBlock *blk = (IOBufferBlock *) blockp;
@@ -681,7 +681,7 @@ TSIOBufferBlockDataSizeGet(TSIOBufferBlock blockp)
 }
 
 const char *
-TSIOBufferBlockReadStart(TSIOBufferBlock blockp, TSIOBufferReader readerp, int64 *avail)
+TSIOBufferBlockReadStart(TSIOBufferBlock blockp, TSIOBufferReader readerp, int64_t *avail)
 {
   if ((sdk_sanity_check_iocore_structure(blockp) != TS_SUCCESS) ||
       (sdk_sanity_check_iocore_structure(readerp) != TS_SUCCESS))
@@ -709,7 +709,7 @@ TSIOBufferBlockReadStart(TSIOBufferBlock blockp, TSIOBufferReader readerp, int64
   return (const char *) p;
 }
 
-int64
+int64_t
 TSIOBufferBlockReadAvail(TSIOBufferBlock blockp, TSIOBufferReader readerp)
 {
   if ((sdk_sanity_check_iocore_structure(blockp) != TS_SUCCESS) ||
@@ -718,7 +718,7 @@ TSIOBufferBlockReadAvail(TSIOBufferBlock blockp, TSIOBufferReader readerp)
 
   IOBufferBlock *blk = (IOBufferBlock *) blockp;
   IOBufferReader *reader = (IOBufferReader *) readerp;
-  int64 avail;
+  int64_t avail;
 
   avail = blk->read_avail();
 
@@ -733,7 +733,7 @@ TSIOBufferBlockReadAvail(TSIOBufferBlock blockp, TSIOBufferReader readerp)
 }
 
 char *
-TSIOBufferBlockWriteStart(TSIOBufferBlock blockp, int64 *avail)
+TSIOBufferBlockWriteStart(TSIOBufferBlock blockp, int64_t *avail)
 {
   if (sdk_sanity_check_iocore_structure(blockp) != TS_SUCCESS)
     return (char *) TS_ERROR_PTR;
@@ -745,7 +745,7 @@ TSIOBufferBlockWriteStart(TSIOBufferBlock blockp, int64 *avail)
   return blk->end();
 }
 
-int64
+int64_t
 TSIOBufferBlockWriteAvail(TSIOBufferBlock blockp)
 {
   if (sdk_sanity_check_iocore_structure(blockp) != TS_SUCCESS) {
@@ -757,7 +757,7 @@ TSIOBufferBlockWriteAvail(TSIOBufferBlock blockp)
 }
 
 TSReturnCode
-TSIOBufferWaterMarkGet(TSIOBuffer bufp, int64 *water_mark)
+TSIOBufferWaterMarkGet(TSIOBuffer bufp, int64_t *water_mark)
 {
   if ((sdk_sanity_check_iocore_structure(bufp) != TS_SUCCESS) || (water_mark == NULL)) {
     return TS_ERROR;
@@ -769,7 +769,7 @@ TSIOBufferWaterMarkGet(TSIOBuffer bufp, int64 *water_mark)
 }
 
 TSReturnCode
-TSIOBufferWaterMarkSet(TSIOBuffer bufp, int64 water_mark)
+TSIOBufferWaterMarkSet(TSIOBuffer bufp, int64_t water_mark)
 {
   if ((sdk_sanity_check_iocore_structure(bufp) != TS_SUCCESS) || water_mark < 0)
     return TS_ERROR;
@@ -830,7 +830,7 @@ TSIOBufferReaderStart(TSIOBufferReader readerp)
 }
 
 TSReturnCode
-TSIOBufferReaderConsume(TSIOBufferReader readerp, int64 nbytes)
+TSIOBufferReaderConsume(TSIOBufferReader readerp, int64_t nbytes)
 {
   if ((sdk_sanity_check_iocore_structure(readerp) != TS_SUCCESS) || nbytes < 0)
     return TS_ERROR;
@@ -840,7 +840,7 @@ TSIOBufferReaderConsume(TSIOBufferReader readerp, int64 nbytes)
   return TS_SUCCESS;
 }
 
-int64
+int64_t
 TSIOBufferReaderAvail(TSIOBufferReader readerp)
 {
   if (sdk_sanity_check_iocore_structure(readerp) != TS_SUCCESS)

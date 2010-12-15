@@ -48,7 +48,7 @@
 //
 
 DNSConnection::DNSConnection():
-  fd(NO_FD), num(0), generator((uint32)((uintptr_t)time(NULL) ^ (uintptr_t) this)), handler(NULL)
+  fd(NO_FD), num(0), generator((uint32_t)((uintptr_t)time(NULL) ^ (uintptr_t) this)), handler(NULL)
 {
   memset(&sa, 0, sizeof(struct sockaddr_in));
 }
@@ -106,8 +106,8 @@ DNSConnection::connect(unsigned int ip, int port,
       memset(&sa, 0, sizeof(bind_sa));
       bind_sa.sin_family = AF_INET;
       bind_sa.sin_addr.s_addr = INADDR_ANY;
-      uint32 p = generator.random();
-      p = (uint16)((p % (LAST_RANDOM_PORT - FIRST_RANDOM_PORT)) + FIRST_RANDOM_PORT);
+      uint32_t p = generator.random();
+      p = (uint16_t)((p % (LAST_RANDOM_PORT - FIRST_RANDOM_PORT)) + FIRST_RANDOM_PORT);
       bind_sa.sin_port = htons(p);
       Debug("dns", "random port = %u\n", p);
       if ((res = socketManager.ink_bind(fd, (struct sockaddr *) &bind_sa, sizeof(bind_sa), Proto)) < 0) {

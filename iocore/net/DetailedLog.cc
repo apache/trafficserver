@@ -32,7 +32,7 @@ void
 DetailedLog::add(const char *message)
 {
   if (pthread_mutex_trylock(&_modifyMutex) != 0) {
-    Error("************ Someone is already here %llu", this);
+    Error("************ Someone is already here %" PRIu64 "", this);
     pthread_mutex_lock(&_modifyMutex);
   }
   // limit the log to the last 1000 messages

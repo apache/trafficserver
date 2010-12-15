@@ -396,8 +396,8 @@ int
 LogAccessHttp::marshal_client_req_http_version(char *buf)
 {
   if (buf) {
-    int64 major = 0;
-    int64 minor = 0;
+    int64_t major = 0;
+    int64_t minor = 0;
     if (m_client_request) {
       HTTPVersion versionObject = m_client_request->version_get();
       major = HTTP_MAJOR(versionObject.m_version);
@@ -416,7 +416,7 @@ int
 LogAccessHttp::marshal_client_req_header_len(char *buf)
 {
   if (buf) {
-    int64 len = 0;
+    int64_t len = 0;
     if (m_client_request) {
       len = m_client_request->length_get();
     }
@@ -432,7 +432,7 @@ int
 LogAccessHttp::marshal_client_req_body_len(char *buf)
 {
   if (buf) {
-    int64 len = 0;
+    int64_t len = 0;
     if (m_client_request) {
       len = m_http_sm->client_request_body_bytes;
     }
@@ -483,7 +483,7 @@ int
 LogAccessHttp::marshal_proxy_resp_squid_len(char *buf)
 {
   if (buf) {
-    int64 val = m_http_sm->client_response_hdr_bytes + m_http_sm->client_response_body_bytes;
+    int64_t val = m_http_sm->client_response_hdr_bytes + m_http_sm->client_response_body_bytes;
     marshal_int(buf, val);
   }
   return INK_MIN_ALIGN;
@@ -496,7 +496,7 @@ int
 LogAccessHttp::marshal_proxy_resp_content_len(char *buf)
 {
   if (buf) {
-    int64 val = m_http_sm->client_response_body_bytes;
+    int64_t val = m_http_sm->client_response_body_bytes;
     marshal_int(buf, val);
   }
   return INK_MIN_ALIGN;
@@ -525,7 +525,7 @@ LogAccessHttp::marshal_proxy_resp_status_code(char *buf)
     } else {
       status = HTTP_STATUS_NONE;
     }
-    marshal_int(buf, (int64) status);
+    marshal_int(buf, (int64_t) status);
   }
   return INK_MIN_ALIGN;
 }
@@ -537,7 +537,7 @@ int
 LogAccessHttp::marshal_proxy_resp_header_len(char *buf)
 {
   if (buf) {
-    int64 val = 0;
+    int64_t val = 0;
     if (m_proxy_response) {
       val = m_proxy_response->length_get();
     }
@@ -585,7 +585,7 @@ LogAccessHttp::marshal_cache_result_code(char *buf)
 {
   if (buf) {
     SquidLogCode code = m_http_sm->t_state.squid_codes.log_code;
-    marshal_int(buf, (int64) code);
+    marshal_int(buf, (int64_t) code);
   }
   return INK_MIN_ALIGN;
 }
@@ -597,7 +597,7 @@ int
 LogAccessHttp::marshal_proxy_req_header_len(char *buf)
 {
   if (buf) {
-    int64 val = 0;
+    int64_t val = 0;
     if (m_proxy_request) {
       val = m_proxy_request->length_get();
     }
@@ -613,7 +613,7 @@ int
 LogAccessHttp::marshal_proxy_req_body_len(char *buf)
 {
   if (buf) {
-    int64 val = 0;
+    int64_t val = 0;
     if (m_proxy_request) {
       val = m_http_sm->server_request_body_bytes;
     }
@@ -647,7 +647,7 @@ LogAccessHttp::marshal_proxy_req_server_ip(char *buf)
     if (m_http_sm->t_state.current.server != NULL) {
       the_ip = m_http_sm->t_state.current.server->ip;
     }
-    marshal_int(buf, (int64)ntohl(the_ip));
+    marshal_int(buf, (int64_t)ntohl(the_ip));
   }
   return INK_MIN_ALIGN;
 }
@@ -660,7 +660,7 @@ LogAccessHttp::marshal_proxy_hierarchy_route(char *buf)
 {
   if (buf) {
     SquidHierarchyCode code = m_http_sm->t_state.squid_codes.hier_code;
-    marshal_int(buf, (int64) code);
+    marshal_int(buf, (int64_t) code);
   }
   return INK_MIN_ALIGN;
 }
@@ -679,7 +679,7 @@ LogAccessHttp::marshal_server_host_ip(char *buf)
         val = m_http_sm->t_state.current.server->ip;
       }
     }
-    marshal_int(buf, (int64)ntohl(val));
+    marshal_int(buf, (int64_t)ntohl(val));
   }
   return INK_MIN_ALIGN;
 }
@@ -769,7 +769,7 @@ LogAccessHttp::marshal_server_resp_status_code(char *buf)
     } else {
       status = HTTP_STATUS_NONE;
     }
-    marshal_int(buf, (int64) status);
+    marshal_int(buf, (int64_t) status);
   }
   return INK_MIN_ALIGN;
 }
@@ -781,7 +781,7 @@ int
 LogAccessHttp::marshal_server_resp_content_len(char *buf)
 {
   if (buf) {
-    int64 val = 0;
+    int64_t val = 0;
     if (m_server_response) {
       val = m_http_sm->server_response_body_bytes;
     }
@@ -797,7 +797,7 @@ int
 LogAccessHttp::marshal_server_resp_header_len(char *buf)
 {
   if (buf) {
-    int64 val = 0;
+    int64_t val = 0;
     if (m_server_response) {
       val = m_server_response->length_get();
     }
@@ -810,8 +810,8 @@ int
 LogAccessHttp::marshal_server_resp_http_version(char *buf)
 {
   if (buf) {
-    int64 major = 0;
-    int64 minor = 0;
+    int64_t major = 0;
+    int64_t minor = 0;
     if (m_server_response) {
       major = HTTP_MAJOR(m_server_response->version_get().m_version);
       minor = HTTP_MINOR(m_server_response->version_get().m_version);
@@ -826,7 +826,7 @@ int
 LogAccessHttp::marshal_client_retry_after_time(char *buf)
 {
   if (buf) {
-    int64 crat = m_http_sm->t_state.congestion_control_crat;
+    int64_t crat = m_http_sm->t_state.congestion_control_crat;
     marshal_int(buf, crat);
   }
   return INK_MIN_ALIGN;
@@ -903,7 +903,7 @@ LogAccessHttp::marshal_transfer_time_ms(char *buf)
   if (buf) {
     ink_hrtime elapsed = m_http_sm->milestones.sm_finish - m_http_sm->milestones.sm_start;
     elapsed /= HRTIME_MSECOND;
-    int64 val = (int64) elapsed;
+    int64_t val = (int64_t) elapsed;
     marshal_int(buf, val);
   }
   return INK_MIN_ALIGN;
@@ -915,7 +915,7 @@ LogAccessHttp::marshal_transfer_time_s(char *buf)
   if (buf) {
     ink_hrtime elapsed = m_http_sm->milestones.sm_finish - m_http_sm->milestones.sm_start;
     elapsed /= HRTIME_SECOND;
-    int64 val = (int64) elapsed;
+    int64_t val = (int64_t) elapsed;
     marshal_int(buf, val);
   }
   return INK_MIN_ALIGN;

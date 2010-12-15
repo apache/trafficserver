@@ -29,7 +29,7 @@
 #include "ink_resource.h"
 #include "ink_stack_trace.h"
 
-volatile int64 resource_allocated_mem = 0;
+volatile int64_t resource_allocated_mem = 0;
 volatile int res_track_memory = RES_TRACK_MEMORY_DEFAULT;
 
 #ifdef TRACK_MEMORY
@@ -77,10 +77,10 @@ volatile int res_zorch_mem = 0;
 volatile int res_fence_post = 0;
 
 #define res_memadd(_x_) \
-   ink_atomic_increment64(&resource_allocated_mem, (int64) (_x_));
+   ink_atomic_increment64(&resource_allocated_mem, (int64_t) (_x_));
 
 #define res_memsub(_x_) \
-   ink_atomic_increment64(&resource_allocated_mem, (int64) -(_x_));
+   ink_atomic_increment64(&resource_allocated_mem, (int64_t) -(_x_));
 
 static int
 _xres_init()
@@ -236,7 +236,7 @@ res_lookup(const char *path)
   -------------------------------------------------------------------------*/
 
 static Resource *
-res_stat(const char *path, int64 value)
+res_stat(const char *path, int64_t value)
 {
   if (path) {
     Resource *res;
@@ -321,7 +321,7 @@ _xfree(void *ptr)
 
       if (info->res) {
         res_check(info->res);
-        res_inc(info->res, -((int64) info->size));
+        res_inc(info->res, -((int64_t) info->size));
       }
 
       mem = (char *) info;
@@ -419,7 +419,7 @@ _xmalloc(unsigned int size, const char *path)
   -------------------------------------------------------------------------*/
 
 char *
-_xstrdup(const char *str, int64 length, const char *path)
+_xstrdup(const char *str, int64_t length, const char *path)
 {
   char *newstr;
 
@@ -459,7 +459,7 @@ _xrealloc(void *ptr, unsigned int size, const char *path)
 
     if (info->res) {
       res_check(info->res);
-      res_inc(info->res, -((int64) info->size));
+      res_inc(info->res, -((int64_t) info->size));
     }
 
     mem = (char *) info;
@@ -539,7 +539,7 @@ _xtrack(void *ptr, const char *path)
 
     if (info->res) {
       res_check(info->res);
-      res_inc(info->res, -((int64) info->size));
+      res_inc(info->res, -((int64_t) info->size));
     }
 
     if (res_track_memory) {
@@ -573,8 +573,8 @@ void
 xdump_to_file_baseline_rel(FILE * fp)
 {
   Resource *res;
-  int64 value;
-  int64 diff;
+  int64_t value;
+  int64_t diff;
   int i;
   struct timeval timestamp;
   char time_string[32], *time_str;
@@ -615,8 +615,8 @@ void
 xdump_to_file(FILE * fp)
 {
   Resource *res;
-  int64 value;
-  int64 diff;
+  int64_t value;
+  int64_t diff;
   int i;
   struct timeval timestamp;
   char time_string[32], *time_str;

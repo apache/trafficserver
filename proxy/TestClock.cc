@@ -35,7 +35,7 @@ test()
     clock_gettime(CLOCK_REALTIME, &ts);
   }
   ink_hrtime t2 = ink_get_hrtime();
-  printf("time for clock_gettime %lld nsecs\n", (t2 - t) / 1000);
+  printf("time for clock_gettime %" PRId64 " nsecs\n", (t2 - t) / 1000);
 
   t = ink_get_hrtime();
   i = 1000000;
@@ -43,5 +43,5 @@ test()
     ink_get_hrtime();
   }
   t2 = ink_get_hrtime();
-  printf("time for clock_gettime %lld nsecs\n", (t2 - t) / 1000);
+  printf("time for clock_gettime %" PRId64 " nsecs\n", (t2 - t) / 1000);
 }
