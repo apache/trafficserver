@@ -855,10 +855,13 @@ AC_SUBST(has_strndup)
 AC_SUBST(has_strlcpy)
 AC_SUBST(has_strlcat)
 
-has_eventfd=0
-AS_IF([test "x$enable_eventfd" = "xyes"],
-  [TS_FLAG_FUNCS([eventfd])]
-)
+# Check for eventfd() and sys/eventfd.h (both must exist ...)
+TS_FLAG_HEADERS([sys/eventfd.h], [has_eventfd=1], [has_eventfd=0], [])
+if test "x${has_eventfd}" = "xyes"; then
+  AS_IF([test "x$enable_eventfd" = "xyes"],
+    [TS_FLAG_FUNCS([eventfd])]
+  )
+fi
 AC_SUBST(has_eventfd)
 
 #
