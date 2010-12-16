@@ -6480,7 +6480,7 @@ typedef enum
 typedef enum
 {
   ORIG_TS_SDK_VERSION_2_0 = 0,
-  ORIG_TS_SDK_VERSION_3_0,
+  ORIG_TS_SDK_VERSION_3_0
 } ORIG_TSSDKVersion;
 
 typedef enum

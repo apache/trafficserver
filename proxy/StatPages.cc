@@ -46,7 +46,7 @@ static struct
   StatPagesFunc func;
 } stat_pages[MAX_STAT_PAGES];
 
-volatile static int n_stat_pages = 0;
+static volatile int n_stat_pages = 0;
 
 void
 StatPagesManager::init()
@@ -67,6 +67,7 @@ StatPagesManager::register_http(const char *module, StatPagesFunc func)
 Action *
 StatPagesManager::handle_http(Continuation * cont, HTTPHdr * header, int client_ip)
 {
+  NOWARN_UNUSED(client_ip);
   URL *url = header->url_get();
 
   if (((m_enabled == 1 || m_enabled == 3) && is_cache_inspector_page(url)) ||

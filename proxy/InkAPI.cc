@@ -2662,6 +2662,7 @@ TSMimeHdrFieldsCount(TSMBuffer bufp, TSMLoc obj)
 const char *
 TSMimeFieldValueGet(TSMBuffer bufp, TSMLoc field_obj, int idx, int *value_len_ptr)
 {
+  NOWARN_UNUSED(bufp);
   MIMEFieldSDKHandle *handle = (MIMEFieldSDKHandle *) field_obj;
 
   if (idx >= 0) {
@@ -2705,6 +2706,9 @@ TSMimeFieldValueInsert(TSMBuffer bufp, TSMLoc field_obj, const char *value, int 
 TSReturnCode
 TSHandleStringRelease(TSMBuffer bufp, TSMLoc parent, const char *str)
 {
+  NOWARN_UNUSED(bufp);
+  NOWARN_UNUSED(parent);
+  NOWARN_UNUSED(str);
   return TS_SUCCESS;
 }
 
