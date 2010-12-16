@@ -2839,8 +2839,7 @@ HttpTransact::build_response_from_cache(State * s, HTTPWarningCode warning_code)
         s->state_machine->do_range_setup_if_necessary();
         if (s->range_setup == RANGE_NOT_SATISFIABLE &&
             s->http_config_param->reverse_proxy_enabled) {
-          build_response(s, &s->hdr_info.client_response,
-                         s->client_info.http_version, HTTP_STATUS_RANGE_NOT_SATISFIABLE);
+          build_error_response(s, HTTP_STATUS_RANGE_NOT_SATISFIABLE, "Requested Range Not Satisfiable","","");
 
           s->cache_info.action = CACHE_DO_NO_ACTION;
           s->next_action = PROXY_INTERNAL_CACHE_NOOP;

@@ -877,18 +877,28 @@ RangeTransform::parse_range_and_compare()
     while (value) {
       // If delimiter '-' is missing
       if (!(e = (const char *) memchr(value, '-', value_len))) {
-        value = csv.get_next(&value_len);
-        i++;
-        continue;
+        m_unsatisfiable_range = true;
+        return;
       }
-
-      s = value;
+      
+      if ( memcmp(value,"bytes=",6) == 0 ) {
+        s = value + 6;
+      }
+      else {
+        s = value;
+      }
+      
       m_ranges[i]._start = mime_parse_int64(s, e);
 
       e++;
       s = e;
       e = value + value_len;
-      m_ranges[i]._end = mime_parse_int64(s, e);
+      if ( e && *(e-1) == '-') { //open-ended Range: bytes=10-\r\n\r\n should be supported
+        m_ranges[i]._end = -1;
+      }
+      else {
+        m_ranges[i]._end = mime_parse_int64(s, e);
+      }
 
       // check and change if necessary whether this is a right entry
       // the last _end bytes are required
