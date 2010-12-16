@@ -23,7 +23,6 @@
 
 #include "libts.h"
 #include "MgmtSchema.h"
-#include "RecordsConfig.h"
 #include "Main.h"
 
 //********************************************************

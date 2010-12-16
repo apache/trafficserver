@@ -207,17 +207,11 @@ RecFloat REC_readFloat(char *name, bool * found, bool lock = true);
 RecCounter REC_readCounter(char *name, bool * found, bool lock = true);
 RecString REC_readString(const char *name, bool * found, bool lock = true);
 
-bool REC_setInteger(const char *name, RecInt value, bool dirty = true);
-bool REC_setFloat(const char *name, float value, bool dirty = true);
-bool REC_setCounter(const char *name, int64_t value, bool dirty = true);
-bool REC_setString(const char *name, char *value, bool dirty = true);
-
-
 //------------------------------------------------------------------------
 // Clear Statistics
 //------------------------------------------------------------------------
 int RecResetStatRecord(char *name);
-int RecResetStatRecord(RecT type = RECT_NULL);
+int RecResetStatRecord(RecT type = RECT_NULL, bool all = false);
 
 
 //------------------------------------------------------------------------

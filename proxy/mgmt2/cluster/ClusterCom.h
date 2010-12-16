@@ -43,8 +43,8 @@
 #define _CLUSTER_COM_H
 
 #include "ink_platform.h"
-//#include "libts.h"
-#include "BaseRecords.h"
+#include "P_RecDefs.h"
+#include "MgmtUtils.h"
 #include "Rollback.h"
 
 #define CLUSTER_MSG_SHUTDOWN_MANAGER  1000
@@ -68,7 +68,6 @@ enum ClusterMismatch
 
 typedef struct _cluster_peer_info
 {
-
   unsigned long inet_address;   /* IP addr of node */
   int port;                     /* Cluster port */
   int ccom_port;                /* CCom reliable port */
@@ -91,7 +90,6 @@ bool checkBackDoor(int req_fd, char *message);
 
 class ClusterCom
 {
-
 public:
 
   ClusterCom(unsigned long oip, char *hname, int port, char *group, int sport, char *p);
@@ -112,7 +110,7 @@ public:
   int establishReceiveChannel(int fatal_on_error = 1);
 
   bool sendSharedData(bool send_proxy_heart_beat = true);
-  void constructSharedGenericPacket(char *message, int max, int packet_type);
+  void constructSharedGenericPacket(char *message, int max, RecT packet_type);
   void constructSharedStatPacket(char *message, int max);
   void constructSharedFilePacket(char *message, int max);
   static int constructSharedPacketHeader(char *message, char *ip, int max);

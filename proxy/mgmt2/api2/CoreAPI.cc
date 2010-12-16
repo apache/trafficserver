@@ -34,7 +34,6 @@
 #include "LocalManager.h"
 #include "FileManager.h"
 #include "Rollback.h"
-#include "RecordsConfig.h"
 #include "WebMgmtUtils.h"
 #include "Diags.h"
 #include "ink_hash_table.h"
@@ -51,14 +50,6 @@ extern int diags_init;          // from Main.cc
 
 // global variable
 CallbackTable *local_event_callbacks;
-
-/*-------------------------------------------------------------------------
- * determine_action_need (forward declaration)
- *-------------------------------------------------------------------------
- * uses the update type that's stored with the record rec_name to determine
- * which type of INKActionNeedT to return.
- */
-INKActionNeedT determine_action_need(const char *rec_name);
 
 /*-------------------------------------------------------------------------
  * Init
@@ -361,8 +352,6 @@ MgmtRecordGet(const char *rec_name, INKRecordEle * rec_ele)
 
 
 /*-------------------------------------------------------------------------
- * determine_action_need (HELPER FN)
- *-------------------------------------------------------------------------
  * reads the RecordsConfig info to determine which type of action is needed
  * when the record rec_name is changed; if the rec_name is invalid,
  * then returns INK_ACTION_UNDEFINED
@@ -370,35 +359,31 @@ MgmtRecordGet(const char *rec_name, INKRecordEle * rec_ele)
 INKActionNeedT
 determine_action_need(const char *rec_name)
 {
-  int r;                        // index in RecordsConfig[]
-  RecordUpdateType update_t;
+  RecUpdateT update_t;
 
-  // INKqa09916
-  // the hashtable lookup will return 0 if there is no binding for the
-  // rec_name in the hashtable
-  if (!RecordsConfigIndex->mgmt_hash_table_lookup((char *) rec_name, (void **) &r))
-    return INK_ACTION_UNDEFINED;        // failed to find the rec_name in the records table
-
-  update_t = RecordsConfig[r].update;
-
-  switch (update_t) {
-  case RU_NULL:                // default:don't know behaviour
+  if (REC_ERR_OKAY == RecGetRecordUpdateType(rec_name, &update_t))
     return INK_ACTION_UNDEFINED;
 
-  case RU_REREAD:              // update dynamically by rereading config files
+  switch (update_t) {
+  case RECU_NULL:                // default:don't know behaviour
+    return INK_ACTION_UNDEFINED;
+
+  case RECU_DYNAMIC:             // update dynamically by rereading config files
     return INK_ACTION_RECONFIGURE;
 
-  case RU_RESTART_TS:          // requires TS restart
+  case RECU_RESTART_TS:          // requires TS restart
     return INK_ACTION_RESTART;
 
-  case RU_RESTART_TM:          // requirs TM/TS restart
+  case RECU_RESTART_TM:          // requirs TM/TS restart
     return INK_ACTION_RESTART;
 
-  case RU_RESTART_TC:          // requires TC/TM/TS restart
+  case RECU_RESTART_TC:          // requires TC/TM/TS restart
     return INK_ACTION_SHUTDOWN;
+
   default:                     // shouldn't get here actually
     return INK_ACTION_UNDEFINED;
   }
+
   return INK_ACTION_UNDEFINED;  // ERROR
 }
 
@@ -454,15 +439,6 @@ MgmtRecordSetInt(const char *rec_name, MgmtInt int_val, INKActionNeedT * action_
   snprintf(str_val, sizeof(str_val), "%" PRId64 "", int_val);
 
   return MgmtRecordSet(rec_name, str_val, action_need);
-
-  /* INKqa10300
-   *action_need = determine_action_need(rec_name);
-   if (recordValidityCheck(rec_name, str_val)) {
-   if (varSetInt(rec_name, int_val))
-   return INK_ERR_OKAY;
-   }
-   return INK_ERR_FAIL;
-   */
 }
 
 
@@ -484,15 +460,6 @@ MgmtRecordSetCounter(const char *rec_name, MgmtIntCounter counter_val, INKAction
   snprintf(str_val, sizeof(str_val), "%" PRId64 "", counter_val);
 
   return MgmtRecordSet(rec_name, str_val, action_need);
-
-  /* INKqa10300
-   *action_need = determine_action_need(rec_name);
-   if (recordValidityCheck(rec_name, str_val)) {
-   if (varSetCounter(rec_name, counter_val))
-   return INK_ERR_OKAY;
-   }
-   return INK_ERR_FAIL;
-   */
 }
 
 
@@ -515,15 +482,6 @@ MgmtRecordSetFloat(const char *rec_name, MgmtFloat float_val, INKActionNeedT * a
   snprintf(str_val, sizeof(str_val), "%f", float_val);
 
   return MgmtRecordSet(rec_name, str_val, action_need);
-
-  /* INKqa10300
-   *action_need = determine_action_need(rec_name);
-   if (recordValidityCheck(rec_name, str_val)) {
-   if (varSetFloat(rec_name, float_val))
-   return INK_ERR_OKAY;
-   }
-   return INK_ERR_FAIL;
-   */
 }
 
 
@@ -924,21 +882,16 @@ StatsReset()
 {
   bool okay = true;
 
-  // iterate through all records in RecordsConfig
-  int i = 0;
-  while (RecordsConfig[i].value_type != INVALID) {
-    if (RecordsConfig[i].type == PROCESS || RecordsConfig[i].type == NODE || RecordsConfig[i].type == CLUSTER) {
-      // stats variable, so restore default using table value
-      if (varSetFromStr(RecordsConfig[i].name, RecordsConfig[i].value) == false)
-        okay = false;
-    }
-    i++;
-  }
+  if (REC_ERR_OKAY == RecResetStatRecord(RECT_PROCESS, true)) // reset all
+    okay = false;
+  if (REC_ERR_OKAY == RecResetStatRecord(RECT_NODE, true)) // reset all
+    okay = false;
+  if (REC_ERR_OKAY == RecResetStatRecord(RECT_CLUSTER)) // only reset non-persistent TODO: ??
+    okay = false;
+  if (REC_ERR_OKAY == RecResetStatRecord(RECT_PLUGIN, true)) // reset all
+    okay = false;
 
-  if (okay)
-    return INK_ERR_OKAY;
-  else
-    return INK_ERR_FAIL;
+  return (okay ? INK_ERR_OKAY : INK_ERR_FAIL);
 }
 
 /*-------------------------------------------------------------------------

@@ -32,7 +32,6 @@
 #include "ink_platform.h"
 #include "ink_hrtime.h"
 #include "ink_atomic.h"
-#include "BaseRecords.h"
 #ifdef USE_LOCKS_FOR_DYN_STATS
 #include "Lock.h"
 #endif
@@ -631,10 +630,10 @@ global_dyn_stats[X].sum = S
 //---------------------------------------------------------------------//
 extern void start_stats_snap(void);
 void initialize_all_global_stats();
-void initialize_http_stats();
-void initialize_cache_stats();
-void *tmp_stats_lock_function(UpdateLockAction action);
-void *stats_lock_function(void *data, UpdateLockAction action);
+
+// TODO: I don't think these are necessary any more, but double check.
+//void *tmp_stats_lock_function(UpdateLockAction action);
+//void *stats_lock_function(void *data, UpdateLockAction action);
 
 void *http_trans_stats_count_cb(void *data, void *res);
 void *http_trans_stats_sum_cb(void *data, void *res);

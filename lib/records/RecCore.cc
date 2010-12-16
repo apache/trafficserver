@@ -208,11 +208,9 @@ RecCoreInit(RecModeT mode_type, Diags *_diags)
     // ./etc/trafficserver/records.config
     // ./records.config
     bool file_exists = true;
-    g_rec_config_fpath = Layout::relative_to(Layout::get()->sysconfdir,
-                                             REC_CONFIG_FILE REC_SHADOW_EXT);
+    g_rec_config_fpath = Layout::relative_to(Layout::get()->sysconfdir, REC_CONFIG_FILE REC_SHADOW_EXT);
     if (RecFileExists(g_rec_config_fpath) == REC_ERR_FAIL) {
-      g_rec_config_fpath = Layout::relative_to(Layout::get()->sysconfdir,
-                                               REC_CONFIG_FILE);
+      g_rec_config_fpath = Layout::relative_to(Layout::get()->sysconfdir, REC_CONFIG_FILE);
       if (RecFileExists(g_rec_config_fpath) == REC_ERR_FAIL) {
         RecLog(DL_Warning, "Could not find '%s', system will run with defaults\n", REC_CONFIG_FILE);
         file_exists = false;
@@ -997,7 +995,7 @@ RecGetRecordPrefix_Xmalloc(char *prefix, char **buf, int *buf_len)
 
 
 //-------------------------------------------------------------------------
-// REC_ConfigReadInteger (backwards compatibility)
+// Backwards compatibility ... TODO: Should eliminate these
 //-------------------------------------------------------------------------
 RecInt
 REC_ConfigReadInteger(const char *name)
@@ -1007,10 +1005,6 @@ REC_ConfigReadInteger(const char *name)
   return t;
 }
 
-
-//-------------------------------------------------------------------------
-// REC_ConfigReadString (backwards compatibility)
-//-------------------------------------------------------------------------
 char *
 REC_ConfigReadString(const char *name)
 {
@@ -1019,10 +1013,6 @@ REC_ConfigReadString(const char *name)
   return t;
 }
 
-
-//-------------------------------------------------------------------------
-// REC_ConfigReadFloat (backwards compatibility)
-//-------------------------------------------------------------------------
 RecFloat
 REC_ConfigReadFloat(const char *name)
 {
@@ -1031,10 +1021,6 @@ REC_ConfigReadFloat(const char *name)
   return t;
 }
 
-
-//-------------------------------------------------------------------------
-// REC_ConfigReadCounter (backwards compatibility)
-//-------------------------------------------------------------------------
 RecCounter
 REC_ConfigReadCounter(const char *name)
 {
@@ -1045,7 +1031,7 @@ REC_ConfigReadCounter(const char *name)
 
 
 //-------------------------------------------------------------------------
-// MGMT2 Marco (backwards compatibility)
+// Backwards compatibility. TODO: Should remove these.
 //-------------------------------------------------------------------------
 RecInt
 REC_readInteger(const char *name, bool * found, bool lock)
@@ -1093,35 +1079,6 @@ REC_readString(const char *name, bool * found, bool lock)
   if (found)
     *found = _found;
   return _tmp;
-}
-
-// MGMT2 Marco's -- converting lmgmt->record_data->setXXX
-bool
-REC_setInteger(const char *name, RecInt value, bool dirty)
-{
-  REC_NOWARN_UNUSED(dirty);
-  return RecSetRecordInt(name, value);
-}
-
-bool
-REC_setFloat(const char *name, float value, bool dirty)
-{
-  REC_NOWARN_UNUSED(dirty);
-  return RecSetRecordFloat(name, value);
-}
-
-bool
-REC_setCounter(const char *name, int64_t value, bool dirty)
-{
-  REC_NOWARN_UNUSED(dirty);
-  return RecSetRecordCounter(name, value);
-}
-
-bool
-REC_setString(const char *name, char *value, bool dirty)
-{
-  REC_NOWARN_UNUSED(dirty);
-  return RecSetRecordString(name, value);
 }
 
 

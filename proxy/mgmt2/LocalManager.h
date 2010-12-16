@@ -36,7 +36,6 @@
 
 #include "Main.h"
 #include "Alarms.h"
-#include "LMRecords.h"
 #include "BaseManager.h"
 #include "ClusterCom.h"
 #include "VMap.h"
@@ -50,17 +49,13 @@
 #define ink_get_based_hrtime ink_get_based_hrtime_internal
 #endif
 
-extern LocalManager *lmgmt;
-
-class LocalManager:public BaseManager
+class LocalManager: public BaseManager
 {
-
 public:
+  LocalManager(char *mpath, bool proxy_on);
 
-  LocalManager(char *mpath, LMRecords * rd, bool proxy_on);
-   ~LocalManager()
+  ~LocalManager()
   {
-    delete record_data;
     delete alarm_keeper;
     delete virt_map;
     delete ccom;
@@ -178,8 +173,6 @@ public:
   volatile int internal_ticker;
   volatile pid_t watched_process_pid;
 
-  LMRecords *record_data;
-
 #ifdef MGMT_USE_SYSLOG
   int syslog_facility;
 #endif
@@ -189,8 +182,9 @@ public:
   wccp::Cache wccp_cache;
 # endif
 private:
-
 };                              /* End class LocalManager */
+
+extern LocalManager *lmgmt;
 
 #if TS_USE_POSIX_CAP
 bool elevateFileAccess(bool);

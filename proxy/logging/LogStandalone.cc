@@ -39,6 +39,7 @@
 
 #include "ProcessManager.h"
 #include "MgmtUtils.h"
+// Needs LibRecordsConfigInit()
 #include "RecordsConfig.h"
 
 #define LOG_ReadConfigString REC_ReadConfigString
@@ -124,8 +125,6 @@ init_system()
 static void
 initialize_process_manager()
 {
-  ProcessRecords *precs;
-
   mgmt_use_syslog();
 
   // Temporary Hack to Enable Communuication with LocalManager
@@ -153,11 +152,7 @@ initialize_process_manager()
   }
   //
   // Start up manager
-  //
-  //    precs = NEW (new ProcessRecords(management_directory,
-  //          "records.config","lm.config"));
-  precs = NEW(new ProcessRecords(management_directory, "records.config", NULL));
-  pmgmt = NEW(new ProcessManager(remote_management_flag, management_directory, precs));
+  pmgmt = NEW(new ProcessManager(remote_management_flag, management_directory));
 
   pmgmt->start();
 

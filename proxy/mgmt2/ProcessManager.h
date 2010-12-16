@@ -36,7 +36,7 @@
 #ifndef _PROCESS_MANAGER_H
 #define _PROCESS_MANAGER_H
 
-#include "ProcessRecords.h"
+#include "MgmtUtils.h"
 #include "BaseManager.h"
 #include "ink_sock.h"
 
@@ -47,11 +47,9 @@ class ProcessManager:public BaseManager
 {
 
 public:
-
-  ProcessManager(bool rlm, char *mpath, ProcessRecords * rd);
+  ProcessManager(bool rlm, char *mpath);
    ~ProcessManager()
   {
-    delete record_data;
 #ifndef _WIN32
       close_socket(local_manager_sockfd);
 #else
@@ -91,25 +89,14 @@ public:
   bool processEventQueue();
   bool processSignalQueue();
 
-  /*
-   * addPlugin*(...)
-   *   Functions for adding plugin defined variables.
-   *
-   * Returns:    true if sucessful
-   *             false otherwise
-   */
-  bool addPluginCounter(const char *name, MgmtIntCounter value);
-  bool addPluginInteger(const char *name, MgmtInt value);
-  bool addPluginFloat(const char *name, MgmtFloat value);
-  bool addPluginString(const char *name, MgmtString value);
-
   bool require_lm;
   time_t timeout;
   char pserver_path[1024];
   int mgmt_sync_key;
-  ProcessRecords *record_data;
 
   LLQ *mgmt_signal_queue;
+
+  pid_t pid;
 
 #ifndef _WIN32
   int local_manager_sockfd;

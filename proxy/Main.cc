@@ -458,8 +458,6 @@ init_dirs(void)
 static void
 initialize_process_manager()
 {
-  ProcessRecords *precs;
-
   mgmt_use_syslog();
 
   // Temporary Hack to Enable Communuication with LocalManager
@@ -470,8 +468,7 @@ initialize_process_manager()
   if (access(management_directory, R_OK) == -1) {
     ink_strncpy(management_directory, Layout::get()->sysconfdir, PATH_NAME_MAX);
     if (access(management_directory, R_OK) == -1) {
-      fprintf(stderr,"unable to access() management path '%s': %d, %s\n",
-                management_directory, errno, strerror(errno));
+      fprintf(stderr,"unable to access() management path '%s': %d, %s\n", management_directory, errno, strerror(errno));
       fprintf(stderr,"please set management path via command line '-d <managment directory>'\n");
       _exit(1);
     }
@@ -485,36 +482,23 @@ initialize_process_manager()
   //
   // Start up manager
   //
-  //precs = NEW (new ProcessRecords(management_directory,"records.config","lm.config"));
-  precs = NEW(new ProcessRecords(management_directory, "records.config", 0));
-
-  pmgmt = NEW(new ProcessManager(remote_management_flag, management_directory, precs));
+  pmgmt = NEW(new ProcessManager(remote_management_flag, management_directory));
 
   pmgmt->start();
-
   RecProcessInitMessage(remote_management_flag ? RECM_CLIENT : RECM_STAND_ALONE);
-
   pmgmt->reconfigure();
-
   init_dirs();// setup directories
 
   //
   // Define version info records
   //
   RecRegisterStatString(RECT_PROCESS, "proxy.process.version.server.short", appVersionInfo.VersionStr, RECP_NULL);
-  RecRegisterStatString(RECT_PROCESS,
-                        "proxy.process.version.server.long", appVersionInfo.FullVersionInfoStr, RECP_NULL);
+  RecRegisterStatString(RECT_PROCESS, "proxy.process.version.server.long", appVersionInfo.FullVersionInfoStr, RECP_NULL);
   RecRegisterStatString(RECT_PROCESS, "proxy.process.version.server.build_number", appVersionInfo.BldNumStr, RECP_NULL);
   RecRegisterStatString(RECT_PROCESS, "proxy.process.version.server.build_time", appVersionInfo.BldTimeStr, RECP_NULL);
   RecRegisterStatString(RECT_PROCESS, "proxy.process.version.server.build_date", appVersionInfo.BldDateStr, RECP_NULL);
-  RecRegisterStatString(RECT_PROCESS,
-                        "proxy.process.version.server.build_machine", appVersionInfo.BldMachineStr, RECP_NULL);
-  RecRegisterStatString(RECT_PROCESS,
-                        "proxy.process.version.server.build_person", appVersionInfo.BldPersonStr, RECP_NULL);
-  //    RecRegisterStatString(RECT_PROCESS,
-  //             "proxy.process.version.server.build_compile_flags",
-  //                 appVersionInfo.BldCompileFlagsStr,
-  //             RECP_NULL);
+  RecRegisterStatString(RECT_PROCESS, "proxy.process.version.server.build_machine", appVersionInfo.BldMachineStr, RECP_NULL);
+  RecRegisterStatString(RECT_PROCESS, "proxy.process.version.server.build_person", appVersionInfo.BldPersonStr, RECP_NULL);
 }
 
 //
@@ -1667,8 +1651,7 @@ main(int argc, char **argv)
   check_system_constants();
 
   // Define the version info
-  appVersionInfo.setup(PACKAGE_NAME,"traffic_server", PACKAGE_VERSION, __DATE__,
-                       __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
+  appVersionInfo.setup(PACKAGE_NAME,"traffic_server", PACKAGE_VERSION, __DATE__, __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
 
   // Before accessing file system initialize Layout engine
   Layout::create();
@@ -1698,8 +1681,6 @@ main(int argc, char **argv)
   //   yet we do not know where
   openlog("traffic_server", LOG_PID | LOG_NDELAY | LOG_NOWAIT, LOG_DAEMON);
 
-
-
   // Setup Diags temporary to allow librecords to be initialized.
   // We will re-configure Diags again with proper configurations after
   // librecords initialized. This is needed because:
@@ -1721,7 +1702,6 @@ main(int argc, char **argv)
 
   // Set the core limit for the process
   init_core_size();
-
   init_system();
 
   // Adjust system and process settings

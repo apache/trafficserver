@@ -603,11 +603,6 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.proxy_binary
  proxy.config.proxy_binary_opts
  proxy.config.proxy_name
- proxy.config.raft.accept_port
- proxy.config.raft.enabled
- proxy.config.raft.proxy_version_max
- proxy.config.raft.proxy_version_min
- proxy.config.raft.server_port
  proxy.config.remap.num_remap_threads
  proxy.config.remap.use_remap_processor
  proxy.config.res_track_memory

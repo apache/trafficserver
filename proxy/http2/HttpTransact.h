@@ -35,7 +35,6 @@
 #include "ControlMatcher.h"
 #include "CacheControl.h"
 #include "ParentSelection.h"
-#include "BaseRecords.h"
 #include "ProxyConfig.h"
 #include "Transform.h"
 //#include "HttpAuthParams.h"

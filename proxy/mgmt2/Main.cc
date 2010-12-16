@@ -36,7 +36,6 @@
 #include "Main.h"
 #include "MgmtUtils.h"
 #include "MgmtSchema.h"
-#include "MgmtConverter.h"
 #include "WebMgmtUtils.h"
 #include "WebIntrMain.h"
 #include "WebOverview.h"
@@ -51,6 +50,8 @@
 #include "URL.h"
 #include "MIME.h"
 #include "HTTP.h"
+
+// Needs LibRecordsConfigInit()
 #include "RecordsConfig.h"
 
 #if defined(TRAFFIC_NET)
@@ -110,9 +111,6 @@ bool forceProcessRecordsSnap = false;
 
 bool schema_on = false;
 char *schema_path = NULL;
-
-bool xml_on = false;
-char *xml_path = NULL;
 
 // TODO: Check if really need those
 char system_root_dir[PATH_NAME_MAX + 1];
@@ -641,10 +639,6 @@ main(int argc, char **argv)
             ++i;
             schema_path = argv[i];
             schema_on = true;
-          } else if (strcmp(argv[i], "-xml") == 0) {    // hidden option
-            ++i;
-            xml_path = argv[i];
-            xml_on = true;
           } else {
             printUsage();
           }
@@ -682,15 +676,11 @@ main(int argc, char **argv)
   extractConfigInfo(mgmt_path, recs_conf, userToRunAs, &fds_throttle);
 
   set_process_limits(fds_throttle); // as root
-
   runAsUser(userToRunAs);
-
   setup_coredump();
-
   check_lockfile();
 
-  Layout::relative_to(config_internal_dir, sizeof(config_internal_dir),
-                      mgmt_path, "internal");
+  Layout::relative_to(config_internal_dir, sizeof(config_internal_dir), mgmt_path, "internal");
   url_init(config_internal_dir);
   mime_init(config_internal_dir);
   http_init(config_internal_dir);
@@ -710,7 +700,7 @@ main(int argc, char **argv)
 #if TS_HAS_WCCP
   Init_Errata_Logging();
 #endif
-  lmgmt = new LocalManager(mgmt_path, new LMRecords(mgmt_path, recs_conf, 0), proxy_on);
+  lmgmt = new LocalManager(mgmt_path, proxy_on);
   RecLocalInitMessage();
   lmgmt->initAlarm();
 
@@ -827,7 +817,7 @@ main(int argc, char **argv)
   }
 
   if (proxy_backdoor != -1) {
-    REC_setInteger("proxy.config.process_manager.mgmt_port", proxy_backdoor);
+    RecSetRecordInt("proxy.config.process_manager.mgmt_port", proxy_backdoor);
   }
 
   if (cluster_server_port == -1) {
@@ -908,74 +898,12 @@ main(int argc, char **argv)
   statProcessor = NEW(new StatProcessor());
 #endif
 
-  if (xml_on) {
-    converterInit();
-    TrafficServer_xml(xml_path);
-  }
-#if defined(OEM) && !defined(OEM_3COM)
-
-  //For OEM releases we check here whether a floppy with the correct config file exists
-  //if it does, we first configure the network, then we continue
-  char floppyLockFile[256];
-  snprintf(floppyLockFile, sizeof(floppyLockFile), "./etc/trafficserver/internal/floppy.dat");
-  struct stat lockFileStat;
-  FILE *floppy_lock_fd;
-  bool floppyRestore = true;
-
-  // Check for the presence of floppy.dat lock file in the etc/trafficserver/internal directory
-  // If the lock is found, check if it is more than 120 seconds old.
-  // If the lock file is missing or if it is more than 120 seconds old, create a new lock file
-  // and restore network settings.
-  if (stat(floppyLockFile, &lockFileStat) < 0) {
-    perror("floppy.lock: ");
-    if ((floppy_lock_fd = fopen(floppyLockFile, "w+")) == NULL) {
-      mgmt_log(stderr, "[main] Could not create floppy.lock. Not restoring floppy configurations\n");
-      floppyRestore = false;
-    } else
-      fclose(floppy_lock_fd);
-  } else {
-    time_t now;
-    floppyRestore = false;
-    if ((time(&now) - lockFileStat.st_mtime) > 120) {
-      unlink(floppyLockFile);
-      floppyRestore = true;
-      if ((floppy_lock_fd = fopen(floppyLockFile, "w+")) == NULL) {
-        mgmt_log(stderr, "[main] Could not create floppy.lock. Not restoring floppy configurations\n");
-        floppyRestore = false;
-      } else {
-        fclose(floppy_lock_fd);
-      }
-    }
-  }
-
-  if (floppyRestore) {
-    int oem_status;
-    int old_euid = getuid();
-    if (seteuid(0))
-      perror("Main: Config_FloppyRestore setuid failed: ");
-    if (setreuid(0, 0))
-      perror("Main: Config_FloppyRestore setreuid failed: ");
-    oem_status = Config_FloppyNetRestore();
-    setreuid(old_euid, old_euid);
-    if (oem_status) {
-      Debug("lm", "[Main] Failed to initialize network using floppy configuration file\n");
-    }
-    //try a to queue a request for a restart
-    //lmgmt->mgmt_shutdown_outstanding = true; //This is marked out as we don't need to restart
-
-  }
-#endif //OEM - Floppy Configuration
-
   for (;;) {
-
-
     lmgmt->processEventQueue();
     lmgmt->pollMgmtProcessServer();
 
     // Check for a SIGHUP
     if (sigHupNotifier != 0) {
-      if (xml_on)               // convert xml into TS config files
-        TrafficServer_xml(xml_path);
       mgmt_log(stderr, "[main] Reading Configuration Files due to SIGHUP\n");
       configFiles->rereadConfig();
       lmgmt->signalEvent(MGMT_EVENT_PLUGIN_CONFIG_UPDATE, "*");
@@ -987,12 +915,6 @@ main(int argc, char **argv)
       xdump();
       sigUsr2Notifier = 0;
     }
-//      if(lmgmt->processRunning() && just_started >= 10) { /* Sync the config/process records */
-//          lmgmt->record_data->syncRecords();
-//      } else {
-//          /* Continue to update the db for config, this also syncs the records.config */
-//          lmgmt->record_data->syncRecords(false);
-//      }
 
     lmgmt->ccom->generateClusterDelta();
 
@@ -1287,18 +1209,6 @@ fileUpdated(char *fname)
     markMgmtIpAllowChange();
   } else if (strcmp(fname, "ip_allow.config") == 0) {
     lmgmt->signalFileChange("proxy.config.cache.ip_allow.filename");
-
-  } else if (strcmp(fname, "lm.config") == 0) {
-
-    /* Fix INKqa00919.  The lm.config file is for stats only so
-     *  we should never need to re-read it and destroy stats
-     *  the manager has stored there
-     *
-     mgmt_log(stderr, "[fileUpdated] lm.config updated\n");
-     if(lmgmt->record_data->rereadRecordFile(lmgmt->config_path, lm_conf) < 0) {
-     mgmt_elog(stderr, "[FileUpdated] Config update failed for lm.config\n");
-     }
-     */
   } else if (strcmp(fname, "vaddrs.config") == 0) {
     mgmt_log(stderr, "[fileUpdated] vaddrs.config updated\n");
     lmgmt->virt_map->lt_readAListFile(fname);

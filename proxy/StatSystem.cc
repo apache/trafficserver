@@ -30,12 +30,10 @@
 #include "StatSystem.h"
 #include "P_EventSystem.h"
 #include "Error.h"
-#include "BaseRecords.h"
 #include "ProcessManager.h"
 #include "ProxyConfig.h"
 #include "StatPages.h"
 #include "HTTP.h"
-#include "RecordsConfig.h"
 #include "I_Layout.h"
 
 // defines
@@ -397,11 +395,6 @@ start_stats_snap()
     Warning("disabling statistics snap");
 }
 
-
-
-static const char **stat_names = NULL;
-static int nstat_names = 0;
-
 static Action *
 stat_callback(Continuation * cont, HTTPHdr * header)
 {
@@ -459,43 +452,6 @@ stat_callback(Continuation * cont, HTTPHdr * header)
   return ACTION_RESULT_DONE;
 }
 
-static void
-stat_callback_init()
-{
-
-  const char *p;
-  int i, j;
-
-  statPagesManager.register_http("stat", stat_callback);
-
-  nstat_names = 0;
-  for (i = 0; RecordsConfig[i].value_type != INVALID; i++) {
-    //if (RecordsConfig[i].type == PROCESS || RecordsConfig[i].type == NODE) {
-    nstat_names++;
-    //}
-  }
-  stat_names = (const char **) xmalloc(nstat_names * sizeof(char *));
-
-  j = 0;
-  for (i = 0; RecordsConfig[i].value_type != INVALID; i++) {
-    //if (RecordsConfig[i].type == PROCESS || RecordsConfig[i].type == NODE) {
-    stat_names[j] = RecordsConfig[i].name;
-    j++;
-    //}
-  }
-
-  for (i = 1; i < nstat_names; i++) {
-    j = i;
-    p = stat_names[j];
-    while ((j > 0) && (strcmp(p, stat_names[j - 1]) < 0)) {
-      stat_names[j] = stat_names[j - 1];
-      j -= 1;
-    }
-    stat_names[j] = p;
-  }
-
-}
-
 static Action *
 testpage_callback(Continuation * cont, HTTPHdr *)
 {
@@ -550,7 +506,8 @@ initialize_all_global_stats()
                       local_state_dir, snap_file);
   Debug("stats", "stat snap filename %s", snap_filename);
 
-  stat_callback_init();
+  statPagesManager.register_http("stat", stat_callback);
+
   testpage_callback_init();
 
   read_stats_snap();
@@ -573,36 +530,39 @@ initialize_all_global_stats()
     }
   }
 
-  pmgmt->record_data->registerUpdateLockFunc(tmp_stats_lock_function);
+  // TODO: HMMMM, wtf does this do? The following is that this 
+  // function does:
+  // ink_atomic_swap_ptr(&this->f_update_lock, (void *) func)
+  //
+  // pmgmt->record_data->registerUpdateLockFunc(tmp_stats_lock_function);
 
 #ifdef DEBUG
   ink_mutex_init(&http_time_lock, "Http Time Function Lock");
   last_http_local_time = 0;
 #endif
 
-  initialize_http_stats();
-  initialize_cache_stats();
+  clear_http_handler_times();
 }
 
-void *
-tmp_stats_lock_function(UpdateLockAction action)
-{
-  stats_lock_function((void *) (&global_http_trans_stat_lock), action);
+//void *
+//tmp_stats_lock_function(UpdateLockAction action)
+//{
+//  stats_lock_function((void *) (&global_http_trans_stat_lock), action);
+//
+//  return NULL;
+//}
 
-  return NULL;
-}
-
-void *
-stats_lock_function(void *data, UpdateLockAction action)
-{
-  if (action == UPDATE_LOCK_ACQUIRE) {
-    STAT_LOCK_ACQUIRE((ink_stat_lock_t *) data);
-  } else {
-    STAT_LOCK_RELEASE((ink_stat_lock_t *) data);
-  }
-
-  return NULL;
-}
+//void *
+//stats_lock_function(void *data, UpdateLockAction action)
+//{
+//  if (action == UPDATE_LOCK_ACQUIRE) {
+//    STAT_LOCK_ACQUIRE((ink_stat_lock_t *) data);
+//  } else {
+//    STAT_LOCK_RELEASE((ink_stat_lock_t *) data);
+//  }
+//
+//  return NULL;
+//}
 
 void *
 dyn_stats_int_msecs_to_float_seconds_cb(void *data, void *res)
@@ -845,52 +805,6 @@ http_trans_stats_time_useconds_cb(void *data, void *res)
   return res;
 }
 
-
-void
-initialize_http_stats()
-{
-  ///////////////////////
-  // Transaction Stats //
-  ///////////////////////
-
-  ///////////////////
-  // Dynamic stats //
-  ///////////////////
-  ////////////////////////////////////////////////////////////////////////////////
-  // http - time and count of transactions classified by client's point of view //
-  //  the internal stat is in msecs, the output time is float seconds           //
-  ////////////////////////////////////////////////////////////////////////////////
-
-
-
-
-  clear_http_handler_times();
-}
-
-
-void
-initialize_cache_stats()
-{
-
-#ifdef TS_MICRO
-  pmgmt->record_data->registerStatUpdateFunc("proxy.process.stuffer.total_promises",
-                                             dyn_stats_count_cb, (void *) stuffer_total_promises);
-  pmgmt->record_data->registerStatUpdateFunc("proxy.process.stuffer.total_objects",
-                                             dyn_stats_count_cb, (void *) stuffer_total_objects);
-  pmgmt->record_data->registerStatUpdateFunc("proxy.process.stuffer.total_bytes_received",
-                                             dyn_stats_count_cb, (void *) stuffer_total_bytes_received);
-  pmgmt->record_data->registerStatUpdateFunc("proxy.process.stuffer.open_read_blocks",
-                                             dyn_stats_count_cb, (void *) stuffer_open_read_blocks);
-  pmgmt->record_data->registerStatUpdateFunc("proxy.process.stuffer.ram_cache_hits",
-                                             dyn_stats_count_cb, (void *) stuffer_ram_cache_hits);
-  pmgmt->record_data->registerStatUpdateFunc("proxy.process.stuffer.url_lookup_misses",
-                                             dyn_stats_count_cb, (void *) stuffer_url_lookup_misses);
-  pmgmt->record_data->registerStatUpdateFunc("proxy.process.stuffer.total_objects_pushed",
-                                             dyn_stats_count_cb, (void *) stuffer_total_objects_pushed);
-#endif
-
-}
-
 //////////////////////////////////////////////////////////////////////////////
 //
 //  TransactionMilestones::TransactionMilestones()
@@ -913,105 +827,3 @@ ua_begin(0), ua_read_header_done(0), ua_begin_write(0), ua_close(0), server_firs
 {
   return;
 }
-
-#ifdef DEBUG
-bool
-TransactionMilestones::invariant()
-{
-  /*
-     bool must_times_set = true;
-     bool order_correct = true;
-
-     #define PRINT_COND(cond) { fprintf(stderr,"internal ivry conflict: %s (%s:%d)\n", #cond, __FILE__, __LINE__); }
-     #define UNSET_IF_FAILS(v, cond) if (!(cond)) { PRINT_COND(cond); v = false; }
-     #define UIF(v, cond) UNSET_IF_FAILS(v, cond);
-
-     UIF(must_times_set, (user_agent_begin != 0));
-     UIF(must_times_set, (user_agent_begin_read != 0));
-     UIF(must_times_set, (user_agent_read_header_done != 0));
-     UIF(must_times_set, (user_agent_close != 0));
-     UIF(must_times_set, (state_machine_construct != 0));
-     UIF(must_times_set, (state_machine_destruct != 0));
-
-     /////////////////
-     // check order //
-     /////////////////
-     ///////////////////////////
-     // user agent milestones //
-     ///////////////////////////
-     UIF(order_correct,
-     ((user_agent_accept <= user_agent_begin_read) || (user_agent_accept == 0)));
-     UIF(order_correct, (user_agent_begin_read <= user_agent_read_header_done));
-     UIF(order_correct,
-     ((user_agent_read_header_done <= user_agent_begin_write) ||
-     (user_agent_begin_write == 0)));
-     UIF(order_correct, (user_agent_read_header_done <= user_agent_close));
-     UIF(order_correct,
-     ((user_agent_begin_write <= user_agent_close) || (user_agent_begin_write == 0)));
-     /////////////////////////////////
-     // user agent  -- data sources //
-     /////////////////////////////////
-     UIF(order_correct,
-     ((user_agent_begin <= origin_server_open_begin) ||
-     (origin_server_open_begin == 0)));
-     UIF(order_correct,
-     ((user_agent_begin <= raw_origin_server_connect_begin) ||
-     (raw_origin_server_connect_begin == 0)));
-     UIF(order_correct,
-     ((user_agent_begin <= cache_lookup_begin) || (cache_lookup_begin == 0)));
-     UIF(order_correct,
-     ((user_agent_begin <= transform_open_begin) || (transform_open_begin == 0)));
-     ///////////////////
-     // origin server //
-     ///////////////////
-     UIF(order_correct, (origin_server_open_begin <= origin_server_open_end));
-     UIF(order_correct,
-     ((origin_server_open_end <= origin_server_begin_write) ||
-     (origin_server_begin_write == 0)));
-     UIF(order_correct,
-     ((origin_server_open_end <= origin_server_begin_read) ||
-     (origin_server_begin_read == 0)));
-
-     UIF(order_correct, (origin_server_open_end <= origin_server_close));
-     UIF(order_correct, (origin_server_begin_read <= origin_server_read_header_done));
-     ///////////////////////
-     // raw origin server //
-     ///////////////////////
-     UIF(order_correct, (raw_origin_server_connect_begin <= raw_origin_server_connect_end));
-     UIF(order_correct, (raw_origin_server_connect_end <= raw_origin_server_begin_read_write));
-     UIF(order_correct, (raw_origin_server_connect_end <= raw_origin_server_close));
-     ///////////
-     // cache //
-     ///////////
-     UIF(order_correct, ((cache_lookup_begin <= cache_lookup_end) || (cache_lookup_end == 0)));
-     UIF(order_correct, ((cache_lookup_end <= cache_update_begin) || (cache_update_begin == 0)));
-     UIF(order_correct, (cache_update_begin <= cache_update_end));
-     UIF(order_correct, ((cache_lookup_end <= cache_open_read_begin) ||
-     (cache_open_read_begin == 0)));
-     UIF(order_correct, ((cache_lookup_end <= cache_open_write_begin) ||
-     (cache_open_write_begin == 0)));
-     UIF(order_correct, (cache_open_read_begin <= cache_open_read_end));
-     UIF(order_correct, (cache_open_write_begin <= cache_open_write_end));
-     UIF(order_correct, ((cache_open_read_end <= cache_read_begin) ||
-     (cache_read_begin == 0)));
-     UIF(order_correct, ((cache_open_write_end <= cache_write_begin) ||
-     (cache_write_begin == 0)));
-     UIF(order_correct, (cache_read_begin <= cache_read_end));
-     UIF(order_correct, (cache_write_begin <= cache_write_end));
-     ///////////////////
-     // transform JG  //
-     ///////////////////
-     UIF(order_correct, (transform_open_begin <= transform_open_end));
-     UIF(order_correct, ((transform_open_end <= transform_close) || (transform_close == 0)));
-     ///////////////////
-     // state machine //
-     ///////////////////
-     UIF(order_correct, (state_machine_construct <= state_machine_destruct));
-
-     return (must_times_set && order_correct);
-   */
-
-  return true;
-}
-
-#endif

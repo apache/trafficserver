@@ -401,17 +401,6 @@ HostDBProcessor::start(int)
   IOCORE_EstablishStaticConfigInt32(hostdb_disable_reverse_lookup, "proxy.config.hostdb.disable_reverse_lookup");
   IOCORE_EstablishStaticConfigInt32(hostdb_re_dns_on_reload, "proxy.config.hostdb.re_dns_on_reload");
   IOCORE_EstablishStaticConfigInt32(hostdb_migrate_on_demand, "proxy.config.hostdb.migrate_on_demand");
-  /* mgmt stuff
-     int64_t ii = pmgmt->record_data->readConfigInteger(
-     "proxy.config.hostdb.strict_round_robin", &found);
-     if (found) {
-     hostdb_strict_round_robin = (int32_t) ii;
-     pmgmt->record_data->registerConfigUpdateFunc(
-     "proxy.config.hostdb.strict_round_robin",config_int_cb,
-     (void*)&hostdb_strict_round_robin);
-     }
-   */
-
   IOCORE_EstablishStaticConfigInt32(hostdb_strict_round_robin, "proxy.config.hostdb.strict_round_robin");
   IOCORE_EstablishStaticConfigInt32(hostdb_cluster, "proxy.config.hostdb.cluster");
   IOCORE_EstablishStaticConfigInt32(hostdb_cluster_round_robin, "proxy.config.hostdb.cluster.round_robin");

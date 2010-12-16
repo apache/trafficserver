@@ -705,7 +705,7 @@ ClusterCom::handleMultiCastMessage(char *message)
   char *last, *line, ip[1024], hostname[1024];
   char tsver[128] = "Before 2.X";
   char cluster_name[1024] = "UNKNOWN";
-  RecordType type;
+  RecT type;
   ClusterPeerInfo *p;
   time_t peer_wall_clock,t;
   InkHashTableValue hash_value;
@@ -719,19 +719,11 @@ ClusterCom::handleMultiCastMessage(char *message)
      once about a cluster name or traffic server version mismatch */
   if ((line = ink_strtok_r(message, "\n", &last)) == NULL)
     goto Lbogus;                /* IP of sender */
-  // coverity[secure_coding]
-  if (strlen(line) >= sizeof(ip) || sscanf(line, "ip: %s", ip) != 1) {
 
-    /* Check to see if this a a pre-2.0 version.  1.1 sent cluster:
-     *   as the first header.  Since we do not have the IP addr when
-     *   we need to discard the packet, we can not log this by ip.
-     *   Just log the packet, and let 1.1 rest in peace */
-    if (strstr("cluster:", ip)) {
-      logClusterMismatch("UNKNOWN", TS_VER_MISMATCH, tsver);
-      return;
-    }
+  // coverity[secure_coding]
+  if (strlen(line) >= sizeof(ip) || sscanf(line, "ip: %s", ip) != 1)
     goto Lbogus;
-  }
+
   // FIX THIS: elam 02/23/1999
   //   Loopback disable is currently not working on NT.
   //   We will ignore our own multicast messages.
@@ -742,6 +734,7 @@ ClusterCom::handleMultiCastMessage(char *message)
   /* Make sure this is a message for the cluster we belong to */
   if ((line = ink_strtok_r(NULL, "\n", &last)) == NULL)
     goto Lbogus;                /* ClusterName of sender */
+
   // coverity[secure_coding]
   if (strlen(line) >= sizeof(cluster_name) || sscanf(line, "cluster: %s", cluster_name) != 1)
     goto Lbogus;
@@ -754,9 +747,9 @@ ClusterCom::handleMultiCastMessage(char *message)
   /* Make sure this a message from a Traffic Server of the same version */
   if ((line = ink_strtok_r(NULL, "\n", &last)) == NULL)
     goto Lbogus;                /* TS version of sender */
+
   // coverity[secure_coding]
-  if (strlen(line) >= sizeof(tsver) ||
-      sscanf(line, "tsver: %s", tsver) != 1 || strcmp(line + 7, appVersionInfo.VersionStr) != 0) {
+  if (strlen(line) >= sizeof(tsver) || sscanf(line, "tsver: %s", tsver) != 1 || strcmp(line + 7, appVersionInfo.VersionStr) != 0) {
     logClusterMismatch(ip, TS_VER_MISMATCH, tsver);
     return;
   }
@@ -768,7 +761,7 @@ ClusterCom::handleMultiCastMessage(char *message)
     handleMultiCastFilePacket(last, ip);
     return;
   } else if (strcmp("type: stat", line) == 0) { /* Statistics report */
-    type = CLUSTER;
+    type = RECT_CLUSTER;
   } else if (strcmp("type: alarm", line) == 0) {        /* Alarm report */
     handleMultiCastAlarmPacket(last, ip);
     return;
@@ -832,13 +825,6 @@ ClusterCom::handleMultiCastMessage(char *message)
   }
   peer_wall_clock = (time_t)tt;
 
-  if ((line = ink_strtok_r(NULL, "\n", &last)) == NULL)
-    goto Lbogus;
-  if (sscanf(line, "ctime: %" PRId64 "", &tt) != 1) {
-    mgmt_elog("[ClusterCom::handleMultiCastMessage] Invalid message-line(%d) '%s'\n", __LINE__, line);
-    return;
-  }
-
   /* Have we see this guy before? */
   ink_mutex_acquire(&(mutex));  /* Grab cluster lock to access hash table */
   if (ink_hash_table_lookup(peers, (InkHashTableKey) ip, &hash_value) == 0) {
@@ -888,7 +874,7 @@ ClusterCom::handleMultiCastMessage(char *message)
   p->delta = peer_wall_clock - our_wall_clock;
   p->manager_alive = 1;
 
-  ink_assert(type == CLUSTER);
+  ink_assert(type == RECT_CLUSTER);
   handleMultiCastStatPacket(last, p);
   ink_mutex_release(&(mutex));  /* Release cluster lock */
 
@@ -1404,7 +1390,7 @@ ClusterCom::sendSharedData(bool send_proxy_heart_beat)
  * broadcast packets. Basically the smarts to read the records values.
  */
 void
-ClusterCom::constructSharedGenericPacket(char *message, int max, int packet_type)
+ClusterCom::constructSharedGenericPacket(char *message, int max, RecT packet_type)
 {
   int running_sum = 0;          /* Make sure we never go over max */
   char tmp[1024];
@@ -1414,7 +1400,7 @@ ClusterCom::constructSharedGenericPacket(char *message, int max, int packet_type
   resolved_addr.s_addr = our_ip;
   running_sum = constructSharedPacketHeader(message, inet_ntoa(resolved_addr), max);
 
-  if (packet_type == NODE) {
+  if (packet_type == RECT_NODE) {
     ink_strncpy(&message[running_sum], "type: stat\n", (max - running_sum));
     running_sum += strlen("type: stat\n");
     ink_release_assert(running_sum < max);
@@ -1467,29 +1453,6 @@ ClusterCom::constructSharedGenericPacket(char *message, int max, int packet_type
   }
   ink_release_assert(running_sum < max);
 
-  /*
-   * Here we cheat a bit, in order to race through the list I am bypassing
-   * the accessor API functions. This could be done via them, however, the
-   * overhead for direct access is most likely smaller.
-   *
-   *  Big lock technology(tm)
-   */
-  ink_mutex_acquire(&lmgmt->record_data->mutex[packet_type]);
-
-  // TODO: This makes no sense, since the_records is never used. Disabled.
-#if 0
-  if (packet_type == CONFIG) {
-    the_records = &(lmgmt->record_data->config_data);
-  } else {
-    the_records = &(lmgmt->record_data->node_data);
-  }
-#endif
-
-  snprintf(tmp, sizeof(tmp), "ctime: %" PRId64 "\n", (int64_t)lmgmt->record_data->time_last_config_change);
-  ink_strncpy(&message[running_sum], tmp, (max - running_sum));
-  running_sum += strlen(tmp);
-  ink_release_assert(running_sum < max);
-
   int cnt = 0;
   for (int j = 0; j < g_num_records; j++) {
     RecRecord *rec = &(g_records[j]);
@@ -1528,7 +1491,6 @@ ClusterCom::constructSharedGenericPacket(char *message, int max, int packet_type
     ink_release_assert(running_sum < max);
   }
 
-  ink_mutex_release(&lmgmt->record_data->mutex[packet_type]);
   return;
 }                               /* End ClusterCom::constructSharedGenericPacket */
 
@@ -1536,7 +1498,7 @@ ClusterCom::constructSharedGenericPacket(char *message, int max, int packet_type
 void
 ClusterCom::constructSharedStatPacket(char *message, int max)
 {
-  constructSharedGenericPacket(message, max, NODE);
+  constructSharedGenericPacket(message, max, RECT_NODE);
   return;
 }                               /* End ClusterCom::constructSharedStatPacket */
 
@@ -1597,9 +1559,7 @@ ClusterCom::constructSharedFilePacket(char *message, int max)
     Rollback *rb;
 
     /* Some files are local only */
-    if (strcmp(line, "storage.config") == 0 ||
-        strcmp(line, "lm.config") == 0 ||       // legacy: should remove
-        strcmp(line, "internal.config") == 0) { // legacy: should remove
+    if (strcmp(line, "storage.config") == 0) {
       continue;
     }
 
@@ -2459,34 +2419,16 @@ checkBackDoor(int req_fd, char *message)
     }
     return true;
   } else if (strstr(message, "write ")) {
-    int id;
     char variable[1024], value[1024];
-    RecordType type;
 
     if (sscanf(message, "write %s %s", variable, value) != 2) {
       mgmt_elog("[ClusterCom::CBD] Invalid message-line(%d) '%s'\n", __LINE__, message);
       return false;
     }
-    if (lmgmt->record_data->idofRecord(variable, &id, &type)) {
-      switch (lmgmt->record_data->typeofRecord(id, type)) {
-      case INK_COUNTER:
-        lmgmt->record_data->setCounter(id, type, ink_atoi64(value));
-        break;
-      case INK_INT:
-        lmgmt->record_data->setInteger(id, type, ink_atoi64(value));
-        break;
-      case INK_FLOAT:
-        lmgmt->record_data->setFloat(id, type, atof(value));
-        break;
-      case INK_STRING:
-        lmgmt->record_data->setString(id, type, value);
-        break;
-      default:
-        break;
-      }
+    // TODO: I think this is correct, it used to do lmgmt->record_data-> ...
+    if (RecSetRecordConvert(variable, value) == REC_ERR_OKAY) {
       ink_strncpy(reply, "\nRecord Updated\n\n", sizeof(reply));
       mgmt_writeline(req_fd, reply, strlen(reply));
-
     } else {
       mgmt_elog("[checkBackDoor] Assignment to unknown variable requested '%s'\n", variable);
     }

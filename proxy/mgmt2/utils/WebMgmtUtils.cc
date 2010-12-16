@@ -24,8 +24,6 @@
 #include "libts.h"
 #include "Main.h"
 #include "WebMgmtUtils.h"
-#include "BaseRecords.h"
-#include "RecordsConfig.h"
 
 #ifdef HAVE_PCRE_PCRE_H
 #include <pcre/pcre.h>
@@ -830,8 +828,6 @@ processFormSubmission(char *submission)
       substituteUnsafeChars(name);
 
       // If the value is blank, store it as a null
-      //   since BaseRecords represents empty as NULL
-      //   as opposed to the empty string
       if (pairNum == 1) {
         value = NULL;
       } else {
@@ -890,8 +886,6 @@ processFormSubmission_noSubstitute(char *submission)
       name = xstrdup(pair[0]);
 
       // If the value is blank, store it as a null
-      //   since BaseRecords represents empty as NULL
-      //   as opposed to the empty string
       if (pairNum == 1) {
         value = NULL;
       } else {

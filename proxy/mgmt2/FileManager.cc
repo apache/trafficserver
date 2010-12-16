@@ -770,7 +770,7 @@ FileManager::WalkSnaps(ExpandingArray * snapList)
     snapshot_dir = new char[snapshot_dir_size];
     ink_assert(snapshot_dir);
     snprintf(snapshot_dir, snapshot_dir_size, "%s", "snapshots");
-    REC_setString("proxy.config.snapshot_dir", snapshot_dir);
+    RecSetRecordString("proxy.config.snapshot_dir", snapshot_dir);
   }
   //if(strncmp(snapshot_dir, config_dir, strlen(config_dir)))
   if (snapshot_dir[0] != '/')

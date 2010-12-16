@@ -423,7 +423,6 @@ RecSetRecord(RecT rec_type, const char *name, RecDataT data_type, RecData *data,
       if ((data_type != RECD_NULL) && (r1->data_type != data_type)) {
         err = REC_ERR_FAIL;
       } else {
-
         if (data_type == RECD_NULL) {
           ink_assert(data->rec_string);
           switch (r1->data_type) {
@@ -461,9 +460,7 @@ RecSetRecord(RecT rec_type, const char *name, RecDataT data_type, RecData *data,
         }
       }
       rec_mutex_release(&(r1->lock));
-
     } else {
-
       // We don't need to xstrdup() here as we will make copies of any
       // strings when we marshal them into our RecMessage buffer.
       RecRecord r2;
@@ -476,17 +473,13 @@ RecSetRecord(RecT rec_type, const char *name, RecDataT data_type, RecData *data,
         r2.stat_meta.data_raw = *data_raw;
       }
       err = send_set_message(&r2);
-
     }
-
   } else {
-
     // Add the record but do not set the 'registered' flag, as this
     // record really hasn't been registered yet.  Also, in order to
     // add the record, we need to have a rec_type, so if the user
     // calls RecSetRecord on a record we haven't registered yet, we
     // should fail out here.
-
     if ((rec_type == RECT_NULL) || (data_type == RECD_NULL)) {
       err = REC_ERR_FAIL;
       goto Ldone;
@@ -998,7 +991,7 @@ RecResetStatRecord(char *name)
 // RecResetStatRecord
 //------------------------------------------------------------------------
 int
-RecResetStatRecord(RecT type)
+RecResetStatRecord(RecT type, bool all)
 {
   int i, num_records;
   int err = REC_ERR_OKAY;
@@ -1011,7 +1004,8 @@ RecResetStatRecord(RecT type)
 
     if (REC_TYPE_IS_STAT(r1->rec_type) &&
         ((type == RECT_NULL) || (r1->rec_type == type)) &&
-        (r1->stat_meta.persist_type != RECP_NON_PERSISTENT) && (r1->data_type != RECD_STRING)) {
+        (all || (r1->stat_meta.persist_type != RECP_NON_PERSISTENT)) &&
+        (r1->data_type != RECD_STRING)) {
       if (i_am_the_record_owner(r1->rec_type)) {
         rec_mutex_acquire(&(r1->lock));
         if (!RecDataSet(r1->data_type, &(r1->data), &(r1->data_default))) {

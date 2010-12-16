@@ -231,8 +231,8 @@ LocalManager::processRunning()
   }
 }                               /* End LocalManager::processRunning */
 
-LocalManager::LocalManager(char *mpath, LMRecords * rd, bool proxy_on):
-BaseManager(), run_proxy(proxy_on), record_data(rd)
+LocalManager::LocalManager(char *mpath, bool proxy_on)
+  : BaseManager(), run_proxy(proxy_on)
 {
   NOWARN_UNUSED(mpath);
   bool found;
@@ -247,7 +247,7 @@ BaseManager(), run_proxy(proxy_on), record_data(rd)
   proxy_launch_outstanding = false;
   mgmt_shutdown_outstanding = false;
   proxy_running = 0;
-  REC_setInteger("proxy.node.proxy_running", 0);
+  RecSetRecordInt("proxy.node.proxy_running", 0);
   mgmt_sync_key = REC_readInteger("proxy.config.lm.sem_id", &found);
   if (!found || mgmt_sync_key <= 0) {
     mgmt_log("Bad or missing proxy.config.lm.sem_id value; using default id %d\n", MGMT_SEMID_DEFAULT);
@@ -521,7 +521,7 @@ LocalManager::initMgmtProcessServer()
     mgmt_fatal(stderr, "[LocalManager::initMgmtProcessServer] Unable to listen on socket exiting\n");
   }
 
-  REC_setInteger("proxy.node.restarts.manager.start_time", manager_started_at);
+  RecSetRecordInt("proxy.node.restarts.manager.start_time", manager_started_at);
 }                               /* End LocalManager::initMgmtProcessServer */
 
 /*
@@ -635,9 +635,6 @@ LocalManager::pollMgmtProcessServer()
                       "Server Process terminated due to Sig %d: %s\n", sig, strsignal(sig));
           }
 
-//              watched_process_fd = watched_process_pid = -1;
-          //      record_data->removeExternalRecords(PROCESS, watched_process_pid);
-
           if (lmgmt->run_proxy) {
             mgmt_elog("[Alarms::signalAlarm] Server Process was reset\n");
             lmgmt->alarm_keeper->signalAlarm(MGMT_ALARM_PROXY_PROCESS_DIED);
@@ -650,7 +647,7 @@ LocalManager::pollMgmtProcessServer()
             proxy_running--;
           }
           proxy_started_at = -1;
-          REC_setInteger("proxy.node.proxy_running", 0);
+          RecSetRecordInt("proxy.node.proxy_running", 0);
         }
 
         num--;
@@ -679,7 +676,7 @@ LocalManager::handleMgmtMsgFromProcesses(MgmtMessageHdr * mh)
     proxy_running++;
     proxy_launch_pid = -1;
     proxy_launch_outstanding = false;
-    REC_setInteger("proxy.node.proxy_running", 1);
+    RecSetRecordInt("proxy.node.proxy_running", 1);
     break;
 
   case MGMT_SIGNAL_MACHINE_UP:
@@ -781,7 +778,7 @@ LocalManager::handleMgmtMsgFromProcesses(MgmtMessageHdr * mh)
       }
       switch (stype) {
       case INK_INT:
-        REC_setInteger(var_name, ink_atoi64(var_value));
+        RecSetRecordInt(var_name, ink_atoi64(var_value));
         break;
       case INK_COUNTER:
       case INK_FLOAT:
@@ -957,7 +954,7 @@ LocalManager::sendMgmtMsgToProcesses(MgmtMessageHdr * mh)
               proxy_running--;
             }
             proxy_started_at = -1;
-            REC_setInteger("proxy.node.proxy_running", 0);
+            RecSetRecordInt("proxy.node.proxy_running", 0);
             // End of TS down
           } else {
             // TS is still up, but the connection is lost
@@ -1021,11 +1018,9 @@ LocalManager::signalEvent(int msg_id, const char *data_raw, int data_len)
 void
 LocalManager::processEventQueue()
 {
-
   bool handled_by_mgmt;
 
   while (!queue_is_empty(mgmt_event_queue)) {
-
     handled_by_mgmt = false;
 
     MgmtMessageHdr *mh = (MgmtMessageHdr *) dequeue(mgmt_event_queue);
@@ -1062,7 +1057,6 @@ LocalManager::processEventQueue()
     }
 
     xfree(mh);
-
   }
 
 }                               /* End LocalManager::processEventQueue */
@@ -1136,8 +1130,8 @@ LocalManager::startProxy()
     proxy_launch_outstanding = true;
     proxy_started_at = time(NULL);
     ++proxy_launch_count;
-    REC_setInteger("proxy.node.restarts.proxy.start_time", proxy_started_at);
-    REC_setInteger("proxy.node.restarts.proxy.restart_count", proxy_launch_count);
+    RecSetRecordInt("proxy.node.restarts.proxy.start_time", proxy_started_at);
+    RecSetRecordInt("proxy.node.restarts.proxy.restart_count", proxy_launch_count);
   } else {
     int res, i = 0, n;
     char real_proxy_options[2048], *options[32], *last, *tok;

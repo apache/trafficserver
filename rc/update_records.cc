@@ -32,13 +32,6 @@
   into the new records.config file.  For example, deprecated records
   specified as input should not be migrated to the new config file.
   This is useful for doing upgrades.
-
-  Recall that in Tomcat moving forward, records.config no longer contains
-  a comprehensive set of all configs in the system.  Also, all statistics
-  have been removed from records.config.  lm.config has been deprecated,
-  and the remaining config variables in lm.config have been merged into
-  records.config.
-
  */
 
 #include "ink_config.h"
@@ -48,8 +41,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "MMH.h"
 #include "SimpleTokenizer.h"
 #include "RecordsConfig.h"
+
+// Ugly hack, but lets us loop through all configs
+extern RecordElement RecordsConfig[];   // big struct of all system records
 
 //-------------------------------------------------------------------------
 // structs
@@ -75,8 +72,8 @@ struct RecordRenameMapElement
 //-------------------------------------------------------------------------
 
 RecordRenameMapElement RecordRenameMap[] = {
-
   // 4.x to 5.x variable renamings
+  // Left here as an example
   {"proxy.config.cluster.type", "proxy.local.cluster.type"},
 
   // place future variables below ^_^
@@ -86,6 +83,7 @@ RecordRenameMapElement RecordRenameMap[] = {
 
 // blacklist these records (upgrade only!)
 const char *RecordBlackList[] = {
+  // Left here as an example
   "proxy.config.socks.socks_version",
   NULL                          // array terminator
 };
@@ -274,23 +272,22 @@ generate_b_ht_from_b_ht_buf()
 int
 generate_rec_ht_from_RecordsConfig()
 {
-
   ConfigEntry *ce = 0;
   RecordElement *re = RecordsConfig;
 
-  while (re->value_type != INVALID) {
+  while (re->value_type != RECD_NULL) {
     if ((ce = (ConfigEntry *) malloc(sizeof(ConfigEntry))) == 0) {
       printf("[Error] Could not allocate memory\n");
       return -1;
     }
     switch (re->type) {
-    case CONFIG:
+    case RECT_CONFIG:
       ce->type = config_str;
       break;
-    case LOCAL:
+    case RECT_LOCAL:
       ce->type = local_str;
       break;
-    case PLUGIN:
+    case RECT_PLUGIN:
       ce->type = plugin_str;
       break;
     default:

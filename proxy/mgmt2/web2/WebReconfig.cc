@@ -97,16 +97,6 @@ setUpWebCB()
 
   ink_assert(RecRegisterConfigUpdateCb("proxy.config.admin.load_factor", WebConfigCB, (void *) LOAD_FACTOR_CB)
              == REC_ERR_OKAY);
-  // FIXME: don't think this is necessary since it's taken care of by
-  // FileManager; need to confirm
-  /*
-     ink_assert(
-     lmgmt->record_data->registerConfigUpdateFunc("proxy.config.admin.ip_allow.filename",
-     WebConfigCB, (void*)MGMT_IP_ALLOW));
-   */
-
-  // file callback must be handled here and not through the
-  // FileManager... because the lang_dict filename can be changed
 
   ink_assert(RecRegisterConfigUpdateCb("proxy.config.admin.lang_dict", WebConfigCB, (void *) LANG_DICT_CB)
              == REC_ERR_OKAY);

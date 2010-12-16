@@ -49,21 +49,16 @@ bin_PROGRAMS = traffic_manager
 libmgmt_p_a_SOURCES = \
   BaseManager.cc \
   BaseManager.h \
-  BaseRecords.cc \
-  BaseRecords.h \
   MgmtDBM.cc \
   MgmtDBM.h \
   MgmtDefs.h \
   ProcessManager.cc \
   ProcessManager.h \
-  ProcessRecords.cc \
-  ProcessRecords.h \
   RecordsConfig.cc \
   RecordsConfig.h
 
 librecords_a_CPPFLAGS = -DFOR_INSTALL $(AM_CPPFLAGS)
 librecords_a_SOURCES = \
-  BaseRecords.h \
   MgmtDefs.h \
   RecordsConfig.cc \
   RecordsConfig.h
@@ -78,12 +73,8 @@ traffic_manager_SOURCES = \
   AutoConf.h \
   BaseManager.cc \
   BaseManager.h \
-  BaseRecords.cc \
-  BaseRecords.h \
   FileManager.cc \
   FileManager.h \
-  LMRecords.cc \
-  LMRecords.h \
   LocalManager.cc \
   LocalManager.h \
   Main.cc \

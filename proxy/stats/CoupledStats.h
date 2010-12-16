@@ -36,7 +36,6 @@
 
 #include "ink_resource.h"
 #include "ink_assert.h"
-#include "BaseRecords.h"
 #include "ProxyConfig.h"
 #include "Stats.h"
 

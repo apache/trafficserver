@@ -81,8 +81,8 @@ startProcessManager(void *arg)
   return ret;
 }                               /* End startProcessManager */
 
-ProcessManager::ProcessManager(bool rlm, char *mpath, ProcessRecords * rd):
-BaseManager(), require_lm(rlm), mgmt_sync_key(0), record_data(rd), local_manager_sockfd(0)
+ProcessManager::ProcessManager(bool rlm, char *mpath):
+BaseManager(), require_lm(rlm), mgmt_sync_key(0), local_manager_sockfd(0)
 {
   NOWARN_UNUSED(mpath);
   ink_strncpy(pserver_path, Layout::get()->runtimedir, sizeof(pserver_path));
@@ -92,15 +92,9 @@ BaseManager(), require_lm(rlm), mgmt_sync_key(0), record_data(rd), local_manager
   // Making the process_manager thread a spinning thread to start traffic server
   // as quickly as possible. Will reset this timeout when reconfigure()
   timeout = 0;
-
+  pid = getpid();
 }                               /* End ProcessManager::ProcessManager */
 
-
-// This function must be call after RecProcessInitMessage() has been invoked,
-// otherwise, REC_readInteger would result in randome values.
-#ifdef DEBUG_MGMT
-static void *drainBackDoor(void *arg);
-#endif
 
 void
 ProcessManager::reconfigure()
@@ -109,13 +103,6 @@ ProcessManager::reconfigure()
   timeout = REC_readInteger("proxy.config.process_manager.timeout", &found);
   ink_assert(found);
 
-#ifdef DEBUG_MGMT
-  int enable_mgmt_port = REC_readInteger("proxy.config.process_manager.enable_mgmt_port", &found);
-  ink_assert(found);
-  if (enable_mgmt_port) {
-    ink_thread_create(drainBackDoor, 0);
-  }
-#endif /* DEBUG_MGMT */
   return;
 }                               /* End ProcessManager::reconfigure */
 
@@ -210,7 +197,6 @@ ProcessManager::initLMConnection()
   MgmtMessageHdr mh_hdr;
   MgmtMessageHdr *mh_full;
   int data_len;
-  pid_t pid;
   char *sync_key_raw = NULL;
 
 #ifndef _WIN32
@@ -240,8 +226,6 @@ ProcessManager::initLMConnection()
     mgmt_fatal(stderr, "[ProcessManager::initLMConnection] Connect failed\n");
   }
 
-  /* Say HI! and give your name(pid). */
-  pid = record_data->pid;
   data_len = sizeof(pid_t);
   mh_full = (MgmtMessageHdr *) alloca(sizeof(MgmtMessageHdr) + data_len);
   mh_full->msg_id = MGMT_SIGNAL_PID;
@@ -276,8 +260,7 @@ ProcessManager::initLMConnection()
     mgmt_fatal(stderr, "[ProcessManager::initLMConnection] Error opening named pipe: %s\n", ink_last_err());
   }
 
-  /* Say HI! and give your name(pid). */
-  sprintf(message, "pid: %ld", record_data->pid);
+  sprintf(message, "pid: %ld", pid);
   if (mgmt_write_pipe(local_manager_hpipe, message, strlen(message)) != 0) {
     mgmt_fatal(stderr, "[ProcessManager::initLMConnection] Error writing message! %s\n", ink_last_err());
   }
@@ -381,324 +364,48 @@ ProcessManager::handleMgmtMsgFromLM(MgmtMessageHdr * mh)
 {
   char *data_raw = (char *) mh + sizeof(MgmtMessageHdr);
 
-  if (!record_data->ignore_manager) {   /* Check if we are speaking to the manager */
-    switch (mh->msg_id) {
-    case MGMT_EVENT_SHUTDOWN:
-      signalMgmtEntity(MGMT_EVENT_SHUTDOWN);
-      break;
-    case MGMT_EVENT_RESTART:
-      signalMgmtEntity(MGMT_EVENT_RESTART);
-      break;
-    case MGMT_EVENT_CLEAR_STATS:
-      signalMgmtEntity(MGMT_EVENT_CLEAR_STATS);
-      break;
-    case MGMT_EVENT_ROLL_LOG_FILES:
-      signalMgmtEntity(MGMT_EVENT_ROLL_LOG_FILES);
-      break;
-    case MGMT_EVENT_PLUGIN_CONFIG_UPDATE:
-      if (data_raw != NULL && data_raw[0] != '\0') {
-        global_config_cbs->invoke(data_raw);
-      }
-      break;
-    case MGMT_EVENT_HTTP_CLUSTER_DELTA:
-      signalMgmtEntity(MGMT_EVENT_HTTP_CLUSTER_DELTA, data_raw);
-      break;
-    case MGMT_EVENT_CONFIG_FILE_UPDATE:
-      /*
-         librecords -- we don't do anything in here because we are traffic_server
-         and we are not the owner of proxy.config.* variables.
-         Even if we trigger the sync_required bit, by
-         RecSetSynRequired, the sync. message will send back to
-         traffic_manager. And traffic_manager founds out that, the
-         actual value of the config variable didn't changed.
-         At the end, the sync_required bit is not set and we will
-         never get notified and callbacks are never invoked.
-
-         The solution is to set the sync_required bit on the
-         manager side. See LocalManager::sendMgmtMsgToProcesses()
-         for details.
-       */
-      break;
-    case MGMT_EVENT_LIBRECORDS:
-      signalMgmtEntity(MGMT_EVENT_LIBRECORDS, data_raw, mh->data_len);
-      break;
-    default:
-      mgmt_elog(stderr, "[ProcessManager::pollLMConnection] unknown type %d\n", mh->msg_id);
-      break;
+  switch (mh->msg_id) {
+  case MGMT_EVENT_SHUTDOWN:
+    signalMgmtEntity(MGMT_EVENT_SHUTDOWN);
+    break;
+  case MGMT_EVENT_RESTART:
+    signalMgmtEntity(MGMT_EVENT_RESTART);
+    break;
+  case MGMT_EVENT_CLEAR_STATS:
+    signalMgmtEntity(MGMT_EVENT_CLEAR_STATS);
+    break;
+  case MGMT_EVENT_ROLL_LOG_FILES:
+    signalMgmtEntity(MGMT_EVENT_ROLL_LOG_FILES);
+    break;
+  case MGMT_EVENT_PLUGIN_CONFIG_UPDATE:
+    if (data_raw != NULL && data_raw[0] != '\0') {
+      global_config_cbs->invoke(data_raw);
     }
+    break;
+  case MGMT_EVENT_HTTP_CLUSTER_DELTA:
+    signalMgmtEntity(MGMT_EVENT_HTTP_CLUSTER_DELTA, data_raw);
+    break;
+  case MGMT_EVENT_CONFIG_FILE_UPDATE:
+    /*
+      librecords -- we don't do anything in here because we are traffic_server
+      and we are not the owner of proxy.config.* variables.
+      Even if we trigger the sync_required bit, by
+      RecSetSynRequired, the sync. message will send back to
+      traffic_manager. And traffic_manager founds out that, the
+      actual value of the config variable didn't changed.
+      At the end, the sync_required bit is not set and we will
+      never get notified and callbacks are never invoked.
+
+      The solution is to set the sync_required bit on the
+      manager side. See LocalManager::sendMgmtMsgToProcesses()
+      for details.
+    */
+    break;
+  case MGMT_EVENT_LIBRECORDS:
+    signalMgmtEntity(MGMT_EVENT_LIBRECORDS, data_raw, mh->data_len);
+    break;
+  default:
+    mgmt_elog(stderr, "[ProcessManager::pollLMConnection] unknown type %d\n", mh->msg_id);
+    break;
   }
 }
-
-bool
-ProcessManager::addPluginCounter(const char *name, MgmtIntCounter value)
-{
-  if (record_data->addPluginCounter(name, value) == true) {
-    char msg[512];
-    sprintf(msg, "%s %d %" PRId64 "", name, INK_COUNTER, value);
-    signalManager(MGMT_SIGNAL_PLUGIN_ADD_REC, msg);
-    return true;
-  }
-
-  return false;
-}
-
-bool
-ProcessManager::addPluginInteger(const char *name, MgmtInt value)
-{
-  if (record_data->addPluginInteger(name, value) == true) {
-    char msg[512];
-    sprintf(msg, "%s %d %" PRId64 "", name, INK_INT, value);
-    pmgmt->signalManager(MGMT_SIGNAL_PLUGIN_ADD_REC, msg);
-    return true;
-  }
-
-  return false;
-}
-
-bool
-ProcessManager::addPluginFloat(const char *name, MgmtFloat value)
-{
-  if (record_data->addPluginFloat(name, value) == true) {
-    char msg[512];
-    sprintf(msg, "%s %d %.5f", name, INK_FLOAT, value);
-    pmgmt->signalManager(MGMT_SIGNAL_PLUGIN_ADD_REC, msg);
-    return true;
-  }
-
-  return false;
-}
-
-bool
-ProcessManager::addPluginString(const char *name, MgmtString value)
-{
-  if (record_data->addPluginString(name, value) == true) {
-    char msg[512];
-    sprintf(msg, "%s %d %s", name, INK_STRING, value);
-    pmgmt->signalManager(MGMT_SIGNAL_PLUGIN_ADD_REC, msg);
-    return true;
-  }
-
-  return false;
-}
-
-#ifdef DEBUG_MGMT
-static bool checkBackDoorP(int req_fd, char *message);
-/*
- * drainBackDoor(...)
- *   This function is blocking, it never returns. It is meant to allow for
- * continuous draining of the network.
- */
-static void *
-drainBackDoor(void *arg)
-{
-  bool found;
-  int port, fd, one = 1;
-  //
-  // Don't allocate the message buffer on the stack..
-  //
-  const int message_size = 61440;
-  char *message = new char[message_size];
-  fd_set fdlist;
-  struct sockaddr_in cli_addr, serv_addr;
-  void *ret = arg;
-
-  while (!pmgmt) {
-    mgmt_sleep_sec(1);
-  }
-
-  port = (int)
-    REC_readInteger("proxy.config.process_manager.mgmt_port", &found);
-  if (!found) {
-    mgmt_log(stderr, "[drainBackDoor] Unable to get mgmt port config variable\n");
-  }
-
-  if ((fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-    mgmt_log(stderr, "[drainBackDoor] Unable to create socket\n");
-    return ret;
-  }
-
-  if (fcntl(fd, F_SETFD, 1) < 0) {
-    mgmt_fatal(stderr, "[drainBackDoor] Unable to set close-on-exec\n");
-  }
-
-  if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (char *) &one, sizeof(int)) < 0) {
-    mgmt_log(stderr, "[drainBackDoor] Unable to setsockopt\n");
-    return ret;
-  }
-
-  memset(&serv_addr, 0, sizeof(serv_addr));
-  serv_addr.sin_family = AF_INET;
-  serv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
-  serv_addr.sin_port = htons(port);
-
-  if ((bind(fd, (struct sockaddr *) &serv_addr, sizeof(serv_addr))) < 0) {
-    mgmt_log(stderr, "[drainBackDoor] Unable to bind socket\n");
-    return ret;
-  }
-
-  if ((listen(fd, 10)) < 0) {
-    mgmt_log(stderr, "[drainBackDoor] Unable to listen on socket\n");
-    return ret;
-  }
-
-  for (;;) {                    /* Loop draining mgmt network */
-
-    memset(message, 0, message_size);
-    FD_ZERO(&fdlist);
-    FD_SET(fd, &fdlist);
-    mgmt_select(FD_SETSIZE, &fdlist, NULL, NULL, NULL);
-
-    if (FD_ISSET(fd, &fdlist)) {        /* Request */
-      int clilen = sizeof(cli_addr);
-      int req_fd = accept(fd, (struct sockaddr *) &cli_addr, &clilen);
-
-      if (fcntl(req_fd, F_SETFD, 1) < 0) {
-        mgmt_elog(stderr, "[drainBackDoor] Unable to set close on exec flag\n");
-        close_socket(req_fd);
-        continue;
-      }
-
-      if (req_fd < 0) {
-        mgmt_elog(stderr, "[drainBackDoor] Request accept failed\n");
-        continue;
-      } else {
-
-        if (mgmt_readline(req_fd, message, 61440) > 0 && !checkBackDoorP(req_fd, message)) {    /* Heh... */
-          mgmt_elog(stderr, "[drainBackDoor] Received unknown message: '%s'\n", message);
-          close_socket(req_fd);
-          continue;
-        }
-      }
-      close_socket(req_fd);
-    }
-  }
-  return ret;
-}                               /* End drainBackDoor */
-
-
-/*
- * checkBackDoorP(...)
- *   Function checks for "backdoor" inktomi commands on dedicated back door port.
- */
-static bool
-checkBackDoorP(int req_fd, char *message)
-{
-  char reply[4096];
-
-  if (strstr(message, "read ")) {
-    int id;
-    char variable[1024];
-    RecordType type;
-    InkHashTableValue hash_value;
-
-    if (sscanf(message, "read %s\n", variable) != 1) {
-      mgmt_elog(stderr, "[CBDP] Bad message(%d) '%s'\n", __LINE__, message);
-      return false;
-    }
-
-    if (pmgmt->record_data->idofRecord(variable, &id, &type)) {
-
-      ink_mutex_acquire(&(pmgmt->record_data->mutex[type]));
-      if (pmgmt->record_data->record_type_map->mgmt_hash_table_lookup((InkHashTableKey) type, &hash_value) != 0) {
-        Records *the_records = (Records *) hash_value;
-        switch (the_records->recs[id].stype) {
-        case INK_COUNTER:
-          sprintf(reply, "\nRecord '%s' Val: '%" PRId64 "'\n", the_records->recs[id].name,
-                      the_records->recs[id].data.counter_data);
-          break;
-        case INK_INT:
-          sprintf(reply, "\nRecord: '%s' Val: '%" PRId64 "'\n", the_records->recs[id].name,
-                      the_records->recs[id].data.int_data);
-          break;
-        case INK_FLOAT:
-          sprintf(reply, "\nRecord: '%s' Val: '%f'\n", the_records->recs[id].name,
-                  the_records->recs[id].data.float_data);
-          break;
-        case INK_STRING:
-          if (the_records->recs[id].name) {
-            sprintf(reply, "\nRecord: '%s' Val: '%s'\n", the_records->recs[id].name,
-                    the_records->recs[id].data.string_data);
-          } else {
-            sprintf(reply, "\nRecord: '%s' Val: NULL\n", the_records->recs[id].name);
-          }
-          break;
-        default:
-          break;
-        }
-        mgmt_writeline(req_fd, reply, strlen(reply));
-      }
-      ink_mutex_release(&(pmgmt->record_data->mutex[type]));
-    } else {
-      mgmt_elog(stderr, "[checkBackDoorP] Unknown variable requested '%s'\n", variable);
-    }
-    return true;
-  } else if (strstr(message, "write ")) {
-    int id;
-    char variable[1024], value[1024];
-    RecordType type;
-
-    if (sscanf(message, "write %s %s", variable, value) != 2) {
-      mgmt_elog(stderr, "[CBDP] Bad message(%d) '%s'\n", __LINE__, message);
-      return false;
-    }
-    if (pmgmt->record_data->idofRecord(variable, &id, &type)) {
-      switch (pmgmt->record_data->typeofRecord(id, type)) {
-      case INK_COUNTER:
-        pmgmt->record_data->setCounter(id, type, ink_atoi64(value));
-        break;
-      case INK_INT:
-        pmgmt->record_data->setInteger(id, type, ink_atoi64(value));
-        break;
-      case INK_FLOAT:
-        pmgmt->record_data->setFloat(id, type, atof(value));
-        break;
-      case INK_STRING:
-        pmgmt->record_data->setString(id, type, value);
-        break;
-      default:
-        break;
-      }
-      strcpy(reply, "\nRecord Updated\n\n");
-      mgmt_writeline(req_fd, reply, strlen(reply));
-
-    } else {
-      mgmt_elog(stderr, "[checkBackDoorP] Assignment to unknown variable requested '%s'\n", variable);
-    }
-    return true;
-  } else if (strstr(message, "signal ")) {
-    int id;
-    char value[1024];
-    RecordType type;
-
-    if (sscanf(message, "signal %s", value) != 1) {
-      mgmt_elog(stderr, "[CBDP] Bad message(%d) '%s'\n", __LINE__, message);
-      return false;
-    }
-    if (pmgmt->record_data->idofRecord(value, &id, &type) && type == CONFIG) {
-      ink_mutex_acquire(&(pmgmt->record_data->mutex[CONFIG]));
-      pmgmt->record_data->config_data.recs[id].changed = true;
-      ink_mutex_release(&(pmgmt->record_data->mutex[CONFIG]));
-    } else {
-      mgmt_elog(stderr, "[checkBackDoorP] Unknown signal change: '%s'\n", value);
-    }
-    return true;
-  } else if (strstr(message, "toggle_ignore")) {
-
-    if (pmgmt->record_data->ignore_manager) {
-      mgmt_log(stderr, "[checkBackDoorP] Now ignoring lm\n");
-      pmgmt->record_data->ignore_manager = true;
-    } else {
-      mgmt_log(stderr, "[checkBackDoorP] Now listening to lm\n");
-      pmgmt->record_data->ignore_manager = false;
-    }
-    return true;
-  } else if (strstr(message, "shutdown")) {
-    char *reply = "[checkBackDoorP] Shutting down\n";
-    pmgmt->signalMgmtEntity(MGMT_EVENT_SHUTDOWN);
-    mgmt_writeline(req_fd, reply, strlen(reply));
-    return true;
-  }
-  return false;
-}                               /* End checkBackDoorP */
-
-#endif /* DEBUG_MGMT */
