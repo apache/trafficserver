@@ -2,6 +2,9 @@
 
 Changes with Apache Traffic Server 2.1.5
 
+  *) Parse Range: requests a bit better. Prior, a request like like Range: bytes=100-200 would 
+   return 0-200. Additionally, Range: bytes=100- would not parse properly. 
+
   *) Migrate from our own int64 (et.al) to int64_t / stdint types. This also
    changes the SDK, so ts/ts.h users should now use int64_t etc. [TS-594].
 
