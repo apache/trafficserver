@@ -360,7 +360,6 @@ overviewRecord::readString(const char *name, bool * found)
     rec_status = RecGetRecordOrderAndId(name, &order, NULL);
     if (rec_status == REC_ERR_OKAY) {
       order -= node_rec_first_ix; // Offset
-      printf("LOCAL NAME IS %s\n", node_rec_data.recs[order].name);
       ink_release_assert(order < node_rec_data.num_recs);
       ink_debug_assert(order < node_rec_data.num_recs);
       rec = xstrdup(node_rec_data.recs[order].data.rec_string);

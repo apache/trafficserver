@@ -851,15 +851,11 @@ LogAccess::marshal_record(char *record, char *buf)
   bool found = false;
 
   if (RecGetRecordDataType(record, &stype) != REC_ERR_OKAY) {
-
     out_buf = "INVALID_RECORD";
     num_chars = 15;
     ink_debug_assert(::strlen(out_buf) + 1 == num_chars);
-
   } else {
-
     if (LOG_INTEGER == stype || LOG_COUNTER == stype) {
-
       // we assume MgmtInt and MgmtIntCounter are int64_t for the
       // conversion below, if this ever changes we should modify
       // accordingly
@@ -876,15 +872,11 @@ LogAccess::marshal_record(char *record, char *buf)
 
         out_buf = LogUtils::int64_to_str(ascii_buf, max_chars, val, &num_chars);
         ink_debug_assert(out_buf);
-
       } else {
-
         out_buf = (char *) record_not_found_msg;
         num_chars = record_not_found_chars;
       }
-
     } else if (LOG_FLOAT == stype) {
-
       // we assume MgmtFloat is at least a float for the conversion below
       // (the conversion itself assumes a double because of the %e)
       // if this ever changes we should modify accordingly
@@ -918,9 +910,7 @@ LogAccess::marshal_record(char *record, char *buf)
         out_buf = (char *) record_not_found_msg;
         num_chars = record_not_found_chars;
       }
-
     } else if (LOG_STRING == stype) {
-
       out_buf = REC_readString(record, &found);
 
       if (found) {
@@ -945,9 +935,7 @@ LogAccess::marshal_record(char *record, char *buf)
         out_buf = (char *) record_not_found_msg;
         num_chars = record_not_found_chars;
       }
-
     } else {
-
       out_buf = "INVALID_MgmtType";
       num_chars = 17;
       ink_debug_assert(!"invalid MgmtType for requested record");
@@ -1040,7 +1028,6 @@ LogAccess::unmarshal_with_map(int64_t code, char *dest, int len, Ptr<LogFieldAli
   int codeStrLen;
 
   switch (map->asString(code, dest, len, (size_t *) & codeStrLen)) {
-
   case LogFieldAliasMap::INVALID_INT:
     if (msg) {
       const int bufSize = 64;

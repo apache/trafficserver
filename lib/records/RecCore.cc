@@ -422,46 +422,6 @@ RecGetRecordCounter(const char *name, RecCounter * rec_counter, bool lock)
   return err;
 }
 
-int
-RecGetRecordGeneric_Xmalloc(const char *name, RecString * rec_string, bool lock)
-{
-  int err;
-
-  RecDataT data_type = RECD_INT;
-  if ((err = RecGetRecordDataType(name, &data_type, lock))
-      != REC_ERR_OKAY) {
-    return err;
-  }
-
-  RecData data;
-  if ((err = RecGetRecord_Xmalloc(name, data_type, &data, lock))
-      != REC_ERR_OKAY) {
-    return err;
-  }
-
-  *rec_string = (RecString) xmalloc(sizeof(char) * 1024);
-  memset(*rec_string, 0, 1024);
-  switch (data_type) {
-  case RECD_INT:
-    snprintf(*rec_string, 1023, "%" PRId64 "", data.rec_int);
-    break;
-  case RECD_FLOAT:
-    snprintf(*rec_string, 1023, "%f", data.rec_float);
-    break;
-  case RECD_STRING:
-    snprintf(*rec_string, 1023, "%s", data.rec_string);
-    break;
-  case RECD_COUNTER:
-    snprintf(*rec_string, 1023, "%" PRId64 "", data.rec_counter);
-    break;
-  default:
-    return REC_ERR_FAIL;
-    break;
-  }
-
-  return err;
-}
-
 
 //-------------------------------------------------------------------------
 // RecGetRec Attributes
@@ -1083,27 +1043,13 @@ REC_readString(const char *name, bool * found, bool lock)
 
 
 //-------------------------------------------------------------------------
-// REC_SignalAlarm (TM) & REC_SignalManager (TS)
+// REC_SignalManager (TS)
 //-------------------------------------------------------------------------
 #if defined (REC_BUILD_MGMT2)
 
 #if defined(LOCAL_MANAGER)
 
 #include "LocalManager.h"
-
-#define RecSignalError(_buf, _already) \
-{ \
-  if(_already == false) RecSignalManager(REC_SIGNAL_CONFIG_ERROR, _buf); \
-  _already = true; \
-  RecLog(DL_Warning, _buf); \
-}
-
-void
-RecSignalAlarm(int id, char *msg)
-{
-  ink_debug_assert(lmgmt);
-  lmgmt->signalAlarm(id, msg);
-}
 
 void
 RecSignalManager(int id, const char *msg)
@@ -1122,20 +1068,6 @@ RecRegisterManagerCb(int _signal, RecManagerCb _fn, void *_data)
 
 #include "ProcessManager.h"
 
-#define RecSignalError(_buf, _already) \
-{ \
-  if(_already == false) RecSignalManager(REC_ALARM_PROXY_CONFIG_ERROR, _buf); \
-  _already = true; \
-  RecLog(DL_Error, _buf); \
-}
-
-void
-RecSignalAlarm(int id, char *msg)
-{
-  REC_NOWARN_UNUSED(id);
-  REC_NOWARN_UNUSED(msg);
-}
-
 void
 RecSignalManager(int id, const char *msg)
 {
@@ -1152,18 +1084,6 @@ RecRegisterManagerCb(int _signal, RecManagerCb _fn, void *_data)
 #endif // LOCAL_MANAGER
 
 #else
-
-#define RecSignalError(_buf, _already) \
-{ \
-  RecLog(DL_Error, _buf); \
-}
-
-void
-RecSignalAlarm(int id, char *msg)
-{
-  REC_NOWARN_UNUSED(id);
-  RecLog(DL_Warning, msg);
-}
 
 void
 RecSignalManager(int id, const char *msg)

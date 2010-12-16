@@ -105,8 +105,6 @@ int RecGetRecordFloat(const char *name, RecFloat * rec_float, bool lock = true);
 int RecGetRecordString(const char *name, char *buf, int buf_len, bool lock = true);
 int RecGetRecordString_Xmalloc(const char *name, RecString * rec_string, bool lock = true);
 int RecGetRecordCounter(const char *name, RecCounter * rec_counter, bool lock = true);
-int RecGetRecordGeneric_Xmalloc(const char *name, RecString * rec_string, bool lock = true);
-
 
 //------------------------------------------------------------------------
 // Record Attributes Reading
@@ -133,7 +131,6 @@ int RecGetRecordPrefix_Xmalloc(char *prefix, char **result, int *result_len);
 // Signal and Alarms
 //------------------------------------------------------------------------
 void RecSignalManager(int, const char *);
-void RecSignalAlarm(int, const char *);
 
 
 //-------------------------------------------------------------------------
@@ -224,7 +221,6 @@ int RecSetSyncRequired(char *name, bool lock = true);
 // Signal Alarm/Warning
 //------------------------------------------------------------------------
 #define REC_SignalManager        RecSignalManager
-#define REC_SignalAlarm          RecSignalAlarm
 #define REC_SignalWarning(_n,_d) { Warning(_d); RecSignalManager(_n,_d); }
 
 

@@ -244,18 +244,6 @@ Test03()
 
 
 //-------------------------------------------------------------------------
-// Test04: Rec Alarm Test
-//-------------------------------------------------------------------------
-
-void
-Test04()
-{
-  printf("\n[Test04: SignalAlarm Test]\n");
-  RecSignalAlarm(1, "    SUMMARY: PASS -- This is an alarm, signaled by RecSignalAlarm\n");
-}
-
-
-//-------------------------------------------------------------------------
 // main
 //-------------------------------------------------------------------------
 
@@ -287,7 +275,6 @@ main(int argc, char **argv)
   Test01();                     // Local callbacks
   Test02();                     // Local callbacks -- mulit-lock
   Test03();                     // RecTree
-  Test04();                     // RecSignalAlarm
 
   while (true) {
     RecDumpRecordsHt(RECT_NULL);
