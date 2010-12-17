@@ -620,25 +620,39 @@ CacheVC::openReadMain(int event, Event * e)
       vio.ndone = doc_len;
       return calluser(VC_EVENT_EOS);
     }
-    if (f.single_fragment) {
-      vio.ndone = seek_to;
-      seek_to = 0;
-    } else {
-      if (seek_to <  doc->data_len()) {
-        vio.ndone += seek_to;
-        seek_to = 0;
-      } else {
-        Frag *frag = doc->frags();
-        // skip to correct key, key is already set to next fragment
-        for (uint32_t i = 1; i <= doc->nfrags(); i++) {
-          if (seek_to < (int)frag[i].offset) break;
+    Doc *first_doc = (Doc*)first_buf->data();
+    Frag *first_frag = first_doc->frags();
+    if (!f.single_fragment) {
+      // find the target fragment
+      int i = 0;
+      for (; i < (int)first_doc->nfrags(); i++)
+        if (seek_to < (int64_t)first_frag[i].offset) break;
+      if (i >= (int)first_doc->nfrags()) {
+        Warning("bad fragment header");
+        return calluser(VC_EVENT_ERROR);
+      }
+      // fragment is the current fragment
+      // key is the next key (fragment + 1)
+      if (i != fragment) {
+        i--; // read will increment the key and fragment
+        while (i > fragment) {
           next_CacheKey(&key, &key);
+          fragment++;
         }
-        seek_to = 0;
-        vio.ndone = seek_to;
+        while (i < fragment) {
+          prev_CacheKey(&key, &key);
+          fragment--;
+        }
         goto Lread;
       }
     }
+    if (fragment)
+      doc_pos = seek_to - (int64_t)first_frag[fragment-1].offset;
+    else
+      doc_pos = seek_to;
+    vio.ndone = 0;
+    seek_to = 0;
+    ntodo = vio.ntodo();
   }
   if (ntodo <= 0)
     return EVENT_CONT;

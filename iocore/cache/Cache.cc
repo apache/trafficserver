@@ -155,6 +155,10 @@ Queue<CachePart> cp_list;
 int cp_list_len = 0;
 ConfigPartitions config_partitions;
 
+void force_link_CacheTestCaller() {
+  force_link_CacheTest();
+}
+
 int64_t
 cache_bytes_used(void)
 {
@@ -249,8 +253,8 @@ CacheVC::do_io_pread(Continuation *c, int64_t nbytes, MIOBuffer *abuf, int64_t o
   ink_assert(vio.op == VIO::READ);
   vio.buffer.writer_for(abuf);
   vio.set_continuation(c);
-  vio.ndone = offset;
-  vio.nbytes = 0;
+  vio.ndone = 0;
+  vio.nbytes = nbytes;
   vio.vc_server = this;
   seek_to = offset;
   ink_assert(c->mutex->thread_holding);

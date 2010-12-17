@@ -81,6 +81,7 @@ struct CacheTestSM : public RegressionSM {
   char urlstr[1024];
 #endif
   int64_t total_size;
+  int64_t nbytes;
   CacheKey key;
   int repeat_count;
   int expect_event;
@@ -125,5 +126,7 @@ struct CacheTestSM : public RegressionSM {
     CacheTestSM__##_sm(const CacheTestSM__##_sm &xsm) : CacheTestSM(xsm) {} \
     RegressionSM *clone() { return new CacheTestSM__##_sm(*this); } \
 } _sm(_t);
+
+void force_link_CacheTest();
 
 #endif /* __P_CACHE_TEST_H__ */

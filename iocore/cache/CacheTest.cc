@@ -35,7 +35,7 @@ CacheTestSM::CacheTestSM(RegressionTest *t) :
   cvio(0),
   buffer(0),
   buffer_reader(0),
-  total_size(-1),
+  nbytes(-1),
   repeat_count(0),
   expect_event(EVENT_NONE),
   expect_initial_event(EVENT_NONE),
@@ -55,12 +55,12 @@ CacheTestSM::~CacheTestSM() {
 }
 
 int CacheTestSM::open_read_callout() {
-  cvio = cache_vc->do_io_read(this, total_size, buffer);
+  cvio = cache_vc->do_io_read(this, nbytes, buffer);
   return 1;
 }
 
 int CacheTestSM::open_write_callout() {
-  cvio = cache_vc->do_io_write(this, total_size, buffer_reader);
+  cvio = cache_vc->do_io_write(this, nbytes, buffer_reader);
   return 1;
 }
 
@@ -139,7 +139,7 @@ int CacheTestSM::event_handler(int event, void *data) {
       return EVENT_CONT;
 
     case VC_EVENT_WRITE_COMPLETE:
-      if (total_size != cvio->ndone)
+      if (nbytes != cvio->ndone)
         goto Lclose_error_next;
       goto Lclose_next;
 
@@ -288,7 +288,7 @@ EXCLUSIVE_REGRESSION_TEST(cache)(RegressionTest *t, int atype, int *pstatus) {
         CACHE_WRITE_OPT_SYNC); } );
   write_test.expect_initial_event = CACHE_EVENT_OPEN_WRITE;
   write_test.expect_event = VC_EVENT_WRITE_COMPLETE;
-  write_test.total_size = 100;
+  write_test.nbytes = 100;
   rand_CacheKey(&write_test.key, thread->mutex);
 
   CACHE_SM(t, lookup_test, { cacheProcessor.lookup(this, &key); } );
@@ -298,7 +298,7 @@ EXCLUSIVE_REGRESSION_TEST(cache)(RegressionTest *t, int atype, int *pstatus) {
   CACHE_SM(t, read_test, { cacheProcessor.open_read(this, &key); } );
   read_test.expect_initial_event = CACHE_EVENT_OPEN_READ;
   read_test.expect_event = VC_EVENT_READ_COMPLETE;
-  read_test.total_size = 100;
+  read_test.nbytes = 100;
   read_test.key = write_test.key;
 
   CACHE_SM(t, remove_test, { cacheProcessor.remove(this, &key); } );
@@ -324,12 +324,12 @@ EXCLUSIVE_REGRESSION_TEST(cache)(RegressionTest *t, int atype, int *pstatus) {
     int open_write_callout() {
       header.serial = 10;
       cache_vc->set_header(&header, sizeof(header));
-      cvio = cache_vc->do_io_write(this, total_size, buffer_reader);
+      cvio = cache_vc->do_io_write(this, nbytes, buffer_reader);
       return 1;
     });
   replace_write_test.expect_initial_event = CACHE_EVENT_OPEN_WRITE;
   replace_write_test.expect_event = VC_EVENT_WRITE_COMPLETE;
-  replace_write_test.total_size = 100;
+  replace_write_test.nbytes = 100;
   rand_CacheKey(&replace_write_test.key, thread->mutex);
 
   CACHE_SM(t, replace_test, {
@@ -345,12 +345,12 @@ EXCLUSIVE_REGRESSION_TEST(cache)(RegressionTest *t, int atype, int *pstatus) {
         return -1;
       header.serial = 11;
       cache_vc->set_header(&header, sizeof(header));
-      cvio = cache_vc->do_io_write(this, total_size, buffer_reader);
+      cvio = cache_vc->do_io_write(this, nbytes, buffer_reader);
       return 1;
     });
   replace_test.expect_initial_event = CACHE_EVENT_OPEN_WRITE;
   replace_test.expect_event = VC_EVENT_WRITE_COMPLETE;
-  replace_test.total_size = 100;
+  replace_test.nbytes = 100;
   replace_test.key = replace_write_test.key;
   replace_test.content_salt = 1;
 
@@ -364,14 +364,34 @@ EXCLUSIVE_REGRESSION_TEST(cache)(RegressionTest *t, int atype, int *pstatus) {
         return -1;
       if (h->serial != 11)
         return -1;
-      cvio = cache_vc->do_io_read(this, total_size, buffer);
+      cvio = cache_vc->do_io_read(this, nbytes, buffer);
       return 1;
     });
   replace_read_test.expect_initial_event = CACHE_EVENT_OPEN_READ;
   replace_read_test.expect_event = VC_EVENT_READ_COMPLETE;
-  replace_read_test.total_size = 100;
+  replace_read_test.nbytes = 100;
   replace_read_test.key = replace_test.key;
   replace_read_test.content_salt = 1;
+
+  CACHE_SM(t, large_write_test, { cacheProcessor.open_write(
+        this, &key, CACHE_FRAG_TYPE_NONE, 100,
+        CACHE_WRITE_OPT_SYNC); } );
+  large_write_test.expect_initial_event = CACHE_EVENT_OPEN_WRITE;
+  large_write_test.expect_event = VC_EVENT_WRITE_COMPLETE;
+  large_write_test.nbytes = 10000000;
+  rand_CacheKey(&large_write_test.key, thread->mutex);
+
+  CACHE_SM(t, pread_test, { 
+      cacheProcessor.open_read(this, &key); 
+    } 
+    int open_read_callout() {
+      cvio = cache_vc->do_io_pread(this, nbytes, buffer, 7000000);
+      return 1;
+    });
+  pread_test.expect_initial_event = CACHE_EVENT_OPEN_READ;
+  pread_test.expect_event = VC_EVENT_READ_COMPLETE;
+  pread_test.nbytes = 100;
+  pread_test.key = large_write_test.key;
 
   r_sequential(
     t,
@@ -385,7 +405,12 @@ EXCLUSIVE_REGRESSION_TEST(cache)(RegressionTest *t, int atype, int *pstatus) {
     replace_write_test.clone(),
     replace_test.clone(),
     replace_read_test.clone(),
+    large_write_test.clone(),
+    pread_test.clone(),
     NULL_PTR
     )->run(pstatus);
   return;
+}
+
+void force_link_CacheTest() {
 }

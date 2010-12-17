@@ -785,6 +785,8 @@ agg_copy(char *p, CacheVC *vc)
       doc->key = vc->key;
       dir_set_head(&vc->dir, !vc->fragment);
     }
+    if (doc->flen)
+      memcpy(doc->frags(), &vc->frag[0], doc->flen);
 
 #ifdef HTTP_CACHE
     if (vc->f.rewrite_resident_alt) {
@@ -1223,6 +1225,19 @@ CacheVC::openWriteCloseDataDone(int event, Event *e)
     if (!fragment) {
       ink_assert(key == earliest_key);
       earliest_dir = dir;
+    } else {
+      if (!frag)
+        frag = &integral_frags[0];
+      else {
+        if (fragment-1 >= INTEGRAL_FRAGS && IS_POWER_2((uint32)(fragment-1))) {
+          Frag *t = frag;
+          frag = (Frag*)xmalloc(sizeof(Frag) * (fragment-1)*2);
+          memcpy(frag, t, sizeof(Frag) * (fragment-1));
+          if (t != integral_frags)
+            xfree(t);
+        }
+      }
+      frag[fragment-1].offset = write_pos;
     }
     fragment++;
     write_pos += write_len;
@@ -1319,7 +1334,7 @@ CacheVC::openWriteWriteDone(int event, Event *e)
         if (fragment-1 >= INTEGRAL_FRAGS && IS_POWER_2((uint32_t)(fragment-1))) {
           Frag *t = frag;
           frag = (Frag*)xmalloc(sizeof(Frag) * (fragment-1)*2);
-          memcpy(frag, t, sizeof(Frag) * (fragment-2));
+          memcpy(frag, t, sizeof(Frag) * (fragment-1));
           if (t != integral_frags)
             xfree(t);
         }
