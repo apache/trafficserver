@@ -448,6 +448,39 @@ extern "C"
     AFTER_BODY
   } TSFetchWakeUpOptions;
 
+  /**
+     This type represents a context for data records.
+  */
+  typedef enum 
+    {
+      TS_RECORDTYPE_NULL = 0,
+      TS_RECORDTYPE_CONFIG,
+      TS_RECORDTYPE_PROCESS,
+      TS_RECORDTYPE_NODE,
+      TS_RECORDTYPE_CLUSTER,
+      TS_RECORDTYPE_LOCAL,
+      TS_RECORDTYPE_PLUGIN,
+      TS_RECORDTYPE_MAX
+    } TSRecordType;
+
+  typedef enum
+    {
+      TS_RECORDDATATYPE_NULL = 0,
+      TS_RECORDDATATYPE_INT,
+      TS_RECORDDATATYPE_FLOAT,
+      TS_RECORDDATATYPE_STRING,
+      TS_RECORDDATATYPE_COUNTER,
+      TS_RECORDDATATYPE_MAX
+    } TSRecordDataType;
+
+  typedef union 
+  {
+    int64_t rec_int;
+    float rec_float;
+    char *rec_string;
+    int64_t rec_counter;
+  } TSRecordData;
+
   extern tsapi const void *TS_ERROR_PTR;
 
   typedef int64_t TSHRTime;
@@ -2432,15 +2465,6 @@ extern "C"
      This is available as of Apache TS v2.2.*/
   typedef enum
   {
-    TS_STAT_TYPE_INT = 1,
-    /*  The following are not supported yet. */
-    TS_STAT_TYPE_FLOAT,
-    TS_STAT_TYPE_STRING,
-    TS_STAT_TYPE_COUNTER
-  } TSStatDataType;
-
-  typedef enum
-  {
     TS_STAT_PERSISTENT = 1,
     TS_STAT_NON_PERSISTENT
   } TSStatPersistence;
@@ -2454,7 +2478,7 @@ extern "C"
   } TSStatSync;
 
   /*  Note that only TS_STAT_TYPE_INT is supported at this point. */
-  tsapi int TSStatCreate(const char *the_name, TSStatDataType the_type, TSStatPersistence persist, TSStatSync sync);
+  tsapi int TSStatCreate(const char *the_name, TSRecordDataType the_type, TSStatPersistence persist, TSStatSync sync);
 
   tsapi TSReturnCode TSStatIntIncrement(int the_stat, TSMgmtInt amount);
   tsapi TSReturnCode TSStatIntDecrement(int the_stat, TSMgmtInt amount);
@@ -2554,39 +2578,6 @@ extern "C"
 
    */
   typedef void *TSTextLogObject;
-
-  /**
-      This type represents a context for data records.
-   */
-  typedef enum 
-  {
-    TS_RECORDTYPE_NULL = 0,
-    TS_RECORDTYPE_CONFIG,
-    TS_RECORDTYPE_PROCESS,
-    TS_RECORDTYPE_NODE,
-    TS_RECORDTYPE_CLUSTER,
-    TS_RECORDTYPE_LOCAL,
-    TS_RECORDTYPE_PLUGIN,
-    TS_RECORDTYPE_MAX
-  } TSRecordType;
-
-  typedef enum
-  {
-    TS_RECORDDATATYPE_NULL = 0,
-    TS_RECORDDATATYPE_INT,
-    TS_RECORDDATATYPE_FLOAT,
-    TS_RECORDDATATYPE_STRING,
-    TS_RECORDDATATYPE_COUNTER,
-    TS_RECORDDATATYPE_MAX
-  } TSRecordDataType;
-
-  typedef union 
-  {
-    int64_t rec_int;
-    float rec_float;
-    char *rec_string;
-    int64_t rec_counter;
-  } TSRecordData;
 
   typedef void (*TSRecordDumpCb) (TSRecordType rec_type, void *edata, int registered, const char *name, TSRecordDataType data_type, TSRecordData *datum);
 

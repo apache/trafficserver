@@ -6337,7 +6337,7 @@ TSCacheScan(TSCont contp, TSCacheKey key, int KB_per_second)
 
 /************************   REC Stats API    **************************/
 int
-TSStatCreate(const char *the_name, TSStatDataType the_type, TSStatPersistence persist, TSStatSync sync)
+TSStatCreate(const char *the_name, TSRecordDataType the_type, TSStatPersistence persist, TSStatSync sync)
 {
   int volatile id = ink_atomic_increment(&top_stat, 1);
   RecRawStatSyncCb syncer = RecRawStatSyncCount;
@@ -6363,7 +6363,7 @@ TSStatCreate(const char *the_name, TSStatDataType the_type, TSStatPersistence pe
     syncer = RecRawStatSyncCount;
     break;
   }
-  RecRegisterRawStat(api_rsb, RECT_PLUGIN, the_name, (RecDataT)the_type, RecPersistT(persist), id, syncer);
+  RecRegisterRawStat(api_rsb, RECT_PLUGIN, the_name, (RecDataT)the_type, (RecPersistT)persist, id, syncer);
 
   return id;
 }
