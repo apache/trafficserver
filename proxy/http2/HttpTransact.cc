@@ -777,18 +777,12 @@ HttpTransact::StartRemapRequest(State * s)
   URL *url = incoming_request->url_get();
   int host_len, path_len;
   const char *host = url->host_get(&host_len);
-  int port = url->port_get();
   const char *path = url->path_get(&path_len);
 
   const char syntxt[] = "synthetic.txt";
 
   s->cop_test_page = (ptr_len_cmp(host, host_len, local_host_ip_str, sizeof(local_host_ip_str) - 1) == 0) &&
     (ptr_len_cmp(path, path_len, syntxt, sizeof(syntxt) - 1) == 0);
-
-  // Determine whether the incoming request is a Traffic Net request.
-  s->traffic_net_req = (incoming_request->method_get_wksidx() == HTTP_WKSIDX_POST)
-    && (ptr_len_cmp(host, host_len, s->http_config_param->tn_server, s->http_config_param->tn_server_len) == 0)
-    && (port == s->http_config_param->tn_port);
 
   //////////////////////////////////////////////////////////////////
   // FIX: this logic seems awfully convoluted and hard to follow; //
@@ -926,7 +920,7 @@ HttpTransact::EndRemapRequest(State * s)
       }
       s->reverse_proxy = false;
       goto done;
-    } else if (s->http_config_param->url_remap_required && !s->cop_test_page && !s->traffic_net_req) {
+    } else if (s->http_config_param->url_remap_required && !s->cop_test_page) {
       ///////////////////////////////////////////////////////
       // the url mapping failed, but mappings are strictly //
       // required (except for synthetic cop accesses), so  //
@@ -1706,7 +1700,7 @@ HttpTransact::OSDNSLookup(State * s)
 void
 HttpTransact::StartAccessControl(State * s)
 {
-  //if (s->cop_test_page || s->traffic_net_req || (s->state_machine->authAdapter.disabled() == true)) {
+  //if (s->cop_test_page  || (s->state_machine->authAdapter.disabled() == true)) {
     // Heartbeats should always be allowed.
     // s->content_control.access = ACCESS_ALLOW;
     HandleRequestAuthorized(s);
@@ -3795,12 +3789,9 @@ HttpTransact::retry_server_connection_not_open(State * s, ServerState_t conn_sta
   // on the first connect attempt failure //
   // record the failue                   //
   //////////////////////////////////////////
-
-  if (!s->traffic_net_req) {
-    Log::error("CONNECT:[%d] could not connect [%s] to %u.%u.%u.%u for '%s'", s->current.attempts,
-               HttpDebugNames::get_server_state_name(conn_state),
-               PRINT_IP(s->current.server->ip), url_string ? url_string : "<none>");
-  }
+  Log::error("CONNECT:[%d] could not connect [%s] to %u.%u.%u.%u for '%s'", s->current.attempts,
+             HttpDebugNames::get_server_state_name(conn_state),
+             PRINT_IP(s->current.server->ip), url_string ? url_string : "<none>");
 
   if (url_string) {
     s->arena.str_free(url_string);
@@ -5594,9 +5585,7 @@ HttpTransact::handle_trace_and_options_requests(State * s, HTTPHdr * incoming_hd
   } else {                      /* max-forwards != 0 */
 
     if ((max_forwards <= 0) || (max_forwards > INT_MAX)) {
-      if (!s->traffic_net_req) {
-        Log::error("HTTP: snapping invalid max-forwards value %d to %d", max_forwards, INT_MAX);
-      }
+      Log::error("HTTP: snapping invalid max-forwards value %d to %d", max_forwards, INT_MAX);
       max_forwards = INT_MAX;
     }
 
@@ -8336,14 +8325,12 @@ HttpTransact::build_error_response(State *s, HTTPStatus status_code, const char 
   }
 
   if (s->http_config_param->errors_log_error_pages) {
-    if (!s->traffic_net_req) {
-      char ip_string[128];
-      unsigned char *p = (unsigned char *) &(s->client_info.ip);
+    char ip_string[128];
+    unsigned char *p = (unsigned char *) &(s->client_info.ip);
 
-      snprintf(ip_string, sizeof(ip_string), "%d.%d.%d.%d", p[0], p[1], p[2], p[3]);
-      Log::error("RESPONSE: sent %s status %d (%s) for '%s'", ip_string, status_code, reason_phrase,
-                 (url_string ? url_string : "<none>"));
-    }
+    snprintf(ip_string, sizeof(ip_string), "%d.%d.%d.%d", p[0], p[1], p[2], p[3]);
+    Log::error("RESPONSE: sent %s status %d (%s) for '%s'", ip_string, status_code, reason_phrase,
+               (url_string ? url_string : "<none>"));
   }
 
   if (url_string) {

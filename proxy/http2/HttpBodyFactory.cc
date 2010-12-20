@@ -84,7 +84,7 @@ HttpBodyFactory::fabricate_with_old_api(const char *type, HttpTransact::State * 
   ///////////////////////////////////////////////////////////////////
   // if logging turned on, buffer up the URL string for simplicity //
   ///////////////////////////////////////////////////////////////////
-  if (enable_logging && !context->traffic_net_req) {
+  if (enable_logging) {
     url[0] = '\0';
     URL *u = context->hdr_info.client_request.url_get();
 
@@ -102,7 +102,7 @@ HttpBodyFactory::fabricate_with_old_api(const char *type, HttpTransact::State * 
   // if suppressing this response, return NULL //
   ///////////////////////////////////////////////
   if (is_response_suppressed(context)) {
-    if (enable_logging && !context->traffic_net_req) {
+    if (enable_logging) {
       Log::error("BODY_FACTORY: suppressing '%s' response for url '%s'", type, url);
     }
     unlock();
@@ -151,7 +151,7 @@ HttpBodyFactory::fabricate_with_old_api(const char *type, HttpTransact::State * 
   // enforce the max buffer length //
   ///////////////////////////////////
   if (buffer && (*resulting_buffer_length > max_buffer_length)) {
-    if (enable_logging && !context->traffic_net_req) {
+    if (enable_logging) {
       Log::error(("BODY_FACTORY: template '%s/%s' consumed %d bytes, "
                   "exceeding %d byte limit, using internal default"),
                  set, type, *resulting_buffer_length, max_buffer_length);
@@ -164,37 +164,31 @@ HttpBodyFactory::fabricate_with_old_api(const char *type, HttpTransact::State * 
   // generate the content language and content type return values    //
   /////////////////////////////////////////////////////////////////////
 
-  if (buffer)                   // got an instantiated template
-  {
+  if (buffer) {                  // got an instantiated template
     if (!plain_flag) {
       snprintf(content_language_out_buf, content_language_buf_size, "%s", lang_ptr);
       snprintf(content_type_out_buf, content_type_buf_size, "text/html; charset=%s", charset_ptr);
     }
 
-    if (enable_logging && !context->traffic_net_req) {
-      if (found_requested_template)     // got exact template
-      {
+    if (enable_logging) {
+      if (found_requested_template) {    // got exact template
         Log::error(("BODY_FACTORY: using custom template "
                     "'%s/%s' for url '%s' (language '%s', charset '%s')"), set, type, url, lang_ptr, charset_ptr);
-      } else                    // got default template
-      {
+      } else {                   // got default template
         Log::error(("BODY_FACTORY: can't find custom template "
                     "'%s/%s', using '%s/%s' for url '%s' (language '%s', charset '%s')"),
                    set, type, set, "default", url, lang_ptr, charset_ptr);
       }
     }
-  } else                        // no template, using old style body
-  {
+  } else {                       // no template, using old style body
     buffer = HttpMessageBody::MakeErrorBodyVA(max_buffer_length, resulting_buffer_length,
                                               context->http_config_param, status_code, reason_or_null, format, ap);
-    if (enable_logging && !context->traffic_net_req) {
-      if (enable_customizations)        // we wanted a template
-      {
+    if (enable_logging) {
+      if (enable_customizations) {       // we wanted a template
         Log::error(("BODY_FACTORY: customization enabled "
                     "but can't find templates '%s' or '%s', using hardcoded default body for url '%s'"),
                    type, "default", url);
-      } else                    // we wanted an old-style body
-      {
+      } else {                   // we wanted an old-style body
         Log::error(("BODY_FACTORY: using hardcoded default '%s' body for url '%s'"), type, url);
       }
     }

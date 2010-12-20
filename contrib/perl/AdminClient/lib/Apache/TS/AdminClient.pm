@@ -663,14 +663,6 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.system.mmap_max
  proxy.config.temp_dir
  proxy.config.thread.default.stacksize
- proxy.config.traffic_net.traffic_net_encryption
- proxy.config.traffic_net.traffic_net_frequency
- proxy.config.traffic_net.traffic_net_lid
- proxy.config.traffic_net.traffic_net_mode
- proxy.config.traffic_net.traffic_net_path
- proxy.config.traffic_net.traffic_net_port
- proxy.config.traffic_net.traffic_net_server
- proxy.config.traffic_net.traffic_net_uid
  proxy.config.udp.free_cancelled_pkts_sec
  proxy.config.udp.periodic_cleanup
  proxy.config.udp.send_retries

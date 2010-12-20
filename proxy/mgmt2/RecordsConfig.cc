@@ -392,28 +392,6 @@ RecordElement RecordsConfig[] = {
 
   //##############################################################################
   //#
-  //# Traffic Net
-  //#
-  //##############################################################################
-  {RECT_CONFIG, "proxy.config.traffic_net.traffic_net_mode", RECD_INT, "3", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-3]", RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.traffic_net.traffic_net_frequency", RECD_INT, "86400", RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.traffic_net.traffic_net_uid", RECD_STRING, NULL, RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.traffic_net.traffic_net_lid", RECD_STRING, NULL, RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.traffic_net.traffic_net_server", RECD_STRING, "sm-linux-1.example.com", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.traffic_net.traffic_net_port", RECD_INT, "80", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.traffic_net.traffic_net_path", RECD_STRING, "/traffic-net", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.traffic_net.traffic_net_encryption", RECD_INT, "1", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
-  ,
-
-  //##############################################################################
-  //#
   //# Inktoswitch Configuration(NOT USED)
   //#
   //##############################################################################

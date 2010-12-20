@@ -1353,26 +1353,6 @@ HttpConfig::startup()
 
   HttpEstablishStaticConfigLongLong(c.record_tcp_mem_hit, "proxy.config.http.record_tcp_mem_hit");
 
-  // Traffic Net configs
-  HttpEstablishStaticConfigLongLong(c.tn_frequency, "proxy.config.traffic_net.traffic_net_frequency");
-
-  HttpEstablishStaticConfigLongLong(c.tn_mode, "proxy.config.traffic_net.traffic_net_mode");
-
-  HttpEstablishStaticConfigStringAlloc(c.tn_uid, "proxy.config.traffic_net.traffic_net_uid");
-
-  HttpEstablishStaticConfigStringAlloc(c.tn_lid, "proxy.config.traffic_net.traffic_net_lid");
-
-  HttpEstablishStaticConfigStringAlloc(c.tn_server, "proxy.config.traffic_net.traffic_net_server");
-  c.tn_server_len = (c.tn_server ? strlen(c.tn_server) : 0);
-
-  HttpEstablishStaticConfigLongLong(c.tn_port, "proxy.config.traffic_net.traffic_net_port");
-
-  HttpEstablishStaticConfigStringAlloc(c.tn_path, "proxy.config.traffic_net.traffic_net_path");
-
-  HttpEstablishStaticConfigLongLong(c.send_http11_requests, "proxy.config.http.send_http11_requests");
-
-  HttpEstablishStaticConfigLongLong(c.doc_in_cache_skip_dns, "proxy.config.http.doc_in_cache_skip_dns");
-
   if (!c.transparency_enabled) {
     //By this time, we would have read Socks configuration.
     c.transparency_enabled = netProcessor.socks_conf_stuff->accept_enabled;
@@ -1530,17 +1510,7 @@ HttpConfig::reconfigure()
 
   params->parent_proxy_routing_enable = INT_TO_BOOL(m_master.parent_proxy_routing_enable);
 
-  // Traffic Net
-  params->tn_frequency = m_master.tn_frequency;
-  params->tn_mode = m_master.tn_mode;
-  params->tn_lid = xstrdup(m_master.tn_lid);
-  params->tn_uid = xstrdup(m_master.tn_uid);
-  params->tn_server = xstrdup(m_master.tn_server);
-  params->tn_server_len = m_master.tn_server_len;
-  params->tn_port = m_master.tn_port;
-  params->tn_path = xstrdup(m_master.tn_path);
-
- params->fwd_proxy_auth_to_parent = 0;
+  params->fwd_proxy_auth_to_parent = 0;
 
   params->enable_url_expandomatic = INT_TO_BOOL(m_master.enable_url_expandomatic);
 
@@ -1548,11 +1518,9 @@ HttpConfig::reconfigure()
   params->insert_response_via_string = INT_TO_BOOL(m_master.insert_response_via_string);
   params->verbose_via_string = m_master.verbose_via_string;
   params->proxy_request_via_string = xstrdup(m_master.proxy_request_via_string);
-  params->proxy_request_via_string_len =
-    (params->proxy_request_via_string) ? (strlen(params->proxy_request_via_string)) : (0);
+  params->proxy_request_via_string_len = (params->proxy_request_via_string) ? (strlen(params->proxy_request_via_string)) : (0);
   params->proxy_response_via_string = xstrdup(m_master.proxy_response_via_string);
-  params->proxy_response_via_string_len =
-    (params->proxy_response_via_string) ? (strlen(params->proxy_response_via_string)) : (0);
+  params->proxy_response_via_string_len = (params->proxy_response_via_string) ? (strlen(params->proxy_response_via_string)) : (0);
 
   params->wuts_enabled = INT_TO_BOOL(m_master.wuts_enabled);
   params->log_spider_codes = INT_TO_BOOL(m_master.log_spider_codes);
@@ -1747,10 +1715,7 @@ HttpConfig::reconfigure()
   params->number_of_redirections = m_master.number_of_redirections;
   params->post_copy_size = m_master.post_copy_size;
 
-
   m_id = configProcessor.set(m_id, params);
-
-
 
 #undef INT_TO_BOOL
 

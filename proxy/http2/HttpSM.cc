@@ -1162,9 +1162,7 @@ HttpSM::state_request_wait_for_transform_read(int event, void *data)
       //  sending a request message body.  Change the event
       //  to an error and fall through
       event = VC_EVENT_ERROR;
-      if (!t_state.traffic_net_req) {
-        Log::error("Request transformation failed to set content length");
-      }
+      Log::error("Request transformation failed to set content length");
     }
     // FALLTHROUGH
   default:
@@ -4494,21 +4492,19 @@ void
 HttpSM::mark_host_failure(HostDBInfo * info, time_t time_down)
 {
   if (info->app.http_data.last_failure == 0) {
-    if (!t_state.traffic_net_req) {
-      int url_len;
-      char *url_str;
+    int url_len;
+    char *url_str;
 
-      URL *url = t_state.hdr_info.client_request.url_get();
-      url_str = url->string_get(&t_state.arena, &url_len);
-      Log::error("CONNECT: could not connect to %u.%u.%u.%u "
-                 "for '%s' (setting last failure time)",
-                 ((unsigned char *) &t_state.current.server->ip)[0],
-                 ((unsigned char *) &t_state.current.server->ip)[1],
-                 ((unsigned char *) &t_state.current.server->ip)[2],
-                 ((unsigned char *) &t_state.current.server->ip)[3], url_str);
-      if (url_str)
-        t_state.arena.str_free(url_str);
-    }
+    URL *url = t_state.hdr_info.client_request.url_get();
+    url_str = url->string_get(&t_state.arena, &url_len);
+    Log::error("CONNECT: could not connect to %u.%u.%u.%u "
+               "for '%s' (setting last failure time)",
+               ((unsigned char *) &t_state.current.server->ip)[0],
+               ((unsigned char *) &t_state.current.server->ip)[1],
+               ((unsigned char *) &t_state.current.server->ip)[2],
+               ((unsigned char *) &t_state.current.server->ip)[3], url_str);
+    if (url_str)
+      t_state.arena.str_free(url_str);
   }
 
   info->app.http_data.last_failure = time_down;
@@ -6153,11 +6149,7 @@ HttpSM::update_stats()
     Debug("http_seq", "Skipping cop heartbeat logging & stats due to config");
     return;
   }
-  // Do not log phone home requests.
-  if (t_state.traffic_net_req) {
-    Debug("http_seq", "Skipping traffic_net logging & stats");
-    return;
-  }
+
   //////////////
   // Log Data //
   //////////////

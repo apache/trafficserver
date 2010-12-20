@@ -693,18 +693,6 @@ public:
   ////////////////////////
   MgmtInt record_tcp_mem_hit;
 
-  //////////////////
-  // Traffic Net  //
-  //////////////////
-  MgmtInt tn_frequency;
-  MgmtInt tn_mode;
-  char *tn_uid;
-  char *tn_lid;
-  char *tn_server;
-  int tn_server_len;
-  MgmtInt tn_port;
-  char *tn_path;
-
   /////////////////////
   // Error Reporting //
   /////////////////////
@@ -1000,14 +988,6 @@ router_ip(0),
 router_port(0),
 record_cop_page(0),
 record_tcp_mem_hit(0),
-tn_frequency(0),
-tn_mode(0),
-tn_uid(0),
-tn_lid(0),
-tn_server(0),
-tn_server_len(0),
-tn_port(0),
-tn_path(0),
 errors_log_error_pages(0),
 send_http11_requests(SEND_HTTP11_IF_REQUEST_11_AND_HOSTDB),
 doc_in_cache_skip_dns(1),       // Added for SKIPPING DNS If DOC IN CACHE

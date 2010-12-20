@@ -951,7 +951,6 @@ public:
     // FilterResult             content_control;
     bool backdoor_request;      // internal
     bool cop_test_page;         // internal
-    bool traffic_net_req;       // internal
     char *unmapped_request_url; // in
 
     StateMachineAction_t next_action;   // out
@@ -1085,7 +1084,6 @@ public:
         cache_lookup_result(CACHE_LOOKUP_NONE),
         backdoor_request(false),
         cop_test_page(false),
-        traffic_net_req(false),
         unmapped_request_url(0),
         next_action(STATE_MACHINE_ACTION_UNDEFINED),
         api_next_action(STATE_MACHINE_ACTION_UNDEFINED),

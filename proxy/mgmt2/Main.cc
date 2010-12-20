@@ -54,10 +54,6 @@
 // Needs LibRecordsConfigInit()
 #include "RecordsConfig.h"
 
-#if defined(TRAFFIC_NET)
-#include "traffic_net/tn_Thread.h"
-#endif
-
 #if defined(MGMT_API)
 #include "TSControlMain.h"
 #endif
@@ -863,15 +859,6 @@ main(int argc, char **argv)
 
   webThrId = ink_thread_create(webIntr_main, NULL);     /* Spin web agent thread */
   lmgmt->listenForProxy();
-
-
-#if defined(TRAFFIC_NET)
-  // Traffic Net Thread
-  ink_thread tnThrId;
-  tnThrId = ink_thread_create(tn_mgmt_main, NULL);      /* Spin Traffic Net thread */
-  mgmt_log("[TrafficManager] Traffic Net thread created\n");
-#endif
-
 
   /* Check the permissions on vip_config */
   if (lmgmt->virt_map->enabled) {
