@@ -2477,7 +2477,7 @@ extern "C"
     TS_STAT_SYNC_TIMEAVG
   } TSStatSync;
 
-  /*  Note that only TS_STAT_TYPE_INT is supported at this point. */
+  /*  Note that only TS_RECORDDATATYPE_INT is supported at this point. */
   tsapi int TSStatCreate(const char *the_name, TSRecordDataType the_type, TSStatPersistence persist, TSStatSync sync);
 
   tsapi TSReturnCode TSStatIntIncrement(int the_stat, TSMgmtInt amount);
