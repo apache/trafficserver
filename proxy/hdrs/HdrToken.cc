@@ -348,7 +348,7 @@ HdrTokenHashBucket hdrtoken_hash_table[HDRTOKEN_HASH_TABLE_SIZE];
 inline unsigned int
 hdrtoken_hash(const unsigned char *string, unsigned int length)
 {
-  const uint32_t InitialFNV = 2166136261;
+  const uint32_t InitialFNV = 2166136261U;
   const int32_t FNVMultiple = 16777619;
 
   uint32_t hash = InitialFNV;
