@@ -1539,14 +1539,22 @@ HdrTest::test_regex()
 {
   DFA dfa;
   int status = 1;
-
+  
+  const char *test_harness[] = {
+    "foo",
+    "(.*\\.inktomi\\.com)",
+    "(.*\\.inktomi\\.org)"
+  };
+  
   bri_box("test_regex");
-
-  dfa.compile("(.*\\.inktomi\\.com#1#)|(.*\\.inktomi\\.org#2#)");
+  
+  dfa.compile(test_harness,SIZEOF(test_harness));
   status = status & (dfa.match("www.inktomi.com") == 1);
   status = status & (dfa.match("www.inktomi.org") == 2);
+  status = status & (dfa.match("aaaaaafooooooooinktomi....com.org") == -1);
+  status = status & (dfa.match("foo") == 0);
 
-  return (failures_to_status("test_regex", (status == 0)));
+  return (failures_to_status("test_regex", (status != 1)));
 }
 
 /*-------------------------------------------------------------------------

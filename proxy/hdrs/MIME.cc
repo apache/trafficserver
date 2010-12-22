@@ -47,23 +47,23 @@
  *                                                                     *
  ***********************************************************************/
 
+static DFA *day_names_dfa = NULL;
+static DFA *month_names_dfa = NULL;
+
 static const char *day_names[] = {
-  "Sun|Sunday",
-  "Mon|Monday",
-  "Tue|Tuesday",
-  "Wed|Wednesday",
-  "Thu|Thursday",
-  "Fri|Friday",
-  "Sat|Saturday",
+  "Sun",
+  "Mon",
+  "Tue",
+  "Wed",
+  "Thu",
+  "Fri",
+  "Sat",
 };
 
 static const char *month_names[] = {
   "Jan", "Feb", "Mar", "Apr", "May", "Jun",
   "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
 };
-
-static DFA *day_names_dfa = NULL;
-static DFA *month_names_dfa = NULL;
 
 struct MDY
 {
@@ -630,19 +630,15 @@ mime_init(const char *path)
   static int init = 1;
 
   if (init) {
-    char buf[4096];
-
     init = 0;
-
+    
     hdrtoken_init(path);
-    ink_filepath_make(buf, sizeof(buf), path, "days.dat");
     day_names_dfa = NEW(new DFA);
-    day_names_dfa->compile(buf, day_names, SIZEOF(day_names), RE_CASE_INSENSITIVE);
-
-    ink_filepath_make(buf, sizeof(buf), path, "months.dat");
+    day_names_dfa->compile(day_names, SIZEOF(day_names), RE_CASE_INSENSITIVE);
+    
     month_names_dfa = NEW(new DFA);
-    month_names_dfa->compile(buf, month_names, SIZEOF(month_names), RE_CASE_INSENSITIVE);
-
+    month_names_dfa->compile(month_names, SIZEOF(month_names), RE_CASE_INSENSITIVE);
+    
     MIME_FIELD_ACCEPT = hdrtoken_string_to_wks("Accept");
     MIME_FIELD_ACCEPT_CHARSET = hdrtoken_string_to_wks("Accept-Charset");
     MIME_FIELD_ACCEPT_ENCODING = hdrtoken_string_to_wks("Accept-Encoding");

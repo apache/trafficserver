@@ -21,15 +21,17 @@ all/general interest
         mturk@apache.org
         zwoop@apache.org
         jim@apache.org
+        ericb@apache.org
 lib/ts
         jplevyak@apache.org
         zwoop@apache.org
         bcall@apache.org
         georgep@apache.org
+        ericb@apache.org
 lib/records
         bcall@apache.org
         georgep@apache.org
-	zwoop@apache.org
+	      zwoop@apache.org
 Event System/Buffering/VIO/VConnection
         jplevyak@apache.org
         bcall@apache.org
@@ -39,7 +41,7 @@ Network I/O
         bcall@apache.org
         georgep@apache.org
         jim@apache.org
-	zwoop@apache.org
+	      zwoop@apache.org
 Raw Cache and AIO
         jplevyak@apache.org
         bcall@apache.org
@@ -47,7 +49,7 @@ Raw Cache and AIO
 HTTP Caching
         bcall@apache.org
         jim@apache.org
-	zwoop@apache.org
+	      zwoop@apache.org
 Block-Cache
 Clustering
         jplevyak@apache.org
@@ -58,27 +60,32 @@ DNS/HostDB
         zwoop@apache.org
         bcall@apache.org
         georgep@apache.org
+        ericb@apache.org
 FastIO
 Docs
-	dianes@apache.org
+	      dianes@apache.org
 Examples/Plugins
         zwoop@apache.org
         bcall@apache.org
+        ericb@apache.org
 HDRs
         bcall@apache.org
-	zwoop@apache.org
+	      zwoop@apache.org
 HTTP
         bcall@apache.org
         zwoop@apache.org
         jim@apache.org
+        ericb@apache.org
 Remap
         zwoop@apache.org
         bcall@apache.org
         jim@apache.org
+        ericb@apache.org
 API
         zwoop@apache.org
         bcall@apache.org
         georgep@apache.org
+        ericb@apache.org
 Config
         zwoop@apache.org
         bcall@apache.org
@@ -91,7 +98,7 @@ MGMT
 Stats
         bcall@apache.org
         georgep@apache.org
-	zwoop@apache.org
+	      zwoop@apache.org
 Build System
         zwoop@apache.org
         bcall@apache.org

@@ -44,29 +44,10 @@
  *                                                                     *
  ***********************************************************************/
 
-static const char *cache_control_names[] = {
-  "max-age",
-  "no-cache",
-  "no-store",
-  "no-transform",
-  "max-stale",
-  "min-fresh",
-  "only-if-cached",
-  "public",
-  "private",
-  "must-revalidate",
-  "proxy-revalidate",
-  "s-maxage",
-  "need-revalidate-once",
-};
-
 // TODO: We should enable the creation and use of these WKS. XXXX
 #if 0
 static const char *cache_control_values[SIZEOF(cache_control_names)];
 #endif
-
-static DFA *cache_control_names_dfa = NULL;
-
 
 const char *HTTP_METHOD_CONNECT;
 const char *HTTP_METHOD_DELETE;
@@ -199,16 +180,10 @@ http_init(const char *path)
   static int init = 1;
 
   if (init) {
-    char buf[4096] = "";
-
     init = 0;
 
     mime_init(path);
     url_init(path);
-
-    ink_filepath_make(buf, sizeof(buf), path, "cache-control.dat");
-    cache_control_names_dfa = NEW(new DFA);
-    cache_control_names_dfa->compile(buf, cache_control_names, SIZEOF(cache_control_names), RE_CASE_INSENSITIVE);
 
     HTTP_METHOD_CONNECT = hdrtoken_string_to_wks("CONNECT");
     HTTP_METHOD_DELETE = hdrtoken_string_to_wks("DELETE");

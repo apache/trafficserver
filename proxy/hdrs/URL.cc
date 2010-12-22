@@ -119,7 +119,27 @@ url_init(const char *path)
     URL_SCHEME_MMS = hdrtoken_string_to_wks("mms");
     URL_SCHEME_MMSU = hdrtoken_string_to_wks("mmsu");
     URL_SCHEME_MMST = hdrtoken_string_to_wks("mmst");
-
+    
+    ink_assert(URL_SCHEME_FILE && 
+      URL_SCHEME_FTP &&
+      URL_SCHEME_GOPHER && 
+      URL_SCHEME_HTTP && 
+      URL_SCHEME_HTTPS && 
+      URL_SCHEME_MAILTO && 
+      URL_SCHEME_NEWS && 
+      URL_SCHEME_NNTP && 
+      URL_SCHEME_PROSPERO && 
+      URL_SCHEME_TELNET &&
+      URL_SCHEME_TUNNEL &&
+      URL_SCHEME_WAIS &&
+      URL_SCHEME_PNM &&
+      URL_SCHEME_RTSP && 
+      URL_SCHEME_RTSPU && 
+      URL_SCHEME_MMS &&
+      URL_SCHEME_MMSU && 
+      URL_SCHEME_MMST
+    );
+    
     URL_WKSIDX_FILE = hdrtoken_wks_to_index(URL_SCHEME_FILE);
     URL_WKSIDX_FTP = hdrtoken_wks_to_index(URL_SCHEME_FTP);
     URL_WKSIDX_GOPHER = hdrtoken_wks_to_index(URL_SCHEME_GOPHER);

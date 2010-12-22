@@ -31,17 +31,27 @@
 #include "Regex.h"
 #include "URL.h"
 
-/* Warning: All new strings must be put on the end of the array
-   since the header systems assumes the array index for a particular
-   string never changes */
+/* 
+ You SHOULD add to _hdrtoken_commonly_tokenized_strs, with the same ordering
+ ** important, ordering matters **
+ 
+ You want a regexp like 'Accept' after "greedier" choices so it doesn't match 'Accept-Ranges' earlier than
+ it should. The regexp are anchored (^Accept), but I dont see a way with the current system to 
+ match the word ONLY without making _hdrtoken_strs a real PCRE, but then that breaks the hashing
+ hdrtoken_hash("^Accept$") != hdrtoken_hash("Accept")
+ 
+ So, the current hack is to have "Accept" follow "Accept-.*", lame, I know
+ 
+  /ericb
+*/
 
 const char *_hdrtoken_strs[] = {
   // MIME Field names
-  "Accept",
   "Accept-Charset",
   "Accept-Encoding",
   "Accept-Language",
   "Accept-Ranges",
+  "Accept",
   "Age",
   "Allow",
   "Approved",                   // NNTP
@@ -99,7 +109,6 @@ const char *_hdrtoken_strs[] = {
   "Set-Cookie",
   "Subject",                    // NNTP
   "Summary",                    // NNTP
-  "TE",
   "Transfer-Encoding",
   "Upgrade",
   "User-Agent",
@@ -109,13 +118,13 @@ const char *_hdrtoken_strs[] = {
   "Www-Authenticate",
   "Xref",                       // NNTP
   "@DataInfo",                  // Internal Hack
-
+  
   // Accept-Encoding
   "compress",
   "deflate",
   "gzip",
   "identity",
-
+  
   // Cache-Control flags
   "max-age",
   "max-stale",
@@ -129,19 +138,18 @@ const char *_hdrtoken_strs[] = {
   "proxy-revalidate",
   "s-maxage",
   "need-revalidate-once",
-
+  
   // HTTP miscellaneous
   "none",
   "chunked",
   "close",
-  "*",
-
+  
   // URL schemes
   "file",
   "ftp",
   "gopher",
-  "http",
   "https",
+  "http",
   "mailto",
   "news",
   "nntp",
@@ -150,28 +158,29 @@ const char *_hdrtoken_strs[] = {
   "tunnel",
   "wais",
   "pnm",
-  "rtsp",
   "rtspu",
-  "mms",
+  "rtsp",
   "mmsu",
   "mmst",
-
+  "mms",
+  
   // HTTP methods
   "CONNECT",
   "DELETE",
   "GET",
+  "POST",
   "HEAD",
   "ICP_QUERY",
   "OPTIONS",
-  "POST",
   "PURGE",
   "PUT",
   "TRACE",
   "PUSH",
   "X-ID",
-
+  
   // Header extensions
-  "X-Forwarded-For"
+  "X-Forwarded-For",
+  "TE",
 };
 
 HdrTokenTypeBinding _hdrtoken_strs_type_initializers[] = {
@@ -321,8 +330,8 @@ DFA *hdrtoken_strs_dfa = NULL;
  *                                                                     *
  ***********************************************************************/
 
-#define	HDRTOKEN_HASH_TABLE_SIZE	128
-#define	HDRTOKEN_HASH_TABLE_MASK	127
+#define	HDRTOKEN_HASH_TABLE_SIZE	65536
+#define	HDRTOKEN_HASH_TABLE_MASK	HDRTOKEN_HASH_TABLE_SIZE-1
 
 struct HdrTokenHashBucket
 {
@@ -331,37 +340,23 @@ struct HdrTokenHashBucket
 
 HdrTokenHashBucket hdrtoken_hash_table[HDRTOKEN_HASH_TABLE_SIZE];
 
+#define TINY_MASK(x) (((u_int32_t)1<<(x))-1)
+
+/**
+  basic FNV hash
+**/
 inline unsigned int
 hdrtoken_hash(const unsigned char *string, unsigned int length)
 {
-  unsigned char c1, c2, c3;
+  const uint32_t InitialFNV = 2166136261;
+  const int32_t FNVMultiple = 16777619;
 
-  if (length >= 3) {
-    c1 = string[0];
-    c2 = string[length - 1];
-    c3 = string[length - 2];
-  } else {
-    switch (length) {
-    case 0:
-      return (0);
-    case 1:
-      c1 = string[0];
-      c2 = c1;
-      c3 = c1;
-      break;
-    case 2:
-      c1 = string[0];
-      c2 = string[1];
-      c3 = c2;
-      break;
-    default:
-      c1 = (c2 = (c3 = 0));
-    }
+  uint32_t hash = InitialFNV;
+  for(size_t i = 0; i < length; i++)  {
+      hash = hash ^ (toupper(string[i])); 
+      hash = hash * FNVMultiple;          
   }
-
-  unsigned int hash = ((length - 3) << 3) + ((((c1 + c2) ^ c3) & 0x1F) / 5);
-  hash = hash & HDRTOKEN_HASH_TABLE_MASK;
-  return (hash);
+  return (((hash>>15) ^ hash) & TINY_MASK(15));
 }
 
 /*-------------------------------------------------------------------------
@@ -369,42 +364,141 @@ hdrtoken_hash(const unsigned char *string, unsigned int length)
 
 const char *_hdrtoken_commonly_tokenized_strs[] = {
   // MIME Field names
-  "Accept",
   "Accept-Charset",
   "Accept-Encoding",
   "Accept-Language",
+  "Accept-Ranges",
+  "Accept",
   "Age",
+  "Allow",
+  "Approved",                   // NNTP
+  "Authorization",
+  "Bytes",                      // NNTP
   "Cache-Control",
   "Client-ip",
   "Connection",
+  "Content-Base",
+  "Content-Encoding",
+  "Content-Language",
   "Content-Length",
   "Content-Location",
+  "Content-MD5",
+  "Content-Range",
   "Content-Type",
+  "Control",                    // NNTP
   "Cookie",
   "Date",
+  "Distribution",               // NNTP
+  "Etag",
+  "Expect",
   "Expires",
+  "Followup-To",                // NNTP
+  "From",
   "Host",
+  "If-Match",
   "If-Modified-Since",
+  "If-None-Match",
+  "If-Range",
+  "If-Unmodified-Since",
   "Keep-Alive",
+  "Keywords",                   // NNTP
   "Last-Modified",
+  "Lines",                      // NNTP
+  "Location",
+  "Max-Forwards",
+  "Message-ID",                 // NNTP
+  "MIME-Version",
+  "Newsgroups",                 // NNTP
+  "Organization",               // NNTP
+  "Path",                       // NNTP
   "Pragma",
+  "Proxy-Authenticate",
+  "Proxy-Authorization",
   "Proxy-Connection",
-
+  "Public",
+  "Range",
+  "References",                 // NNTP
+  "Referer",
+  "Reply-To",                   // NNTP
+  "Retry-After",
+  "Sender",                     // NNTP
+  "Server",
+  "Set-Cookie",
+  "Subject",                    // NNTP
+  "Summary",                    // NNTP
+  "Transfer-Encoding",
+  "Upgrade",
+  "User-Agent",
+  "Vary",
+  "Via",
+  "Warning",
+  "Www-Authenticate",
+  "Xref",                       // NNTP
+  "@DataInfo",                  // Internal Hack
+  
+  // Accept-Encoding
+  "compress",
+  "deflate",
+  "gzip",
+  "identity",
+  
   // Cache-Control flags
   "max-age",
+  "max-stale",
+  "min-fresh",
+  "must-revalidate",
   "no-cache",
   "no-store",
+  "no-transform",
+  "only-if-cached",
   "private",
-
+  "proxy-revalidate",
+  "s-maxage",
+  "need-revalidate-once",
+  
   // HTTP miscellaneous
+  "none",
+  "chunked",
   "close",
-
+  
   // URL schemes
+  "file",
+  "ftp",
+  "gopher",
+  "https",
   "http",
-
+  "mailto",
+  "news",
+  "nntp",
+  "prospero",
+  "telnet",
+  "tunnel",
+  "wais",
+  "pnm",
+  "rtspu",
+  "rtsp",
+  "mmsu",
+  "mmst",
+  "mms",
+  
   // HTTP methods
+  "CONNECT",
+  "DELETE",
   "GET",
-  "POST"
+  "POST",
+  "HEAD",
+  "ICP_QUERY",
+  "OPTIONS",
+  "PURGE",
+  "PUT",
+  "TRACE",
+  "PUSH",
+  "X-ID",
+  
+  // Header extensions
+  "X-Forwarded-For",
+  "TE",
+  
 };
 
 /*-------------------------------------------------------------------------
@@ -413,7 +507,8 @@ const char *_hdrtoken_commonly_tokenized_strs[] = {
 void
 hdrtoken_hash_init()
 {
-  int i, num_collisions;
+  unsigned int i;
+  int num_collisions;
 
   for (i = 0; i < HDRTOKEN_HASH_TABLE_SIZE; i++) {
     hdrtoken_hash_table[i].wks = NULL;
@@ -467,14 +562,10 @@ hdrtoken_init(const char *path)
   int i;
 
   if (!inited) {
-    char buf[PATH_NAME_MAX + 1];
-
     inited = 1;
-    ink_filepath_make(buf, sizeof(buf), path, "hdrtoken.dat");
+
     hdrtoken_strs_dfa = NEW(new DFA);
-    hdrtoken_strs_dfa->compile(buf,
-                               _hdrtoken_strs,
-                               SIZEOF(_hdrtoken_strs), (REFlags) (RE_CASE_INSENSITIVE | RE_NO_WILDCARDS));
+    hdrtoken_strs_dfa->compile(_hdrtoken_strs, SIZEOF(_hdrtoken_strs), (REFlags) (RE_CASE_INSENSITIVE));
 
     // all the tokenized hdrtoken strings are placed in a special heap,
     // and each string is prepended with a HdrTokenHeapPrefix ---
@@ -568,8 +659,9 @@ int
 hdrtoken_tokenize_dfa(const char *string, int string_len, const char **wks_string_out)
 {
   int wks_idx;
-
+  
   wks_idx = hdrtoken_strs_dfa->match(string, string_len);
+
   if (wks_idx < 0)
     wks_idx = -1;
   if (wks_string_out) {
@@ -586,8 +678,6 @@ hdrtoken_tokenize_dfa(const char *string, int string_len, const char **wks_strin
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-#define	HDRTOKEN_TOKENIZE_HASH_ENABLED		1
-
 int
 hdrtoken_tokenize(const char *string, int string_len, const char **wks_string_out)
 {
@@ -596,27 +686,24 @@ hdrtoken_tokenize(const char *string, int string_len, const char **wks_string_ou
 
   ink_debug_assert(string != NULL);
 
-  // printf("hdrtoken_tokenize(%.*s)  ",string_len,string);
-
   if (hdrtoken_is_wks(string)) {
     wks_idx = hdrtoken_wks_to_index(string);
     if (wks_string_out)
       *wks_string_out = string;
     return (wks_idx);
   }
-#if (HDRTOKEN_TOKENIZE_HASH_ENABLED)
+
   unsigned int slot = hdrtoken_hash((const unsigned char *) string, (unsigned int) string_len);
   bucket = &(hdrtoken_hash_table[slot]);
   if ((bucket->wks != NULL) &&
-      (hdrtoken_wks_to_length(bucket->wks) == string_len) && (memcmp(bucket->wks, string, string_len) == 0)) {
+      (hdrtoken_wks_to_length(bucket->wks) == string_len)) {
     wks_idx = hdrtoken_wks_to_index(bucket->wks);
     if (wks_string_out)
       *wks_string_out = bucket->wks;
     return (wks_idx);
   }
-#endif
 
-  return (hdrtoken_tokenize_dfa(string, string_len, wks_string_out));
+  return -1;
 }
 
 /*-------------------------------------------------------------------------
@@ -625,7 +712,7 @@ hdrtoken_tokenize(const char *string, int string_len, const char **wks_string_ou
 const char *
 hdrtoken_string_to_wks(const char *string)
 {
-  const char *wks;
+  const char *wks = NULL;
   hdrtoken_tokenize(string, (int) strlen(string), &wks);
   return (wks);
 }
@@ -636,7 +723,7 @@ hdrtoken_string_to_wks(const char *string)
 const char *
 hdrtoken_string_to_wks(const char *string, int length)
 {
-  const char *wks;
+  const char *wks = NULL;
   hdrtoken_tokenize(string, length, &wks);
   return (wks);
 }

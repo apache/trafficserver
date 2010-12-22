@@ -24,74 +24,43 @@
 #ifndef __TS_REGEX_H__
 #define __TS_REGEX_H__
 
-/*
-  regular expression rules:
-
-  x            - match the character 'x'
-  .            - any character
-  [xyz]        - a "character class"; in this case, the pattern
-                 matches either an 'x', a 'y' or a 'z'
-  [abj-oZ]     - a "character class" with a range in it; matches
-                 an 'a', a 'b', any letter from 'j' through 'o',
-                 or a 'Z'
-  [^A-Z]       - a "negated character class", i.e., any character
-                 but those in the class.
-  r*           - zero or more r's, where r is any regular expression
-  r+           - one or more r's
-  r?           - zero or one r's (that is, "an optional r")
-  r{2,5}       - anywhere from two to five r's
-  r{2,}        - two or more r's
-  r{4}         - exactly 4 r's
-  "[xyz]\"foo" - the literal string: [xyz]"foo
-  \X           - if X is an 'a', 'b', 'f', 'n', 'r', 't', or 'v',
-                 then the ANSI-C interpretation of \x. Otherwise,
-                 a literal 'X'. (Used to escape operators such as
-                 '*')
-  \0           - A NUL character
-  \123         - the character with octal value 123
-  \x2a         - the character with hexadecimal value 2a
-  (r)          - match an r; parentheses are used to override
-                 precedence
-  rs           - the regular expresion r followed by the regular
-                 expression s
-  r|s          - either an r or an s
-  #<n>#        - inserts an "end" node causing regular expression
-                 matching to stop when it is reached and for the
-		 value n to be returned.
-*/
-
-
-#include "ink_port.h"
-#include "DynArray.h"
+#ifdef HAVE_PCRE_PCRE_H
+#include <pcre/pcre.h>
+#else
+#include <pcre.h>
+#endif
 
 
 enum REFlags
 {
-  RE_CASE_INSENSITIVE = 1 << 0,
-  RE_NO_WILDCARDS = 1 << 1
+  RE_CASE_INSENSITIVE = 1,
 };
 
+typedef struct __pat {
+  int _idx;
+  pcre *_re;
+  pcre_extra *_pe;
+  char *_p;
+  __pat * _next;
+} dfa_pattern;
 
 class DFA
 {
 public:
-  DFA();
+  DFA():_my_patterns(0) {
+  }
+  
   ~DFA();
 
   int compile(const char *pattern, REFlags flags = (REFlags) 0);
   int compile(const char **patterns, int npatterns, REFlags flags = (REFlags) 0);
-  int compile(const char *filename, const char **patterns, int npatterns, REFlags flags = (REFlags) 0);
-
+  dfa_pattern * build(const char *pattern, REFlags flags = (REFlags) 0);
+  
   int match(const char *str);
   int match(const char *str, int length);
-  int match(const char *&str, int length, int &state);
-  int size();
 
 private:
-    DynArray<int32_t> basetbl;
-    DynArray<int32_t> accepttbl;
-    DynArray<int32_t> nexttbl;
-    DynArray<int32_t> checktbl;
+  dfa_pattern * _my_patterns;
 };
 
 
