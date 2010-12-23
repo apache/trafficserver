@@ -36,7 +36,6 @@
 #endif
 
 extern int net_config_poll_timeout;
-extern int net_config_max_poll_delay;
 extern int net_config_fds_throttle;
 extern int net_config_listen_backlog;
 

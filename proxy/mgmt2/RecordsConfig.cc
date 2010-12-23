@@ -911,8 +911,6 @@ RecordElement RecordsConfig[] = {
   ,
   {RECT_CONFIG, "proxy.config.net.throttle_enabled", RECD_INT, "1", RECU_NULL, RR_NULL, RECC_NULL, "[0-1]", RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.net.max_poll_delay", RECD_INT, "128", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
-  ,
   {RECT_CONFIG, "proxy.config.net.listen_backlog", RECD_INT, "1024", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.net.accept_throttle", RECD_INT, "0", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}

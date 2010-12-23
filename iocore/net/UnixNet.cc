@@ -194,16 +194,6 @@ void
 initialize_thread_for_net(EThread *thread, int thread_index)
 {
   NOWARN_UNUSED(thread_index);
-  static bool poll_delay_read = false;
-  int max_poll_delay;           // max poll delay in milliseconds
-  if (!poll_delay_read) {
-    IOCORE_ReadConfigInteger(max_poll_delay, "proxy.config.net.max_poll_delay");
-    if ((max_poll_delay & (max_poll_delay - 1)) ||
-        (max_poll_delay<NET_PRIORITY_MSEC) || (max_poll_delay> MAX_NET_BUCKETS * NET_PRIORITY_MSEC)) {
-      IOCORE_SignalWarning(REC_SIGNAL_SYSTEM_ERROR, "proxy.config.net.max_poll_delay range is [4-1024]");
-    }
-    poll_delay_read = true;
-  }
 
   new((ink_dummy_for_new *) get_NetHandler(thread)) NetHandler();
   new((ink_dummy_for_new *) get_PollCont(thread)) PollCont(thread->mutex, get_NetHandler(thread));

@@ -27,7 +27,6 @@
 
 int net_config_poll_timeout = DEFAULT_POLL_TIMEOUT;
 int net_config_fds_throttle = 8000;
-int net_config_max_poll_delay = 0;
 int net_config_listen_backlog = 1024;
 
 

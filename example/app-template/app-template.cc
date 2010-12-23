@@ -89,14 +89,7 @@ ArgumentDescription argument_descriptions[] = {
 int n_argument_descriptions = SIZE(argument_descriptions);
 
 void init_app_config() {
-
   // Net
-  RecRegisterConfigInt(
-    RECT_CONFIG,
-    "proxy.config.net.max_poll_delay",
-    128,
-    RECU_DYNAMIC, RECC_NULL, NULL);
-
    RecRegisterConfigInt(
     RECT_CONFIG,
     "proxy.config.net.listen_backlog",
