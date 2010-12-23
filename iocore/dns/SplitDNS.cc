@@ -73,7 +73,6 @@ enum SplitDNSCB_t
 static const char *SDNSResultStr[] = {
   "DNSServer_Undefined",
   "DNSServer_Specified",
-  "DNSServer_Default",
   "DNSServer_Failed"
 };
 
@@ -96,10 +95,9 @@ inline SplitDNSResult::SplitDNSResult()
    SplitDNS::SplitDNS()
    -------------------------------------------------------------- */
 SplitDNS::SplitDNS()
-: m_DNSSrvrTable(NULL), m_DefaultDNSSrvr(NULL), m_SplitDNSlEnable(0), m_def_domain_len(0),
+: m_DNSSrvrTable(NULL), m_SplitDNSlEnable(0),
   m_bEnableFastPath(false), m_pxLeafArray(NULL), m_numEle(0)
 {
-  memset(m_def_domain, 0, MAXDNAME);
 }
 
 
@@ -107,10 +105,6 @@ SplitDNS::~SplitDNS()
 {
   if (m_DNSSrvrTable) {
     delete m_DNSSrvrTable;
-  }
-
-  if (m_DefaultDNSSrvr) {
-    delete m_DefaultDNSSrvr;
   }
 }
 
@@ -179,26 +173,6 @@ SplitDNSConfig::reconfigure()
     params->m_bEnableFastPath = true;
   }
 
-  char *def_domain = IOCORE_ConfigReadString("proxy.config.dns.splitdns.def_domain");
-
-  if (def_domain) {
-    ink_strncpy(params->m_def_domain, def_domain, MAXDNAME);
-    xfree(def_domain);
-  } else {
-    // If def_domain comes back NULL, then either: the record
-    // doesn't exist -or- the record does exist but is currently set
-    // to NULL.  In this case, just clear the m_def_domain.
-    memset(params->m_def_domain, 0, MAXDNAME);
-  }
-
-  /* ----------------------------
-     Handle default DNS server
-     ---------------------------- */
-  params->m_DefaultDNSSrvr = createDefaultServer();
-  if ((0 == params->m_def_domain[0]) && (0 != params->m_DefaultDNSSrvr) && (true == params->m_bEnableFastPath)) {
-    ink_strncpy(params->m_def_domain, params->m_DefaultDNSSrvr->m_servers.x_def_domain, MAXDNAME);
-  }
-  params->m_def_domain_len = strlen(params->m_def_domain);
   m_id = SplitDNSconfigProcessor.set(m_id, params);
 
   if (is_debug_tag_set("splitdns_config")) {
@@ -218,13 +192,6 @@ SplitDNSConfig::print()
   Debug("splitdns_config", "DNS Server Selection Config\n");
   Debug("splitdns_config", "\tEnabled \n", params->m_SplitDNSlEnable);
 
-  if (params->m_DefaultDNSSrvr == NULL) {
-    Debug("splitdns_config", "\tNo Default DNS Server\n");
-  } else {
-    Debug("splitdns_config", "\tDefault DNS Server:\n");
-    params->m_DefaultDNSSrvr->Print();
-  }
-
   params->m_DNSSrvrTable->Print();
   SplitDNSConfig::release(params);
 }
@@ -234,47 +201,23 @@ SplitDNSConfig::print()
    SplitDNS::getDNSRecord()
    -------------------------------------------------------------- */
 void *
-SplitDNS::getDNSRecord(char *hostname)
+SplitDNS::getDNSRecord(const char *hostname)
 {
-  char szHostName[MAXDNAME];
-  char *pInHost = hostname;
-  size_t remaining_str_size = sizeof szHostName;
-
   Debug("splitdns", "Called SplitDNS::getDNSRecord(%s)", hostname);
-  if (0 < m_def_domain_len) {
-    if (0 == strchr(hostname, '.')) {
-      int hlen = strlen(hostname) + m_def_domain_len;
-
-      if (MAXDNAME > hlen) {
-        ink_strncpy(szHostName, hostname, remaining_str_size);
-        remaining_str_size -= strlen(hostname);
-        strncat(szHostName, ".", remaining_str_size);
-        remaining_str_size--;
-        strncat(szHostName, m_def_domain, remaining_str_size);
-        pInHost = &szHostName[0];
-      }
-    }
-  }
 
   DNSRequestData *pRD = DNSReqAllocator.alloc();
-  pRD->m_pHost = pInHost;
+  pRD->m_pHost = hostname;
 
   SplitDNSResult res;
   findServer(pRD, &res);
 
-  pRD->m_pHost = 0;
   DNSReqAllocator.free(pRD);
 
-  if (DNS_SRVR_UNDEFINED == res.r) {
-    Warning("Failed to match a valid DNS server!");
-    ink_assert(!"Failed to match a valid DNS server");
-  } else if (DNS_SRVR_DEFAULT == res.r) {
-    Debug("splitdns", "Failed to match a valid DNS server! Using defaults ...");
-    return (void *) &(res.m_rec->m_servers);
-  } else if (DNS_SRVR_SPECIFIED == res.r) {
+  if (DNS_SRVR_SPECIFIED == res.r) {
     return (void *) &(res.m_rec->m_servers);
   }
 
+  Debug("splitdns", "Fail to match a valid splitdns rule, fallback to default dns resolver");
   return NULL;
 }
 
@@ -286,7 +229,6 @@ void
 SplitDNS::findServer(RD * rdata, SplitDNSResult * result)
 {
   DNS_table *tablePtr = m_DNSSrvrTable;
-  SplitDNSRecord *defaultPtr = m_DefaultDNSSrvr;
   SplitDNSRecord *rec;
 
   ink_assert(result->r == DNS_SRVR_UNDEFINED);
@@ -342,16 +284,7 @@ SplitDNS::findServer(RD * rdata, SplitDNSResult * result)
 
   rec = result->m_rec;
   if (rec == NULL) {
-    /* ------------------------------------------
-       return default DNS server.
-       however, still return DNS_SRVR_UNDEFINED
-       ------------------------------------------ */
-    if (defaultPtr != NULL) {
-      rec = result->m_rec = defaultPtr;
-      result->r = DNS_SRVR_DEFAULT;
-    } else {
-      result->r = DNS_SRVR_UNDEFINED;
-    }
+    result->r = DNS_SRVR_UNDEFINED;
     return;
   } else {
     result->r = DNS_SRVR_SPECIFIED;
@@ -369,8 +302,7 @@ SplitDNS::findServer(RD * rdata, SplitDNSResult * result)
       result->m_rec->Print();
       break;
     default:
-      // This covers:
-      // DNS_SRVR_UNDEFINED and DNS_SRVR_DEFAULT
+      // DNS_SRVR_UNDEFINED
       break;
     }
   }
@@ -653,49 +585,6 @@ SplitDNSRecord::Print()
   }
 }
 
-
-/* --------------------------------------------------------------
-    SplitDNSRecord* createDefaultServer()
-   -------------------------------------------------------------- */
-SplitDNSRecord *
-createDefaultServer()
-{
-  SplitDNSRecord *newRec;
-  // TODO: Hmmmm, we ought to only have to read this once, in DNS.cc ...
-  char *resolv_conf = IOCORE_ConfigReadString("proxy.config.dns.resolv_conf");
-  ink_res_state res = new __ink_res_state;
-
-  memset(res, 0, sizeof(__ink_res_state));
-  if (ink_res_init(res, 0, 0, 0, 0, resolv_conf) < 0) {
-    Warning("no default name server configured!");
-    xfree(resolv_conf);
-    return 0;
-  }
-  xfree(resolv_conf);
-
-  newRec = NEW(new SplitDNSRecord);
-  for (int i = 0; i < res->nscount; i++) {
-    // TODO: IPv6 ?
-    newRec->m_servers.x_server_ip[i] = res->nsaddr_list[i].sin.sin_addr.s_addr;
-    newRec->m_servers.x_dns_server_port[i] = ntohs(res->nsaddr_list[i].sin.sin_port);
-  }
-
-  newRec->m_servers.x_dnsH = new DNSHandler;
-  newRec->m_servers.x_dnsH->m_res = res;
-
-  newRec->m_servers.x_dnsH->mutex = SplitDNSConfig::dnsHandler_mutex;
-  newRec->m_servers.x_dnsH->options = _res.options;
-  newRec->m_servers.x_dnsH->ip = DEFAULT_DOMAIN_NAME_SERVER;
-  newRec->m_servers.x_dnsH->port = DOMAIN_SERVICE_PORT;
-
-  SET_CONTINUATION_HANDLER(newRec->m_servers.x_dnsH, &DNSHandler::startEvent_sdns);
-  (eventProcessor.eventthread[ET_DNS][0])->schedule_imm(newRec->m_servers.x_dnsH);
-  newRec->m_dnsSrvr_cnt = res->nscount;
-  ink_strncpy(newRec->m_servers.x_def_domain, res->defdname, MAXDNAME);
-
-  newRec->m_domain_srch_list = 0;
-  return newRec;
-}
 
 class SplitDNSConfigInfoReleaser:public Continuation
 {

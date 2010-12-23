@@ -548,8 +548,8 @@ Ldelete:
 
 
 HostDBInfo *
-probe(ProxyMutex * mutex,
-      INK_MD5 & md5, char *hostname, int len, int ip, int port, void *pDS, bool ignore_timeout, bool is_srv_lookup)
+probe(ProxyMutex *mutex, INK_MD5 & md5, char *hostname, int len, int ip, int port, void *pDS, bool ignore_timeout,
+      bool is_srv_lookup)
 {
   ink_debug_assert(this_ethread() == hostDB.lock_for_bucket((int) (fold_md5(md5) % hostDB.buckets))->thread_holding);
   if (hostdb_enable) {
@@ -670,15 +670,9 @@ HostDBProcessor::getby(Continuation * cont,
       if (0 != pSD) {
         pDS = ((SplitDNS *) pSD)->getDNSRecord(hostname);
 
-        if (0 == pSD) {
-          MUTEX_TRY_LOCK(lock, cont->mutex, thread);
-          if (!lock)
-            goto Lretry;
-          cont->handleEvent(EVENT_HOST_DB_LOOKUP, NULL);
-          return ACTION_RESULT_DONE;
+        if (0 != pDS) {
+          pServerLine = ((DNSServer *) pDS)->x_dns_ip_line;
         }
-
-        pServerLine = ((DNSServer *) pDS)->x_dns_ip_line;
       }
       SplitDNSConfig::release((SplitDNS *) pSD);
     }
@@ -882,11 +876,9 @@ HostDBProcessor::getbyname_imm(Continuation * cont, process_hostdb_info_pfn proc
       if (0 != pSD) {
         pDS = ((SplitDNS *) pSD)->getDNSRecord(hostname);
 
-        if (0 == pDS) {
-          (cont->*process_hostdb_info) (NULL);
-          return ACTION_RESULT_DONE;
+        if (0 != pDS) {
+          pServerLine = ((DNSServer *) pDS)->x_dns_ip_line;
         }
-        pServerLine = ((DNSServer *) pDS)->x_dns_ip_line;
       }
       SplitDNSConfig::release((SplitDNS *) pSD);
     }
@@ -1093,7 +1085,7 @@ HostDBProcessor::failed_connect_on_ip_for_name(Continuation * cont, unsigned int
       return ACTION_RESULT_DONE;
     }
 #ifdef SPLIT_DNS
-    HostDBInfo *r = probe(mutex, md5, hostname, len, ip, port, pSD);
+    HostDBInfo *r = probe(mutex, md5, hostname, len, ip, port, pDS);
 #else
     HostDBInfo *r = probe(mutex, md5, hostname, len, ip, port, 0);
 #endif

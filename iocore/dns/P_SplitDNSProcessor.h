@@ -58,7 +58,6 @@ struct DNSServer;
 enum DNSResultType
 { DNS_SRVR_UNDEFINED = 0,
   DNS_SRVR_SPECIFIED,
-  DNS_SRVR_DEFAULT,
   DNS_SRVR_FAIL
 };
 
@@ -124,17 +123,13 @@ struct SplitDNS:public SplitDNSConfigInfo
   SplitDNS();
   ~SplitDNS();
 
-  void *getDNSRecord(char *hostname);
+  void *getDNSRecord(const char *hostname);
   void findServer(RD * rdata, SplitDNSResult * result);
 
 
   DNS_table *m_DNSSrvrTable;
-  SplitDNSRecord *m_DefaultDNSSrvr;
 
   int32_t m_SplitDNSlEnable;
-
-  char m_def_domain[MAXDNAME];
-  int m_def_domain_len;
 
   /* ----------------------------
      required by the alleged fast

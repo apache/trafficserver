@@ -306,7 +306,6 @@ const char *stringVariables[] = {
   "proxy.config.http.cache.vary_default_other",
   "proxy.config.socks.socks_server_ip_str",
   "proxy.config.cluster.ethernet_interface",
-  "proxy.config.dns.splitdns.def_domain",
   "proxy.config.dns.url_expansions",
   "proxy.config.log.hostname",
   "proxy.config.log.logfile_dir",

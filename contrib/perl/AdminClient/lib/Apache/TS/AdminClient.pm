@@ -309,7 +309,6 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.dns.retries
  proxy.config.dns.round_robin_nameservers
  proxy.config.dns.search_default_domains
- proxy.config.dns.splitdns.def_domain
  proxy.config.dns.splitDNS.enabled
  proxy.config.dns.splitdns.filename
  proxy.config.dns.url_expansions

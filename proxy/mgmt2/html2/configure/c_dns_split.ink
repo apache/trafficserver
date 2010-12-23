@@ -56,23 +56,6 @@
       </ul>
     </td>
   </tr>
-
-  <tr> 
-    <td height="2" colspan="2" class="configureLabel"><@submit_error_flg proxy.config.dns.splitdns.def_domain>Default Domain</td>
-  </tr>
-  <tr>
-    <td nowrap class="bodyText">
-      <input type="text" size="18" name="proxy.config.dns.splitdns.def_domain" value="<@record proxy.config.dns.splitdns.def_domain>">
-    </td>
-     <td class="configureHelp" valign="top" align="left"> 
-      <ul>
-        <li>Specifies the default domain for split DNS requests.
-        <li>This value is appended automatically to the hostname if it does
-            not include a domain before split DNS determines which DNS server
-            to use.
-      </ul>
-    </td>
-  </tr>
 </table>
 
 <table width="100%" border="0" cellspacing="0" cellpadding="10"> 

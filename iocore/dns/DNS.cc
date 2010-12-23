@@ -445,7 +445,7 @@ DNSHandler::startEvent_sdns(int event, Event * e)
   if (ip == DEFAULT_DOMAIN_NAME_SERVER) {
     // seems that res_init always sets m_res.nscount to at least 1!
     if (!m_res->nscount)
-      Warning("bad '/etc/resolv.conf': no nameservers given");
+      Warning("bad nameserver config, fallback to 127.0.0.1");
     struct sockaddr_in *sa = &m_res->nsaddr_list[0].sin;
     ip = sa->sin_addr.s_addr;
     if (!ip)
