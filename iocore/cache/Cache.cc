@@ -155,9 +155,11 @@ Queue<CachePart> cp_list;
 int cp_list_len = 0;
 ConfigPartitions config_partitions;
 
+#if TS_HAS_TESTS
 void force_link_CacheTestCaller() {
   force_link_CacheTest();
 }
+#endif
 
 int64_t
 cache_bytes_used(void)

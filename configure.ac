@@ -43,7 +43,8 @@ AC_CONFIG_MACRO_DIR([build])
 AM_INIT_AUTOMAKE([-Wall -Werror foreign no-installinfo no-installman 1.9.2])
 AM_CONFIG_HEADER([lib/ts/ink_autoconf.h])
 
-LT_INIT([dlopen])
+# Not sure this is needed, and seems to break with some versions of automake
+#LT_INIT([dlopen])
 
 # Libtool versioning uses different conventions on different
 # platforms.  At least on FreeBSD, libtool uses an overly complex
