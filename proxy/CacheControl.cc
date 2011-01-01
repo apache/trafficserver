@@ -177,20 +177,21 @@ reloadCacheControl()
 }
 
 void
-getCacheControl(CacheControlResult * result, HttpRequestData * rdata, HttpConfigParams * h_params, char *tag)
+getCacheControl(CacheControlResult *result, HttpRequestData *rdata, HttpConfigParams *h_params,
+                OverridableHttpConfigParams *h_txn_conf, char *tag)
 {
   rdata->tag = tag;
   CacheControlTable->Match(rdata, result);
 
-  if (h_params->cache_ignore_client_no_cache) {
+  if (h_txn_conf->cache_ignore_client_no_cache) {
     result->ignore_client_no_cache = true;
   }
 
-  if (h_params->cache_ignore_server_no_cache) {
+  if (h_txn_conf->cache_ignore_server_no_cache) {
     result->ignore_server_no_cache = true;
   }
 
-  if (!h_params->cache_ignore_client_cc_max_age) {
+  if (!h_txn_conf->cache_ignore_client_cc_max_age) {
     result->ignore_client_cc_max_age = false;
   }
 }
@@ -461,17 +462,18 @@ CacheControlRecord::UpdateMatch(CacheControlResult * result, RD * rdata)
 {
 }
 void
-getCacheControl(CacheControlResult * result, HttpRequestData * rdata, HttpConfigParams * h_params)
+getCacheControl(CacheControlResult * result, HttpRequestData * rdata, HttpConfigParams * h_params,
+                OverridableHttpConfigParams *h_txn_conf)
 {
-  if (h_params->cache_ignore_client_no_cache) {
+  if (h_txn_conf->cache_ignore_client_no_cache) {
     result->ignore_client_no_cache = true;
   }
 
-  if (h_params->cache_ignore_server_no_cache) {
+  if (h_txn_conf->cache_ignore_server_no_cache) {
     result->ignore_server_no_cache = true;
   }
 
-  if (!h_params->cache_ignore_client_cc_max_age) {
+  if (!h_txn_conf->cache_ignore_client_cc_max_age) {
     result->ignore_client_cc_max_age = false;
   }
 }

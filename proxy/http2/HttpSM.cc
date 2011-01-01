@@ -407,25 +407,28 @@ HttpSM::init()
   t_state.state_machine = this;
 
   t_state.http_config_param = HttpConfig::acquire();
+
   // TODO: this might want to be "lazy" (on write from a plugin)
   memcpy(&(t_state.txn_conf), &(t_state.http_config_param->oride), sizeof(t_state.txn_conf));
 
   // update the cache info config structure so that
   // selection from alternates happens correctly.
-  t_state.cache_info.config.cache_global_user_agent_header =
-    t_state.http_config_param->global_user_agent_header ? true : false;
-
+  t_state.cache_info.config.cache_global_user_agent_header = t_state.http_config_param->global_user_agent_header ? true : false;
   t_state.cache_info.config.ignore_accept_mismatch = t_state.http_config_param->ignore_accept_mismatch ? true : false;
+
   t_state.cache_info.config.ignore_accept_language_mismatch =
     t_state.http_config_param->ignore_accept_language_mismatch ? true : false;
+
   t_state.cache_info.config.ignore_accept_encoding_mismatch =
     t_state.http_config_param->ignore_accept_encoding_mismatch ? true : false;
+
   t_state.cache_info.config.ignore_accept_charset_mismatch =
     t_state.http_config_param->ignore_accept_charset_mismatch ? true : false;
 
 
   t_state.cache_info.config.cache_enable_default_vary_headers =
     t_state.http_config_param->cache_enable_default_vary_headers ? true : false;
+
   t_state.cache_info.config.cache_vary_default_text = t_state.http_config_param->cache_vary_default_text;
   t_state.cache_info.config.cache_vary_default_images = t_state.http_config_param->cache_vary_default_images;
   t_state.cache_info.config.cache_vary_default_other = t_state.http_config_param->cache_vary_default_other;
@@ -433,10 +436,7 @@ HttpSM::init()
   t_state.init();
   // Added to skip dns if the document is in cache. DNS will be forced if there is a ip based based ACL in cache control or parent.config or if the doc_in_cache_skip_dns is disabled or if http caching is disabled
   t_state.force_dns = (ip_rule_in_CacheControlTable() || t_state.parent_params->ParentTable->ipMatch ||
-                       !(t_state.http_config_param->doc_in_cache_skip_dns) || !(t_state.http_config_param->cache_http));
-  //printf("%d doc_in_cache_skip_dns\n", t_state.http_config_param->doc_in_cache_skip_dns);
-  //printf("%d t_state.force_dns\n", t_state.force_dns);
-
+                       !(t_state.http_config_param->doc_in_cache_skip_dns) || !(t_state.txn_conf.cache_http));
 
   http_parser_init(&http_parser);
 

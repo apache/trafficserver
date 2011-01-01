@@ -1239,7 +1239,7 @@ HttpConfig::startup()
   c.oride.proxy_response_server_string_len = c.oride.proxy_response_server_string ?
     strlen(c.oride.proxy_response_server_string) : 0;
 
-  HttpEstablishStaticConfigLongLong(c.insert_squid_x_forwarded_for, "proxy.config.http.insert_squid_x_forwarded_for");
+  HttpEstablishStaticConfigLongLong(c.oride.insert_squid_x_forwarded_for, "proxy.config.http.insert_squid_x_forwarded_for");
 
 
   HttpEstablishStaticConfigLongLong(c.insert_age_in_response, "proxy.config.http.insert_age_in_response");
@@ -1278,12 +1278,12 @@ HttpConfig::startup()
   HttpEstablishStaticConfigLongLong(c.max_cache_open_write_retries, "proxy.config.http.cache.max_open_write_retries");
   HttpEstablishStaticConfigLongLong(c.cache_open_write_retry_time, "proxy.config.http.cache.open_write_retry_time");
 
-  HttpEstablishStaticConfigLongLong(c.cache_http, "proxy.config.http.cache.http");
-  HttpEstablishStaticConfigLongLong(c.cache_ignore_client_no_cache, "proxy.config.http.cache.ignore_client_no_cache");
-  HttpEstablishStaticConfigLongLong(c.cache_ignore_client_cc_max_age,
+  HttpEstablishStaticConfigLongLong(c.oride.cache_http, "proxy.config.http.cache.http");
+  HttpEstablishStaticConfigLongLong(c.oride.cache_ignore_client_no_cache, "proxy.config.http.cache.ignore_client_no_cache");
+  HttpEstablishStaticConfigLongLong(c.oride.cache_ignore_client_cc_max_age,
                                     "proxy.config.http.cache.ignore_client_cc_max_age");
-  HttpEstablishStaticConfigLongLong(c.cache_ims_on_client_no_cache, "proxy.config.http.cache.ims_on_client_no_cache");
-  HttpEstablishStaticConfigLongLong(c.cache_ignore_server_no_cache, "proxy.config.http.cache.ignore_server_no_cache");
+  HttpEstablishStaticConfigLongLong(c.oride.cache_ims_on_client_no_cache, "proxy.config.http.cache.ims_on_client_no_cache");
+  HttpEstablishStaticConfigLongLong(c.oride.cache_ignore_server_no_cache, "proxy.config.http.cache.ignore_server_no_cache");
   HttpEstablishStaticConfigLongLong(c.cache_responses_to_cookies, "proxy.config.http.cache.cache_responses_to_cookies");
 
   HttpEstablishStaticConfigLongLong(c.cache_ignore_auth, "proxy.config.http.cache.ignore_authentication");
@@ -1328,6 +1328,8 @@ HttpConfig::startup()
   HttpEstablishStaticConfigLongLong(c.record_cop_page, "proxy.config.http.record_heartbeat");
 
   HttpEstablishStaticConfigLongLong(c.record_tcp_mem_hit, "proxy.config.http.record_tcp_mem_hit");
+
+  HttpEstablishStaticConfigLongLong(c.oride.send_http11_requests, "proxy.config.http.send_http11_requests");
 
   if (!c.transparency_enabled) {
     //By this time, we would have read Socks configuration.
@@ -1554,7 +1556,7 @@ HttpConfig::reconfigure()
     strlen(params->oride.proxy_response_server_string) : 0;
   params->oride.proxy_response_server_enabled = m_master.oride.proxy_response_server_enabled;
 
-  params->insert_squid_x_forwarded_for = INT_TO_BOOL(m_master.insert_squid_x_forwarded_for);
+  params->oride.insert_squid_x_forwarded_for = INT_TO_BOOL(m_master.oride.insert_squid_x_forwarded_for);
   params->insert_age_in_response = INT_TO_BOOL(m_master.insert_age_in_response);
   params->avoid_content_spoofing = INT_TO_BOOL(m_master.avoid_content_spoofing);
   params->enable_http_stats = INT_TO_BOOL(m_master.enable_http_stats);
@@ -1591,11 +1593,11 @@ HttpConfig::reconfigure()
   params->max_cache_open_write_retries = m_master.max_cache_open_write_retries;
   params->cache_open_write_retry_time = m_master.cache_open_write_retry_time;
 
-  params->cache_http = INT_TO_BOOL(m_master.cache_http);
-  params->cache_ignore_client_no_cache = INT_TO_BOOL(m_master.cache_ignore_client_no_cache);
-  params->cache_ignore_client_cc_max_age = INT_TO_BOOL(m_master.cache_ignore_client_cc_max_age);
-  params->cache_ims_on_client_no_cache = INT_TO_BOOL(m_master.cache_ims_on_client_no_cache);
-  params->cache_ignore_server_no_cache = INT_TO_BOOL(m_master.cache_ignore_server_no_cache);
+  params->oride.cache_http = INT_TO_BOOL(m_master.oride.cache_http);
+  params->oride.cache_ignore_client_no_cache = INT_TO_BOOL(m_master.oride.cache_ignore_client_no_cache);
+  params->oride.cache_ignore_client_cc_max_age = INT_TO_BOOL(m_master.oride.cache_ignore_client_cc_max_age);
+  params->oride.cache_ims_on_client_no_cache = INT_TO_BOOL(m_master.oride.cache_ims_on_client_no_cache);
+  params->oride.cache_ignore_server_no_cache = INT_TO_BOOL(m_master.oride.cache_ignore_server_no_cache);
   params->cache_responses_to_cookies = m_master.cache_responses_to_cookies;
   params->cache_ignore_auth = INT_TO_BOOL(m_master.cache_ignore_auth);
   params->cache_urls_that_look_dynamic = INT_TO_BOOL(m_master.cache_urls_that_look_dynamic);
@@ -1625,7 +1627,7 @@ HttpConfig::reconfigure()
   params->slow_log_threshold = m_master.slow_log_threshold;
   params->record_cop_page = INT_TO_BOOL(m_master.record_cop_page);
   params->record_tcp_mem_hit = INT_TO_BOOL(m_master.record_tcp_mem_hit);
-  params->send_http11_requests = m_master.send_http11_requests;
+  params->oride.send_http11_requests = m_master.oride.send_http11_requests;
   params->doc_in_cache_skip_dns = m_master.doc_in_cache_skip_dns;
   params->default_buffer_size_index = m_master.default_buffer_size_index;
   params->default_buffer_water_mark = m_master.default_buffer_water_mark;

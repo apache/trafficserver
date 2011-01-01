@@ -390,11 +390,11 @@ struct HttpConfigPortRange
   int high;
   HttpConfigPortRange *next;
 
-    HttpConfigPortRange()
-  : low(0), high(0), next(0)
-  {
-  }
-   ~HttpConfigPortRange()
+  HttpConfigPortRange()
+    : low(0), high(0), next(0)
+  {  }
+
+  ~HttpConfigPortRange()
   {
     if (next)
       delete next;
@@ -412,9 +412,17 @@ struct OverridableHttpConfigParams {
        sock_recv_buffer_size_out(0), sock_send_buffer_size_out(0), sock_option_flag_out(0),
        anonymize_remove_from(false), anonymize_remove_referer(false), anonymize_remove_user_agent(false),
        anonymize_remove_cookie(false), anonymize_remove_client_ip(false), anonymize_insert_client_ip(true),
-       append_xforwards_header(false),
-       proxy_response_server_string(NULL), proxy_response_server_string_len(0), proxy_response_server_enabled(0)
+       append_xforwards_header(false), proxy_response_server_enabled(0),
+       insert_squid_x_forwarded_for(0), send_http11_requests(3), // SEND_HTTP11_IF_REQUEST_11_AND_HOSTDB
+       cache_http(false), cache_ignore_client_no_cache(false),     cache_ignore_client_cc_max_age(true),
+       cache_ims_on_client_no_cache(false), cache_ignore_server_no_cache(false),
+
+       // Strings / floats must come last
+       proxy_response_server_string(NULL), proxy_response_server_string_len(0)
   {}
+
+  // IMPORTANT: All MgmtInt configs should come before any other string / float
+  // configs!!!
 
   // These three configs used to be @-parameters in remap.config
   MgmtInt maintain_pristine_host_hdr;
@@ -444,12 +452,34 @@ struct OverridableHttpConfigParams {
   MgmtInt anonymize_insert_client_ip;
   MgmtInt append_xforwards_header;
 
+  MgmtInt proxy_response_server_enabled;
+
+  /////////////////////
+  // X-Forwarded-For //
+  /////////////////////
+  MgmtInt insert_squid_x_forwarded_for;
+
+  //////////////////////
+  //  Version Hell    //
+  //////////////////////
+  MgmtInt send_http11_requests;
+
+  ///////////////////
+  // cache control //
+  ///////////////////
+  MgmtInt cache_http;
+  MgmtInt cache_ignore_client_no_cache;
+  MgmtInt cache_ignore_client_cc_max_age;
+  MgmtInt cache_ims_on_client_no_cache;
+  MgmtInt cache_ignore_server_no_cache;
+
+  // IMPORTANT: Here comes all strings / floats configs.
+
   ///////////////////////////////////////////////////////////////////
   // Server header                                                 //
   ///////////////////////////////////////////////////////////////////
   char *proxy_response_server_string; // This does not get free'd by us!
   size_t proxy_response_server_string_len; // Updated when server_string is set.
-  MgmtInt proxy_response_server_enabled;
 };
 
 
@@ -571,11 +601,6 @@ public:
   size_t global_user_agent_header_size;
 
   /////////////////////
-  // X-Forwarded-For //
-  /////////////////////
-  MgmtInt insert_squid_x_forwarded_for;
-
-  /////////////////////
   // Benchmark hacks //
   /////////////////////
   MgmtInt insert_age_in_response;       // INKqa09853
@@ -619,11 +644,6 @@ public:
   ///////////////////
   // cache control //
   ///////////////////
-  MgmtInt cache_http;
-  MgmtInt cache_ignore_client_no_cache;
-  MgmtInt cache_ignore_client_cc_max_age;
-  MgmtInt cache_ims_on_client_no_cache;
-  MgmtInt cache_ignore_server_no_cache;
   MgmtInt cache_responses_to_cookies;
   MgmtInt cache_ignore_auth;
   MgmtInt cache_urls_that_look_dynamic;
@@ -722,11 +742,6 @@ public:
   /////////////////////
   MgmtInt errors_log_error_pages;
   MgmtInt slow_log_threshold;
-
-  //////////////////////
-  //  Version Hell    //
-  //////////////////////
-  MgmtInt send_http11_requests;
 
   //////////////////////
   //  DOC IN CACHE NO DNS//
@@ -940,7 +955,6 @@ HttpConfigParams::HttpConfigParams()
     anonymize_other_header_list(NULL),
     global_user_agent_header(NULL),
     global_user_agent_header_size(0),
-    insert_squid_x_forwarded_for(0),
     insert_age_in_response(1),
     avoid_content_spoofing(1),
     enable_http_stats(1),
@@ -962,11 +976,6 @@ HttpConfigParams::HttpConfigParams()
     cache_open_read_retry_time(0),
     max_cache_open_write_retries(0),
     cache_open_write_retry_time(0),
-    cache_http(false),
-    cache_ignore_client_no_cache(false),
-    cache_ignore_client_cc_max_age(true),
-    cache_ims_on_client_no_cache(false),
-    cache_ignore_server_no_cache(false),
     cache_responses_to_cookies(0),
     cache_ignore_auth(0),
     cache_urls_that_look_dynamic(false),
@@ -994,7 +1003,6 @@ HttpConfigParams::HttpConfigParams()
     record_cop_page(0),
     record_tcp_mem_hit(0),
     errors_log_error_pages(0),
-    send_http11_requests(SEND_HTTP11_IF_REQUEST_11_AND_HOSTDB),
     doc_in_cache_skip_dns(1),       // Added for SKIPPING DNS If DOC IN CACHE
     default_buffer_size_index(0),
     default_buffer_water_mark(0),

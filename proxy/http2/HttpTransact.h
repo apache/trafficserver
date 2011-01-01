@@ -1319,8 +1319,8 @@ public:
   static ResponseError_t check_response_validity(State * s, HTTPHdr * incoming_hdr);
   static bool delete_all_document_alternates_and_return(State * s, bool cache_hit);
   static bool did_forward_server_send_0_9_response(State * s);
-  static bool does_client_request_permit_cached_response(const HttpConfigParams * p, CacheControlResult * c, HTTPHdr * h,
-                                                         char *via_string);
+  static bool does_client_request_permit_cached_response(const OverridableHttpConfigParams *p, CacheControlResult *c,
+                                                         HTTPHdr *h, char *via_string);
   static bool does_client_request_permit_dns_caching(CacheControlResult * c, HTTPHdr * h);
   static bool does_client_request_permit_storing(CacheControlResult * c, HTTPHdr * h);
   static bool handle_internal_request(State * s, HTTPHdr * incoming_hdr);

@@ -175,7 +175,7 @@ is_port_in_range(int port, HttpConfigPortRange *pr)
 inline static void
 update_cache_control_information_from_config(HttpTransact::State * s)
 {
-  getCacheControl(&s->cache_control, &s->request_data, s->http_config_param);
+  getCacheControl(&s->cache_control, &s->request_data, s->http_config_param, &(s->txn_conf));
 
   s->cache_info.directives.does_config_permit_lookup &= (s->cache_control.never_cache == false);
   s->cache_info.directives.does_config_permit_storing &= (s->cache_control.never_cache == false);
@@ -184,7 +184,7 @@ update_cache_control_information_from_config(HttpTransact::State * s)
     HttpTransact::does_client_request_permit_storing(&(s->cache_control), &s->hdr_info.client_request);
 
   s->cache_info.directives.does_client_permit_lookup =
-    HttpTransact::does_client_request_permit_cached_response(s->http_config_param, &(s->cache_control),
+    HttpTransact::does_client_request_permit_cached_response(&(s->txn_conf), &(s->cache_control),
                                                              &s->hdr_info.client_request, s->via_string);
 
   s->cache_info.directives.does_client_permit_dns_storing =
@@ -1214,7 +1214,7 @@ HttpTransact::HandleRequest(State * s)
   //YTS Team, yamsat Plugin
   //Doing a Cache Lookup in case of a Redirection to ensure that
   //the newly requested object is not in the CACHE
-  if (s->http_config_param->cache_http && s->redirect_info.redirect_in_process && s->state_machine->enable_redirection) {
+  if (s->txn_conf.cache_http && s->redirect_info.redirect_in_process && s->state_machine->enable_redirection) {
     TRANSACT_RETURN(CACHE_LOOKUP, NULL);
   }
 
@@ -2188,7 +2188,7 @@ HttpTransact::issue_revalidate(State * s)
         presence(MIME_PRESENCE_IF_MODIFIED_SINCE))) &&
       (!(s->hdr_info.client_request.presence(MIME_PRESENCE_IF_NONE_MATCH)))
       && (no_cache_in_request == true) &&
-      (!s->http_config_param->cache_ims_on_client_no_cache) && (s->www_auth_content == CACHE_AUTH_NONE)) {
+      (!s->txn_conf.cache_ims_on_client_no_cache) && (s->www_auth_content == CACHE_AUTH_NONE)) {
     Debug("http_trans", "[issue_revalidate] Can not make this a conditional request. This is the force update of the cached copy case");
     // set cache action to update. response will be a 200 or error,
     // causing cached copy to be replaced (if 200).
@@ -5041,7 +5041,7 @@ HttpTransact::get_ka_info_from_host_db(State *s, ConnectionAttributes *server_in
   bool force_http11 = false;
   bool http11_if_hostdb = false;
 
-  switch (s->http_config_param->send_http11_requests) {
+  switch (s->txn_conf.send_http11_requests) {
   case HttpConfigParams::SEND_HTTP11_NEVER:
     // No need to do anything since above vars
     //   are defaulted false
@@ -5244,32 +5244,26 @@ HttpTransact::add_client_ip_to_outgoing_request(State * s, HTTPHdr * request)
     }
   }
 
-  if (s->http_config_param->insert_squid_x_forwarded_for) {
+  if (s->txn_conf.insert_squid_x_forwarded_for) {
     // Use insert an extra space in the front so we're append,
     //   everything looks ok.  If we're not appending, we'll
     //   skip over it
     if (ip_string_size > 1) {
       MIMEField *x_for;
 
-      if (s->http_config_param->insert_squid_x_forwarded_for) {
-        if ((x_for = request->field_find(MIME_FIELD_X_FORWARDED_FOR, MIME_LEN_X_FORWARDED_FOR)) != 0) {
-          // My undersanding is that X-Forwarded header does
-          // not use comma to separate tokens...
-          // but...
-          //  According to http://www.openinfo.co.uk/apache/
-          //  "If a request has passed through multiple proxies then the X-Forwarded-For may
-          //   contain several IPs like this: X-Forwarded-For: client1, proxy1, proxy2 "
-          //
-          // I am going to fix it.
-          //
-          //request->field_value_append(x_for, ip_string, ip_string_size, false);    // false => no comma
-          request->field_value_append(x_for, ip_string, ip_string_size, true);  // true => comma must be inserted
-        } else {
-          request->value_set(MIME_FIELD_X_FORWARDED_FOR, MIME_LEN_X_FORWARDED_FOR, ip_string + 1, ip_string_size - 1);
-        }
-        Debug("http_trans", "[add_client_ip_to_outgoing_request] Appended connecting client's "
-              "(%s) to the X-Forwards header", ip_string + 1);
+      if ((x_for = request->field_find(MIME_FIELD_X_FORWARDED_FOR, MIME_LEN_X_FORWARDED_FOR)) != 0) {
+        // My undersanding is that X-Forwarded header does
+        // not use comma to separate tokens...
+        // but...
+        //  According to http://www.openinfo.co.uk/apache/
+        //  "If a request has passed through multiple proxies then the X-Forwarded-For may
+        //   contain several IPs like this: X-Forwarded-For: client1, proxy1, proxy2 "
+        request->field_value_append(x_for, ip_string, ip_string_size, true);  // true => comma must be inserted
+      } else {
+        request->value_set(MIME_FIELD_X_FORWARDED_FOR, MIME_LEN_X_FORWARDED_FOR, ip_string + 1, ip_string_size - 1);
       }
+      Debug("http_trans", "[add_client_ip_to_outgoing_request] Appended connecting client's "
+            "(%s) to the X-Forwards header", ip_string + 1);
     }
   }
 }
@@ -6058,7 +6052,7 @@ HttpTransact::is_request_cache_lookupable(State * s, HTTPHdr * incoming)
     return true;
   }
   // is cache turned on?
-  if (!s->http_config_param->cache_http) {
+  if (!s->txn_conf.cache_http) {
     SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_CACHE_OFF);
     return false;
   }
@@ -7186,7 +7180,7 @@ HttpTransact::delete_all_document_alternates_and_return(State * s, bool cache_hi
 }
 
 bool
-HttpTransact::does_client_request_permit_cached_response(const HttpConfigParams *p, CacheControlResult *c,
+HttpTransact::does_client_request_permit_cached_response(const OverridableHttpConfigParams *p, CacheControlResult *c,
                                                          HTTPHdr *h, char *via_string)
 {
   NOWARN_UNUSED(p);

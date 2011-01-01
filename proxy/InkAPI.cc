@@ -7385,6 +7385,8 @@ TSHttpTxnConfigIntSet(TSHttpTxn txnp, TSOverridableConfigKey conf, TSMgmtInt val
 
   HttpSM *sm = (HttpSM*) txnp;
 
+  // *((MgmtInt*)(&(sm->t_state.txn_conf) + conf*sizeof(MgmtInt))) = value;
+
   switch (conf) {
   case TS_CONFIG_URL_REMAP_PRISTINE_HOST_HDR:
     sm->t_state.txn_conf.maintain_pristine_host_hdr = value;
@@ -7437,6 +7439,27 @@ TSHttpTxnConfigIntSet(TSHttpTxn txnp, TSOverridableConfigKey conf, TSMgmtInt val
   case TS_CONFIG_HTTP_RESPONSE_SERVER_ENABLED:
     sm->t_state.txn_conf.append_xforwards_header = value;
     break;
+  case TS_CONFIG_HTTP_INSERT_SQUID_X_FORWARDED_FOR:
+    sm->t_state.txn_conf.append_xforwards_header = value;
+    break;
+  case TS_CONFIG_HTTP_SEND_HTTP11_REQUESTS:
+    sm->t_state.txn_conf.send_http11_requests = value;
+    break;
+  case TS_CONFIG_HTTP_CACHE_HTTP:
+    sm->t_state.txn_conf.cache_http = value;
+    break;
+  case TS_CONFIG_HTTP_CACHE_IGNORE_CLIENT_NO_CACHE:
+    sm->t_state.txn_conf.cache_ignore_client_no_cache = value;
+    break;
+  case TS_CONFIG_HTTP_CACHE_IGNORE_CLIENT_CC_MAX_AGE:
+    sm->t_state.txn_conf.cache_ignore_client_cc_max_age = value;
+    break;
+  case TS_CONFIG_HTTP_CACHE_IMS_ON_CLIENT_NO_CACHE:
+    sm->t_state.txn_conf.cache_ims_on_client_no_cache = value;
+    break;
+  case TS_CONFIG_HTTP_CACHE_IGNORE_SERVER_NO_CACHE:
+    sm->t_state.txn_conf.cache_ignore_server_no_cache = value;
+    break;
   default:
     return TS_ERROR;
     break;
@@ -7452,6 +7475,8 @@ TSHttpTxnConfigIntGet(TSHttpTxn txnp, TSOverridableConfigKey conf, TSMgmtInt *va
     return TS_ERROR;
 
   HttpSM *sm = (HttpSM*) txnp;
+
+  // *value = *((MgmtInt*)(&(sm->t_state.txn_conf) + conf*sizeof(MgmtInt)));
 
   switch (conf) {
   case TS_CONFIG_URL_REMAP_PRISTINE_HOST_HDR:
@@ -7504,6 +7529,27 @@ TSHttpTxnConfigIntGet(TSHttpTxn txnp, TSOverridableConfigKey conf, TSMgmtInt *va
     break;
   case TS_CONFIG_HTTP_RESPONSE_SERVER_ENABLED:
     *value = sm->t_state.txn_conf.append_xforwards_header;
+    break;
+  case TS_CONFIG_HTTP_INSERT_SQUID_X_FORWARDED_FOR:
+    *value = sm->t_state.txn_conf.append_xforwards_header;
+    break;
+  case TS_CONFIG_HTTP_SEND_HTTP11_REQUESTS:
+    *value = sm->t_state.txn_conf.send_http11_requests;
+    break;
+  case TS_CONFIG_HTTP_CACHE_HTTP:
+    *value = sm->t_state.txn_conf.cache_http;
+    break;
+  case TS_CONFIG_HTTP_CACHE_IGNORE_CLIENT_NO_CACHE:
+    *value = sm->t_state.txn_conf.cache_ignore_client_no_cache;
+    break;
+  case TS_CONFIG_HTTP_CACHE_IGNORE_CLIENT_CC_MAX_AGE:
+    *value = sm->t_state.txn_conf.cache_ignore_client_cc_max_age;
+    break;
+  case TS_CONFIG_HTTP_CACHE_IMS_ON_CLIENT_NO_CACHE:
+    *value = sm->t_state.txn_conf.cache_ims_on_client_no_cache;
+    break;
+  case TS_CONFIG_HTTP_CACHE_IGNORE_SERVER_NO_CACHE:
+    *value = sm->t_state.txn_conf.cache_ignore_server_no_cache;
     break;
   default:
     return TS_ERROR;
@@ -7582,6 +7628,11 @@ TSHttpTxnConfigFind(const char* name, int length, TSOverridableConfigKey *conf, 
 
   // Lots of string comparisons here, but avoid a few at least
   switch (length) {
+  case 28:
+    if (!strncmp(name, "proxy.config.http.cache.http", length))
+      *conf = TS_CONFIG_HTTP_CACHE_HTTP;
+    break;
+
   case 34:
     if (!strncmp(name, "proxy.config.http.chunking_enabled", length))
       *conf = TS_CONFIG_HTTP_CHUNKING_ENABLED;
@@ -7608,6 +7659,11 @@ TSHttpTxnConfigFind(const char* name, int length, TSOverridableConfigKey *conf, 
         *conf = TS_CONFIG_NET_SOCK_OPTION_FLAG_OUT;
       break;
     }
+    break;
+
+  case 38:
+    if (!strncmp(name, "proxy.config.http.send_http11_requests", length))
+      *conf = TS_CONFIG_HTTP_SEND_HTTP11_REQUESTS;
     break;
 
   case 39:
@@ -7670,6 +7726,29 @@ TSHttpTxnConfigFind(const char* name, int length, TSOverridableConfigKey *conf, 
     if (!strncmp(name, "proxy.config.http.anonymize_remove_user_agent", length))
       *conf = TS_CONFIG_HTTP_ANONYMIZE_REMOVE_USER_AGENT;
     break;
+
+  case 46:
+    switch (name[length-1]) {
+    case 'e':
+      if (!strncmp(name, "proxy.config.http.cache.ignore_client_no_cache", length))
+        *conf = TS_CONFIG_HTTP_CACHE_IGNORE_CLIENT_NO_CACHE;
+      else if (!strncmp(name, "proxy.config.http.cache.ims_on_client_no_cache", length))
+        *conf = TS_CONFIG_HTTP_CACHE_IMS_ON_CLIENT_NO_CACHE;
+      else if (!strncmp(name, "proxy.config.http.cache.ignore_server_no_cache", length))
+        *conf = TS_CONFIG_HTTP_CACHE_IGNORE_SERVER_NO_CACHE;
+      break;
+    case 'r':
+      if (!strncmp(name, "proxy.config.http.insert_squid_x_forwarded_for", length))
+        *conf = TS_CONFIG_HTTP_INSERT_SQUID_X_FORWARDED_FOR;
+      break;
+    }
+    break;
+
+  case 48:
+    if (!strncmp(name, "proxy.config.http.cache.ignore_client_cc_max_age", length))
+      *conf = TS_CONFIG_HTTP_CACHE_IGNORE_CLIENT_CC_MAX_AGE;
+    break;
+
   }
 
   return ((*conf != TS_CONFIG_NULL) ? TS_SUCCESS: TS_ERROR);
