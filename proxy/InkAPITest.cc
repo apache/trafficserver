@@ -8280,17 +8280,34 @@ const char *SDK_Overridable_Configs[] = {
   "proxy.config.http.cache.cache_responses_to_cookies",
   "proxy.config.http.cache.ignore_authentication",
   "proxy.config.http.cache.cache_urls_that_look_dynamic",
+  "proxy.config.http.cache.required_headers",
   "proxy.config.http.insert_request_via_str",
   "proxy.config.http.insert_response_via_str",
   "proxy.config.http.cache.heuristic_min_lifetime",
   "proxy.config.http.cache.heuristic_max_lifetime",
   "proxy.config.http.cache.guaranteed_min_lifetime",
   "proxy.config.http.cache.guaranteed_max_lifetime",
+  "proxy.config.http.cache.max_stale_age",
   "proxy.config.http.keep_alive_no_activity_timeout_in",
+  "proxy.config.http.transaction_no_activity_timeout_in",
+  "proxy.config.http.transaction_no_activity_timeout_out",
+  "proxy.config.http.transaction_active_timeout_out",
   "proxy.config.http.origin_max_connections",
+  "proxy.config.http.connect_attempts_max_retries",
+  "proxy.config.http.connect_attempts_max_retries_dead_server",
+  "proxy.config.http.connect_attempts_rr_retries",
+  "proxy.config.http.connect_attempts_timeout",
+  "proxy.config.http.post_connect_attempts_timeout",
+  "proxy.config.http.down_server.cache_time",
+  "proxy.config.http.down_server.abort_threshold",
+  "proxy.config.http.cache.fuzz.time",
+  "proxy.config.http.cache.fuzz.min_time",
+
   // These are "special", since they are not MgmtInt's
   "proxy.config.http.response_server_str",
   "proxy.config.http.cache.heuristic_lm_factor",
+  "proxy.config.http.cache.fuzz.probability",
+
   NULL
 };
 

@@ -52,7 +52,6 @@ HttpServerSession::destroy()
   }
 
   mutex.clear();
-
   httpServerSessionAllocator.free(this);
 }
 
@@ -84,7 +83,7 @@ HttpServerSession::new_connection(NetVConnection * new_vc)
   // Check to see if we are limiting the number of connections
   // per host
   if (enable_origin_connection_limiting == true) {
-    if(connection_count == NULL)
+    if (connection_count == NULL)
       connection_count = ConnectionCount::getInstance();
     connection_count->incrementCount(server_ip);
     Debug("http_ss", "[%" PRId64 "] new connection, ip: %u, count: %u", con_id, server_ip, connection_count->getCount(server_ip));
@@ -140,8 +139,7 @@ HttpServerSession::do_io_close(int alerrno)
       Debug("http_ss", "[%" PRId64 "] connection closed, ip: %u, count: %u",
             con_id, server_ip, connection_count->getCount(server_ip));
     } else {
-      Error("http_ss",
-            "[%" PRId64 "] number of connections should be greater then zero: %u",
+      Error("http_ss", "[%" PRId64 "] number of connections should be greater then zero: %u",
             con_id, connection_count->getCount(server_ip));
     }
   }
@@ -165,12 +163,10 @@ HttpServerSession::reenable(VIO * vio)
 void
 HttpServerSession::release()
 {
-
   // Set our state to KA for stat issues
   state = HSS_KA_SHARED;
 
-  // Private sessions are never released back to the shared
-  //  pool
+  // Private sessions are never released back to the shared pool
   if (private_session || HttpConfig::m_master.share_server_sessions == 0) {
     this->do_io_close();
     return;

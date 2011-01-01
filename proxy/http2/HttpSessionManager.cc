@@ -148,6 +148,8 @@ HttpSessionManager::init()
     g_l1_hash[i].mutex = new_ProxyMutex();
   }
 }
+
+// TODO: Should this really purge all keep-alive sessions?
 void
 HttpSessionManager::purge_keepalives()
 {
@@ -314,16 +316,12 @@ HttpSessionManager::release_session(HttpServerSession * to_release)
     to_release->do_io_write(bucket, 0, NULL);
 
     // we probably don't need the active timeout set, but will leave it for now
-    to_release->get_netvc()->
-      set_inactivity_timeout(HRTIME_SECONDS(HttpConfig::m_master.keep_alive_no_activity_timeout_out));
-    to_release->get_netvc()->
-      set_active_timeout(HRTIME_SECONDS(HttpConfig::m_master.keep_alive_no_activity_timeout_out));
-
+    to_release->get_netvc()->set_inactivity_timeout(HRTIME_SECONDS(HttpConfig::m_master.keep_alive_no_activity_timeout_out));
+    to_release->get_netvc()->set_active_timeout(HRTIME_SECONDS(HttpConfig::m_master.keep_alive_no_activity_timeout_out));
     Debug("http_ss", "[%" PRId64 "] [release session] " "session placed into shared pool", to_release->con_id);
     return HSM_DONE;
   } else {
-    Debug("http_ss", "[%" PRId64 "] [release session] "
-          "could not release session due to lock contention", to_release->con_id);
+    Debug("http_ss", "[%" PRId64 "] [release session] could not release session due to lock contention", to_release->con_id);
     return HSM_RETRY;
   }
 }

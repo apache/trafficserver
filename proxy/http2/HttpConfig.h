@@ -417,17 +417,24 @@ struct OverridableHttpConfigParams {
        insert_squid_x_forwarded_for(0), send_http11_requests(3), // SEND_HTTP11_IF_REQUEST_11_AND_HOSTDB
        cache_http(false), cache_ignore_client_no_cache(false),     cache_ignore_client_cc_max_age(true),
        cache_ims_on_client_no_cache(false), cache_ignore_server_no_cache(false), cache_responses_to_cookies(0),
-       cache_ignore_auth(0), cache_urls_that_look_dynamic(false),
+       cache_ignore_auth(0), cache_urls_that_look_dynamic(false), cache_required_headers(0), // CACHE_REQUIRED_HEADERS_NONE
        insert_request_via_string(0), insert_response_via_string(0),
        cache_heuristic_min_lifetime(0), cache_heuristic_max_lifetime(0),
-       cache_guaranteed_min_lifetime(0), cache_guaranteed_max_lifetime(0),
+       cache_guaranteed_min_lifetime(0), cache_guaranteed_max_lifetime(0), cache_max_stale_age(0),
        keep_alive_no_activity_timeout_in(0),
+       transaction_no_activity_timeout_in(0), transaction_no_activity_timeout_out(0),
+       transaction_active_timeout_out(0),
        origin_max_connections(0),
+       connect_attempts_max_retries(0), connect_attempts_max_retries_dead_server(0),
+       connect_attempts_rr_retries(0), connect_attempts_timeout(0),
+       post_connect_attempts_timeout(0),
+       down_server_timeout(0), client_abort_threshold(0),
+       freshness_fuzz_time(0), freshness_fuzz_min_time(0),
 
        // Strings / floats must come last
        proxy_response_server_string(NULL), proxy_response_server_string_len(0),
-       cache_heuristic_lm_factor(0)
-  {}
+       cache_heuristic_lm_factor(0.0), freshness_fuzz_prob(0.0)
+  { }
 
   // IMPORTANT: All MgmtInt configs should come before any other string / float
   // configs!!!
@@ -488,6 +495,7 @@ struct OverridableHttpConfigParams {
   MgmtInt cache_responses_to_cookies;
   MgmtInt cache_ignore_auth;
   MgmtInt cache_urls_that_look_dynamic;
+  MgmtInt cache_required_headers;
 
   MgmtInt insert_request_via_string;
   MgmtInt insert_response_via_string;
@@ -499,12 +507,34 @@ struct OverridableHttpConfigParams {
   MgmtInt cache_heuristic_max_lifetime;
   MgmtInt cache_guaranteed_min_lifetime;
   MgmtInt cache_guaranteed_max_lifetime;
+  MgmtInt cache_max_stale_age;
 
   ///////////////////////////////////////////////////
   // connection variables. timeouts are in seconds //
   ///////////////////////////////////////////////////
   MgmtInt keep_alive_no_activity_timeout_in;
+  MgmtInt transaction_no_activity_timeout_in;
+  MgmtInt transaction_no_activity_timeout_out;
+  MgmtInt transaction_active_timeout_out;
   MgmtInt origin_max_connections;
+
+  ////////////////////////////////////
+  // origin server connect attempts //
+  ////////////////////////////////////
+  MgmtInt connect_attempts_max_retries;
+  MgmtInt connect_attempts_max_retries_dead_server;
+  MgmtInt connect_attempts_rr_retries;
+  MgmtInt connect_attempts_timeout;
+  MgmtInt post_connect_attempts_timeout;
+
+  ////////////////////////
+  //  Negative Caching  //
+  ////////////////////////
+  MgmtInt down_server_timeout;
+  MgmtInt client_abort_threshold;
+
+  MgmtInt freshness_fuzz_time;
+  MgmtInt freshness_fuzz_min_time;
 
   // IMPORTANT: Here comes all strings / floats configs.
 
@@ -515,6 +545,7 @@ struct OverridableHttpConfigParams {
   size_t proxy_response_server_string_len; // Updated when server_string is set.
 
   float cache_heuristic_lm_factor;
+  float freshness_fuzz_prob;
 };
 
 
@@ -600,10 +631,7 @@ public:
   MgmtInt user_agent_pipeline;
   MgmtInt share_server_sessions;
   MgmtInt keep_alive_no_activity_timeout_out;
-  MgmtInt transaction_no_activity_timeout_in;
-  MgmtInt transaction_no_activity_timeout_out;
   MgmtInt transaction_active_timeout_in;
-  MgmtInt transaction_active_timeout_out;
   MgmtInt accept_no_activity_timeout;
   MgmtInt background_fill_active_timeout;
   MgmtFloat background_fill_threshold;
@@ -611,11 +639,6 @@ public:
   ////////////////////////////////////
   // origin server connect attempts //
   ////////////////////////////////////
-  MgmtInt connect_attempts_max_retries;
-  MgmtInt connect_attempts_max_retries_dead_server;
-  MgmtInt connect_attempts_rr_retries;
-  MgmtInt connect_attempts_timeout;
-  MgmtInt post_connect_attempts_timeout;
   MgmtInt parent_connect_attempts;
   MgmtInt per_parent_connect_attempts;
   MgmtInt parent_connect_timeout;
@@ -644,12 +667,6 @@ public:
   MgmtInt icp_enabled;
   MgmtInt stale_icp_enabled;
 
-  MgmtInt cache_max_stale_age;
-
-  MgmtInt freshness_fuzz_time;
-  MgmtInt freshness_fuzz_min_time;
-  float freshness_fuzz_prob;
-
   char *cache_vary_default_text;
   char *cache_vary_default_images;
   char *cache_vary_default_other;
@@ -667,7 +684,6 @@ public:
   ///////////////////
   MgmtInt cache_enable_default_vary_headers;
   MgmtInt cache_when_to_add_no_cache_to_msie_requests;
-  MgmtInt cache_required_headers;
   MgmtInt cache_range_lookup;
 
   ////////////////////////////////////////////
@@ -719,12 +735,6 @@ public:
   MgmtInt url_remap_required;
   char *reverse_proxy_no_host_redirect;
   int reverse_proxy_no_host_redirect_len;
-
-  ////////////////////////
-  //  Negative Caching  //
-  ////////////////////////
-  MgmtInt down_server_timeout;
-  MgmtInt client_abort_threshold;
 
   ////////////////////////////
   //  Negative Revalidating //
@@ -945,18 +955,10 @@ HttpConfigParams::HttpConfigParams()
     user_agent_pipeline(0),
     share_server_sessions(0),
     keep_alive_no_activity_timeout_out(0),
-    transaction_no_activity_timeout_in(0),
-    transaction_no_activity_timeout_out(0),
     transaction_active_timeout_in(0),
-    transaction_active_timeout_out(0),
     accept_no_activity_timeout(0),
     background_fill_active_timeout(0),
     background_fill_threshold(0.0),
-    connect_attempts_max_retries(0),
-    connect_attempts_max_retries_dead_server(0),
-    connect_attempts_rr_retries(0),
-    connect_attempts_timeout(0),
-    post_connect_attempts_timeout(0),
     parent_connect_attempts(0),
     per_parent_connect_attempts(0),
     parent_connect_timeout(0),
@@ -968,10 +970,6 @@ HttpConfigParams::HttpConfigParams()
     enable_http_stats(1),
     icp_enabled(0),
     stale_icp_enabled(0),
-    cache_max_stale_age(0),
-    freshness_fuzz_time(0),
-    freshness_fuzz_min_time(0),
-    freshness_fuzz_prob(0.0),
     cache_vary_default_text(0),
     cache_vary_default_images(0),
     cache_vary_default_other(0),
@@ -981,7 +979,6 @@ HttpConfigParams::HttpConfigParams()
     cache_open_write_retry_time(0),
     cache_enable_default_vary_headers(false),
     cache_when_to_add_no_cache_to_msie_requests(0),
-    cache_required_headers(CACHE_REQUIRED_HEADERS_NONE),
     connect_ports_string(0),
     connect_ports(0),
     request_hdr_max_size(0),
@@ -992,8 +989,6 @@ HttpConfigParams::HttpConfigParams()
     accept_encoding_filter_enabled(0),
     quick_filter_mask(0),
     transparency_enabled(0),
-    down_server_timeout(0),
-    client_abort_threshold(0),
     negative_revalidating_enabled(0),
     negative_revalidating_lifetime(0),
     inktoswitch_enabled(0),

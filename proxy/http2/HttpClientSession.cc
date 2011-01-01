@@ -582,6 +582,7 @@ HttpClientSession::release(IOBufferReader * r)
 {
   ink_assert(read_state == HCS_ACTIVE_READER);
   ink_assert(current_reader != NULL);
+  MgmtInt ka_in = current_reader->t_state.txn_conf.keep_alive_no_activity_timeout_in;
 
   Debug("http_cs", "[%" PRId64 "] session released by sm [%" PRId64 "]", con_id, current_reader->sm_id);
   current_reader = NULL;
@@ -614,8 +615,8 @@ HttpClientSession::release(IOBufferReader * r)
     SET_HANDLER(&HttpClientSession::state_keep_alive);
     ka_vio = this->do_io_read(this, INT_MAX, read_buffer);
     ink_assert(slave_ka_vio != ka_vio);
-    client_vc->set_inactivity_timeout(HRTIME_SECONDS(current_reader->t_state.txn_conf.keep_alive_no_activity_timeout_in));
-    client_vc->set_active_timeout(HRTIME_SECONDS(current_reader->t_state.txn_conf.keep_alive_no_activity_timeout_in));
+    client_vc->set_inactivity_timeout(HRTIME_SECONDS(ka_in));
+    client_vc->set_active_timeout(HRTIME_SECONDS(ka_in));
   }
 }
 

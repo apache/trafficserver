@@ -200,7 +200,7 @@ inline bool
 HttpTransact::is_server_negative_cached(State* s)
 {
   if (s->host_db_info.app.http_data.last_failure != 0 &&
-      s->host_db_info.app.http_data.last_failure + s->http_config_param->down_server_timeout > s->client_request_time) {
+      s->host_db_info.app.http_data.last_failure + s->txn_conf.down_server_timeout > s->client_request_time) {
     return true;
   } else {
     // Make sure some nasty clock skew has not happened
@@ -208,7 +208,7 @@ HttpTransact::is_server_negative_cached(State* s)
     //   future we should tolerate bogus last failure times.  This sets
     //   the upper bound to the time that we would ever consider a server
     //   down to 2*down_server_timeout
-    if (s->client_request_time + s->http_config_param->down_server_timeout < s->host_db_info.app.http_data.last_failure) {
+    if (s->client_request_time + s->txn_conf.down_server_timeout < s->host_db_info.app.http_data.last_failure) {
       s->host_db_info.app.http_data.last_failure = 0;
       ink_assert(!"extreme clock skew");
       return true;
@@ -3536,10 +3536,10 @@ HttpTransact::handle_response_from_server(State* s)
   case BAD_INCOMING_RESPONSE:
     s->current.server->connect_failure = 1;
     if (is_server_negative_cached(s)) {
-      max_connect_retries = s->http_config_param->connect_attempts_max_retries_dead_server;
+      max_connect_retries = s->txn_conf.connect_attempts_max_retries_dead_server;
     } else {
       // server not yet negative cached - use default number of retries
-      max_connect_retries = s->http_config_param->connect_attempts_max_retries;
+      max_connect_retries = s->txn_conf.connect_attempts_max_retries;
     }
     if (s->pCongestionEntry != NULL)
       max_connect_retries = s->pCongestionEntry->connect_retries();
@@ -3554,8 +3554,8 @@ HttpTransact::handle_response_from_server(State* s)
         delete_srv_entry(s, max_connect_retries);
         return;
       } else if (s->server_info.dns_round_robin &&
-                 (s->http_config_param->connect_attempts_rr_retries > 0) &&
-                 (s->current.attempts % s->http_config_param->connect_attempts_rr_retries == 0)) {
+                 (s->txn_conf.connect_attempts_rr_retries > 0) &&
+                 (s->current.attempts % s->txn_conf.connect_attempts_rr_retries == 0)) {
         delete_server_rr_entry(s, max_connect_retries);
         return;
       } else {
@@ -5953,7 +5953,7 @@ HttpTransact::is_stale_cache_response_returnable(State* s)
                                                                    cached_response->get_date(),
                                                                    s->current.now);
   // Negative age is overflow
-  if ((current_age < 0) || (current_age > s->http_config_param->cache_max_stale_age)) {
+  if ((current_age < 0) || (current_age > s->txn_conf.cache_max_stale_age)) {
     Debug("http_trans", "[is_stale_cache_response_returnable] " "document age is too large %d", current_age);
     return false;
   }
@@ -6232,7 +6232,7 @@ HttpTransact::is_response_cacheable(State* s, HTTPHdr* request, HTTPHdr* respons
       uint32_t cc_mask = (MIME_COOKED_MASK_CC_MAX_AGE | MIME_COOKED_MASK_CC_S_MAXAGE);
       // server did not send expires header or last modified
       // and we are configured to not cache without them.
-      switch (s->http_config_param->cache_required_headers) {
+      switch (s->txn_conf.cache_required_headers) {
       case HttpConfigParams::CACHE_REQUIRED_HEADERS_NONE:
         Debug("http_trans", "[is_response_cacheable] " "no response headers required");
         break;
@@ -7361,21 +7361,21 @@ HttpTransact::calculate_freshness_fuzz(State* s, int fresh_limit)
 
   uint32_t random_num = this_ethread()->generator.random();
   uint32_t index = random_num % granularity;
-  uint32_t range = (uint32_t) (granularity * s->http_config_param->freshness_fuzz_prob);
+  uint32_t range = (uint32_t) (granularity * s->txn_conf.freshness_fuzz_prob);
 
   if (index < range) {
-    if (s->http_config_param->freshness_fuzz_min_time > 0) {
+    if (s->txn_conf.freshness_fuzz_min_time > 0) {
       // Complicated calculations to try to find a reasonable fuzz time between fuzz_min_time and fuzz_time
-      int fresh_small = (int) rint((double) s->http_config_param->freshness_fuzz_min_time *
-                                   pow(2, min((double) fresh_limit / (double) s->http_config_param->freshness_fuzz_time,
-                                              sqrt((double)s->http_config_param->freshness_fuzz_time))));
-      int fresh_large = max((int) s->http_config_param->freshness_fuzz_min_time,
-                            (int) rint(s->http_config_param->freshness_fuzz_time *
-                                       log10((double)(fresh_limit - s->http_config_param->freshness_fuzz_min_time) / LOG_YEAR)));
+      int fresh_small = (int)rint((double)s->txn_conf.freshness_fuzz_min_time *
+                                  pow(2, min((double)fresh_limit / (double)s->txn_conf.freshness_fuzz_time,
+                                             sqrt((double)s->txn_conf.freshness_fuzz_time))));
+      int fresh_large = max((int)s->txn_conf.freshness_fuzz_min_time,
+                            (int)rint(s->txn_conf.freshness_fuzz_time *
+                                      log10((double)(fresh_limit - s->txn_conf.freshness_fuzz_min_time) / LOG_YEAR)));
       result = min(fresh_small, fresh_large);
       Debug("http_match", "calculate_freshness_fuzz using min/max --- freshness fuzz = %d", result);
     } else {
-      result = s->http_config_param->freshness_fuzz_time;
+      result = s->txn_conf.freshness_fuzz_time;
       Debug("http_match", "calculate_freshness_fuzz --- freshness fuzz = %d", result);
     }
   }
@@ -7449,7 +7449,7 @@ HttpTransact::what_is_document_freshness(State *s, HTTPHdr* client_request, HTTP
 
   // Fuzz the freshness to prevent too many revalidates to popular
   //  documents at the same time
-  if (s->http_config_param->freshness_fuzz_time >= 0) {
+  if (s->txn_conf.freshness_fuzz_time >= 0) {
     fresh_limit = fresh_limit - calculate_freshness_fuzz(s, fresh_limit);
     fresh_limit = max(0, fresh_limit);
     fresh_limit = min(NUM_SECONDS_IN_ONE_YEAR, fresh_limit);

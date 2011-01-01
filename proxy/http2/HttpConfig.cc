@@ -1191,12 +1191,12 @@ HttpConfig::startup()
                                     "proxy.config.http.keep_alive_no_activity_timeout_in");
   HttpEstablishStaticConfigLongLong(c.keep_alive_no_activity_timeout_out,
                                     "proxy.config.http.keep_alive_no_activity_timeout_out");
-  HttpEstablishStaticConfigLongLong(c.transaction_no_activity_timeout_in,
+  HttpEstablishStaticConfigLongLong(c.oride.transaction_no_activity_timeout_in,
                                     "proxy.config.http.transaction_no_activity_timeout_in");
-  HttpEstablishStaticConfigLongLong(c.transaction_no_activity_timeout_out,
+  HttpEstablishStaticConfigLongLong(c.oride.transaction_no_activity_timeout_out,
                                     "proxy.config.http.transaction_no_activity_timeout_out");
   HttpEstablishStaticConfigLongLong(c.transaction_active_timeout_in, "proxy.config.http.transaction_active_timeout_in");
-  HttpEstablishStaticConfigLongLong(c.transaction_active_timeout_out,
+  HttpEstablishStaticConfigLongLong(c.oride.transaction_active_timeout_out,
                                     "proxy.config.http.transaction_active_timeout_out");
   HttpEstablishStaticConfigLongLong(c.accept_no_activity_timeout, "proxy.config.http.accept_no_activity_timeout");
 
@@ -1204,13 +1204,13 @@ HttpConfig::startup()
                                     "proxy.config.http.background_fill_active_timeout");
   HttpEstablishStaticConfigFloat(c.background_fill_threshold, "proxy.config.http.background_fill_completed_threshold");
 
-  HttpEstablishStaticConfigLongLong(c.connect_attempts_max_retries, "proxy.config.http.connect_attempts_max_retries");
-  HttpEstablishStaticConfigLongLong(c.connect_attempts_max_retries_dead_server,
+  HttpEstablishStaticConfigLongLong(c.oride.connect_attempts_max_retries, "proxy.config.http.connect_attempts_max_retries");
+  HttpEstablishStaticConfigLongLong(c.oride.connect_attempts_max_retries_dead_server,
                                     "proxy.config.http.connect_attempts_max_retries_dead_server");
 
-  HttpEstablishStaticConfigLongLong(c.connect_attempts_rr_retries, "proxy.config.http.connect_attempts_rr_retries");
-  HttpEstablishStaticConfigLongLong(c.connect_attempts_timeout, "proxy.config.http.connect_attempts_timeout");
-  HttpEstablishStaticConfigLongLong(c.post_connect_attempts_timeout, "proxy.config.http.post_connect_attempts_timeout");
+  HttpEstablishStaticConfigLongLong(c.oride.connect_attempts_rr_retries, "proxy.config.http.connect_attempts_rr_retries");
+  HttpEstablishStaticConfigLongLong(c.oride.connect_attempts_timeout, "proxy.config.http.connect_attempts_timeout");
+  HttpEstablishStaticConfigLongLong(c.oride.post_connect_attempts_timeout, "proxy.config.http.post_connect_attempts_timeout");
   HttpEstablishStaticConfigLongLong(c.parent_connect_attempts, "proxy.config.http.parent_proxy.total_connect_attempts");
   HttpEstablishStaticConfigLongLong(c.per_parent_connect_attempts,
                                     "proxy.config.http.parent_proxy.per_parent_connect_attempts");
@@ -1260,11 +1260,11 @@ HttpConfig::startup()
   HttpEstablishStaticConfigLongLong(c.oride.cache_guaranteed_min_lifetime, "proxy.config.http.cache.guaranteed_min_lifetime");
   HttpEstablishStaticConfigLongLong(c.oride.cache_guaranteed_max_lifetime, "proxy.config.http.cache.guaranteed_max_lifetime");
 
-  HttpEstablishStaticConfigLongLong(c.cache_max_stale_age, "proxy.config.http.cache.max_stale_age");
+  HttpEstablishStaticConfigLongLong(c.oride.cache_max_stale_age, "proxy.config.http.cache.max_stale_age");
 
-  HttpEstablishStaticConfigLongLong(c.freshness_fuzz_time, "proxy.config.http.cache.fuzz.time");
-  HttpEstablishStaticConfigLongLong(c.freshness_fuzz_min_time, "proxy.config.http.cache.fuzz.min_time");
-  HttpEstablishStaticConfigFloat(c.freshness_fuzz_prob, "proxy.config.http.cache.fuzz.probability");
+  HttpEstablishStaticConfigLongLong(c.oride.freshness_fuzz_time, "proxy.config.http.cache.fuzz.time");
+  HttpEstablishStaticConfigLongLong(c.oride.freshness_fuzz_min_time, "proxy.config.http.cache.fuzz.min_time");
+  HttpEstablishStaticConfigFloat(c.oride.freshness_fuzz_prob, "proxy.config.http.cache.fuzz.probability");
 
   HttpEstablishStaticConfigStringAlloc(c.cache_vary_default_text, "proxy.config.http.cache.vary_default_text");
   HttpEstablishStaticConfigStringAlloc(c.cache_vary_default_images, "proxy.config.http.cache.vary_default_images");
@@ -1303,7 +1303,7 @@ HttpConfig::startup()
   HttpEstablishStaticConfigLongLong(c.oride.cache_when_to_revalidate, "proxy.config.http.cache.when_to_revalidate");
   HttpEstablishStaticConfigLongLong(c.cache_when_to_add_no_cache_to_msie_requests,
                                     "proxy.config.http.cache.when_to_add_no_cache_to_msie_requests");
-  HttpEstablishStaticConfigLongLong(c.cache_required_headers, "proxy.config.http.cache.required_headers");
+  HttpEstablishStaticConfigLongLong(c.oride.cache_required_headers, "proxy.config.http.cache.required_headers");
   HttpEstablishStaticConfigLongLong(c.cache_range_lookup, "proxy.config.http.cache.range.lookup");
 
   HttpEstablishStaticConfigStringAlloc(c.connect_ports_string, "proxy.config.http.connect_ports");
@@ -1340,21 +1340,18 @@ HttpConfig::startup()
   HttpEstablishStaticConfigLongLong(c.referer_format_redirect, "proxy.config.http.referer_format_redirect");
 
   // HTTP Accept_Encoding filtering (depends on User-Agent)
-  HttpEstablishStaticConfigLongLong(c.accept_encoding_filter_enabled,
-                                    "proxy.config.http.accept_encoding_filter_enabled");
+  HttpEstablishStaticConfigLongLong(c.accept_encoding_filter_enabled, "proxy.config.http.accept_encoding_filter_enabled");
 
   // HTTP Quick filter
   HttpEstablishStaticConfigLongLong(c.quick_filter_mask, "proxy.config.http.quick_filter.mask");
 
   // Negative caching
-  HttpEstablishStaticConfigLongLong(c.down_server_timeout, "proxy.config.http.down_server.cache_time");
-
-  HttpEstablishStaticConfigLongLong(c.client_abort_threshold, "proxy.config.http.down_server.abort_threshold");
+  HttpEstablishStaticConfigLongLong(c.oride.down_server_timeout, "proxy.config.http.down_server.cache_time");
+  HttpEstablishStaticConfigLongLong(c.oride.client_abort_threshold, "proxy.config.http.down_server.abort_threshold");
 
   // Negative revalidating
   HttpEstablishStaticConfigLongLong(c.negative_revalidating_enabled, "proxy.config.http.negative_revalidating_enabled");
-  HttpEstablishStaticConfigLongLong(c.negative_revalidating_lifetime,
-                                    "proxy.config.http.negative_revalidating_lifetime");
+  HttpEstablishStaticConfigLongLong(c.negative_revalidating_lifetime, "proxy.config.http.negative_revalidating_lifetime");
 
   // Negative response caching
   HttpEstablishStaticConfigLongLong(c.oride.negative_caching_enabled, "proxy.config.http.negative_caching_enabled");
@@ -1513,19 +1510,19 @@ HttpConfig::reconfigure()
 
   params->oride.keep_alive_no_activity_timeout_in = m_master.oride.keep_alive_no_activity_timeout_in;
   params->keep_alive_no_activity_timeout_out = m_master.keep_alive_no_activity_timeout_out;
-  params->transaction_no_activity_timeout_in = m_master.transaction_no_activity_timeout_in;
-  params->transaction_no_activity_timeout_out = m_master.transaction_no_activity_timeout_out;
+  params->oride.transaction_no_activity_timeout_in = m_master.oride.transaction_no_activity_timeout_in;
+  params->oride.transaction_no_activity_timeout_out = m_master.oride.transaction_no_activity_timeout_out;
   params->transaction_active_timeout_in = m_master.transaction_active_timeout_in;
-  params->transaction_active_timeout_out = m_master.transaction_active_timeout_out;
+  params->oride.transaction_active_timeout_out = m_master.oride.transaction_active_timeout_out;
   params->accept_no_activity_timeout = m_master.accept_no_activity_timeout;
   params->background_fill_active_timeout = m_master.background_fill_active_timeout;
   params->background_fill_threshold = m_master.background_fill_threshold;
 
-  params->connect_attempts_max_retries = m_master.connect_attempts_max_retries;
-  params->connect_attempts_max_retries_dead_server = m_master.connect_attempts_max_retries_dead_server;
-  params->connect_attempts_rr_retries = m_master.connect_attempts_rr_retries;
-  params->connect_attempts_timeout = m_master.connect_attempts_timeout;
-  params->post_connect_attempts_timeout = m_master.post_connect_attempts_timeout;
+  params->oride.connect_attempts_max_retries = m_master.oride.connect_attempts_max_retries;
+  params->oride.connect_attempts_max_retries_dead_server = m_master.oride.connect_attempts_max_retries_dead_server;
+  params->oride.connect_attempts_rr_retries = m_master.oride.connect_attempts_rr_retries;
+  params->oride.connect_attempts_timeout = m_master.oride.connect_attempts_timeout;
+  params->oride.post_connect_attempts_timeout = m_master.oride.post_connect_attempts_timeout;
   params->parent_connect_attempts = m_master.parent_connect_attempts;
   params->per_parent_connect_attempts = m_master.per_parent_connect_attempts;
   params->parent_connect_timeout = m_master.parent_connect_timeout;
@@ -1568,10 +1565,10 @@ HttpConfig::reconfigure()
   params->oride.cache_guaranteed_min_lifetime = m_master.oride.cache_guaranteed_min_lifetime;
   params->oride.cache_guaranteed_max_lifetime = m_master.oride.cache_guaranteed_max_lifetime;
 
-  params->cache_max_stale_age = m_master.cache_max_stale_age;
-  params->freshness_fuzz_time = m_master.freshness_fuzz_time;
-  params->freshness_fuzz_min_time = m_master.freshness_fuzz_min_time;
-  params->freshness_fuzz_prob = m_master.freshness_fuzz_prob;
+  params->oride.cache_max_stale_age = m_master.oride.cache_max_stale_age;
+  params->oride.freshness_fuzz_time = m_master.oride.freshness_fuzz_time;
+  params->oride.freshness_fuzz_min_time = m_master.oride.freshness_fuzz_min_time;
+  params->oride.freshness_fuzz_prob = m_master.oride.freshness_fuzz_prob;
 
   params->cache_vary_default_text = xstrdup(m_master.cache_vary_default_text);
   params->cache_vary_default_images = xstrdup(m_master.cache_vary_default_images);
@@ -1607,7 +1604,7 @@ HttpConfig::reconfigure()
   params->oride.cache_when_to_revalidate = m_master.oride.cache_when_to_revalidate;
   params->cache_when_to_add_no_cache_to_msie_requests = m_master.cache_when_to_add_no_cache_to_msie_requests;
 
-  params->cache_required_headers = m_master.cache_required_headers;
+  params->oride.cache_required_headers = m_master.oride.cache_required_headers;
   params->cache_range_lookup = INT_TO_BOOL(m_master.cache_range_lookup);
 
   params->connect_ports_string = xstrdup(m_master.connect_ports_string);
@@ -1641,8 +1638,8 @@ HttpConfig::reconfigure()
 
   params->transparency_enabled = m_master.transparency_enabled;
 
-  params->down_server_timeout = m_master.down_server_timeout;
-  params->client_abort_threshold = m_master.client_abort_threshold;
+  params->oride.down_server_timeout = m_master.oride.down_server_timeout;
+  params->oride.client_abort_threshold = m_master.oride.client_abort_threshold;
 
   params->negative_revalidating_enabled = m_master.negative_revalidating_enabled;
   params->negative_revalidating_lifetime = m_master.negative_revalidating_lifetime;

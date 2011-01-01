@@ -166,7 +166,6 @@ CONFIG proxy.config.http.connect_attempts_max_retries INT 10
 CONFIG proxy.config.http.connect_attempts_max_retries_dead_server INT 4
 CONFIG proxy.config.http.connect_attempts_rr_retries INT 3
 CONFIG proxy.config.http.connect_attempts_timeout INT 20
-CONFIG proxy.config.http.streaming_connect_attempts_timeout INT 1800
 CONFIG proxy.config.http.post_connect_attempts_timeout INT 1800
 CONFIG proxy.config.http.down_server.cache_time INT 180
 CONFIG proxy.config.http.down_server.abort_threshold INT 10

@@ -739,8 +739,7 @@ HttpSM::state_read_client_request_header(int event, void *data)
   //   the accept timeout by the HttpClientSession
   //
   if (client_request_hdr_bytes == 0) {
-    ua_session->get_netvc()->
-      set_inactivity_timeout(HRTIME_SECONDS(t_state.http_config_param->transaction_no_activity_timeout_in));
+    ua_session->get_netvc()->set_inactivity_timeout(HRTIME_SECONDS(t_state.txn_conf.transaction_no_activity_timeout_in));
   }
   /////////////////////
   // tokenize header //
@@ -1102,8 +1101,8 @@ HttpSM::state_raw_http_server_open(int event, void *data)
     server_entry->vc_type = HTTP_RAW_SERVER_VC;
     t_state.current.state = HttpTransact::CONNECTION_ALIVE;
 
-    netvc->set_inactivity_timeout(HRTIME_SECONDS(t_state.http_config_param->transaction_no_activity_timeout_out));
-    netvc->set_active_timeout(HRTIME_SECONDS(t_state.http_config_param->transaction_active_timeout_out));
+    netvc->set_inactivity_timeout(HRTIME_SECONDS(t_state.txn_conf.transaction_no_activity_timeout_out));
+    netvc->set_active_timeout(HRTIME_SECONDS(t_state.txn_conf.transaction_active_timeout_out));
     break;
 
   case VC_EVENT_ERROR:
@@ -1580,9 +1579,8 @@ HttpSM::handle_api_return()
     if (t_state.api_next_action == HttpTransact::HTTP_API_READ_REPONSE_HDR && t_state.api_release_server_session) {
       t_state.api_release_server_session = false;
       release_server_session();
-    } else if (t_state.api_next_action ==
-               HttpTransact::HTTP_API_CACHE_LOOKUP_COMPLETE
-               && t_state.api_cleanup_cache_read &&
+    } else if (t_state.api_next_action == HttpTransact::HTTP_API_CACHE_LOOKUP_COMPLETE &&
+               t_state.api_cleanup_cache_read &&
                t_state.api_update_cached_object != HttpTransact::UPDATE_CACHED_OBJECT_PREPARE) {
       t_state.api_cleanup_cache_read = false;
       t_state.cache_info.object_read = NULL;
@@ -1599,8 +1597,7 @@ HttpSM::handle_api_return()
   case HttpTransact::HTTP_API_SEND_REPONSE_HDR:
     // Set back the inactivity timeout
     if (ua_session) {
-      ua_session->get_netvc()->
-        set_inactivity_timeout(HRTIME_SECONDS(HttpConfig::m_master.transaction_no_activity_timeout_in));
+      ua_session->get_netvc()->set_inactivity_timeout(HRTIME_SECONDS(t_state.txn_conf.transaction_no_activity_timeout_in));
     }
     // we have further processing to do
     //  based on what t_state.next_action is
@@ -1792,7 +1789,7 @@ HttpSM::state_read_server_response_header(int event, void *data)
     if (t_state.api_txn_no_activity_timeout_value != -1) {
       server_session->get_netvc()->set_inactivity_timeout(HRTIME_MSECONDS(t_state.api_txn_no_activity_timeout_value));
     } else {
-      server_session->get_netvc()->set_inactivity_timeout(HRTIME_SECONDS(t_state.http_config_param->transaction_no_activity_timeout_out));
+      server_session->get_netvc()->set_inactivity_timeout(HRTIME_SECONDS(t_state.txn_conf.transaction_no_activity_timeout_out));
     }
 
     // For requests that contain a body, we can cancel the ua inactivity timeout.
@@ -2082,9 +2079,7 @@ HttpSM::process_hostdb_info(HostDBInfo * r)
       // client_request_time may be very large, we cannot use
       // client_request_time
       // to approximate current time when calling select_best_http().
-      rr = r->rr()->select_best_http(t_state.client_info.ip,
-                                     // t_state.client_request_time,
-                                     ink_cluster_time(), (int) t_state.http_config_param->down_server_timeout);
+      rr = r->rr()->select_best_http(t_state.client_info.ip, ink_cluster_time(), (int) t_state.txn_conf.down_server_timeout);
       t_state.dns_info.round_robin = true;
     } else {
       rr = r;
@@ -2943,14 +2938,13 @@ HttpSM::tunnel_handler_server(int event, HttpTunnelProducer * p)
     server_session->server_trans_stat--;
     HTTP_DECREMENT_DYN_STAT(http_current_server_transactions_stat);
 
-    // If the client is still around, attach the the server session
-    //  to so the next ka request can use it.  We bind privately to the
-    //  client to add some degree of affinity to the system.  However,
-    //  we turn off private binding when outbound conenctions are being
-    //  limit since it makes it too expensive to initiate a purge of idle
-    //  server keep-alive sessions
-    if (ua_session &&
-        t_state.client_info.keep_alive == HTTP_KEEPALIVE &&
+    // If the client is still around, attach the server session
+    // to so the next ka request can use it.  We bind privately to the
+    // client to add some degree of affinity to the system.  However,
+    // we turn off private binding when outbound conenctions are being
+    // limit since it makes it too expensive to initiate a purge of idle
+    // server keep-alive sessions
+    if (ua_session && t_state.client_info.keep_alive == HTTP_KEEPALIVE &&
         t_state.http_config_param->server_max_connections <= 0 &&
         t_state.txn_conf.origin_max_connections <= 0) {
       ua_session->attach_server_session(server_session);
@@ -4251,9 +4245,9 @@ HttpSM::do_http_server_open(bool raw)
   // This bug was due to when share_server_sessions is set to 0
   // and we have keep-alive, we are trying to open a new server session
   // when we already have an attached server session.
-  else if ((!t_state.http_config_param->share_server_sessions)
-           && (ua_session != NULL)) {
+  else if ((!t_state.http_config_param->share_server_sessions) && (ua_session != NULL)) {
     HttpServerSession *existing_ss = ua_session->get_server_session();
+
     if (existing_ss) {
       if (existing_ss->server_ip == t_state.current.server->ip
           && existing_ss->server_port == t_state.current.server->port) {
@@ -4288,6 +4282,7 @@ HttpSM::do_http_server_open(bool raw)
     int64_t sum;
 
     HTTP_READ_GLOBAL_DYN_SUM(http_current_server_connections_stat, sum);
+
     // Note that there is a potential race condition here where
     // the value of the http_current_server_connections_stat gets changed
     // between the statement above and the check below.
@@ -4339,14 +4334,14 @@ HttpSM::do_http_server_open(bool raw)
       //   header
       MgmtInt connect_timeout;
       if (t_state.method == HTTP_WKSIDX_POST || t_state.method == HTTP_WKSIDX_PUT) {
-        connect_timeout = t_state.http_config_param->post_connect_attempts_timeout;
+        connect_timeout = t_state.txn_conf.post_connect_attempts_timeout;
       } else if (t_state.current.server == &t_state.parent_info) {
         connect_timeout = t_state.http_config_param->parent_connect_timeout;
       } else {
         if (t_state.pCongestionEntry != NULL)
           connect_timeout = t_state.pCongestionEntry->connect_timeout();
         else
-          connect_timeout = t_state.http_config_param->connect_attempts_timeout;
+          connect_timeout = t_state.txn_conf.connect_attempts_timeout;
       }
       Debug("http", "calling netProcessor.connect_s");
       connect_action_handle = netProcessor.connect_s(this,      // state machine
@@ -4511,7 +4506,7 @@ HttpSM::mark_host_failure(HostDBInfo * info, time_t time_down)
 
 
 #ifdef DEBUG
-  ink_assert(ink_cluster_time() + t_state.http_config_param->down_server_timeout > time_down);
+  ink_assert(ink_cluster_time() + t_state.txn_conf.down_server_timeout > time_down);
 #endif
 
   Debug("http", "[%" PRId64 "] hostdb update marking IP: %u.%u.%u.%u (port %d) as down",
@@ -4579,7 +4574,7 @@ HttpSM::mark_server_down_on_client_abort()
       //  to declare the origin server as down
       ink_hrtime wait = ink_get_hrtime() - milestones.server_first_connect;
       ink_assert(wait >= 0);
-      if (ink_hrtime_to_sec(wait) > t_state.http_config_param->client_abort_threshold) {
+      if (ink_hrtime_to_sec(wait) > t_state.txn_conf.client_abort_threshold) {
         t_state.current.server->connect_failure = true;
         do_hostdb_update_if_necessary();
       }
@@ -5178,12 +5173,13 @@ HttpSM::attach_server_session(HttpServerSession * s)
   //   we fail this server if it doesn't start sending the response
   //   header
   MgmtInt connect_timeout;
+
   if (t_state.method == HTTP_WKSIDX_POST || t_state.method == HTTP_WKSIDX_PUT) {
-    connect_timeout = t_state.http_config_param->post_connect_attempts_timeout;
+    connect_timeout = t_state.txn_conf.post_connect_attempts_timeout;
   } else if (t_state.current.server == &t_state.parent_info) {
     connect_timeout = t_state.http_config_param->parent_connect_timeout;
   } else {
-    connect_timeout = t_state.http_config_param->connect_attempts_timeout;
+    connect_timeout = t_state.txn_conf.connect_attempts_timeout;
   }
   if (t_state.pCongestionEntry != NULL)
     connect_timeout = t_state.pCongestionEntry->connect_timeout();
@@ -5197,7 +5193,7 @@ HttpSM::attach_server_session(HttpServerSession * s)
   if (t_state.api_txn_active_timeout_value != -1) {
     server_session->get_netvc()->set_active_timeout(HRTIME_MSECONDS(t_state.api_txn_active_timeout_value));
   } else {
-    server_session->get_netvc()->set_active_timeout(HRTIME_SECONDS(t_state.http_config_param->transaction_active_timeout_out));
+    server_session->get_netvc()->set_active_timeout(HRTIME_SECONDS(t_state.txn_conf.transaction_active_timeout_out));
   }
 
   if (plugin_tunnel_type != HTTP_NO_PLUGIN_TUNNEL) {
