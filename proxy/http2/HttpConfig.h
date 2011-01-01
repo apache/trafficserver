@@ -407,7 +407,8 @@ struct HttpConfigPortRange
 // to be overridable per transaction more easily.
 struct OverridableHttpConfigParams {
   OverridableHttpConfigParams()
-    :  maintain_pristine_host_hdr(0), chunking_enabled(0), negative_caching_enabled(0),
+    :  maintain_pristine_host_hdr(0), chunking_enabled(0),
+       negative_caching_enabled(0), negative_caching_lifetime(0),
        cache_when_to_revalidate(0), keep_alive_enabled(0), keep_alive_post_out(0),
        sock_recv_buffer_size_out(0), sock_send_buffer_size_out(0), sock_option_flag_out(0),
        anonymize_remove_from(false), anonymize_remove_referer(false), anonymize_remove_user_agent(false),
@@ -415,19 +416,31 @@ struct OverridableHttpConfigParams {
        append_xforwards_header(false), proxy_response_server_enabled(0),
        insert_squid_x_forwarded_for(0), send_http11_requests(3), // SEND_HTTP11_IF_REQUEST_11_AND_HOSTDB
        cache_http(false), cache_ignore_client_no_cache(false),     cache_ignore_client_cc_max_age(true),
-       cache_ims_on_client_no_cache(false), cache_ignore_server_no_cache(false),
+       cache_ims_on_client_no_cache(false), cache_ignore_server_no_cache(false), cache_responses_to_cookies(0),
+       cache_ignore_auth(0), cache_urls_that_look_dynamic(false),
+       insert_request_via_string(0), insert_response_via_string(0),
+       cache_heuristic_min_lifetime(0), cache_heuristic_max_lifetime(0),
+       cache_guaranteed_min_lifetime(0), cache_guaranteed_max_lifetime(0),
+       keep_alive_no_activity_timeout_in(0),
+       origin_max_connections(0),
 
        // Strings / floats must come last
-       proxy_response_server_string(NULL), proxy_response_server_string_len(0)
+       proxy_response_server_string(NULL), proxy_response_server_string_len(0),
+       cache_heuristic_lm_factor(0)
   {}
 
   // IMPORTANT: All MgmtInt configs should come before any other string / float
   // configs!!!
 
-  // These three configs used to be @-parameters in remap.config
+  // The first three configs used to be @-parameters in remap.config
   MgmtInt maintain_pristine_host_hdr;
   MgmtInt chunking_enabled;
+
+  ////////////////////////////////
+  //  Negative Response Caching //
+  ////////////////////////////////
   MgmtInt negative_caching_enabled;
+  MgmtInt negative_caching_lifetime;
 
   MgmtInt cache_when_to_revalidate;
 
@@ -472,6 +485,26 @@ struct OverridableHttpConfigParams {
   MgmtInt cache_ignore_client_cc_max_age;
   MgmtInt cache_ims_on_client_no_cache;
   MgmtInt cache_ignore_server_no_cache;
+  MgmtInt cache_responses_to_cookies;
+  MgmtInt cache_ignore_auth;
+  MgmtInt cache_urls_that_look_dynamic;
+
+  MgmtInt insert_request_via_string;
+  MgmtInt insert_response_via_string;
+
+  /////////////////////
+  // cache variables //
+  /////////////////////
+  MgmtInt cache_heuristic_min_lifetime;
+  MgmtInt cache_heuristic_max_lifetime;
+  MgmtInt cache_guaranteed_min_lifetime;
+  MgmtInt cache_guaranteed_max_lifetime;
+
+  ///////////////////////////////////////////////////
+  // connection variables. timeouts are in seconds //
+  ///////////////////////////////////////////////////
+  MgmtInt keep_alive_no_activity_timeout_in;
+  MgmtInt origin_max_connections;
 
   // IMPORTANT: Here comes all strings / floats configs.
 
@@ -480,6 +513,8 @@ struct OverridableHttpConfigParams {
   ///////////////////////////////////////////////////////////////////
   char *proxy_response_server_string; // This does not get free'd by us!
   size_t proxy_response_server_string_len; // Updated when server_string is set.
+
+  float cache_heuristic_lm_factor;
 };
 
 
@@ -522,8 +557,7 @@ public:
   unsigned int outgoing_ip_to_bind_saddr;
 
   MgmtInt server_max_connections;
-  MgmtInt origin_max_connections;
-  MgmtInt origin_min_keep_alive_connections;
+  MgmtInt origin_min_keep_alive_connections; // TODO: This one really ought to be overridable, but difficult right now.
 
   MgmtInt parent_proxy_routing_enable;
   MgmtInt disable_ssl_parenting;
@@ -536,8 +570,6 @@ public:
 
   MgmtInt snarf_username_from_authorization;
 
-  MgmtInt insert_request_via_string;
-  MgmtInt insert_response_via_string;
   MgmtInt verbose_via_string;
 
   char *proxy_request_via_string;
@@ -567,7 +599,6 @@ public:
   MgmtInt origin_server_pipeline;
   MgmtInt user_agent_pipeline;
   MgmtInt share_server_sessions;
-  MgmtInt keep_alive_no_activity_timeout_in;
   MgmtInt keep_alive_no_activity_timeout_out;
   MgmtInt transaction_no_activity_timeout_in;
   MgmtInt transaction_no_activity_timeout_out;
@@ -613,16 +644,6 @@ public:
   MgmtInt icp_enabled;
   MgmtInt stale_icp_enabled;
 
-  /////////////////////
-  // cache variables //
-  /////////////////////
-  MgmtInt cache_heuristic_min_lifetime;
-  MgmtInt cache_heuristic_max_lifetime;
-  float cache_heuristic_lm_factor;
-
-  MgmtInt cache_guaranteed_min_lifetime;
-  MgmtInt cache_guaranteed_max_lifetime;
-
   MgmtInt cache_max_stale_age;
 
   MgmtInt freshness_fuzz_time;
@@ -644,9 +665,6 @@ public:
   ///////////////////
   // cache control //
   ///////////////////
-  MgmtInt cache_responses_to_cookies;
-  MgmtInt cache_ignore_auth;
-  MgmtInt cache_urls_that_look_dynamic;
   MgmtInt cache_enable_default_vary_headers;
   MgmtInt cache_when_to_add_no_cache_to_msie_requests;
   MgmtInt cache_required_headers;
@@ -668,7 +686,6 @@ public:
   // Push //
   //////////
   MgmtInt push_method_enabled;
-
 
   ////////////////////////////
   // HTTP Referer filtering //
@@ -714,11 +731,6 @@ public:
   ////////////////////////////
   MgmtInt negative_revalidating_enabled;
   MgmtInt negative_revalidating_lifetime;
-
-  ////////////////////////////////
-  //  Negative Response Caching //
-  ////////////////////////////////
-  MgmtInt negative_caching_lifetime;
 
   /////////////////
   // Inktoswitch //
@@ -907,7 +919,6 @@ HttpConfigParams::HttpConfigParams()
     outgoing_ip_to_bind(0),
     outgoing_ip_to_bind_saddr(0),
     server_max_connections(0),
-    origin_max_connections(0),
     origin_min_keep_alive_connections(0),
     parent_proxy_routing_enable(false),
     disable_ssl_parenting(0),
@@ -917,8 +928,6 @@ HttpConfigParams::HttpConfigParams()
     no_origin_server_dns(0),
     use_client_target_addr(0),
     //snarf_username_from_authorization(0),
-    insert_request_via_string(0),
-    insert_response_via_string(0),
     verbose_via_string(0),
     proxy_request_via_string(0),
     proxy_request_via_string_len(0),
@@ -935,7 +944,6 @@ HttpConfigParams::HttpConfigParams()
     origin_server_pipeline(0),
     user_agent_pipeline(0),
     share_server_sessions(0),
-    keep_alive_no_activity_timeout_in(0),
     keep_alive_no_activity_timeout_out(0),
     transaction_no_activity_timeout_in(0),
     transaction_no_activity_timeout_out(0),
@@ -960,11 +968,6 @@ HttpConfigParams::HttpConfigParams()
     enable_http_stats(1),
     icp_enabled(0),
     stale_icp_enabled(0),
-    cache_heuristic_min_lifetime(0),
-    cache_heuristic_max_lifetime(0),
-    cache_heuristic_lm_factor(0),
-    cache_guaranteed_min_lifetime(0),
-    cache_guaranteed_max_lifetime(0),
     cache_max_stale_age(0),
     freshness_fuzz_time(0),
     freshness_fuzz_min_time(0),
@@ -976,9 +979,6 @@ HttpConfigParams::HttpConfigParams()
     cache_open_read_retry_time(0),
     max_cache_open_write_retries(0),
     cache_open_write_retry_time(0),
-    cache_responses_to_cookies(0),
-    cache_ignore_auth(0),
-    cache_urls_that_look_dynamic(false),
     cache_enable_default_vary_headers(false),
     cache_when_to_add_no_cache_to_msie_requests(0),
     cache_required_headers(CACHE_REQUIRED_HEADERS_NONE),
@@ -996,7 +996,6 @@ HttpConfigParams::HttpConfigParams()
     client_abort_threshold(0),
     negative_revalidating_enabled(0),
     negative_revalidating_lifetime(0),
-    negative_caching_lifetime(0),
     inktoswitch_enabled(0),
     router_ip(0),
     router_port(0),

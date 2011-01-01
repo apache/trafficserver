@@ -177,8 +177,7 @@ reloadCacheControl()
 }
 
 void
-getCacheControl(CacheControlResult *result, HttpRequestData *rdata, HttpConfigParams *h_params,
-                OverridableHttpConfigParams *h_txn_conf, char *tag)
+getCacheControl(CacheControlResult *result, HttpRequestData *rdata, OverridableHttpConfigParams *h_txn_conf, char *tag)
 {
   rdata->tag = tag;
   CacheControlTable->Match(rdata, result);
@@ -460,21 +459,5 @@ CacheControlRecord::Init(matcher_line * line_info)
 void
 CacheControlRecord::UpdateMatch(CacheControlResult * result, RD * rdata)
 {
-}
-void
-getCacheControl(CacheControlResult * result, HttpRequestData * rdata, HttpConfigParams * h_params,
-                OverridableHttpConfigParams *h_txn_conf)
-{
-  if (h_txn_conf->cache_ignore_client_no_cache) {
-    result->ignore_client_no_cache = true;
-  }
-
-  if (h_txn_conf->cache_ignore_server_no_cache) {
-    result->ignore_server_no_cache = true;
-  }
-
-  if (!h_txn_conf->cache_ignore_client_cc_max_age) {
-    result->ignore_client_cc_max_age = false;
-  }
 }
 #endif // INK_NO_ACL

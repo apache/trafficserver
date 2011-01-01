@@ -939,7 +939,7 @@ public:
 
     // Sandbox of Variables
     StateMachineAction_t cdn_saved_next_action;
-    void (*cdn_saved_transact_return_point) (State * s);
+    void (*cdn_saved_transact_return_point) (State* s);
     bool cdn_remap_complete;
     bool first_dns_lookup;
 
@@ -955,7 +955,7 @@ public:
 
     StateMachineAction_t next_action;   // out
     StateMachineAction_t api_next_action;       // out
-    void (*transact_return_point) (HttpTransact::State * s);    // out
+    void (*transact_return_point) (HttpTransact::State* s);    // out
     char *internal_msg_buffer;  // out
     char *internal_msg_buffer_type;     // out
     int64_t internal_msg_buffer_size;       // out
@@ -1241,165 +1241,160 @@ public:
 
   static void free_internal_msg_buffer(char *buffer, int64_t size);
 
-  static void HandleBlindTunnel(State * s);
-  static void StartRemapRequest(State * s);
-  static void RemapRequest(State * s);
-  static void EndRemapRequest(State * s);
-  static void PerformRemap(State * s);
-  static void ModifyRequest(State * s);
-  static void HandleRequest(State * s);
-  static bool handleIfRedirect(State * s);
+  static void HandleBlindTunnel(State* s);
+  static void StartRemapRequest(State* s);
+  static void RemapRequest(State* s);
+  static void EndRemapRequest(State* s);
+  static void PerformRemap(State* s);
+  static void ModifyRequest(State* s);
+  static void HandleRequest(State* s);
+  static bool handleIfRedirect(State* s);
 
-  static void StartAccessControl(State * s);
-  static void StartAuth(State * s);
-  static void HandleRequestAuthorized(State * s);
-  static void BadRequest(State * s);
-  static void HandleFiltering(State * s);
-  static void DecideCacheLookup(State * s);
-  static void LookupSkipOpenServer(State * s);
+  static void StartAccessControl(State* s);
+  static void StartAuth(State* s);
+  static void HandleRequestAuthorized(State* s);
+  static void BadRequest(State* s);
+  static void HandleFiltering(State* s);
+  static void DecideCacheLookup(State* s);
+  static void LookupSkipOpenServer(State* s);
 
-  static void CallOSDNSLookup(State * s);
-  static int ConnectionCollapsing(State * s);   //Added functionality for MISS cases - YTS Team, yamsat
-  static int ConnectionCollapsing_for_revalidation(State * s);  //Added functionality for REVALIDATION - YTS Team, yamsat
-  static void OSDNSLookup(State * s);
-  static void ReDNSRoundRobin(State * s);
-  static void PPDNSLookup(State * s);
-  static void HandleAuth(State * s);
-  static void HandleAuthFailed(State * s);
-  static void OriginServerRawOpen(State * s);
-  static void HandleCacheOpenRead(State * s);
-  static void HandleCacheOpenReadHitFreshness(State * s);
-  static void HandleCacheOpenReadHit(State * s);
-  static void HandleCacheOpenReadMiss(State * s);
-  static void build_response_from_cache(State * s, HTTPWarningCode warning_code);
-  static void handle_cache_write_lock(State * s);
-  static void HandleICPLookup(State * s);
-  static void HandleResponse(State * s);
-  static void HandleUpdateCachedObject(State * s);
-  static void HandleUpdateCachedObjectContinue(State * s);
-  static void HandleStatPage(State * s);
-  static void handle_100_continue_response(State * s);
-  static void handle_transform_ready(State * s);
-  static void handle_transform_cache_write(State * s);
-  static void handle_response_from_icp_suggested_host(State * s);
-  static void handle_response_from_parent(State * s);
-  static void handle_response_from_server(State * s);
-  static void delete_server_rr_entry(State * s, int max_retries);
-  static void delete_srv_entry(State * s, int max_retries);
-  static void retry_server_connection_not_open(State * s, ServerState_t conn_state, int max_retries);
-  static void handle_server_connection_not_open(State * s);
-  static void handle_forward_server_connection_open(State * s);
-  static void handle_cache_operation_on_forward_server_response(State * s);
-  static void handle_no_cache_operation_on_forward_server_response(State * s);
-  static void merge_and_update_headers_for_cache_update(State * s);
-  static void set_headers_for_cache_write(State * s, HTTPInfo * cache_info, HTTPHdr * request, HTTPHdr * response);
-  static void set_header_for_transform(State * s, HTTPHdr * base_header);
-  static void merge_response_header_with_cached_header(HTTPHdr * cached_header, HTTPHdr * response_header);
-  static void merge_warning_header(HTTPHdr * cached_header, HTTPHdr * response_header);
-  static void SetCacheFreshnessLimit(State * s);
+  static void CallOSDNSLookup(State* s);
+  static int ConnectionCollapsing(State* s);   //Added functionality for MISS cases - YTS Team, yamsat
+  static int ConnectionCollapsing_for_revalidation(State* s);  //Added functionality for REVALIDATION - YTS Team, yamsat
+  static void OSDNSLookup(State* s);
+  static void ReDNSRoundRobin(State* s);
+  static void PPDNSLookup(State* s);
+  static void HandleAuth(State* s);
+  static void HandleAuthFailed(State* s);
+  static void OriginServerRawOpen(State* s);
+  static void HandleCacheOpenRead(State* s);
+  static void HandleCacheOpenReadHitFreshness(State* s);
+  static void HandleCacheOpenReadHit(State* s);
+  static void HandleCacheOpenReadMiss(State* s);
+  static void build_response_from_cache(State* s, HTTPWarningCode warning_code);
+  static void handle_cache_write_lock(State* s);
+  static void HandleICPLookup(State* s);
+  static void HandleResponse(State* s);
+  static void HandleUpdateCachedObject(State* s);
+  static void HandleUpdateCachedObjectContinue(State* s);
+  static void HandleStatPage(State* s);
+  static void handle_100_continue_response(State* s);
+  static void handle_transform_ready(State* s);
+  static void handle_transform_cache_write(State* s);
+  static void handle_response_from_icp_suggested_host(State* s);
+  static void handle_response_from_parent(State* s);
+  static void handle_response_from_server(State* s);
+  static void delete_server_rr_entry(State* s, int max_retries);
+  static void delete_srv_entry(State* s, int max_retries);
+  static void retry_server_connection_not_open(State* s, ServerState_t conn_state, int max_retries);
+  static void handle_server_connection_not_open(State* s);
+  static void handle_forward_server_connection_open(State* s);
+  static void handle_cache_operation_on_forward_server_response(State* s);
+  static void handle_no_cache_operation_on_forward_server_response(State* s);
+  static void merge_and_update_headers_for_cache_update(State* s);
+  static void set_headers_for_cache_write(State* s, HTTPInfo* cache_info, HTTPHdr* request, HTTPHdr* response);
+  static void set_header_for_transform(State* s, HTTPHdr* base_header);
+  static void merge_response_header_with_cached_header(HTTPHdr* cached_header, HTTPHdr* response_header);
+  static void merge_warning_header(HTTPHdr* cached_header, HTTPHdr* response_header);
+  static void SetCacheFreshnessLimit(State* s);
   static void HandleApiErrorJump(State *);
 
-  static void HandleCacheOpenReadPush(State * s, bool read_successful);
-  static void HandlePushResponseHdr(State * s);
-  static void HandlePushCacheWrite(State * s);
-  static void HandlePushTunnelSuccess(State * s);
-  static void HandlePushTunnelFailure(State * s);
+  static void HandleCacheOpenReadPush(State* s, bool read_successful);
+  static void HandlePushResponseHdr(State* s);
+  static void HandlePushCacheWrite(State* s);
+  static void HandlePushTunnelSuccess(State* s);
+  static void HandlePushTunnelFailure(State* s);
   static void HandlePushError(State *s, const char *reason);
-  static void HandleBadPushRespHdr(State * s);
+  static void HandleBadPushRespHdr(State* s);
 
   // Utility Methods
-  static void issue_revalidate(State * s);
-  static void get_ka_info_from_host_db(State * s, ConnectionAttributes * server_info, ConnectionAttributes * client_info,
-                                       HostDBInfo * host_db_info);
-  static bool service_transaction_in_proxy_only_mode(State * s);
-  static void setup_plugin_request_intercept(State * s);
-  static void handle_msie_reload_badness(State * s, HTTPHdr * client_request);
-  static void add_client_ip_to_outgoing_request(State * s, HTTPHdr * request);
-  static RequestError_t check_request_validity(State * s, HTTPHdr * incoming_hdr);
-  static ResponseError_t check_response_validity(State * s, HTTPHdr * incoming_hdr);
-  static bool delete_all_document_alternates_and_return(State * s, bool cache_hit);
-  static bool did_forward_server_send_0_9_response(State * s);
+  static void issue_revalidate(State* s);
+  static void get_ka_info_from_host_db(State* s, ConnectionAttributes* server_info, ConnectionAttributes* client_info,
+                                       HostDBInfo* host_db_info);
+  static bool service_transaction_in_proxy_only_mode(State* s);
+  static void setup_plugin_request_intercept(State* s);
+  static void handle_msie_reload_badness(State* s, HTTPHdr* client_request);
+  static void add_client_ip_to_outgoing_request(State* s, HTTPHdr* request);
+  static RequestError_t check_request_validity(State* s, HTTPHdr* incoming_hdr);
+  static ResponseError_t check_response_validity(State* s, HTTPHdr* incoming_hdr);
+  static bool delete_all_document_alternates_and_return(State* s, bool cache_hit);
+  static bool did_forward_server_send_0_9_response(State* s);
   static bool does_client_request_permit_cached_response(const OverridableHttpConfigParams *p, CacheControlResult *c,
                                                          HTTPHdr *h, char *via_string);
-  static bool does_client_request_permit_dns_caching(CacheControlResult * c, HTTPHdr * h);
-  static bool does_client_request_permit_storing(CacheControlResult * c, HTTPHdr * h);
-  static bool handle_internal_request(State * s, HTTPHdr * incoming_hdr);
-  static bool handle_trace_and_options_requests(State * s, HTTPHdr * incoming_hdr);
-  static void bootstrap_state_variables_from_request(State * s, HTTPHdr * incoming_request);
-  static void initialize_state_variables_for_origin_server(State * s, HTTPHdr * incoming_request, bool second_time);
-  static void initialize_state_variables_from_request(State * s, HTTPHdr * obsolete_incoming_request);
-  static void initialize_state_variables_from_response(State * s, HTTPHdr * incoming_response);
-  static bool is_server_negative_cached(State * s);
-  static bool is_cache_response_returnable(State * s);
-  static bool is_stale_cache_response_returnable(State * s);
-  static bool need_to_revalidate(State * s);
-  static bool url_looks_dynamic(URL * url);
-  static bool is_request_cache_lookupable(State * s, HTTPHdr * incoming);
-  static bool is_request_valid(State * s, HTTPHdr * incoming_request);
-  static bool is_request_retryable(State * s);
-  static bool is_response_cacheable(State * s, HTTPHdr * request, HTTPHdr * response);
-  static bool is_response_valid(State * s, HTTPHdr * incoming_response);
+  static bool does_client_request_permit_dns_caching(CacheControlResult* c, HTTPHdr* h);
+  static bool does_client_request_permit_storing(CacheControlResult* c, HTTPHdr* h);
+  static bool handle_internal_request(State* s, HTTPHdr* incoming_hdr);
+  static bool handle_trace_and_options_requests(State* s, HTTPHdr* incoming_hdr);
+  static void bootstrap_state_variables_from_request(State* s, HTTPHdr* incoming_request);
+  static void initialize_state_variables_for_origin_server(State* s, HTTPHdr* incoming_request, bool second_time);
+  static void initialize_state_variables_from_request(State* s, HTTPHdr* obsolete_incoming_request);
+  static void initialize_state_variables_from_response(State* s, HTTPHdr* incoming_response);
+  static bool is_server_negative_cached(State* s);
+  static bool is_cache_response_returnable(State* s);
+  static bool is_stale_cache_response_returnable(State* s);
+  static bool need_to_revalidate(State* s);
+  static bool url_looks_dynamic(URL* url);
+  static bool is_request_cache_lookupable(State* s, HTTPHdr* incoming);
+  static bool is_request_valid(State* s, HTTPHdr* incoming_request);
+  static bool is_request_retryable(State* s);
+  static bool is_response_cacheable(State* s, HTTPHdr* request, HTTPHdr* response);
+  static bool is_response_valid(State* s, HTTPHdr* incoming_response);
 
-  static void process_quick_http_filter(State * s, int method);
-  static bool perform_accept_encoding_filtering(State * s);
+  static void process_quick_http_filter(State* s, int method);
+  static bool perform_accept_encoding_filtering(State* s);
 
-  static HostNameExpansionError_t try_to_expand_host_name(State * s);
+  static HostNameExpansionError_t try_to_expand_host_name(State* s);
 
-  static void snarf_username_from_authorization_hdr(State * s);
-  static bool setup_auth_lookup(State * s);
-  static bool will_this_request_self_loop(State * s);
-  static bool is_request_likely_cacheable(State * s, HTTPHdr * request);
-  static void build_request(State * s, HTTPHdr * base_request, HTTPHdr * outgoing_request,
-                            HTTPVersion outgoing_version);
+  static void snarf_username_from_authorization_hdr(State* s);
+  static bool setup_auth_lookup(State* s);
+  static bool will_this_request_self_loop(State* s);
+  static bool is_request_likely_cacheable(State* s, HTTPHdr* request);
 
-  static void build_response(State * s, HTTPHdr * base_response, HTTPHdr * outgoing_response, HTTPVersion outgoing_version,
+  static void build_request(State* s, HTTPHdr* base_request, HTTPHdr* outgoing_request, HTTPVersion outgoing_version);
+  static void build_response(State* s, HTTPHdr* base_response, HTTPHdr* outgoing_response, HTTPVersion outgoing_version,
                              HTTPStatus status_code, const char *reason_phrase = NULL);
-  static void build_response(State * s, HTTPHdr * base_response, HTTPHdr * outgoing_response, HTTPVersion outgoing_version);
-  static void build_response(State * s, HTTPHdr * outgoing_response, HTTPVersion outgoing_version, HTTPStatus status_code,
+  static void build_response(State* s, HTTPHdr* base_response, HTTPHdr* outgoing_response, HTTPVersion outgoing_version);
+  static void build_response(State* s, HTTPHdr* outgoing_response, HTTPVersion outgoing_version, HTTPStatus status_code,
                              const char *reason_phrase = NULL);
 
-  static void build_response_copy(State * s, HTTPHdr * base_response, HTTPHdr * outgoing_response, HTTPVersion outgoing_version);
-  static void handle_content_length_header(State * s, HTTPHdr * header, HTTPHdr * base);
+  static void build_response_copy(State* s, HTTPHdr* base_response, HTTPHdr* outgoing_response, HTTPVersion outgoing_version);
+  static void handle_content_length_header(State* s, HTTPHdr* header, HTTPHdr* base);
 
-  static void handle_request_keep_alive_headers(State * s, HTTPVersion ver, HTTPHdr * heads);
-  static void handle_response_keep_alive_headers(State * s, HTTPVersion ver, HTTPHdr * heads);
-  static int calculate_document_freshness_limit(Arena * arena, HTTPHdr * response, time_t response_date, bool * heuristic,
-                                                time_t request_sent_time, int cache_heuristic_min_lifetime,
-                                                int cache_heuristic_max_lifetime, double cache_heuristic_lm_factor,
-                                                int cache_guaranteed_min_lifetime, int cache_guaranteed_max_lifetime,
-                                                time_t plugin_set_expire_time, State * s);
-  static int calculate_freshness_fuzz(State * s, int fresh_limit);
-  static Freshness_t what_is_document_freshness(State * s, HTTPHdr * client_request, HTTPHdr * cached_obj_request,
-                                                HTTPHdr * cached_obj_response);
-  static Authentication_t AuthenticationNeeded(const HttpConfigParams * p, HTTPHdr * client_request, HTTPHdr * obj_response);
-  static void handle_parent_died(State * s);
-  static void handle_server_died(State * s);
+  static void handle_request_keep_alive_headers(State *s, HTTPVersion ver, HTTPHdr *heads);
+  static void handle_response_keep_alive_headers(State *s, HTTPVersion ver, HTTPHdr *heads);
+  static int calculate_document_freshness_limit(State *s, HTTPHdr *response, time_t response_date, bool *heuristic);
+  static int calculate_freshness_fuzz(State *s, int fresh_limit);
+  static Freshness_t what_is_document_freshness(State *s, HTTPHdr *client_request, HTTPHdr *cached_obj_request,
+                                                HTTPHdr *cached_obj_response);
+  static Authentication_t AuthenticationNeeded(const OverridableHttpConfigParams *p, HTTPHdr *client_request, HTTPHdr *obj_response);
+  static void handle_parent_died(State* s);
+  static void handle_server_died(State* s);
   static void build_error_response(State *s, HTTPStatus status_code, const char *reason_phrase_or_null, const char *error_body_type,
                                    const char *format, ...);
-  static void build_redirect_response(State * s);
+  static void build_redirect_response(State* s);
   static const char *get_error_string(int erno);
 
   // the stat functions
-  static void update_stat(State * s, int stat, ink_statval_t increment);
-  static void update_size_and_time_stats(State * s, ink_hrtime total_time, ink_hrtime user_agent_write_time,
+  static void update_stat(State* s, int stat, ink_statval_t increment);
+  static void update_size_and_time_stats(State* s, ink_hrtime total_time, ink_hrtime user_agent_write_time,
                                          ink_hrtime origin_server_read_time, ink_hrtime cache_lookup_time,
                                          int user_agent_request_header_size, int64_t user_agent_request_body_size,
                                          int user_agent_response_header_size, int64_t user_agent_response_body_size,
                                          int origin_server_request_header_size, int64_t origin_server_request_body_size,
                                          int origin_server_response_header_size, int64_t origin_server_response_body_size,
                                          int pushed_response_header_size, int64_t pushed_response_body_size, CacheAction_t cache_action);
-  static void histogram_request_document_size(State * s, int64_t size);
-  static void histogram_response_document_size(State * s, int64_t size);
-  static void user_agent_connection_speed(State * s, ink_hrtime transfer_time, int64_t nbytes);
-  static void origin_server_connection_speed(State * s, ink_hrtime transfer_time, int64_t nbytes);
-  static void client_result_stat(State * s, ink_hrtime total_time, ink_hrtime request_process_time);
-  static void initialize_bypass_variables(State * s);
-  static void add_new_stat_block(State * s);
-  static void delete_warning_value(HTTPHdr * to_warn, HTTPWarningCode warning_code);
-  static bool is_connection_collapse_checks_success(State * s); //YTS Team, yamsat
+  static void histogram_request_document_size(State* s, int64_t size);
+  static void histogram_response_document_size(State* s, int64_t size);
+  static void user_agent_connection_speed(State* s, ink_hrtime transfer_time, int64_t nbytes);
+  static void origin_server_connection_speed(State* s, ink_hrtime transfer_time, int64_t nbytes);
+  static void client_result_stat(State* s, ink_hrtime total_time, ink_hrtime request_process_time);
+  static void initialize_bypass_variables(State* s);
+  static void add_new_stat_block(State* s);
+  static void delete_warning_value(HTTPHdr* to_warn, HTTPWarningCode warning_code);
+  static bool is_connection_collapse_checks_success(State* s); //YTS Team, yamsat
 };
 
-typedef void (*TransactEntryFunc_t) (HttpTransact::State * s);
+typedef void (*TransactEntryFunc_t) (HttpTransact::State* s);
 
 inline void
 HttpTransact::free_internal_msg_buffer(char *buffer, int64_t size)
@@ -1412,7 +1407,7 @@ HttpTransact::free_internal_msg_buffer(char *buffer, int64_t size)
   }
 }
 
-inline const char *
+inline const char*
 conn_state_enum_to_str(HttpTransact::ServerState_t the_state)
 {
   switch (the_state) {
@@ -1441,8 +1436,7 @@ conn_state_enum_to_str(HttpTransact::ServerState_t the_state)
   }
 }
 
-inline
-  bool
+inline bool
 is_response_body_precluded(HTTPStatus status_code, int method)
 {
 
@@ -1471,7 +1465,7 @@ inkcoreapi extern
 ink_cluster_time(void);
 
 inline void
-HttpTransact::update_stat(State * s, int stat, ink_statval_t increment)
+HttpTransact::update_stat(State* s, int stat, ink_statval_t increment)
 {
 
   if (s->current_stats->next_insert >= StatBlockEntries) {

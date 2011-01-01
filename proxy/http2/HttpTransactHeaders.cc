@@ -1035,127 +1035,116 @@ HttpTransactHeaders::insert_server_header_in_response(const char *server_tag, in
 //
 ///////////////////////////////////////////////////////////////////////////////
 void
-HttpTransactHeaders::insert_via_header_in_request(HttpConfigParams * http_config_param, int scheme,
-                                                  HttpTransact::CacheLookupInfo * cache_info,
-                                                  HTTPHdr * header, char *incoming_via)
+HttpTransactHeaders::insert_via_header_in_request(HttpConfigParams *http_config_param, int scheme, HTTPHdr *header,
+                                                  char *incoming_via)
 {
-  NOWARN_UNUSED(cache_info);
+  char new_via_string[8192];
+  char *via_string = new_via_string;
 
-  if (http_config_param->insert_request_via_string) {
-    char new_via_string[8192];
-    char *via_string = new_via_string;
-
-    if ((http_config_param->proxy_hostname_len + http_config_param->proxy_response_via_string_len) > 200) {
-      header->value_append(MIME_FIELD_VIA, MIME_LEN_VIA, "TrafficServer", 18, true);
-      return;
-    }
-
-    ink_assert(scheme >= 0);
-    int scheme_len = hdrtoken_index_to_length(scheme);
-    int32_t hversion = header->version_get().m_version;
-
-    memcpy(via_string, hdrtoken_index_to_wks(scheme), scheme_len);
-    via_string += scheme_len;
-
-    // Common case (I hope?)
-    if ((HTTP_MAJOR(hversion) == 1) && HTTP_MINOR(hversion) == 1) {
-      memcpy(via_string, "/1.1 ", 5);
-      via_string += 5;
-    } else {
-      *via_string++ = '/';
-      *via_string++ = '0' + HTTP_MAJOR(hversion);
-      *via_string++ = '.';
-      *via_string++ = '0' + HTTP_MINOR(hversion);
-      *via_string++ = ' ';
-    }
-    via_string += nstrcpy(via_string, http_config_param->proxy_hostname);
-    *via_string++ = '[';
-    memcpy(via_string, this_machine()->ip_hex_string, this_machine()->ip_hex_string_len);
-    via_string += this_machine()->ip_hex_string_len;
-    *via_string++ = ']';
-    *via_string++ = ' ';
-    *via_string++ = '(';
-    via_string += nstrcpy(via_string, http_config_param->proxy_request_via_string);
-
-    if (http_config_param->verbose_via_string != 0) {
-      *via_string++ = ' ';
-      *via_string++ = '[';
-
-      if (http_config_param->verbose_via_string == 1) {
-        via_string += nstrcpy(via_string, incoming_via);
-      } else {
-        memcpy(via_string, incoming_via + VIA_CLIENT, VIA_SERVER - VIA_CLIENT);
-        via_string += VIA_SERVER - VIA_CLIENT;
-      }
-      *via_string++ = ']';
-    }
-
-    *via_string++ = ')';
-    *via_string = 0;
-
-    header->value_append(MIME_FIELD_VIA, MIME_LEN_VIA, new_via_string, via_string - new_via_string, true);
+  if ((http_config_param->proxy_hostname_len + http_config_param->proxy_response_via_string_len) > 200) {
+    header->value_append(MIME_FIELD_VIA, MIME_LEN_VIA, "TrafficServer", 18, true);
+    return;
   }
+
+  ink_assert(scheme >= 0);
+  int scheme_len = hdrtoken_index_to_length(scheme);
+  int32_t hversion = header->version_get().m_version;
+
+  memcpy(via_string, hdrtoken_index_to_wks(scheme), scheme_len);
+  via_string += scheme_len;
+
+  // Common case (I hope?)
+  if ((HTTP_MAJOR(hversion) == 1) && HTTP_MINOR(hversion) == 1) {
+    memcpy(via_string, "/1.1 ", 5);
+    via_string += 5;
+  } else {
+    *via_string++ = '/';
+    *via_string++ = '0' + HTTP_MAJOR(hversion);
+    *via_string++ = '.';
+    *via_string++ = '0' + HTTP_MINOR(hversion);
+    *via_string++ = ' ';
+  }
+  via_string += nstrcpy(via_string, http_config_param->proxy_hostname);
+  *via_string++ = '[';
+  memcpy(via_string, this_machine()->ip_hex_string, this_machine()->ip_hex_string_len);
+  via_string += this_machine()->ip_hex_string_len;
+  *via_string++ = ']';
+  *via_string++ = ' ';
+  *via_string++ = '(';
+  via_string += nstrcpy(via_string, http_config_param->proxy_request_via_string);
+
+  if (http_config_param->verbose_via_string != 0) {
+    *via_string++ = ' ';
+    *via_string++ = '[';
+
+    if (http_config_param->verbose_via_string == 1) {
+      via_string += nstrcpy(via_string, incoming_via);
+    } else {
+      memcpy(via_string, incoming_via + VIA_CLIENT, VIA_SERVER - VIA_CLIENT);
+      via_string += VIA_SERVER - VIA_CLIENT;
+    }
+    *via_string++ = ']';
+  }
+
+  *via_string++ = ')';
+  *via_string = 0;
+
+  header->value_append(MIME_FIELD_VIA, MIME_LEN_VIA, new_via_string, via_string - new_via_string, true);
 }
 
 
 void
-HttpTransactHeaders::insert_via_header_in_response(HttpConfigParams * http_config_param,
-                                                   int scheme,
-                                                   HttpTransact::CacheLookupInfo * cache_info,
-                                                   HTTPHdr * header, char *incoming_via)
+HttpTransactHeaders::insert_via_header_in_response(HttpConfigParams * http_config_param, int scheme, HTTPHdr * header,
+                                                   char *incoming_via)
 {
-  NOWARN_UNUSED(cache_info);
+  char new_via_string[8192];
+  char *via_string = new_via_string;
 
-  if (http_config_param->insert_response_via_string) {
-    char new_via_string[8192];
-    char *via_string = new_via_string;
-
-    if ((http_config_param->proxy_hostname_len + http_config_param->proxy_response_via_string_len) > 200) {
-      header->value_append(MIME_FIELD_VIA, MIME_LEN_VIA, "TrafficServer", 18, true);
-      return;
-    }
-
-    ink_assert(scheme >= 0);
-    int scheme_len = hdrtoken_index_to_length(scheme);
-    int32_t hversion = header->version_get().m_version;
-
-    memcpy(via_string, hdrtoken_index_to_wks(scheme), scheme_len);
-    via_string += scheme_len;
-
-    // Common case (I hope?)
-    if ((HTTP_MAJOR(hversion) == 1) && HTTP_MINOR(hversion) == 1) {
-      memcpy(via_string, "/1.1 ", 5);
-      via_string += 5;
-    } else {
-      *via_string++ = '/';
-      *via_string++ = '0' + HTTP_MAJOR(hversion);
-      *via_string++ = '.';
-      *via_string++ = '0' + HTTP_MINOR(hversion);
-      *via_string++ = ' ';
-    }
-    via_string += nstrcpy(via_string, http_config_param->proxy_hostname);
-    *via_string++ = ' ';
-    *via_string++ = '(';
-    memcpy(via_string, http_config_param->proxy_response_via_string, http_config_param->proxy_response_via_string_len);
-    via_string += http_config_param->proxy_response_via_string_len;
-
-    if (http_config_param->verbose_via_string != 0) {
-      *via_string++ = ' ';
-      *via_string++ = '[';
-
-      if (http_config_param->verbose_via_string == 1) {
-        via_string += nstrcpy(via_string, incoming_via);
-      } else {
-        memcpy(via_string, incoming_via + VIA_CACHE, VIA_PROXY - VIA_CACHE);
-        via_string += VIA_PROXY - VIA_CACHE;
-      }
-      *via_string++ = ']';
-    }
-    *via_string++ = ')';
-    *via_string = 0;
-
-    header->value_append(MIME_FIELD_VIA, MIME_LEN_VIA, new_via_string, via_string - new_via_string, true);
+  if ((http_config_param->proxy_hostname_len + http_config_param->proxy_response_via_string_len) > 200) {
+    header->value_append(MIME_FIELD_VIA, MIME_LEN_VIA, "TrafficServer", 18, true);
+    return;
   }
+
+  ink_assert(scheme >= 0);
+  int scheme_len = hdrtoken_index_to_length(scheme);
+  int32_t hversion = header->version_get().m_version;
+
+  memcpy(via_string, hdrtoken_index_to_wks(scheme), scheme_len);
+  via_string += scheme_len;
+
+  // Common case (I hope?)
+  if ((HTTP_MAJOR(hversion) == 1) && HTTP_MINOR(hversion) == 1) {
+    memcpy(via_string, "/1.1 ", 5);
+    via_string += 5;
+  } else {
+    *via_string++ = '/';
+    *via_string++ = '0' + HTTP_MAJOR(hversion);
+    *via_string++ = '.';
+    *via_string++ = '0' + HTTP_MINOR(hversion);
+    *via_string++ = ' ';
+  }
+  via_string += nstrcpy(via_string, http_config_param->proxy_hostname);
+  *via_string++ = ' ';
+  *via_string++ = '(';
+  memcpy(via_string, http_config_param->proxy_response_via_string, http_config_param->proxy_response_via_string_len);
+  via_string += http_config_param->proxy_response_via_string_len;
+
+  if (http_config_param->verbose_via_string != 0) {
+    *via_string++ = ' ';
+    *via_string++ = '[';
+
+    if (http_config_param->verbose_via_string == 1) {
+      via_string += nstrcpy(via_string, incoming_via);
+    } else {
+      memcpy(via_string, incoming_via + VIA_CACHE, VIA_PROXY - VIA_CACHE);
+      via_string += VIA_PROXY - VIA_CACHE;
+    }
+    *via_string++ = ']';
+  }
+  *via_string++ = ')';
+  *via_string = 0;
+
+  header->value_append(MIME_FIELD_VIA, MIME_LEN_VIA, new_via_string, via_string - new_via_string, true);
 }
 
 

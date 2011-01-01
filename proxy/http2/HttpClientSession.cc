@@ -614,8 +614,8 @@ HttpClientSession::release(IOBufferReader * r)
     SET_HANDLER(&HttpClientSession::state_keep_alive);
     ka_vio = this->do_io_read(this, INT_MAX, read_buffer);
     ink_assert(slave_ka_vio != ka_vio);
-    client_vc->set_inactivity_timeout(HRTIME_SECONDS(HttpConfig::m_master.keep_alive_no_activity_timeout_in));
-    client_vc->set_active_timeout(HRTIME_SECONDS(HttpConfig::m_master.keep_alive_no_activity_timeout_in));
+    client_vc->set_inactivity_timeout(HRTIME_SECONDS(current_reader->t_state.txn_conf.keep_alive_no_activity_timeout_in));
+    client_vc->set_active_timeout(HRTIME_SECONDS(current_reader->t_state.txn_conf.keep_alive_no_activity_timeout_in));
   }
 }
 

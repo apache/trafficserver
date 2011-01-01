@@ -1143,7 +1143,7 @@ HttpConfig::startup()
 
   HttpEstablishStaticConfigLongLong(c.server_max_connections, "proxy.config.http.server_max_connections");
 
-  HttpEstablishStaticConfigLongLong(c.origin_max_connections, "proxy.config.http.origin_max_connections");
+  HttpEstablishStaticConfigLongLong(c.oride.origin_max_connections, "proxy.config.http.origin_max_connections");
 
   HttpEstablishStaticConfigLongLong(c.origin_min_keep_alive_connections, "proxy.config.http.origin_min_keep_alive_connections");
 
@@ -1163,8 +1163,8 @@ HttpConfig::startup()
 
   HttpEstablishStaticConfigLongLong(c.enable_url_expandomatic, "proxy.config.http.enable_url_expandomatic");
 
-  HttpEstablishStaticConfigLongLong(c.insert_request_via_string, "proxy.config.http.insert_request_via_str");
-  HttpEstablishStaticConfigLongLong(c.insert_response_via_string, "proxy.config.http.insert_response_via_str");
+  HttpEstablishStaticConfigLongLong(c.oride.insert_request_via_string, "proxy.config.http.insert_request_via_str");
+  HttpEstablishStaticConfigLongLong(c.oride.insert_response_via_string, "proxy.config.http.insert_response_via_str");
   HttpEstablishStaticConfigLongLong(c.verbose_via_string, "proxy.config.http.verbose_via_str");
 
   HttpEstablishStaticConfigStringAlloc(c.proxy_request_via_string, "proxy.config.http.request_via_str");
@@ -1187,7 +1187,7 @@ HttpConfig::startup()
   HttpEstablishStaticConfigLongLong(c.share_server_sessions, "proxy.config.http.share_server_sessions");
   HttpEstablishStaticConfigLongLong(c.oride.keep_alive_post_out, "proxy.config.http.keep_alive_post_out");
 
-  HttpEstablishStaticConfigLongLong(c.keep_alive_no_activity_timeout_in,
+  HttpEstablishStaticConfigLongLong(c.oride.keep_alive_no_activity_timeout_in,
                                     "proxy.config.http.keep_alive_no_activity_timeout_in");
   HttpEstablishStaticConfigLongLong(c.keep_alive_no_activity_timeout_out,
                                     "proxy.config.http.keep_alive_no_activity_timeout_out");
@@ -1253,12 +1253,12 @@ HttpConfig::startup()
   HttpEstablishStaticConfigLongLong(c.icp_enabled, "proxy.config.icp.enabled");
   HttpEstablishStaticConfigLongLong(c.stale_icp_enabled, "proxy.config.icp.stale_icp_enabled");
 
-  HttpEstablishStaticConfigLongLong(c.cache_heuristic_min_lifetime, "proxy.config.http.cache.heuristic_min_lifetime");
-  HttpEstablishStaticConfigLongLong(c.cache_heuristic_max_lifetime, "proxy.config.http.cache.heuristic_max_lifetime");
-  HttpEstablishStaticConfigFloat(c.cache_heuristic_lm_factor, "proxy.config.http.cache.heuristic_lm_factor");
+  HttpEstablishStaticConfigLongLong(c.oride.cache_heuristic_min_lifetime, "proxy.config.http.cache.heuristic_min_lifetime");
+  HttpEstablishStaticConfigLongLong(c.oride.cache_heuristic_max_lifetime, "proxy.config.http.cache.heuristic_max_lifetime");
+  HttpEstablishStaticConfigFloat(c.oride.cache_heuristic_lm_factor, "proxy.config.http.cache.heuristic_lm_factor");
 
-  HttpEstablishStaticConfigLongLong(c.cache_guaranteed_min_lifetime, "proxy.config.http.cache.guaranteed_min_lifetime");
-  HttpEstablishStaticConfigLongLong(c.cache_guaranteed_max_lifetime, "proxy.config.http.cache.guaranteed_max_lifetime");
+  HttpEstablishStaticConfigLongLong(c.oride.cache_guaranteed_min_lifetime, "proxy.config.http.cache.guaranteed_min_lifetime");
+  HttpEstablishStaticConfigLongLong(c.oride.cache_guaranteed_max_lifetime, "proxy.config.http.cache.guaranteed_max_lifetime");
 
   HttpEstablishStaticConfigLongLong(c.cache_max_stale_age, "proxy.config.http.cache.max_stale_age");
 
@@ -1284,10 +1284,10 @@ HttpConfig::startup()
                                     "proxy.config.http.cache.ignore_client_cc_max_age");
   HttpEstablishStaticConfigLongLong(c.oride.cache_ims_on_client_no_cache, "proxy.config.http.cache.ims_on_client_no_cache");
   HttpEstablishStaticConfigLongLong(c.oride.cache_ignore_server_no_cache, "proxy.config.http.cache.ignore_server_no_cache");
-  HttpEstablishStaticConfigLongLong(c.cache_responses_to_cookies, "proxy.config.http.cache.cache_responses_to_cookies");
+  HttpEstablishStaticConfigLongLong(c.oride.cache_responses_to_cookies, "proxy.config.http.cache.cache_responses_to_cookies");
 
-  HttpEstablishStaticConfigLongLong(c.cache_ignore_auth, "proxy.config.http.cache.ignore_authentication");
-  HttpEstablishStaticConfigLongLong(c.cache_urls_that_look_dynamic,
+  HttpEstablishStaticConfigLongLong(c.oride.cache_ignore_auth, "proxy.config.http.cache.ignore_authentication");
+  HttpEstablishStaticConfigLongLong(c.oride.cache_urls_that_look_dynamic,
                                     "proxy.config.http.cache.cache_urls_that_look_dynamic");
   HttpEstablishStaticConfigLongLong(c.cache_enable_default_vary_headers,
                                     "proxy.config.http.cache.enable_default_vary_headers");
@@ -1358,7 +1358,7 @@ HttpConfig::startup()
 
   // Negative response caching
   HttpEstablishStaticConfigLongLong(c.oride.negative_caching_enabled, "proxy.config.http.negative_caching_enabled");
-  HttpEstablishStaticConfigLongLong(c.negative_caching_lifetime, "proxy.config.http.negative_caching_lifetime");
+  HttpEstablishStaticConfigLongLong(c.oride.negative_caching_lifetime, "proxy.config.http.negative_caching_lifetime");
 
   // InktoSwitch
   HttpEstablishStaticConfigLongLong(c.inktoswitch_enabled, "proxy.config.http.inktoswitch_enabled");
@@ -1474,25 +1474,21 @@ HttpConfig::reconfigure()
   params->disable_ssl_parenting = m_master.disable_ssl_parenting;
 
   params->server_max_connections = m_master.server_max_connections;
-
-  params->origin_max_connections = m_master.origin_max_connections;
-
+  params->oride.origin_max_connections = m_master.oride.origin_max_connections;
   params->origin_min_keep_alive_connections = m_master.origin_min_keep_alive_connections;
 
-  if( params->origin_max_connections &&
-      params->origin_max_connections < params->origin_min_keep_alive_connections ) {
+  if (params->oride.origin_max_connections &&
+      params->oride.origin_max_connections < params->origin_min_keep_alive_connections ) {
     Warning("origin_max_connections < origin_min_keep_alive_connections, setting min=max , please correct your records.config");
-    params->origin_min_keep_alive_connections = params->origin_max_connections;
+    params->origin_min_keep_alive_connections = params->oride.origin_max_connections;
   }
 
   params->parent_proxy_routing_enable = INT_TO_BOOL(m_master.parent_proxy_routing_enable);
-
   params->fwd_proxy_auth_to_parent = 0;
-
   params->enable_url_expandomatic = INT_TO_BOOL(m_master.enable_url_expandomatic);
 
-  params->insert_request_via_string = INT_TO_BOOL(m_master.insert_request_via_string);
-  params->insert_response_via_string = INT_TO_BOOL(m_master.insert_response_via_string);
+  params->oride.insert_request_via_string = INT_TO_BOOL(m_master.oride.insert_request_via_string);
+  params->oride.insert_response_via_string = INT_TO_BOOL(m_master.oride.insert_response_via_string);
   params->verbose_via_string = m_master.verbose_via_string;
   params->proxy_request_via_string = xstrdup(m_master.proxy_request_via_string);
   params->proxy_request_via_string_len = (params->proxy_request_via_string) ? strlen(params->proxy_request_via_string) : 0;
@@ -1515,7 +1511,7 @@ HttpConfig::reconfigure()
   params->share_server_sessions = INT_TO_BOOL(m_master.share_server_sessions);
   params->oride.keep_alive_post_out = m_master.oride.keep_alive_post_out;
 
-  params->keep_alive_no_activity_timeout_in = m_master.keep_alive_no_activity_timeout_in;
+  params->oride.keep_alive_no_activity_timeout_in = m_master.oride.keep_alive_no_activity_timeout_in;
   params->keep_alive_no_activity_timeout_out = m_master.keep_alive_no_activity_timeout_out;
   params->transaction_no_activity_timeout_in = m_master.transaction_no_activity_timeout_in;
   params->transaction_no_activity_timeout_out = m_master.transaction_no_activity_timeout_out;
@@ -1565,12 +1561,12 @@ HttpConfig::reconfigure()
   params->icp_enabled = (m_master.icp_enabled == ICP_MODE_SEND_RECEIVE ? 1 : 0);
   params->stale_icp_enabled = m_master.stale_icp_enabled;
 
-  params->cache_heuristic_min_lifetime = m_master.cache_heuristic_min_lifetime;
-  params->cache_heuristic_max_lifetime = m_master.cache_heuristic_max_lifetime;
-  params->cache_heuristic_lm_factor = min(max(m_master.cache_heuristic_lm_factor, 0), 1);
+  params->oride.cache_heuristic_min_lifetime = m_master.oride.cache_heuristic_min_lifetime;
+  params->oride.cache_heuristic_max_lifetime = m_master.oride.cache_heuristic_max_lifetime;
+  params->oride.cache_heuristic_lm_factor = min(max(m_master.oride.cache_heuristic_lm_factor, 0), 1);
 
-  params->cache_guaranteed_min_lifetime = m_master.cache_guaranteed_min_lifetime;
-  params->cache_guaranteed_max_lifetime = m_master.cache_guaranteed_max_lifetime;
+  params->oride.cache_guaranteed_min_lifetime = m_master.oride.cache_guaranteed_min_lifetime;
+  params->oride.cache_guaranteed_max_lifetime = m_master.oride.cache_guaranteed_max_lifetime;
 
   params->cache_max_stale_age = m_master.cache_max_stale_age;
   params->freshness_fuzz_time = m_master.freshness_fuzz_time;
@@ -1598,9 +1594,9 @@ HttpConfig::reconfigure()
   params->oride.cache_ignore_client_cc_max_age = INT_TO_BOOL(m_master.oride.cache_ignore_client_cc_max_age);
   params->oride.cache_ims_on_client_no_cache = INT_TO_BOOL(m_master.oride.cache_ims_on_client_no_cache);
   params->oride.cache_ignore_server_no_cache = INT_TO_BOOL(m_master.oride.cache_ignore_server_no_cache);
-  params->cache_responses_to_cookies = m_master.cache_responses_to_cookies;
-  params->cache_ignore_auth = INT_TO_BOOL(m_master.cache_ignore_auth);
-  params->cache_urls_that_look_dynamic = INT_TO_BOOL(m_master.cache_urls_that_look_dynamic);
+  params->oride.cache_responses_to_cookies = m_master.oride.cache_responses_to_cookies;
+  params->oride.cache_ignore_auth = INT_TO_BOOL(m_master.oride.cache_ignore_auth);
+  params->oride.cache_urls_that_look_dynamic = INT_TO_BOOL(m_master.oride.cache_urls_that_look_dynamic);
   params->cache_enable_default_vary_headers = INT_TO_BOOL(m_master.cache_enable_default_vary_headers);
 
   params->ignore_accept_mismatch = INT_TO_BOOL(m_master.ignore_accept_mismatch);
@@ -1652,7 +1648,7 @@ HttpConfig::reconfigure()
   params->negative_revalidating_lifetime = m_master.negative_revalidating_lifetime;
 
   params->oride.negative_caching_enabled = m_master.oride.negative_caching_enabled;
-  params->negative_caching_lifetime = m_master.negative_caching_lifetime;
+  params->oride.negative_caching_lifetime = m_master.oride.negative_caching_lifetime;
 
   params->inktoswitch_enabled = m_master.inktoswitch_enabled;
   params->router_ip = m_master.router_ip;

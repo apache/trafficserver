@@ -1691,10 +1691,9 @@ HttpSM::state_http_server_open(int event, void *data)
     // of connections per host.  Set enable_origin_connection_limiting
     // to true in the server session so it will increment and decrement
     // the connection count.
-    if (t_state.http_config_param->origin_max_connections > 0 ||
+    if (t_state.txn_conf.origin_max_connections > 0 ||
         t_state.http_config_param->origin_min_keep_alive_connections > 0) {
-      Debug("http_ss", "[%" PRId64 "] max number of connections: %u",
-            sm_id, t_state.http_config_param->origin_max_connections);
+      Debug("http_ss", "[%" PRId64 "] max number of connections: %u", sm_id, t_state.txn_conf.origin_max_connections);
       session->enable_origin_connection_limiting = true;
     }
     /*UnixNetVConnection * vc = (UnixNetVConnection*)(ua_session->client_vc);
@@ -2948,12 +2947,12 @@ HttpSM::tunnel_handler_server(int event, HttpTunnelProducer * p)
     //  to so the next ka request can use it.  We bind privately to the
     //  client to add some degree of affinity to the system.  However,
     //  we turn off private binding when outbound conenctions are being
-    //  limit since it makes it too expense to initiate a purge of idle
+    //  limit since it makes it too expensive to initiate a purge of idle
     //  server keep-alive sessions
     if (ua_session &&
         t_state.client_info.keep_alive == HTTP_KEEPALIVE &&
         t_state.http_config_param->server_max_connections <= 0 &&
-        t_state.http_config_param->origin_max_connections <= 0) {
+        t_state.txn_conf.origin_max_connections <= 0) {
       ua_session->attach_server_session(server_session);
     } else {
       // Release the session back into the shared session pool
@@ -4302,9 +4301,10 @@ HttpSM::do_http_server_open(bool raw)
   }
   // Check to see if we have reached the max number of connections on this
   // host.
-  if (t_state.http_config_param->origin_max_connections > 0) {
+  if (t_state.txn_conf.origin_max_connections > 0) {
     ConnectionCount *connections = ConnectionCount::getInstance();
-    if (connections->getCount((t_state.current.server->ip)) >= t_state.http_config_param->origin_max_connections) {
+
+    if (connections->getCount((t_state.current.server->ip)) >= t_state.txn_conf.origin_max_connections) {
       Debug("http", "[%" PRId64 "] over the number of connection for this host: %u", sm_id, t_state.current.server->ip);
       ink_debug_assert(pending_action == NULL);
       pending_action = eventProcessor.schedule_in(this, HRTIME_MSECONDS(100));

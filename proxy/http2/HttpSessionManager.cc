@@ -74,10 +74,14 @@ SessionBucket::session_handler(int event, void *data)
     return 0;
   }
 
-  // Search the 2nd level bucket for apprpropriate netvc
+  // Search the 2nd level bucket for appropriate netvc
   int l2_index = SECOND_LEVEL_HASH(net_vc->get_remote_ip());
+  HttpConfigParams *http_config_params = HttpConfig::acquire();
+  bool found = false;
+
   ink_assert(l2_index < HSM_LEVEL2_BUCKETS);
   s = l2_hash[l2_index].head;
+
   while (s != NULL) {
     if (s->get_netvc() == net_vc) {
 
@@ -85,40 +89,41 @@ SessionBucket::session_handler(int event, void *data)
       // keeping the connection alive will not keep us above the # of max connections
       // to the origin and we are below the min number of keep alive connections to this
       // origin, then reset the timeouts on our end and do not close the connection
-      if( (event == VC_EVENT_INACTIVITY_TIMEOUT || event == VC_EVENT_ACTIVE_TIMEOUT) &&
-           s->state == HSS_KA_SHARED &&
-           s->enable_origin_connection_limiting ) {
+      if ((event == VC_EVENT_INACTIVITY_TIMEOUT || event == VC_EVENT_ACTIVE_TIMEOUT) &&
+          s->state == HSS_KA_SHARED &&
+          s->enable_origin_connection_limiting) {
 
-        HttpConfigParams *http_config_params = HttpConfig::acquire();
         bool connection_count_below_min = s->connection_count->getCount(s->server_ip) <= http_config_params->origin_min_keep_alive_connections;
-        HttpConfig::release(http_config_params);
 
-        if( connection_count_below_min ) {
+        if (connection_count_below_min) {
           Debug("http_ss", "[%" PRId64 "] [session_bucket] session received io notice [%s], "
                 "reseting timeout to maintain minimum number of connections", s->con_id,
                 HttpDebugNames::get_event_name(event));
-          s->get_netvc()->set_inactivity_timeout(HRTIME_SECONDS(
-            HttpConfig::m_master.keep_alive_no_activity_timeout_out));
-          s->get_netvc()->set_active_timeout(HRTIME_SECONDS(
-            HttpConfig::m_master.keep_alive_no_activity_timeout_out));
-          return 0;
+          s->get_netvc()->set_inactivity_timeout(HRTIME_SECONDS(http_config_params->keep_alive_no_activity_timeout_out));
+          s->get_netvc()->set_active_timeout(HRTIME_SECONDS(http_config_params->keep_alive_no_activity_timeout_out));
+          found = true;
+          break;
         }
       }
 
-
       // We've found our server session. Remove it from
       //   our lists and close it down
-      Debug("http_ss", "[%" PRId64 "] [session_bucket] session received "
-            "io notice [%s]", s->con_id, HttpDebugNames::get_event_name(event));
+      Debug("http_ss", "[%" PRId64 "] [session_bucket] session received io notice [%s]",
+            s->con_id, HttpDebugNames::get_event_name(event));
       ink_assert(s->state == HSS_KA_SHARED);
       lru_list.remove(s);
       l2_hash[l2_index].remove(s);
       s->do_io_close();
-      return 0;
+      found = true;
+      break;
     } else {
       s = s->hash_link.next;
     }
   }
+
+  HttpConfig::release(http_config_params);
+  if (found)
+    return 0;
 
   // We failed to find our session.  This can only be the result
   //  of a programming flaw
