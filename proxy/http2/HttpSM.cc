@@ -4164,9 +4164,9 @@ HttpSM::do_http_server_open(bool raw)
   HSMresult_t shared_result;
   NetVCOptions opt;
   opt.f_blocking_connect = false;
-  opt.set_sock_param(t_state.http_config_param->sock_recv_buffer_size_out,
-                     t_state.http_config_param->sock_send_buffer_size_out,
-                     t_state.http_config_param->sock_option_flag_out);
+  opt.set_sock_param(t_state.txn_conf.sock_recv_buffer_size_out,
+                     t_state.txn_conf.sock_send_buffer_size_out,
+                     t_state.txn_conf.sock_option_flag_out);
 
   if (t_state.http_config_param->outgoing_ip_to_bind_saddr) {
     opt.addr_binding = NetVCOptions::INTF_ADDR;
@@ -4223,7 +4223,7 @@ HttpSM::do_http_server_open(bool raw)
   // there is a request body has been removed.
 
   if (raw == false && t_state.http_config_param->share_server_sessions &&
-      (t_state.http_config_param->keep_alive_post_out == 1 || t_state.hdr_info.request_content_length == 0) &&
+      (t_state.txn_conf.keep_alive_post_out == 1 || t_state.hdr_info.request_content_length == 0) &&
       ua_session != NULL) {
     shared_result = httpSessionManager.acquire_session(this,    // state machine
                                                        t_state.current.server->ip,      // host_op

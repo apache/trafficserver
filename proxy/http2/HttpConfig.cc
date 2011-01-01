@@ -1115,7 +1115,7 @@ HttpConfig::startup()
   register_configs();
   register_stat_callbacks();
 
-  HttpConfigParams & c = m_master;
+  HttpConfigParams &c = m_master;
 
   http_config_cont = NEW(new HttpConfigCont);
 
@@ -1178,14 +1178,14 @@ HttpConfig::startup()
   HttpEstablishStaticConfigStringAlloc(c.url_expansions_string, "proxy.config.dns.url_expansions");
   HttpEstablishStaticConfigLongLong(c.proxy_server_port, "proxy.config.http.server_port");
   HttpEstablishStaticConfigStringAlloc(c.proxy_server_other_ports, "proxy.config.http.server_other_ports");
-  HttpEstablishStaticConfigLongLong(c.keep_alive_enabled, "proxy.config.http.keep_alive_enabled");
+  HttpEstablishStaticConfigLongLong(c.oride.keep_alive_enabled, "proxy.config.http.keep_alive_enabled");
   HttpEstablishStaticConfigLongLong(c.oride.chunking_enabled, "proxy.config.http.chunking_enabled");
   HttpEstablishStaticConfigLongLong(c.session_auth_cache_keep_alive_enabled,
                                    "proxy.config.http.session_auth_cache_keep_alive_enabled");
   HttpEstablishStaticConfigLongLong(c.origin_server_pipeline, "proxy.config.http.origin_server_pipeline");
   HttpEstablishStaticConfigLongLong(c.user_agent_pipeline, "proxy.config.http.user_agent_pipeline");
   HttpEstablishStaticConfigLongLong(c.share_server_sessions, "proxy.config.http.share_server_sessions");
-  HttpEstablishStaticConfigLongLong(c.keep_alive_post_out, "proxy.config.http.keep_alive_post_out");
+  HttpEstablishStaticConfigLongLong(c.oride.keep_alive_post_out, "proxy.config.http.keep_alive_post_out");
 
   HttpEstablishStaticConfigLongLong(c.keep_alive_no_activity_timeout_in,
                                     "proxy.config.http.keep_alive_no_activity_timeout_in");
@@ -1217,34 +1217,27 @@ HttpConfig::startup()
   HttpEstablishStaticConfigLongLong(c.parent_connect_timeout,
                                     "proxy.config.http.parent_proxy.connect_attempts_timeout");
 
-  HttpEstablishStaticConfigLongLong(c.sock_recv_buffer_size_out, "proxy.config.net.sock_recv_buffer_size_out");
-  HttpEstablishStaticConfigLongLong(c.sock_send_buffer_size_out, "proxy.config.net.sock_send_buffer_size_out");
-  HttpEstablishStaticConfigLongLong(c.sock_option_flag_out, "proxy.config.net.sock_option_flag_out");
+  HttpEstablishStaticConfigLongLong(c.oride.sock_recv_buffer_size_out, "proxy.config.net.sock_recv_buffer_size_out");
+  HttpEstablishStaticConfigLongLong(c.oride.sock_send_buffer_size_out, "proxy.config.net.sock_send_buffer_size_out");
+  HttpEstablishStaticConfigLongLong(c.oride.sock_option_flag_out, "proxy.config.net.sock_option_flag_out");
 
   c.fwd_proxy_auth_to_parent = 0;
 
-  HttpEstablishStaticConfigLongLong(c.anonymize_remove_from, "proxy.config.http.anonymize_remove_from");
-  HttpEstablishStaticConfigLongLong(c.anonymize_remove_referer, "proxy.config.http.anonymize_remove_referer");
-  HttpEstablishStaticConfigLongLong(c.anonymize_remove_user_agent, "proxy.config.http.anonymize_remove_user_agent");
-  HttpEstablishStaticConfigLongLong(c.anonymize_remove_cookie, "proxy.config.http.anonymize_remove_cookie");
-  HttpEstablishStaticConfigLongLong(c.anonymize_remove_client_ip, "proxy.config.http.anonymize_remove_client_ip");
-  HttpEstablishStaticConfigLongLong(c.anonymize_insert_client_ip, "proxy.config.http.anonymize_insert_client_ip");
-  HttpEstablishStaticConfigLongLong(c.append_xforwards_header, "proxy.config.http.append_xforwards_header");
+  HttpEstablishStaticConfigLongLong(c.oride.anonymize_remove_from, "proxy.config.http.anonymize_remove_from");
+  HttpEstablishStaticConfigLongLong(c.oride.anonymize_remove_referer, "proxy.config.http.anonymize_remove_referer");
+  HttpEstablishStaticConfigLongLong(c.oride.anonymize_remove_user_agent, "proxy.config.http.anonymize_remove_user_agent");
+  HttpEstablishStaticConfigLongLong(c.oride.anonymize_remove_cookie, "proxy.config.http.anonymize_remove_cookie");
+  HttpEstablishStaticConfigLongLong(c.oride.anonymize_remove_client_ip, "proxy.config.http.anonymize_remove_client_ip");
+  HttpEstablishStaticConfigLongLong(c.oride.anonymize_insert_client_ip, "proxy.config.http.anonymize_insert_client_ip");
+  HttpEstablishStaticConfigLongLong(c.oride.append_xforwards_header, "proxy.config.http.append_xforwards_header");
   HttpEstablishStaticConfigStringAlloc(c.anonymize_other_header_list, "proxy.config.http.anonymize_other_header_list");
   HttpEstablishStaticConfigStringAlloc(c.global_user_agent_header, "proxy.config.http.global_user_agent_header");
-  c.global_user_agent_header_size = c.global_user_agent_header ? (size_t) strlen(c.global_user_agent_header) : 0;
+  c.global_user_agent_header_size = c.global_user_agent_header ? strlen(c.global_user_agent_header) : 0;
 
-  HttpEstablishStaticConfigLongLong(c.proxy_response_server_enabled, "proxy.config.http.response_server_enabled");
-  HttpEstablishStaticConfigStringAlloc(c.proxy_response_server_string, "proxy.config.http.response_server_str");
-  c.proxy_response_server_string_len = c.proxy_response_server_string ?
-    (size_t) strlen(c.proxy_response_server_string) : 0;
-  if (c.anonymize_remove_from ||
-      c.anonymize_remove_referer ||
-      c.anonymize_remove_user_agent ||
-      c.anonymize_remove_cookie || c.anonymize_remove_client_ip || c.anonymize_other_header_list) {
-    c.anonymize_remove_any = true;
-  }
-
+  HttpEstablishStaticConfigLongLong(c.oride.proxy_response_server_enabled, "proxy.config.http.response_server_enabled");
+  HttpEstablishStaticConfigStringAlloc(c.oride.proxy_response_server_string, "proxy.config.http.response_server_str");
+  c.oride.proxy_response_server_string_len = c.oride.proxy_response_server_string ?
+    strlen(c.oride.proxy_response_server_string) : 0;
 
   HttpEstablishStaticConfigLongLong(c.insert_squid_x_forwarded_for, "proxy.config.http.insert_squid_x_forwarded_for");
 
@@ -1467,7 +1460,7 @@ HttpConfig::reconfigure()
   params->incoming_ip_to_bind_saddr = m_master.incoming_ip_to_bind_saddr;
   params->outgoing_ip_to_bind_saddr = m_master.outgoing_ip_to_bind_saddr;
   params->proxy_hostname = xstrdup(m_master.proxy_hostname);
-  params->proxy_hostname_len = (params->proxy_hostname) ? (strlen(params->proxy_hostname)) : (0);
+  params->proxy_hostname_len = (params->proxy_hostname) ? strlen(params->proxy_hostname) : 0;
   params->no_dns_forward_to_parent = INT_TO_BOOL(m_master.no_dns_forward_to_parent);
   params->uncacheable_requests_bypass_parent = INT_TO_BOOL(m_master.uncacheable_requests_bypass_parent);
   params->no_origin_server_dns = INT_TO_BOOL(m_master.no_origin_server_dns);
@@ -1500,9 +1493,9 @@ HttpConfig::reconfigure()
   params->insert_response_via_string = INT_TO_BOOL(m_master.insert_response_via_string);
   params->verbose_via_string = m_master.verbose_via_string;
   params->proxy_request_via_string = xstrdup(m_master.proxy_request_via_string);
-  params->proxy_request_via_string_len = (params->proxy_request_via_string) ? (strlen(params->proxy_request_via_string)) : (0);
+  params->proxy_request_via_string_len = (params->proxy_request_via_string) ? strlen(params->proxy_request_via_string) : 0;
   params->proxy_response_via_string = xstrdup(m_master.proxy_response_via_string);
-  params->proxy_response_via_string_len = (params->proxy_response_via_string) ? (strlen(params->proxy_response_via_string)) : (0);
+  params->proxy_response_via_string_len = (params->proxy_response_via_string) ? strlen(params->proxy_response_via_string) : 0;
 
   params->wuts_enabled = INT_TO_BOOL(m_master.wuts_enabled);
   params->log_spider_codes = INT_TO_BOOL(m_master.log_spider_codes);
@@ -1512,13 +1505,13 @@ HttpConfig::reconfigure()
 
   params->proxy_server_port = m_master.proxy_server_port;
   params->proxy_server_other_ports = xstrdup(m_master.proxy_server_other_ports);
-  params->keep_alive_enabled = INT_TO_BOOL(m_master.keep_alive_enabled);
+  params->oride.keep_alive_enabled = INT_TO_BOOL(m_master.oride.keep_alive_enabled);
   params->oride.chunking_enabled = INT_TO_BOOL(m_master.oride.chunking_enabled);
   params->session_auth_cache_keep_alive_enabled = INT_TO_BOOL(m_master.session_auth_cache_keep_alive_enabled);
   params->origin_server_pipeline = m_master.origin_server_pipeline;
   params->user_agent_pipeline = m_master.user_agent_pipeline;
   params->share_server_sessions = INT_TO_BOOL(m_master.share_server_sessions);
-  params->keep_alive_post_out = m_master.keep_alive_post_out;
+  params->oride.keep_alive_post_out = m_master.oride.keep_alive_post_out;
 
   params->keep_alive_no_activity_timeout_in = m_master.keep_alive_no_activity_timeout_in;
   params->keep_alive_no_activity_timeout_out = m_master.keep_alive_no_activity_timeout_out;
@@ -1539,35 +1532,33 @@ HttpConfig::reconfigure()
   params->per_parent_connect_attempts = m_master.per_parent_connect_attempts;
   params->parent_connect_timeout = m_master.parent_connect_timeout;
 
-  params->sock_recv_buffer_size_out = m_master.sock_recv_buffer_size_out;
-  params->sock_send_buffer_size_out = m_master.sock_send_buffer_size_out;
-  params->sock_option_flag_out = m_master.sock_option_flag_out;
+  params->oride.sock_recv_buffer_size_out = m_master.oride.sock_recv_buffer_size_out;
+  params->oride.sock_send_buffer_size_out = m_master.oride.sock_send_buffer_size_out;
+  params->oride.sock_option_flag_out = m_master.oride.sock_option_flag_out;
 
-  params->anonymize_remove_from = INT_TO_BOOL(m_master.anonymize_remove_from);
-  params->anonymize_remove_referer = INT_TO_BOOL(m_master.anonymize_remove_referer);
-  params->anonymize_remove_user_agent = INT_TO_BOOL(m_master.anonymize_remove_user_agent);
-  params->anonymize_remove_cookie = INT_TO_BOOL(m_master.anonymize_remove_cookie);
-  params->anonymize_remove_client_ip = INT_TO_BOOL(m_master.anonymize_remove_client_ip);
-  params->anonymize_insert_client_ip = INT_TO_BOOL(m_master.anonymize_insert_client_ip);
-  params->append_xforwards_header = INT_TO_BOOL(m_master.append_xforwards_header);
+  params->oride.anonymize_remove_from = INT_TO_BOOL(m_master.oride.anonymize_remove_from);
+  params->oride.anonymize_remove_referer = INT_TO_BOOL(m_master.oride.anonymize_remove_referer);
+  params->oride.anonymize_remove_user_agent = INT_TO_BOOL(m_master.oride.anonymize_remove_user_agent);
+  params->oride.anonymize_remove_cookie = INT_TO_BOOL(m_master.oride.anonymize_remove_cookie);
+  params->oride.anonymize_remove_client_ip = INT_TO_BOOL(m_master.oride.anonymize_remove_client_ip);
+  params->oride.anonymize_insert_client_ip = INT_TO_BOOL(m_master.oride.anonymize_insert_client_ip);
+  params->oride.append_xforwards_header = INT_TO_BOOL(m_master.oride.append_xforwards_header);
   params->anonymize_other_header_list = xstrdup(m_master.anonymize_other_header_list);
-  params->anonymize_remove_any = m_master.anonymize_remove_any;
 
   params->global_user_agent_header = xstrdup(m_master.global_user_agent_header);
   params->global_user_agent_header_size = params->global_user_agent_header ?
     strlen(params->global_user_agent_header) : 0;
 
-  params->proxy_response_server_string = xstrdup(m_master.proxy_response_server_string);
-  params->proxy_response_server_string_len = params->proxy_response_server_string ?
-    strlen(params->proxy_response_server_string) : 0;
-  params->proxy_response_server_enabled = m_master.proxy_response_server_enabled;
+  params->oride.proxy_response_server_string = xstrdup(m_master.oride.proxy_response_server_string);
+  params->oride.proxy_response_server_string_len = params->oride.proxy_response_server_string ?
+    strlen(params->oride.proxy_response_server_string) : 0;
+  params->oride.proxy_response_server_enabled = m_master.oride.proxy_response_server_enabled;
 
   params->insert_squid_x_forwarded_for = INT_TO_BOOL(m_master.insert_squid_x_forwarded_for);
   params->insert_age_in_response = INT_TO_BOOL(m_master.insert_age_in_response);
   params->avoid_content_spoofing = INT_TO_BOOL(m_master.avoid_content_spoofing);
   params->enable_http_stats = INT_TO_BOOL(m_master.enable_http_stats);
   params->normalize_ae_gzip = INT_TO_BOOL(m_master.normalize_ae_gzip);
-
 
   params->icp_enabled = (m_master.icp_enabled == ICP_MODE_SEND_RECEIVE ? 1 : 0);
   params->stale_icp_enabled = m_master.stale_icp_enabled;

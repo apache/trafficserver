@@ -408,13 +408,48 @@ struct HttpConfigPortRange
 struct OverridableHttpConfigParams {
   OverridableHttpConfigParams()
     :  maintain_pristine_host_hdr(0), chunking_enabled(0), negative_caching_enabled(0),
-       cache_when_to_revalidate(0)
+       cache_when_to_revalidate(0), keep_alive_enabled(0), keep_alive_post_out(0),
+       sock_recv_buffer_size_out(0), sock_send_buffer_size_out(0), sock_option_flag_out(0),
+       anonymize_remove_from(false), anonymize_remove_referer(false), anonymize_remove_user_agent(false),
+       anonymize_remove_cookie(false), anonymize_remove_client_ip(false), anonymize_insert_client_ip(true),
+       append_xforwards_header(false),
+       proxy_response_server_string(NULL), proxy_response_server_string_len(0), proxy_response_server_enabled(0)
   {}
 
+  // These three configs used to be @-parameters in remap.config
   MgmtInt maintain_pristine_host_hdr;
   MgmtInt chunking_enabled;
   MgmtInt negative_caching_enabled;
+
   MgmtInt cache_when_to_revalidate;
+
+  MgmtInt keep_alive_enabled;
+  MgmtInt keep_alive_post_out;  // share server sessions for post
+
+  ///////////////////////////////////////
+  // origin server connection settings //
+  ///////////////////////////////////////
+  MgmtInt sock_recv_buffer_size_out;
+  MgmtInt sock_send_buffer_size_out;
+  MgmtInt sock_option_flag_out;
+
+  ///////////////////////////////////////////////////////////////////
+  // Privacy: fields which are removed from the user agent request //
+  ///////////////////////////////////////////////////////////////////
+  MgmtInt anonymize_remove_from;
+  MgmtInt anonymize_remove_referer;
+  MgmtInt anonymize_remove_user_agent;
+  MgmtInt anonymize_remove_cookie;
+  MgmtInt anonymize_remove_client_ip;
+  MgmtInt anonymize_insert_client_ip;
+  MgmtInt append_xforwards_header;
+
+  ///////////////////////////////////////////////////////////////////
+  // Server header                                                 //
+  ///////////////////////////////////////////////////////////////////
+  char *proxy_response_server_string; // This does not get free'd by us!
+  size_t proxy_response_server_string_len; // Updated when server_string is set.
+  MgmtInt proxy_response_server_enabled;
 };
 
 
@@ -498,12 +533,10 @@ public:
   ///////////////////////////////////////////////////
   MgmtInt proxy_server_port;
   char *proxy_server_other_ports;
-  MgmtInt keep_alive_enabled;
   MgmtInt session_auth_cache_keep_alive_enabled;
   MgmtInt origin_server_pipeline;
   MgmtInt user_agent_pipeline;
   MgmtInt share_server_sessions;
-  MgmtInt keep_alive_post_out;  // share server sessions for post
   MgmtInt keep_alive_no_activity_timeout_in;
   MgmtInt keep_alive_no_activity_timeout_out;
   MgmtInt transaction_no_activity_timeout_in;
@@ -526,38 +559,16 @@ public:
   MgmtInt per_parent_connect_attempts;
   MgmtInt parent_connect_timeout;
 
-  ///////////////////////////////////////
-  // origin server connection settings //
-  ///////////////////////////////////////
-  MgmtInt sock_recv_buffer_size_out;
-  MgmtInt sock_send_buffer_size_out;
-  MgmtInt sock_option_flag_out;
-
   ///////////////////////////////////////////////////////////////////
   // Privacy: fields which are removed from the user agent request //
   ///////////////////////////////////////////////////////////////////
-  MgmtInt anonymize_remove_from;
-  MgmtInt anonymize_remove_referer;
-  MgmtInt anonymize_remove_user_agent;
-  MgmtInt anonymize_remove_cookie;
-  MgmtInt anonymize_remove_client_ip;
-  MgmtInt anonymize_insert_client_ip;
-  MgmtInt append_xforwards_header;
   char *anonymize_other_header_list;
-  bool anonymize_remove_any;
 
   ///////////////////////////////////////////////////////////////////
   // Global User Agent                                             //
   ///////////////////////////////////////////////////////////////////
   char *global_user_agent_header;
   size_t global_user_agent_header_size;
-
-  ///////////////////////////////////////////////////////////////////
-  // Global Server header                                          //
-  ///////////////////////////////////////////////////////////////////
-  char *proxy_response_server_string;
-  size_t proxy_response_server_string_len;
-  MgmtInt proxy_response_server_enabled;
 
   /////////////////////
   // X-Forwarded-For //
@@ -905,12 +916,10 @@ HttpConfigParams::HttpConfigParams()
     num_url_expansions(0),
     proxy_server_port(0),
     proxy_server_other_ports(0),
-    keep_alive_enabled(0),
     session_auth_cache_keep_alive_enabled(0),
     origin_server_pipeline(0),
     user_agent_pipeline(0),
     share_server_sessions(0),
-    keep_alive_post_out(0),
     keep_alive_no_activity_timeout_in(0),
     keep_alive_no_activity_timeout_out(0),
     transaction_no_activity_timeout_in(0),
@@ -928,23 +937,9 @@ HttpConfigParams::HttpConfigParams()
     parent_connect_attempts(0),
     per_parent_connect_attempts(0),
     parent_connect_timeout(0),
-    sock_recv_buffer_size_out(0),
-    sock_send_buffer_size_out(0),
-    sock_option_flag_out(0),
-    anonymize_remove_from(false),
-    anonymize_remove_referer(false),
-    anonymize_remove_user_agent(false),
-    anonymize_remove_cookie(false),
-    anonymize_remove_client_ip(false),
-    anonymize_insert_client_ip(true),
-    append_xforwards_header(false),
     anonymize_other_header_list(NULL),
-    anonymize_remove_any(false),
     global_user_agent_header(NULL),
     global_user_agent_header_size(0),
-    proxy_response_server_string(NULL),
-    proxy_response_server_string_len(0),
-    proxy_response_server_enabled(0),
     insert_squid_x_forwarded_for(0),
     insert_age_in_response(1),
     avoid_content_spoofing(1),
@@ -1032,7 +1027,7 @@ HttpConfigParams::~HttpConfigParams()
   xfree(proxy_server_other_ports);
   xfree(anonymize_other_header_list);
   xfree(global_user_agent_header);
-  xfree(proxy_response_server_string);
+  xfree(oride.proxy_response_server_string);
   xfree(cache_vary_default_text);
   xfree(cache_vary_default_images);
   xfree(cache_vary_default_other);

@@ -488,6 +488,20 @@ extern "C"
     TS_CONFIG_HTTP_CHUNKING_ENABLED,
     TS_CONFIG_HTTP_NEGATIVE_CACHING_ENABLED,
     TS_CONFIG_HTTP_CACHE_WHEN_TO_REVALIDATE,
+    TS_CONFIG_HTTP_KEEP_ALIVE_ENABLED,
+    TS_CONFIG_HTTP_KEEP_ALIVE_POST_OUT,
+    TS_CONFIG_NET_SOCK_RECV_BUFFER_SIZE_OUT,
+    TS_CONFIG_NET_SOCK_SEND_BUFFER_SIZE_OUT,
+    TS_CONFIG_NET_SOCK_OPTION_FLAG_OUT,
+    TS_CONFIG_HTTP_ANONYMIZE_REMOVE_FROM,
+    TS_CONFIG_HTTP_ANONYMIZE_REMOVE_REFERER,
+    TS_CONFIG_HTTP_ANONYMIZE_REMOVE_USER_AGENT,
+    TS_CONFIG_HTTP_ANONYMIZE_REMOVE_COOKIE,
+    TS_CONFIG_HTTP_ANONYMIZE_REMOVE_CLIENT_IP,
+    TS_CONFIG_HTTP_ANONYMIZE_INSERT_CLIENT_IP,
+    TS_CONFIG_HTTP_APPEND_XFORWARDS_HEADER,
+    TS_CONFIG_HTTP_RESPONSE_SERVER_STR,
+    TS_CONFIG_HTTP_RESPONSE_SERVER_ENABLED,
     TS_CONFIG_LAST_ENTRY
   } TSOverridableConfigKey;
 
@@ -2820,8 +2834,8 @@ extern "C"
   */
   tsapi TSReturnCode TSHttpTxnConfigIntSet(TSHttpTxn txnp, TSOverridableConfigKey conf, TSMgmtInt value);
   tsapi TSReturnCode TSHttpTxnConfigIntGet(TSHttpTxn txnp, TSOverridableConfigKey conf, TSMgmtInt *value);
-  tsapi TSReturnCode TSHttpTxnConfigStringSet(TSHttpTxn txnp, TSOverridableConfigKey conf, char* value);
-  tsapi TSReturnCode TSHttpTxnConfigStringGet(TSHttpTxn txnp, TSOverridableConfigKey conf, char **value);
+  tsapi TSReturnCode TSHttpTxnConfigStringSet(TSHttpTxn txnp, TSOverridableConfigKey conf, char* value, int length);
+  tsapi TSReturnCode TSHttpTxnConfigStringGet(TSHttpTxn txnp, TSOverridableConfigKey conf, char **value, int *length);
 
   tsapi TSReturnCode TSHttpTxnConfigFind(const char* name, int length, TSOverridableConfigKey *conf, TSRecordDataType *type);
 

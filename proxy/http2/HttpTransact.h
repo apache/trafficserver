@@ -1310,7 +1310,7 @@ public:
   // Utility Methods
   static void issue_revalidate(State * s);
   static void get_ka_info_from_host_db(State * s, ConnectionAttributes * server_info, ConnectionAttributes * client_info,
-                                       HostDBInfo * host_db_info, HttpConfigParams * config_params);
+                                       HostDBInfo * host_db_info);
   static bool service_transaction_in_proxy_only_mode(State * s);
   static void setup_plugin_request_intercept(State * s);
   static void handle_msie_reload_badness(State * s, HTTPHdr * client_request);

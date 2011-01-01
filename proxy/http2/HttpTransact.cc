@@ -1357,7 +1357,7 @@ HttpTransact::PPDNSLookup(State * s)
   } else {
     // lookup succeeded, open connection to p.p.
     s->parent_info.ip = s->host_db_info.ip();
-    get_ka_info_from_host_db(s, &s->parent_info, &s->client_info, &s->host_db_info, s->http_config_param);
+    get_ka_info_from_host_db(s, &s->parent_info, &s->client_info, &s->host_db_info);
     s->parent_info.dns_round_robin = s->dns_info.round_robin;
 
     Debug("http_trans", "[PPDNSLookup] DNS lookup for sm_id[%d] successful IP: %u.%u.%u.%u", s->state_machine->sm_id,
@@ -1412,7 +1412,7 @@ HttpTransact::ReDNSRoundRobin(State * s)
     //  information and try again
     s->server_info.ip = s->host_db_info.ip();
     s->request_data.dest_ip = s->server_info.ip;
-    get_ka_info_from_host_db(s, &s->server_info, &s->client_info, &s->host_db_info, s->http_config_param);
+    get_ka_info_from_host_db(s, &s->server_info, &s->client_info, &s->host_db_info);
     s->server_info.dns_round_robin = s->dns_info.round_robin;
 
     Debug("http_trans", "[ReDNSRoundRobin] DNS lookup for O.S. successful IP: %u.%u.%u.%u",
@@ -1592,7 +1592,7 @@ HttpTransact::OSDNSLookup(State * s)
   // been provided.
   s->server_info.ip = s->host_db_info.ip();
   s->request_data.dest_ip = s->server_info.ip;
-  get_ka_info_from_host_db(s, &s->server_info, &s->client_info, &s->host_db_info, s->http_config_param);
+  get_ka_info_from_host_db(s, &s->server_info, &s->client_info, &s->host_db_info);
   s->server_info.dns_round_robin = s->dns_info.round_robin;
   Debug("http_trans", "[OSDNSLookup] DNS lookup for O.S. successful "
         "IP: %u.%u.%u.%u", PRINT_IP(s->server_info.ip));
@@ -1755,20 +1755,6 @@ HttpTransact::HandleFiltering(State * s)
   //////////////////////////////////////////////////////////////
   // ok, the config file says that the request is authorized. //
   //////////////////////////////////////////////////////////////
-
-  // the config file may have specified that some headers have to
-  // be removed (for example, the client-ip). we put the
-  // code here for now and removed the headers from the incoming
-  // request.
-
-  // TODO do not remove the headers from the incoming request, but only from the outgoing requests
-
-  // there is a function
-  // in HttpTransactHeaders.cc (remove_privacy_headers_from_request)
-  // which should actually have this code. this function is called
-  // from build_request.
-  //
-  // strip out the headers content control says we need to remove
 
   // request is not black listed so now decided if we ought to
   //  lookup the cache
@@ -2579,7 +2565,7 @@ HttpTransact::HandleCacheOpenReadHit(State * s)
       // we haven't done the ICP lookup yet. The following is to
       // fake an icp_info to cater for build_request's needs
       s->icp_info.http_version.set(1, 0);
-      if (!s->http_config_param->keep_alive_enabled || s->http_config_param->origin_server_pipeline == 0) {
+      if (!s->txn_conf.keep_alive_enabled || s->http_config_param->origin_server_pipeline == 0) {
         s->icp_info.keep_alive = HTTP_NO_KEEPALIVE;
       } else {
         s->icp_info.keep_alive = HTTP_KEEPALIVE;
@@ -3055,7 +3041,7 @@ HttpTransact::HandleICPLookup(State * s)
     //   values are not initialized.
     // Force them to be initialized
     s->icp_info.http_version.set(1, 0);
-    if (!s->http_config_param->keep_alive_enabled || s->http_config_param->origin_server_pipeline == 0) {
+    if (!s->txn_conf.keep_alive_enabled || s->http_config_param->origin_server_pipeline == 0) {
       s->icp_info.keep_alive = HTTP_NO_KEEPALIVE;
     } else {
       s->icp_info.keep_alive = HTTP_KEEPALIVE;
@@ -4042,7 +4028,7 @@ HttpTransact::build_response_copy(State * s, HTTPHdr * base_response,HTTPHdr * o
   HttpTransactHeaders::copy_header_fields(base_response, outgoing_response, s->http_config_param->fwd_proxy_auth_to_parent,
                                           s->current.now);
   HttpTransactHeaders::convert_response(outgoing_version, outgoing_response);   // http version conversion
-  HttpTransactHeaders::add_server_header_to_response(s->http_config_param, outgoing_response);
+  HttpTransactHeaders::add_server_header_to_response(&(s->txn_conf), outgoing_response);
 
   if (!s->cop_test_page)
     DUMP_HEADER("http_hdrs", outgoing_response, s->state_machine_id, "Proxy's Response");
@@ -5042,7 +5028,7 @@ HttpTransact::merge_warning_header(HTTPHdr * cached_header, HTTPHdr * response_h
 
 void
 HttpTransact::get_ka_info_from_host_db(State *s, ConnectionAttributes *server_info, ConnectionAttributes *client_info,
-                                       HostDBInfo *host_db_info, HttpConfigParams *config_params)
+                                       HostDBInfo *host_db_info)
 {
   NOWARN_UNUSED(client_info);
   ////////////////////////////////////////////////////////
@@ -5099,13 +5085,13 @@ HttpTransact::get_ka_info_from_host_db(State *s, ConnectionAttributes *server_in
   /////////////////////////////
   // origin server keep_alive //
   /////////////////////////////
-  if ((!config_params->keep_alive_enabled) || (config_params->origin_server_pipeline == 0)) {
+  if ((!s->txn_conf.keep_alive_enabled) || (s->http_config_param->origin_server_pipeline == 0)) {
     server_info->keep_alive = HTTP_NO_KEEPALIVE;
   }
   ///////////////////////////////
   // keep_alive w/o pipelining  //
   ///////////////////////////////
-  if ((server_info->keep_alive == HTTP_PIPELINE) && (config_params->origin_server_pipeline <= 1)) {
+  if ((server_info->keep_alive == HTTP_PIPELINE) && (s->http_config_param->origin_server_pipeline <= 1)) {
     server_info->keep_alive = HTTP_KEEPALIVE;
   }
 
@@ -5248,7 +5234,7 @@ HttpTransact::add_client_ip_to_outgoing_request(State * s, HTTPHdr * request)
   ////////////////////////////////////////////////////////////////
   // if we want client-ip headers, and there isn't one, add one //
   ////////////////////////////////////////////////////////////////
-  if ((s->http_config_param->anonymize_insert_client_ip) && (!s->http_config_param->anonymize_remove_client_ip)) {
+  if ((s->txn_conf.anonymize_insert_client_ip) && (!s->txn_conf.anonymize_remove_client_ip)) {
     bool client_ip_set = request->presence(MIME_PRESENCE_CLIENT_IP);
     Debug("http_trans", "client_ip_set = %d", client_ip_set);
 
@@ -5661,7 +5647,7 @@ HttpTransact::initialize_state_variables_from_request(State * s, HTTPHdr * obsol
   //
   MIMEField *pc = incoming_request->field_find(MIME_FIELD_PROXY_CONNECTION, MIME_LEN_PROXY_CONNECTION);
 
-  if (!s->http_config_param->keep_alive_enabled || (s->http_config_param->transparency_enabled && pc != NULL)) {
+  if (!s->txn_conf.keep_alive_enabled || (s->http_config_param->transparency_enabled && pc != NULL)) {
     s->client_info.keep_alive = HTTP_NO_KEEPALIVE;
 
     // If we need to send a close header later,
@@ -7864,7 +7850,7 @@ HttpTransact::build_request(State * s, HTTPHdr * base_request, HTTPHdr * outgoin
   HttpTransactHeaders::copy_header_fields(base_request, outgoing_request, s->http_config_param->fwd_proxy_auth_to_parent);
   add_client_ip_to_outgoing_request(s, outgoing_request);
   HttpTransactHeaders::process_connection_headers(base_request, outgoing_request);
-  HttpTransactHeaders::remove_privacy_headers_from_request(s->http_config_param, outgoing_request);
+  HttpTransactHeaders::remove_privacy_headers_from_request(s->http_config_param, &(s->txn_conf), outgoing_request);
   HttpTransactHeaders::add_global_user_agent_header_to_request(s->http_config_param, outgoing_request);
   handle_request_keep_alive_headers(s, outgoing_version, outgoing_request);
   HttpTransactHeaders::handle_conditional_headers(&s->cache_info, outgoing_request);
@@ -8104,7 +8090,7 @@ HttpTransact::build_response(State * s, HTTPHdr * base_response, HTTPHdr * outgo
     }
   }
 
-  HttpTransactHeaders::add_server_header_to_response(s->http_config_param, outgoing_response);
+  HttpTransactHeaders::add_server_header_to_response(&(s->txn_conf), outgoing_response);
 
   // auth-response update
  // if (!s->state_machine->authAdapter.disabled()) {

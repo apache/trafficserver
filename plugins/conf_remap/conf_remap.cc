@@ -36,6 +36,7 @@ struct RemapConfigs
     TSOverridableConfigKey _name;
     TSRecordDataType _type;
     TSRecordData _data;
+    int _data_len; // Used when data is a string
   };
 
   RemapConfigs()
@@ -154,6 +155,7 @@ RemapConfigs::parse_file(const char* fn)
       break;
     case TS_RECORDDATATYPE_STRING:
       _items[_current]._data.rec_string = TSstrdup(tok);
+      _items[_current]._data_len = strlen(tok);
       break;
     default:
       TSError("conf_remap: file %s, line %d: type not support (unheard of)", fn, line_num);
@@ -248,7 +250,7 @@ tsremap_remap(ihandle ih, rhandle rh, TSRemapRequestInfo *rri)
         TSDebug(PLUGIN_NAME, "Setting config id %d to %d", conf->_items[ix]._name, conf->_items[ix]._data.rec_int);
         break;
       case TS_RECORDDATATYPE_STRING:
-        TSHttpTxnConfigStringSet(txnp, conf->_items[ix]._name, conf->_items[ix]._data.rec_string);
+        TSHttpTxnConfigStringSet(txnp, conf->_items[ix]._name, conf->_items[ix]._data.rec_string, conf->_items[ix]._data_len);
         TSDebug(PLUGIN_NAME, "Setting config id %d to %s", conf->_items[ix]._name, conf->_items[ix]._data.rec_string);
         break;
       default:

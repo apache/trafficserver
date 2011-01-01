@@ -7398,6 +7398,45 @@ TSHttpTxnConfigIntSet(TSHttpTxn txnp, TSOverridableConfigKey conf, TSMgmtInt val
   case TS_CONFIG_HTTP_CACHE_WHEN_TO_REVALIDATE:
     sm->t_state.txn_conf.cache_when_to_revalidate = value;
     break;
+  case TS_CONFIG_HTTP_KEEP_ALIVE_ENABLED:
+    sm->t_state.txn_conf.keep_alive_enabled = value;
+    break;
+  case TS_CONFIG_HTTP_KEEP_ALIVE_POST_OUT:
+    sm->t_state.txn_conf.keep_alive_post_out = value;
+    break;
+  case TS_CONFIG_NET_SOCK_RECV_BUFFER_SIZE_OUT:
+    sm->t_state.txn_conf.sock_recv_buffer_size_out = value;
+    break;
+  case TS_CONFIG_NET_SOCK_SEND_BUFFER_SIZE_OUT:
+    sm->t_state.txn_conf.sock_send_buffer_size_out = value;
+    break;
+  case TS_CONFIG_NET_SOCK_OPTION_FLAG_OUT:
+    sm->t_state.txn_conf.sock_option_flag_out = value;
+    break;
+  case TS_CONFIG_HTTP_ANONYMIZE_REMOVE_FROM:
+    sm->t_state.txn_conf.anonymize_remove_from = value;
+    break;
+  case TS_CONFIG_HTTP_ANONYMIZE_REMOVE_REFERER:
+    sm->t_state.txn_conf.anonymize_remove_referer = value;
+    break;
+  case TS_CONFIG_HTTP_ANONYMIZE_REMOVE_USER_AGENT:
+    sm->t_state.txn_conf.anonymize_remove_user_agent = value;
+    break;
+  case TS_CONFIG_HTTP_ANONYMIZE_REMOVE_COOKIE:
+    sm->t_state.txn_conf.anonymize_remove_cookie = value;
+    break;
+  case TS_CONFIG_HTTP_ANONYMIZE_REMOVE_CLIENT_IP:
+    sm->t_state.txn_conf.anonymize_remove_client_ip = value;
+    break;
+  case TS_CONFIG_HTTP_ANONYMIZE_INSERT_CLIENT_IP:
+    sm->t_state.txn_conf.anonymize_insert_client_ip = value;
+    break;
+  case TS_CONFIG_HTTP_APPEND_XFORWARDS_HEADER:
+    sm->t_state.txn_conf.append_xforwards_header = value;
+    break;
+  case TS_CONFIG_HTTP_RESPONSE_SERVER_ENABLED:
+    sm->t_state.txn_conf.append_xforwards_header = value;
+    break;
   default:
     return TS_ERROR;
     break;
@@ -7427,6 +7466,45 @@ TSHttpTxnConfigIntGet(TSHttpTxn txnp, TSOverridableConfigKey conf, TSMgmtInt *va
   case TS_CONFIG_HTTP_CACHE_WHEN_TO_REVALIDATE:
     *value = sm->t_state.txn_conf.cache_when_to_revalidate;
     break;
+  case TS_CONFIG_HTTP_KEEP_ALIVE_ENABLED:
+    *value = sm->t_state.txn_conf.keep_alive_enabled;
+    break;
+  case TS_CONFIG_HTTP_KEEP_ALIVE_POST_OUT:
+    *value = sm->t_state.txn_conf.keep_alive_post_out;
+    break;
+  case TS_CONFIG_NET_SOCK_RECV_BUFFER_SIZE_OUT:
+    *value = sm->t_state.txn_conf.sock_recv_buffer_size_out;
+    break;
+  case TS_CONFIG_NET_SOCK_SEND_BUFFER_SIZE_OUT:
+    *value = sm->t_state.txn_conf.sock_send_buffer_size_out;
+    break;
+  case TS_CONFIG_NET_SOCK_OPTION_FLAG_OUT:
+    *value = sm->t_state.txn_conf.sock_option_flag_out;
+    break;
+  case TS_CONFIG_HTTP_ANONYMIZE_REMOVE_FROM:
+    *value = sm->t_state.txn_conf.anonymize_remove_from;
+    break;
+  case TS_CONFIG_HTTP_ANONYMIZE_REMOVE_REFERER:
+    *value = sm->t_state.txn_conf.anonymize_remove_referer;
+    break;
+  case TS_CONFIG_HTTP_ANONYMIZE_REMOVE_USER_AGENT:
+    *value = sm->t_state.txn_conf.anonymize_remove_user_agent;
+    break;
+  case TS_CONFIG_HTTP_ANONYMIZE_REMOVE_COOKIE:
+    *value = sm->t_state.txn_conf.anonymize_remove_cookie;
+    break;
+  case TS_CONFIG_HTTP_ANONYMIZE_REMOVE_CLIENT_IP:
+    *value = sm->t_state.txn_conf.anonymize_remove_client_ip;
+    break;
+  case TS_CONFIG_HTTP_ANONYMIZE_INSERT_CLIENT_IP:
+    *value = sm->t_state.txn_conf.anonymize_insert_client_ip;
+    break;
+  case TS_CONFIG_HTTP_APPEND_XFORWARDS_HEADER:
+    *value = sm->t_state.txn_conf.append_xforwards_header;
+    break;
+  case TS_CONFIG_HTTP_RESPONSE_SERVER_ENABLED:
+    *value = sm->t_state.txn_conf.append_xforwards_header;
+    break;
   default:
     return TS_ERROR;
     break;
@@ -7436,27 +7514,50 @@ TSHttpTxnConfigIntGet(TSHttpTxn txnp, TSOverridableConfigKey conf, TSMgmtInt *va
 }
 
 TSReturnCode
-TSHttpTxnConfigStringSet(TSHttpTxn txnp, TSOverridableConfigKey conf, char* value)
+TSHttpTxnConfigStringSet(TSHttpTxn txnp, TSOverridableConfigKey conf, char* value, int length)
 {
   if ((sdk_sanity_check_txn(txnp) != TS_SUCCESS) ||
       (sdk_sanity_check_null_ptr((void*)value) != TS_SUCCESS))
     return TS_ERROR;
 
-  // HttpSM *sm = (HttpSM*) txnp;
+  if (length == -1)
+    length = strlen(value);
+
+  HttpSM *sm = (HttpSM*) txnp;
+
+  switch (conf) {
+  case TS_CONFIG_HTTP_RESPONSE_SERVER_STR:
+    sm->t_state.txn_conf.proxy_response_server_string = value;
+    sm->t_state.txn_conf.proxy_response_server_string_len = length;
+    break;
+  default:
+    return TS_ERROR;
+    break;
+  }
 
   return TS_SUCCESS;
 }
 
 
 TSReturnCode
-TSHttpTxnConfigStringGet(TSHttpTxn txnp, TSOverridableConfigKey conf, char **value)
+TSHttpTxnConfigStringGet(TSHttpTxn txnp, TSOverridableConfigKey conf, char **value, int *length)
 {
   if ((sdk_sanity_check_txn(txnp) != TS_SUCCESS) ||
       (sdk_sanity_check_null_ptr((void**)value) != TS_SUCCESS) ||
       (sdk_sanity_check_null_ptr((void*)*value) != TS_SUCCESS))
     return TS_ERROR;
 
-  //HttpSM *sm = (HttpSM*) txnp;
+  HttpSM *sm = (HttpSM*) txnp;
+
+  switch (conf) {
+  case TS_CONFIG_HTTP_RESPONSE_SERVER_STR:
+    *value = sm->t_state.txn_conf.proxy_response_server_string;
+    *length = sm->t_state.txn_conf.proxy_response_server_string_len;
+    break;
+  default:
+    return TS_ERROR;
+    break;
+  }
 
   return TS_SUCCESS;
 }
@@ -7473,50 +7574,105 @@ TSHttpTxnConfigFind(const char* name, int length, TSOverridableConfigKey *conf, 
   if (length == -1)
     length = strlen(name);
 
+  // This is a fairly reasonable "bet", and saves a bunch of coding
+  if (type)
+    *type = TS_RECORDDATATYPE_INT;
+
+  *conf = TS_CONFIG_NULL;
+
   // Lots of string comparisons here, but avoid a few at least
   switch (length) {
   case 34:
-    if (!strncmp(name, "proxy.config.http.chunking_enabled", length)) {
+    if (!strncmp(name, "proxy.config.http.chunking_enabled", length))
       *conf = TS_CONFIG_HTTP_CHUNKING_ENABLED;
-      if (type)
-        *type = TS_RECORDDATATYPE_INT;
+    break;
+
+  case 36:
+    if (!strncmp(name, "proxy.config.http.keep_alive_enabled", length))
+      *conf = TS_CONFIG_HTTP_KEEP_ALIVE_ENABLED;
+    break;
+
+  case 37:
+    switch (name[length-1]) {
+    case 'r':
+      if (!strncmp(name, "proxy.config.http.response_server_str", length)) {
+        *conf = TS_CONFIG_HTTP_RESPONSE_SERVER_STR;
+        if (type)
+          *type = TS_RECORDDATATYPE_STRING;
+      }
+      break;
+    case 't':
+      if (!strncmp(name, "proxy.config.http.keep_alive_post_out", length))
+        *conf = TS_CONFIG_HTTP_KEEP_ALIVE_POST_OUT;
+      else if (!strncmp(name, "proxy.config.net.sock_option_flag_out", length))
+        *conf = TS_CONFIG_NET_SOCK_OPTION_FLAG_OUT;
+      break;
     }
     break;
 
+  case 39:
+    if (!strncmp(name, "proxy.config.http.anonymize_remove_from", length))
+      *conf = TS_CONFIG_HTTP_ANONYMIZE_REMOVE_FROM;
+    break;
+
   case 40:
-    if (!strncmp(name, "proxy.config.url_remap.pristine_host_hdr", length)) {
+    if (!strncmp(name, "proxy.config.url_remap.pristine_host_hdr", length))
       *conf = TS_CONFIG_URL_REMAP_PRISTINE_HOST_HDR;
-      if (type)
-        *type = TS_RECORDDATATYPE_INT;
+    break;
+
+  case 41:
+    switch (name[length-1]) {
+    case 'd':
+      if (!strncmp(name, "proxy.config.http.response_server_enabled", length))
+        *conf = TS_CONFIG_HTTP_RESPONSE_SERVER_ENABLED;
+      break;
+    case 'e':
+      if (!strncmp(name, "proxy.config.http.anonymize_remove_cookie", length))
+        *conf = TS_CONFIG_HTTP_ANONYMIZE_REMOVE_COOKIE;
+      break;
+    case 'r':
+      if (!strncmp(name, "proxy.config.http.append_xforwards_header", length))
+        *conf = TS_CONFIG_HTTP_APPEND_XFORWARDS_HEADER;
+      break;
     }
     break;
 
   case 42:
     switch (name[length-1]) {
     case 'd':
-      if (!strncmp(name, "proxy.config.http.negative_caching_enabled", length)) {
+      if (!strncmp(name, "proxy.config.http.negative_caching_enabled", length))
         *conf = TS_CONFIG_HTTP_NEGATIVE_CACHING_ENABLED;
-        if (type)
-          *type = TS_RECORDDATATYPE_INT;
-      }
       break;
     case 'e':
-      if (!strncmp(name, "proxy.config.http.cache.when_to_revalidate", length)) {
+      if (!strncmp(name, "proxy.config.http.cache.when_to_revalidate", length))
         *conf = TS_CONFIG_HTTP_CACHE_WHEN_TO_REVALIDATE;
-        if (type)
-          *type = TS_RECORDDATATYPE_INT;
-      }
       break;
-    default:
-      return TS_ERROR;
+    case 'r':
+      if (!strncmp(name, "proxy.config.http.anonymize_remove_referer", length))
+        *conf = TS_CONFIG_HTTP_ANONYMIZE_REMOVE_REFERER;
+      break;
+    case 't':
+      if (!strncmp(name, "proxy.config.net.sock_recv_buffer_size_out", length))
+        *conf = TS_CONFIG_NET_SOCK_RECV_BUFFER_SIZE_OUT;
+      else if (!strncmp(name, "proxy.config.net.sock_send_buffer_size_out", length))
+        *conf = TS_CONFIG_NET_SOCK_SEND_BUFFER_SIZE_OUT;
+      break;
     }
     break;
 
-  default:
-    return TS_ERROR;
+  case 44:
+    if (!strncmp(name, "proxy.config.http.anonymize_remove_client_ip", length))
+      *conf = TS_CONFIG_HTTP_ANONYMIZE_REMOVE_CLIENT_IP;
+    else if (!strncmp(name, "proxy.config.http.anonymize_insert_client_ip", length))
+      *conf = TS_CONFIG_HTTP_ANONYMIZE_INSERT_CLIENT_IP;
+
+  case 45:
+    if (!strncmp(name, "proxy.config.http.anonymize_remove_user_agent", length))
+      *conf = TS_CONFIG_HTTP_ANONYMIZE_REMOVE_USER_AGENT;
+    break;
   }
 
-  return TS_SUCCESS;
+  return ((*conf != TS_CONFIG_NULL) ? TS_SUCCESS: TS_ERROR);
 }
 
 

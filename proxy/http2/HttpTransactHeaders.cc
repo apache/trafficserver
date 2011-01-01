@@ -1305,52 +1305,53 @@ HttpTransactHeaders::add_global_user_agent_header_to_request(HttpConfigParams * 
 
 
 void
-HttpTransactHeaders::add_server_header_to_response(HttpConfigParams * http_config_param, HTTPHdr * header)
+HttpTransactHeaders::add_server_header_to_response(OverridableHttpConfigParams *http_txn_conf, HTTPHdr * header)
 {
-  if (http_config_param->proxy_response_server_enabled && http_config_param->proxy_response_server_string) {
+  if (http_txn_conf->proxy_response_server_enabled && http_txn_conf->proxy_response_server_string) {
     MIMEField *ua_field;
 
-    Debug("http_trans", "Adding Server: %s", http_config_param->proxy_response_server_string);
+    Debug("http_trans", "Adding Server: %s", http_txn_conf->proxy_response_server_string);
     if ((ua_field = header->field_find(MIME_FIELD_SERVER, MIME_LEN_SERVER)) == NULL) {
       if (likely((ua_field = header->field_create(MIME_FIELD_SERVER, MIME_LEN_SERVER)) != NULL))
         header->field_attach(ua_field);
     }
     // This will remove any old string (free it), and set our Server header.
     if (likely(ua_field))
-      header->field_value_set(ua_field, http_config_param->proxy_response_server_string,
-                              http_config_param->proxy_response_server_string_len);
+      header->field_value_set(ua_field, http_txn_conf->proxy_response_server_string,
+                              http_txn_conf->proxy_response_server_string_len);
   }
 }
 
 
 void
-HttpTransactHeaders::remove_privacy_headers_from_request(HttpConfigParams * http_config_param, HTTPHdr * header)
+HttpTransactHeaders::remove_privacy_headers_from_request(HttpConfigParams *http_config_param,
+                                                         OverridableHttpConfigParams *http_txn_conf, HTTPHdr *header)
 {
-  if (!http_config_param->anonymize_remove_any || !header)
+  if (!header)
     return;
 
   // From
-  if (http_config_param->anonymize_remove_from) {
+  if (http_txn_conf->anonymize_remove_from) {
     Debug("anon", "removing 'From' headers");
     header->field_delete(MIME_FIELD_FROM, MIME_LEN_FROM);
   }
   // Referer
-  if (http_config_param->anonymize_remove_referer) {
+  if (http_txn_conf->anonymize_remove_referer) {
     Debug("anon", "removing 'Referer' headers");
     header->field_delete(MIME_FIELD_REFERER, MIME_LEN_REFERER);
   }
   // User-Agent
-  if (http_config_param->anonymize_remove_user_agent) {
+  if (http_txn_conf->anonymize_remove_user_agent) {
     Debug("anon", "removing 'User-agent' headers");
     header->field_delete(MIME_FIELD_USER_AGENT, MIME_LEN_USER_AGENT);
   }
   // Cookie
-  if (http_config_param->anonymize_remove_cookie) {
+  if (http_txn_conf->anonymize_remove_cookie) {
     Debug("anon", "removing 'Cookie' headers");
     header->field_delete(MIME_FIELD_COOKIE, MIME_LEN_COOKIE);
   }
   // Client-ip
-  if (http_config_param->anonymize_remove_client_ip) {
+  if (http_txn_conf->anonymize_remove_client_ip) {
     Debug("anon", "removing 'Client-ip' headers");
     header->field_delete(MIME_FIELD_CLIENT_IP, MIME_LEN_CLIENT_IP);
   }
