@@ -7433,10 +7433,10 @@ _conf_to_memberp(TSOverridableConfigKey conf, HttpSM* sm)
     return &sm->t_state.txn_conf.append_xforwards_header;
     break;
   case TS_CONFIG_HTTP_RESPONSE_SERVER_ENABLED:
-    return &sm->t_state.txn_conf.append_xforwards_header;
+    return &sm->t_state.txn_conf.proxy_response_server_enabled;
     break;
   case TS_CONFIG_HTTP_INSERT_SQUID_X_FORWARDED_FOR:
-    return &sm->t_state.txn_conf.append_xforwards_header;
+    return &sm->t_state.txn_conf.insert_squid_x_forwarded_for;
     break;
   case TS_CONFIG_HTTP_SEND_HTTP11_REQUESTS:
     return &sm->t_state.txn_conf.send_http11_requests;
@@ -7542,7 +7542,7 @@ TSHttpTxnConfigIntGet(TSHttpTxn txnp, TSOverridableConfigKey conf, TSMgmtInt *va
 // TODO: When there are more string / float configurations that are overridable,
 // we should do something similar to the Int versions (using _conf_to_memberp).
 TSReturnCode
-TSHttpTxnConfigFLoatSet(TSHttpTxn txnp, TSOverridableConfigKey conf, TSMgmtFloat value)
+TSHttpTxnConfigFloatSet(TSHttpTxn txnp, TSOverridableConfigKey conf, TSMgmtFloat value)
 {
   if (sdk_sanity_check_txn(txnp) != TS_SUCCESS)
     return TS_ERROR;
@@ -7584,7 +7584,7 @@ TSHttpTxnConfigFloatGet(TSHttpTxn txnp, TSOverridableConfigKey conf, TSMgmtFloat
 }
 
 TSReturnCode
-TSHttpTxnConfigStringSet(TSHttpTxn txnp, TSOverridableConfigKey conf, char* value, int length)
+TSHttpTxnConfigStringSet(TSHttpTxn txnp, TSOverridableConfigKey conf, const char* value, int length)
 {
   if ((sdk_sanity_check_txn(txnp) != TS_SUCCESS) ||
       (sdk_sanity_check_null_ptr((void*)value) != TS_SUCCESS))
@@ -7597,7 +7597,7 @@ TSHttpTxnConfigStringSet(TSHttpTxn txnp, TSOverridableConfigKey conf, char* valu
 
   switch (conf) {
   case TS_CONFIG_HTTP_RESPONSE_SERVER_STR:
-    sm->t_state.txn_conf.proxy_response_server_string = value;
+    sm->t_state.txn_conf.proxy_response_server_string = const_cast<char*>(value); // The "core" likes non-const char*
     sm->t_state.txn_conf.proxy_response_server_string_len = length;
     break;
   default:
@@ -7610,7 +7610,7 @@ TSHttpTxnConfigStringSet(TSHttpTxn txnp, TSOverridableConfigKey conf, char* valu
 
 
 TSReturnCode
-TSHttpTxnConfigStringGet(TSHttpTxn txnp, TSOverridableConfigKey conf, char **value, int *length)
+TSHttpTxnConfigStringGet(TSHttpTxn txnp, TSOverridableConfigKey conf, const char **value, int *length)
 {
   if ((sdk_sanity_check_txn(txnp) != TS_SUCCESS) ||
       (sdk_sanity_check_null_ptr((void**)value) != TS_SUCCESS) ||
@@ -7622,7 +7622,8 @@ TSHttpTxnConfigStringGet(TSHttpTxn txnp, TSOverridableConfigKey conf, char **val
   switch (conf) {
   case TS_CONFIG_HTTP_RESPONSE_SERVER_STR:
     *value = sm->t_state.txn_conf.proxy_response_server_string;
-    *length = sm->t_state.txn_conf.proxy_response_server_string_len;
+    if (length)
+      *length = sm->t_state.txn_conf.proxy_response_server_string_len;
     break;
   default:
     return TS_ERROR;

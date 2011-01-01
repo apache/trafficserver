@@ -2860,8 +2860,8 @@ extern "C"
   tsapi TSReturnCode TSHttpTxnConfigIntGet(TSHttpTxn txnp, TSOverridableConfigKey conf, TSMgmtInt* value);
   tsapi TSReturnCode TSHttpTxnConfigFloatSet(TSHttpTxn txnp, TSOverridableConfigKey conf, TSMgmtFloat value);
   tsapi TSReturnCode TSHttpTxnConfigFloatGet(TSHttpTxn txnp, TSOverridableConfigKey conf, TSMgmtFloat* value);
-  tsapi TSReturnCode TSHttpTxnConfigStringSet(TSHttpTxn txnp, TSOverridableConfigKey conf, char* value, int length);
-  tsapi TSReturnCode TSHttpTxnConfigStringGet(TSHttpTxn txnp, TSOverridableConfigKey conf, char** value, int* length);
+  tsapi TSReturnCode TSHttpTxnConfigStringSet(TSHttpTxn txnp, TSOverridableConfigKey conf, const char* value, int length);
+  tsapi TSReturnCode TSHttpTxnConfigStringGet(TSHttpTxn txnp, TSOverridableConfigKey conf, const char** value, int* length);
 
   tsapi TSReturnCode TSHttpTxnConfigFind(const char* name, int length, TSOverridableConfigKey* conf, TSRecordDataType* type);
 

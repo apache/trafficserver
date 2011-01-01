@@ -1180,8 +1180,8 @@ public:
         // Loop over our transaction stat blocks and record the stats
         //  in the global arrays
         STAT_LOCK_ACQUIRE(&(global_http_trans_stat_lock));
-        StatBlock *
-          b = &first_stats;
+        StatBlock *b = &first_stats;
+
         while (b != NULL) {
           for (int i = 0; i < b->next_insert && i < StatBlockEntries; i++) {
             RecIncrRawStat(http_rsb, this_ethread(), b->stats[i].index, b->stats[i].increment);

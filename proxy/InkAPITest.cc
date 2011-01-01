@@ -8236,3 +8236,141 @@ EXCLUSIVE_REGRESSION_TEST(SDK_API_TSHttpConnectServerIntercept) (RegressionTest 
 
   return;
 }
+
+
+////////////////////////////////////////////////
+// SDK_API_OVERRIDABLE_CONFIGS
+//
+// Unit Test for API: TSHttpTxnConfigFind
+//                    TSHttpTxnConfigIntSet
+//                    TSHttpTxnConfigIntGet
+//                    TSHttpTxnConfigFloatSet
+//                    TSHttpTxnConfigFloatGet
+//                    TSHttpTxnConfigStringSet
+//                    TSHttpTxnConfigStringGet
+////////////////////////////////////////////////
+
+// The order of these should be the same as TSOverridableConfigKey
+const char *SDK_Overridable_Configs[] = {
+  "proxy.config.url_remap.pristine_host_hdr",
+  "proxy.config.http.chunking_enabled",
+  "proxy.config.http.negative_caching_enabled",
+  "proxy.config.http.negative_caching_lifetime",
+  "proxy.config.http.cache.when_to_revalidate",
+  "proxy.config.http.keep_alive_enabled",
+  "proxy.config.http.keep_alive_post_out",
+  "proxy.config.net.sock_recv_buffer_size_out",
+  "proxy.config.net.sock_send_buffer_size_out",
+  "proxy.config.net.sock_option_flag_out",
+  "proxy.config.http.anonymize_remove_from",
+  "proxy.config.http.anonymize_remove_referer",
+  "proxy.config.http.anonymize_remove_user_agent",
+  "proxy.config.http.anonymize_remove_cookie",
+  "proxy.config.http.anonymize_remove_client_ip",
+  "proxy.config.http.anonymize_insert_client_ip",
+  "proxy.config.http.append_xforwards_header",
+  "proxy.config.http.response_server_enabled",
+  "proxy.config.http.insert_squid_x_forwarded_for",
+  "proxy.config.http.send_http11_requests",
+  "proxy.config.http.cache.http",
+  "proxy.config.http.cache.ignore_client_no_cache",
+  "proxy.config.http.cache.ignore_client_cc_max_age",
+  "proxy.config.http.cache.ims_on_client_no_cache",
+  "proxy.config.http.cache.ignore_server_no_cache",
+  "proxy.config.http.cache.cache_responses_to_cookies",
+  "proxy.config.http.cache.ignore_authentication",
+  "proxy.config.http.cache.cache_urls_that_look_dynamic",
+  "proxy.config.http.insert_request_via_str",
+  "proxy.config.http.insert_response_via_str",
+  "proxy.config.http.cache.heuristic_min_lifetime",
+  "proxy.config.http.cache.heuristic_max_lifetime",
+  "proxy.config.http.cache.guaranteed_min_lifetime",
+  "proxy.config.http.cache.guaranteed_max_lifetime",
+  "proxy.config.http.keep_alive_no_activity_timeout_in",
+  "proxy.config.http.origin_max_connections",
+  // These are "special", since they are not MgmtInt's
+  "proxy.config.http.response_server_str",
+  "proxy.config.http.cache.heuristic_lm_factor",
+  NULL
+};
+
+REGRESSION_TEST(SDK_API_OVERRIDABLE_CONFIGS) (RegressionTest * test, int atype, int *pstatus)
+{
+  NOWARN_UNUSED(atype);
+  const char* conf;
+  TSOverridableConfigKey key;
+  TSRecordDataType type;
+  HttpSM* s = HttpSM::allocate();
+  bool success = true;
+  TSHttpTxn txnp = static_cast<TSHttpTxn>(s); // Convenience ...
+  TSMgmtInt ival;
+  TSMgmtFloat fval;
+  const char* sval;
+  const char* test_string = "The Apache Traffic Server";
+
+  s->init();
+
+  *pstatus = REGRESSION_TEST_INPROGRESS;
+  for (int i=TS_CONFIG_NULL + 1; i < TS_CONFIG_LAST_ENTRY; ++i) {
+    conf = SDK_Overridable_Configs[i];
+    if (TS_SUCCESS == TSHttpTxnConfigFind(conf, -1, &key, &type)) {
+      if (key != i) {
+        SDK_RPRINT(test, "TSHttpTxnConfigFind", "TestCase1", TC_FAIL, "Failed on %s, expected %d, got %d", conf, i, key);
+        success = false;
+        continue;
+      }
+    } else {
+      SDK_RPRINT(test, "TSHttpTxnConfigFind", "TestCase1", TC_FAIL, "Called returned unexpected TS_ERROR");
+      success = false;
+      continue;
+    }
+    // Now check the getters / setters
+    switch (type) {
+    case TS_RECORDDATATYPE_INT:
+      TSHttpTxnConfigIntSet(txnp, key, 17);
+      TSHttpTxnConfigIntGet(txnp, key, &ival);
+      if (17 != ival) {
+        SDK_RPRINT(test, "TSHttpTxnConfigIntSet", "TestCase1", TC_FAIL, "Failed on %s, expected 17, got %d", conf, ival);
+        success = false;
+        continue;
+      }
+      break;
+
+    case TS_RECORDDATATYPE_FLOAT:
+      TSHttpTxnConfigFloatSet(txnp, key, 17.17);
+      TSHttpTxnConfigFloatGet(txnp, key, &fval);
+      if (17.17 != fval) {
+        SDK_RPRINT(test, "TSHttpTxnConfigFloatSet", "TestCase1", TC_FAIL, "Failed on %s, expected 17, got %d", conf, ival);
+        success = false;
+        continue;
+      }
+      break;
+
+    case TS_RECORDDATATYPE_STRING:
+      TSHttpTxnConfigStringSet(txnp, key, test_string, -1);
+      TSHttpTxnConfigStringGet(txnp, key, &sval, NULL);
+      if (test_string != sval) {
+        SDK_RPRINT(test, "TSHttpTxnConfigStringSet", "TestCase1", TC_FAIL, "Failed on %s, expected 17, got %s", conf, sval);
+        success = false;
+        continue;
+      }
+      break;
+
+    default:
+      break;
+    }
+  }
+
+  s->destroy();
+  if (success) {
+    *pstatus = REGRESSION_TEST_PASSED;
+    SDK_RPRINT(test, "TSHttpTxnConfigFind", "TestCase1", TC_PASS, "ok");
+    SDK_RPRINT(test, "TSHttpTxnConfigIntSet", "TestCase1", TC_PASS, "ok");
+    SDK_RPRINT(test, "TSHttpTxnConfigFloatSet", "TestCase1", TC_PASS, "ok");
+    SDK_RPRINT(test, "TSHttpTxnConfigStringSet", "TestCase1", TC_PASS, "ok");
+  } else {
+    *pstatus = REGRESSION_TEST_FAILED;
+  }
+
+  return;
+}
