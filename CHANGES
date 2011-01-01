@@ -1,12 +1,42 @@
                                                          -*- coding: utf-8 -*-
 
 Changes with Apache Traffic Server 2.1.5
+  *) Added support to allow some select (~50 or so) records.config
+  configurations to be overridable per transaction. This is done via new
+  SDK APIs, as well as a remap plugin provided with the core
+  [TS-599]. The new APIs available are
+
+      TSHttpTxnConfigIntSet()
+      TSHttpTxnConfigIntGet()
+      TSHttpTxnConfigFloatSet()
+      TSHttpTxnConfigFloatGet()
+      TSHttpTxnConfigStringSet()
+      TSHttpTxnConfigStringGet()
+      TSHttpTxnConfigFind()
+
+  *) Eliminate dedicated default DNS for SplitDNS [TS-597].
+  Author: Zhao Yongming
+
+  *) Eliminate proxy.config.net.max_poll_delay configs [TS-605].
+
+  *) Old traffic_net configurations are eliminated [TS-601]. 
+
+  *) Multiple preads: this patch is only active if you call do_io_pread
+  on the cache.  This includes a regression test for do_io_pread which
+  is at least a smoke test of the new code. [TS-61]
+
   *) Migrate from home-grown regular expression classes to pcre [TS-604]
   
-  *) Reduce number of calls to regex matcher for standard requests with well-known-strings (WKS). [TS-603]
+  *) Reduce number of calls to regex matcher for standard requests with
+   well-known-strings (WKS). [TS-603] 
   
-  *) Parse Range: requests a bit better. Prior, a request like like Range: bytes=100-200 would 
-   return 0-200. Additionally, Range: bytes=100- would not parse properly. [TS-596]
+  *) Parse Range: requests a bit better. Prior, a request like like
+   Range: bytes=100-200 would return 0-200. Additionally, Range:
+   bytes=100- would not parse properly. [TS-596] 
+
+  *) Remove old, unused configuration code (duplicated) [TS-576].
+
+  *) Bump the SDK version numbers properly [TS-595].
 
   *) Migrate from our own int64 (et.al) to int64_t / stdint types. This also
    changes the SDK, so ts/ts.h users should now use int64_t etc. [TS-594].
