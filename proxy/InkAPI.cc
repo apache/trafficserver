@@ -7374,4 +7374,150 @@ TSReturnCode TSSkipRemappingSet(TSHttpTxn txnp, int flag)
   return TS_SUCCESS;
 }
 
+
+/* APIs to manipulate the overridable configuration options.
+*/
+TSReturnCode
+TSHttpTxnConfigIntSet(TSHttpTxn txnp, TSOverridableConfigKey conf, TSMgmtInt value)
+{
+  if (sdk_sanity_check_txn(txnp) != TS_SUCCESS)
+    return TS_ERROR;
+
+  HttpSM *sm = (HttpSM*) txnp;
+
+  switch (conf) {
+  case TS_CONFIG_URL_REMAP_PRISTINE_HOST_HDR:
+    sm->t_state.txn_conf.maintain_pristine_host_hdr = value;
+    break;
+  case TS_CONFIG_HTTP_CHUNKING_ENABLED:
+    sm->t_state.txn_conf.chunking_enabled = value;
+    break;
+  case TS_CONFIG_HTTP_NEGATIVE_CACHING_ENABLED:
+    sm->t_state.txn_conf.negative_caching_enabled = value;
+    break;
+  case TS_CONFIG_HTTP_CACHE_WHEN_TO_REVALIDATE:
+    sm->t_state.txn_conf.cache_when_to_revalidate = value;
+    break;
+  default:
+    return TS_ERROR;
+    break;
+  }
+  return TS_SUCCESS;
+}
+
+TSReturnCode
+TSHttpTxnConfigIntGet(TSHttpTxn txnp, TSOverridableConfigKey conf, TSMgmtInt *value)
+{
+  if ((sdk_sanity_check_txn(txnp) != TS_SUCCESS) ||
+      (sdk_sanity_check_null_ptr((void*)value) != TS_SUCCESS))
+    return TS_ERROR;
+
+  HttpSM *sm = (HttpSM*) txnp;
+
+  switch (conf) {
+  case TS_CONFIG_URL_REMAP_PRISTINE_HOST_HDR:
+    *value = sm->t_state.txn_conf.maintain_pristine_host_hdr;
+    break;
+  case TS_CONFIG_HTTP_CHUNKING_ENABLED:
+    *value = sm->t_state.txn_conf.chunking_enabled;
+    break;
+  case TS_CONFIG_HTTP_NEGATIVE_CACHING_ENABLED:
+    *value = sm->t_state.txn_conf.negative_caching_enabled;
+    break;
+  case TS_CONFIG_HTTP_CACHE_WHEN_TO_REVALIDATE:
+    *value = sm->t_state.txn_conf.cache_when_to_revalidate;
+    break;
+  default:
+    return TS_ERROR;
+    break;
+  }
+
+  return TS_SUCCESS;
+}
+
+TSReturnCode
+TSHttpTxnConfigStringSet(TSHttpTxn txnp, TSOverridableConfigKey conf, char* value)
+{
+  if ((sdk_sanity_check_txn(txnp) != TS_SUCCESS) ||
+      (sdk_sanity_check_null_ptr((void*)value) != TS_SUCCESS))
+    return TS_ERROR;
+
+  // HttpSM *sm = (HttpSM*) txnp;
+
+  return TS_SUCCESS;
+}
+
+
+TSReturnCode
+TSHttpTxnConfigStringGet(TSHttpTxn txnp, TSOverridableConfigKey conf, char **value)
+{
+  if ((sdk_sanity_check_txn(txnp) != TS_SUCCESS) ||
+      (sdk_sanity_check_null_ptr((void**)value) != TS_SUCCESS) ||
+      (sdk_sanity_check_null_ptr((void*)*value) != TS_SUCCESS))
+    return TS_ERROR;
+
+  //HttpSM *sm = (HttpSM*) txnp;
+
+  return TS_SUCCESS;
+}
+
+
+// This is pretty suboptimal, and should only be used outside the critical path.
+TSReturnCode
+TSHttpTxnConfigFind(const char* name, int length, TSOverridableConfigKey *conf, TSRecordDataType *type)
+{
+  if ((sdk_sanity_check_null_ptr((void*)name) != TS_SUCCESS) ||
+      (sdk_sanity_check_null_ptr((void*)conf) != TS_SUCCESS))
+    return TS_ERROR;
+
+  if (length == -1)
+    length = strlen(name);
+
+  // Lots of string comparisons here, but avoid a few at least
+  switch (length) {
+  case 34:
+    if (!strncmp(name, "proxy.config.http.chunking_enabled", length)) {
+      *conf = TS_CONFIG_HTTP_CHUNKING_ENABLED;
+      if (type)
+        *type = TS_RECORDDATATYPE_INT;
+    }
+    break;
+
+  case 40:
+    if (!strncmp(name, "proxy.config.url_remap.pristine_host_hdr", length)) {
+      *conf = TS_CONFIG_URL_REMAP_PRISTINE_HOST_HDR;
+      if (type)
+        *type = TS_RECORDDATATYPE_INT;
+    }
+    break;
+
+  case 42:
+    switch (name[length-1]) {
+    case 'd':
+      if (!strncmp(name, "proxy.config.http.negative_caching_enabled", length)) {
+        *conf = TS_CONFIG_HTTP_NEGATIVE_CACHING_ENABLED;
+        if (type)
+          *type = TS_RECORDDATATYPE_INT;
+      }
+      break;
+    case 'e':
+      if (!strncmp(name, "proxy.config.http.cache.when_to_revalidate", length)) {
+        *conf = TS_CONFIG_HTTP_CACHE_WHEN_TO_REVALIDATE;
+        if (type)
+          *type = TS_RECORDDATATYPE_INT;
+      }
+      break;
+    default:
+      return TS_ERROR;
+    }
+    break;
+
+  default:
+    return TS_ERROR;
+  }
+
+  return TS_SUCCESS;
+}
+
+
 #endif //TS_NO_API

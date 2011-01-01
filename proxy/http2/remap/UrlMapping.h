@@ -103,10 +103,7 @@ public:
   bool default_redirect_url;
   bool optional_referer;
   bool negative_referer;
-  bool no_negative_cache;       // @no_negative_cache option was used
   bool wildcard_from_scheme;    // from url is '/foo', only http or https for now
-  int pristine_host_hdr;
-  int chunking_enabled;
   char *tag;                    // tag
   char *filter_redirect_url;    // redirect url
   unsigned int map_id;

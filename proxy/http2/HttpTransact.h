@@ -991,9 +991,6 @@ public:
 
     // for negative caching
     bool negative_caching;
-    bool no_negative_cache;     // copy from per-remap rules
-    int pristine_host_hdr;
-    int remap_chunking_enabled;
 
     // for authenticated content caching
     CacheAuth_t www_auth_content;
@@ -1059,6 +1056,8 @@ public:
     
     bool api_skip_all_remapping;
 
+    OverridableHttpConfigParams txn_conf;
+
     // Methods
     void
     init()
@@ -1109,9 +1108,6 @@ public:
         current_stats(NULL),
         range_setup(RANGE_NONE),
         negative_caching(false),
-        no_negative_cache(false),
-        pristine_host_hdr(-1),
-        remap_chunking_enabled(-1),
         www_auth_content(CACHE_AUTH_NONE),
         client_connection_enabled(true),
         acl_filtering_performed(false),
@@ -1373,8 +1369,8 @@ public:
                                                 int cache_guaranteed_min_lifetime, int cache_guaranteed_max_lifetime,
                                                 time_t plugin_set_expire_time, State * s);
   static int calculate_freshness_fuzz(State * s, int fresh_limit);
-  static Freshness_t what_is_document_freshness(State * s, const HttpConfigParams * config, HTTPHdr * client_request,
-                                                HTTPHdr * cached_obj_request, HTTPHdr * cached_obj_response);
+  static Freshness_t what_is_document_freshness(State * s, HTTPHdr * client_request, HTTPHdr * cached_obj_request,
+                                                HTTPHdr * cached_obj_response);
   static Authentication_t AuthenticationNeeded(const HttpConfigParams * p, HTTPHdr * client_request, HTTPHdr * obj_response);
   static void handle_parent_died(State * s);
   static void handle_server_died(State * s);

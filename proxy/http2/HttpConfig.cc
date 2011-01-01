@@ -31,9 +31,6 @@
 #include "ICPProcessor.h"
 #include "P_Net.h"
 #include "P_RecUtils.h"
-#include <iostream>
-
-using namespace std;
 
 #ifndef min
 #define         min(a,b)        ((a) < (b) ? (a) : (b))
@@ -68,39 +65,25 @@ class HttpConfigCont:public Continuation
 {
 public:
   HttpConfigCont();
-
   int handle_event(int event, void *edata);
 };
 
-
-/*
- * char* add_comma_sep_string(char *s, char* a)
- *
- * A helper to fix a configuration conflict. Adds string 'a' to
- * string 's', in a comma seperated manner, if 'a' is not already
- * in 's'.
- */
 
 ////////////////////////////////////////////////////////////////
 //
 //  static variables
 //
 ////////////////////////////////////////////////////////////////
-int
-  HttpConfig::m_id = 0;
-HttpConfigParams
-  HttpConfig::m_master;
-HttpUserAgent_RegxEntry *
-  HttpConfig::user_agent_list = NULL;
+int HttpConfig::m_id = 0;
+HttpConfigParams HttpConfig::m_master;
+HttpUserAgent_RegxEntry *HttpConfig::user_agent_list = NULL;
 
-static volatile int
-  http_config_changes = 1;
-static HttpConfigCont *
-  http_config_cont = NULL;
+static volatile int http_config_changes = 1;
+static HttpConfigCont *http_config_cont = NULL;
 
 
 HttpConfigCont::HttpConfigCont()
-:Continuation(new_ProxyMutex())
+  : Continuation(new_ProxyMutex())
 {
   SET_HANDLER(&HttpConfigCont::handle_event);
 }
@@ -1173,7 +1156,7 @@ HttpConfig::startup()
                                     "proxy.config.http.uncacheable_requests_bypass_parent");
   HttpEstablishStaticConfigLongLong(c.no_origin_server_dns, "proxy.config.http.no_origin_server_dns");
   HttpEstablishStaticConfigLongLong(c.use_client_target_addr, "proxy.config.http.use_client_target_addr");
-  HttpEstablishStaticConfigLongLong(c.maintain_pristine_host_hdr, "proxy.config.url_remap.pristine_host_hdr");
+  HttpEstablishStaticConfigLongLong(c.oride.maintain_pristine_host_hdr, "proxy.config.url_remap.pristine_host_hdr");
 
   HttpEstablishStaticConfigLongLong(c.snarf_username_from_authorization,
                                     "proxy.config.http.snarf_username_from_authorization");
@@ -1196,7 +1179,7 @@ HttpConfig::startup()
   HttpEstablishStaticConfigLongLong(c.proxy_server_port, "proxy.config.http.server_port");
   HttpEstablishStaticConfigStringAlloc(c.proxy_server_other_ports, "proxy.config.http.server_other_ports");
   HttpEstablishStaticConfigLongLong(c.keep_alive_enabled, "proxy.config.http.keep_alive_enabled");
-  HttpEstablishStaticConfigLongLong(c.chunking_enabled, "proxy.config.http.chunking_enabled");
+  HttpEstablishStaticConfigLongLong(c.oride.chunking_enabled, "proxy.config.http.chunking_enabled");
   HttpEstablishStaticConfigLongLong(c.session_auth_cache_keep_alive_enabled,
                                    "proxy.config.http.session_auth_cache_keep_alive_enabled");
   HttpEstablishStaticConfigLongLong(c.origin_server_pipeline, "proxy.config.http.origin_server_pipeline");
@@ -1324,7 +1307,7 @@ HttpConfig::startup()
   HttpEstablishStaticConfigLongLong(c.ignore_accept_charset_mismatch,
                                     "proxy.config.http.cache.ignore_accept_charset_mismatch");
 
-  HttpEstablishStaticConfigLongLong(c.cache_when_to_revalidate, "proxy.config.http.cache.when_to_revalidate");
+  HttpEstablishStaticConfigLongLong(c.oride.cache_when_to_revalidate, "proxy.config.http.cache.when_to_revalidate");
   HttpEstablishStaticConfigLongLong(c.cache_when_to_add_no_cache_to_msie_requests,
                                     "proxy.config.http.cache.when_to_add_no_cache_to_msie_requests");
   HttpEstablishStaticConfigLongLong(c.cache_required_headers, "proxy.config.http.cache.required_headers");
@@ -1379,8 +1362,7 @@ HttpConfig::startup()
                                     "proxy.config.http.negative_revalidating_lifetime");
 
   // Negative response caching
-  // Note: negative caching behavior can be changed via remap option @no_negative_cache
-  HttpEstablishStaticConfigLongLong(c.negative_caching_enabled, "proxy.config.http.negative_caching_enabled");
+  HttpEstablishStaticConfigLongLong(c.oride.negative_caching_enabled, "proxy.config.http.negative_caching_enabled");
   HttpEstablishStaticConfigLongLong(c.negative_caching_lifetime, "proxy.config.http.negative_caching_lifetime");
 
   // InktoSwitch
@@ -1490,7 +1472,7 @@ HttpConfig::reconfigure()
   params->uncacheable_requests_bypass_parent = INT_TO_BOOL(m_master.uncacheable_requests_bypass_parent);
   params->no_origin_server_dns = INT_TO_BOOL(m_master.no_origin_server_dns);
   params->use_client_target_addr = INT_TO_BOOL(m_master.use_client_target_addr);
-  params->maintain_pristine_host_hdr = INT_TO_BOOL(m_master.maintain_pristine_host_hdr);
+  params->oride.maintain_pristine_host_hdr = INT_TO_BOOL(m_master.oride.maintain_pristine_host_hdr);
 
   params->snarf_username_from_authorization = INT_TO_BOOL(m_master.snarf_username_from_authorization);
 
@@ -1531,7 +1513,7 @@ HttpConfig::reconfigure()
   params->proxy_server_port = m_master.proxy_server_port;
   params->proxy_server_other_ports = xstrdup(m_master.proxy_server_other_ports);
   params->keep_alive_enabled = INT_TO_BOOL(m_master.keep_alive_enabled);
-  params->chunking_enabled = INT_TO_BOOL(m_master.chunking_enabled);
+  params->oride.chunking_enabled = INT_TO_BOOL(m_master.oride.chunking_enabled);
   params->session_auth_cache_keep_alive_enabled = INT_TO_BOOL(m_master.session_auth_cache_keep_alive_enabled);
   params->origin_server_pipeline = m_master.origin_server_pipeline;
   params->user_agent_pipeline = m_master.user_agent_pipeline;
@@ -1633,7 +1615,7 @@ HttpConfig::reconfigure()
   params->ignore_accept_encoding_mismatch = INT_TO_BOOL(m_master.ignore_accept_encoding_mismatch);
   params->ignore_accept_charset_mismatch = INT_TO_BOOL(m_master.ignore_accept_charset_mismatch);
 
-  params->cache_when_to_revalidate = m_master.cache_when_to_revalidate;
+  params->oride.cache_when_to_revalidate = m_master.oride.cache_when_to_revalidate;
   params->cache_when_to_add_no_cache_to_msie_requests = m_master.cache_when_to_add_no_cache_to_msie_requests;
 
   params->cache_required_headers = m_master.cache_required_headers;
@@ -1676,7 +1658,7 @@ HttpConfig::reconfigure()
   params->negative_revalidating_enabled = m_master.negative_revalidating_enabled;
   params->negative_revalidating_lifetime = m_master.negative_revalidating_lifetime;
 
-  params->negative_caching_enabled = m_master.negative_caching_enabled;
+  params->oride.negative_caching_enabled = m_master.oride.negative_caching_enabled;
   params->negative_caching_lifetime = m_master.negative_caching_lifetime;
 
   params->inktoswitch_enabled = m_master.inktoswitch_enabled;

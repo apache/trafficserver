@@ -33,11 +33,6 @@
 #define REMAP_OPTFLG_METHOD           0x08      /* "method=" option (used for ACL filtering) */
 #define REMAP_OPTFLG_SRC_IP           0x10      /* "src_ip=" option (used for ACL filtering) */
 #define REMAP_OPTFLG_ACTION           0x20      /* "action=" option (used for ACL filtering) */
-#define REMAP_OPTFLG_NONEGCACHE       0x40      /* "no_negative_cache" option */
-#define REMAP_OPTFLG_PRISTINEHOST_HDR_ENABLED 0x80      /* if pristinem header is enabled */
-#define REMAP_OPTFLG_PRISTINEHOST_HDR_DISABLED 0x100    /*if pristine header is disabled */
-#define REMAP_OPTFLG_CHUNKING_ENABLED 0x200     /* enable chunking for this map rule */
-#define REMAP_OPTFLG_CHUNKING_DISABLED 0x400    /* disable chunking for this map rule */
 #define REMAP_OPTFLG_MAP_ID          0x800      /* associate a map ID with this rule */
 #define REMAP_OPTFLG_INVERT           0x80000000        /* "invert" the rule (for src_ip at least) */
 #define REMAP_OPTFLG_ALL_FILTERS (REMAP_OPTFLG_METHOD|REMAP_OPTFLG_SRC_IP|REMAP_OPTFLG_ACTION)

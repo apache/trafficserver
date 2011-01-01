@@ -451,7 +451,7 @@ extern "C"
   /**
      This type represents a context for data records.
   */
-  typedef enum 
+  typedef enum
     {
       TS_RECORDTYPE_NULL = 0,
       TS_RECORDTYPE_CONFIG,
@@ -473,13 +473,23 @@ extern "C"
       TS_RECORDDATATYPE_MAX
     } TSRecordDataType;
 
-  typedef union 
+  typedef union
   {
     int64_t rec_int;
     float rec_float;
     char *rec_string;
     int64_t rec_counter;
   } TSRecordData;
+
+  typedef enum
+  {
+    TS_CONFIG_NULL = 0,
+    TS_CONFIG_URL_REMAP_PRISTINE_HOST_HDR,
+    TS_CONFIG_HTTP_CHUNKING_ENABLED,
+    TS_CONFIG_HTTP_NEGATIVE_CACHING_ENABLED,
+    TS_CONFIG_HTTP_CACHE_WHEN_TO_REVALIDATE,
+    TS_CONFIG_LAST_ENTRY
+  } TSOverridableConfigKey;
 
   extern tsapi const void *TS_ERROR_PTR;
 
@@ -2802,6 +2812,18 @@ extern "C"
     
   */
   tsapi TSReturnCode TSSkipRemappingSet(TSHttpTxn txnp, int flag);
+
+
+  /*
+    Set or get various overridable configurations, for a transaction. This should
+    probably be done as early as possible, e.g. TS_HTTP_READ_REQUEST_HDR_HOOK.
+  */
+  tsapi TSReturnCode TSHttpTxnConfigIntSet(TSHttpTxn txnp, TSOverridableConfigKey conf, TSMgmtInt value);
+  tsapi TSReturnCode TSHttpTxnConfigIntGet(TSHttpTxn txnp, TSOverridableConfigKey conf, TSMgmtInt *value);
+  tsapi TSReturnCode TSHttpTxnConfigStringSet(TSHttpTxn txnp, TSOverridableConfigKey conf, char* value);
+  tsapi TSReturnCode TSHttpTxnConfigStringGet(TSHttpTxn txnp, TSOverridableConfigKey conf, char **value);
+
+  tsapi TSReturnCode TSHttpTxnConfigFind(const char* name, int length, TSOverridableConfigKey *conf, TSRecordDataType *type);
 
   /*
     It's unclear if these actually function properly still.

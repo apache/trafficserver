@@ -60,7 +60,6 @@ UrlRewrite *rewrite_table = NULL;
 #define AC_PORT_CHANGED 3
 #define TRANS_CHANGED 4
 #define DEFAULT_TO_PAC_CHANGED 5
-#define PRISTINE_HOST_HDR_CHANGED 6
 #define DEFAULT_TO_PAC_PORT_CHANGED 7
 #define URL_REMAP_MODE_CHANGED 8
 #define HTTP_DEFAULT_REDIRECT_CHANGED 9
@@ -84,7 +83,6 @@ init_reverse_proxy()
   REVERSE_RegisterConfigUpdateFunc("proxy.config.admin.autoconf_port", url_rewrite_CB, (void *) AC_PORT_CHANGED);
   REVERSE_RegisterConfigUpdateFunc("proxy.config.url_remap.default_to_server_pac", url_rewrite_CB, (void *) DEFAULT_TO_PAC_CHANGED);
   REVERSE_RegisterConfigUpdateFunc("proxy.config.url_remap.default_to_server_pac_port", url_rewrite_CB, (void *) DEFAULT_TO_PAC_PORT_CHANGED);
-  REVERSE_RegisterConfigUpdateFunc("proxy.config.url_remap.pristine_host_hdr", url_rewrite_CB, (void *) PRISTINE_HOST_HDR_CHANGED);
   REVERSE_RegisterConfigUpdateFunc("proxy.config.url_remap.url_remap_mode", url_rewrite_CB, (void *) URL_REMAP_MODE_CHANGED);
   REVERSE_RegisterConfigUpdateFunc("proxy.config.http.referer_default_redirect", url_rewrite_CB, (void *) HTTP_DEFAULT_REDIRECT_CHANGED);
   return 0;
@@ -182,9 +180,6 @@ url_rewrite_CB(const char *name, RecDataT data_type, RecData data, void *cookie)
   switch (my_token) {
   case REVERSE_CHANGED:
     rewrite_table->SetReverseFlag(data.rec_int);
-    break;
-  case PRISTINE_HOST_HDR_CHANGED:
-    rewrite_table->SetPristineFlag(data.rec_int);
     break;
   case TSNAME_CHANGED:
   case DEFAULT_TO_PAC_CHANGED:

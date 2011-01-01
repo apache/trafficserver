@@ -28,8 +28,8 @@
 **/
 url_mapping::url_mapping(int rank /* = 0 */)
   : from_path_len(0), fromURL(), homePageRedirect(false), unique(false), default_redirect_url(false),
-    optional_referer(false), negative_referer(false), no_negative_cache(false), wildcard_from_scheme(false),
-    pristine_host_hdr(-1), chunking_enabled(-1), tag(NULL), filter_redirect_url(NULL), referer_list(0),
+    optional_referer(false), negative_referer(false), wildcard_from_scheme(false),
+    tag(NULL), filter_redirect_url(NULL), referer_list(0),
     redir_chunk_list(0), filter(NULL), _plugin_count(0), _cur_instance_count(0), _rank(rank), _default_to_url()
 {
 }

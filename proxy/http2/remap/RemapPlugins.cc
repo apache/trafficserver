@@ -240,13 +240,6 @@ RemapPlugins::run_single_remap()
   bool debug_on = false;
   int retcode = 0;              // 0 - no redirect, !=0 - redirected
 
-  // it is important - we must copy "no_negative_cache" flag before possible plugin call [only do this on our first iteration of this function]
-  if (_cur == 0 && _s) {
-    _s->no_negative_cache = map->no_negative_cache;
-    _s->pristine_host_hdr = map->pristine_host_hdr;
-    _s->remap_chunking_enabled = map->chunking_enabled;
-  }
-
   requestPath = _request_url->path_get(&requestPathLen);
 
   toHost = map_to->host_get(&toHostLen);

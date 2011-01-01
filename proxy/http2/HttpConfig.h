@@ -402,6 +402,23 @@ struct HttpConfigPortRange
 };
 
 /////////////////////////////////////////////////////////////
+// This is a little helper class, used by the HttpConfigParams
+// and State (txn) structure. It allows for certain configs
+// to be overridable per transaction more easily.
+struct OverridableHttpConfigParams {
+  OverridableHttpConfigParams()
+    :  maintain_pristine_host_hdr(0), chunking_enabled(0), negative_caching_enabled(0),
+       cache_when_to_revalidate(0)
+  {}
+
+  MgmtInt maintain_pristine_host_hdr;
+  MgmtInt chunking_enabled;
+  MgmtInt negative_caching_enabled;
+  MgmtInt cache_when_to_revalidate;
+};
+
+
+/////////////////////////////////////////////////////////////
 //
 // struct HttpConfigParams
 //
@@ -451,7 +468,6 @@ public:
   MgmtInt uncacheable_requests_bypass_parent;
   MgmtInt no_origin_server_dns;
   MgmtInt use_client_target_addr;
-  MgmtInt maintain_pristine_host_hdr;
 
   MgmtInt snarf_username_from_authorization;
 
@@ -483,7 +499,6 @@ public:
   MgmtInt proxy_server_port;
   char *proxy_server_other_ports;
   MgmtInt keep_alive_enabled;
-  MgmtInt chunking_enabled;
   MgmtInt session_auth_cache_keep_alive_enabled;
   MgmtInt origin_server_pipeline;
   MgmtInt user_agent_pipeline;
@@ -602,7 +617,6 @@ public:
   MgmtInt cache_ignore_auth;
   MgmtInt cache_urls_that_look_dynamic;
   MgmtInt cache_enable_default_vary_headers;
-  MgmtInt cache_when_to_revalidate;
   MgmtInt cache_when_to_add_no_cache_to_msie_requests;
   MgmtInt cache_required_headers;
   MgmtInt cache_range_lookup;
@@ -673,7 +687,6 @@ public:
   ////////////////////////////////
   //  Negative Response Caching //
   ////////////////////////////////
-  MgmtInt negative_caching_enabled;
   MgmtInt negative_caching_lifetime;
 
   /////////////////
@@ -770,6 +783,8 @@ public:
   ////////////////////////////////
   MgmtInt normalize_ae_gzip;
 
+  OverridableHttpConfigParams oride;
+
 private:
   /////////////////////////////////////
   // operator = and copy constructor //
@@ -859,162 +874,156 @@ extern volatile int32_t icp_dynamic_enabled;
 /////////////////////////////////////////////////////////////
 inline
 HttpConfigParams::HttpConfigParams()
-  :
-proxy_hostname(0),
-proxy_hostname_len(0),
-incoming_ip_to_bind(0),
-incoming_ip_to_bind_saddr(0),
-outgoing_ip_to_bind(0),
-outgoing_ip_to_bind_saddr(0),
-server_max_connections(0),
-origin_max_connections(0),
-origin_min_keep_alive_connections(0),
-parent_proxy_routing_enable(false),
-disable_ssl_parenting(0),
-enable_url_expandomatic(0),
-no_dns_forward_to_parent(0),
-uncacheable_requests_bypass_parent(1),
-no_origin_server_dns(0),
-use_client_target_addr(0),
-maintain_pristine_host_hdr(0),
-//snarf_username_from_authorization(0),
-insert_request_via_string(0),
-insert_response_via_string(0),
-verbose_via_string(0),
-proxy_request_via_string(0),
-proxy_request_via_string_len(0),
-proxy_response_via_string(0),
-proxy_response_via_string_len(0),
-wuts_enabled(false),
-log_spider_codes(false),
-url_expansions_string(0),
-url_expansions(0),
-num_url_expansions(0),
-proxy_server_port(0),
-proxy_server_other_ports(0),
-keep_alive_enabled(0),
-chunking_enabled(0),
-session_auth_cache_keep_alive_enabled(0),
-origin_server_pipeline(0),
-user_agent_pipeline(0),
-share_server_sessions(0),
-keep_alive_post_out(0),
-keep_alive_no_activity_timeout_in(0),
-keep_alive_no_activity_timeout_out(0),
-transaction_no_activity_timeout_in(0),
-transaction_no_activity_timeout_out(0),
-transaction_active_timeout_in(0),
-transaction_active_timeout_out(0),
-accept_no_activity_timeout(0),
-background_fill_active_timeout(0),
-background_fill_threshold(0.0),
-connect_attempts_max_retries(0),
-connect_attempts_max_retries_dead_server(0),
-connect_attempts_rr_retries(0),
-connect_attempts_timeout(0),
-post_connect_attempts_timeout(0),
-parent_connect_attempts(0),
-per_parent_connect_attempts(0),
-parent_connect_timeout(0),
-sock_recv_buffer_size_out(0),
-sock_send_buffer_size_out(0),
-sock_option_flag_out(0),
-anonymize_remove_from(false),
-anonymize_remove_referer(false),
-anonymize_remove_user_agent(false),
-anonymize_remove_cookie(false),
-anonymize_remove_client_ip(false),
-anonymize_insert_client_ip(true),
-append_xforwards_header(false),
-anonymize_other_header_list(NULL),
-anonymize_remove_any(false),
-global_user_agent_header(NULL),
-global_user_agent_header_size(0),
-proxy_response_server_string(NULL),
-proxy_response_server_string_len(0),
-proxy_response_server_enabled(0),
-insert_squid_x_forwarded_for(0),
-insert_age_in_response(1),
-avoid_content_spoofing(1),
-enable_http_stats(1),
-icp_enabled(0),
-stale_icp_enabled(0),
-cache_heuristic_min_lifetime(0),
-cache_heuristic_max_lifetime(0),
-cache_heuristic_lm_factor(0),
-cache_guaranteed_min_lifetime(0),
-cache_guaranteed_max_lifetime(0),
-cache_max_stale_age(0),
-freshness_fuzz_time(0),
-freshness_fuzz_min_time(0),
-freshness_fuzz_prob(0.0),
-cache_vary_default_text(0),
-cache_vary_default_images(0),
-cache_vary_default_other(0),
-max_cache_open_read_retries(0),
-cache_open_read_retry_time(0),
-max_cache_open_write_retries(0),
-cache_open_write_retry_time(0),
-cache_http(false),
-cache_ignore_client_no_cache(false),
-cache_ignore_client_cc_max_age(true),
-cache_ims_on_client_no_cache(false),
-cache_ignore_server_no_cache(false),
-cache_responses_to_cookies(0),
-cache_ignore_auth(0),
-cache_urls_that_look_dynamic(false),
-cache_enable_default_vary_headers(false),
-cache_when_to_revalidate(0),
-cache_when_to_add_no_cache_to_msie_requests(0),
-cache_required_headers(CACHE_REQUIRED_HEADERS_NONE),
-connect_ports_string(0),
-connect_ports(0),
-request_hdr_max_size(0),
-response_hdr_max_size(0),
-push_method_enabled(0),
-referer_filter_enabled(0),
-referer_format_redirect(0),
-accept_encoding_filter_enabled(0),
-quick_filter_mask(0),
-transparency_enabled(0),
-down_server_timeout(0),
-client_abort_threshold(0),
-negative_revalidating_enabled(0),
-negative_revalidating_lifetime(0),
-negative_caching_enabled(0),
-negative_caching_lifetime(0),
-inktoswitch_enabled(0),
-router_ip(0),
-router_port(0),
-record_cop_page(0),
-record_tcp_mem_hit(0),
-errors_log_error_pages(0),
-send_http11_requests(SEND_HTTP11_IF_REQUEST_11_AND_HOSTDB),
-doc_in_cache_skip_dns(1),       // Added for SKIPPING DNS If DOC IN CACHE
-default_buffer_size_index(0),
-default_buffer_water_mark(0),
-enable_http_info(0),
-fwd_proxy_auth_to_parent(0),
-cluster_time_delta(0),
-        //Added by YTS Team, yamsat
-hashtable_enabled(false),
-rww_wait_time(0),
-revalidate_window_period(0),
-srv_enabled(0),
-redirection_enabled(true),
-number_of_redirections(0),
-post_copy_size(2048),
-ignore_accept_mismatch(0),
-ignore_accept_language_mismatch(0),
-ignore_accept_encoding_mismatch(0),
-ignore_accept_charset_mismatch(0),
-normalize_ae_gzip(1)
+  : proxy_hostname(0),
+    proxy_hostname_len(0),
+    incoming_ip_to_bind(0),
+    incoming_ip_to_bind_saddr(0),
+    outgoing_ip_to_bind(0),
+    outgoing_ip_to_bind_saddr(0),
+    server_max_connections(0),
+    origin_max_connections(0),
+    origin_min_keep_alive_connections(0),
+    parent_proxy_routing_enable(false),
+    disable_ssl_parenting(0),
+    enable_url_expandomatic(0),
+    no_dns_forward_to_parent(0),
+    uncacheable_requests_bypass_parent(1),
+    no_origin_server_dns(0),
+    use_client_target_addr(0),
+    //snarf_username_from_authorization(0),
+    insert_request_via_string(0),
+    insert_response_via_string(0),
+    verbose_via_string(0),
+    proxy_request_via_string(0),
+    proxy_request_via_string_len(0),
+    proxy_response_via_string(0),
+    proxy_response_via_string_len(0),
+    wuts_enabled(false),
+    log_spider_codes(false),
+    url_expansions_string(0),
+    url_expansions(0),
+    num_url_expansions(0),
+    proxy_server_port(0),
+    proxy_server_other_ports(0),
+    keep_alive_enabled(0),
+    session_auth_cache_keep_alive_enabled(0),
+    origin_server_pipeline(0),
+    user_agent_pipeline(0),
+    share_server_sessions(0),
+    keep_alive_post_out(0),
+    keep_alive_no_activity_timeout_in(0),
+    keep_alive_no_activity_timeout_out(0),
+    transaction_no_activity_timeout_in(0),
+    transaction_no_activity_timeout_out(0),
+    transaction_active_timeout_in(0),
+    transaction_active_timeout_out(0),
+    accept_no_activity_timeout(0),
+    background_fill_active_timeout(0),
+    background_fill_threshold(0.0),
+    connect_attempts_max_retries(0),
+    connect_attempts_max_retries_dead_server(0),
+    connect_attempts_rr_retries(0),
+    connect_attempts_timeout(0),
+    post_connect_attempts_timeout(0),
+    parent_connect_attempts(0),
+    per_parent_connect_attempts(0),
+    parent_connect_timeout(0),
+    sock_recv_buffer_size_out(0),
+    sock_send_buffer_size_out(0),
+    sock_option_flag_out(0),
+    anonymize_remove_from(false),
+    anonymize_remove_referer(false),
+    anonymize_remove_user_agent(false),
+    anonymize_remove_cookie(false),
+    anonymize_remove_client_ip(false),
+    anonymize_insert_client_ip(true),
+    append_xforwards_header(false),
+    anonymize_other_header_list(NULL),
+    anonymize_remove_any(false),
+    global_user_agent_header(NULL),
+    global_user_agent_header_size(0),
+    proxy_response_server_string(NULL),
+    proxy_response_server_string_len(0),
+    proxy_response_server_enabled(0),
+    insert_squid_x_forwarded_for(0),
+    insert_age_in_response(1),
+    avoid_content_spoofing(1),
+    enable_http_stats(1),
+    icp_enabled(0),
+    stale_icp_enabled(0),
+    cache_heuristic_min_lifetime(0),
+    cache_heuristic_max_lifetime(0),
+    cache_heuristic_lm_factor(0),
+    cache_guaranteed_min_lifetime(0),
+    cache_guaranteed_max_lifetime(0),
+    cache_max_stale_age(0),
+    freshness_fuzz_time(0),
+    freshness_fuzz_min_time(0),
+    freshness_fuzz_prob(0.0),
+    cache_vary_default_text(0),
+    cache_vary_default_images(0),
+    cache_vary_default_other(0),
+    max_cache_open_read_retries(0),
+    cache_open_read_retry_time(0),
+    max_cache_open_write_retries(0),
+    cache_open_write_retry_time(0),
+    cache_http(false),
+    cache_ignore_client_no_cache(false),
+    cache_ignore_client_cc_max_age(true),
+    cache_ims_on_client_no_cache(false),
+    cache_ignore_server_no_cache(false),
+    cache_responses_to_cookies(0),
+    cache_ignore_auth(0),
+    cache_urls_that_look_dynamic(false),
+    cache_enable_default_vary_headers(false),
+    cache_when_to_add_no_cache_to_msie_requests(0),
+    cache_required_headers(CACHE_REQUIRED_HEADERS_NONE),
+    connect_ports_string(0),
+    connect_ports(0),
+    request_hdr_max_size(0),
+    response_hdr_max_size(0),
+    push_method_enabled(0),
+    referer_filter_enabled(0),
+    referer_format_redirect(0),
+    accept_encoding_filter_enabled(0),
+    quick_filter_mask(0),
+    transparency_enabled(0),
+    down_server_timeout(0),
+    client_abort_threshold(0),
+    negative_revalidating_enabled(0),
+    negative_revalidating_lifetime(0),
+    negative_caching_lifetime(0),
+    inktoswitch_enabled(0),
+    router_ip(0),
+    router_port(0),
+    record_cop_page(0),
+    record_tcp_mem_hit(0),
+    errors_log_error_pages(0),
+    send_http11_requests(SEND_HTTP11_IF_REQUEST_11_AND_HOSTDB),
+    doc_in_cache_skip_dns(1),       // Added for SKIPPING DNS If DOC IN CACHE
+    default_buffer_size_index(0),
+    default_buffer_water_mark(0),
+    enable_http_info(0),
+    fwd_proxy_auth_to_parent(0),
+    cluster_time_delta(0),
+    //Added by YTS Team, yamsat
+    hashtable_enabled(false),
+    rww_wait_time(0),
+    revalidate_window_period(0),
+    srv_enabled(0),
+    redirection_enabled(true),
+    number_of_redirections(0),
+    post_copy_size(2048),
+    ignore_accept_mismatch(0),
+    ignore_accept_language_mismatch(0),
+    ignore_accept_encoding_mismatch(0),
+    ignore_accept_charset_mismatch(0),
+    normalize_ae_gzip(1)
 {
 }
 
 inline
-HttpConfigParams::~
-HttpConfigParams()
+HttpConfigParams::~HttpConfigParams()
 {
   xfree(proxy_hostname);
   xfree(proxy_request_via_string);

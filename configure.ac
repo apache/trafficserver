@@ -43,6 +43,8 @@ AC_CONFIG_MACRO_DIR([build])
 AM_INIT_AUTOMAKE([-Wall -Werror foreign no-installinfo no-installman 1.9.2])
 AM_CONFIG_HEADER([lib/ts/ink_autoconf.h])
 
+LT_INIT([dlopen])
+
 # Libtool versioning uses different conventions on different
 # platforms.  At least on FreeBSD, libtool uses an overly complex
 # convention that attempts to solve problems that most people just
@@ -1286,8 +1288,11 @@ AC_CONFIG_FILES([proxy/mgmt2/web2/Makefile])
 AC_CONFIG_FILES([proxy/stats/Makefile])
 AC_CONFIG_FILES([proxy/wccp/Makefile])
 AC_CONFIG_FILES([proxy/api/ts/Makefile])
-AC_CONFIG_FILES([example/Makefile])
+# production plugins
+AC_CONFIG_FILES([plugins/Makefile])
+AC_CONFIG_FILES([plugins/conf_remap/Makefile])
 # example plugins
+AC_CONFIG_FILES([example/Makefile])
 AC_CONFIG_FILES([example/add-header/Makefile])
 AC_CONFIG_FILES([example/append-transform/Makefile])
 AC_CONFIG_FILES([example/basic-auth/Makefile])

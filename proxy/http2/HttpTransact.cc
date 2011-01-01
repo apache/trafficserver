@@ -253,7 +253,7 @@ find_appropriate_cached_resp(HttpTransact::State * s)
 inline static bool
 is_negative_caching_appropriate(HttpTransact::State * s)
 {
-  if (!s->http_config_param->negative_caching_enabled || s->no_negative_cache || !s->hdr_info.server_response.valid())
+  if (!s->txn_conf.negative_caching_enabled || !s->hdr_info.server_response.valid())
     return false;
 
   switch (s->hdr_info.server_response.status_get()) {
@@ -1818,7 +1818,7 @@ HttpTransact::DecideCacheLookup(State * s)
     if (s->cache_info.lookup_url == NULL) {
       HTTPHdr* incoming_request = &(s->hdr_info.client_request);
 
-      if (s->pristine_host_hdr > 0 || s->http_config_param->maintain_pristine_host_hdr) {
+      if (s->txn_conf.maintain_pristine_host_hdr) {
         s->cache_info.lookup_url_storage.create(NULL);
         s->cache_info.lookup_url_storage.copy(incoming_request->url_get());
         s->cache_info.lookup_url = &(s->cache_info.lookup_url_storage);
@@ -1836,7 +1836,7 @@ HttpTransact::DecideCacheLookup(State * s)
       // the stupid content on the Host header!!!!
       // We could a) have 6000 alts (barf, puke, vomit) or b) use the original
       // host header in the url before doing all cache actions (lookups, writes, etc.)
-      if (s->http_config_param->maintain_pristine_host_hdr || s->pristine_host_hdr > 0) {
+      if (s->txn_conf.maintain_pristine_host_hdr) {
         // So, the host header will have the original host header.
         int host_len;
         const char *host_hdr = incoming_request->value_get(MIME_FIELD_HOST, MIME_LEN_HOST, &host_len);
@@ -2214,7 +2214,7 @@ HttpTransact::issue_revalidate(State * s)
   case HTTP_STATUS_OK:         // 200
     // don't conditionalize if we are configured to repeat the clients
     //   conditionals
-    if (s->http_config_param->cache_when_to_revalidate == 4)
+    if (s->txn_conf.cache_when_to_revalidate == 4)
       break;
     // ok, request is either a conditional or does not have a no-cache.
     //   (or is method that we don't conditionalize but lookup the
@@ -2298,8 +2298,7 @@ HttpTransact::HandleCacheOpenReadHitFreshness(State * s)
   if (s->cache_lookup_result == HttpTransact::CACHE_LOOKUP_NONE) {
     // is the document still fresh enough to be served back to
     // the client without revalidation?
-    Freshness_t freshness = what_is_document_freshness(s, s->http_config_param, &s->hdr_info.client_request,
-                                                       obj->request_get(), obj->response_get());
+    Freshness_t freshness = what_is_document_freshness(s, &s->hdr_info.client_request, obj->request_get(), obj->response_get());
     switch (freshness) {
     case FRESHNESS_FRESH:
       Debug("http_seq", "[HttpTransact::HandleCacheOpenReadHitFreshness] " "Fresh copy");
@@ -4172,7 +4171,7 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State * s)
       // CACHE_DO_UPDATE and server response is cacheable
 
       if (is_request_conditional(&s->hdr_info.client_request)) {
-        if (s->http_config_param->cache_when_to_revalidate != 4)
+        if (s->txn_conf.cache_when_to_revalidate != 4)
           client_response_code =
             HttpTransactCache::match_response_to_request_conditionals(&s->hdr_info.client_request,
                                                                       s->cache_info.object_read->response_get());
@@ -4184,7 +4183,7 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State * s)
 
       if (client_response_code != HTTP_STATUS_OK) {
         // delete the cached copy unless configured to always verify IMS
-        if (s->http_config_param->cache_when_to_revalidate != 4) {
+        if (s->txn_conf.cache_when_to_revalidate != 4) {
           s->cache_info.action = CACHE_DO_UPDATE;
           s->next_action = PROXY_INTERNAL_CACHE_UPDATE_HEADERS;
           /* base_response will be set after updating headers below */
@@ -6347,7 +6346,7 @@ HttpTransact::is_response_cacheable(State * s, HTTPHdr * request, HTTPHdr * resp
     return (false);
   }
   // default cacheability
-  if (!s->http_config_param->negative_caching_enabled || s->no_negative_cache) {
+  if (!s->txn_conf.negative_caching_enabled) {
     if ((response_code == HTTP_STATUS_OK) ||
         (response_code == HTTP_STATUS_NOT_MODIFIED) ||
         (response_code == HTTP_STATUS_NON_AUTHORITATIVE_INFORMATION) ||
@@ -7083,10 +7082,8 @@ HttpTransact::handle_response_keep_alive_headers(State * s, HTTPVersion ver, HTT
     // to the client to keep the connection alive.
     // Insert a Transfer-Encoding header in the response if necessary.
 
-    if (// check that the client is HTTP 1.1 and the conf allows chunking
-        s->client_info.http_version == HTTPVersion(1, 1) &&
-        ((s->http_config_param->chunking_enabled == 1 && s->remap_chunking_enabled != 0) ||
-         (s->http_config_param->chunking_enabled == 0 && s->remap_chunking_enabled == 1)) &&
+    // check that the client is HTTP 1.1 and the conf allows chunking
+    if (s->client_info.http_version == HTTPVersion(1, 1) && s->txn_conf.chunking_enabled == 1 &&
         // if we're not sending a body, don't set a chunked header regardless of server response
         !is_response_body_precluded(s->hdr_info.client_response.status_get(), s->method) &&
          // we do not need chunked encoding for internal error messages
@@ -7423,8 +7420,8 @@ HttpTransact::calculate_freshness_fuzz(State * s, int fresh_limit)
 //
 //////////////////////////////////////////////////////////////////////////////
 HttpTransact::Freshness_t
-HttpTransact::what_is_document_freshness(State *s, const HttpConfigParams *config, HTTPHdr* client_request,
-                                         HTTPHdr* cached_obj_request, HTTPHdr * cached_obj_response)
+HttpTransact::what_is_document_freshness(State *s, HTTPHdr* client_request, HTTPHdr* cached_obj_request,
+                                         HTTPHdr * cached_obj_response)
 {
   NOWARN_UNUSED(cached_obj_request);
   bool heuristic, do_revalidate = false;
@@ -7476,11 +7473,11 @@ HttpTransact::what_is_document_freshness(State *s, const HttpConfigParams *confi
                                                    response_date,
                                                    &heuristic,
                                                    s->request_sent_time,
-                                                   config->cache_heuristic_min_lifetime,
-                                                   config->cache_heuristic_max_lifetime,
-                                                   config->cache_heuristic_lm_factor,
-                                                   config->cache_guaranteed_min_lifetime,
-                                                   config->cache_guaranteed_max_lifetime, s->plugin_set_expire_time, s);
+                                                   s->http_config_param->cache_heuristic_min_lifetime,
+                                                   s->http_config_param->cache_heuristic_max_lifetime,
+                                                   s->http_config_param->cache_heuristic_lm_factor,
+                                                   s->http_config_param->cache_guaranteed_min_lifetime,
+                                                   s->http_config_param->cache_guaranteed_max_lifetime, s->plugin_set_expire_time, s);
   HTTP_DEBUG_ASSERT(fresh_limit >= 0);
 
   // Fuzz the freshness to prevent too many revalidates to popular
@@ -7491,8 +7488,7 @@ HttpTransact::what_is_document_freshness(State *s, const HttpConfigParams *confi
     fresh_limit = min(NUM_SECONDS_IN_ONE_YEAR, fresh_limit);
   }
 
-  current_age = HttpTransactHeaders::calculate_document_age(s->request_sent_time,
-                                                            s->response_received_time,
+  current_age = HttpTransactHeaders::calculate_document_age(s->request_sent_time, s->response_received_time,
                                                             cached_obj_response, response_date, s->current.now);
 
   // Overflow ?
@@ -7508,11 +7504,11 @@ HttpTransact::what_is_document_freshness(State *s, const HttpConfigParams *confi
   /////////////////////////////////////////////////////////
   HTTP_DEBUG_ASSERT(client_request == &s->hdr_info.client_request);
 
-  if (config->cache_when_to_revalidate == 0) {
+  if (s->txn_conf.cache_when_to_revalidate == 0) {
     ;
     // Compute how fresh below
   } else if (client_request->url_get()->scheme_get_wksidx() == URL_WKSIDX_HTTP) {
-    switch (config->cache_when_to_revalidate) {
+    switch (s->txn_conf.cache_when_to_revalidate) {
     case 1:                    // Stale if heuristic
       if (heuristic) {
         Debug("http_match", "[what_is_document_freshness] config requires FRESHNESS_STALE because heuristic calculation");
@@ -7922,7 +7918,7 @@ HttpTransact::build_request(State * s, HTTPHdr * base_request, HTTPHdr * outgoin
   // from the O.S., we will save bandwidth between proxy and O.S.
   if (s->current.mode == GENERIC_PROXY) {
     if (is_request_likely_cacheable(s, base_request)) {
-      if (s->http_config_param->cache_when_to_revalidate != 4) {
+      if (s->txn_conf.cache_when_to_revalidate != 4) {
         Debug("http_trans", "[build_request] " "request like cacheable and conditional headers removed");
         HttpTransactHeaders::remove_conditional_headers(base_request, outgoing_request);
       } else

@@ -87,26 +87,6 @@ check_remap_option(char *argv[], int argc, unsigned long findmode = 0, int *_ret
         if (argptr)
           *argptr = &argv[i][7];
         ret_flags |= REMAP_OPTFLG_ACTION;
-      } else if (!ink_string_fast_strcasecmp(argv[i], "no_negative_cache")) {
-        if ((findmode & REMAP_OPTFLG_NONEGCACHE) != 0)
-          idx = i;
-        ret_flags |= REMAP_OPTFLG_NONEGCACHE;
-      } else if (!ink_string_fast_strcasecmp(argv[i], "pristine_host_hdr=1")) {
-        if ((findmode & REMAP_OPTFLG_PRISTINEHOST_HDR_ENABLED) != 0)
-          idx = i;
-        ret_flags |= REMAP_OPTFLG_PRISTINEHOST_HDR_ENABLED;
-      } else if (!ink_string_fast_strcasecmp(argv[i], "pristine_host_hdr=0")) {
-        if ((findmode & REMAP_OPTFLG_PRISTINEHOST_HDR_DISABLED) != 0)
-          idx = i;
-        ret_flags |= REMAP_OPTFLG_PRISTINEHOST_HDR_DISABLED;
-      } else if (!ink_string_fast_strcasecmp(argv[i], "chunking_enabled=1")) {
-        if ((findmode & REMAP_OPTFLG_CHUNKING_ENABLED) != 0)
-          idx = i;
-        ret_flags |= REMAP_OPTFLG_CHUNKING_ENABLED;
-      } else if (!ink_string_fast_strcasecmp(argv[i], "chunking_enabled=0")) {
-        if ((findmode & REMAP_OPTFLG_CHUNKING_DISABLED) != 0)
-          idx = i;
-        ret_flags |= REMAP_OPTFLG_CHUNKING_DISABLED;
       } else if (!ink_string_fast_strncasecmp(argv[i], "mapid=", 6)) {
         if ((findmode & REMAP_OPTFLG_MAP_ID) != 0)
           idx = i;
@@ -497,7 +477,7 @@ process_filter_opt(url_mapping * mp, BUILD_TABLE_INFO * bti, char *errStrBuf, in
 // CTOR / DTOR for the UrlRewrite class.
 //
 UrlRewrite::UrlRewrite(const char *file_var_in)
- : nohost_rules(0), reverse_proxy(0), pristine_host_hdr(0), backdoor_enabled(0),
+ : nohost_rules(0), reverse_proxy(0), backdoor_enabled(0),
    mgmt_autoconf_port(0), default_to_pac(0), default_to_pac_port(0), file_var(NULL), ts_name(NULL),
    http_default_redirect_url(NULL), num_rules_forward(0), num_rules_reverse(0), num_rules_redirect_permanent(0),
    num_rules_redirect_temporary(0), remap_pi_list(NULL)
@@ -540,7 +520,6 @@ UrlRewrite::UrlRewrite(const char *file_var_in)
   REVERSE_ReadConfigInteger(mgmt_autoconf_port, "proxy.config.admin.autoconf_port");
   REVERSE_ReadConfigInteger(default_to_pac, "proxy.config.url_remap.default_to_server_pac");
   REVERSE_ReadConfigInteger(default_to_pac_port, "proxy.config.url_remap.default_to_server_pac_port");
-  REVERSE_ReadConfigInteger(pristine_host_hdr, "proxy.config.url_remap.pristine_host_hdr");
   REVERSE_ReadConfigInteger(url_remap_mode, "proxy.config.url_remap.url_remap_mode");
   REVERSE_ReadConfigInteger(backdoor_enabled, "proxy.config.url_remap.handle_backdoor_urls");
 
@@ -583,15 +562,6 @@ void
 UrlRewrite::SetReverseFlag(int flag)
 {
   reverse_proxy = flag;
-  if (is_debug_tag_set("url_rewrite"))
-    Print();
-}
-
-/** Sets the reverse proxy flag. */
-void
-UrlRewrite::SetPristineFlag(int flag)
-{
-  pristine_host_hdr = flag;
   if (is_debug_tag_set("url_rewrite"))
     Print();
 }
@@ -1024,17 +994,6 @@ UrlRewrite::BuildTable()
     if ((errStr = process_filter_opt(new_mapping, &bti, errStrBuf, sizeof(errStrBuf))) != NULL) {
       goto MAP_ERROR;
     }
-    // apply "no_negative_cache" if we have to
-    if ((bti.remap_optflg & REMAP_OPTFLG_NONEGCACHE) != 0)
-      new_mapping->no_negative_cache = true;
-    if ((bti.remap_optflg & REMAP_OPTFLG_PRISTINEHOST_HDR_ENABLED) != 0)
-      new_mapping->pristine_host_hdr = 1;
-    if ((bti.remap_optflg & REMAP_OPTFLG_PRISTINEHOST_HDR_DISABLED) != 0)
-      new_mapping->pristine_host_hdr = 0;
-    if ((bti.remap_optflg & REMAP_OPTFLG_CHUNKING_ENABLED) != 0)
-      new_mapping->chunking_enabled = 1;
-    if ((bti.remap_optflg & REMAP_OPTFLG_CHUNKING_DISABLED) != 0)
-      new_mapping->chunking_enabled = 0;
 
     new_mapping->map_id = 0;
     if ((bti.remap_optflg & REMAP_OPTFLG_MAP_ID) != 0) {

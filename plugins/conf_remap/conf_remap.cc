@@ -1,0 +1,278 @@
+/*
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+*/
+
+#include <ts/ts.h>
+#include <ts/remap.h>
+#include <stdio.h>
+#include <string.h>
+#include <ctype.h>
+#include <stdlib.h>
+
+static const char* PLUGIN_NAME = "conf_remap";
+// This makes the plugin depend on the version of traffic server installed, but that's
+// OK, since this plugin is distributed only with the "core" (it's a core piece).
+#define MAX_OVERRIDABLE_CONFIGS TS_CONFIG_LAST_ENTRY
+
+
+// Class to hold a set of configurations (one for each remap rule instance)
+struct RemapConfigs
+{
+  struct Item {
+    TSOverridableConfigKey _name;
+    TSRecordDataType _type;
+    TSRecordData _data;
+  };
+
+  RemapConfigs()
+    : _current(0)
+  {
+    memset(_items, 0, sizeof(_items));
+  };
+
+  bool parse_file(const char *fn);
+
+  Item _items[MAX_OVERRIDABLE_CONFIGS];
+  int _current;
+};
+
+// Helper functionfor the parser
+inline TSRecordDataType
+str_to_datatype(const char* str)
+{
+  TSRecordDataType type = TS_RECORDDATATYPE_NULL;
+
+  if (!str || !*str)
+    return TS_RECORDDATATYPE_NULL;
+
+  if (!strcmp(str, "INT")) {
+    type = TS_RECORDDATATYPE_INT;
+  } else if (!strcmp(str, "STRING")) {
+    type = TS_RECORDDATATYPE_STRING;
+  }
+
+  return type;
+}
+
+// Config file parser, somewhat borrowed from P_RecCore.i
+bool
+RemapConfigs::parse_file(const char* fn)
+{
+  int line_num = 0;
+  TSFile file;
+  char buf[8192];
+  TSOverridableConfigKey name;
+  TSRecordDataType type, expected_type;
+
+  if (!fn || ('\0' == *fn))
+    return false;
+
+  if (NULL == (file = TSfopen(fn, "r"))) {
+    TSError("conf_remap: could not open config file %s", fn);
+    return false;
+  }
+
+  while (NULL != TSfgets(file, buf, sizeof(buf))) {
+    char *ln, *tok;
+    char *s = buf;
+
+    ++line_num; // First line is #1 ...
+    while (isspace(*s))
+      ++s;
+    tok = strtok_r(s, " \t", &ln);
+
+    // check for blank lines and comments
+    if ((!tok) || (tok && ('#' == *tok)))
+      continue;
+
+    if (strncmp(tok, "CONFIG", 6)) {
+      TSError("conf_remap: file %s, line %d: non-CONFIG line encountered", fn, line_num);
+      continue;
+    }
+
+    // Find the configuration name
+    tok = strtok_r(NULL, " \t", &ln);
+    if (TSHttpTxnConfigFind(tok, -1, &name, &expected_type) != TS_SUCCESS) {
+      TSError("conf_remap: file %s, line %d: no records.config name given", fn, line_num);
+      continue;
+    }
+    
+    // Find the type (INT or STRING only)
+    tok = strtok_r(NULL, " \t", &ln);
+    if (TS_RECORDDATATYPE_NULL == (type = str_to_datatype(tok))) {
+      TSError("conf_remap: file %s, line %d: only INT and STRING types supported", fn, line_num);
+      continue;
+    }
+
+    if (type != expected_type) {
+      TSError("conf_remap: file %s, line %d: mismatch between provide data type, and expected type", fn, line_num);
+      continue;
+    }
+
+    // Find the value (which depends on the type above)
+    if (ln) {
+      while (isspace(*ln))
+        ++ln;
+      if ('\0' == *ln) {
+        tok = NULL;
+      } else {
+        tok = ln;
+        while (*ln != '\0')
+          ++ln;
+        --ln;
+        while (isspace(*ln) && (ln > tok))
+          --ln;
+        ++ln;
+        *ln = '\0';
+      }
+    } else {
+      tok = NULL;
+    }
+    if (!tok) {
+      TSError("conf_remap: file %s, line %d: the configuration must provide a value", fn, line_num);
+      continue;
+    }
+
+    // Now store the new config
+    switch (type) {
+    case TS_RECORDDATATYPE_INT:
+      _items[_current]._data.rec_int = strtoll(tok, NULL, 10);
+      break;
+    case TS_RECORDDATATYPE_STRING:
+      _items[_current]._data.rec_string = TSstrdup(tok);
+      break;
+    default:
+      TSError("conf_remap: file %s, line %d: type not support (unheard of)", fn, line_num);
+      continue;
+      break;
+    }
+    _items[_current]._name = name;
+    _items[_current]._type = type;
+    ++_current;
+  }
+
+  TSfclose(file);
+  return (_current > 0);
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+// Initialize the plugin as a remap plugin.
+//
+int
+tsremap_init(TSRemapInterface* api_info, char *errbuf, int errbuf_size)
+{
+  if (!api_info) {
+    strncpy(errbuf, "[tsremap_init] - Invalid TSRemapInterface argument", errbuf_size - 1);
+    return -1;
+  }
+
+  if (api_info->size < sizeof(TSRemapInterface)) {
+    strncpy(errbuf, "[tsremap_init] - Incorrect size of TSRemapInterface structure", errbuf_size - 1);
+    return -2;
+  }
+
+  if (api_info->tsremap_version < TSREMAP_VERSION) {
+    snprintf(errbuf, errbuf_size - 1, "[tsremap_init] - Incorrect API version %ld.%ld",
+             api_info->tsremap_version >> 16, (api_info->tsremap_version & 0xffff));
+    return -3;
+  }
+
+  TSDebug(PLUGIN_NAME, "remap plugin is succesfully initialized");
+  return 0;                     /* success */
+}
+
+
+int
+tsremap_new_instance(int argc, char* argv[], ihandle* ih, char* errbuf, int errbuf_size)
+{
+  if (argc < 3) {
+    TSError("Unable to create remap instance, need configuration file");
+    return -1;
+  } else {
+    RemapConfigs* conf = new(RemapConfigs);
+
+    if (conf->parse_file(argv[2])) {
+      *ih = static_cast<ihandle>(conf);
+    } else {
+      *ih = NULL;
+      delete conf;
+    }
+  }
+
+  return 0;
+}
+
+void
+tsremap_delete_instance(ihandle ih)
+{
+  RemapConfigs* conf = static_cast<RemapConfigs*>(ih);
+
+  for (int ix=0; ix < conf->_current; ++ix) {
+    if (TS_RECORDDATATYPE_STRING == conf->_items[ix]._type)
+      TSfree(conf->_items[ix]._data.rec_string);
+  }
+
+  delete conf;
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+// Main entry point when used as a remap plugin.
+//
+int
+tsremap_remap(ihandle ih, rhandle rh, TSRemapRequestInfo *rri)
+{
+  if (NULL != ih) {
+    RemapConfigs* conf = static_cast<RemapConfigs*>(ih);
+    TSHttpTxn txnp = static_cast<TSHttpTxn>(rh);
+
+    for (int ix=0; ix < conf->_current; ++ix) {
+      switch (conf->_items[ix]._type) {
+      case TS_RECORDDATATYPE_INT:
+        TSHttpTxnConfigIntSet(txnp, conf->_items[ix]._name, conf->_items[ix]._data.rec_int);
+        TSDebug(PLUGIN_NAME, "Setting config id %d to %d", conf->_items[ix]._name, conf->_items[ix]._data.rec_int);
+        break;
+      case TS_RECORDDATATYPE_STRING:
+        TSHttpTxnConfigStringSet(txnp, conf->_items[ix]._name, conf->_items[ix]._data.rec_string);
+        TSDebug(PLUGIN_NAME, "Setting config id %d to %s", conf->_items[ix]._name, conf->_items[ix]._data.rec_string);
+        break;
+      default:
+        break; // Error ?
+      }
+    }
+  }
+
+  return 0; // This plugin never rewrites anything.
+}
+
+
+
+/*
+  local variables:
+  mode: C++
+  indent-tabs-mode: nil
+  c-basic-offset: 2
+  c-comment-only-line-offset: 0
+  c-file-offsets: ((statement-block-intro . +)
+  (label . 0)
+  (statement-cont . +)
+  (innamespace . 0))
+  end:
+
+  Indent with: /usr/bin/indent -ncs -nut -npcs -l 120 logstats.cc
+*/

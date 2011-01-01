@@ -407,6 +407,8 @@ HttpSM::init()
   t_state.state_machine = this;
 
   t_state.http_config_param = HttpConfig::acquire();
+  // TODO: this might want to be "lazy" (on write from a plugin)
+  memcpy(&(t_state.txn_conf), &(t_state.http_config_param->oride), sizeof(t_state.txn_conf));
 
   // update the cache info config structure so that
   // selection from alternates happens correctly.
@@ -4016,9 +4018,7 @@ HttpSM::do_cache_delete_all_alts(Continuation * cont)
   INK_MD5 md5b;
   t_state.hdr_info.client_request.url_get()->MD5_get(&md5a);
   t_state.cache_info.lookup_url->MD5_get(&md5b);
-  ink_assert(md5a == md5b ||
-             t_state.http_config_param->maintain_pristine_host_hdr ||
-             t_state.pristine_host_hdr > 0);
+  ink_assert(md5a == md5b || t_state.txn_conf.maintain_pristine_host_hdr);
 #endif
 
   Debug("http_seq", "[HttpSM::do_cache_update] Issuing cache delete for %s",

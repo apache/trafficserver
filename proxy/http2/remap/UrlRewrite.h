@@ -74,7 +74,6 @@ public:
    ~UrlRewrite();
   int BuildTable();
   void SetReverseFlag(int flag);
-  void SetPristineFlag(int flag);
   void Print();
 //  private:
 
@@ -159,7 +158,6 @@ public:
 
   int nohost_rules;
   int reverse_proxy;
-  int pristine_host_hdr;
   int backdoor_enabled;
 
   // Vars for PAC mapping
