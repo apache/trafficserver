@@ -311,7 +311,7 @@ pvc_process_connect(TSCont contp, int event, void *data, pvc_state * my_state)
        do not always get VC_EVENT_ERROR on write side of the connection.
        Timeout if we do not reach the host after 30 seconds to prevent leaks.
     */
-    my_state->connect_timeout_event = TSContSchedule(contp, 30 * 1000);
+    my_state->connect_timeout_event = TSContSchedule(contp, 30 * 1000, TS_THREAD_POOL_DEFAULT);
 
     my_state->p_read_vio = TSVConnRead(my_state->p_vc, contp, my_state->req_buffer, INT_MAX);
     if (my_state->p_read_vio == TS_ERROR_PTR) {

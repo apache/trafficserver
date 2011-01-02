@@ -29,7 +29,7 @@ extern ClassAllocator<RemapPlugins> pluginAllocator;
 int
 RemapProcessor::start(int num_threads)
 {
-  _ET_REMAP = eventProcessor.spawn_event_threads(num_threads);  //_ET_REMAP is a class member
+  ET_REMAP = eventProcessor.spawn_event_threads(num_threads);  // ET_REMAP is a class member
   return 0;
 }
 
@@ -301,7 +301,7 @@ RemapProcessor::perform_remap(Continuation * cont, HttpTransact::State * s)
   plugins->setState(s);
   plugins->setHostHeaderInfo(hh_info);
 
-  if (!_use_separate_remap_thread) {    // lets not schedule anything on our thread group (_ET_REMAP), instead, just execute inline
+  if (!_use_separate_remap_thread) {    // lets not schedule anything on our thread group (ET_REMAP), instead, just execute inline
     int ret = 0;
     do {
       ret = plugins->run_single_remap();
@@ -314,7 +314,7 @@ RemapProcessor::perform_remap(Continuation * cont, HttpTransact::State * s)
     plugins->mutex = cont->mutex;
     plugins->action = cont;
     SET_CONTINUATION_HANDLER(plugins, &RemapPlugins::run_remap);
-    eventProcessor.schedule_imm(plugins, _ET_REMAP);
+    eventProcessor.schedule_imm(plugins, ET_REMAP);
     return &plugins->action;
   }
 }

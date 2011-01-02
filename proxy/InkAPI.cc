@@ -65,6 +65,7 @@
 #endif
 #include "HttpDebugNames.h"
 #include "I_AIO.h"
+#include "I_Tasks.h"
 
 
 /****************************************************************
@@ -1001,7 +1002,8 @@ INKContInternal::destroy()
     m_free_magic = INKCONT_INTERN_MAGIC_DEAD;
     INKContAllocator.free(this);
   } else {
-    TSContSchedule(this, 0);
+    // TODO: Should this schedule on some other "thread" ?
+    TSContSchedule(this, 0, TS_THREAD_POOL_DEFAULT);
   }
 }
 
@@ -4234,7 +4236,7 @@ TSContDataGet(TSCont contp)
 }
 
 TSAction
-TSContSchedule(TSCont contp, ink_hrtime timeout)
+TSContSchedule(TSCont contp, ink_hrtime timeout, TSThreadPool tp)
 {
   if (sdk_sanity_check_iocore_structure(contp) != TS_SUCCESS)
     return (TSAction) TS_ERROR_PTR;
@@ -4250,10 +4252,25 @@ TSContSchedule(TSCont contp, ink_hrtime timeout)
     return (TSAction) TS_ERROR_PTR;
   }
 
+  EventType etype;
+
+  switch (tp) {
+  case TS_THREAD_POOL_NET:
+  case TS_THREAD_POOL_DEFAULT:
+    etype = ET_NET;
+    break;
+  case TS_THREAD_POOL_TASK:
+      etype = ET_TASK;
+      break;
+  default:
+    etype = ET_TASK;
+    break;
+  }
+
   if (timeout == 0) {
-    action = eventProcessor.schedule_imm(i, ET_NET);
+    action = eventProcessor.schedule_imm(i, etype);
   } else {
-    action = eventProcessor.schedule_in(i, HRTIME_MSECONDS(timeout), ET_NET);
+    action = eventProcessor.schedule_in(i, HRTIME_MSECONDS(timeout), etype);
   }
 
 /* This is a hack. SHould be handled in ink_types */
@@ -4262,7 +4279,46 @@ TSContSchedule(TSCont contp, ink_hrtime timeout)
 }
 
 TSAction
-TSHttpSchedule(TSCont contp ,TSHttpTxn txnp, ink_hrtime timeout)
+TSContScheduleEvery(TSCont contp, ink_hrtime every, TSThreadPool tp)
+{
+  if (sdk_sanity_check_iocore_structure(contp) != TS_SUCCESS)
+    return (TSAction) TS_ERROR_PTR;
+
+  FORCE_PLUGIN_MUTEX(contp);
+
+  INKContInternal *i = (INKContInternal *) contp;
+  TSAction action;
+
+  if (ink_atomic_increment((int *) &i->m_event_count, 1) < 0) {
+    // simply return error_ptr
+    //ink_assert (!"not reached");
+    return (TSAction) TS_ERROR_PTR;
+  }
+
+  EventType etype;
+
+  switch (tp) {
+  case TS_THREAD_POOL_NET:
+  case TS_THREAD_POOL_DEFAULT:
+    etype = ET_NET;
+    break;
+  case TS_THREAD_POOL_TASK:
+    etype = ET_TASK;
+    break;
+  default:
+    etype = ET_TASK;
+    break;
+  }
+
+  action = eventProcessor.schedule_every(i, HRTIME_MSECONDS(every), etype);
+
+  /* This is a hack. SHould be handled in ink_types */
+  action = (TSAction) ((uintptr_t) action | 0x1);
+  return action;
+}
+
+TSAction
+TSHttpSchedule(TSCont contp, TSHttpTxn txnp, ink_hrtime timeout)
 {
   if (sdk_sanity_check_iocore_structure (contp) != TS_SUCCESS)
     return (TSAction) TS_ERROR_PTR;
@@ -4276,9 +4332,9 @@ TSHttpSchedule(TSCont contp ,TSHttpTxn txnp, ink_hrtime timeout)
   sm->set_http_schedule(cont);
 
   if (timeout == 0) {
-    action = eventProcessor.schedule_imm (sm, ET_NET);
+    action = eventProcessor.schedule_imm(sm, ET_NET);
   } else {
-    action = eventProcessor.schedule_in (sm, HRTIME_MSECONDS (timeout), ET_NET);
+    action = eventProcessor.schedule_in(sm, HRTIME_MSECONDS (timeout), ET_NET);
   }
 
   action = (TSAction) ((uintptr_t) action | 0x1);

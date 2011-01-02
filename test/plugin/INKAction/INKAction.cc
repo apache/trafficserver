@@ -115,7 +115,7 @@ handle_TSAction(TSCont contp, TSEvent event, void *eData)
     /* We should get NET_CONNECT or NET_CONNECT_FAILED before
      * this schedule timeout event
      */
-    TSContSchedule(contp, TIMEOUT_VAL);
+    TSContSchedule(contp, TIMEOUT_VAL, TS_THREAD_POOL_DEFAULT);
 
     inkAction = TSNetConnect(contp, htonl(clientAddr), ntohl(clientInfop->port));
     if (!TSActionDone(inkAction)) {

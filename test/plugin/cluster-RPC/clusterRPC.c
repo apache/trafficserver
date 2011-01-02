@@ -390,7 +390,7 @@ periodic_event(TSCont contp, TSEvent event, void *e)
       }
     }
   }
-  periodic_event_action = TSContSchedule(periodic_event_cont, (1 * 1000) /* 1 sec */ );
+  periodic_event_action = TSContSchedule(periodic_event_cont, (1 * 1000) /* 1 sec */, TS_THREAD_POOL_DEFAULT);
   return 0;
 }
 
@@ -447,7 +447,7 @@ clusterRPC_init()
     TSDebug(PLUGIN_DEBUG_ERR_TAG, "TSContCreate for periodic_event failed\n");
     return;
   }
-  periodic_event_action = TSContSchedule(periodic_event_cont, (1 * 1000) /* 1 sec */ );
+  periodic_event_action = TSContSchedule(periodic_event_cont, (1 * 1000) /* 1 sec */, TS_THREAD_POOL_DEFAULT);
   TSMutexUnlock(node_status_mutex);
 }
 

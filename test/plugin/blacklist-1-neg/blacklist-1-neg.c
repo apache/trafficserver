@@ -222,7 +222,7 @@ read_blacklist(TSCont contp)
 
   /* If the Mutext lock is not successful try again in RETRY_TIME */
   if (!lock) {
-    TSContSchedule(contp, RETRY_TIME);
+    TSContSchedule(contp, RETRY_TIME, TS_THREAD_POOL_DEFAULT);
     return;
   }
 
@@ -257,7 +257,7 @@ read_blacklist(TSCont contp)
 
   /* negative test for TSContSchedule */
 #ifdef DEBUG
-  if (TSContSchedule(NULL, 10) != TS_ERROR_PTR) {
+  if (TSContSchedule(NULL, 10, TS_THREAD_POOL_DEFAULT) != TS_ERROR_PTR) {
     LOG_ERROR_NEG("TSContSchedule");
   }
 #endif

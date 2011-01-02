@@ -112,7 +112,7 @@ handle_dns(TSHttpTxn txnp, TSCont contp)
     TSDebug("blacklist-1", "Unable to get lock. Will retry after some time");
     TSHandleMLocRelease(bufp, hdr_loc, url_loc);
     TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
-    TSContSchedule(contp, RETRY_TIME);
+    TSContSchedule(contp, RETRY_TIME, TS_THREAD_POOL_DEFAULT);
     return;
   }
 
@@ -208,7 +208,7 @@ read_blacklist(TSCont contp)
 
   /* If the Mutext lock is not successful try again in RETRY_TIME */
   if (!lock) {
-    TSContSchedule(contp, RETRY_TIME);
+    TSContSchedule(contp, RETRY_TIME, TS_THREAD_POOL_DEFAULT);
     return;
   }
 

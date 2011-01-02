@@ -1012,7 +1012,7 @@ asm_cache_retry_read(TSCont contp, AsmData * data)
 
   data->state = STATE_CACHE_RETRY_READ;
 
-  action = TSContSchedule(contp, CACHE_READ_RETRY_DELAY);
+  action = TSContSchedule(contp, CACHE_READ_RETRY_DELAY, TS_THREAD_POOL_DEFAULT);
   if (!TSActionDone(action)) {
     TSDebug(LOW, "ContSchedule action not completed...");
     data->pending_action = action;

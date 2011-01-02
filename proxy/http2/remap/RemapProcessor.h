@@ -44,7 +44,7 @@ class RemapProcessor: public Processor
 public:
 
  RemapProcessor()
-   :_ET_REMAP(0), _use_separate_remap_thread(false)
+   : ET_REMAP(0), _use_separate_remap_thread(false)
     { }
 
   ~RemapProcessor() { }
@@ -59,7 +59,7 @@ public:
   bool using_separate_thread() { return _use_separate_remap_thread == true; }
 
 private:
-  EventType _ET_REMAP;
+  EventType ET_REMAP;
   bool _use_separate_remap_thread;
 };
 

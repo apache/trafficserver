@@ -93,13 +93,6 @@
 #define ONE_WAY_TUNNEL_EVENT_PEER_CLOSE (SIMPLE_EVENT_EVENTS_START+1)
 #define PREFETCH_EVENT_SEND_URL         (SIMPLE_EVENT_EVENTS_START+2)
 
-/*
-enum EventType { ET_SPAWN = 0, ET_CALL, ET_NET, ET_CLUSTER, ET_AUTH,
-		 ET_DNS,ET_CACHE , ET_GC, ET_LOG, ET_ICP,
-                 ET_UDP, ET_SSL, ET_NET_9x, ET_REMAP, ET_LAST};
-const int N_EVENT_TYPES = ET_LAST;
-*/
-
 typedef int EventType;
 const int ET_CALL = 0;
 const int MAX_EVENT_TYPES = 8; // TODO: How is this sized? Where does 8 come from? Or 17 ?

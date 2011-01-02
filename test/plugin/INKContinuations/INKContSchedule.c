@@ -82,7 +82,7 @@ EventHandler(TSCont contp, TSEvent event, void *eData)
 
   iVal += 100;                  /* seed + timeout val */
   TSContDataSet(contp, (void *) iVal);
-  TSContSchedule(contp, iVal);
+  TSContSchedule(contp, iVal, TS_THREAD_POOL_DEFAULT);
 
   /* TSHttpTxnReenable(txn, TS_EVENT_HTTP_CONTINUE); */
 }

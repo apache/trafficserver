@@ -636,7 +636,7 @@ state_call_back_sub_sm(TSCont contp, int event, TSVIO vio)
   TSMutexLockTry(SubSM->q_mutex, &lock3);
   if (!lock3) {
     set_handler(Server->q_server_current_handler, &state_main_event);
-    Server->q_pending_action = TSContSchedule(contp, RAFT_SERVER_LOCK_RETRY_TIME);
+    Server->q_pending_action = TSContSchedule(contp, RAFT_SERVER_LOCK_RETRY_TIME, TS_THREAD_POOL_DEFAULT);
     return TS_EVENT_NONE;
   }
 
@@ -673,7 +673,7 @@ state_call_back_sub_sm(TSCont contp, int event, TSVIO vio)
   Server->server_stats->q_count_server_pipeline_depth--;
 
 //    TSContCall (Server->q_reading_sub_contp, TS_EVENT_CONTINUE, NULL);
-  TSContSchedule(Server->q_reading_sub_contp, 0);
+  TSContSchedule(Server->q_reading_sub_contp, 0, TS_THREAD_POOL_DEFAULT);
 
   TSDebug("serversm", "[state_call_back_sub_sm] release sub_sm's mutex");
   Server->q_reading_sub_contp = NULL;
@@ -783,7 +783,7 @@ state_prepare_to_die(TSCont contp, int event, TSVIO vio)
   int lock;
   TSMutexLockTry(global_table->entry[Server->q_global_table_index].entry_mutex, &lock);
   if (!lock) {
-    Server->q_pending_action = TSContSchedule(contp, RAFT_GLOBAL_TABLE_LOCK_RETRY_TIME);
+    Server->q_pending_action = TSContSchedule(contp, RAFT_GLOBAL_TABLE_LOCK_RETRY_TIME, TS_THREAD_POOL_DEFAULT);
     return TS_EVENT_NONE;
   }
 
@@ -802,7 +802,7 @@ state_prepare_to_die(TSCont contp, int event, TSVIO vio)
     return server_state_done(contp, 0, NULL);
 
   // not yet safe to go away. retry later.
-  Server->q_pending_action = TSContSchedule(contp, RAFT_SERVER_ATTEMPT_SHUT_DOWN_RETRY_TIME);
+  Server->q_pending_action = TSContSchedule(contp, RAFT_SERVER_ATTEMPT_SHUT_DOWN_RETRY_TIME, TS_THREAD_POOL_DEFAULT);
   return TS_EVENT_IMMEDIATE;
 }
 

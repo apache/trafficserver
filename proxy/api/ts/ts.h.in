@@ -544,6 +544,21 @@ extern "C"
     TS_CONFIG_LAST_ENTRY
   } TSOverridableConfigKey;
 
+  /* The TASK pool of threads is the primary method of off-loading continuations from the
+     net-threads. Configure this with proxy.config.task_threads in records.config. */
+  typedef enum
+    {
+      TS_THREAD_POOL_DEFAULT = -1,
+      TS_THREAD_POOL_NET,
+      TS_THREAD_POOL_TASK,
+      /* unlikely you should use these */    
+      TS_THREAD_POOL_SSL,
+      TS_THREAD_POOL_DNS,
+      TS_THREAD_POOL_REMAP,
+      TS_THREAD_POOL_CLUSTER,
+      TS_THREAD_POOL_UDP
+    } TSThreadPool;
+
   extern tsapi const void *TS_ERROR_PTR;
 
   typedef int64_t TSHRTime;
@@ -2024,7 +2039,8 @@ extern "C"
   tsapi TSReturnCode TSContDestroy(TSCont contp);
   tsapi TSReturnCode TSContDataSet(TSCont contp, void *data);
   tsapi void *TSContDataGet(TSCont contp);
-  tsapi TSAction TSContSchedule(TSCont contp, TSHRTime timeout);
+  tsapi TSAction TSContSchedule(TSCont contp, TSHRTime timeout, TSThreadPool tp);
+  tsapi TSAction TSContScheduleEvery(TSCont contp, TSHRTime every, TSThreadPool tp);
   tsapi TSAction TSHttpSchedule(TSCont contp, TSHttpTxn txnp, TSHRTime timeout);
   tsapi int TSContCall(TSCont contp, TSEvent event, void *edata);
   tsapi TSMutex TSContMutexGet(TSCont contp);
