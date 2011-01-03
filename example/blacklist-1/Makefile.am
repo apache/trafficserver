@@ -16,9 +16,10 @@
 
 CFLAGS+=-I$(top_srcdir)/proxy/api
 
+pkglibdir = ${pkglibexecdir}
 pkglib_LTLIBRARIES = blacklist-1.la
 blacklist_1_la_SOURCES = blacklist-1.c
-blacklist_1_la_LDFLAGS = -module -version-info $(TS_LIBTOOL_VERSION)
+blacklist_1_la_LDFLAGS = -module -avoid-version -shared
 
 all:
 	ln -sf .libs/blacklist-1.so

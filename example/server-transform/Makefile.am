@@ -16,9 +16,10 @@
 
 CFLAGS+=-I$(top_srcdir)/proxy/api
 
+pkglibdir = ${pkglibexecdir}
 pkglib_LTLIBRARIES = server-transform.la
 server_transform_la_SOURCES = server-transform.c
-server_transform_la_LDFLAGS = -module -version-info $(TS_LIBTOOL_VERSION)
+server_transform_la_LDFLAGS = -module -avoid-version -shared
 
 all:
 	ln -sf .libs/server-transform.so

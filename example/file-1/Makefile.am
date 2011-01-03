@@ -16,9 +16,10 @@
 
 CFLAGS+=-I$(top_srcdir)/proxy/api
 
+pkglibdir = ${pkglibexecdir}
 pkglib_LTLIBRARIES = file-1.la
 file_1_la_SOURCES = file-1.c
-file_1_la_LDFLAGS = -module -version-info $(TS_LIBTOOL_VERSION)
+file_1_la_LDFLAGS = -module -avoid-version -shared
 
 all:
 	ln -sf .libs/file-1.so

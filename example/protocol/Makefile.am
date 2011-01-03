@@ -16,9 +16,10 @@
 
 CFLAGS+=-I$(top_srcdir)/proxy/api
 
+pkglibdir = ${pkglibexecdir}
 pkglib_LTLIBRARIES = protocol.la
 protocol_la_SOURCES = Protocol.c TxnSM.c
-protocol_la_LDFLAGS = -module -version-info $(TS_LIBTOOL_VERSION)
+protocol_la_LDFLAGS = -module -avoid-version -shared
 
 all:
 	ln -sf .libs/protocol.so

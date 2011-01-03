@@ -16,9 +16,10 @@
 
 CXXFLAGS+=-I$(top_srcdir)/proxy/api
 
+pkglibdir = ${pkglibexecdir}
 pkglib_LTLIBRARIES = cache_scan.la
 cache_scan_la_SOURCES = cache_scan.cc
-cache_scan_la_LDFLAGS = -module -version-info $(TS_LIBTOOL_VERSION)
+cache_scan_la_LDFLAGS = -module -avoid-version -shared
 
 all:
 	ln -sf .libs/cache_scan.so

@@ -16,9 +16,10 @@
 
 CFLAGS+=-I$(top_srcdir)/proxy/api
 
+pkglibdir = ${pkglibexecdir}
 pkglib_LTLIBRARIES = add-header.la
 add_header_la_SOURCES = add-header.c
-add_header_la_LDFLAGS = -module -version-info $(TS_LIBTOOL_VERSION)
+add_header_la_LDFLAGS = -module -avoid-version -shared
 
 all:
 	ln -sf .libs/add-header.so

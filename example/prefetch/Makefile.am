@@ -16,9 +16,10 @@
 
 CFLAGS+=-I$(top_srcdir)/proxy/api
 
+pkglibdir = ${pkglibexecdir}
 pkglib_LTLIBRARIES = prefetch.la
 prefetch_la_SOURCES = prefetch.c
-prefetch_la_LDFLAGS = -module -version-info $(TS_LIBTOOL_VERSION)
+prefetch_la_LDFLAGS = -module -avoid-version -shared
 
 all:
 	ln -sf .libs/prefetch.so

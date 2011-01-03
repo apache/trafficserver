@@ -16,9 +16,10 @@
 
 CFLAGS+=-I$(top_srcdir)/proxy/api
 
+pkglibdir = ${pkglibexecdir}
 pkglib_LTLIBRARIES = bnull-transform.la
 bnull_transform_la_SOURCES = bnull-transform.c
-bnull_transform_la_LDFLAGS = -module -version-info $(TS_LIBTOOL_VERSION)
+bnull_transform_la_LDFLAGS = -module -avoid-version -shared
 
 all:
 	ln -sf .libs/bnull-transform.so

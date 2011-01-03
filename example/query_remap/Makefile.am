@@ -16,9 +16,10 @@
 
 CFLAGS+=-I$(top_srcdir)/proxy/api
 
+pkglibdir = ${pkglibexecdir}
 pkglib_LTLIBRARIES = query_remap.la
 query_remap_la_SOURCES = query_remap.c
-query_remap_la_LDFLAGS = -module -version-info $(TS_LIBTOOL_VERSION)
+query_remap_la_LDFLAGS = -module -avoid-version -shared
 
 all:
 	ln -sf .libs/query_remap.so

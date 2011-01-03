@@ -16,12 +16,13 @@
 
 CFLAGS+=-I$(top_srcdir)/proxy/api
 
+pkglibdir = ${pkglibexecdir}
 pkglib_LTLIBRARIES = gzip.la gunzip.la
 gzip_la_SOURCES = gzip.c
-gzip_la_LDFLAGS = -module
+gzip_la_LDFLAGS = -module -avoid-version -shared
 
 gunzip_la_SOURCES = gunzip.c
-gunzip_la_LDFLAGS = -module -version-info $(TS_LIBTOOL_VERSION)
+gunzip_la_LDFLAGS = -module -avoid-version -shared
 
 all:
 	ln -sf .libs/gzip.so
