@@ -1148,7 +1148,8 @@ HttpTransact::HandleRequest(State* s)
   // it tries to handle the problem that MSIE only adds no-cache
   // headers to reload requests when there is an explicit proxy --- the
   // reload button does nothing in the case of transparent proxies.
-  handle_msie_reload_badness(s, &s->hdr_info.client_request);
+  if (s->http_config_param->cache_when_to_add_no_cache_to_msie_requests >= 0)
+    handle_msie_reload_badness(s, &s->hdr_info.client_request);
 
   // this needs to be called after initializing state variables from request
   // it adds the client-ip to the incoming client request.
@@ -5128,11 +5129,6 @@ HttpTransact::handle_msie_reload_badness(State* s, HTTPHdr* client_request)
   int user_agent_value_len;
   int has_ua_msie, has_no_cache, has_ims;
   const char *user_agent_value, *c, *e;
-  const HttpConfigParams *config = s->http_config_param;
-
-  // fastpath (see INKqa09624)
-  if (config->cache_when_to_add_no_cache_to_msie_requests < 0)
-    return;
 
   //////////////////////////////////////////////
   // figure out if User-Agent contains "MSIE" //
@@ -5158,8 +5154,7 @@ HttpTransact::handle_msie_reload_badness(State* s, HTTPHdr* client_request)
   // figure out if no-cache and/or IMS //
   ///////////////////////////////////////
 
-  has_no_cache = (client_request->is_pragma_no_cache_set() ||
-                  (client_request->is_cache_control_set(HTTP_VALUE_NO_CACHE)));
+  has_no_cache = (client_request->is_pragma_no_cache_set() || (client_request->is_cache_control_set(HTTP_VALUE_NO_CACHE)));
   has_ims = (client_request->presence(MIME_PRESENCE_IF_MODIFIED_SINCE) != 0);
 
   /////////////////////////////////////////////////////////
@@ -5198,18 +5193,18 @@ HttpTransact::handle_msie_reload_badness(State* s, HTTPHdr* client_request)
   //  MSIE browser, or if no-cache is already set, get outta here //
   //////////////////////////////////////////////////////////////////
 
-  if ((config->cache_when_to_add_no_cache_to_msie_requests == 0) || (!has_ua_msie) || has_no_cache) {
+  if ((s->http_config_param->cache_when_to_add_no_cache_to_msie_requests == 0) || (!has_ua_msie) || has_no_cache) {
     return;
   }
   //////////////////////////////////////////////////////
   // add a no-cache if mode and circumstances warrant //
   //////////////////////////////////////////////////////
 
-  if ((config->cache_when_to_add_no_cache_to_msie_requests == 2) ||
-      ((config->cache_when_to_add_no_cache_to_msie_requests == 1) && has_ims)) {
+  if ((s->http_config_param->cache_when_to_add_no_cache_to_msie_requests == 2) ||
+      ((s->http_config_param->cache_when_to_add_no_cache_to_msie_requests == 1) && has_ims)) {
     client_request->value_append(MIME_FIELD_PRAGMA, MIME_LEN_PRAGMA, "no-cache", 8, true);
   }
-}                               /* End HttpTransact::handle_msie_reload_badness */
+}
 
 
 void

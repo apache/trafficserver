@@ -252,10 +252,11 @@ CONFIG proxy.config.http.cache.when_to_revalidate INT 0
    # MSIE browsers currently don't send no-cache headers to
    # reverse proxies or transparent caches, this variable controls
    # when to add no-cache headers to MSIE requests:
+   #  -1 - no-cache is never added, stats are not updated
    #   0 - default; no-cache not added to MSIE requests
    #   1 - no-cache added to IMS MSIE requests
    #   2 - no-cache added to all MSIE requests
-CONFIG proxy.config.http.cache.when_to_add_no_cache_to_msie_requests INT 0
+CONFIG proxy.config.http.cache.when_to_add_no_cache_to_msie_requests INT -1
    # required headers: three options:
    #   0 - No required headers to make document cachable
    #   1 - "Last-Modified:", "Expires:", or "Cache-Control: max-age" required

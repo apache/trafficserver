@@ -774,7 +774,7 @@ RecordElement RecordsConfig[] = {
   //       #  0 - default; no-cache not added to MSIE requests
   //       #  1 - no-cache added to IMS MSIE requests
   //       #  2 - no-cache added to all MSIE requests
-  {RECT_CONFIG, "proxy.config.http.cache.when_to_add_no_cache_to_msie_requests", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-2]", RECA_NULL}
+  {RECT_CONFIG, "proxy.config.http.cache.when_to_add_no_cache_to_msie_requests", RECD_INT, "-1", RECU_DYNAMIC, RR_NULL, RECC_INT, NULL, RECA_NULL}
   ,
   //
   //       #  required headers: three options
