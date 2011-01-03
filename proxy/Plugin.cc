@@ -77,16 +77,16 @@ load_in_export_symbols(int j)
 DLL<PluginRegInfo> plugin_reg_list;
 PluginRegInfo *plugin_reg_current = NULL;
 
-PluginRegInfo::PluginRegInfo():
-plugin_registered(false), plugin_path(NULL), sdk_version(PLUGIN_SDK_VERSION_UNKNOWN),
-plugin_name(NULL), vendor_name(NULL), support_email(NULL)
-{
-}
+PluginRegInfo::PluginRegInfo()
+  : plugin_registered(false), plugin_path(NULL), sdk_version(PLUGIN_SDK_VERSION_UNKNOWN),
+    plugin_name(NULL), vendor_name(NULL), support_email(NULL)
+{ }
 
 static void *
 dll_open(char *fn, bool global)
 {
   int global_flags = global ? RTLD_GLOBAL : 0;
+
   return (void *) dlopen(fn, RTLD_NOW | global_flags);
 }
 
@@ -256,11 +256,6 @@ plugins_exist(const char *config_dir)
   int fd;
   int plugin_count = 0;
 
-  // XXX: Commented out.
-  //      Why reading plugin_dir when unused?
-  //
-  // RecGetRecordString_Xmalloc("proxy.config.plugin.plugin_dir", (char **)&plugin_dir);
-
   ink_filepath_make(path, sizeof(path), config_dir, "plugin.config");
   fd = open(path, O_RDONLY);
   if (fd < 0) {
@@ -297,12 +292,8 @@ plugin_init(const char *config_dir, bool internal)
     init_inkapi_stat_system();
     char *cfg = NULL;
 
-    RecGetRecordString_Xmalloc("proxy.config.plugin.plugin_dir", (char**)&cfg);
-    if (cfg != NULL) {
-      plugin_dir = Layout::get()->relative(cfg);
-      xfree(cfg);
-      cfg = NULL;
-    }
+    plugin_dir = TSPluginDirGet();
+
     RecGetRecordString_Xmalloc("proxy.config.plugin.extensions_dir", (char**)&cfg);
     if (cfg != NULL) {
       extensions_dir = Layout::get()->relative(cfg);

@@ -814,28 +814,6 @@ typedef enum
     int int_val;
   } INKRmServerEle;
 
-/* vscan.config */
-  typedef struct
-  {
-    INKCfgEle cfg_ele;
-    char *attr_name;            /* the attribute name */
-    char *attr_val;             /* the attribute value */
-  } INKVscanEle;
-
-/* trust-host.config */
-  typedef struct
-  {
-    INKCfgEle cfg_ele;
-    char *hostname;             /* the trusted-host name */
-  } INKVsTrustedHostEle;
-
-/* extensions.config */
-  typedef struct
-  {
-    INKCfgEle cfg_ele;
-    char *file_ext;             /* the file extension */
-  } INKVsExtensionEle;
-
 /***************************************************************************
  * Function Types
  ***************************************************************************/

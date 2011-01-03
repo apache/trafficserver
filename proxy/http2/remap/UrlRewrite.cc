@@ -1469,21 +1469,19 @@ int
 UrlRewrite::load_remap_plugin(char *argv[], int argc, url_mapping * mp, char *errbuf, int errbufsize, int jump_to_argc,
                               int *plugin_found_at)
 {
-  *plugin_found_at = 0;
-  const char *plugin_default_path = "/usr/local/libexec/trafficserver/";
-  TSREMAP_INTERFACE ri;
+  TSRemapInterface ri;
   struct stat stat_buf;
   remap_plugin_info *pi;
-  char *c, *err, tmpbuf[2048], *parv[1024], default_path[1024];
+  char *c, *err, tmpbuf[2048], *parv[1024], default_path[PATH_MAX];
   char *new_argv[1024];
   int idx = 0, retcode = 0;
   int parc = 0;
 
+  *plugin_found_at = 0;
+
   memset(parv, 0, sizeof(parv));
   memset(new_argv, 0, sizeof(new_argv));
-
   tmpbuf[0] = 0;
-  memset(default_path, 0, 1024);
 
   if (jump_to_argc != 0) {
     argc -= jump_to_argc;
@@ -1508,22 +1506,25 @@ UrlRewrite::load_remap_plugin(char *argv[], int argc, url_mapping * mp, char *er
     return -2;                  /* incorrect input data */
   }
 
-  if (strlen(c) + strlen(plugin_default_path) > 1023) {
-    Debug("remap_plugin", "way too large a path specified for remap plugin");
-  }
+  if (stat(c, &stat_buf) != 0) {
+    const char *plugin_default_path = TSPluginDirGet();
 
-  strncat(default_path, plugin_default_path, strlen(plugin_default_path));
-  strncat(default_path, c, strlen(c));
-  default_path[strlen(c) + strlen(plugin_default_path)] = '\0';
+    // Try with the plugin path instead
+    if (strlen(c) + strlen(plugin_default_path) > (PATH_MAX - 1)) {
+      Debug("remap_plugin", "way too large a path specified for remap plugin");
+      return -3;
+    }
 
-  Debug("remap_plugin", "attempting to stat default plugin path: %s", default_path);
+    snprintf(default_path, PATH_MAX, "%s/%s", plugin_default_path, c);
+    Debug("remap_plugin", "attempting to stat default plugin path: %s", default_path);
 
-  if (stat(&default_path[0], &stat_buf) == 0) {
-    Debug("remap_plugin", "stat successful on %s using that", default_path);
-    c = &default_path[0];
-  } else if (stat(c, &stat_buf) != 0) {
-    snprintf(errbuf, errbufsize, "Can't find remap plugin file \"%s\"", c);
-    return -3;                  /* incorrect input data */
+    if (stat(default_path, &stat_buf) == 0) {
+      Debug("remap_plugin", "stat successful on %s using that", default_path);
+      c = &default_path[0];
+    } else {
+      snprintf(errbuf, errbufsize, "Can't find remap plugin file \"%s\"", c);
+      return -3;
+    }
   }
 
   Debug("remap_plugin", "using path %s for plugin", c);
@@ -1579,11 +1580,6 @@ UrlRewrite::load_remap_plugin(char *argv[], int argc, url_mapping * mp, char *er
     if ((retcode = pi->fp_tsremap_init(&ri, tmpbuf, sizeof(tmpbuf) - 1)) != 0) {
       Error("Failed to initialize plugin %s (non-zero retval) ... bailing out", pi->path);
       exit(-1);                 //see my comment re: exit() about 60 lines down
-      snprintf(errbuf, errbufsize, "Remap plugin initialization error - %d:%s", retcode,
-                   tmpbuf[0] ? tmpbuf : "Unknown error");
-      dlclose(pi->dlh);
-      pi->dlh = NULL;
-      return -20;
     }
     Debug("remap_plugin", "Remap plugin \"%s\" - initialization completed", c);
   }
