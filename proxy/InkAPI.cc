@@ -4262,6 +4262,21 @@ TSContSchedule(TSCont contp, ink_hrtime timeout, TSThreadPool tp)
   case TS_THREAD_POOL_TASK:
       etype = ET_TASK;
       break;
+  case TS_THREAD_POOL_SSL:
+    etype = ET_TASK; // Should be ET_SSL
+    break;
+  case TS_THREAD_POOL_DNS:
+    etype = ET_DNS;
+    break;
+  case TS_THREAD_POOL_REMAP:
+    etype = ET_TASK; // Should be ET_REMAP
+    break;
+  case TS_THREAD_POOL_CLUSTER:
+    etype = ET_CLUSTER;
+    break;
+  case TS_THREAD_POOL_UDP:
+    etype = ET_UDP;
+    break;
   default:
     etype = ET_TASK;
     break;
