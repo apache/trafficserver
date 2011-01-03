@@ -86,6 +86,7 @@ proxy/api/ts/ts.h
 example/*/.libs
 example/app-template/tsapp
 example/app-template/records.config
+plugins/*/.libs
 
 tsxs
 
