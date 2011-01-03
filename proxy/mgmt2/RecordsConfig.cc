@@ -390,18 +390,6 @@ RecordElement RecordsConfig[] = {
   {RECT_CONFIG, "proxy.config.alarm.script_runtime", RECD_INT, "5", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-300]", RECA_NULL}
   ,
 
-  //##############################################################################
-  //#
-  //# Inktoswitch Configuration(NOT USED)
-  //#
-  //##############################################################################
-  {RECT_CONFIG, "proxy.config.http.inktoswitch_enabled", RECD_INT, "0", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.http.router_ip", RECD_INT, "0", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.http.router_port", RECD_INT, "0", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
-  ,
-
   //####################################################################
   //# congestion control
   //####################################################################

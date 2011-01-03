@@ -416,7 +416,6 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.http.errors.log_error_pages
  proxy.config.http.forward.proxy_auth_to_parent
  proxy.config.http.global_user_agent_header
- proxy.config.http.inktoswitch_enabled
  proxy.config.http.insert_age_in_response
  proxy.config.http.insert_request_via_str
  proxy.config.http.insert_response_via_str
@@ -461,8 +460,6 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.http.response_server_enabled
  proxy.config.http.response_server_str
  proxy.config.http.response_via_str
- proxy.config.http.router_ip
- proxy.config.http.router_port
  proxy.config.http.send_http11_requests
  proxy.config.http.server_max_connections
  proxy.config.http.server_other_ports

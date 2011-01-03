@@ -1357,11 +1357,6 @@ HttpConfig::startup()
   HttpEstablishStaticConfigLongLong(c.oride.negative_caching_enabled, "proxy.config.http.negative_caching_enabled");
   HttpEstablishStaticConfigLongLong(c.oride.negative_caching_lifetime, "proxy.config.http.negative_caching_lifetime");
 
-  // InktoSwitch
-  HttpEstablishStaticConfigLongLong(c.inktoswitch_enabled, "proxy.config.http.inktoswitch_enabled");
-  HttpEstablishStaticConfigLongLong(c.router_ip, "proxy.config.http.router_ip");
-  HttpEstablishStaticConfigLongLong(c.router_port, "proxy.config.http.router_port");
-
   // Buffer size
   HttpEstablishStaticConfigLongLong(c.default_buffer_size_index, "proxy.config.http.default_buffer_size");
 
@@ -1646,10 +1641,6 @@ HttpConfig::reconfigure()
 
   params->oride.negative_caching_enabled = m_master.oride.negative_caching_enabled;
   params->oride.negative_caching_lifetime = m_master.oride.negative_caching_lifetime;
-
-  params->inktoswitch_enabled = m_master.inktoswitch_enabled;
-  params->router_ip = m_master.router_ip;
-  params->router_port = m_master.router_port;
 
   ///////////////////////////////////////////////////////////////////////////
   //  Added by YTS Team, yamsat                                                 //

@@ -742,13 +742,6 @@ public:
   MgmtInt negative_revalidating_enabled;
   MgmtInt negative_revalidating_lifetime;
 
-  /////////////////
-  // Inktoswitch //
-  /////////////////
-  MgmtInt inktoswitch_enabled;
-  MgmtInt router_ip;
-  MgmtInt router_port;
-
   ///////////////////
   // cop access    //
   ///////////////////
@@ -991,9 +984,6 @@ HttpConfigParams::HttpConfigParams()
     transparency_enabled(0),
     negative_revalidating_enabled(0),
     negative_revalidating_lifetime(0),
-    inktoswitch_enabled(0),
-    router_ip(0),
-    router_port(0),
     record_cop_page(0),
     record_tcp_mem_hit(0),
     errors_log_error_pages(0),
