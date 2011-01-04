@@ -1089,7 +1089,7 @@ UnixNetVConnection::connectUp(EThread *t)
     if (ep.start(get_PollDescriptor(t), this, EVENTIO_READ|EVENTIO_WRITE) < 0) {
       lerrno = errno;
       Debug("iocore_net", "connectUp : Failed to add to epoll list\n");
-      action_.continuation->handleEvent(NET_EVENT_OPEN_FAILED, (void *) res);
+      action_.continuation->handleEvent(NET_EVENT_OPEN_FAILED, (void *)0); // 0 == res
       free(t);
       return CONNECT_FAILURE;
     }

@@ -23,6 +23,29 @@
 
 #include <arpa/inet.h>
 
+inline const char *
+get_net_error_name(int err_no)
+{
+  switch (err_no) {
+  case ENET_THROTTLING:
+    return "ENET_THROTTLING";
+  case ENET_CONNECT_TIMEOUT:
+    return "ENET_CONNECT_TIMEOUT";
+  case ENET_CONNECT_FAILED:
+    return "ENET_CONNECT_FAILED";
+
+  case ESOCK_DENIED:
+    return "ESOCK_DENIED";
+  case ESOCK_TIMEOUT:
+    return "ESOCK_TIMEOUT";
+  case ESOCK_NO_SOCK_SERVER_CONN:
+    return "ESOCK_NO_SOCK_SERVER_CONN";
+
+  default:
+    return "UNKNOWN ERROR";
+  }
+}
+
 struct NetConnectTester:public Continuation
 {
 

@@ -93,7 +93,6 @@
 
 //struct socks_conf_struct;
 #include "I_NetConfig.h"
-#include "I_NetErrno.h"
 #include "I_NetVConnection.h"
 #include "I_NetProcessor.h"
 #include "I_UDPNet.h"

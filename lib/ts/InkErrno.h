@@ -40,6 +40,8 @@
 #define HTTP_ERRNO                        INK_START_ERRNO+600
 
 #define ENET_THROTTLING                   (NET_ERRNO+1)
+#define ENET_CONNECT_TIMEOUT              (NET_ERRNO+2)
+#define ENET_CONNECT_FAILED               (NET_ERRNO+3)
 
 #define ESOCK_DENIED                      (SOCK_ERRNO+0)
 #define ESOCK_TIMEOUT                     (SOCK_ERRNO+1)
