@@ -688,15 +688,6 @@ if test "x$cpu_architecture" != "x"; then
   TS_ADDTO(CXXFLAGS, [$cpu_architecture])
 fi
 
-# GCC atomics
-AC_CACHE_CHECK([for gcc atomic builtins],[support_cv_atomic],
-[AC_LINK_IFELSE([AC_LANG_PROGRAM([],[[
-int i, x =0;
-i = __sync_add_and_fetch(&x,1);
-return x;
-]])],[support_cv_atomic="yes"],[support_cv_atomic="no"])])
-AM_CONDITIONAL([SUPPORT_ATOMICS],[test x$support_cv_atomic = xyes])
-
 # 64-bit LFS support
 #
 TS_ADDTO(CPPFLAGS, [-D_LARGEFILE64_SOURCE=1])

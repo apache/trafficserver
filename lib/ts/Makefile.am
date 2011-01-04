@@ -141,12 +141,6 @@ libts_a_SOURCES = \
   Tokenizer.h \
   Version.cc
 
-if SUPPORT_ATOMICS
-# support in header
-else
-libts_a_SOURCES += ink_atomic_solaris_i86pc.s
-endif
-
 libts_a_LIBADD = ParseRules.o @LIBOBJS@
 
 mkdfa_SOURCES = mkdfa.c

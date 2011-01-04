@@ -53,8 +53,8 @@ typedef vint32 *pvint32;
 typedef vint64 *pvint64;
 typedef vvoidp *pvvoidp;
 
+// Sun/Solaris and the SunPRO compiler
 #if defined(__SUNPRO_CC)
-
 typedef volatile uint32_t vuint32;
 #if __WORDSIZE == 64
 typedef unsigned long uint64_s;
@@ -64,7 +64,6 @@ typedef uint64_t uint64_s;
 typedef volatile uint64_s vuint64_s;
 typedef vuint32 *pvuint32;
 typedef vuint64_s *pvuint64_s;
-
 
 #include <atomic.h>
 
@@ -82,7 +81,7 @@ static inline void *ink_atomic_increment_ptr(pvvoidp mem, intptr_t value) { retu
 #define INK_WRITE_MEMORY_BARRIER
 #define INK_MEMORY_BARRIER
 
-#else
+#else /* ! defined(__SUNPRO_CC) */
 
 #if defined(__GNUC__) && (__GNUC__ >= 4) && (__GNUC_MINOR__ >= 1)
 
@@ -94,10 +93,13 @@ static inline int ink_atomic_cas(pvint32 mem, int old, int new_value) { return _
 static inline int ink_atomic_cas_ptr(pvvoidp mem, void* old, void* new_value) { return __sync_bool_compare_and_swap(mem, old, new_value); }
 static inline int ink_atomic_increment(pvint32 mem, int value) { return __sync_fetch_and_add(mem, value); }
 static inline void *ink_atomic_increment_ptr(pvvoidp mem, intptr_t value) { return __sync_fetch_and_add((void**)mem, value); }
+
+// Special hacks for ARM 32-bit
 #if defined(__arm__) && (SIZEOF_VOIDP == 4)
 extern ProcessMutex __global_death;
 
-static inline int64_t ink_atomic_swap64(pvint64 mem, int64_t value) {
+static inline int64_t
+ink_atomic_swap64(pvint64 mem, int64_t value) {
   int64_t old;
   ink_mutex_acquire(&__global_death);
   old = *mem;
@@ -105,7 +107,8 @@ static inline int64_t ink_atomic_swap64(pvint64 mem, int64_t value) {
   ink_mutex_release(&__global_death);
   return old;
 }
-static inline int64_t ink_atomic_cas64(pvint64 mem, int64_t old, int64_t new_value) {
+static inline int64_t
+ink_atomic_cas64(pvint64 mem, int64_t old, int64_t new_value) {
   int64_t curr;
   ink_mutex_acquire(&__global_death);
   curr = *mem;
@@ -114,7 +117,8 @@ static inline int64_t ink_atomic_cas64(pvint64 mem, int64_t old, int64_t new_val
   if(old == curr) return 1;
   return 0;
 }
-static inline int64_t ink_atomic_increment64(pvint64 mem, int64_t value) {
+static inline int64_t
+ink_atomic_increment64(pvint64 mem, int64_t value) {
   int64_t curr;
   ink_mutex_acquire(&__global_death);
   curr = *mem;
@@ -122,7 +126,9 @@ static inline int64_t ink_atomic_increment64(pvint64 mem, int64_t value) {
   ink_mutex_release(&__global_death);
   return curr + value;
 }
-#else
+
+#else /* Intel 64-bit */
+
 static inline int64_t ink_atomic_swap64(pvint64 mem, int64_t value) { return __sync_lock_test_and_set(mem, value); }
 static inline int64_t ink_atomic_cas64(pvint64 mem, int64_t old, int64_t new_value) { return __sync_bool_compare_and_swap(mem, old, new_value); }
 static inline int64_t ink_atomic_increment64(pvint64 mem, int64_t value) { return __sync_fetch_and_add(mem, value); }
@@ -132,108 +138,10 @@ static inline int64_t ink_atomic_increment64(pvint64 mem, int64_t value) { retur
 #define INK_WRITE_MEMORY_BARRIER
 #define INK_MEMORY_BARRIER
 
-#else
+#else /* not gcc > v4.1.2 */
+#error Need a compiler / libc that supports atomic operations, e.g. gcc v4.1.2 or later
+#endif 
 
-#ifdef __cplusplus
-extern "C"
-{
-#endif                          /* __cplusplus */
+#endif /* SunPRO CC */
 
-/*===========================================================================*
-
-     Atomic Memory Operations
-
- *===========================================================================*/
-
-/* atomic swap 32-bit value */
-  int32_t ink_atomic_swap(pvint32 mem, int32_t value);
-
-/* atomic swap a pointer */
-  void *ink_atomic_swap_ptr(vvoidp mem, void *value);
-
-  int64_t ink_atomic_swap64(pvint64 mem, int64_t value);
-
-#if defined(freebsd)
-
-  static inline int ink_atomic_cas(pvint32 mem, int old, int new_value)
-  {
-    int result;
-    __asm __volatile("/* %0 %1 */; lock; cmpxchg %2,(%3)":"=a"(result)
-                     :"a"(old), "r"(new_value), "r"(mem)
-      );
-      return old == result;
-  }
-  static inline int ink_atomic_cas_ptr(pvvoidp mem, void *old, void *new_value)
-  {
-    return ink_atomic_cas((int *) mem, (int) old, (int) new_value);
-  }
-
-  static inline int ink_atomic_increment(pvint32 mem, int value)
-  {
-    volatile int *memp = mem;
-    int old;
-    do {
-      old = *memp;
-    } while (!ink_atomic_cas(mem, old, old + value));
-    return old;
-  }
-  static inline void *ink_atomic_increment_ptr(pvvoidp mem, int value)
-  {
-    return (void *) ink_atomic_increment((int *) mem, value);
-  }
-#else  /* non-freebsd for the "else" */
-/* Atomic compare and swap 32-bit.
-   if (*mem == old) *mem = new_value;
-   Returns TRUE if swap was successful. */
-  int ink_atomic_cas(pvint32 mem, int32_t old, int32_t new_value);
-/* Atomic compare and swap of pointers */
-  int ink_atomic_cas_ptr(pvvoidp mem, void *old, void *new_value);
-/* Atomic increment/decrement to a pointer.  Adds 'value' bytes to the
-   pointer.  Returns the old value of the pointer. */
-  void *ink_atomic_increment_ptr(pvvoidp mem, int value);
-
-/* Atomic increment/decrement.  Returns the old value */
-  int ink_atomic_increment(pvint32 mem, int value);
-#endif  /* freebsd vs not freebsd check */
-
-/* Atomic 64-bit compare and swap
-   THIS IS NOT DEFINED for x86 */
-#if defined(freebsd)
-
-  static inline int ink_atomic_cas64(pvint64 az, int64_t ax, int64_t ay)
-  {
-    unsigned long x1 = (uint64_t) ax;
-    unsigned long x2 = ((uint64_t) ax) >> 32;
-    unsigned long y1 = (uint64_t) ay;
-    unsigned long y2 = ((uint64_t) ay) >> 32;
-    register pvint64 z asm("edi") = az;
-    int result;
-    __asm __volatile("lock\n" "     cmpxchg8b (%1)\n" "     setz %%al\n" "     and $255,%%eax":"=a"(result)
-                     :"r"(z), "a"(x1), "d"(x2), "b"(y1), "c"(y2)
-                     :"cc");
-      return result;
-  }
-
-  static inline int64_t ink_atomic_increment64(pvint64 mem, int64_t value)
-  {
-    volatile int64_t *memp = mem;
-    int64_t old;
-    do {
-      old = *memp;
-    } while (!ink_atomic_cas64(mem, old, old + value));
-    return old;
-  }
-#else  /* non-freebsd for the "else" */
-  int ink_atomic_cas64(pvint64 mem, int64_t old, int64_t new_value);
-  int64_t ink_atomic_increment64(pvint64 mem, int64_t value);
-#endif  /* freebsd vs not freebsd check */
-
-#define INK_WRITE_MEMORY_BARRIER
-#define INK_MEMORY_BARRIER
-
-#ifdef __cplusplus
-}
-#endif                          /* __cplusplus */
-#endif
-#endif
 #endif                          /* _ink_atomic_h_ */
