@@ -144,11 +144,6 @@ public:
   bool backdoor_connect;
   int hooks_set;
 
-  bool session_based_auth;
-
-  bool m_bAuthComplete;
-  SecurityContext *secCtx;
-
   // for DI. An active connection is one that a request has
   // been successfully parsed (PARSE_DONE) and it remains to
   // be active until the transaction goes through or the client

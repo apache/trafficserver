@@ -63,8 +63,7 @@ HttpClientSession::HttpClientSession()
     ka_vio(NULL), slave_ka_vio(NULL),
     cur_hook_id(TS_HTTP_LAST_HOOK), cur_hook(NULL),
     cur_hooks(0), backdoor_connect(false), hooks_set(0),
-    //session_based_auth(false), m_bAuthComplete(false), secCtx(NULL), m_active(false)
-    session_based_auth(false), m_bAuthComplete(false), m_active(false)
+    m_active(false)
 {
   memset(user_args, 0, sizeof(user_args));
 }
@@ -89,16 +88,8 @@ HttpClientSession::cleanup()
 #endif
 
   ink_assert(client_vc == 0);
-
   api_hooks.clear();
-
   mutex.clear();
-
-  m_bAuthComplete = false;
-  /*if (secCtx) {
-    acc.abandon_ctx(secCtx);
-    secCtx = NULL;
-  }a*/
 
   if (conn_decrease) {
     HTTP_DECREMENT_DYN_STAT(http_current_client_connections_stat);

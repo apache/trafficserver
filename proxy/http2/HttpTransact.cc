@@ -7040,18 +7040,6 @@ HttpTransact::handle_response_keep_alive_headers(State* s, HTTPVersion ver, HTTP
   else if (heads->status_get() == HTTP_STATUS_NO_CONTENT) {
     ka_action = KA_CLOSE;
   } else {
-    // for the cache authenticated content feature
-    bool session_auth_close = false;
-
-    if (s->www_auth_content != CACHE_AUTH_NONE
-        && s->state_machine->ua_session->session_based_auth
-        && (s->server_info.keep_alive == HTTP_NO_KEEPALIVE ||
-            (!s->http_config_param->session_auth_cache_keep_alive_enabled && s->next_action == SERVE_FROM_CACHE)))
-      session_auth_close = true;
-
-    // Note: the preceding conditions also apply for the use
-    // of chunked encoding.
-
     // Determine if we are going to send either a server-generated or
     // proxy-generated chunked response to the client. If we cannot
     // trust the content-length, we may be able to chunk the response
@@ -7072,7 +7060,7 @@ HttpTransact::handle_response_keep_alive_headers(State* s, HTTPVersion ver, HTTP
          (s->current.server->transfer_encoding == HttpTransact::CHUNKED_ENCODING ||
           // we can use chunked encoding if we cannot trust the content
           // length (e.g. no Content-Length and Connection:close in HTTP/1.1 responses)
-          s->hdr_info.trust_response_cl == false) && session_auth_close == false) ||
+          s->hdr_info.trust_response_cl == false)) ||
          // handle serve from cache (read-while-write) case
          (s->source == SOURCE_CACHE && s->hdr_info.trust_response_cl == false))) {
       s->client_info.receive_chunked_response = true;
@@ -7087,8 +7075,6 @@ HttpTransact::handle_response_keep_alive_headers(State* s, HTTPVersion ver, HTTP
     if (s->hdr_info.trust_response_cl == false &&
         !(s->client_info.receive_chunked_response == true ||
           (s->method == HTTP_WKSIDX_PUSH && s->client_info.keep_alive == HTTP_KEEPALIVE))) {
-      ka_action = KA_CLOSE;
-    } else if (session_auth_close) {
       ka_action = KA_CLOSE;
     } else {
       ka_action = KA_CONNECTION;
@@ -8037,35 +8023,6 @@ HttpTransact::build_response(State* s, HTTPHdr* base_response, HTTPHdr* outgoing
     HttpTransactHeaders::generate_and_set_wuts_codes(outgoing_response, s->via_string, &s->squid_codes, WUTS_PROXY_ID,
                                                      ((s->http_config_param->wuts_enabled) ? (true) : (false)),
                                                      ((s->http_config_param->log_spider_codes) ? (true) : (false)));
-  }
-  // NTLM proxy pass-through
-  if ((status_code == HTTP_STATUS_UNAUTHORIZED ||
-       // if build_response is called from
-       // handle_no_cache_operation_on_forward_server_response,
-       // the status_code passed is HTTP_STATUS_NONE
-       (status_code == HTTP_STATUS_NONE &&
-        s->hdr_info.server_response.valid() &&
-        s->hdr_info.server_response.status_get() == HTTP_STATUS_UNAUTHORIZED)) &&
-      !s->http_config_param->reverse_proxy_enabled && !s->http_config_param->transparency_enabled) {
-    MIMEField *auth_hdr = outgoing_response->field_find(MIME_FIELD_WWW_AUTHENTICATE, MIME_LEN_WWW_AUTHENTICATE);
-
-    if (auth_hdr) {
-      int auth_len;
-      const char *auth_value = auth_hdr->value_get(&auth_len);
-      if (auth_len >= 9 && strncasecmp(auth_value, "Negotiate", 9) == 0) {
-        auth_hdr = auth_hdr->m_next_dup;
-        if (auth_hdr)
-          auth_value = auth_hdr->value_get(&auth_len);
-        else
-          auth_len = 0;
-      }
-      if ((auth_len == 4 && memcmp(auth_value, "NTLM", 4) == 0) ||
-          (auth_len > 5 && memcmp(auth_value, "NTLM ", 5) == 0)) {
-        // Network Analyzer result based on MS ISA
-        outgoing_response->value_set("Proxy-Support", 13, "Session-Based-Authentication", 28);
-        s->state_machine->ua_session->session_based_auth = true;
-      }
-    }
   }
 
   HttpTransactHeaders::add_server_header_to_response(&s->txn_conf, outgoing_response);
