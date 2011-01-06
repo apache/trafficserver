@@ -328,6 +328,8 @@ CONFIG proxy.config.cache.ram_cache.algorithm INT 0
    #  1 : fastlz (extremely fast, relatively low compression)
    #  2 : libz (moderate speed, reasonable compression)
    #  3 : liblzma (very slow, high compression)
+   #  NOTE: compression runs on task threads.  To use more cores for
+   #  compression, increase proxy.config.task_threads.
 CONFIG proxy.config.cache.ram_cache.compress INT 0
    # The maximum number of alternates that are allowed for any given URL.
    # It is not possible to strictly enforce this if the variable
@@ -608,3 +610,9 @@ CONFIG proxy.config.dump_mem_info_frequency INT 0
   # Log any request that takes more then x number of milliseconds, needs
   # to be > 0 to be enabled
 CONFIG proxy.config.http.slow.log.threshold INT 0
+##############################################################################
+#
+# Tasks
+#
+##############################################################################
+CONFIG proxy.config.task_threads INT 1

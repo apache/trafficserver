@@ -30,13 +30,7 @@ TasksProcessor tasksProcessor;
 int
 TasksProcessor::start(int task_threads)
 {
-  if (task_threads > 0) {
+  if (task_threads > 0)
     ET_TASK = eventProcessor.spawn_event_threads(task_threads);
-
-    // TODO: Do we need to "initialize" these threads for "net" ?
-    //    for (int i = 0; i < task_threads; i++)
-    //initialize_thread_for_net(eventProcessor.eventthread[ET_TASK][i], i);
-  }
-
   return 0;
 }

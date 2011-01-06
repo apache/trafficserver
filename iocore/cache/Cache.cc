@@ -839,6 +839,23 @@ CacheProcessor::cacheInitialized()
 
         }
       }
+      switch (cache_config_ram_cache_compress) {
+        default:
+          Fatal("unknown RAM cache compression type: %d", cache_config_ram_cache_compress);
+        case CACHE_COMPRESSION_NONE: 
+        case CACHE_COMPRESSION_FASTLZ:
+          break;
+        case CACHE_COMPRESSION_LIBZ:
+#if ! TS_HAS_LIBZ
+          Fatal("libz not available for RAM cache compression");
+#endif
+          break;
+        case CACHE_COMPRESSION_LIBLZMA:
+#if ! TS_HAS_LZMA
+          Fatal("lzma not available for RAM cache compression");
+#endif
+          break;
+      }
 
       GLOBAL_CACHE_SET_DYN_STAT(cache_ram_cache_bytes_total_stat, ram_cache_bytes);
       GLOBAL_CACHE_SET_DYN_STAT(cache_bytes_total_stat, total_cache_bytes);
