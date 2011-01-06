@@ -44,14 +44,10 @@ noinst_LIBRARIES = libinkutils.a
 libinkutils_a_SOURCES = \
   I_Layout.h \
   I_Machine.h \
-  I_MTInteractor.h \
   I_OneWayMultiTunnel.h \
   I_OneWayTunnel.h \
-  I_OpQueue.h \
   Layout.cc \
-  MTInteractor.cc \
   Machine.cc \
   OneWayMultiTunnel.cc \
-  OneWayTunnel.cc \
-  OpQueue.cc
+  OneWayTunnel.cc
 
