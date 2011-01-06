@@ -48,12 +48,10 @@ libinkutils_a_SOURCES = \
   I_OneWayMultiTunnel.h \
   I_OneWayTunnel.h \
   I_OpQueue.h \
-  I_RadixSort.h \
   Layout.cc \
   MTInteractor.cc \
   Machine.cc \
   OneWayMultiTunnel.cc \
   OneWayTunnel.cc \
-  OpQueue.cc \
-  RadixSort.cc
+  OpQueue.cc
 
