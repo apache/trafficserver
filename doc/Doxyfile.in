@@ -476,6 +476,7 @@ WARN_LOGFILE           = warn.log
 INPUT                  = @abs_top_srcdir@/doc/mainpage.doc \
                          @abs_top_srcdir@/iocore \
                          @abs_top_srcdir@/lib/ts \
+                         @abs_top_srcdir@/lib/tsconfig \
                          @abs_top_srcdir@/lib/records \
                          @abs_top_srcdir@/proxy \
                          @abs_top_srcdir@/test

@@ -5637,7 +5637,7 @@ HttpTransact::initialize_state_variables_from_request(State* s, HTTPHdr* obsolet
   //
   MIMEField *pc = incoming_request->field_find(MIME_FIELD_PROXY_CONNECTION, MIME_LEN_PROXY_CONNECTION);
 
-  if (!s->txn_conf.keep_alive_enabled || (s->http_config_param->transparency_enabled && pc != NULL)) {
+  if (!s->txn_conf.keep_alive_enabled || (s->http_config_param->server_transparency_enabled && pc != NULL)) {
     s->client_info.keep_alive = HTTP_NO_KEEPALIVE;
 
     // If we need to send a close header later,
