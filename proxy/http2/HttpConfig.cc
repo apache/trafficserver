@@ -1331,10 +1331,6 @@ HttpConfig::startup()
 
   HttpEstablishStaticConfigLongLong(c.oride.send_http11_requests, "proxy.config.http.send_http11_requests");
 
-  if (!c.transparency_enabled) {
-    //By this time, we would have read Socks configuration.
-    c.transparency_enabled = netProcessor.socks_conf_stuff->accept_enabled;
-  }
   // HTTP Referer Filtering
   HttpEstablishStaticConfigLongLong(c.referer_filter_enabled, "proxy.config.http.referer_filter");
   HttpEstablishStaticConfigLongLong(c.referer_format_redirect, "proxy.config.http.referer_format_redirect");
@@ -1630,8 +1626,6 @@ HttpConfig::reconfigure()
   params->accept_encoding_filter_enabled = m_master.accept_encoding_filter_enabled;
 
   params->quick_filter_mask = m_master.quick_filter_mask;
-
-  params->transparency_enabled = m_master.transparency_enabled;
 
   params->oride.down_server_timeout = m_master.oride.down_server_timeout;
   params->oride.client_abort_threshold = m_master.oride.client_abort_threshold;

@@ -722,7 +722,6 @@ public:
   //////////////////
   // Transparency //
   //////////////////
-  MgmtInt transparency_enabled; ///< @b OBSOLETE
   /// Accept connections on foreign addresses.
   bool client_transparency_enabled;
   /// Use client address to connect to origin server.
@@ -981,7 +980,8 @@ HttpConfigParams::HttpConfigParams()
     referer_format_redirect(0),
     accept_encoding_filter_enabled(0),
     quick_filter_mask(0),
-    transparency_enabled(0),
+    client_transparency_enabled(0),
+    server_transparency_enabled(0),
     negative_revalidating_enabled(0),
     negative_revalidating_lifetime(0),
     record_cop_page(0),
