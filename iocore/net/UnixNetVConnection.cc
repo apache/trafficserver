@@ -834,7 +834,8 @@ UnixNetVConnection::load_buffer_and_write(int64_t towrite, int64_t &wattempted, 
   IOBufferBlock *b = buf.entry->block;
   do {
     IOVec tiovec[NET_MAX_IOV];
-    int niov = 0, total_wrote_last = total_wrote;
+    int niov = 0;
+    int64_t total_wrote_last = total_wrote;
     while (b && niov < NET_MAX_IOV) {
       // check if we have done this block
       int64_t l = b->read_avail();
