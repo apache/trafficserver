@@ -1752,7 +1752,7 @@ _TSrealloc(void *ptr, size_t size, const char *path)
 
 // length has to be int64_t and not size_t, since -1 means to call strlen() to get length
 char *
-_TSstrdup(const char *str, int length, const char *path)
+_TSstrdup(const char *str, int64_t length, const char *path)
 {
   return _xstrdup(str, length, path);
 }
