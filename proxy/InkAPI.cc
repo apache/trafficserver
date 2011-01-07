@@ -803,8 +803,8 @@ FileImpl::fclose()
 int
 FileImpl::fread(void *buf, int length)
 {
-  int amount;
-  int err;
+  int64_t amount;
+  int64_t err;
 
   if ((m_mode != READ) || (m_fd == -1)) {
     return -1;
@@ -857,7 +857,7 @@ int
 FileImpl::fwrite(const void *buf, int length)
 {
   const char *p, *e;
-  int avail;
+  int64_t avail;
 
   if ((m_mode != WRITE) || (m_fd == -1)) {
     return -1;
@@ -1752,7 +1752,7 @@ _TSrealloc(void *ptr, size_t size, const char *path)
 
 // length has to be int64_t and not size_t, since -1 means to call strlen() to get length
 char *
-_TSstrdup(const char *str, int64_t length, const char *path)
+_TSstrdup(const char *str, int length, const char *path)
 {
   return _xstrdup(str, length, path);
 }
@@ -5810,7 +5810,7 @@ TSHttpCurrentIdleClientConnectionsGet(int *num_connections)
   HTTP_READ_DYN_SUM(http_current_active_client_connections_stat, active);
 
   if (total >= active) {
-    *num_connections = total - active;
+    *num_connections = (int)(total - active);
     return 1;
   }
   return 0;

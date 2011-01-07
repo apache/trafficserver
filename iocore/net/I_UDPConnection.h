@@ -55,9 +55,6 @@ public:
 
   void destroy();
   int shouldDestroy();
-
-  int get_ntodo();
-  int get_ndone();
   /* Returns the b/w allocated to this UDP connection in Mbps */
   double get_allocatedBandwidth();
   /**

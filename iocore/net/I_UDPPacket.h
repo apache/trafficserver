@@ -56,14 +56,13 @@ public:
   void setArrivalTime(ink_hrtime t);
   IOBufferBlock *getIOBlockChain();
   void setReliabilityPkt();
-  int getPktLength();
+  int64_t getPktLength();
   /**
      Add IOBufferBlock (chain) to end of packet.
      @param block block chain to add.
 
    */
   inkcoreapi void append_block(IOBufferBlock * block);
-  char *asBuf(int *len = NULL);
   virtual void UDPPacket_is_abstract() = 0;
 
   struct sockaddr_in from;    // what address came from

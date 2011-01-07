@@ -75,7 +75,7 @@ OneWayMultiTunnel::init(VConnection * vcSource, VConnection ** vcTargets, int n_
 
   n_connections = n_vioTargets + 1;
 
-  int size_index = 0;
+  int64_t size_index = 0;
   if (size_estimate)
     size_index = buffer_size_to_index(size_estimate, default_large_iobuffer_size);
   else

@@ -131,7 +131,7 @@ cluster_disable(ClusterHandler * ch, ClusterVConnection * vc, ClusterVConnState 
 }
 
 void
-cluster_update_priority(ClusterHandler * ch, ClusterVConnection * vc, ClusterVConnState * ns, int ndone, int ntodo)
+cluster_update_priority(ClusterHandler * ch, ClusterVConnection * vc, ClusterVConnState * ns, int64_t ndone, int64_t ntodo)
 {
   //
   // Enable inactivity timeout, recompute priority based on latest transfer.
@@ -146,7 +146,9 @@ cluster_update_priority(ClusterHandler * ch, ClusterVConnection * vc, ClusterVCo
     if (vc->inactivity_timeout_in)
       vc->inactivity_timeout = vc->thread->schedule_in(vc, vc->inactivity_timeout_in);
   }
-  int tsize = ns->vio.buffer.total_size();
+
+  int64_t tsize = ns->vio.buffer.total_size();
+
   if (tsize > ntodo) {
     tsize = ntodo;
   }
@@ -169,6 +171,7 @@ cluster_bump(ClusterHandler * ch, ClusterVConnectionBase * vc, ClusterVConnState
   // current bucket + CLUSTER_BUMP_LENGTH
   //
   int new_bucket = (ch->cur_vcs + CLUSTER_BUMP_LENGTH) % CLUSTER_BUCKETS;
+
   if (ns == &vc->read) {
     if (this_bucket != CLUSTER_BUMP_NO_REMOVE) {
       ClusterVC_remove_read(vc);
@@ -232,9 +235,9 @@ clone_IOBufferBlockList(IOBufferBlock * b, int start_off, int n, IOBufferBlock *
   // of all block read_avail is 'n'.  The given source list
   // must contain at least 'n' read avail bytes.
   ////////////////////////////////////////////////////////////////
-  int nbytes = n;
-  int block_read_avail;
-  int bytes_to_skip = start_off;
+  int64_t nbytes = n;
+  int64_t block_read_avail;
+  int64_t bytes_to_skip = start_off;
   IOBufferBlock *bsrc = b;
   IOBufferBlock *bclone = 0;
   IOBufferBlock *bclone_head = 0;
@@ -287,10 +290,10 @@ clone_IOBufferBlockList(IOBufferBlock * b, int start_off, int n, IOBufferBlock *
 }
 
 IOBufferBlock *
-consume_IOBufferBlockList(IOBufferBlock * b, int n)
+consume_IOBufferBlockList(IOBufferBlock * b, int64_t n)
 {
   IOBufferBlock *b_remainder = 0;
-  int nbytes = n;
+  int64_t nbytes = n;
 
   while (b) {
     nbytes -= b->read_avail();
@@ -318,10 +321,11 @@ consume_IOBufferBlockList(IOBufferBlock * b, int n)
   return b_remainder;           // return remaining blocks
 }
 
-int
-bytes_IOBufferBlockList(IOBufferBlock * b, int read_avail_bytes)
+int64_t
+bytes_IOBufferBlockList(IOBufferBlock * b, int64_t read_avail_bytes)
 {
-  int n = 0;;
+  int64_t n = 0;;
+
   while (b) {
     if (read_avail_bytes) {
       n += b->read_avail();

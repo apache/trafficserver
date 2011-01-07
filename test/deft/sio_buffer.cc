@@ -71,9 +71,9 @@ sio_buffer::~sio_buffer()
 int
 sio_buffer::expand_to(int size)
 {
-
   // Check to see if we've already got enough space
   int wavail = write_avail();
+
   if (wavail >= size) {
     return wavail;
   }
@@ -120,7 +120,6 @@ sio_buffer::end()
 int
 sio_buffer::fill(const char *data, int data_len)
 {
-
   ink_debug_assert(data_len >= 0);
 
   if (data_len <= 0) {
@@ -140,6 +139,7 @@ int
 sio_buffer::fill(int n)
 {
   int wavail = write_avail();
+
   ink_debug_assert(n <= wavail);
   data_end += n;
   return n;
@@ -149,6 +149,7 @@ int
 sio_buffer::read_avail()
 {
   int r = data_end - data_start;
+
   ink_debug_assert(r >= 0);
   return r;
 }
@@ -157,6 +158,7 @@ int
 sio_buffer::write_avail()
 {
   int r = raw_end - data_end;
+
   ink_debug_assert(r >= 0);
   return r;
 }
@@ -171,6 +173,7 @@ void
 sio_buffer::consume(int n)
 {
   int ravail = read_avail();
+
   ink_debug_assert(n <= ravail);
 
   if (n > ravail) {
@@ -184,10 +187,9 @@ sio_buffer::consume(int n)
 char *
 sio_buffer::memchr(int c, int len, int offset)
 {
-
   int ravail = read_avail();
-  ink_debug_assert((len == INT_MAX && offset <= ravail) || len <= ravail - offset);
 
+  ink_debug_assert((len == INT_MAX && offset <= ravail) || len <= ravail - offset);
   if (offset > ravail) {
     return NULL;
   }
@@ -204,7 +206,6 @@ sio_buffer::memchr(int c, int len, int offset)
 int
 sio_buffer::read(char *buf, int len)
 {
-
   int to_read = read_avail();
   if (len < to_read) {
     to_read = len;
@@ -219,8 +220,8 @@ char *
 sio_buffer::memcpy(char *buf, int len, int offset)
 {
   int ravail = offset;
-  ink_debug_assert(offset <= ravail);
 
+  ink_debug_assert(offset <= ravail);
   if (len == INT_MAX) {
     len = ravail - offset;
   } else if (len > ravail - offset) {

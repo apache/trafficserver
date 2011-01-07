@@ -609,8 +609,7 @@ bool ClusterHandler::build_initial_vector(bool read_flag)
             if (vc_ok_write(vc) || remote_write_fill) {
               if (remote_write_fill) {
                 s.iov[new_n_iov].iov_base = 0;
-                ink_release_assert((int) s.msg.descriptor[i].length ==
-                                   bytes_IOBufferBlockList(vc->remote_write_block, 1));
+                ink_release_assert((int) s.msg.descriptor[i].length == bytes_IOBufferBlockList(vc->remote_write_block, 1));
                 s.block[new_n_iov] = vc->remote_write_block;
 
               } else {
@@ -769,8 +768,8 @@ bool ClusterHandler::get_read_locks()
       }
       // Lock acquire success, move read bytes into VC
 
-      int
-        read_avail = vc->read_block->read_avail();
+      int64_t read_avail = vc->read_block->read_avail();
+
       if (!vc->pending_remote_fill && read_avail) {
         Debug("cluster_vc_xfer", "Deferred fill ch %d 0x%x %d bytes", vc->channel, vc, read_avail);
 
@@ -1249,7 +1248,7 @@ ClusterHandler::update_channels_partial_read()
   // amount read in the associated VC read buffer data structures.
   //
   int i;
-  int res = read.bytes_xfered;
+  int64_t res = read.bytes_xfered;
 
   if (!res) {
     return;
@@ -1258,9 +1257,9 @@ ClusterHandler::update_channels_partial_read()
 
   // how much of the iov was done
 
-  int iov_done[MAX_TCOUNT];
-  int total = 0;
-  int already_read = read.did - read.bytes_xfered;
+  int64_t iov_done[MAX_TCOUNT];
+  int64_t total = 0;
+  int64_t already_read = read.did - read.bytes_xfered;
 
   for (i = 0; i < read.n_iov; i++) {
     ink_release_assert(already_read >= 0);
@@ -1302,6 +1301,7 @@ ClusterHandler::update_channels_partial_read()
           ClusterVConnState *s = &vc->read;
           ink_assert(vc->iov_map < read.n_iov);
           int len = iov_done[vc->iov_map];
+
           if (len) {
             if (!read_all_large_control_msgs) {
               //
@@ -1480,9 +1480,9 @@ ClusterHandler::update_channels_written(bool bump_unhandled_channels)
 
           if (vc_ok_write(vc)) {
             vc->last_activity_time = current_time;      // note activity time
-            int n = vc->was_closed()? 0 : s->vio.buffer.reader()->block_read_avail();
-            int nb = vc->was_closed()? 0 : s->vio.nbytes;
-            int ndone = vc->was_closed()? 0 : s->vio.ndone;
+            int64_t n = vc->was_closed()? 0 : s->vio.buffer.reader()->block_read_avail();
+            int64_t nb = vc->was_closed()? 0 : s->vio.nbytes;
+            int64_t ndone = vc->was_closed()? 0 : s->vio.ndone;
 
             if (ndone < vc->remote_free) {
               cluster_set_priority(this, s, 1); // next bucket
@@ -2028,8 +2028,9 @@ retry:
   //
   MIOBufferAccessor & buf = s->vio.buffer;
 
-  int towrite = buf.reader()->read_avail();
-  int ntodo = s->vio.ntodo();
+  int64_t towrite = buf.reader()->read_avail();
+  int64_t ntodo = s->vio.ntodo();
+
   if (towrite > ntodo)
     towrite = ntodo;
 
@@ -2201,8 +2202,8 @@ retry:
     return 0;
   }
 
-  int nb = s->vio.nbytes;
-  int ntodo = s->vio.ntodo();
+  int64_t nb = s->vio.nbytes;
+  int64_t ntodo = s->vio.ntodo();
   ink_assert(ntodo >= 0);
 
   if (ntodo <= 0) {
@@ -2212,7 +2213,7 @@ retry:
     return 0;
   }
 
-  int bytes_to_move = vc->initial_data_bytes;
+  int64_t bytes_to_move = vc->initial_data_bytes;
   if (vc->read_block && bytes_to_move) {
 
     // Push initial read data into VC
@@ -2271,7 +2272,8 @@ retry:
   // has been moved into the user VC.
   // Now allow send of freespace to receive additional data.
 
-  int nextfree = vc->read.vio.ndone;
+  int64_t nextfree = vc->read.vio.ndone;
+
   nextfree = (nextfree + DEFAULT_MAX_BUFFER_SIZE - 1) / DEFAULT_MAX_BUFFER_SIZE;
   nextfree *= DEFAULT_MAX_BUFFER_SIZE;
 

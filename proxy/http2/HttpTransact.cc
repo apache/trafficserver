@@ -8735,8 +8735,8 @@ HttpTransact::update_size_and_time_stats(State* s, ink_hrtime total_time, ink_hr
   switch (s->state_machine->background_fill) {
   case BACKGROUND_FILL_COMPLETED:
     {
-      int bg_size = origin_server_response_body_size - user_agent_response_body_size;
-      bg_size = max(0, bg_size);
+      int64_t bg_size = origin_server_response_body_size - user_agent_response_body_size;
+      bg_size = max((int64_t)0, bg_size);
       HTTP_SUM_TRANS_STAT(http_background_fill_bytes_completed_stat, bg_size);
       break;
     }
@@ -8971,6 +8971,7 @@ HttpTransact::is_connection_collapse_checks_success(State* s)
   bool match = true;
   URL *url = s->hdr_info.client_request.url_get();
   int rww_enabled = 0;
+
   TS_ReadConfigInteger(rww_enabled, "proxy.config.cache.enable_read_while_writer");
   match &= (url->scheme_get_wksidx() == URL_WKSIDX_HTTP);
   match &= HttpConfig::m_master.hashtable_enabled;

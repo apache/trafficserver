@@ -278,8 +278,8 @@ LogCollationClientSM::client_auth(int event, VIO * vio)
   case VC_EVENT_ERROR:
     {
       Debug("log-coll", "[%d]client::client_auth - EOS|ERROR", m_id);
+      int64_t read_avail = m_auth_reader->read_avail();
 
-      int read_avail = m_auth_reader->read_avail();
       if (read_avail > 0) {
         Debug("log-coll", "[%d]client::client_auth - consuming unsent data", m_id);
         m_auth_reader->consume(read_avail);
@@ -727,8 +727,8 @@ LogCollationClientSM::client_send(int event, VIO * vio)
   case VC_EVENT_ERROR:
     {
       Debug("log-coll", "[%d]client::client_send - EOS|ERROR", m_id);
+      int64_t read_avail = m_send_reader->read_avail();
 
-      int read_avail = m_send_reader->read_avail();
       if (read_avail > 0) {
         Debug("log-coll", "[%d]client::client_send - consuming unsent data", m_id);
         m_send_reader->consume(read_avail);

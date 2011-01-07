@@ -84,7 +84,7 @@ FetchSM::get_info_from_buffer(TSIOBufferReader the_reader)
     return ;
 
   read_avail = TSIOBufferReaderAvail(the_reader);
-  Debug(DEBUG_TAG, "[%s] total avail %d", __FUNCTION__, read_avail);
+  Debug(DEBUG_TAG, "[%s] total avail " PRId64 , __FUNCTION__, read_avail);
   //size_t hdr_size = _headers.size();
   //info = (char *) xmalloc(sizeof(char) * (read_avail+1) + hdr_size);
   info = (char *) xmalloc(sizeof(char) * (read_avail+1));
@@ -113,9 +113,10 @@ FetchSM::process_fetch_read(int event)
 {
 
   Debug(DEBUG_TAG, "[%s] I am here read", __FUNCTION__);
-  int bytes;
+  int64_t bytes;
   int bytes_used;
-  int actual_bytes_copied = 0;
+  int64_t actual_bytes_copied = 0;
+
   switch (event) {
   case TS_EVENT_VCONN_READ_READY:
     bytes = resp_reader->read_avail();

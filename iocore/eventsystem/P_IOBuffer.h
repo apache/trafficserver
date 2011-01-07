@@ -39,7 +39,8 @@
 TS_INLINE int64_t
 buffer_size_to_index(int64_t size, int64_t max = max_iobuffer_size)
 {
-  int r = max;
+  int64_t r = max;
+
   while (r && BUFFER_SIZE_FOR_INDEX(r - 1) >= size)
     r--;
   return r;
@@ -609,6 +610,7 @@ IOBufferReader::block_count()
 {
   int count = 0;
   IOBufferBlock *b = block;
+
   while (b) {
     count++;
     b = b->next;
@@ -621,6 +623,7 @@ IOBufferReader::read_avail()
 {
   int64_t t = 0;
   IOBufferBlock *b = block;
+
   while (b) {
     t += b->read_avail();
     b = b->next;

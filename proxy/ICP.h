@@ -1024,10 +1024,7 @@ public:
 #define RECORD_ICP_STATE_CHANGE(x,y,z)
 #endif
 
-  // Static declarations
-  // replaced with IOBufferBlock allocator
-  //    static Allocator *IncomingICPDataBuf;
-  static int ICPDataBuf_IOBuffer_sizeindex;
+  static int64_t ICPDataBuf_IOBuffer_sizeindex;
 };
 
 //------------------------------------------------------------------

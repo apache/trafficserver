@@ -551,6 +551,8 @@ case $host_os in
       release_opt="-g $common_opt -O2 -axsse4.2 -fno-strict-aliasing"
       cxx_opt="-Wno-invalid-offsetof"
     else # gcc
+    # This is useful for finding odd conversions
+    #    common_opt="-pipe -Wall -Werror -Wconversion -Wno-sign-conversion"
       common_opt="-pipe -Wall -Werror"
       debug_opt="-ggdb3 $common_opt"
       release_opt="-g $common_opt -O3 -feliminate-unused-debug-symbols -fno-strict-aliasing"

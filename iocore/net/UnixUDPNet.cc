@@ -825,7 +825,7 @@ UDPQueue::service(UDPNetHandler * nh)
   ink_hrtime pktSendTime;
   double minPktSpacing;
   uint32_t pktSize;
-  int32_t pktLen;
+  int64_t pktLen;
   int i;
   bool addToGuaranteedQ;
   (void) nh;
@@ -969,7 +969,7 @@ UDPQueue::SendPackets()
   ink_hrtime send_threshold_time = now + SLOT_TIME;
   int32_t bytesThisSlot = INT_MAX, bytesUsed = 0, reliabilityBytes = 0;
   int32_t bytesThisPipe, sentOne, i;
-  int32_t pktLen;
+  int64_t pktLen;
   ink_hrtime timeDelta = 0;
 
   if (now > last_service)

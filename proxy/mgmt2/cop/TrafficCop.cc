@@ -945,7 +945,7 @@ test_port(int port, const char *request, char *buffer, int bufsize,
   int64_t start_time, timeout;
   int sock;
   size_t length = strlen(request);
-  int err, idx;
+  int64_t err, idx;
 
   start_time = milliseconds();
 

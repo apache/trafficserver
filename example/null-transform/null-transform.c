@@ -171,8 +171,11 @@ handle_transform(TSCont contp)
         TSError("[null-plugin] unable to copy IO buffers\n");
         goto Lerror;
       }
+      /* For testing bad 64-bit */
+#if 0
       printf("wrote %d\n", (int)towrite);
       sleep(1);
+#endif
 
       /* Tell the read buffer that we have read the data and are no
        * longer interested in it.

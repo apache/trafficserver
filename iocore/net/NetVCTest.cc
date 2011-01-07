@@ -231,7 +231,7 @@ NetVCTest::consume_and_check_bytes(IOBufferReader * r, uint8_t * seed)
   }
 
   while (r->read_avail() > 0) {
-    int b_avail = r->block_read_avail();
+    int64_t b_avail = r->block_read_avail();
 
     tmp = (uint8_t *) r->start();
     end = tmp + b_avail;

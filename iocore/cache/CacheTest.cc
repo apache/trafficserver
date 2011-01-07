@@ -213,8 +213,10 @@ void CacheTestSM::fill_buffer() {
     int64_t l = avail;
     if (l > sk)
       l = sk;
+
     int64_t pos = cvio->ndone +  buffer_reader->read_avail();
-    int o = pos % sk;
+    int64_t o = pos % sk;
+
     if (l > sk - o)
       l = sk - o;
     k.b[0] = pos / sk;
@@ -236,7 +238,7 @@ int CacheTestSM::check_buffer() {
     int64_t l = avail;
     if (l > sk)
       l = sk;
-    int o = pos % sk;
+    int64_t o = pos % sk;
     if (l > sk - o)
       l = sk - o;
     k.b[0] = pos / sk;

@@ -245,6 +245,7 @@ ClusterVConnectionCache::MD5ToIndex(INK_MD5 * p)
 {
   uint64_t i = p->fold();
   int32_t h, l;
+
   h = i >> 32;
   l = i & 0xFFFFFFFF;
   return ((h ^ l) % MAX_TABLE_ENTRIES) & (MAX_TABLE_ENTRIES - 1);
@@ -1824,7 +1825,7 @@ CacheContinuation::setupReadBufTunnel(VConnection * cache_read_vc, VConnection *
   tunnel_cont->mutex = this->mutex;
   SET_CONTINUATION_HANDLER(tunnel_cont, (CacheContHandler)
                            & CacheContinuation::tunnelClosedEvent);
-  int ravail = bytes_IOBufferBlockList(readahead_data, 1);
+  int64_t ravail = bytes_IOBufferBlockList(readahead_data, 1);
 
   tunnel_mutex = tunnel_cont->mutex;
   tunnel_closed = false;
@@ -2725,10 +2726,9 @@ CacheContinuation::replyLookupEvent(int event, void *d)
 
 int32_t CacheContinuation::getObjectSize(VConnection * vc, int opcode, CacheHTTPInfo * ret_ci)
 {
-  CacheHTTPInfo *
-    ci = 0;
-  int32_t
-    object_size = 0;
+  CacheHTTPInfo *ci = 0;
+  int64_t object_size = 0;
+
   if ((opcode == CACHE_OPEN_READ_LONG)
       || (opcode == CACHE_OPEN_READ_BUFFER_LONG)) {
 

@@ -96,7 +96,7 @@ mux_move_data(MIOBuffer * copy_to, IOBufferReader * from, int nbytes)
 
     while (left > 0) {
       char *block_start = from->start();
-      int block_avail = from->block_read_avail();
+      int64_t block_avail = from->block_read_avail();
       int act_on = MIN(block_avail, left);
       int r = copy_to->write(block_start, act_on);
       ink_debug_assert(r == act_on);
@@ -747,8 +747,8 @@ int
 MuxClientVC::process_byte_bank()
 {
 
-  int bank_avail = byte_bank_reader->read_avail();
-  int vio_todo = read_state.vio.ntodo();
+  int64_t bank_avail = byte_bank_reader->read_avail();
+  int64_t vio_todo = read_state.vio.ntodotodo();
   int act_on = MIN(bank_avail, vio_todo);
 
   if (act_on > 0) {
@@ -798,7 +798,7 @@ MuxClientVC::process_write()
 
     ink_debug_assert(!closed);
 
-    int ntodo = write_state.vio.ntodo();
+    int64_t ntodo = write_state.vio.ntodo();
     if (ntodo == 0 || write_state.shutdown) {
       write_state.enabled = 0;
       return 0;
@@ -1609,7 +1609,7 @@ MuxVC::process_read_msg_body()
             //   client's buffer
             int left_in_msg = current_msg_hdr.msg_len - read_msg_ndone;
             int act_on = MIN(avail, left_in_msg);
-            int vio_todo = client->read_state.vio.ntodo();
+            int64_t vio_todo = client->read_state.vio.ntodo();
 
             // If available bytes execeeds amount the I/O requested
             //   on the local side, tell the other side to stop sending

@@ -152,7 +152,7 @@ ClassAllocator<Stuffer> stufferAllocator("stufferAllocator");
 ClassAllocator<StufferCacheWriter> stufferCacheWriterAllocator("stufferCacheWriterAllocator");
 
 inline void
-StufferCacheWriter::init(Stuffer * s, int ntowrite)
+StufferCacheWriter::init(Stuffer * s, int64_t ntowrite)
 {
   mutex = s->mutex;
   SET_HANDLER(&StufferCacheWriter::mainEvent);
@@ -204,7 +204,7 @@ inline int
 Stuffer::processInitialData()
 {
   cur_ntodo = -1;
-  int nbytes_avail = reader->read_avail();
+  int64_t nbytes_avail = reader->read_avail();
 
   if (nbytes_avail < KEEPALIVE_LEN_BYTES + 3)
     return STUFFER_START;
@@ -427,7 +427,7 @@ StufferCacheWriter::mainEvent(int event, void *data)
       //Debug("stuffer_keepalive", "Writer got READ_COMPLETE");
       got_read_complete = 1;
 
-      int nread_avail = reader->read_avail();
+      int64_t nread_avail = reader->read_avail();
       ink_assert(nread_avail <= ntodo);
       ntodo = nread_avail;
 
@@ -558,7 +558,7 @@ int
 StufferCacheWriter::parseHeaders()
 {
   int ret = PARSE_CONT;
-  int nbytes_used;
+  int64_t nbytes_used;
 
   if (parse_state == PARSE_START) {
     http_info.create();

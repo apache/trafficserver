@@ -147,10 +147,10 @@ static inline void
 dump_buffer(IOBufferReader *reader)
 {
   IOBufferBlock *b = reader->get_current_block();
-  int offset = reader->start_offset;
+  int64_t offset = reader->start_offset;
   char *s, *e;
-  int avail;
-  int err;
+  int64_t avail;
+  int64_t err;
 
   while (b) {
     avail = b->read_avail();
@@ -221,7 +221,7 @@ TransformTerminus::handle_event(int event, void *edata)
         m_tvc->m_cont->handleEvent(TRANSFORM_READ_READY, (void *)(intptr_t)m_write_vio.nbytes);
       }
     } else {
-      int towrite;
+      int64_t towrite;
 
       MUTEX_TRY_LOCK(trylock1, m_write_vio.mutex, this_ethread());
       if (!trylock1) {
@@ -251,12 +251,6 @@ TransformTerminus::handle_event(int event, void *edata)
         }
 
         if (towrite > 0) {
-          if (is_debug_tag_set("transform_data")) {
-            printf("transform data start: %d", towrite);
-            dump_buffer(m_write_vio.get_reader());
-            printf("\ntransform data end\n");
-          }
-
           m_read_vio.get_writer()->write(m_write_vio.get_reader(), towrite);
           m_read_vio.ndone += towrite;
 
@@ -681,8 +675,8 @@ NullTransform::handle_event(int event, void *edata)
       break;
     case VC_EVENT_WRITE_READY:
     default:{
-        int towrite;
-        int avail;
+        int64_t towrite;
+        int64_t avail;
 
         ink_assert(m_output_vc != NULL);
 
@@ -781,7 +775,7 @@ TransformTest::run()
   -------------------------------------------------------------------------*/
 
 inline static int
-num_chars_for_int(int i)
+num_chars_for_int(int64_t i)
 {
   int k = 1;
 
@@ -1021,7 +1015,7 @@ void
 RangeTransform::transform_to_range()
 {
   IOBufferReader *reader = m_write_vio.get_reader();
-  int toskip, tosend, avail;
+  int64_t toskip, tosend, avail;
   const int64_t *end, *start;
   int64_t prev_end = 0;
   int64_t *done_byte;

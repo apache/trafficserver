@@ -309,7 +309,7 @@ read_from_net(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
         return;
       }
       vc->read.triggered = 0;
-      read_signal_error(nh, vc, -r);
+      read_signal_error(nh, vc, (int)-r);
       return;
     }
     NET_SUM_DYN_STAT(net_read_bytes_stat, r);
@@ -486,7 +486,7 @@ write_to_net_io(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
       return;
     }
     vc->write.triggered = 0;
-    write_signal_error(nh, vc, -r);
+    write_signal_error(nh, vc, (int)-r);
     return;
   } else {
     NET_SUM_DYN_STAT(net_write_bytes_stat, r);

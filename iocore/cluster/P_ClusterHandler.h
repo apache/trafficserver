@@ -47,7 +47,7 @@ struct ClusterCalloutContinuation:public Continuation
 
 struct ClusterControl: public Continuation
 {
-  int len;
+  int len; // TODO: Should this be 64-bit ?
   char size_index;
   int64_t *real_data;
   char *data;

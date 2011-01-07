@@ -127,7 +127,7 @@ SocksProxy::mainEvent(int event, void *data)
   unsigned char *p;
 
   VIO *vio;
-  int n_read_avail;
+  int64_t n_read_avail;
   //int n_consume;
 
   recursion++;

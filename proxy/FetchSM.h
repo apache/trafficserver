@@ -82,7 +82,8 @@ private:
     else
     req_buffer->write(headers,length);
   }
-  int getReqLen()
+
+  int64_t getReqLen()
   {
     return req_reader->read_avail();
   }

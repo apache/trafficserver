@@ -95,13 +95,14 @@ class Stuffer:public Continuation
 
 public:
 
-    Stuffer():Continuation(), state(STUFFER_START), buf(0), source_vc(0),
-    cur_ntodo(0), cache_writer(0), active_cache_writers(0), active_cache_buffer(0)
-  {
-  };
+  Stuffer()
+    : Continuation(), state(STUFFER_START), buf(0), source_vc(0),
+      cur_ntodo(0), cache_writer(0), active_cache_writers(0), active_cache_buffer(0)
+  {  }
+
   ~Stuffer() {
     mutex = NULL;
-  };
+  }
 
   int init(NetVConnection * netvc)
   {
@@ -128,7 +129,7 @@ public:
   NetVConnection *source_vc;
   VIO *source_vio;
 
-  int cur_ntodo;
+  int64_t cur_ntodo;
 
   StufferCacheWriter *cache_writer;
   int active_cache_writers;
@@ -165,7 +166,7 @@ public:
     http_parser_init(&http_parser);
   };
 
-  void init(Stuffer * s, int ntodo);
+  void init(Stuffer * s, int64_t ntodo);
   void free();
   int addData(int max);
 
@@ -176,7 +177,7 @@ public:
   unsigned int object_id;
   MIOBuffer *buf;
   IOBufferReader *reader;
-  int ntodo;
+  int64_t ntodo;
   int nadded;
 
   int state;

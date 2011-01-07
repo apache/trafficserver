@@ -93,7 +93,7 @@ setup_udp_header(char *header, uint32_t seq_no, uint32_t pkt_no, bool last_pkt)
 }
 
 static inline void
-setup_object_header(char *header, uint32_t size, bool url_promise)
+setup_object_header(char *header, int64_t size, bool url_promise)
 {
   uint32_t *hdr = (uint32_t *) header;
   hdr[0] = htonl(size);
@@ -414,10 +414,12 @@ PrefetchTransform::handle_event(int event, void *edata)
           return 0;
         }
 
-        int towrite = m_write_vio.ntodo();
+        int64_t towrite = m_write_vio.ntodo();
+
         if (towrite > 0) {
           IOBufferReader *buf_reader = m_write_vio.get_reader();
-          int avail = buf_reader->read_avail();
+          int64_t avail = buf_reader->read_avail();
+
           if (towrite > avail) {
             towrite = avail;
           }
@@ -886,8 +888,7 @@ PrefetchUrlBlaster::udpUrlBlaster(int event, void *data)
         IOBufferBlock *block = buf->get_current_block();
         ink_assert(reader->read_avail() == block->read_avail());
         setup_udp_header(block->start(), get_udp_seq_no(), 0, true);
-        setup_object_header(block->start() + PRELOAD_UDP_HEADER_LEN,
-                            block->read_avail() - PRELOAD_UDP_HEADER_LEN, true);
+        setup_object_header(block->start() + PRELOAD_UDP_HEADER_LEN, block->read_avail() - PRELOAD_UDP_HEADER_LEN, true);
 
         struct sockaddr_in saddr;
         saddr.sin_family = AF_INET;
@@ -1465,11 +1466,11 @@ static int
 copy_header(MIOBuffer * buf, HTTPHdr * hdr, const char *hdr_tail)
 {
   //copy the http header into to the buffer
-  int done = 0;
-  int offset = 0;
+  int64_t done = 0;
+  int64_t offset = 0;
 
   while (!done) {
-    int block_len = buf->block_write_avail();
+    int64_t block_len = buf->block_write_avail();
     int index = 0, temp = offset;
 
     done = hdr->print(buf->end(), block_len, &index, &temp);
@@ -1606,7 +1607,6 @@ PrefetchBlaster::bufferObject(int event, void *data)
 int
 PrefetchBlaster::blastObject(int event, void *data)
 {
-
   switch (event) {
 
   case EVENT_IMMEDIATE:
@@ -1662,16 +1662,16 @@ PrefetchBlaster::blastObject(int event, void *data)
       io_block->reset();
       io_block->fill(PRELOAD_UDP_HEADER_LEN);
 
-      int nread_avail = reader->read_avail();
+      int64_t nread_avail = reader->read_avail();
 
       if (nread_avail <= 0) {
         free();
         break;
       }
 
-      int nwrite_avail = io_block->write_avail();
+      int64_t nwrite_avail = io_block->write_avail();
 
-      int towrite = (nread_avail < nwrite_avail) ? nread_avail : nwrite_avail;
+      int64_t towrite = (nread_avail < nwrite_avail) ? nread_avail : nwrite_avail;
 
       reader->read(io_block->end(), towrite);
       io_block->fill(towrite);
@@ -1689,8 +1689,7 @@ PrefetchBlaster::blastObject(int event, void *data)
       //saddr.sin_addr.s_addr = htonl((209<<24)|(131<<16)|(60<<8)|243);
       //saddr.sin_addr.s_addr = htonl((209<<24)|(131<<16)|(48<<8)|52);
 
-      udpNet.sendto_re(this, NULL, prefetch_udp_fd, (sockaddr *) & saddr,
-                       sizeof(saddr), io_block, io_block->read_avail());
+      udpNet.sendto_re(this, NULL, prefetch_udp_fd, (sockaddr *) & saddr, sizeof(saddr), io_block, io_block->read_avail());
     }
     break;
 
@@ -1976,7 +1975,8 @@ KeepAliveConnTable::ip_hash(unsigned int ip)
 inline int
 KeepAliveConn::append(IOBufferReader * rdr)
 {
-  int size = rdr->read_avail();
+  int64_t size = rdr->read_avail();
+
   nbytes_added += size;
 
   buf->write(rdr);

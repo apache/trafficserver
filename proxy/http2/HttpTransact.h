@@ -959,8 +959,8 @@ public:
     char *internal_msg_buffer;  // out
     char *internal_msg_buffer_type;     // out
     int64_t internal_msg_buffer_size;       // out
-    int internal_msg_buffer_fast_allocator_size;
-    int internal_msg_buffer_index;      // out
+    int64_t internal_msg_buffer_fast_allocator_size;
+    int64_t internal_msg_buffer_index;      // out
 
     bool icp_lookup_success;    // in
     struct sockaddr_in icp_ip_result;   // in

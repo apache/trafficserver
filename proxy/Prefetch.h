@@ -358,9 +358,8 @@ class KeepAliveConn: public Continuation
 public:
 
   KeepAliveConn()
-  :Continuation(), ip(0), nbytes_added(0)
-  {
-  };
+    : Continuation(), ip(0), nbytes_added(0)
+  { }
 
   int init(unsigned int ip, MIOBuffer * buf, IOBufferReader * reader);
   void free();
@@ -380,7 +379,7 @@ public:
 
   KeepAliveConn *next;
 
-  unsigned int nbytes_added;
+  int64_t nbytes_added;
 };
 
 class KeepAliveConnTable

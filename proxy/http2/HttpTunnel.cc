@@ -381,6 +381,7 @@ bool ChunkedHandler::generate_chunked_content()
   }
 
   while (dechunked_reader->read_avail() > 0 && state != CHUNK_WRITE_DONE) {
+    // TODO: Should this be 64-bit?
     int write_val = MIN(max_chunk_size, dechunked_reader->read_avail());
 
     // If the server is still alive, check to see if too much data is
@@ -1509,7 +1510,7 @@ HttpTunnel::copy_partial_post_data()
 void
 HttpTunnel::allocate_redirect_postdata_producer_buffer()
 {
-  int alloc_index = buffer_size_to_index(sm->t_state.hdr_info.request_content_length);
+  int64_t alloc_index = buffer_size_to_index(sm->t_state.hdr_info.request_content_length);
 
   ink_release_assert(postbuf->postdata_producer_buffer == NULL);
 
@@ -1522,7 +1523,7 @@ HttpTunnel::allocate_redirect_postdata_producer_buffer()
 void
 HttpTunnel::allocate_redirect_postdata_buffers(IOBufferReader * ua_reader)
 {
-  int alloc_index = buffer_size_to_index(sm->t_state.hdr_info.request_content_length);
+  int64_t alloc_index = buffer_size_to_index(sm->t_state.hdr_info.request_content_length);
 
   Debug("http_redirect", "[HttpTunnel::allocate_postdata_buffers]");
 

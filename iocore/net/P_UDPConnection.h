@@ -125,18 +125,6 @@ UDPConnection::getBinding(struct sockaddr_in *s)
   return p->binding_valid;
 }
 
-TS_INLINE int
-UDPConnection::get_ndone()
-{
-  return ((UDPConnectionInternal *) this)->nBytesDone;
-}
-
-TS_INLINE int
-UDPConnection::get_ntodo()
-{
-  return ((UDPConnectionInternal *) this)->nBytesTodo;
-}
-
 // return the b/w allocated to this UDPConnection in Mbps
 TS_INLINE double
 UDPConnection::get_allocatedBandwidth()

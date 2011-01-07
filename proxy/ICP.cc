@@ -166,7 +166,7 @@ PluginFreshnessCalcFunc pluginFreshnessCalcFunc = (PluginFreshnessCalcFunc) NULL
 
 // Static data declarations
 //Allocator *ICPHandlerCont::IncomingICPDataBuf;
-int ICPHandlerCont::ICPDataBuf_IOBuffer_sizeindex;
+int64_t ICPHandlerCont::ICPDataBuf_IOBuffer_sizeindex;
 static ClassAllocator <ICPPeerReadCont::PeerReadData>PeerReadDataAllocator("PeerReadDataAllocator");
 static ClassAllocator<ICPPeerReadCont> ICPPeerReadContAllocator("ICPPeerReadContAllocator");
 

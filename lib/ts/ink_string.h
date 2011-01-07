@@ -698,7 +698,7 @@ ptr_len_pbrk(const char *p1, int l1, const char *str)
 // On error, we'll return 0, and nothing is written to the buffer.
 // TODO: Do these really need to be inline?
 inline int
-ink_small_itoa(int32_t val, char* buf, int buf_len)
+ink_small_itoa(int val, char* buf, int buf_len)
 {
   ink_assert(buf_len > 5);
   ink_assert((val >= 0) && (val < 100000));
@@ -750,7 +750,7 @@ ink_fast_itoa(int32_t val, char* buf, int buf_len)
     return (ret >= 0 ? ret : 0);
   }
 
-  return ink_small_itoa(val, buf, buf_len);
+  return ink_small_itoa((int)val, buf, buf_len);
 }
 
 inline int
@@ -762,7 +762,7 @@ ink_fast_uitoa(uint32_t val, char* buf, int buf_len)
     return (ret >= 0 ? ret : 0);
   }
 
-  return ink_small_itoa(val, buf, buf_len);
+  return ink_small_itoa((int)val, buf, buf_len);
 }
 
 inline int
@@ -774,7 +774,7 @@ ink_fast_ltoa(int64_t val, char* buf, int buf_len)
     return (ret >= 0 ? ret : 0);
   }
 
-  return ink_small_itoa(val, buf, buf_len);
+  return ink_small_itoa((int)val, buf, buf_len);
 }
 
 #endif

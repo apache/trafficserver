@@ -499,6 +499,7 @@ static int
 synclient_txn_send_request(ClientTxn * txn, char *request)
 {
   TSCont cont;
+
   TSAssert(txn->magic == MAGIC_ALIVE);
   txn->request = strdup(request);
   SET_TEST_HANDLER(txn->current_handler, synclient_txn_connect_handler);

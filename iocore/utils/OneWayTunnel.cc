@@ -50,8 +50,9 @@ transfer_data(MIOBufferAccessor & in_buf, MIOBufferAccessor & out_buf)
 {
   ink_release_assert(!"Not Implemented.");
 
-  int n = in_buf.reader()->read_avail();
-  int o = out_buf.writer()->write_avail();
+  int64_t n = in_buf.reader()->read_avail();
+  int64_t o = out_buf.writer()->write_avail();
+
   if (n > o)
     n = o;
   if (!n)
@@ -132,7 +133,8 @@ OneWayTunnel::init(VConnection * vcSource,
 
   SET_HANDLER(&OneWayTunnel::startEvent);
 
-  int size_index = 0;
+  int64_t size_index = 0;
+
   if (size_estimate)
     size_index = buffer_size_to_index(size_estimate);
   else

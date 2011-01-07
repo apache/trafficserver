@@ -61,7 +61,7 @@ HTTPHdr::parse_req(HTTPParser * parser, IOBufferReader * r, int *bytes_used, boo
 
 
   do {
-    int b_avail = r->block_read_avail();
+    int64_t b_avail = r->block_read_avail();
 
     if (b_avail <= 0 && eof == false) {
       break;
@@ -102,7 +102,7 @@ HTTPHdr::parse_resp(HTTPParser * parser, IOBufferReader * r, int *bytes_used, bo
   *bytes_used = 0;
 
   do {
-    int b_avail = r->block_read_avail();
+    int64_t b_avail = r->block_read_avail();
 
     if (b_avail <= 0 && eof == false) {
       break;

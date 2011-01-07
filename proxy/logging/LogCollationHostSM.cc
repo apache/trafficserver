@@ -521,8 +521,9 @@ LogCollationHostSM::read_partial(VIO * vio)
 
   // careful not to read more than we have memory for
   char *p = &(m_read_buffer[m_read_bytes_received]);
-  int bytes_wanted_now = m_read_bytes_wanted - m_read_bytes_received;
-  int bytes_received_now = m_client_reader->read(p, bytes_wanted_now);
+  int64_t bytes_wanted_now = m_read_bytes_wanted - m_read_bytes_received;
+  int64_t bytes_received_now = m_client_reader->read(p, bytes_wanted_now);
+
   m_read_bytes_received += bytes_received_now;
 
   // stats

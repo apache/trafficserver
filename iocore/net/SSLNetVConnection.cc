@@ -275,7 +275,7 @@ SSLNetVConnection::net_read_io(NetHandler * nh, EThread * lthread)
     break;
   case SSL_READ_ERROR:
     this->read.triggered = 0;
-    readSignalError(nh, r);
+    readSignalError(nh, (int)r);
     Debug("ssl", "read_from_net, read finished - read error");
     break;
   }
@@ -331,7 +331,7 @@ SSLNetVConnection::load_buffer_and_write(int64_t towrite, int64_t &wattempted, i
       return (total_wrote);
     }
   } else {
-    int err = SSL_get_error(ssl, r);
+    int err = SSL_get_error(ssl, (int)r);
 
     switch (err) {
     case SSL_ERROR_NONE:

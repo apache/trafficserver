@@ -55,7 +55,7 @@ public:
   // packet scheduling stuff: keep it a doubly linked list
   uint64_t pktSendStartTime;
   uint64_t pktSendFinishTime;
-  uint32_t pktLength;
+  uint64_t pktLength;
 
   bool isReliabilityPkt;
 
@@ -79,20 +79,10 @@ inkcoreapi extern ClassAllocator<UDPPacketInternal> udpPacketAllocator;
 
 TS_INLINE
 UDPPacketInternal::UDPPacketInternal()
-  : pktSendStartTime(0)
-  , pktSendFinishTime(0)
-  , pktLength(0)
-  , isReliabilityPkt(false)
-  , reqGenerationNum(0)
-  , delivery_time(0)
-  , arrival_time(0)
-  , cont(NULL)
-  , conn(NULL)
+  : pktSendStartTime(0), pktSendFinishTime(0), pktLength(0), isReliabilityPkt(false),
+    reqGenerationNum(0), delivery_time(0), arrival_time(0), cont(NULL) , conn(NULL)
 #if defined(PACKETQUEUE_IMPL_AS_PQLIST) || defined(PACKETQUEUE_IMPL_AS_RING)
-,
-in_the_priority_queue(0)
-  ,
-in_heap(0)
+  ,in_the_priority_queue(0), in_heap(0)
 #endif
 {
   memset(&from, '\0', sizeof(from));
@@ -152,20 +142,7 @@ UDPPacket::append_block(IOBufferBlock * block)
   }
 }
 
-TS_INLINE char *
-UDPPacket::asBuf(int *len)
-{
-  UDPPacketInternal *p = (UDPPacketInternal *) this;
-  if (p->chain) {
-    if (len)
-      *len = p->chain->size();
-    return p->chain->start();
-  } else {
-    return NULL;
-  }
-}
-
-TS_INLINE int
+TS_INLINE int64_t
 UDPPacket::getPktLength()
 {
   UDPPacketInternal *p = (UDPPacketInternal *) this;

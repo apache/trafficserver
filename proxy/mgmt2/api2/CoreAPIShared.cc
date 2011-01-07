@@ -106,7 +106,8 @@ readHTTPResponse(int sock, char *buffer, int bufsize, uint64_t timeout)
     return INK_ERR_OKAY;
   }
 #else
-  int err, idx;
+  int64_t err, idx;
+
   idx = 0;
   for (;;) {
     //      printf("%d\n", idx);

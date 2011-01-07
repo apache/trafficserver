@@ -2665,7 +2665,7 @@ ObjectReloadCont::ObjectReloadEvent(int event, void *d)
             _caller_cont->handleEvent(event, _receive_data_reader);
 
           } else {
-            int read_bytes = _receive_data_reader->read_avail();
+            int64_t read_bytes = _receive_data_reader->read_avail();
             _receive_data_reader->consume(read_bytes);
             _read_vio->reenable();
           }

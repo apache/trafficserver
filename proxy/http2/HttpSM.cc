@@ -859,7 +859,8 @@ HttpSM::state_drain_client_request_body(int event, void *data)
   case VC_EVENT_READ_COMPLETE:
     {
       // We've finished draing the POST body
-      int avail = ua_buffer_reader->read_avail();
+      int64_t avail = ua_buffer_reader->read_avail();
+
       ua_buffer_reader->consume(avail);
       client_request_body_bytes += avail;
       ink_debug_assert(client_request_body_bytes == t_state.hdr_info.request_content_length);
@@ -985,8 +986,9 @@ HttpSM::state_read_push_response_header(int event, void *data)
   ink_assert(ua_entry->read_vio == (VIO *) data);
   ink_assert(t_state.current.server == NULL);
 
-  int data_size = 0;
-  int bytes_used = 0;
+  int64_t data_size = 0;
+  int64_t  bytes_used = 0;
+
   // Not used here.
   //bool parse_error = false;
   //VIO* vio = (VIO*) data;
@@ -3009,7 +3011,7 @@ HttpSM::is_bg_fill_necessary(HttpTunnelConsumer * c)
     int64_t ua_cl = t_state.hdr_info.client_response.get_content_length();
 
     if (ua_cl > 0) {
-      int ua_body_done = c->bytes_written - client_response_hdr_bytes;
+      int64_t ua_body_done = c->bytes_written - client_response_hdr_bytes;
       float pDone = (float) ua_body_done / ua_cl;
 
       // If we got a good content lenght.  Check to make sure that we haven't already
@@ -4886,7 +4888,7 @@ HttpSM::do_setup_post_tunnel(HttpVC_t to_vc_type)
     post_redirect = true;
     //copy the post data into a new producer buffer for static producer
     tunnel.postbuf->postdata_producer_buffer->write(tunnel.postbuf->postdata_copy_buffer_start);
-    int post_bytes = tunnel.postbuf->postdata_producer_reader->read_avail();
+    int64_t post_bytes = tunnel.postbuf->postdata_producer_reader->read_avail();
     transfered_bytes = post_bytes;
     p = tunnel.add_producer(HTTP_TUNNEL_STATIC_PRODUCER,
                             post_bytes,
@@ -4918,8 +4920,7 @@ HttpSM::do_setup_post_tunnel(HttpVC_t to_vc_type)
     //  header buffer into new buffer
     //
 
-    client_request_body_bytes =
-      post_buffer->write(ua_buffer_reader, chunked ? ua_buffer_reader->read_avail() : post_bytes);
+    client_request_body_bytes = post_buffer->write(ua_buffer_reader, chunked ? ua_buffer_reader->read_avail() : post_bytes);
     ua_buffer_reader->consume(client_request_body_bytes);
     p = tunnel.add_producer(ua_entry->vc,
                             post_bytes - transfered_bytes,
@@ -5583,7 +5584,7 @@ int
 HttpSM::find_http_resp_buffer_size(int64_t content_length)
 {
   int64_t buf_size;
-  int alloc_index;
+  int64_t alloc_index;
 
   if (content_length == HTTP_UNDEFINED_CL) {
     // Try use our configured default size.  Otherwise pick
@@ -5903,7 +5904,7 @@ HttpSM::setup_push_transfer_to_cache()
     // The ua has shutdown on us already so the only data
     //  we'll get is already in the buffer.  Make sure it
     //  fullfills the stated lenght
-    int avail = ua_buffer_reader->read_avail();
+    int64_t avail = ua_buffer_reader->read_avail();
 
     if (avail < nbytes) {
       // Client failed to send the body, it's gone.  Kill the
