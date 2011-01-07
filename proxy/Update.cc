@@ -2643,7 +2643,7 @@ ObjectReloadCont::ObjectReloadEvent(int event, void *d)
         _state = ObjectReloadCont::READING_DATA;
         _receive_data = new_MIOBuffer(max_iobuffer_size);
         _receive_data_reader = _receive_data->alloc_reader();
-        _read_vio = _netvc->do_io_read(this, INT_MAX, _receive_data);
+        _read_vio = _netvc->do_io_read(this, INT64_MAX, _receive_data);
         return EVENT_DONE;
       } else {
         // Write error, terminate processing

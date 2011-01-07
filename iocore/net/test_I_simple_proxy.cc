@@ -74,7 +74,7 @@ struct NetTesterSM:public Continuation
     response_buf = new_MIOBuffer(8);
     client_reader = request_buf->alloc_reader();
     client_parse_reader = request_buf->alloc_reader();
-    client_read_vio = client_vc->do_io_read(this, INT_MAX, request_buf);
+    client_read_vio = client_vc->do_io_read(this, INT64_MAX, request_buf);
     client_vc->set_inactivity_timeout(HRTIME_SECONDS(60));
     req_len = 0;
   }

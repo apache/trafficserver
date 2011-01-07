@@ -602,7 +602,7 @@ TransformControl::handle_event(int event, void *edata)
   case TRANSFORM_READ_READY:{
       MIOBuffer *buf = new_empty_MIOBuffer();
       m_read_buf = buf->alloc_reader();
-      m_tvc->do_io_read(this, INT_MAX, buf);
+      m_tvc->do_io_read(this, INT64_MAX, buf);
       break;
     }
 

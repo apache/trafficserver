@@ -186,7 +186,7 @@ gzip_transform_init(TSCont contp, GzipData * data)
 
   data->output_buffer = TSIOBufferCreate();
   data->output_reader = TSIOBufferReaderAlloc(data->output_buffer);
-  data->output_vio = TSVConnWrite(output_conn, contp, data->output_reader, INT_MAX);
+  data->output_vio = TSVConnWrite(output_conn, contp, data->output_reader, INT64_MAX);
 }
 
 

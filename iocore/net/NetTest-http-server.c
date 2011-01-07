@@ -45,7 +45,7 @@ struct NetTesterSM:public Continuation
     SET_HANDLER(&NetTesterSM::handle_read);
     req_buf = new_MIOBuffer(1);
     reader = req_buf->alloc_reader();
-    read_vio = vc->do_io_read(this, INT_MAX, req_buf);
+    read_vio = vc->do_io_read(this, INT64_MAX, req_buf);
     //vc->set_inactivity_timeout(HRTIME_SECONDS(60));
     resp_buf = new_empty_MIOBuffer(6);
     resp_buf->append_block(resp_blk->clone());

@@ -239,7 +239,7 @@ Stuffer::mainEvent(int event, void *data)
     reader = buf->alloc_reader();
     buf->water_mark = buf->block_write_avail();
 
-    source_vio = source_vc->do_io_read(this, INT_MAX, buf);
+    source_vio = source_vc->do_io_read(this, INT64_MAX, buf);
     break;
 
   case VC_EVENT_EOS:

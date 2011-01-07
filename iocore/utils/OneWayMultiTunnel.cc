@@ -59,7 +59,7 @@ OneWayMultiTunnel::OneWayMultiTunnel_free(OneWayMultiTunnel * pOWT)
 }
 
 void
-OneWayMultiTunnel::init(VConnection * vcSource, VConnection ** vcTargets, int n_vcTargets, Continuation * aCont, int size_estimate, int nbytes, bool asingle_buffer,    /* = true */
+OneWayMultiTunnel::init(VConnection * vcSource, VConnection ** vcTargets, int n_vcTargets, Continuation * aCont, int size_estimate, int64_t nbytes, bool asingle_buffer,    /* = true */
                         bool aclose_source,     /* = false */
                         bool aclose_targets,    /* = false */
                         Transform_fn aManipulate_fn, int water_mark)
@@ -100,7 +100,7 @@ OneWayMultiTunnel::init(VConnection * vcSource, VConnection ** vcTargets, int n_
 
   ink_assert(n_vcTargets <= ONE_WAY_MULTI_TUNNEL_LIMIT);
   for (int i = 0; i < n_vcTargets; i++)
-    vioTargets[i] = vcTargets[i]->do_io(VIO::WRITE, this, INT_MAX, buf2, 0);
+    vioTargets[i] = vcTargets[i]->do_io(VIO::WRITE, this, INT64_MAX, buf2, 0);
 
   return;
 }

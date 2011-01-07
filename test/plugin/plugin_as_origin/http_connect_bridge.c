@@ -434,20 +434,20 @@ pvc_process_accept(TSVConn net_vc)
     LOG_ERROR_AND_CLEANUP("TSHttpConnect");
   }
 
-  my_state->h_read_vio = TSVConnRead(my_state->http_vc, contp, my_state->resp_buffer, INT_MAX);
+  my_state->h_read_vio = TSVConnRead(my_state->http_vc, contp, my_state->resp_buffer, INT64_MAX);
   if (my_state->h_read_vio == TS_ERROR_PTR) {
     LOG_ERROR_AND_CLEANUP("TSVConnRead");
   }
-  my_state->h_write_vio = TSVConnWrite(my_state->http_vc, contp, my_state->req_reader, INT_MAX);
+  my_state->h_write_vio = TSVConnWrite(my_state->http_vc, contp, my_state->req_reader, INT64_MAX);
   if (my_state->h_write_vio == TS_ERROR_PTR) {
     LOG_ERROR_AND_CLEANUP("TSVConnWrite");
   }
 
-  my_state->n_read_vio = TSVConnRead(my_state->net_vc, contp, my_state->req_buffer, INT_MAX);
+  my_state->n_read_vio = TSVConnRead(my_state->net_vc, contp, my_state->req_buffer, INT64_MAX);
   if (my_state->n_read_vio == TS_ERROR_PTR) {
     LOG_ERROR_AND_CLEANUP("TSVConnRead");
   }
-  my_state->n_write_vio = TSVConnWrite(my_state->net_vc, contp, my_state->resp_reader, INT_MAX);
+  my_state->n_write_vio = TSVConnWrite(my_state->net_vc, contp, my_state->resp_reader, INT64_MAX);
   if (my_state->n_write_vio == TS_ERROR_PTR) {
     LOG_ERROR_AND_CLEANUP("TSVConnWrite");
   }

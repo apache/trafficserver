@@ -166,11 +166,10 @@ state_start(TSCont contp, TSEvent event, void *data)
   /* Now the IOBuffer and IOBufferReader is ready, the data from
      client_vc can be read into the IOBuffer. Since we don't know
      the size of the client request, set the expecting size to be
-     INT_MAX, so that we will always get TS_EVENT_VCONN_READ_READY
+     INT64_MAX, so that we will always get TS_EVENT_VCONN_READ_READY
      event, but never TS_EVENT_VCONN_READ_COMPLETE event. */
   set_handler(txn_sm->q_current_handler, &state_interface_with_client);
-  txn_sm->q_client_read_vio = TSVConnRead(txn_sm->q_client_vc, (TSCont) contp,
-                                           txn_sm->q_client_request_buffer, INT_MAX);
+  txn_sm->q_client_read_vio = TSVConnRead(txn_sm->q_client_vc, (TSCont) contp, txn_sm->q_client_request_buffer, INT64_MAX);
 
   return TS_SUCCESS;
 }
@@ -526,7 +525,7 @@ state_send_request_to_server(TSCont contp, TSEvent event, TSVIO vio)
 
     /* Waiting for the incoming response. */
     set_handler(txn_sm->q_current_handler, &state_interface_with_server);
-    txn_sm->q_server_read_vio = TSVConnRead(txn_sm->q_server_vc, contp, txn_sm->q_server_response_buffer, INT_MAX);
+    txn_sm->q_server_read_vio = TSVConnRead(txn_sm->q_server_vc, contp, txn_sm->q_server_response_buffer, INT64_MAX);
     break;
 
     /* it could be failure of TSNetConnect */
@@ -554,7 +553,7 @@ state_interface_with_server(TSCont contp, TSEvent event, TSVIO vio)
     /* Otherwise, handle events from server. */
   case TS_EVENT_VCONN_READ_READY:
     /* Actually, we shouldn't get READ_COMPLETE because we set bytes
-       count to be INT_MAX. */
+       count to be INT64_MAX. */
   case TS_EVENT_VCONN_READ_COMPLETE:
     return state_read_response_from_server(contp, event, vio);
 

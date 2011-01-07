@@ -36,6 +36,7 @@
 #include <stddef.h>
 
 #ifdef HAVE_STDINT_H
+#define __STDC_LIMIT_MACROS
 # include <stdint.h>
 #else
 // TODO: Add "standard" int types?

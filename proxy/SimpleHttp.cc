@@ -226,7 +226,7 @@ SimpleCont::start(NetVConnection * ua)
 
   SET_HANDLER(&SimpleCont::ua_read_req_event);
 
-  m_ua_read_vio = m_ua_vc->do_io_read(this, INT_MAX, m_ua_read_buf);
+  m_ua_read_vio = m_ua_vc->do_io_read(this, INT64_MAX, m_ua_read_buf);
 }
 
 void
@@ -394,7 +394,7 @@ SimpleCont::os_read_resp()
 
   SET_HANDLER(&SimpleCont::os_read_resp_event);
 
-  m_os_read_vio = m_os_vc->do_io_read(this, INT_MAX, m_os_read_buf);
+  m_os_read_vio = m_os_vc->do_io_read(this, INT64_MAX, m_os_read_buf);
 }
 
 void
@@ -502,11 +502,11 @@ SimpleCont::os_ua_tunnel()
 {
   SET_HANDLER(&SimpleCont::os_ua_tunnel_event);
 
-  m_os_read_vio = m_os_vc->do_io_read(this, INT_MAX, m_ua_write_buf);
+  m_os_read_vio = m_os_vc->do_io_read(this, INT64_MAX, m_ua_write_buf);
   if (m_cache_write_vc) {
-    m_cache_write_vio = m_cache_write_vc->do_io_write(this, INT_MAX, m_ua_reader->clone());
+    m_cache_write_vio = m_cache_write_vc->do_io_write(this, INT64_MAX, m_ua_reader->clone());
   }
-  m_ua_write_vio = m_ua_vc->do_io_write(this, INT_MAX, m_ua_reader);
+  m_ua_write_vio = m_ua_vc->do_io_write(this, INT64_MAX, m_ua_reader);
 }
 
 void

@@ -182,7 +182,7 @@ public:
     from the vconnection.
 
     @param c continuation to be called back after (partial) read
-    @param nbytes no of bytes to read, if unknown set to INT_MAX
+    @param nbytes no of bytes to read, if unknown set to INT64_MAX
     @param buf buffer to put the data into
     @return vio
 
@@ -217,7 +217,7 @@ public:
     when it is destroyed.
 
     @param c continuation to be called back after (partial) write
-    @param nbytes no of bytes to write, if unknown msut be set to INT_MAX
+    @param nbytes no of bytes to write, if unknown msut be set to INT64_MAX
     @param buf source of data
     @param owner
     @return vio pointer

@@ -28,17 +28,14 @@
 
 TS_INLINE
 VIO::VIO(int aop)
-  :
-_cont(NULL),
-nbytes(0),
-ndone(0),
-op(aop),
-buffer(),
-vc_server(0),
-mutex(0)
-{
-  return;
-}
+  :_cont(NULL),
+   nbytes(0),
+   ndone(0),
+   op(aop),
+   buffer(),
+   vc_server(0),
+   mutex(0)
+{ }
 
 /////////////////////////////////////////////////////////////
 //
@@ -47,17 +44,14 @@ mutex(0)
 /////////////////////////////////////////////////////////////
 TS_INLINE
 VIO::VIO()
-  :
-_cont(0),
-nbytes(0),
-ndone(0),
-op(VIO::NONE),
-buffer(),
-vc_server(0),
-mutex(0)
-{
-  return;
-}
+  :_cont(0),
+   nbytes(0),
+   ndone(0),
+   op(VIO::NONE),
+   buffer(),
+   vc_server(0),
+   mutex(0)
+{ }
 
 TS_INLINE Continuation *
 VIO::get_continuation()

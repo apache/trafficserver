@@ -96,8 +96,8 @@ struct State
   State_t state;
   int tasks_count;
   Task_t tasks[100];
-  int nbytes_write;             // number of bytes to write
-  int nbytes_read;              // number of bytes to read
+  int64_t nbytes_write;             // number of bytes to write
+  intte_t nbytes_read;              // number of bytes to read
 
     State():state(STATE_IDLE), tasks_count(0)
   {

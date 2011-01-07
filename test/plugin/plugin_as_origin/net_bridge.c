@@ -313,23 +313,23 @@ pvc_process_connect(TSCont contp, int event, void *data, pvc_state * my_state)
     */
     my_state->connect_timeout_event = TSContSchedule(contp, 30 * 1000, TS_THREAD_POOL_DEFAULT);
 
-    my_state->p_read_vio = TSVConnRead(my_state->p_vc, contp, my_state->req_buffer, INT_MAX);
+    my_state->p_read_vio = TSVConnRead(my_state->p_vc, contp, my_state->req_buffer, INT64_MAX);
     if (my_state->p_read_vio == TS_ERROR_PTR) {
       LOG_ERROR("TSVConnRead");
       return;
     }
-    my_state->p_write_vio = TSVConnWrite(my_state->p_vc, contp, my_state->resp_reader, INT_MAX);
+    my_state->p_write_vio = TSVConnWrite(my_state->p_vc, contp, my_state->resp_reader, INT64_MAX);
     if (my_state->p_write_vio == TS_ERROR_PTR) {
       LOG_ERROR("TSVConnWrite");
       return;
     }
 
-    my_state->n_read_vio = TSVConnRead(my_state->net_vc, contp, my_state->resp_buffer, INT_MAX);
+    my_state->n_read_vio = TSVConnRead(my_state->net_vc, contp, my_state->resp_buffer, INT64_MAX);
     if (my_state->n_read_vio == TS_ERROR_PTR) {
       LOG_ERROR("TSVConnRead");
       return;
     }
-    my_state->n_write_vio = TSVConnWrite(my_state->net_vc, contp, my_state->req_reader, INT_MAX);
+    my_state->n_write_vio = TSVConnWrite(my_state->net_vc, contp, my_state->req_reader, INT64_MAX);
     if (my_state->n_write_vio == TS_ERROR_PTR) {
       LOG_ERROR("TSVConnWrite");
       return;

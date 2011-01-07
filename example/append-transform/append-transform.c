@@ -108,7 +108,7 @@ handle_transform(TSCont contp)
   data = TSContDataGet(contp);
   if (!data) {
     towrite = TSVIONBytesGet(write_vio);
-    if (towrite != INT_MAX) {
+    if (towrite != INT64_MAX) {
       towrite += append_buffer_length;
     }
     data = my_data_alloc();

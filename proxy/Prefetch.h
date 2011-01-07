@@ -88,9 +88,9 @@ class PrefetchUrlEntry: public RefCountObj
 {
 public:
   PrefetchUrlEntry()
-  :url(0), len(INT_MAX), resp_blaster(0),
-    object_buf_status(TS_PREFETCH_OBJ_BUF_NOT_NEEDED),
-    req_ip(0), child_ip(0), url_multicast_ip(0), data_multicast_ip(0), blaster_link(0), hash_link(0)
+    : url(0), len(INT_MAX), resp_blaster(0),
+      object_buf_status(TS_PREFETCH_OBJ_BUF_NOT_NEEDED),
+      req_ip(0), child_ip(0), url_multicast_ip(0), data_multicast_ip(0), blaster_link(0), hash_link(0)
   {
     refcount_inc();
   }
@@ -211,14 +211,12 @@ class BlasterUrlList:public Continuation
   int cur_len;
 
 public:
-    BlasterUrlList()
-  : Continuation(), timeout(0), action(0), mtu(0), blast_proto(ILL_BLAST), list_head(0), cur_len(0)
-  {
-  }
+  BlasterUrlList()
+    : Continuation(), timeout(0), action(0), mtu(0), blast_proto(ILL_BLAST), list_head(0), cur_len(0)
+  {  }
 
   void init(PrefetchBlastType btype = UDP_BLAST, int tout = 0, int xmtu = INT_MAX) {
-    SET_HANDLER((int (BlasterUrlList::*)(int, void *))
-                (&BlasterUrlList::handleEvent));
+    SET_HANDLER((int (BlasterUrlList::*)(int, void *))(&BlasterUrlList::handleEvent));
     mutex = new_ProxyMutex();
     blast_proto = btype;
     timeout = tout;

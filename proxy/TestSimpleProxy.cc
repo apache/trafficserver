@@ -93,7 +93,7 @@ struct TestProxy:Continuation
     }
     remote = aremote;
     outbuf = new_MIOBuffer();
-    remote->do_io(VIO::WRITE, this, INT_MAX, outbuf);
+    remote->do_io(VIO::WRITE, this, INT64_MAX, outbuf);
     *url_end = 0;
     sprintf(outbuf->start, "GET %s HTTP/1.0\n\n\n", url);
     outbuf->fill(strlen(outbuf->start) + 1);
@@ -141,7 +141,7 @@ struct TestAccept:Continuation
   {
     if (!event) {
       MIOBuffer *buf = new_MIOBuffer();
-        e->do_io(VIO::READ, new TestProxy(buf), INT_MAX, buf);
+        e->do_io(VIO::READ, new TestProxy(buf), INT64_MAX, buf);
     } else
     {
       printf("TestAccept error %d\n", event);

@@ -973,7 +973,7 @@ state_connect_to_server(TSCont contp, int event, TSVConn vc)
 
   set_handler(Server->q_server_current_handler, &state_main_event);
   assert(Server->q_server_response_buffer);
-  Server->q_server_read_vio = TSVConnRead(Server->q_server_vc, contp, Server->q_server_response_buffer, INT_MAX);
+  Server->q_server_read_vio = TSVConnRead(Server->q_server_vc, contp, Server->q_server_response_buffer, INT64_MAX);
 
   assert(Server->q_server_read_vio);
   server_send_request(contp);

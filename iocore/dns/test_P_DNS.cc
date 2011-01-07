@@ -39,7 +39,7 @@ struct NetTesterSM:public Continuation
     SET_HANDLER(&NetTesterSM::handle_read);
     buf = new_MIOBuffer(8);
     reader = buf->alloc_reader();
-    read_vio = vc->do_io_read(this, INT_MAX, buf);
+    read_vio = vc->do_io_read(this, INT64_MAX, buf);
   }
 
 

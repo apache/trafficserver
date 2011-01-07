@@ -493,7 +493,7 @@ struct ClusterVConnection: public ClusterVConnectionBase
   // virtual VIO * do_io(
   //   int                   op,
   //   Continuation        * c = NULL,
-  //   int                   nbytes = INT_MAX,
+  //   int                   nbytes = INT64_MAX,
   //   MIOBuffer           * buf = 0,
   //   int                   whence = SEEK_CUR);
   //

@@ -164,7 +164,7 @@ SocksProxy::mainEvent(int event, void *data)
       buf->reset();
       timeout = this_ethread()
         ->schedule_in(this, HRTIME_SECONDS(netProcessor.socks_conf_stuff->socks_timeout));
-      clientVC->do_io_read(this, INT_MAX, buf);
+      clientVC->do_io_read(this, INT64_MAX, buf);
     }
 
     break;

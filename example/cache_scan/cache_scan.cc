@@ -25,11 +25,11 @@
  * cache_scan.cc:  use TSCacheScan to print URLs and headers for objects in
  *                 the cache when endpoint /show-cache is requested
  */
-
 #include <stdio.h>
 #include <string.h>
 #include <limits.h>
 #include <stdlib.h>
+#define __STDC_LIMIT_MACROS
 #include <ts/ts.h>
 #include <ts/experimental.h>
 
@@ -71,7 +71,7 @@ handle_scan(TSCont contp, TSEvent event, void *edata)
     cstate->done = 1;
     const char error[] = "Cache remove operation succeeded";
     cstate->cache_vc = (TSVConn) edata;
-    cstate->write_vio = TSVConnWrite(cstate->net_vc, contp, cstate->resp_reader, INT_MAX);
+    cstate->write_vio = TSVConnWrite(cstate->net_vc, contp, cstate->resp_reader, INT64_MAX);
     cstate->total_bytes += TSIOBufferWrite(cstate->resp_buffer, error, sizeof(error) - 1);
     TSVIONBytesSet(cstate->write_vio, cstate->total_bytes);
     TSVIOReenable(cstate->write_vio);
@@ -84,7 +84,7 @@ handle_scan(TSCont contp, TSEvent event, void *edata)
     char rc[12];
     snprintf(rc, 12, "%p", edata);
     cstate->cache_vc = (TSVConn) edata;
-    cstate->write_vio = TSVConnWrite(cstate->net_vc, contp, cstate->resp_reader, INT_MAX);
+    cstate->write_vio = TSVConnWrite(cstate->net_vc, contp, cstate->resp_reader, INT64_MAX);
     cstate->total_bytes += TSIOBufferWrite(cstate->resp_buffer, error, sizeof(error) - 1);
     cstate->total_bytes += TSIOBufferWrite(cstate->resp_buffer, rc, strlen(rc));
 
@@ -96,7 +96,7 @@ handle_scan(TSCont contp, TSEvent event, void *edata)
   //first scan event, save vc and start write
   if (event == TS_EVENT_CACHE_SCAN) {
     cstate->cache_vc = (TSVConn) edata;
-    cstate->write_vio = TSVConnWrite(cstate->net_vc, contp, cstate->resp_reader, INT_MAX);
+    cstate->write_vio = TSVConnWrite(cstate->net_vc, contp, cstate->resp_reader, INT64_MAX);
     return TS_EVENT_CONTINUE;
   }
   //just stop scanning if blocked or failed
@@ -195,7 +195,7 @@ handle_accept(TSCont contp, TSEvent event, TSVConn vc)
       cstate->resp_buffer = TSIOBufferCreate();
       cstate->resp_reader = TSIOBufferReaderAlloc(cstate->resp_buffer);
 
-      cstate->read_vio = TSVConnRead(cstate->net_vc, contp, cstate->req_buffer, INT_MAX);
+      cstate->read_vio = TSVConnRead(cstate->net_vc, contp, cstate->req_buffer, INT64_MAX);
     } else {
       TSVConnClose(vc);
       TSContDestroy(contp);

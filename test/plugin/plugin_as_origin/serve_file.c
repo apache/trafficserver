@@ -175,7 +175,7 @@ pvc_process_accept(TSCont contp, pvc_state * my_state)
     return;
   }
 
-  my_state->read_vio = TSVConnRead(my_state->net_vc, contp, my_state->req_buffer, INT_MAX);
+  my_state->read_vio = TSVConnRead(my_state->net_vc, contp, my_state->req_buffer, INT64_MAX);
   if (my_state->read_vio == TS_ERROR_PTR) {
     LOG_ERROR("TSVConnRead");
     return;
@@ -210,7 +210,7 @@ pvc_process_read(TSCont contp, TSEvent event, pvc_state * my_state)
       TSDebug(NEG_DEBUG_TAG, "Negative Test TSVConnShutdown 1 passed");
 #endif
 
-    my_state->write_vio = TSVConnWrite(my_state->net_vc, contp, my_state->resp_reader, INT_MAX);
+    my_state->write_vio = TSVConnWrite(my_state->net_vc, contp, my_state->resp_reader, INT64_MAX);
     if (my_state->write_vio == TS_ERROR_PTR) {
       LOG_ERROR("TSVConnWrite");
       return;

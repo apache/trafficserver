@@ -171,8 +171,8 @@ struct NetTesterSM:public Continuation
       resp_reader = response_buf->alloc_reader();
 
       response_buf->autopilot = 1;
-      server_resp_read_vio = server_vc->do_io_read(this, INT_MAX, response_buf);
-      client_resp_write_vio = client_vc->do_io_write(this, INT_MAX, resp_reader);
+      server_resp_read_vio = server_vc->do_io_read(this, INT64_MAX, response_buf);
+      client_resp_write_vio = client_vc->do_io_write(this, INT64_MAX, resp_reader);
       response_buf->assign_reader_vio(client_resp_write_vio, resp_reader);
       response_buf->assign_writer_vio(server_resp_read_vio);
       break;

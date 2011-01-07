@@ -712,8 +712,8 @@ handle_transform(TSCont contp)
     data->output_buffer = TSIOBufferCreate();
     data->output_reader = TSIOBufferReaderAlloc(data->output_buffer);
 
-    /* INT_MAX because we don't know yet how much bytes we'll produce */
-    data->output_vio = TSVConnWrite(output_conn, contp, data->output_reader, INT_MAX);
+    /* INT64_MAX because we don't know yet how much bytes we'll produce */
+    data->output_vio = TSVConnWrite(output_conn, contp, data->output_reader, INT64_MAX);
 
     if (data->output_vio == TS_ERROR_PTR) {
       TSError("[handle_transform] Error while writing to downstream VC");

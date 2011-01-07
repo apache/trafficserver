@@ -110,7 +110,7 @@ struct OneWayMultiTunnel: public OneWayTunnel
 
   */
   void init(VConnection * vcSource, VConnection ** vcTargets, int n_vcTargets, Continuation * aCont = NULL, int size_estimate = 0,      // 0 == best guess
-            int nbytes = TUNNEL_TILL_DONE,
+            int64_t nbytes = TUNNEL_TILL_DONE,
             bool asingle_buffer = true,
             bool aclose_source = true,
             bool aclose_target = true, Transform_fn manipulate_fn = NULL, int water_mark = 0);
@@ -133,8 +133,8 @@ struct OneWayMultiTunnel: public OneWayTunnel
       end. If aCont is not specified, this should be set to true.
 
   */
-  void init(Continuation * aCont,
-            VIO * SourceVio, VIO ** TargetVios, int n_vioTargets, bool aclose_source = true, bool aclose_target = true);
+  void init(Continuation * aCont, VIO * SourceVio, VIO ** TargetVios, int n_vioTargets, bool aclose_source = true,
+            bool aclose_target = true);
 
   //
   // Private
@@ -142,7 +142,6 @@ struct OneWayMultiTunnel: public OneWayTunnel
   int startEvent(int event, void *data);
 
   virtual void reenable_all();
-
   virtual void close_target_vio(int result, VIO * vio = NULL);
 
   int n_vioTargets;

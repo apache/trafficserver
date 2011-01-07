@@ -39,7 +39,7 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#define TUNNEL_TILL_DONE   INT_MAX
+#define TUNNEL_TILL_DONE   INT64_MAX
 
 #define ONE_WAY_TUNNEL_CLOSE_ALL NULL
 
@@ -124,7 +124,7 @@ struct OneWayTunnel: public Continuation
   */
   void init(VConnection * vcSource, VConnection * vcTarget, Continuation * aCont = NULL, int size_estimate = 0, // 0 = best guess
             ProxyMutex * aMutex = NULL,
-            int nbytes = TUNNEL_TILL_DONE,
+            int64_t nbytes = TUNNEL_TILL_DONE,
             bool asingle_buffer = true,
             bool aclose_source = true,
             bool aclose_target = true, Transform_fn manipulate_fn = NULL, int water_mark = 0);

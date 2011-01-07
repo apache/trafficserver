@@ -52,7 +52,7 @@ FetchSM::httpConnect()
   Debug(DEBUG_TAG, "[%s] calling httpconnect write", __FUNCTION__);
   TSHttpConnect(_ip, _port, &(http_vc));
   PluginVC *vc = (PluginVC *) http_vc;
-  read_vio = vc->do_io_read(this, INT_MAX, resp_buffer);
+  read_vio = vc->do_io_read(this, INT64_MAX, resp_buffer);
   write_vio = vc->do_io_write(this, getReqLen(), req_reader);
 }
 

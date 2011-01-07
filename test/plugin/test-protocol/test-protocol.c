@@ -468,7 +468,7 @@ start_handler(TSCont contp, TSEvent event, void *data)
 
   /* start reading request from the client */
   if ((conn_data->client_read_vio = TSVConnRead(conn_data->client_vconn, (TSCont) contp,
-                                                 conn_data->client_request_buffer, INT_MAX)) == TS_ERROR_PTR) {
+                                                 conn_data->client_request_buffer, INT64_MAX)) == TS_ERROR_PTR) {
     LOG_ERROR("TSVConnRead");
     clean_and_exit(contp);
     return -1;

@@ -1353,7 +1353,7 @@ asm_ts_read_init(TSCont contp, AsmData * data)
   data->block_reader = TSIOBufferReaderAlloc(data->block_buffer);
 
   /* Read data on the socket back. Try to read the maximum */
-  data->ts_vio = TSVConnRead(data->ts_vc, contp, data->ts_output_buffer, INT_MAX);
+  data->ts_vio = TSVConnRead(data->ts_vc, contp, data->ts_output_buffer, INT64_MAX);
 
   return 0;
 }

@@ -116,7 +116,7 @@ OneWayTunnel::init(VConnection * vcSource,
                    Continuation * aCont,
                    int size_estimate,
                    ProxyMutex * aMutex,
-                   int nbytes,
+                   int64_t nbytes,
                    bool asingle_buffer,
                    bool aclose_source, bool aclose_target, Transform_fn aManipulate_fn, int water_mark)
 {

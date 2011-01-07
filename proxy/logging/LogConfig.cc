@@ -604,18 +604,18 @@ LogConfig::read_configuration_variables()
   default value if we get garbage back from the config file.
   -------------------------------------------------------------------------*/
 
+// TODO: Is UINT_MAX here really correct?
 LogConfig::LogConfig()
-:
-initialized(false),
-reconfiguration_needed(false),
-logging_space_exhausted(false), m_space_used(0), m_partition_space_left((int64_t) UINT_MAX),
+  : initialized(false),
+    reconfiguration_needed(false),
+    logging_space_exhausted(false), m_space_used(0), m_partition_space_left((int64_t) UINT_MAX),
 #if defined (IOCORE_LOG_COLLATION)
-  m_log_collation_accept(NULL),
+    m_log_collation_accept(NULL),
 #endif
-  m_dir_entry(NULL),
-m_pDir(NULL),
-m_disk_full(false),
-m_disk_low(false), m_partition_full(false), m_partition_low(false), m_log_directory_inaccessible(false)
+    m_dir_entry(NULL),
+    m_pDir(NULL),
+    m_disk_full(false),
+    m_disk_low(false), m_partition_full(false), m_partition_low(false), m_log_directory_inaccessible(false)
 {
   // Setup the default values for all LogConfig public variables so that
   // a LogConfig object is valid upon return from the constructor even

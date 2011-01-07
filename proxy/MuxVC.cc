@@ -1015,8 +1015,8 @@ void
 MuxVC::init_io()
 {
   SET_HANDLER(MuxVC::state_handle_mux);
-  read_vio = net_vc->do_io_read(this, INT_MAX, read_buffer);
-  write_vio = net_vc->do_io_write(this, INT_MAX, write_buffer->alloc_reader());
+  read_vio = net_vc->do_io_read(this, INT64_MAX, read_buffer);
+  write_vio = net_vc->do_io_write(this, INT64_MAX, write_buffer->alloc_reader());
 }
 
 
@@ -1241,7 +1241,7 @@ MuxVC::setup_connect_check()
   net_vc->set_inactivity_timeout(HRTIME_SECONDS(30));
 
   ink_debug_assert(write_vio == NULL);
-  write_vio = net_vc->do_io_write(this, INT_MAX, r);
+  write_vio = net_vc->do_io_write(this, INT64_MAX, r);
 }
 
 
@@ -2094,7 +2094,7 @@ MuxVC::state_idle(int event, void *data)
         write_vio->nbytes = write_vio->ndone + avail;
 
         // check for rollover in bytes
-        if (write_vio->nbytes < 0 || write_vio->nbytes == INT_MAX) {
+        if (write_vio->nbytes < 0 || write_vio->nbytes == INT64_MAX) {
           write_vio = net_vc->do_io_write(this, avail, write_vio->get_reader());
         } else {
           write_vio->reenable();
@@ -2170,11 +2170,11 @@ MuxVC::state_handle_mux(int event, void *data)
 
   switch (event) {
   case VC_EVENT_WRITE_COMPLETE:
-    // We hit INT_MAX bytes.  Reset the I/O
+    // We hit INT64_MAX bytes.  Reset the I/O
     ink_debug_assert(data == write_vio);
-    ink_debug_assert(write_vio->ndone == INT_MAX);
+    ink_debug_assert(write_vio->ndone == INT64_MAX);
     write_bytes_added -= write_vio->ndone;
-    write_vio = net_vc->do_io_write(this, INT_MAX, write_vio->buffer.reader());
+    write_vio = net_vc->do_io_write(this, INT64_MAX, write_vio->buffer.reader());
     // FALL THROUGH
   case VC_EVENT_WRITE_READY:
     ink_debug_assert(data == write_vio);
@@ -2186,9 +2186,9 @@ MuxVC::state_handle_mux(int event, void *data)
     }
     break;
   case VC_EVENT_READ_COMPLETE:
-    // We hit INT_MAX bytes.  Reset the I/O
+    // We hit INT64_MAX bytes.  Reset the I/O
     ink_debug_assert(data == read_vio);
-    read_vio = net_vc->do_io_read(this, INT_MAX, read_buffer);
+    read_vio = net_vc->do_io_read(this, INT64_MAX, read_buffer);
     // FALL THROUGH
   case VC_EVENT_READ_READY:
     ink_debug_assert(data == read_vio);

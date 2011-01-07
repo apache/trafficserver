@@ -879,8 +879,8 @@ public:
 
   /**
     Add by data from IOBufferReader r to the this buffer by reference. If
-    len is INT_MAX, all available data on the reader is added. If len is
-    less than INT_MAX, the smaller of len or the amount of data on the
+    len is INT64_MAX, all available data on the reader is added. If len is
+    less than INT64_MAX, the smaller of len or the amount of data on the
     buffer is added. If offset is greater than zero, than the offset
     bytes of data at the front of the reader are skipped. Bytes skipped
     by offset reduce the number of bytes available on the reader used

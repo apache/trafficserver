@@ -34,6 +34,7 @@
  */
 
 #include <stdio.h>
+#include <unistd.h>
 #include <ts/ts.h>
 
 // This gets the PRI*64 types
@@ -109,7 +110,9 @@ handle_transform(TSCont contp)
     data->output_buffer = TSIOBufferCreate();
     data->output_reader = TSIOBufferReaderAlloc(data->output_buffer);
     TSDebug("null-transform", "\tWriting %d bytes on VConn", TSVIONBytesGet(input_vio));
-    data->output_vio = TSVConnWrite(output_conn, contp, data->output_reader, TSVIONBytesGet(input_vio));
+    //data->output_vio = TSVConnWrite(output_conn, contp, data->output_reader, INT32_MAX);
+    data->output_vio = TSVConnWrite(output_conn, contp, data->output_reader, INT64_MAX);
+    // data->output_vio = TSVConnWrite(output_conn, contp, data->output_reader, TSVIONBytesGet(input_vio));
     if (TSContDataSet(contp, data) == TS_ERROR) {
       TSError("[null-transform] unable to set continuation " "data!\n");
       goto Lerror;
@@ -168,6 +171,8 @@ handle_transform(TSCont contp)
         TSError("[null-plugin] unable to copy IO buffers\n");
         goto Lerror;
       }
+      printf("wrote %d\n", (int)towrite);
+      sleep(1);
 
       /* Tell the read buffer that we have read the data and are no
        * longer interested in it.

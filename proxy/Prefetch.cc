@@ -391,7 +391,7 @@ PrefetchTransform::handle_event(int event, void *edata)
         if (!m_output_vio) {
           m_output_buf = new_empty_MIOBuffer();
           m_output_reader = m_output_buf->alloc_reader();
-          m_output_vio = m_output_vc->do_io_write(this, INT_MAX, m_output_reader);
+          m_output_vio = m_output_vc->do_io_write(this, INT64_MAX, m_output_reader);
         }
         // If the write vio is null, it means it doesn't want
         // to get anymore event (WRITE_READY or WRITE_COMPLETE)
@@ -1566,7 +1566,7 @@ PrefetchBlaster::bufferObject(int event, void *data)
       buf->water_mark = prefetch_config.max_object_size;
       buf->fill(PRELOAD_HEADER_LEN);
 
-      int ntoread = INT_MAX;
+      int64_t ntoread = INT64_MAX;
       int len = copy_header(buf, request, NULL);
 
       if (cache_http_info) {
@@ -2111,10 +2111,10 @@ KeepAliveConn::handleEvent(int event, void *data)
 
     childVC->set_inactivity_timeout(HRTIME_SECONDS(prefetch_config.keepalive_timeout));
 
-    vio = childVC->do_io_write(this, INT_MAX, reader);
+    vio = childVC->do_io_write(this, INT64_MAX, reader);
 
     //his read lets us disconnect when the other side closes
-    childVC->do_io_read(this, INT_MAX, read_buf);
+    childVC->do_io_read(this, INT64_MAX, read_buf);
     break;
 
   case NET_EVENT_OPEN_FAILED:

@@ -684,7 +684,7 @@ HttpSM::setup_client_read_request_header()
     }
   }
 
-  ua_entry->read_vio = ua_session->do_io_read(this, INT_MAX, ua_buffer_reader->mbuf);
+  ua_entry->read_vio = ua_session->do_io_read(this, INT64_MAX, ua_buffer_reader->mbuf);
 }
 
 void
@@ -866,7 +866,7 @@ HttpSM::state_drain_client_request_body(int event, void *data)
 
       ua_buffer_reader->mbuf->size_index = HTTP_HEADER_BUFFER_SIZE_INDEX;
       ua_entry->vc_handler = &HttpSM::state_watch_for_client_abort;
-      ua_entry->read_vio = ua_entry->vc->do_io_read(this, INT_MAX, ua_buffer_reader->mbuf);
+      ua_entry->read_vio = ua_entry->vc->do_io_read(this, INT64_MAX, ua_buffer_reader->mbuf);
       call_transact_and_set_next_state(NULL);
       break;
     }
@@ -974,7 +974,7 @@ HttpSM::setup_push_read_response_header()
   //  the cache
   if (resp_hdr_state == VC_EVENT_CONT) {
     ink_assert(ua_entry->eos == false);
-    ua_entry->read_vio = ua_session->do_io_read(this, INT_MAX, ua_buffer_reader->mbuf);
+    ua_entry->read_vio = ua_session->do_io_read(this, INT64_MAX, ua_buffer_reader->mbuf);
   }
 }
 
@@ -1150,7 +1150,7 @@ HttpSM::state_request_wait_for_transform_read(int event, void *data)
 
   switch (event) {
   case TRANSFORM_READ_READY:
-    if (size != INT_MAX && size >= 0) {
+    if (size != INT64_MAX && size >= 0) {
       // We got a content length so update our internal
       //   data as well as fix up the request header
       t_state.hdr_info.transform_request_cl = size;
@@ -1190,7 +1190,7 @@ HttpSM::state_response_wait_for_transform_read(int event, void *data)
 
   switch (event) {
   case TRANSFORM_READ_READY:
-    if (size != INT_MAX && size >= 0) {
+    if (size != INT64_MAX && size >= 0) {
       // We got a content length so update our internal state
       t_state.hdr_info.transform_response_cl = size;
       t_state.hdr_info.transform_response.value_set_int(MIME_FIELD_CONTENT_LENGTH, MIME_LEN_CONTENT_LENGTH, size);
@@ -3183,7 +3183,7 @@ HttpSM::tunnel_handler_cache_read(int event, HttpTunnelProducer * p)
   case VC_EVENT_ERROR:
   case VC_EVENT_EOS:
     ink_debug_assert(t_state.cache_info.object_read->valid());
-    if (t_state.cache_info.object_read->object_size_get() != INT_MAX || event == VC_EVENT_ERROR) {
+    if (t_state.cache_info.object_read->object_size_get() != INT64_MAX || event == VC_EVENT_ERROR) {
       // Abnormal termination
       t_state.squid_codes.log_code = SQUID_LOG_TCP_SWAPFAIL;
       t_state.squid_codes.wuts_proxy_status_code =
@@ -3196,7 +3196,7 @@ HttpSM::tunnel_handler_cache_read(int event, HttpTunnelProducer * p)
       break;
     } else {
       tunnel.local_finish_all(p);
-      // fall through for the case INT_MAX read with VC_EVENT_EOS
+      // fall through for the case INT64_MAX read with VC_EVENT_EOS
       // callback (read successful)
     }
   case VC_EVENT_READ_COMPLETE:
@@ -3312,7 +3312,7 @@ HttpSM::tunnel_handler_post_ua(int event, HttpTunnelProducer * p)
     // Initiate another read to watch catch aborts and
     //   timeouts
     ua_entry->vc_handler = &HttpSM::state_watch_for_client_abort;
-    ua_entry->read_vio = p->vc->do_io_read(this, INT_MAX, ua_buffer_reader->mbuf);
+    ua_entry->read_vio = p->vc->do_io_read(this, INT64_MAX, ua_buffer_reader->mbuf);
     break;
   default:
     ink_release_assert(0);
@@ -3405,7 +3405,7 @@ HttpSM::tunnel_handler_post_server(int event, HttpTunnelConsumer * c)
     //do not shut down the client read
     if (enable_redirection) {
       if (ua_producer->vc_type == HT_STATIC && event != VC_EVENT_ERROR && event != VC_EVENT_EOS) {
-        ua_entry->read_vio = ua_producer->vc->do_io_read(this, INT_MAX, c->producer->read_buffer);
+        ua_entry->read_vio = ua_producer->vc->do_io_read(this, INT64_MAX, c->producer->read_buffer);
         //ua_producer->vc->do_io_shutdown(IO_SHUTDOWN_READ);
         t_state.client_info.pipeline_possible = false;
       } else {
@@ -3414,7 +3414,7 @@ HttpSM::tunnel_handler_post_server(int event, HttpTunnelConsumer * c)
         }
       }
     } else {
-      ua_entry->read_vio = ua_producer->vc->do_io_read(this, INT_MAX, c->producer->read_buffer);
+      ua_entry->read_vio = ua_producer->vc->do_io_read(this, INT64_MAX, c->producer->read_buffer);
       // we should not shutdown read side of the client here to prevent sending a reset
       //ua_producer->vc->do_io_shutdown(IO_SHUTDOWN_READ);
       t_state.client_info.pipeline_possible = false;
@@ -4725,7 +4725,7 @@ HttpSM::handle_server_setup_error(int event, void *data)
       ink_assert(ua_entry->vc == ua_producer->vc);
 
       ua_entry->vc_handler = &HttpSM::state_watch_for_client_abort;
-      ua_entry->read_vio = ua_producer->vc->do_io_read(this, INT_MAX, c->producer->read_buffer);
+      ua_entry->read_vio = ua_producer->vc->do_io_read(this, INT64_MAX, c->producer->read_buffer);
       ua_producer->vc->do_io_shutdown(IO_SHUTDOWN_READ);
 
       ua_producer->alive = false;
@@ -4908,7 +4908,7 @@ HttpSM::do_setup_post_tunnel(HttpVC_t to_vc_type)
     }
     MIOBuffer *post_buffer = new_MIOBuffer(alloc_index);
     IOBufferReader *buf_start = post_buffer->alloc_reader();
-    int64_t post_bytes = chunked ? INT_MAX : t_state.hdr_info.request_content_length;
+    int64_t post_bytes = chunked ? INT64_MAX : t_state.hdr_info.request_content_length;
     t_state.hdr_info.request_body_start = true;
     // Note: Many browers, Netscape and IE included send two extra
     //  bytes (CRLF) at the end of the post.  We just ignore those
@@ -5152,7 +5152,7 @@ HttpSM::attach_server_session(HttpServerSession * s)
   //  do the read with a buffer and a size so preallocate the
   //  buffer
   server_buffer_reader = server_session->get_reader();
-  server_entry->read_vio = server_session->do_io_read(this, INT_MAX, server_session->read_buffer);
+  server_entry->read_vio = server_session->do_io_read(this, INT64_MAX, server_session->read_buffer);
 
   // This call cannot be canceled or disabled on Windows at a different
   // time (callstack). After this function, all transactions will send
@@ -5162,7 +5162,7 @@ HttpSM::attach_server_session(HttpServerSession * s)
   // reading until writing the request completed. That turned out to be
   // for the second do_io_read(), the way to reenable() reading once
   // disabled, but still the result of this do_io_read came in. For this
-  // read holds: server_entry->read_vio == INT_MAX
+  // read holds: server_entry->read_vio == INT64_MAX
   // This block of read events gets undone in setup_server_read_response()
 
   // Transfer control of the write side as well
@@ -5322,7 +5322,7 @@ HttpSM::setup_server_read_response_header()
         server_entry->read_vio->nbytes == server_entry->read_vio->ndone &&
         milestones.server_read_header_done == 0) {
       ink_assert(server_entry->eos == false);
-      server_entry->read_vio = server_session->do_io_read(this, INT_MAX, server_buffer_reader->mbuf);
+      server_entry->read_vio = server_session->do_io_read(this, INT64_MAX, server_buffer_reader->mbuf);
     }
   }
 }
@@ -5355,7 +5355,7 @@ HttpSM::setup_cache_read_transfer()
 
   HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::tunnel_handler);
 
-  doc_size = (doc_size == INT_MAX) ? INT_MAX : (doc_size + hdr_size);
+  doc_size = (doc_size == INT64_MAX) ? INT64_MAX : (doc_size + hdr_size);
   HttpTunnelProducer *p = tunnel.add_producer(cache_sm.cache_read_vc,
                                               doc_size, buf_start, &HttpSM::tunnel_handler_cache_read, HT_CACHE_READ,
                                               "cache read");
@@ -5721,7 +5721,7 @@ HttpSM::setup_transfer_from_transform()
   HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::tunnel_handler);
 
   HttpTunnelProducer *p = tunnel.add_producer(transform_info.vc,
-                                              INT_MAX,
+                                              INT64_MAX,
                                               buf_start,
                                               &HttpSM::tunnel_handler_transform_read,
                                               HT_TRANSFORM,
@@ -5753,7 +5753,7 @@ HttpSM::setup_transfer_from_transform_to_cache_only()
   HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::tunnel_handler);
 
   HttpTunnelProducer *p = tunnel.add_producer(transform_info.vc,
-                                              INT_MAX,
+                                              INT64_MAX,
                                               buf_start,
                                               &HttpSM::tunnel_handler_transform_read,
                                               HT_TRANSFORM,

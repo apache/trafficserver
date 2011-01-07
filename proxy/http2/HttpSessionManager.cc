@@ -310,7 +310,7 @@ HttpSessionManager::release_session(HttpServerSession * to_release)
     //  if it closes on us.  We will get called back in the
     //  continuation for this bucket, ensuring we have the lock
     //  to remove the connection from our lists
-    to_release->do_io_read(bucket, INT_MAX, to_release->read_buffer);
+    to_release->do_io_read(bucket, INT64_MAX, to_release->read_buffer);
 
     // Transfer control of the write side as well
     to_release->do_io_write(bucket, 0, NULL);

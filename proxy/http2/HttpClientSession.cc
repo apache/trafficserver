@@ -293,7 +293,7 @@ HttpClientSession::do_io_close(int alerrno)
     //  the do_io_write() call (INKqa05309)
     client_vc->do_io_shutdown(IO_SHUTDOWN_WRITE);
 
-    ka_vio = client_vc->do_io_read(this, INT_MAX, read_buffer);
+    ka_vio = client_vc->do_io_read(this, INT64_MAX, read_buffer);
     ink_assert(slave_ka_vio != ka_vio);
 
     // [bug 2610799] Drain any data read.
@@ -545,7 +545,7 @@ HttpClientSession::attach_server_session(HttpServerSession * ssession, bool tran
     //  have it call the client session back.  This IO also prevent
     //  the server net conneciton from calling back a dead sm
     SET_HANDLER(&HttpClientSession::state_keep_alive);
-    slave_ka_vio = ssession->do_io_read(this, INT_MAX, ssession->read_buffer);
+    slave_ka_vio = ssession->do_io_read(this, INT64_MAX, ssession->read_buffer);
     ink_assert(slave_ka_vio != ka_vio);
 
     // Transfer control of the write side as well
@@ -604,7 +604,7 @@ HttpClientSession::release(IOBufferReader * r)
     Debug("http_cs", "[%" PRId64 "] initiating io for next header", con_id);
     read_state = HCS_KEEP_ALIVE;
     SET_HANDLER(&HttpClientSession::state_keep_alive);
-    ka_vio = this->do_io_read(this, INT_MAX, read_buffer);
+    ka_vio = this->do_io_read(this, INT64_MAX, read_buffer);
     ink_assert(slave_ka_vio != ka_vio);
     client_vc->set_inactivity_timeout(HRTIME_SECONDS(ka_in));
     client_vc->set_active_timeout(HRTIME_SECONDS(ka_in));

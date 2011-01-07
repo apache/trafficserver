@@ -465,7 +465,7 @@ public:
 //          printf("*** Got Request, %d Transactions Currently Open ***\n",
 //                 state_machine_count);
       StateMachine *sm = new StateMachine(nvc);
-        sm->ivio = nvc->do_io(VIO::READ, sm, INT_MAX, sm->ibuf);
+        sm->ivio = nvc->do_io(VIO::READ, sm, INT64_MAX, sm->ibuf);
     } else
     {
       printf("AcceptContinuation error %d\n", event);
