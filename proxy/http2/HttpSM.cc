@@ -2770,8 +2770,6 @@ HttpSM::is_http_server_eos_truncation(HttpTunnelProducer * p)
     return true;
   }
 
-  ink_assert(t_state.hdr_info.response_content_length == HTTP_UNDEFINED_CL);
-
   //////////////////////////////////////////////////////////////
   // If we did not get or did not trust the origin server's   //
   //  content-length, read_content_length is unset.  The      //
