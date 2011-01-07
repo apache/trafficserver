@@ -4823,7 +4823,7 @@ HttpSM::setup_transform_to_server_transfer()
   ink_assert(post_transform_info.entry->vc == post_transform_info.vc);
 
   int64_t nbytes = t_state.hdr_info.transform_request_cl;
-  int alloc_index = buffer_size_to_index(nbytes);
+  int64_t alloc_index = buffer_size_to_index(nbytes);
   MIOBuffer *post_buffer = new_MIOBuffer(alloc_index);
   IOBufferReader *buf_start = post_buffer->alloc_reader();
 
@@ -4898,7 +4898,7 @@ HttpSM::do_setup_post_tunnel(HttpVC_t to_vc_type)
     tunnel.postbuf->postdata_producer_buffer = NULL;
     tunnel.postbuf->postdata_producer_reader = NULL;
   } else {
-    int alloc_index;
+    int64_t alloc_index;
     // content length is undefined, use default buffer size
     if (t_state.hdr_info.request_content_length == HTTP_UNDEFINED_CL) {
       alloc_index = (int) t_state.http_config_param->default_buffer_size_index;
@@ -5330,7 +5330,7 @@ HttpSM::setup_server_read_response_header()
 void
 HttpSM::setup_cache_read_transfer()
 {
-  int alloc_index, hdr_size;
+  int64_t alloc_index, hdr_size;
   int64_t doc_size;
 
   ink_assert(cache_sm.cache_read_vc != NULL);
@@ -5373,7 +5373,7 @@ HttpSM::setup_cache_read_transfer()
 HttpTunnelProducer *
 HttpSM::setup_cache_transfer_to_transform()
 {
-  int alloc_index;
+  int64_t alloc_index;
   int64_t doc_size;
 
   ink_assert(cache_sm.cache_read_vc != NULL);
@@ -5662,7 +5662,7 @@ HttpSM::server_transfer_init(MIOBuffer * buf, int hdr_size)
 HttpTunnelProducer *
 HttpSM::setup_server_transfer_to_transform()
 {
-  int alloc_index;
+  int64_t alloc_index;
   int64_t nbytes;
 
   alloc_index = find_server_buffer_size();
@@ -5702,7 +5702,7 @@ HttpSM::setup_server_transfer_to_transform()
 HttpTunnelProducer *
 HttpSM::setup_transfer_from_transform()
 {
-  int alloc_index = find_server_buffer_size();
+  int64_t alloc_index = find_server_buffer_size();
 
   // TODO change this call to new_empty_MIOBuffer()
   MIOBuffer *buf = new_MIOBuffer(alloc_index);
@@ -5741,7 +5741,7 @@ HttpSM::setup_transfer_from_transform()
 HttpTunnelProducer *
 HttpSM::setup_transfer_from_transform_to_cache_only()
 {
-  int alloc_index = find_server_buffer_size();
+  int64_t alloc_index = find_server_buffer_size();
   MIOBuffer *buf = new_MIOBuffer(alloc_index);
   IOBufferReader *buf_start = buf->alloc_reader();
 
@@ -5774,7 +5774,7 @@ void
 HttpSM::setup_server_transfer_to_cache_only()
 {
   TunnelChunkingAction_t action;
-  int alloc_index;
+  int64_t alloc_index;
   int64_t nbytes;
 
   alloc_index = find_server_buffer_size();
@@ -5805,7 +5805,7 @@ HttpSM::setup_server_transfer_to_cache_only()
 void
 HttpSM::setup_server_transfer()
 {
-  int alloc_index, hdr_size;
+  int64_t alloc_index, hdr_size;
   int64_t nbytes;
 
   alloc_index = find_server_buffer_size();
