@@ -1,6 +1,15 @@
                                                          -*- coding: utf-8 -*-
 
 Changes with Apache Traffic Server 2.1.5
+  *) More 64-bit issues has been identified in the SDK and HTTP core, and
+  fixed [TS-620].
+
+  *) Code cleanup of old transparency code and options [TS-613].
+
+  *) We now require a compiler (or libc) that provides atomic
+  operations. This includes gcc 4.1.2 or later, Intel CC, clang (recent
+  versions) as well as Sun's Solaris compilers and libc [TS-618].
+
   *) Support normal default path for remap plugins [TS-616].
 
   *) Change default settings for MSIE User-Agent sniffing [TS-615].
