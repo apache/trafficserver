@@ -525,7 +525,7 @@ public:
 
 class IOBufferReader;
 
-class HTTPHdr:public MIMEHdr
+class HTTPHdr: public MIMEHdr
 {
 public:
   HTTPHdrImpl * m_http;

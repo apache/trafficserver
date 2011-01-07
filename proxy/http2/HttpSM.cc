@@ -1148,7 +1148,7 @@ int
 HttpSM::state_request_wait_for_transform_read(int event, void *data)
 {
   STATE_ENTER(&HttpSM::state_request_wait_for_transform_read, event);
-  int size = (int)(intptr_t) data;
+  int64_t size = (int)(intptr_t) data;
 
   switch (event) {
   case TRANSFORM_READ_READY:
@@ -1156,7 +1156,7 @@ HttpSM::state_request_wait_for_transform_read(int event, void *data)
       // We got a content length so update our internal
       //   data as well as fix up the request header
       t_state.hdr_info.transform_request_cl = size;
-      t_state.hdr_info.server_request.value_set_int(MIME_FIELD_CONTENT_LENGTH, MIME_LEN_CONTENT_LENGTH, size);
+      t_state.hdr_info.server_request.value_set_int64(MIME_FIELD_CONTENT_LENGTH, MIME_LEN_CONTENT_LENGTH, size);
       setup_server_send_request_api();
       break;
     } else {
@@ -1188,14 +1188,14 @@ int
 HttpSM::state_response_wait_for_transform_read(int event, void *data)
 {
   STATE_ENTER(&HttpSM::state_response_wait_for_transform_read, event);
-  int size = (int)(intptr_t) data;
+  int64_t size = (int)(intptr_t) data;
 
   switch (event) {
   case TRANSFORM_READ_READY:
     if (size != INT64_MAX && size >= 0) {
       // We got a content length so update our internal state
       t_state.hdr_info.transform_response_cl = size;
-      t_state.hdr_info.transform_response.value_set_int(MIME_FIELD_CONTENT_LENGTH, MIME_LEN_CONTENT_LENGTH, size);
+      t_state.hdr_info.transform_response.value_set_int64(MIME_FIELD_CONTENT_LENGTH, MIME_LEN_CONTENT_LENGTH, size);
     } else {
       t_state.hdr_info.transform_response_cl = HTTP_UNDEFINED_CL;
     }
@@ -4922,9 +4922,8 @@ HttpSM::do_setup_post_tunnel(HttpVC_t to_vc_type)
 
     client_request_body_bytes = post_buffer->write(ua_buffer_reader, chunked ? ua_buffer_reader->read_avail() : post_bytes);
     ua_buffer_reader->consume(client_request_body_bytes);
-    p = tunnel.add_producer(ua_entry->vc,
-                            post_bytes - transfered_bytes,
-                            buf_start, &HttpSM::tunnel_handler_post_ua, HT_HTTP_CLIENT, "user agent post");
+    p = tunnel.add_producer(ua_entry->vc, post_bytes - transfered_bytes, buf_start,
+                            &HttpSM::tunnel_handler_post_ua, HT_HTTP_CLIENT, "user agent post");
   }
   ua_entry->in_tunnel = true;
 
@@ -5227,7 +5226,7 @@ HttpSM::setup_server_send_request()
   api_set = t_state.api_server_request_body_set ? true : false;
   if (api_set) {
     msg_len = t_state.internal_msg_buffer_size;
-    t_state.hdr_info.server_request.value_set_int(MIME_FIELD_CONTENT_LENGTH, MIME_LEN_CONTENT_LENGTH, msg_len);
+    t_state.hdr_info.server_request.value_set_int64(MIME_FIELD_CONTENT_LENGTH, MIME_LEN_CONTENT_LENGTH, msg_len);
   }
   // We need a reader so bytes don't fall off the end of
   //  the buffer
