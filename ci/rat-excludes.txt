@@ -84,8 +84,10 @@ lib/ts/ink_res_init.cc
 lib/ts/ink_res_mkquery.cc
 lib/ts/ink_rand.h
 lib/ts/ink_rand.cc
+lib/tsconfig/BisonHeaderToC++.sed
 README.libev
 README-EC2
 REVIEWERS
 contrib/perl/AdminClient/Changes
 contrib/perl/AdminClient/MANIFEST
+ats-install/
