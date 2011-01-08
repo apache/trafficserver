@@ -957,7 +957,7 @@ HttpTransactHeaders::insert_warning_header(HttpConfigParams *http_config_param, 
   else
     warn_text_len = 0; // Make sure it's really zero
 
-  char *warning_text = alloca(bufsize);
+  char *warning_text = (char *)alloca(bufsize);
 
   len = snprintf(warning_text, bufsize, "%3d %s %.*s", code, http_config_param->proxy_response_via_string, warn_text_len, warn_text);
   header->value_set(MIME_FIELD_WARNING, MIME_LEN_WARNING, warning_text, len);
