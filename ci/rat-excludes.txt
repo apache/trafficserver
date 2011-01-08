@@ -90,4 +90,4 @@ README-EC2
 REVIEWERS
 contrib/perl/AdminClient/Changes
 contrib/perl/AdminClient/MANIFEST
-ats-install
+ats-install/
