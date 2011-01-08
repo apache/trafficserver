@@ -1301,8 +1301,9 @@ HttpTransact::HandleApiErrorJump(State* s)
     generic HTTP/1.X 500 INKApi Error
   **/
   if ( s->http_return_code && s->http_return_code >= HTTP_STATUS_BAD_REQUEST ) {
+    const char *reason = http_hdr_reason_lookup(s->http_return_code);;
     build_response(s, &s->hdr_info.client_response, s->client_info.http_version, s->http_return_code,
-                   http_hdr_reason_lookup(s->http_return_code)?:"Error" );
+                   reason?reason:"Error" );
   }
   else {
     build_response(s, &s->hdr_info.client_response, s->client_info.http_version,
