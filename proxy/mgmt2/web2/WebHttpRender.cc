@@ -754,7 +754,7 @@ handle_summary_object(WebHttpContext * whc, char *tag, char *arg)
     char *r = ink_ctime_r(&upTime, dateBuf);
     if (r != NULL) {
       HtmlRndrText(output, dict_ht, HTML_ID_UP_SINCE);
-      snprintf(tmpBuf, sizeof(tmpBuf), ": %s (%" PRId64 ":%02lld:%02lld:%02lld)", dateBuf, (int64_t)d, (int64_t)h, (int64_t)m, (int64_t)s);
+      snprintf(tmpBuf, sizeof(tmpBuf), ": %s (%d:%02d:%02d:%02d)", dateBuf, (int32_t)d, (int32_t)h, (int32_t)m, (int32_t)s);
       output->copyFrom(tmpBuf, strlen(tmpBuf));
       HtmlRndrBr(output);
     }
