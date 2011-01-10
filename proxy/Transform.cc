@@ -180,6 +180,8 @@ TransformTerminus::handle_event(int event, void *edata)
               m_event_count, event, (long) m_tvc, (long) m_tvc->m_cont);
 
         m_called_user = 1;
+        // It is our belief this is safe to pass a reference, i.e. its scope
+        // and locking ought to be safe across the lifetime of the continuation.
         m_tvc->m_cont->handleEvent(TRANSFORM_READ_READY, (void *)&m_write_vio.nbytes);
       }
     } else {
