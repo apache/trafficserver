@@ -1279,6 +1279,8 @@ syslog_log_configure()
     closelog();
     openlog("traffic_server", LOG_PID | LOG_NDELAY | LOG_NOWAIT, facility);
   }
+  // TODO: Not really, what's up with this?
+  Debug("server", "Setting syslog facility to %d\n", syslog_facility);
 }
 
 // void syslog_thr_init()
@@ -1299,28 +1301,12 @@ check_system_constants()
 {
 }
 
-/*
-static void
-init_logging()
-{
-  //  iObject::Init();
-  //  iLogBufferBuffer::Init();
-}
-*/
-
 static void
 init_http_header()
 {
-  char internal_config_dir[PATH_NAME_MAX + 1];
-
-  ink_filepath_make(internal_config_dir, sizeof(internal_config_dir),
-                    system_config_directory, "internal");
-
-  url_init(internal_config_dir);
-  mime_init(internal_config_dir);
-  http_init(internal_config_dir);
-  //extern void init_http_auth();
-  //init_http_auth();
+  url_init();
+  mime_init();
+  http_init();
 }
 
 static void

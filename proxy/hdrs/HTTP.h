@@ -448,7 +448,7 @@ extern int HTTP_LEN_NEED_REVALIDATE_ONCE;
 void http_hdr_adjust(HTTPHdrImpl * hdrp, int32_t offset, int32_t length, int32_t delta);
 
 /* Public */
-void http_init(const char *path);
+void http_init();
 
 inkcoreapi HTTPHdrImpl *http_hdr_create(HdrHeap * heap, HTTPType polarity);
 void http_hdr_init(HdrHeap * heap, HTTPHdrImpl * hh, HTTPType polarity);

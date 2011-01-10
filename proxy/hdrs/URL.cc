@@ -92,14 +92,14 @@ int url_hash_method = 0;
   -------------------------------------------------------------------------*/
 
 void
-url_init(const char *path)
+url_init()
 {
   static int init = 1;
 
   if (init) {
     init = 0;
 
-    hdrtoken_init(path);
+    hdrtoken_init();
 
     URL_SCHEME_FILE = hdrtoken_string_to_wks("file");
     URL_SCHEME_FTP = hdrtoken_string_to_wks("ftp");

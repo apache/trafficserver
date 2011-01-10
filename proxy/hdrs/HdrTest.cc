@@ -56,10 +56,10 @@ HdrTest::go(RegressionTest * t, int atype)
 
   int status = 1;
 
-  hdrtoken_init(NULL);
-  url_init(NULL);
-  mime_init(NULL);
-  http_init(NULL);
+  hdrtoken_init();
+  url_init();
+  mime_init();
+  http_init();
 
   status = status & test_error_page_selection();
   status = status & test_http_hdr_print_and_copy();

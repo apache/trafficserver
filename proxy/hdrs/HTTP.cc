@@ -175,15 +175,15 @@ http_hdr_adjust(HTTPHdrImpl * hdrp, int32_t offset, int32_t length, int32_t delt
   -------------------------------------------------------------------------*/
 
 void
-http_init(const char *path)
+http_init()
 {
   static int init = 1;
 
   if (init) {
     init = 0;
 
-    mime_init(path);
-    url_init(path);
+    mime_init();
+    url_init();
 
     HTTP_METHOD_CONNECT = hdrtoken_string_to_wks("CONNECT");
     HTTP_METHOD_DELETE = hdrtoken_string_to_wks("DELETE");

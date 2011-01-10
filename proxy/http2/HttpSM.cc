@@ -1148,7 +1148,7 @@ int
 HttpSM::state_request_wait_for_transform_read(int event, void *data)
 {
   STATE_ENTER(&HttpSM::state_request_wait_for_transform_read, event);
-  int64_t size = (int)(intptr_t) data;
+  int64_t size = *((int64_t*)data);
 
   switch (event) {
   case TRANSFORM_READ_READY:
@@ -1188,7 +1188,7 @@ int
 HttpSM::state_response_wait_for_transform_read(int event, void *data)
 {
   STATE_ENTER(&HttpSM::state_response_wait_for_transform_read, event);
-  int64_t size = (int)(intptr_t) data;
+  int64_t size = *((int64_t*)data);
 
   switch (event) {
   case TRANSFORM_READ_READY:
@@ -4909,6 +4909,7 @@ HttpSM::do_setup_post_tunnel(HttpVC_t to_vc_type)
     MIOBuffer *post_buffer = new_MIOBuffer(alloc_index);
     IOBufferReader *buf_start = post_buffer->alloc_reader();
     int64_t post_bytes = chunked ? INT64_MAX : t_state.hdr_info.request_content_length;
+
     t_state.hdr_info.request_body_start = true;
     // Note: Many browers, Netscape and IE included send two extra
     //  bytes (CRLF) at the end of the post.  We just ignore those
@@ -5353,7 +5354,9 @@ HttpSM::setup_cache_read_transfer()
 
   HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::tunnel_handler);
 
-  doc_size = (doc_size == INT64_MAX) ? INT64_MAX : (doc_size + hdr_size);
+  if (doc_size != INT64_MAX)
+    doc_size += hdr_size;
+
   HttpTunnelProducer *p = tunnel.add_producer(cache_sm.cache_read_vc,
                                               doc_size, buf_start, &HttpSM::tunnel_handler_cache_read, HT_CACHE_READ,
                                               "cache read");

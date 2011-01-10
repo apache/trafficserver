@@ -625,14 +625,14 @@ mime_hdr_sanity_check(MIMEHdrImpl * mh)
   -------------------------------------------------------------------------*/
 
 void
-mime_init(const char *path)
+mime_init()
 {
   static int init = 1;
 
   if (init) {
     init = 0;
     
-    hdrtoken_init(path);
+    hdrtoken_init();
     day_names_dfa = NEW(new DFA);
     day_names_dfa->compile(day_names, SIZEOF(day_names), RE_CASE_INSENSITIVE);
     

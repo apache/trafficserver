@@ -555,7 +555,7 @@ snap_up_to_multiple(unsigned int n, unsigned int unit)
   -------------------------------------------------------------------------*/
 
 void
-hdrtoken_init(const char *path)
+hdrtoken_init()
 {
   static int inited = 0;
 

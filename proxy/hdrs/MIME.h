@@ -576,7 +576,7 @@ void mime_hdr_presence_unset(MIMEHdrImpl * h, int well_known_str_index);
 
 void mime_hdr_sanity_check(MIMEHdrImpl * mh);
 
-void mime_init(const char *path);
+void mime_init();
 void mime_init_cache_control_cooking_masks();
 void mime_init_date_format_table();
 

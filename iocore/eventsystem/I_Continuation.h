@@ -173,21 +173,6 @@ public:
 #endif
 
 /**
-  Sets the Continuation's handler.
-
-  The preferred mechanism for setting the Continuation's handler.
-  This does the obscure casting to make SET_HANDLER portable across
-  compilers. There should be a typedef named &lt;class>Handler for
-  a pointer to a member function of &lt;class>.
-
-  @param _c Name of class
-  @param _h Pointer to the function used to callback with events.
-
-*/
-#define SET_CLASS_HANDLER(_c, _h) \
-  SET_HANDLER((_c##Handler)&_c::_h)
-
-/**
   Sets a Continuation's handler.
 
   The preferred mechanism for setting the Continuation's handler.
@@ -205,13 +190,12 @@ public:
 #endif
 
 inline
-Continuation::Continuation(ProxyMutex * amutex):
-handler(NULL),
+Continuation::Continuation(ProxyMutex * amutex)
+  : handler(NULL),
 #ifdef DEBUG
-handler_name(NULL),
+    handler_name(NULL),
 #endif
-mutex(amutex)
-{
-}
+    mutex(amutex)
+{ }
 
 #endif /*_Continuation_h_*/

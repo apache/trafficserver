@@ -33,7 +33,7 @@
 
 enum REFlags
 {
-  RE_CASE_INSENSITIVE = 1,
+  RE_CASE_INSENSITIVE = 1
 };
 
 typedef struct __pat {

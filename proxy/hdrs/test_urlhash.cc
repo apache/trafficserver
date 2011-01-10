@@ -80,10 +80,10 @@ test_url()
 int
 main(int argc, char *argv[])
 {
-  hdrtoken_init(NULL);
-  url_init(NULL);
-  mime_init(NULL);
-  http_init(NULL);
+  hdrtoken_init();
+  url_init();
+  mime_init();
+  http_init();
 
   test_url();
 

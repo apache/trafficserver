@@ -1373,9 +1373,9 @@ dns_process(DNSHandler * handler, HostEnt * buf, int len)
         break;
       }
       cp += n;
-      short int type, cls;
+      short int type;
       GETSHORT(type, cp);
-      GETSHORT(cls, cp); // NOTE: Don't eliminate this, it'll break badly.
+      cp += NS_INT16SZ;  // GETSHORT(cls, cp);
       GETLONG(temp_ttl, cp); // NOTE: this is not a "long" but 32-bits (from nameser_compat.h)
       if ((temp_ttl < buf->ttl) || (buf->ttl == 0))
         buf->ttl = temp_ttl;

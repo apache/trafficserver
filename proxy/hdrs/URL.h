@@ -151,7 +151,7 @@ extern int url_hash_method;
 void url_adjust(MarshalXlate * str_xlate, int num_xlate);
 
 /* Public */
-void url_init(const char *path);
+void url_init();
 
 URLImpl *url_create(HdrHeap * heap);
 void url_clear(URLImpl * url_impl);

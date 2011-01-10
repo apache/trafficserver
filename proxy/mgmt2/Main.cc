@@ -492,7 +492,6 @@ main(int argc, char **argv)
   char *envVar = NULL, *group_addr = NULL, *tsArgs = NULL;
   bool log_to_syslog = true;
   char userToRunAs[80];
-  char config_internal_dir[PATH_MAX];
   int  fds_throttle = -1;
   time_t ticker;
   ink_thread webThrId;
@@ -676,10 +675,9 @@ main(int argc, char **argv)
   setup_coredump();
   check_lockfile();
 
-  Layout::relative_to(config_internal_dir, sizeof(config_internal_dir), mgmt_path, "internal");
-  url_init(config_internal_dir);
-  mime_init(config_internal_dir);
-  http_init(config_internal_dir);
+  url_init();
+  mime_init();
+  http_init();
 
 #if defined(MGMT_API)
   // initialize alarm queue
@@ -858,6 +856,7 @@ main(int argc, char **argv)
   overviewGenerator->addSelfRecord();
 
   webThrId = ink_thread_create(webIntr_main, NULL);     /* Spin web agent thread */
+  Debug("lm", "Created Web Agent thread (%d)", webThrId);
   lmgmt->listenForProxy();
 
   /* Check the permissions on vip_config */

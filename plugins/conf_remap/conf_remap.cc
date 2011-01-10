@@ -188,12 +188,6 @@ tsremap_init(TSRemapInterface* api_info, char *errbuf, int errbuf_size)
     return -2;
   }
 
-  if (api_info->tsremap_version < TSREMAP_VERSION) {
-    snprintf(errbuf, errbuf_size - 1, "[tsremap_init] - Incorrect API version %ld.%ld",
-             api_info->tsremap_version >> 16, (api_info->tsremap_version & 0xffff));
-    return -3;
-  }
-
   TSDebug(PLUGIN_NAME, "remap plugin is succesfully initialized");
   return 0;                     /* success */
 }

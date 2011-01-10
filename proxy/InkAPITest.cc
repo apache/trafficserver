@@ -5453,7 +5453,7 @@ TSReturnCode
 compare_field_values(RegressionTest * test, TSMBuffer bufp1, TSMLoc hdr_loc1, TSMLoc field_loc1, TSMBuffer bufp2,
                      TSMBuffer hdr_loc2, TSMLoc field_loc2, bool first_time)
 {
-
+  NOWARN_UNUSED(first_time);
   int no_of_values1;
   int no_of_values2;
   int i;

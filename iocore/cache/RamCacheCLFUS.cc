@@ -618,6 +618,7 @@ class RamCacheCLFUSCompressor : public Continuation { public:
 };
 
 int RamCacheCLFUSCompressor::mainEvent(int event, Event *e) {
+  NOWARN_UNUSED(event);
   switch (cache_config_ram_cache_compress) {
     default:
       Warning("unknown RAM cache compression type: %d", cache_config_ram_cache_compress);

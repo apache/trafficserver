@@ -134,48 +134,10 @@ TransformProcessor::range_transform(ProxyMutex *mut, MIMEField *range_field, HTT
   -------------------------------------------------------------------------*/
 
 TransformTerminus::TransformTerminus(TransformVConnection *tvc)
-:VConnection(tvc->mutex),
-m_tvc(tvc), m_read_vio(), m_write_vio(), m_event_count(0), m_deletable(0), m_closed(0), m_called_user(0)
+  : VConnection(tvc->mutex),
+    m_tvc(tvc), m_read_vio(), m_write_vio(), m_event_count(0), m_deletable(0), m_closed(0), m_called_user(0)
 {
   SET_HANDLER(&TransformTerminus::handle_event);
-}
-
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
-
-static inline void
-dump_buffer(IOBufferReader *reader)
-{
-  IOBufferBlock *b = reader->get_current_block();
-  int64_t offset = reader->start_offset;
-  char *s, *e;
-  int64_t avail;
-  int64_t err;
-
-  while (b) {
-    avail = b->read_avail();
-    avail -= offset;
-    if (avail <= 0) {
-      offset = -avail;
-    } else {
-      s = b->start() + offset;
-      e = b->end();
-
-      ink_assert(avail == (e - s));
-
-      while (s != e) {
-        do {
-          err = write(STDOUT_FILENO, s, e - s);
-        } while ((err < 0) && (errno == EAGAIN));
-
-        ink_assert(err >= 0);
-
-        s += err;
-      }
-    }
-
-    b = b->next;
-  }
 }
 
 
@@ -218,7 +180,7 @@ TransformTerminus::handle_event(int event, void *edata)
               m_event_count, event, (long) m_tvc, (long) m_tvc->m_cont);
 
         m_called_user = 1;
-        m_tvc->m_cont->handleEvent(TRANSFORM_READ_READY, (void *)(intptr_t)m_write_vio.nbytes);
+        m_tvc->m_cont->handleEvent(TRANSFORM_READ_READY, (void *)&m_write_vio.nbytes);
       }
     } else {
       int64_t towrite;
@@ -571,7 +533,8 @@ TransformControl::handle_event(int event, void *edata)
 {
   NOWARN_UNUSED(edata);
   switch (event) {
-  case EVENT_IMMEDIATE:{
+  case EVENT_IMMEDIATE:
+    {
       char *s, *e;
 
       ink_assert(m_tvc == NULL);
@@ -593,8 +556,10 @@ TransformControl::handle_event(int event, void *edata)
       break;
     }
 
-  case TRANSFORM_READ_READY:{
+  case TRANSFORM_READ_READY:
+    {
       MIOBuffer *buf = new_empty_MIOBuffer();
+  
       m_read_buf = buf->alloc_reader();
       m_tvc->do_io_read(this, INT64_MAX, buf);
       break;
@@ -674,7 +639,8 @@ NullTransform::handle_event(int event, void *edata)
       m_output_vc->do_io_shutdown(IO_SHUTDOWN_WRITE);
       break;
     case VC_EVENT_WRITE_READY:
-    default:{
+    default:
+      {
         int64_t towrite;
         int64_t avail;
 
