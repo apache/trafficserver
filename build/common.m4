@@ -562,8 +562,8 @@ dnl enable argument is 'yes', and '0' otherwise.
 dnl
 dnl For instance, if the prefix is "has" and stem is "bob",
 dnl then AC_ARG_ENABLE will set $enable_bob and this macro will set
-dnl $has_bob based on the value in $enable_bob. See the examples of
-dnl use later in this file.
+dnl $has_bob based on the value in $enable_bob. See the examples
+dnl in configure.ac.
 dnl
 dnl Note: As with AC_ARG_ENABLE, non-alphanumeric characters are
 dnl transformed to underscores.
@@ -571,7 +571,7 @@ dnl
 AC_DEFUN([TS_ARG_ENABLE_VAR],[
   tsl_prefix="AS_TR_SH($1)"
   tsl_stem="AS_TR_SH($2)"
-  eval tsl_enable="enable_${tsl_stem}"
+  eval "tsl_enable=\$enable_${tsl_stem}"
   AS_IF([test "x$tsl_enable" = "xyes"],
      [eval "${tsl_prefix}_${tsl_stem}=1"],
      [eval "${tsl_prefix}_${tsl_stem}=0"]
