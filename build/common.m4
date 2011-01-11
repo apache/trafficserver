@@ -546,3 +546,34 @@ do
     fi
 done
 ])
+
+dnl
+dnl Support macro for AC_ARG_ENABLE
+dnl Arguments:
+dnl 1: Variable prefix
+dnl 2: Variable stem
+dnl The prefix is prepended with separating underscore to the stem
+dnl to create the boolean variable to be set. The stem is also used
+dnl to create the name of the AC_ARG_ENABLE variable and therefore
+dnl must be the same as passed to AC_ARG_ENABLE. The prefix should
+dnl be one of "use", "has", or "is", as is appropriate for the
+dnl argument type. The target variable will be set to '1' if the
+dnl enable argument is 'yes', and '0' otherwise.
+dnl
+dnl For instance, if the prefix is "has" and stem is "bob",
+dnl then AC_ARG_ENABLE will set $enable_bob and this macro will set
+dnl $has_bob based on the value in $enable_bob. See the examples of
+dnl use later in this file.
+dnl
+dnl Note: As with AC_ARG_ENABLE, non-alphabetic characters are
+dnl transformed to underscores.
+dnl
+AC_DEFUN([TS_ARG_ENABLE_VAR],[
+  ts_local_prefix="AS_TR_SH($1)"
+  ts_local_stem="AS_TR_SH($2)"
+  AS_VAR_IF([enable_${ts_local_stem}], [yes],
+    [AS_VAR_SET([${ts_local_prefix}_${ts_local_stem}], 1)],
+    [AS_VAR_SET([${ts_local_prefix}_${ts_local_stem}], 0)]
+  )
+])
+

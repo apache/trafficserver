@@ -2072,7 +2072,7 @@ handle_submit_snapshot_to_floppy(WebHttpContext * whc, const char *file)
         linkFile = "/configure/c_basic.ink";
       }
 
-#ifndef NO_WEBUI
+#if TS_HAS_WEBUI
       char *link = WebHttpGetLink_Xmalloc(linkFile);
       whc->response_hdr->setRefreshURL(link);
       xfree(link);
@@ -2467,7 +2467,7 @@ handle_submit_update(WebHttpContext * whc, const char *file)
   }
   // check for restart
   if (ink_hash_table_lookup(whc->post_data_ht, "restart", (void **) &cancel)) {
-#ifndef NO_WEBUI
+#if TS_HAS_WEBUI
     char *link = WebHttpGetLink_Xmalloc(HTML_DEFAULT_CONFIGURE_FILE);
     whc->response_hdr->setRefreshURL(link);
     xfree(link);
@@ -2573,7 +2573,7 @@ handle_submit_update(WebHttpContext * whc, const char *file)
     submit_from_page = xstrdup("/ssl_redirect.ink");
   }
 
-#ifndef NO_WEBUI
+#if TS_HAS_WEBUI
   if (submit_from_page && strcmp(submit_from_page, HTML_FEATURE_ON_OFF_FILE) == 0) {
     WebHttpTreeRebuildJsTree();
   }
@@ -3202,7 +3202,7 @@ handle_submit_otw_upgrade(WebHttpContext * whc, const char *file)
   char *working_dir;
   char *submit_from_page;
   char tmp[MAX_TMP_BUF_LEN];
-#ifndef NO_WEBUI
+#if TS_HAS_WEBUI
   char *link;
 #endif
   const char *cgi_path;
@@ -3233,7 +3233,7 @@ handle_submit_otw_upgrade(WebHttpContext * whc, const char *file)
 
     } else {
       // start upgrade = render upgrade page + spawn traffic_shell.cgi script
-#ifndef NO_WEBUI
+#if TS_HAS_WEBUI
       link = WebHttpGetLink_Xmalloc(HTML_DEFAULT_MONITOR_FILE);
       xfree(link);
 #endif
@@ -3725,7 +3725,7 @@ WebHttpInit()
   WebHttpAuthInit();
   WebHttpLogInit();
   WebHttpSessionInit();
-#ifndef NO_WEBUI
+#if TS_HAS_WEBUI
   WebHttpRenderInit();
   WebHttpTreeInit();
 #endif
@@ -3791,7 +3791,7 @@ WebHttpHandleConnection(WebHttpConInfo * whci)
       goto Ltransaction_send;
     }
   } else {
-#ifndef NO_WEBUI
+#if TS_HAS_WEBUI
     if (WebHttpTreeReturnRefresh(file)) {
       // if we are handling a monitor/mrtg page, configure it to refresh
       if (strncmp(file, "/monitor/", 9) == 0) {

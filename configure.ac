@@ -153,46 +153,42 @@ AC_MSG_RESULT([$enable_debug])
 # Diags
 #
 
-use_diags=0
 AC_MSG_CHECKING([whether to enable diags])
 AC_ARG_ENABLE([diags],
   [AS_HELP_STRING([--disable-diags],[turn off diags])],
   [],
-  [enable_diags="yes"
-   use_diags=1
-  ]
+  [enable_diags=yes]
 )
 AC_MSG_RESULT([$enable_diags])
+TS_ARG_ENABLE_VAR([use], [diags])
 AC_SUBST(use_diags)
 
 #
 # Build regression tests?
 #
 
-has_tests=0
 AC_MSG_CHECKING([whether to enable regression tests])
 AC_ARG_ENABLE([tests],
   [AS_HELP_STRING([--disable-tests],[turn off regression tests])],
   [],
-  [enable_tests="yes"
-   has_tests=1
-  ]
+  [enable_tests=yes]
 )
 AC_MSG_RESULT([$enable_tests])
+TS_ARG_ENABLE_VAR([has], [tests])
 AC_SUBST(has_tests)
-AM_CONDITIONAL([BUILD_TESTS], [test "x$enable_tests" = "xyes"])
+AM_CONDITIONAL([BUILD_TESTS], [test 0 -ne $has_tests])
 
 #
 # Purify
 #
-has_purify=0
 AC_MSG_CHECKING([whether to enable purify])
 AC_ARG_ENABLE([purify],
   [AS_HELP_STRING([--enable-purify],[enable support for Purify])],
-  [has_purify=1],
+  [],
   [enable_purify=no]
 )
 AC_MSG_RESULT([$enable_purify])
+TS_ARG_ENABLE_VAR([has], [purify])
 AC_SUBST(has_purify)
 
 #
@@ -207,33 +203,32 @@ AC_ARG_ENABLE([libev],
 )
 AC_MSG_RESULT([$enable_libev])
 
-
 #
 # Micro
 #
-is_micro_build=0
 AC_MSG_CHECKING([whether to enable micro-TS])
 AC_ARG_ENABLE([micro],
   [AS_HELP_STRING([--enable-micro],[enable micro-TS build [default: no]])],
-  [is_micro_build=1],
+  [],
   [enable_micro=no]
 )
+AS_IF([test "x$enable_micro" = "xyes"], [is_micro_build=1], [is_micro_build=0])
 AC_SUBST(is_micro_build)
 AC_MSG_RESULT([$enable_micro])
 
 #
 # Standalone iocore
 #
-has_standalone_iocore=0
 AC_MSG_CHECKING([whether to build a standalone iocore])
 AC_ARG_ENABLE([standalone-iocore],
   [AS_HELP_STRING([--enable-standalone-iocore],[build just standalone iocore])],
-  [has_standalone_iocore=1],
+  [],
   [enable_standalone_iocore=no]
 )
 AC_MSG_RESULT([$enable_standalone_iocore])
+TS_ARG_ENABLE_VAR([has],[standalone-iocore])
 AC_SUBST(has_standalone_iocore)
-AS_IF([test "x$enable_standalone_iocore" = "xyes"],
+AS_IF([test $has_standalone_iocore],
   [AC_SUBST([IOCORE_MODULARIZED_DEFS],[""])
    AC_SUBST([ink_with_modules_def],["-DREC_BUILD_STAND_ALONE"])
    AC_SUBST([ink_with_modules_local],[""])
@@ -245,7 +240,7 @@ AS_IF([test "x$enable_standalone_iocore" = "xyes"],
    AC_SUBST([ink_with_modules_process],["-DPROCESS_MANAGER"])
   ]
 )
-AM_CONDITIONAL([STANDALONE_IOCORE], [test "x$enable_standalone_iocore" = "xyes"])
+AM_CONDITIONAL([STANDALONE_IOCORE], [test 0 -ne $has_standalone_iocore])
 
 #
 # Remote Coverity Prevent commit
@@ -262,56 +257,56 @@ AC_SUBST([enable_remote_cov_commit])
 #
 # WebUI
 #
-has_webui=0
 AC_MSG_CHECKING([whether to enable Web UI])
 AC_ARG_ENABLE([webui],
   [AS_HELP_STRING([--enable-webui],[enable Web UI [default: no]])],
-  [has_webui=1],
+  [],
   [enable_webui=no]
 )
+TS_ARG_ENABLE_VAR([has],[webui])
 AC_MSG_RESULT([$enable_webui])
 AC_SUBST(has_webui)
-AM_CONDITIONAL([BUILD_WEBUI], [test "x$enable_webui" = "xyes"])
+AM_CONDITIONAL([BUILD_WEBUI], [test 0 -ne $has_webui])
 
 #
 # API
 #
-has_inkapi=1
 AC_MSG_CHECKING([whether to enable API and plugin support])
 AC_ARG_ENABLE([api],
   [AS_HELP_STRING([--disable-api],[do not enable API and plugin support])],
-  [has_inkapi=0],
+  [],
   [enable_api=yes]
 )
 AC_MSG_RESULT([$enable_api])
+AS_IF([test "x$enable_api" = "xyes"], [has_inkapi=1], [has_inkapi=0])
 AC_SUBST(has_inkapi)
 
 #
 # Detailed Logging (for debugging purposes)
 #
-has_detailed_log=0
 AC_MSG_CHECKING([whether to enable detailed logging for debugging purposes])
 AC_ARG_ENABLE([detailed-log],
   [AS_HELP_STRING([--enable-detailed-log],[enable detailed logging])],
-  [has_detailed_log=1],
+  [],
   [enable_detailed_log=no]
 )
 AC_MSG_RESULT([$enable_detailed_log])
+TS_ARG_ENABLE_VAR([has],[detailed-log])
 AC_SUBST(has_detailed_log)
 AM_CONDITIONAL([BUILD_DETAILED_LOG], [test "x$enable_detailed_log" = "xyes"])
 
 #
 # Cli2
 #
-has_cli2=1
 AC_MSG_CHECKING([whether to enable cli2])
 AC_ARG_ENABLE([cli2],
   [AS_HELP_STRING([--disable-cli2],[do not compile cli2])],
-  [has_cli2=0],
+  [],
   [enable_cli2=yes]
 )
 AC_MSG_RESULT([$enable_cli2])
-AS_IF([test "x$enable_cli2" = "xyes"],
+TS_ARG_ENABLE_VAR([has],[cli2])
+AS_IF([test $has_cli2],
   [AC_SUBST([CLI_DIR],[cli2])]
 )
 AC_SUBST(has_cli2)
@@ -319,7 +314,6 @@ AC_SUBST(has_cli2)
 #
 # Experimental V2 stats APIs (for plugins)
 #
-has_v2stats=0
 AC_MSG_CHECKING([whether to enable the experimental V2 stats subsystem for plugin APIs])
 AC_ARG_ENABLE([v2stats],
   [AS_HELP_STRING([--enable-v2stats],[enable experimental V2 stats API])],
@@ -327,24 +321,23 @@ AC_ARG_ENABLE([v2stats],
   [enable_v2stats=no]
 )
 AC_MSG_RESULT([$enable_v2stats])
+TS_ARG_ENABLE_VAR([has],[v2stats])
 AC_SUBST(has_v2stats)
-AM_CONDITIONAL([BUILD_V2STATS], [test "x$enable_v2stats" = "xyes"])
+AM_CONDITIONAL([BUILD_V2STATS], [test 0 -ne $has_v2stats])
 
 #
 # WCCP
 #
-has_wccp=0
 AC_MSG_CHECKING([whether to enable WCCP v2 support])
 AC_ARG_ENABLE([wccp],
   [AS_HELP_STRING([--enable-wccp],[enable WCCP v2])],
-  [
-    has_wccp=1
-  ],
+  [],
   [enable_wccp=no]
 )
 AC_MSG_RESULT([$enable_wccp])
+TS_ARG_ENABLE_VAR([has],[wccp])
 AC_SUBST(has_wccp)
-AM_CONDITIONAL([BUILD_WCCP], [test "x$enable_wccp" = "xyes"])
+AM_CONDITIONAL([BUILD_WCCP], [test 0 -ne $has_wccp])
 
 # Google profiler
 AC_MSG_CHECKING([whether to enable profiler])

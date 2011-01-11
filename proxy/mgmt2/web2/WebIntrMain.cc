@@ -597,7 +597,7 @@ webIntr_main(void *x)
   sigset_t allSigs;             // Set of all signals
 #endif
   char *cliPath = NULL;         // UNIX: socket path for cli
-#ifndef NO_WEBUI
+#if TS_HAS_WEBUI
   char webFailMsg[] = "Management Web Services Failed to Initialize";
 #endif
   char pacFailMsg[] = "Auto-Configuration Service Failed to Initialize";
@@ -612,7 +612,7 @@ webIntr_main(void *x)
 
   int addrLen;
   int i;
-#ifndef NO_WEBUI
+#if TS_HAS_WEBUI
   int sleepTime = 2;
 #endif
   // No Warning
@@ -721,7 +721,7 @@ webIntr_main(void *x)
 
   adminContext.SSL_Context = NULL;
 
-#ifndef NO_WEBUI
+#if TS_HAS_WEBUI
   // configure components
   configAuthEnabled();
   configAuthAdminUser();
@@ -730,7 +730,7 @@ webIntr_main(void *x)
   // <@record> substitution requires WebHttpInit() first
   // configLangDict();
   configUI();
-#endif /* NO_WEBUI */
+#endif /* TS_HAS_WEBUI */
 
   configSSLenable();
   Debug("ui", "SSL enabled is %d\n", adminContext.SSLenabled);
@@ -854,7 +854,7 @@ webIntr_main(void *x)
   // Check our web contexts to make sure everything is
   //  OK.  If it is, go ahead and fire up the interfaces
 
-#ifndef NO_WEBUI
+#if TS_HAS_WEBUI
 
   if (checkWebContext(&adminContext, "Web Management") != 0) {
     lmgmt->alarm_keeper->signalAlarm(MGMT_ALARM_WEB_ERROR, webFailMsg);
@@ -876,7 +876,7 @@ webIntr_main(void *x)
     }
   }
 
-#endif //NO_WEBUI
+#endif //TS_HAS_WEBUI
 
   if (checkWebContext(&autoconfContext, "Browser Auto-Configuration") != 0) {
     lmgmt->alarm_keeper->signalAlarm(MGMT_ALARM_WEB_ERROR, pacFailMsg);
@@ -918,9 +918,9 @@ webIntr_main(void *x)
 
   // Initialze WebHttp Module
   WebHttpInit();
-#ifndef NO_WEBUI
+#if TS_HAS_WEBUI
   configLangDict();
-#endif /* NO_WEBUI */
+#endif /* TS_HAS_WEBUI */
 
   while (1) {
 
@@ -1008,12 +1008,12 @@ webIntr_main(void *x)
       // Accept OK
       ink_mutex_acquire(&wGlobals.serviceThrLock);
 
-#ifndef NO_WEBUI
+#if TS_HAS_WEBUI
       // Check to see if there are any unprocessed config changes
       if (webConfigChanged > 0) {
         updateWebConfig();
       }
-#endif /* NO_WEBUI */
+#endif /* TS_HAS_WEBUI */
 
       // If this a web manager or an overseer connection, make sure that
       //   it is from an allowed ip addr

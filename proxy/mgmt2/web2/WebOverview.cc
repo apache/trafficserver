@@ -901,7 +901,7 @@ overviewPage::generateAlarmsTableCLI(textBuffer * output)
   ink_mutex_release(&accessLock);
 }                               // end generateAlarmsTableCLI()
 
-#ifndef NO_WEBUI
+#if TS_HAS_WEBUI
 // void overviewPage::generateAlarmsSummary(textBuffer* output)
 //
 //  alarm summary information (Alarm! [X pending])

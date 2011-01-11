@@ -165,10 +165,6 @@
 # define HTTP_CACHE                     1
 #endif
 
-#if !TS_HAS_WEBUI
-# define NO_WEBUI                       1
-#endif
-
 #if TS_HAS_PURIFY
 # define PURIFY                         1
 #endif

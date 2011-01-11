@@ -122,7 +122,7 @@ WebHttpGetIntFromQuery(WebHttpContext * whc, const char *tag, int *active_id)
   }
 }
 
-#ifndef NO_WEBUI
+#if TS_HAS_WEBUI
 //-------------------------------------------------------------------------
 // handle_alarm_object
 //-------------------------------------------------------------------------

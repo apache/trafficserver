@@ -1200,7 +1200,7 @@ ClusterCom::handleMultiCastFilePacket(char *last, char *ip)
             delete our_rec_cfg;
             delete our_locals_ht;
           }
-#ifndef NO_WEBUI
+#if TS_HAS_WEBUI
           if (!file_update_failure)
             WebHttpTreeRebuildJsTree();
 #endif

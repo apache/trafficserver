@@ -1230,7 +1230,7 @@ test_server_http_port()
   return test_http_port(http_backdoor_port, request, server_timeout * 1000, ip, ip);
 }
 
-#ifndef NO_WEBUI
+#if TS_HAS_WEBUI
 static int
 test_manager_http_port()
 {
@@ -1269,7 +1269,7 @@ heartbeat_manager()
 #endif
     return err;
   }
-#ifndef NO_WEBUI
+#if TS_HAS_WEBUI
   err = test_manager_http_port();
 
   if (err < 0) {
@@ -1291,7 +1291,7 @@ heartbeat_manager()
     manager_failures = 0;
   }
 
-#endif //NO_WEBUI
+#endif // TS_HAS_WEBUI
 
 #ifdef TRACE_LOG_COP
   cop_log(COP_DEBUG, "Leaving heartbeat_manager() --> %d\n", err);
