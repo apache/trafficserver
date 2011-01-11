@@ -300,12 +300,9 @@ cli_write_timeout(int fd, const char *data, int nbytes, ink_hrtime timeout)
 int
 GetTSDirectory(char *ts_path, size_t ts_path_len)
 {
-
   ink_strncpy(ts_path, Layout::get()->bindir, ts_path_len);
-
   if (access(ts_path, R_OK) == -1) {
-    printf("unable to stat() '%s': %d, %s\n",
-              ts_path, errno, strerror(errno));
+    printf("unable to stat() '%s': %d, %s\n", ts_path, errno, strerror(errno));
     printf(" Please set correct path in env variable TS_ROOT \n");
     return -1;
   }

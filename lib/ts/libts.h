@@ -95,7 +95,6 @@
 #include "RawHashTable.h"
 #include "Regex.h"
 #include "Resource.h"
-#include "SimpleDBM.h"
 #include "SimpleTokenizer.h"
 #include "TextBuffer.h"
 #include "Tokenizer.h"

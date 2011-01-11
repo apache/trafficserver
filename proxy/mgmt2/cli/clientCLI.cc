@@ -59,30 +59,9 @@ clientCLI::clientCLI(void)
   cliPort = clientCLI::defaultCliPort;
 #endif
   //coverity[uninit_member]
-}                               // end clientCLI(const char*)
-
-//
-// Default destructor
-//
-clientCLI::~clientCLI(void)
-{                               // nothing
-}                               // end ~clientCLI()
-
-#ifndef _WIN32
-int
-clientCLI::GetTSDirectory(char *ts_path, size_t ts_path_len)
-{
-
-  ink_strncpy(ts_path, Layout::get()->bindir, ts_path_len);
-  if (access(ts_path, R_OK) == -1) {
-    fprintf(stderr,"unable to access() '%s': %d, %s\n", ts_path, errno, strerror(errno));
-    fprintf(stderr," Please set correct path in env variable TS_ROOT \n");
-    return -1;
-  }
-
-  return 0;
 }
 
+#ifndef _WIN32
 void
 clientCLI::setSockPath(const char *path)
 {

@@ -24,6 +24,7 @@
 #include "libts.h"
 #include "I_Layout.h"
 #include "I_Version.h"
+#include "clientCLI.h"
 
 #if defined(linux)
 #include "sys/utsname.h"
@@ -1254,7 +1255,6 @@ heartbeat_manager()
   cop_log(COP_DEBUG, "Entering heartbeat_manager()\n");
 #endif
   err = test_rs_port();
-
   if (err < 0) {
     manager_failures += 1;
     cop_log(COP_WARNING, "manager heartbeat [variable] failed [%d]\n", manager_failures);
@@ -1660,6 +1660,9 @@ check(void *arg)
 
       child_pid = child_status = 0;
     }
+    // Get a new CLI
+    clientCLI *cli = new clientCLI();
+
     // Re-read the config file information
     read_config();
 
@@ -1668,6 +1671,9 @@ check(void *arg)
 
     // Check to see if we're running out of free memory
     check_memory();
+
+    // Get rid of the CLI
+    delete cli;
 
     // Pause to catch our breath. (10 seconds).
     // Use 'millisleep()' because normal 'sleep()' interferes with

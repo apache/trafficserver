@@ -17,7 +17,8 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-AM_CPPFLAGS = $(iocore_include_dirs)
+AM_CPPFLAGS = $(iocore_include_dirs) \
+  -I$(top_srcdir)/proxy/mgmt2/cli
 
 MGMT_DEFS = @MGMT_DEFS@
 DEFS += $(MGMT_DEFS)
@@ -27,6 +28,7 @@ bin_PROGRAMS = traffic_cop
 traffic_cop_SOURCES = TrafficCop.cc
 traffic_cop_LDFLAGS = @EXTRA_CXX_LDFLAGS@
 traffic_cop_LDADD = \
+  $(top_builddir)/proxy/mgmt2/cli/libcli_tl.a \
   $(top_builddir)/lib/ts/libts.a \
   $(top_builddir)/iocore/utils/libinkutils.a \
   @LIBTCL@ \

@@ -53,11 +53,10 @@ public:
 
   static const char *CliResultStr[];
 
-    clientCLI(void);
-   ~clientCLI(void);
+  clientCLI(void);
+  ~clientCLI(void) {}
 
 #ifndef _WIN32
-   int GetTSDirectory(char *ts_path, size_t ts_path_len);
    void setSockPath(const char *path);
 #else
   void setCliPort(int port);
@@ -70,14 +69,6 @@ public:
 
   /* read response from manager */
   int readResponse(textBuffer * output, ink_hrtime timeout = -1);
-
-  /* get the Traffic Server version string          */
-  /*   - no need to connect before calling this     */
-  /*   - caller needs to free() the returned string */
-  char *getTSVersion(void)
-  {
-    return strdup(PACKAGE_VERSION);
-  }
 
   /* connects to manager using:
      - UNIX domain socket on UNIX
