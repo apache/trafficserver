@@ -26,8 +26,10 @@ nodist_sysconf_DATA = \
   records.config \
   storage.config
 
+webui_conf = \
+  admin_access.config
+
 dist_sysconf_DATA =	\
-  admin_access.config \
   ae_ua.config \
   cache.config \
   cluster.config \
@@ -51,3 +53,6 @@ dist_sysconf_DATA =	\
   update.config \
   vaddrs.config
 
+if BUILD_WEBUI
+  dist_sysconf_DATA += $(webui_conf)
+endif
