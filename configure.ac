@@ -474,7 +474,6 @@ TS_SUBST([pkgcachedir])
 
 REAL_CFLAGS="${CFLAGS}"
 REAL_CXXFLAGS="${CXXFLAGS}"
-REAL_CCASFLAGS="${CCASFLAGS}"
 
 AC_PROG_CC
 AC_PROG_CXX
@@ -522,7 +521,6 @@ AC_ARG_VAR([PERL], [full path of Perl executable])
 
 CFLAGS="${REAL_CFLAGS}"
 CXXFLAGS="${REAL_CXXFLAGS}"
-CCASFLAGS="${REAL_CCASFLAGS}"
 
 base_cc=`basename $CC`
 # These are shortcuts used in combination for the compiler options below
@@ -577,7 +575,6 @@ case $host_os in
   solaris*)
     if test "x${base_cc}" = "xcc"; then
       common_opt="-mt -m64 -D__WORDSIZE=64" # FIXME: arch should be detected
-      CCASFLAGS="-Wa,-32" # TODO: add 64bit support to atomic ops
       debug_opt="-g $common_opt"
       release_opt="-g $common_opt -xO3"
       cxx_opt="-library=stlport4"
@@ -1190,14 +1187,12 @@ MGMT_DEFS="$MGMT_DEFS -DMGMT_USE_SYSLOG"
 AC_MSG_NOTICE([Build using CC=$CC])
 AC_MSG_NOTICE([Build using CXX=$CXX])
 AC_MSG_NOTICE([Build using CPP=$CPP])
-AC_MSG_NOTICE([Build using CCAS=$CCAS])
 AC_MSG_NOTICE([Build using CFLAGS=$CFLAGS])
 AC_MSG_NOTICE([Build using SHARED_CFLAGS=$SHARED_CFLAGS])
 AC_MSG_NOTICE([Build using CXXFLAGS=$CXXFLAGS])
 AC_MSG_NOTICE([Build using SHARED_CXXFLAGS=$SHARED_CXXFLAGS])
 AC_MSG_NOTICE([Build using SHARED_CXXLINKFLAGS=$SHARED_LINKCXXFLAGS])
 AC_MSG_NOTICE([Build using CPPFLAGS=$CPPFLAGS])
-AC_MSG_NOTICE([Build using CCASFLAGS=$CCASFLAGS])
 AC_MSG_NOTICE([Build using LDFLAGS=$LDFLAGS])
 AC_MSG_NOTICE([Build using SHARED_LDFLAGS=$SHARED_LDFLAGS])
 AC_MSG_NOTICE([Build using EXTRA_CC_LDFLAGS=$EXTRA_CC_LDFLAGS])

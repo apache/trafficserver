@@ -21,7 +21,6 @@ check_PROGRAMS = test_atomic test_freelist test_arena test_List
 TESTS = $(check_PROGRAMS)
 noinst_LIBRARIES = libts.a
 
-#libts_a_CCASFLAGS = -Wa,-32
 libts_a_SOURCES = \
   Allocator.cc \
   Allocator.h \
