@@ -355,8 +355,8 @@ cluster_com_port_watcher(const char *name, RecDataT data_type, RecData data, voi
 }                               /* End cluster_com_port_watcher */
 
 
-ClusterCom::ClusterCom(unsigned long oip, char *host, int port, char *group, int sport, char *p):our_wall_clock(0), alive_peers_count(0), reliable_server_fd(0), broadcast_fd(0),
-receive_fd(0)
+ClusterCom::ClusterCom(unsigned long oip, char *host, int port, char *group, int sport, char *p)
+  : our_wall_clock(0), alive_peers_count(0), reliable_server_fd(0), broadcast_fd(0), receive_fd(0)
 {
   int rec_err;
   bool found = false;
@@ -1613,35 +1613,38 @@ ClusterCom::establishChannels()
     establishReceiveChannel();
   }
 
-  /* Setup reliable connection, for large config changes */
-  if ((reliable_server_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-    mgmt_fatal("[ClusterCom::establishChannels] Unable to create socket\n");
-  }
+  if (reliable_server_port > 0) {
+    /* Setup reliable connection, for large config changes */
+    if ((reliable_server_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+      mgmt_fatal("[ClusterCom::establishChannels] Unable to create socket\n");
+    }
 #ifndef _WIN32                  /* no need to set close-on-exec on NT */
-  if (fcntl(reliable_server_fd, F_SETFD, 1) < 0) {
-    mgmt_fatal("[ClusterCom::establishChannels] Unable to set close-on-exec.\n");
-  }
+    if (fcntl(reliable_server_fd, F_SETFD, 1) < 0) {
+      mgmt_fatal("[ClusterCom::establishChannels] Unable to set close-on-exec.\n");
+    }
 #endif
 
-  if (setsockopt(reliable_server_fd, SOL_SOCKET, SO_REUSEADDR, (char *) &one, sizeof(int)) < 0) {
-    mgmt_fatal("[ClusterCom::establishChannels] Unable to set socket options.\n");
-  }
+    if (setsockopt(reliable_server_fd, SOL_SOCKET, SO_REUSEADDR, (char *) &one, sizeof(int)) < 0) {
+      mgmt_fatal("[ClusterCom::establishChannels] Unable to set socket options.\n");
+    }
 
-  memset(&serv_addr, 0, sizeof(serv_addr));
-  serv_addr.sin_family = AF_INET;
-  serv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
-  serv_addr.sin_port = htons(reliable_server_port);
+    memset(&serv_addr, 0, sizeof(serv_addr));
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+    serv_addr.sin_port = htons(reliable_server_port);
 
-  if ((bind(reliable_server_fd, (struct sockaddr *) &serv_addr, sizeof(serv_addr))) < 0) {
-    mgmt_fatal("[ClusterCom::establishChannels] Unable to bind socket (port:%d)\n", reliable_server_port);
-  }
+    if ((bind(reliable_server_fd, (struct sockaddr *) &serv_addr, sizeof(serv_addr))) < 0) {
+      mgmt_fatal("[ClusterCom::establishChannels] Unable to bind socket (port:%d)\n", reliable_server_port);
+    }
 
-  if ((listen(reliable_server_fd, 10)) < 0) {
-    mgmt_fatal("[ClusterCom::establishChannels] Unable to listen on socket\n");
+    if ((listen(reliable_server_fd, 10)) < 0) {
+      mgmt_fatal("[ClusterCom::establishChannels] Unable to listen on socket\n");
+    }
   }
 
   Debug("ccom", "[ClusterCom::establishChannels] Channels setup\n");
   init = true;
+
   return;
 }                               /* End ClusterCom::establishChannels */
 
@@ -2379,6 +2382,7 @@ checkBackDoor(int req_fd, char *message)
     if (RecGetRecordDataType(variable, &stype) == REC_ERR_OKAY) {
       bool found = false;
       int rep_len = 0;
+
       switch (stype) {
       case RECD_COUNTER:
       case RECD_INT:

@@ -36,8 +36,7 @@
 #include "CliUtils.h"           /* cli_read_timeout(), cli_write_timeout(),GetTSDirectory() */
 #include "clientCLI.h"
 
-const char *
-  clientCLI::CliResultStr[] = {
+const char *clientCLI::CliResultStr[] = {
   "no error",
   "traffic_manager refusing onnection",
   "unable to connect to traffic_manager",
@@ -46,15 +45,13 @@ const char *
 };
 
 #ifndef _WIN32
-const char *
-  clientCLI::defaultSockPath = "cli";
+const char *clientCLI::defaultSockPath = "cli";
 #else
-const int
-  clientCLI::defaultCliPort = 9000;
+const int clientCLI::defaultCliPort = 9000;
 #endif
 
-clientCLI::clientCLI(void):
-socketFD(0)
+clientCLI::clientCLI(void)
+  : socketFD(0)
 {
 #ifndef _WIN32
   ink_strncpy(sockPath, clientCLI::defaultSockPath, sizeof(sockPath));
@@ -78,8 +75,7 @@ clientCLI::GetTSDirectory(char *ts_path, size_t ts_path_len)
 
   ink_strncpy(ts_path, Layout::get()->bindir, ts_path_len);
   if (access(ts_path, R_OK) == -1) {
-    fprintf(stderr,"unable to access() '%s': %d, %s\n",
-              ts_path, errno, strerror(errno));
+    fprintf(stderr,"unable to access() '%s': %d, %s\n", ts_path, errno, strerror(errno));
     fprintf(stderr," Please set correct path in env variable TS_ROOT \n");
     return -1;
   }
@@ -100,7 +96,8 @@ clientCLI::setCliPort(int port)
 }
 #endif
 
-clientCLI::CliResult clientCLI::disconnectFromLM(void)
+clientCLI::CliResult
+clientCLI::disconnectFromLM(void)
 {
   close_socket(socketFD);
   socketFD = 0;
@@ -114,12 +111,11 @@ clientCLI::CliResult clientCLI::disconnectFromLM(void)
 //    process via the UNIX domain socket
 //    referenced by sockPath
 //
-clientCLI::CliResult clientCLI::connectToLM(void)
+clientCLI::CliResult
+clientCLI::connectToLM(void)
 {
-  struct sockaddr_un
-    clientS;
-  int
-    sockaddrLen;
+  struct sockaddr_un clientS;
+  int sockaddrLen;
 
   // create stream socket
   socketFD = socket(AF_UNIX, SOCK_STREAM, 0);
@@ -155,14 +151,13 @@ clientCLI::CliResult clientCLI::connectToLM(void)
 
 }                               // end connectToLM()
 
-#else
+#else /* WIN32 */
 
-clientCLI::CliResult clientCLI::connectToLM(void)
+clientCLI::CliResult
+clientCLI::connectToLM(void)
 {
-  struct sockaddr_in
-    clientS;
-  int
-    sockaddrLen;
+  struct sockaddr_in clientS;
+  int sockaddrLen;
 
   // create stream socket
   socketFD = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
@@ -250,15 +245,13 @@ clientCLI::sendCommand(const char *cmd, textBuffer * response, ink_hrtime timeou
   return readResponse(response, timeLeft);
 }
 
-clientCLI::CliResult clientCLI::startupLocal(void)
+clientCLI::CliResult
+clientCLI::startupLocal(void)
 {
-  textBuffer
-  response(512);                // textBuffer object to hold response
+  textBuffer response(512);                // textBuffer object to hold response
   //char*       responseStr;   // actual response string
-  Tokenizer
-  respTok(";");
-  const char *
-    status = NULL;
+  Tokenizer respTok(";");
+  const char *status = NULL;
   //const char* prompt = NULL;
   //const char* resp = NULL;
 
@@ -280,15 +273,13 @@ clientCLI::CliResult clientCLI::startupLocal(void)
   return err_tm_invalid_resp;
 }
 
-clientCLI::CliResult clientCLI::shutdownLocal(void)
+clientCLI::CliResult
+clientCLI::shutdownLocal(void)
 {
-  textBuffer
-  response(512);                // textBuffer object to hold response
+  textBuffer response(512);                // textBuffer object to hold response
   //char*       responseStr;   // actual response string
-  Tokenizer
-  respTok(";");
-  const char *
-    status = NULL;
+  Tokenizer respTok(";");
+  const char *status = NULL;
   //const char* prompt = NULL;
   //const char* resp = NULL;
 
@@ -310,20 +301,16 @@ clientCLI::CliResult clientCLI::shutdownLocal(void)
   return err_tm_invalid_resp;
 }
 
-clientCLI::CliResult clientCLI::probeLocal(bool * running)
+clientCLI::CliResult
+clientCLI::probeLocal(bool * running)
 {
-  textBuffer
-  response(512);                // textBuffer object to hold response
+  textBuffer response(512);                // textBuffer object to hold response
   //char*       responseStr;   // actual response string
-  CliResult
-    result = err_tm_invalid_resp;
-  Tokenizer
-  respTok(";");
-  const char *
-    status = NULL;
+  CliResult result = err_tm_invalid_resp;
+  Tokenizer respTok(";");
+  const char *status = NULL;
   //const char* prompt = NULL;
-  const char *
-    resp = NULL;
+  const char *resp = NULL;
 
   sendCommand("b get proxy.node.proxy_running", &response);
   //responseStr = response.bufPtr();
@@ -350,22 +337,17 @@ clientCLI::CliResult clientCLI::probeLocal(bool * running)
   return result;
 }
 
-clientCLI::CliResult clientCLI::getVariable(const char *name, char **value)
+clientCLI::CliResult
+clientCLI::getVariable(const char *name, char **value)
 {
-  textBuffer
-  response(512);                // textBuffer object to hold response
+  textBuffer response(512);                // textBuffer object to hold response
   //char*       responseStr;   // actual response string
-  CliResult
-    result = err_tm_invalid_resp;
-  Tokenizer
-  respTok(";");
-  const char *
-    status = NULL;
+  CliResult result = err_tm_invalid_resp;
+  Tokenizer respTok(";");
+  const char *status = NULL;
   //const char* prompt = NULL;
-  const char *
-    resp = NULL;
-  char
-    requestStr[512];
+  const char *resp = NULL;
+  char requestStr[512];
 
   snprintf(requestStr, sizeof(requestStr), "b get %s", name);
   sendCommand(requestStr, &response);

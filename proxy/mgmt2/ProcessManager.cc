@@ -146,9 +146,6 @@ ProcessManager::processEventQueue()
       executeMgmtCallback(mh->msg_id, NULL, 0);
     }
     if (mh->msg_id == MGMT_EVENT_SHUTDOWN) {
-      /* 3com does not want these messages to be seen */
-      /* Actually one instance of this message is made visible */
-
       mgmt_log(stderr, "[ProcessManager::processEventQueue] Shutdown msg received, exiting\n");
       _exit(0);
     }                           /* Exit on shutdown */

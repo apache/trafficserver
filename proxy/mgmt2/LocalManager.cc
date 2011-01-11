@@ -104,7 +104,6 @@ LocalManager::mgmtShutdown(int status, bool mainThread)
 void
 LocalManager::processShutdown(bool mainThread)
 {
-  /* 3com does not want these messages to be seen */
   mgmt_log("[LocalManager::processShutdown] Executing process shutdown request.\n");
   if (mainThread) {
     sendMgmtMsgToProcesses(MGMT_EVENT_SHUTDOWN, "processShutdown[main]");

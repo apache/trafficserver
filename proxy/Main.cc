@@ -1781,21 +1781,14 @@ main(int argc, char **argv)
   // on a thread changes require special consideration to allow
   // minimial Cache Clustering functionality.
   //////////////////////////////////////////////////////////////////////
-  int cluster_type = 0;
-  //kwt
-  //ReadLocalInteger(cluster_type, "proxy.config.cluster.type");
-  RecInt temp_int;
-  RecGetRecordInt("proxy.local.cluster.type", &temp_int);
-  cluster_type = (int) temp_int;
-  if (cluster_type == 1) {
-    cache_clustering_enabled = 1;
-    Note("cache clustering enabled");
-  } else {
-    cache_clustering_enabled = 0;
-    /* 3com does not want these messages to be seen */
-    Note("cache clustering disabled");
+  RecInt cluster_type;
+  cache_clustering_enabled = 0;
 
+  if (RecGetRecordInt("proxy.local.cluster.type", &cluster_type) == REC_ERR_OKAY) {
+    if (cluster_type == 1)
+      cache_clustering_enabled = 1;
   }
+  Note("cache clustering %s", cache_clustering_enabled ? "enabled" : "disabled");
 
   // Initialize New Stat system
   initialize_all_global_stats();

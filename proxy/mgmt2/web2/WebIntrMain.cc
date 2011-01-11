@@ -997,8 +997,6 @@ webIntr_main(void *x)
       // Set TCP_NODELAY if are using a TCP/IP socket
       //    setting no delay reduces the latency for servicing
       //    request on Solaris
-      // For 3com, it is not TCP socket, and so cannot do this for 3com.
-
       if (serviceThr != CLI_THR) {      // service thread for command line utility
         if (safe_setsockopt(clientFD, IPPROTO_TCP, TCP_NODELAY, ON, sizeof(int)) < 0) {
           mgmt_log(stderr, "[WebIntrMain]Failed to set sock options: %s\n", strerror(errno));

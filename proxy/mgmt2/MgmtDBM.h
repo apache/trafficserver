@@ -213,7 +213,6 @@ public:
 
   void mgmt_set_partner_process(pid_t pid)
   {
-    /* 3com does not want these messages to be seen */
     mgmt_log("[MgmtDBM::mgmt_set_partner_process] From: %ld To: %ld\n", partner_process, pid);
     partner_process = pid;
   }
