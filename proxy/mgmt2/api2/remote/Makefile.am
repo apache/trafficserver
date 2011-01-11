@@ -52,4 +52,4 @@ traffic_api_cli_remote_LDADD = \
   $(top_builddir)/iocore/utils/libinkutils.a \
   $(top_builddir)/lib/ts/libts.a \
   @LIBTHREAD@ @LIBSOCKET@ @LIBNSL@ @LIBRESOLV@ \
-  @LIBTCL@ @LIBDB@ @LIBRT@ @LIBDL@ @LIBSSL@ @LIBICONV@ @LIBEXECINFO@
+  @LIBTCL@ @LIBRT@ @LIBDL@ @LIBSSL@ @LIBICONV@ @LIBEXECINFO@

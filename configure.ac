@@ -233,7 +233,6 @@ AS_IF([test $has_standalone_iocore],
    AC_SUBST([ink_with_modules_def],["-DREC_BUILD_STAND_ALONE"])
    AC_SUBST([ink_with_modules_local],[""])
    AC_SUBST([ink_with_modules_process],[""])
-   AC_SUBST([hdr_dirs],"proxy/hdrs")
   ],
   [AC_SUBST([ink_with_modules_def],["-DREC_BUILD_MGMT2"])
    AC_SUBST([ink_with_modules_local],["-DLOCAL_MANAGER"])
@@ -811,23 +810,6 @@ TS_CHECK_XML
 if test "x${enable_xml}" != "xyes"; then
   AC_MSG_ERROR([Need at least one XML library, --with-expat is supported])
 fi
-
-#
-# Check for default sqlite3 DB backend
-#
-use_sqlite3=1
-use_libdb=0
-TS_CHECK_SQLITE3
-if test "x${enable_sqlite3}" != "xyes"; then
-  TS_CHECK_BDB
-  if test "x${enable_libdb}" != "xyes"; then
-    AC_MSG_ERROR([Need at least one DB backend, --with-sqlite3 and --with-libdb are supported])
-  fi
-  use_sqlite3=0
-  use_libdb=1
-fi
-AC_SUBST(use_sqlite3)
-AC_SUBST(use_libdb)
 
 TS_FLAG_FUNCS([clock_gettime kqueue epoll_ctl posix_memalign posix_fadvise lrand48_r srand48_r port_create])
 TS_FLAG_FUNCS([strndup strlcpy strlcat])

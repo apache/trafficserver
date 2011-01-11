@@ -131,8 +131,6 @@ libts_a_SOURCES = \
   Regression.h \
   Resource.cc \
   Resource.h \
-  SimpleDBM.cc \
-  SimpleDBM.h \
   SimpleTokenizer.h \
   TextBuffer.cc \
   TextBuffer.h \

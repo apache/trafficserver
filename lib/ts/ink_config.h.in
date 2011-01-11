@@ -96,8 +96,6 @@
 #define TS_HAS_STRLCPY                 @has_strlcpy@
 #define TS_HAS_STRLCAT                 @has_strlcat@
 
-#define TS_USE_SQLITE3                 @use_sqlite3@
-#define TS_USE_LIBDB                   @use_libdb@
 #define TS_HAS_BACKTRACE               @has_backtrace@
 #define TS_HAS_PROFILER                @has_profiler@
 #define TS_USE_DIAGS                   @use_diags@

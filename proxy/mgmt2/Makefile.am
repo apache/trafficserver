@@ -49,8 +49,6 @@ bin_PROGRAMS = traffic_manager
 libmgmt_p_a_SOURCES = \
   BaseManager.cc \
   BaseManager.h \
-  MgmtDBM.cc \
-  MgmtDBM.h \
   MgmtDefs.h \
   ProcessManager.cc \
   ProcessManager.h \
@@ -79,8 +77,6 @@ traffic_manager_SOURCES = \
   LocalManager.h \
   Main.cc \
   Main.h \
-  MgmtDBM.cc \
-  MgmtDBM.h \
   MgmtDefs.h \
   MultiFile.cc \
   MultiFile.h \
@@ -109,7 +105,7 @@ traffic_manager_LDADD = \
   $(top_builddir)/iocore/utils/libinkutils.a \
   $(top_builddir)/lib/ts/libts.a \
   @LIBEXPAT@ @LIBPCRE@ \
-  @LIBSSL@ @LIBDB@ @LIBSQLITE3@ @LIBTCL@ @LIBICONV@ \
+  @LIBSSL@ @LIBTCL@ @LIBICONV@ \
   @LIBM@ @LIBDL@ @LIBSOCKET@ @LIBNSL@ @LIBRESOLV@ \
   @LIBTHREAD@ @LIBRT@ @LIBEXECINFO@ @LIBCAP@
 

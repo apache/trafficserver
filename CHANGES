@@ -2,7 +2,20 @@
 
 Changes with Apache Traffic Server 2.1.6
 
+  *) Fix configure issues for sqlite3. This fix eliminates all of SimpleDBM,
+  sqlite3 and bdb dependencies. It also fixes the "make distclean" problem,
+  and clean things up a bit [TS-513].
 
+  *) Add the CLI interface to Traffic Cop, and make it possible to run
+   traffic_manager without listening on the cluster port [TS-491].
+
+  *) Build fails if --disable-webui is added [TS-583].
+
+  *) Removing traces of CCAS/CCASFLAGS [TS-618].
+
+  *) Fixes for "make check" to succeed (author: Arno Toell) [TS-627]. 
+
+  *) Fixes for bad cast and cleanup for Intel CC [TS-632].
 
 Changes with Apache Traffic Server 2.1.5
 

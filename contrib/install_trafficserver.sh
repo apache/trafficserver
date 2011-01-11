@@ -52,7 +52,7 @@ BUILD_HOME=/usr/local
 PREFIX=--prefix=$BUILD_HOME
 BUILD_OPTIONS="$PREFIX"
 BUILD_OPTIONS_DEBUG="--with-user=root --with-group=root --enable-debug"
-BUILD_OPTIONS_FC8_EC2="--without-sqlite3 -with-libdb --disable-eventfd"
+BUILD_OPTIONS_FC8_EC2="--disable-eventfd"
 CONFIGURE_OPTIONS=""
 FULL_BUILD_PATH=$EC2_EPHEMERAL/$PROJECT/$SVN_LOC
 
@@ -79,10 +79,7 @@ function updateInstall() {
         libssl-dev \
         tcl-dev \
         libexpat1-dev \
-        libdb-dev \
         libpcre3-dev \
-        libsqlite3-dev \
-        libdb-dev \
         curl
         apt-get install -y subversion git git-svn
     elif [ "$DISTRIB_ID" = "$FEDORA" ]; then
@@ -115,7 +112,6 @@ function updateInstall() {
                 openssl-devel \
                 tcl-devel \
                 expat-devel \
-                sqlite-devel \
                 pcre \
                 pcre-devel
         fi
