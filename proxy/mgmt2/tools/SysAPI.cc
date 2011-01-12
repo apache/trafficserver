@@ -1108,7 +1108,7 @@ Net_GetEncryptedRootPassword(char **password)
   if (find == 0)
     *password = NULL;
   else
-    *password = strtok(strdup(shadowPasswd), ":");
+    *password = strtok(xstrdup(shadowPasswd), ":");
   setreuid(old_euid, old_euid);
   return 0;
 }
@@ -1327,7 +1327,7 @@ Net_SetEncryptedRootPassword(char *password)
         fputs(buffer, tmp);
       } else {
         char *buf;
-        if ((buf = strdup(buffer)) != NULL) {
+        if ((buf = xstrdup(buffer)) != NULL) {
           strtok_r(buf, ":", &remainingTokens);
           strtok_r(NULL, ":", &remainingTokens);
           fprintf(tmp, "root:%s:%s", password, remainingTokens);
@@ -2599,7 +2599,7 @@ Net_GetEncryptedRootPassword(char **password)
   if (find == 0)
     *password = NULL;
   else
-    *password = strtok(strdup(shadowPasswd), ":");
+    *password = strtok(xstrdup(shadowPasswd), ":");
   setreuid(old_euid, old_euid);
   return 0;
 }
@@ -2803,7 +2803,7 @@ Net_SetEncryptedRootPassword(char *password)
       if (strncmp(buffer, "root", 4) != 0) {
         fputs(buffer, tmp);
       } else {
-        char *toks = strtok_r(strdup(buffer), ":", &remainingTokens);
+        char *toks = strtok_r(xstrdup(buffer), ":", &remainingTokens);
         toks = strtok_r(NULL, ":", &remainingTokens);
         fprintf(tmp, "root:%s:%s", password, remainingTokens);
       }

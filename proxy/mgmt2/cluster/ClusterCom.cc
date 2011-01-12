@@ -165,163 +165,136 @@ drainIncomingChannel(void *arg)
       }
 #endif
 
-      if (lmgmt->ccom->cluster_type == NO_CLUSTER) {
-        // In no cluster mode, all we want is for the cop
-        //   to be able to heartbeat us
+      // In no cluster mode, the rsport should not be listening.
+      ink_release_assert(lmgmt->ccom->cluster_type != NO_CLUSTER);
 
+      /* Handle Request */
+      if (mgmt_readline(req_fd, message, 61440) > 0) {
+        if (strstr(message, "aresolv: ")) {
+          /* Peer is Resolving our alarm */
+          alarm_t a;
 
-        // Only allow localhosts requests since all we
-        //   should get is stuff from the cop
-        if (strcmp(inet_ntoa(cli_addr.sin_addr), "127.0.0.1") == 0) {
-
-          /* Handle Request */
-          if (mgmt_readline(req_fd, message, 61440) > 0) {
-
-            if (!checkBackDoor(req_fd, message)) {      /* Heh... */
-              mgmt_log("[ClusterCom::drainIncomingChannel] Unexpected message on cluster"
-                       " port.  Possibly an attack\n");
-              Debug("ccom", "Unknown message to rsport received: %s", message);
-            }
-          }
-        } else {
-          mgmt_log("[ClusterCom::drainIncomingChannel] Unexpected message on cluster" " port.  Possibly an attack\n");
-        }
-
-      } else {
-
-        /* Handle Request */
-        if (mgmt_readline(req_fd, message, 61440) > 0) {
-
-          if (strstr(message, "aresolv: ")) {
-
-            /* Peer is Resolving our alarm */
-            alarm_t a;
-
-            // coverity[secure_coding]
-            if (sscanf(message, "aresolv: %d", &a) != 1) {
-              close_socket(req_fd);
-              continue;
-            }
-            lmgmt->alarm_keeper->resolveAlarm(a);
-          } else if (strstr(message, "unmap: ")) {
-
-            /*
-             * Explicit virtual ip unmap request. Note order unmap then
-             * map for strstr.
-             */
-            char msg_ip[80];
-            const char *msg;
-            if (sscanf(message, "unmap: %79s", msg_ip) != 1) {
-              close_socket(req_fd);
-              continue;
-            }
-
-            mgmt_log("[drainIncomingChannel] Got unmap request: '%s'\n", message);
-
-            ink_mutex_acquire(&(lmgmt->ccom->mutex));   /* Grab the lock */
-            if (lmgmt->virt_map->rl_unmap(msg_ip)) {    /* Requires lock */
-              msg = "unmap: done";
-            } else {
-              msg = "unmap: failed";
-            }
-            ink_mutex_release(&(lmgmt->ccom->mutex));   /* Release the lock */
-
-            mgmt_writeline(req_fd, msg, strlen(msg));
-
-            /* Wait for peer to read status */
-            if (mgmt_readline(req_fd, message, 61440) != 0) {
-              mgmt_elog("[drainIncomingChannel] Connection not closed\n");
-            }
-          } else if (strstr(message, "map: ")) {
-
-            /* Explicit virtual ip map request */
-            char msg_ip[80];
-            const char *msg;
-            if (sscanf(message, "map: %79s", msg_ip) != 1) {
-              close_socket(req_fd);
-              continue;
-            }
-
-            mgmt_log("[drainIncomingChannel] Got map request: '%s'\n", message);
-
-            if (lmgmt->run_proxy) {
-
-              ink_mutex_acquire(&(lmgmt->ccom->mutex)); /* Grab the lock */
-              if (lmgmt->virt_map->rl_map(msg_ip)) {    /* Requires the lock */
-                msg = "map: done";
-              } else {
-                msg = "map: failed";
-              }
-              ink_mutex_release(&(lmgmt->ccom->mutex)); /* Release the lock */
-            } else {
-              msg = "map: failed";
-            }
-
-            mgmt_writeline(req_fd, msg, strlen(msg));
-
-            /* Wait for peer to read status */
-            if (mgmt_readline(req_fd, message, 61440) != 0) {
-              mgmt_elog("[drainIncomingChannel] Connection not closedx\n");
-            }
-
-          } else if (strstr(message, "file: ")) {
-
-            /* Requesting a config file from us */
-            bool stat = false;
-            char fname[1024];
-            version_t ver;
-            textBuffer *buff = NULL;
-            Rollback *rb;
-
-            /* Get the file and blast it back */
-            if (sscanf(message, "file: %1023s %d", fname, &ver) != 2) {
-              close_socket(req_fd);
-              continue;
-            }
-
-            if (configFiles->getRollbackObj(fname, &rb) &&
-                (rb->getCurrentVersion() == ver) && (rb->getVersion(ver, &buff) == OK_ROLLBACK)) {
-              size_t bytes_written = 0;
-              stat = true;
-              bytes_written = write_socket(req_fd, buff->bufPtr(), strlen(buff->bufPtr()));
-              if (bytes_written != strlen(buff->bufPtr())) {
-                stat = false;
-                mgmt_log(stderr, "[drainIncomingChannel] Failed file req: %s v: %d\n", fname, ver);
-              } else {
-                mgmt_log(stderr,
-                         "[drainIncomingChannel] file req: %s v: %d bytes: %d\n", fname, ver, strlen(buff->bufPtr()));
-              }
-            } else {
-              mgmt_elog("[drainIncomingChannel] Error file req: %s ver: %d\n", fname, ver);
-            }
-
-            if (!stat) {
-              const char *msg = "file: failed";
-              mgmt_writeline(req_fd, msg, strlen(msg));
-            }
-            if (buff)
-              delete buff;
-          } else if (strstr(message, "cmd: shutdown_manager")) {
-            mgmt_log("[ClusterCom::drainIncomingChannel] Received manager shutdown request\n");
-            lmgmt->mgmtShutdown(0);
-          } else if (strstr(message, "cmd: shutdown_process")) {
-            mgmt_log("[ClusterCom::drainIncomingChannel] Received process shutdown request\n");
-            lmgmt->processShutdown();
-          } else if (strstr(message, "cmd: restart_process")) {
-            mgmt_log("[ClusterCom::drainIncomingChannel] Received restart process request\n");
-            lmgmt->processRestart();
-          } else if (strstr(message, "cmd: bounce_process")) {
-            mgmt_log("[ClusterCom::drainIncomingChannel] Received bounce process request\n");
-            lmgmt->processBounce();
-          } else if (strstr(message, "cmd: clear_stats")) {
-            mgmt_log("[ClusterCom::drainIncomingChannel] Received clear stats request\n");
-            lmgmt->clearStats();
-          } else if (!checkBackDoor(req_fd, message)) { /* Heh... */
-            mgmt_log("[ClusterCom::drainIncomingChannel] Unexpected message on cluster" " port.  Possibly an attack\n");
-            Debug("ccom", "Unknown message to rsport received: %s", message);
+          // coverity[secure_coding]
+          if (sscanf(message, "aresolv: %d", &a) != 1) {
             close_socket(req_fd);
             continue;
           }
+          lmgmt->alarm_keeper->resolveAlarm(a);
+        } else if (strstr(message, "unmap: ")) {
+          /*
+           * Explicit virtual ip unmap request. Note order unmap then
+           * map for strstr.
+           */
+          char msg_ip[80];
+          const char *msg;
+          if (sscanf(message, "unmap: %79s", msg_ip) != 1) {
+            close_socket(req_fd);
+            continue;
+          }
+
+          mgmt_log("[drainIncomingChannel] Got unmap request: '%s'\n", message);
+
+          ink_mutex_acquire(&(lmgmt->ccom->mutex));   /* Grab the lock */
+          if (lmgmt->virt_map->rl_unmap(msg_ip)) {    /* Requires lock */
+            msg = "unmap: done";
+          } else {
+            msg = "unmap: failed";
+          }
+          ink_mutex_release(&(lmgmt->ccom->mutex));   /* Release the lock */
+
+          mgmt_writeline(req_fd, msg, strlen(msg));
+
+          /* Wait for peer to read status */
+          if (mgmt_readline(req_fd, message, 61440) != 0) {
+            mgmt_elog("[drainIncomingChannel] Connection not closed\n");
+          }
+        } else if (strstr(message, "map: ")) {
+          /* Explicit virtual ip map request */
+          char msg_ip[80];
+          const char *msg;
+          if (sscanf(message, "map: %79s", msg_ip) != 1) {
+            close_socket(req_fd);
+            continue;
+          }
+
+          mgmt_log("[drainIncomingChannel] Got map request: '%s'\n", message);
+
+          if (lmgmt->run_proxy) {
+
+            ink_mutex_acquire(&(lmgmt->ccom->mutex)); /* Grab the lock */
+            if (lmgmt->virt_map->rl_map(msg_ip)) {    /* Requires the lock */
+              msg = "map: done";
+            } else {
+              msg = "map: failed";
+            }
+            ink_mutex_release(&(lmgmt->ccom->mutex)); /* Release the lock */
+          } else {
+            msg = "map: failed";
+          }
+
+          mgmt_writeline(req_fd, msg, strlen(msg));
+
+          /* Wait for peer to read status */
+          if (mgmt_readline(req_fd, message, 61440) != 0) {
+            mgmt_elog("[drainIncomingChannel] Connection not closedx\n");
+          }
+
+        } else if (strstr(message, "file: ")) {
+          /* Requesting a config file from us */
+          bool stat = false;
+          char fname[1024];
+          version_t ver;
+          textBuffer *buff = NULL;
+          Rollback *rb;
+
+          /* Get the file and blast it back */
+          if (sscanf(message, "file: %1023s %d", fname, &ver) != 2) {
+            close_socket(req_fd);
+            continue;
+          }
+
+          if (configFiles->getRollbackObj(fname, &rb) &&
+              (rb->getCurrentVersion() == ver) && (rb->getVersion(ver, &buff) == OK_ROLLBACK)) {
+            size_t bytes_written = 0;
+            stat = true;
+            bytes_written = write_socket(req_fd, buff->bufPtr(), strlen(buff->bufPtr()));
+            if (bytes_written != strlen(buff->bufPtr())) {
+              stat = false;
+              mgmt_log(stderr, "[drainIncomingChannel] Failed file req: %s v: %d\n", fname, ver);
+            } else {
+              mgmt_log(stderr,
+                       "[drainIncomingChannel] file req: %s v: %d bytes: %d\n", fname, ver, strlen(buff->bufPtr()));
+            }
+          } else {
+            mgmt_elog("[drainIncomingChannel] Error file req: %s ver: %d\n", fname, ver);
+          }
+
+          if (!stat) {
+            const char *msg = "file: failed";
+            mgmt_writeline(req_fd, msg, strlen(msg));
+          }
+          if (buff)
+            delete buff;
+        } else if (strstr(message, "cmd: shutdown_manager")) {
+          mgmt_log("[ClusterCom::drainIncomingChannel] Received manager shutdown request\n");
+          lmgmt->mgmtShutdown(0);
+        } else if (strstr(message, "cmd: shutdown_process")) {
+          mgmt_log("[ClusterCom::drainIncomingChannel] Received process shutdown request\n");
+          lmgmt->processShutdown();
+        } else if (strstr(message, "cmd: restart_process")) {
+          mgmt_log("[ClusterCom::drainIncomingChannel] Received restart process request\n");
+          lmgmt->processRestart();
+        } else if (strstr(message, "cmd: bounce_process")) {
+          mgmt_log("[ClusterCom::drainIncomingChannel] Received bounce process request\n");
+          lmgmt->processBounce();
+        } else if (strstr(message, "cmd: clear_stats")) {
+          mgmt_log("[ClusterCom::drainIncomingChannel] Received clear stats request\n");
+          lmgmt->clearStats();
+        } else if (!checkBackDoor(req_fd, message)) { /* Heh... */
+          mgmt_log("[ClusterCom::drainIncomingChannel] Unexpected message on cluster" " port.  Possibly an attack\n");
+          Debug("ccom", "Unknown message to rsport received: %s", message);
+          close_socket(req_fd);
+          continue;
         }
       }
       close_socket(req_fd);
@@ -1597,7 +1570,7 @@ ClusterCom::constructSharedFilePacket(char *message, int max)
 /*
  * estabilishChannels(...)
  *   Sets up the multi-cast and reliable tcp channels for cluster
- * communication.
+ * communication. But only if clustering is enabled in some shape.
  */
 void
 ClusterCom::establishChannels()
@@ -1605,48 +1578,44 @@ ClusterCom::establishChannels()
   int one = 1;
   struct sockaddr_in serv_addr;
 
-  // We only setup the reliable service port when
-  //   running no clustered.  We need the rs port so
-  //   that the cop can heartbeat us
   if (cluster_type != NO_CLUSTER) {
     establishBroadcastChannel();
     establishReceiveChannel();
-  }
 
-  if (reliable_server_port > 0) {
-    /* Setup reliable connection, for large config changes */
-    if ((reliable_server_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-      mgmt_fatal("[ClusterCom::establishChannels] Unable to create socket\n");
-    }
+    if (reliable_server_port > 0) {
+      /* Setup reliable connection, for large config changes */
+      if ((reliable_server_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+        mgmt_fatal("[ClusterCom::establishChannels] Unable to create socket\n");
+      }
 #ifndef _WIN32                  /* no need to set close-on-exec on NT */
-    if (fcntl(reliable_server_fd, F_SETFD, 1) < 0) {
-      mgmt_fatal("[ClusterCom::establishChannels] Unable to set close-on-exec.\n");
-    }
+      if (fcntl(reliable_server_fd, F_SETFD, 1) < 0) {
+        mgmt_fatal("[ClusterCom::establishChannels] Unable to set close-on-exec.\n");
+      }
 #endif
 
-    if (setsockopt(reliable_server_fd, SOL_SOCKET, SO_REUSEADDR, (char *) &one, sizeof(int)) < 0) {
-      mgmt_fatal("[ClusterCom::establishChannels] Unable to set socket options.\n");
-    }
+      if (setsockopt(reliable_server_fd, SOL_SOCKET, SO_REUSEADDR, (char *) &one, sizeof(int)) < 0) {
+        mgmt_fatal("[ClusterCom::establishChannels] Unable to set socket options.\n");
+      }
 
-    memset(&serv_addr, 0, sizeof(serv_addr));
-    serv_addr.sin_family = AF_INET;
-    serv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
-    serv_addr.sin_port = htons(reliable_server_port);
+      memset(&serv_addr, 0, sizeof(serv_addr));
+      serv_addr.sin_family = AF_INET;
+      serv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+      serv_addr.sin_port = htons(reliable_server_port);
 
-    if ((bind(reliable_server_fd, (struct sockaddr *) &serv_addr, sizeof(serv_addr))) < 0) {
-      mgmt_fatal("[ClusterCom::establishChannels] Unable to bind socket (port:%d)\n", reliable_server_port);
-    }
+      if ((bind(reliable_server_fd, (struct sockaddr *) &serv_addr, sizeof(serv_addr))) < 0) {
+        mgmt_fatal("[ClusterCom::establishChannels] Unable to bind socket (port:%d)\n", reliable_server_port);
+      }
 
-    if ((listen(reliable_server_fd, 10)) < 0) {
-      mgmt_fatal("[ClusterCom::establishChannels] Unable to listen on socket\n");
+      if ((listen(reliable_server_fd, 10)) < 0) {
+        mgmt_fatal("[ClusterCom::establishChannels] Unable to listen on socket\n");
+      }
     }
   }
 
   Debug("ccom", "[ClusterCom::establishChannels] Channels setup\n");
   init = true;
-
   return;
-}                               /* End ClusterCom::establishChannels */
+}
 
 
 /*

@@ -1146,7 +1146,7 @@ handle_submit_snapshot_to_filesystem(WebHttpContext * whc, const char *file)
         RecSetRecordString("proxy.config.snapshot_dir", snapDirFromRecordsConf);
         // Create a directory for the snap shot
         if (snap_directory[0] != '/') {
-          char *snap_dir_cpy = strdup(snap_directory);
+          char *snap_dir_cpy = xstrdup(snap_directory);
           int newLen;
 
           newLen = strlen(snap_dir_cpy) + strlen(config_dir) + 2;
@@ -1307,7 +1307,7 @@ handle_submit_snapshot_to_filesystem(WebHttpContext * whc, const char *file)
       ink_release_assert(found);
 
       if (snap_directory[0] != '/') {
-        char *snap_dir_cpy = strdup(snap_directory);
+        char *snap_dir_cpy = xstrdup(snap_directory);
         int newLen;
 
         newLen = strlen(snap_dir_cpy) + strlen(config_dir) + 2;
@@ -1337,7 +1337,7 @@ handle_submit_snapshot_to_filesystem(WebHttpContext * whc, const char *file)
         RecGetRecordString_Xmalloc("proxy.config.snapshot_dir", &snapDirFromRecordsConf);
         ink_release_assert(found);
         if (snapDirFromRecordsConf[0] != '/') {
-          char *snap_dir_cpy = strdup(snapDirFromRecordsConf);
+          char *snap_dir_cpy = xstrdup(snapDirFromRecordsConf);
           ink_assert(snap_dir_cpy);
           int newLen;
           newLen = strlen(snap_dir_cpy) + strlen(config_dir) + 2;
@@ -1362,7 +1362,7 @@ Ldelete:
         RecGetRecordString_Xmalloc("proxy.config.snapshot_dir", &snapDirFromRecordsConf);
         ink_release_assert(found);
         if (snapDirFromRecordsConf[0] != '/') {
-          char *snap_dir_cpy = strdup(snapDirFromRecordsConf);
+          char *snap_dir_cpy = xstrdup(snapDirFromRecordsConf);
           ink_assert(snap_dir_cpy);
           int newLen;
           newLen = strlen(snap_dir_cpy) + strlen(config_dir) + 2;

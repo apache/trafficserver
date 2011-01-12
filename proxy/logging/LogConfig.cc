@@ -476,11 +476,8 @@ LogConfig::read_configuration_variables()
   // rolling_offset_hr, or rolling_size_mb because the LogObject takes care of this
   //
   rolling_enabled = (int) LOG_ConfigReadInteger("proxy.config.log.rolling_enabled");
-
   rolling_interval_sec = (int) LOG_ConfigReadInteger("proxy.config.log.rolling_interval_sec");
-
   rolling_offset_hr = (int) LOG_ConfigReadInteger("proxy.config.log.rolling_offset_hr");
-
   rolling_size_mb = (int) LOG_ConfigReadInteger("proxy.config.log.rolling_size_mb");
 
   val = (int) LOG_ConfigReadInteger("proxy.config.log." "auto_delete_rolled_files");
@@ -2374,7 +2371,7 @@ LogConfig::read_log_hosts_file(size_t * num_hosts)
             continue;
           }
           LogUtils::strip_trailing_newline(line);
-          hosts[i] = strdup(line);
+          hosts[i] = xstrdup(line);
           ++i;
         }
         ink_assert(i == nhosts);

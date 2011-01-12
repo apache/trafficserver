@@ -235,7 +235,7 @@ generate_b_ht_from_b_ht_buf()
       printf("[Error] Could not allocate memory\n");
       return -1;
     }
-    if ((p_copy = strdup(p)) == 0) {
+    if ((p_copy = xstrdup(p)) == 0) {
       printf("[Error] Could not allocate memory\n");
       if (ce)
         free(ce);
@@ -387,7 +387,7 @@ find_config_updates()
       clear_trailing_whitespace(p);
     }
     // 'p' points to start of this line, 'q' points to start of next
-    if ((p_copy = strdup(p)) == 0) {
+    if ((p_copy = xstrdup(p)) == 0) {
       printf("[Error] Could not allocate memory\n");
       return -1;
     }
@@ -523,7 +523,7 @@ generate_new_config(char *fname)
       clear_trailing_whitespace(p);
     }
     // 'p' points to start of this line, 'q' points to start of next
-    if ((p_copy = strdup(p)) == 0) {
+    if ((p_copy = xstrdup(p)) == 0) {
       printf("[Error] Could not allocate memory\n");
       // coverity[leaked_storage]
       return -1;
@@ -586,7 +586,7 @@ main(int argc, char *argv[])
     goto lerror;
   if ((b_buf = import_file(argv[2])) == 0)
     goto lerror;
-  if ((b_ht_buf = strdup(b_buf)) == 0) {
+  if ((b_ht_buf = xstrdup(b_buf)) == 0) {
     printf("[Error] Could not allocate memory\n");
     goto lerror;
   }

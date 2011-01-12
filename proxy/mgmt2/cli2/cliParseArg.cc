@@ -253,14 +253,14 @@ cliParseArgument(int argc, const char **argv, cli_CommandInfo * commandInfo)
             Tcl_AppendResult(interp, "\"", curArg, "\" option requires an additional argument", (char *) NULL);
             return TCL_ERROR;
           }
-          parsedInfoPtr->arg_string = strdup(argv[srcIndex]);
+          parsedInfoPtr->arg_string = xstrdup(argv[srcIndex]);
           parsedInfoPtr->parsed_args = infoPtr->arg_ref;
           srcIndex++;
           argc--;
           break;
         case CLI_ARGV_OPTION_NAME_VALUE:
           if (argc > 0) {
-            parsedInfoPtr->arg_string = strdup(argv[srcIndex]);
+            parsedInfoPtr->arg_string = xstrdup(argv[srcIndex]);
           }
           parsedInfoPtr->parsed_args = infoPtr->arg_ref;
           break;
@@ -361,13 +361,13 @@ cliParseArgument(int argc, const char **argv, cli_CommandInfo * commandInfo)
 
 
         if (prevMatchPtr->type != CLI_ARGV_OPTION_NAME_VALUE) {
-          parsedInfoPtr->data = strdup(curArg);
+          parsedInfoPtr->data = xstrdup(curArg);
           parsedInfoPtr->parsed_args = CLI_PARSED_ARGV_DATA;
         } else
           parsedInfoPtr--;
 
       } else {
-        parsedInfoPtr->data = strdup(curArg);
+        parsedInfoPtr->data = xstrdup(curArg);
         parsedInfoPtr->parsed_args = CLI_PARSED_ARGV_DATA;
       }
     }

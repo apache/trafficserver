@@ -39,8 +39,8 @@ struct WebPluginConfig
 {
   WebPluginConfig(const char *aName, const char *aConfigPath)
   {
-    name = strdup(aName);
-    config_path = strdup(aConfigPath);
+    name = xstrdup(aName);
+    config_path = xstrdup(aConfigPath);
     next = NULL;
   }
    ~WebPluginConfig(void)

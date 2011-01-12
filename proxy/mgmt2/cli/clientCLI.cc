@@ -24,7 +24,7 @@
 /***************************************/
 /****************************************************************************
  *
- *  clientCLI.cc - A simple client to communicate to local manager
+ *  ClientCLI.cc - A simple client to communicate to local manager
  *
  *
  ****************************************************************************/
@@ -36,7 +36,7 @@
 #include "CliUtils.h"           /* cli_read_timeout(), cli_write_timeout(),GetTSDirectory() */
 #include "clientCLI.h"
 
-const char *clientCLI::CliResultStr[] = {
+const char *ClientCLI::CliResultStr[] = {
   "no error",
   "traffic_manager refusing onnection",
   "unable to connect to traffic_manager",
@@ -45,38 +45,38 @@ const char *clientCLI::CliResultStr[] = {
 };
 
 #ifndef _WIN32
-const char *clientCLI::defaultSockPath = "cli";
+const char *ClientCLI::defaultSockPath = "cli";
 #else
-const int clientCLI::defaultCliPort = 9000;
+const int ClientCLI::defaultCliPort = 9000;
 #endif
 
-clientCLI::clientCLI(void)
+ClientCLI::ClientCLI(void)
   : socketFD(0)
 {
 #ifndef _WIN32
-  ink_strncpy(sockPath, clientCLI::defaultSockPath, sizeof(sockPath));
+  ink_strncpy(sockPath, ClientCLI::defaultSockPath, sizeof(sockPath));
 #else
-  cliPort = clientCLI::defaultCliPort;
+  cliPort = ClientCLI::defaultCliPort;
 #endif
   //coverity[uninit_member]
 }
 
 #ifndef _WIN32
 void
-clientCLI::setSockPath(const char *path)
+ClientCLI::setSockPath(const char *path)
 {
   ink_strncpy(sockPath, path, sizeof(sockPath));
 }
 #else
 void
-clientCLI::setCliPort(int port)
+ClientCLI::setCliPort(int port)
 {
   cliPort = port;
 }
 #endif
 
-clientCLI::CliResult
-clientCLI::disconnectFromLM(void)
+ClientCLI::CliResult
+ClientCLI::disconnectFromLM(void)
 {
   close_socket(socketFD);
   socketFD = 0;
@@ -90,8 +90,8 @@ clientCLI::disconnectFromLM(void)
 //    process via the UNIX domain socket
 //    referenced by sockPath
 //
-clientCLI::CliResult
-clientCLI::connectToLM(void)
+ClientCLI::CliResult
+ClientCLI::connectToLM(void)
 {
   struct sockaddr_un clientS;
   int sockaddrLen;
@@ -132,8 +132,8 @@ clientCLI::connectToLM(void)
 
 #else /* WIN32 */
 
-clientCLI::CliResult
-clientCLI::connectToLM(void)
+ClientCLI::CliResult
+ClientCLI::connectToLM(void)
 {
   struct sockaddr_in clientS;
   int sockaddrLen;
@@ -166,7 +166,7 @@ clientCLI::connectToLM(void)
 //    Timeout is in milliseconds
 //
 int
-clientCLI::readResponse(textBuffer * output, ink_hrtime timeout)
+ClientCLI::readResponse(textBuffer * output, ink_hrtime timeout)
 {
   int readBytes = 0;            // number of bytes read
   int readResult = 0;           // status of read
@@ -200,7 +200,7 @@ clientCLI::readResponse(textBuffer * output, ink_hrtime timeout)
 }                               // end readResponse()
 
 int
-clientCLI::sendCommand(const char *cmd, textBuffer * response, ink_hrtime timeout)
+ClientCLI::sendCommand(const char *cmd, textBuffer * response, ink_hrtime timeout)
 {
   // Timeout vars
   ink_hrtime timeLeft, endTime = 0;
@@ -224,8 +224,8 @@ clientCLI::sendCommand(const char *cmd, textBuffer * response, ink_hrtime timeou
   return readResponse(response, timeLeft);
 }
 
-clientCLI::CliResult
-clientCLI::startupLocal(void)
+ClientCLI::CliResult
+ClientCLI::startupLocal(void)
 {
   textBuffer response(512);                // textBuffer object to hold response
   //char*       responseStr;   // actual response string
@@ -252,8 +252,8 @@ clientCLI::startupLocal(void)
   return err_tm_invalid_resp;
 }
 
-clientCLI::CliResult
-clientCLI::shutdownLocal(void)
+ClientCLI::CliResult
+ClientCLI::shutdownLocal(void)
 {
   textBuffer response(512);                // textBuffer object to hold response
   //char*       responseStr;   // actual response string
@@ -280,8 +280,8 @@ clientCLI::shutdownLocal(void)
   return err_tm_invalid_resp;
 }
 
-clientCLI::CliResult
-clientCLI::probeLocal(bool * running)
+ClientCLI::CliResult
+ClientCLI::probeLocal(bool * running)
 {
   textBuffer response(512);                // textBuffer object to hold response
   //char*       responseStr;   // actual response string
@@ -316,8 +316,8 @@ clientCLI::probeLocal(bool * running)
   return result;
 }
 
-clientCLI::CliResult
-clientCLI::getVariable(const char *name, char **value)
+ClientCLI::CliResult
+ClientCLI::getVariable(const char *name, char **value)
 {
   textBuffer response(512);                // textBuffer object to hold response
   //char*       responseStr;   // actual response string
@@ -330,7 +330,6 @@ clientCLI::getVariable(const char *name, char **value)
 
   snprintf(requestStr, sizeof(requestStr), "b get %s", name);
   sendCommand(requestStr, &response);
-  //responseStr = response.bufPtr();
 
   // parse response request from server into 3 tokens:
   // status, prompt and response
@@ -343,7 +342,7 @@ clientCLI::getVariable(const char *name, char **value)
   if (status && *status == '1') {       // OK
     if (resp != NULL) {
       result = err_none;
-      *value = strdup(resp);
+      *value = xstrdup(resp);
     } else {
       *value = NULL;
     }

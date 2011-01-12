@@ -1012,7 +1012,7 @@ int
 Part::init(char *s, off_t blocks, off_t dir_skip, bool clear)
 {
   dir_skip = ROUND_TO_STORE_BLOCK((dir_skip < START_POS ? START_POS : dir_skip));
-  path = strdup(s);
+  path = xstrdup(s);
   const size_t hash_id_size = strlen(s) + 32;
   hash_id = (char *) malloc(hash_id_size);
   ink_strncpy(hash_id, s, hash_id_size);

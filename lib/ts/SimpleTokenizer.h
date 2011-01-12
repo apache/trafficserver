@@ -28,11 +28,10 @@
 #include <string.h>
 #include <ctype.h>
 #include "ink_bool.h"
+#include "ink_resource.h"
 
 /*-----------------------------------------------------------------------------
   SimpleTokenizer
-
-
 
   This class provides easy token parsing from an input string. It supports:
 
@@ -128,14 +127,15 @@ public:
     OVERWRITE_INPUT_STRING = 8
   };
 
-  SimpleTokenizer(char delimiter = ' ', int mode = 0, char escape = '\\'):
-  _data(0), _delimiter(delimiter), _mode(mode), _escape(escape), _start(0), _length(0) {
-  };
+  SimpleTokenizer(char delimiter = ' ', int mode = 0, char escape = '\\')
+    : _data(0), _delimiter(delimiter), _mode(mode), _escape(escape), _start(0), _length(0)
+  {  }
 
-SimpleTokenizer(char *s, char delimiter = ' ', int mode = 0, char escape = '\\'):
-  _data(0), _delimiter(delimiter), _mode(mode), _escape(escape) {
+SimpleTokenizer(char *s, char delimiter = ' ', int mode = 0, char escape = '\\')
+  : _data(0), _delimiter(delimiter), _mode(mode), _escape(escape)
+  {
     setString(s);
-  };
+  }
 
   ~SimpleTokenizer() {
     _clearData();
@@ -147,7 +147,7 @@ SimpleTokenizer(char *s, char delimiter = ' ', int mode = 0, char escape = '\\')
 
     _start = 0;
     _length = strlen(s);
-    _data = (_mode & OVERWRITE_INPUT_STRING ? s : strdup(s));
+    _data = (_mode & OVERWRITE_INPUT_STRING ? s : xstrdup(s));
 
     // to handle the case where there is a null field at the end of the
     // input string, we replace the null character at the end of the

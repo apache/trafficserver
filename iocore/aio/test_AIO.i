@@ -451,7 +451,7 @@ read_config(const char *config_filename)
       else if (strcmp(field_name, "disk_path") == 0) {
       assert(n_disk_path < MAX_DISK_THREADS);
       fin >> field_value;
-      disk_path[n_disk_path] = strdup(field_value);
+      disk_path[n_disk_path] = xstrdup(field_value);
       cout << "reading disk_path = " << disk_path[n_disk_path] << endl;
       n_disk_path++;
     }

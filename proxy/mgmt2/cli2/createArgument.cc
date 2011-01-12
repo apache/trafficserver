@@ -153,7 +153,7 @@ findRequired(cli_ArgvInfo * argtable)
   for (infoPtr = argtable; (infoPtr->key != NULL); infoPtr++) {
     if (infoPtr->option == CLI_ARGV_REQUIRED) {
 
-      args[i] = strdup(infoPtr->key);
+      args[i] = xstrdup(infoPtr->key);
       i++;
     }
   }
@@ -260,7 +260,7 @@ getIntRange(char *range, int *r1, int *r2)
   char *endPtr;
 
   buf = (char *) ckalloc(sizeof(char) * 256);
-  range_str = strdup(range);
+  range_str = xstrdup(range);
   len = strlen(range_str);
   range_str[len] = 0;
   str = range_str;
@@ -334,7 +334,7 @@ getFloatRange(char *range, float *r1, float *r2)
   char *endPtr;
 
   buf = (char *) ckalloc(sizeof(char) * 256);
-  range_str = strdup(range);
+  range_str = xstrdup(range);
   len = strlen(range_str);
   range_str[len] = 0;
   str = range_str;

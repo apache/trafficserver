@@ -492,6 +492,7 @@ CacheHostRecord::Init(matcher_line * line_info, int typ)
   err[0] = 0;
   int is_part_present = 0;
   char config_file[PATH_NAME_MAX];
+
   IOCORE_ReadConfigString(config_file, "proxy.config.cache.hosting_filename", PATH_NAME_MAX);
   type = typ;
   for (i = 0; i < MATCHER_MAX_TOKENS; i++) {
@@ -502,7 +503,7 @@ CacheHostRecord::Init(matcher_line * line_info, int typ)
 
     if (!strcasecmp(label, "partition")) {
       /* parse the list of partitions */
-      val = strdup(line_info->line[1][i]);
+      val = xstrdup(line_info->line[1][i]);
       char *part_no = val;
       char *s = val;
       int partition_number;

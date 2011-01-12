@@ -59,8 +59,11 @@
 #define CLUSTER_CONFIG_FILE_BLURB "# Cluster Configuration file\n#\n# This file is machine generated and machine parsed.\n# Please do not change this file by hand.\n#\n# This file designates the machines which make up the cluster\n# proper.  Data and load are distributed among these machines.\n#\n############################################################################\n# Number\n# IP:Port \n# ...\n############################################################################\n# Number = { 0, 1 ... } where 0 is a stand-alone proxy\n# IP:Port = IP address: cluster accept port number\n#\n# Example 1: stand-alone proxy\n# 0\n#\n# Example 2: 3 machines\n# 3\n# 127.1.2.3:83\n# 127.1.2.4:83\n# 127.1.2.5:83\n#\n"
 
 enum MgmtClusterType
-{ CLUSTER_INVALID = 0, FULL_CLUSTER,
-  MGMT_CLUSTER, NO_CLUSTER
+{
+  CLUSTER_INVALID = 0,
+  FULL_CLUSTER,
+  MGMT_CLUSTER,
+  NO_CLUSTER
 };
 
 enum ClusterMismatch

@@ -21,7 +21,6 @@
   limitations under the License.
  */
 
-/***************************************/
 /****************************************************************************
  *
  *  clientCLI.h - A simple client to communicate to local manager
@@ -38,7 +37,7 @@
 class textBuffer;
 
 /* Client side part of CLI */
-class clientCLI
+class ClientCLI
 {
 public:
 
@@ -53,8 +52,8 @@ public:
 
   static const char *CliResultStr[];
 
-  clientCLI(void);
-  ~clientCLI(void) {}
+  ClientCLI(void);
+  ~ClientCLI(void) {}
 
 #ifndef _WIN32
    void setSockPath(const char *path);
@@ -98,8 +97,8 @@ private:
   int socketFD;
 
   /* copy constructor and assignment operator are private */
-  clientCLI(const clientCLI &);
-  clientCLI & operator =(const clientCLI &);
+  ClientCLI(const ClientCLI &);
+  ClientCLI & operator =(const ClientCLI &);
 };
 
 #endif /* _CLIENT_CLI_H_ */

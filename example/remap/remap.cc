@@ -91,7 +91,7 @@ argv(NULL)
   if (_argc > 0 && _argv && (argv = (char **) malloc(sizeof(char *) * (_argc + 1))) != 0) {
     argc = _argc;
     for (i = 0; i < argc; i++)
-      argv[i] = strdup(_argv[i]);
+      argv[i] = TSstrdup(_argv[i]);
     argv[i] = NULL;
   }
 }

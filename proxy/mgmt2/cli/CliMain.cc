@@ -84,7 +84,7 @@ static int ClearNode;
 static int timeout_arg;
 
 static void
-handleArgInvocation(clientCLI * cli)
+handleArgInvocation(ClientCLI * cli)
 {
   char bufToLm[1024];           // buffer to send request to Local Manager
   textBuffer response(512);     // textBuffer object to hold response
@@ -214,7 +214,7 @@ handleArgInvocation(clientCLI * cli)
 }                               // end handleArgInvocation
 
 static void
-runInteractive(clientCLI * cli)
+runInteractive(ClientCLI * cli)
 {
   char buf[512];                // holds request from interactive prompt
   char sendbuf[512];            // holds request to send LM
@@ -318,7 +318,7 @@ main(int argc, char **argv)
 
   // Before accessing file system initialize Layout engine
   Layout::create();
-  clientCLI *cli = new clientCLI();
+  ClientCLI *cli = new ClientCLI();
 
 /* Argument description table used to describe how to parse command line args, */
 /* see 'ink_args.h' for meanings of the various fields */
@@ -373,19 +373,18 @@ main(int argc, char **argv)
 
   // Connect to Local Manager
 #ifndef _WIN32
-  if (cli->connectToLM() != clientCLI::err_none) {
+  if (cli->connectToLM() != ClientCLI::err_none) {
     char sock_path[PATH_NAME_MAX + 1];
 
-    Layout::relative_to(sock_path, sizeof(sock_path),
-                        Layout::get()->runtimedir, clientCLI::defaultSockPath);
+    Layout::relative_to(sock_path, sizeof(sock_path), Layout::get()->runtimedir, ClientCLI::defaultSockPath);
     cli->setSockPath(sock_path);
-    if (cli->connectToLM() != clientCLI::err_none) {
+    if (cli->connectToLM() != ClientCLI::err_none) {
       fprintf(stderr, "%s: unable to connect to traffic_manager via %s\n", programName, cli->sockPath);
       exit(1);
     }
   }
 #else
-  if (cli->connectToLM() != clientCLI::err_none) {
+  if (cli->connectToLM() != ClientCLI::err_none) {
     fprintf(stderr, "%s: unable to connect to traffic_manager via %s\n", programName, cli->sockPath);
     exit(1);
   }

@@ -33,6 +33,15 @@
 #include <sys/ipc.h>
 #include <sys/sem.h>
 
+// From ClusterCom.h
+enum MgmtClusterType
+{
+  CLUSTER_INVALID = 0,
+  FULL_CLUSTER,
+  MGMT_CLUSTER,
+  NO_CLUSTER
+};
+
 union semun
 {
   int val;                      /* value for SETVAL */
@@ -88,6 +97,7 @@ static char bin_path[PATH_MAX];
 
 static int autoconf_port = 8083;
 static int rs_port = 8088;
+static int cluster_type = NO_CLUSTER;
 static int http_backdoor_port = 8084;
 static char http_backdoor_ip[PATH_MAX];
 
@@ -519,7 +529,7 @@ build_config_table(FILE * fp)
     }
     varname[i] = '\0';
 
-    ink_hash_table_insert(configTable, varname, strdup(buffer));
+    ink_hash_table_insert(configTable, varname, xstrdup(buffer));
   }
 #ifdef TRACE_LOG_COP
   cop_log(COP_DEBUG, "Leaving build_config_table(%d)\n", fp);
@@ -669,6 +679,7 @@ read_config()
   read_config_int("proxy.config.process_manager.mgmt_port", &http_backdoor_port);
   read_config_int("proxy.config.admin.autoconf_port", &autoconf_port);
   read_config_int("proxy.config.cluster.rsport", &rs_port);
+  read_config_int("proxy.local.cluster.type", &cluster_type);
   read_config_int("proxy.config.lm.sem_id", &sem_id);
 
   // If TS is going to bind to incoming_ip_to_bind, we need to make
@@ -1139,6 +1150,28 @@ read_manager_int(const char *variable, int *value)
 }
 
 static int
+read_cli_int(ClientCLI *cli, const char *variable, int *value)
+{
+  char *resp = NULL;
+  int ret = 0;
+
+  if (cli->connectToLM() != ClientCLI::err_none)
+    return -1;
+
+  if ((cli->getVariable(variable, &resp) == ClientCLI::err_none) && resp) {
+    *value = ink_atoi(resp);
+    xfree(resp);
+  } else {
+    ret = -1;
+    cop_log(COP_WARNING, "(cli test) could not communicate with cli\n");
+  }
+
+  cli->disconnectFromLM();
+  return ret;
+}
+
+
+static int
 test_rs_port()
 {
   char buffer[4096];
@@ -1155,6 +1188,30 @@ test_rs_port()
   }
 
   return 0;
+}
+
+
+static int
+test_cli_port(ClientCLI *cli)
+{
+  char *resp = NULL;
+  int ret = 0;
+
+  if (cli->connectToLM() != ClientCLI::err_none)
+    return -1;
+
+  if ((cli->getVariable("proxy.config.manager_binary", &resp) == ClientCLI::err_none) && resp) {
+    if (strcmp(resp, manager_binary) != 0) {
+      cop_log(COP_WARNING, "(cli test) bad response value, got %s, expected %s\n", resp, manager_binary);
+      ret = -1;
+    }
+    xfree(resp);
+  } else {
+    ret = -1;
+  }
+
+  cli->disconnectFromLM();
+  return ret;
 }
 
 
@@ -1247,28 +1304,35 @@ test_manager_http_port()
 
 
 static int
-heartbeat_manager()
+heartbeat_manager(ClientCLI *cli)
 {
   int err;
 
 #ifdef TRACE_LOG_COP
   cop_log(COP_DEBUG, "Entering heartbeat_manager()\n");
 #endif
-  err = test_rs_port();
-  if (err < 0) {
-    manager_failures += 1;
-    cop_log(COP_WARNING, "manager heartbeat [variable] failed [%d]\n", manager_failures);
+  // the CLI, and the rsport if cluster is enabled.
+  err = test_cli_port(cli);
+  if ((0 == err) && (cluster_type != NO_CLUSTER))
+    err = test_rs_port();
 
-    if (manager_failures > 1) {
-      manager_failures = 0;
-      cop_log(COP_WARNING, "killing manager\n");
-      safe_kill(manager_lockfile, manager_binary, true);
-    }
+  if (err < 0) {
+    if (err < 0) {
+      manager_failures += 1;
+      cop_log(COP_WARNING, "manager heartbeat [variable] failed [%d]\n", manager_failures);
+
+      if (manager_failures > 1) {
+        manager_failures = 0;
+        cop_log(COP_WARNING, "killing manager\n");
+        safe_kill(manager_lockfile, manager_binary, true);
+      }
 #ifdef TRACE_LOG_COP
-    cop_log(COP_DEBUG, "Leaving heartbeat_manager() --> %d\n", err);
+      cop_log(COP_DEBUG, "Leaving heartbeat_manager() --> %d\n", err);
 #endif
-    return err;
+      return err;
+    }
   }
+
 #if TS_HAS_WEBUI
   err = test_manager_http_port();
 
@@ -1290,7 +1354,6 @@ heartbeat_manager()
       cop_log(COP_WARNING, "manager heartbeat [http] succeeded\n");
     manager_failures = 0;
   }
-
 #endif // TS_HAS_WEBUI
 
 #ifdef TRACE_LOG_COP
@@ -1348,22 +1411,34 @@ heartbeat_server()
 }
 
 static int
-server_up()
+server_up(ClientCLI *cli)
 {
   static int old_val = 0;
-  int val;
+  int val = -1;
   int err;
 
 #ifdef TRACE_LOG_COP
   cop_log(COP_DEBUG, "Entering server_up()\n");
 #endif
-  err = read_manager_int("proxy.node.proxy_running", &val);
-  if (err < 0) {
-    cop_log(COP_WARNING, "could not contact manager, " "assuming server is down\n");
+  if (cluster_type != NO_CLUSTER) {
+    err = read_manager_int("proxy.node.proxy_running", &val);
+    if (err < 0) {
+      cop_log(COP_WARNING, "could not contact manager, " "assuming server is down\n");
 #ifdef TRACE_LOG_COP
-    cop_log(COP_DEBUG, "Leaving server_up() --> 0\n");
+      cop_log(COP_DEBUG, "Leaving server_up() --> 0\n");
 #endif
-    return 0;
+      return 0;
+    }
+  } else {
+    err = read_cli_int(cli, "proxy.node.proxy_running", &val);
+    printf("GOT %d\n", val);
+    if (err < 0) {
+      cop_log(COP_WARNING, "could not contact manager, " "assuming server is down\n");
+#ifdef TRACE_LOG_COP
+      cop_log(COP_DEBUG, "Leaving server_up() --> 0\n");
+#endif
+      return 0;
+    }
   }
 
   if (val != old_val) {
@@ -1402,7 +1477,7 @@ server_up()
 
 
 static void
-check_programs()
+check_programs(ClientCLI *cli)
 {
   int err;
   pid_t holding_pid;
@@ -1495,14 +1570,14 @@ check_programs()
     // running. If there is we test it.
 
     alarm(2 * manager_timeout);
-    err = heartbeat_manager();
+    err = heartbeat_manager(cli);
     alarm(0);
 
     if (err < 0) {
       return;
     }
 
-    if (server_up() <= 0) {
+    if (server_up(cli) <= 0) {
       return;
     }
 
@@ -1632,6 +1707,13 @@ check(void *arg)
 #ifdef TRACE_LOG_COP
   cop_log(COP_DEBUG, "Entering check()\n");
 #endif
+  // Get a CLI
+  char sock_path[PATH_NAME_MAX + 1];
+  ClientCLI *cli = new ClientCLI();
+
+  Layout::relative_to(sock_path, sizeof(sock_path), Layout::get()->runtimedir, ClientCLI::defaultSockPath);
+  cli->setSockPath(sock_path);
+
   for (;;) {
     // problems with the ownership of this file as root Make sure it is
     // owned by the admin user
@@ -1660,26 +1742,23 @@ check(void *arg)
 
       child_pid = child_status = 0;
     }
-    // Get a new CLI
-    clientCLI *cli = new clientCLI();
-
     // Re-read the config file information
     read_config();
 
     // Check to make sure the programs are running
-    check_programs();
+    check_programs(cli);
 
     // Check to see if we're running out of free memory
     check_memory();
-
-    // Get rid of the CLI
-    delete cli;
 
     // Pause to catch our breath. (10 seconds).
     // Use 'millisleep()' because normal 'sleep()' interferes with
     // the SIGALRM signal which we use to heartbeat the cop.
     millisleep(sleep_time * 1000);
   }
+
+  // Get rid of the CLI
+  delete cli;
 
 #ifdef TRACE_LOG_COP
   cop_log(COP_DEBUG, "Leaving check()\n");
@@ -1815,12 +1894,9 @@ init_lockfiles()
 #ifdef TRACE_LOG_COP
   cop_log(COP_DEBUG, "Entering init_lockfiles()\n");
 #endif
-  Layout::relative_to(cop_lockfile, sizeof(cop_lockfile),
-                      Layout::get()->runtimedir, COP_LOCK);
-  Layout::relative_to(manager_lockfile, sizeof(manager_lockfile),
-                      Layout::get()->runtimedir, MANAGER_LOCK);
-  Layout::relative_to(server_lockfile, sizeof(server_lockfile),
-                      Layout::get()->runtimedir, SERVER_LOCK);
+  Layout::relative_to(cop_lockfile, sizeof(cop_lockfile), Layout::get()->runtimedir, COP_LOCK);
+  Layout::relative_to(manager_lockfile, sizeof(manager_lockfile), Layout::get()->runtimedir, MANAGER_LOCK);
+  Layout::relative_to(server_lockfile, sizeof(server_lockfile), Layout::get()->runtimedir, SERVER_LOCK);
 
 #ifdef TRACE_LOG_COP
   cop_log(COP_DEBUG, "Leaving init_lockfiles()\n");
@@ -1889,12 +1965,12 @@ init()
 }
 
 int version_flag = 0;
+
 int
 main(int argc, char *argv[])
 {
   int fd;
-  appVersionInfo.setup(PACKAGE_NAME,"traffic_cop", PACKAGE_VERSION, __DATE__,
-                       __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
+  appVersionInfo.setup(PACKAGE_NAME,"traffic_cop", PACKAGE_VERSION, __DATE__, __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
 
   // Before accessing file system initialize Layout engine
   Layout::create();
