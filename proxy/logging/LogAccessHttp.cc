@@ -35,7 +35,7 @@
 #include "libts.h"
 #include "Error.h"
 #include "LogAccessHttp.h"
-#include "http2/HttpSM.h"
+#include "http/HttpSM.h"
 #include "MIME.h"
 #include "HTTP.h"
 #include "LogUtils.h"

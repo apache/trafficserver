@@ -35,7 +35,7 @@
 #include "I_Store.h"
 
 #ifdef HTTP_CACHE
-#include "../../proxy/http2/Hash_Table.h"       //Added to get the scope of hash table - YTS Team, yamsat
+#include "../../proxy/http/Hash_Table.h"       //Added to get the scope of hash table - YTS Team, yamsat
 #endif
 
 #define CACHE_MODULE_MAJOR_VERSION 1

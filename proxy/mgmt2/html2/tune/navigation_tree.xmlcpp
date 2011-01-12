@@ -30,7 +30,7 @@ adjust.  Further, the header file may be included elsewhere to
 syncronize behaviour across the system.
 
 Note that in order to not change the existing convenience, there is
-still a .../http2/navigation_tree.xml file, but it is unused in any
+still a .../http/navigation_tree.xml file, but it is unused in any
 of the packaged products.  For 'gmake install' installations, the user
 may copy or from the tuned version in the build tree if it is
 desirable for the task at hand. (Rem: {inst}/bin/ui/ is linked to a

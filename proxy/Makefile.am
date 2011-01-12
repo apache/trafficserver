@@ -21,7 +21,7 @@ noinst_LIBRARIES = libTrafficServerStandalone.a
 bin_PROGRAMS =
 noinst_PROGRAMS =
 else
-SUBDIRS = congest http2 hdrs logging
+SUBDIRS = congest http hdrs logging
 if BUILD_WCCP
 SUBDIRS += wccp
 endif
@@ -37,9 +37,9 @@ endif
 AM_CPPFLAGS = \
   $(iocore_include_dirs) \
   -I$(top_srcdir)/lib/records \
-  -I$(srcdir)/http2 \
+  -I$(srcdir)/http \
   -I$(srcdir)/logging \
-  -I$(srcdir)/http2/remap  \
+  -I$(srcdir)/http/remap  \
   -I$(srcdir)/hdrs \
   -I$(srcdir)/mgmt2 \
   -I$(srcdir)/mgmt2/preparse \
@@ -141,8 +141,8 @@ endif
 
 traffic_server_LDFLAGS = @EXTRA_CXX_LDFLAGS@
 traffic_server_LDADD = \
-  http2/libhttp.a \
-  http2/remap/libhttp_remap.a \
+  http/libhttp.a \
+  http/remap/libhttp_remap.a \
   congest/libCongestionControl.a \
   logging/liblogging.a \
   stats/libstats.a \
@@ -199,8 +199,8 @@ traffic_logcat_LDADD = \
   FetchSM.o \
   InkIOCoreAPI.o \
   InkXml.o \
-  http2/libhttp.a \
-  http2/remap/libhttp_remap.a \
+  http/libhttp.a \
+  http/remap/libhttp_remap.a \
   logging/liblogging.a \
   stats/libstats.a \
   hdrs/libhdrs.a \
@@ -267,8 +267,8 @@ traffic_logstats_LDADD = \
   FetchSM.o \
   InkIOCoreAPI.o \
   InkXml.o \
-  http2/libhttp.a \
-  http2/remap/libhttp_remap.a \
+  http/libhttp.a \
+  http/remap/libhttp_remap.a \
   logging/liblogging.a \
   stats/libstats.a \
   hdrs/libhdrs.a \
@@ -336,8 +336,8 @@ traffic_sac_LDADD = \
   FetchSM.o \
   InkIOCoreAPI.o \
   InkXml.o \
-  http2/libhttp.a \
-  http2/remap/libhttp_remap.a \
+  http/libhttp.a \
+  http/remap/libhttp_remap.a \
   congest/libCongestionControl.a \
   logging/liblogging.a \
   stats/libstats.a \

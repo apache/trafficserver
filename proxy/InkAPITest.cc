@@ -39,7 +39,7 @@
 #include "I_Layout.h"
 
 #include "InkAPITestTool.cc"
-#include "http2/HttpSM.h"
+#include "http/HttpSM.h"
 
 #define TC_PASS 1
 #define TC_FAIL 0

@@ -29,8 +29,8 @@ AM_CPPFLAGS = \
   -I$(top_srcdir)/lib/records \
   -I$(top_srcdir)/proxy \
   -I$(top_srcdir)/proxy/hdrs \
-  -I$(top_srcdir)/proxy/http2 \
-  -I$(top_srcdir)/proxy/http2/remap \
+  -I$(top_srcdir)/proxy/http \
+  -I$(top_srcdir)/proxy/http/remap \
   -I$(top_srcdir)/proxy/mgmt2 \
   -I$(top_srcdir)/proxy/mgmt2/preparse \
   -I$(top_srcdir)/proxy/mgmt2/utils \

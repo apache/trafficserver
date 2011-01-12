@@ -110,7 +110,7 @@
 #include "ink_bool.h"
 #include "CoreUtils.h"
 #include "Diags.h"
-#include "http2/HttpSM.h"
+#include "http/HttpSM.h"
 #include "P_EventSystem.h"
 #include "I_Version.h"
 #include  <string.h>
@@ -144,7 +144,7 @@ int program_counter = 0;
 
 #include "EventName.h"
 
-#include "http2/HttpSM.h"
+#include "http/HttpSM.h"
 
 bool inTable;
 FILE *fp;

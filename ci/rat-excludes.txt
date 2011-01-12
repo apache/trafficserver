@@ -27,13 +27,13 @@ config.nice
 configure
 REVIEWERS
 proxy/README-stats.otl
-proxy/http2/README.via
+proxy/http/README.via
 proxy/ClassH.txt
 proxy/DebugStreamLevels.txt
 proxy/trafficserver-release
 proxy/cache_test.config
 proxy/congest/FeatureSpec.txt
-proxy/http2/stats.memo
+proxy/http/stats.memo
 proxy/issues.txt
 proxy/mgmt2/cli2/cli_detailed_command_list.txt
 proxy/mgmt2/cli2/cli_feature_spec.txt

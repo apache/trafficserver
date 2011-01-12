@@ -1,6 +1,6 @@
 proxy/cluster/Cluster.h is now iocore/cluster/P_ClusterCache.h
 Clustering compiles but only works if this module is compiled with the entire
-TS because there are a lot of stuff required for clustering in proxy/http2.
+TS because there are a lot of stuff required for clustering in proxy/http.
 
 
 cache ifdefs
