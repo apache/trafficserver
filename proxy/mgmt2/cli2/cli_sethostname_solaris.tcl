@@ -14,12 +14,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-PATH=/usr/bin:/bin:/sbin:/usr/sbin:/etc:/usr/ucb:/usr/bsd:/usr/etc:/usr/loca
-l/bin; export PATH
+PATH=/usr/bin:/bin:/sbin:/usr/sbin:/etc:/usr/ucb:/usr/bsd:/usr/etc:/usr/local/bin;
+export PATH
 
 # determine network interface device from /etc/ts_product_info
-network_dev=`grep "TS_NET_DEVICE=" /etc/ts_product_info | awk -F= '{print $2
-}'`
+network_dev=`grep "TS_NET_DEVICE=" /etc/ts_product_info | awk -F= '{print $2 }'`
 
 name=$1
 ipaddr=$2
