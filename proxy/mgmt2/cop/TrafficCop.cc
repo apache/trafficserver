@@ -25,6 +25,7 @@
 #include "I_Layout.h"
 #include "I_Version.h"
 #include "clientCLI.h"
+#include "ClusterCom.h"
 
 #if defined(linux)
 #include "sys/utsname.h"
@@ -32,15 +33,6 @@
 #include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/sem.h>
-
-// From ClusterCom.h
-enum MgmtClusterType
-{
-  CLUSTER_INVALID = 0,
-  FULL_CLUSTER,
-  MGMT_CLUSTER,
-  NO_CLUSTER
-};
 
 union semun
 {
@@ -97,7 +89,7 @@ static char bin_path[PATH_MAX];
 
 static int autoconf_port = 8083;
 static int rs_port = 8088;
-static int cluster_type = NO_CLUSTER;
+static MgmtClusterType cluster_type = NO_CLUSTER;
 static int http_backdoor_port = 8084;
 static char http_backdoor_ip[PATH_MAX];
 
@@ -626,6 +618,7 @@ read_config()
   static time_t last_mod = 0;
   char log_dir[PATH_MAX];
   char log_filename[PATH_MAX];
+  int tmp_int;
 
 #ifdef TRACE_LOG_COP
   cop_log(COP_DEBUG, "Entering read_config()\n");
@@ -679,8 +672,10 @@ read_config()
   read_config_int("proxy.config.process_manager.mgmt_port", &http_backdoor_port);
   read_config_int("proxy.config.admin.autoconf_port", &autoconf_port);
   read_config_int("proxy.config.cluster.rsport", &rs_port);
-  read_config_int("proxy.local.cluster.type", &cluster_type);
   read_config_int("proxy.config.lm.sem_id", &sem_id);
+
+  read_config_int("proxy.local.cluster.type", &tmp_int);
+  cluster_type = static_cast<MgmtClusterType>(tmp_int);
 
   // If TS is going to bind to incoming_ip_to_bind, we need to make
   // sure we connect to it when heartbeating TS on the http_backdoor
