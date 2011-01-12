@@ -1178,14 +1178,6 @@ typedef enum
   inkapi INKError INKSnapshotGetMlt(INKStringList snapshots);
 
 
-/*--- ftp operations ------------------------------------------------------*/
-
-/* INKMgmtFtpGet: retrieves a file from the specified ftp server
- * Input:
- * Output: INKError
- */
-  inkapi INKError INKMgmtFtp(const char *ftpCmd, const char *ftp_server_name, const char *ftp_login, const char *ftp_password, const char *local,
-                             const char *remote, char *output);
 /*--- statistics operations -----------------------------------------------*/
 /* INKStatsReset: sets all the statistics variables to their default values
  * Input: <none>

@@ -2,6 +2,9 @@
 
 Changes with Apache Traffic Server 2.1.6
 
+  *) Remove traces of FTP references [TS-324] by purging the now useless TCL
+  bindings to it.
+
   *) Fix configure issues for sqlite3. This fix eliminates all of SimpleDBM,
   sqlite3 and bdb dependencies. It also fixes the "make distclean" problem,
   and clean things up a bit [TS-513].
