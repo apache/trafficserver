@@ -183,9 +183,6 @@
         <LINK name="File System" refresh="false"
               file_link="/configure/c_snapshot_filesystem.ink"
               help_link="/help/ts.ink?help=c_snap.htm"/>
-        <LINK name="Floppy Disk" refresh="false"
-              file_link="/configure/c_snapshot_floppy.ink"
-              help_link="/help/ts.ink?help=c_snap.htm"/>
       </ITEM>
       <ITEM name="Logs">
         <LINK name="System" refresh="true"

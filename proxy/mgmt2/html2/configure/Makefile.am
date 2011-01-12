@@ -14,8 +14,6 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-SUBDIRS = helper
-
 webuidir = $(pkgdatadir)/configure
 dist_webui_DATA = \
 	c_autoconf_pac.ink \
@@ -75,7 +73,6 @@ dist_webui_DATA = \
 	c_real_networks_general.ink \
 	c_reverse_proxy.ink \
 	c_snapshot_filesystem.ink \
-	c_snapshot_floppy.ink \
 	c_snapshot.ink \
 	c_socks_general.ink \
 	c_socks_proxy.ink \

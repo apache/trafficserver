@@ -19,7 +19,6 @@ The Traffic Server 2.1 Default LAYOUT
 |   `-- trafficserver
 |-- share
 |   `-- trafficserver
-|       |-- agent-installer
 |       |-- charting
 |       |-- configure
 |       |   `-- helper

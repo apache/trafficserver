@@ -2388,75 +2388,6 @@ handle_submit_net_config(WebHttpContext * whc, const char *file)
   return WebHttpRender(whc, submit_from_page);
 }
 
-//-------------------------------------------------------------------------
-// handle_submit_otw_upgrade
-//-------------------------------------------------------------------------
-static int
-handle_submit_otw_upgrade(WebHttpContext * whc, const char *file)
-{
-  NOWARN_UNUSED(file);
-  int err = WEB_HTTP_ERR_OKAY;
-  char *action;
-  char *working_dir;
-  char *submit_from_page;
-  char tmp[MAX_TMP_BUF_LEN];
-#if TS_HAS_WEBUI
-  char *link;
-#endif
-  const char *cgi_path;
-
-  if (ink_hash_table_lookup(whc->post_data_ht, "submit_from_page", (void **) &submit_from_page)) {
-    ink_hash_table_delete(whc->post_data_ht, "submit_from_page");
-    whc->top_level_render_file = xstrdup(submit_from_page);
-  } else {
-    submit_from_page = NULL;
-  }
-
-#ifndef _WIN32
-
-  if (ink_hash_table_lookup(whc->post_data_ht, "action", (void **) &action)) {
-    if (strcmp(action, "Cancel") == 0) {
-      // upgrade cancelled = return to HTML_OTW_UPGRADE_FILE
-      if (ink_hash_table_lookup(whc->post_data_ht, "working_dir", (void **) &working_dir)) {
-        // cleanup
-        snprintf(tmp, MAX_TMP_BUF_LEN, "/bin/rm -rf %s", working_dir);
-        NOWARN_UNUSED_RETURN(system(tmp));
-      }
-      if (submit_from_page)
-        xfree(submit_from_page);
-      submit_from_page = xstrdup(HTML_OTW_UPGRADE_FILE);
-      if (whc->top_level_render_file)
-        xfree(whc->top_level_render_file);
-      whc->top_level_render_file = xstrdup(submit_from_page);
-
-    } else {
-      // start upgrade = render upgrade page + spawn traffic_shell.cgi script
-#if TS_HAS_WEBUI
-      link = WebHttpGetLink_Xmalloc(HTML_DEFAULT_MONITOR_FILE);
-      xfree(link);
-#endif
-      cgi_path = WebHttpAddDocRoot_Xmalloc(whc, HTML_OTW_UPGRADE_CGI_FILE);
-      int old_euid, old_egid;
-      Config_User_Root(&old_euid);
-      Config_Grp_Root(&old_egid);
-      spawn_cgi(whc, cgi_path, NULL, true, true);
-      Config_User_Inktomi(old_euid);
-      Config_Grp_Inktomi(old_egid);
-      if (submit_from_page)
-        xfree(submit_from_page);
-      submit_from_page = xstrdup("/upgrade.ink");
-      xfree((char *) cgi_path);
-    }
-  }
-#endif
-  if (submit_from_page) {
-    err = WebHttpRender(whc, submit_from_page);
-    xfree(submit_from_page);
-  } else {
-    err = WebHttpRender(whc, HTML_DEFAULT_CONFIGURE_FILE);
-  }
-  return err;
-}
 
 //-------------------------------------------------------------------------
 // handle_default
@@ -2886,7 +2817,6 @@ WebHttpInit()
   ink_hash_table_insert(g_submit_bindings_ht, HTML_SUBMIT_UPDATE_CONFIG, (void *) handle_submit_update_config);
   ink_hash_table_insert(g_submit_bindings_ht, HTML_SUBMIT_CONFIG_DISPLAY, (void *) handle_submit_config_display);
   ink_hash_table_insert(g_submit_bindings_ht, HTML_SUBMIT_NET_CONFIG, (void *) handle_submit_net_config);
-  ink_hash_table_insert(g_submit_bindings_ht, HTML_SUBMIT_OTW_UPGRADE_FILE, (void *) handle_submit_otw_upgrade);
   // initialize file bindings
   g_file_bindings_ht = ink_hash_table_create(InkHashTableKeyType_String);
   ink_hash_table_insert(g_file_bindings_ht, HTML_CHART_FILE, (void *) handle_chart);

@@ -105,9 +105,7 @@
 #define HTML_ID_PERMISSION_DENIED       "s_text_112"
 #define HTML_ID_FILE_TRUNCATED          "s_text_113"
 #define HTML_ID_SESSION_VALUE_LIMIT     "s_text_114"
-#define HTML_ID_FLOPPY_UNMOUNT_ERR	"s_text_115"
 // Currently unsused: 116
-#define HTML_ID_FLOPPY_NO_SPACE		"s_text_117"
 
 #define HTML_ID_SUBMIT_NOTE_FLG         "s_text_150"
 #define HTML_ID_RESTART_REQUIRED        "s_text_151"
@@ -394,8 +392,6 @@
 #define HTML_TREE_FOOTER_FILE           "/include/tree_footer.ink"
 #define HTML_DEFAULT_MONITOR_FILE       "/monitor/m_overview.ink"
 #define HTML_DEFAULT_CONFIGURE_FILE     "/configure/c_basic.ink"
-#define HTML_OTW_UPGRADE_FILE           "/configure/c_otw_upgrade.ink"
-#define HTML_OTW_UPGRADE_CGI_FILE       "/configure/helper/traffic_shell.cgi"
 #define HTML_FEATURE_ON_OFF_FILE        "/configure/c_basic.ink"
 #define HTML_DEFAULT_HELP_FILE          "/help/ts.ink"
 
@@ -404,8 +400,6 @@
 #define HTML_SUBMIT_MGMT_AUTH_FILE      "/submit_mgmt_auth.cgi"
 //#define HTML_SUBMIT_SNAPSHOT_FILE       "/submit_snapshot.cgi"
 #define HTML_SUBMIT_SNAPSHOT_FILESYSTEM "/submit_snapshot_filesystem.cgi"
-#define HTML_SUBMIT_SNAPSHOT_FTPSERVER  "/submit_snapshot_ftpserver.cgi"
-#define HTML_SUBMIT_SNAPSHOT_FLOPPY     "/submit_snapshot_floppy.cgi"
 #define HTML_SUBMIT_INSPECTOR_FILE      "/submit_inspector.cgi"
 #define HTML_SUBMIT_INSPECTOR_DPY_FILE  "/configure/submit_inspector_display.cgi"
 #define HTML_SUBMIT_VIEW_LOGS_FILE      "/log.cgi"

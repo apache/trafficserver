@@ -223,11 +223,6 @@ This text will be stripped from the build 'navigation_tree.xml'.
               file_link="/configure/c_snapshot_ftpsystem.ink"
               help_link="/help/ts.ink?help=c_snap.htm"/>
 #endif
-#ifdef FTR_SNAP_FLOPPY
-        <LINK name="Floppy Disk" refresh="false"
-              file_link="/configure/c_snapshot_floppy.ink"
-              help_link="/help/ts.ink?help=c_snap.htm"/>
-#endif
       </ITEM>
       <ITEM name="Logs">
         <LINK name="System" refresh="true"
