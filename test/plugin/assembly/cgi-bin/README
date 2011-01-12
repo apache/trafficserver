@@ -13,5 +13,5 @@ Format of requests:
   http://<webserver>/cgi-bin/portal.cgi?user=<username>&city=<city_name>&news=<sports|intl>
 
 Example:
-  http://helsinki.climate.inktomi.com/cgi-bin/portal.cgi?user=franck&city=SF&news=sports
-  http://helsinki.climate.inktomi.com/cgi-bin/portal.cgi?user=davep&city=NY&news=intl 
+  http://helsinki.climate.example.com/cgi-bin/portal.cgi?user=franck&city=SF&news=sports
+  http://helsinki.climate.example.com/cgi-bin/portal.cgi?user=davep&city=NY&news=intl 

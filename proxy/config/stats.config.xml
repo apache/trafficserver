@@ -2,8 +2,8 @@
  
 <!DOCTYPE ink:statistics SYSTEM "stats.config.dtd">
 
-<!-- Inktomi's namespace: ink -->
-<ink:statistics xmlns:ink='http://www.inktomi.com/'>
+<!-- Traffic Server's namespace: ink -->
+<ink:statistics xmlns:ink='http://trafficserver.apache.com/'>
 
     <statistics
 	minimum="0">

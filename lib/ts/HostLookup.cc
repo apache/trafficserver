@@ -88,11 +88,11 @@ domaincmp(const char *hostname, const char *domain)
   if (domain_cur < domain) {
     if (host_cur < hostname) {
       // This covers the case 1
-      //   ex: inktomi.com matching inktomi.com
+      //   ex: example.com matching example.com
       return true;
     } else {
       // This covers case 2 (the most common case):
-      //   ex: www.inktomi.com matching .com or com
+      //   ex: www.example.com matching .com or com
       // But we must check that we do match
       //   www.inktomi.ecom against com
       //
@@ -106,7 +106,7 @@ domaincmp(const char *hostname, const char *domain)
     }
   } else if (host_cur < hostname) {
     // This covers the case 3 (a very unusual case)
-    //  ex: inktomi.com needing to match .inktomi.com
+    //  ex: example.com needing to match .example.com
     if (*domain_cur == '.' && domain_cur == domain) {
       return true;
     } else {
@@ -125,8 +125,8 @@ domaincmp(const char *hostname, const char *domain)
 //     then they are equal
 //
 //   Meant to compare to host names and
-//     take in out account that www.inktomi.com
-//     and www.inktomi.com. are the same host
+//     take in out account that www.example.com
+//     and www.example.com. are the same host
 //     since the trailing dot is optional
 //
 int
@@ -1120,7 +1120,7 @@ HostLookup::TableInsert(const char *match_data, int index, bool domain_record)
 //    for each element in arg array
 //
 //  host_done should be passed as true if this call represents the all fields
-//     in the matched against hostname being consumed.  Example: for www.inktomi.com
+//     in the matched against hostname being consumed.  Example: for www.example.com
 //     this would be true for the call matching against the "www", but
 //     neither of the prior two fields, "inktomi" and "com"
 //
@@ -1144,8 +1144,8 @@ HostLookup::MatchArray(HostLookupState * s, void **opaque_ptr, DynArray<int>&arr
       break;
     case HOST_COMPLETE:
       // We have to have consumed the whole hostname for this to match
-      //   so that we do not match a rule for "inktomi.com" to
-      //   "www.inktomi.com
+      //   so that we do not match a rule for "example.com" to
+      //   "www.example.com
       //
       if (host_done == true) {
         *opaque_ptr = leaf_array[index].opaque_data;

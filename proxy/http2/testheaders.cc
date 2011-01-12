@@ -49,7 +49,7 @@ char response1[] =
 char response2[] =
   "HTTP/1.0 304 Not Modified\r\n"
   "Date: Wed, 30 Jul 1997 22:31:20 GMT\r\n"
-  "Via: 1.0 proxydev.inktomi.com (Traffic-Server/1.0b [ONM])\r\n" "Server: Apache/1.1.1\r\n\r\n";
+  "Via: 1.0 trafficserver.apache.org (Traffic-Server/1.0b [ONM])\r\n" "Server: Apache/1.1.1\r\n\r\n";
 
 void print_header(HttpHeader * header);
 

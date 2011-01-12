@@ -105,7 +105,7 @@ public class ClientTest
   public static void main(String[] args)
   {
     // default setting
-    String proxy = "ts-sun22.tsqa.inktomi.com";
+    String proxy = "ts-sun22.tsqa.example.com";
     int port = 7493;
     String pattern = "abc";
     String number  = "3";

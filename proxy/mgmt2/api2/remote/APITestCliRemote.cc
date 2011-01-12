@@ -1498,7 +1498,7 @@ test_read_url(bool valid)
       INKfree(body);
 
   } else {                      // use valid urls
-    err = INKReadFromUrlEx("lakota.inktomi.com:80/", &header, &headerSize, &body, &bodySize, 50000);
+    err = INKReadFromUrlEx("lakota.example.com:80/", &header, &headerSize, &body, &bodySize, 50000);
 
     if (err != INK_ERR_OKAY) {
       print_err("INKReadFromUrlEx", err);

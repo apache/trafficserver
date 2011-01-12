@@ -2179,12 +2179,12 @@ INKConfigFileWrite(INKFileNameT file, char *text, int size, int version)
  * Output: INKError   - INK_ERR_OKAY if succeed, INK_ERR_FAIL otherwise
  * Obsolete:  inkapi INKError INKReadFromUrl (char *url, char **text, int *size);
  * NOTE: The URL can be expressed in the following forms:
- *       - http://www.inktomi.com:80/products/network/index.html
- *       - http://www.inktomi.com/products/network/index.html
- *       - http://www.inktomi.com/products/network/
- *       - http://www.inktomi.com/
- *       - http://www.inktomi.com
- *       - www.inktomi.com
+ *       - http://www.example.com:80/products/network/index.html
+ *       - http://www.example.com/products/network/index.html
+ *       - http://www.example.com/products/network/
+ *       - http://www.example.com/
+ *       - http://www.example.com
+ *       - www.example.com
  * NOTE: header and headerSize can be NULL
  */
 inkapi INKError

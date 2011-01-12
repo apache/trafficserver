@@ -2320,7 +2320,7 @@ ClusterCom::highestPeer(int *no)
 
 /*
  * checkBackDoor(...)
- *   Function checks for "backdoor" inktomi commands on the cluster port.
+ *   Function checks for "backdoor" commands on the cluster port.
  */
 bool
 checkBackDoor(int req_fd, char *message)

@@ -186,7 +186,7 @@ handle_os_dns(TSHttpTxn txnp)
   const unsigned int size1 = 100;
   const unsigned int size2 = 200;
 
-  char *hostname = "npdev.inktomi.com";
+  char *hostname = "npdev.example.com";
   int port = 10180;
 
   /* get the cached request header */

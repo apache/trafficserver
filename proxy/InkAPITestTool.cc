@@ -221,10 +221,10 @@ generate_request(int test_case)
 			     "X-Request-ID: %d\r\n" \
                              "Accept-Language: English,French\r\n" \
                              "\r\n"
-#define HTTP_REQUEST_FORMAT9 "GET http://www.inktomi.com/format9.html HTTP/1.0\r\n" \
+#define HTTP_REQUEST_FORMAT9 "GET http://trafficserver.apache.org/format9.html HTTP/1.0\r\n" \
 			     "X-Request-ID: %d\r\n" \
                              "\r\n"
-#define HTTP_REQUEST_FORMAT10 "GET http://www.inktomi.com/format10.html HTTP/1.0\r\n" \
+#define HTTP_REQUEST_FORMAT10 "GET http://trafficserver.apache.org/format10.html HTTP/1.0\r\n" \
 			      "X-Request-ID: %d\r\n" \
                               "\r\n"
 

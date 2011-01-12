@@ -50,22 +50,22 @@ connection to the server, the client will get 503 Retry-After back.
 There is no PRAT on the "max_connection" reached servers.
 
 Here a server can be identified by IP address (per_ip) or by host name 
-(per_host). For example, www.inktomi.com has two IP addresses, 
+(per_host). For example, www.example.com has two IP addresses, 
 209.131.63.206 and 209.131.63.207. If per_ip is used, then each IP address
 has its own number of connection failures, and each IP address will be marked
 congested or not by itself. That is, if 206 is marked congested (but 207 is 
 not), requests can still be forwarded to 207. On the other hand, if per_host is
 used, then one connection failure to either 206 or 207 will be counted to the
-number if connection failures of host www.inktomi.com. If the host 
-www.inktomi.com is marked congested, then essentially both 206 and 207 are
+number if connection failures of host www.example.com. If the host 
+www.example.com is marked congested, then essentially both 206 and 207 are
 marked congested. 
 
 We can also use prefix as a secondary specifier to specify the scope of 
 congestion control to sub-host (service) area. For example, 
-   dest_host=www.inktomi.com prefix=/cgi/search.exe
+   dest_host=www.example.com prefix=/cgi/search.exe
 This rule can detect the stop of the cgi program or database it depends on.
 Each specification has an independent counter. The error of requests to 
-www.inktomi.com/index.html will count independently to the counter of this 
+www.example.com/index.html will count independently to the counter of this 
 line. The prefix=/cgi/ means all requests to the objects under /cgi/ have
 one common counter with specified parameters. It does not mean each URI 
 under the directory has its own counter.

@@ -115,11 +115,5 @@ test_marshal(URL * url)
 
 main()
 {
-//    test_marshal(create_url("http://ivry:semel@www.inktomi.com:8080/index.html;type=I?query=what#http_fragment"));
-//    create_url("http://www.inktomi.com/index.html;type=I#http_fragment");
   create_url("www.microsoft.com/isapi/redir.dll?TARGET=%2Foffice%2Fmigration%2F&nonie3home&homepage&&&&headline1&1006");
-
-
-  //create_url("http://www.inktomi.com/~anjali");
-  //test_marshal(create_url("http://www.interworld.com/images/emailus.gif "));
 }

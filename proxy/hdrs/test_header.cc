@@ -208,7 +208,7 @@ test_url()
     "http://some.place/path;params?query#fragment",
 
     // Start with an easy one...
-    "http://www.inktomi.com/index.html",
+    "http://trafficserver.apache.org/index.html",
 
     "cheese://bogosity",
 
@@ -927,8 +927,8 @@ test_regex()
   printf("   <<< MUST BE HAND-VERIFIED >>>\n\n");
 
   dfa.compile("(.*\\.inktomi\\.com#1#)|(.*\\.inktomi\\.org#2#)");
-  printf("match www.inktomi.com [%d]\n", dfa.match("www.inktomi.com"));
-  printf("match www.inktomi.org [%d]\n", dfa.match("www.inktomi.org"));
+  printf("match www.example.com [%d]\n", dfa.match("www.example.com"));
+  printf("match www.apache.org [%d]\n", dfa.match("www.apache.org"));
 }
 
 

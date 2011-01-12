@@ -129,7 +129,6 @@ init_diags(char *bdt, char *bat)
  */
 //#include "NetTest-http-server.c"
 #include "NetTest-simple-proxy.c"
-//#include "NetTest-connect.c"
 
 
 int

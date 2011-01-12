@@ -38,7 +38,7 @@
   /* serial numbers can range from 0 to doc size which could very
      large say 10 billion */
 #define MAX_ONEREQUESTSTR_SIZE 256      /* each GET request */
-#define MAX_ORIGINSERVERSTR_SIZE 64     /* eg. origin.inktomi.com:80 */
+#define MAX_ORIGINSERVERSTR_SIZE 64     /* eg. origin.example.com:80 */
 #define MAX_REQUEST_SIZE 1024   /* multiple keepalive GETs */
 #define MAX_READBUF_SIZE 100000 /* Max read size */
 #define MAX_HOSTNAME_SIZE 64

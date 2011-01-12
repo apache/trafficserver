@@ -2098,7 +2098,7 @@ struct ShowHostDB: public ShowCont
   {
     CHECK_SHOW(begin("HostDB"));
     CHECK_SHOW(show("<form method = GET action = \"./name\">\n"
-                    "Lookup by name (e.g. www.inktomi.com):<br>\n"
+                    "Lookup by name (e.g. trafficserver.apache.org):<br>\n"
                     "<input type=text name=name size=64 maxlength=256>\n"
                     "</form>\n"
                     "<form method = GET action = \"./ip\">\n"
@@ -2106,7 +2106,7 @@ struct ShowHostDB: public ShowCont
                     "<input type=text name=ip size=64 maxlength=256>\n"
                     "</form>\n"
                     "<form method = GET action = \"./nameforce\">\n"
-                    "Force DNS by name (e.g. www.inktomi.com):<br>\n"
+                    "Force DNS by name (e.g. trafficserver.apache.org):<br>\n"
                     "<input type=text name=name size=64 maxlength=256>\n" "</form>\n"));
     return complete(event, e);
   }

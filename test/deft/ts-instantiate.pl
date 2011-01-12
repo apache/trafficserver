@@ -163,7 +163,7 @@ my $eth_if = find_ethernet_if();
 our %defaults =
 (
  "proxy.config.socks.socks_server_port" => 1080,
- "proxy.config.proxy_name" => "ink-proxy.inktomi.com",
+ "proxy.config.proxy_name" => "ink-proxy.example.com",
  "proxy.config.bin_path" => "bin",
  "proxy.config.alarm_email" => $default_user,
  "proxy.config.cluster.mc_group_addr" => "225.0.1.89",

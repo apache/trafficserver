@@ -336,7 +336,7 @@ setHostnameVar()
   res_init();
   appendDefaultDomain(ourHostName, MAXDNAME);
 
-  // FQ is a Fully Qualified hostname (ie: proxydev.inktomi.com)
+  // FQ is a Fully Qualified hostname (ie: proxydev.example.com)
   varSetFromStr("proxy.node.hostname_FQ", ourHostName);
 
   // non-FQ is just the hostname (ie: proxydev)

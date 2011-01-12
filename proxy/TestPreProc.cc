@@ -38,7 +38,7 @@ void dumpMessage(const HttpMessage & msg);
 void testPreProc();
 
 /* some global requests */
-char *request1 = "GET http://www.inktomi.com HTTP/1.1\r\n\
+char *request1 = "GET http://trafficserver.apache.org HTTP/1.1\r\n\
 Accept: text/*, text/html, text/html; level=1\r\n\
 Accept-Charset: iso-8859-5, unicode-1-1;q=0.8\r\n\r\n";
 char *response1 = "HTTP/1.1 200\r\n\r\n";

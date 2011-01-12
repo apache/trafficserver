@@ -114,22 +114,22 @@ test_group ACC_policy \
 
 # acc ldap tests
 test_case acc_ldap_sanity_l  acc/http/ldap/ldap-1.pl localhost
-test_case acc_ldap_sanity_1a acc/http/ldap/ldap-1.pl bleep.inktomi.com
-test_case acc_ldap_sanity_1b acc/http/ldap/ldap-1.pl othello.climate.inktomi.com
+test_case acc_ldap_sanity_1a acc/http/ldap/ldap-1.pl bleep.example.com
+test_case acc_ldap_sanity_1b acc/http/ldap/ldap-1.pl othello.climate.example.com
 
-test_case acc_ldap_auzn_1a acc/http/ldap/ldap-auzn.pl bleep.inktomi.com
-test_case acc_ldap_auzn_1b acc/http/ldap/ldap-auzn.pl othello.climate.inktomi.com
-test_case acc_ldap_auzn_1c acc/http/ldap/ldap-auzn.pl ntlm.inktomi.com
+test_case acc_ldap_auzn_1a acc/http/ldap/ldap-auzn.pl bleep.example.com
+test_case acc_ldap_auzn_1b acc/http/ldap/ldap-auzn.pl othello.climate.example.com
+test_case acc_ldap_auzn_1c acc/http/ldap/ldap-auzn.pl ntlm.example.com
 
-test_case acc_ldap_errors_1a acc/http/ldap/ldap-errors.pl bleep.inktomi.com
+test_case acc_ldap_errors_1a acc/http/ldap/ldap-errors.pl bleep.example.com
 
-test_case acc_ldap_bind_1a acc/http/ldap/ldap-bind.pl bleep.inktomi.com
-test_case acc_ldap_bind_1b acc/http/ldap/ldap-bind.pl othello.climate.inktomi.com
-test_case acc_ldap_ad_1a acc/http/ldap/ldap-2.pl ntlm.inktomi.com 1
-test_case acc_ldap_ad_1b acc/http/ldap/ldap-2.pl ntlm.inktomi.com 2
-test_case acc_ldap_ad_1c acc/http/ldap/ldap-2.pl ntlm.inktomi.com 3
-test_case acc_ldap_ad_1d acc/http/ldap/ldap-2.pl ntlm.inktomi.com 4
-test_case acc_ldap_ad_1e acc/http/ldap/ldap-2.pl ntlm.inktomi.com 5
+test_case acc_ldap_bind_1a acc/http/ldap/ldap-bind.pl bleep.example.com
+test_case acc_ldap_bind_1b acc/http/ldap/ldap-bind.pl othello.climate.example.com
+test_case acc_ldap_ad_1a acc/http/ldap/ldap-2.pl ntlm.example.com 1
+test_case acc_ldap_ad_1b acc/http/ldap/ldap-2.pl ntlm.example.com 2
+test_case acc_ldap_ad_1c acc/http/ldap/ldap-2.pl ntlm.example.com 3
+test_case acc_ldap_ad_1d acc/http/ldap/ldap-2.pl ntlm.example.com 4
+test_case acc_ldap_ad_1e acc/http/ldap/ldap-2.pl ntlm.example.com 5
 
 # Active Directory load
 test_group ACC_ad_load \
@@ -139,11 +139,11 @@ test_group ACC_ad_load \
 	ad_load1d \
 	ad_load1e \
 
-test_case ad_load1a acc/http/group/ad-load.pl ntlm.inktomi.com 1
-test_case ad_load1b acc/http/group/ad-load.pl ntlm.inktomi.com 2
-test_case ad_load1c acc/http/group/ad-load.pl ntlm.inktomi.com 3
-test_case ad_load1d acc/http/group/ad-load.pl ntlm.inktomi.com 4
-test_case ad_load1e acc/http/group/ad-load.pl ntlm.inktomi.com 5
+test_case ad_load1a acc/http/group/ad-load.pl ntlm.example.com 1
+test_case ad_load1b acc/http/group/ad-load.pl ntlm.example.com 2
+test_case ad_load1c acc/http/group/ad-load.pl ntlm.example.com 3
+test_case ad_load1d acc/http/group/ad-load.pl ntlm.example.com 4
+test_case ad_load1e acc/http/group/ad-load.pl ntlm.example.com 5
 
 test_group ACC_ad_load2 \
 	ad_load2a \
@@ -151,16 +151,16 @@ test_group ACC_ad_load2 \
 	ad_load2c \
 	ad_load2d 
 
-test_case ad_load2a acc/http/group/ad-load2.pl cmu.climate.inktomi.com 1
-test_case ad_load2b acc/http/group/ad-load2.pl cmu.climate.inktomi.com 2
-test_case ad_load2c acc/http/group/ad-load2.pl cmu.climate.inktomi.com 3
-test_case ad_load2d acc/http/group/ad-load2.pl cmu.climate.inktomi.com 4
+test_case ad_load2a acc/http/group/ad-load2.pl cmu.climate.example.com 1
+test_case ad_load2b acc/http/group/ad-load2.pl cmu.climate.example.com 2
+test_case ad_load2c acc/http/group/ad-load2.pl cmu.climate.example.com 3
+test_case ad_load2d acc/http/group/ad-load2.pl cmu.climate.example.com 4
 
 # Attribute search
 test_group ACC_ad_attr \
 	ad_attr \
 
-test_case ad_attr acc/http/group/ad-attr.pl cmu.climate.inktomi.com 
+test_case ad_attr acc/http/group/ad-attr.pl cmu.climate.example.com 
 
 # acc policy tests
 test_case acc_policy_time_ranges acc/http/policy/time-ranges.pl

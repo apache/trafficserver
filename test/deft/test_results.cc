@@ -446,7 +446,7 @@ TestRunResults::build_tinderbox_message_hdr(const char *status, time_t now, sio_
   Debug("tinderbox", "Build tinderbox msg with status %s", status);
 
   const char admin_hdr[] = "tinderbox: administrator : ";
-  const char admin_hdr_end[] = "foo@inktomi.com\n";
+  const char admin_hdr_end[] = "foo@example.com\n";
   const char start_time_hdr[] = "tinderbox: starttime : ";
   const char build_name_hdr[] = "tinderbox: buildname : ";
   const char status_hdr[] = "tinderbox: status : ";

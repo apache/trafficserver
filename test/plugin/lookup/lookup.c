@@ -947,7 +947,7 @@ TSPluginInit(int argc, const char *argv[])
 
   /* Initialize global variables hostname and hostname length  */
   /* No need to grab the lock here  */
-  HOSTNAME = TSstrdup("tsdev.inktomi.com");
+  HOSTNAME = TSstrdup("www.example.com");
   HOSTNAME_LENGTH = strlen(HOSTNAME) + 1;
 
   /* Parse the eventual 2 plugin arguments */

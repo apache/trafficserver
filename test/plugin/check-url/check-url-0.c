@@ -421,10 +421,10 @@ negTesting(TSMBuffer hdrBuf, TSMLoc urlLoc)
   }
 
   /* TSUrlHostSet */
-  if (TSUrlHostSet(NULL, negUrlLoc, "www.inktomi.com", strlen("www.inktomi.com")) != TS_ERROR) {
+  if (TSUrlHostSet(NULL, negUrlLoc, "www.example.com", strlen("www.example.com")) != TS_ERROR) {
     LOG_NEG_ERROR("TSUrlHostSet");
   }
-  if (TSUrlHostSet(negHdrBuf, NULL, "www.inktomi.com", strlen("www.inktomi.com")) != TS_ERROR) {
+  if (TSUrlHostSet(negHdrBuf, NULL, "www.example.com", strlen("www.example.com")) != TS_ERROR) {
     LOG_NEG_ERROR("TSUrlHostSet");
   }
   if (TSUrlHostSet(negHdrBuf, negUrlLoc, NULL, 0) != TS_ERROR) {
