@@ -83,6 +83,13 @@ CONFIG proxy.config.process_manager.mgmt_port INT 8084
 CONFIG proxy.config.vmap.enabled INT 0
 ##############################################################################
 #
+# In order to only bind a specific IP, use the following config, as in 
+# the example below. Note
+#
+##############################################################################
+#LOCAL proxy.local.incoming_ip_to_bind STRING 192.168.101.17
+##############################################################################
+#
 # Alarm Configuration
 #
 ##############################################################################
