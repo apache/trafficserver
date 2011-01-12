@@ -2711,7 +2711,7 @@ signal_handler_do_nothing(int x)
 {
   //  A small function thats whole purpose is to give the signal
   //  handler for breaking out of a network read, somethng to call
-  x = x;
+  NOWARN_UNUSED(x);
 }
 
 int

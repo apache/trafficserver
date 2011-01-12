@@ -616,7 +616,7 @@ webIntr_main(void *x)
   int sleepTime = 2;
 #endif
   // No Warning
-  x = x;
+  NOWARN_UNUSED(x);
 
 #if !defined(linux)
   // Start by blocking all signals

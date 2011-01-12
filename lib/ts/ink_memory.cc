@@ -266,7 +266,7 @@ ink_memcpy(void *s1, const void *s2, int n)
       d[i + 6] = s[i + 6];
       d[i + 7] = s[i + 7];
     }
-    for (i = i; i < n; i++)
+    for (; i < n; i++)
       d[i] = s[i];
   } else {
     memcpy(s1, s2, n);

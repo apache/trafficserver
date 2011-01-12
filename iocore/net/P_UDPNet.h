@@ -444,7 +444,7 @@ public:
   };
   ~UDPWorkContinuation() {
   };
-  void init(Continuation * c, int numPairs, unsigned int my_ip, unsigned int dest_ip, int s_bufsize, int r_bufsize);
+  void init(Continuation * c, int num_pairs, unsigned int my_ip, unsigned int dest_ip, int s_bufsize, int r_bufsize);
   int StateCreatePortPairs(int event, void *data);
   int StateDoCallback(int event, void *data);
 
