@@ -23,7 +23,6 @@
 
 #include "ink_config.h"
 #include <stdlib.h>
-//#include "tclExtend.h"
 #include "tcl.h"
 #include <string.h>
 #include "ink_args.h"

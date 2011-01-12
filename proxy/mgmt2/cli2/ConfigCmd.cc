@@ -57,7 +57,6 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-#include "cli_scriptpaths.h"
 #include "ConfigAPI.h"
 #include "SysAPI.h"
 
@@ -4054,117 +4053,6 @@ IsValidDomainname(char *str)
   return CLI_OK;
 }
 
-
-int
-getnameserver(char *nameserver, int len)
-{
-#if defined(linux)
-  char buff[256];
-  FILE *fstr;
-  if ((fstr = fopen(NAMESERVER_PATH, "r")) == NULL)
-    return CLI_ERROR;
-
-  do {
-    NOWARN_UNUSED_RETURN(fgets(buff, sizeof(buff), fstr));
-  } while (!feof(fstr) && strncmp(buff, NAMESERVER_MARKER, strlen(NAMESERVER_MARKER)) != 0);
-
-  if (feof(fstr)) {
-    fclose(fstr);
-    return CLI_ERROR;
-  }
-
-  fclose(fstr);
-
-  strncpy(nameserver, buff + strlen(NAMESERVER_MARKER), len);
-
-  /* Strip off any trailing newline, tabs, or blanks */
-  *(nameserver + strcspn(nameserver, " \t\n")) = 0;
-
-#endif
-
-  return CLI_OK;
-
-}
-
-#if defined(solaris)
-/*
- * NOTE: This routine is found in libnsl (-lnsl). No prototype was found in
- * any of the header files in /usr/include. Define a prototype here to keep the
- * compiler happy.
- */
-extern int getdomainname(char *, int);
-#endif
-
-int
-setnameserver(char *nameserver)
-{
-  FILE *fstr;
-  if ((fstr = fopen(NAMESERVER_PATH, "wb")) == NULL) {
-    return -1;
-  } else {
-#if defined(linux) || defined(darwin) || defined(freebsd) //FIXME: solaris
-    char domain[256];
-    char resolventry[256];
-
-    if (getdomainname(domain, 256) == -1)
-      return CLI_ERROR;
-    snprintf((char *) &resolventry, sizeof(resolventry), "domain %s\nnameserver %s\n", domain, nameserver);
-
-    fputs((char *) &resolventry, fstr);
-    fputs("\n", fstr);
-    fclose(fstr);
-#endif
-    return CLI_OK;
-  }
-  return CLI_OK;
-
-}
-
-int
-setrouter(char *router, int len)
-{
-  NOWARN_UNUSED(len);
-  FILE *fstr;
-  if ((fstr = fopen(DEFAULTROUTER_PATH, "wb")) == NULL) {
-    return -1;
-  } else {
-    fprintf(fstr, "%s", router);
-    fclose(fstr);
-    return CLI_OK;
-  }
-}
-
-int
-getrouter(char *router, int len)
-{
-  FILE *fstr;
-#if defined(linux) || defined(darwin) || defined(freebsd) || defined(solaris)
-  char buff[256];
-  char *p;
-
-  if ((fstr = fopen(DEFAULTROUTER_PATH, "r")) == NULL)
-    return CLI_ERROR;
-
-  do {
-    NOWARN_UNUSED_RETURN(fgets(buff, sizeof(buff), fstr));
-  } while (!feof(fstr) && strncmp(buff, GATEWAY_MARKER, strlen(GATEWAY_MARKER)) != 0);
-
-  if (feof(fstr)) {
-    fclose(fstr);
-    return CLI_ERROR;
-  }
-
-  fclose(fstr);
-
-  strncpy(router, buff + strlen(GATEWAY_MARKER), len);
-
-  /* Strip off the trailing newline, if present */
-  if ((p = strchr(router, '\n')) != NULL)
-    *p = 0;
-#endif
-  return CLI_OK;
-
-}
 
 char *
 pos_after_string(char *haystack, const char *needle)
