@@ -287,7 +287,7 @@ public:
   DiagsLevel level;
   SrcLoc src_location;
 
-    DiagsBaseClosure(Diags * d, DiagsLevel l, const char *_file, const char *_func, int _line)
+  DiagsBaseClosure(Diags * d, DiagsLevel l, const char *_file, const char *_func, int _line)
   {
     diags = d;
     level = l;
@@ -296,22 +296,20 @@ public:
     src_location.line = _line;
     src_location.valid = true;
   }
+
    ~DiagsBaseClosure()
-  {
-  }
+  {  }
 };
 
 
 class DiagsDClosure:public DiagsBaseClosure
 {
 public:
-  DiagsDClosure(Diags * d, DiagsLevel l,
-                const char *file, const char *func, int line):DiagsBaseClosure(d, l, file, func, line)
-  {
-  }
+  DiagsDClosure(Diags * d, DiagsLevel l, const char *file, const char *func, int line):DiagsBaseClosure(d, l, file, func, line)
+  {  }
+
    ~DiagsDClosure()
-  {
-  }
+  {  }
 
   // default: no location printed
   void inkcoreapi operator() (const char *tag, const char *format_string ...);
@@ -326,13 +324,11 @@ public:
 class DiagsEClosure:public DiagsBaseClosure
 {
 public:
-  DiagsEClosure(Diags * d, DiagsLevel l,
-                const char *file, const char *func, int line):DiagsBaseClosure(d, l, file, func, line)
-  {
-  }
+  DiagsEClosure(Diags * d, DiagsLevel l, const char *file, const char *func, int line):DiagsBaseClosure(d, l, file, func, line)
+  { }
+
    ~DiagsEClosure()
-  {
-  }
+  {  }
 
   // default: no location printed
   void inkcoreapi operator() (const char *format_string ...);
