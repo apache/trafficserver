@@ -24,7 +24,7 @@
 #ifndef _I_REC_ALARMS_H_
 #define _I_REC_ALARMS_H_
 
-// copy from proxy/mgmt2/Alarms.h
+// copy from proxy/mgmt/Alarms.h
 #define REC_ALARM_PROXY_PROCESS_DIED            1
 #define REC_ALARM_PROXY_PROCESS_BORN            2
 #define REC_ALARM_PROXY_PEER_BORN               3

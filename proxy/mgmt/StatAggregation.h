@@ -36,7 +36,7 @@
  *    ____
  *   /    \
  *  /      \
- * |  STOP  | This file is depreciated. Please see proxy/mgmt2/stats/*
+ * |  STOP  | This file is depreciated. Please see proxy/mgmt/stats/*
  *  \      /
  *   \____/
  *

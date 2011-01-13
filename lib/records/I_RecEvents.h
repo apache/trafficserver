@@ -24,7 +24,7 @@
 #ifndef _I_REC_EVENTS_H_
 #define _I_REC_EVENTS_H_
 
-// copy from proxy/mgmt2/BaseManager.h
+// copy from proxy/mgmt/BaseManager.h
 #define REC_EVENT_SYNC_KEY              10000
 #define REC_EVENT_SHUTDOWN              10001
 #define REC_EVENT_RESTART               10002

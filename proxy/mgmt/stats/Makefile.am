@@ -18,25 +18,24 @@
 #  limitations under the License.
 
 AM_CPPFLAGS = \
-  $(iocore_include_dirs) \
-  -I$(top_srcdir)/proxy/mgmt2/utils \
-  -I$(top_srcdir)/proxy/mgmt2/api \
-  -I$(top_srcdir)/proxy/mgmt2/api/include \
-  -I$(top_srcdir)/proxy/mgmt2
+  -I$(top_srcdir)/lib/records \
+  -I$(top_srcdir)/proxy/mgmt \
+  -I$(top_srcdir)/proxy/mgmt/cluster \
+  -I$(top_srcdir)/proxy/mgmt/utils \
+  -I$(top_srcdir)/proxy/mgmt/api/include \
+  -I$(top_srcdir)/lib/tsconfig \
+  -I$(top_srcdir)/proxy/mgmt/web2 \
+  -I$(top_srcdir)/proxy
 
 MGMT_DEFS = @MGMT_DEFS@
 DEFS += $(MGMT_DEFS)
 
-noinst_PROGRAMS = traffic_shmem_clean
-noinst_LIBRARIES = libinksysapi.a libinkconfigapi.a
+noinst_LIBRARIES = libstats.a
 
-traffic_shmem_clean_SOURCES = ShmemClean.cc
-traffic_shmem_clean_LDFLAGS = @EXTRA_CXX_LDFLAGS@
-
-libinksysapi_a_SOURCES = SysAPI.cc SysAPI.h
-
-libinkconfigapi_a_SOURCES = \
-  ConfigAPI.cc \
-  ConfigAPI.h \
-  SysAPI.cc \
-  SysAPI.h
+libstats_a_SOURCES = \
+  StatProcessor.cc \
+  StatProcessor.h \
+  StatType.cc \
+  StatType.h \
+  StatXML.cc \
+  StatXML.h

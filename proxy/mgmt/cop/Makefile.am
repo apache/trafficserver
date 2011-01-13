@@ -17,56 +17,24 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-AM_CPPFLAGS = \
-  $(iocore_include_dirs) \
+AM_CPPFLAGS = $(iocore_include_dirs) \
   -I$(top_srcdir)/lib/records \
-  -I$(top_srcdir)/proxy/mgmt2 \
-  -I$(top_srcdir)/proxy/mgmt2/api/include \
-  -I$(top_srcdir)/proxy/mgmt2/cluster \
-  -I$(top_srcdir)/proxy/mgmt2/utils \
-  -I$(top_srcdir)/lib/tsconfig \
-  -I$(top_srcdir)/proxy/mgmt2/web2
+  -I$(top_srcdir)/proxy/mgmt \
+  -I$(top_srcdir)/proxy/mgmt/utils \
+  -I$(top_srcdir)/proxy/mgmt/cli \
+  -I$(top_srcdir)/proxy/mgmt/cluster
 
 MGMT_DEFS = @MGMT_DEFS@
 DEFS += $(MGMT_DEFS)
 
-noinst_LIBRARIES = libcli_lm.a libcli_tl.a
+bin_PROGRAMS = traffic_cop
 
-bin_PROGRAMS = traffic_line
-
-libcli_tl_a_SOURCES = \
-  clientCLI.cc \
-  clientCLI.h \
-  CliUtils.cc \
-  CliUtils.h
-
-libcli_lm_a_SOURCES = \
-  AbsEventHandler.h \
-  CLI.cc \
-  CLI.h \
-  CLIconfigure.cc \
-  CLIconfigure.h \
-  CLIeventHandler.cc \
-  CLIeventHandler.h \
-  CLIhelp.cc \
-  CLIlineBuffer.cc \
-  CLIlineBuffer.h \
-  CLImonitor.cc \
-  CLImonitor.h \
-  CliUtils.cc \
-  CliUtils.h \
-  FSM.cc \
-  FSM.h
-
-traffic_line_SOURCES = \
-  clientCLI.h \
-  CliMain.cc
-
-traffic_line_LDFLAGS = @EXTRA_CXX_LDFLAGS@
-traffic_line_LDADD = \
-  libcli_tl.a \
+traffic_cop_SOURCES = TrafficCop.cc
+traffic_cop_LDFLAGS = @EXTRA_CXX_LDFLAGS@
+traffic_cop_LDADD = \
+  $(top_builddir)/proxy/mgmt/cli/libcli_tl.a \
   $(top_builddir)/lib/ts/libts.a \
-  $(top_builddir)/lib/records/libreclocal.a \
   $(top_builddir)/iocore/utils/libinkutils.a \
-  @LIBTHREAD@ @LIBSOCKET@ @LIBNSL@ @LIBRESOLV@ \
-  @LIBTCL@ @LIBRT@ @LIBDL@ @LIBICONV@ @LIBEXECINFO@
+  @LIBTCL@ \
+  @LIBSOCKET@ @LIBNSL@ @LIBRESOLV@ \
+  @LIBTHREAD@ @LIBDL@ @LIBRT@ @LIBICONV@ @LIBEXECINFO@

@@ -20,14 +20,14 @@
 AM_CPPFLAGS = \
   -I$(top_srcdir)/iocore/utils \
   -I$(top_srcdir)/lib/records \
-  -I$(top_srcdir)/proxy/mgmt2 \
-  -I$(top_srcdir)/proxy/mgmt2/api \
-  -I$(top_srcdir)/proxy/mgmt2/api/include \
-  -I$(top_srcdir)/proxy/mgmt2/cli \
-  -I$(top_srcdir)/proxy/mgmt2/cluster \
-  -I$(top_srcdir)/proxy/mgmt2/utils \
+  -I$(top_srcdir)/proxy/mgmt \
+  -I$(top_srcdir)/proxy/mgmt/api \
+  -I$(top_srcdir)/proxy/mgmt/api/include \
+  -I$(top_srcdir)/proxy/mgmt/cli \
+  -I$(top_srcdir)/proxy/mgmt/cluster \
+  -I$(top_srcdir)/proxy/mgmt/utils \
   -I$(top_srcdir)/lib/tsconfig \
-  -I$(top_srcdir)/proxy/mgmt2/tools \
+  -I$(top_srcdir)/proxy/mgmt/tools \
   -I$(top_srcdir)/proxy/hdrs
 
 MGMT_DEFS = @MGMT_DEFS@

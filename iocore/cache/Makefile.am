@@ -31,9 +31,9 @@ AM_CPPFLAGS = \
   -I$(top_srcdir)/proxy/hdrs \
   -I$(top_srcdir)/proxy/http \
   -I$(top_srcdir)/proxy/http/remap \
-  -I$(top_srcdir)/proxy/mgmt2 \
-  -I$(top_srcdir)/proxy/mgmt2/preparse \
-  -I$(top_srcdir)/proxy/mgmt2/utils \
+  -I$(top_srcdir)/proxy/mgmt \
+  -I$(top_srcdir)/proxy/mgmt/preparse \
+  -I$(top_srcdir)/proxy/mgmt/utils \
   -DSYSCONFDIR=\"$(sysconfdir)\"
 
 ADD_SRC =

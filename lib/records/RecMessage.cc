@@ -573,7 +573,7 @@ RecMessageWriteToDisk(RecMessage *msg, const char *fpath)
 
 //
 // [hack for tsunami, bevans] -- I need this exported to the ACC module somehow,
-// the acc module can't include stuff out put proxy/ or mgmt2/
+// the acc module can't include stuff out put proxy/ or mgmt/
 //
 int
 RecAlarmSignal(int code, const char *msg, int msg_size)

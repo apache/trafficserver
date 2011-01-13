@@ -19,8 +19,8 @@
 AM_CPPFLAGS = \
   -I$(top_srcdir)/lib/records \
   -I$(top_srcdir)/proxy \
-  -I$(top_srcdir)/proxy/mgmt2 \
-  -I$(top_srcdir)/proxy/mgmt2/utils \
+  -I$(top_srcdir)/proxy/mgmt \
+  -I$(top_srcdir)/proxy/mgmt/utils \
   -I$(top_srcdir)/proxy/cache \
   -I$(top_srcdir)/proxy/logging
 
@@ -32,7 +32,7 @@ noinst_PROGRAMS = update_records
 update_records_SOURCES = update_records.cc 
 update_records_LDFLAGS = @EXTRA_CXX_LDFLAGS@
 update_records_LDADD =	\
-			$(top_builddir)/proxy/mgmt2/librecords.a \
+			$(top_builddir)/proxy/mgmt/librecords.a \
 			$(top_builddir)/lib/ts/libts.a \
 			@LIBICONV@ @LIBTHREAD@ @LIBRT@ @LIBTCL@ @LIBDL@ @LIBSSL@ @LIBEXECINFO@
 

@@ -179,7 +179,7 @@ ProxyStateSet(INKProxyStateT state, INKCacheClearT clear)
     if (lmgmt->processRunning())        // already on
       break;
 
-    // taken from mgmt2/Main.cc when check the -tsArgs option
+    // taken from mgmt/Main.cc when check the -tsArgs option
     // Update cmd line overrides/environmental overrides/etc
     switch (clear) {
     case INK_CACHE_CLEAR_ON:   // traffic_server -K

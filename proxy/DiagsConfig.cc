@@ -26,7 +26,7 @@
 #include "DiagsConfig.h"
 #ifdef LOCAL_MANAGER
 
-#include "mgmt2/Main.h"
+#include "mgmt/Main.h"
 #define MGMT_PTR       lmgmt
 #define DIAGS_LOG_FILE "manager.log"
 

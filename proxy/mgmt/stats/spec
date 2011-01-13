@@ -20,7 +20,7 @@ configuration file is read and parsed. Each set of calculation is then stored
 as a C++ object, called StatObject; and each StatObject is linked into a list,
 called StatObjectList.
 
-The mgmt2/traffic_manager threads will invoke the StatObjectList->Eval() to
+The mgmt/traffic_manager threads will invoke the StatObjectList->Eval() to
 perform the statistics aggregation and calculation within its event loop. As
 Eval() is call, each StatObject in StatObjectList is evaluated.
 
@@ -95,7 +95,7 @@ average hit rate in the cluster.
 
 The statistics processor is designed to replace StatAggregate.cc and part of
 the WebOverview. The first thing to test StatProcessor is to comment the 
-aggregateNodeRecords() and doClusterAg() calls from proxy/mgmt2/Main.cc.
+aggregateNodeRecords() and doClusterAg() calls from proxy/mgmt/Main.cc.
 
 The next step is to replace the above function calls with StatProcessor::
 processStat().

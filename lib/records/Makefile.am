@@ -21,12 +21,12 @@ DEFS += @ink_with_modules_def@
 AM_CPPFLAGS = \
   -I$(top_srcdir)/iocore/eventsystem \
   -I$(top_srcdir)/iocore/utils \
-  -I$(top_srcdir)/proxy/mgmt2 \
-  -I$(top_srcdir)/proxy/mgmt2/cluster \
-  -I$(top_srcdir)/proxy/mgmt2/web2 \
-  -I$(top_srcdir)/proxy/mgmt2/api/include \
+  -I$(top_srcdir)/proxy/mgmt \
+  -I$(top_srcdir)/proxy/mgmt/cluster \
+  -I$(top_srcdir)/proxy/mgmt/web2 \
+  -I$(top_srcdir)/proxy/mgmt/api/include \
   -I$(top_srcdir)/lib/tsconfig \
-  -I$(top_srcdir)/proxy/mgmt2/utils
+  -I$(top_srcdir)/proxy/mgmt/utils
 
 noinst_LIBRARIES = libreclocal.a librecprocess.a
 

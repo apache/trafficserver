@@ -19,19 +19,50 @@
 
 AM_CPPFLAGS = \
   -I$(top_srcdir)/lib/records \
-  -I$(top_srcdir)/proxy/mgmt2 \
-  -I$(top_srcdir)/proxy/mgmt2/api/include \
-  -I$(top_srcdir)/proxy/mgmt2/utils \
+  -I$(top_srcdir)/iocore/utils \
+  -I$(top_srcdir)/proxy/mgmt \
+  -I$(top_srcdir)/proxy/mgmt/api \
+  -I$(top_srcdir)/proxy/mgmt/api/include \
+  -I$(top_srcdir)/proxy/mgmt/cluster \
+  -I$(top_srcdir)/proxy/mgmt/web2 \
   -I$(top_srcdir)/lib/tsconfig \
-  -I$(top_srcdir)/proxy/mgmt2/web2
+  -I$(top_srcdir)/proxy
 
 MGMT_DEFS = @MGMT_DEFS@
 DEFS += $(MGMT_DEFS)
 
-noinst_LIBRARIES = libcluster.a
+# header files used by other libraries
+EXTRA_DIST = MgmtHashTable.h MgmtSocket.h
 
-libcluster_a_SOURCES = \
-  ClusterCom.cc \
-  ClusterCom.h \
-  VMap.cc \
-  VMap.h
+noinst_LIBRARIES = libutils_lm.a libutils_p.a
+
+libutils_lm_a_CPPFLAGS = -DLOCAL_MANAGER $(AM_CPPFLAGS)
+libutils_lm_a_SOURCES = \
+  $(top_srcdir)/lib/ts/MatcherUtils.cc \
+  $(top_srcdir)/proxy/DiagsConfig.cc \
+  EnvBlock.cc \
+  EnvBlock.h \
+  ExpandingArray.cc \
+  ExpandingArray.h \
+  IpLookup.cc \
+  IpLookup.h \
+  MgmtPing.cc \
+  MgmtPing.h \
+  MgmtSchema.cc \
+  MgmtSchema.h \
+  MgmtUtils.cc \
+  MgmtUtils.h \
+  SimpleQueue.cc \
+  SimpleQueue.h \
+  WebMgmtUtils.cc \
+  WebMgmtUtils.h \
+  XmlUtils.cc \
+  XmlUtils.h
+
+libutils_p_a_SOURCES = \
+  IpLookup.cc \
+  IpLookup.h \
+  MgmtUtils.cc \
+  MgmtUtils.h \
+  XmlUtils.cc \
+  XmlUtils.h

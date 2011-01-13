@@ -16,10 +16,10 @@
 
 AM_CPPFLAGS = \
   $(iocore_include_dirs) \
-  -I$(top_srcdir)/proxy/mgmt2 \
-  -I$(top_srcdir)/proxy/mgmt2/utils \
-  -I$(top_srcdir)/proxy/mgmt2/api \
-  -I$(top_srcdir)/proxy/mgmt2/api/include
+  -I$(top_srcdir)/proxy/mgmt \
+  -I$(top_srcdir)/proxy/mgmt/utils \
+  -I$(top_srcdir)/proxy/mgmt/api \
+  -I$(top_srcdir)/proxy/mgmt/api/include
 
 MGMT_DEFS = @MGMT_DEFS@
 DEFS  += $(MGMT_DEFS)

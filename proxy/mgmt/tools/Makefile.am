@@ -17,46 +17,26 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-SUBDIRS = remote
-
 AM_CPPFLAGS = \
   $(iocore_include_dirs) \
-  -I$(top_srcdir)/lib/records \
-  -I$(top_srcdir)/proxy/mgmt2 \
-  -I$(top_srcdir)/proxy/mgmt2/cluster \
-  -I$(top_srcdir)/proxy/mgmt2/utils \
-  -I$(top_srcdir)/proxy/mgmt2/web2 \
-  -I$(top_srcdir)/lib/tsconfig \
-  -I$(top_srcdir)/proxy/mgmt2/api/include
+  -I$(top_srcdir)/proxy/mgmt/utils \
+  -I$(top_srcdir)/proxy/mgmt/api \
+  -I$(top_srcdir)/proxy/mgmt/api/include \
+  -I$(top_srcdir)/proxy/mgmt
 
 MGMT_DEFS = @MGMT_DEFS@
 DEFS += $(MGMT_DEFS)
 
-noinst_LIBRARIES = libmgmtapilocal.a
-libmgmtapilocal_a_SOURCES = \
-  include/INKMgmtAPI.h \
-  CfgContextDefs.h \
-  CfgContextImpl.cc \
-  CfgContextImpl.h \
-  CfgContextManager.cc \
-  CfgContextManager.h \
-  CfgContextUtils.cc \
-  CfgContextUtils.h \
-  CoreAPI.cc \
-  CoreAPI.h \
-  CoreAPIShared.cc \
-  CoreAPIShared.h \
-  EventCallback.cc \
-  EventCallback.h \
-  EventControlMain.cc \
-  EventControlMain.h \
-  GenericParser.cc \
-  GenericParser.h \
-  INKMgmtAPI.cc \
-  MgmtPlugin.cc \
-  MgmtPlugin.h \
-  NetworkUtilsDefs.h \
-  NetworkUtilsLocal.cc \
-  NetworkUtilsLocal.h \
-  TSControlMain.cc \
-  TSControlMain.h
+noinst_PROGRAMS = traffic_shmem_clean
+noinst_LIBRARIES = libinksysapi.a libinkconfigapi.a
+
+traffic_shmem_clean_SOURCES = ShmemClean.cc
+traffic_shmem_clean_LDFLAGS = @EXTRA_CXX_LDFLAGS@
+
+libinksysapi_a_SOURCES = SysAPI.cc SysAPI.h
+
+libinkconfigapi_a_SOURCES = \
+  ConfigAPI.cc \
+  ConfigAPI.h \
+  SysAPI.cc \
+  SysAPI.h

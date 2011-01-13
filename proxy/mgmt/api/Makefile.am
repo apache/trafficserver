@@ -17,52 +17,46 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+SUBDIRS = remote
+
 AM_CPPFLAGS = \
+  $(iocore_include_dirs) \
   -I$(top_srcdir)/lib/records \
-  -I$(top_srcdir)/iocore/utils \
-  -I$(top_srcdir)/proxy/mgmt2 \
-  -I$(top_srcdir)/proxy/mgmt2/api \
-  -I$(top_srcdir)/proxy/mgmt2/api/include \
-  -I$(top_srcdir)/proxy/mgmt2/cluster \
-  -I$(top_srcdir)/proxy/mgmt2/web2 \
+  -I$(top_srcdir)/proxy/mgmt \
+  -I$(top_srcdir)/proxy/mgmt/cluster \
+  -I$(top_srcdir)/proxy/mgmt/utils \
+  -I$(top_srcdir)/proxy/mgmt/web2 \
   -I$(top_srcdir)/lib/tsconfig \
-  -I$(top_srcdir)/proxy
+  -I$(top_srcdir)/proxy/mgmt/api/include
 
 MGMT_DEFS = @MGMT_DEFS@
 DEFS += $(MGMT_DEFS)
 
-# header files used by other libraries
-EXTRA_DIST = MgmtHashTable.h MgmtSocket.h
-
-noinst_LIBRARIES = libutils_lm.a libutils_p.a
-
-libutils_lm_a_CPPFLAGS = -DLOCAL_MANAGER $(AM_CPPFLAGS)
-libutils_lm_a_SOURCES = \
-  $(top_srcdir)/lib/ts/MatcherUtils.cc \
-  $(top_srcdir)/proxy/DiagsConfig.cc \
-  EnvBlock.cc \
-  EnvBlock.h \
-  ExpandingArray.cc \
-  ExpandingArray.h \
-  IpLookup.cc \
-  IpLookup.h \
-  MgmtPing.cc \
-  MgmtPing.h \
-  MgmtSchema.cc \
-  MgmtSchema.h \
-  MgmtUtils.cc \
-  MgmtUtils.h \
-  SimpleQueue.cc \
-  SimpleQueue.h \
-  WebMgmtUtils.cc \
-  WebMgmtUtils.h \
-  XmlUtils.cc \
-  XmlUtils.h
-
-libutils_p_a_SOURCES = \
-  IpLookup.cc \
-  IpLookup.h \
-  MgmtUtils.cc \
-  MgmtUtils.h \
-  XmlUtils.cc \
-  XmlUtils.h
+noinst_LIBRARIES = libmgmtapilocal.a
+libmgmtapilocal_a_SOURCES = \
+  include/INKMgmtAPI.h \
+  CfgContextDefs.h \
+  CfgContextImpl.cc \
+  CfgContextImpl.h \
+  CfgContextManager.cc \
+  CfgContextManager.h \
+  CfgContextUtils.cc \
+  CfgContextUtils.h \
+  CoreAPI.cc \
+  CoreAPI.h \
+  CoreAPIShared.cc \
+  CoreAPIShared.h \
+  EventCallback.cc \
+  EventCallback.h \
+  EventControlMain.cc \
+  EventControlMain.h \
+  GenericParser.cc \
+  GenericParser.h \
+  INKMgmtAPI.cc \
+  MgmtPlugin.cc \
+  MgmtPlugin.h \
+  NetworkUtilsDefs.h \
+  NetworkUtilsLocal.cc \
+  NetworkUtilsLocal.h \
+  TSControlMain.cc \
+  TSControlMain.h

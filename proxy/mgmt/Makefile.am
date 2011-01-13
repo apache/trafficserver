@@ -30,14 +30,14 @@ AM_CPPFLAGS = \
   -I$(top_srcdir)/lib/records \
   -I$(top_srcdir)/proxy \
   -I$(top_srcdir)/proxy/hdrs \
-  -I$(top_srcdir)/proxy/mgmt2 \
-  -I$(top_srcdir)/proxy/mgmt2/api/include \
-  -I$(top_srcdir)/proxy/mgmt2/cluster \
-  -I$(top_srcdir)/proxy/mgmt2/preparse \
-  -I$(top_srcdir)/proxy/mgmt2/stats \
-  -I$(top_srcdir)/proxy/mgmt2/utils \
+  -I$(top_srcdir)/proxy/mgmt \
+  -I$(top_srcdir)/proxy/mgmt/api/include \
+  -I$(top_srcdir)/proxy/mgmt/cluster \
+  -I$(top_srcdir)/proxy/mgmt/preparse \
+  -I$(top_srcdir)/proxy/mgmt/stats \
+  -I$(top_srcdir)/proxy/mgmt/utils \
   -I$(top_srcdir)/lib/tsconfig \
-  -I$(top_srcdir)/proxy/mgmt2/web2
+  -I$(top_srcdir)/proxy/mgmt/web2
 
 MGMT_DEFS = @MGMT_DEFS@
 DEFS += $(MGMT_DEFS)
@@ -100,8 +100,8 @@ traffic_manager_LDADD = \
   utils/libutils_lm.a \
   $(top_builddir)/proxy/hdrs/libhdrs.a \
   $(top_builddir)/lib/records/libreclocal.a \
-  $(top_builddir)/proxy/mgmt2/tools/libinksysapi.a \
-  $(top_builddir)/proxy/mgmt2/tools/libinkconfigapi.a \
+  $(top_builddir)/proxy/mgmt/tools/libinksysapi.a \
+  $(top_builddir)/proxy/mgmt/tools/libinkconfigapi.a \
   $(top_builddir)/iocore/utils/libinkutils.a \
   $(top_builddir)/lib/ts/libts.a \
   @LIBEXPAT@ @LIBPCRE@ \

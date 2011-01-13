@@ -25,7 +25,7 @@ SUBDIRS = congest http hdrs logging
 if BUILD_WCCP
 SUBDIRS += wccp
 endif
-SUBDIRS += mgmt2 config stats
+SUBDIRS += mgmt config stats
 noinst_LIBRARIES =
 bin_PROGRAMS = \
   traffic_server \
@@ -41,9 +41,9 @@ AM_CPPFLAGS = \
   -I$(srcdir)/logging \
   -I$(srcdir)/http/remap  \
   -I$(srcdir)/hdrs \
-  -I$(srcdir)/mgmt2 \
-  -I$(srcdir)/mgmt2/preparse \
-  -I$(srcdir)/mgmt2/utils \
+  -I$(srcdir)/mgmt \
+  -I$(srcdir)/mgmt/preparse \
+  -I$(srcdir)/mgmt/utils \
   -I$(srcdir)/api/ts
 
 noinst_HEADERS = \
@@ -147,9 +147,9 @@ traffic_server_LDADD = \
   logging/liblogging.a \
   stats/libstats.a \
   hdrs/libhdrs.a  \
-  mgmt2/preparse/libpreparse.a \
-  mgmt2/utils/libutils_p.a \
-  mgmt2/libmgmt_p.a \
+  mgmt/preparse/libpreparse.a \
+  mgmt/utils/libutils_p.a \
+  mgmt/libmgmt_p.a \
   $(top_builddir)/iocore/utils/libinkutils.a \
   $(top_builddir)/iocore/cluster/libinkcluster.a \
   $(top_builddir)/iocore/dns/libinkdns.a \
@@ -205,9 +205,9 @@ traffic_logcat_LDADD = \
   stats/libstats.a \
   hdrs/libhdrs.a \
   congest/libCongestionControl.a \
-  mgmt2/preparse/libpreparse.a \
-  mgmt2/utils/libutils_p.a \
-  mgmt2/libmgmt_p.a \
+  mgmt/preparse/libpreparse.a \
+  mgmt/utils/libutils_p.a \
+  mgmt/libmgmt_p.a \
   $(top_builddir)/iocore/utils/libinkutils.a \
   $(top_builddir)/iocore/cluster/libinkcluster.a \
   $(top_builddir)/iocore/dns/libinkdns.a \
@@ -273,9 +273,9 @@ traffic_logstats_LDADD = \
   stats/libstats.a \
   hdrs/libhdrs.a \
   congest/libCongestionControl.a \
-  mgmt2/preparse/libpreparse.a \
-  mgmt2/utils/libutils_p.a \
-  mgmt2/libmgmt_p.a \
+  mgmt/preparse/libpreparse.a \
+  mgmt/utils/libutils_p.a \
+  mgmt/libmgmt_p.a \
   $(top_builddir)/iocore/utils/libinkutils.a \
   $(top_builddir)/iocore/cluster/libinkcluster.a \
   $(top_builddir)/iocore/dns/libinkdns.a \
@@ -342,9 +342,9 @@ traffic_sac_LDADD = \
   logging/liblogging.a \
   stats/libstats.a \
   hdrs/libhdrs.a \
-  mgmt2/preparse/libpreparse.a \
-  mgmt2/utils/libutils_p.a \
-  mgmt2/libmgmt_p.a \
+  mgmt/preparse/libpreparse.a \
+  mgmt/utils/libutils_p.a \
+  mgmt/libmgmt_p.a \
   $(top_builddir)/iocore/utils/libinkutils.a \
   $(top_builddir)/iocore/cluster/libinkcluster.a \
   $(top_builddir)/iocore/dns/libinkdns.a \
