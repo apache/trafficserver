@@ -18,9 +18,9 @@
 #  limitations under the License.
 
 if BUILD_WEBUI
-SUBDIRS = cli cluster cop preparse tools utils web2 html2 stats api2 $(CLI_DIR)
+SUBDIRS = cli cluster cop preparse tools utils web2 html2 stats api $(CLI_DIR)
 else
-SUBDIRS = cli cluster cop preparse tools utils web2 stats api2 $(CLI_DIR)
+SUBDIRS = cli cluster cop preparse tools utils web2 stats api $(CLI_DIR)
 endif
 
 DIST_SUBDIRS = $(SUBDIRS)
@@ -31,7 +31,7 @@ AM_CPPFLAGS = \
   -I$(top_srcdir)/proxy \
   -I$(top_srcdir)/proxy/hdrs \
   -I$(top_srcdir)/proxy/mgmt2 \
-  -I$(top_srcdir)/proxy/mgmt2/api2/include \
+  -I$(top_srcdir)/proxy/mgmt2/api/include \
   -I$(top_srcdir)/proxy/mgmt2/cluster \
   -I$(top_srcdir)/proxy/mgmt2/preparse \
   -I$(top_srcdir)/proxy/mgmt2/stats \
@@ -96,7 +96,7 @@ traffic_manager_LDADD = \
   stats/libstats.a \
   web2/libweb.a \
   cli/libcli_lm.a \
-  api2/libmgmtapilocal.a \
+  api/libmgmtapilocal.a \
   utils/libutils_lm.a \
   $(top_builddir)/proxy/hdrs/libhdrs.a \
   $(top_builddir)/lib/records/libreclocal.a \

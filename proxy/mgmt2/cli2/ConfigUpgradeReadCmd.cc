@@ -35,7 +35,7 @@
 #include <CliMgmtUtils.h>
 #include <ConfigUpgradeCmd.h>
 #include <string.h>
-#include "../api2/include/INKMgmtAPI.h"
+#include "../api/include/INKMgmtAPI.h"
 
 
 extern Tcl_Interp *interp;

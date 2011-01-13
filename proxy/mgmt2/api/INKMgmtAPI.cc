@@ -2923,7 +2923,7 @@ INKSetProxyPort(INKString proxy_port)
      if (ele != NULL) {
      if (ele->src_port == 80) {
      ele->dest_port = ink_atoi(proxy_port);
-     //  Debug("api2","[INKSetProxyPort] %d is the dest_port for port %d now.\n",ele->dest_port, ele->src_port);
+     //  Debug("api","[INKSetProxyPort] %d is the dest_port for port %d now.\n",ele->dest_port, ele->src_port);
      }
      }
      }

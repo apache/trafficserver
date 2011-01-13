@@ -21,7 +21,7 @@ SUFFIXES = .java .class .jar .my .def .stb .html
 
 AM_CPPFLAGS = \
   $(iocore_include_dirs) \
-  -I$(top_srcdir)/proxy/mgmt2/api2/include \
+  -I$(top_srcdir)/proxy/mgmt2/api/include \
   -I$(top_srcdir)/proxy/mgmt2/tools
 
 
@@ -72,7 +72,7 @@ traffic_shell_LDFLAGS =	$(EXTRA_CXX_LDFLAGS)
 
 traffic_shell_LDADD = \
   libtrafficshell.a \
-  $(top_builddir)/proxy/mgmt2/api2/remote/libmgmtapiremote.a \
+  $(top_builddir)/proxy/mgmt2/api/remote/libmgmtapiremote.a \
   $(top_builddir)/proxy/mgmt2/tools/libinksysapi.a \
   $(top_builddir)/proxy/mgmt2/tools/libinkconfigapi.a \
   $(top_builddir)/proxy/mgmt2/utils/libutils_lm.a \

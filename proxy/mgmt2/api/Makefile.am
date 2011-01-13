@@ -27,7 +27,7 @@ AM_CPPFLAGS = \
   -I$(top_srcdir)/proxy/mgmt2/utils \
   -I$(top_srcdir)/proxy/mgmt2/web2 \
   -I$(top_srcdir)/lib/tsconfig \
-  -I$(top_srcdir)/proxy/mgmt2/api2/include
+  -I$(top_srcdir)/proxy/mgmt2/api/include
 
 MGMT_DEFS = @MGMT_DEFS@
 DEFS += $(MGMT_DEFS)
