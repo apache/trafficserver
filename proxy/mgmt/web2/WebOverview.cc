@@ -2180,6 +2180,22 @@ overviewPage::varClusterCounterFromName(char *nodeVar, RecInt * sum)
   return (status);
 }
 
+// Moved from the now removed StatAggregation.cc
+void
+AgFloat_generic_scale_to_int(const char *processVar, const char *nodeVar, double factor)
+{
+  MgmtFloat tmp;
+
+  if (varFloatFromName(processVar, &tmp)) {
+    tmp = tmp * factor;
+    tmp = tmp + 0.5;            // round up.
+    varSetInt(nodeVar, (int) tmp);
+  } else {
+    varSetInt(nodeVar, -20);
+  }
+}
+
+
 // void overviewPage::doClusterAg()
 //
 //   Aggregate data for cluster records

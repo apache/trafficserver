@@ -88,11 +88,8 @@ bool varSetFloat(const char *varName, RecFloat value, bool convert = false);
 // Return the type of the variable named
 RecDataT varType(const char *varName);
 
-
 int convertHtmlToUnix(char *buffer);
-
 int substituteUnsafeChars(char *buffer);
-
 char *substituteForHTMLChars(const char *buffer);
 
 // Produce a hash table based on a HTML form submission
@@ -103,9 +100,8 @@ InkHashTable *processFormSubmission_noSubstitute(char *submission);
 
 // Shutdown the proxy
 bool ProxyShutdown();
-int processSpawn(const char *args[],
-                 EnvBlock * env,
-                 textBuffer * input_buf, textBuffer * output_buf, bool nowait, bool runAsRoot, bool * truncated = NULL);
+int processSpawn(const char *args[], EnvBlock * env, textBuffer * input_buf, textBuffer * output_buf, bool nowait,
+                 bool runAsRoot, bool * truncated = NULL);
 
 void computeXactMax();
 void appendDefaultDomain(char *hostname, int bufLength);
@@ -115,9 +111,6 @@ void appendDefaultDomain(char *hostname, int bufLength);
 #define MBIT_TO_KBIT_SCALE (1000.0)
 #define SECOND_TO_MILLISECOND_SCALE (1000.0)
 #define PCT_TO_INTPCT_SCALE (100.0)
-
-void AgInt_generic_scale(char *processVar, char *nodeVar, double factor);
-void AgFloat_generic_scale_to_int(const char *processVar, const char *nodeVar, double factor);
 
 bool recordValidityCheck(const char *varName, const char *value);
 bool recordRegexCheck(const char *pattern, const char *value);

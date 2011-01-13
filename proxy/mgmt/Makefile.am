@@ -84,8 +84,6 @@ traffic_manager_SOURCES = \
   RecordsConfig.h \
   Rollback.cc \
   Rollback.h \
-  StatAggregation.cc \
-  StatAggregation.h \
   WebPluginList.cc \
   WebPluginList.h
 

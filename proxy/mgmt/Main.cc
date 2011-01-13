@@ -59,13 +59,7 @@
 #endif
 
 
-#define USE_STATPRO
-#if defined(USE_STATPRO)
 #include "StatProcessor.h"
-#else
-#include "StatAggregation.h"
-#endif
-
 #include "P_RecLocal.h"
 #include "P_RecCore.h"
 
@@ -91,10 +85,7 @@ LocalManager *lmgmt = NULL;
 MgmtPing *icmp_ping;
 FileManager *configFiles;
 
-#if defined(USE_STATPRO)
 StatProcessor *statProcessor;   // Statistics Processors
-#endif
-
 AppVersionInfo appVersionInfo;  // Build info for this application
 
 inkcoreapi Diags *diags;
@@ -880,9 +871,7 @@ main(int argc, char **argv)
   ticker = time(NULL);
   mgmt_log("[TrafficManager] Setup complete\n");
 
-#ifdef USE_STATPRO
   statProcessor = NEW(new StatProcessor());
-#endif
 
   for (;;) {
     lmgmt->processEventQueue();
@@ -916,20 +905,14 @@ main(int argc, char **argv)
       /* Proxy is not up, but we should still exchange config and alarm info */
       lmgmt->ccom->sendSharedData(false);
     }
-#ifndef USE_STATPRO
     // Aggregate node statistics
     overviewGenerator->doClusterAg();
-#endif
     lmgmt->ccom->checkPeers(&ticker);
     overviewGenerator->checkForUpdates();
-#ifndef USE_STATPRO
-    // Aggregate cluster statistics
-    aggregateNodeRecords();
-#else
+
     if (statProcessor) {
       statProcessor->processStat();
     }
-#endif
 
     if (lmgmt->mgmt_shutdown_outstanding == true) {
       lmgmt->mgmtShutdown(0, true);
@@ -972,11 +955,9 @@ main(int argc, char **argv)
 
   }
 
-#if defined(STATPRO)
   if (statProcessor) {
     delete(statProcessor);
   }
-#endif
 
 #ifndef MGMT_SERVICE
   return 0;
@@ -1245,11 +1226,9 @@ fileUpdated(char *fname)
     lmgmt->signalFileChange("proxy.config.body_factory.template_sets_dir");
 
   } else if (strcmp(fname, "stats.config.xml") == 0) {
-#if defined(STATPRO)
     if (statProcessor) {
       statProcessor->rereadConfig();
     }
-#endif
     mgmt_log(stderr, "[fileUpdated] stats.config.xml file has been modified\n");
   } else if (strcmp(fname, "congestion.config") == 0) {
     lmgmt->signalFileChange("proxy.config.http.congestion_control.filename");
