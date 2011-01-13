@@ -46,8 +46,6 @@ libutils_lm_a_SOURCES = \
   ExpandingArray.h \
   IpLookup.cc \
   IpLookup.h \
-  MgmtPing.cc \
-  MgmtPing.h \
   MgmtSchema.cc \
   MgmtSchema.h \
   MgmtUtils.cc \

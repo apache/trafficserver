@@ -365,44 +365,6 @@ VMap::lt_runGambit()
     xfree(conf_addr);
   }
 
-
-  /* Ping our bound interface's real ip address to make sure it is alive */
-  InkHashTableEntry *entry;
-  InkHashTableIteratorState iterator_state;
-
-  for (entry = ink_hash_table_iterator_first(interface_realip_map, &iterator_state);
-       entry != NULL; entry = ink_hash_table_iterator_next(interface_realip_map, &iterator_state)) {
-
-    char *key = (char *) ink_hash_table_entry_key(interface_realip_map, entry);
-    RealIPInfo *tmp = (RealIPInfo *) ink_hash_table_entry_value(interface_realip_map, entry);
-
-    if (tmp->mappings_for_interface) {
-      char ip[24];
-
-      ink_strncpy(ip, inet_ntoa(tmp->real_ip), sizeof(ip));
-
-      /* If we only have 1 interface anyway not much help to do the ping test */
-      if (num_nics == 1) {
-        break;
-      }
-
-      if (icmp_ping && icmp_ping->pingAddress(ip)) {
-
-        /*
-         * All is well, perhaps record this...?
-         */
-      } else if (icmp_ping) {
-        char error[512];
-
-        snprintf(error, sizeof(error), "[VMap::lt_runGambit] ICMP echo failed for interface"
-                 " '%s' real-ip: '%s'. Shutting down node!\n", key, inet_ntoa(tmp->real_ip));
-        lmgmt->processShutdown();
-        mgmt_elog(error);
-        lmgmt->alarm_keeper->signalAlarm(MGMT_ALARM_PING_FAILURE, error);
-      }
-    }
-  }
-
   ink_mutex_release(mutex);
   return;
 }                               /* End VMap::lt_runGambit */

@@ -82,7 +82,6 @@ extern "C" int getpwnam_r(const char *name, struct passwd *result, char *buffer,
 #endif
 
 LocalManager *lmgmt = NULL;
-MgmtPing *icmp_ping;
 FileManager *configFiles;
 
 StatProcessor *statProcessor;   // Statistics Processors
@@ -652,10 +651,6 @@ main(int argc, char **argv)
   diags = diagsConfig->diags;
   diags->prefix_str = "Manager ";
 
-/* Disable 12/14/98 (see explanation below)
-    icmp_ping = new MgmtPing(); */
-  icmp_ping = NULL;
-
   init_dirs(false);// setup directories
 
   // Get the config info we need while we are still root
@@ -773,20 +768,6 @@ main(int argc, char **argv)
   // RecLocal's 'sync_thr' depends on 'configFiles', so we can't
   // stat the 'sync_thr' until 'configFiles' has been initialized.
   RecLocalStart();
-
-/* Disabled 12/14/98
- *   Goldmine is seeing ping failures for no apparent reason.
- *   My tests show that the ping packets go over the loop back interface
- *   and the driver forwards them to loop back even if the link status
- *   for the interface is down
-    if(!icmp_ping->init()) {  // Initialize after the records data object has been created
-	delete icmp_ping;
-	icmp_ping = NULL;
- 	lmgmt->alarm_keeper->signalAlarm(MGMT_ALARM_PROXY_SYSTEM_ERROR,
- 					 "Unable to open raw icmp socket, Virtual IP failover at risk"
- 					 " if multiple interfaces are present on this node.");
-    }
-    */
 
   /* Update cmd line overrides/environmental overrides/etc */
   if (tsArgs) {                 /* Passed command line args for proxy */
