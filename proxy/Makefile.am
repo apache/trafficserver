@@ -52,7 +52,6 @@ noinst_HEADERS = \
   Show.h
 
 EXTRA_PROGRAMS = \
-  test_StateEventLogger \
   test_ClusterHashStandalone \
   test_xml_parser
 
@@ -391,8 +390,6 @@ if BUILD_V2STATS
   libTrafficServerStandalone_a_SOURCES += StatSystemV2.cc
 endif
 
-
-test_StateEventLogger_SOURCES =	StateEventLogger.cc
 
 test_ClusterHashStandalone_SOURCES = test_ClusterHashStandalone.c
 test_ClusterHashStandalone_LDADD = libClusterHashStandalone.a
