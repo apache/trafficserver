@@ -35,8 +35,6 @@
 #include "libts.h"
 #include "AbsEventHandler.h"
 
-/* A simple queue for FSM events, borrowed from "SimpleQueue.h"
- * NOTE: not-thread safe like the one in "SimpleQueue.h" */
 struct FSMQueueEntry
 {
   FSMQueueEntry *next;

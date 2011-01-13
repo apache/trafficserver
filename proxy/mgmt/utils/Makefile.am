@@ -50,8 +50,6 @@ libutils_lm_a_SOURCES = \
   MgmtSchema.h \
   MgmtUtils.cc \
   MgmtUtils.h \
-  SimpleQueue.cc \
-  SimpleQueue.h \
   WebMgmtUtils.cc \
   WebMgmtUtils.h \
   XmlUtils.cc \

@@ -35,10 +35,6 @@
 #include "FSM.h"
 
 //
-// simple queue fcns, borrowed from "SimpleQueue.h"
-//
-
-//
 // Create queue
 //
 FSMQueue::FSMQueue()
