@@ -1045,7 +1045,7 @@ REC_readString(const char *name, bool * found, bool lock)
 //-------------------------------------------------------------------------
 // REC_SignalManager (TS)
 //-------------------------------------------------------------------------
-#if defined (REC_BUILD_MGMT2)
+#if defined (REC_BUILD_MGMT)
 
 #if defined(LOCAL_MANAGER)
 
@@ -1098,4 +1098,4 @@ RecRegisterManagerCb(int _signal, RecManagerCb _fn, void *_data)
   return -1;
 }
 
-#endif // REC_BUILD_MGMT2
+#endif // REC_BUILD_MGMT

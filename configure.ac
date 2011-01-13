@@ -234,7 +234,7 @@ AS_IF([test $has_standalone_iocore],
    AC_SUBST([ink_with_modules_local],[""])
    AC_SUBST([ink_with_modules_process],[""])
   ],
-  [AC_SUBST([ink_with_modules_def],["-DREC_BUILD_MGMT2"])
+  [AC_SUBST([ink_with_modules_def],["-DREC_BUILD_MGMT"])
    AC_SUBST([ink_with_modules_local],["-DLOCAL_MANAGER"])
    AC_SUBST([ink_with_modules_process],["-DPROCESS_MANAGER"])
   ]

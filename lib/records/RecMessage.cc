@@ -197,10 +197,10 @@ RecMessageSend(RecMessage * msg)
 
 //-------------------------------------------------------------------------
 //
-// REC_BUILD_MGMT2 IMPLEMENTATION
+// REC_BUILD_MGMT IMPLEMENTATION
 //
 //-------------------------------------------------------------------------
-#elif defined (REC_BUILD_MGMT2)
+#elif defined (REC_BUILD_MGMT)
 
 #if defined(LOCAL_MANAGER)
 #include "LocalManager.h"
@@ -265,7 +265,7 @@ RecMessageSend(RecMessage * msg)
 
 #else
 
-#error "Required #define not specificed; expected REC_BUILD_STAND_ALONE, REC_BUILD_MGMT2, or REC_BUILD_STUB"
+#error "Required #define not specificed; expected REC_BUILD_STAND_ALONE, REC_BUILD_MGMT, or REC_BUILD_STUB"
 
 #endif
 
