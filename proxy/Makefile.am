@@ -52,11 +52,9 @@ noinst_HEADERS = \
   Show.h
 
 EXTRA_PROGRAMS = \
-  test_ClusterHashStandalone \
   test_xml_parser
 
 EXTRA_LIBRARIES	= \
-  libClusterHashStandalone.a \
   libTrafficServerStandalone.a
 
 EXTRA_DIST = InkAPITestTool.cc example_alarm_bin.sh example_prep.sh
@@ -370,10 +368,6 @@ if BUILD_TESTS
     TestHook.o
 endif
 
-libClusterHashStandalone_a_SOURCES = \
-  ClusterHashStandalone.cc \
-  $(top_srcdir)/lib/ts/ParseRules.cc
-
 libTrafficServerStandalone_a_SOURCES = \
   signals.cc \
   Error.cc \
@@ -390,9 +384,6 @@ if BUILD_V2STATS
   libTrafficServerStandalone_a_SOURCES += StatSystemV2.cc
 endif
 
-
-test_ClusterHashStandalone_SOURCES = test_ClusterHashStandalone.c
-test_ClusterHashStandalone_LDADD = libClusterHashStandalone.a
 
 test_xml_parser_SOURCES = test_xml_parser.cc InkXml.cc DiagsConfig.cc
 
