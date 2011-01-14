@@ -56,6 +56,7 @@ libmgmt_p_a_CPPFLAGS = \
   -I$(top_srcdir)/proxy/mgmt/cluster \
   -I$(top_srcdir)/proxy/mgmt/preparse \
   -I$(top_srcdir)/proxy/mgmt/utils \
+  -I$(top_srcdir)/lib/tsconfig \
   -I$(top_srcdir)/proxy/mgmt/web2 \
   -I$(top_srcdir)/proxy
 libmgmt_p_a_SOURCES = \

@@ -212,9 +212,9 @@ AC_ARG_ENABLE([micro],
   [],
   [enable_micro=no]
 )
+AC_MSG_RESULT([$enable_micro])
 AS_IF([test "x$enable_micro" = "xyes"], [is_micro_build=1], [is_micro_build=0])
 AC_SUBST(is_micro_build)
-AC_MSG_RESULT([$enable_micro])
 
 #
 # Standalone iocore
@@ -262,8 +262,8 @@ AC_ARG_ENABLE([webui],
   [],
   [enable_webui=no]
 )
-TS_ARG_ENABLE_VAR([has],[webui])
 AC_MSG_RESULT([$enable_webui])
+TS_ARG_ENABLE_VAR([has],[webui])
 AC_SUBST(has_webui)
 AM_CONDITIONAL([BUILD_WEBUI], [test 0 -ne $has_webui])
 
@@ -292,7 +292,7 @@ AC_ARG_ENABLE([detailed-log],
 AC_MSG_RESULT([$enable_detailed_log])
 TS_ARG_ENABLE_VAR([has],[detailed-log])
 AC_SUBST(has_detailed_log)
-AM_CONDITIONAL([BUILD_DETAILED_LOG], [test "x$enable_detailed_log" = "xyes"])
+AM_CONDITIONAL([BUILD_DETAILED_LOG], [test 0 -ne $has_detailed_log])
 
 #
 # Cli2
@@ -305,7 +305,7 @@ AC_ARG_ENABLE([cli2],
 )
 AC_MSG_RESULT([$enable_cli2])
 TS_ARG_ENABLE_VAR([has],[cli2])
-AS_IF([test $has_cli2],
+AS_IF([test 0 -ne $has_cli2],
   [AC_SUBST([CLI_DIR],[cli2])]
 )
 AC_SUBST(has_cli2)
