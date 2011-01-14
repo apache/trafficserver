@@ -228,7 +228,7 @@ AC_ARG_ENABLE([standalone-iocore],
 AC_MSG_RESULT([$enable_standalone_iocore])
 TS_ARG_ENABLE_VAR([has],[standalone-iocore])
 AC_SUBST(has_standalone_iocore)
-AS_IF([test $has_standalone_iocore],
+AS_IF([test 0 -ne $has_standalone_iocore],
   [AC_SUBST([IOCORE_MODULARIZED_DEFS],[""])
    AC_SUBST([ink_with_modules_def],["-DREC_BUILD_STAND_ALONE"])
    AC_SUBST([ink_with_modules_local],[""])

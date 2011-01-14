@@ -25,7 +25,8 @@ endif
 
 DIST_SUBDIRS = $(SUBDIRS)
 
-AM_CPPFLAGS = \
+# This is for traffic_manager only (local manager)
+AM_CPPFLAGS = $(ink_with_modules_local) \
   $(iocore_include_dirs) \
   -I$(top_srcdir)/lib/records \
   -I$(top_srcdir)/proxy \
@@ -42,10 +43,21 @@ AM_CPPFLAGS = \
 MGMT_DEFS = @MGMT_DEFS@
 DEFS += $(MGMT_DEFS)
 
-noinst_LIBRARIES = libmgmt_p.a librecords.a
+noinst_LIBRARIES = libmgmt_p.a
 
 bin_PROGRAMS = traffic_manager
 
+# Compile this for "process manager"
+libmgmt_p_a_CPPFLAGS = \
+  $(iocore_include_dirs) \
+  -I$(top_srcdir)/lib/records \
+  -I$(top_srcdir)/proxy/hdrs \
+  -I$(top_srcdir)/proxy/mgmt/api/include \
+  -I$(top_srcdir)/proxy/mgmt/cluster \
+  -I$(top_srcdir)/proxy/mgmt/preparse \
+  -I$(top_srcdir)/proxy/mgmt/utils \
+  -I$(top_srcdir)/proxy/mgmt/web2 \
+  -I$(top_srcdir)/proxy
 libmgmt_p_a_SOURCES = \
   BaseManager.cc \
   BaseManager.h \
@@ -55,13 +67,6 @@ libmgmt_p_a_SOURCES = \
   RecordsConfig.cc \
   RecordsConfig.h
 
-librecords_a_CPPFLAGS = -DFOR_INSTALL $(AM_CPPFLAGS)
-librecords_a_SOURCES = \
-  MgmtDefs.h \
-  RecordsConfig.cc \
-  RecordsConfig.h
-
-traffic_manager_CPPFLAGS = -DLOCAL_MANAGER $(AM_CPPFLAGS)
 traffic_manager_SOURCES = \
   $(top_srcdir)/proxy/Error.cc \
   AddConfigFilesHere.cc \

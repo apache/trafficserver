@@ -26,13 +26,3 @@ AM_CPPFLAGS = \
 
 dist_bin_SCRIPTS = \
   trafficserver
-
-noinst_PROGRAMS = update_records
-
-update_records_SOURCES = update_records.cc 
-update_records_LDFLAGS = @EXTRA_CXX_LDFLAGS@
-update_records_LDADD =	\
-			$(top_builddir)/proxy/mgmt/librecords.a \
-			$(top_builddir)/lib/ts/libts.a \
-			@LIBICONV@ @LIBTHREAD@ @LIBRT@ @LIBTCL@ @LIBDL@ @LIBSSL@ @LIBEXECINFO@
-

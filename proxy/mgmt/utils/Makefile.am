@@ -36,7 +36,7 @@ EXTRA_DIST = MgmtHashTable.h MgmtSocket.h
 
 noinst_LIBRARIES = libutils_lm.a libutils_p.a
 
-libutils_lm_a_CPPFLAGS = -DLOCAL_MANAGER $(AM_CPPFLAGS)
+libutils_lm_a_CPPFLAGS = $(ink_with_modules_local) $(AM_CPPFLAGS)
 libutils_lm_a_SOURCES = \
   $(top_srcdir)/lib/ts/MatcherUtils.cc \
   $(top_srcdir)/proxy/DiagsConfig.cc \
