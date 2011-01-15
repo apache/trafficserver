@@ -40,6 +40,5 @@ dist_webui_DATA = \
 	m_quicktime.ink \
 	m_real_networks.ink \
 	m_socks.ink \
-	m_tab.ink \
 	m_virtual_ip.ink \
 	m_windows_media.ink
