@@ -31,14 +31,8 @@ uninstall-hook:
 
 webuidir = $(pkgdatadir)
 dist_webui_DATA = \
-	checkCookies.ink \
-	enableCookies.ink \
 	index.ink \
 	inktomi.css \
 	inktomiLarge.css \
 	navigation_tree.xml \
-	plugin.ink \
-	rename.ink \
-	resize.js \
-	restart.ink \
-	ssl_redirect.ink
+	resize.js
