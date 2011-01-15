@@ -206,8 +206,6 @@ Rule::parse(const char *const_rule, INKFileNameT filetype)
   m_filetype = filetype;
 
   switch (m_filetype) {
-  case INK_FNAME_ADMIN_ACCESS: /* admin_access.config */
-    return admin_accessParse(rule);
   case INK_FNAME_CACHE_OBJ:    /* cache.config */
     return cacheParse(rule);
   case INK_FNAME_CONGESTION:   /* congestion.config */
@@ -243,16 +241,6 @@ Rule::parse(const char *const_rule, INKFileNameT filetype)
   default:
     return NULL;
   }
-}
-
-
-/**
- * admin_accessParse
- **/
-TokenList *
-Rule::admin_accessParse(char *rule)
-{
-  return icpParse(rule, 3, 3);
 }
 
 
@@ -966,9 +954,7 @@ RuleList::parse(char *fileBuf, const char *filename)
 {
   m_filename = xstrdup(filename);
 
-  if (strstr(filename, "admin_access.config")) {
-    m_filetype = INK_FNAME_ADMIN_ACCESS;        /* admin_access.config */
-  } else if (strstr(filename, "cache.config")) {
+  if (strstr(filename, "cache.config")) {
     m_filetype = INK_FNAME_CACHE_OBJ;   /* cache.config */
   } else if (strstr(filename, "congestion.config")) {
     m_filetype = INK_FNAME_CONGESTION;  /* congestion.config */

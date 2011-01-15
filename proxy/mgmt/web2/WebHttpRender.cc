@@ -38,7 +38,6 @@
 #include "WebCompatibility.h"
 #include "WebHttp.h"
 #include "WebHttpRender.h"
-#include "WebHttpSession.h"
 #include "WebHttpTree.h"
 #include "WebOverview.h"
 
@@ -833,121 +832,6 @@ handle_html_tab_object(WebHttpContext * whc, char *tag, char *arg)
   return err;
 }
 
-//-------------------------------------------------------------------------
-// handle_mgmt_auth_object
-//-------------------------------------------------------------------------
-
-static int
-handle_mgmt_auth_object(WebHttpContext * whc, char *tag, char *arg)
-{
-  NOWARN_UNUSED(tag);
-  NOWARN_UNUSED(arg);
-  int user_count;
-  INKCfgContext ctx;
-  INKCfgIterState ctx_state;
-  char *ctx_key;
-  INKAdminAccessEle *ele;
-  textBuffer *output = whc->response_bdy;
-  char tmp[32];
-
-  ctx = INKCfgContextCreate(INK_FNAME_ADMIN_ACCESS);
-
-  if (INKCfgContextGet(ctx) != INK_ERR_OKAY)
-    printf("ERROR READING FILE\n");
-  INKCfgContextGetFirst(ctx, &ctx_state);
-
-  user_count = 0;
-  ele = (INKAdminAccessEle *) INKCfgContextGetFirst(ctx, &ctx_state);
-  while (ele) {
-    // render table row
-    HtmlRndrTrOpen(output, HTML_CSS_NONE, HTML_ALIGN_NONE);
-    snprintf(tmp, sizeof(tmp), "user:%d", user_count);
-    HtmlRndrInput(output, HTML_CSS_NONE, HTML_TYPE_HIDDEN, tmp, ele->user, NULL, NULL);
-    HtmlRndrTdOpen(output, HTML_CSS_BODY_TEXT, HTML_ALIGN_NONE, HTML_VALIGN_NONE, "33%", NULL, 0);
-    output->copyFrom(ele->user, strlen(ele->user));
-    HtmlRndrTdClose(output);
-    HtmlRndrTdOpen(output, HTML_CSS_BODY_TEXT, HTML_ALIGN_NONE, HTML_VALIGN_NONE, "33%", NULL, 0);
-    snprintf(tmp, sizeof(tmp), "access:%d", user_count);
-    HtmlRndrSelectOpen(output, HTML_CSS_BODY_TEXT, tmp, 1);
-    snprintf(tmp, sizeof(tmp), "%d", INK_ACCESS_NONE);
-    HtmlRndrOptionOpen(output, tmp, ele->access == INK_ACCESS_NONE);
-    HtmlRndrText(output, whc->lang_dict_ht, HTML_ID_AUTH_NO_ACCESS);
-    HtmlRndrOptionClose(output);
-    snprintf(tmp, sizeof(tmp), "%d", INK_ACCESS_MONITOR);
-    HtmlRndrOptionOpen(output, tmp, ele->access == INK_ACCESS_MONITOR);
-    HtmlRndrText(output, whc->lang_dict_ht, HTML_ID_AUTH_MONITOR);
-    HtmlRndrOptionClose(output);
-    snprintf(tmp, sizeof(tmp), "%d", INK_ACCESS_MONITOR_VIEW);
-    HtmlRndrOptionOpen(output, tmp, ele->access == INK_ACCESS_MONITOR_VIEW);
-    HtmlRndrText(output, whc->lang_dict_ht, HTML_ID_AUTH_MONITOR_VIEW);
-    HtmlRndrOptionClose(output);
-    snprintf(tmp, sizeof(tmp), "%d", INK_ACCESS_MONITOR_CHANGE);
-    HtmlRndrOptionOpen(output, tmp, ele->access == INK_ACCESS_MONITOR_CHANGE);
-    HtmlRndrText(output, whc->lang_dict_ht, HTML_ID_AUTH_MONITOR_CHANGE);
-    HtmlRndrOptionClose(output);
-    HtmlRndrSelectClose(output);
-    HtmlRndrTdClose(output);
-    HtmlRndrTdOpen(output, HTML_CSS_BODY_TEXT, HTML_ALIGN_NONE, HTML_VALIGN_NONE, "33%", NULL, 0);
-    output->copyFrom(ele->password, strlen(ele->password));
-    HtmlRndrTdClose(output);
-    HtmlRndrTdOpen(output, HTML_CSS_BODY_TEXT, HTML_ALIGN_CENTER, HTML_VALIGN_NONE, NULL, NULL, 0);
-    snprintf(tmp, sizeof(tmp), "delete:%d", user_count);
-    HtmlRndrInput(output, HTML_CSS_NONE, HTML_TYPE_CHECKBOX, tmp, ele->user, NULL, NULL);
-    HtmlRndrTdClose(output);
-    HtmlRndrTrClose(output);
-    // move on
-    ele = (INKAdminAccessEle *) INKCfgContextGetNext(ctx, &ctx_state);
-    user_count++;
-  }
-  // what? no users?
-  if (user_count == 0) {
-    HtmlRndrTrOpen(output, HTML_CSS_NONE, HTML_ALIGN_NONE);
-    HtmlRndrTdOpen(output, HTML_CSS_BODY_TEXT, HTML_ALIGN_NONE, HTML_VALIGN_NONE, NULL, NULL, 4);
-    HtmlRndrText(output, whc->lang_dict_ht, HTML_ID_NO_ADDITIONAL_USERS);
-    HtmlRndrTdClose(output);
-    HtmlRndrTrClose(output);
-  }
-  // store context
-  ctx_key = WebHttpMakeSessionKey_Xmalloc();
-  WebHttpSessionStore(ctx_key, (void *) ctx, InkMgmtApiCtxDeleter);
-  // add hidden form tags
-  snprintf(tmp, sizeof(tmp), "%d", user_count);
-  HtmlRndrInput(output, HTML_CSS_NONE, HTML_TYPE_HIDDEN, "user_count", tmp, NULL, NULL);
-  HtmlRndrInput(output, HTML_CSS_NONE, HTML_TYPE_HIDDEN, "session_id", ctx_key, NULL, NULL);
-  xfree(ctx_key);
-
-  return WEB_HTTP_ERR_OKAY;
-}
-
-//-------------------------------------------------------------------------
-// handle_tree_object
-//-------------------------------------------------------------------------
-
-static int
-handle_tree_object(WebHttpContext * whc, char *tag, char *arg)
-{
-  NOWARN_UNUSED(tag);
-  NOWARN_UNUSED(arg);
-  int err = WEB_HTTP_ERR_OKAY;
-  char *file = NULL;
-
-  if ((err = WebHttpRender(whc, HTML_TREE_HEADER_FILE)) != WEB_HTTP_ERR_OKAY)
-    goto Ldone;
-
-  if ((file = WebHttpGetTopLevelRndrFile_Xmalloc(whc))) {
-    if ((err = WebHttpRenderJsTree(whc->response_bdy, file)) != WEB_HTTP_ERR_OKAY)
-      goto Ldone;
-
-  } else {
-    mgmt_log(stderr, "[handle_tree_object] failed to get top_level_render_file");
-  }
-  err = WebHttpRender(whc, HTML_TREE_FOOTER_FILE);
-
-Ldone:
-  if (file)
-    xfree(file);
-  return err;
-}
 
 //-------------------------------------------------------------------------
 // handle_vip_object
@@ -2193,72 +2077,6 @@ handle_plugin_object(WebHttpContext * whc, char *tag, char *arg)
 
 
 //-------------------------------------------------------------------------
-// handle_ssl_redirect_url
-//-------------------------------------------------------------------------
-
-static int
-handle_ssl_redirect_url(WebHttpContext * whc, char *tag, char *arg)
-{
-  NOWARN_UNUSED(tag);
-  NOWARN_UNUSED(arg);
-  RecInt ssl_value = 0;         // current SSL value, enabled/disabled
-  char *hostname_FQ = NULL;
-
-  // get current SSL value and fully qualified local hostname
-  if (RecGetRecordInt("proxy.config.admin.use_ssl", &ssl_value) != REC_ERR_OKAY)
-    mgmt_log(stderr, "[handle_ssl_redirect_url] Error: Unable to get SSL enabled config variable\n");
-  if (RecGetRecordString_Xmalloc("proxy.node.hostname_FQ", &hostname_FQ) != REC_ERR_OKAY)
-    mgmt_log(stderr, "[handle_ssl_redirect_url] Error: Unable to get local hostname \n");
-
-  char ssl_redirect_url[256] = "";
-  char* link = WebHttpGetLink_Xmalloc(HTML_MGMT_GENERAL_FILE);
-
-  // construct proper redirect url
-  snprintf(ssl_redirect_url, sizeof(ssl_redirect_url), "%s://%s:%d%s",
-               ssl_value ? "https" : "http", hostname_FQ, wGlobals.webPort, link);
-
-  whc->response_bdy->copyFrom(ssl_redirect_url, strlen(ssl_redirect_url));
-
-  // free allocated space
-  xfree(link);
-  if (hostname_FQ)
-    xfree(hostname_FQ);
-
-  return WEB_HTTP_ERR_OKAY;
-
-}
-
-//-------------------------------------------------------------------------
-// handle_host_redirect_url
-//-------------------------------------------------------------------------
-
-static int
-handle_host_redirect_url(WebHttpContext * whc, char *tag, char *arg)
-{
-  NOWARN_UNUSED(tag);
-  NOWARN_UNUSED(arg);
-  RecInt ssl_value = 0;         // current SSL value, enabled/disabled
-  char hostname[1024];
-
-  // get current SSL value and fully qualified local hostname
-  if (RecGetRecordInt("proxy.config.admin.use_ssl", &ssl_value) != REC_ERR_OKAY)
-    mgmt_log(stderr, "[handle_ssl_redirect_url] Error: Unable to get SSL enabled config variable\n");
-  gethostname(hostname, 1024);
-  char host_redirect_url[256] = "";
-  char* link = WebHttpGetLink_Xmalloc("/configure/c_net_config.ink");
-
-  // construct proper redirect url
-  snprintf(host_redirect_url, sizeof(host_redirect_url), "%s://%s:%d%s",
-               ssl_value ? "https" : "http", hostname, wGlobals.webPort, link);
-
-  whc->response_bdy->copyFrom(host_redirect_url, strlen(host_redirect_url));
-
-  // free allocated space
-  xfree(link);
-  return WEB_HTTP_ERR_OKAY;
-}
-
-//-------------------------------------------------------------------------
 // handle_network
 //-------------------------------------------------------------------------
 static int
@@ -2480,8 +2298,6 @@ WebHttpRenderInit()
   ink_hash_table_insert(g_display_bindings_ht, "summary_object", (void *) handle_summary_object);
   ink_hash_table_insert(g_display_bindings_ht, "tab_object", (void *) handle_tab_object);
   ink_hash_table_insert(g_display_bindings_ht, "html_tab_object", (void *) handle_html_tab_object);
-  ink_hash_table_insert(g_display_bindings_ht, "mgmt_auth_object", (void *) handle_mgmt_auth_object);
-  ink_hash_table_insert(g_display_bindings_ht, "tree_object", (void *) handle_tree_object);
   ink_hash_table_insert(g_display_bindings_ht, "vip_object", (void *) handle_vip_object);
   ink_hash_table_insert(g_display_bindings_ht, "checked", (void *) handle_checked);
   ink_hash_table_insert(g_display_bindings_ht, "action_checked", (void *) handle_action_checked);
@@ -2504,8 +2320,6 @@ WebHttpRenderInit()
   ink_hash_table_insert(g_display_bindings_ht, "time", (void *) handle_time);
   ink_hash_table_insert(g_display_bindings_ht, "user", (void *) handle_user);
   ink_hash_table_insert(g_display_bindings_ht, "plugin_object", (void *) handle_plugin_object);
-  ink_hash_table_insert(g_display_bindings_ht, "ssl_redirect_url", (void *) handle_ssl_redirect_url);
-  ink_hash_table_insert(g_display_bindings_ht, "host_redirect_url", (void *) handle_host_redirect_url);
   ink_hash_table_insert(g_display_bindings_ht, "help_link", (void *) handle_help_link);
   ink_hash_table_insert(g_display_bindings_ht, "include_cgi", (void *) handle_include_cgi);
 

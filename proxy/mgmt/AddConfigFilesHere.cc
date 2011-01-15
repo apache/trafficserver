@@ -81,7 +81,6 @@ initializeRegistry()
   configFiles->addFile("parent.config", false);
   configFiles->addFile("remap.config", false);
   configFiles->addFile("update.config", false);
-  configFiles->addFile("admin_access.config", false);
   configFiles->addFile("partition.config", false);
   configFiles->addFile("hosting.config", false);
   configFiles->addFile("congestion.config", false);

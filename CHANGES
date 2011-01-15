@@ -2,6 +2,9 @@
 
 Changes with Apache Traffic Server 2.1.6
 
+  *) Purge of WebUI, by starting with html2 and recursively
+  moving through the code, removing everything useless. [TS-641]
+
   *) Rename proxy/http2 -> proxy/http and proxy/mgmt2 to proxy/mgmt [TS-631].
 
   *) Add an example to records.config for how to bind a specific IP [TS-582].

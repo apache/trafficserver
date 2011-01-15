@@ -1439,9 +1439,6 @@ char *
 filename_to_string(INKFileNameT file)
 {
   switch (file) {
-  case INK_FNAME_ADMIN_ACCESS:
-    return xstrdup("admin_access.config");
-
   case INK_FNAME_CACHE_OBJ:
     return xstrdup("cache.config");
 
@@ -1513,44 +1510,6 @@ string_to_congest_scheme_type(const char *scheme)
   return INK_HTTP_CONGEST_UNDEFINED;
 }
 
-/* -------------------------------------------------------------------------
- * string_to_admin_acc_type
- * -------------------------------------------------------------------------
- */
-INKAccessT
-string_to_admin_acc_type(const char *access)
-{
-  if (strcmp(access, "none") == 0) {
-    return INK_ACCESS_NONE;
-  } else if (strcmp(access, "monitor_only") == 0) {
-    return INK_ACCESS_MONITOR;
-  } else if (strcmp(access, "monitor_config_view") == 0) {
-    return INK_ACCESS_MONITOR_VIEW;
-  } else if (strcmp(access, "monitor_config_change") == 0) {
-    return INK_ACCESS_MONITOR_CHANGE;
-  }
-
-  return INK_ACCESS_UNDEFINED;
-}
-
-char *
-admin_acc_type_to_string(INKAccessT access)
-{
-  switch (access) {
-  case INK_ACCESS_NONE:
-    return xstrdup("none");
-  case INK_ACCESS_MONITOR:
-    return xstrdup("monitor_only");
-  case INK_ACCESS_MONITOR_VIEW:
-    return xstrdup("monitor_config_view");
-  case INK_ACCESS_MONITOR_CHANGE:
-    return xstrdup("monitor_config_change");
-  default:
-    break;
-  }
-
-  return NULL;
-}
 
 
 /***************************************************************************
@@ -1951,9 +1910,6 @@ create_ele_obj_from_rule_node(Rule * rule)
   // convert TokenList into an Ele
   // need switch statement to determine which Ele constructor to call
   switch (rule_type) {
-  case INK_ADMIN_ACCESS:       /* admin_access.config */
-    ele = (CfgEleObj *) new AdminAccessObj(token_list);
-    break;
   case INK_CACHE_NEVER:        /* all cache rules use same constructor */
   case INK_CACHE_IGNORE_NO_CACHE:
   case INK_CACHE_IGNORE_CLIENT_NO_CACHE:
@@ -2044,10 +2000,6 @@ create_ele_obj_from_ele(INKCfgEle * ele)
     return NULL;
 
   switch (ele->type) {
-  case INK_ADMIN_ACCESS:       /* admin_access.config */
-    ele_obj = (CfgEleObj *) new AdminAccessObj((INKAdminAccessEle *) ele);
-    break;
-
   case INK_CACHE_NEVER:        /* cache.config */
   case INK_CACHE_IGNORE_NO_CACHE:      // fall-through
   case INK_CACHE_IGNORE_CLIENT_NO_CACHE:       // fall-through
@@ -2152,9 +2104,6 @@ get_rule_type(TokenList * token_list, INKFileNameT file)
   /* Depending on the file and rule type, need to find out which
      token specifies which type of rule it is */
   switch (file) {
-  case INK_FNAME_ADMIN_ACCESS: /* admin_access.config */
-    return INK_ADMIN_ACCESS;
-
   case INK_FNAME_CACHE_OBJ:    /* cache.config */
     tok = token_list->first();
     while (tok != NULL) {
@@ -2501,27 +2450,6 @@ copy_int_list(INKIntList list)
 }
 
 //////////////////////////////////////////////////
-INKAdminAccessEle *
-copy_admin_access_ele(INKAdminAccessEle * ele)
-{
-  if (!ele)
-    return NULL;
-
-  INKAdminAccessEle *nele = INKAdminAccessEleCreate();
-  if (!nele)
-    return NULL;
-
-  copy_cfg_ele(&(ele->cfg_ele), &(nele->cfg_ele));
-
-  if (ele->user)
-    nele->user = xstrdup(ele->user);
-  if (ele->password)
-    nele->password = xstrdup(ele->password);
-  nele->access = ele->access;
-
-  return nele;
-}
-
 INKCacheEle *
 copy_cache_ele(INKCacheEle * ele)
 {

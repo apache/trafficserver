@@ -295,18 +295,6 @@ INKPdSsFormatDestroy(INKPdSsFormat * ele)
   return;
 }
 
-inkapi INKAdminAccessEle *
-INKAdminAccessEleCreate()
-{
-  return NULL;
-}
-
-inkapi void
-INKAdminAccessEleDestroy(INKAdminAccessEle * ele)
-{
-  return;
-}
-
 inkapi INKArmSecurityEle *
 INKArmSecurityEleCreate()
 {

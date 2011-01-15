@@ -938,40 +938,6 @@ INKPdSsFormatDestroy(INKPdSsFormat * ele)
   return;
 }
 
-/*-------------------------------------------------------------
- * INKAdminAccessEle
- *-------------------------------------------------------------*/
-inkapi INKAdminAccessEle *
-INKAdminAccessEleCreate()
-{
-  INKAdminAccessEle *ele;
-
-  ele = (INKAdminAccessEle *) xmalloc(sizeof(INKAdminAccessEle));
-  if (!ele)
-    return NULL;
-
-  ele->cfg_ele.type = INK_ADMIN_ACCESS;
-  ele->cfg_ele.error = INK_ERR_OKAY;
-  ele->user = NULL;
-  ele->password = NULL;
-  ele->access = INK_ACCESS_UNDEFINED;
-
-  return ele;
-}
-
-inkapi void
-INKAdminAccessEleDestroy(INKAdminAccessEle * ele)
-{
-  if (ele) {
-    if (ele->user)
-      xfree(ele->user);
-    if (ele->password)
-      xfree(ele->password);
-    xfree(ele);
-  }
-  return;
-}
-
 
 /*-------------------------------------------------------------
  * CacheObj

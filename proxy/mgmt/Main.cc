@@ -37,10 +37,8 @@
 #include "MgmtUtils.h"
 #include "MgmtSchema.h"
 #include "WebMgmtUtils.h"
-#include "WebIntrMain.h"
 #include "WebOverview.h"
 #include "FileManager.h"
-#include "WebReconfig.h"
 #include "I_Layout.h"
 #include "I_Version.h"
 #include "ink_syslog.h"
@@ -484,7 +482,6 @@ main(int argc, char **argv)
   char userToRunAs[80];
   int  fds_throttle = -1;
   time_t ticker;
-  ink_thread webThrId;
 
   while ((setsid() == (pid_t) - 1) && (errno == EINTR)) {
   }
@@ -493,15 +490,6 @@ main(int argc, char **argv)
   appVersionInfo.setup(PACKAGE_NAME,"traffic_manager", PACKAGE_VERSION,
                        __DATE__, __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
   initSignalHandlers();
-
-  // Process Environment Variables
-  if ((envVar = getenv("MGMT_WEB_PORT")) != NULL) {
-    web_port_arg = atoi(envVar);
-  }
-
-  if ((envVar = getenv("MGMT_ACONF_PORT")) != NULL) {
-    aconf_port_arg = atoi(envVar);
-  }
 
   if ((envVar = getenv("MGMT_CLUSTER_PORT")) != NULL) {
     cluster_port = atoi(envVar);
@@ -529,13 +517,7 @@ main(int argc, char **argv)
         // The rest of the options require an argument in the form of -<Flag> <val>
         if ((i + 1) < argc) {
 
-          if (strcmp(argv[i], "-webPort") == 0) {
-            ++i;
-            web_port_arg = atoi(argv[i]);
-          } else if (strcmp(argv[i], "-aconfPort") == 0) {
-            ++i;
-            aconf_port_arg = atoi(argv[i]);
-          } else if (strcmp(argv[i], "-clusterPort") == 0) {
+          if (strcmp(argv[i], "-clusterPort") == 0) {
             ++i;
             cluster_port = atoi(argv[i]);
           } else if (strcmp(argv[i], "-groupAddr") == 0) {
@@ -827,8 +809,6 @@ main(int argc, char **argv)
   //   UI record for this machine
   overviewGenerator->addSelfRecord();
 
-  webThrId = ink_thread_create(webIntr_main, NULL);     /* Spin web agent thread */
-  Debug("lm", "Created Web Agent thread (%d)", webThrId);
   lmgmt->listenForProxy();
 
   /* Check the permissions on vip_config */
@@ -1103,7 +1083,6 @@ printUsage()
      "     -noProxy               Do not launch the proxy process.\n");
    */
   fprintf(stderr, "     -tsArgs        [...]   Args to proxy, everything till eol is passed.\n");
-  fprintf(stderr, "     -webPort       <port>  Port for web interface.\n");
   /*
      fprintf(stderr,
      "     -graphPort     <port>  Port for dynamic graphs.\n");
@@ -1154,7 +1133,8 @@ fileUpdated(char *fname)
     lmgmt->signalFileChange("proxy.config.admin.ip_allow.filename");
     // signalFileChange does not cause callbacks in the manager
     //  so generate one here by hand
-    markMgmtIpAllowChange();
+    // markMgmtIpAllowChange();
+    // XXX Cannot do this after purging WebReconfig -- what to do?
   } else if (strcmp(fname, "ip_allow.config") == 0) {
     lmgmt->signalFileChange("proxy.config.cache.ip_allow.filename");
   } else if (strcmp(fname, "vaddrs.config") == 0) {
@@ -1175,9 +1155,6 @@ fileUpdated(char *fname)
 
   } else if (strcmp(fname, "update.config") == 0) {
     lmgmt->signalFileChange("proxy.config.update.update_configuration");
-
-  } else if (strcmp(fname, "admin_access.config") == 0) {
-    lmgmt->signalFileChange("admin_access.config");
 
   } else if (strcmp(fname, "partition.config") == 0) {
     mgmt_log(stderr, "[fileUpdated] partition.config changed, need restart\n");

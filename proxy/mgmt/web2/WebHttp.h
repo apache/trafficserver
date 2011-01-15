@@ -38,7 +38,6 @@
 #include "P_RecCore.h"
 
 void WebHttpInit();
-void WebHttpHandleConnection(WebHttpConInfo * whci);
 
 void WebHttpSetErrorResponse(WebHttpContext * whc, HttpStatus_t error);
 char *WebHttpAddDocRoot_Xmalloc(WebHttpContext * whc, const char *file);

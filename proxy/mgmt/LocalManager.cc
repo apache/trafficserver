@@ -37,7 +37,6 @@
 #include "Compatability.h"
 #include "LocalManager.h"
 #include "NTDefs.h"
-#include "WebReconfig.h"
 #include "MgmtSocket.h"
 
 #if TS_USE_POSIX_CAP
@@ -1033,11 +1032,6 @@ LocalManager::processEventQueue()
         if (RecReadConfigFile() != REC_ERR_OKAY) {
           mgmt_elog(stderr, "[fileUpdated] Config update failed for records.config\n");
         }
-        handled_by_mgmt = true;
-      }
-      // admin_access.config
-      if (!(strcmp(data_raw, "admin_access.config"))) {
-        markAuthOtherUsersChange();
         handled_by_mgmt = true;
       }
 

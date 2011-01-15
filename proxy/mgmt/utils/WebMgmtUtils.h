@@ -92,6 +92,9 @@ int convertHtmlToUnix(char *buffer);
 int substituteUnsafeChars(char *buffer);
 char *substituteForHTMLChars(const char *buffer);
 
+// These functions are migrated from web2
+int setHostnameVar();
+
 // Produce a hash table based on a HTML form submission
 //
 //  CALLEE deallocates hashtable

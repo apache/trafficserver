@@ -51,20 +51,12 @@ libweb_a_SOURCES = \
   WebHttp.h \
   WebHttpContext.cc \
   WebHttpContext.h \
-  WebHttpLog.cc \
-  WebHttpLog.h \
   WebHttpMessage.cc \
   WebHttpMessage.h \
   WebHttpRender.cc \
   WebHttpRender.h \
-  WebHttpSession.cc \
-  WebHttpSession.h \
-  WebIntrMain.cc \
-  WebIntrMain.h \
   WebOverview.cc \
   WebOverview.h \
-  WebReconfig.cc \
-  WebReconfig.h \
   WebUtils.cc \
   WebUtils.h
 

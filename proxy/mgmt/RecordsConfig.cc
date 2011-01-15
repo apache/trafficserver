@@ -267,8 +267,6 @@ RecordElement RecordsConfig[] = {
   ,
   {RECT_CONFIG, "proxy.config.cluster.log_bogus_mc_msgs", RECD_INT, "1", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.admin.html_doc_root", RECD_STRING, "<html_doc_root>", RECU_NULL, RR_REQUIRED, RECC_NULL, NULL, RECA_NULL}
-  ,
   {RECT_CONFIG, "proxy.config.admin.web_interface_port", RECD_INT, "8081", RECU_RESTART_TM, RR_REQUIRED, RECC_INT, "[0-65535]", RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.admin.autoconf_port", RECD_INT, "8083", RECU_RESTART_TM, RR_REQUIRED, RECC_INT, "[0-65535]", RECA_NULL}
@@ -287,8 +285,6 @@ RecordElement RecordsConfig[] = {
   {RECT_CONFIG, "proxy.config.admin.admin_user", RECD_STRING, "<admin_user_name>", RECU_DYNAMIC, RR_REQUIRED, RECC_STR, ".+", RECA_NO_ACCESS}
   ,
   {RECT_CONFIG, "proxy.config.admin.admin_password", RECD_STRING, "<admin_user_password>", RECU_DYNAMIC, RR_REQUIRED, RECC_STR, ".*", RECA_NO_ACCESS}
-  ,
-  {RECT_CONFIG, "proxy.config.admin.access_control_file", RECD_STRING, "admin_access.config", RECU_RESTART_TM, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.feature_set", RECD_INT, "1", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
