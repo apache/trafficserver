@@ -19,13 +19,4 @@ dist_webui_DATA = \
 	blankIcon.gif \
 	configure_off.gif \
 	dot_clear.gif \
-	menu_begin_off.gif \
-	menu_begin_on.gif \
-	menu_bg_off.gif \
-	menu_bg_on.gif \
-	menu_end_off.gif \
-	menu_end_on.gif \
-	menu_separator_off_off.gif \
-	menu_separator_off_on.gif \
-	menu_separator_on_off.gif \
 	monitor_on.gif

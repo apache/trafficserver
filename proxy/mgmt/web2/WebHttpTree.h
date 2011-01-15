@@ -35,7 +35,6 @@
 #include "WebHttpContext.h"
 
 int WebHttpRenderJsTree(textBuffer * output, char *file_link);
-int WebHttpRenderTabs(textBuffer * output, int active_mode);
 int WebHttpRenderHtmlTabs(textBuffer * output, char *file_link, int active_tab);
 bool WebHttpTreeReturnRefresh(char *file_link);
 char *WebHttpTreeReturnHelpLink(char *file_link);

@@ -786,26 +786,6 @@ handle_summary_object(WebHttpContext * whc, char *tag, char *arg)
 }
 
 //-------------------------------------------------------------------------
-// handle_tab_object
-//-------------------------------------------------------------------------
-
-static int
-handle_tab_object(WebHttpContext * whc, char *tag, char *arg)
-{
-  NOWARN_UNUSED(tag);
-  NOWARN_UNUSED(arg);
-  int err = WEB_HTTP_ERR_OKAY;
-  int active_mode;
-
-  // render main tab object
-  WebHttpGetIntFromQuery(whc, "mode", &active_mode);
-  if ((err = WebHttpRenderTabs(whc->response_bdy, active_mode)) != WEB_HTTP_ERR_OKAY) {
-    mgmt_log(stderr, "[handle_tab_object] failed to render mode tabs");
-  }
-  return err;
-}
-
-//-------------------------------------------------------------------------
 // handle_html_tab_object
 //-------------------------------------------------------------------------
 
@@ -2296,7 +2276,6 @@ WebHttpRenderInit()
   ink_hash_table_insert(g_display_bindings_ht, "record", (void *) handle_record);
   ink_hash_table_insert(g_display_bindings_ht, "record_version", (void *) handle_record_version);
   ink_hash_table_insert(g_display_bindings_ht, "summary_object", (void *) handle_summary_object);
-  ink_hash_table_insert(g_display_bindings_ht, "tab_object", (void *) handle_tab_object);
   ink_hash_table_insert(g_display_bindings_ht, "html_tab_object", (void *) handle_html_tab_object);
   ink_hash_table_insert(g_display_bindings_ht, "vip_object", (void *) handle_vip_object);
   ink_hash_table_insert(g_display_bindings_ht, "checked", (void *) handle_checked);
