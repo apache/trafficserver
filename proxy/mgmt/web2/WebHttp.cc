@@ -109,30 +109,6 @@ InkHashTable *g_display_config_ht = 0;
 
 void spawn_script(WebHttpContext * whc, char *script, char **args);
 
-//-------------------------------------------------------------------------
-// record_version_valid
-//-------------------------------------------------------------------------
-
-static bool
-record_version_valid(char *record_version)
-{
-  int old_version, old_pid, cur_version;
-  // coverity[secure_coding]
-  if (sscanf(record_version, "%d:%d", &old_pid, &old_version) == 2 && old_version >= 0) {
-    cur_version = RecGetRecordUpdateCount(RECT_CONFIG);
-    //fix me --> lmgmt->record_data->pid
-    // TODO: need to check the PID ??
-    //    if (cur_version != old_version || lmgmt->record_data->pid != old_pid) {
-    if (cur_version != old_version) {
-      // we are out of date since the version number has been incremented
-      return false;
-    } else {
-      return true;
-    }
-  }
-  // bad format, return false to be safe
-  return false;
-}
 
 //-------------------------------------------------------------------------
 // set_record_value
