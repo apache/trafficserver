@@ -24,13 +24,13 @@
 #ifndef _WEB_OVERVIEW_H_
 #define _WEB_OVERVIEW_H_
 
+#include "WebUtils.h"
 #include "ink_hash_table.h"
 #include "ink_mutex.h"
 #include "WebGlobals.h"
 #include "TextBuffer.h"
 #include "List.h"
 
-#include "WebHttpMessage.h"
 #include "ExpandingArray.h"
 #include "ClusterCom.h"
 #include "Alarms.h"

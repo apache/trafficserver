@@ -37,7 +37,6 @@
 #include "List.h"
 #include "WebGlobals.h"
 #include "MultiFile.h"
-#include "WebHttpMessage.h"
 
 class Rollback;
 

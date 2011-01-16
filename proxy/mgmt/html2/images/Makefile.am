@@ -16,6 +16,5 @@
 
 webuidir = $(pkgdatadir)/images
 dist_webui_DATA = \
-	blankIcon.gif \
 	configure_off.gif \
 	dot_clear.gif

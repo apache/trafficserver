@@ -38,24 +38,9 @@ libweb_a_SOURCES = \
   MgmtAllow.cc \
   MgmtAllow.h \
   MgmtRaf.h \
-  WebCompatibility.cc \
-  WebCompatibility.h \
-  WebConfig.cc \
-  WebConfig.h \
-  WebConfigRender.cc \
-  WebConfigRender.h \
   WebGlobals.h \
-  WebHttpMessage.cc \
-  WebHttpMessage.h \
-  WebHttpRender.cc \
-  WebHttpRender.h \
   WebOverview.cc \
   WebOverview.h \
   WebUtils.cc \
   WebUtils.h
 
-if BUILD_WEBUI
-libweb_a_SOURCES += \
-  WebHttpTree.cc \
-  WebHttpTree.h
-endif
