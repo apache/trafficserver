@@ -35,8 +35,6 @@
 #include "ink_platform.h"
 #include "MgmtDefs.h"
 
-struct WebContext;
-
 /* Ugly Hack - declare
  *  SSLcon as void* instead of SSL since this prevents  us from
  *  including ssl.h right here which creates a whole bunch of

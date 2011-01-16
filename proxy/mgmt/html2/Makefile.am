@@ -31,7 +31,6 @@ uninstall-hook:
 
 webuidir = $(pkgdatadir)
 dist_webui_DATA = \
-	index.ink \
 	inktomi.css \
 	inktomiLarge.css \
 	navigation_tree.xml \

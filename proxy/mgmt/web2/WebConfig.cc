@@ -35,7 +35,6 @@
 
 #include "WebConfig.h"
 #include "WebGlobals.h"
-#include "WebHttp.h"
 
 #include "CfgContextUtils.h"
 

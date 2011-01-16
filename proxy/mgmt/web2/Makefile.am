@@ -45,12 +45,6 @@ libweb_a_SOURCES = \
   WebConfigRender.cc \
   WebConfigRender.h \
   WebGlobals.h \
-  WebHttpAuth.cc \
-  WebHttpAuth.h \
-  WebHttp.cc \
-  WebHttp.h \
-  WebHttpContext.cc \
-  WebHttpContext.h \
   WebHttpMessage.cc \
   WebHttpMessage.h \
   WebHttpRender.cc \

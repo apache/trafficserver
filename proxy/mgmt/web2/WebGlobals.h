@@ -45,7 +45,6 @@
 
 #include "ink_mutex.h"
 #include "MgmtHashTable.h"
-#include "WebHttpAuth.h"
 
 extern "C"
 {
@@ -92,22 +91,6 @@ struct serviceThr_t
 //  since prior transactions in the system will STILL
 //  BE USING the memory pointed to.
 //
-struct WebContext
-{
-  const char *defaultFile;
-  char *docRoot;
-  int docRootLen;
-  char *pluginDocRoot;
-  int pluginDocRootLen;
-  int adminAuthEnabled;
-  WebHttpAuthUser admin_user;   // admin user (always available)
-  MgmtHashTable *other_users_ht;        // other users (can change dynamically)
-  MgmtHashTable *lang_dict_ht;  // language dictionary (tag to string)
-  int SSLenabled;
-  int AdvUIEnabled;             /* 0=Simple UI, 1=Full UI, 2=RNI UI */
-  int FeatureSet;               /* bit field of features */
-  ssl_ctx_st *SSL_Context;
-};
 
 struct WebInterFaceGlobals
 {
@@ -128,8 +111,6 @@ struct WebInterFaceGlobals
 };
 
 extern WebInterFaceGlobals wGlobals;
-extern WebContext adminContext;
-extern WebContext autoconfContext;
 
 #define MAX_SERVICE_THREADS 100
 #define MAX_VAR_LENGTH      256
@@ -165,11 +146,5 @@ extern WebContext autoconfContext;
 #define WEB_MAX_PAGE_QUERY_LEN             (32+1)
 #define WEB_MAX_EDIT_FILE_SIZE             (32*1024)    // Some browsers limit you to this
 
-struct WebHttpConInfo
-{
-  int fd;
-  WebContext *context;
-  sockaddr_in *clientInfo;
-};
 
 #endif

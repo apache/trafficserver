@@ -32,7 +32,6 @@
 #ifndef _WEB_HTTP_TREE_H_
 #define _WEB_HTTP_TREE_H_
 
-#include "WebHttpContext.h"
 
 int WebHttpRenderJsTree(textBuffer * output, char *file_link);
 int WebHttpRenderHtmlTabs(textBuffer * output, char *file_link, int active_tab);

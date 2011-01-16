@@ -32,7 +32,6 @@
 #define _WEB_HTTP_RENDER_H_
 
 #include "TextBuffer.h"
-#include "WebHttpContext.h"
 
 #include "P_RecCore.h"
 
@@ -427,8 +426,6 @@
 //-------------------------------------------------------------------------
 
 void WebHttpRenderInit();
-int WebHttpRender(WebHttpContext * whc, const char *file);
-int WebHttpRender(WebHttpContext * whc, char *file_buf, int file_size);
 
 //-------------------------------------------------------------------------
 // html rendering
@@ -462,12 +459,10 @@ int HtmlRndrUlClose(textBuffer * html);
 
 int HtmlRndrInput(textBuffer * html, const HtmlCss css, const HtmlType type, const char *name, const char *value, const char *target, const char *onclick);
 
-int HtmlRndrInput(textBuffer * html, MgmtHashTable * dict_ht, HtmlCss css, HtmlType type, char *name, HtmlId value_id);
 int HtmlRndrBr(textBuffer * html);
 int HtmlRndrLi(textBuffer * html);
 
 int HtmlRndrSpace(textBuffer * html, int num_spaces);
-int HtmlRndrText(textBuffer * html, MgmtHashTable * dict_ht, const HtmlId text_id);
 
 int HtmlRndrImg(textBuffer * html, const char *src, const char *border, const char *width, const char *height, const char *hspace);
 int HtmlRndrDotClear(textBuffer * html, int width, int height);

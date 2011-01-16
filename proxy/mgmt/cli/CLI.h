@@ -153,9 +153,4 @@ struct CLI_globals
                              cmdline_states plevel /*   IN: command level */ );
 };
 
-/* CLI.cc */
-void handleCLI(int cliFD,       /* IN: UNIX domain socket descriptor */
-               WebContext * pContext /* IN: */ );
-
-
 #endif /* _CLI_H_ */
