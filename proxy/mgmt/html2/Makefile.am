@@ -14,24 +14,13 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-sysconfdir = $(pkgsysconfdir)
-dist_sysconf_DATA = english.dict
-
-SUBDIRS = charting images monitor mrtg
+SUBDIRS = charting
 
 install-data-local:
 	$(INSTALL) -d -o $(pkgsysuser) -g $(pkgsysgroup) $(DESTDIR)$(pkgdatadir) \
-	$(DESTDIR)$(pkgdatadir)/charting \
-	$(DESTDIR)$(pkgdatadir)/images \
-	$(DESTDIR)$(pkgdatadir)/monitor \
-	$(DESTDIR)$(pkgdatadir)/mrtg
+	$(DESTDIR)$(pkgdatadir)/charting
 
 uninstall-hook:
 	-rm -rf $(DESTDIR)$(pkgdatadir)
 
 webuidir = $(pkgdatadir)
-dist_webui_DATA = \
-	inktomi.css \
-	inktomiLarge.css \
-	navigation_tree.xml \
-	resize.js

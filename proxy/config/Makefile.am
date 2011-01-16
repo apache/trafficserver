@@ -53,6 +53,3 @@ dist_sysconf_DATA =	\
   update.config \
   vaddrs.config
 
-if BUILD_WEBUI
-  dist_sysconf_DATA += $(webui_conf)
-endif
