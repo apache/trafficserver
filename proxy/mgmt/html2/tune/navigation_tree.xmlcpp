@@ -1,0 +1,464 @@
+<!-------------------------------------------------------------------------
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+  ------------------------------------------------------------------------->
+//#include "ts_features.h"
+
+--- Note ---
+------------
+
+This template file is processed by CPP at buildtime to create a
+single 'navigation_tree.xml' file which is tuned for the particular
+build.  The file 'traffic/common/include/ts_features.h' is included
+and it translates common compile-time defines (i.e., 'oem' or 'Linux')
+into a desired feature set. It is hoped that this file, and the
+controlling header file will be relatively straightforward to read and
+adjust.  Further, the header file may be included elsewhere to
+syncronize behaviour across the system.
+
+Note that in order to not change the existing convenience, there is
+still a .../http/navigation_tree.xml file, but it is unused in any
+of the packaged products.  For 'gmake install' installations, the user
+may copy or from the tuned version in the build tree if it is
+desirable for the task at hand. (Rem: {inst}/bin/ui/ is linked to a
+common area.)
+
+This text will be stripped from the build 'navigation_tree.xml'.
+
+-------------
+
+<!-- LEAVE_ME -->
+<!-- AND_ME_TOO -->
+<?xml version="1.0"?>
+
+<!DOCTYPE MENU_TREE
+  [
+  <!ELEMENT MENU_TREE (MODE+)>
+  <!ELEMENT MODE (MENU+)>
+    <!ATTLIST MODE
+        name            CDATA #REQUIRED
+        enable_record   CDATA #IMPLIED>
+
+    <!ELEMENT MENU (ITEM*)>
+      <!ATTLIST MENU
+        name            CDATA #REQUIRED
+        enable_record   CDATA #IMPLIED
+        top_level_item  (true|false) "false">
+
+    <!ELEMENT ITEM (LINK*)>
+      <!ATTLIST ITEM
+        name            CDATA #REQUIRED
+        enable_record   CDATA #IMPLIED>
+
+    <!ELEMENT LINK (FILE_LINK, HELP_LINK)>
+      <!ATTLIST LINK
+        name            CDATA #IMPLIED
+        enable_record   CDATA #IMPLIED
+        refresh         (true|false) #REQUIRED
+        query           CDATA #IMPLIED
+        file_link       CDATA #REQUIRED
+        help_link       CDATA #IMPLIED> <!-- help_link maps to /help/ts.ink internally by default -->
+  ]
+>
+
+<MENU_TREE>
+  <MODE name="Monitor">
+
+    <MENU name="My Proxy">
+      <ITEM name="Summary">
+        <LINK refresh="true"
+              file_link="/monitor/m_overview.ink"
+              help_link="/help/ts.ink?help=s_sum.htm"/>
+      </ITEM>
+      <ITEM name="Node">
+        <LINK refresh="true" 
+              file_link="/monitor/m_node.ink"
+	      help_link="/help/ts.ink?help=s_node.htm"/>
+      </ITEM>
+      <ITEM name="Graphs">
+        <LINK refresh="false"
+              file_link="/monitor/m_graphs.ink"
+              help_link="/help/ts.ink?help=s_graph.htm"/>
+      </ITEM>
+      <ITEM name="Alarms">
+        <LINK refresh="false"
+              file_link="/monitor/m_alarm.ink"
+              help_link="/help/ts.ink?help=s_alarm.htm"/>
+      </ITEM>
+    </MENU>
+
+    <MENU name="Protocols">
+      <ITEM name="HTTP">
+        <LINK name="General" refresh="true"
+              file_link="/monitor/m_http.ink"
+              help_link="/help/ts.ink?help=s_http.htm"/>
+        <LINK name="Transaction" refresh="true"
+              file_link="/monitor/m_http_trans.ink"
+              help_link="/help/ts.ink?help=s_http.htm"/>
+      </ITEM>
+    </MENU>
+
+    <MENU name="Content Routing">
+      <ITEM name="ICP Peering">
+        <LINK name="ICP Peering" refresh="true"
+              file_link="/monitor/m_icp.ink"
+              help_link="/help/ts.ink?help=s_rout.htm"/>
+      </ITEM>
+    </MENU>
+
+    <MENU name="Subsystems">
+      <ITEM name="Cache">
+        <LINK refresh="true"
+              file_link="/monitor/m_cache.ink"
+              help_link="/help/ts.ink?help=s_cache.htm"/>
+      </ITEM>
+      <ITEM name="Clustering">
+        <LINK refresh="true"
+              file_link="/monitor/m_cluster.ink"
+              help_link="/help/ts.ink?help=s_clustr.htm"/>
+      </ITEM>
+      <ITEM name="Logging">
+        <LINK refresh="true"
+              file_link="/monitor/m_logging.ink"
+              help_link="/help/ts.ink?help=s_log.htm"/>
+      </ITEM>
+    </MENU>
+
+    <MENU name="Networking">
+#if (HOST_OS == linux) || (HOST_OS == solaris)
+      <ITEM name="System">
+        <LINK refresh="true"
+              file_link="/monitor/m_net.ink"
+              help_link="/help/ts.ink?help=s_system.htm"/>
+      </ITEM>
+#endif
+      <ITEM name="DNS Resolver">
+        <LINK refresh="true"
+              file_link="/monitor/m_dns.ink"
+              help_link="/help/ts.ink?help=s_dnsr.htm"/>
+      </ITEM>
+      <ITEM name="Virtual IP" enable_record="proxy.config.vmap.enabled">
+        <LINK name="General" refresh="true"
+              file_link="/monitor/m_virtual_ip.ink"
+              help_link="/help/ts.ink?help=s_vip.htm"/>
+      </ITEM>
+    </MENU>
+
+    <MENU name="MRTG">
+      <ITEM name="Overview">
+        <LINK refresh="true"
+              file_link="/mrtg/overview.ink"
+              help_link="/help/ts.ink?help=s_mrtg.htm"/>
+      </ITEM>
+      <ITEM name="Daily">
+        <LINK refresh="true" query="&amp;mrtg=day"
+              file_link="/mrtg/detailed.ink"
+              help_link="/help/ts.ink?help=s_mrtg.htm"/>
+      </ITEM>
+      <ITEM name="Weekly">
+        <LINK refresh="true" query="&amp;mrtg=week"
+              file_link="/mrtg/detailed.ink"
+              help_link="/help/ts.ink?help=s_mrtg.htm"/>
+      </ITEM>
+      <ITEM name="Monthly">
+        <LINK refresh="true" query="&amp;mrtg=month"
+              file_link="/mrtg/detailed.ink"
+              help_link="/help/ts.ink?help=s_mrtg.htm"/>
+      </ITEM>
+      <ITEM name="Yearly">
+        <LINK refresh="true" query="&amp;mrtg=year"
+              file_link="/mrtg/detailed.ink"
+              help_link="/help/ts.ink?help=s_mrtg.htm"/>
+      </ITEM>
+    </MENU>
+
+  </MODE>
+
+  <MODE name="Configure">
+
+    <MENU name="My Proxy">
+      <ITEM name="Basic">
+        <LINK name="General" refresh="false"
+              file_link="/configure/c_basic.ink"
+              help_link="/help/ts.ink?help=c_basic.htm"/>
+        <LINK name="Clustering" refresh="false"
+              file_link="/configure/c_clustering.ink"
+              help_link="/help/ts.ink?help=c_basic.htm"/>
+      </ITEM>
+      <ITEM name="UI Setup">
+        <LINK name="General" refresh="false"
+              file_link="/configure/c_mgmt_general.ink"
+              help_link="/help/ts.ink?help=c_uisetp.htm"/>
+        <LINK name="Login" refresh="false"
+              file_link="/configure/c_mgmt_login.ink"
+              help_link="/help/ts.ink?help=c_uisetp.htm"/>
+        <LINK name="Access" refresh="false"
+              file_link="/configure/c_mgmt_access.ink"
+              help_link="/help/ts.ink?help=c_uisetp.htm"/>
+#ifdef FTR_SES_CTRL
+        <LINK name="Session Control" refresh="false"
+              file_link="/configure/c_session.ink"
+              help_link="/help/ts.ink?help=c_uisetp.htm"/>
+#endif
+      </ITEM>
+      <ITEM name="Snapshots">
+        <LINK name="File System" refresh="false"
+              file_link="/configure/c_snapshot_filesystem.ink"
+              help_link="/help/ts.ink?help=c_snap.htm"/>
+#ifdef FTR_SNAP_FTP
+        <LINK name="FTP Server" refresh="false"
+              file_link="/configure/c_snapshot_ftpsystem.ink"
+              help_link="/help/ts.ink?help=c_snap.htm"/>
+#endif
+      </ITEM>
+      <ITEM name="Logs">
+        <LINK name="System" refresh="true"
+              file_link="/configure/c_view_system_logs.ink"
+              help_link="/help/ts.ink?help=c_vlog.htm"/>
+        <LINK name="Access" refresh="true"
+              file_link="/configure/c_view_access_logs.ink"
+              help_link="/help/ts.ink?help=c_vlog.htm"/>
+      </ITEM>
+#ifdef FTR_DATE_TIME
+      <ITEM name="Date/Time">
+        <LINK name="Date/Time" refresh="true"
+              file_link="/configure/c_time.ink"      
+              help_link="/help/ts.ink?help=c_vlog.htm"/>
+        <LINK name="NTP" refresh="false"
+              file_link="/configure/c_ntp.ink"
+              help_link="/help/ts.ink?help=c_vlog.htm"/>
+      </ITEM>
+#endif
+#ifdef FTR_BOX_CTRL
+      <ITEM name="Control">
+        <LINK name="General" refresh="false"
+             file_link="/configure/c_box_control.ink"
+             help_link="/help/ts.ink?help=c_vlog.htm"/>	
+      </ITEM>
+#endif
+    </MENU>
+
+    <MENU name="Protocols">
+      <ITEM name="HTTP">
+        <LINK name="General" refresh="false"
+              file_link="/configure/c_http_general.ink"
+              help_link="/help/ts.ink?help=c_http.htm"/>
+        <LINK name="Cacheability" refresh="false"
+              file_link="/configure/c_http_cachability.ink"
+              help_link="/help/ts.ink?help=c_http.htm"/>
+        <LINK name="Privacy" refresh="false"
+              file_link="/configure/c_http_privacy.ink"
+              help_link="/help/ts.ink?help=c_http.htm"/>
+        <LINK name="Timeouts" refresh="false"
+              file_link="/configure/c_http_timeout.ink"
+              help_link="/help/ts.ink?help=c_http.htm"/>
+      </ITEM> 
+
+<!--
+      <ITEM name="Cache Inspector">
+        <LINK name="Cache Inspector" refresh="false"
+              file_link="/configure/c_inspector.ink"/>
+      </ITEM>
+-->
+
+      <ITEM name="HTTP Responses">
+        <LINK name="General" refresh="false"
+              file_link="/configure/c_http_response_general.ink"
+              help_link="/help/ts.ink?help=c_httprp.htm"/>
+        <LINK name="Custom" refresh="false"
+              file_link="/configure/c_http_response_custom.ink"
+              help_link="/help/ts.ink?help=c_httprp.htm"/>
+      </ITEM>
+      <ITEM name="HTTP Scheduled Update">
+        <LINK name="General" refresh="false"
+              file_link="/configure/c_http_update_general.ink"
+              help_link="/help/ts.ink?help=c_httpsc.htm"/>
+        <LINK name="Update URLs" refresh="false"
+              file_link="/configure/c_http_update_urls.ink"
+              help_link="/help/ts.ink?help=c_httpsc.htm"/>
+      </ITEM>
+    </MENU>
+    <MENU name="Content Routing">
+      <ITEM name="Hierarchies">
+	<LINK name="Parenting" refresh="false"
+              file_link="/configure/c_http_parent_proxy.ink"
+              help_link="/help/ts.ink?help=c_hier.htm"/>
+	<LINK name="ICP Peering" refresh="false"
+              file_link="/configure/c_icp.ink"
+              help_link="/help/ts.ink?help=c_hier.htm"/>
+      </ITEM>
+      <ITEM name="Reverse Proxy">
+        <LINK name="General" refresh="false"
+              file_link="/configure/c_reverse_proxy.ink"
+              help_link="/help/ts.ink?help=c_revp.htm"/>
+      </ITEM> 
+      <ITEM name="Mapping and Redirection">
+        <LINK name="General" refresh="false"
+              file_link="/configure/c_mapping.ink"
+              help_link="/help/ts.ink?help=c_map.htm"/>
+      </ITEM>
+      <ITEM name="Browser Auto-Config">
+        <LINK name="PAC" refresh="false"
+              file_link="/configure/c_autoconf_pac.ink"
+              help_link="/help/ts.ink?help=c_brws.htm"/>
+        <LINK name="WPAD" refresh="false"
+              file_link="/configure/c_autoconf_wpad.ink"
+              help_link="/help/ts.ink?help=c_brws.htm"/>
+      </ITEM>
+    </MENU>
+
+    <MENU name="Security">
+      <ITEM name="Connection Control">
+        <LINK name="Proxy Access" refresh="false"
+              file_link="/configure/c_proxy_access.ink"
+              help_link="/help/ts.ink?help=c_cnct.htm"/>
+      </ITEM>
+      <ITEM name="SSL Termination" enable_record="proxy.config.ssl.enabled">
+        <LINK name="General" refresh="false"
+              file_link="/configure/c_ssl_general.ink"
+              help_link="/help/ts.ink?help=c_sslopt.htm"/>
+        <LINK name="Accelerator" refresh="false"
+              file_link="/configure/c_ssl_accelerator.ink"
+              help_link="/help/ts.ink?help=c_sslopt.htm"/>
+        <LINK name="Client Proxy" refresh="false"
+              file_link="/configure/c_ssl_client_proxy.ink"
+              help_link="/help/ts.ink?help=c_sslopt.htm"/>
+        <LINK name="Proxy Server" refresh="false"
+              file_link="/configure/c_ssl_proxy_server.ink"
+              help_link="/help/ts.ink?help=c_sslopt.htm"/>
+      </ITEM>
+      <ITEM name="SOCKS" enable_record="proxy.config.socks.socks_needed">
+        <LINK name="General" refresh="false"
+              file_link="/configure/c_socks_general.ink"
+              help_link="/help/ts.ink?help=c_soks.htm"/>
+        <LINK name="Proxy" refresh="false"
+              file_link="/configure/c_socks_proxy.ink"
+              help_link="/help/ts.ink?help=c_soks.htm"/>
+	<LINK name="Server" refresh="false"
+              file_link="/configure/c_socks_server.ink"
+              help_link="/help/ts.ink?help=c_soks.htm"/>
+      </ITEM>
+    </MENU>
+
+    <MENU name="Subsystems">
+      <ITEM name="Cache">
+        <LINK name="General" refresh="false"
+              file_link="/configure/c_cache_general.ink"
+              help_link="/help/ts.ink?help=c_cache.htm"/>
+        <LINK name="Partition" refresh="false"
+              file_link="/configure/c_cache_partition.ink"
+              help_link="/help/ts.ink?help=c_cache.htm"/>
+        <LINK name="Hosting" refresh="false"
+              file_link="/configure/c_cache_hosting.ink"
+              help_link="/help/ts.ink?help=c_cache.htm"/>
+      </ITEM>
+      <ITEM name="Logging">
+        <LINK name="General" refresh="false"
+              file_link="/configure/c_logging_general.ink"
+              help_link="/help/ts.ink?help=c_log.htm"/>
+        <LINK name="Formats" refresh="false"
+              file_link="/configure/c_logging_format.ink"
+              help_link="/help/ts.ink?help=c_log.htm"/>
+        <LINK name="Splitting" refresh="false"
+              file_link="/configure/c_logging_splitting.ink"
+              help_link="/help/ts.ink?help=c_log.htm"/>
+        <LINK name="Collation" refresh="false"
+              file_link="/configure/c_logging_collation.ink"
+              help_link="/help/ts.ink?help=c_log.htm"/>
+        <LINK name="Custom" refresh="false"
+              file_link="/configure/c_logging_custom.ink"
+              help_link="/help/ts.ink?help=c_log.htm"/>
+      </ITEM>
+    </MENU>
+
+    <MENU name="Networking">
+#if (HOST_OS == linux) || (HOST_OS == solaris)
+      <ITEM name="System">
+        <LINK name="General"
+              file_link="/configure/c_net_config.ink"
+              help_link="/help/ts.ink?help=c_systm.htm"/>
+        <LINK name="NIC"
+              file_link="/configure/c_net_nic.ink"
+              help_link="/help/ts.ink?help=c_systm.htm"/>
+      </ITEM>
+#endif
+      <ITEM name="Connection Management">
+        <LINK name="Throttling" refresh="false"
+              file_link="/configure/c_throttling.ink"
+              help_link="/help/ts.ink?help=c_cmng.htm"/>
+        <LINK name="Congestion Control" refresh="false"
+              file_link="/configure/c_congestion.ink"
+              help_link="/help/ts.ink?help=c_cmng.htm"/>
+      </ITEM>
+      <ITEM name="DNS Resolver">
+        <LINK name="Resolver" refresh="false"
+              file_link="/configure/c_dns_resolver.ink"
+              help_link="/help/ts.ink?help=c_dnsr.htm"/>
+        <LINK name="Host Database" refresh="false"
+              file_link="/configure/c_dns_host_database.ink"
+              help_link="/help/ts.ink?help=c_dnsr.htm"/>
+        <LINK name="Split DNS" refresh="false"
+              file_link="/configure/c_dns_split.ink"
+              help_link="/help/ts.ink?help=c_dnsr.htm"/>
+      </ITEM>
+      <ITEM name="Virtual IP" enable_record="proxy.config.vmap.enabled">
+        <LINK name="General" refresh="false"
+              file_link="/configure/c_virtual_ip.ink"
+              help_link="/help/ts.ink?help=c_vipo.htm"/>
+      </ITEM>
+    </MENU>
+
+    <MENU name="Plugins" top_level_item="true">
+      <ITEM name="Plugins">
+#ifdef FTR_PLG_INK
+        <LINK name="Plugin" refresh="false"
+              file_link="/plugin.ink"
+#endif
+#ifdef FTR_PLG_WEBSENSE
+        <LINK name="WebSense" refresh="false"
+              file_link="/configure/c_plugin_websense.ink"
+#endif
+              help_link="/help/ts.ink?help=c_plugins.htm"/>
+#ifdef FTR_PLG_VIRUS_SCAN
+        <LINK name="Virus Scan" refresh="false"
+              file_link="/configure/c_plugin_vscan.ink"
+              help_link="/help/ts.ink?help=c_plugins.htm"/>
+#endif
+      </ITEM>
+    </MENU>
+
+  </MODE>
+
+#ifdef FTR_OTW_UP
+  <MODE name="Upgrade">
+     <MENU name="Upgrade" top_level_item="true">
+       <ITEM name="Upgrade">
+         <LINK name="General" refresh="false"
+               file_link="/configure/c_otw_upgrade.ink"
+               help_link="/help/ts.ink?help=UI.htm"/>
+         <LINK name="General" refresh="false"
+               file_link="/configure/c_otw_package.ink"
+               help_link="/help/ts.ink?help=UI.htm"/>
+         <LINK name="General" refresh="false"
+               file_link="/configure/c_otw_confirm.ink"
+               help_link="/help/ts.ink?help=UI.htm"/>
+      </ITEM>
+    </MENU>
+
+  </MODE>
+#endif
+
+</MENU_TREE>

@@ -102,6 +102,29 @@ private:
 
 };
 
+/* admin_access.config    ****************************************/
+class AdminAccessObj:public CfgEleObj
+{
+public:
+  AdminAccessObj(INKAdminAccessEle * ele);
+  AdminAccessObj(TokenList * tokens);   //creates the ele
+  ~AdminAccessObj();
+
+  virtual char *formatEleToRule();
+  virtual bool isValid();
+  virtual INKCfgEle *getCfgEleCopy();
+  virtual INKCfgEle *getCfgEle()
+  {
+    return (INKCfgEle *) m_ele;
+  }
+  virtual INKRuleTypeT getRuleType()
+  {
+    return m_ele->cfg_ele.type;
+  }
+
+private:
+  INKAdminAccessEle * m_ele;
+};
 
 /* cache.config ***************************************************/
 class CacheObj:public CfgEleObj

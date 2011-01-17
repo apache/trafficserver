@@ -71,6 +71,160 @@ CommentObj::getCfgEleCopy()
   return (INKCfgEle *) copy_comment_ele(m_ele);
 }
 
+//--------------------------------------------------------------------------
+// AdminAccessObj
+//--------------------------------------------------------------------------
+AdminAccessObj::AdminAccessObj(INKAdminAccessEle * ele)
+{
+  m_ele = ele;
+  m_valid = true;
+  m_valid = isValid();
+}
+
+AdminAccessObj::AdminAccessObj(TokenList * tokens)
+{
+  Token *tok;
+  int accessType;
+
+  m_ele = INKAdminAccessEleCreate();
+  m_ele->cfg_ele.error = INK_ERR_OKAY;
+  m_valid = true;
+
+  if (!tokens || tokens->length < 3) {
+    goto FORMAT_ERR;
+  }
+
+  m_ele->cfg_ele.type = get_rule_type(tokens, INK_FNAME_ADMIN_ACCESS);
+  if (m_ele->cfg_ele.type == INK_TYPE_UNDEFINED) {
+    goto FORMAT_ERR;
+  }
+  // The first token
+  tok = tokens->first();
+#ifdef TIGHT_RULE_CHECK
+  if (tok->value)
+    goto FORMAT_ERR;
+#endif
+  m_ele->user = xstrdup(tok->name);
+
+  // The second token
+  tok = tokens->next(tok);
+#ifdef TIGHT_RULE_CHECK
+  if (tok->value)
+    goto FORMAT_ERR;
+#endif
+  m_ele->password = xstrdup(tok->name);
+
+  // The third (last) token
+  tok = tokens->next(tok);
+#ifdef TIGHT_RULE_CHECK
+  if (tok->value)
+    goto FORMAT_ERR;
+#endif
+  accessType = ink_atoi(tok->name);
+  switch (accessType) {
+  case 0:
+    m_ele->access = INK_ACCESS_NONE;
+    break;
+  case 1:
+    m_ele->access = INK_ACCESS_MONITOR;
+    break;
+  case 2:
+    m_ele->access = INK_ACCESS_MONITOR_VIEW;
+    break;
+  case 3:
+    m_ele->access = INK_ACCESS_MONITOR_CHANGE;
+    break;
+  default:
+    m_ele->access = INK_ACCESS_UNDEFINED;
+    goto FORMAT_ERR;
+  }
+  m_ele->cfg_ele.error = INK_ERR_OKAY;
+  return;
+
+FORMAT_ERR:
+  m_ele->cfg_ele.error = INK_ERR_INVALID_CONFIG_RULE;
+  m_valid = false;
+}
+
+AdminAccessObj::~AdminAccessObj()
+{
+  INKAdminAccessEleDestroy(m_ele);
+}
+
+char *
+AdminAccessObj::formatEleToRule()
+{
+  if (!isValid()) {
+    m_ele->cfg_ele.error = INK_ERR_INVALID_CONFIG_RULE;
+    return NULL;
+  }
+
+  short accessType;
+
+  char buf[MAX_RULE_SIZE];
+  memset(buf, 0, MAX_RULE_SIZE);
+
+  switch (m_ele->access) {
+  case INK_ACCESS_NONE:
+    accessType = 0;
+    break;
+  case INK_ACCESS_MONITOR:
+    accessType = 1;
+    break;
+  case INK_ACCESS_MONITOR_VIEW:
+    accessType = 2;
+    break;
+  case INK_ACCESS_MONITOR_CHANGE:
+    accessType = 3;
+    break;
+  default:
+    accessType = 0;             // lv: just zero it
+    // Handled here:
+    // INK_ACCESS_UNDEFINED
+    break;
+  }
+
+  snprintf(buf, sizeof(buf), "%s:%s:%d:", m_ele->user, m_ele->password, accessType);
+
+  return xstrdup(buf);
+}
+
+bool AdminAccessObj::isValid()
+{
+  if (m_ele->cfg_ele.error != INK_ERR_OKAY) {
+    m_valid = false;
+  }
+  // Must have a user
+  if (!m_ele->user) {
+    m_valid = false;
+  }
+  // Must have a password
+  if (!m_ele->password) {
+    m_valid = false;
+  }
+  // validate access type
+  switch (m_ele->access) {
+  case INK_ACCESS_NONE:
+  case INK_ACCESS_MONITOR:
+  case INK_ACCESS_MONITOR_VIEW:
+  case INK_ACCESS_MONITOR_CHANGE:
+    break;
+  default:
+    m_valid = false;
+  }
+
+  if (!m_valid) {
+    m_ele->cfg_ele.error = INK_ERR_INVALID_CONFIG_RULE;
+  }
+
+  return m_valid;
+}
+
+INKCfgEle *
+AdminAccessObj::getCfgEleCopy()
+{
+  return (INKCfgEle *) copy_admin_access_ele(m_ele);
+}
 
 //--------------------------------------------------------------------------
 // CacheObj

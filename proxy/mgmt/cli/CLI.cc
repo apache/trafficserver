@@ -527,6 +527,586 @@ CLI_globals::QueryDeadhosts(char *largs,        /*     IN: arguments */
 
 const int MaxNumTransitions = 367;      // Maximum number of transitions in table
 
+//
+// handle cli connections
+// NOTE: May need to change this when handling say a connect through
+//       a telnet session to a port on the manager.
+//
+void
+handleCLI(int cliFD,            /* IN: UNIX domain socket descriptor */
+          WebContext * pContext /* IN: */ )
+{
+  char inputBuf[1025];
+  int readResult;
+  textBuffer input(1024);
+  textBuffer output(1024);
+  Tokenizer cmdTok(" ");
+  CLI_DATA cli_data = { NULL, NULL, NULL, NULL, NULL, CL_EV_HELP, 0, 0 };
+  cmdline_events event = CL_EV_ERROR;
+
+  // An instance of a command line events handler
+  CmdLine_EventHandler evHandler(MaxNumTransitions);
+
+  // Create an instance of a FSM for command line event handler
+  FSM cliFSM(&evHandler, MaxNumTransitions, CL_BASE);
+
+  // Define the FSM's transitions
+  // Note all events have to be handled at each level since
+  // users can input them anywhere by mistake. This makes
+  // for a *huge* transition table but since we use a FSM there is
+  // no easy way around this for now.
+
+
+  // base level
+  //                      source,  dest,   event,  index
+  cliFSM.defineTransition(CL_BASE, CL_BASE, INTERNAL_ERROR, Ind_InternalError);
+  cliFSM.defineTransition(CL_BASE, CL_BASE, CL_EV_ERROR, Ind_BaseLevel);
+  cliFSM.defineTransition(CL_BASE, CL_BASE, CL_EV_HELP, Ind_BaseLevel);
+  cliFSM.defineTransition(CL_BASE, CL_BASE, CL_EV_EXIT, Ind_BaseLevel);
+  cliFSM.defineTransition(CL_BASE, CL_BASE, CL_EV_PREV, Ind_BaseLevel);
+  cliFSM.defineTransition(CL_BASE, CL_BASE, CL_EV_GET, Ind_BaseLevel);
+  cliFSM.defineTransition(CL_BASE, CL_BASE, CL_EV_SET, Ind_BaseLevel);
+  cliFSM.defineTransition(CL_BASE, CL_BASE, CL_EV_DISPLAY, Ind_BaseLevel);
+  cliFSM.defineTransition(CL_BASE, CL_BASE, CL_EV_CHANGE, Ind_BaseLevel);
+  cliFSM.defineTransition(CL_BASE, CL_BASE, CL_EV_ADD_ALARM, Ind_BaseLevel);    // OEM_ALARM
+  cliFSM.defineTransition(CL_BASE, CL_BASE, CL_EV_QUERY_DEADHOSTS, Ind_BaseLevel);
+  // events tied to number selection - 11
+  cliFSM.defineTransition(CL_BASE, CL_MONITOR, CL_EV_ONE, Ind_BaseLevel);
+  cliFSM.defineTransition(CL_BASE, CL_CONFIGURE, CL_EV_TWO, Ind_BaseLevel);
+  cliFSM.defineTransition(CL_BASE, CL_BASE, CL_EV_THREE, Ind_BaseLevel);
+  cliFSM.defineTransition(CL_BASE, CL_BASE, CL_EV_FOUR, Ind_BaseLevel);
+  cliFSM.defineTransition(CL_BASE, CL_BASE, CL_EV_FIVE, Ind_BaseLevel);
+  cliFSM.defineTransition(CL_BASE, CL_BASE, CL_EV_SIX, Ind_BaseLevel);
+  cliFSM.defineTransition(CL_BASE, CL_BASE, CL_EV_SEVEN, Ind_BaseLevel);
+  cliFSM.defineTransition(CL_BASE, CL_BASE, CL_EV_EIGHT, Ind_BaseLevel);
+  cliFSM.defineTransition(CL_BASE, CL_BASE, CL_EV_NINE, Ind_BaseLevel);
+  cliFSM.defineTransition(CL_BASE, CL_BASE, CL_EV_TEN, Ind_BaseLevel);
+  cliFSM.defineTransition(CL_BASE, CL_BASE, CL_EV_ELEVEN, Ind_BaseLevel);
+
+  // Monitor Level
+  //                      source,  dest,   event,  index
+  cliFSM.defineTransition(CL_MONITOR, CL_BASE, INTERNAL_ERROR, Ind_InternalError);
+  cliFSM.defineTransition(CL_MONITOR, CL_MONITOR, CL_EV_ERROR, Ind_MonitorLevel);
+  cliFSM.defineTransition(CL_MONITOR, CL_MONITOR, CL_EV_HELP, Ind_MonitorLevel);
+  cliFSM.defineTransition(CL_MONITOR, CL_MONITOR, CL_EV_EXIT, Ind_MonitorLevel);
+  cliFSM.defineTransition(CL_MONITOR, CL_BASE, CL_EV_PREV, Ind_MonitorLevel);
+  cliFSM.defineTransition(CL_MONITOR, CL_MONITOR, CL_EV_GET, Ind_MonitorLevel);
+  cliFSM.defineTransition(CL_MONITOR, CL_MONITOR, CL_EV_SET, Ind_MonitorLevel);
+  cliFSM.defineTransition(CL_MONITOR, CL_MONITOR, CL_EV_DISPLAY, Ind_MonitorLevel);
+  cliFSM.defineTransition(CL_MONITOR, CL_MONITOR, CL_EV_CHANGE, Ind_MonitorLevel);
+  cliFSM.defineTransition(CL_MONITOR, CL_MONITOR, CL_EV_ADD_ALARM, Ind_MonitorLevel);   // OEM_ALARM
+  // events tied to number selection
+  cliFSM.defineTransition(CL_MONITOR, CL_MON_DASHBOARD, CL_EV_ONE, Ind_MonitorLevel);
+  cliFSM.defineTransition(CL_MONITOR, CL_MON_NODE, CL_EV_TWO, Ind_MonitorLevel);
+  cliFSM.defineTransition(CL_MONITOR, CL_MON_PROTOCOLS, CL_EV_THREE, Ind_MonitorLevel);
+  cliFSM.defineTransition(CL_MONITOR, CL_MON_CACHE, CL_EV_FOUR, Ind_MonitorLevel);
+  cliFSM.defineTransition(CL_MONITOR, CL_MON_OTHER, CL_EV_FIVE, Ind_MonitorLevel);
+  cliFSM.defineTransition(CL_MONITOR, CL_MONITOR, CL_EV_SIX, Ind_MonitorLevel);
+  cliFSM.defineTransition(CL_MONITOR, CL_MONITOR, CL_EV_SEVEN, Ind_MonitorLevel);
+  cliFSM.defineTransition(CL_MONITOR, CL_MONITOR, CL_EV_EIGHT, Ind_MonitorLevel);
+  cliFSM.defineTransition(CL_MONITOR, CL_MONITOR, CL_EV_NINE, Ind_MonitorLevel);
+  cliFSM.defineTransition(CL_MONITOR, CL_MONITOR, CL_EV_TEN, Ind_MonitorLevel);
+  cliFSM.defineTransition(CL_MONITOR, CL_MONITOR, CL_EV_ELEVEN, Ind_MonitorLevel);
+
+  // Monitor->Dashboard Level
+  //                      source,  dest,   event,  index
+  cliFSM.defineTransition(CL_MON_DASHBOARD, CL_BASE, INTERNAL_ERROR, Ind_InternalError);
+  cliFSM.defineTransition(CL_MON_DASHBOARD, CL_MON_DASHBOARD, CL_EV_ERROR, Ind_MonitorDashboardLevel);
+  cliFSM.defineTransition(CL_MON_DASHBOARD, CL_MON_DASHBOARD, CL_EV_HELP, Ind_MonitorDashboardLevel);
+  cliFSM.defineTransition(CL_MON_DASHBOARD, CL_MON_DASHBOARD, CL_EV_EXIT, Ind_MonitorDashboardLevel);
+  cliFSM.defineTransition(CL_MON_DASHBOARD, CL_MONITOR, CL_EV_PREV, Ind_MonitorDashboardLevel);
+  cliFSM.defineTransition(CL_MON_DASHBOARD, CL_MON_DASHBOARD, CL_EV_GET, Ind_MonitorDashboardLevel);
+  cliFSM.defineTransition(CL_MON_DASHBOARD, CL_MON_DASHBOARD, CL_EV_SET, Ind_MonitorDashboardLevel);
+  cliFSM.defineTransition(CL_MON_DASHBOARD, CL_MON_DASHBOARD, CL_EV_DISPLAY, Ind_MonitorDashboardLevel);
+  cliFSM.defineTransition(CL_MON_DASHBOARD, CL_MON_DASHBOARD, CL_EV_CHANGE, Ind_MonitorDashboardLevel);
+  cliFSM.defineTransition(CL_MON_DASHBOARD, CL_MON_DASHBOARD, CL_EV_ADD_ALARM, Ind_MonitorDashboardLevel);      //OEM_ALARM
+  // events tied to number selection
+  cliFSM.defineTransition(CL_MON_DASHBOARD, CL_MON_DASHBOARD, CL_EV_ONE, Ind_MonitorDashboardLevel);
+  cliFSM.defineTransition(CL_MON_DASHBOARD, CL_MON_DASHBOARD, CL_EV_TWO, Ind_MonitorDashboardLevel);
+  cliFSM.defineTransition(CL_MON_DASHBOARD, CL_MON_DASHBOARD, CL_EV_THREE, Ind_MonitorDashboardLevel);
+  cliFSM.defineTransition(CL_MON_DASHBOARD, CL_MON_DASHBOARD, CL_EV_FOUR, Ind_MonitorDashboardLevel);
+  cliFSM.defineTransition(CL_MON_DASHBOARD, CL_MON_DASHBOARD, CL_EV_FIVE, Ind_MonitorDashboardLevel);
+  cliFSM.defineTransition(CL_MON_DASHBOARD, CL_MON_DASHBOARD, CL_EV_SIX, Ind_MonitorDashboardLevel);
+  cliFSM.defineTransition(CL_MON_DASHBOARD, CL_MON_DASHBOARD, CL_EV_SEVEN, Ind_MonitorDashboardLevel);
+  cliFSM.defineTransition(CL_MON_DASHBOARD, CL_MON_DASHBOARD, CL_EV_EIGHT, Ind_MonitorDashboardLevel);
+  cliFSM.defineTransition(CL_MON_DASHBOARD, CL_MON_DASHBOARD, CL_EV_NINE, Ind_MonitorDashboardLevel);
+  cliFSM.defineTransition(CL_MON_DASHBOARD, CL_MON_DASHBOARD, CL_EV_TEN, Ind_MonitorDashboardLevel);
+  cliFSM.defineTransition(CL_MON_DASHBOARD, CL_MON_DASHBOARD, CL_EV_ELEVEN, Ind_MonitorDashboardLevel);
+
+  // Monitor->Node Level
+  //                      source,  dest,   event,  index
+  cliFSM.defineTransition(CL_MON_NODE, CL_BASE, INTERNAL_ERROR, Ind_InternalError);
+  cliFSM.defineTransition(CL_MON_NODE, CL_MON_NODE, CL_EV_ERROR, Ind_MonitorNodeLevel);
+  cliFSM.defineTransition(CL_MON_NODE, CL_MON_NODE, CL_EV_HELP, Ind_MonitorNodeLevel);
+  cliFSM.defineTransition(CL_MON_NODE, CL_MON_NODE, CL_EV_EXIT, Ind_MonitorNodeLevel);
+  cliFSM.defineTransition(CL_MON_NODE, CL_MONITOR, CL_EV_PREV, Ind_MonitorNodeLevel);
+  cliFSM.defineTransition(CL_MON_NODE, CL_MON_NODE, CL_EV_GET, Ind_MonitorNodeLevel);
+  cliFSM.defineTransition(CL_MON_NODE, CL_MON_NODE, CL_EV_SET, Ind_MonitorNodeLevel);
+  cliFSM.defineTransition(CL_MON_NODE, CL_MON_NODE, CL_EV_DISPLAY, Ind_MonitorNodeLevel);
+  cliFSM.defineTransition(CL_MON_NODE, CL_MON_NODE, CL_EV_CHANGE, Ind_MonitorNodeLevel);
+  cliFSM.defineTransition(CL_MON_NODE, CL_MON_NODE, CL_EV_ADD_ALARM, Ind_MonitorNodeLevel);     // OEM_ALARM
+  // events tied to number selection
+  cliFSM.defineTransition(CL_MON_NODE, CL_MON_NODE, CL_EV_ONE, Ind_MonitorNodeLevel);
+  cliFSM.defineTransition(CL_MON_NODE, CL_MON_NODE, CL_EV_TWO, Ind_MonitorNodeLevel);
+  cliFSM.defineTransition(CL_MON_NODE, CL_MON_NODE, CL_EV_THREE, Ind_MonitorNodeLevel);
+  cliFSM.defineTransition(CL_MON_NODE, CL_MON_NODE, CL_EV_FOUR, Ind_MonitorNodeLevel);
+  cliFSM.defineTransition(CL_MON_NODE, CL_MON_NODE, CL_EV_FIVE, Ind_MonitorNodeLevel);
+  cliFSM.defineTransition(CL_MON_NODE, CL_MON_NODE, CL_EV_SIX, Ind_MonitorNodeLevel);
+  cliFSM.defineTransition(CL_MON_NODE, CL_MON_NODE, CL_EV_SEVEN, Ind_MonitorNodeLevel);
+  cliFSM.defineTransition(CL_MON_NODE, CL_MON_NODE, CL_EV_EIGHT, Ind_MonitorNodeLevel);
+  cliFSM.defineTransition(CL_MON_NODE, CL_MON_NODE, CL_EV_NINE, Ind_MonitorNodeLevel);
+  cliFSM.defineTransition(CL_MON_NODE, CL_MON_NODE, CL_EV_TEN, Ind_MonitorNodeLevel);
+  cliFSM.defineTransition(CL_MON_NODE, CL_MON_NODE, CL_EV_ELEVEN, Ind_MonitorNodeLevel);
+
+  // Monitor->Protocols Level
+  //                      source,  dest,   event,  index
+  cliFSM.defineTransition(CL_MON_PROTOCOLS, CL_BASE, INTERNAL_ERROR, Ind_InternalError);
+  cliFSM.defineTransition(CL_MON_PROTOCOLS, CL_MON_PROTOCOLS, CL_EV_ERROR, Ind_MonitorProtocolsLevel);
+  cliFSM.defineTransition(CL_MON_PROTOCOLS, CL_MON_PROTOCOLS, CL_EV_HELP, Ind_MonitorProtocolsLevel);
+  cliFSM.defineTransition(CL_MON_PROTOCOLS, CL_MON_PROTOCOLS, CL_EV_EXIT, Ind_MonitorProtocolsLevel);
+  cliFSM.defineTransition(CL_MON_PROTOCOLS, CL_MONITOR, CL_EV_PREV, Ind_MonitorProtocolsLevel);
+  cliFSM.defineTransition(CL_MON_PROTOCOLS, CL_MON_PROTOCOLS, CL_EV_GET, Ind_MonitorProtocolsLevel);
+  cliFSM.defineTransition(CL_MON_PROTOCOLS, CL_MON_PROTOCOLS, CL_EV_SET, Ind_MonitorProtocolsLevel);
+  cliFSM.defineTransition(CL_MON_PROTOCOLS, CL_MON_PROTOCOLS, CL_EV_DISPLAY, Ind_MonitorProtocolsLevel);
+  cliFSM.defineTransition(CL_MON_PROTOCOLS, CL_MON_PROTOCOLS, CL_EV_CHANGE, Ind_MonitorProtocolsLevel);
+  cliFSM.defineTransition(CL_MON_PROTOCOLS, CL_MON_PROTOCOLS, CL_EV_ADD_ALARM, Ind_MonitorProtocolsLevel);      //OEM_ALARM
+  // events tied to number selection
+  cliFSM.defineTransition(CL_MON_PROTOCOLS, CL_MON_PROTOCOLS, CL_EV_ONE, Ind_MonitorProtocolsLevel);
+  cliFSM.defineTransition(CL_MON_PROTOCOLS, CL_MON_PROTOCOLS, CL_EV_TWO, Ind_MonitorProtocolsLevel);
+  cliFSM.defineTransition(CL_MON_PROTOCOLS, CL_MON_PROTOCOLS, CL_EV_THREE, Ind_MonitorProtocolsLevel);
+  cliFSM.defineTransition(CL_MON_PROTOCOLS, CL_MON_PROTOCOLS, CL_EV_FOUR, Ind_MonitorProtocolsLevel);
+  cliFSM.defineTransition(CL_MON_PROTOCOLS, CL_MON_PROTOCOLS, CL_EV_FIVE, Ind_MonitorProtocolsLevel);
+  cliFSM.defineTransition(CL_MON_PROTOCOLS, CL_MON_PROTOCOLS, CL_EV_SIX, Ind_MonitorProtocolsLevel);
+  cliFSM.defineTransition(CL_MON_PROTOCOLS, CL_MON_PROTOCOLS, CL_EV_SEVEN, Ind_MonitorProtocolsLevel);
+  cliFSM.defineTransition(CL_MON_PROTOCOLS, CL_MON_PROTOCOLS, CL_EV_EIGHT, Ind_MonitorProtocolsLevel);
+  cliFSM.defineTransition(CL_MON_PROTOCOLS, CL_MON_PROTOCOLS, CL_EV_NINE, Ind_MonitorProtocolsLevel);
+  cliFSM.defineTransition(CL_MON_PROTOCOLS, CL_MON_PROTOCOLS, CL_EV_TEN, Ind_MonitorProtocolsLevel);
+  cliFSM.defineTransition(CL_MON_PROTOCOLS, CL_MON_PROTOCOLS, CL_EV_ELEVEN, Ind_MonitorProtocolsLevel);
+
+
+  // Monitor->Cache Level
+  //                      source,  dest,   event,  index
+  cliFSM.defineTransition(CL_MON_CACHE, CL_BASE, INTERNAL_ERROR, Ind_InternalError);
+  cliFSM.defineTransition(CL_MON_CACHE, CL_MON_CACHE, CL_EV_ERROR, Ind_MonitorCacheLevel);
+  cliFSM.defineTransition(CL_MON_CACHE, CL_MON_CACHE, CL_EV_HELP, Ind_MonitorCacheLevel);
+  cliFSM.defineTransition(CL_MON_CACHE, CL_MON_CACHE, CL_EV_EXIT, Ind_MonitorCacheLevel);
+  cliFSM.defineTransition(CL_MON_CACHE, CL_MONITOR, CL_EV_PREV, Ind_MonitorCacheLevel);
+  cliFSM.defineTransition(CL_MON_CACHE, CL_MON_CACHE, CL_EV_GET, Ind_MonitorCacheLevel);
+  cliFSM.defineTransition(CL_MON_CACHE, CL_MON_CACHE, CL_EV_SET, Ind_MonitorCacheLevel);
+  cliFSM.defineTransition(CL_MON_CACHE, CL_MON_CACHE, CL_EV_DISPLAY, Ind_MonitorCacheLevel);
+  cliFSM.defineTransition(CL_MON_CACHE, CL_MON_CACHE, CL_EV_CHANGE, Ind_MonitorCacheLevel);
+  cliFSM.defineTransition(CL_MON_CACHE, CL_MON_CACHE, CL_EV_ADD_ALARM, Ind_MonitorCacheLevel);  // OEM_ALARM
+  // events tied to number selection
+  cliFSM.defineTransition(CL_MON_CACHE, CL_MON_CACHE, CL_EV_ONE, Ind_MonitorCacheLevel);
+  cliFSM.defineTransition(CL_MON_CACHE, CL_MON_CACHE, CL_EV_TWO, Ind_MonitorCacheLevel);
+  cliFSM.defineTransition(CL_MON_CACHE, CL_MON_CACHE, CL_EV_THREE, Ind_MonitorCacheLevel);
+  cliFSM.defineTransition(CL_MON_CACHE, CL_MON_CACHE, CL_EV_FOUR, Ind_MonitorCacheLevel);
+  cliFSM.defineTransition(CL_MON_CACHE, CL_MON_CACHE, CL_EV_FIVE, Ind_MonitorCacheLevel);
+  cliFSM.defineTransition(CL_MON_CACHE, CL_MON_CACHE, CL_EV_SIX, Ind_MonitorCacheLevel);
+  cliFSM.defineTransition(CL_MON_CACHE, CL_MON_CACHE, CL_EV_SEVEN, Ind_MonitorCacheLevel);
+  cliFSM.defineTransition(CL_MON_CACHE, CL_MON_CACHE, CL_EV_EIGHT, Ind_MonitorCacheLevel);
+  cliFSM.defineTransition(CL_MON_CACHE, CL_MON_CACHE, CL_EV_NINE, Ind_MonitorCacheLevel);
+  cliFSM.defineTransition(CL_MON_CACHE, CL_MON_CACHE, CL_EV_TEN, Ind_MonitorCacheLevel);
+  cliFSM.defineTransition(CL_MON_CACHE, CL_MON_CACHE, CL_EV_ELEVEN, Ind_MonitorCacheLevel);
+
+
+  // Monitor->Other Level
+  //                      source,  dest,   event,  index
+  cliFSM.defineTransition(CL_MON_OTHER, CL_BASE, INTERNAL_ERROR, Ind_InternalError);
+  cliFSM.defineTransition(CL_MON_OTHER, CL_MON_OTHER, CL_EV_ERROR, Ind_MonitorOtherLevel);
+  cliFSM.defineTransition(CL_MON_OTHER, CL_MON_OTHER, CL_EV_HELP, Ind_MonitorOtherLevel);
+  cliFSM.defineTransition(CL_MON_OTHER, CL_MON_OTHER, CL_EV_EXIT, Ind_MonitorOtherLevel);
+  cliFSM.defineTransition(CL_MON_OTHER, CL_MONITOR, CL_EV_PREV, Ind_MonitorOtherLevel);
+  cliFSM.defineTransition(CL_MON_OTHER, CL_MON_OTHER, CL_EV_GET, Ind_MonitorOtherLevel);
+  cliFSM.defineTransition(CL_MON_OTHER, CL_MON_OTHER, CL_EV_SET, Ind_MonitorOtherLevel);
+  cliFSM.defineTransition(CL_MON_OTHER, CL_MON_OTHER, CL_EV_DISPLAY, Ind_MonitorOtherLevel);
+  cliFSM.defineTransition(CL_MON_OTHER, CL_MON_OTHER, CL_EV_CHANGE, Ind_MonitorOtherLevel);
+  cliFSM.defineTransition(CL_MON_OTHER, CL_MON_OTHER, CL_EV_ADD_ALARM, Ind_MonitorOtherLevel);  // OEM_ALARM
+  // events tied to number selection
+  cliFSM.defineTransition(CL_MON_OTHER, CL_MON_OTHER, CL_EV_ONE, Ind_MonitorOtherLevel);
+  cliFSM.defineTransition(CL_MON_OTHER, CL_MON_OTHER, CL_EV_TWO, Ind_MonitorOtherLevel);
+  cliFSM.defineTransition(CL_MON_OTHER, CL_MON_OTHER, CL_EV_THREE, Ind_MonitorOtherLevel);
+  cliFSM.defineTransition(CL_MON_OTHER, CL_MON_OTHER, CL_EV_FOUR, Ind_MonitorOtherLevel);
+  cliFSM.defineTransition(CL_MON_OTHER, CL_MON_OTHER, CL_EV_FIVE, Ind_MonitorOtherLevel);
+  cliFSM.defineTransition(CL_MON_OTHER, CL_MON_OTHER, CL_EV_SIX, Ind_MonitorOtherLevel);
+  cliFSM.defineTransition(CL_MON_OTHER, CL_MON_OTHER, CL_EV_SEVEN, Ind_MonitorOtherLevel);
+  cliFSM.defineTransition(CL_MON_OTHER, CL_MON_OTHER, CL_EV_EIGHT, Ind_MonitorOtherLevel);
+  cliFSM.defineTransition(CL_MON_OTHER, CL_MON_OTHER, CL_EV_NINE, Ind_MonitorOtherLevel);
+  cliFSM.defineTransition(CL_MON_OTHER, CL_MON_OTHER, CL_EV_TEN, Ind_MonitorOtherLevel);
+  cliFSM.defineTransition(CL_MON_OTHER, CL_MON_OTHER, CL_EV_ELEVEN, Ind_MonitorOtherLevel);
+
+  // Configure level
+  //                      source,  dest,   event,  index
+  cliFSM.defineTransition(CL_CONFIGURE, CL_BASE, INTERNAL_ERROR, Ind_InternalError);
+  cliFSM.defineTransition(CL_CONFIGURE, CL_CONFIGURE, CL_EV_ERROR, Ind_ConfigureLevel);
+  cliFSM.defineTransition(CL_CONFIGURE, CL_CONFIGURE, CL_EV_HELP, Ind_ConfigureLevel);
+  cliFSM.defineTransition(CL_CONFIGURE, CL_CONFIGURE, CL_EV_EXIT, Ind_ConfigureLevel);
+  cliFSM.defineTransition(CL_CONFIGURE, CL_BASE, CL_EV_PREV, Ind_ConfigureLevel);
+  cliFSM.defineTransition(CL_CONFIGURE, CL_CONFIGURE, CL_EV_GET, Ind_ConfigureLevel);
+  cliFSM.defineTransition(CL_CONFIGURE, CL_CONFIGURE, CL_EV_SET, Ind_ConfigureLevel);
+  cliFSM.defineTransition(CL_CONFIGURE, CL_CONFIGURE, CL_EV_DISPLAY, Ind_ConfigureLevel);
+  cliFSM.defineTransition(CL_CONFIGURE, CL_CONFIGURE, CL_EV_CHANGE, Ind_ConfigureLevel);
+  cliFSM.defineTransition(CL_CONFIGURE, CL_CONFIGURE, CL_EV_ADD_ALARM, Ind_ConfigureLevel);     // OEM_ALARM
+  // events tied to number selection
+  cliFSM.defineTransition(CL_CONFIGURE, CL_CONF_SERVER, CL_EV_ONE, Ind_ConfigureLevel);
+  cliFSM.defineTransition(CL_CONFIGURE, CL_CONF_PROTOCOLS, CL_EV_TWO, Ind_ConfigureLevel);
+  cliFSM.defineTransition(CL_CONFIGURE, CL_CONF_CACHE, CL_EV_THREE, Ind_ConfigureLevel);
+  cliFSM.defineTransition(CL_CONFIGURE, CL_CONF_SECURITY, CL_EV_FOUR, Ind_ConfigureLevel);
+  cliFSM.defineTransition(CL_CONFIGURE, CL_CONF_LOGGING, CL_EV_FIVE, Ind_ConfigureLevel);
+  cliFSM.defineTransition(CL_CONFIGURE, CL_CONF_ROUTING, CL_EV_SIX, Ind_ConfigureLevel);
+  cliFSM.defineTransition(CL_CONFIGURE, CL_CONF_HOSTDB, CL_EV_SEVEN, Ind_ConfigureLevel);
+  /* cliFSM.defineTransition(CL_CONFIGURE, CL_CONF_SNAPSHOTS, CL_EV_SEVEN, Ind_ConfigureLevel); */
+  cliFSM.defineTransition(CL_CONFIGURE, CL_CONFIGURE, CL_EV_EIGHT, Ind_ConfigureLevel);
+  cliFSM.defineTransition(CL_CONFIGURE, CL_CONFIGURE, CL_EV_NINE, Ind_ConfigureLevel);
+  cliFSM.defineTransition(CL_CONFIGURE, CL_CONFIGURE, CL_EV_TEN, Ind_ConfigureLevel);
+  cliFSM.defineTransition(CL_CONFIGURE, CL_CONFIGURE, CL_EV_ELEVEN, Ind_ConfigureLevel);
+
+  // Configure->Server level
+  //                      source,  dest,   event,  index
+  cliFSM.defineTransition(CL_CONF_SERVER, CL_BASE, INTERNAL_ERROR, Ind_InternalError);
+  cliFSM.defineTransition(CL_CONF_SERVER, CL_CONF_SERVER, CL_EV_ERROR, Ind_ConfigureServerLevel);
+  cliFSM.defineTransition(CL_CONF_SERVER, CL_CONF_SERVER, CL_EV_HELP, Ind_ConfigureServerLevel);
+  cliFSM.defineTransition(CL_CONF_SERVER, CL_CONF_SERVER, CL_EV_EXIT, Ind_ConfigureServerLevel);
+  cliFSM.defineTransition(CL_CONF_SERVER, CL_CONFIGURE, CL_EV_PREV, Ind_ConfigureServerLevel);
+  cliFSM.defineTransition(CL_CONF_SERVER, CL_CONF_SERVER, CL_EV_GET, Ind_ConfigureServerLevel);
+  cliFSM.defineTransition(CL_CONF_SERVER, CL_CONF_SERVER, CL_EV_SET, Ind_ConfigureServerLevel);
+  cliFSM.defineTransition(CL_CONF_SERVER, CL_CONF_SERVER, CL_EV_DISPLAY, Ind_ConfigureServerLevel);
+  cliFSM.defineTransition(CL_CONF_SERVER, CL_CONF_SERVER, CL_EV_CHANGE, Ind_ConfigureServerLevel);
+  cliFSM.defineTransition(CL_CONF_SERVER, CL_CONF_SERVER, CL_EV_ADD_ALARM, Ind_ConfigureServerLevel);   // OEM_ALARM
+  // events tied to number selection
+  cliFSM.defineTransition(CL_CONF_SERVER, CL_CONF_SERVER, CL_EV_ONE, Ind_ConfigureServerLevel);
+  cliFSM.defineTransition(CL_CONF_SERVER, CL_CONF_SERVER, CL_EV_TWO, Ind_ConfigureServerLevel);
+  cliFSM.defineTransition(CL_CONF_SERVER, CL_CONF_SERVER, CL_EV_THREE, Ind_ConfigureServerLevel);
+  cliFSM.defineTransition(CL_CONF_SERVER, CL_CONF_SERVER, CL_EV_FOUR, Ind_ConfigureServerLevel);
+  cliFSM.defineTransition(CL_CONF_SERVER, CL_CONF_SERVER, CL_EV_FIVE, Ind_ConfigureServerLevel);
+  cliFSM.defineTransition(CL_CONF_SERVER, CL_CONF_SERVER, CL_EV_SIX, Ind_ConfigureServerLevel);
+  cliFSM.defineTransition(CL_CONF_SERVER, CL_CONF_SERVER, CL_EV_SEVEN, Ind_ConfigureServerLevel);
+  cliFSM.defineTransition(CL_CONF_SERVER, CL_CONF_SERVER, CL_EV_EIGHT, Ind_ConfigureServerLevel);
+  cliFSM.defineTransition(CL_CONF_SERVER, CL_CONF_SERVER, CL_EV_NINE, Ind_ConfigureServerLevel);
+  cliFSM.defineTransition(CL_CONF_SERVER, CL_CONF_SERVER, CL_EV_TEN, Ind_ConfigureServerLevel);
+  cliFSM.defineTransition(CL_CONF_SERVER, CL_CONF_SERVER, CL_EV_ELEVEN, Ind_ConfigureServerLevel);
+
+  // Configure->Protocols level
+  //                      source,  dest,   event,  index
+  cliFSM.defineTransition(CL_CONF_PROTOCOLS, CL_BASE, INTERNAL_ERROR, Ind_InternalError);
+  cliFSM.defineTransition(CL_CONF_PROTOCOLS, CL_CONF_PROTOCOLS, CL_EV_ERROR, Ind_ConfigureProtocolsLevel);
+  cliFSM.defineTransition(CL_CONF_PROTOCOLS, CL_CONF_PROTOCOLS, CL_EV_HELP, Ind_ConfigureProtocolsLevel);
+  cliFSM.defineTransition(CL_CONF_PROTOCOLS, CL_CONF_PROTOCOLS, CL_EV_EXIT, Ind_ConfigureProtocolsLevel);
+  cliFSM.defineTransition(CL_CONF_PROTOCOLS, CL_CONFIGURE, CL_EV_PREV, Ind_ConfigureProtocolsLevel);
+  cliFSM.defineTransition(CL_CONF_PROTOCOLS, CL_CONF_PROTOCOLS, CL_EV_GET, Ind_ConfigureProtocolsLevel);
+  cliFSM.defineTransition(CL_CONF_PROTOCOLS, CL_CONF_PROTOCOLS, CL_EV_SET, Ind_ConfigureProtocolsLevel);
+  cliFSM.defineTransition(CL_CONF_PROTOCOLS, CL_CONF_PROTOCOLS, CL_EV_DISPLAY, Ind_ConfigureProtocolsLevel);
+  cliFSM.defineTransition(CL_CONF_PROTOCOLS, CL_CONF_PROTOCOLS, CL_EV_CHANGE, Ind_ConfigureProtocolsLevel);
+  cliFSM.defineTransition(CL_CONF_PROTOCOLS, CL_CONF_PROTOCOLS, CL_EV_ADD_ALARM, Ind_ConfigureProtocolsLevel);  //OEM_ALARM
+  // events tied to number selection
+  cliFSM.defineTransition(CL_CONF_PROTOCOLS, CL_CONF_PROTOCOLS, CL_EV_ONE, Ind_ConfigureProtocolsLevel);
+  cliFSM.defineTransition(CL_CONF_PROTOCOLS, CL_CONF_PROTOCOLS, CL_EV_TWO, Ind_ConfigureProtocolsLevel);
+  cliFSM.defineTransition(CL_CONF_PROTOCOLS, CL_CONF_PROTOCOLS, CL_EV_THREE, Ind_ConfigureProtocolsLevel);
+  cliFSM.defineTransition(CL_CONF_PROTOCOLS, CL_CONF_PROTOCOLS, CL_EV_FOUR, Ind_ConfigureProtocolsLevel);
+  cliFSM.defineTransition(CL_CONF_PROTOCOLS, CL_CONF_PROTOCOLS, CL_EV_FIVE, Ind_ConfigureProtocolsLevel);
+  cliFSM.defineTransition(CL_CONF_PROTOCOLS, CL_CONF_PROTOCOLS, CL_EV_SIX, Ind_ConfigureProtocolsLevel);
+  cliFSM.defineTransition(CL_CONF_PROTOCOLS, CL_CONF_PROTOCOLS, CL_EV_SEVEN, Ind_ConfigureProtocolsLevel);
+  cliFSM.defineTransition(CL_CONF_PROTOCOLS, CL_CONF_PROTOCOLS, CL_EV_EIGHT, Ind_ConfigureProtocolsLevel);
+  cliFSM.defineTransition(CL_CONF_PROTOCOLS, CL_CONF_PROTOCOLS, CL_EV_NINE, Ind_ConfigureProtocolsLevel);
+  cliFSM.defineTransition(CL_CONF_PROTOCOLS, CL_CONF_PROTOCOLS, CL_EV_TEN, Ind_ConfigureProtocolsLevel);
+  cliFSM.defineTransition(CL_CONF_PROTOCOLS, CL_CONF_PROTOCOLS, CL_EV_ELEVEN, Ind_ConfigureProtocolsLevel);
+
+  // Configure->Cache level
+  //                      source,  dest,   event,  index
+  cliFSM.defineTransition(CL_CONF_CACHE, CL_BASE, INTERNAL_ERROR, Ind_InternalError);
+  cliFSM.defineTransition(CL_CONF_CACHE, CL_CONF_CACHE, CL_EV_ERROR, Ind_ConfigureCacheLevel);
+  cliFSM.defineTransition(CL_CONF_CACHE, CL_CONF_CACHE, CL_EV_HELP, Ind_ConfigureCacheLevel);
+  cliFSM.defineTransition(CL_CONF_CACHE, CL_CONF_CACHE, CL_EV_EXIT, Ind_ConfigureCacheLevel);
+  cliFSM.defineTransition(CL_CONF_CACHE, CL_CONFIGURE, CL_EV_PREV, Ind_ConfigureCacheLevel);
+  cliFSM.defineTransition(CL_CONF_CACHE, CL_CONF_CACHE, CL_EV_GET, Ind_ConfigureCacheLevel);
+  cliFSM.defineTransition(CL_CONF_CACHE, CL_CONF_CACHE, CL_EV_SET, Ind_ConfigureCacheLevel);
+  cliFSM.defineTransition(CL_CONF_CACHE, CL_CONF_CACHE, CL_EV_DISPLAY, Ind_ConfigureCacheLevel);
+  cliFSM.defineTransition(CL_CONF_CACHE, CL_CONF_CACHE, CL_EV_CHANGE, Ind_ConfigureCacheLevel);
+  cliFSM.defineTransition(CL_CONF_CACHE, CL_CONF_CACHE, CL_EV_ADD_ALARM, Ind_ConfigureCacheLevel);      //OEM_ALARM
+  // events tied to number selection
+  cliFSM.defineTransition(CL_CONF_CACHE, CL_CONF_CACHE, CL_EV_ONE, Ind_ConfigureCacheLevel);
+  cliFSM.defineTransition(CL_CONF_CACHE, CL_CONF_CACHE, CL_EV_TWO, Ind_ConfigureCacheLevel);
+  cliFSM.defineTransition(CL_CONF_CACHE, CL_CONF_CACHE, CL_EV_THREE, Ind_ConfigureCacheLevel);
+  cliFSM.defineTransition(CL_CONF_CACHE, CL_CONF_CACHE, CL_EV_FOUR, Ind_ConfigureCacheLevel);
+  cliFSM.defineTransition(CL_CONF_CACHE, CL_CONF_CACHE, CL_EV_FIVE, Ind_ConfigureCacheLevel);
+  cliFSM.defineTransition(CL_CONF_CACHE, CL_CONF_CACHE, CL_EV_SIX, Ind_ConfigureCacheLevel);
+  cliFSM.defineTransition(CL_CONF_CACHE, CL_CONF_CACHE, CL_EV_SEVEN, Ind_ConfigureCacheLevel);
+  cliFSM.defineTransition(CL_CONF_CACHE, CL_CONF_CACHE, CL_EV_EIGHT, Ind_ConfigureCacheLevel);
+  cliFSM.defineTransition(CL_CONF_CACHE, CL_CONF_CACHE, CL_EV_NINE, Ind_ConfigureCacheLevel);
+  cliFSM.defineTransition(CL_CONF_CACHE, CL_CONF_CACHE, CL_EV_TEN, Ind_ConfigureCacheLevel);
+  cliFSM.defineTransition(CL_CONF_CACHE, CL_CONF_CACHE, CL_EV_ELEVEN, Ind_ConfigureCacheLevel);
+
+  // Configure->Security level
+  //                      source,  dest,   event,  index
+  cliFSM.defineTransition(CL_CONF_SECURITY, CL_BASE, INTERNAL_ERROR, Ind_InternalError);
+  cliFSM.defineTransition(CL_CONF_SECURITY, CL_CONF_SECURITY, CL_EV_ERROR, Ind_ConfigureSecurityLevel);
+  cliFSM.defineTransition(CL_CONF_SECURITY, CL_CONF_SECURITY, CL_EV_HELP, Ind_ConfigureSecurityLevel);
+  cliFSM.defineTransition(CL_CONF_SECURITY, CL_CONF_SECURITY, CL_EV_EXIT, Ind_ConfigureSecurityLevel);
+  cliFSM.defineTransition(CL_CONF_SECURITY, CL_CONFIGURE, CL_EV_PREV, Ind_ConfigureSecurityLevel);
+  cliFSM.defineTransition(CL_CONF_SECURITY, CL_CONF_SECURITY, CL_EV_GET, Ind_ConfigureSecurityLevel);
+  cliFSM.defineTransition(CL_CONF_SECURITY, CL_CONF_SECURITY, CL_EV_SET, Ind_ConfigureSecurityLevel);
+  cliFSM.defineTransition(CL_CONF_SECURITY, CL_CONF_SECURITY, CL_EV_DISPLAY, Ind_ConfigureSecurityLevel);
+  cliFSM.defineTransition(CL_CONF_SECURITY, CL_CONF_SECURITY, CL_EV_CHANGE, Ind_ConfigureSecurityLevel);
+  cliFSM.defineTransition(CL_CONF_SECURITY, CL_CONF_SECURITY, CL_EV_ADD_ALARM, Ind_ConfigureSecurityLevel);     //OEM_ALARM
+  // events tied to number selection
+  cliFSM.defineTransition(CL_CONF_SECURITY, CL_CONF_SECURITY, CL_EV_ONE, Ind_ConfigureSecurityLevel);
+  cliFSM.defineTransition(CL_CONF_SECURITY, CL_CONF_SECURITY, CL_EV_TWO, Ind_ConfigureSecurityLevel);
+  cliFSM.defineTransition(CL_CONF_SECURITY, CL_CONF_SECURITY, CL_EV_THREE, Ind_ConfigureSecurityLevel);
+  cliFSM.defineTransition(CL_CONF_SECURITY, CL_CONF_SECURITY, CL_EV_FOUR, Ind_ConfigureSecurityLevel);
+  cliFSM.defineTransition(CL_CONF_SECURITY, CL_CONF_SECURITY, CL_EV_FIVE, Ind_ConfigureSecurityLevel);
+  cliFSM.defineTransition(CL_CONF_SECURITY, CL_CONF_SECURITY, CL_EV_SIX, Ind_ConfigureSecurityLevel);
+  cliFSM.defineTransition(CL_CONF_SECURITY, CL_CONF_SECURITY, CL_EV_SEVEN, Ind_ConfigureSecurityLevel);
+  cliFSM.defineTransition(CL_CONF_SECURITY, CL_CONF_SECURITY, CL_EV_EIGHT, Ind_ConfigureSecurityLevel);
+  cliFSM.defineTransition(CL_CONF_SECURITY, CL_CONF_SECURITY, CL_EV_NINE, Ind_ConfigureSecurityLevel);
+  cliFSM.defineTransition(CL_CONF_SECURITY, CL_CONF_SECURITY, CL_EV_TEN, Ind_ConfigureSecurityLevel);
+  cliFSM.defineTransition(CL_CONF_SECURITY, CL_CONF_SECURITY, CL_EV_ELEVEN, Ind_ConfigureSecurityLevel);
+
+  // Configure->Routing level
+  //                      source,  dest,   event,  index
+  cliFSM.defineTransition(CL_CONF_ROUTING, CL_BASE, INTERNAL_ERROR, Ind_InternalError);
+  cliFSM.defineTransition(CL_CONF_ROUTING, CL_CONF_ROUTING, CL_EV_ERROR, Ind_ConfigureRoutingLevel);
+  cliFSM.defineTransition(CL_CONF_ROUTING, CL_CONF_ROUTING, CL_EV_HELP, Ind_ConfigureRoutingLevel);
+  cliFSM.defineTransition(CL_CONF_ROUTING, CL_CONF_ROUTING, CL_EV_EXIT, Ind_ConfigureRoutingLevel);
+  cliFSM.defineTransition(CL_CONF_ROUTING, CL_CONFIGURE, CL_EV_PREV, Ind_ConfigureRoutingLevel);
+  cliFSM.defineTransition(CL_CONF_ROUTING, CL_CONF_ROUTING, CL_EV_GET, Ind_ConfigureRoutingLevel);
+  cliFSM.defineTransition(CL_CONF_ROUTING, CL_CONF_ROUTING, CL_EV_SET, Ind_ConfigureRoutingLevel);
+  cliFSM.defineTransition(CL_CONF_ROUTING, CL_CONF_ROUTING, CL_EV_DISPLAY, Ind_ConfigureRoutingLevel);
+  cliFSM.defineTransition(CL_CONF_ROUTING, CL_CONF_ROUTING, CL_EV_CHANGE, Ind_ConfigureRoutingLevel);
+  cliFSM.defineTransition(CL_CONF_ROUTING, CL_CONF_ROUTING, CL_EV_ADD_ALARM, Ind_ConfigureRoutingLevel);        //OEM_ALARM
+  // events tied to number selection
+  cliFSM.defineTransition(CL_CONF_ROUTING, CL_CONF_ROUTING, CL_EV_ONE, Ind_ConfigureRoutingLevel);
+  cliFSM.defineTransition(CL_CONF_ROUTING, CL_CONF_ROUTING, CL_EV_TWO, Ind_ConfigureRoutingLevel);
+  cliFSM.defineTransition(CL_CONF_ROUTING, CL_CONF_ROUTING, CL_EV_THREE, Ind_ConfigureRoutingLevel);
+  cliFSM.defineTransition(CL_CONF_ROUTING, CL_CONF_ROUTING, CL_EV_FOUR, Ind_ConfigureRoutingLevel);
+  cliFSM.defineTransition(CL_CONF_ROUTING, CL_CONF_ROUTING, CL_EV_FIVE, Ind_ConfigureRoutingLevel);
+  cliFSM.defineTransition(CL_CONF_ROUTING, CL_CONF_ROUTING, CL_EV_SIX, Ind_ConfigureRoutingLevel);
+  cliFSM.defineTransition(CL_CONF_ROUTING, CL_CONF_ROUTING, CL_EV_SEVEN, Ind_ConfigureRoutingLevel);
+  cliFSM.defineTransition(CL_CONF_ROUTING, CL_CONF_ROUTING, CL_EV_EIGHT, Ind_ConfigureRoutingLevel);
+  cliFSM.defineTransition(CL_CONF_ROUTING, CL_CONF_ROUTING, CL_EV_NINE, Ind_ConfigureRoutingLevel);
+  cliFSM.defineTransition(CL_CONF_ROUTING, CL_CONF_ROUTING, CL_EV_TEN, Ind_ConfigureRoutingLevel);
+  cliFSM.defineTransition(CL_CONF_ROUTING, CL_CONF_ROUTING, CL_EV_ELEVEN, Ind_ConfigureRoutingLevel);
+
+  // Configure->HostDB level
+  //                      source,  dest,   event,  index
+  cliFSM.defineTransition(CL_CONF_HOSTDB, CL_BASE, INTERNAL_ERROR, Ind_InternalError);
+  cliFSM.defineTransition(CL_CONF_HOSTDB, CL_CONF_HOSTDB, CL_EV_ERROR, Ind_ConfigureHostDBLevel);
+  cliFSM.defineTransition(CL_CONF_HOSTDB, CL_CONF_HOSTDB, CL_EV_HELP, Ind_ConfigureHostDBLevel);
+  cliFSM.defineTransition(CL_CONF_HOSTDB, CL_CONF_HOSTDB, CL_EV_EXIT, Ind_ConfigureHostDBLevel);
+  cliFSM.defineTransition(CL_CONF_HOSTDB, CL_CONFIGURE, CL_EV_PREV, Ind_ConfigureHostDBLevel);
+  cliFSM.defineTransition(CL_CONF_HOSTDB, CL_CONF_HOSTDB, CL_EV_GET, Ind_ConfigureHostDBLevel);
+  cliFSM.defineTransition(CL_CONF_HOSTDB, CL_CONF_HOSTDB, CL_EV_SET, Ind_ConfigureHostDBLevel);
+  cliFSM.defineTransition(CL_CONF_HOSTDB, CL_CONF_HOSTDB, CL_EV_DISPLAY, Ind_ConfigureHostDBLevel);
+  cliFSM.defineTransition(CL_CONF_HOSTDB, CL_CONF_HOSTDB, CL_EV_CHANGE, Ind_ConfigureHostDBLevel);
+  cliFSM.defineTransition(CL_CONF_HOSTDB, CL_CONF_HOSTDB, CL_EV_ADD_ALARM, Ind_ConfigureHostDBLevel);   // OEM_ALARM
+  // events tied to number selection
+  cliFSM.defineTransition(CL_CONF_HOSTDB, CL_CONF_HOSTDB, CL_EV_ONE, Ind_ConfigureHostDBLevel);
+  cliFSM.defineTransition(CL_CONF_HOSTDB, CL_CONF_HOSTDB, CL_EV_TWO, Ind_ConfigureHostDBLevel);
+  cliFSM.defineTransition(CL_CONF_HOSTDB, CL_CONF_HOSTDB, CL_EV_THREE, Ind_ConfigureHostDBLevel);
+  cliFSM.defineTransition(CL_CONF_HOSTDB, CL_CONF_HOSTDB, CL_EV_FOUR, Ind_ConfigureHostDBLevel);
+  cliFSM.defineTransition(CL_CONF_HOSTDB, CL_CONF_HOSTDB, CL_EV_FIVE, Ind_ConfigureHostDBLevel);
+  cliFSM.defineTransition(CL_CONF_HOSTDB, CL_CONF_HOSTDB, CL_EV_SIX, Ind_ConfigureHostDBLevel);
+  cliFSM.defineTransition(CL_CONF_HOSTDB, CL_CONF_HOSTDB, CL_EV_SEVEN, Ind_ConfigureHostDBLevel);
+  cliFSM.defineTransition(CL_CONF_HOSTDB, CL_CONF_HOSTDB, CL_EV_EIGHT, Ind_ConfigureHostDBLevel);
+  cliFSM.defineTransition(CL_CONF_HOSTDB, CL_CONF_HOSTDB, CL_EV_NINE, Ind_ConfigureHostDBLevel);
+  cliFSM.defineTransition(CL_CONF_HOSTDB, CL_CONF_HOSTDB, CL_EV_TEN, Ind_ConfigureHostDBLevel);
+  cliFSM.defineTransition(CL_CONF_HOSTDB, CL_CONF_HOSTDB, CL_EV_ELEVEN, Ind_ConfigureHostDBLevel);
+
+  // Configure->Logging level
+  //                      source,  dest,   event,  index
+  cliFSM.defineTransition(CL_CONF_LOGGING, CL_BASE, INTERNAL_ERROR, Ind_InternalError);
+  cliFSM.defineTransition(CL_CONF_LOGGING, CL_CONF_LOGGING, CL_EV_ERROR, Ind_ConfigureLoggingLevel);
+  cliFSM.defineTransition(CL_CONF_LOGGING, CL_CONF_LOGGING, CL_EV_HELP, Ind_ConfigureLoggingLevel);
+  cliFSM.defineTransition(CL_CONF_LOGGING, CL_CONF_LOGGING, CL_EV_EXIT, Ind_ConfigureLoggingLevel);
+  cliFSM.defineTransition(CL_CONF_LOGGING, CL_CONFIGURE, CL_EV_PREV, Ind_ConfigureLoggingLevel);
+  cliFSM.defineTransition(CL_CONF_LOGGING, CL_CONF_LOGGING, CL_EV_GET, Ind_ConfigureLoggingLevel);
+  cliFSM.defineTransition(CL_CONF_LOGGING, CL_CONF_LOGGING, CL_EV_SET, Ind_ConfigureLoggingLevel);
+  cliFSM.defineTransition(CL_CONF_LOGGING, CL_CONF_LOGGING, CL_EV_DISPLAY, Ind_ConfigureLoggingLevel);
+  cliFSM.defineTransition(CL_CONF_LOGGING, CL_CONF_LOGGING, CL_EV_CHANGE, Ind_ConfigureLoggingLevel);
+  cliFSM.defineTransition(CL_CONF_LOGGING, CL_CONF_LOGGING, CL_EV_ADD_ALARM, Ind_ConfigureLoggingLevel);        // OEM_ALARM
+  // events tied to number selection
+  cliFSM.defineTransition(CL_CONF_LOGGING, CL_CONF_LOGGING, CL_EV_ONE, Ind_ConfigureLoggingLevel);
+  cliFSM.defineTransition(CL_CONF_LOGGING, CL_CONF_LOGGING, CL_EV_TWO, Ind_ConfigureLoggingLevel);
+  cliFSM.defineTransition(CL_CONF_LOGGING, CL_CONF_LOGGING, CL_EV_THREE, Ind_ConfigureLoggingLevel);
+  cliFSM.defineTransition(CL_CONF_LOGGING, CL_CONF_LOGGING, CL_EV_FOUR, Ind_ConfigureLoggingLevel);
+  cliFSM.defineTransition(CL_CONF_LOGGING, CL_CONF_LOGGING, CL_EV_FIVE, Ind_ConfigureLoggingLevel);
+  cliFSM.defineTransition(CL_CONF_LOGGING, CL_CONF_LOGGING, CL_EV_SIX, Ind_ConfigureLoggingLevel);
+  cliFSM.defineTransition(CL_CONF_LOGGING, CL_CONF_LOGGING, CL_EV_SEVEN, Ind_ConfigureLoggingLevel);
+  cliFSM.defineTransition(CL_CONF_LOGGING, CL_CONF_LOGGING, CL_EV_EIGHT, Ind_ConfigureLoggingLevel);
+  cliFSM.defineTransition(CL_CONF_LOGGING, CL_CONF_LOGGING, CL_EV_NINE, Ind_ConfigureLoggingLevel);
+  cliFSM.defineTransition(CL_CONF_LOGGING, CL_CONF_LOGGING, CL_EV_TEN, Ind_ConfigureLoggingLevel);
+  cliFSM.defineTransition(CL_CONF_LOGGING, CL_CONF_LOGGING, CL_EV_ELEVEN, Ind_ConfigureLoggingLevel);
+
+  // Configure->Snapshots level
+  //                      source,  dest,   event,  index
+  cliFSM.defineTransition(CL_CONF_SNAPSHOTS, CL_BASE, INTERNAL_ERROR, Ind_InternalError);
+  cliFSM.defineTransition(CL_CONF_SNAPSHOTS, CL_CONF_SNAPSHOTS, CL_EV_ERROR, Ind_ConfigureSnapshotsLevel);
+  cliFSM.defineTransition(CL_CONF_SNAPSHOTS, CL_CONF_SNAPSHOTS, CL_EV_HELP, Ind_ConfigureSnapshotsLevel);
+  cliFSM.defineTransition(CL_CONF_SNAPSHOTS, CL_CONF_SNAPSHOTS, CL_EV_EXIT, Ind_ConfigureSnapshotsLevel);
+  cliFSM.defineTransition(CL_CONF_SNAPSHOTS, CL_CONFIGURE, CL_EV_PREV, Ind_ConfigureSnapshotsLevel);
+  cliFSM.defineTransition(CL_CONF_SNAPSHOTS, CL_CONF_SNAPSHOTS, CL_EV_GET, Ind_ConfigureSnapshotsLevel);
+  cliFSM.defineTransition(CL_CONF_SNAPSHOTS, CL_CONF_SNAPSHOTS, CL_EV_SET, Ind_ConfigureSnapshotsLevel);
+  cliFSM.defineTransition(CL_CONF_SNAPSHOTS, CL_CONF_SNAPSHOTS, CL_EV_DISPLAY, Ind_ConfigureSnapshotsLevel);
+  cliFSM.defineTransition(CL_CONF_SNAPSHOTS, CL_CONF_SNAPSHOTS, CL_EV_CHANGE, Ind_ConfigureSnapshotsLevel);
+  cliFSM.defineTransition(CL_CONF_SNAPSHOTS, CL_CONF_SNAPSHOTS, CL_EV_ADD_ALARM, Ind_ConfigureSnapshotsLevel);  // OEM_ALARM
+  // events tied to number selection
+  cliFSM.defineTransition(CL_CONF_SNAPSHOTS, CL_CONF_SNAPSHOTS, CL_EV_ONE, Ind_ConfigureSnapshotsLevel);
+  cliFSM.defineTransition(CL_CONF_SNAPSHOTS, CL_CONF_SNAPSHOTS, CL_EV_TWO, Ind_ConfigureSnapshotsLevel);
+  cliFSM.defineTransition(CL_CONF_SNAPSHOTS, CL_CONF_SNAPSHOTS, CL_EV_THREE, Ind_ConfigureSnapshotsLevel);
+  cliFSM.defineTransition(CL_CONF_SNAPSHOTS, CL_CONF_SNAPSHOTS, CL_EV_FOUR, Ind_ConfigureSnapshotsLevel);
+  cliFSM.defineTransition(CL_CONF_SNAPSHOTS, CL_CONF_SNAPSHOTS, CL_EV_FIVE, Ind_ConfigureSnapshotsLevel);
+  cliFSM.defineTransition(CL_CONF_SNAPSHOTS, CL_CONF_SNAPSHOTS, CL_EV_SIX, Ind_ConfigureSnapshotsLevel);
+  cliFSM.defineTransition(CL_CONF_SNAPSHOTS, CL_CONF_SNAPSHOTS, CL_EV_SEVEN, Ind_ConfigureSnapshotsLevel);
+  cliFSM.defineTransition(CL_CONF_SNAPSHOTS, CL_CONF_SNAPSHOTS, CL_EV_EIGHT, Ind_ConfigureSnapshotsLevel);
+  cliFSM.defineTransition(CL_CONF_SNAPSHOTS, CL_CONF_SNAPSHOTS, CL_EV_NINE, Ind_ConfigureSnapshotsLevel);
+  cliFSM.defineTransition(CL_CONF_SNAPSHOTS, CL_CONF_SNAPSHOTS, CL_EV_TEN, Ind_ConfigureSnapshotsLevel);
+  cliFSM.defineTransition(CL_CONF_SNAPSHOTS, CL_CONF_SNAPSHOTS, CL_EV_ELEVEN, Ind_ConfigureSnapshotsLevel);
+
+  // Get ready to parse input
+  inputBuf[1024] = '\0';
+  cmdTok.setMaxTokens(3);       //input form -> <batch/interactive> <command> <args>
+
+  // process command from 'cli'
+  // NOTE: will need to change the protocol a little bit
+  //       when handling connections from a telnet->port session.
+  while (event != CL_EV_EXIT) {
+    event = CL_EV_ERROR;
+
+    // reuse input/output buffers
+    input.reUse();
+    output.reUse();
+
+    // read input from 'command line client'
+    do {
+      readResult = cli_read(cliFD, inputBuf, 1024);
+      if (readResult > 0) {
+        input.copyFrom(inputBuf, strlen(inputBuf));
+      }
+    } while (readResult == 1024);
+
+    if (readResult < 0 || input.spaceUsed() <= 0) {
+      close_socket(cliFD);
+      return;
+    }
+    // parse command request from client
+    cmdTok.Initialize(input.bufPtr(), COPY_TOKS);
+
+    cli_data.cmdmode = (char *) cmdTok[0];      // (b)atch/(i)nterative
+    cli_data.command = (char *) cmdTok[1];      // command
+    cli_data.args = (char *) cmdTok[2]; // args to command
+    cli_data.output = &output;  // output text buffer
+    cli_data.advui = pContext->AdvUIEnabled;
+    cli_data.featset = pContext->FeatureSet;
+
+    Debug("cli", "handleCLI: cmdmode=%s, command=%s, args=%s \n",
+          cli_data.cmdmode ? cli_data.cmdmode : "NULL",
+          cli_data.command ? cli_data.command : "NULL", cli_data.args ? cli_data.args : "NULL");
+
+    // make sure the command mode and command to execute exits
+    if (cli_data.cmdmode == NULL || cli_data.command == NULL) {
+      close(cliFD);
+      return;
+    }
+    // make sure command mode is valid
+    if (strcasecmp(cli_data.cmdmode, "i") != 0 && strcasecmp(cli_data.cmdmode, "b") != 0) {
+      close(cliFD);
+      return;
+    }
+    // find event to pass to FSM i.e. command -> event
+    // for now do simple string compares for every possible command.
+    // May need to change to a faster/robust mechanism if needed.
+
+    // all levels, include ascii version
+    if (strcasecmp(cli_data.command, "help") == 0 || strcasecmp(cli_data.command, "?") == 0) {
+      Debug("cli", "event HELP \n");
+      event = CL_EV_HELP;
+    } else if (strcasecmp(cli_data.command, "exit") == 0 || strcasecmp(cli_data.command, "quit") == 0) {
+      Debug("cli", "event EXIT \n");
+      event = CL_EV_EXIT;
+    } else if (strcasecmp(cli_data.command, ".") == 0) {
+      Debug("cli", "event PREV \n");
+      event = CL_EV_PREV;
+    } else if (strcasecmp(cli_data.command, "get") == 0) {
+      Debug("cli", "event GET \n");
+      event = CL_EV_GET;
+    } else if (strcasecmp(cli_data.command, "set") == 0) {
+      Debug("cli", "event SET \n");
+      event = CL_EV_SET;
+    } else if (strcasecmp(cli_data.command, "display") == 0 || strcasecmp(cli_data.command, "alarms") == 0) {
+      // in the dashboard handler
+      Debug("cli", "event DISPLAY \n");
+      event = CL_EV_DISPLAY;
+    } else if (strcasecmp(cli_data.command, "add_alarm") == 0) {
+      // OEM_ALARM
+      Debug("cli", "customized ALARM added \n");
+      // created a new event = CL_EV_ADD_ALARM which
+      // calls AddAlarm function; add this transition to the FSM
+      event = CL_EV_ADD_ALARM;
+    } else if (strcasecmp(cli_data.command, "change") == 0 || strcasecmp(cli_data.command, "resolve") == 0) {
+      // overload 'change' to resolve alarms
+      // in the dashboard handler
+      Debug("cli", "event CHANGE \n");
+      event = CL_EV_CHANGE;
+    } else if (strcasecmp(cli_data.command, "query_deadhosts") == 0) {
+      Debug("cli", "event QUERY_DEADHOSTS");
+      event = CL_EV_QUERY_DEADHOSTS;
+    } else if (strcasecmp(cli_data.command, "1") == 0) {
+      Debug("cli", "event ONE \n");
+      event = CL_EV_ONE;
+    } else if (strcasecmp(cli_data.command, "2") == 0) {
+      Debug("cli", "event TWO \n");
+      event = CL_EV_TWO;
+    } else if (strcasecmp(cli_data.command, "3") == 0) {
+      Debug("cli", "event THREE \n");
+      event = CL_EV_THREE;
+    } else if (strcasecmp(cli_data.command, "4") == 0) {
+      Debug("cli", "event FOUR \n");
+      event = CL_EV_FOUR;
+    } else if (strcasecmp(cli_data.command, "5") == 0) {
+      Debug("cli", "event FIVE \n");
+      event = CL_EV_FIVE;
+    } else if (strcasecmp(cli_data.command, "6") == 0) {
+      Debug("cli", "event SIX \n");
+      event = CL_EV_SIX;
+    } else if (strcasecmp(cli_data.command, "7") == 0) {
+      Debug("cli", "event SEVEN \n");
+      event = CL_EV_SEVEN;
+    } else if (strcasecmp(cli_data.command, "8") == 0) {
+      Debug("cli", "event EIGHT \n");
+      event = CL_EV_EIGHT;
+    } else if (strcasecmp(cli_data.command, "9") == 0) {
+      Debug("cli", "event NINE \n");
+      event = CL_EV_NINE;
+    } else if (strcasecmp(cli_data.command, "10") == 0) {
+      Debug("cli", "event TEN \n");
+      event = CL_EV_TEN;
+    } else if (strcasecmp(cli_data.command, "11") == 0) {
+      Debug("cli", "event ELEVEN \n");
+      event = CL_EV_ELEVEN;
+    } else {
+      // unknown command mode
+      Debug("cli", "event ERROR \n");
+      event = CL_EV_ERROR;
+    }
+
+    cli_data.cevent = event;    // command -> event
+
+    // execute transition and associated actions
+    if (cliFSM.control(event, (void *) &cli_data) == FALSE) {
+      close_socket(cliFD);
+      return;
+    }
+    // send response back to client
+    if (event != CL_EV_EXIT && (cli_write(cliFD, output.bufPtr(), output.spaceUsed()) < 0)) {
+      close_socket(cliFD);
+      return;
+    } else if (CL_EV_EXIT == event) {
+      close_socket(cliFD);
+    }
+  }                             // end while
+
+  return;
+}                               // end handleCLI()
+
 void
 handleOverseer(int fd, int mode)
 {

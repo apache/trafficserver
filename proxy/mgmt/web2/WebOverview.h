@@ -24,13 +24,14 @@
 #ifndef _WEB_OVERVIEW_H_
 #define _WEB_OVERVIEW_H_
 
-#include "WebUtils.h"
 #include "ink_hash_table.h"
 #include "ink_mutex.h"
 #include "WebGlobals.h"
 #include "TextBuffer.h"
 #include "List.h"
 
+#include "WebHttpContext.h"
+#include "WebHttpMessage.h"
 #include "ExpandingArray.h"
 #include "ClusterCom.h"
 #include "Alarms.h"
@@ -125,9 +126,13 @@ public:
   /*
      void generateTable(textBuffer* output,
      const char* submission,
+     WebContext* pContext);
    */
+  void generateTable(WebHttpContext * whc);
   void generateTableCLI(textBuffer * output);
+  void generateAlarmsTable(WebHttpContext * whc);
   void generateAlarmsTableCLI(textBuffer * output);
+  void generateAlarmsSummary(WebHttpContext * whc);
   void addAlarm(alarm_t newAlarm, char *ip, char *desc);
   void checkForUpdates();
   char *resolvePeerHostname(const char *peerIP);
@@ -154,6 +159,7 @@ private:
   void addLoadBar(textBuffer * output, MgmtInt load);
   void sortHosts();
   bool moreInfoButton(const char *submission, textBuffer * output);
+  void addHostPanel(WebHttpContext * whc, overviewRecord * host);
 
   // Private variables
   InkHashTable *nodeRecords;    // container for overviewRecords

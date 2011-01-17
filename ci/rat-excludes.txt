@@ -78,6 +78,7 @@ test/SDKtest/synth_server/SDKtest_server.config
 test/deft/defs/climatelab.def
 test/deft/defs/localhost.def
 test/plugin/INKHttpHooksTrans/altSelect.notes
+proxy/mgmt/html2/tune/navigation_tree.xml
 proxy/mgmt/cli2/hashtable.cc
 lib/ts/ink_res_init.cc
 lib/ts/ink_res_mkquery.cc

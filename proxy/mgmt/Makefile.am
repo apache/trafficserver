@@ -17,7 +17,11 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+if BUILD_WEBUI
+SUBDIRS = cli cluster cop preparse tools utils web2 html2 stats api $(CLI_DIR)
+else
 SUBDIRS = cli cluster cop preparse tools utils web2 stats api $(CLI_DIR)
+endif
 
 DIST_SUBDIRS = $(SUBDIRS)
 

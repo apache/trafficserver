@@ -42,6 +42,7 @@
 #include "ClusterCom.h"
 #include "WebMgmtUtils.h"
 #include "MgmtHashTable.h"
+#include "WebHttpTree.h"
 
 int MultiCastMessages = 0;
 long LastHighestDelta = -1L;
@@ -1172,6 +1173,10 @@ ClusterCom::handleMultiCastFilePacket(char *last, char *ip)
             delete our_rec_cfg;
             delete our_locals_ht;
           }
+#if TS_HAS_WEBUI
+          if (!file_update_failure)
+            WebHttpTreeRebuildJsTree();
+#endif
         }
 
         if (!file_update_failure && (rb->updateVersion(reply, our_ver, ver) != OK_ROLLBACK)) {

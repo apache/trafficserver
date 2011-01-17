@@ -953,6 +953,9 @@ Cmd_ConfigSecurity(ClientData clientData, Tcl_Interp * interp, int argc, const c
     case CMD_CONFIG_SECURITY_MGMT:
       return (Cli_ConfigFileURL_Action(INK_FNAME_MGMT_ALLOW, "mgmt_allow.config", argtable->arg_string));
 
+    case CMD_CONFIG_SECURITY_ADMIN:
+      return (Cli_ConfigFileURL_Action(INK_FNAME_ADMIN_ACCESS, "admin_access.config", argtable->arg_string));
+
     case CMD_CONFIG_SECURITY_PASSWORD:
       return (ConfigSecurityPasswd());
     }

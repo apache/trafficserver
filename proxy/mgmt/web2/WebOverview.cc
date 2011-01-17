@@ -33,6 +33,8 @@
 
 #include "WebOverview.h"
 #include "WebGlobals.h"
+#include "WebHttpRender.h"
+#include "WebHttpTree.h"
 #include "WebMgmtUtils.h"
 
 #include "Main.h"
@@ -737,6 +739,86 @@ overviewPage::addAlarm(alarm_t type, char *ip, char *desc)
   ink_mutex_release(&accessLock);
 }
 
+// void overviewPage::generateAlarmsTable(textBuffer* output)
+//
+//  places an HTML table containing
+//
+//    resolve   hostname  alarm_description into output
+//
+void
+overviewPage::generateAlarmsTable(WebHttpContext * whc)
+{
+
+  overviewRecord *current;
+  AlarmListable *curAlarm;
+  char numBuf[256];
+  char name[32];
+  //  char *alarm_query;
+  int alarm_count;
+
+  textBuffer *output = whc->response_bdy;
+
+  ink_mutex_acquire(&accessLock);
+
+  // Iterate through each host
+  alarm_count = 0;
+  for (int i = 0; i < numHosts; i++) {
+    current = (overviewRecord *) sortRecords[i];
+
+    // Iterate through the list of alarms
+    curAlarm = current->nodeAlarms.head;
+
+    while (curAlarm != NULL) {
+      HtmlRndrTrOpen(output, HTML_CSS_NONE, HTML_ALIGN_LEFT);
+
+      // Hostname is an entry
+      HtmlRndrTdOpen(output, HTML_CSS_BODY_TEXT, HTML_ALIGN_NONE, HTML_VALIGN_TOP, NULL, NULL, 0);
+      output->copyFrom(current->hostname, strlen(current->hostname));
+      HtmlRndrTdClose(output);
+
+      // Alarm description is an entry
+      HtmlRndrTdOpen(output, HTML_CSS_BODY_TEXT, HTML_ALIGN_NONE, HTML_VALIGN_TOP, NULL, NULL, 0);
+      if (curAlarm->desc != NULL) {
+        output->copyFrom(curAlarm->desc, strlen(curAlarm->desc));
+      } else {
+        const char *alarmText = lmgmt->alarm_keeper->getAlarmText(curAlarm->type);
+        output->copyFrom(alarmText, strlen(alarmText));
+      }
+      HtmlRndrTdClose(output);
+
+      // the name of each checkbox is : "alarm:<alarm_count>"
+      // the value of each checkbox is: "<alarmId>:<ip addr>"
+      HtmlRndrTdOpen(output, HTML_CSS_BODY_TEXT, HTML_ALIGN_CENTER, HTML_VALIGN_NONE, NULL, NULL, 0);
+      if (curAlarm->ip == NULL)
+        snprintf(numBuf, sizeof(numBuf), "%d:local", curAlarm->type);
+      else
+        snprintf(numBuf, sizeof(numBuf), "%d:%s", curAlarm->type, curAlarm->ip);
+      snprintf(name, sizeof(name), "alarm:%d", alarm_count);
+      HtmlRndrInput(output, HTML_CSS_NONE, HTML_TYPE_CHECKBOX, name, numBuf, NULL, NULL);
+      HtmlRndrTdClose(output);
+
+      HtmlRndrTrClose(output);
+      curAlarm = curAlarm->link.next;
+
+      alarm_count++;
+
+    }
+  }
+
+  ink_mutex_release(&accessLock);
+
+  // check if we didn't find any alarms
+  if (alarm_count == 0) {
+    HtmlRndrTrOpen(output, HTML_CSS_NONE, HTML_ALIGN_NONE);
+    HtmlRndrTdOpen(output, HTML_CSS_BODY_TEXT, HTML_ALIGN_NONE, HTML_VALIGN_NONE, NULL, NULL, 3);
+    HtmlRndrSpace(output, 2);
+    HtmlRndrText(output, whc->lang_dict_ht, HTML_ID_NO_ACTIVE_ALARMS);
+    HtmlRndrTdClose(output);
+    HtmlRndrTrClose(output);
+  }
+
+}
+
 void
 overviewPage::generateAlarmsTableCLI(textBuffer * output)
 {
@@ -820,6 +902,225 @@ overviewPage::generateAlarmsTableCLI(textBuffer * output)
 }                               // end generateAlarmsTableCLI()
 
 #if TS_HAS_WEBUI
+// void overviewPage::generateAlarmsSummary(textBuffer* output)
+//
+//  alarm summary information (Alarm! [X pending])
+//
+void
+overviewPage::generateAlarmsSummary(WebHttpContext * whc)
+{
+
+  overviewRecord *current;
+  AlarmListable *curAlarm;
+  char buf[256];
+  int alarm_count;
+  char *alarm_link;
+
+  textBuffer *output = whc->response_bdy;
+
+  ink_mutex_acquire(&accessLock);
+
+  // Iterate through each host
+  alarm_count = 0;
+  for (int i = 0; i < numHosts; i++) {
+    current = (overviewRecord *) sortRecords[i];
+    // Iterate through the list of alarms
+    curAlarm = current->nodeAlarms.head;
+    while (curAlarm != NULL) {
+      alarm_count++;
+      curAlarm = curAlarm->link.next;
+    }
+  }
+
+  ink_mutex_release(&accessLock);
+
+  if (alarm_count > 0) {
+    HtmlRndrTableOpen(output, "100%", 0, 0, 0);
+
+    HtmlRndrTrOpen(output, HTML_CSS_ALARM_COLOR, HTML_ALIGN_NONE);
+    HtmlRndrTdOpen(output, HTML_CSS_GREY_LINKS, HTML_ALIGN_NONE, HTML_VALIGN_NONE, NULL, "30", 0);
+    alarm_link = WebHttpGetLink_Xmalloc(HTML_ALARM_FILE);
+    HtmlRndrAOpen(output, HTML_CSS_NONE, alarm_link, NULL);
+    xfree(alarm_link);
+    HtmlRndrSpace(output, 2);
+    HtmlRndrText(output, whc->lang_dict_ht, HTML_ID_ALARM);
+    snprintf(buf, sizeof(buf), "! [%d ", alarm_count);
+    output->copyFrom(buf, strlen(buf));
+    HtmlRndrText(output, whc->lang_dict_ht, HTML_ID_PENDING);
+    snprintf(buf, sizeof(buf), "]");
+    output->copyFrom(buf, strlen(buf));
+    HtmlRndrAClose(output);
+    HtmlRndrTdClose(output);
+    HtmlRndrTrClose(output);
+
+    HtmlRndrTrOpen(output, HTML_CSS_NONE, HTML_ALIGN_NONE);
+    HtmlRndrTdOpen(output, HTML_CSS_TERTIARY_COLOR, HTML_ALIGN_NONE, HTML_VALIGN_NONE, "1", "1", 0);
+    HtmlRndrDotClear(output, 1, 1);
+    HtmlRndrTdClose(output);
+
+    HtmlRndrTrClose(output);
+
+    HtmlRndrTableClose(output);
+
+  }
+}
+
+// generates the table for the overview page
+//
+//  the entries are   hostname, on/off, alarm
+//
+void
+overviewPage::generateTable(WebHttpContext * whc)
+{
+
+  // Varariables for finding out information about a specific node
+  overviewRecord *current;
+  char *hostName;
+  bool alarm;
+  bool up;
+  bool found;
+  PowerLampState proxyUp;
+  bool sslEnabled = false;
+  const char refFormat[] = "%s://%s:%d%s";
+  char refBuf[256];             // Buffer for link to other nodes
+  char *domainStart;            // pointer to domain name part of hostna,e
+  int hostLen;                  // length of the host only portion of the hostname
+  char outBuf[16 + 1];
+  MgmtInt objs, t_hit, t_miss;
+  MgmtFloat ops, hits, mbps;
+  //  char *alarm_link;
+
+  textBuffer *output = whc->response_bdy;
+  MgmtHashTable *dict_ht = whc->lang_dict_ht;
+
+  // Check to see if SSL is enabled.  Do one check, and record
+  //  the info since it can change from under us in the pContext
+  //  structure and we at least want to be able to give a
+  //  consistent view
+  if (whc->server_state & WEB_HTTP_SERVER_STATE_SSL_ENABLED) {
+    sslEnabled = true;
+  }
+
+  ink_mutex_acquire(&accessLock);
+  for (int i = 0; i < numHosts; i++) {
+    current = (overviewRecord *) sortRecords[i];
+    current->getStatus(&hostName, &up, &alarm, &proxyUp);
+
+    // no longer need 'if (alarm)' since we have the alarm bar now
+    //if (alarm)
+    //HtmlRndrTrOpen(output, HTML_CSS_ALARM_COLOR, HTML_ALIGN_CENTER);
+    //else
+    HtmlRndrTrOpen(output, HTML_CSS_NONE, HTML_ALIGN_CENTER);
+
+    // Make the hostname non-qualified if we have a host name and not
+    // an ip address
+    if (isdigit(*hostName))
+      domainStart = NULL;
+    else
+      domainStart = strchr(hostName, '.');
+
+    if (domainStart == NULL)
+      hostLen = strlen(hostName);
+    else
+      hostLen = domainStart - hostName;
+
+    HtmlRndrTdOpen(output, HTML_CSS_BODY_TEXT, HTML_ALIGN_NONE, HTML_VALIGN_NONE, NULL, NULL, 0);
+    // INKqa01119  - remove the up check since we are currently
+    // not sending heartbeat packets when the proxy is off
+    // if (up == true && current->localNode == false) {
+    if (current->localNode == false) {
+      char *link = WebHttpGetLink_Xmalloc(HTML_DEFAULT_MONITOR_FILE);
+      if (sslEnabled == false) {
+        // coverity[non_const_printf_format_string]
+        snprintf(refBuf, sizeof(refBuf), refFormat, "http", hostName, wGlobals.webPort, link);
+      } else {
+        // coverity[non_const_printf_format_string]
+        snprintf(refBuf, sizeof(refBuf), refFormat, "https", hostName, wGlobals.webPort, link);
+      }
+      HtmlRndrAOpen(output, HTML_CSS_GRAPH, refBuf, NULL);
+      output->copyFrom(hostName, hostLen);
+      HtmlRndrAClose(output);
+      xfree(link);
+    } else {
+      output->copyFrom(hostName, hostLen);
+    }
+    HtmlRndrTdClose(output);
+
+    // Add On/Off light
+    HtmlRndrTdOpen(output, HTML_CSS_BODY_TEXT, HTML_ALIGN_NONE, HTML_VALIGN_NONE, NULL, NULL, 0);
+    switch (proxyUp) {
+    case LAMP_ON:
+      HtmlRndrText(output, dict_ht, HTML_ID_ON);
+      break;
+    case LAMP_OFF:
+      HtmlRndrText(output, dict_ht, HTML_ID_OFF);
+      break;
+    case LAMP_WARNING:
+      HtmlRndrText(output, dict_ht, HTML_ID_WARNING);
+      break;
+    }
+    HtmlRndrTdClose(output);
+
+    // objects served
+    HtmlRndrTdOpen(output, HTML_CSS_BODY_TEXT, HTML_ALIGN_NONE, HTML_VALIGN_NONE, NULL, NULL, 0);
+    current->varIntFromName("proxy.node.user_agents_total_documents_served", &objs);
+    snprintf(outBuf, sizeof(outBuf), "%.10lld", objs);
+    output->copyFrom(outBuf, strlen(outBuf));
+    HtmlRndrTdClose(output);
+
+    // ops/sec
+    if (up == true) {
+      ops = current->readFloat("proxy.node.user_agent_xacts_per_second", &found);
+    } else {
+      // Always report zero for down nodes
+      ops = 0;
+      found = true;
+    }
+    HtmlRndrTdOpen(output, HTML_CSS_BODY_TEXT, HTML_ALIGN_NONE, HTML_VALIGN_NONE, NULL, NULL, 0);
+    snprintf(outBuf, 16, "%.2f", ops);
+    output->copyFrom(outBuf, strlen(outBuf));
+    HtmlRndrTdClose(output);
+
+    // hit rate
+    HtmlRndrTdOpen(output, HTML_CSS_BODY_TEXT, HTML_ALIGN_NONE, HTML_VALIGN_NONE, NULL, NULL, 0);
+    current->varFloatFromName("proxy.node.cache_hit_ratio_avg_10s", &hits);
+    snprintf(outBuf, sizeof(outBuf), "%.2f%% ", hits * 100.0);
+    output->copyFrom(outBuf, strlen(outBuf));
+    HtmlRndrTdClose(output);
+
+    // throughput
+    HtmlRndrTdOpen(output, HTML_CSS_BODY_TEXT, HTML_ALIGN_NONE, HTML_VALIGN_NONE, NULL, NULL, 0);
+    current->varFloatFromName("proxy.node.client_throughput_out", &mbps);
+    snprintf(outBuf, sizeof(outBuf), "%.2f", mbps);
+    output->copyFrom(outBuf, strlen(outBuf));
+    HtmlRndrTdClose(output);
+
+    // hit latency
+    HtmlRndrTdOpen(output, HTML_CSS_BODY_TEXT, HTML_ALIGN_NONE, HTML_VALIGN_NONE, NULL, NULL, 0);
+    current->varIntFromName("proxy.node.http.transaction_msec_avg_10s.hit_fresh", &t_hit);
+    snprintf(outBuf, sizeof(outBuf), "%" PRId64 "", t_hit);
+    output->copyFrom(outBuf, strlen(outBuf));
+    HtmlRndrTdClose(output);
+
+    // miss latency
+    HtmlRndrTdOpen(output, HTML_CSS_BODY_TEXT, HTML_ALIGN_NONE, HTML_VALIGN_NONE, NULL, NULL, 0);
+    current->varIntFromName("proxy.node.http.transaction_msec_avg_10s.miss_cold", &t_miss);
+    snprintf(outBuf, sizeof(outBuf), "%" PRId64 "", t_miss);
+    output->copyFrom(outBuf, strlen(outBuf));
+    HtmlRndrTdClose(output);
+
+    // row close
+    HtmlRndrTrClose(output);
+
+    // show the 'details' section on the dashboard
+    if (whc->request_state & WEB_HTTP_STATE_MORE_DETAIL) {
+      this->addHostPanel(whc, current);
+    }
+
+  }
+
+  ink_mutex_release(&accessLock);
+}
 
 //
 // generates the table for the dashboard page for CLI
@@ -933,6 +1234,189 @@ overviewPage::generateTableCLI(textBuffer * output)
   ink_mutex_release(&accessLock);
 }                               // end generateTableCLI()
 
+// overviewPage::addHostPanel
+//
+//  Inserts stats entries for the host referenced by parameter host
+//  Called by overviewPage::generateTable
+//
+void
+overviewPage::addHostPanel(WebHttpContext * whc, overviewRecord * host)
+{
+
+  const char errorStr[] = "loading...";
+  char tmp[256];
+  in_addr ip;
+  char *ip_str;
+
+  textBuffer *output = whc->response_bdy;
+  MgmtHashTable *dict_ht = whc->lang_dict_ht;
+
+  //-----------------------------------------------------------------------
+  // SET 1: CACHE TRANSACTION SUMMARY
+  //-----------------------------------------------------------------------
+
+  HtmlRndrTrOpen(output, HTML_CSS_NONE, HTML_ALIGN_LEFT);
+  HtmlRndrTdOpen(output, HTML_CSS_NONE, HTML_ALIGN_NONE, HTML_VALIGN_NONE, NULL, NULL, 8);
+
+  MgmtFloat hits, hit_f, hit_r;
+  MgmtFloat errs, abts, f;
+
+  // get aborts
+  abts = 0;
+  if (host->varFloatFromName("proxy.node.http.transaction_frac_avg_10s.errors.pre_accept_hangups", &f))
+    abts += f;
+  if (host->varFloatFromName("proxy.node.http.transaction_frac_avg_10s.errors.empty_hangups", &f))
+    abts += f;
+  if (host->varFloatFromName("proxy.node.http.transaction_frac_avg_10s.errors.early_hangups", &f))
+    abts += f;
+  if (host->varFloatFromName("proxy.node.http.transaction_frac_avg_10s.errors.aborts", &f))
+    abts += f;
+
+  // get errors
+  errs = 0;
+  if (host->varFloatFromName("proxy.node.http.transaction_frac_avg_10s.errors.connect_failed", &f))
+    errs += f;
+  if (host->varFloatFromName("proxy.node.http.transaction_frac_avg_10s.errors.other", &f))
+    errs += f;
+
+  // get hits
+  hits = hit_f = hit_r = 0;
+  if (host->varFloatFromName("proxy.node.http.transaction_frac_avg_10s.hit_fresh", &hit_f))
+    hits += hit_f;
+  if (host->varFloatFromName("proxy.node.http.transaction_frac_avg_10s.hit_revalidated", &hit_r))
+    hits += hit_r;
+#ifndef OLD_WAY
+  host->varFloatFromName("proxy.node.cache_hit_ratio_avg_10s", &hits);
+#endif /* !OLD_WAY */
+
+#define SEPARATOR output->copyFrom("&nbsp;-&nbsp;", 13)
+
+  HtmlRndrTableOpen(output, NULL, 0, 0, 0);
+
+  HtmlRndrTrOpen(output, HTML_CSS_NONE, HTML_ALIGN_LEFT);
+  HtmlRndrTdOpen(output, HTML_CSS_BODY_TEXT, HTML_ALIGN_NONE, HTML_VALIGN_NONE, NULL, NULL, 0);
+  HtmlRndrText(output, dict_ht, HTML_ID_CACHE_HIT_RATE);
+  HtmlRndrTdClose(output);
+  HtmlRndrTdOpen(output, HTML_CSS_BODY_TEXT, HTML_ALIGN_NONE, HTML_VALIGN_NONE, NULL, NULL, 0);
+  SEPARATOR;
+  snprintf(tmp, sizeof(tmp), "%.1f%% (%.1f%% ", hits * 100.0, hit_f * 100.0);
+  output->copyFrom(tmp, strlen(tmp));
+  HtmlRndrText(output, dict_ht, HTML_ID_FRESH);
+  snprintf(tmp, sizeof(tmp), ", %.1f%% ", hit_r * 100.0);
+  output->copyFrom(tmp, strlen(tmp));
+  HtmlRndrText(output, dict_ht, HTML_ID_REFRESH);
+  output->copyFrom(")", 1);
+  HtmlRndrTdClose(output);
+  HtmlRndrTrClose(output);
+
+  HtmlRndrTrOpen(output, HTML_CSS_NONE, HTML_ALIGN_LEFT);
+  HtmlRndrTdOpen(output, HTML_CSS_BODY_TEXT, HTML_ALIGN_NONE, HTML_VALIGN_NONE, NULL, NULL, 0);
+  HtmlRndrText(output, dict_ht, HTML_ID_ERRORS);
+  HtmlRndrTdClose(output);
+  HtmlRndrTdOpen(output, HTML_CSS_BODY_TEXT, HTML_ALIGN_NONE, HTML_VALIGN_NONE, NULL, NULL, 0);
+  SEPARATOR;
+  snprintf(tmp, sizeof(tmp), "%.1f%%", errs * 100.0);
+  output->copyFrom(tmp, strlen(tmp));
+  HtmlRndrTdClose(output);
+  HtmlRndrTrClose(output);
+
+  HtmlRndrTrOpen(output, HTML_CSS_NONE, HTML_ALIGN_LEFT);
+  HtmlRndrTdOpen(output, HTML_CSS_BODY_TEXT, HTML_ALIGN_NONE, HTML_VALIGN_NONE, NULL, NULL, 0);
+  HtmlRndrText(output, dict_ht, HTML_ID_ABORTS);
+  HtmlRndrTdClose(output);
+  HtmlRndrTdOpen(output, HTML_CSS_BODY_TEXT, HTML_ALIGN_NONE, HTML_VALIGN_NONE, NULL, NULL, 0);
+  SEPARATOR;
+  snprintf(tmp, sizeof(tmp), "%.1f%%", abts * 100.0);
+  output->copyFrom(tmp, strlen(tmp));
+  HtmlRndrTdClose(output);
+  HtmlRndrTrClose(output);
+
+  //-----------------------------------------------------------------------
+  // SET 2: ACTIVE CONNECTIONS
+  //-----------------------------------------------------------------------
+
+  MgmtInt clients, servers;
+
+  clients = servers = 0;
+
+  host->varIntFromName("proxy.node.current_client_connections", &clients);
+  host->varIntFromName("proxy.node.current_server_connections", &servers);
+
+  HtmlRndrTrOpen(output, HTML_CSS_NONE, HTML_ALIGN_LEFT);
+  HtmlRndrTdOpen(output, HTML_CSS_BODY_TEXT, HTML_ALIGN_NONE, HTML_VALIGN_NONE, NULL, NULL, 0);
+  HtmlRndrText(output, dict_ht, HTML_ID_ACTIVE_CLIENTS);
+  HtmlRndrTdClose(output);
+  HtmlRndrTdOpen(output, HTML_CSS_BODY_TEXT, HTML_ALIGN_NONE, HTML_VALIGN_NONE, NULL, NULL, 0);
+  SEPARATOR;
+  snprintf(tmp, sizeof(tmp), "%" PRId64 "", clients);
+  output->copyFrom(tmp, strlen(tmp));
+  HtmlRndrTdClose(output);
+  HtmlRndrTrClose(output);
+
+  HtmlRndrTrOpen(output, HTML_CSS_NONE, HTML_ALIGN_LEFT);
+  HtmlRndrTdOpen(output, HTML_CSS_BODY_TEXT, HTML_ALIGN_NONE, HTML_VALIGN_NONE, NULL, NULL, 0);
+  HtmlRndrText(output, dict_ht, HTML_ID_ACTIVE_SERVERS);
+  HtmlRndrTdClose(output);
+  HtmlRndrTdOpen(output, HTML_CSS_BODY_TEXT, HTML_ALIGN_NONE, HTML_VALIGN_NONE, NULL, NULL, 0);
+  SEPARATOR;
+  snprintf(tmp, sizeof(tmp), "%" PRId64 "", servers);
+  output->copyFrom(tmp, strlen(tmp));
+  HtmlRndrTdClose(output);
+  HtmlRndrTrClose(output);
+
+  //-----------------------------------------------------------------------
+  // SET 3: CLUSTER ADDRESS
+  //-----------------------------------------------------------------------
+
+  HtmlRndrTrOpen(output, HTML_CSS_NONE, HTML_ALIGN_LEFT);
+  HtmlRndrTdOpen(output, HTML_CSS_BODY_TEXT, HTML_ALIGN_NONE, HTML_VALIGN_NONE, NULL, NULL, 0);
+  HtmlRndrText(output, dict_ht, HTML_ID_NODE_IP_ADDRESS);
+  HtmlRndrTdClose(output);
+  HtmlRndrTdOpen(output, HTML_CSS_BODY_TEXT, HTML_ALIGN_NONE, HTML_VALIGN_NONE, NULL, NULL, 0);
+  SEPARATOR;
+  ip.s_addr = host->inetAddr;
+  ip_str = inet_ntoa(ip);
+  output->copyFrom(ip_str, strlen(ip_str));
+  HtmlRndrTdClose(output);
+  HtmlRndrTrClose(output);
+
+  //-----------------------------------------------------------------------
+  // SET 4: TS Lite
+  //-----------------------------------------------------------------------
+
+  if (host->varStrFromName("proxy.node.cache.bytes_free\\b", tmp, 256) == false) {
+    ink_strncpy(tmp, errorStr, sizeof(tmp));
+  }
+  HtmlRndrTrOpen(output, HTML_CSS_NONE, HTML_ALIGN_LEFT);
+  HtmlRndrTdOpen(output, HTML_CSS_BODY_TEXT, HTML_ALIGN_NONE, HTML_VALIGN_NONE, NULL, NULL, 0);
+  HtmlRndrText(output, dict_ht, HTML_ID_CACHE_FREE_SPACE);
+  HtmlRndrTdClose(output);
+  HtmlRndrTdOpen(output, HTML_CSS_BODY_TEXT, HTML_ALIGN_NONE, HTML_VALIGN_NONE, NULL, NULL, 0);
+  SEPARATOR;
+  output->copyFrom(tmp, strlen(tmp));
+  HtmlRndrTdClose(output);
+  HtmlRndrTrClose(output);
+
+  if (host->varStrFromName("proxy.node.hostdb.hit_ratio_avg_10s\\p", tmp, 256) == false) {
+    ink_strncpy(tmp, errorStr, sizeof(tmp));
+  }
+  HtmlRndrTrOpen(output, HTML_CSS_NONE, HTML_ALIGN_LEFT);
+  HtmlRndrTdOpen(output, HTML_CSS_BODY_TEXT, HTML_ALIGN_NONE, HTML_VALIGN_NONE, NULL, NULL, 0);
+  HtmlRndrText(output, dict_ht, HTML_ID_HOSTDB_HIT_RATE);
+  HtmlRndrTdClose(output);
+  HtmlRndrTdOpen(output, HTML_CSS_BODY_TEXT, HTML_ALIGN_NONE, HTML_VALIGN_NONE, NULL, NULL, 0);
+  SEPARATOR;
+  output->copyFrom(tmp, strlen(tmp));
+  HtmlRndrTdClose(output);
+  HtmlRndrTrClose(output);
+
+  HtmlRndrTableClose(output);
+
+  HtmlRndrTdClose(output);
+  HtmlRndrTrClose(output);
+
+#undef SEPARATOR
+}
 #endif
 
 // int overviewPage::getClusterHosts(Expanding Array* hosts)

@@ -389,6 +389,7 @@ typedef enum
 
   typedef enum
   {
+    INK_FNAME_ADMIN_ACCESS,     /* admin_access.config */
     INK_FNAME_CACHE_OBJ,        /* cache.config */
     INK_FNAME_CONGESTION,       /* congestion.config */
     INK_FNAME_HOSTING,          /* hosting.config */
@@ -419,6 +420,7 @@ typedef enum
  */
   typedef enum
   {
+    INK_ADMIN_ACCESS,           /* admin_access.config */
     INK_CACHE_NEVER,            /* cache.config */
     INK_CACHE_IGNORE_NO_CACHE,
     INK_CACHE_IGNORE_CLIENT_NO_CACHE,
@@ -581,6 +583,15 @@ typedef enum
     INKRuleTypeT type;
     INKError error;
   } INKCfgEle;
+
+/* admin_access.config */
+  typedef struct
+  {
+    INKCfgEle cfg_ele;
+    char *user;                 /* username */
+    char *password;             /* MD5 encrypted */
+    INKAccessT access;          /* type of access allowed for user */
+  } INKAdminAccessEle;
 
 /* cache.config */
   typedef struct
@@ -917,6 +928,8 @@ typedef enum
   inkapi void INKSspecDestroy(INKSspec * ele);
   inkapi INKPdSsFormat *INKPdSsFormatCreate();
   inkapi void INKPdSsFormatDestroy(INKPdSsFormat * ele);
+  inkapi INKAdminAccessEle *INKAdminAccessEleCreate();
+  inkapi void INKAdminAccessEleDestroy(INKAdminAccessEle * ele);
   inkapi INKCacheEle *INKCacheEleCreate(INKRuleTypeT type);
   inkapi void INKCacheEleDestroy(INKCacheEle * ele);
   inkapi INKCongestionEle *INKCongestionEleCreate();

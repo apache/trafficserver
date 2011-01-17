@@ -174,6 +174,7 @@ INKDomainList copy_domain_list(INKDomainList list);
 INKStringList copy_string_list(INKStringList list);
 INKIntList copy_int_list(INKIntList list);
 
+INKAdminAccessEle *copy_admin_access_ele(INKAdminAccessEle * ele);
 INKCacheEle *copy_cache_ele(INKCacheEle * ele);
 INKCongestionEle *copy_congestion_ele(INKCongestionEle * ele);
 INKHostingEle *copy_hosting_ele(INKHostingEle * ele);
