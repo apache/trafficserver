@@ -24,10 +24,10 @@ AM_CPPFLAGS = \
   -I$(top_srcdir)/proxy \
   -I$(top_srcdir)/proxy/http \
   -I$(top_srcdir)/proxy/http/remap \
-  -I$(top_srcdir)/proxy/mgmt \
-  -I$(top_srcdir)/proxy/mgmt/preparse \
-  -I$(top_srcdir)/proxy/mgmt/utils \
-  -I$(top_srcdir)/proxy/hdrs
+  -I$(top_srcdir)/proxy/hdrs \
+  -I$(top_srcdir)/mgmt \
+  -I$(top_srcdir)/mgmt/preparse \
+  -I$(top_srcdir)/mgmt/utils
 
 EXTRA_DIST = LogStandalone.cc
 

@@ -35,8 +35,8 @@ proxy/cache_test.config
 proxy/congest/FeatureSpec.txt
 proxy/http/stats.memo
 proxy/issues.txt
-proxy/mgmt/cli2/cli_detailed_command_list.txt
-proxy/mgmt/cli2/cli_feature_spec.txt
+mgmt/cli2/cli_detailed_command_list.txt
+mgmt/cli2/cli_feature_spec.txt
 example/README.internal
 example/blacklist-1/blacklist.txt
 example/thread-pool/TESTPLAN.txt
@@ -70,7 +70,7 @@ iocore/cache/Notes
 iocore/cache/cache_test.config
 iocore/fastio/tools/advbmark/runme
 lib/records/test_records.config
-proxy/mgmt/stats/spec
+mgmt/stats/spec
 proxy/mime.types
 proxy/msgs/TSMessages.mc
 proxy/msgs/TSMsgs.rc
@@ -78,8 +78,8 @@ test/SDKtest/synth_server/SDKtest_server.config
 test/deft/defs/climatelab.def
 test/deft/defs/localhost.def
 test/plugin/INKHttpHooksTrans/altSelect.notes
-proxy/mgmt/html2/tune/navigation_tree.xml
-proxy/mgmt/cli2/hashtable.cc
+mgmt/html2/tune/navigation_tree.xml
+mgmt/cli2/hashtable.cc
 lib/ts/ink_res_init.cc
 lib/ts/ink_res_mkquery.cc
 lib/ts/ink_rand.h

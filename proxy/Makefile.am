@@ -16,16 +16,17 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+# Note that hdrs is targeted from ../Makefile.am
 if STANDALONE_IOCORE
 noinst_LIBRARIES = libTrafficServerStandalone.a
 bin_PROGRAMS =
 noinst_PROGRAMS =
 else
-SUBDIRS = congest http hdrs logging
+SUBDIRS = congest http logging
 if BUILD_WCCP
 SUBDIRS += wccp
 endif
-SUBDIRS += mgmt config stats
+SUBDIRS += config stats
 noinst_LIBRARIES =
 bin_PROGRAMS = \
   traffic_server \
@@ -41,9 +42,9 @@ AM_CPPFLAGS = \
   -I$(srcdir)/logging \
   -I$(srcdir)/http/remap  \
   -I$(srcdir)/hdrs \
-  -I$(srcdir)/mgmt \
-  -I$(srcdir)/mgmt/preparse \
-  -I$(srcdir)/mgmt/utils \
+  -I$(top_srcdir)/mgmt \
+  -I$(top_srcdir)/mgmt/preparse \
+  -I$(top_srcdir)/mgmt/utils \
   -I$(srcdir)/api/ts
 
 noinst_HEADERS = \
@@ -144,9 +145,9 @@ traffic_server_LDADD = \
   logging/liblogging.a \
   stats/libstats.a \
   hdrs/libhdrs.a  \
-  mgmt/preparse/libpreparse.a \
-  mgmt/utils/libutils_p.a \
-  mgmt/libmgmt_p.a \
+  $(top_builddir)/mgmt/preparse/libpreparse.a \
+  $(top_builddir)/mgmt/utils/libutils_p.a \
+  $(top_builddir)/mgmt/libmgmt_p.a \
   $(top_builddir)/iocore/utils/libinkutils.a \
   $(top_builddir)/iocore/cluster/libinkcluster.a \
   $(top_builddir)/iocore/dns/libinkdns.a \
@@ -202,9 +203,9 @@ traffic_logcat_LDADD = \
   stats/libstats.a \
   hdrs/libhdrs.a \
   congest/libCongestionControl.a \
-  mgmt/preparse/libpreparse.a \
-  mgmt/utils/libutils_p.a \
-  mgmt/libmgmt_p.a \
+  $(top_builddir)/mgmt/preparse/libpreparse.a \
+  $(top_builddir)/mgmt/utils/libutils_p.a \
+  $(top_builddir)/mgmt/libmgmt_p.a \
   $(top_builddir)/iocore/utils/libinkutils.a \
   $(top_builddir)/iocore/cluster/libinkcluster.a \
   $(top_builddir)/iocore/dns/libinkdns.a \
@@ -270,9 +271,9 @@ traffic_logstats_LDADD = \
   stats/libstats.a \
   hdrs/libhdrs.a \
   congest/libCongestionControl.a \
-  mgmt/preparse/libpreparse.a \
-  mgmt/utils/libutils_p.a \
-  mgmt/libmgmt_p.a \
+  $(top_builddir)/mgmt/preparse/libpreparse.a \
+  $(top_builddir)/mgmt/utils/libutils_p.a \
+  $(top_builddir)/mgmt/libmgmt_p.a \
   $(top_builddir)/iocore/utils/libinkutils.a \
   $(top_builddir)/iocore/cluster/libinkcluster.a \
   $(top_builddir)/iocore/dns/libinkdns.a \
@@ -339,9 +340,9 @@ traffic_sac_LDADD = \
   logging/liblogging.a \
   stats/libstats.a \
   hdrs/libhdrs.a \
-  mgmt/preparse/libpreparse.a \
-  mgmt/utils/libutils_p.a \
-  mgmt/libmgmt_p.a \
+  $(top_builddir)/mgmt/preparse/libpreparse.a \
+  $(top_builddir)/mgmt/utils/libutils_p.a \
+  $(top_builddir)/mgmt/libmgmt_p.a \
   $(top_builddir)/iocore/utils/libinkutils.a \
   $(top_builddir)/iocore/cluster/libinkcluster.a \
   $(top_builddir)/iocore/dns/libinkdns.a \

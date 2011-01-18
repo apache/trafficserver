@@ -18,25 +18,20 @@
 #  limitations under the License.
 
 AM_CPPFLAGS = \
-  $(iocore_include_dirs) \
-  -I$(top_srcdir)/proxy/mgmt/utils \
-  -I$(top_srcdir)/proxy/mgmt/api \
-  -I$(top_srcdir)/proxy/mgmt/api/include \
-  -I$(top_srcdir)/proxy/mgmt
+  -I$(top_srcdir)/lib/records \
+  -I$(top_srcdir)/mgmt \
+  -I$(top_srcdir)/mgmt/api/include \
+  -I$(top_srcdir)/mgmt/utils \
+  -I$(top_srcdir)/mgmt/web2 \
+  -I$(top_srcdir)/lib/tsconfig
 
 MGMT_DEFS = @MGMT_DEFS@
 DEFS += $(MGMT_DEFS)
 
-noinst_PROGRAMS = traffic_shmem_clean
-noinst_LIBRARIES = libinksysapi.a libinkconfigapi.a
+noinst_LIBRARIES = libcluster.a
 
-traffic_shmem_clean_SOURCES = ShmemClean.cc
-traffic_shmem_clean_LDFLAGS = @EXTRA_CXX_LDFLAGS@
-
-libinksysapi_a_SOURCES = SysAPI.cc SysAPI.h
-
-libinkconfigapi_a_SOURCES = \
-  ConfigAPI.cc \
-  ConfigAPI.h \
-  SysAPI.cc \
-  SysAPI.h
+libcluster_a_SOURCES = \
+  ClusterCom.cc \
+  ClusterCom.h \
+  VMap.cc \
+  VMap.h

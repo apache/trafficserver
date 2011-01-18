@@ -47,7 +47,7 @@
 // Table of Variable/Descriptions for the Configure section
 //
 // The variables come from 'proxy/config/records.conf' and
-// the Descriptions from 'proxy/mgmt/html/protocols.stats.ink'
+// the Descriptions from 'mgmt/html/protocols.stats.ink'
 // It would be nice to cosolidate these so that both
 // the ASCII and HTML output could use the same info.
 //

@@ -36,9 +36,11 @@
 #include "Diags.h"
 
 #ifdef LOCAL_MANAGER
-#include "mgmt/Main.h"
+// mgmt/Main.h
+#include "../Main.h"
 #else
-#include "mgmt/../Main.h"
+// proxy/Main.h
+#include "../../proxy/Main.h"
 #endif
 
 extern int diags_init;

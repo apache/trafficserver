@@ -20,8 +20,8 @@ AM_CPPFLAGS = \
   $(iocore_include_dirs) \
   -I$(top_srcdir)/lib/records \
   -I$(top_srcdir)/proxy \
-  -I$(top_srcdir)/proxy/mgmt \
-  -I$(top_srcdir)/proxy/mgmt/utils
+  -I$(top_srcdir)/mgmt \
+  -I$(top_srcdir)/mgmt/utils
 
 noinst_LIBRARIES = libstats.a
 

@@ -19,10 +19,10 @@
 
 AM_CPPFLAGS = $(iocore_include_dirs) \
   -I$(top_srcdir)/lib/records \
-  -I$(top_srcdir)/proxy/mgmt \
-  -I$(top_srcdir)/proxy/mgmt/utils \
-  -I$(top_srcdir)/proxy/mgmt/cluster \
-  -I$(top_srcdir)/proxy/mgmt/api/include
+  -I$(top_srcdir)/mgmt \
+  -I$(top_srcdir)/mgmt/utils \
+  -I$(top_srcdir)/mgmt/cluster \
+  -I$(top_srcdir)/mgmt/api/include
 
 MGMT_DEFS = @MGMT_DEFS@
 DEFS += $(MGMT_DEFS)
@@ -32,7 +32,7 @@ bin_PROGRAMS = traffic_cop
 traffic_cop_SOURCES = TrafficCop.cc
 traffic_cop_LDFLAGS = @EXTRA_CXX_LDFLAGS@
 traffic_cop_LDADD = \
-  $(top_builddir)/proxy/mgmt/api/remote/libmgmtapiremote.a \
+  $(top_builddir)/mgmt/api/remote/libmgmtapiremote.a \
   $(top_builddir)/iocore/utils/libinkutils.a \
   $(top_builddir)/lib/ts/libts.a \
-  @LIBTHREAD@ @LIBSOCKET@ @LIBTCL@ @LIBICONV@ @LIBRT@ @LIBDL@ @LIBSSL@ 
+  @LIBTHREAD@ @LIBSOCKET@ @LIBNSL@ @LIBTCL@ @LIBICONV@ @LIBRT@ @LIBDL@ @LIBSSL@ 

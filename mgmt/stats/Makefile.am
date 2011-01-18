@@ -19,19 +19,23 @@
 
 AM_CPPFLAGS = \
   -I$(top_srcdir)/lib/records \
-  -I$(top_srcdir)/proxy/mgmt \
-  -I$(top_srcdir)/proxy/mgmt/api/include \
-  -I$(top_srcdir)/proxy/mgmt/utils \
+  -I$(top_srcdir)/mgmt \
+  -I$(top_srcdir)/mgmt/cluster \
+  -I$(top_srcdir)/mgmt/utils \
+  -I$(top_srcdir)/mgmt/api/include \
+  -I$(top_srcdir)/mgmt/web2 \
   -I$(top_srcdir)/lib/tsconfig \
-  -I$(top_srcdir)/proxy/mgmt/web2
+  -I$(top_srcdir)/proxy
 
 MGMT_DEFS = @MGMT_DEFS@
 DEFS += $(MGMT_DEFS)
 
-noinst_LIBRARIES = libcluster.a
+noinst_LIBRARIES = libstats.a
 
-libcluster_a_SOURCES = \
-  ClusterCom.cc \
-  ClusterCom.h \
-  VMap.cc \
-  VMap.h
+libstats_a_SOURCES = \
+  StatProcessor.cc \
+  StatProcessor.h \
+  StatType.cc \
+  StatType.h \
+  StatXML.cc \
+  StatXML.h

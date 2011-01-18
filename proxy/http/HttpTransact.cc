@@ -6615,7 +6615,7 @@ HttpTransact::process_quick_http_filter(State* s, int method)
   // different internal implementation. We ought to either rewrite this
   // completely, or just remove it.
 
-  // Please refer to proxy/mgmt/RecordsConfig.cc file,
+  // Please refer to mgmt/RecordsConfig.cc file,
   // "proxy.config.http.quick_filter.mask" variable for
   // detailed information about quick_filter_mask layout.
 

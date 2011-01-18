@@ -21,9 +21,9 @@ AM_CPPFLAGS = \
   -I$(top_srcdir)/lib/records \
   -I$(top_srcdir)/proxy \
   -I$(top_srcdir)/proxy/http \
-  -I$(top_srcdir)/proxy/mgmt \
-  -I$(top_srcdir)/proxy/mgmt/preparse \
-  -I$(top_srcdir)/proxy/mgmt/utils \
+  -I$(top_srcdir)/mgmt \
+  -I$(top_srcdir)/mgmt/preparse \
+  -I$(top_srcdir)/mgmt/utils \
   -I$(top_srcdir)/proxy/hdrs
 
 noinst_LIBRARIES = libCongestionControl.a

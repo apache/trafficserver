@@ -24,7 +24,7 @@
 #ifndef _I_REC_SIGNALS_H_
 #define _I_REC_SIGNALS_H_
 
-// copy from proxy/mgmt/BaseManager.h
+// copy from mgmt/BaseManager.h
 #define REC_SIGNAL_PID                          0
 #define REC_SIGNAL_MACHINE_UP                   1
 #define REC_SIGNAL_MACHINE_DOWN                 2
