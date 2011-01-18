@@ -35,4 +35,4 @@ traffic_cop_LDADD = \
   $(top_builddir)/proxy/mgmt/api/remote/libmgmtapiremote.a \
   $(top_builddir)/iocore/utils/libinkutils.a \
   $(top_builddir)/lib/ts/libts.a \
-  @LIBTHREAD@ @LIBSOCKET@ @LIBTCL@ @LIBRT@ @LIBDL@ @LIBSSL@ 
+  @LIBTHREAD@ @LIBSOCKET@ @LIBTCL@ @LIBICONV@ @LIBRT@ @LIBDL@ @LIBSSL@ 

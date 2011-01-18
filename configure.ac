@@ -1230,7 +1230,6 @@ AC_CONFIG_FILES([proxy/mgmt/api/remote/Makefile])
 AC_CONFIG_FILES([proxy/mgmt/cli2/Makefile])
 AC_CONFIG_FILES([proxy/mgmt/cli/Makefile])
 AC_CONFIG_FILES([proxy/mgmt/cluster/Makefile])
-AC_CONFIG_FILES([proxy/mgmt/cop/Makefile])
 AS_IF([test "x$enable_webui" = "xyes"],
   [AC_CONFIG_FILES([proxy/mgmt/html2/Makefile])
    AC_CONFIG_FILES([proxy/mgmt/html2/charting/Makefile])
@@ -1250,6 +1249,8 @@ AC_CONFIG_FILES([proxy/mgmt/web2/Makefile])
 AC_CONFIG_FILES([proxy/stats/Makefile])
 AC_CONFIG_FILES([proxy/wccp/Makefile])
 AC_CONFIG_FILES([proxy/api/ts/Makefile])
+# Traffic Cop
+AC_CONFIG_FILES([cop/Makefile])
 # production plugins
 AC_CONFIG_FILES([plugins/Makefile])
 AC_CONFIG_FILES([plugins/conf_remap/Makefile])
