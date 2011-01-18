@@ -64,7 +64,9 @@ bool start_binary(const char *abs_bin_path);
 // global variables
 // need to store the thread id associated with socket_test_thread
 // in case we want to  explicitly stop/cancel the testing thread
-ink_thread ink_test_thread;
+ink_thread ts_test_thread;
+ink_thread ts_event_thread;
+TSInitOptionT ts_init_options;
 
 /***************************************************************************
  * Helper Functions
@@ -132,7 +134,6 @@ send_and_parse_list(OpType op, LLQ * list)
 
   if (list_str)
     xfree(list_str);
-
   return INK_ERR_OKAY;
 }
 
@@ -229,23 +230,12 @@ start_binary(const char *abs_bin_path)
 /***************************************************************************
  * SetUp Operations
  ***************************************************************************/
-
-// signal handler for SIGUSR1 - sent when cancelling the socket-test-thread
-// Doesn't really need to do anything since it's currently only called when
-// terminating the remote client api, so everything should close anyways
-void
-terminate_signal(int sig)
-{
-  NOWARN_UNUSED(sig);
-  //fprintf(stderr, "[terminate_signal] received SIGUSR1 signal\n");
-  return;
-}
-
-
 INKError
-Init(const char *socket_path)
+Init(const char *socket_path, TSInitOptionT options)
 {
   INKError err = INK_ERR_OKAY;
+
+  ts_init_options = options;
 
   // SOCKET setup
   ink_assert(socket_path);
@@ -257,12 +247,15 @@ Init(const char *socket_path)
 
   // need to ignore SIGPIPE signal; in the case that TM is restarted
   signal(SIGPIPE, SIG_IGN);
-  signal(SIGUSR1, terminate_signal);    // for cancelling socket_test_thread
 
   // EVENT setup - initialize callback queue
-  remote_event_callbacks = create_callback_table("remote_callbacks");
-  if (!remote_event_callbacks)
-    return INK_ERR_SYS_CALL;
+  if (0 == (ts_init_options & TS_MGMT_OPT_NO_EVENTS)) {
+    remote_event_callbacks = create_callback_table("remote_callbacks");
+    if (!remote_event_callbacks)
+      return INK_ERR_SYS_CALL;
+  } else {
+    remote_event_callbacks = NULL;
+  }
 
   // try to connect to traffic manager
   // do this last so that everything else on client side is set up even if
@@ -273,13 +266,22 @@ Init(const char *socket_path)
     goto END;
 
   // if connected, create event thread that listens for events from TM
-  ink_thread_create(event_poll_thread_main, &event_socket_fd);
+  if (0 == (ts_init_options & TS_MGMT_OPT_NO_EVENTS)) {
+    ts_event_thread = ink_thread_create(event_poll_thread_main, &event_socket_fd, 0, DEFAULT_STACK_SIZE);
+  } else {
+    ts_event_thread = static_cast<ink_thread>(NULL);
+  }
 
 END:
 
   // create thread that periodically checks the socket connection
   // with TM alive - reconnects if not alive
-  ink_test_thread = ink_thread_create(socket_test_thread, NULL);
+  if (0 == (ts_init_options & TS_MGMT_OPT_NO_SOCK_TESTS)) {
+    ts_test_thread = ink_thread_create(socket_test_thread, NULL, 0, DEFAULT_STACK_SIZE);
+  } else {
+    ts_test_thread = static_cast<ink_thread>(NULL);
+  }
+
   return err;
 
 }
@@ -290,7 +292,8 @@ Terminate()
 {
   INKError err;
 
-  delete_callback_table(remote_event_callbacks);
+  if (remote_event_callbacks)
+    delete_callback_table(remote_event_callbacks);
 
   // be sure to do this before reset socket_fd's
   err = disconnect();
@@ -303,8 +306,13 @@ Terminate()
   // will seg fault if the socket paths are NULL while it is connecting;
   // the thread will be cancelled at a cancellation point in the
   // socket_test_thread, eg. sleep
-  ink_thread_cancel(ink_test_thread);
+  if (ts_test_thread)
+    ink_thread_cancel(ts_test_thread);
+  if (ts_event_thread)
+    ink_thread_cancel(ts_event_thread);
 
+  ts_test_thread = static_cast<ink_thread>(NULL);
+  ts_event_thread = static_cast<ink_thread>(NULL);
   set_socket_paths(NULL);       // clear the socket_path
 
   return INK_ERR_OKAY;
@@ -412,10 +420,8 @@ HardRestart()
   // determine the path of where start and stop TS scripts stored
   INKDiags(INK_DIAG_NOTE, "Root Directory: %s", Layout::get()->bindir);
 
-  Layout::relative_to(start_path, sizeof(start_path),
-                      Layout::get()->bindir, "start_traffic_server");
-  Layout::relative_to(stop_path, sizeof(stop_path),
-                      Layout::get()->bindir, "stop_traffic_server");
+  Layout::relative_to(start_path, sizeof(start_path), Layout::get()->bindir, "start_traffic_server");
+  Layout::relative_to(stop_path, sizeof(stop_path), Layout::get()->bindir, "stop_traffic_server");
 
   INKDiags(INK_DIAG_NOTE, "[HardRestart] start_path = %s", start_path);
   INKDiags(INK_DIAG_NOTE, "[HardRestart] stop_path = %s", stop_path);
@@ -708,6 +714,8 @@ EventSignalCbRegister(char *event_name, INKEventSignalFunc func, void *data)
 
   if (func == NULL)
     return INK_ERR_PARAMS;
+  if (!remote_event_callbacks)
+    return INK_ERR_FAIL;
 
   err = cb_table_register(remote_event_callbacks, event_name, func, data, &first_time);
   if (err != INK_ERR_OKAY)
@@ -741,6 +749,9 @@ INKError
 EventSignalCbUnregister(char *event_name, INKEventSignalFunc func)
 {
   INKError err;
+
+  if (!remote_event_callbacks)
+    return INK_ERR_FAIL;
 
   // remove the callback function from the table
   err = cb_table_unregister(remote_event_callbacks, event_name, func);

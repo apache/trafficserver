@@ -202,15 +202,6 @@ extern "C"
   } INKDiagsT;
 
 /*--- event operations ----------------------------------------------------*/
-/*
-typedef enum
-{
-  INK_EVENT_TYPE_PREDEFINED,
-  INK_EVENT_TYPE_CONDITIONAL,
-  INK_EVENT_TYPE_UNDEFINED
-} INKEventTypeT;
-*/
-
   typedef enum
   {
     INK_EVENT_PRIORITY_WARNING,
@@ -316,6 +307,7 @@ typedef enum
     INK_LOG_MODE_UNDEFINED
   } INKLogModeT;
 
+  /* TODO: This should be removed */
   typedef enum                  /* access privileges to news articles cached by Traffic Server  */
   {
     INK_MGMT_ALLOW_ALLOW,
@@ -455,6 +447,14 @@ typedef enum
     INK_TYPE_UNDEFINED,
     INK_TYPE_COMMENT            /* for internal use only */
   } INKRuleTypeT;
+
+  /* These are initialization options for the Init() function. */
+  typedef enum
+  {
+    TS_MGMT_OPT_DEFAULTS = 0,
+    TS_MGMT_OPT_NO_EVENTS,      /* No event callbacks and threads */
+    TS_MGMT_OPT_NO_SOCK_TESTS  /* No socket test thread */
+  } TSInitOptionT;
 
 
 /***************************************************************************
@@ -983,12 +983,13 @@ typedef enum
  * Input: socket_path - not applicable for local clients
  *                      for remote users, the path to the config directory
  *         (eg. run from bin, socket_path = "../etc/trafficserver")
+ *        options - Control some features of the APIs
  * Output: INK_ERR_xx
  * Note: If remote client successfully connects, returns INK_ERR_OKAY; but
  *       even if not successful connection (eg. client program is started
  *       before TM) then can still make API calls and will try connecting then
  */
-  inkapi INKError INKInit(const char *socket_path);
+  inkapi INKError INKInit(const char *socket_path, TSInitOptionT options );
 
 /* INKTerminate: does clean up for API clients
  * Input: <none>

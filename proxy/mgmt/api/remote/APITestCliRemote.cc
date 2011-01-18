@@ -2551,30 +2551,14 @@ main(int argc, char **argv)
 {
   INKError ret;
 
-  // initialize
   Layout::create();
-  // XXX: What's the INSTALL_TEST?
-  //      IMKInit calls setup_socket which
-  //      setup unix sockets which live inside
-  //      runtimedir not sysconfdir
-#if INSTALL_TEST
-  // XXX: This was ../etc/trafficserver/
-  if ((ret = INKInit(Layout::get()->runtimedir)) != INK_ERR_OKAY)
-#else
-  // XXX: This was even more wired; ../../../../etc/trafficserver/
-  if ((ret = INKInit(Layout::get()->runtimedir)) != INK_ERR_OKAY)
-#endif
-  {
+  if ((ret = INKInit(Layout::get()->runtimedir, TS_MGMT_OPT_DEFAULTS)) == INK_ERR_OKAY) {
+    runInteractive();
+    INKTerminate();
+    printf("END REMOTE API TEST\n");
+  } else {
     print_err("main", ret);
-
-    //return -1;
   }
-  // Interactive mode
-  runInteractive();
-
-  // clean-up
-  INKTerminate();               //ERROR:Causes infinite!!
-  printf("END REMOTE API TEST\n");
 
   return 0;
 }                               // end main()

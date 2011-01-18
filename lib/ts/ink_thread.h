@@ -106,7 +106,6 @@ ink_thread_create(void *(*f) (void *), void *a, int detached = 0, size_t stacksi
 {
   ink_thread t;
   int ret;
-
   pthread_attr_t attr;
 
   pthread_attr_init(&attr);

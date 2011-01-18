@@ -76,38 +76,32 @@ event_poll_thread_main(void *arg)
 {
   INKError err;
   int sock_fd;
-  INKEvent *event_notice;
+  INKEvent *event_notice = NULL;
 
   sock_fd = *((int *) arg);     // should be same as event_socket_fd
 
-  // Not use here.
-  //fd_set selectFDs;
-  //struct timeval timeout;
-
   // the sock_fd is going to be the one we listen for events on
   while (1) {
-
     // possible sock_fd is invalid if TM restarts and client reconnects
     if (sock_fd < 0) {
-      //fprintf(stderr, "[event_poll_thread_main] EXIT: invalid socket %d\n", sock_fd);
-      return NULL;              // exit thread
+      break;
     }
+
     // read the entire message, so create INKEvent for the callback
     event_notice = INKEventCreate();
     err = parse_event_notification(sock_fd, event_notice);
     if (err == INK_ERR_NET_READ || err == INK_ERR_NET_EOF) {
-      goto END;                 // socket connection error; kill the thread!
+      break;
     } else if (err != INK_ERR_OKAY) {
       INKEventDestroy(event_notice);
       continue;                 // skip the message
     }
     // got event notice; spawn new thread to handle the event's callback functions
-    ink_thread_create(event_callback_thread, (void *) event_notice);
+    ink_thread_create(event_callback_thread, (void *) event_notice, 0, DEFAULT_STACK_SIZE);
+  }
 
-  }                             // end while(1)
-
-END:
-  INKEventDestroy(event_notice);
+  if (event_notice)
+    INKEventDestroy(event_notice);
   ink_thread_exit(NULL);
   return NULL;
 }
@@ -134,20 +128,19 @@ event_callback_thread(void *arg)
 
   func_q = create_queue();
   if (!func_q) {
+    if (event_notice)
+      INKEventDestroy(event_notice);
     return NULL;
   }
+
   // obtain lock
   ink_mutex_acquire(&remote_event_callbacks->event_callback_lock);
 
   INKEventSignalFunc cb;
 
   // check if we have functions to call
-  if (remote_event_callbacks->event_callback_l[index] &&
-      (!queue_is_empty(remote_event_callbacks->event_callback_l[index]))) {
-
-    int queue_depth;
-
-    queue_depth = queue_len(remote_event_callbacks->event_callback_l[index]);
+  if (remote_event_callbacks->event_callback_l[index] && (!queue_is_empty(remote_event_callbacks->event_callback_l[index]))) {
+    int queue_depth = queue_len(remote_event_callbacks->event_callback_l[index]);
 
     for (int i = 0; i < queue_depth; i++) {
       event_cb = (EventCallbackT *) dequeue(remote_event_callbacks->event_callback_l[index]);

@@ -58,13 +58,17 @@ CallbackTable *local_event_callbacks;
  * eg. set up global structures; called by the INKMgmtAPI::INKInit()
  */
 INKError
-Init(const char *socket_path)
+Init(const char *socket_path, TSInitOptionT options)
 {
   NOWARN_UNUSED(socket_path);
   // socket_path should be null; only applies to remote clients
-  local_event_callbacks = create_callback_table("local_callbacks");
-  if (!local_event_callbacks)
-    return INK_ERR_SYS_CALL;
+  if (0 == (options & TS_MGMT_OPT_NO_EVENTS)) {
+    local_event_callbacks = create_callback_table("local_callbacks");
+    if (!local_event_callbacks)
+      return INK_ERR_SYS_CALL;
+  } else {
+    local_event_callbacks = NULL;
+  }
 
   return INK_ERR_OKAY;
 }

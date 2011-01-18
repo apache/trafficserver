@@ -1913,9 +1913,9 @@ INKRecordSetMlt(INKList rec_list, INKActionNeedT * action_need)
 
 /*--- api initialization and shutdown -------------------------------------*/
 inkapi INKError
-INKInit(const char *socket_path)
+INKInit(const char *socket_path, TSInitOptionT options)
 {
-  return Init(socket_path);
+  return Init(socket_path, options);
 }
 
 inkapi INKError

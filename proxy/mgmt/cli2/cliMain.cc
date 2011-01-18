@@ -79,7 +79,7 @@ main(int argc, char *argv[])
   CliDisplayPrintf = 1;
 
   // initialize MgmtAPI using TS runtime directory
-  status = INKInit(Layout::get()->runtimedir);
+  status = INKInit(Layout::get()->runtimedir, TS_MGMT_OPT_DEFAULTS);
   if (status) {
     printf("INKInit %d: Failed to initialize MgmtAPI in %s\n",
            status, Layout::get()->runtimedir);

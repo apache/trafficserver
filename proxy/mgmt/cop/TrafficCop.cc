@@ -24,7 +24,7 @@
 #include "libts.h"
 #include "I_Layout.h"
 #include "I_Version.h"
-#include "clientCLI.h"
+#include "INKMgmtAPI.h"
 #include "ClusterCom.h"
 
 #if defined(linux)
@@ -1145,24 +1145,16 @@ read_manager_int(const char *variable, int *value)
 }
 
 static int
-read_cli_int(ClientCLI *cli, const char *variable, int *value)
+read_mgmt_cli_int(const char *variable, int *value)
 {
-  char *resp = NULL;
-  int ret = 0;
+  INKInt val;
 
-  if (cli->connectToLM() != ClientCLI::err_none)
+  if (INKRecordGetInt(variable, &val) != INK_ERR_OKAY) {
+    cop_log(COP_WARNING, "(cli test) could not communicate with mgmt cli\n");
     return -1;
-
-  if ((cli->getVariable(variable, &resp) == ClientCLI::err_none) && resp) {
-    *value = ink_atoi(resp);
-    xfree(resp);
-  } else {
-    ret = -1;
-    cop_log(COP_WARNING, "(cli test) could not communicate with cli\n");
   }
-
-  cli->disconnectFromLM();
-  return ret;
+  *value = val;
+  return 0;
 }
 
 
@@ -1187,25 +1179,22 @@ test_rs_port()
 
 
 static int
-test_cli_port(ClientCLI *cli)
+test_mgmt_cli_port()
 {
-  char *resp = NULL;
+  INKString val;
   int ret = 0;
 
-  if (cli->connectToLM() != ClientCLI::err_none)
-    return -1;
-
-  if ((cli->getVariable("proxy.config.manager_binary", &resp) == ClientCLI::err_none) && resp) {
-    if (strcmp(resp, manager_binary) != 0) {
-      cop_log(COP_WARNING, "(cli test) bad response value, got %s, expected %s\n", resp, manager_binary);
+  if (INKRecordGetString("proxy.config.manager_binary", &val) !=  INK_ERR_OKAY) {
+    cop_log(COP_WARNING, "(cli test) unable to retrieve manager_binary\n");
+    ret = -1;
+  } else {
+    if (strcmp(val, manager_binary) != 0) {
+      cop_log(COP_WARNING, "(cli test) bad response value, got %s, expected %s\n", val, manager_binary);
       ret = -1;
     }
-    xfree(resp);
-  } else {
-    ret = -1;
   }
 
-  cli->disconnectFromLM();
+  INKfree(val);
   return ret;
 }
 
@@ -1299,7 +1288,7 @@ test_manager_http_port()
 
 
 static int
-heartbeat_manager(ClientCLI *cli)
+heartbeat_manager()
 {
   int err;
 
@@ -1307,7 +1296,7 @@ heartbeat_manager(ClientCLI *cli)
   cop_log(COP_DEBUG, "Entering heartbeat_manager()\n");
 #endif
   // the CLI, and the rsport if cluster is enabled.
-  err = test_cli_port(cli);
+  err = test_mgmt_cli_port();
   if ((0 == err) && (cluster_type != NO_CLUSTER))
     err = test_rs_port();
 
@@ -1406,7 +1395,7 @@ heartbeat_server()
 }
 
 static int
-server_up(ClientCLI *cli)
+server_up()
 {
   static int old_val = 0;
   int val = -1;
@@ -1425,8 +1414,7 @@ server_up(ClientCLI *cli)
       return 0;
     }
   } else {
-    err = read_cli_int(cli, "proxy.node.proxy_running", &val);
-    printf("GOT %d\n", val);
+    err = read_mgmt_cli_int("proxy.node.proxy_running", &val);
     if (err < 0) {
       cop_log(COP_WARNING, "could not contact manager, " "assuming server is down\n");
 #ifdef TRACE_LOG_COP
@@ -1472,7 +1460,7 @@ server_up(ClientCLI *cli)
 
 
 static void
-check_programs(ClientCLI *cli)
+check_programs()
 {
   int err;
   pid_t holding_pid;
@@ -1565,14 +1553,14 @@ check_programs(ClientCLI *cli)
     // running. If there is we test it.
 
     alarm(2 * manager_timeout);
-    err = heartbeat_manager(cli);
+    err = heartbeat_manager();
     alarm(0);
 
     if (err < 0) {
       return;
     }
 
-    if (server_up(cli) <= 0) {
+    if (server_up() <= 0) {
       return;
     }
 
@@ -1690,24 +1678,17 @@ check_no_run()
   return -1;
 }
 
-// 3/23/99 - elam
-//
 // Changed function from taking no argument and returning void
 // to taking a void* and returning a void*. The change was made
 // so that we can call ink_thread_create() on this function
 // in the case of running cop as a win32 service.
-static void *
+static void*
 check(void *arg)
 {
+  bool mgmt_init = false;
 #ifdef TRACE_LOG_COP
   cop_log(COP_DEBUG, "Entering check()\n");
 #endif
-  // Get a CLI
-  char sock_path[PATH_NAME_MAX + 1];
-  ClientCLI *cli = new ClientCLI();
-
-  Layout::relative_to(sock_path, sizeof(sock_path), Layout::get()->runtimedir, ClientCLI::defaultSockPath);
-  cli->setSockPath(sock_path);
 
   for (;;) {
     // problems with the ownership of this file as root Make sure it is
@@ -1737,11 +1718,12 @@ check(void *arg)
 
       child_pid = child_status = 0;
     }
+
     // Re-read the config file information
     read_config();
 
     // Check to make sure the programs are running
-    check_programs(cli);
+    check_programs();
 
     // Check to see if we're running out of free memory
     check_memory();
@@ -1750,10 +1732,16 @@ check(void *arg)
     // Use 'millisleep()' because normal 'sleep()' interferes with
     // the SIGALRM signal which we use to heartbeat the cop.
     millisleep(sleep_time * 1000);
+
+    // We do this after the first round of checks, since the first "check" will spawn traffic_manager
+    if (!mgmt_init) {
+      INKInit(Layout::get()->runtimedir, static_cast<TSInitOptionT>(TS_MGMT_OPT_NO_EVENTS | TS_MGMT_OPT_NO_SOCK_TESTS));
+      mgmt_init = true;
+    }
   }
 
-  // Get rid of the CLI
-  delete cli;
+  // Done with the mgmt API.
+  INKTerminate();
 
 #ifdef TRACE_LOG_COP
   cop_log(COP_DEBUG, "Leaving check()\n");

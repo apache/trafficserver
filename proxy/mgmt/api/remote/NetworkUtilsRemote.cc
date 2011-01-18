@@ -51,6 +51,12 @@ int event_socket_fd = -1;
 char *main_socket_path = NULL;  // "<path>/mgmtapisocket"
 char *event_socket_path = NULL; // "<path>/eventapisocket"
 
+// From CoreAPIRemote.cc
+extern ink_thread ts_test_thread;
+extern ink_thread ts_event_thread;
+extern TSInitOptionT ts_init_options;
+
+
 /**********************************************************************
  * Socket Helper Functions
  **********************************************************************/
@@ -113,7 +119,6 @@ socket_test(int fd)
 
       return -1;
     }
-
     amount_read += ret;
   }
 
@@ -261,12 +266,17 @@ reconnect()
     return err;
 
   // relaunch a new event thread since socket_fd changed
-  ink_thread_create(event_poll_thread_main, &(event_socket_fd));
-
-  // reregister the callbacks on the TM side for this new client connection
-  err = send_register_all_callbacks(event_socket_fd, remote_event_callbacks);
-  if (err != INK_ERR_OKAY)      // problem establishing connection
-    return err;
+  if (0 == (ts_init_options & TS_MGMT_OPT_NO_EVENTS)) {
+    ts_event_thread = ink_thread_create(event_poll_thread_main, &event_socket_fd, 0, DEFAULT_STACK_SIZE);
+    // reregister the callbacks on the TM side for this new client connection
+    if (remote_event_callbacks) {
+      err = send_register_all_callbacks(event_socket_fd, remote_event_callbacks);
+      if (err != INK_ERR_OKAY)      // problem establishing connection
+        return err;
+    }
+  } else {
+    ts_event_thread = static_cast<ink_thread>(NULL);
+  }
 
   return INK_ERR_OKAY;
 }

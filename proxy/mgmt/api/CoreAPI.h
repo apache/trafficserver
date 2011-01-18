@@ -40,7 +40,7 @@ extern "C"
 {
 #endif /* __cplusplus */
 
-INKError Init(const char *socket_path = NULL);
+INKError Init(const char *socket_path = NULL, TSInitOptionT options = TS_MGMT_OPT_DEFAULTS);
 INKError Terminate();
 
 void Diags(INKDiagsT mode, const char *fmt, va_list ap);
