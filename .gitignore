@@ -57,14 +57,9 @@ mgmt/tools/traffic_vip_config
 mgmt/api/remote/api_cli_remote
 mgmt/cli/traffic_line
 mgmt/cli2/traffic_shell
-mgmt/tools/mcast_snoop
-mgmt/tools/net_config
 mgmt/tools/shmem_clean
-mgmt/tools/time_config
-mgmt/tools/vip_config
 mgmt/traffic_manager
 mgmt/html2/tune/navigation_tree.xml
-proxy/traffic_cust_log_fmt_cnvrt
 proxy/traffic_logcat
 proxy/traffic_logstats
 proxy/traffic_sac
