@@ -18,9 +18,9 @@
 #  limitations under the License.
 
 if BUILD_WEBUI
-SUBDIRS = cli cluster preparse tools utils web2 html2 stats api $(CLI_DIR)
+SUBDIRS = cluster preparse tools utils web2 html2 stats api $(CLI_DIR)
 else
-SUBDIRS = cli cluster preparse tools utils web2 stats api $(CLI_DIR)
+SUBDIRS = cluster preparse tools utils web2 stats api $(CLI_DIR)
 endif
 
 DIST_SUBDIRS = $(SUBDIRS)
@@ -99,7 +99,6 @@ traffic_manager_LDADD = \
   preparse/libpreparse.a \
   stats/libstats.a \
   web2/libweb.a \
-  cli/libcli_lm.a \
   api/libmgmtapilocal.a \
   utils/libutils_lm.a \
   $(top_builddir)/proxy/hdrs/libhdrs.a \

@@ -269,6 +269,7 @@ extern "C"
     INK_ICP_UNDEFINED
   } INKIcpT;
 
+  /* TODO: This should be removed */
   typedef enum                  /* access privileges to news articles cached by Traffic Server  */
   {
     INK_IP_ALLOW_ALLOW,

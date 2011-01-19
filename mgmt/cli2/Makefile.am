@@ -25,7 +25,7 @@ AM_CPPFLAGS = \
   -I$(top_srcdir)/mgmt/tools
 
 
-bin_PROGRAMS = traffic_shell
+bin_PROGRAMS = traffic_shell traffic_line
 traffic_shell_SOURCES = \
   cliAppInit.cc \
   CliCreateCommands.h \
@@ -37,6 +37,9 @@ traffic_shell_SOURCES = \
   definitions.h \
   hashtable.h \
   ShowCmd.h
+
+traffic_line_SOURCES = \
+  TrafficLine.cc
 
 noinst_LIBRARIES = libtrafficshell.a
 libtrafficshell_a_SOURCES = \
@@ -69,7 +72,6 @@ libtrafficshell_a_SOURCES = \
   UtilCmds.h
 
 traffic_shell_LDFLAGS =	$(EXTRA_CXX_LDFLAGS)
-
 traffic_shell_LDADD = \
   libtrafficshell.a \
   $(top_builddir)/mgmt/api/remote/libmgmtapiremote.a \
@@ -85,3 +87,11 @@ traffic_shell_LDADD = \
   @LIBEXPAT@ @LIBSSL@ \
   @LIBTHREAD@ @LIBSOCKET@ @LIBNSL@ @LIBRESOLV@ \
   @LIBRT@ @LIBEXECINFO@ @LIBPCRE@
+
+
+traffic_line_LDFLAGS = @EXTRA_CXX_LDFLAGS@
+traffic_line_LDADD = \
+  $(top_builddir)/mgmt/api/remote/libmgmtapiremote.a \
+  $(top_builddir)/iocore/utils/libinkutils.a \
+  $(top_builddir)/lib/ts/libts.a \
+  @LIBTHREAD@ @LIBSOCKET@ @LIBNSL@ @LIBTCL@ @LIBICONV@ @LIBRT@ @LIBDL@ @LIBSSL@ 

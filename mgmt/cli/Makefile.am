@@ -32,8 +32,6 @@ DEFS += $(MGMT_DEFS)
 
 noinst_LIBRARIES = libcli_lm.a libcli_tl.a
 
-bin_PROGRAMS = traffic_line
-
 libcli_tl_a_SOURCES = \
   clientCLI.cc \
   clientCLI.h \
@@ -57,16 +55,3 @@ libcli_lm_a_SOURCES = \
   CliUtils.h \
   FSM.cc \
   FSM.h
-
-traffic_line_SOURCES = \
-  clientCLI.h \
-  CliMain.cc
-
-traffic_line_LDFLAGS = @EXTRA_CXX_LDFLAGS@
-traffic_line_LDADD = \
-  libcli_tl.a \
-  $(top_builddir)/lib/ts/libts.a \
-  $(top_builddir)/lib/records/libreclocal.a \
-  $(top_builddir)/iocore/utils/libinkutils.a \
-  @LIBTHREAD@ @LIBSOCKET@ @LIBNSL@ @LIBRESOLV@ \
-  @LIBTCL@ @LIBRT@ @LIBDL@ @LIBICONV@ @LIBEXECINFO@
