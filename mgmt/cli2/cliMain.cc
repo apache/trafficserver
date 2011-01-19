@@ -51,8 +51,7 @@ main(int argc, char *argv[])
   INKError status;
 
   // build the application information structure
-  appVersionInfo.setup(PACKAGE_NAME,"traffic_shell", PACKAGE_VERSION, __DATE__,
-                       __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
+  appVersionInfo.setup(PACKAGE_NAME,"traffic_shell", PACKAGE_VERSION, __DATE__, __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
 
   // Before accessing file system initialize Layout engine
   Layout::create();
@@ -81,11 +80,9 @@ main(int argc, char *argv[])
   // initialize MgmtAPI using TS runtime directory
   status = INKInit(Layout::get()->runtimedir, TS_MGMT_OPT_DEFAULTS);
   if (status) {
-    printf("INKInit %d: Failed to initialize MgmtAPI in %s\n",
-           status, Layout::get()->runtimedir);
+    printf("INKInit %d: Failed to initialize MgmtAPI in %s\n", status, Layout::get()->runtimedir);
   } else {
-    printf("Successfully Initialized MgmtAPI in %s \n",
-          Layout::get()->runtimedir);
+    printf("Successfully Initialized MgmtAPI in %s \n", Layout::get()->runtimedir);
   }
 
   register_event_callback();

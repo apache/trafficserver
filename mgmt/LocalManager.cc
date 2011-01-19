@@ -869,7 +869,6 @@ LocalManager::sendMgmtMsgToProcesses(MgmtMessageHdr * mh)
         lmgmt->virt_map->downAddrs();   /* Down all known addrs to be safe */
       }
       for (int i = 0; i < MAX_PROXY_SERVER_PORTS; i++) {
-
         if (proxy_server_fd[i] != -1) { // Close the socket
           close_socket(proxy_server_fd[i]);
           proxy_server_fd[i] = -1;

@@ -2047,6 +2047,16 @@ INKActionDo(INKActionNeedT action)
   return ret;
 }
 
+/* INKBouncer: restarts the traffic_server process(es)
+ * Input:  cluster - local or cluster-wide
+ * Output: INKError
+ */
+inkapi INKError
+INKBounce(bool cluster)
+{
+  return Bounce(cluster);
+}
+
 
 /*--- diags output operations ---------------------------------------------*/
 inkapi void
@@ -2746,14 +2756,6 @@ INKSetHostname(INKString hostname)
   if (action_need < top_action_req)     // a more severe action
     top_action_req = action_need;
 
-  //FIXME - currently MRTG is all about hard coded hostname - this is where we should fix it
-  //Currently it is fixed in net_config
-
-  //if (!(mrtg_update_hostname(hostname)))
-  //     return INK_ERR_WRITE_FILE;
-
-  //Also, we use this variable sometimes - needs to be fixed
-
   if (MgmtRecordSet("proxy.node.hostname_FQ", hostname, &action_need) != INK_ERR_OKAY)
     return INK_ERR_FAIL;
 
@@ -2762,7 +2764,6 @@ INKSetHostname(INKString hostname)
     top_action_req = action_need;
 
   if (top_action_req != INK_ACTION_UNDEFINED) {
-    //return INKActionDo(top_action_req); //right now we mark this out as this is not needed and causes hangs - verify this FIX - bz49778
     return INK_ERR_OKAY;
   } else {
     return INK_ERR_OKAY;
@@ -3029,147 +3030,4 @@ resetHostName(INKRmServerEle * ele, const char *hostname, const char *tail)
   snprintf(buff, sizeof(buff), "%s.%s", hostname, tail);
   ele->str_val = xstrdup(buff);
   return;
-}
-
-INKError
-INKSetRmRealm(const char *hostname)
-{
-
-  INKCfgContext ctx;
-  INKRmServerEle *ele;
-  Tokenizer tokens("\n");
-  INKActionNeedT action_need;
-  INKError response;
-  INKError err = INK_ERR_OKAY;
-
-
-  ctx = INKCfgContextCreate(INK_FNAME_RMSERVER);
-  if (!ctx) {
-//    Debug("config", "[net_config:Config] can't allocate ctx memory");
-    goto Lerror;
-  }
-  if (INKCfgContextGet(ctx) != INK_ERR_OKAY) {
-//    Debug("config", "[net_config:Config] Failed to Get CfgContext");
-    goto Lerror;
-  }
-  ele = (INKRmServerEle *) CfgContextGetEleAt((CfgContext *) ctx, (int) INK_RM_RULE_SCU_ADMIN_REALM);
-  resetHostName(ele, hostname, "AdminRealm");
-  ele = (INKRmServerEle *) CfgContextGetEleAt((CfgContext *) ctx, (int) INK_RM_RULE_CNN_REALM);
-  resetHostName(ele, hostname, "ConnectRealm");
-  ele = (INKRmServerEle *) CfgContextGetEleAt((CfgContext *) ctx, (int) INK_RM_RULE_ADMIN_FILE_REALM);
-  resetHostName(ele, hostname, "AdminRealm");
-  ele = (INKRmServerEle *) CfgContextGetEleAt((CfgContext *) ctx, (int) INK_RM_RULE_AUTH_REALM);
-  resetHostName(ele, hostname, "ConnectRealm");
-  response = INKCfgContextCommit(ctx, &action_need, NULL);
-  if (response == INK_ERR_INVALID_CONFIG_RULE) {
-    //    MgmtAPI should return INK_ not WEB_
-    //    err = WEB_HTTP_ERR_INVALID_CFG_RULE;
-    err = INK_ERR_INVALID_CONFIG_RULE;
-  } else if (response != INK_ERR_OKAY) {
-    goto Lerror;
-  }
-  INKCfgContextDestroy(ctx);
-  return err;
-
-Lerror:
-  if (ctx)
-    INKCfgContextDestroy(ctx);
-  return err;
-}
-
-/* this function change the PNA_REDIREDT IP address of rmserver.cfg file. */
-INKError
-INKSetRmPNA_RDT_IP(const char *ip)
-{
-  INKCfgContext ctx;
-  INKRmServerEle *ele;
-  Tokenizer tokens("\n");
-  INKActionNeedT action_need;
-  INKError response;
-  INKError err = INK_ERR_OKAY;
-  char buff[MAX_RULE_SIZE];
-
-  ctx = INKCfgContextCreate(INK_FNAME_RMSERVER);
-  if (!ctx) {
-//    Debug("config", "[net_config:Config] can't allocate ctx memory");
-    goto Lerror;
-  }
-  if (INKCfgContextGet(ctx) != INK_ERR_OKAY) {
-//    Debug("config", "[net_config:Config] Failed to Get CfgContext");
-    goto Lerror;
-  }
-  ele = (INKRmServerEle *) CfgContextGetEleAt((CfgContext *) ctx, (int) INK_RM_RULE_PNA_RDT_IP);
-  if (ele->str_val)
-    xfree(ele->str_val);
-  snprintf(buff, sizeof(buff), "%s", ip);
-  ele->str_val = xstrdup(buff);
-
-  response = INKCfgContextCommit(ctx, &action_need, NULL);
-  if (response == INK_ERR_INVALID_CONFIG_RULE) {
-    //    MgmtAPI should return INK_ not WEB_
-    //    err = WEB_HTTP_ERR_INVALID_CFG_RULE;
-    err = INK_ERR_INVALID_CONFIG_RULE;
-  } else if (response != INK_ERR_OKAY) {
-    goto Lerror;
-  }
-  //INKCfgContextDestroy(ctx);
-  return err;
-
-Lerror:
-  if (ctx)
-    INKCfgContextDestroy(ctx);
-  return err;
-}
-
-/* this function change the PNA_REDIRET port in  ipnat.conf file. */
-inkapi INKError
-INKSetPNA_RDT_Port(const int port)
-{
-  NOWARN_UNUSED(port);
-  /* there is no ipnat conf file anymore,
-     commenting out the rest of this function */
-  return INK_ERR_READ_FILE;
-
-  /*
-     INKCfgContext ctx;
-     INKIpFilterEle *ele;
-     INKActionNeedT action_need=INK_ACTION_UNDEFINED;
-     int i, index;
-
-
-     //ctx = INKCfgContextCreate(INK_FNAME_IPNAT);
-
-     if (!ctx) {
-     return INK_ERR_FAIL;
-     }
-
-     if (INKCfgContextGet(ctx) != INK_ERR_OKAY) {
-     return INK_ERR_READ_FILE;
-     }
-     if ((i =  INKCfgContextGetCount(ctx)) <=0 ) {
-     return INK_ERR_FAIL;
-     }
-
-     for (index=0 ; index<i ; index++) {
-     ele = (INKIpFilterEle *)INKCfgContextGetEleAt(ctx, index);
-     if (ele != NULL) {
-     if (ele->src_port == 7070) {
-     ele->dest_port = port;
-     break;
-     }
-     }
-     }
-
-     // commit the CfgContext to write a new version of the file
-     if (INKCfgContextCommit(ctx, &action_need, NULL) != INK_ERR_OKAY) {
-     return INK_ERR_FAIL;
-     }
-
-     if ( action_need != INK_ACTION_UNDEFINED) {
-     return INKActionDo(action_need);
-     }
-     else {
-     return INK_ERR_OKAY;
-     }
-   */
 }

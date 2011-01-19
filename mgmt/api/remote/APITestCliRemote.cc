@@ -100,7 +100,6 @@
 #include <stdio.h>
 #include <strings.h>
 #include "ink_string.h"
-#include "I_Layout.h"
 
 #include "INKMgmtAPI.h"
 #include "CfgContextUtils.h"
@@ -1031,6 +1030,19 @@ test_action_need(void)
   printf("[INKRecordSetInt] proxy.config.cluster.cluster_port\n\tAction Should: [%d]\n\tAction is    : [%d]\n",
          INK_ACTION_RESTART, action);
 
+}
+
+/* Bouncer the traffic_server process(es) */
+void
+bounce()
+{
+  INKError ret;
+
+  printf("BOUNCER - Cluster wide\n");
+  if ((ret = INKBounce(true)) != INK_ERR_OKAY)
+    printf("[INKBounce] FAILED\n");
+
+  print_err("bounce", ret);
 }
 
 /***************************************************************************
@@ -2551,8 +2563,7 @@ main(int argc, char **argv)
 {
   INKError ret;
 
-  Layout::create();
-  if ((ret = INKInit(Layout::get()->runtimedir, TS_MGMT_OPT_DEFAULTS)) == INK_ERR_OKAY) {
+  if ((ret = INKInit(NULL, TS_MGMT_OPT_DEFAULTS)) == INK_ERR_OKAY) {
     runInteractive();
     INKTerminate();
     printf("END REMOTE API TEST\n");

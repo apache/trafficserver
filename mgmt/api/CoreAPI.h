@@ -54,6 +54,7 @@ INKError ProxyStateSet(INKProxyStateT state, INKCacheClearT clear);
 INKError Reconfigure();         // TS reread config files
 INKError Restart(bool cluster); //restart TM
 INKError HardRestart();         //restart traffic_cop
+INKError Bounce(bool cluster);  //restart traffic_server
 
 /***************************************************************************
  * Record Operations

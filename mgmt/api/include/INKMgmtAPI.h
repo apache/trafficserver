@@ -399,7 +399,6 @@ extern "C"
     INK_FNAME_STORAGE,          /* storage.config */
     INK_FNAME_UPDATE_URL,       /* update.config */
     INK_FNAME_VADDRS,           /* vaddrs.config */
-    INK_FNAME_RMSERVER,         /* rmserver.cfg */
     INK_FNAME_VSCAN,            /* vscan.config */
     INK_FNAME_VS_TRUSTED_HOST,  /* trusted-host.config */
     INK_FNAME_VS_EXTENSION,     /* extensions.config */
@@ -982,15 +981,15 @@ extern "C"
 /*--- api initialization and shutdown -------------------------------------*/
 /* INKInit: initializations required for API clients
  * Input: socket_path - not applicable for local clients
- *                      for remote users, the path to the config directory
- *         (eg. run from bin, socket_path = "../etc/trafficserver")
+ *                      for remote users, the path to the config directory.
+ *                      If == NULL, we use the Layout engine by default.
  *        options - Control some features of the APIs
  * Output: INK_ERR_xx
  * Note: If remote client successfully connects, returns INK_ERR_OKAY; but
  *       even if not successful connection (eg. client program is started
  *       before TM) then can still make API calls and will try connecting then
  */
-  inkapi INKError INKInit(const char *socket_path, TSInitOptionT options );
+  inkapi INKError INKInit(const char *socket_path, TSInitOptionT options);
 
 /* INKTerminate: does clean up for API clients
  * Input: <none>
@@ -1064,6 +1063,12 @@ extern "C"
  * Output: INKError
  */
   inkapi INKError INKActionDo(INKActionNeedT action);
+
+/* INKBounce: restart the traffic_server process(es).
+ * Input: cluster - local or cluster-wide
+ * Output INKError
+ */
+  inkapi INKError INKBounce(bool cluster);
 
 /*--- diags output operations ---------------------------------------------*/
 /* INKDiags: enables users to manipulate run-time diagnostics, and print
@@ -1489,12 +1494,6 @@ extern "C"
   inkapi INKError INKSetNICDown(INKString nic_name, INKString ip_addrr);
 
   inkapi INKError INKSetSearchDomain(const char *search_name);
-
-  inkapi INKError INKSetRmRealm(const char *hostname);
-
-  inkapi INKError INKSetRmPNA_RDT_IP(const char *ip);
-
-  inkapi INKError INKSetPNA_RDT_Port(const int port);
 
 #ifdef __cplusplus
 }

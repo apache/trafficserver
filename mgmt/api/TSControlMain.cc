@@ -314,11 +314,23 @@ ts_ctrl_main(void *arg)
               break;
 
             case RESTART:
-              ret = handle_restart(client_entry->sock_info, req);
+              ret = handle_restart(client_entry->sock_info, req, false);
               if (req)
                 xfree(req);     // free the request allocated by preprocess_msg
               if (ret == INK_ERR_NET_WRITE || ret == INK_ERR_NET_EOF) {
                 Debug("ts_main", "[ts_ctrl_main] ERROR:handle_restart\n");
+                remove_client(client_entry, accepted_con);
+                con_entry = ink_hash_table_iterator_next(accepted_con, &con_state);
+                continue;
+              }
+              break;
+
+            case BOUNCE:
+              ret = handle_restart(client_entry->sock_info, req, true);
+              if (req)
+                xfree(req);     // free the request allocated by preprocess_msg
+              if (ret == INK_ERR_NET_WRITE || ret == INK_ERR_NET_EOF) {
+                Debug("ts_main", "[ts_ctrl_main] ERROR:handle_restart bounce\n");
                 remove_client(client_entry, accepted_con);
                 con_entry = ink_hash_table_iterator_next(accepted_con, &con_state);
                 continue;
@@ -736,11 +748,12 @@ handle_reconfigure(struct SocketInfo sock_info)
  * purpose: handles request to restart TM and TS
  * input: struct SocketInfo sock_info - the socket to use to talk to client
  *        req - indicates if restart should be cluster wide or not
+ *        bounce - indicate if the restart is a traffic_server bounce only
  * output: INK_ERR_xx
  * note: None
  *************************************************************************/
 INKError
-handle_restart(struct SocketInfo sock_info, char *req)
+handle_restart(struct SocketInfo sock_info, char *req, bool bounce)
 {
   int16_t cluster;
   INKError ret;
@@ -752,10 +765,12 @@ handle_restart(struct SocketInfo sock_info, char *req)
   // the req should be a boolean value - typecase it
   memcpy(&cluster, req, SIZE_BOOL);
 
-  if (cluster == 0)             // cluster is true
-    ret = Restart(true);
-  else                          // cluster is false
-    ret = Restart(false);
+  // TODO: Does this logic make sense (it's the same as before). If
+  // cluster == 0 we take it to mean to restart the cluster?
+  if (bounce)
+    ret = Bounce(cluster == 0);
+  else
+    ret = Restart(cluster == 0);
 
   ret = send_reply(sock_info, ret);
   return ret;

@@ -24,7 +24,6 @@
 #include "libts.h"
 
 #include "ink_args.h"
-#include "I_Layout.h"
 #include "I_Version.h"
 #include "Tokenizer.h"
 #include "TextBuffer.h"
@@ -59,7 +58,9 @@ handleArgInvocation()
   } else if (Shutdown == 1) {
     return INKProxyStateSet(INK_PROXY_OFF, INK_CACHE_CLEAR_OFF);
   } else if (BounceCluster == 1) {
+    return INKBounce(true);
   } else if (BounceLocal == 1) {
+    return INKBounce(false);
   } else if (Startup == 1) {
     return INKProxyStateSet(INK_PROXY_ON, INK_CACHE_CLEAR_OFF);
   } else if (ClearCluster == 1) {
@@ -143,8 +144,7 @@ main(int argc, char **argv)
   }
 
   // Connect to Local Manager
-  Layout::create();
-  INKInit(Layout::get()->runtimedir, static_cast<TSInitOptionT>(TS_MGMT_OPT_NO_EVENTS | TS_MGMT_OPT_NO_SOCK_TESTS));
+  INKInit(NULL, static_cast<TSInitOptionT>(TS_MGMT_OPT_NO_EVENTS | TS_MGMT_OPT_NO_SOCK_TESTS));
 
   // Do it
   status = handleArgInvocation();

@@ -79,7 +79,7 @@ INKError send_file_write_request(int fd, INKFileNameT file, int ver, int size, c
 INKError send_record_get_request(int fd, char *rec_name);
 
 INKError send_proxy_state_set_request(int fd, INKProxyStateT state, INKCacheClearT clear);
-INKError send_restart_request(int fd, bool cluster);
+INKError send_restart_request(int fd, bool bounce, bool cluster);
 
 INKError send_register_all_callbacks(int fd, CallbackTable * cb_table);
 INKError send_unregister_all_callbacks(int fd, CallbackTable * cb_table);

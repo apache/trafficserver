@@ -276,6 +276,23 @@ HardRestart()
 }
 
 
+/*-------------------------------------------------------------------------
+ * Bouncer
+ *-------------------------------------------------------------------------
+ * Bounces traffic_server process(es).
+ */
+INKError
+Bounce(bool cluster)
+{
+  if (cluster) {
+    lmgmt->ccom->sendClusterMessage(CLUSTER_MSG_BOUNCE_PROCESS);
+  } else {
+    lmgmt->processBounce();
+  }
+
+  return INK_ERR_OKAY;
+}
+
 /**************************************************************************
  * RECORD OPERATIONS
  *************************************************************************/

@@ -237,10 +237,10 @@ Init(const char *socket_path, TSInitOptionT options)
 
   ts_init_options = options;
 
-  // SOCKET setup
-  ink_assert(socket_path);
-  if (!socket_path)
-    return INK_ERR_PARAMS;
+  if (!socket_path) {
+    Layout::create();
+    socket_path = Layout::get()->runtimedir;
+  }
 
   // store socket_path
   set_socket_paths(socket_path);
@@ -390,7 +390,7 @@ Restart(bool cluster)
 {
   INKError ret;
 
-  ret = send_restart_request(main_socket_fd, cluster);
+  ret = send_restart_request(main_socket_fd, false, cluster);
   if (ret != INK_ERR_OKAY)
     return ret;                 // networking error
 
@@ -435,6 +435,30 @@ HardRestart()
 
   return INK_ERR_OKAY;
 }
+
+/*-------------------------------------------------------------------------
+ * Bounce
+ *-------------------------------------------------------------------------
+ * Restart the traffic_server process(es) only.
+ */
+INKError
+Bounce(bool cluster)
+{
+  INKError ret;
+
+  ret = send_restart_request(main_socket_fd, true, cluster);
+  if (ret != INK_ERR_OKAY)
+    return ret;                 // networking error
+
+  ret = parse_reply(main_socket_fd);
+
+  if (ret == INK_ERR_OKAY) {
+    ret = reconnect_loop(MAX_CONN_TRIES);
+  }
+
+  return ret;
+}
+
 
 /***************************************************************************
  * Record Operations

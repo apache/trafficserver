@@ -57,7 +57,7 @@ INKError handle_file_write(struct SocketInfo sock_info, char *req);
 INKError handle_proxy_state_get(struct SocketInfo sock_info);
 INKError handle_proxy_state_set(struct SocketInfo sock_info, char *req);
 INKError handle_reconfigure(struct SocketInfo sock_info);
-INKError handle_restart(struct SocketInfo sock_info, char *req);
+INKError handle_restart(struct SocketInfo sock_info, char *req, bool bounce);
 
 INKError handle_event_resolve(struct SocketInfo sock_info, char *req);
 INKError handle_event_get_mlt(struct SocketInfo sock_info);

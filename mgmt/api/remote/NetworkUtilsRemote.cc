@@ -847,14 +847,15 @@ send_proxy_state_set_request(int fd, INKProxyStateT state, INKCacheClearT clear)
 /**********************************************************************
  * send_restart_request
  *
- * purpose: sends request restart Traffic Manager and Traffic Server
+ * purpose: sends request restart Traffic Server and/or Traffic Server
  * input: fd      - file descriptor to use
+ *        bounce  - true=bounce traffic_server only, false=both
  *        cluster - true= clusterwide, false= local restart
  * output: INK_ERR_xx
  * note: format: RESTART 2(=msg_len) <bool>
  **********************************************************************/
 INKError
-send_restart_request(int fd, bool cluster)
+send_restart_request(int fd, bool bounce, bool cluster)
 {
   char *msg_buf;
   int16_t op, clust_t;
@@ -868,7 +869,11 @@ send_restart_request(int fd, bool cluster)
     return INK_ERR_SYS_CALL;
 
   // fill in op type
-  op = (int16_t) RESTART;
+  if (bounce)
+    op = (int16_t) BOUNCE;
+  else
+    op = (int16_t) RESTART;
+
   memcpy(msg_buf, (void *) &op, SIZE_OP_T);
 
   // fill in msg_len = SIZE_BOOL

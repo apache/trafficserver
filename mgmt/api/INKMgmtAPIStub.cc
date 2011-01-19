@@ -554,6 +554,12 @@ INKActionDo(INKActionNeedT action)
   return INK_ERR_OKAY;
 }
 
+inkapi INKError
+INKBounce(bool cluster)
+{
+  return INK_ERR_OKAY;
+}
+
 /*--- diags output operations ---------------------------------------------*/
 inkapi void
 INKDiags(INKDiagsT mode, const char *fmt, ...)
