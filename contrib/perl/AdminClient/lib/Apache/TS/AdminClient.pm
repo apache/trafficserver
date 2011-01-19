@@ -27,6 +27,53 @@ use IO::Socket::UNIX;
 use IO::Select;
 our $VERSION = "0.01";
 
+use constant { TS_FILE_READ => 0,
+               TS_FILE_WRITE => 1,
+               TS_RECORD_SET => 2,
+               TS_RECORD_GET => 3,
+               TS_PROXY_STATE_GET => 4,
+               TS_PROXY_STATE_SET => 5,
+               TS_RECONFIGURE => 6,
+               TS_RESTART => 7,
+               TS_BOUNCE => 8,
+               TS_EVENT_RESOLVE => 9,
+               TS_EVENT_GET_MLT => 10,
+               TS_EVENT_ACTIVE => 11,
+               TS_EVENT_REG_CALLBACK => 12,
+               TS_EVENT_UNREG_CALLBACK => 13,
+               TS_EVENT_NOTIFY => 14,
+               TS_SNAPSHOT_TAKE => 15,
+               TS_SNAPSHOT_RESTORE => 16,
+               TS_SNAPSHOT_REMOVE => 17,
+               TS_SNAPSHOT_GET_MLT => 18,
+               TS_DIAGS => 19,
+               TS_STATS_RESET => 20,
+               TS_ENCRYPT_TO_FILE => 21
+};
+
+# We treat both REC_INT and REC_COUNTER the same here
+use constant { TS_REC_INT => 0,
+               TS_REC_COUNTER => 0,
+               TS_REC_FLOAT => 2,
+               TS_REC_STRING => 3
+};
+
+use constant { TS_ERR_OKAY => 0,
+               TS_ERR_READ_FILE => 1,
+               TS_ERR_WRITE_FILE => 2,
+               TS_ERR_PARSE_CONFIG_RULE => 3,
+               TS_ERR_INVALID_CONFIG_RULE => 4,
+               TS_ERR_NET_ESTABLISH => 5,
+               TS_ERR_NET_READ => 6,
+               TS_ERR_NET_WRITE => 7,
+               TS_ERR_NET_EOF => 8,
+               TS_ERR_NET_TIMEOUT => 9,
+               TS_ERR_SYS_CALL => 10,
+               TS_ERR_PARAMS => 11,
+               TS_ERR_FAIL => 12
+};
+
+
 #
 # Constructor
 #
@@ -35,7 +82,7 @@ sub new {
   my $self = {};
   my %args = @_;
 
-  $self->{_socket_path} = $args{socket_path} || "/usr/local/var/trafficserver/cli"; # TODO: fix on install
+  $self->{_socket_path} = $args{socket_path} || "/usr/local/var/trafficserver/mgmtapisocket"; # TODO: fix on install
   $self->{_socket} = undef;
 
   if ( (! -r $self->{_socket_path}) or (! -w $self->{_socket_path}) or (! -S $self->{_socket_path}) ) {
@@ -76,8 +123,7 @@ sub open_socket {
   }
 
 
-  $self->{_socket} = IO::Socket::UNIX->new(Type => SOCK_STREAM,
-                                          Peer => $self->{_socket_path}) or croak ("Error opening socket - $@");
+  $self->{_socket} = IO::Socket::UNIX->new(Type => SOCK_STREAM, Peer => $self->{_socket_path}) or croak ("Error opening socket - $@");
 
   return undef unless defined($self->{_socket});
   $self->{_select}->add($self->{_socket});
@@ -111,9 +157,10 @@ sub get_stat {
   my $max_read_attempts = 25;
 
   return undef unless defined($self->{_socket});
-
   return undef unless $self->{_select}->can_write(10);
-  $self->{_socket}->print("b get $stat\0");
+
+  # This is a total hack for now, we need to wrap this into the proper mgmt API library.
+  $self->{_socket}->print(pack("sla*", TS_RECORD_GET, length($stat)), $stat);
   
   while ($res eq "") {
     return undef if ($max_read_attempts-- < 0);
@@ -121,15 +168,27 @@ sub get_stat {
 
     my $status = $self->{_socket}->sysread($res, 1024);
     return undef unless defined($status) || ($status == 0);
-
-    $res =~ s/\0+$//;
-    $res =~ s/^\0+//;
+    
   }
+  my @resp = unpack("sls", $res);
+  return undef unless (scalar(@resp) == 3);
 
-  my @parts = split(/;/, $res);
-
-  return undef unless (scalar(@parts) == 3);
-  return $parts[2] if ($parts[0] eq "1");
+  if ($resp[0] == TS_ERR_OKAY) {
+    if ($resp[2] < TS_REC_FLOAT) {
+      @resp = unpack("slsl", $res);
+      return undef unless (scalar(@resp) == 4);
+      return int($resp[3]);
+    } elsif ($resp[2] == TS_REC_FLOAT) {
+      @resp = unpack("slsf", $res);
+      return undef unless (scalar(@resp) == 4);
+      return $resp[3];
+    } elsif ($resp[2] == TS_REC_STRING) {
+      @resp = unpack("slsa*", $res);
+      return undef unless (scalar(@resp) == 4);
+      return float($resp[3]);
+    }
+  }
+    
   return undef;
 }
 
