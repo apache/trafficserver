@@ -194,7 +194,6 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.admin.autoconf_port
  proxy.config.admin.autoconf.wpad_filename
  proxy.config.admin.basic_auth
- proxy.config.admin.cli_enabled
  proxy.config.admin.cli_path
  proxy.config.admin.cli_port
  proxy.config.admin.html_doc_root
@@ -204,8 +203,6 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.admin.log_mgmt_access
  proxy.config.admin.log_resolve_hostname
  proxy.config.admin.number_config_bak
- proxy.config.admin.overseer_mode
- proxy.config.admin.overseer_port
  proxy.config.admin.session
  proxy.config.admin.session.timeout
  proxy.config.admin.ssl_cert_file

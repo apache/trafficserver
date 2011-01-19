@@ -279,11 +279,6 @@ RecordElement RecordsConfig[] = {
   ,
   {RECT_CONFIG, "proxy.config.admin.autoconf.wpad_filename", RECD_STRING, "wpad.dat", RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
-  // overseer_mode: 0 disabled, 1 monitor only (get), 2 full acces (get, set, reread, bounce, restart)
-  {RECT_CONFIG, "proxy.config.admin.overseer_mode", RECD_INT, "0", RECU_RESTART_TM, RR_NULL, RECC_INT, "[0-2]", RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.admin.overseer_port", RECD_INT, "9898", RECU_NULL, RR_REQUIRED, RECC_NULL, NULL, RECA_NULL}
-  ,
   {RECT_CONFIG, "proxy.config.admin.admin_user", RECD_STRING, "<admin_user_name>", RECU_DYNAMIC, RR_REQUIRED, RECC_STR, ".+", RECA_NO_ACCESS}
   ,
   {RECT_CONFIG, "proxy.config.admin.admin_password", RECD_STRING, "<admin_user_password>", RECU_DYNAMIC, RR_REQUIRED, RECC_STR, ".*", RECA_NO_ACCESS}
@@ -313,8 +308,6 @@ RecordElement RecordsConfig[] = {
   {RECT_CONFIG, "proxy.config.admin.ip_allow.filename", RECD_STRING, "mgmt_allow.config", RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.admin.advanced_ui", RECD_INT, "1", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.admin.cli_enabled", RECD_INT, "1", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.admin.cli_path", RECD_STRING, "cli", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,

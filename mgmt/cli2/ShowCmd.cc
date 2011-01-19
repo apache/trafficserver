@@ -1225,7 +1225,6 @@ ShowPorts()
   INKInt http_server = -1;
   INKString http_other = NULL;
   INKInt web_interface = -1;
-  INKInt overseer = -1;
   INKInt cluster = -1;
   INKInt cluster_rs = -1;
   INKInt cluster_mc = -1;
@@ -1238,7 +1237,6 @@ ShowPorts()
   Cli_RecordGetInt("proxy.config.http.server_port", &http_server);
   Cli_RecordGetString("proxy.config.http.server_other_ports", &http_other);
   Cli_RecordGetInt("proxy.config.admin.web_interface_port", &web_interface);
-  Cli_RecordGetInt("proxy.config.admin.overseer_port", &overseer);
   Cli_RecordGetInt("proxy.config.cluster.cluster_port", &cluster);
   Cli_RecordGetInt("proxy.config.cluster.rsport", &cluster_rs);
   Cli_RecordGetInt("proxy.config.cluster.mcport", &cluster_mc);
@@ -1251,7 +1249,6 @@ ShowPorts()
   Cli_Printf("HTTP Server Port ------- %d\n", http_server);
   Cli_Printf("HTTP Other Ports ------- %s\n", (http_other != NULL) ? http_other : "none");
   Cli_Printf("Web Interface Port ----- %d\n", web_interface);
-  Cli_Printf("Overseer Port ---------- %d\n", overseer);
   Cli_Printf("Cluster Port ----------- %d\n", cluster);
   Cli_Printf("Cluster RS Port -------- %d\n", cluster_rs);
   Cli_Printf("Cluster MC Port -------- %d\n", cluster_mc);
@@ -1289,14 +1286,11 @@ int
 ShowSecurity()
 {
   INKInt web_interface = -1;
-  INKInt overseer = -1;
 
   Cli_Printf("\n");
   Cli_RecordGetInt("proxy.config.admin.web_interface_port", &web_interface);
-  Cli_RecordGetInt("proxy.config.admin.overseer_port", &overseer);
 
   Cli_Printf("Web Interface Port ----- %d\n", web_interface);
-  Cli_Printf("Overseer Port ---------- %d\n", overseer);
   Cli_Printf("\n");
   Cli_Printf("Traffic Server Access\n" "-------------------\n");
   INKError status = Cli_DisplayRules(INK_FNAME_IP_ALLOW);

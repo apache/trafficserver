@@ -37,7 +37,6 @@
 #include "MgmtUtils.h"
 #include "WebMgmtUtils.h"
 #include "WebIntrMain.h"
-#include "CLI.h"
 #include "WebReconfig.h"
 #include "MgmtAllow.h"
 #include "Diags.h"
@@ -99,9 +98,6 @@ WebContext autoconfContext;
 // Used for storing argument values
 int web_port_arg = -1;
 int aconf_port_arg = -1;
-
-// INKqa10098: UBSWarburg: Overseer port enabled by default
-static int overseerMode = 0;
 
 // Locks that SSleay uses
 static ink_mutex ssl_locks[CRYPTO_NUM_LOCKS];
@@ -574,10 +570,8 @@ void *
 webIntr_main(void *x)
 {
   fd socketFD = -1;             // FD for incoming HTTP connections
-  fd cliFD = -1;                // FD for incoming command  line interface connections
   fd autoconfFD = -1;           // FD for incoming autoconf connections
   fd clientFD = -1;             // FD for accepted connections
-  fd overseerFD = -1;
   fd mgmtapiFD = -1;            // FD for the api interface to issue commands
   fd eventapiFD = -1;           // FD for the api and clients to handle event callbacks
 
@@ -591,19 +585,14 @@ webIntr_main(void *x)
   int webPort = -1;             // Port for incoming HTTP connections
   int publicPort = -1;          // Port for incoming autoconf connections
   int loggingEnabled;           // Whether to log accesses the mgmt server
-  int cliEnabled;               // Whether cli server should be enabled
-  int overseerPort = -1;
 #if !defined(linux)
   sigset_t allSigs;             // Set of all signals
 #endif
-  char *cliPath = NULL;         // UNIX: socket path for cli
 #if TS_HAS_WEBUI
   char webFailMsg[] = "Management Web Services Failed to Initialize";
 #endif
   char pacFailMsg[] = "Auto-Configuration Service Failed to Initialize";
   //  char gphFailMsg[] = "Dynamic Graph Service Failed to Initialize";
-  char cliFailMsg[] = "Command Line Interface Failed to Initialize";
-  char aolFailMsg[] = "Overseer Interface Failed to Initialize";
   char mgmtapiFailMsg[] = "Traffic server managment API service Interface Failed to Initialize.";
 
   RecInt tempInt;
@@ -704,14 +693,6 @@ webIntr_main(void *x)
   snprintf(adminContext.pluginDocRoot, adminContext.pluginDocRootLen + 1,
                "%s%s%s", ts_base_dir, DIR_SEP, plugin_dir);
   xfree(plugin_dir);
-
-  int rec_err;
-  rec_err = RecGetRecordInt("proxy.config.admin.overseer_mode", &tempInt);
-  overseerMode = (int) tempInt;
-  if ((rec_err != REC_ERR_OKAY) || overseerMode<0 || overseerMode> 2)
-    overseerMode = 2;
-  rec_err = RecGetRecordInt("proxy.config.admin.overseer_port", &tempInt);
-  overseerPort = (int) tempInt;
 
   // setup our other_users hash-table (for WebHttpAuth)
   adminContext.other_users_ht = new MgmtHashTable("other_users_ht", false, InkHashTableKeyType_String);
@@ -887,35 +868,6 @@ webIntr_main(void *x)
     }
   }
 
-  found = (RecGetRecordInt("proxy.config.admin.cli_enabled", &tempInt) == REC_ERR_OKAY);
-  cliEnabled = (int) tempInt;
-  if (found && cliEnabled) {
-    found = (RecGetRecordString_Xmalloc("proxy.config.admin.cli_path", &cliPath) == REC_ERR_OKAY);
-    if (found) {
-      char *sockPath = Layout::relative_to(Layout::get()->runtimedir, cliPath);
-      if ((cliFD = newUNIXsocket(sockPath)) < 0) {
-        found = false;
-      }
-      xfree(sockPath);
-    }
-    if (!found) {
-      mgmt_elog(stderr,
-                "[WebIntrMain] Unable to start Command Line Interface server.  The command line tool will not work\n");
-      lmgmt->alarm_keeper->signalAlarm(MGMT_ALARM_WEB_ERROR, cliFailMsg);
-    }
-    if (cliPath)
-      xfree(cliPath);
-  }
-
-  if (overseerMode > 0) {
-    if (overseerPort > 0 && (overseerFD = newTcpSocket(overseerPort)) < 0) {
-      mgmt_elog("[WebIntrMain] Unable to start overseer interface\n");
-      lmgmt->alarm_keeper->signalAlarm(MGMT_ALARM_WEB_ERROR, aolFailMsg);
-    } else if (overseerPort < 0) {
-      overseerFD = -1;
-    }
-  }
-
   // Initialze WebHttp Module
   WebHttpInit();
 #if TS_HAS_WEBUI
@@ -930,14 +882,6 @@ webIntr_main(void *x)
       FD_SET(socketFD, &selectFDs);
     }
 
-    if (cliFD >= 0) {
-      FD_SET(cliFD, &selectFDs);
-    }
-
-    if (overseerFD >= 0) {
-      FD_SET(overseerFD, &selectFDs);
-    }
-
     if (autoconfFD >= 0) {
       FD_SET(autoconfFD, &selectFDs);
     }
@@ -949,15 +893,9 @@ webIntr_main(void *x)
       // new HTTP Connection
       acceptFD = socketFD;
       serviceThr = HTTP_THR;
-    } else if (cliFD >= 0 && FD_ISSET(cliFD, &selectFDs)) {
-      acceptFD = cliFD;
-      serviceThr = CLI_THR;
     } else if (autoconfFD >= 0 && FD_ISSET(autoconfFD, &selectFDs)) {
       acceptFD = autoconfFD;
       serviceThr = AUTOCONF_THR;
-    } else if (overseerFD >= 0 && FD_ISSET(overseerFD, &selectFDs)) {
-      acceptFD = overseerFD;
-      serviceThr = OVERSEER_THR;
     } else {
       ink_assert(!"[webIntrMain] Error on mgmt_select()\n");
     }
@@ -968,15 +906,9 @@ webIntr_main(void *x)
 #endif
     ink_atomic_increment((int32_t *) & numServiceThr, 1);
 
-    // INKqa11624 - setup sockaddr struct for unix/tcp socket in different sizes
-    if (acceptFD == cliFD) {
-      clientInfo = (struct sockaddr_in *) xmalloc(sizeof(struct sockaddr_un));
-      addrLen = sizeof(struct sockaddr_un);
-    } else {
-      // coverity[alloc_fn]
-      clientInfo = (struct sockaddr_in *) xmalloc(sizeof(struct sockaddr_in));
-      addrLen = sizeof(struct sockaddr_in);
-    }
+    // coverity[alloc_fn]
+    clientInfo = (struct sockaddr_in *) xmalloc(sizeof(struct sockaddr_in));
+    addrLen = sizeof(struct sockaddr_in);
 
     // coverity[noescape]
     if ((clientFD = mgmt_accept(acceptFD, (sockaddr *) clientInfo, &addrLen)) < 0) {
@@ -994,13 +926,9 @@ webIntr_main(void *x)
           mgmt_elog(stderr, "[WebIntrMain] Unable to set close on exec flag\n");
         }
       }
-      // Set TCP_NODELAY if are using a TCP/IP socket
-      //    setting no delay reduces the latency for servicing
-      //    request on Solaris
-      if (serviceThr != CLI_THR) {      // service thread for command line utility
-        if (safe_setsockopt(clientFD, IPPROTO_TCP, TCP_NODELAY, ON, sizeof(int)) < 0) {
-          mgmt_log(stderr, "[WebIntrMain]Failed to set sock options: %s\n", strerror(errno));
-        }
+
+      if (safe_setsockopt(clientFD, IPPROTO_TCP, TCP_NODELAY, ON, sizeof(int)) < 0) {
+        mgmt_log(stderr, "[WebIntrMain]Failed to set sock options: %s\n", strerror(errno));
       }
 
       // Accept OK
@@ -1013,19 +941,12 @@ webIntr_main(void *x)
       }
 #endif /* TS_HAS_WEBUI */
 
-      // If this a web manager or an overseer connection, make sure that
-      //   it is from an allowed ip addr
-      if (((serviceThr == HTTP_THR || serviceThr == OVERSEER_THR) &&
+      // If this a web manager, make sure that it is from an allowed ip addr
+      if (((serviceThr == HTTP_THR) &&
            mgmt_allow_table->match(clientInfo->sin_addr.s_addr) == false)
           // Fix for INKqa10514
           || (serviceThr == AUTOCONF_THR && autoconf_localhost_only != 0 &&
-              strcmp(inet_ntoa(clientInfo->sin_addr), "127.0.0.1") != 0)
-#if defined(OEM_INTEL) || defined(OEM_SUN)
-          // Fix INKqa08148: on OEM boxes, we need to allow localhost to
-          //   connect so that CLI will function correctly
-          && (strcmp(inet_ntoa(clientInfo->sin_addr), "127.0.0.1"))
-#endif
-        ) {
+              strcmp(inet_ntoa(clientInfo->sin_addr), "127.0.0.1") != 0)) {
         mgmt_log("WARNING: connect by disallowed client %s, closing\n", inet_ntoa(clientInfo->sin_addr));
 #if defined(darwin)
         ink_sem_post(wGlobals.serviceThrCount);
@@ -1122,12 +1043,6 @@ serviceThrMain(void *info)
     httpInfo.clientInfo = threadInfo->clientInfo;
     WebHttpHandleConnection(&httpInfo);
     xfree(secureCTX);
-    break;
-  case CLI_THR:                // service command line utility
-    handleCLI(threadInfo->fd, &adminContext);
-    break;
-  case OVERSEER_THR:
-    handleOverseer(threadInfo->fd, overseerMode);
     break;
   case AUTOCONF_THR:
     httpInfo.fd = threadInfo->fd;

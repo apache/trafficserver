@@ -732,15 +732,15 @@ CLI_monitor::doMonitorDashboard(CLI_DATA * c_data /* IN: client data */ )
 
 #if TS_HAS_WEBUI
     // show dashboard
-    overviewGenerator->generateTableCLI(c_data->output);
+    // overviewGenerator->generateTableCLI(c_data->output);
 #endif
 
     c_data->output->copyFrom("\n", strlen("\n"));
     c_data->output->copyFrom(CLI_globals::sep2, strlen(CLI_globals::sep2));
   } else if (CL_EV_DISPLAY == c_data->cevent) { // display list of alarms
-    overviewGenerator->generateAlarmsTableCLI(c_data->output);
+    // overviewGenerator->generateAlarmsTableCLI(c_data->output);
   } else if (CL_EV_CHANGE == c_data->cevent) {  // resolve an alarm
-    resolveAlarmCLI(c_data->output, c_data->args);
+    // resolveAlarmCLI(c_data->output, c_data->args);
   }
   //  if (Obuf)
   //    delete Obuf;

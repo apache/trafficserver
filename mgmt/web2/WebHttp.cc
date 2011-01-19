@@ -582,7 +582,6 @@ handle_chart(WebHttpContext * whc, const char *file)
     "</SCRIPT>\n"
     "<applet NAME=\"ink_chart\" CODE=\"InktomiCharter.class\" " " ARCHIVE=\"/charting/InkChart.jar\" MAYSCRIPT ";
   static const char str3[] = ">\n<param name=ServerName value=\"";
-  static const char str3_2[] = "\">\n<param name=ServerPort value=\"";
   static const char str3_3[] = "\">\n<param name=ServerWebPort value=\"";
   static const char str3_4[] = "\">\n<param name=Graphs value=\"";
   static const char str3_5[] = "\">\n<param name=StatNames   value=\"";
@@ -593,7 +592,6 @@ handle_chart(WebHttpContext * whc, const char *file)
   static const int str1_5Len = strlen(str1_5);
   static const int str2Len = strlen(str2);
   static const int str3Len = strlen(str3);
-  static const int str3_2Len = strlen(str3_2);
   static const int str3_3Len = strlen(str3_3);
   static const int str3_4Len = strlen(str3_4);
   static const int str3_5Len = strlen(str3_5);
@@ -654,10 +652,6 @@ handle_chart(WebHttpContext * whc, const char *file)
 
   replyMsg->copyFrom(str3, str3Len);
   varStrFromName("proxy.node.hostname_FQ", tmpVal, MAX_VAL_LENGTH);
-  replyMsg->copyFrom(tmpVal, strlen(tmpVal));
-
-  replyMsg->copyFrom(str3_2, str3_2Len);
-  varStrFromName("proxy.config.admin.overseer_port", tmpVal, MAX_VAL_LENGTH);
   replyMsg->copyFrom(tmpVal, strlen(tmpVal));
 
   replyMsg->copyFrom(str3_3, str3_3Len);

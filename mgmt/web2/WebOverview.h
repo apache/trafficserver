@@ -123,16 +123,7 @@ class overviewPage
 public:
   overviewPage();
   ~overviewPage();
-  /*
-     void generateTable(textBuffer* output,
-     const char* submission,
-     WebContext* pContext);
-   */
-  void generateTable(WebHttpContext * whc);
-  void generateTableCLI(textBuffer * output);
-  void generateAlarmsTable(WebHttpContext * whc);
-  void generateAlarmsTableCLI(textBuffer * output);
-  void generateAlarmsSummary(WebHttpContext * whc);
+
   void addAlarm(alarm_t newAlarm, char *ip, char *desc);
   void checkForUpdates();
   char *resolvePeerHostname(const char *peerIP);
@@ -144,9 +135,7 @@ public:
   void doClusterAg();
   void addSelfRecord();
 
-  int varClusterIntFromName(char *, MgmtInt *);
   int varClusterFloatFromName(char *, MgmtFloat *);
-  int varClusterCounterFromName(char *, MgmtInt *);
 
 private:
   ink_mutex accessLock;
@@ -189,7 +178,6 @@ extern overviewPage *overviewGenerator; // global handle to overiewPage?
 
 void overviewAlarmCallback(alarm_t newAlarm, char *ip, char *desc);
 void resolveAlarm(InkHashTable * post_data_ht);
-void resolveAlarmCLI(textBuffer * output, const char *ipAddr);
 int hostSortFunc(const void *arg1, const void *arg2);
 
 #endif

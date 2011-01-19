@@ -132,7 +132,7 @@ handle_alarm_object(WebHttpContext * whc, char *tag, char *arg)
 {
   NOWARN_UNUSED(tag);
   NOWARN_UNUSED(arg);
-  overviewGenerator->generateAlarmsTable(whc);
+  // overviewGenerator->generateAlarmsTable(whc);
   return WEB_HTTP_ERR_OKAY;
 }
 
@@ -145,7 +145,7 @@ handle_alarm_summary_object(WebHttpContext * whc, char *tag, char *arg)
 {
   NOWARN_UNUSED(tag);
   NOWARN_UNUSED(arg);
-  overviewGenerator->generateAlarmsSummary(whc);
+  // overviewGenerator->generateAlarmsSummary(whc);
   return WEB_HTTP_ERR_OKAY;
 }
 
@@ -598,7 +598,7 @@ handle_overview_object(WebHttpContext * whc, char *tag, char *arg)
 {
   NOWARN_UNUSED(tag);
   NOWARN_UNUSED(arg);
-  overviewGenerator->generateTable(whc);
+  // overviewGenerator->generateTable(whc);
   return WEB_HTTP_ERR_OKAY;
 }
 

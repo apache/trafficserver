@@ -779,7 +779,6 @@ Cmd_ConfigPorts(ClientData clientData, Tcl_Interp * interp, int argc, const char
         break;
       case CMD_CONFIG_PORTS_HTTP_SERVER:
       case CMD_CONFIG_PORTS_WEBUI:
-      case CMD_CONFIG_PORTS_OVERSEER:
       case CMD_CONFIG_PORTS_CLUSTER:
       case CMD_CONFIG_PORTS_CLUSTER_RS:
       case CMD_CONFIG_PORTS_CLUSTER_MC:
@@ -790,7 +789,7 @@ Cmd_ConfigPorts(ClientData clientData, Tcl_Interp * interp, int argc, const char
     }
   }
   Cli_Error(ERR_COMMAND_SYNTAX,
-            "\n\nconfig:ports <http-server | http-other | webui | \n overseer | cluster-rs | cluster-mc | \n  ssl | \n socks-server | icp > \n <port | ports list>\n");
+            "\n\nconfig:ports <http-server | http-other | webui | cluster-rs | cluster-mc | \n  ssl | \n socks-server | icp > \n <port | ports list>\n");
   return CMD_ERROR;
 
 }
@@ -809,8 +808,6 @@ CmdArgs_ConfigPorts()
                  (char *) NULL, CMD_CONFIG_PORTS_HTTP_OTHER, "Set Ports for http-other", (char *) NULL);
   createArgument("webui", 1, CLI_ARGV_OPTION_INT_VALUE,
                  (char *) NULL, CMD_CONFIG_PORTS_WEBUI, "Set Ports for webui", (char *) NULL);
-  createArgument("overseer", 1, CLI_ARGV_OPTION_INT_VALUE,
-                 (char *) NULL, CMD_CONFIG_PORTS_OVERSEER, "Set Ports for overseer", (char *) NULL);
   createArgument("cluster", 1, CLI_ARGV_OPTION_INT_VALUE,
                  (char *) NULL, CMD_CONFIG_PORTS_CLUSTER, "Set Ports for cluster", (char *) NULL);
   createArgument("cluster-rs", 1, CLI_ARGV_OPTION_INT_VALUE,
@@ -2529,9 +2526,6 @@ ConfigPortsSet(int arg_ref, void *valuePtr)
   case CMD_CONFIG_PORTS_WEBUI:
     status = Cli_RecordSetInt("proxy.config.admin.web_interface_port", *(INKInt *) valuePtr, &action_need);
     break;
-  case CMD_CONFIG_PORTS_OVERSEER:
-    status = Cli_RecordSetInt("proxy.config.admin.overseer_port", *(INKInt *) valuePtr, &action_need);
-    break;
   case CMD_CONFIG_PORTS_CLUSTER:
     status = Cli_RecordSetInt("proxy.config.cluster.cluster_port", *(INKInt *) valuePtr, &action_need);
     break;
@@ -2598,13 +2592,6 @@ ConfigPortsGet(int arg_ref)
     }
     Cli_Printf("%d\n", int_val);
     break;
-  case CMD_CONFIG_PORTS_OVERSEER:
-    status = Cli_RecordGetInt("proxy.config.admin.overseer_port", &int_val);
-    if (status) {
-      return status;
-    }
-    Cli_Printf("%d\n", int_val);
-    break;
   case CMD_CONFIG_PORTS_CLUSTER:
     status = Cli_RecordGetInt("proxy.config.cluster.cluster_port", &int_val);
     if (status) {
@@ -2653,7 +2640,7 @@ ConfigPortsGet(int arg_ref)
     break;
   default:
     Cli_Error(ERR_COMMAND_SYNTAX,
-              "\n\nconfig:ports <http-server | http-other | webui | \n overseer | cluster-rs | cluster-mc | \n ssl | \n socks-server | icp > \n <port | ports list>\n");
+              "\n\nconfig:ports <http-server | http-other | webui | cluster-rs | cluster-mc | \n ssl | \n socks-server | icp > \n <port | ports list>\n");
 
     return CLI_ERROR;
   }

@@ -328,7 +328,6 @@ security		Security Configuration (only in Enable Mode)
     ts> show:security
 
     Web Interface Port ----- 12    (proxy.config.admin.web_interface_port)
-    Overseer Port ---------- 345   (proxy.config.admin.overseer_port)
 
     Traffic Server Access
     (ip_allow.config contents)
@@ -1404,14 +1403,13 @@ remap			Remap Rules
 ports			Ports used by Traffic Server
 *** config:ports command is not implemented or supported ***
 			(including mgmt port)
-  syntax: config:ports <http-server | http-other | webui | overseer | cluster
+  syntax: config:ports <http-server | http-other | webui | cluster
                         cluster-rs | cluster-mc |
                         ssl | socks-server | icp> <port | ports>
   args:   some variables are single-port while other can be a list of ports
           <http-server>     (proxy.config.http.server_port) single
           <http-other>      (proxy.config.http.server_other_ports) list
           <webui>           (proxy.config.admin.web_interface_port) single
-          <overseer>        (proxy.config.admin.overseer_port) single
           <cluster>         (proxy.config.cluster_port) single
           <cluster-rs>      (proxy.config.cluster.rsport) single
           <cluster-mc>      (proxy.config.cluster.mcport) single
