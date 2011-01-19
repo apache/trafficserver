@@ -636,8 +636,7 @@ send_request_name_value(int fd, OpType op, const char *name, const char *value)
 INKError
 send_request_bool(int fd, OpType op, bool flag)
 {
-  int total_len = SIZE_OP_T + SIZE_LEN + SIZE_BOOL;
-  char msg_buf[total_len];
+  char msg_buf[SIZE_OP_T + SIZE_LEN + SIZE_BOOL];
   int16_t flag_t;
   int32_t msg_len;
 
@@ -653,7 +652,7 @@ send_request_bool(int fd, OpType op, bool flag)
   memcpy(msg_buf + SIZE_OP_T + SIZE_LEN, (void *) &flag_t, SIZE_BOOL);
 
   // send message
-  return socket_write_conn(fd, msg_buf, total_len);
+  return socket_write_conn(fd, msg_buf, SIZE_OP_T + SIZE_LEN + SIZE_BOOL);
 }
 
 /**********************************************************************
@@ -669,8 +668,7 @@ send_request_bool(int fd, OpType op, bool flag)
 INKError
 send_file_read_request(int fd, INKFileNameT file)
 {
-  int total_len = SIZE_OP_T + SIZE_LEN + SIZE_FILE_T;
-  char msg_buf[total_len];
+  char msg_buf[SIZE_OP_T + SIZE_LEN + SIZE_FILE_T];
   int msg_pos = 0;
   int32_t msg_len = (int32_t) SIZE_FILE_T;  //marshalled values
   int16_t op, file_t;
@@ -689,7 +687,7 @@ send_file_read_request(int fd, INKFileNameT file)
   memcpy(msg_buf + msg_pos, &file_t, SIZE_FILE_T);
 
   // send message
-  return socket_write_conn(fd, msg_buf, total_len);
+  return socket_write_conn(fd, msg_buf, SIZE_OP_T + SIZE_LEN + SIZE_FILE_T);
 }
 
 /**********************************************************************
@@ -831,8 +829,7 @@ send_proxy_state_get_request(int fd)
 INKError
 send_proxy_state_set_request(int fd, INKProxyStateT state, INKCacheClearT clear)
 {
-  int total_len = SIZE_OP_T + SIZE_LEN + SIZE_PROXY_T + SIZE_TS_ARG_T;
-  char msg_buf[total_len];
+  char msg_buf[SIZE_OP_T + SIZE_LEN + SIZE_PROXY_T + SIZE_TS_ARG_T];
   int16_t op, state_t, cache_t;
   int32_t msg_len;
 
@@ -853,7 +850,7 @@ send_proxy_state_set_request(int fd, INKProxyStateT state, INKCacheClearT clear)
   memcpy(msg_buf + SIZE_OP_T + SIZE_LEN + SIZE_PROXY_T, (void *) &cache_t, SIZE_TS_ARG_T);
 
   // send message
-  return socket_write_conn(fd, msg_buf, total_len);
+  return socket_write_conn(fd, msg_buf, SIZE_OP_T + SIZE_LEN + SIZE_PROXY_T + SIZE_TS_ARG_T);
 }
 
 
