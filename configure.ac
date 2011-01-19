@@ -1228,7 +1228,6 @@ AC_CONFIG_FILES([proxy/Makefile])
 AC_CONFIG_FILES([mgmt/api/Makefile])
 AC_CONFIG_FILES([mgmt/api/remote/Makefile])
 AC_CONFIG_FILES([mgmt/cli2/Makefile])
-AC_CONFIG_FILES([mgmt/cli/Makefile])
 AC_CONFIG_FILES([mgmt/cluster/Makefile])
 AS_IF([test "x$enable_webui" = "xyes"],
   [AC_CONFIG_FILES([mgmt/html2/Makefile])

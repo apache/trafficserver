@@ -40,8 +40,6 @@
 #include "Main.h"
 #include "ClusterCom.h"
 #include "MgmtDefs.h"
-#include "CLI.h"
-#include "CLIlineBuffer.h"
 #include "Diags.h"
 
 // Make this pointer to avoid nasty destruction
