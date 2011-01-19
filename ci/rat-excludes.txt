@@ -35,8 +35,8 @@ proxy/cache_test.config
 proxy/congest/FeatureSpec.txt
 proxy/http/stats.memo
 proxy/issues.txt
-mgmt/cli2/cli_detailed_command_list.txt
-mgmt/cli2/cli_feature_spec.txt
+mgmt/cli/cli_detailed_command_list.txt
+mgmt/cli/cli_feature_spec.txt
 example/README.internal
 example/blacklist-1/blacklist.txt
 example/thread-pool/TESTPLAN.txt
@@ -79,7 +79,7 @@ test/deft/defs/climatelab.def
 test/deft/defs/localhost.def
 test/plugin/INKHttpHooksTrans/altSelect.notes
 mgmt/html2/tune/navigation_tree.xml
-mgmt/cli2/hashtable.cc
+mgmt/cli/hashtable.cc
 lib/ts/ink_res_init.cc
 lib/ts/ink_res_mkquery.cc
 lib/ts/ink_rand.h

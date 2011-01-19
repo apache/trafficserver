@@ -295,22 +295,6 @@ AC_SUBST(has_detailed_log)
 AM_CONDITIONAL([BUILD_DETAILED_LOG], [test 0 -ne $has_detailed_log])
 
 #
-# Cli2
-#
-AC_MSG_CHECKING([whether to enable cli2])
-AC_ARG_ENABLE([cli2],
-  [AS_HELP_STRING([--disable-cli2],[do not compile cli2])],
-  [],
-  [enable_cli2=yes]
-)
-AC_MSG_RESULT([$enable_cli2])
-TS_ARG_ENABLE_VAR([has],[cli2])
-AS_IF([test 0 -ne $has_cli2],
-  [AC_SUBST([CLI_DIR],[cli2])]
-)
-AC_SUBST(has_cli2)
-
-#
 # Experimental V2 stats APIs (for plugins)
 #
 AC_MSG_CHECKING([whether to enable the experimental V2 stats subsystem for plugin APIs])
@@ -1227,7 +1211,7 @@ AC_CONFIG_FILES([proxy/logging/Makefile])
 AC_CONFIG_FILES([proxy/Makefile])
 AC_CONFIG_FILES([mgmt/api/Makefile])
 AC_CONFIG_FILES([mgmt/api/remote/Makefile])
-AC_CONFIG_FILES([mgmt/cli2/Makefile])
+AC_CONFIG_FILES([mgmt/cli/Makefile])
 AC_CONFIG_FILES([mgmt/cluster/Makefile])
 AS_IF([test "x$enable_webui" = "xyes"],
   [AC_CONFIG_FILES([mgmt/html2/Makefile])
