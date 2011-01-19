@@ -742,17 +742,13 @@ inkapi INKRecordEle *
 INKRecordEleCreate(void)
 {
   INKRecordEle *ele;
+
   ele = (INKRecordEle *) xmalloc(sizeof(INKRecordEle));
   if (!ele)
     return NULL;
 
   ele->rec_name = NULL;
   ele->rec_type = INK_REC_UNDEFINED;
-
-  //ele->int_val = -1;
-  //ele->counter_val = -1;
-  //ele->float_val = -1;
-  //ele->string_val = NULL;
 
   return ele;
 }
@@ -1667,9 +1663,9 @@ INKVirtIpAddrEleDestroy(INKVirtIpAddrEle * ele)
 
 /*--- statistics operations ----------------------------------------------- */
 inkapi INKError
-INKStatsReset()
+INKStatsReset(bool cluster)
 {
-  return StatsReset();
+  return StatsReset(cluster);
 }
 
 /*--- variable operations ------------------------------------------------- */

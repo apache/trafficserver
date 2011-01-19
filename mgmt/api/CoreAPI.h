@@ -95,7 +95,7 @@ INKError SnapshotRestore(char *snapshot_name);
 INKError SnapshotRemove(char *snapshot_name);
 INKError SnapshotGetMlt(LLQ * snapshots);
 
-INKError StatsReset();
+INKError StatsReset(bool cluster);
 
 /***************************************************************************
  * Miscellaneous Utility

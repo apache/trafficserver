@@ -31,10 +31,10 @@
 
 static const char *programName;
 
-static char readVar[1024];
-static char setVar[1024];
-static char varValue[1024];
-static int reRead;
+static char ReadVar[1024];
+static char SetVar[1024];
+static char VarValue[1024];
+static int ReRead;
 static int Shutdown;
 static int BounceCluster;
 static int BounceLocal;
@@ -49,7 +49,7 @@ static int VersionFlag;
 static INKError
 handleArgInvocation()
 {
-  if (reRead == 1) {
+  if (ReRead == 1) {
     return INKReconfigure();
   } else if (ShutdownMgmtCluster == 1) {
     return INKRestart(true);
@@ -64,21 +64,59 @@ handleArgInvocation()
   } else if (Startup == 1) {
     return INKProxyStateSet(INK_PROXY_ON, INK_CACHE_CLEAR_OFF);
   } else if (ClearCluster == 1) {
+    return INKStatsReset(true);
   } else if (ClearNode == 1) {
+    return INKStatsReset(false);
   } else if (QueryDeadhosts == 1) {
-  } else if (*readVar != '\0') {        // Handle a value read
-    if (*setVar != '\0' || *varValue != '\0') {
+    fprintf(stderr, "Query Deadhosts is not implemented, it requires support for congestion control.\n");
+    fprintf(stderr, "For more details, examine the old code in cli/CLI.cc: QueryDeadhosts()\n");
+    return INK_ERR_FAIL;
+  } else if (*ReadVar != '\0') {        // Handle a value read
+    if (*SetVar != '\0' || *VarValue != '\0') {
       fprintf(stderr, "%s: Invalid Argument Combination: Can not read and set values at the same time\n", programName);
       return INK_ERR_FAIL;
     } else {
+      INKError err;
+      INKRecordEle *rec_ele = INKRecordEleCreate();
+
+      if ((err = INKRecordGet(ReadVar, rec_ele)) != INK_ERR_OKAY) {
+        fprintf(stderr, "%s: Variable Not Found\n", programName);
+      } else {
+        switch (rec_ele->rec_type) {
+        case INK_REC_INT:
+          printf("%" PRId64 "\n", rec_ele->int_val);
+          break;
+        case INK_REC_COUNTER:
+          printf("%" PRId64 "\n", rec_ele->counter_val);
+          break;
+        case INK_REC_FLOAT:
+          printf("%f\n", rec_ele->float_val);
+          break;
+        case INK_REC_STRING:
+          printf("%s\n", rec_ele->string_val);
+          break;
+        default:
+          fprintf(stderr, "%s: unknown record type (%d)\n", programName, rec_ele->rec_type);
+          err = INK_ERR_FAIL;
+          break;
+        }
+      }
+      INKRecordEleDestroy(rec_ele);
+      return err;
     }
-  } else if (*setVar != '\0') { // Setting a variable
-    if (*varValue == '\0') {
+  } else if (*SetVar != '\0') { // Setting a variable
+    if (*VarValue == '\0') {
       fprintf(stderr, "%s: Set requires a -v argument\n", programName);
       return INK_ERR_FAIL;
     } else {
+      INKError err;
+      INKActionNeedT action;
+
+      if ((err = INKRecordSet(SetVar, VarValue, &action)) != INK_ERR_OKAY)
+        fprintf(stderr, "%s: Only configuration vars can be set\n", programName);
+      return err;
     }
-  } else if (*varValue != '\0') {       // We have a value but no variable to set
+  } else if (*VarValue != '\0') {       // We have a value but no variable to set
     fprintf(stderr, "%s: Must specify variable to set with -s when using -v\n", programName);
     return INK_ERR_FAIL;
   }
@@ -96,10 +134,10 @@ main(int argc, char **argv)
 
   programName = argv[0];
 
-  readVar[0] = '\0';
-  setVar[0] = '\0';
-  varValue[0] = '\0';
-  reRead = 0;
+  ReadVar[0] = '\0';
+  SetVar[0] = '\0';
+  VarValue[0] = '\0';
+  ReRead = 0;
   Shutdown = 0;
   BounceCluster = 0;
   BounceLocal = 0;
@@ -118,11 +156,11 @@ main(int argc, char **argv)
 /* see 'ink_args.h' for meanings of the various fields */
   ArgumentDescription argument_descriptions[] = {
     {"query_deadhosts", 'q', "Query congested sites", "F", &QueryDeadhosts, NULL, NULL},
-    {"read_var", 'r', "Read Variable", "S1024", &readVar, NULL, NULL},
-    {"set_var", 's', "Set Variable (requires -v option)", "S1024", &setVar, NULL, NULL},
-    {"value", 'v', "Set Value (used with -s option)", "S1024", &varValue, NULL, NULL},
+    {"read_var", 'r', "Read Variable", "S1024", &ReadVar, NULL, NULL},
+    {"set_var", 's', "Set Variable (requires -v option)", "S1024", &SetVar, NULL, NULL},
+    {"value", 'v', "Set Value (used with -s option)", "S1024", &VarValue, NULL, NULL},
     {"help", 'h', "Help", NULL, NULL, NULL, usage},
-    {"reread_config", 'x', "Reread Config Files", "F", &reRead, NULL, NULL},
+    {"reread_config", 'x', "Reread Config Files", "F", &ReRead, NULL, NULL},
     {"restart_cluster", 'M', "Restart traffic_manager (cluster wide)", "F", &ShutdownMgmtCluster, NULL, NULL},
     {"restart_local", 'L', "Restart traffic_manager (local node)", "F", &ShutdownMgmtLocal, NULL, NULL},
     {"shutdown", 'S', "Shutdown traffic_server (local node)", "F", &Shutdown, NULL, NULL},
@@ -143,17 +181,18 @@ main(int argc, char **argv)
     exit(0);
   }
 
-  // Connect to Local Manager
+  // Connect to Local Manager and do it.
   INKInit(NULL, static_cast<TSInitOptionT>(TS_MGMT_OPT_NO_EVENTS | TS_MGMT_OPT_NO_SOCK_TESTS));
-
-  // Do it
   status = handleArgInvocation();
 
   // Done with the mgmt API.
   INKTerminate();
+
   if (INK_ERR_OKAY != status) {
-    fprintf(stderr, "error: the requested command failed\n");
+    if (ReadVar[0] == '\0' && SetVar[0] == '\0')
+      fprintf(stderr, "error: the requested command failed\n");
     exit(1);
   }
+
   exit(0);
 }

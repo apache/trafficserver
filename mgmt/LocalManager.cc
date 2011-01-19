@@ -71,7 +71,7 @@ LocalManager::mgmtCleanup()
   closelog();
 #endif /* MGMT_USE_SYSLOG */
   return;
-}                               /* End LocalManager::mgmtCleanup */
+}
 
 
 void
@@ -98,7 +98,7 @@ LocalManager::mgmtShutdown(int status, bool mainThread)
     mgmt_shutdown_outstanding = true;
   }
   return;
-}                               /* End LocalManager::mgmtShutdown */
+}
 
 
 void
@@ -111,7 +111,7 @@ LocalManager::processShutdown(bool mainThread)
     signalEvent(MGMT_EVENT_SHUTDOWN, "processShutdown");
   }
   return;
-}                               /* End LocalManager::processShutdown */
+}
 
 
 void
@@ -120,7 +120,7 @@ LocalManager::processRestart()
   mgmt_log("[LocalManager::processRestart] Executing process restart request.\n");
   signalEvent(MGMT_EVENT_RESTART, "processRestart");
   return;
-}                               /* End LocalManager::processRestart */
+}
 
 
 void
@@ -129,7 +129,7 @@ LocalManager::processBounce()
   mgmt_log("[LocalManager::processBounce] Executing process bounce request.\n");
   signalEvent(MGMT_EVENT_BOUNCE, "processBounce");
   return;
-}                               /* End LocalManager::processBounce */
+}
 
 void
 LocalManager::rollLogFiles()
@@ -139,23 +139,10 @@ LocalManager::rollLogFiles()
   return;
 }
 
-char snap_filename[PATH_NAME_MAX + 1] = "stats.snap";
-
 void
 LocalManager::clearStats()
 {
   char *statsPath;
-  char conf[PATH_NAME_MAX + 1];
-  char local_state_dir[PATH_NAME_MAX + 1];
-
-  REC_ReadConfigString(conf, "proxy.config.local_state_dir", PATH_NAME_MAX);
-  Layout::get()->relative(local_state_dir, sizeof(local_state_dir), conf);
-  if (access(local_state_dir, R_OK | W_OK) == -1) {
-    Warning("Unable to access() local state directory '%s': %d, %s", local_state_dir, errno, strerror(errno));
-    Warning(" Please set 'proxy.config.local_state_dir' to allow statistics collection");
-  }
-  REC_ReadConfigString(conf, "proxy.config.stats.snap_file", PATH_NAME_MAX);
-  ink_filepath_make(snap_filename, sizeof(snap_filename), local_state_dir, conf);
 
   // Clear our records and then send the signal.  There is a race condition
   //  here where our stats could get re-updated from the proxy
@@ -166,8 +153,8 @@ LocalManager::clearStats()
   //   stats getting cleared by progation of clearing the
   //   cluster stats
   //
-  NOWARN_UNUSED(snap_filename);
-
+  // TODO: This doesn't clear all stats, should we do so? E.g.
+  // RecResetStatRecord(NULL, all);
   RecResetStatRecord();
 
   // If the proxy is not running, sending the signal does
@@ -183,8 +170,7 @@ LocalManager::clearStats()
     }
     xfree(statsPath);
   }
-
-}                               /* End LocalManager::clearStats */
+}
 
 // void LocalManager::syslogThrInit()
 //
@@ -195,7 +181,7 @@ LocalManager::clearStats()
 void
 LocalManager::syslogThrInit()
 {
-}                               /* End LocalManager::syslogThrInit */
+}
 
 // bool LocalManager::clusterOk()
 //
@@ -218,7 +204,7 @@ LocalManager::clusterOk()
 
   ink_assert(found);
   return result;
-}                               /* End LocalManager::clusterOk */
+}
 
 bool
 LocalManager::processRunning()
@@ -228,7 +214,7 @@ LocalManager::processRunning()
   } else {
     return false;
   }
-}                               /* End LocalManager::processRunning */
+}
 
 LocalManager::LocalManager(char *mpath, bool proxy_on)
   : BaseManager(), run_proxy(proxy_on)
@@ -403,7 +389,7 @@ LocalManager::LocalManager(char *mpath, bool proxy_on)
   proxy_launch_pid = -1;
 
   return;
-}                               /* End LocalManager::LocalManager */
+}
 
 void
 LocalManager::initAlarm()
@@ -470,7 +456,7 @@ LocalManager::initCCom(int port, char *addr, int sport)
     xfree(intrName);
   }
   return;
-}                               /* End LocalManager::initCCom */
+}
 
 /*
  * initMgmtProcessServer()
@@ -521,7 +507,7 @@ LocalManager::initMgmtProcessServer()
   }
 
   RecSetRecordInt("proxy.node.restarts.manager.start_time", manager_started_at);
-}                               /* End LocalManager::initMgmtProcessServer */
+}
 
 /*
  * pollMgmtProcessServer()
@@ -619,7 +605,6 @@ LocalManager::pollMgmtProcessServer()
         }
         // handle EOF
         if (res == 0) {
-
           int estatus;
           pid_t tmp_pid = watched_process_pid;
 
@@ -659,14 +644,12 @@ LocalManager::pollMgmtProcessServer()
     }
 
   }
-}                               /* End LocalManager::pollMgmtProcessServer */
+}
 
 
 void
 LocalManager::handleMgmtMsgFromProcesses(MgmtMessageHdr * mh)
 {
-
-
   char *data_raw = (char *) mh + sizeof(MgmtMessageHdr);
   switch (mh->msg_id) {
   case MGMT_SIGNAL_PID:
@@ -833,8 +816,7 @@ LocalManager::handleMgmtMsgFromProcesses(MgmtMessageHdr * mh)
   if (mh->msg_id >= INK_MGMT_SIGNAL_ACC_ALARMS_START && mh->msg_id <= INK_MGMT_SIGNAL_ACC_ALARMS_END) {
     alarm_keeper->signalAlarm(mh->msg_id, data_raw);
   }
-
-}                               /* End LocalManager::handleMgmtMsgFromProcesses */
+}
 
 
 void
@@ -856,7 +838,7 @@ LocalManager::sendMgmtMsgToProcesses(int msg_id, const char *data_raw, int data_
   memcpy((char *) mh + sizeof(MgmtMessageHdr), data_raw, data_len);
   sendMgmtMsgToProcesses(mh);
   return;
-}                               /* End LocalManager::sendMgmtMsgToProcesses */
+}
 
 
 void
@@ -916,7 +898,6 @@ LocalManager::sendMgmtMsgToProcesses(MgmtMessageHdr * mh)
 
   if (watched_process_fd != -1) {
     if (mgmt_write_pipe(watched_process_fd, (char *) mh, sizeof(MgmtMessageHdr) + mh->data_len) <= 0) {
-
       // In case of Linux, sometimes when the TS dies, the connection between TS and TM
       // is not closed properly. the socket does not receive an EOF. So, the TM does
       // not detect that the connection and hence TS has gone down. Hence it still
@@ -971,8 +952,7 @@ LocalManager::sendMgmtMsgToProcesses(MgmtMessageHdr * mh)
       }
     }
   }
-
-}                               /* End LocalManager::sendMgmtMsgToProcesses */
+}
 
 
 void
@@ -980,7 +960,7 @@ LocalManager::signalFileChange(const char *var_name)
 {
   signalEvent(MGMT_EVENT_CONFIG_FILE_UPDATE, var_name);
   return;
-}                               /* End LocalManager::signalFileChange */
+}
 
 
 void
@@ -988,7 +968,7 @@ LocalManager::signalEvent(int msg_id, const char *data_str)
 {
   signalEvent(msg_id, data_str, strlen(data_str) + 1);
   return;
-}                               /* End LocalManager::signalFileChange */
+}
 
 
 void
@@ -1003,8 +983,7 @@ LocalManager::signalEvent(int msg_id, const char *data_raw, int data_len)
   ink_assert(enqueue(mgmt_event_queue, mh));
 
   return;
-
-}                               /* End LocalManager::signalEvent */
+}
 
 
 /*
@@ -1026,7 +1005,6 @@ LocalManager::processEventQueue()
 
     // check if we have a local file update
     if (mh->msg_id == MGMT_EVENT_CONFIG_FILE_UPDATE) {
-
       // records.config
       if (!(strcmp(data_raw, "records.config"))) {
         if (RecReadConfigFile() != REC_ERR_OKAY) {
@@ -1056,8 +1034,7 @@ LocalManager::processEventQueue()
 
     xfree(mh);
   }
-
-}                               /* End LocalManager::processEventQueue */
+}
 
 
 /*
@@ -1067,7 +1044,6 @@ LocalManager::processEventQueue()
 bool
 LocalManager::startProxy()
 {
-
   if (proxy_launch_outstanding) {
     return false;
   }
@@ -1182,8 +1158,7 @@ LocalManager::startProxy()
     _exit(res);
   }
   return true;
-
-}                               /* End LocalManager::startProxy */
+}
 
 
 /*
@@ -1199,7 +1174,6 @@ LocalManager::listenForProxy()
   // We are not already bound, bind the port
   for (int i = 0; i < MAX_PROXY_SERVER_PORTS; i++) {
     if (proxy_server_port[i] != -1) {
-
       if (proxy_server_fd[i] < 0) {
         int domain = AF_INET;
         int type = SOCK_STREAM;
@@ -1240,7 +1214,7 @@ LocalManager::listenForProxy()
     }
   }
   return;
-}                               /* End LocalManager::listenForProxy */
+}
 
 #if TS_USE_POSIX_CAP
 /** Control file access privileges to bypass DAC.
@@ -1400,12 +1374,11 @@ bindProxyPort(int proxy_port, char *incoming_ip_to_bind_str, int domain, bool tr
   }
 #endif
   return proxy_port_fd;
-
-}                               /* End bindProxyPort */
+}
 
 void
 LocalManager::signalAlarm(int alarm_id, const char *desc, const char *ip)
 {
   if (alarm_keeper)
     alarm_keeper->signalAlarm((alarm_t) alarm_id, desc, ip);
-}                               /* signalAlarm */
+}

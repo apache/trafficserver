@@ -55,7 +55,7 @@ mgmt/tools/traffic_shmem_clean
 mgmt/tools/traffic_time_config
 mgmt/tools/traffic_vip_config
 mgmt/api/remote/api_cli_remote
-mgmt/cli/traffic_line
+mgmt/cli2/traffic_line
 mgmt/cli2/traffic_shell
 mgmt/tools/shmem_clean
 mgmt/traffic_manager

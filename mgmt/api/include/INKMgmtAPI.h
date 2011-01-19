@@ -1187,10 +1187,10 @@ extern "C"
 
 /*--- statistics operations -----------------------------------------------*/
 /* INKStatsReset: sets all the statistics variables to their default values
- * Input: <none>
+ * Input: cluster - Reset the stats clusterwide or not
  * Outpue: INKErrr
  */
-  inkapi INKError INKStatsReset();
+  inkapi INKError INKStatsReset(bool cluster);
 
 /*--- variable operations -------------------------------------------------*/
 /* INKRecordGet: gets a record

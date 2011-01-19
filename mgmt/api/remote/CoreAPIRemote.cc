@@ -390,7 +390,7 @@ Restart(bool cluster)
 {
   INKError ret;
 
-  ret = send_restart_request(main_socket_fd, false, cluster);
+  ret = send_request_bool(main_socket_fd, RESTART, cluster);
   if (ret != INK_ERR_OKAY)
     return ret;                 // networking error
 
@@ -432,7 +432,6 @@ HardRestart()
   if (!start_binary(start_path))        // call start_traffic_server script
     return INK_ERR_FAIL;
 
-
   return INK_ERR_OKAY;
 }
 
@@ -446,17 +445,11 @@ Bounce(bool cluster)
 {
   INKError ret;
 
-  ret = send_restart_request(main_socket_fd, true, cluster);
+  ret = send_request_bool(main_socket_fd, BOUNCE, cluster);
   if (ret != INK_ERR_OKAY)
     return ret;                 // networking error
 
-  ret = parse_reply(main_socket_fd);
-
-  if (ret == INK_ERR_OKAY) {
-    ret = reconnect_loop(MAX_CONN_TRIES);
-  }
-
-  return ret;
+  return parse_reply(main_socket_fd);
 }
 
 
@@ -828,9 +821,15 @@ SnapshotGetMlt(LLQ * snapshots)
 }
 
 INKError
-StatsReset()
+StatsReset(bool cluster)
 {
-  return send_and_parse_basic(STATS_RESET);
+  INKError ret;
+
+  ret = send_request_bool(main_socket_fd, STATS_RESET, cluster);
+  if (ret != INK_ERR_OKAY)
+    return ret;                 // networking error
+
+  return parse_reply(main_socket_fd);
 }
 
 /*-------------------------------------------------------------------------

@@ -626,6 +626,37 @@ send_request_name_value(int fd, OpType op, const char *name, const char *value)
 }
 
 /**********************************************************************
+ * send_request_bool (helper)
+ *
+ * purpose: sends a simple op with a boolean flag argument
+ * input: fd      - file descriptor to use
+ *        flag    - boolean flag
+ * output: INK_ERR_xx
+ **********************************************************************/
+INKError
+send_request_bool(int fd, OpType op, bool flag)
+{
+  int total_len = SIZE_OP_T + SIZE_LEN + SIZE_BOOL;
+  char msg_buf[total_len];
+  int16_t flag_t;
+  int32_t msg_len;
+
+  // Fill in the operator
+  memcpy(msg_buf, (void *) &op, SIZE_OP_T);
+
+  // fill in msg_len = SIZE_BOOL
+  msg_len = (int32_t) SIZE_BOOL;
+  memcpy(msg_buf + SIZE_OP_T, (void *)&msg_len, SIZE_LEN);
+
+  // Fill in the argument (the boolean flag)
+  flag_t = flag ? 1 : 0;
+  memcpy(msg_buf + SIZE_OP_T + SIZE_LEN, (void *) &flag_t, SIZE_BOOL);
+
+  // send message
+  return socket_write_conn(fd, msg_buf, total_len);
+}
+
+/**********************************************************************
  * send_file_read_request
  *
  * purpose: sends file read request to Traffic Manager
@@ -638,16 +669,11 @@ send_request_name_value(int fd, OpType op, const char *name, const char *value)
 INKError
 send_file_read_request(int fd, INKFileNameT file)
 {
-  char *msg_buf;
-  int msg_pos = 0, total_len;
+  int total_len = SIZE_OP_T + SIZE_LEN + SIZE_FILE_T;
+  char msg_buf[total_len];
+  int msg_pos = 0;
   int32_t msg_len = (int32_t) SIZE_FILE_T;  //marshalled values
   int16_t op, file_t;
-  INKError err;
-
-  total_len = SIZE_OP_T + SIZE_LEN + SIZE_FILE_T;
-  msg_buf = (char *) xmalloc(sizeof(char) * total_len);
-  if (!msg_buf)
-    return INK_ERR_SYS_CALL;
 
   // fill in op type
   op = (int16_t) FILE_READ;
@@ -663,10 +689,7 @@ send_file_read_request(int fd, INKFileNameT file)
   memcpy(msg_buf + msg_pos, &file_t, SIZE_FILE_T);
 
   // send message
-  err = socket_write_conn(fd, msg_buf, total_len);
-  xfree(msg_buf);
-  return err;
-
+  return socket_write_conn(fd, msg_buf, total_len);
 }
 
 /**********************************************************************
@@ -730,7 +753,6 @@ send_file_write_request(int fd, INKFileNameT file, int ver, int size, char *text
   err = socket_write_conn(fd, msg_buf, total_len);
   xfree(msg_buf);
   return err;
-
 }
 
 /**********************************************************************
@@ -776,7 +798,6 @@ send_record_get_request(int fd, char *rec_name)
   err = socket_write_conn(fd, msg_buf, total_len);
   xfree(msg_buf);
   return err;
-
 }
 
 
@@ -810,16 +831,10 @@ send_proxy_state_get_request(int fd)
 INKError
 send_proxy_state_set_request(int fd, INKProxyStateT state, INKCacheClearT clear)
 {
+  int total_len = SIZE_OP_T + SIZE_LEN + SIZE_PROXY_T + SIZE_TS_ARG_T;
+  char msg_buf[total_len];
   int16_t op, state_t, cache_t;
   int32_t msg_len;
-  int total_len;
-  char *msg_buf;
-  INKError err;
-
-  total_len = SIZE_OP_T + SIZE_LEN + SIZE_PROXY_T + SIZE_TS_ARG_T;
-  msg_buf = (char *) xmalloc(sizeof(char) * (total_len));
-  if (!msg_buf)
-    return INK_ERR_SYS_CALL;
 
   // fill in op type
   op = (int16_t) PROXY_STATE_SET;
@@ -838,62 +853,9 @@ send_proxy_state_set_request(int fd, INKProxyStateT state, INKCacheClearT clear)
   memcpy(msg_buf + SIZE_OP_T + SIZE_LEN + SIZE_PROXY_T, (void *) &cache_t, SIZE_TS_ARG_T);
 
   // send message
-  err = socket_write_conn(fd, msg_buf, total_len);
-  xfree(msg_buf);
-  return err;
-
+  return socket_write_conn(fd, msg_buf, total_len);
 }
 
-/**********************************************************************
- * send_restart_request
- *
- * purpose: sends request restart Traffic Server and/or Traffic Server
- * input: fd      - file descriptor to use
- *        bounce  - true=bounce traffic_server only, false=both
- *        cluster - true= clusterwide, false= local restart
- * output: INK_ERR_xx
- * note: format: RESTART 2(=msg_len) <bool>
- **********************************************************************/
-INKError
-send_restart_request(int fd, bool bounce, bool cluster)
-{
-  char *msg_buf;
-  int16_t op, clust_t;
-  int32_t msg_len;
-  int total_len;
-  INKError err;
-
-  total_len = SIZE_OP_T + SIZE_LEN + SIZE_BOOL;
-  msg_buf = (char *) xmalloc(sizeof(char) * total_len);
-  if (!msg_buf)
-    return INK_ERR_SYS_CALL;
-
-  // fill in op type
-  if (bounce)
-    op = (int16_t) BOUNCE;
-  else
-    op = (int16_t) RESTART;
-
-  memcpy(msg_buf, (void *) &op, SIZE_OP_T);
-
-  // fill in msg_len = SIZE_BOOL
-  msg_len = (int32_t) SIZE_BOOL;
-  memcpy(msg_buf + SIZE_OP_T, (void *) &msg_len, SIZE_LEN);
-
-  // fill in cluster?; true=0, false=1
-  if (cluster)
-    clust_t = 0;
-  else
-    clust_t = 1;
-  memcpy(msg_buf + SIZE_OP_T + SIZE_LEN, (void *) &clust_t, SIZE_BOOL);
-
-
-  // send message
-  err = socket_write_conn(fd, msg_buf, total_len);
-  xfree(msg_buf);
-  return err;
-
-}
 
 /*------ events -------------------------------------------------------*/
 
@@ -1125,7 +1087,6 @@ parse_reply(int fd)
   }
 
   return (INKError) ret_val;
-
 }
 
 /**********************************************************************
@@ -1841,5 +1802,4 @@ ERROR_EOF:
   if (desc)
     xfree(desc);
   return INK_ERR_NET_EOF;
-
 }

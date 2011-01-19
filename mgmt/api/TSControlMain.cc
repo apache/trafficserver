@@ -222,7 +222,6 @@ ts_ctrl_main(void *arg)
             }
             // determine which handler function to call based on operation
             switch (op_t) {
-
             case RECORD_GET:
               ret = handle_record_get(client_entry->sock_info, req);
               if (req)
@@ -765,12 +764,11 @@ handle_restart(struct SocketInfo sock_info, char *req, bool bounce)
   // the req should be a boolean value - typecase it
   memcpy(&cluster, req, SIZE_BOOL);
 
-  // TODO: Does this logic make sense (it's the same as before). If
-  // cluster == 0 we take it to mean to restart the cluster?
+  // cluster == 0 means no cluster
   if (bounce)
-    ret = Bounce(cluster == 0);
+    ret = Bounce(0 != cluster);
   else
-    ret = Restart(cluster == 0);
+    ret = Restart(0 != cluster);
 
   ret = send_reply(sock_info, ret);
   return ret;
@@ -1042,15 +1040,22 @@ Lerror:
 INKError
 handle_stats_reset(struct SocketInfo sock_info, char *req)
 {
-  NOWARN_UNUSED(req);
+  int16_t cluster;
   INKError ret;
 
+  if (!req) {
+    ret = send_reply(sock_info, INK_ERR_PARAMS);
+    return ret;                 // shouldn't get here
+  }
+
+  // the req should be a boolean value - typecase it
+  memcpy(&cluster, req, SIZE_BOOL);
+
   // call CoreAPI call on Traffic Manager side
-  ret = StatsReset();
+  ret = StatsReset(0 != cluster);
   ret = send_reply(sock_info, ret);
 
   return ret;
-
 }
 
 /**************************************************************************

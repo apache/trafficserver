@@ -899,20 +899,13 @@ SnapshotGetMlt(LLQ * snapshots)
  * stats are set back to defaults succesfully.
  */
 INKError
-StatsReset()
+StatsReset(bool cluster)
 {
-  bool okay = true;
-
-  if (REC_ERR_OKAY == RecResetStatRecord(RECT_PROCESS, true)) // reset all
-    okay = false;
-  if (REC_ERR_OKAY == RecResetStatRecord(RECT_NODE, true)) // reset all
-    okay = false;
-  if (REC_ERR_OKAY == RecResetStatRecord(RECT_CLUSTER)) // only reset non-persistent TODO: ??
-    okay = false;
-  if (REC_ERR_OKAY == RecResetStatRecord(RECT_PLUGIN, true)) // reset all
-    okay = false;
-
-  return (okay ? INK_ERR_OKAY : INK_ERR_FAIL);
+  if (cluster)
+    lmgmt->ccom->sendClusterMessage(CLUSTER_MSG_CLEAR_STATS);
+  else
+    lmgmt->clearStats();
+  return INK_ERR_OKAY;
 }
 
 /*-------------------------------------------------------------------------

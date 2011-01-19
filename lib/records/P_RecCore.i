@@ -1002,8 +1002,7 @@ RecResetStatRecord(RecT type, bool all)
   for (i = 0; i < num_records; i++) {
     RecRecord *r1 = &(g_records[i]);
 
-    if (REC_TYPE_IS_STAT(r1->rec_type) &&
-        ((type == RECT_NULL) || (r1->rec_type == type)) &&
+    if (REC_TYPE_IS_STAT(r1->rec_type) && ((type == RECT_NULL) || (r1->rec_type == type)) &&
         (all || (r1->stat_meta.persist_type != RECP_NON_PERSISTENT)) &&
         (r1->data_type != RECD_STRING)) {
       if (i_am_the_record_owner(r1->rec_type)) {

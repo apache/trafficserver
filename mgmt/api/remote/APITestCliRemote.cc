@@ -2399,7 +2399,7 @@ print_stats()
 void
 reset_stats()
 {
-  INKError err = INKStatsReset();
+  INKError err = INKStatsReset(false);
   print_err("INKStatsReset", err);
   return;
 }
