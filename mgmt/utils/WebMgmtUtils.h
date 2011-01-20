@@ -104,6 +104,7 @@ int processSpawn(const char *args[], EnvBlock * env, textBuffer * input_buf, tex
                  bool runAsRoot, bool * truncated = NULL);
 
 void computeXactMax();
+int setHostnameVar();
 void appendDefaultDomain(char *hostname, int bufLength);
 
 // Some scaling constants

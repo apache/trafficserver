@@ -37,7 +37,6 @@ struct WebContext;
 #include "P_RecCore.h"
 
 void *webIntr_main(void *);
-int setHostnameVar();
 void *serviceThrMain(void *info);
 int init_SSL(char *sslCertFile, WebContext * wContext);
 

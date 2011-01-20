@@ -312,38 +312,6 @@ checkWebContext(WebContext * wctx, const char *desc)
   return 0;
 }
 
-//
-//
-//  Sets the LocalManager variable:  proxy.node.hostname
-//
-//    To the fully qualified hostname for the machine
-//       that we are running on
-int
-setHostnameVar()
-{
-  char ourHostName[MAXDNAME];
-  char *firstDot;
-
-  // Get Our HostName
-  if (gethostname(ourHostName, MAXDNAME) < 0) {
-    mgmt_fatal(stderr, "[setHostnameVar] Can not determine our hostname");
-  }
-
-  res_init();
-  appendDefaultDomain(ourHostName, MAXDNAME);
-
-  // FQ is a Fully Qualified hostname (ie: proxydev.example.com)
-  varSetFromStr("proxy.node.hostname_FQ", ourHostName);
-
-  // non-FQ is just the hostname (ie: proxydev)
-  firstDot = strchr(ourHostName, '.');
-  if (firstDot != NULL) {
-    *firstDot = '\0';
-  }
-  varSetFromStr("proxy.node.hostname", ourHostName);
-
-  return 0;
-}
 
 //  fd newUNIXsocket(char* fpath)
 //
