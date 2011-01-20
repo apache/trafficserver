@@ -60,7 +60,7 @@ char system_log_dir[PATH_NAME_MAX + 1];
 
 //int system_remote_management_flag = DEFAULT_REMOTE_MANAGEMENT_FLAG;
 
-Diags *diags = NULL;
+//Diags *diags = NULL;
 char debug_tags[1024]  = "";
 char action_tags[1024] = "";
 

@@ -25,7 +25,7 @@
 
   ink_error.h
 
-  Error reporting routines for libts.a.
+  Error reporting routines for libts
 
  ****************************************************************************/
 

@@ -47,7 +47,7 @@
 #include "WebOverview.h"
 #include "WebConfig.h"
 
-#include "INKMgmtAPI.h"
+#include "mgmtapi.h"
 //#include "I_AccCrypto.h"
 #include "LocalManager.h"
 #include "WebMgmtUtils.h"

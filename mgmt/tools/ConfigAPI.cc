@@ -30,7 +30,7 @@
 #include "CoreAPI.h"
 #include "SimpleTokenizer.h"
 #include "XmlUtils.h"
-#include "INKMgmtAPI.h"
+#include "mgmtapi.h"
 
 #include <stdio.h>
 #include <stdlib.h>

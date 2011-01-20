@@ -40,7 +40,7 @@
 
 #include "ink_llqueue.h"
 
-#include "INKMgmtAPI.h"
+#include "mgmtapi.h"
 #include "CoreAPIShared.h"
 
 // when registering the callback function, can pass in void* data which

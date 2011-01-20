@@ -33,7 +33,7 @@
 #include <limits.h>
 #include "I_Layout.h"
 
-#include "INKMgmtAPI.h"
+#include "mgmtapi.h"
 #include "CfgContextManager.h"
 #include "CfgContextImpl.h"
 #include "CfgContextUtils.h"

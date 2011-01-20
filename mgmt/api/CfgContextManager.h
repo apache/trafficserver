@@ -35,7 +35,7 @@
 #ifndef _CFG_CONTEXT_MANAGER_H
 #define _CFG_CONTEXT_MANAGER_H
 
-#include "INKMgmtAPI.h"
+#include "mgmtapi.h"
 #include "CfgContextImpl.h"
 #include "CfgContextDefs.h"
 

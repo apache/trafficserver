@@ -43,7 +43,7 @@
 #include "ink_port.h"
 #include "WebUtils.h"           // for SocketInfo, socket_read, socket_write
 
-#include "INKMgmtAPI.h"
+#include "mgmtapi.h"
 #include "NetworkUtilsDefs.h"
 
 /*****************************************************************************

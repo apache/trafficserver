@@ -19,9 +19,13 @@
 noinst_PROGRAMS = mkdfa CompileParseRules
 check_PROGRAMS = test_atomic test_freelist test_arena test_List
 TESTS = $(check_PROGRAMS)
-noinst_LIBRARIES = libts.a
 
-libts_a_SOURCES = \
+lib_LTLIBRARIES = libtsutil.la
+
+libtsutil_la_LDFLAGS = -version-info @TS_LIBTOOL_VERSION@
+libtsutil_la_LIBADD = @LIBOBJS@ @LIBPCRE@ @LIBSSL@ @LIBTCL@
+
+libtsutil_la_SOURCES = \
   Allocator.cc \
   Allocator.h \
   Arena.cc \
@@ -124,6 +128,7 @@ libts_a_SOURCES = \
   MMH.cc \
   MMH.h \
   ParseRules.h \
+  ParseRules.cc \
   Ptr.h \
   RawHashTable.cc \
   RawHashTable.h \
@@ -140,29 +145,29 @@ libts_a_SOURCES = \
   Tokenizer.h \
   Version.cc
 
-libts_a_LIBADD = ParseRules.o @LIBOBJS@
+# Special hacks to generate the parser rules
+ParseRules.cc: ParseRulesCType
+
+ParseRulesCType: CompileParseRules
+	./CompileParseRules
 
 mkdfa_SOURCES = mkdfa.c
 
 test_atomic_SOURCES = test_atomic.cc
-test_atomic_LDADD = libts.a @LIBTHREAD@ @LIBTCL@ @LIBICONV@ @LIBEXECINFO@
+test_atomic_LDADD = libtsutil.la @LIBTHREAD@ @LIBTCL@ @LIBICONV@ @LIBEXECINFO@
 test_atomic_LDFLAGS = @EXTRA_CXX_LDFLAGS@
 
 test_freelist_SOURCES = test_freelist.cc
-test_freelist_LDADD = libts.a @LIBTHREAD@ @LIBTCL@ @LIBICONV@ @LIBEXECINFO@
+test_freelist_LDADD = libtsutil.la @LIBTHREAD@ @LIBTCL@ @LIBICONV@ @LIBEXECINFO@
 test_freelist_LDFLAGS = @EXTRA_CXX_LDFLAGS@
 
 test_arena_SOURCES = test_arena.cc
-test_arena_LDADD = libts.a @LIBTHREAD@ @LIBTCL@ @LIBICONV@ @LIBEXECINFO@
+test_arena_LDADD = libtsutil.la @LIBTHREAD@ @LIBTCL@ @LIBICONV@ @LIBEXECINFO@
 test_arena_LDFLAGS = @EXTRA_CXX_LDFLAGS@
 
 test_List_SOURCES = test_List.cc
 
 CompileParseRules_SOURCES = CompileParseRules.cc
-
-ParseRules.o: ParseRules.cc CompileParseRules
-	./CompileParseRules
-	$(CXXCOMPILE) -c $<
 
 test:: $(TESTS)
 	for f in $(TESTS) ; do $$f ; done

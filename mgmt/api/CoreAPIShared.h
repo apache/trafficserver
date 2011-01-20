@@ -33,7 +33,7 @@
 #ifndef _CORE_API_SHARED_H_
 #define _CORE_API_SHARED_H_
 
-#include "INKMgmtAPI.h"
+#include "mgmtapi.h"
 
 #define NUM_EVENTS          19  // number of predefined TM events
 #define MAX_EVENT_NAME_SIZE 100 // max length for an event name

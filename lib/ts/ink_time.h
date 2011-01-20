@@ -25,7 +25,7 @@
 
   ink_time.h
 
-  Timing routines for libts.a.
+  Timing routines for libts
 
 
 

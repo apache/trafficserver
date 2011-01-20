@@ -35,7 +35,7 @@
 #include "List.h"
 #include "ink_bool.h"
 #include "ink_resource.h"
-#include "INKMgmtAPI.h"         // INKFileNameT
+#include "mgmtapi.h"         // INKFileNameT
 
 
 #define MIN_CONFIG_TOKEN       1

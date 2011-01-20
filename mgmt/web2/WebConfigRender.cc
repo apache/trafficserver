@@ -40,7 +40,7 @@
 #include "MgmtUtils.h"
 #include "LocalManager.h"
 
-#include "INKMgmtAPI.h"
+#include "mgmtapi.h"
 #include "CfgContextUtils.h"
 
 //-------------------------------------------------------------------------

@@ -29,7 +29,7 @@
  *
  ****************************************************************/
 
-#include "INKMgmtAPI.h"
+#include "mgmtapi.h"
 
 #define PATH_NAME_MAX         511 // instead of PATH_MAX which is inconsistent
                                   // on various OSs (linux-4096,osx/bsd-1024,

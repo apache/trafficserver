@@ -38,7 +38,7 @@
 #include "ink_port.h"
 #include "ink_mutex.h"
 
-#include "INKMgmtAPI.h"
+#include "mgmtapi.h"
 #include "NetworkUtilsDefs.h"
 #include "EventCallback.h"
 

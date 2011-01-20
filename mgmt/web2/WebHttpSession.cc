@@ -33,7 +33,7 @@
 #include "ink_hash_table.h"
 #include "ink_hash_table.h"
 
-#include "INKMgmtAPI.h"
+#include "mgmtapi.h"
 #include "MgmtUtils.h"
 #include "WebCompatibility.h"
 #include "WebGlobals.h"

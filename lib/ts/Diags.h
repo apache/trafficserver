@@ -283,7 +283,7 @@ private:
 class DiagsBaseClosure
 {
 public:
-  Diags * diags;
+  Diags *diags;
   DiagsLevel level;
   SrcLoc src_location;
 

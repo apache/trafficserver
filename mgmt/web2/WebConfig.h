@@ -31,7 +31,7 @@
 #ifndef _WEB_CONFIG_H_
 #define _WEB_CONFIG_H_
 
-#include "INKMgmtAPI.h"
+#include "mgmtapi.h"
 #include "WebHttpContext.h"
 
 char *convertRules(INKFileNameT file, INKIntList errRules, char *rules[]);

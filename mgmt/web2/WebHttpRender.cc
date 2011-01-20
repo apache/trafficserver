@@ -47,7 +47,7 @@
 
 #include "LocalManager.h"
 
-#include "INKMgmtAPI.h"
+#include "mgmtapi.h"
 #include "CfgContextUtils.h"
 #include "MgmtSocket.h"
 #include "WebConfigRender.h"

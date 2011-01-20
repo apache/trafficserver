@@ -30,7 +30,7 @@
 #ifndef _CFG_CONTEXT_IMPL_H_
 #define _CFG_CONTEXT_IMPL_H_
 
-#include "INKMgmtAPI.h"
+#include "mgmtapi.h"
 #include "CfgContextDefs.h"
 #include "GenericParser.h"      /* use for TokenList */
 

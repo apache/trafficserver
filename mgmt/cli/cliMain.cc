@@ -30,7 +30,7 @@
 #include "I_Layout.h"
 #include "I_Version.h"
 #include "CliMgmtUtils.h"
-#include "INKMgmtAPI.h"
+#include "mgmtapi.h"
 
 extern int Tcl_AppInit(Tcl_Interp * interp);
 extern int CliDisplayPrintf;

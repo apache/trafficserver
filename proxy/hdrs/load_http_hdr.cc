@@ -60,7 +60,7 @@ void *high_load_addr = NULL;
 int heap_load_size = 0;
 int marshalled = 0;
 
-Diags *diags;
+//Diags *diags;
 
 enum hdr_type
 {

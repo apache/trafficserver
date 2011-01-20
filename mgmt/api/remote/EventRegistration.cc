@@ -41,7 +41,7 @@
 
 #include "MgmtSocket.h"
 
-#include "INKMgmtAPI.h"
+#include "mgmtapi.h"
 #include "EventRegistration.h"
 #include "CoreAPIShared.h"
 #include "NetworkUtilsDefs.h"

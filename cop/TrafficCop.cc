@@ -24,7 +24,7 @@
 #include "libts.h"
 #include "I_Layout.h"
 #include "I_Version.h"
-#include "INKMgmtAPI.h"
+#include "mgmtapi.h"
 #include "ClusterCom.h"
 
 #if defined(linux)
@@ -1194,7 +1194,8 @@ test_mgmt_cli_port()
     }
   }
 
-  INKfree(val);
+  if (val)
+    INKfree(val);
   return ret;
 }
 

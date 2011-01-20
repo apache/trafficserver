@@ -32,7 +32,7 @@
 
 #include "CfgContextImpl.h"
 #include "CfgContextUtils.h"
-#include "INKMgmtAPI.h"
+#include "mgmtapi.h"
 
 //--------------------------------------------------------------------------
 // Defines

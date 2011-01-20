@@ -32,7 +32,7 @@
 #ifndef EVENT_CONTROL_MAIN_H
 #define EVENT_CONTROL_MAIN_H
 
-#include "INKMgmtAPI.h"         //add the include path b/c included in web dir
+#include "mgmtapi.h"         //add the include path b/c included in web dir
 #include "CoreAPIShared.h"      // for NUM_EVENTS
 
 #include "WebUtils.h"           // for SocketInfo

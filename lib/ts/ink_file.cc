@@ -25,7 +25,7 @@
 
   ink_file.c
 
-  File manipulation routines for libts.a.
+  File manipulation routines for libts
 
  ****************************************************************************/
 

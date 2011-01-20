@@ -32,7 +32,7 @@
 
 #include "libts.h"
 #include "I_Layout.h"
-#include "INKMgmtAPI.h"
+#include "mgmtapi.h"
 #include "ShowCmd.h"
 #include "ConfigCmd.h"
 #include "createArgument.h"

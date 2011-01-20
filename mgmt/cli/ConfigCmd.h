@@ -28,7 +28,7 @@
  *
  ****************************************************************/
 
-#include "INKMgmtAPI.h"
+#include "mgmtapi.h"
 #include <tcl.h>
 #include "createArgument.h"
 #include "definitions.h"

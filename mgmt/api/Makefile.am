@@ -17,7 +17,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-SUBDIRS = remote
+SUBDIRS = remote include
 
 AM_CPPFLAGS = \
   $(iocore_include_dirs) \
@@ -34,7 +34,7 @@ DEFS += $(MGMT_DEFS)
 
 noinst_LIBRARIES = libmgmtapilocal.a
 libmgmtapilocal_a_SOURCES = \
-  include/INKMgmtAPI.h \
+  include/mgmtapi.h \
   CfgContextDefs.h \
   CfgContextImpl.cc \
   CfgContextImpl.h \

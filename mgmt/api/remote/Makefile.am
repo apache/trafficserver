@@ -28,8 +28,12 @@ if BUILD_TESTS
   noinst_PROGRAMS = traffic_api_cli_remote
 endif
 
-noinst_LIBRARIES = libmgmtapiremote.a
-libmgmtapiremote_a_SOURCES = \
+lib_LTLIBRARIES = libtsmgmt.la
+
+libtsmgmt_la_LDFLAGS = -version-info @TS_LIBTOOL_VERSION@
+libtsmgmt_la_LIBADD = @LIBOBJS@ $(top_builddir)/lib/ts/libtsutil.la
+
+libtsmgmt_la_SOURCES = \
   ../CfgContextImpl.cc \
   ../CfgContextManager.cc \
   ../CfgContextUtils.cc \
@@ -48,7 +52,7 @@ if BUILD_TESTS
 endif
 
 traffic_api_cli_remote_LDADD = \
-  libmgmtapiremote.a \
-  $(top_builddir)/lib/ts/libts.a \
+  libtsmgmt.la \
+  $(top_builddir)/lib/ts/libtsutil.la \
   @LIBTHREAD@ @LIBSOCKET@ @LIBNSL@ @LIBRESOLV@ \
   @LIBTCL@ @LIBRT@ @LIBDL@ @LIBSSL@ @LIBICONV@ @LIBEXECINFO@

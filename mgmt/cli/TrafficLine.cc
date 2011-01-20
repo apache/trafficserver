@@ -27,7 +27,7 @@
 #include "I_Version.h"
 #include "Tokenizer.h"
 #include "TextBuffer.h"
-#include "INKMgmtAPI.h"
+#include "mgmtapi.h"
 
 static const char *programName;
 

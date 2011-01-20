@@ -35,7 +35,7 @@
 #include "TextBuffer.h"
 #include "Diags.h"
 
-#include "INKMgmtAPI.h"
+#include "mgmtapi.h"
 #include "LocalManager.h"
 
 #include "WebGlobals.h"

@@ -40,7 +40,7 @@
 #include <grp.h>
 
 #include <ctype.h>
-#include "INKMgmtAPI.h"
+#include "mgmtapi.h"
 
 #include <arpa/inet.h>
 #include <netinet/in.h>
@@ -1422,7 +1422,7 @@ Get_Value(char *buffer, size_t buffer_len, char *buf, int location)
 
 #include "ink_string.h"
 
-#include "INKMgmtAPI.h"
+#include "mgmtapi.h"
 
 #include <arpa/inet.h>
 #include <netinet/in.h>

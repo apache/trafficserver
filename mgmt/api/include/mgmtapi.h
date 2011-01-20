@@ -22,7 +22,7 @@
  */
 
 /*****************************************************************************
- * Filename: INKMgmtAPI.h
+ * Filename: mgmtapi.h
  * Purpose: This file contains all API wrapper functions in one class. In
  * order to eliminate the interdependencies of other library calls, new
  * types and structs will be defined and used in the wrapper function calls.

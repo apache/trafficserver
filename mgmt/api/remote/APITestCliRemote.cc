@@ -101,7 +101,7 @@
 #include <strings.h>
 #include "ink_string.h"
 
-#include "INKMgmtAPI.h"
+#include "mgmtapi.h"
 #include "CfgContextUtils.h"
 
 // refer to test_records() function

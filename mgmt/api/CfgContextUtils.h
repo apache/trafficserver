@@ -35,7 +35,7 @@
 #define _CONTEXT_UTILS_H_
 
 #include "CfgContextDefs.h"
-#include "INKMgmtAPI.h"
+#include "mgmtapi.h"
 #include "GenericParser.h"
 #include "CfgContextImpl.h"
 

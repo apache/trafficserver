@@ -31,7 +31,7 @@
 #ifndef _WEB_HTTP_AUTH_H_
 #define _WEB_HTTP_AUTH_H_
 
-#include "INKMgmtAPI.h"
+#include "mgmtapi.h"
 
 #include "P_RecCore.h"
 

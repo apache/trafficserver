@@ -27,7 +27,7 @@
 #ifndef _MGMT_API_DEFS_
 #define _MGMT_API_DEFS_
 
-#include "INKMgmtAPI.h"
+#include "mgmtapi.h"
 #include "ink_llqueue.h"
 
 // for buffer used temporarily to parse incoming commands.
@@ -54,7 +54,7 @@
 #define IP_END_DELIMITER     "#"
 #define LIST_DELIMITER       ", "
 
-/* Each opaque List handle in the INKMgmtAPI should have
+/* Each opaque List handle in the mgmtapi should have
  * a corresponding typedef here. Using LLQ's to implement the
  * lists
  */

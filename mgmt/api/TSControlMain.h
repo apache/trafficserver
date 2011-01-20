@@ -34,7 +34,7 @@
 #define TS_CONTROL_MAIN_H
 
 #include "WebUtils.h"           // for SocketInfo
-#include "INKMgmtAPI.h"
+#include "mgmtapi.h"
 #include "NetworkUtilsDefs.h"
 
 typedef struct

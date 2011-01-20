@@ -31,7 +31,7 @@
 #include "ink_llqueue.h"
 #include "MgmtDefs.h"           // MgmtInt, MgmtFloat, etc
 
-#include "INKMgmtAPI.h"
+#include "mgmtapi.h"
 #include "CfgContextDefs.h"
 #include "Tokenizer.h"
 
