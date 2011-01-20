@@ -2,6 +2,33 @@
 
 Changes with Apache Traffic Server 2.1.6
 
+  *) Remove the dead v2 stats code [TS-650].
+
+  *) Dynamic libraries for mgmt APIs [TS-649].
+    
+    This makes libts -> libtsutil, and we now support making .so's for
+    libtsutil.so and libtsmgmt.so. All binaries are changed to use this,
+    except traffic_server which continues to use the libtsutil.a library
+    (for performance on e.g. 32-bit platforms).
+    
+    This also renames the public API include file to be
+    
+         #include <ts/mgmtapi.h>
+
+
+  *) Move Layout out of iocore and into lib/ts [TS-647].
+
+  *) Rename various directories:
+      proxy/mgmt -> mgmt/
+      proxy/mgmt/cop -> cop/
+
+   All "cli" APIs are now also migrated into mgmt/cli, unified into one
+   single cli. [TS-638]
+
+  *) Cleanup of Web2/HTML2 [TS-641].
+
+  *) Remove various unused source files [TS-636, TS-637].
+
   *) Rename proxy/http2 -> proxy/http and proxy/mgmt2 to proxy/mgmt [TS-631].
 
   *) Add an example to records.config for how to bind a specific IP [TS-582].

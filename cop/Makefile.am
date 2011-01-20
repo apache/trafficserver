@@ -33,4 +33,4 @@ traffic_cop_LDFLAGS = @EXTRA_CXX_LDFLAGS@
 traffic_cop_LDADD = \
   $(top_builddir)/mgmt/api/remote/libtsmgmt.la \
   $(top_builddir)/lib/ts/libtsutil.la \
-  @LIBTHREAD@ @LIBSOCKET@ @LIBNSL@ @LIBTCL@ @LIBICONV@ @LIBRT@ @LIBDL@ @LIBSSL@ 
+  @LIBTHREAD@ @LIBSOCKET@ @LIBNSL@ @LIBTCL@ @LIBICONV@ @LIBRT@ @LIBDL@ @LIBSSL@ @LIBRESOLV@
