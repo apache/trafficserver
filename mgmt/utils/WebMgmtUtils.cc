@@ -760,13 +760,7 @@ computeXactMax()
   RecInt maxXact = 0;
   int err = REC_ERR_FAIL;
 
-#if defined(hpux)
-  numCPU = pthread_num_processors_np();
-#elif defined(freebsd)
-  numCPU = 1;
-#else
-  numCPU = sysconf(_SC_NPROCESSORS_ONLN);
-#endif
+  numCPU = ink_number_of_processors();
   err = RecGetRecordFloat("proxy.config.admin.load_factor", &loadFactor);
 
   if (err == REC_ERR_OKAY || loadFactor < 20.0) {
