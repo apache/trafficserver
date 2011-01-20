@@ -650,8 +650,7 @@ LogObject::roll_files_if_needed(long time_now)
       // remaining until the next roll, but we calculate this figure
       // every time ...
       //
-      int secs_to_next = LogUtils::seconds_to_next_roll(time_now, m_rolling_offset_hr,
-                                                        m_rolling_interval_sec);
+      int secs_to_next = LogUtils::seconds_to_next_roll(time_now, m_rolling_offset_hr, m_rolling_interval_sec);
 
       // ... likewise, we make sure we compute the absolute value
       // of the seconds since the last roll (which would otherwise

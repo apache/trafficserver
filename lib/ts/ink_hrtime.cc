@@ -41,19 +41,18 @@
 #include "ink_unused.h"  /* MAGIC_EDITING_TAG */
 
 char *
-int64_to_str(char *buf, unsigned int buf_size, int64_t val,
-             unsigned int *total_chars, unsigned int req_width, char pad_char)
+int64_to_str(char *buf, unsigned int buf_size, int64_t val, unsigned int *total_chars, unsigned int req_width, char pad_char)
 {
-  const int local_buf_size = 32;
+  const unsigned int local_buf_size = 32;
   char local_buf[local_buf_size];
-  int using_local_buffer = 0;
-  int negative = 0;
+  bool using_local_buffer = false;
+  bool negative = false;
   char *out_buf;
 
   if (buf_size < 22) {
     // int64_t may not fit in provided buffer, use the local one
     out_buf = &local_buf[local_buf_size - 1];
-    using_local_buffer = 1;
+    using_local_buffer = false;
   } else {
     out_buf = &buf[buf_size - 1];
   }
@@ -63,7 +62,7 @@ int64_to_str(char *buf, unsigned int buf_size, int64_t val,
 
   if (val < 0) {
     val = -val;
-    negative = 1;
+    negative = false;
   }
 
   if (val < 10) {
@@ -138,10 +137,10 @@ int64_to_str(char *buf, unsigned int buf_size, int64_t val,
 
 
 int
-squid_timestamp_to_buf(char *buf, uint32_t buf_size, uint64_t timestamp_sec, uint64_t timestamp_usec)
+squid_timestamp_to_buf(char *buf, unsigned int buf_size, long timestamp_sec, long timestamp_usec)
 {
   int res;
-  const int tmp_buf_size = 32;
+  const unsigned int tmp_buf_size = 32;
   char tmp_buf[tmp_buf_size];
 
   unsigned int num_chars_s;
@@ -153,8 +152,7 @@ squid_timestamp_to_buf(char *buf, uint32_t buf_size, uint64_t timestamp_sec, uin
   tmp_buf[tmp_buf_size - 5] = '.';
   int ms = timestamp_usec / 1000;
   unsigned int num_chars_ms;
-  char RELEASE_UNUSED *ts_ms = int64_to_str(&tmp_buf[tmp_buf_size - 4],
-                                            4, ms, &num_chars_ms, 4, '0');
+  char RELEASE_UNUSED *ts_ms = int64_to_str(&tmp_buf[tmp_buf_size - 4], 4, ms, &num_chars_ms, 4, '0');
   ink_debug_assert(ts_ms && num_chars_ms == 4);
 
   unsigned int chars_to_write = num_chars_s + 3;        // no eos

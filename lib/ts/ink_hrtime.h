@@ -35,9 +35,8 @@
 #include "ink_assert.h"
 #include "Compatability.h"
 
-int squid_timestamp_to_buf(char *buf, uint32_t buf_size, uint64_t timestamp_sec, uint64_t timestamp_usec);
-char *int64_to_str(char *buf, int32_t buf_size, int64_t val,
-                   uint32_t *total_chars, uint32_t req_width, char pad_char);
+int squid_timestamp_to_buf(char *buf, unsigned int buf_size, long timestamp_sec, long timestamp_usec);
+char *int64_to_str(char *buf, unsigned int buf_size, int64_t val, unsigned int *total_chars, unsigned int req_width=0, char pad_char='0');
 
 #ifdef NEED_HRTIME
 #include <time.h>

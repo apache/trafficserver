@@ -870,7 +870,7 @@ LogAccess::marshal_record(char *record, char *buf)
 
       if (found) {
 
-        out_buf = LogUtils::int64_to_str(ascii_buf, max_chars, val, &num_chars);
+        out_buf = int64_to_str(ascii_buf, max_chars, val, &num_chars);
         ink_debug_assert(out_buf);
       } else {
         out_buf = (char *) record_not_found_msg;

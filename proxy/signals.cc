@@ -106,8 +106,8 @@ class TrackerContinuation:public Continuation
 public:
   int baseline_taken;
   int use_baseline;
-    TrackerContinuation()
-  : Continuation(new_ProxyMutex())
+  TrackerContinuation()
+    : Continuation(new_ProxyMutex())
   {
     SET_HANDLER(&TrackerContinuation::periodic);
     use_baseline = 0;
