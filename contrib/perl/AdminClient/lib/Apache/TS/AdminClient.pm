@@ -708,8 +708,6 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.stats.config_file
  proxy.config.stats.snap_file
  proxy.config.stats.snap_frequency
- proxy.config.stat_systemV2.max_stats_allowed
- proxy.config.stat_systemV2.num_stats_estimate
  proxy.config.syslog_facility
  proxy.config.system.mmap_max
  proxy.config.temp_dir

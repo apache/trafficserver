@@ -34,12 +34,6 @@
 #include "P_Net.h"
 #endif
 
-#if TS_HAS_V2STATS
-#include <string> // TODO: Do we need STL strings really?
-#include <vector> // TODO: Do we need STL vectors really?
-#include "StatAPITypes.h"
-#endif
-
 enum INKContInternalMagic_t
 {
   INKCONT_INTERN_MAGIC_ALIVE = 0x00009631,
@@ -58,15 +52,6 @@ public:
   void handle_event_count(int event);
   int handle_event(int event, void *edata);
 
-#if TS_HAS_V2STATS
-  // TODO: These have confusing names, what exactly does it mean? Something with "cont" stats I think?
-  // We should give these appropriate names, like contName and isContStatsEnabled() or some such.
-  void setName(const char *name);
-  const char *getName();
-  void statCallsMade(TSHttpHookID hook_id);
-  bool isStatsEnabled() { return stats_enabled; }
-#endif
-
 public:
   void *mdata;
   TSEventFunc m_event_func;
@@ -76,15 +61,6 @@ public:
   int m_deleted;
   //INKqa07670: Nokia memory leak bug fix
   INKContInternalMagic_t m_free_magic;
-
-#if TS_HAS_V2STATS
-  // TODO: Fix names as describe above.
-  // TODO: Eliminate STL strings and containers?
-  std::string cont_name;
-  std::vector<HistogramStats> cont_time_stats;
-  std::vector<uint32_t> cont_calls;
-  bool stats_enabled;
-#endif
 };
 
 

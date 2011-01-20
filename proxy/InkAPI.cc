@@ -59,10 +59,6 @@
 #include "HttpAccept.h"
 #include "PluginVC.h"
 #include "FetchSM.h"
-#if TS_HAS_V2STATS
-#include <string> // TODO: Do we really need STL strings?
-#include "StatSystemV2.h"
-#endif
 #include "HttpDebugNames.h"
 #include "I_AIO.h"
 #include "I_Tasks.h"
@@ -1023,36 +1019,6 @@ INKContInternal::handle_event_count(int event)
     m_deletable = m_deletable && (val == 1);
   }
 }
-
-#if TS_HAS_V2STATS
-void INKContInternal::setName(const char *name) {
-  cont_name = name;
-
-  cont_time_stats.resize((int)(TS_HTTP_LAST_HOOK + 1));
-  cont_calls.resize((int)(TS_HTTP_LAST_HOOK + 1));
-
-  for(TSHttpHookID cur_hook_id = TS_HTTP_READ_REQUEST_HDR_HOOK; cur_hook_id <= TS_HTTP_LAST_HOOK; cur_hook_id = TSHttpHookID(cur_hook_id+1)) {
-    // TODO: Fix the name of these stats to be something appropriate, e.g. proxy.x.y.z or some such (for now at least)
-    // TODO: Get rid of std::string (snprintf anyone?)
-    std::string stat_base = "cont." + cont_name + "." + HttpDebugNames::get_api_hook_name(cur_hook_id);
-    // TODO: This needs to be supported with non-V2 APIs as well.
-    cont_time_stats[cur_hook_id].init(stat_base + ".time_spent", 64000);
-
-    StatSystemV2::registerStat((stat_base + ".calls").c_str(), &cont_calls[cur_hook_id]);
-  }
-  stats_enabled = true;
-}
-
-const char *INKContInternal::getName() {
-  return cont_name.c_str();
-}
-
-void INKContInternal::statCallsMade(TSHttpHookID hook_id) {
-  if(cont_name == "")
-    return;
-  StatSystemV2::increment(cont_calls[hook_id]);
-}
-#endif
 
 int
 INKContInternal::handle_event(int event, void *edata)
@@ -6579,76 +6545,6 @@ INKStatIncrement(INKStat the_stat)
   statp->increment();
   return TS_SUCCESS;
 }
-
-#if TS_HAS_V2STATS
-TSReturnCode
-TSStatCreateV2(const char *the_name, uint32_t *stat_num)
-{
-  if(StatSystemV2::registerStat(the_name, stat_num))
-    return TS_SUCCESS;
-  return TS_ERROR;
-}
-
-TSReturnCode
-TSStatIncrementV2(uint32_t stat_num, int64_t inc_by)
-{
-  if(StatSystemV2::increment(stat_num, inc_by))
-    return TS_SUCCESS;
-  return TS_ERROR;
-}
-
-TSReturnCode
-TSStatIncrementByNameV2(const char *stat_name, int64_t inc_by)
-{
-  if(StatSystemV2::increment(stat_name, inc_by))
-    return TS_SUCCESS;
-  return TS_ERROR;
-}
-
-TSReturnCode
-TSStatDecrementV2(uint32_t stat_num, int64_t dec_by)
-{
-  return TSStatIncrementV2(stat_num, (-1)*dec_by);
-}
-
-TSReturnCode
-TSStatDecrementByNameV2(const char *stat_name, int64_t dec_by)
-{
-  return TSStatIncrementByNameV2(stat_name, (-1)*dec_by);
-}
-
-TSReturnCode
-TSStatGetCurrentV2(uint32_t stat_num, int64_t *stat_val)
-{
-  if(StatSystemV2::get_current(stat_num, stat_val))
-    return TS_SUCCESS;
-  return TS_ERROR;
-}
-
-TSReturnCode
-TSStatGetCurrentByNameV2(const char *stat_name, int64_t *stat_val)
-{
-  if(StatSystemV2::get_current(stat_name, stat_val))
-    return TS_SUCCESS;
-  return TS_ERROR;
-}
-
-TSReturnCode
-TSStatGetV2(uint32_t stat_num, int64_t *stat_val)
-{
-  if(StatSystemV2::get(stat_num, stat_val))
-    return TS_SUCCESS;
-  return TS_ERROR;
-}
-
-TSReturnCode
-TSStatGetByNameV2(const char *stat_name, int64_t *stat_val)
-{
-  if(StatSystemV2::get(stat_name, stat_val))
-    return TS_SUCCESS;
-  return TS_ERROR;
-}
-#endif
 
 TSReturnCode
 INKStatIntGet(INKStat the_stat, int64_t *value)

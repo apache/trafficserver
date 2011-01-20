@@ -295,20 +295,6 @@ AC_SUBST(has_detailed_log)
 AM_CONDITIONAL([BUILD_DETAILED_LOG], [test 0 -ne $has_detailed_log])
 
 #
-# Experimental V2 stats APIs (for plugins)
-#
-AC_MSG_CHECKING([whether to enable the experimental V2 stats subsystem for plugin APIs])
-AC_ARG_ENABLE([v2stats],
-  [AS_HELP_STRING([--enable-v2stats],[enable experimental V2 stats API])],
-  [has_v2stats=1],
-  [enable_v2stats=no]
-)
-AC_MSG_RESULT([$enable_v2stats])
-TS_ARG_ENABLE_VAR([has],[v2stats])
-AC_SUBST(has_v2stats)
-AM_CONDITIONAL([BUILD_V2STATS], [test 0 -ne $has_v2stats])
-
-#
 # WCCP
 #
 AC_MSG_CHECKING([whether to enable WCCP v2 support])

@@ -119,16 +119,11 @@ traffic_server_SOURCES = \
   StatPages.h \
   StatSystem.cc \
   StatSystem.h \
-  StatAPITypes.cc \
   Transform.cc \
   Transform.h \
   TransformInternal.h \
   Update.cc \
   Update.h
-
-if BUILD_V2STATS
-  traffic_server_SOURCES += StatSystemV2.cc
-endif
 
 if BUILD_TESTS
   traffic_server_SOURCES +=  InkAPITest.cc  \
@@ -178,7 +173,6 @@ traffic_logcat_LDADD = \
   ControlBase.o \
   ControlMatcher.o CacheControl.o  \
   StatSystem.o \
-  StatAPITypes.o \
   ReverseProxy.o \
   ProxyConfig.o \
   signals.o \
@@ -222,10 +216,6 @@ traffic_logcat_LDADD = \
   @LIBPCRE@ @LIBSSL@ @LIBTCL@ @LIBDL@ @LIBEV@ \
   @LIBEXPAT@ @LIBDEMANGLE@ @LIBMLD@ @LIBEXC@ @LIBICONV@ @LIBM@ @LIBPROFILER@ \
   @LIBEXECINFO@
-
-if BUILD_V2STATS
-  traffic_logcat_LDADD += StatSystemV2.o
-endif
 
 if BUILD_TESTS
   traffic_logcat_LDADD += RegressionSM.o \
@@ -245,7 +235,6 @@ traffic_logstats_LDADD = \
   ControlMatcher.o \
   CacheControl.o  \
   StatSystem.o \
-  StatAPITypes.o \
   ReverseProxy.o \
   ProxyConfig.o \
   signals.o \
@@ -290,10 +279,6 @@ traffic_logstats_LDADD = \
   @LIBPCRE@ @LIBSSL@ @LIBTCL@ @LIBDL@ @LIBEV@ \
   @LIBEXPAT@ @LIBDEMANGLE@ @LIBMLD@ @LIBEXC@ @LIBICONV@ @LIBM@ @LIBPROFILER@ \
   @LIBEXECINFO@
-
-if BUILD_V2STATS
-  traffic_logstats_LDADD += StatSystemV2.o
-endif
 
 if BUILD_TESTS
   traffic_logstats_LDADD += RegressionSM.o \
@@ -313,7 +298,6 @@ traffic_sac_LDADD = \
   ControlMatcher.o \
   CacheControl.o \
   StatSystem.o \
-  StatAPITypes.o \
   ReverseProxy.o \
   ProxyConfig.o \
   signals.o \
@@ -357,10 +341,6 @@ traffic_sac_LDADD = \
   @LIBEXPAT@ @LIBDEMANGLE@ @LIBMLD@ @LIBEXC@ @LIBICONV@ @LIBM@ @LIBPROFILER@ \
   @LIBEXECINFO@
 
-if BUILD_V2STATS
-  traffic_sac_LDADD += StatSystemV2.o
-endif
-
 if BUILD_TESTS
   traffic_sac_LDADD += RegressionSM.o \
     TestHook.o
@@ -374,13 +354,8 @@ libTrafficServerStandalone_a_SOURCES = \
   DiagsConfig.cc \
   StatPages.cc \
   StatSystem.cc \
-  StatAPITypes.cc \
   AbstractBuffer.cc \
   Initialize.cc
-
-if BUILD_V2STATS
-  libTrafficServerStandalone_a_SOURCES += StatSystemV2.cc
-endif
 
 
 test_xml_parser_SOURCES = test_xml_parser.cc InkXml.cc DiagsConfig.cc

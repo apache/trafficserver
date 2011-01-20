@@ -38,10 +38,6 @@
 #include "ReverseProxy.h"
 #include "RemapProcessor.h"
 
-#if TS_HAS_V2STATS
-#include "StatSystemV2.h"
-#endif
-
 #include "HttpPages.h"
 
 //#include "I_Auth.h"
@@ -333,11 +329,6 @@ HttpSM::HttpSM()
     client_response_hdr_bytes(0), client_response_body_bytes(0),
     pushed_response_hdr_bytes(0), pushed_response_body_bytes(0),
     hooks_set(0), cur_hook_id(TS_HTTP_LAST_HOOK), cur_hook(NULL),
-    // TODO: This needs to be supported with non-V2 APIs as well.
-#if TS_HAS_V2STATS
-    prev_hook_start_time(0),
-    prev_hook_stats_enabled(false),
-#endif
     cur_hooks(0), callout_state(HTTP_API_NO_CALLOUT), terminate_sm(false), kill_this_async_done(false)
 {
   static int scatter_init = 0;
@@ -1407,30 +1398,6 @@ HttpSM::state_api_callout(int event, void *data)
         APIHook *hook = cur_hook;
         cur_hook = cur_hook->next();
 
-#if TS_HAS_V2STATS
-        // Do per plugin stats
-        // Increment calls made to plugin
-        hook->m_cont->statCallsMade(cur_hook_id);
-
-        // Stat time spent in previous plugin
-        int64_t curr_time = ink_get_based_hrtime();
-        // TODO: This needs to be supported with non-V2 APIs as well.
-        if(prev_hook_stats_enabled && prev_hook_start_time) {
-          int64_t time_in_plugin_ms = (curr_time - prev_hook_start_time)/1000000;
-          prev_hook_stats.inc(time_in_plugin_ms);
-          Debug("http", "[%" PRId64 "] Time spent in plugin %s = %" PRId64 "",
-                sm_id, HttpDebugNames::get_api_hook_name(cur_hook_id), time_in_plugin_ms);
-        }
-
-        // store time and plugin info before invoking it
-        prev_hook_start_time = curr_time;
-
-        // TODO: This needs to be supported with non-V2 APIs as well.
-        prev_hook_stats_enabled = hook->m_cont->isStatsEnabled();
-        if(prev_hook_stats_enabled)
-          prev_hook_stats = hook->m_cont->cont_time_stats[cur_hook_id];
-#endif
-
         hook->invoke(TS_EVENT_HTTP_READ_REQUEST_HDR + cur_hook_id, this);
 
         if (plugin_lock) {
@@ -1505,24 +1472,6 @@ HttpSM::state_api_callout(int event, void *data)
   case API_RETURN_CONTINUE:
     if (t_state.api_next_action == HttpTransact::HTTP_API_SEND_REPONSE_HDR)
       do_redirect();
-
-    // Do per plugin stats
-    // Handle last plugin on current state
-    // TODO: This needs to be supported with non-V2 APIs as well.
-#if TS_HAS_V2STATS
-    if(prev_hook_stats_enabled && prev_hook_start_time) {
-      int64_t time_in_plugin_ms = (ink_get_based_hrtime() - prev_hook_start_time)/1000000;
-      Debug("http", "[%" PRId64 "] Last plugin : Time spent : %s %" PRId64 "", 
-            sm_id, HttpDebugNames::get_api_hook_name(cur_hook_id), time_in_plugin_ms);
-      prev_hook_stats.inc(time_in_plugin_ms);
-    }
-
-    // Get ready for next state
-    // TODO: This needs to be supported with non-V2 APIs as well.
-    prev_hook_stats_enabled = false;
-    prev_hook_start_time = 0;
-#endif
-
     handle_api_return();
     break;
   case API_RETURN_DEFERED_CLOSE:

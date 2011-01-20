@@ -49,21 +49,6 @@ extern "C"
   tsapi void TSCacheHttpInfoSizeSet(TSCacheHttpInfo infop, int64_t size);
   tsapi int TSCacheHttpInfoVector(TSCacheHttpInfo infop, void *data, int length);
 
-  /* --------------------------------------------------------------------------
-     This is an experimental stat system, which is not compatible with standard
-     TS stats. It is disabled by default, enable it with --with_v2_stats at
-     configure time. */
-  tsapi TSReturnCode     TSStatCreateV2(const char *name, uint32_t *stat_num);
-  tsapi TSReturnCode     TSStatIncrementV2(uint32_t stat_num, int64_t inc_by);
-  tsapi TSReturnCode     TSStatIncrementByNameV2(const char *stat_name, int64_t inc_by);
-  tsapi TSReturnCode     TSStatDecrementV2(uint32_t stat_num, int64_t dec_by);
-  tsapi TSReturnCode     TSStatDecrementByNameV2(const char *stat_name, int64_t dec_by);
-  tsapi TSReturnCode     TSStatGetCurrentV2(uint32_t stat_num, int64_t *stat_val);
-  tsapi TSReturnCode     TSStatGetCurrentByNameV2(const char *stat_name, int64_t *stat_val);
-  tsapi TSReturnCode     TSStatGetV2(uint32_t stat_num, int64_t *stat_val);
-  tsapi TSReturnCode     TSStatGetByNameV2(const char *stat_name, int64_t *stat_val);
-
-
   /* Do not edit these apis, used internally */
   tsapi int TSMimeHdrFieldEqual(TSMBuffer bufp, TSMLoc hdr_obj, TSMLoc field1, TSMLoc field2);
   tsapi int TSHttpTxnHookRegisteredFor(TSHttpTxn txnp, TSHttpHookID id, TSEventFunc funcp);

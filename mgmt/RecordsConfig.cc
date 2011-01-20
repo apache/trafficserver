@@ -1950,17 +1950,6 @@ RecordElement RecordsConfig[] = {
   //# Librecords based stats system (new as of v2.1.3)
   {RECT_CONFIG, "proxy.config.stat_api.max_stats_allowed", RECD_INT, "256", RECU_RESTART_TS, RR_NULL, RECC_INT, "[256-1000]", RECA_NULL}
   ,
-#if TS_HAS_V2STATS
-  // StatSystemV2 config
-  {RECT_CONFIG, "proxy.config.stat_collector.interval", RECD_INT, "600", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.stat_collector.port", RECD_INT, "8091", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.stat_systemV2.max_stats_allowed", RECD_INT, "0", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.stat_systemV2.num_stats_estimate", RECD_INT, "0", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
-  ,
-#endif
 
   //############
   //#
