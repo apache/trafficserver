@@ -96,7 +96,6 @@ traffic_manager_SOURCES = \
 traffic_manager_LDFLAGS = @EXTRA_CXX_LDFLAGS@ @EXPAT_LDFLAGS@
 traffic_manager_LDADD = \
   cluster/libcluster.a \
-  preparse/libpreparse.a \
   stats/libstats.a \
   web2/libweb.a \
   api/libmgmtapilocal.a \
@@ -105,7 +104,6 @@ traffic_manager_LDADD = \
   $(top_builddir)/lib/records/libreclocal.a \
   $(top_builddir)/mgmt/tools/libinksysapi.a \
   $(top_builddir)/mgmt/tools/libinkconfigapi.a \
-  $(top_builddir)/iocore/utils/libinkutils.a \
   $(top_builddir)/lib/ts/libts.a \
   @LIBEXPAT@ @LIBPCRE@ \
   @LIBSSL@ @LIBTCL@ @LIBICONV@ \

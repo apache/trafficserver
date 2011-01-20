@@ -75,23 +75,15 @@ traffic_shell_LDFLAGS =	$(EXTRA_CXX_LDFLAGS)
 traffic_shell_LDADD = \
   libtrafficshell.a \
   $(top_builddir)/mgmt/api/remote/libmgmtapiremote.a \
-  $(top_builddir)/mgmt/tools/libinksysapi.a \
   $(top_builddir)/mgmt/tools/libinkconfigapi.a \
   $(top_builddir)/mgmt/utils/libutils_lm.a \
   $(top_builddir)/lib/ts/libts.a \
-  $(top_builddir)/iocore/utils/libinkutils.a \
-  $(LIBTCL) \
-  @LIBDL@ \
-  @LIBM@ \
-  @LIBICONV@ \
-  @LIBEXPAT@ @LIBSSL@ \
+  $(LIBTCL) @LIBDL@ @LIBM@ @LIBICONV@ @LIBEXPAT@ @LIBSSL@ \
   @LIBTHREAD@ @LIBSOCKET@ @LIBNSL@ @LIBRESOLV@ \
   @LIBRT@ @LIBEXECINFO@ @LIBPCRE@
-
 
 traffic_line_LDFLAGS = @EXTRA_CXX_LDFLAGS@
 traffic_line_LDADD = \
   $(top_builddir)/mgmt/api/remote/libmgmtapiremote.a \
-  $(top_builddir)/iocore/utils/libinkutils.a \
   $(top_builddir)/lib/ts/libts.a \
   @LIBTHREAD@ @LIBSOCKET@ @LIBNSL@ @LIBTCL@ @LIBICONV@ @LIBRT@ @LIBDL@ @LIBSSL@ 

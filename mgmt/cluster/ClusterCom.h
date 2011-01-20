@@ -44,7 +44,6 @@
 
 #include "ink_platform.h"
 #include "P_RecDefs.h"
-#include "MgmtUtils.h"
 #include "Rollback.h"
 
 #define CLUSTER_MSG_SHUTDOWN_MANAGER  1000

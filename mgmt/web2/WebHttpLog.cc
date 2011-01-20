@@ -31,6 +31,7 @@
 #include "ink_platform.h"
 #include "TextBuffer.h"
 #include "Main.h"
+#include "MgmtUtils.h"
 #include "WebCompatibility.h"
 #include "WebHttpLog.h"
 

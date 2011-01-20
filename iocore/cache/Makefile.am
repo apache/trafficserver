@@ -19,8 +19,7 @@
 if STANDALONE_IOCORE
 AM_CPPFLAGS = \
   $(iocore_include_dirs) \
-  -I$(top_srcdir)/lib/records \
-  -DSYSCONFDIR=\"$(sysconfdir)\"
+  -I$(top_srcdir)/lib/records
 
 ADD_SRC =
 else
@@ -33,8 +32,7 @@ AM_CPPFLAGS = \
   -I$(top_srcdir)/proxy/http/remap \
   -I$(top_srcdir)/mgmt \
   -I$(top_srcdir)/mgmt/preparse \
-  -I$(top_srcdir)/mgmt/utils \
-  -DSYSCONFDIR=\"$(sysconfdir)\"
+  -I$(top_srcdir)/mgmt/utils
 
 ADD_SRC =
 if BUILD_TESTS

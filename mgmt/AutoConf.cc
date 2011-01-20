@@ -27,6 +27,7 @@
 #include "ink_time.h"
 
 #include "Main.h"
+#include "MgmtUtils.h"
 #include "AutoConf.h"
 #include "TextBuffer.h"
 #include "Tokenizer.h"

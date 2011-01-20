@@ -206,7 +206,6 @@ traffic_logcat_LDADD = \
   $(top_builddir)/mgmt/preparse/libpreparse.a \
   $(top_builddir)/mgmt/utils/libutils_p.a \
   $(top_builddir)/mgmt/libmgmt_p.a \
-  $(top_builddir)/iocore/utils/libinkutils.a \
   $(top_builddir)/iocore/cluster/libinkcluster.a \
   $(top_builddir)/iocore/dns/libinkdns.a \
   $(top_builddir)/iocore/hostdb/libinkhostdb.a \
@@ -274,7 +273,6 @@ traffic_logstats_LDADD = \
   $(top_builddir)/mgmt/preparse/libpreparse.a \
   $(top_builddir)/mgmt/utils/libutils_p.a \
   $(top_builddir)/mgmt/libmgmt_p.a \
-  $(top_builddir)/iocore/utils/libinkutils.a \
   $(top_builddir)/iocore/cluster/libinkcluster.a \
   $(top_builddir)/iocore/dns/libinkdns.a \
   $(top_builddir)/iocore/hostdb/libinkhostdb.a \
@@ -343,7 +341,6 @@ traffic_sac_LDADD = \
   $(top_builddir)/mgmt/preparse/libpreparse.a \
   $(top_builddir)/mgmt/utils/libutils_p.a \
   $(top_builddir)/mgmt/libmgmt_p.a \
-  $(top_builddir)/iocore/utils/libinkutils.a \
   $(top_builddir)/iocore/cluster/libinkcluster.a \
   $(top_builddir)/iocore/dns/libinkdns.a \
   $(top_builddir)/iocore/hostdb/libinkhostdb.a \

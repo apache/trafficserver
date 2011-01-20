@@ -2675,7 +2675,7 @@ ink_cache_init(ModuleVersion v)
         cache_config_max_doc_size, cache_config_max_doc_size / (1024 * 1024));
 
   // This is just here to make sure IOCORE "standalone" works, it's usually configured in RecordsConfig.cc
-  IOCORE_RegisterConfigString(RECT_CONFIG, "proxy.config.config_dir", SYSCONFDIR, RECU_DYNAMIC, RECC_NULL, NULL);
+  IOCORE_RegisterConfigString(RECT_CONFIG, "proxy.config.config_dir", TS_BUILD_SYSCONFDIR, RECU_DYNAMIC, RECC_NULL, NULL);
   IOCORE_ReadConfigString(cache_system_config_directory, "proxy.config.config_dir", PATH_NAME_MAX);
   if (cache_system_config_directory[0] != '/') {
     // Not an absolute path so use system one

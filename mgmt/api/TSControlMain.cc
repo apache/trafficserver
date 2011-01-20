@@ -33,6 +33,7 @@
 #include "libts.h"
 #include "LocalManager.h"
 #include "Main.h"
+#include "MgmtUtils.h"
 #include "MgmtSocket.h"
 #include "TSControlMain.h"
 #include "CoreAPI.h"

@@ -32,6 +32,7 @@
 
 #include "ink_config.h"
 #include "StatType.h"
+#include "MgmtUtils.h"
 
 bool StatError = false;         // global error flag
 bool StatDebug = false;         // global debug flag

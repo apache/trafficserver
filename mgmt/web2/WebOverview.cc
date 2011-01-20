@@ -39,6 +39,7 @@
 
 #include "Main.h"
 #include "ClusterCom.h"
+#include "MgmtUtils.h"
 #include "MgmtDefs.h"
 #include "Diags.h"
 

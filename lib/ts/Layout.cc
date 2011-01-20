@@ -142,8 +142,7 @@ Layout::Layout(const char *_prefix)
 {
   if (_prefix) {
     prefix = xstrdup(_prefix);
-  }
-  else {
+  } else {
     char *env_path;
     char path[PATH_MAX];
     int  len;
@@ -162,7 +161,7 @@ Layout::Layout(const char *_prefix)
       }
     } else {
         // Use compile time --prefix
-        ink_strncpy(path, PREFIX, sizeof(path));
+      ink_strncpy(path, TS_BUILD_PREFIX, sizeof(path));
     }
 
     if (access(path, R_OK) == -1) {
@@ -172,21 +171,20 @@ Layout::Layout(const char *_prefix)
     }
     prefix = xstrdup(path);
   }
-  exec_prefix = layout_relative(prefix, EXEC_PREFIX);
-  bindir = layout_relative(prefix, BINDIR);
-  sbindir = layout_relative(prefix, SBINDIR);
-  sysconfdir = layout_relative(prefix, SYSCONFDIR);
-  datadir = layout_relative(prefix, DATADIR);
-  includedir = layout_relative(prefix, INCLUDEDIR);
-  libdir = layout_relative(prefix, LIBDIR);
-  libexecdir = layout_relative(prefix, LIBEXECDIR);
-  localstatedir = layout_relative(prefix, LOCALSTATEDIR);
-  sharedstatedir = layout_relative(prefix, SHAREDSTATEDIR);
-  runtimedir = layout_relative(prefix, RUNTIMEDIR);
-  logdir = layout_relative(prefix, LOGDIR);
-  mandir = layout_relative(prefix, MANDIR);
-  infodir = layout_relative(prefix, INFODIR);
-  cachedir = layout_relative(prefix, CACHEDIR);
+  exec_prefix = layout_relative(prefix, TS_BUILD_EXEC_PREFIX);
+  bindir = layout_relative(prefix, TS_BUILD_BINDIR);
+  sbindir = layout_relative(prefix, TS_BUILD_SBINDIR);
+  sysconfdir = layout_relative(prefix, TS_BUILD_SYSCONFDIR);
+  datadir = layout_relative(prefix, TS_BUILD_DATADIR);
+  includedir = layout_relative(prefix, TS_BUILD_INCLUDEDIR);
+  libdir = layout_relative(prefix, TS_BUILD_LIBDIR);
+  libexecdir = layout_relative(prefix, TS_BUILD_LIBEXECDIR);
+  localstatedir = layout_relative(prefix, TS_BUILD_LOCALSTATEDIR);
+  runtimedir = layout_relative(prefix, TS_BUILD_RUNTIMEDIR);
+  logdir = layout_relative(prefix, TS_BUILD_LOGDIR);
+  mandir = layout_relative(prefix, TS_BUILD_MANDIR);
+  infodir = layout_relative(prefix, TS_BUILD_INFODIR);
+  cachedir = layout_relative(prefix, TS_BUILD_CACHEDIR);
 
 #ifdef DEBUG
 // TODO: Use a propper Debug logging
@@ -205,7 +203,6 @@ Layout::Layout(const char *_prefix)
   PrintSTR(libdir);
   PrintSTR(libexecdir);
   PrintSTR(localstatedir);
-  PrintSTR(sharedstatedir);
   PrintSTR(runtimedir);
   PrintSTR(logdir);
   PrintSTR(mandir);
@@ -230,7 +227,6 @@ Layout::~Layout()
   SafeFree(libdir);
   SafeFree(libexecdir);
   SafeFree(localstatedir);
-  SafeFree(sharedstatedir);
   SafeFree(runtimedir);
   SafeFree(logdir);
   SafeFree(mandir);

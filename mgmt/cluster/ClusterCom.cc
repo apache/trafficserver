@@ -40,6 +40,7 @@
 
 #include "Main.h"
 #include "ClusterCom.h"
+#include "MgmtUtils.h"
 #include "WebMgmtUtils.h"
 #include "MgmtHashTable.h"
 #include "WebHttpTree.h"

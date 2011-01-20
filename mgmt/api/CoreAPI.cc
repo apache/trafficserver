@@ -31,6 +31,7 @@
 
 #include "ink_platform.h"
 #include "Main.h"
+#include "MgmtUtils.h"
 #include "LocalManager.h"
 #include "FileManager.h"
 #include "Rollback.h"

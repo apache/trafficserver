@@ -173,4 +173,23 @@
 /* TODO: Fix those always defined features */
 #define MODULARIZED
 
+
+/* Various "build" defines */
+#define TS_BUILD_PREFIX "@prefix@"
+#define TS_BUILD_EXEC_PREFIX "@rel_exec_prefix@"
+#define TS_BUILD_BINDIR "@rel_bindir@"
+#define TS_BUILD_SBINDIR "@rel_sbindir@"
+#define TS_BUILD_SYSCONFDIR "@rel_sysconfdir@"
+#define TS_BUILD_SYSCONFIGDIR "@exp_sysconfdir@"
+#define TS_BUILD_DATADIR "@rel_datadir@"
+#define TS_BUILD_INCLUDEDIR "@rel_includedir@"
+#define TS_BUILD_LIBDIR "@rel_libdir@"
+#define TS_BUILD_LIBEXECDIR "@rel_libexecdir@"
+#define TS_BUILD_LOCALSTATEDIR "@rel_localstatedir@"
+#define TS_BUILD_RUNTIMEDIR "@rel_runtimedir@"
+#define TS_BUILD_LOGDIR "@rel_logdir@"
+#define TS_BUILD_MANDIR "@rel_mandir@"
+#define TS_BUILD_CACHEDIR "@rel_cachedir@"
+#define TS_BUILD_INFODIR "@rel_infodir@"
+
 #endif /* _ink_config_h */

@@ -34,6 +34,7 @@
 
 #include "Main.h"
 #include "VMap.h"
+#include "MgmtUtils.h"
 #include "P_RecLocal.h"
 
 // for linux and freebsd

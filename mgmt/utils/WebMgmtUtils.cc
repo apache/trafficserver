@@ -23,6 +23,7 @@
 
 #include "libts.h"
 #include "Main.h"
+#include "MgmtUtils.h"
 #include "WebMgmtUtils.h"
 
 #ifdef HAVE_PCRE_PCRE_H

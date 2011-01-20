@@ -18,35 +18,16 @@
 
 AM_CPPFLAGS = \
   -I$(top_srcdir)/lib/records \
-  -I$(top_srcdir)/iocore/eventsystem \
-  -DPREFIX=\"$(prefix)\" \
-  -DEXEC_PREFIX=\"$(rel_exec_prefix)\" \
-  -DBINDIR=\"$(rel_bindir)\" \
-  -DSBINDIR=\"$(rel_sbindir)\" \
-  -DSYSCONFDIR=\"$(rel_sysconfdir)\" \
-  -DSYSCONFIGDIR=\"$(exp_sysconfdir)\" \
-  -DDATADIR=\"$(rel_datadir)\" \
-  -DINCLUDEDIR=\"$(rel_includedir)\" \
-  -DLIBDIR=\"$(rel_libdir)\" \
-  -DLIBEXECDIR=\"$(rel_libexecdir)\" \
-  -DLOCALSTATEDIR=\"$(rel_localstatedir)\" \
-  -DSHAREDSTATEDIR=\"$(rel_sharedstatedir)\" \
-  -DRUNTIMEDIR=\"$(rel_runtimedir)\" \
-  -DLOGDIR=\"$(rel_logdir)\" \
-  -DMANDIR=\"$(rel_mandir)\" \
-  -DCACHEDIR=\"$(rel_cachedir)\" \
-  -DINFODIR=\"$(rel_infodir)\"
+  -I$(top_srcdir)/iocore/eventsystem
 
 DEFS += @IOCORE_MODULARIZED_DEFS@
 
 noinst_LIBRARIES = libinkutils.a
 
 libinkutils_a_SOURCES = \
-  I_Layout.h \
   I_Machine.h \
   I_OneWayMultiTunnel.h \
   I_OneWayTunnel.h \
-  Layout.cc \
   Machine.cc \
   OneWayMultiTunnel.cc \
   OneWayTunnel.cc

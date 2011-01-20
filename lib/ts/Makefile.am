@@ -115,6 +115,8 @@ libts_a_SOURCES = \
   List.h \
   llqueue.cc \
   lockfile.cc \
+  I_Layout.h \
+  Layout.cc \
   MatcherUtils.cc \
   MatcherUtils.h \
   MimeTable.cc \
