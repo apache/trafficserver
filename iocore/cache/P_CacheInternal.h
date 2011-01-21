@@ -858,10 +858,8 @@ dir_overwrite_lock(CacheKey *key, Part *d, Dir *to_part, ProxyMutex *m, Dir *ove
 void TS_INLINE
 rand_CacheKey(CacheKey *next_key, ProxyMutex *mutex)
 {
-  uint32_t *b = (uint32_t *) & next_key->b[0];
-  InkRand & g = mutex->thread_holding->generator;
-  for (int i = 0; i < 4; i++)
-    b[i] = (uint32_t) g.random();
+  next_key->b[0] = mutex->thread_holding->generator.random();
+  next_key->b[1] = mutex->thread_holding->generator.random();
 }
 
 extern uint8_t CacheKey_next_table[];
