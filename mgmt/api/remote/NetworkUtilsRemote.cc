@@ -133,13 +133,13 @@ socket_test(int fd)
  *          requests & issues out responses and alerts
  * 1) create and set the client socket_fd; connect to TM
  * 2) create and set the client's event_socket_fd; connect to TM
- * output: INK_ERR_OKAY          - if both sockets sucessfully connect to TM
- *         INK_ERR_NET_ESTABLISH - at least one unsuccessful connection
+ * output: TS_ERR_OKAY          - if both sockets sucessfully connect to TM
+ *         TS_ERR_NET_ESTABLISH - at least one unsuccessful connection
  * notes: If connection breaks it is responsibility of client to reconnect
  *        otherwise traffic server will assume mgmt stopped request and
  *        goes back to just sitting and listening for connection.
  ***************************************************************************/
-INKError
+TSError
 ts_connect()
 {
   struct sockaddr_un client_sock;
@@ -201,10 +201,10 @@ ts_connect()
     goto ERROR;                 //connection is down
   }
 
-  return INK_ERR_OKAY;
+  return TS_ERR_OKAY;
 
 ERROR:
-  return INK_ERR_NET_ESTABLISH;
+  return TS_ERR_NET_ESTABLISH;
 }
 
 /***************************************************************************
@@ -212,10 +212,10 @@ ERROR:
  *
  * purpose: disconnect from traffic server; closes sockets and resets their values
  * input: None
- * output: INK_ERR_FAIL, INK_ERR_OKAY
+ * output: TS_ERR_FAIL, TS_ERR_OKAY
  * notes: doesn't do clean up - all cleanup should be done before here
  ***************************************************************************/
-INKError
+TSError
 disconnect()
 {
   int ret;
@@ -224,17 +224,17 @@ disconnect()
     ret = close(main_socket_fd);
     main_socket_fd = -1;
     if (ret < 0)
-      return INK_ERR_FAIL;
+      return TS_ERR_FAIL;
   }
 
   if (event_socket_fd > 0) {
     ret = close(event_socket_fd);
     event_socket_fd = -1;
     if (ret < 0)
-      return INK_ERR_FAIL;
+      return TS_ERR_FAIL;
   }
 
-  return INK_ERR_OKAY;
+  return TS_ERR_OKAY;
 }
 
 /***************************************************************************
@@ -243,26 +243,26 @@ disconnect()
  * purpose: reconnects to TM (eg. when TM restarts); does all the necesarry
  *          set up for reconnection
  * input: None
- * output: INK_ERR_FAIL, INK_ERR_OKAY
+ * output: TS_ERR_FAIL, TS_ERR_OKAY
  * notes: necessarry events for a new client-TM connection:
  * 1) get new socket_fd using old socket_path by calling connect()
  * 2) relaunch event_poll_thread_main with new socket_fd
  * 3) re-notify TM of all the client's registered callbacks by send msg
  ***************************************************************************/
-INKError
+TSError
 reconnect()
 {
-  INKError err;
+  TSError err;
 
   err = disconnect();
-  if (err != INK_ERR_OKAY)      // problem disconnecting
+  if (err != TS_ERR_OKAY)      // problem disconnecting
     return err;
 
   // use the socket_path that was called by remote client on first init
-  // use connect instead of INKInit() b/c if TM restarted, client-side tables
+  // use connect instead of TSInit() b/c if TM restarted, client-side tables
   // would be recreated; just want to reconnect to same socket_path
   err = ts_connect();
-  if (err != INK_ERR_OKAY)      // problem establishing connection
+  if (err != TS_ERR_OKAY)      // problem establishing connection
     return err;
 
   // relaunch a new event thread since socket_fd changed
@@ -271,14 +271,14 @@ reconnect()
     // reregister the callbacks on the TM side for this new client connection
     if (remote_event_callbacks) {
       err = send_register_all_callbacks(event_socket_fd, remote_event_callbacks);
-      if (err != INK_ERR_OKAY)      // problem establishing connection
+      if (err != TS_ERR_OKAY)      // problem establishing connection
         return err;
     }
   } else {
     ts_event_thread = static_cast<ink_thread>(NULL);
   }
 
-  return INK_ERR_OKAY;
+  return TS_ERR_OKAY;
 }
 
 /***************************************************************************
@@ -287,22 +287,22 @@ reconnect()
  * purpose: attempts to reconnect to TM (eg. when TM restarts) for the
  *          specified number of times
  * input:  num_attempts - number of reconnection attempts to try before quit
- * output: INK_ERR_OKAY - if succesfully reconnected within num_attempts
- *         INK_ERR_xx - the reason the reconnection failed
+ * output: TS_ERR_OKAY - if succesfully reconnected within num_attempts
+ *         TS_ERR_xx - the reason the reconnection failed
  * notes:
  ***************************************************************************/
-INKError
+TSError
 reconnect_loop(int num_attempts)
 {
   int numTries = 0;
-  INKError err = INK_ERR_FAIL;
+  TSError err = TS_ERR_FAIL;
 
   while (numTries < num_attempts) {
     numTries++;
     err = reconnect();
-    if (err == INK_ERR_OKAY) {
+    if (err == TS_ERR_OKAY) {
       //fprintf(stderr, "[reconnect_loop] Successful reconnction; Leave loop\n");
-      return INK_ERR_OKAY;      // successful connection
+      return TS_ERR_OKAY;      // successful connection
     }
     sleep(1);                   // to make it slower
   }
@@ -326,7 +326,7 @@ reconnect_loop(int num_attempts)
  * the "connect" was successful.
  * 1) try connect()
  * 2) if connect() success, then resend the request.
- * output: INK_ERR_NET_xx - connection problem or INK_ERR_OKAY
+ * output: TS_ERR_NET_xx - connection problem or TS_ERR_OKAY
  * notes:
  * This function is basically called by the special "socket_write_conn" fn
  * which will call this fn if it tries to write to the socket and discovers
@@ -335,20 +335,20 @@ reconnect_loop(int num_attempts)
  * which is not open; which will by default terminate the process;
  * client needs to "ignore" the SIGPIPE signal
  **************************************************************************/
-INKError
+TSError
 connect_and_send(const char *msg, int msg_len)
 {
-  INKError err;
+  TSError err;
   int total_wrote = 0, ret;
 
   // connects to TM and does all necessary event updates required
   err = reconnect();
-  if (err != INK_ERR_OKAY)
+  if (err != TS_ERR_OKAY)
     return err;
 
   // makes sure the descriptor is writable
   if (socket_write_timeout(main_socket_fd, MAX_TIME_WAIT, 0) <= 0) {
-    return INK_ERR_NET_TIMEOUT;
+    return TS_ERR_NET_TIMEOUT;
   }
   // connection successfully established; resend msg
   // socket_fd should be new fd
@@ -356,7 +356,7 @@ connect_and_send(const char *msg, int msg_len)
     ret = write(main_socket_fd, msg + total_wrote, msg_len - total_wrote);
 
     if (ret == 0) {
-      return INK_ERR_NET_EOF;
+      return TS_ERR_NET_EOF;
     }
 
     if (ret < 0) {
@@ -369,17 +369,17 @@ connect_and_send(const char *msg, int msg_len)
         main_socket_fd = -1;
         event_socket_fd = -1;
 
-        return INK_ERR_NET_ESTABLISH;   // can't establish connection
+        return TS_ERR_NET_ESTABLISH;   // can't establish connection
 
       } else
-        return INK_ERR_NET_WRITE;       // general socket writing error
+        return TS_ERR_NET_WRITE;       // general socket writing error
 
     }
 
     total_wrote += ret;
   }
 
-  return INK_ERR_OKAY;
+  return TS_ERR_OKAY;
 }
 
 /**************************************************************************
@@ -388,7 +388,7 @@ connect_and_send(const char *msg, int msg_len)
  * purpose: guarantees writing of n bytes; if connection error, tries
  *          reconnecting to TM again (in case TM was restarted)
  * input:   fd to write to, buffer to write from & number of bytes to write
- * output:  INK_ERR_xx
+ * output:  TS_ERR_xx
  * note:   EPIPE - this happens if client makes a call after stopping then
  *         starting TM again.
  *         ENOTCONN - this happens if the client tries to make a call after
@@ -399,21 +399,21 @@ connect_and_send(const char *msg, int msg_len)
  * 1) if the write returns EPIPE error, then call connect_and_send()
  * 2) return the value returned from EPIPE
  *************************************************************************/
-INKError
+TSError
 socket_write_conn(int fd, const char *msg_buf, int bytes)
 {
   int ret, byte_wrote = 0;
 
   // makes sure the descriptor is writable
   if (socket_write_timeout(fd, MAX_TIME_WAIT, 0) <= 0) {
-    return INK_ERR_NET_TIMEOUT;
+    return TS_ERR_NET_TIMEOUT;
   }
   // read until we fulfill the number
   while (byte_wrote < bytes) {
     ret = write(fd, msg_buf + byte_wrote, bytes - byte_wrote);
 
     if (ret == 0) {
-      return INK_ERR_NET_EOF;
+      return TS_ERR_NET_EOF;
     }
 
     if (ret < 0) {
@@ -424,13 +424,13 @@ socket_write_conn(int fd, const char *msg_buf, int bytes)
         // clean-up of sockets is done in reconnect()
         return connect_and_send(msg_buf, bytes);
       } else
-        return INK_ERR_NET_WRITE;
+        return TS_ERR_NET_WRITE;
     }
     // we are all good here
     byte_wrote += ret;
   }
 
-  return INK_ERR_OKAY;
+  return TS_ERR_OKAY;
 }
 
 /**********************************************************************
@@ -470,7 +470,7 @@ socket_test_thread(void *arg)
       // reconnect will return an "ALREADY CONNECTED" error when it
       // tries to connect, and on the next loop iteration, the socket_test
       // will actually pass because main_socket_fd is valid!!
-      if (reconnect() == INK_ERR_OKAY) {
+      if (reconnect() == TS_ERR_OKAY) {
         //fprintf(stderr, "[socket_test_thread] reconnect succeeds\n");
       }
     }
@@ -491,18 +491,18 @@ socket_test_thread(void *arg)
  * purpose: sends file read request to Traffic Manager
  * input:   fd - file descriptor to use to send to
  *          op - the type of OpType request sending
- * output:  INK_ERR_xx
+ * output:  TS_ERR_xx
  * notes:  used by operations which don't need to send any additional
  *         parameters
  * format: <OpType> <msg_len=0>
  **********************************************************************/
-INKError
+TSError
 send_request(int fd, OpType op)
 {
   int16_t op_t;
   int32_t msg_len;
   char msg_buf[SIZE_OP_T + SIZE_LEN];
-  INKError err;
+  TSError err;
 
   // fill in op type
   op_t = (int16_t) op;
@@ -523,17 +523,17 @@ send_request(int fd, OpType op)
  * purpose: sends generic  request with one string argument name
  * input: fd - file descriptor to use
  *        op - .
- * output: INK_ERR_xx
+ * output: TS_ERR_xx
  * note: format: <OpType> <str_len> <string>
  **********************************************************************/
-INKError
+TSError
 send_request_name(int fd, OpType op, char *name)
 {
   char *msg_buf;
   int16_t op_t;
   int32_t msg_len;
   int total_len;
-  INKError err;
+  TSError err;
 
   if (name == NULL) {           //reg callback for all events when op==EVENT_REG_CALLBACK
     msg_len = 0;
@@ -544,7 +544,7 @@ send_request_name(int fd, OpType op, char *name)
   total_len = SIZE_OP_T + SIZE_LEN + msg_len;
   msg_buf = (char *) xmalloc(sizeof(char) * total_len);
   if (!msg_buf)
-    return INK_ERR_SYS_CALL;
+    return TS_ERR_SYS_CALL;
 
   // fill in op type
   op_t = (int16_t) op;
@@ -571,20 +571,20 @@ send_request_name(int fd, OpType op, char *name)
  * purpose: sends generic request with 2 str arguments; a name-value pair
  * input: fd - file descriptor to use
  *        op - Op type
- * output: INK_ERR_xx
+ * output: TS_ERR_xx
  * note: format: <OpType> <name-len> <val-len> <name> <val>
  **********************************************************************/
-INKError
+TSError
 send_request_name_value(int fd, OpType op, const char *name, const char *value)
 {
   char *msg_buf;
   int msg_pos = 0, total_len;
   int32_t msg_len, name_len, val_size;    // these are written to msg
   int16_t op_t;
-  INKError err;
+  TSError err;
 
   if (!name || !value)
-    return INK_ERR_PARAMS;
+    return TS_ERR_PARAMS;
 
   // set the sizes
   name_len = strlen(name);
@@ -593,7 +593,7 @@ send_request_name_value(int fd, OpType op, const char *name, const char *value)
   total_len = SIZE_OP_T + SIZE_LEN + msg_len;
   msg_buf = (char *) xmalloc(sizeof(char) * (total_len));
   if (!msg_buf)
-    return INK_ERR_SYS_CALL;
+    return TS_ERR_SYS_CALL;
 
   // fill in op type
   op_t = (int16_t) op;
@@ -631,9 +631,9 @@ send_request_name_value(int fd, OpType op, const char *name, const char *value)
  * purpose: sends a simple op with a boolean flag argument
  * input: fd      - file descriptor to use
  *        flag    - boolean flag
- * output: INK_ERR_xx
+ * output: TS_ERR_xx
  **********************************************************************/
-INKError
+TSError
 send_request_bool(int fd, OpType op, bool flag)
 {
   char msg_buf[SIZE_OP_T + SIZE_LEN + SIZE_BOOL];
@@ -661,12 +661,12 @@ send_request_bool(int fd, OpType op, bool flag)
  * purpose: sends file read request to Traffic Manager
  * input:   fd - file descriptor to use to send to
  *          file - file to read
- * output:  INK_ERR_xx
+ * output:  TS_ERR_xx
  * notes:   first must create the message and then send it across network
- *          msg format = <OpType> <msg_len> <INKFileNameT>
+ *          msg format = <OpType> <msg_len> <TSFileNameT>
  **********************************************************************/
-INKError
-send_file_read_request(int fd, INKFileNameT file)
+TSError
+send_file_read_request(int fd, TSFileNameT file)
 {
   char msg_buf[SIZE_OP_T + SIZE_LEN + SIZE_FILE_T];
   int msg_pos = 0;
@@ -699,26 +699,26 @@ send_file_read_request(int fd, INKFileNameT file)
  *        text - new text to write to specified file
  *        size - length of the text
  *        ver  - version of the file to be written
- * output: INK_ERR_xx
+ * output: TS_ERR_xx
  * notes: format - FILE_WRITE <msg_len> <file_type> <file_ver> <file_size> <text>
  **********************************************************************/
-INKError
-send_file_write_request(int fd, INKFileNameT file, int ver, int size, char *text)
+TSError
+send_file_write_request(int fd, TSFileNameT file, int ver, int size, char *text)
 {
   char *msg_buf;
   int msg_pos = 0, total_len;
   int32_t msg_len, f_size;        //marshalled values
   int16_t op, file_t, f_ver;
-  INKError err;
+  TSError err;
 
   if (!text)
-    return INK_ERR_PARAMS;
+    return TS_ERR_PARAMS;
 
   msg_len = SIZE_FILE_T + SIZE_VER + SIZE_LEN + size;
   total_len = SIZE_OP_T + SIZE_LEN + msg_len;
   msg_buf = (char *) xmalloc(sizeof(char) * total_len);
   if (!msg_buf)
-    return INK_ERR_SYS_CALL;
+    return TS_ERR_SYS_CALL;
 
   // fill in op type
   op = (int16_t) FILE_WRITE;
@@ -759,25 +759,25 @@ send_file_write_request(int fd, INKFileNameT file, int ver, int size, char *text
  * purpose: sends request to get record value from Traffic Manager
  * input: fd       - file descriptor to use
  *        rec_name - name of record to retrieve value for
- * output: INK_ERR_xx
+ * output: TS_ERR_xx
  * format: RECORD_GET <msg_len> <rec_name>
  **********************************************************************/
-INKError
+TSError
 send_record_get_request(int fd, char *rec_name)
 {
   char *msg_buf;
   int msg_pos = 0, total_len;
   int16_t op;
   int32_t msg_len;
-  INKError err;
+  TSError err;
 
   if (!rec_name)
-    return INK_ERR_PARAMS;
+    return TS_ERR_PARAMS;
 
   total_len = SIZE_OP_T + SIZE_LEN + strlen(rec_name);
   msg_buf = (char *) xmalloc(sizeof(char) * total_len);
   if (!msg_buf)
-    return INK_ERR_SYS_CALL;
+    return TS_ERR_SYS_CALL;
 
   // fill in op type
   op = (int16_t) RECORD_GET;
@@ -805,13 +805,13 @@ send_record_get_request(int fd, char *rec_name)
  *
  * purpose: sends request to get the proxy state (on/off)
  * input: fd       - file descriptor to use
- * output: INK_ERR_xx
+ * output: TS_ERR_xx
  * note: format: PROXY_STATE_GET 0(=msg_len)
  **********************************************************************/
-INKError
+TSError
 send_proxy_state_get_request(int fd)
 {
-  INKError err;
+  TSError err;
 
   err = send_request(fd, PROXY_STATE_GET);
   return err;
@@ -822,12 +822,12 @@ send_proxy_state_get_request(int fd)
  *
  * purpose: sends request to set the proxy state (on/off)
  * input: fd    - file descriptor to use
- *        state - INK_PROXY_ON, INK_PROXY_OFF
- * output: INK_ERR_xx
- * note: format: PROXY_STATE_SET  <msg_len> <INKProxyStateT> <INKCacheClearT>
+ *        state - TS_PROXY_ON, TS_PROXY_OFF
+ * output: TS_ERR_xx
+ * note: format: PROXY_STATE_SET  <msg_len> <TSProxyStateT> <TSCacheClearT>
  **********************************************************************/
-INKError
-send_proxy_state_set_request(int fd, INKProxyStateT state, INKCacheClearT clear)
+TSError
+send_proxy_state_set_request(int fd, TSProxyStateT state, TSCacheClearT clear)
 {
   char msg_buf[SIZE_OP_T + SIZE_LEN + SIZE_PROXY_T + SIZE_TS_ARG_T];
   int16_t op, state_t, cache_t;
@@ -863,25 +863,25 @@ send_proxy_state_set_request(int fd, INKProxyStateT state, INKCacheClearT clear)
  *          and sends message to notify TM that this client has a callback
  *          registered for each event
  * input: None
- * output: return INK_ERR_OKAY only if ALL events sent okay
+ * output: return TS_ERR_OKAY only if ALL events sent okay
  * notes: could create a function which just sends a list of all the events to
  * reregister; but actually just reuse the function
  * send_request_name(EVENT_REG_CALLBACK) and call it for each event
  * 1) get list of all events with callbacks
  * 2) for each event, call send_request_name
  **********************************************************************/
-INKError
+TSError
 send_register_all_callbacks(int fd, CallbackTable * cb_table)
 {
   LLQ *events_with_cb;
-  INKError err, send_err = INK_ERR_FAIL;
+  TSError err, send_err = TS_ERR_FAIL;
   bool no_errors = true;        // set to false if one send is not okay
 
   events_with_cb = get_events_with_callbacks(cb_table);
   // need to check that the list has all the events registered
   if (!events_with_cb) {        // all events have registered callback
     err = send_request_name(fd, EVENT_REG_CALLBACK, NULL);
-    if (err != INK_ERR_OKAY)
+    if (err != TS_ERR_OKAY)
       return err;
   } else {
     char *event_name;
@@ -894,7 +894,7 @@ send_register_all_callbacks(int fd, CallbackTable * cb_table)
       if (event_name) {
         err = send_request_name(fd, EVENT_REG_CALLBACK, event_name);
         xfree(event_name);      // free memory
-        if (err != INK_ERR_OKAY) {
+        if (err != TS_ERR_OKAY) {
           send_err = err;       // save the type of send error
           no_errors = false;
         }
@@ -907,7 +907,7 @@ send_register_all_callbacks(int fd, CallbackTable * cb_table)
     delete_queue(events_with_cb);
 
   if (no_errors)
-    return INK_ERR_OKAY;
+    return TS_ERR_OKAY;
   else
     return send_err;
 }
@@ -919,19 +919,19 @@ send_register_all_callbacks(int fd, CallbackTable * cb_table)
  *          and sends message to notify TM that this client has no
  *          callbacks registered for that event
  * input: None
- * output: INK_ERR_OKAY only if all send requests are okay
+ * output: TS_ERR_OKAY only if all send requests are okay
  * notes: could create a function which just sends a list of all the events to
  * unregister; but actually just reuse the function
  * send_request_name(EVENT_UNREG_CALLBACK) and call it for each event
  **********************************************************************/
-INKError
+TSError
 send_unregister_all_callbacks(int fd, CallbackTable * cb_table)
 {
   char *event_name;
   int event_id;
   LLQ *events_with_cb;          // list of events with at least one callback
   int reg_callback[NUM_EVENTS];
-  INKError err, send_err = INK_ERR_FAIL;
+  TSError err, send_err = TS_ERR_FAIL;
   bool no_errors = true;        // set to false if at least one send fails
 
   // init array so that all events don't have any callbacks
@@ -941,7 +941,7 @@ send_unregister_all_callbacks(int fd, CallbackTable * cb_table)
 
   events_with_cb = get_events_with_callbacks(cb_table);
   if (!events_with_cb) {        // all events have a registered callback
-    return INK_ERR_OKAY;
+    return TS_ERR_OKAY;
   } else {
     int num_events = queue_len(events_with_cb);
     // iterate through the LLQ and mark events that have a callback
@@ -958,7 +958,7 @@ send_unregister_all_callbacks(int fd, CallbackTable * cb_table)
       event_name = get_event_name(k);
       err = send_request_name(fd, EVENT_UNREG_CALLBACK, event_name);
       xfree(event_name);
-      if (err != INK_ERR_OKAY) {
+      if (err != TS_ERR_OKAY) {
         send_err = err;         //save the type of the sending error
         no_errors = false;
       }
@@ -969,7 +969,7 @@ send_unregister_all_callbacks(int fd, CallbackTable * cb_table)
   }
 
   if (no_errors)
-    return INK_ERR_OKAY;
+    return TS_ERR_OKAY;
   else
     return send_err;
 }
@@ -980,27 +980,27 @@ send_unregister_all_callbacks(int fd, CallbackTable * cb_table)
  * purpose: sends the diag msg across along with they diag msg type
  * input: mode - type of diags msg
  *        msg  - the diags msg
- * output: INK_ERR_xx
- * note: format: <OpType> <msg_len> <INKDiagsT> <diag_msg_len> <diag_msg>
+ * output: TS_ERR_xx
+ * note: format: <OpType> <msg_len> <TSDiagsT> <diag_msg_len> <diag_msg>
  **********************************************************************/
-INKError
-send_diags_msg(int fd, INKDiagsT mode, const char *diag_msg)
+TSError
+send_diags_msg(int fd, TSDiagsT mode, const char *diag_msg)
 {
   char *msg_buf;
   int16_t op_t, diag_t;
   int32_t msg_len, diag_msg_len;
   int total_len;
-  INKError err;
+  TSError err;
 
   if (!diag_msg)
-    return INK_ERR_PARAMS;
+    return TS_ERR_PARAMS;
 
   diag_msg_len = (int32_t) strlen(diag_msg);
   msg_len = SIZE_DIAGS_T + SIZE_LEN + diag_msg_len;
   total_len = SIZE_OP_T + SIZE_LEN + msg_len;
   msg_buf = (char *) xmalloc(sizeof(char) * total_len);
   if (!msg_buf)
-    return INK_ERR_SYS_CALL;
+    return TS_ERR_SYS_CALL;
 
   // fill in op type
   op_t = (int16_t) DIAGS;
@@ -1009,7 +1009,7 @@ send_diags_msg(int fd, INKDiagsT mode, const char *diag_msg)
   // fill in entire msg len
   memcpy(msg_buf + SIZE_OP_T, (void *) &msg_len, SIZE_LEN);
 
-  // fill in INKDiagsT
+  // fill in TSDiagsT
   diag_t = (int16_t) mode;
   memcpy(msg_buf + SIZE_OP_T + SIZE_LEN, (void *) &diag_t, SIZE_DIAGS_T);
 
@@ -1033,9 +1033,9 @@ send_diags_msg(int fd, INKDiagsT mode, const char *diag_msg)
 
 /* Error handling implementation:
  * All the parsing functions which parse the reply returned from local side
- * also must read the INKERror return value sent from local side; this return
+ * also must read the TSERror return value sent from local side; this return
  * value is the same value that will be returned by the parsing function.
- * ALL PARSING FUNCTIONS MUST FIRST CHECK that the retval is INK_ERR_OKAY;
+ * ALL PARSING FUNCTIONS MUST FIRST CHECK that the retval is TS_ERR_OKAY;
  * if it is not, then DON"T PARSE THE REST OF THE REPLY!!
  */
 
@@ -1051,10 +1051,10 @@ send_diags_msg(int fd, INKDiagsT mode, const char *diag_msg)
  * purpose: parses a reply from traffic manager. return that error
  * input: fd
  * output: errors on error or fill up class with response &
- *         return INK_ERR_xx
- * notes: only returns an INKError
+ *         return TS_ERR_xx
+ * notes: only returns an TSError
  **********************************************************************/
-INKError
+TSError
 parse_reply(int fd)
 {
   int ret, amount_read = 0;
@@ -1062,9 +1062,9 @@ parse_reply(int fd)
 
   // check to see if anything to read; wait for specified time = 1 sec
   if (socket_read_timeout(fd, MAX_TIME_WAIT, 0) <= 0) { // time expires before ready to read
-    return INK_ERR_NET_TIMEOUT;
+    return TS_ERR_NET_TIMEOUT;
   }
-  // get the return value (INKError type)
+  // get the return value (TSError type)
   while (amount_read < SIZE_ERR_T) {
     ret = read(fd, (void *) &ret_val, SIZE_ERR_T - amount_read);
 
@@ -1072,18 +1072,18 @@ parse_reply(int fd)
       if (errno == EAGAIN)
         continue;
       else {
-        return INK_ERR_NET_READ;
+        return TS_ERR_NET_READ;
       }
     }
 
     if (ret == 0) {
-      return INK_ERR_NET_EOF;
+      return TS_ERR_NET_EOF;
     }
     // all is good here :)
     amount_read += ret;
   }
 
-  return (INKError) ret_val;
+  return (TSError) ret_val;
 }
 
 /**********************************************************************
@@ -1092,26 +1092,26 @@ parse_reply(int fd)
  * purpose: parses a TM reply to a request to get a list of string tokens
  * input: fd - socket to read
  *        list - will contain delimited string list of tokens
- * output: INK_ERR_xx
+ * output: TS_ERR_xx
  * notes:
- * format: <INKError> <string_list_len> <delimited_string_list>
+ * format: <TSError> <string_list_len> <delimited_string_list>
  **********************************************************************/
-INKError
+TSError
 parse_reply_list(int fd, char **list)
 {
   int ret, amount_read = 0;
   int16_t ret_val;
   int32_t list_size;
-  INKError err_t;
+  TSError err_t;
 
   if (!list)
-    return INK_ERR_PARAMS;
+    return TS_ERR_PARAMS;
 
   // check to see if anything to read; wait for specified time
   if (socket_read_timeout(fd, MAX_TIME_WAIT, 0) <= 0) {
-    return INK_ERR_NET_TIMEOUT;
+    return TS_ERR_NET_TIMEOUT;
   }
-  // get the return value (INKError type)
+  // get the return value (TSError type)
   while (amount_read < SIZE_ERR_T) {
     ret = read(fd, (void *) &ret_val, SIZE_ERR_T - amount_read);
 
@@ -1119,19 +1119,19 @@ parse_reply_list(int fd, char **list)
       if (errno == EAGAIN)
         continue;
       else {
-        return INK_ERR_NET_READ;
+        return TS_ERR_NET_READ;
       }
     }
 
     if (ret == 0) {
-      return INK_ERR_NET_EOF;
+      return TS_ERR_NET_EOF;
     }
     // all is good here :)
     amount_read += ret;
   }
-  // if !INK_ERR_OKAY, stop reading rest of msg
-  err_t = (INKError) ret_val;
-  if (err_t != INK_ERR_OKAY) {
+  // if !TS_ERR_OKAY, stop reading rest of msg
+  err_t = (TSError) ret_val;
+  if (err_t != TS_ERR_OKAY) {
     return err_t;
   }
   // now get size of string event list
@@ -1143,12 +1143,12 @@ parse_reply_list(int fd, char **list)
       if (errno == EAGAIN)
         continue;
       else {
-        return INK_ERR_NET_READ;
+        return TS_ERR_NET_READ;
       }
     }
 
     if (ret == 0) {
-      return INK_ERR_NET_EOF;
+      return TS_ERR_NET_EOF;
     }
     // all is good here :)
     amount_read += ret;
@@ -1157,7 +1157,7 @@ parse_reply_list(int fd, char **list)
   // get the delimited event list string
   *list = (char *) xmalloc(sizeof(char) * (list_size + 1));
   if (!(*list)) {
-    return INK_ERR_SYS_CALL;
+    return TS_ERR_SYS_CALL;
   }
 
   amount_read = 0;
@@ -1169,13 +1169,13 @@ parse_reply_list(int fd, char **list)
         continue;
       else {
         xfree(*list);
-        return INK_ERR_NET_READ;
+        return TS_ERR_NET_READ;
       }
     }
 
     if (ret == 0) {
       xfree(*list);
-      return INK_ERR_NET_EOF;
+      return TS_ERR_NET_EOF;
     }
 
     amount_read += ret;
@@ -1196,23 +1196,23 @@ parse_reply_list(int fd, char **list)
  *        size - size of text
  *        text -
  * output: errors on error or fill up class with response &
- *         return INK_ERR_xx
- * notes: reply format = <INKError> <file_version> <file_size> <text>
+ *         return TS_ERR_xx
+ * notes: reply format = <TSError> <file_version> <file_size> <text>
  **********************************************************************/
-INKError
+TSError
 parse_file_read_reply(int fd, int *ver, int *size, char **text)
 {
   int ret, amount_read = 0;
   int32_t f_size;
   int16_t ret_val, f_ver;
-  INKError err_t;
+  TSError err_t;
 
   if (!ver || !size || !text)
-    return INK_ERR_PARAMS;
+    return TS_ERR_PARAMS;
 
   // check to see if anything to read; wait for specified time
   if (socket_read_timeout(fd, MAX_TIME_WAIT, 0) <= 0) { // time expires before ready to read
-    return INK_ERR_NET_TIMEOUT;
+    return TS_ERR_NET_TIMEOUT;
   }
   // get the error return value
   while (amount_read < SIZE_ERR_T) {
@@ -1222,19 +1222,19 @@ parse_file_read_reply(int fd, int *ver, int *size, char **text)
       if (errno == EAGAIN)
         continue;
       else {
-        return INK_ERR_NET_READ;
+        return TS_ERR_NET_READ;
       }
     }
 
     if (ret == 0) {
-      return INK_ERR_NET_EOF;
+      return TS_ERR_NET_EOF;
     }
 
     amount_read += ret;
   }
-  // if !INK_ERR_OKAY, stop reading rest of msg
-  err_t = (INKError) ret_val;
-  if (err_t != INK_ERR_OKAY) {
+  // if !TS_ERR_OKAY, stop reading rest of msg
+  err_t = (TSError) ret_val;
+  if (err_t != TS_ERR_OKAY) {
     return err_t;
   }
   // now get file version
@@ -1246,12 +1246,12 @@ parse_file_read_reply(int fd, int *ver, int *size, char **text)
       if (errno == EAGAIN)
         continue;
       else {
-        return INK_ERR_NET_READ;
+        return TS_ERR_NET_READ;
       }
     }
 
     if (ret == 0) {
-      return INK_ERR_NET_EOF;
+      return TS_ERR_NET_EOF;
     }
 
     amount_read += ret;
@@ -1267,12 +1267,12 @@ parse_file_read_reply(int fd, int *ver, int *size, char **text)
       if (errno == EAGAIN)
         continue;
       else {
-        return INK_ERR_NET_READ;
+        return TS_ERR_NET_READ;
       }
     }
 
     if (ret == 0) {
-      return INK_ERR_NET_EOF;
+      return TS_ERR_NET_EOF;
     }
     // all is good here :)
     amount_read += ret;
@@ -1286,7 +1286,7 @@ parse_file_read_reply(int fd, int *ver, int *size, char **text)
     // now we got the size, we can read everything into our msg * then parse it
     *text = (char *) xmalloc(sizeof(char) * (f_size + 1));
     if (!(*text)) {
-      return INK_ERR_SYS_CALL;
+      return TS_ERR_SYS_CALL;
     }
 
     amount_read = 0;
@@ -1298,13 +1298,13 @@ parse_file_read_reply(int fd, int *ver, int *size, char **text)
           continue;
         else {
           xfree(*text);
-          return INK_ERR_NET_READ;
+          return TS_ERR_NET_READ;
         }
       }
 
       if (ret == 0) {
         xfree(*text);
-        return INK_ERR_NET_EOF;
+        return TS_ERR_NET_EOF;
       }
 
       amount_read += ret;
@@ -1325,26 +1325,26 @@ parse_file_read_reply(int fd, int *ver, int *size, char **text)
  *        rec_value - the value of the record in string format
  * output: errors on error or fill up class with response &
  *         return SUCC
- * notes: reply format = <INKError> <val_size> <rec_type> <record_value>
+ * notes: reply format = <TSError> <val_size> <rec_type> <record_value>
  * It's the responsibility of the calling function to conver the rec_value
  * based on the rec_type!!
  **********************************************************************/
-INKError
-parse_record_get_reply(int fd, INKRecordT * rec_type, void **rec_val)
+TSError
+parse_record_get_reply(int fd, TSRecordT * rec_type, void **rec_val)
 {
   int ret, amount_read = 0;
   int16_t ret_val, rec_t;
   int32_t rec_size;
-  INKError err_t;
+  TSError err_t;
 
   if (!rec_type || !rec_val)
-    return INK_ERR_PARAMS;
+    return TS_ERR_PARAMS;
 
   // check to see if anything to read; wait for specified time
   if (socket_read_timeout(fd, MAX_TIME_WAIT, 0) <= 0) { //time expired before ready to read
-    return INK_ERR_NET_TIMEOUT;
+    return TS_ERR_NET_TIMEOUT;
   }
-  // get the return value (INKError type)
+  // get the return value (TSError type)
   while (amount_read < SIZE_ERR_T) {
     ret = read(fd, (void *) &ret_val, SIZE_ERR_T - amount_read);
 
@@ -1352,19 +1352,19 @@ parse_record_get_reply(int fd, INKRecordT * rec_type, void **rec_val)
       if (errno == EAGAIN)
         continue;
       else {
-        return INK_ERR_NET_READ;
+        return TS_ERR_NET_READ;
       }
     }
 
     if (ret == 0) {
-      return INK_ERR_NET_EOF;
+      return TS_ERR_NET_EOF;
     }
     // all is good here :)
     amount_read += ret;
   }
-  // if !INK_ERR_OKAY, stop reading rest of msg
-  err_t = (INKError) ret_val;
-  if (err_t != INK_ERR_OKAY) {
+  // if !TS_ERR_OKAY, stop reading rest of msg
+  err_t = (TSError) ret_val;
+  if (err_t != TS_ERR_OKAY) {
     return err_t;
   }
   // now get size of record_value
@@ -1376,12 +1376,12 @@ parse_record_get_reply(int fd, INKRecordT * rec_type, void **rec_val)
       if (errno == EAGAIN)
         continue;
       else {
-        return INK_ERR_NET_READ;
+        return TS_ERR_NET_READ;
       }
     }
 
     if (ret == 0) {
-      return INK_ERR_NET_EOF;
+      return TS_ERR_NET_EOF;
     }
     // all is good here :)
     amount_read += ret;
@@ -1396,27 +1396,27 @@ parse_record_get_reply(int fd, INKRecordT * rec_type, void **rec_val)
       if (errno == EAGAIN) {
         continue;
       } else {
-        return INK_ERR_NET_READ;
+        return TS_ERR_NET_READ;
       }
     }
 
     if (ret == 0) {
-      return INK_ERR_NET_EOF;
+      return TS_ERR_NET_EOF;
     }
     // all is good here :)
     amount_read += ret;
   }
-  *rec_type = (INKRecordT) rec_t;
+  *rec_type = (TSRecordT) rec_t;
 
   // get record value
   // allocate correct amount of memory for record value
-  if (*rec_type == INK_REC_STRING)
+  if (*rec_type == TS_REC_STRING)
     *rec_val = xmalloc(sizeof(char) * (rec_size + 1));
   else
     *rec_val = xmalloc(sizeof(char) * (rec_size));
 
   if (!(*rec_val)) {
-    return INK_ERR_SYS_CALL;
+    return TS_ERR_SYS_CALL;
   }
 
   amount_read = 0;
@@ -1428,19 +1428,19 @@ parse_record_get_reply(int fd, INKRecordT * rec_type, void **rec_val)
         continue;
       else {
         xfree(*rec_val);
-        return INK_ERR_NET_READ;
+        return TS_ERR_NET_READ;
       }
     }
 
     if (ret == 0) {
       xfree(*rec_val);
-      return INK_ERR_NET_EOF;
+      return TS_ERR_NET_EOF;
     }
 
     amount_read += ret;
   }
   // add end of string to end of the record value
-  if (*rec_type == INK_REC_STRING)
+  if (*rec_type == TS_REC_STRING)
     ((char *) (*rec_val))[rec_size] = '\0';
 
   return err_t;
@@ -1452,26 +1452,26 @@ parse_record_get_reply(int fd, INKRecordT * rec_type, void **rec_val)
  * purpose: parses a record_set reply from traffic manager.
  * input: fd
  *        action_need - will contain the type of action needed from the set
- * output: INK_ERR_xx
- * notes: reply format = <INKError> <val_size> <rec_type> <record_value>
+ * output: TS_ERR_xx
+ * notes: reply format = <TSError> <val_size> <rec_type> <record_value>
  * It's the responsibility of the calling function to conver the rec_value
  * based on the rec_type!!
  **********************************************************************/
-INKError
-parse_record_set_reply(int fd, INKActionNeedT * action_need)
+TSError
+parse_record_set_reply(int fd, TSActionNeedT * action_need)
 {
   int ret, amount_read = 0;
   int16_t ret_val, action_t;
-  INKError err_t;
+  TSError err_t;
 
   if (!action_need)
-    return INK_ERR_PARAMS;
+    return TS_ERR_PARAMS;
 
   // check to see if anything to read; wait for specified time
   if (socket_read_timeout(fd, MAX_TIME_WAIT, 0) <= 0) {
-    return INK_ERR_NET_TIMEOUT;
+    return TS_ERR_NET_TIMEOUT;
   }
-  // get the return value (INKError type)
+  // get the return value (TSError type)
   while (amount_read < SIZE_ERR_T) {
     ret = read(fd, (void *) &ret_val, SIZE_ERR_T - amount_read);
 
@@ -1479,19 +1479,19 @@ parse_record_set_reply(int fd, INKActionNeedT * action_need)
       if (errno == EAGAIN)
         continue;
       else {
-        return INK_ERR_NET_READ;
+        return TS_ERR_NET_READ;
       }
     }
 
     if (ret == 0) {
-      return INK_ERR_NET_EOF;
+      return TS_ERR_NET_EOF;
     }
     // all is good here :)
     amount_read += ret;
   }
-  // if !INK_ERR_OKAY, stop reading rest of msg
-  err_t = (INKError) ret_val;
-  if (err_t != INK_ERR_OKAY) {
+  // if !TS_ERR_OKAY, stop reading rest of msg
+  err_t = (TSError) ret_val;
+  if (err_t != TS_ERR_OKAY) {
     return err_t;
   }
   // now get the action needed
@@ -1503,17 +1503,17 @@ parse_record_set_reply(int fd, INKActionNeedT * action_need)
       if (errno == EAGAIN)
         continue;
       else {
-        return INK_ERR_NET_READ;
+        return TS_ERR_NET_READ;
       }
     }
 
     if (ret == 0) {
-      return INK_ERR_NET_EOF;
+      return TS_ERR_NET_EOF;
     }
     // all is good here :)
     amount_read += ret;
   }
-  *action_need = (INKActionNeedT) action_t;
+  *action_need = (TSActionNeedT) action_t;
 
   return err_t;
 }
@@ -1525,22 +1525,22 @@ parse_record_set_reply(int fd, INKActionNeedT * action_need)
  * purpose: parses a TM reply to a PROXY_STATE_GET request
  * input: fd
  *        state - will contain the state of the proxy
- * output: INK_ERR_xx
- * notes: function is DIFFERENT becuase it has NO INKError at head of msg
- * format: <INKProxyStateT>
+ * output: TS_ERR_xx
+ * notes: function is DIFFERENT becuase it has NO TSError at head of msg
+ * format: <TSProxyStateT>
  **********************************************************************/
-INKError
-parse_proxy_state_get_reply(int fd, INKProxyStateT * state)
+TSError
+parse_proxy_state_get_reply(int fd, TSProxyStateT * state)
 {
   int ret, amount_read = 0;
   int16_t state_t;
 
   if (!state)
-    return INK_ERR_PARAMS;
+    return TS_ERR_PARAMS;
 
   // check to see if anything to read; wait for specified time
   if (socket_read_timeout(fd, MAX_TIME_WAIT, 0) <= 0) { // time expires before ready to read
-    return INK_ERR_NET_TIMEOUT;
+    return TS_ERR_NET_TIMEOUT;
   }
   // now get proxy state
   amount_read = 0;
@@ -1551,19 +1551,19 @@ parse_proxy_state_get_reply(int fd, INKProxyStateT * state)
       if (errno == EAGAIN)
         continue;
       else {
-        return INK_ERR_NET_READ;
+        return TS_ERR_NET_READ;
       }
     }
 
     if (ret == 0) {
-      return INK_ERR_NET_EOF;
+      return TS_ERR_NET_EOF;
     }
     // all is good here :)
     amount_read += ret;
   }
-  *state = (INKProxyStateT) state_t;
+  *state = (TSProxyStateT) state_t;
 
-  return INK_ERR_OKAY;
+  return TS_ERR_OKAY;
 }
 
 /*------------- events ---------------------------------------------*/
@@ -1574,25 +1574,25 @@ parse_proxy_state_get_reply(int fd, INKProxyStateT * state)
  * purpose: parses a TM reply to a request to get status of an event
  * input: fd - socket to read
  *        is_active - set to true if event is active; false otherwise
- * output: INK_ERR_xx
+ * output: TS_ERR_xx
  * notes:
- * format: reply format = <INKError> <bool>
+ * format: reply format = <TSError> <bool>
  **********************************************************************/
-INKError
+TSError
 parse_event_active_reply(int fd, bool * is_active)
 {
   int ret, amount_read = 0;
   int16_t ret_val, active;
-  INKError err_t;
+  TSError err_t;
 
   if (!is_active)
-    return INK_ERR_PARAMS;
+    return TS_ERR_PARAMS;
 
   // check to see if anything to read; wait for specified time
   if (socket_read_timeout(fd, MAX_TIME_WAIT, 0) <= 0) {
-    return INK_ERR_NET_TIMEOUT;
+    return TS_ERR_NET_TIMEOUT;
   }
-  // get the return value (INKError type)
+  // get the return value (TSError type)
   while (amount_read < SIZE_ERR_T) {
     ret = read(fd, (void *) &ret_val, SIZE_ERR_T - amount_read);
 
@@ -1600,19 +1600,19 @@ parse_event_active_reply(int fd, bool * is_active)
       if (errno == EAGAIN)
         continue;
       else {
-        return INK_ERR_NET_READ;
+        return TS_ERR_NET_READ;
       }
     }
 
     if (ret == 0) {
-      return INK_ERR_NET_EOF;
+      return TS_ERR_NET_EOF;
     }
     // all is good here :)
     amount_read += ret;
   }
-  // if !INK_ERR_OKAY, stop reading rest of msg
-  err_t = (INKError) ret_val;
-  if (err_t != INK_ERR_OKAY) {
+  // if !TS_ERR_OKAY, stop reading rest of msg
+  err_t = (TSError) ret_val;
+  if (err_t != TS_ERR_OKAY) {
     return err_t;
   }
   // now get the boolean
@@ -1624,12 +1624,12 @@ parse_event_active_reply(int fd, bool * is_active)
       if (errno == EAGAIN)
         continue;
       else {
-        return INK_ERR_NET_READ;
+        return TS_ERR_NET_READ;
       }
     }
 
     if (ret == 0) {
-      return INK_ERR_NET_EOF;
+      return TS_ERR_NET_EOF;
     }
     // all is good here :)
     amount_read += ret;
@@ -1643,15 +1643,15 @@ parse_event_active_reply(int fd, bool * is_active)
  * parse_event_notification
  *
  * purpose: parses the event notification message from TM when an event
- *          is signalled; stores the event info in the INKEvent
+ *          is signalled; stores the event info in the TSEvent
  * input: fd - socket to read
  *        event - where the event info from msg is stored
- * output:INK_ERR_OKAY, INK_ERR_NET_READ, INK_ERR_NET_EOF, INK_ERR_PARAMS
+ * output:TS_ERR_OKAY, TS_ERR_NET_READ, TS_ERR_NET_EOF, TS_ERR_PARAMS
  * notes:
  * format: <OpType> <event_name_len> <event_name> <desc_len> <desc>
  **********************************************************************/
-INKError
-parse_event_notification(int fd, INKEvent * event)
+TSError
+parse_event_notification(int fd, TSEvent * event)
 {
   int amount_read, ret;
   OpType msg_type;
@@ -1660,7 +1660,7 @@ parse_event_notification(int fd, INKEvent * event)
   char *event_name = NUL, *desc = NULL;
 
   if (!event)
-    return INK_ERR_PARAMS;
+    return TS_ERR_PARAMS;
 
   // read the operation type; should be EVENT_NOTIFY
   amount_read = 0;
@@ -1691,7 +1691,7 @@ parse_event_notification(int fd, INKEvent * event)
   // got the message type; the msg_type should be EVENT_NOTIFY
   msg_type = (OpType) type_op;
   if (msg_type != EVENT_NOTIFY)
-    return INK_ERR_FAIL;
+    return TS_ERR_FAIL;
   //fprintf(stderr, "[event_poll_thread_main] received EVENT_NOTIFY from TM\n");
 
   // read in event name length
@@ -1784,19 +1784,19 @@ parse_event_notification(int fd, INKEvent * event)
   event->id = (int) get_event_id(event_name);
   event->description = desc;
 
-  return INK_ERR_OKAY;
+  return TS_ERR_OKAY;
 
 ERROR_READ:
   if (event_name)
     xfree(event_name);
   if (desc)
     xfree(desc);
-  return INK_ERR_NET_READ;
+  return TS_ERR_NET_READ;
 
 ERROR_EOF:
   if (event_name)
     xfree(event_name);
   if (desc)
     xfree(desc);
-  return INK_ERR_NET_EOF;
+  return TS_ERR_NET_EOF;
 }

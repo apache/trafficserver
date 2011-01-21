@@ -215,7 +215,7 @@ sig_child(int signum)
     if (pid <= 0) {
       break;
     }
-    // INKqa03086 - We can not log the child status signal from
+    // TSqa03086 - We can not log the child status signal from
     //   the signal handler since syslog can deadlock.  Record
     //   the pid and the status in a global for logging
     //   next time through the event loop.  We will occasionally
@@ -765,7 +765,7 @@ spawn_manager()
   }
 
   // Move any traffic.out that we can not write to, out
-  //  of the way (INKqa2232)
+  //  of the way (TSqa2232)
   // coverity[fs_check_call]
   if (access(log_file, W_OK) < 0 && errno == EACCES) {
     char old_log_file[PATH_MAX];
@@ -1147,9 +1147,9 @@ read_manager_int(const char *variable, int *value)
 static int
 read_mgmt_cli_int(const char *variable, int *value)
 {
-  INKInt val;
+  TSInt val;
 
-  if (INKRecordGetInt(variable, &val) != INK_ERR_OKAY) {
+  if (TSRecordGetInt(variable, &val) != TS_ERR_OKAY) {
     cop_log(COP_WARNING, "(cli test) could not communicate with mgmt cli\n");
     return -1;
   }
@@ -1181,10 +1181,10 @@ test_rs_port()
 static int
 test_mgmt_cli_port()
 {
-  INKString val;
+  TSString val;
   int ret = 0;
 
-  if (INKRecordGetString("proxy.config.manager_binary", &val) !=  INK_ERR_OKAY) {
+  if (TSRecordGetString("proxy.config.manager_binary", &val) !=  TS_ERR_OKAY) {
     cop_log(COP_WARNING, "(cli test) unable to retrieve manager_binary\n");
     ret = -1;
   } else {
@@ -1195,7 +1195,7 @@ test_mgmt_cli_port()
   }
 
   if (val)
-    INKfree(val);
+    TSfree(val);
   return ret;
 }
 
@@ -1375,7 +1375,7 @@ heartbeat_server()
       server_failures = 0;
       cop_log(COP_WARNING, "killing server\n");
 
-      // INKqa02622: Change the ALRM signal handler while
+      // TSqa02622: Change the ALRM signal handler while
       //   trying to kill the process since if a core
       //   is being written, it could take a long time
       //   Set a new alarm so that we can print warnings
@@ -1736,13 +1736,13 @@ check(void *arg)
 
     // We do this after the first round of checks, since the first "check" will spawn traffic_manager
     if (!mgmt_init) {
-      INKInit(Layout::get()->runtimedir, static_cast<TSInitOptionT>(TS_MGMT_OPT_NO_EVENTS | TS_MGMT_OPT_NO_SOCK_TESTS));
+      TSInit(Layout::get()->runtimedir, static_cast<TSInitOptionT>(TS_MGMT_OPT_NO_EVENTS | TS_MGMT_OPT_NO_SOCK_TESTS));
       mgmt_init = true;
     }
   }
 
   // Done with the mgmt API.
-  INKTerminate();
+  TSTerminate();
 
 #ifdef TRACE_LOG_COP
   cop_log(COP_DEBUG, "Leaving check()\n");

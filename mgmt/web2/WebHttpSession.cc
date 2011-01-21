@@ -104,7 +104,7 @@ deleter_main(void *unused)
 void
 InkMgmtApiCtxDeleter(void *data)
 {
-  INKCfgContextDestroy((INKCfgContext) data);
+  TSCfgContextDestroy((TSCfgContext) data);
 }
 
 //-------------------------------------------------------------------------

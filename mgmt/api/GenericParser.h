@@ -157,7 +157,7 @@ class Rule
 public:
   TokenList * tokenList;
 
-  inline INKFileNameT getFiletype()
+  inline TSFileNameT getFiletype()
   {
     return m_filetype;
   };
@@ -180,12 +180,12 @@ public:
   Rule();
   ~Rule();
   void Print();
-  TokenList *parse(const char *buf, INKFileNameT filetype);
+  TokenList *parse(const char *buf, TSFileNameT filetype);
 
   LINK(Rule, link);
 private:
 
-  INKFileNameT m_filetype;
+  TSFileNameT m_filetype;
   char *m_filename;
   char *m_ruleStr;
   char *m_comment;
@@ -292,11 +292,11 @@ public:
     m_lineList.insert(newNode, current);
   }
   void Print();                 /* debugging use only */
-  void parse(char *buf, INKFileNameT filetype);
+  void parse(char *buf, TSFileNameT filetype);
   void parse(char *buf, const char *filename);
 
 private:
-  INKFileNameT m_filetype;
+  TSFileNameT m_filetype;
   char *m_filename;
   Queue<Rule> m_lineList;
 };

@@ -43,14 +43,14 @@
 #include "TextBuffer.h"
 
 // forward declarations
-void init_pdss_format(INKPdSsFormat * info);
+void init_pdss_format(TSPdSsFormat * info);
 
 
 /***************************************************************************
  * API Memory Management
  ***************************************************************************/
 void *
-_INKmalloc(unsigned int size, const char *path)
+_TSmalloc(unsigned int size, const char *path)
 {
 #ifdef PURIFY
   return xmalloc(size);
@@ -60,7 +60,7 @@ _INKmalloc(unsigned int size, const char *path)
 }
 
 void *
-_INKrealloc(void *ptr, unsigned int size, const char *path)
+_TSrealloc(void *ptr, unsigned int size, const char *path)
 {
 #ifdef PURIFY
   return xrealloc(ptr, size);
@@ -70,7 +70,7 @@ _INKrealloc(void *ptr, unsigned int size, const char *path)
 }
 
 char *
-_INKstrdup(const char *str, int length, const char *path)
+_TSstrdup(const char *str, int length, const char *path)
 {
 #ifdef PURIFY
   return xstrndup(str, length);
@@ -80,7 +80,7 @@ _INKstrdup(const char *str, int length, const char *path)
 }
 
 void
-_INKfree(void *ptr)
+_TSfree(void *ptr)
 {
 #ifdef PURIFY
   xfree(ptr);
@@ -94,16 +94,16 @@ _INKfree(void *ptr)
  * API Helper Functions for Data Carrier Structures
  ***************************************************************************/
 
-/*--- INKList operations -------------------------------------------------*/
-inkapi INKList
-INKListCreate(void)
+/*--- TSList operations -------------------------------------------------*/
+tsapi TSList
+TSListCreate(void)
 {
   return (void *) create_queue();
 }
 
 /* NOTE: The List must be EMPTY */
-inkapi void
-INKListDestroy(INKList l)
+tsapi void
+TSListDestroy(TSList l)
 {
   if (!l)
     return;
@@ -112,25 +112,25 @@ INKListDestroy(INKList l)
   return;
 }
 
-inkapi INKError
-INKListEnqueue(INKList l, void *data)
+tsapi TSError
+TSListEnqueue(TSList l, void *data)
 {
   int ret;
 
   ink_assert(l && data);
   if (!l || !data)
-    return INK_ERR_PARAMS;
+    return TS_ERR_PARAMS;
 
   ret = enqueue((LLQ *) l, data);       /* returns TRUE=1 or FALSE=0 */
   if (ret == 0) {
-    return INK_ERR_FAIL;
+    return TS_ERR_FAIL;
   } else {
-    return INK_ERR_OKAY;
+    return TS_ERR_OKAY;
   }
 }
 
-inkapi void *
-INKListDequeue(INKList l)
+tsapi void *
+TSListDequeue(TSList l)
 {
   ink_assert(l);
   if (!l || queue_is_empty((LLQ *) l))
@@ -139,8 +139,8 @@ INKListDequeue(INKList l)
   return dequeue((LLQ *) l);
 }
 
-inkapi bool
-INKListIsEmpty(INKList l)
+tsapi bool
+TSListIsEmpty(TSList l)
 {
   int ret;
 
@@ -156,8 +156,8 @@ INKListIsEmpty(INKList l)
   }
 }
 
-inkapi int
-INKListLen(INKList l)
+tsapi int
+TSListLen(TSList l)
 {
   ink_assert(l);
   if (!l)
@@ -166,8 +166,8 @@ INKListLen(INKList l)
   return queue_len((LLQ *) l);
 }
 
-inkapi bool
-INKListIsValid(INKList l)
+tsapi bool
+TSListIsValid(TSList l)
 {
   int i, len;
   void *ele;
@@ -185,32 +185,32 @@ INKListIsValid(INKList l)
   return true;
 }
 
-/*--- INKIpAddrList operations -------------------------------------------------*/
-inkapi INKIpAddrList
-INKIpAddrListCreate(void)
+/*--- TSIpAddrList operations -------------------------------------------------*/
+tsapi TSIpAddrList
+TSIpAddrListCreate(void)
 {
   return (void *) create_queue();       /* this queue will be a list of IpAddrEle* */
 }
 
-inkapi void
-INKIpAddrListDestroy(INKIpAddrList ip_addrl)
+tsapi void
+TSIpAddrListDestroy(TSIpAddrList ip_addrl)
 {
-  INKIpAddrEle *ipaddr_ele;
+  TSIpAddrEle *ipaddr_ele;
 
   if (!ip_addrl) {
     return;
   }
 
   /* dequeue each element and free it;
-     currently, an element can only be an INKIpAddrEle
-     or it can be an INKIpAddr ?? */
+     currently, an element can only be an TSIpAddrEle
+     or it can be an TSIpAddr ?? */
   while (!queue_is_empty((LLQ *) ip_addrl)) {
-    ipaddr_ele = (INKIpAddrEle *) dequeue((LLQ *) ip_addrl);
+    ipaddr_ele = (TSIpAddrEle *) dequeue((LLQ *) ip_addrl);
 
     if (!ipaddr_ele)
       continue;
 
-    INKIpAddrEleDestroy(ipaddr_ele);
+    TSIpAddrEleDestroy(ipaddr_ele);
   }
 
   /* we have removed everything on the list so free list */
@@ -218,38 +218,38 @@ INKIpAddrListDestroy(INKIpAddrList ip_addrl)
   return;
 }
 
-inkapi INKError
-INKIpAddrListEnqueue(INKIpAddrList ip_addrl, INKIpAddrEle * ip_addr)
+tsapi TSError
+TSIpAddrListEnqueue(TSIpAddrList ip_addrl, TSIpAddrEle * ip_addr)
 {
   int ret;
 
   ink_assert(ip_addrl && ip_addr);
   if (!ip_addrl || !ip_addr)
-    return INK_ERR_PARAMS;
+    return TS_ERR_PARAMS;
 
   ret = enqueue((LLQ *) ip_addrl, ip_addr);
   if (ret == 0) {
-    return INK_ERR_FAIL;
+    return TS_ERR_FAIL;
   } else {
-    return INK_ERR_OKAY;
+    return TS_ERR_OKAY;
   }
 }
 
 
-/* The the INKIpAddrEle returned is actually removed from the end of list */
-inkapi INKIpAddrEle *
-INKIpAddrListDequeue(INKIpAddrList ip_addrl)
+/* The the TSIpAddrEle returned is actually removed from the end of list */
+tsapi TSIpAddrEle *
+TSIpAddrListDequeue(TSIpAddrList ip_addrl)
 {
   ink_assert(ip_addrl);
   if (!ip_addrl || queue_is_empty((LLQ *) ip_addrl))
     return NULL;
 
-  return (INKIpAddrEle *) dequeue((LLQ *) ip_addrl);
+  return (TSIpAddrEle *) dequeue((LLQ *) ip_addrl);
 }
 
 
-inkapi int
-INKIpAddrListLen(INKIpAddrList ip_addrl)
+tsapi int
+TSIpAddrListLen(TSIpAddrList ip_addrl)
 {
   ink_assert(ip_addrl);
   if (!ip_addrl)
@@ -258,8 +258,8 @@ INKIpAddrListLen(INKIpAddrList ip_addrl)
   return queue_len((LLQ *) ip_addrl);
 }
 
-inkapi bool
-INKIpAddrListIsEmpty(INKIpAddrList ip_addrl)
+tsapi bool
+TSIpAddrListIsEmpty(TSIpAddrList ip_addrl)
 {
   ink_assert(ip_addrl);
   if (!ip_addrl)
@@ -271,18 +271,18 @@ INKIpAddrListIsEmpty(INKIpAddrList ip_addrl)
 // returns false if any of the IpAddrEle is not an valid IP address by making
 // use of ccu_checkIpAddrEle; if return false, the ip's may be reordered
 // from the original list
-inkapi bool
-INKIpAddrListIsValid(INKIpAddrList ip_addrl)
+tsapi bool
+TSIpAddrListIsValid(TSIpAddrList ip_addrl)
 {
   int i, len;
-  INKIpAddrEle *ele;
+  TSIpAddrEle *ele;
 
   if (!ip_addrl)
     return false;
 
   len = queue_len((LLQ *) ip_addrl);
   for (i = 0; i < len; i++) {
-    ele = (INKIpAddrEle *) dequeue((LLQ *) ip_addrl);
+    ele = (TSIpAddrEle *) dequeue((LLQ *) ip_addrl);
     if (!ccu_checkIpAddrEle(ele)) {
       enqueue((LLQ *) ip_addrl, ele);
       return false;
@@ -292,29 +292,29 @@ INKIpAddrListIsValid(INKIpAddrList ip_addrl)
   return true;
 }
 
-/*--- INKPortList operations ----------------------------------------------*/
-inkapi INKPortList
-INKPortListCreate()
+/*--- TSPortList operations ----------------------------------------------*/
+tsapi TSPortList
+TSPortListCreate()
 {
-  return (void *) create_queue();       /* this queue will be a list of INKPortEle* */
+  return (void *) create_queue();       /* this queue will be a list of TSPortEle* */
 }
 
-inkapi void
-INKPortListDestroy(INKPortList portl)
+tsapi void
+TSPortListDestroy(TSPortList portl)
 {
-  INKPortEle *port_ele;
+  TSPortEle *port_ele;
 
   if (!portl) {
     return;
   }
   // dequeue each element and free it
   while (!queue_is_empty((LLQ *) portl)) {
-    port_ele = (INKPortEle *) dequeue((LLQ *) portl);
+    port_ele = (TSPortEle *) dequeue((LLQ *) portl);
 
     if (!port_ele)
       continue;
 
-    INKPortEleDestroy(port_ele);
+    TSPortEleDestroy(port_ele);
   }
 
   /* we have removed everything on the list so free list */
@@ -322,35 +322,35 @@ INKPortListDestroy(INKPortList portl)
   return;
 }
 
-inkapi INKError
-INKPortListEnqueue(INKPortList portl, INKPortEle * port)
+tsapi TSError
+TSPortListEnqueue(TSPortList portl, TSPortEle * port)
 {
   int ret;
 
   ink_assert(portl && port);
   if (!portl || !port)
-    return INK_ERR_PARAMS;
+    return TS_ERR_PARAMS;
 
   ret = enqueue((LLQ *) portl, port);   /* returns TRUE=1 or FALSE=0 */
   if (ret == 0) {
-    return INK_ERR_FAIL;
+    return TS_ERR_FAIL;
   } else {
-    return INK_ERR_OKAY;
+    return TS_ERR_OKAY;
   }
 }
 
-inkapi INKPortEle *
-INKPortListDequeue(INKPortList portl)
+tsapi TSPortEle *
+TSPortListDequeue(TSPortList portl)
 {
   ink_assert(portl);
   if (!portl || queue_is_empty((LLQ *) portl))
     return NULL;
 
-  return (INKPortEle *) dequeue((LLQ *) portl);
+  return (TSPortEle *) dequeue((LLQ *) portl);
 }
 
-inkapi int
-INKPortListLen(INKPortList portl)
+tsapi int
+TSPortListLen(TSPortList portl)
 {
   ink_assert(portl);
   if (!portl)
@@ -359,8 +359,8 @@ INKPortListLen(INKPortList portl)
   return queue_len((LLQ *) portl);
 }
 
-inkapi bool
-INKPortListIsEmpty(INKPortList portl)
+tsapi bool
+TSPortListIsEmpty(TSPortList portl)
 {
   ink_assert(portl);
   if (!portl)
@@ -372,18 +372,18 @@ INKPortListIsEmpty(INKPortList portl)
 // returns false if any of the PortEle's has a port_a <= 0;
 // if returns false, then will return the entire port list
 // intact, although the ports may not be ordered in the same way
-inkapi bool
-INKPortListIsValid(INKPortList portl)
+tsapi bool
+TSPortListIsValid(TSPortList portl)
 {
   int i, len;
-  INKPortEle *ele;
+  TSPortEle *ele;
 
   if (!portl)
     return false;
 
   len = queue_len((LLQ *) portl);
   for (i = 0; i < len; i++) {
-    ele = (INKPortEle *) dequeue((LLQ *) portl);
+    ele = (TSPortEle *) dequeue((LLQ *) portl);
     if (!ccu_checkPortEle(ele)) {
       enqueue((LLQ *) portl, ele);
       return false;
@@ -394,17 +394,17 @@ INKPortListIsValid(INKPortList portl)
 }
 
 
-/*--- INKDomainList operations -----------------------------------------*/
-inkapi INKDomainList
-INKDomainListCreate()
+/*--- TSDomainList operations -----------------------------------------*/
+tsapi TSDomainList
+TSDomainListCreate()
 {
   return (void *) create_queue();       /* this queue will be a list of char* */
 }
 
-inkapi void
-INKDomainListDestroy(INKDomainList domainl)
+tsapi void
+TSDomainListDestroy(TSDomainList domainl)
 {
-  INKDomain *domain;
+  TSDomain *domain;
 
   if (!domainl) {
     return;
@@ -412,46 +412,46 @@ INKDomainListDestroy(INKDomainList domainl)
 
   /* dequeue each element and free it */
   while (!queue_is_empty((LLQ *) domainl)) {
-    domain = (INKDomain *) dequeue((LLQ *) domainl);
+    domain = (TSDomain *) dequeue((LLQ *) domainl);
 
     if (!domain)
       continue;
 
-    INKDomainDestroy(domain);
+    TSDomainDestroy(domain);
   }
 
   delete_queue((LLQ *) domainl);
 }
 
-inkapi INKError
-INKDomainListEnqueue(INKDomainList domainl, INKDomain * domain)
+tsapi TSError
+TSDomainListEnqueue(TSDomainList domainl, TSDomain * domain)
 {
   int ret;
 
   ink_assert(domainl && domain);
   if (!domainl || !domain)
-    return INK_ERR_PARAMS;
+    return TS_ERR_PARAMS;
 
   ret = enqueue((LLQ *) domainl, domain);       /* returns TRUE=1 or FALSE=0 */
   if (ret == 0) {
-    return INK_ERR_FAIL;
+    return TS_ERR_FAIL;
   } else {
-    return INK_ERR_OKAY;
+    return TS_ERR_OKAY;
   }
 }
 
-inkapi INKDomain *
-INKDomainListDequeue(INKDomainList domainl)
+tsapi TSDomain *
+TSDomainListDequeue(TSDomainList domainl)
 {
   ink_assert(domainl);
   if (!domainl || queue_is_empty((LLQ *) domainl))
     return NULL;
 
-  return (INKDomain *) dequeue((LLQ *) domainl);
+  return (TSDomain *) dequeue((LLQ *) domainl);
 }
 
-inkapi bool
-INKDomainListIsEmpty(INKDomainList domainl)
+tsapi bool
+TSDomainListIsEmpty(TSDomainList domainl)
 {
   ink_assert(domainl);
   if (!domainl)
@@ -460,8 +460,8 @@ INKDomainListIsEmpty(INKDomainList domainl)
   return queue_is_empty((LLQ *) domainl);
 }
 
-inkapi int
-INKDomainListLen(INKDomainList domainl)
+tsapi int
+TSDomainListLen(TSDomainList domainl)
 {
   ink_assert(domainl);
   if (!domainl)
@@ -471,18 +471,18 @@ INKDomainListLen(INKDomainList domainl)
 }
 
 // returns false if encounter a NULL hostname and ip
-inkapi bool
-INKDomainListIsValid(INKDomainList domainl)
+tsapi bool
+TSDomainListIsValid(TSDomainList domainl)
 {
   int i, len;
-  INKDomain *dom;
+  TSDomain *dom;
 
   if (!domainl)
     return false;
 
   len = queue_len((LLQ *) domainl);
   for (i = 0; i < len; i++) {
-    dom = (INKDomain *) dequeue((LLQ *) domainl);
+    dom = (TSDomain *) dequeue((LLQ *) domainl);
     if (!dom) {
       return false;
     }
@@ -495,16 +495,16 @@ INKDomainListIsValid(INKDomainList domainl)
 
 }
 
-/*--- INKStringList operations --------------------------------------*/
-inkapi INKStringList
-INKStringListCreate()
+/*--- TSStringList operations --------------------------------------*/
+tsapi TSStringList
+TSStringListCreate()
 {
   return (void *) create_queue();       /* this queue will be a list of char* */
 }
 
 /* usually, must be an empty list before destroying*/
-inkapi void
-INKStringListDestroy(INKStringList strl)
+tsapi void
+TSStringListDestroy(TSStringList strl)
 {
   char *str;
 
@@ -525,25 +525,25 @@ INKStringListDestroy(INKStringList strl)
   delete_queue((LLQ *) strl);
 }
 
-inkapi INKError
-INKStringListEnqueue(INKStringList strl, char *str)
+tsapi TSError
+TSStringListEnqueue(TSStringList strl, char *str)
 {
   int ret;
 
   ink_assert(strl && str);
   if (!strl || !str)
-    return INK_ERR_PARAMS;
+    return TS_ERR_PARAMS;
 
   ret = enqueue((LLQ *) strl, str);     /* returns TRUE=1 or FALSE=0 */
   if (ret == 0) {
-    return INK_ERR_FAIL;
+    return TS_ERR_FAIL;
   } else {
-    return INK_ERR_OKAY;
+    return TS_ERR_OKAY;
   }
 }
 
-inkapi char *
-INKStringListDequeue(INKStringList strl)
+tsapi char *
+TSStringListDequeue(TSStringList strl)
 {
   ink_assert(strl);
   if (!strl || queue_is_empty((LLQ *) strl))
@@ -552,8 +552,8 @@ INKStringListDequeue(INKStringList strl)
   return (char *) dequeue((LLQ *) strl);
 }
 
-inkapi bool
-INKStringListIsEmpty(INKStringList strl)
+tsapi bool
+TSStringListIsEmpty(TSStringList strl)
 {
   ink_assert(strl);
   if (!strl)
@@ -562,8 +562,8 @@ INKStringListIsEmpty(INKStringList strl)
   return queue_is_empty((LLQ *) strl);
 }
 
-inkapi int
-INKStringListLen(INKStringList strl)
+tsapi int
+TSStringListLen(TSStringList strl)
 {
   ink_assert(strl);
   if (!strl)
@@ -573,8 +573,8 @@ INKStringListLen(INKStringList strl)
 }
 
 // returns false if any element is NULL string
-inkapi bool
-INKStringListIsValid(INKStringList strl)
+tsapi bool
+TSStringListIsValid(TSStringList strl)
 {
   int i, len;
   char *str;
@@ -592,16 +592,16 @@ INKStringListIsValid(INKStringList strl)
   return true;
 }
 
-/*--- INKIntList operations --------------------------------------*/
-inkapi INKIntList
-INKIntListCreate()
+/*--- TSIntList operations --------------------------------------*/
+tsapi TSIntList
+TSIntListCreate()
 {
   return (void *) create_queue();       /* this queue will be a list of int* */
 }
 
 /* usually, must be an empty list before destroying*/
-inkapi void
-INKIntListDestroy(INKIntList intl)
+tsapi void
+TSIntListDestroy(TSIntList intl)
 {
   int *iPtr;
 
@@ -622,25 +622,25 @@ INKIntListDestroy(INKIntList intl)
   return;
 }
 
-inkapi INKError
-INKIntListEnqueue(INKIntList intl, int *elem)
+tsapi TSError
+TSIntListEnqueue(TSIntList intl, int *elem)
 {
   int ret;
 
   ink_assert(intl && elem);
   if (!intl || !elem)
-    return INK_ERR_PARAMS;
+    return TS_ERR_PARAMS;
 
   ret = enqueue((LLQ *) intl, elem);    /* returns TRUE=1 or FALSE=0 */
   if (ret == 0) {
-    return INK_ERR_FAIL;
+    return TS_ERR_FAIL;
   } else {
-    return INK_ERR_OKAY;
+    return TS_ERR_OKAY;
   }
 }
 
-inkapi int *
-INKIntListDequeue(INKIntList intl)
+tsapi int *
+TSIntListDequeue(TSIntList intl)
 {
   ink_assert(intl);
   if (!intl || queue_is_empty((LLQ *) intl))
@@ -649,8 +649,8 @@ INKIntListDequeue(INKIntList intl)
   return (int *) dequeue((LLQ *) intl);
 }
 
-inkapi bool
-INKIntListIsEmpty(INKIntList intl)
+tsapi bool
+TSIntListIsEmpty(TSIntList intl)
 {
   ink_assert(intl);
   if (!intl)
@@ -659,8 +659,8 @@ INKIntListIsEmpty(INKIntList intl)
   return queue_is_empty((LLQ *) intl);
 }
 
-inkapi int
-INKIntListLen(INKIntList intl)
+tsapi int
+TSIntListLen(TSIntList intl)
 {
   ink_assert(intl);
   if (!intl)
@@ -669,8 +669,8 @@ INKIntListLen(INKIntList intl)
   return queue_len((LLQ *) intl);
 }
 
-inkapi bool
-INKIntListIsValid(INKIntList intl, int min, int max)
+tsapi bool
+TSIntListIsValid(TSIntList intl, int min, int max)
 {
   if (!intl)
     return false;
@@ -691,42 +691,42 @@ INKIntListIsValid(INKIntList intl, int min, int max)
 
 // helper fn that sets default values for the info passed in
 void
-init_pdss_format(INKPdSsFormat * info)
+init_pdss_format(TSPdSsFormat * info)
 {
-  info->pd_type = INK_PD_UNDEFINED;
+  info->pd_type = TS_PD_UNDEFINED;
   info->pd_val = NULL;
   info->sec_spec.active = 0;
   info->sec_spec.time.hour_a = 0;
   info->sec_spec.time.min_a = 0;
   info->sec_spec.time.hour_b = 0;
   info->sec_spec.time.min_b = 0;
-  info->sec_spec.src_ip = INK_INVALID_IP_ADDR;
+  info->sec_spec.src_ip = TS_INVALID_IP_ADDR;
   info->sec_spec.prefix = NULL;
   info->sec_spec.suffix = NULL;
-  info->sec_spec.port = INK_INVALID_PORT;
-  info->sec_spec.method = INK_METHOD_UNDEFINED;
-  info->sec_spec.scheme = INK_SCHEME_UNDEFINED;
+  info->sec_spec.port = TS_INVALID_PORT;
+  info->sec_spec.method = TS_METHOD_UNDEFINED;
+  info->sec_spec.scheme = TS_SCHEME_UNDEFINED;
 }
 
 /*--- allocate/deallocate operations --------------------------------------*/
-inkapi INKEvent *
-INKEventCreate(void)
+tsapi TSEvent *
+TSEventCreate(void)
 {
-  INKEvent *event;
-  event = (INKEvent *) xmalloc(sizeof(INKEvent));
+  TSEvent *event;
+  event = (TSEvent *) xmalloc(sizeof(TSEvent));
   if (!event)
     return NULL;
 
   event->id = -1;
   event->name = NULL;
   event->description = NULL;
-  event->priority = INK_EVENT_PRIORITY_UNDEFINED;
+  event->priority = TS_EVENT_PRIORITY_UNDEFINED;
 
   return event;
 }
 
-inkapi void
-INKEventDestroy(INKEvent * event)
+tsapi void
+TSEventDestroy(TSEvent * event)
 {
   if (event) {
     if (event->name)
@@ -738,56 +738,56 @@ INKEventDestroy(INKEvent * event)
   return;
 }
 
-inkapi INKRecordEle *
-INKRecordEleCreate(void)
+tsapi TSRecordEle *
+TSRecordEleCreate(void)
 {
-  INKRecordEle *ele;
+  TSRecordEle *ele;
 
-  ele = (INKRecordEle *) xmalloc(sizeof(INKRecordEle));
+  ele = (TSRecordEle *) xmalloc(sizeof(TSRecordEle));
   if (!ele)
     return NULL;
 
   ele->rec_name = NULL;
-  ele->rec_type = INK_REC_UNDEFINED;
+  ele->rec_type = TS_REC_UNDEFINED;
 
   return ele;
 }
 
-inkapi void
-INKRecordEleDestroy(INKRecordEle * ele)
+tsapi void
+TSRecordEleDestroy(TSRecordEle * ele)
 {
   if (ele) {
     if (ele->rec_name)
       xfree(ele->rec_name);
-    if (ele->rec_type == INK_REC_STRING && ele->string_val)
+    if (ele->rec_type == TS_REC_STRING && ele->string_val)
       xfree(ele->string_val);
     xfree(ele);
   }
   return;
 }
 
-inkapi INKIpAddrEle *
-INKIpAddrEleCreate(void)
+tsapi TSIpAddrEle *
+TSIpAddrEleCreate(void)
 {
-  INKIpAddrEle *ele;
+  TSIpAddrEle *ele;
 
-  ele = (INKIpAddrEle *) xmalloc(sizeof(INKIpAddrEle));
+  ele = (TSIpAddrEle *) xmalloc(sizeof(TSIpAddrEle));
   if (!ele)
     return NULL;
 
   /* set default values */
-  ele->type = INK_IP_UNDEFINED;
-  ele->ip_a = INK_INVALID_IP_ADDR;
-  ele->cidr_a = INK_INVALID_IP_CIDR;
-  ele->port_a = INK_INVALID_PORT;
-  ele->ip_b = INK_INVALID_IP_ADDR;
-  ele->cidr_b = INK_INVALID_IP_CIDR;
-  ele->port_b = INK_INVALID_PORT;
+  ele->type = TS_IP_UNDEFINED;
+  ele->ip_a = TS_INVALID_IP_ADDR;
+  ele->cidr_a = TS_INVALID_IP_CIDR;
+  ele->port_a = TS_INVALID_PORT;
+  ele->ip_b = TS_INVALID_IP_ADDR;
+  ele->cidr_b = TS_INVALID_IP_CIDR;
+  ele->port_b = TS_INVALID_PORT;
   return ele;
 }
 
-inkapi void
-INKIpAddrEleDestroy(INKIpAddrEle * ele)
+tsapi void
+TSIpAddrEleDestroy(TSIpAddrEle * ele)
 {
   if (ele) {
     if (ele->ip_a)
@@ -800,61 +800,61 @@ INKIpAddrEleDestroy(INKIpAddrEle * ele)
   return;
 }
 
-inkapi INKPortEle *
-INKPortEleCreate(void)
+tsapi TSPortEle *
+TSPortEleCreate(void)
 {
-  INKPortEle *ele;
+  TSPortEle *ele;
 
-  ele = (INKPortEle *) xmalloc(sizeof(INKPortEle));
+  ele = (TSPortEle *) xmalloc(sizeof(TSPortEle));
   if (!ele)
     return NULL;
 
-  ele->port_a = INK_INVALID_PORT;
-  ele->port_b = INK_INVALID_PORT;
+  ele->port_a = TS_INVALID_PORT;
+  ele->port_b = TS_INVALID_PORT;
 
   return ele;
 }
 
-inkapi void
-INKPortEleDestroy(INKPortEle * ele)
+tsapi void
+TSPortEleDestroy(TSPortEle * ele)
 {
   if (ele)
     xfree(ele);
   return;
 }
 
-inkapi INKDomain *
-INKDomainCreate()
+tsapi TSDomain *
+TSDomainCreate()
 {
-  INKDomain *ele;
+  TSDomain *ele;
 
-  ele = (INKDomain *) xmalloc(sizeof(INKDomain));
+  ele = (TSDomain *) xmalloc(sizeof(TSDomain));
   if (!ele)
     return NULL;
 
   ele->domain_val = NULL;
-  ele->port = INK_INVALID_PORT;
+  ele->port = TS_INVALID_PORT;
 
   return ele;
 }
 
-inkapi void
-INKDomainDestroy(INKDomain * ele)
+tsapi void
+TSDomainDestroy(TSDomain * ele)
 {
   if (ele) {
-    // this is okay because INKIpAddr is also a char*
+    // this is okay because TSIpAddr is also a char*
     if (ele->domain_val)
       xfree(ele->domain_val);
     xfree(ele);
   }
 }
 
-inkapi INKSspec *
-INKSspecCreate(void)
+tsapi TSSspec *
+TSSspecCreate(void)
 {
-  INKSspec *sec_spec;
+  TSSspec *sec_spec;
 
-  sec_spec = (INKSspec *) xmalloc(sizeof(INKSspec));
+  sec_spec = (TSSspec *) xmalloc(sizeof(TSSspec));
   if (!sec_spec)
     return NULL;
 
@@ -864,17 +864,17 @@ INKSspecCreate(void)
   (sec_spec->time).min_a = 0;
   (sec_spec->time).hour_b = 0;
   (sec_spec->time).min_b = 0;
-  sec_spec->src_ip = INK_INVALID_IP_ADDR;
+  sec_spec->src_ip = TS_INVALID_IP_ADDR;
   sec_spec->prefix = NULL;
   sec_spec->suffix = NULL;
   sec_spec->port = NULL;
-  sec_spec->method = INK_METHOD_UNDEFINED;
-  sec_spec->scheme = INK_SCHEME_UNDEFINED;
+  sec_spec->method = TS_METHOD_UNDEFINED;
+  sec_spec->scheme = TS_SCHEME_UNDEFINED;
   return sec_spec;
 }
 
-inkapi void
-INKSspecDestroy(INKSspec * ele)
+tsapi void
+TSSspecDestroy(TSSspec * ele)
 {
   if (ele) {
     if (ele->prefix)
@@ -882,23 +882,23 @@ INKSspecDestroy(INKSspec * ele)
     if (ele->suffix)
       xfree(ele->suffix);
     if (ele->port)
-      INKPortEleDestroy(ele->port);
+      TSPortEleDestroy(ele->port);
     xfree(ele);
   }
   return;
 }
 
-inkapi INKPdSsFormat *
-INKPdSsFormatCreate(void)
+tsapi TSPdSsFormat *
+TSPdSsFormatCreate(void)
 {
-  INKPdSsFormat *ele;
+  TSPdSsFormat *ele;
 
-  ele = (INKPdSsFormat *) xmalloc(sizeof(INKPdSsFormat));
+  ele = (TSPdSsFormat *) xmalloc(sizeof(TSPdSsFormat));
   if (!ele)
     return NULL;
 
   /* should set default values here */
-  ele->pd_type = INK_PD_UNDEFINED;
+  ele->pd_type = TS_PD_UNDEFINED;
   ele->pd_val = NULL;
 
   ele->sec_spec.active = 0;
@@ -906,18 +906,18 @@ INKPdSsFormatCreate(void)
   (ele->sec_spec.time).min_a = -1;
   (ele->sec_spec.time).hour_b = -1;
   (ele->sec_spec.time).min_b = -1;
-  ele->sec_spec.src_ip = INK_INVALID_IP_ADDR;
+  ele->sec_spec.src_ip = TS_INVALID_IP_ADDR;
   ele->sec_spec.prefix = NULL;
   ele->sec_spec.suffix = NULL;
   ele->sec_spec.port = NULL;
-  ele->sec_spec.method = INK_METHOD_UNDEFINED;
-  ele->sec_spec.scheme = INK_SCHEME_UNDEFINED;
+  ele->sec_spec.method = TS_METHOD_UNDEFINED;
+  ele->sec_spec.scheme = TS_SCHEME_UNDEFINED;
 
   return ele;
 }
 
-inkapi void
-INKPdSsFormatDestroy(INKPdSsFormat * ele)
+tsapi void
+TSPdSsFormatDestroy(TSPdSsFormat * ele)
 {
   if (ele) {
     if (ele->pd_val)
@@ -929,34 +929,34 @@ INKPdSsFormatDestroy(INKPdSsFormat * ele)
     if (ele->sec_spec.suffix)
       xfree(ele->sec_spec.suffix);
     if (ele->sec_spec.port)
-      INKPortEleDestroy(ele->sec_spec.port);
+      TSPortEleDestroy(ele->sec_spec.port);
   }
   return;
 }
 
 /*-------------------------------------------------------------
- * INKAdminAccessEle
+ * TSAdminAccessEle
  *-------------------------------------------------------------*/
-inkapi INKAdminAccessEle *
-INKAdminAccessEleCreate()
+tsapi TSAdminAccessEle *
+TSAdminAccessEleCreate()
 {
-  INKAdminAccessEle *ele;
+  TSAdminAccessEle *ele;
 
-  ele = (INKAdminAccessEle *) xmalloc(sizeof(INKAdminAccessEle));
+  ele = (TSAdminAccessEle *) xmalloc(sizeof(TSAdminAccessEle));
   if (!ele)
     return NULL;
 
-  ele->cfg_ele.type = INK_ADMIN_ACCESS;
-  ele->cfg_ele.error = INK_ERR_OKAY;
+  ele->cfg_ele.type = TS_ADMIN_ACCESS;
+  ele->cfg_ele.error = TS_ERR_OKAY;
   ele->user = NULL;
   ele->password = NULL;
-  ele->access = INK_ACCESS_UNDEFINED;
+  ele->access = TS_ACCESS_UNDEFINED;
 
   return ele;
 }
 
-inkapi void
-INKAdminAccessEleDestroy(INKAdminAccessEle * ele)
+tsapi void
+TSAdminAccessEleDestroy(TSAdminAccessEle * ele)
 {
   if (ele) {
     if (ele->user)
@@ -972,27 +972,27 @@ INKAdminAccessEleDestroy(INKAdminAccessEle * ele)
 /*-------------------------------------------------------------
  * CacheObj
  *-------------------------------------------------------------*/
-inkapi INKCacheEle *
-INKCacheEleCreate(INKRuleTypeT type)
+tsapi TSCacheEle *
+TSCacheEleCreate(TSRuleTypeT type)
 {
-  INKCacheEle *ele;
+  TSCacheEle *ele;
 
-  if (type != INK_CACHE_NEVER &&
-      type != INK_CACHE_IGNORE_NO_CACHE &&
-      type != INK_CACHE_IGNORE_CLIENT_NO_CACHE &&
-      type != INK_CACHE_IGNORE_SERVER_NO_CACHE &&
-      type != INK_CACHE_PIN_IN_CACHE &&
-      type != INK_CACHE_REVALIDATE &&
-      type != INK_CACHE_TTL_IN_CACHE && type != INK_CACHE_AUTH_CONTENT && type != INK_TYPE_UNDEFINED)
+  if (type != TS_CACHE_NEVER &&
+      type != TS_CACHE_IGNORE_NO_CACHE &&
+      type != TS_CACHE_IGNORE_CLIENT_NO_CACHE &&
+      type != TS_CACHE_IGNORE_SERVER_NO_CACHE &&
+      type != TS_CACHE_PIN_IN_CACHE &&
+      type != TS_CACHE_REVALIDATE &&
+      type != TS_CACHE_TTL_IN_CACHE && type != TS_CACHE_AUTH_CONTENT && type != TS_TYPE_UNDEFINED)
     return NULL;                // invalid type
 
-  ele = (INKCacheEle *) xmalloc(sizeof(INKCacheEle));
+  ele = (TSCacheEle *) xmalloc(sizeof(TSCacheEle));
   if (!ele)
     return NULL;
 
   /* set defaults */
   ele->cfg_ele.type = type;
-  ele->cfg_ele.error = INK_ERR_OKAY;
+  ele->cfg_ele.error = TS_ERR_OKAY;
   init_pdss_format(&(ele->cache_info));
   ele->time_period.d = 0;
   ele->time_period.h = 0;
@@ -1002,11 +1002,11 @@ INKCacheEleCreate(INKRuleTypeT type)
   return ele;
 }
 
-inkapi void
-INKCacheEleDestroy(INKCacheEle * ele)
+tsapi void
+TSCacheEleDestroy(TSCacheEle * ele)
 {
   if (ele) {
-    INKPdSsFormatDestroy(&(ele->cache_info));
+    TSPdSsFormatDestroy(&(ele->cache_info));
     xfree(ele);
   }
   return;
@@ -1018,24 +1018,24 @@ INKCacheEleDestroy(INKCacheEle * ele)
 // FIXME: for now use defaults specified in feature spec; the
 // defaults though are configurable as records, so should use
 // records values instead
-inkapi INKCongestionEle *
-INKCongestionEleCreate()
+tsapi TSCongestionEle *
+TSCongestionEleCreate()
 {
-  INKCongestionEle *ele;
+  TSCongestionEle *ele;
 
-  ele = (INKCongestionEle *) xmalloc(sizeof(INKCongestionEle));
+  ele = (TSCongestionEle *) xmalloc(sizeof(TSCongestionEle));
   if (!ele)
     return NULL;
 
   /* set defaults */
-  ele->cfg_ele.type = INK_CONGESTION;
-  ele->cfg_ele.error = INK_ERR_OKAY;
+  ele->cfg_ele.type = TS_CONGESTION;
+  ele->cfg_ele.error = TS_ERR_OKAY;
   //init_pdss_format(&(ele->congestion_info));
-  ele->pd_type = INK_PD_UNDEFINED;
+  ele->pd_type = TS_PD_UNDEFINED;
   ele->pd_val = NULL;
   ele->prefix = NULL;
-  ele->port = INK_INVALID_PORT;
-  ele->scheme = INK_HTTP_CONGEST_PER_IP;
+  ele->port = TS_INVALID_PORT;
+  ele->scheme = TS_HTTP_CONGEST_PER_IP;
   ele->max_connection_failures = 5;
   ele->fail_window = 120;
   ele->proxy_retry_interval = 10;
@@ -1051,8 +1051,8 @@ INKCongestionEleCreate()
   return ele;
 }
 
-inkapi void
-INKCongestionEleDestroy(INKCongestionEle * ele)
+tsapi void
+TSCongestionEleDestroy(TSCongestionEle * ele)
 {
   if (ele) {
     if (ele->pd_val)
@@ -1070,32 +1070,32 @@ INKCongestionEleDestroy(INKCongestionEle * ele)
 /*-------------------------------------------------------------
  * HostingObj
  *-------------------------------------------------------------*/
-inkapi INKHostingEle *
-INKHostingEleCreate()
+tsapi TSHostingEle *
+TSHostingEleCreate()
 {
-  INKHostingEle *ele;
+  TSHostingEle *ele;
 
-  ele = (INKHostingEle *) xmalloc(sizeof(INKHostingEle));
+  ele = (TSHostingEle *) xmalloc(sizeof(TSHostingEle));
   if (!ele)
     return NULL;
 
-  ele->cfg_ele.type = INK_HOSTING;
-  ele->cfg_ele.error = INK_ERR_OKAY;
-  ele->pd_type = INK_PD_UNDEFINED;
+  ele->cfg_ele.type = TS_HOSTING;
+  ele->cfg_ele.error = TS_ERR_OKAY;
+  ele->pd_type = TS_PD_UNDEFINED;
   ele->pd_val = NULL;
-  ele->partitions = INK_INVALID_LIST;
+  ele->partitions = TS_INVALID_LIST;
 
   return ele;
 }
 
-inkapi void
-INKHostingEleDestroy(INKHostingEle * ele)
+tsapi void
+TSHostingEleDestroy(TSHostingEle * ele)
 {
   if (ele) {
     if (ele->pd_val)
       xfree(ele->pd_val);
     if (ele->partitions)
-      INKIntListDestroy(ele->partitions);
+      TSIntListDestroy(ele->partitions);
     xfree(ele);
   }
   return;
@@ -1104,33 +1104,33 @@ INKHostingEleDestroy(INKHostingEle * ele)
 /*-------------------------------------------------------------
  * IcpObject
  *-------------------------------------------------------------*/
-inkapi INKIcpEle *
-INKIcpEleCreate()
+tsapi TSIcpEle *
+TSIcpEleCreate()
 {
-  INKIcpEle *ele;
+  TSIcpEle *ele;
 
-  ele = (INKIcpEle *) xmalloc(sizeof(INKIcpEle));
+  ele = (TSIcpEle *) xmalloc(sizeof(TSIcpEle));
   if (!ele)
     return NULL;
 
   /* set defaults */
-  ele->cfg_ele.type = INK_ICP;
-  ele->cfg_ele.error = INK_ERR_OKAY;
+  ele->cfg_ele.type = TS_ICP;
+  ele->cfg_ele.error = TS_ERR_OKAY;
   ele->peer_hostname = NULL;
-  ele->peer_host_ip_addr = INK_INVALID_IP_ADDR;
-  ele->peer_type = INK_ICP_UNDEFINED;
-  ele->peer_proxy_port = INK_INVALID_PORT;
-  ele->peer_icp_port = INK_INVALID_PORT;
+  ele->peer_host_ip_addr = TS_INVALID_IP_ADDR;
+  ele->peer_type = TS_ICP_UNDEFINED;
+  ele->peer_proxy_port = TS_INVALID_PORT;
+  ele->peer_icp_port = TS_INVALID_PORT;
   ele->is_multicast = FALSE;
-  ele->mc_ip_addr = INK_INVALID_IP_ADDR;
-  ele->mc_ttl = INK_MC_TTL_SINGLE_SUBNET;       // default value
+  ele->mc_ip_addr = TS_INVALID_IP_ADDR;
+  ele->mc_ttl = TS_MC_TTL_SINGLE_SUBNET;       // default value
 
   return ele;
 
 }
 
-inkapi void
-INKIcpEleDestroy(INKIcpEle * ele)
+tsapi void
+TSIcpEleDestroy(TSIcpEle * ele)
 {
   if (ele) {
     if (ele->peer_hostname)
@@ -1145,32 +1145,32 @@ INKIcpEleDestroy(INKIcpEle * ele)
 }
 
 /*-------------------------------------------------------------
- * INKIpAllowEle
+ * TSIpAllowEle
  *-------------------------------------------------------------*/
-inkapi INKIpAllowEle *
-INKIpAllowEleCreate()
+tsapi TSIpAllowEle *
+TSIpAllowEleCreate()
 {
 
-  INKIpAllowEle *ele;
+  TSIpAllowEle *ele;
 
-  ele = (INKIpAllowEle *) xmalloc(sizeof(INKIpAllowEle));
+  ele = (TSIpAllowEle *) xmalloc(sizeof(TSIpAllowEle));
   if (!ele)
     return NULL;
 
-  ele->cfg_ele.type = INK_IP_ALLOW;
-  ele->cfg_ele.error = INK_ERR_OKAY;
-  ele->src_ip_addr = INK_INVALID_IP_ADDR;
-  ele->action = INK_IP_ALLOW_UNDEFINED;
+  ele->cfg_ele.type = TS_IP_ALLOW;
+  ele->cfg_ele.error = TS_ERR_OKAY;
+  ele->src_ip_addr = TS_INVALID_IP_ADDR;
+  ele->action = TS_IP_ALLOW_UNDEFINED;
 
   return ele;
 }
 
-inkapi void
-INKIpAllowEleDestroy(INKIpAllowEle * ele)
+tsapi void
+TSIpAllowEleDestroy(TSIpAllowEle * ele)
 {
   if (ele) {
     if (ele->src_ip_addr)
-      INKIpAddrEleDestroy(ele->src_ip_addr);
+      TSIpAddrEleDestroy(ele->src_ip_addr);
     xfree(ele);
   }
   return;
@@ -1179,30 +1179,30 @@ INKIpAllowEleDestroy(INKIpAllowEle * ele)
 
 
 /*-------------------------------------------------------------
- * INKLogFilterEle
+ * TSLogFilterEle
  *-------------------------------------------------------------*/
-inkapi INKLogFilterEle *
-INKLogFilterEleCreate()
+tsapi TSLogFilterEle *
+TSLogFilterEleCreate()
 {
-  INKLogFilterEle *ele;
+  TSLogFilterEle *ele;
 
-  ele = (INKLogFilterEle *) xmalloc(sizeof(INKLogFilterEle));
+  ele = (TSLogFilterEle *) xmalloc(sizeof(TSLogFilterEle));
   if (!ele)
     return NULL;
 
-  ele->cfg_ele.type = INK_LOG_FILTER;
-  ele->cfg_ele.error = INK_ERR_OKAY;
-  ele->action = INK_LOG_FILT_UNDEFINED;
+  ele->cfg_ele.type = TS_LOG_FILTER;
+  ele->cfg_ele.error = TS_ERR_OKAY;
+  ele->action = TS_LOG_FILT_UNDEFINED;
   ele->filter_name = NULL;
   ele->log_field = NULL;
-  ele->compare_op = INK_LOG_COND_UNDEFINED;
+  ele->compare_op = TS_LOG_COND_UNDEFINED;
   ele->compare_str = NULL;
   ele->compare_int = -1;
   return ele;
 }
 
-inkapi void
-INKLogFilterEleDestroy(INKLogFilterEle * ele)
+tsapi void
+TSLogFilterEleDestroy(TSLogFilterEle * ele)
 {
   if (ele) {
     if (ele->filter_name)
@@ -1217,19 +1217,19 @@ INKLogFilterEleDestroy(INKLogFilterEle * ele)
 }
 
 /*-------------------------------------------------------------
- * INKLogFormatEle
+ * TSLogFormatEle
  *-------------------------------------------------------------*/
-inkapi INKLogFormatEle *
-INKLogFormatEleCreate()
+tsapi TSLogFormatEle *
+TSLogFormatEleCreate()
 {
-  INKLogFormatEle *ele;
+  TSLogFormatEle *ele;
 
-  ele = (INKLogFormatEle *) xmalloc(sizeof(INKLogFormatEle));
+  ele = (TSLogFormatEle *) xmalloc(sizeof(TSLogFormatEle));
   if (!ele)
     return NULL;
 
-  ele->cfg_ele.type = INK_LOG_FORMAT;
-  ele->cfg_ele.error = INK_ERR_OKAY;
+  ele->cfg_ele.type = TS_LOG_FORMAT;
+  ele->cfg_ele.error = TS_ERR_OKAY;
   ele->name = NULL;
   ele->format = NULL;
   ele->aggregate_interval_secs = 0;
@@ -1237,8 +1237,8 @@ INKLogFormatEleCreate()
   return ele;
 }
 
-inkapi void
-INKLogFormatEleDestroy(INKLogFormatEle * ele)
+tsapi void
+TSLogFormatEleDestroy(TSLogFormatEle * ele)
 {
   if (ele) {
     if (ele->name)
@@ -1251,32 +1251,32 @@ INKLogFormatEleDestroy(INKLogFormatEle * ele)
 }
 
 /*-------------------------------------------------------------
- * INKLogObjectEle
+ * TSLogObjectEle
  *-------------------------------------------------------------*/
-inkapi INKLogObjectEle *
-INKLogObjectEleCreate()
+tsapi TSLogObjectEle *
+TSLogObjectEleCreate()
 {
-  INKLogObjectEle *ele;
+  TSLogObjectEle *ele;
 
-  ele = (INKLogObjectEle *) xmalloc(sizeof(INKLogObjectEle));
+  ele = (TSLogObjectEle *) xmalloc(sizeof(TSLogObjectEle));
   if (!ele)
     return NULL;
 
-  ele->cfg_ele.type = INK_LOG_OBJECT;
-  ele->cfg_ele.error = INK_ERR_OKAY;
+  ele->cfg_ele.type = TS_LOG_OBJECT;
+  ele->cfg_ele.error = TS_ERR_OKAY;
   ele->format_name = NULL;
   ele->file_name = NULL;
-  ele->log_mode = INK_LOG_MODE_UNDEFINED;
-  ele->collation_hosts = INK_INVALID_LIST;
-  ele->filters = INK_INVALID_LIST;
-  ele->protocols = INK_INVALID_LIST;
-  ele->server_hosts = INK_INVALID_LIST;
+  ele->log_mode = TS_LOG_MODE_UNDEFINED;
+  ele->collation_hosts = TS_INVALID_LIST;
+  ele->filters = TS_INVALID_LIST;
+  ele->protocols = TS_INVALID_LIST;
+  ele->server_hosts = TS_INVALID_LIST;
 
   return ele;
 }
 
-inkapi void
-INKLogObjectEleDestroy(INKLogObjectEle * ele)
+tsapi void
+TSLogObjectEleDestroy(TSLogObjectEle * ele)
 {
   if (ele) {
     if (ele->format_name)
@@ -1284,45 +1284,45 @@ INKLogObjectEleDestroy(INKLogObjectEle * ele)
     if (ele->file_name)
       xfree(ele->file_name);
     if (ele->collation_hosts)
-      INKDomainListDestroy(ele->collation_hosts);
+      TSDomainListDestroy(ele->collation_hosts);
     if (ele->filters)
-      INKStringListDestroy(ele->filters);
+      TSStringListDestroy(ele->filters);
     if (ele->protocols)
-      INKStringListDestroy(ele->protocols);
+      TSStringListDestroy(ele->protocols);
     if (ele->server_hosts)
-      INKStringListDestroy(ele->server_hosts);
+      TSStringListDestroy(ele->server_hosts);
     xfree(ele);
   }
   return;
 }
 
 /*-------------------------------------------------------------
- * INKMgmtAllowEle
+ * TSMgmtAllowEle
  *-------------------------------------------------------------*/
-inkapi INKMgmtAllowEle *
-INKMgmtAllowEleCreate()
+tsapi TSMgmtAllowEle *
+TSMgmtAllowEleCreate()
 {
 
-  INKMgmtAllowEle *ele;
+  TSMgmtAllowEle *ele;
 
-  ele = (INKMgmtAllowEle *) xmalloc(sizeof(INKMgmtAllowEle));
+  ele = (TSMgmtAllowEle *) xmalloc(sizeof(TSMgmtAllowEle));
   if (!ele)
     return NULL;
 
-  ele->cfg_ele.type = INK_MGMT_ALLOW;
-  ele->cfg_ele.error = INK_ERR_OKAY;
-  ele->src_ip_addr = INK_INVALID_IP_ADDR;
-  ele->action = INK_MGMT_ALLOW_UNDEFINED;
+  ele->cfg_ele.type = TS_MGMT_ALLOW;
+  ele->cfg_ele.error = TS_ERR_OKAY;
+  ele->src_ip_addr = TS_INVALID_IP_ADDR;
+  ele->action = TS_MGMT_ALLOW_UNDEFINED;
 
   return ele;
 }
 
-inkapi void
-INKMgmtAllowEleDestroy(INKMgmtAllowEle * ele)
+tsapi void
+TSMgmtAllowEleDestroy(TSMgmtAllowEle * ele)
 {
   if (ele) {
     if (ele->src_ip_addr)
-      INKIpAddrEleDestroy(ele->src_ip_addr);
+      TSIpAddrEleDestroy(ele->src_ip_addr);
     xfree(ele);
   }
   return;
@@ -1331,37 +1331,37 @@ INKMgmtAllowEleDestroy(INKMgmtAllowEle * ele)
 
 
 /*-------------------------------------------------------------
- * INKParentProxyEleCreate
+ * TSParentProxyEleCreate
  *-------------------------------------------------------------*/
-inkapi INKParentProxyEle *
-INKParentProxyEleCreate(INKRuleTypeT type)
+tsapi TSParentProxyEle *
+TSParentProxyEleCreate(TSRuleTypeT type)
 {
-  INKParentProxyEle *ele;
+  TSParentProxyEle *ele;
 
-  if (type != INK_PP_PARENT && type != INK_PP_GO_DIRECT && type != INK_TYPE_UNDEFINED)
+  if (type != TS_PP_PARENT && type != TS_PP_GO_DIRECT && type != TS_TYPE_UNDEFINED)
     return NULL;
 
-  ele = (INKParentProxyEle *) xmalloc(sizeof(INKParentProxyEle));
+  ele = (TSParentProxyEle *) xmalloc(sizeof(TSParentProxyEle));
   if (!ele)
     return NULL;
 
   ele->cfg_ele.type = type;
-  ele->cfg_ele.error = INK_ERR_OKAY;
+  ele->cfg_ele.error = TS_ERR_OKAY;
   init_pdss_format(&(ele->parent_info));
-  ele->rr = INK_RR_NONE;
-  ele->proxy_list = INK_INVALID_LIST;
+  ele->rr = TS_RR_NONE;
+  ele->proxy_list = TS_INVALID_LIST;
   ele->direct = false;
 
   return ele;
 }
 
-inkapi void
-INKParentProxyEleDestroy(INKParentProxyEle * ele)
+tsapi void
+TSParentProxyEleDestroy(TSParentProxyEle * ele)
 {
   if (ele) {
-    INKPdSsFormatDestroy(&(ele->parent_info));
+    TSPdSsFormatDestroy(&(ele->parent_info));
     if (ele->proxy_list)
-      INKDomainListDestroy(ele->proxy_list);
+      TSDomainListDestroy(ele->proxy_list);
     xfree(ele);
   }
 
@@ -1369,29 +1369,29 @@ INKParentProxyEleDestroy(INKParentProxyEle * ele)
 }
 
 /*-------------------------------------------------------------
- * INKPartitionEle
+ * TSPartitionEle
  *-------------------------------------------------------------*/
-inkapi INKPartitionEle *
-INKPartitionEleCreate()
+tsapi TSPartitionEle *
+TSPartitionEleCreate()
 {
-  INKPartitionEle *ele;
+  TSPartitionEle *ele;
 
-  ele = (INKPartitionEle *) xmalloc(sizeof(INKPartitionEle));
+  ele = (TSPartitionEle *) xmalloc(sizeof(TSPartitionEle));
   if (!ele)
     return NULL;
 
-  ele->cfg_ele.type = INK_PARTITION;
-  ele->cfg_ele.error = INK_ERR_OKAY;
+  ele->cfg_ele.type = TS_PARTITION;
+  ele->cfg_ele.error = TS_ERR_OKAY;
   ele->partition_num = 0;
-  ele->scheme = INK_PARTITION_UNDEFINED;
+  ele->scheme = TS_PARTITION_UNDEFINED;
   ele->partition_size = 0;
-  ele->size_format = INK_SIZE_FMT_UNDEFINED;
+  ele->size_format = TS_SIZE_FMT_UNDEFINED;
 
   return ele;
 }
 
-inkapi void
-INKPartitionEleDestroy(INKPartitionEle * ele)
+tsapi void
+TSPartitionEleDestroy(TSPartitionEle * ele)
 {
   if (ele) {
     xfree(ele);
@@ -1400,72 +1400,72 @@ INKPartitionEleDestroy(INKPartitionEle * ele)
 }
 
 /*-------------------------------------------------------------
- * INKPluginEle
+ * TSPluginEle
  *-------------------------------------------------------------*/
-inkapi INKPluginEle *
-INKPluginEleCreate()
+tsapi TSPluginEle *
+TSPluginEleCreate()
 {
-  INKPluginEle *ele;
+  TSPluginEle *ele;
 
-  ele = (INKPluginEle *) xmalloc(sizeof(INKPluginEle));
+  ele = (TSPluginEle *) xmalloc(sizeof(TSPluginEle));
   if (!ele)
     return NULL;
 
-  ele->cfg_ele.type = INK_PLUGIN;
-  ele->cfg_ele.error = INK_ERR_OKAY;
+  ele->cfg_ele.type = TS_PLUGIN;
+  ele->cfg_ele.error = TS_ERR_OKAY;
   ele->name = NULL;
-  ele->args = INK_INVALID_LIST;
+  ele->args = TS_INVALID_LIST;
 
   return ele;
 }
 
-inkapi void
-INKPluginEleDestroy(INKPluginEle * ele)
+tsapi void
+TSPluginEleDestroy(TSPluginEle * ele)
 {
   if (ele) {
     if (ele->name)
       xfree(ele->name);
     if (ele->args)
-      INKStringListDestroy(ele->args);
+      TSStringListDestroy(ele->args);
     xfree(ele);
   }
   return;
 }
 
 /*-------------------------------------------------------------
- * INKRemapEle
+ * TSRemapEle
  *-------------------------------------------------------------*/
-INKRemapEle *
-INKRemapEleCreate(INKRuleTypeT type)
+TSRemapEle *
+TSRemapEleCreate(TSRuleTypeT type)
 {
-  INKRemapEle *ele;
+  TSRemapEle *ele;
 
-  if (type != INK_REMAP_MAP &&
-      type != INK_REMAP_REVERSE_MAP &&
-      type != INK_REMAP_REDIRECT && type != INK_REMAP_REDIRECT_TEMP && type != INK_TYPE_UNDEFINED)
+  if (type != TS_REMAP_MAP &&
+      type != TS_REMAP_REVERSE_MAP &&
+      type != TS_REMAP_REDIRECT && type != TS_REMAP_REDIRECT_TEMP && type != TS_TYPE_UNDEFINED)
     return NULL;
 
-  ele = (INKRemapEle *) xmalloc(sizeof(INKRemapEle));
+  ele = (TSRemapEle *) xmalloc(sizeof(TSRemapEle));
   if (!ele)
     return NULL;
 
   ele->cfg_ele.type = type;
-  ele->cfg_ele.error = INK_ERR_OKAY;
+  ele->cfg_ele.error = TS_ERR_OKAY;
   ele->map = true;
-  ele->from_scheme = INK_SCHEME_UNDEFINED;
+  ele->from_scheme = TS_SCHEME_UNDEFINED;
   ele->from_host = NULL;
-  ele->from_port = INK_INVALID_PORT;
+  ele->from_port = TS_INVALID_PORT;
   ele->from_path_prefix = NULL;
-  ele->to_scheme = INK_SCHEME_UNDEFINED;
+  ele->to_scheme = TS_SCHEME_UNDEFINED;
   ele->to_host = NULL;
-  ele->to_port = INK_INVALID_PORT;
+  ele->to_port = TS_INVALID_PORT;
   ele->to_path_prefix = NULL;
 
   return ele;
 }
 
 void
-INKRemapEleDestroy(INKRemapEle * ele)
+TSRemapEleDestroy(TSRemapEle * ele)
 {
   if (ele) {
     if (ele->from_host)
@@ -1481,22 +1481,22 @@ INKRemapEleDestroy(INKRemapEle * ele)
 }
 
 /*-------------------------------------------------------------
- * INKSocksEle
+ * TSSocksEle
  *-------------------------------------------------------------*/
-INKSocksEle *
-INKSocksEleCreate(INKRuleTypeT type)
+TSSocksEle *
+TSSocksEleCreate(TSRuleTypeT type)
 {
-  INKSocksEle *ele;
-  ele = (INKSocksEle *) xmalloc(sizeof(INKSocksEle));
+  TSSocksEle *ele;
+  ele = (TSSocksEle *) xmalloc(sizeof(TSSocksEle));
   if (!ele)
     return NULL;
 
   ele->cfg_ele.type = type;
-  ele->cfg_ele.error = INK_ERR_OKAY;
-  ele->ip_addrs = INK_INVALID_LIST;
-  ele->dest_ip_addr = INK_INVALID_IP_ADDR;
-  ele->socks_servers = INK_INVALID_LIST;
-  ele->rr = INK_RR_NONE;
+  ele->cfg_ele.error = TS_ERR_OKAY;
+  ele->ip_addrs = TS_INVALID_LIST;
+  ele->dest_ip_addr = TS_INVALID_IP_ADDR;
+  ele->socks_servers = TS_INVALID_LIST;
+  ele->rr = TS_RR_NONE;
   ele->username = NULL;
   ele->password = NULL;
 
@@ -1504,15 +1504,15 @@ INKSocksEleCreate(INKRuleTypeT type)
 }
 
 void
-INKSocksEleDestroy(INKSocksEle * ele)
+TSSocksEleDestroy(TSSocksEle * ele)
 {
   if (ele) {
     if (ele->ip_addrs)
-      INKIpAddrListDestroy(ele->ip_addrs);
+      TSIpAddrListDestroy(ele->ip_addrs);
     if (ele->dest_ip_addr)
-      INKIpAddrEleDestroy(ele->dest_ip_addr);
+      TSIpAddrEleDestroy(ele->dest_ip_addr);
     if (ele->socks_servers)
-      INKDomainListDestroy(ele->socks_servers);
+      TSDomainListDestroy(ele->socks_servers);
     if (ele->username)
       xfree(ele->username);
     if (ele->password)
@@ -1522,57 +1522,57 @@ INKSocksEleDestroy(INKSocksEle * ele)
 }
 
 /*-------------------------------------------------------------
- * INKSplitDnsEle
+ * TSSplitDnsEle
  *-------------------------------------------------------------*/
-INKSplitDnsEle *
-INKSplitDnsEleCreate()
+TSSplitDnsEle *
+TSSplitDnsEleCreate()
 {
-  INKSplitDnsEle *ele;
-  ele = (INKSplitDnsEle *) xmalloc(sizeof(INKSplitDnsEle));
+  TSSplitDnsEle *ele;
+  ele = (TSSplitDnsEle *) xmalloc(sizeof(TSSplitDnsEle));
   if (!ele)
     return NULL;
 
-  ele->cfg_ele.type = INK_SPLIT_DNS;
-  ele->cfg_ele.error = INK_ERR_OKAY;
-  ele->pd_type = INK_PD_UNDEFINED;
+  ele->cfg_ele.type = TS_SPLIT_DNS;
+  ele->cfg_ele.error = TS_ERR_OKAY;
+  ele->pd_type = TS_PD_UNDEFINED;
   ele->pd_val = NULL;
-  ele->dns_servers_addrs = INK_INVALID_LIST;
+  ele->dns_servers_addrs = TS_INVALID_LIST;
   ele->def_domain = NULL;
-  ele->search_list = INK_INVALID_LIST;
+  ele->search_list = TS_INVALID_LIST;
 
   return ele;
 }
 
 void
-INKSplitDnsEleDestroy(INKSplitDnsEle * ele)
+TSSplitDnsEleDestroy(TSSplitDnsEle * ele)
 {
   if (ele) {
     if (ele->pd_val)
       xfree(ele->pd_val);
     if (ele->dns_servers_addrs)
-      INKDomainListDestroy(ele->dns_servers_addrs);
+      TSDomainListDestroy(ele->dns_servers_addrs);
     if (ele->def_domain)
       xfree(ele->def_domain);
     if (ele->search_list)
-      INKDomainListDestroy(ele->search_list);
+      TSDomainListDestroy(ele->search_list);
     xfree(ele);
   }
   return;
 }
 
 /*-------------------------------------------------------------
- * INKStorageEle
+ * TSStorageEle
  *-------------------------------------------------------------*/
-INKStorageEle *
-INKStorageEleCreate()
+TSStorageEle *
+TSStorageEleCreate()
 {
-  INKStorageEle *ele;
-  ele = (INKStorageEle *) xmalloc(sizeof(INKStorageEle));
+  TSStorageEle *ele;
+  ele = (TSStorageEle *) xmalloc(sizeof(TSStorageEle));
   if (!ele)
     return NULL;
 
-  ele->cfg_ele.type = INK_STORAGE;
-  ele->cfg_ele.error = INK_ERR_OKAY;
+  ele->cfg_ele.type = TS_STORAGE;
+  ele->cfg_ele.error = TS_ERR_OKAY;
   ele->pathname = NULL;
   ele->size = -1;
 
@@ -1580,7 +1580,7 @@ INKStorageEleCreate()
 }
 
 void
-INKStorageEleDestroy(INKStorageEle * ele)
+TSStorageEleDestroy(TSStorageEle * ele)
 {
   if (ele) {
     if (ele->pathname)
@@ -1591,20 +1591,20 @@ INKStorageEleDestroy(INKStorageEle * ele)
 }
 
 /*-------------------------------------------------------------
- * INKUpdateEle
+ * TSUpdateEle
  *-------------------------------------------------------------*/
-INKUpdateEle *
-INKUpdateEleCreate()
+TSUpdateEle *
+TSUpdateEleCreate()
 {
-  INKUpdateEle *ele;
-  ele = (INKUpdateEle *) xmalloc(sizeof(INKUpdateEle));
+  TSUpdateEle *ele;
+  ele = (TSUpdateEle *) xmalloc(sizeof(TSUpdateEle));
   if (!ele)
     return NULL;
 
-  ele->cfg_ele.type = INK_UPDATE_URL;
-  ele->cfg_ele.error = INK_ERR_OKAY;
+  ele->cfg_ele.type = TS_UPDATE_URL;
+  ele->cfg_ele.error = TS_ERR_OKAY;
   ele->url = NULL;
-  ele->headers = INK_INVALID_LIST;
+  ele->headers = TS_INVALID_LIST;
   ele->offset_hour = -1;
   ele->interval = -1;
   ele->recursion_depth = 0;
@@ -1613,40 +1613,40 @@ INKUpdateEleCreate()
 }
 
 void
-INKUpdateEleDestroy(INKUpdateEle * ele)
+TSUpdateEleDestroy(TSUpdateEle * ele)
 {
   if (ele) {
     if (ele->url)
       xfree(ele->url);
     if (ele->headers)
-      INKStringListDestroy(ele->headers);
+      TSStringListDestroy(ele->headers);
     xfree(ele);
   }
   return;
 }
 
 /*-------------------------------------------------------------
- * INKVirtIpAddrEle
+ * TSVirtIpAddrEle
  *-------------------------------------------------------------*/
-INKVirtIpAddrEle *
-INKVirtIpAddrEleCreate()
+TSVirtIpAddrEle *
+TSVirtIpAddrEleCreate()
 {
-  INKVirtIpAddrEle *ele;
-  ele = (INKVirtIpAddrEle *) xmalloc(sizeof(INKVirtIpAddrEle));
+  TSVirtIpAddrEle *ele;
+  ele = (TSVirtIpAddrEle *) xmalloc(sizeof(TSVirtIpAddrEle));
   if (!ele)
     return NULL;
 
-  ele->cfg_ele.type = INK_VADDRS;
-  ele->cfg_ele.error = INK_ERR_OKAY;
+  ele->cfg_ele.type = TS_VADDRS;
+  ele->cfg_ele.error = TS_ERR_OKAY;
   ele->intr = NULL;
   ele->sub_intr = -1;
-  ele->ip_addr = INK_INVALID_IP_ADDR;
+  ele->ip_addr = TS_INVALID_IP_ADDR;
 
   return ele;
 }
 
 void
-INKVirtIpAddrEleDestroy(INKVirtIpAddrEle * ele)
+TSVirtIpAddrEleDestroy(TSVirtIpAddrEle * ele)
 {
   if (ele) {
     if (ele->intr)
@@ -1662,8 +1662,8 @@ INKVirtIpAddrEleDestroy(INKVirtIpAddrEle * ele)
  ***************************************************************************/
 
 /*--- statistics operations ----------------------------------------------- */
-inkapi INKError
-INKStatsReset(bool cluster)
+tsapi TSError
+TSStatsReset(bool cluster)
 {
   return StatsReset(cluster);
 }
@@ -1671,95 +1671,95 @@ INKStatsReset(bool cluster)
 /*--- variable operations ------------------------------------------------- */
 /* Call the CfgFileIO variable operations */
 
-inkapi INKError
-INKRecordGet(char *rec_name, INKRecordEle * rec_val)
+tsapi TSError
+TSRecordGet(char *rec_name, TSRecordEle * rec_val)
 {
   return MgmtRecordGet(rec_name, rec_val);
 }
 
-INKError
-INKRecordGetInt(const char *rec_name, INKInt * int_val)
+TSError
+TSRecordGetInt(const char *rec_name, TSInt * int_val)
 {
-  INKError ret = INK_ERR_OKAY;
+  TSError ret = TS_ERR_OKAY;
 
-  INKRecordEle *ele = INKRecordEleCreate();
+  TSRecordEle *ele = TSRecordEleCreate();
   ret = MgmtRecordGet(rec_name, ele);
-  if (ret != INK_ERR_OKAY)
+  if (ret != TS_ERR_OKAY)
     goto END;
 
   *int_val = ele->int_val;
 
 END:
-  INKRecordEleDestroy(ele);
+  TSRecordEleDestroy(ele);
   return ret;
 }
 
-INKError
-INKRecordGetCounter(const char *rec_name, INKCounter * counter_val)
+TSError
+TSRecordGetCounter(const char *rec_name, TSCounter * counter_val)
 {
-  INKError ret;
+  TSError ret;
 
-  INKRecordEle *ele = INKRecordEleCreate();
+  TSRecordEle *ele = TSRecordEleCreate();
   ret = MgmtRecordGet(rec_name, ele);
-  if (ret != INK_ERR_OKAY)
+  if (ret != TS_ERR_OKAY)
     goto END;
   *counter_val = ele->counter_val;
 
 END:
-  INKRecordEleDestroy(ele);
+  TSRecordEleDestroy(ele);
   return ret;
 }
 
-INKError
-INKRecordGetFloat(const char *rec_name, INKFloat * float_val)
+TSError
+TSRecordGetFloat(const char *rec_name, TSFloat * float_val)
 {
-  INKError ret;
+  TSError ret;
 
-  INKRecordEle *ele = INKRecordEleCreate();
+  TSRecordEle *ele = TSRecordEleCreate();
   ret = MgmtRecordGet(rec_name, ele);
-  if (ret != INK_ERR_OKAY)
+  if (ret != TS_ERR_OKAY)
     goto END;
   *float_val = ele->float_val;
 
 END:
-  INKRecordEleDestroy(ele);
+  TSRecordEleDestroy(ele);
   return ret;
 }
 
-INKError
-INKRecordGetString(const char *rec_name, INKString *string_val)
+TSError
+TSRecordGetString(const char *rec_name, TSString *string_val)
 {
-  INKError ret;
+  TSError ret;
   char *str;
   size_t str_size = 0;
 
-  INKRecordEle *ele = INKRecordEleCreate();
+  TSRecordEle *ele = TSRecordEleCreate();
   ret = MgmtRecordGet(rec_name, ele);
-  if (ret != INK_ERR_OKAY)
+  if (ret != TS_ERR_OKAY)
     goto END;
 
   str_size = strlen(ele->string_val) + 1;
   str = (char *) xmalloc(sizeof(char) * str_size);
   if (!str)
-    return INK_ERR_SYS_CALL;
+    return TS_ERR_SYS_CALL;
   ink_strncpy(str, ele->string_val, str_size);
   *string_val = str;
 
 END:
-  INKRecordEleDestroy(ele);
+  TSRecordEleDestroy(ele);
   return ret;
 }
 
 
 /*-------------------------------------------------------------------------
- * INKRecordGetMlt
+ * TSRecordGetMlt
  *-------------------------------------------------------------------------
  * Purpose: Retrieves list of record values specified in the rec_names list
  * Input: rec_names - list of record names to retrieve
- *        rec_vals  - queue of INKRecordEle* that correspons to rec_names
+ *        rec_vals  - queue of TSRecordEle* that correspons to rec_names
  * Output: If at any point, while retrieving one of the records there's a
  *         a failure then the entire process is aborted, all the allocated
- *         INKRecordEle's are deallocated and INK_ERR_FAIL is returned.
+ *         TSRecordEle's are deallocated and TS_ERR_FAIL is returned.
  * Note: rec_names is not freed; if function is successful, the rec_names
  *       list is unchanged!
  *
@@ -1769,131 +1769,131 @@ END:
  * a file while retrieving all the requested records!
  */
 
-inkapi INKError
-INKRecordGetMlt(INKStringList rec_names, INKList rec_vals)
+tsapi TSError
+TSRecordGetMlt(TSStringList rec_names, TSList rec_vals)
 {
-  INKRecordEle *ele;
+  TSRecordEle *ele;
   char *rec_name;
   int num_recs, i, j;
-  INKError ret;
+  TSError ret;
 
   if (!rec_names || !rec_vals)
-    return INK_ERR_PARAMS;
+    return TS_ERR_PARAMS;
 
   num_recs = queue_len((LLQ *) rec_names);
   for (i = 0; i < num_recs; i++) {
     rec_name = (char *) dequeue((LLQ *) rec_names);     // remove name from list
     if (!rec_name)
-      return INK_ERR_PARAMS;    // NULL is invalid record name
+      return TS_ERR_PARAMS;    // NULL is invalid record name
 
-    ele = INKRecordEleCreate();
+    ele = TSRecordEleCreate();
 
     ret = MgmtRecordGet(rec_name, ele);
     enqueue((LLQ *) rec_names, rec_name);       // return name to list
 
-    if (ret != INK_ERR_OKAY) {  // RecordGet failed
+    if (ret != TS_ERR_OKAY) {  // RecordGet failed
       // need to free all the ele's allocated by MgmtRecordGet so far
-      INKRecordEleDestroy(ele);
+      TSRecordEleDestroy(ele);
       for (j = 0; j < i; j++) {
-        ele = (INKRecordEle *) dequeue((LLQ *) rec_vals);
+        ele = (TSRecordEle *) dequeue((LLQ *) rec_vals);
         if (ele)
-          INKRecordEleDestroy(ele);
+          TSRecordEleDestroy(ele);
       }
       return ret;
     }
     enqueue((LLQ *) rec_vals, ele);     // all is good; add ele to end of list
   }
 
-  return INK_ERR_OKAY;
+  return TS_ERR_OKAY;
 }
 
 
-inkapi INKError
-INKRecordSet(const char *rec_name, const char *val, INKActionNeedT * action_need)
+tsapi TSError
+TSRecordSet(const char *rec_name, const char *val, TSActionNeedT * action_need)
 {
   return MgmtRecordSet(rec_name, val, action_need);
 }
 
 
-inkapi INKError
-INKRecordSetInt(const char *rec_name, INKInt int_val, INKActionNeedT * action_need)
+tsapi TSError
+TSRecordSetInt(const char *rec_name, TSInt int_val, TSActionNeedT * action_need)
 {
   return MgmtRecordSetInt(rec_name, int_val, action_need);
 }
 
-inkapi INKError
-INKRecordSetCounter(const char *rec_name, INKCounter counter_val, INKActionNeedT * action_need)
+tsapi TSError
+TSRecordSetCounter(const char *rec_name, TSCounter counter_val, TSActionNeedT * action_need)
 {
   return MgmtRecordSetCounter(rec_name, counter_val, action_need);
 }
 
-inkapi INKError
-INKRecordSetFloat(const char *rec_name, INKFloat float_val, INKActionNeedT * action_need)
+tsapi TSError
+TSRecordSetFloat(const char *rec_name, TSFloat float_val, TSActionNeedT * action_need)
 {
   return MgmtRecordSetFloat(rec_name, float_val, action_need);
 }
 
-inkapi INKError
-INKRecordSetString(const char *rec_name, const char *str_val, INKActionNeedT * action_need)
+tsapi TSError
+TSRecordSetString(const char *rec_name, const char *str_val, TSActionNeedT * action_need)
 {
   return MgmtRecordSetString(rec_name, str_val, action_need);
 }
 
 
 /*-------------------------------------------------------------------------
- * INKRecordSetMlt
+ * TSRecordSetMlt
  *-------------------------------------------------------------------------
  * Basically iterates through each RecordEle in rec_list and calls the
  * appropriate "MgmtRecordSetxx" function for that record
- * Input: rec_list - queue of INKRecordEle*; each INKRecordEle* must have
+ * Input: rec_list - queue of TSRecordEle*; each TSRecordEle* must have
  *        a valid record name (remains unchanged on return)
  * Output: if there is an error during the setting of one of the variables then
  *         will continue to try to set the other variables. Error response will
  *         indicate though that not all set operations were successful.
- *         INK_ERR_OKAY is returned if all the records are set successfully
+ *         TS_ERR_OKAY is returned if all the records are set successfully
  * Note: Determining the action needed is more complex b/c need to keep
  * track of which record change is the most drastic out of the group of
  * records; action_need will be set to the most severe action needed of
  * all the "Set" calls
  */
-inkapi INKError
-INKRecordSetMlt(INKList rec_list, INKActionNeedT * action_need)
+tsapi TSError
+TSRecordSetMlt(TSList rec_list, TSActionNeedT * action_need)
 {
   int num_recs, ret, i;
-  INKRecordEle *ele;
-  INKError status = INK_ERR_OKAY;
-  INKActionNeedT top_action_req = INK_ACTION_UNDEFINED;
+  TSRecordEle *ele;
+  TSError status = TS_ERR_OKAY;
+  TSActionNeedT top_action_req = TS_ACTION_UNDEFINED;
 
   if (!rec_list || !action_need)
-    return INK_ERR_PARAMS;
+    return TS_ERR_PARAMS;
 
   num_recs = queue_len((LLQ *) rec_list);
 
   for (i = 0; i < num_recs; i++) {
-    ele = (INKRecordEle *) dequeue((LLQ *) rec_list);
+    ele = (TSRecordEle *) dequeue((LLQ *) rec_list);
     if (ele) {
       switch (ele->rec_type) {
-      case INK_REC_INT:
+      case TS_REC_INT:
         ret = MgmtRecordSetInt(ele->rec_name, ele->int_val, action_need);
         break;
-      case INK_REC_COUNTER:
+      case TS_REC_COUNTER:
         ret = MgmtRecordSetCounter(ele->rec_name, ele->counter_val, action_need);
         break;
-      case INK_REC_FLOAT:
+      case TS_REC_FLOAT:
         ret = MgmtRecordSetFloat(ele->rec_name, ele->float_val, action_need);
         break;
-      case INK_REC_STRING:
+      case TS_REC_STRING:
         ret = MgmtRecordSetString(ele->rec_name, ele->string_val, action_need);
         break;
       default:
-        ret = INK_ERR_FAIL;
+        ret = TS_ERR_FAIL;
         break;
       };                        /* end of switch (ele->rec_type) */
-      if (ret != INK_ERR_OKAY)
-        status = INK_ERR_FAIL;
+      if (ret != TS_ERR_OKAY)
+        status = TS_ERR_FAIL;
 
       // keep track of most severe action; reset if needed
-      // the INKACtionNeedT should be listed such that most severe actions have
+      // the TSACtionNeedT should be listed such that most severe actions have
       // a lower number (so most severe action == 0)
       if (*action_need < top_action_req)        // a more severe action
         top_action_req = *action_need;
@@ -1908,155 +1908,155 @@ INKRecordSetMlt(INKList rec_list, INKActionNeedT * action_need)
 }
 
 /*--- api initialization and shutdown -------------------------------------*/
-inkapi INKError
-INKInit(const char *socket_path, TSInitOptionT options)
+tsapi TSError
+TSInit(const char *socket_path, TSInitOptionT options)
 {
   return Init(socket_path, options);
 }
 
-inkapi INKError
-INKTerminate()
+tsapi TSError
+TSTerminate()
 {
   return Terminate();
 }
 
 /*--- plugin initialization -----------------------------------------------*/
 inkexp extern void
-INKPluginInit(int argc, const char *argv[])
+TSPluginInit(int argc, const char *argv[])
 {
   NOWARN_UNUSED(argc);
   NOWARN_UNUSED(argv);
 }
 
 /*--- network operations --------------------------------------------------*/
-inkapi INKError
-INKConnect(INKIpAddr ip_addr, int port)
+tsapi TSError
+TSConnect(TSIpAddr ip_addr, int port)
 {
   NOWARN_UNUSED(ip_addr);
   NOWARN_UNUSED(port);
-  return INK_ERR_OKAY;
+  return TS_ERR_OKAY;
 }
-inkapi INKError
-INKDisconnectCbRegister(INKDisconnectFunc * func, void *data)
+tsapi TSError
+TSDisconnectCbRegister(TSDisconnectFunc * func, void *data)
 {
   NOWARN_UNUSED(func);
   NOWARN_UNUSED(data);
-  return INK_ERR_OKAY;
+  return TS_ERR_OKAY;
 }
-inkapi INKError
-INKDisconnectRetrySet(int retries, int retry_sleep_msec)
+tsapi TSError
+TSDisconnectRetrySet(int retries, int retry_sleep_msec)
 {
   NOWARN_UNUSED(retries);
   NOWARN_UNUSED(retry_sleep_msec);
-  return INK_ERR_OKAY;
+  return TS_ERR_OKAY;
 }
-inkapi INKError
-INKDisconnect()
+tsapi TSError
+TSDisconnect()
 {
-  return INK_ERR_OKAY;
+  return TS_ERR_OKAY;
 }
 
 /*--- control operations --------------------------------------------------*/
 /* NOTE: these operations are wrappers that make direct calls to the CoreAPI */
 
-/* INKProxyStateGet: get the proxy state (on/off)
+/* TSProxyStateGet: get the proxy state (on/off)
  * Input:  <none>
  * Output: proxy state (on/off)
  */
-inkapi INKProxyStateT
-INKProxyStateGet()
+tsapi TSProxyStateT
+TSProxyStateGet()
 {
   return ProxyStateGet();
 }
 
-/* INKProxyStateSet: set the proxy state (on/off)
+/* TSProxyStateSet: set the proxy state (on/off)
  * Input:  proxy_state - set to on/off
  *         clear - start TS with cache clearing option,
- *                 when stopping TS should always be INK_CACHE_CLEAR_OFF
- * Output: INKError
+ *                 when stopping TS should always be TS_CACHE_CLEAR_OFF
+ * Output: TSError
  */
-inkapi INKError
-INKProxyStateSet(INKProxyStateT proxy_state, INKCacheClearT clear)
+tsapi TSError
+TSProxyStateSet(TSProxyStateT proxy_state, TSCacheClearT clear)
 {
   return ProxyStateSet(proxy_state, clear);
 }
 
-/* INKReconfigure: tell traffic_server to re-read its configuration files
+/* TSReconfigure: tell traffic_server to re-read its configuration files
  * Input:  <none>
- * Output: INKError
+ * Output: TSError
  */
-inkapi INKError
-INKReconfigure()
+tsapi TSError
+TSReconfigure()
 {
   return Reconfigure();
 }
 
-/* INKRestart: restarts Traffic Server
+/* TSRestart: restarts Traffic Server
  * Input:  cluster - local or cluster-wide
- * Output: INKError
+ * Output: TSError
  */
-inkapi INKError
-INKRestart(bool cluster)
+tsapi TSError
+TSRestart(bool cluster)
 {
   return Restart(cluster);
 }
 
-/* INKHardRestart: a traffic_cop restart (restarts TM and TS),
+/* TSHardRestart: a traffic_cop restart (restarts TM and TS),
  * essentially does a "start_traffic_server"/"stop_traffic_server" sequence
  * Input:  <none>
- * Output: INKError
+ * Output: TSError
  * Note: only for remote API clients
  */
 /* CAN ONLY BE IMPLEMENTED ON THE REMOTE SIDE !!! */
-inkapi INKError
-INKHardRestart()
+tsapi TSError
+TSHardRestart()
 {
-  return HardRestart();         // should return INK_ERR_FAIL
+  return HardRestart();         // should return TS_ERR_FAIL
 }
 
-/* INKActionDo: based on INKActionNeedT, will take appropriate action
+/* TSActionDo: based on TSActionNeedT, will take appropriate action
  * Input: action - action that needs to be taken
- * Output: INKError
+ * Output: TSError
  */
-inkapi INKError
-INKActionDo(INKActionNeedT action)
+tsapi TSError
+TSActionDo(TSActionNeedT action)
 {
-  INKError ret;
+  TSError ret;
 
   switch (action) {
-  case INK_ACTION_SHUTDOWN:
+  case TS_ACTION_SHUTDOWN:
     ret = HardRestart();
     break;
-  case INK_ACTION_RESTART:
+  case TS_ACTION_RESTART:
     ret = Restart(true);        // cluster wide by default?
     break;
-  case INK_ACTION_RECONFIGURE:
+  case TS_ACTION_RECONFIGURE:
     ret = Reconfigure();
     break;
-  case INK_ACTION_DYNAMIC:
+  case TS_ACTION_DYNAMIC:
     /* do nothing - change takes effect immediately */
-    return INK_ERR_OKAY;
+    return TS_ERR_OKAY;
   default:
-    return INK_ERR_FAIL;
+    return TS_ERR_FAIL;
   }
 
   return ret;
 }
 
-/* INKBouncer: restarts the traffic_server process(es)
+/* TSBouncer: restarts the traffic_server process(es)
  * Input:  cluster - local or cluster-wide
- * Output: INKError
+ * Output: TSError
  */
-inkapi INKError
-INKBounce(bool cluster)
+tsapi TSError
+TSBounce(bool cluster)
 {
   return Bounce(cluster);
 }
 
 
 /*--- diags output operations ---------------------------------------------*/
-inkapi void
-INKDiags(INKDiagsT mode, const char *fmt, ...)
+tsapi void
+TSDiags(TSDiagsT mode, const char *fmt, ...)
 {
   // need to find way to pass arguments to the function
   va_list ap;
@@ -2070,49 +2070,49 @@ INKDiags(INKDiagsT mode, const char *fmt, ...)
 
 /* NOTE: user must deallocate the memory for the string returned */
 char *
-INKGetErrorMessage(INKError err_id)
+TSGetErrorMessage(TSError err_id)
 {
   char msg[1024];               // need to define a MAX_ERR_MSG_SIZE???
   char *err_msg = NULL;
 
   switch (err_id) {
-  case INK_ERR_OKAY:
+  case TS_ERR_OKAY:
     snprintf(msg, sizeof(msg), "[%d] Everything's looking good.", err_id);
     break;
-  case INK_ERR_READ_FILE:      /* Error occur in reading file */
+  case TS_ERR_READ_FILE:      /* Error occur in reading file */
     snprintf(msg, sizeof(msg), "[%d] Unable to find/open file for reading.", err_id);
     break;
-  case INK_ERR_WRITE_FILE:     /* Error occur in writing file */
+  case TS_ERR_WRITE_FILE:     /* Error occur in writing file */
     snprintf(msg, sizeof(msg), "[%d] Unable to find/open file for writing.", err_id);
     break;
-  case INK_ERR_PARSE_CONFIG_RULE:      /* Error in parsing configuration file */
+  case TS_ERR_PARSE_CONFIG_RULE:      /* Error in parsing configuration file */
     snprintf(msg, sizeof(msg), "[%d] Error parsing configuration file.", err_id);
     break;
-  case INK_ERR_INVALID_CONFIG_RULE:    /* Invalid Configuration Rule */
+  case TS_ERR_INVALID_CONFIG_RULE:    /* Invalid Configuration Rule */
     snprintf(msg, sizeof(msg), "[%d] Invalid configuration rule reached.", err_id);
     break;
-  case INK_ERR_NET_ESTABLISH:
+  case TS_ERR_NET_ESTABLISH:
     snprintf(msg, sizeof(msg), "[%d] Error establishing socket conenction.", err_id);
     break;
-  case INK_ERR_NET_READ:       /* Error reading from socket */
+  case TS_ERR_NET_READ:       /* Error reading from socket */
     snprintf(msg, sizeof(msg), "[%d] Error reading from socket.", err_id);
     break;
-  case INK_ERR_NET_WRITE:      /* Error writing to socket */
+  case TS_ERR_NET_WRITE:      /* Error writing to socket */
     snprintf(msg, sizeof(msg), "[%d] Error writing to socket.", err_id);
     break;
-  case INK_ERR_NET_EOF:        /* Hit socket EOF */
+  case TS_ERR_NET_EOF:        /* Hit socket EOF */
     snprintf(msg, sizeof(msg), "[%d] Reached socket EOF.", err_id);
     break;
-  case INK_ERR_NET_TIMEOUT:    /* Timed out waiting for socket read */
+  case TS_ERR_NET_TIMEOUT:    /* Timed out waiting for socket read */
     snprintf(msg, sizeof(msg), "[%d] Timed out waiting for socket read.", err_id);
     break;
-  case INK_ERR_SYS_CALL:       /* Error in sys/utility call, eg.malloc */
+  case TS_ERR_SYS_CALL:       /* Error in sys/utility call, eg.malloc */
     snprintf(msg, sizeof(msg), "[%d] Error in basic system/utility call.", err_id);
     break;
-  case INK_ERR_PARAMS:         /* Invalid parameters for a fn */
+  case TS_ERR_PARAMS:         /* Invalid parameters for a fn */
     snprintf(msg, sizeof(msg), "[%d] Invalid parameters passed into function call.", err_id);
     break;
-  case INK_ERR_FAIL:
+  case TS_ERR_FAIL:
     snprintf(msg, sizeof(msg), "[%d] Generic Fail message (ie. CoreAPI call).", err_id);
     break;
 
@@ -2127,8 +2127,8 @@ INKGetErrorMessage(INKError err_id)
 
 
 /*--- password operations -------------------------------------------------*/
-inkapi INKError
-INKEncryptPassword(char *passwd, char **e_passwd)
+tsapi TSError
+TSEncryptPassword(char *passwd, char **e_passwd)
 {
 
   INK_DIGEST_CTX md5_context;
@@ -2137,12 +2137,12 @@ INKEncryptPassword(char *passwd, char **e_passwd)
   int passwd_md5_str_len = 32;
 
   ink_debug_assert(passwd);
-  ink_debug_assert(INK_ENCRYPT_PASSWD_LEN <= passwd_md5_str_len);
+  ink_debug_assert(TS_ENCRYPT_PASSWD_LEN <= passwd_md5_str_len);
 
   const size_t md5StringSize = (passwd_md5_str_len + 1) * sizeof(char);
   passwd_md5_str = (char *) xmalloc(md5StringSize);
   if (!passwd_md5_str)
-    return INK_ERR_FAIL;
+    return TS_ERR_FAIL;
 
   ink_code_incr_md5_init(&md5_context);
   ink_code_incr_md5_update(&md5_context, passwd, strlen(passwd));
@@ -2150,27 +2150,27 @@ INKEncryptPassword(char *passwd, char **e_passwd)
   ink_code_md5_stringify(passwd_md5_str, md5StringSize, passwd_md5);
 
   // use only a subset of the MD5 string
-  passwd_md5_str[INK_ENCRYPT_PASSWD_LEN] = '\0';
+  passwd_md5_str[TS_ENCRYPT_PASSWD_LEN] = '\0';
   *e_passwd = passwd_md5_str;
 
-  return INK_ERR_OKAY;
+  return TS_ERR_OKAY;
 }
 
-inkapi INKError
-INKEncryptToFile(const char *passwd, const char *filepath)
+tsapi TSError
+TSEncryptToFile(const char *passwd, const char *filepath)
 {
   return EncryptToFile(passwd, filepath);
 }
 
 /*--- direct file operations ----------------------------------------------*/
-inkapi INKError
-INKConfigFileRead(INKFileNameT file, char **text, int *size, int *version)
+tsapi TSError
+TSConfigFileRead(TSFileNameT file, char **text, int *size, int *version)
 {
   return ReadFile(file, text, size, version);
 }
 
-inkapi INKError
-INKConfigFileWrite(INKFileNameT file, char *text, int size, int version)
+tsapi TSError
+TSConfigFileWrite(TSFileNameT file, char *text, int size, int version)
 {
   return WriteFile(file, text, size, version);
 }
@@ -2182,8 +2182,8 @@ INKConfigFileWrite(INKFileNameT file, char *text, int size, int version)
  *         headerSize - the size of the header buffer is returned
  *         body       - a buffer is allocated on the body char* pointer
  *         bodySize   - the size of the body buffer is returned
- * Output: INKError   - INK_ERR_OKAY if succeed, INK_ERR_FAIL otherwise
- * Obsolete:  inkapi INKError INKReadFromUrl (char *url, char **text, int *size);
+ * Output: TSError   - TS_ERR_OKAY if succeed, TS_ERR_FAIL otherwise
+ * Obsolete:  tsapi TSError TSReadFromUrl (char *url, char **text, int *size);
  * NOTE: The URL can be expressed in the following forms:
  *       - http://www.example.com:80/products/network/index.html
  *       - http://www.example.com/products/network/index.html
@@ -2193,16 +2193,16 @@ INKConfigFileWrite(INKFileNameT file, char *text, int size, int version)
  *       - www.example.com
  * NOTE: header and headerSize can be NULL
  */
-inkapi INKError
-INKReadFromUrl(char *url, char **header, int *headerSize, char **body, int *bodySize)
+tsapi TSError
+TSReadFromUrl(char *url, char **header, int *headerSize, char **body, int *bodySize)
 {
   //return ReadFromUrl(url, header, headerSize, body, bodySize);
-  return INKReadFromUrlEx(url, header, headerSize, body, bodySize, URL_TIMEOUT);
+  return TSReadFromUrlEx(url, header, headerSize, body, bodySize, URL_TIMEOUT);
 
 }
 
-inkapi INKError
-INKReadFromUrlEx(const char *url, char **header, int *headerSize, char **body, int *bodySize, int timeout)
+tsapi TSError
+TSReadFromUrlEx(const char *url, char **header, int *headerSize, char **body, int *bodySize, int timeout)
 {
   int hFD = -1;
   char *httpHost = NULL;
@@ -2213,11 +2213,11 @@ INKReadFromUrlEx(const char *url, char **header, int *headerSize, char **body, i
   char request[BUFSIZE];
   char *hdr_temp;
   char *bdy_temp;
-  INKError status = INK_ERR_OKAY;
+  TSError status = TS_ERR_OKAY;
 
   // Sanity check
   if (!url)
-    return INK_ERR_FAIL;
+    return TS_ERR_FAIL;
   if (timeout < 0) {
     timeout = URL_TIMEOUT;
   }
@@ -2253,21 +2253,21 @@ INKReadFromUrlEx(const char *url, char **header, int *headerSize, char **body, i
 
   hFD = connectDirect(httpHost, httpPort, timeout);
   if (hFD == -1) {
-    status = INK_ERR_NET_ESTABLISH;
+    status = TS_ERR_NET_ESTABLISH;
     goto END;
   }
 
   /* sending the HTTP request via the established socket */
   snprintf(request, BUFSIZE, "http://%s:%d/%s", httpHost, httpPort, httpPath);
-  if ((status = sendHTTPRequest(hFD, request, (uint64_t) timeout)) != INK_ERR_OKAY)
+  if ((status = sendHTTPRequest(hFD, request, (uint64_t) timeout)) != TS_ERR_OKAY)
     goto END;
 
   memset(buffer, 0, bufsize);   /* empty the buffer */
-  if ((status = readHTTPResponse(hFD, buffer, bufsize, (uint64_t) timeout)) != INK_ERR_OKAY)
+  if ((status = readHTTPResponse(hFD, buffer, bufsize, (uint64_t) timeout)) != TS_ERR_OKAY)
     goto END;
 
   if ((status = parseHTTPResponse(buffer, &hdr_temp, headerSize, &bdy_temp, bodySize))
-      != INK_ERR_OKAY)
+      != TS_ERR_OKAY)
     goto END;
 
   if (header && headerSize)
@@ -2284,10 +2284,10 @@ END:
 
 /*--- cache inspector operations -------------------------------------------*/
 
-inkapi INKError
-INKLookupFromCacheUrl(INKString url, INKString * info)
+tsapi TSError
+TSLookupFromCacheUrl(TSString url, TSString * info)
 {
-  INKError err = INK_ERR_OKAY;
+  TSError err = TS_ERR_OKAY;
   int fd;
   char request[BUFSIZE];
   char response[URL_BUFSIZE];
@@ -2296,24 +2296,24 @@ INKLookupFromCacheUrl(INKString url, INKString * info)
   int hdr_size;
   int bdy_size;
   int timeout = URL_TIMEOUT;
-  INKInt ts_port = 8080;
+  TSInt ts_port = 8080;
 
-  if ((err = INKRecordGetInt("proxy.config.http.server_port", &ts_port)) != INK_ERR_OKAY)
+  if ((err = TSRecordGetInt("proxy.config.http.server_port", &ts_port)) != TS_ERR_OKAY)
     goto END;
 
   if ((fd = connectDirect("localhost", ts_port, timeout)) < 0) {
-    err = INK_ERR_FAIL;
+    err = TS_ERR_FAIL;
     goto END;
   }
   snprintf(request, BUFSIZE, "http://{cache}/lookup_url?url=%s", url);
-  if ((err = sendHTTPRequest(fd, request, (uint64_t) timeout)) != INK_ERR_OKAY)
+  if ((err = sendHTTPRequest(fd, request, (uint64_t) timeout)) != TS_ERR_OKAY)
     goto END;
 
   memset(response, 0, URL_BUFSIZE);
-  if ((err = readHTTPResponse(fd, response, URL_BUFSIZE, (uint64_t) timeout)) != INK_ERR_OKAY)
+  if ((err = readHTTPResponse(fd, response, URL_BUFSIZE, (uint64_t) timeout)) != TS_ERR_OKAY)
     goto END;
 
-  if ((err = parseHTTPResponse(response, &header, &hdr_size, &body, &bdy_size)) != INK_ERR_OKAY)
+  if ((err = parseHTTPResponse(response, &header, &hdr_size, &body, &bdy_size)) != TS_ERR_OKAY)
     goto END;
 
   *info = xstrndup(body, bdy_size);
@@ -2322,10 +2322,10 @@ END:
   return err;
 }
 
-inkapi INKError
-INKLookupFromCacheUrlRegex(INKString url_regex, INKString * list)
+tsapi TSError
+TSLookupFromCacheUrlRegex(TSString url_regex, TSString * list)
 {
-  INKError err = INK_ERR_OKAY;
+  TSError err = TS_ERR_OKAY;
   int fd = -1;
   char request[BUFSIZE];
   char response[URL_BUFSIZE];
@@ -2334,24 +2334,24 @@ INKLookupFromCacheUrlRegex(INKString url_regex, INKString * list)
   int hdr_size;
   int bdy_size;
   int timeout = -1;
-  INKInt ts_port = 8080;
+  TSInt ts_port = 8080;
 
-  if ((err = INKRecordGetInt("proxy.config.http.server_port", &ts_port)) != INK_ERR_OKAY)
+  if ((err = TSRecordGetInt("proxy.config.http.server_port", &ts_port)) != TS_ERR_OKAY)
     goto END;
 
   if ((fd = connectDirect("localhost", ts_port, timeout)) < 0) {
-    err = INK_ERR_FAIL;
+    err = TS_ERR_FAIL;
     goto END;
   }
   snprintf(request, BUFSIZE, "http://{cache}/lookup_regex?url=%s", url_regex);
-  if ((err = sendHTTPRequest(fd, request, (uint64_t) timeout)) != INK_ERR_OKAY)
+  if ((err = sendHTTPRequest(fd, request, (uint64_t) timeout)) != TS_ERR_OKAY)
     goto END;
 
   memset(response, 0, URL_BUFSIZE);
-  if ((err = readHTTPResponse(fd, response, URL_BUFSIZE, (uint64_t) timeout)) != INK_ERR_OKAY)
+  if ((err = readHTTPResponse(fd, response, URL_BUFSIZE, (uint64_t) timeout)) != TS_ERR_OKAY)
     goto END;
 
-  if ((err = parseHTTPResponse(response, &header, &hdr_size, &body, &bdy_size)) != INK_ERR_OKAY)
+  if ((err = parseHTTPResponse(response, &header, &hdr_size, &body, &bdy_size)) != TS_ERR_OKAY)
     goto END;
 
   *list = xstrndup(body, bdy_size);
@@ -2359,10 +2359,10 @@ END:
   return err;
 }
 
-inkapi INKError
-INKDeleteFromCacheUrl(INKString url, INKString * info)
+tsapi TSError
+TSDeleteFromCacheUrl(TSString url, TSString * info)
 {
-  INKError err = INK_ERR_OKAY;
+  TSError err = TS_ERR_OKAY;
   int fd = -1;
   char request[BUFSIZE];
   char response[URL_BUFSIZE];
@@ -2371,24 +2371,24 @@ INKDeleteFromCacheUrl(INKString url, INKString * info)
   int hdr_size;
   int bdy_size;
   int timeout = URL_TIMEOUT;
-  INKInt ts_port = 8080;
+  TSInt ts_port = 8080;
 
-  if ((err = INKRecordGetInt("proxy.config.http.server_port", &ts_port)) != INK_ERR_OKAY)
+  if ((err = TSRecordGetInt("proxy.config.http.server_port", &ts_port)) != TS_ERR_OKAY)
     goto END;
 
   if ((fd = connectDirect("localhost", ts_port, timeout)) < 0) {
-    err = INK_ERR_FAIL;
+    err = TS_ERR_FAIL;
     goto END;
   }
   snprintf(request, BUFSIZE, "http://{cache}/delete_url?url=%s", url);
-  if ((err = sendHTTPRequest(fd, request, (uint64_t) timeout)) != INK_ERR_OKAY)
+  if ((err = sendHTTPRequest(fd, request, (uint64_t) timeout)) != TS_ERR_OKAY)
     goto END;
 
   memset(response, 0, URL_BUFSIZE);
-  if ((err = readHTTPResponse(fd, response, URL_BUFSIZE, (uint64_t) timeout)) != INK_ERR_OKAY)
+  if ((err = readHTTPResponse(fd, response, URL_BUFSIZE, (uint64_t) timeout)) != TS_ERR_OKAY)
     goto END;
 
-  if ((err = parseHTTPResponse(response, &header, &hdr_size, &body, &bdy_size)) != INK_ERR_OKAY)
+  if ((err = parseHTTPResponse(response, &header, &hdr_size, &body, &bdy_size)) != TS_ERR_OKAY)
     goto END;
 
   *info = xstrndup(body, bdy_size);
@@ -2397,10 +2397,10 @@ END:
   return err;
 }
 
-inkapi INKError
-INKDeleteFromCacheUrlRegex(INKString url_regex, INKString * list)
+tsapi TSError
+TSDeleteFromCacheUrlRegex(TSString url_regex, TSString * list)
 {
-  INKError err = INK_ERR_OKAY;
+  TSError err = TS_ERR_OKAY;
   int fd = -1;
   char request[BUFSIZE];
   char response[URL_BUFSIZE];
@@ -2409,24 +2409,24 @@ INKDeleteFromCacheUrlRegex(INKString url_regex, INKString * list)
   int hdr_size;
   int bdy_size;
   int timeout = -1;
-  INKInt ts_port = 8080;
+  TSInt ts_port = 8080;
 
-  if ((err = INKRecordGetInt("proxy.config.http.server_port", &ts_port)) != INK_ERR_OKAY)
+  if ((err = TSRecordGetInt("proxy.config.http.server_port", &ts_port)) != TS_ERR_OKAY)
     goto END;
 
   if ((fd = connectDirect("localhost", ts_port, timeout)) < 0) {
-    err = INK_ERR_FAIL;
+    err = TS_ERR_FAIL;
     goto END;
   }
   snprintf(request, BUFSIZE, "http://{cache}/delete_regex?url=%s", url_regex);
-  if ((err = sendHTTPRequest(fd, request, (uint64_t) timeout)) != INK_ERR_OKAY)
+  if ((err = sendHTTPRequest(fd, request, (uint64_t) timeout)) != TS_ERR_OKAY)
     goto END;
 
   memset(response, 0, URL_BUFSIZE);
-  if ((err = readHTTPResponse(fd, response, URL_BUFSIZE, (uint64_t) timeout)) != INK_ERR_OKAY)
+  if ((err = readHTTPResponse(fd, response, URL_BUFSIZE, (uint64_t) timeout)) != TS_ERR_OKAY)
     goto END;
 
-  if ((err = parseHTTPResponse(response, &header, &hdr_size, &body, &bdy_size)) != INK_ERR_OKAY)
+  if ((err = parseHTTPResponse(response, &header, &hdr_size, &body, &bdy_size)) != TS_ERR_OKAY)
     goto END;
 
   *list = xstrndup(body, bdy_size);
@@ -2434,10 +2434,10 @@ END:
   return err;
 }
 
-inkapi INKError
-INKInvalidateFromCacheUrlRegex(INKString url_regex, INKString * list)
+tsapi TSError
+TSInvalidateFromCacheUrlRegex(TSString url_regex, TSString * list)
 {
-  INKError err = INK_ERR_OKAY;
+  TSError err = TS_ERR_OKAY;
   int fd = -1;
   char request[BUFSIZE];
   char response[URL_BUFSIZE];
@@ -2446,24 +2446,24 @@ INKInvalidateFromCacheUrlRegex(INKString url_regex, INKString * list)
   int hdr_size;
   int bdy_size;
   int timeout = -1;
-  INKInt ts_port = 8080;
+  TSInt ts_port = 8080;
 
-  if ((err = INKRecordGetInt("proxy.config.http.server_port", &ts_port)) != INK_ERR_OKAY)
+  if ((err = TSRecordGetInt("proxy.config.http.server_port", &ts_port)) != TS_ERR_OKAY)
     goto END;
 
   if ((fd = connectDirect("localhost", ts_port, timeout)) < 0) {
-    err = INK_ERR_FAIL;
+    err = TS_ERR_FAIL;
     goto END;
   }
   snprintf(request, BUFSIZE, "http://{cache}/invalidate_regex?url=%s", url_regex);
-  if ((err = sendHTTPRequest(fd, request, (uint64_t) timeout)) != INK_ERR_OKAY)
+  if ((err = sendHTTPRequest(fd, request, (uint64_t) timeout)) != TS_ERR_OKAY)
     goto END;
 
   memset(response, 0, URL_BUFSIZE);
-  if ((err = readHTTPResponse(fd, response, URL_BUFSIZE, (uint64_t) timeout)) != INK_ERR_OKAY)
+  if ((err = readHTTPResponse(fd, response, URL_BUFSIZE, (uint64_t) timeout)) != TS_ERR_OKAY)
     goto END;
 
-  if ((err = parseHTTPResponse(response, &header, &hdr_size, &body, &bdy_size)) != INK_ERR_OKAY)
+  if ((err = parseHTTPResponse(response, &header, &hdr_size, &body, &bdy_size)) != TS_ERR_OKAY)
     goto END;
 
   *list = xstrndup(body, bdy_size);
@@ -2472,36 +2472,36 @@ END:
 }
 
 /*--- snapshot operations -------------------------------------------------*/
-inkapi INKError
-INKSnapshotTake(char *snapshot_name)
+tsapi TSError
+TSSnapshotTake(char *snapshot_name)
 {
   return SnapshotTake(snapshot_name);
 }
 
-inkapi INKError
-INKSnapshotRestore(char *snapshot_name)
+tsapi TSError
+TSSnapshotRestore(char *snapshot_name)
 {
   return SnapshotRestore(snapshot_name);
 }
 
-inkapi INKError
-INKSnapshotRemove(char *snapshot_name)
+tsapi TSError
+TSSnapshotRemove(char *snapshot_name)
 {
   return SnapshotRemove(snapshot_name);
 }
 
-inkapi INKError
-INKSnapshotGetMlt(INKStringList snapshots)
+tsapi TSError
+TSSnapshotGetMlt(TSStringList snapshots)
 {
   return SnapshotGetMlt((LLQ *) snapshots);
 }
 
 /*--- events --------------------------------------------------------------*/
-inkapi INKError
-INKEventSignal(char *event_name, ...)
+tsapi TSError
+TSEventSignal(char *event_name, ...)
 {
   va_list ap;
-  INKError ret;
+  TSError ret;
 
   va_start(ap, event_name);     // initialize the argument pointer ap
   ret = EventSignal(event_name, ap);
@@ -2509,32 +2509,32 @@ INKEventSignal(char *event_name, ...)
   return ret;
 }
 
-inkapi INKError
-INKEventResolve(char *event_name)
+tsapi TSError
+TSEventResolve(char *event_name)
 {
   return EventResolve(event_name);
 }
 
-inkapi INKError
-INKActiveEventGetMlt(INKList active_events)
+tsapi TSError
+TSActiveEventGetMlt(TSList active_events)
 {
   return ActiveEventGetMlt((LLQ *) active_events);
 }
 
-inkapi INKError
-INKEventIsActive(char *event_name, bool * is_current)
+tsapi TSError
+TSEventIsActive(char *event_name, bool * is_current)
 {
   return EventIsActive(event_name, is_current);
 }
 
-inkapi INKError
-INKEventSignalCbRegister(char *event_name, INKEventSignalFunc func, void *data)
+tsapi TSError
+TSEventSignalCbRegister(char *event_name, TSEventSignalFunc func, void *data)
 {
   return EventSignalCbRegister(event_name, func, data);
 }
 
-inkapi INKError
-INKEventSignalCbUnregister(char *event_name, INKEventSignalFunc func)
+tsapi TSError
+TSEventSignalCbUnregister(char *event_name, TSEventSignalFunc func)
 {
   return EventSignalCbUnregister(event_name, func);
 }
@@ -2546,100 +2546,100 @@ INKEventSignalCbUnregister(char *event_name, INKEventSignalFunc func)
 /*--- abstracted file operations ------------------------------------------*/
 
 /* calls teh CfgContext class constructor */
-inkapi INKCfgContext
-INKCfgContextCreate(INKFileNameT file)
+tsapi TSCfgContext
+TSCfgContextCreate(TSFileNameT file)
 {
   return ((void *) CfgContextCreate(file));
 }
 
 /* calls the CfgContext class destructor */
-inkapi INKError
-INKCfgContextDestroy(INKCfgContext ctx)
+tsapi TSError
+TSCfgContextDestroy(TSCfgContext ctx)
 {
   return (CfgContextDestroy((CfgContext *) ctx));
 }
 
-inkapi INKError
-INKCfgContextCommit(INKCfgContext ctx, INKActionNeedT * action_need, INKIntList errRules)
+tsapi TSError
+TSCfgContextCommit(TSCfgContext ctx, TSActionNeedT * action_need, TSIntList errRules)
 {
   NOWARN_UNUSED(action_need);
   return (CfgContextCommit((CfgContext *) ctx, (LLQ *) errRules));
 }
 
-inkapi INKError
-INKCfgContextGet(INKCfgContext ctx)
+tsapi TSError
+TSCfgContextGet(TSCfgContext ctx)
 {
   return (CfgContextGet((CfgContext *) ctx));
 }
 
 /*--- helper operations ---------------------------------------------------*/
-/* returns number of ele's in the INKCfgContext */
+/* returns number of ele's in the TSCfgContext */
 int
-INKCfgContextGetCount(INKCfgContext ctx)
+TSCfgContextGetCount(TSCfgContext ctx)
 {
   return CfgContextGetCount((CfgContext *) ctx);
 }
 
-/* user must typecast the INKCfgEle to appropriate INKEle before using */
-INKCfgEle *
-INKCfgContextGetEleAt(INKCfgContext ctx, int index)
+/* user must typecast the TSCfgEle to appropriate TSEle before using */
+TSCfgEle *
+TSCfgContextGetEleAt(TSCfgContext ctx, int index)
 {
   return CfgContextGetEleAt((CfgContext *) ctx, index);
 }
 
 /* iterator */
-INKCfgEle *
-INKCfgContextGetFirst(INKCfgContext ctx, INKCfgIterState * state)
+TSCfgEle *
+TSCfgContextGetFirst(TSCfgContext ctx, TSCfgIterState * state)
 {
   return CfgContextGetFirst((CfgContext *) ctx, state);
 }
 
-INKCfgEle *
-INKCfgContextGetNext(INKCfgContext ctx, INKCfgIterState * state)
+TSCfgEle *
+TSCfgContextGetNext(TSCfgContext ctx, TSCfgIterState * state)
 {
   return CfgContextGetNext((CfgContext *) ctx, state);
 }
 
-INKError
-INKCfgContextMoveEleUp(INKCfgContext ctx, int index)
+TSError
+TSCfgContextMoveEleUp(TSCfgContext ctx, int index)
 {
   return CfgContextMoveEleUp((CfgContext *) ctx, index);
 }
 
-INKError
-INKCfgContextMoveEleDown(INKCfgContext ctx, int index)
+TSError
+TSCfgContextMoveEleDown(TSCfgContext ctx, int index)
 {
   return CfgContextMoveEleDown((CfgContext *) ctx, index);
 }
 
 
-INKError
-INKCfgContextAppendEle(INKCfgContext ctx, INKCfgEle * ele)
+TSError
+TSCfgContextAppendEle(TSCfgContext ctx, TSCfgEle * ele)
 {
   return CfgContextAppendEle((CfgContext *) ctx, ele);
 }
 
-INKError
-INKCfgContextInsertEleAt(INKCfgContext ctx, INKCfgEle * ele, int index)
+TSError
+TSCfgContextInsertEleAt(TSCfgContext ctx, TSCfgEle * ele, int index)
 {
   return CfgContextInsertEleAt((CfgContext *) ctx, ele, index);
 }
 
-INKError
-INKCfgContextRemoveEleAt(INKCfgContext ctx, int index)
+TSError
+TSCfgContextRemoveEleAt(TSCfgContext ctx, int index)
 {
   return CfgContextRemoveEleAt((CfgContext *) ctx, index);
 }
 
-INKError
-INKCfgContextRemoveAll(INKCfgContext ctx)
+TSError
+TSCfgContextRemoveAll(TSCfgContext ctx)
 {
   return CfgContextRemoveAll((CfgContext *) ctx);
 }
 
 /* checks if the fields in the ele are all valid */
 bool
-INKIsValid(INKCfgEle * ele)
+TSIsValid(TSCfgEle * ele)
 {
   CfgEleObj *ele_obj;
 
@@ -2687,7 +2687,7 @@ closeAllFds()
   }
 }
 
-inkapi INKError rm_start_proxy()
+tsapi TSError rm_start_proxy()
 {
 
 #if defined(linux)
@@ -2724,7 +2724,7 @@ inkapi INKError rm_start_proxy()
     }
   }                             // else already try to stop within 60s Window, skip
 #endif
-  return INK_ERR_OKAY;
+  return TS_ERR_OKAY;
 }
 
 
@@ -2732,61 +2732,61 @@ inkapi INKError rm_start_proxy()
 * Traffic server changes necessary when network config is changed
 *****************************************************************/
 
-inkapi INKError
-INKSetHostname(INKString hostname)
+tsapi TSError
+TSSetHostname(TSString hostname)
 {
-  INKActionNeedT action_need = INK_ACTION_UNDEFINED, top_action_req = INK_ACTION_UNDEFINED;
-  INKInt val = 0;
+  TSActionNeedT action_need = TS_ACTION_UNDEFINED, top_action_req = TS_ACTION_UNDEFINED;
+  TSInt val = 0;
 
   /* Here we should handle these cases:
    * rmserver.cfg - different API currently, records.config, mrtg, and hostname_FQ
    */
 
-  if (INKRecordGetInt("proxy.local.cluster.type", &val) == INK_ERR_OKAY) {      //If error??
+  if (TSRecordGetInt("proxy.local.cluster.type", &val) == TS_ERR_OKAY) {      //If error??
     if (val == 3) {
-      if (MgmtRecordSet("proxy.config.proxy_name", hostname, &action_need) != INK_ERR_OKAY)
-        return INK_ERR_FAIL;
+      if (MgmtRecordSet("proxy.config.proxy_name", hostname, &action_need) != TS_ERR_OKAY)
+        return TS_ERR_FAIL;
     }
   }
 
   if (action_need < top_action_req)     // a more severe action
     top_action_req = action_need;
 
-  if (MgmtRecordSet("proxy.node.hostname_FQ", hostname, &action_need) != INK_ERR_OKAY)
-    return INK_ERR_FAIL;
+  if (MgmtRecordSet("proxy.node.hostname_FQ", hostname, &action_need) != TS_ERR_OKAY)
+    return TS_ERR_FAIL;
 
   //carry out the appropriate action
   if (action_need < top_action_req)     // a more severe action
     top_action_req = action_need;
 
-  if (top_action_req != INK_ACTION_UNDEFINED) {
-    return INK_ERR_OKAY;
+  if (top_action_req != TS_ACTION_UNDEFINED) {
+    return TS_ERR_OKAY;
   } else {
-    return INK_ERR_OKAY;
+    return TS_ERR_OKAY;
   }
 }
 
-inkapi INKError
-INKSetGateway(INKString gateway_ip)
+tsapi TSError
+TSSetGateway(TSString gateway_ip)
 {
   NOWARN_UNUSED(gateway_ip);
   //Nothing to be done for now
-  return INK_ERR_OKAY;
+  return TS_ERR_OKAY;
 
 }
 
-inkapi INKError
-INKSetDNSServers(INKString dns_ips)
+tsapi TSError
+TSSetDNSServers(TSString dns_ips)
 {
   NOWARN_UNUSED(dns_ips);
   //Nothing to be done for now
-  return INK_ERR_OKAY;
+  return TS_ERR_OKAY;
 
 }
 
-inkapi INKError
-INKSetNICUp(INKString nic_name, bool static_ip, INKString ip, INKString old_ip, INKString netmask, bool onboot,
-            INKString gateway_ip)
+tsapi TSError
+TSSetNICUp(TSString nic_name, bool static_ip, TSString ip, TSString old_ip, TSString netmask, bool onboot,
+           TSString gateway_ip)
 {
   NOWARN_UNUSED(nic_name);
   NOWARN_UNUSED(static_ip);
@@ -2795,233 +2795,42 @@ INKSetNICUp(INKString nic_name, bool static_ip, INKString ip, INKString old_ip, 
   NOWARN_UNUSED(netmask);
   NOWARN_UNUSED(onboot);
   NOWARN_UNUSED(gateway_ip);
-  /* there is no ipnat conf file anymore,
-     commenting out the rest of this function */
-  return INK_ERR_READ_FILE;
-
-  /*
-     INKCfgContext ctx;
-     INKIpFilterEle *ele, *ele_copy;
-     INKActionNeedT action_need=INK_ACTION_UNDEFINED;
-     int i, index;
-
-     //ctx = INKCfgContextCreate(INK_FNAME_IPNAT);
-
-     if (!ctx) {
-     //Debug("config", "[INKSetNICUp] can't allocate ctx memory");
-     return INK_ERR_FAIL;
-     }
-
-     if (INKCfgContextGet(ctx) != INK_ERR_OKAY) {
-     //if (ctx) INKCfgContextDestroy(ctx);
-     return INK_ERR_READ_FILE;
-     }
-
-     if ((i =  INKCfgContextGetCount(ctx)) <=0 ) {
-     //if (ctx) INKCfgContextDestroy(ctx);
-     return INK_ERR_FAIL;
-     }
-
-     if (strcmp(nic_name, "eth0") == 0) {  //currently we hard code it - should be changed
-     for (index=0 ; index<i ; index++) {
-     ele = (INKIpFilterEle *)INKCfgContextGetEleAt(ctx, index);
-     if (ele != NULL) {
-     if (strcmp(ele->intr,nic_name) == 0) {
-     //if (strcmp(ele->dest_ip_addr, old_ip) == 0) //INKqa12486
-     ele->dest_ip_addr =  string_to_ip_addr(ip);
-     }
-     }
-     }
-     } else { //it is not eth0
-
-     bool found = false;
-     for (index=0 ; index<i ; index++) {
-     ele = (INKIpFilterEle *)INKCfgContextGetEleAt(ctx, index);
-     if (ele != NULL) {
-     if (strcmp(ele->intr,nic_name) == 0) {
-     found = true;
-     //if (strcmp(ele->dest_ip_addr, old_ip) == 0)  //INKqa12486
-     ele->dest_ip_addr =  string_to_ip_addr(ip);
-     }
-     }
-     }
-     if (!found) { //create the rules for the new NIC according to eth0
-     for (index=0 ; index<i ; index++) {
-     ele = (INKIpFilterEle *)INKCfgContextGetEleAt(ctx, index);
-     if (ele != NULL) {
-     if (strcmp(ele->intr, "eth0") == 0) {
-     ele_copy = INKIpFilterEleCreate();
-     //copy the ele
-     ele_copy->intr =  xstrdup(nic_name); // ethernet interface
-     ele_copy->src_ip_addr = ele->src_ip_addr;  // from IP
-     ele_copy->src_cidr = ele->src_cidr;
-     ele_copy->src_port = ele->src_port;  // from port
-     ele_copy->dest_ip_addr =  string_to_ip_addr(ip); // to IP
-     ele_copy->dest_port = ele->dest_port;     // to port
-     ele_copy->type_con = ele->type_con;
-     ele_copy->protocol = ele->protocol;
-
-     INKCfgContextAppendEle(ctx, (INKCfgEle*)ele_copy); // add new ele to end of list
-     }
-     }
-     }
-     }
-     }
-
-     // commit the CfgContext to write a new version of the file
-     if (INKCfgContextCommit(ctx, &action_need, NULL) != INK_ERR_OKAY) {
-     //if (ctx) INKCfgContextDestroy(ctx);
-     return INK_ERR_FAIL;
-     }
-     //if (ctx) INKCfgContextDestroy(ctx);
-
-
-     if ( action_need != INK_ACTION_UNDEFINED ){
-     return INKActionDo(action_need);
-     }
-     else {
-     return INK_ERR_OKAY;
-     }
-   */
+  /* there is no ipnat conf file anymore */
+  return TS_ERR_READ_FILE;
 }
 
-inkapi INKError
-INKSetProxyPort(INKString proxy_port)
+tsapi TSError
+TSSetProxyPort(TSString proxy_port)
 {
   NOWARN_UNUSED(proxy_port);
-  /* there is no ipnat.conf file anymore,
-     commenting out the rest of this function */
-  return INK_ERR_READ_FILE;
-
-  /*
-     INKCfgContext ctx;
-     INKIpFilterEle *ele;
-     INKActionNeedT action_need=INK_ACTION_UNDEFINED;
-     int i, index;
-
-     //ctx = INKCfgContextCreate(INK_FNAME_IPNAT);
-     if (!ctx) {
-     //Debug("config", "[INKSetNICUp] can't allocate ctx memory");
-     return INK_ERR_FAIL;
-     }
-
-     if (INKCfgContextGet(ctx) != INK_ERR_OKAY) {
-     //if (ctx) INKCfgContextDestroy(ctx);
-     return INK_ERR_READ_FILE;
-     }
-
-     if ((i =  INKCfgContextGetCount(ctx)) <=0 ) {
-     //if (ctx) INKCfgContextDestroy(ctx);
-     return INK_ERR_FAIL;
-     }
-
-     for (index=0 ; index<i ; index++) {
-     ele = (INKIpFilterEle *)INKCfgContextGetEleAt(ctx, index);
-     if (ele != NULL) {
-     if (ele->src_port == 80) {
-     ele->dest_port = ink_atoi(proxy_port);
-     //  Debug("api","[INKSetProxyPort] %d is the dest_port for port %d now.\n",ele->dest_port, ele->src_port);
-     }
-     }
-     }
-
-     // commit the CfgContext to write a new version of the file
-     if (INKCfgContextCommit(ctx, &action_need, NULL) != INK_ERR_OKAY) {
-     //if (ctx) INKCfgContextDestroy(ctx);
-     return INK_ERR_FAIL;
-     }
-     //if (ctx) INKCfgContextDestroy(ctx);
-
-     if ( action_need != INK_ACTION_UNDEFINED ){
-     return INKActionDo(action_need);
-     }
-     else {
-     return INK_ERR_OKAY;
-     }
-   */
+  /* there is no ipnat.conf file anymore */
+  return TS_ERR_READ_FILE;
 }
 
-inkapi INKError
-INKSetNICDown(INKString nic_name, INKString ip_addrr)
+tsapi TSError
+TSSetNICDown(TSString nic_name, TSString ip_addrr)
 {
   NOWARN_UNUSED(nic_name);
   NOWARN_UNUSED(ip_addrr);
-  /* there is no ipnat.conf file anymore,
-     commenting out the rest of this function */
-  return INK_ERR_READ_FILE;
-
-  /*
-     INKCfgContext ctx;
-     INKIpFilterEle *ele;
-     INKActionNeedT action_need = INK_ACTION_UNDEFINED;
-     int index;
-     // This isn't used any more, code commented out below. /leif
-     //INKCfgIterState ctx_state;
-     bool found;
-
-     //ctx = INKCfgContextCreate(INK_FNAME_IPNAT);
-
-     if (!ctx) {
-     //Debug("config", "[INKSetNicDown] can't allocate ctx memory");
-     return INK_ERR_FAIL;
-     }
-
-     if (INKCfgContextGet(ctx) != INK_ERR_OKAY) {
-     //if (ctx) INKCfgContextDestroy(ctx);
-     return INK_ERR_READ_FILE;
-     }
-
-     ele = (INKIpFilterEle *)INKCfgContextGetFirst(ctx, &ctx_state);
-
-     while (ele) {
-     if (strcmp(ele->intr, nic_name) == 0)  INKCfgContextRemoveEleAt (ctx, index);
-     ele = (INKIpFilterEle *)INKCfgContextGetNext(ctx, &ctx_state);
-
-     }
-     found = true;
-     while (found) {
-     found = false;
-     for (index=0 ; index< INKCfgContextGetCount(ctx); index++) {
-     ele = (INKIpFilterEle *)INKCfgContextGetEleAt(ctx, index);
-     if (ele != NULL) {
-     if (strcmp(ele->intr, nic_name) == 0)  {
-     INKCfgContextRemoveEleAt (ctx, index);
-     found = true;
-     }
-     }
-     }
-     }
-
-     // commit the CfgContext to write a new version of the file
-     if (INKCfgContextCommit(ctx, &action_need, NULL) != INK_ERR_OKAY) {
-     //if (ctx) INKCfgContextDestroy(ctx);
-     return INK_ERR_FAIL;
-     }
-     //if (ctx) INKCfgContextDestroy(ctx);
-
-     if ( action_need != INK_ACTION_UNDEFINED) {
-     return INKActionDo(action_need);
-     }
-     else {
-     return INK_ERR_OKAY;
-     }
-   */
+  /* there is no ipnat.conf file anymore */
+  return TS_ERR_READ_FILE;
 }
 
 
-inkapi INKError
-INKSetSearchDomain(const char *search_name)
+tsapi TSError
+TSSetSearchDomain(const char *search_name)
 {
   NOWARN_UNUSED(search_name);
   //Nothing to be done for now
-  return INK_ERR_OKAY;
+  return TS_ERR_OKAY;
 }
 
 /* The following 2 functions set the Realm field in rmserver.cfg file. */
 void
-resetHostName(INKRmServerEle * ele, const char *hostname, const char *tail)
+resetHostName(TSRmServerEle * ele, const char *hostname, const char *tail)
 {
   char buff[MAX_RULE_SIZE];
+
   xfree(ele->str_val);
   snprintf(buff, sizeof(buff), "%s.%s", hostname, tail);
   ele->str_val = xstrdup(buff);

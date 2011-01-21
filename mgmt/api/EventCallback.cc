@@ -45,7 +45,7 @@
  * notes: None
  **********************************************************************/
 EventCallbackT *
-create_event_callback(INKEventSignalFunc func, void *data)
+create_event_callback(TSEventSignalFunc func, void *data)
 {
   EventCallbackT *event_cb;
 
@@ -82,7 +82,7 @@ delete_event_callback(EventCallbackT * event_cb)
  *
  * purpose: initializes the structures used to deal with events
  * input: None
- * output: INK_ERR_xx
+ * output: TS_ERR_xx
  * notes: None
  **********************************************************************/
 CallbackTable *
@@ -193,11 +193,11 @@ get_events_with_callbacks(CallbackTable * cb_table)
  *        event_name - the event to store the callback for (if NULL, register for all events)
  *        func - the callback function
  *        first_cb - true only if this is the event's first callback
- * output: INK_ERR_xx
+ * output: TS_ERR_xx
  * notes:
  **********************************************************************/
-INKError
-cb_table_register(CallbackTable * cb_table, char *event_name, INKEventSignalFunc func, void *data, bool * first_cb)
+TSError
+cb_table_register(CallbackTable * cb_table, char *event_name, TSEventSignalFunc func, void *data, bool * first_cb)
 {
   bool first_time = 0;
   int id;
@@ -205,7 +205,7 @@ cb_table_register(CallbackTable * cb_table, char *event_name, INKEventSignalFunc
 
   // the data and event_name can be NULL
   if (func == NULL || !cb_table)
-    return INK_ERR_PARAMS;
+    return TS_ERR_PARAMS;
 
   ink_mutex_acquire(&(cb_table->event_callback_lock));
 
@@ -220,7 +220,7 @@ cb_table_register(CallbackTable * cb_table, char *event_name, INKEventSignalFunc
 
       if (!cb_table->event_callback_l[i]) {
         ink_mutex_release(&cb_table->event_callback_lock);
-        return INK_ERR_SYS_CALL;
+        return TS_ERR_SYS_CALL;
       }
 
       event_cb = create_event_callback(func, data);
@@ -236,7 +236,7 @@ cb_table_register(CallbackTable * cb_table, char *event_name, INKEventSignalFunc
 
     if (!cb_table->event_callback_l[id]) {
       ink_mutex_release(&cb_table->event_callback_lock);
-      return INK_ERR_SYS_CALL;
+      return TS_ERR_SYS_CALL;
     }
     // now add to list
     event_cb = create_event_callback(func, data);
@@ -249,7 +249,7 @@ cb_table_register(CallbackTable * cb_table, char *event_name, INKEventSignalFunc
   if (first_cb)
     *first_cb = first_time;
 
-  return INK_ERR_OKAY;
+  return TS_ERR_OKAY;
 }
 
 
@@ -262,13 +262,13 @@ cb_table_register(CallbackTable * cb_table, char *event_name, INKEventSignalFunc
  *        event_name - the event to store the callback for (if NULL, register for all events)
  *        func - the callback function
  *        first_cb - true only if this is the event's first callback
- * output: INK_ERR_xx
+ * output: TS_ERR_xx
  * notes:
  **********************************************************************/
-INKError
-cb_table_unregister(CallbackTable * cb_table, char *event_name, INKEventSignalFunc func)
+TSError
+cb_table_unregister(CallbackTable * cb_table, char *event_name, TSEventSignalFunc func)
 {
-  INKEventSignalFunc cb_fun;
+  TSEventSignalFunc cb_fun;
   EventCallbackT *event_cb;
 
   ink_mutex_acquire(&cb_table->event_callback_lock);
@@ -357,5 +357,5 @@ cb_table_unregister(CallbackTable * cb_table, char *event_name, INKEventSignalFu
 
   ink_mutex_release(&cb_table->event_callback_lock);
 
-  return INK_ERR_OKAY;
+  return TS_ERR_OKAY;
 }

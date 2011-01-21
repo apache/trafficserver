@@ -30,8 +30,8 @@
  *
  ***************************************************************************/
 
-#ifndef __INK_MGMT_API_H__
-#define __INK_MGMT_API_H__
+#ifndef __TS_MGMT_API_H__
+#define __TS_MGMT_API_H__
 
 #include "ink_port.h"
 
@@ -39,12 +39,12 @@
  * System Specific Items
  ***************************************************************************/
 
-#if defined (_WIN32) && defined (_INK_EXPORT)
-#define inkapi __declspec( dllexport )
+#if defined (_WIN32) && defined (_TS_EXPORT)
+#define tsapi __declspec( dllexport )
 #elif defined (_WIN32)
-#define inkapi __declspec( dllimport )
+#define tsapi __declspec( dllimport )
 #else
-#define inkapi
+#define tsapi
 #endif
 
 #if defined (_WIN32)
@@ -84,10 +84,10 @@ extern "C"
 {
 #endif                          /* __cplusplus */
 
-#define __INK_RES_PATH(x)   #x
-#define _INK_RES_PATH(x)    __INK_RES_PATH (x)
-#define INK_RES_PATH(x)     x __FILE__ ":" _INK_RES_PATH (__LINE__)
-#define INK_RES_MEM_PATH    INK_RES_PATH ("memory/")
+#define __TS_RES_PATH(x)   #x
+#define _TS_RES_PATH(x)    __TS_RES_PATH (x)
+#define TS_RES_PATH(x)     x __FILE__ ":" _TS_RES_PATH (__LINE__)
+#define TS_RES_MEM_PATH    TS_RES_PATH ("memory/")
 
 /***************************************************************************
  * Error and Return Values
@@ -95,315 +95,315 @@ extern "C"
 
   typedef enum
   {
-    INK_ERR_OKAY = 0,
+    TS_ERR_OKAY = 0,
 
-    INK_ERR_READ_FILE,          /* Error occur in reading file */
-    INK_ERR_WRITE_FILE,         /* Error occur in writing file */
-    INK_ERR_PARSE_CONFIG_RULE,  /* Error in parsing configuration file */
-    INK_ERR_INVALID_CONFIG_RULE,        /* Invalid Configuration Rule */
+    TS_ERR_READ_FILE,          /* Error occur in reading file */
+    TS_ERR_WRITE_FILE,         /* Error occur in writing file */
+    TS_ERR_PARSE_CONFIG_RULE,  /* Error in parsing configuration file */
+    TS_ERR_INVALID_CONFIG_RULE,        /* Invalid Configuration Rule */
 
-    INK_ERR_NET_ESTABLISH,      /* Problem in establishing a TCP socket */
-    INK_ERR_NET_READ,           /* Problem reading from socket */
-    INK_ERR_NET_WRITE,          /* Problem writing to socket */
-    INK_ERR_NET_EOF,            /* Hit socket EOF */
-    INK_ERR_NET_TIMEOUT,        /* Timed out while waiting for socket read */
+    TS_ERR_NET_ESTABLISH,      /* Problem in establishing a TCP socket */
+    TS_ERR_NET_READ,           /* Problem reading from socket */
+    TS_ERR_NET_WRITE,          /* Problem writing to socket */
+    TS_ERR_NET_EOF,            /* Hit socket EOF */
+    TS_ERR_NET_TIMEOUT,        /* Timed out while waiting for socket read */
 
-    INK_ERR_SYS_CALL,           /* Error in basic system call, eg. malloc */
-    INK_ERR_PARAMS,             /* Invalid parameters for a fn */
+    TS_ERR_SYS_CALL,           /* Error in basic system call, eg. malloc */
+    TS_ERR_PARAMS,             /* Invalid parameters for a fn */
 
-    INK_ERR_FAIL
-  } INKError;
+    TS_ERR_FAIL
+  } TSError;
 
 /***************************************************************************
  * Constants
  ***************************************************************************/
 
-#define INK_INVALID_HANDLE       NULL
-#define INK_INVALID_LIST         INK_INVALID_HANDLE
-#define INK_INVALID_CFG_CONTEXT  INK_INVALID_HANDLE
-#define INK_INVALID_THREAD       INK_INVALID_HANDLE
-#define INK_INVALID_MUTEX        INK_INVALID_HANDLE
+#define TS_INVALID_HANDLE       NULL
+#define TS_INVALID_LIST         TS_INVALID_HANDLE
+#define TS_INVALID_CFG_CONTEXT  TS_INVALID_HANDLE
+#define TS_INVALID_THREAD       TS_INVALID_HANDLE
+#define TS_INVALID_MUTEX        TS_INVALID_HANDLE
 
-#define INK_INVALID_IP_ADDR      NULL
-#define INK_INVALID_IP_CIDR      -1
-#define INK_INVALID_PORT         0
+#define TS_INVALID_IP_ADDR      NULL
+#define TS_INVALID_IP_CIDR      -1
+#define TS_INVALID_PORT         0
 
-#define INK_SSPEC_TIME           0x1
-#define INK_SSPEC_SRC_IP         0x2
-#define INK_SSPEC_PREFIX         0x4
-#define INK_SSPEC_SUFFIX         0x8
-#define INK_SSPEC_PORT           0x10
-#define INK_SSPEC_METHOD         0x20
-#define INK_SSPEC_SCHEME         0x40
+#define TS_SSPEC_TIME           0x1
+#define TS_SSPEC_SRC_IP         0x2
+#define TS_SSPEC_PREFIX         0x4
+#define TS_SSPEC_SUFFIX         0x8
+#define TS_SSPEC_PORT           0x10
+#define TS_SSPEC_METHOD         0x20
+#define TS_SSPEC_SCHEME         0x40
 
-#define INK_ENCRYPT_PASSWD_LEN   23
+#define TS_ENCRYPT_PASSWD_LEN   23
 
 /***************************************************************************
  * Types
  ***************************************************************************/
 
-  typedef int64_t INKInt;
-  typedef int64_t INKCounter;
-  typedef float INKFloat;
-  typedef char *INKString;
-  typedef char *INKIpAddr;
+  typedef int64_t TSInt;
+  typedef int64_t TSCounter;
+  typedef float TSFloat;
+  typedef char *TSString;
+  typedef char *TSIpAddr;
 
-  typedef void *INKHandle;
-  typedef INKHandle INKList;
-  typedef INKHandle INKIpAddrList;      /* contains INKIpAddrEle *'s */
-  typedef INKHandle INKPortList;        /* conatins INKPortEle *'s   */
-  typedef INKHandle INKDomainList;      /* contains INKDomain *'s    */
-  typedef INKHandle INKStringList;      /* contains char* 's         */
-  typedef INKHandle INKIntList; /* contains int* 's          */
+  typedef void *TSHandle;
+  typedef TSHandle TSList;
+  typedef TSHandle TSIpAddrList;      /* contains TSIpAddrEle *'s */
+  typedef TSHandle TSPortList;        /* conatins TSPortEle *'s   */
+  typedef TSHandle TSDomainList;      /* contains TSDomain *'s    */
+  typedef TSHandle TSStringList;      /* contains char* 's         */
+  typedef TSHandle TSIntList; /* contains int* 's          */
 
-  typedef INKHandle INKCfgContext;
-  typedef INKHandle INKCfgIterState;
+  typedef TSHandle TSCfgContext;
+  typedef TSHandle TSCfgIterState;
 
 /*--- basic control operations --------------------------------------------*/
 
   typedef enum
   {
-    INK_ACTION_SHUTDOWN,        /* change requires user to stop then start the Traffic Server and Manager (restart Traffic Cop) */
-    INK_ACTION_RESTART,         /* change requires restart Traffic Server and Traffic Manager */
-    INK_ACTION_DYNAMIC,         /* change is already made in function call */
-    INK_ACTION_RECONFIGURE,     /* change requires TS to reread configuration files */
-    INK_ACTION_UNDEFINED
-  } INKActionNeedT;
+    TS_ACTION_SHUTDOWN,        /* change requires user to stop then start the Traffic Server and Manager (restart Traffic Cop) */
+    TS_ACTION_RESTART,         /* change requires restart Traffic Server and Traffic Manager */
+    TS_ACTION_DYNAMIC,         /* change is already made in function call */
+    TS_ACTION_RECONFIGURE,     /* change requires TS to reread configuration files */
+    TS_ACTION_UNDEFINED
+  } TSActionNeedT;
 
   typedef enum
   {
-    INK_PROXY_ON,
-    INK_PROXY_OFF,
-    INK_PROXY_UNDEFINED
-  } INKProxyStateT;
+    TS_PROXY_ON,
+    TS_PROXY_OFF,
+    TS_PROXY_UNDEFINED
+  } TSProxyStateT;
 
 /* used when starting Traffic Server process */
   typedef enum
   {
-    INK_CACHE_CLEAR_ON,         /* run TS in  "clear entire cache" mode */
-    INK_CACHE_CLEAR_HOSTDB,     /* run TS in "only clear the host db cache" mode */
-    INK_CACHE_CLEAR_OFF         /* starts TS in regualr mode w/o any options */
-  } INKCacheClearT;
+    TS_CACHE_CLEAR_ON,         /* run TS in  "clear entire cache" mode */
+    TS_CACHE_CLEAR_HOSTDB,     /* run TS in "only clear the host db cache" mode */
+    TS_CACHE_CLEAR_OFF         /* starts TS in regualr mode w/o any options */
+  } TSCacheClearT;
 
 /*--- diagnostic output operations ----------------------------------------*/
 
   typedef enum
   {
-    INK_DIAG_DIAG,
-    INK_DIAG_DEBUG,
-    INK_DIAG_STATUS,
-    INK_DIAG_NOTE,
-    INK_DIAG_WARNING,
-    INK_DIAG_ERROR,
-    INK_DIAG_FATAL,             /* >= FATAL severity causes process termination */
-    INK_DIAG_ALERT,
-    INK_DIAG_EMERGENCY,
-    INK_DIAG_UNDEFINED
-  } INKDiagsT;
+    TS_DIAG_DIAG,
+    TS_DIAG_DEBUG,
+    TS_DIAG_STATUS,
+    TS_DIAG_NOTE,
+    TS_DIAG_WARNING,
+    TS_DIAG_ERROR,
+    TS_DIAG_FATAL,             /* >= FATAL severity causes process termination */
+    TS_DIAG_ALERT,
+    TS_DIAG_EMERGENCY,
+    TS_DIAG_UNDEFINED
+  } TSDiagsT;
 
 /*--- event operations ----------------------------------------------------*/
   typedef enum
   {
-    INK_EVENT_PRIORITY_WARNING,
-    INK_EVENT_PRIORITY_ERROR,
-    INK_EVENT_PRIORITY_FATAL,
-    INK_EVENT_PRIORITY_UNDEFINED
-  } INKEventPriorityT;
+    TS_EVENT_PRIORITY_WARNING,
+    TS_EVENT_PRIORITY_ERROR,
+    TS_EVENT_PRIORITY_FATAL,
+    TS_EVENT_PRIORITY_UNDEFINED
+  } TSEventPriorityT;
 
 /*--- abstract file operations --------------------------------------------*/
 
   typedef enum
   {
-    INK_ACCESS_NONE,            /* no access */
-    INK_ACCESS_MONITOR,         /* monitor only access */
-    INK_ACCESS_MONITOR_VIEW,    /* monitor and view configuration access */
-    INK_ACCESS_MONITOR_CHANGE,  /* monitor and change configuration access */
-    INK_ACCESS_UNDEFINED
-  } INKAccessT;
+    TS_ACCESS_NONE,            /* no access */
+    TS_ACCESS_MONITOR,         /* monitor only access */
+    TS_ACCESS_MONITOR_VIEW,    /* monitor and view configuration access */
+    TS_ACCESS_MONITOR_CHANGE,  /* monitor and change configuration access */
+    TS_ACCESS_UNDEFINED
+  } TSAccessT;
 
   typedef enum
   {
-    INK_REC_INT,
-    INK_REC_COUNTER,
-    INK_REC_FLOAT,
-    INK_REC_STRING,
-    INK_REC_UNDEFINED
-  } INKRecordT;
+    TS_REC_INT,
+    TS_REC_COUNTER,
+    TS_REC_FLOAT,
+    TS_REC_STRING,
+    TS_REC_UNDEFINED
+  } TSRecordT;
 
   typedef enum
   {
-    INK_IP_SINGLE,              /* single ip address */
-    INK_IP_RANGE,               /* range ip address, eg. 1.1.1.1-2.2.2.2 */
-    INK_IP_UNDEFINED
-  } INKIpAddrT;
+    TS_IP_SINGLE,              /* single ip address */
+    TS_IP_RANGE,               /* range ip address, eg. 1.1.1.1-2.2.2.2 */
+    TS_IP_UNDEFINED
+  } TSIpAddrT;
 
   typedef enum
   {
-    INK_CON_TCP,                /* TCP connection */
-    INK_CON_UDP,                /* UDP connection */
-    INK_CON_UNDEFINED
-  } INKConnectT;
+    TS_CON_TCP,                /* TCP connection */
+    TS_CON_UDP,                /* UDP connection */
+    TS_CON_UNDEFINED
+  } TSConnectT;
 
   typedef enum                  /* primary destination types */
   {
-    INK_PD_DOMAIN,              /* domain name */
-    INK_PD_HOST,                /* hostname */
-    INK_PD_IP,                  /* ip address */
-    INK_PD_URL_REGEX,           /* regular expression in url */
-    INK_PD_UNDEFINED
-  } INKPrimeDestT;
+    TS_PD_DOMAIN,              /* domain name */
+    TS_PD_HOST,                /* hostname */
+    TS_PD_IP,                  /* ip address */
+    TS_PD_URL_REGEX,           /* regular expression in url */
+    TS_PD_UNDEFINED
+  } TSPrimeDestT;
 
   typedef enum                  /* header information types */
   {
-    INK_HDR_DATE,
-    INK_HDR_HOST,
-    INK_HDR_COOKIE,
-    INK_HDR_CLIENT_IP,
-    INK_HDR_UNDEFINED
-  } INKHdrT;
+    TS_HDR_DATE,
+    TS_HDR_HOST,
+    TS_HDR_COOKIE,
+    TS_HDR_CLIENT_IP,
+    TS_HDR_UNDEFINED
+  } TSHdrT;
 
   typedef enum                  /* indicate if ICP parent cache or ICP sibling cache */
   {
-    INK_ICP_PARENT,
-    INK_ICP_SIBLING,
-    INK_ICP_UNDEFINED
-  } INKIcpT;
+    TS_ICP_PARENT,
+    TS_ICP_SIBLING,
+    TS_ICP_UNDEFINED
+  } TSIcpT;
 
   /* TODO: This should be removed */
   typedef enum                  /* access privileges to news articles cached by Traffic Server  */
   {
-    INK_IP_ALLOW_ALLOW,
-    INK_IP_ALLOW_DENY,
-    INK_IP_ALLOW_UNDEFINED
-  } INKIpAllowT;
+    TS_IP_ALLOW_ALLOW,
+    TS_IP_ALLOW_DENY,
+    TS_IP_ALLOW_UNDEFINED
+  } TSIpAllowT;
 
   typedef enum                  /* multicast time to live options */
   {
-    INK_MC_TTL_SINGLE_SUBNET,   /* forward multicast datagrams to single subnet */
-    INK_MC_TTL_MULT_SUBNET,     /* deliver multicast to more than one subnet */
-    INK_MC_TTL_UNDEFINED
-  } INKMcTtlT;
+    TS_MC_TTL_SINGLE_SUBNET,   /* forward multicast datagrams to single subnet */
+    TS_MC_TTL_MULT_SUBNET,     /* deliver multicast to more than one subnet */
+    TS_MC_TTL_UNDEFINED
+  } TSMcTtlT;
 
   typedef enum                  /* tells Traffic Server to accept or reject records satisfying filter condition */
   {
-    INK_LOG_FILT_ACCEPT,
-    INK_LOG_FILT_REJECT,
-    INK_LOG_FILT_UNDEFINED
-  } INKLogFilterActionT;
+    TS_LOG_FILT_ACCEPT,
+    TS_LOG_FILT_REJECT,
+    TS_LOG_FILT_UNDEFINED
+  } TSLogFilterActionT;
 
   typedef enum                  /* possible conditional operators used in filters */
   {
-    INK_LOG_COND_MATCH,         /* true if filter's field and value are idential; case-sensitive */
-    INK_LOG_COND_CASE_INSENSITIVE_MATCH,
-    INK_LOG_COND_CONTAIN,       /* true if field contains the value; case-sensitive */
-    INK_LOG_COND_CASE_INSENSITIVE_CONTAIN,
-    INK_LOG_COND_UNDEFINED
-  } INKLogConditionOpT;
+    TS_LOG_COND_MATCH,         /* true if filter's field and value are idential; case-sensitive */
+    TS_LOG_COND_CASE_INSENSITIVE_MATCH,
+    TS_LOG_COND_CONTAIN,       /* true if field contains the value; case-sensitive */
+    TS_LOG_COND_CASE_INSENSITIVE_CONTAIN,
+    TS_LOG_COND_UNDEFINED
+  } TSLogConditionOpT;
 
   typedef enum                  /* valid logging modes for LogObject's */
   {
-    INK_LOG_MODE_ASCII,
-    INK_LOG_MODE_BINARY,
-    INK_LOG_ASCII_PIPE,
-    INK_LOG_MODE_UNDEFINED
-  } INKLogModeT;
+    TS_LOG_MODE_ASCII,
+    TS_LOG_MODE_BINARY,
+    TS_LOG_ASCII_PIPE,
+    TS_LOG_MODE_UNDEFINED
+  } TSLogModeT;
 
   /* TODO: This should be removed */
   typedef enum                  /* access privileges to news articles cached by Traffic Server  */
   {
-    INK_MGMT_ALLOW_ALLOW,
-    INK_MGMT_ALLOW_DENY,
-    INK_MGMT_ALLOW_UNDEFINED
-  } INKMgmtAllowT;
+    TS_MGMT_ALLOW_ALLOW,
+    TS_MGMT_ALLOW_DENY,
+    TS_MGMT_ALLOW_UNDEFINED
+  } TSMgmtAllowT;
 
   typedef enum                  /* methods of specifying groups of clients */
   {
-    INK_CLIENT_GRP_IP,          /* ip range */
-    INK_CLIENT_GRP_DOMAIN,      /* domain */
-    INK_CLIENT_GRP_HOSTNAME,    /* hostname */
-    INK_CLIENT_GRP_UNDEFINED
-  } INKClientGroupT;
+    TS_CLIENT_GRP_IP,          /* ip range */
+    TS_CLIENT_GRP_DOMAIN,      /* domain */
+    TS_CLIENT_GRP_HOSTNAME,    /* hostname */
+    TS_CLIENT_GRP_UNDEFINED
+  } TSClientGroupT;
 
   typedef enum
   {
-    INK_RR_TRUE,                /* go through parent cache list in round robin */
-    INK_RR_STRICT,              /* Traffic Server machines serve requests striclty in turn */
-    INK_RR_FALSE,               /* no round robin selection */
-    INK_RR_NONE,                /* no round-robin action tag specified */
-    INK_RR_UNDEFINED
-  } INKRrT;
+    TS_RR_TRUE,                /* go through parent cache list in round robin */
+    TS_RR_STRICT,              /* Traffic Server machines serve requests striclty in turn */
+    TS_RR_FALSE,               /* no round robin selection */
+    TS_RR_NONE,                /* no round-robin action tag specified */
+    TS_RR_UNDEFINED
+  } TSRrT;
 
   typedef enum                  /* a request URL method; used in Secondary Specifiers */
   {
-    INK_METHOD_NONE,
-    INK_METHOD_GET,
-    INK_METHOD_POST,
-    INK_METHOD_PUT,
-    INK_METHOD_TRACE,
-    INK_METHOD_PUSH,
-    INK_METHOD_UNDEFINED
-  } INKMethodT;
+    TS_METHOD_NONE,
+    TS_METHOD_GET,
+    TS_METHOD_POST,
+    TS_METHOD_PUT,
+    TS_METHOD_TRACE,
+    TS_METHOD_PUSH,
+    TS_METHOD_UNDEFINED
+  } TSMethodT;
 
   typedef enum                  /*  possible URL schemes */
   {
-    INK_SCHEME_NONE,
-    INK_SCHEME_HTTP,
-    INK_SCHEME_HTTPS,
-    INK_SCHEME_RTSP,
-    INK_SCHEME_MMS,
-    INK_SCHEME_UNDEFINED
-  } INKSchemeT;
+    TS_SCHEME_NONE,
+    TS_SCHEME_HTTP,
+    TS_SCHEME_HTTPS,
+    TS_SCHEME_RTSP,
+    TS_SCHEME_MMS,
+    TS_SCHEME_UNDEFINED
+  } TSSchemeT;
 
   typedef enum                  /* possible schemes to divide partition by */
   {
-    INK_PARTITION_HTTP,
-    INK_PARTITION_UNDEFINED
-  } INKPartitionSchemeT;
+    TS_PARTITION_HTTP,
+    TS_PARTITION_UNDEFINED
+  } TSPartitionSchemeT;
 
   typedef enum                  /* specifies how size is specified */
   {
-    INK_SIZE_FMT_PERCENT,       /* as a percentage */
-    INK_SIZE_FMT_ABSOLUTE,      /* as an absolute value */
-    INK_SIZE_FMT_UNDEFINED
-  } INKSizeFormatT;
+    TS_SIZE_FMT_PERCENT,       /* as a percentage */
+    TS_SIZE_FMT_ABSOLUTE,      /* as an absolute value */
+    TS_SIZE_FMT_UNDEFINED
+  } TSSizeFormatT;
 
   typedef enum
   {
-    INK_HTTP_CONGEST_PER_IP,
-    INK_HTTP_CONGEST_PER_HOST,
-    INK_HTTP_CONGEST_UNDEFINED
-  } INKCongestionSchemeT;
+    TS_HTTP_CONGEST_PER_IP,
+    TS_HTTP_CONGEST_PER_HOST,
+    TS_HTTP_CONGEST_UNDEFINED
+  } TSCongestionSchemeT;
 
   typedef enum
   {
-    INK_PROTOCOL_DNS,
-    INK_PROTOCOL_UNDEFINED
-  } INKProtocolT;
+    TS_PROTOCOL_DNS,
+    TS_PROTOCOL_UNDEFINED
+  } TSProtocolT;
 
   typedef enum
   {
-    INK_FNAME_ADMIN_ACCESS,     /* admin_access.config */
-    INK_FNAME_CACHE_OBJ,        /* cache.config */
-    INK_FNAME_CONGESTION,       /* congestion.config */
-    INK_FNAME_HOSTING,          /* hosting.config */
-    INK_FNAME_ICP_PEER,         /* icp.config */
-    INK_FNAME_IP_ALLOW,         /* ip_allow.config */
-    INK_FNAME_LOGS_XML,         /* logs_xml.config */
-    INK_FNAME_MGMT_ALLOW,       /* mgmt_allow.config */
-    INK_FNAME_PARENT_PROXY,     /* parent.config */
-    INK_FNAME_PARTITION,        /* partition.config */
-    INK_FNAME_PLUGIN,           /* plugin.config */
-    INK_FNAME_REMAP,            /* remap.config */
-    INK_FNAME_SOCKS,            /* socks.config */
-    INK_FNAME_SPLIT_DNS,        /* splitdns.config */
-    INK_FNAME_STORAGE,          /* storage.config */
-    INK_FNAME_UPDATE_URL,       /* update.config */
-    INK_FNAME_VADDRS,           /* vaddrs.config */
-    INK_FNAME_VSCAN,            /* vscan.config */
-    INK_FNAME_VS_TRUSTED_HOST,  /* trusted-host.config */
-    INK_FNAME_VS_EXTENSION,     /* extensions.config */
-    INK_FNAME_UNDEFINED
-  } INKFileNameT;
+    TS_FNAME_ADMIN_ACCESS,     /* admin_access.config */
+    TS_FNAME_CACHE_OBJ,        /* cache.config */
+    TS_FNAME_CONGESTION,       /* congestion.config */
+    TS_FNAME_HOSTING,          /* hosting.config */
+    TS_FNAME_ICP_PEER,         /* icp.config */
+    TS_FNAME_IP_ALLOW,         /* ip_allow.config */
+    TS_FNAME_LOGS_XML,         /* logs_xml.config */
+    TS_FNAME_MGMT_ALLOW,       /* mgmt_allow.config */
+    TS_FNAME_PARENT_PROXY,     /* parent.config */
+    TS_FNAME_PARTITION,        /* partition.config */
+    TS_FNAME_PLUGIN,           /* plugin.config */
+    TS_FNAME_REMAP,            /* remap.config */
+    TS_FNAME_SOCKS,            /* socks.config */
+    TS_FNAME_SPLIT_DNS,        /* splitdns.config */
+    TS_FNAME_STORAGE,          /* storage.config */
+    TS_FNAME_UPDATE_URL,       /* update.config */
+    TS_FNAME_VADDRS,           /* vaddrs.config */
+    TS_FNAME_VSCAN,            /* vscan.config */
+    TS_FNAME_VS_TRUSTED_HOST,  /* trusted-host.config */
+    TS_FNAME_VS_EXTENSION,     /* extensions.config */
+    TS_FNAME_UNDEFINED
+  } TSFileNameT;
 
 
 /* Each rule type within a file has its own enumeration.
@@ -412,41 +412,41 @@ extern "C"
  */
   typedef enum
   {
-    INK_ADMIN_ACCESS,           /* admin_access.config */
-    INK_CACHE_NEVER,            /* cache.config */
-    INK_CACHE_IGNORE_NO_CACHE,
-    INK_CACHE_IGNORE_CLIENT_NO_CACHE,
-    INK_CACHE_IGNORE_SERVER_NO_CACHE,
-    INK_CACHE_PIN_IN_CACHE,
-    INK_CACHE_REVALIDATE,
-    INK_CACHE_TTL_IN_CACHE,
-    INK_CACHE_AUTH_CONTENT,
-    INK_CONGESTION,             /* congestion.config */
-    INK_HOSTING,                /* hosting.config */
-    INK_ICP,                    /* icp.config */
-    INK_IP_ALLOW,               /* ip_allow.config */
-    INK_LOG_FILTER,             /* logs_xml.config */
-    INK_LOG_OBJECT,
-    INK_LOG_FORMAT,
-    INK_MGMT_ALLOW,             /* mgmt_allow.config */
-    INK_PP_PARENT,              /* parent.config */
-    INK_PP_GO_DIRECT,
-    INK_PARTITION,              /* partition.config */
-    INK_PLUGIN,                 /* plugin.config */
-    INK_REMAP_MAP,              /* remap.config */
-    INK_REMAP_REVERSE_MAP,
-    INK_REMAP_REDIRECT,
-    INK_REMAP_REDIRECT_TEMP,
-    INK_SOCKS_BYPASS,           /* socks.config */
-    INK_SOCKS_AUTH,
-    INK_SOCKS_MULTIPLE,
-    INK_SPLIT_DNS,              /* splitdns.config */
-    INK_STORAGE,                /* storage.config */
-    INK_UPDATE_URL,             /* update.config */
-    INK_VADDRS,                 /* vaddrs.config */
-    INK_TYPE_UNDEFINED,
-    INK_TYPE_COMMENT            /* for internal use only */
-  } INKRuleTypeT;
+    TS_ADMIN_ACCESS,           /* admin_access.config */
+    TS_CACHE_NEVER,            /* cache.config */
+    TS_CACHE_IGNORE_NO_CACHE,
+    TS_CACHE_IGNORE_CLIENT_NO_CACHE,
+    TS_CACHE_IGNORE_SERVER_NO_CACHE,
+    TS_CACHE_PIN_IN_CACHE,
+    TS_CACHE_REVALIDATE,
+    TS_CACHE_TTL_IN_CACHE,
+    TS_CACHE_AUTH_CONTENT,
+    TS_CONGESTION,             /* congestion.config */
+    TS_HOSTING,                /* hosting.config */
+    TS_ICP,                    /* icp.config */
+    TS_IP_ALLOW,               /* ip_allow.config */
+    TS_LOG_FILTER,             /* logs_xml.config */
+    TS_LOG_OBJECT,
+    TS_LOG_FORMAT,
+    TS_MGMT_ALLOW,             /* mgmt_allow.config */
+    TS_PP_PARENT,              /* parent.config */
+    TS_PP_GO_DIRECT,
+    TS_PARTITION,              /* partition.config */
+    TS_PLUGIN,                 /* plugin.config */
+    TS_REMAP_MAP,              /* remap.config */
+    TS_REMAP_REVERSE_MAP,
+    TS_REMAP_REDIRECT,
+    TS_REMAP_REDIRECT_TEMP,
+    TS_SOCKS_BYPASS,           /* socks.config */
+    TS_SOCKS_AUTH,
+    TS_SOCKS_MULTIPLE,
+    TS_SPLIT_DNS,              /* splitdns.config */
+    TS_STORAGE,                /* storage.config */
+    TS_UPDATE_URL,             /* update.config */
+    TS_VADDRS,                 /* vaddrs.config */
+    TS_TYPE_UNDEFINED,
+    TS_TYPE_COMMENT            /* for internal use only */
+  } TSRuleTypeT;
 
   /* These are initialization options for the Init() function. */
   typedef enum
@@ -469,22 +469,22 @@ extern "C"
     int h;                      /* hours */
     int m;                      /* minutes */
     int s;                      /* seconds */
-  } INKHmsTime;
+  } TSHmsTime;
 
 /*--- records -------------------------------------------------------------*/
 
   typedef struct
   {
     char *rec_name;             /* record name */
-    INKRecordT rec_type;        /* record type {INK_REC_INT...} */
+    TSRecordT rec_type;        /* record type {TS_REC_INT...} */
     union
     {                           /* record value */
-      INKInt int_val;
-      INKCounter counter_val;
-      INKFloat float_val;
-      INKString string_val;
+      TSInt int_val;
+      TSCounter counter_val;
+      TSFloat float_val;
+      TSString string_val;
     };
-  } INKRecordEle;
+  } TSRecordEle;
 
 /*--- events --------------------------------------------------------------*/
 
@@ -496,16 +496,16 @@ extern "C"
 
   typedef struct
   {
-    /*INKEventTypeT type; *//* Predefined or Conditional event */
+    /*TSEventTypeT type; *//* Predefined or Conditional event */
     int id;
     char *name;                 /* pre-set, immutable for PREDEFINED events */
     char *description;          /* predefined events have default */
     /*char *condition; *//* pre-set, immutable for PREDEFINED events */
-    INKEventPriorityT priority; /* WARNING, ERROR, FATAL */
+    TSEventPriorityT priority; /* WARNING, ERROR, FATAL */
     /*bool local; */
     /*unsigned long inet_address; *//* for remote peer events */
     /*bool seen; *//* for remote peer events */
-  } INKEvent;
+  } TSEvent;
 
 /* Will not be used until new Cougar Event Processor */
   typedef struct
@@ -513,34 +513,34 @@ extern "C"
     char *name;
     /*int signalCount; *//* 0 is inactive, >= 1 is active event */
     /*unsigned long timestamp; *//* only applies to active events */
-  } INKActiveEvent;
+  } TSActiveEvent;
 
 
 /*--- abstract file operations --------------------------------------------*/
 
   typedef struct
   {
-    INKIpAddrT type;            /* single ip or an ip-range */
-    INKIpAddr ip_a;             /* first ip */
+    TSIpAddrT type;            /* single ip or an ip-range */
+    TSIpAddr ip_a;             /* first ip */
     int cidr_a;                 /* CIDR value, 0 if not defined */
     int port_a;                 /* port, 0 if not defined */
-    INKIpAddr ip_b;             /* second ip (if ip-range) */
+    TSIpAddr ip_b;             /* second ip (if ip-range) */
     int cidr_b;                 /* CIDR value, 0 if not defined */
     int port_b;                 /* port, 0 if not defined */
-  } INKIpAddrEle;
+  } TSIpAddrEle;
 
   typedef struct
   {
     int port_a;                 /* first port */
     int port_b;                 /* second port (0 if not a port range) */
-  } INKPortEle;
+  } TSPortEle;
 
   typedef struct
   {
     char *domain_val;           /* a server name can be specified by name or IP address */
     /* used for www.host.com:8080 or 11.22.33.44:8000 */
     int port;                   /* (optional) */
-  } INKDomain;
+  } TSDomain;
 
 /* there are a variety of secondary specifiers that can be used in a rule; more than
  * one secondary specifier can be used per rule, but a secondary specifier can only
@@ -548,7 +548,7 @@ extern "C"
  */
   typedef struct
   {
-    uint32_t active;              /* valid field: INK_SSPEC_xxx */
+    uint32_t active;              /* valid field: TS_SSPEC_xxx */
     struct
     {                           /* time range */
       int hour_a;
@@ -556,60 +556,60 @@ extern "C"
       int hour_b;
       int min_b;
     } time;
-    INKIpAddr src_ip;           /* client/source ip */
+    TSIpAddr src_ip;           /* client/source ip */
     char *prefix;               /* prefix in path part of URL */
     char *suffix;               /* suffix in the URL */
-    INKPortEle *port;           /* requested URL port */
-    INKMethodT method;          /* get, post, put, trace */
-    INKSchemeT scheme;          /* HTTP */
-  } INKSspec;                   /* Sspec = Secondary Specifier */
+    TSPortEle *port;           /* requested URL port */
+    TSMethodT method;          /* get, post, put, trace */
+    TSSchemeT scheme;          /* HTTP */
+  } TSSspec;                   /* Sspec = Secondary Specifier */
 
   typedef struct
   {
-    INKPrimeDestT pd_type;      /* primary destination type: INK_PD_xxx */
+    TSPrimeDestT pd_type;      /* primary destination type: TS_PD_xxx */
     char *pd_val;               /* primary destination value; refers to the requested domain name,
                                    host name, ip address, or regular expression to
                                    be found in a URL  */
-    INKSspec sec_spec;          /* secondary specifier */
-  } INKPdSsFormat;              /* PdSs = Primary Destination Secondary Specifier */
+    TSSspec sec_spec;          /* secondary specifier */
+  } TSPdSsFormat;              /* PdSs = Primary Destination Secondary Specifier */
 
 
 /* Generic Ele struct which is used as first member in all other Ele structs.
- * The INKCfgContext operations deal with INKCfgEle* type, so must typecast
- * all Ele's to an INKCfgEle*
+ * The TSCfgContext operations deal with TSCfgEle* type, so must typecast
+ * all Ele's to an TSCfgEle*
  */
   typedef struct
   {
-    INKRuleTypeT type;
-    INKError error;
-  } INKCfgEle;
+    TSRuleTypeT type;
+    TSError error;
+  } TSCfgEle;
 
 /* admin_access.config */
   typedef struct
   {
-    INKCfgEle cfg_ele;
+    TSCfgEle cfg_ele;
     char *user;                 /* username */
     char *password;             /* MD5 encrypted */
-    INKAccessT access;          /* type of access allowed for user */
-  } INKAdminAccessEle;
+    TSAccessT access;          /* type of access allowed for user */
+  } TSAdminAccessEle;
 
 /* cache.config */
   typedef struct
   {
-    INKCfgEle cfg_ele;
-    INKPdSsFormat cache_info;   /* general PdSs information */
-    INKHmsTime time_period;     /* only valid if cache_act == INK_CACHE_PIN_IN_CACHE */
-  } INKCacheEle;
+    TSCfgEle cfg_ele;
+    TSPdSsFormat cache_info;   /* general PdSs information */
+    TSHmsTime time_period;     /* only valid if cache_act == TS_CACHE_PIN_IN_CACHE */
+  } TSCacheEle;
 
 /* congestion.config */
   typedef struct
   {
-    INKCfgEle cfg_ele;
-    INKPrimeDestT pd_type;
+    TSCfgEle cfg_ele;
+    TSPrimeDestT pd_type;
     char *pd_val;
     char *prefix;               /* optional */
     int port;                   /* optional */
-    INKCongestionSchemeT scheme;        /* per_ip or per_host */
+    TSCongestionSchemeT scheme;        /* per_ip or per_host */
     int max_connection_failures;
     int fail_window;
     int proxy_retry_interval;
@@ -621,131 +621,131 @@ extern "C"
     int dead_os_conn_retries;
     int max_connection;
     char *error_page_uri;
-  } INKCongestionEle;
+  } TSCongestionEle;
 
 /* hosting.config */
   typedef struct
   {
-    INKCfgEle cfg_ele;
-    INKPrimeDestT pd_type;
+    TSCfgEle cfg_ele;
+    TSPrimeDestT pd_type;
     char *pd_val;               /* domain or hostname  */
-    INKIntList partitions;      /* must be a list of ints */
-  } INKHostingEle;
+    TSIntList partitions;      /* must be a list of ints */
+  } TSHostingEle;
 
 /* icp.config */
   typedef struct
   {
-    INKCfgEle cfg_ele;
+    TSCfgEle cfg_ele;
     char *peer_hostname;        /* hostname of icp peer; ("localhost" name reserved for Traffic Server) */
-    INKIpAddr peer_host_ip_addr;        /* ip address of icp peer (not required if peer_hostname) */
-    INKIcpT peer_type;          /* 1: icp parent, 2: icp sibling */
+    TSIpAddr peer_host_ip_addr;        /* ip address of icp peer (not required if peer_hostname) */
+    TSIcpT peer_type;          /* 1: icp parent, 2: icp sibling */
     int peer_proxy_port;        /* port number of the TCP port used by the ICP peer for proxy communication */
     int peer_icp_port;          /* port number of the UDP port used by the ICP peer for ICP communication  */
     bool is_multicast;          /* false: multicast not enabled; true: multicast enabled */
-    INKIpAddr mc_ip_addr;       /* multicast ip (can be 0 if is_multicast == false */
-    INKMcTtlT mc_ttl;           /* multicast time to live; either IP multicast datagrams will not
+    TSIpAddr mc_ip_addr;       /* multicast ip (can be 0 if is_multicast == false */
+    TSMcTtlT mc_ttl;           /* multicast time to live; either IP multicast datagrams will not
                                    be forwarded beyond a single subnetwork, or allow delivery
                                    of IP multicast datagrams to more than one subnet
                                    (can be UNDEFINED if is_multicast == false */
-  } INKIcpEle;
+  } TSIcpEle;
 
 /* ip_allow.config */
   typedef struct
   {
-    INKCfgEle cfg_ele;
-    INKIpAddrEle *src_ip_addr;  /* source ip address (single or range) */
-    INKIpAllowT action;
-  } INKIpAllowEle;
+    TSCfgEle cfg_ele;
+    TSIpAddrEle *src_ip_addr;  /* source ip address (single or range) */
+    TSIpAllowT action;
+  } TSIpAllowEle;
 
 /* logs_xml.config */
   typedef struct
   {
-    INKCfgEle cfg_ele;
-    INKLogFilterActionT action; /* accept or reject records satisfying filter condition */
+    TSCfgEle cfg_ele;
+    TSLogFilterActionT action; /* accept or reject records satisfying filter condition */
     char *filter_name;
     char *log_field;            /* possible choices listed on p.250 */
-    INKLogConditionOpT compare_op;
+    TSLogConditionOpT compare_op;
     char *compare_str;          /* the comparison value can be any string or integer */
-    int compare_int;            /* if int, then all the INKLogConditionOpT operations mean "equal" */
-  } INKLogFilterEle;
+    int compare_int;            /* if int, then all the TSLogConditionOpT operations mean "equal" */
+  } TSLogFilterEle;
 
   typedef struct
   {
-    INKCfgEle cfg_ele;
+    TSCfgEle cfg_ele;
     char *name;                 /* must be unique; can't be a pre-defined format */
     char *format;
     int aggregate_interval_secs;        /* (optional) use if format contains aggregate ops */
-  } INKLogFormatEle;
+  } TSLogFormatEle;
 
   typedef struct
   {
-    INKCfgEle cfg_ele;
+    TSCfgEle cfg_ele;
     char *format_name;
     char *file_name;
-    INKLogModeT log_mode;
-    INKDomainList collation_hosts;      /* list of hosts (by name or IP addr) */
-    INKStringList filters;      /* list of filter names that already exist */
-    INKStringList protocols;    /* list of protocols, eg. http, nttp, icp */
-    INKStringList server_hosts; /* list of host names */
-  } INKLogObjectEle;
+    TSLogModeT log_mode;
+    TSDomainList collation_hosts;      /* list of hosts (by name or IP addr) */
+    TSStringList filters;      /* list of filter names that already exist */
+    TSStringList protocols;    /* list of protocols, eg. http, nttp, icp */
+    TSStringList server_hosts; /* list of host names */
+  } TSLogObjectEle;
 
 /* mgmt_allow.config */
   typedef struct
   {
-    INKCfgEle cfg_ele;
-    INKIpAddrEle *src_ip_addr;  /* source ip address (single or range) */
-    INKMgmtAllowT action;
-  } INKMgmtAllowEle;
+    TSCfgEle cfg_ele;
+    TSIpAddrEle *src_ip_addr;  /* source ip address (single or range) */
+    TSMgmtAllowT action;
+  } TSMgmtAllowEle;
 
 /* parent.config */
   typedef struct
   {
-    INKCfgEle cfg_ele;
-    INKPdSsFormat parent_info;  /* general PdSs information */
-    INKRrT rr;                  /*  possible values are INK_RRT_TRUE (go through proxy
-                                   parent list in round robin),INK_RRT_STRICT (server
-                                   requests striclty in turn), or INK_RRT_FALSE (no
+    TSCfgEle cfg_ele;
+    TSPdSsFormat parent_info;  /* general PdSs information */
+    TSRrT rr;                  /*  possible values are TS_RRT_TRUE (go through proxy
+                                   parent list in round robin),TS_RRT_STRICT (server
+                                   requests striclty in turn), or TS_RRT_FALSE (no
                                    round robin selection) */
-    INKDomainList proxy_list;   /* ordered list of parent proxies */
+    TSDomainList proxy_list;   /* ordered list of parent proxies */
     bool direct;                /* indicate if go directly to origin server, default = false and does
                                    not bypass parent heirarchies */
-  } INKParentProxyEle;          /* exactly one of rr or parent_proxy_act must be defined */
+  } TSParentProxyEle;          /* exactly one of rr or parent_proxy_act must be defined */
 
 /* partition.config */
   typedef struct
   {
-    INKCfgEle cfg_ele;
+    TSCfgEle cfg_ele;
     int partition_num;          /* must be in range 1 - 255 */
-    INKPartitionSchemeT scheme; /* http, mixt */
+    TSPartitionSchemeT scheme; /* http, mixt */
     int partition_size;         /* >= 128 MB, multiple of 128 */
-    INKSizeFormatT size_format; /* percentage or absolute */
-  } INKPartitionEle;
+    TSSizeFormatT size_format; /* percentage or absolute */
+  } TSPartitionEle;
 
 /* plugin.config */
   typedef struct
   {
-    INKCfgEle cfg_ele;
+    TSCfgEle cfg_ele;
     char *name;                 /* name of plugin */
-    INKStringList args;         /* list of arguments */
-  } INKPluginEle;
+    TSStringList args;         /* list of arguments */
+  } TSPluginEle;
 
 /* remap.config */
   typedef struct
   {
-    INKCfgEle cfg_ele;
+    TSCfgEle cfg_ele;
     bool map;                   /* if true: map, if false: remap */
-    INKSchemeT from_scheme;     /* http, https, <scheme>://<host>:<port>/<path_prefix> */
+    TSSchemeT from_scheme;     /* http, https, <scheme>://<host>:<port>/<path_prefix> */
     char *from_host;            /* from host */
     int from_port;              /* from port (can be 0) */
     char *from_path_prefix;     /* from path_prefix (can be NULL) */
-    INKSchemeT to_scheme;
+    TSSchemeT to_scheme;
     char *to_host;              /* to host */
     int to_port;                /* to port (can be 0) */
     char *to_path_prefix;       /* to path_prefix (can be NULL) */
-  } INKRemapEle;
+  } TSRemapEle;
 
 /* socks.config */
-/* INKqa10915: supports two rules types - the first rule type specifies the
+/* TSqa10915: supports two rules types - the first rule type specifies the
    IP addresses of origin servers that TS should bypass SOCKS and access
    directly (this is when ip_addrs is used); the second rule
    type specifies which SOCKS servers to use for the addresses specified
@@ -753,256 +753,256 @@ extern "C"
    dest_ip_addr/socks_servers/rr are */
   typedef struct
   {
-    INKCfgEle cfg_ele;
-    INKIpAddrList ip_addrs;     /* list of ip addresses to bypass SOCKS server (INK_SOCKS_BYPASS) */
-    INKIpAddrEle *dest_ip_addr; /* ip address(es) that will use the socks server
-                                   specified in parent_list (INK_SOCKS_MULTIPLE rule) */
-    INKDomainList socks_servers;        /* ordered list of SOCKS servers (INK_SOCKS_MULTIPLE rule) */
-    INKRrT rr;                  /* possible values are INK_RRT_TRUE (go through proxy
-                                   parent list in round robin),INK_RRT_STRICT (server
-                                   requests striclty in turn), or INK_RRT_FALSE (no
-                                   round robin selection) (INK_SOCKS_MULTIPLE rule) */
-    char *username;             /* used for INK_SOCKS_AUTH rule */
-    char *password;             /* used for INK_SOCKS_AUTH rule */
-  } INKSocksEle;
+    TSCfgEle cfg_ele;
+    TSIpAddrList ip_addrs;     /* list of ip addresses to bypass SOCKS server (TS_SOCKS_BYPASS) */
+    TSIpAddrEle *dest_ip_addr; /* ip address(es) that will use the socks server
+                                   specified in parent_list (TS_SOCKS_MULTIPLE rule) */
+    TSDomainList socks_servers;        /* ordered list of SOCKS servers (TS_SOCKS_MULTIPLE rule) */
+    TSRrT rr;                  /* possible values are TS_RRT_TRUE (go through proxy
+                                   parent list in round robin),TS_RRT_STRICT (server
+                                   requests striclty in turn), or TS_RRT_FALSE (no
+                                   round robin selection) (TS_SOCKS_MULTIPLE rule) */
+    char *username;             /* used for TS_SOCKS_AUTH rule */
+    char *password;             /* used for TS_SOCKS_AUTH rule */
+  } TSSocksEle;
 
 /* splitdns.config */
   typedef struct
   {
-    INKCfgEle cfg_ele;
-    INKPrimeDestT pd_type;      /* INK_PD_DOMAIN, INK_PD_HOST, INK_PD_URL_REGEX only */
+    TSCfgEle cfg_ele;
+    TSPrimeDestT pd_type;      /* TS_PD_DOMAIN, TS_PD_HOST, TS_PD_URL_REGEX only */
     char *pd_val;               /* primary destination value */
-    INKDomainList dns_servers_addrs;    /* list of dns servers */
+    TSDomainList dns_servers_addrs;    /* list of dns servers */
     char *def_domain;           /* (optional) default domain name (can be NULL) */
-    INKDomainList search_list;  /* (optinal) domain search list (can be INVALID) */
-  } INKSplitDnsEle;
+    TSDomainList search_list;  /* (optinal) domain search list (can be INVALID) */
+  } TSSplitDnsEle;
 
 /* storage.config */
   typedef struct
   {
-    INKCfgEle cfg_ele;
+    TSCfgEle cfg_ele;
     char *pathname;             /* the name of a partition, directory, or file */
     int size;                   /* size of the named pathname (in bytes); optional if raw partitions */
-  } INKStorageEle;
+  } TSStorageEle;
 
 /* update.config */
   typedef struct
   {
-    INKCfgEle cfg_ele;
+    TSCfgEle cfg_ele;
     char *url;                  /* url to update (HTTP based URLs) */
-    INKStringList headers;      /* list of headers, separated by semicolons (can be NULL) */
+    TSStringList headers;      /* list of headers, separated by semicolons (can be NULL) */
     int offset_hour;            /* offset hour to start update; must be 00-23 hrs  */
     int interval;               /* in secs, frequency of updates starting at offset_hour */
     int recursion_depth;        /* starting at given URL, the depth to which referenced URLs are recursively updated */
-  } INKUpdateEle;
+  } TSUpdateEle;
 
 /* vaddrs.config */
   typedef struct
   {
-    INKCfgEle cfg_ele;
-    INKIpAddr ip_addr;          /* virtual ip address */
+    TSCfgEle cfg_ele;
+    TSIpAddr ip_addr;          /* virtual ip address */
     char *intr;                 /* network interface name (hme0) */
     int sub_intr;               /* the sub-interface number; must be between 1 and 255 */
-  } INKVirtIpAddrEle;
+  } TSVirtIpAddrEle;
 
 /* rmserver.cfg */
   typedef struct
   {
-    INKCfgEle cfg_ele;
+    TSCfgEle cfg_ele;
     char *Vname;
     char *str_val;
     int int_val;
-  } INKRmServerEle;
+  } TSRmServerEle;
 
 /***************************************************************************
  * Function Types
  ***************************************************************************/
 
-  typedef void (*INKEventSignalFunc) (char *name, char *msg, int pri, void *data);
-  typedef void (*INKDisconnectFunc) (void *data);
+  typedef void (*TSEventSignalFunc) (char *name, char *msg, int pri, void *data);
+  typedef void (*TSDisconnectFunc) (void *data);
 
 /***************************************************************************
  * API Memory Management
  ***************************************************************************/
-#define INKmalloc(s)      _INKmalloc ((s), INK_RES_MEM_PATH)
-#define INKrealloc(p,s)   _INKrealloc ((p), (s), INK_RES_MEM_PATH)
-#define INKstrdup(p)      _INKstrdup ((p), -1, INK_RES_MEM_PATH)
-#define INKstrndup(p,n)   _INKstrdup ((p), (n), INK_RES_MEM_PATH)
-#define INKfree(p)        _INKfree (p)
+#define TSmalloc(s)      _TSmalloc ((s), TS_RES_MEM_PATH)
+#define TSrealloc(p,s)   _TSrealloc ((p), (s), TS_RES_MEM_PATH)
+#define TSstrdup(p)      _TSstrdup ((p), -1, TS_RES_MEM_PATH)
+#define TSstrndup(p,n)   _TSstrdup ((p), (n), TS_RES_MEM_PATH)
+#define TSfree(p)        _TSfree (p)
 
-  inkapi void *_INKmalloc(unsigned int size, const char *path);
-  inkapi void *_INKrealloc(void *ptr, unsigned int size, const char *path);
-  inkapi char *_INKstrdup(const char *str, int length, const char *path);
-  inkapi void _INKfree(void *ptr);
+  tsapi void *_TSmalloc(unsigned int size, const char *path);
+  tsapi void *_TSrealloc(void *ptr, unsigned int size, const char *path);
+  tsapi char *_TSstrdup(const char *str, int length, const char *path);
+  tsapi void _TSfree(void *ptr);
 
 /***************************************************************************
  * API Helper Functions for Data Carrier Structures
  ***************************************************************************/
 
-/*--- INKList operations --------------------------------------------------*/
-  inkapi INKList INKListCreate();
-  inkapi void INKListDestroy(INKList l);        /* list must be empty */
-  inkapi INKError INKListEnqueue(INKList l, void *data);
-  inkapi void *INKListDequeue(INKList l);
-  inkapi bool INKListIsEmpty(INKList l);
-  inkapi int INKListLen(INKList l);     /* returns -1 if list is invalid */
-  inkapi bool INKListIsValid(INKList l);
+/*--- TSList operations --------------------------------------------------*/
+  tsapi TSList TSListCreate();
+  tsapi void TSListDestroy(TSList l);        /* list must be empty */
+  tsapi TSError TSListEnqueue(TSList l, void *data);
+  tsapi void *TSListDequeue(TSList l);
+  tsapi bool TSListIsEmpty(TSList l);
+  tsapi int TSListLen(TSList l);     /* returns -1 if list is invalid */
+  tsapi bool TSListIsValid(TSList l);
 
-/*--- INKIpAddrList operations --------------------------------------------*/
-  inkapi INKIpAddrList INKIpAddrListCreate();
-  inkapi void INKIpAddrListDestroy(INKIpAddrList ip_addrl);
-  inkapi INKError INKIpAddrListEnqueue(INKIpAddrList ip_addrl, INKIpAddrEle * ip_addr);
-  inkapi INKIpAddrEle *INKIpAddrListDequeue(INKIpAddrList ip_addrl);
-  inkapi int INKIpAddrListLen(INKIpAddrList ip_addrl);
-  inkapi bool INKIpAddrListIsEmpty(INKIpAddrList ip_addrl);
-  inkapi int INKIpAddrListLen(INKIpAddrList ip_addrl);
-  inkapi bool INKIpAddrListIsValid(INKIpAddrList ip_addrl);
+/*--- TSIpAddrList operations --------------------------------------------*/
+  tsapi TSIpAddrList TSIpAddrListCreate();
+  tsapi void TSIpAddrListDestroy(TSIpAddrList ip_addrl);
+  tsapi TSError TSIpAddrListEnqueue(TSIpAddrList ip_addrl, TSIpAddrEle * ip_addr);
+  tsapi TSIpAddrEle *TSIpAddrListDequeue(TSIpAddrList ip_addrl);
+  tsapi int TSIpAddrListLen(TSIpAddrList ip_addrl);
+  tsapi bool TSIpAddrListIsEmpty(TSIpAddrList ip_addrl);
+  tsapi int TSIpAddrListLen(TSIpAddrList ip_addrl);
+  tsapi bool TSIpAddrListIsValid(TSIpAddrList ip_addrl);
 
-/*--- INKPortList operations ----------------------------------------------*/
-  inkapi INKPortList INKPortListCreate();
-  inkapi void INKPortListDestroy(INKPortList portl);
-  inkapi INKError INKPortListEnqueue(INKPortList portl, INKPortEle * port);
-  inkapi INKPortEle *INKPortListDequeue(INKPortList portl);
-  inkapi bool INKPortListIsEmpty(INKPortList portl);
-  inkapi int INKPortListLen(INKPortList portl);
-  inkapi bool INKPortListIsValid(INKPortList portl);
+/*--- TSPortList operations ----------------------------------------------*/
+  tsapi TSPortList TSPortListCreate();
+  tsapi void TSPortListDestroy(TSPortList portl);
+  tsapi TSError TSPortListEnqueue(TSPortList portl, TSPortEle * port);
+  tsapi TSPortEle *TSPortListDequeue(TSPortList portl);
+  tsapi bool TSPortListIsEmpty(TSPortList portl);
+  tsapi int TSPortListLen(TSPortList portl);
+  tsapi bool TSPortListIsValid(TSPortList portl);
 
-/*--- INKStringList operations --------------------------------------------*/
-  inkapi INKStringList INKStringListCreate();
-  inkapi void INKStringListDestroy(INKStringList strl);
-  inkapi INKError INKStringListEnqueue(INKStringList strl, char *str);
-  inkapi char *INKStringListDequeue(INKStringList strl);
-  inkapi bool INKStringListIsEmpty(INKStringList strl);
-  inkapi int INKStringListLen(INKStringList strl);
-  inkapi bool INKStringListIsValid(INKStringList strl);
+/*--- TSStringList operations --------------------------------------------*/
+  tsapi TSStringList TSStringListCreate();
+  tsapi void TSStringListDestroy(TSStringList strl);
+  tsapi TSError TSStringListEnqueue(TSStringList strl, char *str);
+  tsapi char *TSStringListDequeue(TSStringList strl);
+  tsapi bool TSStringListIsEmpty(TSStringList strl);
+  tsapi int TSStringListLen(TSStringList strl);
+  tsapi bool TSStringListIsValid(TSStringList strl);
 
-/*--- INKIntList operations --------------------------------------------*/
-  inkapi INKIntList INKIntListCreate();
-  inkapi void INKIntListDestroy(INKIntList intl);
-  inkapi INKError INKIntListEnqueue(INKIntList intl, int *str);
-  inkapi int *INKIntListDequeue(INKIntList intl);
-  inkapi bool INKIntListIsEmpty(INKIntList intl);
-  inkapi int INKIntListLen(INKIntList intl);
-  inkapi bool INKIntListIsValid(INKIntList intl, int min, int max);
+/*--- TSIntList operations --------------------------------------------*/
+  tsapi TSIntList TSIntListCreate();
+  tsapi void TSIntListDestroy(TSIntList intl);
+  tsapi TSError TSIntListEnqueue(TSIntList intl, int *str);
+  tsapi int *TSIntListDequeue(TSIntList intl);
+  tsapi bool TSIntListIsEmpty(TSIntList intl);
+  tsapi int TSIntListLen(TSIntList intl);
+  tsapi bool TSIntListIsValid(TSIntList intl, int min, int max);
 
-/*--- INKDomainList operations --------------------------------------------*/
-  inkapi INKDomainList INKDomainListCreate();
-  inkapi void INKDomainListDestroy(INKDomainList domainl);
-  inkapi INKError INKDomainListEnqueue(INKDomainList domainl, INKDomain * domain);
-  inkapi INKDomain *INKDomainListDequeue(INKDomainList domainl);
-  inkapi bool INKDomainListIsEmpty(INKDomainList domainl);
-  inkapi int INKDomainListLen(INKDomainList domainl);
-  inkapi bool INKDomainListIsValid(INKDomainList domainl);
+/*--- TSDomainList operations --------------------------------------------*/
+  tsapi TSDomainList TSDomainListCreate();
+  tsapi void TSDomainListDestroy(TSDomainList domainl);
+  tsapi TSError TSDomainListEnqueue(TSDomainList domainl, TSDomain * domain);
+  tsapi TSDomain *TSDomainListDequeue(TSDomainList domainl);
+  tsapi bool TSDomainListIsEmpty(TSDomainList domainl);
+  tsapi int TSDomainListLen(TSDomainList domainl);
+  tsapi bool TSDomainListIsValid(TSDomainList domainl);
 
 /*--- allocate/deallocate operations -------------------------------------*/
 /* NOTE:
- * 1) Default values for INKxxEleCreate functions:
- *    - for all lists, default value is INK_INVALID_LIST. NO memory is
+ * 1) Default values for TSxxEleCreate functions:
+ *    - for all lists, default value is TS_INVALID_LIST. NO memory is
  *      allocated for an Ele's  list type member. The user must
- *      explicity call the INKxxListCreate() function to initialize it.
- *    - for char*'s and INKIpAddr the default is NULL (or INK_INVALID_IP_ADDR
- *      for INKIpAddr's); user must assign allocated memory to initialize any
- *      string or INKIpAddr members of an INKxxxEle
+ *      explicity call the TSxxListCreate() function to initialize it.
+ *    - for char*'s and TSIpAddr the default is NULL (or TS_INVALID_IP_ADDR
+ *      for TSIpAddr's); user must assign allocated memory to initialize any
+ *      string or TSIpAddr members of an TSxxxEle
  *
  * 2) An Ele corresponds to a rule type in a file; this is why each Ele has an
- * INKRuleType to identify which type of rule it corresponds to.
+ * TSRuleType to identify which type of rule it corresponds to.
  * For config files which only have one rule type, we can easily set the
  * rule type of the Ele in the EleCreate function since there's only one possible
  * option. However, note that for those config files with more than one rule
  * type, we cannot set the rule type in the EleCreate function since
  * we don't know which rule type the Ele corresponds to yet. Thus, the user must
- * specify the INKRuleTypeT when he/she creates the Ele.
+ * specify the TSRuleTypeT when he/she creates the Ele.
  */
 
-  inkapi INKEvent *INKEventCreate();
-  inkapi void INKEventDestroy(INKEvent * event);
-  inkapi INKRecordEle *INKRecordEleCreate();
-  inkapi void INKRecordEleDestroy(INKRecordEle * ele);
-  inkapi INKIpAddrEle *INKIpAddrEleCreate();
-  inkapi void INKIpAddrEleDestroy(INKIpAddrEle * ele);
-  inkapi INKPortEle *INKPortEleCreate();
-  inkapi void INKPortEleDestroy(INKPortEle * ele);
-  inkapi INKDomain *INKDomainCreate();
-  inkapi void INKDomainDestroy(INKDomain * ele);
-  inkapi INKSspec *INKSspecCreate();
-  inkapi void INKSspecDestroy(INKSspec * ele);
-  inkapi INKPdSsFormat *INKPdSsFormatCreate();
-  inkapi void INKPdSsFormatDestroy(INKPdSsFormat * ele);
-  inkapi INKAdminAccessEle *INKAdminAccessEleCreate();
-  inkapi void INKAdminAccessEleDestroy(INKAdminAccessEle * ele);
-  inkapi INKCacheEle *INKCacheEleCreate(INKRuleTypeT type);
-  inkapi void INKCacheEleDestroy(INKCacheEle * ele);
-  inkapi INKCongestionEle *INKCongestionEleCreate();
-  inkapi void INKCongestionEleDestroy(INKCongestionEle * ele);
-  inkapi INKHostingEle *INKHostingEleCreate();
-  inkapi void INKHostingEleDestroy(INKHostingEle * ele);
-  inkapi INKIcpEle *INKIcpEleCreate();
-  inkapi void INKIcpEleDestroy(INKIcpEle * ele);
-  inkapi INKIpAllowEle *INKIpAllowEleCreate();
-  inkapi void INKIpAllowEleDestroy(INKIpAllowEle * ele);
-  inkapi INKLogFilterEle *INKLogFilterEleCreate();
-  inkapi void INKLogFilterEleDestroy(INKLogFilterEle * ele);
-  inkapi INKLogFormatEle *INKLogFormatEleCreate();
-  inkapi void INKLogFormatEleDestroy(INKLogFormatEle * ele);
-  inkapi INKLogObjectEle *INKLogObjectEleCreate();
-  inkapi void INKLogObjectEleDestroy(INKLogObjectEle * ele);
-  inkapi INKMgmtAllowEle *INKMgmtAllowEleCreate();
-  inkapi void INKMgmtAllowEleDestroy(INKMgmtAllowEle * ele);
-  inkapi INKParentProxyEle *INKParentProxyEleCreate(INKRuleTypeT type);
-  inkapi void INKParentProxyEleDestroy(INKParentProxyEle * ele);
-  inkapi INKPartitionEle *INKPartitionEleCreate();
-  inkapi void INKPartitionEleDestroy(INKPartitionEle * ele);
-  inkapi INKPluginEle *INKPluginEleCreate();
-  inkapi void INKPluginEleDestroy(INKPluginEle * ele);
-  inkapi INKRemapEle *INKRemapEleCreate(INKRuleTypeT type);
-  inkapi void INKRemapEleDestroy(INKRemapEle * ele);
-  inkapi INKSocksEle *INKSocksEleCreate(INKRuleTypeT type);
-  inkapi void INKSocksEleDestroy(INKSocksEle * ele);
-  inkapi INKSplitDnsEle *INKSplitDnsEleCreate();
-  inkapi void INKSplitDnsEleDestroy(INKSplitDnsEle * ele);
-  inkapi INKStorageEle *INKStorageEleCreate();
-  inkapi void INKStorageEleDestroy(INKStorageEle * ele);
-  inkapi INKUpdateEle *INKUpdateEleCreate();
-  inkapi void INKUpdateEleDestroy(INKUpdateEle * ele);
-  inkapi INKVirtIpAddrEle *INKVirtIpAddrEleCreate();
-  inkapi void INKVirtIpAddrEleDestroy(INKVirtIpAddrEle * ele);
+  tsapi TSEvent *TSEventCreate();
+  tsapi void TSEventDestroy(TSEvent * event);
+  tsapi TSRecordEle *TSRecordEleCreate();
+  tsapi void TSRecordEleDestroy(TSRecordEle * ele);
+  tsapi TSIpAddrEle *TSIpAddrEleCreate();
+  tsapi void TSIpAddrEleDestroy(TSIpAddrEle * ele);
+  tsapi TSPortEle *TSPortEleCreate();
+  tsapi void TSPortEleDestroy(TSPortEle * ele);
+  tsapi TSDomain *TSDomainCreate();
+  tsapi void TSDomainDestroy(TSDomain * ele);
+  tsapi TSSspec *TSSspecCreate();
+  tsapi void TSSspecDestroy(TSSspec * ele);
+  tsapi TSPdSsFormat *TSPdSsFormatCreate();
+  tsapi void TSPdSsFormatDestroy(TSPdSsFormat * ele);
+  tsapi TSAdminAccessEle *TSAdminAccessEleCreate();
+  tsapi void TSAdminAccessEleDestroy(TSAdminAccessEle * ele);
+  tsapi TSCacheEle *TSCacheEleCreate(TSRuleTypeT type);
+  tsapi void TSCacheEleDestroy(TSCacheEle * ele);
+  tsapi TSCongestionEle *TSCongestionEleCreate();
+  tsapi void TSCongestionEleDestroy(TSCongestionEle * ele);
+  tsapi TSHostingEle *TSHostingEleCreate();
+  tsapi void TSHostingEleDestroy(TSHostingEle * ele);
+  tsapi TSIcpEle *TSIcpEleCreate();
+  tsapi void TSIcpEleDestroy(TSIcpEle * ele);
+  tsapi TSIpAllowEle *TSIpAllowEleCreate();
+  tsapi void TSIpAllowEleDestroy(TSIpAllowEle * ele);
+  tsapi TSLogFilterEle *TSLogFilterEleCreate();
+  tsapi void TSLogFilterEleDestroy(TSLogFilterEle * ele);
+  tsapi TSLogFormatEle *TSLogFormatEleCreate();
+  tsapi void TSLogFormatEleDestroy(TSLogFormatEle * ele);
+  tsapi TSLogObjectEle *TSLogObjectEleCreate();
+  tsapi void TSLogObjectEleDestroy(TSLogObjectEle * ele);
+  tsapi TSMgmtAllowEle *TSMgmtAllowEleCreate();
+  tsapi void TSMgmtAllowEleDestroy(TSMgmtAllowEle * ele);
+  tsapi TSParentProxyEle *TSParentProxyEleCreate(TSRuleTypeT type);
+  tsapi void TSParentProxyEleDestroy(TSParentProxyEle * ele);
+  tsapi TSPartitionEle *TSPartitionEleCreate();
+  tsapi void TSPartitionEleDestroy(TSPartitionEle * ele);
+  tsapi TSPluginEle *TSPluginEleCreate();
+  tsapi void TSPluginEleDestroy(TSPluginEle * ele);
+  tsapi TSRemapEle *TSRemapEleCreate(TSRuleTypeT type);
+  tsapi void TSRemapEleDestroy(TSRemapEle * ele);
+  tsapi TSSocksEle *TSSocksEleCreate(TSRuleTypeT type);
+  tsapi void TSSocksEleDestroy(TSSocksEle * ele);
+  tsapi TSSplitDnsEle *TSSplitDnsEleCreate();
+  tsapi void TSSplitDnsEleDestroy(TSSplitDnsEle * ele);
+  tsapi TSStorageEle *TSStorageEleCreate();
+  tsapi void TSStorageEleDestroy(TSStorageEle * ele);
+  tsapi TSUpdateEle *TSUpdateEleCreate();
+  tsapi void TSUpdateEleDestroy(TSUpdateEle * ele);
+  tsapi TSVirtIpAddrEle *TSVirtIpAddrEleCreate();
+  tsapi void TSVirtIpAddrEleDestroy(TSVirtIpAddrEle * ele);
 /*--- Ele helper operations -------------------------------------*/
 
-/* INKIsValid: checks if the fields in the ele are all valid
- * Input:  ele - the ele to check (typecast any of the INKxxxEle's to an INKCfgEle)
+/* TSIsValid: checks if the fields in the ele are all valid
+ * Input:  ele - the ele to check (typecast any of the TSxxxEle's to an TSCfgEle)
  * Output: true if ele has valid fields for its rule type, false otherwise
  */
-  bool INKIsValid(INKCfgEle * ele);
+  bool TSIsValid(TSCfgEle * ele);
 
 /***************************************************************************
  * API Core
  ***************************************************************************/
 
 /*--- api initialization and shutdown -------------------------------------*/
-/* INKInit: initializations required for API clients
+/* TSInit: initializations required for API clients
  * Input: socket_path - not applicable for local clients
  *                      for remote users, the path to the config directory.
  *                      If == NULL, we use the Layout engine by default.
  *        options - Control some features of the APIs
- * Output: INK_ERR_xx
- * Note: If remote client successfully connects, returns INK_ERR_OKAY; but
+ * Output: TS_ERR_xx
+ * Note: If remote client successfully connects, returns TS_ERR_OKAY; but
  *       even if not successful connection (eg. client program is started
  *       before TM) then can still make API calls and will try connecting then
  */
-  inkapi INKError INKInit(const char *socket_path, TSInitOptionT options);
+  tsapi TSError TSInit(const char *socket_path, TSInitOptionT options);
 
-/* INKTerminate: does clean up for API clients
+/* TSTerminate: does clean up for API clients
  * Input: <none>
  * Output: <none>
  */
-  inkapi INKError INKTerminate();
+  tsapi TSError TSTerminate();
 
 /*--- plugin initialization -----------------------------------------------*/
-/* INKPluginInit: called by traffic_manager to initialize the plugin
+/* TSPluginInit: called by traffic_manager to initialize the plugin
  * Input:  argc - argument count
  *         argv - argument array
  * Output: <none>
- * Note: To implement a program as a plugin, need to implement the INKPluginInit
+ * Note: To implement a program as a plugin, need to implement the TSPluginInit
  *       function and then add the plugin's name (eg. test-plugin.so) and argument
  *       list (if any) to the list in the plugin_mgmt.config file. The location of the
  *       mgmt plugins should be specified in the records.config variable
@@ -1013,122 +1013,122 @@ extern "C"
  *       same directory as records.config. You should place your shared library (*.so)
  *       into the directory you have specified.
  */
-  inkexp extern void INKPluginInit(int argc, const char *argv[]);
+  inkexp extern void TSPluginInit(int argc, const char *argv[]);
 
 /*--- network operations --------------------------------------------------*/
 /* UNIMPLEMENTED: used for remote clients on a different machine */
-  inkapi INKError INKConnect(INKIpAddr ip_addr, int port);
-  inkapi INKError INKDisconnectCbRegister(INKDisconnectFunc * func, void *data);
-  inkapi INKError INKDisconnectRetrySet(int retries, int retry_sleep_msec);
-  inkapi INKError INKDisconnect();
+  tsapi TSError TSConnect(TSIpAddr ip_addr, int port);
+  tsapi TSError TSDisconnectCbRegister(TSDisconnectFunc * func, void *data);
+  tsapi TSError TSDisconnectRetrySet(int retries, int retry_sleep_msec);
+  tsapi TSError TSDisconnect();
 
 
 /*--- control operations --------------------------------------------------*/
-/* INKProxyStateGet: get the proxy state (on/off)
+/* TSProxyStateGet: get the proxy state (on/off)
  * Input:  <none>
  * Output: proxy state (on/off)
  */
-  inkapi INKProxyStateT INKProxyStateGet();
+  tsapi TSProxyStateT TSProxyStateGet();
 
-/* INKProxyStateSet: set the proxy state (on/off)
+/* TSProxyStateSet: set the proxy state (on/off)
  * Input:  proxy_state - set to on/off
  *         clear - specifies if want to start TS with clear_cache or
  *                 clear_cache_hostdb option, or just run TS with no options;
  *                  only applies when turning proxy on
- * Output: INKError
+ * Output: TSError
  */
-  inkapi INKError INKProxyStateSet(INKProxyStateT proxy_state, INKCacheClearT clear);
+  tsapi TSError TSProxyStateSet(TSProxyStateT proxy_state, TSCacheClearT clear);
 
-/* INKReconfigure: tell traffic_server to re-read its configuration files
+/* TSReconfigure: tell traffic_server to re-read its configuration files
  * Input:  <none>
- * Output: INKError
+ * Output: TSError
  */
-  inkapi INKError INKReconfigure();
+  tsapi TSError TSReconfigure();
 
-/* INKRestart: restarts Traffic Manager and Traffic Server
+/* TSRestart: restarts Traffic Manager and Traffic Server
  * Input:  cluster - local or cluster-wide
- * Output: INKError
+ * Output: TSError
  */
-  inkapi INKError INKRestart(bool cluster);
+  tsapi TSError TSRestart(bool cluster);
 
-/* INKHardRestart: stops and then starts Traffic Server
+/* TSHardRestart: stops and then starts Traffic Server
  * Input:  <none>
- * Output: INKError
+ * Output: TSError
  * Note: only for remote API clients
  */
-  inkapi INKError INKHardRestart();
+  tsapi TSError TSHardRestart();
 
-/* INKActionDo: based on INKActionNeedT, will take appropriate action
+/* TSActionDo: based on TSActionNeedT, will take appropriate action
  * Input: action - action that needs to be taken
- * Output: INKError
+ * Output: TSError
  */
-  inkapi INKError INKActionDo(INKActionNeedT action);
+  tsapi TSError TSActionDo(TSActionNeedT action);
 
-/* INKBounce: restart the traffic_server process(es).
+/* TSBounce: restart the traffic_server process(es).
  * Input: cluster - local or cluster-wide
- * Output INKError
+ * Output TSError
  */
-  inkapi INKError INKBounce(bool cluster);
+  tsapi TSError TSBounce(bool cluster);
 
 /*--- diags output operations ---------------------------------------------*/
-/* INKDiags: enables users to manipulate run-time diagnostics, and print
+/* TSDiags: enables users to manipulate run-time diagnostics, and print
  *           user-formatted notices, warnings and errors
  * Input:  mode - diags mode
  *         fmt  - printf style format
  * Output: <none>
  */
-  inkapi void INKDiags(INKDiagsT mode, const char *fmt, ...);
+  tsapi void TSDiags(TSDiagsT mode, const char *fmt, ...);
 
-/* INKGetErrorMessage: convert error id to error message
- * Input:  error id (defined in INKError)
+/* TSGetErrorMessage: convert error id to error message
+ * Input:  error id (defined in TSError)
  * Output: corresponding error message (allocated memory)
  */
-  char *INKGetErrorMessage(INKError error_id);
+  char *TSGetErrorMessage(TSError error_id);
 
 /*--- password operations -------------------------------------------------*/
-/* INKEncryptPassword: encrypts a password
+/* TSEncryptPassword: encrypts a password
  * Input: passwd - a password string to encrypt (can be NULL)
  * Output: e_passwd - an encrypted passwd (xmalloc's memory)
  */
-  inkapi INKError INKEncryptPassword(char *passwd, char **e_passwd);
+  tsapi TSError TSEncryptPassword(char *passwd, char **e_passwd);
 
-/* INKEncryptToFile: Given the plain text password, this function will
+/* TSEncryptToFile: Given the plain text password, this function will
  *                   encrypt the password and stores it to the specified file
  * Input: passwd - the plain text password
  *        filepath - the file location to store the encyrpted password
- * Output: INKError
+ * Output: TSError
  * Note: Uses certificate in ACL module for encryption.
  */
-  inkapi INKError INKEncryptToFile(const char *passwd, const char *filepath);
+  tsapi TSError TSEncryptToFile(const char *passwd, const char *filepath);
 
 /*--- direct file operations ----------------------------------------------*/
-/* INKConfigFileRead: reads a config file into a buffer
+/* TSConfigFileRead: reads a config file into a buffer
  * Input:  file - the config file to read
  *         text - a buffer is allocated on the text char* pointer
  *         size - the size of the buffer is returned
- * Output: INKError
+ * Output: TSError
  */
-  inkapi INKError INKConfigFileRead(INKFileNameT file, char **text, int *size, int *version);
+  tsapi TSError TSConfigFileRead(TSFileNameT file, char **text, int *size, int *version);
 
-/* INKConfigFileWrite: writes a config file into a buffer
+/* TSConfigFileWrite: writes a config file into a buffer
  * Input:  file - the config file to write
  *         text - text buffer to write
  *         size - the size of the buffer to write
  *         version - the current version level; new file will have the
  *                  version number above this one  (if version < 0, then
  *                  just uses the next version number in the sequence)
- * Output: INKError
+ * Output: TSError
  */
-  inkapi INKError INKConfigFileWrite(INKFileNameT file, char *text, int size, int version);
+  tsapi TSError TSConfigFileWrite(TSFileNameT file, char *text, int size, int version);
 
-/* INKReadFromUrl: reads a remotely located config file into a buffer
+/* TSReadFromUrl: reads a remotely located config file into a buffer
  * Input:  url        - remote location of the file
  *         header     - a buffer is allocated on the header char* pointer
  *         headerSize - the size of the header buffer is returned
  *         body       - a buffer is allocated on the body char* pointer
  *         bodySize   - the size of the body buffer is returned
- * Output: INKError   - INK_ERR_OKAY if succeed, INK_ERR_FAIL otherwise
- * Obsolete:  inkapi INKError INKReadFromUrl (char *url, char **text, int *size);
+ * Output: TSError   - TS_ERR_OKAY if succeed, TS_ERR_FAIL otherwise
+ * Obsolete:  tsapi TSError TSReadFromUrl (char *url, char **text, int *size);
  * NOTE: The URL can be expressed in the following forms:
  *       - http://www.example.com:80/products/network/index.html
  *       - http://www.example.com/products/network/index.html
@@ -1138,16 +1138,16 @@ extern "C"
  *       - www.example.com
  * NOTE: header and headerSize can be NULL
  */
-  inkapi INKError INKReadFromUrl(char *url, char **header, int *headerSize, char **body, int *bodySize);
+  tsapi TSError TSReadFromUrl(char *url, char **header, int *headerSize, char **body, int *bodySize);
 
-/* INKReadFromUrl: reads a remotely located config file into a buffer
+/* TSReadFromUrl: reads a remotely located config file into a buffer
  * Input:  url        - remote location of the file
  *         header     - a buffer is allocated on the header char* pointer
  *         headerSize - the size of the header buffer is returned
  *         body       - a buffer is allocated on the body char* pointer
  *         bodySize   - the size of the body buffer is returned
  *         timeout    - the max. connection timeout value before aborting.
- * Output: INKError   - INK_ERR_OKAY if succeed, INK_ERR_FAIL otherwise
+ * Output: TSError   - TS_ERR_OKAY if succeed, TS_ERR_FAIL otherwise
  * NOTE: The URL can be expressed in the following forms:
  *       - http://www.example.com:80/products/network/index.html
  *       - http://www.example.com/products/network/index.html
@@ -1157,89 +1157,89 @@ extern "C"
  *       - www.example.com
  * NOTE: header and headerSize can be NULL
  */
-  inkapi INKError INKReadFromUrlEx(const char *url, char **header, int *headerSize, char **body, int *bodySize, int timeout);
+  tsapi TSError TSReadFromUrlEx(const char *url, char **header, int *headerSize, char **body, int *bodySize, int timeout);
 
 /*--- snapshot operations -------------------------------------------------*/
-/* INKSnapshotTake: takes snapshot of configuration at that instant in time
+/* TSSnapshotTake: takes snapshot of configuration at that instant in time
  * Input:  snapshot_name - name to call new snapshot
- * Output: INKError
+ * Output: TSError
  */
-  inkapi INKError INKSnapshotTake(char *snapshot_name);
+  tsapi TSError TSSnapshotTake(char *snapshot_name);
 
-/* INKSnapshotRestore: restores configuration to when the snapshot was taken
+/* TSSnapshotRestore: restores configuration to when the snapshot was taken
  * Input:  snapshot_name - name of snapshot to restore
- * Output: INKError
+ * Output: TSError
  */
-  inkapi INKError INKSnapshotRestore(char *snapshot_name);
+  tsapi TSError TSSnapshotRestore(char *snapshot_name);
 
-/* INKSnapshotRemove: removes the snapshot
+/* TSSnapshotRemove: removes the snapshot
  * Input:  snapshot_name - name of snapshot to remove
- * Output: INKError
+ * Output: TSError
  */
-  inkapi INKError INKSnapshotRemove(char *snapshot_name);
+  tsapi TSError TSSnapshotRemove(char *snapshot_name);
 
-/* INKSnapshotsGet: restores configuration to when the snapshot was taken
+/* TSSnapshotsGet: restores configuration to when the snapshot was taken
  * Input:  snapshots - the list which will store all snapshot names currently taken
- * Output: INKError
+ * Output: TSError
  */
-  inkapi INKError INKSnapshotGetMlt(INKStringList snapshots);
+  tsapi TSError TSSnapshotGetMlt(TSStringList snapshots);
 
 
 /*--- statistics operations -----------------------------------------------*/
-/* INKStatsReset: sets all the statistics variables to their default values
+/* TSStatsReset: sets all the statistics variables to their default values
  * Input: cluster - Reset the stats clusterwide or not
- * Outpue: INKErrr
+ * Outpue: TSErrr
  */
-  inkapi INKError INKStatsReset(bool cluster);
+  tsapi TSError TSStatsReset(bool cluster);
 
 /*--- variable operations -------------------------------------------------*/
-/* INKRecordGet: gets a record
+/* TSRecordGet: gets a record
  * Input:  rec_name - the name of the record (proxy.config.record_name)
- *         rec_val  - allocated INKRecordEle structure, value stored inside
- * Output: INKError (if the rec_name does not exist, returns INK_ERR_FAIL)
+ *         rec_val  - allocated TSRecordEle structure, value stored inside
+ * Output: TSError (if the rec_name does not exist, returns TS_ERR_FAIL)
  */
-  inkapi INKError INKRecordGet(char *rec_name, INKRecordEle * rec_val);
+  tsapi TSError TSRecordGet(char *rec_name, TSRecordEle * rec_val);
 
-/* INKRecordGet*: gets a record w/ a known type
+/* TSRecordGet*: gets a record w/ a known type
  * Input:  rec_name - the name of the record (proxy.config.record_name)
- *         *_val    - allocated INKRecordEle structure, value stored inside
- * Output: INKError
- * Note: For INKRecordGetString, the function will allocate memory for the
+ *         *_val    - allocated TSRecordEle structure, value stored inside
+ * Output: TSError
+ * Note: For TSRecordGetString, the function will allocate memory for the
  *       *string_val, so the caller must free (*string_val);
  */
-  inkapi INKError INKRecordGetInt(const char *rec_name, INKInt * int_val);
-  inkapi INKError INKRecordGetCounter(const char *rec_name, INKCounter * counter_val);
-  inkapi INKError INKRecordGetFloat(const char *rec_name, INKFloat * float_val);
-  inkapi INKError INKRecordGetString(const char *rec_name, INKString * string_val);
+  tsapi TSError TSRecordGetInt(const char *rec_name, TSInt * int_val);
+  tsapi TSError TSRecordGetCounter(const char *rec_name, TSCounter * counter_val);
+  tsapi TSError TSRecordGetFloat(const char *rec_name, TSFloat * float_val);
+  tsapi TSError TSRecordGetString(const char *rec_name, TSString * string_val);
 
-/* INKRecordGetMlt: gets a set of records
+/* TSRecordGetMlt: gets a set of records
  * Input:  rec_list - list of record names the user wants to retrieve;
  *                    resulting gets will be stored in the same list;
  *                    if one get fails, transaction will be aborted
- * Output: INKError
+ * Output: TSError
  */
-  inkapi INKError INKRecordGetMlt(INKStringList rec_names, INKList rec_vals);
+  tsapi TSError TSRecordGetMlt(TSStringList rec_names, TSList rec_vals);
 
-/* INKRecordSet*: sets a record w/ a known type
+/* TSRecordSet*: sets a record w/ a known type
  * Input:  rec_name     - the name of the record (proxy.config.record_name)
  *         *_val        - the value to set the record to
  *         *action_need - indicates which operation required by user for changes to take effect
- * Output: INKError
+ * Output: TSError
  */
 
-  inkapi INKError INKRecordSet(const char *rec_name, const char *val, INKActionNeedT * action_need);
-  inkapi INKError INKRecordSetInt(const char *rec_name, INKInt int_val, INKActionNeedT * action_need);
-  inkapi INKError INKRecordSetCounter(const char *rec_name, INKCounter counter_val, INKActionNeedT * action_need);
-  inkapi INKError INKRecordSetFloat(const char *rec_name, INKFloat float_val, INKActionNeedT * action_need);
-  inkapi INKError INKRecordSetString(const char *rec_name, const char *string_val, INKActionNeedT * action_need);
+  tsapi TSError TSRecordSet(const char *rec_name, const char *val, TSActionNeedT * action_need);
+  tsapi TSError TSRecordSetInt(const char *rec_name, TSInt int_val, TSActionNeedT * action_need);
+  tsapi TSError TSRecordSetCounter(const char *rec_name, TSCounter counter_val, TSActionNeedT * action_need);
+  tsapi TSError TSRecordSetFloat(const char *rec_name, TSFloat float_val, TSActionNeedT * action_need);
+  tsapi TSError TSRecordSetString(const char *rec_name, const char *string_val, TSActionNeedT * action_need);
 
-/* INKRecordSetMlt: sets a set of records
+/* TSRecordSetMlt: sets a set of records
  * Input:  rec_list     - list of record names the user wants to set;
  *                        if one set fails, transaction will be aborted
  *         *action_need - indicates which operation required by user for changes to take effect
- * Output: INKError
+ * Output: TSError
  */
-  inkapi INKError INKRecordSetMlt(INKList rec_list, INKActionNeedT * action_need);
+  tsapi TSError TSRecordSetMlt(TSList rec_list, TSActionNeedT * action_need);
 
 /*--- events --------------------------------------------------------------*/
 /* Only a set of statically defined events exist. An event is either
@@ -1249,219 +1249,219 @@ extern "C"
  */
 
 /* UNIMPLEMENTED - wait for new alarm processor */
-/* INKEventSignal: enables the user to trigger an event
+/* TSEventSignal: enables the user to trigger an event
  * Input:  event_name - "MGMT_ALARM_ADD_ALARM"
  *         ...        - variable argument list of parameters that go
  *                       go into event description when it is signalled
- * Output: INKError
+ * Output: TSError
  */
-/*inkapi INKError               INKEventSignal (char *event_name, ...); */
+/*tsapi TSError               TSEventSignal (char *event_name, ...); */
 
 
-/* INKEventResolve: enables the user to resolve an event
+/* TSEventResolve: enables the user to resolve an event
  * Input:  event_name - event to resolve
- * Output: INKError
+ * Output: TSError
  */
-  inkapi INKError INKEventResolve(char *event_name);
+  tsapi TSError TSEventResolve(char *event_name);
 
-/* INKActiveEventGetMlt: query for a list of all the currently active events
- * Input:  active_events - an empty INKList; if function call is successful,
+/* TSActiveEventGetMlt: query for a list of all the currently active events
+ * Input:  active_events - an empty TSList; if function call is successful,
  *                         active_events will contain names of the currently
  *                         active events
- * Output: INKError
+ * Output: TSError
  */
-  inkapi INKError INKActiveEventGetMlt(INKList active_events);
+  tsapi TSError TSActiveEventGetMlt(TSList active_events);
 
-/* INKEventIsActive: check if the specified event is active
+/* TSEventIsActive: check if the specified event is active
  * Input:  event_name - name of event to check if active; must be one of
  *                      the predefined names
  *         is_current - when function completes, if true, then the event is
  *                      active
- * Output: INKError
+ * Output: TSError
  */
-  inkapi INKError INKEventIsActive(char *event_name, bool * is_current);
+  tsapi TSError TSEventIsActive(char *event_name, bool * is_current);
 
-/* INKEventSignalCbRegister: register a callback for a specific event or
+/* TSEventSignalCbRegister: register a callback for a specific event or
  *                           for any event
  * Input:  event_name - the name of event to register callback for;
  *                      if NULL, the callback is registered for all events
  *         func       - callback function
  *         data       - data to pass to callback
- * Output: INKError
+ * Output: TSError
  */
-  inkapi INKError INKEventSignalCbRegister(char *event_name, INKEventSignalFunc func, void *data);
+  tsapi TSError TSEventSignalCbRegister(char *event_name, TSEventSignalFunc func, void *data);
 
-/* INKEventSignalCbUnregister: unregister a callback for a specific event
+/* TSEventSignalCbUnregister: unregister a callback for a specific event
  *                             or for any event
  * Input: event_name - the name of event to unregister callback for;
  *                     if NULL, the callback is unregistered for all events
  *         func       - callback function
- * Output: INKError
+ * Output: TSError
  */
-  inkapi INKError INKEventSignalCbUnregister(char *event_name, INKEventSignalFunc func);
+  tsapi TSError TSEventSignalCbUnregister(char *event_name, TSEventSignalFunc func);
 
 
 /*--- abstracted file operations ------------------------------------------*/
-/* INKCfgContextCreate: allocates memory for an empty INKCfgContext for the specified file
+/* TSCfgContextCreate: allocates memory for an empty TSCfgContext for the specified file
  * Input:  file - the file
- * Output: INKCfgContext
+ * Output: TSCfgContext
  * Note: This function does not read the current rules in the file into
- * the INKCfgContext (must call INKCfgContextGet to do this). If you
- * do not call INKCfgContextGet before calling INKCfgContextCommit, then
+ * the TSCfgContext (must call TSCfgContextGet to do this). If you
+ * do not call TSCfgContextGet before calling TSCfgContextCommit, then
  * you will overwite all the old rules in the config file!
  */
-  inkapi INKCfgContext INKCfgContextCreate(INKFileNameT file);
+  tsapi TSCfgContext TSCfgContextCreate(TSFileNameT file);
 
-/* INKCfgContextDestroy: deallocates all memory for the INKCfgContext
- * Input:  ctx - the INKCfgContext to destroy
- * Output: INKError
+/* TSCfgContextDestroy: deallocates all memory for the TSCfgContext
+ * Input:  ctx - the TSCfgContext to destroy
+ * Output: TSError
  */
-  inkapi INKError INKCfgContextDestroy(INKCfgContext ctx);
+  tsapi TSError TSCfgContextDestroy(TSCfgContext ctx);
 
-/* INKCfgContextCommit: write new file copy based on ele's listed in ctx
+/* TSCfgContextCommit: write new file copy based on ele's listed in ctx
  * Input:  ctx - where all the file's eles are stored
  *         *action_need - indicates which operation required by user for changes to take effect
- * Output: INKError
- * Note: If you do not call INKCfgContextGet before calling INKCfgContextCommit, then
+ * Output: TSError
+ * Note: If you do not call TSCfgContextGet before calling TSCfgContextCommit, then
  * you could possibly overwrite all the old rules in the config file!!
  */
-  inkapi INKError INKCfgContextCommit(INKCfgContext ctx, INKActionNeedT * action_need, INKIntList errRules);
+  tsapi TSError TSCfgContextCommit(TSCfgContext ctx, TSActionNeedT * action_need, TSIntList errRules);
 
 
-/* INKCfgContextGet: retrieves all the Ele's for the file specified in the ctx and
- *                puts them into ctx; note that the ele's in the INKCfgContext don't
+/* TSCfgContextGet: retrieves all the Ele's for the file specified in the ctx and
+ *                puts them into ctx; note that the ele's in the TSCfgContext don't
  *                all have to be of the same ele type
  * Input: ctx - where all the most currfile's eles are stored
- * Output: INKError
+ * Output: TSError
  *
  */
-  inkapi INKError INKCfgContextGet(INKCfgContext ctx);
+  tsapi TSError TSCfgContextGet(TSCfgContext ctx);
 
 
-/*--- INKCfgContext Operations --------------------------------------------*/
+/*--- TSCfgContext Operations --------------------------------------------*/
 /*
- * These operations are used to manipulate the opaque INKCfgContext type,
+ * These operations are used to manipulate the opaque TSCfgContext type,
  * eg. when want to modify a file
  */
 
-/* INKCfgContextGetCount: returns number of Ele's in the INKCfgContext
- * Input:  ctx - the INKCfgContext to count the number of ele's in
+/* TSCfgContextGetCount: returns number of Ele's in the TSCfgContext
+ * Input:  ctx - the TSCfgContext to count the number of ele's in
  * Output: the number of Ele's
  */
-  int INKCfgContextGetCount(INKCfgContext ctx);
+  int TSCfgContextGetCount(TSCfgContext ctx);
 
-/* INKCfgContextGetEleAt: retrieves the Ele at the specified index; user must
- *                        typecast the INKCfgEle to appropriate INKEle before using
- * Input:  ctx   - the INKCfgContext to retrieve the ele from
+/* TSCfgContextGetEleAt: retrieves the Ele at the specified index; user must
+ *                        typecast the TSCfgEle to appropriate TSEle before using
+ * Input:  ctx   - the TSCfgContext to retrieve the ele from
  *         index - the Ele position desired; first Ele located at index 0
- * Output: the Ele (typecasted as an INKCfgEle)
+ * Output: the Ele (typecasted as an TSCfgEle)
  */
-  INKCfgEle *INKCfgContextGetEleAt(INKCfgContext ctx, int index);
+  TSCfgEle *TSCfgContextGetEleAt(TSCfgContext ctx, int index);
 
-/* INKCfgContextGetFirst: retrieves the first Ele in the INKCfgContext
- * Input:  ctx   - the INKCfgContext
+/* TSCfgContextGetFirst: retrieves the first Ele in the TSCfgContext
+ * Input:  ctx   - the TSCfgContext
  *         state - the current position in the Ele that the iterator is at
- * Output: returns first Ele in the ctx (typecasted as an INKCfgEle)
+ * Output: returns first Ele in the ctx (typecasted as an TSCfgEle)
  */
-  INKCfgEle *INKCfgContextGetFirst(INKCfgContext ctx, INKCfgIterState * state);
+  TSCfgEle *TSCfgContextGetFirst(TSCfgContext ctx, TSCfgIterState * state);
 
-/* INKCfgContextGetNext: retrieves the next ele in the ctx that's located after
- *                       the one pointed to by the INKCfgIterState
- * Input:  ctx   - the INKCfgContext
+/* TSCfgContextGetNext: retrieves the next ele in the ctx that's located after
+ *                       the one pointed to by the TSCfgIterState
+ * Input:  ctx   - the TSCfgContext
  *         state - the current position in the Ele that the iterator is at
- * Output: returns the next Ele in the ctx (typecasted as an INKCfgEle)
+ * Output: returns the next Ele in the ctx (typecasted as an TSCfgEle)
  */
-  INKCfgEle *INKCfgContextGetNext(INKCfgContext ctx, INKCfgIterState * state);
+  TSCfgEle *TSCfgContextGetNext(TSCfgContext ctx, TSCfgIterState * state);
 
-/* INKCfgContextMoveEleUp: shifts the Ele at the specified index one position up;
- *                         does nothing if Ele is at first position in the INKCfgContext
- * Input:  ctx   - the INKCfgContext
+/* TSCfgContextMoveEleUp: shifts the Ele at the specified index one position up;
+ *                         does nothing if Ele is at first position in the TSCfgContext
+ * Input:  ctx   - the TSCfgContext
  *         index - the position of the Ele that needs to be shifted up
- * Output: INKError
+ * Output: TSError
  */
-  INKError INKCfgContextMoveEleUp(INKCfgContext ctx, int index);
+  TSError TSCfgContextMoveEleUp(TSCfgContext ctx, int index);
 
-/* INKCfgContextMoveEleDown: shifts the Ele at the specified index one position down;
- *                           does nothing if Ele is last in the INKCfgContext
- * Input:  ctx   - the INKCfgContext
+/* TSCfgContextMoveEleDown: shifts the Ele at the specified index one position down;
+ *                           does nothing if Ele is last in the TSCfgContext
+ * Input:  ctx   - the TSCfgContext
  *         index - the position of the Ele that needs to be shifted down
- * Output: INKError
+ * Output: TSError
  */
-  INKError INKCfgContextMoveEleDown(INKCfgContext ctx, int index);
+  TSError TSCfgContextMoveEleDown(TSCfgContext ctx, int index);
 
-/* INKCfgContextAppendEle: apppends the ele to the end of the INKCfgContext
- * Input:  ctx   - the INKCfgContext
- *         ele - the Ele (typecasted as an INKCfgEle) to append to ctx
- * Output: INKError
- * Note: When appending the ele to the INKCfgContext, this function does NOT
+/* TSCfgContextAppendEle: apppends the ele to the end of the TSCfgContext
+ * Input:  ctx   - the TSCfgContext
+ *         ele - the Ele (typecasted as an TSCfgEle) to append to ctx
+ * Output: TSError
+ * Note: When appending the ele to the TSCfgContext, this function does NOT
  *       make a copy of the ele passed in; it uses the same memory! So you probably
  *       do not want to append the ele and then free the memory for the ele
- *       without first removing the ele from the INKCfgContext
+ *       without first removing the ele from the TSCfgContext
  */
-  INKError INKCfgContextAppendEle(INKCfgContext ctx, INKCfgEle * ele);
+  TSError TSCfgContextAppendEle(TSCfgContext ctx, TSCfgEle * ele);
 
-/* INKCfgContextInsertEleAt: inserts the ele at the specified index
- * Input:  ctx   - the INKCfgContext
- *         ele   - the Ele (typecasted as an INKCfgEle) to insert into ctx
+/* TSCfgContextInsertEleAt: inserts the ele at the specified index
+ * Input:  ctx   - the TSCfgContext
+ *         ele   - the Ele (typecasted as an TSCfgEle) to insert into ctx
  *         index - the position in ctx to insert the Ele
- * Output: INKError
- * Note: When inserting the ele into the INKCfgContext, this function does NOT
+ * Output: TSError
+ * Note: When inserting the ele into the TSCfgContext, this function does NOT
  *       make a copy of the ele passed in; it uses the same memory! So you probably
  *       do not want to insert the ele and then free the memory for the ele
- *       without first removing the ele from the INKCfgContext
+ *       without first removing the ele from the TSCfgContext
  */
-  INKError INKCfgContextInsertEleAt(INKCfgContext ctx, INKCfgEle * ele, int index);
+  TSError TSCfgContextInsertEleAt(TSCfgContext ctx, TSCfgEle * ele, int index);
 
-/* INKCfgContextRemoveEleAt: removes the Ele at the specified index from the INKCfgContext
- * Input:  ctx   - the INKCfgContext
+/* TSCfgContextRemoveEleAt: removes the Ele at the specified index from the TSCfgContext
+ * Input:  ctx   - the TSCfgContext
  *         index - the position of the Ele in the ctx to remove
- * Output: INKError
+ * Output: TSError
  */
-  INKError INKCfgContextRemoveEleAt(INKCfgContext ctx, int index);
+  TSError TSCfgContextRemoveEleAt(TSCfgContext ctx, int index);
 
-  /* INKCfgContextRemoveAll: removes all Eles from the INKCfgContext
-   * Input:  ctx   - the INKCfgContext
-   * Output: INKError
+  /* TSCfgContextRemoveAll: removes all Eles from the TSCfgContext
+   * Input:  ctx   - the TSCfgContext
+   * Output: TSError
    */
-  INKError INKCfgContextRemoveAll(INKCfgContext ctx);
+  TSError TSCfgContextRemoveAll(TSCfgContext ctx);
 
-/*--- INK Cache Inspector Operations --------------------------------------------*/
+/*--- TS Cache Inspector Operations --------------------------------------------*/
 
-/* INKLookupFromCacheUrl
+/* TSLookupFromCacheUrl
  *   Function takes an url and an 'info' buffer as input,
  *   lookups cache information of the url and saves the
  *   cache info to the info buffer
  */
-  inkapi INKError INKLookupFromCacheUrl(INKString url, INKString * info);
+  tsapi TSError TSLookupFromCacheUrl(TSString url, TSString * info);
 
-/* INKLookupFromCacheUrlRegex
+/* TSLookupFromCacheUrlRegex
  *   Function takes a string in a regex form and returns
  *   a list of urls that match the regex
  ********************************************************/
 
-  inkapi INKError INKLookupFromCacheUrlRegex(INKString url_regex, INKString * list);
+  tsapi TSError TSLookupFromCacheUrlRegex(TSString url_regex, TSString * list);
 
-/* INKDeleteFromCacheUrl
+/* TSDeleteFromCacheUrl
  *   Function takes an url and an 'info' buffer as input,
  *   deletes the url from cache if it's in the cache and
  *   returns the status of deletion
  ********************************************************/
 
-  inkapi INKError INKDeleteFromCacheUrl(INKString url, INKString * info);
+  tsapi TSError TSDeleteFromCacheUrl(TSString url, TSString * info);
 
-/* INKDeleteFromCacheUrlRegex
+/* TSDeleteFromCacheUrlRegex
  *   Function takes a string in a regex form and returns
  *   a list of urls deleted from cache
  ********************************************************/
 
-  inkapi INKError INKDeleteFromCacheUrlRegex(INKString url_regex, INKString * list);
+  tsapi TSError TSDeleteFromCacheUrlRegex(TSString url_regex, TSString * list);
 
-/* INKInvalidateFromCacheUrlRegex
+/* TSInvalidateFromCacheUrlRegex
  *   Function takes a string in a regex form and returns
  *   a list of urls invalidated from cache
  ********************************************************/
 
-  inkapi INKError INKInvalidateFromCacheUrlRegex(INKString url_regex, INKString * list);
+  tsapi TSError TSInvalidateFromCacheUrlRegex(TSString url_regex, TSString * list);
 
 /* These functions support the network configuration functionality
  * For each change of hostname, gateway, dns servers, and nick configurations
@@ -1469,34 +1469,34 @@ extern "C"
  ******************************************************************/
   /* rmserver.cfg */
 
-  inkapi INKError rm_change_ip(int, char **);
+  tsapi TSError rm_change_ip(int, char **);
 
-  inkapi INKError rm_change_hostname(char *);
+  tsapi TSError rm_change_hostname(char *);
 
-  inkapi INKError rm_start_proxy();
+  tsapi TSError rm_start_proxy();
 
-  inkapi INKError rm_remove_ip(int, char **);
+  tsapi TSError rm_remove_ip(int, char **);
 
 
 /* Net config functions */
 
-  inkapi INKError INKSetHostname(INKString hostname);
+  tsapi TSError TSSetHostname(TSString hostname);
 
-  inkapi INKError INKSetGateway(INKString gateway_ip);
+  tsapi TSError TSSetGateway(TSString gateway_ip);
 
-  inkapi INKError INKSetDNSServers(INKString dns_ips);
+  tsapi TSError TSSetDNSServers(TSString dns_ips);
 
-  inkapi INKError INKSetNICUp(INKString nic_name, bool static_ip, INKString ip, INKString old_ip, INKString netmask,
-                              bool onboot, INKString gateway_ip);
+  tsapi TSError TSSetNICUp(TSString nic_name, bool static_ip, TSString ip, TSString old_ip, TSString netmask,
+                           bool onboot, TSString gateway_ip);
 
-  inkapi INKError INKSetProxyPort(INKString proxy_port);
+  tsapi TSError TSSetProxyPort(TSString proxy_port);
 
-  inkapi INKError INKSetNICDown(INKString nic_name, INKString ip_addrr);
+  tsapi TSError TSSetNICDown(TSString nic_name, TSString ip_addrr);
 
-  inkapi INKError INKSetSearchDomain(const char *search_name);
+  tsapi TSError TSSetSearchDomain(const char *search_name);
 
 #ifdef __cplusplus
 }
 #endif                          /* __cplusplus */
 
-#endif                          /* __INK_MGMT_API_H__ */
+#endif                          /* __TS_MGMT_API_H__ */

@@ -2,6 +2,8 @@
 
 Changes with Apache Traffic Server 2.1.6
 
+  *) Rename the management APIs from INK* to TS* [TS-639].
+
   *) Remove the dead v2 stats code [TS-650].
 
   *) Dynamic libraries for mgmt APIs [TS-649].

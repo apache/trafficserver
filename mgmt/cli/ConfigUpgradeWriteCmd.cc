@@ -40,13 +40,9 @@
 
 CIFCWriteEntry::CIFCWriteEntry():CountOn(0)
 {
-
-  char *
-    pathPtr;
-  char *
-    filenamePtr;
-  char *
-    versionPtr;
+  char *pathPtr;
+  char *filenamePtr;
+  char *versionPtr;
 
   pathPtr = getenv("IFCPATH");
   filenamePtr = getenv("IFCFILENAME");
@@ -61,18 +57,15 @@ CIFCWriteEntry::CIFCWriteEntry():CountOn(0)
 
 CIFCWriteEntry::~CIFCWriteEntry()
 {
-
 }
 
 // check IFCVERSION IFCPATH and IFCFILENAME setup
-INKError
+TSError
 CIFCWriteEntry::ConfigWriteCheckIFCEnv()
 {
-
   char *pathPtr;
   char *filenamePtr;
   char *versionPtr;
-
 
   pathPtr = getenv("IFCPATH");
   filenamePtr = getenv("IFCFILENAME");
@@ -80,27 +73,26 @@ CIFCWriteEntry::ConfigWriteCheckIFCEnv()
 
   if (pathPtr == NULL || filenamePtr == NULL || versionPtr == NULL ||
       strlen(pathPtr) == 0 || strlen(filenamePtr) == 0 || strlen(versionPtr) == 0) {
-    return INK_ERR_READ_FILE;
+    return TS_ERR_READ_FILE;
   }
 
-  return INK_ERR_OKAY;
+  return TS_ERR_OKAY;
 }
 
-INKError
+TSError
 CIFCWriteEntry::Cli_NewIFCFile()
 {
-
   FILE *Fptr;
 
   Fptr = fopen(FileName, "r+");
   if (Fptr != NULL) {
     fclose(Fptr);
-    return INK_ERR_OKAY;
+    return TS_ERR_OKAY;
   } else {                      /* need to create new file */
     Fptr = fopen(FileName, "w");
     if (Fptr == NULL) {
       Cli_Error("Error in creating new IFC file\n");
-      return INK_ERR_WRITE_FILE;
+      return TS_ERR_WRITE_FILE;
     }
 
     fprintf(Fptr, "%s\n\n", IFC_BEGIN);
@@ -123,7 +115,7 @@ CIFCWriteEntry::Cli_NewIFCFile()
 
     fclose(Fptr);
 
-    return INK_ERR_OKAY;
+    return TS_ERR_OKAY;
   }
 }
 
@@ -131,7 +123,6 @@ CIFCWriteEntry::Cli_NewIFCFile()
 int
 CIFCWriteEntry::ConfigWriteIFCEle()
 {
-
   FILE *Fptr;
   char *filebuffer, *in_buffer;
   char *p1;
@@ -241,7 +232,6 @@ CIFCWriteEntry::PrintEle()
 int
 CIFCWriteEntry::ConfigWriteIFCHead(char *ts_version, char *build_date, char *platform, int nodes)
 {
-
   ink_strncpy(KeyWord, IFC_HEAD, sizeof(KeyWord));
   snprintf(Input, sizeof(Input), "%s\n%s\n%s\n%d", ts_version, build_date, platform, nodes);
   CountOn = 0;
@@ -251,7 +241,6 @@ CIFCWriteEntry::ConfigWriteIFCHead(char *ts_version, char *build_date, char *pla
 int
 CIFCWriteEntry::ConfigWriteIFCFeature(char *input)
 {
-
   ink_strncpy(KeyWord, IFC_FEATURE, sizeof(KeyWord));
   CountOn = 0;
   ink_strncpy(Input, input, sizeof(Input));
@@ -261,7 +250,6 @@ CIFCWriteEntry::ConfigWriteIFCFeature(char *input)
 int
 CIFCWriteEntry::ConfigWriteIFCTar(char *input)
 {
-
   ink_strncpy(KeyWord, IFC_TAR, sizeof(KeyWord));
   CountOn = 1;
   ink_strncpy(Input, input, sizeof(Input));
@@ -271,7 +259,6 @@ CIFCWriteEntry::ConfigWriteIFCTar(char *input)
 int
 CIFCWriteEntry::ConfigWriteIFCCommonTar(char *input)
 {
-
   ink_strncpy(KeyWord, IFC_COMMON_TAR, sizeof(KeyWord));
   CountOn = 1;
   ink_strncpy(Input, input, sizeof(Input));
@@ -281,7 +268,6 @@ CIFCWriteEntry::ConfigWriteIFCCommonTar(char *input)
 int
 CIFCWriteEntry::ConfigWriteIFCTarInfo(char *tar, char *filelist)
 {
-
   ink_strncpy(KeyWord, IFC_TAR_INFO, sizeof(KeyWord));
   CountOn = 0;
   snprintf(Input, sizeof(Input), "%s:\n%s", tar, filelist);
@@ -291,7 +277,6 @@ CIFCWriteEntry::ConfigWriteIFCTarInfo(char *tar, char *filelist)
 int
 CIFCWriteEntry::ConfigWriteIFCBinGroup(char *input)
 {
-
   ink_strncpy(KeyWord, IFC_BIN_GROUP, sizeof(KeyWord));
   CountOn = 1;
   ink_strncpy(Input, input, sizeof(Input));
@@ -301,7 +286,6 @@ CIFCWriteEntry::ConfigWriteIFCBinGroup(char *input)
 int
 CIFCWriteEntry::ConfigWriteIFCBinDir(char *subdir, char *filelist)
 {
-
   ink_strncpy(KeyWord, IFC_BIN_DIR, sizeof(KeyWord));
   CountOn = 1;
   snprintf(Input, sizeof(Input), "%s:%s", subdir, filelist);
@@ -311,7 +295,6 @@ CIFCWriteEntry::ConfigWriteIFCBinDir(char *subdir, char *filelist)
 int
 CIFCWriteEntry::ConfigWriteIFCBinCommon(char *input)
 {
-
   ink_strncpy(KeyWord, IFC_BIN_COMMON, sizeof(KeyWord));
   CountOn = 1;
   ink_strncpy(Input, input, sizeof(Input));
@@ -321,7 +304,6 @@ CIFCWriteEntry::ConfigWriteIFCBinCommon(char *input)
 int
 CIFCWriteEntry::ConfigWriteIFCLibGroup(char *input)
 {
-
   ink_strncpy(KeyWord, IFC_LIB_GROUP, sizeof(KeyWord));
   CountOn = 1;
   ink_strncpy(Input, input, sizeof(Input));
@@ -331,7 +313,6 @@ CIFCWriteEntry::ConfigWriteIFCLibGroup(char *input)
 int
 CIFCWriteEntry::ConfigWriteIFCLibDir(char *subdir, char *filelist)
 {
-
   ink_strncpy(KeyWord, IFC_LIB_DIR, sizeof(KeyWord));
   CountOn = 1;
   snprintf(Input, sizeof(Input), "%s:%s", subdir, filelist);
@@ -341,7 +322,6 @@ CIFCWriteEntry::ConfigWriteIFCLibDir(char *subdir, char *filelist)
 int
 CIFCWriteEntry::ConfigWriteIFCLibCommon(char *input)
 {
-
   ink_strncpy(KeyWord, IFC_LIB_COMMON, sizeof(KeyWord));
   CountOn = 1;
   ink_strncpy(Input, input, sizeof(Input));
@@ -351,7 +331,6 @@ CIFCWriteEntry::ConfigWriteIFCLibCommon(char *input)
 int
 CIFCWriteEntry::ConfigWriteIFCConfigGroup(char *input)
 {
-
   ink_strncpy(KeyWord, IFC_CONFIG_GROUP, sizeof(KeyWord));
   CountOn = 1;
   ink_strncpy(Input, input, sizeof(Input));
@@ -361,7 +340,6 @@ CIFCWriteEntry::ConfigWriteIFCConfigGroup(char *input)
 int
 CIFCWriteEntry::ConfigWriteIFCConfigDir(char *subdir, char *filelist)
 {
-
   ink_strncpy(KeyWord, IFC_CONFIG_DIR, sizeof(KeyWord));
   CountOn = 1;
   snprintf(Input, sizeof(Input), "%s:%s", subdir, filelist);
@@ -371,7 +349,6 @@ CIFCWriteEntry::ConfigWriteIFCConfigDir(char *subdir, char *filelist)
 int
 CIFCWriteEntry::ConfigWriteIFCConfigCommon(char *input)
 {
-
   ink_strncpy(KeyWord, IFC_CONFIG_COMMON, sizeof(KeyWord));
   CountOn = 1;
   ink_strncpy(Input, input, sizeof(Input));
@@ -382,7 +359,6 @@ CIFCWriteEntry::ConfigWriteIFCConfigCommon(char *input)
 int
 CIFCWriteEntry::ConfigWriteIFCCommonFile(char *input)
 {
-
   ink_strncpy(KeyWord, IFC_COMMON_FILE, sizeof(KeyWord));
   CountOn = 1;
   ink_strncpy(Input, input, sizeof(Input));
@@ -403,7 +379,6 @@ CIFCWriteEntry::ConfigWriteIFCCommonFile(char *input)
 int
 Cmd_ConfigWrite(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[])
 {
-
   /* call to processArgForCommand must appear at the beginning
    * of each command's callback function
    */
@@ -426,14 +401,14 @@ Cmd_ConfigWrite(ClientData clientData, Tcl_Interp * interp, int argc, const char
   argtable = cmdCallbackInfo->parsedArgTable;
   Cli_Debug("Cmd_ConfigWrite argc %d\n", argc);
 
-  if (CIFCWriteEntry::ConfigWriteCheckIFCEnv() == INK_ERR_READ_FILE) {
+  if (CIFCWriteEntry::ConfigWriteCheckIFCEnv() == TS_ERR_READ_FILE) {
     Cli_Error("Set $IFCVERSION, $IFCPATH and $IFCFILENAME First\n");
     return CLI_ERROR;
   }
 
   CIFCWriteEntry Entry;
 
-  if (Entry.Cli_NewIFCFile() == INK_ERR_WRITE_FILE) {
+  if (Entry.Cli_NewIFCFile() == TS_ERR_WRITE_FILE) {
     return CLI_ERROR;
   }
 
@@ -499,7 +474,6 @@ Cmd_ConfigWrite(ClientData clientData, Tcl_Interp * interp, int argc, const char
 int
 CmdArgs_ConfigWrite()
 {
-
   createArgument("ifc-head", 1, CLI_ARGV_CONST_OPTION,
                  (char *) NULL, CMD_CONFIG_WRITE_IFC_HEAD, "Specify the head information of ifc file", (char *) NULL);
   createArgument("ts-version", CMD_CONFIG_WRITE_IFC_HEAD, CLI_ARGV_STRING,

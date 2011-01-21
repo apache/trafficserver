@@ -44,92 +44,92 @@
  ***************************************************************************/
 /* INKIpAddrEle <==> (single type)  ip_a/cidr_a
  *                   (range type)   ip_a/cidr_a-ip_b/cidr_b */
-INKIpAddrEle *string_to_ip_addr_ele(const char *str);
-char *ip_addr_ele_to_string(INKIpAddrEle * ele);
+TSIpAddrEle *string_to_ip_addr_ele(const char *str);
+char *ip_addr_ele_to_string(TSIpAddrEle * ele);
 
 /* INKIpAddr <==> ip_addr_string */
-char *ip_addr_to_string(INKIpAddr ip);
-INKIpAddr string_to_ip_addr(const char *str);
+char *ip_addr_to_string(TSIpAddr ip);
+TSIpAddr string_to_ip_addr(const char *str);
 
 /* IpAddrList <==> ip_addr1, ip_addr2, ip_addr3, ... */
 char *ip_addr_list_to_string(IpAddrList * list, const char *delimiter);
-INKIpAddrList string_to_ip_addr_list(const char *str_list, const char *delimiter);
+TSIpAddrList string_to_ip_addr_list(const char *str_list, const char *delimiter);
 
 /* PortList <==> port_1<delim>port_2<delim>port_3<delim>...<delim>port_n
  * (Note: each port can be a port range */
 char *port_list_to_string(PortList * ports, const char *delimiter);
-INKPortList string_to_port_list(const char *str_list, const char *delimiter);
+TSPortList string_to_port_list(const char *str_list, const char *delimiter);
 
-/* INKPortEle <==> port_a / port_a#port_b */
-char *port_ele_to_string(INKPortEle * ele);
-INKPortEle *string_to_port_ele(const char *str);
+/* TSPortEle <==> port_a / port_a#port_b */
+char *port_ele_to_string(TSPortEle * ele);
+TSPortEle *string_to_port_ele(const char *str);
 
-/* INKProxyList <==> proxy_1, proxy_2,... */
+/* TSProxyList <==> proxy_1, proxy_2,... */
 //char* proxy_list_to_string(ProxyList *list);
 
-/* INKStringList(of char*'s)==> elem1<delimiter>elem2<delimiter>elem3 */
-char *string_list_to_string(INKStringList list, const char *delimiter);
-INKStringList string_to_string_list(const char *str, const char *delimiter);
+/* TSStringList(of char*'s)==> elem1<delimiter>elem2<delimiter>elem3 */
+char *string_list_to_string(TSStringList list, const char *delimiter);
+TSStringList string_to_string_list(const char *str, const char *delimiter);
 
-/* INKIntList(of char*'s)==> elem1<delimiter>elem2<delimiter>elem3 */
-char *int_list_to_string(INKIntList list, const char *delimiter);
-INKIntList string_to_int_list(const char *str, const char *delimiter);
+/* TSIntList(of char*'s)==> elem1<delimiter>elem2<delimiter>elem3 */
+char *int_list_to_string(TSIntList list, const char *delimiter);
+TSIntList string_to_int_list(const char *str, const char *delimiter);
 
-/* INKDomain */
-INKDomain *string_to_domain(const char *str);
-char *domain_to_string(INKDomain * domain);
+/* TSDomain */
+TSDomain *string_to_domain(const char *str);
+char *domain_to_string(TSDomain * domain);
 
-/* INKDomainList */
-INKDomainList string_to_domain_list(const char *str_list, const char *delimiter);
-char *domain_list_to_string(INKDomainList list, const char *delimiter);
+/* TSDomainList */
+TSDomainList string_to_domain_list(const char *str_list, const char *delimiter);
+char *domain_list_to_string(TSDomainList list, const char *delimiter);
 
-/* pd, pd_val, INKSspec ==> <pd_type>#<pd_value>#<sspecs> */
-char *pdest_sspec_to_string(INKPrimeDestT pd, char *prim_dest_val, INKSspec * sspec);
-/* <pd_type>#<pd_value>#<sspecs> ==> INKPdSsFormat */
-INKError string_to_pdss_format(const char *str, INKPdSsFormat * pdss);
+/* pd, pd_val, TSSspec ==> <pd_type>#<pd_value>#<sspecs> */
+char *pdest_sspec_to_string(TSPrimeDestT pd, char *prim_dest_val, TSSspec * sspec);
+/* <pd_type>#<pd_value>#<sspecs> ==> TSPdSsFormat */
+TSError string_to_pdss_format(const char *str, TSPdSsFormat * pdss);
 
-/* ?h?m?s <==> INKHmsTime */
-char *hms_time_to_string(INKHmsTime time);
-INKError string_to_hms_time(const char *str, INKHmsTime * time);
+/* ?h?m?s <==> TSHmsTime */
+char *hms_time_to_string(TSHmsTime time);
+TSError string_to_hms_time(const char *str, TSHmsTime * time);
 
 /* string ==> time struct */
-INKError string_to_time_struct(const char *str, INKSspec * sspec);
+TSError string_to_time_struct(const char *str, TSSspec * sspec);
 
-/* string ==> INKHdrT */
-INKHdrT string_to_header_type(const char *str);
-char *header_type_to_string(INKHdrT hdr);
+/* string ==> TSHdrT */
+TSHdrT string_to_header_type(const char *str);
+char *header_type_to_string(TSHdrT hdr);
 
-/* INKSchemeT <==> string */
-INKSchemeT string_to_scheme_type(const char *scheme);
-char *scheme_type_to_string(INKSchemeT scheme);
+/* TSSchemeT <==> string */
+TSSchemeT string_to_scheme_type(const char *scheme);
+char *scheme_type_to_string(TSSchemeT scheme);
 
-/* INKMethodT <==> string */
-INKMethodT string_to_method_type(const char *method);
-char *method_type_to_string(INKMethodT method);
+/* TSMethodT <==> string */
+TSMethodT string_to_method_type(const char *method);
+char *method_type_to_string(TSMethodT method);
 
-/* INKConnectT <==> string */
-char *connect_type_to_string(INKConnectT conn);
-INKConnectT string_to_connect_type(const char *conn);
+/* TSConnectT <==> string */
+char *connect_type_to_string(TSConnectT conn);
+TSConnectT string_to_connect_type(const char *conn);
 
-/* INKMcTtlt <==> string */
-char *multicast_type_to_string(INKMcTtlT mc);
+/* TSMcTtlt <==> string */
+char *multicast_type_to_string(TSMcTtlT mc);
 
-/* INKRrT <==> string */
-INKRrT string_to_round_robin_type(const char *rr);
-char *round_robin_type_to_string(INKRrT rr);
+/* TSRrT <==> string */
+TSRrT string_to_round_robin_type(const char *rr);
+char *round_robin_type_to_string(TSRrT rr);
 
-/* INKFileNameT <==> string */
-char *filename_to_string(INKFileNameT file);
+/* TSFileNameT <==> string */
+char *filename_to_string(TSFileNameT file);
 
-INKCongestionSchemeT string_to_congest_scheme_type(const char *scheme);
+TSCongestionSchemeT string_to_congest_scheme_type(const char *scheme);
 
-INKAccessT string_to_admin_acc_type(const char *access);
-char *admin_acc_type_to_string(INKAccessT access);
+TSAccessT string_to_admin_acc_type(const char *access);
+char *admin_acc_type_to_string(TSAccessT access);
 
 /***************************************************************************
  * Tokens-to-Struct Conversion Functions
  ***************************************************************************/
-Token *tokens_to_pdss_format(TokenList * tokens, Token * first_tok, INKPdSsFormat * pdss);
+Token *tokens_to_pdss_format(TokenList * tokens, Token * first_tok, TSPdSsFormat * pdss);
 
 
 /***************************************************************************
@@ -137,12 +137,12 @@ Token *tokens_to_pdss_format(TokenList * tokens, Token * first_tok, INKPdSsForma
  ***************************************************************************/
 bool isNumber(const char *strNum);
 bool ccu_checkIpAddr(const char *addr, const char *min_addr = "0.0.0.0", const char *max_addr = "255.255.255.255");
-bool ccu_checkIpAddrEle(INKIpAddrEle * ele);
+bool ccu_checkIpAddrEle(TSIpAddrEle * ele);
 bool ccu_checkPortNum(int port);
-bool ccu_checkPortEle(INKPortEle * ele);
-bool ccu_checkPdSspec(INKPdSsFormat pdss);
+bool ccu_checkPortEle(TSPortEle * ele);
+bool ccu_checkPdSspec(TSPdSsFormat pdss);
 bool ccu_checkUrl(char *url);
-bool ccu_checkTimePeriod(INKSspec * sspec);
+bool ccu_checkTimePeriod(TSSspec * sspec);
 
 char *chopWhiteSpaces_alloc(char *str);
 
@@ -150,8 +150,8 @@ char *chopWhiteSpaces_alloc(char *str);
  * General Helper Functions
  ***************************************************************************/
 CfgEleObj *create_ele_obj_from_rule_node(Rule * rule);
-CfgEleObj *create_ele_obj_from_ele(INKCfgEle * ele);
-INKRuleTypeT get_rule_type(TokenList * token_list, INKFileNameT file);
+CfgEleObj *create_ele_obj_from_ele(TSCfgEle * ele);
+TSRuleTypeT get_rule_type(TokenList * token_list, TSFileNameT file);
 
 
 /***************************************************************************
@@ -160,39 +160,39 @@ INKRuleTypeT get_rule_type(TokenList * token_list, INKFileNameT file);
 // these are mainly used by the C++ CfgEleObj subclasses when they need
 // to make copies of their m_ele data class member
 
-void copy_cfg_ele(INKCfgEle * src_ele, INKCfgEle * dst_ele);
-void copy_sspec(INKSspec * src, INKSspec * dst);
-void copy_pdss_format(INKPdSsFormat * src_pdss, INKPdSsFormat * dst_pdss);
-void copy_hms_time(INKHmsTime * src, INKHmsTime * dst);
-INKIpAddrEle *copy_ip_addr_ele(INKIpAddrEle * src_ele);
-INKPortEle *copy_port_ele(INKPortEle * src_ele);
-INKDomain *copy_domain(INKDomain * src_dom);
+void copy_cfg_ele(TSCfgEle * src_ele, TSCfgEle * dst_ele);
+void copy_sspec(TSSspec * src, TSSspec * dst);
+void copy_pdss_format(TSPdSsFormat * src_pdss, TSPdSsFormat * dst_pdss);
+void copy_hms_time(TSHmsTime * src, TSHmsTime * dst);
+TSIpAddrEle *copy_ip_addr_ele(TSIpAddrEle * src_ele);
+TSPortEle *copy_port_ele(TSPortEle * src_ele);
+TSDomain *copy_domain(TSDomain * src_dom);
 
-INKIpAddrList copy_ip_addr_list(INKIpAddrList list);
-INKPortList copy_port_list(INKPortList list);
-INKDomainList copy_domain_list(INKDomainList list);
-INKStringList copy_string_list(INKStringList list);
-INKIntList copy_int_list(INKIntList list);
+TSIpAddrList copy_ip_addr_list(TSIpAddrList list);
+TSPortList copy_port_list(TSPortList list);
+TSDomainList copy_domain_list(TSDomainList list);
+TSStringList copy_string_list(TSStringList list);
+TSIntList copy_int_list(TSIntList list);
 
-INKAdminAccessEle *copy_admin_access_ele(INKAdminAccessEle * ele);
-INKCacheEle *copy_cache_ele(INKCacheEle * ele);
-INKCongestionEle *copy_congestion_ele(INKCongestionEle * ele);
-INKHostingEle *copy_hosting_ele(INKHostingEle * ele);
-INKIcpEle *copy_icp_ele(INKIcpEle * ele);
-INKIpAllowEle *copy_ip_allow_ele(INKIpAllowEle * ele);
-INKLogFilterEle *copy_log_filter_ele(INKLogFilterEle * ele);
-INKLogFormatEle *copy_log_format_ele(INKLogFormatEle * ele);
-INKLogObjectEle *copy_log_object_ele(INKLogObjectEle * ele);
-INKMgmtAllowEle *copy_mgmt_allow_ele(INKMgmtAllowEle * ele);
-INKParentProxyEle *copy_parent_proxy_ele(INKParentProxyEle * ele);
-INKPartitionEle *copy_partition_ele(INKPartitionEle * ele);
-INKPluginEle *copy_plugin_ele(INKPluginEle * ele);
-INKRemapEle *copy_remap_ele(INKRemapEle * ele);
-INKSocksEle *copy_socks_ele(INKSocksEle * ele);
-INKSplitDnsEle *copy_split_dns_ele(INKSplitDnsEle * ele);
-INKStorageEle *copy_storage_ele(INKStorageEle * ele);
-INKUpdateEle *copy_update_ele(INKUpdateEle * ele);
-INKVirtIpAddrEle *copy_virt_ip_addr_ele(INKVirtIpAddrEle * ele);
+TSAdminAccessEle *copy_admin_access_ele(TSAdminAccessEle * ele);
+TSCacheEle *copy_cache_ele(TSCacheEle * ele);
+TSCongestionEle *copy_congestion_ele(TSCongestionEle * ele);
+TSHostingEle *copy_hosting_ele(TSHostingEle * ele);
+TSIcpEle *copy_icp_ele(TSIcpEle * ele);
+TSIpAllowEle *copy_ip_allow_ele(TSIpAllowEle * ele);
+TSLogFilterEle *copy_log_filter_ele(TSLogFilterEle * ele);
+TSLogFormatEle *copy_log_format_ele(TSLogFormatEle * ele);
+TSLogObjectEle *copy_log_object_ele(TSLogObjectEle * ele);
+TSMgmtAllowEle *copy_mgmt_allow_ele(TSMgmtAllowEle * ele);
+TSParentProxyEle *copy_parent_proxy_ele(TSParentProxyEle * ele);
+TSPartitionEle *copy_partition_ele(TSPartitionEle * ele);
+TSPluginEle *copy_plugin_ele(TSPluginEle * ele);
+TSRemapEle *copy_remap_ele(TSRemapEle * ele);
+TSSocksEle *copy_socks_ele(TSSocksEle * ele);
+TSSplitDnsEle *copy_split_dns_ele(TSSplitDnsEle * ele);
+TSStorageEle *copy_storage_ele(TSStorageEle * ele);
+TSUpdateEle *copy_update_ele(TSUpdateEle * ele);
+TSVirtIpAddrEle *copy_virt_ip_addr_ele(TSVirtIpAddrEle * ele);
 INKCommentEle *copy_comment_ele(INKCommentEle * ele);
 
 /***************************************************************************

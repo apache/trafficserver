@@ -47,11 +47,11 @@
  * CfgContextCreate
  * ---------------------------------------------------------------
  * Allocates memory for a CfgContext struct and initializes its members.
- * Must pass in a valid file name type; INK_FNAME_UNDEFINED is
+ * Must pass in a valid file name type; TS_FNAME_UNDEFINED is
  * considered valid.
  */
 CfgContext *
-CfgContextCreate(INKFileNameT file)
+CfgContextCreate(TSFileNameT file)
 {
   CfgContext *ctx = NULL;
   ctx = new CfgContext(file);
@@ -63,26 +63,26 @@ CfgContextCreate(INKFileNameT file)
  * ---------------------------------------------------------------
  * frees all memory allocated for the CfgContext
  */
-INKError
+TSError
 CfgContextDestroy(CfgContext * ctx)
 {
   if (!ctx)
-    return INK_ERR_PARAMS;
+    return TS_ERR_PARAMS;
   delete ctx;
-  return INK_ERR_OKAY;
+  return TS_ERR_OKAY;
 }
 
 /* ---------------------------------------------------------------
  * CfgContextCommit
  * ---------------------------------------------------------------
  * Convert CfgContext into file, and write the file.
- * Return INK_ERR_FAIL if completely fail to commit changes (eg.
- * write new file). Returns INK_ERR_INVALID_CONFIG_RULE if succeeded
+ * Return TS_ERR_FAIL if completely fail to commit changes (eg.
+ * write new file). Returns TS_ERR_INVALID_CONFIG_RULE if succeeded
  * in commiting changes, but at least one rule was invalid.
  * errRules is an optional argument - if specified, then a
  * list of the indices of the invalid rules will be stored in it
  */
-INKError
+TSError
 CfgContextCommit(CfgContext * ctx, LLQ * errRules)
 {
   int ret;
@@ -91,13 +91,13 @@ CfgContextCommit(CfgContext * ctx, LLQ * errRules)
   CfgEleObj *ele;
   int ver, size = 0, index;
   int *iPtr;
-  INKError err = INK_ERR_OKAY;
+  TSError err = TS_ERR_OKAY;
   int max_file_size = MAX_FILE_SIZE;
   int len = 0;
 
   ink_assert(ctx);
   if (!ctx)
-    return INK_ERR_PARAMS;
+    return TS_ERR_PARAMS;
 
   new_text = (char *) xmalloc(max_file_size + 1);
   new_text[0] = '\0';
@@ -106,7 +106,7 @@ CfgContextCommit(CfgContext * ctx, LLQ * errRules)
   while (ele) {
     rule = ele->formatEleToRule();      // use polymorphism
     if (!rule) {
-      err = INK_ERR_INVALID_CONFIG_RULE;
+      err = TS_ERR_INVALID_CONFIG_RULE;
       rule = xstrdup(FORMAT_TO_RULE_ERROR);
       if (errRules) {
         iPtr = (int *) xmalloc(sizeof(int));
@@ -121,7 +121,7 @@ CfgContextCommit(CfgContext * ctx, LLQ * errRules)
       max_file_size *= 2;
       new_text = (char *) xrealloc(new_text, max_file_size + 1);
       if (!new_text) {          // out of memory
-        return INK_ERR_FAIL;
+        return TS_ERR_FAIL;
       }
     }
     strncat(new_text, rule, len);
@@ -129,7 +129,7 @@ CfgContextCommit(CfgContext * ctx, LLQ * errRules)
 
     if (rule)
       xfree(rule);
-    if (ele->getRuleType() != INK_TYPE_COMMENT)
+    if (ele->getRuleType() != TS_TYPE_COMMENT)
       index++;
     ele = ctx->next(ele);
   }
@@ -138,8 +138,8 @@ CfgContextCommit(CfgContext * ctx, LLQ * errRules)
   ver = ctx->getVersion();
   ret = WriteFile(ctx->getFilename(), new_text, size, ver);
   xfree(new_text);
-  if (ret != INK_ERR_OKAY)
-    return INK_ERR_FAIL;        // couldn't write file
+  if (ret != TS_ERR_OKAY)
+    return TS_ERR_FAIL;        // couldn't write file
 
   return err;
 }
@@ -153,10 +153,10 @@ CfgContextCommit(CfgContext * ctx, LLQ * errRules)
  * ctx should also store the version number of the file being read.
  * If invalid rule, it is skipped and not added to the CfgContext.
  */
-INKError
+TSError
 CfgContextGet(CfgContext * ctx)
 {
-  INKError ret;
+  TSError ret;
   int size, ver;
   char *old_text = NULL;
   RuleList *rule_list = NULL;
@@ -164,11 +164,11 @@ CfgContextGet(CfgContext * ctx)
 
   ink_assert(ctx);
   if (!ctx)
-    return INK_ERR_PARAMS;
+    return TS_ERR_PARAMS;
 
   // get copy of the file
   ret = ReadFile(ctx->getFilename(), &old_text, &size, &ver);
-  if (ret != INK_ERR_OKAY) {
+  if (ret != TS_ERR_OKAY) {
     if (old_text && strcmp(old_text, "") != 0)
       xfree(old_text);          // need to free memory
     return ret;                 // Pass the error code along
@@ -188,7 +188,7 @@ CfgContextGet(CfgContext * ctx)
     }
 
     ret = ctx->addEle(ele);
-    if (ret != INK_ERR_OKAY) {
+    if (ret != TS_ERR_OKAY) {
       if (old_text)
         xfree(old_text);        // need to free memory
       return ret;
@@ -197,7 +197,7 @@ CfgContextGet(CfgContext * ctx)
   delete(rule_list);            // free RuleList memory
   if (old_text && strcmp(old_text, "") != 0)
     xfree(old_text);            // need to free memory
-  return INK_ERR_OKAY;
+  return TS_ERR_OKAY;
 }
 
 
@@ -224,7 +224,7 @@ CfgContextGetCount(CfgContext * ctx)
   // iterate CfgContext; return the first EleObj that's not a comment
   curr_ele = ctx->first();      // get head of ele
   while (curr_ele) {
-    if (curr_ele->getRuleType() != INK_TYPE_COMMENT) {
+    if (curr_ele->getRuleType() != TS_TYPE_COMMENT) {
       count++;                  // only count non-comments
     }
     curr_ele = ctx->next(curr_ele);
@@ -236,7 +236,7 @@ CfgContextGetCount(CfgContext * ctx)
 /*--------------------------------------------------------------
  * CfgContextGetObjAt
  *--------------------------------------------------------------
- * user must typecast the INKCfgObj to appropriate INKObj before using;
+ * user must typecast the TSCfgObj to appropriate TSObj before using;
  * iterate through the CfgContext, until the count of NON-Comment ObjObj's
  * equals index specified (remember to start counting from 0)
  */
@@ -253,7 +253,7 @@ CfgContextGetObjAt(CfgContext * ctx, int index)
   // iterate through the ctx, keep count of all NON-Comment Obj Objects
   curr_ele = ctx->first();      // get head of ele
   while (curr_ele) {
-    if (curr_ele->getRuleType() == INK_TYPE_COMMENT) {  /* a comment ele */
+    if (curr_ele->getRuleType() == TS_TYPE_COMMENT) {  /* a comment ele */
       curr_ele = ctx->next(curr_ele);
       continue;
     } else {
@@ -272,14 +272,14 @@ CfgContextGetObjAt(CfgContext * ctx, int index)
 /*--------------------------------------------------------------
  * CfgContextGetEleAt
  *--------------------------------------------------------------
- * user must typecast the INKCfgEle to appropriate INKEle before using;
+ * user must typecast the TSCfgEle to appropriate TSEle before using;
  * iterate through the CfgContext, until the count of NON-Comment EleObj's
  * equals index specified (remember to start counting from 0)
  */
-INKCfgEle *
+TSCfgEle *
 CfgContextGetEleAt(CfgContext * ctx, int index)
 {
-  INKCfgEle *cfg_ele;
+  TSCfgEle *cfg_ele;
   CfgEleObj *curr_ele;
   int count = 0;                // start counting from 0
 
@@ -290,7 +290,7 @@ CfgContextGetEleAt(CfgContext * ctx, int index)
   // iterate through the ctx, keep count of all NON-Comment Ele Objects
   curr_ele = ctx->first();      // get head of ele
   while (curr_ele) {
-    if (curr_ele->getRuleType() == INK_TYPE_COMMENT) {  /* a comment ele */
+    if (curr_ele->getRuleType() == TS_TYPE_COMMENT) {  /* a comment ele */
       curr_ele = ctx->next(curr_ele);
       continue;
     } else {
@@ -314,8 +314,8 @@ CfgContextGetEleAt(CfgContext * ctx, int index)
  * Returns pointer to first Non-comment Ele in the CfgContext.
  * Used as part of iterator
  */
-INKCfgEle *
-CfgContextGetFirst(CfgContext * ctx, INKCfgIterState * state)
+TSCfgEle *
+CfgContextGetFirst(CfgContext * ctx, TSCfgIterState * state)
 {
   CfgEleObj *curr_ele;
 
@@ -326,7 +326,7 @@ CfgContextGetFirst(CfgContext * ctx, INKCfgIterState * state)
   // iterate; return the first CfgEleObj that's not a comment
   curr_ele = ctx->first();      // get head of ele
   while (curr_ele) {
-    if (curr_ele->getRuleType() == INK_TYPE_COMMENT) {  //a comment ele
+    if (curr_ele->getRuleType() == TS_TYPE_COMMENT) {  //a comment ele
       curr_ele = ctx->next(curr_ele);
       continue;
     } else {
@@ -344,8 +344,8 @@ CfgContextGetFirst(CfgContext * ctx, INKCfgIterState * state)
  * Returns pointer to next Non-comment Ele in the CfgContext.
  * Used as part of iterator.
  */
-INKCfgEle *
-CfgContextGetNext(CfgContext * ctx, INKCfgIterState * state)
+TSCfgEle *
+CfgContextGetNext(CfgContext * ctx, TSCfgIterState * state)
 {
   CfgEleObj *curr_ele;
 
@@ -358,14 +358,14 @@ CfgContextGetNext(CfgContext * ctx, INKCfgIterState * state)
   curr_ele = (CfgEleObj *) * state;
   curr_ele = ctx->next(curr_ele);       // get next ele
   while (curr_ele) {
-    if (curr_ele->getRuleType() != INK_TYPE_COMMENT) {  // a non-comment ele
+    if (curr_ele->getRuleType() != TS_TYPE_COMMENT) {  // a non-comment ele
       *state = curr_ele;
       return curr_ele->getCfgEle();
     }
     curr_ele = ctx->next(curr_ele);     // get next ele
 
     /*
-       if (curr_ele->getRuleType() == INK_TYPE_COMMENT) { // a comment ele
+       if (curr_ele->getRuleType() == TS_TYPE_COMMENT) { // a comment ele
        continue;
        } else {
        *state = curr_ele;
@@ -386,26 +386,26 @@ CfgContextGetNext(CfgContext * ctx, INKCfgIterState * state)
  * first), and insert the copy at the position of index-1.
  * THIS IS REALLY INEFFICIENT!!!
  */
-INKError
+TSError
 CfgContextMoveEleUp(CfgContext * ctx, int index)
 {
   CfgEleObj *curr_ele_obj;
-  INKCfgEle *ele_copy = 0;      /* lv: just to make gcc happy */
+  TSCfgEle *ele_copy = 0;      /* lv: just to make gcc happy */
   int count = 0;                // start counting from 0
-  INKError ret;
+  TSError ret;
 
   ink_assert(ctx && index >= 0);
   if (!ctx || index < 0)
-    return INK_ERR_PARAMS;
+    return TS_ERR_PARAMS;
 
   // moving the first Ele up does nothing
   if (index == 0)
-    return INK_ERR_OKAY;
+    return TS_ERR_OKAY;
 
   // retrieve the ELe and make a copy of it
   curr_ele_obj = ctx->first();  // get head of ele
   while (curr_ele_obj) {
-    if (curr_ele_obj->getRuleType() == INK_TYPE_COMMENT) {      // a comment ele
+    if (curr_ele_obj->getRuleType() == TS_TYPE_COMMENT) {      // a comment ele
       curr_ele_obj = ctx->next(curr_ele_obj);
       continue;
     } else {
@@ -423,7 +423,7 @@ CfgContextMoveEleUp(CfgContext * ctx, int index)
   }
   // reached end of CfgContext before hit index
   if (count != index)
-    return INK_ERR_FAIL;
+    return TS_ERR_FAIL;
 
   // reinsert  the ele at index-1
   ret = CfgContextInsertEleAt(ctx, ele_copy, index - 1);
@@ -438,31 +438,31 @@ CfgContextMoveEleUp(CfgContext * ctx, int index)
  * Make a copy of the ele stored in the EleObj before deleting it and
  * reinserts the new EleObj in the index+1 position.
  */
-INKError
+TSError
 CfgContextMoveEleDown(CfgContext * ctx, int index)
 {
   CfgEleObj *curr_ele_obj;
-  INKCfgEle *ele_copy = 0;      /* lv: just to make gcc happy */
+  TSCfgEle *ele_copy = 0;      /* lv: just to make gcc happy */
   int count = 0;                // start counting from 0
-  INKError ret;
+  TSError ret;
   int tot_ele;
 
   ink_assert(ctx);
   if (!ctx)
-    return INK_ERR_PARAMS;
+    return TS_ERR_PARAMS;
 
   tot_ele = CfgContextGetCount(ctx);    // inefficient!
   if (index<0 || index>= tot_ele)
-    return INK_ERR_PARAMS;
+    return TS_ERR_PARAMS;
 
   // moving the last ele down does nothing
   if (index == (tot_ele - 1))
-    return INK_ERR_OKAY;
+    return TS_ERR_OKAY;
 
   // retrieve the ELe and make a copy of it
   curr_ele_obj = ctx->first();  // get head of ele
   while (curr_ele_obj) {
-    if (curr_ele_obj->getRuleType() == INK_TYPE_COMMENT) {      /* a comment ele */
+    if (curr_ele_obj->getRuleType() == TS_TYPE_COMMENT) {      /* a comment ele */
       curr_ele_obj = ctx->next(curr_ele_obj);
       continue;
     } else {
@@ -480,7 +480,7 @@ CfgContextMoveEleDown(CfgContext * ctx, int index)
   }
   // reached end of CfgContext before hit index
   if (count != index)
-    return INK_ERR_FAIL;
+    return TS_ERR_FAIL;
 
   // reinsert  the ele at index+1
   ret = CfgContextInsertEleAt(ctx, ele_copy, index + 1);
@@ -494,15 +494,15 @@ CfgContextMoveEleDown(CfgContext * ctx, int index)
  * Appends the ele to the end of the CfgContext. First must
  * wrap the ele in an CfgEleObj class before can append to CfgContext
  */
-INKError
-CfgContextAppendEle(CfgContext * ctx, INKCfgEle * ele)
+TSError
+CfgContextAppendEle(CfgContext * ctx, TSCfgEle * ele)
 {
   CfgEleObj *ele_obj;
 
   ele_obj = create_ele_obj_from_ele(ele);
   ctx->addEle(ele_obj);
 
-  return INK_ERR_OKAY;
+  return TS_ERR_OKAY;
 }
 
 /*--------------------------------------------------------------
@@ -518,12 +518,12 @@ CfgContextAppendEle(CfgContext * ctx, INKCfgEle * ele)
  * comments before the first non-comment CfgEleObj, then insert the
  * new EleObj right after the last comment
  */
-INKError
-CfgContextInsertEleAt(CfgContext * ctx, INKCfgEle * ele, int index)
+TSError
+CfgContextInsertEleAt(CfgContext * ctx, TSCfgEle * ele, int index)
 {
   CfgEleObj *ele_obj, *curr_ele_obj, *last_comment = NULL;
   int count = 0;
-  INKError err = INK_ERR_OKAY;
+  TSError err = TS_ERR_OKAY;
   bool has_comment = false;
 
   // need to convert the ele into appropriate Ele object type
@@ -533,7 +533,7 @@ CfgContextInsertEleAt(CfgContext * ctx, INKCfgEle * ele, int index)
   // when count == index, then insert the new ele object there
   curr_ele_obj = ctx->first();  // get head of ele
   while (curr_ele_obj) {
-    if (curr_ele_obj->getRuleType() == INK_TYPE_COMMENT) {      /* a comment ele */
+    if (curr_ele_obj->getRuleType() == TS_TYPE_COMMENT) {      /* a comment ele */
       last_comment = curr_ele_obj;
       curr_ele_obj = ctx->next(curr_ele_obj);
       has_comment = true;
@@ -560,7 +560,7 @@ CfgContextInsertEleAt(CfgContext * ctx, INKCfgEle * ele, int index)
     }
   }
 
-  return INK_ERR_FAIL;          // invalid index
+  return TS_ERR_FAIL;          // invalid index
 }
 
 /*--------------------------------------------------------------
@@ -570,7 +570,7 @@ CfgContextInsertEleAt(CfgContext * ctx, INKCfgEle * ele, int index)
  * non-comment ele's from 0, eg. if index = 3, that means remove the
  * fourth non-comment ELe in the CfgContext
  */
-INKError
+TSError
 CfgContextRemoveEleAt(CfgContext * ctx, int index)
 {
   CfgEleObj *curr_ele_obj;
@@ -580,20 +580,20 @@ CfgContextRemoveEleAt(CfgContext * ctx, int index)
   // when count == index, then insert the new ele object there
   curr_ele_obj = ctx->first();  // get head of ele
   while (curr_ele_obj) {
-    if (curr_ele_obj->getRuleType() == INK_TYPE_COMMENT) {      /* a comment ele */
+    if (curr_ele_obj->getRuleType() == TS_TYPE_COMMENT) {      /* a comment ele */
       curr_ele_obj = ctx->next(curr_ele_obj);
       continue;
     } else {
       if (count == index) {     // reached the Ele
         ctx->removeEle(curr_ele_obj);
-        return INK_ERR_OKAY;    // DONE!
+        return TS_ERR_OKAY;    // DONE!
       }
       curr_ele_obj = ctx->next(curr_ele_obj);
       count++;
     }
   }
 
-  return INK_ERR_FAIL;          // invalid index
+  return TS_ERR_FAIL;          // invalid index
 }
 
 /*--------------------------------------------------------------
@@ -602,14 +602,14 @@ CfgContextRemoveEleAt(CfgContext * ctx, int index)
  * Removes all the Ele rules from Cfg Context leaving all the
  * comments behind
  */
-INKError
+TSError
 CfgContextRemoveAll(CfgContext * ctx)
 {
   CfgEleObj *curr_ele_obj, *ele_obj_ptr;
 
   curr_ele_obj = ctx->first();
   while (curr_ele_obj) {
-    if (curr_ele_obj->getRuleType() == INK_TYPE_COMMENT) {      // skip comments
+    if (curr_ele_obj->getRuleType() == TS_TYPE_COMMENT) {      // skip comments
       curr_ele_obj = ctx->next(curr_ele_obj);
       continue;
     } else {
@@ -619,5 +619,5 @@ CfgContextRemoveAll(CfgContext * ctx)
     curr_ele_obj = ele_obj_ptr;
   }
 
-  return INK_ERR_OKAY;
+  return TS_ERR_OKAY;
 }

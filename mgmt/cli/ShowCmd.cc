@@ -1182,16 +1182,16 @@ CmdArgs_None()
 int
 ShowStatus()
 {
-  INKProxyStateT state = INKProxyStateGet();
+  TSProxyStateT state = TSProxyStateGet();
   Cli_Printf("\n");
   switch (state) {
-  case INK_PROXY_ON:
+  case TS_PROXY_ON:
     Cli_Printf("Proxy -- on\n");
     break;
-  case INK_PROXY_OFF:
+  case TS_PROXY_OFF:
     Cli_Printf("Proxy -- off\n");
     break;
-  case INK_PROXY_UNDEFINED:
+  case TS_PROXY_UNDEFINED:
     Cli_Printf("Proxy status undefined\n");
     break;
   }
@@ -1204,9 +1204,9 @@ ShowStatus()
 int
 ShowVersion()
 {
-  INKError status = INK_ERR_OKAY;
-  INKString ts_version = NULL;
-  INKString tm_version = NULL;
+  TSError status = TS_ERR_OKAY;
+  TSString ts_version = NULL;
+  TSString tm_version = NULL;
 
   status = Cli_RecordGetString("proxy.process.version.server.short", &ts_version);
   status = Cli_RecordGetString("proxy.node.version.manager.short", &tm_version);
@@ -1222,15 +1222,15 @@ ShowVersion()
 int
 ShowPorts()
 {
-  INKInt http_server = -1;
-  INKString http_other = NULL;
-  INKInt web_interface = -1;
-  INKInt cluster = -1;
-  INKInt cluster_rs = -1;
-  INKInt cluster_mc = -1;
-  INKInt socks_server = -1;
-  INKInt icp = -1;
-  INKString connect = NULL;
+  TSInt http_server = -1;
+  TSString http_other = NULL;
+  TSInt web_interface = -1;
+  TSInt cluster = -1;
+  TSInt cluster_rs = -1;
+  TSInt cluster_mc = -1;
+  TSInt socks_server = -1;
+  TSInt icp = -1;
+  TSString connect = NULL;
 
   // retrieve values
 
@@ -1264,9 +1264,9 @@ ShowPorts()
 int
 ShowCluster()
 {
-  INKInt cluster = -1;
-  INKInt cluster_rs = -1;
-  INKInt cluster_mc = -1;
+  TSInt cluster = -1;
+  TSInt cluster_rs = -1;
+  TSInt cluster_mc = -1;
 
   Cli_RecordGetInt("proxy.config.cluster.cluster_port", &cluster);
   Cli_RecordGetInt("proxy.config.cluster.rsport", &cluster_rs);
@@ -1285,7 +1285,7 @@ ShowCluster()
 int
 ShowSecurity()
 {
-  INKInt web_interface = -1;
+  TSInt web_interface = -1;
 
   Cli_Printf("\n");
   Cli_RecordGetInt("proxy.config.admin.web_interface_port", &web_interface);
@@ -1293,7 +1293,7 @@ ShowSecurity()
   Cli_Printf("Web Interface Port ----- %d\n", web_interface);
   Cli_Printf("\n");
   Cli_Printf("Traffic Server Access\n" "-------------------\n");
-  INKError status = Cli_DisplayRules(INK_FNAME_IP_ALLOW);
+  TSError status = Cli_DisplayRules(TS_FNAME_IP_ALLOW);
 
   if (status) {
     return status;
@@ -1301,7 +1301,7 @@ ShowSecurity()
 
   Cli_Printf("\n");
   Cli_Printf("Traffic Manager Access\n" "-------------------\n");
-  status = Cli_DisplayRules(INK_FNAME_MGMT_ALLOW);
+  status = Cli_DisplayRules(TS_FNAME_MGMT_ALLOW);
 
   return status;
 }
@@ -1312,24 +1312,24 @@ ShowHttp()
 {
   // declare and initialize variables
 
-  INKInt http_enabled = -1;
-  INKInt keepalive_timeout_in = -1;
-  INKInt keepalive_timeout_out = -1;
-  INKInt inactivity_timeout_in = -1;
-  INKInt inactivity_timeout_out = -1;
-  INKInt activity_timeout_in = -1;
-  INKInt activity_timeout_out = -1;
-  INKInt max_alts = -1;
-  INKInt remove_from = -1;
-  INKInt remove_referer = -1;
-  INKInt remove_user_agent = -1;
-  INKInt remove_cookie = -1;
-  INKString other_header_list = NULL;
-  INKInt insert_client_ip = -1;
-  INKInt remove_client_ip = -1;
-  INKInt http_server = -1;
-  INKString http_other = NULL;
-  INKString global_user_agent = NULL;
+  TSInt http_enabled = -1;
+  TSInt keepalive_timeout_in = -1;
+  TSInt keepalive_timeout_out = -1;
+  TSInt inactivity_timeout_in = -1;
+  TSInt inactivity_timeout_out = -1;
+  TSInt activity_timeout_in = -1;
+  TSInt activity_timeout_out = -1;
+  TSInt max_alts = -1;
+  TSInt remove_from = -1;
+  TSInt remove_referer = -1;
+  TSInt remove_user_agent = -1;
+  TSInt remove_cookie = -1;
+  TSString other_header_list = NULL;
+  TSInt insert_client_ip = -1;
+  TSInt remove_client_ip = -1;
+  TSInt http_server = -1;
+  TSString http_other = NULL;
+  TSString global_user_agent = NULL;
 
   // retrieve values
 
@@ -1405,10 +1405,10 @@ ShowIcp()
 {
   // declare and initialize variables
 
-  INKInt icp_enabled = 0;
-  INKInt icp_port = -1;
-  INKInt multicast_enabled = 0;
-  INKInt query_timeout = 2;
+  TSInt icp_enabled = 0;
+  TSInt icp_port = -1;
+  TSInt multicast_enabled = 0;
+  TSInt query_timeout = 2;
 
   // retrieve value
 
@@ -1436,7 +1436,7 @@ ShowIcpPeer()
   // display rules from icp.config
   Cli_Printf("\n");
   Cli_Printf("icp.config Rules\n" "-------------------\n");
-  INKError status = Cli_DisplayRules(INK_FNAME_ICP_PEER);
+  TSError status = Cli_DisplayRules(TS_FNAME_ICP_PEER);
   Cli_Printf("\n");
 
   return status;
@@ -1447,7 +1447,7 @@ int
 ShowProxy()
 {
 
-  INKString proxy_name = NULL;
+  TSString proxy_name = NULL;
 
   Cli_RecordGetString("proxy.config.proxy_name", &proxy_name);
   Cli_Printf("\n");
@@ -1463,19 +1463,19 @@ ShowCache()
 {
   // declare and initialize variables
 
-  INKInt cache_http = -1;
-  INKInt cache_bypass = -1;
-  INKInt max_doc_size = -1;
-  INKInt when_to_reval = -1;
-  INKInt reqd_headers = -1;
-  INKInt min_life = -1;
-  INKInt max_life = -1;
-  INKInt dynamic_urls = -1;
-  INKInt alternates = -1;
+  TSInt cache_http = -1;
+  TSInt cache_bypass = -1;
+  TSInt max_doc_size = -1;
+  TSInt when_to_reval = -1;
+  TSInt reqd_headers = -1;
+  TSInt min_life = -1;
+  TSInt max_life = -1;
+  TSInt dynamic_urls = -1;
+  TSInt alternates = -1;
   const char *vary_def_text = "NONE";
   const char *vary_def_image = "NONE";
   const char *vary_def_other = "NONE";
-  INKInt cookies = -1;
+  TSInt cookies = -1;
 
   // retrieve values
 
@@ -1591,7 +1591,7 @@ ShowCacheRules()
   Cli_Printf("\n");
 
   Cli_Printf("cache.config rules\n" "-------------------\n");
-  INKError status = Cli_DisplayRules(INK_FNAME_CACHE_OBJ);
+  TSError status = Cli_DisplayRules(TS_FNAME_CACHE_OBJ);
 
   Cli_Printf("\n");
 
@@ -1605,7 +1605,7 @@ ShowCacheStorage()
   // display rules from storage.config
   Cli_Printf("storage.config rules\n");
 
-  INKError status = Cli_DisplayRules(INK_FNAME_STORAGE);
+  TSError status = Cli_DisplayRules(TS_FNAME_STORAGE);
 
   return status;
 }
@@ -1615,19 +1615,19 @@ ShowCacheStorage()
 int
 ShowVirtualIp()
 {
-  INKCfgContext VipCtx;
+  TSCfgContext VipCtx;
   int EleCount, i;
-  INKVirtIpAddrEle *VipElePtr;
+  TSVirtIpAddrEle *VipElePtr;
 
-  VipCtx = INKCfgContextCreate(INK_FNAME_VADDRS);
-  if (INKCfgContextGet(VipCtx) != INK_ERR_OKAY)
+  VipCtx = TSCfgContextCreate(TS_FNAME_VADDRS);
+  if (TSCfgContextGet(VipCtx) != TS_ERR_OKAY)
     Cli_Printf("ERROR READING FILE\n");
-  EleCount = INKCfgContextGetCount(VipCtx);
+  EleCount = TSCfgContextGetCount(VipCtx);
   Cli_Printf("\n");
   Cli_Printf("%d Elements in Record\n", EleCount);
   Cli_Printf("\n");
   for (i = 0; i < EleCount; i++) {
-    VipElePtr = (INKVirtIpAddrEle *) INKCfgContextGetEleAt(VipCtx, i);
+    VipElePtr = (TSVirtIpAddrEle *) TSCfgContextGetEleAt(VipCtx, i);
     Cli_Printf("%d %s %s %d\n", i, VipElePtr->ip_addr, VipElePtr->intr, VipElePtr->sub_intr);
   }
   Cli_Printf("\n");
@@ -1641,13 +1641,13 @@ ShowHostDb()
 
   // declare and initialize variables
 
-  INKInt lookup_timeout = -1;
-  INKInt timeout = -1;
-  INKInt verify_after = -1;
-  INKInt fail_timeout = -1;
-  INKInt re_dns_on_reload = 0;
-  INKInt dns_lookup_timeout = -1;
-  INKInt dns_retries = -1;
+  TSInt lookup_timeout = -1;
+  TSInt timeout = -1;
+  TSInt verify_after = -1;
+  TSInt fail_timeout = -1;
+  TSInt re_dns_on_reload = 0;
+  TSInt dns_lookup_timeout = -1;
+  TSInt dns_retries = -1;
 
   // retrieve value
 
@@ -1682,8 +1682,8 @@ ShowDnsResolver()
 {
   // declare and initialize variables
 
-  INKInt dns_search_default_domains = 0;
-  INKInt http_enable_url_expandomatic = 0;
+  TSInt dns_search_default_domains = 0;
+  TSInt http_enable_url_expandomatic = 0;
 
   // retrieve value
 
@@ -1710,44 +1710,44 @@ ShowLogging()
 {
   // declare and initialize variables
 
-  INKInt logging_enabled = 0;
-  INKInt log_space = -1;
-  INKInt headroom_space = -1;
-  INKInt collation_mode = 0;
+  TSInt logging_enabled = 0;
+  TSInt log_space = -1;
+  TSInt headroom_space = -1;
+  TSInt collation_mode = 0;
   const char *collation_host = "None";
-  INKInt collation_port = -1;
-  INKString collation_secret = NULL;
-  INKInt host_tag = 0;
-  INKInt orphan_space = -1;
+  TSInt collation_port = -1;
+  TSString collation_secret = NULL;
+  TSInt host_tag = 0;
+  TSInt orphan_space = -1;
 
-  INKInt squid_log = 0;
-  INKInt is_ascii = 1;
-  INKString file_name = NULL;
-  INKString file_header = NULL;
+  TSInt squid_log = 0;
+  TSInt is_ascii = 1;
+  TSString file_name = NULL;
+  TSString file_header = NULL;
 
-  INKInt common_log = 0;
-  INKInt common_is_ascii = 0;
-  INKString common_file_name = NULL;
-  INKString common_file_header = NULL;
+  TSInt common_log = 0;
+  TSInt common_is_ascii = 0;
+  TSString common_file_name = NULL;
+  TSString common_file_header = NULL;
 
-  INKInt extended_log = 0;
-  INKInt extended_is_ascii = 0;
-  INKString extended_file_name = NULL;
-  INKString extended_file_header = NULL;
+  TSInt extended_log = 0;
+  TSInt extended_is_ascii = 0;
+  TSString extended_file_name = NULL;
+  TSString extended_file_header = NULL;
 
-  INKInt extended2_log = 0;
-  INKInt extended2_is_ascii = 0;
-  INKString extended2_file_name = NULL;
-  INKString extended2_file_header = NULL;
+  TSInt extended2_log = 0;
+  TSInt extended2_is_ascii = 0;
+  TSString extended2_file_name = NULL;
+  TSString extended2_file_header = NULL;
 
-  INKInt icp_log = 0;
-  INKInt http_host_log = 0;
-  INKInt custom_log = 0;
-  INKInt xml_log = 0;
-  INKInt rolling = 0;
-  INKInt roll_offset_hr = -1;
-  INKInt roll_interval = -1;
-  INKInt auto_delete = 0;
+  TSInt icp_log = 0;
+  TSInt http_host_log = 0;
+  TSInt custom_log = 0;
+  TSInt xml_log = 0;
+  TSInt rolling = 0;
+  TSInt roll_offset_hr = -1;
+  TSInt roll_interval = -1;
+  TSInt auto_delete = 0;
   // retrieve value
 
   Cli_RecordGetInt("proxy.config.log.logging_enabled", &logging_enabled);
@@ -1883,7 +1883,7 @@ ShowSsl()
 {
   // declare and initialize variables
 
-  INKString connect_ports = NULL;
+  TSString connect_ports = NULL;
 
   // retrieve value
 
@@ -1902,9 +1902,9 @@ ShowSsl()
 int
 ShowParents()
 {
-  INKError status = INK_ERR_OKAY;
-  INKInt parent_enabled = -1;
-  INKString parent_cache = NULL;
+  TSError status = TS_ERR_OKAY;
+  TSInt parent_enabled = -1;
+  TSString parent_cache = NULL;
 
   Cli_RecordGetInt("proxy.config.http.parent_proxy_routing_enable", &parent_enabled);
   Cli_RecordGetString("proxy.config.http.parent_proxies", &parent_cache);
@@ -1924,7 +1924,7 @@ ShowParentRules()
   Cli_Printf("\n");
 
   Cli_Printf("parent.config rules\n" "-------------------\n");
-  INKError status = Cli_DisplayRules(INK_FNAME_PARENT_PROXY);
+  TSError status = Cli_DisplayRules(TS_FNAME_PARENT_PROXY);
   Cli_Printf("\n");
 
   return status;
@@ -1938,7 +1938,7 @@ ShowRemap()
   Cli_Printf("\n");
 
   Cli_Printf("remap.config rules\n" "-------------------\n");
-  INKError status = Cli_DisplayRules(INK_FNAME_REMAP);
+  TSError status = Cli_DisplayRules(TS_FNAME_REMAP);
   Cli_Printf("\n");
 
   return status;
@@ -1950,11 +1950,11 @@ ShowSocks()
 {
   // declare and initialize variables
 
-  INKInt socks_enabled = 0;
-  INKInt version = -1;
-  INKString default_servers = NULL;
-  INKInt accept_enabled = -1;
-  INKInt accept_port = -1;
+  TSInt socks_enabled = 0;
+  TSInt version = -1;
+  TSString default_servers = NULL;
+  TSInt accept_enabled = -1;
+  TSInt accept_port = -1;
 
   // retrieve values
   Cli_RecordGetInt("proxy.config.socks.socks_needed", &socks_enabled);
@@ -1983,7 +1983,7 @@ ShowSocksRules()
   Cli_Printf("\n");
 
   Cli_Printf("socks.config rules\n" "-------------------\n");
-  INKError status = Cli_DisplayRules(INK_FNAME_SOCKS);
+  TSError status = Cli_DisplayRules(TS_FNAME_SOCKS);
   Cli_Printf("\n");
 
   return status;
@@ -1993,8 +1993,8 @@ ShowSocksRules()
 int
 ShowPortTunnels()
 {
-  INKString str_val = NULL;
-  INKError status = INK_ERR_OKAY;
+  TSString str_val = NULL;
+  TSError status = TS_ERR_OKAY;
 
   status = Cli_RecordGetString("proxy.config.http.server_other_ports", &str_val);
   if (status) {
@@ -2015,11 +2015,11 @@ int
 ShowScheduledUpdate()
 {
   // variable declaration
-  INKInt enabled = 0;
-  INKInt force = 0;
-  INKInt retry_count = -1;
-  INKInt retry_interval = -1;
-  INKInt concurrent_updates = 0;
+  TSInt enabled = 0;
+  TSInt force = 0;
+  TSInt retry_count = -1;
+  TSInt retry_interval = -1;
+  TSInt concurrent_updates = 0;
 
   // get value
   Cli_RecordGetInt("proxy.config.update.enabled", &enabled);
@@ -2055,7 +2055,7 @@ ShowScheduledUpdateRules()
   Cli_Printf("\n");
 
   Cli_Printf("update.config rules\n" "-------------------\n");
-  INKError status = Cli_DisplayRules(INK_FNAME_UPDATE_URL);
+  TSError status = Cli_DisplayRules(TS_FNAME_UPDATE_URL);
   Cli_Printf("\n");
 
   return status;
@@ -2070,14 +2070,14 @@ int
 ShowProxyStats()
 {
 
-  INKFloat cache_hit_ratio = -1.0;
-  INKFloat bandwidth_hit_ratio = -1.0;
-  INKFloat percent_free = -1.0;
-  INKInt current_server_connection = -1;
-  INKInt current_client_connection = -1;
-  INKInt current_cache_connection = -1;
-  INKFloat client_throughput_out = -1.0;
-  INKFloat xacts_per_second = -1.0;
+  TSFloat cache_hit_ratio = -1.0;
+  TSFloat bandwidth_hit_ratio = -1.0;
+  TSFloat percent_free = -1.0;
+  TSInt current_server_connection = -1;
+  TSInt current_client_connection = -1;
+  TSInt current_cache_connection = -1;
+  TSFloat client_throughput_out = -1.0;
+  TSFloat xacts_per_second = -1.0;
 
 
   //get value
@@ -2113,34 +2113,34 @@ int
 ShowHttpTransStats()
 {
   //varialbles
-  INKFloat frac_avg_10s_hit_fresh = -1.0;
-  INKInt msec_avg_10s_hit_fresh = -1;
-  INKFloat frac_avg_10s_hit_revalidated = -1.0;
-  INKInt msec_avg_10s_hit_revalidated = -1;
-  INKFloat frac_avg_10s_miss_cold = -1.0;
-  INKInt msec_avg_10s_miss_cold = -1;
-  INKFloat frac_avg_10s_miss_not_cachable = -1.0;
-  INKInt msec_avg_10s_miss_not_cachable = -1;
-  INKFloat frac_avg_10s_miss_changed = -1.0;
-  INKInt msec_avg_10s_miss_changed = -1;
-  INKFloat frac_avg_10s_miss_client_no_cache = -1.0;
-  INKInt msec_avg_10s_miss_client_no_cache = -1;
-  INKFloat frac_avg_10s_errors_connect_failed = -1.0;
-  INKInt msec_avg_10s_errors_connect_failed = -1;
-  INKFloat frac_avg_10s_errors_other = -1.0;
-  INKInt msec_avg_10s_errors_other = -1;
-  INKFloat frac_avg_10s_errors_aborts = -1.0;
-  INKInt msec_avg_10s_errors_aborts = -1;
-  INKFloat frac_avg_10s_errors_possible_aborts = -1.0;
-  INKInt msec_avg_10s_errors_possible_aborts = -1;
-  INKFloat frac_avg_10s_errors_early_hangups = -1.0;
-  INKInt msec_avg_10s_errors_early_hangups = -1;
-  INKFloat frac_avg_10s_errors_empty_hangups = -1.0;
-  INKInt msec_avg_10s_errors_empty_hangups = -1;
-  INKFloat frac_avg_10s_errors_pre_accept_hangups = -1.0;
-  INKInt msec_avg_10s_errors_pre_accept_hangups = -1;
-  INKFloat frac_avg_10s_other_unclassified = -1.0;
-  INKInt msec_avg_10s_other_unclassified = -1;
+  TSFloat frac_avg_10s_hit_fresh = -1.0;
+  TSInt msec_avg_10s_hit_fresh = -1;
+  TSFloat frac_avg_10s_hit_revalidated = -1.0;
+  TSInt msec_avg_10s_hit_revalidated = -1;
+  TSFloat frac_avg_10s_miss_cold = -1.0;
+  TSInt msec_avg_10s_miss_cold = -1;
+  TSFloat frac_avg_10s_miss_not_cachable = -1.0;
+  TSInt msec_avg_10s_miss_not_cachable = -1;
+  TSFloat frac_avg_10s_miss_changed = -1.0;
+  TSInt msec_avg_10s_miss_changed = -1;
+  TSFloat frac_avg_10s_miss_client_no_cache = -1.0;
+  TSInt msec_avg_10s_miss_client_no_cache = -1;
+  TSFloat frac_avg_10s_errors_connect_failed = -1.0;
+  TSInt msec_avg_10s_errors_connect_failed = -1;
+  TSFloat frac_avg_10s_errors_other = -1.0;
+  TSInt msec_avg_10s_errors_other = -1;
+  TSFloat frac_avg_10s_errors_aborts = -1.0;
+  TSInt msec_avg_10s_errors_aborts = -1;
+  TSFloat frac_avg_10s_errors_possible_aborts = -1.0;
+  TSInt msec_avg_10s_errors_possible_aborts = -1;
+  TSFloat frac_avg_10s_errors_early_hangups = -1.0;
+  TSInt msec_avg_10s_errors_early_hangups = -1;
+  TSFloat frac_avg_10s_errors_empty_hangups = -1.0;
+  TSInt msec_avg_10s_errors_empty_hangups = -1;
+  TSFloat frac_avg_10s_errors_pre_accept_hangups = -1.0;
+  TSInt msec_avg_10s_errors_pre_accept_hangups = -1;
+  TSFloat frac_avg_10s_other_unclassified = -1.0;
+  TSInt msec_avg_10s_other_unclassified = -1;
 
   //get values
   Cli_RecordGetFloat("proxy.node.http.transaction_frac_avg_10s.hit_fresh", &frac_avg_10s_hit_fresh);
@@ -2226,14 +2226,14 @@ int
 ShowHttpStats()
 {
   //variable declaration
-  INKInt user_agent_response_document_total_size = -1;
-  INKInt user_agent_response_header_total_size = -1;
-  INKInt current_client_connections = -1;
-  INKInt current_client_transactions = -1;
-  INKInt origin_server_response_document_total_size = -1;
-  INKInt origin_server_response_header_total_size = -1;
-  INKInt current_server_connections = -1;
-  INKInt current_server_transactions = -1;
+  TSInt user_agent_response_document_total_size = -1;
+  TSInt user_agent_response_header_total_size = -1;
+  TSInt current_client_connections = -1;
+  TSInt current_client_transactions = -1;
+  TSInt origin_server_response_document_total_size = -1;
+  TSInt origin_server_response_header_total_size = -1;
+  TSInt current_server_connections = -1;
+  TSInt current_server_transactions = -1;
   //get value
   Cli_RecordGetInt("proxy.process.http.user_agent_response_document_total_size",
                    &user_agent_response_document_total_size);
@@ -2270,17 +2270,17 @@ ShowIcpStats()
 {
   //variable declaration
 
-  INKInt icp_query_requests = -1;
-  INKInt total_udp_send_queries = -1;
-  INKInt icp_query_hits = -1;
-  INKInt icp_query_misses = -1;
-  INKInt icp_remote_responses = -1;
-  INKFloat total_icp_response_time = -1.0;
-  INKFloat total_icp_request_time = -1.0;
-  INKInt icp_remote_query_requests = -1;
-  INKInt cache_lookup_success = -1;
-  INKInt cache_lookup_fail = -1;
-  INKInt query_response_write = -1;
+  TSInt icp_query_requests = -1;
+  TSInt total_udp_send_queries = -1;
+  TSInt icp_query_hits = -1;
+  TSInt icp_query_misses = -1;
+  TSInt icp_remote_responses = -1;
+  TSFloat total_icp_response_time = -1.0;
+  TSFloat total_icp_request_time = -1.0;
+  TSInt icp_remote_query_requests = -1;
+  TSInt cache_lookup_success = -1;
+  TSInt cache_lookup_fail = -1;
+  TSInt query_response_write = -1;
 
   //get values
   Cli_RecordGetInt("proxy.process.icp.icp_query_requests", &icp_query_requests);
@@ -2321,27 +2321,27 @@ int
 ShowCacheStats()
 {
   //variable delaration
-  INKInt bytes_used = -1;
-  INKInt bytes_total = -1;
-  INKInt ram_cache_total_bytes = -1;
-  INKInt ram_cache_bytes_used = -1;
-  INKInt ram_cache_hits = -1;
-  INKInt ram_cache_misses = -1;
-  INKInt lookup_active = -1;
-  INKInt lookup_success = -1;
-  INKInt lookup_failure = -1;
-  INKInt read_active = -1;
-  INKInt read_success = -1;
-  INKInt read_failure = -1;
-  INKInt write_active = -1;
-  INKInt write_success = -1;
-  INKInt write_failure = -1;
-  INKInt update_active = -1;
-  INKInt update_success = -1;
-  INKInt update_failure = -1;
-  INKInt remove_active = -1;
-  INKInt remove_success = -1;
-  INKInt remove_failure = -1;
+  TSInt bytes_used = -1;
+  TSInt bytes_total = -1;
+  TSInt ram_cache_total_bytes = -1;
+  TSInt ram_cache_bytes_used = -1;
+  TSInt ram_cache_hits = -1;
+  TSInt ram_cache_misses = -1;
+  TSInt lookup_active = -1;
+  TSInt lookup_success = -1;
+  TSInt lookup_failure = -1;
+  TSInt read_active = -1;
+  TSInt read_success = -1;
+  TSInt read_failure = -1;
+  TSInt write_active = -1;
+  TSInt write_success = -1;
+  TSInt write_failure = -1;
+  TSInt update_active = -1;
+  TSInt update_success = -1;
+  TSInt update_failure = -1;
+  TSInt remove_active = -1;
+  TSInt remove_success = -1;
+  TSInt remove_failure = -1;
 
   //get values
 
@@ -2406,8 +2406,8 @@ int
 ShowHostDbStats()
 {
   //variables
-  INKFloat hit_ratio = -1.0;
-  INKFloat lookups_per_second = -1.0;
+  TSFloat hit_ratio = -1.0;
+  TSFloat lookups_per_second = -1.0;
 
   //get values
   Cli_RecordGetFloat("proxy.node.hostdb.hit_ratio", &hit_ratio);
@@ -2427,7 +2427,7 @@ ShowHostDbStats()
 int
 ShowDnsStats()
 {
-  INKFloat lookups_per_second = -1.0;
+  TSFloat lookups_per_second = -1.0;
 
   Cli_RecordGetFloat("proxy.node.dns.lookups_per_second", &lookups_per_second);
   Cli_Printf("\n");
@@ -2441,11 +2441,11 @@ ShowDnsStats()
 int
 ShowLoggingStats()
 {
-  INKCounter log_file_open = -1;
-  INKInt log_files_space_used = -1;
-  INKCounter event_log_access = -1;
-  INKCounter event_log_access_skip = -1;
-  INKCounter event_log_error = -1;
+  TSCounter log_file_open = -1;
+  TSInt log_files_space_used = -1;
+  TSCounter event_log_access = -1;
+  TSCounter event_log_access_skip = -1;
+  TSCounter event_log_error = -1;
 
   Cli_RecordGetCounter("proxy.process.log.log_files_open", &log_file_open);
   Cli_RecordGetInt("proxy.process.log.log_files_space_used", &log_files_space_used);
@@ -2468,25 +2468,25 @@ ShowLoggingStats()
 int
 ShowAlarms()
 {
-  INKList events;
+  TSList events;
   int count, i;
   char *name;
 
-  events = INKListCreate();
-  INKError status = INKActiveEventGetMlt(events);
-  if (status != INK_ERR_OKAY) {
+  events = TSListCreate();
+  TSError status = TSActiveEventGetMlt(events);
+  if (status != TS_ERR_OKAY) {
     if (events) {
-      INKListDestroy(events);
+      TSListDestroy(events);
     }
     Cli_Error(ERR_ALARM_LIST);
     return CLI_ERROR;
   }
 
-  count = INKListLen(events);
+  count = TSListLen(events);
   if (count > 0) {
     Cli_Printf("\nActive Alarms\n");
     for (i = 0; i < count; i++) {
-      name = (char *) INKListDequeue(events);
+      name = (char *) TSListDequeue(events);
       Cli_Printf("  %d. %s\n", i + 1, name);
     }
     Cli_Printf("\n");
@@ -2494,7 +2494,7 @@ ShowAlarms()
     Cli_Printf("\nNo active alarms.\n\n");
   }
 
-  INKListDestroy(events);
+  TSListDestroy(events);
 
   return CLI_OK;
 }

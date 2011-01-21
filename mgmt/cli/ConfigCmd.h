@@ -826,7 +826,7 @@ int ConfigCacheFreshnessVerify(int arg_ref, int setvar);
 int ConfigCacheFreshnessMinimum(int arg_ref, int setvar);
 
 // config Cache FreshnessNoExpireLimit
-int ConfigCacheFreshnessNoExpireLimit(INKInt min, INKInt max, int setvar);
+int ConfigCacheFreshnessNoExpireLimit(TSInt min, TSInt max, int setvar);
 
 // config Cache Vary sub-command
 int ConfigCacheVary(int arg_ref, char *field, int setvar);
@@ -856,11 +856,11 @@ int ConfigLoggingEvent(int arg_ref, int setvar);
 int ConfigLoggingCollationStatus(int arg_ref, int setvar);
 
 // config Logging collation sub-command
-int ConfigLoggingCollation(INKString secret, int arg_ref, INKInt orphan, int setvar);
+int ConfigLoggingCollation(TSString secret, int arg_ref, TSInt orphan, int setvar);
 
 // config Logging Format Type File sub-command
 int ConfigLoggingFormatTypeFile(int arg_ref_format, int arg_ref,
-                                int arg_ref_type, INKString file, INKString header, int setvar);
+                                int arg_ref_type, TSString file, TSString header, int setvar);
 
 // config Logging splitting sub-command
 int ConfigLoggingSplitting(int arg_ref_protocol, int arg_ref_on_off, int setvar);
@@ -869,7 +869,7 @@ int ConfigLoggingSplitting(int arg_ref_protocol, int arg_ref_on_off, int setvar)
 int ConfigLoggingCustomFormat(int arg_ref_on_off, int arg_ref_format, int setvar);
 
 // config Logging rolling offset interval autodelete sub-command
-int ConfigLoggingRollingOffsetIntervalAutodelete(int arg_ref_rolling, INKInt offset, INKInt num_hours,
+int ConfigLoggingRollingOffsetIntervalAutodelete(int arg_ref_rolling, TSInt offset, TSInt num_hours,
                                                  int arg_ref_auto_delete, int setvar);
 
 // config icp peers sub-command

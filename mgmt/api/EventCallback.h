@@ -48,7 +48,7 @@
 // the callback in a struct
 typedef struct
 {
-  INKEventSignalFunc func;
+  TSEventSignalFunc func;
   void *data;
 } EventCallbackT;
 
@@ -64,7 +64,7 @@ extern "C"
 {
 #endif /* __cplusplus */
 
-EventCallbackT *create_event_callback(INKEventSignalFunc func, void *data);
+EventCallbackT *create_event_callback(TSEventSignalFunc func, void *data);
 void delete_event_callback(EventCallbackT * event_cb);
 
 CallbackTable *create_callback_table(const char *lock_name);
@@ -74,9 +74,9 @@ void delete_callback_table(CallbackTable * cb_table);
 // returns list of event_id that have at least one callback registered for it
 LLQ *get_events_with_callbacks(CallbackTable * cb_table);
 
-INKError cb_table_register(CallbackTable * cb_table, char *event_name, INKEventSignalFunc func, void *data,
+TSError cb_table_register(CallbackTable * cb_table, char *event_name, TSEventSignalFunc func, void *data,
                            bool * first_cb);
-INKError cb_table_unregister(CallbackTable * cb_table, char *event_name, INKEventSignalFunc func);
+TSError cb_table_unregister(CallbackTable * cb_table, char *event_name, TSEventSignalFunc func);
 
 #ifdef __cplusplus
 }

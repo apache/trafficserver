@@ -54,18 +54,15 @@ CountOn(0), Count(0)
 
 CIFCReadEntry::~CIFCReadEntry()
 {
-
 }
 
 // check IFCVERSION IFCPATH and IFCFILENAME setup
-INKError
+TSError
 CIFCReadEntry::ConfigReadCheckIFCEnv()
 {
-
   char *pathPtr;
   char *filenamePtr;
   char *versionPtr;
-
 
   pathPtr = getenv("IFCPATH");
   filenamePtr = getenv("IFCFILENAME");
@@ -73,44 +70,23 @@ CIFCReadEntry::ConfigReadCheckIFCEnv()
 
   if (pathPtr == NULL || filenamePtr == NULL || versionPtr == NULL ||
       strlen(pathPtr) == 0 || strlen(filenamePtr) == 0 || strlen(versionPtr) == 0) {
-    return INK_ERR_READ_FILE;
+    return TS_ERR_READ_FILE;
   }
 
-  return INK_ERR_OKAY;
+  return TS_ERR_OKAY;
 }
 
 
 int
 CIFCReadEntry::ConfigReadPrintIFCEle()
 {
-
   Tcl_AppendResult(interp, Output, (char *) NULL);
   return CLI_OK;
-
-  /*
-     char ListEle[CONFIG_UPGRADE_BUF_SIZE];
-     char *p = NULL;
-     Tcl_Obj* ObjPtr;
-
-     p = OutPut;
-     While (*p != NULL){
-     sprintf(ListEle, "%s\n", p);
-     ObjPtr = Tcl_NewStringObj(ListEle, -1);
-     p += strlen(ListEle);
-     if (Tcl_ListObjAppendElement(interp, ListPtr, ObjPtr) == CLI_ERROR){
-     return CLI_ERROR;
-     }
-     }
-     return CLI_OK; */
-
-
 }
 
 int
 CIFCReadEntry::ConfigReadIFCEle()
 {
-
-
   FILE *Fptr;
   char *filebuffer;
   char *p1, *p2;
@@ -187,17 +163,14 @@ CIFCReadEntry::ConfigReadIFCEle()
 int
 CIFCReadEntry::ConfigReadIFCHead()
 {
-
   ink_strncpy(KeyWord, IFC_HEAD, sizeof(KeyWord));
   CountOn = 0;
   return (ConfigReadIFCEle());
-
 }
 
 int
 CIFCReadEntry::ConfigReadIFCFeature()
 {
-
   ink_strncpy(KeyWord, IFC_FEATURE, sizeof(KeyWord));
   CountOn = 0;
   return (ConfigReadIFCEle());
@@ -206,7 +179,6 @@ CIFCReadEntry::ConfigReadIFCFeature()
 int
 CIFCReadEntry::ConfigReadIFCTar()
 {
-
   ink_strncpy(KeyWord, IFC_TAR, sizeof(KeyWord));
   CountOn = 1;
   return (ConfigReadIFCEle());
@@ -215,7 +187,6 @@ CIFCReadEntry::ConfigReadIFCTar()
 int
 CIFCReadEntry::ConfigReadIFCCommonTar()
 {
-
   ink_strncpy(KeyWord, IFC_COMMON_TAR, sizeof(KeyWord));
   CountOn = 1;
   return (ConfigReadIFCEle());
@@ -224,7 +195,6 @@ CIFCReadEntry::ConfigReadIFCCommonTar()
 int
 CIFCReadEntry::ConfigReadIFCTarInfo()
 {
-
   ink_strncpy(KeyWord, IFC_TAR_INFO, sizeof(KeyWord));
   CountOn = 0;
   return (ConfigReadIFCEle());
@@ -233,7 +203,6 @@ CIFCReadEntry::ConfigReadIFCTarInfo()
 int
 CIFCReadEntry::ConfigReadIFCBinGroup()
 {
-
   ink_strncpy(KeyWord, IFC_BIN_GROUP, sizeof(KeyWord));
   CountOn = 1;
   return (ConfigReadIFCEle());
@@ -242,7 +211,6 @@ CIFCReadEntry::ConfigReadIFCBinGroup()
 int
 CIFCReadEntry::ConfigReadIFCBinDir()
 {
-
   ink_strncpy(KeyWord, IFC_BIN_DIR, sizeof(KeyWord));
   CountOn = 1;
   return (ConfigReadIFCEle());
@@ -251,7 +219,6 @@ CIFCReadEntry::ConfigReadIFCBinDir()
 int
 CIFCReadEntry::ConfigReadIFCBinCommon()
 {
-
   ink_strncpy(KeyWord, IFC_BIN_COMMON, sizeof(KeyWord));
   CountOn = 1;
   return (ConfigReadIFCEle());
@@ -260,7 +227,6 @@ CIFCReadEntry::ConfigReadIFCBinCommon()
 int
 CIFCReadEntry::ConfigReadIFCLibGroup()
 {
-
   ink_strncpy(KeyWord, IFC_LIB_GROUP, sizeof(KeyWord));
   CountOn = 1;
   return (ConfigReadIFCEle());
@@ -269,7 +235,6 @@ CIFCReadEntry::ConfigReadIFCLibGroup()
 int
 CIFCReadEntry::ConfigReadIFCLibDir()
 {
-
   ink_strncpy(KeyWord, IFC_LIB_DIR, sizeof(KeyWord));
   CountOn = 1;
   return (ConfigReadIFCEle());
@@ -278,7 +243,6 @@ CIFCReadEntry::ConfigReadIFCLibDir()
 int
 CIFCReadEntry::ConfigReadIFCLibCommon()
 {
-
   ink_strncpy(KeyWord, IFC_LIB_COMMON, sizeof(KeyWord));
   CountOn = 1;
   return (ConfigReadIFCEle());
@@ -287,7 +251,6 @@ CIFCReadEntry::ConfigReadIFCLibCommon()
 int
 CIFCReadEntry::ConfigReadIFCConfigGroup()
 {
-
   ink_strncpy(KeyWord, IFC_CONFIG_GROUP, sizeof(KeyWord));
   CountOn = 1;
   return (ConfigReadIFCEle());
@@ -296,7 +259,6 @@ CIFCReadEntry::ConfigReadIFCConfigGroup()
 int
 CIFCReadEntry::ConfigReadIFCConfigDir()
 {
-
   ink_strncpy(KeyWord, IFC_CONFIG_DIR, sizeof(KeyWord));
   CountOn = 1;
   return (ConfigReadIFCEle());
@@ -305,7 +267,6 @@ CIFCReadEntry::ConfigReadIFCConfigDir()
 int
 CIFCReadEntry::ConfigReadIFCConfigCommon()
 {
-
   ink_strncpy(KeyWord, IFC_CONFIG_COMMON, sizeof(KeyWord));
   CountOn = 1;
   return (ConfigReadIFCEle());
@@ -315,7 +276,6 @@ CIFCReadEntry::ConfigReadIFCConfigCommon()
 int
 CIFCReadEntry::ConfigReadIFCCommonFile()
 {
-
   ink_strncpy(KeyWord, IFC_COMMON_FILE, sizeof(KeyWord));
   CountOn = 1;
   return (ConfigReadIFCEle());
@@ -336,7 +296,6 @@ CIFCReadEntry::ConfigReadIFCCommonFile()
 int
 Cmd_ConfigRead(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[])
 {
-
   /* call to processArgForCommand must appear at the beginning
    * of each command's callback function
    */
@@ -358,7 +317,7 @@ Cmd_ConfigRead(ClientData clientData, Tcl_Interp * interp, int argc, const char 
   argtable = cmdCallbackInfo->parsedArgTable;
   Cli_Debug("Cmd_ConfigRead argc %d\n", argc);
 
-  if (CIFCWriteEntry::ConfigWriteCheckIFCEnv() == INK_ERR_READ_FILE) {
+  if (CIFCWriteEntry::ConfigWriteCheckIFCEnv() == TS_ERR_READ_FILE) {
     Cli_Error("Set $IFCVERSION, $IFCPATH and $IFCFILENAME First\n");
     return CLI_ERROR;
   }
@@ -429,7 +388,6 @@ Cmd_ConfigRead(ClientData clientData, Tcl_Interp * interp, int argc, const char 
 int
 CmdArgs_ConfigRead()
 {
-
   createArgument("ifc-head", 1, CLI_ARGV_OPTION_NAME_VALUE,
                  (char *) NULL, CMD_CONFIG_READ_IFC_HEAD, "Read the head information of ifc file", (char *) NULL);
   createArgument("feature", 1, CLI_ARGV_OPTION_NAME_VALUE,
@@ -522,8 +480,7 @@ Cmd_ConfigSaveUrl(ClientData clientData, Tcl_Interp * interp, int argc, const ch
   if (Url == NULL || outputFile == NULL) {
     return CMD_ERROR;
   } else {
-    if (INKReadFromUrl(Url, header, &headerSize, body, &bodySize)
-        == INK_ERR_FAIL) {
+    if (TSReadFromUrl(Url, header, &headerSize, body, &bodySize) == TS_ERR_FAIL) {
       return CMD_ERROR;
     }
 
@@ -541,9 +498,7 @@ Cmd_ConfigSaveUrl(ClientData clientData, Tcl_Interp * interp, int argc, const ch
 int
 CmdArgs_ConfigSaveUrl()
 {
-
   createArgument("url", 1, CLI_ARGV_STRING, (char *) NULL, CMD_CONFIG_UPGRADE_READ_URL, "Read the url", (char *) NULL);
 
   return CMD_OK;
-
 }

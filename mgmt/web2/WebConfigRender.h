@@ -85,14 +85,14 @@ int writeVaddrsConfigTable(WebHttpContext * whc);
 int writeVaddrsRuleList(textBuffer * output);
 int writeVaddrsConfigForm(WebHttpContext * whc);
 
-int writeSecondarySpecsForm(WebHttpContext * whc, INKFileNameT file);
+int writeSecondarySpecsForm(WebHttpContext * whc, TSFileNameT file);
 int writeSecondarySpecsTableElem(textBuffer * output, char *time, char *src_ip, char *prefix, char *suffix, char *port,
                                  char *method, char *scheme, char *mixt);
 
 
 // -------------------- CONVERSION FUNCTIONS ------------------------------
 
-int convert_cache_ele_to_html_format(INKCacheEle * ele,
+int convert_cache_ele_to_html_format(TSCacheEle * ele,
                                      char *ruleType,
                                      char *pdType,
                                      char *time,
@@ -101,19 +101,19 @@ int convert_cache_ele_to_html_format(INKCacheEle * ele,
                                      char *suffix,
                                      char *port, char *method, char *scheme, char *time_period, char *mixt);
 
-int convert_hosting_ele_to_html_format(INKHostingEle * ele, char *pdType, char *partitions);
+int convert_hosting_ele_to_html_format(TSHostingEle * ele, char *pdType, char *partitions);
 
-int convert_icp_ele_to_html_format(INKIcpEle * ele,
+int convert_icp_ele_to_html_format(TSIcpEle * ele,
                                    char *name,
                                    char *host_ip,
                                    char *peer_type,
                                    char *proxy_port, char *icp_port, char *mc_state, char *mc_ip, char *mc_ttl);
 
-int convert_ip_allow_ele_to_html_format(INKIpAllowEle * ele, char *src_ip, char *action);
+int convert_ip_allow_ele_to_html_format(TSIpAllowEle * ele, char *src_ip, char *action);
 
-int convert_mgmt_allow_ele_to_html_format(INKMgmtAllowEle * ele, char *src_ip, char *action);
+int convert_mgmt_allow_ele_to_html_format(TSMgmtAllowEle * ele, char *src_ip, char *action);
 
-int convert_parent_ele_to_html_format(INKParentProxyEle * ele,
+int convert_parent_ele_to_html_format(TSParentProxyEle * ele,
                                       char *pdType,
                                       char *time,
                                       char *src_ip,
@@ -123,25 +123,25 @@ int convert_parent_ele_to_html_format(INKParentProxyEle * ele,
                                       char *method,
                                       char *scheme, char *mixt, char *parents, char *round_robin, char *direct);
 
-int convert_partition_ele_to_html_format(INKPartitionEle * ele,
+int convert_partition_ele_to_html_format(TSPartitionEle * ele,
                                          char *part_num, char *scheme, char *size, char *size_fmt);
 
-int convert_remap_ele_to_html_format(INKRemapEle * ele,
+int convert_remap_ele_to_html_format(TSRemapEle * ele,
                                      char *rule_type,
                                      char *from_scheme, char *from_port, char *from_path,
                                      char *to_scheme, char *to_port, char *to_path, char *mixt);
 
-int convert_socks_ele_to_html_format(INKSocksEle * ele,
+int convert_socks_ele_to_html_format(TSSocksEle * ele,
                                      char *rule_type, char *dest_ip, char *user, char *passwd, char *servers, char *rr);
 
-int convert_split_dns_ele_to_html_format(INKSplitDnsEle * ele,
+int convert_split_dns_ele_to_html_format(TSSplitDnsEle * ele,
                                          char *pdType, char *dns_server, char *def_domain, char *search_list);
 
-int convert_update_ele_to_html_format(INKUpdateEle * ele, char *hdrs, char *offset, char *interval, char *depth);
+int convert_update_ele_to_html_format(TSUpdateEle * ele, char *hdrs, char *offset, char *interval, char *depth);
 
-int convert_virt_ip_addr_ele_to_html_format(INKVirtIpAddrEle * ele, char *ip, char *sub_intr);
+int convert_virt_ip_addr_ele_to_html_format(TSVirtIpAddrEle * ele, char *ip, char *sub_intr);
 
-int convert_pdss_to_html_format(INKPdSsFormat info,
+int convert_pdss_to_html_format(TSPdSsFormat info,
                                 char *pdType,
                                 char *time,
                                 char *src_ip,

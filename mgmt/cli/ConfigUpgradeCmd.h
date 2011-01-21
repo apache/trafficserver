@@ -104,9 +104,9 @@ public:
   // PrintOut the Element of this Entry
   void PrintEle();
 
-  INKError Cli_NewIFCFile();
+  TSError Cli_NewIFCFile();
 
-  static INKError ConfigWriteCheckIFCEnv();
+  static TSError ConfigWriteCheckIFCEnv();
 
   int ConfigWriteIFCHead(char *ts_version, char *build_date, char *platform, int nodes);
 
@@ -182,7 +182,7 @@ public:
     CIFCReadEntry();
    ~CIFCReadEntry();
 
-  static INKError ConfigReadCheckIFCEnv();
+  static TSError ConfigReadCheckIFCEnv();
 
   int ConfigReadIFCHead();
 

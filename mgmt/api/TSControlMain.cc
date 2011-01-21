@@ -186,7 +186,7 @@ ts_ctrl_main(void *arg)
         // create a new instance to store client connection info
         ClientT *new_client_con = create_client();
         if (!new_client_con) {
-          // return INK_ERR_SYS_CALL; WHAT TO DO? just keep going
+          // return TS_ERR_SYS_CALL; WHAT TO DO? just keep going
           Debug("ts_main", "[ts_ctrl_main] can't allocate new ClientT\n");
         } else {                // accept connection
           new_con_fd = mgmt_accept(con_socket_fd, new_client_con->adr, &addr_len);
@@ -211,7 +211,7 @@ ts_ctrl_main(void *arg)
             // clear the fields first
             op_t = UNDEFINED_OP;
             ret = preprocess_msg(client_entry->sock_info, (OpType *) & op_t, &req);
-            if (ret == INK_ERR_NET_READ || ret == INK_ERR_NET_EOF) {
+            if (ret == TS_ERR_NET_READ || ret == TS_ERR_NET_EOF) {
               // occurs when remote API client terminates connection
               Debug("ts_main", "[ts_ctrl_main] ERROR: preprocess_msg - remove client %d \n",
                     client_entry->sock_info.fd);
@@ -227,7 +227,7 @@ ts_ctrl_main(void *arg)
               ret = handle_record_get(client_entry->sock_info, req);
               if (req)
                 xfree(req);     // free memory for req
-              if (ret == INK_ERR_NET_WRITE || ret == INK_ERR_NET_EOF) {
+              if (ret == TS_ERR_NET_WRITE || ret == TS_ERR_NET_EOF) {
                 Debug("ts_main", "[ts_ctrl_main] ERROR:handle_record_get\n");
                 remove_client(client_entry, accepted_con);
                 con_entry = ink_hash_table_iterator_next(accepted_con, &con_state);
@@ -239,7 +239,7 @@ ts_ctrl_main(void *arg)
               ret = handle_record_set(client_entry->sock_info, req);
               if (req)
                 xfree(req);
-              if (ret == INK_ERR_NET_WRITE || ret == INK_ERR_NET_EOF) {
+              if (ret == TS_ERR_NET_WRITE || ret == TS_ERR_NET_EOF) {
                 Debug("ts_main", "[ts_ctrl_main] ERROR:handle_record_set\n");
                 remove_client(client_entry, accepted_con);
                 con_entry = ink_hash_table_iterator_next(accepted_con, &con_state);
@@ -252,7 +252,7 @@ ts_ctrl_main(void *arg)
               ret = handle_file_read(client_entry->sock_info, req);
               if (req)
                 xfree(req);
-              if (ret == INK_ERR_NET_WRITE || ret == INK_ERR_NET_EOF) {
+              if (ret == TS_ERR_NET_WRITE || ret == TS_ERR_NET_EOF) {
                 Debug("ts_main", "[ts_ctrl_main] ERROR:handle_file_read\n");
                 remove_client(client_entry, accepted_con);
                 con_entry = ink_hash_table_iterator_next(accepted_con, &con_state);
@@ -265,7 +265,7 @@ ts_ctrl_main(void *arg)
               ret = handle_file_write(client_entry->sock_info, req);
               if (req)
                 xfree(req);
-              if (ret == INK_ERR_NET_WRITE || ret == INK_ERR_NET_EOF) {
+              if (ret == TS_ERR_NET_WRITE || ret == TS_ERR_NET_EOF) {
                 Debug("ts_main", "[ts_ctrl_main] ERROR:handle_file_write\n");
                 remove_client(client_entry, accepted_con);
                 con_entry = ink_hash_table_iterator_next(accepted_con, &con_state);
@@ -278,7 +278,7 @@ ts_ctrl_main(void *arg)
               ret = handle_proxy_state_get(client_entry->sock_info);
               if (req)
                 xfree(req);     // free the request allocated by preprocess_msg
-              if (ret == INK_ERR_NET_WRITE || ret == INK_ERR_NET_EOF) {
+              if (ret == TS_ERR_NET_WRITE || ret == TS_ERR_NET_EOF) {
                 Debug("ts_main", "[ts_ctrl_main] ERROR:handle_proxy_state_get\n");
                 remove_client(client_entry, accepted_con);
                 con_entry = ink_hash_table_iterator_next(accepted_con, &con_state);
@@ -291,7 +291,7 @@ ts_ctrl_main(void *arg)
               ret = handle_proxy_state_set(client_entry->sock_info, req);
               if (req)
                 xfree(req);     // free the request allocated by preprocess_msg
-              if (ret == INK_ERR_NET_WRITE || ret == INK_ERR_NET_EOF) {
+              if (ret == TS_ERR_NET_WRITE || ret == TS_ERR_NET_EOF) {
                 Debug("ts_main", "[ts_ctrl_main] ERROR:handle_proxy_state_set\n");
                 remove_client(client_entry, accepted_con);
                 con_entry = ink_hash_table_iterator_next(accepted_con, &con_state);
@@ -304,7 +304,7 @@ ts_ctrl_main(void *arg)
               ret = handle_reconfigure(client_entry->sock_info);
               if (req)
                 xfree(req);     // free the request allocated by preprocess_msg
-              if (ret == INK_ERR_NET_WRITE || ret == INK_ERR_NET_EOF) {
+              if (ret == TS_ERR_NET_WRITE || ret == TS_ERR_NET_EOF) {
                 Debug("ts_main", "[ts_ctrl_main] ERROR:handle_reconfigure\n");
                 remove_client(client_entry, accepted_con);
                 con_entry = ink_hash_table_iterator_next(accepted_con, &con_state);
@@ -317,7 +317,7 @@ ts_ctrl_main(void *arg)
               ret = handle_restart(client_entry->sock_info, req, false);
               if (req)
                 xfree(req);     // free the request allocated by preprocess_msg
-              if (ret == INK_ERR_NET_WRITE || ret == INK_ERR_NET_EOF) {
+              if (ret == TS_ERR_NET_WRITE || ret == TS_ERR_NET_EOF) {
                 Debug("ts_main", "[ts_ctrl_main] ERROR:handle_restart\n");
                 remove_client(client_entry, accepted_con);
                 con_entry = ink_hash_table_iterator_next(accepted_con, &con_state);
@@ -329,7 +329,7 @@ ts_ctrl_main(void *arg)
               ret = handle_restart(client_entry->sock_info, req, true);
               if (req)
                 xfree(req);     // free the request allocated by preprocess_msg
-              if (ret == INK_ERR_NET_WRITE || ret == INK_ERR_NET_EOF) {
+              if (ret == TS_ERR_NET_WRITE || ret == TS_ERR_NET_EOF) {
                 Debug("ts_main", "[ts_ctrl_main] ERROR:handle_restart bounce\n");
                 remove_client(client_entry, accepted_con);
                 con_entry = ink_hash_table_iterator_next(accepted_con, &con_state);
@@ -341,7 +341,7 @@ ts_ctrl_main(void *arg)
               ret = handle_event_resolve(client_entry->sock_info, req);
               if (req)
                 xfree(req);     // free the request allocated by preprocess_msg
-              if (ret == INK_ERR_NET_WRITE || ret == INK_ERR_NET_EOF) {
+              if (ret == TS_ERR_NET_WRITE || ret == TS_ERR_NET_EOF) {
                 Debug("ts_main", "[ts_ctrl_main] ERROR:handle_event_resolve\n");
                 remove_client(client_entry, accepted_con);
                 con_entry = ink_hash_table_iterator_next(accepted_con, &con_state);
@@ -353,7 +353,7 @@ ts_ctrl_main(void *arg)
               ret = handle_event_get_mlt(client_entry->sock_info);
               if (req)
                 xfree(req);     // free the request allocated by preprocess_msg
-              if (ret == INK_ERR_NET_WRITE || ret == INK_ERR_NET_EOF) {
+              if (ret == TS_ERR_NET_WRITE || ret == TS_ERR_NET_EOF) {
                 Debug("ts_main", "[ts_ctrl_main] ERROR:event_get_mlt\n");
                 remove_client(client_entry, accepted_con);
                 con_entry = ink_hash_table_iterator_next(accepted_con, &con_state);
@@ -365,7 +365,7 @@ ts_ctrl_main(void *arg)
               ret = handle_event_active(client_entry->sock_info, req);
               if (req)
                 xfree(req);     // free the request allocated by preprocess_msg
-              if (ret == INK_ERR_NET_WRITE || ret == INK_ERR_NET_EOF) {
+              if (ret == TS_ERR_NET_WRITE || ret == TS_ERR_NET_EOF) {
                 Debug("ts_main", "[ts_ctrl_main] ERROR:event_active\n");
                 remove_client(client_entry, accepted_con);
                 con_entry = ink_hash_table_iterator_next(accepted_con, &con_state);
@@ -379,7 +379,7 @@ ts_ctrl_main(void *arg)
               ret = handle_snapshot(client_entry->sock_info, req, op_t);
               if (req)
                 xfree(req);
-              if (ret == INK_ERR_NET_WRITE || ret == INK_ERR_NET_EOF) {
+              if (ret == TS_ERR_NET_WRITE || ret == TS_ERR_NET_EOF) {
                 Debug("ts_main", "[ts_ctrl_main] ERROR:handle_snapshot\n");
                 remove_client(client_entry, accepted_con);
                 con_entry = ink_hash_table_iterator_next(accepted_con, &con_state);
@@ -391,7 +391,7 @@ ts_ctrl_main(void *arg)
               ret = handle_snapshot_get_mlt(client_entry->sock_info);
               if (req)
                 xfree(req);
-              if (ret == INK_ERR_NET_WRITE || ret == INK_ERR_NET_EOF) {
+              if (ret == TS_ERR_NET_WRITE || ret == TS_ERR_NET_EOF) {
                 Debug("ts_main", "[ts_ctrl_main] ERROR:snapshot_get_mlt\n");
                 remove_client(client_entry, accepted_con);
                 con_entry = ink_hash_table_iterator_next(accepted_con, &con_state);
@@ -410,7 +410,7 @@ ts_ctrl_main(void *arg)
               ret = handle_stats_reset(client_entry->sock_info, req);
               if (req)
                 xfree(req);
-              if (ret == INK_ERR_NET_WRITE || ret == INK_ERR_NET_EOF) {
+              if (ret == TS_ERR_NET_WRITE || ret == TS_ERR_NET_EOF) {
                 Debug("ts_main", "[ts_ctrl_main] ERROR: stats_reset\n");
                 remove_client(client_entry, accepted_con);
                 con_entry = ink_hash_table_iterator_next(accepted_con, &con_state);
@@ -422,7 +422,7 @@ ts_ctrl_main(void *arg)
               ret = handle_encrypt_to_file(client_entry->sock_info, req);
               if (req)
                 xfree(req);
-              if (ret == INK_ERR_NET_WRITE || ret == INK_ERR_NET_EOF) {
+              if (ret == TS_ERR_NET_WRITE || ret == TS_ERR_NET_EOF) {
                 Debug("ts_main", "[ts_ctrl_main] ERROR: encrypt_to_file");
                 remove_client(client_entry, accepted_con);
                 con_entry = ink_hash_table_iterator_next(accepted_con, &con_state);
@@ -477,8 +477,8 @@ ts_ctrl_main(void *arg)
  * with only the error return value in the msg!!! It's important that if
  * an error does occur, the "send_reply" function is used; otherwise the socket
  * will get written with too much extraneous stuff; the remote side will
- * only read the INKError type since that's all it expects to be in the message
- * (for an INKError != INK_ERR_OKAY).
+ * only read the TSError type since that's all it expects to be in the message
+ * (for an TSError != TS_ERR_OKAY).
  */
 
 /**************************************************************************
@@ -491,50 +491,50 @@ ts_ctrl_main(void *arg)
  * output: SUCC or ERR
  * note:
  *************************************************************************/
-INKError
+TSError
 handle_record_get(struct SocketInfo sock_info, char *req)
 {
-  INKError ret;
-  INKRecordEle *ele;
+  TSError ret;
+  TSRecordEle *ele;
 
   // parse msg - don't really need since the request itself is the record name
   if (!req) {
-    ret = send_reply(sock_info, INK_ERR_FAIL);
+    ret = send_reply(sock_info, TS_ERR_FAIL);
     return ret;
   }
   // call CoreAPI call on Traffic Manager side
-  ele = INKRecordEleCreate();
+  ele = TSRecordEleCreate();
   ret = MgmtRecordGet(req, ele);
-  if (ret != INK_ERR_OKAY) {
+  if (ret != TS_ERR_OKAY) {
     ret = send_reply(sock_info, ret);
-    INKRecordEleDestroy(ele);
+    TSRecordEleDestroy(ele);
     return ret;
   }
   // create and send reply back to client
   switch (ele->rec_type) {
-  case INK_REC_INT:
-    ret = send_record_get_reply(sock_info, ret, &(ele->int_val), sizeof(INKInt), ele->rec_type);
+  case TS_REC_INT:
+    ret = send_record_get_reply(sock_info, ret, &(ele->int_val), sizeof(TSInt), ele->rec_type);
     break;
-  case INK_REC_COUNTER:
-    ret = send_record_get_reply(sock_info, ret, &(ele->counter_val), sizeof(INKCounter), ele->rec_type);
+  case TS_REC_COUNTER:
+    ret = send_record_get_reply(sock_info, ret, &(ele->counter_val), sizeof(TSCounter), ele->rec_type);
     break;
-  case INK_REC_FLOAT:
-    ret = send_record_get_reply(sock_info, ret, &(ele->float_val), sizeof(INKFloat), ele->rec_type);
+  case TS_REC_FLOAT:
+    ret = send_record_get_reply(sock_info, ret, &(ele->float_val), sizeof(TSFloat), ele->rec_type);
     break;
-  case INK_REC_STRING:
+  case TS_REC_STRING:
     ret = send_record_get_reply(sock_info, ret, ele->string_val, strlen(ele->string_val), ele->rec_type);
     break;
   default:                     // invalid record type
-    ret = send_reply(sock_info, INK_ERR_FAIL);
-    INKRecordEleDestroy(ele);
+    ret = send_reply(sock_info, TS_ERR_FAIL);
+    TSRecordEleDestroy(ele);
     return ret;
   }
 
-  if (ret != INK_ERR_OKAY) {    // error sending reply
+  if (ret != TS_ERR_OKAY) {    // error sending reply
     ret = send_reply(sock_info, ret);
   }
 
-  INKRecordEleDestroy(ele);     // free any memory allocated by CoreAPI call
+  TSRecordEleDestroy(ele);     // free any memory allocated by CoreAPI call
 
   return ret;
 }
@@ -548,20 +548,20 @@ handle_record_get(struct SocketInfo sock_info, char *req)
  * output: SUCC or ERR
  * note: request format = <record name>DELIMITER<record_value>
  *************************************************************************/
-INKError
+TSError
 handle_record_set(struct SocketInfo sock_info, char *req)
 {
   char *name, *val;
-  INKError ret;
-  INKActionNeedT action = INK_ACTION_UNDEFINED;
+  TSError ret;
+  TSActionNeedT action = TS_ACTION_UNDEFINED;
 
   if (!req) {
-    ret = send_reply(sock_info, INK_ERR_PARAMS);
+    ret = send_reply(sock_info, TS_ERR_PARAMS);
     return ret;
   }
   // parse request msg
   ret = parse_request_name_value(req, &name, &val);
-  if (ret != INK_ERR_OKAY) {
+  if (ret != TS_ERR_OKAY) {
     ret = send_reply(sock_info, ret);
     if (name)
       xfree(name);
@@ -574,7 +574,7 @@ handle_record_set(struct SocketInfo sock_info, char *req)
   if (val)
     xfree(val);
 
-  if (ret != INK_ERR_OKAY) {
+  if (ret != TS_ERR_OKAY) {
     ret = send_reply(sock_info, ret);
     return ret;
   }
@@ -592,33 +592,33 @@ handle_record_set(struct SocketInfo sock_info, char *req)
  * output: SUCC or ERR
  * note: None
  *************************************************************************/
-INKError
+TSError
 handle_file_read(struct SocketInfo sock_info, char *req)
 {
-  INKError ret;
+  TSError ret;
   int size, version;
-  INKFileNameT file;
+  TSFileNameT file;
   char *text;
 
   if (!req) {
-    ret = send_reply(sock_info, INK_ERR_PARAMS);
+    ret = send_reply(sock_info, TS_ERR_PARAMS);
     return ret;
   }
   // first parse the message to retrieve needed data
   ret = parse_file_read_request(req, &file);
-  if (ret != INK_ERR_OKAY) {
+  if (ret != TS_ERR_OKAY) {
     ret = send_reply(sock_info, ret);
     return ret;
   }
   // make CoreAPI call on Traffic Manager side
   ret = ReadFile(file, &text, &size, &version);
-  if (ret != INK_ERR_OKAY) {
+  if (ret != TS_ERR_OKAY) {
     ret = send_reply(sock_info, ret);
     return ret;
   }
   // marshal the file info message that can be returned to client
   ret = send_file_read_reply(sock_info, ret, version, size, text);
-  if (ret != INK_ERR_OKAY) {
+  if (ret != TS_ERR_OKAY) {
     ret = send_reply(sock_info, ret);
   }
 
@@ -636,21 +636,21 @@ handle_file_read(struct SocketInfo sock_info, char *req)
  * output: SUCC or ERR
  * note: None
  *************************************************************************/
-INKError
+TSError
 handle_file_write(struct SocketInfo sock_info, char *req)
 {
-  INKError ret;
+  TSError ret;
   int size, version;
-  INKFileNameT file;
+  TSFileNameT file;
   char *text;
 
   if (!req) {
-    ret = send_reply(sock_info, INK_ERR_PARAMS);
+    ret = send_reply(sock_info, TS_ERR_PARAMS);
     return ret;
   }
   // first parse the message
   ret = parse_file_write_request(req, &file, &version, &size, &text);
-  if (ret != INK_ERR_OKAY) {
+  if (ret != TS_ERR_OKAY) {
     ret = send_reply(sock_info, ret);
     return ret;
   }
@@ -670,14 +670,14 @@ handle_file_write(struct SocketInfo sock_info, char *req)
  *
  * purpose: handles request to get the state of the proxy (TS)
  * input: struct SocketInfo sock_info - the socket to use to talk to client
- * output: INK_ERR_xx
+ * output: TS_ERR_xx
  * note: None
  *************************************************************************/
-INKError
+TSError
 handle_proxy_state_get(struct SocketInfo sock_info)
 {
-  INKProxyStateT state;
-  INKError ret;
+  TSProxyStateT state;
+  TSError ret;
 
   // make coreAPI call on local side
   state = ProxyStateGet();
@@ -695,23 +695,23 @@ handle_proxy_state_get(struct SocketInfo sock_info)
  * input: struct SocketInfo sock_info - the socket to use to talk to client
  *        req - indicates which state to set it to (on/off?) and specifies
  *        what to set the ts options too (optional)
- * output: INK_ERR_xx
+ * output: TS_ERR_xx
  * note: None
  *************************************************************************/
-INKError
+TSError
 handle_proxy_state_set(struct SocketInfo sock_info, char *req)
 {
-  INKProxyStateT state;
-  INKCacheClearT clear;
-  INKError ret;
+  TSProxyStateT state;
+  TSCacheClearT clear;
+  TSError ret;
 
   if (!req) {
-    ret = INK_ERR_FAIL;
+    ret = TS_ERR_FAIL;
     goto END;
   }
   // the req should specify the state and any cache clearing options
   ret = parse_proxy_state_request(req, &state, &clear);
-  if (ret != INK_ERR_OKAY) {
+  if (ret != TS_ERR_OKAY) {
     goto END;
   }
 
@@ -727,13 +727,13 @@ END:
  *
  * purpose: handles request to reread the config files
  * input: struct SocketInfo sock_info - the socket to use to talk to client
- * output: INK_ERR_xx
+ * output: TS_ERR_xx
  * note: None
  *************************************************************************/
-INKError
+TSError
 handle_reconfigure(struct SocketInfo sock_info)
 {
-  INKError ret;
+  TSError ret;
 
   // make local side coreAPI call
   ret = Reconfigure();
@@ -749,17 +749,17 @@ handle_reconfigure(struct SocketInfo sock_info)
  * input: struct SocketInfo sock_info - the socket to use to talk to client
  *        req - indicates if restart should be cluster wide or not
  *        bounce - indicate if the restart is a traffic_server bounce only
- * output: INK_ERR_xx
+ * output: TS_ERR_xx
  * note: None
  *************************************************************************/
-INKError
+TSError
 handle_restart(struct SocketInfo sock_info, char *req, bool bounce)
 {
   int16_t cluster;
-  INKError ret;
+  TSError ret;
 
   if (!req) {
-    ret = send_reply(sock_info, INK_ERR_PARAMS);
+    ret = send_reply(sock_info, TS_ERR_PARAMS);
     return ret;                 // shouldn't get here
   }
   // the req should be a boolean value - typecase it
@@ -780,17 +780,17 @@ handle_restart(struct SocketInfo sock_info, char *req, bool bounce)
  *
  * purpose: handles request to resolve an event
  * input: struct SocketInfo sock_info - the socket to use to talk to client
- * output: INK_ERR_xx
+ * output: TS_ERR_xx
  * note: the req should be the event name
  *************************************************************************/
-INKError
+TSError
 handle_event_resolve(struct SocketInfo sock_info, char *req)
 {
-  INKError ret;
+  TSError ret;
 
   // parse msg - don't really need since the request itself is the record name
   if (!req) {
-    ret = send_reply(sock_info, INK_ERR_PARAMS);
+    ret = send_reply(sock_info, TS_ERR_PARAMS);
     return ret;                 // shouldn't get here
   }
   // call CoreAPI call on Traffic Manager side; req == event_name
@@ -805,13 +805,13 @@ handle_event_resolve(struct SocketInfo sock_info, char *req)
  *
  * purpose: handles request to get list of active events
  * input: struct SocketInfo sock_info - the socket to use to talk to client
- * output: INK_ERR_xx
+ * output: TS_ERR_xx
  * note: the req should be the event name
  *************************************************************************/
-INKError
+TSError
 handle_event_get_mlt(struct SocketInfo sock_info)
 {
-  INKError ret;
+  TSError ret;
   LLQ *event_list;
   char buf[MAX_BUF_SIZE];
   char *event_name;
@@ -821,7 +821,7 @@ handle_event_get_mlt(struct SocketInfo sock_info)
 
   // call CoreAPI call on Traffic Manager side; req == event_name
   ret = ActiveEventGetMlt(event_list);
-  if (ret != INK_ERR_OKAY) {
+  if (ret != TS_ERR_OKAY) {
     ret = send_reply(sock_info, ret);
     delete_queue(event_list);
     return ret;
@@ -849,23 +849,23 @@ handle_event_get_mlt(struct SocketInfo sock_info)
  *
  * purpose: handles request to resolve an event
  * input: struct SocketInfo sock_info - the socket to use to talk to client
- * output: INK_ERR_xx
+ * output: TS_ERR_xx
  * note: the req should be the event name
  *************************************************************************/
-INKError
+TSError
 handle_event_active(struct SocketInfo sock_info, char *req)
 {
-  INKError ret;
+  TSError ret;
   bool active;
 
   // parse msg - don't really need since the request itself is the record name
   if (!req) {
-    ret = send_reply(sock_info, INK_ERR_PARAMS);
+    ret = send_reply(sock_info, TS_ERR_PARAMS);
     return ret;                 // shouldn't get here
   }
   // call CoreAPI call on Traffic Manager side; req == event_name
   ret = EventIsActive(req, &active);
-  if (ret != INK_ERR_OKAY) {
+  if (ret != TS_ERR_OKAY) {
     ret = send_reply(sock_info, ret);
     return ret;                 //shouldn't get here
   }
@@ -883,15 +883,15 @@ handle_event_active(struct SocketInfo sock_info, char *req)
  * input: struct SocketInfo sock_info - the socket to use to talk to client
  *        req - the snapshot name
  *        op  - SNAPSHOT_TAKE, SNAPSHOT_REMOVE, or SNAPSHOT_RESTORE
- * output: INK_ERR_xx
+ * output: TS_ERR_xx
  *************************************************************************/
-INKError
+TSError
 handle_snapshot(struct SocketInfo sock_info, char *req, OpType op)
 {
-  INKError ret;
+  TSError ret;
 
   if (!req) {
-    ret = send_reply(sock_info, INK_ERR_PARAMS);
+    ret = send_reply(sock_info, TS_ERR_PARAMS);
     return ret;
   }
   // call CoreAPI call on Traffic Manager side; req == snap_name
@@ -906,7 +906,7 @@ handle_snapshot(struct SocketInfo sock_info, char *req, OpType op)
     ret = SnapshotRemove(req);
     break;
   default:
-    ret = INK_ERR_FAIL;
+    ret = TS_ERR_FAIL;
     break;
   }
 
@@ -919,13 +919,13 @@ handle_snapshot(struct SocketInfo sock_info, char *req, OpType op)
  *
  * purpose: handles request to get list of snapshots
  * input: struct SocketInfo sock_info - the socket to use to talk to client
- * output: INK_ERR_xx
+ * output: TS_ERR_xx
  * note: the req should be the event name
  *************************************************************************/
-INKError
+TSError
 handle_snapshot_get_mlt(struct SocketInfo sock_info)
 {
-  INKError ret;
+  TSError ret;
   LLQ *snap_list;
   char buf[MAX_BUF_SIZE];
   char *snap_name;
@@ -935,7 +935,7 @@ handle_snapshot_get_mlt(struct SocketInfo sock_info)
 
   // call CoreAPI call on Traffic Manager side; req == event_name
   ret = SnapshotGetMlt(snap_list);
-  if (ret != INK_ERR_OKAY) {
+  if (ret != TS_ERR_OKAY) {
     ret = send_reply(sock_info, ret);
     delete_queue(snap_list);
     return ret;
@@ -965,15 +965,15 @@ handle_snapshot_get_mlt(struct SocketInfo sock_info)
  * purpose: handles diags request
  * input: struct SocketInfo sock_info - the socket to use to talk to client
  *        req - the diag message (already formatted with arguments)
- * output: INK_ERR_xx
+ * output: TS_ERR_xx
  *************************************************************************/
 void
 handle_diags(struct SocketInfo sock_info, char *req)
 {
   NOWARN_UNUSED(sock_info);
   NOWARN_UNUSED(req);
-  INKError ret;
-  INKDiagsT mode;
+  TSError ret;
+  TSDiagsT mode;
   char *diag_msg = NULL;
   DiagsLevel level;
 
@@ -981,36 +981,36 @@ handle_diags(struct SocketInfo sock_info, char *req)
     goto Lerror;
 
   ret = parse_diags_request(req, &mode, &diag_msg);
-  if (ret != INK_ERR_OKAY)
+  if (ret != TS_ERR_OKAY)
     goto Lerror;
 
 
   switch (mode) {
-  case INK_DIAG_DIAG:
+  case TS_DIAG_DIAG:
     level = DL_Diag;
     break;
-  case INK_DIAG_DEBUG:
+  case TS_DIAG_DEBUG:
     level = DL_Debug;
     break;
-  case INK_DIAG_STATUS:
+  case TS_DIAG_STATUS:
     level = DL_Status;
     break;
-  case INK_DIAG_NOTE:
+  case TS_DIAG_NOTE:
     level = DL_Note;
     break;
-  case INK_DIAG_WARNING:
+  case TS_DIAG_WARNING:
     level = DL_Warning;
     break;
-  case INK_DIAG_ERROR:
+  case TS_DIAG_ERROR:
     level = DL_Error;
     break;
-  case INK_DIAG_FATAL:
+  case TS_DIAG_FATAL:
     level = DL_Fatal;
     break;
-  case INK_DIAG_ALERT:
+  case TS_DIAG_ALERT:
     level = DL_Alert;
     break;
-  case INK_DIAG_EMERGENCY:
+  case TS_DIAG_EMERGENCY:
     level = DL_Emergency;
     break;
   default:
@@ -1018,7 +1018,7 @@ handle_diags(struct SocketInfo sock_info, char *req)
   }
 
   if (diags_init) {
-    diags->print("INKMgmtAPI", level, NULL, NULL, diag_msg);
+    diags->print("TSMgmtAPI", level, NULL, NULL, diag_msg);
     if (diag_msg)
       xfree(diag_msg);
     return;
@@ -1036,16 +1036,16 @@ Lerror:
  * purpose: handles request to reset statistics to default values
  * input: struct SocketInfo sock_info - the socket to use to talk to client
  *        req - should be NULL
- * output: INK_ERR_xx
+ * output: TS_ERR_xx
  *************************************************************************/
-INKError
+TSError
 handle_stats_reset(struct SocketInfo sock_info, char *req)
 {
   int16_t cluster;
-  INKError ret;
+  TSError ret;
 
   if (!req) {
-    ret = send_reply(sock_info, INK_ERR_PARAMS);
+    ret = send_reply(sock_info, TS_ERR_PARAMS);
     return ret;                 // shouldn't get here
   }
 
@@ -1065,21 +1065,21 @@ handle_stats_reset(struct SocketInfo sock_info, char *req)
  * purpose: handles request to encrypt password to file
  * input: struct SocketInfo sock_info - the socket to use to talk to client
  *        req - should be NULL
- * output: INK_ERR_xx
+ * output: TS_ERR_xx
  *************************************************************************/
-INKError
+TSError
 handle_encrypt_to_file(struct SocketInfo sock_info, char *req)
 {
   char *pwd, *filepath;
-  INKError ret;
+  TSError ret;
 
   if (!req) {
-    ret = send_reply(sock_info, INK_ERR_PARAMS);
+    ret = send_reply(sock_info, TS_ERR_PARAMS);
     return ret;
   }
   // parse request msg
   ret = parse_request_name_value(req, &pwd, &filepath);
-  if (ret != INK_ERR_OKAY) {
+  if (ret != TS_ERR_OKAY) {
     ret = send_reply(sock_info, ret);
     if (pwd)
       xfree(pwd);

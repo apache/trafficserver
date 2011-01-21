@@ -84,13 +84,13 @@ int
 cliVerifyPasswd(char *passwd)
 {
   char *e_passwd = NULL;
-  INKError status = INK_ERR_OKAY;
-  INKString old_passwd = NULL;
+  TSError status = TS_ERR_OKAY;
+  TSString old_passwd = NULL;
 
-  INKEncryptPassword(passwd, &e_passwd);
+  TSEncryptPassword(passwd, &e_passwd);
   status = Cli_RecordGetString("proxy.config.admin.admin_password", &old_passwd);
 
-  if (status != INK_ERR_OKAY) {
+  if (status != TS_ERR_OKAY) {
     if (e_passwd)
       xfree(e_passwd);
     return CLI_ERROR;
@@ -546,7 +546,7 @@ Cmd_ConfigHardRestart(ClientData clientData, Tcl_Interp * interp, int argc, cons
   Cli_Debug("Cmd_ConfigHardRestart argc %d\n", argc);
 
   if (argc == 1) {
-    return (INKHardRestart());
+    return (TSHardRestart());
   }
   Cli_Error(ERR_COMMAND_SYNTAX, cmdCallbackInfo->command_usage);
   return CMD_ERROR;
@@ -587,10 +587,10 @@ Cmd_ConfigRestart(ClientData clientData, Tcl_Interp * interp, int argc, const ch
   Cli_Debug("Cmd_ConfigRestart argc %d\n", argc);
 
   if (argc == 1) {
-    return (INKRestart(false));
+    return (TSRestart(false));
   } else if (argc == 2) {
     if (argtable[0].parsed_args == CMD_CONFIG_RESTART_CLUSTER) {
-      return (INKRestart(true));
+      return (TSRestart(true));
     }
   }
   Cli_Error(ERR_COMMAND_SYNTAX, cmdCallbackInfo->command_usage);
@@ -663,7 +663,7 @@ Cmd_ConfigParents(ClientData clientData, Tcl_Interp * interp, int argc, const ch
       return (Cli_RecordString_Action((argc == 3), "proxy.config.http.parent_proxies", argtable->arg_string));
 
     case CMD_CONFIG_PARENTS_CONFIG_FILE:
-      return (Cli_ConfigFileURL_Action(INK_FNAME_PARENT_PROXY, "parent.config", argtable->arg_string));
+      return (Cli_ConfigFileURL_Action(TS_FNAME_PARENT_PROXY, "parent.config", argtable->arg_string));
     }
   }
   Cli_Error(ERR_COMMAND_SYNTAX, cmdCallbackInfo->command_usage);
@@ -945,13 +945,13 @@ Cmd_ConfigSecurity(ClientData clientData, Tcl_Interp * interp, int argc, const c
   if (argtable[0].parsed_args != CLI_PARSED_ARGV_END) {
     switch (argtable[0].parsed_args) {
     case CMD_CONFIG_SECURITY_IP:
-      return (Cli_ConfigFileURL_Action(INK_FNAME_IP_ALLOW, "ip_allow.config", argtable->arg_string));
+      return (Cli_ConfigFileURL_Action(TS_FNAME_IP_ALLOW, "ip_allow.config", argtable->arg_string));
 
     case CMD_CONFIG_SECURITY_MGMT:
-      return (Cli_ConfigFileURL_Action(INK_FNAME_MGMT_ALLOW, "mgmt_allow.config", argtable->arg_string));
+      return (Cli_ConfigFileURL_Action(TS_FNAME_MGMT_ALLOW, "mgmt_allow.config", argtable->arg_string));
 
     case CMD_CONFIG_SECURITY_ADMIN:
-      return (Cli_ConfigFileURL_Action(INK_FNAME_ADMIN_ACCESS, "admin_access.config", argtable->arg_string));
+      return (Cli_ConfigFileURL_Action(TS_FNAME_ADMIN_ACCESS, "admin_access.config", argtable->arg_string));
 
     case CMD_CONFIG_SECURITY_PASSWORD:
       return (ConfigSecurityPasswd());
@@ -1199,7 +1199,7 @@ Cmd_ConfigIcp(ClientData clientData, Tcl_Interp * interp, int argc, const char *
       return (Cli_RecordInt_Action(action, "proxy.config.icp.query_timeout", argtable->arg_int));
 
     case CMD_CONFIG_ICP_PEERS:
-      return (Cli_ConfigFileURL_Action(INK_FNAME_ICP_PEER, "icp.config", argtable->arg_string));
+      return (Cli_ConfigFileURL_Action(TS_FNAME_ICP_PEER, "icp.config", argtable->arg_string));
     }
   }
   Cli_Error(ERR_COMMAND_SYNTAX, cmdCallbackInfo->command_usage);
@@ -1360,7 +1360,7 @@ Cmd_ConfigScheduledUpdate(ClientData clientData, Tcl_Interp * interp, int argc, 
       return (Cli_RecordOnOff_Action(action, "proxy.config.update.force", argtable->arg_string));
 
     case CMD_CONFIG_SCHEDULED_UPDATE_RULES:
-      return (Cli_ConfigFileURL_Action(INK_FNAME_UPDATE_URL, "update.config", argtable->arg_string));
+      return (Cli_ConfigFileURL_Action(TS_FNAME_UPDATE_URL, "update.config", argtable->arg_string));
     }
   }
   Cli_Error(ERR_COMMAND_SYNTAX, cmdCallbackInfo->command_usage);
@@ -1534,7 +1534,7 @@ Cmd_ConfigCache(ClientData clientData, Tcl_Interp * interp, int argc, const char
       return (Cli_RecordInt_Action((argc == 3), "proxy.config.cache.limits.http.max_alts", argtable->arg_int));
 
     case CMD_CONFIG_CACHE_FILE:
-      return (Cli_ConfigFileURL_Action(INK_FNAME_CACHE_OBJ, "cache.config", argtable->arg_string));
+      return (Cli_ConfigFileURL_Action(TS_FNAME_CACHE_OBJ, "cache.config", argtable->arg_string));
 
     case CMD_CONFIG_CACHE_FRESHNESS:
       if (argtable[1].parsed_args != CLI_PARSED_ARGV_END) {
@@ -2356,16 +2356,16 @@ CmdArgs_ConfigAlarm()
 int
 ConfigStart()
 {
-  INKProxyStateT state = INKProxyStateGet();
+  TSProxyStateT state = TSProxyStateGet();
 
   switch (state) {
-  case INK_PROXY_ON:
+  case TS_PROXY_ON:
     // do nothing, proxy is already on
     Cli_Error(ERR_PROXY_STATE_ALREADY, "on");
     break;
-  case INK_PROXY_OFF:
-  case INK_PROXY_UNDEFINED:
-    if (INKProxyStateSet(INK_PROXY_ON, INK_CACHE_CLEAR_OFF)) {
+  case TS_PROXY_OFF:
+  case TS_PROXY_UNDEFINED:
+    if (TSProxyStateSet(TS_PROXY_ON, TS_CACHE_CLEAR_OFF)) {
       Cli_Error(ERR_PROXY_STATE_SET, "on");
       return CLI_ERROR;
     }
@@ -2378,16 +2378,16 @@ ConfigStart()
 int
 ConfigStop()
 {
-  INKProxyStateT state = INKProxyStateGet();
+  TSProxyStateT state = TSProxyStateGet();
 
   switch (state) {
-  case INK_PROXY_OFF:
+  case TS_PROXY_OFF:
     // do nothing, proxy is already off
     Cli_Error(ERR_PROXY_STATE_ALREADY, "off");
     break;
-  case INK_PROXY_ON:
-  case INK_PROXY_UNDEFINED:
-    if (INKProxyStateSet(INK_PROXY_OFF, INK_CACHE_CLEAR_OFF)) {
+  case TS_PROXY_ON:
+  case TS_PROXY_UNDEFINED:
+    if (TSProxyStateSet(TS_PROXY_OFF, TS_CACHE_CLEAR_OFF)) {
       Cli_Error(ERR_PROXY_STATE_SET, "off");
       return CLI_ERROR;
     }
@@ -2403,8 +2403,8 @@ ConfigGet(const char *rec_name)
 {
   Cli_Debug("ConfigGet: rec_name %s\n", rec_name);
 
-  INKError status;
-  INKRecordEle rec_val;
+  TSError status;
+  TSRecordEle rec_val;
 
   status = Cli_RecordGet(rec_name, &rec_val);
 
@@ -2414,19 +2414,19 @@ ConfigGet(const char *rec_name)
   // display the result
 
   switch (rec_val.rec_type) {
-  case INK_REC_INT:            // INK64 aka "long long"
+  case TS_REC_INT:            // TS64 aka "long long"
     Cli_Printf("%s = %d\n", rec_name, (int) rec_val.int_val);
     break;
-  case INK_REC_COUNTER:        // INK64 aka "long long"
+  case TS_REC_COUNTER:        // TS64 aka "long long"
     Cli_Printf("%s = %d\n", rec_name, (int) rec_val.counter_val);
     break;
-  case INK_REC_FLOAT:          // float
+  case TS_REC_FLOAT:          // float
     Cli_Printf("%s = %f\n", rec_name, rec_val.float_val);
     break;
-  case INK_REC_STRING:         // char*
+  case TS_REC_STRING:         // char*
     Cli_Printf("%s = \"%s\"\n", rec_name, rec_val.string_val);
     break;
-  case INK_REC_UNDEFINED:      // what's this???
+  case TS_REC_UNDEFINED:      // what's this???
     Cli_Printf("%s = UNDEFINED\n", rec_name);
     break;
   }
@@ -2442,8 +2442,8 @@ ConfigSet(const char *rec_name, const char *value)
 {
   Cli_Debug("ConfigSet: rec_name %s value %s\n", rec_name, value);
 
-  INKError status;
-  INKActionNeedT action_need;
+  TSError status;
+  TSActionNeedT action_need;
 
   status = Cli_RecordSet(rec_name, value, &action_need);
   if (status) {
@@ -2459,15 +2459,15 @@ ConfigSet(const char *rec_name, const char *value)
 int
 ConfigName(const char *proxy_name)
 {
-  INKError status = INK_ERR_OKAY;
-  INKString str_val = NULL;
-  INKActionNeedT action_need;
+  TSError status = TS_ERR_OKAY;
+  TSString str_val = NULL;
+  TSActionNeedT action_need;
 
   if (proxy_name) {             // set the name
 
     Cli_Debug("ConfigName: set name proxy_name %s\n", proxy_name);
 
-    status = Cli_RecordSetString("proxy.config.proxy_name", (INKString) proxy_name, &action_need);
+    status = Cli_RecordSetString("proxy.config.proxy_name", (TSString) proxy_name, &action_need);
 
     if (status) {
       return status;
@@ -2509,40 +2509,40 @@ ConfigPortsSet(int arg_ref, void *valuePtr)
     Cli_Debug("ConfigPortsSet: arg_ref %d value %s\n", arg_ref, (char *) valuePtr);
     break;
   default:
-    Cli_Debug("ConfigPortsSet: arg_ref %d value %d\n", arg_ref, *(INKInt *) valuePtr);
+    Cli_Debug("ConfigPortsSet: arg_ref %d value %d\n", arg_ref, *(TSInt *) valuePtr);
   }
 
-  INKError status = INK_ERR_OKAY;
-  INKActionNeedT action_need = INK_ACTION_UNDEFINED;
+  TSError status = TS_ERR_OKAY;
+  TSActionNeedT action_need = TS_ACTION_UNDEFINED;
 
   Cli_Debug("ConfigPorts: set\n");
   switch (arg_ref) {
   case CMD_CONFIG_PORTS_HTTP_SERVER:
-    status = Cli_RecordSetInt("proxy.config.http.server_port", *(INKInt *) valuePtr, &action_need);
+    status = Cli_RecordSetInt("proxy.config.http.server_port", *(TSInt *) valuePtr, &action_need);
     break;
   case CMD_CONFIG_PORTS_HTTP_OTHER:
-    status = Cli_RecordSetString("proxy.config.http.server_other_ports", (INKString) valuePtr, &action_need);
+    status = Cli_RecordSetString("proxy.config.http.server_other_ports", (TSString) valuePtr, &action_need);
     break;
   case CMD_CONFIG_PORTS_WEBUI:
-    status = Cli_RecordSetInt("proxy.config.admin.web_interface_port", *(INKInt *) valuePtr, &action_need);
+    status = Cli_RecordSetInt("proxy.config.admin.web_interface_port", *(TSInt *) valuePtr, &action_need);
     break;
   case CMD_CONFIG_PORTS_CLUSTER:
-    status = Cli_RecordSetInt("proxy.config.cluster.cluster_port", *(INKInt *) valuePtr, &action_need);
+    status = Cli_RecordSetInt("proxy.config.cluster.cluster_port", *(TSInt *) valuePtr, &action_need);
     break;
   case CMD_CONFIG_PORTS_CLUSTER_RS:
-    status = Cli_RecordSetInt("proxy.config.cluster.rsport", *(INKInt *) valuePtr, &action_need);
+    status = Cli_RecordSetInt("proxy.config.cluster.rsport", *(TSInt *) valuePtr, &action_need);
     break;
   case CMD_CONFIG_PORTS_CLUSTER_MC:
-    status = Cli_RecordSetInt("proxy.config.cluster.mcport", *(INKInt *) valuePtr, &action_need);
+    status = Cli_RecordSetInt("proxy.config.cluster.mcport", *(TSInt *) valuePtr, &action_need);
     break;
   case CMD_CONFIG_PORTS_CONNECT:
-    status = Cli_RecordSetString("proxy.config.http.connect_ports", (INKString) valuePtr, &action_need);
+    status = Cli_RecordSetString("proxy.config.http.connect_ports", (TSString) valuePtr, &action_need);
     break;
   case CMD_CONFIG_PORTS_SOCKS_SERVER:
-    status = Cli_RecordSetInt("proxy.config.socks.socks_server_port", *(INKInt *) valuePtr, &action_need);
+    status = Cli_RecordSetInt("proxy.config.socks.socks_server_port", *(TSInt *) valuePtr, &action_need);
     break;
   case CMD_CONFIG_PORTS_ICP:
-    status = Cli_RecordSetInt("proxy.config.icp.icp_port", *(INKInt *) valuePtr, &action_need);
+    status = Cli_RecordSetInt("proxy.config.icp.icp_port", *(TSInt *) valuePtr, &action_need);
     break;
   }
 
@@ -2560,9 +2560,9 @@ ConfigPortsSet(int arg_ref, void *valuePtr)
 int
 ConfigPortsGet(int arg_ref)
 {
-  INKError status = INK_ERR_OKAY;
-  INKInt int_val = -1;
-  INKString str_val = NULL;
+  TSError status = TS_ERR_OKAY;
+  TSInt int_val = -1;
+  TSString str_val = NULL;
 
   Cli_Debug("ConfigPortsGet: get\n");
 
@@ -2653,8 +2653,8 @@ ConfigSecurityPasswd()
   char org_passwd[256], new_passwd1[256], new_passwd2[256], ch = 'p';
   int i = 0;
   char *e_passwd = NULL;
-  INKError status = INK_ERR_OKAY;
-  INKActionNeedT action_need = INK_ACTION_UNDEFINED;
+  TSError status = TS_ERR_OKAY;
+  TSActionNeedT action_need = TS_ACTION_UNDEFINED;
 
   Cli_Debug("ConfigSecurityPasswd\n");
 
@@ -2703,10 +2703,10 @@ ConfigSecurityPasswd()
     return CLI_ERROR;
   }
 
-  INKEncryptPassword(new_passwd1, &e_passwd);
-  status = Cli_RecordSetString("proxy.config.admin.admin_password", (INKString) e_passwd, &action_need);
+  TSEncryptPassword(new_passwd1, &e_passwd);
+  status = Cli_RecordSetString("proxy.config.admin.admin_password", (TSString) e_passwd, &action_need);
 
-  if (status != INK_ERR_OKAY) {
+  if (status != TS_ERR_OKAY) {
     Cli_Printf("\nCannot Set The Password\n");
     Cli_ConfigEnactChanges(action_need);
     if (e_passwd)
@@ -2727,7 +2727,7 @@ ConfigRemap(const char *url)
 {
   Cli_Debug("ConfigRemap: url %s\n", url);
 
-  return (Cli_SetConfigFileFromUrl(INK_FNAME_REMAP, url));
+  return (Cli_SetConfigFileFromUrl(TS_FNAME_REMAP, url));
 }
 
 // config date sub-command
@@ -3090,10 +3090,10 @@ ConfigHttpProxy(int arg_ref, int setvar)
 {
   Cli_Debug("ConfigHttpProxy: proxy %d\n", arg_ref);
 
-  INKInt rmp_val = 0;
-  INKInt rev_val = 0;
-  INKActionNeedT action_need = INK_ACTION_UNDEFINED;
-  INKError status = INK_ERR_OKAY;
+  TSInt rmp_val = 0;
+  TSInt rev_val = 0;
+  TSActionNeedT action_need = TS_ACTION_UNDEFINED;
+  TSError status = TS_ERR_OKAY;
 
   switch (setvar) {
   case 0:                      //get
@@ -3121,28 +3121,28 @@ ConfigHttpProxy(int arg_ref, int setvar)
     {
       switch (arg_ref) {
       case CMD_CONFIG_HTTP_FWD:
-        status = Cli_RecordSetInt("proxy.config.reverse_proxy.enabled", (INKInt) 0, &action_need);
+        status = Cli_RecordSetInt("proxy.config.reverse_proxy.enabled", (TSInt) 0, &action_need);
         if (status) {
           return status;
         }
         return (Cli_ConfigEnactChanges(action_need));
       case CMD_CONFIG_HTTP_REV:
-        status = Cli_RecordSetInt("proxy.config.reverse_proxy.enabled", (INKInt) 1, &action_need);
+        status = Cli_RecordSetInt("proxy.config.reverse_proxy.enabled", (TSInt) 1, &action_need);
         if (status) {
           return status;
         }
-        status = Cli_RecordSetInt("proxy.config.url_remap.remap_required", (INKInt) 1, &action_need);
+        status = Cli_RecordSetInt("proxy.config.url_remap.remap_required", (TSInt) 1, &action_need);
 
         if (status) {
           return status;
         }
         return (Cli_ConfigEnactChanges(action_need));
       case CMD_CONFIG_HTTP_FWD_REV:
-        status = Cli_RecordSetInt("proxy.config.reverse_proxy.enabled", (INKInt) 1, &action_need);
+        status = Cli_RecordSetInt("proxy.config.reverse_proxy.enabled", (TSInt) 1, &action_need);
         if (status) {
           return status;
         }
-        status = Cli_RecordSetInt("proxy.config.url_remap.remap_required", (INKInt) 0, &action_need);
+        status = Cli_RecordSetInt("proxy.config.url_remap.remap_required", (TSInt) 0, &action_need);
         if (status) {
           return status;
         }
@@ -3180,8 +3180,8 @@ ConfigIcpMode(int arg_ref, int setvar)
       return CLI_ERROR;
     }
 
-    INKActionNeedT action_need = INK_ACTION_UNDEFINED;
-    INKError status = Cli_RecordSetInt("proxy.config.icp.enabled",
+    TSActionNeedT action_need = TS_ACTION_UNDEFINED;
+    TSError status = Cli_RecordSetInt("proxy.config.icp.enabled",
                                        mode_num, &action_need);
     if (status) {
       return status;
@@ -3190,8 +3190,8 @@ ConfigIcpMode(int arg_ref, int setvar)
     return (Cli_ConfigEnactChanges(action_need));
 
   } else {
-    INKInt value_in = -1;
-    INKError status = Cli_RecordGetInt("proxy.config.icp.enabled", &value_in);
+    TSInt value_in = -1;
+    TSError status = Cli_RecordGetInt("proxy.config.icp.enabled", &value_in);
 
     if (status) {
       return status;
@@ -3224,9 +3224,9 @@ ConfigCacheFreshnessVerify(int arg_ref, int setvar)
 
   Cli_Debug(" ConfigCacheFreshnessVerify: %d set?%d\n", arg_ref, setvar);
 
-  INKInt int_val = 0;
-  INKActionNeedT action_need = INK_ACTION_UNDEFINED;
-  INKError status = INK_ERR_OKAY;
+  TSInt int_val = 0;
+  TSActionNeedT action_need = TS_ACTION_UNDEFINED;
+  TSError status = TS_ERR_OKAY;
 
   switch (setvar) {
   case 0:                      //get
@@ -3269,7 +3269,7 @@ ConfigCacheFreshnessVerify(int arg_ref, int setvar)
       default:
         Cli_Printf("ERROR in Argument\n");
       }
-      status = Cli_RecordSetInt("proxy.config.http.cache.when_to_revalidate", (INKInt) int_val, &action_need);
+      status = Cli_RecordSetInt("proxy.config.http.cache.when_to_revalidate", (TSInt) int_val, &action_need);
       if (status) {
         return status;
       }
@@ -3288,9 +3288,9 @@ ConfigCacheFreshnessMinimum(int arg_ref, int setvar)
 
   Cli_Debug("ConfigCacheFreshnessMinimum: %d set?%d\n", arg_ref, setvar);
 
-  INKInt int_val = 0;
-  INKActionNeedT action_need = INK_ACTION_UNDEFINED;
-  INKError status = INK_ERR_OKAY;
+  TSInt int_val = 0;
+  TSActionNeedT action_need = TS_ACTION_UNDEFINED;
+  TSError status = TS_ERR_OKAY;
 
   switch (setvar) {
   case 0:                      //get
@@ -3327,7 +3327,7 @@ ConfigCacheFreshnessMinimum(int arg_ref, int setvar)
       default:
         Cli_Printf("ERROR in arg\n");
       }
-      status = Cli_RecordSetInt("proxy.config.http.cache.required_headers", (INKInt) int_val, &action_need);
+      status = Cli_RecordSetInt("proxy.config.http.cache.required_headers", (TSInt) int_val, &action_need);
       if (status) {
         return status;
       }
@@ -3340,16 +3340,16 @@ ConfigCacheFreshnessMinimum(int arg_ref, int setvar)
 
 // config Cache FreshnessNoExpireLimit
 int
-ConfigCacheFreshnessNoExpireLimit(INKInt min, INKInt max, int setvar)
+ConfigCacheFreshnessNoExpireLimit(TSInt min, TSInt max, int setvar)
 {
 
   Cli_Debug(" ConfigCacheFreshnessNoExpireLimit: greater than %d \n", min);
   Cli_Debug(" ConfigCacheFreshnessNoExpireLimit: less than %d\n", max);
   Cli_Debug(" set?%d\n", setvar);
-  INKInt min_val = 0;
-  INKInt max_val = 0;
-  INKActionNeedT action_need = INK_ACTION_UNDEFINED;
-  INKError status = INK_ERR_OKAY;
+  TSInt min_val = 0;
+  TSInt max_val = 0;
+  TSActionNeedT action_need = TS_ACTION_UNDEFINED;
+  TSError status = TS_ERR_OKAY;
 
   switch (setvar) {
   case 0:                      //get
@@ -3366,11 +3366,11 @@ ConfigCacheFreshnessNoExpireLimit(INKInt min, INKInt max, int setvar)
     Cli_Printf("less than ----- %d\n", max_val);
     return CLI_OK;
   case 1:
-    status = Cli_RecordSetInt("proxy.config.http.cache.heuristic_min_lifetime", (INKInt) min, &action_need);
+    status = Cli_RecordSetInt("proxy.config.http.cache.heuristic_min_lifetime", (TSInt) min, &action_need);
     if (status) {
       return status;
     }
-    status = Cli_RecordSetInt("proxy.config.http.cache.heuristic_max_lifetime", (INKInt) max, &action_need);
+    status = Cli_RecordSetInt("proxy.config.http.cache.heuristic_max_lifetime", (TSInt) max, &action_need);
     if (status) {
       return status;
     }
@@ -3388,9 +3388,9 @@ ConfigCacheVary(int arg_ref, char *field, int setvar)
 
   Cli_Debug(" ConfigCacheVary: %d set?%d\n", arg_ref, setvar);
   Cli_Debug(" field: %s\n", field);
-  INKString str_val = NULL;
-  INKActionNeedT action_need = INK_ACTION_UNDEFINED;
-  INKError status = INK_ERR_OKAY;
+  TSString str_val = NULL;
+  TSActionNeedT action_need = TS_ACTION_UNDEFINED;
+  TSError status = TS_ERR_OKAY;
 
   switch (setvar) {
   case 0:                      //get
@@ -3425,15 +3425,15 @@ ConfigCacheVary(int arg_ref, char *field, int setvar)
     {
       switch (arg_ref) {
       case CMD_CONFIG_CACHE_VARY_TEXT:
-        status = Cli_RecordSetString("proxy.config.http.cache.vary_default_text", (INKString) field, &action_need);
+        status = Cli_RecordSetString("proxy.config.http.cache.vary_default_text", (TSString) field, &action_need);
         break;
 
       case CMD_CONFIG_CACHE_VARY_COOKIES_IMAGES:
-        status = Cli_RecordSetString("proxy.config.http.cache.vary_default_images", (INKString) field, &action_need);
+        status = Cli_RecordSetString("proxy.config.http.cache.vary_default_images", (TSString) field, &action_need);
         break;
 
       case CMD_CONFIG_CACHE_VARY_OTHER:
-        status = Cli_RecordSetString("proxy.config.http.cache.vary_default_other", (INKString) field, &action_need);
+        status = Cli_RecordSetString("proxy.config.http.cache.vary_default_other", (TSString) field, &action_need);
         break;
       default:
         Cli_Printf("ERROR in arg\n");
@@ -3457,9 +3457,9 @@ ConfigCacheCookies(int arg_ref, int setvar)
 
   Cli_Debug("ConfigCacheCookies: %d set?%d\n", arg_ref, setvar);
 
-  INKInt int_val = 0;
-  INKActionNeedT action_need = INK_ACTION_UNDEFINED;
-  INKError status = INK_ERR_OKAY;
+  TSInt int_val = 0;
+  TSActionNeedT action_need = TS_ACTION_UNDEFINED;
+  TSError status = TS_ERR_OKAY;
 
   switch (setvar) {
   case 0:                      //get
@@ -3510,7 +3510,7 @@ ConfigCacheCookies(int arg_ref, int setvar)
       default:
         Cli_Printf("ERROR in arg\n");
       }
-      status = Cli_RecordSetInt("proxy.config.http.cache.cache_responses_to_cookies", (INKInt) int_val, &action_need);
+      status = Cli_RecordSetInt("proxy.config.http.cache.cache_responses_to_cookies", (TSInt) int_val, &action_need);
       if (status) {
         return status;
       }
@@ -3529,22 +3529,22 @@ ConfigCacheClear()
 
   Cli_Debug("ConfigCacheClear");
 
-  INKProxyStateT state;
-  INKError status = INK_ERR_OKAY;
+  TSProxyStateT state;
+  TSError status = TS_ERR_OKAY;
 
-  state = INKProxyStateGet();
+  state = TSProxyStateGet();
   switch (state) {
-  case INK_PROXY_ON:
+  case TS_PROXY_ON:
     Cli_Printf("Traffic Server is running.\nClear Cache failed.\n");
     return CLI_ERROR;
 
-  case INK_PROXY_OFF:
-    status = INKProxyStateSet(INK_PROXY_ON, INK_CACHE_CLEAR_ON);
+  case TS_PROXY_OFF:
+    status = TSProxyStateSet(TS_PROXY_ON, TS_CACHE_CLEAR_ON);
     if (status) {
       return status;
     }
     return status;
-  case INK_PROXY_UNDEFINED:
+  case TS_PROXY_UNDEFINED:
     Cli_Printf("Error %d: Problem clearing Cache.\n", state);
     return CLI_ERROR;
   default:
@@ -3562,23 +3562,23 @@ ConfigHostdbClear()
 
   Cli_Debug("ConfigHostDBClear\n");
 
-  INKProxyStateT state = INK_PROXY_UNDEFINED;
-  INKError status = INK_ERR_OKAY;
+  TSProxyStateT state = TS_PROXY_UNDEFINED;
+  TSError status = TS_ERR_OKAY;
 
-  state = INKProxyStateGet();
+  state = TSProxyStateGet();
   Cli_Debug("Proxy State %d\n", state);
   switch (state) {
-  case INK_PROXY_ON:
+  case TS_PROXY_ON:
     Cli_Printf("Traffic Server is running.\nClear HostDB failed.\n");
     return CLI_ERROR;
 
-  case INK_PROXY_OFF:
-    status = INKProxyStateSet(INK_PROXY_ON, INK_CACHE_CLEAR_HOSTDB);
+  case TS_PROXY_OFF:
+    status = TSProxyStateSet(TS_PROXY_ON, TS_CACHE_CLEAR_HOSTDB);
     if (status) {
       return status;
     }
     return status;
-  case INK_PROXY_UNDEFINED:
+  case TS_PROXY_UNDEFINED:
     Cli_Printf("Error %d: Problem clearing HostDB.\n", state);
     return CLI_ERROR;
   default:
@@ -3595,27 +3595,27 @@ ConfigVirtualIpList()
 
   Cli_Debug("ConfigVirtualIpList\n");
 
-  INKCfgContext VipCtx;
+  TSCfgContext VipCtx;
   int EleCount, i;
-  INKVirtIpAddrEle *VipElePtr;
+  TSVirtIpAddrEle *VipElePtr;
 
-  VipCtx = INKCfgContextCreate(INK_FNAME_VADDRS);
-  if (INKCfgContextGet(VipCtx) != INK_ERR_OKAY) {
+  VipCtx = TSCfgContextCreate(TS_FNAME_VADDRS);
+  if (TSCfgContextGet(VipCtx) != TS_ERR_OKAY) {
     Cli_Printf("ERROR READING FILE\n");
     return CLI_ERROR;
   }
-  EleCount = INKCfgContextGetCount(VipCtx);
+  EleCount = TSCfgContextGetCount(VipCtx);
   if (EleCount == 0) {
     Cli_Printf("\nNo Virtual IP addresses specified\n");
   } else {
     Cli_Printf("\nVirtual IP addresses specified\n" "------------------------------\n", EleCount);
     for (i = 0; i < EleCount; i++) {
-      VipElePtr = (INKVirtIpAddrEle *) INKCfgContextGetEleAt(VipCtx, i);
+      VipElePtr = (TSVirtIpAddrEle *) TSCfgContextGetEleAt(VipCtx, i);
       Cli_Printf("%d) %s %s %d\n", i, VipElePtr->ip_addr, VipElePtr->intr, VipElePtr->sub_intr);
     }
   }
   Cli_Printf("\n");
-  INKCfgContextDestroy(VipCtx);
+  TSCfgContextDestroy(VipCtx);
 
   return CLI_OK;
 }
@@ -3627,11 +3627,11 @@ ConfigVirtualipAdd(char *ip, char *device, int subinterface, int setvar)
 
   Cli_Debug("ConfigVirtualipAdd: %s %s %d set? %d\n", ip, device, subinterface, setvar);
 
-  INKActionNeedT action_need = INK_ACTION_UNDEFINED;
-  INKError status = INK_ERR_OKAY;
-  INKCfgContext VipCtx;
+  TSActionNeedT action_need = TS_ACTION_UNDEFINED;
+  TSError status = TS_ERR_OKAY;
+  TSCfgContext VipCtx;
   int size;
-  INKVirtIpAddrEle *VipElePtr;
+  TSVirtIpAddrEle *VipElePtr;
 
   switch (setvar) {
   case 0:                      //get
@@ -3639,7 +3639,7 @@ ConfigVirtualipAdd(char *ip, char *device, int subinterface, int setvar)
 
   case 1:                      //set
 
-    VipElePtr = INKVirtIpAddrEleCreate();
+    VipElePtr = TSVirtIpAddrEleCreate();
 
     if (!VipElePtr)
       return CLI_ERROR;
@@ -3651,16 +3651,16 @@ ConfigVirtualipAdd(char *ip, char *device, int subinterface, int setvar)
     VipElePtr->intr = new char[size + 1];
     ink_strncpy(VipElePtr->intr, device, size + 1);
     VipElePtr->sub_intr = subinterface;
-    VipCtx = INKCfgContextCreate(INK_FNAME_VADDRS);
-    if (INKCfgContextGet(VipCtx) != INK_ERR_OKAY)
+    VipCtx = TSCfgContextCreate(TS_FNAME_VADDRS);
+    if (TSCfgContextGet(VipCtx) != TS_ERR_OKAY)
       Cli_Printf("ERROR READING FILE\n");
-    status = INKCfgContextAppendEle(VipCtx, (INKCfgEle *) VipElePtr);
+    status = TSCfgContextAppendEle(VipCtx, (TSCfgEle *) VipElePtr);
     if (status) {
       Cli_Printf("ERROR %d: Failed to add entry to config file.\n", status);
       return status;
     }
 
-    status = INKCfgContextCommit(VipCtx, &action_need, NULL);
+    status = TSCfgContextCommit(VipCtx, &action_need, NULL);
 
     if (status) {
       Cli_Printf("\nERROR %d: Failed to commit changes to config file.\n"
@@ -3681,9 +3681,9 @@ ConfigVirtualipDelete(int ip_no, int setvar)
 
   Cli_Debug("ConfigVirtualipDelete: %d set? %d\n", ip_no, setvar);
 
-  INKActionNeedT action_need = INK_ACTION_UNDEFINED;
-  INKError status = INK_ERR_OKAY;
-  INKCfgContext VipCtx;
+  TSActionNeedT action_need = TS_ACTION_UNDEFINED;
+  TSError status = TS_ERR_OKAY;
+  TSCfgContext VipCtx;
   int EleCount;
 
   switch (setvar) {
@@ -3692,12 +3692,12 @@ ConfigVirtualipDelete(int ip_no, int setvar)
 
   case 1:                      //set
 
-    VipCtx = INKCfgContextCreate(INK_FNAME_VADDRS);
-    if (INKCfgContextGet(VipCtx) != INK_ERR_OKAY) {
+    VipCtx = TSCfgContextCreate(TS_FNAME_VADDRS);
+    if (TSCfgContextGet(VipCtx) != TS_ERR_OKAY) {
       Cli_Printf("ERROR READING FILE\n");
       return CLI_ERROR;
     }
-    EleCount = INKCfgContextGetCount(VipCtx);
+    EleCount = TSCfgContextGetCount(VipCtx);
     if (EleCount == 0) {
       Cli_Printf("No Virual IP's to delete.\n");
       return CLI_ERROR;
@@ -3710,11 +3710,11 @@ ConfigVirtualipDelete(int ip_no, int setvar)
 
       return CLI_ERROR;
     }
-    status = INKCfgContextRemoveEleAt(VipCtx, ip_no);
+    status = TSCfgContextRemoveEleAt(VipCtx, ip_no);
     if (status) {
       return status;
     }
-    status = INKCfgContextCommit(VipCtx, &action_need, NULL);
+    status = TSCfgContextCommit(VipCtx, &action_need, NULL);
 
     if (status) {
       Cli_Printf("\nERROR %d: Failed to commit changes to config file.\n"
@@ -4199,9 +4199,9 @@ ConfigLoggingEvent(int arg_ref, int setvar)
 
   Cli_Debug("ConfigLoggingEvent: %d set?%d\n", arg_ref, setvar);
 
-  INKInt int_val = 0;
-  INKActionNeedT action_need = INK_ACTION_UNDEFINED;
-  INKError status = INK_ERR_OKAY;
+  TSInt int_val = 0;
+  TSActionNeedT action_need = TS_ACTION_UNDEFINED;
+  TSError status = TS_ERR_OKAY;
 
   switch (setvar) {
   case 0:                      //get
@@ -4246,7 +4246,7 @@ ConfigLoggingEvent(int arg_ref, int setvar)
       default:
         Cli_Printf("ERROR in arg\n");
       }
-      status = Cli_RecordSetInt("proxy.config.log.logging_enabled", (INKInt) int_val, &action_need);
+      status = Cli_RecordSetInt("proxy.config.log.logging_enabled", (TSInt) int_val, &action_need);
       if (status) {
         return status;
       }
@@ -4267,9 +4267,9 @@ ConfigLoggingCollationStatus(int arg_ref, int setvar)
 
   Cli_Debug("ConfigLoggingCollationStatus: %d set?%d\n", arg_ref, setvar);
 
-  INKInt int_val = 0;
-  INKActionNeedT action_need = INK_ACTION_UNDEFINED;
-  INKError status = INK_ERR_OKAY;
+  TSInt int_val = 0;
+  TSActionNeedT action_need = TS_ACTION_UNDEFINED;
+  TSError status = TS_ERR_OKAY;
 
   switch (setvar) {
   case 0:                      //get
@@ -4321,7 +4321,7 @@ ConfigLoggingCollationStatus(int arg_ref, int setvar)
         Cli_Printf("ERROR in arg\n");
       }
       Cli_Debug("ConfigLoggingCollationStatus: %d set?%d\n", int_val, setvar);
-      status = Cli_RecordSetInt("proxy.local.log.collation_mode", (INKInt) int_val, &action_need);
+      status = Cli_RecordSetInt("proxy.local.log.collation_mode", (TSInt) int_val, &action_need);
       if (status) {
         return status;
       }
@@ -4335,16 +4335,16 @@ ConfigLoggingCollationStatus(int arg_ref, int setvar)
 
 // config Logging collation sub-command
 int
-ConfigLoggingCollation(INKString secret, int arg_ref, INKInt orphan, int setvar)
+ConfigLoggingCollation(TSString secret, int arg_ref, TSInt orphan, int setvar)
 {
 
   Cli_Debug(" LoggingCollation %s %d %d\n", secret, orphan, arg_ref);
   Cli_Debug(" set? %d\n", setvar);
 
-  INKString str_val = NULL;
-  INKInt int_val = 0;
-  INKActionNeedT action_need = INK_ACTION_UNDEFINED;
-  INKError status = INK_ERR_OKAY;
+  TSString str_val = NULL;
+  TSInt int_val = 0;
+  TSActionNeedT action_need = TS_ACTION_UNDEFINED;
+  TSError status = TS_ERR_OKAY;
 
   switch (setvar) {
   case 0:                      //get
@@ -4378,7 +4378,7 @@ ConfigLoggingCollation(INKString secret, int arg_ref, INKInt orphan, int setvar)
   case 1:                      //set
     {
 
-      status = Cli_RecordSetString("proxy.config.log.collation_secret", (INKString) secret, &action_need);
+      status = Cli_RecordSetString("proxy.config.log.collation_secret", (TSString) secret, &action_need);
       if (status) {
         return status;
       }
@@ -4393,12 +4393,12 @@ ConfigLoggingCollation(INKString secret, int arg_ref, INKInt orphan, int setvar)
         Cli_Printf("ERROR in arg\n");
       }
 
-      status = Cli_RecordSetInt("proxy.config.log.collation_host_tagged", (INKInt) int_val, &action_need);
+      status = Cli_RecordSetInt("proxy.config.log.collation_host_tagged", (TSInt) int_val, &action_need);
       if (status) {
         return status;
       }
 
-      status = Cli_RecordSetInt("proxy.config.log.collation_port", (INKInt) orphan, &action_need);
+      status = Cli_RecordSetInt("proxy.config.log.collation_port", (TSInt) orphan, &action_need);
       if (status) {
         return status;
       }
@@ -4414,16 +4414,16 @@ ConfigLoggingCollation(INKString secret, int arg_ref, INKInt orphan, int setvar)
 // config Logging Format Type File sub-command
 int
 ConfigLoggingFormatTypeFile(int arg_ref_format, int arg_ref,
-                            int arg_ref_type, INKString file, INKString header, int setvar)
+                            int arg_ref_type, TSString file, TSString header, int setvar)
 {
 
   Cli_Debug(" LoggingFormatTypeFile %d %d %d %s %s set?%d\n",
             arg_ref_format, arg_ref, arg_ref_type, file, header, setvar);
 
-  INKString str_val = NULL;
-  INKInt int_val = 0;
-  INKActionNeedT action_need = INK_ACTION_UNDEFINED;
-  INKError status = INK_ERR_OKAY;
+  TSString str_val = NULL;
+  TSInt int_val = 0;
+  TSActionNeedT action_need = TS_ACTION_UNDEFINED;
+  TSError status = TS_ERR_OKAY;
 
   switch (setvar) {
   case 0:                      //get
@@ -4583,7 +4583,7 @@ ConfigLoggingFormatTypeFile(int arg_ref_format, int arg_ref,
           return CLI_ERROR;
         }
 
-        status = Cli_RecordSetInt("proxy.config.log.squid_log_enabled", (INKInt) int_val, &action_need);
+        status = Cli_RecordSetInt("proxy.config.log.squid_log_enabled", (TSInt) int_val, &action_need);
         if (status) {
           return status;
         }
@@ -4599,18 +4599,18 @@ ConfigLoggingFormatTypeFile(int arg_ref_format, int arg_ref,
           Cli_Printf("ERROR in arg\n");
           return CLI_ERROR;
         }
-        status = Cli_RecordSetInt("proxy.config.log.squid_log_is_ascii", (INKInt) int_val, &action_need);
+        status = Cli_RecordSetInt("proxy.config.log.squid_log_is_ascii", (TSInt) int_val, &action_need);
         if (status) {
           return status;
         }
 
-        status = Cli_RecordSetString("proxy.config.log.squid_log_name", (INKString) file, &action_need);
+        status = Cli_RecordSetString("proxy.config.log.squid_log_name", (TSString) file, &action_need);
 
         if (status) {
           return status;
         }
 
-        status = Cli_RecordSetString("proxy.config.log.squid_log_header", (INKString) header, &action_need);
+        status = Cli_RecordSetString("proxy.config.log.squid_log_header", (TSString) header, &action_need);
         if (status) {
           return status;
         }
@@ -4629,7 +4629,7 @@ ConfigLoggingFormatTypeFile(int arg_ref_format, int arg_ref,
           return CLI_ERROR;
         }
 
-        status = Cli_RecordSetInt("proxy.config.log.common_log_enabled", (INKInt) int_val, &action_need);
+        status = Cli_RecordSetInt("proxy.config.log.common_log_enabled", (TSInt) int_val, &action_need);
         if (status) {
           return status;
         }
@@ -4646,18 +4646,18 @@ ConfigLoggingFormatTypeFile(int arg_ref_format, int arg_ref,
           return CLI_ERROR;
         }
 
-        status = Cli_RecordSetInt("proxy.config.log.common_log_is_ascii", (INKInt) int_val, &action_need);
+        status = Cli_RecordSetInt("proxy.config.log.common_log_is_ascii", (TSInt) int_val, &action_need);
         if (status) {
           return status;
         }
 
-        status = Cli_RecordSetString("proxy.config.log.common_log_name", (INKString) file, &action_need);
+        status = Cli_RecordSetString("proxy.config.log.common_log_name", (TSString) file, &action_need);
 
         if (status) {
           return status;
         }
 
-        status = Cli_RecordSetString("proxy.config.log.common_log_header", (INKString) header, &action_need);
+        status = Cli_RecordSetString("proxy.config.log.common_log_header", (TSString) header, &action_need);
         if (status) {
           return status;
         }
@@ -4678,7 +4678,7 @@ ConfigLoggingFormatTypeFile(int arg_ref_format, int arg_ref,
           return CLI_ERROR;
         }
 
-        status = Cli_RecordSetInt("proxy.config.log.extended_log_enabled", (INKInt) int_val, &action_need);
+        status = Cli_RecordSetInt("proxy.config.log.extended_log_enabled", (TSInt) int_val, &action_need);
 
         if (status) {
           return status;
@@ -4694,18 +4694,18 @@ ConfigLoggingFormatTypeFile(int arg_ref_format, int arg_ref,
           Cli_Printf("ERROR in arg\n");
           return CLI_ERROR;
         }
-        status = Cli_RecordSetInt("proxy.config.log.extended_log_is_ascii", (INKInt) int_val, &action_need);
+        status = Cli_RecordSetInt("proxy.config.log.extended_log_is_ascii", (TSInt) int_val, &action_need);
         if (status) {
           return status;
         }
 
-        status = Cli_RecordSetString("proxy.config.log.extended_log_name", (INKString) file, &action_need);
+        status = Cli_RecordSetString("proxy.config.log.extended_log_name", (TSString) file, &action_need);
 
         if (status) {
           return status;
         }
 
-        status = Cli_RecordSetString("proxy.config.log.extended_log_header", (INKString) header, &action_need);
+        status = Cli_RecordSetString("proxy.config.log.extended_log_header", (TSString) header, &action_need);
         if (status) {
           return status;
         }
@@ -4724,7 +4724,7 @@ ConfigLoggingFormatTypeFile(int arg_ref_format, int arg_ref,
           return CLI_ERROR;
         }
 
-        status = Cli_RecordSetInt("proxy.config.log.extended2_log_enabled", (INKInt) int_val, &action_need);
+        status = Cli_RecordSetInt("proxy.config.log.extended2_log_enabled", (TSInt) int_val, &action_need);
         if (status) {
           return status;
         }
@@ -4739,18 +4739,18 @@ ConfigLoggingFormatTypeFile(int arg_ref_format, int arg_ref,
           Cli_Printf("ERROR in arg\n");
           return CLI_ERROR;
         }
-        status = Cli_RecordSetInt("proxy.config.log.extended2_log_is_ascii", (INKInt) int_val, &action_need);
+        status = Cli_RecordSetInt("proxy.config.log.extended2_log_is_ascii", (TSInt) int_val, &action_need);
         if (status) {
           return status;
         }
 
-        status = Cli_RecordSetString("proxy.config.log.extended2_log_name", (INKString) file, &action_need);
+        status = Cli_RecordSetString("proxy.config.log.extended2_log_name", (TSString) file, &action_need);
 
         if (status) {
           return status;
         }
 
-        status = Cli_RecordSetString("proxy.config.log.extended2_log_header", (INKString) header, &action_need);
+        status = Cli_RecordSetString("proxy.config.log.extended2_log_header", (TSString) header, &action_need);
         if (status) {
           return status;
         }
@@ -4769,9 +4769,9 @@ ConfigLoggingSplitting(int arg_ref_protocol, int arg_ref_on_off, int setvar)
 
   Cli_Debug("ConfigLoggingSplitting %d %d set?%d\n", arg_ref_protocol, arg_ref_on_off, setvar);
 
-  INKInt int_val;
-  INKActionNeedT action_need = INK_ACTION_UNDEFINED;
-  INKError status = INK_ERR_OKAY;
+  TSInt int_val;
+  TSActionNeedT action_need = TS_ACTION_UNDEFINED;
+  TSError status = TS_ERR_OKAY;
 
   switch (setvar) {
   case 0:                      //get
@@ -4845,9 +4845,9 @@ ConfigLoggingCustomFormat(int arg_ref_on_off, int arg_ref_format, int setvar)
 
   Cli_Debug("ConfigLoggingSplitting %d %d set?%d\n", arg_ref_on_off, arg_ref_format, setvar);
 
-  INKInt int_val = 0;
-  INKActionNeedT action_need = INK_ACTION_UNDEFINED;
-  INKError status = INK_ERR_OKAY;
+  TSInt int_val = 0;
+  TSActionNeedT action_need = TS_ACTION_UNDEFINED;
+  TSError status = TS_ERR_OKAY;
 
   switch (setvar) {
   case 0:                      //get
@@ -4891,7 +4891,7 @@ ConfigLoggingCustomFormat(int arg_ref_on_off, int arg_ref_format, int setvar)
 // config Logging rolling offset interval autodelete sub-command
 int
 ConfigLoggingRollingOffsetIntervalAutodelete(int arg_ref_rolling,
-                                             INKInt offset, INKInt num_hours, int arg_ref_auto_delete, int setvar)
+                                             TSInt offset, TSInt num_hours, int arg_ref_auto_delete, int setvar)
 {
 
   Cli_Debug("ConfigLoggingRollingOffsetIntervalAutodelete %d %d\n", arg_ref_rolling, offset);
@@ -4899,9 +4899,9 @@ ConfigLoggingRollingOffsetIntervalAutodelete(int arg_ref_rolling,
   Cli_Debug("%d\n", arg_ref_auto_delete);
   Cli_Debug("set?%d\n", setvar);
 
-  INKInt int_val = 0;
-  INKActionNeedT action_need = INK_ACTION_UNDEFINED;
-  INKError status = INK_ERR_OKAY;
+  TSInt int_val = 0;
+  TSActionNeedT action_need = TS_ACTION_UNDEFINED;
+  TSError status = TS_ERR_OKAY;
 
   switch (setvar) {
   case 0:                      //get
@@ -4989,11 +4989,11 @@ int
 ConfigAlarmResolveName(char *name)
 {
   bool active;
-  INKError status;
+  TSError status;
 
   // determine if the event is active
-  status = INKEventIsActive(name, &active);
-  if (status != INK_ERR_OKAY) {
+  status = TSEventIsActive(name, &active);
+  if (status != TS_ERR_OKAY) {
     // unable to retrieve active/inactive status for alarm
     Cli_Error(ERR_ALARM_STATUS, name);
     return CLI_ERROR;
@@ -5005,8 +5005,8 @@ ConfigAlarmResolveName(char *name)
     return CLI_ERROR;
   }
   // alarm is active, resolve it
-  status = INKEventResolve(name);
-  if (status != INK_ERR_OKAY) {
+  status = TSEventResolve(name);
+  if (status != TS_ERR_OKAY) {
     Cli_Error(ERR_ALARM_RESOLVE, name);
     return CLI_ERROR;
   }
@@ -5018,33 +5018,33 @@ ConfigAlarmResolveName(char *name)
 int
 ConfigAlarmResolveNumber(int number)
 {
-  INKList events;
-  INKError status;
+  TSList events;
+  TSError status;
   int count, i;
   char *name = 0;
 
-  events = INKListCreate();
-  status = INKActiveEventGetMlt(events);
-  if (status != INK_ERR_OKAY) {
+  events = TSListCreate();
+  status = TSActiveEventGetMlt(events);
+  if (status != TS_ERR_OKAY) {
     Cli_Error(ERR_ALARM_LIST);
-    INKListDestroy(events);
+    TSListDestroy(events);
     return CLI_ERROR;
   }
 
-  count = INKListLen(events);
+  count = TSListLen(events);
   if (number > count) {
     // number is too high
     Cli_Error(ERR_ALARM_RESOLVE_NUMBER, number);
-    INKListDestroy(events);
+    TSListDestroy(events);
     return CLI_ERROR;
   }
 
   for (i = 0; i < number; i++) {
-    name = (char *) INKListDequeue(events);
+    name = (char *) TSListDequeue(events);
   }
 
   // try to resolve the alarm
-  INKListDestroy(events);
+  TSListDestroy(events);
   return (ConfigAlarmResolveName(name));
 }
 
@@ -5052,36 +5052,36 @@ ConfigAlarmResolveNumber(int number)
 int
 ConfigAlarmResolveAll()
 {
-  INKList events;
-  INKError status;
+  TSList events;
+  TSError status;
   int count, i;
   char *name;
 
-  events = INKListCreate();
-  status = INKActiveEventGetMlt(events);
-  if (status != INK_ERR_OKAY) {
+  events = TSListCreate();
+  status = TSActiveEventGetMlt(events);
+  if (status != TS_ERR_OKAY) {
     Cli_Error(ERR_ALARM_LIST);
-    INKListDestroy(events);
+    TSListDestroy(events);
     return CLI_ERROR;
   }
 
-  count = INKListLen(events);
+  count = TSListLen(events);
   if (count == 0) {
     // no alarms to resolve
     Cli_Printf("No Alarms to resolve\n");
-    INKListDestroy(events);
+    TSListDestroy(events);
     return CLI_ERROR;
   }
 
   for (i = 0; i < count; i++) {
-    name = (char *) INKListDequeue(events);
-    status = INKEventResolve(name);
-    if (status != INK_ERR_OKAY) {
+    name = (char *) TSListDequeue(events);
+    status = TSEventResolve(name);
+    if (status != TS_ERR_OKAY) {
       Cli_Error(ERR_ALARM_RESOLVE, name);
     }
   }
 
-  INKListDestroy(events);
+  TSListDestroy(events);
   return CLI_OK;
 }
 

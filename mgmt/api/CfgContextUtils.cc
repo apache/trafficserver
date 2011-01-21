@@ -31,20 +31,20 @@
 /* ---------------------------------------------------------------------------
  * string_to_ip_addr_ele
  * ---------------------------------------------------------------------------
- * Converts ip address string format to an INKIpAddrEle.
+ * Converts ip address string format to an TSIpAddrEle.
  * Determines if single/range, cidr/not-cidr based on format of string.
  *
  * if SINGLE =  ip_a/cidr_a
  * if RANGE =   ip_a/cidr_a-ip_b/cidr_b (possible to have spaces next to dash)
  * Returns NULL if invalid ele (eg. if ip's are invalid)
  */
-INKIpAddrEle *
+TSIpAddrEle *
 string_to_ip_addr_ele(const char *str)
 {
   Tokenizer range_tokens(RANGE_DELIMITER_STR);
   Tokenizer cidr_tokens(CIDR_DELIMITER_STR);
   Tokenizer cidr_tokens2(CIDR_DELIMITER_STR);
-  INKIpAddrEle *ele;
+  TSIpAddrEle *ele;
   const char *const_ip_a, *const_ip_b;
   char *ip_a = NULL, *ip_b = NULL;
   int numTokens = 0;
@@ -54,7 +54,7 @@ string_to_ip_addr_ele(const char *str)
   if (!str)
     return NULL;
 
-  ele = INKIpAddrEleCreate();
+  ele = TSIpAddrEleCreate();
   if (!ele)
     return NULL;
 
@@ -65,7 +65,7 @@ string_to_ip_addr_ele(const char *str)
   range_tokens.Initialize(buf, COPY_TOKS);
   numTokens = range_tokens.getNumber();
   if (numTokens == 1) {         // SINGLE TYPE
-    ele->type = INK_IP_SINGLE;
+    ele->type = TS_IP_SINGLE;
     // determine if cidr type
     cidr_tokens.Initialize(buf, COPY_TOKS);
     numTokens = cidr_tokens.getNumber();
@@ -80,7 +80,7 @@ string_to_ip_addr_ele(const char *str)
     if (!ele->ip_a)             // ERROR: Invalid ip
       goto Lerror;
   } else {                      // RANGE TYPE
-    ele->type = INK_IP_RANGE;
+    ele->type = TS_IP_RANGE;
     const_ip_a = range_tokens[0];
     const_ip_b = range_tokens[1];
     ip_a = xstrdup(const_ip_a);
@@ -116,7 +116,7 @@ Lerror:
     xfree(ip_a);
   if (ip_b)
     xfree(ip_b);
-  INKIpAddrEleDestroy(ele);
+  TSIpAddrEleDestroy(ele);
   return NULL;
 
 }
@@ -125,7 +125,7 @@ Lerror:
 /* ----------------------------------------------------------------------------
  * ip_addr_ele_to_string
  * ---------------------------------------------------------------------------
- * Converts an  INKIpAddrEle to following string format:
+ * Converts an  TSIpAddrEle to following string format:
  * Output:
  * if SINGLE =             ip_a/cidr_a
  * if RANGE =              ip_a/cidr_a-ip_b/cidr_b
@@ -133,7 +133,7 @@ Lerror:
  * Returns NULL if invalid ele (needs to check that the ip's are valid too)
  */
 char *
-ip_addr_ele_to_string(INKIpAddrEle * ele)
+ip_addr_ele_to_string(TSIpAddrEle * ele)
 {
   char buf[MAX_BUF_SIZE];
   char *str, *ip_a_str = NULL, *ip_b_str = NULL;
@@ -144,14 +144,14 @@ ip_addr_ele_to_string(INKIpAddrEle * ele)
 
   memset(buf, 0, MAX_BUF_SIZE);
 
-  if (ele->ip_a == INK_INVALID_IP_ADDR)
+  if (ele->ip_a == TS_INVALID_IP_ADDR)
     goto Lerror;                // invalid ip_addr
 
-  if (ele->type == INK_IP_SINGLE) {     // SINGLE TYPE
+  if (ele->type == TS_IP_SINGLE) {     // SINGLE TYPE
     ip_a_str = ip_addr_to_string(ele->ip_a);
     if (!ip_a_str)              // ERROR: invalid IP address
       goto Lerror;
-    if (ele->cidr_a != INK_INVALID_IP_CIDR) {   // a cidr type
+    if (ele->cidr_a != TS_INVALID_IP_CIDR) {   // a cidr type
       snprintf(buf, sizeof(buf), "%s%c%d", ip_a_str, CIDR_DELIMITER, ele->cidr_a);
     } else {                    // not cidr type
       snprintf(buf, sizeof(buf), "%s", ip_a_str);
@@ -161,14 +161,14 @@ ip_addr_ele_to_string(INKIpAddrEle * ele)
     str = xstrdup(buf);
 
     return str;
-  } else if (ele->type == INK_IP_RANGE) {       // RANGE TYPE
+  } else if (ele->type == TS_IP_RANGE) {       // RANGE TYPE
     ip_a_str = ip_addr_to_string(ele->ip_a);
     ip_b_str = ip_addr_to_string(ele->ip_b);
 
     if (!ip_a_str || !ip_b_str)
       goto Lerror;
 
-    if (ele->cidr_a != INK_INVALID_IP_CIDR && ele->cidr_b != INK_INVALID_IP_CIDR) {
+    if (ele->cidr_a != TS_INVALID_IP_CIDR && ele->cidr_b != TS_INVALID_IP_CIDR) {
       // a cidr type
       snprintf(buf, sizeof(buf), "%s%c%d%c%s%c%d",
                ip_a_str, CIDR_DELIMITER, ele->cidr_a, RANGE_DELIMITER, ip_b_str, CIDR_DELIMITER, ele->cidr_b);
@@ -194,15 +194,15 @@ Lerror:
 /* ----------------------------------------------------------------------------
  * ip_addr_to_string
  * ---------------------------------------------------------------------------
- * Converts an  INKIpAddr (char*) to dotted decimal string notation. Allocates
- * memory for the new INKIpAddr.
- * Returns NULL if invalid INKIpAddr
+ * Converts an  TSIpAddr (char*) to dotted decimal string notation. Allocates
+ * memory for the new TSIpAddr.
+ * Returns NULL if invalid TSIpAddr
  */
 char *
-ip_addr_to_string(INKIpAddr ip)
+ip_addr_to_string(TSIpAddr ip)
 {
-  //ink_assert(ip != INK_INVALID_IP_ADDR);
-  if (ip == INK_INVALID_IP_ADDR) {
+  //ink_assert(ip != TS_INVALID_IP_ADDR);
+  if (ip == TS_INVALID_IP_ADDR) {
     return NULL;
   }
   if (!ccu_checkIpAddr(ip)) {
@@ -215,33 +215,33 @@ ip_addr_to_string(INKIpAddr ip)
  * string_to_ip_addr
  * ---------------------------------------------------------------------------
  * Converts an ip address in dotted-decimal string format into a string;
- * allocates memory for string. If IP is invalid, then returns INK_INVALID_IP_ADDR.
+ * allocates memory for string. If IP is invalid, then returns TS_INVALID_IP_ADDR.
  */
-INKIpAddr
+TSIpAddr
 string_to_ip_addr(const char *str)
 {
   //ink_assert(str);
   if (!ccu_checkIpAddr(str))
-    return INK_INVALID_IP_ADDR;
+    return TS_INVALID_IP_ADDR;
 
   char *copy;
   copy = xstrdup(str);
-  return (INKIpAddr) copy;
+  return (TSIpAddr) copy;
 }
 
 /* ---------------------------------------------------------------
  * ip_addr_list_to_string
  * ---------------------------------------------------------------
- * converts INKIpAddrList <==> ip_addr1<delim>ip_addr2<delim>ip_addr3, ...
- * Returns INKIpAddrList with original elements.
- * If encounters invalid INKIpAddrEle, returns NULL.
+ * converts TSIpAddrList <==> ip_addr1<delim>ip_addr2<delim>ip_addr3, ...
+ * Returns TSIpAddrList with original elements.
+ * If encounters invalid TSIpAddrEle, returns NULL.
  */
 char *
 ip_addr_list_to_string(IpAddrList * list, const char *delimiter)
 {
   char buf[MAX_BUF_SIZE];
   int buf_pos = 0;
-  INKIpAddrEle *ip_ele;
+  TSIpAddrEle *ip_ele;
   char *ip_str, *new_str;
   int num, i;
 
@@ -252,7 +252,7 @@ ip_addr_list_to_string(IpAddrList * list, const char *delimiter)
   num = queue_len((LLQ *) list);
 
   for (i = 0; i < num; i++) {
-    ip_ele = (INKIpAddrEle *) dequeue((LLQ *) list);    //read next ip
+    ip_ele = (TSIpAddrEle *) dequeue((LLQ *) list);    //read next ip
     ip_str = ip_addr_ele_to_string(ip_ele);
 
     if (!ip_str) {
@@ -277,34 +277,34 @@ ip_addr_list_to_string(IpAddrList * list, const char *delimiter)
 /* ---------------------------------------------------------------
  * string_to_ip_addr_list
  * ---------------------------------------------------------------
- * Converts ip_addr1<delim>ip_addr2<delim>ip_addr3, ...==> INKIpAddrList
+ * Converts ip_addr1<delim>ip_addr2<delim>ip_addr3, ...==> TSIpAddrList
  * Does checking to make sure that each ip_addr is valid; if encounter
- * an invalid ip addr, then returns INK_INVALID_LIST
+ * an invalid ip addr, then returns TS_INVALID_LIST
  */
-INKIpAddrList
+TSIpAddrList
 string_to_ip_addr_list(const char *str_list, const char *delimiter)
 {
   Tokenizer tokens(delimiter);
   int numToks, i;
-  INKIpAddrList ip_list;
-  INKIpAddrEle *ip_ele;
+  TSIpAddrList ip_list;
+  TSIpAddrEle *ip_ele;
 
   //ink_assert(str_list && delimiter);
   if (!str_list || !delimiter)
-    return INK_INVALID_LIST;
+    return TS_INVALID_LIST;
 
   tokens.Initialize(str_list);
   numToks = tokens.getNumber();
 
-  ip_list = INKIpAddrListCreate();
+  ip_list = TSIpAddrListCreate();
 
   for (i = 0; i < numToks; i++) {
     ip_ele = string_to_ip_addr_ele(tokens[i]);
     if (ip_ele) {
-      INKIpAddrListEnqueue(ip_list, ip_ele);
+      TSIpAddrListEnqueue(ip_list, ip_ele);
     } else {                    // Error: invalid IP
-      INKIpAddrListDestroy(ip_list);
-      return INK_INVALID_LIST;
+      TSIpAddrListDestroy(ip_list);
+      return TS_INVALID_LIST;
     }
   }
   return ip_list;
@@ -314,7 +314,7 @@ string_to_ip_addr_list(const char *str_list, const char *delimiter)
  * port_list_to_string (REPLACE BY sprintf_ports)
  * ---------------------------------------------------------------
  * Purpose: prints a list of ports in a PortList into string delimited format
- * Input:  ports - the queue of INKPortEle *'s.
+ * Input:  ports - the queue of TSPortEle *'s.
  * Output: port_0<delim>port_1<delim>...<delim>port_n
  *         (each port can refer to a port range, eg 80-90)
  *         Return NULL if encounter invalid port or empty port list
@@ -325,7 +325,7 @@ port_list_to_string(PortList * ports, const char *delimiter)
   int num_ports;
   size_t pos = 0;
   int i, psize;
-  INKPortEle *port_ele;
+  TSPortEle *port_ele;
   char buf[MAX_BUF_SIZE];
   char *str;
 
@@ -339,16 +339,16 @@ port_list_to_string(PortList * ports, const char *delimiter)
   }
   // now list all the ports, including ranges
   for (i = 0; i < num_ports; i++) {
-    port_ele = (INKPortEle *) dequeue((LLQ *) ports);
+    port_ele = (TSPortEle *) dequeue((LLQ *) ports);
     if (!ccu_checkPortEle(port_ele)) {
-      enqueue((LLQ *) ports, port_ele); // return INKPortEle to list
+      enqueue((LLQ *) ports, port_ele); // return TSPortEle to list
       goto Lerror;
     }
 
     if (pos < sizeof(buf) && (psize = snprintf(buf + pos, sizeof(buf) - pos, "%d", port_ele->port_a)) > 0) {
       pos += psize;
     }
-    if (port_ele->port_b != INK_INVALID_PORT) { //. is this a range
+    if (port_ele->port_b != TS_INVALID_PORT) { //. is this a range
       // add in range delimiter & end of range
       if (pos < sizeof(buf) &&
           (psize = snprintf(buf + pos, sizeof(buf) - pos, "%c%d", RANGE_DELIMITER, port_ele->port_b)) > 0)
@@ -360,7 +360,7 @@ port_list_to_string(PortList * ports, const char *delimiter)
         pos += psize;
     }
 
-    enqueue((LLQ *) ports, port_ele);   // return INKPortEle to list
+    enqueue((LLQ *) ports, port_ele);   // return TSPortEle to list
   }
 
   str = xstrdup(buf);
@@ -373,35 +373,35 @@ Lerror:
 /* ---------------------------------------------------------------
  * string_to_port_list
  * ---------------------------------------------------------------
- * Converts port1<delim>port2<delim>port3, ...==> INKPortList
+ * Converts port1<delim>port2<delim>port3, ...==> TSPortList
  * Does checking to make sure that each ip_addr is valid; if encounter
- * an invalid ip addr, then returns INKT_INVALID_LIST
+ * an invalid ip addr, then returns TST_INVALID_LIST
  */
-INKPortList
+TSPortList
 string_to_port_list(const char *str_list, const char *delimiter)
 {
   Tokenizer tokens(delimiter);
   int numToks, i;
-  INKPortList port_list;
-  INKPortEle *port_ele;
+  TSPortList port_list;
+  TSPortEle *port_ele;
 
   //ink_assert(str_list && delimiter);
   if (!str_list || !delimiter)
-    return INK_INVALID_LIST;
+    return TS_INVALID_LIST;
 
   tokens.Initialize(str_list);
 
   numToks = tokens.getNumber();
 
-  port_list = INKPortListCreate();
+  port_list = TSPortListCreate();
 
   for (i = 0; i < numToks; i++) {
     port_ele = string_to_port_ele(tokens[i]);
     if (port_ele) {
-      INKPortListEnqueue(port_list, port_ele);
+      TSPortListEnqueue(port_list, port_ele);
     } else {                    // error - invalid port ele
-      INKPortListDestroy(port_list);
-      return INK_INVALID_LIST;
+      TSPortListDestroy(port_list);
+      return TS_INVALID_LIST;
     }
   }
 
@@ -415,7 +415,7 @@ string_to_port_list(const char *str_list, const char *delimiter)
  * Returns NULL if invalid PortEle
  */
 char *
-port_ele_to_string(INKPortEle * ele)
+port_ele_to_string(TSPortEle * ele)
 {
   char buf[MAX_BUF_SIZE];
   char *str;
@@ -426,7 +426,7 @@ port_ele_to_string(INKPortEle * ele)
 
   memset(buf, 0, MAX_BUF_SIZE);
 
-  if (ele->port_b == INK_INVALID_PORT) {        // Not a range
+  if (ele->port_b == TS_INVALID_PORT) {        // Not a range
     snprintf(buf, sizeof(buf), "%d", ele->port_a);
   } else {
     snprintf(buf, sizeof(buf), "%d%c%d", ele->port_a, RANGE_DELIMITER, ele->port_b);
@@ -442,11 +442,11 @@ port_ele_to_string(INKPortEle * ele)
  * Converts a string formatted port_ele into actual port_ele. Returns NULL if
  * invalid port(s). It is okay to have a single port specified.
  */
-INKPortEle *
+TSPortEle *
 string_to_port_ele(const char *str)
 {
   Tokenizer tokens(RANGE_DELIMITER_STR);
-  INKPortEle *ele;
+  TSPortEle *ele;
   char copy[MAX_BUF_SIZE];
 
   //ink_assert(str);
@@ -456,7 +456,7 @@ string_to_port_ele(const char *str)
   memset(copy, 0, MAX_BUF_SIZE);
   snprintf(copy, sizeof(copy), "%s", str);
 
-  ele = INKPortEleCreate();
+  ele = TSPortEleCreate();
   if (tokens.Initialize(copy, COPY_TOKS) > 2)
     goto Lerror;
   if (tokens.getNumber() == 1) {        // Not a Range of ports
@@ -477,7 +477,7 @@ string_to_port_ele(const char *str)
   return ele;
 
 Lerror:
-  INKPortEleDestroy(ele);
+  TSPortEleDestroy(ele);
   return NULL;
 }
 
@@ -489,15 +489,15 @@ Lerror:
  * eg. str1<delim>str2<delim>str3...
  */
 char *
-string_list_to_string(INKStringList str_list, const char *delimiter)
+string_list_to_string(TSStringList str_list, const char *delimiter)
 {
   char buf[MAX_BUF_SIZE];
   size_t buf_pos = 0;
   int i, numElems, psize;
   char *str_ele, *list_str;
 
-  //ink_assert(str_list != INK_INVALID_LIST && delimiter);
-  if (str_list == INK_INVALID_LIST || !delimiter)
+  //ink_assert(str_list != TS_INVALID_LIST && delimiter);
+  if (str_list == TS_INVALID_LIST || !delimiter)
     return NULL;
 
   memset(buf, 0, MAX_BUF_SIZE);
@@ -524,11 +524,11 @@ string_list_to_string(INKStringList str_list, const char *delimiter)
 /* ---------------------------------------------------------------
  * string_to_string_list
  * ---------------------------------------------------------------
- * Converts port1<delim>port2<delim>port3, ...==> INKStringList
+ * Converts port1<delim>port2<delim>port3, ...==> TSStringList
  * Does checking to make sure that each ip_addr is valid; if encounter
  * an invalid ip addr, then returns INVALID_HANDLE
  */
-INKStringList
+TSStringList
 string_to_string_list(const char *str, const char *delimiter)
 {
   Tokenizer tokens(delimiter);
@@ -536,11 +536,11 @@ string_to_string_list(const char *str, const char *delimiter)
 
   //ink_assert(str && delimiter);
   if (!str || !delimiter)
-    return INK_INVALID_LIST;
+    return TS_INVALID_LIST;
 
-  INKStringList str_list = INKStringListCreate();
+  TSStringList str_list = TSStringListCreate();
   for (int i = 0; i < tokens.getNumber(); i++) {
-    INKStringListEnqueue(str_list, xstrdup(tokens[i]));
+    TSStringListEnqueue(str_list, xstrdup(tokens[i]));
   }
 
   return str_list;
@@ -549,21 +549,21 @@ string_to_string_list(const char *str, const char *delimiter)
 /*----------------------------------------------------------------------------
  * int_list_to_string
  *----------------------------------------------------------------------------
- * INKList(of char*'s only)==> elem1<delimiter>elem2<delimiter>elem3<delimiter>
+ * TSList(of char*'s only)==> elem1<delimiter>elem2<delimiter>elem3<delimiter>
  * Note: the string always ends with the delimiter
  * The list and its elements are not changed in any way.
  * Returns NULL if error.
  */
 char *
-int_list_to_string(INKIntList list, const char *delimiter)
+int_list_to_string(TSIntList list, const char *delimiter)
 {
   char buf[MAX_BUF_SIZE];
   size_t buf_pos = 0;
   int numElems, i, psize;
   int *elem;
 
-  //ink_assert(list != INK_INVALID_LIST && delimiter);
-  if (list == INK_INVALID_LIST || !delimiter)
+  //ink_assert(list != TS_INVALID_LIST && delimiter);
+  if (list == TS_INVALID_LIST || !delimiter)
     return NULL;
 
 
@@ -588,26 +588,26 @@ int_list_to_string(INKIntList list, const char *delimiter)
 /* ---------------------------------------------------------------
  * string_to_int_list
  * ---------------------------------------------------------------
- * converts domain1<delim>domain2<delim>domain3, ... ==> INKList
+ * converts domain1<delim>domain2<delim>domain3, ... ==> TSList
  * Does checking to make sure that each integer is valid; if encounter
- * an invalid int, then returns INK_INVALID_LIST
+ * an invalid int, then returns TS_INVALID_LIST
  */
-INKIntList
+TSIntList
 string_to_int_list(const char *str_list, const char *delimiter)
 {
   Tokenizer tokens(delimiter);
   int numToks, i;
-  INKList list;
+  TSList list;
   int *ele;
 
   //ink_assert (str_list  && delimiter);
   if (!str_list || !delimiter)
-    return INK_INVALID_LIST;
+    return TS_INVALID_LIST;
 
   tokens.Initialize(str_list);
 
   numToks = tokens.getNumber();
-  list = INKIntListCreate();
+  list = TSIntListCreate();
 
   for (i = 0; i < numToks; i++) {
     if (!isNumber(tokens[i]))
@@ -615,49 +615,49 @@ string_to_int_list(const char *str_list, const char *delimiter)
     ele = (int *) xmalloc(sizeof(int));
     if (ele) {
       *ele = ink_atoi(tokens[i]);       // What about we can't convert? ERROR?
-      INKIntListEnqueue(list, ele);
+      TSIntListEnqueue(list, ele);
     }
   }
 
   return list;
 
 Lerror:
-  INKIntListDestroy(list);
-  return INK_INVALID_LIST;
+  TSIntListDestroy(list);
+  return TS_INVALID_LIST;
 }
 
 
 /* ---------------------------------------------------------------
  * string_to_domain_list
  * ---------------------------------------------------------------
- * Converts domain1<delim>domain2<delim>domain3, ... ==> INKDomainList
- * Returns INK_INVALID_LIST if encounter an invalid Domain.
+ * Converts domain1<delim>domain2<delim>domain3, ... ==> TSDomainList
+ * Returns TS_INVALID_LIST if encounter an invalid Domain.
  */
-INKDomainList
+TSDomainList
 string_to_domain_list(const char *str_list, const char *delimiter)
 {
   Tokenizer tokens(delimiter);
   int numToks, i;
-  INKDomainList list;
-  INKDomain *ele;
+  TSDomainList list;
+  TSDomain *ele;
 
   //ink_assert(str_list && delimiter);
   if (!str_list || !delimiter)
-    return INK_INVALID_LIST;
+    return TS_INVALID_LIST;
 
   tokens.Initialize(str_list);
 
   numToks = tokens.getNumber();
 
-  list = INKDomainListCreate();
+  list = TSDomainListCreate();
 
   for (i = 0; i < numToks; i++) {
     ele = string_to_domain(tokens[i]);
     if (ele) {
-      INKDomainListEnqueue(list, ele);
+      TSDomainListEnqueue(list, ele);
     } else {                    // Error: invalid domain
-      INKDomainListDestroy(list);
-      return INK_INVALID_LIST;
+      TSDomainListDestroy(list);
+      return TS_INVALID_LIST;
     }
   }
 
@@ -668,22 +668,22 @@ string_to_domain_list(const char *str_list, const char *delimiter)
 /*----------------------------------------------------------------------------
  * domain_list_to_string
  *----------------------------------------------------------------------------
- * INKList(of char*'s only)==> elem1<delimiter>elem2<delimiter>elem3<delimiter>
+ * TSList(of char*'s only)==> elem1<delimiter>elem2<delimiter>elem3<delimiter>
  * Note: the string always ends with the delimiter
  * The list and its elements are not changed in any way.
- * Returns NULL if encounter an invalid INKDomain.
+ * Returns NULL if encounter an invalid TSDomain.
  */
 char *
-domain_list_to_string(INKDomainList list, const char *delimiter)
+domain_list_to_string(TSDomainList list, const char *delimiter)
 {
   char buf[MAX_BUF_SIZE];
   size_t buf_pos = 0;
   int numElems, i, psize;
   char *list_str, *dom_str;
-  INKDomain *domain;
+  TSDomain *domain;
 
-  //ink_assert(list != INK_INVALID_LIST && delimiter);
-  if (list == INK_INVALID_LIST || !delimiter)
+  //ink_assert(list != TS_INVALID_LIST && delimiter);
+  if (list == TS_INVALID_LIST || !delimiter)
     return NULL;
 
   numElems = queue_len((LLQ *) list);
@@ -691,7 +691,7 @@ domain_list_to_string(INKDomainList list, const char *delimiter)
   memset(buf, 0, MAX_BUF_SIZE);
 
   for (i = 0; i < numElems; i++) {
-    domain = (INKDomain *) dequeue((LLQ *) list);
+    domain = (TSDomain *) dequeue((LLQ *) list);
 
     dom_str = domain_to_string(domain);
     if (!dom_str) {
@@ -717,11 +717,11 @@ domain_list_to_string(INKDomainList list, const char *delimiter)
 /*----------------------------------------------------------------------------
  * domain_to_string
  *----------------------------------------------------------------------------
- * Converts an INKDomain into string format, eg. www.host.com:8080
- * Return NULL if invalid INKDomain (eg. missing domain value).
+ * Converts an TSDomain into string format, eg. www.host.com:8080
+ * Return NULL if invalid TSDomain (eg. missing domain value).
  */
 char *
-domain_to_string(INKDomain * domain)
+domain_to_string(TSDomain * domain)
 {
   char buf[MAX_BUF_SIZE];
   char *dom_str;
@@ -731,12 +731,12 @@ domain_to_string(INKDomain * domain)
     return NULL;
 
   if (domain->domain_val) {
-    if (domain->port != INK_INVALID_PORT)       // host:port
+    if (domain->port != TS_INVALID_PORT)       // host:port
       snprintf(buf, sizeof(buf), "%s:%d", domain->domain_val, domain->port);
     else                        // host
       snprintf(buf, sizeof(buf), "%s", domain->domain_val);
   } else {
-    return NULL;                // invalid INKDomain
+    return NULL;                // invalid TSDomain
   }
 
   dom_str = xstrdup(buf);
@@ -747,15 +747,15 @@ domain_to_string(INKDomain * domain)
 /*----------------------------------------------------------------------------
  * string_to_domain
  *----------------------------------------------------------------------------
- * Converts string format, eg. www.host.com:8080, into INKDomain.
+ * Converts string format, eg. www.host.com:8080, into TSDomain.
  * The string can consist of just the host (which can be a name or an IP)
  * or of the host and port.
- * Return NULL if invalid INKDomain (eg. missing domain value).
+ * Return NULL if invalid TSDomain (eg. missing domain value).
  */
-INKDomain *
+TSDomain *
 string_to_domain(const char *str)
 {
-  INKDomain *dom;
+  TSDomain *dom;
   char *token, *remain, *token_pos;
   char buf[MAX_BUF_SIZE];
 
@@ -763,7 +763,7 @@ string_to_domain(const char *str)
   if (!str)
     return NULL;
 
-  dom = INKDomainCreate();
+  dom = TSDomainCreate();
 
   // get hostname
   ink_strncpy(buf, str, sizeof(buf));
@@ -781,27 +781,27 @@ string_to_domain(const char *str)
       goto Lerror;
     dom->port = ink_atoi(remain);
   } else {
-    dom->port = INK_INVALID_PORT;
+    dom->port = TS_INVALID_PORT;
   }
 
   return dom;
 
 Lerror:
-  INKDomainDestroy(dom);
+  TSDomainDestroy(dom);
   return NULL;
 }
 
 /* ---------------------------------------------------------------
  * pdest_sspec_to_string
  * ---------------------------------------------------------------
- * Converts the INKPrimeDest, primary dest, secondary spec struct
+ * Converts the TSPrimeDest, primary dest, secondary spec struct
  * into string format: <pdT>:pdst_val:sspec1:sspec2:...:
  * <pdT> - dest_domain, dest_host, dest_ip, url_regex
  * even if sspec is missing the delimter is included; so if no
  * sspecs, then : ::: ::: will appear
  */
 char *
-pdest_sspec_to_string(INKPrimeDestT pd, char *pd_val, INKSspec * sspec)
+pdest_sspec_to_string(TSPrimeDestT pd, char *pd_val, TSSspec * sspec)
 {
   char buf[MAX_BUF_SIZE];
   size_t buf_pos = 0;
@@ -809,8 +809,8 @@ pdest_sspec_to_string(INKPrimeDestT pd, char *pd_val, INKSspec * sspec)
   char hour_a[3], hour_b[3], min_a[3], min_b[3];
   char *src_ip, *str;
 
-  //ink_assert(pd != INK_PD_UNDEFINED && pd_val && sspec);
-  if (pd == INK_PD_UNDEFINED || !pd_val || !sspec)
+  //ink_assert(pd != TS_PD_UNDEFINED && pd_val && sspec);
+  if (pd == TS_PD_UNDEFINED || !pd_val || !sspec)
     return NULL;
 
   memset(buf, 0, MAX_BUF_SIZE);
@@ -818,22 +818,22 @@ pdest_sspec_to_string(INKPrimeDestT pd, char *pd_val, INKSspec * sspec)
   do {
     // push in primary destination
     switch (pd) {
-    case INK_PD_DOMAIN:
+    case TS_PD_DOMAIN:
       psize = snprintf(buf, sizeof(buf), "dest_domain=%s ", pd_val);
       break;
-    case INK_PD_HOST:
+    case TS_PD_HOST:
       psize = snprintf(buf, sizeof(buf), "dest_host=%s ", pd_val);
       break;
-    case INK_PD_IP:
+    case TS_PD_IP:
       psize = snprintf(buf, sizeof(buf), "dest_ip=%s ", pd_val);
       break;
-    case INK_PD_URL_REGEX:
+    case TS_PD_URL_REGEX:
       psize = snprintf(buf, sizeof(buf), "url_regex=%s ", pd_val);
       break;
     default:
       psize = 0;
       // Handled here:
-      // INK_PD_UNDEFINED
+      // TS_PD_UNDEFINED
       break;
     }
     if (psize > 0)
@@ -889,7 +889,7 @@ pdest_sspec_to_string(INKPrimeDestT pd, char *pd_val, INKSspec * sspec)
           buf_pos += psize;
       }
       // src_ip
-      if (sspec->src_ip != INK_INVALID_IP_ADDR) {
+      if (sspec->src_ip != TS_INVALID_IP_ADDR) {
         src_ip = ip_addr_to_string(sspec->src_ip);
         if (!src_ip) {
           return NULL;
@@ -923,19 +923,19 @@ pdest_sspec_to_string(INKPrimeDestT pd, char *pd_val, INKSspec * sspec)
       // method
       if (buf_pos < sizeof(buf)) {
         switch (sspec->method) {
-        case INK_METHOD_GET:
+        case TS_METHOD_GET:
           psize = snprintf(buf + buf_pos, sizeof(buf) - buf_pos, "method=get ");
           break;
-        case INK_METHOD_POST:
+        case TS_METHOD_POST:
           psize = snprintf(buf + buf_pos, sizeof(buf) - buf_pos, "method=post ");
           break;
-        case INK_METHOD_PUT:
+        case TS_METHOD_PUT:
           psize = snprintf(buf + buf_pos, sizeof(buf) - buf_pos, "method=put ");
           break;
-        case INK_METHOD_TRACE:
+        case TS_METHOD_TRACE:
           psize = snprintf(buf + buf_pos, sizeof(buf) - buf_pos, "method=trace ");
           break;
-        case INK_METHOD_PUSH:
+        case TS_METHOD_PUSH:
           psize = snprintf(buf + buf_pos, sizeof(buf) - buf_pos, "method=PUSH ");
           break;
         default:
@@ -950,19 +950,19 @@ pdest_sspec_to_string(INKPrimeDestT pd, char *pd_val, INKSspec * sspec)
       // scheme
       if (buf_pos < sizeof(buf)) {
         switch (sspec->scheme) {
-        case INK_SCHEME_NONE:
+        case TS_SCHEME_NONE:
           psize = snprintf(buf + buf_pos, sizeof(buf) - buf_pos, "%c", DELIMITER);
           break;
-        case INK_SCHEME_HTTP:
+        case TS_SCHEME_HTTP:
           psize = snprintf(buf + buf_pos, sizeof(buf) - buf_pos, "scheme=http ");
           break;
-        case INK_SCHEME_HTTPS:
+        case TS_SCHEME_HTTPS:
           psize = snprintf(buf + buf_pos, sizeof(buf) - buf_pos, "scheme=https ");
           break;
-        case INK_SCHEME_RTSP:
+        case TS_SCHEME_RTSP:
           psize = snprintf(buf + buf_pos, sizeof(buf) - buf_pos, "scheme=rtsp ");
           break;
-        case INK_SCHEME_MMS:
+        case TS_SCHEME_MMS:
           psize = snprintf(buf + buf_pos, sizeof(buf) - buf_pos, "scheme=mms ");
           break;
         default:
@@ -983,11 +983,11 @@ pdest_sspec_to_string(INKPrimeDestT pd, char *pd_val, INKSspec * sspec)
 /*----------------------------------------------------------------------------
  * string_to_pdss_format
  *----------------------------------------------------------------------------
- * <pd_type>#<pd_value>#<sspecs> --> INKPdSsFormat
+ * <pd_type>#<pd_value>#<sspecs> --> TSPdSsFormat
  * NOTE that the entire data line, including the action type is being passed in
  */
-INKError
-string_to_pdss_format(const char *str, INKPdSsFormat * pdss)
+TSError
+string_to_pdss_format(const char *str, TSPdSsFormat * pdss)
 {
   Tokenizer tokens(DELIMITER_STR);
   Tokenizer time_tokens(":-");
@@ -995,7 +995,7 @@ string_to_pdss_format(const char *str, INKPdSsFormat * pdss)
 
   //ink_assert(str && pdss);
   if (!str || !pdss)
-    return INK_ERR_PARAMS;
+    return TS_ERR_PARAMS;
 
   memset(copy, 0, MAX_BUF_SIZE);
   snprintf(copy, sizeof(copy), "%s", str);
@@ -1004,13 +1004,13 @@ string_to_pdss_format(const char *str, INKPdSsFormat * pdss)
 
   // pd type
   if (strcmp(tokens[1], "dest_domain") == 0) {
-    pdss->pd_type = INK_PD_DOMAIN;
+    pdss->pd_type = TS_PD_DOMAIN;
   } else if (strcmp(tokens[1], "dest_host") == 0) {
-    pdss->pd_type = INK_PD_HOST;
+    pdss->pd_type = TS_PD_HOST;
   } else if (strcmp(tokens[1], "dest_ip") == 0) {
-    pdss->pd_type = INK_PD_IP;
+    pdss->pd_type = TS_PD_IP;
   } else if (strcmp(tokens[1], "url_regex") == 0) {
-    pdss->pd_type = INK_PD_URL_REGEX;
+    pdss->pd_type = TS_PD_URL_REGEX;
   } else {
     goto Lerror;
   }
@@ -1023,7 +1023,7 @@ string_to_pdss_format(const char *str, INKPdSsFormat * pdss)
   // check secondary specifiers; exists only if not empty string
   // time
   if (strlen(tokens[3]) > 0) {
-    if (string_to_time_struct(tokens[3], &(pdss->sec_spec)) != INK_ERR_OKAY)
+    if (string_to_time_struct(tokens[3], &(pdss->sec_spec)) != TS_ERR_OKAY)
       goto Lerror;
   }
   // src_ip
@@ -1050,20 +1050,20 @@ string_to_pdss_format(const char *str, INKPdSsFormat * pdss)
   if (strlen(tokens[9]) > 0) {
     pdss->sec_spec.scheme = string_to_scheme_type(tokens[9]);
   }
-  return INK_ERR_OKAY;
+  return TS_ERR_OKAY;
 
 Lerror:
-  return INK_ERR_FAIL;
+  return TS_ERR_FAIL;
 }
 
 
 /*----------------------------------------------------------------------------
  * hms_time_to_string
  *----------------------------------------------------------------------------
- * Converts an INKHmsTime structure to string format: eg. 5h15m20s
+ * Converts an TSHmsTime structure to string format: eg. 5h15m20s
  */
 char *
-hms_time_to_string(INKHmsTime time)
+hms_time_to_string(TSHmsTime time)
 {
   char *str;
   char buf[MAX_BUF_SIZE];
@@ -1092,12 +1092,12 @@ hms_time_to_string(INKHmsTime time)
 /*----------------------------------------------------------------------------
  * string_to_hms_time
  *----------------------------------------------------------------------------
- * Convert ?d?h?m?s ==> INKHmsTime
- * Returns INK_ERR_FAIL if invalid hms format, eg. if there are invalid
+ * Convert ?d?h?m?s ==> TSHmsTime
+ * Returns TS_ERR_FAIL if invalid hms format, eg. if there are invalid
  * characters, eg. "10xh", "10h15m30s34", or repeated values, eg. "10h15h"
  */
-INKError
-string_to_hms_time(const char *str, INKHmsTime * time)
+TSError
+string_to_hms_time(const char *str, TSHmsTime * time)
 {
   int i, pos = 0;
   int len;
@@ -1106,7 +1106,7 @@ string_to_hms_time(const char *str, INKHmsTime * time)
 
   //ink_assert(str && time);
   if (!str || !time)
-    return INK_ERR_PARAMS;
+    return TS_ERR_PARAMS;
 
   memset(unit, 0, 10);
   len = strlen(str);
@@ -1151,10 +1151,10 @@ string_to_hms_time(const char *str, INKHmsTime * time)
 
   if (!valid)
     goto Lerror;
-  return INK_ERR_OKAY;
+  return TS_ERR_OKAY;
 
 Lerror:
-  return INK_ERR_FAIL;
+  return TS_ERR_FAIL;
 }
 
 /*----------------------------------------------------------------------------
@@ -1167,15 +1167,15 @@ Lerror:
  *   int hour_b;
  *   int min_b;
  *  } time
- * Returns INK_ERR_FAIL if invalid time string.
+ * Returns TS_ERR_FAIL if invalid time string.
  */
-INKError
-string_to_time_struct(const char *str, INKSspec * sspec)
+TSError
+string_to_time_struct(const char *str, TSSspec * sspec)
 {
   Tokenizer time_tokens(":-");
 
   if (time_tokens.Initialize(str) != 4) {
-    return INK_ERR_FAIL;
+    return TS_ERR_FAIL;
   }
 
   if (strcmp(time_tokens[0], "00") == 0) {
@@ -1211,50 +1211,50 @@ string_to_time_struct(const char *str, INKSspec * sspec)
   if (!ccu_checkTimePeriod(sspec))
     goto Lerror;
 
-  return INK_ERR_OKAY;
+  return TS_ERR_OKAY;
 
 Lerror:
-  return INK_ERR_FAIL;
+  return TS_ERR_FAIL;
 }
 
 
 /*----------------------------------------------------------------------------
  * string_to_header_type
  *----------------------------------------------------------------------------
- * string ==> INKHdrT
+ * string ==> TSHdrT
  */
-INKHdrT
+TSHdrT
 string_to_header_type(const char *str)
 {
   //ink_assert(str);
   if (!str)
-    return INK_HDR_UNDEFINED;
+    return TS_HDR_UNDEFINED;
 
   if (strcmp(str, "date") == 0) {
-    return INK_HDR_DATE;
+    return TS_HDR_DATE;
   } else if (strcmp(str, "host") == 0) {
-    return INK_HDR_HOST;
+    return TS_HDR_HOST;
   } else if (strcmp(str, "cookie") == 0) {
-    return INK_HDR_COOKIE;
+    return TS_HDR_COOKIE;
   } else if (strcmp(str, "client_ip") == 0) {
-    return INK_HDR_CLIENT_IP;
+    return TS_HDR_CLIENT_IP;
   }
 
-  return INK_HDR_UNDEFINED;
+  return TS_HDR_UNDEFINED;
 }
 
 char *
-header_type_to_string(INKHdrT hdr)
+header_type_to_string(TSHdrT hdr)
 {
   // header type
   switch (hdr) {
-  case INK_HDR_DATE:
+  case TS_HDR_DATE:
     return xstrdup("date");
-  case INK_HDR_HOST:
+  case TS_HDR_HOST:
     return xstrdup("host");
-  case INK_HDR_COOKIE:
+  case TS_HDR_COOKIE:
     return xstrdup("cookie");
-  case INK_HDR_CLIENT_IP:
+  case TS_HDR_CLIENT_IP:
     return xstrdup("client_ip");
   default:
     break;
@@ -1266,36 +1266,36 @@ header_type_to_string(INKHdrT hdr)
 /*----------------------------------------------------------------------------
  * string_to_scheme_type
  *----------------------------------------------------------------------------
- * converts scheme string into a INKSchemeT type
+ * converts scheme string into a TSSchemeT type
  */
-INKSchemeT
+TSSchemeT
 string_to_scheme_type(const char *scheme)
 {
   if (strcasecmp(scheme, "http") == 0) {
-    return INK_SCHEME_HTTP;
+    return TS_SCHEME_HTTP;
   } else if (strcasecmp(scheme, "https") == 0) {
-    return INK_SCHEME_HTTPS;
+    return TS_SCHEME_HTTPS;
   } else if (strcasecmp(scheme, "rtsp") == 0) {
-    return INK_SCHEME_RTSP;
+    return TS_SCHEME_RTSP;
   } else if (strcasecmp(scheme, "mms") == 0) {
-    return INK_SCHEME_MMS;
+    return TS_SCHEME_MMS;
   }
 
-  return INK_SCHEME_UNDEFINED;
+  return TS_SCHEME_UNDEFINED;
 }
 
 
 char *
-scheme_type_to_string(INKSchemeT scheme)
+scheme_type_to_string(TSSchemeT scheme)
 {
   switch (scheme) {
-  case INK_SCHEME_HTTP:
+  case TS_SCHEME_HTTP:
     return xstrdup("http");
-  case INK_SCHEME_HTTPS:
+  case TS_SCHEME_HTTPS:
     return xstrdup("https");
-  case INK_SCHEME_RTSP:
+  case TS_SCHEME_RTSP:
     return xstrdup("rtsp");
-  case INK_SCHEME_MMS:
+  case TS_SCHEME_MMS:
     return xstrdup("mms");
   default:
     break;
@@ -1307,39 +1307,39 @@ scheme_type_to_string(INKSchemeT scheme)
 /*----------------------------------------------------------------------------
  * string_to_method_type
  *----------------------------------------------------------------------------
- * converts scheme string into a INKSchemeT type
+ * converts scheme string into a TSSchemeT type
  */
-INKMethodT
+TSMethodT
 string_to_method_type(const char *method)
 {
   if (strcasecmp(method, "get") == 0) {
-    return INK_METHOD_GET;
+    return TS_METHOD_GET;
   } else if (strcasecmp(method, "post") == 0) {
-    return INK_METHOD_POST;
+    return TS_METHOD_POST;
   } else if (strcasecmp(method, "put") == 0) {
-    return INK_METHOD_PUT;
+    return TS_METHOD_PUT;
   } else if (strcasecmp(method, "trace") == 0) {
-    return INK_METHOD_TRACE;
+    return TS_METHOD_TRACE;
   } else if (strcasecmp(method, "push") == 0) { // could be "push" or "PUSH"
-    return INK_METHOD_PUSH;
+    return TS_METHOD_PUSH;
   }
 
-  return INK_METHOD_UNDEFINED;
+  return TS_METHOD_UNDEFINED;
 }
 
 char *
-method_type_to_string(INKMethodT method)
+method_type_to_string(TSMethodT method)
 {
   switch (method) {
-  case INK_METHOD_GET:
+  case TS_METHOD_GET:
     return xstrdup("get");
-  case INK_METHOD_POST:
+  case TS_METHOD_POST:
     return xstrdup("post");
-  case INK_METHOD_PUT:
+  case TS_METHOD_PUT:
     return xstrdup("put");
-  case INK_METHOD_TRACE:
+  case TS_METHOD_TRACE:
     return xstrdup("trace");
-  case INK_METHOD_PUSH:
+  case TS_METHOD_PUSH:
     return xstrdup("push");
   default:
     break;
@@ -1353,12 +1353,12 @@ method_type_to_string(INKMethodT method)
  *----------------------------------------------------------------------------
  */
 char *
-connect_type_to_string(INKConnectT conn)
+connect_type_to_string(TSConnectT conn)
 {
   switch (conn) {
-  case INK_CON_UDP:
+  case TS_CON_UDP:
     return xstrdup("udp");
-  case INK_CON_TCP:
+  case TS_CON_TCP:
     return xstrdup("tcp");
   default:
     break;
@@ -1366,16 +1366,16 @@ connect_type_to_string(INKConnectT conn)
   return NULL;
 }
 
-INKConnectT
+TSConnectT
 string_to_connect_type(const char *conn)
 {
   if (strcmp(conn, "tcp") == 0) {
-    return INK_CON_TCP;
+    return TS_CON_TCP;
   } else {
-    return INK_CON_UDP;
+    return TS_CON_UDP;
   }
 
-  return INK_CON_UNDEFINED;
+  return TS_CON_UNDEFINED;
 }
 
 /*----------------------------------------------------------------------------
@@ -1383,12 +1383,12 @@ string_to_connect_type(const char *conn)
  *----------------------------------------------------------------------------
  */
 char *
-multicast_type_to_string(INKMcTtlT mc)
+multicast_type_to_string(TSMcTtlT mc)
 {
   switch (mc) {
-  case INK_MC_TTL_SINGLE_SUBNET:
+  case TS_MC_TTL_SINGLE_SUBNET:
     return xstrdup("single_subnet");
-  case INK_MC_TTL_MULT_SUBNET:
+  case TS_MC_TTL_MULT_SUBNET:
     return xstrdup("multiple_subnet");
   default:
     break;
@@ -1400,28 +1400,28 @@ multicast_type_to_string(INKMcTtlT mc)
  * string_to_round_robin_type
  * -------------------------------------------------------------------------
  */
-INKRrT
+TSRrT
 string_to_round_robin_type(const char *rr)
 {
   if (strcmp(rr, "true") == 0)
-    return INK_RR_TRUE;
+    return TS_RR_TRUE;
   else if (strcmp(rr, "false") == 0)
-    return INK_RR_FALSE;
+    return TS_RR_FALSE;
   else if (strcmp(rr, "strict") == 0)
-    return INK_RR_STRICT;
+    return TS_RR_STRICT;
 
-  return INK_RR_UNDEFINED;
+  return TS_RR_UNDEFINED;
 }
 
 char *
-round_robin_type_to_string(INKRrT rr)
+round_robin_type_to_string(TSRrT rr)
 {
   switch (rr) {
-  case INK_RR_TRUE:
+  case TS_RR_TRUE:
     return xstrdup("true");
-  case INK_RR_FALSE:
+  case TS_RR_FALSE:
     return xstrdup("false");
-  case INK_RR_STRICT:
+  case TS_RR_STRICT:
     return xstrdup("strict");
   default:
     break;
@@ -1433,62 +1433,62 @@ round_robin_type_to_string(INKRrT rr)
 /*----------------------------------------------------------------------------
  * filename_to_string
  *----------------------------------------------------------------------------
- * INKFileNameT ==> string
+ * TSFileNameT ==> string
  */
 char *
-filename_to_string(INKFileNameT file)
+filename_to_string(TSFileNameT file)
 {
   switch (file) {
-  case INK_FNAME_ADMIN_ACCESS:
+  case TS_FNAME_ADMIN_ACCESS:
     return xstrdup("admin_access.config");
 
-  case INK_FNAME_CACHE_OBJ:
+  case TS_FNAME_CACHE_OBJ:
     return xstrdup("cache.config");
 
-  case INK_FNAME_CONGESTION:
+  case TS_FNAME_CONGESTION:
     return xstrdup("congestion.config");
 
-  case INK_FNAME_HOSTING:
+  case TS_FNAME_HOSTING:
     return xstrdup("hosting.config");
 
-  case INK_FNAME_ICP_PEER:
+  case TS_FNAME_ICP_PEER:
     return xstrdup("icp.config");
 
-  case INK_FNAME_IP_ALLOW:
+  case TS_FNAME_IP_ALLOW:
     return xstrdup("ip_allow.config");
 
 
-  case INK_FNAME_LOGS_XML:
+  case TS_FNAME_LOGS_XML:
     return xstrdup("logs_xml.config");
 
-  case INK_FNAME_MGMT_ALLOW:
+  case TS_FNAME_MGMT_ALLOW:
     return xstrdup("mgmt_allow.config");
 
-  case INK_FNAME_PARENT_PROXY:
+  case TS_FNAME_PARENT_PROXY:
     return xstrdup("parent.config");
 
-  case INK_FNAME_PARTITION:
+  case TS_FNAME_PARTITION:
     return xstrdup("partition.config");
 
-  case INK_FNAME_PLUGIN:
+  case TS_FNAME_PLUGIN:
     return xstrdup("plugin.config");
 
-  case INK_FNAME_REMAP:
+  case TS_FNAME_REMAP:
     return xstrdup("remap.config");
 
-  case INK_FNAME_SOCKS:
+  case TS_FNAME_SOCKS:
     return xstrdup("socks.config");
 
-  case INK_FNAME_SPLIT_DNS:
+  case TS_FNAME_SPLIT_DNS:
     return xstrdup("splitdns.config");
 
-  case INK_FNAME_STORAGE:
+  case TS_FNAME_STORAGE:
     return xstrdup("storage.config");
 
-  case INK_FNAME_UPDATE_URL:
+  case TS_FNAME_UPDATE_URL:
     return xstrdup("update.config");
 
-  case INK_FNAME_VADDRS:
+  case TS_FNAME_VADDRS:
     return xstrdup("vaddrs.config");
 
 
@@ -1501,49 +1501,49 @@ filename_to_string(INKFileNameT file)
  * string_to_congest_scheme_type
  * -------------------------------------------------------------------------
  */
-INKCongestionSchemeT
+TSCongestionSchemeT
 string_to_congest_scheme_type(const char *scheme)
 {
   if (strcmp(scheme, "per_ip") == 0) {
-    return INK_HTTP_CONGEST_PER_IP;
+    return TS_HTTP_CONGEST_PER_IP;
   } else if (strcmp(scheme, "per_host") == 0) {
-    return INK_HTTP_CONGEST_PER_HOST;
+    return TS_HTTP_CONGEST_PER_HOST;
   }
 
-  return INK_HTTP_CONGEST_UNDEFINED;
+  return TS_HTTP_CONGEST_UNDEFINED;
 }
 
 /* -------------------------------------------------------------------------
  * string_to_admin_acc_type
  * -------------------------------------------------------------------------
  */
-INKAccessT
+TSAccessT
 string_to_admin_acc_type(const char *access)
 {
   if (strcmp(access, "none") == 0) {
-    return INK_ACCESS_NONE;
+    return TS_ACCESS_NONE;
   } else if (strcmp(access, "monitor_only") == 0) {
-    return INK_ACCESS_MONITOR;
+    return TS_ACCESS_MONITOR;
   } else if (strcmp(access, "monitor_config_view") == 0) {
-    return INK_ACCESS_MONITOR_VIEW;
+    return TS_ACCESS_MONITOR_VIEW;
   } else if (strcmp(access, "monitor_config_change") == 0) {
-    return INK_ACCESS_MONITOR_CHANGE;
+    return TS_ACCESS_MONITOR_CHANGE;
   }
 
-  return INK_ACCESS_UNDEFINED;
+  return TS_ACCESS_UNDEFINED;
 }
 
 char *
-admin_acc_type_to_string(INKAccessT access)
+admin_acc_type_to_string(TSAccessT access)
 {
   switch (access) {
-  case INK_ACCESS_NONE:
+  case TS_ACCESS_NONE:
     return xstrdup("none");
-  case INK_ACCESS_MONITOR:
+  case TS_ACCESS_MONITOR:
     return xstrdup("monitor_only");
-  case INK_ACCESS_MONITOR_VIEW:
+  case TS_ACCESS_MONITOR_VIEW:
     return xstrdup("monitor_config_view");
-  case INK_ACCESS_MONITOR_CHANGE:
+  case TS_ACCESS_MONITOR_CHANGE:
     return xstrdup("monitor_config_change");
   default:
     break;
@@ -1569,7 +1569,7 @@ admin_acc_type_to_string(INKAccessT access)
  * Returns NULL, if the first token IS NOT a  Primary Dest Specifier
  */
 Token *
-tokens_to_pdss_format(TokenList * tokens, Token * first_tok, INKPdSsFormat * pdss)
+tokens_to_pdss_format(TokenList * tokens, Token * first_tok, TSPdSsFormat * pdss)
 {
   Token *tok, *last_tok;
   int i = 0;
@@ -1583,13 +1583,13 @@ tokens_to_pdss_format(TokenList * tokens, Token * first_tok, INKPdSsFormat * pds
 
   // first token must be primary destination specifier
   if (strcmp(first_tok->name, "dest_domain") == 0) {
-    pdss->pd_type = INK_PD_DOMAIN;
+    pdss->pd_type = TS_PD_DOMAIN;
   } else if (strcmp(first_tok->name, "dest_host") == 0) {
-    pdss->pd_type = INK_PD_HOST;
+    pdss->pd_type = TS_PD_HOST;
   } else if (strcmp(first_tok->name, "dest_ip") == 0) {
-    pdss->pd_type = INK_PD_IP;
+    pdss->pd_type = TS_PD_IP;
   } else if (strcmp(first_tok->name, "url_regex") == 0) {
-    pdss->pd_type = INK_PD_URL_REGEX;
+    pdss->pd_type = TS_PD_URL_REGEX;
   } else {
     return NULL;                //INVALID primary destination specifier
   }
@@ -1743,14 +1743,14 @@ ccu_checkIpAddr(const char *addr, const char *min_addr, const char *max_addr)
  * very similar to the ip_addr_ele_to_string function
  */
 bool
-ccu_checkIpAddrEle(INKIpAddrEle * ele)
+ccu_checkIpAddrEle(TSIpAddrEle * ele)
 {
-  if (!ele || ele->ip_a == INK_INVALID_IP_ADDR)
+  if (!ele || ele->ip_a == TS_INVALID_IP_ADDR)
     return false;
 
-  if (ele->type == INK_IP_SINGLE) {     // SINGLE TYPE
+  if (ele->type == TS_IP_SINGLE) {     // SINGLE TYPE
     return (ccu_checkIpAddr(ele->ip_a));
-  } else if (ele->type == INK_IP_RANGE) {       // RANGE TYPE
+  } else if (ele->type == TS_IP_RANGE) {       // RANGE TYPE
     return (ccu_checkIpAddr(ele->ip_a) && ccu_checkIpAddr(ele->ip_b));
   } else {
     return false;
@@ -1766,7 +1766,7 @@ ccu_checkPortNum(int port)
 // port_b can be "unspecified"; however if port_b is specified, it must
 // be greater than port_a
 bool
-ccu_checkPortEle(INKPortEle * ele)
+ccu_checkPortEle(TSPortEle * ele)
 {
   if (!ele)
     return false;
@@ -1786,10 +1786,10 @@ ccu_checkPortEle(INKPortEle * ele)
  * must have a prim dest value spsecified and have valid prim dest type
  */
 bool
-ccu_checkPdSspec(INKPdSsFormat pdss)
+ccu_checkPdSspec(TSPdSsFormat pdss)
 {
-  if (pdss.pd_type != INK_PD_DOMAIN && pdss.pd_type != INK_PD_HOST &&
-      pdss.pd_type != INK_PD_IP && pdss.pd_type != INK_PD_URL_REGEX) {
+  if (pdss.pd_type != TS_PD_DOMAIN && pdss.pd_type != TS_PD_HOST &&
+      pdss.pd_type != TS_PD_IP && pdss.pd_type != TS_PD_URL_REGEX) {
     goto Lerror;
   }
 
@@ -1801,12 +1801,12 @@ ccu_checkPdSspec(INKPdSsFormat pdss)
     goto Lerror;
   }
   // if pdest is IP type, check if valid IP (could be single or range)
-  if (pdss.pd_type == INK_PD_IP) {
-    INKIpAddrEle *ip = string_to_ip_addr_ele(pdss.pd_val);
+  if (pdss.pd_type == TS_PD_IP) {
+    TSIpAddrEle *ip = string_to_ip_addr_ele(pdss.pd_val);
     if (!ip)
       goto Lerror;
     else
-      INKIpAddrEleDestroy(ip);
+      TSIpAddrEleDestroy(ip);
   }
   // if src_ip specified, check if valid IP address
   if (pdss.sec_spec.src_ip) {
@@ -1861,11 +1861,11 @@ ccu_checkUrl(char *url)
  * ccu_checkTimePeriod
  * ---------------------------------------------------------------
  * Checks that the time struct used to specify the time period in the
- * INKSspec has valid time values (eg. 0-23 hr, 0-59 min) and that
+ * TSSspec has valid time values (eg. 0-23 hr, 0-59 min) and that
  * time A <= time B
  */
 bool
-ccu_checkTimePeriod(INKSspec * sspec)
+ccu_checkTimePeriod(TSSspec * sspec)
 {
   // check valid time values
   if (sspec->time.hour_a < 0 || sspec->time.hour_a > 23 ||
@@ -1929,7 +1929,7 @@ chopWhiteSpaces_alloc(char *str)
 CfgEleObj *
 create_ele_obj_from_rule_node(Rule * rule)
 {
-  INKRuleTypeT rule_type;
+  TSRuleTypeT rule_type;
   TokenList *token_list;
   CfgEleObj *ele = NULL;
 
@@ -1951,71 +1951,71 @@ create_ele_obj_from_rule_node(Rule * rule)
   // convert TokenList into an Ele
   // need switch statement to determine which Ele constructor to call
   switch (rule_type) {
-  case INK_ADMIN_ACCESS:       /* admin_access.config */
+  case TS_ADMIN_ACCESS:       /* admin_access.config */
     ele = (CfgEleObj *) new AdminAccessObj(token_list);
     break;
-  case INK_CACHE_NEVER:        /* all cache rules use same constructor */
-  case INK_CACHE_IGNORE_NO_CACHE:
-  case INK_CACHE_IGNORE_CLIENT_NO_CACHE:
-  case INK_CACHE_IGNORE_SERVER_NO_CACHE:
-  case INK_CACHE_PIN_IN_CACHE:
-  case INK_CACHE_TTL_IN_CACHE:
-  case INK_CACHE_REVALIDATE:
-  case INK_CACHE_AUTH_CONTENT:
+  case TS_CACHE_NEVER:        /* all cache rules use same constructor */
+  case TS_CACHE_IGNORE_NO_CACHE:
+  case TS_CACHE_IGNORE_CLIENT_NO_CACHE:
+  case TS_CACHE_IGNORE_SERVER_NO_CACHE:
+  case TS_CACHE_PIN_IN_CACHE:
+  case TS_CACHE_TTL_IN_CACHE:
+  case TS_CACHE_REVALIDATE:
+  case TS_CACHE_AUTH_CONTENT:
     ele = (CfgEleObj *) new CacheObj(token_list);
     break;
-  case INK_CONGESTION:
+  case TS_CONGESTION:
     ele = (CfgEleObj *) new CongestionObj(token_list);
     break;
-  case INK_HOSTING:            /* hosting.config */
+  case TS_HOSTING:            /* hosting.config */
     ele = (CfgEleObj *) new HostingObj(token_list);
     break;
-  case INK_ICP:                /* icp.config */
+  case TS_ICP:                /* icp.config */
     ele = (CfgEleObj *) new IcpObj(token_list);
     break;
-  case INK_IP_ALLOW:           /* ip_allow.config */
+  case TS_IP_ALLOW:           /* ip_allow.config */
     ele = (CfgEleObj *) new IpAllowObj(token_list);
     break;
 
-  case INK_LOG_FILTER:         /* logs_xml.config */
-  case INK_LOG_OBJECT:
-  case INK_LOG_FORMAT:
+  case TS_LOG_FILTER:         /* logs_xml.config */
+  case TS_LOG_OBJECT:
+  case TS_LOG_FORMAT:
     //ele = (CfgEleObj *) new LogFilterObj(token_list);
     break;
-  case INK_MGMT_ALLOW:         /* mgmt_allow.config */
+  case TS_MGMT_ALLOW:         /* mgmt_allow.config */
     ele = (CfgEleObj *) new MgmtAllowObj(token_list);
     break;
-  case INK_PP_PARENT:          /* parent.config */
-  case INK_PP_GO_DIRECT:
+  case TS_PP_PARENT:          /* parent.config */
+  case TS_PP_GO_DIRECT:
     ele = (CfgEleObj *) new ParentProxyObj(token_list);
     break;
-  case INK_PARTITION:          /* partition.config */
+  case TS_PARTITION:          /* partition.config */
     ele = (CfgEleObj *) new PartitionObj(token_list);
     break;
-  case INK_PLUGIN:
+  case TS_PLUGIN:
     ele = (CfgEleObj *) new PluginObj(token_list);
     break;
-  case INK_REMAP_MAP:          /* remap.config */
-  case INK_REMAP_REVERSE_MAP:
-  case INK_REMAP_REDIRECT:
-  case INK_REMAP_REDIRECT_TEMP:
+  case TS_REMAP_MAP:          /* remap.config */
+  case TS_REMAP_REVERSE_MAP:
+  case TS_REMAP_REDIRECT:
+  case TS_REMAP_REDIRECT_TEMP:
     ele = (CfgEleObj *) new RemapObj(token_list);
     break;
-  case INK_SOCKS_BYPASS:       /* socks.config */
-  case INK_SOCKS_AUTH:
-  case INK_SOCKS_MULTIPLE:
+  case TS_SOCKS_BYPASS:       /* socks.config */
+  case TS_SOCKS_AUTH:
+  case TS_SOCKS_MULTIPLE:
     ele = (CfgEleObj *) new SocksObj(token_list);
     break;
-  case INK_SPLIT_DNS:          /* splitdns.config */
+  case TS_SPLIT_DNS:          /* splitdns.config */
     ele = (CfgEleObj *) new SplitDnsObj(token_list);
     break;
-  case INK_STORAGE:
+  case TS_STORAGE:
     ele = (CfgEleObj *) new StorageObj(token_list);
     break;
-  case INK_UPDATE_URL:         /* update.config */
+  case TS_UPDATE_URL:         /* update.config */
     ele = (CfgEleObj *) new UpdateObj(token_list);
     break;
-  case INK_VADDRS:             /* vaddrs.config */
+  case TS_VADDRS:             /* vaddrs.config */
     ele = (CfgEleObj *) new VirtIpAddrObj(token_list);
     break;
   default:
@@ -2030,13 +2030,13 @@ create_ele_obj_from_rule_node(Rule * rule)
 /*--------------------------------------------------------------
  * create_ele_obj_from_ele
  *--------------------------------------------------------------
- * calls the appropriate subclasses' constructor using actual INKEle
+ * calls the appropriate subclasses' constructor using actual TSEle
  * need to convert the ele into appropriate Ele object type
  * Note: the ele is not copied, it is actually used, so caller
  * shouldn't free it!
  */
 CfgEleObj *
-create_ele_obj_from_ele(INKCfgEle * ele)
+create_ele_obj_from_ele(TSCfgEle * ele)
 {
   CfgEleObj *ele_obj = NULL;
 
@@ -2044,89 +2044,89 @@ create_ele_obj_from_ele(INKCfgEle * ele)
     return NULL;
 
   switch (ele->type) {
-  case INK_ADMIN_ACCESS:       /* admin_access.config */
-    ele_obj = (CfgEleObj *) new AdminAccessObj((INKAdminAccessEle *) ele);
+  case TS_ADMIN_ACCESS:       /* admin_access.config */
+    ele_obj = (CfgEleObj *) new AdminAccessObj((TSAdminAccessEle *) ele);
     break;
 
-  case INK_CACHE_NEVER:        /* cache.config */
-  case INK_CACHE_IGNORE_NO_CACHE:      // fall-through
-  case INK_CACHE_IGNORE_CLIENT_NO_CACHE:       // fall-through
-  case INK_CACHE_IGNORE_SERVER_NO_CACHE:       // fall-through
-  case INK_CACHE_PIN_IN_CACHE: // fall-through
-  case INK_CACHE_REVALIDATE:   // fall-through
-  case INK_CACHE_TTL_IN_CACHE:
-  case INK_CACHE_AUTH_CONTENT:
-    ele_obj = (CfgEleObj *) new CacheObj((INKCacheEle *) ele);
+  case TS_CACHE_NEVER:        /* cache.config */
+  case TS_CACHE_IGNORE_NO_CACHE:      // fall-through
+  case TS_CACHE_IGNORE_CLIENT_NO_CACHE:       // fall-through
+  case TS_CACHE_IGNORE_SERVER_NO_CACHE:       // fall-through
+  case TS_CACHE_PIN_IN_CACHE: // fall-through
+  case TS_CACHE_REVALIDATE:   // fall-through
+  case TS_CACHE_TTL_IN_CACHE:
+  case TS_CACHE_AUTH_CONTENT:
+    ele_obj = (CfgEleObj *) new CacheObj((TSCacheEle *) ele);
     break;
 
-  case INK_CONGESTION:
-    ele_obj = (CfgEleObj *) new CongestionObj((INKCongestionEle *) ele);
+  case TS_CONGESTION:
+    ele_obj = (CfgEleObj *) new CongestionObj((TSCongestionEle *) ele);
     break;
 
-  case INK_HOSTING:            /* hosting.config */
-    ele_obj = (CfgEleObj *) new HostingObj((INKHostingEle *) ele);
+  case TS_HOSTING:            /* hosting.config */
+    ele_obj = (CfgEleObj *) new HostingObj((TSHostingEle *) ele);
     break;
 
-  case INK_ICP:                /* icp.config */
-    ele_obj = (CfgEleObj *) new IcpObj((INKIcpEle *) ele);
+  case TS_ICP:                /* icp.config */
+    ele_obj = (CfgEleObj *) new IcpObj((TSIcpEle *) ele);
     break;
 
-  case INK_IP_ALLOW:           /* ip_allow.config */
-    ele_obj = (CfgEleObj *) new IpAllowObj((INKIpAllowEle *) ele);
+  case TS_IP_ALLOW:           /* ip_allow.config */
+    ele_obj = (CfgEleObj *) new IpAllowObj((TSIpAllowEle *) ele);
     break;
 
-  case INK_LOG_FILTER:         /* logs_xml.config */
-  case INK_LOG_OBJECT:         // fall-through
-  case INK_LOG_FORMAT:         // fall-through
-    //ele_obj = (CfgEleObj*) new LogFilterObj((INKLogFilterEle*)ele);
+  case TS_LOG_FILTER:         /* logs_xml.config */
+  case TS_LOG_OBJECT:         // fall-through
+  case TS_LOG_FORMAT:         // fall-through
+    //ele_obj = (CfgEleObj*) new LogFilterObj((TSLogFilterEle*)ele);
     break;
 
-  case INK_MGMT_ALLOW:         /* mgmt_allow.config */
-    ele_obj = (CfgEleObj *) new MgmtAllowObj((INKMgmtAllowEle *) ele);
+  case TS_MGMT_ALLOW:         /* mgmt_allow.config */
+    ele_obj = (CfgEleObj *) new MgmtAllowObj((TSMgmtAllowEle *) ele);
     break;
 
-  case INK_PP_PARENT:          /* parent.config */
-  case INK_PP_GO_DIRECT:       // fall-through
-    ele_obj = (CfgEleObj *) new ParentProxyObj((INKParentProxyEle *) ele);
+  case TS_PP_PARENT:          /* parent.config */
+  case TS_PP_GO_DIRECT:       // fall-through
+    ele_obj = (CfgEleObj *) new ParentProxyObj((TSParentProxyEle *) ele);
     break;
 
-  case INK_PARTITION:          /* partition.config */
-    ele_obj = (CfgEleObj *) new PartitionObj((INKPartitionEle *) ele);
+  case TS_PARTITION:          /* partition.config */
+    ele_obj = (CfgEleObj *) new PartitionObj((TSPartitionEle *) ele);
     break;
 
-  case INK_PLUGIN:
-    ele_obj = (CfgEleObj *) new PluginObj((INKPluginEle *) ele);
+  case TS_PLUGIN:
+    ele_obj = (CfgEleObj *) new PluginObj((TSPluginEle *) ele);
     break;
 
-  case INK_REMAP_MAP:          /* remap.config */
-  case INK_REMAP_REVERSE_MAP:  // fall-through
-  case INK_REMAP_REDIRECT:     // fall-through
-  case INK_REMAP_REDIRECT_TEMP:        // fall-through
-    ele_obj = (CfgEleObj *) new RemapObj((INKRemapEle *) ele);
+  case TS_REMAP_MAP:          /* remap.config */
+  case TS_REMAP_REVERSE_MAP:  // fall-through
+  case TS_REMAP_REDIRECT:     // fall-through
+  case TS_REMAP_REDIRECT_TEMP:        // fall-through
+    ele_obj = (CfgEleObj *) new RemapObj((TSRemapEle *) ele);
     break;
 
-  case INK_SOCKS_BYPASS:       /* socks.config */
-  case INK_SOCKS_AUTH:
-  case INK_SOCKS_MULTIPLE:
-    ele_obj = (CfgEleObj *) new SocksObj((INKSocksEle *) ele);
+  case TS_SOCKS_BYPASS:       /* socks.config */
+  case TS_SOCKS_AUTH:
+  case TS_SOCKS_MULTIPLE:
+    ele_obj = (CfgEleObj *) new SocksObj((TSSocksEle *) ele);
     break;
 
-  case INK_SPLIT_DNS:          /* splitdns.config */
-    ele_obj = (CfgEleObj *) new SplitDnsObj((INKSplitDnsEle *) ele);
+  case TS_SPLIT_DNS:          /* splitdns.config */
+    ele_obj = (CfgEleObj *) new SplitDnsObj((TSSplitDnsEle *) ele);
     break;
 
-  case INK_STORAGE:            /* storage.config */
-    ele_obj = (CfgEleObj *) new StorageObj((INKStorageEle *) ele);
+  case TS_STORAGE:            /* storage.config */
+    ele_obj = (CfgEleObj *) new StorageObj((TSStorageEle *) ele);
     break;
 
-  case INK_UPDATE_URL:         /* update.config */
-    ele_obj = (CfgEleObj *) new UpdateObj((INKUpdateEle *) ele);
+  case TS_UPDATE_URL:         /* update.config */
+    ele_obj = (CfgEleObj *) new UpdateObj((TSUpdateEle *) ele);
     break;
 
-  case INK_VADDRS:             /* vaddrs.config */
-    ele_obj = (CfgEleObj *) new VirtIpAddrObj((INKVirtIpAddrEle *) ele);
+  case TS_VADDRS:             /* vaddrs.config */
+    ele_obj = (CfgEleObj *) new VirtIpAddrObj((TSVirtIpAddrEle *) ele);
     break;
-  case INK_TYPE_UNDEFINED:
+  case TS_TYPE_UNDEFINED:
   default:
     return NULL;                // error
   }
@@ -2140,143 +2140,143 @@ create_ele_obj_from_ele(INKCfgEle * ele)
  * determine what rule type the TokenList refers to by examining
  * the appropriate token-value pair in the TokenList
  */
-INKRuleTypeT
-get_rule_type(TokenList * token_list, INKFileNameT file)
+TSRuleTypeT
+get_rule_type(TokenList * token_list, TSFileNameT file)
 {
   Token *tok;
 
   //ink_asser(ttoken_list);
   if (!token_list)
-    return INK_TYPE_UNDEFINED;
+    return TS_TYPE_UNDEFINED;
 
   /* Depending on the file and rule type, need to find out which
      token specifies which type of rule it is */
   switch (file) {
-  case INK_FNAME_ADMIN_ACCESS: /* admin_access.config */
-    return INK_ADMIN_ACCESS;
+  case TS_FNAME_ADMIN_ACCESS: /* admin_access.config */
+    return TS_ADMIN_ACCESS;
 
-  case INK_FNAME_CACHE_OBJ:    /* cache.config */
+  case TS_FNAME_CACHE_OBJ:    /* cache.config */
     tok = token_list->first();
     while (tok != NULL) {
       if (strcmp(tok->name, "action") == 0) {
         if (strcmp(tok->value, "never-cache") == 0) {
-          return INK_CACHE_NEVER;
+          return TS_CACHE_NEVER;
         } else if (strcmp(tok->value, "ignore-no-cache") == 0) {
-          return INK_CACHE_IGNORE_NO_CACHE;
+          return TS_CACHE_IGNORE_NO_CACHE;
         } else if (strcmp(tok->value, "ignore-client-no-cache") == 0) {
-          return INK_CACHE_IGNORE_CLIENT_NO_CACHE;
+          return TS_CACHE_IGNORE_CLIENT_NO_CACHE;
         } else if (strcmp(tok->value, "ignore-server-no-cache") == 0) {
-          return INK_CACHE_IGNORE_SERVER_NO_CACHE;
+          return TS_CACHE_IGNORE_SERVER_NO_CACHE;
         } else if (strcmp(tok->value, "cache-auth-content") == 0) {
-          return INK_CACHE_AUTH_CONTENT;
+          return TS_CACHE_AUTH_CONTENT;
         } else {
-          return INK_TYPE_UNDEFINED;
+          return TS_TYPE_UNDEFINED;
         }
       } else if (strcmp(tok->name, "pin-in-cache") == 0) {
-        return INK_CACHE_PIN_IN_CACHE;
+        return TS_CACHE_PIN_IN_CACHE;
       } else if (strcmp(tok->name, "revalidate") == 0) {
-        return INK_CACHE_REVALIDATE;
+        return TS_CACHE_REVALIDATE;
       } else if (strcmp(tok->name, "ttl-in-cache") == 0) {
-        return INK_CACHE_TTL_IN_CACHE;
+        return TS_CACHE_TTL_IN_CACHE;
       } else {                  // try next token
         tok = token_list->next(tok);
       }
     }
     // if reached this point, there is no action specified
-    return INK_TYPE_UNDEFINED;
+    return TS_TYPE_UNDEFINED;
 
-  case INK_FNAME_CONGESTION:   /* congestion.config */
-    return INK_CONGESTION;
+  case TS_FNAME_CONGESTION:   /* congestion.config */
+    return TS_CONGESTION;
 
-  case INK_FNAME_HOSTING:      /* hosting.config */
-    return INK_HOSTING;
+  case TS_FNAME_HOSTING:      /* hosting.config */
+    return TS_HOSTING;
 
-  case INK_FNAME_ICP_PEER:     /* icp.config */
-    return INK_ICP;
+  case TS_FNAME_ICP_PEER:     /* icp.config */
+    return TS_ICP;
 
-  case INK_FNAME_IP_ALLOW:     /* ip_allow.config */
-    return INK_IP_ALLOW;
+  case TS_FNAME_IP_ALLOW:     /* ip_allow.config */
+    return TS_IP_ALLOW;
 
 
-  case INK_FNAME_LOGS_XML:     /* logs_xml.config */
+  case TS_FNAME_LOGS_XML:     /* logs_xml.config */
     printf(" *** CfgContextUtils.cc: NOT DONE YET! **\n");
-    //  INK_LOG_FILTER,             /* logs_xml.config */
-    //  INK_LOG_OBJECT,
-    //  INK_LOG_FORMAT,
-    return INK_LOG_FILTER;
+    //  TS_LOG_FILTER,             /* logs_xml.config */
+    //  TS_LOG_OBJECT,
+    //  TS_LOG_FORMAT,
+    return TS_LOG_FILTER;
 
-  case INK_FNAME_MGMT_ALLOW:   /* mgmt_allow.config */
-    return INK_MGMT_ALLOW;
+  case TS_FNAME_MGMT_ALLOW:   /* mgmt_allow.config */
+    return TS_MGMT_ALLOW;
 
-  case INK_FNAME_PARENT_PROXY: /* parent.config */
+  case TS_FNAME_PARENT_PROXY: /* parent.config */
     // search fro go_direct action name and recongize the value-> ture or false
     for (tok = token_list->first(); tok; tok = token_list->next(tok)) {
       if ((strcmp(tok->name, "go_direct") == 0) && (strcmp(tok->value, "true") == 0)) {
-        return INK_PP_GO_DIRECT;
+        return TS_PP_GO_DIRECT;
       }
     }
-    return INK_PP_PARENT;
+    return TS_PP_PARENT;
 
-  case INK_FNAME_PARTITION:    /* partition.config */
-    return INK_PARTITION;
+  case TS_FNAME_PARTITION:    /* partition.config */
+    return TS_PARTITION;
 
-  case INK_FNAME_PLUGIN:       /* plugin.config */
-    return INK_PLUGIN;
+  case TS_FNAME_PLUGIN:       /* plugin.config */
+    return TS_PLUGIN;
 
-  case INK_FNAME_REMAP:        /* remap.config */
+  case TS_FNAME_REMAP:        /* remap.config */
     tok = token_list->first();
     if (strcmp(tok->name, "map") == 0) {
-      return INK_REMAP_MAP;
+      return TS_REMAP_MAP;
     } else if (strcmp(tok->name, "reverse_map") == 0) {
-      return INK_REMAP_REVERSE_MAP;
+      return TS_REMAP_REVERSE_MAP;
     } else if (strcmp(tok->name, "redirect") == 0) {
-      return INK_REMAP_REDIRECT;
+      return TS_REMAP_REDIRECT;
     } else if (strcmp(tok->name, "redirect_temporary") == 0) {
-      return INK_REMAP_REDIRECT_TEMP;
+      return TS_REMAP_REDIRECT_TEMP;
     } else {
-      return INK_TYPE_UNDEFINED;
+      return TS_TYPE_UNDEFINED;
     }
-  case INK_FNAME_SOCKS:        /* socks.config */
+  case TS_FNAME_SOCKS:        /* socks.config */
     tok = token_list->first();
     if (strcmp(tok->name, "no_socks") == 0) {
-      return INK_SOCKS_BYPASS;
+      return TS_SOCKS_BYPASS;
     } else if (strcmp(tok->name, "auth") == 0) {
-      return INK_SOCKS_AUTH;
+      return TS_SOCKS_AUTH;
     } else if (strcmp(tok->name, "dest_ip") == 0) {
-      return INK_SOCKS_MULTIPLE;
+      return TS_SOCKS_MULTIPLE;
     } else {
-      return INK_TYPE_UNDEFINED;
+      return TS_TYPE_UNDEFINED;
     }
-  case INK_FNAME_SPLIT_DNS:    /* splitdns.config */
-    return INK_SPLIT_DNS;
+  case TS_FNAME_SPLIT_DNS:    /* splitdns.config */
+    return TS_SPLIT_DNS;
 
-  case INK_FNAME_STORAGE:      /* storage.config */
-    return INK_STORAGE;
+  case TS_FNAME_STORAGE:      /* storage.config */
+    return TS_STORAGE;
 
-  case INK_FNAME_UPDATE_URL:   /* update.config */
-    return INK_UPDATE_URL;
+  case TS_FNAME_UPDATE_URL:   /* update.config */
+    return TS_UPDATE_URL;
 
-  case INK_FNAME_VADDRS:       /* vaddrs.config */
-    return INK_VADDRS;
-  case INK_FNAME_UNDEFINED:
+  case TS_FNAME_VADDRS:       /* vaddrs.config */
+    return TS_VADDRS;
+  case TS_FNAME_UNDEFINED:
   default:
-    return INK_TYPE_UNDEFINED;
+    return TS_TYPE_UNDEFINED;
   }
 
-  return INK_TYPE_UNDEFINED;    // Should not reach here
+  return TS_TYPE_UNDEFINED;    // Should not reach here
 }
 
 ///////////////////////////////////////////////////////////////////
 // Since we are using the ele's as C structures wrapped in C++ classes
 // we need to write copy function that "copy" the C structures
 // 1) need copy functions for each helper information struct which
-//    are typically embedded in the Ele's (eg. any lists, INKSspec)
+//    are typically embedded in the Ele's (eg. any lists, TSSspec)
 // 2) need copy functions for each Ele; these functiosn will actually
 // be called by teh copy constructors and overloaded assignment
 // operators in each CfgEleObj subclass!!
 ///////////////////////////////////////////////////////////////////
 void
-copy_cfg_ele(INKCfgEle * src_ele, INKCfgEle * dst_ele)
+copy_cfg_ele(TSCfgEle * src_ele, TSCfgEle * dst_ele)
 {
   //ink_assert (src_ele && dst_ele);
   if (!src_ele || !dst_ele)
@@ -2288,7 +2288,7 @@ copy_cfg_ele(INKCfgEle * src_ele, INKCfgEle * dst_ele)
 
 
 void
-copy_sspec(INKSspec * src, INKSspec * dst)
+copy_sspec(TSSspec * src, TSSspec * dst)
 {
   //ink_assert(src && dst);
   if (!src || !dst)
@@ -2311,7 +2311,7 @@ copy_sspec(INKSspec * src, INKSspec * dst)
 }
 
 void
-copy_pdss_format(INKPdSsFormat * src_pdss, INKPdSsFormat * dst_pdss)
+copy_pdss_format(TSPdSsFormat * src_pdss, TSPdSsFormat * dst_pdss)
 {
   //ink_assert (src_pdss && dst_pdss);
   if (!src_pdss || !dst_pdss)
@@ -2324,7 +2324,7 @@ copy_pdss_format(INKPdSsFormat * src_pdss, INKPdSsFormat * dst_pdss)
 }
 
 void
-copy_hms_time(INKHmsTime * src, INKHmsTime * dst)
+copy_hms_time(TSHmsTime * src, TSHmsTime * dst)
 {
   if (!src || !dst)
     return;
@@ -2335,15 +2335,15 @@ copy_hms_time(INKHmsTime * src, INKHmsTime * dst)
   dst->s = src->s;
 }
 
-INKIpAddrEle *
-copy_ip_addr_ele(INKIpAddrEle * src_ele)
+TSIpAddrEle *
+copy_ip_addr_ele(TSIpAddrEle * src_ele)
 {
-  INKIpAddrEle *dst_ele;
+  TSIpAddrEle *dst_ele;
 
   if (!src_ele)
     return NULL;
 
-  dst_ele = INKIpAddrEleCreate();
+  dst_ele = TSIpAddrEleCreate();
   dst_ele->type = src_ele->type;
   if (src_ele->ip_a)
     dst_ele->ip_a = xstrdup(src_ele->ip_a);
@@ -2357,30 +2357,30 @@ copy_ip_addr_ele(INKIpAddrEle * src_ele)
   return dst_ele;
 }
 
-INKPortEle *
-copy_port_ele(INKPortEle * src_ele)
+TSPortEle *
+copy_port_ele(TSPortEle * src_ele)
 {
-  INKPortEle *dst_ele;
+  TSPortEle *dst_ele;
 
   if (!src_ele)
     return NULL;
 
-  dst_ele = INKPortEleCreate();
+  dst_ele = TSPortEleCreate();
   dst_ele->port_a = src_ele->port_a;
   dst_ele->port_b = src_ele->port_b;
 
   return dst_ele;
 }
 
-INKDomain *
-copy_domain(INKDomain * src_dom)
+TSDomain *
+copy_domain(TSDomain * src_dom)
 {
-  INKDomain *dst_dom;
+  TSDomain *dst_dom;
 
   if (!src_dom)
     return NULL;
 
-  dst_dom = INKDomainCreate();
+  dst_dom = TSDomainCreate();
   if (src_dom->domain_val)
     dst_dom->domain_val = xstrdup(src_dom->domain_val);
   dst_dom->port = src_dom->port;
@@ -2388,126 +2388,126 @@ copy_domain(INKDomain * src_dom)
   return dst_dom;
 }
 
-INKIpAddrList
-copy_ip_addr_list(INKIpAddrList list)
+TSIpAddrList
+copy_ip_addr_list(TSIpAddrList list)
 {
-  INKIpAddrList nlist;
-  INKIpAddrEle *ele, *nele;
+  TSIpAddrList nlist;
+  TSIpAddrEle *ele, *nele;
   int count, i;
 
-  if (list == INK_INVALID_LIST)
-    return INK_INVALID_LIST;
+  if (list == TS_INVALID_LIST)
+    return TS_INVALID_LIST;
 
-  nlist = INKIpAddrListCreate();
-  count = INKIpAddrListLen(list);
+  nlist = TSIpAddrListCreate();
+  count = TSIpAddrListLen(list);
   for (i = 0; i < count; i++) {
-    ele = INKIpAddrListDequeue(list);
+    ele = TSIpAddrListDequeue(list);
     nele = copy_ip_addr_ele(ele);
-    INKIpAddrListEnqueue(list, ele);
-    INKIpAddrListEnqueue(nlist, nele);
+    TSIpAddrListEnqueue(list, ele);
+    TSIpAddrListEnqueue(nlist, nele);
   }
 
   return nlist;
 }
 
-INKPortList
-copy_port_list(INKPortList list)
+TSPortList
+copy_port_list(TSPortList list)
 {
-  INKPortList nlist;
-  INKPortEle *ele, *nele;
+  TSPortList nlist;
+  TSPortEle *ele, *nele;
   int count, i;
 
-  if (list == INK_INVALID_LIST)
-    return INK_INVALID_LIST;
+  if (list == TS_INVALID_LIST)
+    return TS_INVALID_LIST;
 
-  nlist = INKPortListCreate();
-  count = INKPortListLen(list);
+  nlist = TSPortListCreate();
+  count = TSPortListLen(list);
   for (i = 0; i < count; i++) {
-    ele = INKPortListDequeue(list);
+    ele = TSPortListDequeue(list);
     nele = copy_port_ele(ele);
-    INKPortListEnqueue(list, ele);
-    INKPortListEnqueue(nlist, nele);
+    TSPortListEnqueue(list, ele);
+    TSPortListEnqueue(nlist, nele);
   }
 
   return nlist;
 }
 
-INKDomainList
-copy_domain_list(INKDomainList list)
+TSDomainList
+copy_domain_list(TSDomainList list)
 {
-  INKDomainList nlist;
-  INKDomain *ele, *nele;
+  TSDomainList nlist;
+  TSDomain *ele, *nele;
   int count, i;
 
-  if (list == INK_INVALID_LIST)
-    return INK_INVALID_LIST;
+  if (list == TS_INVALID_LIST)
+    return TS_INVALID_LIST;
 
-  nlist = INKDomainListCreate();
-  count = INKDomainListLen(list);
+  nlist = TSDomainListCreate();
+  count = TSDomainListLen(list);
   for (i = 0; i < count; i++) {
-    ele = INKDomainListDequeue(list);
+    ele = TSDomainListDequeue(list);
     nele = copy_domain(ele);
-    INKDomainListEnqueue(list, ele);
-    INKDomainListEnqueue(nlist, nele);
+    TSDomainListEnqueue(list, ele);
+    TSDomainListEnqueue(nlist, nele);
   }
 
   return nlist;
 }
 
-INKStringList
-copy_string_list(INKStringList list)
+TSStringList
+copy_string_list(TSStringList list)
 {
-  INKStringList nlist;
+  TSStringList nlist;
   char *ele, *nele;
   int count, i;
 
-  if (list == INK_INVALID_LIST)
-    return INK_INVALID_LIST;
+  if (list == TS_INVALID_LIST)
+    return TS_INVALID_LIST;
 
-  nlist = INKStringListCreate();
-  count = INKStringListLen(list);
+  nlist = TSStringListCreate();
+  count = TSStringListLen(list);
   for (i = 0; i < count; i++) {
-    ele = INKStringListDequeue(list);
+    ele = TSStringListDequeue(list);
     nele = xstrdup(ele);
-    INKStringListEnqueue(list, ele);
-    INKStringListEnqueue(nlist, nele);
+    TSStringListEnqueue(list, ele);
+    TSStringListEnqueue(nlist, nele);
   }
 
   return nlist;
 
 }
 
-INKIntList
-copy_int_list(INKIntList list)
+TSIntList
+copy_int_list(TSIntList list)
 {
-  INKIntList nlist;
+  TSIntList nlist;
   int *elem, *nelem;
   int count, i;
 
-  if (list == INK_INVALID_LIST)
-    return INK_INVALID_LIST;
+  if (list == TS_INVALID_LIST)
+    return TS_INVALID_LIST;
 
-  nlist = INKIntListCreate();
-  count = INKIntListLen(list);
+  nlist = TSIntListCreate();
+  count = TSIntListLen(list);
   for (i = 0; i < count; i++) {
-    elem = INKIntListDequeue(list);
+    elem = TSIntListDequeue(list);
     nelem = (int *) xmalloc(sizeof(int));
     *nelem = *elem;
-    INKIntListEnqueue(list, elem);
-    INKIntListEnqueue(nlist, nelem);
+    TSIntListEnqueue(list, elem);
+    TSIntListEnqueue(nlist, nelem);
   }
 
   return nlist;
 }
 
 //////////////////////////////////////////////////
-INKAdminAccessEle *
-copy_admin_access_ele(INKAdminAccessEle * ele)
+TSAdminAccessEle *
+copy_admin_access_ele(TSAdminAccessEle * ele)
 {
   if (!ele)
     return NULL;
 
-  INKAdminAccessEle *nele = INKAdminAccessEleCreate();
+  TSAdminAccessEle *nele = TSAdminAccessEleCreate();
   if (!nele)
     return NULL;
 
@@ -2522,14 +2522,14 @@ copy_admin_access_ele(INKAdminAccessEle * ele)
   return nele;
 }
 
-INKCacheEle *
-copy_cache_ele(INKCacheEle * ele)
+TSCacheEle *
+copy_cache_ele(TSCacheEle * ele)
 {
   if (!ele) {
     return NULL;
   }
 
-  INKCacheEle *nele = INKCacheEleCreate(ele->cfg_ele.type);
+  TSCacheEle *nele = TSCacheEleCreate(ele->cfg_ele.type);
   if (!nele)
     return NULL;
 
@@ -2540,14 +2540,14 @@ copy_cache_ele(INKCacheEle * ele)
   return nele;
 }
 
-INKCongestionEle *
-copy_congestion_ele(INKCongestionEle * ele)
+TSCongestionEle *
+copy_congestion_ele(TSCongestionEle * ele)
 {
   if (!ele) {
     return NULL;
   }
 
-  INKCongestionEle *nele = INKCongestionEleCreate();
+  TSCongestionEle *nele = TSCongestionEleCreate();
   if (!nele)
     return NULL;
   copy_cfg_ele(&(ele->cfg_ele), &(nele->cfg_ele));
@@ -2575,14 +2575,14 @@ copy_congestion_ele(INKCongestionEle * ele)
 }
 
 
-INKHostingEle *
-copy_hosting_ele(INKHostingEle * ele)
+TSHostingEle *
+copy_hosting_ele(TSHostingEle * ele)
 {
   if (!ele) {
     return NULL;
   }
 
-  INKHostingEle *nele = INKHostingEleCreate();
+  TSHostingEle *nele = TSHostingEleCreate();
   if (!nele)
     return NULL;
 
@@ -2595,14 +2595,14 @@ copy_hosting_ele(INKHostingEle * ele)
   return nele;
 }
 
-INKIcpEle *
-copy_icp_ele(INKIcpEle * ele)
+TSIcpEle *
+copy_icp_ele(TSIcpEle * ele)
 {
   if (!ele) {
     return NULL;
   }
 
-  INKIcpEle *nele = INKIcpEleCreate();
+  TSIcpEle *nele = TSIcpEleCreate();
   if (!nele)
     return NULL;
 
@@ -2622,14 +2622,14 @@ copy_icp_ele(INKIcpEle * ele)
   return nele;
 }
 
-INKIpAllowEle *
-copy_ip_allow_ele(INKIpAllowEle * ele)
+TSIpAllowEle *
+copy_ip_allow_ele(TSIpAllowEle * ele)
 {
   if (!ele) {
     return NULL;
   }
 
-  INKIpAllowEle *nele = INKIpAllowEleCreate();
+  TSIpAllowEle *nele = TSIpAllowEleCreate();
   if (!nele)
     return NULL;
   if (ele->src_ip_addr)
@@ -2638,14 +2638,14 @@ copy_ip_allow_ele(INKIpAllowEle * ele)
   return nele;
 }
 
-INKLogFilterEle *
-copy_log_filter_ele(INKLogFilterEle * ele)
+TSLogFilterEle *
+copy_log_filter_ele(TSLogFilterEle * ele)
 {
   if (!ele) {
     return NULL;
   }
 
-  INKLogFilterEle *nele = INKLogFilterEleCreate();
+  TSLogFilterEle *nele = TSLogFilterEleCreate();
   if (!nele)
     return NULL;
 
@@ -2663,14 +2663,14 @@ copy_log_filter_ele(INKLogFilterEle * ele)
   return nele;
 }
 
-INKLogFormatEle *
-copy_log_format_ele(INKLogFormatEle * ele)
+TSLogFormatEle *
+copy_log_format_ele(TSLogFormatEle * ele)
 {
   if (!ele) {
     return NULL;
   }
 
-  INKLogFormatEle *nele = INKLogFormatEleCreate();
+  TSLogFormatEle *nele = TSLogFormatEleCreate();
   if (!nele)
     return NULL;
 
@@ -2684,14 +2684,14 @@ copy_log_format_ele(INKLogFormatEle * ele)
   return nele;
 }
 
-INKMgmtAllowEle *
-copy_mgmt_allow_ele(INKMgmtAllowEle * ele)
+TSMgmtAllowEle *
+copy_mgmt_allow_ele(TSMgmtAllowEle * ele)
 {
   if (!ele) {
     return NULL;
   }
 
-  INKMgmtAllowEle *nele = INKMgmtAllowEleCreate();
+  TSMgmtAllowEle *nele = TSMgmtAllowEleCreate();
   if (!nele)
     return NULL;
   if (ele->src_ip_addr)
@@ -2700,14 +2700,14 @@ copy_mgmt_allow_ele(INKMgmtAllowEle * ele)
   return nele;
 }
 
-INKLogObjectEle *
-copy_log_object_ele(INKLogObjectEle * ele)
+TSLogObjectEle *
+copy_log_object_ele(TSLogObjectEle * ele)
 {
   if (!ele) {
     return NULL;
   }
 
-  INKLogObjectEle *nele = INKLogObjectEleCreate();
+  TSLogObjectEle *nele = TSLogObjectEleCreate();
   if (!nele)
     return NULL;
 
@@ -2725,14 +2725,14 @@ copy_log_object_ele(INKLogObjectEle * ele)
   return nele;
 }
 
-INKParentProxyEle *
-copy_parent_proxy_ele(INKParentProxyEle * ele)
+TSParentProxyEle *
+copy_parent_proxy_ele(TSParentProxyEle * ele)
 {
   if (!ele) {
     return NULL;
   }
 
-  INKParentProxyEle *nele = INKParentProxyEleCreate(INK_TYPE_UNDEFINED);
+  TSParentProxyEle *nele = TSParentProxyEleCreate(TS_TYPE_UNDEFINED);
   if (!nele)
     return NULL;
 
@@ -2745,14 +2745,14 @@ copy_parent_proxy_ele(INKParentProxyEle * ele)
   return nele;
 }
 
-INKPartitionEle *
-copy_partition_ele(INKPartitionEle * ele)
+TSPartitionEle *
+copy_partition_ele(TSPartitionEle * ele)
 {
   if (!ele) {
     return NULL;
   }
 
-  INKPartitionEle *nele = INKPartitionEleCreate();
+  TSPartitionEle *nele = TSPartitionEleCreate();
   if (!nele)
     return NULL;
 
@@ -2765,14 +2765,14 @@ copy_partition_ele(INKPartitionEle * ele)
   return nele;
 }
 
-INKPluginEle *
-copy_plugin_ele(INKPluginEle * ele)
+TSPluginEle *
+copy_plugin_ele(TSPluginEle * ele)
 {
   if (!ele) {
     return NULL;
   }
 
-  INKPluginEle *nele = INKPluginEleCreate();
+  TSPluginEle *nele = TSPluginEleCreate();
   if (!nele)
     return NULL;
 
@@ -2784,14 +2784,14 @@ copy_plugin_ele(INKPluginEle * ele)
   return nele;
 }
 
-INKRemapEle *
-copy_remap_ele(INKRemapEle * ele)
+TSRemapEle *
+copy_remap_ele(TSRemapEle * ele)
 {
   if (!ele) {
     return NULL;
   }
 
-  INKRemapEle *nele = INKRemapEleCreate(INK_TYPE_UNDEFINED);
+  TSRemapEle *nele = TSRemapEleCreate(TS_TYPE_UNDEFINED);
   if (!nele)
     return NULL;
 
@@ -2813,14 +2813,14 @@ copy_remap_ele(INKRemapEle * ele)
   return nele;
 }
 
-INKSocksEle *
-copy_socks_ele(INKSocksEle * ele)
+TSSocksEle *
+copy_socks_ele(TSSocksEle * ele)
 {
   if (!ele) {
     return NULL;
   }
 
-  INKSocksEle *nele = INKSocksEleCreate(INK_TYPE_UNDEFINED);
+  TSSocksEle *nele = TSSocksEleCreate(TS_TYPE_UNDEFINED);
   if (!nele)
     return NULL;
 
@@ -2837,14 +2837,14 @@ copy_socks_ele(INKSocksEle * ele)
   return nele;
 }
 
-INKSplitDnsEle *
-copy_split_dns_ele(INKSplitDnsEle * ele)
+TSSplitDnsEle *
+copy_split_dns_ele(TSSplitDnsEle * ele)
 {
   if (!ele) {
     return NULL;
   }
 
-  INKSplitDnsEle *nele = INKSplitDnsEleCreate();
+  TSSplitDnsEle *nele = TSSplitDnsEleCreate();
   if (!nele)
     return NULL;
 
@@ -2860,14 +2860,14 @@ copy_split_dns_ele(INKSplitDnsEle * ele)
   return nele;
 }
 
-INKStorageEle *
-copy_storage_ele(INKStorageEle * ele)
+TSStorageEle *
+copy_storage_ele(TSStorageEle * ele)
 {
   if (!ele) {
     return NULL;
   }
 
-  INKStorageEle *nele = INKStorageEleCreate();
+  TSStorageEle *nele = TSStorageEleCreate();
   if (!nele)
     return NULL;
 
@@ -2879,14 +2879,14 @@ copy_storage_ele(INKStorageEle * ele)
   return nele;
 }
 
-INKUpdateEle *
-copy_update_ele(INKUpdateEle * ele)
+TSUpdateEle *
+copy_update_ele(TSUpdateEle * ele)
 {
   if (!ele) {
     return NULL;
   }
 
-  INKUpdateEle *nele = INKUpdateEleCreate();
+  TSUpdateEle *nele = TSUpdateEleCreate();
   if (!nele)
     return NULL;
 
@@ -2901,16 +2901,16 @@ copy_update_ele(INKUpdateEle * ele)
   return nele;
 }
 
-INKVirtIpAddrEle *
-copy_virt_ip_addr_ele(INKVirtIpAddrEle * ele)
+TSVirtIpAddrEle *
+copy_virt_ip_addr_ele(TSVirtIpAddrEle * ele)
 {
-  INKVirtIpAddrEle *new_ele;
+  TSVirtIpAddrEle *new_ele;
 
   if (!ele) {
     return NULL;
   }
 
-  new_ele = INKVirtIpAddrEleCreate();
+  new_ele = TSVirtIpAddrEleCreate();
   if (!new_ele)
     return NULL;
 
@@ -2943,8 +2943,8 @@ comment_ele_create(char *comment)
 
   ele = (INKCommentEle *) xmalloc(sizeof(INKCommentEle));
 
-  ele->cfg_ele.type = INK_TYPE_COMMENT;
-  ele->cfg_ele.error = INK_ERR_OKAY;
+  ele->cfg_ele.type = TS_TYPE_COMMENT;
+  ele->cfg_ele.error = TS_ERR_OKAY;
   if (comment)
     ele->comment = xstrdup(comment);
   else                          // comment is NULL

@@ -40,125 +40,67 @@ extern "C"
 {
 #endif /* __cplusplus */
 
-INKError Init(const char *socket_path = NULL, TSInitOptionT options = TS_MGMT_OPT_DEFAULTS);
-INKError Terminate();
+TSError Init(const char *socket_path = NULL, TSInitOptionT options = TS_MGMT_OPT_DEFAULTS);
+TSError Terminate();
 
-void Diags(INKDiagsT mode, const char *fmt, va_list ap);
+void Diags(TSDiagsT mode, const char *fmt, va_list ap);
 
 /***************************************************************************
  * Control Operations
  ***************************************************************************/
-INKProxyStateT ProxyStateGet();
-INKError ProxyStateSet(INKProxyStateT state, INKCacheClearT clear);
+TSProxyStateT ProxyStateGet();
+TSError ProxyStateSet(TSProxyStateT state, TSCacheClearT clear);
 
-INKError Reconfigure();         // TS reread config files
-INKError Restart(bool cluster); //restart TM
-INKError HardRestart();         //restart traffic_cop
-INKError Bounce(bool cluster);  //restart traffic_server
+TSError Reconfigure();         // TS reread config files
+TSError Restart(bool cluster); //restart TM
+TSError HardRestart();         //restart traffic_cop
+TSError Bounce(bool cluster);  //restart traffic_server
 
 /***************************************************************************
  * Record Operations
  ***************************************************************************/
 /* For remote implementation of this interface, these functions will have
    to marshal/unmarshal and send request across the network */
-INKError MgmtRecordGet(const char *rec_name, INKRecordEle * rec_ele);
+TSError MgmtRecordGet(const char *rec_name, TSRecordEle * rec_ele);
 
-INKError MgmtRecordSet(const char *rec_name, const char *val, INKActionNeedT * action_need);
-INKError MgmtRecordSetInt(const char *rec_name, MgmtInt int_val, INKActionNeedT * action_need);
-INKError MgmtRecordSetCounter(const char *rec_name, MgmtIntCounter counter_val, INKActionNeedT *action_need);
-INKError MgmtRecordSetFloat(const char *rec_name, MgmtFloat float_val, INKActionNeedT * action_need);
-INKError MgmtRecordSetString(const char *rec_name, const char*string_val, INKActionNeedT * action_need);
+TSError MgmtRecordSet(const char *rec_name, const char *val, TSActionNeedT * action_need);
+TSError MgmtRecordSetInt(const char *rec_name, MgmtInt int_val, TSActionNeedT * action_need);
+TSError MgmtRecordSetCounter(const char *rec_name, MgmtIntCounter counter_val, TSActionNeedT *action_need);
+TSError MgmtRecordSetFloat(const char *rec_name, MgmtFloat float_val, TSActionNeedT * action_need);
+TSError MgmtRecordSetString(const char *rec_name, const char*string_val, TSActionNeedT * action_need);
 
 
 /***************************************************************************
  * File Operations
  ***************************************************************************/
-INKError ReadFile(INKFileNameT file, char **text, int *size, int *version);
-INKError WriteFile(INKFileNameT file, char *text, int size, int version);
+TSError ReadFile(TSFileNameT file, char **text, int *size, int *version);
+TSError WriteFile(TSFileNameT file, char *text, int size, int version);
 
 /***************************************************************************
  * Events
  ***************************************************************************/
 
-INKError EventSignal(char *event_name, va_list ap);
-INKError EventResolve(char *event_name);
-INKError ActiveEventGetMlt(LLQ * active_events);
-INKError EventIsActive(char *event_name, bool * is_current);
-INKError EventSignalCbRegister(char *event_name, INKEventSignalFunc func, void *data);
-INKError EventSignalCbUnregister(char *event_name, INKEventSignalFunc func);
+TSError EventSignal(char *event_name, va_list ap);
+TSError EventResolve(char *event_name);
+TSError ActiveEventGetMlt(LLQ * active_events);
+TSError EventIsActive(char *event_name, bool * is_current);
+TSError EventSignalCbRegister(char *event_name, TSEventSignalFunc func, void *data);
+TSError EventSignalCbUnregister(char *event_name, TSEventSignalFunc func);
 
 /***************************************************************************
  * Snapshots
  ***************************************************************************/
-INKError SnapshotTake(char *snapshot_name);
-INKError SnapshotRestore(char *snapshot_name);
-INKError SnapshotRemove(char *snapshot_name);
-INKError SnapshotGetMlt(LLQ * snapshots);
+TSError SnapshotTake(char *snapshot_name);
+TSError SnapshotRestore(char *snapshot_name);
+TSError SnapshotRemove(char *snapshot_name);
+TSError SnapshotGetMlt(LLQ * snapshots);
 
-INKError StatsReset(bool cluster);
+TSError StatsReset(bool cluster);
 
 /***************************************************************************
  * Miscellaneous Utility
  ***************************************************************************/
-INKError EncryptToFile(const char *passwd, const char *filepath);
-
-/*-------------------------------------------------------------
- * rmserver.cfg
- *-------------------------------------------------------------*/
-
-/*  Define the lists in rmserver.cfg  */
-#define RM_LISTTAG_PROXY      "Name=\"Proxy\""
-#define RM_LISTTAG_PNA_RDT    "Name=\"PNARedirector\""
-#define RM_LISTTAG_SCU_ADMIN  "Name=\"SecureAdmin\""
-#define RM_LISTTAG_CNN_REALM  "Name=\"ConnectRealm\""
-#define RM_LISTTAG_ADMIN_FILE "Name=\"RealSystem Administrator Files\""
-#define RM_LISTTAG_AUTH       "Name=\"Authority\""
-#define RM_LISTTAG_END        "</List>"
-
-/* define the configurable Var of rmserver.cfg */
-#define RM_ADMIN_PORT      "AdminPort"
-#define RM_PNA_PORT        "PNAPort"
-#define RM_MAX_PROXY_CONN  "MaxProxyConnections"
-#define RM_MAX_GWBW        "MaxGatewayBandwidth"
-#define RM_MAX_PXBW        "MaxProxyBandwidth"
-#define RM_PNA_RDT_PORT    "ListenPort"
-#define RM_PNA_RDT_IP      "ProxyHost"
-#define RM_IP              "Address"
-#define RM_REALM           "Realm"
-
-typedef enum
-{
-  INK_RM_LISTTAG_SCU_ADMIN,
-  INK_RM_LISTTAG_CNN_REALM,
-  INK_RM_LISTTAG_ADMIN_FILE,
-  INK_RM_LISTTAG_AUTH,
-  INK_RM_LISTTAG_PROXY,
-  INK_RM_LISTTAG_RTSP_RDT,
-  INK_RM_LISTTAG_PNA_RDT,
-  INK_RM_LISTTAG_IP
-} INKRmServerListT;
-
-typedef enum
-{
-  INK_RM_RULE_ADMIN_PORT = 0,
-  INK_RM_RULE_SCU_ADMIN_REALM,
-  INK_RM_RULE_CNN_REALM,
-  INK_RM_RULE_ADMIN_FILE_REALM,
-  INK_RM_RULE_PNA_PORT,
-  INK_RM_RULE_MAX_PROXY_CONN,
-  INK_RM_RULE_MAX_GWBW,
-  INK_RM_RULE_MAX_PXBW,
-  INK_RM_RULE_AUTH_REALM,
-  INK_RM_RULE_PNA_RDT_PORT,
-  INK_RM_RULE_PNA_RDT_IP
-} INKRmServerRuleT;
-
-INKString RmdeXMLize(INKString XMLline, int *lengthp);
-INKString RmXMLize(INKString line, int *lengthp);
-INKString GetRmCfgPath();
-INKError ReadRmCfgFile(char **);
-void RmReadCfgList(Tokenizer * Tp, tok_iter_state * Tstate, char **, INKRmServerListT ListType);
-INKError WriteRmCfgFile(char *text);
+TSError EncryptToFile(const char *passwd, const char *filepath);
 
 #ifdef __cplusplus
 }

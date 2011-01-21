@@ -804,23 +804,23 @@ set_admin_passwd(WebHttpContext * whc)
     if (admin_new_passwd_retype == NULL)
       admin_new_passwd_retype = empty_str;
 
-    admin_orig_epasswd = (char *) alloca(INK_ENCRYPT_PASSWD_LEN + 1);
-    varStrFromName("proxy.config.admin.admin_password", admin_orig_epasswd, INK_ENCRYPT_PASSWD_LEN + 1);
+    admin_orig_epasswd = (char *) alloca(TS_ENCRYPT_PASSWD_LEN + 1);
+    varStrFromName("proxy.config.admin.admin_password", admin_orig_epasswd, TS_ENCRYPT_PASSWD_LEN + 1);
 
     // INKqa12084: do not encrypt password if empty_str
     if (strcmp(admin_old_passwd, empty_str) == 0) {
       admin_old_epasswd = xstrdup(empty_str);
     } else {
-      INKEncryptPassword(admin_old_passwd, &admin_old_epasswd);
+      TSEncryptPassword(admin_old_passwd, &admin_old_epasswd);
     }
 
-    if (strncmp(admin_old_epasswd, admin_orig_epasswd, INK_ENCRYPT_PASSWD_LEN) == 0) {
+    if (strncmp(admin_old_epasswd, admin_orig_epasswd, TS_ENCRYPT_PASSWD_LEN) == 0) {
       if (strcmp(admin_new_passwd, admin_new_passwd_retype) == 0) {
         // INKqa12084: do not encrypt password if empty_str
         if (strcmp(admin_new_passwd, empty_str) == 0) {
           admin_new_epasswd = xstrdup(empty_str);
         } else {
-          INKEncryptPassword(admin_new_passwd, &admin_new_epasswd);
+          TSEncryptPassword(admin_new_passwd, &admin_new_epasswd);
         }
 
         set_record_value(whc, "proxy.config.admin.admin_password", admin_new_epasswd);
@@ -860,10 +860,10 @@ handle_submit_mgmt_auth(WebHttpContext * whc, const char *file)
   char *aa_new_epasswd;
   char admin_user[MAX_VAL_LENGTH + 1];
   int user, user_count;
-  INKCfgContext ctx;
-  INKAdminAccessEle *ele;
-  INKActionNeedT action_need;
-  INKAccessT access_t;
+  TSCfgContext ctx;
+  TSAdminAccessEle *ele;
+  TSActionNeedT action_need;
+  TSAccessT access_t;
   bool ctx_updated;
 
   char tmp_a[32];
@@ -943,7 +943,7 @@ handle_submit_mgmt_auth(WebHttpContext * whc, const char *file)
           aa_new_passwd_retype = empty_str;
         if (strcmp(aa_new_passwd, aa_new_passwd_retype) == 0) {
           // allocating memory on aa_new_epasswd
-          INKEncryptPassword(aa_new_passwd, &aa_new_epasswd);
+          TSEncryptPassword(aa_new_passwd, &aa_new_epasswd);
         } else {
           ink_hash_table_insert(whc->submit_warn_ht, "additional_administrative_accounts", NULL);
           ink_hash_table_insert(whc->submit_warn_ht, "add_new_administrative_user", NULL);
@@ -979,11 +979,11 @@ handle_submit_mgmt_auth(WebHttpContext * whc, const char *file)
           ink_hash_table_lookup(whc->post_data_ht, tmp_b, (void **) &aa_access)) {
         snprintf(tmp_a, sizeof(tmp_a), "delete:%d", user);
         if (ink_hash_table_lookup(whc->post_data_ht, tmp_a, (void **) &aa_delete)) {
-          INKCfgContextRemoveEleAt(ctx, user);
+          TSCfgContextRemoveEleAt(ctx, user);
           ctx_updated = true;
           continue;
         }
-        ele = (INKAdminAccessEle *) INKCfgContextGetEleAt(ctx, user);
+        ele = (TSAdminAccessEle *) TSCfgContextGetEleAt(ctx, user);
         if (strcmp(ele->user, aa_user) != 0) {
           goto Lunable_to_submit;
         }
@@ -995,7 +995,7 @@ handle_submit_mgmt_auth(WebHttpContext * whc, const char *file)
           HtmlRndrBr(whc->submit_warn);
           aa_new_user = NULL;
         }
-        access_t = (INKAccessT) ink_atoi(aa_access);
+        access_t = (TSAccessT) ink_atoi(aa_access);
         if (ele->access != access_t) {
           ele->access = access_t;
           ctx_updated = true;
@@ -1006,21 +1006,21 @@ handle_submit_mgmt_auth(WebHttpContext * whc, const char *file)
     }
     // add new user
     if ((aa_new_user != NULL) && (aa_new_epasswd != NULL)) {
-      ele = INKAdminAccessEleCreate();
+      ele = TSAdminAccessEleCreate();
       ele->user = xstrdup(aa_new_user);
       ele->password = xstrdup(aa_new_epasswd);
       // FIXME: no access for now, add back later?
-      //ele->access = aa_new_access ? (INKAccessT)ink_atoi(aa_new_access) : INK_ACCESS_NONE;
-      ele->access = INK_ACCESS_NONE;
-      INKCfgContextAppendEle(ctx, (INKCfgEle *) ele);
+      //ele->access = aa_new_access ? (TSAccessT)ink_atoi(aa_new_access) : TS_ACCESS_NONE;
+      ele->access = TS_ACCESS_NONE;
+      TSCfgContextAppendEle(ctx, (TSCfgEle *) ele);
       ctx_updated = true;
     }
     if (ctx_updated) {
-      if (INKCfgContextCommit(ctx, &action_need, NULL) != INK_ERR_OKAY) {
+      if (TSCfgContextCommit(ctx, &action_need, NULL) != TS_ERR_OKAY) {
         WebHttpSessionDelete(aa_session_id);
         goto Lout_of_date;
       }
-      INKActionDo(action_need);
+      TSActionDo(action_need);
     }
     WebHttpSessionDelete(aa_session_id);
   } else {
@@ -1417,21 +1417,21 @@ handle_submit_inspector(WebHttpContext * whc, const char *file)
     if (strcmp(regex_action, "Lookup") == 0) {
       // handle regex lookup
       if (ink_hash_table_lookup(whc->post_data_ht, "regex", (void **) &regex)) {
-        if ((err = INKLookupFromCacheUrlRegex(regex, &list)) == INK_ERR_OKAY) {
+        if ((err = TSLookupFromCacheUrlRegex(regex, &list)) == TS_ERR_OKAY) {
           whc->cache_query_result = list;
         }
       }
     } else if (strcmp(regex_action, "Delete") == 0) {
       // handle regex delete
       if (ink_hash_table_lookup(whc->post_data_ht, "regex", (void **) &regex)) {
-        if ((err = INKDeleteFromCacheUrlRegex(regex, &list)) == INK_ERR_OKAY) {
+        if ((err = TSDeleteFromCacheUrlRegex(regex, &list)) == TS_ERR_OKAY) {
           whc->cache_query_result = list;
         }
       }
     } else if (strcmp(regex_action, "Invalidate") == 0) {
       // handle regex invalidate
       if (ink_hash_table_lookup(whc->post_data_ht, "regex", (void **) &regex)) {
-        if ((err = INKInvalidateFromCacheUrlRegex(regex, &list)) == INK_ERR_OKAY) {
+        if ((err = TSInvalidateFromCacheUrlRegex(regex, &list)) == TS_ERR_OKAY) {
           whc->cache_query_result = list;
         }
       }
@@ -1442,7 +1442,7 @@ handle_submit_inspector(WebHttpContext * whc, const char *file)
     mgmt_log(stderr, "Unknown action is specified.");
   }
 
-  if (err != INK_ERR_OKAY) {
+  if (err != TS_ERR_OKAY) {
     // FIXME: show alarm error for cache inspector!
   }
 
@@ -1479,7 +1479,7 @@ handle_submit_inspector_display(WebHttpContext * whc, const char *file)
     if (strcmp(url_action, "Lookup") == 0) {
       // handle url lookup
       if (ink_hash_table_lookup(ht, "url", (void **) &url)) {
-        if ((err = INKLookupFromCacheUrl(url, &buf)) == INK_ERR_OKAY) {
+        if ((err = TSLookupFromCacheUrl(url, &buf)) == TS_ERR_OKAY) {
           whc->cache_query_result = buf;
         }
       }
@@ -1488,7 +1488,7 @@ handle_submit_inspector_display(WebHttpContext * whc, const char *file)
       if ((query_ht = processFormSubmission_noSubstitute((char *) (whc->request->getQuery()))) != NULL) {
         if (ink_hash_table_lookup(query_ht, "url", (void **) &url)) {
           // handle url delete
-          if ((err = INKDeleteFromCacheUrl(url, &buf)) == INK_ERR_OKAY) {
+          if ((err = TSDeleteFromCacheUrl(url, &buf)) == TS_ERR_OKAY) {
             whc->cache_query_result = buf;
           }
         }
@@ -1810,7 +1810,7 @@ handle_submit_update_config(WebHttpContext * whc, const char *file)
   char *apply;
   char *filename;
   char *frecord;
-  INKFileNameT type;
+  TSFileNameT type;
   int i, numRules = 0;
   int err = WEB_HTTP_ERR_OKAY;
   char *errBuff = NULL;
@@ -1828,7 +1828,7 @@ handle_submit_update_config(WebHttpContext * whc, const char *file)
   // This portion of the code handles parsing the hidden tags with all
   // the current ruleList information; commits this information as new config file
 
-  // get the filename to create the INKCfgContext; do NOT delete the
+  // get the filename to create the TSCfgContext; do NOT delete the
   // HTML_CONFIG_FILE_TAG entry because we need to use the filename
   // binding to refresh the page
   if (!ink_hash_table_lookup(whc->post_data_ht, HTML_CONFIG_FILE_TAG, (void **) &filename)) {
@@ -1841,10 +1841,10 @@ handle_submit_update_config(WebHttpContext * whc, const char *file)
   if (ink_hash_table_lookup(g_display_config_ht, filename, (void **) &type)) {
 
     int maxRules = 0;
-    INKCfgContext ctx = INKCfgContextCreate(type);
-    if (ctx && (INKCfgContextGet(ctx) == INK_ERR_OKAY)) {
-      maxRules = INKCfgContextGetCount(ctx) + MAX_ADD_RULES;
-      INKCfgContextDestroy(ctx);
+    TSCfgContext ctx = TSCfgContextCreate(type);
+    if (ctx && (TSCfgContextGet(ctx) == TS_ERR_OKAY)) {
+      maxRules = TSCfgContextGetCount(ctx) + MAX_ADD_RULES;
+      TSCfgContextDestroy(ctx);
     }
 
     // read all the rules from the post form into an array of strings
@@ -1866,40 +1866,40 @@ handle_submit_update_config(WebHttpContext * whc, const char *file)
     }
 
     switch (type) {
-    case INK_FNAME_CACHE_OBJ:
+    case TS_FNAME_CACHE_OBJ:
       err = updateCacheConfig(rules, numRules, &errBuff);
       break;
-    case INK_FNAME_HOSTING:
+    case TS_FNAME_HOSTING:
       err = updateHostingConfig(rules, numRules, &errBuff);
       break;
-    case INK_FNAME_ICP_PEER:
+    case TS_FNAME_ICP_PEER:
       err = updateIcpConfig(rules, numRules, &errBuff);
       break;
-    case INK_FNAME_IP_ALLOW:
+    case TS_FNAME_IP_ALLOW:
       err = updateIpAllowConfig(rules, numRules, &errBuff);
       break;
-    case INK_FNAME_MGMT_ALLOW:
+    case TS_FNAME_MGMT_ALLOW:
       err = updateMgmtAllowConfig(rules, numRules, &errBuff);
       break;
-    case INK_FNAME_PARENT_PROXY:
+    case TS_FNAME_PARENT_PROXY:
       err = updateParentConfig(rules, numRules, &errBuff);
       break;
-    case INK_FNAME_PARTITION:
+    case TS_FNAME_PARTITION:
       err = updatePartitionConfig(rules, numRules, &errBuff);
       break;
-    case INK_FNAME_REMAP:
+    case TS_FNAME_REMAP:
       err = updateRemapConfig(rules, numRules, &errBuff);
       break;
-    case INK_FNAME_SOCKS:
+    case TS_FNAME_SOCKS:
       err = updateSocksConfig(rules, numRules, &errBuff);
       break;
-    case INK_FNAME_SPLIT_DNS:
+    case TS_FNAME_SPLIT_DNS:
       err = updateSplitDnsConfig(rules, numRules, &errBuff);
       break;
-    case INK_FNAME_UPDATE_URL:
+    case TS_FNAME_UPDATE_URL:
       err = updateUpdateConfig(rules, numRules, &errBuff);
       break;
-    case INK_FNAME_VADDRS:
+    case TS_FNAME_VADDRS:
       err = updateVaddrsConfig(rules, numRules, &errBuff);
       break;
     default:
@@ -1913,7 +1913,7 @@ handle_submit_update_config(WebHttpContext * whc, const char *file)
     if (rules)
       delete[]rules;
 
-  } else {                      // missing binding from f_xx_config.ink to INKFileNameT
+  } else {                      // missing binding from f_xx_config.ink to TSFileNameT
     whc->response_hdr->setStatus(STATUS_NOT_FOUND);
     WebHttpSetErrorResponse(whc, STATUS_NOT_FOUND);
     goto Lerror;
@@ -2825,20 +2825,20 @@ WebHttpInit()
 
   // initialize the configurator editing bindings which binds
   // configurator display filename (eg. f_cache_config.ink) to
-  // its mgmt API config file type (INKFileNameT)
+  // its mgmt API config file type (TSFileNameT)
   g_display_config_ht = ink_hash_table_create(InkHashTableKeyType_String);
-  ink_hash_table_insert(g_display_config_ht, HTML_FILE_CACHE_CONFIG, (void *) INK_FNAME_CACHE_OBJ);
-  ink_hash_table_insert(g_display_config_ht, HTML_FILE_HOSTING_CONFIG, (void *) INK_FNAME_HOSTING);
-  ink_hash_table_insert(g_display_config_ht, HTML_FILE_ICP_CONFIG, (void *) INK_FNAME_ICP_PEER);
-  ink_hash_table_insert(g_display_config_ht, HTML_FILE_IP_ALLOW_CONFIG, (void *) INK_FNAME_IP_ALLOW);
-  ink_hash_table_insert(g_display_config_ht, HTML_FILE_MGMT_ALLOW_CONFIG, (void *) INK_FNAME_MGMT_ALLOW);
-  ink_hash_table_insert(g_display_config_ht, HTML_FILE_PARENT_CONFIG, (void *) INK_FNAME_PARENT_PROXY);
-  ink_hash_table_insert(g_display_config_ht, HTML_FILE_PARTITION_CONFIG, (void *) INK_FNAME_PARTITION);
-  ink_hash_table_insert(g_display_config_ht, HTML_FILE_REMAP_CONFIG, (void *) INK_FNAME_REMAP);
-  ink_hash_table_insert(g_display_config_ht, HTML_FILE_SOCKS_CONFIG, (void *) INK_FNAME_SOCKS);
-  ink_hash_table_insert(g_display_config_ht, HTML_FILE_SPLIT_DNS_CONFIG, (void *) INK_FNAME_SPLIT_DNS);
-  ink_hash_table_insert(g_display_config_ht, HTML_FILE_UPDATE_CONFIG, (void *) INK_FNAME_UPDATE_URL);
-  ink_hash_table_insert(g_display_config_ht, HTML_FILE_VADDRS_CONFIG, (void *) INK_FNAME_VADDRS);
+  ink_hash_table_insert(g_display_config_ht, HTML_FILE_CACHE_CONFIG, (void *) TS_FNAME_CACHE_OBJ);
+  ink_hash_table_insert(g_display_config_ht, HTML_FILE_HOSTING_CONFIG, (void *) TS_FNAME_HOSTING);
+  ink_hash_table_insert(g_display_config_ht, HTML_FILE_ICP_CONFIG, (void *) TS_FNAME_ICP_PEER);
+  ink_hash_table_insert(g_display_config_ht, HTML_FILE_IP_ALLOW_CONFIG, (void *) TS_FNAME_IP_ALLOW);
+  ink_hash_table_insert(g_display_config_ht, HTML_FILE_MGMT_ALLOW_CONFIG, (void *) TS_FNAME_MGMT_ALLOW);
+  ink_hash_table_insert(g_display_config_ht, HTML_FILE_PARENT_CONFIG, (void *) TS_FNAME_PARENT_PROXY);
+  ink_hash_table_insert(g_display_config_ht, HTML_FILE_PARTITION_CONFIG, (void *) TS_FNAME_PARTITION);
+  ink_hash_table_insert(g_display_config_ht, HTML_FILE_REMAP_CONFIG, (void *) TS_FNAME_REMAP);
+  ink_hash_table_insert(g_display_config_ht, HTML_FILE_SOCKS_CONFIG, (void *) TS_FNAME_SOCKS);
+  ink_hash_table_insert(g_display_config_ht, HTML_FILE_SPLIT_DNS_CONFIG, (void *) TS_FNAME_SPLIT_DNS);
+  ink_hash_table_insert(g_display_config_ht, HTML_FILE_UPDATE_CONFIG, (void *) TS_FNAME_UPDATE_URL);
+  ink_hash_table_insert(g_display_config_ht, HTML_FILE_VADDRS_CONFIG, (void *) TS_FNAME_VADDRS);
 
   // initialize other modules
   WebHttpAuthInit();

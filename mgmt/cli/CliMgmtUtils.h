@@ -24,7 +24,7 @@
 /****************************************************************
  * Filename: CliMgmtUtils.h
  * Purpose: This file declares various utility functions which
- *          call the INKMgmtAPI.
+ *          call the TSMgmtAPI.
  *
  *
  ****************************************************************/
@@ -39,41 +39,41 @@
 #define RECORD_SET 1
 
 // Get a records.config variable by name
-INKError Cli_RecordGet(const char *rec_name, INKRecordEle * rec_val);
+TSError Cli_RecordGet(const char *rec_name, TSRecordEle * rec_val);
 
 // Get an integer type records.config variable
-INKError Cli_RecordGetInt(const char *rec_name, INKInt * int_val);
+TSError Cli_RecordGetInt(const char *rec_name, TSInt * int_val);
 
 // Get an counter type records.config variable
-INKError Cli_RecordGetCounter(const char *rec_name, INKCounter * ctr_val);
+TSError Cli_RecordGetCounter(const char *rec_name, TSCounter * ctr_val);
 
 // Get a float type records.config variable
-INKError Cli_RecordGetFloat(const char *rec_name, INKFloat * float_val);
+TSError Cli_RecordGetFloat(const char *rec_name, TSFloat * float_val);
 
 // Get a string type records.config variable
-INKError Cli_RecordGetString(const char *rec_name, char **string_val);
+TSError Cli_RecordGetString(const char *rec_name, char **string_val);
 
 // Use a string to set a records.config variable
-INKError Cli_RecordSet(const char *rec_name, const char *rec_value, INKActionNeedT * action_need);
+TSError Cli_RecordSet(const char *rec_name, const char *rec_value, TSActionNeedT * action_need);
 
 // Set an integer type records.config variable
-INKError Cli_RecordSetInt(const char *rec_name, INKInt int_val, INKActionNeedT * action_need);
+TSError Cli_RecordSetInt(const char *rec_name, TSInt int_val, TSActionNeedT * action_need);
 
 //Set a float type records.config variable
-INKError Cli_RecordSetFloat(const char *rec_name, INKFloat float_val, INKActionNeedT * action_need);
+TSError Cli_RecordSetFloat(const char *rec_name, TSFloat float_val, TSActionNeedT * action_need);
 
 // Set a string type records.config variable
-INKError Cli_RecordSetString(const char *rec_name, INKString str_val, INKActionNeedT * action_need);
+TSError Cli_RecordSetString(const char *rec_name, TSString str_val, TSActionNeedT * action_need);
 
 // Retrieve and display contents of a rules file
-INKError Cli_DisplayRules(INKFileNameT fname);
+TSError Cli_DisplayRules(TSFileNameT fname);
 
 // Retrieve and use config file from remote URL
-INKError Cli_SetConfigFileFromUrl(INKFileNameT file, const char *url);
+TSError Cli_SetConfigFileFromUrl(TSFileNameT file, const char *url);
 
 // enable recent configuration changes by performing the action specified
 // by the action_need value
-INKError Cli_ConfigEnactChanges(INKActionNeedT action_need);
+TSError Cli_ConfigEnactChanges(TSActionNeedT action_need);
 
 // evaluate "stringval" and return 1 if "on", otherwise 0
 int Cli_EvalOnOffString(char *stringval);
@@ -151,7 +151,7 @@ int Cli_RecordString_Action(int action, const char *record, char *string_val);
 //
 // url = if non-NULL, update the file using contents of URL
 //
-int Cli_ConfigFileURL_Action(INKFileNameT file, const char *filename, const char *url);
+int Cli_ConfigFileURL_Action(TSFileNameT file, const char *filename, const char *url);
 
 extern int enable_restricted_commands;
 
@@ -161,4 +161,4 @@ int GetTSDirectory(char *ts_path, size_t ts_path_len);
 
 int StopTrafficServer();
 int StartTrafficServer();
-int Cli_CheckPluginStatus(INKString plugin);
+int Cli_CheckPluginStatus(TSString plugin);

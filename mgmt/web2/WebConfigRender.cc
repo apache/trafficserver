@@ -65,7 +65,7 @@
 int
 writeCacheConfigTable(WebHttpContext * whc)
 {
-  INKCacheEle *ele;
+  TSCacheEle *ele;
   char ruleType[MAX_RULE_PART_SIZE];
   char pdType[MAX_RULE_PART_SIZE];
   char time[MAX_RULE_PART_SIZE];
@@ -80,11 +80,11 @@ writeCacheConfigTable(WebHttpContext * whc)
   int count;
 
   textBuffer *output = whc->response_bdy;
-  INKCfgContext ctx = INKCfgContextCreate(INK_FNAME_CACHE_OBJ);
-  INKError err = INKCfgContextGet(ctx);
-  if (err != INK_ERR_OKAY) {
-    mgmt_log(stderr, "[writeCacheConfigTable] Error: INKCfgContextGet failed");
-    INKCfgContextDestroy(ctx);
+  TSCfgContext ctx = TSCfgContextCreate(TS_FNAME_CACHE_OBJ);
+  TSError err = TSCfgContextGet(ctx);
+  if (err != TS_ERR_OKAY) {
+    mgmt_log(stderr, "[writeCacheConfigTable] Error: TSCfgContextGet failed");
+    TSCfgContextDestroy(ctx);
     return WEB_HTTP_ERR_FAIL;
   }
 
@@ -115,9 +115,9 @@ writeCacheConfigTable(WebHttpContext * whc)
 
   HtmlRndrTrClose(output);
 
-  count = INKCfgContextGetCount(ctx);
+  count = TSCfgContextGetCount(ctx);
   for (int i = 0; i < count; i++) {
-    ele = (INKCacheEle *) INKCfgContextGetEleAt(ctx, i);
+    ele = (TSCacheEle *) TSCfgContextGetEleAt(ctx, i);
 
     memset(ruleType, 0, MAX_RULE_PART_SIZE);
     memset(pdType, 0, MAX_RULE_PART_SIZE);
@@ -176,7 +176,7 @@ writeCacheConfigTable(WebHttpContext * whc)
   }
 
   HtmlRndrTableClose(output);
-  INKCfgContextDestroy(ctx);
+  TSCfgContextDestroy(ctx);
   return WEB_HTTP_ERR_OKAY;
 }
 
@@ -187,17 +187,17 @@ writeCacheConfigTable(WebHttpContext * whc)
 int
 writeHostingConfigTable(WebHttpContext * whc)
 {
-  INKHostingEle *ele;
+  TSHostingEle *ele;
   char pdType[MAX_RULE_PART_SIZE];
   char partitions[MAX_RULE_PART_SIZE];
   int count;
 
   textBuffer *output = whc->response_bdy;
-  INKCfgContext ctx = INKCfgContextCreate(INK_FNAME_HOSTING);
-  INKError err = INKCfgContextGet(ctx);
-  if (err != INK_ERR_OKAY) {
-    Debug("config", "[writeHostingConfigTable] Error: INKCfgContextGet failed");
-    INKCfgContextDestroy(ctx);
+  TSCfgContext ctx = TSCfgContextCreate(TS_FNAME_HOSTING);
+  TSError err = TSCfgContextGet(ctx);
+  if (err != TS_ERR_OKAY) {
+    Debug("config", "[writeHostingConfigTable] Error: TSCfgContextGet failed");
+    TSCfgContextDestroy(ctx);
     return WEB_HTTP_ERR_FAIL;
   }
 
@@ -218,9 +218,9 @@ writeHostingConfigTable(WebHttpContext * whc)
   HtmlRndrText(output, whc->lang_dict_ht, HTML_ID_CFG_EDIT_PARTITIONS);
   HtmlRndrTdClose(output);
 
-  count = INKCfgContextGetCount(ctx);
+  count = TSCfgContextGetCount(ctx);
   for (int i = 0; i < count; i++) {
-    ele = (INKHostingEle *) INKCfgContextGetEleAt(ctx, i);
+    ele = (TSHostingEle *) TSCfgContextGetEleAt(ctx, i);
 
     memset(pdType, 0, MAX_RULE_PART_SIZE);
     memset(partitions, 0, MAX_RULE_PART_SIZE);
@@ -261,7 +261,7 @@ writeHostingConfigTable(WebHttpContext * whc)
   }
 
   HtmlRndrTableClose(output);
-  INKCfgContextDestroy(ctx);
+  TSCfgContextDestroy(ctx);
   return WEB_HTTP_ERR_OKAY;
 }
 
@@ -271,7 +271,7 @@ writeHostingConfigTable(WebHttpContext * whc)
 int
 writeIcpConfigTable(WebHttpContext * whc)
 {
-  INKIcpEle *ele;
+  TSIcpEle *ele;
   char name[MAX_RULE_PART_SIZE];
   char host_ip[MAX_RULE_PART_SIZE];
   char peer_type[MAX_RULE_PART_SIZE];
@@ -283,11 +283,11 @@ writeIcpConfigTable(WebHttpContext * whc)
   int count;
 
   textBuffer *output = whc->response_bdy;
-  INKCfgContext ctx = INKCfgContextCreate(INK_FNAME_ICP_PEER);
-  INKError err = INKCfgContextGet(ctx);
-  if (err != INK_ERR_OKAY) {
-    Debug("config", "[writeICPConfigTable] Error: INKCfgContextGet failed");
-    INKCfgContextDestroy(ctx);
+  TSCfgContext ctx = TSCfgContextCreate(TS_FNAME_ICP_PEER);
+  TSError err = TSCfgContextGet(ctx);
+  if (err != TS_ERR_OKAY) {
+    Debug("config", "[writeICPConfigTable] Error: TSCfgContextGet failed");
+    TSCfgContextDestroy(ctx);
     return WEB_HTTP_ERR_FAIL;
   }
 
@@ -328,9 +328,9 @@ writeIcpConfigTable(WebHttpContext * whc)
   HtmlRndrText(output, whc->lang_dict_ht, HTML_ID_CFG_EDIT_MCAST_TTL);
   HtmlRndrTdClose(output);
 
-  count = INKCfgContextGetCount(ctx);
+  count = TSCfgContextGetCount(ctx);
   for (int i = 0; i < count; i++) {
-    ele = (INKIcpEle *) INKCfgContextGetEleAt(ctx, i);
+    ele = (TSIcpEle *) TSCfgContextGetEleAt(ctx, i);
 
     memset(name, 0, MAX_RULE_PART_SIZE);
     memset(host_ip, 0, MAX_RULE_PART_SIZE);
@@ -404,7 +404,7 @@ writeIcpConfigTable(WebHttpContext * whc)
   }
 
   HtmlRndrTableClose(output);
-  INKCfgContextDestroy(ctx);
+  TSCfgContextDestroy(ctx);
   return WEB_HTTP_ERR_OKAY;
 }
 
@@ -414,17 +414,17 @@ writeIcpConfigTable(WebHttpContext * whc)
 int
 writeIpAllowConfigTable(WebHttpContext * whc)
 {
-  INKIpAllowEle *ele;
+  TSIpAllowEle *ele;
   char src_ip[MAX_RULE_PART_SIZE];
   char action[MAX_RULE_PART_SIZE];
   int count;
 
   textBuffer *output = whc->response_bdy;
-  INKCfgContext ctx = INKCfgContextCreate(INK_FNAME_IP_ALLOW);
-  INKError err = INKCfgContextGet(ctx);
-  if (err != INK_ERR_OKAY) {
-    mgmt_log(stderr, "[writeIpAllowConfigTable] Error: INKCfgContextGet failed");
-    INKCfgContextDestroy(ctx);
+  TSCfgContext ctx = TSCfgContextCreate(TS_FNAME_IP_ALLOW);
+  TSError err = TSCfgContextGet(ctx);
+  if (err != TS_ERR_OKAY) {
+    mgmt_log(stderr, "[writeIpAllowConfigTable] Error: TSCfgContextGet failed");
+    TSCfgContextDestroy(ctx);
     return WEB_HTTP_ERR_FAIL;
   }
 
@@ -443,9 +443,9 @@ writeIpAllowConfigTable(WebHttpContext * whc)
 
   HtmlRndrTrClose(output);
 
-  count = INKCfgContextGetCount(ctx);
+  count = TSCfgContextGetCount(ctx);
   for (int i = 0; i < count; i++) {
-    ele = (INKIpAllowEle *) INKCfgContextGetEleAt(ctx, i);
+    ele = (TSIpAllowEle *) TSCfgContextGetEleAt(ctx, i);
 
     memset(src_ip, 0, MAX_RULE_PART_SIZE);
     memset(action, 0, MAX_RULE_PART_SIZE);
@@ -481,7 +481,7 @@ writeIpAllowConfigTable(WebHttpContext * whc)
   }
 
   HtmlRndrTableClose(output);
-  INKCfgContextDestroy(ctx);
+  TSCfgContextDestroy(ctx);
   return WEB_HTTP_ERR_OKAY;
 }
 
@@ -493,17 +493,17 @@ writeIpAllowConfigTable(WebHttpContext * whc)
 int
 writeMgmtAllowConfigTable(WebHttpContext * whc)
 {
-  INKMgmtAllowEle *ele;
+  TSMgmtAllowEle *ele;
   char src_ip[MAX_RULE_PART_SIZE];
   char action[MAX_RULE_PART_SIZE];
   int count;
 
   textBuffer *output = whc->response_bdy;
-  INKCfgContext ctx = INKCfgContextCreate(INK_FNAME_MGMT_ALLOW);
-  INKError err = INKCfgContextGet(ctx);
-  if (err != INK_ERR_OKAY) {
-    mgmt_log(stderr, "[writeMgmtAllowConfigTable] Error: INKCfgContextGet failed");
-    INKCfgContextDestroy(ctx);
+  TSCfgContext ctx = TSCfgContextCreate(TS_FNAME_MGMT_ALLOW);
+  TSError err = TSCfgContextGet(ctx);
+  if (err != TS_ERR_OKAY) {
+    mgmt_log(stderr, "[writeMgmtAllowConfigTable] Error: TSCfgContextGet failed");
+    TSCfgContextDestroy(ctx);
     return WEB_HTTP_ERR_FAIL;
   }
 
@@ -522,9 +522,9 @@ writeMgmtAllowConfigTable(WebHttpContext * whc)
 
   HtmlRndrTrClose(output);
 
-  count = INKCfgContextGetCount(ctx);
+  count = TSCfgContextGetCount(ctx);
   for (int i = 0; i < count; i++) {
-    ele = (INKMgmtAllowEle *) INKCfgContextGetEleAt(ctx, i);
+    ele = (TSMgmtAllowEle *) TSCfgContextGetEleAt(ctx, i);
 
     memset(src_ip, 0, MAX_RULE_PART_SIZE);
     memset(action, 0, MAX_RULE_PART_SIZE);
@@ -559,7 +559,7 @@ writeMgmtAllowConfigTable(WebHttpContext * whc)
   }
 
   HtmlRndrTableClose(output);
-  INKCfgContextDestroy(ctx);
+  TSCfgContextDestroy(ctx);
   return WEB_HTTP_ERR_OKAY;
 }
 
@@ -569,7 +569,7 @@ writeMgmtAllowConfigTable(WebHttpContext * whc)
 int
 writeParentConfigTable(WebHttpContext * whc)
 {
-  INKParentProxyEle *ele;
+  TSParentProxyEle *ele;
   char pdType[MAX_RULE_PART_SIZE];
   char time[MAX_RULE_PART_SIZE];
   char src_ip[MAX_RULE_PART_SIZE];
@@ -585,11 +585,11 @@ writeParentConfigTable(WebHttpContext * whc)
   int count;
 
   textBuffer *output = whc->response_bdy;
-  INKCfgContext ctx = INKCfgContextCreate(INK_FNAME_PARENT_PROXY);
-  INKError err = INKCfgContextGet(ctx);
-  if (err != INK_ERR_OKAY) {
-    mgmt_log(stderr, "[writeParentConfigTable] Error: INKCfgContextGet failed");
-    INKCfgContextDestroy(ctx);
+  TSCfgContext ctx = TSCfgContextCreate(TS_FNAME_PARENT_PROXY);
+  TSError err = TSCfgContextGet(ctx);
+  if (err != TS_ERR_OKAY) {
+    mgmt_log(stderr, "[writeParentConfigTable] Error: TSCfgContextGet failed");
+    TSCfgContextDestroy(ctx);
     return WEB_HTTP_ERR_FAIL;
   }
 
@@ -622,9 +622,9 @@ writeParentConfigTable(WebHttpContext * whc)
 
   HtmlRndrTrClose(output);
 
-  count = INKCfgContextGetCount(ctx);
+  count = TSCfgContextGetCount(ctx);
   for (int i = 0; i < count; i++) {
-    ele = (INKParentProxyEle *) INKCfgContextGetEleAt(ctx, i);
+    ele = (TSParentProxyEle *) TSCfgContextGetEleAt(ctx, i);
 
     memset(pdType, 0, MAX_RULE_PART_SIZE);
     memset(time, 0, MAX_RULE_PART_SIZE);
@@ -689,7 +689,7 @@ writeParentConfigTable(WebHttpContext * whc)
   }
 
   HtmlRndrTableClose(output);
-  INKCfgContextDestroy(ctx);
+  TSCfgContextDestroy(ctx);
   return WEB_HTTP_ERR_OKAY;
 }
 
@@ -700,7 +700,7 @@ int
 writePartitionConfigTable(WebHttpContext * whc)
 {
   // now write each rule as a row in the table
-  INKPartitionEle *ele;
+  TSPartitionEle *ele;
   char part_num[MAX_RULE_PART_SIZE];
   char scheme[MAX_RULE_PART_SIZE];
   char size[MAX_RULE_PART_SIZE];
@@ -708,11 +708,11 @@ writePartitionConfigTable(WebHttpContext * whc)
   int count;
 
   textBuffer *output = whc->response_bdy;
-  INKCfgContext ctx = INKCfgContextCreate(INK_FNAME_PARTITION);
-  INKError err = INKCfgContextGet(ctx);
-  if (err != INK_ERR_OKAY) {
-    Debug("config", "[writePartitionConfigTable] Error: INKCfgContextGet failed");
-    INKCfgContextDestroy(ctx);
+  TSCfgContext ctx = TSCfgContextCreate(TS_FNAME_PARTITION);
+  TSError err = TSCfgContextGet(ctx);
+  if (err != TS_ERR_OKAY) {
+    Debug("config", "[writePartitionConfigTable] Error: TSCfgContextGet failed");
+    TSCfgContextDestroy(ctx);
     return WEB_HTTP_ERR_FAIL;
   }
 
@@ -733,9 +733,9 @@ writePartitionConfigTable(WebHttpContext * whc)
   HtmlRndrText(output, whc->lang_dict_ht, HTML_ID_CFG_EDIT_PSIZE);
   HtmlRndrTdClose(output);
 
-  count = INKCfgContextGetCount(ctx);
+  count = TSCfgContextGetCount(ctx);
   for (int i = 0; i < count; i++) {
-    ele = (INKPartitionEle *) INKCfgContextGetEleAt(ctx, i);
+    ele = (TSPartitionEle *) TSCfgContextGetEleAt(ctx, i);
 
     memset(part_num, 0, MAX_RULE_PART_SIZE);
     memset(scheme, 0, MAX_RULE_PART_SIZE);
@@ -762,15 +762,15 @@ writePartitionConfigTable(WebHttpContext * whc)
     HtmlRndrSpace(output, 2);
     output->copyFrom(size, strlen(size));
     switch (ele->size_format) {
-    case INK_SIZE_FMT_PERCENT:
+    case TS_SIZE_FMT_PERCENT:
       output->copyFrom("%", strlen("%"));
       break;
-    case INK_SIZE_FMT_ABSOLUTE:
+    case TS_SIZE_FMT_ABSOLUTE:
       output->copyFrom(" MB", strlen(" MB"));
       break;
     default:
       // Handled here:
-      // INK_SIZE_FMT_UNDEFINED
+      // TS_SIZE_FMT_UNDEFINED
       break;
     }
     HtmlRndrTdClose(output);
@@ -789,7 +789,7 @@ writePartitionConfigTable(WebHttpContext * whc)
   }
 
   HtmlRndrTableClose(output);
-  INKCfgContextDestroy(ctx);
+  TSCfgContextDestroy(ctx);
   return WEB_HTTP_ERR_OKAY;
 }
 
@@ -799,7 +799,7 @@ writePartitionConfigTable(WebHttpContext * whc)
 int
 writeRemapConfigTable(WebHttpContext * whc)
 {
-  INKRemapEle *ele;
+  TSRemapEle *ele;
   char rule_type[MAX_RULE_PART_SIZE];
   char from_scheme[MAX_RULE_PART_SIZE];
   char from_port[MAX_RULE_PART_SIZE];
@@ -812,11 +812,11 @@ writeRemapConfigTable(WebHttpContext * whc)
   int count;
 
   textBuffer *output = whc->response_bdy;
-  INKCfgContext ctx = INKCfgContextCreate(INK_FNAME_REMAP);
-  INKError err = INKCfgContextGet(ctx);
-  if (err != INK_ERR_OKAY) {
-    mgmt_log(stderr, "[writeRemapConfigTable] Error: INKCfgContextGet failed");
-    INKCfgContextDestroy(ctx);
+  TSCfgContext ctx = TSCfgContextCreate(TS_FNAME_REMAP);
+  TSError err = TSCfgContextGet(ctx);
+  if (err != TS_ERR_OKAY) {
+    mgmt_log(stderr, "[writeRemapConfigTable] Error: TSCfgContextGet failed");
+    TSCfgContextDestroy(ctx);
     return WEB_HTTP_ERR_FAIL;
   }
 
@@ -863,9 +863,9 @@ writeRemapConfigTable(WebHttpContext * whc)
 
   HtmlRndrTrClose(output);
 
-  count = INKCfgContextGetCount(ctx);
+  count = TSCfgContextGetCount(ctx);
   for (int i = 0; i < count; i++) {
-    ele = (INKRemapEle *) INKCfgContextGetEleAt(ctx, i);
+    ele = (TSRemapEle *) TSCfgContextGetEleAt(ctx, i);
 
     memset(rule_type, 0, MAX_RULE_PART_SIZE);
     memset(from_scheme, 0, MAX_RULE_PART_SIZE);
@@ -949,7 +949,7 @@ writeRemapConfigTable(WebHttpContext * whc)
   }
 
   HtmlRndrTableClose(output);
-  INKCfgContextDestroy(ctx);
+  TSCfgContextDestroy(ctx);
   return WEB_HTTP_ERR_OKAY;
 }
 
@@ -959,7 +959,7 @@ writeRemapConfigTable(WebHttpContext * whc)
 int
 writeSocksConfigTable(WebHttpContext * whc)
 {
-  INKSocksEle *ele;
+  TSSocksEle *ele;
   char rule_type[MAX_RULE_PART_SIZE];
   char user[MAX_RULE_PART_SIZE];
   char passwd[MAX_RULE_PART_SIZE];
@@ -970,11 +970,11 @@ writeSocksConfigTable(WebHttpContext * whc)
   int count;
 
   textBuffer *output = whc->response_bdy;
-  INKCfgContext ctx = INKCfgContextCreate(INK_FNAME_SOCKS);
-  INKError err = INKCfgContextGet(ctx);
-  if (err != INK_ERR_OKAY) {
-    mgmt_log(stderr, "[writeSocksConfigTable] Error: INKCfgContextGet failed");
-    INKCfgContextDestroy(ctx);
+  TSCfgContext ctx = TSCfgContextCreate(TS_FNAME_SOCKS);
+  TSError err = TSCfgContextGet(ctx);
+  if (err != TS_ERR_OKAY) {
+    mgmt_log(stderr, "[writeSocksConfigTable] Error: TSCfgContextGet failed");
+    TSCfgContextDestroy(ctx);
     return WEB_HTTP_ERR_FAIL;
   }
 
@@ -1009,9 +1009,9 @@ writeSocksConfigTable(WebHttpContext * whc)
 
   HtmlRndrTrClose(output);
 
-  count = INKCfgContextGetCount(ctx);
+  count = TSCfgContextGetCount(ctx);
   for (int i = 0; i < count; i++) {
-    ele = (INKSocksEle *) INKCfgContextGetEleAt(ctx, i);
+    ele = (TSSocksEle *) TSCfgContextGetEleAt(ctx, i);
 
     memset(rule_type, 0, MAX_RULE_PART_SIZE);
     memset(user, 0, MAX_RULE_PART_SIZE);
@@ -1075,7 +1075,7 @@ writeSocksConfigTable(WebHttpContext * whc)
   }
 
   HtmlRndrTableClose(output);
-  INKCfgContextDestroy(ctx);
+  TSCfgContextDestroy(ctx);
   return WEB_HTTP_ERR_OKAY;
 }
 
@@ -1087,7 +1087,7 @@ int
 writeSplitDnsConfigTable(WebHttpContext * whc)
 {
   // now write each rule as a row in the table
-  INKSplitDnsEle *ele;
+  TSSplitDnsEle *ele;
   char pdType[MAX_RULE_PART_SIZE];
   char dns_server[MAX_RULE_PART_SIZE];
   char def_domain[MAX_RULE_PART_SIZE];
@@ -1095,11 +1095,11 @@ writeSplitDnsConfigTable(WebHttpContext * whc)
   int count;
 
   textBuffer *output = whc->response_bdy;
-  INKCfgContext ctx = INKCfgContextCreate(INK_FNAME_SPLIT_DNS);
-  INKError err = INKCfgContextGet(ctx);
-  if (err != INK_ERR_OKAY) {
-    Debug("config", "[writeSplitDnsConfigTable] Error: INKCfgContextGet failed");
-    INKCfgContextDestroy(ctx);
+  TSCfgContext ctx = TSCfgContextCreate(TS_FNAME_SPLIT_DNS);
+  TSError err = TSCfgContextGet(ctx);
+  if (err != TS_ERR_OKAY) {
+    Debug("config", "[writeSplitDnsConfigTable] Error: TSCfgContextGet failed");
+    TSCfgContextDestroy(ctx);
     return WEB_HTTP_ERR_FAIL;
   }
 
@@ -1129,9 +1129,9 @@ writeSplitDnsConfigTable(WebHttpContext * whc)
   HtmlRndrTdClose(output);
   HtmlRndrTrClose(output);
 
-  count = INKCfgContextGetCount(ctx);
+  count = TSCfgContextGetCount(ctx);
   for (int i = 0; i < count; i++) {
-    ele = (INKSplitDnsEle *) INKCfgContextGetEleAt(ctx, i);
+    ele = (TSSplitDnsEle *) TSCfgContextGetEleAt(ctx, i);
 
     memset(pdType, 0, MAX_RULE_PART_SIZE);
     memset(dns_server, 0, MAX_RULE_PART_SIZE);
@@ -1186,7 +1186,7 @@ writeSplitDnsConfigTable(WebHttpContext * whc)
   }
 
   HtmlRndrTableClose(output);
-  INKCfgContextDestroy(ctx);
+  TSCfgContextDestroy(ctx);
   return WEB_HTTP_ERR_OKAY;
 }
 
@@ -1197,7 +1197,7 @@ int
 writeUpdateConfigTable(WebHttpContext * whc)
 {
   // now write each rule as a row in the table
-  INKUpdateEle *ele;
+  TSUpdateEle *ele;
   char hdrs[MAX_RULE_PART_SIZE];
   char offset[MAX_RULE_PART_SIZE];
   char interval[MAX_RULE_PART_SIZE];
@@ -1205,11 +1205,11 @@ writeUpdateConfigTable(WebHttpContext * whc)
   int count;
 
   textBuffer *output = whc->response_bdy;
-  INKCfgContext ctx = INKCfgContextCreate(INK_FNAME_UPDATE_URL);
-  INKError err = INKCfgContextGet(ctx);
-  if (err != INK_ERR_OKAY) {
-    Debug("config", "[writeUpdateConfigTable] Error: INKCfgContextGet failed");
-    INKCfgContextDestroy(ctx);
+  TSCfgContext ctx = TSCfgContextCreate(TS_FNAME_UPDATE_URL);
+  TSError err = TSCfgContextGet(ctx);
+  if (err != TS_ERR_OKAY) {
+    Debug("config", "[writeUpdateConfigTable] Error: TSCfgContextGet failed");
+    TSCfgContextDestroy(ctx);
     return WEB_HTTP_ERR_FAIL;
   }
 
@@ -1240,9 +1240,9 @@ writeUpdateConfigTable(WebHttpContext * whc)
 
   HtmlRndrTrClose(output);
 
-  count = INKCfgContextGetCount(ctx);
+  count = TSCfgContextGetCount(ctx);
   for (int i = 0; i < count; i++) {
-    ele = (INKUpdateEle *) INKCfgContextGetEleAt(ctx, i);
+    ele = (TSUpdateEle *) TSCfgContextGetEleAt(ctx, i);
 
     memset(hdrs, 0, MAX_RULE_PART_SIZE);
     memset(offset, 0, MAX_RULE_PART_SIZE);
@@ -1296,7 +1296,7 @@ writeUpdateConfigTable(WebHttpContext * whc)
   }
 
   HtmlRndrTableClose(output);
-  INKCfgContextDestroy(ctx);
+  TSCfgContextDestroy(ctx);
   return WEB_HTTP_ERR_OKAY;
 }
 
@@ -1307,17 +1307,17 @@ int
 writeVaddrsConfigTable(WebHttpContext * whc)
 {
   // now write each rule as a row in the table
-  INKVirtIpAddrEle *ele;
+  TSVirtIpAddrEle *ele;
   char ip[MAX_RULE_PART_SIZE];
   char sub_intr[MAX_RULE_PART_SIZE];
   int count;
 
   textBuffer *output = whc->response_bdy;
-  INKCfgContext ctx = INKCfgContextCreate(INK_FNAME_VADDRS);
-  INKError err = INKCfgContextGet(ctx);
-  if (err != INK_ERR_OKAY) {
-    Debug("config", "[writeVaddrsConfigTable] Error: INKCfgContextGet failed");
-    INKCfgContextDestroy(ctx);
+  TSCfgContext ctx = TSCfgContextCreate(TS_FNAME_VADDRS);
+  TSError err = TSCfgContextGet(ctx);
+  if (err != TS_ERR_OKAY) {
+    Debug("config", "[writeVaddrsConfigTable] Error: TSCfgContextGet failed");
+    TSCfgContextDestroy(ctx);
     return WEB_HTTP_ERR_FAIL;
   }
 
@@ -1340,9 +1340,9 @@ writeVaddrsConfigTable(WebHttpContext * whc)
 
   HtmlRndrTrClose(output);
 
-  count = INKCfgContextGetCount(ctx);
+  count = TSCfgContextGetCount(ctx);
   for (int i = 0; i < count; i++) {
-    ele = (INKVirtIpAddrEle *) INKCfgContextGetEleAt(ctx, i);
+    ele = (TSVirtIpAddrEle *) TSCfgContextGetEleAt(ctx, i);
 
     memset(ip, 0, MAX_RULE_PART_SIZE);
     memset(sub_intr, 0, MAX_RULE_PART_SIZE);
@@ -1382,7 +1382,7 @@ writeVaddrsConfigTable(WebHttpContext * whc)
   }
 
   HtmlRndrTableClose(output);
-  INKCfgContextDestroy(ctx);
+  TSCfgContextDestroy(ctx);
   return WEB_HTTP_ERR_OKAY;
 }
 
@@ -1398,14 +1398,14 @@ writeVaddrsConfigTable(WebHttpContext * whc)
 int
 writeCacheRuleList(textBuffer * output)
 {
-  INKCacheEle *ele;
+  TSCacheEle *ele;
   int count, i;
   const char ruleList[] = "var ruleList = new Object();\n";
 
-  INKCfgContext ctx = INKCfgContextCreate(INK_FNAME_CACHE_OBJ);
-  INKError err = INKCfgContextGet(ctx);
-  if (err != INK_ERR_OKAY) {
-    mgmt_log(stderr, "[writeCacheRuleList] Error INKCfgContextGet");
+  TSCfgContext ctx = TSCfgContextCreate(TS_FNAME_CACHE_OBJ);
+  TSError err = TSCfgContextGet(ctx);
+  if (err != TS_ERR_OKAY) {
+    mgmt_log(stderr, "[writeCacheRuleList] Error TSCfgContextGet");
     return WEB_HTTP_ERR_FAIL;
   }
 
@@ -1424,9 +1424,9 @@ writeCacheRuleList(textBuffer * output)
   char time_period[MAX_RULE_PART_SIZE];
   char mixt[MAX_RULE_PART_SIZE];
 
-  count = INKCfgContextGetCount(ctx);
+  count = TSCfgContextGetCount(ctx);
   for (i = 0; i < count; i++) {
-    ele = (INKCacheEle *) INKCfgContextGetEleAt(ctx, i);
+    ele = (TSCacheEle *) TSCfgContextGetEleAt(ctx, i);
 
     memset(ruleType, 0, MAX_RULE_PART_SIZE);
     memset(pdType, 0, MAX_RULE_PART_SIZE);
@@ -1455,7 +1455,7 @@ writeCacheRuleList(textBuffer * output)
     output->copyFrom(rule, strlen(rule));
   }
 
-  INKCfgContextDestroy(ctx);
+  TSCfgContextDestroy(ctx);
   return WEB_HTTP_ERR_OKAY;
 }
 
@@ -1466,14 +1466,14 @@ writeCacheRuleList(textBuffer * output)
 int
 writeHostingRuleList(textBuffer * output)
 {
-  INKHostingEle *ele;
+  TSHostingEle *ele;
   int count, i;
   const char ruleList[] = "var ruleList = new Object();\n";
 
-  INKCfgContext ctx = INKCfgContextCreate(INK_FNAME_HOSTING);
-  INKError err = INKCfgContextGet(ctx);
-  if (err != INK_ERR_OKAY) {
-    mgmt_log(stderr, "[writeHostingRuleList] Error INKCfgContextGet");
+  TSCfgContext ctx = TSCfgContextCreate(TS_FNAME_HOSTING);
+  TSError err = TSCfgContextGet(ctx);
+  if (err != TS_ERR_OKAY) {
+    mgmt_log(stderr, "[writeHostingRuleList] Error TSCfgContextGet");
     return WEB_HTTP_ERR_FAIL;
   }
 
@@ -1484,9 +1484,9 @@ writeHostingRuleList(textBuffer * output)
   char pdType[MAX_RULE_PART_SIZE];
   char partitions[MAX_RULE_PART_SIZE];
 
-  count = INKCfgContextGetCount(ctx);
+  count = TSCfgContextGetCount(ctx);
   for (i = 0; i < count; i++) {
-    ele = (INKHostingEle *) INKCfgContextGetEleAt(ctx, i);
+    ele = (TSHostingEle *) TSCfgContextGetEleAt(ctx, i);
 
     memset(pdType, 0, MAX_RULE_PART_SIZE);
     memset(partitions, 0, MAX_RULE_PART_SIZE);
@@ -1503,7 +1503,7 @@ writeHostingRuleList(textBuffer * output)
     output->copyFrom(rule, strlen(rule));
   }
 
-  INKCfgContextDestroy(ctx);
+  TSCfgContextDestroy(ctx);
   return WEB_HTTP_ERR_OKAY;
 }
 
@@ -1515,14 +1515,14 @@ writeHostingRuleList(textBuffer * output)
 int
 writeIcpRuleList(textBuffer * output)
 {
-  INKIcpEle *ele;
+  TSIcpEle *ele;
   int count, i;
   const char ruleList[] = "var ruleList = new Object();\n";
 
-  INKCfgContext ctx = INKCfgContextCreate(INK_FNAME_ICP_PEER);
-  INKError err = INKCfgContextGet(ctx);
-  if (err != INK_ERR_OKAY) {
-    mgmt_log(stderr, "[writeIcpRuleList] Error INKCfgContextGet");
+  TSCfgContext ctx = TSCfgContextCreate(TS_FNAME_ICP_PEER);
+  TSError err = TSCfgContextGet(ctx);
+  if (err != TS_ERR_OKAY) {
+    mgmt_log(stderr, "[writeIcpRuleList] Error TSCfgContextGet");
     return WEB_HTTP_ERR_FAIL;   //goto Lerror;
   }
 
@@ -1538,9 +1538,9 @@ writeIcpRuleList(textBuffer * output)
   char mc_ip[MAX_RULE_PART_SIZE];
   char mc_ttl[MAX_RULE_PART_SIZE];
 
-  count = INKCfgContextGetCount(ctx);
+  count = TSCfgContextGetCount(ctx);
   for (i = 0; i < count; i++) {
-    ele = (INKIcpEle *) INKCfgContextGetEleAt(ctx, i);
+    ele = (TSIcpEle *) TSCfgContextGetEleAt(ctx, i);
 
     memset(name, 0, MAX_RULE_PART_SIZE);
     memset(host_ip, 0, MAX_RULE_PART_SIZE);
@@ -1564,7 +1564,7 @@ writeIcpRuleList(textBuffer * output)
     output->copyFrom(rule, strlen(rule));
   }
 
-  INKCfgContextDestroy(ctx);
+  TSCfgContextDestroy(ctx);
   return WEB_HTTP_ERR_OKAY;
 }
 
@@ -1576,14 +1576,14 @@ writeIcpRuleList(textBuffer * output)
 int
 writeIpAllowRuleList(textBuffer * output)
 {
-  INKIpAllowEle *ele;
+  TSIpAllowEle *ele;
   int count, i;
   const char ruleList[] = "var ruleList = new Object();\n";
 
-  INKCfgContext ctx = INKCfgContextCreate(INK_FNAME_IP_ALLOW);
-  INKError err = INKCfgContextGet(ctx);
-  if (err != INK_ERR_OKAY) {
-    mgmt_log(stderr, "[writeIpAllowRuleList] Error INKCfgContextGet");
+  TSCfgContext ctx = TSCfgContextCreate(TS_FNAME_IP_ALLOW);
+  TSError err = TSCfgContextGet(ctx);
+  if (err != TS_ERR_OKAY) {
+    mgmt_log(stderr, "[writeIpAllowRuleList] Error TSCfgContextGet");
     return WEB_HTTP_ERR_FAIL;
   }
 
@@ -1593,9 +1593,9 @@ writeIpAllowRuleList(textBuffer * output)
   char src_ip[MAX_RULE_PART_SIZE];
   char action[MAX_RULE_PART_SIZE];
 
-  count = INKCfgContextGetCount(ctx);
+  count = TSCfgContextGetCount(ctx);
   for (i = 0; i < count; i++) {
-    ele = (INKIpAllowEle *) INKCfgContextGetEleAt(ctx, i);
+    ele = (TSIpAllowEle *) TSCfgContextGetEleAt(ctx, i);
 
     memset(src_ip, 0, MAX_RULE_PART_SIZE);
     memset(action, 0, MAX_RULE_PART_SIZE);
@@ -1611,7 +1611,7 @@ writeIpAllowRuleList(textBuffer * output)
     output->copyFrom(rule, strlen(rule));
   }
 
-  INKCfgContextDestroy(ctx);
+  TSCfgContextDestroy(ctx);
   return WEB_HTTP_ERR_OKAY;
 }
 
@@ -1623,14 +1623,14 @@ writeIpAllowRuleList(textBuffer * output)
 int
 writeMgmtAllowRuleList(textBuffer * output)
 {
-  INKMgmtAllowEle *ele;
+  TSMgmtAllowEle *ele;
   int count, i;
   const char ruleList[] = "var ruleList = new Object();\n";
 
-  INKCfgContext ctx = INKCfgContextCreate(INK_FNAME_MGMT_ALLOW);
-  INKError err = INKCfgContextGet(ctx);
-  if (err != INK_ERR_OKAY) {
-    mgmt_log(stderr, "[writeMgmtAllowRuleList] Error INKCfgContextGet");
+  TSCfgContext ctx = TSCfgContextCreate(TS_FNAME_MGMT_ALLOW);
+  TSError err = TSCfgContextGet(ctx);
+  if (err != TS_ERR_OKAY) {
+    mgmt_log(stderr, "[writeMgmtAllowRuleList] Error TSCfgContextGet");
     return WEB_HTTP_ERR_FAIL;
   }
 
@@ -1640,9 +1640,9 @@ writeMgmtAllowRuleList(textBuffer * output)
   char src_ip[MAX_RULE_PART_SIZE];
   char action[MAX_RULE_PART_SIZE];
 
-  count = INKCfgContextGetCount(ctx);
+  count = TSCfgContextGetCount(ctx);
   for (i = 0; i < count; i++) {
-    ele = (INKMgmtAllowEle *) INKCfgContextGetEleAt(ctx, i);
+    ele = (TSMgmtAllowEle *) TSCfgContextGetEleAt(ctx, i);
 
     memset(src_ip, 0, MAX_RULE_PART_SIZE);
     memset(action, 0, MAX_RULE_PART_SIZE);
@@ -1658,7 +1658,7 @@ writeMgmtAllowRuleList(textBuffer * output)
     output->copyFrom(rule, strlen(rule));
   }
 
-  INKCfgContextDestroy(ctx);
+  TSCfgContextDestroy(ctx);
   return WEB_HTTP_ERR_OKAY;
 }
 
@@ -1669,14 +1669,14 @@ writeMgmtAllowRuleList(textBuffer * output)
 int
 writeParentRuleList(textBuffer * output)
 {
-  INKParentProxyEle *ele;
+  TSParentProxyEle *ele;
   int count, i;
   const char ruleList[] = "var ruleList = new Object();\n";
 
-  INKCfgContext ctx = INKCfgContextCreate(INK_FNAME_PARENT_PROXY);
-  INKError err = INKCfgContextGet(ctx);
-  if (err != INK_ERR_OKAY) {
-    mgmt_log(stderr, "[writeParentRuleList] Error INKCfgContextGet");
+  TSCfgContext ctx = TSCfgContextCreate(TS_FNAME_PARENT_PROXY);
+  TSError err = TSCfgContextGet(ctx);
+  if (err != TS_ERR_OKAY) {
+    mgmt_log(stderr, "[writeParentRuleList] Error TSCfgContextGet");
     return WEB_HTTP_ERR_FAIL;
   }
 
@@ -1695,9 +1695,9 @@ writeParentRuleList(textBuffer * output)
   char round_robin[MAX_RULE_PART_SIZE];
   char direct[MAX_RULE_PART_SIZE];
 
-  count = INKCfgContextGetCount(ctx);
+  count = TSCfgContextGetCount(ctx);
   for (i = 0; i < count; i++) {
-    ele = (INKParentProxyEle *) INKCfgContextGetEleAt(ctx, i);
+    ele = (TSParentProxyEle *) TSCfgContextGetEleAt(ctx, i);
 
     memset(pdType, 0, MAX_RULE_PART_SIZE);
     memset(time, 0, MAX_RULE_PART_SIZE);
@@ -1727,7 +1727,7 @@ writeParentRuleList(textBuffer * output)
     output->copyFrom(rule, strlen(rule));
   }
 
-  INKCfgContextDestroy(ctx);
+  TSCfgContextDestroy(ctx);
   return WEB_HTTP_ERR_OKAY;
 }
 
@@ -1737,14 +1737,14 @@ writeParentRuleList(textBuffer * output)
 int
 writePartitionRuleList(textBuffer * output)
 {
-  INKPartitionEle *ele;
+  TSPartitionEle *ele;
   int count, i;
   const char ruleList[] = "var ruleList = new Object();\n";
 
-  INKCfgContext ctx = INKCfgContextCreate(INK_FNAME_PARTITION);
-  INKError err = INKCfgContextGet(ctx);
-  if (err != INK_ERR_OKAY) {
-    mgmt_log(stderr, "[writePartitionRuleList] Error INKCfgContextGet");
+  TSCfgContext ctx = TSCfgContextCreate(TS_FNAME_PARTITION);
+  TSError err = TSCfgContextGet(ctx);
+  if (err != TS_ERR_OKAY) {
+    mgmt_log(stderr, "[writePartitionRuleList] Error TSCfgContextGet");
     return WEB_HTTP_ERR_FAIL;
   }
 
@@ -1757,9 +1757,9 @@ writePartitionRuleList(textBuffer * output)
   char size[MAX_RULE_PART_SIZE];
   char size_fmt[MAX_RULE_PART_SIZE];
 
-  count = INKCfgContextGetCount(ctx);
+  count = TSCfgContextGetCount(ctx);
   for (i = 0; i < count; i++) {
-    ele = (INKPartitionEle *) INKCfgContextGetEleAt(ctx, i);
+    ele = (TSPartitionEle *) TSCfgContextGetEleAt(ctx, i);
 
     memset(part_num, 0, MAX_RULE_PART_SIZE);
     memset(scheme, 0, MAX_RULE_PART_SIZE);
@@ -1777,7 +1777,7 @@ writePartitionRuleList(textBuffer * output)
     output->copyFrom(rule, strlen(rule));
   }
 
-  INKCfgContextDestroy(ctx);
+  TSCfgContextDestroy(ctx);
   return WEB_HTTP_ERR_OKAY;
 }
 
@@ -1788,14 +1788,14 @@ writePartitionRuleList(textBuffer * output)
 int
 writeRemapRuleList(textBuffer * output)
 {
-  INKRemapEle *ele;
+  TSRemapEle *ele;
   int count, i;
   const char ruleList[] = "var ruleList = new Object();\n";
 
-  INKCfgContext ctx = INKCfgContextCreate(INK_FNAME_REMAP);
-  INKError err = INKCfgContextGet(ctx);
-  if (err != INK_ERR_OKAY) {
-    mgmt_log(stderr, "[writeRemapRuleList] Error INKCfgContextGet");
+  TSCfgContext ctx = TSCfgContextCreate(TS_FNAME_REMAP);
+  TSError err = TSCfgContextGet(ctx);
+  if (err != TS_ERR_OKAY) {
+    mgmt_log(stderr, "[writeRemapRuleList] Error TSCfgContextGet");
     return WEB_HTTP_ERR_FAIL;
   }
 
@@ -1811,9 +1811,9 @@ writeRemapRuleList(textBuffer * output)
   char to_path[MAX_RULE_PART_SIZE];
   char mixt[MAX_RULE_PART_SIZE];
 
-  count = INKCfgContextGetCount(ctx);
+  count = TSCfgContextGetCount(ctx);
   for (i = 0; i < count; i++) {
-    ele = (INKRemapEle *) INKCfgContextGetEleAt(ctx, i);
+    ele = (TSRemapEle *) TSCfgContextGetEleAt(ctx, i);
 
     memset(rule_type, 0, MAX_RULE_PART_SIZE);
     memset(from_scheme, 0, MAX_RULE_PART_SIZE);
@@ -1838,7 +1838,7 @@ writeRemapRuleList(textBuffer * output)
     output->copyFrom(rule, strlen(rule));
   }
 
-  INKCfgContextDestroy(ctx);
+  TSCfgContextDestroy(ctx);
   return WEB_HTTP_ERR_OKAY;
 }
 
@@ -1849,14 +1849,14 @@ writeRemapRuleList(textBuffer * output)
 int
 writeSocksRuleList(textBuffer * output)
 {
-  INKSocksEle *ele;
+  TSSocksEle *ele;
   int count, i;
   const char ruleList[] = "var ruleList = new Object();\n";
 
-  INKCfgContext ctx = INKCfgContextCreate(INK_FNAME_SOCKS);
-  INKError err = INKCfgContextGet(ctx);
-  if (err != INK_ERR_OKAY) {
-    mgmt_log(stderr, "[writeSocksRuleList] Error INKCfgContextGet");
+  TSCfgContext ctx = TSCfgContextCreate(TS_FNAME_SOCKS);
+  TSError err = TSCfgContextGet(ctx);
+  if (err != TS_ERR_OKAY) {
+    mgmt_log(stderr, "[writeSocksRuleList] Error TSCfgContextGet");
     return WEB_HTTP_ERR_FAIL;
   }
 
@@ -1870,9 +1870,9 @@ writeSocksRuleList(textBuffer * output)
   char dest_ip[MAX_RULE_PART_SIZE];
   char rr[MAX_RULE_PART_SIZE];
 
-  count = INKCfgContextGetCount(ctx);
+  count = TSCfgContextGetCount(ctx);
   for (i = 0; i < count; i++) {
-    ele = (INKSocksEle *) INKCfgContextGetEleAt(ctx, i);
+    ele = (TSSocksEle *) TSCfgContextGetEleAt(ctx, i);
 
     memset(rule_type, 0, MAX_RULE_PART_SIZE);
     memset(user, 0, MAX_RULE_PART_SIZE);
@@ -1892,7 +1892,7 @@ writeSocksRuleList(textBuffer * output)
     output->copyFrom(rule, strlen(rule));
   }
 
-  INKCfgContextDestroy(ctx);
+  TSCfgContextDestroy(ctx);
   return WEB_HTTP_ERR_OKAY;
 }
 
@@ -1902,14 +1902,14 @@ writeSocksRuleList(textBuffer * output)
 int
 writeSplitDnsRuleList(textBuffer * output)
 {
-  INKSplitDnsEle *ele;
+  TSSplitDnsEle *ele;
   int count, i;
   const char ruleList[] = "var ruleList = new Object();\n";
 
-  INKCfgContext ctx = INKCfgContextCreate(INK_FNAME_SPLIT_DNS);
-  INKError err = INKCfgContextGet(ctx);
-  if (err != INK_ERR_OKAY) {
-    mgmt_log(stderr, "[writeSplitDnsRuleList] Error INKCfgContextGet");
+  TSCfgContext ctx = TSCfgContextCreate(TS_FNAME_SPLIT_DNS);
+  TSError err = TSCfgContextGet(ctx);
+  if (err != TS_ERR_OKAY) {
+    mgmt_log(stderr, "[writeSplitDnsRuleList] Error TSCfgContextGet");
     return WEB_HTTP_ERR_FAIL;
   }
 
@@ -1922,9 +1922,9 @@ writeSplitDnsRuleList(textBuffer * output)
   char def_domain[MAX_RULE_PART_SIZE];
   char search_list[MAX_RULE_PART_SIZE];
 
-  count = INKCfgContextGetCount(ctx);
+  count = TSCfgContextGetCount(ctx);
   for (i = 0; i < count; i++) {
-    ele = (INKSplitDnsEle *) INKCfgContextGetEleAt(ctx, i);
+    ele = (TSSplitDnsEle *) TSCfgContextGetEleAt(ctx, i);
 
     memset(pdType, 0, MAX_RULE_PART_SIZE);
     memset(dns_server, 0, MAX_RULE_PART_SIZE);
@@ -1943,7 +1943,7 @@ writeSplitDnsRuleList(textBuffer * output)
     output->copyFrom(rule, strlen(rule));
   }
 
-  INKCfgContextDestroy(ctx);
+  TSCfgContextDestroy(ctx);
   return WEB_HTTP_ERR_OKAY;
 }
 
@@ -1953,14 +1953,14 @@ writeSplitDnsRuleList(textBuffer * output)
 int
 writeUpdateRuleList(textBuffer * output)
 {
-  INKUpdateEle *ele;
+  TSUpdateEle *ele;
   int count, i;
   const char ruleList[] = "var ruleList = new Object();\n";
 
-  INKCfgContext ctx = INKCfgContextCreate(INK_FNAME_UPDATE_URL);
-  INKError err = INKCfgContextGet(ctx);
-  if (err != INK_ERR_OKAY) {
-    mgmt_log(stderr, "[writeUpdateRuleList] Error INKCfgContextGet");
+  TSCfgContext ctx = TSCfgContextCreate(TS_FNAME_UPDATE_URL);
+  TSError err = TSCfgContextGet(ctx);
+  if (err != TS_ERR_OKAY) {
+    mgmt_log(stderr, "[writeUpdateRuleList] Error TSCfgContextGet");
     return WEB_HTTP_ERR_FAIL;
   }
 
@@ -1973,9 +1973,9 @@ writeUpdateRuleList(textBuffer * output)
   char interval[MAX_RULE_PART_SIZE];
   char depth[MAX_RULE_PART_SIZE];
 
-  count = INKCfgContextGetCount(ctx);
+  count = TSCfgContextGetCount(ctx);
   for (i = 0; i < count; i++) {
-    ele = (INKUpdateEle *) INKCfgContextGetEleAt(ctx, i);
+    ele = (TSUpdateEle *) TSCfgContextGetEleAt(ctx, i);
 
     memset(hdrs, 0, MAX_RULE_PART_SIZE);
     memset(offset, 0, MAX_RULE_PART_SIZE);
@@ -1993,7 +1993,7 @@ writeUpdateRuleList(textBuffer * output)
     output->copyFrom(rule, strlen(rule));
   }
 
-  INKCfgContextDestroy(ctx);
+  TSCfgContextDestroy(ctx);
   return WEB_HTTP_ERR_OKAY;
 }
 
@@ -2003,14 +2003,14 @@ writeUpdateRuleList(textBuffer * output)
 int
 writeVaddrsRuleList(textBuffer * output)
 {
-  INKVirtIpAddrEle *ele;
+  TSVirtIpAddrEle *ele;
   int count, i;
   const char ruleList[] = "var ruleList = new Object();\n";
 
-  INKCfgContext ctx = INKCfgContextCreate(INK_FNAME_VADDRS);
-  INKError err = INKCfgContextGet(ctx);
-  if (err != INK_ERR_OKAY) {
-    mgmt_log(stderr, "[writeVaddrsRuleList] Error INKCfgContextGet");
+  TSCfgContext ctx = TSCfgContextCreate(TS_FNAME_VADDRS);
+  TSError err = TSCfgContextGet(ctx);
+  if (err != TS_ERR_OKAY) {
+    mgmt_log(stderr, "[writeVaddrsRuleList] Error TSCfgContextGet");
     return WEB_HTTP_ERR_FAIL;
   }
 
@@ -2020,9 +2020,9 @@ writeVaddrsRuleList(textBuffer * output)
   char ip[MAX_RULE_PART_SIZE];
   char sub_intr[MAX_RULE_PART_SIZE];
 
-  count = INKCfgContextGetCount(ctx);
+  count = TSCfgContextGetCount(ctx);
   for (i = 0; i < count; i++) {
-    ele = (INKVirtIpAddrEle *) INKCfgContextGetEleAt(ctx, i);
+    ele = (TSVirtIpAddrEle *) TSCfgContextGetEleAt(ctx, i);
 
     memset(ip, 0, MAX_RULE_PART_SIZE);
     memset(sub_intr, 0, MAX_RULE_PART_SIZE);
@@ -2037,7 +2037,7 @@ writeVaddrsRuleList(textBuffer * output)
     output->copyFrom(rule, strlen(rule));
   }
 
-  INKCfgContextDestroy(ctx);
+  TSCfgContextDestroy(ctx);
   return WEB_HTTP_ERR_OKAY;
 }
 
@@ -2139,7 +2139,7 @@ writeCacheConfigForm(WebHttpContext * whc)
   HtmlRndrTrClose(output);
 
   // secondary specifiers
-  writeSecondarySpecsForm(whc, INK_FNAME_CACHE_OBJ);
+  writeSecondarySpecsForm(whc, TS_FNAME_CACHE_OBJ);
 
   return WEB_HTTP_ERR_OKAY;
 }
@@ -2834,12 +2834,12 @@ writeRemapConfigForm(WebHttpContext * whc)
 //-------------------------------------------------------------------------
 // Form contains:
 //    Rule Type                 rule_type
-//    (INK_SOCKS_BYPASS rule type)
+//    (TS_SOCKS_BYPASS rule type)
 //    IP address list           dest_ip
-//    (INK_SOCKS_AUTH rule type)
+//    (TS_SOCKS_AUTH rule type)
 //    Username                  user
 //    Password                  password
-//    (INK_SOCKS_MULTIPLE rule type)
+//    (TS_SOCKS_MULTIPLE rule type)
 //    SOck Servers List         socks_servers
 //    Round Robin               round_robin
 int
@@ -3239,10 +3239,10 @@ writeVaddrsConfigForm(WebHttpContext * whc)
 // specifiers. Assumes that the html for a table are already created. This
 // function will only write the a sec spec field per row, and the
 // header for Secondary Specifiers
-// INKFileNameT parameter is needed because there might be some special
+// TSFileNameT parameter is needed because there might be some special
 // handling of sec. specs for different files
 int
-writeSecondarySpecsForm(WebHttpContext * whc, INKFileNameT file)
+writeSecondarySpecsForm(WebHttpContext * whc, TSFileNameT file)
 {
   NOWARN_UNUSED(file);
   textBuffer *output = whc->response_bdy;
@@ -3463,7 +3463,7 @@ writeSecondarySpecsTableElem(textBuffer * output, char *time, char *src_ip, char
 // convert_cache_ele_to_html_format
 //-------------------------------------------------------------------------
 int
-convert_cache_ele_to_html_format(INKCacheEle * ele,
+convert_cache_ele_to_html_format(TSCacheEle * ele,
                                  char *ruleType,
                                  char *pdType,
                                  char *time,
@@ -3475,28 +3475,28 @@ convert_cache_ele_to_html_format(INKCacheEle * ele,
 
   // rule type
   switch (ele->cfg_ele.type) {
-  case INK_CACHE_NEVER:
+  case TS_CACHE_NEVER:
     snprintf(ruleType, MAX_RULE_PART_SIZE, "never-cache");
     break;
-  case INK_CACHE_IGNORE_NO_CACHE:
+  case TS_CACHE_IGNORE_NO_CACHE:
     snprintf(ruleType, MAX_RULE_PART_SIZE, "ignore-no-cache");
     break;
-  case INK_CACHE_IGNORE_CLIENT_NO_CACHE:
+  case TS_CACHE_IGNORE_CLIENT_NO_CACHE:
     snprintf(ruleType, MAX_RULE_PART_SIZE, "ignore-client-no-cache");
     break;
-  case INK_CACHE_IGNORE_SERVER_NO_CACHE:
+  case TS_CACHE_IGNORE_SERVER_NO_CACHE:
     snprintf(ruleType, MAX_RULE_PART_SIZE, "ignore-server-no-cache");
     break;
-  case INK_CACHE_PIN_IN_CACHE:
+  case TS_CACHE_PIN_IN_CACHE:
     snprintf(ruleType, MAX_RULE_PART_SIZE, "pin-in-cache");
     break;
-  case INK_CACHE_REVALIDATE:
+  case TS_CACHE_REVALIDATE:
     snprintf(ruleType, MAX_RULE_PART_SIZE, "revalidate");
     break;
-  case INK_CACHE_TTL_IN_CACHE:
+  case TS_CACHE_TTL_IN_CACHE:
     snprintf(ruleType, MAX_RULE_PART_SIZE, "ttl-in-cache");
     break;
-  case INK_CACHE_AUTH_CONTENT:
+  case TS_CACHE_AUTH_CONTENT:
     snprintf(ruleType, MAX_RULE_PART_SIZE, "cache-auth-content");
     break;
   default:
@@ -3525,16 +3525,16 @@ Lerror:
 // convert_hosting_ele_to_html_format
 //-------------------------------------------------------------------------
 int
-convert_hosting_ele_to_html_format(INKHostingEle * ele, char *pdType, char *partitions)
+convert_hosting_ele_to_html_format(TSHostingEle * ele, char *pdType, char *partitions)
 {
   char *list;
 
   // pd type
   switch (ele->pd_type) {
-  case INK_PD_DOMAIN:
+  case TS_PD_DOMAIN:
     snprintf(pdType, MAX_RULE_PART_SIZE, "domain");
     break;
-  case INK_PD_HOST:
+  case TS_PD_HOST:
     snprintf(pdType, MAX_RULE_PART_SIZE, "hostname");
     break;
   default:
@@ -3565,7 +3565,7 @@ Lerror:
 // convert_icp_ele_to_html_format
 //-------------------------------------------------------------------------
 int
-convert_icp_ele_to_html_format(INKIcpEle * ele,
+convert_icp_ele_to_html_format(TSIcpEle * ele,
                                char *name,
                                char *host_ip,
                                char *peer_type,
@@ -3588,10 +3588,10 @@ convert_icp_ele_to_html_format(INKIcpEle * ele,
   }
   // cache type
   switch (ele->peer_type) {
-  case INK_ICP_PARENT:
+  case TS_ICP_PARENT:
     snprintf(peer_type, MAX_RULE_PART_SIZE, "parent");
     break;
-  case INK_ICP_SIBLING:
+  case TS_ICP_SIBLING:
     snprintf(peer_type, MAX_RULE_PART_SIZE, "sibling");
     break;
   default:
@@ -3612,22 +3612,22 @@ convert_icp_ele_to_html_format(INKIcpEle * ele,
   }
 
   // mc ip
-  if (ele->mc_ip_addr != INK_INVALID_IP_ADDR) {
+  if (ele->mc_ip_addr != TS_INVALID_IP_ADDR) {
     tmpStr = ip_addr_to_string(ele->mc_ip_addr);
     ink_strncpy(mc_ip, tmpStr, MAX_RULE_PART_SIZE);
     xfree(tmpStr);
   }
   // mc ttl
   switch (ele->mc_ttl) {
-  case INK_MC_TTL_SINGLE_SUBNET:
+  case TS_MC_TTL_SINGLE_SUBNET:
     snprintf(mc_ttl, MAX_RULE_PART_SIZE, "single subnet");
     break;
-  case INK_MC_TTL_MULT_SUBNET:
+  case TS_MC_TTL_MULT_SUBNET:
     snprintf(mc_ttl, MAX_RULE_PART_SIZE, "multiple subnets");
     break;
   default:
     // Handled here:
-    //INK_MC_TTL_UNDEFINED
+    //TS_MC_TTL_UNDEFINED
     break;
   }
 
@@ -3642,7 +3642,7 @@ Lerror:
 // convert_ip_allow_ele_to_html_format
 //-------------------------------------------------------------------------
 int
-convert_ip_allow_ele_to_html_format(INKIpAllowEle * ele, char *src_ip, char *action)
+convert_ip_allow_ele_to_html_format(TSIpAllowEle * ele, char *src_ip, char *action)
 {
   char *ip = NULL;
 
@@ -3654,10 +3654,10 @@ convert_ip_allow_ele_to_html_format(INKIpAllowEle * ele, char *src_ip, char *act
   }
   // action
   switch (ele->action) {
-  case INK_IP_ALLOW_ALLOW:
+  case TS_IP_ALLOW_ALLOW:
     snprintf(action, MAX_RULE_PART_SIZE, "ip_allow");
     break;
-  case INK_IP_ALLOW_DENY:
+  case TS_IP_ALLOW_DENY:
     snprintf(action, MAX_RULE_PART_SIZE, "ip_deny");
     break;
   default:
@@ -3675,7 +3675,7 @@ Lerror:
 // convert_mgmt_allow_ele_to_html_format
 //-------------------------------------------------------------------------
 int
-convert_mgmt_allow_ele_to_html_format(INKMgmtAllowEle * ele, char *src_ip, char *action)
+convert_mgmt_allow_ele_to_html_format(TSMgmtAllowEle * ele, char *src_ip, char *action)
 {
   char *ip = NULL;
 
@@ -3687,10 +3687,10 @@ convert_mgmt_allow_ele_to_html_format(INKMgmtAllowEle * ele, char *src_ip, char 
   }
   // action
   switch (ele->action) {
-  case INK_MGMT_ALLOW_ALLOW:
+  case TS_MGMT_ALLOW_ALLOW:
     snprintf(action, MAX_RULE_PART_SIZE, "ip_allow");
     break;
-  case INK_MGMT_ALLOW_DENY:
+  case TS_MGMT_ALLOW_DENY:
     snprintf(action, MAX_RULE_PART_SIZE, "ip_deny");
     break;
   default:
@@ -3708,7 +3708,7 @@ Lerror:
 // convert_parent_ele_to_html_format
 //-------------------------------------------------------------------------
 int
-convert_parent_ele_to_html_format(INKParentProxyEle * ele,
+convert_parent_ele_to_html_format(TSParentProxyEle * ele,
                                   char *pdType,
                                   char *time,
                                   char *src_ip,
@@ -3732,18 +3732,18 @@ convert_parent_ele_to_html_format(INKParentProxyEle * ele,
   }
   // round_robin
   switch (ele->rr) {
-  case INK_RR_TRUE:
+  case TS_RR_TRUE:
     snprintf(round_robin, MAX_RULE_PART_SIZE, "true");
     break;
-  case INK_RR_STRICT:
+  case TS_RR_STRICT:
     snprintf(round_robin, MAX_RULE_PART_SIZE, "strict");
     break;
-  case INK_RR_FALSE:
+  case TS_RR_FALSE:
     snprintf(round_robin, MAX_RULE_PART_SIZE, "false");
     break;
   default:
     // Handled here:
-    // INK_RR_NONE, INK_RR_UNDEFINED
+    // TS_RR_NONE, TS_RR_UNDEFINED
     break;
   }
 
@@ -3764,14 +3764,14 @@ Lerror:
 // convert_partition_ele_to_html_format
 //-------------------------------------------------------------------------
 int
-convert_partition_ele_to_html_format(INKPartitionEle * ele, char *part_num, char *scheme, char *size, char *size_fmt)
+convert_partition_ele_to_html_format(TSPartitionEle * ele, char *part_num, char *scheme, char *size, char *size_fmt)
 {
   // partition number
   snprintf(part_num, MAX_RULE_PART_SIZE, "%d", ele->partition_num);
 
   // scheme
   switch (ele->scheme) {
-  case INK_PARTITION_HTTP:
+  case TS_PARTITION_HTTP:
     snprintf(scheme, MAX_RULE_PART_SIZE, "http");
     break;
   default:
@@ -3783,10 +3783,10 @@ convert_partition_ele_to_html_format(INKPartitionEle * ele, char *part_num, char
 
   // size format
   switch (ele->size_format) {
-  case INK_SIZE_FMT_PERCENT:
+  case TS_SIZE_FMT_PERCENT:
     snprintf(size_fmt, MAX_RULE_PART_SIZE, "percent");
     break;
-  case INK_SIZE_FMT_ABSOLUTE:
+  case TS_SIZE_FMT_ABSOLUTE:
     snprintf(size_fmt, MAX_RULE_PART_SIZE, "absolute");
     break;
   default:
@@ -3804,7 +3804,7 @@ Lerror:
 // convert_remap_ele_to_html_format
 //-------------------------------------------------------------------------
 int
-convert_remap_ele_to_html_format(INKRemapEle * ele,
+convert_remap_ele_to_html_format(TSRemapEle * ele,
                                  char *rule_type,
                                  char *from_scheme, char *from_port, char *from_path,
                                  char *to_scheme, char *to_port, char *to_path, char *mixt)
@@ -3812,16 +3812,16 @@ convert_remap_ele_to_html_format(INKRemapEle * ele,
   NOWARN_UNUSED(mixt);
   // rule type
   switch (ele->cfg_ele.type) {
-  case INK_REMAP_MAP:
+  case TS_REMAP_MAP:
     snprintf(rule_type, MAX_RULE_PART_SIZE, "map");
     break;
-  case INK_REMAP_REVERSE_MAP:
+  case TS_REMAP_REVERSE_MAP:
     snprintf(rule_type, MAX_RULE_PART_SIZE, "reverse_map");
     break;
-  case INK_REMAP_REDIRECT:
+  case TS_REMAP_REDIRECT:
     snprintf(rule_type, MAX_RULE_PART_SIZE, "redirect");
     break;
-  case INK_REMAP_REDIRECT_TEMP:
+  case TS_REMAP_REDIRECT_TEMP:
     snprintf(rule_type, MAX_RULE_PART_SIZE, "redirect_temporary");
     break;
   default:
@@ -3830,16 +3830,16 @@ convert_remap_ele_to_html_format(INKRemapEle * ele,
 
   // scheme
   switch (ele->from_scheme) {
-  case INK_SCHEME_HTTP:
+  case TS_SCHEME_HTTP:
     snprintf(from_scheme, MAX_RULE_PART_SIZE, "http");
     break;
-  case INK_SCHEME_HTTPS:
+  case TS_SCHEME_HTTPS:
     snprintf(from_scheme, MAX_RULE_PART_SIZE, "https");
     break;
-  case INK_SCHEME_RTSP:
+  case TS_SCHEME_RTSP:
     snprintf(from_scheme, MAX_RULE_PART_SIZE, "rtsp");
     break;
-  case INK_SCHEME_MMS:
+  case TS_SCHEME_MMS:
     snprintf(from_scheme, MAX_RULE_PART_SIZE, "mms");
     break;
   default:
@@ -3859,16 +3859,16 @@ convert_remap_ele_to_html_format(INKRemapEle * ele,
   }
 
   switch (ele->to_scheme) {
-  case INK_SCHEME_HTTP:
+  case TS_SCHEME_HTTP:
     snprintf(to_scheme, MAX_RULE_PART_SIZE, "http");
     break;
-  case INK_SCHEME_HTTPS:
+  case TS_SCHEME_HTTPS:
     snprintf(to_scheme, MAX_RULE_PART_SIZE, "https");
     break;
-  case INK_SCHEME_RTSP:
+  case TS_SCHEME_RTSP:
     snprintf(to_scheme, MAX_RULE_PART_SIZE, "rtsp");
     break;
-  case INK_SCHEME_MMS:
+  case TS_SCHEME_MMS:
     snprintf(to_scheme, MAX_RULE_PART_SIZE, "mms");
     break;
   default:
@@ -3899,20 +3899,20 @@ Lerror:
 // convert_socks_ele_to_html_format
 //-------------------------------------------------------------------------
 int
-convert_socks_ele_to_html_format(INKSocksEle * ele,
+convert_socks_ele_to_html_format(TSSocksEle * ele,
                                  char *rule_type, char *dest_ip, char *user, char *passwd, char *servers, char *rr)
 {
   char *list, *ip;
 
   // rule type
   switch (ele->cfg_ele.type) {
-  case INK_SOCKS_BYPASS:
+  case TS_SOCKS_BYPASS:
     snprintf(rule_type, MAX_RULE_PART_SIZE, "no_socks");
     break;
-  case INK_SOCKS_AUTH:
+  case TS_SOCKS_AUTH:
     snprintf(rule_type, MAX_RULE_PART_SIZE, "auth");
     break;
-  case INK_SOCKS_MULTIPLE:
+  case TS_SOCKS_MULTIPLE:
     snprintf(rule_type, MAX_RULE_PART_SIZE, "multiple_socks");
     break;
   default:
@@ -3955,18 +3955,18 @@ convert_socks_ele_to_html_format(INKSocksEle * ele,
   }
   // round_robin
   switch (ele->rr) {
-  case INK_RR_TRUE:
+  case TS_RR_TRUE:
     snprintf(rr, MAX_RULE_PART_SIZE, "true");
     break;
-  case INK_RR_STRICT:
+  case TS_RR_STRICT:
     snprintf(rr, MAX_RULE_PART_SIZE, "strict");
     break;
-  case INK_RR_FALSE:
+  case TS_RR_FALSE:
     snprintf(rr, MAX_RULE_PART_SIZE, "false");
     break;
   default:
     // Handled here:
-    // INK_RR_NONE, INK_RR_UNDEFINED
+    // TS_RR_NONE, TS_RR_UNDEFINED
     break;
   }
 
@@ -3982,20 +3982,20 @@ Lerror:
 // convert_split_dns_ele_to_html_format
 //-------------------------------------------------------------------------
 int
-convert_split_dns_ele_to_html_format(INKSplitDnsEle * ele,
+convert_split_dns_ele_to_html_format(TSSplitDnsEle * ele,
                                      char *pdType, char *dns_server, char *def_domain, char *search_list)
 {
   char *domain_list;
 
   // pd type
   switch (ele->pd_type) {
-  case INK_PD_DOMAIN:
+  case TS_PD_DOMAIN:
     snprintf(pdType, MAX_RULE_PART_SIZE, "dest_domain");
     break;
-  case INK_PD_HOST:
+  case TS_PD_HOST:
     snprintf(pdType, MAX_RULE_PART_SIZE, "dest_host");
     break;
-  case INK_PD_URL_REGEX:
+  case TS_PD_URL_REGEX:
     snprintf(pdType, MAX_RULE_PART_SIZE, "url_regex");
     break;
   default:
@@ -4041,7 +4041,7 @@ Lerror:
 // convert_update_ele_to_html_format
 //-------------------------------------------------------------------------
 int
-convert_update_ele_to_html_format(INKUpdateEle * ele, char *hdrs, char *offset, char *interval, char *depth)
+convert_update_ele_to_html_format(TSUpdateEle * ele, char *hdrs, char *offset, char *interval, char *depth)
 {
   char *list;
 
@@ -4083,7 +4083,7 @@ Lerror:
 // convert_virt_ip_addr_ele_to_html_format
 //-------------------------------------------------------------------------
 int
-convert_virt_ip_addr_ele_to_html_format(INKVirtIpAddrEle * ele, char *ip, char *sub_intr)
+convert_virt_ip_addr_ele_to_html_format(TSVirtIpAddrEle * ele, char *ip, char *sub_intr)
 {
   char *ipt;
 
@@ -4114,10 +4114,10 @@ Lerror:
 //-------------------------------------------------------------------------
 // convert_pdss_to_html_format
 //-------------------------------------------------------------------------
-// Helper function that can be used by Ele's with embeded INKPdSsFormat
+// Helper function that can be used by Ele's with embeded TSPdSsFormat
 // structures.
 int
-convert_pdss_to_html_format(INKPdSsFormat info,
+convert_pdss_to_html_format(TSPdSsFormat info,
                             char *pdType,
                             char *time,
                             char *src_ip,
@@ -4129,16 +4129,16 @@ convert_pdss_to_html_format(INKPdSsFormat info,
 
   // pd type
   switch (info.pd_type) {
-  case INK_PD_DOMAIN:
+  case TS_PD_DOMAIN:
     snprintf(pdType, MAX_RULE_PART_SIZE, "dest_domain");
     break;
-  case INK_PD_HOST:
+  case TS_PD_HOST:
     snprintf(pdType, MAX_RULE_PART_SIZE, "dest_host");
     break;
-  case INK_PD_IP:
+  case TS_PD_IP:
     snprintf(pdType, MAX_RULE_PART_SIZE, "dest_ip");
     break;
-  case INK_PD_URL_REGEX:
+  case TS_PD_URL_REGEX:
     snprintf(pdType, MAX_RULE_PART_SIZE, "url_regex");
     break;
   default:
@@ -4193,22 +4193,22 @@ convert_pdss_to_html_format(INKPdSsFormat info,
   }
   //method
   switch (info.sec_spec.method) {
-  case INK_METHOD_GET:
+  case TS_METHOD_GET:
     snprintf(method, MAX_RULE_PART_SIZE, "get");
     break;
-  case INK_METHOD_POST:
+  case TS_METHOD_POST:
     snprintf(method, MAX_RULE_PART_SIZE, "post");
     break;
-  case INK_METHOD_PUT:
+  case TS_METHOD_PUT:
     snprintf(method, MAX_RULE_PART_SIZE, "put");
     break;
-  case INK_METHOD_TRACE:
+  case TS_METHOD_TRACE:
     snprintf(method, MAX_RULE_PART_SIZE, "trace");
     break;
-  case INK_METHOD_PUSH:
+  case TS_METHOD_PUSH:
     snprintf(method, MAX_RULE_PART_SIZE, "PUSH");
     break;
-  case INK_METHOD_NONE:
+  case TS_METHOD_NONE:
     snprintf(method, MAX_RULE_PART_SIZE, "none");
     break;
   default:
@@ -4217,19 +4217,19 @@ convert_pdss_to_html_format(INKPdSsFormat info,
 
   // scheme
   switch (info.sec_spec.scheme) {
-  case INK_SCHEME_HTTP:
+  case TS_SCHEME_HTTP:
     snprintf(scheme, MAX_RULE_PART_SIZE, "http");
     break;
-  case INK_SCHEME_HTTPS:
+  case TS_SCHEME_HTTPS:
     snprintf(scheme, MAX_RULE_PART_SIZE, "https");
     break;
-  case INK_SCHEME_RTSP:
+  case TS_SCHEME_RTSP:
     snprintf(scheme, MAX_RULE_PART_SIZE, "rtsp");
     break;
-  case INK_SCHEME_MMS:
+  case TS_SCHEME_MMS:
     snprintf(scheme, MAX_RULE_PART_SIZE, "mms");
     break;
-  case INK_SCHEME_NONE:
+  case TS_SCHEME_NONE:
     snprintf(scheme, MAX_RULE_PART_SIZE, "none");
     break;
   default:

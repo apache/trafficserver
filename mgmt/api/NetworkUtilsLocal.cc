@@ -47,7 +47,7 @@
  * flushes the socket by reading the entire message out of the socket
  * and then gets rid of the msg
  **************************************************************************/
-INKError
+TSError
 socket_flush(struct SocketInfo sock_info)
 {
   int ret, byte_read = 0;
@@ -55,7 +55,7 @@ socket_flush(struct SocketInfo sock_info)
 
   // check to see if anything to read; wait only for specified time
   if (socket_read_timeout(sock_info.fd, MAX_TIME_WAIT, 0) <= 0) {
-    return INK_ERR_NET_TIMEOUT;
+    return TS_ERR_NET_TIMEOUT;
   }
   // read entire message
   while (byte_read < MAX_BUF_SIZE) {
@@ -67,21 +67,21 @@ socket_flush(struct SocketInfo sock_info)
         continue;
 
       Debug("ts_main", "[socket_read_n] socket read for version byte failed.\n");
-      mgmt_elog("[socket_flush] (INK_ERR_NET_READ) %s\n", strerror(errno));
-      return INK_ERR_NET_READ;
+      mgmt_elog("[socket_flush] (TS_ERR_NET_READ) %s\n", strerror(errno));
+      return TS_ERR_NET_READ;
     }
 
     if (ret == 0) {
       Debug("ts_main", "[socket_read_n] returned 0 on reading: %s.\n", strerror(errno));
-      mgmt_log("[socket_flush] (INK_ERR_NET_EOF) %s\n", strerror(errno));
-      return INK_ERR_NET_EOF;
+      mgmt_log("[socket_flush] (TS_ERR_NET_EOF) %s\n", strerror(errno));
+      return TS_ERR_NET_EOF;
     }
     // we are all good here
     byte_read += ret;
   }
 
   mgmt_elog("[socket_flush] uh oh! didn't finish flushing socket!\n");
-  return INK_ERR_FAIL;
+  return TS_ERR_FAIL;
 }
 
 /**************************************************************************
@@ -92,14 +92,14 @@ socket_flush(struct SocketInfo sock_info)
  * output:  number of bytes read
  * note:    socket_read is implemented in WebUtils.cc
  *************************************************************************/
-INKError
+TSError
 socket_read_n(struct SocketInfo sock_info, char *buf, int bytes)
 {
   int ret, byte_read = 0;
 
   // check to see if anything to read; wait for specified time
   if (socket_read_timeout(sock_info.fd, MAX_TIME_WAIT, 0) <= 0) {
-    return INK_ERR_NET_TIMEOUT;
+    return TS_ERR_NET_TIMEOUT;
   }
   // read until we fulfill the number
   while (byte_read < bytes) {
@@ -111,20 +111,20 @@ socket_read_n(struct SocketInfo sock_info, char *buf, int bytes)
         continue;
 
       Debug("ts_main", "[socket_read_n] socket read for version byte failed.\n");
-      mgmt_elog("[socket_read_n] (INK_ERR_NET_READ) %s\n", strerror(errno));
-      return INK_ERR_NET_READ;
+      mgmt_elog("[socket_read_n] (TS_ERR_NET_READ) %s\n", strerror(errno));
+      return TS_ERR_NET_READ;
     }
 
     if (ret == 0) {
       Debug("ts_main", "[socket_read_n] returned 0 on reading: %s.\n", strerror(errno));
-      mgmt_log("[socket_read_n] (INK_ERR_NET_EOF) %s\n", strerror(errno));
-      return INK_ERR_NET_EOF;
+      mgmt_log("[socket_read_n] (TS_ERR_NET_EOF) %s\n", strerror(errno));
+      return TS_ERR_NET_EOF;
     }
     // we are all good here
     byte_read += ret;
   }
 
-  return INK_ERR_OKAY;
+  return TS_ERR_OKAY;
 }
 
 /**************************************************************************
@@ -132,17 +132,17 @@ socket_read_n(struct SocketInfo sock_info, char *buf, int bytes)
  *
  * purpose: guarantees writing of n bytes or return error
  * input:   socket info struct, buffer to write from & number of bytes to write
- * output:  INK_ERR_xx (depends on num bytes written)
+ * output:  TS_ERR_xx (depends on num bytes written)
  * note:    socket_read is implemented in WebUtils.cc
  *************************************************************************/
-INKError
+TSError
 socket_write_n(struct SocketInfo sock_info, const char *buf, int bytes)
 {
   int ret, byte_wrote = 0;
 
   // makes sure the socket descriptor is writable
   if (socket_write_timeout(sock_info.fd, MAX_TIME_WAIT, 0) <= 0) {
-    return INK_ERR_NET_TIMEOUT;
+    return TS_ERR_NET_TIMEOUT;
   }
   // read until we fulfill the number
   while (byte_wrote < bytes) {
@@ -154,18 +154,18 @@ socket_write_n(struct SocketInfo sock_info, const char *buf, int bytes)
       if (errno == EAGAIN)
         continue;
 
-      return INK_ERR_NET_WRITE;
+      return TS_ERR_NET_WRITE;
     }
 
     if (ret == 0) {
       mgmt_elog("[socket_write_n] %s\n", strerror(errno));
-      return INK_ERR_NET_EOF;
+      return TS_ERR_NET_EOF;
     }
     // we are all good here
     byte_wrote += ret;
   }
 
-  return INK_ERR_OKAY;
+  return TS_ERR_OKAY;
 }
 
 
@@ -177,20 +177,20 @@ socket_write_n(struct SocketInfo sock_info, const char *buf, int bytes)
  * input: sock_info - socket msg is read from
  *        op_t      - the operation type specified in the msg
  *        msg       - the data from the network message (no OpType or msg_len)
- * output: INK_ERR_xx ( if INK_ERR_OKAY, then parameters set successfully)
+ * output: TS_ERR_xx ( if TS_ERR_OKAY, then parameters set successfully)
  * notes: Since preprocess_msg already removes the OpType and msg_len, this part o
  *        the message is not dealt with by the other parsing functions
  **********************************************************************/
-INKError
+TSError
 preprocess_msg(struct SocketInfo sock_info, OpType * op_t, char **req)
 {
-  INKError ret;
+  TSError ret;
   int req_len;
   int16_t op;
 
   // read operation type
   ret = socket_read_n(sock_info, (char *) &op, SIZE_OP_T);
-  if (ret != INK_ERR_OKAY) {
+  if (ret != TS_ERR_OKAY) {
     Debug("ts_main", "[preprocess_msg] ERROR %d reading op type\n", ret);
     goto Lerror;
   }
@@ -203,7 +203,7 @@ preprocess_msg(struct SocketInfo sock_info, OpType * op_t, char **req)
     mgmt_elog("[preprocess_msg] ERROR: %d is invalid op type\n", op);
 
     // need to flush the invalid message from the socket
-    if ((ret = socket_flush(sock_info)) != INK_ERR_NET_EOF)
+    if ((ret = socket_flush(sock_info)) != TS_ERR_NET_EOF)
       mgmt_log("[preprocess_msg] unsuccessful socket flushing\n");
     else
       mgmt_log("[preprocess_msg] successfully flushed the socket\n");
@@ -212,7 +212,7 @@ preprocess_msg(struct SocketInfo sock_info, OpType * op_t, char **req)
   }
   // now read the request msg size
   ret = socket_read_n(sock_info, (char *) &req_len, SIZE_LEN);
-  if (ret != INK_ERR_OKAY) {
+  if (ret != TS_ERR_OKAY) {
     mgmt_elog("[preprocess_msg] ERROR %d reading msg size\n", ret);
     Debug("ts_main", "[preprocess_msg] ERROR %d reading msg size\n", ret);
     goto Lerror;
@@ -229,12 +229,12 @@ preprocess_msg(struct SocketInfo sock_info, OpType * op_t, char **req)
   } else {
     *req = (char *) xmalloc(sizeof(char) * (req_len + 1));
     if (!(*req)) {
-      ret = INK_ERR_SYS_CALL;
+      ret = TS_ERR_SYS_CALL;
       goto Lerror;
     }
 
     ret = socket_read_n(sock_info, *req, req_len);
-    if (ret != INK_ERR_OKAY) {
+    if (ret != TS_ERR_OKAY) {
       xfree(*req);
       goto Lerror;
     }
@@ -243,7 +243,7 @@ preprocess_msg(struct SocketInfo sock_info, OpType * op_t, char **req)
     Debug("ts_main", "[preprocess_msg] request message = %s\n", *req);
   }
 
-  return INK_ERR_OKAY;
+  return TS_ERR_OKAY;
 
 Lerror:
   return ret;
@@ -260,22 +260,22 @@ Lerror:
  * purpose: parses a file read request from a remote API client
  * input: req - data that needs to be parsed
  *        file - the file type sent in the request
- * output: INK_ERR_xx
- * notes: request format = <INKFileNameT>
+ * output: TS_ERR_xx
+ * notes: request format = <TSFileNameT>
  **********************************************************************/
-INKError
-parse_file_read_request(char *req, INKFileNameT * file)
+TSError
+parse_file_read_request(char *req, TSFileNameT * file)
 {
   int16_t file_t;
 
   if (!req || !file)
-    return INK_ERR_PARAMS;
+    return TS_ERR_PARAMS;
 
   // get file type - copy first 2 bytes of request
   memcpy(&file_t, req, SIZE_FILE_T);
-  *file = (INKFileNameT) file_t;
+  *file = (TSFileNameT) file_t;
 
-  return INK_ERR_OKAY;
+  return TS_ERR_OKAY;
 }
 
 /**********************************************************************
@@ -287,22 +287,22 @@ parse_file_read_request(char *req, INKFileNameT * file)
  *        text - the text that needs to be written
  *        size - length of the text
  *        ver  - version of the file that is to be written
- * output: INK_ERR_xx
- * notes: request format = <INKFileNameT> <version> <size> <text>
+ * output: TS_ERR_xx
+ * notes: request format = <TSFileNameT> <version> <size> <text>
  **********************************************************************/
-INKError
-parse_file_write_request(char *req, INKFileNameT * file, int *ver, int *size, char **text)
+TSError
+parse_file_write_request(char *req, TSFileNameT * file, int *ver, int *size, char **text)
 {
   int16_t file_t, f_ver;
   int32_t f_size;
 
   // check input is non-NULL
   if (!req || !file || !ver || !size || !text)
-    return INK_ERR_PARAMS;
+    return TS_ERR_PARAMS;
 
   // get file type - copy first 2 bytes of request
   memcpy(&file_t, req, SIZE_FILE_T);
-  *file = (INKFileNameT) file_t;
+  *file = (TSFileNameT) file_t;
 
   // get file version - copy next 2 bytes
   memcpy(&f_ver, req + SIZE_FILE_T, SIZE_VER);
@@ -315,11 +315,11 @@ parse_file_write_request(char *req, INKFileNameT * file, int *ver, int *size, ch
   // get file text
   *text = (char *) xmalloc(sizeof(char) * (f_size + 1));
   if (!(*text))
-    return INK_ERR_SYS_CALL;
+    return TS_ERR_SYS_CALL;
   memcpy(*text, req + SIZE_FILE_T + SIZE_VER + SIZE_LEN, f_size);
   (*text)[f_size] = '\0';       // end buffer
 
-  return INK_ERR_OKAY;
+  return TS_ERR_OKAY;
 }
 
 /**********************************************************************
@@ -329,17 +329,17 @@ parse_file_write_request(char *req, INKFileNameT * file, int *ver, int *size, ch
  * input: req - request info from requestor
  *        name - first arg
  *        val  - second arg
- * output: INK_ERR_xx
+ * output: TS_ERR_xx
  * notes: format= <name_len> <val_len> <name> <val>
  **********************************************************************/
-INKError
+TSError
 parse_request_name_value(char *req, char **name_1, char **val_1)
 {
   int32_t name_len, val_len;
   char *name, *val;
 
   if (!req || !name_1 || !val_1)
-    return INK_ERR_PARAMS;
+    return TS_ERR_PARAMS;
 
   // get record name length
   memcpy(&name_len, req, SIZE_LEN);
@@ -350,7 +350,7 @@ parse_request_name_value(char *req, char **name_1, char **val_1)
   // get record name
   name = (char *) xmalloc(sizeof(char) * (name_len + 1));
   if (!name)
-    return INK_ERR_SYS_CALL;
+    return TS_ERR_SYS_CALL;
   memcpy(name, req + SIZE_LEN + SIZE_LEN, name_len);
   name[name_len] = '\0';        // end string
   *name_1 = name;
@@ -358,12 +358,12 @@ parse_request_name_value(char *req, char **name_1, char **val_1)
   // get record value - can be a MgmtInt, MgmtCounter ...
   val = (char *) xmalloc(sizeof(char) * (val_len + 1));
   if (!val)
-    return INK_ERR_SYS_CALL;
+    return TS_ERR_SYS_CALL;
   memcpy(val, req + SIZE_LEN + SIZE_LEN + name_len, val_len);
   val[val_len] = '\0';          // end string
   *val_1 = val;
 
-  return INK_ERR_OKAY;
+  return TS_ERR_OKAY;
 }
 
 
@@ -373,22 +373,22 @@ parse_request_name_value(char *req, char **name_1, char **val_1)
  * purpose: parses a diags request
  * input: diag_msg - the diag msg to be outputted
  *        mode     - indicates what type of diag message
- * output: INK_ERR_xx
- * notes: request format = <INKDiagsT> <diag_msg_len> <diag_msg>
+ * output: TS_ERR_xx
+ * notes: request format = <TSDiagsT> <diag_msg_len> <diag_msg>
  **********************************************************************/
-INKError
-parse_diags_request(char *req, INKDiagsT * mode, char **diag_msg)
+TSError
+parse_diags_request(char *req, TSDiagsT * mode, char **diag_msg)
 {
   int16_t diag_t;
   int32_t msg_len;
 
   // check input is non-NULL
   if (!req || !mode || !diag_msg)
-    return INK_ERR_PARAMS;
+    return TS_ERR_PARAMS;
 
   // get diags type - copy first 2 bytes of request
   memcpy(&diag_t, req, SIZE_DIAGS_T);
-  *mode = (INKDiagsT) diag_t;
+  *mode = (TSDiagsT) diag_t;
 
   // get msg size - copy next 4 bytes
   memcpy(&msg_len, req + SIZE_DIAGS_T, SIZE_LEN);
@@ -396,11 +396,11 @@ parse_diags_request(char *req, INKDiagsT * mode, char **diag_msg)
   // get msg
   *diag_msg = (char *) xmalloc(sizeof(char) * (msg_len + 1));
   if (!(*diag_msg))
-    return INK_ERR_SYS_CALL;
+    return TS_ERR_SYS_CALL;
   memcpy(*diag_msg, req + SIZE_DIAGS_T + SIZE_LEN, msg_len);
   (*diag_msg)[msg_len] = '\0';  // end buffer
 
-  return INK_ERR_OKAY;
+  return TS_ERR_OKAY;
 }
 
 /**********************************************************************
@@ -409,27 +409,27 @@ parse_diags_request(char *req, INKDiagsT * mode, char **diag_msg)
  * purpose: parses a request to set the proxy state
  * input: diag_msg - the diag msg to be outputted
  *        mode     - indicates what type of diag message
- * output: INK_ERR_xx
- * notes: request format = <INKProxyStateT> <INKCacheClearT>
+ * output: TS_ERR_xx
+ * notes: request format = <TSProxyStateT> <TSCacheClearT>
  **********************************************************************/
-INKError
-parse_proxy_state_request(char *req, INKProxyStateT * state, INKCacheClearT * clear)
+TSError
+parse_proxy_state_request(char *req, TSProxyStateT * state, TSCacheClearT * clear)
 {
   int16_t state_t, cache_t;
 
   // check input is non-NULL
   if (!req || !state || !clear)
-    return INK_ERR_PARAMS;
+    return TS_ERR_PARAMS;
 
   // get proxy on/off
   memcpy(&state_t, req, SIZE_PROXY_T);
-  *state = (INKProxyStateT) state_t;
+  *state = (TSProxyStateT) state_t;
 
   // get cahce-clearing type
   memcpy(&cache_t, req + SIZE_PROXY_T, SIZE_TS_ARG_T);
-  *clear = (INKCacheClearT) cache_t;
+  *clear = (TSCacheClearT) cache_t;
 
-  return INK_ERR_OKAY;
+  return TS_ERR_OKAY;
 }
 
 /**********************************************************************
@@ -442,18 +442,18 @@ parse_proxy_state_request(char *req, INKProxyStateT * state, INKCacheClearT * cl
 /**********************************************************************
  * send_reply
  *
- * purpose: sends a simple INK_ERR_* reply to the request made
+ * purpose: sends a simple TS_ERR_* reply to the request made
  * input: return value - could be extended to support more complex
- *        error codes but for now use only INK_ERR_FAIL, INK_ERR_OKAY
+ *        error codes but for now use only TS_ERR_FAIL, TS_ERR_OKAY
  *        int fd - socket fd to use.
- * output: INK_ERR_*
+ * output: TS_ERR_*
  * notes: this function does not need to go through the internal structure
  *        so no cleaning up is done.
  **********************************************************************/
-INKError
-send_reply(struct SocketInfo sock_info, INKError retval)
+TSError
+send_reply(struct SocketInfo sock_info, TSError retval)
 {
-  INKError ret;
+  TSError ret;
   char msg[SIZE_ERR_T];
   int16_t ret_val;
 
@@ -473,29 +473,29 @@ send_reply(struct SocketInfo sock_info, INKError retval)
  * purpose: sends the reply in response to a request to get list of string
  *          tokens (delimited by REMOTE_DELIM_STR)
  * input: sock_info -
- *        retval - INKError return type for the CoreAPI call
+ *        retval - TSError return type for the CoreAPI call
  *        list - string delimited list of string tokens
- * output: INK_ERR_*
+ * output: TS_ERR_*
  * notes:
- * format: <INKError> <string_list_len> <delimited_string_list>
+ * format: <TSError> <string_list_len> <delimited_string_list>
  **********************************************************************/
-INKError
-send_reply_list(struct SocketInfo sock_info, INKError retval, char *list)
+TSError
+send_reply_list(struct SocketInfo sock_info, TSError retval, char *list)
 {
-  INKError ret;
+  TSError ret;
   int msg_pos = 0, total_len;
   char *msg;
   int16_t ret_val;
   int32_t list_size;              // to be safe, typecast
 
   if (!list) {
-    return INK_ERR_PARAMS;
+    return TS_ERR_PARAMS;
   }
 
   total_len = SIZE_ERR_T + SIZE_LEN + strlen(list);
   msg = (char *) xmalloc(sizeof(char) * total_len);
   if (!msg)
-    return INK_ERR_SYS_CALL;    // ERROR - malloc failed
+    return TS_ERR_SYS_CALL;    // ERROR - malloc failed
 
   // write the return value
   ret_val = (int16_t) retval;
@@ -527,28 +527,28 @@ send_reply_list(struct SocketInfo sock_info, INKError retval, char *list)
  *        val      - the value of the record requested
  *        val_size - num bytes the value occupies
  *        rec_type - the type of the record value requested
- * output: INK_ERR_*
+ * output: TS_ERR_*
  * notes: this function does not need to go through the internal structure
  *        so no cleaning up is done.
- *        format = <INKError> <rec_val_len> <rec_type> <rec_val>
+ *        format = <TSError> <rec_val_len> <rec_type> <rec_val>
  **********************************************************************/
-INKError
-send_record_get_reply(struct SocketInfo sock_info, INKError retval, void *val, int val_size, INKRecordT rec_type)
+TSError
+send_record_get_reply(struct SocketInfo sock_info, TSError retval, void *val, int val_size, TSRecordT rec_type)
 {
-  INKError ret;
+  TSError ret;
   int msg_pos = 0, total_len;
   char *msg;
   int16_t record_t, ret_val;
   int32_t v_size;                 // to be safe, typecast
 
   if (!val) {
-    return INK_ERR_PARAMS;
+    return TS_ERR_PARAMS;
   }
 
   total_len = SIZE_ERR_T + SIZE_LEN + SIZE_REC_T + val_size;
   msg = (char *) xmalloc(sizeof(char) * total_len);
   if (!msg)
-    return INK_ERR_SYS_CALL;    // ERROR - malloc failed
+    return TS_ERR_SYS_CALL;    // ERROR - malloc failed
 
   // write the return value
   ret_val = (int16_t) retval;
@@ -580,15 +580,15 @@ send_record_get_reply(struct SocketInfo sock_info, INKError retval, void *val, i
  *
  * purpose: sends reply to the record_set request made
  * input:
- * output: INK_ERR_*
+ * output: TS_ERR_*
  * notes: this function does not need to go through the internal structure
  *        so no cleaning up is done.
  *        format =
  **********************************************************************/
-INKError
-send_record_set_reply(struct SocketInfo sock_info, INKError retval, INKActionNeedT action_need)
+TSError
+send_record_set_reply(struct SocketInfo sock_info, TSError retval, TSActionNeedT action_need)
 {
-  INKError ret;
+  TSError ret;
   int total_len;
   char *msg;
   int16_t action_t, ret_val;
@@ -596,7 +596,7 @@ send_record_set_reply(struct SocketInfo sock_info, INKError retval, INKActionNee
   total_len = SIZE_ERR_T + SIZE_ACTION_T;
   msg = (char *) xmalloc(sizeof(char) * total_len);
   if (!msg)
-    return INK_ERR_SYS_CALL;    // ERROR - malloc failed!
+    return TS_ERR_SYS_CALL;    // ERROR - malloc failed!
 
   // write the return value
   ret_val = (int16_t) retval;
@@ -620,30 +620,30 @@ send_record_set_reply(struct SocketInfo sock_info, INKError retval, INKActionNee
  *
  * purpose: sends the reply in response to a file read request
  * input: return value - could be extended to support more complex
- *        error codes but for now use only INK_ERR_FAIL, INK_ERR_OKAY
+ *        error codes but for now use only TS_ERR_FAIL, TS_ERR_OKAY
  *        int fd - socket fd to use.
- * output: INK_ERR_*
+ * output: TS_ERR_*
  * notes: this function does not need to go through the internal structure
  *        so no cleaning up is done.
- *        reply format = <INKError> <file_ver> <file_size> <file_text>
+ *        reply format = <TSError> <file_ver> <file_size> <file_text>
  **********************************************************************/
-INKError
-send_file_read_reply(struct SocketInfo sock_info, INKError retval, int ver, int size, char *text)
+TSError
+send_file_read_reply(struct SocketInfo sock_info, TSError retval, int ver, int size, char *text)
 {
-  INKError ret;
+  TSError ret;
   int msg_pos = 0, msg_len;
   char *msg;
   int16_t ret_val, f_ver;
   int32_t f_size;                 // to be safe
 
   if (!text)
-    return INK_ERR_PARAMS;
+    return TS_ERR_PARAMS;
 
   // allocate space for buffer
   msg_len = SIZE_ERR_T + SIZE_VER + SIZE_LEN + size;
   msg = (char *) xmalloc(sizeof(char) * msg_len);
   if (!msg)
-    return INK_ERR_SYS_CALL;
+    return TS_ERR_SYS_CALL;
 
   // write the return value
   ret_val = (int16_t) retval;
@@ -678,14 +678,14 @@ send_file_read_reply(struct SocketInfo sock_info, INKError retval, int ver, int 
  * purpose: sends the reply in response to a request to get state of proxy
  * input:
  *        int fd - socket fd to use.
- * output: INK_ERR_*
- * notes: this function DOES NOT HAVE IT"S OWN INKError TO SEND!!!!
- *        reply format = <INKProxyStateT>
+ * output: TS_ERR_*
+ * notes: this function DOES NOT HAVE IT"S OWN TSError TO SEND!!!!
+ *        reply format = <TSProxyStateT>
  **********************************************************************/
-INKError
-send_proxy_state_get_reply(struct SocketInfo sock_info, INKProxyStateT state)
+TSError
+send_proxy_state_get_reply(struct SocketInfo sock_info, TSProxyStateT state)
 {
-  INKError ret;
+  TSError ret;
   char msg[SIZE_PROXY_T];
   int16_t state_t;
 
@@ -705,16 +705,16 @@ send_proxy_state_get_reply(struct SocketInfo sock_info, INKProxyStateT state)
  *
  * purpose: sends the reply in response to a request check if event is active
  * input: sock_info -
- *        retval - INKError return type for the EventIsActive core call
+ *        retval - TSError return type for the EventIsActive core call
  *        active - is the requested event active or not?
- * output: INK_ERR_*
+ * output: TS_ERR_*
  * notes:
- * format: <INKError> <bool>
+ * format: <TSError> <bool>
  **********************************************************************/
-INKError
-send_event_active_reply(struct SocketInfo sock_info, INKError retval, bool active)
+TSError
+send_event_active_reply(struct SocketInfo sock_info, TSError retval, bool active)
 {
-  INKError ret;
+  TSError ret;
   int total_len;
   char *msg;
   int16_t is_active, ret_val;
@@ -722,7 +722,7 @@ send_event_active_reply(struct SocketInfo sock_info, INKError retval, bool activ
   total_len = SIZE_ERR_T + SIZE_BOOL;
   msg = (char *) xmalloc(sizeof(char) * total_len);
   if (!msg)
-    return INK_ERR_SYS_CALL;    // ERROR - malloc failed!
+    return TS_ERR_SYS_CALL;    // ERROR - malloc failed!
 
   // write the return value
   ret_val = (int16_t) retval;
@@ -747,27 +747,27 @@ send_event_active_reply(struct SocketInfo sock_info, INKError retval, bool activ
  *          has occurred (this msg will be received by the event_poll_thread)
  * input: fd - file descriptor to use for writing
  *        event - the event that was signalled on TM side
- * output: INK_ERR_xx
+ * output: TS_ERR_xx
  * note: format: <OpType> <event_name_len> <event_name> <desc_len> <desc>
  **********************************************************************/
-INKError
-send_event_notification(struct SocketInfo sock_info, INKEvent * event)
+TSError
+send_event_notification(struct SocketInfo sock_info, TSEvent * event)
 {
-  INKError ret;
+  TSError ret;
   int total_len, name_len, desc_len;
   char *msg;
   int16_t op_t;
   int32_t len;
 
   if (!event || !event->name || !event->description)
-    return INK_ERR_PARAMS;
+    return TS_ERR_PARAMS;
 
   name_len = strlen(event->name);
   desc_len = strlen(event->description);
   total_len = SIZE_OP_T + (SIZE_LEN * 2) + name_len + desc_len;
   msg = (char *) xmalloc(sizeof(char) * total_len);
   if (!msg)
-    return INK_ERR_SYS_CALL;    // ERROR - malloc failed!
+    return TS_ERR_SYS_CALL;    // ERROR - malloc failed!
 
   // write the operation
   op_t = (int16_t) EVENT_NOTIFY;

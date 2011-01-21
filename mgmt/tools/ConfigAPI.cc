@@ -94,7 +94,7 @@ Config_SetHostname(char *hostname)
     return status;
   }
   //MgmtAPI call
-  status = INKSetHostname(hostname);
+  status = TSSetHostname(hostname);
   if (status) {
     // If this fails, we need to restore old machine hostname
     Net_GetHostname(old_hostname, sizeof(old_hostname));
@@ -150,7 +150,7 @@ Config_SetDefaultRouter(char *router)
     return status;
   }
 
-  status = INKSetGateway(router);
+  status = TSSetGateway(router);
   DPRINTF(("Config_SetDefaultRouter: INKSetGateway returned %d\n", status));
   if (status) {
     if (old_router == NULL) {
@@ -194,7 +194,7 @@ Config_SetDomain(const char *domain)
   if (status) {
     return status;
   }
-  status = INKSetSearchDomain(domain);
+  status = TSSetSearchDomain(domain);
   if (status) {
     //rollback
     if (old_domain == NULL) {
@@ -239,7 +239,7 @@ Config_SetDNS_Servers(char *dns)
   if (status) {
     return status;
   }
-  status = INKSetDNSServers(dns);
+  status = TSSetDNSServers(dns);
   if (status) {
     //if we fail we try to revert to the old dns name??
     if (old_dns == NULL) {
@@ -365,7 +365,7 @@ Config_SetNIC_Down(char *interface)
 
   Config_GetNIC_IP(interface, ip, sizeof(ip));
 
-  status = INKSetNICDown(interface, ip);
+  status = TSSetNICDown(interface, ip);
   //do we have anything to roll back to?
   if (status) {
     DPRINTF(("Config_SetNIC_down: falied to config TS for SetNIC_Down\n"));
@@ -467,8 +467,7 @@ Config_SetNIC_Up(char *interface, char *onboot, char *protocol, char *ip, char *
 
   DPRINTF(("Config_SetNIC_Up: calling INKSetNICUp \n"));
   //Rollback to keep consistent with CLI and snapshot
-  status =
-    INKSetNICUp(interface, strcmp(protocol, "dhcp") != 0, ip, old_ip, netmask, strcmp(onboot, "onboot") == 0, gateway);
+  status = TSSetNICUp(interface, strcmp(protocol, "dhcp") != 0, ip, old_ip, netmask, strcmp(onboot, "onboot") == 0, gateway);
 
   if (status) {
     DPRINTF(("Config_SetNIC_Up: INKSetNICUp returned %d\n", status));
@@ -616,8 +615,8 @@ Config_SaveVersion(char *file)
   child2->setAttributes(parentAttributes3);
   child2->setNodeName("CONFIG_TYPE");
 
-  INKString TMVersion = NULL;
-  if (INKRecordGetString("proxy.node.version.manager.short", &TMVersion) == INK_ERR_OKAY) {
+  TSString TMVersion = NULL;
+  if (TSRecordGetString("proxy.node.version.manager.short", &TMVersion) == TS_ERR_OKAY) {
     XMLNode *VersionString = new XMLNode;
     if (TMVersion != NULL) {
       VersionString->setNodeName("VersionString");
@@ -827,10 +826,10 @@ Config_RestoreNetConfig(char *file)
 
     // Get Admin GUI encrypted password.
     char *e_gui_passwd;
-    INKActionNeedT action_need, top_action_req = INK_ACTION_UNDEFINED;
+    TSActionNeedT action_need, top_action_req = TS_ACTION_UNDEFINED;
     char *mail_address = netXml.getXmlTagValue("MailAddress");
     if (mail_address != NULL) {
-      if (MgmtRecordSet("proxy.config.alarm_email", mail_address, &action_need) != INK_ERR_OKAY) {
+      if (MgmtRecordSet("proxy.config.alarm_email", mail_address, &action_need) != TS_ERR_OKAY) {
         DPRINTF(("Config_FloppyNetRestore: failed to set new mail_address %s!\n", mail_address));
       } else {
         if (action_need < top_action_req)       // a more "severe" action is needed...
@@ -842,10 +841,10 @@ Config_RestoreNetConfig(char *file)
     //Admin GUI passwd setting
     char *gui_passwd = netXml.getXmlTagValue("AdminGUIPasswd");
     if (gui_passwd != NULL) {
-      if (INKEncryptPassword(gui_passwd, &e_gui_passwd) != INK_ERR_OKAY) {
+      if (TSEncryptPassword(gui_passwd, &e_gui_passwd) != TS_ERR_OKAY) {
         DPRINTF(("Config_FloppyNetRestore: failed to encrypt passwd %s!\n", gui_passwd));
       } else {
-        if (MgmtRecordSet("proxy.config.admin.admin_password", e_gui_passwd, &action_need) != INK_ERR_OKAY) {
+        if (MgmtRecordSet("proxy.config.admin.admin_password", e_gui_passwd, &action_need) != TS_ERR_OKAY) {
           DPRINTF(("Config_FloppyNetRestore: failed to set new passwd %s!\n", gui_passwd));
         } else {
           if (action_need < top_action_req)     // a more "severe" action is needed...
@@ -905,8 +904,8 @@ Config_SaveNetConfig(char *file)
   child2->setAttributes(parentAttributes3);
   child2->setNodeName("CONFIG_TYPE");
 
-  INKString TMVersion = NULL;
-  if (INKRecordGetString("proxy.node.version.manager.short", &TMVersion) == INK_ERR_OKAY) {
+  TSString TMVersion = NULL;
+  if (TSRecordGetString("proxy.node.version.manager.short", &TMVersion) == TS_ERR_OKAY) {
     XMLNode *VersionString = new XMLNode;
     if (TMVersion != NULL) {
       VersionString->setNodeName("VersionString");

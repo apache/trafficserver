@@ -64,17 +64,17 @@
 #define MGMT_ALARM_MGMT_CONFIG_ERROR             17
 #define MGMT_ALARM_ADD_ALARM                     18
 
-// used by INKReadFromUrl
+// used by TSReadFromUrl
 #define HTTP_DIVIDER "\r\n\r\n"
 #define URL_BUFSIZE  65536      // the max. lenght of URL obtainable (in bytes)
 #define URL_TIMEOUT  5000       // the timeout value for send/recv HTTP in ms
 #define HTTP_PORT    80
 #define BUFSIZE      1024
 
-// used by INKReadFromUrl
-INKError parseHTTPResponse(char *buffer, char **header, int *hdr_size, char **body, int *bdy_size);
-INKError readHTTPResponse(int sock, char *buffer, int bufsize, uint64_t timeout);
-INKError sendHTTPRequest(int sock, char *request, uint64_t timeout);
+// used by TSReadFromUrl
+TSError parseHTTPResponse(char *buffer, char **header, int *hdr_size, char **body, int *bdy_size);
+TSError readHTTPResponse(int sock, char *buffer, int bufsize, uint64_t timeout);
+TSError sendHTTPRequest(int sock, char *request, uint64_t timeout);
 int connectDirect(const char *host, int port, uint64_t timeout);
 
 // used by NetworkUtilRemote.cc and NetworkUtilLocal.cc

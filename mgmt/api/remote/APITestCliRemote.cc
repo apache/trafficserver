@@ -50,18 +50,18 @@
  *          (int, float, counter, string)
  * err_recs: stress test record get/set functions by purposely entering
  *              invalid record names and/or values
- * get_mlt: tests INKRecordGetMlt
- * set_mlt: tests INKRecordSetMlt
+ * get_mlt: tests TSRecordGetMlt
+ * set_mlt: tests TSRecordSetMlt
  *
- * read_url: tests INKReadFromUrl works by retrieving two valid urls
- * test_url: tests robustness of INKReadFromUrl using invalid urls
+ * read_url: tests TSReadFromUrl works by retrieving two valid urls
+ * test_url: tests robustness of TSReadFromUrl using invalid urls
  *
  * CfgContext operations:
  * ---------------------
  * cfg_get:<config-filename>: prints out the rules in confg-filename
  * cfg:<config-filename>: switches the position of first and last rule of
  *                        <config-filename>
- * cfg_context: calls all the INKCfgCOntext helper function calls using
+ * cfg_context: calls all the TSCfgCOntext helper function calls using
  *              vaddrs.config
  * cfg_socks: does some basic testing of socks.config (reads in file,
  *            modifies it, eg. add new rules, then commits changes)
@@ -126,18 +126,18 @@
 /* ------------------------------------------------------------------------
  * print_err
  * ------------------------------------------------------------------------
- * used to print the error description associated with the INKError err
+ * used to print the error description associated with the TSError err
  */
 void
-print_err(const char *module, INKError err)
+print_err(const char *module, TSError err)
 {
   char *err_msg;
 
-  err_msg = INKGetErrorMessage(err);
+  err_msg = TSGetErrorMessage(err);
   printf("(%s) ERROR: %s\n", module, err_msg);
 
   if (err_msg)
-    INKfree(err_msg);
+    TSfree(err_msg);
 }
 
 
@@ -145,18 +145,18 @@ print_err(const char *module, INKError err)
  * print_ports
  *--------------------------------------------------------------*/
 void
-print_ports(INKPortList list)
+print_ports(TSPortList list)
 {
   int i, count;
-  INKPortEle *port_ele;
+  TSPortEle *port_ele;
 
-  count = INKPortListLen(list);
+  count = TSPortListLen(list);
   for (i = 0; i < count; i++) {
-    port_ele = INKPortListDequeue(list);
+    port_ele = TSPortListDequeue(list);
     printf(" %d \n", port_ele->port_a);
     if (port_ele->port_b != -1)
       printf(" %d - %d \n", port_ele->port_a, port_ele->port_b);
-    INKPortListEnqueue(list, port_ele);
+    TSPortListEnqueue(list, port_ele);
   }
 
   return;
@@ -166,7 +166,7 @@ print_ports(INKPortList list)
  * print_string_list
  *-------------------------------------------------------------*/
 void
-print_string_list(INKStringList list)
+print_string_list(TSStringList list)
 {
   int i, count, buf_pos = 0;
   char *str;
@@ -174,12 +174,12 @@ print_string_list(INKStringList list)
 
   if (!list)
     return;
-  count = INKStringListLen(list);
+  count = TSStringListLen(list);
   for (i = 0; i < count; i++) {
-    str = INKStringListDequeue(list);
+    str = TSStringListDequeue(list);
     snprintf(buf + buf_pos, sizeof(buf) - buf_pos, "%s,", str);
     buf_pos = strlen(buf);
-    INKStringListEnqueue(list, str);
+    TSStringListEnqueue(list, str);
   }
   printf("%s \n", buf);
 }
@@ -188,18 +188,18 @@ print_string_list(INKStringList list)
  * print_int_list
  *-------------------------------------------------------------*/
 void
-print_int_list(INKIntList list)
+print_int_list(TSIntList list)
 {
   int i, count, buf_pos = 0;
   int *elem;
   char buf[1000];
 
-  count = INKIntListLen(list);
+  count = TSIntListLen(list);
   for (i = 0; i < count; i++) {
-    elem = INKIntListDequeue(list);
+    elem = TSIntListDequeue(list);
     snprintf(buf + buf_pos, sizeof(buf) - buf_pos, "%d:", *elem);
     buf_pos = strlen(buf);
-    INKIntListEnqueue(list, elem);
+    TSIntListEnqueue(list, elem);
   }
   printf("Int List: %s \n", buf);
 }
@@ -208,28 +208,28 @@ print_int_list(INKIntList list)
  * print_domain_list
  *-------------------------------------------------------*/
 void
-print_domain_list(INKDomainList list)
+print_domain_list(TSDomainList list)
 {
   int i, count;
-  INKDomain *proxy;
+  TSDomain *proxy;
 
-  count = INKDomainListLen(list);
+  count = TSDomainListLen(list);
   for (i = 0; i < count; i++) {
-    proxy = INKDomainListDequeue(list);
+    proxy = TSDomainListDequeue(list);
     if (proxy->domain_val)
       printf("%s:%d\n", proxy->domain_val, proxy->port);
-    INKDomainListEnqueue(list, proxy);
+    TSDomainListEnqueue(list, proxy);
   }
 }
 
 
 void
-print_ip_addr_ele(INKIpAddrEle * ele)
+print_ip_addr_ele(TSIpAddrEle * ele)
 {
   if (!ele)
     return;
 
-  if (ele->type == INK_IP_RANGE) {
+  if (ele->type == TS_IP_RANGE) {
     if (ele->cidr_a != -1)
       printf("IP_addr: %s/%d - %s/%d\n", ele->ip_a, ele->cidr_a, ele->ip_b, ele->cidr_b);
     else
@@ -246,17 +246,17 @@ print_ip_addr_ele(INKIpAddrEle * ele)
  * print_ip_list
  *-------------------------------------------------------*/
 void
-print_ip_list(INKIpAddrList list)
+print_ip_list(TSIpAddrList list)
 {
   int i, count;
-  INKIpAddrEle *ele;
+  TSIpAddrEle *ele;
 
-  count = INKIpAddrListLen(list);
+  count = TSIpAddrListLen(list);
   for (i = 0; i < count; i++) {
-    ele = INKIpAddrListDequeue(list);
+    ele = TSIpAddrListDequeue(list);
     print_ip_addr_ele(ele);
 
-    INKIpAddrListEnqueue(list, ele);
+    TSIpAddrListEnqueue(list, ele);
   }
 }
 
@@ -264,18 +264,18 @@ print_ip_list(INKIpAddrList list)
  * print_list_of_ip_list
  *-------------------------------------------------------*/
 void
-print_list_of_ip_list(INKList list)
+print_list_of_ip_list(TSList list)
 {
   int i, count;
-  INKIpAddrList ele;
+  TSIpAddrList ele;
 
-  count = INKIpAddrListLen(list);
+  count = TSIpAddrListLen(list);
   for (i = 0; i < count; i++) {
-    ele = INKListDequeue(list);
+    ele = TSListDequeue(list);
     printf("\n");
     print_ip_list(ele);
     printf("\n");
-    INKListEnqueue(list, ele);
+    TSListEnqueue(list, ele);
   }
 
 }
@@ -285,19 +285,19 @@ print_list_of_ip_list(INKList list)
  * print_pd_sspec
  *-------------------------------------------------------*/
 void
-print_pd_sspec(INKPdSsFormat info)
+print_pd_sspec(TSPdSsFormat info)
 {
   switch (info.pd_type) {
-  case INK_PD_DOMAIN:
+  case TS_PD_DOMAIN:
     printf("Prime Dest: dest_domain=%s\n", info.pd_val);
     break;
-  case INK_PD_HOST:
+  case TS_PD_HOST:
     printf("Prime Host: dest_host=%s\n", info.pd_val);
     break;
-  case INK_PD_IP:
+  case TS_PD_IP:
     printf("Prime IP: dest_ip=%s\n", info.pd_val);
     break;
-  case INK_PD_URL_REGEX:
+  case TS_PD_URL_REGEX:
     printf("Prime Url regex: url_regex=%s\n", info.pd_val);
     break;
   default:
@@ -322,27 +322,27 @@ print_pd_sspec(INKPdSsFormat info)
 
   printf("\tmethod: ");
   switch (info.sec_spec.method) {
-  case INK_METHOD_NONE:
+  case TS_METHOD_NONE:
     printf("NONE");
     break;
-  case INK_METHOD_GET:
+  case TS_METHOD_GET:
     printf("GET");
     break;
-  case INK_METHOD_POST:
+  case TS_METHOD_POST:
     printf("POST");
     break;
-  case INK_METHOD_PUT:
+  case TS_METHOD_PUT:
     printf("PUT");
     break;
-  case INK_METHOD_TRACE:
+  case TS_METHOD_TRACE:
     printf("TRACE");
     break;
-  case INK_METHOD_UNDEFINED:
+  case TS_METHOD_UNDEFINED:
     printf("UNDEFINED");
     break;
   default:
     // Handled here:
-    // INK_METHOD_PUSH
+    // TS_METHOD_PUSH
     break;
   }
   printf("\n");
@@ -350,20 +350,20 @@ print_pd_sspec(INKPdSsFormat info)
 
   printf("\tscheme: ");
   switch (info.sec_spec.scheme) {
-  case INK_SCHEME_NONE:
+  case TS_SCHEME_NONE:
     printf("NONE\n");
     break;
-  case INK_SCHEME_HTTP:
+  case TS_SCHEME_HTTP:
     printf("HTTP\n");
     break;
-  case INK_SCHEME_HTTPS:
+  case TS_SCHEME_HTTPS:
     printf("HTTPS\n");
     break;
-  case INK_SCHEME_RTSP:
-  case INK_SCHEME_MMS:
+  case TS_SCHEME_RTSP:
+  case TS_SCHEME_MMS:
     printf("MIXT\n");
     break;
-  case INK_SCHEME_UNDEFINED:
+  case TS_SCHEME_UNDEFINED:
     printf("UNDEFINED\n");
     break;
   }
@@ -377,7 +377,7 @@ print_pd_sspec(INKPdSsFormat info)
 //
 
 void
-print_admin_access_ele(INKAdminAccessEle * ele)
+print_admin_access_ele(TSAdminAccessEle * ele)
 {
   if (!ele) {
     fprintf(stderr, "print_admin_access_ele: ele is NULL\n");
@@ -386,22 +386,22 @@ print_admin_access_ele(INKAdminAccessEle * ele)
 
   char accessType;
   switch (ele->access) {
-  case INK_ACCESS_NONE:
+  case TS_ACCESS_NONE:
     accessType = '0';
     break;
-  case INK_ACCESS_MONITOR:
+  case TS_ACCESS_MONITOR:
     accessType = '1';
     break;
-  case INK_ACCESS_MONITOR_VIEW:
+  case TS_ACCESS_MONITOR_VIEW:
     accessType = '2';
     break;
-  case INK_ACCESS_MONITOR_CHANGE:
+  case TS_ACCESS_MONITOR_CHANGE:
     accessType = '3';
     break;
   default:
     accessType = '?';           /* lv: to make gcc happy and don't brake fprintf */
     // Handled here:
-    // INK_ACCESS_UNDEFINED
+    // TS_ACCESS_UNDEFINED
     break;
   }
 
@@ -410,7 +410,7 @@ print_admin_access_ele(INKAdminAccessEle * ele)
 }
 
 void
-print_cache_ele(INKCacheEle * ele)
+print_cache_ele(TSCacheEle * ele)
 {
   if (!ele) {
     printf("can't print ele\n");
@@ -436,26 +436,26 @@ print_cache_ele(INKCacheEle * ele)
 
   // now format the message
   switch (ele->cfg_ele.type) {
-  case INK_CACHE_NEVER:
+  case TS_CACHE_NEVER:
     snprintf(buf + buf_pos, sizeof(buf) - buf_pos, "action=never-cache");
     break;
-  case INK_CACHE_IGNORE_NO_CACHE:
+  case TS_CACHE_IGNORE_NO_CACHE:
     snprintf(buf + buf_pos, sizeof(buf) - buf_pos, "action=ignore-no-cache");
     break;
-  case INK_CACHE_IGNORE_CLIENT_NO_CACHE:
+  case TS_CACHE_IGNORE_CLIENT_NO_CACHE:
     snprintf(buf + buf_pos, sizeof(buf) - buf_pos, "action=ignore-server-no-cache");
     break;
-  case INK_CACHE_IGNORE_SERVER_NO_CACHE:
+  case TS_CACHE_IGNORE_SERVER_NO_CACHE:
     snprintf(buf + buf_pos, sizeof(buf) - buf_pos, "action=ignore-client-no-cache");
     break;
-  case INK_CACHE_PIN_IN_CACHE:
+  case TS_CACHE_PIN_IN_CACHE:
     time_str = hms_time_to_string(ele->time_period);
     if (!time_str)
       return;
     snprintf(buf + buf_pos, sizeof(buf) - buf_pos, "pin-in-cache=%s", time_str);
     xfree(time_str);
     break;
-  case INK_CACHE_REVALIDATE:
+  case TS_CACHE_REVALIDATE:
     time_str = hms_time_to_string(ele->time_period);
     if (!time_str)
       return;
@@ -478,23 +478,23 @@ print_cache_ele(INKCacheEle * ele)
 
 
 void
-print_hosting_ele(INKHostingEle * ele)
+print_hosting_ele(TSHostingEle * ele)
 {
   if (!ele) {
     printf("can't print ele\n");
   }
 
   switch (ele->pd_type) {
-  case INK_PD_DOMAIN:
+  case TS_PD_DOMAIN:
     printf("dest_domain=%s\n", ele->pd_val);
     break;
-  case INK_PD_HOST:
+  case TS_PD_HOST:
     printf("dest_host=%s\n", ele->pd_val);
     break;
-  case INK_PD_IP:
+  case TS_PD_IP:
     printf("ip=%s\n", ele->pd_val);
     break;
-  case INK_PD_URL_REGEX:
+  case TS_PD_URL_REGEX:
     printf("url_regex=%s\n", ele->pd_val);
     break;
   default:
@@ -506,7 +506,7 @@ print_hosting_ele(INKHostingEle * ele)
 }
 
 void
-print_icp_ele(INKIcpEle * ele)
+print_icp_ele(TSIcpEle * ele)
 {
   if (!ele) {
     printf("can't print ele\n");
@@ -515,10 +515,10 @@ print_icp_ele(INKIcpEle * ele)
   int peer_type;
 
   switch (ele->peer_type) {
-  case INK_ICP_PARENT:
+  case TS_ICP_PARENT:
     peer_type = 1;
     break;
-  case INK_ICP_SIBLING:
+  case TS_ICP_SIBLING:
     peer_type = 2;
     break;
 
@@ -532,12 +532,12 @@ print_icp_ele(INKIcpEle * ele)
          peer_type,
          ele->peer_proxy_port,
          ele->peer_icp_port,
-         (ele->is_multicast ? 1 : 0), ele->mc_ip_addr, (ele->mc_ttl == INK_MC_TTL_SINGLE_SUBNET ? 1 : 2)
+         (ele->is_multicast ? 1 : 0), ele->mc_ip_addr, (ele->mc_ttl == TS_MC_TTL_SINGLE_SUBNET ? 1 : 2)
     );
 }
 
 void
-print_ip_allow_ele(INKIpAllowEle * ele)
+print_ip_allow_ele(TSIpAllowEle * ele)
 {
   if (!ele) {
     printf("can't print ele\n");
@@ -547,7 +547,7 @@ print_ip_allow_ele(INKIpAllowEle * ele)
 }
 
 void
-print_mgmt_allow_ele(INKMgmtAllowEle * ele)
+print_mgmt_allow_ele(TSMgmtAllowEle * ele)
 {
   if (!ele) {
     printf("can't print ele\n");
@@ -557,7 +557,7 @@ print_mgmt_allow_ele(INKMgmtAllowEle * ele)
 }
 
 void
-print_parent_ele(INKParentProxyEle * ele)
+print_parent_ele(TSParentProxyEle * ele)
 {
   if (!ele) {
     printf("can't print ele\n");
@@ -572,7 +572,7 @@ print_parent_ele(INKParentProxyEle * ele)
 }
 
 void
-print_partition_ele(INKPartitionEle * ele)
+print_partition_ele(TSPartitionEle * ele)
 {
   if (!ele) {
     printf("can't print ele\n");
@@ -581,21 +581,21 @@ print_partition_ele(INKPartitionEle * ele)
   printf("partition #: %d\n", ele->partition_num);
   printf("scheme: %d\n", ele->scheme);
   switch (ele->size_format) {
-  case INK_SIZE_FMT_ABSOLUTE:
+  case TS_SIZE_FMT_ABSOLUTE:
     printf("partition_size=%d\n", ele->partition_size);
     break;
-  case INK_SIZE_FMT_PERCENT:
+  case TS_SIZE_FMT_PERCENT:
     printf("partition_size=%% %d\n", ele->partition_size);
     break;
   default:
     // Handled here:
-    // INK_SIZE_FMT_UNDEFINED
+    // TS_SIZE_FMT_UNDEFINED
     break;
   }
 }
 
 void
-print_plugin_ele(INKPluginEle * ele)
+print_plugin_ele(TSPluginEle * ele)
 {
   if (!ele) {
     printf("can't print plugin ele\n");
@@ -611,7 +611,7 @@ print_plugin_ele(INKPluginEle * ele)
 }
 
 void
-print_remap_ele(INKRemapEle * ele)
+print_remap_ele(TSRemapEle * ele)
 {
   if (!ele) {
     printf("can't print ele\n");
@@ -621,16 +621,16 @@ print_remap_ele(INKRemapEle * ele)
   bzero(buf, MAX_BUF_SIZE);
 
   switch (ele->cfg_ele.type) {
-  case INK_REMAP_MAP:
+  case TS_REMAP_MAP:
     strncat(buf, "map", sizeof(buf) - strlen(buf) - 1);
     break;
-  case INK_REMAP_REVERSE_MAP:
+  case TS_REMAP_REVERSE_MAP:
     strncat(buf, "reverse_map", sizeof(buf) - strlen(buf) - 1);
     break;
-  case INK_REMAP_REDIRECT:
+  case TS_REMAP_REDIRECT:
     strncat(buf, "redirect", sizeof(buf) - strlen(buf) - 1);
     break;
-  case INK_REMAP_REDIRECT_TEMP:
+  case TS_REMAP_REDIRECT_TEMP:
     strncat(buf, "redirect_temporary", sizeof(buf) - strlen(buf) - 1);
     break;
   default:
@@ -643,22 +643,22 @@ print_remap_ele(INKRemapEle * ele)
 
   // from scheme
   switch (ele->from_scheme) {
-  case INK_SCHEME_HTTP:
+  case TS_SCHEME_HTTP:
     strncat(buf, "http", sizeof(buf) - strlen(buf) - 1);
     break;
-  case INK_SCHEME_HTTPS:
+  case TS_SCHEME_HTTPS:
     strncat(buf, "https", sizeof(buf) - strlen(buf) - 1);
     break;
-  case INK_SCHEME_RTSP:
+  case TS_SCHEME_RTSP:
     strncat(buf, "rtsp", sizeof(buf) - strlen(buf) - 1);
     break;
-  case INK_SCHEME_MMS:
+  case TS_SCHEME_MMS:
     strncat(buf, "mms", sizeof(buf) - strlen(buf) - 1);
     break;
   default:
     // Handled here:
-    // INK_SCHEME_NONE, INK_SCHEME_UNDEFINED, INK_SCHEME_NONE,
-    // INK_SCHEME_UNDEFINED
+    // TS_SCHEME_NONE, TS_SCHEME_UNDEFINED, TS_SCHEME_NONE,
+    // TS_SCHEME_UNDEFINED
     break;
   }
   strncat(buf, "://", sizeof(buf) - strlen(buf) - 1);
@@ -668,7 +668,7 @@ print_remap_ele(INKRemapEle * ele)
     strncat(buf, ele->from_host, sizeof(buf) - strlen(buf) - 1);
   }
   // from port
-  if (ele->from_port != INK_INVALID_PORT) {
+  if (ele->from_port != TS_INVALID_PORT) {
     snprintf(buf, sizeof(buf), "%s:%d", buf, ele->from_port);
   }
   // from host path
@@ -681,21 +681,21 @@ print_remap_ele(INKRemapEle * ele)
 
   // to scheme
   switch (ele->to_scheme) {
-  case INK_SCHEME_HTTP:
+  case TS_SCHEME_HTTP:
     strncat(buf, "http", sizeof(buf) - strlen(buf) - 1);
     break;
-  case INK_SCHEME_HTTPS:
+  case TS_SCHEME_HTTPS:
     strncat(buf, "https", sizeof(buf) - strlen(buf) - 1);
     break;
-  case INK_SCHEME_RTSP:
+  case TS_SCHEME_RTSP:
     strncat(buf, "rtsp", sizeof(buf) - strlen(buf) - 1);
     break;
-  case INK_SCHEME_MMS:
+  case TS_SCHEME_MMS:
     strncat(buf, "mms", sizeof(buf) - strlen(buf) - 1);
     break;
   default:
     // Handled here:
-    // INK_SCHEME_NONE, INK_SCHEME_UNDEFINED
+    // TS_SCHEME_NONE, TS_SCHEME_UNDEFINED
     break;
   }
   strncat(buf, "://", sizeof(buf) - strlen(buf) - 1);
@@ -705,7 +705,7 @@ print_remap_ele(INKRemapEle * ele)
     strncat(buf, ele->to_host, sizeof(buf) - strlen(buf) - 1);
   }
   // to port
-  if (ele->to_port != INK_INVALID_PORT) {
+  if (ele->to_port != TS_INVALID_PORT) {
     snprintf(buf, sizeof(buf), "%s:%d", buf, ele->to_port);
   }
   // to host path
@@ -719,7 +719,7 @@ print_remap_ele(INKRemapEle * ele)
 }
 
 void
-print_socks_ele(INKSocksEle * ele)
+print_socks_ele(TSSocksEle * ele)
 {
   printf("\n");
   if (!ele) {
@@ -735,7 +735,7 @@ print_socks_ele(INKSocksEle * ele)
 }
 
 void
-print_split_dns_ele(INKSplitDnsEle * ele)
+print_split_dns_ele(TSSplitDnsEle * ele)
 {
   if (!ele) {
     printf("can't print ele\n");
@@ -748,19 +748,19 @@ print_split_dns_ele(INKSplitDnsEle * ele)
 
   char *pd_name = 0;
   switch (ele->pd_type) {
-  case INK_PD_DOMAIN:
+  case TS_PD_DOMAIN:
     pd_name = xstrdup("dest_domain");
     break;
-  case INK_PD_HOST:
+  case TS_PD_HOST:
     pd_name = xstrdup("dest_host");
     break;
-  case INK_PD_URL_REGEX:
+  case TS_PD_URL_REGEX:
     pd_name = xstrdup("url_regex");
     break;
   default:
     pd_name = xstrdup("?????");
     // Handled here:
-    // INK_PD_IP, INK_PD_UNDEFINED
+    // TS_PD_IP, TS_PD_UNDEFINED
     break;
   }
 
@@ -801,7 +801,7 @@ print_split_dns_ele(INKSplitDnsEle * ele)
 }
 
 void
-print_storage_ele(INKStorageEle * ele)
+print_storage_ele(TSStorageEle * ele)
 {
   if (!ele) {
     printf("can't print ele\n");
@@ -812,7 +812,7 @@ print_storage_ele(INKStorageEle * ele)
 }
 
 void
-print_update_ele(INKUpdateEle * ele)
+print_update_ele(TSUpdateEle * ele)
 {
   if (!ele) {
     printf("can't print ele\n");
@@ -825,7 +825,7 @@ print_update_ele(INKUpdateEle * ele)
 }
 
 void
-print_vaddrs_ele(INKVirtIpAddrEle * ele)
+print_vaddrs_ele(TSVirtIpAddrEle * ele)
 {
   if (!ele) {
     printf("can't print ele\n");
@@ -841,68 +841,68 @@ print_vaddrs_ele(INKVirtIpAddrEle * ele)
 //
 
 void
-print_ele_list(INKFileNameT file, INKCfgContext ctx)
+print_ele_list(TSFileNameT file, TSCfgContext ctx)
 {
-  INKFileNameT filename = file;
-  INKCfgEle *ele;
+  TSFileNameT filename = file;
+  TSCfgEle *ele;
 
   if (!ctx) {
-    printf("[print_ele_list] invalid INKCFgContext\n");
+    printf("[print_ele_list] invalid TSCFgContext\n");
     return;
   }
 
-  int count = INKCfgContextGetCount(ctx);
+  int count = TSCfgContextGetCount(ctx);
   printf("\n[print_ele_list] %d rules\n", count);
   for (int i = 0; i < count; i++) {
-    ele = INKCfgContextGetEleAt(ctx, i);
+    ele = TSCfgContextGetEleAt(ctx, i);
 
     switch (filename) {
-    case INK_FNAME_ADMIN_ACCESS:
-      print_admin_access_ele((INKAdminAccessEle *) ele);
+    case TS_FNAME_ADMIN_ACCESS:
+      print_admin_access_ele((TSAdminAccessEle *) ele);
       break;
-    case INK_FNAME_CACHE_OBJ:
-      print_cache_ele((INKCacheEle *) ele);
+    case TS_FNAME_CACHE_OBJ:
+      print_cache_ele((TSCacheEle *) ele);
       break;
-    case INK_FNAME_HOSTING:
-      print_hosting_ele((INKHostingEle *) ele);
+    case TS_FNAME_HOSTING:
+      print_hosting_ele((TSHostingEle *) ele);
       break;
-    case INK_FNAME_ICP_PEER:
-      print_icp_ele((INKIcpEle *) ele);
+    case TS_FNAME_ICP_PEER:
+      print_icp_ele((TSIcpEle *) ele);
       break;
-    case INK_FNAME_IP_ALLOW:
-      print_ip_allow_ele((INKIpAllowEle *) ele);
+    case TS_FNAME_IP_ALLOW:
+      print_ip_allow_ele((TSIpAllowEle *) ele);
       break;
-    case INK_FNAME_LOGS_XML:
+    case TS_FNAME_LOGS_XML:
       break;                    /*NOT DONE */
-    case INK_FNAME_MGMT_ALLOW:
-      print_mgmt_allow_ele((INKMgmtAllowEle *) ele);
+    case TS_FNAME_MGMT_ALLOW:
+      print_mgmt_allow_ele((TSMgmtAllowEle *) ele);
       break;
-    case INK_FNAME_PARENT_PROXY:
-      print_parent_ele((INKParentProxyEle *) ele);
+    case TS_FNAME_PARENT_PROXY:
+      print_parent_ele((TSParentProxyEle *) ele);
       break;
-    case INK_FNAME_PARTITION:
-      print_partition_ele((INKPartitionEle *) ele);
+    case TS_FNAME_PARTITION:
+      print_partition_ele((TSPartitionEle *) ele);
       break;
-    case INK_FNAME_PLUGIN:
-      print_plugin_ele((INKPluginEle *) ele);
+    case TS_FNAME_PLUGIN:
+      print_plugin_ele((TSPluginEle *) ele);
       break;
-    case INK_FNAME_REMAP:
-      print_remap_ele((INKRemapEle *) ele);
+    case TS_FNAME_REMAP:
+      print_remap_ele((TSRemapEle *) ele);
       break;
-    case INK_FNAME_SOCKS:
-      print_socks_ele((INKSocksEle *) ele);
+    case TS_FNAME_SOCKS:
+      print_socks_ele((TSSocksEle *) ele);
       break;
-    case INK_FNAME_SPLIT_DNS:
-      print_split_dns_ele((INKSplitDnsEle *) ele);
+    case TS_FNAME_SPLIT_DNS:
+      print_split_dns_ele((TSSplitDnsEle *) ele);
       break;
-    case INK_FNAME_STORAGE:
-      print_storage_ele((INKStorageEle *) ele);
+    case TS_FNAME_STORAGE:
+      print_storage_ele((TSStorageEle *) ele);
       break;
-    case INK_FNAME_UPDATE_URL:
-      print_update_ele((INKUpdateEle *) ele);
+    case TS_FNAME_UPDATE_URL:
+      print_update_ele((TSUpdateEle *) ele);
       break;
-    case INK_FNAME_VADDRS:
-      print_vaddrs_ele((INKVirtIpAddrEle *) ele);
+    case TS_FNAME_VADDRS:
+      print_vaddrs_ele((TSVirtIpAddrEle *) ele);
     default:
       printf("[print_ele_list] invalid file type \n");
       return;
@@ -919,13 +919,13 @@ print_ele_list(INKFileNameT file, INKCfgContext ctx)
 void
 print_proxy_state()
 {
-  INKProxyStateT state = INKProxyStateGet();
+  TSProxyStateT state = TSProxyStateGet();
 
   switch (state) {
-  case INK_PROXY_ON:
+  case TS_PROXY_ON:
     printf("Proxy State = ON\n");
     break;
-  case INK_PROXY_OFF:
+  case TS_PROXY_OFF:
     printf("Proxy State = OFF\n");
     break;
   default:
@@ -938,23 +938,23 @@ print_proxy_state()
 void
 start_TS(char *tsArgs)
 {
-  INKError ret;
-  INKCacheClearT clear = INK_CACHE_CLEAR_OFF;
+  TSError ret;
+  TSCacheClearT clear = TS_CACHE_CLEAR_OFF;
 
   char *args = strtok(tsArgs, ":");
   args = strtok(NULL, ":");
   if (args) {
     if (strcmp(args, "all\n") == 0)
-      clear = INK_CACHE_CLEAR_ON;
+      clear = TS_CACHE_CLEAR_ON;
     else if (strcmp(args, "hostdb\n") == 0)
-      clear = INK_CACHE_CLEAR_HOSTDB;
+      clear = TS_CACHE_CLEAR_HOSTDB;
   } else {
-    clear = INK_CACHE_CLEAR_OFF;
+    clear = TS_CACHE_CLEAR_OFF;
   }
 
   printf("STARTING PROXY with cache: %d\n", clear);
-  if ((ret = INKProxyStateSet(INK_PROXY_ON, clear)) != INK_ERR_OKAY)
-    printf("[INKProxyStateSet] turn on FAILED\n");
+  if ((ret = TSProxyStateSet(TS_PROXY_ON, clear)) != TS_ERR_OKAY)
+    printf("[TSProxyStateSet] turn on FAILED\n");
   print_err("start_TS", ret);
 }
 
@@ -962,11 +962,11 @@ start_TS(char *tsArgs)
 void
 stop_TS()
 {
-  INKError ret;
+  TSError ret;
 
   printf("STOPPING PROXY\n");
-  if ((ret = INKProxyStateSet(INK_PROXY_OFF, INK_CACHE_CLEAR_OFF)) != INK_ERR_OKAY)
-    printf("[INKProxyStateSet] turn off FAILED\n");
+  if ((ret = TSProxyStateSet(TS_PROXY_OFF, TS_CACHE_CLEAR_OFF)) != TS_ERR_OKAY)
+    printf("[TSProxyStateSet] turn off FAILED\n");
   print_err("stop_TS", ret);
 }
 
@@ -974,11 +974,11 @@ stop_TS()
 void
 restart()
 {
-  INKError ret;
+  TSError ret;
 
   printf("RESTART - Cluster wide\n");
-  if ((ret = INKRestart(true)) != INK_ERR_OKAY)
-    printf("[INKRestart] FAILED\n");
+  if ((ret = TSRestart(true)) != TS_ERR_OKAY)
+    printf("[TSRestart] FAILED\n");
 
   print_err("restart", ret);
 }
@@ -987,11 +987,11 @@ restart()
 void
 reconfigure()
 {
-  INKError ret;
+  TSError ret;
 
   printf("RECONFIGURE\n");
-  if ((ret = INKReconfigure()) != INK_ERR_OKAY)
-    printf("[INKReconfigure] FAILED\n");
+  if ((ret = TSReconfigure()) != TS_ERR_OKAY)
+    printf("[TSReconfigure] FAILED\n");
 
   print_err("reconfigure", ret);
 }
@@ -1000,11 +1000,11 @@ reconfigure()
 void
 hard_restart()
 {
-  INKError ret;
+  TSError ret;
 
   printf("[hard_restart]Restart Traffic Cop\n");
-  if ((ret = INKHardRestart()) != INK_ERR_OKAY)
-    printf("[INKHardRestart] FAILED\n");
+  if ((ret = TSHardRestart()) != TS_ERR_OKAY)
+    printf("[TSHardRestart] FAILED\n");
 
   print_err("hard_restart", ret);
 }
@@ -1018,17 +1018,17 @@ hard_restart()
 void
 test_action_need(void)
 {
-  INKActionNeedT action;
+  TSActionNeedT action;
 
   // RU_NULL record
-  INKRecordSetString("proxy.config.proxy_name", "proxy_dorky", &action);
-  printf("[INKRecordSetString] proxy.config.proxy_name \n\tAction Should: [%d]\n\tAction is    : [%d]\n",
-         INK_ACTION_UNDEFINED, action);
+  TSRecordSetString("proxy.config.proxy_name", "proxy_dorky", &action);
+  printf("[TSRecordSetString] proxy.config.proxy_name \n\tAction Should: [%d]\n\tAction is    : [%d]\n",
+         TS_ACTION_UNDEFINED, action);
 
   // RU_RESTART_TS record
-  INKRecordSetInt("proxy.config.cluster.cluster_port", 6666, &action);
-  printf("[INKRecordSetInt] proxy.config.cluster.cluster_port\n\tAction Should: [%d]\n\tAction is    : [%d]\n",
-         INK_ACTION_RESTART, action);
+  TSRecordSetInt("proxy.config.cluster.cluster_port", 6666, &action);
+  printf("[TSRecordSetInt] proxy.config.cluster.cluster_port\n\tAction Should: [%d]\n\tAction is    : [%d]\n",
+         TS_ACTION_RESTART, action);
 
 }
 
@@ -1036,11 +1036,11 @@ test_action_need(void)
 void
 bounce()
 {
-  INKError ret;
+  TSError ret;
 
   printf("BOUNCER - Cluster wide\n");
-  if ((ret = INKBounce(true)) != INK_ERR_OKAY)
-    printf("[INKBounce] FAILED\n");
+  if ((ret = TSBounce(true)) != TS_ERR_OKAY)
+    printf("[TSBounce] FAILED\n");
 
   print_err("bounce", ret);
 }
@@ -1058,38 +1058,38 @@ bounce()
 void
 test_error_records()
 {
-  INKInt port1, new_port = 8080;
-  INKActionNeedT action;
-  INKError ret;
-  INKFloat flt1;
-  INKCounter ctr1;
+  TSInt port1, new_port = 8080;
+  TSActionNeedT action;
+  TSError ret;
+  TSFloat flt1;
+  TSCounter ctr1;
 
   printf("\n");
   // test get integer
   fprintf(stderr, "Test invalid record names\n");
 
-  ret = INKRecordGetInt("proy.config.cop.core_signal", &port1);
-  if (ret != INK_ERR_OKAY) {
-    print_err("INKRecordGetInt", ret);
+  ret = TSRecordGetInt("proy.config.cop.core_signal", &port1);
+  if (ret != TS_ERR_OKAY) {
+    print_err("TSRecordGetInt", ret);
   } else
-    printf("[INKRecordGetInt] proxy.config.cop.core_signal=%" PRId64 " \n", port1);
+    printf("[TSRecordGetInt] proxy.config.cop.core_signal=%" PRId64 " \n", port1);
 
   // test set integer
-  ret = INKRecordSetInt("proy.config.cop.core_signal", new_port, &action);
-  print_err("INKRecordSetInt", ret);
+  ret = TSRecordSetInt("proy.config.cop.core_signal", new_port, &action);
+  print_err("TSRecordSetInt", ret);
 
 
   printf("\n");
-  if (INKRecordGetCounter("proxy.press.socks.connections_successful", &ctr1) != INK_ERR_OKAY)
-    printf("INKRecordGetCounter FAILED!\n");
+  if (TSRecordGetCounter("proxy.press.socks.connections_successful", &ctr1) != TS_ERR_OKAY)
+    printf("TSRecordGetCounter FAILED!\n");
   else
-    printf("[INKRecordGetCounter]proxy.process.socks.connections_successful=%" PRId64 " \n", ctr1);
+    printf("[TSRecordGetCounter]proxy.process.socks.connections_successful=%" PRId64 " \n", ctr1);
 
   printf("\n");
-  if (INKRecordGetFloat("proxy.conig.http.cache.fuzz.probability", &flt1) != INK_ERR_OKAY)
-    printf("INKRecordGetFloat FAILED!\n");
+  if (TSRecordGetFloat("proxy.conig.http.cache.fuzz.probability", &flt1) != TS_ERR_OKAY)
+    printf("TSRecordGetFloat FAILED!\n");
   else
-    printf("[INKRecordGetFloat] proxy.config.http.cache.fuzz.probability=%f\n", flt1);
+    printf("[TSRecordGetFloat] proxy.config.http.cache.fuzz.probability=%f\n", flt1);
 
 }
 
@@ -1103,150 +1103,150 @@ test_error_records()
 void
 test_records()
 {
-  INKActionNeedT action;
+  TSActionNeedT action;
   char *rec_value;
   char new_str[] = "new_record_value";
-  INKInt port1, port2, new_port = 52432;
-  INKFloat flt1, flt2, new_flt = 1.444;
-  INKCounter ctr1, ctr2, new_ctr = 6666;
-  INKError err;
+  TSInt port1, port2, new_port = 52432;
+  TSFloat flt1, flt2, new_flt = 1.444;
+  TSCounter ctr1, ctr2, new_ctr = 6666;
+  TSError err;
 
   /********************* START TEST SECTION *****************/
   printf("\n\n");
 
 #if SET_INT
   // test set integer
-  if (INKRecordSetInt("proxy.config.cop.core_signal", new_port, &action) != INK_ERR_OKAY)
-    printf("INKRecordSetInt FAILED!\n");
+  if (TSRecordSetInt("proxy.config.cop.core_signal", new_port, &action) != TS_ERR_OKAY)
+    printf("TSRecordSetInt FAILED!\n");
   else
-    printf("[INKRecordSetInt] proxy.config.cop.core_signal=%" PRId64 " \n", new_port);
+    printf("[TSRecordSetInt] proxy.config.cop.core_signal=%" PRId64 " \n", new_port);
 #endif
 
 
 #if TEST_REC_GET
-  INKRecordEle *rec_ele;
+  TSRecordEle *rec_ele;
   // retrieve a string value record using generic RecordGet
-  rec_ele = INKRecordEleCreate();
-  if (INKRecordGet("proxy.config.http.cache.vary_default_other", rec_ele) != INK_ERR_OKAY)
-    printf("INKRecordGet FAILED!\n");
+  rec_ele = TSRecordEleCreate();
+  if (TSRecordGet("proxy.config.http.cache.vary_default_other", rec_ele) != TS_ERR_OKAY)
+    printf("TSRecordGet FAILED!\n");
   else
-    printf("[INKRecordGet] proxy.config.http.cache.vary_default_other=%s\n", rec_ele->string_val);
+    printf("[TSRecordGet] proxy.config.http.cache.vary_default_other=%s\n", rec_ele->string_val);
 
-  INKRecordEleDestroy(rec_ele);
+  TSRecordEleDestroy(rec_ele);
   printf("\n\n");
 #endif
 
 
 #if TEST_REC_GET_2
   // retrieve a string value record using generic RecordGet
-  rec_ele = INKRecordEleCreate();
-  if (INKRecordGet("proxy.config.proxy_name", rec_ele) != INK_ERR_OKAY)
-    printf("INKRecordGet FAILED!\n");
+  rec_ele = TSRecordEleCreate();
+  if (TSRecordGet("proxy.config.proxy_name", rec_ele) != TS_ERR_OKAY)
+    printf("TSRecordGet FAILED!\n");
   else
-    printf("[INKRecordGet] proxy.config.proxy_name=%s\n", rec_ele->string_val);
+    printf("[TSRecordGet] proxy.config.proxy_name=%s\n", rec_ele->string_val);
 
-  INKRecordEleDestroy(rec_ele);
+  TSRecordEleDestroy(rec_ele);
   printf("\n\n");
 #endif
 
 #if TEST_STRING
   // retrieve an string value record using GetString
-  err = INKRecordGetString("proxy.config.proxy_name", &rec_value);
-  if (err != INK_ERR_OKAY)
-    print_err("INKRecordGetString", err);
+  err = TSRecordGetString("proxy.config.proxy_name", &rec_value);
+  if (err != TS_ERR_OKAY)
+    print_err("TSRecordGetString", err);
   else
-    printf("[INKRecordGetString] proxy.config.proxy_name=%s\n", rec_value);
-  INKfree(rec_value);
+    printf("[TSRecordGetString] proxy.config.proxy_name=%s\n", rec_value);
+  TSfree(rec_value);
 
   // test RecordSet
-  err = INKRecordSetString("proxy.config.proxy_name", (INKString) new_str, &action);
-  if (err != INK_ERR_OKAY)
-    print_err("INKRecordSetString", err);
+  err = TSRecordSetString("proxy.config.proxy_name", (TSString) new_str, &action);
+  if (err != TS_ERR_OKAY)
+    print_err("TSRecordSetString", err);
   else
-    printf("[INKRecordSetString] proxy.config.proxy_name=%s\n", new_str);
+    printf("[TSRecordSetString] proxy.config.proxy_name=%s\n", new_str);
 
 
   // get
-  err = INKRecordGetString("proxy.config.proxy_name", &rec_value);
-  if (err != INK_ERR_OKAY)
-    print_err("INKRecordGetString", err);
+  err = TSRecordGetString("proxy.config.proxy_name", &rec_value);
+  if (err != TS_ERR_OKAY)
+    print_err("TSRecordGetString", err);
   else
-    printf("[INKRecordGetString] proxy.config.proxy_name=%s\n", rec_value);
+    printf("[TSRecordGetString] proxy.config.proxy_name=%s\n", rec_value);
   printf("\n");
-  INKfree(rec_value);
+  TSfree(rec_value);
 #endif
 
 #if TEST_INT
   printf("\n");
   // test get integer
-  if (INKRecordGetInt("proxy.config.cop.core_signal", &port1) != INK_ERR_OKAY)
-    printf("INKRecordGetInt FAILED!\n");
+  if (TSRecordGetInt("proxy.config.cop.core_signal", &port1) != TS_ERR_OKAY)
+    printf("TSRecordGetInt FAILED!\n");
   else
-    printf("[INKRecordGetInt] proxy.config.cop.core_signal=%" PRId64 " \n", port1);
+    printf("[TSRecordGetInt] proxy.config.cop.core_signal=%" PRId64 " \n", port1);
 
   // test set integer
-  if (INKRecordSetInt("proxy.config.cop.core_signal", new_port, &action) != INK_ERR_OKAY)
-    printf("INKRecordSetInt FAILED!\n");
+  if (TSRecordSetInt("proxy.config.cop.core_signal", new_port, &action) != TS_ERR_OKAY)
+    printf("TSRecordSetInt FAILED!\n");
   else
-    printf("[INKRecordSetInt] proxy.config.cop.core_signal=%" PRId64 " \n", new_port);
+    printf("[TSRecordSetInt] proxy.config.cop.core_signal=%" PRId64 " \n", new_port);
 
-  if (INKRecordGetInt("proxy.config.cop.core_signal", &port2) != INK_ERR_OKAY)
-    printf("INKRecordGetInt FAILED!\n");
+  if (TSRecordGetInt("proxy.config.cop.core_signal", &port2) != TS_ERR_OKAY)
+    printf("TSRecordGetInt FAILED!\n");
   else
-    printf("[INKRecordGetInt] proxy.config.cop.core_signal=%" PRId64 " \n", port2);
+    printf("[TSRecordGetInt] proxy.config.cop.core_signal=%" PRId64 " \n", port2);
   printf("\n");
 #endif
 
 #if TEST_COUNTER
   printf("\n");
 
-  if (INKRecordGetCounter("proxy.process.socks.connections_successful", &ctr1) != INK_ERR_OKAY)
-    printf("INKRecordGetCounter FAILED!\n");
+  if (TSRecordGetCounter("proxy.process.socks.connections_successful", &ctr1) != TS_ERR_OKAY)
+    printf("TSRecordGetCounter FAILED!\n");
   else
-    printf("[INKRecordGetCounter]proxy.process.socks.connections_successful=%" PRId64 " \n", ctr1);
+    printf("[TSRecordGetCounter]proxy.process.socks.connections_successful=%" PRId64 " \n", ctr1);
 
-  if (INKRecordSetCounter("proxy.process.socks.connections_successful", new_ctr, &action) != INK_ERR_OKAY)
-    printf("INKRecordSetCounter FAILED!\n");
+  if (TSRecordSetCounter("proxy.process.socks.connections_successful", new_ctr, &action) != TS_ERR_OKAY)
+    printf("TSRecordSetCounter FAILED!\n");
   else
-    printf("[INKRecordSetCounter] proxy.process.socks.connections_successful=%" PRId64 " \n", new_ctr);
+    printf("[TSRecordSetCounter] proxy.process.socks.connections_successful=%" PRId64 " \n", new_ctr);
 
-  if (INKRecordGetCounter("proxy.process.socks.connections_successful", &ctr2) != INK_ERR_OKAY)
-    printf("INKRecordGetCounter FAILED!\n");
+  if (TSRecordGetCounter("proxy.process.socks.connections_successful", &ctr2) != TS_ERR_OKAY)
+    printf("TSRecordGetCounter FAILED!\n");
   else
-    printf("[INKRecordGetCounter]proxy.process.socks.connections_successful=%" PRId64 " \n", ctr2);
+    printf("[TSRecordGetCounter]proxy.process.socks.connections_successful=%" PRId64 " \n", ctr2);
   printf("\n");
 #endif
 
 #if TEST_FLOAT
   printf("\n");
-  if (INKRecordGetFloat("proxy.config.http.cache.fuzz.probability", &flt1) != INK_ERR_OKAY)
-    printf("INKRecordGetFloat FAILED!\n");
+  if (TSRecordGetFloat("proxy.config.http.cache.fuzz.probability", &flt1) != TS_ERR_OKAY)
+    printf("TSRecordGetFloat FAILED!\n");
   else
-    printf("[INKRecordGetFloat] proxy.config.http.cache.fuzz.probability=%f\n", flt1);
+    printf("[TSRecordGetFloat] proxy.config.http.cache.fuzz.probability=%f\n", flt1);
 
-  if (INKRecordSetFloat("proxy.config.http.cache.fuzz.probability", new_flt, &action) != INK_ERR_OKAY)
-    printf("INKRecordSetFloat FAILED!\n");
+  if (TSRecordSetFloat("proxy.config.http.cache.fuzz.probability", new_flt, &action) != TS_ERR_OKAY)
+    printf("TSRecordSetFloat FAILED!\n");
   else
-    printf("[INKRecordSetFloat] proxy.config.http.cache.fuzz.probability=%f\n", new_flt);
+    printf("[TSRecordSetFloat] proxy.config.http.cache.fuzz.probability=%f\n", new_flt);
 
-  if (INKRecordGetFloat("proxy.config.http.cache.fuzz.probability", &flt2) != INK_ERR_OKAY)
-    printf("INKRecordGetFloat FAILED!\n");
+  if (TSRecordGetFloat("proxy.config.http.cache.fuzz.probability", &flt2) != TS_ERR_OKAY)
+    printf("TSRecordGetFloat FAILED!\n");
   else
-    printf("[INKRecordGetFloat] proxy.config.http.cache.fuzz.probability=%f\n", flt2);
+    printf("[TSRecordGetFloat] proxy.config.http.cache.fuzz.probability=%f\n", flt2);
   printf("\n");
 #endif
 
 #if TEST_REC_SET
   printf("\n");
-  if (INKRecordSet("proxy.config.http.cache.fuzz.probability", "-0.3456", &action) != INK_ERR_OKAY)
-    printf("INKRecordSet FAILED!\n");
+  if (TSRecordSet("proxy.config.http.cache.fuzz.probability", "-0.3456", &action) != TS_ERR_OKAY)
+    printf("TSRecordSet FAILED!\n");
   else
-    printf("[INKRecordSet] proxy.config.http.cache.fuzz.probability=-0.3456\n");
+    printf("[TSRecordSet] proxy.config.http.cache.fuzz.probability=-0.3456\n");
 
-  if (INKRecordGetFloat("proxy.config.http.cache.fuzz.probability", &flt2) != INK_ERR_OKAY)
-    printf("INKRecordGetFloat FAILED!\n");
+  if (TSRecordGetFloat("proxy.config.http.cache.fuzz.probability", &flt2) != TS_ERR_OKAY)
+    printf("TSRecordGetFloat FAILED!\n");
   else
-    printf("[INKRecordGetFloat] proxy.config.http.cache.fuzz.probability=%f\n", flt2);
+    printf("[TSRecordGetFloat] proxy.config.http.cache.fuzz.probability=%f\n", flt2);
 #endif
 
 }
@@ -1255,44 +1255,44 @@ test_records()
 void
 test_rec_get(char *rec_name)
 {
-  INKRecordEle *rec_ele;
-  INKError ret;
+  TSRecordEle *rec_ele;
+  TSError ret;
   char *name;
 
-  name = (char *) INKmalloc(sizeof(char) * (strlen(rec_name)));
+  name = (char *) TSmalloc(sizeof(char) * (strlen(rec_name)));
   strncpy(name, rec_name, strlen(rec_name) - 1);
   name[strlen(rec_name) - 1] = '\0';
   printf("[test_rec_get] Get Record: %s\n", name);
 
   // retrieve a string value record using generic RecordGet
-  rec_ele = INKRecordEleCreate();
-  if ((ret = INKRecordGet(name, rec_ele)) != INK_ERR_OKAY)
-    printf("INKRecordGet FAILED!\n");
+  rec_ele = TSRecordEleCreate();
+  if ((ret = TSRecordGet(name, rec_ele)) != TS_ERR_OKAY)
+    printf("TSRecordGet FAILED!\n");
   else {
     switch (rec_ele->rec_type) {
-    case INK_REC_INT:
-      printf("[INKRecordGet] %s=%" PRId64 "\n", name, rec_ele->int_val);
+    case TS_REC_INT:
+      printf("[TSRecordGet] %s=%" PRId64 "\n", name, rec_ele->int_val);
       break;
-    case INK_REC_COUNTER:
-      printf("[INKRecordGet] %s=%" PRId64 "\n", name, rec_ele->counter_val);
+    case TS_REC_COUNTER:
+      printf("[TSRecordGet] %s=%" PRId64 "\n", name, rec_ele->counter_val);
       break;
-    case INK_REC_FLOAT:
-      printf("[INKRecordGet] %s=%f\n", name, rec_ele->float_val);
+    case TS_REC_FLOAT:
+      printf("[TSRecordGet] %s=%f\n", name, rec_ele->float_val);
       break;
-    case INK_REC_STRING:
-      printf("[INKRecordGet] %s=%s\n", name, rec_ele->string_val);
+    case TS_REC_STRING:
+      printf("[TSRecordGet] %s=%s\n", name, rec_ele->string_val);
       break;
     default:
       // Handled here:
-      // INK_REC_UNDEFINED
+      // TS_REC_UNDEFINED
       break;
     }
   }
 
-  print_err("INKRecordGet", ret);
+  print_err("TSRecordGet", ret);
 
-  INKRecordEleDestroy(rec_ele);
-  INKfree(name);
+  TSRecordEleDestroy(rec_ele);
+  TSfree(name);
 }
 
 /* ------------------------------------------------------------------------
@@ -1304,90 +1304,90 @@ test_rec_get(char *rec_name)
 void
 test_record_get_mlt(void)
 {
-  INKRecordEle *rec_ele;
-  INKStringList name_list;
-  INKList rec_list;
+  TSRecordEle *rec_ele;
+  TSStringList name_list;
+  TSList rec_list;
   int i, num;
   char *v1, *v2, *v3, *v4, *v5, *v6, *v7, *v8;
-  INKError ret;
+  TSError ret;
 
-  name_list = INKStringListCreate();
-  rec_list = INKListCreate();
+  name_list = TSStringListCreate();
+  rec_list = TSListCreate();
 
   const size_t v1_size = (sizeof(char) * (strlen("proxy.config.proxy_name") + 1));
-  v1 = (char *) INKmalloc(v1_size);
+  v1 = (char *) TSmalloc(v1_size);
   ink_strncpy(v1, "proxy.config.proxy_name", v1_size);
   const size_t v2_size = (sizeof(char) * (strlen("proxy.config.bin_path") + 1));
-  v2 = (char *) INKmalloc(v2_size);
+  v2 = (char *) TSmalloc(v2_size);
   ink_strncpy(v2, "proxy.config.bin_path", v2_size);
   const size_t v3_size = (sizeof(char) * (strlen("proxy.config.manager_binary") + 1));
-  v3 = (char *) INKmalloc(v3_size);
+  v3 = (char *) TSmalloc(v3_size);
   ink_strncpy(v3, "proxy.config.manager_binary", v3_size);
   const size_t v4_size = (sizeof(char) * (strlen("proxy.config.cli_binary") + 1));
-  v4 = (char *) INKmalloc(v4_size);
+  v4 = (char *) TSmalloc(v4_size);
   ink_strncpy(v4, "proxy.config.cli_binary", v4_size);
   const size_t v5_size = (sizeof(char) * (strlen("proxy.config.watch_script") + 1));
-  v5 = (char *) INKmalloc(v5_size);
+  v5 = (char *) TSmalloc(v5_size);
   ink_strncpy(v5, "proxy.config.watch_script", v5_size);
   const size_t v6_size = (sizeof(char) * (strlen("proxy.config.env_prep") + 1));
-  v6 = (char *) INKmalloc(v6_size);
+  v6 = (char *) TSmalloc(v6_size);
   ink_strncpy(v6, "proxy.config.env_prep", v6_size);
   const size_t v7_size = (sizeof(char) * (strlen("proxy.config.cop.core_signal") + 1));
-  v7 = (char *) INKmalloc(v7_size);
+  v7 = (char *) TSmalloc(v7_size);
   ink_strncpy(v7, "proxy.config.cop.core_signal", v7_size);
   const size_t v8_size = (sizeof(char) * (strlen("proxy.config.http.cache.fuzz.probability") + 1));
-  v8 = (char *) INKmalloc(v8_size);
+  v8 = (char *) TSmalloc(v8_size);
   ink_strncpy(v8, "proxy.config.http.cache.fuzz.probability", v8_size);
 
   // add the names to the get_list
-  INKStringListEnqueue(name_list, v1);
-  INKStringListEnqueue(name_list, v2);
-  INKStringListEnqueue(name_list, v3);
-  INKStringListEnqueue(name_list, v4);
-  INKStringListEnqueue(name_list, v5);
-  INKStringListEnqueue(name_list, v6);
-  INKStringListEnqueue(name_list, v7);
-  INKStringListEnqueue(name_list, v8);
+  TSStringListEnqueue(name_list, v1);
+  TSStringListEnqueue(name_list, v2);
+  TSStringListEnqueue(name_list, v3);
+  TSStringListEnqueue(name_list, v4);
+  TSStringListEnqueue(name_list, v5);
+  TSStringListEnqueue(name_list, v6);
+  TSStringListEnqueue(name_list, v7);
+  TSStringListEnqueue(name_list, v8);
 
 
-  num = INKStringListLen(name_list);
+  num = TSStringListLen(name_list);
   printf("Num Records to Get: %d\n", num);
-  ret = INKRecordGetMlt(name_list, rec_list);
+  ret = TSRecordGetMlt(name_list, rec_list);
   // free the string list
-  INKStringListDestroy(name_list);
-  if (ret != INK_ERR_OKAY) {
-    print_err("INKStringListDestroy", ret);
+  TSStringListDestroy(name_list);
+  if (ret != TS_ERR_OKAY) {
+    print_err("TSStringListDestroy", ret);
   }
 
   for (i = 0; i < num; i++) {
-    rec_ele = (INKRecordEle *) INKListDequeue(rec_list);
+    rec_ele = (TSRecordEle *) TSListDequeue(rec_list);
     if (!rec_ele) {
       printf("ERROR\n");
       break;
     }
     printf("Record: %s = ", rec_ele->rec_name);
     switch (rec_ele->rec_type) {
-    case INK_REC_INT:
+    case TS_REC_INT:
       printf("%" PRId64 "\n", rec_ele->int_val);
       break;
-    case INK_REC_COUNTER:
+    case TS_REC_COUNTER:
       printf("%" PRId64 "\n", rec_ele->counter_val);
       break;
-    case INK_REC_FLOAT:
+    case TS_REC_FLOAT:
       printf("%f\n", rec_ele->float_val);
       break;
-    case INK_REC_STRING:
+    case TS_REC_STRING:
       printf("%s\n", rec_ele->string_val);
       break;
     default:
       // Handled here:
-      // INK_REC_UNDEFINED
+      // TS_REC_UNDEFINED
       break;
     }
-    INKRecordEleDestroy(rec_ele);
+    TSRecordEleDestroy(rec_ele);
   }
 
-  INKListDestroy(rec_list);     // must dequeue and free each string individually
+  TSListDestroy(rec_list);     // must dequeue and free each string individually
 
   return;
 }
@@ -1395,72 +1395,72 @@ test_record_get_mlt(void)
 /* ------------------------------------------------------------------------
  * test_record_set_mlt
  * ------------------------------------------------------------------------
- * Creates a list of INKRecordEle's, and then batch request to set records
+ * Creates a list of TSRecordEle's, and then batch request to set records
  * Also checks to make sure correct action_need type is set.
  */
 void
 test_record_set_mlt(void)
 {
-  INKList list;
-  INKRecordEle *ele1, *ele2, *ele3, *ele4, *ele5;
-  INKActionNeedT action = INK_ACTION_UNDEFINED;
-  INKError err;
+  TSList list;
+  TSRecordEle *ele1, *ele2, *ele3, *ele4, *ele5;
+  TSActionNeedT action = TS_ACTION_UNDEFINED;
+  TSError err;
 
-  list = INKListCreate();
+  list = TSListCreate();
 
-  ele1 = INKRecordEleCreate();  // INK_TYPE_UNDEFINED action
+  ele1 = TSRecordEleCreate();  // TS_TYPE_UNDEFINED action
   const size_t ele1_rec_name_size = (sizeof(char) * (strlen("proxy.config.cli_binary") + 1));
-  ele1->rec_name = (char *) INKmalloc(ele1_rec_name_size);
+  ele1->rec_name = (char *) TSmalloc(ele1_rec_name_size);
   ink_strncpy(ele1->rec_name, "proxy.config.cli_binary", ele1_rec_name_size);
-  ele1->rec_type = INK_REC_STRING;
-  ele1->string_val = INKstrdup(ele1->rec_name);
+  ele1->rec_type = TS_REC_STRING;
+  ele1->string_val = TSstrdup(ele1->rec_name);
 
-  ele2 = INKRecordEleCreate();  // reread action
+  ele2 = TSRecordEleCreate();  // reread action
   const size_t ele2_rec_name_size = (sizeof(char) * (strlen("proxy.config.http.cache.fuzz.probability") + 1));
-  ele2->rec_name = (char *) INKmalloc(ele2_rec_name_size);
+  ele2->rec_name = (char *) TSmalloc(ele2_rec_name_size);
   ink_strncpy(ele2->rec_name, "proxy.config.http.cache.fuzz.probability", ele2_rec_name_size);
-  ele2->rec_type = INK_REC_FLOAT;
+  ele2->rec_type = TS_REC_FLOAT;
   ele2->float_val = 0.1234;
 
-  ele3 = INKRecordEleCreate();  // undefined action
+  ele3 = TSRecordEleCreate();  // undefined action
   const size_t ele3_rec_name_size = (sizeof(char) * (strlen("proxy.config.cop.core_signal") + 1));
-  ele3->rec_name = (char *) INKmalloc(ele3_rec_name_size);
+  ele3->rec_name = (char *) TSmalloc(ele3_rec_name_size);
   ink_strncpy(ele3->rec_name, "proxy.config.cop.core_signal", ele3_rec_name_size);
-  ele3->rec_type = INK_REC_INT;
+  ele3->rec_type = TS_REC_INT;
   ele3->int_val = -4;
 
-  ele4 = INKRecordEleCreate();  //restart TM
+  ele4 = TSRecordEleCreate();  //restart TM
   const size_t ele4_rec_name_size = (sizeof(char) * (strlen("proxy.local.cluster.type") + 1));
-  ele4->rec_name = (char *) INKmalloc(ele4_rec_name_size);
+  ele4->rec_name = (char *) TSmalloc(ele4_rec_name_size);
   ink_strncpy(ele4->rec_name, "proxy.local.cluster.type", ele4_rec_name_size);
-  ele4->rec_type = INK_REC_INT;
+  ele4->rec_type = TS_REC_INT;
   ele4->int_val = 2;
 
-  ele5 = INKRecordEleCreate();  // reread action
+  ele5 = TSRecordEleCreate();  // reread action
   const size_t ele5_rec_name_size = (sizeof(char) * (strlen("proxy.config.cluster.mc_ttl") + 1));
-  ele5->rec_name = (char *) INKmalloc(ele5_rec_name_size);
+  ele5->rec_name = (char *) TSmalloc(ele5_rec_name_size);
   ink_strncpy(ele5->rec_name, "proxy.config.cluster.mc_ttl", ele5_rec_name_size);
-  ele5->rec_type = INK_REC_INT;
+  ele5->rec_type = TS_REC_INT;
   ele5->int_val = 555;
 
 
-  INKListEnqueue(list, ele4);
-  INKListEnqueue(list, ele1);
-  INKListEnqueue(list, ele2);
-  INKListEnqueue(list, ele3);
-  INKListEnqueue(list, ele5);
+  TSListEnqueue(list, ele4);
+  TSListEnqueue(list, ele1);
+  TSListEnqueue(list, ele2);
+  TSListEnqueue(list, ele3);
+  TSListEnqueue(list, ele5);
 
-  err = INKRecordSetMlt(list, &action);
-  print_err("INKRecordSetMlt", err);
-  fprintf(stderr, "[INKRecordSetMlt] Action Required: %d\n", action);
+  err = TSRecordSetMlt(list, &action);
+  print_err("TSRecordSetMlt", err);
+  fprintf(stderr, "[TSRecordSetMlt] Action Required: %d\n", action);
 
   // cleanup: need to iterate through list and delete each ele
-  int count = INKListLen(list);
+  int count = TSListLen(list);
   for (int i = 0; i < count; i++) {
-    INKRecordEle *ele = (INKRecordEle *) INKListDequeue(list);
-    INKRecordEleDestroy(ele);
+    TSRecordEle *ele = (TSRecordEle *) TSListDequeue(list);
+    TSRecordEleDestroy(ele);
   }
-  INKListDestroy(list);
+  TSListDestroy(list);
 }
 
 
@@ -1476,14 +1476,14 @@ test_read_url(bool valid)
   int headerSize;
   char *body = NULL;
   int bodySize;
-  INKError err;
+  TSError err;
 
   if (!valid) {
     // first try
 
-    err = INKReadFromUrlEx("hsdfasdf.com:80/index.html", &header, &headerSize, &body, &bodySize, 50000);
-    if (err != INK_ERR_OKAY) {
-      print_err("INKReadFromUrlEx", err);
+    err = TSReadFromUrlEx("hsdfasdf.com:80/index.html", &header, &headerSize, &body, &bodySize, 50000);
+    if (err != TS_ERR_OKAY) {
+      print_err("TSReadFromUrlEx", err);
     } else {
       printf("--------------------------------------------------------------\n");
       //  printf("The header...\n%s\n%d\n", *header, *headerSize);
@@ -1491,13 +1491,13 @@ test_read_url(bool valid)
       printf("The body...\n%s\n%d\n", body, bodySize);
     }
     if (body)
-      INKfree(body);
+      TSfree(body);
     if (header)
-      INKfree(header);
+      TSfree(header);
 
-    err = INKReadFromUrlEx("http://sadfasdfi.com:80/", &header, &headerSize, &body, &bodySize, 50000);
-    if (err != INK_ERR_OKAY) {
-      print_err("INKReadFromUrlEx", err);
+    err = TSReadFromUrlEx("http://sadfasdfi.com:80/", &header, &headerSize, &body, &bodySize, 50000);
+    if (err != TS_ERR_OKAY) {
+      print_err("TSReadFromUrlEx", err);
     } else {
       printf("---------------------------------------------------------------\n");
       printf("The header...\n%s\n%d\n", header, headerSize);
@@ -1505,15 +1505,15 @@ test_read_url(bool valid)
       printf("The body...\n%s\n%d\n", body, bodySize);
     }
     if (header)
-      INKfree(header);
+      TSfree(header);
     if (body)
-      INKfree(body);
+      TSfree(body);
 
   } else {                      // use valid urls
-    err = INKReadFromUrlEx("lakota.example.com:80/", &header, &headerSize, &body, &bodySize, 50000);
+    err = TSReadFromUrlEx("lakota.example.com:80/", &header, &headerSize, &body, &bodySize, 50000);
 
-    if (err != INK_ERR_OKAY) {
-      print_err("INKReadFromUrlEx", err);
+    if (err != TS_ERR_OKAY) {
+      print_err("TSReadFromUrlEx", err);
     } else {
       printf("---------------------------------------------------------------\n");
       printf("The header...\n%s\n%d\n", header, headerSize);
@@ -1521,14 +1521,14 @@ test_read_url(bool valid)
       printf("The body...\n%s\n%d\n", body, bodySize);
     }
     if (header)
-      INKfree(header);
+      TSfree(header);
     if (body)
-      INKfree(body);
+      TSfree(body);
 
     // read second url
-    err = INKReadFromUrlEx("http://www.apache.org:80/index.html", &header, &headerSize, &body, &bodySize, 50000);
-    if (err != INK_ERR_OKAY) {
-      print_err("INKReadFromUrlEx", err);
+    err = TSReadFromUrlEx("http://www.apache.org:80/index.html", &header, &headerSize, &body, &bodySize, 50000);
+    if (err != TS_ERR_OKAY) {
+      print_err("TSReadFromUrlEx", err);
     } else {
       printf("---------------------------------------------------------------\n");
       printf("The header...\n%s\n%d\n", header, headerSize);
@@ -1536,9 +1536,9 @@ test_read_url(bool valid)
       printf("The body...\n%s\n%d\n", body, bodySize);
     }
     if (header)
-      INKfree(header);
+      TSfree(header);
     if (body)
-      INKfree(body);
+      TSfree(body);
   }
 }
 
@@ -1555,11 +1555,11 @@ test_read_file()
   int f_ver = -1;
 
   printf("\n");
-  if (INKConfigFileRead(INK_FNAME_HOSTING, &f_text, &f_size, &f_ver) != INK_ERR_OKAY)
-    printf("[INKConfigFileRead] FAILED!\n");
+  if (TSConfigFileRead(TS_FNAME_HOSTING, &f_text, &f_size, &f_ver) != TS_ERR_OKAY)
+    printf("[TSConfigFileRead] FAILED!\n");
   else {
-    printf("[INKConfigFileRead]\n\tFile Size=%d, Version=%d\n%s\n", f_size, f_ver, f_text);
-    INKfree(f_text);
+    printf("[TSConfigFileRead]\n\tFile Size=%d, Version=%d\n%s\n", f_size, f_ver, f_text);
+    TSfree(f_text);
   }
 
 }
@@ -1580,97 +1580,97 @@ test_write_file()
   int new_f_size = strlen(new_f_text);
 
   printf("\n");
-  if (INKConfigFileWrite(INK_FNAME_HOSTING, new_f_text, new_f_size, -1) != INK_ERR_OKAY)
-    printf("[INKConfigFileWrite] FAILED!\n");
+  if (TSConfigFileWrite(TS_FNAME_HOSTING, new_f_text, new_f_size, -1) != TS_ERR_OKAY)
+    printf("[TSConfigFileWrite] FAILED!\n");
   else
-    printf("[INKConfigFileWrite] SUCCESS!\n");
+    printf("[TSConfigFileWrite] SUCCESS!\n");
   printf("\n");
 
   // should free f_text???
-  if (INKConfigFileRead(INK_FNAME_HOSTING, &f_text, &f_size, &f_ver) != INK_ERR_OKAY)
-    printf("[INKConfigFileRead] FAILED!\n");
+  if (TSConfigFileRead(TS_FNAME_HOSTING, &f_text, &f_size, &f_ver) != TS_ERR_OKAY)
+    printf("[TSConfigFileRead] FAILED!\n");
   else {
-    printf("[INKConfigFileRead]\n\tFile Size=%d, Version=%d\n%s\n", f_size, f_ver, f_text);
-    INKfree(f_text);
+    printf("[TSConfigFileRead]\n\tFile Size=%d, Version=%d\n%s\n", f_size, f_ver, f_text);
+    TSfree(f_text);
   }
 }
 
 /***************************************************************************
- * INKCfgContext Testing
+ * TSCfgContext Testing
  ***************************************************************************/
-// tests the INKCfgContextMoveEleUp/Down functions (which end up calling
+// tests the TSCfgContextMoveEleUp/Down functions (which end up calling
 // the new "copy" utility functions in CfgContextUtils.cc
 
-// uses INKCfgContextGet to read in a file and print out all the rules
+// uses TSCfgContextGet to read in a file and print out all the rules
 void
 test_cfg_context_get(char *args)
 {
-  INKCfgContext ctx;
-  INKFileNameT file;
+  TSCfgContext ctx;
+  TSFileNameT file;
 
   char *filename = strtok(args, ":");
   filename = strtok(NULL, ":");
   fprintf(stderr, "modify file: %s\n", filename);
-  char *name = (char *) INKmalloc(sizeof(char) * (strlen(filename)));
+  char *name = (char *) TSmalloc(sizeof(char) * (strlen(filename)));
   ink_strncpy(name, filename, strlen(filename));
   name[strlen(filename) - 1] = '\0';
 
-  // convert file name to INKFileNameT
+  // convert file name to TSFileNameT
   if (strcmp(name, "admin_access.config") == 0) {
-    file = INK_FNAME_ADMIN_ACCESS;
+    file = TS_FNAME_ADMIN_ACCESS;
   } else if (strcmp(name, "cache.config") == 0) {
-    file = INK_FNAME_CACHE_OBJ;
+    file = TS_FNAME_CACHE_OBJ;
   } else if (strcmp(name, "congestion.config") == 0) {
-    file = INK_FNAME_CONGESTION;
+    file = TS_FNAME_CONGESTION;
   } else if (strcmp(name, "hosting.config") == 0) {
-    file = INK_FNAME_HOSTING;
+    file = TS_FNAME_HOSTING;
   } else if (strcmp(name, "icp.config") == 0) {
-    file = INK_FNAME_ICP_PEER;
+    file = TS_FNAME_ICP_PEER;
   } else if (strcmp(name, "ip_allow.config") == 0) {
-    file = INK_FNAME_IP_ALLOW;
+    file = TS_FNAME_IP_ALLOW;
   } else if (strcmp(name, "logs_xml.config") == 0) {
-    file = INK_FNAME_LOGS_XML;
+    file = TS_FNAME_LOGS_XML;
   } else if (strcmp(name, "mgmt_allow.config") == 0) {
-    file = INK_FNAME_MGMT_ALLOW;
+    file = TS_FNAME_MGMT_ALLOW;
   } else if (strcmp(name, "parent.config") == 0) {
-    file = INK_FNAME_PARENT_PROXY;
+    file = TS_FNAME_PARENT_PROXY;
   } else if (strcmp(name, "partition.config") == 0) {
-    file = INK_FNAME_PARTITION;
+    file = TS_FNAME_PARTITION;
   } else if (strcmp(name, "plugin.config") == 0) {
-    file = INK_FNAME_PLUGIN;
+    file = TS_FNAME_PLUGIN;
   } else if (strcmp(name, "remap.config") == 0) {
-    file = INK_FNAME_REMAP;
+    file = TS_FNAME_REMAP;
   } else if (strcmp(name, "socks.config") == 0) {
-    file = INK_FNAME_SOCKS;
+    file = TS_FNAME_SOCKS;
   } else if (strcmp(name, "storage.config") == 0) {
-    file = INK_FNAME_STORAGE;
+    file = TS_FNAME_STORAGE;
   } else if (strcmp(name, "splitdns.config") == 0) {
-    file = INK_FNAME_SPLIT_DNS;
+    file = TS_FNAME_SPLIT_DNS;
   } else if (strcmp(name, "update.config") == 0) {
-    file = INK_FNAME_UPDATE_URL;
+    file = TS_FNAME_UPDATE_URL;
   } else if (strcmp(name, "vaddrs.config") == 0) {
-    file = INK_FNAME_VADDRS;
+    file = TS_FNAME_VADDRS;
   } else {
-    INKfree(name);
+    TSfree(name);
     return;
   }
 
-  ctx = INKCfgContextCreate(file);
-  if (INKCfgContextGet(ctx) != INK_ERR_OKAY)
+  ctx = TSCfgContextCreate(file);
+  if (TSCfgContextGet(ctx) != TS_ERR_OKAY)
     printf("ERROR READING FILE\n");
 
-  int count = INKCfgContextGetCount(ctx);
+  int count = TSCfgContextGetCount(ctx);
   printf("%d rules in file: %s\n", count, name);
 
   print_ele_list(file, ctx);
 
-  INKCfgContextDestroy(ctx);
-  INKfree(name);
+  TSCfgContextDestroy(ctx);
+  TSfree(name);
   return;
 }
 
 //
-// tests the INKCfgContextMoveEleUp/Down functions (which end up calling
+// tests the TSCfgContextMoveEleUp/Down functions (which end up calling
 // the new "copy" utility functions in CfgContextUtils.cc
 // depending on the file specified, this will move the top rule to the bottom,
 // and the second to the last rule to the top
@@ -1679,68 +1679,68 @@ test_cfg_context_get(char *args)
 void
 test_cfg_context_move(char *args)
 {
-  INKCfgContext ctx;
-  INKFileNameT file;
+  TSCfgContext ctx;
+  TSFileNameT file;
   int i;
-  INKError err;
+  TSError err;
 
   char *filename = strtok(args, ":");
   filename = strtok(NULL, ":");
   fprintf(stderr, "modify file: %s\n", filename);
-  char *name = (char *) INKmalloc(sizeof(char) * (strlen(filename)));
+  char *name = (char *) TSmalloc(sizeof(char) * (strlen(filename)));
   ink_strncpy(name, filename, strlen(filename));
   name[strlen(filename) - 1] = '\0';
 
-  // convert file name to INKFileNameT
+  // convert file name to TSFileNameT
   if (strcmp(name, "admin_access.config") == 0) {
-    file = INK_FNAME_ADMIN_ACCESS;
+    file = TS_FNAME_ADMIN_ACCESS;
   } else if (strcmp(name, "cache.config") == 0) {
-    file = INK_FNAME_CACHE_OBJ;
+    file = TS_FNAME_CACHE_OBJ;
   } else if (strcmp(name, "congestion.config") == 0) {
-    file = INK_FNAME_CONGESTION;
+    file = TS_FNAME_CONGESTION;
   } else if (strcmp(name, "hosting.config") == 0) {
-    file = INK_FNAME_HOSTING;
+    file = TS_FNAME_HOSTING;
   } else if (strcmp(name, "icp.config") == 0) {
-    file = INK_FNAME_ICP_PEER;
+    file = TS_FNAME_ICP_PEER;
   } else if (strcmp(name, "ip_allow.config") == 0) {
-    file = INK_FNAME_IP_ALLOW;
+    file = TS_FNAME_IP_ALLOW;
   } else if (strcmp(name, "logs_xml.config") == 0) {
-    file = INK_FNAME_LOGS_XML;
+    file = TS_FNAME_LOGS_XML;
   } else if (strcmp(name, "mgmt_allow.config") == 0) {
-    file = INK_FNAME_MGMT_ALLOW;
+    file = TS_FNAME_MGMT_ALLOW;
   } else if (strcmp(name, "parent.config") == 0) {
-    file = INK_FNAME_PARENT_PROXY;
+    file = TS_FNAME_PARENT_PROXY;
   } else if (strcmp(name, "partition.config") == 0) {
-    file = INK_FNAME_PARTITION;
+    file = TS_FNAME_PARTITION;
   } else if (strcmp(name, "remap.config") == 0) {
-    file = INK_FNAME_REMAP;
+    file = TS_FNAME_REMAP;
   } else if (strcmp(name, "socks.config") == 0) {
-    file = INK_FNAME_SOCKS;
+    file = TS_FNAME_SOCKS;
   } else if (strcmp(name, "storage.config") == 0) {
-    file = INK_FNAME_STORAGE;
+    file = TS_FNAME_STORAGE;
   } else if (strcmp(name, "splitdns.config") == 0) {
-    file = INK_FNAME_SPLIT_DNS;
+    file = TS_FNAME_SPLIT_DNS;
   } else if (strcmp(name, "update.config") == 0) {
-    file = INK_FNAME_UPDATE_URL;
+    file = TS_FNAME_UPDATE_URL;
   } else if (strcmp(name, "vaddrs.config") == 0) {
-    file = INK_FNAME_VADDRS;
+    file = TS_FNAME_VADDRS;
   } else {
-    INKfree(name);
+    TSfree(name);
     return;
   }
 
-  ctx = INKCfgContextCreate(file);
-  if (INKCfgContextGet(ctx) != INK_ERR_OKAY)
+  ctx = TSCfgContextCreate(file);
+  if (TSCfgContextGet(ctx) != TS_ERR_OKAY)
     printf("ERROR READING FILE\n");
 
-  int count = INKCfgContextGetCount(ctx);
+  int count = TSCfgContextGetCount(ctx);
   printf("%d rules in file: %s\n", count, name);
 
   // shift all the ele's up so that the top ele is now the bottom ele
   printf("\nShift all ele's up so that top ele is now bottom ele\n");
   for (i = 1; i < count; i++) {
-    err = INKCfgContextMoveEleUp(ctx, i);
-    if (err != INK_ERR_OKAY) {
+    err = TSCfgContextMoveEleUp(ctx, i);
+    if (err != TS_ERR_OKAY) {
       printf("ERROR moving ele at index %d up \n", i);
       goto END;
     }
@@ -1750,19 +1750,19 @@ test_cfg_context_move(char *args)
   // move all ele's above the last ele down; bottom ele becomes top ele
   printf("\nShift all Ele's above second to last ele down; bottom ele becomes top ele\n");
   for (i = count - 3; i >= 0; i--) {
-    err = INKCfgContextMoveEleDown(ctx, i);
-    if (err != INK_ERR_OKAY) {
+    err = TSCfgContextMoveEleDown(ctx, i);
+    if (err != TS_ERR_OKAY) {
       printf("ERROR: moving ele down at index %d\n", i);
       goto END;
     }
   }
 
   // clean up; commit change
-  INKCfgContextCommit(ctx, NULL, NULL);
+  TSCfgContextCommit(ctx, NULL, NULL);
 
 END:
-  INKCfgContextDestroy(ctx);
-  INKfree(name);
+  TSCfgContextDestroy(ctx);
+  TSfree(name);
   return;
 }
 
@@ -1770,31 +1770,31 @@ void
 test_cfg_context_ops()
 {
   // Not used here.
-  //INKCfgIterState iter_state;
-  //INKCfgEle *cfg_ele;
-  INKError err;
-  INKCfgContext ctx;
-  INKVirtIpAddrEle *ele;
+  //TSCfgIterState iter_state;
+  //TSCfgEle *cfg_ele;
+  TSError err;
+  TSCfgContext ctx;
+  TSVirtIpAddrEle *ele;
   int rm_index = 0, i;
   int insert_at;
 
-  ctx = INKCfgContextCreate(INK_FNAME_VADDRS);
+  ctx = TSCfgContextCreate(TS_FNAME_VADDRS);
 
-  if (INKCfgContextGet(ctx) != INK_ERR_OKAY)
+  if (TSCfgContextGet(ctx) != TS_ERR_OKAY)
     printf("ERROR READING FILE\n");
 
   printf("\nBEFORE CHANGE:\n");
   //  print_VirtIpAddr_ele_list(ctx);
 
-  int count = INKCfgContextGetCount(ctx);
+  int count = TSCfgContextGetCount(ctx);
   printf("# ele's = %d\n", count);
 
   printf("\nShifted all Ele's < %d up\n", rm_index);
   // move all ele's below rm_index up one; this shifts the rm_index ele to
-  // bottom of INKCfgContext
+  // bottom of TSCfgContext
   for (i = (rm_index + 1); i < count; i++) {
-    err = INKCfgContextMoveEleUp(ctx, i);
-    if (err != INK_ERR_OKAY) {
+    err = TSCfgContextMoveEleUp(ctx, i);
+    if (err != TS_ERR_OKAY) {
       printf("ERROR moving ele at index %d up \n", i);
       goto END;
     }
@@ -1803,34 +1803,34 @@ test_cfg_context_ops()
 
   printf("\nREMOVE LAST ELE (originally the first ele)\n");
   // remove the last ele (which was originally the first ele)
-  err = INKCfgContextRemoveEleAt(ctx, (count - 1));
-  if (err != INK_ERR_OKAY) {
+  err = TSCfgContextRemoveEleAt(ctx, (count - 1));
+  if (err != TS_ERR_OKAY) {
     printf("ERROR: removing ele at index %d\n", count - 1);
     goto END;
   }
 
   printf("\nRemoving second to last Ele \n");
-  err = INKCfgContextRemoveEleAt(ctx, (count - 2));
-  if (err != INK_ERR_OKAY) {
+  err = TSCfgContextRemoveEleAt(ctx, (count - 2));
+  if (err != TS_ERR_OKAY) {
     printf("ERROR: removing ele at index %d\n", count - 2);
     goto END;
   }
 
   // append a new ele
   printf("\nappend new ele\n");
-  ele = INKVirtIpAddrEleCreate();
+  ele = TSVirtIpAddrEleCreate();
   if (ele) {
     const size_t ip_addr_size = (sizeof(char) * (strlen("201.201.201.201") + 1));
-    ele->ip_addr = (char *) INKmalloc(ip_addr_size);
+    ele->ip_addr = (char *) TSmalloc(ip_addr_size);
     ink_strncpy(ele->ip_addr, "201.201.201.201", ip_addr_size);
     const size_t intr_size = (sizeof(char) * (strlen("appended") + 1));
-    ele->intr = (char *) INKmalloc(intr_size);
+    ele->intr = (char *) TSmalloc(intr_size);
     ink_strncpy(ele->intr, "appended", intr_size);
     ele->sub_intr = 201;
-    err = INKCfgContextAppendEle(ctx, (INKCfgEle *) ele);
-    if (err != INK_ERR_OKAY) {
+    err = TSCfgContextAppendEle(ctx, (TSCfgEle *) ele);
+    if (err != TS_ERR_OKAY) {
       printf("ERROR: append ele\n");
-      INKVirtIpAddrEleDestroy(ele);
+      TSVirtIpAddrEleDestroy(ele);
       goto END;
     }
   } else {
@@ -1841,19 +1841,19 @@ test_cfg_context_ops()
   insert_at = 1;
   // insert a new ele in insert_at index
   printf("\nINSERT NEW ELE at %d index\n", insert_at);
-  ele = INKVirtIpAddrEleCreate();
+  ele = TSVirtIpAddrEleCreate();
   if (ele) {
     const size_t ip_addr_size = (sizeof(char) * (strlen("101.101.101.101") + 1));
-    ele->ip_addr = (char *) INKmalloc(ip_addr_size);
+    ele->ip_addr = (char *) TSmalloc(ip_addr_size);
     ink_strncpy(ele->ip_addr, "101.101.101.101", ip_addr_size);
     const size_t intr_size = (sizeof(char) * (strlen("inserted") + 1));
-    ele->intr = (char *) INKmalloc(intr_size);
+    ele->intr = (char *) TSmalloc(intr_size);
     ink_strncpy(ele->intr, "inserted", intr_size);
     ele->sub_intr = 100;
-    err = INKCfgContextInsertEleAt(ctx, (INKCfgEle *) ele, insert_at);
-    if (err != INK_ERR_OKAY) {
+    err = TSCfgContextInsertEleAt(ctx, (TSCfgEle *) ele, insert_at);
+    if (err != TS_ERR_OKAY) {
       printf("ERROR: insert ele  at index %d\n", insert_at);
-      INKVirtIpAddrEleDestroy(ele);
+      TSVirtIpAddrEleDestroy(ele);
       goto END;
     }
   } else {
@@ -1863,9 +1863,9 @@ test_cfg_context_ops()
 
 
   printf("\nMove ele at index %d to botoom of list\n", insert_at);
-  for (i = insert_at; i < INKCfgContextGetCount(ctx); i++) {
-    err = INKCfgContextMoveEleDown(ctx, i);
-    if (err != INK_ERR_OKAY) {
+  for (i = insert_at; i < TSCfgContextGetCount(ctx); i++) {
+    err = TSCfgContextMoveEleDown(ctx, i);
+    if (err != TS_ERR_OKAY) {
       printf("ERROR: moving ele down at index %d\n", i);
       goto END;
     }
@@ -1873,10 +1873,10 @@ test_cfg_context_ops()
   //print_VirtIpAddr_ele_list(ctx);
 
   printf("\nShift all Ele's above last ele down; bottom ele becomes top ele\n");
-  count = INKCfgContextGetCount(ctx);
+  count = TSCfgContextGetCount(ctx);
   for (i = count - 2; i >= 0; i--) {
-    err = INKCfgContextMoveEleDown(ctx, i);
-    if (err != INK_ERR_OKAY) {
+    err = TSCfgContextMoveEleDown(ctx, i);
+    if (err != TS_ERR_OKAY) {
       printf("ERROR: moving ele down at index %d\n", i);
       goto END;
     }
@@ -1885,13 +1885,13 @@ test_cfg_context_ops()
 
 
   // commit change
-  INKCfgContextCommit(ctx, NULL, NULL);
+  TSCfgContextCommit(ctx, NULL, NULL);
 
   printf("\nAFTER CHANGE:\n");
   //print_VirtIpAddr_ele_list(ctx);
 
 END:
-  INKCfgContextDestroy(ctx);
+  TSCfgContextDestroy(ctx);
 
 }
 
@@ -1905,19 +1905,19 @@ void
 test_cfg_plugin()
 {
   // Not used here.
-  //INKCfgIterState iter_state;
-  INKCfgContext ctx;
-  INKCfgEle *cfg_ele;
-  INKPluginEle *ele;
+  //TSCfgIterState iter_state;
+  TSCfgContext ctx;
+  TSCfgEle *cfg_ele;
+  TSPluginEle *ele;
 
-  ctx = INKCfgContextCreate(INK_FNAME_PLUGIN);
-  if (INKCfgContextGet(ctx) != INK_ERR_OKAY)
+  ctx = TSCfgContextCreate(TS_FNAME_PLUGIN);
+  if (TSCfgContextGet(ctx) != TS_ERR_OKAY)
     printf("ERROR READING FILE\n");
 
   // retrieve and modify ele
   printf("test_cfg_plugin: modifying the first ele...\n");
-  cfg_ele = INKCfgContextGetEleAt(ctx, 0);
-  ele = (INKPluginEle *) cfg_ele;
+  cfg_ele = TSCfgContextGetEleAt(ctx, 0);
+  ele = (TSPluginEle *) cfg_ele;
   if (ele) {
     //free(ele->name);
     ele->name = xstrdup("change-plugin.so");
@@ -1925,23 +1925,23 @@ test_cfg_plugin()
 
   // remove the second ele
   printf("test_cfg_plugin: removing the second ele...\n");
-  INKCfgContextRemoveEleAt(ctx, 1);
+  TSCfgContextRemoveEleAt(ctx, 1);
 
   // create and add new ele
   printf("test_socks_set: appending a new ele...\n");
-  ele = INKPluginEleCreate();
+  ele = TSPluginEleCreate();
 
   ele->name = xstrdup("new-plugin.so");
 
-  ele->args = INKStringListCreate();
-  INKStringListEnqueue(ele->args, xstrdup("arg1"));
-  INKStringListEnqueue(ele->args, xstrdup("arg2"));
-  INKCfgContextAppendEle(ctx, (INKCfgEle *) ele);
+  ele->args = TSStringListCreate();
+  TSStringListEnqueue(ele->args, xstrdup("arg1"));
+  TSStringListEnqueue(ele->args, xstrdup("arg2"));
+  TSCfgContextAppendEle(ctx, (TSCfgEle *) ele);
 
   // commit change
-  INKCfgContextCommit(ctx, NULL, NULL);
+  TSCfgContextCommit(ctx, NULL, NULL);
 
-  INKCfgContextDestroy(ctx);
+  TSCfgContextDestroy(ctx);
 
 }
 
@@ -1955,67 +1955,67 @@ void
 test_cfg_socks()
 {
   // Not used here.
-  //INKCfgIterState iter_state;
-  INKCfgContext ctx;
-  INKCfgEle *cfg_ele;
-  INKSocksEle *ele;
+  //TSCfgIterState iter_state;
+  TSCfgContext ctx;
+  TSCfgEle *cfg_ele;
+  TSSocksEle *ele;
 
-  ctx = INKCfgContextCreate(INK_FNAME_SOCKS);
-  if (INKCfgContextGet(ctx) != INK_ERR_OKAY)
+  ctx = TSCfgContextCreate(TS_FNAME_SOCKS);
+  if (TSCfgContextGet(ctx) != TS_ERR_OKAY)
     printf("ERROR READING FILE\n");
 
   // retrieving an ele
   printf("test_socks_set: modifying the fourth ele...\n");
-  cfg_ele = INKCfgContextGetEleAt(ctx, 3);
-  ele = (INKSocksEle *) cfg_ele;
+  cfg_ele = TSCfgContextGetEleAt(ctx, 3);
+  ele = (TSSocksEle *) cfg_ele;
   if (ele) {
-    if (ele->rr != INK_RR_NONE)
-      ele->rr = INK_RR_FALSE;
+    if (ele->rr != TS_RR_NONE)
+      ele->rr = TS_RR_FALSE;
   }
 
   // remove the second ele
   printf("test_socks_set: removing the second ele...\n");
-  INKCfgContextRemoveEleAt(ctx, 1);
+  TSCfgContextRemoveEleAt(ctx, 1);
 
   // create new structs for new rules
-  INKIpAddrEle *ip1 = INKIpAddrEleCreate();
-  ip1->type = INK_IP_SINGLE;
-  ip1->ip_a = INKstrdup("1.1.1.1");
+  TSIpAddrEle *ip1 = TSIpAddrEleCreate();
+  ip1->type = TS_IP_SINGLE;
+  ip1->ip_a = TSstrdup("1.1.1.1");
 
-  INKDomainList dlist = INKDomainListCreate();
-  INKDomain *dom1 = INKDomainCreate();
-  dom1->domain_val = INKstrdup("www.mucky.com");
+  TSDomainList dlist = TSDomainListCreate();
+  TSDomain *dom1 = TSDomainCreate();
+  dom1->domain_val = TSstrdup("www.mucky.com");
   dom1->port = 8888;
-  INKDomainListEnqueue(dlist, dom1);
+  TSDomainListEnqueue(dlist, dom1);
 
-  INKDomain *dom2 = INKDomainCreate();
-  dom2->domain_val = INKstrdup("freakazoid.com");
+  TSDomain *dom2 = TSDomainCreate();
+  dom2->domain_val = TSstrdup("freakazoid.com");
   dom2->port = 2222;
-  INKDomainListEnqueue(dlist, dom2);
+  TSDomainListEnqueue(dlist, dom2);
 
-  INKDomain *dom3 = INKDomainCreate();
-  dom3->domain_val = INKstrdup("hong.kong.com");
+  TSDomain *dom3 = TSDomainCreate();
+  dom3->domain_val = TSstrdup("hong.kong.com");
   dom3->port = 3333;
-  INKDomainListEnqueue(dlist, dom3);
+  TSDomainListEnqueue(dlist, dom3);
 
   // create and add new ele
   printf("test_socks_set: appending a new ele...\n");
-  ele = INKSocksEleCreate(INK_TYPE_UNDEFINED);
+  ele = TSSocksEleCreate(TS_TYPE_UNDEFINED);
   if (ele) {
-    ele->cfg_ele.type = INK_SOCKS_MULTIPLE;
+    ele->cfg_ele.type = TS_SOCKS_MULTIPLE;
     ele->dest_ip_addr = ip1;
     ele->socks_servers = dlist;
-    ele->rr = INK_RR_STRICT;
+    ele->rr = TS_RR_STRICT;
 
-    INKCfgContextAppendEle(ctx, (INKCfgEle *) ele);
+    TSCfgContextAppendEle(ctx, (TSCfgEle *) ele);
   } else {
     printf("Can't create SocksEle\n");
   }
 
   // commit change
-  INKCfgContextCommit(ctx, NULL, NULL);
+  TSCfgContextCommit(ctx, NULL, NULL);
 
-  INKCfgContextDestroy(ctx);
+  TSCfgContextDestroy(ctx);
 }
 
 
@@ -2032,29 +2032,29 @@ test_cfg_socks()
 void
 print_active_events()
 {
-  INKList events;
-  INKError ret;
+  TSList events;
+  TSError ret;
   int count, i;
   char *name;
 
   printf("[print_active_events]\n");
 
-  events = INKListCreate();
-  ret = INKActiveEventGetMlt(events);
-  if (ret != INK_ERR_OKAY) {
-    print_err("INKActiveEventGetMlt", ret);
+  events = TSListCreate();
+  ret = TSActiveEventGetMlt(events);
+  if (ret != TS_ERR_OKAY) {
+    print_err("TSActiveEventGetMlt", ret);
     goto END;
   } else {                      // successful get
-    count = INKListLen(events);
+    count = TSListLen(events);
     for (i = 0; i < count; i++) {
-      name = (char *) INKListDequeue(events);
+      name = (char *) TSListDequeue(events);
       printf("\t%s\n", name);
-      INKfree(name);
+      TSfree(name);
     }
   }
 
 END:
-  INKListDestroy(events);
+  TSListDestroy(events);
   return;
 }
 
@@ -2068,10 +2068,10 @@ bool
 check_active(char *event_name)
 {
   bool active;
-  INKError ret;
+  TSError ret;
 
-  ret = INKEventIsActive(event_name, &active);
-  print_err("INKEventIsActive", ret);
+  ret = TSEventIsActive(event_name, &active);
+  print_err("TSEventIsActive", ret);
 
   if (active)
     printf("%s is ACTIVE\n", event_name);
@@ -2095,21 +2095,21 @@ check_active(char *event_name)
 void
 try_resolve(char *event_name)
 {
-  INKError ret;
+  TSError ret;
   char *name;
 
-  name = (char *) INKmalloc(sizeof(char) * (strlen(event_name)));
+  name = (char *) TSmalloc(sizeof(char) * (strlen(event_name)));
   strncpy(name, event_name, strlen(event_name) - 1);
   name[strlen(event_name) - 1] = '\0';
   printf("[try_resolve] Resolving event: %s\n", name);
 
   if (check_active(name)) {     // resolve events
-    ret = INKEventResolve(name);
-    print_err("INKEventResolve", ret);
+    ret = TSEventResolve(name);
+    print_err("TSEventResolve", ret);
     check_active(name);         // should be non-active now
   }
 
-  INKfree(name);
+  TSfree(name);
 }
 
 /* ------------------------------------------------------------------------
@@ -2136,11 +2136,11 @@ eventCallbackFn(char *name, char *msg, int pri, void *data)
 void
 register_event_callback(void)
 {
-  INKError err;
+  TSError err;
 
   printf("\n[register_event_callback] \n");
-  err = INKEventSignalCbRegister(NULL, eventCallbackFn, NULL);
-  print_err("INKEventSignalCbRegister", err);
+  err = TSEventSignalCbRegister(NULL, eventCallbackFn, NULL);
+  print_err("TSEventSignalCbRegister", err);
 }
 
 /* ------------------------------------------------------------------------
@@ -2153,11 +2153,11 @@ register_event_callback(void)
 void
 unregister_event_callback(void)
 {
-  INKError err;
+  TSError err;
 
   printf("\n[unregister_event_callback]\n");
-  err = INKEventSignalCbUnregister(NULL, eventCallbackFn);
-  print_err("INKEventSignalCbUnregister", err);
+  err = TSEventSignalCbUnregister(NULL, eventCallbackFn);
+  print_err("TSEventSignalCbUnregister", err);
 }
 
 /***************************************************************************
@@ -2167,26 +2167,26 @@ unregister_event_callback(void)
 void
 print_snapshots()
 {
-  INKStringList list;
-  INKError err;
+  TSStringList list;
+  TSError err;
   char *name;
 
-  list = INKStringListCreate();
-  err = INKSnapshotGetMlt(list);
-  print_err("INKSnapshotGetMlt", err);
+  list = TSStringListCreate();
+  err = TSSnapshotGetMlt(list);
+  print_err("TSSnapshotGetMlt", err);
 
   printf("All Snapshots:\n");
-  if (err == INK_ERR_OKAY) {
-    int num = INKStringListLen(list);
+  if (err == TS_ERR_OKAY) {
+    int num = TSStringListLen(list);
     for (int i = 0; i < num; i++) {
-      name = INKStringListDequeue(list);
+      name = TSStringListDequeue(list);
       if (name)
         printf("%s\n", name);
-      INKfree(name);
+      TSfree(name);
     }
   }
 
-  INKStringListDestroy(list);
+  TSStringListDestroy(list);
   return;
 }
 
@@ -2196,14 +2196,14 @@ add_snapshot(char *args)
   char *snap_name = strtok(args, ":");
   snap_name = strtok(NULL, ":");
   fprintf(stderr, "add snapshot: %s\n", snap_name);
-  char *name = (char *) INKmalloc(sizeof(char) * (strlen(snap_name)));
+  char *name = (char *) TSmalloc(sizeof(char) * (strlen(snap_name)));
   strncpy(name, snap_name, strlen(snap_name) - 1);
   name[strlen(snap_name) - 1] = '\0';
 
-  INKError err = INKSnapshotTake(name);
-  print_err("INKSnapshotTake", err);
+  TSError err = TSSnapshotTake(name);
+  print_err("TSSnapshotTake", err);
 
-  INKfree(name);
+  TSfree(name);
 }
 
 void
@@ -2212,14 +2212,14 @@ remove_snapshot(char *args)
   char *snap_name = strtok(args, ":");
   snap_name = strtok(NULL, ":");
   fprintf(stderr, "remove snapshot: %s\n", snap_name);
-  char *name = (char *) INKmalloc(sizeof(char) * (strlen(snap_name)));
+  char *name = (char *) TSmalloc(sizeof(char) * (strlen(snap_name)));
   strncpy(name, snap_name, strlen(snap_name) - 1);
   name[strlen(snap_name) - 1] = '\0';
 
-  INKError err = INKSnapshotRemove(name);
-  print_err("INKSnapshotRemove", err);
+  TSError err = TSSnapshotRemove(name);
+  print_err("TSSnapshotRemove", err);
 
-  INKfree(name);
+  TSfree(name);
 }
 
 void
@@ -2228,14 +2228,14 @@ restore_snapshot(char *args)
   char *snap_name = strtok(args, ":");
   snap_name = strtok(NULL, ":");
   fprintf(stderr, "resotre snapshot: %s\n", snap_name);
-  char *name = (char *) INKmalloc(sizeof(char) * (strlen(snap_name)));
+  char *name = (char *) TSmalloc(sizeof(char) * (strlen(snap_name)));
   strncpy(name, snap_name, strlen(snap_name) - 1);
   name[strlen(snap_name) - 1] = '\0';
 
-  INKError err = INKSnapshotRestore(name);
-  print_err("INKSnapshotRestore", err);
+  TSError err = TSSnapshotRestore(name);
+  print_err("TSSnapshotRestore", err);
 
-  INKfree(name);
+  TSfree(name);
 }
 
 /***************************************************************************
@@ -2247,20 +2247,20 @@ test_diags()
 {
   // status
   for (int i = 0; i < 5; i++) {
-    INKDiags(INK_DIAG_STATUS, "[remote]status diag %d", i);
+    TSDiags(TS_DIAG_STATUS, "[remote]status diag %d", i);
   }
 
   // warning
-  INKDiags(INK_DIAG_WARNING, "[remote]warning msg %s %s", "I am", "a fiue");
+  TSDiags(TS_DIAG_WARNING, "[remote]warning msg %s %s", "I am", "a fiue");
 
   // fatal
-  INKDiags(INK_DIAG_FATAL, "[remote]FATAL, FATAL: Nuclear meltdown in %d seconds", 10);
+  TSDiags(TS_DIAG_FATAL, "[remote]FATAL, FATAL: Nuclear meltdown in %d seconds", 10);
 
   // error
-  INKDiags(INK_DIAG_ERROR, "[remote]error msg shouldn't have printed this %s", "argument");
+  TSDiags(TS_DIAG_ERROR, "[remote]error msg shouldn't have printed this %s", "argument");
 
   // debug
-  INKDiags(INK_DIAG_DEBUG, "[remote]debug ... wish I was good at it");
+  TSDiags(TS_DIAG_DEBUG, "[remote]debug ... wish I was good at it");
 
 }
 
@@ -2272,119 +2272,119 @@ test_diags()
 void
 set_stats()
 {
-  INKActionNeedT action;
+  TSActionNeedT action;
 
   fprintf(stderr, "[set_stats] Set Dummy Stat Values\n");
 
 
-  INKRecordSetInt("proxy.process.http.user_agent_response_document_total_size", 100, &action);
-  INKRecordSetInt("proxy.process.http.user_agent_response_header_total_size", 100, &action);
-  INKRecordSetInt("proxy.process.http.current_client_connections", 100, &action);
-  INKRecordSetInt("proxy.process.http.current_client_transactions", 100, &action);
-  INKRecordSetInt("proxy.process.http.origin_server_response_document_total_size", 100, &action);
-  INKRecordSetInt("proxy.process.http.origin_server_response_header_total_size", 100, &action);
-  INKRecordSetInt("proxy.process.http.current_server_connections", 100, &action);
-  INKRecordSetInt("proxy.process.http.current_server_transactions", 100, &action);
+  TSRecordSetInt("proxy.process.http.user_agent_response_document_total_size", 100, &action);
+  TSRecordSetInt("proxy.process.http.user_agent_response_header_total_size", 100, &action);
+  TSRecordSetInt("proxy.process.http.current_client_connections", 100, &action);
+  TSRecordSetInt("proxy.process.http.current_client_transactions", 100, &action);
+  TSRecordSetInt("proxy.process.http.origin_server_response_document_total_size", 100, &action);
+  TSRecordSetInt("proxy.process.http.origin_server_response_header_total_size", 100, &action);
+  TSRecordSetInt("proxy.process.http.current_server_connections", 100, &action);
+  TSRecordSetInt("proxy.process.http.current_server_transactions", 100, &action);
 
 
-  INKRecordSetFloat("proxy.node.http.cache_hit_ratio", 110.0, &action);
-  INKRecordSetFloat("proxy.node.http.bandwidth_hit_ratio", 110.0, &action);
-  INKRecordSetFloat("proxy.node.bandwidth_hit_ratio", 110, &action);
-  INKRecordSetFloat("proxy.node.hostdb.hit_ratio", 110, &action);
-  INKRecordSetFloat("proxy.node.cache.percent_free", 110, &action);
-  INKRecordSetFloat("proxy.node.cache_hit_ratio", 110, &action);
-  INKRecordSetFloat("proxy.node.bandwidth_hit_ratio_avg_10s", 110, &action);
-  INKRecordSetFloat("proxy.node.http.cache_hit_fresh_avg_10s", 110, &action);
-  INKRecordSetFloat("proxy.node.http.cache_hit_revalidated_avg_10s", 110, &action);
-  INKRecordSetFloat("proxy.node.http.cache_hit_ims_avg_10s", 100, &action);
-  INKRecordSetFloat("proxy.node.client_throughput_out", 110, &action);
+  TSRecordSetFloat("proxy.node.http.cache_hit_ratio", 110.0, &action);
+  TSRecordSetFloat("proxy.node.http.bandwidth_hit_ratio", 110.0, &action);
+  TSRecordSetFloat("proxy.node.bandwidth_hit_ratio", 110, &action);
+  TSRecordSetFloat("proxy.node.hostdb.hit_ratio", 110, &action);
+  TSRecordSetFloat("proxy.node.cache.percent_free", 110, &action);
+  TSRecordSetFloat("proxy.node.cache_hit_ratio", 110, &action);
+  TSRecordSetFloat("proxy.node.bandwidth_hit_ratio_avg_10s", 110, &action);
+  TSRecordSetFloat("proxy.node.http.cache_hit_fresh_avg_10s", 110, &action);
+  TSRecordSetFloat("proxy.node.http.cache_hit_revalidated_avg_10s", 110, &action);
+  TSRecordSetFloat("proxy.node.http.cache_hit_ims_avg_10s", 100, &action);
+  TSRecordSetFloat("proxy.node.client_throughput_out", 110, &action);
 
-  INKRecordSetInt("proxy.node.http.cache_hit_ratio_int_pct", 110, &action);
-  INKRecordSetInt("proxy.node.http.bandwidth_hit_ratio_int_pct", 110, &action);
-  INKRecordSetInt("proxy.node.bandwidth_hit_ratio_int_pct", 110, &action);
-  INKRecordSetInt("proxy.node.hostdb.hit_ratio_int_pct", 110, &action);
-  INKRecordSetInt("proxy.node.proxy_running", 110, &action);
-  INKRecordSetInt("proxy.node.hostdb.hit_ratio_int_pct", 110, &action);
-  INKRecordSetInt("proxy.node.proxy_running", 110, &action);
-  INKRecordSetInt("proxy.node.cache_hit_ratio_int_pct", 110, &action);
-  INKRecordSetInt("proxy.node.current_client_connections", 110, &action);
-  INKRecordSetInt("proxy.node.current_cache_connections", 110, &action);
+  TSRecordSetInt("proxy.node.http.cache_hit_ratio_int_pct", 110, &action);
+  TSRecordSetInt("proxy.node.http.bandwidth_hit_ratio_int_pct", 110, &action);
+  TSRecordSetInt("proxy.node.bandwidth_hit_ratio_int_pct", 110, &action);
+  TSRecordSetInt("proxy.node.hostdb.hit_ratio_int_pct", 110, &action);
+  TSRecordSetInt("proxy.node.proxy_running", 110, &action);
+  TSRecordSetInt("proxy.node.hostdb.hit_ratio_int_pct", 110, &action);
+  TSRecordSetInt("proxy.node.proxy_running", 110, &action);
+  TSRecordSetInt("proxy.node.cache_hit_ratio_int_pct", 110, &action);
+  TSRecordSetInt("proxy.node.current_client_connections", 110, &action);
+  TSRecordSetInt("proxy.node.current_cache_connections", 110, &action);
 
-  INKRecordSetFloat("proxy.cluster.user_agent_total_bytes_avg_10s", 110, &action);
-  INKRecordSetFloat("proxy.cluster.origin_server_total_bytes_avg_10s", 110, &action);
-  INKRecordSetFloat("proxy.cluster.bandwidth_hit_ratio", 110, &action);
-  INKRecordSetFloat("proxy.cluster.bandwidth_hit_ratio_avg_10s", 110, &action);
-  INKRecordSetFloat("proxy.cluster.http.cache_hit_ratio", 110, &action);
-  INKRecordSetFloat("proxy.cluster.http.bandwidth_hit_ratio", 110, &action);
+  TSRecordSetFloat("proxy.cluster.user_agent_total_bytes_avg_10s", 110, &action);
+  TSRecordSetFloat("proxy.cluster.origin_server_total_bytes_avg_10s", 110, &action);
+  TSRecordSetFloat("proxy.cluster.bandwidth_hit_ratio", 110, &action);
+  TSRecordSetFloat("proxy.cluster.bandwidth_hit_ratio_avg_10s", 110, &action);
+  TSRecordSetFloat("proxy.cluster.http.cache_hit_ratio", 110, &action);
+  TSRecordSetFloat("proxy.cluster.http.bandwidth_hit_ratio", 110, &action);
 
-  INKRecordSetInt("proxy.cluster.http.cache_hit_ratio_int_pct", 110, &action);
-  INKRecordSetInt("proxy.cluster.bandwidth_hit_ratio_int_pct", 110, &action);
-  INKRecordSetInt("proxy.cluster.http.cache_total_hits", 110, &action);
-  INKRecordSetInt("proxy.cluster.http.cache_total_misses", 110, &action);
-  INKRecordSetInt("proxy.cluster.http.throughput", 110, &action);
+  TSRecordSetInt("proxy.cluster.http.cache_hit_ratio_int_pct", 110, &action);
+  TSRecordSetInt("proxy.cluster.bandwidth_hit_ratio_int_pct", 110, &action);
+  TSRecordSetInt("proxy.cluster.http.cache_total_hits", 110, &action);
+  TSRecordSetInt("proxy.cluster.http.cache_total_misses", 110, &action);
+  TSRecordSetInt("proxy.cluster.http.throughput", 110, &action);
 }
 
 void
 print_stats()
 {
-  INKFloat f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11;
-  INKInt i1, i2, i3, i4, i5, i6, i7, i8, i9, i10;
+  TSFloat f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11;
+  TSInt i1, i2, i3, i4, i5, i6, i7, i8, i9, i10;
 
   fprintf(stderr, "[print_stats]\n");
 
 
-  INKRecordGetInt("proxy.process.http.user_agent_response_document_total_size", &i1);
-  INKRecordGetInt("proxy.process.http.user_agent_response_header_total_size", &i2);
-  INKRecordGetInt("proxy.process.http.current_client_connections", &i3);
-  INKRecordGetInt("proxy.process.http.current_client_transactions", &i4);
-  INKRecordGetInt("proxy.process.http.origin_server_response_document_total_size", &i5);
-  INKRecordGetInt("proxy.process.http.origin_server_response_header_total_size", &i6);
-  INKRecordGetInt("proxy.process.http.current_server_connections", &i7);
-  INKRecordGetInt("proxy.process.http.current_server_transactions", &i8);
+  TSRecordGetInt("proxy.process.http.user_agent_response_document_total_size", &i1);
+  TSRecordGetInt("proxy.process.http.user_agent_response_header_total_size", &i2);
+  TSRecordGetInt("proxy.process.http.current_client_connections", &i3);
+  TSRecordGetInt("proxy.process.http.current_client_transactions", &i4);
+  TSRecordGetInt("proxy.process.http.origin_server_response_document_total_size", &i5);
+  TSRecordGetInt("proxy.process.http.origin_server_response_header_total_size", &i6);
+  TSRecordGetInt("proxy.process.http.current_server_connections", &i7);
+  TSRecordGetInt("proxy.process.http.current_server_transactions", &i8);
 
   fprintf(stderr, "%" PRId64 ", %" PRId64 ", %" PRId64 ", %" PRId64 ", %" PRId64 ", %" PRId64 ", %" PRId64 ", %" PRId64 "\n", i1, i2, i3, i4, i5, i6, i7, i8);
 
-  INKRecordGetFloat("proxy.node.http.cache_hit_ratio", &f1);
-  INKRecordGetFloat("proxy.node.http.bandwidth_hit_ratio", &f2);
-  INKRecordGetFloat("proxy.node.bandwidth_hit_ratio", &f3);
-  INKRecordGetFloat("proxy.node.hostdb.hit_ratio", &f4);
-  INKRecordGetFloat("proxy.node.cache.percent_free", &f5);
-  INKRecordGetFloat("proxy.node.cache_hit_ratio", &f6);
-  INKRecordGetFloat("proxy.node.bandwidth_hit_ratio_avg_10s", &f7);
-  INKRecordGetFloat("proxy.node.http.cache_hit_fresh_avg_10s", &f8);
-  INKRecordGetFloat("proxy.node.http.cache_hit_revalidated_avg_10s", &f9);
-  INKRecordGetFloat("proxy.node.http.cache_hit_ims_avg_10s", &f10);
-  INKRecordGetFloat("proxy.node.client_throughput_out", &f11);
+  TSRecordGetFloat("proxy.node.http.cache_hit_ratio", &f1);
+  TSRecordGetFloat("proxy.node.http.bandwidth_hit_ratio", &f2);
+  TSRecordGetFloat("proxy.node.bandwidth_hit_ratio", &f3);
+  TSRecordGetFloat("proxy.node.hostdb.hit_ratio", &f4);
+  TSRecordGetFloat("proxy.node.cache.percent_free", &f5);
+  TSRecordGetFloat("proxy.node.cache_hit_ratio", &f6);
+  TSRecordGetFloat("proxy.node.bandwidth_hit_ratio_avg_10s", &f7);
+  TSRecordGetFloat("proxy.node.http.cache_hit_fresh_avg_10s", &f8);
+  TSRecordGetFloat("proxy.node.http.cache_hit_revalidated_avg_10s", &f9);
+  TSRecordGetFloat("proxy.node.http.cache_hit_ims_avg_10s", &f10);
+  TSRecordGetFloat("proxy.node.client_throughput_out", &f11);
 
   fprintf(stderr, "NODE stats: \n%f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f\n",
           f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11);
 
-  INKRecordGetInt("proxy.node.http.cache_hit_ratio_int_pct", &i1);
-  INKRecordGetInt("proxy.node.http.bandwidth_hit_ratio_int_pct", &i2);
-  INKRecordGetInt("proxy.node.bandwidth_hit_ratio_int_pct", &i3);
-  INKRecordGetInt("proxy.node.hostdb.hit_ratio_int_pct", &i4);
-  INKRecordGetInt("proxy.node.proxy_running", &i5);
-  INKRecordGetInt("proxy.node.hostdb.hit_ratio_int_pct", &i6);
-  INKRecordGetInt("proxy.node.proxy_running", &i7);
-  INKRecordGetInt("proxy.node.cache_hit_ratio_int_pct", &i8);
-  INKRecordGetInt("proxy.node.current_client_connections", &i9);
-  INKRecordGetInt("proxy.node.current_cache_connections", &i10);
+  TSRecordGetInt("proxy.node.http.cache_hit_ratio_int_pct", &i1);
+  TSRecordGetInt("proxy.node.http.bandwidth_hit_ratio_int_pct", &i2);
+  TSRecordGetInt("proxy.node.bandwidth_hit_ratio_int_pct", &i3);
+  TSRecordGetInt("proxy.node.hostdb.hit_ratio_int_pct", &i4);
+  TSRecordGetInt("proxy.node.proxy_running", &i5);
+  TSRecordGetInt("proxy.node.hostdb.hit_ratio_int_pct", &i6);
+  TSRecordGetInt("proxy.node.proxy_running", &i7);
+  TSRecordGetInt("proxy.node.cache_hit_ratio_int_pct", &i8);
+  TSRecordGetInt("proxy.node.current_client_connections", &i9);
+  TSRecordGetInt("proxy.node.current_cache_connections", &i10);
 
   fprintf(stderr, "%" PRId64 ", %" PRId64 ", %" PRId64 ", %" PRId64 ", %" PRId64 ", %" PRId64 ", %" PRId64 ", %" PRId64 ", %" PRId64 ", %" PRId64 "\n",
           i1, i2, i3, i4, i5, i6, i7, i8, i9, i10);
 
-  INKRecordGetFloat("proxy.cluster.user_agent_total_bytes_avg_10s", &f1);
-  INKRecordGetFloat("proxy.cluster.origin_server_total_bytes_avg_10s", &f2);
-  INKRecordGetFloat("proxy.cluster.bandwidth_hit_ratio", &f3);
-  INKRecordGetFloat("proxy.cluster.bandwidth_hit_ratio_avg_10s", &f4);
-  INKRecordGetFloat("proxy.cluster.http.cache_hit_ratio", &f5);
-  INKRecordGetFloat("proxy.cluster.http.bandwidth_hit_ratio", &f6);
+  TSRecordGetFloat("proxy.cluster.user_agent_total_bytes_avg_10s", &f1);
+  TSRecordGetFloat("proxy.cluster.origin_server_total_bytes_avg_10s", &f2);
+  TSRecordGetFloat("proxy.cluster.bandwidth_hit_ratio", &f3);
+  TSRecordGetFloat("proxy.cluster.bandwidth_hit_ratio_avg_10s", &f4);
+  TSRecordGetFloat("proxy.cluster.http.cache_hit_ratio", &f5);
+  TSRecordGetFloat("proxy.cluster.http.bandwidth_hit_ratio", &f6);
 
-  INKRecordGetInt("proxy.cluster.http.cache_hit_ratio_int_pct", &i1);
-  INKRecordGetInt("proxy.cluster.bandwidth_hit_ratio_int_pct", &i2);
-  INKRecordGetInt("proxy.cluster.http.cache_total_hits", &i3);
-  INKRecordGetInt("proxy.cluster.http.cache_total_misses", &i4);
-  INKRecordGetInt("proxy.cluster.http.throughput", &i5);
+  TSRecordGetInt("proxy.cluster.http.cache_hit_ratio_int_pct", &i1);
+  TSRecordGetInt("proxy.cluster.bandwidth_hit_ratio_int_pct", &i2);
+  TSRecordGetInt("proxy.cluster.http.cache_total_hits", &i3);
+  TSRecordGetInt("proxy.cluster.http.cache_total_misses", &i4);
+  TSRecordGetInt("proxy.cluster.http.throughput", &i5);
 
   fprintf(stderr, "CLUSTER stats: \n");
   fprintf(stderr, "%f, %f, %f, %f, %f, %f\n", f1, f2, f3, f4, f5, f6);
@@ -2399,40 +2399,40 @@ print_stats()
 void
 reset_stats()
 {
-  INKError err = INKStatsReset(false);
-  print_err("INKStatsReset", err);
+  TSError err = TSStatsReset(false);
+  print_err("TSStatsReset", err);
   return;
 }
 
 void
 sync_test()
 {
-  INKActionNeedT action;
+  TSActionNeedT action;
 
-  INKRecordSetString("proxy.config.proxy_name", "dorkface", &action);
-  printf("[INKRecordSetString] proxy.config.proxy_name \n\tAction Should: [%d]\n\tAction is    : [%d]\n",
-         INK_ACTION_UNDEFINED, action);
+  TSRecordSetString("proxy.config.proxy_name", "dorkface", &action);
+  printf("[TSRecordSetString] proxy.config.proxy_name \n\tAction Should: [%d]\n\tAction is    : [%d]\n",
+         TS_ACTION_UNDEFINED, action);
 
-  INKRecordSetInt("proxy.config.cluster.cluster_port", 3333, &action);
-  printf("[INKRecordSetInt] proxy.config.cluster.cluster_port\n\tAction Should: [%d]\n\tAction is    : [%d]\n",
-         INK_ACTION_RESTART, action);
+  TSRecordSetInt("proxy.config.cluster.cluster_port", 3333, &action);
+  printf("[TSRecordSetInt] proxy.config.cluster.cluster_port\n\tAction Should: [%d]\n\tAction is    : [%d]\n",
+         TS_ACTION_RESTART, action);
 
-  if (INKRecordSet("proxy.config.http.cache.fuzz.probability", "-0.3333", &action) != INK_ERR_OKAY)
-    printf("INKRecordSet FAILED!\n");
+  if (TSRecordSet("proxy.config.http.cache.fuzz.probability", "-0.3333", &action) != TS_ERR_OKAY)
+    printf("TSRecordSet FAILED!\n");
   else
-    printf("[INKRecordSet] proxy.config.http.cache.fuzz.probability=-0.3333\n");
+    printf("[TSRecordSet] proxy.config.http.cache.fuzz.probability=-0.3333\n");
 
-  INKError ret;
-  if ((ret = INKProxyStateSet(INK_PROXY_OFF, INK_CACHE_CLEAR_OFF)) != INK_ERR_OKAY)
-    printf("[INKProxyStateSet] turn off FAILED\n");
+  TSError ret;
+  if ((ret = TSProxyStateSet(TS_PROXY_OFF, TS_CACHE_CLEAR_OFF)) != TS_ERR_OKAY)
+    printf("[TSProxyStateSet] turn off FAILED\n");
   print_err("stop_TS", ret);
 }
 
 void
 test_encrypt_password(char *pwd)
 {
-  if (INKEncryptToFile(pwd, "/export/workareas/lant/tsunami/traffic/sun_dbg/etc/trafficserver/LAN_pwd") != INK_ERR_OKAY)
-    printf("[INKEncryptToFile] could not encrypt %s", pwd);
+  if (TSEncryptToFile(pwd, "/export/workareas/lant/tsunami/traffic/sun_dbg/etc/trafficserver/LAN_pwd") != TS_ERR_OKAY)
+    printf("[TSEncryptToFile] could not encrypt %s", pwd);
 }
 
 
@@ -2561,11 +2561,11 @@ runInteractive()
 int
 main(int argc, char **argv)
 {
-  INKError ret;
+  TSError ret;
 
-  if ((ret = INKInit(NULL, TS_MGMT_OPT_DEFAULTS)) == INK_ERR_OKAY) {
+  if ((ret = TSInit(NULL, TS_MGMT_OPT_DEFAULTS)) == TS_ERR_OKAY) {
     runInteractive();
-    INKTerminate();
+    TSTerminate();
     printf("END REMOTE API TEST\n");
   } else {
     print_err("main", ret);

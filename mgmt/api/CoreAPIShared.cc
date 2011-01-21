@@ -24,7 +24,7 @@
 /*****************************************************************************
  * Filename: CoreAPIShared.cc
  * Purpose: This file contains functions that are shared by local and remote
- *          API; in particular it has helper functions used by INKMgmtAPI.cc
+ *          API; in particular it has helper functions used by TSMgmtAPI.cc
  * Created: 01/20/00
  * Created by: Lan Tran
  *
@@ -51,17 +51,17 @@ static int poll_read(int fd, int timeout);
  *         hdr_size -- size of the header
  *         body     -- pointer to the head of the body
  *         bdy_size -- size of the body
- * OUTPUT: INKError -- error status
+ * OUTPUT: TSError -- error status
  */
-INKError
+TSError
 parseHTTPResponse(char *buffer, char **header, int *hdr_size, char **body, int *bdy_size)
 {
-  INKError err = INK_ERR_OKAY;
+  TSError err = TS_ERR_OKAY;
   char *buf;
 
   // locate HTTP divider
   if (!(buf = strstr(buffer, HTTP_DIVIDER))) {
-    err = INK_ERR_FAIL;
+    err = TS_ERR_FAIL;
     goto END;
   }
   // calculate header info
@@ -89,7 +89,7 @@ END:
  *         bufsize -- the size allocated for the buffer
  * OUTPUT: bool -- true if everything went well. false otherwise
  */
-INKError
+TSError
 readHTTPResponse(int sock, char *buffer, int bufsize, uint64_t timeout)
 {
 #ifdef _WIN32
@@ -103,7 +103,7 @@ readHTTPResponse(int sock, char *buffer, int bufsize, uint64_t timeout)
     goto error;
   } else {
     close_socket(sock);
-    return INK_ERR_OKAY;
+    return TS_ERR_OKAY;
   }
 #else
   int64_t err, idx;
@@ -137,7 +137,7 @@ readHTTPResponse(int sock, char *buffer, int bufsize, uint64_t timeout)
     } else if (err == 0) {
       buffer[idx] = '\0';
       close(sock);
-      return INK_ERR_OKAY;
+      return TS_ERR_OKAY;
     } else {
       idx += err;
     }
@@ -148,7 +148,7 @@ error:                         /* "Houston, we have a problem!" (Apollo 13) */
   if (sock >= 0) {
     close_socket(sock);
   }
-  return INK_ERR_NET_READ;
+  return TS_ERR_NET_READ;
 }
 
 /* sendHTTPRequest
@@ -158,7 +158,7 @@ error:                         /* "Houston, we have a problem!" (Apollo 13) */
  * OUTPUT: bool -- true if everything went well. false otherwise (and sock is
  *                 closed)
  */
-INKError
+TSError
 sendHTTPRequest(int sock, char *req, uint64_t timeout)
 {
   char request[BUFSIZ];
@@ -206,13 +206,13 @@ sendHTTPRequest(int sock, char *req, uint64_t timeout)
 #endif
 
   /* everything went well */
-  return INK_ERR_OKAY;
+  return TS_ERR_OKAY;
 
 error:                         /* "Houston, we have a problem!" (Apollo 13) */
   if (sock >= 0) {
     close_socket(sock);
   }
-  return INK_ERR_NET_WRITE;
+  return TS_ERR_NET_WRITE;
 }
 
 

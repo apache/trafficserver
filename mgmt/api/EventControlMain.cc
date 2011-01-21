@@ -119,10 +119,10 @@ remove_event_client(EventClientT * client, InkHashTable * table)
  * purpose: initializes the mgmt_events queue which is intended to hold
  *          TM events.
  * input:
- * output: INK_ERR_xx
+ * output: TS_ERR_xx
  * note: None
  *********************************************************************/
-INKError
+TSError
 init_mgmt_events()
 {
   int ret;
@@ -130,16 +130,16 @@ init_mgmt_events()
   ret = ink_mutex_init(&mgmt_events_lock, "mgmt_event_notice");
 
   if (ret)
-    return INK_ERR_SYS_CALL;
+    return TS_ERR_SYS_CALL;
 
   // initialize queue
   mgmt_events = create_queue();
   if (!mgmt_events) {
     ink_mutex_destroy(&mgmt_events_lock);
-    return INK_ERR_SYS_CALL;
+    return TS_ERR_SYS_CALL;
   }
 
-  return INK_ERR_OKAY;
+  return TS_ERR_OKAY;
 }
 
 
@@ -174,8 +174,8 @@ delete_mgmt_events()
 /*********************************************************************
  * delete_event_queue
  *
- * purpose: frees queue where the elements are of type INKEvent* 's
- * input: LLQ * q - a queue with entries of INKEvent*'s
+ * purpose: frees queue where the elements are of type TSEvent* 's
+ * input: LLQ * q - a queue with entries of TSEvent*'s
  * output: None
  * note: None
  *********************************************************************/
@@ -186,10 +186,10 @@ delete_event_queue(LLQ * q)
     return;
 
   // now for every element, dequeue and free
-  INKEvent *ele;
+  TSEvent *ele;
 
   while (!queue_is_empty(q)) {
-    ele = (INKEvent *) dequeue(q);
+    ele = (TSEvent *) dequeue(q);
     if (ele) {
       xfree(ele);
     }
@@ -213,11 +213,11 @@ void
 apiEventCallback(alarm_t newAlarm, char *ip, char *desc)
 {
   NOWARN_UNUSED(ip);
-  // create an INKEvent
+  // create an TSEvent
   // addEvent(new_alarm, ip, desc) // adds event to mgmt_events
-  INKEvent *newEvent;
+  TSEvent *newEvent;
 
-  newEvent = INKEventCreate();
+  newEvent = TSEventCreate();
   newEvent->id = newAlarm;
   newEvent->name = get_event_name(newEvent->id);
   //newEvent->ip   = xstrdup(ip);
@@ -263,7 +263,7 @@ event_callback_main(void *arg)
     return NULL;
   }
   // initialize queue for holding mgmt events
-  if ((ret = init_mgmt_events()) != INK_ERR_OKAY) {
+  if ((ret = init_mgmt_events()) != TS_ERR_OKAY) {
     ink_hash_table_destroy(accepted_clients);
     return NULL;
   }
@@ -342,7 +342,7 @@ event_callback_main(void *arg)
             // clear the fields first
             op_t = UNDEFINED_OP;
             ret = preprocess_msg(client_entry->sock_info, (OpType *) & op_t, &req);
-            if (ret == INK_ERR_NET_READ || ret == INK_ERR_NET_EOF) {    // preprocess_msg FAILED!
+            if (ret == TS_ERR_NET_READ || ret == TS_ERR_NET_EOF) {    // preprocess_msg FAILED!
               Debug("event", "[event_callback_main] preprocess_msg FAILED; skip! \n");
               remove_event_client(client_entry, accepted_clients);
               con_entry = ink_hash_table_iterator_next(accepted_clients, &con_state);
@@ -355,7 +355,7 @@ event_callback_main(void *arg)
               handle_event_reg_callback(client_entry, req);
               if (req)
                 xfree(req);     // free the request allocated by preprocess_msg
-              if (ret == INK_ERR_NET_WRITE || ret == INK_ERR_NET_EOF) {
+              if (ret == TS_ERR_NET_WRITE || ret == TS_ERR_NET_EOF) {
                 Debug("event", "[event_callback_main] ERROR: handle_event_reg_callback\n");
                 remove_event_client(client_entry, accepted_clients);
                 con_entry = ink_hash_table_iterator_next(accepted_clients, &con_state);
@@ -368,7 +368,7 @@ event_callback_main(void *arg)
               handle_event_unreg_callback(client_entry, req);
               if (req)
                 xfree(req);     // free the request allocated by preprocess_msg
-              if (ret == INK_ERR_NET_WRITE || ret == INK_ERR_NET_EOF) {
+              if (ret == TS_ERR_NET_WRITE || ret == TS_ERR_NET_EOF) {
                 Debug("event", "[event_callback_main] ERROR: handle_event_unreg_callback\n");
                 remove_event_client(client_entry, accepted_clients);
                 con_entry = ink_hash_table_iterator_next(accepted_clients, &con_state);
@@ -394,7 +394,7 @@ event_callback_main(void *arg)
     // events_registered queue for each client connection to see if that client
     // has a callback registered for that event_id
 
-    INKEvent *event;
+    TSEvent *event;
 
     if (!mgmt_events || queue_is_empty(mgmt_events)) {  //no events to process
       //fprintf(stderr, "[event_callback_main] NO EVENTS TO PROCESS\n");
@@ -404,7 +404,7 @@ event_callback_main(void *arg)
     // iterate through each event in mgmt_events
     while (!queue_is_empty(mgmt_events)) {
       ink_mutex_acquire(&mgmt_events_lock);     //acquire lock
-      event = (INKEvent *) dequeue(mgmt_events);        // get what we want
+      event = (TSEvent *) dequeue(mgmt_events);        // get what we want
       ink_mutex_release(&mgmt_events_lock);     // release lock
 
       if (!event)
@@ -418,7 +418,7 @@ event_callback_main(void *arg)
         client_entry = (EventClientT *) ink_hash_table_entry_value(accepted_clients, con_entry);
         if (client_entry->events_registered[event->id]) {
           ret = send_event_notification(client_entry->sock_info, event);
-          if (ret != INK_ERR_OKAY) {    // send_event_notification failed!
+          if (ret != TS_ERR_OKAY) {    // send_event_notification failed!
             Debug("event", "sending even notification to fd [%d] failed.\n", client_entry->sock_info);
           }
         }
@@ -428,7 +428,7 @@ event_callback_main(void *arg)
 
       // now we can delete the event
       //fprintf(stderr, "[event_callback_main] DELETE EVENT\n");
-      INKEventDestroy(event);
+      TSEventDestroy(event);
     }                           // end while (!queue_is_empty)
 
   }                             // end while (1)
@@ -464,10 +464,10 @@ event_callback_main(void *arg)
  * purpose: handles request to register a callback for a specific event (or all events)
  * input: client - the client currently reading the msg from
  *        req    - the event_name
- * output: INK_ERR_xx
+ * output: TS_ERR_xx
  * note: the req should be the event name; does not send a reply to client
  *************************************************************************/
-INKError
+TSError
 handle_event_reg_callback(EventClientT * client, char *req)
 {
   // mark the specified alarm as "wanting to be notified" in the client's alarm_registered list
@@ -478,12 +478,12 @@ handle_event_reg_callback(EventClientT * client, char *req)
   } else {
     int id = get_event_id(req); // req == event_name
     if (id < 0) {
-      return INK_ERR_FAIL;
+      return TS_ERR_FAIL;
     }
     client->events_registered[id] = true;
   }
 
-  return INK_ERR_OKAY;
+  return TS_ERR_OKAY;
 }
 
 /**************************************************************************
@@ -492,10 +492,10 @@ handle_event_reg_callback(EventClientT * client, char *req)
  * purpose: handles request to unregister a callback for a specific event (or all events)
  * input: client - the client currently reading the msg from
  *        req    - the event_name
- * output: INK_ERR_xx
+ * output: TS_ERR_xx
  * note: the req should be the event name; does not send reply to client
  *************************************************************************/
-INKError
+TSError
 handle_event_unreg_callback(EventClientT * client, char *req)
 {
   // mark the specified alarm as "wanting to be notified" in the client's alarm_registered list
@@ -506,10 +506,10 @@ handle_event_unreg_callback(EventClientT * client, char *req)
   } else {
     int id = get_event_id(req); // req == event_name
     if (id < 0) {
-      return INK_ERR_FAIL;
+      return TS_ERR_FAIL;
     }
     client->events_registered[id] = false;
   }
 
-  return INK_ERR_OKAY;
+  return TS_ERR_OKAY;
 }

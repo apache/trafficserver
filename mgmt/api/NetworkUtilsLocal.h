@@ -49,33 +49,33 @@
 /*****************************************************************************
  * general socket functions
  *****************************************************************************/
-INKError socket_flush(struct SocketInfo sock_info);
-INKError socket_read_n(struct SocketInfo sock_info, char *buf, int bytes);
-INKError socket_write_n(struct SocketInfo sock_info, const char *buf, int bytes);
+TSError socket_flush(struct SocketInfo sock_info);
+TSError socket_read_n(struct SocketInfo sock_info, char *buf, int bytes);
+TSError socket_write_n(struct SocketInfo sock_info, const char *buf, int bytes);
 
 /*****************************************************************************
  * Unmarshalling/marshalling
  *****************************************************************************/
-INKError preprocess_msg(struct SocketInfo sock_info, OpType * op_t, char **msg);
+TSError preprocess_msg(struct SocketInfo sock_info, OpType * op_t, char **msg);
 
-INKError parse_request_name_value(char *req, char **name, char **val);
-INKError parse_record_get_request(char *req, char **rec_name);
-INKError parse_file_read_request(char *req, INKFileNameT * file);
-INKError parse_file_write_request(char *req, INKFileNameT * file, int *ver, int *size, char **text);
-INKError parse_diags_request(char *req, INKDiagsT * mode, char **diag_msg);
-INKError parse_proxy_state_request(char *req, INKProxyStateT * state, INKCacheClearT * clear);
+TSError parse_request_name_value(char *req, char **name, char **val);
+TSError parse_record_get_request(char *req, char **rec_name);
+TSError parse_file_read_request(char *req, TSFileNameT * file);
+TSError parse_file_write_request(char *req, TSFileNameT * file, int *ver, int *size, char **text);
+TSError parse_diags_request(char *req, TSDiagsT * mode, char **diag_msg);
+TSError parse_proxy_state_request(char *req, TSProxyStateT * state, TSCacheClearT * clear);
 
-INKError send_reply(struct SocketInfo sock_info, INKError retval);
-INKError send_reply_list(struct SocketInfo sock_info, INKError retval, char *list);
+TSError send_reply(struct SocketInfo sock_info, TSError retval);
+TSError send_reply_list(struct SocketInfo sock_info, TSError retval, char *list);
 
-INKError send_record_get_reply(struct SocketInfo sock_info, INKError retval, void *val, int val_size,
-                               INKRecordT rec_type);
-INKError send_record_set_reply(struct SocketInfo sock_info, INKError retval, INKActionNeedT action_need);
-INKError send_file_read_reply(struct SocketInfo sock_info, INKError retval, int ver, int size, char *text);
-INKError send_proxy_state_get_reply(struct SocketInfo sock_info, INKProxyStateT state);
+TSError send_record_get_reply(struct SocketInfo sock_info, TSError retval, void *val, int val_size,
+                               TSRecordT rec_type);
+TSError send_record_set_reply(struct SocketInfo sock_info, TSError retval, TSActionNeedT action_need);
+TSError send_file_read_reply(struct SocketInfo sock_info, TSError retval, int ver, int size, char *text);
+TSError send_proxy_state_get_reply(struct SocketInfo sock_info, TSProxyStateT state);
 
-INKError send_event_active_reply(struct SocketInfo sock_info, INKError retval, bool active);
+TSError send_event_active_reply(struct SocketInfo sock_info, TSError retval, bool active);
 
-INKError send_event_notification(struct SocketInfo sock_info, INKEvent * event);
+TSError send_event_notification(struct SocketInfo sock_info, TSEvent * event);
 
 #endif

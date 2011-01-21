@@ -48,7 +48,7 @@ int version_flag = 0;
 int
 main(int argc, char *argv[])
 {
-  INKError status;
+  TSError status;
 
   // build the application information structure
   appVersionInfo.setup(PACKAGE_NAME,"traffic_shell", PACKAGE_VERSION, __DATE__, __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
@@ -78,9 +78,9 @@ main(int argc, char *argv[])
   CliDisplayPrintf = 1;
 
   // initialize MgmtAPI using TS runtime directory
-  status = INKInit(Layout::get()->runtimedir, TS_MGMT_OPT_DEFAULTS);
+  status = TSInit(Layout::get()->runtimedir, TS_MGMT_OPT_DEFAULTS);
   if (status) {
-    printf("INKInit %d: Failed to initialize MgmtAPI in %s\n", status, Layout::get()->runtimedir);
+    printf("TSInit %d: Failed to initialize MgmtAPI in %s\n", status, Layout::get()->runtimedir);
   } else {
     printf("Successfully Initialized MgmtAPI in %s \n", Layout::get()->runtimedir);
   }
@@ -109,5 +109,5 @@ void
 register_event_callback(void)
 {
   // TODO: Check return code?
-  INKEventSignalCbRegister(NULL, eventCallbackFn, NULL);
+  TSEventSignalCbRegister(NULL, eventCallbackFn, NULL);
 }

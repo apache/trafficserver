@@ -46,83 +46,83 @@ static int ClearCluster;
 static int ClearNode;
 static int VersionFlag;
 
-static INKError
+static TSError
 handleArgInvocation()
 {
   if (ReRead == 1) {
-    return INKReconfigure();
+    return TSReconfigure();
   } else if (ShutdownMgmtCluster == 1) {
-    return INKRestart(true);
+    return TSRestart(true);
   } else if (ShutdownMgmtLocal == 1) {
-    return INKRestart(false);
+    return TSRestart(false);
   } else if (Shutdown == 1) {
-    return INKProxyStateSet(INK_PROXY_OFF, INK_CACHE_CLEAR_OFF);
+    return TSProxyStateSet(TS_PROXY_OFF, TS_CACHE_CLEAR_OFF);
   } else if (BounceCluster == 1) {
-    return INKBounce(true);
+    return TSBounce(true);
   } else if (BounceLocal == 1) {
-    return INKBounce(false);
+    return TSBounce(false);
   } else if (Startup == 1) {
-    return INKProxyStateSet(INK_PROXY_ON, INK_CACHE_CLEAR_OFF);
+    return TSProxyStateSet(TS_PROXY_ON, TS_CACHE_CLEAR_OFF);
   } else if (ClearCluster == 1) {
-    return INKStatsReset(true);
+    return TSStatsReset(true);
   } else if (ClearNode == 1) {
-    return INKStatsReset(false);
+    return TSStatsReset(false);
   } else if (QueryDeadhosts == 1) {
     fprintf(stderr, "Query Deadhosts is not implemented, it requires support for congestion control.\n");
     fprintf(stderr, "For more details, examine the old code in cli/CLI.cc: QueryDeadhosts()\n");
-    return INK_ERR_FAIL;
+    return TS_ERR_FAIL;
   } else if (*ReadVar != '\0') {        // Handle a value read
     if (*SetVar != '\0' || *VarValue != '\0') {
       fprintf(stderr, "%s: Invalid Argument Combination: Can not read and set values at the same time\n", programName);
-      return INK_ERR_FAIL;
+      return TS_ERR_FAIL;
     } else {
-      INKError err;
-      INKRecordEle *rec_ele = INKRecordEleCreate();
+      TSError err;
+      TSRecordEle *rec_ele = TSRecordEleCreate();
 
-      if ((err = INKRecordGet(ReadVar, rec_ele)) != INK_ERR_OKAY) {
+      if ((err = TSRecordGet(ReadVar, rec_ele)) != TS_ERR_OKAY) {
         fprintf(stderr, "%s: Variable Not Found\n", programName);
       } else {
         switch (rec_ele->rec_type) {
-        case INK_REC_INT:
+        case TS_REC_INT:
           printf("%" PRId64 "\n", rec_ele->int_val);
           break;
-        case INK_REC_COUNTER:
+        case TS_REC_COUNTER:
           printf("%" PRId64 "\n", rec_ele->counter_val);
           break;
-        case INK_REC_FLOAT:
+        case TS_REC_FLOAT:
           printf("%f\n", rec_ele->float_val);
           break;
-        case INK_REC_STRING:
+        case TS_REC_STRING:
           printf("%s\n", rec_ele->string_val);
           break;
         default:
           fprintf(stderr, "%s: unknown record type (%d)\n", programName, rec_ele->rec_type);
-          err = INK_ERR_FAIL;
+          err = TS_ERR_FAIL;
           break;
         }
       }
-      INKRecordEleDestroy(rec_ele);
+      TSRecordEleDestroy(rec_ele);
       return err;
     }
   } else if (*SetVar != '\0') { // Setting a variable
     if (*VarValue == '\0') {
       fprintf(stderr, "%s: Set requires a -v argument\n", programName);
-      return INK_ERR_FAIL;
+      return TS_ERR_FAIL;
     } else {
-      INKError err;
-      INKActionNeedT action;
+      TSError err;
+      TSActionNeedT action;
 
-      if ((err = INKRecordSet(SetVar, VarValue, &action)) != INK_ERR_OKAY)
+      if ((err = TSRecordSet(SetVar, VarValue, &action)) != TS_ERR_OKAY)
         fprintf(stderr, "%s: Only configuration vars can be set\n", programName);
       return err;
     }
   } else if (*VarValue != '\0') {       // We have a value but no variable to set
     fprintf(stderr, "%s: Must specify variable to set with -s when using -v\n", programName);
-    return INK_ERR_FAIL;
+    return TS_ERR_FAIL;
   }
 
   fprintf(stderr, "%s: No arguments specified\n", programName);
-  return INK_ERR_FAIL;
+  return TS_ERR_FAIL;
 }
 
 int
@@ -130,7 +130,7 @@ main(int argc, char **argv)
 {
   NOWARN_UNUSED(argc);
   AppVersionInfo appVersionInfo;
-  INKError status;
+  TSError status;
 
   programName = argv[0];
 
@@ -182,13 +182,13 @@ main(int argc, char **argv)
   }
 
   // Connect to Local Manager and do it.
-  INKInit(NULL, static_cast<TSInitOptionT>(TS_MGMT_OPT_NO_EVENTS | TS_MGMT_OPT_NO_SOCK_TESTS));
+  TSInit(NULL, static_cast<TSInitOptionT>(TS_MGMT_OPT_NO_EVENTS | TS_MGMT_OPT_NO_SOCK_TESTS));
   status = handleArgInvocation();
 
   // Done with the mgmt API.
-  INKTerminate();
+  TSTerminate();
 
-  if (INK_ERR_OKAY != status) {
+  if (TS_ERR_OKAY != status) {
     if (ReadVar[0] == '\0' && SetVar[0] == '\0')
       fprintf(stderr, "error: the requested command failed\n");
     exit(1);

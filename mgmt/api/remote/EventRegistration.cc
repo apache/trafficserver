@@ -65,7 +65,7 @@ CallbackTable *remote_event_callbacks;
  * notes:   each time the client's socket connection to TM is reset
  *          a new thread will be launched as old one dies; there are
  *          only two places where a new thread is created:
- *          1) when client first connects (INKInit call)
+ *          1) when client first connects (TSInit call)
  *          2) client reconnects() due to a TM restart
  * Uses blocking socket; so blocks until receives an event notification.
  * Shouldn't need to use select since only waiting for a notification
@@ -74,9 +74,9 @@ CallbackTable *remote_event_callbacks;
 void *
 event_poll_thread_main(void *arg)
 {
-  INKError err;
+  TSError err;
   int sock_fd;
-  INKEvent *event_notice = NULL;
+  TSEvent *event_notice = NULL;
 
   sock_fd = *((int *) arg);     // should be same as event_socket_fd
 
@@ -87,13 +87,13 @@ event_poll_thread_main(void *arg)
       break;
     }
 
-    // read the entire message, so create INKEvent for the callback
-    event_notice = INKEventCreate();
+    // read the entire message, so create TSEvent for the callback
+    event_notice = TSEventCreate();
     err = parse_event_notification(sock_fd, event_notice);
-    if (err == INK_ERR_NET_READ || err == INK_ERR_NET_EOF) {
+    if (err == TS_ERR_NET_READ || err == TS_ERR_NET_EOF) {
       break;
-    } else if (err != INK_ERR_OKAY) {
-      INKEventDestroy(event_notice);
+    } else if (err != TS_ERR_OKAY) {
+      TSEventDestroy(event_notice);
       continue;                 // skip the message
     }
     // got event notice; spawn new thread to handle the event's callback functions
@@ -101,7 +101,7 @@ event_poll_thread_main(void *arg)
   }
 
   if (event_notice)
-    INKEventDestroy(event_notice);
+    TSEventDestroy(event_notice);
   ink_thread_exit(NULL);
   return NULL;
 }
@@ -111,32 +111,32 @@ event_poll_thread_main(void *arg)
  *
  * purpose: Given an event, determines and calls the registered cb functions
  *          in the CallbackTable for remote events
- * input: arg - should be an INKEvent with the event info sent from TM msg
+ * input: arg - should be an TSEvent with the event info sent from TM msg
  * output: returns when done calling all the callbacks
  * notes: None
  **********************************************************************/
 void *
 event_callback_thread(void *arg)
 {
-  INKEvent *event_notice;
+  TSEvent *event_notice;
   EventCallbackT *event_cb;
   int index;
 
-  event_notice = (INKEvent *) arg;
+  event_notice = (TSEvent *) arg;
   index = (int) event_notice->id;
   LLQ *func_q;                  // list of callback functions need to call
 
   func_q = create_queue();
   if (!func_q) {
     if (event_notice)
-      INKEventDestroy(event_notice);
+      TSEventDestroy(event_notice);
     return NULL;
   }
 
   // obtain lock
   ink_mutex_acquire(&remote_event_callbacks->event_callback_lock);
 
-  INKEventSignalFunc cb;
+  TSEventSignalFunc cb;
 
   // check if we have functions to call
   if (remote_event_callbacks->event_callback_l[index] && (!queue_is_empty(remote_event_callbacks->event_callback_l[index]))) {
@@ -154,12 +154,12 @@ event_callback_thread(void *arg)
 
   // execute the callback function
   while (!queue_is_empty(func_q)) {
-    cb = (INKEventSignalFunc) dequeue(func_q);
+    cb = (TSEventSignalFunc) dequeue(func_q);
     (*cb) (event_notice->name, event_notice->description, event_notice->priority, NULL);
   }
 
   // clean up event notice
-  INKEventDestroy(event_notice);
+  TSEventDestroy(event_notice);
   delete_queue(func_q);
 
   // all done!

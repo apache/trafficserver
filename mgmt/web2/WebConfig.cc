@@ -56,53 +56,53 @@
 // Return an allocated buffer containing the HTML of the invalid rules
 // that will appear in "Rule" format. Returns NULL if error.
 // Note, that it will dequeue the elements from errRules list, but will
-// not free it (it is up to the caller to free the INKIntList)
+// not free it (it is up to the caller to free the TSIntList)
 //
 char *
-convertRules(INKFileNameT file, INKIntList errRules, char *rules[])
+convertRules(TSFileNameT file, TSIntList errRules, char *rules[])
 {
   char *rule = NULL;
   int *index;
   textBuffer buf(4096);
   char num[10];
 
-  while (!INKIntListIsEmpty(errRules)) {
-    index = INKIntListDequeue(errRules);
+  while (!TSIntListIsEmpty(errRules)) {
+    index = TSIntListDequeue(errRules);
     switch (file) {
-    case INK_FNAME_CACHE_OBJ:
+    case TS_FNAME_CACHE_OBJ:
       rule = formatCacheRule(rules[*index]);
       break;
-    case INK_FNAME_HOSTING:
+    case TS_FNAME_HOSTING:
       rule = formatHostingRule(rules[*index]);
       break;
-    case INK_FNAME_ICP_PEER:
+    case TS_FNAME_ICP_PEER:
       rule = formatIcpRule(rules[*index]);
       break;
-    case INK_FNAME_IP_ALLOW:
+    case TS_FNAME_IP_ALLOW:
       rule = formatIpAllowRule(rules[*index]);
       break;
-    case INK_FNAME_MGMT_ALLOW:
+    case TS_FNAME_MGMT_ALLOW:
       rule = formatMgmtAllowRule(rules[*index]);
       break;
-    case INK_FNAME_PARENT_PROXY:
+    case TS_FNAME_PARENT_PROXY:
       rule = formatParentRule(rules[*index]);
       break;
-    case INK_FNAME_PARTITION:
+    case TS_FNAME_PARTITION:
       rule = formatPartitionRule(rules[*index]);
       break;
-    case INK_FNAME_REMAP:
+    case TS_FNAME_REMAP:
       rule = formatRemapRule(rules[*index]);
       break;
-    case INK_FNAME_SOCKS:
+    case TS_FNAME_SOCKS:
       rule = formatSocksRule(rules[*index]);
       break;
-    case INK_FNAME_SPLIT_DNS:
+    case TS_FNAME_SPLIT_DNS:
       rule = formatSplitDnsRule(rules[*index]);
       break;
-    case INK_FNAME_UPDATE_URL:
+    case TS_FNAME_UPDATE_URL:
       rule = formatUpdateRule(rules[*index]);
       break;
-    case INK_FNAME_VADDRS:
+    case TS_FNAME_VADDRS:
       rule = formatVaddrsRule(rules[*index]);
       break;
     default:                   // UH-OH!!!
@@ -702,24 +702,24 @@ formatVaddrsRule(char *rule)
 int
 updateCacheConfig(char *rules[], int numRules, char **errBuff)
 {
-  INKCfgContext ctx = NULL;
-  INKCacheEle *ele;
+  TSCfgContext ctx = NULL;
+  TSCacheEle *ele;
   Tokenizer tokens(CFG_RULE_DELIMITER);
-  INKPdSsFormat *pdss;
-  INKActionNeedT action_need;
-  INKError response;
+  TSPdSsFormat *pdss;
+  TSActionNeedT action_need;
+  TSError response;
   int i, err = WEB_HTTP_ERR_OKAY;
-  INKIntList errRules = NULL;
+  TSIntList errRules = NULL;
 
-  ctx = INKCfgContextCreate(INK_FNAME_CACHE_OBJ);
+  ctx = TSCfgContextCreate(TS_FNAME_CACHE_OBJ);
   if (!ctx) {
     Debug("config", "[updateCacheConfig] can't allocate ctx memory");
     err = WEB_HTTP_ERR_FAIL;
     goto Lerror;
   }
   // since we want to preserve comments, we need to read in the
-  // file using INKCfgContextGet and remove all the rules; starting from scratch
-  if (INKCfgContextGet(ctx) != INK_ERR_OKAY || INKCfgContextRemoveAll(ctx) != INK_ERR_OKAY) {
+  // file using TSCfgContextGet and remove all the rules; starting from scratch
+  if (TSCfgContextGet(ctx) != TS_ERR_OKAY || TSCfgContextRemoveAll(ctx) != TS_ERR_OKAY) {
     Debug("config", "[updateCacheConfig] Failed to Get and Clear CfgContext");
     err = WEB_HTTP_ERR_FAIL;
     goto Lerror;
@@ -729,48 +729,48 @@ updateCacheConfig(char *rules[], int numRules, char **errBuff)
   for (i = 0; i < numRules; i++) {
     tokens.Initialize(rules[i], ALLOW_EMPTY_TOKS);
     // we know there should be 13 tokens for cache.config rule
-    ele = INKCacheEleCreate(INK_TYPE_UNDEFINED);
+    ele = TSCacheEleCreate(TS_TYPE_UNDEFINED);
     pdss = &(ele->cache_info);
 
     // rule type
     if (strcmp(tokens[0], "never-cache") == 0) {
-      ele->cfg_ele.type = INK_CACHE_NEVER;
+      ele->cfg_ele.type = TS_CACHE_NEVER;
     } else if (strcmp(tokens[0], "ignore-no-cache") == 0) {
-      ele->cfg_ele.type = INK_CACHE_IGNORE_NO_CACHE;
+      ele->cfg_ele.type = TS_CACHE_IGNORE_NO_CACHE;
     } else if (strcmp(tokens[0], "ignore-client-no-cache") == 0) {
-      ele->cfg_ele.type = INK_CACHE_IGNORE_CLIENT_NO_CACHE;
+      ele->cfg_ele.type = TS_CACHE_IGNORE_CLIENT_NO_CACHE;
     } else if (strcmp(tokens[0], "ignore-server-no-cache") == 0) {
-      ele->cfg_ele.type = INK_CACHE_IGNORE_SERVER_NO_CACHE;
+      ele->cfg_ele.type = TS_CACHE_IGNORE_SERVER_NO_CACHE;
     } else if (strcmp(tokens[0], "pin-in-cache") == 0) {
-      ele->cfg_ele.type = INK_CACHE_PIN_IN_CACHE;
+      ele->cfg_ele.type = TS_CACHE_PIN_IN_CACHE;
     } else if (strcmp(tokens[0], "revalidate") == 0) {
-      ele->cfg_ele.type = INK_CACHE_REVALIDATE;
+      ele->cfg_ele.type = TS_CACHE_REVALIDATE;
     } else if (strcmp(tokens[0], "ttl-in-cache") == 0) {
-      ele->cfg_ele.type = INK_CACHE_TTL_IN_CACHE;
+      ele->cfg_ele.type = TS_CACHE_TTL_IN_CACHE;
     } else if (strcmp(tokens[0], "cache-auth-content") == 0) {
-      ele->cfg_ele.type = INK_CACHE_AUTH_CONTENT;
+      ele->cfg_ele.type = TS_CACHE_AUTH_CONTENT;
     } else {
-      ele->cfg_ele.error = INK_ERR_INVALID_CONFIG_RULE;
+      ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
       Debug("config", "[updateCacheConfig] invalid rule - SKIP");
     }
 
     // pd type
     if (strcmp(tokens[1], "dest_domain") == 0) {
-      pdss->pd_type = INK_PD_DOMAIN;
+      pdss->pd_type = TS_PD_DOMAIN;
     } else if (strcmp(tokens[1], "dest_host") == 0) {
-      pdss->pd_type = INK_PD_HOST;
+      pdss->pd_type = TS_PD_HOST;
     } else if (strcmp(tokens[1], "dest_ip") == 0) {
-      pdss->pd_type = INK_PD_IP;
+      pdss->pd_type = TS_PD_IP;
     } else if (strcmp(tokens[1], "url_regex") == 0) {
-      pdss->pd_type = INK_PD_URL_REGEX;
+      pdss->pd_type = TS_PD_URL_REGEX;
     } else {
-      ele->cfg_ele.error = INK_ERR_INVALID_CONFIG_RULE;
+      ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
       Debug("config", "[updateCacheConfig] invalid rule - SKIP");
     }
 
     // pd value - Required field!
     if (strlen(tokens[2]) <= 0) {
-      ele->cfg_ele.error = INK_ERR_INVALID_CONFIG_RULE;
+      ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
       Debug("config", "[updateCacheConfig] invalid rule - SKIP");
     }
     pdss->pd_val = xstrdup(tokens[2]);
@@ -780,8 +780,8 @@ updateCacheConfig(char *rules[], int numRules, char **errBuff)
 
     // time
     if (strlen(tokens[3]) > 0) {
-      if (string_to_time_struct(tokens[3], &(pdss->sec_spec)) != INK_ERR_OKAY) {
-        ele->cfg_ele.error = INK_ERR_INVALID_CONFIG_RULE;
+      if (string_to_time_struct(tokens[3], &(pdss->sec_spec)) != TS_ERR_OKAY) {
+        ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
         Debug("config", "[updateCacheConfig] invalid time sec spec. - SKIP");
       }
     }
@@ -789,7 +789,7 @@ updateCacheConfig(char *rules[], int numRules, char **errBuff)
     if (strlen(tokens[4]) > 0) {
       pdss->sec_spec.src_ip = string_to_ip_addr(tokens[4]);
       if (!pdss->sec_spec.src_ip) {     // invalid IP
-        ele->cfg_ele.error = INK_ERR_INVALID_CONFIG_RULE;
+        ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
         Debug("config", "[updateCacheConfig] invalid src_ip - SKIP");
       }
     }
@@ -805,7 +805,7 @@ updateCacheConfig(char *rules[], int numRules, char **errBuff)
     if (strlen(tokens[7]) > 0) {
       pdss->sec_spec.port = string_to_port_ele(tokens[7]);
       if (!pdss->sec_spec.port) {
-        ele->cfg_ele.error = INK_ERR_INVALID_CONFIG_RULE;
+        ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
         Debug("config", "[updateCacheConfig] invalid port - SKIP");
       }
     }
@@ -819,32 +819,32 @@ updateCacheConfig(char *rules[], int numRules, char **errBuff)
     }
     // time_period
     if (strlen(tokens[10]) > 0) {
-      if (string_to_hms_time(tokens[10], &(ele->time_period)) != INK_ERR_OKAY) {
-        ele->cfg_ele.error = INK_ERR_INVALID_CONFIG_RULE;
+      if (string_to_hms_time(tokens[10], &(ele->time_period)) != TS_ERR_OKAY) {
+        ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
         Debug("config", "[updateCacheConfig] invalid hms time - SKIP");
       }
     }
 
-    INKCfgContextAppendEle(ctx, (INKCfgEle *) ele);     // add new ele to end of list
+    TSCfgContextAppendEle(ctx, (TSCfgEle *) ele);     // add new ele to end of list
 
   }
 
   // commit the CfgContext to write a new version of the file
-  errRules = INKIntListCreate();
-  response = INKCfgContextCommit(ctx, &action_need, errRules);
-  if (response == INK_ERR_INVALID_CONFIG_RULE) {
+  errRules = TSIntListCreate();
+  response = TSCfgContextCommit(ctx, &action_need, errRules);
+  if (response == TS_ERR_INVALID_CONFIG_RULE) {
     err = WEB_HTTP_ERR_INVALID_CFG_RULE;
-    *errBuff = convertRules(INK_FNAME_CACHE_OBJ, errRules, rules);
-  } else if (response != INK_ERR_OKAY) {
+    *errBuff = convertRules(TS_FNAME_CACHE_OBJ, errRules, rules);
+  } else if (response != TS_ERR_OKAY) {
     err = WEB_HTTP_ERR_FAIL;
     goto Lerror;
   }
 
 Lerror:
   if (errRules)
-    INKIntListDestroy(errRules);
+    TSIntListDestroy(errRules);
   if (ctx)
-    INKCfgContextDestroy(ctx);
+    TSCfgContextDestroy(ctx);
   return err;
 }
 
@@ -855,23 +855,23 @@ Lerror:
 int
 updateHostingConfig(char *rules[], int numRules, char **errBuff)
 {
-  INKCfgContext ctx = NULL;
-  INKHostingEle *ele;
+  TSCfgContext ctx = NULL;
+  TSHostingEle *ele;
   Tokenizer tokens(CFG_RULE_DELIMITER);
-  INKActionNeedT action_need;
-  INKError response;
+  TSActionNeedT action_need;
+  TSError response;
   int i, err = WEB_HTTP_ERR_OKAY;
-  INKIntList errRules = NULL;
+  TSIntList errRules = NULL;
 
-  ctx = INKCfgContextCreate(INK_FNAME_HOSTING);
+  ctx = TSCfgContextCreate(TS_FNAME_HOSTING);
   if (!ctx) {
     Debug("config", "[updateHostingConfig] can't allocate ctx memory");
     err = WEB_HTTP_ERR_FAIL;
     goto Lerror;
   }
   // since we want to preserve comments, we need to read in the
-  // file using INKCfgContextGet and remove all the rules; starting from scratch
-  if (INKCfgContextGet(ctx) != INK_ERR_OKAY || INKCfgContextRemoveAll(ctx) != INK_ERR_OKAY) {
+  // file using TSCfgContextGet and remove all the rules; starting from scratch
+  if (TSCfgContextGet(ctx) != TS_ERR_OKAY || TSCfgContextRemoveAll(ctx) != TS_ERR_OKAY) {
     Debug("config", "[updateHostingConfig] Failed to Get and Clear CfgContext");
     err = WEB_HTTP_ERR_FAIL;
     goto Lerror;
@@ -880,15 +880,15 @@ updateHostingConfig(char *rules[], int numRules, char **errBuff)
   // insert the Ele's into a Cfg Context; if get invalid formatted rule, just skip it
   for (i = 0; i < numRules; i++) {
     tokens.Initialize(rules[i], ALLOW_EMPTY_TOKS);
-    ele = INKHostingEleCreate();
+    ele = TSHostingEleCreate();
 
     // pd type
     if (strcmp(tokens[0], "domain") == 0) {
-      ele->pd_type = INK_PD_DOMAIN;
+      ele->pd_type = TS_PD_DOMAIN;
     } else if (strcmp(tokens[0], "hostname") == 0) {
-      ele->pd_type = INK_PD_HOST;
+      ele->pd_type = TS_PD_HOST;
     } else {
-      ele->cfg_ele.error = INK_ERR_INVALID_CONFIG_RULE;
+      ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
       Debug("config", "[updateHostingConfig] invalid rule - SKIP");
     }
 
@@ -896,7 +896,7 @@ updateHostingConfig(char *rules[], int numRules, char **errBuff)
     if (strlen(tokens[1]) > 0) {
       ele->pd_val = xstrdup(tokens[1]);
     } else {
-      ele->cfg_ele.error = INK_ERR_INVALID_CONFIG_RULE;
+      ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
       Debug("config", "[updateHostingConfig] invalid rule - SKIP");
     }
 
@@ -904,29 +904,29 @@ updateHostingConfig(char *rules[], int numRules, char **errBuff)
     if (strlen(tokens[2]) > 0) {
       ele->partitions = string_to_int_list(tokens[2], ",");
     } else {                    // a required field
-      ele->cfg_ele.error = INK_ERR_INVALID_CONFIG_RULE;
+      ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
       Debug("config", "[updateHostingConfig] invalid rule - SKIP");
     }
 
-    INKCfgContextAppendEle(ctx, (INKCfgEle *) ele);     // add new ele to end of list
+    TSCfgContextAppendEle(ctx, (TSCfgEle *) ele);     // add new ele to end of list
   }
 
   // commit the CfgContext to write a new version of the file
-  errRules = INKIntListCreate();
-  response = INKCfgContextCommit(ctx, &action_need, errRules);
-  if (response == INK_ERR_INVALID_CONFIG_RULE) {
+  errRules = TSIntListCreate();
+  response = TSCfgContextCommit(ctx, &action_need, errRules);
+  if (response == TS_ERR_INVALID_CONFIG_RULE) {
     err = WEB_HTTP_ERR_INVALID_CFG_RULE;
-    *errBuff = convertRules(INK_FNAME_HOSTING, errRules, rules);
-  } else if (response != INK_ERR_OKAY) {
+    *errBuff = convertRules(TS_FNAME_HOSTING, errRules, rules);
+  } else if (response != TS_ERR_OKAY) {
     err = WEB_HTTP_ERR_FAIL;
     goto Lerror;
   }
 
 Lerror:
   if (errRules)
-    INKIntListDestroy(errRules);
+    TSIntListDestroy(errRules);
   if (ctx)
-    INKCfgContextDestroy(ctx);
+    TSCfgContextDestroy(ctx);
   return err;
 }
 
@@ -936,23 +936,23 @@ Lerror:
 int
 updateIcpConfig(char *rules[], int numRules, char **errBuff)
 {
-  INKCfgContext ctx = NULL;
-  INKIcpEle *ele;
+  TSCfgContext ctx = NULL;
+  TSIcpEle *ele;
   Tokenizer tokens(CFG_RULE_DELIMITER);
-  INKActionNeedT action_need;
-  INKError response;
+  TSActionNeedT action_need;
+  TSError response;
   int i, err = WEB_HTTP_ERR_OKAY;
-  INKIntList errRules = NULL;
+  TSIntList errRules = NULL;
 
-  ctx = INKCfgContextCreate(INK_FNAME_ICP_PEER);
+  ctx = TSCfgContextCreate(TS_FNAME_ICP_PEER);
   if (!ctx) {
     Debug("config", "[updateIcpConfig] can't allocate ctx memory");
     err = WEB_HTTP_ERR_FAIL;
     goto Lerror;
   }
   // since we want to preserve comments, we need to read in the
-  // file using INKCfgContextGet and remove all the rules; starting from scratch
-  if (INKCfgContextGet(ctx) != INK_ERR_OKAY || INKCfgContextRemoveAll(ctx) != INK_ERR_OKAY) {
+  // file using TSCfgContextGet and remove all the rules; starting from scratch
+  if (TSCfgContextGet(ctx) != TS_ERR_OKAY || TSCfgContextRemoveAll(ctx) != TS_ERR_OKAY) {
     Debug("config", "[updateIcpConfig] Failed to Get and Clear CfgContext");
     err = WEB_HTTP_ERR_FAIL;
     goto Lerror;
@@ -961,10 +961,10 @@ updateIcpConfig(char *rules[], int numRules, char **errBuff)
   // insert the Ele's into a Cfg Context; if get invalid formatted rule, just skip it
   for (i = 0; i < numRules; i++) {
     tokens.Initialize(rules[i], ALLOW_EMPTY_TOKS);
-    ele = INKIcpEleCreate();
+    ele = TSIcpEleCreate();
 
     if (strlen(tokens[0]) <= 0 && strlen(tokens[1]) <= 0) {
-      ele->cfg_ele.error = INK_ERR_INVALID_CONFIG_RULE;
+      ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
       Debug("config", "[updateIcpConfig] invalid rule - SKIP");
     }
     // hostname
@@ -975,17 +975,17 @@ updateIcpConfig(char *rules[], int numRules, char **errBuff)
     if (strlen(tokens[1]) > 0) {
       ele->peer_host_ip_addr = string_to_ip_addr(tokens[1]);
       if (!ele->peer_host_ip_addr) {
-        ele->cfg_ele.error = INK_ERR_INVALID_CONFIG_RULE;
+        ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
         Debug("config", "[updateIcpConfig] invalid host IP - SKIP");
       }
     }
     // peer type
     if (strcmp(tokens[2], "parent") == 0) {
-      ele->peer_type = INK_ICP_PARENT;
+      ele->peer_type = TS_ICP_PARENT;
     } else if (strcmp(tokens[2], "sibling") == 0) {
-      ele->peer_type = INK_ICP_SIBLING;
+      ele->peer_type = TS_ICP_SIBLING;
     } else {
-      ele->cfg_ele.error = INK_ERR_INVALID_CONFIG_RULE;
+      ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
       Debug("config", "[updateIcpConfig] invalid cache type - SKIP");
     }
 
@@ -993,7 +993,7 @@ updateIcpConfig(char *rules[], int numRules, char **errBuff)
     if (strlen(tokens[3]) > 0 && isNumber(tokens[3])) {
       ele->peer_proxy_port = ink_atoi(tokens[3]);
     } else {
-      ele->cfg_ele.error = INK_ERR_INVALID_CONFIG_RULE;
+      ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
       Debug("config", "[updateIcpConfig]invalid proxy_port - SKIP");
     }
 
@@ -1001,7 +1001,7 @@ updateIcpConfig(char *rules[], int numRules, char **errBuff)
     if (strlen(tokens[4]) > 0 && isNumber(tokens[4])) {
       ele->peer_icp_port = ink_atoi(tokens[4]);
     } else {
-      ele->cfg_ele.error = INK_ERR_INVALID_CONFIG_RULE;
+      ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
       Debug("config", "[updateIcpConfig]invalid icp_port - SKIP");
     }
 
@@ -1013,7 +1013,7 @@ updateIcpConfig(char *rules[], int numRules, char **errBuff)
         ele->is_multicast = false;
       }
     } else {
-      ele->cfg_ele.error = INK_ERR_INVALID_CONFIG_RULE;
+      ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
       Debug("config", "[updateIcpConfig] invalid mc state - SKIP");
     }
 
@@ -1021,41 +1021,41 @@ updateIcpConfig(char *rules[], int numRules, char **errBuff)
     if (strlen(tokens[6]) > 0) {
       ele->mc_ip_addr = string_to_ip_addr(tokens[6]);
       if (!ele->mc_ip_addr) {
-        ele->cfg_ele.error = INK_ERR_INVALID_CONFIG_RULE;
+        ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
         Debug("config", "[updateIcpConfig] invalid mc_ip - SKIP");
       }
     }
     // mc_ttl
     if (strlen(tokens[7]) > 0) {
       if (strcmp(tokens[7], "single subnet") == 0) {
-        ele->mc_ttl = INK_MC_TTL_SINGLE_SUBNET;
+        ele->mc_ttl = TS_MC_TTL_SINGLE_SUBNET;
       } else if (strcmp(tokens[7], "multiple subnets") == 0) {
-        ele->mc_ttl = INK_MC_TTL_MULT_SUBNET;
+        ele->mc_ttl = TS_MC_TTL_MULT_SUBNET;
       } else {
-        ele->cfg_ele.error = INK_ERR_INVALID_CONFIG_RULE;
+        ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
         Debug("config", "[updateIcpConfig] invalid mc_Ttl - SKIP");
       }
     }
 
-    INKCfgContextAppendEle(ctx, (INKCfgEle *) ele);     // add new ele to end of list
+    TSCfgContextAppendEle(ctx, (TSCfgEle *) ele);     // add new ele to end of list
   }
 
   // commit the CfgContext to write a new version of the file
-  errRules = INKIntListCreate();
-  response = INKCfgContextCommit(ctx, &action_need, errRules);
-  if (response == INK_ERR_INVALID_CONFIG_RULE) {
+  errRules = TSIntListCreate();
+  response = TSCfgContextCommit(ctx, &action_need, errRules);
+  if (response == TS_ERR_INVALID_CONFIG_RULE) {
     err = WEB_HTTP_ERR_INVALID_CFG_RULE;
-    *errBuff = convertRules(INK_FNAME_ICP_PEER, errRules, rules);
-  } else if (response != INK_ERR_OKAY) {
+    *errBuff = convertRules(TS_FNAME_ICP_PEER, errRules, rules);
+  } else if (response != TS_ERR_OKAY) {
     err = WEB_HTTP_ERR_FAIL;
     goto Lerror;
   }
 
 Lerror:
   if (errRules)
-    INKIntListDestroy(errRules);
+    TSIntListDestroy(errRules);
   if (ctx)
-    INKCfgContextDestroy(ctx);
+    TSCfgContextDestroy(ctx);
   return err;
 }
 
@@ -1066,23 +1066,23 @@ Lerror:
 int
 updateIpAllowConfig(char *rules[], int numRules, char **errBuff)
 {
-  INKCfgContext ctx = NULL;
-  INKIpAllowEle *ele;
+  TSCfgContext ctx = NULL;
+  TSIpAllowEle *ele;
   Tokenizer tokens(CFG_RULE_DELIMITER);
-  INKActionNeedT action_need;
-  INKError response;
+  TSActionNeedT action_need;
+  TSError response;
   int i, err = WEB_HTTP_ERR_OKAY;
-  INKIntList errRules = NULL;
+  TSIntList errRules = NULL;
 
-  ctx = INKCfgContextCreate(INK_FNAME_IP_ALLOW);
+  ctx = TSCfgContextCreate(TS_FNAME_IP_ALLOW);
   if (!ctx) {
     Debug("config", "[updateIpAllowConfig] can't allocate ctx memory");
     err = WEB_HTTP_ERR_FAIL;
     goto Lerror;
   }
   // since we want to preserve comments, we need to read in the
-  // file using INKCfgContextGet and remove all the rules; starting from scratch
-  if (INKCfgContextGet(ctx) != INK_ERR_OKAY || INKCfgContextRemoveAll(ctx) != INK_ERR_OKAY) {
+  // file using TSCfgContextGet and remove all the rules; starting from scratch
+  if (TSCfgContextGet(ctx) != TS_ERR_OKAY || TSCfgContextRemoveAll(ctx) != TS_ERR_OKAY) {
     Debug("config", "[updateIpAllowConfig] Failed to Get and Clear CfgContext");
     err = WEB_HTTP_ERR_FAIL;
     goto Lerror;
@@ -1091,7 +1091,7 @@ updateIpAllowConfig(char *rules[], int numRules, char **errBuff)
   // insert the Ele's into a Cfg Context; if get invalid formatted rule, just skip it
   for (i = 0; i < numRules; i++) {
     tokens.Initialize(rules[i], ALLOW_EMPTY_TOKS);
-    ele = INKIpAllowEleCreate();
+    ele = TSIpAllowEleCreate();
 
     // src_ip
     if (strlen(tokens[0]) > 0) {
@@ -1100,34 +1100,34 @@ updateIpAllowConfig(char *rules[], int numRules, char **errBuff)
     // ip action
     if (strlen(tokens[1]) > 0) {
       if (strcmp(tokens[1], "ip_allow") == 0) {
-        ele->action = INK_IP_ALLOW_ALLOW;
+        ele->action = TS_IP_ALLOW_ALLOW;
       } else if (strcmp(tokens[1], "ip_deny") == 0) {
-        ele->action = INK_IP_ALLOW_DENY;
+        ele->action = TS_IP_ALLOW_DENY;
       } else {
-        ele->cfg_ele.error = INK_ERR_INVALID_CONFIG_RULE;
+        ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
         Debug("config", "[updateIpAllowConfig] invalid rule - SKIP");
       }
     }
 
-    INKCfgContextAppendEle(ctx, (INKCfgEle *) ele);     // add new ele to end of list
+    TSCfgContextAppendEle(ctx, (TSCfgEle *) ele);     // add new ele to end of list
   }
 
   // commit the CfgContext to write a new version of the file
-  errRules = INKIntListCreate();
-  response = INKCfgContextCommit(ctx, &action_need, errRules);
-  if (response == INK_ERR_INVALID_CONFIG_RULE) {
+  errRules = TSIntListCreate();
+  response = TSCfgContextCommit(ctx, &action_need, errRules);
+  if (response == TS_ERR_INVALID_CONFIG_RULE) {
     err = WEB_HTTP_ERR_INVALID_CFG_RULE;
-    *errBuff = convertRules(INK_FNAME_IP_ALLOW, errRules, rules);
-  } else if (response != INK_ERR_OKAY) {
+    *errBuff = convertRules(TS_FNAME_IP_ALLOW, errRules, rules);
+  } else if (response != TS_ERR_OKAY) {
     err = WEB_HTTP_ERR_FAIL;
     goto Lerror;
   }
 
 Lerror:
   if (errRules)
-    INKIntListDestroy(errRules);
+    TSIntListDestroy(errRules);
   if (ctx)
-    INKCfgContextDestroy(ctx);
+    TSCfgContextDestroy(ctx);
   return err;
 }
 
@@ -1138,23 +1138,23 @@ Lerror:
 int
 updateMgmtAllowConfig(char *rules[], int numRules, char **errBuff)
 {
-  INKCfgContext ctx = NULL;
-  INKMgmtAllowEle *ele;
+  TSCfgContext ctx = NULL;
+  TSMgmtAllowEle *ele;
   Tokenizer tokens(CFG_RULE_DELIMITER);
-  INKActionNeedT action_need;
-  INKError response;
+  TSActionNeedT action_need;
+  TSError response;
   int i, err = WEB_HTTP_ERR_OKAY;
-  INKIntList errRules = NULL;
+  TSIntList errRules = NULL;
 
-  ctx = INKCfgContextCreate(INK_FNAME_MGMT_ALLOW);
+  ctx = TSCfgContextCreate(TS_FNAME_MGMT_ALLOW);
   if (!ctx) {
     Debug("config", "[updateMgmtAllowConfig] can't allocate ctx memory");
     err = WEB_HTTP_ERR_FAIL;
     goto Lerror;
   }
   // since we want to preserve comments, we need to read in the
-  // file using INKCfgContextGet and remove all the rules; starting from scratch
-  if (INKCfgContextGet(ctx) != INK_ERR_OKAY || INKCfgContextRemoveAll(ctx) != INK_ERR_OKAY) {
+  // file using TSCfgContextGet and remove all the rules; starting from scratch
+  if (TSCfgContextGet(ctx) != TS_ERR_OKAY || TSCfgContextRemoveAll(ctx) != TS_ERR_OKAY) {
     Debug("config", "[updateMgmtAllowConfig] Failed to Get and Clear CfgContext");
     err = WEB_HTTP_ERR_FAIL;
     goto Lerror;
@@ -1163,7 +1163,7 @@ updateMgmtAllowConfig(char *rules[], int numRules, char **errBuff)
   // insert the Ele's into a Cfg Context; if get invalid formatted rule, just skip it
   for (i = 0; i < numRules; i++) {
     tokens.Initialize(rules[i], ALLOW_EMPTY_TOKS);
-    ele = INKMgmtAllowEleCreate();
+    ele = TSMgmtAllowEleCreate();
 
     // src_ip
     if (strlen(tokens[0]) > 0) {
@@ -1172,34 +1172,34 @@ updateMgmtAllowConfig(char *rules[], int numRules, char **errBuff)
     // ip action
     if (strlen(tokens[1]) > 0) {
       if (strcmp(tokens[1], "ip_allow") == 0) {
-        ele->action = INK_MGMT_ALLOW_ALLOW;
+        ele->action = TS_MGMT_ALLOW_ALLOW;
       } else if (strcmp(tokens[1], "ip_deny") == 0) {
-        ele->action = INK_MGMT_ALLOW_DENY;
+        ele->action = TS_MGMT_ALLOW_DENY;
       } else {
-        ele->cfg_ele.error = INK_ERR_INVALID_CONFIG_RULE;
+        ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
         Debug("config", "[updateMgmtAllowConfig] invalid rule - SKIP");
       }
     }
 
-    INKCfgContextAppendEle(ctx, (INKCfgEle *) ele);     // add new ele to end of list
+    TSCfgContextAppendEle(ctx, (TSCfgEle *) ele);     // add new ele to end of list
   }
 
   // commit the CfgContext to write a new version of the file
-  errRules = INKIntListCreate();
-  response = INKCfgContextCommit(ctx, &action_need, errRules);
-  if (response == INK_ERR_INVALID_CONFIG_RULE) {
+  errRules = TSIntListCreate();
+  response = TSCfgContextCommit(ctx, &action_need, errRules);
+  if (response == TS_ERR_INVALID_CONFIG_RULE) {
     err = WEB_HTTP_ERR_INVALID_CFG_RULE;
-    *errBuff = convertRules(INK_FNAME_MGMT_ALLOW, errRules, rules);
-  } else if (response != INK_ERR_OKAY) {
+    *errBuff = convertRules(TS_FNAME_MGMT_ALLOW, errRules, rules);
+  } else if (response != TS_ERR_OKAY) {
     err = WEB_HTTP_ERR_FAIL;
     goto Lerror;
   }
 
 Lerror:
   if (errRules)
-    INKIntListDestroy(errRules);
+    TSIntListDestroy(errRules);
   if (ctx)
-    INKCfgContextDestroy(ctx);
+    TSCfgContextDestroy(ctx);
   return err;
 }
 
@@ -1209,24 +1209,24 @@ Lerror:
 int
 updateParentConfig(char *rules[], int numRules, char **errBuff)
 {
-  INKCfgContext ctx = NULL;
-  INKParentProxyEle *ele;
+  TSCfgContext ctx = NULL;
+  TSParentProxyEle *ele;
   Tokenizer tokens(CFG_RULE_DELIMITER);
-  INKPdSsFormat *pdss;
-  INKActionNeedT action_need;
-  INKError response;
+  TSPdSsFormat *pdss;
+  TSActionNeedT action_need;
+  TSError response;
   int i, err = WEB_HTTP_ERR_OKAY;
-  INKIntList errRules = NULL;
+  TSIntList errRules = NULL;
 
-  ctx = INKCfgContextCreate(INK_FNAME_PARENT_PROXY);
+  ctx = TSCfgContextCreate(TS_FNAME_PARENT_PROXY);
   if (!ctx) {
     Debug("config", "[updateParentConfig] can't allocate ctx memory");
     err = WEB_HTTP_ERR_FAIL;
     goto Lerror;
   }
   // since we want to preserve comments, we need to read in the
-  // file using INKCfgContextGet and remove all the rules; starting from scratch
-  if (INKCfgContextGet(ctx) != INK_ERR_OKAY || INKCfgContextRemoveAll(ctx) != INK_ERR_OKAY) {
+  // file using TSCfgContextGet and remove all the rules; starting from scratch
+  if (TSCfgContextGet(ctx) != TS_ERR_OKAY || TSCfgContextRemoveAll(ctx) != TS_ERR_OKAY) {
     Debug("config", "[updateParentConfig] Failed to Get and Clear CfgContext");
     err = WEB_HTTP_ERR_FAIL;
     goto Lerror;
@@ -1235,21 +1235,21 @@ updateParentConfig(char *rules[], int numRules, char **errBuff)
   // insert the Ele's into a Cfg Context; if get invalid formatted rule, just skip it
   for (i = 0; i < numRules; i++) {
     tokens.Initialize(rules[i], ALLOW_EMPTY_TOKS);
-    ele = INKParentProxyEleCreate(INK_TYPE_UNDEFINED);
+    ele = TSParentProxyEleCreate(TS_TYPE_UNDEFINED);
     pdss = &(ele->parent_info);
 
 
     // pd type
     if (strcmp(tokens[0], "dest_domain") == 0) {
-      pdss->pd_type = INK_PD_DOMAIN;
+      pdss->pd_type = TS_PD_DOMAIN;
     } else if (strcmp(tokens[0], "dest_host") == 0) {
-      pdss->pd_type = INK_PD_HOST;
+      pdss->pd_type = TS_PD_HOST;
     } else if (strcmp(tokens[0], "dest_ip") == 0) {
-      pdss->pd_type = INK_PD_IP;
+      pdss->pd_type = TS_PD_IP;
     } else if (strcmp(tokens[0], "url_regex") == 0) {
-      pdss->pd_type = INK_PD_URL_REGEX;
+      pdss->pd_type = TS_PD_URL_REGEX;
     } else {
-      ele->cfg_ele.error = INK_ERR_INVALID_CONFIG_RULE;
+      ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
       Debug("config", "[updateParentConfig] invalid prime dest type - SKIP");
     }
 
@@ -1257,7 +1257,7 @@ updateParentConfig(char *rules[], int numRules, char **errBuff)
     if (strlen(tokens[1]) > 0) {
       pdss->pd_val = xstrdup(tokens[1]);
     } else {
-      ele->cfg_ele.error = INK_ERR_INVALID_CONFIG_RULE;
+      ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
       Debug("config", "[updateParentConfig] invalid prime dest value - SKIP");
     }
 
@@ -1267,8 +1267,8 @@ updateParentConfig(char *rules[], int numRules, char **errBuff)
 
     // time
     if (strlen(tokens[2]) > 0) {
-      if (string_to_time_struct(tokens[2], &(pdss->sec_spec)) != INK_ERR_OKAY) {
-        ele->cfg_ele.error = INK_ERR_INVALID_CONFIG_RULE;
+      if (string_to_time_struct(tokens[2], &(pdss->sec_spec)) != TS_ERR_OKAY) {
+        ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
         Debug("config", "[updateParentConfig] invalid time sec spec. - SKIP");
       }
     }
@@ -1276,7 +1276,7 @@ updateParentConfig(char *rules[], int numRules, char **errBuff)
     if (strlen(tokens[3]) > 0) {
       pdss->sec_spec.src_ip = string_to_ip_addr(tokens[3]);
       if (!pdss->sec_spec.src_ip) {
-        ele->cfg_ele.error = INK_ERR_INVALID_CONFIG_RULE;
+        ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
         Debug("config", "[updateParentConfig] invalid src_ip - SKIP");
       }
     }
@@ -1292,7 +1292,7 @@ updateParentConfig(char *rules[], int numRules, char **errBuff)
     if (strlen(tokens[6]) > 0) {
       pdss->sec_spec.port = string_to_port_ele(tokens[6]);
       if (!pdss->sec_spec.port) {
-        ele->cfg_ele.error = INK_ERR_INVALID_CONFIG_RULE;
+        ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
         Debug("config", "[updateParentConfig] invalid port - SKIP");
       }
     }
@@ -1308,24 +1308,24 @@ updateParentConfig(char *rules[], int numRules, char **errBuff)
     if (strlen(tokens[10]) > 0) {
       ele->proxy_list = string_to_domain_list(tokens[10], ";");
       if (!ele->proxy_list) {
-        ele->cfg_ele.error = INK_ERR_INVALID_CONFIG_RULE;
+        ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
         Debug("config", "[updateParentConfig] invalid parent proxies - SKIP");
       }
-      ele->cfg_ele.type = INK_PP_PARENT;
+      ele->cfg_ele.type = TS_PP_PARENT;
     }
     // round robin type
     if (strlen(tokens[11]) > 0) {
       if (strcmp(tokens[11], "true") == 0) {
-        ele->rr = INK_RR_TRUE;
+        ele->rr = TS_RR_TRUE;
       } else if (strcmp(tokens[11], "strict") == 0) {
-        ele->rr = INK_RR_STRICT;
+        ele->rr = TS_RR_STRICT;
       } else if (strcmp(tokens[11], "false") == 0) {
-        ele->rr = INK_RR_FALSE;
+        ele->rr = TS_RR_FALSE;
       } else {
-        ele->rr = INK_RR_NONE;
+        ele->rr = TS_RR_NONE;
       }
     } else {
-      ele->rr = INK_RR_NONE;
+      ele->rr = TS_RR_NONE;
     }
 
     // go direct
@@ -1338,31 +1338,31 @@ updateParentConfig(char *rules[], int numRules, char **errBuff)
     }
     // if no parents specified, must be a GO_DIRECT rule type
     if (ele->proxy_list) {
-      ele->cfg_ele.type = INK_PP_PARENT;
+      ele->cfg_ele.type = TS_PP_PARENT;
     } else {
-      ele->cfg_ele.type = INK_PP_GO_DIRECT;
+      ele->cfg_ele.type = TS_PP_GO_DIRECT;
     }
 
-    INKCfgContextAppendEle(ctx, (INKCfgEle *) ele);     // add new ele to end of list
+    TSCfgContextAppendEle(ctx, (TSCfgEle *) ele);     // add new ele to end of list
 
   }
 
   // commit the CfgContext to write a new version of the file
-  errRules = INKIntListCreate();
-  response = INKCfgContextCommit(ctx, &action_need, errRules);
-  if (response == INK_ERR_INVALID_CONFIG_RULE) {
+  errRules = TSIntListCreate();
+  response = TSCfgContextCommit(ctx, &action_need, errRules);
+  if (response == TS_ERR_INVALID_CONFIG_RULE) {
     err = WEB_HTTP_ERR_INVALID_CFG_RULE;
-    *errBuff = convertRules(INK_FNAME_PARENT_PROXY, errRules, rules);
-  } else if (response != INK_ERR_OKAY) {
+    *errBuff = convertRules(TS_FNAME_PARENT_PROXY, errRules, rules);
+  } else if (response != TS_ERR_OKAY) {
     err = WEB_HTTP_ERR_FAIL;
     goto Lerror;
   }
 
 Lerror:
   if (errRules)
-    INKIntListDestroy(errRules);
+    TSIntListDestroy(errRules);
   if (ctx)
-    INKCfgContextDestroy(ctx);
+    TSCfgContextDestroy(ctx);
   return err;
 }
 
@@ -1372,23 +1372,23 @@ Lerror:
 int
 updatePartitionConfig(char *rules[], int numRules, char **errBuff)
 {
-  INKCfgContext ctx = NULL;
-  INKPartitionEle *ele;
+  TSCfgContext ctx = NULL;
+  TSPartitionEle *ele;
   Tokenizer tokens(CFG_RULE_DELIMITER);
-  INKActionNeedT action_need;
-  INKError response = INK_ERR_OKAY;
+  TSActionNeedT action_need;
+  TSError response = TS_ERR_OKAY;
   int i, err = WEB_HTTP_ERR_OKAY;
-  INKIntList errRules = NULL;
+  TSIntList errRules = NULL;
 
-  ctx = INKCfgContextCreate(INK_FNAME_PARTITION);
+  ctx = TSCfgContextCreate(TS_FNAME_PARTITION);
   if (!ctx) {
     Debug("config", "[updatePartitionConfig] can't allocate ctx memory");
     err = WEB_HTTP_ERR_FAIL;
     goto Lerror;
   }
   // since we want to preserve comments, we need to read in the
-  // file using INKCfgContextGet and remove all the rules; starting from scratch
-  if (INKCfgContextGet(ctx) != INK_ERR_OKAY || INKCfgContextRemoveAll(ctx) != INK_ERR_OKAY) {
+  // file using TSCfgContextGet and remove all the rules; starting from scratch
+  if (TSCfgContextGet(ctx) != TS_ERR_OKAY || TSCfgContextRemoveAll(ctx) != TS_ERR_OKAY) {
     Debug("config", "[updatePartitionConfig] Failed to Get and Clear CfgContext");
     err = WEB_HTTP_ERR_FAIL;
     goto Lerror;
@@ -1397,21 +1397,21 @@ updatePartitionConfig(char *rules[], int numRules, char **errBuff)
   // insert the Ele's into a Cfg Context; if get invalid formatted rule, just skip it
   for (i = 0; i < numRules; i++) {
     tokens.Initialize(rules[i], ALLOW_EMPTY_TOKS);
-    ele = INKPartitionEleCreate();
+    ele = TSPartitionEleCreate();
 
     // partition number
     if (strlen(tokens[0]) > 0 && isNumber(tokens[0])) {
       ele->partition_num = ink_atoi(tokens[0]);
     } else {
-      ele->cfg_ele.error = INK_ERR_INVALID_CONFIG_RULE;
+      ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
       Debug("config", "[updatePartitionConfig] invalid partition number - SKIP");
     }
 
     // scheme
     if (strcmp(tokens[1], "http") == 0) {
-      ele->scheme = INK_PARTITION_HTTP;
+      ele->scheme = TS_PARTITION_HTTP;
     } else {
-      ele->cfg_ele.error = INK_ERR_INVALID_CONFIG_RULE;
+      ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
       Debug("config", "[updatePartitionConfig] invalid scheme - SKIP");
     }
 
@@ -1419,39 +1419,39 @@ updatePartitionConfig(char *rules[], int numRules, char **errBuff)
     if (strlen(tokens[2]) > 0 && isNumber(tokens[2])) {
       ele->partition_size = ink_atoi(tokens[2]);
     } else {
-      ele->cfg_ele.error = INK_ERR_INVALID_CONFIG_RULE;
+      ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
       Debug("config", "[updatePartitionConfig] invalid size - SKIP");
     }
 
     // size format
     if (strcmp(tokens[3], "percent") == 0) {
-      ele->size_format = INK_SIZE_FMT_PERCENT;
+      ele->size_format = TS_SIZE_FMT_PERCENT;
     } else if (strcmp(tokens[3], "absolute") == 0) {
-      ele->size_format = INK_SIZE_FMT_ABSOLUTE;
+      ele->size_format = TS_SIZE_FMT_ABSOLUTE;
     } else {                    // a required field
-      ele->cfg_ele.error = INK_ERR_INVALID_CONFIG_RULE;
+      ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
       Debug("config", "[updatePartitionConfig] invalid size format - SKIP");
     }
 
-    INKCfgContextAppendEle(ctx, (INKCfgEle *) ele);     // add new ele to end of list
+    TSCfgContextAppendEle(ctx, (TSCfgEle *) ele);     // add new ele to end of list
   }
 
   // commit the CfgContext to write a new version of the file
-  errRules = INKIntListCreate();
-  response = INKCfgContextCommit(ctx, &action_need, errRules);
-  if (response == INK_ERR_INVALID_CONFIG_RULE) {
+  errRules = TSIntListCreate();
+  response = TSCfgContextCommit(ctx, &action_need, errRules);
+  if (response == TS_ERR_INVALID_CONFIG_RULE) {
     err = WEB_HTTP_ERR_INVALID_CFG_RULE;
-    *errBuff = convertRules(INK_FNAME_PARTITION, errRules, rules);
-  } else if (response != INK_ERR_OKAY) {
+    *errBuff = convertRules(TS_FNAME_PARTITION, errRules, rules);
+  } else if (response != TS_ERR_OKAY) {
     err = WEB_HTTP_ERR_FAIL;
     goto Lerror;
   }
 
 Lerror:
   if (errRules)
-    INKIntListDestroy(errRules);
+    TSIntListDestroy(errRules);
   if (ctx)
-    INKCfgContextDestroy(ctx);
+    TSCfgContextDestroy(ctx);
   return err;
 }
 
@@ -1461,23 +1461,23 @@ Lerror:
 int
 updateRemapConfig(char *rules[], int numRules, char **errBuff)
 {
-  INKCfgContext ctx = NULL;
-  INKRemapEle *ele;
+  TSCfgContext ctx = NULL;
+  TSRemapEle *ele;
   Tokenizer tokens(CFG_RULE_DELIMITER);
-  INKActionNeedT action_need;
-  INKError response;
+  TSActionNeedT action_need;
+  TSError response;
   int i, err = WEB_HTTP_ERR_OKAY;
-  INKIntList errRules = NULL;
+  TSIntList errRules = NULL;
 
-  ctx = INKCfgContextCreate(INK_FNAME_REMAP);
+  ctx = TSCfgContextCreate(TS_FNAME_REMAP);
   if (!ctx) {
     Debug("config", "[updateRemapConfig] can't allocate ctx memory");
     err = WEB_HTTP_ERR_FAIL;
     goto Lerror;
   }
   // since we want to preserve comments, we need to read in the
-  // file using INKCfgContextGet and remove all the rules; starting from scratch
-  if (INKCfgContextGet(ctx) != INK_ERR_OKAY || INKCfgContextRemoveAll(ctx) != INK_ERR_OKAY) {
+  // file using TSCfgContextGet and remove all the rules; starting from scratch
+  if (TSCfgContextGet(ctx) != TS_ERR_OKAY || TSCfgContextRemoveAll(ctx) != TS_ERR_OKAY) {
     Debug("config", "[updateRemapConfig] Failed to Get and Clear CfgContext");
     err = WEB_HTTP_ERR_FAIL;
     goto Lerror;
@@ -1486,31 +1486,31 @@ updateRemapConfig(char *rules[], int numRules, char **errBuff)
   // insert the Ele's into a Cfg Context; if get invalid formatted rule, just skip it
   for (i = 0; i < numRules; i++) {
     tokens.Initialize(rules[i], ALLOW_EMPTY_TOKS);
-    ele = INKRemapEleCreate(INK_TYPE_UNDEFINED);
+    ele = TSRemapEleCreate(TS_TYPE_UNDEFINED);
 
     // rule type
     if (strcmp(tokens[0], "map") == 0) {
-      ele->cfg_ele.type = INK_REMAP_MAP;
+      ele->cfg_ele.type = TS_REMAP_MAP;
     } else if (strcmp(tokens[0], "reverse_map") == 0) {
-      ele->cfg_ele.type = INK_REMAP_REVERSE_MAP;
+      ele->cfg_ele.type = TS_REMAP_REVERSE_MAP;
     } else if (strcmp(tokens[0], "redirect") == 0) {
-      ele->cfg_ele.type = INK_REMAP_REDIRECT;
+      ele->cfg_ele.type = TS_REMAP_REDIRECT;
     } else if (strcmp(tokens[0], "redirect_temporary") == 0) {
-      ele->cfg_ele.type = INK_REMAP_REDIRECT_TEMP;
+      ele->cfg_ele.type = TS_REMAP_REDIRECT_TEMP;
     } else {
-      ele->cfg_ele.error = INK_ERR_INVALID_CONFIG_RULE;
+      ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
       Debug("config", "[updateRemapConfig] invalid rule type - SKIP");
     }
 
     // from scheme
     if (strlen(tokens[1]) > 0) {
       ele->from_scheme = string_to_scheme_type(tokens[1]);
-      if (ele->from_scheme == INK_SCHEME_UNDEFINED) {
-        ele->cfg_ele.error = INK_ERR_INVALID_CONFIG_RULE;
+      if (ele->from_scheme == TS_SCHEME_UNDEFINED) {
+        ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
         Debug("config", "[updateRemapConfig] invalid scheme - SKIP");
       }
     } else {
-      ele->cfg_ele.error = INK_ERR_INVALID_CONFIG_RULE;
+      ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
       Debug("config", "[updateRemapConfig] invalid scheme - SKIP");
     }
 
@@ -1518,7 +1518,7 @@ updateRemapConfig(char *rules[], int numRules, char **errBuff)
     if (strlen(tokens[2]) > 0) {
       ele->from_host = xstrdup(tokens[2]);
     } else {
-      ele->cfg_ele.error = INK_ERR_INVALID_CONFIG_RULE;
+      ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
       Debug("config", "[updateRemapConfig] invalid src host - SKIP");
     }
 
@@ -1527,7 +1527,7 @@ updateRemapConfig(char *rules[], int numRules, char **errBuff)
       if (isNumber(tokens[3])) {
         ele->from_port = ink_atoi(tokens[3]);
       } else {
-        ele->cfg_ele.error = INK_ERR_INVALID_CONFIG_RULE;
+        ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
         Debug("config", "[updateRemapConfig] invalid src port - SKIP");
       }
     }
@@ -1538,12 +1538,12 @@ updateRemapConfig(char *rules[], int numRules, char **errBuff)
     // to scheme
     if (strlen(tokens[5]) > 0) {
       ele->to_scheme = string_to_scheme_type(tokens[5]);
-      if (ele->to_scheme == INK_SCHEME_UNDEFINED) {
-        ele->cfg_ele.error = INK_ERR_INVALID_CONFIG_RULE;
+      if (ele->to_scheme == TS_SCHEME_UNDEFINED) {
+        ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
         Debug("config", "[updateRemapConfig] invalid scheme - SKIP");
       }
     } else {
-      ele->cfg_ele.error = INK_ERR_INVALID_CONFIG_RULE;
+      ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
       Debug("config", "[updateRemapConfig] invalid scheme - SKIP");
     }
 
@@ -1551,7 +1551,7 @@ updateRemapConfig(char *rules[], int numRules, char **errBuff)
     if (strlen(tokens[6]) > 0) {
       ele->to_host = xstrdup(tokens[6]);
     } else {
-      ele->cfg_ele.error = INK_ERR_INVALID_CONFIG_RULE;
+      ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
       Debug("config", "[updateRemapConfig] invalid dest host - SKIP");
     }
 
@@ -1560,7 +1560,7 @@ updateRemapConfig(char *rules[], int numRules, char **errBuff)
       if (isNumber(tokens[7])) {
         ele->to_port = ink_atoi(tokens[7]);
       } else {
-        ele->cfg_ele.error = INK_ERR_INVALID_CONFIG_RULE;
+        ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
         Debug("config", "[updateRemapConfig] invalid dest port - SKIP");
       }
     }
@@ -1569,25 +1569,25 @@ updateRemapConfig(char *rules[], int numRules, char **errBuff)
       ele->to_path_prefix = xstrdup(tokens[8]);
     }
 
-    INKCfgContextAppendEle(ctx, (INKCfgEle *) ele);     // add new ele to end of list
+    TSCfgContextAppendEle(ctx, (TSCfgEle *) ele);     // add new ele to end of list
   }
 
   // commit the CfgContext to write a new version of the file
-  errRules = INKIntListCreate();
-  response = INKCfgContextCommit(ctx, &action_need, errRules);
-  if (response == INK_ERR_INVALID_CONFIG_RULE) {
+  errRules = TSIntListCreate();
+  response = TSCfgContextCommit(ctx, &action_need, errRules);
+  if (response == TS_ERR_INVALID_CONFIG_RULE) {
     err = WEB_HTTP_ERR_INVALID_CFG_RULE;
-    *errBuff = convertRules(INK_FNAME_REMAP, errRules, rules);
-  } else if (response != INK_ERR_OKAY) {
+    *errBuff = convertRules(TS_FNAME_REMAP, errRules, rules);
+  } else if (response != TS_ERR_OKAY) {
     err = WEB_HTTP_ERR_FAIL;
     goto Lerror;
   }
 
 Lerror:
   if (errRules)
-    INKIntListDestroy(errRules);
+    TSIntListDestroy(errRules);
   if (ctx)
-    INKCfgContextDestroy(ctx);
+    TSCfgContextDestroy(ctx);
   return err;
 }
 
@@ -1597,23 +1597,23 @@ Lerror:
 int
 updateSocksConfig(char *rules[], int numRules, char **errBuff)
 {
-  INKCfgContext ctx = NULL;
-  INKSocksEle *ele;
+  TSCfgContext ctx = NULL;
+  TSSocksEle *ele;
   Tokenizer tokens(CFG_RULE_DELIMITER);
-  INKActionNeedT action_need;
-  INKError response;
+  TSActionNeedT action_need;
+  TSError response;
   int i, err = WEB_HTTP_ERR_OKAY;
-  INKIntList errRules = NULL;
+  TSIntList errRules = NULL;
 
-  ctx = INKCfgContextCreate(INK_FNAME_SOCKS);
+  ctx = TSCfgContextCreate(TS_FNAME_SOCKS);
   if (!ctx) {
     Debug("config", "[updateSocksConfig] can't allocate ctx memory");
     err = WEB_HTTP_ERR_FAIL;
     goto Lerror;
   }
   // since we want to preserve comments, we need to read in the
-  // file using INKCfgContextGet and remove all the rules; starting from scratch
-  if (INKCfgContextGet(ctx) != INK_ERR_OKAY || INKCfgContextRemoveAll(ctx) != INK_ERR_OKAY) {
+  // file using TSCfgContextGet and remove all the rules; starting from scratch
+  if (TSCfgContextGet(ctx) != TS_ERR_OKAY || TSCfgContextRemoveAll(ctx) != TS_ERR_OKAY) {
     Debug("config", "[updateSocksConfig] Failed to Get and Clear CfgContext");
     err = WEB_HTTP_ERR_FAIL;
     goto Lerror;
@@ -1622,31 +1622,31 @@ updateSocksConfig(char *rules[], int numRules, char **errBuff)
   // insert the Ele's into a Cfg Context; if get invalid formatted rule, just skip it
   for (i = 0; i < numRules; i++) {
     tokens.Initialize(rules[i], ALLOW_EMPTY_TOKS);
-    ele = INKSocksEleCreate(INK_TYPE_UNDEFINED);
+    ele = TSSocksEleCreate(TS_TYPE_UNDEFINED);
 
     // rule type
     if (strcmp(tokens[0], "no_socks") == 0) {
-      ele->cfg_ele.type = INK_SOCKS_BYPASS;
+      ele->cfg_ele.type = TS_SOCKS_BYPASS;
     } else if (strcmp(tokens[0], "auth") == 0) {
-      ele->cfg_ele.type = INK_SOCKS_AUTH;
+      ele->cfg_ele.type = TS_SOCKS_AUTH;
     } else if (strcmp(tokens[0], "multiple_socks") == 0) {
-      ele->cfg_ele.type = INK_SOCKS_MULTIPLE;
+      ele->cfg_ele.type = TS_SOCKS_MULTIPLE;
     } else {
-      ele->cfg_ele.error = INK_ERR_INVALID_CONFIG_RULE;
+      ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
       Debug("config", "[updateSocksConfig] invalid rule type - SKIP");
     }
 
     // dest_ip
     if (strlen(tokens[1]) > 0) {
       switch (ele->cfg_ele.type) {
-      case INK_SOCKS_BYPASS:
+      case TS_SOCKS_BYPASS:
         ele->ip_addrs = string_to_ip_addr_list(tokens[1], ",");
         break;
-      case INK_SOCKS_MULTIPLE:
+      case TS_SOCKS_MULTIPLE:
         ele->dest_ip_addr = string_to_ip_addr_ele(tokens[1]);
         break;
       default:
-        ele->cfg_ele.error = INK_ERR_INVALID_CONFIG_RULE;
+        ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
         Debug("config", "[updateSocksConfig] invalid rule - SKIP");
       }
     }
@@ -1665,37 +1665,37 @@ updateSocksConfig(char *rules[], int numRules, char **errBuff)
     // round robin
     if (strlen(tokens[5]) > 0) {
       if (strcmp(tokens[5], "true") == 0) {
-        ele->rr = INK_RR_TRUE;
+        ele->rr = TS_RR_TRUE;
       } else if (strcmp(tokens[5], "strict") == 0) {
-        ele->rr = INK_RR_STRICT;
+        ele->rr = TS_RR_STRICT;
       } else if (strcmp(tokens[5], "false") == 0) {
-        ele->rr = INK_RR_FALSE;
+        ele->rr = TS_RR_FALSE;
       } else {
-        ele->rr = INK_RR_NONE;
+        ele->rr = TS_RR_NONE;
       }
     } else {
-      ele->rr = INK_RR_NONE;
+      ele->rr = TS_RR_NONE;
     }
 
-    INKCfgContextAppendEle(ctx, (INKCfgEle *) ele);     // add new ele to end of list
+    TSCfgContextAppendEle(ctx, (TSCfgEle *) ele);     // add new ele to end of list
   }
 
   // commit the CfgContext to write a new version of the file
-  errRules = INKIntListCreate();
-  response = INKCfgContextCommit(ctx, &action_need, errRules);
-  if (response == INK_ERR_INVALID_CONFIG_RULE) {
+  errRules = TSIntListCreate();
+  response = TSCfgContextCommit(ctx, &action_need, errRules);
+  if (response == TS_ERR_INVALID_CONFIG_RULE) {
     err = WEB_HTTP_ERR_INVALID_CFG_RULE;
-    *errBuff = convertRules(INK_FNAME_SOCKS, errRules, rules);
-  } else if (response != INK_ERR_OKAY) {
+    *errBuff = convertRules(TS_FNAME_SOCKS, errRules, rules);
+  } else if (response != TS_ERR_OKAY) {
     err = WEB_HTTP_ERR_FAIL;
     goto Lerror;
   }
 
 Lerror:
   if (errRules)
-    INKIntListDestroy(errRules);
+    TSIntListDestroy(errRules);
   if (ctx)
-    INKCfgContextDestroy(ctx);
+    TSCfgContextDestroy(ctx);
   return err;
 }
 
@@ -1706,23 +1706,23 @@ Lerror:
 int
 updateSplitDnsConfig(char *rules[], int numRules, char **errBuff)
 {
-  INKCfgContext ctx = NULL;
-  INKSplitDnsEle *ele;
+  TSCfgContext ctx = NULL;
+  TSSplitDnsEle *ele;
   Tokenizer tokens(CFG_RULE_DELIMITER);
-  INKActionNeedT action_need;
-  INKError response;
+  TSActionNeedT action_need;
+  TSError response;
   int i, err = WEB_HTTP_ERR_OKAY;
-  INKIntList errRules = NULL;
+  TSIntList errRules = NULL;
 
-  ctx = INKCfgContextCreate(INK_FNAME_SPLIT_DNS);
+  ctx = TSCfgContextCreate(TS_FNAME_SPLIT_DNS);
   if (!ctx) {
     Debug("config", "[updateSplitDnsConfig] can't allocate ctx memory");
     err = WEB_HTTP_ERR_FAIL;
     goto Lerror;
   }
   // since we want to preserve comments, we need to read in the
-  // file using INKCfgContextGet and remove all the rules; starting from scratch
-  if (INKCfgContextGet(ctx) != INK_ERR_OKAY || INKCfgContextRemoveAll(ctx) != INK_ERR_OKAY) {
+  // file using TSCfgContextGet and remove all the rules; starting from scratch
+  if (TSCfgContextGet(ctx) != TS_ERR_OKAY || TSCfgContextRemoveAll(ctx) != TS_ERR_OKAY) {
     Debug("config", "[updateSplitDnsConfig] Failed to Get and Clear CfgContext");
     err = WEB_HTTP_ERR_FAIL;
     goto Lerror;
@@ -1731,19 +1731,19 @@ updateSplitDnsConfig(char *rules[], int numRules, char **errBuff)
   // insert the Ele's into a Cfg Context; if get invalid formatted rule, just skip it
   for (i = 0; i < numRules; i++) {
     tokens.Initialize(rules[i], ALLOW_EMPTY_TOKS);
-    ele = INKSplitDnsEleCreate();
+    ele = TSSplitDnsEleCreate();
 
     // pd type
     if (strcmp(tokens[0], "dest_domain") == 0) {
-      ele->pd_type = INK_PD_DOMAIN;
+      ele->pd_type = TS_PD_DOMAIN;
     } else if (strcmp(tokens[0], "dest_host") == 0) {
-      ele->pd_type = INK_PD_HOST;
+      ele->pd_type = TS_PD_HOST;
     } else if (strcmp(tokens[0], "dest_ip") == 0) {
-      ele->pd_type = INK_PD_IP;
+      ele->pd_type = TS_PD_IP;
     } else if (strcmp(tokens[0], "url_regex") == 0) {
-      ele->pd_type = INK_PD_URL_REGEX;
+      ele->pd_type = TS_PD_URL_REGEX;
     } else {
-      ele->cfg_ele.error = INK_ERR_INVALID_CONFIG_RULE;
+      ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
       Debug("config", "[updateSplitDnsConfig] invalid rule - SKIP");
     }
 
@@ -1751,7 +1751,7 @@ updateSplitDnsConfig(char *rules[], int numRules, char **errBuff)
     if (strlen(tokens[1]) > 0) {
       ele->pd_val = xstrdup(tokens[1]);
     } else {
-      ele->cfg_ele.error = INK_ERR_INVALID_CONFIG_RULE;
+      ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
       Debug("config", "[updateSplitDnsConfig] invalid rule - SKIP");
     }
 
@@ -1759,7 +1759,7 @@ updateSplitDnsConfig(char *rules[], int numRules, char **errBuff)
     if (strlen(tokens[2]) > 0) {
       ele->dns_servers_addrs = string_to_domain_list(tokens[2], "; ");
     } else {                    // a required field
-      ele->cfg_ele.error = INK_ERR_INVALID_CONFIG_RULE;
+      ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
       Debug("config", "[updateSplitDnsConfig] invalid rule - SKIP");
     }
 
@@ -1771,30 +1771,30 @@ updateSplitDnsConfig(char *rules[], int numRules, char **errBuff)
     if (strlen(tokens[4]) > 0) {
       ele->search_list = string_to_domain_list(tokens[4], "; ");
       if (!ele->search_list) {
-        ele->cfg_ele.error = INK_ERR_INVALID_CONFIG_RULE;
+        ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
         Debug("config", "[updateSplitDnsConfig] invalid rule - SKIP");
       }
     }
 
-    INKCfgContextAppendEle(ctx, (INKCfgEle *) ele);     // add new ele to end of list
+    TSCfgContextAppendEle(ctx, (TSCfgEle *) ele);     // add new ele to end of list
   }
 
   // commit the CfgContext to write a new version of the file
-  errRules = INKIntListCreate();
-  response = INKCfgContextCommit(ctx, &action_need, errRules);
-  if (response == INK_ERR_INVALID_CONFIG_RULE) {
+  errRules = TSIntListCreate();
+  response = TSCfgContextCommit(ctx, &action_need, errRules);
+  if (response == TS_ERR_INVALID_CONFIG_RULE) {
     err = WEB_HTTP_ERR_INVALID_CFG_RULE;
-    *errBuff = convertRules(INK_FNAME_SPLIT_DNS, errRules, rules);
-  } else if (response != INK_ERR_OKAY) {
+    *errBuff = convertRules(TS_FNAME_SPLIT_DNS, errRules, rules);
+  } else if (response != TS_ERR_OKAY) {
     err = WEB_HTTP_ERR_FAIL;
     goto Lerror;
   }
 
 Lerror:
   if (errRules)
-    INKIntListDestroy(errRules);
+    TSIntListDestroy(errRules);
   if (ctx)
-    INKCfgContextDestroy(ctx);
+    TSCfgContextDestroy(ctx);
   return err;
 }
 
@@ -1804,23 +1804,23 @@ Lerror:
 int
 updateUpdateConfig(char *rules[], int numRules, char **errBuff)
 {
-  INKCfgContext ctx = NULL;
-  INKUpdateEle *ele;
+  TSCfgContext ctx = NULL;
+  TSUpdateEle *ele;
   Tokenizer tokens(CFG_RULE_DELIMITER);
-  INKActionNeedT action_need;
-  INKError response;
+  TSActionNeedT action_need;
+  TSError response;
   int i, err = WEB_HTTP_ERR_OKAY;
-  INKIntList errRules = NULL;
+  TSIntList errRules = NULL;
 
-  ctx = INKCfgContextCreate(INK_FNAME_UPDATE_URL);
+  ctx = TSCfgContextCreate(TS_FNAME_UPDATE_URL);
   if (!ctx) {
     Debug("config", "[updateUpdateConfig] can't allocate ctx memory");
     err = WEB_HTTP_ERR_FAIL;
     goto Lerror;
   }
   // since we want to preserve comments, we need to read in the
-  // file using INKCfgContextGet and remove all the rules; starting from scratch
-  if (INKCfgContextGet(ctx) != INK_ERR_OKAY || INKCfgContextRemoveAll(ctx) != INK_ERR_OKAY) {
+  // file using TSCfgContextGet and remove all the rules; starting from scratch
+  if (TSCfgContextGet(ctx) != TS_ERR_OKAY || TSCfgContextRemoveAll(ctx) != TS_ERR_OKAY) {
     Debug("config", "[updateUpdateConfig] Failed to Get and Clear CfgContext");
     err = WEB_HTTP_ERR_FAIL;
     goto Lerror;
@@ -1829,13 +1829,13 @@ updateUpdateConfig(char *rules[], int numRules, char **errBuff)
   // insert the Ele's into a Cfg Context; if get invalid formatted rule, just skip it
   for (i = 0; i < numRules; i++) {
     tokens.Initialize(rules[i], ALLOW_EMPTY_TOKS);
-    ele = INKUpdateEleCreate();
+    ele = TSUpdateEleCreate();
 
     // url
     if (strlen(tokens[0]) > 0) {
       ele->url = xstrdup(tokens[0]);
     } else {
-      ele->cfg_ele.error = INK_ERR_INVALID_CONFIG_RULE;
+      ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
       Debug("config", "[updateUpdateConfig] invalid url - SKIP");
     }
 
@@ -1847,7 +1847,7 @@ updateUpdateConfig(char *rules[], int numRules, char **errBuff)
     if (strlen(tokens[2]) > 0 && isNumber(tokens[2])) {
       ele->offset_hour = ink_atoi(tokens[2]);
     } else {                    // a required field
-      ele->cfg_ele.error = INK_ERR_INVALID_CONFIG_RULE;
+      ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
       Debug("config", "[updateUpdateConfig] invalid offset hour- SKIP");
     }
 
@@ -1855,7 +1855,7 @@ updateUpdateConfig(char *rules[], int numRules, char **errBuff)
     if (strlen(tokens[3]) > 0 && isNumber(tokens[3])) {
       ele->interval = ink_atoi(tokens[3]);
     } else {                    // a required field
-      ele->cfg_ele.error = INK_ERR_INVALID_CONFIG_RULE;
+      ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
       Debug("config", "[updateUpdateConfig] invalid interval - SKIP");
     }
 
@@ -1864,30 +1864,30 @@ updateUpdateConfig(char *rules[], int numRules, char **errBuff)
       if (isNumber(tokens[4])) {
         ele->recursion_depth = ink_atoi(tokens[4]);
       } else {
-        ele->cfg_ele.error = INK_ERR_INVALID_CONFIG_RULE;
+        ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
         Debug("config", "[updateRemapConfig] invalid recursion depth - SKIP");
       }
     }
 
-    INKCfgContextAppendEle(ctx, (INKCfgEle *) ele);     // add new ele to end of list
+    TSCfgContextAppendEle(ctx, (TSCfgEle *) ele);     // add new ele to end of list
   }
 
   // commit the CfgContext to write a new version of the file
-  errRules = INKIntListCreate();
-  response = INKCfgContextCommit(ctx, &action_need, errRules);
-  if (response == INK_ERR_INVALID_CONFIG_RULE) {
+  errRules = TSIntListCreate();
+  response = TSCfgContextCommit(ctx, &action_need, errRules);
+  if (response == TS_ERR_INVALID_CONFIG_RULE) {
     err = WEB_HTTP_ERR_INVALID_CFG_RULE;
-    *errBuff = convertRules(INK_FNAME_UPDATE_URL, errRules, rules);
-  } else if (response != INK_ERR_OKAY) {
+    *errBuff = convertRules(TS_FNAME_UPDATE_URL, errRules, rules);
+  } else if (response != TS_ERR_OKAY) {
     err = WEB_HTTP_ERR_FAIL;
     goto Lerror;
   }
 
 Lerror:
   if (errRules)
-    INKIntListDestroy(errRules);
+    TSIntListDestroy(errRules);
   if (ctx)
-    INKCfgContextDestroy(ctx);
+    TSCfgContextDestroy(ctx);
   return err;
 }
 
@@ -1898,23 +1898,23 @@ Lerror:
 int
 updateVaddrsConfig(char *rules[], int numRules, char **errBuff)
 {
-  INKCfgContext ctx = NULL;
-  INKVirtIpAddrEle *ele;
+  TSCfgContext ctx = NULL;
+  TSVirtIpAddrEle *ele;
   Tokenizer tokens(CFG_RULE_DELIMITER);
-  INKActionNeedT action_need;
-  INKError response;
+  TSActionNeedT action_need;
+  TSError response;
   int i, err = WEB_HTTP_ERR_OKAY;
-  INKIntList errRules = NULL;
+  TSIntList errRules = NULL;
 
-  ctx = INKCfgContextCreate(INK_FNAME_VADDRS);
+  ctx = TSCfgContextCreate(TS_FNAME_VADDRS);
   if (!ctx) {
     Debug("config", "[updateVaddrsConfig] can't allocate ctx memory");
     err = WEB_HTTP_ERR_FAIL;
     goto Lerror;
   }
   // since we want to preserve comments, we need to read in the
-  // file using INKCfgContextGet and remove all the rules; starting from scratch
-  if (INKCfgContextGet(ctx) != INK_ERR_OKAY || INKCfgContextRemoveAll(ctx) != INK_ERR_OKAY) {
+  // file using TSCfgContextGet and remove all the rules; starting from scratch
+  if (TSCfgContextGet(ctx) != TS_ERR_OKAY || TSCfgContextRemoveAll(ctx) != TS_ERR_OKAY) {
     Debug("config", "[updateVaddrsConfig] Failed to Get and Clear CfgContext");
     err = WEB_HTTP_ERR_FAIL;
     goto Lerror;
@@ -1923,13 +1923,13 @@ updateVaddrsConfig(char *rules[], int numRules, char **errBuff)
   // insert the Ele's into a Cfg Context; if get invalid formatted rule, just skip it
   for (i = 0; i < numRules; i++) {
     tokens.Initialize(rules[i], ALLOW_EMPTY_TOKS);
-    ele = INKVirtIpAddrEleCreate();
+    ele = TSVirtIpAddrEleCreate();
 
     // virtual IP
     if (strlen(tokens[0]) > 0) {
       ele->ip_addr = string_to_ip_addr(tokens[0]);
     } else {
-      ele->cfg_ele.error = INK_ERR_INVALID_CONFIG_RULE;
+      ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
       Debug("config", "[updateVaddrsConfig] invalid Virtual Ip Addr - SKIP");
     }
 
@@ -1937,7 +1937,7 @@ updateVaddrsConfig(char *rules[], int numRules, char **errBuff)
     if (strlen(tokens[1]) > 0) {
       ele->intr = xstrdup(tokens[1]);
     } else {                    // a required field
-      ele->cfg_ele.error = INK_ERR_INVALID_CONFIG_RULE;
+      ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
       Debug("config", "[updateVaddrsConfig] invalid interface- SKIP");
     }
 
@@ -1945,28 +1945,28 @@ updateVaddrsConfig(char *rules[], int numRules, char **errBuff)
     if (strlen(tokens[2]) > 0 && isNumber(tokens[2])) {
       ele->sub_intr = ink_atoi(tokens[2]);
     } else {                    // a required field
-      ele->cfg_ele.error = INK_ERR_INVALID_CONFIG_RULE;
+      ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
       Debug("config", "[updateVaddrsConfig] invalid sub-interface - SKIP");
     }
 
-    INKCfgContextAppendEle(ctx, (INKCfgEle *) ele);     // add new ele to end of list
+    TSCfgContextAppendEle(ctx, (TSCfgEle *) ele);     // add new ele to end of list
   }
 
   // commit the CfgContext to write a new version of the file
-  errRules = INKIntListCreate();
-  response = INKCfgContextCommit(ctx, &action_need, errRules);
-  if (response == INK_ERR_INVALID_CONFIG_RULE) {
+  errRules = TSIntListCreate();
+  response = TSCfgContextCommit(ctx, &action_need, errRules);
+  if (response == TS_ERR_INVALID_CONFIG_RULE) {
     err = WEB_HTTP_ERR_INVALID_CFG_RULE;
-    *errBuff = convertRules(INK_FNAME_VADDRS, errRules, rules);
-  } else if (response != INK_ERR_OKAY) {
+    *errBuff = convertRules(TS_FNAME_VADDRS, errRules, rules);
+  } else if (response != TS_ERR_OKAY) {
     err = WEB_HTTP_ERR_FAIL;
     goto Lerror;
   }
 
 Lerror:
   if (errRules)
-    INKIntListDestroy(errRules);
+    TSIntListDestroy(errRules);
   if (ctx)
-    INKCfgContextDestroy(ctx);
+    TSCfgContextDestroy(ctx);
   return err;
 }

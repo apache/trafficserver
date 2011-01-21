@@ -24,7 +24,7 @@
 /****************************************************************
  * Filename: CliMgmtUtils.cc
  * Purpose: This file contains various utility functions which
- *          call the INKMgmtAPI.
+ *          call the TSMgmtAPI.
  *
  *
  ****************************************************************/
@@ -40,14 +40,14 @@
 #include "ConfigCmd.h"
 
 
-void Cli_DisplayMgmtAPI_Error(INKError status);
+void Cli_DisplayMgmtAPI_Error(TSError status);
 
 // Get a records.config variable by name
-INKError
-Cli_RecordGet(const char *rec_name, INKRecordEle * rec_val)
+TSError
+Cli_RecordGet(const char *rec_name, TSRecordEle * rec_val)
 {
-  INKError status;
-  if ((status = INKRecordGet((char *) rec_name, rec_val))) {
+  TSError status;
+  if ((status = TSRecordGet((char *) rec_name, rec_val))) {
     Cli_Debug(ERR_RECORD_GET, rec_name);
     Cli_DisplayMgmtAPI_Error(status);
   }
@@ -55,11 +55,11 @@ Cli_RecordGet(const char *rec_name, INKRecordEle * rec_val)
 }
 
 // Get an integer type records.config variable
-INKError
-Cli_RecordGetInt(const char *rec_name, INKInt * int_val)
+TSError
+Cli_RecordGetInt(const char *rec_name, TSInt * int_val)
 {
-  INKError status;
-  if ((status = INKRecordGetInt(rec_name, int_val))) {
+  TSError status;
+  if ((status = TSRecordGetInt(rec_name, int_val))) {
     Cli_Debug(ERR_RECORD_GET_INT, rec_name);
     Cli_DisplayMgmtAPI_Error(status);
   }
@@ -67,11 +67,11 @@ Cli_RecordGetInt(const char *rec_name, INKInt * int_val)
 }
 
 // Get an counter type records.config variable
-INKError
-Cli_RecordGetCounter(const char *rec_name, INKCounter * ctr_val)
+TSError
+Cli_RecordGetCounter(const char *rec_name, TSCounter * ctr_val)
 {
-  INKError status;
-  if ((status = INKRecordGetCounter(rec_name, ctr_val))) {
+  TSError status;
+  if ((status = TSRecordGetCounter(rec_name, ctr_val))) {
     Cli_Debug(ERR_RECORD_GET_COUNTER, rec_name);
     Cli_DisplayMgmtAPI_Error(status);
   }
@@ -79,11 +79,11 @@ Cli_RecordGetCounter(const char *rec_name, INKCounter * ctr_val)
 }
 
 // Get a float type records.config variable
-INKError
-Cli_RecordGetFloat(const char *rec_name, INKFloat * float_val)
+TSError
+Cli_RecordGetFloat(const char *rec_name, TSFloat * float_val)
 {
-  INKError status;
-  if ((status = INKRecordGetFloat(rec_name, float_val))) {
+  TSError status;
+  if ((status = TSRecordGetFloat(rec_name, float_val))) {
     Cli_Debug(ERR_RECORD_GET_FLOAT, rec_name);
     Cli_DisplayMgmtAPI_Error(status);
   }
@@ -91,11 +91,11 @@ Cli_RecordGetFloat(const char *rec_name, INKFloat * float_val)
 }
 
 // Get a string type records.config variable
-INKError
+TSError
 Cli_RecordGetString(const char *rec_name, char **string_val)
 {
-  INKError status;
-  if ((status = INKRecordGetString(rec_name, string_val))) {
+  TSError status;
+  if ((status = TSRecordGetString(rec_name, string_val))) {
     Cli_Debug(ERR_RECORD_GET_STRING, rec_name);
     Cli_DisplayMgmtAPI_Error(status);
   }
@@ -103,11 +103,11 @@ Cli_RecordGetString(const char *rec_name, char **string_val)
 }
 
 // Use a string to set a records.config variable
-INKError
-Cli_RecordSet(const char *rec_name, const char *rec_value, INKActionNeedT * action_need)
+TSError
+Cli_RecordSet(const char *rec_name, const char *rec_value, TSActionNeedT * action_need)
 {
-  INKError status;
-  if ((status = INKRecordSet((char *) rec_name, (INKString) rec_value, action_need))) {
+  TSError status;
+  if ((status = TSRecordSet((char *) rec_name, (TSString) rec_value, action_need))) {
     Cli_Debug(ERR_RECORD_SET, rec_name, rec_value);
     Cli_DisplayMgmtAPI_Error(status);
   }
@@ -115,11 +115,11 @@ Cli_RecordSet(const char *rec_name, const char *rec_value, INKActionNeedT * acti
 }
 
 // Set an integer type records.config variable
-INKError
-Cli_RecordSetInt(const char *rec_name, INKInt int_val, INKActionNeedT * action_need)
+TSError
+Cli_RecordSetInt(const char *rec_name, TSInt int_val, TSActionNeedT * action_need)
 {
-  INKError status;
-  if ((status = INKRecordSetInt(rec_name, int_val, action_need))) {
+  TSError status;
+  if ((status = TSRecordSetInt(rec_name, int_val, action_need))) {
     Cli_Debug(ERR_RECORD_SET_INT, rec_name, int_val);
     Cli_DisplayMgmtAPI_Error(status);
   }
@@ -127,11 +127,11 @@ Cli_RecordSetInt(const char *rec_name, INKInt int_val, INKActionNeedT * action_n
 }
 
 // Set a float type records.config variable
-INKError
-Cli_RecordSetFloat(const char *rec_name, INKFloat float_val, INKActionNeedT * action_need)
+TSError
+Cli_RecordSetFloat(const char *rec_name, TSFloat float_val, TSActionNeedT * action_need)
 {
-  INKError status;
-  if ((status = INKRecordSetFloat(rec_name, float_val, action_need))) {
+  TSError status;
+  if ((status = TSRecordSetFloat(rec_name, float_val, action_need))) {
     Cli_Debug(ERR_RECORD_SET_FLOAT, rec_name, float_val);
     Cli_DisplayMgmtAPI_Error(status);
   }
@@ -140,11 +140,11 @@ Cli_RecordSetFloat(const char *rec_name, INKFloat float_val, INKActionNeedT * ac
 
 
 // Set a string type records.config variable
-INKError
-Cli_RecordSetString(const char *rec_name, INKString str_val, INKActionNeedT * action_need)
+TSError
+Cli_RecordSetString(const char *rec_name, TSString str_val, TSActionNeedT * action_need)
 {
-  INKError status;
-  if ((status = INKRecordSetString(rec_name, str_val, action_need))) {
+  TSError status;
+  if ((status = TSRecordSetString(rec_name, str_val, action_need))) {
     Cli_Debug(ERR_RECORD_SET_STRING, rec_name, str_val);
     Cli_DisplayMgmtAPI_Error(status);
   }
@@ -152,50 +152,50 @@ Cli_RecordSetString(const char *rec_name, INKString str_val, INKActionNeedT * ac
 }
 
 void
-Cli_DisplayMgmtAPI_Error(INKError status)
+Cli_DisplayMgmtAPI_Error(TSError status)
 {
   switch (status) {
-  case INK_ERR_OKAY:           // do nothing
+  case TS_ERR_OKAY:           // do nothing
     break;
-  case INK_ERR_READ_FILE:
+  case TS_ERR_READ_FILE:
     Cli_Printf("\nERROR: Unable to read config file.\n\n");
     break;
-  case INK_ERR_WRITE_FILE:
+  case TS_ERR_WRITE_FILE:
     Cli_Printf("\nERROR: Unable to write config file.\n\n");
     break;
-  case INK_ERR_PARSE_CONFIG_RULE:
+  case TS_ERR_PARSE_CONFIG_RULE:
     Cli_Printf("\nERROR: Unable to parse config file.\n\n");
     break;
-  case INK_ERR_INVALID_CONFIG_RULE:
+  case TS_ERR_INVALID_CONFIG_RULE:
     Cli_Printf("\nERROR: Invalid Configuration Rule in config file.\n\n");
     break;
-  case INK_ERR_NET_ESTABLISH:
+  case TS_ERR_NET_ESTABLISH:
     Cli_Printf("\nERROR: Unable to establish connection to traffic_manager.\n"
                "       Ability to make configuration changes depends on traffic_manager.\n");
     break;
-  case INK_ERR_NET_READ:
+  case TS_ERR_NET_READ:
     Cli_Printf("\nERROR: Unable to read data from traffic_manager.\n"
                "       Ability to monitor the system changes depends on traffic_manager.\n");
     break;
-  case INK_ERR_NET_WRITE:
+  case TS_ERR_NET_WRITE:
     Cli_Printf("\nERROR: Unable to write configuration data to traffic_manager.\n"
                "       Ability to make configuration changes depends on traffic_manager.\n");
     break;
-  case INK_ERR_NET_EOF:
+  case TS_ERR_NET_EOF:
     Cli_Printf("\nERROR: Unexpected EOF while communicating with traffic_manager.\n"
                "       Ability to make configuration changes depends on traffic_manager.\n");
     break;
-  case INK_ERR_NET_TIMEOUT:
+  case TS_ERR_NET_TIMEOUT:
     Cli_Printf("\nERROR: Timed-out while communicating with traffic_manager.\n"
                "       Ability to make configuration changes depends on traffic_manager.\n");
     break;
-  case INK_ERR_SYS_CALL:
+  case TS_ERR_SYS_CALL:
     Cli_Printf("\nERROR: Internal System Call failed.\n\n");
     break;
-  case INK_ERR_PARAMS:
+  case TS_ERR_PARAMS:
     Cli_Printf("\nERROR: Invalid parameters passed to a function.\n\n");
     break;
-  case INK_ERR_FAIL:
+  case TS_ERR_FAIL:
     Cli_Printf("\nERROR: Invalid parameter specified.\n" "       Check parameters for correct syntax and type.\n\n");
     break;
   default:
@@ -205,19 +205,19 @@ Cli_DisplayMgmtAPI_Error(INKError status)
 }
 
 // Retrieve and display contents of a rules file
-INKError
-Cli_DisplayRules(INKFileNameT fname)
+TSError
+Cli_DisplayRules(TSFileNameT fname)
 {
-  INKError status;
+  TSError status;
   char *text;
   int size = 0, version = 0;
 
-  if ((status = INKConfigFileRead(fname, &text, &size, &version))) {
+  if ((status = TSConfigFileRead(fname, &text, &size, &version))) {
     Cli_Debug(ERR_CONFIG_FILE_READ, fname);
     Cli_DisplayMgmtAPI_Error(status);
   } else {
     if (size) {
-      // Fix INKqa12220: use printf directly since Cli_Printf may
+      // Fix TSqa12220: use printf directly since Cli_Printf may
       // not allocate enough buffer space to display the file contents
       puts(text);
       xfree(text);
@@ -230,18 +230,18 @@ Cli_DisplayRules(INKFileNameT fname)
 }
 
 // Retrieve and use config file from remote URL
-INKError
-Cli_SetConfigFileFromUrl(INKFileNameT file, const char *url)
+TSError
+Cli_SetConfigFileFromUrl(TSFileNameT file, const char *url)
 {
   char *buf;
   int size = 0;
   int version = -1;
-  INKError status;
+  TSError status;
 
   Cli_Debug("Cli_SetConfigFileFromUrl: file %d url %s\n", file, url);
 
   // read config file from Url
-  if ((status = INKReadFromUrl((char *) url, NULL, NULL, &buf, &size))) {
+  if ((status = TSReadFromUrl((char *) url, NULL, NULL, &buf, &size))) {
     Cli_Debug(ERR_READ_FROM_URL, url);
     Cli_DisplayMgmtAPI_Error(status);
     return status;
@@ -252,7 +252,7 @@ Cli_SetConfigFileFromUrl(INKFileNameT file, const char *url)
   Cli_Debug("Cli_SetConfigFileFromUrl: buf\n%s\n", buf);
 
   // write config file
-  if ((status = INKConfigFileWrite(file, buf, size, version))) {
+  if ((status = TSConfigFileWrite(file, buf, size, version))) {
     Cli_Debug(ERR_CONFIG_FILE_WRITE, file);
     Cli_DisplayMgmtAPI_Error(status);
     if (size) {
@@ -272,49 +272,49 @@ Cli_SetConfigFileFromUrl(INKFileNameT file, const char *url)
 
 // enable recent configuration changes by performing the action specified
 // by the action_need value
-INKError
-Cli_ConfigEnactChanges(INKActionNeedT action_need)
+TSError
+Cli_ConfigEnactChanges(TSActionNeedT action_need)
 {
-  INKError status;
+  TSError status;
 
   Cli_Debug("Cli_ConfigEnactChanges: action_need %d\n", action_need);
 
   switch (action_need) {
-  case INK_ACTION_SHUTDOWN:
-    Cli_Debug("Cli_ConfigEnactChanges: INK_ACTION_SHUTDOWN\n");
+  case TS_ACTION_SHUTDOWN:
+    Cli_Debug("Cli_ConfigEnactChanges: TS_ACTION_SHUTDOWN\n");
     Cli_Printf("\nHard Restart required.\n"
                "  Change will take effect after next Hard Restart.\n"
                "  Use the \"config:hard-restart\" command to restart now.\n\n");
     break;
 
-  case INK_ACTION_RESTART:
-    Cli_Debug("Cli_ConfigEnactChanges: INK_ACTION_RESTART\n");
+  case TS_ACTION_RESTART:
+    Cli_Debug("Cli_ConfigEnactChanges: TS_ACTION_RESTART\n");
     Cli_Printf("\nRestart required.\n"
                "  Change will take effect after next Restart.\n"
                "  Use the \"config:restart\" command to restart now.\n\n");
     break;
 
-  case INK_ACTION_DYNAMIC:
-    Cli_Debug("Cli_ConfigEnactChanges: INK_ACTION_DYNAMIC\n");
+  case TS_ACTION_DYNAMIC:
+    Cli_Debug("Cli_ConfigEnactChanges: TS_ACTION_DYNAMIC\n");
     // no additional action required
     break;
 
-  case INK_ACTION_RECONFIGURE:
-    Cli_Debug("Cli_ConfigEnactChanges: INK_ACTION_RECONFIGURE\n");
-    status = INKActionDo(INK_ACTION_RECONFIGURE);
+  case TS_ACTION_RECONFIGURE:
+    Cli_Debug("Cli_ConfigEnactChanges: TS_ACTION_RECONFIGURE\n");
+    status = TSActionDo(TS_ACTION_RECONFIGURE);
     if (status) {
       Cli_Error("\nERROR %d: Failed to reread configuration files.\n\n", status);
-      return INK_ERR_FAIL;
+      return TS_ERR_FAIL;
     }
     break;
 
   default:
     Cli_Debug("  Status Message #%d\n", action_need);
     Cli_Error("\nYou may need to use the \"config:hard-restart\" command\n" "to enable this configuration change.\n\n");
-    return INK_ERR_OKAY;
+    return TS_ERR_OKAY;
   }
 
-  return INK_ERR_OKAY;
+  return TS_ERR_OKAY;
 }
 
 // evaluate "stringval" and return 1 if "on", otherwise 0
@@ -346,9 +346,9 @@ Cli_EvalOnOffString(char *stringval)
 int
 Cli_RecordOnOff_Action(int action, const char *record, const char *on_off)
 {
-  INKActionNeedT action_need;
-  INKError status;
-  INKInt int_val;
+  TSActionNeedT action_need;
+  TSError status;
+  TSInt int_val;
 
   switch (action) {
   case RECORD_SET:
@@ -366,7 +366,7 @@ Cli_RecordOnOff_Action(int action, const char *record, const char *on_off)
       return CLI_ERROR;
     }
     status = Cli_RecordSetInt(record, int_val, &action_need);
-    if (status != INK_ERR_OKAY) {
+    if (status != TS_ERR_OKAY) {
       return status;
     }
     return (Cli_ConfigEnactChanges(action_need));
@@ -398,8 +398,8 @@ Cli_RecordInt_Action(int action, const char *record, int value)
   switch (action) {
   case RECORD_SET:
     {
-      INKActionNeedT action_need = INK_ACTION_UNDEFINED;
-      INKError status = Cli_RecordSetInt(record, value, &action_need);
+      TSActionNeedT action_need = TS_ACTION_UNDEFINED;
+      TSError status = Cli_RecordSetInt(record, value, &action_need);
 
       if (status) {
         return status;
@@ -408,8 +408,8 @@ Cli_RecordInt_Action(int action, const char *record, int value)
     }
   case RECORD_GET:
     {
-      INKInt value_in = -1;
-      INKError status = Cli_RecordGetInt(record, &value_in);
+      TSInt value_in = -1;
+      TSError status = Cli_RecordGetInt(record, &value_in);
 
       if (status) {
         return status;
@@ -437,14 +437,14 @@ Cli_RecordInt_Action(int action, const char *record, int value)
 int
 Cli_RecordHostname_Action(int action, char *record, char *hostname)
 {
-  INKError status;
-  INKActionNeedT action_need = INK_ACTION_UNDEFINED;
-  INKString str_val = NULL;
+  TSError status;
+  TSActionNeedT action_need = TS_ACTION_UNDEFINED;
+  TSString str_val = NULL;
 
   switch (action) {
   case RECORD_SET:
     if (IsValidFQHostname(hostname) == CLI_OK) {
-      status = Cli_RecordSetString(record, (INKString) hostname, &action_need);
+      status = Cli_RecordSetString(record, (TSString) hostname, &action_need);
 
       if (status) {
         return status;
@@ -483,13 +483,13 @@ Cli_RecordHostname_Action(int action, char *record, char *hostname)
 int
 Cli_RecordString_Action(int action, const char *record, char *string_val)
 {
-  INKError status;
-  INKActionNeedT action_need = INK_ACTION_UNDEFINED;
-  INKString str_val = NULL;
+  TSError status;
+  TSActionNeedT action_need = TS_ACTION_UNDEFINED;
+  TSString str_val = NULL;
 
   switch (action) {
   case RECORD_SET:
-    status = Cli_RecordSetString(record, (INKString) string_val, &action_need);
+    status = Cli_RecordSetString(record, (TSString) string_val, &action_need);
 
     if (status) {
       return status;
@@ -522,9 +522,9 @@ Cli_RecordString_Action(int action, const char *record, char *string_val)
 // url = if non-NULL, update the file using contents of URL
 //
 int
-Cli_ConfigFileURL_Action(INKFileNameT file, const char *filename, const char *url)
+Cli_ConfigFileURL_Action(TSFileNameT file, const char *filename, const char *url)
 {
-  INKError status;
+  TSError status;
   // Retrieve  file from url
 
   if (url == NULL) {
@@ -603,26 +603,26 @@ StartTrafficServer()
 }
 
 int
-Cli_CheckPluginStatus(INKString plugin)
+Cli_CheckPluginStatus(TSString plugin)
 {
 
   int match = 0;
-  INKCfgContext ctx;
-  INKCfgIterState ctx_state;
-  INKPluginEle *ele;
+  TSCfgContext ctx;
+  TSCfgIterState ctx_state;
+  TSPluginEle *ele;
 
-  ctx = INKCfgContextCreate(INK_FNAME_PLUGIN);
-  if (INKCfgContextGet(ctx) != INK_ERR_OKAY) {
+  ctx = TSCfgContextCreate(TS_FNAME_PLUGIN);
+  if (TSCfgContextGet(ctx) != TS_ERR_OKAY) {
     printf("ERROR READING FILE\n");
   }
-  ele = (INKPluginEle *) INKCfgContextGetFirst(ctx, &ctx_state);
+  ele = (TSPluginEle *) TSCfgContextGetFirst(ctx, &ctx_state);
 
   while (ele) {
     if (!strcasecmp(plugin, ele->name)) {
       match = 1;
       break;
     }
-    ele = (INKPluginEle *) INKCfgContextGetNext(ctx, &ctx_state);
+    ele = (TSPluginEle *) TSCfgContextGetNext(ctx, &ctx_state);
   }
 
   if (match) {

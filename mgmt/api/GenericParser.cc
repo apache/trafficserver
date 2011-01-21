@@ -144,7 +144,7 @@ TokenList::Print()
 
 Rule::Rule()
   : tokenList(NULL),
-    m_filetype(INK_FNAME_UNDEFINED), m_filename(NULL), m_ruleStr(NULL), m_comment(NULL), m_errorHint(NULL), m_lineNum(0)
+    m_filetype(TS_FNAME_UNDEFINED), m_filename(NULL), m_ruleStr(NULL), m_comment(NULL), m_errorHint(NULL), m_lineNum(0)
 {
 }
 
@@ -200,45 +200,45 @@ Rule::Print()
 }
 
 TokenList *
-Rule::parse(const char *const_rule, INKFileNameT filetype)
+Rule::parse(const char *const_rule, TSFileNameT filetype)
 {
   char *rule = (char *) const_rule;
   m_filetype = filetype;
 
   switch (m_filetype) {
-  case INK_FNAME_ADMIN_ACCESS: /* admin_access.config */
+  case TS_FNAME_ADMIN_ACCESS: /* admin_access.config */
     return admin_accessParse(rule);
-  case INK_FNAME_CACHE_OBJ:    /* cache.config */
+  case TS_FNAME_CACHE_OBJ:    /* cache.config */
     return cacheParse(rule);
-  case INK_FNAME_CONGESTION:   /* congestion.config */
+  case TS_FNAME_CONGESTION:   /* congestion.config */
     return congestionParse(rule, 1, 15);
-  case INK_FNAME_HOSTING:      /* hosting.config */
+  case TS_FNAME_HOSTING:      /* hosting.config */
     return hostingParse(rule);
-  case INK_FNAME_ICP_PEER:     /* icp.config */
+  case TS_FNAME_ICP_PEER:     /* icp.config */
     return icpParse(rule, 8, 8);
-  case INK_FNAME_IP_ALLOW:     /* ip_allow.config */
+  case TS_FNAME_IP_ALLOW:     /* ip_allow.config */
     return ip_allowParse(rule);
-  case INK_FNAME_LOGS_XML:     /* logs_xml.config */
+  case TS_FNAME_LOGS_XML:     /* logs_xml.config */
     return logs_xmlParse(rule);
-  case INK_FNAME_MGMT_ALLOW:   /* mgmt_allow.config */
+  case TS_FNAME_MGMT_ALLOW:   /* mgmt_allow.config */
     return mgmt_allowParse(rule);
-  case INK_FNAME_PARENT_PROXY: /* parent.config */
+  case TS_FNAME_PARENT_PROXY: /* parent.config */
     return parentParse(rule);
-  case INK_FNAME_PARTITION:    /* partition.config */
+  case TS_FNAME_PARTITION:    /* partition.config */
     return partitionParse(rule);
-  case INK_FNAME_PLUGIN:       /* plugin.config */
+  case TS_FNAME_PLUGIN:       /* plugin.config */
     return pluginParse(rule);
-  case INK_FNAME_REMAP:        /* remap.config */
+  case TS_FNAME_REMAP:        /* remap.config */
     return remapParse(rule);
-  case INK_FNAME_SOCKS:        /* socks.config */
+  case TS_FNAME_SOCKS:        /* socks.config */
     return socksParse(rule);
-  case INK_FNAME_SPLIT_DNS:    /* splitdns.config */
+  case TS_FNAME_SPLIT_DNS:    /* splitdns.config */
     return splitdnsParse(rule);
-  case INK_FNAME_STORAGE:      /* storage.config */
+  case TS_FNAME_STORAGE:      /* storage.config */
     return storageParse(rule);
-  case INK_FNAME_UPDATE_URL:   /* update.config */
+  case TS_FNAME_UPDATE_URL:   /* update.config */
     return updateParse(rule);
-  case INK_FNAME_VADDRS:       /* vaddrs.config */
+  case TS_FNAME_VADDRS:       /* vaddrs.config */
     return vaddrsParse(rule);
   default:
     return NULL;
@@ -361,7 +361,7 @@ Rule::cacheParse(char *rule, unsigned short minNumToken, unsigned short maxNumTo
         subtoken = subruleTok.iterNext(&subruleTok_state);
       } else {
         /* Ignore the first "=" sign and treat the rest as one token
-           for INKqa09488 */
+           for TSqa09488 */
         const char *secondEqual = strstr(strstr(tokenStr, "="), "=");
         secondEqual++;
         subtoken = xstrdup(secondEqual);
@@ -630,7 +630,7 @@ Rule::socksParse(char *rule)
   TokenList *m_tokenList = NEW(new TokenList());
 
   /* check which rule type it is */
-  if (strcmp(tokenStr, "no_socks") == 0) {      /* INK_SOCKS_BYPASS rule type */
+  if (strcmp(tokenStr, "no_socks") == 0) {      /* TS_SOCKS_BYPASS rule type */
     /* the token name = "no socks", the value = "list of ip addresses" */
     token = NEW(new Token());
     token->setName(tokenStr);
@@ -639,7 +639,7 @@ Rule::socksParse(char *rule)
       token->appendValue(tokenStr);
     }
     m_tokenList->enqueue(token);
-  } else if (strcmp(tokenStr, "auth") == 0) {   /* INK_SOCKS_AUTH rule type */
+  } else if (strcmp(tokenStr, "auth") == 0) {   /* TS_SOCKS_AUTH rule type */
     /* first token:  name = "auth", value = "u"
        second token: name = <username>
        third token:  name = <password> */
@@ -656,7 +656,7 @@ Rule::socksParse(char *rule)
       m_tokenList->enqueue(token);
     }
 
-  } else {                      /* INK_SOCKS_MULTIPLE rule type */
+  } else {                      /* TS_SOCKS_MULTIPLE rule type */
     for (; tokenStr; tokenStr = ruleTok.iterNext(&ruleTok_state)) {
       /* token is a name-value pair separated with = sign */
       if (!insideQuote) {
@@ -680,7 +680,7 @@ Rule::socksParse(char *rule)
           subtoken = subruleTok.iterNext(&subruleTok_state);
         } else {
           /* Ignore the first "=" sign and treat the rest as one token
-             for INKqa09488 */
+             for TSqa09488 */
           const char *secondEqual = strstr(strstr(tokenStr, "="), "=");
           secondEqual++;
           subtoken = xstrdup(secondEqual);
@@ -931,7 +931,7 @@ bool Rule::inQuote(const char *str)
 RuleList::RuleList()
  : length(0), m_filename(NULL)
 {
-  m_filetype = INK_FNAME_UNDEFINED;
+  m_filetype = TS_FNAME_UNDEFINED;
 }
 
 RuleList::~RuleList()
@@ -967,44 +967,44 @@ RuleList::parse(char *fileBuf, const char *filename)
   m_filename = xstrdup(filename);
 
   if (strstr(filename, "admin_access.config")) {
-    m_filetype = INK_FNAME_ADMIN_ACCESS;        /* admin_access.config */
+    m_filetype = TS_FNAME_ADMIN_ACCESS;        /* admin_access.config */
   } else if (strstr(filename, "cache.config")) {
-    m_filetype = INK_FNAME_CACHE_OBJ;   /* cache.config */
+    m_filetype = TS_FNAME_CACHE_OBJ;   /* cache.config */
   } else if (strstr(filename, "congestion.config")) {
-    m_filetype = INK_FNAME_CONGESTION;  /* congestion.config */
+    m_filetype = TS_FNAME_CONGESTION;  /* congestion.config */
   } else if (strstr(filename, "hosting.config")) {
-    m_filetype = INK_FNAME_HOSTING;     /* hosting.config */
+    m_filetype = TS_FNAME_HOSTING;     /* hosting.config */
   } else if (strstr(filename, "icp.config")) {
-    m_filetype = INK_FNAME_ICP_PEER;    /* icp.config */
+    m_filetype = TS_FNAME_ICP_PEER;    /* icp.config */
   } else if (strstr(filename, "ip_allow.config")) {
-    m_filetype = INK_FNAME_IP_ALLOW;    /* ip_allow.config */
+    m_filetype = TS_FNAME_IP_ALLOW;    /* ip_allow.config */
   } else if (strstr(filename, "logs_xml.config")) {
-    m_filetype = INK_FNAME_LOGS_XML;    /* logs_xml.config */
+    m_filetype = TS_FNAME_LOGS_XML;    /* logs_xml.config */
   } else if (strstr(filename, "mgmt_allow.config")) {
-    m_filetype = INK_FNAME_MGMT_ALLOW;  /* mgmt_allow.config */
+    m_filetype = TS_FNAME_MGMT_ALLOW;  /* mgmt_allow.config */
   } else if (strstr(filename, "parent.config")) {
-    m_filetype = INK_FNAME_PARENT_PROXY;        /* parent.config */
+    m_filetype = TS_FNAME_PARENT_PROXY;        /* parent.config */
   } else if (strstr(filename, "partition.config")) {
-    m_filetype = INK_FNAME_PARTITION;   /* partition.config */
+    m_filetype = TS_FNAME_PARTITION;   /* partition.config */
   } else if (strstr(filename, "plugin.config")) {
-    m_filetype = INK_FNAME_PLUGIN;      /* plugin.config */
+    m_filetype = TS_FNAME_PLUGIN;      /* plugin.config */
   } else if (strstr(filename, "remap.config")) {
-    m_filetype = INK_FNAME_REMAP;       /* remap.config */
+    m_filetype = TS_FNAME_REMAP;       /* remap.config */
   } else if (strstr(filename, "socks.config")) {
-    m_filetype = INK_FNAME_SOCKS;       /* socks.config */
+    m_filetype = TS_FNAME_SOCKS;       /* socks.config */
   } else if (strstr(filename, "splitdns.config")) {
-    m_filetype = INK_FNAME_SPLIT_DNS;   /* splitdns.config */
+    m_filetype = TS_FNAME_SPLIT_DNS;   /* splitdns.config */
   } else if (strstr(filename, "update.config")) {
-    m_filetype = INK_FNAME_UPDATE_URL;  /* update.config */
+    m_filetype = TS_FNAME_UPDATE_URL;  /* update.config */
   } else if (strstr(filename, "vaddrs.config")) {
-    m_filetype = INK_FNAME_VADDRS;      /* vaddrs.config */
+    m_filetype = TS_FNAME_VADDRS;      /* vaddrs.config */
   } else if (strstr(filename, "plugin.config")) {
-    m_filetype = INK_FNAME_UNDEFINED;   /* plugin.config */
+    m_filetype = TS_FNAME_UNDEFINED;   /* plugin.config */
   } else if (strstr(filename, "storage.config")) {
-    m_filetype = INK_FNAME_STORAGE;     /* storage.config */
+    m_filetype = TS_FNAME_STORAGE;     /* storage.config */
   }
   else {
-    m_filetype = INK_FNAME_UNDEFINED;
+    m_filetype = TS_FNAME_UNDEFINED;
   }
 
   // Call the proper function
@@ -1012,7 +1012,7 @@ RuleList::parse(char *fileBuf, const char *filename)
 }
 
 /*
- * void RuleList::parse(char *fileBuf, INKFileNameT filetype)
+ * void RuleList::parse(char *fileBuf, TSFileNameT filetype)
  *   Takes configuration file buffer, tokenize the buffer according carriage
  *   return. For each line, pasre it.
  *   NOTE: (1) comment line must start with '#' as the first character without
@@ -1021,7 +1021,7 @@ RuleList::parse(char *fileBuf, const char *filename)
  *
  */
 void
-RuleList::parse(char *fileBuf, INKFileNameT filetype)
+RuleList::parse(char *fileBuf, TSFileNameT filetype)
 {
 #ifdef _WIN32
   Tokenizer lineTok("\r\n");
@@ -1031,7 +1031,7 @@ RuleList::parse(char *fileBuf, INKFileNameT filetype)
   tok_iter_state lineTok_state;
   const char *line;
 
-  if (filetype == INK_FNAME_LOGS_XML) {
+  if (filetype == TS_FNAME_LOGS_XML) {
     printf("Yes Yes! XML!\n");
     //      InkXmlConfigFile(NULL);
     return;

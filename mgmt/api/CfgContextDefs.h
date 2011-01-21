@@ -67,7 +67,7 @@ typedef LLQ StringList;
 /* should this be defined in CfgContextUtils.h ?? */
 typedef struct
 {
-  INKCfgEle cfg_ele;
+  TSCfgEle cfg_ele;
   char *comment;
 } INKCommentEle;
 

@@ -34,7 +34,7 @@
 #include "mgmtapi.h"
 #include "WebHttpContext.h"
 
-char *convertRules(INKFileNameT file, INKIntList errRules, char *rules[]);
+char *convertRules(TSFileNameT file, TSIntList errRules, char *rules[]);
 
 char *formatCacheRule(char *rule);
 char *formatHostingRule(char *rule);

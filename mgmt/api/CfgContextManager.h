@@ -25,9 +25,9 @@
  * Filename: CfgContextManager.h (based on FileOp.h)
  * ------------------------------------------------------------------------
  * Purpose:
- *    Implements some of INKCfgContext functionality in the API; deals only
- *    with the CfgContext class though, not the INKCfgContext; typically
- *    the INKCfgContext function is a wrapper for the function whose purpose
+ *    Implements some of TSCfgContext functionality in the API; deals only
+ *    with the CfgContext class though, not the TSCfgContext; typically
+ *    the TSCfgContext function is a wrapper for the function whose purpose
  *    is to make the appropriate typecast to a CfgContext*
  *
  ***************************************************************************/
@@ -47,10 +47,10 @@
  * into CoreAPI terms; because the file name stored , knows the format
  * of the rules in the queue
  */
-CfgContext *CfgContextCreate(INKFileNameT filetype);
-INKError CfgContextDestroy(CfgContext * ctx);
-INKError CfgContextCommit(CfgContext * ctx, LLQ * errRules = NULL);
-INKError CfgContextGet(CfgContext * ctx);
+CfgContext *CfgContextCreate(TSFileNameT filetype);
+TSError CfgContextDestroy(CfgContext * ctx);
+TSError CfgContextCommit(CfgContext * ctx, LLQ * errRules = NULL);
+TSError CfgContextGet(CfgContext * ctx);
 
 
 /***************************************************************************
@@ -59,19 +59,19 @@ INKError CfgContextGet(CfgContext * ctx);
 /* returns number of ele's in the CfgContext * */
 int CfgContextGetCount(CfgContext * ctx);
 
-/* user must typecast the INKCfgEle to appropriate INKEle before using */
-INKCfgEle *CfgContextGetEleAt(CfgContext * ctx, int index);
+/* user must typecast the TSCfgEle to appropriate TSEle before using */
+TSCfgEle *CfgContextGetEleAt(CfgContext * ctx, int index);
 CfgEleObj *CfgContextGetObjAt(CfgContext * ctx, int index);
 
-INKCfgEle *CfgContextGetFirst(CfgContext * ctx, INKCfgIterState * state);
-INKCfgEle *CfgContextGetNext(CfgContext * ctx, INKCfgIterState * state);
+TSCfgEle *CfgContextGetFirst(CfgContext * ctx, TSCfgIterState * state);
+TSCfgEle *CfgContextGetNext(CfgContext * ctx, TSCfgIterState * state);
 
-INKError CfgContextMoveEleUp(CfgContext * ctx, int index);
-INKError CfgContextMoveEleDown(CfgContext * ctx, int index);
+TSError CfgContextMoveEleUp(CfgContext * ctx, int index);
+TSError CfgContextMoveEleDown(CfgContext * ctx, int index);
 
-INKError CfgContextAppendEle(CfgContext * ctx, INKCfgEle * ele);
-INKError CfgContextInsertEleAt(CfgContext * ctx, INKCfgEle * ele, int index);
-INKError CfgContextRemoveEleAt(CfgContext * ctx, int index);
-INKError CfgContextRemoveAll(CfgContext * ctx);
+TSError CfgContextAppendEle(CfgContext * ctx, TSCfgEle * ele);
+TSError CfgContextInsertEleAt(CfgContext * ctx, TSCfgEle * ele, int index);
+TSError CfgContextRemoveEleAt(CfgContext * ctx, int index);
+TSError CfgContextRemoveAll(CfgContext * ctx);
 
 #endif

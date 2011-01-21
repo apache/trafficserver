@@ -24,7 +24,7 @@
 /*****************************************************************************
  * CoreAPI.cc
  *
- * Implementation of many of INKMgmtAPI functions, but from local side.
+ * Implementation of many of TSMgmtAPI functions, but from local side.
  *
  *
  ***************************************************************************/
@@ -56,9 +56,9 @@ CallbackTable *local_event_callbacks;
  * Init
  *-------------------------------------------------------------------------
  * performs any necesary initializations for the local API client,
- * eg. set up global structures; called by the INKMgmtAPI::INKInit()
+ * eg. set up global structures; called by the TSMgmtAPI::TSInit()
  */
-INKError
+TSError
 Init(const char *socket_path, TSInitOptionT options)
 {
   NOWARN_UNUSED(socket_path);
@@ -66,12 +66,12 @@ Init(const char *socket_path, TSInitOptionT options)
   if (0 == (options & TS_MGMT_OPT_NO_EVENTS)) {
     local_event_callbacks = create_callback_table("local_callbacks");
     if (!local_event_callbacks)
-      return INK_ERR_SYS_CALL;
+      return TS_ERR_SYS_CALL;
   } else {
     local_event_callbacks = NULL;
   }
 
-  return INK_ERR_OKAY;
+  return TS_ERR_OKAY;
 }
 
 /*-------------------------------------------------------------------------
@@ -80,12 +80,12 @@ Init(const char *socket_path, TSInitOptionT options)
  * performs any necesary cleanup of global structures, etc,
  * for the local API client,
  */
-INKError
+TSError
 Terminate()
 {
   delete_callback_table(local_event_callbacks);
 
-  return INK_ERR_OKAY;
+  return TS_ERR_OKAY;
 }
 
 
@@ -95,37 +95,37 @@ Terminate()
  * Uses the Traffic Manager diags object to display the diags output.
  */
 void
-Diags(INKDiagsT mode, const char *fmt, va_list ap)
+Diags(TSDiagsT mode, const char *fmt, va_list ap)
 {
-  // Mapping INKDiagsT to Diags.h:DiagsLevel
+  // Mapping TSDiagsT to Diags.h:DiagsLevel
   // Simple casting would work, but not inflexible
   DiagsLevel level = DL_Undefined;
   switch (mode) {
-  case INK_DIAG_DIAG:
+  case TS_DIAG_DIAG:
     level = DL_Diag;
     break;
-  case INK_DIAG_DEBUG:
+  case TS_DIAG_DEBUG:
     level = DL_Debug;
     break;
-  case INK_DIAG_STATUS:
+  case TS_DIAG_STATUS:
     level = DL_Status;
     break;
-  case INK_DIAG_NOTE:
+  case TS_DIAG_NOTE:
     level = DL_Note;
     break;
-  case INK_DIAG_WARNING:
+  case TS_DIAG_WARNING:
     level = DL_Warning;
     break;
-  case INK_DIAG_ERROR:
+  case TS_DIAG_ERROR:
     level = DL_Error;
     break;
-  case INK_DIAG_FATAL:
+  case TS_DIAG_FATAL:
     level = DL_Fatal;
     break;
-  case INK_DIAG_ALERT:
+  case TS_DIAG_ALERT:
     level = DL_Alert;
     break;
-  case INK_DIAG_EMERGENCY:
+  case TS_DIAG_EMERGENCY:
     level = DL_Emergency;
     break;
   default:
@@ -133,7 +133,7 @@ Diags(INKDiagsT mode, const char *fmt, va_list ap)
   }
 
   if (diags_init) {             // check that diags is initialized
-    diags->print_va("INKMgmtAPI", level, NULL, NULL, fmt, ap);
+    diags->print_va("TSMgmtAPI", level, NULL, NULL, fmt, ap);
     va_end(ap);
   }
 }
@@ -145,28 +145,28 @@ Diags(INKDiagsT mode, const char *fmt, va_list ap)
 /*-------------------------------------------------------------------------
  * ProxyStateGet
  *-------------------------------------------------------------------------
- * return INK_PROXY_OFF if  Traffic Server is off.
- * return INK_PROXY_ON if Traffic Server is on.
+ * return TS_PROXY_OFF if  Traffic Server is off.
+ * return TS_PROXY_ON if Traffic Server is on.
  */
-INKProxyStateT
+TSProxyStateT
 ProxyStateGet()
 {
   if (!lmgmt->processRunning())
-    return INK_PROXY_OFF;
+    return TS_PROXY_OFF;
   else
-    return INK_PROXY_ON;
+    return TS_PROXY_ON;
 }
 
 /*-------------------------------------------------------------------------
  * ProxyStateSet
  *-------------------------------------------------------------------------
- * If state == INK_PROXY_ON, will turn on TS (unless it's already running).
- * If steat == INK_PROXY_OFF, will turn off TS (unless it's already off).
+ * If state == TS_PROXY_ON, will turn on TS (unless it's already running).
+ * If steat == TS_PROXY_OFF, will turn off TS (unless it's already off).
  * tsArgs  - (optional) a string with space delimited options that user
  *            wants to start traffic Server with
  */
-INKError
-ProxyStateSet(INKProxyStateT state, INKCacheClearT clear)
+TSError
+ProxyStateSet(TSProxyStateT state, TSCacheClearT clear)
 {
   int i = 0;
   char tsArgs[MAX_BUF_SIZE];
@@ -176,24 +176,24 @@ ProxyStateSet(INKProxyStateT state, INKCacheClearT clear)
   memset(tsArgs, 0, MAX_BUF_SIZE);
 
   switch (state) {
-  case INK_PROXY_OFF:
+  case TS_PROXY_OFF:
     if (!ProxyShutdown())       // from WebMgmtUtils
       goto Lerror;              // unsuccessful shutdown
     break;
-  case INK_PROXY_ON:
+  case TS_PROXY_ON:
     if (lmgmt->processRunning())        // already on
       break;
 
     // taken from mgmt/Main.cc when check the -tsArgs option
     // Update cmd line overrides/environmental overrides/etc
     switch (clear) {
-    case INK_CACHE_CLEAR_ON:   // traffic_server -K
+    case TS_CACHE_CLEAR_ON:   // traffic_server -K
       snprintf(tsArgs, sizeof(tsArgs), "-K -M");
       break;
-    case INK_CACHE_CLEAR_HOSTDB:       // traffic_server -k
+    case TS_CACHE_CLEAR_HOSTDB:       // traffic_server -k
       snprintf(tsArgs, sizeof(tsArgs), "-k -M");
       break;
-    case INK_CACHE_CLEAR_OFF:
+    case TS_CACHE_CLEAR_OFF:
       // use default tsargs in records.config
       int rec_err = RecGetRecordString_Xmalloc("proxy.config.proxy_binary_opts", &proxy_options);
       found = (rec_err == REC_ERR_OKAY);
@@ -225,10 +225,10 @@ ProxyStateSet(INKProxyStateT state, INKCacheClearT clear)
     goto Lerror;
   }
 
-  return INK_ERR_OKAY;
+  return TS_ERR_OKAY;
 
 Lerror:
-  return INK_ERR_FAIL;          /* failed to set proxy  state */
+  return TS_ERR_FAIL;          /* failed to set proxy  state */
 }
 
 /*-------------------------------------------------------------------------
@@ -236,13 +236,13 @@ Lerror:
  *-------------------------------------------------------------------------
  * Rereads configuration files
  */
-INKError
+TSError
 Reconfigure()
 {
   configFiles->rereadConfig();  // TM rereads
   lmgmt->signalEvent(MGMT_EVENT_PLUGIN_CONFIG_UPDATE, "*");     // TS rereads
 
-  return INK_ERR_OKAY;
+  return TS_ERR_OKAY;
 }
 
 /*-------------------------------------------------------------------------
@@ -251,7 +251,7 @@ Reconfigure()
  * Restarts Traffic Manager. Traffic Cop must be running in order to
  * restart Traffic Manager!!
  */
-INKError
+TSError
 Restart(bool cluster)
 {
   if (cluster) {                // Enqueue an event to restart the proxies across the cluster
@@ -261,19 +261,19 @@ Restart(bool cluster)
     lmgmt->mgmtShutdown(0);
   }
 
-  return INK_ERR_OKAY;
+  return TS_ERR_OKAY;
 }
 
 /*-------------------------------------------------------------------------
  * HardRestart
  *-------------------------------------------------------------------------
  * Cannot be executed locally since it requires a restart of Traffic Cop.
- * So just return INK_ERR_FAIL. Should only be called by remote API clients.
+ * So just return TS_ERR_FAIL. Should only be called by remote API clients.
  */
-INKError
+TSError
 HardRestart()
 {
-  return INK_ERR_FAIL;
+  return TS_ERR_FAIL;
 }
 
 
@@ -282,7 +282,7 @@ HardRestart()
  *-------------------------------------------------------------------------
  * Bounces traffic_server process(es).
  */
-INKError
+TSError
 Bounce(bool cluster)
 {
   if (cluster) {
@@ -291,7 +291,7 @@ Bounce(bool cluster)
     lmgmt->processBounce();
   }
 
-  return INK_ERR_OKAY;
+  return TS_ERR_OKAY;
 }
 
 /**************************************************************************
@@ -303,8 +303,8 @@ Bounce(bool cluster)
  * rec_ele has allocated memory already but with all empty fields.
  * The record info associated with rec_name will be returned in rec_ele.
  */
-INKError
-MgmtRecordGet(const char *rec_name, INKRecordEle * rec_ele)
+TSError
+MgmtRecordGet(const char *rec_name, TSRecordEle * rec_ele)
 {
   RecDataT rec_type;
   char rec_val[MAX_BUF_SIZE];
@@ -322,34 +322,34 @@ MgmtRecordGet(const char *rec_name, INKRecordEle * rec_ele)
   rec_type = varType(rec_name);
   switch (rec_type) {
   case RECD_COUNTER:
-    rec_ele->rec_type = INK_REC_COUNTER;
+    rec_ele->rec_type = TS_REC_COUNTER;
     if (!varCounterFromName(rec_name, &(counter_val)))
-      return INK_ERR_FAIL;
-    rec_ele->counter_val = (INKCounter) counter_val;
+      return TS_ERR_FAIL;
+    rec_ele->counter_val = (TSCounter) counter_val;
 
     Debug("RecOp", "[MgmtRecordGet] Get Counter Var %s = %d\n", rec_ele->rec_name, rec_ele->counter_val);
     break;
 
   case RECD_INT:
-    rec_ele->rec_type = INK_REC_INT;
+    rec_ele->rec_type = TS_REC_INT;
     if (!varIntFromName(rec_name, &(int_val)))
-      return INK_ERR_FAIL;
-    rec_ele->int_val = (INKInt) int_val;
+      return TS_ERR_FAIL;
+    rec_ele->int_val = (TSInt) int_val;
 
     Debug("RecOp", "[MgmtRecordGet] Get Int Var %s = %d\n", rec_ele->rec_name, rec_ele->int_val);
     break;
 
   case RECD_FLOAT:
-    rec_ele->rec_type = INK_REC_FLOAT;
+    rec_ele->rec_type = TS_REC_FLOAT;
     if (!varFloatFromName(rec_name, &(rec_ele->float_val)))
-      return INK_ERR_FAIL;
+      return TS_ERR_FAIL;
 
     Debug("RecOp", "[MgmtRecordGet] Get Float Var %s = %f\n", rec_ele->rec_name, rec_ele->float_val);
     break;
 
   case RECD_STRING:
     if (!varStrFromName(rec_name, rec_val, MAX_BUF_SIZE))
-      return INK_ERR_FAIL;
+      return TS_ERR_FAIL;
 
 
     if (rec_val[0] != '\0') {   // non-NULL string value
@@ -359,54 +359,54 @@ MgmtRecordGet(const char *rec_name, INKRecordEle * rec_ele)
       str_val = xstrdup("NULL");
     }
 
-    rec_ele->rec_type = INK_REC_STRING;
+    rec_ele->rec_type = TS_REC_STRING;
     rec_ele->string_val = str_val;
     Debug("RecOp", "[MgmtRecordGet] Get String Var %s = %s\n", rec_ele->rec_name, rec_ele->string_val);
     break;
 
   default:                     // UNKOWN TYPE
     Debug("RecOp", "[MgmtRecordGet] Get Failed : %d is Unknown Var type %s\n", rec_type, rec_name);
-    return INK_ERR_FAIL;
+    return TS_ERR_FAIL;
   }
 
-  return INK_ERR_OKAY;
+  return TS_ERR_OKAY;
 }
 
 
 /*-------------------------------------------------------------------------
  * reads the RecordsConfig info to determine which type of action is needed
  * when the record rec_name is changed; if the rec_name is invalid,
- * then returns INK_ACTION_UNDEFINED
+ * then returns TS_ACTION_UNDEFINED
  */
-INKActionNeedT
+TSActionNeedT
 determine_action_need(const char *rec_name)
 {
   RecUpdateT update_t;
 
   if (REC_ERR_OKAY == RecGetRecordUpdateType(rec_name, &update_t))
-    return INK_ACTION_UNDEFINED;
+    return TS_ACTION_UNDEFINED;
 
   switch (update_t) {
   case RECU_NULL:                // default:don't know behaviour
-    return INK_ACTION_UNDEFINED;
+    return TS_ACTION_UNDEFINED;
 
   case RECU_DYNAMIC:             // update dynamically by rereading config files
-    return INK_ACTION_RECONFIGURE;
+    return TS_ACTION_RECONFIGURE;
 
   case RECU_RESTART_TS:          // requires TS restart
-    return INK_ACTION_RESTART;
+    return TS_ACTION_RESTART;
 
   case RECU_RESTART_TM:          // requirs TM/TS restart
-    return INK_ACTION_RESTART;
+    return TS_ACTION_RESTART;
 
   case RECU_RESTART_TC:          // requires TC/TM/TS restart
-    return INK_ACTION_SHUTDOWN;
+    return TS_ACTION_SHUTDOWN;
 
   default:                     // shouldn't get here actually
-    return INK_ACTION_UNDEFINED;
+    return TS_ACTION_UNDEFINED;
   }
 
-  return INK_ACTION_UNDEFINED;  // ERROR
+  return TS_ACTION_UNDEFINED;  // ERROR
 }
 
 
@@ -422,22 +422,22 @@ determine_action_need(const char *rec_name)
  *  returns true if the variable was successfully set
  *   and false otherwise
  */
-INKError
-MgmtRecordSet(const char *rec_name, const char *val, INKActionNeedT * action_need)
+TSError
+MgmtRecordSet(const char *rec_name, const char *val, TSActionNeedT * action_need)
 {
   Debug("RecOp", "[MgmtRecordSet] Start\n");
 
   if (!rec_name || !val || !action_need)
-    return INK_ERR_PARAMS;
+    return TS_ERR_PARAMS;
 
   *action_need = determine_action_need(rec_name);
 
   if (recordValidityCheck(rec_name, val)) {
     if (varSetFromStr(rec_name, val))
-      return INK_ERR_OKAY;
+      return TS_ERR_OKAY;
   }
 
-  return INK_ERR_FAIL;
+  return TS_ERR_FAIL;
 }
 
 
@@ -445,14 +445,14 @@ MgmtRecordSet(const char *rec_name, const char *val, INKActionNeedT * action_nee
  * MgmtRecordSetInt
  *-------------------------------------------------------------------------
  * Use the record's name to look up the record value and its type.
- * Returns INK_ERR_FAIL if the type is not a valid integer.
+ * Returns TS_ERR_FAIL if the type is not a valid integer.
  * Converts the integer value to a string and call MgmtRecordSet
  */
-INKError
-MgmtRecordSetInt(const char *rec_name, MgmtInt int_val, INKActionNeedT * action_need)
+TSError
+MgmtRecordSetInt(const char *rec_name, MgmtInt int_val, TSActionNeedT * action_need)
 {
   if (!rec_name || !action_need)
-    return INK_ERR_PARAMS;
+    return TS_ERR_PARAMS;
 
   // convert int value to string for validity check
   char str_val[MAX_RECORD_SIZE];
@@ -469,11 +469,11 @@ MgmtRecordSetInt(const char *rec_name, MgmtInt int_val, INKActionNeedT * action_
  *-------------------------------------------------------------------------
  * converts the counter_val to a string and uses MgmtRecordSet
  */
-INKError
-MgmtRecordSetCounter(const char *rec_name, MgmtIntCounter counter_val, INKActionNeedT * action_need)
+TSError
+MgmtRecordSetCounter(const char *rec_name, MgmtIntCounter counter_val, TSActionNeedT * action_need)
 {
   if (!rec_name || !action_need)
-    return INK_ERR_PARAMS;
+    return TS_ERR_PARAMS;
 
   // convert int value to string for validity check
   char str_val[MAX_RECORD_SIZE];
@@ -491,11 +491,11 @@ MgmtRecordSetCounter(const char *rec_name, MgmtIntCounter counter_val, INKAction
  * converts the float value to string (to do record validity check)
  * and calls MgmtRecordSet
  */
-INKError
-MgmtRecordSetFloat(const char *rec_name, MgmtFloat float_val, INKActionNeedT * action_need)
+TSError
+MgmtRecordSetFloat(const char *rec_name, MgmtFloat float_val, TSActionNeedT * action_need)
 {
   if (!rec_name || !action_need)
-    return INK_ERR_PARAMS;
+    return TS_ERR_PARAMS;
 
   // convert float value to string for validity check
   char str_val[MAX_RECORD_SIZE];
@@ -512,8 +512,8 @@ MgmtRecordSetFloat(const char *rec_name, MgmtFloat float_val, INKActionNeedT * a
  *-------------------------------------------------------------------------
  * The string value is copied so it's okay to free the string later
  */
-INKError
-MgmtRecordSetString(const char *rec_name, const char *string_val, INKActionNeedT * action_need)
+TSError
+MgmtRecordSetString(const char *rec_name, const char *string_val, TSActionNeedT * action_need)
 {
   return MgmtRecordSet(rec_name, string_val, action_need);
 }
@@ -533,8 +533,8 @@ MgmtRecordSetString(const char *rec_name, const char *string_val, INKActionNeedT
  *          ver  - the version number of file being read
  * Note: CALLEE must DEALLOCATE text memory returned
  */
-INKError
-ReadFile(INKFileNameT file, char **text, int *size, int *version)
+TSError
+ReadFile(TSFileNameT file, char **text, int *size, int *version)
 {
   char *fname;
   Rollback *file_rb;
@@ -548,13 +548,13 @@ ReadFile(INKFileNameT file, char **text, int *size, int *version)
 
   fname = filename_to_string(file);
   if (!fname)
-    return INK_ERR_READ_FILE;
+    return TS_ERR_READ_FILE;
 
   ret = configFiles->getRollbackObj(fname, &file_rb);
   if (ret != TRUE) {
     Debug("FileOp", "[get_lines_from_file] Can't get Rollback for file: %s\n", fname);
     xfree(fname);
-    return INK_ERR_READ_FILE;
+    return TS_ERR_READ_FILE;
   }
   xfree(fname);
   ver = file_rb->getCurrentVersion();
@@ -573,7 +573,7 @@ ReadFile(INKFileNameT file, char **text, int *size, int *version)
 
   delete old_file_content;      // delete textBuffer
 
-  return INK_ERR_OKAY;
+  return TS_ERR_OKAY;
 }
 
 /*-------------------------------------------------------------------------
@@ -588,8 +588,8 @@ ReadFile(INKFileNameT file, char **text, int *size, int *version)
  *        version - the current version level; new file will have the
  *                  version number above this one
  */
-INKError
-WriteFile(INKFileNameT file, char *text, int size, int version)
+TSError
+WriteFile(TSFileNameT file, char *text, int size, int version)
 {
   char *fname;
   Rollback *file_rb;
@@ -600,7 +600,7 @@ WriteFile(INKFileNameT file, char *text, int size, int version)
 
   fname = filename_to_string(file);
   if (!fname)
-    return INK_ERR_WRITE_FILE;
+    return TS_ERR_WRITE_FILE;
 
   // get rollback object for config file
   mgmt_log(stderr, "[CfgFileIO::WriteFile] %s\n", fname);
@@ -617,23 +617,23 @@ WriteFile(INKFileNameT file, char *text, int size, int version)
     // that wants to be written
     ver = file_rb->getCurrentVersion();
     if (ver != version)         // trying to commit an old version
-      return INK_ERR_WRITE_FILE;
+      return TS_ERR_WRITE_FILE;
   }
   // use rollback object to update file with new content
   file_content = new textBuffer(size + 1);
   ret = file_content->copyFrom(text, size);
   if (ret < 0) {
     delete file_content;
-    return INK_ERR_WRITE_FILE;
+    return TS_ERR_WRITE_FILE;
   }
 
   if ((file_rb->forceUpdate(file_content, -1)) != OK_ROLLBACK) {
     delete file_content;
-    return INK_ERR_WRITE_FILE;
+    return TS_ERR_WRITE_FILE;
   }
 
   delete file_content;
-  return INK_ERR_OKAY;
+  return TS_ERR_OKAY;
 }
 
 /**************************************************************************
@@ -648,7 +648,7 @@ WriteFile(INKFileNameT file, char *text, int size, int version)
  * be careful because this alarm description is used to keep track
  * of alarms in the current alarm processor
  */
-INKError
+TSError
 EventSignal(char *event_name, va_list ap)
 {
   NOWARN_UNUSED(event_name);
@@ -660,28 +660,28 @@ EventSignal(char *event_name, va_list ap)
   //text = get_event_text(event_name);
   //lmgmt->alarm_keeper->signalAlarm(id, text, NULL);
 
-  return INK_ERR_OKAY;
+  return TS_ERR_OKAY;
 }
 
 /*-------------------------------------------------------------------------
  * EventResolve
  *-------------------------------------------------------------------------
  * Resolves the event of the given event_name. If the event is already
- * unresolved, just return INK_ERR_OKAY.
+ * unresolved, just return TS_ERR_OKAY.
 
  */
-INKError
+TSError
 EventResolve(char *event_name)
 {
   alarm_t a;
 
   if (!event_name)
-    return INK_ERR_PARAMS;
+    return TS_ERR_PARAMS;
 
   a = get_event_id(event_name);
   lmgmt->alarm_keeper->resolveAlarm(a);
 
-  return INK_ERR_OKAY;
+  return TS_ERR_OKAY;
 }
 
 /*-------------------------------------------------------------------------
@@ -691,7 +691,7 @@ EventResolve(char *event_name)
  * functions fail for a single event
  * note: returns list of local alarms at that instant of fn call (snapshot)
  */
-INKError
+TSError
 ActiveEventGetMlt(LLQ * active_events)
 {
   InkHashTable *event_ht;
@@ -701,7 +701,7 @@ ActiveEventGetMlt(LLQ * active_events)
   char *event_name;
 
   if (!active_events)
-    return INK_ERR_PARAMS;
+    return TS_ERR_PARAMS;
 
   // Alarms stores a hashtable of all active alarms where:
   // key = alarm_t,
@@ -719,11 +719,11 @@ ActiveEventGetMlt(LLQ * active_events)
     event_name = get_event_name(event_id);
     if (event_name) {
       if (!enqueue(active_events, event_name))  // returns true if successful
-        return INK_ERR_FAIL;
+        return TS_ERR_FAIL;
     }
   }
 
-  return INK_ERR_OKAY;
+  return TS_ERR_OKAY;
 }
 
 /*-------------------------------------------------------------------------
@@ -732,24 +732,24 @@ ActiveEventGetMlt(LLQ * active_events)
  * Sets *is_current to true if the event named event_name is currently
  * unresolved; otherwise sets *is_current to false.
  */
-INKError
+TSError
 EventIsActive(char *event_name, bool * is_current)
 {
   alarm_t a;
 
   if (!event_name || !is_current)
-    return INK_ERR_PARAMS;
+    return TS_ERR_PARAMS;
 
   a = get_event_id(event_name);
   // consider an invalid event_name an error
   if (a < 0)
-    return INK_ERR_PARAMS;
+    return TS_ERR_PARAMS;
   if (lmgmt->alarm_keeper->isCurrentAlarm(a))
     *is_current = true;         // currently an event
   else
     *is_current = false;
 
-  return INK_ERR_OKAY;
+  return TS_ERR_OKAY;
 }
 
 /*-------------------------------------------------------------------------
@@ -763,8 +763,8 @@ EventIsActive(char *event_name, bool * is_current)
  * event callback functions for each type of event. The functions are also
  * stored in the the hashtable, not in the TM alarm processor model
  */
-INKError
-EventSignalCbRegister(char *event_name, INKEventSignalFunc func, void *data)
+TSError
+EventSignalCbRegister(char *event_name, TSEventSignalFunc func, void *data)
 {
   return cb_table_register(local_event_callbacks, event_name, func, data, NULL);
 
@@ -775,8 +775,8 @@ EventSignalCbRegister(char *event_name, INKEventSignalFunc func, void *data)
  *-------------------------------------------------------------------------
  * Removes the callback function from the local side CallbackTable
  */
-INKError
-EventSignalCbUnregister(char *event_name, INKEventSignalFunc func)
+TSError
+EventSignalCbUnregister(char *event_name, TSEventSignalFunc func)
 {
   return cb_table_unregister(local_event_callbacks, event_name, func);
 }
@@ -784,7 +784,7 @@ EventSignalCbUnregister(char *event_name, INKEventSignalFunc func)
 /***************************************************************************
  * Snapshots
  ***************************************************************************/
-INKError
+TSError
 SnapshotTake(char *snapshot_name)
 {
   char *snapDirFromRecordsConf;
@@ -792,7 +792,7 @@ SnapshotTake(char *snapshot_name)
   char snapDir[PATH_NAME_MAX + 1];
 
   if (!snapshot_name)
-    return INK_ERR_PARAMS;
+    return TS_ERR_PARAMS;
 
   int rec_err = RecGetRecordString_Xmalloc("proxy.config.snapshot_dir", &snapDirFromRecordsConf);
   found = (rec_err == REC_ERR_OKAY);
@@ -806,12 +806,12 @@ SnapshotTake(char *snapshot_name)
 
   SnapResult result = configFiles->takeSnap(snapshot_name, snapDir);
   if (result != SNAP_OK)
-    return INK_ERR_FAIL;
+    return TS_ERR_FAIL;
   else
-    return INK_ERR_OKAY;
+    return TS_ERR_OKAY;
 }
 
-INKError
+TSError
 SnapshotRestore(char *snapshot_name)
 {
   char *snapDirFromRecordsConf;
@@ -819,7 +819,7 @@ SnapshotRestore(char *snapshot_name)
   char snapDir[PATH_NAME_MAX + 1];
 
   if (!snapshot_name)
-    return INK_ERR_PARAMS;
+    return TS_ERR_PARAMS;
 
   int rec_err = RecGetRecordString_Xmalloc("proxy.config.snapshot_dir", &snapDirFromRecordsConf);
   found = (rec_err == REC_ERR_OKAY);
@@ -834,12 +834,12 @@ SnapshotRestore(char *snapshot_name)
   SnapResult result = configFiles->restoreSnap(snapshot_name, snapDir);
   xfree(snapDirFromRecordsConf);
   if (result != SNAP_OK)
-    return INK_ERR_FAIL;
+    return TS_ERR_FAIL;
   else
-    return INK_ERR_OKAY;
+    return TS_ERR_OKAY;
 }
 
-INKError
+TSError
 SnapshotRemove(char *snapshot_name)
 {
   char *snapDirFromRecordsConf;
@@ -847,7 +847,7 @@ SnapshotRemove(char *snapshot_name)
   char snapDir[PATH_NAME_MAX + 1];
 
   if (!snapshot_name)
-    return INK_ERR_PARAMS;
+    return TS_ERR_PARAMS;
 
   int rec_err = RecGetRecordString_Xmalloc("proxy.config.snapshot_dir", &snapDirFromRecordsConf);
   found = (rec_err == REC_ERR_OKAY);
@@ -862,13 +862,13 @@ SnapshotRemove(char *snapshot_name)
   SnapResult result = configFiles->removeSnap(snapshot_name, snapDir);
   xfree(snapDirFromRecordsConf);
   if (result != SNAP_OK)
-    return INK_ERR_FAIL;
+    return TS_ERR_FAIL;
   else
-    return INK_ERR_OKAY;
+    return TS_ERR_OKAY;
 }
 
 /* based on FileManager.cc::displaySnapOption() */
-INKError
+TSError
 SnapshotGetMlt(LLQ * snapshots)
 {
   ExpandingArray snap_list(25, true);
@@ -878,7 +878,7 @@ SnapshotGetMlt(LLQ * snapshots)
 
   snap_result = configFiles->WalkSnaps(&snap_list);
   if (snap_result != SNAP_OK)
-    return INK_ERR_FAIL;
+    return TS_ERR_FAIL;
 
   num_snaps = snap_list.getNumEntries();
   for (int i = 0; i < num_snaps; i++) {
@@ -887,7 +887,7 @@ SnapshotGetMlt(LLQ * snapshots)
       enqueue(snapshots, xstrdup(snap_name));
   }
 
-  return INK_ERR_OKAY;
+  return TS_ERR_OKAY;
 }
 
 /*-------------------------------------------------------------------------
@@ -896,17 +896,17 @@ SnapshotGetMlt(LLQ * snapshots)
  * Iterates through the RecordsConfig table, and for all stats
  * (type PROCESS, NODE, CLUSTER), sets them back to their default value
  * If one stat fails to be set correctly, then continues onto next one,
- * but will return INK_ERR_FAIL. Only returns INK_ERR_OKAY if all
+ * but will return TS_ERR_FAIL. Only returns TS_ERR_OKAY if all
  * stats are set back to defaults succesfully.
  */
-INKError
+TSError
 StatsReset(bool cluster)
 {
   if (cluster)
     lmgmt->ccom->sendClusterMessage(CLUSTER_MSG_CLEAR_STATS);
   else
     lmgmt->clearStats();
-  return INK_ERR_OKAY;
+  return TS_ERR_OKAY;
 }
 
 /*-------------------------------------------------------------------------
@@ -915,7 +915,7 @@ StatsReset(bool cluster)
  * Encrypts the password and stores the encrypted password in the
  * location specified by "filepath"
  */
-INKError
+TSError
 EncryptToFile(const char *passwd, const char *filepath)
 {
   NOWARN_UNUSED(passwd);
@@ -924,10 +924,10 @@ EncryptToFile(const char *passwd, const char *filepath)
   //AuthString passwdAuthStr(passwd);
   /*if (!AccCrypto::encryptToFile(fileAuthStr, passwdAuthStr)) {
     Debug("config", "[EncryptToFile] Failed to encrypt password");
-    return INK_ERR_FAIL;
+    return TS_ERR_FAIL;
   }*/
 
-  return INK_ERR_OKAY;
+  return TS_ERR_OKAY;
 }
 
 

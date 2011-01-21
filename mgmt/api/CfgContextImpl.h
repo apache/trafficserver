@@ -56,9 +56,9 @@ public:
   virtual bool isValid() = 0;
 
   /* these are implemented as inline functons by subclasses */
-  virtual INKCfgEle *getCfgEle() = 0;   /* returns actual ele */
-  virtual INKCfgEle *getCfgEleCopy() = 0;       /* returns copy of ele */
-  virtual INKRuleTypeT getRuleType() = 0;
+  virtual TSCfgEle *getCfgEle() = 0;   /* returns actual ele */
+  virtual TSCfgEle *getCfgEleCopy() = 0;       /* returns copy of ele */
+  virtual TSRuleTypeT getRuleType() = 0;
 
   LINK(CfgEleObj, link);
 
@@ -87,12 +87,12 @@ public:
 
   virtual char *formatEleToRule();
   virtual bool isValid();
-  virtual INKCfgEle *getCfgEleCopy();
-  virtual INKCfgEle *getCfgEle()
+  virtual TSCfgEle *getCfgEleCopy();
+  virtual TSCfgEle *getCfgEle()
   {
-    return (INKCfgEle *) m_ele;
+    return (TSCfgEle *) m_ele;
   }
-  virtual INKRuleTypeT getRuleType()
+  virtual TSRuleTypeT getRuleType()
   {
     return m_ele->cfg_ele.type;
   }
@@ -106,215 +106,215 @@ private:
 class AdminAccessObj:public CfgEleObj
 {
 public:
-  AdminAccessObj(INKAdminAccessEle * ele);
+  AdminAccessObj(TSAdminAccessEle * ele);
   AdminAccessObj(TokenList * tokens);   //creates the ele
   ~AdminAccessObj();
 
   virtual char *formatEleToRule();
   virtual bool isValid();
-  virtual INKCfgEle *getCfgEleCopy();
-  virtual INKCfgEle *getCfgEle()
+  virtual TSCfgEle *getCfgEleCopy();
+  virtual TSCfgEle *getCfgEle()
   {
-    return (INKCfgEle *) m_ele;
+    return (TSCfgEle *) m_ele;
   }
-  virtual INKRuleTypeT getRuleType()
+  virtual TSRuleTypeT getRuleType()
   {
     return m_ele->cfg_ele.type;
   }
 
 private:
-  INKAdminAccessEle * m_ele;
+  TSAdminAccessEle * m_ele;
 };
 
 /* cache.config ***************************************************/
 class CacheObj:public CfgEleObj
 {
 public:
-  CacheObj(INKCacheEle * ele);
+  CacheObj(TSCacheEle * ele);
   CacheObj(TokenList * tokens); //creates the ele
   ~CacheObj();
 
   virtual char *formatEleToRule();
   virtual bool isValid();
-  virtual INKCfgEle *getCfgEleCopy();
-  virtual INKCfgEle *getCfgEle()
+  virtual TSCfgEle *getCfgEleCopy();
+  virtual TSCfgEle *getCfgEle()
   {
-    return (INKCfgEle *) m_ele;
+    return (TSCfgEle *) m_ele;
   }
-  virtual INKRuleTypeT getRuleType()
+  virtual TSRuleTypeT getRuleType()
   {
     return m_ele->cfg_ele.type;
   }
 
 private:
-  INKCacheEle * m_ele;
+  TSCacheEle * m_ele;
 };
 
 /* congestion.config ***************************************************/
 class CongestionObj:public CfgEleObj
 {
 public:
-  CongestionObj(INKCongestionEle * ele);
+  CongestionObj(TSCongestionEle * ele);
   CongestionObj(TokenList * tokens);    //creates the ele
   ~CongestionObj();
 
   virtual char *formatEleToRule();
   virtual bool isValid();
-  virtual INKCfgEle *getCfgEleCopy();
-  virtual INKCfgEle *getCfgEle()
+  virtual TSCfgEle *getCfgEleCopy();
+  virtual TSCfgEle *getCfgEle()
   {
-    return (INKCfgEle *) m_ele;
+    return (TSCfgEle *) m_ele;
   }
-  virtual INKRuleTypeT getRuleType()
+  virtual TSRuleTypeT getRuleType()
   {
     return m_ele->cfg_ele.type;
   }
 
 private:
-  INKCongestionEle * m_ele;
+  TSCongestionEle * m_ele;
 };
 
 /* hosting.config ************************************************/
 class HostingObj:public CfgEleObj
 {
 public:
-  HostingObj(INKHostingEle * ele);
+  HostingObj(TSHostingEle * ele);
   HostingObj(TokenList * tokens);       //creates the ele
   ~HostingObj();
 
   virtual char *formatEleToRule();
   virtual bool isValid();
-  virtual INKCfgEle *getCfgEleCopy();
-  virtual INKCfgEle *getCfgEle()
+  virtual TSCfgEle *getCfgEleCopy();
+  virtual TSCfgEle *getCfgEle()
   {
-    return (INKCfgEle *) m_ele;
+    return (TSCfgEle *) m_ele;
   }
-  virtual INKRuleTypeT getRuleType()
+  virtual TSRuleTypeT getRuleType()
   {
     return m_ele->cfg_ele.type;
   }
 
 private:
-  INKHostingEle * m_ele;
+  TSHostingEle * m_ele;
 };
 
 /* icp.config ************************************************/
 class IcpObj:public CfgEleObj
 {
 public:
-  IcpObj(INKIcpEle * ele);
+  IcpObj(TSIcpEle * ele);
   IcpObj(TokenList * tokens);   //creates the ele
   ~IcpObj();
 
   virtual char *formatEleToRule();
   virtual bool isValid();
-  virtual INKCfgEle *getCfgEleCopy();
-  virtual INKCfgEle *getCfgEle()
+  virtual TSCfgEle *getCfgEleCopy();
+  virtual TSCfgEle *getCfgEle()
   {
-    return (INKCfgEle *) m_ele;
+    return (TSCfgEle *) m_ele;
   }
-  virtual INKRuleTypeT getRuleType()
+  virtual TSRuleTypeT getRuleType()
   {
     return m_ele->cfg_ele.type;
   }
 
 private:
-  INKIcpEle * m_ele;
+  TSIcpEle * m_ele;
 };
 
 /* ip_allow.config    *********************************************/
 class IpAllowObj:public CfgEleObj
 {
 public:
-  IpAllowObj(INKIpAllowEle * ele);
+  IpAllowObj(TSIpAllowEle * ele);
   IpAllowObj(TokenList * tokens);
   ~IpAllowObj();
 
   virtual char *formatEleToRule();
   virtual bool isValid();
-  virtual INKCfgEle *getCfgEleCopy();
-  virtual INKCfgEle *getCfgEle()
+  virtual TSCfgEle *getCfgEleCopy();
+  virtual TSCfgEle *getCfgEle()
   {
-    return (INKCfgEle *) m_ele;
+    return (TSCfgEle *) m_ele;
   }
-  virtual INKRuleTypeT getRuleType()
+  virtual TSRuleTypeT getRuleType()
   {
     return m_ele->cfg_ele.type;
   }
 
 private:
-  INKIpAllowEle * m_ele;
+  TSIpAllowEle * m_ele;
 };
 
 /* logs_xml.config    ********************************************/
 class LogFilterObj:public CfgEleObj
 {
 public:
-  LogFilterObj(INKLogFilterEle * ele);
+  LogFilterObj(TSLogFilterEle * ele);
   LogFilterObj(TokenList * tokens);
   ~LogFilterObj();
 
   virtual char *formatEleToRule();
   virtual bool isValid();
-  virtual INKCfgEle *getCfgEleCopy();
-  virtual INKCfgEle *getCfgEle()
+  virtual TSCfgEle *getCfgEleCopy();
+  virtual TSCfgEle *getCfgEle()
   {
-    return (INKCfgEle *) m_ele;
+    return (TSCfgEle *) m_ele;
   }
-  virtual INKRuleTypeT getRuleType()
+  virtual TSRuleTypeT getRuleType()
   {
     return m_ele->cfg_ele.type;
   }
 
 private:
-  INKLogFilterEle * m_ele;
+  TSLogFilterEle * m_ele;
 };
 
 class LogFormatObj:public CfgEleObj
 {
 public:
-  LogFormatObj(INKLogFilterEle * ele);
+  LogFormatObj(TSLogFilterEle * ele);
   LogFormatObj(TokenList * tokens);
   ~LogFormatObj();
 
   virtual char *formatEleToRule();
   virtual bool isValid();
-  virtual INKCfgEle *getCfgEleCopy();
-  virtual INKCfgEle *getCfgEle()
+  virtual TSCfgEle *getCfgEleCopy();
+  virtual TSCfgEle *getCfgEle()
   {
-    return (INKCfgEle *) m_ele;
+    return (TSCfgEle *) m_ele;
   }
-  virtual INKRuleTypeT getRuleType()
+  virtual TSRuleTypeT getRuleType()
   {
     return m_ele->cfg_ele.type;
   }
 
 private:
-  INKLogFormatEle * m_ele;
+  TSLogFormatEle * m_ele;
 };
 
 /* logs.config ***************************************************/
 class LogObjectObj:public CfgEleObj
 {
 public:
-  LogObjectObj(INKLogObjectEle * ele);
+  LogObjectObj(TSLogObjectEle * ele);
   LogObjectObj(TokenList * tokens);
   ~LogObjectObj();
 
   virtual char *formatEleToRule();
   virtual bool isValid();
-  virtual INKCfgEle *getCfgEleCopy();
-  virtual INKCfgEle *getCfgEle()
+  virtual TSCfgEle *getCfgEleCopy();
+  virtual TSCfgEle *getCfgEle()
   {
-    return (INKCfgEle *) m_ele;
+    return (TSCfgEle *) m_ele;
   }
-  virtual INKRuleTypeT getRuleType()
+  virtual TSRuleTypeT getRuleType()
   {
     return m_ele->cfg_ele.type;
   }
 
 private:
-  INKLogObjectEle * m_ele;
+  TSLogObjectEle * m_ele;
 };
 
 
@@ -322,144 +322,144 @@ private:
 class MgmtAllowObj:public CfgEleObj
 {
 public:
-  MgmtAllowObj(INKMgmtAllowEle * ele);
+  MgmtAllowObj(TSMgmtAllowEle * ele);
   MgmtAllowObj(TokenList * tokens);
   ~MgmtAllowObj();
 
   virtual char *formatEleToRule();
   virtual bool isValid();
-  virtual INKCfgEle *getCfgEleCopy();
-  virtual INKCfgEle *getCfgEle()
+  virtual TSCfgEle *getCfgEleCopy();
+  virtual TSCfgEle *getCfgEle()
   {
-    return (INKCfgEle *) m_ele;
+    return (TSCfgEle *) m_ele;
   }
-  virtual INKRuleTypeT getRuleType()
+  virtual TSRuleTypeT getRuleType()
   {
     return m_ele->cfg_ele.type;
   }
 
 private:
-  INKMgmtAllowEle * m_ele;
+  TSMgmtAllowEle * m_ele;
 };
 
 /* parent.config       *******************************************/
 class ParentProxyObj:public CfgEleObj
 {
 public:
-  ParentProxyObj(INKParentProxyEle * ele);
+  ParentProxyObj(TSParentProxyEle * ele);
   ParentProxyObj(TokenList * tokens);
   ~ParentProxyObj();
 
   virtual char *formatEleToRule();
   virtual bool isValid();
-  virtual INKCfgEle *getCfgEleCopy();
-  virtual INKCfgEle *getCfgEle()
+  virtual TSCfgEle *getCfgEleCopy();
+  virtual TSCfgEle *getCfgEle()
   {
-    return (INKCfgEle *) m_ele;
+    return (TSCfgEle *) m_ele;
   }
-  virtual INKRuleTypeT getRuleType()
+  virtual TSRuleTypeT getRuleType()
   {
     return m_ele->cfg_ele.type;
   }
 
 private:
-  INKParentProxyEle * m_ele;
+  TSParentProxyEle * m_ele;
 };
 
 /* partition.config    *******************************************/
 class PartitionObj:public CfgEleObj
 {
 public:
-  PartitionObj(INKPartitionEle * ele);
+  PartitionObj(TSPartitionEle * ele);
   PartitionObj(TokenList * tokens);
   ~PartitionObj();
 
   virtual char *formatEleToRule();
   virtual bool isValid();
-  virtual INKCfgEle *getCfgEleCopy();
-  virtual INKCfgEle *getCfgEle()
+  virtual TSCfgEle *getCfgEleCopy();
+  virtual TSCfgEle *getCfgEle()
   {
-    return (INKCfgEle *) m_ele;
+    return (TSCfgEle *) m_ele;
   }
-  virtual INKRuleTypeT getRuleType()
+  virtual TSRuleTypeT getRuleType()
   {
     return m_ele->cfg_ele.type;
   }
 
 private:
-  INKPartitionEle * m_ele;
+  TSPartitionEle * m_ele;
 };
 
 /* plugin.config    *******************************************/
 class PluginObj:public CfgEleObj
 {
 public:
-  PluginObj(INKPluginEle * ele);
+  PluginObj(TSPluginEle * ele);
   PluginObj(TokenList * tokens);
   ~PluginObj();
 
   virtual char *formatEleToRule();
   virtual bool isValid();
-  virtual INKCfgEle *getCfgEleCopy();
-  virtual INKCfgEle *getCfgEle()
+  virtual TSCfgEle *getCfgEleCopy();
+  virtual TSCfgEle *getCfgEle()
   {
-    return (INKCfgEle *) m_ele;
+    return (TSCfgEle *) m_ele;
   }
-  virtual INKRuleTypeT getRuleType()
+  virtual TSRuleTypeT getRuleType()
   {
     return m_ele->cfg_ele.type;
   }
 
 private:
-  INKPluginEle * m_ele;
+  TSPluginEle * m_ele;
 };
 
 /* remap.config        *******************************************/
 class RemapObj:public CfgEleObj
 {
 public:
-  RemapObj(INKRemapEle * ele);
+  RemapObj(TSRemapEle * ele);
   RemapObj(TokenList * tokens);
   ~RemapObj();
 
   virtual char *formatEleToRule();
   virtual bool isValid();
-  virtual INKCfgEle *getCfgEleCopy();
-  virtual INKCfgEle *getCfgEle()
+  virtual TSCfgEle *getCfgEleCopy();
+  virtual TSCfgEle *getCfgEle()
   {
-    return (INKCfgEle *) m_ele;
+    return (TSCfgEle *) m_ele;
   }
-  virtual INKRuleTypeT getRuleType()
+  virtual TSRuleTypeT getRuleType()
   {
     return m_ele->cfg_ele.type;
   }
 
 private:
-  INKRemapEle * m_ele;
+  TSRemapEle * m_ele;
 };
 
 /* socks.config        *******************************************/
 class SocksObj:public CfgEleObj
 {
 public:
-  SocksObj(INKSocksEle * ele);
+  SocksObj(TSSocksEle * ele);
   SocksObj(TokenList * tokens);
   ~SocksObj();
 
   virtual char *formatEleToRule();
   virtual bool isValid();
-  virtual INKCfgEle *getCfgEleCopy();
-  virtual INKCfgEle *getCfgEle()
+  virtual TSCfgEle *getCfgEleCopy();
+  virtual TSCfgEle *getCfgEle()
   {
-    return (INKCfgEle *) m_ele;
+    return (TSCfgEle *) m_ele;
   }
-  virtual INKRuleTypeT getRuleType()
+  virtual TSRuleTypeT getRuleType()
   {
     return m_ele->cfg_ele.type;
   }
 
 private:
-  INKSocksEle * m_ele;
+  TSSocksEle * m_ele;
 };
 
 
@@ -467,48 +467,48 @@ private:
 class SplitDnsObj:public CfgEleObj
 {
 public:
-  SplitDnsObj(INKSplitDnsEle * ele);
+  SplitDnsObj(TSSplitDnsEle * ele);
   SplitDnsObj(TokenList * tokens);
   ~SplitDnsObj();
 
   virtual char *formatEleToRule();
   virtual bool isValid();
-  virtual INKCfgEle *getCfgEleCopy();
-  virtual INKCfgEle *getCfgEle()
+  virtual TSCfgEle *getCfgEleCopy();
+  virtual TSCfgEle *getCfgEle()
   {
-    return (INKCfgEle *) m_ele;
+    return (TSCfgEle *) m_ele;
   }
-  virtual INKRuleTypeT getRuleType()
+  virtual TSRuleTypeT getRuleType()
   {
     return m_ele->cfg_ele.type;
   }
 
 private:
-  INKSplitDnsEle * m_ele;
+  TSSplitDnsEle * m_ele;
 };
 
 /* storage.config      *******************************************/
 class StorageObj:public CfgEleObj
 {
 public:
-  StorageObj(INKStorageEle * ele);
+  StorageObj(TSStorageEle * ele);
   StorageObj(TokenList * tokens);
   ~StorageObj();
 
   virtual char *formatEleToRule();
   virtual bool isValid();
-  virtual INKCfgEle *getCfgEleCopy();
-  virtual INKCfgEle *getCfgEle()
+  virtual TSCfgEle *getCfgEleCopy();
+  virtual TSCfgEle *getCfgEle()
   {
-    return (INKCfgEle *) m_ele;
+    return (TSCfgEle *) m_ele;
   }
-  virtual INKRuleTypeT getRuleType()
+  virtual TSRuleTypeT getRuleType()
   {
     return m_ele->cfg_ele.type;
   }
 
 private:
-  INKStorageEle * m_ele;
+  TSStorageEle * m_ele;
 };
 
 
@@ -516,48 +516,48 @@ private:
 class UpdateObj:public CfgEleObj
 {
 public:
-  UpdateObj(INKUpdateEle * ele);
+  UpdateObj(TSUpdateEle * ele);
   UpdateObj(TokenList * tokens);
   ~UpdateObj();
 
   virtual char *formatEleToRule();
   virtual bool isValid();
-  virtual INKCfgEle *getCfgEleCopy();
-  virtual INKCfgEle *getCfgEle()
+  virtual TSCfgEle *getCfgEleCopy();
+  virtual TSCfgEle *getCfgEle()
   {
-    return (INKCfgEle *) m_ele;
+    return (TSCfgEle *) m_ele;
   }
-  virtual INKRuleTypeT getRuleType()
+  virtual TSRuleTypeT getRuleType()
   {
     return m_ele->cfg_ele.type;
   }
 
 private:
-  INKUpdateEle * m_ele;
+  TSUpdateEle * m_ele;
 };
 
 /* vaddrs.config       *******************************************/
 class VirtIpAddrObj:public CfgEleObj
 {
 public:
-  VirtIpAddrObj(INKVirtIpAddrEle * ele);
+  VirtIpAddrObj(TSVirtIpAddrEle * ele);
   VirtIpAddrObj(TokenList * tokens);
   ~VirtIpAddrObj();
 
   virtual char *formatEleToRule();
   virtual bool isValid();
-  virtual INKCfgEle *getCfgEleCopy();
-  virtual INKCfgEle *getCfgEle()
+  virtual TSCfgEle *getCfgEleCopy();
+  virtual TSCfgEle *getCfgEle()
   {
-    return (INKCfgEle *) m_ele;
+    return (TSCfgEle *) m_ele;
   }
-  virtual INKRuleTypeT getRuleType()
+  virtual TSRuleTypeT getRuleType()
   {
     return m_ele->cfg_ele.type;
   }
 
 private:
-  INKVirtIpAddrEle * m_ele;
+  TSVirtIpAddrEle * m_ele;
 };
 
 
@@ -567,10 +567,10 @@ private:
 class CfgContext
 {
 public:
-  CfgContext(INKFileNameT filename);
+  CfgContext(TSFileNameT filename);
   ~CfgContext();
 
-  INKFileNameT getFilename()
+  TSFileNameT getFilename()
   {
     return m_file;
   }
@@ -592,13 +592,13 @@ public:
     return (here->link).next;
   }
 
-  INKError addEle(CfgEleObj * ele);     /* enqueue EleObj at end of Queue */
-  INKError removeEle(CfgEleObj * ele);
-  INKError insertEle(CfgEleObj * ele, CfgEleObj * after_ele);
-  INKError pushEle(CfgEleObj * ele);
+  TSError addEle(CfgEleObj * ele);     /* enqueue EleObj at end of Queue */
+  TSError removeEle(CfgEleObj * ele);
+  TSError insertEle(CfgEleObj * ele, CfgEleObj * after_ele);
+  TSError pushEle(CfgEleObj * ele);
 
 private:
-  INKFileNameT m_file;
+  TSFileNameT m_file;
   int m_ver;                    /* version of the file read */
   Queue<CfgEleObj> m_eles;
 };

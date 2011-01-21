@@ -49,15 +49,15 @@ EventClientT *new_event_client();
 void delete_event_client(EventClientT * client);
 void remove_event_client(EventClientT * client, InkHashTable * table);
 
-INKError init_mgmt_events();
+TSError init_mgmt_events();
 void delete_mgmt_events();
 void delete_event_queue(LLQ * q);
 
 void apiAlarmCallback(alarm_t newAlarm, char *ip, char *desc);
 void *event_callback_main(void *arg);
 
-INKError handle_event_reg_callback(EventClientT * client, char *req);
-INKError handle_event_unreg_callback(EventClientT * client, char *req);
+TSError handle_event_reg_callback(EventClientT * client, char *req);
+TSError handle_event_unreg_callback(EventClientT * client, char *req);
 
 
 #endif

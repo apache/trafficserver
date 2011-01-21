@@ -25,12 +25,12 @@
  * Filename: CoreAPIRemote.cc
  * Purpose: Implementation of CoreAPI.h interface but from remote client
  *          perspective, so must also add networking calls. Basically, any
- *          INKMgmtAPI calls which are "special" for remote clients
+ *          TSMgmtAPI calls which are "special" for remote clients
  *          need to be implemented here.
  * Note: For remote implementation of this interface, most functions will:
  *  1) marshal: create the message to send across network
  *  2) connect and send request
- *  3) unmarshal: parse the reply (checking for INKError)
+ *  3) unmarshal: parse the reply (checking for TSError)
  *
  * Created: lant
  *
@@ -55,10 +55,10 @@ extern int main_socket_fd;      // from NetworkUtils
 extern int event_socket_fd;
 
 // forward declarations
-INKError send_and_parse_basic(OpType op);
-INKError send_and_parse_list(OpType op, LLQ * list);
-INKError send_and_parse_name(OpType op, char *name);
-INKError mgmt_record_set(const char *rec_name, const char *rec_val, INKActionNeedT * action_need);
+TSError send_and_parse_basic(OpType op);
+TSError send_and_parse_list(OpType op, LLQ * list);
+TSError send_and_parse_name(OpType op, char *name);
+TSError mgmt_record_set(const char *rec_name, const char *rec_val, TSActionNeedT * action_need);
 bool start_binary(const char *abs_bin_path);
 
 // global variables
@@ -77,13 +77,13 @@ TSInitOptionT ts_init_options;
  * helper function used by operations which only require sending a simple
  * operation type and parsing a simple error return value
  */
-INKError
+TSError
 send_and_parse_basic(OpType op)
 {
-  INKError err;
+  TSError err;
 
   err = send_request(main_socket_fd, op);
-  if (err != INK_ERR_OKAY)
+  if (err != TS_ERR_OKAY)
     return err;                 // networking error
 
   err = parse_reply(main_socket_fd);
@@ -99,31 +99,31 @@ send_and_parse_basic(OpType op)
  * (delimited with REMOTE_DELIM_STR) and storing the tokens in the list
  * parameter
  */
-INKError
+TSError
 send_and_parse_list(OpType op, LLQ * list)
 {
-  INKError ret;
+  TSError ret;
   char *list_str;
   const char *tok;
   Tokenizer tokens(REMOTE_DELIM_STR);
   tok_iter_state i_state;
 
   if (!list)
-    return INK_ERR_PARAMS;
+    return TS_ERR_PARAMS;
 
   // create and send request
   ret = send_request(main_socket_fd, op);
-  if (ret != INK_ERR_OKAY)
+  if (ret != TS_ERR_OKAY)
     return ret;
 
   // parse the reply = delimited list of ids of active event names
   ret = parse_reply_list(main_socket_fd, &list_str);
-  if (ret != INK_ERR_OKAY)
+  if (ret != TS_ERR_OKAY)
     return ret;
 
   // tokenize the list_str and put into LLQ; use Tokenizer
   if (!list_str)
-    return INK_ERR_FAIL;
+    return TS_ERR_FAIL;
 
   tokens.Initialize(list_str, COPY_TOKS);
   tok = tokens.iterFirst(&i_state);
@@ -134,7 +134,7 @@ send_and_parse_list(OpType op, LLQ * list)
 
   if (list_str)
     xfree(list_str);
-  return INK_ERR_OKAY;
+  return TS_ERR_OKAY;
 }
 
 /*-------------------------------------------------------------------------
@@ -142,17 +142,17 @@ send_and_parse_list(OpType op, LLQ * list)
  *-------------------------------------------------------------------------
  * helper function used by operations which only require sending a simple
  * operation type with one string name argument and then parsing a simple
- * INKError reply
+ * TSError reply
  * NOTE: name can be a NULL parameter!
  */
-INKError
+TSError
 send_and_parse_name(OpType op, char *name)
 {
-  INKError ret;
+  TSError ret;
 
   // create and send request
   ret = send_request_name(main_socket_fd, op, name);
-  if (ret != INK_ERR_OKAY)
+  if (ret != TS_ERR_OKAY)
     return ret;
 
   // parse the reply
@@ -173,20 +173,20 @@ send_and_parse_name(OpType op, char *name)
  * Hence, on the local side, don't have to worry about typecasting a
  * void*. Just read out the string from socket and pass it MgmtRecordSet.
  */
-INKError
-mgmt_record_set(const char *rec_name, const char *rec_val, INKActionNeedT * action_need)
+TSError
+mgmt_record_set(const char *rec_name, const char *rec_val, TSActionNeedT * action_need)
 {
-  INKError err;
+  TSError err;
 
   if (!rec_name || !rec_val || !action_need)
-    return INK_ERR_PARAMS;
+    return TS_ERR_PARAMS;
 
   // create and send request
   err = send_request_name_value(main_socket_fd, RECORD_SET, rec_name, rec_val);
-  if (err != INK_ERR_OKAY)
+  if (err != TS_ERR_OKAY)
     return err;
 
-  // parse the reply to get INKError response and INKActionNeedT
+  // parse the reply to get TSError response and TSActionNeedT
   err = parse_record_set_reply(main_socket_fd, action_need);
 
   return err;
@@ -203,23 +203,23 @@ mgmt_record_set(const char *rec_name, const char *rec_val, INKActionNeedT * acti
 bool
 start_binary(const char *abs_bin_path)
 {
-  INKDiags(INK_DIAG_NOTE, "[start_binary] abs_bin_path = %s", abs_bin_path);
+  TSDiags(TS_DIAG_NOTE, "[start_binary] abs_bin_path = %s", abs_bin_path);
   // before doing anything, check for existence of binary and its execute
   // permissions
   if (access(abs_bin_path, F_OK) < 0) {
     // ERROR: can't find binary
-    INKDiags(INK_DIAG_ERROR, "Cannot find executable %s", abs_bin_path);
+    TSDiags(TS_DIAG_ERROR, "Cannot find executable %s", abs_bin_path);
     return false;
   }
   // binary exists, check permissions
   else if (access(abs_bin_path, R_OK | X_OK) < 0) {
     // ERROR: doesn't have proper permissions
-    INKDiags(INK_DIAG_ERROR, "Cannot execute %s", abs_bin_path);
+    TSDiags(TS_DIAG_ERROR, "Cannot execute %s", abs_bin_path);
     return false;
   }
 
   if (system(abs_bin_path) == -1) {
-    INKDiags(INK_DIAG_ERROR, "Cannot system(%s)", abs_bin_path);
+    TSDiags(TS_DIAG_ERROR, "Cannot system(%s)", abs_bin_path);
     return false;
   }
 
@@ -230,10 +230,10 @@ start_binary(const char *abs_bin_path)
 /***************************************************************************
  * SetUp Operations
  ***************************************************************************/
-INKError
+TSError
 Init(const char *socket_path, TSInitOptionT options)
 {
-  INKError err = INK_ERR_OKAY;
+  TSError err = TS_ERR_OKAY;
 
   ts_init_options = options;
 
@@ -252,7 +252,7 @@ Init(const char *socket_path, TSInitOptionT options)
   if (0 == (ts_init_options & TS_MGMT_OPT_NO_EVENTS)) {
     remote_event_callbacks = create_callback_table("remote_callbacks");
     if (!remote_event_callbacks)
-      return INK_ERR_SYS_CALL;
+      return TS_ERR_SYS_CALL;
   } else {
     remote_event_callbacks = NULL;
   }
@@ -262,7 +262,7 @@ Init(const char *socket_path, TSInitOptionT options)
   // connection fails; this might happen if client is set up and running
   // before TM
   err = ts_connect();
-  if (err != INK_ERR_OKAY)
+  if (err != TS_ERR_OKAY)
     goto END;
 
   // if connected, create event thread that listens for events from TM
@@ -287,17 +287,17 @@ END:
 }
 
 // does clean up for remote API client; destroy structures and disconnects
-INKError
+TSError
 Terminate()
 {
-  INKError err;
+  TSError err;
 
   if (remote_event_callbacks)
     delete_callback_table(remote_event_callbacks);
 
   // be sure to do this before reset socket_fd's
   err = disconnect();
-  if (err != INK_ERR_OKAY)
+  if (err != TS_ERR_OKAY)
     return err;
 
   // cancel the listening socket thread
@@ -315,7 +315,7 @@ Terminate()
   ts_event_thread = static_cast<ink_thread>(NULL);
   set_socket_paths(NULL);       // clear the socket_path
 
-  return INK_ERR_OKAY;
+  return TS_ERR_OKAY;
 }
 
 // ONLY have very basic diag functionality for remote cliets.
@@ -323,15 +323,15 @@ Terminate()
 // diagnostics, the diagnostics will be outputted to the machine
 // the remote client is logged into (the one TM is running on)
 void
-Diags(INKDiagsT mode, const char *fmt, va_list ap)
+Diags(TSDiagsT mode, const char *fmt, va_list ap)
 {
   char diag_msg[MAX_BUF_SIZE];
 
   // format the diag message now so it can be sent
   // vsnprintf does not compile on DEC
   vsnprintf(diag_msg, MAX_BUF_SIZE - 1, fmt, ap);
-  INKError ret = send_diags_msg(main_socket_fd, mode, diag_msg);
-  if (ret != INK_ERR_OKAY) {
+  TSError ret = send_diags_msg(main_socket_fd, mode, diag_msg);
+  if (ret != TS_ERR_OKAY) {
     //fprintf(stderr, "[Diags] error sending diags message\n");
   }
 }
@@ -339,30 +339,30 @@ Diags(INKDiagsT mode, const char *fmt, va_list ap)
 /***************************************************************************
  * Control Operations
  ***************************************************************************/
-INKProxyStateT
+TSProxyStateT
 ProxyStateGet()
 {
-  INKError ret;
-  INKProxyStateT state;
+  TSError ret;
+  TSProxyStateT state;
 
   ret = send_request(main_socket_fd, PROXY_STATE_GET);
-  if (ret != INK_ERR_OKAY)      // Networking error
-    return INK_PROXY_UNDEFINED;
+  if (ret != TS_ERR_OKAY)      // Networking error
+    return TS_PROXY_UNDEFINED;
 
   ret = parse_proxy_state_get_reply(main_socket_fd, &state);
-  if (ret != INK_ERR_OKAY)      // Newtorking error
-    return INK_PROXY_UNDEFINED;
+  if (ret != TS_ERR_OKAY)      // Newtorking error
+    return TS_PROXY_UNDEFINED;
 
   return state;
 }
 
-INKError
-ProxyStateSet(INKProxyStateT state, INKCacheClearT clear)
+TSError
+ProxyStateSet(TSProxyStateT state, TSCacheClearT clear)
 {
-  INKError ret;
+  TSError ret;
 
   ret = send_proxy_state_set_request(main_socket_fd, state, clear);
-  if (ret != INK_ERR_OKAY)
+  if (ret != TS_ERR_OKAY)
     return ret;                 // networking error
 
   ret = parse_reply(main_socket_fd);
@@ -370,7 +370,7 @@ ProxyStateSet(INKProxyStateT state, INKCacheClearT clear)
   return ret;
 }
 
-INKError
+TSError
 Reconfigure()
 {
   return send_and_parse_basic(RECONFIGURE);
@@ -385,18 +385,18 @@ Reconfigure()
  * only signals the event putting it in a msg queue;
  * so keep trying to reconnect until successful or for MAX_CONN_TRIES
  */
-INKError
+TSError
 Restart(bool cluster)
 {
-  INKError ret;
+  TSError ret;
 
   ret = send_request_bool(main_socket_fd, RESTART, cluster);
-  if (ret != INK_ERR_OKAY)
+  if (ret != TS_ERR_OKAY)
     return ret;                 // networking error
 
   ret = parse_reply(main_socket_fd);
 
-  if (ret == INK_ERR_OKAY) {
+  if (ret == TS_ERR_OKAY) {
     ret = reconnect_loop(MAX_CONN_TRIES);
   }
 
@@ -409,30 +409,30 @@ Restart(bool cluster)
  *-------------------------------------------------------------------------
  * Restarts Traffic Cop by using the stop_traffic_server, start_traffic_server script
  */
-INKError
+TSError
 HardRestart()
 {
   char start_path[1024];
   char stop_path[1024];
 
   if (!Layout::get() || !Layout::get()->bindir)
-    return INK_ERR_FAIL;
+    return TS_ERR_FAIL;
   // determine the path of where start and stop TS scripts stored
-  INKDiags(INK_DIAG_NOTE, "Root Directory: %s", Layout::get()->bindir);
+  TSDiags(TS_DIAG_NOTE, "Root Directory: %s", Layout::get()->bindir);
 
   Layout::relative_to(start_path, sizeof(start_path), Layout::get()->bindir, "start_traffic_server");
   Layout::relative_to(stop_path, sizeof(stop_path), Layout::get()->bindir, "stop_traffic_server");
 
-  INKDiags(INK_DIAG_NOTE, "[HardRestart] start_path = %s", start_path);
-  INKDiags(INK_DIAG_NOTE, "[HardRestart] stop_path = %s", stop_path);
+  TSDiags(TS_DIAG_NOTE, "[HardRestart] start_path = %s", start_path);
+  TSDiags(TS_DIAG_NOTE, "[HardRestart] stop_path = %s", stop_path);
 
   if (!start_binary(stop_path)) // call stop_traffic_server script
-    return INK_ERR_FAIL;
+    return TS_ERR_FAIL;
 
   if (!start_binary(start_path))        // call start_traffic_server script
-    return INK_ERR_FAIL;
+    return TS_ERR_FAIL;
 
-  return INK_ERR_OKAY;
+  return TS_ERR_OKAY;
 }
 
 /*-------------------------------------------------------------------------
@@ -440,13 +440,13 @@ HardRestart()
  *-------------------------------------------------------------------------
  * Restart the traffic_server process(es) only.
  */
-INKError
+TSError
 Bounce(bool cluster)
 {
-  INKError ret;
+  TSError ret;
 
   ret = send_request_bool(main_socket_fd, BOUNCE, cluster);
-  if (ret != INK_ERR_OKAY)
+  if (ret != TS_ERR_OKAY)
     return ret;                 // networking error
 
   return parse_reply(main_socket_fd);
@@ -458,58 +458,58 @@ Bounce(bool cluster)
  ***************************************************************************/
 // note that the record value is being sent as chunk of memory, regardless of
 // record type; it's not being converted to a string!!
-INKError
-MgmtRecordGet(const char *rec_name, INKRecordEle * rec_ele)
+TSError
+MgmtRecordGet(const char *rec_name, TSRecordEle * rec_ele)
 {
-  INKError ret;
+  TSError ret;
   void *val;
 
   if (!rec_name || !rec_ele)
-    return INK_ERR_PARAMS;
+    return TS_ERR_PARAMS;
 
   rec_ele->rec_name = xstrdup(rec_name);
 
   // create and send request
   ret = send_record_get_request(main_socket_fd, rec_ele->rec_name);
-  if (ret != INK_ERR_OKAY)
+  if (ret != TS_ERR_OKAY)
     return ret;
 
   // parse the reply to get record value and type
   ret = parse_record_get_reply(main_socket_fd, &(rec_ele->rec_type), &val);
-  if (ret != INK_ERR_OKAY)
+  if (ret != TS_ERR_OKAY)
     return ret;
 
   // convert the record value to appropriate type
   switch (rec_ele->rec_type) {
-  case INK_REC_INT:
-    rec_ele->int_val = *(INKInt *) val;
+  case TS_REC_INT:
+    rec_ele->int_val = *(TSInt *) val;
     break;
-  case INK_REC_COUNTER:
-    rec_ele->counter_val = *(INKCounter *) val;
+  case TS_REC_COUNTER:
+    rec_ele->counter_val = *(TSCounter *) val;
     break;
-  case INK_REC_FLOAT:
-    rec_ele->float_val = *(INKFloat *) val;
+  case TS_REC_FLOAT:
+    rec_ele->float_val = *(TSFloat *) val;
     break;
-  case INK_REC_STRING:
+  case TS_REC_STRING:
     rec_ele->string_val = xstrdup((char *) val);
     break;
   default:                     // ERROR - invalid record type
-    return INK_ERR_FAIL;
+    return TS_ERR_FAIL;
   }
 
   if (val)
     xfree(val);
-  return INK_ERR_OKAY;
+  return TS_ERR_OKAY;
 }
 
 
-INKError
-MgmtRecordSet(const char *rec_name, const char *val, INKActionNeedT * action_need)
+TSError
+MgmtRecordSet(const char *rec_name, const char *val, TSActionNeedT * action_need)
 {
-  INKError ret;
+  TSError ret;
 
   if (!rec_name || !val || !action_need)
-    return INK_ERR_PARAMS;
+    return TS_ERR_PARAMS;
 
   ret = mgmt_record_set(rec_name, val, action_need);
   return ret;
@@ -517,14 +517,14 @@ MgmtRecordSet(const char *rec_name, const char *val, INKActionNeedT * action_nee
 
 // first convert the MgmtInt into a string
 // NOTE: use long long, not just long, MgmtInt = int64_t
-INKError
-MgmtRecordSetInt(const char *rec_name, MgmtInt int_val, INKActionNeedT * action_need)
+TSError
+MgmtRecordSetInt(const char *rec_name, MgmtInt int_val, TSActionNeedT * action_need)
 {
   char str_val[MAX_RECORD_SIZE];
-  INKError ret;
+  TSError ret;
 
   if (!rec_name || !action_need)
-    return INK_ERR_PARAMS;
+    return TS_ERR_PARAMS;
 
   bzero(str_val, MAX_RECORD_SIZE);
   snprintf(str_val, sizeof(str_val), "%" PRId64 "", int_val);
@@ -534,14 +534,14 @@ MgmtRecordSetInt(const char *rec_name, MgmtInt int_val, INKActionNeedT * action_
 }
 
 // first convert the MgmtIntCounter into a string
-INKError
-MgmtRecordSetCounter(const char *rec_name, MgmtIntCounter counter_val, INKActionNeedT * action_need)
+TSError
+MgmtRecordSetCounter(const char *rec_name, MgmtIntCounter counter_val, TSActionNeedT * action_need)
 {
   char str_val[MAX_RECORD_SIZE];
-  INKError ret;
+  TSError ret;
 
   if (!rec_name || !action_need)
-    return INK_ERR_PARAMS;
+    return TS_ERR_PARAMS;
 
   bzero(str_val, MAX_RECORD_SIZE);
   snprintf(str_val, sizeof(str_val), "%" PRId64 "", counter_val);
@@ -551,28 +551,28 @@ MgmtRecordSetCounter(const char *rec_name, MgmtIntCounter counter_val, INKAction
 }
 
 // first convert the MgmtFloat into string
-INKError
-MgmtRecordSetFloat(const char *rec_name, MgmtFloat float_val, INKActionNeedT * action_need)
+TSError
+MgmtRecordSetFloat(const char *rec_name, MgmtFloat float_val, TSActionNeedT * action_need)
 {
   char str_val[MAX_RECORD_SIZE];
-  INKError ret;
+  TSError ret;
 
   bzero(str_val, MAX_RECORD_SIZE);
   if (snprintf(str_val, sizeof(str_val), "%f", float_val) < 0)
-    return INK_ERR_SYS_CALL;
+    return TS_ERR_SYS_CALL;
   ret = mgmt_record_set(rec_name, str_val, action_need);
 
   return ret;
 }
 
 
-INKError
-MgmtRecordSetString(const char *rec_name, const char *string_val, INKActionNeedT * action_need)
+TSError
+MgmtRecordSetString(const char *rec_name, const char *string_val, TSActionNeedT * action_need)
 {
-  INKError ret;
+  TSError ret;
 
   if (!rec_name || !action_need)
-    return INK_ERR_PARAMS;
+    return TS_ERR_PARAMS;
 
   ret = mgmt_record_set(rec_name, string_val, action_need);
   return ret;
@@ -595,15 +595,15 @@ MgmtRecordSetString(const char *rec_name, const char *string_val, INKActionNeedT
  * Connects to the socket and sends request over. Parses the response from
  * Traffic Manager.
  */
-INKError
-ReadFile(INKFileNameT file, char **text, int *size, int *version)
+TSError
+ReadFile(TSFileNameT file, char **text, int *size, int *version)
 {
-  INKError ret;
+  TSError ret;
 
   // marshal data into message request to be sent over socket
   // create connection and send request
   ret = send_file_read_request(main_socket_fd, file);
-  if (ret != INK_ERR_OKAY)
+  if (ret != TS_ERR_OKAY)
     return ret;
 
   // read response from socket and unmarshal the response
@@ -626,13 +626,13 @@ ReadFile(INKFileNameT file, char **text, int *size, int *version)
  * Connects to the socket and sends request over. Parses the response from
  * Traffic Manager.
  */
-INKError
-WriteFile(INKFileNameT file, char *text, int size, int version)
+TSError
+WriteFile(TSFileNameT file, char *text, int size, int version)
 {
-  INKError ret;
+  TSError ret;
 
   ret = send_file_write_request(main_socket_fd, file, version, size, text);
-  if (ret != INK_ERR_OKAY)
+  if (ret != TS_ERR_OKAY)
     return ret;
 
   ret = parse_reply(main_socket_fd);
@@ -649,12 +649,12 @@ WriteFile(INKFileNameT file, char *text, int size, int version)
  *-------------------------------------------------------------------------
  * LAN - need to implement
  */
-INKError
+TSError
 EventSignal(char *event_name, va_list ap)
 {
   NOWARN_UNUSED(event_name);
   NOWARN_UNUSED(ap);
-  return INK_ERR_FAIL;
+  return TS_ERR_FAIL;
 }
 
 /*-------------------------------------------------------------------------
@@ -664,11 +664,11 @@ EventSignal(char *event_name, va_list ap)
  * note:    when sending the message request, actually sends the event name,
  *          not the event id
  */
-INKError
+TSError
 EventResolve(char *event_name)
 {
   if (!event_name)
-    return INK_ERR_PARAMS;
+    return TS_ERR_PARAMS;
 
   return (send_and_parse_name(EVENT_RESOLVE, event_name));
 }
@@ -679,11 +679,11 @@ EventResolve(char *event_name)
  * purpose: Retrieves a list of active(unresolved) events
  * note:    list of event names returned in network msg which must be tokenized
  */
-INKError
+TSError
 ActiveEventGetMlt(LLQ * active_events)
 {
   if (!active_events)
-    return INK_ERR_PARAMS;
+    return TS_ERR_PARAMS;
 
   return (send_and_parse_list(EVENT_GET_MLT, active_events));
 }
@@ -693,22 +693,22 @@ ActiveEventGetMlt(LLQ * active_events)
  *-------------------------------------------------------------------------
  * determines if the event_name is active; sets result in is_current
  */
-INKError
+TSError
 EventIsActive(char *event_name, bool * is_current)
 {
-  INKError ret;
+  TSError ret;
 
   if (!event_name || !is_current)
-    return INK_ERR_PARAMS;
+    return TS_ERR_PARAMS;
 
   // create and send request
   ret = send_request_name(main_socket_fd, EVENT_ACTIVE, event_name);
-  if (ret != INK_ERR_OKAY)
+  if (ret != TS_ERR_OKAY)
     return ret;
 
   // parse the reply
   ret = parse_event_active_reply(main_socket_fd, is_current);
-  if (ret != INK_ERR_OKAY)
+  if (ret != TS_ERR_OKAY)
     return ret;
 
   return ret;
@@ -723,29 +723,29 @@ EventIsActive(char *event_name, bool * is_current)
  * then sends a callback registration notification to TM so that TM will know
  * which events have remote callbacks registered on it.
  */
-INKError
-EventSignalCbRegister(char *event_name, INKEventSignalFunc func, void *data)
+TSError
+EventSignalCbRegister(char *event_name, TSEventSignalFunc func, void *data)
 {
   bool first_time = 0;
-  INKError err;
+  TSError err;
 
   if (func == NULL)
-    return INK_ERR_PARAMS;
+    return TS_ERR_PARAMS;
   if (!remote_event_callbacks)
-    return INK_ERR_FAIL;
+    return TS_ERR_FAIL;
 
   err = cb_table_register(remote_event_callbacks, event_name, func, data, &first_time);
-  if (err != INK_ERR_OKAY)
+  if (err != TS_ERR_OKAY)
     return err;
 
   // if we need to notify traffic manager of the event then send msg
   if (first_time) {
     err = send_request_name(event_socket_fd, EVENT_REG_CALLBACK, event_name);
-    if (err != INK_ERR_OKAY)
+    if (err != TS_ERR_OKAY)
       return err;
   }
 
-  return INK_ERR_OKAY;
+  return TS_ERR_OKAY;
 }
 
 /*-------------------------------------------------------------------------
@@ -762,71 +762,71 @@ EventSignalCbRegister(char *event_name, INKEventSignalFunc func, void *data)
  *                     unregisters all callback functions for the event_name
  *                     specified
  */
-INKError
-EventSignalCbUnregister(char *event_name, INKEventSignalFunc func)
+TSError
+EventSignalCbUnregister(char *event_name, TSEventSignalFunc func)
 {
-  INKError err;
+  TSError err;
 
   if (!remote_event_callbacks)
-    return INK_ERR_FAIL;
+    return TS_ERR_FAIL;
 
   // remove the callback function from the table
   err = cb_table_unregister(remote_event_callbacks, event_name, func);
-  if (err != INK_ERR_OKAY)
+  if (err != TS_ERR_OKAY)
     return err;
 
   // check if we need to notify traffic manager of the event (notify TM
   // only if the event has no callbacks)
   err = send_unregister_all_callbacks(event_socket_fd, remote_event_callbacks);
-  if (err != INK_ERR_OKAY)
+  if (err != TS_ERR_OKAY)
     return err;
 
-  return INK_ERR_OKAY;
+  return TS_ERR_OKAY;
 }
 
 /***************************************************************************
  * Snapshots
  ***************************************************************************/
-INKError
+TSError
 SnapshotTake(char *snapshot_name)
 {
   if (!snapshot_name)
-    return INK_ERR_PARAMS;
+    return TS_ERR_PARAMS;
 
   return send_and_parse_name(SNAPSHOT_TAKE, snapshot_name);
 }
 
-INKError
+TSError
 SnapshotRestore(char *snapshot_name)
 {
   if (!snapshot_name)
-    return INK_ERR_PARAMS;
+    return TS_ERR_PARAMS;
 
   return send_and_parse_name(SNAPSHOT_RESTORE, snapshot_name);
 }
 
-INKError
+TSError
 SnapshotRemove(char *snapshot_name)
 {
   if (!snapshot_name)
-    return INK_ERR_PARAMS;
+    return TS_ERR_PARAMS;
 
   return send_and_parse_name(SNAPSHOT_REMOVE, snapshot_name);
 }
 
-INKError
+TSError
 SnapshotGetMlt(LLQ * snapshots)
 {
   return send_and_parse_list(SNAPSHOT_GET_MLT, snapshots);
 }
 
-INKError
+TSError
 StatsReset(bool cluster)
 {
-  INKError ret;
+  TSError ret;
 
   ret = send_request_bool(main_socket_fd, STATS_RESET, cluster);
-  if (ret != INK_ERR_OKAY)
+  if (ret != TS_ERR_OKAY)
     return ret;                 // networking error
 
   return parse_reply(main_socket_fd);
@@ -838,16 +838,16 @@ StatsReset(bool cluster)
  * Encrypts the password and stores the encrypted password in the
  * location specified by "filepath"
  */
-INKError
+TSError
 EncryptToFile(const char *passwd, const char *filepath)
 {
-  INKError err;
+  TSError err;
 
   if (!passwd || !filepath)
-    return INK_ERR_PARAMS;
+    return TS_ERR_PARAMS;
 
   err = send_request_name_value(main_socket_fd, ENCRYPT_TO_FILE, passwd, filepath);
-  if (err != INK_ERR_OKAY)
+  if (err != TS_ERR_OKAY)
     return err;
 
   err = parse_reply(main_socket_fd);

@@ -48,29 +48,29 @@ void delete_client(ClientT * client);
 
 void *ts_ctrl_main(void *arg);
 
-INKError handle_record_get(struct SocketInfo sock_info, char *req);
-INKError handle_record_set(struct SocketInfo sock_info, char *req);
+TSError handle_record_get(struct SocketInfo sock_info, char *req);
+TSError handle_record_set(struct SocketInfo sock_info, char *req);
 
-INKError handle_file_read(struct SocketInfo sock_info, char *req);
-INKError handle_file_write(struct SocketInfo sock_info, char *req);
+TSError handle_file_read(struct SocketInfo sock_info, char *req);
+TSError handle_file_write(struct SocketInfo sock_info, char *req);
 
-INKError handle_proxy_state_get(struct SocketInfo sock_info);
-INKError handle_proxy_state_set(struct SocketInfo sock_info, char *req);
-INKError handle_reconfigure(struct SocketInfo sock_info);
-INKError handle_restart(struct SocketInfo sock_info, char *req, bool bounce);
+TSError handle_proxy_state_get(struct SocketInfo sock_info);
+TSError handle_proxy_state_set(struct SocketInfo sock_info, char *req);
+TSError handle_reconfigure(struct SocketInfo sock_info);
+TSError handle_restart(struct SocketInfo sock_info, char *req, bool bounce);
 
-INKError handle_event_resolve(struct SocketInfo sock_info, char *req);
-INKError handle_event_get_mlt(struct SocketInfo sock_info);
-INKError handle_event_active(struct SocketInfo sock_info, char *req);
+TSError handle_event_resolve(struct SocketInfo sock_info, char *req);
+TSError handle_event_get_mlt(struct SocketInfo sock_info);
+TSError handle_event_active(struct SocketInfo sock_info, char *req);
 
-INKError handle_snapshot(struct SocketInfo sock_info, char *req, OpType op);
-INKError handle_snapshot_get_mlt(struct SocketInfo sock_info);
+TSError handle_snapshot(struct SocketInfo sock_info, char *req, OpType op);
+TSError handle_snapshot_get_mlt(struct SocketInfo sock_info);
 
 void handle_diags(struct SocketInfo sock_info, char *req);
 
-INKError handle_stats_reset(struct SocketInfo sock_info, char *req);
+TSError handle_stats_reset(struct SocketInfo sock_info, char *req);
 
-INKError handle_encrypt_to_file(struct SocketInfo sock_info, char *req);
+TSError handle_encrypt_to_file(struct SocketInfo sock_info, char *req);
 
 
 #endif

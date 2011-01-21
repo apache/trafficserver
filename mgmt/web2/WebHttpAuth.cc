@@ -146,7 +146,7 @@ WebHttpAuthenticate(WebHttpContext * whc)
     passwd = empty_string;
   }
 
-  INKEncryptPassword(passwd, &encrypt_passwd);
+  TSEncryptPassword(passwd, &encrypt_passwd);
 
   Debug("web_auth", "[WebHttpAuthenticate] encrypt_passwd (%s), "
         "admin.encrypt_passwd (%s)\n", encrypt_passwd, whc->admin_user.encrypt_passwd);
@@ -174,7 +174,7 @@ WebHttpAuthenticate(WebHttpContext * whc)
   substituteUnsafeChars(passwd);
 
   xfree(encrypt_passwd);
-  INKEncryptPassword(passwd, &encrypt_passwd);
+  TSEncryptPassword(passwd, &encrypt_passwd);
 
   // FIXME: Yucky cut-and-paste code below!!!
 
