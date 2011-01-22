@@ -52,7 +52,7 @@ int64_to_str(char *buf, unsigned int buf_size, int64_t val, unsigned int *total_
   if (buf_size < 22) {
     // int64_t may not fit in provided buffer, use the local one
     out_buf = &local_buf[local_buf_size - 1];
-    using_local_buffer = false;
+    using_local_buffer = true;
   } else {
     out_buf = &buf[buf_size - 1];
   }
@@ -62,7 +62,7 @@ int64_to_str(char *buf, unsigned int buf_size, int64_t val, unsigned int *total_
 
   if (val < 0) {
     val = -val;
-    negative = false;
+    negative = true;
   }
 
   if (val < 10) {
