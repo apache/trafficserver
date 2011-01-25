@@ -2150,25 +2150,11 @@ Cache::remove(Continuation *cont, CacheKey *key, CacheFragType type,
   else
     return &c->_action;
 }
-
-#ifdef NON_MODULAR
-Action *
-Cache::remove(Continuation *cont, CacheURL *url, CacheFragType type)
-{
-  INK_MD5 md5;
-  url->MD5_get(&md5);
-  int host_len = 0;
-  const char *hostname = url->host_get(&host_len);
-  return remove(cont, &md5, type, true, false, (char *) hostname, host_len);
-}
-#endif
-
 // CacheVConnection
 
 CacheVConnection::CacheVConnection()
-:VConnection(NULL)
-{
-}
+  : VConnection(NULL)
+{ }
 
 void
 cplist_init()
@@ -2544,6 +2530,7 @@ Cache::key_to_part(CacheKey *key, char *hostname, int host_len)
   uint32_t h = (key->word(2) >> DIR_TAG_WIDTH) % PART_HASH_TABLE_SIZE;
   unsigned short *hash_table = hosttable->gen_host_rec.part_hash_table;
   CacheHostRecord *host_rec = &hosttable->gen_host_rec;
+
   if (hosttable->m_numEntries > 0 && host_len) {
     CacheHostResult res;
     hosttable->Match(hostname, host_len, &res);
@@ -2801,14 +2788,28 @@ CacheProcessor::open_write(Continuation *cont, int expected_size, URL *url,
 }
 
 //----------------------------------------------------------------------------
+// Note: this should not be called from from the cluster processor, or bad
+// recursion could occur. This is merely a convenience wrapper.
 Action *
 CacheProcessor::remove(Continuation *cont, URL *url, CacheFragType frag_type)
 {
+  INK_MD5 md5;
+  int len = 0;
+  const char *hostname;
+
+  url->MD5_get(&md5);
+  hostname = url->host_get(&len);
+
+  Debug("cache_remove", "[CacheProcessor::remove] Issuing cache delete for %s", url->string_get_ref());
 #ifdef CLUSTER_CACHE
   if (cache_clustering_enabled > 0) {
+    // Remove from cluster
+    return remove(cont, &md5, frag_type, true, false, const_cast<char *>(hostname), len);
   }
 #endif
-  return caches[frag_type]->remove(cont, url, frag_type);
+
+  // Remove from local cache only.
+  return caches[frag_type]->remove(cont, &md5, frag_type, true, false, const_cast<char*>(hostname), len);
 }
 
 #endif

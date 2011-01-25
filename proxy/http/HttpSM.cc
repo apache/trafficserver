@@ -3963,14 +3963,12 @@ HttpSM::do_cache_delete_all_alts(Continuation * cont)
   ink_assert(md5a == md5b || t_state.txn_conf.maintain_pristine_host_hdr);
 #endif
 
-  Debug("http_seq", "[HttpSM::do_cache_update] Issuing cache delete for %s",
+  Debug("http_seq", "[HttpSM::do_cache_delete_all_alts] Issuing cache delete for %s",
         t_state.cache_info.lookup_url->string_get_ref());
 
   Action *cache_action_handle = NULL;
 
-  cache_action_handle = cacheProcessor.remove(cont,   // continuation
-                                              t_state.cache_info.lookup_url); // url
-
+  cache_action_handle = cacheProcessor.remove(cont, t_state.cache_info.lookup_url);
   if (cont != NULL) {
     if (cache_action_handle != ACTION_RESULT_DONE) {
       ink_assert(!pending_action);

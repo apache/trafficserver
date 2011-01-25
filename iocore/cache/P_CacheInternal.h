@@ -974,7 +974,6 @@ struct Cache
   Action *open_write(Continuation *cont, URL *url, CacheHTTPHdr *request,
                      CacheHTTPInfo *old_info, time_t pin_in_cache = (time_t) 0,
                      CacheFragType type = CACHE_FRAG_TYPE_HTTP);
-  Action *remove(Continuation *cont, URL *url, CacheFragType type);
   static void generate_key(INK_MD5 *md5, URL *url, CacheHTTPHdr *request);
 #endif
 
@@ -1174,6 +1173,7 @@ TS_INLINE Action *
 CacheProcessor::remove(Continuation *cont, CacheKey *key, CacheFragType frag_type,
                        bool rm_user_agents, bool rm_link, char *hostname, int host_len)
 {
+  Debug("cache_remove", "[CacheProcessor::remove] Issuing cache delete for %u", cache_hash(*key));
 #ifdef CLUSTER_CACHE
   if (cache_clustering_enabled > 0) {
     ClusterMachine *m = cluster_machine_at_depth(cache_hash(*key));
