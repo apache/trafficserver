@@ -118,7 +118,7 @@ EOF
 		;;
 	-c)
 		shift
-		while [ -r $1 ]; do
+		while [ -r "$1" ]; do
 			SRC=$1
 			obj=`echo $SRC | sed -e 's/\.[a-z]*$/\.lo/g;'`
 			echo "  compiling $SRC -> $obj"
@@ -132,7 +132,7 @@ EOF
 		;;
 	-C)
 		shift
-		while [ -r $1 ]; do
+		while [ -r "$1" ]; do
 			SRC=$1
 			obj=`echo $SRC | sed -e 's/\.[a-z]*$/\.lo/g;'`
 			echo "  compiling $SRC -> $obj"
