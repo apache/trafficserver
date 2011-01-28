@@ -56,7 +56,7 @@ class Thread;
 class Processor
 {
 public:
-  virtual ~ Processor();
+  virtual ~Processor();
 
   /**
     Returns a Thread appropriate for the processor.

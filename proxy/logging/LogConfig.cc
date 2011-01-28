@@ -657,76 +657,6 @@ LogConfig::~LogConfig()
 }
 
 /*-------------------------------------------------------------------------
-  LogConfig::setup_collation
-  -------------------------------------------------------------------------*/
-
-void
-LogConfig::setup_collation(LogConfig * prev_config)
-{
-  // Set-up the collation status, but only if collation is enabled and
-  // there are valid entries for the collation host and port.
-  //
-  if (collation_mode<NO_COLLATION || collation_mode>= N_COLLATION_MODES) {
-    Note("Invalid value %d for proxy.local.log.collation_mode"
-         " configuration variable (valid range is from %d to %d)\n"
-         "Log collation disabled", collation_mode, NO_COLLATION, N_COLLATION_MODES - 1);
-  } else if (collation_mode == NO_COLLATION) {
-    // if the previous configuration had a collation accept, delete it
-    //
-    if (prev_config && prev_config->m_log_collation_accept) {
-      delete prev_config->m_log_collation_accept;
-      prev_config->m_log_collation_accept = NULL;
-    }
-  } else {
-    if (!collation_port) {
-      Note("Cannot activate log collation, %d is and invalid " "collation port", collation_port);
-    } else if (collation_mode > COLLATION_HOST && strcmp(collation_host, "none") == 0) {
-      Note("Cannot activate log collation, \"%s\" is and invalid " "collation host", collation_host);
-    } else {
-      if (collation_mode == COLLATION_HOST) {
-#if defined(IOCORE_LOG_COLLATION)
-
-        ink_debug_assert(m_log_collation_accept == 0);
-
-        if (prev_config && prev_config->m_log_collation_accept) {
-          if (prev_config->collation_port == collation_port) {
-            m_log_collation_accept = prev_config->m_log_collation_accept;
-          } else {
-            delete prev_config->m_log_collation_accept;
-          }
-        }
-
-        if (!m_log_collation_accept) {
-          Log::collation_port = collation_port;
-          m_log_collation_accept = NEW(new LogCollationAccept(collation_port));
-        }
-#else
-        // since we are the collation host, we need to signal the
-        // collate_cond variable so that our collation thread wakes up.
-        //
-        ink_cond_signal(&Log::collate_cond);
-#endif
-        Debug("log", "I am a collation host listening on port %d.", collation_port);
-      } else {
-        Debug("log", "I am a collation client (%d)."
-              " My collation host is %s:%d", collation_mode, collation_host, collation_port);
-      }
-
-#ifdef IOCORE_LOG_COLLATION
-      Debug("log", "using iocore log collation");
-#else
-      Debug("log", "using socket log collation");
-#endif
-      if (collation_host_tagged) {
-        LogFormat::turn_tagging_on();
-      } else {
-        LogFormat::turn_tagging_off();
-      }
-    }
-  }
-}
-
-/*-------------------------------------------------------------------------
   LogConfig::init
   -------------------------------------------------------------------------*/
 
@@ -961,55 +891,6 @@ LogConfig::add_filters_to_search_log_object(const char *format_name)
 #ifndef MAXHOSTNAMELEN
 #define MAXHOSTNAMELEN 256
 #endif
-
-void
-LogConfig::create_pre_defined_objects_with_filter(const PreDefinedFormatInfoList & pre_def_info_list, size_t num_filters,
-                                                  LogFilter ** filter, const char *filt_name, bool force_extension)
-{
-  PreDefinedFormatInfo *pdi;
-  for (pdi = pre_def_info_list.head; pdi != NULL; pdi = (pdi->link).next) {
-
-    char *obj_fname;
-    char obj_filt_fname[PATH_MAX];
-    if (filt_name) {
-      ink_string_concatenate_strings_n(obj_filt_fname, PATH_MAX, pdi->filename, "-", filt_name, NULL);
-      obj_fname = obj_filt_fname;
-    } else {
-      obj_fname = pdi->filename;
-    }
-
-    if (force_extension) {
-      ink_string_append(obj_filt_fname,
-                        (char *) (pdi->is_ascii ?
-                                  ASCII_LOG_OBJECT_FILENAME_EXTENSION :
-                                  BINARY_LOG_OBJECT_FILENAME_EXTENSION), PATH_MAX);
-    }
-    // create object with filters
-    //
-    LogObject *obj;
-    obj = NEW(new LogObject(pdi->format, logfile_dir, obj_fname,
-                            pdi->is_ascii ? ASCII_LOG : BINARY_LOG,
-                            pdi->header, rolling_enabled, rolling_interval_sec, rolling_offset_hr, rolling_size_mb));
-
-    if (collation_mode == SEND_STD_FMTS || collation_mode == SEND_STD_AND_NON_XML_CUSTOM_FMTS) {
-
-      LogHost *loghost = NEW(new LogHost(obj->get_full_filename(),
-                                         obj->get_signature()));
-      ink_assert(loghost != NULL);
-
-      loghost->set_name_port(collation_host, collation_port);
-      obj->add_loghost(loghost, false);
-    }
-
-    for (size_t i = 0; i < num_filters; ++i) {
-      obj->add_filter(filter[i]);
-    }
-
-    // give object to object manager
-    //
-    log_object_manager.manage_object(obj);
-  }
-}
 
 //-----------------------------------------------------------------------------
 // split_by_protocol
@@ -2275,9 +2156,8 @@ LogConfig::read_xml_log_config(int from_memory)
         LogField *shn_field = Log::global_field_list.find_by_symbol("shn");
         ink_assert(shn_field);
 
-        LogFilterString
-          server_host_filter("__xml_server_hosts__",
-                             shn_field, LogFilter::ACCEPT, LogFilter::CASE_INSENSITIVE_CONTAIN, serverHosts_str);
+        LogFilterString server_host_filter("__xml_server_hosts__",
+                                           shn_field, LogFilter::ACCEPT, LogFilter::CASE_INSENSITIVE_CONTAIN, serverHosts_str);
 
         if (server_host_filter.get_num_values() == 0) {
           Warning("No valid server host value(s) (%s) for Protocol "
@@ -2293,9 +2173,8 @@ LogConfig::read_xml_log_config(int from_memory)
         char *host;
         SimpleTokenizer tok(collationHosts_str, ',');
         while (host = tok.getNext(), host != 0) {
+          LogHost *lh = NEW(new LogHost(obj->get_full_filename(), obj->get_signature()));
 
-          LogHost *lh = NEW(new LogHost(obj->get_full_filename(),
-                                        obj->get_signature()));
           if (lh->set_name_or_ipstr(host)) {
             Warning("Could not set \"%s\" as collation host", host);
             delete lh;

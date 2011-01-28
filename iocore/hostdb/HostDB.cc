@@ -104,14 +104,6 @@ register_ShowHostDB(Continuation * c, HTTPHdr * h);
 #endif
 
 
-//
-// Initialization
-//
-HostDBProcessor::HostDBProcessor()
-{
-}
-
-
 HostDBCache::HostDBCache()
 {
   tag_bits = HOST_DB_TAG_BITS;

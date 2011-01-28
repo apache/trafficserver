@@ -37,9 +37,9 @@
 //-------------------------------------------------------------------------
 
 LogCollationAccept::LogCollationAccept(int port):
-Continuation(new_ProxyMutex()),
-m_port(port),
-m_pending_event(NULL)
+  Continuation(new_ProxyMutex()),
+  m_port(port),
+  m_pending_event(NULL)
 {
 
   SET_HANDLER((LogCollationAcceptHandler) & LogCollationAccept::accept_event);

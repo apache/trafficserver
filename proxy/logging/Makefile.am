@@ -31,7 +31,7 @@ AM_CPPFLAGS = \
 
 EXTRA_DIST = LogStandalone.cc
 
-noinst_LIBRARIES = liblogging.a
+noinst_LIBRARIES = liblogging.a liblogcollation.a
 
 liblogging_a_SOURCES = \
   LogAccess.cc \
@@ -46,13 +46,6 @@ liblogging_a_SOURCES = \
   LogBufferV1.h \
   Log.cc \
   Log.h \
-  LogCollationAccept.cc \
-  LogCollationAccept.h \
-  LogCollationBase.h \
-  LogCollationClientSM.cc \
-  LogCollationClientSM.h \
-  LogCollationHostSM.cc \
-  LogCollationHostSM.h \
   LogConfig.cc \
   LogConfig.h \
   LogFieldAliasMap.cc \
@@ -66,12 +59,22 @@ liblogging_a_SOURCES = \
   LogFormat.cc \
   LogFormat.h \
   LogFormatType.h \
-  LogHost.cc \
-  LogHost.h \
   LogLimits.h \
   LogObject.cc \
   LogObject.h \
   LogSock.cc \
   LogSock.h \
+  LogHost.cc \
+  LogHost.h \
   LogUtils.cc \
   LogUtils.h
+
+liblogcollation_a_SOURCES = \
+  LogConfigCollation.cc \
+  LogCollationAccept.cc \
+  LogCollationAccept.h \
+  LogCollationBase.h \
+  LogCollationClientSM.cc \
+  LogCollationClientSM.h \
+  LogCollationHostSM.cc \
+  LogCollationHostSM.h

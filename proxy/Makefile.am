@@ -138,6 +138,7 @@ traffic_server_LDADD = \
   http/remap/libhttp_remap.a \
   congest/libCongestionControl.a \
   logging/liblogging.a \
+  logging/liblogcollation.a \
   stats/libstats.a \
   hdrs/libhdrs.a  \
   $(top_builddir)/mgmt/preparse/libpreparse.a \
@@ -164,51 +165,13 @@ traffic_server_LDADD = \
 traffic_logcat_SOURCES = logcat.cc
 traffic_logcat_LDFLAGS = @EXTRA_CXX_LDFLAGS@
 traffic_logcat_LDADD = \
-  ICP.o \
-  ICPConfig.o \
-  ICPProcessor.o \
-  ICPStats.o \
-  IPAllow.o \
-  ParentSelection.o \
-  ControlBase.o \
-  ControlMatcher.o CacheControl.o  \
-  StatSystem.o \
-  ReverseProxy.o \
-  ProxyConfig.o \
   signals.o \
-  Error.o \
-  EventName.o \
-  DiagsConfig.o \
-  StatPages.o \
-  PluginVC.o \
-  AbstractBuffer.o \
-  Transform.o \
-  Prefetch.o \
-  Update.o \
-  Plugin.o \
-  PluginDB.o \
-  InkAPI.o \
-  FetchSM.o \
-  InkIOCoreAPI.o \
   InkXml.o \
-  http/libhttp.a \
-  http/remap/libhttp_remap.a \
+  DiagsConfig.o \
+  UglyLogStubs.o \
   logging/liblogging.a \
-  stats/libstats.a \
-  hdrs/libhdrs.a \
-  congest/libCongestionControl.a \
-  $(top_builddir)/mgmt/preparse/libpreparse.a \
   $(top_builddir)/mgmt/utils/libutils_p.a \
   $(top_builddir)/mgmt/libmgmt_p.a \
-  $(top_builddir)/iocore/cluster/libinkcluster.a \
-  $(top_builddir)/iocore/dns/libinkdns.a \
-  $(top_builddir)/iocore/hostdb/libinkhostdb.a \
-  $(top_builddir)/iocore/cluster/libinkcluster.a \
-  $(top_builddir)/iocore/cache/libinkcache.a \
-  $(top_builddir)/iocore/utils/libinkutils.a \
-  $(top_builddir)/iocore/aio/libinkaio.a \
-  $(top_builddir)/iocore/net/libinknet.a \
-  $(top_builddir)/iocore/eventsystem/libinkevent.a \
   $(top_builddir)/lib/records/librecprocess.a \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
   $(top_builddir)/lib/ts/libtsutil.la \
@@ -225,53 +188,13 @@ endif
 traffic_logstats_SOURCES = logstats.cc
 traffic_logstats_LDFLAGS = @EXTRA_CXX_LDFLAGS@
 traffic_logstats_LDADD = \
-  ICP.o \
-  ICPConfig.o \
-  ICPProcessor.o \
-  ICPStats.o \
-  IPAllow.o \
-  ParentSelection.o \
-  ControlBase.o \
-  ControlMatcher.o \
-  CacheControl.o  \
-  StatSystem.o \
-  ReverseProxy.o \
-  ProxyConfig.o \
   signals.o \
-  Error.o \
-  EventName.o \
-  DiagsConfig.o \
-  StatPages.o \
-  PluginVC.o \
-  AbstractBuffer.o \
-  Transform.o \
-  Prefetch.o \
-  Update.o \
-  Plugin.o \
-  PluginDB.o \
-  InkAPI.o \
-  FetchSM.o \
-  InkIOCoreAPI.o \
   InkXml.o \
-  http/libhttp.a \
-  http/remap/libhttp_remap.a \
+  DiagsConfig.o \
+  UglyLogStubs.o \
   logging/liblogging.a \
-  stats/libstats.a \
-  hdrs/libhdrs.a \
-  congest/libCongestionControl.a \
-  $(top_builddir)/mgmt/preparse/libpreparse.a \
   $(top_builddir)/mgmt/utils/libutils_p.a \
   $(top_builddir)/mgmt/libmgmt_p.a \
-  $(top_builddir)/iocore/cluster/libinkcluster.a \
-  $(top_builddir)/iocore/dns/libinkdns.a \
-  $(top_builddir)/iocore/hostdb/libinkhostdb.a \
-  $(top_builddir)/iocore/dns/libinkdns.a \
-  $(top_builddir)/iocore/cluster/libinkcluster.a \
-  $(top_builddir)/iocore/cache/libinkcache.a \
-  $(top_builddir)/iocore/utils/libinkutils.a \
-  $(top_builddir)/iocore/aio/libinkaio.a \
-  $(top_builddir)/iocore/net/libinknet.a \
-  $(top_builddir)/iocore/eventsystem/libinkevent.a \
   $(top_builddir)/lib/records/librecprocess.a \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
   $(top_builddir)/lib/ts/libtsutil.la \
@@ -279,11 +202,6 @@ traffic_logstats_LDADD = \
   @LIBPCRE@ @LIBSSL@ @LIBTCL@ @LIBDL@ @LIBEV@ \
   @LIBEXPAT@ @LIBDEMANGLE@ @LIBMLD@ @LIBEXC@ @LIBICONV@ @LIBM@ @LIBPROFILER@ \
   @LIBEXECINFO@
-
-if BUILD_TESTS
-  traffic_logstats_LDADD += RegressionSM.o \
-    TestHook.o
-endif
 
 traffic_sac_SOURCES = sac.cc
 traffic_sac_LDFLAGS = @EXTRA_CXX_LDFLAGS@
@@ -320,6 +238,7 @@ traffic_sac_LDADD = \
   http/remap/libhttp_remap.a \
   congest/libCongestionControl.a \
   logging/liblogging.a \
+  logging/liblogcollation.a \
   stats/libstats.a \
   hdrs/libhdrs.a \
   $(top_builddir)/mgmt/preparse/libpreparse.a \

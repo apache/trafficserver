@@ -30,14 +30,12 @@ struct LogCollationAccept: public Continuation
 {
 
 public:
-
   LogCollationAccept(int port);
    ~LogCollationAccept();
 
   int accept_event(int event, NetVConnection * net_vc);
 
 private:
-
   int m_port;
   Action *m_accept_action;
   Event *m_pending_event;

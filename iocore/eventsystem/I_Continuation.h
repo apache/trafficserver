@@ -91,8 +91,7 @@ public:
 
 */
 
-// TODO: The ICCcompiler defaults this to "private", is that really correct?
-class Continuation: public force_VFPT_to_top
+class Continuation: private force_VFPT_to_top
 {
 public:
 
