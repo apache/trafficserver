@@ -2,6 +2,17 @@
 
 Changes with Apache Traffic Server 2.1.6
 
+  *) Changed the defaults to deal with read contention on the cache, this
+   dramatically improves the performance on cache misses [TS-505, TS-506].
+
+  *) Reorganize some code to reduce binary foot prints [TS-655].
+
+  *) Bogus logcat conversion of squid timestamps [TS-653].
+
+  *) Unable to purge objects on other servers in full cluster mode [TS-643].
+
+  *) New 64-bit random generator.
+
   *) Rename the management APIs from INK* to TS* [TS-639].
 
   *) Remove the dead v2 stats code [TS-650].

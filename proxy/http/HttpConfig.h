@@ -677,7 +677,6 @@ public:
 
   // open write failure retries.
   MgmtInt max_cache_open_write_retries;
-  MgmtInt cache_open_write_retry_time;  // time is in mseconds
 
   ///////////////////
   // cache control //
@@ -968,7 +967,6 @@ HttpConfigParams::HttpConfigParams()
     max_cache_open_read_retries(0),
     cache_open_read_retry_time(0),
     max_cache_open_write_retries(0),
-    cache_open_write_retry_time(0),
     cache_enable_default_vary_headers(false),
     cache_when_to_add_no_cache_to_msie_requests(0),
     connect_ports_string(0),

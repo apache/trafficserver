@@ -749,8 +749,6 @@ RecordElement RecordsConfig[] = {
   ,
   {RECT_CONFIG, "proxy.config.http.cache.max_open_write_retries", RECD_INT, "1", RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.http.cache.open_write_retry_time", RECD_INT, "500", RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
-  ,
   //       #  when_to_revalidate has 4 options:
   //       #
   //       #  0 - default. use use cache directives or heuristic
