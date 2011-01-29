@@ -7,6 +7,7 @@ plugins to build large scale web applications.
 1. DIRECTORY STRUCTURE
 
   traffic/ ............... top src dir
+  |-- cop ................ traffic_cop application
   |-- doc/ ............... generated documentation
   |-- example/ ........... example plugins
   |-- install/ ........... installation programs and scripts
@@ -16,6 +17,8 @@ plugins to build large scale web applications.
       |-- tsconfig/....... New config parser and library (experimental)
       |-- records/ ....... library for config files
   |-- m4/ ................ custom macros for configure.ac
+  |-- mgmt/ .............. Management server and tools (including traffic_manager)
+      |-- cli ............ Command line utilities and API
   |-- proxy/ ............. HTTP proxy logic
   |-- test/ .............. functional tests
   |-- .indent.pro ........ indent profile for coding style
