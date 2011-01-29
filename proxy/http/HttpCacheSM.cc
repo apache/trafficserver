@@ -103,7 +103,6 @@ lookup_url(NULL), lookup_max_recursive(0), current_lookup_level(0)
 int
 HttpCacheSM::state_cache_open_read(int event, void *data)
 {
-
   STATE_ENTER(&HttpCacheSM::state_cache_open_read, event);
   ink_assert(captive_action.cancelled == 0);
   pending_action = NULL;
@@ -158,13 +157,11 @@ HttpCacheSM::state_cache_open_read(int event, void *data)
 int
 HttpCacheSM::state_cache_open_write(int event, void *data)
 {
-
   STATE_ENTER(&HttpCacheSM::state_cache_open_write, event);
   ink_assert(captive_action.cancelled == 0);
   pending_action = NULL;
 
   switch (event) {
-
   case CACHE_EVENT_OPEN_WRITE:
     HTTP_INCREMENT_DYN_STAT(http_current_cache_connections_stat);
     ink_assert(cache_write_vc == NULL);
@@ -191,10 +188,8 @@ void
 HttpCacheSM::do_schedule_in()
 {
   ink_assert(pending_action == NULL);
-  Action *action_handle = mutex->thread_holding->schedule_in(this,
-                                                             HRTIME_MSECONDS(master_sm->t_state.http_config_param->
-                                                                             cache_open_read_retry_time)
-    );
+  Action *action_handle =
+    mutex->thread_holding->schedule_in(this, HRTIME_MSECONDS(master_sm->t_state.http_config_param->cache_open_read_retry_time));
 
   if (action_handle != ACTION_RESULT_DONE) {
     pending_action = action_handle;
@@ -206,7 +201,6 @@ HttpCacheSM::do_schedule_in()
 Action *
 HttpCacheSM::do_cache_open_read()
 {
-
   open_read_tries++;
   ink_assert(pending_action == NULL);
   if (write_locked) {
@@ -275,11 +269,9 @@ HttpCacheSM::open_read(URL * url, HTTPHdr * hdr, CacheLookupHttpConfig * params,
 }
 
 Action *
-HttpCacheSM::open_write(URL * url,
-                        HTTPHdr * request,
-                        CacheHTTPInfo * old_info, time_t pin_in_cache, bool retry, bool allow_multiple)
+HttpCacheSM::open_write(URL * url, HTTPHdr * request, CacheHTTPInfo * old_info, time_t pin_in_cache,
+                        bool retry, bool allow_multiple)
 {
-
   SET_HANDLER(&HttpCacheSM::state_cache_open_write);
   ink_assert(pending_action == NULL);
   ink_assert(cache_write_vc == NULL);
