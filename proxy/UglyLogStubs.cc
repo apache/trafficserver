@@ -111,3 +111,13 @@ LogHost::write(LogBuffer * lb, size_t * to_disk, size_t * to_net, size_t * to_pi
   return 0;
 }
 
+
+NetVCOptions const Connection::DEFAULT_OPTIONS;
+NetProcessor::AcceptOptions const NetProcessor::DEFAULT_ACCEPT_OPTIONS;
+
+NetProcessor::AcceptOptions&
+NetProcessor::AcceptOptions::reset()
+{
+  ink_release_assert(false);
+  return *this;
+}
