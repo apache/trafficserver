@@ -121,3 +121,10 @@ NetProcessor::AcceptOptions::reset()
   ink_release_assert(false);
   return *this;
 }
+
+int
+net_accept(NetAccept * na, void *ep, bool blockable)
+{
+  ink_release_assert(false);
+  return 0;
+}
