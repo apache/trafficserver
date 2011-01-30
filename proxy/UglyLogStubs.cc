@@ -111,14 +111,24 @@ LogHost::write(LogBuffer * lb, size_t * to_disk, size_t * to_net, size_t * to_pi
   return 0;
 }
 
-
+// TODO: The following was necessary only for Solaris, should examine more.
 NetVCOptions const Connection::DEFAULT_OPTIONS;
 NetProcessor::AcceptOptions const NetProcessor::DEFAULT_ACCEPT_OPTIONS;
 
+// TODO: This is even uglier, this actually gets called here when "defined".
 NetProcessor::AcceptOptions&
 NetProcessor::AcceptOptions::reset()
 {
-  ink_release_assert(false);
+  port = 0;
+  accept_threads = 0;
+  domain = AF_INET;
+  etype = ET_NET;
+  f_callback_on_open = false;
+  recv_bufsize = 0;
+  send_bufsize = 0;
+  sockopt_flags = 0;
+  f_outbound_transparent = false;
+  f_inbound_transparent = false;
   return *this;
 }
 
