@@ -430,6 +430,7 @@ struct OverridableHttpConfigParams {
        post_connect_attempts_timeout(0),
        down_server_timeout(0), client_abort_threshold(0),
        freshness_fuzz_time(0), freshness_fuzz_min_time(0),
+       max_cache_open_read_retries(0), cache_open_read_retry_time(0),
 
        // Strings / floats must come last
        proxy_response_server_string(NULL), proxy_response_server_string_len(0),
@@ -535,6 +536,10 @@ struct OverridableHttpConfigParams {
 
   MgmtInt freshness_fuzz_time;
   MgmtInt freshness_fuzz_min_time;
+
+  // open read failure retries.
+  MgmtInt max_cache_open_read_retries;
+  MgmtInt cache_open_read_retry_time;   // time is in mseconds
 
   // IMPORTANT: Here comes all strings / floats configs.
 
@@ -670,10 +675,6 @@ public:
   char *cache_vary_default_text;
   char *cache_vary_default_images;
   char *cache_vary_default_other;
-
-  // open read failure retries.
-  MgmtInt max_cache_open_read_retries;
-  MgmtInt cache_open_read_retry_time;   // time is in mseconds
 
   // open write failure retries.
   MgmtInt max_cache_open_write_retries;
@@ -964,8 +965,6 @@ HttpConfigParams::HttpConfigParams()
     cache_vary_default_text(0),
     cache_vary_default_images(0),
     cache_vary_default_other(0),
-    max_cache_open_read_retries(0),
-    cache_open_read_retry_time(0),
     max_cache_open_write_retries(0),
     cache_enable_default_vary_headers(false),
     cache_when_to_add_no_cache_to_msie_requests(0),

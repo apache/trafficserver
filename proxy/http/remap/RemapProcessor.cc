@@ -225,7 +225,7 @@ RemapProcessor::finish_remap(HttpTransact::State * s)
   int host_len;
   const char *host_hdr = request_header->value_get(MIME_FIELD_HOST, MIME_LEN_HOST, &host_len);
 
-  if (request_url && host_hdr != NULL && s->txn_conf.maintain_pristine_host_hdr == 0) {
+  if (request_url && host_hdr != NULL && s->txn_conf->maintain_pristine_host_hdr == 0) {
     remapped_host = request_url->host_get(&remapped_host_len);
     remapped_port = request_url->port_get_raw();
 

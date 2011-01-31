@@ -573,7 +573,7 @@ HttpClientSession::release(IOBufferReader * r)
 {
   ink_assert(read_state == HCS_ACTIVE_READER);
   ink_assert(current_reader != NULL);
-  MgmtInt ka_in = current_reader->t_state.txn_conf.keep_alive_no_activity_timeout_in;
+  MgmtInt ka_in = current_reader->t_state.txn_conf->keep_alive_no_activity_timeout_in;
 
   Debug("http_cs", "[%" PRId64 "] session released by sm [%" PRId64 "]", con_id, current_reader->sm_id);
   current_reader = NULL;

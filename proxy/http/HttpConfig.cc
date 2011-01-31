@@ -1271,8 +1271,8 @@ HttpConfig::startup()
   HttpEstablishStaticConfigStringAlloc(c.cache_vary_default_other, "proxy.config.http.cache.vary_default_other");
 
   // open read failure retries
-  HttpEstablishStaticConfigLongLong(c.max_cache_open_read_retries, "proxy.config.http.cache.max_open_read_retries");
-  HttpEstablishStaticConfigLongLong(c.cache_open_read_retry_time, "proxy.config.http.cache.open_read_retry_time");
+  HttpEstablishStaticConfigLongLong(c.oride.max_cache_open_read_retries, "proxy.config.http.cache.max_open_read_retries");
+  HttpEstablishStaticConfigLongLong(c.oride.cache_open_read_retry_time, "proxy.config.http.cache.open_read_retry_time");
 
   // open write failure retries
   HttpEstablishStaticConfigLongLong(c.max_cache_open_write_retries, "proxy.config.http.cache.max_open_write_retries");
@@ -1565,8 +1565,8 @@ HttpConfig::reconfigure()
   params->cache_vary_default_other = xstrdup(m_master.cache_vary_default_other);
 
   // open read failure retries
-  params->max_cache_open_read_retries = m_master.max_cache_open_read_retries;
-  params->cache_open_read_retry_time = m_master.cache_open_read_retry_time;
+  params->oride.max_cache_open_read_retries = m_master.oride.max_cache_open_read_retries;
+  params->oride.cache_open_read_retry_time = m_master.oride.cache_open_read_retry_time;
 
   // open write failure retries
   params->max_cache_open_write_retries = m_master.max_cache_open_write_retries;

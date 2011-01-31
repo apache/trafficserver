@@ -2,24 +2,31 @@
 
 Changes with Apache Traffic Server 2.1.6
 
-  *) Cache scan can not be canceled [TS-660].
+  *) [TS-661] Delay the copy of per transaction configs until a plugin
+   actually tries to modify a setting. We also add these settings to the
+   list of configurations that is overridable:
 
-  *) Changed the defaults to deal with read contention on the cache, this
-   dramatically improves the performance on cache misses [TS-505, TS-506].
+       proxy.config.http.cache.max_open_read_retries
+       proxy.config.http.cache.open_read_retry_time
 
-  *) Reorganize some code to reduce binary foot prints [TS-655].
+  *) [TS-660] Cache scan can not be canceled.
 
-  *) Bogus logcat conversion of squid timestamps [TS-653].
+  *) [TS-505, TS-506] Changed the defaults to deal with read contention on
+   the cache, this dramatically improves the performance on cache misses.
 
-  *) Unable to purge objects on other servers in full cluster mode [TS-643].
+  *) [TS-655] Reorganize some code to reduce binary foot prints.
+
+  *) [TS-653] Bogus logcat conversion of squid timestamps.
+
+  *) [TS-643] Unable to purge objects on other servers in full cluster mode.
 
   *) New 64-bit random generator.
 
-  *) Rename the management APIs from INK* to TS* [TS-639].
+  *) [TS-639] Rename the management APIs from INK* to TS*.
 
-  *) Remove the dead v2 stats code [TS-650].
+  *) [TS-650] Remove the dead v2 stats code.
 
-  *) Dynamic libraries for mgmt APIs [TS-649].
+  *) [TS-649] Dynamic libraries for mgmt APIs.
     
     This makes libts -> libtsutil, and we now support making .so's for
     libtsutil.so and libtsmgmt.so. All binaries are changed to use this,
@@ -31,47 +38,47 @@ Changes with Apache Traffic Server 2.1.6
          #include <ts/mgmtapi.h>
 
 
-  *) Move Layout out of iocore and into lib/ts [TS-647].
+  *) [TS-647] Move Layout out of iocore and into lib/ts.
 
-  *) Rename various directories:
+  *) [TS-638] Rename various directories:
       proxy/mgmt -> mgmt/
       proxy/mgmt/cop -> cop/
 
    All "cli" APIs are now also migrated into mgmt/cli, unified into one
-   single cli. [TS-638]
+   single cli.
 
-  *) Cleanup of Web2/HTML2 [TS-641].
+  *) [TS-641] Cleanup of Web2/HTML2.
 
-  *) Remove various unused source files [TS-636, TS-637].
+  *) [TS-636, TS-637] Remove various unused source files.
 
-  *) Rename proxy/http2 -> proxy/http and proxy/mgmt2 to proxy/mgmt [TS-631].
+  *) [TS-631] Rename proxy/http2 -> proxy/http and proxy/mgmt2 to proxy/mgmt.
 
-  *) Add an example to records.config for how to bind a specific IP [TS-582].
+  *) [TS-582] Add an example to records.config for how to bind a specific IP.
 
-  *) Cluster port was activated even with clustering disabled. This fix also
-   adds monitoring support for the "cli" unix domain socket [TS-491].
+  *) [TS-491] Cluster port was activated even with clustering disabled. This fix also
+   adds monitoring support for the "cli" unix domain socket.
 
-  *) Cleanup of inktomi.com [TS-593].
+  *) [TS-593] Cleanup of inktomi.com.
 
-  *) Cleaning up some old TCL files and dependencies [TS-324].
+  *) [TS-324] Cleaning up some old TCL files and dependencies.
 
   *) Remove traces of FTP references [TS-324] by purging the now useless TCL
   bindings to it.
 
-  *) Fix configure issues for sqlite3. This fix eliminates all of SimpleDBM,
-  sqlite3 and bdb dependencies. It also fixes the "make distclean" problem,
-  and clean things up a bit [TS-513].
+  *) [TS-513] Fix configure issues for sqlite3. This fix eliminates all of
+  SimpleDBM, sqlite3 and bdb dependencies. It also fixes the "make
+  distclean" problem, and clean things up a bit.
 
-  *) Add the CLI interface to Traffic Cop, and make it possible to run
-   traffic_manager without listening on the cluster port [TS-491].
+  *) [TS-491] Add the CLI interface to Traffic Cop, and make it possible to
+   run traffic_manager without listening on the cluster port.
 
-  *) Build fails if --disable-webui is added [TS-583].
+  *) [TS-583] Build fails if --disable-webui is added.
 
-  *) Removing traces of CCAS/CCASFLAGS [TS-618].
+  *) [TS-618] Removing traces of CCAS/CCASFLAGS.
 
-  *) Fixes for "make check" to succeed (author: Arno Toell) [TS-627]. 
+  *) [TS-627] Fixes for "make check" to succeed (author: Arno Toell). 
 
-  *) Fixes for bad cast and cleanup for Intel CC [TS-632].
+  *) [TS-632] Fixes for bad cast and cleanup for Intel CC.
 
 Changes with Apache Traffic Server 2.1.5
 

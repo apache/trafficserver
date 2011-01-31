@@ -45,7 +45,8 @@
 #define REMEMBER(e,r) master_sm->add_history_entry(__FILE__ ":" _REMEMBER (__LINE__), e, r);
 
 
-HttpCacheAction::HttpCacheAction():sm(NULL)
+HttpCacheAction::HttpCacheAction()
+  : sm(NULL)
 {
 }
 
@@ -60,16 +61,16 @@ HttpCacheAction::cancel(Continuation * c)
 }
 
 HttpCacheSM::HttpCacheSM():
-Continuation(NULL),
-cache_read_vc(NULL), cache_write_vc(NULL),
-read_locked(false), write_locked(false),
-readwhilewrite_inprogress(false),
-master_sm(NULL), pending_action(NULL),
-captive_action(),
-open_read_cb(false), open_write_cb(false), open_read_tries(0),
-read_request_hdr(NULL), read_config(NULL),
-read_pin_in_cache(0), retry_write(true), open_write_tries(0),
-lookup_url(NULL), lookup_max_recursive(0), current_lookup_level(0)
+  Continuation(NULL),
+  cache_read_vc(NULL), cache_write_vc(NULL),
+  read_locked(false), write_locked(false),
+  readwhilewrite_inprogress(false),
+  master_sm(NULL), pending_action(NULL),
+  captive_action(),
+  open_read_cb(false), open_write_cb(false), open_read_tries(0),
+  read_request_hdr(NULL), read_config(NULL),
+  read_pin_in_cache(0), retry_write(true), open_write_tries(0),
+  lookup_url(NULL), lookup_max_recursive(0), current_lookup_level(0)
 {
 }
 
@@ -119,7 +120,7 @@ HttpCacheSM::state_cache_open_read(int event, void *data)
   case CACHE_EVENT_OPEN_READ_FAILED:
     if (data == (void *) -ECACHE_DOC_BUSY) {
       // Somebody else is writing the object
-      if (open_read_tries <= master_sm->t_state.http_config_param->max_cache_open_read_retries) {
+      if (open_read_tries <= master_sm->t_state.txn_conf->max_cache_open_read_retries) {
         // Retry to read; maybe the update finishes in time
         open_read_cb = false;
         do_schedule_in();
@@ -140,7 +141,7 @@ HttpCacheSM::state_cache_open_read(int event, void *data)
     // Retry the cache open read if the number retries is less
     // than or equal to the max number of open read retries,
     // else treat as a cache miss.
-    ink_assert(open_read_tries <= master_sm->t_state.http_config_param->max_cache_open_read_retries || write_locked);
+    ink_assert(open_read_tries <= master_sm->t_state.txn_conf->max_cache_open_read_retries || write_locked);
     Debug("http_cache", "[%" PRId64 "] [state_cache_open_read] cache open read failure %d. "
           "retrying cache open read...", master_sm->sm_id, open_read_tries);
 
@@ -189,7 +190,7 @@ HttpCacheSM::do_schedule_in()
 {
   ink_assert(pending_action == NULL);
   Action *action_handle =
-    mutex->thread_holding->schedule_in(this, HRTIME_MSECONDS(master_sm->t_state.http_config_param->cache_open_read_retry_time));
+    mutex->thread_holding->schedule_in(this, HRTIME_MSECONDS(master_sm->t_state.txn_conf->cache_open_read_retry_time));
 
   if (action_handle != ACTION_RESULT_DONE) {
     pending_action = action_handle;
@@ -210,10 +211,7 @@ HttpCacheSM::do_cache_open_read()
   }
   //Initialising read-while-write-inprogress flag
   this->readwhilewrite_inprogress = false;
-  Action *action_handle = cacheProcessor.open_read(this,
-                                                   this->lookup_url,
-                                                   this->read_request_hdr,
-                                                   this->read_config,
+  Action *action_handle = cacheProcessor.open_read(this, this->lookup_url, this->read_request_hdr, this->read_config,
                                                    this->read_pin_in_cache);
 
   if (action_handle != ACTION_RESULT_DONE) {

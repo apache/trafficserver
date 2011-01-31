@@ -7361,168 +7361,168 @@ _conf_to_memberp(TSOverridableConfigKey conf, HttpSM* sm, OverridableDataType *t
 
   switch (conf) {
   case TS_CONFIG_URL_REMAP_PRISTINE_HOST_HDR:
-    ret = &sm->t_state.txn_conf.maintain_pristine_host_hdr;
+    ret = &sm->t_state.txn_conf->maintain_pristine_host_hdr;
     break;
   case TS_CONFIG_HTTP_CHUNKING_ENABLED:
-    ret = &sm->t_state.txn_conf.chunking_enabled;
+    ret = &sm->t_state.txn_conf->chunking_enabled;
     break;
   case TS_CONFIG_HTTP_NEGATIVE_CACHING_ENABLED:
-    ret = &sm->t_state.txn_conf.negative_caching_enabled;
+    ret = &sm->t_state.txn_conf->negative_caching_enabled;
     break;
   case TS_CONFIG_HTTP_NEGATIVE_CACHING_LIFETIME:
-    ret = &sm->t_state.txn_conf.negative_caching_lifetime;
+    ret = &sm->t_state.txn_conf->negative_caching_lifetime;
     break;
   case TS_CONFIG_HTTP_CACHE_WHEN_TO_REVALIDATE:
-    ret = &sm->t_state.txn_conf.cache_when_to_revalidate;
+    ret = &sm->t_state.txn_conf->cache_when_to_revalidate;
     break;
   case TS_CONFIG_HTTP_KEEP_ALIVE_ENABLED:
-    ret = &sm->t_state.txn_conf.keep_alive_enabled;
+    ret = &sm->t_state.txn_conf->keep_alive_enabled;
     break;
   case TS_CONFIG_HTTP_KEEP_ALIVE_POST_OUT:
-    ret = &sm->t_state.txn_conf.keep_alive_post_out;
+    ret = &sm->t_state.txn_conf->keep_alive_post_out;
     break;
   case TS_CONFIG_NET_SOCK_RECV_BUFFER_SIZE_OUT:
-    ret = &sm->t_state.txn_conf.sock_recv_buffer_size_out;
+    ret = &sm->t_state.txn_conf->sock_recv_buffer_size_out;
     break;
   case TS_CONFIG_NET_SOCK_SEND_BUFFER_SIZE_OUT:
-    ret = &sm->t_state.txn_conf.sock_send_buffer_size_out;
+    ret = &sm->t_state.txn_conf->sock_send_buffer_size_out;
     break;
   case TS_CONFIG_NET_SOCK_OPTION_FLAG_OUT:
-    ret = &sm->t_state.txn_conf.sock_option_flag_out;
+    ret = &sm->t_state.txn_conf->sock_option_flag_out;
     break;
   case TS_CONFIG_HTTP_ANONYMIZE_REMOVE_FROM:
-    ret = &sm->t_state.txn_conf.anonymize_remove_from;
+    ret = &sm->t_state.txn_conf->anonymize_remove_from;
     break;
   case TS_CONFIG_HTTP_ANONYMIZE_REMOVE_REFERER:
-    ret = &sm->t_state.txn_conf.anonymize_remove_referer;
+    ret = &sm->t_state.txn_conf->anonymize_remove_referer;
     break;
   case TS_CONFIG_HTTP_ANONYMIZE_REMOVE_USER_AGENT:
-    ret = &sm->t_state.txn_conf.anonymize_remove_user_agent;
+    ret = &sm->t_state.txn_conf->anonymize_remove_user_agent;
     break;
   case TS_CONFIG_HTTP_ANONYMIZE_REMOVE_COOKIE:
-    ret = &sm->t_state.txn_conf.anonymize_remove_cookie;
+    ret = &sm->t_state.txn_conf->anonymize_remove_cookie;
     break;
   case TS_CONFIG_HTTP_ANONYMIZE_REMOVE_CLIENT_IP:
-    ret = &sm->t_state.txn_conf.anonymize_remove_client_ip;
+    ret = &sm->t_state.txn_conf->anonymize_remove_client_ip;
     break;
   case TS_CONFIG_HTTP_ANONYMIZE_INSERT_CLIENT_IP:
-    ret = &sm->t_state.txn_conf.anonymize_insert_client_ip;
+    ret = &sm->t_state.txn_conf->anonymize_insert_client_ip;
     break;
   case TS_CONFIG_HTTP_APPEND_XFORWARDS_HEADER:
-    ret = &sm->t_state.txn_conf.append_xforwards_header;
+    ret = &sm->t_state.txn_conf->append_xforwards_header;
     break;
   case TS_CONFIG_HTTP_RESPONSE_SERVER_ENABLED:
-    ret = &sm->t_state.txn_conf.proxy_response_server_enabled;
+    ret = &sm->t_state.txn_conf->proxy_response_server_enabled;
     break;
   case TS_CONFIG_HTTP_INSERT_SQUID_X_FORWARDED_FOR:
-    ret = &sm->t_state.txn_conf.insert_squid_x_forwarded_for;
+    ret = &sm->t_state.txn_conf->insert_squid_x_forwarded_for;
     break;
   case TS_CONFIG_HTTP_SEND_HTTP11_REQUESTS:
-    ret = &sm->t_state.txn_conf.send_http11_requests;
+    ret = &sm->t_state.txn_conf->send_http11_requests;
     break;
   case TS_CONFIG_HTTP_CACHE_HTTP:
-    ret = &sm->t_state.txn_conf.cache_http;
+    ret = &sm->t_state.txn_conf->cache_http;
     break;
   case TS_CONFIG_HTTP_CACHE_IGNORE_CLIENT_NO_CACHE:
-    ret = &sm->t_state.txn_conf.cache_ignore_client_no_cache;
+    ret = &sm->t_state.txn_conf->cache_ignore_client_no_cache;
     break;
   case TS_CONFIG_HTTP_CACHE_IGNORE_CLIENT_CC_MAX_AGE:
-    ret = &sm->t_state.txn_conf.cache_ignore_client_cc_max_age;
+    ret = &sm->t_state.txn_conf->cache_ignore_client_cc_max_age;
     break;
   case TS_CONFIG_HTTP_CACHE_IMS_ON_CLIENT_NO_CACHE:
-    ret = &sm->t_state.txn_conf.cache_ims_on_client_no_cache;
+    ret = &sm->t_state.txn_conf->cache_ims_on_client_no_cache;
     break;
   case TS_CONFIG_HTTP_CACHE_IGNORE_SERVER_NO_CACHE:
-    ret = &sm->t_state.txn_conf.cache_ignore_server_no_cache;
+    ret = &sm->t_state.txn_conf->cache_ignore_server_no_cache;
     break;
   case TS_CONFIG_HTTP_CACHE_CACHE_RESPONSES_TO_COOKIES:
-    ret = &sm->t_state.txn_conf.cache_responses_to_cookies;
+    ret = &sm->t_state.txn_conf->cache_responses_to_cookies;
     break;
   case TS_CONFIG_HTTP_CACHE_IGNORE_AUTHENTICATION:
-    ret = &sm->t_state.txn_conf.cache_ignore_auth;
+    ret = &sm->t_state.txn_conf->cache_ignore_auth;
     break;
   case TS_CONFIG_HTTP_CACHE_CACHE_URLS_THAT_LOOK_DYNAMIC:
-    ret = &sm->t_state.txn_conf.cache_urls_that_look_dynamic;
+    ret = &sm->t_state.txn_conf->cache_urls_that_look_dynamic;
     break;
   case TS_CONFIG_HTTP_CACHE_REQUIRED_HEADERS:
-    ret = &sm->t_state.txn_conf.cache_required_headers;
+    ret = &sm->t_state.txn_conf->cache_required_headers;
     break;
   case TS_CONFIG_HTTP_INSERT_REQUEST_VIA_STR:
-    ret = &sm->t_state.txn_conf.insert_request_via_string;
+    ret = &sm->t_state.txn_conf->insert_request_via_string;
     break;
   case TS_CONFIG_HTTP_INSERT_RESPONSE_VIA_STR:
-    ret = &sm->t_state.txn_conf.insert_response_via_string;
+    ret = &sm->t_state.txn_conf->insert_response_via_string;
     break;
   case TS_CONFIG_HTTP_CACHE_HEURISTIC_MIN_LIFETIME:
-    ret = &sm->t_state.txn_conf.cache_heuristic_min_lifetime;
+    ret = &sm->t_state.txn_conf->cache_heuristic_min_lifetime;
     break;
   case TS_CONFIG_HTTP_CACHE_HEURISTIC_MAX_LIFETIME:
-    ret = &sm->t_state.txn_conf.cache_heuristic_max_lifetime;
+    ret = &sm->t_state.txn_conf->cache_heuristic_max_lifetime;
     break;
   case TS_CONFIG_HTTP_CACHE_GUARANTEED_MIN_LIFETIME:
-    ret = &sm->t_state.txn_conf.cache_guaranteed_min_lifetime;
+    ret = &sm->t_state.txn_conf->cache_guaranteed_min_lifetime;
     break;
   case TS_CONFIG_HTTP_CACHE_GUARANTEED_MAX_LIFETIME:
-    ret = &sm->t_state.txn_conf.cache_guaranteed_max_lifetime;
+    ret = &sm->t_state.txn_conf->cache_guaranteed_max_lifetime;
     break;
   case TS_CONFIG_HTTP_CACHE_MAX_STALE_AGE:
-    ret = &sm->t_state.txn_conf.cache_max_stale_age;
+    ret = &sm->t_state.txn_conf->cache_max_stale_age;
     break;
   case TS_CONFIG_HTTP_KEEP_ALIVE_NO_ACTIVITY_TIMEOUT_IN:
-    ret = &sm->t_state.txn_conf.keep_alive_no_activity_timeout_in;
+    ret = &sm->t_state.txn_conf->keep_alive_no_activity_timeout_in;
     break;
   case TS_CONFIG_HTTP_TRANSACTION_NO_ACTIVITY_TIMEOUT_IN:
-    ret = &sm->t_state.txn_conf.transaction_no_activity_timeout_in;
+    ret = &sm->t_state.txn_conf->transaction_no_activity_timeout_in;
     break;
   case TS_CONFIG_HTTP_TRANSACTION_NO_ACTIVITY_TIMEOUT_OUT:
-    ret = &sm->t_state.txn_conf.transaction_no_activity_timeout_out;
+    ret = &sm->t_state.txn_conf->transaction_no_activity_timeout_out;
     break;
   case TS_CONFIG_HTTP_TRANSACTION_ACTIVE_TIMEOUT_OUT:
-    ret = &sm->t_state.txn_conf.transaction_active_timeout_out;
+    ret = &sm->t_state.txn_conf->transaction_active_timeout_out;
     break;
   case TS_CONFIG_HTTP_ORIGIN_MAX_CONNECTIONS:
-    ret = &sm->t_state.txn_conf.origin_max_connections;
+    ret = &sm->t_state.txn_conf->origin_max_connections;
     break;
   case TS_CONFIG_HTTP_CONNECT_ATTEMPTS_MAX_RETRIES:
-    ret = &sm->t_state.txn_conf.connect_attempts_max_retries;
+    ret = &sm->t_state.txn_conf->connect_attempts_max_retries;
     break;
   case TS_CONFIG_HTTP_CONNECT_ATTEMPTS_MAX_RETRIES_DEAD_SERVER:
-    ret = &sm->t_state.txn_conf.connect_attempts_max_retries_dead_server;
+    ret = &sm->t_state.txn_conf->connect_attempts_max_retries_dead_server;
     break;
   case TS_CONFIG_HTTP_CONNECT_ATTEMPTS_RR_RETRIES:
-    ret = &sm->t_state.txn_conf.connect_attempts_rr_retries;
+    ret = &sm->t_state.txn_conf->connect_attempts_rr_retries;
     break;
   case TS_CONFIG_HTTP_CONNECT_ATTEMPTS_TIMEOUT:
-    ret = &sm->t_state.txn_conf.connect_attempts_timeout;
+    ret = &sm->t_state.txn_conf->connect_attempts_timeout;
     break;
   case TS_CONFIG_HTTP_POST_CONNECT_ATTEMPTS_TIMEOUT:
-    ret = &sm->t_state.txn_conf.post_connect_attempts_timeout;
+    ret = &sm->t_state.txn_conf->post_connect_attempts_timeout;
     break;
   case TS_CONFIG_HTTP_DOWN_SERVER_CACHE_TIME:
-    ret = &sm->t_state.txn_conf.down_server_timeout;
+    ret = &sm->t_state.txn_conf->down_server_timeout;
     break;
   case TS_CONFIG_HTTP_DOWN_SERVER_ABORT_THRESHOLD:
-    ret = &sm->t_state.txn_conf.client_abort_threshold;
+    ret = &sm->t_state.txn_conf->client_abort_threshold;
     break;
   case TS_CONFIG_HTTP_CACHE_FUZZ_TIME:
-    ret = &sm->t_state.txn_conf.freshness_fuzz_time;
+    ret = &sm->t_state.txn_conf->freshness_fuzz_time;
     break;
   case TS_CONFIG_HTTP_CACHE_FUZZ_MIN_TIME:
-    ret = &sm->t_state.txn_conf.freshness_fuzz_min_time;
+    ret = &sm->t_state.txn_conf->freshness_fuzz_min_time;
     break;
 
   case TS_CONFIG_HTTP_CACHE_HEURISTIC_LM_FACTOR:
     typ = OVERRIDABLE_TYPE_FLOAT;
-    ret = &sm->t_state.txn_conf.cache_heuristic_lm_factor;
+    ret = &sm->t_state.txn_conf->cache_heuristic_lm_factor;
     break;
   case TS_CONFIG_HTTP_CACHE_FUZZ_PROBABILITY:
     typ = OVERRIDABLE_TYPE_FLOAT;
-    ret = &sm->t_state.txn_conf.freshness_fuzz_prob;
+    ret = &sm->t_state.txn_conf->freshness_fuzz_prob;
     break;
     // These are "special", since they still need more attention, so fall through.
   case TS_CONFIG_HTTP_RESPONSE_SERVER_STR:
     typ = OVERRIDABLE_TYPE_STRING;
-    ret = &sm->t_state.txn_conf.proxy_response_server_string;
+    ret = &sm->t_state.txn_conf->proxy_response_server_string;
     break;
 
     // This helps avoiding compiler warnings, yet detect unhandled enum members.
@@ -7546,8 +7546,17 @@ TSHttpTxnConfigIntSet(TSHttpTxn txnp, TSOverridableConfigKey conf, TSMgmtInt val
   if (sdk_sanity_check_txn(txnp) != TS_SUCCESS)
     return TS_ERROR;
 
+  HttpSM *s = static_cast<HttpSM*>(txnp);
+
+  // If this is the first time we're trying to modify a transaction config, copy it.
+  if (false == s->t_state.oride_copied) {
+    memcpy(&(s->t_state.my_txn_conf), &(s->t_state.http_config_param->oride), sizeof(s->t_state.txn_conf));
+    s->t_state.txn_conf = &s->t_state.http_config_param->oride;
+    s->t_state.oride_copied = true;
+  }
+
   OverridableDataType type;
-  TSMgmtInt* dest = static_cast<TSMgmtInt*>(_conf_to_memberp(conf, (HttpSM*)txnp, &type));
+  TSMgmtInt* dest = static_cast<TSMgmtInt*>(_conf_to_memberp(conf, s, &type));
 
   if (type != OVERRIDABLE_TYPE_INT)
     return TS_ERROR;
@@ -7587,8 +7596,17 @@ TSHttpTxnConfigFloatSet(TSHttpTxn txnp, TSOverridableConfigKey conf, TSMgmtFloat
   if (sdk_sanity_check_txn(txnp) != TS_SUCCESS)
     return TS_ERROR;
 
+  HttpSM *s = static_cast<HttpSM*>(txnp);
   OverridableDataType type;
-  TSMgmtFloat* dest = static_cast<TSMgmtFloat*>(_conf_to_memberp(conf, (HttpSM*)txnp, &type));
+
+  // If this is the first time we're trying to modify a transaction config, copy it.
+  if (false == s->t_state.oride_copied) {
+    memcpy(&(s->t_state.my_txn_conf), &(s->t_state.http_config_param->oride), sizeof(s->t_state.txn_conf));
+    s->t_state.txn_conf = &s->t_state.http_config_param->oride;
+    s->t_state.oride_copied = true;
+  }
+
+  TSMgmtFloat* dest = static_cast<TSMgmtFloat*>(_conf_to_memberp(conf, s, &type));
 
   if (type != OVERRIDABLE_TYPE_FLOAT)
     return TS_ERROR;
@@ -7632,12 +7650,19 @@ TSHttpTxnConfigStringSet(TSHttpTxn txnp, TSOverridableConfigKey conf, const char
   if (length == -1)
     length = strlen(value);
 
-  HttpSM *sm = (HttpSM*) txnp;
+  HttpSM *s = (HttpSM*) txnp;
+
+  // If this is the first time we're trying to modify a transaction config, copy it.
+  if (false == s->t_state.oride_copied) {
+    memcpy(&(s->t_state.my_txn_conf), &(s->t_state.http_config_param->oride), sizeof(s->t_state.txn_conf));
+    s->t_state.txn_conf = &s->t_state.http_config_param->oride;
+    s->t_state.oride_copied = true;
+  }
 
   switch (conf) {
   case TS_CONFIG_HTTP_RESPONSE_SERVER_STR:
-    sm->t_state.txn_conf.proxy_response_server_string = const_cast<char*>(value); // The "core" likes non-const char*
-    sm->t_state.txn_conf.proxy_response_server_string_len = length;
+    s->t_state.txn_conf->proxy_response_server_string = const_cast<char*>(value); // The "core" likes non-const char*
+    s->t_state.txn_conf->proxy_response_server_string_len = length;
     break;
   default:
     return TS_ERROR;
@@ -7660,9 +7685,9 @@ TSHttpTxnConfigStringGet(TSHttpTxn txnp, TSOverridableConfigKey conf, const char
 
   switch (conf) {
   case TS_CONFIG_HTTP_RESPONSE_SERVER_STR:
-    *value = sm->t_state.txn_conf.proxy_response_server_string;
+    *value = sm->t_state.txn_conf->proxy_response_server_string;
     if (length)
-      *length = sm->t_state.txn_conf.proxy_response_server_string_len;
+      *length = sm->t_state.txn_conf->proxy_response_server_string_len;
     break;
   default:
     return TS_ERROR;

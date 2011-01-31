@@ -175,7 +175,7 @@ is_port_in_range(int port, HttpConfigPortRange *pr)
 inline static void
 update_cache_control_information_from_config(HttpTransact::State* s)
 {
-  getCacheControl(&s->cache_control, &s->request_data, &s->txn_conf);
+  getCacheControl(&s->cache_control, &s->request_data, s->txn_conf);
 
   s->cache_info.directives.does_config_permit_lookup &= (s->cache_control.never_cache == false);
   s->cache_info.directives.does_config_permit_storing &= (s->cache_control.never_cache == false);
@@ -184,7 +184,7 @@ update_cache_control_information_from_config(HttpTransact::State* s)
     HttpTransact::does_client_request_permit_storing(&s->cache_control, &s->hdr_info.client_request);
 
   s->cache_info.directives.does_client_permit_lookup =
-    HttpTransact::does_client_request_permit_cached_response(&s->txn_conf, &s->cache_control,
+    HttpTransact::does_client_request_permit_cached_response(s->txn_conf, &s->cache_control,
                                                              &s->hdr_info.client_request, s->via_string);
 
   s->cache_info.directives.does_client_permit_dns_storing =
@@ -200,7 +200,7 @@ inline bool
 HttpTransact::is_server_negative_cached(State* s)
 {
   if (s->host_db_info.app.http_data.last_failure != 0 &&
-      s->host_db_info.app.http_data.last_failure + s->txn_conf.down_server_timeout > s->client_request_time) {
+      s->host_db_info.app.http_data.last_failure + s->txn_conf->down_server_timeout > s->client_request_time) {
     return true;
   } else {
     // Make sure some nasty clock skew has not happened
@@ -208,7 +208,7 @@ HttpTransact::is_server_negative_cached(State* s)
     //   future we should tolerate bogus last failure times.  This sets
     //   the upper bound to the time that we would ever consider a server
     //   down to 2*down_server_timeout
-    if (s->client_request_time + s->txn_conf.down_server_timeout < s->host_db_info.app.http_data.last_failure) {
+    if (s->client_request_time + s->txn_conf->down_server_timeout < s->host_db_info.app.http_data.last_failure) {
       s->host_db_info.app.http_data.last_failure = 0;
       ink_assert(!"extreme clock skew");
       return true;
@@ -253,7 +253,7 @@ find_appropriate_cached_resp(HttpTransact::State* s)
 inline static bool
 is_negative_caching_appropriate(HttpTransact::State* s)
 {
-  if (!s->txn_conf.negative_caching_enabled || !s->hdr_info.server_response.valid())
+  if (!s->txn_conf->negative_caching_enabled || !s->hdr_info.server_response.valid())
     return false;
 
   switch (s->hdr_info.server_response.status_get()) {
@@ -1215,7 +1215,7 @@ HttpTransact::HandleRequest(State* s)
   //YTS Team, yamsat Plugin
   //Doing a Cache Lookup in case of a Redirection to ensure that
   //the newly requested object is not in the CACHE
-  if (s->txn_conf.cache_http && s->redirect_info.redirect_in_process && s->state_machine->enable_redirection) {
+  if (s->txn_conf->cache_http && s->redirect_info.redirect_in_process && s->state_machine->enable_redirection) {
     TRANSACT_RETURN(CACHE_LOOKUP, NULL);
   }
 
@@ -1806,7 +1806,7 @@ HttpTransact::DecideCacheLookup(State* s)
     if (s->cache_info.lookup_url == NULL) {
       HTTPHdr* incoming_request = &s->hdr_info.client_request;
 
-      if (s->txn_conf.maintain_pristine_host_hdr) {
+      if (s->txn_conf->maintain_pristine_host_hdr) {
         s->cache_info.lookup_url_storage.create(NULL);
         s->cache_info.lookup_url_storage.copy(incoming_request->url_get());
         s->cache_info.lookup_url = &s->cache_info.lookup_url_storage;
@@ -1824,7 +1824,7 @@ HttpTransact::DecideCacheLookup(State* s)
       // the stupid content on the Host header!!!!
       // We could a) have 6000 alts (barf, puke, vomit) or b) use the original
       // host header in the url before doing all cache actions (lookups, writes, etc.)
-      if (s->txn_conf.maintain_pristine_host_hdr) {
+      if (s->txn_conf->maintain_pristine_host_hdr) {
         // So, the host header will have the original host header.
         int host_len;
         const char *host_hdr = incoming_request->value_get(MIME_FIELD_HOST, MIME_LEN_HOST, &host_len);
@@ -2188,7 +2188,7 @@ HttpTransact::issue_revalidate(State* s)
   if ((!(s->hdr_info.client_request.presence(MIME_PRESENCE_IF_MODIFIED_SINCE))) &&
       (!(s->hdr_info.client_request.presence(MIME_PRESENCE_IF_NONE_MATCH))) &&
       (no_cache_in_request == true) &&
-      (!s->txn_conf.cache_ims_on_client_no_cache) && (s->www_auth_content == CACHE_AUTH_NONE)) {
+      (!s->txn_conf->cache_ims_on_client_no_cache) && (s->www_auth_content == CACHE_AUTH_NONE)) {
     Debug("http_trans", "[issue_revalidate] Can not make this a conditional request. This is the force update of the cached copy case");
     // set cache action to update. response will be a 200 or error,
     // causing cached copy to be replaced (if 200).
@@ -2200,7 +2200,7 @@ HttpTransact::issue_revalidate(State* s)
   case HTTP_STATUS_OK:         // 200
     // don't conditionalize if we are configured to repeat the clients
     //   conditionals
-    if (s->txn_conf.cache_when_to_revalidate == 4)
+    if (s->txn_conf->cache_when_to_revalidate == 4)
       break;
     // ok, request is either a conditional or does not have a no-cache.
     //   (or is method that we don't conditionalize but lookup the
@@ -2358,7 +2358,7 @@ HttpTransact::need_to_revalidate(State* s)
   // do we have to authenticate with the server before
   // sending back the cached response to the client?
   Authentication_t authentication_needed =
-    AuthenticationNeeded(&s->txn_conf, &s->hdr_info.client_request, obj->response_get());
+    AuthenticationNeeded(s->txn_conf, &s->hdr_info.client_request, obj->response_get());
 
   switch (authentication_needed) {
   case AUTHENTICATION_SUCCESS:
@@ -2454,7 +2454,7 @@ HttpTransact::HandleCacheOpenReadHit(State* s)
   // do we have to authenticate with the server before
   // sending back the cached response to the client?
   Authentication_t authentication_needed =
-    AuthenticationNeeded(&s->txn_conf, &s->hdr_info.client_request, obj->response_get());
+    AuthenticationNeeded(s->txn_conf, &s->hdr_info.client_request, obj->response_get());
 
   switch (authentication_needed) {
   case AUTHENTICATION_SUCCESS:
@@ -2567,7 +2567,7 @@ HttpTransact::HandleCacheOpenReadHit(State* s)
       // we haven't done the ICP lookup yet. The following is to
       // fake an icp_info to cater for build_request's needs
       s->icp_info.http_version.set(1, 0);
-      if (!s->txn_conf.keep_alive_enabled || s->http_config_param->origin_server_pipeline == 0) {
+      if (!s->txn_conf->keep_alive_enabled || s->http_config_param->origin_server_pipeline == 0) {
         s->icp_info.keep_alive = HTTP_NO_KEEPALIVE;
       } else {
         s->icp_info.keep_alive = HTTP_KEEPALIVE;
@@ -3043,7 +3043,7 @@ HttpTransact::HandleICPLookup(State* s)
     //   values are not initialized.
     // Force them to be initialized
     s->icp_info.http_version.set(1, 0);
-    if (!s->txn_conf.keep_alive_enabled || s->http_config_param->origin_server_pipeline == 0) {
+    if (!s->txn_conf->keep_alive_enabled || s->http_config_param->origin_server_pipeline == 0) {
       s->icp_info.keep_alive = HTTP_NO_KEEPALIVE;
     } else {
       s->icp_info.keep_alive = HTTP_KEEPALIVE;
@@ -3538,10 +3538,10 @@ HttpTransact::handle_response_from_server(State* s)
   case BAD_INCOMING_RESPONSE:
     s->current.server->connect_failure = 1;
     if (is_server_negative_cached(s)) {
-      max_connect_retries = s->txn_conf.connect_attempts_max_retries_dead_server;
+      max_connect_retries = s->txn_conf->connect_attempts_max_retries_dead_server;
     } else {
       // server not yet negative cached - use default number of retries
-      max_connect_retries = s->txn_conf.connect_attempts_max_retries;
+      max_connect_retries = s->txn_conf->connect_attempts_max_retries;
     }
     if (s->pCongestionEntry != NULL)
       max_connect_retries = s->pCongestionEntry->connect_retries();
@@ -3556,8 +3556,8 @@ HttpTransact::handle_response_from_server(State* s)
         delete_srv_entry(s, max_connect_retries);
         return;
       } else if (s->server_info.dns_round_robin &&
-                 (s->txn_conf.connect_attempts_rr_retries > 0) &&
-                 (s->current.attempts % s->txn_conf.connect_attempts_rr_retries == 0)) {
+                 (s->txn_conf->connect_attempts_rr_retries > 0) &&
+                 (s->current.attempts % s->txn_conf->connect_attempts_rr_retries == 0)) {
         delete_server_rr_entry(s, max_connect_retries);
         return;
       } else {
@@ -4030,7 +4030,7 @@ HttpTransact::build_response_copy(State* s, HTTPHdr* base_response,HTTPHdr* outg
   HttpTransactHeaders::copy_header_fields(base_response, outgoing_response, s->http_config_param->fwd_proxy_auth_to_parent,
                                           s->current.now);
   HttpTransactHeaders::convert_response(outgoing_version, outgoing_response);   // http version conversion
-  HttpTransactHeaders::add_server_header_to_response(&s->txn_conf, outgoing_response);
+  HttpTransactHeaders::add_server_header_to_response(s->txn_conf, outgoing_response);
 
   if (!s->cop_test_page)
     DUMP_HEADER("http_hdrs", outgoing_response, s->state_machine_id, "Proxy's Response");
@@ -4159,7 +4159,7 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State* s)
       // CACHE_DO_UPDATE and server response is cacheable
 
       if (is_request_conditional(&s->hdr_info.client_request)) {
-        if (s->txn_conf.cache_when_to_revalidate != 4)
+        if (s->txn_conf->cache_when_to_revalidate != 4)
           client_response_code =
             HttpTransactCache::match_response_to_request_conditionals(&s->hdr_info.client_request,
                                                                       s->cache_info.object_read->response_get());
@@ -4171,7 +4171,7 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State* s)
 
       if (client_response_code != HTTP_STATUS_OK) {
         // delete the cached copy unless configured to always verify IMS
-        if (s->txn_conf.cache_when_to_revalidate != 4) {
+        if (s->txn_conf->cache_when_to_revalidate != 4) {
           s->cache_info.action = CACHE_DO_UPDATE;
           s->next_action = PROXY_INTERNAL_CACHE_UPDATE_HEADERS;
           /* base_response will be set after updating headers below */
@@ -4386,7 +4386,7 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State* s)
         s->cache_info.object_store.response_set(&s->hdr_info.server_response);
         resp = s->cache_info.object_store.response_get();
         if (!resp->presence(MIME_PRESENCE_EXPIRES)) {
-          time_t exp_time = s->txn_conf.negative_caching_lifetime + ink_cluster_time();
+          time_t exp_time = s->txn_conf->negative_caching_lifetime + ink_cluster_time();
 
           resp->set_expires(exp_time);
         }
@@ -4836,7 +4836,7 @@ HttpTransact::set_headers_for_cache_write(State* s, HTTPInfo* cache_info, HTTPHd
 
   // If we're ignoring auth, then we don't want to cache WWW-Auth
   //  headers
-  if (s->txn_conf.cache_ignore_auth) {
+  if (s->txn_conf->cache_ignore_auth) {
     cache_info->response_get()->field_delete(MIME_FIELD_WWW_AUTHENTICATE, MIME_LEN_WWW_AUTHENTICATE);
   }
 
@@ -5044,7 +5044,7 @@ HttpTransact::get_ka_info_from_host_db(State *s, ConnectionAttributes *server_in
   bool force_http11 = false;
   bool http11_if_hostdb = false;
 
-  switch (s->txn_conf.send_http11_requests) {
+  switch (s->txn_conf->send_http11_requests) {
   case HttpConfigParams::SEND_HTTP11_NEVER:
     // No need to do anything since above vars
     //   are defaulted false
@@ -5088,7 +5088,7 @@ HttpTransact::get_ka_info_from_host_db(State *s, ConnectionAttributes *server_in
   /////////////////////////////
   // origin server keep_alive //
   /////////////////////////////
-  if ((!s->txn_conf.keep_alive_enabled) || (s->http_config_param->origin_server_pipeline == 0)) {
+  if ((!s->txn_conf->keep_alive_enabled) || (s->http_config_param->origin_server_pipeline == 0)) {
     server_info->keep_alive = HTTP_NO_KEEPALIVE;
   }
   ///////////////////////////////
@@ -5231,7 +5231,7 @@ HttpTransact::add_client_ip_to_outgoing_request(State* s, HTTPHdr* request)
   ////////////////////////////////////////////////////////////////
   // if we want client-ip headers, and there isn't one, add one //
   ////////////////////////////////////////////////////////////////
-  if ((s->txn_conf.anonymize_insert_client_ip) && (!s->txn_conf.anonymize_remove_client_ip)) {
+  if ((s->txn_conf->anonymize_insert_client_ip) && (!s->txn_conf->anonymize_remove_client_ip)) {
     bool client_ip_set = request->presence(MIME_PRESENCE_CLIENT_IP);
     Debug("http_trans", "client_ip_set = %d", client_ip_set);
 
@@ -5241,7 +5241,7 @@ HttpTransact::add_client_ip_to_outgoing_request(State* s, HTTPHdr* request)
     }
   }
 
-  if (s->txn_conf.insert_squid_x_forwarded_for) {
+  if (s->txn_conf->insert_squid_x_forwarded_for) {
     // Use insert an extra space in the front so we're append,
     //   everything looks ok.  If we're not appending, we'll
     //   skip over it
@@ -5638,7 +5638,7 @@ HttpTransact::initialize_state_variables_from_request(State* s, HTTPHdr* obsolet
   //
   MIMEField *pc = incoming_request->field_find(MIME_FIELD_PROXY_CONNECTION, MIME_LEN_PROXY_CONNECTION);
 
-  if (!s->txn_conf.keep_alive_enabled || (s->http_config_param->server_transparency_enabled && pc != NULL)) {
+  if (!s->txn_conf->keep_alive_enabled || (s->http_config_param->server_transparency_enabled && pc != NULL)) {
     s->client_info.keep_alive = HTTP_NO_KEEPALIVE;
 
     // If we need to send a close header later,
@@ -5896,7 +5896,7 @@ HttpTransact::is_cache_response_returnable(State* s)
   }
   // If cookies in response and no TTL set, we do not cache the doc
   if ((s->cache_control.ttl_in_cache <= 0) &&
-      do_cookies_prevent_caching((int) s->txn_conf.cache_responses_to_cookies,
+      do_cookies_prevent_caching((int) s->txn_conf->cache_responses_to_cookies,
                                  &s->hdr_info.client_request, s->cache_info.object_read->response_get(),
                                  s->cache_info.object_read->request_get())) {
     SET_VIA_STRING(VIA_CACHE_RESULT, VIA_IN_CACHE_NOT_ACCEPTABLE);
@@ -5949,12 +5949,12 @@ HttpTransact::is_stale_cache_response_returnable(State* s)
                                                                    cached_response->get_date(),
                                                                    s->current.now);
   // Negative age is overflow
-  if ((current_age < 0) || (current_age > s->txn_conf.cache_max_stale_age)) {
+  if ((current_age < 0) || (current_age > s->txn_conf->cache_max_stale_age)) {
     Debug("http_trans", "[is_stale_cache_response_returnable] " "document age is too large %d", current_age);
     return false;
   }
   // If the stale document requires authorization, we can't return it either.
-  Authentication_t auth_needed = AuthenticationNeeded(&s->txn_conf, &s->hdr_info.client_request, cached_response);
+  Authentication_t auth_needed = AuthenticationNeeded(s->txn_conf, &s->hdr_info.client_request, cached_response);
 
   if (auth_needed != AUTHENTICATION_SUCCESS) {
     Debug("http_trans", "[is_stale_cache_response_returnable] " "authorization prevent serving stale");
@@ -6049,7 +6049,7 @@ HttpTransact::is_request_cache_lookupable(State* s, HTTPHdr* incoming)
     return true;
   }
   // is cache turned on?
-  if (!s->txn_conf.cache_http) {
+  if (!s->txn_conf->cache_http) {
     SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_CACHE_OFF);
     return false;
   }
@@ -6065,7 +6065,7 @@ HttpTransact::is_request_cache_lookupable(State* s, HTTPHdr* incoming)
   // So for the time being, it'll be left here.
 
   // If url looks dynamic but a ttl is set, request is cache lookupable
-  if ((!s->txn_conf.cache_urls_that_look_dynamic) &&
+  if ((!s->txn_conf->cache_urls_that_look_dynamic) &&
       url_looks_dynamic(s->hdr_info.client_request.url_get()) && (s->cache_control.ttl_in_cache <= 0)) {
     // We do not want to forward the request for a dynamic URL onto the
     // origin server if the value of the Max-Forwards header is zero.
@@ -6178,12 +6178,12 @@ HttpTransact::is_response_cacheable(State* s, HTTPHdr* request, HTTPHdr* respons
   // Check whether the response is cachable based on its cookie
   // If there are cookies in response but a ttl is set, allow caching
   if ((s->cache_control.ttl_in_cache <= 0) &&
-      do_cookies_prevent_caching((int) s->txn_conf.cache_responses_to_cookies, request, response)) {
+      do_cookies_prevent_caching((int) s->txn_conf->cache_responses_to_cookies, request, response)) {
     Debug("http_trans", "[is_response_cacheable] " "response has uncachable cookies, response is not cachable");
     return (false);
   }
   // if server spits back a WWW-Authenticate
-  if ((s->txn_conf.cache_ignore_auth) == 0 && response->presence(MIME_PRESENCE_WWW_AUTHENTICATE)) {
+  if ((s->txn_conf->cache_ignore_auth) == 0 && response->presence(MIME_PRESENCE_WWW_AUTHENTICATE)) {
     Debug("http_trans", "[is_response_cacheable] " "response has WWW-Authenticate, response is not cachable");
     return (false);
   }
@@ -6228,7 +6228,7 @@ HttpTransact::is_response_cacheable(State* s, HTTPHdr* request, HTTPHdr* respons
       uint32_t cc_mask = (MIME_COOKED_MASK_CC_MAX_AGE | MIME_COOKED_MASK_CC_S_MAXAGE);
       // server did not send expires header or last modified
       // and we are configured to not cache without them.
-      switch (s->txn_conf.cache_required_headers) {
+      switch (s->txn_conf->cache_required_headers) {
       case HttpConfigParams::CACHE_REQUIRED_HEADERS_NONE:
         Debug("http_trans", "[is_response_cacheable] " "no response headers required");
         break;
@@ -6323,7 +6323,7 @@ HttpTransact::is_response_cacheable(State* s, HTTPHdr* request, HTTPHdr* respons
     return (false);
   }
   // default cacheability
-  if (!s->txn_conf.negative_caching_enabled) {
+  if (!s->txn_conf->negative_caching_enabled) {
     if ((response_code == HTTP_STATUS_OK) ||
         (response_code == HTTP_STATUS_NOT_MODIFIED) ||
         (response_code == HTTP_STATUS_NON_AUTHORITATIVE_INFORMATION) ||
@@ -7056,7 +7056,7 @@ HttpTransact::handle_response_keep_alive_headers(State* s, HTTPVersion ver, HTTP
     // Insert a Transfer-Encoding header in the response if necessary.
 
     // check that the client is HTTP 1.1 and the conf allows chunking
-    if (s->client_info.http_version == HTTPVersion(1, 1) && s->txn_conf.chunking_enabled == 1 &&
+    if (s->client_info.http_version == HTTPVersion(1, 1) && s->txn_conf->chunking_enabled == 1 &&
         // if we're not sending a body, don't set a chunked header regardless of server response
         !is_response_body_precluded(s->hdr_info.client_response.status_get(), s->method) &&
          // we do not need chunked encoding for internal error messages
@@ -7294,7 +7294,7 @@ HttpTransact::calculate_document_freshness_limit(State *s, HTTPHdr *response, ti
 
       *heuristic = true;
       if (date_set && last_modified_set) {
-        float f = s->txn_conf.cache_heuristic_lm_factor;
+        float f = s->txn_conf->cache_heuristic_lm_factor;
         HTTP_DEBUG_ASSERT((f >= 0.0) && (f <= 1.0));
         ink_time_t time_since_last_modify = date_value - last_modified_value;
         int h_freshness = (int) (time_since_last_modify * f);
@@ -7303,20 +7303,20 @@ HttpTransact::calculate_document_freshness_limit(State *s, HTTPHdr *response, ti
               "time_since_last_modify=%ld, f=%g, freshness_limit = %d",
               date_value, last_modified_value, time_since_last_modify, f, freshness_limit);
       } else {
-        freshness_limit = s->txn_conf.cache_heuristic_min_lifetime;
+        freshness_limit = s->txn_conf->cache_heuristic_min_lifetime;
         Debug("http_match", "calculate_document_freshness_limit --- heuristic: freshness_limit = %d", freshness_limit);
       }
     }
   }
 
   // The freshness limit must always fall within the min and max guaranteed bounds.
-  min_freshness_bounds = max((MgmtInt)0, s->txn_conf.cache_guaranteed_min_lifetime);
-  max_freshness_bounds = min((MgmtInt)NUM_SECONDS_IN_ONE_YEAR, s->txn_conf.cache_guaranteed_max_lifetime);
+  min_freshness_bounds = max((MgmtInt)0, s->txn_conf->cache_guaranteed_min_lifetime);
+  max_freshness_bounds = min((MgmtInt)NUM_SECONDS_IN_ONE_YEAR, s->txn_conf->cache_guaranteed_max_lifetime);
 
   // Heuristic freshness can be more strict.
   if (*heuristic) {
-    min_freshness_bounds = max(min_freshness_bounds, s->txn_conf.cache_heuristic_min_lifetime);
-    max_freshness_bounds = min(max_freshness_bounds, s->txn_conf.cache_heuristic_max_lifetime);
+    min_freshness_bounds = max(min_freshness_bounds, s->txn_conf->cache_heuristic_min_lifetime);
+    max_freshness_bounds = min(max_freshness_bounds, s->txn_conf->cache_heuristic_max_lifetime);
   }
   // Now clip the freshness limit.
   if (freshness_limit > max_freshness_bounds)
@@ -7351,21 +7351,21 @@ HttpTransact::calculate_freshness_fuzz(State* s, int fresh_limit)
 
   uint32_t random_num = this_ethread()->generator.random();
   uint32_t index = random_num % granularity;
-  uint32_t range = (uint32_t) (granularity * s->txn_conf.freshness_fuzz_prob);
+  uint32_t range = (uint32_t) (granularity * s->txn_conf->freshness_fuzz_prob);
 
   if (index < range) {
-    if (s->txn_conf.freshness_fuzz_min_time > 0) {
+    if (s->txn_conf->freshness_fuzz_min_time > 0) {
       // Complicated calculations to try to find a reasonable fuzz time between fuzz_min_time and fuzz_time
-      int fresh_small = (int)rint((double)s->txn_conf.freshness_fuzz_min_time *
-                                  pow(2, min((double)fresh_limit / (double)s->txn_conf.freshness_fuzz_time,
-                                             sqrt((double)s->txn_conf.freshness_fuzz_time))));
-      int fresh_large = max((int)s->txn_conf.freshness_fuzz_min_time,
-                            (int)rint(s->txn_conf.freshness_fuzz_time *
-                                      log10((double)(fresh_limit - s->txn_conf.freshness_fuzz_min_time) / LOG_YEAR)));
+      int fresh_small = (int)rint((double)s->txn_conf->freshness_fuzz_min_time *
+                                  pow(2, min((double)fresh_limit / (double)s->txn_conf->freshness_fuzz_time,
+                                             sqrt((double)s->txn_conf->freshness_fuzz_time))));
+      int fresh_large = max((int)s->txn_conf->freshness_fuzz_min_time,
+                            (int)rint(s->txn_conf->freshness_fuzz_time *
+                                      log10((double)(fresh_limit - s->txn_conf->freshness_fuzz_min_time) / LOG_YEAR)));
       result = min(fresh_small, fresh_large);
       Debug("http_match", "calculate_freshness_fuzz using min/max --- freshness fuzz = %d", result);
     } else {
-      result = s->txn_conf.freshness_fuzz_time;
+      result = s->txn_conf->freshness_fuzz_time;
       Debug("http_match", "calculate_freshness_fuzz --- freshness fuzz = %d", result);
     }
   }
@@ -7439,7 +7439,7 @@ HttpTransact::what_is_document_freshness(State *s, HTTPHdr* client_request, HTTP
 
   // Fuzz the freshness to prevent too many revalidates to popular
   //  documents at the same time
-  if (s->txn_conf.freshness_fuzz_time >= 0) {
+  if (s->txn_conf->freshness_fuzz_time >= 0) {
     fresh_limit = fresh_limit - calculate_freshness_fuzz(s, fresh_limit);
     fresh_limit = max(0, fresh_limit);
     fresh_limit = min(NUM_SECONDS_IN_ONE_YEAR, fresh_limit);
@@ -7461,11 +7461,11 @@ HttpTransact::what_is_document_freshness(State *s, HTTPHdr* client_request, HTTP
   /////////////////////////////////////////////////////////
   HTTP_DEBUG_ASSERT(client_request == &s->hdr_info.client_request);
 
-  if (s->txn_conf.cache_when_to_revalidate == 0) {
+  if (s->txn_conf->cache_when_to_revalidate == 0) {
     ;
     // Compute how fresh below
   } else if (client_request->url_get()->scheme_get_wksidx() == URL_WKSIDX_HTTP) {
-    switch (s->txn_conf.cache_when_to_revalidate) {
+    switch (s->txn_conf->cache_when_to_revalidate) {
     case 1:                    // Stale if heuristic
       if (heuristic) {
         Debug("http_match", "[what_is_document_freshness] config requires FRESHNESS_STALE because heuristic calculation");
@@ -7821,7 +7821,7 @@ HttpTransact::build_request(State* s, HTTPHdr* base_request, HTTPHdr* outgoing_r
   HttpTransactHeaders::copy_header_fields(base_request, outgoing_request, s->http_config_param->fwd_proxy_auth_to_parent);
   add_client_ip_to_outgoing_request(s, outgoing_request);
   HttpTransactHeaders::process_connection_headers(base_request, outgoing_request);
-  HttpTransactHeaders::remove_privacy_headers_from_request(s->http_config_param, &s->txn_conf, outgoing_request);
+  HttpTransactHeaders::remove_privacy_headers_from_request(s->http_config_param, s->txn_conf, outgoing_request);
   HttpTransactHeaders::add_global_user_agent_header_to_request(s->http_config_param, outgoing_request);
   handle_request_keep_alive_headers(s, outgoing_version, outgoing_request);
   HttpTransactHeaders::handle_conditional_headers(&s->cache_info, outgoing_request);
@@ -7831,7 +7831,7 @@ HttpTransact::build_request(State* s, HTTPHdr* base_request, HTTPHdr* outgoing_r
   if (s->orig_scheme < 0)
     s->orig_scheme = URL_WKSIDX_HTTP;
 
-  if (s->txn_conf.insert_request_via_string)
+  if (s->txn_conf->insert_request_via_string)
     HttpTransactHeaders::insert_via_header_in_request(s->http_config_param, s->orig_scheme, outgoing_request, s->via_string);
 
   // We build 1.1 request header and then convert as necessary to
@@ -7875,7 +7875,7 @@ HttpTransact::build_request(State* s, HTTPHdr* base_request, HTTPHdr* outgoing_r
   // from the O.S., we will save bandwidth between proxy and O.S.
   if (s->current.mode == GENERIC_PROXY) {
     if (is_request_likely_cacheable(s, base_request)) {
-      if (s->txn_conf.cache_when_to_revalidate != 4) {
+      if (s->txn_conf->cache_when_to_revalidate != 4) {
         Debug("http_trans", "[build_request] " "request like cacheable and conditional headers removed");
         HttpTransactHeaders::remove_conditional_headers(base_request, outgoing_request);
       } else
@@ -8016,7 +8016,7 @@ HttpTransact::build_response(State* s, HTTPHdr* base_response, HTTPHdr* outgoing
   if (s->next_hop_scheme < 0)
     s->next_hop_scheme = URL_WKSIDX_HTTP;
 
-  if (s->txn_conf.insert_response_via_string)
+  if (s->txn_conf->insert_response_via_string)
     HttpTransactHeaders::insert_via_header_in_response(s->http_config_param, s->next_hop_scheme, outgoing_response, s->via_string);
 
   HttpTransactHeaders::convert_response(outgoing_version, outgoing_response);
@@ -8034,7 +8034,7 @@ HttpTransact::build_response(State* s, HTTPHdr* base_response, HTTPHdr* outgoing
                                                      ((s->http_config_param->log_spider_codes) ? (true) : (false)));
   }
 
-  HttpTransactHeaders::add_server_header_to_response(&s->txn_conf, outgoing_response);
+  HttpTransactHeaders::add_server_header_to_response(s->txn_conf, outgoing_response);
 
   // auth-response update
  // if (!s->state_machine->authAdapter.disabled()) {
@@ -8303,7 +8303,7 @@ HttpTransact::build_redirect_response(State* s)
   // set redirect headers //
   //////////////////////////
   HTTPHdr *h = &s->hdr_info.client_response;
-  if (s->txn_conf.insert_response_via_string) {
+  if (s->txn_conf->insert_response_via_string) {
     const char pa[] = "Proxy-agent";
 
     h->value_append(pa, sizeof(pa) - 1, s->http_config_param->proxy_response_via_string,
