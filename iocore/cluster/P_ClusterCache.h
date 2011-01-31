@@ -392,10 +392,6 @@ struct ClusterVConnectionBase: public CacheVConnection
   Event *inactivity_timeout;
   Event *active_timeout;
 
-  virtual Action *action()
-  {
-    return &action_;
-  }
   virtual void reenable(VIO *);
   virtual void reenable_re(VIO *);
 };

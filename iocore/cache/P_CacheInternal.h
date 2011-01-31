@@ -242,10 +242,7 @@ struct CacheVC: public CacheVConnection
   void reenable_re(VIO *avio);
   bool get_data(int i, void *data);
   bool set_data(int i, void *data);
-  Action *action()
-  {
-    return &_action;
-  }
+
   bool is_ram_cache_hit()
   {
     ink_assert(vio.op == VIO::READ);

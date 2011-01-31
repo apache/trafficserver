@@ -360,11 +360,6 @@ public:
     return false;
   }
 
-  virtual Action *action()
-  {
-    return NULL;
-  }
-
 public:
 
   /**

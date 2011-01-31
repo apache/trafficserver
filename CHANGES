@@ -2,6 +2,8 @@
 
 Changes with Apache Traffic Server 2.1.6
 
+  *) Cache scan can not be canceled [TS-660].
+
   *) Changed the defaults to deal with read contention on the cache, this
    dramatically improves the performance on cache misses [TS-505, TS-506].
 

@@ -177,7 +177,6 @@ struct CacheVConnection:public VConnection
   virtual void get_http_info(CacheHTTPInfo **info) = 0;
 #endif
 
-  virtual Action *action() = 0;
   virtual bool is_ram_cache_hit() = 0;
   virtual bool set_disk_io_priority(int priority) = 0;
   virtual int get_disk_io_priority() = 0;
