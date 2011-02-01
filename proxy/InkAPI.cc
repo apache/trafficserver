@@ -7549,10 +7549,9 @@ TSHttpTxnConfigIntSet(TSHttpTxn txnp, TSOverridableConfigKey conf, TSMgmtInt val
   HttpSM *s = static_cast<HttpSM*>(txnp);
 
   // If this is the first time we're trying to modify a transaction config, copy it.
-  if (false == s->t_state.oride_copied) {
-    memcpy(&(s->t_state.my_txn_conf), &(s->t_state.http_config_param->oride), sizeof(s->t_state.txn_conf));
-    s->t_state.txn_conf = &s->t_state.http_config_param->oride;
-    s->t_state.oride_copied = true;
+  if (s->t_state.txn_conf != &s->t_state.my_txn_conf) {
+    memcpy(&s->t_state.my_txn_conf, &s->t_state.http_config_param->oride, sizeof(s->t_state.my_txn_conf));
+    s->t_state.txn_conf = &s->t_state.my_txn_conf;
   }
 
   OverridableDataType type;
@@ -7600,10 +7599,9 @@ TSHttpTxnConfigFloatSet(TSHttpTxn txnp, TSOverridableConfigKey conf, TSMgmtFloat
   OverridableDataType type;
 
   // If this is the first time we're trying to modify a transaction config, copy it.
-  if (false == s->t_state.oride_copied) {
-    memcpy(&(s->t_state.my_txn_conf), &(s->t_state.http_config_param->oride), sizeof(s->t_state.txn_conf));
-    s->t_state.txn_conf = &s->t_state.http_config_param->oride;
-    s->t_state.oride_copied = true;
+  if (s->t_state.txn_conf != &s->t_state.my_txn_conf) {
+    memcpy(&s->t_state.my_txn_conf, &s->t_state.http_config_param->oride, sizeof(s->t_state.my_txn_conf));
+    s->t_state.txn_conf = &s->t_state.my_txn_conf;
   }
 
   TSMgmtFloat* dest = static_cast<TSMgmtFloat*>(_conf_to_memberp(conf, s, &type));
@@ -7653,10 +7651,9 @@ TSHttpTxnConfigStringSet(TSHttpTxn txnp, TSOverridableConfigKey conf, const char
   HttpSM *s = (HttpSM*) txnp;
 
   // If this is the first time we're trying to modify a transaction config, copy it.
-  if (false == s->t_state.oride_copied) {
-    memcpy(&(s->t_state.my_txn_conf), &(s->t_state.http_config_param->oride), sizeof(s->t_state.txn_conf));
-    s->t_state.txn_conf = &s->t_state.http_config_param->oride;
-    s->t_state.oride_copied = true;
+  if (s->t_state.txn_conf != &s->t_state.my_txn_conf) {
+    memcpy(&s->t_state.my_txn_conf, &s->t_state.http_config_param->oride, sizeof(s->t_state.my_txn_conf));
+    s->t_state.txn_conf = &s->t_state.my_txn_conf;
   }
 
   switch (conf) {

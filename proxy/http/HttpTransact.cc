@@ -5044,6 +5044,7 @@ HttpTransact::get_ka_info_from_host_db(State *s, ConnectionAttributes *server_in
   bool force_http11 = false;
   bool http11_if_hostdb = false;
 
+  printf("IT IS %d\n", (int)s->txn_conf->send_http11_requests);
   switch (s->txn_conf->send_http11_requests) {
   case HttpConfigParams::SEND_HTTP11_NEVER:
     // No need to do anything since above vars
