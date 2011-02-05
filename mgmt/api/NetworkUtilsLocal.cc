@@ -73,7 +73,6 @@ socket_flush(struct SocketInfo sock_info)
 
     if (ret == 0) {
       Debug("ts_main", "[socket_read_n] returned 0 on reading: %s.\n", strerror(errno));
-      mgmt_log("[socket_flush] (TS_ERR_NET_EOF) %s\n", strerror(errno));
       return TS_ERR_NET_EOF;
     }
     // we are all good here
@@ -117,7 +116,6 @@ socket_read_n(struct SocketInfo sock_info, char *buf, int bytes)
 
     if (ret == 0) {
       Debug("ts_main", "[socket_read_n] returned 0 on reading: %s.\n", strerror(errno));
-      mgmt_log("[socket_read_n] (TS_ERR_NET_EOF) %s\n", strerror(errno));
       return TS_ERR_NET_EOF;
     }
     // we are all good here

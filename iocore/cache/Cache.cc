@@ -149,7 +149,7 @@ static void cplist_update();
 int cplist_reconfigure();
 static int create_partition(int partition_number, int size_in_blocks, int scheme, CachePart *cp);
 static void rebuild_host_table(Cache *cache);
-void register_cache_stats(RecRawStatBlock *rsb, const char *prefix, bool reg_bytes_used=true);
+void register_cache_stats(RecRawStatBlock *rsb, const char *prefix);
 
 Queue<CachePart> cp_list;
 int cp_list_len = 0;
@@ -162,15 +162,25 @@ void force_link_CacheTestCaller() {
 #endif
 
 int64_t
-cache_bytes_used(void)
+cache_bytes_used(int partition)
 {
   uint64_t used = 0;
-  for (int i = 0; i < gnpart; i++) {
+  int start, end;
+
+  if (-1 == partition) {
+    start = 0;
+    end = gnpart;
+  } else {
+    start = partition;
+    end = partition + 1;
+  }
+  
+  for (int i = start; i < end; i++) {
     if (!DISK_BAD(gpart[i]->disk)) {
       if (!gpart[i]->header->cycle)
-        used += gpart[i]->header->write_pos - gpart[i]->start;
+          used += gpart[i]->header->write_pos - gpart[i]->start;
       else
-        used += gpart[i]->len - part_dirlen(gpart[i]) - EVACUATION_SIZE;
+          used += gpart[i]->len - part_dirlen(gpart[i]) - EVACUATION_SIZE;
     }
   }
   return used;
@@ -189,12 +199,18 @@ cache_bytes_total(void)
 int
 cache_stats_bytes_used_cb(const char *name, RecDataT data_type, RecData *data, RecRawStatBlock *rsb, int id)
 {
-  NOWARN_UNUSED(name);
+  int partition = -1;
+
   NOWARN_UNUSED(data_type);
   NOWARN_UNUSED(data);
-  if (cacheProcessor.initialized == CACHE_INITIALIZED) {
-    RecSetGlobalRawStatSum(rsb, id, cache_bytes_used());
-  }
+
+  // Well, there's no way to pass along the partition ID, so extracting it from the stat name.
+  if (0 == strncmp(name+20, "partition_", 10))
+    partition = strtol(name+30, NULL, 10);
+
+  if (cacheProcessor.initialized == CACHE_INITIALIZED)
+    RecSetGlobalRawStatSum(rsb, id, cache_bytes_used(partition));
+
   RecRawStatSyncSum(name, data_type, data, rsb, id);
 
   return 1;
@@ -2567,15 +2583,12 @@ static void reg_int(const char *str, int stat, RecRawStatBlock *rsb, const char 
 
 // Register Stats
 void
-register_cache_stats(RecRawStatBlock *rsb, const char *prefix, bool reg_bytes_used)
+register_cache_stats(RecRawStatBlock *rsb, const char *prefix)
 {
   char stat_str[256];
 
-  // TODO: At some point we should figure out how to calculate bytes_used for the per partition stats. Right now they will be zero.
-  if (reg_bytes_used) {
-    REG_INT("bytes_used", cache_bytes_used_stat);
-  }
- 
+  // Special case for this sucker, since it uses its own aggregator.
+  reg_int("bytes_used", cache_bytes_used_stat, rsb, prefix, cache_stats_bytes_used_cb);
 
   REG_INT("bytes_total", cache_bytes_total_stat);
   snprintf(stat_str, sizeof(stat_str), "%s.%s", prefix, "ram_cache.total_bytes");
@@ -2722,10 +2735,7 @@ ink_cache_init(ModuleVersion v)
   IOCORE_RegisterConfigUpdateFunc("proxy.config.cache.enable_read_while_writer", update_cache_config, NULL);
   Debug("cache_init", "proxy.config.cache.enable_read_while_writer = %d", cache_config_read_while_writer);
 
-  // Special case here for cache.bytes_used, since it uses a different CB than the "normal" SUM. This
-  // is a little ugly, but it's for one single stat, and saves an entire thread (and unecessary callbacks).
-  reg_int("bytes_used", cache_bytes_used_stat, cache_rsb, "proxy.process.cache", cache_stats_bytes_used_cb);
-  register_cache_stats(cache_rsb, "proxy.process.cache", false);
+  register_cache_stats(cache_rsb, "proxy.process.cache");
 
   const char *err = NULL;
   if ((err = theCacheStore.read_config())) {

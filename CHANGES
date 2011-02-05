@@ -2,6 +2,8 @@
 
 Changes with Apache Traffic Server 2.1.6
 
+  *) [TS-662] Make per partition stats for bytes_used work.
+
   *) [TS-661] Delay the copy of per transaction configs until a plugin
    actually tries to modify a setting. We also add these settings to the
    list of configurations that is overridable:

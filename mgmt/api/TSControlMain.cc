@@ -194,7 +194,6 @@ ts_ctrl_main(void *arg)
           new_client_con->sock_info.SSLcon = NULL;
           ink_hash_table_insert(accepted_con, (char *) &new_client_con->sock_info.fd, new_client_con);
           Debug("ts_main", "[ts_ctrl_main] Add new client connection \n");
-          //mgmt_log(stderr, "[ts_ctrl_main] Accept new connection: fd=%d\n", new_con_fd);
         }
       }                         // end if(new_con_fd >= 0 && FD_ISSET(new_con_fd, &selectFDs))
 
@@ -213,9 +212,7 @@ ts_ctrl_main(void *arg)
             ret = preprocess_msg(client_entry->sock_info, (OpType *) & op_t, &req);
             if (ret == TS_ERR_NET_READ || ret == TS_ERR_NET_EOF) {
               // occurs when remote API client terminates connection
-              Debug("ts_main", "[ts_ctrl_main] ERROR: preprocess_msg - remove client %d \n",
-                    client_entry->sock_info.fd);
-              mgmt_log("[ts_ctrl_main] preprocess_msg - remove client %d\n", client_entry->sock_info.fd);
+              Debug("ts_main", "[ts_ctrl_main] ERROR: preprocess_msg - remove client %d \n", client_entry->sock_info.fd);
               remove_client(client_entry, accepted_con);
               // get next client connection (if any)
               con_entry = ink_hash_table_iterator_next(accepted_con, &con_state);
