@@ -134,6 +134,11 @@ public:
   static uint32_t const SRC_PORT_ALT_HASH = 1<<10;
   /// Alternate destination port hash
   static uint32_t const DST_PORT_ALT_HASH = 1<<11;
+  /// All hash related flags.
+  static uint32_t const HASH_FLAGS =
+    SRC_IP_HASH | DST_IP_HASH | SRC_PORT_HASH | DST_PORT_HASH
+    | SRC_IP_ALT_HASH | DST_IP_ALT_HASH | SRC_PORT_ALT_HASH | DST_PORT_ALT_HASH
+    ;
   //@}
 
   /// Default constructor - no member initialization.

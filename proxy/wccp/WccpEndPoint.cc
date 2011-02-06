@@ -341,9 +341,7 @@ CacheImpl::defineServiceGroup(
     group = &(m_groups[svc_id]);
     group->m_svc = svc;
     memset(&group->m_id, 0, sizeof(group->m_id));
-    group->m_id.setAddr(m_addr);
-    group->m_id.setUnassigned(true);
-    group->m_id.setBuckets(false);
+    group->m_id.initDefaultHash(m_addr);
     zret = ServiceGroup::DEFINED;
   } else {
     group = &spot->second;
@@ -483,7 +481,7 @@ CacheImpl::generateHereIAm(
   HereIAmMsg& msg,
   GroupData& group
 ) {
-  msg.fill(group, this->setSecurity(msg, group), 0, 0);
+  msg.fill(group, this->setSecurity(msg, group));
   msg.finalize();
 }
 
@@ -493,36 +491,8 @@ CacheImpl::generateHereIAm(
   GroupData& group,
   RouterData& router
 ) {
-  int i;
-  size_t n_routers = group.m_routers.size();
-  size_t n_caches = group.m_caches.size();
-
-  msg.fill(group, this->setSecurity(msg, group), n_routers, n_caches);
+  msg.fill(group, this->setSecurity(msg, group));
   msg.fill_caps(router);
-
-  // Fill routers.
-  i = 0;
-  for ( RouterBag::iterator spot = group.m_routers.begin(),
-          limit = group.m_routers.end();
-        spot != limit;
-        ++spot, ++i
-  ) {
-    msg.m_cache_view.routerElt(i)
-      .setAddr(spot->m_addr)
-      .setRecvId(spot->m_recv.m_sn)
-      ;
-  }
-
-  // fill caches.
-  i = 0;
-  for ( CacheBag::iterator spot = group.m_caches.begin(),
-          limit = group.m_caches.end();
-        spot != limit;
-        ++spot, ++i
-  ) {
-    msg.m_cache_view.setCacheAddr(i, spot->idAddr());
-  }
-
   msg.finalize();
 }
 
@@ -531,37 +501,7 @@ CacheImpl::generateRedirectAssign(
   RedirectAssignMsg& msg,
   GroupData& group
 ) {
-  int i;
-  size_t n_caches = group.m_caches.size();
-  size_t n_routers = group.m_caches.size();
-  AssignmentKeyElt key(m_addr, group.m_generation);
-
-  msg.fill(group, this->setSecurity(msg, group), key, n_routers, n_caches);
-
-  // Fill routers.
-  i = 0;
-  for ( RouterBag::iterator spot = group.m_routers.begin(),
-          limit = group.m_routers.end();
-        spot != limit;
-        ++spot, ++i
-  ) {
-    msg.m_assign.routerElt(i)
-      .setChangeNumber(spot->m_generation)
-      .setAddr(spot->m_addr)
-      .setRecvId(spot->m_recv.m_sn)
-      ;
-  }
-
-  // fill caches.
-  i = 0;
-  for ( CacheBag::iterator spot = group.m_caches.begin(),
-          limit = group.m_caches.end();
-        spot != limit;
-        ++spot, ++i
-  ) {
-    msg.m_assign.setCacheAddr(i, spot->idAddr());
-  }
-
+  msg.fill(group, this->setSecurity(msg, group));
   msg.finalize();
 }
 
@@ -572,16 +512,27 @@ CacheImpl::checkRouterAssignment(
 ) const {
   // If group doesn't have an active assignment, always match w/o checking.
   bool zret = ! group.m_assign_info.isActive();
-  if (! zret && ! comp.isEmpty()) { // invalid component doesn't match.
-    uint32_t nc = comp.getCacheCount();
+  if (! zret
+    && ! comp.isEmpty()
+    && ServiceGroup::HASH_ONLY == group.m_cache_assign
+  ) {
+//    uint32_t nc = comp.getCacheCount();
+//    HashAssignElt const& ha = *(group.m_assign_info.getHash());
     // Nothing for it but simple brute force - iterate over every bucket
     // in the assignment and verify the corresponding bucket in the
     // cache bit array is set.
     zret = true;
+    // TBD: FIX THIS TO CHECK HASH BUCKETS!
+    // Need to fix up RouterViewComp extensively to make this work.
+# if 0
     for ( size_t b = 0 ; zret && b < N_BUCKETS ; ++b ) {
-      unsigned int c = group.m_assign_info[b].m_idx;
+      unsigned int c = ha[b].m_idx;
       if (c >= nc || ! comp.cacheElt(c).getBucket(b)) zret = false;
     }
+# endif
+  } else {
+    // TBD: Validate mask assignments. For now, always OK.
+    zret = true;
   }
   return zret;
 }
@@ -681,10 +632,10 @@ CacheImpl::housekeeping() {
       zret = sendto(m_fd, msg_data, here_i_am.getCount(), 0,
         addr_ptr, sizeof(dst_addr));
       if (0 <= zret) {
-        logf(LVL_DEBUG, "Sent HERE_I_AM for SG %d to seed router %s [#%d,%lu].",
+        logf(LVL_DEBUG, "Sent HERE_I_AM for SG %d to seed router %s [gen=#%d,t=%lu,n=%lu].",
           group.m_svc.getSvcId(),
           ip_addr_to_str(sspot->m_addr),
-          group.m_generation, now
+          group.m_generation, now, here_i_am.getCount()
         );
         sspot->m_xmit = now;
         sspot->m_count += 1;
@@ -741,20 +692,25 @@ CacheImpl::handleISeeYou(IpHeader const& ip_hdr, ts::Buffer const& chunk) {
   int router_idx; // index in active routers.
   std::vector< SeedRouter >::iterator seed_spot;
 
+  CapComp& caps = msg.m_capabilities;
   // Handle the router that sent us this.
   ar_spot = find_by_member(group.m_routers, &RouterData::m_addr, router_addr);
   if (ar_spot == group.m_routers.end()) {
+    // This is a new router that's replied to one of our pings.
+    // Need to do various setup and reply things to get the connection
+    // established.
+
     // Remove this from the seed routers and copy the last packet
     // sent time.
     RouterData r(router_addr); // accumulate state before we commit it.
     r.m_xmit.m_time = group.removeSeedRouter(to_addr);
 
     // Validate capabilities.
-    CapComp& caps = msg.m_capabilities;
     ServiceGroup::PacketStyle ps;
     ServiceGroup::CacheAssignmentStyle as;
     char const* caps_tag = caps.isEmpty() ? "default" : "router";
 
+    // No caps -> use GRE forwarding.
     ps = caps.isEmpty() ? ServiceGroup::GRE : caps.getPacketForwardStyle();
     if (ServiceGroup::GRE & ps & group.m_packet_forward)
       r.m_packet_forward = ServiceGroup::GRE;
@@ -763,6 +719,7 @@ CacheImpl::handleISeeYou(IpHeader const& ip_hdr, ts::Buffer const& chunk) {
     else
       logf(zret, LVL_WARN, "Packet forwarding (config=%d, %s=%d) did not match.", group.m_packet_forward, caps_tag, ps);
 
+    // No caps -> use GRE return.
     ps = caps.isEmpty() ? ServiceGroup::GRE : caps.getPacketReturnStyle();
     if (ServiceGroup::GRE & ps & group.m_packet_return)
       r.m_packet_return = ServiceGroup::GRE;
@@ -771,15 +728,15 @@ CacheImpl::handleISeeYou(IpHeader const& ip_hdr, ts::Buffer const& chunk) {
     else
       logf(zret, LVL_WARN, "Packet return (local=%d, %s=%d) did not match.", group.m_packet_return, caps_tag, ps);
 
+    // No caps -> use HASH assignment.
     as = caps.isEmpty() ? ServiceGroup::HASH_ONLY : caps.getCacheAssignmentStyle();
     if (ServiceGroup::HASH_ONLY & as & group.m_cache_assign)
       r.m_cache_assign = ServiceGroup::HASH_ONLY;
-    else if (ServiceGroup::MASK_ONLY & as & group.m_cache_assign)
+    else if (ServiceGroup::MASK_ONLY & as & group.m_cache_assign) {
       r.m_cache_assign = ServiceGroup::MASK_ONLY;
-    else
+      group.m_id.initDefaultMask(m_addr); // switch to MASK style ID.
+    } else
       logf(zret, LVL_WARN, "Cache assignment (local=%d, %s=%d) did not match.", group.m_cache_assign, caps_tag, as);
-
-    r.m_send_caps = ! caps.isEmpty();
 
     if (!zret) {
       // cancel out, can't use this packet because we reject the router.
@@ -791,8 +748,9 @@ CacheImpl::handleISeeYou(IpHeader const& ip_hdr, ts::Buffer const& chunk) {
     view_changed = true;
     logf(LVL_INFO, "Added source router %s to view %d", ip_addr_to_str(router_addr), group.m_svc.getSvcId());
   } else {
-    // Existing router. If we have a valid assignment, check it and
-    // send again if this router hasn't updated.
+    // Existing router. Update the receive ID in the assignment object.
+    group.m_assign_info.updateRouterId(router_addr, recv_id, msg.m_router_view.getChangeNumber());
+    // Check the assignment to see if we need to send it again.
     if (!this->checkRouterAssignment(group, msg.m_router_view)) {
       ar_spot->m_assign = true; // schedule an assignment message.
       logf(LVL_INFO, "Router assignment reported from "
@@ -805,6 +763,11 @@ CacheImpl::handleISeeYou(IpHeader const& ip_hdr, ts::Buffer const& chunk) {
   ar_spot->m_recv.set(now, recv_id);
   ar_spot->m_generation = msg.m_router_view.getChangeNumber();
   router_idx = ar_spot - group.m_routers.begin();
+  // Reply with our own capability options iff the router sent one to us.
+  // This is a violation of the spec but it's what we have to do in practice
+  // for mask assignment.
+  ar_spot->m_send_caps = ! caps.isEmpty();
+
 
   // For all the other listed routers, seed them if they're not
   // already active.
@@ -821,7 +784,7 @@ CacheImpl::handleISeeYou(IpHeader const& ip_hdr, ts::Buffer const& chunk) {
   group.resizeCacheSources();
   uint32_t nc = msg.m_router_view.getCacheCount();
   for ( uint32_t idx = 0 ; idx < nc ; ++idx ) {
-    CacheIdElt& cache = msg.m_router_view.cacheElt(idx);
+    CacheIdBox& cache = msg.m_router_view.cacheId(idx);
     CacheBag::iterator ac_spot = group.findCache(cache.getAddr());
     if (group.m_caches.end() == ac_spot) {
       group.m_caches.push_back(CacheData());
@@ -830,7 +793,7 @@ CacheImpl::handleISeeYou(IpHeader const& ip_hdr, ts::Buffer const& chunk) {
       logf(LVL_INFO, "Added cache %s to view %d", ip_addr_to_str(cache.getAddr()), group.m_svc.getSvcId());
       view_changed = true;
     }
-    ac_spot->m_id = cache;
+    ac_spot->m_id.fill(cache);
     ac_spot->m_src[router_idx].set(now, recv_id);
   }
 
@@ -986,7 +949,7 @@ RouterImpl::handleHereIAm(IpHeader const& ip_hdr, ts::Buffer const& chunk) {
   cache_gen = msg.m_cache_view.getChangeNumber();
 
   cache_idx = cache - group.m_caches.begin();
-  cache->m_id = msg.m_cache_id.idElt();
+  cache->m_id.fill(msg.m_cache_id.cacheId());
   cache->m_recv.set(now, cache_gen);
   cache->m_pending = true;
   cache->m_to_addr = ip_hdr.m_dst;
@@ -1048,7 +1011,9 @@ RouterImpl::generateISeeYou(
         spot != limit;
         ++spot, ++i
   ) {
-    msg.m_router_view.cacheElt(i) = spot->m_id;
+    // TBD: This needs to track memory because cache ID elements
+    // turn out to be variable sized.
+//    msg.m_router_view.cacheId(i) = spot->m_id;
   }
 
   msg.finalize();

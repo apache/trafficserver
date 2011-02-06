@@ -35,6 +35,7 @@ struct CompileTimeChecks {
   ts::TEST_IF_TRUE< BUCKET_SIZE == UINT8_SIZE > m_check_bucket_size;
 };
 
+ts::Errata::Code LVL_TMP = 1; ///< Temporary message.
 ts::Errata::Code LVL_FATAL = 3; ///< Fatal, cannot continue.
 ts::Errata::Code LVL_WARN = 2; ///< Significant, should be fixed.
 ts::Errata::Code LVL_INFO = 1; /// Interesting, not necessarily a problem.

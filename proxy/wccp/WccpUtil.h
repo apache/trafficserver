@@ -29,6 +29,8 @@ extern ts::Errata::Code LVL_FATAL; ///< Fatal, cannot continue.
 extern ts::Errata::Code LVL_WARN; ///< Significant, function degraded.
 extern ts::Errata::Code LVL_INFO; ///< Interesting, not necessarily a problem.
 extern ts::Errata::Code LVL_DEBUG; ///< Debugging information.
+extern ts::Errata::Code LVL_TMP; ///< For temporary debugging only.
+// Handy so that temporary debugging messages can be located by grep.
 //@}
 
 /** Logging / reporting support.
@@ -151,6 +153,7 @@ void set_field(uint32_t R::*M, char* buffer, uint32_t value) {
 
 // IP address fields are kept locally in network order so
 // we need variants without re-ordering.
+// Also required for member structures.
 template < typename R, typename T >
 T& access_field(T R::*M, void* buffer) {
   return reinterpret_cast<R*>(buffer)->*M;
@@ -158,12 +161,12 @@ T& access_field(T R::*M, void* buffer) {
 
 // Access an array @a T starting at @a buffer.
 template < typename T>
-T* access_array(char* buffer) {
+T* access_array(void* buffer) {
   return reinterpret_cast<T*>(buffer);
 }
 // Access an array of @a T starting at @a buffer.
 template < typename T >
-T const* access_array(char const* buffer) {
+T const* access_array(void const* buffer) {
   return reinterpret_cast<T const*>(buffer);
 }
 
