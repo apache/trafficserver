@@ -20,6 +20,9 @@ noinst_LIBRARIES = libtsconfig.a
 
 AM_YFLAGS = -d -p tsconfig
 
+AM_CPPFLAGS = \
+  -I$(top_srcdir)/lib
+
 BUILT_SOURCES = \
   TsConfigGrammar.c TsConfigGrammar.h TsConfigGrammar.hpp \
   TsConfigSyntax.c 

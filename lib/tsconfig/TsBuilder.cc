@@ -18,7 +18,7 @@
  */
 
 # include "TsBuilder.h"
-# include <TsErrataUtil.h>
+# include "TsErrataUtil.h"
 # include "TsConfigLexer.h"
 # include "TsConfigGrammar.hpp"
 # include <stdlib.h>

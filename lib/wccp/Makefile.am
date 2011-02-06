@@ -1,4 +1,5 @@
-# lib Makefile.am
+#
+# Makefile.am for WCCP module.
 #
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
@@ -16,9 +17,25 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-SUBDIRS = ts records
+AM_CPPFLAGS = \
+  -I$(top_srcdir)/lib \
+  -I$(top_srcdir)/proxy/api/ts
 
-# TsConfig is only built for WCCP until the bugs are worked out.
-if BUILD_WCCP
-SUBDIRS += tsconfig wccp
-endif
+#WCCP_DEFS = @WCCP_DEFS@
+#DEFS += $(WCCP_DEFS)
+
+noinst_LIBRARIES = libwccp.a
+#noinst_PROGRAMS = test-cache
+
+libwccp_a_SOURCES = \
+  Wccp.h \
+  WccpLocal.h \
+  WccpStatic.cc \
+  WccpMsg.cc \
+  WccpEndPoint.cc \
+  WccpConfig.cc
+
+#test_cache_SOURCES = \
+#  wccp-test-cache.cc
+
+#test_cache_LDADD = ./libwccp.a -lconfig++ -lcrypto

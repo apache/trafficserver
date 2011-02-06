@@ -20,10 +20,10 @@
     limitations under the License.
  */
 
-# include <TsBuffer.h>
-# include <NumericType.h>
-# include <IntrusivePtr.h>
-# include <Errata.h>
+# include <tsconfig/TsBuffer.h>
+# include <tsconfig/NumericType.h>
+# include <tsconfig/IntrusivePtr.h>
+# include <tsconfig/Errata.h>
 # include <vector>
 
 namespace ts { namespace config {
