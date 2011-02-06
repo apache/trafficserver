@@ -30,7 +30,7 @@
 
 #include "ink_platform.h"
 #include "MgmtAllow.h"
-#include "Main.h"
+#include "LocalManager.h"
 #include "MgmtUtils.h"
 
 // Make sure we have LOCAL_MANAGER defined for MatcherUtils.h

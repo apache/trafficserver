@@ -26,7 +26,7 @@
 #include "ink_port.h"
 #include "ink_time.h"
 
-#include "Main.h"
+#include "LocalManager.h"
 #include "MgmtUtils.h"
 #include "AutoConf.h"
 #include "TextBuffer.h"

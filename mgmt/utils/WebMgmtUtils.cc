@@ -22,7 +22,7 @@
  */
 
 #include "libts.h"
-#include "Main.h"
+#include "LocalManager.h"
 #include "MgmtUtils.h"
 #include "WebMgmtUtils.h"
 

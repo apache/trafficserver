@@ -41,7 +41,7 @@
 #include "VMap.h"
 #include "WebPluginList.h"
 #if TS_HAS_WCCP
-#include "../wccp/Wccp.h"
+#include <wccp/Wccp.h>
 #endif
 
 #if !defined(WIN32)

@@ -24,7 +24,6 @@
 #ifndef _MAIN_H_
 #define _MAIN_H_
 
-#include "LocalManager.h"
 #include "FileManager.h"
 #include "WebOverview.h"
 #include "I_Version.h"

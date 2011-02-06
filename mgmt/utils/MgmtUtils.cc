@@ -37,7 +37,8 @@
 
 #ifdef LOCAL_MANAGER
 // mgmt/Main.h
-#include "../Main.h"
+#include "LocalManager.h"
+//#include "../Main.h"
 #else
 // proxy/Main.h
 #include "../../proxy/Main.h"

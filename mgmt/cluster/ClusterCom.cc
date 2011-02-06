@@ -39,6 +39,7 @@
 #include "MgmtSocket.h"
 
 #include "Main.h"
+#include "LocalManager.h"
 #include "ClusterCom.h"
 #include "MgmtUtils.h"
 #include "WebMgmtUtils.h"

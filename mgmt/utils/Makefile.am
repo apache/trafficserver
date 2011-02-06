@@ -18,7 +18,6 @@
 #  limitations under the License.
 
 AM_CPPFLAGS = \
-  -I$(top_srcdir)/lib/records \
   -I$(top_srcdir)/iocore/utils \
   -I$(top_srcdir)/mgmt \
   -I$(top_srcdir)/mgmt/api \
@@ -26,7 +25,9 @@ AM_CPPFLAGS = \
   -I$(top_srcdir)/mgmt/cluster \
   -I$(top_srcdir)/mgmt/web2 \
   -I$(top_srcdir)/lib/tsconfig \
-  -I$(top_srcdir)/proxy
+  -I$(top_srcdir)/proxy \
+  -I$(top_srcdir)/lib/records \
+  -I$(top_srcdir)/lib
 
 MGMT_DEFS = @MGMT_DEFS@
 DEFS += $(MGMT_DEFS)

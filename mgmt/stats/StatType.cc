@@ -33,6 +33,7 @@
 #include "ink_config.h"
 #include "StatType.h"
 #include "MgmtUtils.h"
+#include "ink_hrtime.h"
 
 bool StatError = false;         // global error flag
 bool StatDebug = false;         // global debug flag
@@ -972,7 +973,7 @@ StatObjectList::Eval()
 
     if (object->m_update_interval <= 0) {
       // non-time statistics
-      object->m_current_time = ink_get_hrtime();
+      object->m_current_time = ink_get_hrtime_internal();
 
       result = ERROR_VALUE;
       if (object->m_node_dest) {
@@ -995,7 +996,7 @@ StatObjectList::Eval()
       object->m_last_update = object->m_current_time;
     } else {
       // timed statisitics
-      object->m_current_time = ink_get_hrtime();
+      object->m_current_time = ink_get_hrtime_internal();
 
       threshold = object->m_update_interval * HRTIME_SECOND;
       delta = object->m_current_time - object->m_last_update;

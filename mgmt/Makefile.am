@@ -38,7 +38,7 @@ AM_CPPFLAGS = $(ink_with_modules_local) \
   -I$(top_srcdir)/mgmt/stats \
   -I$(top_srcdir)/mgmt/utils \
   -I$(top_srcdir)/mgmt/web2 \
-  -I$(top_srcdir)/lib/tsconfig
+  -I$(top_srcdir)/lib
 
 MGMT_DEFS = @MGMT_DEFS@
 DEFS += $(MGMT_DEFS)
@@ -50,15 +50,15 @@ bin_PROGRAMS = traffic_manager
 # Compile this for "process manager"
 libmgmt_p_a_CPPFLAGS = \
   $(iocore_include_dirs) \
-  -I$(top_srcdir)/lib/records \
-  -I$(top_srcdir)/proxy/hdrs \
   -I$(top_srcdir)/mgmt/api/include \
   -I$(top_srcdir)/mgmt/cluster \
   -I$(top_srcdir)/mgmt/preparse \
   -I$(top_srcdir)/mgmt/utils \
   -I$(top_srcdir)/mgmt/web2 \
-  -I$(top_srcdir)/lib/tsconfig \
-  -I$(top_srcdir)/proxy
+  -I$(top_srcdir)/proxy \
+  -I$(top_srcdir)/proxy/hdrs \
+  -I$(top_srcdir)/lib/records \
+  -I$(top_srcdir)/lib
 libmgmt_p_a_SOURCES = \
   BaseManager.cc \
   BaseManager.h \
@@ -113,6 +113,6 @@ traffic_manager_LDADD = \
 # Must do it this way or the dependencies aren't detected.
 if BUILD_WCCP
 traffic_manager_LDADD += \
-  $(top_builddir)/proxy/wccp/libwccp.a \
+  $(top_builddir)/lib/wccp/libwccp.a \
   $(top_builddir)/lib/tsconfig/libtsconfig.a
 endif

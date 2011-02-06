@@ -27,7 +27,7 @@ AM_CPPFLAGS = \
   -I$(top_srcdir)/mgmt/utils \
   -I$(top_srcdir)/mgmt/web2 \
   -I$(top_srcdir)/mgmt/api/include \
-  -I$(top_srcdir)/lib/tsconfig
+  -I$(top_srcdir)/lib
 
 MGMT_DEFS = @MGMT_DEFS@
 DEFS += $(MGMT_DEFS)

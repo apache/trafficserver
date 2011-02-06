@@ -37,7 +37,7 @@
 #include "WebHttpTree.h"
 #include "WebMgmtUtils.h"
 
-#include "Main.h"
+#include "LocalManager.h"
 #include "ClusterCom.h"
 #include "MgmtUtils.h"
 #include "MgmtDefs.h"

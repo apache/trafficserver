@@ -33,6 +33,7 @@
 #include "ink_unused.h"        /* MAGIC_EDITING_TAG */
 
 #include "Main.h"
+#include "LocalManager.h"
 #include "VMap.h"
 #include "MgmtUtils.h"
 #include "P_RecLocal.h"

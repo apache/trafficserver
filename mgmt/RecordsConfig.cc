@@ -24,7 +24,7 @@
 
 #include "ink_config.h"
 #include "RecordsConfig.h"
-#include "Main.h"
+#include "ParseRules.h"
 
 //-------------------------------------------------------------------------
 // RecordsConfig

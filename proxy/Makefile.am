@@ -22,11 +22,7 @@ noinst_LIBRARIES = libTrafficServerStandalone.a
 bin_PROGRAMS =
 noinst_PROGRAMS =
 else
-SUBDIRS = congest http logging
-if BUILD_WCCP
-SUBDIRS += wccp
-endif
-SUBDIRS += config stats
+SUBDIRS = congest http logging config stats
 noinst_LIBRARIES =
 bin_PROGRAMS = \
   traffic_server \
