@@ -107,7 +107,7 @@ traffic_manager_LDADD = \
   $(top_builddir)/lib/ts/libtsutil.la \
   @LIBEXPAT@ @LIBPCRE@ \
   @LIBSSL@ @LIBTCL@ @LIBICONV@ \
-  @LIBM@ @LIBDL@ @LIBSOCKET@ @LIBNSL@ @LIBRESOLV@ \
+  -lm @LIBDL@ @LIBSOCKET@ @LIBNSL@ @LIBRESOLV@ \
   @LIBTHREAD@ @LIBRT@ @LIBEXECINFO@ @LIBCAP@
 
 # Must do it this way or the dependencies aren't detected.

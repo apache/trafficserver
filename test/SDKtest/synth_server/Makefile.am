@@ -25,7 +25,7 @@ noinst_PROGRAMS = SDKtest_server
 
 SDKtest_server_SOURCES = synth_server.c
 
-SDKtest_server_LDFLAGS = @LIBM@ @LIBSOCKET@ @LIBNSL@ @LIBDL@
+SDKtest_server_LDFLAGS = -lm @LIBSOCKET@ @LIBNSL@ @LIBDL@
 
 
 
