@@ -1994,7 +1994,7 @@ HttpConfig::parse_ports_list(char *ports_string)
 
       start = end;
 
-      HTTP_ASSERT(pr->low <= pr->high);
+      ink_release_assert(pr->low <= pr->high);
     }
   }
   return (ports_list);

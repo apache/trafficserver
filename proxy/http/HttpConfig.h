@@ -55,8 +55,6 @@
 #define MgmtInt RecInt
 #define MgmtFloat RecFloat
 
-#include "HttpAssert.h"
-
 
 #include "P_RecProcess.h"
 

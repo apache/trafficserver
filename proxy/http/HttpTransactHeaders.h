@@ -153,7 +153,7 @@ inline bool
 HttpTransactHeaders::is_request_proxy_authorized(HTTPHdr * incoming_hdr)
 {
   NOWARN_UNUSED(incoming_hdr);
-  HTTP_DEBUG_ASSERT(incoming_hdr);
+  ink_debug_assert(incoming_hdr);
   // TODO: What do we need to do here?
   return true;
 }

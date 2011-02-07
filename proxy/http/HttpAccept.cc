@@ -23,7 +23,6 @@
 
 #include "HttpAccept.h"
 #include "IPAllow.h"
-#include "HttpAssert.h"
 #include "HttpClientSession.h"
 #include "I_Machine.h"
 

@@ -37,7 +37,6 @@ libhttp_a_SOURCES = \
   Hash_Table.h \
   HttpAccept.cc \
   HttpAccept.h \
-  HttpAssert.h \
   HttpBodyFactory.cc \
   HttpBodyFactory.h \
   HttpCacheSM.cc \

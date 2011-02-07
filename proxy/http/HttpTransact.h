@@ -1402,7 +1402,7 @@ typedef void (*TransactEntryFunc_t) (HttpTransact::State* s);
 inline void
 HttpTransact::free_internal_msg_buffer(char *buffer, int64_t size)
 {
-  HTTP_DEBUG_ASSERT(buffer);
+  ink_debug_assert(buffer);
   if (size >= 0) {
     ioBufAllocator[size].free_void(buffer);
   } else {

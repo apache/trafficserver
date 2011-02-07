@@ -293,7 +293,7 @@ history[pos].fileline = __FILE__ ":" _REMEMBER (__LINE__);
 #undef STATE_ENTER
 #endif
 #define STATE_ENTER(state_name, event) { \
-    /*HTTP_DEBUG_ASSERT (magic == HTTP_SM_MAGIC_ALIVE); */ REMEMBER (event, reentrancy_count);  \
+    /*ink_debug_assert (magic == HTTP_SM_MAGIC_ALIVE); */ REMEMBER (event, reentrancy_count);  \
         Debug("http", "[%" PRId64 "] [%s, %s]", sm_id, \
         #state_name, HttpDebugNames::get_event_name(event)); }
 
@@ -2072,7 +2072,7 @@ HttpSM::state_hostdb_lookup(int event, void *data)
 {
   STATE_ENTER(&HttpSM::state_hostdb_lookup, event);
 
-//    HTTP_DEBUG_ASSERT (m_origin_server_vc == 0);
+//    ink_debug_assert (m_origin_server_vc == 0);
   // REQ_FLAVOR_SCHEDULED_UPDATE can be transformed into
   // REQ_FLAVOR_REVPROXY
   ink_assert(t_state.req_flavor == HttpTransact::REQ_FLAVOR_SCHEDULED_UPDATE ||
@@ -6130,7 +6130,7 @@ HttpSM::update_stats()
     if (t_state.hdr_info.client_response.valid() && t_state.hdr_info.client_response.status_get() == HTTP_STATUS_OK) {
       int64_t p_resp_cl = t_state.hdr_info.client_response.get_content_length();
       int64_t resp_size = client_response_body_bytes;
-      HTTP_ASSERT(p_resp_cl == -1 || p_resp_cl == resp_size || resp_size == 0);
+      ink_release_assert(p_resp_cl == -1 || p_resp_cl == resp_size || resp_size == 0);
     }
   }
 
@@ -6685,7 +6685,7 @@ HttpSM::set_next_state()
     {
       HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::state_mark_os_down);
 
-      HTTP_DEBUG_ASSERT(t_state.dns_info.looking_up == HttpTransact::ORIGIN_SERVER);
+      ink_debug_assert(t_state.dns_info.looking_up == HttpTransact::ORIGIN_SERVER);
       do_hostdb_lookup();
       break;
     }

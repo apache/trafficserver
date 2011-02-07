@@ -24,7 +24,6 @@
 #include "ink_unused.h"  /* MAGIC_EDITING_TAG */
 #include "HttpMessageBody.h"
 #include "HttpConfig.h"
-#include "HttpAssert.h"
 
 /** This routine returns a constant string name for the status_code. */
 const char *
@@ -121,7 +120,7 @@ HttpMessageBody::MakeErrorBodyVA(int64_t max_buffer_length,
     l++;                        // leave room for trailing NUL
 
     if (pass == 2) {
-      HTTP_ASSERT(l == output_length);
+      ink_release_assert(l == output_length);
     }
     output_length = l;
   }

@@ -38,7 +38,7 @@
 #include "HttpServerSession.h"
 
 #define STATE_ENTER(state_name, event, vio) { \
-    /*HTTP_DEBUG_ASSERT (magic == HTTP_SM_MAGIC_ALIVE);  REMEMBER (event, NULL, reentrancy_count); */ \
+    /*ink_debug_assert (magic == HTTP_SM_MAGIC_ALIVE);  REMEMBER (event, NULL, reentrancy_count); */ \
         Debug("http_cs", "[%" PRId64 "] [%s, %s]", con_id, \
         #state_name, HttpDebugNames::get_event_name(event)); }
 

@@ -266,7 +266,7 @@ start_HttpProxyServer(int fd, int port, int ssl_fd, int accept_threads)
         HttpStateMachine::m_state_machines_max_count =
             atoi(state_machines_max_count);
 
-        HTTP_ASSERT (HttpStateMachine::m_state_machines_max_count >= 1);
+        ink_release_assert (HttpStateMachine::m_state_machines_max_count >= 1);
     }
     */
   ///////////////////////////////////
