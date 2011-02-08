@@ -47,6 +47,7 @@
 #include <string>
 #include <algorithm>
 #include <vector>
+#include <list>
 #if (__GNUC__ >= 3)
 #define _BACKWARD_BACKWARD_WARNING_H    // needed for gcc 4.3
 #include <ext/hash_map>
@@ -118,7 +119,7 @@ struct LastState
 static LastState last_state;
 
 
-// Store the collected counters and stats, per Origin Server (or total)
+// Store the collected counters and stats, per Origin Server, URL or total
 struct StatsCounter
 {
   int64_t count;
@@ -135,7 +136,7 @@ struct ElapsedStats
 
 struct OriginStats
 {
-  char *server;
+  const char *server;
   StatsCounter total;
 
   struct
@@ -315,6 +316,25 @@ struct OriginStats
   } content;
 };
 
+struct UrlStats
+{
+  bool operator < (const UrlStats& rhs)
+  {
+    return req.count > rhs.req.count;
+  }
+
+  const char *url;
+  StatsCounter req;
+  ElapsedStats time;
+  int64_t c_2xx;
+  int64_t c_3xx;
+  int64_t c_4xx;
+  int64_t c_5xx;
+  int64_t hits;
+  int64_t misses;
+  int64_t errors;
+};
+
 
 ///////////////////////////////////////////////////////////////////////////////
 // Equal operator for char* (for the hash_map)
@@ -322,7 +342,7 @@ struct eqstr
 {
   inline bool operator() (const char *s1, const char *s2) const
   {
-    return strcmp(s1, s2) == 0;
+    return 0 == strcmp(s1, s2);
   }
 };
 
@@ -330,11 +350,239 @@ typedef hash_map <const char *, OriginStats *, hash <const char *>, eqstr> Origi
 typedef hash_set <const char *, hash <const char *>, eqstr> OriginSet;
 
 
+// LRU class for the URL data
+void  update_elapsed(ElapsedStats &stat, const int elapsed, const StatsCounter &counter);
+
+class UrlLru
+{
+  typedef list<UrlStats> LruStack;
+  typedef hash_map<const char *, LruStack::iterator, hash <const char *>, eqstr> LruHash;
+
+public:
+  UrlLru(int size=1000000, int show_urls=0)
+    : _size(size)
+  {
+    _show_urls = size > 0 ? (show_urls >= size ? size-1 : show_urls) : show_urls;
+    _init();
+    _reset(false);
+    _cur = _stack.begin();
+  }
+
+  void
+  resize(int size=0)
+  {
+    if (0 != size)
+      _size = size;
+
+    _init();
+    _reset(true);
+    _cur = _stack.begin();
+  }
+
+  void
+  dump(int as_object=0)
+  {
+    int show = _show_urls ? _show_urls : _stack.size();
+
+    _stack.sort();
+    for (LruStack::iterator u=_stack.begin(); NULL != u->url && show-- >= 0; ++u)
+      _dump_url(u, as_object);
+    if (as_object)
+      std::cout << "  \"_timestamp\" : \"" << static_cast<int>(ink_time_wall_seconds()) << "\"" << std::endl;
+    else 
+      std::cout << "  { \"_timestamp\" : \"" << static_cast<int>(ink_time_wall_seconds()) << "\" }" << std::endl;
+  }
+
+  void
+  add_stat(const char* url, int64_t bytes, int time, int result, int http_code, int as_object=0)
+  {
+    LruHash::iterator h = _hash.find(url);
+
+    if (h != _hash.end()) {
+      LruStack::iterator &l = h->second;
+
+      ++(l->req.count);
+      l->req.bytes += bytes;
+
+      if (http_code >= 500)
+        ++(l->c_5xx);
+      else if (http_code >= 400)
+        ++(l->c_4xx);
+      else if (http_code >= 300)
+        ++(l->c_3xx);
+      else if (http_code >= 200)
+        ++(l->c_2xx);
+
+      switch (result) {
+      case SQUID_LOG_TCP_HIT:
+      case SQUID_LOG_TCP_IMS_HIT:
+      case SQUID_LOG_TCP_REFRESH_HIT:
+      case SQUID_LOG_TCP_DISK_HIT:
+      case SQUID_LOG_TCP_MEM_HIT:
+      case SQUID_LOG_TCP_REF_FAIL_HIT:
+      case SQUID_LOG_UDP_HIT:
+      case SQUID_LOG_UDP_WEAK_HIT:
+      case SQUID_LOG_UDP_HIT_OBJ:
+        ++(l->hits);
+        break;
+      case SQUID_LOG_TCP_MISS:
+      case SQUID_LOG_TCP_IMS_MISS:
+      case SQUID_LOG_TCP_REFRESH_MISS:
+      case SQUID_LOG_TCP_EXPIRED_MISS:
+      case SQUID_LOG_TCP_WEBFETCH_MISS:
+      case SQUID_LOG_UDP_MISS:
+        ++(l->misses);
+        break;
+      case SQUID_LOG_ERR_CLIENT_ABORT:
+      case SQUID_LOG_ERR_CONNECT_FAIL:
+      case SQUID_LOG_ERR_INVALID_REQ:
+      case SQUID_LOG_ERR_UNKNOWN:
+      case SQUID_LOG_ERR_READ_TIMEOUT:
+        ++(l->errors);
+        break;
+      }
+
+      update_elapsed(l->time, time, l->req);
+      // Move this entry to the top of the stack (hence, LRU)
+      if (_size > 0)
+        _stack.splice(_stack.begin(), _stack, l);
+    } else { // "new" URL
+      const char *u = xstrdup(url); // We own it.
+      LruStack::iterator l = _stack.end();
+
+      if (_size > 0) {
+        if (_cur == l) { // LRU is full, take the last one
+          --l;
+          h = _hash.find(l->url);
+          if (h != _hash.end())
+            _hash.erase(h);
+          if (0 == _show_urls)
+            _dump_url(l, as_object);
+        } else {
+          l = _cur++;
+        }
+        if (l->url)
+          xfree(const_cast<char*>(l->url)); // We no longer own this string.
+      } else {
+        l = _stack.insert(l, UrlStats());
+      }
+
+      // Setup this URL stat
+      l->url = u;
+      l->req.bytes = bytes;
+      l->req.count = 1;
+
+      if (http_code >= 500)
+        l->c_5xx = 1;
+      else if (http_code >= 400)
+        l->c_4xx = 1;
+      else if (http_code >= 300)
+        l->c_3xx = 1;
+      else if (http_code >= 200)
+        l->c_2xx = 1;
+
+      switch (result) {
+      case SQUID_LOG_TCP_HIT:
+      case SQUID_LOG_TCP_IMS_HIT:
+      case SQUID_LOG_TCP_REFRESH_HIT:
+      case SQUID_LOG_TCP_DISK_HIT:
+      case SQUID_LOG_TCP_MEM_HIT:
+      case SQUID_LOG_TCP_REF_FAIL_HIT:
+      case SQUID_LOG_UDP_HIT:
+      case SQUID_LOG_UDP_WEAK_HIT:
+      case SQUID_LOG_UDP_HIT_OBJ:
+        l->hits = 1;
+        break;
+      case SQUID_LOG_TCP_MISS:
+      case SQUID_LOG_TCP_IMS_MISS:
+      case SQUID_LOG_TCP_REFRESH_MISS:
+      case SQUID_LOG_TCP_EXPIRED_MISS:
+      case SQUID_LOG_TCP_WEBFETCH_MISS:
+      case SQUID_LOG_UDP_MISS:
+        l->misses = 1;
+        break;
+      case SQUID_LOG_ERR_CLIENT_ABORT:
+      case SQUID_LOG_ERR_CONNECT_FAIL:
+      case SQUID_LOG_ERR_INVALID_REQ:
+      case SQUID_LOG_ERR_UNKNOWN:
+      case SQUID_LOG_ERR_READ_TIMEOUT:
+        l->errors = 1;
+        break;
+      }
+
+      l->time.min = -1;
+      l->time.max = -1;
+      update_elapsed(l->time, time, l->req);
+      _hash[u] = l;
+
+      // We running a real LRU or not?
+      if (_size > 0)
+        _stack.splice(_stack.begin(), _stack, l); // Move this to the top of the stack
+    }
+  }
+
+private:
+  void
+  _init()
+  {
+    if (_size > 0) {
+      _stack.resize(_size);
+      _hash.resize(_size);
+    }
+  }
+
+  void
+  _reset(bool free=false)
+  {
+    for (LruStack::iterator l=_stack.begin(); l != _stack.end(); ++l) {
+      if (free && l->url)
+        xfree(const_cast<char*>(l->url));
+      memset(&(*l), 0, sizeof(UrlStats));
+    }
+  }
+
+  void
+  _dump_url(LruStack::iterator &u, int as_object)
+  {
+    if (as_object)
+      std::cout << "  \"" << u->url << "\" : { ";
+    else
+      std::cout << "  { \"" << u->url << "\" : { ";
+    // Requests
+    std::cout << "\"req\" : { \"total\" : \"" << u->req.count <<
+      "\", \"hits\" : \"" <<  u->hits << 
+      "\", \"misses\" : \"" <<  u->misses << 
+      "\", \"errors\" : \"" <<  u->errors <<
+      "\", \"2xx\" : \"" <<  u->c_2xx <<
+      "\", \"3xx\" : \"" <<  u->c_3xx <<
+      "\", \"4xx\" : \"" <<  u->c_4xx <<
+      "\", \"5xx\" : \"" <<  u->c_5xx << "\" }, ";
+    std:: cout << "\"bytes\" : \"" << u->req.bytes << "\", ";
+    // Service times
+    std::cout << "\"svc_t\" : { \"min\" : \"" << u->time.min <<
+      "\", \"max\" : \"" << u->time.max <<
+      "\", \"avg\" : \"" << std::setiosflags(ios::fixed) << std::setprecision(2) << u->time.avg <<
+      "\", \"dev\" : \"" << std::setiosflags(ios::fixed) << std::setprecision(2) << u->time.stddev;
+
+    if (as_object)
+      std::cout << "\" } }," << std::endl;
+    else
+      std::cout << "\" } } }," << std::endl;
+  }
+
+  LruHash _hash;
+  LruStack _stack;
+  int _size, _show_urls;
+  LruStack::iterator _cur;
+};
+
+
 ///////////////////////////////////////////////////////////////////////////////
 // Globals, holding the accumulated stats (ok, I'm lazy ...)
 static OriginStats totals;
 static OriginStorage origins;
 static OriginSet *origin_set;
+static UrlLru *urls;
 static int parse_errors;
 
 // Command line arguments (parsing)
@@ -353,12 +601,15 @@ struct CommandLineArgs
   int summary;                  // Summary only
   int json;			// JSON output
   int cgi;			// CGI output (typically with json)
+  int urls;			// Produce JSON output of URL stats, arg is LRU size
+  int show_urls;		// Max URLs to show
+  int as_object;		// Show the URL stats as a single JSON object (not array)
   int version;
   int help;
 
   CommandLineArgs()
     : max_origins(0), min_hits(0), max_age(0), line_len(DEFAULT_LINE_LEN), incremental(0),
-      tail(0), summary(0), json(0), cgi(0), version(0), help(0)
+      tail(0), summary(0), json(0), cgi(0), urls(0), show_urls(0), as_object(0), version(0), help(0)
   {
     log_file[0] = '\0';
     origin_file[0] = '\0';
@@ -377,6 +628,9 @@ static ArgumentDescription argument_descriptions[] = {
   {"origin_list", 'o', "Only show stats for listed Origins", "S4095", cl.origin_list, NULL, NULL},
   {"origin_file", 'O', "File listing Origins to show", "S1023", cl.origin_file, NULL, NULL},
   {"max_orgins", 'M', "Max number of Origins to show", "I", &cl.max_origins, NULL, NULL},
+  {"urls", 'u', "Produce JSON stats for URLs, argument is LRU size", "I", &cl.urls, NULL, NULL},
+  {"show_urls", 'U', "Only show max this number of URLs", "I", &cl.show_urls, NULL, NULL},
+  {"as_object", 'A', "Produce URL stats as a JSON object instead of array", "T", &cl.as_object, NULL, NULL},
   {"incremental", 'i', "Incremental log parsing", "T", &cl.incremental, NULL, NULL},
   {"statetag", 'S', "Name of the state file to use", "S1023", cl.state_tag, NULL, NULL},
   {"tail", 't', "Parse the last <sec> seconds of log", "I", &cl.tail, NULL, NULL},
@@ -425,6 +679,12 @@ CommandLineArgs::parse_arguments(char** argv) {
           ink_strlcpy(state_tag, val, sizeof(state_tag));
         } else if (0 == strncmp(tok, "max_origins", 11)) {
           max_origins = strtol(val, NULL, 10);
+        } else if (0 == strncmp(tok, "urls", 4)) {
+          urls = strtol(val, NULL, 10);
+        } else if (0 == strncmp(tok, "show_urls", 9)) {
+          show_urls = strtol(val, NULL, 10);
+        } else if (0 == strncmp(tok, "as_object", 9)) {
+          as_object = strtol(val, NULL, 10);
         } else if (0 == strncmp(tok, "min_hits", 8)) {
           min_hits = strtol(val, NULL, 10);
         } else if (0 == strncmp(tok, "incremental", 11)) {
@@ -531,18 +791,18 @@ enum URLScheme
 ///////////////////////////////////////////////////////////////////////////////
 // Initialize the elapsed field
 inline void
-init_elapsed(OriginStats & stats)
+init_elapsed(OriginStats *stats)
 {
-  stats.elapsed.hits.hit.min = -1;
-  stats.elapsed.hits.ims.min = -1;
-  stats.elapsed.hits.refresh.min = -1;
-  stats.elapsed.hits.other.min = -1;
-  stats.elapsed.hits.total.min = -1;
-  stats.elapsed.misses.miss.min = -1;
-  stats.elapsed.misses.ims.min = -1;
-  stats.elapsed.misses.refresh.min = -1;
-  stats.elapsed.misses.other.min = -1;
-  stats.elapsed.misses.total.min = -1;
+  stats->elapsed.hits.hit.min = -1;
+  stats->elapsed.hits.ims.min = -1;
+  stats->elapsed.hits.refresh.min = -1;
+  stats->elapsed.hits.other.min = -1;
+  stats->elapsed.hits.total.min = -1;
+  stats->elapsed.misses.miss.min = -1;
+  stats->elapsed.misses.ims.min = -1;
+  stats->elapsed.misses.refresh.min = -1;
+  stats->elapsed.misses.other.min = -1;
+  stats->elapsed.misses.total.min = -1;
 }
 
 // Update the counters for one StatsCounter
@@ -554,14 +814,15 @@ update_counter(StatsCounter& counter, int size)
 }
 
 inline void
-update_elapsed(ElapsedStats & stat, const int elapsed, const StatsCounter & counter)
+update_elapsed(ElapsedStats &stat, const int elapsed, const StatsCounter &counter)
 {
   int newcount, oldcount;
   float oldavg, newavg, sum_of_squares;
+
   // Skip all the "0" values.
-  if (elapsed == 0)
+  if (0 == elapsed)
     return;
-  if (stat.min == -1)
+  if (-1 == stat.min)
     stat.min = elapsed;
   else if (stat.min > elapsed)
     stat.min = elapsed;
@@ -573,7 +834,7 @@ update_elapsed(ElapsedStats & stat, const int elapsed, const StatsCounter & coun
   // update_elapsed.
   newcount = counter.count;
   // New count should never be zero, else there was a programming error.
-  assert(newcount);
+  ink_release_assert(newcount);
   oldcount = counter.count - 1;
   oldavg = stat.avg;
   newavg = (oldavg * oldcount + elapsed) / newcount;
@@ -891,11 +1152,11 @@ update_methods(OriginStats * stat, int method, int size)
 inline void
 update_schemes(OriginStats * stat, int scheme, int size)
 {
-  if (scheme == SCHEME_HTTP)
+  if (SCHEME_HTTP == scheme)
     update_counter(stat->schemes.http, size);
-  else if (scheme == SCHEME_HTTPS)
+  else if (SCHEME_HTTPS == scheme)
     update_counter(stat->schemes.https, size);
-  else if (scheme == SCHEME_NONE)
+  else if (SCHEME_NONE == scheme)
     update_counter(stat->schemes.none, size);
   else
     update_counter(stat->schemes.other, size);
@@ -931,9 +1192,9 @@ parse_log_buff(LogBufferHeader * buf_header, bool summary = false)
 
 
   // Initialize some "static" variables.
-  if (str_buf == NULL) {
+  if (NULL == str_buf) {
     str_buf = (char *) xmalloc(LOG_MAX_FORMATTED_LINE);
-    if (str_buf == NULL)
+    if (NULL == str_buf)
       return 0;
   }
 
@@ -993,7 +1254,6 @@ parse_log_buff(LogBufferHeader * buf_header, bool summary = false)
           flag = 1;
           state = P_STATE_END;
         }
-        //printf("CODE == %d\n", http_code);
         break;
 
       case P_STATE_SIZE:
@@ -1002,12 +1262,10 @@ parse_log_buff(LogBufferHeader * buf_header, bool summary = false)
         state = P_STATE_METHOD;
         size = *((int64_t *) (read_from));
         read_from += INK_MIN_ALIGN;
-        //printf("Size == %d\n", size)
         break;
 
       case P_STATE_METHOD:
         state = P_STATE_URL;
-        //printf("METHOD == %s\n", read_from);
         flag = 0;
 
         // Small optimization for common (3-4 char) cases
@@ -1030,13 +1288,13 @@ parse_log_buff(LogBufferHeader * buf_header, bool summary = false)
           break;
         default:
           tok_len = strlen(read_from);
-          if ((tok_len == 5) && (strncmp(read_from, "PURGE", 5) == 0))
+          if ((5 == tok_len) && (0 == strncmp(read_from, "PURGE", 5)))
             method = METHOD_PURGE;
-          else if ((tok_len == 6) && (strncmp(read_from, "DELETE", 6) == 0))
+          else if ((6 == tok_len) && (0 == strncmp(read_from, "DELETE", 6)))
             method = METHOD_DELETE;
-          else if ((tok_len == 7) && (strncmp(read_from, "OPTIONS", 7) == 0))
+          else if ((7 == tok_len) && (0 == strncmp(read_from, "OPTIONS", 7)))
             method = METHOD_OPTIONS;
-          else if ((tok_len == 1) && (*read_from == '-')) {
+          else if ((1 == tok_len) && ('-' == *read_from)) {
             method = METHOD_NONE;
             flag = 1;           // No method, so no need to parse the URL
           } else {
@@ -1054,28 +1312,30 @@ parse_log_buff(LogBufferHeader * buf_header, bool summary = false)
 
       case P_STATE_URL:
         state = P_STATE_RFC931;
+        if (urls)
+          urls->add_stat(read_from, size, elapsed, result, http_code, cl.as_object);
 
         // TODO check for read_from being empty string
-        if (flag == 0) {
+        if (0 == flag) {
           tok = read_from;
-          if (*reinterpret_cast <int*>(tok) == HTTP_AS_INT) {
+          if (HTTP_AS_INT == *reinterpret_cast <int*>(tok)) {
             tok += 4;
-            if (*tok == ':') {
+            if (':' == *tok) {
               scheme = SCHEME_HTTP;
               tok += 3;
               tok_len = strlen(tok) + 7;
-            } else if (*tok == 's') {
+            } else if ('s' == *tok) {
               scheme = SCHEME_HTTPS;
               tok += 4;
               tok_len = strlen(tok) + 8;
             } else
               tok_len = strlen(tok) + 4;
           } else {
-            if (*tok == '/')
+            if ('/' == *tok)
               scheme = SCHEME_NONE;
             tok_len = strlen(tok);
           }
-          if (*tok == '/')      // This is to handle crazy stuff like http:///origin.com
+          if ('/' == *tok)      // This is to handle crazy stuff like http:///origin.com
             tok++;
           ptr = strchr(tok, '/');
           if (ptr && !summary) { // Find the origin
@@ -1085,9 +1345,10 @@ parse_log_buff(LogBufferHeader * buf_header, bool summary = false)
             // update the origin data, no matter what the origin_set is.
             if (origin_set ? (origin_set->find(tok) != origin_set->end()) : 1) {
               o_iter = origins.find(tok);
-              if (o_iter == origins.end()) {
+              if (origins.end() == o_iter) {
                 o_stats = (OriginStats *) xmalloc(sizeof(OriginStats));
-                init_elapsed(*o_stats);
+                memset(o_stats, 0, sizeof(OriginStats));
+                init_elapsed(o_stats);
                 o_server = xstrdup(tok);
                 if (o_stats && o_server) {
                   o_stats->server = o_server;
@@ -1099,7 +1360,7 @@ parse_log_buff(LogBufferHeader * buf_header, bool summary = false)
           }
         } else {
           // No method given
-          if (*read_from == '/')
+          if ('/' == *read_from)
             scheme = SCHEME_NONE;
           tok_len = strlen(read_from);
         }
@@ -1122,7 +1383,7 @@ parse_log_buff(LogBufferHeader * buf_header, bool summary = false)
 
       case P_STATE_RFC931:
         state = P_STATE_HIERARCHY;
-        if (*read_from == '-')
+        if ('-' == *read_from)
           read_from += LogAccess::round_strlen(1 + 1);
         else
           read_from += LogAccess::strlen(read_from);
@@ -1174,7 +1435,7 @@ parse_log_buff(LogBufferHeader * buf_header, bool summary = false)
 
       case P_STATE_PEER:
         state = P_STATE_TYPE;
-        if (*read_from == '-')
+        if ('-' == *read_from)
           read_from += LogAccess::round_strlen(1 + 1);
         else
           read_from += LogAccess::strlen(read_from);
@@ -1182,7 +1443,7 @@ parse_log_buff(LogBufferHeader * buf_header, bool summary = false)
 
       case P_STATE_TYPE:
         state = P_STATE_END;
-        if (*reinterpret_cast <int*>(read_from) == IMAG_AS_INT) {
+        if (IMAG_AS_INT == *reinterpret_cast <int*>(read_from)) {
           update_counter(totals.content.image.total, size);
           if (o_stats != NULL)
             update_counter(o_stats->content.image.total, size);
@@ -1225,7 +1486,7 @@ parse_log_buff(LogBufferHeader * buf_header, bool summary = false)
               update_counter(o_stats->content.image.other, size);
             break;
           }
-        } else if (*reinterpret_cast <int*>(read_from) == TEXT_AS_INT) {
+        } else if (TEXT_AS_INT == *reinterpret_cast <int*>(read_from)) {
           tok = read_from + 5;
           update_counter(totals.content.text.total, size);
           if (o_stats != NULL)
@@ -1269,7 +1530,7 @@ parse_log_buff(LogBufferHeader * buf_header, bool summary = false)
               update_counter(o_stats->content.text.other, size);
             break;
           }
-        } else if (strncmp(read_from, "application", 11) == 0) {
+        } else if (0 == strncmp(read_from, "application", 11)) {
           tok = read_from + 12;
           update_counter(totals.content.application.total, size);
           if (o_stats != NULL)
@@ -1293,12 +1554,12 @@ parse_log_buff(LogBufferHeader * buf_header, bool summary = false)
               update_counter(o_stats->content.application.javascript, size);
             break;
           case RSSp_AS_INT:
-            if (strcmp(tok+4, "xml") == 0) {
+            if (0 == strcmp(tok+4, "xml")) {
               tok_len = 19;
               update_counter(totals.content.application.rss_xml, size);
               if (o_stats != NULL)
                 update_counter(o_stats->content.application.rss_xml, size);
-            } else if (strcmp(tok+4,"atom") == 0) {
+            } else if (0 == strcmp(tok+4,"atom")) {
               tok_len = 20;
               update_counter(totals.content.application.rss_atom, size);
               if (o_stats != NULL)
@@ -1311,12 +1572,12 @@ parse_log_buff(LogBufferHeader * buf_header, bool summary = false)
             }
             break;
           default:
-            if (strcmp(tok, "x-shockwave-flash") == 0) {
+            if (0 == strcmp(tok, "x-shockwave-flash")) {
               tok_len = 29;
               update_counter(totals.content.application.shockwave_flash, size);
               if (o_stats != NULL)
                 update_counter(o_stats->content.application.shockwave_flash, size);
-            } else if (strcmp(tok, "x-quicktimeplayer") == 0) {
+            } else if (0 == strcmp(tok, "x-quicktimeplayer")) {
               tok_len = 29;
               update_counter(totals.content.application.quicktime, size);
               if (o_stats != NULL)
@@ -1328,17 +1589,17 @@ parse_log_buff(LogBufferHeader * buf_header, bool summary = false)
                 update_counter(o_stats->content.application.other, size);
             }
           }
-        } else if (strncmp(read_from, "audio", 5) == 0) {
+        } else if (0 == strncmp(read_from, "audio", 5)) {
           tok = read_from + 6;
           tok_len = 6 + strlen(tok);
           update_counter(totals.content.audio.total, size);
           if (o_stats != NULL)
             update_counter(o_stats->content.audio.total, size);
-          if ((strcmp(tok, "x-wav") == 0) || (strcmp(tok, "wav") == 0)) {
+          if ((0 == strcmp(tok, "x-wav")) || (0 == strcmp(tok, "wav"))) {
             update_counter(totals.content.audio.wav, size);
             if (o_stats != NULL)
               update_counter(o_stats->content.audio.wav, size);
-          } else if ((strcmp(tok, "x-mpeg") == 0) || (strcmp(tok, "mpeg") == 0)) {
+          } else if ((0 == strcmp(tok, "x-mpeg")) || (0 == strcmp(tok, "mpeg"))) {
             update_counter(totals.content.audio.mpeg, size);
             if (o_stats != NULL)
               update_counter(o_stats->content.audio.mpeg, size);
@@ -1347,7 +1608,7 @@ parse_log_buff(LogBufferHeader * buf_header, bool summary = false)
             if (o_stats != NULL)
               update_counter(o_stats->content.audio.other, size);
           }
-        } else if (*read_from == '-') {
+        } else if ('-' == *read_from) {
           tok_len = 1;
           update_counter(totals.content.none, size);
           if (o_stats != NULL)
@@ -1390,7 +1651,7 @@ process_file(int in_fd, off_t offset, unsigned max_age)
     buffer[0] = '\0';
 
     unsigned first_read_size = 2 * sizeof(unsigned);
-    LogBufferHeader *header = (LogBufferHeader *) & buffer[0];
+    LogBufferHeader *header = (LogBufferHeader *)&buffer[0];
 
     // Find the next log header, aligning us properly. This is not
     // particularly optimal, but we shouldn't only have to do this
@@ -1403,11 +1664,11 @@ process_file(int in_fd, off_t offset, unsigned max_age)
         // read the first 8 bytes of the header, which will give us the
         // cookie and the version number.
         nread = read(in_fd, buffer, first_read_size);
-        if (!nread || nread == EOF) {
+        if (!nread || EOF == nread) {
           return 0;
         }
         // ensure that this is a valid logbuffer header
-        if (header->cookie && (header->cookie == LOG_SEGMENT_COOKIE)) {
+        if (header->cookie && (LOG_SEGMENT_COOKIE == header->cookie)) {
           offset = 0;
           break;
         }
@@ -1418,7 +1679,7 @@ process_file(int in_fd, off_t offset, unsigned max_age)
       }
     } else {
       nread = read(in_fd, buffer, first_read_size);
-      if (!nread || nread == EOF || !header->cookie)
+      if (!nread ||  EOF == nread || !header->cookie)
         return 0;
 
       // ensure that this is a valid logbuffer header
@@ -1433,7 +1694,7 @@ process_file(int in_fd, off_t offset, unsigned max_age)
     // read the rest of the header
     unsigned second_read_size = sizeof(LogBufferHeader) - first_read_size;
     nread = read(in_fd, &buffer[first_read_size], second_read_size);
-    if (!nread || nread == EOF)
+    if (!nread || EOF == nread)
       return 1;
 
     // read the rest of the buffer
@@ -1445,7 +1706,7 @@ process_file(int in_fd, off_t offset, unsigned max_age)
       return 1;
 
     nread = read(in_fd, &buffer[sizeof(LogBufferHeader)], buffer_bytes);
-    if (!nread || nread == EOF)
+    if (!nread || EOF == nread)
       return 1;
 
     // Possibly skip too old entries (the entire buffer is skipped)
@@ -1464,21 +1725,20 @@ process_file(int in_fd, off_t offset, unsigned max_age)
 inline int
 use_origin(const OriginStats * stat)
 {
-  return ((stat->total.count > cl.min_hits) && (strchr(stat->server, '.') != NULL) &&
-          (strchr(stat->server, '%') == NULL));
+  return ((stat->total.count > cl.min_hits) && (NULL != strchr(stat->server, '.')) && (NULL == strchr(stat->server, '%')));
 }
 
 
 ///////////////////////////////////////////////////////////////////////////////
 // Produce a nicely formatted output for a stats collection on a stream
 inline void
-format_center(const char *str, std::ostream & out)
+format_center(const char *str)
 {
-  out << std::setfill(' ') << std::setw((cl.line_len - strlen(str)) / 2 + strlen(str)) << str << std::endl << std::endl;
+  std::cout << std::setfill(' ') << std::setw((cl.line_len - strlen(str)) / 2 + strlen(str)) << str << std::endl << std::endl;
 }
 
 inline void
-format_int(int64_t num, std::ostream & out)
+format_int(int64_t num)
 {
   if (num > 0) {
     int64_t mult = (int64_t) pow((double)10, (int) (log10((double)num) / 3) * 3);
@@ -1493,81 +1753,83 @@ format_int(int64_t num, std::ostream & out)
       if (mult /= 1000)
         ss << std::setw(0) << ',' << std::setw(3);
     }
-    out << ss.str();
+    std::cout << ss.str();
   } else
-    out << '0';
+    std::cout << '0';
 }
 
 void
-format_elapsed_header(std::ostream & out)
+format_elapsed_header()
 {
-  out << std::left << std::setw(24) << "Elapsed time stats";
-  out << std::right << std::setw(7) << "Min" << std::setw(13) << "Max";
-  out << std::right << std::setw(17) << "Avg" << std::setw(17) << "Std Deviation" << std::endl;
-  out << std::setw(cl.line_len) << std::setfill('-') << '-' << std::setfill(' ') << std::endl;
+  std::cout << std::left << std::setw(24) << "Elapsed time stats";
+  std::cout << std::right << std::setw(7) << "Min" << std::setw(13) << "Max";
+  std::cout << std::right << std::setw(17) << "Avg" << std::setw(17) << "Std Deviation" << std::endl;
+  std::cout << std::setw(cl.line_len) << std::setfill('-') << '-' << std::setfill(' ') << std::endl;
 }
 
 inline void
-format_elapsed_line(const char *desc, const ElapsedStats & stat, std::ostream & out, bool json=false)
+format_elapsed_line(const char *desc, const ElapsedStats &stat, bool json=false)
 {
   static char buf[64];
 
   if (json) {
-    out << "    " << '"' << desc << "\" : " << "{ ";
-    out << "\"min\": \"" << stat.min << "\", ";
-    out << "\"max\": \"" << stat.max << "\", ";
-    out << "\"avg\": \"" << std::setiosflags(ios::fixed) << std::setprecision(2) << stat.avg << "\", ";
-    out << "\"dev\": \"" << std::setiosflags(ios::fixed) << std::setprecision(2) << stat.stddev << "\" }," << std::endl;
+    std::cout << "    " << '"' << desc << "\" : " << "{ ";
+    std::cout << "\"min\": \"" << stat.min << "\", ";
+    std::cout << "\"max\": \"" << stat.max << "\", ";
+    std::cout << "\"avg\": \"" << std::setiosflags(ios::fixed) << std::setprecision(2) << stat.avg << "\", ";
+    std::cout << "\"dev\": \"" << std::setiosflags(ios::fixed) << std::setprecision(2) << stat.stddev << "\" }," << std::endl;
   } else {
-    out << std::left << std::setw(24) << desc;
-    out << std::right << std::setw(7);
-    format_int(stat.min, out);
-    out << std::right << std::setw(13);
-    format_int(stat.max, out);
+    std::cout << std::left << std::setw(24) << desc;
+    std::cout << std::right << std::setw(7);
+    format_int(stat.min);
+    std::cout << std::right << std::setw(13);
+    format_int(stat.max);
     snprintf(buf, sizeof(buf), "%17.3f", stat.avg);
-    out << std::right << buf;
+    std::cout << std::right << buf;
     snprintf(buf, sizeof(buf), "%17.3f", stat.stddev);
-    out << std::right << buf << std::endl;
+    std::cout << std::right << buf << std::endl;
   }
 }
 
 
 void
-format_detail_header(const char *desc, std::ostream & out)
+format_detail_header(const char *desc)
 {
-  out << std::left << std::setw(29) << desc;
-  out << std::right << std::setw(15) << "Count" << std::setw(11) << "Percent";
-  out << std::right << std::setw(12) << "Bytes" << std::setw(11) << "Percent" << std::endl;
-  out << std::setw(cl.line_len) << std::setfill('-') << '-' << std::setfill(' ') << std::endl;
+  std::cout << std::left << std::setw(29) << desc;
+  std::cout << std::right << std::setw(15) << "Count" << std::setw(11) << "Percent";
+  std::cout << std::right << std::setw(12) << "Bytes" << std::setw(11) << "Percent" << std::endl;
+  std::cout << std::setw(cl.line_len) << std::setfill('-') << '-' << std::setfill(' ') << std::endl;
 }
 
 inline void
-format_line(const char *desc, const StatsCounter & stat, const StatsCounter & total, std::ostream & out, bool json=false)
+format_line(const char *desc, const StatsCounter &stat, const StatsCounter &total, bool json=false)
 {
   static char metrics[] = "KKMGTP";
   static char buf[64];
   int ix = (stat.bytes > 1024 ? (int) (log10((double)stat.bytes) / LOG10_1024) : 1);
 
   if (json) {
-    out << "    " << '"' << desc << "\" : " << "{ ";
-    out << "\"req\": \"" << stat.count << "\", ";
-    out << "\"req_pct\": \"" << std::setiosflags(ios::fixed) << std::setprecision(2) << (double)stat.count / total.count * 100 << "\", ";
-    out << "\"bytes\": \"" << stat.bytes << "\", ";
-    out << "\"bytes_pct\": \"" << std::setiosflags(ios::fixed) << std::setprecision(2) << (double)stat.bytes / total.bytes * 100 << "\" }," << std::endl;
+    std::cout << "    " << '"' << desc << "\" : " << "{ ";
+    std::cout << "\"req\": \"" << stat.count << "\", ";
+    std::cout << "\"req_pct\": \"" << std::setiosflags(ios::fixed) << std::setprecision(2) <<
+      (double)stat.count / total.count * 100 << "\", ";
+    std::cout << "\"bytes\": \"" << stat.bytes << "\", ";
+    std::cout << "\"bytes_pct\": \"" << std::setiosflags(ios::fixed) << std::setprecision(2) <<
+      (double)stat.bytes / total.bytes * 100 << "\" }," << std::endl;
   } else {
-    out << std::left << std::setw(29) << desc;
+    std::cout << std::left << std::setw(29) << desc;
 
-    out << std::right << std::setw(15);
-    format_int(stat.count, out);
+    std::cout << std::right << std::setw(15);
+    format_int(stat.count);
 
     snprintf(buf, sizeof(buf), "%10.2f%%", ((double) stat.count / total.count * 100));
-    out << std::right << buf;
+    std::cout << std::right << buf;
 
     snprintf(buf, sizeof(buf), "%10.2f%cB", stat.bytes / pow((double)1024, ix), metrics[ix]);
-    out << std::right << buf;
+    std::cout << std::right << buf;
 
     snprintf(buf, sizeof(buf), "%10.2f%%", ((double) stat.bytes / total.bytes * 100));
-    out << std::right << buf << std::endl;
+    std::cout << std::right << buf << std::endl;
   }
 }
 
@@ -1575,233 +1837,233 @@ format_line(const char *desc, const StatsCounter & stat, const StatsCounter & to
 // Little "helpers" for the vector we use to sort the Origins.
 typedef pair<const char *, OriginStats *>OriginPair;
 inline bool
-operator<(const OriginPair & a, const OriginPair & b)
+operator<(const OriginPair &a, const OriginPair &b)
 {
   return a.second->total.count > b.second->total.count;
 }
 
 void
-print_detail_stats(const OriginStats * stat, std::ostream & out, bool json=false)
+print_detail_stats(const OriginStats * stat, bool json=false)
 {
   // Cache hit/misses etc.
   if (!json)
-    format_detail_header("Request Result", out);
+    format_detail_header("Request Result");
 
-  format_line(json ? "hit.direct" : "Cache hit", stat->results.hits.hit, stat->total, out, json);
-  format_line(json ? "hit.ims" : "Cache hit IMS", stat->results.hits.ims, stat->total, out, json);
-  format_line(json ? "hit.refresh" : "Cache hit refresh", stat->results.hits.refresh, stat->total, out, json);
-  format_line(json ? "hit.other" : "Cache hit other", stat->results.hits.other, stat->total, out, json);
-  format_line(json ? "hit.total" : "Cache hit total", stat->results.hits.total, stat->total, out, json);
-
-  if (!json)
-    out << std::endl;
-
-  format_line(json ? "miss.direct" : "Cache miss", stat->results.misses.miss, stat->total, out, json);
-  format_line(json ? "miss.ims" : "Cache miss IMS", stat->results.misses.ims, stat->total, out, json);
-  format_line(json ? "miss.refresh" : "Cache miss refresh", stat->results.misses.refresh, stat->total, out, json);
-  format_line(json ? "miss.other" : "Cache miss other", stat->results.misses.other, stat->total, out, json);
-  format_line(json ? "miss.total" : "Cache miss total", stat->results.misses.total, stat->total, out, json);
+  format_line(json ? "hit.direct" : "Cache hit", stat->results.hits.hit, stat->total, json);
+  format_line(json ? "hit.ims" : "Cache hit IMS", stat->results.hits.ims, stat->total,json);
+  format_line(json ? "hit.refresh" : "Cache hit refresh", stat->results.hits.refresh, stat->total,json);
+  format_line(json ? "hit.other" : "Cache hit other", stat->results.hits.other, stat->total, json);
+  format_line(json ? "hit.total" : "Cache hit total", stat->results.hits.total, stat->total, json);
 
   if (!json)
-    out << std::endl;
+    std::cout << std::endl;
 
-  format_line(json ? "error.client_abort" : "Client aborted", stat->results.errors.client_abort, stat->total, out, json);
-  format_line(json ? "error.conenct_failed" : "Connect failed", stat->results.errors.connect_fail, stat->total, out, json);
-  format_line(json ? "error.invalid_request" : "Invalid request", stat->results.errors.invalid_req, stat->total, out, json);
-  format_line(json ? "error.unknown" : "Unknown error(99)", stat->results.errors.unknown, stat->total, out, json);
-  format_line(json ? "error.other" : "Other errors", stat->results.errors.other, stat->total, out, json);
-  format_line(json ? "error.total" : "Errors total", stat->results.errors.total, stat->total, out, json);
+  format_line(json ? "miss.direct" : "Cache miss", stat->results.misses.miss, stat->total, json);
+  format_line(json ? "miss.ims" : "Cache miss IMS", stat->results.misses.ims, stat->total, json);
+  format_line(json ? "miss.refresh" : "Cache miss refresh", stat->results.misses.refresh, stat->total, json);
+  format_line(json ? "miss.other" : "Cache miss other", stat->results.misses.other, stat->total, json);
+  format_line(json ? "miss.total" : "Cache miss total", stat->results.misses.total, stat->total, json);
+
+  if (!json)
+    std::cout << std::endl;
+
+  format_line(json ? "error.client_abort" : "Client aborted", stat->results.errors.client_abort, stat->total, json);
+  format_line(json ? "error.conenct_failed" : "Connect failed", stat->results.errors.connect_fail, stat->total, json);
+  format_line(json ? "error.invalid_request" : "Invalid request", stat->results.errors.invalid_req, stat->total, json);
+  format_line(json ? "error.unknown" : "Unknown error(99)", stat->results.errors.unknown, stat->total, json);
+  format_line(json ? "error.other" : "Other errors", stat->results.errors.other, stat->total, json);
+  format_line(json ? "error.total" : "Errors total", stat->results.errors.total, stat->total, json);
 
   if (!json) {
-    out << std::setw(cl.line_len) << std::setfill('.') << '.' << std::setfill(' ') << std::endl;
-    format_line("Total requests", stat->total, stat->total, out);
-    out << std::endl << std::endl;
+    std::cout << std::setw(cl.line_len) << std::setfill('.') << '.' << std::setfill(' ') << std::endl;
+    format_line("Total requests", stat->total, stat->total);
+    std::cout << std::endl << std::endl;
 
     // HTTP codes
-    format_detail_header("HTTP return codes", out);
+    format_detail_header("HTTP return codes");
   }
 
-  format_line(json ? "status.100" : "100 Continue", stat->codes.c_100, stat->total, out, json);
+  format_line(json ? "status.100" : "100 Continue", stat->codes.c_100, stat->total, json);
 
-  format_line(json ? "status.200" : "200 OK", stat->codes.c_200, stat->total, out, json);
-  format_line(json ? "status.201" : "201 Created", stat->codes.c_201, stat->total, out, json);
-  format_line(json ? "status.202" : "202 Accepted", stat->codes.c_202, stat->total, out, json);
-  format_line(json ? "status.203" : "203 Non-Authoritative Info", stat->codes.c_203, stat->total, out, json);
-  format_line(json ? "status.204" : "204 No content", stat->codes.c_204, stat->total, out, json);
-  format_line(json ? "status.205" : "205 Reset Content", stat->codes.c_205, stat->total, out, json);
-  format_line(json ? "status.206" : "206 Partial content", stat->codes.c_206, stat->total, out, json);
-  format_line(json ? "status.2xx" : "2xx Total", stat->codes.c_2xx, stat->total, out, json);
-
-  if (!json)
-    out << std::endl;
-
-  format_line(json ? "status.300" : "300 Multiple Choices", stat->codes.c_300, stat->total, out, json);
-  format_line(json ? "status.301" : "301 Moved permanently", stat->codes.c_301, stat->total, out, json);
-  format_line(json ? "status.302" : "302 Found", stat->codes.c_302, stat->total, out, json);
-  format_line(json ? "status.303" : "303 See Other", stat->codes.c_303, stat->total, out, json);
-  format_line(json ? "status.304" : "304 Not modified", stat->codes.c_304, stat->total, out, json);
-  format_line(json ? "status.305" : "305 Use Proxy", stat->codes.c_305, stat->total, out, json);
-  format_line(json ? "status.307" : "307 Temporary Redirect", stat->codes.c_307, stat->total, out, json);
-  format_line(json ? "status.3xx" : "3xx Total", stat->codes.c_3xx, stat->total, out, json);
+  format_line(json ? "status.200" : "200 OK", stat->codes.c_200, stat->total, json);
+  format_line(json ? "status.201" : "201 Created", stat->codes.c_201, stat->total, json);
+  format_line(json ? "status.202" : "202 Accepted", stat->codes.c_202, stat->total, json);
+  format_line(json ? "status.203" : "203 Non-Authoritative Info", stat->codes.c_203, stat->total, json);
+  format_line(json ? "status.204" : "204 No content", stat->codes.c_204, stat->total, json);
+  format_line(json ? "status.205" : "205 Reset Content", stat->codes.c_205, stat->total, json);
+  format_line(json ? "status.206" : "206 Partial content", stat->codes.c_206, stat->total, json);
+  format_line(json ? "status.2xx" : "2xx Total", stat->codes.c_2xx, stat->total, json);
 
   if (!json)
-    out << std::endl;
+    std::cout << std::endl;
 
-  format_line(json ? "status.400" : "400 Bad request", stat->codes.c_400, stat->total, out, json);
-  format_line(json ? "status.401" : "401 Unauthorized", stat->codes.c_401, stat->total, out, json);
-  format_line(json ? "status.402" : "402 Payment Required", stat->codes.c_402, stat->total, out, json);
-  format_line(json ? "status.403" : "403 Forbidden", stat->codes.c_403, stat->total, out, json);
-  format_line(json ? "status.404" : "404 Not found", stat->codes.c_404, stat->total, out, json);
-  format_line(json ? "status.405" : "405 Method Not Allowed", stat->codes.c_405, stat->total, out, json);
-  format_line(json ? "status.406" : "406 Not Acceptable", stat->codes.c_406, stat->total, out, json);
-  format_line(json ? "status.407" : "407 Proxy Auth Required", stat->codes.c_407, stat->total, out, json);
-  format_line(json ? "status.408" : "408 Request Timeout", stat->codes.c_408, stat->total, out, json);
-  format_line(json ? "status.409" : "409 Conflict", stat->codes.c_409, stat->total, out, json);
-  format_line(json ? "status.410" : "410 Gone", stat->codes.c_410, stat->total, out, json);
-  format_line(json ? "status.411" : "411 Length Required", stat->codes.c_411, stat->total, out, json);
-  format_line(json ? "status.412" : "412 Precondition Failed", stat->codes.c_412, stat->total, out, json);
-  format_line(json ? "status.413" : "413 Request Entity Too Large", stat->codes.c_413, stat->total, out, json);
-  format_line(json ? "status.414" : "414 Request-URI Too Long", stat->codes.c_414, stat->total, out, json);
-  format_line(json ? "status.415" : "415 Unsupported Media Type", stat->codes.c_415, stat->total, out, json);
-  format_line(json ? "status.416" : "416 Req Range Not Satisfiable", stat->codes.c_416, stat->total, out, json);
-  format_line(json ? "status.417" : "417 Expectation Failed", stat->codes.c_417, stat->total, out, json);
-  format_line(json ? "status.4xx" : "4xx Total", stat->codes.c_4xx, stat->total, out, json);
+  format_line(json ? "status.300" : "300 Multiple Choices", stat->codes.c_300, stat->total, json);
+  format_line(json ? "status.301" : "301 Moved permanently", stat->codes.c_301, stat->total, json);
+  format_line(json ? "status.302" : "302 Found", stat->codes.c_302, stat->total, json);
+  format_line(json ? "status.303" : "303 See Other", stat->codes.c_303, stat->total, json);
+  format_line(json ? "status.304" : "304 Not modified", stat->codes.c_304, stat->total, json);
+  format_line(json ? "status.305" : "305 Use Proxy", stat->codes.c_305, stat->total, json);
+  format_line(json ? "status.307" : "307 Temporary Redirect", stat->codes.c_307, stat->total, json);
+  format_line(json ? "status.3xx" : "3xx Total", stat->codes.c_3xx, stat->total, json);
 
   if (!json)
-    out << std::endl;
+    std::cout << std::endl;
 
-  format_line(json ? "status.500" : "500 Internal Server Error", stat->codes.c_500, stat->total, out, json);
-  format_line(json ? "status.501" : "501 Not implemented", stat->codes.c_501, stat->total, out, json);
-  format_line(json ? "status.502" : "502 Bad gateway", stat->codes.c_502, stat->total, out, json);
-  format_line(json ? "status.503" : "503 Service unavailable", stat->codes.c_503, stat->total, out, json);
-  format_line(json ? "status.504" : "504 Gateway Timeout", stat->codes.c_504, stat->total, out, json);
-  format_line(json ? "status.505" : "505 HTTP Ver. Not Supported", stat->codes.c_505, stat->total, out, json);
-  format_line(json ? "status.5xx" : "5xx Total", stat->codes.c_5xx, stat->total, out, json);
+  format_line(json ? "status.400" : "400 Bad request", stat->codes.c_400, stat->total, json);
+  format_line(json ? "status.401" : "401 Unauthorized", stat->codes.c_401, stat->total, json);
+  format_line(json ? "status.402" : "402 Payment Required", stat->codes.c_402, stat->total, json);
+  format_line(json ? "status.403" : "403 Forbidden", stat->codes.c_403, stat->total, json);
+  format_line(json ? "status.404" : "404 Not found", stat->codes.c_404, stat->total, json);
+  format_line(json ? "status.405" : "405 Method Not Allowed", stat->codes.c_405, stat->total, json);
+  format_line(json ? "status.406" : "406 Not Acceptable", stat->codes.c_406, stat->total, json);
+  format_line(json ? "status.407" : "407 Proxy Auth Required", stat->codes.c_407, stat->total, json);
+  format_line(json ? "status.408" : "408 Request Timeout", stat->codes.c_408, stat->total, json);
+  format_line(json ? "status.409" : "409 Conflict", stat->codes.c_409, stat->total, json);
+  format_line(json ? "status.410" : "410 Gone", stat->codes.c_410, stat->total, json);
+  format_line(json ? "status.411" : "411 Length Required", stat->codes.c_411, stat->total, json);
+  format_line(json ? "status.412" : "412 Precondition Failed", stat->codes.c_412, stat->total, json);
+  format_line(json ? "status.413" : "413 Request Entity Too Large", stat->codes.c_413, stat->total, json);
+  format_line(json ? "status.414" : "414 Request-URI Too Long", stat->codes.c_414, stat->total, json);
+  format_line(json ? "status.415" : "415 Unsupported Media Type", stat->codes.c_415, stat->total, json);
+  format_line(json ? "status.416" : "416 Req Range Not Satisfiable", stat->codes.c_416, stat->total, json);
+  format_line(json ? "status.417" : "417 Expectation Failed", stat->codes.c_417, stat->total, json);
+  format_line(json ? "status.4xx" : "4xx Total", stat->codes.c_4xx, stat->total, json);
 
   if (!json)
-    out << std::endl;
+    std::cout << std::endl;
 
-  format_line(json ? "status.000" : "000 Unknown", stat->codes.c_000, stat->total, out, json);
+  format_line(json ? "status.500" : "500 Internal Server Error", stat->codes.c_500, stat->total, json);
+  format_line(json ? "status.501" : "501 Not implemented", stat->codes.c_501, stat->total, json);
+  format_line(json ? "status.502" : "502 Bad gateway", stat->codes.c_502, stat->total, json);
+  format_line(json ? "status.503" : "503 Service unavailable", stat->codes.c_503, stat->total, json);
+  format_line(json ? "status.504" : "504 Gateway Timeout", stat->codes.c_504, stat->total, json);
+  format_line(json ? "status.505" : "505 HTTP Ver. Not Supported", stat->codes.c_505, stat->total, json);
+  format_line(json ? "status.5xx" : "5xx Total", stat->codes.c_5xx, stat->total, json);
+
+  if (!json)
+    std::cout << std::endl;
+
+  format_line(json ? "status.000" : "000 Unknown", stat->codes.c_000, stat->total, json);
 
   if (!json) {
-    out << std::endl << std::endl;
+    std::cout << std::endl << std::endl;
 
     // Origin hierarchies
-    format_detail_header("Origin hierarchies", out);
+    format_detail_header("Origin hierarchies");
   }
 
-  format_line(json ? "hier.none" : "NONE", stat->hierarchies.none, stat->total, out, json);
-  format_line(json ? "hier.direct" : "DIRECT", stat->hierarchies.direct, stat->total, out, json);
-  format_line(json ? "hier.sibling" : "SIBLING", stat->hierarchies.sibling, stat->total, out, json);
-  format_line(json ? "hier.parent" : "PARENT", stat->hierarchies.parent, stat->total, out, json);
-  format_line(json ? "hier.empty" : "EMPTY", stat->hierarchies.empty, stat->total, out, json);
-  format_line(json ? "hier.invalid" : "invalid", stat->hierarchies.invalid, stat->total, out, json);
-  format_line(json ? "hier.other" : "other", stat->hierarchies.other, stat->total, out, json);
+  format_line(json ? "hier.none" : "NONE", stat->hierarchies.none, stat->total, json);
+  format_line(json ? "hier.direct" : "DIRECT", stat->hierarchies.direct, stat->total, json);
+  format_line(json ? "hier.sibling" : "SIBLING", stat->hierarchies.sibling, stat->total, json);
+  format_line(json ? "hier.parent" : "PARENT", stat->hierarchies.parent, stat->total, json);
+  format_line(json ? "hier.empty" : "EMPTY", stat->hierarchies.empty, stat->total, json);
+  format_line(json ? "hier.invalid" : "invalid", stat->hierarchies.invalid, stat->total, json);
+  format_line(json ? "hier.other" : "other", stat->hierarchies.other, stat->total, json);
 
   if (!json) {
-    out << std::endl << std::endl;
+    std::cout << std::endl << std::endl;
 
     // HTTP methods
-    format_detail_header("HTTP Methods", out);
+    format_detail_header("HTTP Methods");
   }
 
-  format_line(json ? "method.options" : "OPTIONS", stat->methods.options, stat->total, out, json);
-  format_line(json ? "method.get" : "GET", stat->methods.get, stat->total, out, json);
-  format_line(json ? "method.head" : "HEAD", stat->methods.head, stat->total, out, json);
-  format_line(json ? "method.post" : "POST", stat->methods.post, stat->total, out, json);
-  format_line(json ? "method.put" : "PUT", stat->methods.put, stat->total, out, json);
-  format_line(json ? "method.delete" : "DELETE", stat->methods.del, stat->total, out, json);
-  format_line(json ? "method.trace" : "TRACE", stat->methods.trace, stat->total, out, json);
-  format_line(json ? "method.connect" : "CONNECT", stat->methods.connect, stat->total, out, json);
-  format_line(json ? "method.purge" : "PURGE", stat->methods.purge, stat->total, out, json);
-  format_line(json ? "method.none" : "none (-)", stat->methods.none, stat->total, out, json);
-  format_line(json ? "method.other" : "other", stat->methods.other, stat->total, out, json);
+  format_line(json ? "method.options" : "OPTIONS", stat->methods.options, stat->total, json);
+  format_line(json ? "method.get" : "GET", stat->methods.get, stat->total, json);
+  format_line(json ? "method.head" : "HEAD", stat->methods.head, stat->total, json);
+  format_line(json ? "method.post" : "POST", stat->methods.post, stat->total, json);
+  format_line(json ? "method.put" : "PUT", stat->methods.put, stat->total, json);
+  format_line(json ? "method.delete" : "DELETE", stat->methods.del, stat->total, json);
+  format_line(json ? "method.trace" : "TRACE", stat->methods.trace, stat->total, json);
+  format_line(json ? "method.connect" : "CONNECT", stat->methods.connect, stat->total, json);
+  format_line(json ? "method.purge" : "PURGE", stat->methods.purge, stat->total, json);
+  format_line(json ? "method.none" : "none (-)", stat->methods.none, stat->total, json);
+  format_line(json ? "method.other" : "other", stat->methods.other, stat->total, json);
 
   if (!json) {
-    out << std::endl << std::endl;
+    std::cout << std::endl << std::endl;
 
     // URL schemes (HTTP/HTTPs)
-    format_detail_header("URL Schemes", out);
+    format_detail_header("URL Schemes");
   }
 
-  format_line(json ? "scheme.http" : "HTTP (port 80)", stat->schemes.http, stat->total, out, json);
-  format_line(json ? "scheme.https" : "HTTPS (port 443)", stat->schemes.https, stat->total, out, json);
-  format_line(json ? "scheme.none" : "none", stat->schemes.none, stat->total, out, json);
-  format_line(json ? "scheme.other" : "other", stat->schemes.other, stat->total, out, json);
+  format_line(json ? "scheme.http" : "HTTP (port 80)", stat->schemes.http, stat->total, json);
+  format_line(json ? "scheme.https" : "HTTPS (port 443)", stat->schemes.https, stat->total, json);
+  format_line(json ? "scheme.none" : "none", stat->schemes.none, stat->total, json);
+  format_line(json ? "scheme.other" : "other", stat->schemes.other, stat->total, json);
 
   if (!json) {
-    out << std::endl << std::endl;
+    std::cout << std::endl << std::endl;
 
     // Content types
-    format_detail_header("Content Types", out);
+    format_detail_header("Content Types");
   }
 
-  format_line(json ? "content.text.javascript" : "text/javascript", stat->content.text.javascript, stat->total, out, json);
-  format_line(json ? "content.text.css" : "text/css", stat->content.text.css, stat->total, out, json);
-  format_line(json ? "content.text.html" : "text/html", stat->content.text.html, stat->total, out, json);
-  format_line(json ? "content.text.xml" : "text/xml", stat->content.text.xml, stat->total, out, json);
-  format_line(json ? "content.text.plain" : "text/plain", stat->content.text.plain, stat->total, out, json);
-  format_line(json ? "content.text.other" : "text/ other", stat->content.text.other, stat->total, out, json);
-  format_line(json ? "content.text.total" : "text/ total", stat->content.text.total, stat->total, out, json);
+  format_line(json ? "content.text.javascript" : "text/javascript", stat->content.text.javascript, stat->total, json);
+  format_line(json ? "content.text.css" : "text/css", stat->content.text.css, stat->total, json);
+  format_line(json ? "content.text.html" : "text/html", stat->content.text.html, stat->total, json);
+  format_line(json ? "content.text.xml" : "text/xml", stat->content.text.xml, stat->total, json);
+  format_line(json ? "content.text.plain" : "text/plain", stat->content.text.plain, stat->total, json);
+  format_line(json ? "content.text.other" : "text/ other", stat->content.text.other, stat->total, json);
+  format_line(json ? "content.text.total" : "text/ total", stat->content.text.total, stat->total, json);
 
   if (!json)
-    out << std::endl;
+    std::cout << std::endl;
 
-  format_line(json ? "content.image.jpeg" : "image/jpeg", stat->content.image.jpeg, stat->total, out, json);
-  format_line(json ? "content.image.gif" : "image/gif", stat->content.image.gif, stat->total, out, json);
-  format_line(json ? "content.image.png" : "image/png", stat->content.image.png, stat->total, out, json);
-  format_line(json ? "content.image.bmp" : "image/bmp", stat->content.image.bmp, stat->total, out, json);
-  format_line(json ? "content.image.other" : "image/ other", stat->content.image.other, stat->total, out, json);
-  format_line(json ? "content.image.total" : "image/ total", stat->content.image.total, stat->total, out, json);
-
-  if (!json)
-    out << std::endl;
-
-  format_line(json ? "content.audio.x-wav" : "audio/x-wav", stat->content.audio.wav, stat->total, out, json);
-  format_line(json ? "content.audio.x-mpeg" : "audio/x-mpeg", stat->content.audio.mpeg, stat->total, out, json);
-  format_line(json ? "content.audio.other" : "audio/ other", stat->content.audio.other, stat->total, out, json);
-  format_line(json ? "content.audio.total": "audio/ total", stat->content.audio.total, stat->total, out, json);
+  format_line(json ? "content.image.jpeg" : "image/jpeg", stat->content.image.jpeg, stat->total, json);
+  format_line(json ? "content.image.gif" : "image/gif", stat->content.image.gif, stat->total, json);
+  format_line(json ? "content.image.png" : "image/png", stat->content.image.png, stat->total, json);
+  format_line(json ? "content.image.bmp" : "image/bmp", stat->content.image.bmp, stat->total, json);
+  format_line(json ? "content.image.other" : "image/ other", stat->content.image.other, stat->total, json);
+  format_line(json ? "content.image.total" : "image/ total", stat->content.image.total, stat->total, json);
 
   if (!json)
-    out << std::endl;
+    std::cout << std::endl;
 
-  format_line(json ? "content.application.shockwave" : "application/x-shockwave", stat->content.application.shockwave_flash, stat->total, out, json);
-  format_line(json ? "content.application.javascript" : "application/[x-]javascript", stat->content.application.javascript, stat->total, out, json);
-  format_line(json ? "content.application.quicktime" : "application/x-quicktime", stat->content.application.quicktime, stat->total, out, json);
-  format_line(json ? "content.application.zip" : "application/zip", stat->content.application.zip, stat->total, out, json);
-  format_line(json ? "content.application.rss_xml" : "application/rss+xml", stat->content.application.rss_xml, stat->total, out, json);
-  format_line(json ? "content.application.rss_atom" : "application/rss+atom", stat->content.application.rss_atom, stat->total, out, json);
-  format_line(json ? "content.application.other" : "application/ other", stat->content.application.other, stat->total, out, json);
-  format_line(json ? "content.application.total": "application/ total", stat->content.application.total, stat->total, out, json);
+  format_line(json ? "content.audio.x-wav" : "audio/x-wav", stat->content.audio.wav, stat->total, json);
+  format_line(json ? "content.audio.x-mpeg" : "audio/x-mpeg", stat->content.audio.mpeg, stat->total, json);
+  format_line(json ? "content.audio.other" : "audio/ other", stat->content.audio.other, stat->total, json);
+  format_line(json ? "content.audio.total": "audio/ total", stat->content.audio.total, stat->total, json);
 
   if (!json)
-    out << std::endl;
+    std::cout << std::endl;
 
-  format_line(json ? "content.none" : "none", stat->content.none, stat->total, out, json);
-  format_line(json ? "content.other" : "other", stat->content.other, stat->total, out, json);
+  format_line(json ? "content.application.shockwave" : "application/x-shockwave", stat->content.application.shockwave_flash, stat->total, json);
+  format_line(json ? "content.application.javascript" : "application/[x-]javascript", stat->content.application.javascript, stat->total, json);
+  format_line(json ? "content.application.quicktime" : "application/x-quicktime", stat->content.application.quicktime, stat->total, json);
+  format_line(json ? "content.application.zip" : "application/zip", stat->content.application.zip, stat->total, json);
+  format_line(json ? "content.application.rss_xml" : "application/rss+xml", stat->content.application.rss_xml, stat->total, json);
+  format_line(json ? "content.application.rss_atom" : "application/rss+atom", stat->content.application.rss_atom, stat->total, json);
+  format_line(json ? "content.application.other" : "application/ other", stat->content.application.other, stat->total, json);
+  format_line(json ? "content.application.total": "application/ total", stat->content.application.total, stat->total, json);
 
   if (!json)
-    out << std::endl << std::endl;
+    std::cout << std::endl;
 
-  // Elapsed time
-  if (!json)
-    format_elapsed_header(out);
-
-  format_elapsed_line(json ? "hit.direct.latency" : "Cache hit", stat->elapsed.hits.hit, out, json);
-  format_elapsed_line(json ? "hit.ims.latency" : "Cache hit IMS", stat->elapsed.hits.ims, out, json);
-  format_elapsed_line(json ? "hit.refresh.latency" : "Cache hit refresh", stat->elapsed.hits.refresh, out, json);
-  format_elapsed_line(json ? "hit.other.latency" : "Cache hit other", stat->elapsed.hits.other, out, json);
-  format_elapsed_line(json ? "hit.total.latency" : "Cache hit total", stat->elapsed.hits.total, out, json);
-
-  format_elapsed_line(json ? "miss.direct.latency" : "Cache miss", stat->elapsed.misses.miss, out, json);
-  format_elapsed_line(json ? "miss.ims.latency" : "Cache miss IMS", stat->elapsed.misses.ims, out, json);
-  format_elapsed_line(json ? "miss.refresh.latency" : "Cache miss refresh", stat->elapsed.misses.refresh, out, json);
-  format_elapsed_line(json ? "miss.other.latency" : "Cache miss other", stat->elapsed.misses.other, out, json);
-  format_elapsed_line(json ? "miss.total.latency" : "Cache miss total", stat->elapsed.misses.total, out, json);
+  format_line(json ? "content.none" : "none", stat->content.none, stat->total, json);
+  format_line(json ? "content.other" : "other", stat->content.other, stat->total, json);
 
   if (!json) {
-    out << std::endl;
-    out << std::setw(cl.line_len) << std::setfill('_') << '_' << std::setfill(' ') << std::endl;
+    std::cout << std::endl << std::endl;
+
+  // Elapsed time
+    format_elapsed_header();
+  }
+
+  format_elapsed_line(json ? "hit.direct.latency" : "Cache hit", stat->elapsed.hits.hit, json);
+  format_elapsed_line(json ? "hit.ims.latency" : "Cache hit IMS", stat->elapsed.hits.ims, json);
+  format_elapsed_line(json ? "hit.refresh.latency" : "Cache hit refresh", stat->elapsed.hits.refresh, json);
+  format_elapsed_line(json ? "hit.other.latency" : "Cache hit other", stat->elapsed.hits.other, json);
+  format_elapsed_line(json ? "hit.total.latency" : "Cache hit total", stat->elapsed.hits.total, json);
+
+  format_elapsed_line(json ? "miss.direct.latency" : "Cache miss", stat->elapsed.misses.miss, json);
+  format_elapsed_line(json ? "miss.ims.latency" : "Cache miss IMS", stat->elapsed.misses.ims, json);
+  format_elapsed_line(json ? "miss.refresh.latency" : "Cache miss refresh", stat->elapsed.misses.refresh, json);
+  format_elapsed_line(json ? "miss.other.latency" : "Cache miss other", stat->elapsed.misses.other, json);
+  format_elapsed_line(json ? "miss.total.latency" : "Cache miss total", stat->elapsed.misses.total, json);
+
+  if (!json) {
+    std::cout << std::endl;
+    std::cout << std::setw(cl.line_len) << std::setfill('_') << '_' << std::setfill(' ') << std::endl;
   } else {
     std::cout << "    \"_timestamp\" : \"" << static_cast<int>(ink_time_wall_seconds()) << '"' << std::endl;
   }
@@ -1817,13 +2079,18 @@ my_exit(const ExitStatus& status)
   bool first = true;
   int max_origins;
 
-  if (cl.cgi) {
-    std::cout << "Content-Type: application/javascript\r\n";
-    std::cout << "Cache-Control: no-cache\r\n\r\n";
+  // Special case for URLs output.
+  if (urls) {
+    urls->dump(cl.as_object);
+    if (cl.as_object)
+      std::cout << "}" << std::endl;
+    else
+      std::cout << "]" << std::endl;
+    _exit(status.level);
   }
 
   if (cl.json) {
-    // TODO: Add JSON output?
+    // TODO: produce output
   } else {
     switch (status.level) {
     case EXIT_OK:
@@ -1851,7 +2118,7 @@ my_exit(const ExitStatus& status)
 
     if (!cl.json) {
       // Produce a nice summary first
-      format_center("Traffic summary", std::cout);
+      format_center("Traffic summary");
       std::cout << std::left << std::setw(33) << "Origin Server";
       std::cout << std::right << std::setw(15) << "Hits";
       std::cout << std::right << std::setw(15) << "Misses";
@@ -1862,11 +2129,11 @@ my_exit(const ExitStatus& status)
       for (vector<OriginPair>::iterator i = vec.begin(); (i != vec.end()) && (max_origins > 0); ++i, --max_origins) {
         std::cout << std::left << std::setw(33) << i->first;
         std::cout << std::right << std::setw(15);
-        format_int(i->second->results.hits.total.count, std::cout);
+        format_int(i->second->results.hits.total.count);
         std::cout << std::right << std::setw(15);
-        format_int(i->second->results.misses.total.count, std::cout);
+        format_int(i->second->results.misses.total.count);
         std::cout << std::right << std::setw(15);
-        format_int(i->second->results.errors.total.count, std::cout);
+        format_int(i->second->results.errors.total.count);
         std::cout << std::endl;
       }
       std::cout << std::setw(cl.line_len) << std::setfill('=') << '=' << std::setfill(' ') << std::endl;
@@ -1879,11 +2146,11 @@ my_exit(const ExitStatus& status)
     first = false;
     if (cl.json) {
       std::cout << "{ \"total\": {" << std::endl;
-      print_detail_stats(&totals, std::cout, cl.json);
+      print_detail_stats(&totals, cl.json);
       std::cout << "  }";
     } else {
-      format_center("Totals (all Origins combined)", std::cout);
-      print_detail_stats(&totals, std::cout);
+      format_center("Totals (all Origins combined)");
+      print_detail_stats(&totals);
       std::cout << std::endl << std::endl << std::endl;
     }
   }
@@ -1899,11 +2166,11 @@ my_exit(const ExitStatus& status)
         std::cout << "," << std::endl << "  ";
       }
       std::cout << '"' <<  i->first << "\": {" << std::endl;
-      print_detail_stats(i->second, std::cout, cl.json);
+      print_detail_stats(i->second, cl.json);
       std::cout << "  }";
     } else {
-      format_center(i->first, std::cout);
-      print_detail_stats(i->second, std::cout);
+      format_center(i->first);
+      print_detail_stats(i->second);
       std::cout << std::endl << std::endl << std::endl;
     }
   }
@@ -1966,14 +2233,14 @@ main(int argc, char *argv[])
   Layout::create();
 
   memset(&totals, 0, sizeof(totals));
-  init_elapsed(totals);
+  init_elapsed(&totals);
 
   origin_set = NULL;
   parse_errors = 0;
 
   // Get log directory
   ink_strlcpy(system_log_dir, Layout::get()->logdir, PATH_NAME_MAX);
-  if (access(system_log_dir, R_OK) == -1) {
+  if (-1 == access(system_log_dir, R_OK)) {
     fprintf(stderr, "unable to change to log directory \"%s\" [%d '%s']\n", system_log_dir, errno, strerror(errno));
     fprintf(stderr, " please set correct path in env variable TS_ROOT \n");
     exit(1);
@@ -2001,8 +2268,8 @@ main(int argc, char *argv[])
     char *tok;
     char *sep_ptr;
 
-    if (origin_set == NULL)
-      origin_set = NEW(new OriginSet);
+    if (NULL == origin_set)
+        origin_set = NEW(new OriginSet);
     if (cl.origin_list) {
       for (tok = strtok_r(cl.origin_list, ",", &sep_ptr); tok != NULL;) {
         origin_set->insert(tok);
@@ -2021,7 +2288,7 @@ main(int argc, char *argv[])
       _exit(0);
     }
 
-    if (origin_set == NULL)
+    if (NULL == origin_set)
       origin_set = NEW(new OriginSet);
 
     while (!fs.eof()) {
@@ -2032,7 +2299,7 @@ main(int argc, char *argv[])
       start = line.find_first_not_of(" \t");
       if (start != std::string::npos) {
         end = line.find_first_of(" \t#/");
-        if (end == std::string::npos)
+        if (std::string::npos == end)
           end = line.length();
 
         if (end > start) {
@@ -2044,6 +2311,21 @@ main(int argc, char *argv[])
         }
       }
     }
+  }
+
+  // Produce the CGI header first (if applicable)
+  if (cl.cgi) {
+    std::cout << "Content-Type: application/javascript\r\n";
+    std::cout << "Cache-Control: no-cache\r\n\r\n";
+  }
+
+  // Should we calculate per URL data;
+  if (cl.urls != 0) {
+    urls = NEW(new UrlLru(cl.urls, cl.show_urls));
+    if (cl.as_object)
+      std::cout << "{" << std::endl;
+    else
+      std::cout << "[" << std::endl;
   }
 
   // Change directory to the log dir
@@ -2152,7 +2434,7 @@ main(int argc, char *argv[])
 
       // Find the old log file.
       dirp = opendir(system_log_dir);
-      if (dirp == NULL) {
+      if (NULL == dirp) {
         exit_status.set(EXIT_WARNING, " can't read log directory");
       } else {
         while ((dp = readdir(dirp)) != NULL) {
@@ -2203,7 +2485,7 @@ main(int argc, char *argv[])
     if (lseek(state_fd, 0, SEEK_SET) < 0) {
       exit_status.set(EXIT_WARNING, " can't lseek state file");
     } else {
-      if (write(state_fd, &last_state, sizeof(last_state)) == (-1)) {
+      if (-1 == write(state_fd, &last_state, sizeof(last_state))) {
         exit_status.set(EXIT_WARNING, " can't write state_fd ");
       }
     }
@@ -2242,7 +2524,7 @@ main(int argc, char *argv[])
   }
 
   // All done.
-  if (exit_status.level == EXIT_OK)
+  if (EXIT_OK == exit_status.level)
     exit_status.append(" OK");
   my_exit(exit_status);
 }

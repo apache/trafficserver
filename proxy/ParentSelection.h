@@ -50,7 +50,8 @@ class ParentRecord;
 #define PARENT_SELECTION_TIMEOUT            (HRTIME_HOUR*4)
 
 enum ParentResultType
-{ PARENT_UNDEFINED, PARENT_DIRECT,
+{
+  PARENT_UNDEFINED, PARENT_DIRECT,
   PARENT_SPECIFIED, PARENT_AGENT, PARENT_FAIL
 };
 
@@ -61,11 +62,10 @@ typedef ControlMatcher<ParentRecord, ParentResult> P_table;
 //
 struct ParentResult
 {
-
-  ParentResult():r(PARENT_UNDEFINED), hostname(NULL), port(0),
-    line_number(0), epoch(NULL), rec(NULL), last_parent(0), start_parent(0), wrap_around(false), retry(false)
-  {
-  };
+  ParentResult()
+    : r(PARENT_UNDEFINED), hostname(NULL), port(0),
+      line_number(0), epoch(NULL), rec(NULL), last_parent(0), start_parent(0), wrap_around(false), retry(false)
+  { };
 
   // For outside consumption
   ParentResultType r;
@@ -183,6 +183,7 @@ class ParentRecord:public ControlBase
 public:
   ParentRecord();
   ~ParentRecord();
+
   char *Init(matcher_line * line_info);
   bool DefaultInit(char *val);
   void UpdateMatch(ParentResult * result, RD * rdata);
@@ -190,10 +191,12 @@ public:
   void Print();
   pRecord *parents;
   int num_parents;
+
   bool bypass_ok()
   {
     return go_direct;
   };
+
   const char *scheme;
   //private:
   const char *ProcessParents(char *val);
@@ -203,12 +206,12 @@ public:
 };
 
 inline
-ParentRecord::ParentRecord():
-parents(NULL),
-num_parents(0),
-round_robin(P_NO_ROUND_ROBIN),
-rr_next(0),
-go_direct(true)
+ParentRecord::ParentRecord()
+  : parents(NULL),
+    num_parents(0),
+    round_robin(P_NO_ROUND_ROBIN),
+    rr_next(0),
+    go_direct(true)
 {
 }
 
