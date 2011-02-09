@@ -382,10 +382,15 @@ public:
   void
   dump(int as_object=0)
   {
-    int show = _show_urls ? _show_urls : _stack.size();
+    int show = _stack.size();
 
+    if (_show_urls > 0 && _show_urls < show)
+      show = _show_urls;
+
+#if !defined(__SUNPRO_CC)
     _stack.sort();
-    for (LruStack::iterator u=_stack.begin(); NULL != u->url && show-- >= 0; ++u)
+#endif
+    for (LruStack::iterator u=_stack.begin(); NULL != u->url && --show >= 0; ++u)
       _dump_url(u, as_object);
     if (as_object)
       std::cout << "  \"_timestamp\" : \"" << static_cast<int>(ink_time_wall_seconds()) << "\"" << std::endl;
@@ -464,7 +469,7 @@ public:
         if (l->url)
           xfree(const_cast<char*>(l->url)); // We no longer own this string.
       } else {
-        l = _stack.insert(l, UrlStats());
+        l = _stack.insert(l, UrlStats()); // This seems faster than having a static "template" ...
       }
 
       // Setup this URL stat
