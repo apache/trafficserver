@@ -588,16 +588,6 @@ CONFIG proxy.config.core_limit INT -1
 CONFIG proxy.config.auth.enabled INT 0
 ##############################################################################
 #
-# Connection Collapsing
-#
-##############################################################################
-  # Adds the ability to collapse connections going to the origin server
-  # see Admin Guide Addendum for more details
-CONFIG proxy.config.connection_collapsing.hashtable_enabled INT 0
-CONFIG proxy.config.connection_collapsing.rww_wait_time INT 0
-CONFIG proxy.config.connection_collapsing.revalidate_window_period INT 0
-##############################################################################
-#
 # Debugging
 #
 ##############################################################################

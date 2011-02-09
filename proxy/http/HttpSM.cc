@@ -311,9 +311,6 @@ HttpSM::HttpSM()
     //YTS Team, yamsat Plugin
     enable_redirection(false), api_enable_redirection(true), redirect_url(NULL), redirect_url_len(0), redirection_tries(0), transfered_bytes(0),
     post_failed(false),
-    //YTS Team, yamsat
-    is_cache_enabled(false), request_inserted(false),
-    Hashtable_index(0), piggybacking_scheduled(false), event_scheduled(NULL),
     plugin_tunnel_type(HTTP_NO_PLUGIN_TUNNEL),
     plugin_tunnel(NULL), reentrancy_count(0),
     history_pos(0), tunnel(), ua_entry(NULL),
@@ -440,21 +437,6 @@ HttpSM::init()
   ink_mutex_release(&debug_sm_list_mutex);
 #endif
 
-}
-
-
-//Added by YTS Team, yamsat
-//This callback function is called by eventsystem if it has been scheduled.
-//This function enables the SM to do a CACHE-LOOKUP by calling DecideCacheLookup
-
-int
-HttpSM::connection_collapsing_piggyback_handler(int event, void *data)
-{
-  NOWARN_UNUSED(event);
-  NOWARN_UNUSED(data);
-  Debug("http_track", "HttpSM:connection_collapsing_piggyback_handler[%d]\n", sm_id);
-  call_transact_and_set_next_state(&HttpTransact::DecideCacheLookup);
-  return 0;
 }
 
 bool
@@ -603,9 +585,6 @@ HttpSM::start_sub_sm()
   tunnel.init(this, mutex);
   cache_sm.init(this, mutex);
   transform_cache_sm.init(this, mutex);
-  if (cacheProcessor.IsCacheEnabled() == 1) {   //To check if cache is enabled
-    is_cache_enabled = true;
-  }
 }
 
 void
@@ -2261,9 +2240,9 @@ HttpSM::state_icp_lookup(int event, void *data)
 *
 *  // inhibit bad ICP looping behavior
 *  if (t_state.icp_ip_result.sin_addr.s_addr ==
-*	  t_state.client_info.ip) {
-*	    Debug("http","Loop in ICP config, bypassing...");
-* 	    t_state.icp_lookup_success = false;
+*    t_state.client_info.ip) {
+*      Debug("http","Loop in ICP config, bypassing...");
+*        t_state.icp_lookup_success = false;
 *  }
 */
     break;
@@ -2438,7 +2417,7 @@ HttpSM::main_handler(int event, void *data)
 {
   ink_release_assert(magic == HTTP_SM_MAGIC_ALIVE);
 
-  HttpSMHandler jump_point;
+  HttpSMHandler jump_point = NULL;
   ink_assert(reentrancy_count >= 0);
   reentrancy_count++;
 
@@ -2452,30 +2431,13 @@ HttpSM::main_handler(int event, void *data)
     // Only search the VC table if the event could have to
     //  do with a VIO to save a few cycles
 
-    //Added by YTS Team, yamsat
-    // If piggybacking is scheduled and the incoming event is not VC_EVENT_INTERVAL
-    // then skip finding the vc_entry. If the event is VC_EVENT_INTERVAL, then find
-    // the appr. vc_entry and nullify the event_scheduled.
-
     if (event < VC_EVENT_EVENTS_START + 100) {
-      if (piggybacking_scheduled && (event != 104)) {
-        vc_entry = vc_table.find_entry(ua_entry->read_vio);
-        event_scheduled = NULL;
-      } else
-        vc_entry = vc_table.find_entry((VIO *) data);
+      vc_entry = vc_table.find_entry((VIO *) data);
     }
   }
 
   if (vc_entry) {
-    //Added by YTS Team, yamsat
-    //if piggybacking is scheduled and the event arrived is VC_EVENT_INTERVAL
-    //Then set the jump_point to scheduled handler.This therefore calls the
-    //connection_collapsing_piggybacked_handler()
-    if (piggybacking_scheduled && event == 2) {
-      jump_point = vc_entry->piggybacking_scheduled_handler;
-    } else {
-      jump_point = vc_entry->vc_handler;
-    }
+    jump_point = vc_entry->vc_handler;
     ink_assert(jump_point != (HttpSMHandler)NULL);
     ink_assert(vc_entry->vc != (VConnection *)NULL);
     (this->*jump_point) (event, data);
@@ -3726,9 +3688,9 @@ HttpSM::do_hostdb_lookup()
     // is currently opened --- close it.    //
     //////////////////////////////////////////
     if (m_origin_server_vc != 0) {
-	origin_server_close(CLOSE_CONNECTION);
-	if (m_response_body_tunnel_buffer_.buf() != 0)
-	    m_response_body_tunnel_buffer_.reset();
+   origin_server_close(CLOSE_CONNECTION);
+   if (m_response_body_tunnel_buffer_.buf() != 0)
+       m_response_body_tunnel_buffer_.reset();
     }
     */
 
@@ -4096,8 +4058,7 @@ HttpSM::do_http_server_open(bool raw)
   // to be based on ua_session != NULL instead of req_flavor value.
   ink_assert(ua_entry != NULL ||
              t_state.req_flavor == HttpTransact::REQ_FLAVOR_SCHEDULED_UPDATE ||
-             t_state.req_flavor == HttpTransact::REQ_FLAVOR_REVPROXY
-	     );
+             t_state.req_flavor == HttpTransact::REQ_FLAVOR_REVPROXY);
 
   ink_assert(pending_action == NULL);
   ink_assert(t_state.current.server->port > 0);
@@ -5957,27 +5918,8 @@ void
 HttpSM::kill_this()
 {
   ink_release_assert(reentrancy_count == 1);
-
-  //Added by YTS Team, yamsat
-  //If piggybacking is scheduled, and in the mean time, there is an client collapse,
-  //then cancle the event in the event system
-  if (event_scheduled) {
-    event_scheduled->cancelled = 1;
-    event_scheduled = NULL;
-  }
   tunnel.deallocate_redirect_postdata_buffers();
   enable_redirection = false;
-
-  //Added by YTS Team, yamsat
-  // Deleting entry from the hashtable
-  if (is_cache_enabled && HttpConfig::m_master.hashtable_enabled && request_inserted) {
-    char *request_data_str = t_state.request_data.get_string();
-    int index = cacheProcessor.hashtable_tracker.KeyToIndex(request_data_str);
-    if (cacheProcessor.hashtable_tracker.remove(index, request_data_str, RequestHeader)) {
-      Debug("http_track", "[HttpSM::kill_this]URL entry removed from Hashtable");
-    }
-    xfree(request_data_str);
-  }
 
   if (kill_this_async_done == false) {
     ////////////////////////////////
@@ -6149,9 +6091,9 @@ HttpSM::update_stats()
   }
 
 /*   Debug("ARMStatsCache", "ua_begin_write: %d ua_close: %d ua_write_time:%d",
-	  (int) ink_hrtime_to_msec(milestones.ua_begin_write),
-	  (int) ink_hrtime_to_msec(milestones.ua_close),
-	  (int) ink_hrtime_to_msec(ua_write_time));
+     (int) ink_hrtime_to_msec(milestones.ua_begin_write),
+     (int) ink_hrtime_to_msec(milestones.ua_close),
+     (int) ink_hrtime_to_msec(ua_write_time));
  */
 
   ink_hrtime os_read_time;
@@ -6443,7 +6385,7 @@ HttpSM::set_next_state()
         do_remap_request(false);        /* dont run inline (iow on another thread) */
       }
       break;
-    }  
+    }
   
   case HttpTransact::DNS_LOOKUP:
     {

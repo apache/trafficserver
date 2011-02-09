@@ -138,27 +138,6 @@ RecordElement RecordsConfig[] = {
 
   //##############################################################################
   //#
-  //# Connection Collapsing
-  //#
-  //# 1. hashtable_enabled: if set to 1, requests will first search the
-  //#    hashtable to see if another similar request is already being served.
-  //# 2. rww_wait_time: read-while-write wait time: While read while write is
-  //#    enabled, the secondary clients will wait this amount of time after which
-  //#    cache lookup is retried.
-  //# 3. revaildate_window_period: while revaidation of a cached object is being
-  //#    done, the secondary clients for the same url will serve the stale object for
-  //#    this amount of time, after the revalidation had started.
-  //#
-  //##############################################################################
-  {RECT_CONFIG, "proxy.config.connection_collapsing.hashtable_enabled", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.connection_collapsing.rww_wait_time", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.connection_collapsing.revalidate_window_period", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
-  ,
-
-  //##############################################################################
-  //#
   //# Support for SRV records
   //#
   //##############################################################################

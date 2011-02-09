@@ -2,6 +2,17 @@
 
 Changes with Apache Traffic Server 2.1.6
 
+  *) [TS-489] Remove the "connection collapsing" feature, it was poorly
+   implemented, and caused major problem if enabled. We should redo this
+   for v3.1 in a way that fits with the HttpSM [author: mohan_zl].
+
+  *) [TS-668] Add support for URL stats to traffic_logstats.
+
+  *) [TS-665] Remove HTTP_ASSERT from the code base, use standard asserts.
+
+  *) [TS-663, TS-664] Fixes to WCCP with mask assignments, and trunk build
+   problems.
+
   *) [TS-662] Make per partition stats for bytes_used work.
 
   *) [TS-661] Delay the copy of per transaction configs until a plugin

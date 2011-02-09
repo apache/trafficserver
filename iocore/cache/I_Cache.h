@@ -34,10 +34,6 @@
 #include "I_CacheDefs.h"
 #include "I_Store.h"
 
-#ifdef HTTP_CACHE
-#include "../../proxy/http/Hash_Table.h"       //Added to get the scope of hash table - YTS Team, yamsat
-#endif
-
 #define CACHE_MODULE_MAJOR_VERSION 1
 #define CACHE_MODULE_MINOR_VERSION 0
 #define CACHE_MODULE_VERSION       makeModuleVersion(CACHE_MODULE_MAJOR_VERSION,\
@@ -149,9 +145,6 @@ struct CacheProcessor:public Processor
   static int fix;
   static int start_internal_flags;
   static int auto_clear_flag;
-#ifdef HTTP_CACHE
-  HashTable hashtable_tracker;  //Object declaration for hash table  - YTS Team, yamsat
-#endif
 };
 
 struct CacheVConnection:public VConnection

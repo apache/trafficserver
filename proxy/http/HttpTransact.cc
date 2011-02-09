@@ -26,7 +26,6 @@
 #include <strings.h>
 #include <math.h>
 
-//#include "Hash_Table.h"
 #include "HttpTransact.h"
 #include "HttpTransactHeaders.h"
 #include "HttpSM.h"
@@ -47,8 +46,6 @@
 #include "HttpBodyFactory.h"
 #include "StatPages.h"
 #include "HttpClientSession.h"
-//#include "YAddr.h"
-#define REVALIDATE_CONV_FACTOR 1000000  //Revalidation Conversion Factor to msec - YTS Team, yamsat
 #include "I_Machine.h"
 
 static const char *URL_MSG = "Unable to process requested URL.\n";
@@ -1496,7 +1493,6 @@ HttpTransact::OSDNSLookup(State* s)
 {
   static int max_dns_lookups = 3 + s->http_config_param->num_url_expansions;
   ++s->dns_info.attempts;
-  int return_action = 0;        // Return action - YTS Team, yamsat
 
   Debug("http_trans", "[HttpTransact::OSDNSLookup] This was attempt %d", s->dns_info.attempts);
 
@@ -1598,32 +1594,6 @@ HttpTransact::OSDNSLookup(State* s)
   Debug("http_trans", "[OSDNSLookup] DNS lookup for O.S. successful "
         "IP: %u.%u.%u.%u", PRINT_IP(s->server_info.ip));
 
-
-  //Added By YTS Team, yamsat
-
-  //As the object is a miss in Cache and DNS lookup done by this time
-  //lets check if there is someother client requesting for the same url
-  //by looking-up the HashTable.
-  //The return action would further be either scheduling for connection
-  //collapsing or doing a cache lookup again.
-  return_action = ConnectionCollapsing(s);
-
-  if (return_action == CONNECTION_COLLAPSING_SCHEDULED) {
-    // Changing the state from DNS_LOOKUP to STATE_MACHINE_ACTION_UNDEFINED
-    //As the handler has been scheduled, the event system would call back
-    //after rww_wait_time. So lets return to Zero state from here so that
-    //transaction starts afresh when piggybacked_handler is scheduled
-    //YTS Team, yamsat
-    TRANSACT_RETURN(STATE_MACHINE_ACTION_UNDEFINED, NULL);
-  }
-
-  else if (return_action == CACHE_RELOOKUP) {
-    //This case arises if a client could not insert an entry in Hash Table
-    //as someother url has inserted it.Therefore there is a possibility
-    //for this client to get the object from Cache instead of going to
-    //origin server connection -- YTS Team, yamsat
-    TRANSACT_RETURN(CACHE_LOOKUP, NULL);
-  }
   // so the dns lookup was a success, but the lookup succeeded on
   // a hostname which was expanded by the traffic server. we should
   // not automatically forward the request to this expanded hostname.
@@ -1771,7 +1741,7 @@ HttpTransact::DecideCacheLookup(State* s)
     // the cache directly with the URL before the redirect
     s->cache_info.action = CACHE_DO_NO_ACTION;
     s->current.mode = GENERIC_PROXY;
-  } else if (!s->state_machine->piggybacking_scheduled) {       //Check if this process is done - YTS Team, yamsat
+  } else {
     if (is_request_cache_lookupable(s, &s->hdr_info.client_request)) {
       s->cache_info.action = CACHE_DO_LOOKUP;
       s->current.mode = GENERIC_PROXY;
@@ -1780,10 +1750,6 @@ HttpTransact::DecideCacheLookup(State* s)
       s->current.mode = TUNNELLING_PROXY;
       HTTP_INCREMENT_TRANS_STAT(http_tunnels_stat);
     }
-  } else {
-    s->cache_info.action = CACHE_DO_LOOKUP;
-    s->current.mode = GENERIC_PROXY;
-    s->state_machine->piggybacking_scheduled = false;
   }
 
   if (service_transaction_in_proxy_only_mode(s)) {
@@ -2442,7 +2408,6 @@ HttpTransact::HandleCacheOpenReadHit(State* s)
   bool needs_cache_auth = false;
   bool server_up = true;
   CacheHTTPInfo *obj;
-  int return_action = 0;        // Return action for Connection Collapsing - YTS Team, yamsat
 
   if (s->api_update_cached_object == HttpTransact::UPDATE_CACHED_OBJECT_CONTINUE) {
     obj = &s->cache_info.object_store;
@@ -2525,28 +2490,6 @@ HttpTransact::HandleCacheOpenReadHit(State* s)
     DebugOn("http_trans", "CacheOpenRead --- needs_cache_auth    = %d", needs_cache_auth);
     DebugOn("http_trans", "CacheOpenRead --- send_revalidate    = %d", send_revalidate);
   }
-  //Added by YTS Team, yamsat
-
-  //At this juncture, the object needs to be revalidated. But check if some other client
-  //is already in the process of revalidation. Looking-up hashtable will enable to find
-  //if someone's there.The foll cases arise
-  // 1) if URL inserted and revalidation_window_period not expired, then this client will
-  //    be served stale object.
-  // 2) if URL not found, then insert the URL and update the window_period.
-  //Both the above actions are done in ConnectionCollapsing_for_revalidation()
-  //Depending on the return type, set send_revalidate to false, or retain it to true.
-
-
-  //Check if hash table is enabled in config file
-  if (HttpConfig::m_master.hashtable_enabled && (s->state_machine->is_cache_enabled) && (s->is_revalidation_necessary)) {
-    return_action = ConnectionCollapsing_for_revalidation(s);
-
-    if (return_action == SERVE_STALE_OBJECT) {
-      //setting send_revalidate to false so as to serve stale object in cache
-      send_revalidate = false;
-    }
-  }                             // YTS Team, yamsat
-
   if (send_revalidate) {
     Debug("http_trans", "CacheOpenRead --- HIT-STALE");
     s->dns_info.attempts = 0;
@@ -4095,12 +4038,6 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State* s)
   if (diags->on()) {
     if (cacheable) {
       DebugOn("http_trans", "[hcoofsr] response cacheable");
-    } else {
-      if (s->state_machine->request_inserted) {
-        cacheProcessor.hashtable_tracker.set_response_noncacheable(s->state_machine->Hashtable_index,
-                                                                   s->state_machine->RequestHeader);
-      }
-      DebugOn("http_trans", "[hcoofsr] response not cacheable");
     }
   }
   // set the correct next action, cache action, response code, and base response
@@ -8950,164 +8887,3 @@ HttpTransact::delete_warning_value(HTTPHdr* to_warn, HTTPWarningCode warning_cod
     }
   }
 }
-
-
-////////////////////////////////////////////////////////////////////////////////////
-//
-// Name    : is_connection_collapse_checks_success
-//
-// Details : This function is used to check for the success of various connection
-//           collapsing parameters.Connection collapsing is disabled in the foll cases
-//              1) If Cache DISK not present
-//              2) If read_while_writing is disabled
-//              3) If request is Https
-//
-// YTS Team, yamsat
-////////////////////////////////////////////////////////////////////////////////////
-
-bool
-HttpTransact::is_connection_collapse_checks_success(State* s)
-{
-  bool match = true;
-  URL *url = s->hdr_info.client_request.url_get();
-  int rww_enabled = 0;
-
-  TS_ReadConfigInteger(rww_enabled, "proxy.config.cache.enable_read_while_writer");
-  match &= (url->scheme_get_wksidx() == URL_WKSIDX_HTTP);
-  match &= HttpConfig::m_master.hashtable_enabled;
-  match &= !(s->is_revalidation_necessary);
-  match &= s->state_machine->is_cache_enabled;
-  match &= rww_enabled;
-  return match;
-}
-
-////////////////////////////////////////////////////////////////////////////////////
-// Name         : ConnectionCollapsing
-//
-// Details      : This function is called from OSDNSLookup(). Checks if there is an
-//                ongoing transaction already in progress for the same object.This
-//                is done by looking-up the hashtable.There would be two cases here.
-//              1) If entry found, check if URL headers match perfectly. then return
-//                 for scheduling this client to be piggy backed.
-//              2) If entry not found in Hashtable, insert an entry and return with
-//                 status indicating normal procedure for connecting to OriginServer
-//              3) If entry could not be inserted,this means that there was someother
-//                 client who has inserted the request.Therefore, return with a status
-//                 indicating CACHE_RELOOKUP.Then, this client could get the object
-//                 from the cache because of the read-while-write behavior
-//
-// YTS Team, yamsat
-////////////////////////////////////////////////////////////////////////////////////
-int
-HttpTransact::ConnectionCollapsing(State* s)
-{
-  //Checking Hash table tries
-  if (s->HashTable_Tries == 0) {
-    s->HashTable_Tries++;
-    if (is_connection_collapse_checks_success(s)) {
-      char *url_str = s->request_data.get_string();
-      int index = cacheProcessor.hashtable_tracker.KeyToIndex(url_str);
-      HeaderAlternate *alternate = NULL;
-
-      alternate = cacheProcessor.hashtable_tracker.lookup(index, url_str, s->request_data.hdr);
-      xfree(url_str);
-
-      if (alternate != NULL) {
-        Debug("http_seq", "[HttpTransact::OSDNSLookup]URL entry found in HashTable");
-        if (!alternate->response_noncacheable && HttpConfig::m_master.rww_wait_time != 0) {
-          HttpVCTableEntry *ua_entry = s->state_machine->get_ua_entry();
-
-          //Registering vc_handler for scheduling
-          ua_entry->piggybacking_scheduled_handler = &HttpSM::connection_collapsing_piggyback_handler;
-          s->state_machine->piggybacking_scheduled = true;
-
-          //Scheduling the piggy backed clients to do Cache lookup
-          s->state_machine->event_scheduled =
-            s->state_machine->mutex->thread_holding->schedule_at(s->state_machine, HRTIME_MSECONDS(HttpConfig::m_master.rww_wait_time));
-
-          return CONNECTION_COLLAPSING_SCHEDULED;
-        }
-      } else {
-        //Creating a Hash entry in the Hash table
-        if (NULL != (alternate = cacheProcessor.hashtable_tracker.insert(index, &s->request_data, false))) {
-          s->state_machine->request_inserted = true;
-          s->state_machine->RequestHeader = alternate;
-          s->state_machine->Hashtable_index = index;
-          Debug("http_seq", "[HttpTransact::OSDNSLookup]Inserted URL entry in hashtable");
-        } else {
-          s->state_machine->request_inserted = false;
-          s->state_machine->RequestHeader = NULL;
-          xfree(alternate);
-          alternate = NULL;
-          return CACHE_RELOOKUP;
-        }
-      }
-    }
-  }
-  return 0;
-}
-
-///////////////////////////////////////////////////////////////////////////////////////////////
-//Name          : ConnectionCollapsing_for_revalidation
-//
-//Details       : This function is called from HandleCacheOpenReadHit(). If an object is determined
-//                to be revalidated, check if there is some other client already in the process
-//                of revalidation.This is done by looking-up the HashTable.The foll cases arise
-//              1) If URL found in HashTable, check if the revalidate_window_period is expired.
-//                 If yes, update the revalidation_start_time and proceed for OS connection.
-//                 If no, return a status indicating that stale object be served from CACHE.
-//              2) If URL not found,
-//                      * insert the url in the hashTable and update the revalidation_start_time
-//                         and return with the status indicating the connection to OS.
-//                      * if url not inserted, this means that there was someother client who inserted
-//                        it and there is a possibility of avoiding a OS connection. Therefore, return
-//                        with status indicating that stale object be served from CACHE.
-//
-// YTS Team, yamsat
-///////////////////////////////////////////////////////////////////////////////////////////////
-int
-HttpTransact::ConnectionCollapsing_for_revalidation(State* s)
-{
-  HeaderAlternate *alternate = NULL;
-
-  // TODO eval whether we should get a reference here
-  // except this getter also unescapes the string so maybe not...
-  char *url_str = s->request_data.get_string();
-
-  //Doing a Hashtable Lookup
-  int index = cacheProcessor.hashtable_tracker.KeyToIndex(url_str);
-
-  alternate = cacheProcessor.hashtable_tracker.lookup(index, url_str, s->request_data.hdr);
-  xfree(url_str);
-  if (alternate != NULL) {
-    Debug("http_seq", "[HttpTransact::HandleCacheOpenReadHit]URL entry found in HashTable");
-    if (alternate->revalidation_in_progress == true) {
-      //Checking if request is in revalidate_window_period
-      if (((ink_get_hrtime_internal() - (alternate->revalidation_start_time)) / REVALIDATE_CONV_FACTOR) <
-          (HttpConfig::m_master.revalidate_window_period)) {
-        //setting send_revalidate to false so as to serve stale object in cache
-        return SERVE_STALE_OBJECT;
-      } else {
-        //Updating the revalidation_start_time
-        cacheProcessor.hashtable_tracker.update_revalidation_start_time(index, alternate);
-      }
-    }
-  }
-  //if URL not found ie. if Hash Table Miss....
-  else {
-    if (NULL != (alternate = cacheProcessor.hashtable_tracker.insert(index, &s->request_data, true))) {
-      s->state_machine->request_inserted = true;
-      s->state_machine->RequestHeader = alternate;
-      s->state_machine->Hashtable_index = index;
-      Debug("http_seq", "[HttpTransact::HandleCacheOpenReadHit]Inserted URL entry in hashtable");
-    } else {
-      xfree(alternate);
-      s->state_machine->request_inserted = false;
-      s->state_machine->RequestHeader = NULL;
-      alternate = NULL;
-      return SERVE_STALE_OBJECT;
-    }
-  }
-  return 0;
-}
-

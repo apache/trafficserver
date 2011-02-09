@@ -33,8 +33,6 @@ noinst_HEADERS = HttpProxyServerMain.h
 noinst_LIBRARIES = libhttp.a
 
 libhttp_a_SOURCES = \
-  Hash_Table.cc \
-  Hash_Table.h \
   HttpAccept.cc \
   HttpAccept.h \
   HttpBodyFactory.cc \

@@ -1361,28 +1361,6 @@ HttpConfig::startup()
   // Stat Page Info
   HttpEstablishStaticConfigLongLong(c.enable_http_info, "proxy.config.http.enable_http_info");
 
-
-  ///////////////////////////////////////////////////////////////////////////
-  //   Added by YTS Team, yamsat                                                //
-  //   Connection collapsing Configuration parameters                      //
-  // 1. hashtable_enabled: if set to 1, requests will first search the     //
-  //    hashtable to see if another similar request is already being served//
-  // 2. rww_wait_time: read-while-write wait time: While read while write  //
-  //    is enabled, the secondary clients will wait this amount of time    //
-  //    after which cache lookup is retried                                //
-  // 3. revaildate_window_period: while revaidation of a cached object is  //
-  //    being done, the secondary clients for the same url will serve the  //
-  //    stale object for this amount of time, after the revalidation had   //
-  //    started                                                            //
-  ///////////////////////////////////////////////////////////////////////////
-
-  HttpEstablishStaticConfigLongLong(c.hashtable_enabled, "proxy.config.connection_collapsing.hashtable_enabled");
-
-  HttpEstablishStaticConfigLongLong(c.rww_wait_time, "proxy.config.connection_collapsing.rww_wait_time");
-
-  HttpEstablishStaticConfigLongLong(c.revalidate_window_period,
-                                    "proxy.config.connection_collapsing.revalidate_window_period");
-
   HttpEstablishStaticConfigLongLong(c.srv_enabled, "proxy.config.srv_enabled");
 
   //##############################################################################
@@ -1630,24 +1608,6 @@ HttpConfig::reconfigure()
   params->oride.negative_caching_enabled = m_master.oride.negative_caching_enabled;
   params->oride.negative_caching_lifetime = m_master.oride.negative_caching_lifetime;
 
-  ///////////////////////////////////////////////////////////////////////////
-  //  Added by YTS Team, yamsat                                                 //
-  //   Connection collapsing Configuration parameters                      //
-  // 1. hashtable_enabled: if set to 1, requests will first search the     //
-  //    hashtable to see if another similar request is already being served//
-  // 2. rww_wait_time: read-while-write wait time: While read while write  //
-  //    is enabled, the secondary clients will wait this amount of time    //
-  //    after which cache lookup is retried                                //
-  // 3. revaildate_window_period: while revaidation of a cached object is  //
-  //    being done, the secondary clients for the same url will serve the  //
-  //    stale object for this amount of time, after the revalidation had   //
-  //    started                                                            //
-  ///////////////////////////////////////////////////////////////////////////
-
-  params->hashtable_enabled = INT_TO_BOOL(m_master.hashtable_enabled);
-  params->rww_wait_time = m_master.rww_wait_time;
-  params->revalidate_window_period = m_master.revalidate_window_period;
-
   //##############################################################################
   //#
   //# Redirection
@@ -1665,12 +1625,6 @@ HttpConfig::reconfigure()
   m_id = configProcessor.set(m_id, params);
 
 #undef INT_TO_BOOL
-
-// Connection collapsing debug statements
-  Debug("http_init", "proxy.config.connection_collapsing.hashtable_enabled = %d", params->hashtable_enabled);
-  Debug("http_init", "proxy.config.connection_collapsing.rww_wait_time = %d", params->rww_wait_time);
-  Debug("http_init", "proxy.config.connection_collapsing.revalidate_window_period = %d",
-        params->revalidate_window_period);
 
 // Redirection debug statements
   Debug("http_init", "proxy.config.http.redirection_enabled = %d", params->redirection_enabled);

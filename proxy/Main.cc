@@ -1901,11 +1901,6 @@ main(int argc, char **argv)
 
     if (http_enabled) {
       start_HttpProxyServer(http_accept_file_descriptor, http_accept_port_number, ssl_accept_file_descriptor, num_accept_threads);
-      int hashtable_enabled = 0;
-      TS_ReadConfigInteger(hashtable_enabled, "proxy.config.connection_collapsing.hashtable_enabled");
-      if (hashtable_enabled) {
-        cacheProcessor.hashtable_tracker.createHashTable();
-      }
     }
 #ifndef INK_NO_ICP
     icpProcessor.start();

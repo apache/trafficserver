@@ -774,23 +774,6 @@ public:
   //  rather it is the time skew which the manager observes
   int32_t cluster_time_delta;
 
-  ///////////////////////////////////////////////////////////////////////////
-  // Added by YTS Team, yamsat                                                  //
-  //   Connection collapsing Configuration parameters                      //
-  // 1. hashtable_enabled: if set to 1, requests will first search the     //
-  //    hashtable to see if another similar request is already being served//
-  // 2. rww_wait_time: read-while-write wait time: While read while write  //
-  //    is enabled, the secondary clients will wait this amount of time    //
-  //    after which cache lookup is retried                                //
-  // 3. revaildate_window_period: while revaidation of a cached object is  //
-  //    being done, the secondary clients for the same url will serve the  //
-  //    stale object for this amount of time, after the revalidation had   //
-  //    started                                                            //
-  ///////////////////////////////////////////////////////////////////////////
-
-  MgmtInt hashtable_enabled;
-  MgmtInt rww_wait_time;
-  MgmtInt revalidate_window_period;
   MgmtInt srv_enabled;          /* added by: ebalsa */
 
   //##############################################################################
@@ -988,10 +971,6 @@ HttpConfigParams::HttpConfigParams()
     enable_http_info(0),
     fwd_proxy_auth_to_parent(0),
     cluster_time_delta(0),
-    //Added by YTS Team, yamsat
-    hashtable_enabled(false),
-    rww_wait_time(0),
-    revalidate_window_period(0),
     srv_enabled(0),
     redirection_enabled(true),
     number_of_redirections(0),

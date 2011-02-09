@@ -102,7 +102,6 @@ struct HttpVCTableEntry
   VIO *read_vio;
   VIO *write_vio;
   HttpSMHandler vc_handler;
-  HttpSMHandler piggybacking_scheduled_handler; //The other scheduling handler for Conn Collapsing - YTS Team, yamsat
   HttpVC_t vc_type;
   bool in_tunnel;
 };
@@ -272,13 +271,6 @@ public:
   int64_t transfered_bytes;         //Added to calculate POST data
   bool post_failed;             //Added to identify post failure
 
-  bool is_cache_enabled;        //To check if cache is enabled  - YTS Team, yamsat
-  bool request_inserted;        //To check if requested URL is inserted - YTS Team, yamsat
-  bool Hashtable_index;         //Storing the hash table index - YTS Team, yamsat
-  HeaderAlternate *RequestHeader;       //Pointer for request header - YTS Team, yamsat
-  bool piggybacking_scheduled;  //To check if piggy backing is scheduled - YTS Team, yamsat
-  Event *event_scheduled;       //YTS Team, yamsat
-
   // Tunneling request to plugin
   HttpPluginTunnel_t plugin_tunnel_type;
   PluginVCCore *plugin_tunnel;
@@ -305,8 +297,6 @@ protected:
   void remove_ua_entry();
 
 public:
-  //Handler for connection collapsing for Response-Cache-MISS case
-  int connection_collapsing_piggyback_handler(int, void *);     //YTS Team, yamsat
   HttpClientSession *ua_session;
   BackgroundFill_t background_fill;
   //AuthHttpAdapter authAdapter;

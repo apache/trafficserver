@@ -47,9 +47,6 @@
 #define MAX_DNS_LOOKUPS 2
 #define WUTS_PROXY_ID 0
 #define NUM_SECONDS_IN_ONE_YEAR (31536000)      // (365L * 24L * 3600L)
-#define CONNECTION_COLLAPSING_SCHEDULED 1       //YTS Team, yamsat
-#define CACHE_RELOOKUP 2        //YTS Team, yamsat
-#define SERVE_STALE_OBJECT 1    //YTS Team, yamsat
 
 #define HTTP_RELEASE_ASSERT(X) ink_release_assert(X)
 // #define ink_cluster_time(X) time(X)
@@ -1262,8 +1259,6 @@ public:
   static void LookupSkipOpenServer(State* s);
 
   static void CallOSDNSLookup(State* s);
-  static int ConnectionCollapsing(State* s);   //Added functionality for MISS cases - YTS Team, yamsat
-  static int ConnectionCollapsing_for_revalidation(State* s);  //Added functionality for REVALIDATION - YTS Team, yamsat
   static void OSDNSLookup(State* s);
   static void ReDNSRoundRobin(State* s);
   static void PPDNSLookup(State* s);
