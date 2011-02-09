@@ -318,10 +318,7 @@ struct OriginStats
 
 struct UrlStats
 {
-  bool operator < (const UrlStats& rhs)
-  {
-    return req.count > rhs.req.count;
-  }
+  bool operator < (const UrlStats& rhs) const  { return req.count > rhs.req.count;  } // Reverse order
 
   const char *url;
   StatsCounter req;
@@ -387,9 +384,7 @@ public:
     if (_show_urls > 0 && _show_urls < show)
       show = _show_urls;
 
-#if !defined(__SUNPRO_CC)
     _stack.sort();
-#endif
     for (LruStack::iterator u=_stack.begin(); NULL != u->url && --show >= 0; ++u)
       _dump_url(u, as_object);
     if (as_object)
