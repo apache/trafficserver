@@ -154,9 +154,7 @@ LocalManager::clearStats()
   //   stats getting cleared by progation of clearing the
   //   cluster stats
   //
-  // TODO: This doesn't clear all stats, should we do so? E.g.
-  // RecResetStatRecord(NULL, all);
-  RecResetStatRecord();
+  RecResetStatRecord(RECT_NULL, true);
 
   // If the proxy is not running, sending the signal does
   //   not do anything.  Remove the stats file to make sure
