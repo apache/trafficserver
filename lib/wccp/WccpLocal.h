@@ -667,6 +667,10 @@ class CacheIdBox;
     This class provides basic control. Two subclasses specialize for the
     two variants. Use @c isMask to detect which variant is present.
 
+    @note Do not add virtual methods, as reasonable as that seems because
+    this is a serialized object and the memory layout correspond to the
+    protocol definition.
+
     @see CacheHashIdElt
     @see CacheMaskIdElt
 */
@@ -712,8 +716,15 @@ protected:
   unsigned int m_reserved_1:1; ///< Reserved (unused).
   unsigned int m_is_mask:1; ///< Set -> mask, Clear -> hash.
   unsigned int m_reserved_2:6; ///< Reserved (unused).
-  // Unfortunately, although @c weight and @c status are common, they are
-  // after the variable data and so can't be put in the base class.
+  /** Trailing elements common to all cache ID variants.
+      Unfortunately, although @c weight and @c status are common, they are
+      after the variable data and so can't be put in the base class.
+      Best we can do is declare a struct for them for later convenience.
+  */
+  struct Tail {
+    uint16_t m_weight; ///< Weight of assignment.
+    uint16_t m_status; ///< Cache status.
+  };
 };
 
 /** Cache ID for Hash assignment.
@@ -741,8 +752,10 @@ public:
 protected:
   /// Bit vector of buckets assigned to this cache.
   HashBuckets m_buckets;
-  uint16_t m_weight; ///< Assignment weight.
-  uint16_t m_status; ///< Cache status.
+  Tail m_tail; /// Trailing values in element.
+
+  /// Get the address of the tail elements.
+  Tail* getTailPtr();
 };
 
 /** Cache ID for Mask assignment.
@@ -773,8 +786,11 @@ public:
   /// Get object size in bytes.
   size_t getSize() const;
 protected:
+  /// Mask assignment data.
   MaskAssignElt m_assign;
-  // m_assign is variable sized so we can't layout the weight and status.
+  /// Get a pointer to where the tail data is.
+  /// Presumes the assignment is filled out.
+  Tail* getTailPtr();
 };
 
 /** Holder for a @c CacheIdElt.
@@ -853,8 +869,9 @@ protected:
   );
 
   CacheIdElt* m_base; ///< Base address of memory for element.
-  size_t m_count; ///< Size of element.
-  size_t m_size; ///< Size of allocated memory. Zero if external memory.
+  CacheIdElt::Tail* m_tail; ///< Base address of trailing data elements.
+  size_t m_size; ///< Size of element (valid data in buffer);
+  size_t m_cap; ///< Size of allocated memory. Zero if external memory.
 };
 
 /** Base class for all components.
@@ -2015,13 +2032,13 @@ namespace detail {
     );
 
     /// Get the assignment key.
-    AssignmentKeyElt const* getKey() const;
+    AssignmentKeyElt const& getKey() const;
     /// Get the router assignment list.
-    RouterAssignListElt const* getRouterList() const;
+    RouterAssignListElt const& getRouterList() const;
     /// Get the hash assignment.
-    HashAssignElt const* getHash() const;
+    HashAssignElt const& getHash() const;
     /// Get the mask assignment.
-    MaskAssignElt const* getMask() const;
+    MaskAssignElt const& getMask() const;
 
   protected:
     Key m_key; ///< Assignment key.
@@ -2578,7 +2595,7 @@ public:
   /** Check cache assignment reported by a router against internal assign.
       @return @c true if they are the same, @c false otherwise.
   */
-  virtual bool checkRouterAssignment(
+  virtual ts::Errata checkRouterAssignment(
     GroupData const& group, ///< Group with assignment.
     RouterViewComp const& comp ///< Assignment reported by router.
   ) const;
@@ -2868,7 +2885,7 @@ MaskValueSetElt::getSize() const {
 }
 
 inline size_t
-MaskAssignElt::getSize() const { return sizeof(self) + this->getVarSize(); }
+  MaskAssignElt::getSize() const { return sizeof(self) + this->getVarSize(); }
 
 inline uint32_t CacheIdElt::getAddr() const { return m_addr; }
 inline CacheIdElt&
@@ -2922,6 +2939,11 @@ CacheIdElt::setStatus(uint16_t s) {
 }
 # endif
 
+inline CacheIdElt::Tail*
+CacheHashIdElt::getTailPtr() {
+  return &m_tail;
+}
+
 # if 0
 inline bool
 CacheHashIdElt::getBucket(int idx) const {
@@ -2936,7 +2958,14 @@ CacheMaskIdElt::getCount() const {
 
 inline size_t
 CacheMaskIdElt::getSize() const {
-  return sizeof(self) + m_assign.getVarSize();
+  return sizeof(self) + sizeof(Tail) + m_assign.getVarSize();
+}
+
+inline CacheIdElt::Tail*
+CacheMaskIdElt::getTailPtr() {
+  return reinterpret_cast<Tail*>(
+    reinterpret_cast<char*>(this) + sizeof(self) + m_assign.getVarSize()
+  );
 }
 
 inline uint32_t
@@ -3179,21 +3208,24 @@ detail::Assignment::updateRouterId(uint32_t addr, uint32_t rcvid, uint32_t cno) 
   return *this;
 }
 inline AssignmentKeyElt::AssignmentKeyElt() { }
-inline AssignmentKeyElt const*
+inline AssignmentKeyElt const&
 detail::Assignment::getKey() const {
-  return &m_key;
+  return m_key;
 }
-inline RouterAssignListElt const*
+inline RouterAssignListElt const&
 detail::Assignment::getRouterList() const {
-  return m_router_list;
+  assert(m_router_list);
+  return *m_router_list;
 }
-inline HashAssignElt const*
+inline HashAssignElt const&
 detail::Assignment::getHash() const {
-  return m_hash_assign;
+  assert(m_hash_assign);
+  return *m_hash_assign;
 }
-inline MaskAssignElt const*
+inline MaskAssignElt const&
 detail::Assignment::getMask() const {
-  return m_mask_assign;
+  assert(m_mask_assign);
+  return *m_mask_assign;
 }
 
 inline MsgBuffer::MsgBuffer() : super(0,0), _count(0) { }

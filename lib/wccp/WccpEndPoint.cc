@@ -505,34 +505,47 @@ CacheImpl::generateRedirectAssign(
   msg.finalize();
 }
 
-bool
+ts::Errata
 CacheImpl::checkRouterAssignment(
   GroupData const& group,
   RouterViewComp const& comp
 ) const {
+  detail::Assignment const& ainfo = group.m_assign_info;
   // If group doesn't have an active assignment, always match w/o checking.
-  bool zret = ! group.m_assign_info.isActive();
-  if (! zret
-    && ! comp.isEmpty()
-    && ServiceGroup::HASH_ONLY == group.m_cache_assign
-  ) {
+  ts::Errata zret; // default is success.
+
+  logf(LVL_TMP, "Checking router assignment - %s %lx %lu/%lu",
+    ainfo.isActive() ? "active" : "inactive",
+    ainfo.getKey().getAddr(),
+    ainfo.getKey().getChangeNumber(),
+    comp.isEmpty() ? 0 : comp.getChangeNumber()
+  );
+  // if active assignment and data we can check, then check.
+  if (ainfo.isActive() && ! comp.isEmpty()) {
+    // Validate the assignment key.
+    if (ainfo.getKey().getAddr() != comp.getKeyAddr()
+      || ainfo.getKey().getChangeNumber() != comp.getChangeNumber()
+    ) {
+      log(zret, LVL_INFO, "Router assignment key did not match.");;
+    } else if (ServiceGroup::HASH_ONLY == group.m_cache_assign
+    ) {
+      // Still not sure how much checking we really want or should
+      // do here. Note that we have to handle the case where the
+      // router sends mask cache ID elements but we expect hash.
 //    uint32_t nc = comp.getCacheCount();
 //    HashAssignElt const& ha = *(group.m_assign_info.getHash());
     // Nothing for it but simple brute force - iterate over every bucket
     // in the assignment and verify the corresponding bucket in the
     // cache bit array is set.
-    zret = true;
     // TBD: FIX THIS TO CHECK HASH BUCKETS!
     // Need to fix up RouterViewComp extensively to make this work.
 # if 0
     for ( size_t b = 0 ; zret && b < N_BUCKETS ; ++b ) {
       unsigned int c = ha[b].m_idx;
       if (c >= nc || ! comp.cacheElt(c).getBucket(b)) zret = false;
-    }
 # endif
-  } else {
-    // TBD: Validate mask assignments. For now, always OK.
-    zret = true;
+    } else if (ServiceGroup::MASK_ONLY == group.m_cache_assign) {
+    } // else still pending, can't be mismatch yet.
   }
   return zret;
 }
@@ -751,9 +764,10 @@ CacheImpl::handleISeeYou(IpHeader const& ip_hdr, ts::Buffer const& chunk) {
     // Existing router. Update the receive ID in the assignment object.
     group.m_assign_info.updateRouterId(router_addr, recv_id, msg.m_router_view.getChangeNumber());
     // Check the assignment to see if we need to send it again.
-    if (!this->checkRouterAssignment(group, msg.m_router_view)) {
+    ts::Errata status = this->checkRouterAssignment(group, msg.m_router_view);
+    if (status.size()) {
       ar_spot->m_assign = true; // schedule an assignment message.
-      logf(LVL_INFO, "Router assignment reported from "
+      logf(status, LVL_INFO, "Router assignment reported from "
         ATS_IP_PRINTF_CODE
         " did not match local assignment. Resending assignment.\n ",
         ATS_IP_OCTETS(router_addr)
@@ -832,7 +846,7 @@ CacheImpl::handleRemovalQuery(IpHeader const& ip_hdr, ts::Buffer const& chunk) {
     if (group.m_routers.end() != router) {
       router->m_rapid = true; // do rapid responses.
       router->m_recv.set(now, msg.m_query.getRecvId());
-      logf(LVL_DEBUG, "WCCP2_REMOVAL_QUERY from router "
+      logf(LVL_INFO, "WCCP2_REMOVAL_QUERY from router "
         ATS_IP_PRINTF_CODE ".\n",
         ATS_IP_OCTETS(raddr)
       );
