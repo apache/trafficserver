@@ -481,7 +481,7 @@ CacheImpl::generateHereIAm(
   HereIAmMsg& msg,
   GroupData& group
 ) {
-  msg.fill(group, this->setSecurity(msg, group));
+  msg.fill(group, group.m_id, this->setSecurity(msg, group));
   msg.finalize();
 }
 
@@ -491,7 +491,12 @@ CacheImpl::generateHereIAm(
   GroupData& group,
   RouterData& router
 ) {
-  msg.fill(group, this->setSecurity(msg, group));
+  SecurityOption sec_opt = this->setSecurity(msg, group);
+
+  msg.fill(group, group.m_id, sec_opt);
+  if (router.m_local_cache_id.getSize())
+    msg.m_cache_id.setUnassigned(false);
+
   msg.fill_caps(router);
   msg.finalize();
 }
@@ -514,38 +519,23 @@ CacheImpl::checkRouterAssignment(
   // If group doesn't have an active assignment, always match w/o checking.
   ts::Errata zret; // default is success.
 
-  logf(LVL_TMP, "Checking router assignment - %s %lx %lu/%lu",
-    ainfo.isActive() ? "active" : "inactive",
-    ainfo.getKey().getAddr(),
-    ainfo.getKey().getChangeNumber(),
-    comp.isEmpty() ? 0 : comp.getChangeNumber()
-  );
   // if active assignment and data we can check, then check.
   if (ainfo.isActive() && ! comp.isEmpty()) {
     // Validate the assignment key.
     if (ainfo.getKey().getAddr() != comp.getKeyAddr()
-      || ainfo.getKey().getChangeNumber() != comp.getChangeNumber()
+      || ainfo.getKey().getChangeNumber() != comp.getKeyChangeNumber()
     ) {
       log(zret, LVL_INFO, "Router assignment key did not match.");;
     } else if (ServiceGroup::HASH_ONLY == group.m_cache_assign
     ) {
       // Still not sure how much checking we really want or should
-      // do here. Note that we have to handle the case where the
-      // router sends mask cache ID elements but we expect hash.
-//    uint32_t nc = comp.getCacheCount();
-//    HashAssignElt const& ha = *(group.m_assign_info.getHash());
-    // Nothing for it but simple brute force - iterate over every bucket
-    // in the assignment and verify the corresponding bucket in the
-    // cache bit array is set.
-    // TBD: FIX THIS TO CHECK HASH BUCKETS!
-    // Need to fix up RouterViewComp extensively to make this work.
-# if 0
-    for ( size_t b = 0 ; zret && b < N_BUCKETS ; ++b ) {
-      unsigned int c = ha[b].m_idx;
-      if (c >= nc || ! comp.cacheElt(c).getBucket(b)) zret = false;
-# endif
+      // do here. For now, we'll just leave the checks validating
+      // the assignment key.
     } else if (ServiceGroup::MASK_ONLY == group.m_cache_assign) {
-    } // else still pending, can't be mismatch yet.
+      // The data passed back is useless. In practice the interesting
+      // data in the mask case is in the Assignment Map Component
+      // which the router seems to send when using mask assignment.
+    }
   }
   return zret;
 }
@@ -676,7 +666,7 @@ CacheImpl::handleISeeYou(IpHeader const& ip_hdr, ts::Buffer const& chunk) {
   int parse = msg.parse(chunk);
 
   if (PARSE_SUCCESS != parse)
-    return log(LVL_INFO, "Ignored malformed WCCP2_I_SEE_YOU message.");
+    return logf(LVL_INFO, "Ignored malformed [%d] WCCP2_I_SEE_YOU message.", parse);
 
   ServiceGroup svc(msg.m_service);
   GroupMap::iterator spot = m_groups.find(svc.getSvcId());
@@ -782,7 +772,6 @@ CacheImpl::handleISeeYou(IpHeader const& ip_hdr, ts::Buffer const& chunk) {
   // for mask assignment.
   ar_spot->m_send_caps = ! caps.isEmpty();
 
-
   // For all the other listed routers, seed them if they're not
   // already active.
   uint32_t nr = msg.m_router_view.getRouterCount();
@@ -808,6 +797,8 @@ CacheImpl::handleISeeYou(IpHeader const& ip_hdr, ts::Buffer const& chunk) {
       view_changed = true;
     }
     ac_spot->m_id.fill(cache);
+    // If cache is this cache, update data in router record.
+    if (cache.getAddr() == m_addr) ar_spot->m_local_cache_id.fill(cache);
     ac_spot->m_src[router_idx].set(now, recv_id);
   }
 

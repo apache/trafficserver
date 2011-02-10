@@ -587,14 +587,6 @@ protected:
     to the serialized layout. Therefore we can't keep extra accounting
     data around to make manipulation easier. We need a helper class
     for that, which functions in a manner similar to an iterator.
-
-    @internal As a shorthand, a mask assignment of everything to a
-    single web cache can be represented by an mask/value set count of
-    0 followed by the IP address of the target web cache. I don't know
-    if this works went sent to a router, but I observe it being
-    returned by routers in Cache Identity elements. I have verified
-    that a single count of zero with no other data is rejected by
-    at least one type of router.
  */
 
 class MaskAssignElt {
@@ -2140,6 +2132,7 @@ public:
   */
   void fill(
     detail::cache::GroupData const& group, ///< Service group for message.
+    CacheIdBox const& cache_id, ///< ID to use for this cache.
     SecurityOption sec_opt ///< Security option to use.
   );
   /** Fill in optional capabilities.
@@ -2418,6 +2411,8 @@ namespace detail {
        *  The sequence number @a m_sn is the view generation of this cache.
        */
       PacketStamp m_xmit;
+      /// Cache ID of this cache as reflected by this router.
+      CacheIdBox m_local_cache_id;
       int m_rapid; ///< Rapid replies to send.
       bool m_assign; ///< Send a REDIRECT_ASSIGN.
       bool m_send_caps; ///< Send capabilities.
@@ -2976,6 +2971,12 @@ CacheIdBox::getAddr() const {
 inline CacheIdBox&
 CacheIdBox::setAddr(uint32_t addr) {
   m_base->setAddr(addr);
+  return *this;
+}
+
+inline CacheIdBox&
+CacheIdBox::setUnassigned(bool state) {
+  m_base->setUnassigned(state);
   return *this;
 }
 

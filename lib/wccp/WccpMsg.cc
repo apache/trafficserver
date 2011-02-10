@@ -287,10 +287,6 @@ MaskAssignElt::getVarSize() const {
   size_t zret = 0;
   int n = this->getCount();
 
-  // Special case - if the count is zero, the rest of the data is just
-  // the target IP address.
-  if (0 == n) return sizeof(uint32_t);
-
   MaskValueSetElt const* set = reinterpret_cast<MaskValueSetElt const*>(this+1);
   while (n--) {
     size_t k = set->getSize();
@@ -1624,12 +1620,13 @@ BaseMsg::validateSecurity() const {
 void
 HereIAmMsg::fill(
     detail::cache::GroupData const& group,
+    CacheIdBox const& cache_id,
     SecurityOption sec_opt
 ) {
   m_header.fill(m_buffer, HERE_I_AM);
   m_security.fill(m_buffer, sec_opt);
   m_service.fill(m_buffer, group.m_svc);
-  m_cache_id.fill(m_buffer, group.m_id);
+  m_cache_id.fill(m_buffer, cache_id);
   m_cache_view.fill(m_buffer, group);
 }
 
@@ -1749,7 +1746,10 @@ ISeeYouMsg::parse(ts::Buffer const& buffer) {
   m_capabilities.parse(m_buffer);
   m_command.parse(m_buffer);
 
-  if (m_buffer.getSpace()) { zret = PARSE_DATA_OVERRUN; logf(LVL_DEBUG, "I_SEE_YOU: Data overrun %lu", m_buffer.getSpace()); }
+  if (m_buffer.getSpace()) {
+    zret = PARSE_DATA_OVERRUN;
+    logf(LVL_DEBUG, "I_SEE_YOU: Data overrun %lu", m_buffer.getSpace());
+  }
 
   return zret;
 }
