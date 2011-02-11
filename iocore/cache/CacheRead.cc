@@ -306,8 +306,10 @@ CacheVC::openReadFromWriter(int event, Event * e)
 #ifndef READ_WHILE_WRITER
   return openReadFromWriterFailure(CACHE_EVENT_OPEN_READ_FAILED, (Event *) -err);
 #else
-  if (_action.cancelled)
+  if (_action.cancelled) {
+    od = NULL; // only open for read so no need to close
     return free_CacheVC(this);
+  }
   CACHE_TRY_LOCK(lock, part->mutex, mutex->thread_holding);
   if (!lock)
     VC_SCHED_LOCK_RETRY();
