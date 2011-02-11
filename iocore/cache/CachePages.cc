@@ -27,8 +27,7 @@
 #include "api/ts/ts.h"
 #include "Show.h"
 
-struct ShowCache: public ShowCont
-{
+struct ShowCache: public ShowCont {
   int part_index;
   int seg_index;
   int scan_flag;
@@ -38,24 +37,30 @@ struct ShowCache: public ShowCont
   URL url;
   CacheKey show_cache_key;
   CacheVC *cache_vc;
-  int showMain(int event, Event * e);
-  int lookup_url_form(int event, Event * e);
-  int delete_url_form(int event, Event * e);
-  int lookup_regex_form(int event, Event * e);
-  int delete_regex_form(int event, Event * e);
-  int invalidate_regex_form(int event, Event * e);
+  MIOBuffer *buffer;
+  IOBufferReader *buffer_reader;
+  int64_t content_length;
+  VIO *cvio;
+  int showMain(int event, Event *e);
+  int lookup_url_form(int event, Event *e);
+  int delete_url_form(int event, Event *e);
+  int lookup_regex_form(int event, Event *e);
+  int delete_regex_form(int event, Event *e);
+  int invalidate_regex_form(int event, Event *e);
 
-  int lookup_url(int event, Event * e);
-  int delete_url(int event, Event * e);
-  int lookup_regex(int event, Event * e);
-  int delete_regex(int event, Event * e);
-  int invalidate_regex(int event, Event * e);
+  int lookup_url(int event, Event *e);
+  int delete_url(int event, Event *e);
+  int lookup_regex(int event, Event *e);
+  int delete_regex(int event, Event *e);
+  int invalidate_regex(int event, Event *e);
 
-  int handleCacheOpenRead(int event, Event * e);
-  int handleCacheDeleteComplete(int event, Event * e);
-  int handleCacheScanCallback(int event, Event * e);
+  int handleCacheEvent(int event, Event *e);
+  int handleCacheDeleteComplete(int event, Event *e);
+  int handleCacheScanCallback(int event, Event *e);
 
-    ShowCache(Continuation * c, HTTPHdr * h):ShowCont(c, h), part_index(0), seg_index(0), scan_flag(0)
+  ShowCache(Continuation *c, HTTPHdr *h): 
+    ShowCont(c, h), part_index(0), seg_index(0), scan_flag(0),
+    cache_vc(0), buffer(0), buffer_reader(0), content_length(0), cvio(0)
   {
     urlstrs_index = 0;
     linecount = 0;
@@ -66,8 +71,7 @@ struct ShowCache: public ShowCont
     URL *u = h->url_get();
 
     // process the query string
-    if (u->query_get(&query_len))
-    {
+    if (u->query_get(&query_len)) {
       strncpy(query, u->query_get(&query_len), query_len);
       query[query_len] = '\0';
       strncpy(unescapedQuery, query, query_len);
@@ -87,8 +91,7 @@ struct ShowCache: public ShowCont
       int nstrings = 1;
       char *p = strstr(query, "url=");
       // count the no of urls
-      if (p)
-      {
+      if (p) {
         while ((p = strstr(p, "\n"))) {
           nstrings++;
           if ((size_t) (p - query) >= strlen(query) - 1)
@@ -101,23 +104,23 @@ struct ShowCache: public ShowCont
       show_cache_urlstrs = NEW(new char[nstrings + 1][500]);
       for (int si = 0; si < nstrings + 1; si++)
         for (int sj = 0; sj < 500; sj++)
-          show_cache_urlstrs[si][sj] = '\0';    //zeroing out mem
+          show_cache_urlstrs[si][sj] = '\0';    // zeroing out mem
 
       char *q, *t;
       p = strstr(unescapedQuery, "url=");
       if (p) {
-        p += 4;                 //4 ==> strlen("url=")
+        p += 4;                 // 4 ==> strlen("url=")
         t = strchr(p, '&');
         if (!t)
           t = (char *) unescapedQuery + strlen(unescapedQuery);
         for (int s = 0; p < t; s++) {
           show_cache_urlstrs[s][0] = '\0';
-          q = strstr(p, "%0D%0A");      //we used this in the JS to separate urls
+          q = strstr(p, "%0D%0A");      // we used this in the JS to separate urls
           if (!q)
             q = t;
           strncpy(show_cache_urlstrs[s], p, q - p);
           show_cache_urlstrs[s][q - p] = '\0';
-          p = q + 6;            //+6 ==> strlen(%0D%0A)
+          p = q + 6;            // +6 ==> strlen(%0D%0A)
         }
       }
 
@@ -133,8 +136,7 @@ struct ShowCache: public ShowCont
     }
 
     SET_HANDLER(&ShowCache::showMain);
-
-  };
+  }
 
   ~ShowCache() {
     if (show_cache_urlstrs)
@@ -145,10 +147,6 @@ struct ShowCache: public ShowCont
 };
 
 extern ShowCache *theshowcache;
-
-
-
-
 extern Part **gpart;
 extern volatile int gnpart;
 
@@ -160,13 +158,9 @@ ShowCache *theshowcache = NULL;
 
 
 Action *
-register_ShowCache(Continuation * c, HTTPHdr * h)
-{
+register_ShowCache(Continuation *c, HTTPHdr *h) {
   theshowcache = NEW(new ShowCache(c, h));
   URL *u = h->url_get();
-
-
-
   int path_len;
   const char *path = u->path_get(&path_len);
 
@@ -202,10 +196,8 @@ register_ShowCache(Continuation * c, HTTPHdr * h)
   return &theshowcache->action;
 }
 
-
 int
-ShowCache::showMain(int event, Event * e)
-{
+ShowCache::showMain(int event, Event *e) {
   CHECK_SHOW(begin("Cache"));
   CHECK_SHOW(show("<H3><A HREF=\"./lookup_url_form\">Lookup url</A></H3>\n"
                   "<H3><A HREF=\"./delete_url_form\">Delete url</A></H3>\n"
@@ -215,9 +207,8 @@ ShowCache::showMain(int event, Event * e)
   return complete(event, e);
 }
 
-
 int
-ShowCache::lookup_url_form(int event, Event * e)
+ShowCache::lookup_url_form(int event, Event *e)
 {
   CHECK_SHOW(begin("Cache Lookup"));
   CHECK_SHOW(show("<FORM METHOD=\"GET\" ACTION=\"./lookup_url\">\n"
@@ -228,8 +219,7 @@ ShowCache::lookup_url_form(int event, Event * e)
 }
 
 int
-ShowCache::delete_url_form(int event, Event * e)
-{
+ShowCache::delete_url_form(int event, Event *e) {
   CHECK_SHOW(begin("Cache Delete"));
   CHECK_SHOW(show("<FORM METHOD=\"GET\" ACTION=\"./delete_url\">\n"
                   "<P><B>Type the list urls that you want to delete\n"
@@ -241,7 +231,7 @@ ShowCache::delete_url_form(int event, Event * e)
 }
 
 int
-ShowCache::lookup_regex_form(int event, Event * e)
+ShowCache::lookup_regex_form(int event, Event *e)
 {
   CHECK_SHOW(begin("Cache Regex Lookup"));
   CHECK_SHOW(show("<FORM METHOD=\"GET\" ACTION=\"./lookup_regex\">\n"
@@ -254,8 +244,7 @@ ShowCache::lookup_regex_form(int event, Event * e)
 }
 
 int
-ShowCache::delete_regex_form(int event, Event * e)
-{
+ShowCache::delete_regex_form(int event, Event *e) {
   CHECK_SHOW(begin("Cache Regex delete"));
   CHECK_SHOW(show("<FORM METHOD=\"GET\" ACTION=\"./delete_regex\">\n"
                   "<P><B>Type the list of regular expressions that you want to delete\n"
@@ -267,8 +256,7 @@ ShowCache::delete_regex_form(int event, Event * e)
 }
 
 int
-ShowCache::invalidate_regex_form(int event, Event * e)
-{
+ShowCache::invalidate_regex_form(int event, Event *e) {
   CHECK_SHOW(begin("Cache Regex Invalidate"));
   CHECK_SHOW(show("<FORM METHOD=\"GET\" ACTION=\"./invalidate_regex\">\n"
                   "<P><B>Type the list of regular expressions that you want to invalidate\n"
@@ -280,105 +268,142 @@ ShowCache::invalidate_regex_form(int event, Event * e)
 }
 
 
-
-
-
 int
-ShowCache::handleCacheOpenRead(int event, Event * e)
-{
+ShowCache::handleCacheEvent(int event, Event *e) {
+  // we use VC_EVENT_xxx to finish the cluster read in cluster mode
+  switch (event) {
+    case VC_EVENT_EOS:
+    case VC_EVENT_READ_COMPLETE: {
+      // cluster read done, we just print hit in cluster
+      CHECK_SHOW(show("<P><TABLE border=1 width=100%%>"));
+      CHECK_SHOW(show("<TR><TH bgcolor=\"#FFF0E0\" colspan=2>Doc Hit from Cluster</TH></TR>\n"));
+      CHECK_SHOW(show("<tr><td>Size</td><td>%" PRId64 "</td>\n", content_length));
 
-  if (event == CACHE_EVENT_OPEN_READ) {
-
-    //get the vector
-    CacheVC *c = (CacheVC *) e;
-    CacheHTTPInfoVector *vec = &(c->vector);
-    int alt_count = vec->count();
-    Doc *d = (Doc *) (c->first_buf->data());
-    time_t t;
-    char tmpstr[4096];
-
-
-    //print the Doc
-
-    CHECK_SHOW(show("<P><TABLE border=1 width=100%%>"));
-    CHECK_SHOW(show("<TR><TH bgcolor=\"#FFF0E0\" colspan=2>Doc</TH></TR>\n"));
-    CHECK_SHOW(show("<TR><TD>first key</td> <td>%s</td></tr>\n", d->first_key.string(tmpstr)));
-    CHECK_SHOW(show("<TR><TD>key</td> <td>%s</td></tr>\n", d->key.string(tmpstr)));
-    CHECK_SHOW(show("<tr><td>sync_serial</td><td>%lu</tr>\n", d->sync_serial));
-    CHECK_SHOW(show("<tr><td>write_serial</td><td>%lu</tr>\n", d->write_serial));
-    CHECK_SHOW(show("<tr><td>header length</td><td>%lu</tr>\n", d->hlen));
-    CHECK_SHOW(show("<tr><td>fragment type</td><td>%lu</tr>\n", d->ftype));
-    CHECK_SHOW(show("<tr><td>fragment table length</td><td>%lu</tr>\n", d->flen));
-    CHECK_SHOW(show("<tr><td>No of Alternates</td><td>%d</td></tr>\n", alt_count));
-
-    CHECK_SHOW(show("<tr><td>Action</td>\n"
-                    "<td><FORM action=\"./delete_url\" method=get>\n"
-                    "<Input type=HIDDEN name=url value=\"%s\">\n"
-                    "<input type=submit value=\"Delete URL\">\n" "</FORM></td></tr>\n", show_cache_urlstrs[0]));
-    CHECK_SHOW(show("</TABLE></P>"));
-
-
-    for (int i = 0; i < alt_count; i++) {
-      //unmarshal the alternate??
-      CHECK_SHOW(show("<p><table border=1>\n"));
-      CHECK_SHOW(show("<tr><th bgcolor=\"#FFF0E0\" colspan=2>Alternate %d</th></tr>\n", i + 1));
-      CacheHTTPInfo *obj = vec->get(i);
-      CacheKey obj_key = obj->object_key_get();
-      HTTPHdr *cached_request = obj->request_get();
-      HTTPHdr *cached_response = obj->response_get();
-      int64_t obj_size = obj->object_size_get();
-      int offset, tmp, used, done;
-      char b[4096];
-
-      // print request header
-      CHECK_SHOW(show("<tr><td>Request Header</td><td><PRE>"));
-      offset = 0;
-      do {
-        used = 0;
-        tmp = offset;
-        done = cached_request->print(b, 4095, &used, &tmp);
-        offset += used;
-        b[used] = '\0';
-        CHECK_SHOW(show("%s", b));
-      } while (!done);
-      CHECK_SHOW(show("</PRE></td><tr>\n"));
-
-      // print response header
-      CHECK_SHOW(show("<tr><td>Response Header</td><td><PRE>"));
-      offset = 0;
-      do {
-        used = 0;
-        tmp = offset;
-        done = cached_response->print(b, 4095, &used, &tmp);
-        offset += used;
-        b[used] = '\0';
-        CHECK_SHOW(show("%s", b));
-      } while (!done);
-      CHECK_SHOW(show("</PRE></td></tr>\n"));
-      CHECK_SHOW(show("<tr><td>Size</td><td>%" PRId64 "</td>\n", obj_size));
-      CHECK_SHOW(show("<tr><td>Key</td><td>%s</td>\n", obj_key.string(tmpstr)));
-      t = obj->request_sent_time_get();
-      ink_ctime_r(&t, tmpstr);
-      CHECK_SHOW(show("<tr><td>Request sent time</td><td>%s</td></tr>\n", tmpstr));
-      t = obj->response_received_time_get();
-      ink_ctime_r(&t, tmpstr);
-
-      CHECK_SHOW(show("<tr><td>Response received time</td><td>%s</td></tr>\n", tmpstr));
+      // delete button
+      CHECK_SHOW(show("<tr><td>Action</td>\n"
+                      "<td><FORM action=\"./delete_url\" method=get>\n"
+                      "<Input type=HIDDEN name=url value=\"%s\">\n"
+                      "<input type=submit value=\"Delete URL\">\n" "</FORM></td></tr>\n",
+                      show_cache_urlstrs[0]));
       CHECK_SHOW(show("</TABLE></P>"));
-    }
 
-    c->do_io_close(-1);
-  } else {
-    CHECK_SHOW(show("<H3>Cache Miss</H3>\n"));
+      if (buffer_reader) {
+        buffer->dealloc_reader(buffer_reader);
+        buffer_reader = 0;
+      }
+      if (buffer) {
+        free_MIOBuffer(buffer);
+        buffer = 0;
+      }
+      cvio = 0;
+      cache_vc->do_io_close(-1);
+      cache_vc = 0;
+      return complete(event, e);
+    }
+    case CACHE_EVENT_OPEN_READ: {
+      // get the vector
+      cache_vc = (CacheVC *) e;
+      CacheHTTPInfoVector *vec = &(cache_vc->vector);
+      int alt_count = vec->count();
+      if (alt_count) {
+        Doc *d = (Doc *) (cache_vc->first_buf->data());
+        time_t t;
+        char tmpstr[4096];
+
+        // print the Doc
+        CHECK_SHOW(show("<P><TABLE border=1 width=100%%>"));
+        CHECK_SHOW(show("<TR><TH bgcolor=\"#FFF0E0\" colspan=2>Doc</TH></TR>\n"));
+        CHECK_SHOW(show("<TR><TD>first key</td> <td>%s</td></tr>\n", d->first_key.string(tmpstr)));
+        CHECK_SHOW(show("<TR><TD>key</td> <td>%s</td></tr>\n", d->key.string(tmpstr)));
+        CHECK_SHOW(show("<tr><td>sync_serial</td><td>%lu</tr>\n", d->sync_serial));
+        CHECK_SHOW(show("<tr><td>write_serial</td><td>%lu</tr>\n", d->write_serial));
+        CHECK_SHOW(show("<tr><td>header length</td><td>%lu</tr>\n", d->hlen));
+        CHECK_SHOW(show("<tr><td>fragment type</td><td>%lu</tr>\n", d->ftype));
+        CHECK_SHOW(show("<tr><td>fragment table length</td><td>%lu</tr>\n", d->flen));
+        CHECK_SHOW(show("<tr><td>No of Alternates</td><td>%d</td></tr>\n", alt_count));
+
+        CHECK_SHOW(show("<tr><td>Action</td>\n"
+                        "<td><FORM action=\"./delete_url\" method=get>\n"
+                        "<Input type=HIDDEN name=url value=\"%s\">\n"
+                        "<input type=submit value=\"Delete URL\">\n" "</FORM></td></tr>\n",
+                        show_cache_urlstrs[0]));
+        CHECK_SHOW(show("</TABLE></P>"));
+
+        for (int i = 0; i < alt_count; i++) {
+          // unmarshal the alternate??
+          CHECK_SHOW(show("<p><table border=1>\n"));
+          CHECK_SHOW(show("<tr><th bgcolor=\"#FFF0E0\" colspan=2>Alternate %d</th></tr>\n", i + 1));
+          CacheHTTPInfo *obj = vec->get(i);
+          CacheKey obj_key = obj->object_key_get();
+          HTTPHdr *cached_request = obj->request_get();
+          HTTPHdr *cached_response = obj->response_get();
+          int64_t obj_size = obj->object_size_get();
+          int offset, tmp, used, done;
+          char b[4096];
+
+          // print request header
+          CHECK_SHOW(show("<tr><td>Request Header</td><td><PRE>"));
+          offset = 0;
+          do {
+            used = 0;
+            tmp = offset;
+            done = cached_request->print(b, 4095, &used, &tmp);
+            offset += used;
+            b[used] = '\0';
+            CHECK_SHOW(show("%s", b));
+          } while (!done);
+          CHECK_SHOW(show("</PRE></td><tr>\n"));
+
+          // print response header
+          CHECK_SHOW(show("<tr><td>Response Header</td><td><PRE>"));
+          offset = 0;
+          do {
+            used = 0;
+            tmp = offset;
+            done = cached_response->print(b, 4095, &used, &tmp);
+            offset += used;
+            b[used] = '\0';
+            CHECK_SHOW(show("%s", b));
+          } while (!done);
+          CHECK_SHOW(show("</PRE></td></tr>\n"));
+          CHECK_SHOW(show("<tr><td>Size</td><td>%" PRId64 "</td>\n", obj_size));
+          CHECK_SHOW(show("<tr><td>Key</td><td>%s</td>\n", obj_key.string(tmpstr)));
+          t = obj->request_sent_time_get();
+          ink_ctime_r(&t, tmpstr);
+          CHECK_SHOW(show("<tr><td>Request sent time</td><td>%s</td></tr>\n", tmpstr));
+          t = obj->response_received_time_get();
+          ink_ctime_r(&t, tmpstr);
+
+          CHECK_SHOW(show("<tr><td>Response received time</td><td>%s</td></tr>\n", tmpstr));
+          CHECK_SHOW(show("</TABLE></P>"));
+        }
+
+        cache_vc->do_io_close(-1);
+        return complete(event, e);
+      }
+      // open success but no vector, that is the Cluster open read, pass through
+    }
+    case VC_EVENT_READ_READY:
+      if (!cvio) {
+        buffer = new_empty_MIOBuffer();
+        buffer_reader = buffer->alloc_reader();
+        TSVConnCacheObjectSizeGet(cache_vc, &content_length);
+        cvio = cache_vc->do_io_read(this, content_length, buffer);
+      } else
+        buffer_reader->consume(buffer_reader->read_avail());
+      return EVENT_DONE;
+    case CACHE_EVENT_OPEN_READ_FAILED:
+      // something strange happen, or cache miss in cluster mode.
+      CHECK_SHOW(show("<H3>Cache Lookup Failed, or missing in cluster</H3>\n"));
+      return complete(event, e);
+    default:
+      CHECK_SHOW(show("<H3>Cache Miss</H3>\n"));
+      return complete(event, e);
   }
-  return complete(event, e);
 }
 
-
-
 int
-ShowCache::lookup_url(int event, Event * e)
-{
+ShowCache::lookup_url(int event, Event *e) {
   char header_str[300];
 
   snprintf(header_str, sizeof(header_str), "<font color=red>%s</font>", show_cache_urlstrs[0]);
@@ -391,15 +416,22 @@ ShowCache::lookup_url(int event, Event * e)
   int len;
   url.MD5_get(&md5);
   const char *hostname = url.host_get(&len);
-  SET_HANDLER(&ShowCache::handleCacheOpenRead);
-  cacheProcessor.open_read(this, &md5, CACHE_FRAG_TYPE_HTTP, (char *) hostname, len);
-  return EVENT_DONE;
+  SET_HANDLER(&ShowCache::handleCacheEvent);
+  Action *lookup_result = cacheProcessor.open_read(this, &md5, CACHE_FRAG_TYPE_HTTP, (char *) hostname, len);
+  if (!lookup_result)
+    lookup_result = ACTION_IO_ERROR;
+  if (lookup_result == ACTION_RESULT_DONE)
+    return EVENT_DONE;        // callback complete
+  else if (lookup_result == ACTION_IO_ERROR) {
+    handleEvent(CACHE_EVENT_OPEN_READ_FAILED, 0);
+    return EVENT_DONE;        // callback complete
+  } else
+    return EVENT_CONT;        // callback pending, will be a cluster read.
 }
 
 
-
 int
-ShowCache::delete_url(int event, Event * e)
+ShowCache::delete_url(int event, Event *e)
 {
   if (urlstrs_index == 0) {
     // print the header the first time delete_url is called
@@ -428,7 +460,7 @@ ShowCache::delete_url(int event, Event * e)
 }
 
 int
-ShowCache::handleCacheDeleteComplete(int event, Event * e)
+ShowCache::handleCacheDeleteComplete(int event, Event *e)
 {
 
   if (event == CACHE_EVENT_REMOVE) {
@@ -442,7 +474,7 @@ ShowCache::handleCacheDeleteComplete(int event, Event * e)
 
 
 int
-ShowCache::lookup_regex(int event, Event * e)
+ShowCache::lookup_regex(int event, Event *e)
 {
   CHECK_SHOW(begin("Regex Lookup"));
   CHECK_SHOW(show("<SCRIPT LANGIAGE=\"Javascript1.2\">\n"
@@ -485,7 +517,7 @@ ShowCache::lookup_regex(int event, Event * e)
 }
 
 int
-ShowCache::delete_regex(int event, Event * e)
+ShowCache::delete_regex(int event, Event *e)
 {
   CHECK_SHOW(begin("Regex Delete"));
   CHECK_SHOW(show("<B><TABLE border=1>\n"));
@@ -498,7 +530,7 @@ ShowCache::delete_regex(int event, Event * e)
 
 
 int
-ShowCache::invalidate_regex(int event, Event * e)
+ShowCache::invalidate_regex(int event, Event *e)
 {
   CHECK_SHOW(begin("Regex Invalidate"));
   CHECK_SHOW(show("<B><TABLE border=1>\n"));
@@ -512,7 +544,7 @@ ShowCache::invalidate_regex(int event, Event * e)
 
 
 int
-ShowCache::handleCacheScanCallback(int event, Event * e)
+ShowCache::handleCacheScanCallback(int event, Event *e)
 {
   switch (event) {
   case CACHE_EVENT_SCAN:{
