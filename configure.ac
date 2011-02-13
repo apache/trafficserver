@@ -123,12 +123,13 @@ AC_ARG_WITH([user],
   ]
 )
 
+default_group="`id -ng $with_user`"
 AC_ARG_WITH([group],
   [AS_HELP_STRING([--with-group],[specify the system group [default: nobody]])],
   [
   with_group="$withval"
   ],[
-  with_group="nobody"
+  with_group=${default_group:-nobody}
   ]
 )
 AC_SUBST([pkgsysuser],[$with_user])
