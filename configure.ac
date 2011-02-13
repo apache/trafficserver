@@ -124,7 +124,7 @@ AC_ARG_WITH([user],
 )
 
 AC_ARG_WITH([group],
-  [AS_HELP_STRING([--with-group],[specify the system group [default: nogroup]])],
+  [AS_HELP_STRING([--with-group],[specify the system group [default: nobody]])],
   [
   with_group="$withval"
   ],[
