@@ -45,8 +45,6 @@
 // defines
 //-------------------------------------------------------------------------
 
-#define WHT_XML_FILE         "navigation_tree.xml"
-
 #define WHT_MAX_MODES        5
 #define WHT_MAX_MENUS        10
 #define WHT_MAX_ITEMS        32
@@ -456,52 +454,6 @@ build_and_index_tree(InkHashTable * mode_ht, InkHashTable * menu_ht, InkHashTabl
     mode++;
   }
   return WEB_HTTP_ERR_OKAY;
-}
-
-//-------------------------------------------------------------------------
-// WebHttpTreeInit
-//-------------------------------------------------------------------------
-
-int
-WebHttpTreeInit()
-{
-  char *xml_file_path;
-  char *xml_file_buf = NULL;
-  int xml_file_len;
-
-  // allocate objects
-  g_mode_ht = ink_hash_table_create(InkHashTableKeyType_String);
-  g_menu_ht = ink_hash_table_create(InkHashTableKeyType_String);
-  g_item_ht = ink_hash_table_create(InkHashTableKeyType_String);
-  g_link_ht = ink_hash_table_create(InkHashTableKeyType_String);
-
-  XML_Parser parser = XML_ParserCreate(NULL);
-  XML_SetUserData(parser, NULL);
-  XML_SetElementHandler(parser, start_element_handler, end_element_handler);
-
-  size_t len = adminContext.docRootLen + strlen(DIR_SEP) + strlen(WHT_XML_FILE) + 1;
-  xml_file_path = (char *) xmalloc(len);
-  snprintf(xml_file_path, len, "%s%s%s", adminContext.docRoot, DIR_SEP, WHT_XML_FILE);
-  if (WebFileImport_Xmalloc(xml_file_path, &xml_file_buf, &xml_file_len) != WEB_HTTP_ERR_OKAY) {
-    /* 3Com doesn't want to see this message */
-    mgmt_elog(stderr, "[WebHttpTreeInit]: unable to import file %s\n", xml_file_path);
-    goto Lerror;
-  }
-  if (XML_Parse(parser, xml_file_buf, xml_file_len, true) == 0) {
-    mgmt_elog(stderr, "[WebHttpTreeInit]: XML parse error - %s at line %d for %s\n",
-              XML_ErrorString(XML_GetErrorCode(parser)), XML_GetCurrentLineNumber(parser),xml_file_path);
-    goto Lerror;
-  }
-  // build javascript tree and track 'item's in our g_link_ht
-  //build_and_index_tree(g_mode_ht, g_menu_ht, g_item_ht, g_link_ht, g_reverse_ht);
-  build_and_index_tree(g_mode_ht, g_menu_ht, g_item_ht, g_link_ht);
-  xfree(xml_file_path);
-  xfree(xml_file_buf);
-  XML_ParserFree(parser);
-  return WEB_HTTP_ERR_OKAY;
-Lerror:
-  xfree(xml_file_path);
-  return WEB_HTTP_ERR_FAIL;
 }
 
 //-------------------------------------------------------------------------

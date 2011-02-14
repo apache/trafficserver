@@ -17,12 +17,8 @@
 #  limitations under the License.
 
 webuidir = $(pkgdatadir)/tune
-dist_webui_DATA = \
-	navigation_tree.xmlcpp
 
 DEFS += @DEFS@
-
-noinst_DATA = navigation_tree.xml
 
 # C Pre-Processor Program.  This is for using the CPP for things
 # -----------------------   other than normal.  (CPP) gets a value

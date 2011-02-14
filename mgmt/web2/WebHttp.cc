@@ -2846,7 +2846,6 @@ WebHttpInit()
   WebHttpSessionInit();
 #if TS_HAS_WEBUI
   WebHttpRenderInit();
-  WebHttpTreeInit();
 #endif
 
   return;

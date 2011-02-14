@@ -39,7 +39,6 @@ dist_webui_DATA = \
 	index.ink \
 	inktomi.css \
 	inktomiLarge.css \
-	navigation_tree.xml \
 	plugin.ink \
 	rename.ink \
 	resize.js \
