@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 
 Changes with Apache Traffic Server 2.1.6
+  *) [TS-672] remove unused/unreferenced Win32 header files and
+   code paths
 
   *) [TS-489] Remove the "connection collapsing" feature, it was poorly
    implemented, and caused major problem if enabled. We should redo this

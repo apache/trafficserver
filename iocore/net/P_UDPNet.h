@@ -347,7 +347,6 @@ public:
 #endif
 
 #if defined(_IOCORE_WIN32)
-#include "NTUDPConnection.h"
 void initialize_thread_for_udp_net(EThread * thread);
 
 class UDPQueue;

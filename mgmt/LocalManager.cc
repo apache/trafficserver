@@ -37,7 +37,6 @@
 #include "I_Layout.h"
 #include "Compatability.h"
 #include "LocalManager.h"
-#include "NTDefs.h"
 #include "WebReconfig.h"
 #include "MgmtSocket.h"
 

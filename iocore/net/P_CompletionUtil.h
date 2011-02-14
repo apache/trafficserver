@@ -42,9 +42,7 @@ public:
   static void releaseReferences(Event * e);
 };
 
-#ifdef _IOCORE_WIN32_WINNT
-#include "NTCompletionUtil.h"
-#else
+#ifndef _IOCORE_WIN32_WINNT
 #include "P_UnixCompletionUtil.h"
 #endif
 

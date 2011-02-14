@@ -45,7 +45,6 @@ AM_CPPFLAGS = \
 
 noinst_HEADERS = \
   ConfigParse.h \
-  NTDefs.h \
   Show.h
 
 EXTRA_PROGRAMS = \
