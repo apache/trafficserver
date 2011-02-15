@@ -16,17 +16,8 @@
 
 webuidir = $(pkgdatadir)/images
 dist_webui_DATA = \
-	arrow_add.gif \
-	arrow_cross.gif \
-	arrow_down.gif \
-	arrow_set.gif \
-	arrow_up.gif \
 	blankIcon.gif \
-	configure_off.gif \
-	configure_on.gif \
 	dot_clear.gif \
-	header_bg.gif \
-	header_bg_pe.gif \
 	menu_begin_off.gif \
 	menu_begin_on.gif \
 	menu_bg_off.gif \
@@ -35,8 +26,4 @@ dist_webui_DATA = \
 	menu_end_on.gif \
 	menu_separator_off_off.gif \
 	menu_separator_off_on.gif \
-	menu_separator_on_off.gif \
-	minusIcon.gif \
-	monitor_off.gif \
-	monitor_on.gif \
-	plusIcon.gif
+	menu_separator_on_off.gif
