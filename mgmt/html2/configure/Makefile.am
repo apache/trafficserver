@@ -18,8 +18,6 @@ webuidir = $(pkgdatadir)/configure
 dist_webui_DATA = \
 	c_autoconf_pac.ink \
 	c_autoconf_wpad.ink \
-	c_basic.ink \
-	c_basic.ink.win \
 	c_buttons_hide.ink \
 	c_buttons.ink \
 	c_cache_general.ink \

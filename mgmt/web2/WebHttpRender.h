@@ -391,7 +391,6 @@
 #define HTML_TREE_HEADER_FILE           "/include/tree_header.ink"
 #define HTML_TREE_FOOTER_FILE           "/include/tree_footer.ink"
 #define HTML_DEFAULT_MONITOR_FILE       "/monitor/m_overview.ink"
-#define HTML_DEFAULT_CONFIGURE_FILE     "/configure/c_basic.ink"
 #define HTML_FEATURE_ON_OFF_FILE        "/configure/c_basic.ink"
 #define HTML_DEFAULT_HELP_FILE          "/help/ts.ink"
 
