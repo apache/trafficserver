@@ -387,7 +387,6 @@
 #define HTML_MGMT_GENERAL_FILE          "/configure/c_mgmt_general.ink"
 #define HTML_MGMT_LOGIN_FILE            "/configure/c_mgmt_login.ink"
 #define HTML_INSPECTOR_DISPLAY_FILE     "/configure/c_inspector_display.ink"
-#define HTML_CONFIG_DISPLAY_FILE        "/configure/c_config_display.ink"
 #define HTML_TREE_HEADER_FILE           "/include/tree_header.ink"
 #define HTML_TREE_FOOTER_FILE           "/include/tree_footer.ink"
 #define HTML_DEFAULT_MONITOR_FILE       "/monitor/m_overview.ink"

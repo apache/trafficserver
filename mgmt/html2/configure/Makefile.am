@@ -24,7 +24,6 @@ dist_webui_DATA = \
 	c_cache_hosting.ink \
 	c_cache_partition.ink \
 	c_clustering.ink \
-	c_config_display.ink \
 	c_congestion.ink \
 	c_dns_host_database.ink \
 	c_dns_resolver.ink \
