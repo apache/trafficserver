@@ -471,11 +471,11 @@ CacheVC::openReadFromWriterMain(int event, Event * e)
   if (ntodo <= 0)
     return EVENT_CONT;
   if (length < ((int64_t)doc_len) - vio.ndone) {
-    DDebug("cache_read_agg", "truncation %X", earliest_key.word(0));
+    DDebug("cache_read_agg", "truncation %X", first_key.word(1));
     if (is_action_tag_set("cache")) {
       ink_release_assert(false);
     }
-    Warning("Document for %X truncated", earliest_key.word(0));
+    Warning("Document %X truncated at %d of %d, reading from writer", first_key.word(1), (int)vio.ndone, (int)doc_len);
     return calluser(VC_EVENT_ERROR);
   }
   /* its possible that the user did a do_io_close before
@@ -592,7 +592,7 @@ CacheVC::openReadReadDone(int event, Event * e)
   }
 Lerror:
   char tmpstring[100];
-  Warning("Document truncated for %s", earliest_key.string(tmpstring));
+  Warning("Document %s truncated", earliest_key.string(tmpstring));
   return calluser(VC_EVENT_ERROR);
 Ldone:
   return calluser(VC_EVENT_EOS);
@@ -713,17 +713,17 @@ Lread: {
             goto Leos;
           }
         }
-        DDebug("cache_read_agg", "%x: key: %X ReadMain writer aborted: %d",
+        DDebug("cache_read_agg", "%X: key: %X ReadMain writer aborted: %d",
               this, first_key.word(1), (int)vio.ndone);
         goto Lerror;
       }
-      DDebug("cache_read_agg", "%x: key: %X ReadMain retrying: %d", this, first_key.word(1), (int)vio.ndone);
+      DDebug("cache_read_agg", "%X: key: %X ReadMain retrying: %d", this, first_key.word(1), (int)vio.ndone);
       SET_HANDLER(&CacheVC::openReadMain);
       VC_SCHED_WRITER_RETRY();
     }
     if (is_action_tag_set("cache"))
       ink_release_assert(false);
-    Warning("Document for %X truncated", earliest_key.word(0));
+    Warning("Document %X truncated at %d of %d, missing fragment %X", first_key.word(1), (int)vio.ndone, (int)doc_len, key.word(1));
     // remove the directory entry
     dir_delete(&earliest_key, part, &earliest_dir);
   }
