@@ -16,13 +16,7 @@
 
 webuidir = $(pkgdatadir)/include
 dist_webui_DATA = \
-	body_footer.ink \
-	body_header.ink \
 	footer.ink \
-	form_footer.ink \
-	form_header.ink \
 	header.ink \
-	html_footer.ink \
-	html_header.ink \
 	tree_footer.ink \
 	tree_header.ink
