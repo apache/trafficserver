@@ -496,7 +496,7 @@ gzip_transformable(TSHttpTxn txnp, int server)
   cfield = TSMimeHdrFieldFind(cbuf, chdr, TS_MIME_FIELD_ACCEPT_ENCODING, -1);
   if (TS_NULL_MLOC != cfield) {
     nvalues = TSMimeHdrFieldValuesCount(cbuf, chdr, cfield);
-    TSMimeHdrFieldValueStringGet(cbuf, chdr, cfield, 0, &value, NULL);
+    value = TSMimeHdrFieldValueStringGet(cbuf, chdr, cfield, 0, NULL);
     deflate_flag = 0;
     i = 0;
     while (nvalues > 0) {
@@ -505,7 +505,7 @@ gzip_transformable(TSHttpTxn txnp, int server)
         break;
       }
       i++;
-      TSMimeHdrFieldValueStringGet(cbuf, chdr, cfield, i, &value, NULL);
+      value = TSMimeHdrFieldValueStringGet(cbuf, chdr, cfield, i, NULL);
       nvalues--;
     }
     if (!deflate_flag) {
@@ -544,12 +544,7 @@ gzip_transformable(TSHttpTxn txnp, int server)
     return -4;
   }
 
-  if (TSMimeHdrFieldValueStringGet(bufp, hdr_loc, field_loc, 0, &value, NULL) == TS_ERROR) {
-    TSHandleMLocRelease(bufp, hdr_loc, field_loc);
-    TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
-    return -5;
-  }
-
+  value = TSMimeHdrFieldValueStringGet(bufp, hdr_loc, field_loc, 0, NULL);
   if (value && (strncasecmp(value, "text/", sizeof("text/") - 1) == 0)) {
     TSHandleMLocRelease(bufp, hdr_loc, field_loc);
     TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);

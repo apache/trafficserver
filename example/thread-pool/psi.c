@@ -1047,10 +1047,8 @@ transformable(TSHttpTxn txnp)
     return 0;
   }
 
-  if (TSMimeHdrFieldValueStringGet(bufp, hdr_loc, field_loc, 0, &value, NULL) == TS_ERROR) {
-    TSError("[transformable] Error while getting Content-Type field value");
-  }
-  if ((value == TS_ERROR_PTR) || (value == NULL) || (strncasecmp(value, "text/", sizeof("text/") - 1) != 0)) {
+  value = TSMimeHdrFieldValueStringGet(bufp, hdr_loc, field_loc, 0, NULL);
+  if ((value == NULL) || (strncasecmp(value, "text/", sizeof("text/") - 1) != 0)) {
     TSHandleMLocRelease(bufp, hdr_loc, field_loc);
     TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
     return 0;

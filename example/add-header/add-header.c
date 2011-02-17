@@ -92,12 +92,6 @@ add_header(TSHttpTxn txnp, TSCont contp)
     TSHandleMLocRelease(req_bufp, req_loc, new_field_loc);
 
     next_field_loc = TSMimeHdrFieldNext(hdr_bufp, hdr_loc, field_loc);
-    if (next_field_loc == TS_ERROR_PTR) {
-      TSError("[add_header] Error while getting next field to add");
-      TSHandleMLocRelease(hdr_bufp, hdr_loc, field_loc);
-      goto error;
-    }
-
     TSHandleMLocRelease(hdr_bufp, hdr_loc, field_loc);
     field_loc = next_field_loc;
   }

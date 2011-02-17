@@ -443,12 +443,7 @@ gzip_transformable(TSHttpTxn txnp, int server)
     return -4;
   }
 
-  if (TSMimeHdrFieldValueStringGet(bufp, hdr_loc, field_loc, 0, &value, NULL) == TS_ERROR) {
-    TSHandleMLocRelease(bufp, hdr_loc, field_loc);
-    TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
-    return -5;
-  }
-
+  value = TSMimeHdrFieldValueStringGet(bufp, hdr_loc, field_loc, 0, NULL);
   if (value && (strncasecmp(value, "deflate", sizeof("deflate") - 1) == 0)) {
     TSHandleMLocRelease(bufp, hdr_loc, field_loc);
     TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);

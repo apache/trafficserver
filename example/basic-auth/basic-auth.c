@@ -131,14 +131,15 @@ handle_dns(TSHttpTxn txnp, TSCont contp)
     goto done;
   }
 
-  if (TSMimeHdrFieldValueStringGet(bufp, hdr_loc, field_loc, 0, &val, &authval_length) != TS_SUCCESS) {
+  val = TSMimeHdrFieldValueStringGet(bufp, hdr_loc, field_loc, 0, &authval_length);
+  if (NULL == val) {
     TSError("no value in Proxy-Authorization field\n");
     TSHandleMLocRelease(bufp, hdr_loc, field_loc);
     TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
     goto done;
   }
-  ptr = val;
 
+  ptr = val;
   if (strncmp(ptr, "Basic", 5) != 0) {
     TSError("no Basic auth type in Proxy-Authorization\n");
     TSHandleMLocRelease(bufp, hdr_loc, field_loc);

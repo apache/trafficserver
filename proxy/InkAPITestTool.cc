@@ -401,7 +401,6 @@ get_request_id(TSHttpTxn txnp)
   TSMBuffer bufp;
   TSMLoc hdr_loc, id_loc;
   int id = -1;
-  int ret_val;
 
   if (!TSHttpTxnClientReqGet(txnp, &bufp, &hdr_loc)) {
     return -1;
@@ -413,12 +412,7 @@ get_request_id(TSHttpTxn txnp)
     return -1;
   }
 
-  ret_val = TSMimeHdrFieldValueIntGet(bufp, hdr_loc, id_loc, 0, &id);
-  if (ret_val == TS_ERROR) {
-    TSHandleMLocRelease(bufp, hdr_loc, id_loc);
-    TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
-    return -1;
-  }
+  id = TSMimeHdrFieldValueIntGet(bufp, hdr_loc, id_loc, 0);
 
   TSHandleMLocRelease(bufp, hdr_loc, id_loc);
   TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
