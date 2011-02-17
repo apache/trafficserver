@@ -941,13 +941,6 @@ extern "C"
    */
   tsapi TSReturnCode TSHandleMLocRelease(TSMBuffer bufp, TSMLoc parent, TSMLoc mloc);
 
-  /**
-      This API is no longer necessary, all strings from the marshal buffers
-      are on a simple lease, read-only, and do not need to be released.
-   */
-  /** @deprecated */
-  tsapi TS_DEPRECATED TSReturnCode TSHandleStringRelease(TSMBuffer bufp, TSMLoc parent, const char *str);
-
   /* --------------------------------------------------------------------------
      Install and plugin locations */
   /**
@@ -1678,8 +1671,8 @@ extern "C"
           because the end of the buffer was reached.
 
    */
-  tsapi int TSMimeHdrParse(TSMimeParser parser, TSMBuffer bufp, TSMLoc offset, const char **start,
-                             const char *end);
+  tsapi TSParseResult TSMimeHdrParse(TSMimeParser parser, TSMBuffer bufp, TSMLoc offset, const char **start,
+                                     const char *end);
 
   /**
       Calculates the length of the MIME header located at hdr_loc if it
@@ -1737,8 +1730,8 @@ extern "C"
       specify which field to retrieve. For each MIME field in the MIME
       header, a case insensitive string comparison is done between
       the field name and name. If TSMimeHdrFieldFind() cannot find the
-      requested field, it returns 0. Release the returned TSMLoc handle
-      with a call to TSHandleMLocRelease().
+      requested field, it returns TS_NULL_MLOC. Release the returned
+      TSMLoc handle with a call to TSHandleMLocRelease().
 
       @param bufp marshal buffer containing the MIME header field to find.
       @param hdr location of the MIME header containing the field.
@@ -1746,7 +1739,7 @@ extern "C"
       @param length string length of the string name. If length is -1,
         then name is assumed to be null-terminated.
       @return location of the requested MIME field. If the field could
-        not be found, returns 0.
+        not be found, returns TS_NULL_MLOC.
 
    */
   tsapi TSMLoc TSMimeHdrFieldFind(TSMBuffer bufp, TSMLoc hdr, const char *name, int length);
@@ -1794,7 +1787,12 @@ extern "C"
    */
   tsapi TSReturnCode TSMimeHdrFieldRemove(TSMBuffer bufp, TSMLoc hdr, TSMLoc field);
 
-  tsapi TSMLoc TSMimeHdrFieldCreate(TSMBuffer bufp, TSMLoc hdr);
+  tsapi TSReturnCode TSMimeHdrFieldCreate(TSMBuffer bufp, TSMLoc hdr, TSMLoc *locp);
+
+  /****************************************************************************
+   *  Create a new field and assign it a name all in one call
+   ****************************************************************************/
+  tsapi TSReturnCode TSMimeHdrFieldCreateNamed(TSMBuffer bufp, TSMLoc mh_mloc, const char *name, int name_len, TSMLoc *locp);
 
   /**
       Destroys the MIME field located at field within bufp. You must

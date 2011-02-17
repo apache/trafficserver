@@ -1041,10 +1041,8 @@ transformable(TSHttpTxn txnp)
   }
 
   field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, TS_MIME_FIELD_CONTENT_TYPE, -1);
-  if (field_loc == TS_ERROR_PTR) {
+  if (field_loc == TS_NULL_MLOC) {
     TSError("[transformable] Error while searching Content-Type field");
-  }
-  if ((field_loc == TS_ERROR_PTR) || (field_loc == NULL)) {
     TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
     return 0;
   }
@@ -1061,10 +1059,8 @@ transformable(TSHttpTxn txnp)
   TSHandleMLocRelease(bufp, hdr_loc, field_loc);
 
   field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, MIME_FIELD_XPSI, -1);
-  if (value == TS_ERROR_PTR) {
+  if (value == TS_NULL_MLOC) {
     TSError("[transformable] Error while searching XPSI field");
-  }
-  if ((value == TS_ERROR_PTR) || (field_loc == NULL)) {
     TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
     return 0;
   }

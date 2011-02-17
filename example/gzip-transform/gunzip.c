@@ -490,7 +490,7 @@ transform_plugin(TSCont contp, TSEvent event, void *edata)
       TSMLoc ae_loc;           /* for the accept encoding mime field */
 
       TSHttpTxnClientReqGet(txnp, &bufp, &hdr_loc);
-      ae_loc = TSMimeHdrFieldCreate(bufp, hdr_loc);
+      TSMimeHdrFieldCreate(bufp, hdr_loc, &ae_loc); /* Probably should check for errors */
       TSMimeHdrFieldNameSet(bufp, hdr_loc, ae_loc, "Accept-Encoding", -1);
       TSMimeHdrFieldValueAppend(bufp, hdr_loc, ae_loc, -1, "deflate", -1);
       TSMimeHdrFieldAppend(bufp, hdr_loc, ae_loc);

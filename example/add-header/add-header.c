@@ -57,7 +57,7 @@ add_header(TSHttpTxn txnp, TSCont contp)
   }
 
   field_loc = TSMimeHdrFieldGet(hdr_bufp, hdr_loc, 0);
-  if (field_loc == TS_ERROR_PTR) {
+  if (field_loc == TS_NULL_MLOC) {
     TSError("[add_header] Error while getting field");
     goto error;
   }
@@ -66,8 +66,7 @@ add_header(TSHttpTxn txnp, TSCont contp)
   while (field_loc) {
 
     /* First create a new field in the client request header */
-    new_field_loc = TSMimeHdrFieldCreate(req_bufp, req_loc);
-    if (new_field_loc == TS_ERROR_PTR) {
+    if (TSMimeHdrFieldCreate(req_bufp, req_loc, &new_field_loc) != TS_SUCCESS) {
       TSError("[add_header] Error while creating new field");
       TSHandleMLocRelease(hdr_bufp, hdr_loc, field_loc);
       break;
@@ -83,7 +82,7 @@ add_header(TSHttpTxn txnp, TSCont contp)
 
     /* Add this field to the Http client request header */
     retval = TSMimeHdrFieldAppend(req_bufp, req_loc, new_field_loc);
-    if (retval == TS_ERROR) {
+    if (retval != TS_SUCCESS) {
       TSError("[add_header] Error while appending new field");
       TSHandleMLocRelease(hdr_bufp, hdr_loc, field_loc);
       break;
@@ -190,14 +189,13 @@ TSPluginInit(int argc, const char *argv[])
   }
 
   for (i = 1; i < argc; i++) {
-    field_loc = TSMimeHdrFieldCreate(hdr_bufp, hdr_loc);
-    if (field_loc == TS_ERROR_PTR) {
+    if (TSMimeHdrFieldCreate(hdr_bufp, hdr_loc, &field_loc) != TS_SUCCESS) {
       TSError("[PluginInit] Error while creating field");
       goto error;
     }
 
     retval = TSMimeHdrFieldAppend(hdr_bufp, hdr_loc, field_loc);
-    if (retval == TS_ERROR) {
+    if (retval != TS_SUCCESS) {
       TSError("[PluginInit] Error while adding field");
       goto error;
     }

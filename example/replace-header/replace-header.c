@@ -48,11 +48,11 @@ replace_header(TSHttpTxn txnp, TSCont contp)
   }
 
   field_loc = TSMimeHdrFieldFind(resp_bufp, resp_loc, TS_MIME_FIELD_ACCEPT_RANGES, TS_MIME_LEN_ACCEPT_RANGES);
-  if (field_loc == 0) {
+  if (field_loc == TS_NULL_MLOC) {
     /* field was not found */
 
     /* create a new field in the header */
-    field_loc = TSMimeHdrFieldCreate(resp_bufp, resp_loc);
+    TSMimeHdrFieldCreate(resp_bufp, resp_loc, &field_loc); /* Probably should check for errors. */
     /* set its name */
     TSMimeHdrFieldNameSet(resp_bufp, resp_loc, field_loc, TS_MIME_FIELD_ACCEPT_RANGES, TS_MIME_LEN_ACCEPT_RANGES);
     /* set its value */

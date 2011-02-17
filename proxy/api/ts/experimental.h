@@ -97,12 +97,6 @@ extern "C"
   /* The rest is from the old "froze" private API include, we should consider
      moving some of these over to ts/ts.h as well. TODO */
 
-
-  /****************************************************************************
-   *  Create a new field and assign it a name
-   ****************************************************************************/
-  tsapi TSMLoc TSMimeHdrFieldCreateNamed(TSMBuffer bufp, TSMLoc mh_mloc, const char *name, int name_len);
-
   /****************************************************************************
    *  Test if cache ready to accept request for a specific type of data
    ****************************************************************************/

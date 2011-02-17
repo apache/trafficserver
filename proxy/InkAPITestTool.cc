@@ -408,7 +408,7 @@ get_request_id(TSHttpTxn txnp)
   }
 
   id_loc = TSMimeHdrFieldFind(bufp, hdr_loc, X_REQUEST_ID, -1);
-  if ((id_loc == TS_NULL_MLOC) || (id_loc == TS_ERROR_PTR)) {
+  if (id_loc == TS_NULL_MLOC) {
     TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
     return -1;
   }

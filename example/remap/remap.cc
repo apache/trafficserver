@@ -329,13 +329,13 @@ tsremap_remap(ihandle ih, rhandle rh, TSRemapRequestInfo * rri)
   // InkAPI usage case
   if (TSHttpTxnClientReqGet((TSHttpTxn) rh, &cbuf, &chdr)) {
     const char *value;
-    if ((cfield = TSMimeHdrFieldFind(cbuf, chdr, TS_MIME_FIELD_DATE, -1)) != NULL) {
+    if ((cfield = TSMimeHdrFieldFind(cbuf, chdr, TS_MIME_FIELD_DATE, -1)) != TS_NULL_MLOC) {
       fprintf(stderr, "We have \"Date\" header in request\n");
       if (TSMimeHdrFieldValueStringGet(cbuf, chdr, cfield, 0, &value, NULL) != TS_ERROR) {
         fprintf(stderr, "Header value: %s\n", value);
       }
     }
-    if ((cfield = TSMimeHdrFieldFind(cbuf, chdr, "MyHeader", sizeof("MyHeader") - 1)) != NULL) {
+    if ((cfield = TSMimeHdrFieldFind(cbuf, chdr, "MyHeader", sizeof("MyHeader") - 1)) != TS_NULL_MLOC) {
       fprintf(stderr, "We have \"MyHeader\" header in request\n");
       if (TSMimeHdrFieldValueStringGet(cbuf, chdr, cfield, 0, &value, NULL) != TS_ERROR) {
         fprintf(stderr, "Header value: %s\n", value);

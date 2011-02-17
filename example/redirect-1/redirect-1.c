@@ -227,11 +227,10 @@ handle_response(TSHttpTxn txnp)
                       TSHttpHdrReasonLookup(TS_HTTP_STATUS_MOVED_PERMANENTLY),
                       strlen(TSHttpHdrReasonLookup(TS_HTTP_STATUS_MOVED_PERMANENTLY)));
 
-  newfield_loc = TSMimeHdrFieldCreate(bufp, hdr_loc);
+  TSMimeHdrFieldCreate(bufp, hdr_loc, &newfield_loc); /* Probably should check for errors ... */
   TSMimeHdrFieldNameSet(bufp, hdr_loc, newfield_loc, TS_MIME_FIELD_LOCATION, TS_MIME_LEN_LOCATION);
   TSMimeHdrFieldValueStringInsert(bufp, hdr_loc, newfield_loc, -1, uri_redirect, strlen(uri_redirect));
   TSMimeHdrFieldAppend(bufp, hdr_loc, newfield_loc);
-
 
   /*
    *  Note that we can't directly use errormsg_body, as TSHttpTxnErrorBodySet()

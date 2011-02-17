@@ -201,7 +201,7 @@ handle_response(TSHttpTxn txnp)
                       TSHttpHdrReasonLookup(TS_HTTP_STATUS_PROXY_AUTHENTICATION_REQUIRED),
                       strlen(TSHttpHdrReasonLookup(TS_HTTP_STATUS_PROXY_AUTHENTICATION_REQUIRED)));
 
-  field_loc = TSMimeHdrFieldCreate(bufp, hdr_loc);
+  TSMimeHdrFieldCreate(bufp, hdr_loc, &field_loc); // Probably should check for errors
   TSMimeHdrFieldNameSet(bufp, hdr_loc, field_loc, TS_MIME_FIELD_PROXY_AUTHENTICATE, TS_MIME_LEN_PROXY_AUTHENTICATE);
   TSMimeHdrFieldValueStringInsert(bufp, hdr_loc, field_loc, -1,  insert, len);
   TSMimeHdrFieldAppend(bufp, hdr_loc, field_loc);

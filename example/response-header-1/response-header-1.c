@@ -96,7 +96,7 @@ modify_header(TSHttpTxn txnp, TSCont contp)
   if (TS_HTTP_STATUS_OK == resp_status) {
 
     TSDebug("resphdr", "Processing 200 OK");
-    new_field_loc = TSMimeHdrFieldCreate(resp_bufp, resp_loc);
+    TSMimeHdrFieldCreate(resp_bufp, resp_loc, &new_field_loc); /* Probably should check for errors */
     TSDebug("resphdr", "Created new resp field with loc %d", new_field_loc);
 
     /* copy name/values created at init
@@ -109,7 +109,7 @@ modify_header(TSHttpTxn txnp, TSCont contp)
 
 
     /* Cache-Control: Public */
-    new_field_loc = TSMimeHdrFieldCreate(resp_bufp, resp_loc);
+    TSMimeHdrFieldCreate(resp_bufp, resp_loc, &new_field_loc); /* Probably should check for errors */
     TSDebug("resphdr", "Created new resp field with loc %d", new_field_loc);
     TSMimeHdrFieldAppend(resp_bufp, resp_loc, new_field_loc);
     TSMimeHdrFieldNameSet(resp_bufp, resp_loc, new_field_loc,
@@ -120,7 +120,7 @@ modify_header(TSHttpTxn txnp, TSCont contp)
     /*
      * mimehdr2_name  = TSstrdup( "x-date-200-recvd" ) : CurrentDateTime
      */
-    new_field_loc = TSMimeHdrFieldCreate(resp_bufp, resp_loc);
+    TSMimeHdrFieldCreate(resp_bufp, resp_loc, &new_field_loc); /* Probably should check for errors */
     TSDebug("resphdr", "Created new resp field with loc %d", new_field_loc);
     TSMimeHdrFieldAppend(resp_bufp, resp_loc, new_field_loc);
     TSMimeHdrFieldNameSet(resp_bufp, resp_loc, new_field_loc, mimehdr2_name, strlen(mimehdr2_name));
@@ -147,7 +147,7 @@ modify_header(TSHttpTxn txnp, TSCont contp)
     /* Get the cached MIME field name for this HTTP header */
     cached_field_loc = TSMimeHdrFieldFind(cached_bufp, cached_loc,
                                            (const char *) mimehdr1_name, strlen(mimehdr1_name));
-    if (0 == cached_field_loc) {
+    if (TS_NULL_MLOC == cached_field_loc) {
       TSError("Can't find header %s in cached document", mimehdr1_name);
       TSHandleMLocRelease(resp_bufp, TS_NULL_MLOC, resp_loc);
       TSHandleMLocRelease(cached_bufp, TS_NULL_MLOC, cached_loc);
@@ -193,7 +193,7 @@ modify_header(TSHttpTxn txnp, TSCont contp)
        * in the in-process response in order to have the cached response
        * become invalid.
      */
-    new_field_loc = TSMimeHdrFieldCreate(resp_bufp, resp_loc);
+    TSMimeHdrFieldCreate(resp_bufp, resp_loc, &new_field_loc); /* Probaby should check for errrors */
 
     /* mimehdr1_name : TSstrdup( "x-num-served-from-cache" ) ; */
 
@@ -312,7 +312,7 @@ TSPluginInit(int argc, const char *argv[])
 
   TSDebug("resphdr", "Inserting header %s with value %s into init buffer", mimehdr1_name, mimehdr1_value);
 
-  field_loc = TSMimeHdrFieldCreate(hdr_bufp, hdr_loc);
+  TSMimeHdrFieldCreate(hdr_bufp, hdr_loc, &field_loc); /* Probably should check for errors */
   TSMimeHdrFieldAppend(hdr_bufp, hdr_loc, field_loc);
   TSMimeHdrFieldNameSet(hdr_bufp, hdr_loc, field_loc, mimehdr1_name, strlen(mimehdr1_name));
   TSMimeHdrFieldValueStringInsert(hdr_bufp, hdr_loc, field_loc, -1, mimehdr1_value, strlen(mimehdr1_value));
@@ -328,7 +328,7 @@ TSPluginInit(int argc, const char *argv[])
    *  similar to this may be used to extract header fields from any buffer.
    */
 
-  if (0 == (chk_field_loc = TSMimeHdrFieldGet(hdr_bufp, hdr_loc, 0))) {
+  if (TS_NULL_MLOC == (chk_field_loc = TSMimeHdrFieldGet(hdr_bufp, hdr_loc, 0))) {
     TSError("couldn't retrieve header field from init buffer");
     TSError("marking init buffer as corrupt; no more plugin processing");
     init_buffer_status = 0;

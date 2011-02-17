@@ -173,7 +173,7 @@ gzip_transform_init(TSCont contp, GzipData * data)
    * Mark the output data as having gzip content encoding
    */
   TSHttpTxnTransformRespGet(data->txn, &bufp, &hdr_loc);
-  ce_loc = TSMimeHdrFieldCreate(bufp, hdr_loc);
+  TSMimeHdrFieldCreate(bufp, hdr_loc, &ce_loc); /* Probably should check for errors */
   TSMimeHdrFieldNameSet(bufp, hdr_loc, ce_loc, "Content-Encoding", -1);
   TSMimeHdrFieldValueStringInsert(bufp, hdr_loc, ce_loc, -1, "deflate", -1);
   TSMimeHdrFieldAppend(bufp, hdr_loc, ce_loc);
@@ -494,7 +494,7 @@ gzip_transformable(TSHttpTxn txnp, int server)
   /* check if client accepts "deflate" */
 
   cfield = TSMimeHdrFieldFind(cbuf, chdr, TS_MIME_FIELD_ACCEPT_ENCODING, -1);
-  if (cfield) {
+  if (TS_NULL_MLOC != cfield) {
     nvalues = TSMimeHdrFieldValuesCount(cbuf, chdr, cfield);
     TSMimeHdrFieldValueStringGet(cbuf, chdr, cfield, 0, &value, NULL);
     deflate_flag = 0;
