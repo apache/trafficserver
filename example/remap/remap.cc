@@ -181,7 +181,7 @@ TSPluginInit(int argc, const char *argv[])
   info.vendor_name = (char*)"Apache";
   info.support_email = (char*)"";
 
-  if (!TSPluginRegister(TS_SDK_VERSION_3_0, &info)) {
+  if (TSPluginRegister(TS_SDK_VERSION_3_0, &info) != TS_SUCCESS) {
     TSError("Plugin registration failed. \n");
   }
   TSDebug("debug-remap", "TSPluginInit: Remap plugin started\n");

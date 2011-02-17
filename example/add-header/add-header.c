@@ -163,7 +163,7 @@ TSPluginInit(int argc, const char *argv[])
   info.vendor_name = "MyCompany";
   info.support_email = "ts-api-support@MyCompany.com";
 
-  if (!TSPluginRegister(TS_SDK_VERSION_3_0, &info)) {
+  if (TSPluginRegister(TS_SDK_VERSION_3_0, &info) != TS_SUCCESS) {
     TSError("[PluginInit] Plugin registration failed.\n");
     goto error;
   }
@@ -184,8 +184,7 @@ TSPluginInit(int argc, const char *argv[])
     goto error;
   }
 
-  hdr_loc = TSMimeHdrCreate(hdr_bufp);
-  if (hdr_loc == TS_ERROR_PTR) {
+  if (TSMimeHdrCreate(hdr_bufp, &hdr_loc) != TS_SUCCESS) {
     TSError("[PluginInit] Can not create mime header");
     goto error;
   }

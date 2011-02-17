@@ -272,9 +272,9 @@ public:
   const char *fragment_get(int *length);
   void fragment_set(const char *value, int length);
 
-  int parse(const char **start, const char *end);
-  int parse(const char *str, int length);
-  int parse_no_path_component_breakdown(const char *str, int length);
+  MIMEParseResult parse(const char **start, const char *end);
+  MIMEParseResult parse(const char *str, int length);
+  MIMEParseResult parse_no_path_component_breakdown(const char *str, int length);
 
 public:
   static char *unescapify(Arena * arena, const char *str, int length);
@@ -677,7 +677,7 @@ URL::fragment_set(const char *value, int length)
   the resulting URL may contain some of the previous data.
 
  */
-inline int
+inline MIMEParseResult
 URL::parse(const char **start, const char *end)
 {
   ink_debug_assert(valid());
@@ -689,7 +689,7 @@ URL::parse(const char **start, const char *end)
   the resulting URL may contain some of the previous data.
 
  */
-inline int
+inline MIMEParseResult
 URL::parse(const char *str, int length)
 {
   ink_debug_assert(valid());
@@ -703,7 +703,7 @@ URL::parse(const char *str, int length)
   the resulting URL may contain some of the previous data.
 
  */
-inline int
+inline MIMEParseResult
 URL::parse_no_path_component_breakdown(const char *str, int length)
 {
   ink_debug_assert(valid());

@@ -1032,11 +1032,10 @@ extern "C"
         supports your plugin.
       @param plugin_info contains registration information about your
         plugin. See TSPluginRegistrationInfo.
-      @return 0 if the plugin registration failed.
+      @return TS_ERROR if the plugin registration failed.
 
    */
-  tsapi int TSPluginRegister(TSSDKVersion sdk_version, TSPluginRegistrationInfo * plugin_info);
-  tsapi TSReturnCode TSPluginInfoRegister(TSPluginRegistrationInfo * plugin_info);
+  tsapi TSReturnCode TSPluginRegister(TSSDKVersion sdk_version, TSPluginRegistrationInfo * plugin_info);
 
   /* --------------------------------------------------------------------------
      Files */
@@ -1174,10 +1173,10 @@ extern "C"
       location for the URL within the marshal buffer.
 
       @param bufp marshal buffer containing the new URL.
-      @return location of the created URL.
+      @param locp pointer to a TSMLoc to store the MLoc into.
 
    */
-  tsapi TSMLoc TSUrlCreate(TSMBuffer bufp);
+  tsapi TSReturnCode TSUrlCreate(TSMBuffer bufp, TSMLoc *locp);
 
   /**
       Destroys the URL located at url_loc within the marshal buffer
@@ -1201,10 +1200,10 @@ extern "C"
       @param src_bufp marshal buffer containing the URL to be cloned.
       @param src_url location of the URL to be cloned, within the marshal
         buffer src_bufp.
-      @return location of the newly created URL.
+      @param locp pointer to a TSMLoc to store the MLoc into.
 
    */
-  tsapi TSMLoc TSUrlClone(TSMBuffer dest_bufp, TSMBuffer src_bufp, TSMLoc src_url);
+  tsapi TSReturnCode TSUrlClone(TSMBuffer dest_bufp, TSMBuffer src_bufp, TSMLoc src_url, TSMLoc *locp);
 
   /**
       Copies the contents of the URL at lcoation src_loc within the
@@ -1229,7 +1228,7 @@ extern "C"
       @param iobufp destination TSIOBuffer for the URL.
 
    */
-  tsapi TSReturnCode TSUrlPrint(TSMBuffer bufp, TSMLoc offset, TSIOBuffer iobufp);
+  tsapi void TSUrlPrint(TSMBuffer bufp, TSMLoc offset, TSIOBuffer iobufp);
 
   /**
       Parses a URL. The start pointer is both an input and an output
@@ -1250,7 +1249,7 @@ extern "C"
       @return TS_PARSE_ERROR or TS_PARSE_DONE.
 
    */
-  tsapi int TSUrlParse(TSMBuffer bufp, TSMLoc offset, const char **start, const char *end);
+  tsapi TSParseResult TSUrlParse(TSMBuffer bufp, TSMLoc offset, const char **start, const char *end);
 
   /**
       Calculates the length of the URL located at url_loc within the
@@ -1583,24 +1582,24 @@ extern "C"
       @param parser to be cleared.
 
    */
-  tsapi TSReturnCode TSMimeParserClear(TSMimeParser parser);
+  tsapi void TSMimeParserClear(TSMimeParser parser);
 
   /**
       Destroys the specified MIME parser and frees the associated memory.
 
       @param parser to destroy.
    */
-  tsapi TSReturnCode TSMimeParserDestroy(TSMimeParser parser);
+  tsapi void TSMimeParserDestroy(TSMimeParser parser);
 
   /**
       Creates a new MIME header within bufp. Release with a call to
       TSHandleMLocRelease().
 
       @param bufp marshal buffer to contain the new MIME header.
-      @return location of the new MIME header within bufp.
+      @param locp buffer pointer to contain the MLoc
 
    */
-  tsapi TSMLoc TSMimeHdrCreate(TSMBuffer bufp);
+  tsapi TSReturnCode TSMimeHdrCreate(TSMBuffer bufp, TSMLoc *locp);
 
   /**
       Destroys the MIME header located at hdr_loc within bufp.
@@ -1621,10 +1620,10 @@ extern "C"
       @param dest_bufp destination marshal buffer.
       @param src_bufp source marshal buffer.
       @param src_hdr location of the source MIME header.
-      @return location of the copied MIME header.
+      @param locp where to store the location of the copied MIME header.
 
    */
-  tsapi TSMLoc TSMimeHdrClone(TSMBuffer dest_bufp, TSMBuffer src_bufp, TSMLoc src_hdr);
+  tsapi TSReturnCode TSMimeHdrClone(TSMBuffer dest_bufp, TSMBuffer src_bufp, TSMLoc src_hdr, TSMLoc *locp);
 
   /**
       Copies the contents of the MIME header located at src_loc
@@ -1653,7 +1652,7 @@ extern "C"
       @param iobufp target TSIOBuffer.
 
    */
-  tsapi TSReturnCode TSMimeHdrPrint(TSMBuffer bufp, TSMLoc offset, TSIOBuffer iobufp);
+  tsapi void TSMimeHdrPrint(TSMBuffer bufp, TSMLoc offset, TSIOBuffer iobufp);
 
   /**
       Parses a MIME header. The MIME header must have already been

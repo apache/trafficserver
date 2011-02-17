@@ -475,8 +475,9 @@ setup_request(TSCont contp, TSHttpTxn txnp)
         TSDebug("cache_iter", "deleting url: %s", start);
 
         TSMBuffer urlBuf = TSMBufferCreate();
-        TSMLoc urlLoc = TSUrlCreate(urlBuf);
+        TSMLoc urlLoc;
 
+        TSUrlCreate(urlBuf, &urlLoc);
         if (TSUrlParse(urlBuf, urlLoc, (const char **) &start, end) != TS_PARSE_DONE
             || TSCacheKeyDigestFromUrlSet(cstate->key_to_delete, urlLoc)
             != TS_SUCCESS) {

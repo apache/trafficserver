@@ -275,7 +275,7 @@ TSPluginInit(int argc, const char *argv[])
   info.vendor_name = "MyCompany";
   info.support_email = "ts-api-support@MyCompany.com";
 
-  if (!TSPluginRegister(TS_SDK_VERSION_3_0, &info)) {
+  if (TSPluginRegister(TS_SDK_VERSION_3_0, &info) != TS_SUCCESS) {
     TSError("Plugin registration failed.\n");
   }
 
@@ -300,7 +300,7 @@ TSPluginInit(int argc, const char *argv[])
 
 
   hdr_bufp = TSMBufferCreate();
-  hdr_loc = TSMimeHdrCreate(hdr_bufp);
+  TSMimeHdrCreate(hdr_bufp, &hdr_loc);
 
   mimehdr1_name = TSstrdup("x-num-served-from-cache");
   mimehdr1_value = TSstrdup("0");

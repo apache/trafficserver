@@ -91,10 +91,7 @@ handle_dns(TSHttpTxn txnp, TSCont contp)
   /* This will print  just MIMEFields and not
      the http request line */
   TSDebug(DEBUG_TAG, "Printing the hdrs ... ");
-  if (TSMimeHdrPrint(bufp, hdr_loc, output_buffer) == TS_ERROR) {
-    TSDebug(DEBUG_TAG, "non-fatal: error printing mime-hdrs");
-    TSError("non-fatal: error printing mime-hdrs\n");
-  }
+  TSMimeHdrPrint(bufp, hdr_loc, output_buffer);
 
   if (TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc) == TS_ERROR) {
     TSDebug(DEBUG_TAG, "non-fatal: error releasing MLoc");
@@ -247,7 +244,7 @@ TSPluginInit(int argc, const char *argv[])
   info.vendor_name = "MyCompany";
   info.support_email = "ts-api-support@MyCompany.com";
 
-  if (!TSPluginRegister(TS_SDK_VERSION_3_0, &info)) {
+  if (TSPluginRegister(TS_SDK_VERSION_3_0, &info) != TS_SUCCESS) {
     TSError("[PluginInit] Plugin registration failed.\n");
     goto error;
   }
