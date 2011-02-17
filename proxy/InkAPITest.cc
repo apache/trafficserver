@@ -1309,10 +1309,8 @@ REGRESSION_TEST(SDK_API_TSContCreate) (RegressionTest * test, int atype, int *ps
 
   TSMutex mutexp = TSMutexCreate();
   TSCont contp = TSContCreate(cont_handler, mutexp);
-  int lock = 0;
 
-  TSMutexLockTry(mutexp, &lock);
-  if (lock) {     //mutex is grabbed
+  if (TSMutexLockTry(mutexp)) { // Mutex is grabbed succesfully
     TSContCall(contp, (TSEvent) 0, NULL);
     TSMutexUnlock(mutexp);
   } else {                       //mutex has problems
@@ -1499,8 +1497,8 @@ REGRESSION_TEST(SDK_API_TSMutexCreate) (RegressionTest * test, int atype, int *p
   /* This is normal because all locking is from the same thread */
   int lock = 0;
 
-  TSMutexLockTry(mutexp, &lock);
-  TSMutexLockTry(mutexp, &lock);
+  lock = TSMutexLockTry(mutexp);
+  lock = TSMutexLockTry(mutexp);
 
   if (lock) {
     SDK_RPRINT(test, "TSMutexCreate", "TestCase1", TC_PASS, "ok");
@@ -2771,6 +2769,7 @@ REGRESSION_TEST(SDK_API_TSUrl) (RegressionTest * test, int atype, int *pstatus)
   int url_length_from_2;
   int type = 'a';
   int type_get;
+  int tmp_len;
 
   bool test_passed_create = false;
   bool test_passed_destroy = false;
@@ -2966,7 +2965,7 @@ REGRESSION_TEST(SDK_API_TSUrl) (RegressionTest * test, int atype, int *pstatus)
   }
 
   //String
-  url_string_from_1 = TSUrlStringGet(bufp1, url_loc1, NULL);
+  url_string_from_1 = TSUrlStringGet(bufp1, url_loc1, &tmp_len);
   if (strcmp(url_string_from_1, url_expected_string) == 0) {
     SDK_RPRINT(test, "TSUrlStringGet", "TestCase1", TC_PASS, "ok");
     test_passed_string1 = true;
@@ -2995,7 +2994,7 @@ REGRESSION_TEST(SDK_API_TSUrl) (RegressionTest * test, int atype, int *pstatus)
 
 
     //String Test Case 2
-    url_string_from_2 = TSUrlStringGet(bufp2, url_loc2, NULL);
+    url_string_from_2 = TSUrlStringGet(bufp2, url_loc2, &tmp_len);
     if (strcmp(url_string_from_2, url_expected_string) == 0) {
       SDK_RPRINT(test, "TSUrlStringGet", "TestCase2", TC_PASS, "ok");
       test_passed_string2 = true;
@@ -3018,7 +3017,7 @@ REGRESSION_TEST(SDK_API_TSUrl) (RegressionTest * test, int atype, int *pstatus)
     SDK_RPRINT(test, "TSUrlClone", "TestCase1", TC_FAIL, "Returned TS_ERROR");
   } else {
     //String Test Case 2
-    url_string_from_3 = TSUrlStringGet(bufp3, url_loc3, NULL);
+    url_string_from_3 = TSUrlStringGet(bufp3, url_loc3, &tmp_len);
     // Copy Test Case
     if (strcmp(url_string_from_1, url_string_from_3) == 0) {
       SDK_RPRINT(test, "TSUrlClone", "TestCase1", TC_PASS, "ok");
@@ -7563,6 +7562,7 @@ REGRESSION_TEST(SDK_API_OVERRIDABLE_CONFIGS) (RegressionTest * test, int atype, 
   TSMgmtFloat fval;
   const char* sval;
   const char* test_string = "The Apache Traffic Server";
+  int tmp_int;
 
   s->init();
 
@@ -7604,7 +7604,7 @@ REGRESSION_TEST(SDK_API_OVERRIDABLE_CONFIGS) (RegressionTest * test, int atype, 
 
     case TS_RECORDDATATYPE_STRING:
       TSHttpTxnConfigStringSet(txnp, key, test_string, -1);
-      TSHttpTxnConfigStringGet(txnp, key, &sval, NULL);
+      TSHttpTxnConfigStringGet(txnp, key, &sval, &tmp_int);
       if (test_string != sval) {
         SDK_RPRINT(test, "TSHttpTxnConfigStringSet", "TestCase1", TC_FAIL, "Failed on %s, expected 17, got %s", conf, sval);
         success = false;

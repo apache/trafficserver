@@ -74,7 +74,6 @@ handle_dns(TSHttpTxn txnp, TSCont contp)
   const char *host;
   int i;
   int host_length;
-  int lock;
 
   if (TSHttpTxnClientReqGet(txnp, &bufp, &hdr_loc) != TS_SUCCESS) {
     TSError("couldn't retrieve client request header\n");
@@ -97,9 +96,7 @@ handle_dns(TSHttpTxn txnp, TSCont contp)
 
   /* We need to lock the sites_mutex as that is the mutex that is
      protecting the global list of all blacklisted sites. */
-
-  TSMutexLockTry(sites_mutex, &lock);
-  if (!lock) {
+  if (!TSMutexLockTry(sites_mutex)) {
     TSDebug("blacklist-1", "Unable to get lock. Will retry after some time");
     TSHandleMLocRelease(bufp, hdr_loc, url_loc);
     TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
@@ -182,16 +179,13 @@ read_blacklist(TSCont contp)
 {
   char blacklist_file[1024];
   TSFile file;
-  int lock;
 
   sprintf(blacklist_file, "%s/blacklist.txt", TSPluginDirGet());
   file = TSfopen(blacklist_file, "r");
-
-  TSMutexLockTry(sites_mutex, &lock);
   nsites = 0;
 
   /* If the Mutext lock is not successful try again in RETRY_TIME */
-  if (!lock) {
+  if (!TSMutexLockTry(sites_mutex)) {
     TSContSchedule(contp, RETRY_TIME, TS_THREAD_POOL_DEFAULT);
     return;
   }

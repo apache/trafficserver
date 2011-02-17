@@ -1,6 +1,13 @@
                                                          -*- coding: utf-8 -*-
 
 Changes with Apache Traffic Server 2.1.6
+  *) [TS-590] Cleanup all SDK APIs to be more consistent. This
+  changes a large number of APIs, so please check updated docs
+  and signatures in ts/ts.h.
+
+  *) [TS-673] Make the default configurations more conservative
+  for when content is cacheable.
+
   *) [TS-672] remove unused/unreferenced Win32 header files and
    code paths
 

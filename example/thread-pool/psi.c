@@ -771,17 +771,17 @@ transform_handler(TSCont contp, TSEvent event, void *edata)
 {
   TSVIO input_vio;
   ContData *data;
-  int state, lock, retval;
+  int state, retval;
 
   /* This section will be called by both TS internal
      and the thread. Protect it with a mutex to avoid
      concurrent calls. */
-  TSMutexLockTry(TSContMutexGet(contp), &lock);
 
   /* Handle TryLock result */
-  if (!lock) {
+  if (!TSMutexLockTry(TSContMutexGet(contp))) {
     TSCont c = TSContCreate(trylock_handler, NULL);
     TryLockData *d = TSmalloc(sizeof(TryLockData));
+
     d->contp = contp;
     d->event = event;
     TSContDataSet(c, d);

@@ -2050,6 +2050,7 @@ TSUrlStringGet(TSMBuffer bufp, TSMLoc obj, int *length)
 {
   sdk_assert(sdk_sanity_check_mbuffer(bufp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_url_handle(obj) == TS_SUCCESS);
+  sdk_assert(sdk_sanity_check_null_ptr((void*)length) == TS_SUCCESS);
 
   URLImpl *url_impl = (URLImpl *) obj;
   return url_string_get(url_impl, NULL, length, NULL);
@@ -2939,15 +2940,10 @@ TSMimeHdrFieldNameGet(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int *length)
   sdk_assert((sdk_sanity_check_mime_hdr_handle(hdr) == TS_SUCCESS) ||
              (sdk_sanity_check_http_hdr_handle(hdr) == TS_SUCCESS));
   sdk_assert(sdk_sanity_check_field_handle(field, hdr) == TS_SUCCESS);
+  sdk_assert(sdk_sanity_check_null_ptr((void*)length) == TS_SUCCESS);
 
-  int name_len;
-  const char *name_ptr;
   MIMEFieldSDKHandle *handle = (MIMEFieldSDKHandle *) field;
-
-  name_ptr = mime_field_name_get(handle->field_ptr, &name_len);
-  if (length)
-    *length = name_len;
-  return name_ptr;
+  return mime_field_name_get(handle->field_ptr, length);
 }
 
 TSReturnCode
@@ -3617,6 +3613,7 @@ TSHttpHdrMethodGet(TSMBuffer bufp, TSMLoc obj, int *length)
 {
   sdk_assert(sdk_sanity_check_mbuffer(bufp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_http_hdr_handle(obj) == TS_SUCCESS);
+  sdk_assert(sdk_sanity_check_null_ptr((void*)length) == TS_SUCCESS);
 
   HTTPHdr h;
 
@@ -3726,6 +3723,7 @@ TSHttpHdrReasonGet(TSMBuffer bufp, TSMLoc obj, int *length)
 {
   sdk_assert(sdk_sanity_check_mbuffer(bufp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_http_hdr_handle(obj) == TS_SUCCESS);
+  sdk_assert(sdk_sanity_check_null_ptr((void*)length) == TS_SUCCESS);
 
   HTTPHdr h;
 
@@ -4415,6 +4413,7 @@ char*
 TSHttpTxnEffectiveUrlStringGet(TSHttpTxn txnp, int* length)
 {
   sdk_assert(TS_SUCCESS == sdk_sanity_check_txn(txnp));
+  sdk_assert(sdk_sanity_check_null_ptr((void*)length) == TS_SUCCESS);
 
   HttpSM *sm = reinterpret_cast<HttpSM*>(txnp);
   return sm->t_state.hdr_info.client_request.url_string_get(0, length);
@@ -6938,6 +6937,7 @@ char*
 TSFetchRespGet(TSHttpTxn txnp, int *length)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+  sdk_assert(sdk_sanity_check_null_ptr((void*)length) == TS_SUCCESS);
 
   FetchSM *fetch_sm = (FetchSM*)txnp;
   return fetch_sm->resp_get(length);
@@ -7427,14 +7427,14 @@ TSHttpTxnConfigStringGet(TSHttpTxn txnp, TSOverridableConfigKey conf, const char
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_null_ptr((void**)value) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_null_ptr((void*)*value) == TS_SUCCESS);
+  sdk_assert(sdk_sanity_check_null_ptr((void*)length) == TS_SUCCESS);
 
   HttpSM *sm = (HttpSM*) txnp;
 
   switch (conf) {
   case TS_CONFIG_HTTP_RESPONSE_SERVER_STR:
     *value = sm->t_state.txn_conf->proxy_response_server_string;
-    if (length)
-      *length = sm->t_state.txn_conf->proxy_response_server_string_len;
+    *length = sm->t_state.txn_conf->proxy_response_server_string_len;
     break;
   default:
     return TS_ERROR;

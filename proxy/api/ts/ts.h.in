@@ -1260,7 +1260,8 @@ extern "C"
       string in the parameter length. This is the same length that
       TSUrlLengthGet() returns. The returned string is allocated by a
       call to TSmalloc(). It should be freed by a call to TSfree().
-      If length is NULL then no attempt is made to dereference it.
+      The length parameter must present, providing storage for the URL
+      string length value.
 
       @param bufp marshal buffer containing the URL you want to get.
       @param offset location of the URL within bufp.
@@ -1948,7 +1949,7 @@ extern "C"
      Mutexes */
   tsapi TSMutex TSMutexCreate(void);
   tsapi void TSMutexLock(TSMutex mutexp);
-  tsapi void TSMutexLockTry(TSMutex mutexp, int *lock);
+  tsapi int TSMutexLockTry(TSMutex mutexp);
 
   tsapi void TSMutexUnlock(TSMutex mutexp);
 
