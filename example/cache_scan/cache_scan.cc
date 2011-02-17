@@ -229,9 +229,7 @@ cleanup(TSCont contp)
       TSVConnShutdown(cstate->net_vc, 1, 1);
 
     if (cstate->req_buffer) {
-      if (TSIOBufferDestroy(cstate->req_buffer) == TS_ERROR) {
-        TSError("failed to destroy req_buffer");
-      }
+      TSIOBufferDestroy(cstate->req_buffer);
       cstate->req_buffer = NULL;
     }
 
@@ -243,9 +241,7 @@ cleanup(TSCont contp)
     }
 
     if (cstate->resp_buffer) {
-      if (TSIOBufferDestroy(cstate->resp_buffer) == TS_ERROR) {
-        TSError("failed to destroy resp_buffer");
-      }
+      TSIOBufferDestroy(cstate->resp_buffer);
       cstate->resp_buffer = NULL;
     }
 

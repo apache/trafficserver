@@ -149,17 +149,11 @@ transform_destroy(TSCont contp)
 
   data = TSContDataGet(contp);
   if ((data != TS_ERROR_PTR) || (data != NULL)) {
-    if (data->input_buf) {
-      if (TSIOBufferDestroy(data->input_buf) != TS_SUCCESS) {
-        TSError("Unable to destroy input IO buffer");
-      }
-    }
+    if (data->input_buf)
+      TSIOBufferDestroy(data->input_buf);
 
-    if (data->output_buf) {
-      if (TSIOBufferDestroy(data->output_buf) != TS_SUCCESS) {
-        TSError("Unable to destroy output IO buffer");
-      }
-    }
+    if (data->output_buf)
+      TSIOBufferDestroy(data->output_buf);
 
     if (data->pending_action)
       TSActionCancel(data->pending_action);
@@ -206,42 +200,26 @@ transform_connect(TSCont contp, TransformData * data)
 
           if (TSIOBufferWrite(temp, (const char *) &data->content_length, sizeof(int)) == TS_ERROR) {
             TSError("TSIOBufferWrite returns TS_ERROR");
-            if (TSIOBufferReaderFree(tempReader) == TS_ERROR) {
-              TSError("TSIOBufferReaderFree returns TS_ERROR");
-            }
-            if (TSIOBufferDestroy(temp) == TS_ERROR) {
-              TSError("TSIOBufferDestroy returns TS_ERROR");
-            }
+            TSIOBufferReaderFree(tempReader);
+            TSIOBufferDestroy(temp);
             return 0;
           }
 
           if (TSIOBufferCopy(temp, data->input_reader, data->content_length, 0) == TS_ERROR) {
             TSError("TSIOBufferCopy returns TS_ERROR");
-            if (TSIOBufferReaderFree(tempReader) == TS_ERROR) {
-              TSError("TSIOBufferReaderFree returns TS_ERROR");
-            }
-            if (TSIOBufferDestroy(temp) == TS_ERROR) {
-              TSError("TSIOBufferDestroy returns TS_ERROR");
-            }
+            TSIOBufferReaderFree(tempReader);
+            TSIOBufferDestroy(temp);
             return 0;
           }
 
-          if (TSIOBufferReaderFree(data->input_reader) == TS_ERROR) {
-            TSError("Unable to free IOBuffer Reader");
-          }
-
-          if (TSIOBufferDestroy(data->input_buf) == TS_ERROR) {
-            TSError("Trying to destroy IOBuffer returns TS_ERROR");
-          }
-
+          TSIOBufferReaderFree(data->input_reader);
+          TSIOBufferDestroy(data->input_buf);
           data->input_buf = temp;
           data->input_reader = tempReader;
 
         } else {
           TSError("Unable to allocate a reader for buffer");
-          if (TSIOBufferDestroy(temp) == TS_ERROR) {
-            TSError("Unable to destroy IOBuffer");
-          }
+          TSIOBufferDestroy(temp);
           return 0;
         }
       } else {
@@ -315,9 +293,7 @@ transform_read(TSCont contp, TransformData * data)
 {
   data->state = STATE_READ;
 
-  if (TSIOBufferDestroy(data->input_buf) != TS_SUCCESS) {
-    TSError("Unable to destroy input IO Buffer. TSIOBuffer doesn't return TS_SUCCESS");
-  }
+  TSIOBufferDestroy(data->input_buf);
   data->input_buf = NULL;
   data->input_reader = NULL;
 
@@ -353,17 +329,12 @@ transform_bypass(TSCont contp, TransformData * data)
   }
 
   if (data->output_buf) {
-    if (TSIOBufferDestroy(data->output_buf) != TS_SUCCESS) {
-      TSError("Error in destroy output IO buffer. TSIOBufferDestroy doesn't return TS_SUCCESS");
-    }
+    TSIOBufferDestroy(data->output_buf);
     data->output_buf = NULL;
     data->output_reader = NULL;
   }
 
-  if (TSIOBufferReaderConsume(data->input_reader, sizeof(int)) != TS_SUCCESS) {
-    TSError("Error in Consuming bytes from Reader. TSIObufferReaderConsume doesn't return TS_SUCCESS");
-  }
-
+  TSIOBufferReaderConsume(data->input_reader, sizeof(int));
   data->output_vc = TSTransformOutputVConnGet((TSVConn) contp);
   if ((data->output_vc == TS_ERROR_PTR) || (data->output_vc == NULL)) {
     TSError("TSTransformOutputVConnGet returns NULL or TS_ERROR_PTR");
@@ -435,15 +406,11 @@ transform_buffer_event(TSCont contp, TransformData * data, TSEvent event, void *
 
           /* Tell the read buffer that we have read the data and are no
              longer interested in it. */
-          if (TSIOBufferReaderConsume(TSVIOReaderGet(write_vio), towrite) != TS_SUCCESS) {
-            TSError("Unable to consume bytes from the buffer");
-          }
+          TSIOBufferReaderConsume(TSVIOReaderGet(write_vio), towrite);
 
           /* Modify the write VIO to reflect how much data we've
              completed. */
-          if (TSVIONDoneSet(write_vio, TSVIONDoneGet(write_vio) + towrite) != TS_SUCCESS) {
-            TSError("Unable to modify the write VIO to reflect how much data we have completed");
-          }
+          TSVIONDoneSet(write_vio, TSVIONDoneGet(write_vio) + towrite);
         }
       }
     }
@@ -495,9 +462,7 @@ transform_write_event(TSCont contp, TransformData * data, TSEvent event, void *e
 {
   switch (event) {
   case TS_EVENT_VCONN_WRITE_READY:
-    if (TSVIOReenable(data->server_vio) != TS_SUCCESS) {
-      TSError("Unable to reenable the server vio in TS_EVENT_VCONN_WRITE_READY");
-    }
+    TSVIOReenable(data->server_vio);
     break;
   case TS_EVENT_VCONN_WRITE_COMPLETE:
     return transform_read_status(contp, data);
@@ -537,13 +502,10 @@ transform_read_status_event(TSCont contp, TransformData * data, TSEvent event, v
             read_ndone = (avail >= read_nbytes) ? read_nbytes : avail;
             memcpy(buf_ptr, buf, read_ndone);
             if (read_ndone > 0) {
-              if (TSIOBufferReaderConsume(data->output_reader, read_ndone) != TS_SUCCESS) {
-                TSError("Error in consuming data from the buffer");
-              } else {
-                read_nbytes -= read_ndone;
-                /* move ptr frwd by read_ndone bytes */
-                buf_ptr = (char *) buf_ptr + read_ndone;
-              }
+              TSIOBufferReaderConsume(data->output_reader, read_ndone);
+              read_nbytes -= read_ndone;
+              /* move ptr frwd by read_ndone bytes */
+              buf_ptr = (char *) buf_ptr + read_ndone;
             }
           } else {
             TSError("TSIOBufferBlockReadStart returns TS_ERROR_PTR");
@@ -588,22 +550,16 @@ transform_read_event(TSCont contp, TransformData * data, TSEvent event, void *ed
     data->server_vc = NULL;
     data->server_vio = NULL;
 
-    if (TSVIOReenable(data->output_vio) != TS_SUCCESS) {
-      TSError("TSVIOReneable doesn't return TS_SUCCESS on TS_EVENT_VCONN_READ_COMPLETE");
-    }
+    TSVIOReenable(data->output_vio);
     break;
   case TS_EVENT_VCONN_READ_READY:
-    if (TSVIOReenable(data->output_vio) != TS_SUCCESS) {
-      TSError("TSVIOReneable doesn't return TS_SUCCESS on TS_EVENT_VCONN_READ_READY");
-    }
+    TSVIOReenable(data->output_vio);
     break;
   case TS_EVENT_VCONN_WRITE_COMPLETE:
     TSVConnShutdown(data->output_vc, 0, 1);
     break;
   case TS_EVENT_VCONN_WRITE_READY:
-    if (TSVIOReenable(data->server_vio) != TS_SUCCESS) {
-      TSError("TSVIOReneable doesn't return TS_SUCCESS while reenabling on TS_EVENT_VCONN_WRITE_READY");
-    }
+    TSVIOReenable(data->server_vio);
     break;
   default:
     break;
@@ -621,9 +577,7 @@ transform_bypass_event(TSCont contp, TransformData * data, TSEvent event, void *
     break;
   case TS_EVENT_VCONN_WRITE_READY:
   default:
-    if (TSVIOReenable(data->output_vio) != TS_SUCCESS) {
-      TSError("Error in re-enabling the VIO while bypassing the event");
-    }
+    TSVIOReenable(data->output_vio);
     break;
   }
 

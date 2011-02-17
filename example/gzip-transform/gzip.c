@@ -151,9 +151,8 @@ gzip_data_destroy(GzipData * data)
       TSError("gzip-transform: ERROR: deflateEnd (%d)!", err);
     }
 
-    if (data->output_buffer) {
+    if (data->output_buffer)
       TSIOBufferDestroy(data->output_buffer);
-    }
     TSfree(data);
   }
 }

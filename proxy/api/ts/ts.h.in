@@ -1943,16 +1943,16 @@ extern "C"
      Threads */
   tsapi TSThread TSThreadCreate(TSThreadFunc func, void *data);
   tsapi TSThread TSThreadInit(void);
-  tsapi TSReturnCode TSThreadDestroy(TSThread thread);
+  tsapi void TSThreadDestroy(TSThread thread);
   tsapi TSThread TSThreadSelf(void);
 
   /* --------------------------------------------------------------------------
      Mutexes */
   tsapi TSMutex TSMutexCreate(void);
-  tsapi TSReturnCode TSMutexLock(TSMutex mutexp);
-  tsapi TSReturnCode TSMutexLockTry(TSMutex mutexp, int *lock);
+  tsapi void TSMutexLock(TSMutex mutexp);
+  tsapi void TSMutexLockTry(TSMutex mutexp, int *lock);
 
-  tsapi TSReturnCode TSMutexUnlock(TSMutex mutexp);
+  tsapi void TSMutexUnlock(TSMutex mutexp);
 
   /* --------------------------------------------------------------------------
      cachekey */
@@ -2437,13 +2437,13 @@ extern "C"
 
   /* --------------------------------------------------------------------------
      VIOs */
-  tsapi TSReturnCode TSVIOReenable(TSVIO viop);
+  tsapi void TSVIOReenable(TSVIO viop);
   tsapi TSIOBuffer TSVIOBufferGet(TSVIO viop);
   tsapi TSIOBufferReader TSVIOReaderGet(TSVIO viop);
   tsapi int64_t TSVIONBytesGet(TSVIO viop);
-  tsapi TSReturnCode TSVIONBytesSet(TSVIO viop, int64_t nbytes);
+  tsapi void TSVIONBytesSet(TSVIO viop, int64_t nbytes);
   tsapi int64_t TSVIONDoneGet(TSVIO viop);
-  tsapi TSReturnCode TSVIONDoneSet(TSVIO viop, int64_t ndone);
+  tsapi void TSVIONDoneSet(TSVIO viop, int64_t ndone);
   tsapi int64_t TSVIONTodoGet(TSVIO viop);
   tsapi TSMutex TSVIOMutexGet(TSVIO viop);
   tsapi TSCont TSVIOContGet(TSVIO viop);
@@ -2473,11 +2473,9 @@ extern "C"
       in bytes, for a specified TSIOBuffer.
 
       @param bufp buffer whose watermark the function gets.
-      @param water_mark will be set to the current watermark of the
-        provided TSIOBuffer.
 
    */
-  tsapi TSReturnCode TSIOBufferWaterMarkGet(TSIOBuffer bufp, int64_t *water_mark);
+  tsapi int64_t TSIOBufferWaterMarkGet(TSIOBuffer bufp);
 
   /**
       The watermark of an TSIOBuffer is the minimum number of bytes
@@ -2493,9 +2491,9 @@ extern "C"
       @param water_mark watermark setting, as a number of bytes.
 
    */
-  tsapi TSReturnCode TSIOBufferWaterMarkSet(TSIOBuffer bufp, int64_t water_mark);
+  tsapi void TSIOBufferWaterMarkSet(TSIOBuffer bufp, int64_t water_mark);
 
-  tsapi TSReturnCode TSIOBufferDestroy(TSIOBuffer bufp);
+  tsapi void TSIOBufferDestroy(TSIOBuffer bufp);
   tsapi TSIOBufferBlock TSIOBufferStart(TSIOBuffer bufp);
   tsapi int64_t TSIOBufferCopy(TSIOBuffer bufp, TSIOBufferReader readerp, int64_t length, int64_t offset);
 
@@ -2512,7 +2510,7 @@ extern "C"
 
    */
   tsapi int64_t TSIOBufferWrite(TSIOBuffer bufp, const void *buf, int64_t length);
-  tsapi TSReturnCode TSIOBufferProduce(TSIOBuffer bufp, int64_t nbytes);
+  tsapi void TSIOBufferProduce(TSIOBuffer bufp, int64_t nbytes);
 
   tsapi TSIOBufferBlock TSIOBufferBlockNext(TSIOBufferBlock blockp);
   tsapi const char *TSIOBufferBlockReadStart(TSIOBufferBlock blockp, TSIOBufferReader readerp, int64_t *avail);
@@ -2522,9 +2520,9 @@ extern "C"
 
   tsapi TSIOBufferReader TSIOBufferReaderAlloc(TSIOBuffer bufp);
   tsapi TSIOBufferReader TSIOBufferReaderClone(TSIOBufferReader readerp);
-  tsapi TSReturnCode TSIOBufferReaderFree(TSIOBufferReader readerp);
+  tsapi void TSIOBufferReaderFree(TSIOBufferReader readerp);
   tsapi TSIOBufferBlock TSIOBufferReaderStart(TSIOBufferReader readerp);
-  tsapi TSReturnCode TSIOBufferReaderConsume(TSIOBufferReader readerp, int64_t nbytes);
+  tsapi void TSIOBufferReaderConsume(TSIOBufferReader readerp, int64_t nbytes);
   tsapi int64_t TSIOBufferReaderAvail(TSIOBufferReader readerp);
 
 
@@ -2839,7 +2837,7 @@ extern "C"
   */
   tsapi TSVConn TSVConnCreate(TSEventFunc event_funcp, TSMutex mutexp);
 
-  tsapi TS_DEPRECATED TSReturnCode TSIOBufferAppend(TSIOBuffer bufp, TSIOBufferBlock blockp);
+  tsapi TS_DEPRECATED void TSIOBufferAppend(TSIOBuffer bufp, TSIOBufferBlock blockp);
   tsapi TS_DEPRECATED TSIOBufferData TSIOBufferDataCreate(void *data, int size, TSIOBufferDataFlags flags);
   tsapi TS_DEPRECATED TSIOBufferBlock TSIOBufferBlockCreate(TSIOBufferData datap, int size, int offset);
 

@@ -137,9 +137,8 @@ gzip_data_destroy(GzipData * data)
       TSError("gunzip-transform: ERROR: inflateEnd (%d)!", err);
     }
 
-    if (data->output_buffer) {
+    if (data->output_buffer)
       TSIOBufferDestroy(data->output_buffer);
-    }
     TSfree(data);
   }
 }

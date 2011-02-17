@@ -152,10 +152,7 @@ handle_dns(TSHttpTxn txnp, TSCont contp)
     output_len += block_avail;
 
     /* Consume the data so that we get to the next block */
-    if (TSIOBufferReaderConsume(reader, block_avail) == TS_ERROR) {
-      TSDebug(DEBUG_TAG, "error consuming data from the ReaderBlock");
-      TSError("error consuming data from the ReaderBlock\n");
-    }
+    TSIOBufferReaderConsume(reader, block_avail);
 
     /* Get the next block now that we've consumed the
        data off the last block */
@@ -174,15 +171,8 @@ handle_dns(TSHttpTxn txnp, TSCont contp)
   output_len++;
 
   /* Free up the TSIOBuffer that we used to print out the header */
-  if (TSIOBufferReaderFree(reader) != TS_SUCCESS) {
-    TSDebug(DEBUG_TAG, "non-fatal: error releasing IOBufferReader");
-    TSError("non-fatal: error releasing IOBufferReader\n");
-  }
-
-  if (TSIOBufferDestroy(output_buffer) != TS_SUCCESS) {
-    TSDebug(DEBUG_TAG, "non-fatal: error destroying IOBuffer");
-    TSError("non-fatal: error destroying IOBuffer\n");
-  }
+  TSIOBufferReaderFree(reader);
+  TSIOBufferDestroy(output_buffer);
 
   /* Although I'd never do this a production plugin, printf
      the header so that we can see it's all there */

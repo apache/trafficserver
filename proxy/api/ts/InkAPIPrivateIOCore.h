@@ -178,7 +178,7 @@ extern "C"
 /* IOBuffer */
   tsapi void TSIOBufferReaderCopy(TSIOBufferReader readerp, const void *buf, int64_t length);
   tsapi int64_t TSIOBufferBlockDataSizeGet(TSIOBufferBlock blockp);
-  tsapi TSReturnCode TSIOBufferBlockDestroy(TSIOBufferBlock blockp);
+  tsapi void TSIOBufferBlockDestroy(TSIOBufferBlock blockp);
   typedef void *INKUDPPacket;
   typedef void *INKUDPacketQueue;
   typedef void *INKUDPConn;

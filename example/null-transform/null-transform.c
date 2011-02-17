@@ -65,9 +65,8 @@ static void
 my_data_destroy(MyData * data)
 {
   if (data) {
-    if (data->output_buffer) {
-      TSAssert(TSIOBufferDestroy(data->output_buffer) == TS_SUCCESS);
-    }
+    if (data->output_buffer)
+      TSIOBufferDestroy(data->output_buffer);
     TSfree(data);
   }
 }
@@ -128,15 +127,8 @@ handle_transform(TSCont contp)
       goto Lerror;
     }
   } else {
-    if (TSVIONBytesSet(data->output_vio, TSVIONDoneGet(input_vio)) == TS_ERROR) {
-      TSError("[null-transform] error seting output VIO nbytes\n");
-      goto Lerror;
-    }
-
-    if (TSVIOReenable(data->output_vio) == TS_ERROR) {
-      TSError("[null-transform] error reenabling output VIO\n");
-      goto Lerror;
-    }
+    TSVIONBytesSet(data->output_vio, TSVIONDoneGet(input_vio));
+    TSVIOReenable(data->output_vio);
 
     return;
   }
@@ -168,18 +160,12 @@ handle_transform(TSCont contp)
       /* Tell the read buffer that we have read the data and are no
        * longer interested in it.
        */
-      if (TSIOBufferReaderConsume(TSVIOReaderGet(input_vio), towrite) == TS_ERROR) {
-        TSError("[null-plugin] unable to update VIO reader\n");
-        goto Lerror;
-      }
+      TSIOBufferReaderConsume(TSVIOReaderGet(input_vio), towrite);
 
       /* Modify the input VIO to reflect how much data we've
        * completed.
        */
-      if (TSVIONDoneSet(input_vio, TSVIONDoneGet(input_vio) + towrite) == TS_ERROR) {
-        TSError("[null-plugin] unable to update VIO\n");
-        goto Lerror;
-      }
+      TSVIONDoneSet(input_vio, TSVIONDoneGet(input_vio) + towrite);
     }
   } else if (towrite == TS_ERROR) {
     TSError("[null-plugin] error fetching VIO to-do amount\n");
@@ -196,10 +182,8 @@ handle_transform(TSCont contp)
        * the output connection and allow it to consume data from the
        * output buffer.
        */
-      if (TSVIOReenable(data->output_vio) == TS_ERROR) {
-        TSError("[null-plugin] error reenabling transaction\n");
-        goto Lerror;
-      }
+      TSVIOReenable(data->output_vio);
+
       /* Call back the input VIO continuation to let it know that we
        * are ready for more data.
        */
@@ -213,10 +197,7 @@ handle_transform(TSCont contp)
      * that it can consume the data we just gave it.
      */
     TSVIONBytesSet(data->output_vio, TSVIONDoneGet(input_vio));
-    if (TSVIOReenable(data->output_vio) == TS_ERROR) {
-      TSError("[null-plugin] error reenabling transaction\n");
-      goto Lerror;
-    }
+    TSVIOReenable(data->output_vio);
 
     /* Call back the input VIO continuation to let it know that we
      * have completed the write operation.

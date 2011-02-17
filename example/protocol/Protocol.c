@@ -55,10 +55,9 @@ accept_handler(TSCont contp, TSEvent event, void *edata)
 
     /* This is no reason for not grabbing the lock.
        So skip the routine which handle LockTry failure case. */
-    if (TSMutexLockTry(pmutex, &lock) == TS_SUCCESS) {
-      TSContCall(txn_sm, 0, NULL);
-      TSMutexUnlock(pmutex);
-    }
+    TSMutexLockTry(pmutex, &lock);
+    TSContCall(txn_sm, 0, NULL);
+    TSMutexUnlock(pmutex);
     break;
 
   default:

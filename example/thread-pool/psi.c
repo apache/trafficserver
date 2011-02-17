@@ -513,16 +513,10 @@ psi_include(TSCont contp, void *edata)
   TSFile filep;
   char buf[BUFFER_SIZE];
   char inc_file[PSI_PATH_MAX_SIZE + PSI_FILENAME_MAX_SIZE];
-  TSReturnCode retval;
 
   /* We manipulate plugin continuation data from a separate thread.
      Grab mutex to avoid concurrent access */
-  retval = TSMutexLock(TSContMutexGet(contp));
-  if (retval != TS_SUCCESS) {
-    TSError("[psi_include] Could not lock mutex");
-    return 0;
-  }
-
+  TSMutexLock(TSContMutexGet(contp));
   data = TSContDataGet(contp);
   TSAssert(data->magic == MAGIC_ALIVE);
 
@@ -568,11 +562,7 @@ psi_include(TSCont contp, void *edata)
         towrite = MIN(ntodo, avail);
 
         memcpy(ptr_block, buf + ndone, towrite);
-        retval = TSIOBufferProduce(data->psi_buffer, towrite);
-        if (retval == TS_ERROR) {
-          TSError("[psi_include] Could not produce data");
-          goto error;
-        }
+        TSIOBufferProduce(data->psi_buffer, towrite);
         ntodo -= towrite;
         ndone += towrite;
       }
@@ -623,7 +613,6 @@ wake_up_streams(TSCont contp)
   TSVIO input_vio;
   ContData *data;
   int ntodo;
-  TSReturnCode retval;
 
   data = TSContDataGet(contp);
   TSAssert(data->magic == MAGIC_ALIVE);
@@ -636,24 +625,12 @@ wake_up_streams(TSCont contp)
   }
 
   if (ntodo > 0) {
-    retval = TSVIOReenable(data->output_vio);
-    if (retval == TS_ERROR) {
-      TSError("[wake_up_streams] Error while reenabling downstream vio");
-      return 0;
-    }
+    TSVIOReenable(data->output_vio);
     TSContCall(TSVIOContGet(input_vio), TS_EVENT_VCONN_WRITE_READY, input_vio);
   } else {
     TSDebug(DBG_TAG, "Total bytes produced by transform = %d", data->transform_bytes);
-    retval = TSVIONBytesSet(data->output_vio, data->transform_bytes);
-    if (retval == TS_ERROR) {
-      TSError("[wake_up_streams] Error while setting nbytes to downstream vio");
-      return 0;
-    }
-    retval = TSVIOReenable(data->output_vio);
-    if (retval == TS_ERROR) {
-      TSError("[wake_up_streams] Error while reenabling downstream vio");
-      return 0;
-    }
+    TSVIONBytesSet(data->output_vio, data->transform_bytes);
+    TSVIOReenable(data->output_vio);
     TSContCall(TSVIOContGet(input_vio), TS_EVENT_VCONN_WRITE_COMPLETE, input_vio);
   }
 
@@ -755,27 +732,15 @@ handle_transform(TSCont contp)
         }
 
         /* Reenable the output connection so it can read the data we've produced. */
-        retval = TSVIOReenable(data->output_vio);
-        if (retval == TS_ERROR) {
-          TSError("[handle_transform] Error while reenabling output VC");
-          return 0;
-        }
+        TSVIOReenable(data->output_vio);
       }
 
       if (toconsume > 0) {
         /* Consume data we've processed an we are no longer interested in */
-        retval = TSIOBufferReaderConsume(input_reader, toconsume);
-        if (retval == TS_ERROR) {
-          TSError("[handle_transform] Error while consuming data from upstream VC");
-          return 0;
-        }
+        TSIOBufferReaderConsume(input_reader, toconsume);
 
         /* Modify the input VIO to reflect how much data we've completed. */
-        retval = TSVIONDoneSet(input_vio, TSVIONDoneGet(input_vio) + toconsume);
-        if (retval == TS_ERROR) {
-          TSError("[handle_transform] Error while setting ndone on upstream VC");
-          return 0;
-        }
+        TSVIONDoneSet(input_vio, TSVIONDoneGet(input_vio) + toconsume);
       }
 
       /* Did we find a psi filename to execute in the data ? */
@@ -847,18 +812,10 @@ dump_psi(TSCont contp)
       }
 
       /* Consume all the output data */
-      retval = TSIOBufferReaderConsume(data->psi_reader, psi_output_len);
-      if (retval == TS_ERROR) {
-        TSError("[dump_psi] Error while consuming data from buffer");
-        return 1;
-      }
+      TSIOBufferReaderConsume(data->psi_reader, psi_output_len);
 
       /* Reenable the output connection so it can read the data we've produced. */
-      retval = TSVIOReenable(data->output_vio);
-      if (retval == TS_ERROR) {
-        TSError("[dump_psi] Error while reenabling output VIO");
-        return 1;
-      }
+      TSVIOReenable(data->output_vio);
     }
   }
 

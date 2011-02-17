@@ -130,18 +130,11 @@ handle_buffering(TSCont contp, MyData * data)
 
       /* Tell the read buffer that we have read the data and are no
          longer interested in it. */
-      if (TSIOBufferReaderConsume(TSVIOReaderGet(write_vio), towrite) == TS_ERROR) {
-        TSError("[bnull-transform] Unable to copy read buffer\n");
-        goto Lerror;
-      }
+      TSIOBufferReaderConsume(TSVIOReaderGet(write_vio), towrite);
 
       /* Modify the write VIO to reflect how much data we've
          completed. */
-      if (TSVIONDoneSet(write_vio, TSVIONDoneGet(write_vio)
-                         + towrite) == TS_ERROR) {
-        TSError("[bnull-transform] Unable to copy read buffer\n");
-        goto Lerror;
-      }
+      TSVIONDoneSet(write_vio, TSVIONDoneGet(write_vio) + towrite);
     }
   }
 

@@ -76,9 +76,8 @@ static void
 my_data_destroy(MyData * data)
 {
   if (data) {
-    if (data->output_buffer) {
-      ASSERT_SUCCESS(TSIOBufferDestroy(data->output_buffer));
-    }
+    if (data->output_buffer)
+      TSIOBufferDestroy(data->output_buffer);
     TSfree(data);
   }
 }
@@ -131,9 +130,9 @@ handle_transform(TSCont contp)
       TSIOBufferCopy(TSVIOBufferGet(data->output_vio), append_buffer_reader, append_buffer_length, 0);
     }
 
-    ASSERT_SUCCESS(TSVIONBytesSet(data->output_vio, TSVIONDoneGet(write_vio) + append_buffer_length));
+    TSVIONBytesSet(data->output_vio, TSVIONDoneGet(write_vio) + append_buffer_length);
+    TSVIOReenable(data->output_vio);
 
-    ASSERT_SUCCESS(TSVIOReenable(data->output_vio));
     return;
   }
 
@@ -155,11 +154,11 @@ handle_transform(TSCont contp)
 
       /* Tell the read buffer that we have read the data and are no
          longer interested in it. */
-      ASSERT_SUCCESS(TSIOBufferReaderConsume(TSVIOReaderGet(write_vio), towrite));
+      TSIOBufferReaderConsume(TSVIOReaderGet(write_vio), towrite);
 
       /* Modify the write VIO to reflect how much data we've
          completed. */
-      ASSERT_SUCCESS(TSVIONDoneSet(write_vio, TSVIONDoneGet(write_vio) + towrite));
+      TSVIONDoneSet(write_vio, TSVIONDoneGet(write_vio) + towrite);
     }
   }
 
@@ -171,7 +170,7 @@ handle_transform(TSCont contp)
          connection by reenabling the output VIO. This will wakeup
          the output connection and allow it to consume data from the
          output buffer. */
-      ASSERT_SUCCESS(TSVIOReenable(data->output_vio));
+      TSVIOReenable(data->output_vio);
 
       /* Call back the write VIO continuation to let it know that we
          are ready for more data. */
@@ -188,9 +187,8 @@ handle_transform(TSCont contp)
        expect. This allows the output connection to know when it
        is done reading. We then reenable the output connection so
        that it can consume the data we just gave it. */
-    ASSERT_SUCCESS(TSVIONBytesSet(data->output_vio, TSVIONDoneGet(write_vio) + append_buffer_length));
-
-    ASSERT_SUCCESS(TSVIOReenable(data->output_vio));
+    TSVIONBytesSet(data->output_vio, TSVIONDoneGet(write_vio) + append_buffer_length);
+    TSVIOReenable(data->output_vio);
 
     /* Call back the write VIO continuation to let it know that we
        have completed the write operation. */
@@ -341,7 +339,7 @@ load(const char *filename)
 
     err = TSfread(fp, p, avail);
     if (err > 0) {
-      ASSERT_SUCCESS(TSIOBufferProduce(append_buffer, err));
+      TSIOBufferProduce(append_buffer, err);
     } else {
       break;
     }
