@@ -166,13 +166,6 @@ modify_header(TSHttpTxn txnp, TSCont contp)
     TSDebug("resphdr", "Header field value is %s, with length %d", chkptr, chklength);
 
 
-    /* TODO check these comments for correctness */
-    /*
-     * Since TSMimeHdrFieldValueStringGet returned with valid values
-     * are we also guaranteed that TSMimeHdrFieldValueUintGet returns
-     * valid values? There is no erro code for TSMimeHdrFieldValueUintGet
-     * and 0 is a valid value.
-     */
     /* Get the cached MIME value for this name in this HTTP header */
     /*
        TSMimeHdrFieldValueUintGet(cached_bufp, cached_loc, cached_field_loc, 0, &num_refreshes);

@@ -130,7 +130,7 @@ handle_scan(TSCont contp, TSEvent event, void *edata)
     const char s1[] = "URL: ", s2[] = "\n";
     cstate->total_bytes += TSIOBufferWrite(cstate->resp_buffer, s1, sizeof(s1) - 1);
     TSCacheHttpInfoReqGet(cache_infop, &req_bufp, &req_hdr_loc);
-    url_loc = TSHttpHdrUrlGet(req_bufp, req_hdr_loc);
+    TSHttpHdrUrlGet(req_bufp, req_hdr_loc, &url_loc);
     url = TSUrlStringGet(req_bufp, url_loc, &url_len);
 
     cstate->total_bytes += TSIOBufferWrite(cstate->resp_buffer, url, url_len);
@@ -421,8 +421,7 @@ setup_request(TSCont contp, TSHttpTxn txnp)
     return TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
   }
 
-  url_loc = TSHttpHdrUrlGet(bufp, hdr_loc);
-  if (!url_loc) {
+  if (TSHttpHdrUrlGet(bufp, hdr_loc, &url_loc) != TS_SUCCESS) {
     TSError("couldn't retrieve request url");
     TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
     return TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
@@ -466,12 +465,7 @@ setup_request(TSCont contp, TSHttpTxn txnp)
         del_url_len = unescapifyStr(start);
         end = start + del_url_len;
 
-        if (TSCacheKeyCreate(&cstate->key_to_delete) != TS_SUCCESS) {
-          TSError("CacheKeyCreate failed");
-          TSfree(cstate);
-          goto Ldone;
-        }
-
+        cstate->key_to_delete = TSCacheKeyCreate();
         TSDebug("cache_iter", "deleting url: %s", start);
 
         TSMBuffer urlBuf = TSMBufferCreate();

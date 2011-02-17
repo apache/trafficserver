@@ -1824,8 +1824,7 @@ extern "C"
 
   tsapi const char* TSMimeHdrFieldValueStringGet(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int idx, int *value_len_ptr);
   tsapi int TSMimeHdrFieldValueIntGet(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int idx);
-  tsapi TSReturnCode TSMimeHdrFieldValueUintGet(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int idx,
-                                                   unsigned int *value);
+  tsapi unsigned int TSMimeHdrFieldValueUintGet(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int idx);
   tsapi time_t TSMimeHdrFieldValueDateGet(TSMBuffer bufp, TSMLoc hdr, TSMLoc field);
   tsapi TSReturnCode TSMimeHdrFieldValueStringSet(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int idx,
                                                      const char *value, int length);
@@ -1848,8 +1847,8 @@ extern "C"
   /* --------------------------------------------------------------------------
      HTTP headers */
   tsapi TSHttpParser TSHttpParserCreate(void);
-  tsapi TSReturnCode TSHttpParserClear(TSHttpParser parser);
-  tsapi TSReturnCode TSHttpParserDestroy(TSHttpParser parser);
+  tsapi void TSHttpParserClear(TSHttpParser parser);
+  tsapi void TSHttpParserDestroy(TSHttpParser parser);
 
   tsapi TSMLoc TSHttpHdrCreate(TSMBuffer bufp);
 
@@ -1859,9 +1858,9 @@ extern "C"
       call to TSHandleMLocRelease().
 
    */
-  tsapi TSReturnCode TSHttpHdrDestroy(TSMBuffer bufp, TSMLoc offset);
+  tsapi void TSHttpHdrDestroy(TSMBuffer bufp, TSMLoc offset);
 
-  tsapi TSMLoc TSHttpHdrClone(TSMBuffer dest_bufp, TSMBuffer src_bufp, TSMLoc src_hdr);
+  tsapi TSReturnCode TSHttpHdrClone(TSMBuffer dest_bufp, TSMBuffer src_bufp, TSMLoc src_hdr, TSMLoc *locp);
 
   /**
       Copies the contents of the HTTP header located at src_loc within
@@ -1884,7 +1883,7 @@ extern "C"
   tsapi TSReturnCode TSHttpHdrCopy(TSMBuffer dest_bufp, TSMLoc dest_offset, TSMBuffer src_bufp,
                                       TSMLoc src_offset);
 
-  tsapi TSReturnCode TSHttpHdrPrint(TSMBuffer bufp, TSMLoc offset, TSIOBuffer iobufp);
+  tsapi void TSHttpHdrPrint(TSMBuffer bufp, TSMLoc offset, TSIOBuffer iobufp);
 
   /**
       Parses an HTTP request header. The HTTP header must have already
@@ -1915,11 +1914,11 @@ extern "C"
           span multiple buffers).
 
    */
-  tsapi int TSHttpHdrParseReq(TSHttpParser parser, TSMBuffer bufp, TSMLoc offset, const char **start,
-                                const char *end);
+  tsapi TSParseResult TSHttpHdrParseReq(TSHttpParser parser, TSMBuffer bufp, TSMLoc offset, const char **start,
+                                        const char *end);
 
-  tsapi int TSHttpHdrParseResp(TSHttpParser parser, TSMBuffer bufp, TSMLoc offset, const char **start,
-                                 const char *end);
+  tsapi TSParseResult TSHttpHdrParseResp(TSHttpParser parser, TSMBuffer bufp, TSMLoc offset, const char **start,
+                                         const char *end);
 
   tsapi int TSHttpHdrLengthGet(TSMBuffer bufp, TSMLoc offset);
 
@@ -1931,7 +1930,7 @@ extern "C"
 
   tsapi const char *TSHttpHdrMethodGet(TSMBuffer bufp, TSMLoc offset, int *length);
   tsapi TSReturnCode TSHttpHdrMethodSet(TSMBuffer bufp, TSMLoc offset, const char *value, int length);
-  tsapi TSMLoc TSHttpHdrUrlGet(TSMBuffer bufp, TSMLoc offset);
+  tsapi TSReturnCode TSHttpHdrUrlGet(TSMBuffer bufp, TSMLoc offset, TSMLoc *locp);
   tsapi TSReturnCode TSHttpHdrUrlSet(TSMBuffer bufp, TSMLoc offset, TSMLoc url);
 
   tsapi TSHttpStatus TSHttpHdrStatusGet(TSMBuffer bufp, TSMLoc offset);
@@ -1959,11 +1958,8 @@ extern "C"
      cachekey */
   /**
       Creates (allocates memory for) a new cache key.
-
-      @param new_key represents an object to be cached.
-
    */
-  tsapi TSReturnCode TSCacheKeyCreate(TSCacheKey * new_key);
+  tsapi TSCacheKey TSCacheKeyCreate();
 
   /**
       Generates a key for an object to be cached (written to the cache).

@@ -630,11 +630,11 @@ public:
   const char *reason_get(int *length);
   void reason_set(const char *value, int length);
 
-  int parse_req(HTTPParser * parser, const char **start, const char *end, bool eof);
-  int parse_resp(HTTPParser * parser, const char **start, const char *end, bool eof);
+  MIMEParseResult parse_req(HTTPParser * parser, const char **start, const char *end, bool eof);
+  MIMEParseResult parse_resp(HTTPParser * parser, const char **start, const char *end, bool eof);
 
-  int parse_req(HTTPParser * parser, IOBufferReader * r, int *bytes_used, bool eof);
-  int parse_resp(HTTPParser * parser, IOBufferReader * r, int *bytes_used, bool eof);
+  MIMEParseResult parse_req(HTTPParser * parser, IOBufferReader * r, int *bytes_used, bool eof);
+  MIMEParseResult parse_resp(HTTPParser * parser, IOBufferReader * r, int *bytes_used, bool eof);
 
 public:
   // Utility routines
@@ -1178,7 +1178,7 @@ HTTPHdr::reason_set(const char *value, int length)
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-inline int
+inline MIMEParseResult
 HTTPHdr::parse_req(HTTPParser * parser, const char **start, const char *end, bool eof)
 {
   ink_debug_assert(valid());
@@ -1190,7 +1190,7 @@ HTTPHdr::parse_req(HTTPParser * parser, const char **start, const char *end, boo
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-inline int
+inline MIMEParseResult
 HTTPHdr::parse_resp(HTTPParser * parser, const char **start, const char *end, bool eof)
 {
   ink_debug_assert(valid());

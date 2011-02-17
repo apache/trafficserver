@@ -73,39 +73,3 @@
         X = NULL; \
     } \
 } \
-
-#define HANDLE_RELEASE(P_BUFFER, P_PARENT, P_MLOC) \
-{ \
-    if (VALID_PTR(P_MLOC)) { \
-        if (TSHandleMLocRelease(P_BUFFER, P_PARENT, P_MLOC) == TS_ERROR) { \
-            LOG_API_ERROR("TSHandleMLocRelease"); \
-        } else { \
-            P_MLOC = (TSMLoc)NULL; \
-        } \
-    } \
-}\
-
-#define URL_DESTROY(P_BUFFER, P_MLOC) \
-{ \
-    if (VALID_PTR(P_MLOC)) {\
-        TSUrlDestroy (P_BUFFER, P_MLOC); \
-    } else { \
-        P_MLOC = (TSMLoc)NULL; \
-    } \
-}\
-
-#define HDR_DESTROY(P_BUFFER, P_MLOC) \
-{ \
-    if (VALID_PTR(P_MLOC)) \
-        if (TSHttpHdrDestroy (P_BUFFER, P_MLOC) == TS_ERROR) \
-            LOG_API_ERROR("TSHttpHdrDestroy"); \
-}\
-
-#define BUFFER_DESTROY(P_BUFFER) \
-{ \
-    if (VALID_PTR(P_BUFFER)) \
-        if (TSMBufferDestroy (P_BUFFER) == TS_ERROR) \
-            LOG_API_ERROR("TSMBufferDestroy"); \
-}\
-
-#endif

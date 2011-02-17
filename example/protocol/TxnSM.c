@@ -959,14 +959,9 @@ TSCacheKey
 CacheKeyCreate(char *file_name)
 {
   TSCacheKey key;
-  TSReturnCode return_code;
 
   /* TSCacheKeyCreate is to allocate memory space for the key */
-  return_code = TSCacheKeyCreate(&key);
-  if (return_code != TS_SUCCESS) {
-    TSError("Can't create cache key");
-    return (TSCacheKey) TS_ERROR_PTR;
-  }
+  key = TSCacheKeyCreate();
 
   /* TSCacheKeyDigestSet is to compute TSCackeKey from the input string */
   TSCacheKeyDigestSet(key, file_name, strlen(file_name));

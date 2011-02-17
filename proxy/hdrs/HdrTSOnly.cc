@@ -44,7 +44,7 @@
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-int
+MIMEParseResult
 HTTPHdr::parse_req(HTTPParser * parser, IOBufferReader * r, int *bytes_used, bool eof)
 {
 
@@ -86,10 +86,9 @@ HTTPHdr::parse_req(HTTPParser * parser, IOBufferReader * r, int *bytes_used, boo
   return state;
 }
 
-int
+MIMEParseResult
 HTTPHdr::parse_resp(HTTPParser * parser, IOBufferReader * r, int *bytes_used, bool eof)
 {
-
   const char *start;
   const char *tmp;
   const char *end;

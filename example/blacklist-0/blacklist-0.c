@@ -52,8 +52,7 @@ handle_dns(TSHttpTxn txnp, TSCont contp)
     goto done;
   }
 
-  url_loc = TSHttpHdrUrlGet(bufp, hdr_loc);
-  if (!url_loc) {
+  if (TSHttpHdrUrlGet(bufp, hdr_loc, &url_loc) != TS_SUCCESS) {
     TSError("couldn't retrieve request url\n");
     TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
     goto done;
@@ -109,8 +108,7 @@ handle_response(TSHttpTxn txnp)
     goto done;
   }
 
-  url_loc = TSHttpHdrUrlGet(bufp, hdr_loc);
-  if (!url_loc) {
+  if (!TSHttpHdrUrlGet(bufp, hdr_loc, &url_loc) != TS_SUCCESS) {
     TSError("couldn't retrieve request url\n");
     TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
     goto done;
