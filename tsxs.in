@@ -22,6 +22,8 @@ exec_prefix="@exec_prefix@"
 INSTALLDIR=`eval echo "@libexecdir@"`
 INCLUDEDIR=`eval echo "@includedir@"`
 CPPFLAGS="$CPPFLAGS -I$INCLUDEDIR"
+CFLAGS="@CFLAGS@"
+CXXFLAGS="@CXXFLAGS@"
 BUILD=
 DEBUGECHO=
 
@@ -93,7 +95,9 @@ LD=$MODULELD
 for v in $* 
 do
 	case $v in 
-	-v)	DEBUGECHO=1
+	-v)
+		shift
+		DEBUGECHO=1
 		;;
 	-h)
 		cat <<EOF
