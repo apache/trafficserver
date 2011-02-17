@@ -99,7 +99,7 @@ handle_transform(TSCont contp)
      ourself. This VIO contains the buffer that we are to read from
      as well as the continuation we are to call when the buffer is
      empty. */
-  write_vio = TSVConnWriteVIOGet(contp);
+  TSVConnWriteVIOGet(contp, &write_vio); /* Should check for errors ... */
 
   /* Get our data structure for this operation. The private data
      structure contains the output VIO and output buffer. If the
@@ -115,7 +115,7 @@ handle_transform(TSCont contp)
     data->output_buffer = TSIOBufferCreate();
     data->output_reader = TSIOBufferReaderAlloc(data->output_buffer);
     data->output_vio = TSVConnWrite(output_conn, contp, data->output_reader, towrite);
-    ASSERT_SUCCESS(TSContDataSet(contp, data));
+    TSContDataSet(contp, data);
   }
 
   /* We also check to see if the write VIO's buffer is non-NULL. A
@@ -205,7 +205,7 @@ append_transform(TSCont contp, TSEvent event, void *edata)
      TSVConnClose. */
   if (TSVConnClosedGet(contp)) {
     my_data_destroy(TSContDataGet(contp));
-    ASSERT_SUCCESS(TSContDestroy(contp));
+    TSContDestroy(contp);
     return 0;
   } else {
     switch (event) {
@@ -216,7 +216,7 @@ append_transform(TSCont contp, TSEvent event, void *edata)
         /* Get the write VIO for the write operation that was
            performed on ourself. This VIO contains the continuation of
            our parent transformation. */
-        write_vio = TSVConnWriteVIOGet(contp);
+        TSVConnWriteVIOGet(contp, &write_vio); /* Should check for errors ... */
 
         /* Call back the write VIO continuation to let it know that we
            have completed the write operation. */
@@ -295,10 +295,7 @@ transform_add(TSHttpTxn txnp)
   TSVConn connp;
 
   connp = TSTransformCreate(append_transform, txnp);
-
-  if (TSHttpTxnHookAdd(txnp, TS_HTTP_RESPONSE_TRANSFORM_HOOK, connp) == TS_ERROR) {
-    TSError("[append-transform] Unable to attach plugin to http transaction\n");
-  }
+  TSHttpTxnHookAdd(txnp, TS_HTTP_RESPONSE_TRANSFORM_HOOK, connp);
 }
 
 static int
@@ -311,7 +308,7 @@ transform_plugin(TSCont contp, TSEvent event, void *edata)
     if (transformable(txnp)) {
       transform_add(txnp);
     }
-    ASSERT_SUCCESS(TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE));
+    TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
     return 0;
   default:
     break;
@@ -411,11 +408,7 @@ TSPluginInit(int argc, const char *argv[])
     goto Lerror;
   }
 
-  if (TSHttpHookAdd(TS_HTTP_READ_RESPONSE_HDR_HOOK, TSContCreate(transform_plugin, NULL)) == TS_ERROR) {
-    TSError("[append-transform] Unable to set read response header\n");
-    goto Lerror;
-  }
-
+  TSHttpHookAdd(TS_HTTP_READ_RESPONSE_HDR_HOOK, TSContCreate(transform_plugin, NULL));
   return;
 
 Lerror:

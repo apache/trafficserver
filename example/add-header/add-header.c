@@ -51,7 +51,7 @@ add_header(TSHttpTxn txnp, TSCont contp)
   TSMLoc new_field_loc;
   int retval;
 
-  if (!TSHttpTxnClientReqGet(txnp, &req_bufp, &req_loc)) {
+  if (TSHttpTxnClientReqGet(txnp, &req_bufp, &req_loc) != TS_SUCCESS) {
     TSError("[add_header] Error while retrieving client request header\n");
     goto done;
   }
@@ -222,12 +222,7 @@ TSPluginInit(int argc, const char *argv[])
 
   /* Create a continuation with a mutex as there is a shared global structure
      containing the headers to add */
-  retval = TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, TSContCreate(add_header_plugin, TSMutexCreate()));
-  if (retval == TS_ERROR) {
-    TSError("[PluginInit] Error while registering to hook");
-    goto error;
-  }
-
+  TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, TSContCreate(add_header_plugin, TSMutexCreate()));
   goto done;
 
 error:

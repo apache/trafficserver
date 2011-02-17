@@ -340,7 +340,8 @@ CacheVC::reenable_re(VIO *avio)
   }
 }
 
-bool CacheVC::get_data(int i, void *data)
+bool
+CacheVC::get_data(int i, void *data)
 {
   switch (i) {
   case CACHE_DATA_SIZE:

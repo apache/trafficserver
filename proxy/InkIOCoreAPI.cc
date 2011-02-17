@@ -42,46 +42,36 @@
 TSReturnCode
 sdk_sanity_check_mutex(TSMutex mutex)
 {
-#ifdef DEBUG
-  if (mutex == NULL || mutex == TS_ERROR_PTR)
+  if (mutex == NULL)
     return TS_ERROR;
+
   ProxyMutex *mutexp = (ProxyMutex *) mutex;
+
   if (mutexp->m_refcount < 0)
     return TS_ERROR;
   if (mutexp->nthread_holding < 0)
     return TS_ERROR;
+
   return TS_SUCCESS;
-#else
-  NOWARN_UNUSED(mutex);
-  return TS_SUCCESS;
-#endif
 }
 
 
 TSReturnCode
 sdk_sanity_check_hostlookup_structure(TSHostLookupResult data)
 {
-#ifdef DEBUG
-  if (data == NULL || data == TS_ERROR_PTR)
+  if (data == NULL)
     return TS_ERROR;
+
   return TS_SUCCESS;
-#else
-  NOWARN_UNUSED(data);
-  return TS_SUCCESS;
-#endif
 }
 
 TSReturnCode
 sdk_sanity_check_iocore_structure(void *data)
 {
-#ifdef DEBUG
-  if (data == NULL || data == TS_ERROR_PTR)
+  if (data == NULL)
     return TS_ERROR;
+
   return TS_SUCCESS;
-#else
-  NOWARN_UNUSED(data);
-  return TS_SUCCESS;
-#endif
 }
 
 
@@ -93,12 +83,10 @@ sdk_sanity_check_iocore_structure(void *data)
 
 struct INKThreadInternal:public EThread
 {
-
 #if !defined (_WIN32)
   INKThreadInternal()
-  :EThread(DEDICATED, -1)
-  {
-  }
+    : EThread(DEDICATED, -1)
+  {  }
 #endif
 
   TSThreadFunc func;
@@ -112,11 +100,8 @@ ink_thread_trampoline(void *data)
   void *retval;
 
   thread = (INKThreadInternal *) data;
-
   thread->set_specific();
-
   retval = thread->func(thread->data);
-
   delete thread;
 
   return retval;

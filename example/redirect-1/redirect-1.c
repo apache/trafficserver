@@ -148,7 +148,7 @@ handle_client_lookup(TSHttpTxn txnp, TSCont contp)
   clientstring = inet_ntoa(tempstruct);
   TSDebug("redirect", "clientip is %s and block_ip is %s", clientstring, block_ip);
 
-  if (!TSHttpTxnClientReqGet(txnp, &bufp, &hdr_loc)) {
+  if (TSHttpTxnClientReqGet(txnp, &bufp, &hdr_loc) != TS_SUCCESS) {
     TSError("couldn't retrieve client request header\n");
     goto done;
   }
@@ -216,7 +216,7 @@ handle_response(TSHttpTxn txnp)
   char *errormsg_body = "All requests from this IP address are redirected.\n";
   char *tmp_body;
 
-  if (!TSHttpTxnClientRespGet(txnp, &bufp, &hdr_loc)) {
+  if (TSHttpTxnClientRespGet(txnp, &bufp, &hdr_loc) != TS_SUCCESS) {
     TSError("couldn't retrieve client response header\n");
     goto done;
   }

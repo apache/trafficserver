@@ -628,8 +628,7 @@ wake_up_streams(TSCont contp)
   data = TSContDataGet(contp);
   TSAssert(data->magic == MAGIC_ALIVE);
 
-  input_vio = TSVConnWriteVIOGet(contp);
-  if (input_vio == TS_ERROR_PTR) {
+  if (TSVConnWriteVIOGet(contp, &input_vio) != TS_SUCCESS) {
     TSError("[wake_up_streams] Error while getting input_vio");
     return 0;
   }
@@ -699,8 +698,7 @@ handle_transform(TSCont contp)
   }
 
   /* Get upstream vio */
-  input_vio = TSVConnWriteVIOGet(contp);
-  if (input_vio == TS_ERROR_PTR) {
+  if (TSVConnWriteVIOGet(contp, &input_vio) != TS_SUCCESS) {
     TSError("[handle_transform] Error while getting input vio");
     return 1;
   }
@@ -834,8 +832,7 @@ dump_psi(TSCont contp)
   TSVIO input_vio;
   TSReturnCode retval;
 
-  input_vio = TSVConnWriteVIOGet(contp);
-  if (input_vio == TS_ERROR_PTR) {
+  if (TSVConnWriteVIOGet(contp, &input_vio) != TS_SUCCESS) {
     TSError("[dump_psi] Error while getting input vio");
     return 1;
   }
@@ -942,8 +939,7 @@ transform_handler(TSCont contp, TSEvent event, void *edata)
   } else {
     switch (event) {
     case TS_EVENT_ERROR:
-      input_vio = TSVConnWriteVIOGet(contp);
-      if (input_vio == TS_ERROR_PTR) {
+      if (TSVConnWriteVIOGet(contp, &input_vio) != TS_SUCCESS) {
         TSError("[transform_handler] Error while getting upstream vio");
       } else {
         TSContCall(TSVIOContGet(input_vio), TS_EVENT_ERROR, input_vio);
@@ -1085,7 +1081,6 @@ transform_add(TSHttpTxn txnp)
 {
   TSCont contp;
   ContData *data;
-  TSReturnCode retval;
 
   contp = TSTransformCreate(transform_handler, txnp);
   if (contp == TS_ERROR_PTR) {
@@ -1096,11 +1091,7 @@ transform_add(TSHttpTxn txnp)
   data = cont_data_alloc();
   TSContDataSet(contp, data);
 
-  retval = TSHttpTxnHookAdd(txnp, TS_HTTP_RESPONSE_TRANSFORM_HOOK, contp);
-  if (retval == TS_ERROR) {
-    TSError("[transform_add] Error registering to transform hook");
-    return 0;
-  }
+  TSHttpTxnHookAdd(txnp, TS_HTTP_RESPONSE_TRANSFORM_HOOK, contp);
   return 1;
 }
 
@@ -1225,11 +1216,6 @@ TSPluginInit(int argc, const char *argv[])
     }
   }
 
-  retval = TSHttpHookAdd(TS_HTTP_READ_RESPONSE_HDR_HOOK, TSContCreate(read_response_handler, TSMutexCreate()));
-  if (retval == TS_ERROR) {
-    TSError("[TSPluginInit] Error while registering to read response hook");
-    return;
-  }
-
+  TSHttpHookAdd(TS_HTTP_READ_RESPONSE_HDR_HOOK, TSContCreate(read_response_handler, TSMutexCreate()));
   TSDebug(DBG_TAG, "Plugin started");
 }

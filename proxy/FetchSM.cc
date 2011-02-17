@@ -41,7 +41,9 @@ FetchSM::cleanUp()
   http_parser_clear(&http_parser);
   client_response_hdr.destroy();
   xfree(client_response);
+
   PluginVC *vc = (PluginVC *) http_vc;
+
   vc->do_io_close();
   FetchSMAllocator.free(this);
 }
@@ -50,24 +52,30 @@ void
 FetchSM::httpConnect()
 {
   Debug(DEBUG_TAG, "[%s] calling httpconnect write", __FUNCTION__);
-  TSHttpConnect(_ip, _port, &(http_vc));
+  http_vc = TSHttpConnect(_ip, _port);
+
   PluginVC *vc = (PluginVC *) http_vc;
+
   read_vio = vc->do_io_read(this, INT64_MAX, resp_buffer);
   write_vio = vc->do_io_write(this, getReqLen(), req_reader);
 }
 
 char* FetchSM::resp_get(int *length) {
-*length = client_bytes;
-return client_response;
+  *length = client_bytes;
+  return client_response;
 }
 
 int FetchSM::InvokePlugin(int event, void *data)
 {
   Continuation *cont = (Continuation*) contp;
   EThread *mythread = this_ethread();
+
   MUTEX_TAKE_LOCK(cont->mutex,mythread);
+
   int ret = cont->handleEvent(event,data);
+
   MUTEX_UNTAKE_LOCK(cont->mutex,mythread);
+
   return ret;
 }
 void

@@ -1425,7 +1425,6 @@ REGRESSION_TEST(SDK_API_TSContMutexGet) (RegressionTest * test, int atype, int *
   *pstatus = ((test_passed == true) ? REGRESSION_TEST_PASSED : REGRESSION_TEST_FAILED);
 
   TSContDestroy(contp);
-
 }
 
 //////////////////////////////////////////////
@@ -2345,7 +2344,7 @@ checkHttpTxnClientReqGet(SocketTest * test, void *data)
   TSMLoc mloc;
   TSHttpTxn txnp = (TSHttpTxn) data;
 
-  if (!TSHttpTxnClientReqGet(txnp, &bufp, &mloc)) {
+  if (TSHttpTxnClientReqGet(txnp, &bufp, &mloc) != TS_SUCCESS) {
     test->test_client_req_get = false;
     SDK_RPRINT(test->regtest, "TSHttpTxnClientReqGet", "TestCase1", TC_FAIL, "Unable to get handle to client request");
     return TS_EVENT_CONTINUE;
@@ -2373,7 +2372,7 @@ checkHttpTxnClientRespGet(SocketTest * test, void *data)
   TSMLoc mloc;
   TSHttpTxn txnp = (TSHttpTxn) data;
 
-  if (!TSHttpTxnClientRespGet(txnp, &bufp, &mloc)) {
+  if (TSHttpTxnClientRespGet(txnp, &bufp, &mloc) != TS_SUCCESS) {
     test->test_client_resp_get = false;
     SDK_RPRINT(test->regtest, "TSHttpTxnClientRespGet", "TestCase1", TC_FAIL, "Unable to get handle to client response");
     return TS_EVENT_CONTINUE;
@@ -2400,7 +2399,7 @@ checkHttpTxnServerReqGet(SocketTest * test, void *data)
   TSMLoc mloc;
   TSHttpTxn txnp = (TSHttpTxn) data;
 
-  if (!TSHttpTxnServerReqGet(txnp, &bufp, &mloc)) {
+  if (TSHttpTxnServerReqGet(txnp, &bufp, &mloc) != TS_SUCCESS) {
     test->test_server_req_get = false;
     SDK_RPRINT(test->regtest, "TSHttpTxnServerReqGet", "TestCase1", TC_FAIL, "Unable to get handle to server request");
     return TS_EVENT_CONTINUE;
@@ -2427,7 +2426,7 @@ checkHttpTxnServerRespGet(SocketTest * test, void *data)
   TSMLoc mloc;
   TSHttpTxn txnp = (TSHttpTxn) data;
 
-  if (!TSHttpTxnServerRespGet(txnp, &bufp, &mloc)) {
+  if (TSHttpTxnServerRespGet(txnp, &bufp, &mloc) != TS_SUCCESS) {
     test->test_server_resp_get = false;
     SDK_RPRINT(test->regtest, "TSHttpTxnServerRespGet", "TestCase1", TC_FAIL, "Unable to get handle to server response");
     return TS_EVENT_CONTINUE;
@@ -2468,11 +2467,8 @@ mytest_handler(TSCont contp, TSEvent event, void *data)
       test->hook_mask |= 1;
     }
 
-    if (TSHttpTxnReenable((TSHttpTxn) data, TS_EVENT_HTTP_CONTINUE) != TS_SUCCESS) {
-      SDK_RPRINT(test->regtest, "TSHttpTxnReenable", "TestCase1", TC_FAIL, "TSHttpTxnReenable doesn't return TS_SUCCESS");
-    } else {
-      test->reenable_mask |= 1;
-    }
+    TSHttpTxnReenable((TSHttpTxn) data, TS_EVENT_HTTP_CONTINUE);
+    test->reenable_mask |= 1;
     break;
 
   case TS_EVENT_HTTP_READ_REQUEST_HDR:
@@ -2482,12 +2478,8 @@ mytest_handler(TSCont contp, TSEvent event, void *data)
     TSSkipRemappingSet((TSHttpTxn) data,1);
     checkHttpTxnClientReqGet(test, data);
 
-    if (TSHttpTxnReenable((TSHttpTxn) data, TS_EVENT_HTTP_CONTINUE) != TS_SUCCESS) {
-      SDK_RPRINT(test->regtest, "TSHttpTxnReenable", "TestCase1", TC_FAIL, "TSHttpTxnReenable doesn't return TS_SUCCESS");
-    } else {
-      test->reenable_mask |= 2;
-    }
-
+    TSHttpTxnReenable((TSHttpTxn) data, TS_EVENT_HTTP_CONTINUE);
+    test->reenable_mask |= 2;
     break;
 
   case TS_EVENT_HTTP_OS_DNS:
@@ -2501,22 +2493,16 @@ mytest_handler(TSCont contp, TSEvent event, void *data)
     checkHttpTxnClientIPGet(test, data);
     checkHttpTxnServerIPGet(test, data);
 
-    if (TSHttpTxnReenable((TSHttpTxn) data, TS_EVENT_HTTP_CONTINUE) != TS_SUCCESS) {
-      SDK_RPRINT(test->regtest, "TSHttpTxnReenable", "TestCase1", TC_FAIL, "TSHttpTxnReenable doesn't return TS_SUCCESS");
-    } else {
-      test->reenable_mask |= 8;
-    }
+    TSHttpTxnReenable((TSHttpTxn) data, TS_EVENT_HTTP_CONTINUE);
+    test->reenable_mask |= 8;
     break;
 
   case TS_EVENT_HTTP_CACHE_LOOKUP_COMPLETE:
     if (test->hook_mask == 3) {
       test->hook_mask |= 4;
     }
-    if (TSHttpTxnReenable((TSHttpTxn) data, TS_EVENT_HTTP_CONTINUE) != TS_SUCCESS) {
-      SDK_RPRINT(test->regtest, "TSHttpTxnReenable", "TestCase1", TC_FAIL, "TSHttpTxnReenable doesn't return TS_SUCCESS");
-    } else {
-      test->reenable_mask |= 4;
-    }
+    TSHttpTxnReenable((TSHttpTxn) data, TS_EVENT_HTTP_CONTINUE);
+    test->reenable_mask |= 4;
     break;
 
   case TS_EVENT_HTTP_SEND_REQUEST_HDR:
@@ -2527,13 +2513,8 @@ mytest_handler(TSCont contp, TSEvent event, void *data)
     checkHttpTxnServerReqGet(test, data);
     checkHttpTxnNextHopIPGet(test, data);
 
-    if (TSHttpTxnReenable((TSHttpTxn) data, TS_EVENT_HTTP_CONTINUE) != TS_SUCCESS) {
-      SDK_RPRINT(test->regtest, "TSHttpTxnReenable", "TestCase1", TC_FAIL, "TSHttpTxnReenable doesn't return TS_SUCCESS");
-    } else {
-      test->reenable_mask |= 16;
-    }
-
-
+    TSHttpTxnReenable((TSHttpTxn) data, TS_EVENT_HTTP_CONTINUE);
+    test->reenable_mask |= 16;
     break;
 
   case TS_EVENT_HTTP_READ_RESPONSE_HDR:
@@ -2542,12 +2523,8 @@ mytest_handler(TSCont contp, TSEvent event, void *data)
     }
     checkHttpTxnServerRespGet(test, data);
 
-    if (TSHttpTxnReenable((TSHttpTxn) data, TS_EVENT_HTTP_CONTINUE) != TS_SUCCESS) {
-      SDK_RPRINT(test->regtest, "TSHttpTxnReenable", "TestCase1", TC_FAIL, "TSHttpTxnReenable doesn't return TS_SUCCESS");
-    } else {
-      test->reenable_mask |= 32;
-    }
-
+    TSHttpTxnReenable((TSHttpTxn) data, TS_EVENT_HTTP_CONTINUE);
+    test->reenable_mask |= 32;
     break;
 
   case TS_EVENT_HTTP_SEND_RESPONSE_HDR:
@@ -2557,12 +2534,8 @@ mytest_handler(TSCont contp, TSEvent event, void *data)
 
     checkHttpTxnClientRespGet(test, data);
 
-    if (TSHttpTxnReenable((TSHttpTxn) data, TS_EVENT_HTTP_CONTINUE) != TS_SUCCESS) {
-      SDK_RPRINT(test->regtest, "TSHttpTxnReenable", "TestCase1", TC_FAIL, "TSHttpTxnReenable doesn't return TS_SUCCESS");
-    } else {
-      test->reenable_mask |= 64;
-    }
-
+    TSHttpTxnReenable((TSHttpTxn) data, TS_EVENT_HTTP_CONTINUE);
+    test->reenable_mask |= 64;
     break;
 
   case TS_EVENT_HTTP_TXN_CLOSE:
@@ -2570,11 +2543,8 @@ mytest_handler(TSCont contp, TSEvent event, void *data)
       test->hook_mask |= 128;
     }
 
-    if (TSHttpTxnReenable((TSHttpTxn) data, TS_EVENT_HTTP_CONTINUE) != TS_SUCCESS) {
-      SDK_RPRINT(test->regtest, "TSHttpTxnReenable", "TestCase1", TC_FAIL, "TSHttpTxnReenable doesn't return TS_SUCCESS");
-    } else {
-      test->reenable_mask |= 128;
-    }
+    TSHttpTxnReenable((TSHttpTxn) data, TS_EVENT_HTTP_CONTINUE);
+    test->reenable_mask |= 128;
     break;
 
   case TS_EVENT_IMMEDIATE:
@@ -5915,43 +5885,6 @@ REGRESSION_TEST(SDK_API_TSMgmtGet) (RegressionTest * test, int atype, int *pstat
 
 
 //////////////////////////////////////////////
-//       SDK_API_TSMgmtUpdateRegister
-//
-// Unit Test for APIs: TSMgmtUpdateRegister
-//
-// FIX ME: How to test this API automatically
-// as it requires a GUI action ??
-//////////////////////////////////////////////
-
-// dummy handler. Should never get called.
-int
-gui_update_handler(TSCont contp, TSEvent event, void *edata)
-{
-  NOWARN_UNUSED(contp);
-  NOWARN_UNUSED(event);
-  NOWARN_UNUSED(edata);
-  TSReleaseAssert(!"gui_update_handler should not be called");
-  return 0;
-}
-
-REGRESSION_TEST(SDK_API_TSMgmtUpdateRegister) (RegressionTest * test, int atype, int *pstatus)
-{
-  NOWARN_UNUSED(atype);
-  *pstatus = REGRESSION_TEST_INPROGRESS;
-
-  TSCont mycont = TSContCreate(gui_update_handler, TSMutexCreate());
-
-  if (TSMgmtUpdateRegister(mycont, "myPlugin", "myPluginPath/myGui.cgi") != TS_SUCCESS) {
-    SDK_RPRINT(test, "TSMgmtUpdateRegister", "TestCase1", TC_FAIL, "can not register plugin interface");
-    *pstatus = REGRESSION_TEST_FAILED;
-  } else {
-    *pstatus = REGRESSION_TEST_PASSED;
-  }
-  return;
-}
-
-
-//////////////////////////////////////////////
 //       SDK_API_TSConstant
 //
 // Unit Test for APIs: All TS_XXX constants
@@ -6356,12 +6289,7 @@ checkHttpTxnParentProxy(ContData * data, TSHttpTxn txnp)
   char *hostnameget = NULL;
   int portget = 0;
 
-  if (TSHttpTxnParentProxySet(txnp, (char*)hostname, port) != TS_SUCCESS) {
-    SDK_RPRINT(data->test, "TSHttpTxnParentProxySet", "TestCase1", TC_FAIL, "TSHttpTxnParentProxySet doesn't return TS_SUCCESS");
-    SDK_RPRINT(data->test, "TSHttpTxnParentProxyGet", "TestCase1", TC_FAIL, "TSHttpTxnParentProxySet doesn't return TS_SUCCESS");
-    return TS_EVENT_CONTINUE;
-  }
-
+  TSHttpTxnParentProxySet(txnp, (char*)hostname, port);
   if (TSHttpTxnParentProxyGet(txnp, &hostnameget, &portget) != TS_SUCCESS) {
     SDK_RPRINT(data->test, "TSHttpTxnParentProxySet", "TestCase1", TC_FAIL, "TSHttpTxnParentProxyGet doesn't return TS_SUCCESS");
     SDK_RPRINT(data->test, "TSHttpTxnParentProxyGet", "TestCase1", TC_FAIL, "TSHttpTxnParentProxyGet doesn't return TS_SUCCESS");
@@ -6407,14 +6335,8 @@ ssn_handler(TSCont contp, TSEvent event, void *edata)
   switch (event) {
   case TS_EVENT_HTTP_SSN_START:
     data->ssnp = (TSHttpSsn) edata;
-    if (TSHttpSsnHookAdd(data->ssnp, TS_HTTP_TXN_START_HOOK, contp) != TS_SUCCESS) {
-      SDK_RPRINT(data->test, "TSHttpSsnHookAdd", "TestCase1", TC_FAIL, "TSHttpSsnHookAdd doesn't return TS_SUCCESS");
-      data->test_passed_ssn_hook_add--;
-    }
-    if (TSHttpSsnReenable(data->ssnp, TS_EVENT_HTTP_CONTINUE) != TS_SUCCESS) {
-      SDK_RPRINT(data->test, "TSHttpSsnReenable", "TestCase1", TC_FAIL, "TSHttpSsnReenable doesn't return TS_SUCCESS");
-      data->test_passed_ssn_reenable--;
-    }
+    TSHttpSsnHookAdd(data->ssnp, TS_HTTP_TXN_START_HOOK, contp);
+    TSHttpSsnReenable(data->ssnp, TS_EVENT_HTTP_CONTINUE);
     break;
 
   case TS_EVENT_HTTP_TXN_START:
@@ -6435,13 +6357,8 @@ ssn_handler(TSCont contp, TSEvent event, void *edata)
         SDK_RPRINT(data->test, "TSHttpTxnSsnGet", "TestCase1", TC_PASS, "ok");
         data->test_passed_txn_ssn_get++;
       }
-      if (TSHttpTxnHookAdd(txnp, TS_HTTP_OS_DNS_HOOK, contp) != TS_SUCCESS) {
-        SDK_RPRINT(data->test, "TSHttpTxnHookAdd", "TestCase1", TC_FAIL, "TSHttpTxnHookAdd doesn't return TS_SUCCESS");
-        data->test_passed_txn_hook_add--;
-      }
-      if (TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE) != TS_SUCCESS) {
-        SDK_RPRINT(data->test, "TSHttpSsn", "TestCase1", TC_FAIL, "TSHttpTxnReenable doesn't return TS_SUCCESS");
-      }
+      TSHttpTxnHookAdd(txnp, TS_HTTP_OS_DNS_HOOK, contp);
+      TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
     }
     break;
 
@@ -6450,16 +6367,10 @@ ssn_handler(TSCont contp, TSEvent event, void *edata)
     data->test_passed_txn_hook_add++;
     txnp = (TSHttpTxn) edata;
 
-    if (TSHttpTxnHookAdd(txnp, TS_HTTP_SEND_RESPONSE_HDR_HOOK, contp) != TS_SUCCESS) {
-      SDK_RPRINT(data->test, "TSHttpTxnHookAdd", "TestCase1", TC_FAIL, "TSHttpTxnHookAdd doesn't return TS_SUCCESS");
-      data->test_passed_txn_hook_add--;
-    }
-
+    TSHttpTxnHookAdd(txnp, TS_HTTP_SEND_RESPONSE_HDR_HOOK, contp);
     checkHttpTxnParentProxy(data, txnp);
 
-    if (TSHttpTxnReenable(txnp, TS_EVENT_HTTP_ERROR) != TS_SUCCESS) {
-      SDK_RPRINT(data->test, "TSHttpSsn", "TestCase1", TC_FAIL, "TSHttpTxnReenable doesn't return TS_SUCCESS");
-    }
+    TSHttpTxnReenable(txnp, TS_EVENT_HTTP_ERROR);
     break;
 
   case TS_EVENT_HTTP_SEND_RESPONSE_HDR:
@@ -6468,14 +6379,9 @@ ssn_handler(TSCont contp, TSEvent event, void *edata)
     txnp = (TSHttpTxn) edata;
     if (1) {
       char *temp = TSstrdup(ERROR_BODY);
-      if (TSHttpTxnErrorBodySet(txnp, temp, strlen(temp), NULL) != TS_SUCCESS) {
-        SDK_RPRINT(data->test, "TSHttpTxnErrorBodySet", "TestCase1", TC_FAIL, "TSHttpTxnErrorBodySet doesn't return TS_SUCCESS");
-        data->test_passed_txn_error_body_set--;
-      }
+      TSHttpTxnErrorBodySet(txnp, temp, strlen(temp), NULL);
     }
-    if (TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE) != TS_SUCCESS) {
-      SDK_RPRINT(data->test, "TSHttpSsn", "TestCase1", TC_FAIL, "TSHttpTxnReenable doesn't return TS_SUCCESS");
-    }
+    TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
     break;
 
   case TS_EVENT_IMMEDIATE:
@@ -6661,9 +6567,7 @@ cache_hook_handler(TSCont contp, TSEvent event, void *edata)
           }
         }
       }
-      if (TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE) != TS_SUCCESS) {
-        SDK_RPRINT(data->test, "TSHttpTxnCacheLookupStatusGet", "", TC_FAIL, "Unable to reenable the transaction");
-      }
+      TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
     }
     break;
   case TS_EVENT_HTTP_READ_CACHE_HDR:
@@ -6676,7 +6580,7 @@ cache_hook_handler(TSCont contp, TSEvent event, void *edata)
 
       txnp = (TSHttpTxn) edata;
 
-      if (TSHttpTxnCachedReqGet(txnp, &reqbuf, &reqhdr) == 0) {
+      if (TSHttpTxnCachedReqGet(txnp, &reqbuf, &reqhdr) != TS_SUCCESS) {
         SDK_RPRINT(data->test, "TSHttpTxnCachedReqGet", "TestCase1", TC_FAIL, "TSHttpTxnCachedReqGet returns 0");
       } else {
         if ((reqbuf == (((HttpSM *) txnp)->t_state.cache_req_hdr_heap_handle)) &&
@@ -6688,7 +6592,7 @@ cache_hook_handler(TSCont contp, TSEvent event, void *edata)
         }
       }
 
-      if (TSHttpTxnCachedRespGet(txnp, &respbuf, &resphdr) == 0) {
+      if (TSHttpTxnCachedRespGet(txnp, &respbuf, &resphdr) != TS_SUCCESS) {
         SDK_RPRINT(data->test, "TSHttpTxnCachedRespGet", "TestCase1", TC_FAIL, "TSHttpTxnCachedRespGet returns 0");
       } else {
         if ((respbuf == (((HttpSM *) txnp)->t_state.cache_resp_hdr_heap_handle)) &&
@@ -6705,9 +6609,7 @@ cache_hook_handler(TSCont contp, TSEvent event, void *edata)
         SDK_RPRINT(data->test, "TSHttpTxnCache", "", TC_FAIL, "Unable to release handle to headers.");
       }
 
-      if (TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE) != TS_SUCCESS) {
-        SDK_RPRINT(data->test, "TSHttpTxnCache", "", TC_FAIL, "Unable to reenable the transaction.");
-      }
+      TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
     }
 
     break;
@@ -6899,7 +6801,7 @@ handle_transform(TSCont contp)
      ourself. This VIO contains the buffer that we are to read from
      as well as the continuation we are to call when the buffer is
      empty. */
-  write_vio = TSVConnWriteVIOGet(contp);
+  TSVConnWriteVIOGet(contp, &write_vio); /* Should check for errors ... */
 
   /* Get our data structure for this operation. The private data
      structure contains the output VIO and output buffer. If the
@@ -7025,7 +6927,7 @@ transformtest_transform(TSCont contp, TSEvent event, void *edata)
         /* Get the write VIO for the write operation that was
            performed on ourself. This VIO contains the continuation of
            our parent transformation. */
-        write_vio = TSVConnWriteVIOGet(contp);
+        TSVConnWriteVIOGet(contp, &write_vio); /* Should check for errors ... */
 
         /* Call back the write VIO continuation to let it know that we
            have completed the write operation. */
@@ -7058,7 +6960,7 @@ transformable(TSHttpTxn txnp, TransformTestData * data)
   TSMBuffer bufp;
   TSMLoc hdr_loc;
 
-  if (TSHttpTxnServerRespGet(txnp, &bufp, &hdr_loc) == 0) {
+  if (TSHttpTxnServerRespGet(txnp, &bufp, &hdr_loc) != TS_SUCCESS) {
     SDK_RPRINT(data->test, "TSHttpTxnTransform", "", TC_FAIL, "[transformable]: TSHttpTxnServerRespGet return 0");
   }
 
@@ -7090,9 +6992,7 @@ transform_add(TSHttpTxn txnp, TransformTestData * data)
     return;
   }
 
-  if (TSHttpTxnHookAdd(txnp, TS_HTTP_RESPONSE_TRANSFORM_HOOK, connp) != TS_SUCCESS) {
-    SDK_RPRINT(data->test, "TSHttpTxnTransform", "", TC_FAIL, "Unable to add Transformation to the transform hook.");
-  }
+  TSHttpTxnHookAdd(txnp, TS_HTTP_RESPONSE_TRANSFORM_HOOK, connp);
   return;
 }
 
@@ -7158,7 +7058,7 @@ transform_hook_handler(TSCont contp, TSEvent event, void *edata)
       TSMLoc hdr;
       TSMLoc field;
 
-      if (TSHttpTxnClientReqGet(txnp, &bufp, &hdr) == 0) {
+      if (TSHttpTxnClientReqGet(txnp, &bufp, &hdr) != TS_SUCCESS) {
         SDK_RPRINT(data->test, "TSHttpTxnTransform", "TestCase", TC_FAIL, "TSHttpTxnClientReqGet returns 0");
       } else {
         if (TS_NULL_MLOC == (field = TSMimeHdrFieldFind(bufp, hdr, "Request", -1))) {
@@ -7166,20 +7066,12 @@ transform_hook_handler(TSCont contp, TSEvent event, void *edata)
         } else {
           int reqid =TSMimeHdrFieldValueIntGet(bufp, hdr, field, 0);
           if (reqid == 1) {
-            if ((TSHttpTxnTransformedRespCache(txnp, 0) != TS_SUCCESS) ||
-                (TSHttpTxnUntransformedRespCache(txnp, 1) != TS_SUCCESS)) {
-              SDK_RPRINT(data->test, "TSHttpTxnTransformedRespCache", "TestCase", TC_FAIL,
-                         "TSHttpTxnTransformedRespCache or TSHttpTxnUntransformedRespCache doesn't return TS_SUCCESS.reqid=%d",
-                         reqid);
-            }
+            TSHttpTxnTransformedRespCache(txnp, 0);
+            TSHttpTxnUntransformedRespCache(txnp, 1);
           }
           if (reqid == 2) {
-            if ((TSHttpTxnTransformedRespCache(txnp, 1) != TS_SUCCESS) ||
-                (TSHttpTxnUntransformedRespCache(txnp, 0) != TS_SUCCESS)) {
-              SDK_RPRINT(data->test, "TSHttpTxnTransformedRespCache", "TestCase", TC_FAIL,
-                         "TSHttpTxnTransformedRespCache or TSHttpTxnUntransformedRespCache doesn't return TS_SUCCESS.reqid=%d",
-                         reqid);
-            }
+            TSHttpTxnTransformedRespCache(txnp, 1);
+            TSHttpTxnUntransformedRespCache(txnp, 0);
           }
           if (TSHandleMLocRelease(bufp, hdr, field) != TS_SUCCESS) {
             SDK_RPRINT(data->test, "TSHttpTxnTransform", "TestCase", TC_FAIL, "Unable to release handle to field in Client request");
@@ -7192,13 +7084,9 @@ transform_hook_handler(TSCont contp, TSEvent event, void *edata)
     }
 
     /* Add the transaction hook to SEND_RESPONSE_HDR_HOOK */
-    if (TSHttpTxnHookAdd(txnp, TS_HTTP_SEND_RESPONSE_HDR_HOOK, contp) != TS_SUCCESS) {
-      SDK_RPRINT(data->test, "TSHttpTxnTransform", "", TC_FAIL, "Cannot add transaction hook to SEND_RESPONSE_HDR_HOOK");
-    }
+    TSHttpTxnHookAdd(txnp, TS_HTTP_SEND_RESPONSE_HDR_HOOK, contp);
     /* Reenable the transaction */
-    if (TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE) != TS_SUCCESS) {
-      SDK_RPRINT(data->test, "TSHttpTxnTransform", "", TC_FAIL, "Reenabling the transaction doesn't return TS_SUCCESS");
-    }
+    TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
     break;
 
   case TS_EVENT_HTTP_SEND_RESPONSE_HDR:
@@ -7206,7 +7094,7 @@ transform_hook_handler(TSCont contp, TSEvent event, void *edata)
       TSMBuffer bufp;
       TSMLoc hdr;
       txnp = (TSHttpTxn) edata;
-      if (TSHttpTxnTransformRespGet(txnp, &bufp, &hdr) == 0) {
+      if (TSHttpTxnTransformRespGet(txnp, &bufp, &hdr) != TS_SUCCESS) {
         SDK_RPRINT(data->test, "TSHttpTxnTransformRespGet", "TestCase", TC_FAIL, "TSHttpTxnTransformRespGet returns 0");
         data->test_passed_txn_transform_resp_get = false;
       } else {
@@ -7224,9 +7112,7 @@ transform_hook_handler(TSCont contp, TSEvent event, void *edata)
 
       }
     }
-    if (TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE) != TS_SUCCESS) {
-      SDK_RPRINT(data->test, "TSHttpTxnTransformRespGet", "", TC_FAIL, "Reenabling the transaction doesn't return TS_SUCCESS");
-    }
+    TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
     break;
 
   case TS_EVENT_IMMEDIATE:
@@ -7522,12 +7408,8 @@ altinfo_hook_handler(TSCont contp, TSEvent event, void *edata)
         }
       }
 
-      if (TSHttpAltInfoQualitySet(infop, 0.5) != TS_SUCCESS) {
-        SDK_RPRINT(data->test, "TSHttpAltInfoQualityset", "TestCase", TC_FAIL, "TSHttpAltInfoQualitySet doesn't return TS_SUCCESS");
-        data->test_passed_txn_alt_info_quality_set = false;
-      } else {
-        SDK_RPRINT(data->test, "TSHttpAltInfoQualitySet", "TestCase", TC_PASS, "ok");
-      }
+      TSHttpAltInfoQualitySet(infop, 0.5);
+      SDK_RPRINT(data->test, "TSHttpAltInfoQualitySet", "TestCase", TC_PASS, "ok");
     }
 
     break;
@@ -7560,10 +7442,7 @@ altinfo_hook_handler(TSCont contp, TSEvent event, void *edata)
         synclient_txn_send_request(data->browser3, data->request3);
 
         /* Register to HTTP hooks that are called in case of alternate selection */
-        if (TSHttpHookAdd(TS_HTTP_SELECT_ALT_HOOK, contp) != TS_SUCCESS) {
-          SDK_RPRINT(data->test, "TSHttpAltInfo", "", TC_FAIL, "TSHttpHookAdd doesn't return TS_SUCCESS");
-        }
-
+        TSHttpHookAdd(TS_HTTP_SELECT_ALT_HOOK, contp);
         TSContSchedule(contp, 25, TS_THREAD_POOL_DEFAULT);
         return 0;
       }
@@ -7826,8 +7705,7 @@ EXCLUSIVE_REGRESSION_TEST(SDK_API_TSHttpConnectIntercept) (RegressionTest * test
   /* Now send a request to the OS via TS using TSHttpConnect */
 
   /* ip and log do not matter as it is used for logging only */
-  TSHttpConnect(1, 1, &(data->vc));
-
+  data->vc = TSHttpConnect(1, 1);
   synclient_txn_send_request_to_vc(data->browser, data->request, data->vc);
 
   /* Wait until transaction is done */
@@ -7865,7 +7743,7 @@ EXCLUSIVE_REGRESSION_TEST(SDK_API_TSHttpConnectServerIntercept) (RegressionTest 
   /* Now send a request to the OS via TS using TSHttpConnect */
 
   /* ip and log do not matter as it is used for logging only */
-  TSHttpConnect(2, 2, &(data->vc));
+  data->vc = TSHttpConnect(2, 2);
 
   synclient_txn_send_request_to_vc(data->browser, data->request, data->vc);
 

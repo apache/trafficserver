@@ -138,10 +138,7 @@ transform_create(TSHttpTxn txnp)
   data->server_vio = NULL;
   data->content_length = 0;
 
-  if (TSContDataSet(contp, data) != TS_SUCCESS) {
-    TSError("Error in setting continuation's data. TSContDataSet doesn't return TS_SUCCESS");
-  }
-
+  TSContDataSet(contp, data);
   return contp;
 }
 
@@ -164,11 +161,8 @@ transform_destroy(TSCont contp)
       }
     }
 
-    if (data->pending_action) {
-      if (TSActionCancel(data->pending_action) != TS_SUCCESS) {
-        TSError("Unable to cancel the pending action");
-      }
-    }
+    if (data->pending_action)
+      TSActionCancel(data->pending_action);
 
     if (data->server_vc) {
       if (TSVConnAbort(data->server_vc, 1) != TS_SUCCESS) {
@@ -181,9 +175,7 @@ transform_destroy(TSCont contp)
     TSError("Unable to get Continuation's Data. TSContDataGet returns TS_ERROR_PTR or NULL");
   }
 
-  if (TSContDestroy(contp) != TS_SUCCESS) {
-    TSError("Error in Destroying the continuation");
-  }
+  TSContDestroy(contp);
 }
 
 static int
@@ -414,10 +406,8 @@ transform_buffer_event(TSCont contp, TransformData * data, TSEvent event, void *
      ourself. This VIO contains the buffer that we are to read from
      as well as the continuation we are to call when the buffer is
      empty. */
-  write_vio = TSVConnWriteVIOGet(contp);
-  if (write_vio == TS_ERROR_PTR) {
+  if (TSVConnWriteVIOGet(contp, &write_vio) != TS_SUCCESS)
     TSError("Corrupted write VIO received.");
-  }
 
   /* We also check to see if the write VIO's buffer is non-NULL. A
      NULL buffer indicates that the write operation has been
@@ -739,7 +729,7 @@ server_response_ok(TSHttpTxn txnp)
   TSMLoc hdr_loc;
   TSHttpStatus resp_status;
 
-  if (TSHttpTxnServerRespGet(txnp, &bufp, &hdr_loc) == 0) {
+  if (TSHttpTxnServerRespGet(txnp, &bufp, &hdr_loc) != TS_SUCCESS) {
     TSError("Unable to get handle to Server Response");
     return 0;
   }
@@ -773,36 +763,22 @@ transform_plugin(TSCont contp, TSEvent event, void *edata)
   switch (event) {
   case TS_EVENT_HTTP_READ_REQUEST_HDR:
     if (request_ok(txnp)) {
-      if (TSHttpTxnHookAdd(txnp, TS_HTTP_READ_CACHE_HDR_HOOK, contp) != TS_SUCCESS) {
-        TSError("Unable to add continuation to hook " "TS_HTTP_READ_CACHE_HDR_HOOK for this transaction");
-      }
-      if (TSHttpTxnHookAdd(txnp, TS_HTTP_READ_RESPONSE_HDR_HOOK, contp) != TS_SUCCESS) {
-        TSError("Unable to add continuation to hook " "TS_HTTP_READ_RESPONSE_HDR_HOOK for this transaction");
-      }
+      TSHttpTxnHookAdd(txnp, TS_HTTP_READ_CACHE_HDR_HOOK, contp);
+      TSHttpTxnHookAdd(txnp, TS_HTTP_READ_RESPONSE_HDR_HOOK, contp);
     }
-    if (TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE) != TS_SUCCESS) {
-      TSError("Error in re-enabling transaction at TS_HTTP_READ_REQUEST_HDR_HOOK");
-    }
+    TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
     break;
   case TS_EVENT_HTTP_READ_CACHE_HDR:
     if (cache_response_ok(txnp)) {
-      if (TSHttpTxnHookAdd(txnp, TS_HTTP_RESPONSE_TRANSFORM_HOOK, transform_create(txnp)) != TS_SUCCESS) {
-        TSError("Unable to add continuation to tranformation hook " "for this transaction");
-      }
+      TSHttpTxnHookAdd(txnp, TS_HTTP_RESPONSE_TRANSFORM_HOOK, transform_create(txnp));
     }
-    if (TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE) != TS_SUCCESS) {
-      TSError("Error in re-enabling transaction at TS_HTTP_READ_CACHE_HDR_HOOK");
-    }
+    TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
     break;
   case TS_EVENT_HTTP_READ_RESPONSE_HDR:
     if (server_response_ok(txnp)) {
-      if (TSHttpTxnHookAdd(txnp, TS_HTTP_RESPONSE_TRANSFORM_HOOK, transform_create(txnp)) != TS_SUCCESS) {
-        TSError("Unable to add continuation to tranformation hook " "for this transaction");
-      }
+      TSHttpTxnHookAdd(txnp, TS_HTTP_RESPONSE_TRANSFORM_HOOK, transform_create(txnp));
     }
-    if (TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE) != TS_SUCCESS) {
-      TSError("Error in re-enabling transaction at TS_HTTP_READ_RESPONSE_HDR_HOOK");
-    }
+    TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
     break;
   default:
     break;
@@ -865,10 +841,5 @@ TSPluginInit(int argc, const char *argv[])
     return;
   }
 
-  if (TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, cont) == TS_ERROR) {
-    TSError("Unable to add the continuation to the hook. Aborting...");
-    if (TSContDestroy(cont) == TS_ERROR) {
-      TSError("Error in Destroying the continuation.");
-    }
-  }
+  TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, cont);
 }

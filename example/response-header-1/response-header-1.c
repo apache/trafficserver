@@ -85,7 +85,7 @@ modify_header(TSHttpTxn txnp, TSCont contp)
   if (!init_buffer_status)
     return;                     /* caller reenables */
 
-  if (!TSHttpTxnServerRespGet(txnp, &resp_bufp, &resp_loc)) {
+  if (TSHttpTxnServerRespGet(txnp, &resp_bufp, &resp_loc) != TS_SUCCESS) {
     TSError("couldn't retrieve server response header\n");
     return;                     /* caller reenables */
   }
@@ -137,7 +137,7 @@ modify_header(TSHttpTxn txnp, TSCont contp)
     /* N.B.: Protect writes to data (hash on URL + mutex: (ies)) */
 
     /* Get the cached HTTP header */
-    if (!TSHttpTxnCachedRespGet(txnp, &cached_bufp, &cached_loc)) {
+    if (TSHttpTxnCachedRespGet(txnp, &cached_bufp, &cached_loc) != TS_SUCCESS) {
       TSError("STATUS 304, TSHttpTxnCachedRespGet():");
       TSError("couldn't retrieve cached response header\n");
       TSHandleMLocRelease(resp_bufp, TS_NULL_MLOC, resp_loc);

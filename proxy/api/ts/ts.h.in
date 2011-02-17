@@ -1028,7 +1028,7 @@ extern "C"
       @return TS_ERROR if the plugin registration failed.
 
    */
-  tsapi TSReturnCode TSPluginRegister(TSSDKVersion sdk_version, TSPluginRegistrationInfo * plugin_info);
+  tsapi TSReturnCode TSPluginRegister(TSSDKVersion sdk_version, TSPluginRegistrationInfo *plugin_info);
 
   /* --------------------------------------------------------------------------
      Files */
@@ -1959,7 +1959,7 @@ extern "C"
   /**
       Creates (allocates memory for) a new cache key.
    */
-  tsapi TSCacheKey TSCacheKeyCreate();
+  tsapi TSCacheKey TSCacheKeyCreate(void);
 
   /**
       Generates a key for an object to be cached (written to the cache).
@@ -2019,17 +2019,16 @@ extern "C"
 
   /* --------------------------------------------------------------------------
      Management */
-  tsapi TSReturnCode TSMgmtUpdateRegister(TSCont contp, const char *plugin_name, const char *path);
-  tsapi int TSMgmtIntGet(const char *var_name, TSMgmtInt * result);
-  tsapi int TSMgmtCounterGet(const char *var_name, TSMgmtCounter * result);
-  tsapi int TSMgmtFloatGet(const char *var_name, TSMgmtFloat * result);
-  tsapi int TSMgmtStringGet(const char *var_name, TSMgmtString * result);
+  tsapi int TSMgmtIntGet(const char *var_name, TSMgmtInt *result);
+  tsapi int TSMgmtCounterGet(const char *var_name, TSMgmtCounter *result);
+  tsapi int TSMgmtFloatGet(const char *var_name, TSMgmtFloat *result);
+  tsapi int TSMgmtStringGet(const char *var_name, TSMgmtString *result);
 
   /* --------------------------------------------------------------------------
      Continuations */
   tsapi TSCont TSContCreate(TSEventFunc funcp, TSMutex mutexp);
-  tsapi TSReturnCode TSContDestroy(TSCont contp);
-  tsapi TSReturnCode TSContDataSet(TSCont contp, void *data);
+  tsapi void TSContDestroy(TSCont contp);
+  tsapi void TSContDataSet(TSCont contp, void *data);
   tsapi void *TSContDataGet(TSCont contp);
   tsapi TSAction TSContSchedule(TSCont contp, TSHRTime timeout, TSThreadPool tp);
   tsapi TSAction TSContScheduleEvery(TSCont contp, TSHRTime every, TSThreadPool tp);
@@ -2039,7 +2038,7 @@ extern "C"
 
   /* --------------------------------------------------------------------------
      HTTP hooks */
-  tsapi TSReturnCode TSHttpHookAdd(TSHttpHookID id, TSCont contp);
+  tsapi void TSHttpHookAdd(TSHttpHookID id, TSCont contp);
 
   /* --------------------------------------------------------------------------
      Cache hook */
@@ -2047,15 +2046,15 @@ extern "C"
 
   /* --------------------------------------------------------------------------
      HTTP sessions */
-  tsapi TSReturnCode TSHttpSsnHookAdd(TSHttpSsn ssnp, TSHttpHookID id, TSCont contp);
-  tsapi TSReturnCode TSHttpSsnReenable(TSHttpSsn ssnp, TSEvent event);
-  tsapi TSReturnCode TSHttpSsnTransactionCount(TSHttpSsn ssnp, int* count);
+  tsapi void TSHttpSsnHookAdd(TSHttpSsn ssnp, TSHttpHookID id, TSCont contp);
+  tsapi void TSHttpSsnReenable(TSHttpSsn ssnp, TSEvent event);
+  tsapi int TSHttpSsnTransactionCount(TSHttpSsn ssnp);
 
   /* --------------------------------------------------------------------------
      HTTP transactions */
-  tsapi TSReturnCode TSHttpTxnHookAdd(TSHttpTxn txnp, TSHttpHookID id, TSCont contp);
+  tsapi void TSHttpTxnHookAdd(TSHttpTxn txnp, TSHttpHookID id, TSCont contp);
   tsapi TSHttpSsn TSHttpTxnSsnGet(TSHttpTxn txnp);
-  tsapi int TSHttpTxnClientReqGet(TSHttpTxn txnp, TSMBuffer * bufp, TSMLoc * offset);
+  tsapi TSReturnCode TSHttpTxnClientReqGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *offset);
   tsapi TSReturnCode TSHttpTxnPristineUrlGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *url_loc);
   /** Get the effective URL for the transaction.
       The effective URL is the URL taking in to account both the explicit
@@ -2070,18 +2069,18 @@ extern "C"
     TSHttpTxn txnp, ///< Transaction.
     int* length ///< String length return, may be @c NULL.
   );
-  tsapi int TSHttpTxnClientRespGet(TSHttpTxn txnp, TSMBuffer * bufp, TSMLoc * offset);
-  tsapi int TSHttpTxnServerReqGet(TSHttpTxn txnp, TSMBuffer * bufp, TSMLoc * offset);
-  tsapi int TSHttpTxnServerRespGet(TSHttpTxn txnp, TSMBuffer * bufp, TSMLoc * offset);
-  tsapi int TSHttpTxnCachedReqGet(TSHttpTxn txnp, TSMBuffer * bufp, TSMLoc * offset);
-  tsapi int TSHttpTxnCachedRespGet(TSHttpTxn txnp, TSMBuffer * bufp, TSMLoc * offset);
+  tsapi TSReturnCode TSHttpTxnClientRespGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *offset);
+  tsapi TSReturnCode TSHttpTxnServerReqGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *offset);
+  tsapi TSReturnCode TSHttpTxnServerRespGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *offset);
+  tsapi TSReturnCode TSHttpTxnCachedReqGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *offset);
+  tsapi TSReturnCode TSHttpTxnCachedRespGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *offset);
   tsapi void TSHttpTxnSetRespCacheableSet(TSHttpTxn txnp);
   tsapi void TSHttpTxnSetReqCacheableSet(TSHttpTxn txnp);
   tsapi int TSFetchPageRespGet (TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *offset);
   tsapi char* TSFetchRespGet (TSHttpTxn txnp, int *length);
   tsapi TSReturnCode TSHttpTxnCacheLookupStatusGet(TSHttpTxn txnp, int *lookup_status);
 
-  tsapi int TSHttpTxnTransformRespGet(TSHttpTxn txnp, TSMBuffer * bufp, TSMLoc * offset);
+  tsapi TSReturnCode TSHttpTxnTransformRespGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *offset);
 
   /**
       Retrieves the socket address of the remote client that has
@@ -2098,7 +2097,7 @@ extern "C"
       @return generic socket address storage.
 
    */
-  tsapi const struct sockaddr_storage * INKHttpTxnClientSockAddrGet(TSHttpTxn txnp);
+  tsapi const struct sockaddr_storage *INKHttpTxnClientSockAddrGet(TSHttpTxn txnp);
 
   tsapi unsigned int TSHttpTxnClientIPGet(TSHttpTxn txnp);
   tsapi int TSHttpTxnClientFdGet(TSHttpTxn txnp);
@@ -2108,7 +2107,7 @@ extern "C"
   tsapi unsigned int TSHttpTxnNextHopIPGet(TSHttpTxn txnp);
   tsapi int TSHttpTxnNextHopPortGet(TSHttpTxn txnp);
 
-  tsapi TSReturnCode TSHttpTxnErrorBodySet(TSHttpTxn txnp, char *buf, int buflength, char *mimetype);
+  tsapi void TSHttpTxnErrorBodySet(TSHttpTxn txnp, char *buf, int buflength, char *mimetype);
 
   /**
       Retrieves the parent proxy hostname and port, if parent
@@ -2132,10 +2131,10 @@ extern "C"
       @param port parent proxy port to set.
 
    */
-  tsapi TSReturnCode TSHttpTxnParentProxySet(TSHttpTxn txnp, char *hostname, int port);
+  tsapi void TSHttpTxnParentProxySet(TSHttpTxn txnp, char *hostname, int port);
 
-  tsapi TSReturnCode TSHttpTxnUntransformedRespCache(TSHttpTxn txnp, int on);
-  tsapi TSReturnCode TSHttpTxnTransformedRespCache(TSHttpTxn txnp, int on);
+  tsapi void TSHttpTxnUntransformedRespCache(TSHttpTxn txnp, int on);
+  tsapi void TSHttpTxnTransformedRespCache(TSHttpTxn txnp, int on);
 
   /**
       Notifies the HTTP transaction txnp that the plugin is
@@ -2156,14 +2155,14 @@ extern "C"
           been sent.
 
    */
-  tsapi TSReturnCode TSHttpTxnReenable(TSHttpTxn txnp, TSEvent event);
+  tsapi void TSHttpTxnReenable(TSHttpTxn txnp, TSEvent event);
   tsapi TSReturnCode TSHttpCacheReenable(TSCacheTxn txnp, const TSEvent event, const void *data, const uint64_t size);
   tsapi TSReturnCode TSHttpTxnFollowRedirect(TSHttpTxn txnp, int on);
 
-  tsapi TSReturnCode TSHttpTxnArgSet(TSHttpTxn txnp, int arg_idx, void *arg);
-  tsapi TSReturnCode TSHttpTxnArgGet(TSHttpTxn txnp, int arg_idx, void **argp);
-  tsapi TSReturnCode TSHttpSsnArgSet(TSHttpSsn ssnp, int arg_idx, void *arg);
-  tsapi TSReturnCode TSHttpSsnArgGet(TSHttpSsn ssnp, int arg_idx, void **argp);
+  tsapi void TSHttpTxnArgSet(TSHttpTxn txnp, int arg_idx, void *arg);
+  tsapi void *TSHttpTxnArgGet(TSHttpTxn txnp, int arg_idx);
+  tsapi void TSHttpSsnArgSet(TSHttpSsn ssnp, int arg_idx, void *arg);
+  tsapi void *TSHttpSsnArgGet(TSHttpSsn ssnp, int arg_idx);
 
   /* The reserve API should only be use in TSAPI plugins, during plugin initialization! */
   /* The lookup methods can be used anytime, but are best used during initialization as well,
@@ -2176,12 +2175,13 @@ extern "C"
   tsapi TS_DEPRECATED int TSHttpTxnMaxArgCntGet(void);
 
   tsapi int TSHttpTxnGetMaxHttpRetBodySize(void);
-  tsapi TSReturnCode TSHttpTxnSetHttpRetBody(TSHttpTxn txnp, const char *body_msg, int plain_msg);
-  tsapi TSReturnCode TSHttpTxnSetHttpRetStatus(TSHttpTxn txnp, TSHttpStatus http_retstatus);
-  tsapi int TSHttpTxnActiveTimeoutSet(TSHttpTxn txnp, int timeout);
-  tsapi int TSHttpTxnConnectTimeoutSet(TSHttpTxn txnp, int timeout);
-  tsapi int TSHttpTxnNoActivityTimeoutSet(TSHttpTxn txnp, int timeout);
-  tsapi int TSHttpTxnDNSTimeoutSet(TSHttpTxn txnp, int timeout);
+  tsapi void TSHttpTxnSetHttpRetBody(TSHttpTxn txnp, const char *body_msg, int plain_msg);
+  tsapi void TSHttpTxnSetHttpRetStatus(TSHttpTxn txnp, TSHttpStatus http_retstatus);
+
+  tsapi void TSHttpTxnActiveTimeoutSet(TSHttpTxn txnp, int timeout);
+  tsapi void TSHttpTxnConnectTimeoutSet(TSHttpTxn txnp, int timeout);
+  tsapi void TSHttpTxnDNSTimeoutSet(TSHttpTxn txnp, int timeout);
+  tsapi void TSHttpTxnNoActivityTimeoutSet(TSHttpTxn txnp, int timeout);
 
   tsapi TSServerState TSHttpTxnServerStateGet(TSHttpTxn txnp);
 
@@ -2266,7 +2266,7 @@ extern "C"
       @return TS_SUCCESS on success, TS_ERROR on failure.
 
    */
-  tsapi TSReturnCode TSHttpConnect(unsigned int log_ip, int log_port, TSVConn * vc);
+  tsapi TSVConn TSHttpConnect(unsigned int log_ip, int log_port);
   tsapi TSReturnCode TSFetchUrl(const char *request,int request_len, unsigned int ip, int port , TSCont contp, TSFetchWakeUpOptions callback_options,TSFetchEvent event);
   tsapi TSReturnCode TSFetchPages(TSFetchUrlParams_t *params);
 
@@ -2275,20 +2275,20 @@ extern "C"
 
   /* --------------------------------------------------------------------------
      HTTP alternate selection */
-  tsapi TSReturnCode TSHttpAltInfoClientReqGet(TSHttpAltInfo infop, TSMBuffer * bufp, TSMLoc * offset);
-  tsapi TSReturnCode TSHttpAltInfoCachedReqGet(TSHttpAltInfo infop, TSMBuffer * bufp, TSMLoc * offset);
-  tsapi TSReturnCode TSHttpAltInfoCachedRespGet(TSHttpAltInfo infop, TSMBuffer * bufp, TSMLoc * offset);
-  tsapi TSReturnCode TSHttpAltInfoQualitySet(TSHttpAltInfo infop, float quality);
+  tsapi TSReturnCode TSHttpAltInfoClientReqGet(TSHttpAltInfo infop, TSMBuffer *bufp, TSMLoc *offset);
+  tsapi TSReturnCode TSHttpAltInfoCachedReqGet(TSHttpAltInfo infop, TSMBuffer *bufp, TSMLoc *offset);
+  tsapi TSReturnCode TSHttpAltInfoCachedRespGet(TSHttpAltInfo infop, TSMBuffer *bufp, TSMLoc *offset);
+  tsapi void TSHttpAltInfoQualitySet(TSHttpAltInfo infop, float quality);
 
   /* --------------------------------------------------------------------------
      Actions */
-  tsapi TSReturnCode TSActionCancel(TSAction actionp);
+  tsapi void TSActionCancel(TSAction actionp);
   tsapi int TSActionDone(TSAction actionp);
 
   /* --------------------------------------------------------------------------
      VConnections */
-  tsapi TSVIO TSVConnReadVIOGet(TSVConn connp);
-  tsapi TSVIO TSVConnWriteVIOGet(TSVConn connp);
+  tsapi TSReturnCode TSVConnReadVIOGet(TSVConn connp, TSVIO *viop);
+  tsapi TSReturnCode TSVConnWriteVIOGet(TSVConn connp, TSVIO *viop);
   tsapi int TSVConnClosedGet(TSVConn connp);
 
   tsapi TSVIO TSVConnRead(TSVConn connp, TSCont contp, TSIOBuffer bufp, int64_t nbytes);
@@ -2590,7 +2590,7 @@ extern "C"
   /** @deprecated */
   tsapi TSReturnCode INKStatIncrement(INKStat the_stat);
   /** @deprecated */
-  tsapi TSReturnCode INKStatIntGet(INKStat the_stat, int64_t * value);
+  tsapi TSReturnCode INKStatIntGet(INKStat the_stat, int64_t *value);
   /** @deprecated */
   tsapi TSReturnCode INKStatFloatGet(INKStat the_stat, float *value);
   /** @deprecated */
@@ -2699,7 +2699,7 @@ extern "C"
           does not exist).
 
    */
-  tsapi TSReturnCode TSTextLogObjectCreate(const char *filename, int mode, TSTextLogObject * new_log_obj);
+  tsapi TSReturnCode TSTextLogObjectCreate(const char *filename, int mode, TSTextLogObject *new_log_obj);
 
   /**
       Writes a printf-style formatted statement to an TSTextLogObject
@@ -2816,7 +2816,7 @@ extern "C"
 
       @return 1 if transaction was aborted
   */
-  tsapi int TSHttpTxnAborted(TSHttpTxn txnp);
+  tsapi TSReturnCode TSHttpTxnAborted(TSHttpTxn txnp);
 
   /*
     The reason is even if VConn is created using this API, it is
@@ -2854,12 +2854,16 @@ extern "C"
 
   /* api functions to access stats */
   /* ClientResp APIs exist as well and are exposed in PrivateFrozen  */
-  tsapi int TSHttpTxnClientReqHdrBytesGet(TSHttpTxn txnp, int *bytes);
-  tsapi int TSHttpTxnClientReqBodyBytesGet(TSHttpTxn txnp, int64_t *bytes);
-  tsapi int TSHttpTxnServerReqHdrBytesGet(TSHttpTxn txnp, int *bytes);
-  tsapi int TSHttpTxnServerReqBodyBytesGet(TSHttpTxn txnp, int64_t *bytes);
-  tsapi int TSHttpTxnPushedRespHdrBytesGet(TSHttpTxn txnp, int *bytes);
-  tsapi int TSHttpTxnPushedRespBodyBytesGet(TSHttpTxn txnp, int64_t *bytes);
+  tsapi int TSHttpTxnClientReqHdrBytesGet(TSHttpTxn txnp);
+  tsapi int64_t TSHttpTxnClientReqBodyBytesGet(TSHttpTxn txnp);
+  tsapi int TSHttpTxnServerReqHdrBytesGet(TSHttpTxn txnp);
+  tsapi int64_t TSHttpTxnServerReqBodyBytesGet(TSHttpTxn txnp);
+  tsapi int TSHttpTxnPushedRespHdrBytesGet(TSHttpTxn txnp);
+  tsapi int64_t TSHttpTxnPushedRespBodyBytesGet(TSHttpTxn txnp);
+  tsapi int TSHttpTxnServerRespHdrBytesGet(TSHttpTxn txnp);
+  tsapi int64_t TSHttpTxnServerRespBodyBytesGet(TSHttpTxn txnp);
+  tsapi int TSHttpTxnClientRespHdrBytesGet(TSHttpTxn txnp);
+  tsapi int64_t TSHttpTxnClientRespBodyBytesGet(TSHttpTxn txnp);
 
   /* NetVC timeout APIs. */
   tsapi void TSVConnInactivityTimeoutSet(TSVConn connp, TSHRTime timeout);
@@ -2893,6 +2897,13 @@ extern "C"
   */
   tsapi TSReturnCode TSRedirectUrlSet(TSHttpTxn txnp, const char* url, const int url_len);
   tsapi const char*  TSRedirectUrlGet(TSHttpTxn txnp, int* url_len_ptr);
+
+  /* Get current HTTP connection stats */
+  tsapi int TSHttpCurrentClientConnectionsGet(void);
+  tsapi int TSHttpCurrentActiveClientConnectionsGet(void);
+  tsapi int TSHttpCurrentIdleClientConnectionsGet(void);
+  tsapi int TSHttpCurrentCacheConnectionsGet(void);
+  tsapi int TSHttpCurrentServerConnectionsGet(void);
   
 #ifdef __cplusplus
 }

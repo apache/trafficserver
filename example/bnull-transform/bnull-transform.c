@@ -86,7 +86,7 @@ handle_buffering(TSCont contp, MyData * data)
      ourself. This VIO contains the buffer that we are to read from
      as well as the continuation we are to call when the buffer is
      empty. */
-  write_vio = TSVConnWriteVIOGet(contp);
+  TSVConnWriteVIOGet(contp, &write_vio); /* Should check for errors ... */
 
   /* Create the output buffer and its associated reader */
   if (!data->output_buffer) {
@@ -228,7 +228,7 @@ bnull_transform(TSCont contp, TSEvent event, void *edata)
 
   if (TSVConnClosedGet(contp)) {
     my_data_destroy(TSContDataGet(contp));
-    TSAssert(TSContDestroy(contp) == TS_SUCCESS);
+    TSContDestroy(contp);
   } else {
     switch (event) {
     case TS_EVENT_ERROR:{
@@ -237,7 +237,7 @@ bnull_transform(TSCont contp, TSEvent event, void *edata)
         /* Get the write VIO for the write operation that was
            performed on ourself. This VIO contains the continuation of
            our parent transformation. */
-        write_vio = TSVConnWriteVIOGet(contp);
+        TSVConnWriteVIOGet(contp, &write_vio); /* Should check for errors ... */
 
         /* Call back the write VIO continuation to let it know that we
            have completed the write operation. */
@@ -294,12 +294,7 @@ transform_add(TSHttpTxn txnp)
   TSVConn connp;
 
   connp = TSTransformCreate(bnull_transform, txnp);
-  if (TSHttpTxnHookAdd(txnp, TS_HTTP_RESPONSE_TRANSFORM_HOOK, connp)
-      == TS_ERROR) {
-    /* this should not happen */
-    TSError("[bnull-transform] Error adding transform to transaction\n");
-  }
-
+  TSHttpTxnHookAdd(txnp, TS_HTTP_RESPONSE_TRANSFORM_HOOK, connp);
   return;
 }
 
@@ -371,11 +366,7 @@ TSPluginInit(int argc, const char *argv[])
   /* This is call we could use if we need to protect global data */
   /* TSReleaseAssert ((mutex = TSMutexCreate()) != TS_NULL_MUTEX); */
 
-  if (TSHttpHookAdd(TS_HTTP_READ_RESPONSE_HDR_HOOK, TSContCreate(transform_plugin, mutex)) == TS_ERROR) {
-    TSError("[bnull-transform] Unable to add READ_RESPONSE_HDR_HOOK\n");
-    goto Lerror;
-  }
-
+  TSHttpHookAdd(TS_HTTP_READ_RESPONSE_HDR_HOOK, TSContCreate(transform_plugin, mutex));
   return;
 
 Lerror:

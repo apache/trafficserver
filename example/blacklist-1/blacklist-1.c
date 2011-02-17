@@ -77,7 +77,7 @@ handle_dns(TSHttpTxn txnp, TSCont contp)
   int lock;
   TSReturnCode ret_code;
 
-  if (!TSHttpTxnClientReqGet(txnp, &bufp, &hdr_loc)) {
+  if (TSHttpTxnClientReqGet(txnp, &bufp, &hdr_loc) != TS_SUCCESS) {
     TSError("couldn't retrieve client request header\n");
     goto done;
   }
@@ -149,7 +149,7 @@ handle_response(TSHttpTxn txnp, TSCont contp)
   char *buf;
   int url_length;
 
-  if (!TSHttpTxnClientRespGet(txnp, &bufp, &hdr_loc)) {
+  if (TSHttpTxnClientRespGet(txnp, &bufp, &hdr_loc) != TS_SUCCESS) {
     TSError("couldn't retrieve client response header\n");
     goto done;
   }
@@ -159,7 +159,7 @@ handle_response(TSHttpTxn txnp, TSCont contp)
                       TSHttpHdrReasonLookup(TS_HTTP_STATUS_FORBIDDEN),
                       strlen(TSHttpHdrReasonLookup(TS_HTTP_STATUS_FORBIDDEN)));
 
-  if (!TSHttpTxnClientReqGet(txnp, &bufp, &hdr_loc)) {
+  if (TSHttpTxnClientReqGet(txnp, &bufp, &hdr_loc) != TS_SUCCESS) {
     TSError("couldn't retrieve client request header\n");
     TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
     goto done;

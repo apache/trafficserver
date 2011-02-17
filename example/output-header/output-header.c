@@ -64,7 +64,7 @@ handle_dns(TSHttpTxn txnp, TSCont contp)
   char *output_string;
   int64_t output_len;
 
-  if (!TSHttpTxnClientReqGet(txnp, &bufp, &hdr_loc)) {
+  if (TSHttpTxnClientReqGet(txnp, &bufp, &hdr_loc) != TS_SUCCESS) {
     TSDebug(DEBUG_TAG, "couldn't retrieve client request header");
     TSError("couldn't retrieve client request header\n");
     goto done;

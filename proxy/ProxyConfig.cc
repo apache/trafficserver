@@ -95,7 +95,7 @@ class ConfigInfoReleaser:public Continuation
 {
 public:
   ConfigInfoReleaser(unsigned int id, ConfigInfo * info)
-  :Continuation(new_ProxyMutex()), m_id(id), m_info(info)
+    : Continuation(new_ProxyMutex()), m_id(id), m_info(info)
   {
     SET_HANDLER(&ConfigInfoReleaser::handle_event);
   }
@@ -116,7 +116,7 @@ public:
 
 
 ConfigProcessor::ConfigProcessor()
-:ninfos(0)
+  : ninfos(0)
 {
   int i;
 

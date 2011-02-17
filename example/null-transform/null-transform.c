@@ -93,8 +93,7 @@ handle_transform(TSCont contp)
    * empty. This is the input VIO (the write VIO for the upstream
    * vconnection).
    */
-  input_vio = TSVConnWriteVIOGet(contp);
-  if (input_vio == TS_ERROR_PTR) {
+  if (TSVConnWriteVIOGet(contp, &input_vio) != TS_SUCCESS) {
     TSError("[null-transform] Unable to fetching input VIO\n");
     goto Lerror;
   }
@@ -113,10 +112,7 @@ handle_transform(TSCont contp)
     //data->output_vio = TSVConnWrite(output_conn, contp, data->output_reader, INT32_MAX);
     data->output_vio = TSVConnWrite(output_conn, contp, data->output_reader, INT64_MAX);
     // data->output_vio = TSVConnWrite(output_conn, contp, data->output_reader, TSVIONBytesGet(input_vio));
-    if (TSContDataSet(contp, data) == TS_ERROR) {
-      TSError("[null-transform] unable to set continuation " "data!\n");
-      goto Lerror;
-    }
+    TSContDataSet(contp, data);
   }
 
   /* We also check to see if the input VIO's buffer is non-NULL. A
@@ -247,7 +243,7 @@ null_transform(TSCont contp, TSEvent event, void *edata)
   if (TSVConnClosedGet(contp)) {
     TSDebug("null-transform", "\tVConn is closed");
     my_data_destroy(TSContDataGet(contp));
-    TSAssert(TSContDestroy(contp) == TS_SUCCESS);
+    TSContDestroy(contp);
     return 0;
   } else {
     switch (event) {
@@ -260,7 +256,7 @@ null_transform(TSCont contp, TSEvent event, void *edata)
          * performed on ourself. This VIO contains the continuation of
          * our parent transformation. This is the input VIO.
          */
-        input_vio = TSVConnWriteVIOGet(contp);
+        TSVConnWriteVIOGet(contp, &input_vio); /* Should check for errors ... */
 
         /* Call back the write VIO continuation to let it know that we
          * have completed the write operation.
@@ -326,9 +322,7 @@ transform_add(TSHttpTxn txnp)
 
   TSDebug("null-transform", "Entering transform_add()");
   connp = TSTransformCreate(null_transform, txnp);
-  if (TSHttpTxnHookAdd(txnp, TS_HTTP_RESPONSE_TRANSFORM_HOOK, connp) == TS_ERROR) {
-    TSError("[null-plugin] Unable to attach plugin to transaction\n");
-  }
+  TSHttpTxnHookAdd(txnp, TS_HTTP_RESPONSE_TRANSFORM_HOOK, connp);
 }
 
 static int
@@ -344,10 +338,7 @@ transform_plugin(TSCont contp, TSEvent event, void *edata)
       transform_add(txnp);
     }
 
-    if (TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE) == TS_ERROR) {
-      TSError("[null-plugin] Alert! unable to continue " "the HTTP transaction\n");
-      return -1;
-    }
+    TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
     return 0;
   default:
     break;
@@ -401,11 +392,7 @@ TSPluginInit(int argc, const char *argv[])
     goto Lerror;
   }
 
-  if (TSHttpHookAdd(TS_HTTP_READ_RESPONSE_HDR_HOOK, TSContCreate(transform_plugin, NULL)) == TS_ERROR) {
-    TSError("[null-transform] Unable to set READ_RESPONSE_HDR_HOOK\n");
-    goto Lerror;
-  }
-
+  TSHttpHookAdd(TS_HTTP_READ_RESPONSE_HDR_HOOK, TSContCreate(transform_plugin, NULL));
   return;
 
 Lerror:

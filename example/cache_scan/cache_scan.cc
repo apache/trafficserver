@@ -222,13 +222,11 @@ cleanup(TSCont contp)
   if (cstate) {
     // cancel any pending cache scan actions, since we will be destroying the
     // continuation
-    if (cstate->pending_action) {
+    if (cstate->pending_action)
       TSActionCancel(cstate->pending_action);
-    }
 
-    if (cstate->net_vc) {
+    if (cstate->net_vc)
       TSVConnShutdown(cstate->net_vc, 1, 1);
-    }
 
     if (cstate->req_buffer) {
       if (TSIOBufferDestroy(cstate->req_buffer) == TS_ERROR) {
@@ -416,15 +414,17 @@ setup_request(TSCont contp, TSHttpTxn txnp)
 
   TSAssert(contp == global_contp);
 
-  if (!TSHttpTxnClientReqGet(txnp, &bufp, &hdr_loc)) {
+  if (TSHttpTxnClientReqGet(txnp, &bufp, &hdr_loc) != TS_SUCCESS) {
     TSError("couldn't retrieve client request header");
-    return TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
+    TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
+    return TS_SUCCESS;
   }
 
   if (TSHttpHdrUrlGet(bufp, hdr_loc, &url_loc) != TS_SUCCESS) {
     TSError("couldn't retrieve request url");
     TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
-    return TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
+    TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
+    return TS_SUCCESS;
   }
 
   path = TSUrlPathGet(bufp, url_loc, &path_len);
@@ -432,7 +432,8 @@ setup_request(TSCont contp, TSHttpTxn txnp)
     TSError("couldn't retrieve request path");
     TSHandleMLocRelease(bufp, hdr_loc, url_loc);
     TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
-    return TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
+    TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
+    return TS_SUCCESS;
   }
 
   query = TSUrlHttpQueryGet(bufp, url_loc, &query_len);
@@ -487,11 +488,7 @@ setup_request(TSCont contp, TSHttpTxn txnp)
       }
     }
 
-    if (TSContDataSet(scan_contp, cstate) != TS_SUCCESS) {
-      TSError("ContDataSet failed");
-      TSfree(cstate);
-      goto Ldone;
-    }
+    TSContDataSet(scan_contp, cstate);
     TSDebug("cache_iter", "setup cache intercept");
   } else {
     TSDebug("cache_iter", "not a cache iter request");
@@ -500,8 +497,8 @@ setup_request(TSCont contp, TSHttpTxn txnp)
 Ldone:
   TSHandleMLocRelease(bufp, hdr_loc, url_loc);
   TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
-
-  return TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
+  TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
+  return TS_SUCCESS;
 }
 
 //----------------------------------------------------------------------------
@@ -515,7 +512,8 @@ cache_print_plugin(TSCont contp, TSEvent event, void *edata)
   default:
     break;
   }
-  return TSHttpTxnReenable((TSHttpTxn) edata, TS_EVENT_HTTP_CONTINUE);
+  TSHttpTxnReenable((TSHttpTxn) edata, TS_EVENT_HTTP_CONTINUE);
+  return TS_SUCCESS;
 }
 
 //----------------------------------------------------------------------------

@@ -327,7 +327,7 @@ tsremap_remap(ihandle ih, rhandle rh, TSRemapRequestInfo * rri)
 
 
   // InkAPI usage case
-  if (TSHttpTxnClientReqGet((TSHttpTxn) rh, &cbuf, &chdr)) {
+  if (TSHttpTxnClientReqGet((TSHttpTxn) rh, &cbuf, &chdr) == TS_SUCCESS) {
     const char *value;
     if ((cfield = TSMimeHdrFieldFind(cbuf, chdr, TS_MIME_FIELD_DATE, -1)) != TS_NULL_MLOC) {
       fprintf(stderr, "We have \"Date\" header in request\n");
@@ -384,8 +384,11 @@ tsremap_remap(ihandle ih, rhandle rh, TSRemapRequestInfo * rri)
 void
 tsremap_os_response(ihandle ih, rhandle rh, int os_response_type)
 {
-  int request_id;
-  TSHttpTxnArgGet((TSHttpTxn) rh, arg_index, (void **) &request_id);  // read counter (we store it in tsremap_remap function call)
+  int request_id = -1;
+  void *data = TSHttpTxnArgGet((TSHttpTxn) rh, arg_index);  // read counter (we store it in tsremap_remap function call)
+
+  if (data)
+    request_id = *((int*)data);
   fprintf(stderr, "[tsremap_os_response] Read processing counter %d from request processing block\n", request_id);
   fprintf(stderr, "[tsremap_os_response] OS response status: %d\n", os_response_type);
 }

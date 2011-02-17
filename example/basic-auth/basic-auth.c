@@ -119,7 +119,7 @@ handle_dns(TSHttpTxn txnp, TSCont contp)
   char *user, *password;
   int authval_length;
 
-  if (!TSHttpTxnClientReqGet(txnp, &bufp, &hdr_loc)) {
+  if (TSHttpTxnClientReqGet(txnp, &bufp, &hdr_loc) != TS_SUCCESS) {
     TSError("couldn't retrieve client request header\n");
     goto done;
   }
@@ -192,7 +192,7 @@ handle_response(TSHttpTxn txnp)
   const char *insert = "Basic realm=\"proxy\"";
   int len = strlen(insert);
 
-  if (!TSHttpTxnClientRespGet(txnp, &bufp, &hdr_loc)) {
+  if (TSHttpTxnClientRespGet(txnp, &bufp, &hdr_loc) != TS_SUCCESS) {
     TSError("couldn't retrieve client response header\n");
     goto done;
   }

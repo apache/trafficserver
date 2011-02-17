@@ -402,7 +402,7 @@ get_request_id(TSHttpTxn txnp)
   TSMLoc hdr_loc, id_loc;
   int id = -1;
 
-  if (!TSHttpTxnClientReqGet(txnp, &bufp, &hdr_loc)) {
+  if (TSHttpTxnClientReqGet(txnp, &bufp, &hdr_loc) != TS_SUCCESS) {
     return -1;
   }
 
