@@ -230,10 +230,6 @@ strsearch_ioreader(TSIOBufferReader reader, const char *pattern, int *nparse)
   if (slen <= 0) {
     return STR_FAIL;
   }
-  if (block == TS_ERROR_PTR) {
-    TSError("[strsearch_ioreader] Error while getting block from ioreader");
-    return STR_FAIL;
-  }
 
   *nparse = 0;
 
@@ -242,11 +238,6 @@ strsearch_ioreader(TSIOBufferReader reader, const char *pattern, int *nparse)
     int64_t blocklen;
     const char *blockptr = TSIOBufferBlockReadStart(block, reader, &blocklen);
     const char *ptr;
-
-    if (blockptr == TS_ERROR_PTR) {
-      TSError("[strsearch_ioreader] Error while getting block pointer");
-      break;
-    }
 
     for (ptr = blockptr; ptr < blockptr + blocklen; ptr++) {
       (*nparse)++;
@@ -262,10 +253,6 @@ strsearch_ioreader(TSIOBufferReader reader, const char *pattern, int *nparse)
 
     /* Parse next block */
     block = TSIOBufferBlockNext(block);
-    if (block == TS_ERROR_PTR) {
-      TSError("[strsearch_ioreader] Error while getting block from ioreader");
-      return STR_FAIL;
-    }
   }
 
   *nparse -= index;             /* Adjust nparse so it doesn't include matching chars */
@@ -313,20 +300,11 @@ strextract_ioreader(TSIOBufferReader reader, int offset, const char *end_pattern
   if (plen <= 0) {
     return STR_FAIL;
   }
-  if (block == TS_ERROR_PTR) {
-    TSError("[strextract_ioreader] Error while getting block from ioreader");
-    return STR_FAIL;
-  }
 
   /* Now start extraction */
   while ((block != NULL) && (p_idx < plen) && (buf_idx < PSI_FILENAME_MAX_SIZE)) {
     int64_t blocklen;
     const char *blockptr = TSIOBufferBlockReadStart(block, reader, &blocklen);
-
-    if (blockptr == TS_ERROR_PTR) {
-      TSError("[strsearch_ioreader] Error while getting block pointer");
-      break;
-    }
 
     for (ptr = blockptr; ptr < blockptr + blocklen; ptr++, nbytes_so_far++) {
       if (nbytes_so_far >= offset) {
@@ -352,10 +330,6 @@ strextract_ioreader(TSIOBufferReader reader, int offset, const char *end_pattern
     }
 
     block = TSIOBufferBlockNext(block);
-    if (block == TS_ERROR_PTR) {
-      TSError("[strextract_ioreader] Error while getting block from ioreader");
-      return STR_FAIL;
-    }
   }
 
   /* Error, could not read end of filename */
@@ -523,11 +497,6 @@ psi_include(TSCont contp, void *edata)
   if (!data->psi_buffer) {
     data->psi_buffer = TSIOBufferCreate();
     data->psi_reader = TSIOBufferReaderAlloc(data->psi_buffer);
-
-    if ((data->psi_buffer == TS_ERROR_PTR) || (data->psi_reader == TS_ERROR_PTR)) {
-      TSError("[psi_include] Could not create iobuffer to store include content");
-      goto error;
-    }
   }
 
   /* For security reason, we do not allow to include files that are
@@ -550,15 +519,7 @@ psi_include(TSCont contp, void *edata)
       while (ntodo > 0) {
         /* TSIOBufferStart allocates more blocks if required */
         block = TSIOBufferStart(data->psi_buffer);
-        if (block == TS_ERROR_PTR) {
-          TSError("[psi_include] Could not get buffer block");
-          goto error;
-        }
         ptr_block = TSIOBufferBlockWriteStart(block, &avail);
-        if (ptr_block == TS_ERROR_PTR) {
-          TSError("[psi_include] Could not get buffer block");
-          goto error;
-        }
         towrite = MIN(ntodo, avail);
 
         memcpy(ptr_block, buf + ndone, towrite);
@@ -586,11 +547,11 @@ psi_include(TSCont contp, void *edata)
      TS_HTTP_READ_REQUEST_HDR, TS_HTTP_OS_DNS and so on...) we could
      use TSHttpTxnReenable to wake up the transaction instead of sending an event. */
 
-error:
   TSContSchedule(contp, 0, TS_THREAD_POOL_DEFAULT);
   data->psi_success = 0;
   data->state = STATE_READ_DATA;
   TSMutexUnlock(TSContMutexGet(contp));
+
   return 0;
 }
 
@@ -619,10 +580,6 @@ wake_up_streams(TSCont contp)
 
   input_vio = TSVConnWriteVIOGet(contp);
   ntodo = TSVIONTodoGet(input_vio);
-  if (ntodo == TS_ERROR) {
-    TSError("[wake_up_streams] Error while getting bytes left to read");
-    return 0;
-  }
 
   if (ntodo > 0) {
     TSVIOReenable(data->output_vio);
@@ -665,10 +622,6 @@ handle_transform(TSCont contp)
 
   /* Get the output (downstream) vconnection where we'll write data to. */
   output_conn = TSTransformOutputVConnGet(contp);
-  if (output_conn == TS_ERROR_PTR) {
-    TSError("[handle_transform] Error while getting transform VC");
-    return 1;
-  }
 
   /* Get upstream vio */
   input_vio = TSVConnWriteVIOGet(contp);
@@ -681,11 +634,6 @@ handle_transform(TSCont contp)
 
     /* INT64_MAX because we don't know yet how much bytes we'll produce */
     data->output_vio = TSVConnWrite(output_conn, contp, data->output_reader, INT64_MAX);
-
-    if (data->output_vio == TS_ERROR_PTR) {
-      TSError("[handle_transform] Error while writing to downstream VC");
-      return 0;
-    }
   }
 
   /* If the input VIO's buffer is NULL, the transformation is over */
@@ -702,10 +650,6 @@ handle_transform(TSCont contp)
   if (toread > 0) {
     input_reader = TSVIOReaderGet(input_vio);
     avail = TSIOBufferReaderAvail(input_reader);
-    if (avail == TS_ERROR) {
-      TSError("[handle_transform] Error while getting number of bytes available");
-      return 0;
-    }
 
     /* There are some data available for reading. Let's parse it */
     if (avail > 0) {
@@ -726,11 +670,6 @@ handle_transform(TSCont contp)
 
         /* Copy the data from the read buffer to the output buffer. */
         retval = TSIOBufferCopy(TSVIOBufferGet(data->output_vio), TSVIOReaderGet(input_vio), towrite, 0);
-        if (retval == TS_ERROR) {
-          TSError("[handle_transform] Error while copying bytes to output VC");
-          return 0;
-        }
-
         /* Reenable the output connection so it can read the data we've produced. */
         TSVIOReenable(data->output_vio);
       }
@@ -796,21 +735,12 @@ dump_psi(TSCont contp)
   /* If script exec succeded, copy its output to the downstream vconn */
   if (data->psi_success == 1) {
     psi_output_len = TSIOBufferReaderAvail(data->psi_reader);
-    if (psi_output_len == TS_ERROR) {
-      TSError("[dump_psi] Error while getting available bytes from reader");
-      return 1;
-    }
 
     if (psi_output_len > 0) {
       data->transform_bytes += psi_output_len;
 
       TSDebug(DBG_TAG, "Inserting %d bytes from include file", psi_output_len);
       retval = TSIOBufferCopy(TSVIOBufferGet(data->output_vio), data->psi_reader, psi_output_len, 0);
-      if (retval == TS_ERROR) {
-        TSError("[dump_psi] Error while copying include bytes to downstream VC");
-        return 1;
-      }
-
       /* Consume all the output data */
       TSIOBufferReaderConsume(data->psi_reader, psi_output_len);
 
@@ -866,9 +796,6 @@ transform_handler(TSCont contp, TSEvent event, void *edata)
 
   /* Check to see if the transformation has been closed */
   retval = TSVConnClosedGet(contp);
-  if (retval == TS_ERROR) {
-    TSError("[transform_handler] Error while getting close status of transformation");
-  }
   if (retval) {
     /* If the thread is still executing its job, we don't want to destroy
        the continuation right away as the thread will call us back
@@ -970,10 +897,7 @@ transformable(TSHttpTxn txnp)
   TSHttpTxnServerRespGet(txnp, &bufp, &hdr_loc);
 
   resp_status = TSHttpHdrStatusGet(bufp, hdr_loc);
-  if (resp_status == (TSHttpStatus)TS_ERROR) {
-    TSError("[transformable] Error while getting http status");
-  }
-  if ((resp_status == (TSHttpStatus)TS_ERROR) || (resp_status != TS_HTTP_STATUS_OK)) {
+  if (resp_status != TS_HTTP_STATUS_OK) {
     TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
     return 0;
   }
@@ -1025,11 +949,6 @@ transform_add(TSHttpTxn txnp)
   ContData *data;
 
   contp = TSTransformCreate(transform_handler, txnp);
-  if (contp == TS_ERROR_PTR) {
-    TSError("[transform_add] Error while creating a new transformation");
-    return 0;
-  }
-
   data = cont_data_alloc();
   TSContDataSet(contp, data);
 

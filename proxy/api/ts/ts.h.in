@@ -559,8 +559,6 @@ extern "C"
       TS_THREAD_POOL_UDP
     } TSThreadPool;
 
-  extern tsapi const void *TS_ERROR_PTR;
-
   typedef int64_t TSHRTime;
 
   /* These typedefs are used with the corresponding TSMgmt*Get functions
@@ -2207,7 +2205,6 @@ extern "C"
 
       @param contp continuation called to handle the interception.
       @param txnp transaction to be intercepted.
-      @return TS_SUCCESS on success, TS_ERROR on failure.
 
    */
   tsapi void TSHttpTxnIntercept(TSCont contp, TSHttpTxn txnp);
@@ -2241,7 +2238,6 @@ extern "C"
 
       @param contp continuation called to handle the interception
       @param txnp transaction to be intercepted.
-      @return TS_SUCCESS on success, TS_ERROR on failure.
 
    */
   tsapi void TSHttpTxnServerIntercept(TSCont contp, TSHttpTxn txnp);
@@ -2263,7 +2259,6 @@ extern "C"
       @param log_port port (in network byte order) that connection will
         be logged as coming from.
       @param vc will be set to point to the new TSVConn on success.
-      @return TS_SUCCESS on success, TS_ERROR on failure.
 
    */
   tsapi TSVConn TSHttpConnect(unsigned int log_ip, int log_port);

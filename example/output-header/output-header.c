@@ -71,22 +71,7 @@ handle_dns(TSHttpTxn txnp, TSCont contp)
   }
 
   output_buffer = TSIOBufferCreate();
-
-  /* TSIOBufferCreate may return an error pointer */
-  if ((void *) output_buffer == TS_ERROR_PTR) {
-    TSDebug(DEBUG_TAG, "couldn't allocate IOBuffer");
-    TSError("couldn't allocate IOBuffer\n");
-    goto done;
-  }
-
   reader = TSIOBufferReaderAlloc(output_buffer);
-
-  /* TSIOBufferReaderAlloc may return an error pointer */
-  if ((void *) reader == TS_ERROR_PTR) {
-    TSDebug(DEBUG_TAG, "couldn't allocate IOBufferReader");
-    TSError("couldn't allocate IOBufferReader\n");
-    goto done;
-  }
 
   /* This will print  just MIMEFields and not
      the http request line */
@@ -104,13 +89,6 @@ handle_dns(TSHttpTxn txnp, TSCont contp)
      see the size of the entire header */
   total_avail = TSIOBufferReaderAvail(reader);
 
-  /* TSIOBufferReaderAvail may send an TS_ERROR */
-  if ((TSReturnCode) total_avail == TS_ERROR) {
-    TSDebug(DEBUG_TAG, "couldn't get available byte-count from IO-read-buffer");
-    TSError("couldn't get available byte-count from IO-read-buffer\n");
-    goto done;
-  }
-
   /* Allocate the string with an extra byte for the string
      terminator */
   output_string = (char *) TSmalloc(total_avail + 1);
@@ -120,24 +98,8 @@ handle_dns(TSHttpTxn txnp, TSCont contp)
      sure we get the complete header since the header can
      be in multiple blocks */
   block = TSIOBufferReaderStart(reader);
-
-  /* TSIOBufferReaderStart may return an error pointer */
-  if (block == TS_ERROR_PTR) {
-    TSDebug(DEBUG_TAG, "couldn't get from IOBufferBlock");
-    TSError("couldn't get from IOBufferBlock\n");
-    goto done;
-  }
-
   while (block) {
-
     block_start = TSIOBufferBlockReadStart(block, reader, &block_avail);
-
-    /* TSIOBufferBlockReadStart may return an error pointer */
-    if (block_start == TS_ERROR_PTR) {
-      TSDebug(DEBUG_TAG, "couldn't read from IOBuffer");
-      TSError("couldn't read from IOBuffer\n");
-      goto done;
-    }
 
     /* We'll get a block pointer back even if there is no data
        left to read so check for this condition and break out of
@@ -157,13 +119,6 @@ handle_dns(TSHttpTxn txnp, TSCont contp)
     /* Get the next block now that we've consumed the
        data off the last block */
     block = TSIOBufferReaderStart(reader);
-
-    /* TSIOBufferReaderStart may return an error pointer */
-    if (block == TS_ERROR_PTR) {
-      TSDebug(DEBUG_TAG, "couldn't get from IOBufferBlock");
-      TSError("couldn't get from IOBufferBlock\n");
-      goto done;
-    }
   }
 
   /* Terminate the string */

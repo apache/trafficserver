@@ -357,8 +357,6 @@ static ClassAllocator<INKContInternal> INKContAllocator("INKContAllocator");
 static ClassAllocator<INKVConnInternal> INKVConnAllocator("INKVConnAllocator");
 static ClassAllocator<MIMEFieldSDKHandle> mHandleAllocator("MIMEFieldSDKHandle");
 
-// Error Ptr.
-tsapi const void *TS_ERROR_PTR = (const void*) 0x00000bad;
 
 ////////////////////////////////////////////////////////////////////
 //
@@ -404,8 +402,12 @@ _TSAssert(const char *text, const char *file, int line)
 }
 
 // This assert is for internal API use only.
+#if TS_USE_FAST_SDK
+#define sdk_assert(EX) (void)(EX)
+#else
 #define sdk_assert(EX)                                          \
   (void)((EX) || (_TSReleaseAssert(#EX, __FILE__, __LINE__)))
+#endif
 
 ////////////////////////////////////////////////////////////////////
 //
@@ -2276,6 +2278,7 @@ TSMimeParserCreate(void)
   TSMimeParser parser;
 
   parser = xmalloc(sizeof(MIMEParser));
+  // TODO: Should remove this when memory allocation can't fail.
   sdk_assert(sdk_sanity_check_mime_parser(parser) == TS_SUCCESS);
 
   mime_parser_init((MIMEParser *) parser);
@@ -2312,7 +2315,6 @@ TSMimeHdrCreate(TSMBuffer bufp, TSMLoc *locp)
   // Allow to modify the buffer only
   // if bufp is modifiable. If bufp is not modifiable return
   // TS_ERROR. If not allowed, return NULL.
-  // Changed the return value for SDK3.0 from NULL to TS_ERROR_PTR.
   sdk_assert(sdk_sanity_check_mbuffer(bufp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_null_ptr((void*)locp) == TS_SUCCESS);
 
@@ -2718,7 +2720,6 @@ TSMimeHdrFieldCreate(TSMBuffer bufp, TSMLoc mh_mloc, TSMLoc *locp)
   // Allow to modify the buffer only
   // if bufp is modifiable. If bufp is not modifiable return
   // TS_ERROR. If not allowed, return NULL.
-  // Changed the return value to TS_ERROR_PTR from NULL in case of errors.
   sdk_assert(sdk_sanity_check_mbuffer(bufp) == TS_SUCCESS);
   sdk_assert((sdk_sanity_check_mime_hdr_handle(mh_mloc) == TS_SUCCESS) ||
              (sdk_sanity_check_http_hdr_handle(mh_mloc) == TS_SUCCESS));
@@ -3540,17 +3541,13 @@ TSHttpHdrTypeGet(TSMBuffer bufp, TSMLoc obj)
 TSReturnCode
 TSHttpHdrTypeSet(TSMBuffer bufp, TSMLoc obj, TSHttpType type)
 {
-#ifdef DEBUG
-  if ((type<TS_HTTP_TYPE_UNKNOWN) || (type> TS_HTTP_TYPE_RESPONSE)) {
-    return TS_ERROR;
-  }
-#endif
   // Allow to modify the buffer only
   // if bufp is modifiable. If bufp is not modifiable return
   // TS_ERROR. If allowed, return TS_SUCCESS. Changed the
   // return value of function from void to TSReturnCode.
   sdk_assert(sdk_sanity_check_mbuffer(bufp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_http_hdr_handle(obj) == TS_SUCCESS);
+  sdk_assert((type >= TS_HTTP_TYPE_UNKNOWN) && (type <= TS_HTTP_TYPE_RESPONSE));
 
   if (!isWriteable(bufp))
     return TS_ERROR;

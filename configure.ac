@@ -151,6 +151,21 @@ AC_ARG_ENABLE([debug],
 AC_MSG_RESULT([$enable_debug])
 
 #
+# Fast SDK APIs, this disables the parameter checks (assert)
+# on all APIs.
+#
+
+AC_MSG_CHECKING([whether to enable fast SDK APIs])
+AC_ARG_ENABLE([fast-sdk],
+  [AS_HELP_STRING([--enable-fast-sdk],[enable fast SDK APIs (no input parameter sanity checks)])],
+  [],
+  [enable_fast_sdk=no]
+)
+AC_MSG_RESULT([$enable_fast_sdk])
+TS_ARG_ENABLE_VAR([use], [fast-sdk])
+AC_SUBST(use_fast_sdk)
+
+#
 # Diags
 #
 

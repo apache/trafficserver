@@ -35,8 +35,6 @@ Assertions
 int
 _ink_assert(const char *a, const char *f, int l)
 {
-
-#ifndef NO_ASSERTS
   char buf1[256];
   char buf2[512];
   ink_strlcpy(buf1, f, sizeof(buf1));
@@ -44,7 +42,6 @@ _ink_assert(const char *a, const char *f, int l)
   ink_strlcat(buf2, a, sizeof(buf2));
   ink_strlcat(buf2, "`", sizeof(buf2));
   ink_fatal(1, buf2);
-#endif /* NO_ASSERTS */
 
   return (0);
 }

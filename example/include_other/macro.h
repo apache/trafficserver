@@ -64,7 +64,7 @@
 }
 
 /* Release macros */
-#define VALID_PTR(X) ((X != NULL) && (X != TS_ERROR_PTR))
+#define VALID_PTR(X) (X != NULL))
 
 #define FREE(X) \
 { \

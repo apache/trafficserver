@@ -62,7 +62,7 @@ my_data_alloc()
   MyData *data;
 
   data = (MyData *) TSmalloc(sizeof(MyData));
-  TSReleaseAssert(data && data != TS_ERROR_PTR);
+  TSReleaseAssert(data);
 
   data->output_vio = NULL;
   data->output_buffer = NULL;
@@ -331,7 +331,6 @@ load(const char *filename)
 
   append_buffer = TSIOBufferCreate();
   append_buffer_reader = TSIOBufferReaderAlloc(append_buffer);
-  TSAssert(append_buffer_reader != TS_ERROR_PTR);
 
   for (;;) {
     blk = TSIOBufferStart(append_buffer);

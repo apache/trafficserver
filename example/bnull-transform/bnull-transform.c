@@ -123,10 +123,7 @@ handle_buffering(TSCont contp, MyData * data)
 
     if (towrite > 0) {
       /* Copy the data from the read buffer to the input buffer. */
-      if (TSIOBufferCopy(data->output_buffer, TSVIOReaderGet(write_vio), towrite, 0) == TS_ERROR) {
-        TSError("[bnull-transform] Unable to copy read buffer\n");
-        goto Lerror;
-      }
+      TSIOBufferCopy(data->output_buffer, TSVIOReaderGet(write_vio), towrite, 0);
 
       /* Tell the read buffer that we have read the data and are no
          longer interested in it. */
@@ -154,8 +151,6 @@ handle_buffering(TSCont contp, MyData * data)
   }
 
   return 1;
-
-Lerror:
 
   /* If we are in this code path then something is seriously wrong. */
   TSError("[bnull-transform] Fatal error in plugin");

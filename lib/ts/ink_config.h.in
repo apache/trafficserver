@@ -98,6 +98,7 @@
 
 #define TS_HAS_BACKTRACE               @has_backtrace@
 #define TS_HAS_PROFILER                @has_profiler@
+#define TS_USE_FAST_SDK                @use_fast_sdk@
 #define TS_USE_DIAGS                   @use_diags@
 #define TS_USE_LIBEV                   @use_libev@
 #define TS_USE_EPOLL                   @use_epoll@

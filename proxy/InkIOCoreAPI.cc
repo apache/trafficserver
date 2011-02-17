@@ -40,8 +40,13 @@
 #include "I_HostDB.h"
 
 // This assert is for internal API use only.
+#if TS_USE_FAST_SDK
+#define sdk_assert(EX) (void)(EX)
+#else
 #define sdk_assert(EX)                                          \
   (void)((EX) || (_TSReleaseAssert(#EX, __FILE__, __LINE__)))
+#endif
+
 
 TSReturnCode
 sdk_sanity_check_mutex(TSMutex mutex)

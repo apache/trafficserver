@@ -121,15 +121,9 @@ handle_transform(TSCont contp)
    */
   buf_test = TSVIOBufferGet(input_vio);
 
-  if (buf_test) {
-    if (buf_test == TS_ERROR_PTR) {
-      TSError("[null-transform] error fetching buffer\n");
-      goto Lerror;
-    }
-  } else {
+  if (!buf_test) {
     TSVIONBytesSet(data->output_vio, TSVIONDoneGet(input_vio));
     TSVIOReenable(data->output_vio);
-
     return;
   }
 
@@ -152,10 +146,7 @@ handle_transform(TSCont contp)
 
     if (towrite > 0) {
       /* Copy the data from the read buffer to the output buffer. */
-      if (TSIOBufferCopy(TSVIOBufferGet(data->output_vio), TSVIOReaderGet(input_vio), towrite, 0) == TS_ERROR) {
-        TSError("[null-plugin] unable to copy IO buffers\n");
-        goto Lerror;
-      }
+      TSIOBufferCopy(TSVIOBufferGet(data->output_vio), TSVIOReaderGet(input_vio), towrite, 0);
 
       /* Tell the read buffer that we have read the data and are no
        * longer interested in it.
@@ -167,9 +158,6 @@ handle_transform(TSCont contp)
        */
       TSVIONDoneSet(input_vio, TSVIONDoneGet(input_vio) + towrite);
     }
-  } else if (towrite == TS_ERROR) {
-    TSError("[null-plugin] error fetching VIO to-do amount\n");
-    goto Lerror;
   }
 
   /* Now we check the input VIO to see if there is data left to
@@ -204,10 +192,6 @@ handle_transform(TSCont contp)
      */
     TSContCall(TSVIOContGet(input_vio), TS_EVENT_VCONN_WRITE_COMPLETE, input_vio);
   }
-
-
-Lerror:
-  return;
 }
 
 static int

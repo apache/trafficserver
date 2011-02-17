@@ -119,10 +119,7 @@ transform_create(TSHttpTxn txnp)
   TSCont contp;
   TransformData *data;
 
-  if ((contp = TSTransformCreate(transform_handler, txnp)) == TS_ERROR_PTR) {
-    TSError("Error in creating Transformation. Retyring...");
-    return NULL;
-  }
+  contp = TSTransformCreate(transform_handler, txnp);
 
   data = (TransformData *) TSmalloc(sizeof(TransformData));
   data->state = STATE_BUFFER;
@@ -148,7 +145,7 @@ transform_destroy(TSCont contp)
   TransformData *data;
 
   data = TSContDataGet(contp);
-  if ((data != TS_ERROR_PTR) || (data != NULL)) {
+  if (data != NULL) {
     if (data->input_buf)
       TSIOBufferDestroy(data->input_buf);
 
@@ -163,7 +160,7 @@ transform_destroy(TSCont contp)
 
     TSfree(data);
   } else {
-    TSError("Unable to get Continuation's Data. TSContDataGet returns TS_ERROR_PTR or NULL");
+    TSError("Unable to get Continuation's Data. TSContDataGet returns NULL");
   }
 
   TSContDestroy(contp);
@@ -178,7 +175,7 @@ transform_connect(TSCont contp, TransformData * data)
   data->state = STATE_CONNECT;
 
   content_length = TSIOBufferReaderAvail(data->input_reader);
-  if (content_length != TS_ERROR) {
+  if (content_length >= 0) {
     data->content_length = content_length;
     data->content_length = htonl(data->content_length);
 
@@ -193,39 +190,15 @@ transform_connect(TSCont contp, TransformData * data)
       TSIOBufferReader tempReader;
 
       temp = TSIOBufferCreate();
-      if (temp != TS_ERROR_PTR) {
-        tempReader = TSIOBufferReaderAlloc(temp);
+      tempReader = TSIOBufferReaderAlloc(temp);
 
-        if (tempReader != TS_ERROR_PTR) {
+      TSIOBufferWrite(temp, (const char *) &data->content_length, sizeof(int));
+      TSIOBufferCopy(temp, data->input_reader, data->content_length, 0);
 
-          if (TSIOBufferWrite(temp, (const char *) &data->content_length, sizeof(int)) == TS_ERROR) {
-            TSError("TSIOBufferWrite returns TS_ERROR");
-            TSIOBufferReaderFree(tempReader);
-            TSIOBufferDestroy(temp);
-            return 0;
-          }
-
-          if (TSIOBufferCopy(temp, data->input_reader, data->content_length, 0) == TS_ERROR) {
-            TSError("TSIOBufferCopy returns TS_ERROR");
-            TSIOBufferReaderFree(tempReader);
-            TSIOBufferDestroy(temp);
-            return 0;
-          }
-
-          TSIOBufferReaderFree(data->input_reader);
-          TSIOBufferDestroy(data->input_buf);
-          data->input_buf = temp;
-          data->input_reader = tempReader;
-
-        } else {
-          TSError("Unable to allocate a reader for buffer");
-          TSIOBufferDestroy(temp);
-          return 0;
-        }
-      } else {
-        TSError("Unable to create IOBuffer.");
-        return 0;
-      }
+      TSIOBufferReaderFree(data->input_reader);
+      TSIOBufferDestroy(data->input_buf);
+      data->input_buf = temp;
+      data->input_reader = tempReader;
     }
   } else {
     TSError("TSIOBufferReaderAvail returns TS_ERROR");
@@ -233,12 +206,8 @@ transform_connect(TSCont contp, TransformData * data)
   }
 
   action = TSNetConnect(contp, server_ip, server_port);
-  if (action != TS_ERROR_PTR) {
-    if (!TSActionDone(action)) {
-      data->pending_action = action;
-    }
-  } else {
-    TSError("Unable to connect to server. TSNetConnect returns TS_ERROR_PTR");
+  if (!TSActionDone(action)) {
+    data->pending_action = action;
   }
 
   return 0;
@@ -252,13 +221,8 @@ transform_write(TSCont contp, TransformData * data)
   data->state = STATE_WRITE;
 
   content_length = TSIOBufferReaderAvail(data->input_reader);
-  if (content_length != TS_ERROR) {
-
-    data->server_vio =
-      TSVConnWrite(data->server_vc, contp, TSIOBufferReaderClone(data->input_reader), content_length);
-    if (data->server_vio == TS_ERROR_PTR) {
-      TSError("TSVConnWrite returns TS_ERROR_PTR");
-    }
+  if (content_length >= 0) {
+    data->server_vio = TSVConnWrite(data->server_vc, contp, TSIOBufferReaderClone(data->input_reader), content_length);
   } else {
     TSError("TSIOBufferReaderAvail returns TS_ERROR");
   }
@@ -271,20 +235,13 @@ transform_read_status(TSCont contp, TransformData * data)
   data->state = STATE_READ_STATUS;
 
   data->output_buf = TSIOBufferCreate();
-  if ((data->output_buf != NULL) && (data->output_buf != TS_ERROR_PTR)) {
-    data->output_reader = TSIOBufferReaderAlloc(data->output_buf);
-    if ((data->output_reader != NULL) && (data->output_reader != TS_ERROR_PTR)) {
-      data->server_vio = TSVConnRead(data->server_vc, contp, data->output_buf, sizeof(int));
-      if (data->server_vio == TS_ERROR_PTR) {
-        TSError("TSVConnRead returns TS_ERROR_PTR");
-      }
-
-    } else {
-      TSError("Error in Allocating a Reader to output buffer. TSIOBufferReaderAlloc returns NULL or TS_ERROR_PTR");
-    }
+  data->output_reader = TSIOBufferReaderAlloc(data->output_buf);
+  if (data->output_reader != NULL) {
+    data->server_vio = TSVConnRead(data->server_vc, contp, data->output_buf, sizeof(int));
   } else {
-    TSError("Error in creating output buffer. TSIOBufferCreate returns TS_ERROR_PTR");
+    TSError("Error in Allocating a Reader to output buffer. TSIOBufferReaderAlloc returns NULL");
   }
+
   return 0;
 }
 
@@ -298,19 +255,13 @@ transform_read(TSCont contp, TransformData * data)
   data->input_reader = NULL;
 
   data->server_vio = TSVConnRead(data->server_vc, contp, data->output_buf, data->content_length);
-
-  if (data->server_vio == TS_ERROR_PTR) {
-    TSError("TSVConnRead returns TS_ERROR_PTR");
-    return -1;
-  }
-
   data->output_vc = TSTransformOutputVConnGet((TSVConn) contp);
-  if ((data->output_vc == TS_ERROR_PTR) || (data->output_vc == NULL)) {
-    TSError("TSTransformOutputVConnGet returns NULL or TS_ERROR_PTR");
+  if (data->output_vc == NULL) {
+    TSError("TSTransformOutputVConnGet returns NULL");
   } else {
     data->output_vio = TSVConnWrite(data->output_vc, contp, data->output_reader, data->content_length);
-    if ((data->output_vio == TS_ERROR_PTR) || (data->output_vio == NULL)) {
-      TSError("TSVConnWrite returns NULL or TS_ERROR_PTR");
+    if (data->output_vio == NULL) {
+      TSError("TSVConnWrite returns NULL");
     }
   }
 
@@ -336,13 +287,13 @@ transform_bypass(TSCont contp, TransformData * data)
 
   TSIOBufferReaderConsume(data->input_reader, sizeof(int));
   data->output_vc = TSTransformOutputVConnGet((TSVConn) contp);
-  if ((data->output_vc == TS_ERROR_PTR) || (data->output_vc == NULL)) {
-    TSError("TSTransformOutputVConnGet returns NULL or TS_ERROR_PTR");
+  if (data->output_vc == NULL) {
+    TSError("TSTransformOutputVConnGet returns NULL");
   } else {
     data->output_vio =
       TSVConnWrite(data->output_vc, contp, data->input_reader, TSIOBufferReaderAvail(data->input_reader));
-    if ((data->output_vio == TS_ERROR_PTR) || (data->output_vio == NULL)) {
-      TSError("TSVConnWrite returns NULL or TS_ERROR_PTR");
+    if (data->output_vio == NULL) {
+      TSError("TSVConnWrite returns NULL");
     }
   }
   return 1;
@@ -357,15 +308,7 @@ transform_buffer_event(TSCont contp, TransformData * data, TSEvent event, void *
 
   if (!data->input_buf) {
     data->input_buf = TSIOBufferCreate();
-    if ((data->input_buf == NULL) || (data->input_buf == TS_ERROR_PTR)) {
-      TSError("Error in Creating buffer");
-      return -1;
-    }
     data->input_reader = TSIOBufferReaderAlloc(data->input_buf);
-    if ((data->input_reader == NULL) || (data->input_reader == TS_ERROR_PTR)) {
-      TSError("Unable to allocate a reader to input buffer.");
-      return -1;
-    }
   }
 
   /* Get the write VIO for the write operation that was performed on
@@ -391,33 +334,21 @@ transform_buffer_event(TSCont contp, TransformData * data, TSEvent event, void *
     /* The amount of data left to read needs to be truncated by
        the amount of data actually in the read buffer. */
     avail = TSIOBufferReaderAvail(TSVIOReaderGet(write_vio));
-    if (avail == TS_ERROR) {
-      TSError("Unable to get the number of bytes availabe for reading");
-    } else {
-      if (towrite > avail) {
-        towrite = avail;
-      }
-
-      if (towrite > 0) {
-        /* Copy the data from the read buffer to the input buffer. */
-        if (TSIOBufferCopy(data->input_buf, TSVIOReaderGet(write_vio), towrite, 0) == TS_ERROR) {
-          TSError("Error in Copying the buffer");
-        } else {
-
-          /* Tell the read buffer that we have read the data and are no
-             longer interested in it. */
-          TSIOBufferReaderConsume(TSVIOReaderGet(write_vio), towrite);
-
-          /* Modify the write VIO to reflect how much data we've
-             completed. */
-          TSVIONDoneSet(write_vio, TSVIONDoneGet(write_vio) + towrite);
-        }
-      }
+    if (towrite > avail) {
+      towrite = avail;
     }
-  } else {
-    if (towrite == TS_ERROR) {
-      TSError("TSVIONTodoGet returns TS_ERROR");
-      return 0;
+
+    if (towrite > 0) {
+      /* Copy the data from the read buffer to the input buffer. */
+      TSIOBufferCopy(data->input_buf, TSVIOReaderGet(write_vio), towrite, 0);
+
+      /* Tell the read buffer that we have read the data and are no
+         longer interested in it. */
+      TSIOBufferReaderConsume(TSVIOReaderGet(write_vio), towrite);
+
+      /* Modify the write VIO to reflect how much data we've
+         completed. */
+      TSVIONDoneSet(write_vio, TSVIONDoneGet(write_vio) + towrite);
     }
   }
 
@@ -494,22 +425,14 @@ transform_read_status_event(TSCont contp, TransformData * data, TSEvent event, v
       buf_ptr = &data->content_length;
       while (read_nbytes > 0) {
         blk = TSIOBufferReaderStart(data->output_reader);
-        if (blk == TS_ERROR_PTR) {
-          TSError("Error in Getting the pointer to starting of reader block");
-        } else {
-          buf = (char *) TSIOBufferBlockReadStart(blk, data->output_reader, &avail);
-          if (buf != TS_ERROR_PTR) {
-            read_ndone = (avail >= read_nbytes) ? read_nbytes : avail;
-            memcpy(buf_ptr, buf, read_ndone);
-            if (read_ndone > 0) {
-              TSIOBufferReaderConsume(data->output_reader, read_ndone);
-              read_nbytes -= read_ndone;
-              /* move ptr frwd by read_ndone bytes */
-              buf_ptr = (char *) buf_ptr + read_ndone;
-            }
-          } else {
-            TSError("TSIOBufferBlockReadStart returns TS_ERROR_PTR");
-          }
+        buf = (char *) TSIOBufferBlockReadStart(blk, data->output_reader, &avail);
+        read_ndone = (avail >= read_nbytes) ? read_nbytes : avail;
+        memcpy(buf_ptr, buf, read_ndone);
+        if (read_ndone > 0) {
+          TSIOBufferReaderConsume(data->output_reader, read_ndone);
+          read_nbytes -= read_ndone;
+          /* move ptr frwd by read_ndone bytes */
+          buf_ptr = (char *) buf_ptr + read_ndone;
         }
       }
       data->content_length = ntohl(data->content_length);
@@ -596,8 +519,8 @@ transform_handler(TSCont contp, TSEvent event, void *edata)
     TransformData *data;
     int val = 0;
 
-    data = (TransformData *) TSContDataGet(contp);
-    if ((data == NULL) && (data == TS_ERROR_PTR)) {
+    data = (TransformData *)TSContDataGet(contp);
+    if (data == NULL) {
       TSError("Didn't get Continuation's Data. Ignoring Event..");
       return 0;
     }
@@ -668,14 +591,7 @@ server_response_ok(TSHttpTxn txnp)
     return 0;
   }
 
-  if ((resp_status = TSHttpHdrStatusGet(bufp, hdr_loc)) == (TSHttpStatus)TS_ERROR) {
-    TSError("Error in Getting Status from Server response");
-    if (TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc) != TS_SUCCESS) {
-      TSError("Unable to release handle to server request");
-    }
-    return 0;
-  }
-
+  resp_status = TSHttpHdrStatusGet(bufp, hdr_loc);
   if (TS_HTTP_STATUS_OK == resp_status) {
     if (TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc) != TS_SUCCESS) {
       TSError("Unable to release handle to server request");
@@ -770,10 +686,6 @@ TSPluginInit(int argc, const char *argv[])
   server_ip = htonl(server_ip);
   server_port = 7;
 
-  if ((cont = TSContCreate(transform_plugin, NULL)) == TS_ERROR_PTR) {
-    TSError("Unable to create continuation. Aborting...");
-    return;
-  }
-
+  cont = TSContCreate(transform_plugin, NULL);
   TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, cont);
 }

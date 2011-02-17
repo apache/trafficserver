@@ -269,28 +269,16 @@ handle_io(TSCont contp, TSEvent event, void *edata)
 
       if (cstate->key_to_delete) {
         TSAction actionp = TSCacheRemove(contp, cstate->key_to_delete);
-        if (actionp != TS_ERROR_PTR) {
-          if (!TSActionDone(actionp)) {
-            cstate->pending_action = actionp;
-          }
-        } else {
-          TSError("CacheRemove action failed");
-          cleanup(contp);
-          return 0;
+        if (!TSActionDone(actionp)) {
+          cstate->pending_action = actionp;
         }
       } else {
         char head[] = "<h3>Cache Contents:</h3>\n<p><pre>\n";
         cstate->total_bytes += TSIOBufferWrite(cstate->resp_buffer, head, sizeof(head) - 1);
         //start scan
         TSAction actionp = TSCacheScan(contp, 0, 512000);
-        if (actionp != TS_ERROR_PTR) {
-          if (!TSActionDone(actionp)) {
-            cstate->pending_action = actionp;
-          }
-        } else {
-          TSError("CacheScan action failed");
-          cleanup(contp);
-          return 0;
+        if (!TSActionDone(actionp)) {
+          cstate->pending_action = actionp;
         }
       }
 
