@@ -2076,7 +2076,7 @@ extern "C"
   tsapi TSReturnCode TSHttpTxnCachedRespGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *offset);
   tsapi void TSHttpTxnSetRespCacheableSet(TSHttpTxn txnp);
   tsapi void TSHttpTxnSetReqCacheableSet(TSHttpTxn txnp);
-  tsapi int TSFetchPageRespGet (TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *offset);
+  tsapi TSReturnCode TSFetchPageRespGet (TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *offset);
   tsapi char* TSFetchRespGet (TSHttpTxn txnp, int *length);
   tsapi TSReturnCode TSHttpTxnCacheLookupStatusGet(TSHttpTxn txnp, int *lookup_status);
 
@@ -2100,8 +2100,8 @@ extern "C"
   tsapi const struct sockaddr_storage *INKHttpTxnClientSockAddrGet(TSHttpTxn txnp);
 
   tsapi unsigned int TSHttpTxnClientIPGet(TSHttpTxn txnp);
-  tsapi int TSHttpTxnClientFdGet(TSHttpTxn txnp);
-  tsapi TSReturnCode TSHttpTxnClientRemotePortGet(TSHttpTxn txnp, int *port);
+  tsapi TSReturnCode TSHttpTxnClientFdGet(TSHttpTxn txnp, int *fdp);
+  tsapi TSReturnCode TSHttpTxnClientRemotePortGet(TSHttpTxn txnp, int *portp);
   tsapi int TSHttpTxnClientIncomingPortGet(TSHttpTxn txnp);
   tsapi unsigned int TSHttpTxnServerIPGet(TSHttpTxn txnp);
   tsapi unsigned int TSHttpTxnNextHopIPGet(TSHttpTxn txnp);
@@ -2210,7 +2210,7 @@ extern "C"
       @return TS_SUCCESS on success, TS_ERROR on failure.
 
    */
-  tsapi TSReturnCode TSHttpTxnIntercept(TSCont contp, TSHttpTxn txnp);
+  tsapi void TSHttpTxnIntercept(TSCont contp, TSHttpTxn txnp);
 
   /**
       Allows a plugin take over the servicing of the request as though
@@ -2244,7 +2244,7 @@ extern "C"
       @return TS_SUCCESS on success, TS_ERROR on failure.
 
    */
-  tsapi TSReturnCode TSHttpTxnServerIntercept(TSCont contp, TSHttpTxn txnp);
+  tsapi void TSHttpTxnServerIntercept(TSCont contp, TSHttpTxn txnp);
 
   /* --------------------------------------------------------------------------
      Initiate Http Connection */
@@ -2267,8 +2267,8 @@ extern "C"
 
    */
   tsapi TSVConn TSHttpConnect(unsigned int log_ip, int log_port);
-  tsapi TSReturnCode TSFetchUrl(const char *request,int request_len, unsigned int ip, int port , TSCont contp, TSFetchWakeUpOptions callback_options,TSFetchEvent event);
-  tsapi TSReturnCode TSFetchPages(TSFetchUrlParams_t *params);
+  tsapi void TSFetchUrl(const char *request,int request_len, unsigned int ip, int port , TSCont contp, TSFetchWakeUpOptions callback_options,TSFetchEvent event);
+  tsapi void TSFetchPages(TSFetchUrlParams_t *params);
 
   /* Check if HTTP State machine is internal or not */
   tsapi int TSHttpIsInternalRequest(TSHttpTxn txnp);
@@ -2287,19 +2287,19 @@ extern "C"
 
   /* --------------------------------------------------------------------------
      VConnections */
-  tsapi TSReturnCode TSVConnReadVIOGet(TSVConn connp, TSVIO *viop);
-  tsapi TSReturnCode TSVConnWriteVIOGet(TSVConn connp, TSVIO *viop);
+  tsapi TSVIO TSVConnReadVIOGet(TSVConn connp);
+  tsapi TSVIO TSVConnWriteVIOGet(TSVConn connp);
   tsapi int TSVConnClosedGet(TSVConn connp);
 
   tsapi TSVIO TSVConnRead(TSVConn connp, TSCont contp, TSIOBuffer bufp, int64_t nbytes);
   tsapi TSVIO TSVConnWrite(TSVConn connp, TSCont contp, TSIOBufferReader readerp, int64_t nbytes);
-  tsapi TSReturnCode TSVConnClose(TSVConn connp);
-  tsapi TSReturnCode TSVConnAbort(TSVConn connp, int error);
-  tsapi TSReturnCode TSVConnShutdown(TSVConn connp, int read, int write);
+  tsapi void TSVConnClose(TSVConn connp);
+  tsapi void TSVConnAbort(TSVConn connp, int error);
+  tsapi void TSVConnShutdown(TSVConn connp, int read, int write);
 
   /* --------------------------------------------------------------------------
      Cache VConnections */
-  tsapi TSReturnCode TSVConnCacheObjectSizeGet(TSVConn connp, int64_t *obj_size);
+  tsapi int64_t TSVConnCacheObjectSizeGet(TSVConn connp);
 
   /* --------------------------------------------------------------------------
      Transformations */
@@ -2318,9 +2318,9 @@ extern "C"
         network byte order. Note: this value is 32-bit, for IPv4.
 
    */
-  tsapi TSReturnCode TSNetVConnRemoteIPGet(TSVConn vc, unsigned int *ip);
+  tsapi unsigned int TSNetVConnRemoteIPGet(TSVConn vc);
 
-  tsapi TSReturnCode TSNetVConnRemotePortGet(TSVConn vc, int *port);
+  tsapi int TSNetVConnRemotePortGet(TSVConn vc);
 
   /**
       Opens a network connection to the host specified by ip on the port
@@ -2354,7 +2354,7 @@ extern "C"
   /* --------------------------------------------------------------------------
      DNS Lookups */
   tsapi TSAction TSHostLookup(TSCont contp, char *hostname, int namelen);
-  tsapi TSReturnCode TSHostLookupResultIPGet(TSHostLookupResult lookup_result, unsigned int *ip);
+  tsapi unsigned int TSHostLookupResultIPGet(TSHostLookupResult lookup_result);
 
   /* --------------------------------------------------------------------------
      Cache VConnections */
@@ -2551,19 +2551,19 @@ extern "C"
   /*  Note that only TS_RECORDDATATYPE_INT is supported at this point. */
   tsapi int TSStatCreate(const char *the_name, TSRecordDataType the_type, TSStatPersistence persist, TSStatSync sync);
 
-  tsapi TSReturnCode TSStatIntIncrement(int the_stat, TSMgmtInt amount);
-  tsapi TSReturnCode TSStatIntDecrement(int the_stat, TSMgmtInt amount);
+  tsapi void TSStatIntIncrement(int the_stat, TSMgmtInt amount);
+  tsapi void TSStatIntDecrement(int the_stat, TSMgmtInt amount);
   /* Currently not supported. */
-  /* tsapi TSReturnCode TSStatFloatIncrement(int the_stat, float amount); */
-  /* tsapi TSReturnCode TSStatFloatDecrement(int the_stat, float amount); */
+  /* tsapi void TSStatFloatIncrement(int the_stat, float amount); */
+  /* tsapi void TSStatFloatDecrement(int the_stat, float amount); */
 
-  tsapi TSReturnCode TSStatIntGet(int the_stat, TSMgmtInt* value);
-  tsapi TSReturnCode TSStatIntSet(int the_stat, TSMgmtInt value);
+  tsapi TSMgmtInt TSStatIntGet(int the_stat);
+  tsapi void TSStatIntSet(int the_stat, TSMgmtInt value);
   /* Currently not supported. */
   /* tsapi TSeturnCode TSStatFloatGet(int the_stat, float* value); */
   /* tsapi TSReturnCode TSStatFloatSet(int the_stat, float value); */
 
-  tsapi int TSStatFindName(const char* name);
+  tsapi TSReturnCode TSStatFindName(const char* name, int *idp);
 
   /* --------------------------------------------------------------------------
      This is the old stats system, it's deprecated, and should preferably not
@@ -2582,21 +2582,21 @@ extern "C"
   /** @deprecated */
   tsapi INKStat INKStatCreate(const char *the_name, INKStatTypes the_type);
   /** @deprecated */
-  tsapi TSReturnCode INKStatIntAddTo(INKStat the_stat, int64_t amount);
+  tsapi void INKStatIntAddTo(INKStat the_stat, int64_t amount);
   /** @deprecated */
-  tsapi TSReturnCode INKStatFloatAddTo(INKStat the_stat, float amount);
+  tsapi void INKStatFloatAddTo(INKStat the_stat, float amount);
   /** @deprecated */
-  tsapi TSReturnCode INKStatDecrement(INKStat the_stat);
+  tsapi void INKStatDecrement(INKStat the_stat);
   /** @deprecated */
-  tsapi TSReturnCode INKStatIncrement(INKStat the_stat);
+  tsapi void INKStatIncrement(INKStat the_stat);
   /** @deprecated */
-  tsapi TSReturnCode INKStatIntGet(INKStat the_stat, int64_t *value);
+  tsapi int64_t INKStatIntGet(INKStat the_stat);
   /** @deprecated */
-  tsapi TSReturnCode INKStatFloatGet(INKStat the_stat, float *value);
+  tsapi float INKStatFloatGet(INKStat the_stat);
   /** @deprecated */
-  tsapi TSReturnCode INKStatIntSet(INKStat the_stat, int64_t value);
+  tsapi void INKStatIntSet(INKStat the_stat, int64_t value);
   /** @deprecated */
-  tsapi TSReturnCode INKStatFloatSet(INKStat the_stat, float value);
+  tsapi void INKStatFloatSet(INKStat the_stat, float value);
 
   /* --------------------------------------------------------------------------
      coupled stats */
@@ -2605,13 +2605,13 @@ extern "C"
   /** @deprecated */
   tsapi INKCoupledStat INKStatCoupledLocalCopyCreate(const char *the_name, INKCoupledStat global_copy);
   /** @deprecated */
-  tsapi TSReturnCode INKStatCoupledLocalCopyDestroy(INKCoupledStat local_copy);
+  tsapi void INKStatCoupledLocalCopyDestroy(INKCoupledStat local_copy);
   /** @deprecated */
   tsapi INKStat INKStatCoupledGlobalAdd(INKCoupledStat global_copy, const char *the_name, INKStatTypes the_type);
   /** @deprecated */
   tsapi INKStat INKStatCoupledLocalAdd(INKCoupledStat local_copy, const char *the_name, INKStatTypes the_type);
   /** @deprecated */
-  tsapi TSReturnCode INKStatsCoupledUpdate(INKCoupledStat local_copy);
+  tsapi void INKStatsCoupledUpdate(INKCoupledStat local_copy);
 
   /* --------------------------------------------------------------------------
      tracing api */
@@ -2733,7 +2733,7 @@ extern "C"
         flushed.
 
    */
-  tsapi TSReturnCode TSTextLogObjectFlush(TSTextLogObject the_object);
+  tsapi void TSTextLogObjectFlush(TSTextLogObject the_object);
 
   /**
       Destroys a log object and releases the memory allocated to it.
@@ -2747,34 +2747,26 @@ extern "C"
   /**
       Set log header.
 
-      @return TS_SUCCESS or TS_ERROR.
-
    */
-  tsapi TSReturnCode TSTextLogObjectHeaderSet(TSTextLogObject the_object, const char *header);
+  tsapi void TSTextLogObjectHeaderSet(TSTextLogObject the_object, const char *header);
 
   /**
       Enable/disable rolling.
 
-      @return TS_SUCCESS or TS_ERROR.
-
    */
-  tsapi TSReturnCode TSTextLogObjectRollingEnabledSet(TSTextLogObject the_object, int rolling_enabled);
+  tsapi void TSTextLogObjectRollingEnabledSet(TSTextLogObject the_object, int rolling_enabled);
 
   /**
       Set the rolling interval.
 
-      @return TS_SUCCESS or TS_ERROR.
-
    */
-  tsapi TSReturnCode TSTextLogObjectRollingIntervalSecSet(TSTextLogObject the_object, int rolling_interval_sec);
+  tsapi void TSTextLogObjectRollingIntervalSecSet(TSTextLogObject the_object, int rolling_interval_sec);
 
   /**
       Set the rolling offset.
 
-      @return TS_SUCCESS or TS_ERROR.
-
    */
-  tsapi TSReturnCode TSTextLogObjectRollingOffsetHrSet(TSTextLogObject the_object, int rolling_offset_hr);
+  tsapi void TSTextLogObjectRollingOffsetHrSet(TSTextLogObject the_object, int rolling_offset_hr);
 
   /**
       Async disk IO read
@@ -2874,9 +2866,8 @@ extern "C"
   /* 
     ability to skip the remap phase of the State Machine 
     this only really makes sense in TS_HTTP_READ_REQUEST_HDR_HOOK
-    
   */
-  tsapi TSReturnCode TSSkipRemappingSet(TSHttpTxn txnp, int flag);
+  tsapi void TSSkipRemappingSet(TSHttpTxn txnp, int flag);
 
 
   /*
@@ -2895,7 +2886,7 @@ extern "C"
   /*
     It's unclear if these actually function properly still.
   */
-  tsapi TSReturnCode TSRedirectUrlSet(TSHttpTxn txnp, const char* url, const int url_len);
+  tsapi void TSRedirectUrlSet(TSHttpTxn txnp, const char* url, const int url_len);
   tsapi const char*  TSRedirectUrlGet(TSHttpTxn txnp, int* url_len_ptr);
 
   /* Get current HTTP connection stats */

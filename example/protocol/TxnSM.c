@@ -277,7 +277,7 @@ state_handle_cache_lookup(TSCont contp, TSEvent event, TSVConn vc)
     txn_sm->q_pending_action = NULL;
 
     /* Get the size of the cached doc. */
-    TSVConnCacheObjectSizeGet(txn_sm->q_cache_vc, &response_size);
+    response_size = TSVConnCacheObjectSizeGet(txn_sm->q_cache_vc);
 
     /* Allocate IOBuffer to store data from the cache. */
     txn_sm->q_client_response_buffer = TSIOBufferCreate();
@@ -468,7 +468,7 @@ state_dns_lookup(TSCont contp, TSEvent event, TSHostLookupResult host_info)
   txn_sm->q_pending_action = NULL;
 
   /* Get the server IP from data structure TSHostLookupResult. */
-  TSHostLookupResultIPGet(host_info, &(txn_sm->q_server_ip));
+  txn_sm->q_server_ip = TSHostLookupResultIPGet(host_info);
 
   /* Connect to the server using its IP. */
   set_handler(txn_sm->q_current_handler, &state_connect_to_server);

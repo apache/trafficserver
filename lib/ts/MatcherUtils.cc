@@ -394,9 +394,9 @@ const matcher_tags socks_server_tags = {
 const char *
 parseConfigLine(char *line, matcher_line *p_line, const matcher_tags * tags)
 {
-
   enum pState
-  { FIND_LABEL, PARSE_LABEL,
+  {
+    FIND_LABEL, PARSE_LABEL,
     PARSE_VAL, START_PARSE_VAL, CONSUME
   };
 

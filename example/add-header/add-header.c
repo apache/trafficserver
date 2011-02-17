@@ -172,11 +172,6 @@ TSPluginInit(int argc, const char *argv[])
   }
 
   hdr_bufp = TSMBufferCreate();
-  if (hdr_bufp == TS_ERROR_PTR) {
-    TSError("[PluginInit] Can not create mbuffer");
-    goto error;
-  }
-
   if (TSMimeHdrCreate(hdr_bufp, &hdr_loc) != TS_SUCCESS) {
     TSError("[PluginInit] Can not create mime header");
     goto error;

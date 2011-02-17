@@ -90,8 +90,8 @@ extern "C"
   typedef int (*TSPluginFreshnessCalcFunc) (TSCont contp);
   tsapi void TSICPFreshnessFuncSet(TSPluginFreshnessCalcFunc funcp);
 
-  tsapi int TSICPCachedReqGet(TSCont contp, TSMBuffer *bufp, TSMLoc *obj);
-  tsapi int TSICPCachedRespGet(TSCont contp, TSMBuffer *bufp, TSMLoc *obj);
+  tsapi TSReturnCode TSICPCachedReqGet(TSCont contp, TSMBuffer *bufp, TSMLoc *obj);
+  tsapi TSReturnCode TSICPCachedRespGet(TSCont contp, TSMBuffer *bufp, TSMLoc *obj);
 
 
   /* The rest is from the old "froze" private API include, we should consider
@@ -289,7 +289,7 @@ extern "C"
   /****************************************************************************
    *  Set a records.config integer variable
    ****************************************************************************/
-  tsapi int TSMgmtConfigIntSet(const char *var_name, TSMgmtInt value);
+  tsapi TSReturnCode TSMgmtConfigIntSet(const char *var_name, TSMgmtInt value);
 
   /* ----------------------------------------------------------------------
    * Interfaces used by Wireless group
@@ -314,10 +314,9 @@ extern "C"
   /* ===== Alarm ===== */
   /****************************************************************************
    *  ??
-   *  Return ??
    *  contact: OXYGEN
    ****************************************************************************/
-  tsapi int TSSignalWarning(TSAlarmType code, char *msg);
+  tsapi void TSSignalWarning(TSAlarmType code, char *msg);
 
   /*****************************************************************************
    * 			Cluster RPC API support 			     *

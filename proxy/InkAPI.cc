@@ -481,7 +481,7 @@ _hdr_mloc_to_mime_hdr_impl(TSMLoc mloc)
   return _hdr_obj_to_mime_hdr_impl((HdrHeapObjImpl *) mloc);
 }
 
-inline TSReturnCode
+TSReturnCode
 sdk_sanity_check_field_handle(TSMLoc field, TSMLoc parent_hdr = NULL)
 {
   if (field == TS_NULL_MLOC)
@@ -499,7 +499,7 @@ sdk_sanity_check_field_handle(TSMLoc field, TSMLoc parent_hdr = NULL)
   return TS_SUCCESS;
 }
 
-inline TSReturnCode
+TSReturnCode
 sdk_sanity_check_mbuffer(TSMBuffer bufp)
 {
   HdrHeapSDKHandle *handle = (HdrHeapSDKHandle *) bufp;
@@ -509,7 +509,7 @@ sdk_sanity_check_mbuffer(TSMBuffer bufp)
   return TS_SUCCESS;
 }
 
-inline TSReturnCode
+TSReturnCode
 sdk_sanity_check_mime_hdr_handle(TSMLoc field)
 {
   if (field == TS_NULL_MLOC)
@@ -522,7 +522,7 @@ sdk_sanity_check_mime_hdr_handle(TSMLoc field)
   return TS_SUCCESS;
 }
 
-inline TSReturnCode
+TSReturnCode
 sdk_sanity_check_url_handle(TSMLoc field)
 {
   if (field == TS_NULL_MLOC)
@@ -535,7 +535,7 @@ sdk_sanity_check_url_handle(TSMLoc field)
   return TS_SUCCESS;
 }
 
-inline TSReturnCode
+TSReturnCode
 sdk_sanity_check_http_hdr_handle(TSMLoc field)
 {
   if (field == TS_NULL_MLOC)
@@ -548,7 +548,7 @@ sdk_sanity_check_http_hdr_handle(TSMLoc field)
   return TS_SUCCESS;
 }
 
-inline TSReturnCode
+TSReturnCode
 sdk_sanity_check_continuation(TSCont cont)
 {
   if ((cont == NULL) || (((INKContInternal *) cont)->m_free_magic == INKCONT_INTERN_MAGIC_DEAD))
@@ -557,7 +557,7 @@ sdk_sanity_check_continuation(TSCont cont)
   return TS_SUCCESS;
 }
 
-inline TSReturnCode
+TSReturnCode
 sdk_sanity_check_http_ssn(TSHttpSsn ssnp)
 {
   if (ssnp == NULL)
@@ -566,7 +566,7 @@ sdk_sanity_check_http_ssn(TSHttpSsn ssnp)
   return TS_SUCCESS;
 }
 
-inline TSReturnCode
+TSReturnCode
 sdk_sanity_check_txn(TSHttpTxn txnp)
 {
   if ((txnp != NULL) && (((HttpSM *) txnp)->magic == HTTP_SM_MAGIC_ALIVE))
@@ -574,7 +574,7 @@ sdk_sanity_check_txn(TSHttpTxn txnp)
   return TS_ERROR;
 }
 
-inline TSReturnCode
+TSReturnCode
 sdk_sanity_check_mime_parser(TSMimeParser parser)
 {
   if (parser == NULL)
@@ -582,7 +582,7 @@ sdk_sanity_check_mime_parser(TSMimeParser parser)
   return TS_SUCCESS;
 }
 
-inline TSReturnCode
+TSReturnCode
 sdk_sanity_check_http_parser(TSHttpParser parser)
 {
   if (parser == NULL)
@@ -590,7 +590,7 @@ sdk_sanity_check_http_parser(TSHttpParser parser)
   return TS_SUCCESS;
 }
 
-inline TSReturnCode
+TSReturnCode
 sdk_sanity_check_alt_info(TSHttpAltInfo info)
 {
   if (info == NULL)
@@ -598,7 +598,7 @@ sdk_sanity_check_alt_info(TSHttpAltInfo info)
   return TS_SUCCESS;
 }
 
-inline TSReturnCode
+TSReturnCode
 sdk_sanity_check_hook_id(TSHttpHookID id)
 {
   if (id<TS_HTTP_READ_REQUEST_HDR_HOOK || id> TS_HTTP_LAST_HOOK)
@@ -607,7 +607,7 @@ sdk_sanity_check_hook_id(TSHttpHookID id)
 }
 
 
-inline TSReturnCode
+TSReturnCode
 sdk_sanity_check_null_ptr(void *ptr)
 {
   if (ptr == NULL)
@@ -1875,6 +1875,7 @@ TSMBufferCreate(void)
 
   new_heap->m_heap = new_HdrHeap();
   bufp = (TSMBuffer)new_heap;
+  // TODO: Should remove this when memory allocation is guaranteed to fail.
   sdk_assert(sdk_sanity_check_mbuffer(bufp) == TS_SUCCESS);
   return bufp;
 }
@@ -5812,56 +5813,49 @@ TSVConnCreate(TSEventFunc event_funcp, TSMutex mutexp)
   return (TSCont)i;
 }
 
-TSReturnCode
-TSVConnReadVIOGet(TSVConn connp, TSVIO *viop)
+TSVIO
+TSVConnReadVIOGet(TSVConn connp)
 {
   sdk_assert(sdk_sanity_check_iocore_structure(connp) == TS_SUCCESS);
 
   VConnection *vc = (VConnection *)connp;
+  TSVIO data;
 
-  if (vc->get_data(TS_API_DATA_READ_VIO, viop))
-    return TS_SUCCESS;
-
-  return TS_ERROR;
+  vc->get_data(TS_API_DATA_READ_VIO, &data); // Can not fail for this case
+  return data;
 }
 
-TSReturnCode
-TSVConnWriteVIOGet(TSVConn connp, TSVIO *viop)
+TSVIO
+TSVConnWriteVIOGet(TSVConn connp)
 {
   sdk_assert(sdk_sanity_check_iocore_structure(connp) == TS_SUCCESS);
 
   VConnection *vc = (VConnection *) connp;
+  TSVIO data;
 
-  if (vc->get_data(TS_API_DATA_WRITE_VIO, viop))
-    return TS_SUCCESS;
-
-  return TS_ERROR;
+  vc->get_data(TS_API_DATA_WRITE_VIO, &data); // Can not fail for this case
+  return data;
 }
 
 int
 TSVConnClosedGet(TSVConn connp)
 {
-  if (sdk_sanity_check_iocore_structure(connp) != TS_SUCCESS)
-    return TS_ERROR;
+  sdk_assert(sdk_sanity_check_iocore_structure(connp) == TS_SUCCESS);
 
   VConnection *vc = (VConnection *) connp;
   int data;
 
-  if (!vc->get_data(TS_API_DATA_CLOSED, &data)) {
-    // don't assert, simple return error_ptr
-    // ink_assert (!"not reached");
-    return TS_ERROR;
-  }
+  vc->get_data(TS_API_DATA_CLOSED, &data); // Can not fail for this case
   return data;
 }
 
 TSVIO
 TSVConnRead(TSVConn connp, TSCont contp, TSIOBuffer bufp, int64_t nbytes)
 {
-  if ((sdk_sanity_check_iocore_structure(connp) != TS_SUCCESS) ||
-      (sdk_sanity_check_iocore_structure(contp) != TS_SUCCESS) ||
-      (sdk_sanity_check_iocore_structure(bufp) != TS_SUCCESS) || (nbytes < 0))
-    return (TSCont)TS_ERROR_PTR;
+  sdk_assert(sdk_sanity_check_iocore_structure(connp) == TS_SUCCESS);
+  sdk_assert(sdk_sanity_check_iocore_structure(contp) == TS_SUCCESS);
+  sdk_assert(sdk_sanity_check_iocore_structure(bufp) == TS_SUCCESS);
+  sdk_assert(nbytes >= 0);
 
   FORCE_PLUGIN_MUTEX(contp);
   VConnection *vc = (VConnection *) connp;
@@ -5871,43 +5865,38 @@ TSVConnRead(TSVConn connp, TSCont contp, TSIOBuffer bufp, int64_t nbytes)
 TSVIO
 TSVConnWrite(TSVConn connp, TSCont contp, TSIOBufferReader readerp, int64_t nbytes)
 {
-  if ((sdk_sanity_check_iocore_structure(connp) != TS_SUCCESS) ||
-      (sdk_sanity_check_iocore_structure(contp) != TS_SUCCESS) ||
-      (sdk_sanity_check_iocore_structure(readerp) != TS_SUCCESS) || (nbytes < 0))
-    return (TSCont)TS_ERROR_PTR;
+  sdk_assert(sdk_sanity_check_iocore_structure(connp) == TS_SUCCESS);
+  sdk_assert(sdk_sanity_check_iocore_structure(contp) == TS_SUCCESS);
+  sdk_assert(sdk_sanity_check_iocore_structure(readerp) == TS_SUCCESS);
+  sdk_assert(nbytes >= 0);
 
   FORCE_PLUGIN_MUTEX(contp);
   VConnection *vc = (VConnection *) connp;
   return vc->do_io_write((INKContInternal *) contp, nbytes, (IOBufferReader *) readerp);
 }
 
-TSReturnCode
+void
 TSVConnClose(TSVConn connp)
 {
-  if (sdk_sanity_check_iocore_structure(connp) != TS_SUCCESS)
-    return TS_ERROR;
+  sdk_assert(sdk_sanity_check_iocore_structure(connp) == TS_SUCCESS);
 
   VConnection *vc = (VConnection *) connp;
   vc->do_io_close();
-  return TS_SUCCESS;
 }
 
-TSReturnCode
+void
 TSVConnAbort(TSVConn connp, int error)
 {
-  if (sdk_sanity_check_iocore_structure(connp) != TS_SUCCESS)
-    return TS_ERROR;
+  sdk_assert(sdk_sanity_check_iocore_structure(connp) == TS_SUCCESS);
 
   VConnection *vc = (VConnection *) connp;
   vc->do_io_close(error);
-  return TS_SUCCESS;
 }
 
-TSReturnCode
+void
 TSVConnShutdown(TSVConn connp, int read, int write)
 {
-  if (sdk_sanity_check_iocore_structure(connp) != TS_SUCCESS)
-    return TS_ERROR;
+  sdk_assert(sdk_sanity_check_iocore_structure(connp) == TS_SUCCESS);
 
   VConnection *vc = (VConnection *) connp;
 
@@ -5918,23 +5907,22 @@ TSVConnShutdown(TSVConn connp, int read, int write)
   } else if (write) {
     vc->do_io_shutdown(IO_SHUTDOWN_WRITE);
   }
-  return TS_SUCCESS;
 }
 
-TSReturnCode
-TSVConnCacheObjectSizeGet(TSVConn connp, int64_t *obj_size)
+int64_t
+TSVConnCacheObjectSizeGet(TSVConn connp)
 {
-  if ((sdk_sanity_check_iocore_structure(connp) != TS_SUCCESS) || (obj_size == NULL))
-    return TS_ERROR;
+  sdk_assert(sdk_sanity_check_iocore_structure(connp) == TS_SUCCESS);
 
-  CacheVC *vc = (CacheVC *) connp;
-  *obj_size = vc->get_object_size();
-  return TS_SUCCESS;
+  CacheVC *vc = (CacheVC *)connp;
+  return vc->get_object_size();
 }
 
 void
 TSVConnCacheHttpInfoSet(TSVConn connp, TSCacheHttpInfo infop)
 {
+  sdk_assert(sdk_sanity_check_iocore_structure(connp) == TS_SUCCESS);
+
   CacheVC *vc = (CacheVC *) connp;
   if (vc->base_stat == cache_scan_active_stat)
     vc->set_http_info((CacheHTTPInfo *) infop);
@@ -5945,128 +5933,121 @@ TSVConnCacheHttpInfoSet(TSVConn connp, TSCacheHttpInfo infop)
 TSVConn
 TSTransformCreate(TSEventFunc event_funcp, TSHttpTxn txnp)
 {
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+
   return TSVConnCreate(event_funcp, TSContMutexGet(txnp));
 }
 
 TSVConn
 TSTransformOutputVConnGet(TSVConn connp)
 {
-  if (sdk_sanity_check_iocore_structure(connp) != TS_SUCCESS) {
-    return (TSVConn)TS_ERROR_PTR;
-  }
+  sdk_assert(sdk_sanity_check_iocore_structure(connp) == TS_SUCCESS);
+
   VConnection *vc = (VConnection *) connp;
   TSVConn data;
 
-  if (!vc->get_data(TS_API_DATA_OUTPUT_VC, &data)) {
-    ink_assert(!"not reached");
-  }
+  vc->get_data(TS_API_DATA_OUTPUT_VC, &data); // This case can't fail.
   return data;
 }
 
-TSReturnCode
+void
 TSHttpTxnServerIntercept(TSCont contp, TSHttpTxn txnp)
 {
-  if ((sdk_sanity_check_txn(txnp) != TS_SUCCESS) || (sdk_sanity_check_continuation(contp) != TS_SUCCESS)) {
-    return TS_ERROR;
-  }
-  HttpSM *http_sm = (HttpSM *) txnp;
-  INKContInternal *i = (INKContInternal *) contp;
-#ifdef DEBUG
-  if (i->mutex == NULL) {
-    return TS_ERROR;
-  }
-#endif
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+  sdk_assert(sdk_sanity_check_continuation(contp) == TS_SUCCESS);
+
+  HttpSM *http_sm = (HttpSM *)txnp;
+  INKContInternal *i = (INKContInternal *)contp;
+
+  // Must have a mutex
+  sdk_assert(sdk_sanity_check_null_ptr((void*)i->mutex) == TS_SUCCESS);
+
   http_sm->plugin_tunnel_type = HTTP_PLUGIN_AS_SERVER;
   http_sm->plugin_tunnel = PluginVCCore::alloc();
   http_sm->plugin_tunnel->set_accept_cont(i);
-
-  return TS_SUCCESS;
 }
 
-TSReturnCode
+void
 TSHttpTxnIntercept(TSCont contp, TSHttpTxn txnp)
 {
-  if ((sdk_sanity_check_txn(txnp) != TS_SUCCESS) || (sdk_sanity_check_continuation(contp) != TS_SUCCESS)) {
-    return TS_ERROR;
-  }
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+  sdk_assert(sdk_sanity_check_continuation(contp) == TS_SUCCESS);
+
   HttpSM *http_sm = (HttpSM *) txnp;
   INKContInternal *i = (INKContInternal *) contp;
-#ifdef DEBUG
-  if (i->mutex == NULL) {
-    return TS_ERROR;
-  }
-#endif
+
+  // Must have a mutex
+  sdk_assert(sdk_sanity_check_null_ptr((void*)i->mutex) == TS_SUCCESS);
+
   http_sm->plugin_tunnel_type = HTTP_PLUGIN_AS_INTERCEPT;
   http_sm->plugin_tunnel = PluginVCCore::alloc();
   http_sm->plugin_tunnel->set_accept_cont(i);
-
-  return TS_SUCCESS;
 }
 
 /* Net VConnections */
 void
 TSVConnInactivityTimeoutSet(TSVConn connp, TSHRTime timeout)
 {
-  NetVConnection *vc = (NetVConnection *) connp;
+  sdk_assert(sdk_sanity_check_iocore_structure(connp) == TS_SUCCESS);
 
+  NetVConnection *vc = (NetVConnection *) connp;
   vc->set_inactivity_timeout(timeout);
 }
 
 void
 TSVConnInactivityTimeoutCancel(TSVConn connp)
 {
-  NetVConnection *vc = (NetVConnection *) connp;
+  sdk_assert(sdk_sanity_check_iocore_structure(connp) == TS_SUCCESS);
 
+  NetVConnection *vc = (NetVConnection *) connp;
   vc->cancel_inactivity_timeout();
 }
 
 void
 TSVConnActiveTimeoutSet(TSVConn connp, TSHRTime timeout)
 {
-  NetVConnection *vc = (NetVConnection *) connp;
+  sdk_assert(sdk_sanity_check_iocore_structure(connp) == TS_SUCCESS);
 
+  NetVConnection *vc = (NetVConnection *) connp;
   vc->set_active_timeout(timeout);
 }
 
 void
 TSVConnActiveTimeoutCancel(TSVConn connp)
 {
-  NetVConnection *vc = (NetVConnection *) connp;
+  sdk_assert(sdk_sanity_check_iocore_structure(connp) == TS_SUCCESS);
 
+  NetVConnection *vc = (NetVConnection *) connp;
   vc->cancel_active_timeout();
 }
 
-TSReturnCode
-TSNetVConnRemoteIPGet(TSVConn connp, unsigned int *ip)
+// TODO: IPv6 ...
+unsigned int
+TSNetVConnRemoteIPGet(TSVConn connp)
 {
-  if ((sdk_sanity_check_iocore_structure(connp) != TS_SUCCESS) || (ip == NULL))
-    return TS_ERROR;
+  sdk_assert(sdk_sanity_check_iocore_structure(connp) == TS_SUCCESS);
 
   NetVConnection *vc = (NetVConnection *) connp;
-
-  *ip = vc->get_remote_ip();
-  return TS_SUCCESS;
+  return vc->get_remote_ip();
 }
 
-TSReturnCode
-TSNetVConnRemotePortGet(TSVConn connp, int *port)
+int
+TSNetVConnRemotePortGet(TSVConn connp)
 {
-  if ((sdk_sanity_check_iocore_structure(connp) != TS_SUCCESS) || (port == NULL))
-    return TS_ERROR;
+  sdk_assert(sdk_sanity_check_iocore_structure(connp) == TS_SUCCESS);
 
   NetVConnection *vc = (NetVConnection *) connp;
-
-  *port = vc->get_remote_port();
-  return TS_SUCCESS;
+  return vc->get_remote_port();
 }
 
 TSAction
 TSNetConnect(TSCont contp, unsigned int ip, int port)
 {
-  if ((sdk_sanity_check_continuation(contp) != TS_SUCCESS) || (ip == 0) || (port == 0))
-    return (TSAction)TS_ERROR_PTR;
+  sdk_assert(sdk_sanity_check_continuation(contp) == TS_SUCCESS);
+  sdk_assert(ip > 0 && port > 0);
 
   FORCE_PLUGIN_MUTEX(contp);
+
   INKContInternal *i = (INKContInternal *) contp;
   return (TSAction)netProcessor.connect_re(i, ip, port);
 }
@@ -6074,10 +6055,11 @@ TSNetConnect(TSCont contp, unsigned int ip, int port)
 TSAction
 TSNetAccept(TSCont contp, int port)
 {
-  if ((sdk_sanity_check_continuation(contp) != TS_SUCCESS) || (port == 0))
-    return (TSAction)TS_ERROR_PTR;
+  sdk_assert(sdk_sanity_check_continuation(contp) == TS_SUCCESS);
+  sdk_assert(port > 0);
 
   FORCE_PLUGIN_MUTEX(contp);
+
   INKContInternal *i = (INKContInternal *) contp;
   return (TSAction)netProcessor.accept(i, port);
 }
@@ -6086,22 +6068,21 @@ TSNetAccept(TSCont contp, int port)
 TSAction
 TSHostLookup(TSCont contp, char *hostname, int namelen)
 {
-  if ((sdk_sanity_check_continuation(contp) != TS_SUCCESS) || (hostname == NULL) || (namelen == 0))
-    return (TSAction)TS_ERROR_PTR;
+  sdk_assert(sdk_sanity_check_continuation(contp) == TS_SUCCESS);
+  sdk_assert(sdk_sanity_check_null_ptr((void*)hostname) == TS_SUCCESS);
+  sdk_assert(namelen > 0);
 
   FORCE_PLUGIN_MUTEX(contp);
+
   INKContInternal *i = (INKContInternal *) contp;
   return (TSAction)hostDBProcessor.getbyname_re(i, hostname, namelen);
 }
 
-TSReturnCode
-TSHostLookupResultIPGet(TSHostLookupResult lookup_result, unsigned int *ip)
+unsigned int
+TSHostLookupResultIPGet(TSHostLookupResult lookup_result)
 {
-  if ((sdk_sanity_check_hostlookup_structure(lookup_result) != TS_SUCCESS) || (ip == NULL))
-    return TS_ERROR;
-
-  *ip = ((HostDBInfo *) lookup_result)->ip();
-  return TS_SUCCESS;
+  sdk_assert(sdk_sanity_check_hostlookup_structure(lookup_result) == TS_SUCCESS);
+  return ((HostDBInfo *)lookup_result)->ip();
 }
 
 /*
@@ -6113,6 +6094,7 @@ TSHostLookupResultIPGet(TSHostLookupResult lookup_result, unsigned int *ip)
 TSReturnCode
 TSCacheReady(int *is_ready)
 {
+  sdk_assert(sdk_sanity_check_null_ptr((void*)is_ready) == TS_SUCCESS);
   return TSCacheDataTypeReady(TS_CACHE_DATA_TYPE_NONE, is_ready);
 }
 
@@ -6120,11 +6102,8 @@ TSCacheReady(int *is_ready)
 TSReturnCode
 TSCacheDataTypeReady(TSCacheDataType type, int *is_ready)
 {
-#ifdef DEBUG
-  if (is_ready == NULL) {
-    return TS_ERROR;
-  }
-#endif
+  sdk_assert(sdk_sanity_check_null_ptr((void*)is_ready) == TS_SUCCESS);
+
   CacheFragType frag_type;
 
   switch (type) {
@@ -6148,8 +6127,8 @@ TSCacheDataTypeReady(TSCacheDataType type, int *is_ready)
 TSAction
 TSCacheRead(TSCont contp, TSCacheKey key)
 {
-  if ((sdk_sanity_check_iocore_structure(contp) != TS_SUCCESS) || (sdk_sanity_check_cachekey(key) != TS_SUCCESS))
-    return (TSAction)TS_ERROR_PTR;
+  sdk_assert(sdk_sanity_check_iocore_structure(contp) == TS_SUCCESS);
+  sdk_assert(sdk_sanity_check_cachekey(key) == TS_SUCCESS);
 
   FORCE_PLUGIN_MUTEX(contp);
 
@@ -6162,8 +6141,8 @@ TSCacheRead(TSCont contp, TSCacheKey key)
 TSAction
 TSCacheWrite(TSCont contp, TSCacheKey key)
 {
-  if ((sdk_sanity_check_iocore_structure(contp) != TS_SUCCESS) || (sdk_sanity_check_cachekey(key) != TS_SUCCESS))
-    return (TSAction)TS_ERROR_PTR;
+  sdk_assert(sdk_sanity_check_iocore_structure(contp) == TS_SUCCESS);
+  sdk_assert(sdk_sanity_check_cachekey(key) == TS_SUCCESS);
 
   FORCE_PLUGIN_MUTEX(contp);
 
@@ -6177,8 +6156,8 @@ TSCacheWrite(TSCont contp, TSCacheKey key)
 TSAction
 TSCacheRemove(TSCont contp, TSCacheKey key)
 {
-  if ((sdk_sanity_check_iocore_structure(contp) != TS_SUCCESS) || (sdk_sanity_check_cachekey(key) != TS_SUCCESS))
-    return (TSAction)TS_ERROR_PTR;
+  sdk_assert(sdk_sanity_check_iocore_structure(contp) == TS_SUCCESS);
+  sdk_assert(sdk_sanity_check_cachekey(key) == TS_SUCCESS);
 
   FORCE_PLUGIN_MUTEX(contp);
 
@@ -6191,8 +6170,8 @@ TSCacheRemove(TSCont contp, TSCacheKey key)
 TSAction
 TSCacheScan(TSCont contp, TSCacheKey key, int KB_per_second)
 {
-  if ((sdk_sanity_check_iocore_structure(contp) != TS_SUCCESS) || (key && sdk_sanity_check_cachekey(key) != TS_SUCCESS))
-    return (TSAction)TS_ERROR_PTR;
+  sdk_assert(sdk_sanity_check_iocore_structure(contp) == TS_SUCCESS);
+  // NOTE: key can be NULl here, so don't check for it.
 
   FORCE_PLUGIN_MUTEX(contp);
 
@@ -6239,58 +6218,42 @@ TSStatCreate(const char *the_name, TSRecordDataType the_type, TSStatPersistence 
   return id;
 }
 
-TSReturnCode
+void
 TSStatIntIncrement(int the_stat, TSMgmtInt amount)
 {
-  if (sdk_sanity_check_null_ptr((void*)api_rsb) != TS_SUCCESS)
-    return TS_ERROR;
-
   RecIncrRawStat(api_rsb, NULL, the_stat, amount);
-  return TS_SUCCESS;
 }
 
-TSReturnCode
+void
 TSStatIntDecrement(int the_stat, TSMgmtInt amount)
 {
-  if (sdk_sanity_check_null_ptr((void*)api_rsb) != TS_SUCCESS)
-    return TS_ERROR;
-
   RecDecrRawStat(api_rsb, NULL, the_stat, amount);
-  return TS_SUCCESS;
 }
 
-TSReturnCode
-TSStatIntGet(int the_stat, TSMgmtInt* value)
+TSMgmtInt
+TSStatIntGet(int the_stat)
 {
-  if (sdk_sanity_check_null_ptr((void*)api_rsb) != TS_SUCCESS)
-    return TS_ERROR;
+  TSMgmtInt value;
 
-  RecGetGlobalRawStatSum(api_rsb, the_stat, value);
-  return TS_SUCCESS;
+  RecGetGlobalRawStatSum(api_rsb, the_stat, &value);
+  return value;
 }
 
-TSReturnCode
+void
 TSStatIntSet(int the_stat, TSMgmtInt value)
 {
-  if (sdk_sanity_check_null_ptr((void*)api_rsb) != TS_SUCCESS)
-    return TS_ERROR;
-
   RecSetGlobalRawStatSum(api_rsb, the_stat, value);
-  return TS_SUCCESS;
 }
 
-int
-TSStatFindName(const char* name)
+TSReturnCode
+TSStatFindName(const char* name, int *idp)
 {
-  int id;
+  sdk_assert(sdk_sanity_check_null_ptr((void*)name) == TS_SUCCESS);
 
-  if ((sdk_sanity_check_null_ptr((void*)name) != TS_SUCCESS) ||
-      (sdk_sanity_check_null_ptr((void*)api_rsb) != TS_SUCCESS))
-    return TS_ERROR;
+  if (RecGetRecordOrderAndId(name, NULL, idp) == REC_ERR_OKAY)
+    return TS_SUCCESS;
 
-  if (RecGetRecordOrderAndId(name, NULL, &id) == REC_ERR_OKAY)
-    return id;
-  return -1;
+  return TS_ERROR;
 }
 
 
@@ -6301,21 +6264,16 @@ TSStatFindName(const char* name)
 inline TSReturnCode
 ink_sanity_check_stat_structure(void *obj)
 {
-  if (obj == NULL || obj == TS_ERROR_PTR) {
+  if (obj == NULL)
     return TS_ERROR;
-  }
+
   return TS_SUCCESS;
 }
 
 INKStat
 INKStatCreate(const char *the_name, INKStatTypes the_type)
 {
-#ifdef DEBUG
-  if (the_name == NULL ||
-      the_name == TS_ERROR_PTR || ((the_type != INKSTAT_TYPE_INT64) && (the_type != INKSTAT_TYPE_FLOAT))) {
-    return (INKStat)TS_ERROR_PTR;
-  }
-#endif
+  sdk_assert(sdk_sanity_check_null_ptr((void*)the_name) == TS_SUCCESS);
 
   StatDescriptor *n = NULL;
 
@@ -6329,112 +6287,89 @@ INKStatCreate(const char *the_name, INKStatTypes the_type)
     break;
 
   default:
-    Warning("INKStatCreate given invalid type enumeration!");
+    sdk_assert(!"Bad Input");
     break;
   };
 
-  return n == NULL ? (INKStat) TS_ERROR_PTR : (INKStat) n;
+  return (INKStat)n;
 }
 
-TSReturnCode
+void
 INKStatIntAddTo(INKStat the_stat, int64_t amount)
 {
-  if (ink_sanity_check_stat_structure(the_stat) != TS_SUCCESS)
-    return TS_ERROR;
+  sdk_assert(ink_sanity_check_stat_structure(the_stat) == TS_SUCCESS);
 
-  StatDescriptor *statp = (StatDescriptor *) the_stat;
+  StatDescriptor *statp = (StatDescriptor *)the_stat;
   statp->add(amount);
-  return TS_SUCCESS;
 }
 
-TSReturnCode
+void
 INKStatFloatAddTo(INKStat the_stat, float amount)
 {
-  if (ink_sanity_check_stat_structure(the_stat) != TS_SUCCESS)
-    return TS_ERROR;
+  sdk_assert(ink_sanity_check_stat_structure(the_stat) == TS_SUCCESS);
 
-  StatDescriptor *statp = (StatDescriptor *) the_stat;
+  StatDescriptor *statp = (StatDescriptor *)the_stat;
   statp->add(amount);
-  return TS_SUCCESS;
 }
 
-TSReturnCode
+void
 INKStatDecrement(INKStat the_stat)
 {
-  if (ink_sanity_check_stat_structure(the_stat) != TS_SUCCESS)
-    return TS_ERROR;
+  sdk_assert(ink_sanity_check_stat_structure(the_stat) == TS_SUCCESS);
 
-  StatDescriptor *statp = (StatDescriptor *) the_stat;
+  StatDescriptor *statp = (StatDescriptor *)the_stat;
   statp->decrement();
-  return TS_SUCCESS;
 }
 
-TSReturnCode
+void
 INKStatIncrement(INKStat the_stat)
 {
-  if (ink_sanity_check_stat_structure(the_stat) != TS_SUCCESS)
-    return TS_ERROR;
+  sdk_assert(ink_sanity_check_stat_structure(the_stat) == TS_SUCCESS);
 
-  StatDescriptor *statp = (StatDescriptor *) the_stat;
+  StatDescriptor *statp = (StatDescriptor *)the_stat;
   statp->increment();
-  return TS_SUCCESS;
 }
 
-TSReturnCode
-INKStatIntGet(INKStat the_stat, int64_t *value)
+int64_t
+INKStatIntGet(INKStat the_stat)
 {
-  if (ink_sanity_check_stat_structure(the_stat) != TS_SUCCESS)
-    return TS_ERROR;
+  sdk_assert(ink_sanity_check_stat_structure(the_stat) == TS_SUCCESS);
 
   StatDescriptor *statp = (StatDescriptor *) the_stat;
-
-  *value = statp->int_value();
-  return TS_SUCCESS;
+  return statp->int_value();
 }
 
-TSReturnCode
-INKStatFloatGet(INKStat the_stat, float *value)
+float
+INKStatFloatGet(INKStat the_stat)
 {
-  if (ink_sanity_check_stat_structure(the_stat) != TS_SUCCESS)
-    return TS_ERROR;
+  sdk_assert(ink_sanity_check_stat_structure(the_stat) == TS_SUCCESS);
 
   StatDescriptor *statp = (StatDescriptor *) the_stat;
-
-  *value = statp->flt_value();
-  return TS_SUCCESS;
+  return statp->flt_value();
 }
 
-TSReturnCode
+void
 INKStatIntSet(INKStat the_stat, int64_t value)
 {
-  if (ink_sanity_check_stat_structure(the_stat) != TS_SUCCESS)
-    return TS_ERROR;
+  sdk_assert(ink_sanity_check_stat_structure(the_stat) == TS_SUCCESS);
 
   StatDescriptor *statp = (StatDescriptor *) the_stat;
-
   statp->set(value);
-  return TS_SUCCESS;
 }
 
-TSReturnCode
+void
 INKStatFloatSet(INKStat the_stat, float value)
 {
-  if (ink_sanity_check_stat_structure(the_stat) != TS_SUCCESS)
-    return TS_ERROR;
+  sdk_assert(ink_sanity_check_stat_structure(the_stat) == TS_SUCCESS);
 
   StatDescriptor *statp = (StatDescriptor *) the_stat;
-
   statp->set(value);
-  return TS_SUCCESS;
 }
 
 INKCoupledStat
 INKStatCoupledGlobalCategoryCreate(const char *the_name)
 {
-#ifdef DEBUG
-  if (the_name == NULL || the_name == TS_ERROR_PTR)
-    return (INKCoupledStat)TS_ERROR_PTR;
-#endif
+  sdk_assert(sdk_sanity_check_null_ptr((void*)the_name) == TS_SUCCESS);
 
   CoupledStats *category = NEW(new CoupledStats(the_name));
   return (INKCoupledStat)category;
@@ -6443,39 +6378,33 @@ INKStatCoupledGlobalCategoryCreate(const char *the_name)
 INKCoupledStat
 INKStatCoupledLocalCopyCreate(const char *the_name, INKCoupledStat global_copy)
 {
-  if (ink_sanity_check_stat_structure(global_copy) != TS_SUCCESS ||
-      sdk_sanity_check_null_ptr((void*) the_name) != TS_SUCCESS)
-    return (INKCoupledStat)TS_ERROR_PTR;
+  sdk_assert(ink_sanity_check_stat_structure(global_copy) == TS_SUCCESS);
+  sdk_assert(sdk_sanity_check_null_ptr((void*)the_name) == TS_SUCCESS);
 
   CoupledStatsSnapshot *snap = NEW(new CoupledStatsSnapshot((CoupledStats *) global_copy));
-
-  return (INKCoupledStat)snap;
+return (INKCoupledStat)snap;
 }
 
-TSReturnCode
+void
 INKStatCoupledLocalCopyDestroy(INKCoupledStat stat)
 {
-  if (ink_sanity_check_stat_structure(stat) != TS_SUCCESS)
-    return TS_ERROR;
+  sdk_assert(ink_sanity_check_stat_structure(stat) == TS_SUCCESS);
 
-  CoupledStatsSnapshot *snap = (CoupledStatsSnapshot *) stat;
+  CoupledStatsSnapshot *snap = (CoupledStatsSnapshot *)stat;
 
   if (snap) {
     delete snap;
   }
-  return TS_SUCCESS;
 }
 
 INKStat
 INKStatCoupledGlobalAdd(INKCoupledStat global_copy, const char *the_name, INKStatTypes the_type)
 {
-  if ((ink_sanity_check_stat_structure(global_copy) != TS_SUCCESS) ||
-      sdk_sanity_check_null_ptr((void*) the_name) != TS_SUCCESS ||
-      ((the_type != INKSTAT_TYPE_INT64) && (the_type != INKSTAT_TYPE_FLOAT)))
-    return (INKStat)TS_ERROR_PTR;
+  sdk_assert(ink_sanity_check_stat_structure(global_copy) == TS_SUCCESS);
+  sdk_assert(sdk_sanity_check_null_ptr((void*)the_name) == TS_SUCCESS);
 
   CoupledStats *category = (CoupledStats *) global_copy;
-  StatDescriptor *n;
+  StatDescriptor *n = NULL;
 
   switch (the_type) {
   case INKSTAT_TYPE_INT64:
@@ -6487,37 +6416,31 @@ INKStatCoupledGlobalAdd(INKCoupledStat global_copy, const char *the_name, INKSta
     break;
 
   default:
-    n = NULL;
-    Warning("INKStatCreate given invalid type enumeration!");
+    sdk_assert(!"Bad stat type");
     break;
   };
 
-  return n == NULL ? (INKStat) TS_ERROR_PTR : (INKStat) n;
+  return (INKStat)n;
 }
 
 INKStat
 INKStatCoupledLocalAdd(INKCoupledStat local_copy, const char *the_name, INKStatTypes the_type)
 {
-  if ((ink_sanity_check_stat_structure(local_copy) != TS_SUCCESS) ||
-      sdk_sanity_check_null_ptr((void*) the_name) != TS_SUCCESS ||
-      ((the_type != INKSTAT_TYPE_INT64) && (the_type != INKSTAT_TYPE_FLOAT)))
-    return (INKStat)TS_ERROR_PTR;
+  sdk_assert(ink_sanity_check_stat_structure(local_copy) == TS_SUCCESS);
+  sdk_assert(sdk_sanity_check_null_ptr((void*)the_name) == TS_SUCCESS);
+  sdk_assert((the_type == INKSTAT_TYPE_INT64) || (the_type == INKSTAT_TYPE_FLOAT));
 
   StatDescriptor *n = ((CoupledStatsSnapshot *) local_copy)->fetchNext();
-
-  return n == NULL ? (INKStat) TS_ERROR_PTR : (INKStat) n;
+  return (INKStat)n;
 }
 
-TSReturnCode
+void
 INKStatsCoupledUpdate(INKCoupledStat local_copy)
 {
-  if (ink_sanity_check_stat_structure(local_copy) != TS_SUCCESS)
-    return TS_ERROR;
-
+  sdk_assert(ink_sanity_check_stat_structure(local_copy) == TS_SUCCESS);
   ((CoupledStatsSnapshot *) local_copy)->CommitUpdates();
-
-  return TS_SUCCESS;
 }
+
 
 /**************************   Tracing API   ****************************/
 // returns 1 or 0 to indicate whether TS is being run with a debug tag.
@@ -6534,6 +6457,7 @@ TSDebug(const char *tag, const char *format_str, ...)
 {
   if (diags->on(tag, DiagsTagType_Debug)) {
     va_list ap;
+
     va_start(ap, format_str);
     diags->print_va(tag, DL_Diag, NULL, NULL, format_str, ap);
     va_end(ap);
@@ -6545,17 +6469,14 @@ TSDebug(const char *tag, const char *format_str, ...)
 TSReturnCode
 TSTextLogObjectCreate(const char *filename, int mode, TSTextLogObject *new_object)
 {
-#ifdef DEBUG
-  if (filename == NULL) {
-    *new_object = NULL;
-    return TS_ERROR;
-  }
-#endif
+  sdk_assert(sdk_sanity_check_null_ptr((void*)filename) == TS_SUCCESS);
+  sdk_assert(sdk_sanity_check_null_ptr((void*)new_object) == TS_SUCCESS);
+
   if (mode<0 || mode>= TS_LOG_MODE_INVALID_FLAG) {
-    /* specified mode is invalid */
     *new_object = NULL;
     return TS_ERROR;
   }
+
   TextLogObject *tlog = NEW(new TextLogObject(filename, Log::config->logfile_dir,
                                               (bool) mode & TS_LOG_MODE_ADD_TIMESTAMP,
                                               NULL,
@@ -6568,25 +6489,24 @@ TSTextLogObjectCreate(const char *filename, int mode, TSTextLogObject *new_objec
                Log::config->log_object_manager.manage_api_object(tlog, 0) :
                Log::config->log_object_manager.manage_api_object(tlog));
     if (err != LogObjectManager::NO_FILENAME_CONFLICTS) {
-      // error managing log
       delete tlog;
       *new_object = NULL;
       return TS_ERROR;
     }
   } else {
-    // error creating log
     *new_object = NULL;
     return TS_ERROR;
   }
   *new_object = (TSTextLogObject) tlog;
+
   return TS_SUCCESS;
 }
 
 TSReturnCode
 TSTextLogObjectWrite(TSTextLogObject the_object, char *format, ...)
 {
-  if ((sdk_sanity_check_iocore_structure(the_object) != TS_SUCCESS) || (format == NULL))
-    return TS_ERROR;
+  sdk_assert(sdk_sanity_check_iocore_structure(the_object) == TS_SUCCESS);
+  sdk_assert(sdk_sanity_check_null_ptr((void*)format) == TS_SUCCESS);
 
   TSReturnCode retVal = TS_SUCCESS;
 
@@ -6606,104 +6526,101 @@ TSTextLogObjectWrite(TSTextLogObject the_object, char *format, ...)
     ink_debug_assert(!"invalid return code");
   }
   va_end(ap);
+
   return retVal;
 }
 
-TSReturnCode
+void
 TSTextLogObjectFlush(TSTextLogObject the_object)
 {
-  if (sdk_sanity_check_iocore_structure(the_object) != TS_SUCCESS)
-    return TS_ERROR;
+  sdk_assert(sdk_sanity_check_iocore_structure(the_object) == TS_SUCCESS);
 
   ((TextLogObject *) the_object)->force_new_buffer();
-  return TS_SUCCESS;
 }
 
 TSReturnCode
 TSTextLogObjectDestroy(TSTextLogObject the_object)
 {
-  if (sdk_sanity_check_iocore_structure(the_object) != TS_SUCCESS)
-    return TS_ERROR;
+  sdk_assert(sdk_sanity_check_iocore_structure(the_object) == TS_SUCCESS);
 
-  return (Log::config->log_object_manager.unmanage_api_object((TextLogObject *) the_object) ? TS_SUCCESS : TS_ERROR);
+  if (Log::config->log_object_manager.unmanage_api_object((TextLogObject *) the_object))
+    return TS_SUCCESS;
+
+  return TS_ERROR;
 }
 
-tsapi TSReturnCode
+void
 TSTextLogObjectHeaderSet(TSTextLogObject the_object, const char *header)
 {
-  if (sdk_sanity_check_iocore_structure(the_object) != TS_SUCCESS)
-    return TS_ERROR;
+  sdk_assert(sdk_sanity_check_iocore_structure(the_object) == TS_SUCCESS);
 
   ((TextLogObject *) the_object)->set_log_file_header(header);
-  return TS_SUCCESS;
 }
 
-tsapi TSReturnCode
+void
 TSTextLogObjectRollingEnabledSet(TSTextLogObject the_object, int rolling_enabled)
 {
-  if (sdk_sanity_check_iocore_structure(the_object) != TS_SUCCESS)
-    return TS_ERROR;
+  sdk_assert(sdk_sanity_check_iocore_structure(the_object) == TS_SUCCESS);
 
   ((TextLogObject *) the_object)->set_rolling_enabled(rolling_enabled);
-  return TS_SUCCESS;
 }
 
-tsapi TSReturnCode
+void
 TSTextLogObjectRollingIntervalSecSet(TSTextLogObject the_object, int rolling_interval_sec)
 {
-  if (sdk_sanity_check_iocore_structure(the_object) != TS_SUCCESS)
-    return TS_ERROR;
+  sdk_assert(sdk_sanity_check_iocore_structure(the_object) == TS_SUCCESS);
 
   ((TextLogObject *) the_object)->set_rolling_interval_sec(rolling_interval_sec);
-  return TS_SUCCESS;
 }
 
-tsapi TSReturnCode
+void
 TSTextLogObjectRollingOffsetHrSet(TSTextLogObject the_object, int rolling_offset_hr)
 {
-  if (sdk_sanity_check_iocore_structure(the_object) != TS_SUCCESS)
-    return TS_ERROR;
+  sdk_assert(sdk_sanity_check_iocore_structure(the_object) == TS_SUCCESS);
 
   ((TextLogObject *) the_object)->set_rolling_offset_hr(rolling_offset_hr);
-  return TS_SUCCESS;
-}
-
-int
-TSHttpTxnClientFdGet(TSHttpTxn txnp)
-{
-  if (sdk_sanity_check_txn(txnp) != TS_SUCCESS) {
-    return TS_ERROR;
-  }
-  TSHttpSsn ssnp = TSHttpTxnSsnGet(txnp);
-  HttpClientSession *cs = (HttpClientSession *) ssnp;
-  if (cs == NULL) {
-    return -1;
-  }
-  NetVConnection *vc = cs->get_netvc();
-  if (vc == NULL) {
-    return -1;
-  }
-  return vc->get_socket();
 }
 
 TSReturnCode
-TSHttpTxnClientRemotePortGet(TSHttpTxn txnp, int *port)
+TSHttpTxnClientFdGet(TSHttpTxn txnp, int *fdp)
 {
-  if (sdk_sanity_check_txn(txnp) != TS_SUCCESS) {
-    return TS_ERROR;
-  }
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+  sdk_assert(sdk_sanity_check_null_ptr((void*)fdp) == TS_SUCCESS);
+
   TSHttpSsn ssnp = TSHttpTxnSsnGet(txnp);
   HttpClientSession *cs = (HttpClientSession *) ssnp;
-  if (cs == NULL) {
+
+  if (cs == NULL)
     return TS_ERROR;
-  }
+
   NetVConnection *vc = cs->get_netvc();
-  if (vc == NULL) {
+  if (vc == NULL)
     return TS_ERROR;
-  }
+
+  *fdp = vc->get_socket();
+  return TS_SUCCESS;
+}
+
+TSReturnCode
+TSHttpTxnClientRemotePortGet(TSHttpTxn txnp, int *portp)
+{
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+  sdk_assert(sdk_sanity_check_null_ptr((void*)portp) == TS_SUCCESS);
+
+  TSHttpSsn ssnp = TSHttpTxnSsnGet(txnp);
+  HttpClientSession *cs = (HttpClientSession *) ssnp;
+
+  if (cs == NULL)
+    return TS_ERROR;
+
+  NetVConnection *vc = cs->get_netvc();
+  if (vc == NULL)
+    return TS_ERROR;
+
   // Note: SDK spec specifies this API should return port in network byte order
   // iocore returns it in host byte order. So we do the conversion.
-  *port = htons(vc->get_remote_port());
+  *portp = htons(vc->get_remote_port());
+
   return TS_SUCCESS;
 }
 
@@ -6711,13 +6628,11 @@ TSHttpTxnClientRemotePortGet(TSHttpTxn txnp, int *port)
 
 // This is very suspicious, TSILookup is a (void *), so how on earth
 // can we try to delete an instance of it?
-
-
-
 void
 TSIPLookupNewEntry(TSIPLookup iplu, uint32_t addr1, uint32_t addr2, void *data)
 {
   IpLookup *my_iplu = (IpLookup *) iplu;
+
   if (my_iplu) {
     my_iplu->NewEntry((ip_addr_t) addr1, (ip_addr_t) addr2, data);
   }
@@ -6728,6 +6643,7 @@ TSIPLookupMatch(TSIPLookup iplu, uint32_t addr, void **data)
 {
   void *dummy;
   IpLookup *my_iplu = (IpLookup *) iplu;
+
   if (!data) {
     data = &dummy;
   }
@@ -6739,9 +6655,9 @@ TSIPLookupMatchFirst(TSIPLookup iplu, uint32_t addr, TSIPLookupState iplus, void
 {
   IpLookup *my_iplu = (IpLookup *) iplu;
   IpLookupState *my_iplus = (IpLookupState *) iplus;
-  if (my_iplu && my_iplus && my_iplu->MatchFirst(addr, my_iplus, data)) {
+  if (my_iplu && my_iplus && my_iplu->MatchFirst(addr, my_iplus, data))
     return 1;
-  }
+
   return 0;
 }
 
@@ -6750,9 +6666,10 @@ TSIPLookupMatchNext(TSIPLookup iplu, TSIPLookupState iplus, void **data)
 {
   IpLookup *my_iplu = (IpLookup *) iplu;
   IpLookupState *my_iplus = (IpLookupState *) iplus;
-  if (my_iplu && my_iplus && my_iplu->MatchNext(my_iplus, data)) {
+
+  if (my_iplu && my_iplus && my_iplu->MatchNext(my_iplus, data))
     return 1;
-  }
+
   return 0;
 }
 
@@ -6760,27 +6677,30 @@ void
 TSIPLookupPrint(TSIPLookup iplu, TSIPLookupPrintFunc pf)
 {
   IpLookup *my_iplu = (IpLookup *) iplu;
-  if (my_iplu) {
+
+  if (my_iplu)
     my_iplu->Print((IpLookupPrintFunc) pf);
-  }
 }
 
 /* Matcher Utils */
 char *
 TSMatcherReadIntoBuffer(char *file_name, int *file_len)
 {
+  sdk_assert(sdk_sanity_check_null_ptr((void*)file_name) == TS_SUCCESS);
   return readIntoBuffer((char *) file_name, "TSMatcher", file_len);
 }
 
 char *
 TSMatcherTokLine(char *buffer, char **last)
 {
+  sdk_assert(sdk_sanity_check_null_ptr((void*)buffer) == TS_SUCCESS);
   return tokLine(buffer, last);
 }
 
 char *
 TSMatcherExtractIPRange(char *match_str, uint32_t *addr1, uint32_t *addr2)
 {
+  sdk_assert(sdk_sanity_check_null_ptr((void*)match_str) == TS_SUCCESS);
   return (char*)ExtractIpRange(match_str, (ip_addr_t *) addr1, (ip_addr_t *) addr2);
 }
 
@@ -6793,42 +6713,46 @@ TSMatcherLineCreate(void)
 void
 TSMatcherLineDestroy(TSMatcherLine ml)
 {
-  if (ml) {
+  sdk_assert(sdk_sanity_check_null_ptr((void*)ml) == TS_SUCCESS);
+  if (ml)
     xfree(ml);
-  }
 }
 
 const char *
 TSMatcherParseSrcIPConfigLine(char *line, TSMatcherLine ml)
 {
+  sdk_assert(sdk_sanity_check_null_ptr((void*)line) == TS_SUCCESS);
   return parseConfigLine(line, (matcher_line *) ml, &ip_allow_tags);
 }
 
 char *
 TSMatcherLineName(TSMatcherLine ml, int element)
 {
+  sdk_assert(sdk_sanity_check_null_ptr((void*)ml) == TS_SUCCESS);
   return (((matcher_line *) ml)->line)[0][element];
 }
 
 char *
 TSMatcherLineValue(TSMatcherLine ml, int element)
 {
+  sdk_assert(sdk_sanity_check_null_ptr((void*)ml) == TS_SUCCESS);
   return (((matcher_line *) ml)->line)[1][element];
 }
 
 /* Configuration Setting */
-int
+TSReturnCode
 TSMgmtConfigIntSet(const char *var_name, TSMgmtInt value)
 {
   TSMgmtInt result;
   char *buffer;
 
   // is this a valid integer?
-  if (!TSMgmtIntGet(var_name, &result)) {
-    return 0;
-  }
+  if (!TSMgmtIntGet(var_name, &result))
+    return TS_ERROR;
+
   // construct a buffer
   int buffer_size = strlen(var_name) + 1 + 32 + 1 + 64 + 1;
+
   buffer = (char *) alloca(buffer_size);
   snprintf(buffer, buffer_size, "%s %d %" PRId64 "", var_name, INK_INT, value);
 
@@ -6836,20 +6760,20 @@ TSMgmtConfigIntSet(const char *var_name, TSMgmtInt value)
   // transactional (e.g. we return control to the plugin before the
   // value is commited to disk by the manager)
   RecSignalManager(MGMT_SIGNAL_PLUGIN_SET_CONFIG, buffer);
-  return 1;
+
+  return TS_SUCCESS;
 }
 
 
 /* Alarm */
 /* return type is "int" currently, it should be TSReturnCode */
-int
+void
 TSSignalWarning(TSAlarmType code, char *msg)
 {
-  if (code<TS_SIGNAL_WDA_BILLING_CONNECTION_DIED || code> TS_SIGNAL_WDA_RADIUS_CORRUPTED_PACKETS || msg == NULL)
-    return -1;                  //TS_ERROR
+  sdk_assert(code >= TS_SIGNAL_WDA_BILLING_CONNECTION_DIED && code <= TS_SIGNAL_WDA_RADIUS_CORRUPTED_PACKETS);
+  sdk_assert(sdk_sanity_check_null_ptr((void*)msg) == TS_SUCCESS);
 
   REC_SignalWarning(code, msg);
-  return 0;                     //TS_SUCCESS
 }
 
 void
@@ -6858,26 +6782,28 @@ TSICPFreshnessFuncSet(TSPluginFreshnessCalcFunc funcp)
   pluginFreshnessCalcFunc = (PluginFreshnessCalcFunc) funcp;
 }
 
-int
+TSReturnCode
 TSICPCachedReqGet(TSCont contp, TSMBuffer *bufp, TSMLoc *obj)
 {
-  ICPPeerReadCont *sm = (ICPPeerReadCont *) contp;
-  HTTPInfo *cached_obj;
+  sdk_assert(sdk_sanity_check_continuation(contp) == TS_SUCCESS);
+  sdk_assert(sdk_sanity_check_null_ptr((void*)bufp) == TS_SUCCESS);
+  sdk_assert(sdk_sanity_check_null_ptr((void*)obj) == TS_SUCCESS);
 
-  if (sm == NULL)
-    return 0;
+  ICPPeerReadCont *sm = (ICPPeerReadCont *)contp;
+  HTTPInfo *cached_obj;
 
   cached_obj = sm->_object_read;
   if (cached_obj == NULL || !cached_obj->valid())
-    return 0;
+    return TS_ERROR;
 
   HTTPHdr *cached_hdr = cached_obj->request_get();
   if (!cached_hdr->valid())
-    return 0;
+    return TS_ERROR;;
 
   // We can't use the HdrHeapSDKHandle structure in the RamCache since multiple
   //  threads can access.  We need to create our own for the transaction and return that.
   HdrHeapSDKHandle **handle = &(sm->_cache_req_hdr_heap_handle);
+
   if (*handle == NULL) {
     *handle = (HdrHeapSDKHandle *) xmalloc(sizeof(HdrHeapSDKHandle));
     (*handle)->m_heap = cached_hdr->m_heap;
@@ -6887,29 +6813,34 @@ TSICPCachedReqGet(TSCont contp, TSMBuffer *bufp, TSMLoc *obj)
   *obj = cached_hdr->m_http;
   sdk_sanity_check_mbuffer(*bufp);
 
-  return 1;
+  return TS_SUCCESS;
 }
 
-int
+TSReturnCode
 TSICPCachedRespGet(TSCont contp, TSMBuffer *bufp, TSMLoc *obj)
 {
+  sdk_assert(sdk_sanity_check_continuation(contp) == TS_SUCCESS);
+  sdk_assert(sdk_sanity_check_null_ptr((void*)bufp) == TS_SUCCESS);
+  sdk_assert(sdk_sanity_check_null_ptr((void*)obj) == TS_SUCCESS);
+
   ICPPeerReadCont *sm = (ICPPeerReadCont *) contp;
   HTTPInfo *cached_obj;
 
   if (sm == NULL)
-    return 0;
+    return TS_ERROR;
 
   cached_obj = sm->_object_read;
   if (cached_obj == NULL || !cached_obj->valid())
-    return 0;
+    return TS_ERROR;
 
   HTTPHdr *cached_hdr = cached_obj->response_get();
   if (!cached_hdr->valid())
-    return 0;
+    return TS_ERROR;
 
   // We can't use the HdrHeapSDKHandle structure in the RamCache since multiple
   //  threads can access.  We need to create our own for the transaction and return that.
   HdrHeapSDKHandle **handle = &(sm->_cache_resp_hdr_heap_handle);
+
   if (*handle == NULL) {
     *handle = (HdrHeapSDKHandle *) xmalloc(sizeof(HdrHeapSDKHandle));
     (*handle)->m_heap = cached_hdr->m_heap;
@@ -6919,12 +6850,14 @@ TSICPCachedRespGet(TSCont contp, TSMBuffer *bufp, TSMLoc *obj)
   *obj = cached_hdr->m_http;
   sdk_sanity_check_mbuffer(*bufp);
 
-  return 1;
+  return TS_SUCCESS;
 }
 
 TSReturnCode
 TSCacheUrlSet(TSHttpTxn txnp, const char *url, int length)
 {
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+
   HttpSM *sm = (HttpSM *) txnp;
   Debug("cache_url", "[TSCacheUrlSet]");
 
@@ -6937,17 +6870,18 @@ TSCacheUrlSet(TSHttpTxn txnp, const char *url, int length)
     sm->t_state.cache_info.lookup_url_storage.create(NULL);
     sm->t_state.cache_info.lookup_url = &(sm->t_state.cache_info.lookup_url_storage);
     sm->t_state.cache_info.lookup_url->parse(url, length);
-  } else {
-    return TS_ERROR;
+    return TS_SUCCESS;
   }
-  return TS_SUCCESS;
+
+  return TS_ERROR;
 }
 
 void
 TSCacheHttpInfoKeySet(TSCacheHttpInfo infop, TSCacheKey keyp)
 {
+  // TODO: Check input ?
   CacheHTTPInfo *info = (CacheHTTPInfo *) infop;
-  INK_MD5 *key = (INK_MD5 *) keyp;
+  INK_MD5 *key = (INK_MD5 *)keyp;
 
   info->object_key_set(*key);
 }
@@ -6955,21 +6889,19 @@ TSCacheHttpInfoKeySet(TSCacheHttpInfo infop, TSCacheKey keyp)
 void
 TSCacheHttpInfoSizeSet(TSCacheHttpInfo infop, int64_t size)
 {
+  // TODO: Check input ?
   CacheHTTPInfo *info = (CacheHTTPInfo *) infop;
 
   info->object_size_set(size);
 }
 
 // this function should be called at TS_EVENT_HTTP_READ_RESPONSE_HDR
-TSReturnCode
+void
 TSRedirectUrlSet(TSHttpTxn txnp, const char* url, const int url_len)
 {
-  if (url == NULL) {
-    return TS_ERROR;
-  }
-  if (sdk_sanity_check_txn(txnp)!=TS_SUCCESS) {
-    return TS_ERROR;
-  }
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+  sdk_assert(sdk_sanity_check_null_ptr((void*)url) == TS_SUCCESS);
+
   HttpSM *sm = (HttpSM*) txnp;
 
   if (sm->redirect_url != NULL) {
@@ -6978,30 +6910,29 @@ TSRedirectUrlSet(TSHttpTxn txnp, const char* url, const int url_len)
     sm->redirect_url_len = 0;
   }
 
-  if ((sm->redirect_url = (char*)xmalloc(url_len + 1)) != NULL) {
-    ink_strncpy(sm->redirect_url, (char*)url, url_len + 1);
-    sm->redirect_url_len = url_len;
-    // have to turn redirection on for this transaction if user wants to redirect to another URL
-    if (sm->enable_redirection == false) {
-      sm->enable_redirection = true;
-      // max-out "redirection_tries" to avoid the regular redirection being turned on in
-      // this transaction improperly. This variable doesn't affect the custom-redirection
-      sm->redirection_tries = HttpConfig::m_master.number_of_redirections;
-    }
-    return TS_SUCCESS;
-  }
-  else {
-    return TS_ERROR;
+  sm->redirect_url = (char*)xmalloc(url_len + 1);
+  // TODO: Should remove this when malloc is guaranteed to fail.
+  sdk_assert(sdk_sanity_check_null_ptr((void*)sm->redirect_url) == TS_SUCCESS);
+
+
+  ink_strncpy(sm->redirect_url, (char*)url, url_len + 1);
+  sm->redirect_url_len = url_len;
+  // have to turn redirection on for this transaction if user wants to redirect to another URL
+  if (sm->enable_redirection == false) {
+    sm->enable_redirection = true;
+    // max-out "redirection_tries" to avoid the regular redirection being turned on in
+    // this transaction improperly. This variable doesn't affect the custom-redirection
+    sm->redirection_tries = HttpConfig::m_master.number_of_redirections;
   }
 }
 
 const char*
 TSRedirectUrlGet(TSHttpTxn txnp, int* url_len_ptr)
 {
-  if (sdk_sanity_check_txn(txnp)!=TS_SUCCESS) {
-    return NULL;
-  }
-  HttpSM *sm = (HttpSM*) txnp;
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+
+  HttpSM *sm = (HttpSM*)txnp;
+
   *url_len_ptr = sm->redirect_url_len;
   return (const char*)sm->redirect_url;
 }
@@ -7009,15 +6940,18 @@ TSRedirectUrlGet(TSHttpTxn txnp, int* url_len_ptr)
 char*
 TSFetchRespGet(TSHttpTxn txnp, int *length)
 {
-   FetchSM *fetch_sm = (FetchSM*)txnp;
-   return  fetch_sm->resp_get(length);
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+
+  FetchSM *fetch_sm = (FetchSM*)txnp;
+  return fetch_sm->resp_get(length);
 }
 
-int
+TSReturnCode
 TSFetchPageRespGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *obj)
 {
-  if (sdk_sanity_check_null_ptr((void*)bufp) != TS_SUCCESS || sdk_sanity_check_null_ptr((void*)obj) != TS_SUCCESS)
-    return 0;
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+  sdk_assert(sdk_sanity_check_null_ptr((void*)bufp) == TS_SUCCESS);
+  sdk_assert(sdk_sanity_check_null_ptr((void*)obj) == TS_SUCCESS);
 
   HTTPHdr *hptr = (HTTPHdr*) txnp;
 
@@ -7025,66 +6959,66 @@ TSFetchPageRespGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *obj)
     *bufp = hptr;
     *obj = hptr->m_http;
     if (sdk_sanity_check_mbuffer(*bufp) == TS_SUCCESS)
-      return 1;
+      return TS_SUCCESS;
   }
-  return 0;
+
+  return TS_ERROR;
 }
 
+// Fetchpages SM
 extern ClassAllocator<FetchSM> FetchSMAllocator;
 
-TSReturnCode
+void
 TSFetchPages(TSFetchUrlParams_t *params)
 {
-   TSFetchUrlParams_t *myparams = params;
+  TSFetchUrlParams_t *myparams = params;
 
-   while(myparams!=NULL) {
-     FetchSM *fetch_sm =  FetchSMAllocator.alloc();
+  while (myparams != NULL) {
+    FetchSM *fetch_sm =  FetchSMAllocator.alloc();
 
-     fetch_sm->init(myparams->contp,myparams->options,myparams->events,myparams->request,myparams->request_len, myparams->ip, myparams->port);
-     fetch_sm->httpConnect();
-     myparams= myparams->next;
+    fetch_sm->init(myparams->contp, myparams->options,myparams->events, myparams->request, myparams->request_len, myparams->ip, myparams->port);
+    fetch_sm->httpConnect();
+    myparams= myparams->next;
   }
-  return TS_SUCCESS;
 }
 
-TSReturnCode
+void
 TSFetchUrl(const char* headers, int request_len, unsigned int ip, int port , TSCont contp, TSFetchWakeUpOptions callback_options,TSFetchEvent events)
 {
-   FetchSM *fetch_sm =  FetchSMAllocator.alloc();
+  sdk_assert(sdk_sanity_check_continuation(contp) == TS_SUCCESS);
 
-   fetch_sm->init(contp,callback_options,events,headers,request_len,ip,port);
-   fetch_sm->httpConnect();
-  return TS_SUCCESS;
+  FetchSM *fetch_sm =  FetchSMAllocator.alloc();
+
+  fetch_sm->init(contp, callback_options, events, headers, request_len, ip,port);
+  fetch_sm->httpConnect();
 }
 
 int
 TSHttpIsInternalRequest(TSHttpTxn txnp)
 {
-  if (sdk_sanity_check_txn(txnp) != TS_SUCCESS) {
-    return 0;
-  }
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+
   TSHttpSsn ssnp = TSHttpTxnSsnGet(txnp);
   HttpClientSession *cs = (HttpClientSession *) ssnp;
   NetVConnection *vc = cs->get_netvc();
-  if (!cs || !vc) {
+
+  if (!cs || !vc)
     return 0;
-  }
-  return vc->get_is_internal_request();
+
+  return vc->get_is_internal_request() ? 1 : 0;
 }
 
 
 TSReturnCode
 TSAIORead(int fd, off_t offset, char* buf, size_t buffSize, TSCont contp)
 {
-  if (sdk_sanity_check_iocore_structure (contp) != TS_SUCCESS) {
-    return TS_ERROR;
-  }
+  sdk_assert(sdk_sanity_check_iocore_structure(contp) == TS_SUCCESS);
 
   Continuation* pCont = (Continuation*) contp;
   AIOCallback* pAIO = new_AIOCallback();
-  if( pAIO == NULL ) {
+
+  if (pAIO == NULL)
     return TS_ERROR;
-  }
 
   pAIO->aiocb.aio_fildes = fd;
   pAIO->aiocb.aio_offset = offset;
@@ -7095,11 +7029,10 @@ TSAIORead(int fd, off_t offset, char* buf, size_t buffSize, TSCont contp)
   pAIO->action = pCont;
   pAIO->thread = ((ProxyMutex*) pCont->mutex)->thread_holding;
 
-  if (ink_aio_read(pAIO, 1) == 1) {
+  if (ink_aio_read(pAIO, 1) == 1)
     return TS_SUCCESS;
-  } else {
-    return TS_ERROR;
-  }
+
+  return TS_ERROR;
 }
 
 char*
@@ -7119,17 +7052,13 @@ TSAIONBytesGet(void *data)
 TSReturnCode
 TSAIOWrite(int fd, off_t offset, char* buf, const size_t bufSize, TSCont contp)
 {
-
-  if (sdk_sanity_check_iocore_structure (contp) != TS_SUCCESS) {
-    return TS_ERROR;
-  }
-
+  sdk_assert(sdk_sanity_check_iocore_structure (contp) == TS_SUCCESS);
+  
   Continuation* pCont = (Continuation*) contp;
-
   AIOCallback* pAIO = new_AIOCallback();
-  if( pAIO == NULL ) {
-    return TS_ERROR;
-  }
+
+  // TODO: Might be able to remove this when allocations can never fail.
+  sdk_assert(sdk_sanity_check_null_ptr((void*)pAIO) == TS_SUCCESS);
 
   pAIO->aiocb.aio_fildes = fd;
   pAIO->aiocb.aio_offset = offset;
@@ -7138,22 +7067,19 @@ TSAIOWrite(int fd, off_t offset, char* buf, const size_t bufSize, TSCont contp)
   pAIO->action = pCont;
   pAIO->thread = ((ProxyMutex*) pCont->mutex)->thread_holding;
 
-  if (ink_aio_write(pAIO, 1) == 1) {
+  if (ink_aio_write(pAIO, 1) == 1)
     return TS_SUCCESS;
-  } else {
-    return TS_ERROR;
-  }
+
+  return TS_ERROR;
 }
 
 TSReturnCode
 TSAIOThreadNumSet(int thread_num)
 {
-  if (ink_aio_thread_num_set(thread_num) == 1) {
+  if (ink_aio_thread_num_set(thread_num))
     return TS_SUCCESS;
-  }
-  else {
-    return TS_ERROR;
-  }
+
+  return TS_ERROR;
 }
 
 void
@@ -7165,14 +7091,13 @@ TSRecordDump(TSRecordType rec_type, TSRecordDumpCb callback, void *edata)
 /* ability to skip the remap phase of the State Machine 
    this only really makes sense in TS_HTTP_READ_REQUEST_HDR_HOOK
 */
-TSReturnCode TSSkipRemappingSet(TSHttpTxn txnp, int flag)
+void
+TSSkipRemappingSet(TSHttpTxn txnp, int flag)
 {
-  if (sdk_sanity_check_txn(txnp) != TS_SUCCESS) {
-    return TS_ERROR;
-  }
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+
   HttpSM *sm = (HttpSM*) txnp;
   sm->t_state.api_skip_all_remapping = (flag != 0);
-  return TS_SUCCESS;
 }
 
 // Little helper function to find the struct member
@@ -7377,8 +7302,7 @@ _conf_to_memberp(TSOverridableConfigKey conf, HttpSM* sm, OverridableDataType *t
 TSReturnCode
 TSHttpTxnConfigIntSet(TSHttpTxn txnp, TSOverridableConfigKey conf, TSMgmtInt value)
 {
-  if (sdk_sanity_check_txn(txnp) != TS_SUCCESS)
-    return TS_ERROR;
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 
   HttpSM *s = static_cast<HttpSM*>(txnp);
 
@@ -7405,9 +7329,8 @@ TSHttpTxnConfigIntSet(TSHttpTxn txnp, TSOverridableConfigKey conf, TSMgmtInt val
 TSReturnCode
 TSHttpTxnConfigIntGet(TSHttpTxn txnp, TSOverridableConfigKey conf, TSMgmtInt *value)
 {
-  if ((sdk_sanity_check_txn(txnp) != TS_SUCCESS) ||
-      (sdk_sanity_check_null_ptr((void*)value) != TS_SUCCESS))
-    return TS_ERROR;
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+  sdk_assert(sdk_sanity_check_null_ptr((void*)value) == TS_SUCCESS);
 
   OverridableDataType type;
   TSMgmtInt* dest = static_cast<TSMgmtInt*>(_conf_to_memberp(conf, (HttpSM*)txnp, &type));
@@ -7426,8 +7349,7 @@ TSHttpTxnConfigIntGet(TSHttpTxn txnp, TSOverridableConfigKey conf, TSMgmtInt *va
 TSReturnCode
 TSHttpTxnConfigFloatSet(TSHttpTxn txnp, TSOverridableConfigKey conf, TSMgmtFloat value)
 {
-  if (sdk_sanity_check_txn(txnp) != TS_SUCCESS)
-    return TS_ERROR;
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 
   HttpSM *s = static_cast<HttpSM*>(txnp);
   OverridableDataType type;
@@ -7454,9 +7376,8 @@ TSHttpTxnConfigFloatSet(TSHttpTxn txnp, TSOverridableConfigKey conf, TSMgmtFloat
 TSReturnCode
 TSHttpTxnConfigFloatGet(TSHttpTxn txnp, TSOverridableConfigKey conf, TSMgmtFloat *value)
 {
-  if ((sdk_sanity_check_txn(txnp) != TS_SUCCESS) ||
-      (sdk_sanity_check_null_ptr((void*)value) != TS_SUCCESS))
-    return TS_ERROR;
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+  sdk_assert(sdk_sanity_check_null_ptr((void*)value) == TS_SUCCESS);
 
   OverridableDataType type;
   TSMgmtFloat* dest = static_cast<TSMgmtFloat*>(_conf_to_memberp(conf, (HttpSM*)txnp, &type));
@@ -7475,9 +7396,8 @@ TSHttpTxnConfigFloatGet(TSHttpTxn txnp, TSOverridableConfigKey conf, TSMgmtFloat
 TSReturnCode
 TSHttpTxnConfigStringSet(TSHttpTxn txnp, TSOverridableConfigKey conf, const char* value, int length)
 {
-  if ((sdk_sanity_check_txn(txnp) != TS_SUCCESS) ||
-      (sdk_sanity_check_null_ptr((void*)value) != TS_SUCCESS))
-    return TS_ERROR;
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+  sdk_assert(sdk_sanity_check_null_ptr((void*)value) == TS_SUCCESS);
 
   if (length == -1)
     length = strlen(value);
@@ -7507,10 +7427,9 @@ TSHttpTxnConfigStringSet(TSHttpTxn txnp, TSOverridableConfigKey conf, const char
 TSReturnCode
 TSHttpTxnConfigStringGet(TSHttpTxn txnp, TSOverridableConfigKey conf, const char **value, int *length)
 {
-  if ((sdk_sanity_check_txn(txnp) != TS_SUCCESS) ||
-      (sdk_sanity_check_null_ptr((void**)value) != TS_SUCCESS) ||
-      (sdk_sanity_check_null_ptr((void*)*value) != TS_SUCCESS))
-    return TS_ERROR;
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+  sdk_assert(sdk_sanity_check_null_ptr((void**)value) == TS_SUCCESS);
+  sdk_assert(sdk_sanity_check_null_ptr((void*)*value) == TS_SUCCESS);
 
   HttpSM *sm = (HttpSM*) txnp;
 
@@ -7533,9 +7452,8 @@ TSHttpTxnConfigStringGet(TSHttpTxn txnp, TSOverridableConfigKey conf, const char
 TSReturnCode
 TSHttpTxnConfigFind(const char* name, int length, TSOverridableConfigKey *conf, TSRecordDataType *type)
 {
-  if ((sdk_sanity_check_null_ptr((void*)name) != TS_SUCCESS) ||
-      (sdk_sanity_check_null_ptr((void*)conf) != TS_SUCCESS))
-    return TS_ERROR;
+  sdk_assert(sdk_sanity_check_null_ptr((void*)name) == TS_SUCCESS);
+  sdk_assert(sdk_sanity_check_null_ptr((void*)conf) == TS_SUCCESS);
 
   TSOverridableConfigKey cnf = TS_CONFIG_NULL;
   TSRecordDataType typ = TS_RECORDDATATYPE_INT;

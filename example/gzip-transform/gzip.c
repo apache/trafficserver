@@ -344,7 +344,7 @@ gzip_transform_do(TSCont contp)
      ourself. This vio contains the buffer that we are to read from
      as well as the continuation we are to call when the buffer is
      empty. */
-  TSVConnWriteVIOGet(contp, &write_vio); /* Should check for errors ... */
+  write_vio = TSVConnWriteVIOGet(contp);
 
   length = data->output_length;
 
@@ -444,7 +444,7 @@ gzip_transform(TSCont contp, TSEvent event, void *edata)
         /* Get the write vio for the write operation that was
            performed on ourself. This vio contains the continuation of
            our parent transformation. */
-        TSVConnWriteVIOGet(contp, &write_vio); /* Should check for errors ... */
+        write_vio = TSVConnWriteVIOGet(contp);
 
         /* Call back the write vio continuation to let it know that we
            have completed the write operation. */

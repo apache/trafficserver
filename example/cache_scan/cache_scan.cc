@@ -249,10 +249,7 @@ cleanup(TSCont contp)
       cstate->resp_buffer = NULL;
     }
 
-    if (TSVConnClose(cstate->net_vc) == TS_ERROR) {
-      TSError("TSVConnClose failed");
-    }
-
+    TSVConnClose(cstate->net_vc);
     TSfree(cstate);
   }
   TSContDestroy(contp);
@@ -269,11 +266,7 @@ handle_io(TSCont contp, TSEvent event, void *edata)
   case TS_EVENT_VCONN_READ_COMPLETE:
     {
       //we don't care about the request, so just shut down the read vc
-      if (TSVConnShutdown(cstate->net_vc, 1, 0) == TS_ERROR) {
-        TSError("TSVConnShutdown failed");
-        cleanup(contp);
-        return 0;
-      }
+      TSVConnShutdown(cstate->net_vc, 1, 0);
       //setup the response headers so we are ready to write body
       char hdrs[] = "HTTP/1.0 200 OK\r\nContent-Type: text/html\r\n\r\n";
       cstate->total_bytes = TSIOBufferWrite(cstate->resp_buffer, hdrs, sizeof(hdrs) - 1);
@@ -439,13 +432,8 @@ setup_request(TSCont contp, TSHttpTxn txnp)
   query = TSUrlHttpQueryGet(bufp, url_loc, &query_len);
 
   if (path_len == 10 && !strncmp(path, "show-cache", 10)) {
-
     scan_contp = TSContCreate(cache_intercept, TSMutexCreate());
-    if (TSHttpTxnIntercept(scan_contp, txnp) != TS_SUCCESS) {
-      TSError("HttpTxnIntercept failed");
-      TSContDestroy(scan_contp);
-      goto Ldone;
-    }
+    TSHttpTxnIntercept(scan_contp, txnp);
     cstate = (cache_scan_state *) TSmalloc(sizeof(cache_scan_state));
     memset(cstate, 0, sizeof(cache_scan_state));
     cstate->http_txnp = txnp;
@@ -473,9 +461,8 @@ setup_request(TSCont contp, TSHttpTxn txnp)
         TSMLoc urlLoc;
 
         TSUrlCreate(urlBuf, &urlLoc);
-        if (TSUrlParse(urlBuf, urlLoc, (const char **) &start, end) != TS_PARSE_DONE
-            || TSCacheKeyDigestFromUrlSet(cstate->key_to_delete, urlLoc)
-            != TS_SUCCESS) {
+        if (TSUrlParse(urlBuf, urlLoc, (const char **) &start, end) != TS_PARSE_DONE ||
+            TSCacheKeyDigestFromUrlSet(cstate->key_to_delete, urlLoc) != TS_SUCCESS) {
           TSError("CacheKeyDigestFromUrlSet failed");
           TSfree(cstate);
           TSUrlDestroy(urlBuf, urlLoc);

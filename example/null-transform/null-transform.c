@@ -93,10 +93,7 @@ handle_transform(TSCont contp)
    * empty. This is the input VIO (the write VIO for the upstream
    * vconnection).
    */
-  if (TSVConnWriteVIOGet(contp, &input_vio) != TS_SUCCESS) {
-    TSError("[null-transform] Unable to fetching input VIO\n");
-    goto Lerror;
-  }
+  input_vio = TSVConnWriteVIOGet(contp);
 
   /* Get our data structure for this operation. The private data
    * structure contains the output VIO and output buffer. If the
@@ -256,7 +253,7 @@ null_transform(TSCont contp, TSEvent event, void *edata)
          * performed on ourself. This VIO contains the continuation of
          * our parent transformation. This is the input VIO.
          */
-        TSVConnWriteVIOGet(contp, &input_vio); /* Should check for errors ... */
+        input_vio = TSVConnWriteVIOGet(contp);
 
         /* Call back the write VIO continuation to let it know that we
          * have completed the write operation.
@@ -271,7 +268,7 @@ null_transform(TSCont contp, TSEvent event, void *edata)
        * shutdown the write portion of its connection to
        * indicate that we don't want to hear about it anymore.
        */
-      TSAssert(TSVConnShutdown(TSTransformOutputVConnGet(contp), 0, 1) != TS_ERROR);
+      TSVConnShutdown(TSTransformOutputVConnGet(contp), 0, 1);
       break;
     case TS_EVENT_VCONN_WRITE_READY:
       TSDebug("null-transform", "\tEvent is TS_EVENT_VCONN_WRITE_READY");

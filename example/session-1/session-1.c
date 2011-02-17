@@ -43,9 +43,8 @@ txn_handler(TSHttpTxn txnp, TSCont contp)
   int64_t num_txns = 0;
 
   INKStatIncrement(transaction_count);
-  INKStatIntGet(transaction_count, &num_txns);
+  num_txns = INKStatIntGet(transaction_count);
   TSDebug("tag_session", "The number of transactions is %d\n", num_txns);
-
 }
 
 
@@ -55,7 +54,7 @@ handle_session(TSHttpSsn ssnp, TSCont contp)
   int64_t num_ssn = 0;
 
   INKStatIncrement(session_count);
-  INKStatIntGet(session_count, &num_ssn);
+  num_ssn = INKStatIntGet(session_count);
   TSDebug("tag_session", "The number of sessions is %d\n", num_ssn);
   TSHttpSsnHookAdd(ssnp, TS_HTTP_TXN_START_HOOK, contp);
 }

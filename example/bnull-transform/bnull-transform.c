@@ -86,7 +86,7 @@ handle_buffering(TSCont contp, MyData * data)
      ourself. This VIO contains the buffer that we are to read from
      as well as the continuation we are to call when the buffer is
      empty. */
-  TSVConnWriteVIOGet(contp, &write_vio); /* Should check for errors ... */
+  write_vio = TSVConnWriteVIOGet(contp);
 
   /* Create the output buffer and its associated reader */
   if (!data->output_buffer) {
@@ -237,7 +237,7 @@ bnull_transform(TSCont contp, TSEvent event, void *edata)
         /* Get the write VIO for the write operation that was
            performed on ourself. This VIO contains the continuation of
            our parent transformation. */
-        TSVConnWriteVIOGet(contp, &write_vio); /* Should check for errors ... */
+        write_vio = TSVConnWriteVIOGet(contp);
 
         /* Call back the write VIO continuation to let it know that we
            have completed the write operation. */
@@ -251,7 +251,7 @@ bnull_transform(TSCont contp, TSEvent event, void *edata)
          shutdown the write portion of its connection to
          indicate that we don't want to hear about it anymore. */
 
-      TSAssert(TSVConnShutdown(TSTransformOutputVConnGet(contp), 0, 1) != TS_ERROR);
+      TSVConnShutdown(TSTransformOutputVConnGet(contp), 0, 1);
       break;
 
     case TS_EVENT_VCONN_WRITE_READY:

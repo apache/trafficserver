@@ -628,11 +628,7 @@ wake_up_streams(TSCont contp)
   data = TSContDataGet(contp);
   TSAssert(data->magic == MAGIC_ALIVE);
 
-  if (TSVConnWriteVIOGet(contp, &input_vio) != TS_SUCCESS) {
-    TSError("[wake_up_streams] Error while getting input_vio");
-    return 0;
-  }
-
+  input_vio = TSVConnWriteVIOGet(contp);
   ntodo = TSVIONTodoGet(input_vio);
   if (ntodo == TS_ERROR) {
     TSError("[wake_up_streams] Error while getting bytes left to read");
@@ -698,11 +694,7 @@ handle_transform(TSCont contp)
   }
 
   /* Get upstream vio */
-  if (TSVConnWriteVIOGet(contp, &input_vio) != TS_SUCCESS) {
-    TSError("[handle_transform] Error while getting input vio");
-    return 1;
-  }
-
+  input_vio = TSVConnWriteVIOGet(contp);
   data = TSContDataGet(contp);
   TSAssert(data->magic == MAGIC_ALIVE);
 
@@ -832,11 +824,7 @@ dump_psi(TSCont contp)
   TSVIO input_vio;
   TSReturnCode retval;
 
-  if (TSVConnWriteVIOGet(contp, &input_vio) != TS_SUCCESS) {
-    TSError("[dump_psi] Error while getting input vio");
-    return 1;
-  }
-
+  input_vio = TSVConnWriteVIOGet(contp);
   data = TSContDataGet(contp);
   TSAssert(data->magic == MAGIC_ALIVE);
 
@@ -939,11 +927,8 @@ transform_handler(TSCont contp, TSEvent event, void *edata)
   } else {
     switch (event) {
     case TS_EVENT_ERROR:
-      if (TSVConnWriteVIOGet(contp, &input_vio) != TS_SUCCESS) {
-        TSError("[transform_handler] Error while getting upstream vio");
-      } else {
-        TSContCall(TSVIOContGet(input_vio), TS_EVENT_ERROR, input_vio);
-      }
+      input_vio = TSVConnWriteVIOGet(contp);
+      TSContCall(TSVIOContGet(input_vio), TS_EVENT_ERROR, input_vio);
       break;
 
     case TS_EVENT_VCONN_WRITE_COMPLETE:

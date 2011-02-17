@@ -164,11 +164,8 @@ transform_destroy(TSCont contp)
     if (data->pending_action)
       TSActionCancel(data->pending_action);
 
-    if (data->server_vc) {
-      if (TSVConnAbort(data->server_vc, 1) != TS_SUCCESS) {
-        TSError("Unable to abort server VConnection. TSVConnAbort doesn't return TS_SUCESS");
-      }
-    }
+    if (data->server_vc)
+      TSVConnAbort(data->server_vc, 1);
 
     TSfree(data);
   } else {
@@ -350,9 +347,7 @@ transform_bypass(TSCont contp, TransformData * data)
   data->state = STATE_BYPASS;
 
   if (data->server_vc) {
-    if (TSVConnAbort(data->server_vc, 1) != TS_SUCCESS) {
-      TSError("Error in destroy server vc. TSVConnAbort doesn't return TS_SUCCESS");
-    }
+    TSVConnAbort(data->server_vc, 1);
     data->server_vc = NULL;
     data->server_vio = NULL;
   }
@@ -406,8 +401,7 @@ transform_buffer_event(TSCont contp, TransformData * data, TSEvent event, void *
      ourself. This VIO contains the buffer that we are to read from
      as well as the continuation we are to call when the buffer is
      empty. */
-  if (TSVConnWriteVIOGet(contp, &write_vio) != TS_SUCCESS)
-    TSError("Corrupted write VIO received.");
+  write_vio = TSVConnWriteVIOGet(contp);
 
   /* We also check to see if the write VIO's buffer is non-NULL. A
      NULL buffer indicates that the write operation has been
@@ -572,35 +566,25 @@ transform_read_event(TSCont contp, TransformData * data, TSEvent event, void *ed
 {
   switch (event) {
   case TS_EVENT_ERROR:
-    if (TSVConnAbort(data->server_vc, 1) != TS_SUCCESS) {
-      TSError("TSVConnAbort doesn't return TS_SUCCESS on server VConnection during TS_EVENT_ERROR");
-    }
+    TSVConnAbort(data->server_vc, 1);
     data->server_vc = NULL;
     data->server_vio = NULL;
 
-    if (TSVConnAbort(data->output_vc, 1) != TS_SUCCESS) {
-      TSError("TSVConnAbort doesn't return TS_SUCCESS on output VConnection during TS_EVENT_ERROR");
-    }
+    TSVConnAbort(data->output_vc, 1);
     data->output_vc = NULL;
     data->output_vio = NULL;
     break;
   case TS_EVENT_VCONN_EOS:
-    if (TSVConnAbort(data->server_vc, 1) != TS_SUCCESS) {
-      TSError("TSVConnAbort doesn't return TS_SUCCESS on server VConnection during TS_EVENT_VCONN_EOS");
-    }
+    TSVConnAbort(data->server_vc, 1);
     data->server_vc = NULL;
     data->server_vio = NULL;
 
-    if (TSVConnAbort(data->output_vc, 1) != TS_SUCCESS) {
-      TSError("TSVConnAbort doesn't return TS_SUCCESS on output VConnection during TS_EVENT_VCONN_EOS");
-    }
+    TSVConnAbort(data->output_vc, 1);
     data->output_vc = NULL;
     data->output_vio = NULL;
     break;
   case TS_EVENT_VCONN_READ_COMPLETE:
-    if (TSVConnClose(data->server_vc) != TS_SUCCESS) {
-      TSError("TSVConnClose doesn't return TS_SUCCESS on TS_EVENT_VCONN_READ_COMPLETE");
-    }
+    TSVConnClose(data->server_vc);
     data->server_vc = NULL;
     data->server_vio = NULL;
 
@@ -614,9 +598,7 @@ transform_read_event(TSCont contp, TransformData * data, TSEvent event, void *ed
     }
     break;
   case TS_EVENT_VCONN_WRITE_COMPLETE:
-    if (TSVConnShutdown(data->output_vc, 0, 1) != TS_SUCCESS) {
-      TSError("TSVConnShutdown doesn't return TS_SUCCESS during TS_EVENT_VCONN_WRITE_COMPLETE");
-    }
+    TSVConnShutdown(data->output_vc, 0, 1);
     break;
   case TS_EVENT_VCONN_WRITE_READY:
     if (TSVIOReenable(data->server_vio) != TS_SUCCESS) {
@@ -635,9 +617,7 @@ transform_bypass_event(TSCont contp, TransformData * data, TSEvent event, void *
 {
   switch (event) {
   case TS_EVENT_VCONN_WRITE_COMPLETE:
-    if (TSVConnShutdown(data->output_vc, 0, 1) != TS_SUCCESS) {
-      TSError("Error in shutting down the VConnection while bypassing the event");
-    }
+    TSVConnShutdown(data->output_vc, 0, 1);
     break;
   case TS_EVENT_VCONN_WRITE_READY:
   default:

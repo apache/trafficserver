@@ -409,8 +409,8 @@ public:
     return _manage_object(logObject, true, maxConflicts);
   };
 
-  // return 1 if object is removed from array of managed objects, 0 otherwise
-  int unmanage_api_object(LogObject * logObject);
+  // return success
+  bool unmanage_api_object(LogObject * logObject);
 
   LogObject *get_object_with_signature(uint64_t signature);
   void check_buffer_expiration(long time_now);

@@ -81,6 +81,6 @@ void ink_aio_set_callback(Continuation * error_callback);
 
 int ink_aio_read(AIOCallback *op, int fromAPI = 0);   // fromAPI is a boolean to indicate if this is from a API call such as upload proxy feature
 int ink_aio_write(AIOCallback *op, int fromAPI = 0);
-int ink_aio_thread_num_set(int thread_num);
+bool ink_aio_thread_num_set(int thread_num);
 AIOCallback *new_AIOCallback(void);
 #endif

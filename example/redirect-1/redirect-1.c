@@ -329,7 +329,7 @@ update_redirected_method_stats(TSMBuffer bufp, TSMLoc hdr_loc)
       INKStatFloatAddTo(method_count_redirected_icp_query, 1);
 
     else if (0 == strncmp(txn_method, TS_HTTP_METHOD_OPTIONS, length)) {
-      INKStatIntGet(method_count_redirected_options, &tempint);
+      tempint = INKStatIntGet(method_count_redirected_options);
       tempint++;
       INKStatIntSet(method_count_redirected_options, tempint);
     } else if (0 == strncmp(txn_method, TS_HTTP_METHOD_POST, length)) {
