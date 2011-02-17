@@ -753,7 +753,7 @@ RecordElement RecordsConfig[] = {
   //       #  1 - at least, "Last-Modified:" header required
   //       #  2 - explicit lifetime required, "Expires:" or "Cache-Control:"
   //       #
-  {RECT_CONFIG, "proxy.config.http.cache.required_headers", RECD_INT, "1", RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
+  {RECT_CONFIG, "proxy.config.http.cache.required_headers", RECD_INT, "2", RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.http.cache.max_stale_age", RECD_INT, "604800", RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
