@@ -4016,25 +4016,25 @@ TSConfigDataGet(TSConfig configp)
 // Management
 //
 ////////////////////////////////////////////////////////////////////
-int
+TSReturnCode
 TSMgmtIntGet(const char *var_name, TSMgmtInt *result)
 {
-  return RecGetRecordInt((char *) var_name, (RecInt *) result) == REC_ERR_OKAY ? 1 : 0;
+  return RecGetRecordInt((char *) var_name, (RecInt *) result) == REC_ERR_OKAY ? TS_SUCCESS : TS_ERROR;
 }
 
-int
+TSReturnCode
 TSMgmtCounterGet(const char *var_name, TSMgmtCounter *result)
 {
-  return RecGetRecordCounter((char *) var_name, (RecCounter *) result) == REC_ERR_OKAY ? 1 : 0;
+  return RecGetRecordCounter((char *) var_name, (RecCounter *) result) == REC_ERR_OKAY ? TS_SUCCESS : TS_ERROR;
 }
 
-int
+TSReturnCode
 TSMgmtFloatGet(const char *var_name, TSMgmtFloat *result)
 {
-  return RecGetRecordFloat((char *) var_name, (RecFloat *) result) == REC_ERR_OKAY ? 1 : 0;
+  return RecGetRecordFloat((char *) var_name, (RecFloat *) result) == REC_ERR_OKAY ? TS_SUCCESS : TS_ERROR;
 }
 
-int
+TSReturnCode
 TSMgmtStringGet(const char *var_name, TSMgmtString *result)
 {
   RecString tmp = 0;
@@ -4042,9 +4042,10 @@ TSMgmtStringGet(const char *var_name, TSMgmtString *result)
 
   if (tmp) {
     *result = tmp;
-    return 1;
+    return TS_SUCCESS;
   }
-  return 0;
+
+  return TS_ERROR;
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -4332,7 +4333,7 @@ TSHttpTxnHookAdd(TSHttpTxn txnp, TSHttpHookID id, TSCont contp)
 
 // Private api function for gzip plugin.
 //  This function should only appear in TsapiPrivate.h
-int
+TSReturnCode
 TSHttpTxnHookRegisteredFor(TSHttpTxn txnp, TSHttpHookID id, TSEventFunc funcp)
 {
   HttpSM *sm = (HttpSM *) txnp;
@@ -4340,12 +4341,12 @@ TSHttpTxnHookRegisteredFor(TSHttpTxn txnp, TSHttpHookID id, TSEventFunc funcp)
 
   while (hook != NULL) {
     if (hook->m_cont && hook->m_cont->m_event_func == funcp) {
-      return 1;
+      return TS_SUCCESS;
     }
     hook = hook->m_link.next;
   }
 
-  return 0;
+  return TS_ERROR;
 }
 
 TSHttpSsn
@@ -5393,7 +5394,7 @@ TSHttpTxnSetHttpRetBody(TSHttpTxn txnp, const char *body_msg, int plain_msg_flag
 }
 
 /* control channel for HTTP */
-int
+TSReturnCode
 TSHttpTxnCntl(TSHttpTxn txnp, TSHttpCntlType cntl, void *data)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
@@ -5403,9 +5404,8 @@ TSHttpTxnCntl(TSHttpTxn txnp, TSHttpCntlType cntl, void *data)
   switch (cntl) {
   case TS_HTTP_CNTL_GET_LOGGING_MODE:
     {
-      if (data == NULL) {
-        return 0;
-      }
+      if (data == NULL)
+        return TS_ERROR;
 
       intptr_t *rptr = (intptr_t *) data;
 
@@ -5415,23 +5415,22 @@ TSHttpTxnCntl(TSHttpTxn txnp, TSHttpCntlType cntl, void *data)
         *rptr = (intptr_t) TS_HTTP_CNTL_OFF;
       }
 
-      return 1;
+      return TS_SUCCESS;
     }
 
   case TS_HTTP_CNTL_SET_LOGGING_MODE:
     if (data != TS_HTTP_CNTL_ON && data != TS_HTTP_CNTL_OFF) {
-      return 0;
+      return TS_ERROR;
     } else {
       sm->t_state.api_info.logging_enabled = (bool) data;
-      return 1;
+      return TS_SUCCESS;
     }
     break;
 
   case TS_HTTP_CNTL_GET_INTERCEPT_RETRY_MODE:
     {
-      if (data == NULL) {
-        return 0;
-      }
+      if (data == NULL)
+        return TS_ERROR;
 
       intptr_t *rptr = (intptr_t *) data;
 
@@ -5441,21 +5440,21 @@ TSHttpTxnCntl(TSHttpTxn txnp, TSHttpCntlType cntl, void *data)
         *rptr = (intptr_t) TS_HTTP_CNTL_OFF;
       }
 
-      return 1;
+      return TS_SUCCESS;
     }
 
   case TS_HTTP_CNTL_SET_INTERCEPT_RETRY_MODE:
     if (data != TS_HTTP_CNTL_ON && data != TS_HTTP_CNTL_OFF) {
-      return 0;
+      return TS_ERROR;
     } else {
       sm->t_state.api_info.retry_intercept_failures = (bool) data;
-      return 1;
+      return TS_SUCCESS;
     }
   default:
-    return 0;
+    return TS_ERROR;
   }
 
-  return 0;
+  return TS_ERROR;
 }
 
 /* This is kinda horky, we have to use TSServerState instead of
@@ -6647,27 +6646,27 @@ TSIPLookupMatch(TSIPLookup iplu, uint32_t addr, void **data)
   return (my_iplu ? my_iplu->Match((ip_addr_t) addr, data) : 0);
 }
 
-int
+TSReturnCode
 TSIPLookupMatchFirst(TSIPLookup iplu, uint32_t addr, TSIPLookupState iplus, void **data)
 {
   IpLookup *my_iplu = (IpLookup *) iplu;
   IpLookupState *my_iplus = (IpLookupState *) iplus;
   if (my_iplu && my_iplus && my_iplu->MatchFirst(addr, my_iplus, data))
-    return 1;
+    return TS_SUCCESS;
 
-  return 0;
+  return TS_ERROR;
 }
 
-int
+TSReturnCode
 TSIPLookupMatchNext(TSIPLookup iplu, TSIPLookupState iplus, void **data)
 {
   IpLookup *my_iplu = (IpLookup *) iplu;
   IpLookupState *my_iplus = (IpLookupState *) iplus;
 
   if (my_iplu && my_iplus && my_iplu->MatchNext(my_iplus, data))
-    return 1;
+    return TS_SUCCESS;
 
-  return 0;
+  return TS_ERROR;
 }
 
 void
@@ -6744,7 +6743,7 @@ TSMgmtConfigIntSet(const char *var_name, TSMgmtInt value)
   char *buffer;
 
   // is this a valid integer?
-  if (!TSMgmtIntGet(var_name, &result))
+  if (TSMgmtIntGet(var_name, &result) != TS_SUCCESS)
     return TS_ERROR;
 
   // construct a buffer
@@ -6991,7 +6990,7 @@ TSFetchUrl(const char* headers, int request_len, unsigned int ip, int port , TSC
   fetch_sm->httpConnect();
 }
 
-int
+TSReturnCode
 TSHttpIsInternalRequest(TSHttpTxn txnp)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
@@ -7001,9 +7000,9 @@ TSHttpIsInternalRequest(TSHttpTxn txnp)
   NetVConnection *vc = cs->get_netvc();
 
   if (!cs || !vc)
-    return 0;
+    return TS_ERROR;
 
-  return vc->get_is_internal_request() ? 1 : 0;
+  return vc->get_is_internal_request() ? TS_SUCCESS : TS_ERROR;
 }
 
 

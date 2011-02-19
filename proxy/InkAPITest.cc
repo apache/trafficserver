@@ -2252,7 +2252,7 @@ checkHttpTxnClientIncomingPortGet(SocketTest * test, void *data)
     return TS_EVENT_CONTINUE;
   }
 
-  if (TSMgmtIntGet("proxy.config.http.server_port", &port_from_config_file) == 0) {
+  if (TSMgmtIntGet("proxy.config.http.server_port", &port_from_config_file) != TS_SUCCESS) {
     port_from_config_file = 8080;
   }
 
@@ -5545,15 +5545,13 @@ REGRESSION_TEST(SDK_API_TSMgmtGet) (RegressionTest * test, int atype, int *pstat
 
   *pstatus = REGRESSION_TEST_INPROGRESS;
 
-  int retVal;
   int err = 0;
   TSMgmtCounter cvalue = 0;
   TSMgmtFloat fvalue = 0.0;
   TSMgmtInt ivalue = -1;
   TSMgmtString svalue = NULL;
 
-  retVal = TSMgmtCounterGet(CONFIG_PARAM_COUNTER_NAME, &cvalue);
-  if (retVal == 0) {
+  if (TS_SUCCESS != TSMgmtCounterGet(CONFIG_PARAM_COUNTER_NAME, &cvalue)) {
     SDK_RPRINT(test, "TSMgmtCounterGet", "TestCase1.1", TC_FAIL, "can not get value of param %s", CONFIG_PARAM_COUNTER_NAME);
     err = 1;
   } else if (cvalue != CONFIG_PARAM_COUNTER_VALUE) {
@@ -5565,24 +5563,21 @@ REGRESSION_TEST(SDK_API_TSMgmtGet) (RegressionTest * test, int atype, int *pstat
     SDK_RPRINT(test, "TSMgmtCounterGet", "TestCase1.1", TC_PASS, "ok");
   }
 
-  retVal = TSMgmtFloatGet(CONFIG_PARAM_FLOAT_NAME, &fvalue);
-  if ((retVal == 0) || (fvalue != CONFIG_PARAM_FLOAT_VALUE)) {
+  if ((TS_SUCCESS != TSMgmtFloatGet(CONFIG_PARAM_FLOAT_NAME, &fvalue)) || (fvalue != CONFIG_PARAM_FLOAT_VALUE)) {
     SDK_RPRINT(test, "TSMgmtFloatGet", "TestCase2", TC_FAIL, "can not get value of param %s", CONFIG_PARAM_FLOAT_NAME);
     err = 1;
   } else {
     SDK_RPRINT(test, "TSMgmtFloatGet", "TestCase1.2", TC_PASS, "ok");
   }
 
-  retVal = TSMgmtIntGet(CONFIG_PARAM_INT_NAME, &ivalue);
-  if ((retVal == 0) || (ivalue != CONFIG_PARAM_INT_VALUE)) {
+  if ((TSMgmtIntGet(CONFIG_PARAM_INT_NAME, &ivalue) != TS_SUCCESS) || (ivalue != CONFIG_PARAM_INT_VALUE)) {
     SDK_RPRINT(test, "TSMgmtIntGet", "TestCase1.3", TC_FAIL, "can not get value of param %s", CONFIG_PARAM_INT_NAME);
     err = 1;
   } else {
     SDK_RPRINT(test, "TSMgmtIntGet", "TestCase1.3", TC_PASS, "ok");
   }
 
-  retVal = TSMgmtStringGet(CONFIG_PARAM_STRING_NAME, &svalue);
-  if (retVal == 0) {
+  if (TS_SUCCESS != TSMgmtStringGet(CONFIG_PARAM_STRING_NAME, &svalue)) {
     SDK_RPRINT(test, "TSMgmtStringGet", "TestCase1.4", TC_FAIL, "can not get value of param %s", CONFIG_PARAM_STRING_NAME);
     err = 1;
   } else if (strcmp(svalue, CONFIG_PARAM_STRING_VALUE) != 0) {

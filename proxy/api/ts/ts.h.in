@@ -2018,10 +2018,10 @@ extern "C"
 
   /* --------------------------------------------------------------------------
      Management */
-  tsapi int TSMgmtIntGet(const char *var_name, TSMgmtInt *result);
-  tsapi int TSMgmtCounterGet(const char *var_name, TSMgmtCounter *result);
-  tsapi int TSMgmtFloatGet(const char *var_name, TSMgmtFloat *result);
-  tsapi int TSMgmtStringGet(const char *var_name, TSMgmtString *result);
+  tsapi TSReturnCode TSMgmtIntGet(const char *var_name, TSMgmtInt *result);
+  tsapi TSReturnCode TSMgmtCounterGet(const char *var_name, TSMgmtCounter *result);
+  tsapi TSReturnCode TSMgmtFloatGet(const char *var_name, TSMgmtFloat *result);
+  tsapi TSReturnCode TSMgmtStringGet(const char *var_name, TSMgmtString *result);
 
   /* --------------------------------------------------------------------------
      Continuations */
@@ -2267,7 +2267,7 @@ extern "C"
   tsapi void TSFetchPages(TSFetchUrlParams_t *params);
 
   /* Check if HTTP State machine is internal or not */
-  tsapi int TSHttpIsInternalRequest(TSHttpTxn txnp);
+  tsapi TSReturnCode TSHttpIsInternalRequest(TSHttpTxn txnp);
 
   /* --------------------------------------------------------------------------
      HTTP alternate selection */

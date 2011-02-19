@@ -51,7 +51,7 @@ extern "C"
 
   /* Do not edit these apis, used internally */
   tsapi int TSMimeHdrFieldEqual(TSMBuffer bufp, TSMLoc hdr_obj, TSMLoc field1, TSMLoc field2);
-  tsapi int TSHttpTxnHookRegisteredFor(TSHttpTxn txnp, TSHttpHookID id, TSEventFunc funcp);
+  tsapi TSReturnCode TSHttpTxnHookRegisteredFor(TSHttpTxn txnp, TSHttpHookID id, TSEventFunc funcp);
 
   /* IP Lookup */
   typedef void *TSIPLookup;
@@ -61,8 +61,8 @@ extern "C"
   tsapi void TSIPLookupPrint(TSIPLookup iplu, TSIPLookupPrintFunc pf);
   tsapi void TSIPLookupNewEntry(TSIPLookup iplu, uint32_t addr1, uint32_t addr2, void *data);
   tsapi int TSIPLookupMatch(TSIPLookup iplu, uint32_t addr, void **data);
-  tsapi int TSIPLookupMatchFirst(TSIPLookup iplu, uint32_t addr, TSIPLookupState iplus, void **data);
-  tsapi int TSIPLookupMatchNext(TSIPLookup iplu, TSIPLookupState iplus, void **data);
+  tsapi TSReturnCode TSIPLookupMatchFirst(TSIPLookup iplu, uint32_t addr, TSIPLookupState iplus, void **data);
+  tsapi TSReturnCode TSIPLookupMatchNext(TSIPLookup iplu, TSIPLookupState iplus, void **data);
 
   /* for Media-IXT mms over http */
   typedef enum
@@ -80,7 +80,7 @@ extern "C"
      TSHttpTxnCntl(.., TS_HTTP_CNTL_GET_LOGGING_MODE, &onoff);
      if (onoff == TS_HTTP_CNTL_ON) ....
   */
-  tsapi int TSHttpTxnCntl(TSHttpTxn txnp, TSHttpCntlType cntl, void *data);
+  tsapi TSReturnCode TSHttpTxnCntl(TSHttpTxn txnp, TSHttpCntlType cntl, void *data);
 
 
   /* Protocols APIs */

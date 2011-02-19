@@ -431,7 +431,7 @@ synclient_txn_create(void)
   TSMgmtInt proxy_port;
 
   ClientTxn *txn = (ClientTxn *) TSmalloc(sizeof(ClientTxn));
-  if (!TSMgmtIntGet(PROXY_CONFIG_NAME_HTTP_PORT, &proxy_port)) {
+  if (TSMgmtIntGet(PROXY_CONFIG_NAME_HTTP_PORT, &proxy_port) != TS_SUCCESS) {
     proxy_port = PROXY_HTTP_DEFAULT_PORT;
   }
   txn->connect_port = (int) proxy_port;
