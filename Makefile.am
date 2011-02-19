@@ -27,9 +27,9 @@ ACLOCAL_AMFLAGS = -I build
 # proxy/api/ts has to be built first, since so much of libraries and "core
 # depends on the generates ts/ts.h include file.
 if STANDALONE_IOCORE
-SUBDIRS =  proxy/api/ts iocore lib proxy/hdrs mgmt proxy cop plugins
+SUBDIRS =  proxy/api/ts iocore lib proxy/hdrs mgmt proxy cop plugins tools
 else
-SUBDIRS =  proxy/api/ts iocore lib proxy/hdrs mgmt proxy cop rc doc plugins
+SUBDIRS =  proxy/api/ts iocore lib proxy/hdrs mgmt proxy cop rc doc plugins tools
 endif
 
 DIST_BUILD_USER=`id -nu`

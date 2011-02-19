@@ -1181,7 +1181,7 @@ AC_SUBST([TFW_PACKAGE_SUFFIX])
 # 6. OUTPUT FILES
 
 AC_CONFIG_FILES([lib/ts/ink_config.h proxy/api/ts/ts.h])
-AC_CONFIG_FILES([tsxs])
+AC_CONFIG_FILES([tools/tsxs])
 AC_CONFIG_FILES([doc/Doxyfile])
 AC_CONFIG_FILES([doc/Makefile])
 AC_CONFIG_FILES([rc/Makefile])
@@ -1239,6 +1239,8 @@ AC_CONFIG_FILES([cop/Makefile])
 # production plugins
 AC_CONFIG_FILES([plugins/Makefile])
 AC_CONFIG_FILES([plugins/conf_remap/Makefile])
+# various tools
+AC_CONFIG_FILES([tools/Makefile])
 # example plugins
 AC_CONFIG_FILES([example/Makefile])
 AC_CONFIG_FILES([example/add-header/Makefile])
