@@ -1310,7 +1310,7 @@ REGRESSION_TEST(SDK_API_TSContCreate) (RegressionTest * test, int atype, int *ps
   TSMutex mutexp = TSMutexCreate();
   TSCont contp = TSContCreate(cont_handler, mutexp);
 
-  if (TSMutexLockTry(mutexp)) { // Mutex is grabbed succesfully
+  if (TS_SUCCESS == TSMutexLockTry(mutexp)) { // Mutex is grabbed succesfully
     TSContCall(contp, (TSEvent) 0, NULL);
     TSMutexUnlock(mutexp);
   } else {                       //mutex has problems
@@ -1495,12 +1495,12 @@ REGRESSION_TEST(SDK_API_TSMutexCreate) (RegressionTest * test, int atype, int *p
   TSMutexLock(mutexp);
 
   /* This is normal because all locking is from the same thread */
-  int lock = 0;
+  TSReturnCode lock = TS_ERROR;
 
   lock = TSMutexLockTry(mutexp);
   lock = TSMutexLockTry(mutexp);
 
-  if (lock) {
+  if (TS_SUCCESS == lock) {
     SDK_RPRINT(test, "TSMutexCreate", "TestCase1", TC_PASS, "ok");
     SDK_RPRINT(test, "TSMutexLock", "TestCase1", TC_PASS, "ok");
     SDK_RPRINT(test, "TSMutexLockTry", "TestCase1", TC_PASS, "ok");

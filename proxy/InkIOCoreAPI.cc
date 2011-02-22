@@ -229,11 +229,11 @@ TSMutexLock(TSMutex mutexp)
 }
 
 
-int
+TSReturnCode
 TSMutexLockTry(TSMutex mutexp)
 {
   sdk_assert(sdk_sanity_check_mutex(mutexp) == TS_SUCCESS);
-  return MUTEX_TAKE_TRY_LOCK((ProxyMutex *)mutexp, this_ethread());
+  return (MUTEX_TAKE_TRY_LOCK((ProxyMutex *)mutexp, this_ethread()) ? TS_SUCCESS : TS_ERROR);
 }
 
 void

@@ -1,15 +1,23 @@
                                                          -*- coding: utf-8 -*-
 
 Changes with Apache Traffic Server 2.1.6
-  *) [TS-590] Cleanup all SDK APIs to be more consistent. This
-  changes a large number of APIs, so please check updated docs
-  and signatures in ts/ts.h.
+
+  *) [TS-590] Cleanup all SDK APIs to be more consistent. This changes a
+  large number of APIs, so please check updated docs and signatures in
+  ts/ts.h. A new tools, tools/apichecker.pl, can be used to help
+  identifying areas in existing plugins that might need changes.
 
   *) [TS-673] Make the default configurations more conservative
   for when content is cacheable.
 
-  *) [TS-672] remove unused/unreferenced Win32 header files and
+  *) [TS-672] Remove unused/unreferenced Win32 header files and
    code paths
+
+  *) [TS-671] Detect install group based on install user.
+
+  *) [TS-644] Fix clustered cache pages crash.
+
+  *) [TS-651] Clear all stats when we ask to clear the local stats.
 
   *) [TS-489] Remove the "connection collapsing" feature, it was poorly
    implemented, and caused major problem if enabled. We should redo this

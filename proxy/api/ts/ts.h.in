@@ -80,9 +80,9 @@ extern "C"
    */
   typedef struct
   {
-    char *plugin_name;
-    char *vendor_name;
-    char *support_email;
+    char* plugin_name;
+    char* vendor_name;
+    char* support_email;
   } TSPluginRegistrationInfo;
 
   /**
@@ -477,7 +477,7 @@ extern "C"
   {
     int64_t rec_int;
     float rec_float;
-    char *rec_string;
+    char* rec_string;
     int64_t rec_counter;
   } TSRecordData;
 
@@ -567,37 +567,37 @@ extern "C"
   typedef int64_t TSMgmtInt;
   typedef int64_t TSMgmtCounter;
   typedef float TSMgmtFloat;
-  typedef char *TSMgmtString;
+  typedef char* TSMgmtString;
 
-  typedef void *TSFile;
+  typedef void* TSFile;
 
-  typedef void *TSMLoc;
-  typedef void *TSMBuffer;
-  typedef void *TSHttpSsn;
-  typedef void *TSHttpTxn;
-  typedef void *TSHttpAltInfo;
-  typedef void *TSMimeParser;
-  typedef void *TSHttpParser;
-  typedef void *TSCacheKey;
-  typedef void *TSCacheHttpInfo;
-  typedef void *TSCacheTxn;
+  typedef void* TSMLoc;
+  typedef void* TSMBuffer;
+  typedef void* TSHttpSsn;
+  typedef void* TSHttpTxn;
+  typedef void* TSHttpAltInfo;
+  typedef void* TSMimeParser;
+  typedef void* TSHttpParser;
+  typedef void* TSCacheKey;
+  typedef void* TSCacheHttpInfo;
+  typedef void* TSCacheTxn;
 
-  typedef void *TSVIO;
-  typedef void *TSThread;
-  typedef void *TSMutex;
-  typedef void *TSConfig;
-  typedef void *TSCont;
-  typedef void *TSAction;
-  typedef void *TSVConn;
-  typedef void *TSIOBuffer;
-  typedef void *TSIOBufferData;
-  typedef void *TSIOBufferBlock;
-  typedef void *TSIOBufferReader;
-  typedef void *TSHostLookupResult;
+  typedef void* TSVIO;
+  typedef void* TSThread;
+  typedef void* TSMutex;
+  typedef void* TSConfig;
+  typedef void* TSCont;
+  typedef void* TSAction;
+  typedef void* TSVConn;
+  typedef void* TSIOBuffer;
+  typedef void* TSIOBufferData;
+  typedef void* TSIOBufferBlock;
+  typedef void* TSIOBufferReader;
+  typedef void* TSHostLookupResult;
 
-  typedef void *(*TSThreadFunc) (void *data);
-  typedef int (*TSEventFunc) (TSCont contp, TSEvent event, void *edata);
-  typedef void (*TSConfigDestroyFunc) (void *data);
+  typedef void *(*TSThreadFunc) (void* data);
+  typedef int (*TSEventFunc) (TSCont contp, TSEvent event, void* edata);
+  typedef void (*TSConfigDestroyFunc) (void* data);
 
   typedef struct
   {
@@ -608,14 +608,14 @@ extern "C"
 
   typedef struct TSFetchUrlParams
   {
-    const char *request;
+    const char* request;
     int request_len;
     unsigned int ip;
     int port;
     TSCont contp;
     TSFetchEvent events;
     TSFetchWakeUpOptions options;
-    struct TSFetchUrlParams *next;
+    struct TSFetchUrlParams* next;
   } TSFetchUrlParams_t;
 
   /* --------------------------------------------------------------------------
@@ -636,7 +636,7 @@ extern "C"
         plugin.config.
 
    */
-  extern tsexp void TSPluginInit(int argc, const char *argv[]);
+  extern tsexp void TSPluginInit(int argc, const char* argv[]);
 
   /* --------------------------------------------------------------------------
      License */
@@ -655,17 +655,17 @@ extern "C"
 
   /* --------------------------------------------------------------------------
      URL schemes */
-  extern tsapi const char *TS_URL_SCHEME_FILE;
-  extern tsapi const char *TS_URL_SCHEME_FTP;
-  extern tsapi const char *TS_URL_SCHEME_GOPHER;
-  extern tsapi const char *TS_URL_SCHEME_HTTP;
-  extern tsapi const char *TS_URL_SCHEME_HTTPS;
-  extern tsapi const char *TS_URL_SCHEME_MAILTO;
-  extern tsapi const char *TS_URL_SCHEME_NEWS;
-  extern tsapi const char *TS_URL_SCHEME_NNTP;
-  extern tsapi const char *TS_URL_SCHEME_PROSPERO;
-  extern tsapi const char *TS_URL_SCHEME_TELNET;
-  extern tsapi const char *TS_URL_SCHEME_WAIS;
+  extern tsapi const char* TS_URL_SCHEME_FILE;
+  extern tsapi const char* TS_URL_SCHEME_FTP;
+  extern tsapi const char* TS_URL_SCHEME_GOPHER;
+  extern tsapi const char* TS_URL_SCHEME_HTTP;
+  extern tsapi const char* TS_URL_SCHEME_HTTPS;
+  extern tsapi const char* TS_URL_SCHEME_MAILTO;
+  extern tsapi const char* TS_URL_SCHEME_NEWS;
+  extern tsapi const char* TS_URL_SCHEME_NNTP;
+  extern tsapi const char* TS_URL_SCHEME_PROSPERO;
+  extern tsapi const char* TS_URL_SCHEME_TELNET;
+  extern tsapi const char* TS_URL_SCHEME_WAIS;
 
   /* --------------------------------------------------------------------------
      URL scheme string lengths */
@@ -683,77 +683,77 @@ extern "C"
 
   /* --------------------------------------------------------------------------
      MIME fields */
-  extern tsapi const char *TS_MIME_FIELD_ACCEPT;
-  extern tsapi const char *TS_MIME_FIELD_ACCEPT_CHARSET;
-  extern tsapi const char *TS_MIME_FIELD_ACCEPT_ENCODING;
-  extern tsapi const char *TS_MIME_FIELD_ACCEPT_LANGUAGE;
-  extern tsapi const char *TS_MIME_FIELD_ACCEPT_RANGES;
-  extern tsapi const char *TS_MIME_FIELD_AGE;
-  extern tsapi const char *TS_MIME_FIELD_ALLOW;
-  extern tsapi const char *TS_MIME_FIELD_APPROVED;
-  extern tsapi const char *TS_MIME_FIELD_AUTHORIZATION;
-  extern tsapi const char *TS_MIME_FIELD_BYTES;
-  extern tsapi const char *TS_MIME_FIELD_CACHE_CONTROL;
-  extern tsapi const char *TS_MIME_FIELD_CLIENT_IP;
-  extern tsapi const char *TS_MIME_FIELD_CONNECTION;
-  extern tsapi const char *TS_MIME_FIELD_CONTENT_BASE;
-  extern tsapi const char *TS_MIME_FIELD_CONTENT_ENCODING;
-  extern tsapi const char *TS_MIME_FIELD_CONTENT_LANGUAGE;
-  extern tsapi const char *TS_MIME_FIELD_CONTENT_LENGTH;
-  extern tsapi const char *TS_MIME_FIELD_CONTENT_LOCATION;
-  extern tsapi const char *TS_MIME_FIELD_CONTENT_MD5;
-  extern tsapi const char *TS_MIME_FIELD_CONTENT_RANGE;
-  extern tsapi const char *TS_MIME_FIELD_CONTENT_TYPE;
-  extern tsapi const char *TS_MIME_FIELD_CONTROL;
-  extern tsapi const char *TS_MIME_FIELD_COOKIE;
-  extern tsapi const char *TS_MIME_FIELD_DATE;
-  extern tsapi const char *TS_MIME_FIELD_DISTRIBUTION;
-  extern tsapi const char *TS_MIME_FIELD_ETAG;
-  extern tsapi const char *TS_MIME_FIELD_EXPECT;
-  extern tsapi const char *TS_MIME_FIELD_EXPIRES;
-  extern tsapi const char *TS_MIME_FIELD_FOLLOWUP_TO;
-  extern tsapi const char *TS_MIME_FIELD_FROM;
-  extern tsapi const char *TS_MIME_FIELD_HOST;
-  extern tsapi const char *TS_MIME_FIELD_IF_MATCH;
-  extern tsapi const char *TS_MIME_FIELD_IF_MODIFIED_SINCE;
-  extern tsapi const char *TS_MIME_FIELD_IF_NONE_MATCH;
-  extern tsapi const char *TS_MIME_FIELD_IF_RANGE;
-  extern tsapi const char *TS_MIME_FIELD_IF_UNMODIFIED_SINCE;
-  extern tsapi const char *TS_MIME_FIELD_KEEP_ALIVE;
-  extern tsapi const char *TS_MIME_FIELD_KEYWORDS;
-  extern tsapi const char *TS_MIME_FIELD_LAST_MODIFIED;
-  extern tsapi const char *TS_MIME_FIELD_LINES;
-  extern tsapi const char *TS_MIME_FIELD_LOCATION;
-  extern tsapi const char *TS_MIME_FIELD_MAX_FORWARDS;
-  extern tsapi const char *TS_MIME_FIELD_MESSAGE_ID;
-  extern tsapi const char *TS_MIME_FIELD_NEWSGROUPS;
-  extern tsapi const char *TS_MIME_FIELD_ORGANIZATION;
-  extern tsapi const char *TS_MIME_FIELD_PATH;
-  extern tsapi const char *TS_MIME_FIELD_PRAGMA;
-  extern tsapi const char *TS_MIME_FIELD_PROXY_AUTHENTICATE;
-  extern tsapi const char *TS_MIME_FIELD_PROXY_AUTHORIZATION;
-  extern tsapi const char *TS_MIME_FIELD_PROXY_CONNECTION;
-  extern tsapi const char *TS_MIME_FIELD_PUBLIC;
-  extern tsapi const char *TS_MIME_FIELD_RANGE;
-  extern tsapi const char *TS_MIME_FIELD_REFERENCES;
-  extern tsapi const char *TS_MIME_FIELD_REFERER;
-  extern tsapi const char *TS_MIME_FIELD_REPLY_TO;
-  extern tsapi const char *TS_MIME_FIELD_RETRY_AFTER;
-  extern tsapi const char *TS_MIME_FIELD_SENDER;
-  extern tsapi const char *TS_MIME_FIELD_SERVER;
-  extern tsapi const char *TS_MIME_FIELD_SET_COOKIE;
-  extern tsapi const char *TS_MIME_FIELD_SUBJECT;
-  extern tsapi const char *TS_MIME_FIELD_SUMMARY;
-  extern tsapi const char *TS_MIME_FIELD_TE;
-  extern tsapi const char *TS_MIME_FIELD_TRANSFER_ENCODING;
-  extern tsapi const char *TS_MIME_FIELD_UPGRADE;
-  extern tsapi const char *TS_MIME_FIELD_USER_AGENT;
-  extern tsapi const char *TS_MIME_FIELD_VARY;
-  extern tsapi const char *TS_MIME_FIELD_VIA;
-  extern tsapi const char *TS_MIME_FIELD_WARNING;
-  extern tsapi const char *TS_MIME_FIELD_WWW_AUTHENTICATE;
-  extern tsapi const char *TS_MIME_FIELD_XREF;
-  extern tsapi const char *TS_MIME_FIELD_X_FORWARDED_FOR;
+  extern tsapi const char* TS_MIME_FIELD_ACCEPT;
+  extern tsapi const char* TS_MIME_FIELD_ACCEPT_CHARSET;
+  extern tsapi const char* TS_MIME_FIELD_ACCEPT_ENCODING;
+  extern tsapi const char* TS_MIME_FIELD_ACCEPT_LANGUAGE;
+  extern tsapi const char* TS_MIME_FIELD_ACCEPT_RANGES;
+  extern tsapi const char* TS_MIME_FIELD_AGE;
+  extern tsapi const char* TS_MIME_FIELD_ALLOW;
+  extern tsapi const char* TS_MIME_FIELD_APPROVED;
+  extern tsapi const char* TS_MIME_FIELD_AUTHORIZATION;
+  extern tsapi const char* TS_MIME_FIELD_BYTES;
+  extern tsapi const char* TS_MIME_FIELD_CACHE_CONTROL;
+  extern tsapi const char* TS_MIME_FIELD_CLIENT_IP;
+  extern tsapi const char* TS_MIME_FIELD_CONNECTION;
+  extern tsapi const char* TS_MIME_FIELD_CONTENT_BASE;
+  extern tsapi const char* TS_MIME_FIELD_CONTENT_ENCODING;
+  extern tsapi const char* TS_MIME_FIELD_CONTENT_LANGUAGE;
+  extern tsapi const char* TS_MIME_FIELD_CONTENT_LENGTH;
+  extern tsapi const char* TS_MIME_FIELD_CONTENT_LOCATION;
+  extern tsapi const char* TS_MIME_FIELD_CONTENT_MD5;
+  extern tsapi const char* TS_MIME_FIELD_CONTENT_RANGE;
+  extern tsapi const char* TS_MIME_FIELD_CONTENT_TYPE;
+  extern tsapi const char* TS_MIME_FIELD_CONTROL;
+  extern tsapi const char* TS_MIME_FIELD_COOKIE;
+  extern tsapi const char* TS_MIME_FIELD_DATE;
+  extern tsapi const char* TS_MIME_FIELD_DISTRIBUTION;
+  extern tsapi const char* TS_MIME_FIELD_ETAG;
+  extern tsapi const char* TS_MIME_FIELD_EXPECT;
+  extern tsapi const char* TS_MIME_FIELD_EXPIRES;
+  extern tsapi const char* TS_MIME_FIELD_FOLLOWUP_TO;
+  extern tsapi const char* TS_MIME_FIELD_FROM;
+  extern tsapi const char* TS_MIME_FIELD_HOST;
+  extern tsapi const char* TS_MIME_FIELD_IF_MATCH;
+  extern tsapi const char* TS_MIME_FIELD_IF_MODIFIED_SINCE;
+  extern tsapi const char* TS_MIME_FIELD_IF_NONE_MATCH;
+  extern tsapi const char* TS_MIME_FIELD_IF_RANGE;
+  extern tsapi const char* TS_MIME_FIELD_IF_UNMODIFIED_SINCE;
+  extern tsapi const char* TS_MIME_FIELD_KEEP_ALIVE;
+  extern tsapi const char* TS_MIME_FIELD_KEYWORDS;
+  extern tsapi const char* TS_MIME_FIELD_LAST_MODIFIED;
+  extern tsapi const char* TS_MIME_FIELD_LINES;
+  extern tsapi const char* TS_MIME_FIELD_LOCATION;
+  extern tsapi const char* TS_MIME_FIELD_MAX_FORWARDS;
+  extern tsapi const char* TS_MIME_FIELD_MESSAGE_ID;
+  extern tsapi const char* TS_MIME_FIELD_NEWSGROUPS;
+  extern tsapi const char* TS_MIME_FIELD_ORGANIZATION;
+  extern tsapi const char* TS_MIME_FIELD_PATH;
+  extern tsapi const char* TS_MIME_FIELD_PRAGMA;
+  extern tsapi const char* TS_MIME_FIELD_PROXY_AUTHENTICATE;
+  extern tsapi const char* TS_MIME_FIELD_PROXY_AUTHORIZATION;
+  extern tsapi const char* TS_MIME_FIELD_PROXY_CONNECTION;
+  extern tsapi const char* TS_MIME_FIELD_PUBLIC;
+  extern tsapi const char* TS_MIME_FIELD_RANGE;
+  extern tsapi const char* TS_MIME_FIELD_REFERENCES;
+  extern tsapi const char* TS_MIME_FIELD_REFERER;
+  extern tsapi const char* TS_MIME_FIELD_REPLY_TO;
+  extern tsapi const char* TS_MIME_FIELD_RETRY_AFTER;
+  extern tsapi const char* TS_MIME_FIELD_SENDER;
+  extern tsapi const char* TS_MIME_FIELD_SERVER;
+  extern tsapi const char* TS_MIME_FIELD_SET_COOKIE;
+  extern tsapi const char* TS_MIME_FIELD_SUBJECT;
+  extern tsapi const char* TS_MIME_FIELD_SUMMARY;
+  extern tsapi const char* TS_MIME_FIELD_TE;
+  extern tsapi const char* TS_MIME_FIELD_TRANSFER_ENCODING;
+  extern tsapi const char* TS_MIME_FIELD_UPGRADE;
+  extern tsapi const char* TS_MIME_FIELD_USER_AGENT;
+  extern tsapi const char* TS_MIME_FIELD_VARY;
+  extern tsapi const char* TS_MIME_FIELD_VIA;
+  extern tsapi const char* TS_MIME_FIELD_WARNING;
+  extern tsapi const char* TS_MIME_FIELD_WWW_AUTHENTICATE;
+  extern tsapi const char* TS_MIME_FIELD_XREF;
+  extern tsapi const char* TS_MIME_FIELD_X_FORWARDED_FOR;
 
   /* --------------------------------------------------------------------------
      MIME fields string lengths */
@@ -831,26 +831,26 @@ extern "C"
 
   /* --------------------------------------------------------------------------
      HTTP values */
-  extern tsapi const char *TS_HTTP_VALUE_BYTES;
-  extern tsapi const char *TS_HTTP_VALUE_CHUNKED;
-  extern tsapi const char *TS_HTTP_VALUE_CLOSE;
-  extern tsapi const char *TS_HTTP_VALUE_COMPRESS;
-  extern tsapi const char *TS_HTTP_VALUE_DEFLATE;
-  extern tsapi const char *TS_HTTP_VALUE_GZIP;
-  extern tsapi const char *TS_HTTP_VALUE_IDENTITY;
-  extern tsapi const char *TS_HTTP_VALUE_KEEP_ALIVE;
-  extern tsapi const char *TS_HTTP_VALUE_MAX_AGE;
-  extern tsapi const char *TS_HTTP_VALUE_MAX_STALE;
-  extern tsapi const char *TS_HTTP_VALUE_MIN_FRESH;
-  extern tsapi const char *TS_HTTP_VALUE_MUST_REVALIDATE;
-  extern tsapi const char *TS_HTTP_VALUE_NONE;
-  extern tsapi const char *TS_HTTP_VALUE_NO_CACHE;
-  extern tsapi const char *TS_HTTP_VALUE_NO_STORE;
-  extern tsapi const char *TS_HTTP_VALUE_NO_TRANSFORM;
-  extern tsapi const char *TS_HTTP_VALUE_ONLY_IF_CACHED;
-  extern tsapi const char *TS_HTTP_VALUE_PRIVATE;
-  extern tsapi const char *TS_HTTP_VALUE_PROXY_REVALIDATE;
-  extern tsapi const char *TS_HTTP_VALUE_PUBLIC;
+  extern tsapi const char* TS_HTTP_VALUE_BYTES;
+  extern tsapi const char* TS_HTTP_VALUE_CHUNKED;
+  extern tsapi const char* TS_HTTP_VALUE_CLOSE;
+  extern tsapi const char* TS_HTTP_VALUE_COMPRESS;
+  extern tsapi const char* TS_HTTP_VALUE_DEFLATE;
+  extern tsapi const char* TS_HTTP_VALUE_GZIP;
+  extern tsapi const char* TS_HTTP_VALUE_IDENTITY;
+  extern tsapi const char* TS_HTTP_VALUE_KEEP_ALIVE;
+  extern tsapi const char* TS_HTTP_VALUE_MAX_AGE;
+  extern tsapi const char* TS_HTTP_VALUE_MAX_STALE;
+  extern tsapi const char* TS_HTTP_VALUE_MIN_FRESH;
+  extern tsapi const char* TS_HTTP_VALUE_MUST_REVALIDATE;
+  extern tsapi const char* TS_HTTP_VALUE_NONE;
+  extern tsapi const char* TS_HTTP_VALUE_NO_CACHE;
+  extern tsapi const char* TS_HTTP_VALUE_NO_STORE;
+  extern tsapi const char* TS_HTTP_VALUE_NO_TRANSFORM;
+  extern tsapi const char* TS_HTTP_VALUE_ONLY_IF_CACHED;
+  extern tsapi const char* TS_HTTP_VALUE_PRIVATE;
+  extern tsapi const char* TS_HTTP_VALUE_PROXY_REVALIDATE;
+  extern tsapi const char* TS_HTTP_VALUE_PUBLIC;
 
   /* --------------------------------------------------------------------------
      HTTP values string lengths */
@@ -877,16 +877,16 @@ extern "C"
 
   /* --------------------------------------------------------------------------
      HTTP methods */
-  extern tsapi const char *TS_HTTP_METHOD_CONNECT;
-  extern tsapi const char *TS_HTTP_METHOD_DELETE;
-  extern tsapi const char *TS_HTTP_METHOD_GET;
-  extern tsapi const char *TS_HTTP_METHOD_HEAD;
-  extern tsapi const char *TS_HTTP_METHOD_ICP_QUERY;
-  extern tsapi const char *TS_HTTP_METHOD_OPTIONS;
-  extern tsapi const char *TS_HTTP_METHOD_POST;
-  extern tsapi const char *TS_HTTP_METHOD_PURGE;
-  extern tsapi const char *TS_HTTP_METHOD_PUT;
-  extern tsapi const char *TS_HTTP_METHOD_TRACE;
+  extern tsapi const char* TS_HTTP_METHOD_CONNECT;
+  extern tsapi const char* TS_HTTP_METHOD_DELETE;
+  extern tsapi const char* TS_HTTP_METHOD_GET;
+  extern tsapi const char* TS_HTTP_METHOD_HEAD;
+  extern tsapi const char* TS_HTTP_METHOD_ICP_QUERY;
+  extern tsapi const char* TS_HTTP_METHOD_OPTIONS;
+  extern tsapi const char* TS_HTTP_METHOD_POST;
+  extern tsapi const char* TS_HTTP_METHOD_PURGE;
+  extern tsapi const char* TS_HTTP_METHOD_PUT;
+  extern tsapi const char* TS_HTTP_METHOD_TRACE;
 
   /* --------------------------------------------------------------------------
      HTTP methods string lengths */
@@ -919,10 +919,10 @@ extern "C"
 #define TSstrndup(p,n)   _TSstrdup ((p), (n), TS_RES_MEM_PATH)
 #define TSfree(p)        _TSfree (p)
 
-  tsapi void *_TSmalloc(size_t size, const char *path);
-  tsapi void *_TSrealloc(void *ptr, size_t size, const char *path);
-  tsapi char *_TSstrdup(const char *str, int64_t length, const char *path);
-  tsapi void _TSfree(void *ptr);
+  tsapi void* _TSmalloc(size_t size, const char* path);
+  tsapi void* _TSrealloc(void* ptr, size_t size, const char* path);
+  tsapi char* _TSstrdup(const char* str, int64_t length, const char* path);
+  tsapi void _TSfree(void* ptr);
 
   /* --------------------------------------------------------------------------
      Component object handles */
@@ -949,7 +949,7 @@ extern "C"
       @return pointer to Traffic Server install directory.
 
    */
-  tsapi const char *TSInstallDirGet(void);
+  tsapi const char* TSInstallDirGet(void);
 
   /**
       Gets the path of the directory of Traffic Server configuration.
@@ -957,7 +957,7 @@ extern "C"
       @return pointer to Traffic Server configuration directory.
 
    */
-  tsapi const char *TSConfigDirGet(void);
+  tsapi const char* TSConfigDirGet(void);
 
   /**
       Gets the path of the plugin directory relative to the Traffic Server
@@ -972,7 +972,7 @@ extern "C"
       directory.
 
    */
-  tsapi const char *TSPluginDirGet(void);
+  tsapi const char* TSPluginDirGet(void);
 
   /* --------------------------------------------------------------------------
      Traffic Server Version */
@@ -984,7 +984,7 @@ extern "C"
       @return pointer to version of Traffic Server running the plugin.
 
    */
-  tsapi const char *TSTrafficServerVersionGet(void);
+  tsapi const char* TSTrafficServerVersionGet(void);
 
   /**  Get the major version of Traffic Server currently running.
        This is the same as the first element of the string
@@ -1026,7 +1026,7 @@ extern "C"
       @return TS_ERROR if the plugin registration failed.
 
    */
-  tsapi TSReturnCode TSPluginRegister(TSSDKVersion sdk_version, TSPluginRegistrationInfo *plugin_info);
+  tsapi TSReturnCode TSPluginRegister(TSSDKVersion sdk_version, TSPluginRegistrationInfo* plugin_info);
 
   /* --------------------------------------------------------------------------
      Files */
@@ -1045,7 +1045,7 @@ extern "C"
         type TSFile can be greater than 256.
 
    */
-  tsapi TSFile TSfopen(const char *filename, const char *mode);
+  tsapi TSFile TSfopen(const char* filename, const char* mode);
 
   /**
       Closes the file to which filep points and frees the data structures
@@ -1069,7 +1069,7 @@ extern "C"
         while reading the file, it returns -1.
 
    */
-  tsapi size_t TSfread(TSFile filep, void *buf, size_t length);
+  tsapi size_t TSfread(TSFile filep, void* buf, size_t length);
 
   /**
       Attempts to write length bytes of data from the buffer buf
@@ -1086,7 +1086,7 @@ extern "C"
         writing, it returns the number of bytes successfully written.
 
    */
-  tsapi size_t TSfwrite(TSFile filep, const void *buf, size_t length);
+  tsapi size_t TSfwrite(TSFile filep, const void* buf, size_t length);
 
   /**
       Flushes pending data that has been buffered up in memory from
@@ -1110,7 +1110,7 @@ extern "C"
       @return pointer to the string read into the buffer buf.
 
    */
-  tsapi char *TSfgets(TSFile filep, char *buf, size_t length);
+  tsapi char* TSfgets(TSFile filep, char* buf, size_t length);
 
   /* --------------------------------------------------------------------------
      Error logging */
@@ -1125,12 +1125,12 @@ extern "C"
       @param ... argument for the printf format description.
 
   */
-  tsapi void TSError(const char *fmt, ...);
+  tsapi void TSError(const char* fmt, ...);
 
   /* --------------------------------------------------------------------------
      Assertions */
-  tsapi int _TSReleaseAssert(const char *txt, const char *f, int l);
-  tsapi int _TSAssert(const char *txt, const char *f, int l);
+  tsapi int _TSReleaseAssert(const char* txt, const char* f, int l);
+  tsapi int _TSAssert(const char* txt, const char* f, int l);
 
 #define TSReleaseAssert(EX) \
             (void)((EX) || (_TSReleaseAssert(#EX, __FILE__, __LINE__)))
@@ -1167,7 +1167,7 @@ extern "C"
       @param locp pointer to a TSMLoc to store the MLoc into.
 
    */
-  tsapi TSReturnCode TSUrlCreate(TSMBuffer bufp, TSMLoc *locp);
+  tsapi TSReturnCode TSUrlCreate(TSMBuffer bufp, TSMLoc* locp);
 
   /**
       Destroys the URL located at url_loc within the marshal buffer
@@ -1194,7 +1194,7 @@ extern "C"
       @param locp pointer to a TSMLoc to store the MLoc into.
 
    */
-  tsapi TSReturnCode TSUrlClone(TSMBuffer dest_bufp, TSMBuffer src_bufp, TSMLoc src_url, TSMLoc *locp);
+  tsapi TSReturnCode TSUrlClone(TSMBuffer dest_bufp, TSMBuffer src_bufp, TSMLoc src_url, TSMLoc* locp);
 
   /**
       Copies the contents of the URL at lcoation src_loc within the
@@ -1240,7 +1240,7 @@ extern "C"
       @return TS_PARSE_ERROR or TS_PARSE_DONE.
 
    */
-  tsapi TSParseResult TSUrlParse(TSMBuffer bufp, TSMLoc offset, const char **start, const char *end);
+  tsapi TSParseResult TSUrlParse(TSMBuffer bufp, TSMLoc offset, const char** start, const char* end);
 
   /**
       Calculates the length of the URL located at url_loc within the
@@ -1269,7 +1269,7 @@ extern "C"
       @return The URL as a string.
 
    */
-  tsapi char *TSUrlStringGet(TSMBuffer bufp, TSMLoc offset, int *length);
+  tsapi char* TSUrlStringGet(TSMBuffer bufp, TSMLoc offset, int* length);
 
   /**
       Retrieves the scheme portion of the URL located at url_loc within
@@ -1283,7 +1283,7 @@ extern "C"
       @return The scheme portion of the URL, as a string.
 
    */
-  tsapi const char *TSUrlSchemeGet(TSMBuffer bufp, TSMLoc offset, int *length);
+  tsapi const char* TSUrlSchemeGet(TSMBuffer bufp, TSMLoc offset, int *length);
 
   /**
       Sets the scheme portion of the URL located at url_loc within
@@ -1299,7 +1299,7 @@ extern "C"
       @param length string stored in value.
 
    */
-  tsapi TSReturnCode TSUrlSchemeSet(TSMBuffer bufp, TSMLoc offset, const char *value, int length);
+  tsapi TSReturnCode TSUrlSchemeSet(TSMBuffer bufp, TSMLoc offset, const char* value, int length);
 
   /* --------------------------------------------------------------------------
      Internet specific URLs */
@@ -1314,7 +1314,7 @@ extern "C"
       @return user portion of the URL.
 
    */
-  tsapi const char *TSUrlUserGet(TSMBuffer bufp, TSMLoc offset, int *length);
+  tsapi const char* TSUrlUserGet(TSMBuffer bufp, TSMLoc offset, int* length);
 
   /**
       Sets the user portion of the URL located at url_loc within bufp
@@ -1330,7 +1330,7 @@ extern "C"
       @param length string length of value.
 
    */
-  tsapi TSReturnCode TSUrlUserSet(TSMBuffer bufp, TSMLoc offset, const char *value, int length);
+  tsapi TSReturnCode TSUrlUserSet(TSMBuffer bufp, TSMLoc offset, const char* value, int length);
 
   /**
       Retrieves the password portion of the URL located at url_loc
@@ -1344,7 +1344,7 @@ extern "C"
       @return password portion of the URL.
 
    */
-  tsapi const char *TSUrlPasswordGet(TSMBuffer bufp, TSMLoc offset, int *length);
+  tsapi const char* TSUrlPasswordGet(TSMBuffer bufp, TSMLoc offset, int* length);
 
   /**
       Sets the password portion of the URL located at url_loc within
@@ -1360,7 +1360,7 @@ extern "C"
       @param length of the new password.
 
    */
-  tsapi TSReturnCode TSUrlPasswordSet(TSMBuffer bufp, TSMLoc offset, const char *value, int length);
+  tsapi TSReturnCode TSUrlPasswordSet(TSMBuffer bufp, TSMLoc offset, const char* value, int length);
 
   /**
       Retrieves the host portion of the URL located at url_loc
@@ -1373,7 +1373,7 @@ extern "C"
       @return Host portion of the URL.
 
    */
-  tsapi const char *TSUrlHostGet(TSMBuffer bufp, TSMLoc offset, int *length);
+  tsapi const char* TSUrlHostGet(TSMBuffer bufp, TSMLoc offset, int* length);
 
   /**
       Sets the host portion of the URL at url_loc to the string value.
@@ -1388,7 +1388,7 @@ extern "C"
       @param length string length of the new host name of the URL.
 
    */
-  tsapi TSReturnCode TSUrlHostSet(TSMBuffer bufp, TSMLoc offset, const char *value, int length);
+  tsapi TSReturnCode TSUrlHostSet(TSMBuffer bufp, TSMLoc offset, const char* value, int length);
 
   /**
       Retrieves the port portion of the URL located at url_loc.
@@ -1424,7 +1424,7 @@ extern "C"
       @return path portion of the URL.
 
    */
-  tsapi const char *TSUrlPathGet(TSMBuffer bufp, TSMLoc offset, int *length);
+  tsapi const char* TSUrlPathGet(TSMBuffer bufp, TSMLoc offset, int* length);
 
   /**
       Sets the path portion of the URL located at url_loc within bufp
@@ -1439,7 +1439,7 @@ extern "C"
       @param length of the new path string.
 
    */
-  tsapi TSReturnCode TSUrlPathSet(TSMBuffer bufp, TSMLoc offset, const char *value, int length);
+  tsapi TSReturnCode TSUrlPathSet(TSMBuffer bufp, TSMLoc offset, const char* value, int length);
 
   /* --------------------------------------------------------------------------
      FTP specific URLs */
@@ -1478,7 +1478,7 @@ extern "C"
       @return HTTP params portion of the URL.
 
    */
-  tsapi const char *TSUrlHttpParamsGet(TSMBuffer bufp, TSMLoc offset, int *length);
+  tsapi const char* TSUrlHttpParamsGet(TSMBuffer bufp, TSMLoc offset, int* length);
 
   /**
       Sets the HTTP params portion of the URL located at url_loc within
@@ -1494,7 +1494,7 @@ extern "C"
       @param length string length of the new HTTP params value.
 
    */
-  tsapi TSReturnCode TSUrlHttpParamsSet(TSMBuffer bufp, TSMLoc offset, const char *value, int length);
+  tsapi TSReturnCode TSUrlHttpParamsSet(TSMBuffer bufp, TSMLoc offset, const char* value, int length);
 
   /**
       Retrieves the HTTP query portion of the URL located at url_loc
@@ -1508,7 +1508,7 @@ extern "C"
       @return HTTP query portion of the URL.
 
    */
-  tsapi const char *TSUrlHttpQueryGet(TSMBuffer bufp, TSMLoc offset, int *length);
+  tsapi const char* TSUrlHttpQueryGet(TSMBuffer bufp, TSMLoc offset, int* length);
 
   /**
       Sets the HTTP query portion of the URL located at url_loc within
@@ -1523,7 +1523,7 @@ extern "C"
       @param length of the new HTTP query string.
 
    */
-  tsapi TSReturnCode TSUrlHttpQuerySet(TSMBuffer bufp, TSMLoc offset, const char *value, int length);
+  tsapi TSReturnCode TSUrlHttpQuerySet(TSMBuffer bufp, TSMLoc offset, const char* value, int length);
 
   /**
       Retrieves the HTTP fragment portion of the URL located at url_loc
@@ -1537,7 +1537,7 @@ extern "C"
       @return HTTP fragment portion of the URL.
 
    */
-  tsapi const char *TSUrlHttpFragmentGet(TSMBuffer bufp, TSMLoc offset, int *length);
+  tsapi const char* TSUrlHttpFragmentGet(TSMBuffer bufp, TSMLoc offset, int* length);
 
   /**
       Sets the HTTP fragment portion of the URL located at url_loc
@@ -1553,7 +1553,7 @@ extern "C"
       @param length of the new HTTP query string.
 
    */
-  tsapi TSReturnCode TSUrlHttpFragmentSet(TSMBuffer bufp, TSMLoc offset, const char *value, int length);
+  tsapi TSReturnCode TSUrlHttpFragmentSet(TSMBuffer bufp, TSMLoc offset, const char* value, int length);
 
   /* --------------------------------------------------------------------------
      MIME headers */
@@ -1591,7 +1591,7 @@ extern "C"
       @param locp buffer pointer to contain the MLoc
 
    */
-  tsapi TSReturnCode TSMimeHdrCreate(TSMBuffer bufp, TSMLoc *locp);
+  tsapi TSReturnCode TSMimeHdrCreate(TSMBuffer bufp, TSMLoc* locp);
 
   /**
       Destroys the MIME header located at hdr_loc within bufp.
@@ -1615,7 +1615,7 @@ extern "C"
       @param locp where to store the location of the copied MIME header.
 
    */
-  tsapi TSReturnCode TSMimeHdrClone(TSMBuffer dest_bufp, TSMBuffer src_bufp, TSMLoc src_hdr, TSMLoc *locp);
+  tsapi TSReturnCode TSMimeHdrClone(TSMBuffer dest_bufp, TSMBuffer src_bufp, TSMLoc src_hdr, TSMLoc* locp);
 
   /**
       Copies the contents of the MIME header located at src_loc
@@ -1670,8 +1670,8 @@ extern "C"
           because the end of the buffer was reached.
 
    */
-  tsapi TSParseResult TSMimeHdrParse(TSMimeParser parser, TSMBuffer bufp, TSMLoc offset, const char **start,
-                                     const char *end);
+  tsapi TSParseResult TSMimeHdrParse(TSMimeParser parser, TSMBuffer bufp, TSMLoc offset, const char** start,
+                                     const char* end);
 
   /**
       Calculates the length of the MIME header located at hdr_loc if it
@@ -1741,7 +1741,7 @@ extern "C"
         not be found, returns TS_NULL_MLOC.
 
    */
-  tsapi TSMLoc TSMimeHdrFieldFind(TSMBuffer bufp, TSMLoc hdr, const char *name, int length);
+  tsapi TSMLoc TSMimeHdrFieldFind(TSMBuffer bufp, TSMLoc hdr, const char* name, int length);
 
   /**
       Returns the TSMLoc location of a specified MIME field from within
@@ -1786,12 +1786,12 @@ extern "C"
    */
   tsapi TSReturnCode TSMimeHdrFieldRemove(TSMBuffer bufp, TSMLoc hdr, TSMLoc field);
 
-  tsapi TSReturnCode TSMimeHdrFieldCreate(TSMBuffer bufp, TSMLoc hdr, TSMLoc *locp);
+  tsapi TSReturnCode TSMimeHdrFieldCreate(TSMBuffer bufp, TSMLoc hdr, TSMLoc* locp);
 
   /****************************************************************************
    *  Create a new field and assign it a name all in one call
    ****************************************************************************/
-  tsapi TSReturnCode TSMimeHdrFieldCreateNamed(TSMBuffer bufp, TSMLoc mh_mloc, const char *name, int name_len, TSMLoc *locp);
+  tsapi TSReturnCode TSMimeHdrFieldCreateNamed(TSMBuffer bufp, TSMLoc mh_mloc, const char* name, int name_len, TSMLoc* locp);
 
   /**
       Destroys the MIME field located at field within bufp. You must
@@ -1807,7 +1807,7 @@ extern "C"
   tsapi TSReturnCode TSMimeHdrFieldDestroy(TSMBuffer bufp, TSMLoc hdr, TSMLoc field);
 
   tsapi TSReturnCode TSMimeHdrFieldClone(TSMBuffer dest_bufp, TSMLoc dest_hdr, TSMBuffer src_bufp, TSMLoc src_hdr,
-                                         TSMLoc src_field, TSMLoc *locp);
+                                         TSMLoc src_field, TSMLoc* locp);
   tsapi TSReturnCode TSMimeHdrFieldCopy(TSMBuffer dest_bufp, TSMLoc dest_hdr, TSMLoc dest_field,
                                         TSMBuffer src_bufp, TSMLoc src_hdr, TSMLoc src_field);
   tsapi TSReturnCode TSMimeHdrFieldCopyValues(TSMBuffer dest_bufp, TSMLoc dest_hdr, TSMLoc dest_field,
@@ -1815,27 +1815,27 @@ extern "C"
   tsapi TSMLoc TSMimeHdrFieldNext(TSMBuffer bufp, TSMLoc hdr, TSMLoc field);
   tsapi TSMLoc TSMimeHdrFieldNextDup(TSMBuffer bufp, TSMLoc hdr, TSMLoc field);
   tsapi int TSMimeHdrFieldLengthGet(TSMBuffer bufp, TSMLoc hdr, TSMLoc field);
-  tsapi const char *TSMimeHdrFieldNameGet(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int *length);
-  tsapi TSReturnCode TSMimeHdrFieldNameSet(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, const char *name, int length);
+  tsapi const char* TSMimeHdrFieldNameGet(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int* length);
+  tsapi TSReturnCode TSMimeHdrFieldNameSet(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, const char* name, int length);
 
   tsapi TSReturnCode TSMimeHdrFieldValuesClear(TSMBuffer bufp, TSMLoc hdr, TSMLoc field);
   tsapi int TSMimeHdrFieldValuesCount(TSMBuffer bufp, TSMLoc hdr, TSMLoc field);
 
-  tsapi const char* TSMimeHdrFieldValueStringGet(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int idx, int *value_len_ptr);
+  tsapi const char* TSMimeHdrFieldValueStringGet(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int idx, int* value_len_ptr);
   tsapi int TSMimeHdrFieldValueIntGet(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int idx);
   tsapi unsigned int TSMimeHdrFieldValueUintGet(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int idx);
   tsapi time_t TSMimeHdrFieldValueDateGet(TSMBuffer bufp, TSMLoc hdr, TSMLoc field);
   tsapi TSReturnCode TSMimeHdrFieldValueStringSet(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int idx,
-                                                     const char *value, int length);
+                                                     const char* value, int length);
   tsapi TSReturnCode TSMimeHdrFieldValueIntSet(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int idx, int value);
   tsapi TSReturnCode TSMimeHdrFieldValueUintSet(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int idx,
                                                    unsigned int value);
   tsapi TSReturnCode TSMimeHdrFieldValueDateSet(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, time_t value);
 
   tsapi TSReturnCode TSMimeHdrFieldValueAppend(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int idx,
-                                                  const char *value, int length);
+                                                  const char* value, int length);
   tsapi TSReturnCode TSMimeHdrFieldValueStringInsert(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int idx,
-                                                        const char *value, int length);
+                                                        const char* value, int length);
   tsapi TSReturnCode TSMimeHdrFieldValueIntInsert(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int idx, int value);
   tsapi TSReturnCode TSMimeHdrFieldValueUintInsert(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int idx,
                                                       unsigned int value);
@@ -1859,7 +1859,7 @@ extern "C"
    */
   tsapi void TSHttpHdrDestroy(TSMBuffer bufp, TSMLoc offset);
 
-  tsapi TSReturnCode TSHttpHdrClone(TSMBuffer dest_bufp, TSMBuffer src_bufp, TSMLoc src_hdr, TSMLoc *locp);
+  tsapi TSReturnCode TSHttpHdrClone(TSMBuffer dest_bufp, TSMBuffer src_bufp, TSMLoc src_hdr, TSMLoc* locp);
 
   /**
       Copies the contents of the HTTP header located at src_loc within
@@ -1913,11 +1913,11 @@ extern "C"
           span multiple buffers).
 
    */
-  tsapi TSParseResult TSHttpHdrParseReq(TSHttpParser parser, TSMBuffer bufp, TSMLoc offset, const char **start,
-                                        const char *end);
+  tsapi TSParseResult TSHttpHdrParseReq(TSHttpParser parser, TSMBuffer bufp, TSMLoc offset, const char** start,
+                                        const char* end);
 
-  tsapi TSParseResult TSHttpHdrParseResp(TSHttpParser parser, TSMBuffer bufp, TSMLoc offset, const char **start,
-                                         const char *end);
+  tsapi TSParseResult TSHttpHdrParseResp(TSHttpParser parser, TSMBuffer bufp, TSMLoc offset, const char** start,
+                                         const char* end);
 
   tsapi int TSHttpHdrLengthGet(TSMBuffer bufp, TSMLoc offset);
 
@@ -1927,20 +1927,20 @@ extern "C"
   tsapi int TSHttpHdrVersionGet(TSMBuffer bufp, TSMLoc offset);
   tsapi TSReturnCode TSHttpHdrVersionSet(TSMBuffer bufp, TSMLoc offset, int ver);
 
-  tsapi const char *TSHttpHdrMethodGet(TSMBuffer bufp, TSMLoc offset, int *length);
-  tsapi TSReturnCode TSHttpHdrMethodSet(TSMBuffer bufp, TSMLoc offset, const char *value, int length);
-  tsapi TSReturnCode TSHttpHdrUrlGet(TSMBuffer bufp, TSMLoc offset, TSMLoc *locp);
+  tsapi const char* TSHttpHdrMethodGet(TSMBuffer bufp, TSMLoc offset, int* length);
+  tsapi TSReturnCode TSHttpHdrMethodSet(TSMBuffer bufp, TSMLoc offset, const char* value, int length);
+  tsapi TSReturnCode TSHttpHdrUrlGet(TSMBuffer bufp, TSMLoc offset, TSMLoc* locp);
   tsapi TSReturnCode TSHttpHdrUrlSet(TSMBuffer bufp, TSMLoc offset, TSMLoc url);
 
   tsapi TSHttpStatus TSHttpHdrStatusGet(TSMBuffer bufp, TSMLoc offset);
   tsapi TSReturnCode TSHttpHdrStatusSet(TSMBuffer bufp, TSMLoc offset, TSHttpStatus status);
-  tsapi const char *TSHttpHdrReasonGet(TSMBuffer bufp, TSMLoc offset, int *length);
-  tsapi TSReturnCode TSHttpHdrReasonSet(TSMBuffer bufp, TSMLoc offset, const char *value, int length);
-  tsapi const char *TSHttpHdrReasonLookup(TSHttpStatus status);
+  tsapi const char* TSHttpHdrReasonGet(TSMBuffer bufp, TSMLoc offset, int* length);
+  tsapi TSReturnCode TSHttpHdrReasonSet(TSMBuffer bufp, TSMLoc offset, const char* value, int length);
+  tsapi const char* TSHttpHdrReasonLookup(TSHttpStatus status);
 
   /* --------------------------------------------------------------------------
      Threads */
-  tsapi TSThread TSThreadCreate(TSThreadFunc func, void *data);
+  tsapi TSThread TSThreadCreate(TSThreadFunc func, void* data);
   tsapi TSThread TSThreadInit(void);
   tsapi void TSThreadDestroy(TSThread thread);
   tsapi TSThread TSThreadSelf(void);
@@ -1949,7 +1949,7 @@ extern "C"
      Mutexes */
   tsapi TSMutex TSMutexCreate(void);
   tsapi void TSMutexLock(TSMutex mutexp);
-  tsapi int TSMutexLockTry(TSMutex mutexp);
+  tsapi TSReturnCode TSMutexLockTry(TSMutex mutexp);
 
   tsapi void TSMutexUnlock(TSMutex mutexp);
 
@@ -1971,7 +1971,7 @@ extern "C"
       @param length of the string input.
 
    */
-  tsapi TSReturnCode TSCacheKeyDigestSet(TSCacheKey key, const char *input, int length);
+  tsapi TSReturnCode TSCacheKeyDigestSet(TSCacheKey key, const char* input, int length);
 
   tsapi TSReturnCode TSCacheKeyDigestFromUrlSet(TSCacheKey key, TSMLoc url);
 
@@ -1985,7 +1985,7 @@ extern "C"
       @param host_len length of the string hostname.
 
    */
-  tsapi TSReturnCode TSCacheKeyHostNameSet(TSCacheKey key, const char *hostname, int host_len);
+  tsapi TSReturnCode TSCacheKeyHostNameSet(TSCacheKey key, const char* hostname, int host_len);
 
   tsapi TSReturnCode TSCacheKeyPinnedSet(TSCacheKey key, time_t pin_in_cache);
 
@@ -2000,39 +2000,39 @@ extern "C"
 
   /* --------------------------------------------------------------------------
      cache url */
-  tsapi TSReturnCode TSCacheUrlSet(TSHttpTxn txnp, const char *url, int length);
+  tsapi TSReturnCode TSCacheUrlSet(TSHttpTxn txnp, const char* url, int length);
 
   /* --------------------------------------------------------------------------
      cache plugin */
-  tsapi TSReturnCode TSCacheKeyGet(TSCacheTxn txnp, void **key, int *length);
-  tsapi TSReturnCode TSCacheHeaderKeyGet(TSCacheTxn txnp, void **key, int *length);
+  tsapi TSReturnCode TSCacheKeyGet(TSCacheTxn txnp, void** key, int* length);
+  tsapi TSReturnCode TSCacheHeaderKeyGet(TSCacheTxn txnp, void** key, int* length);
   tsapi TSIOBufferReader TSCacheBufferReaderGet(TSCacheTxn txnp);
   tsapi TSHttpTxn TSCacheGetStateMachine(TSCacheTxn txnp);
 
   /* --------------------------------------------------------------------------
      Configuration */
-  tsapi unsigned int TSConfigSet(unsigned int id, void *data, TSConfigDestroyFunc funcp);
+  tsapi unsigned int TSConfigSet(unsigned int id, void* data, TSConfigDestroyFunc funcp);
   tsapi TSConfig TSConfigGet(unsigned int id);
   tsapi void TSConfigRelease(unsigned int id, TSConfig configp);
-  tsapi void *TSConfigDataGet(TSConfig configp);
+  tsapi void* TSConfigDataGet(TSConfig configp);
 
   /* --------------------------------------------------------------------------
      Management */
-  tsapi TSReturnCode TSMgmtIntGet(const char *var_name, TSMgmtInt *result);
-  tsapi TSReturnCode TSMgmtCounterGet(const char *var_name, TSMgmtCounter *result);
-  tsapi TSReturnCode TSMgmtFloatGet(const char *var_name, TSMgmtFloat *result);
-  tsapi TSReturnCode TSMgmtStringGet(const char *var_name, TSMgmtString *result);
+  tsapi TSReturnCode TSMgmtIntGet(const char* var_name, TSMgmtInt* result);
+  tsapi TSReturnCode TSMgmtCounterGet(const char* var_name, TSMgmtCounter* result);
+  tsapi TSReturnCode TSMgmtFloatGet(const char* var_name, TSMgmtFloat* result);
+  tsapi TSReturnCode TSMgmtStringGet(const char* var_name, TSMgmtString* result);
 
   /* --------------------------------------------------------------------------
      Continuations */
   tsapi TSCont TSContCreate(TSEventFunc funcp, TSMutex mutexp);
   tsapi void TSContDestroy(TSCont contp);
-  tsapi void TSContDataSet(TSCont contp, void *data);
-  tsapi void *TSContDataGet(TSCont contp);
+  tsapi void TSContDataSet(TSCont contp, void* data);
+  tsapi void* TSContDataGet(TSCont contp);
   tsapi TSAction TSContSchedule(TSCont contp, TSHRTime timeout, TSThreadPool tp);
   tsapi TSAction TSContScheduleEvery(TSCont contp, TSHRTime every, TSThreadPool tp);
   tsapi TSAction TSHttpSchedule(TSCont contp, TSHttpTxn txnp, TSHRTime timeout);
-  tsapi int TSContCall(TSCont contp, TSEvent event, void *edata);
+  tsapi int TSContCall(TSCont contp, TSEvent event, void* edata);
   tsapi TSMutex TSContMutexGet(TSCont contp);
 
   /* --------------------------------------------------------------------------
@@ -2053,8 +2053,8 @@ extern "C"
      HTTP transactions */
   tsapi void TSHttpTxnHookAdd(TSHttpTxn txnp, TSHttpHookID id, TSCont contp);
   tsapi TSHttpSsn TSHttpTxnSsnGet(TSHttpTxn txnp);
-  tsapi TSReturnCode TSHttpTxnClientReqGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *offset);
-  tsapi TSReturnCode TSHttpTxnPristineUrlGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *url_loc);
+  tsapi TSReturnCode TSHttpTxnClientReqGet(TSHttpTxn txnp, TSMBuffer* bufp, TSMLoc* offset);
+  tsapi TSReturnCode TSHttpTxnPristineUrlGet(TSHttpTxn txnp, TSMBuffer* bufp, TSMLoc* url_loc);
   /** Get the effective URL for the transaction.
       The effective URL is the URL taking in to account both the explicit
       URL in the request and the HOST field.
@@ -2068,18 +2068,18 @@ extern "C"
     TSHttpTxn txnp, ///< Transaction.
     int* length ///< String length return, may be @c NULL.
   );
-  tsapi TSReturnCode TSHttpTxnClientRespGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *offset);
-  tsapi TSReturnCode TSHttpTxnServerReqGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *offset);
-  tsapi TSReturnCode TSHttpTxnServerRespGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *offset);
-  tsapi TSReturnCode TSHttpTxnCachedReqGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *offset);
-  tsapi TSReturnCode TSHttpTxnCachedRespGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *offset);
+  tsapi TSReturnCode TSHttpTxnClientRespGet(TSHttpTxn txnp, TSMBuffer* bufp, TSMLoc* offset);
+  tsapi TSReturnCode TSHttpTxnServerReqGet(TSHttpTxn txnp, TSMBuffer* bufp, TSMLoc* offset);
+  tsapi TSReturnCode TSHttpTxnServerRespGet(TSHttpTxn txnp, TSMBuffer* bufp, TSMLoc* offset);
+  tsapi TSReturnCode TSHttpTxnCachedReqGet(TSHttpTxn txnp, TSMBuffer* bufp, TSMLoc* offset);
+  tsapi TSReturnCode TSHttpTxnCachedRespGet(TSHttpTxn txnp, TSMBuffer* bufp, TSMLoc* offset);
   tsapi void TSHttpTxnSetRespCacheableSet(TSHttpTxn txnp);
   tsapi void TSHttpTxnSetReqCacheableSet(TSHttpTxn txnp);
-  tsapi TSReturnCode TSFetchPageRespGet (TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *offset);
-  tsapi char* TSFetchRespGet (TSHttpTxn txnp, int *length);
-  tsapi TSReturnCode TSHttpTxnCacheLookupStatusGet(TSHttpTxn txnp, int *lookup_status);
+  tsapi TSReturnCode TSFetchPageRespGet (TSHttpTxn txnp, TSMBuffer* bufp, TSMLoc* offset);
+  tsapi char* TSFetchRespGet(TSHttpTxn txnp, int* length);
+  tsapi TSReturnCode TSHttpTxnCacheLookupStatusGet(TSHttpTxn txnp, int* lookup_status);
 
-  tsapi TSReturnCode TSHttpTxnTransformRespGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *offset);
+  tsapi TSReturnCode TSHttpTxnTransformRespGet(TSHttpTxn txnp, TSMBuffer* bufp, TSMLoc* offset);
 
   /**
       Retrieves the socket address of the remote client that has
@@ -2096,17 +2096,17 @@ extern "C"
       @return generic socket address storage.
 
    */
-  tsapi const struct sockaddr_storage *INKHttpTxnClientSockAddrGet(TSHttpTxn txnp);
+  tsapi const struct sockaddr_storage* INKHttpTxnClientSockAddrGet(TSHttpTxn txnp);
 
   tsapi unsigned int TSHttpTxnClientIPGet(TSHttpTxn txnp);
-  tsapi TSReturnCode TSHttpTxnClientFdGet(TSHttpTxn txnp, int *fdp);
-  tsapi TSReturnCode TSHttpTxnClientRemotePortGet(TSHttpTxn txnp, int *portp);
+  tsapi TSReturnCode TSHttpTxnClientFdGet(TSHttpTxn txnp, int* fdp);
+  tsapi TSReturnCode TSHttpTxnClientRemotePortGet(TSHttpTxn txnp, int* portp);
   tsapi int TSHttpTxnClientIncomingPortGet(TSHttpTxn txnp);
   tsapi unsigned int TSHttpTxnServerIPGet(TSHttpTxn txnp);
   tsapi unsigned int TSHttpTxnNextHopIPGet(TSHttpTxn txnp);
   tsapi int TSHttpTxnNextHopPortGet(TSHttpTxn txnp);
 
-  tsapi void TSHttpTxnErrorBodySet(TSHttpTxn txnp, char *buf, int buflength, char *mimetype);
+  tsapi void TSHttpTxnErrorBodySet(TSHttpTxn txnp, char* buf, int buflength, char* mimetype);
 
   /**
       Retrieves the parent proxy hostname and port, if parent
@@ -2118,7 +2118,7 @@ extern "C"
       @param port parent proxy's port.
 
    */
-  tsapi TSReturnCode TSHttpTxnParentProxyGet(TSHttpTxn txnp, char **hostname, int *port);
+  tsapi TSReturnCode TSHttpTxnParentProxyGet(TSHttpTxn txnp, char** hostname, int* port);
 
   /**
       Sets the parent proxy name and port. The string hostname is copied
@@ -2130,7 +2130,7 @@ extern "C"
       @param port parent proxy port to set.
 
    */
-  tsapi void TSHttpTxnParentProxySet(TSHttpTxn txnp, char *hostname, int port);
+  tsapi void TSHttpTxnParentProxySet(TSHttpTxn txnp, char* hostname, int port);
 
   tsapi void TSHttpTxnUntransformedRespCache(TSHttpTxn txnp, int on);
   tsapi void TSHttpTxnTransformedRespCache(TSHttpTxn txnp, int on);
@@ -2155,13 +2155,13 @@ extern "C"
 
    */
   tsapi void TSHttpTxnReenable(TSHttpTxn txnp, TSEvent event);
-  tsapi TSReturnCode TSHttpCacheReenable(TSCacheTxn txnp, const TSEvent event, const void *data, const uint64_t size);
+  tsapi TSReturnCode TSHttpCacheReenable(TSCacheTxn txnp, const TSEvent event, const void* data, const uint64_t size);
   tsapi TSReturnCode TSHttpTxnFollowRedirect(TSHttpTxn txnp, int on);
 
-  tsapi void TSHttpTxnArgSet(TSHttpTxn txnp, int arg_idx, void *arg);
-  tsapi void *TSHttpTxnArgGet(TSHttpTxn txnp, int arg_idx);
-  tsapi void TSHttpSsnArgSet(TSHttpSsn ssnp, int arg_idx, void *arg);
-  tsapi void *TSHttpSsnArgGet(TSHttpSsn ssnp, int arg_idx);
+  tsapi void TSHttpTxnArgSet(TSHttpTxn txnp, int arg_idx, void* arg);
+  tsapi void* TSHttpTxnArgGet(TSHttpTxn txnp, int arg_idx);
+  tsapi void TSHttpSsnArgSet(TSHttpSsn ssnp, int arg_idx, void* arg);
+  tsapi void* TSHttpSsnArgGet(TSHttpSsn ssnp, int arg_idx);
 
   /* The reserve API should only be use in TSAPI plugins, during plugin initialization! */
   /* The lookup methods can be used anytime, but are best used during initialization as well,
@@ -2174,7 +2174,7 @@ extern "C"
   tsapi TS_DEPRECATED int TSHttpTxnMaxArgCntGet(void);
 
   tsapi int TSHttpTxnGetMaxHttpRetBodySize(void);
-  tsapi void TSHttpTxnSetHttpRetBody(TSHttpTxn txnp, const char *body_msg, int plain_msg);
+  tsapi void TSHttpTxnSetHttpRetBody(TSHttpTxn txnp, const char* body_msg, int plain_msg);
   tsapi void TSHttpTxnSetHttpRetStatus(TSHttpTxn txnp, TSHttpStatus http_retstatus);
 
   tsapi void TSHttpTxnActiveTimeoutSet(TSHttpTxn txnp, int timeout);
@@ -2263,17 +2263,17 @@ extern "C"
 
    */
   tsapi TSVConn TSHttpConnect(unsigned int log_ip, int log_port);
-  tsapi void TSFetchUrl(const char *request,int request_len, unsigned int ip, int port , TSCont contp, TSFetchWakeUpOptions callback_options,TSFetchEvent event);
-  tsapi void TSFetchPages(TSFetchUrlParams_t *params);
+  tsapi void TSFetchUrl(const char* request,int request_len, unsigned int ip, int port , TSCont contp, TSFetchWakeUpOptions callback_options,TSFetchEvent event);
+  tsapi void TSFetchPages(TSFetchUrlParams_t* params);
 
   /* Check if HTTP State machine is internal or not */
   tsapi TSReturnCode TSHttpIsInternalRequest(TSHttpTxn txnp);
 
   /* --------------------------------------------------------------------------
      HTTP alternate selection */
-  tsapi TSReturnCode TSHttpAltInfoClientReqGet(TSHttpAltInfo infop, TSMBuffer *bufp, TSMLoc *offset);
-  tsapi TSReturnCode TSHttpAltInfoCachedReqGet(TSHttpAltInfo infop, TSMBuffer *bufp, TSMLoc *offset);
-  tsapi TSReturnCode TSHttpAltInfoCachedRespGet(TSHttpAltInfo infop, TSMBuffer *bufp, TSMLoc *offset);
+  tsapi TSReturnCode TSHttpAltInfoClientReqGet(TSHttpAltInfo infop, TSMBuffer* bufp, TSMLoc* offset);
+  tsapi TSReturnCode TSHttpAltInfoCachedReqGet(TSHttpAltInfo infop, TSMBuffer* bufp, TSMLoc* offset);
+  tsapi TSReturnCode TSHttpAltInfoCachedRespGet(TSHttpAltInfo infop, TSMBuffer* bufp, TSMLoc* offset);
   tsapi void TSHttpAltInfoQualitySet(TSHttpAltInfo infop, float quality);
 
   /* --------------------------------------------------------------------------
@@ -2349,7 +2349,7 @@ extern "C"
 
   /* --------------------------------------------------------------------------
      DNS Lookups */
-  tsapi TSAction TSHostLookup(TSCont contp, char *hostname, int namelen);
+  tsapi TSAction TSHostLookup(TSCont contp, char* hostname, int namelen);
   tsapi unsigned int TSHostLookupResultIPGet(TSHostLookupResult lookup_result);
 
   /* --------------------------------------------------------------------------
@@ -2428,7 +2428,7 @@ extern "C"
 
    */
   tsapi TSAction TSCacheRemove(TSCont contp, TSCacheKey key);
-  tsapi TSReturnCode TSCacheReady(int *is_ready);
+  tsapi TSReturnCode TSCacheReady(int* is_ready);
   tsapi TSAction TSCacheScan(TSCont contp, TSCacheKey key, int KB_per_second);
 
   /* --------------------------------------------------------------------------
@@ -2505,13 +2505,13 @@ extern "C"
         in bytes.
 
    */
-  tsapi int64_t TSIOBufferWrite(TSIOBuffer bufp, const void *buf, int64_t length);
+  tsapi int64_t TSIOBufferWrite(TSIOBuffer bufp, const void* buf, int64_t length);
   tsapi void TSIOBufferProduce(TSIOBuffer bufp, int64_t nbytes);
 
   tsapi TSIOBufferBlock TSIOBufferBlockNext(TSIOBufferBlock blockp);
-  tsapi const char *TSIOBufferBlockReadStart(TSIOBufferBlock blockp, TSIOBufferReader readerp, int64_t *avail);
+  tsapi const char* TSIOBufferBlockReadStart(TSIOBufferBlock blockp, TSIOBufferReader readerp, int64_t* avail);
   tsapi int64_t TSIOBufferBlockReadAvail(TSIOBufferBlock blockp, TSIOBufferReader readerp);
-  tsapi char *TSIOBufferBlockWriteStart(TSIOBufferBlock blockp, int64_t *avail);
+  tsapi char* TSIOBufferBlockWriteStart(TSIOBufferBlock blockp, int64_t* avail);
   tsapi int64_t TSIOBufferBlockWriteAvail(TSIOBufferBlock blockp);
 
   tsapi TSIOBufferReader TSIOBufferReaderAlloc(TSIOBuffer bufp);
@@ -2543,7 +2543,7 @@ extern "C"
   } TSStatSync;
 
   /*  Note that only TS_RECORDDATATYPE_INT is supported at this point. */
-  tsapi int TSStatCreate(const char *the_name, TSRecordDataType the_type, TSStatPersistence persist, TSStatSync sync);
+  tsapi int TSStatCreate(const char* the_name, TSRecordDataType the_type, TSStatPersistence persist, TSStatSync sync);
 
   tsapi void TSStatIntIncrement(int the_stat, TSMgmtInt amount);
   tsapi void TSStatIntDecrement(int the_stat, TSMgmtInt amount);
@@ -2557,7 +2557,7 @@ extern "C"
   /* tsapi TSeturnCode TSStatFloatGet(int the_stat, float* value); */
   /* tsapi TSReturnCode TSStatFloatSet(int the_stat, float value); */
 
-  tsapi TSReturnCode TSStatFindName(const char* name, int *idp);
+  tsapi TSReturnCode TSStatFindName(const char* name, int* idp);
 
   /* --------------------------------------------------------------------------
      This is the old stats system, it's deprecated, and should preferably not
@@ -2568,13 +2568,13 @@ extern "C"
     INKSTAT_TYPE_FLOAT
   } INKStatTypes;
 
-  typedef void *INKStat;
-  typedef void *INKCoupledStat;
+  typedef void* INKStat;
+  typedef void* INKCoupledStat;
 
   /* --------------------------------------------------------------------------
      uncoupled stats */
   /** @deprecated */
-  tsapi INKStat INKStatCreate(const char *the_name, INKStatTypes the_type);
+  tsapi INKStat INKStatCreate(const char* the_name, INKStatTypes the_type);
   /** @deprecated */
   tsapi void INKStatIntAddTo(INKStat the_stat, int64_t amount);
   /** @deprecated */
@@ -2595,23 +2595,23 @@ extern "C"
   /* --------------------------------------------------------------------------
      coupled stats */
   /** @deprecated */
-  tsapi INKCoupledStat INKStatCoupledGlobalCategoryCreate(const char *the_name);
+  tsapi INKCoupledStat INKStatCoupledGlobalCategoryCreate(const char* the_name);
   /** @deprecated */
-  tsapi INKCoupledStat INKStatCoupledLocalCopyCreate(const char *the_name, INKCoupledStat global_copy);
+  tsapi INKCoupledStat INKStatCoupledLocalCopyCreate(const char* the_name, INKCoupledStat global_copy);
   /** @deprecated */
   tsapi void INKStatCoupledLocalCopyDestroy(INKCoupledStat local_copy);
   /** @deprecated */
-  tsapi INKStat INKStatCoupledGlobalAdd(INKCoupledStat global_copy, const char *the_name, INKStatTypes the_type);
+  tsapi INKStat INKStatCoupledGlobalAdd(INKCoupledStat global_copy, const char* the_name, INKStatTypes the_type);
   /** @deprecated */
-  tsapi INKStat INKStatCoupledLocalAdd(INKCoupledStat local_copy, const char *the_name, INKStatTypes the_type);
+  tsapi INKStat INKStatCoupledLocalAdd(INKCoupledStat local_copy, const char* the_name, INKStatTypes the_type);
   /** @deprecated */
   tsapi void INKStatsCoupledUpdate(INKCoupledStat local_copy);
 
   /* --------------------------------------------------------------------------
      tracing api */
 
-  tsapi int TSIsDebugTagSet(const char *t);
-  tsapi void TSDebug(const char *tag, const char *format_str, ...);
+  tsapi int TSIsDebugTagSet(const char* t);
+  tsapi void TSDebug(const char* tag, const char* format_str, ...);
   extern int diags_on_for_plugins;
 #define TSDEBUG if (diags_on_for_plugins) TSDebug
 
@@ -2642,11 +2642,11 @@ extern "C"
       log file using TSTextLogObjectWrite().
 
    */
-  typedef void *TSTextLogObject;
+  typedef void* TSTextLogObject;
 
-  typedef void (*TSRecordDumpCb) (TSRecordType rec_type, void *edata, int registered, const char *name, TSRecordDataType data_type, TSRecordData *datum);
+  typedef void (*TSRecordDumpCb) (TSRecordType rec_type, void* edata, int registered, const char* name, TSRecordDataType data_type, TSRecordData* datum);
 
-  tsapi void TSRecordDump(TSRecordType rec_type, TSRecordDumpCb callback, void *edata);
+  tsapi void TSRecordDump(TSRecordType rec_type, TSRecordDumpCb callback, void* edata);
 
   /**
 
@@ -2693,7 +2693,7 @@ extern "C"
           does not exist).
 
    */
-  tsapi TSReturnCode TSTextLogObjectCreate(const char *filename, int mode, TSTextLogObject *new_log_obj);
+  tsapi TSReturnCode TSTextLogObjectCreate(const char* filename, int mode, TSTextLogObject* new_log_obj);
 
   /**
       Writes a printf-style formatted statement to an TSTextLogObject
@@ -2714,7 +2714,7 @@ extern "C"
           log write buffer). This error is very unusual.
 
    */
-  tsapi TSReturnCode TSTextLogObjectWrite(TSTextLogObject the_object, char *format, ...);
+  tsapi TSReturnCode TSTextLogObjectWrite(TSTextLogObject the_object, char* format, ...);
 
   /**
       This immediately flushes the contents of the log write buffer for
@@ -2742,7 +2742,7 @@ extern "C"
       Set log header.
 
    */
-  tsapi void TSTextLogObjectHeaderSet(TSTextLogObject the_object, const char *header);
+  tsapi void TSTextLogObjectHeaderSet(TSTextLogObject the_object, const char* header);
 
   /**
       Enable/disable rolling.
@@ -2834,7 +2834,7 @@ extern "C"
   tsapi TSVConn TSVConnCreate(TSEventFunc event_funcp, TSMutex mutexp);
 
   tsapi TS_DEPRECATED void TSIOBufferAppend(TSIOBuffer bufp, TSIOBufferBlock blockp);
-  tsapi TS_DEPRECATED TSIOBufferData TSIOBufferDataCreate(void *data, int size, TSIOBufferDataFlags flags);
+  tsapi TS_DEPRECATED TSIOBufferData TSIOBufferDataCreate(void* data, int size, TSIOBufferDataFlags flags);
   tsapi TS_DEPRECATED TSIOBufferBlock TSIOBufferBlockCreate(TSIOBufferData datap, int size, int offset);
 
 
@@ -2881,7 +2881,7 @@ extern "C"
     It's unclear if these actually function properly still.
   */
   tsapi void TSRedirectUrlSet(TSHttpTxn txnp, const char* url, const int url_len);
-  tsapi const char*  TSRedirectUrlGet(TSHttpTxn txnp, int* url_len_ptr);
+  tsapi const char* TSRedirectUrlGet(TSHttpTxn txnp, int* url_len_ptr);
 
   /* Get current HTTP connection stats */
   tsapi int TSHttpCurrentClientConnectionsGet(void);

@@ -778,7 +778,7 @@ transform_handler(TSCont contp, TSEvent event, void *edata)
      concurrent calls. */
 
   /* Handle TryLock result */
-  if (!TSMutexLockTry(TSContMutexGet(contp))) {
+  if (TSMutexLockTry(TSContMutexGet(contp)) != TS_SUCCESS) {
     TSCont c = TSContCreate(trylock_handler, NULL);
     TryLockData *d = TSmalloc(sizeof(TryLockData));
 

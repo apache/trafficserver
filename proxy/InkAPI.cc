@@ -4412,7 +4412,7 @@ TSHttpTxnPristineUrlGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *url_loc)
 
 // Shortcut to just get the URL.
 char*
-TSHttpTxnEffectiveUrlStringGet(TSHttpTxn txnp, int* length)
+TSHttpTxnEffectiveUrlStringGet(TSHttpTxn txnp, int *length)
 {
   sdk_assert(TS_SUCCESS == sdk_sanity_check_txn(txnp));
   sdk_assert(sdk_sanity_check_null_ptr((void*)length) == TS_SUCCESS);
@@ -5267,7 +5267,7 @@ TSHttpTxnMaxArgCntGet(void)
 }
 
 TSReturnCode
-TSHttpArgIndexReserve(const char* name, const char* description, int* arg_idx)
+TSHttpArgIndexReserve(const char* name, const char* description, int *arg_idx)
 {
   sdk_assert(sdk_sanity_check_null_ptr(arg_idx) == TS_SUCCESS);
 
@@ -5301,7 +5301,7 @@ TSHttpArgIndexLookup(int arg_idx, const char** name, const char** description)
 
 // Not particularly efficient, but good enough for now.
 TSReturnCode
-TSHttpArgIndexNameLookup(const char* name, int* arg_idx, const char** description)
+TSHttpArgIndexNameLookup(const char* name, int *arg_idx, const char **description)
 {
   sdk_assert(sdk_sanity_check_null_ptr(arg_idx) == TS_SUCCESS);
 
@@ -6923,7 +6923,7 @@ TSRedirectUrlSet(TSHttpTxn txnp, const char* url, const int url_len)
 }
 
 const char*
-TSRedirectUrlGet(TSHttpTxn txnp, int* url_len_ptr)
+TSRedirectUrlGet(TSHttpTxn txnp, int *url_len_ptr)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 
@@ -7310,7 +7310,7 @@ TSHttpTxnConfigIntSet(TSHttpTxn txnp, TSOverridableConfigKey conf, TSMgmtInt val
   }
 
   OverridableDataType type;
-  TSMgmtInt* dest = static_cast<TSMgmtInt*>(_conf_to_memberp(conf, s, &type));
+  TSMgmtInt *dest = static_cast<TSMgmtInt*>(_conf_to_memberp(conf, s, &type));
 
   if (type != OVERRIDABLE_TYPE_INT)
     return TS_ERROR;

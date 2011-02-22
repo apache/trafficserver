@@ -96,7 +96,7 @@ handle_dns(TSHttpTxn txnp, TSCont contp)
 
   /* We need to lock the sites_mutex as that is the mutex that is
      protecting the global list of all blacklisted sites. */
-  if (!TSMutexLockTry(sites_mutex)) {
+  if (TSMutexLockTry(sites_mutex) != TS_SUCCESS) {
     TSDebug("blacklist-1", "Unable to get lock. Will retry after some time");
     TSHandleMLocRelease(bufp, hdr_loc, url_loc);
     TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
@@ -185,7 +185,7 @@ read_blacklist(TSCont contp)
   nsites = 0;
 
   /* If the Mutext lock is not successful try again in RETRY_TIME */
-  if (!TSMutexLockTry(sites_mutex)) {
+  if (TSMutexLockTry(sites_mutex) != TS_SUCCESS) {
     TSContSchedule(contp, RETRY_TIME, TS_THREAD_POOL_DEFAULT);
     return;
   }
