@@ -24,8 +24,7 @@ The Traffic Server 2.1 Default LAYOUT
 |       |-- images
 |       |-- include
 |       |-- monitor
-|       |-- mrtg
-|       `-- tune
+|       `-- mrtg
 `-- var
     |-- log
     |   `-- trafficserver ... Log files

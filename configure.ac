@@ -1222,7 +1222,6 @@ AS_IF([test "x$enable_webui" = "xyes"],
    AC_CONFIG_FILES([mgmt/html2/include/Makefile])
    AC_CONFIG_FILES([mgmt/html2/monitor/Makefile])
    AC_CONFIG_FILES([mgmt/html2/mrtg/Makefile])
-   AC_CONFIG_FILES([mgmt/html2/tune/Makefile])
 ])
 AC_CONFIG_FILES([mgmt/Makefile])
 AC_CONFIG_FILES([mgmt/preparse/Makefile])
