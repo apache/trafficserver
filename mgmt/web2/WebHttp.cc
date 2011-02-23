@@ -445,207 +445,6 @@ handle_ink_extn(WebHttpContext * whc, const char *file)
   return err;
 }
 
-//-------------------------------------------------------------------------
-// handle_chart
-//-------------------------------------------------------------------------
-
-static int
-handle_chart(WebHttpContext * whc, const char *file)
-{
-  NOWARN_UNUSED(file);
-  //-----------------------------------------------------------------------
-  // FIXME: HARD-CODED HTML HELL!!!
-  //-----------------------------------------------------------------------
-
-  // Note that chart.cgi is a special case so it can not be handled
-  // like our other submit_bindings; the browswer can access the cgi
-  // either by a GET/query or by a POST/body combo.
-
-  int err = WEB_HTTP_ERR_OKAY;
-
-  httpMessage *request = whc->request;
-  textBuffer *replyMsg = whc->response_bdy;
-  httpResponse *answerHdr = whc->response_hdr;
-  InkHashTable *post_data_ht, *params;
-
-  char *varName = NULL;
-  int varNameLen;
-  char tmpVal[MAX_VAL_LENGTH];
-  bool postForm = true;
-  bool clusterGraph = false;
-
-  //800, 410
-  static const char dimensions[] = "width=\"1600\" height=\"1200\"";
-  static const char multiGraph[] = "Inktomi Real-time Graphing";
-  int numGraphs = 0;
-  const int totalNumGraphs = 10;
-  char numGraphStr[8];
-  char *theGraphs[totalNumGraphs];
-  const char *theGraphNames[totalNumGraphs];
-  const char *graphNames[] = {
-    "Document Hit Rate", "Bandwidth Savings", "Cache Percent Free",
-    "Open Server Connections", "Open Client Connections",
-    "Cache Transfers In Progress", "Client Throughput",
-    "Transactions Per Second", "Host Database Hit Rate",
-    "DNS Lookups Per Second"
-  };
-
-  static const char str1[] = "<html>\n" "<title>";
-  static const char str1_5[] =
-    "</title>\n" "<body><b> No variable(s) were selected for graphing. </b></body>\n" "</html>\n";
-  static const char str2[] =
-    "</title>\n"
-    "<body bgcolor=\"#C0C0C0\" onResize=\"resize()\" onLoad=\"resize()\" "
-    " topmargin=\"0\" leftmargin=\"0\" marginwidth=\"0\" marginheight=\"0\">\n"
-    "<SCRIPT LANGUAGE=\"JavaScript\">\n"
-    "   function myFunc(page, winName) {\n"
-    "          window.open(page, winName, \"width=850,height=435,status,resizable=yes\");\n"
-    "   }\n"
-    "   function resize() {\n"
-    "	var w_newWidth,w_newHeight;\n"
-    "	var w_maxWidth=1600,w_maxHeight=1200;\n"
-    "	if (navigator.appName.indexOf(\"Microsoft\") != -1)\n"
-    "	{\n"
-    "		w_newWidth=document.body.clientWidth;\n"
-    "		w_newHeight=document.body.clientHeight;\n"
-    "	} else {\n"
-    "		var netscapeScrollWidth=15;\n"
-    "		w_newWidth=window.innerWidth-netscapeScrollWidth;\n"
-    "		w_newHeight=window.innerHeight-netscapeScrollWidth;\n"
-    "	}\n"
-    "	if (w_newWidth>w_maxWidth)\n"
-    "		w_newWidth=w_maxWidth;\n"
-    "	if (w_newHeight>w_maxHeight)\n"
-    "		w_newHeight=w_maxHeight;\n"
-    "	document.ink_chart.resizeFrame(w_newWidth,w_newHeight);\n"
-    "        window.scroll(0,0);\n" "   }\n" "   window.onResize = resize;\n" "   window.onLoad = resize;\n"
-    //kwt
-    "   function closeTheBrowser() {\n"
-    "   window.close();\n"
-    "   }\n"
-    "   function SnapshotAlert() {\n"
-    "   window.alert(\"Snapshot is currently not supported on SSL connection.\");\n" "   }\n"
-    //kwt
-    "</SCRIPT>\n"
-    "<applet NAME=\"ink_chart\" CODE=\"InktomiCharter.class\" " " ARCHIVE=\"/charting/InkChart.jar\" MAYSCRIPT ";
-  static const char str3[] = ">\n<param name=ServerName value=\"";
-  static const char str3_3[] = "\">\n<param name=ServerWebPort value=\"";
-  static const char str3_4[] = "\">\n<param name=Graphs value=\"";
-  static const char str3_5[] = "\">\n<param name=StatNames   value=\"";
-  static const char str3_6[] = "\">\n<param name=SSL value=\"";
-  static const char str4[] = "\">\n</applet>\n</body>\n</html>\n";
-
-  static const int str1Len = strlen(str1);
-  static const int str1_5Len = strlen(str1_5);
-  static const int str2Len = strlen(str2);
-  static const int str3Len = strlen(str3);
-  static const int str3_3Len = strlen(str3_3);
-  static const int str3_4Len = strlen(str3_4);
-  static const int str3_5Len = strlen(str3_5);
-  static const int str3_6Len = strlen(str3_6);
-  static const int str4Len = strlen(str4);
-
-  // The graph Generator is a POST form, while the cluster graphs are
-  // GET forms.  If we get nothing, assume that we have a postForm.
-  post_data_ht = processFormSubmission(request->getBody());
-  if (post_data_ht == NULL) {
-    postForm = false;
-    params = whc->query_data_ht;
-    // If we still didn't get anything, there is nothing to be had
-    if (params == NULL) {
-      err = WEB_HTTP_ERR_REQUEST_ERROR;
-      goto Ldone;
-    }
-  } else {
-    params = post_data_ht;
-  }
-
-  if (postForm == false) {
-    // We are trying to generate a cluster graph for a node variable
-    int ink_hash_lookup_result = ink_hash_table_lookup(params, "cluster", (void **) &varName);
-    if (!ink_hash_lookup_result || varName == NULL) {
-      mgmt_log(stderr, "Invalid Graph Submission No graph will be generated\n");
-      err = WEB_HTTP_ERR_REQUEST_ERROR;
-      goto Ldone;
-    }
-    clusterGraph = true;
-  } else {
-    for (int i = 0; i < totalNumGraphs; i++) {
-      if (ink_hash_table_lookup(params, graphNames[i], (void **) &varName)) {
-        theGraphs[numGraphs] = (char *) varName;
-        theGraphNames[numGraphs] = graphNames[i];
-        numGraphs += 1;
-      }
-    }
-    clusterGraph = false;
-  }
-
-  varNameLen = varName ? strlen(varName) : 0;
-
-  // Build the reply
-  replyMsg->copyFrom(str1, str1Len);
-  if (clusterGraph == true && varName) {
-    replyMsg->copyFrom(varName, varNameLen);
-  } else {
-    replyMsg->copyFrom(multiGraph, strlen(multiGraph));
-    if (numGraphs == 0) {
-      replyMsg->copyFrom(str1_5, str1_5Len);
-      answerHdr->setStatus(STATUS_OK);
-      goto Ldone;
-    }
-  }
-  replyMsg->copyFrom(str2, str2Len);
-  replyMsg->copyFrom(dimensions, strlen(dimensions));
-
-  replyMsg->copyFrom(str3, str3Len);
-  varStrFromName("proxy.node.hostname_FQ", tmpVal, MAX_VAL_LENGTH);
-  replyMsg->copyFrom(tmpVal, strlen(tmpVal));
-
-  replyMsg->copyFrom(str3_3, str3_3Len);
-  varStrFromName("proxy.config.admin.web_interface_port", tmpVal, MAX_VAL_LENGTH);
-  replyMsg->copyFrom(tmpVal, strlen(tmpVal));
-
-  replyMsg->copyFrom(str3_4, str3_4Len);
-  if (clusterGraph == true) {
-    replyMsg->copyFrom("CLUSTER", 7);
-  } else {
-    snprintf(numGraphStr, sizeof(numGraphStr), "%d", numGraphs);
-    replyMsg->copyFrom(numGraphStr, strlen(numGraphStr));
-  }
-
-  replyMsg->copyFrom(str3_5, str3_5Len);
-  if (clusterGraph == true) {
-    replyMsg->copyFrom(varName, varNameLen);
-  } else {
-    for (int j = 1; j < numGraphs; j++) {
-      replyMsg->copyFrom(theGraphs[j], strlen(theGraphs[j]));
-      replyMsg->copyFrom(",", 1);
-      replyMsg->copyFrom(theGraphNames[j], strlen(theGraphNames[j]));
-
-      replyMsg->copyFrom(",", 1);
-    }
-    replyMsg->copyFrom(theGraphs[0], strlen(theGraphs[0]));
-    replyMsg->copyFrom(",", 1);
-    replyMsg->copyFrom(theGraphNames[0], strlen(theGraphNames[0]));
-  }
-
-  replyMsg->copyFrom(str3_6, str3_6Len);
-  if (whc->server_state & WEB_HTTP_SERVER_STATE_SSL_ENABLED) {
-    replyMsg->copyFrom("enabled", strlen("enabled"));
-  } else {
-    replyMsg->copyFrom("disabled", strlen("disabled"));
-  }
-
-  replyMsg->copyFrom(str4, str4Len);
-  answerHdr->setLength(strlen(replyMsg->bufPtr()));
-
-Ldone:
-  if (post_data_ht) {
-    ink_hash_table_destroy_and_xfree_values(post_data_ht);
-  }
-  return err;
-
-}
 
 //-------------------------------------------------------------------------
 // handle_record_info
@@ -1544,7 +1343,6 @@ WebHttpInit()
   ink_hash_table_insert(g_submit_bindings_ht, HTML_SUBMIT_VIEW_LOGS_FILE, (void *) handle_submit_view_logs);
   // initialize file bindings
   g_file_bindings_ht = ink_hash_table_create(InkHashTableKeyType_String);
-  ink_hash_table_insert(g_file_bindings_ht, HTML_CHART_FILE, (void *) handle_chart);
   ink_hash_table_insert(g_file_bindings_ht, HTML_SYNTHETIC_FILE, (void *) handle_synthetic);
 
   // initialize extension bindings
@@ -1570,7 +1368,9 @@ WebHttpInit()
   ink_hash_table_insert(g_display_config_ht, HTML_FILE_VADDRS_CONFIG, (void *) TS_FNAME_VADDRS);
 
   // initialize other modules
+#if TS_HAS_WEBUI
   WebHttpAuthInit();
+#endif
   WebHttpLogInit();
   WebHttpSessionInit();
 #if TS_HAS_WEBUI
@@ -1612,10 +1412,12 @@ WebHttpHandleConnection(WebHttpConInfo * whci)
   if ((err = read_request(whc)) != WEB_HTTP_ERR_OKAY)
     goto Lerror_switch;
 
+#if TS_HAS_WEBUI
   // authentication
   if (whc->server_state & WEB_HTTP_SERVER_STATE_AUTH_ENABLED)
     if (WebHttpAuthenticate(whc) != WEB_HTTP_ERR_OKAY)
       goto Ltransaction_send;
+#endif
 
   // get our file information
   file = (char *) (whc->request->getFile());

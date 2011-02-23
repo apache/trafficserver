@@ -392,7 +392,6 @@
 #define HTML_FEATURE_ON_OFF_FILE        "/configure/c_basic.ink"
 #define HTML_DEFAULT_HELP_FILE          "/help/ts.ink"
 
-#define HTML_CHART_FILE                 "/charting/chart.cgi"
 #define HTML_SUBMIT_ALARM_FILE          "/submit_alarm.cgi"
 #define HTML_SUBMIT_MGMT_AUTH_FILE      "/submit_mgmt_auth.cgi"
 //#define HTML_SUBMIT_SNAPSHOT_FILE       "/submit_snapshot.cgi"

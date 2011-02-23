@@ -1217,7 +1217,6 @@ AC_CONFIG_FILES([mgmt/cli/Makefile])
 AC_CONFIG_FILES([mgmt/cluster/Makefile])
 AS_IF([test "x$enable_webui" = "xyes"],
   [AC_CONFIG_FILES([mgmt/html2/Makefile])
-   AC_CONFIG_FILES([mgmt/html2/charting/Makefile])
    AC_CONFIG_FILES([mgmt/html2/configure/Makefile])
    AC_CONFIG_FILES([mgmt/html2/images/Makefile])
    AC_CONFIG_FILES([mgmt/html2/include/Makefile])

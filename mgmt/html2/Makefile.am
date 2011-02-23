@@ -17,11 +17,10 @@
 sysconfdir = $(pkgsysconfdir)
 dist_sysconf_DATA = english.dict
 
-SUBDIRS = charting configure images include monitor mrtg tune
+SUBDIRS = configure images include monitor mrtg tune
 
 install-data-local:
 	$(INSTALL) -d -o $(pkgsysuser) -g $(pkgsysgroup) $(DESTDIR)$(pkgdatadir) \
-	$(DESTDIR)$(pkgdatadir)/charting \
 	$(DESTDIR)$(pkgdatadir)/configure \
 	$(DESTDIR)$(pkgdatadir)/images \
 	$(DESTDIR)$(pkgdatadir)/include \
