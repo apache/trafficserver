@@ -665,20 +665,6 @@ Ldone:
 #undef BUF_SIZE
 #undef NULL_STR
 
-static int
-handle_config_files(WebHttpContext * whc, const char *file)
-{
-  NOWARN_UNUSED(file);
-  return WebHttpRender(whc, HTML_FILE_ALL_CONFIG);
-}
-
-static int
-handle_debug_logs(WebHttpContext * whc, const char *file)
-{
-  NOWARN_UNUSED(file);
-  return WebHttpRender(whc, HTML_VIEW_DEBUG_LOGS_FILE);
-}
-
 //-------------------------------------------------------------------------
 // handle_synthetic
 //-------------------------------------------------------------------------
@@ -701,19 +687,6 @@ handle_synthetic(WebHttpContext * whc, const char *file)
     whc->response_bdy->copyFrom(buffer, 27);
   }
   return WEB_HTTP_ERR_OKAY;
-}
-
-//-------------------------------------------------------------------------
-// handle_submit_alarm
-//-------------------------------------------------------------------------
-
-static int
-handle_submit_alarm(WebHttpContext * whc, const char *file)
-{
-  NOWARN_UNUSED(file);
-  resolveAlarm(whc->post_data_ht);
-  whc->top_level_render_file = xstrdup(HTML_ALARM_FILE);
-  return handle_ink_extn(whc, HTML_ALARM_FILE);
 }
 
 //-------------------------------------------------------------------------
@@ -1566,15 +1539,12 @@ WebHttpInit()
 
   // initialize submit bindings
   g_submit_bindings_ht = ink_hash_table_create(InkHashTableKeyType_String);
-  ink_hash_table_insert(g_submit_bindings_ht, HTML_SUBMIT_ALARM_FILE, (void *) handle_submit_alarm);
   ink_hash_table_insert(g_submit_bindings_ht, HTML_SUBMIT_MGMT_AUTH_FILE, (void *) handle_submit_mgmt_auth);
   //ink_hash_table_insert(g_submit_bindings_ht, HTML_SUBMIT_SNAPSHOT_FILE, handle_submit_snapshot);
   ink_hash_table_insert(g_submit_bindings_ht, HTML_SUBMIT_VIEW_LOGS_FILE, (void *) handle_submit_view_logs);
   // initialize file bindings
   g_file_bindings_ht = ink_hash_table_create(InkHashTableKeyType_String);
   ink_hash_table_insert(g_file_bindings_ht, HTML_CHART_FILE, (void *) handle_chart);
-  ink_hash_table_insert(g_file_bindings_ht, HTML_BACKDOOR_CONFIG_FILES, (void *) handle_config_files);
-  ink_hash_table_insert(g_file_bindings_ht, HTML_BACKDOOR_DEBUG_LOGS, (void *) handle_debug_logs);
   ink_hash_table_insert(g_file_bindings_ht, HTML_SYNTHETIC_FILE, (void *) handle_synthetic);
 
   // initialize extension bindings

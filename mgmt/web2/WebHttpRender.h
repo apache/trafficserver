@@ -383,7 +383,6 @@
 
 #define HTML_WRAP_OFF                   "off"
 
-#define HTML_ALARM_FILE                 "/monitor/m_alarm.ink"
 #define HTML_MGMT_GENERAL_FILE          "/configure/c_mgmt_general.ink"
 #define HTML_MGMT_LOGIN_FILE            "/configure/c_mgmt_login.ink"
 #define HTML_INSPECTOR_DISPLAY_FILE     "/configure/c_inspector_display.ink"
@@ -401,7 +400,6 @@
 #define HTML_SUBMIT_INSPECTOR_FILE      "/submit_inspector.cgi"
 #define HTML_SUBMIT_INSPECTOR_DPY_FILE  "/configure/submit_inspector_display.cgi"
 #define HTML_SUBMIT_VIEW_LOGS_FILE      "/log.cgi"
-#define HTML_VIEW_DEBUG_LOGS_FILE       "/configure/c_view_debug_logs.ink"
 #define HTML_SUBMIT_UPDATE_FILE         "/submit_update.cgi"
 #define HTML_SUBMIT_UPDATE_CONFIG       "/submit_update_config.cgi"
 #define HTML_SUBMIT_CONFIG_DISPLAY      "/configure/submit_config_display.cgi"
@@ -416,7 +414,6 @@
 #define HTML_SYNTHETIC_FILE             "/synthetic.txt"
 
 #define HTML_CONFIG_FILE_TAG            "filename"
-#define HTML_FILE_ALL_CONFIG            "/configure/f_configs.ink"
 #define HTML_FILE_CACHE_CONFIG          "/configure/f_cache_config.ink"
 #define HTML_FILE_HOSTING_CONFIG        "/configure/f_hosting_config.ink"
 #define HTML_FILE_ICP_CONFIG            "/configure/f_icp_config.ink"

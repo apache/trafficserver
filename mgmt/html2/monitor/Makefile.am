@@ -16,7 +16,6 @@
 
 webuidir = $(pkgdatadir)/monitor
 dist_webui_DATA = \
-	m_alarm.ink \
 	m_net_device.ink \
 	m_net.ink \
 	m_overview_details_less.ink \

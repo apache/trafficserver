@@ -22,9 +22,7 @@ dist_webui_DATA = \
 	c_net_config.ink \
 	c_net_device.ink \
 	c_tab.ink \
-	c_view_debug_logs.ink \
 	f_cache_config.ink \
-	f_configs.ink \
 	f_hosting_config.ink \
 	f_icp_config.ink \
 	f_ip_allow_config.ink \
