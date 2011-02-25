@@ -84,7 +84,11 @@ ControlBase::Modifier::Type TimeMod::type() const { return MOD_TIME; }
 char const * TimeMod::name() const { return NAME; }
 
 void TimeMod::print(FILE* f) const {
-  fprintf(f, "%s=%ld-%ld  ", this->name(), start_time, end_time);
+  fprintf(f, "%s=%ld-%ld  ",
+    // Have to cast because time_t can be 32 or 64 bits and the compiler
+    // will barf if format code doesn't match.
+    this->name(), static_cast<long>(start_time), static_cast<long>(end_time)
+  );
 }
 bool TimeMod::check(HttpRequestData* req) const {
   struct tm cur_time;
