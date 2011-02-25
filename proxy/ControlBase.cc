@@ -472,12 +472,13 @@ ControlBase::~ControlBase() {
 
 void
 ControlBase::clear() {
-  line_num = 0;
+  // Free all of the modifiers.
   for ( Array::iterator spot = _mods.begin(), limit = _mods.end()
       ; spot != limit
       ; ++spot
   )
     delete *spot;
+  // Erase the pointers.
   _mods.clear();
 }
 
