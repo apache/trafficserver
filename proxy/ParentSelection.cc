@@ -830,7 +830,7 @@ ParentRecord::Init(matcher_line * line_info)
     }
     // record SCHEME modifier if present.
     // NULL if not present
-    this->scheme = (const char *) getModElem(MOD_SCHEME);
+    this->scheme = this->getSchemeModText();
     if (this->scheme != NULL) {
       // update parent entries' schemes
       for (int j = 0; j < num_parents; j++) {

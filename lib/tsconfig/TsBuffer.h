@@ -71,6 +71,14 @@ namespace ts {
      */
     bool operator != (ConstBuffer const& that) const;
 
+    /// @name Accessors.
+    //@{
+    /// Get the data in the buffer.
+    char* data() const;
+    /// Get the size of the buffer.
+    size_t size() const;
+    //@}
+
     /// Set the chunk.
     /// Any previous values are discarded.
     /// @return @c this object.
@@ -130,6 +138,14 @@ namespace ts {
         Buffer const& that ///< Source buffer.
     );
 
+    /// @name Accessors.
+    //@{
+    /// Get the data in the buffer.
+    char const * data() const;
+    /// Get the size of the buffer.
+    size_t size() const;
+    //@}
+
     /// Set the chunk.
     /// Any previous values are discarded.
     /// @return @c this object.
@@ -156,6 +172,8 @@ namespace ts {
   inline bool Buffer::operator == (ConstBuffer const& that) const {
       return _size == that._size && 0 == memcmp(_ptr, that._ptr, _size);
   }
+  inline char * Buffer::data() const { return _ptr; }
+  inline size_t Buffer::size() const { return _size; }
 
   inline ConstBuffer::ConstBuffer() { }
   inline ConstBuffer::ConstBuffer(char const* ptr, size_t n) : _ptr(ptr), _size(n) { }
@@ -171,6 +189,8 @@ namespace ts {
   inline bool ConstBuffer::operator == (Buffer const& that) const {
       return _size == that._size && 0 == memcmp(_ptr, that._ptr, _size);
   }
+  inline char const * ConstBuffer::data() const { return _ptr; }
+  inline size_t ConstBuffer::size() const { return _size; }
 }
 
 # endif // TS_BUFFER_HEADER

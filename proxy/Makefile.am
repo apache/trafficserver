@@ -41,7 +41,8 @@ AM_CPPFLAGS = \
   -I$(top_srcdir)/mgmt \
   -I$(top_srcdir)/mgmt/preparse \
   -I$(top_srcdir)/mgmt/utils \
-  -I$(srcdir)/api/ts
+  -I$(srcdir)/api/ts \
+  -I$(top_srcdir)/lib
 
 noinst_HEADERS = \
   ConfigParse.h \

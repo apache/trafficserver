@@ -203,7 +203,7 @@ template<class Data, class Result> char *HostMatcher<Data, Result>::NewEntry(mat
   ink_assert(match_data != NULL);
 
   // Remove our consumed label from the parsed line
-  line_info->line[0][line_info->dest_entry - 1] = NULL; // XXX
+  line_info->line[0][line_info->dest_entry] = 0;
   line_info->num_el--;
 
   // Fill in the parameter info
@@ -319,7 +319,7 @@ template<class Data, class Result> char *RegexMatcher<Data, Result>::NewEntry(ma
   re_str[num_el] = xstrdup(pattern);
 
   // Remove our consumed label from the parsed line
-  line_info->line[0][line_info->dest_entry - 1] = NULL; // XXX
+  line_info->line[0][line_info->dest_entry] = 0;
   line_info->num_el--;
 
   // Fill in the parameter info

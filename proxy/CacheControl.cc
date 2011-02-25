@@ -234,8 +234,8 @@ CacheControlRecord::Print()
   case CC_STANDARD_CACHE:
   case CC_IGNORE_NO_CACHE:
  // case CC_CACHE_AUTH_CONTENT:
-  //  printf("\t\tDirective: %s\n", CC_directive_str[this->directive]);
-  //  break;
+    printf("\t\tDirective: %s\n", CC_directive_str[this->directive]);
+    break;
   case CC_INVALID:
   case CC_NUM_TYPES:
     printf("\t\tDirective: INVALID\n");
