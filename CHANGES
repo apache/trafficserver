@@ -2,13 +2,27 @@
 
 Changes with Apache Traffic Server 2.1.6
 
+  *) [TS-678] Add a config option for try-lock retry delay.
+    
+   This adds a configuration option
+    
+         proxy.config.cache.mutex_retry_delay INT 2
+    
+   2ms seems to be fairly optimal, with little detrimental effect on CPU
+   usage. We'll fine tune this further in the next release.
+
+  *) [TS-674] Fixes for cache.config and the "modifiers" to work.
+
+  *) [TS-641] Remove inktomi*.css and some files only referenced by it.
+   Removing mgmt/html2/charting. Remove the now empty mgmt/html2/tune.
+
   *) [TS-590] Cleanup all SDK APIs to be more consistent. This changes a
-  large number of APIs, so please check updated docs and signatures in
-  ts/ts.h. A new tools, tools/apichecker.pl, can be used to help
-  identifying areas in existing plugins that might need changes.
+   large number of APIs, so please check updated docs and signatures in
+   ts/ts.h. A new tools, tools/apichecker.pl, can be used to help
+   identifying areas in existing plugins that might need changes.
 
   *) [TS-673] Make the default configurations more conservative
-  for when content is cacheable.
+   for when content is cacheable.
 
   *) [TS-672] Remove unused/unreferenced Win32 header files and
    code paths
