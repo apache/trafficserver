@@ -90,3 +90,11 @@ REVIEWERS
 contrib/perl/AdminClient/Changes
 contrib/perl/AdminClient/MANIFEST
 ats-install/
+cop/traffic_cop
+mgmt/api/remote/traffic_api_cli_remote
+mgmt/cli/traffic_line
+mgmt/cli/traffic_shell
+mgmt/traffic_manager
+proxy/traffic_logcat
+proxy/traffic_logstats
+proxy/traffic_sac
