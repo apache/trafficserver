@@ -315,7 +315,7 @@ Part::aggWriteDone(int event, Event *e)
   // retaking the current mutex recursively is a NOOP
   CACHE_TRY_LOCK(lock, dir_sync_waiting ? cacheDirSync->mutex : mutex, mutex->thread_holding);
   if (!lock) {
-    eventProcessor.schedule_in(this, MUTEX_RETRY_DELAY);
+    eventProcessor.schedule_in(this, HRTIME_MSECONDS(cache_config_mutex_retry_delay));
     return EVENT_CONT;
   }
   if (io.ok()) {

@@ -104,7 +104,7 @@ Cache::deref(Continuation * cont, CacheKey * key, CacheFragType type, char *host
     c->last_collision = last_collision;
 
     if (!lock) {
-      c->mutex->thread_holding->schedule_in_local(c, MUTEX_RETRY_DELAY);
+      c->mutex->thread_holding->schedule_in_local(c, HRTIME_MSECONDS(cache_config_mutex_retry_delay));
       return &c->_action;
     }
 
@@ -152,7 +152,7 @@ CacheVC::derefRead(int event, Event * e)
 Lcollision:{
     CACHE_TRY_LOCK(lock, part->mutex, mutex->thread_holding);
     if (!lock) {
-      mutex->thread_holding->schedule_in_local(this, MUTEX_RETRY_DELAY);
+      mutex->thread_holding->schedule_in_local(this, HRTIME_MSECONDS(cache_config_mutex_retry_delay));
       return EVENT_CONT;
     }
     if (dir_probe(&key, part, &dir, &last_collision)) {

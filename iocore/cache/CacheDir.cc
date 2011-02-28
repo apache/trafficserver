@@ -124,7 +124,7 @@ OpenDir::signal_readers(int event, Event *e)
     EThread *t1 = newly_delayed_readers.head->mutex->thread_holding;
     if (!t1)
       t1 = mutex->thread_holding;
-    t1->schedule_in(this, MUTEX_RETRY_DELAY);
+    t1->schedule_in(this, HRTIME_MSECONDS(cache_config_mutex_retry_delay));
   }
   return 0;
 }
@@ -1005,7 +1005,7 @@ Lrestart:
   {
     CACHE_TRY_LOCK(lock, gpart[part]->mutex, mutex->thread_holding);
     if (!lock) {
-      trigger = eventProcessor.schedule_in(this, MUTEX_RETRY_DELAY);
+      trigger = eventProcessor.schedule_in(this, HRTIME_MSECONDS(cache_config_mutex_retry_delay));
       return EVENT_CONT;
     }
     Part *d = gpart[part];

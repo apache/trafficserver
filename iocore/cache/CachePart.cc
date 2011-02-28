@@ -115,7 +115,7 @@ CacheVC::scanObject(int event, Event * e)
 
   CACHE_TRY_LOCK(lock, part->mutex, mutex->thread_holding);
   if (!lock) {
-    mutex->thread_holding->schedule_in_local(this, MUTEX_RETRY_DELAY);
+    mutex->thread_holding->schedule_in_local(this, HRTIME_MSECONDS(cache_config_mutex_retry_delay));
     return EVENT_CONT;
   }
 
@@ -400,7 +400,7 @@ CacheVC::scanUpdateDone(int event, Event * e)
     SET_HANDLER(&CacheVC::scanObject);
     return handleEvent(EVENT_IMMEDIATE, 0);
   } else {
-    mutex->thread_holding->schedule_in_local(this, MUTEX_RETRY_DELAY);
+    mutex->thread_holding->schedule_in_local(this, HRTIME_MSECONDS(cache_config_mutex_retry_delay));
     return EVENT_CONT;
   }
 }

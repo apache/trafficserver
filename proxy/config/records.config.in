@@ -359,6 +359,9 @@ CONFIG proxy.config.cache.min_average_object_size INT 8000
    # How many I/O threads to allocate per disk (spindle). Be aware that RAID
    # disks would show up to TS as a single spindle.
 CONFIG proxy.config.cache.threads_per_disk INT 8
+   # Time (in ms) to delay until retrying to acquire a cache lock. Setting
+   # this lower will reduce latencies in some cases, but consume more CPU.
+CONFIG proxy.config.cache.mutex_retry_delay INT 11
 ##############################################################################
 #
 # DNS

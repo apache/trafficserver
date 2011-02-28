@@ -76,24 +76,24 @@ struct EvacuationBlock;
 
 #define VC_LOCK_RETRY_EVENT() \
   do { \
-    trigger = mutex->thread_holding->schedule_in_local(this,MUTEX_RETRY_DELAY,event); \
+    trigger = mutex->thread_holding->schedule_in_local(this, HRTIME_MSECONDS(cache_config_mutex_retry_delay), event); \
     return EVENT_CONT; \
   } while (0)
 
 #define VC_SCHED_LOCK_RETRY() \
   do { \
-    trigger = mutex->thread_holding->schedule_in_local(this,MUTEX_RETRY_DELAY); \
+    trigger = mutex->thread_holding->schedule_in_local(this, HRTIME_MSECONDS(cache_config_mutex_retry_delay)); \
     return EVENT_CONT; \
   } while (0)
 
 #define CONT_SCHED_LOCK_RETRY_RET(_c) \
   do { \
-    _c->mutex->thread_holding->schedule_in_local(_c, MUTEX_RETRY_DELAY); \
+    _c->mutex->thread_holding->schedule_in_local(_c, HRTIME_MSECONDS(cache_config_mutex_retry_delay)); \
     return EVENT_CONT; \
   } while (0)
 
 #define CONT_SCHED_LOCK_RETRY(_c) \
-  _c->mutex->thread_holding->schedule_in_local(_c, MUTEX_RETRY_DELAY)
+  _c->mutex->thread_holding->schedule_in_local(_c, HRTIME_MSECONDS(cache_config_mutex_retry_delay))
 
 #define VC_SCHED_WRITER_RETRY() \
   do { \
@@ -228,6 +228,7 @@ extern int cache_config_hit_evacuate_size_limit;
 #endif
 extern int cache_config_force_sector_size;
 extern int cache_config_target_fragment_size;
+extern int cache_config_mutex_retry_delay;
 
 // CacheVC
 struct CacheVC: public CacheVConnection
@@ -686,7 +687,7 @@ CacheVC::handleWriteLock(int event, Event *e)
     CACHE_TRY_LOCK(lock, part->mutex, mutex->thread_holding);
     if (!lock) {
       set_agg_write_in_progress();
-      trigger = mutex->thread_holding->schedule_in_local(this, MUTEX_RETRY_DELAY);
+      trigger = mutex->thread_holding->schedule_in_local(this, HRTIME_MSECONDS(cache_config_mutex_retry_delay));
       return EVENT_CONT;
     }
     ret = handleWrite(EVENT_CALL, e);

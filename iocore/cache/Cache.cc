@@ -78,6 +78,7 @@ int cache_config_enable_checksum = 0;
 int cache_config_alt_rewrite_max_size = 4096;
 int cache_config_read_while_writer = 0;
 char cache_system_config_directory[PATH_NAME_MAX + 1];
+int cache_config_mutex_retry_delay = 2;
 
 // Globals
 
@@ -2674,6 +2675,9 @@ ink_cache_init(ModuleVersion v)
   IOCORE_EstablishStaticConfigInt32(cache_config_max_doc_size, "proxy.config.cache.max_doc_size");
   Debug("cache_init", "proxy.config.cache.max_doc_size = %d = %dMb",
         cache_config_max_doc_size, cache_config_max_doc_size / (1024 * 1024));
+
+  IOCORE_EstablishStaticConfigInt32(cache_config_mutex_retry_delay, "proxy.config.cache.mutex_retry_delay");
+  Debug("cache_init", "proxy.config.cache.mutex_retry_delay = %dms", cache_config_mutex_retry_delay);
 
   // This is just here to make sure IOCORE "standalone" works, it's usually configured in RecordsConfig.cc
   IOCORE_RegisterConfigString(RECT_CONFIG, "proxy.config.config_dir", TS_BUILD_SYSCONFDIR, RECU_DYNAMIC, RECC_NULL, NULL);

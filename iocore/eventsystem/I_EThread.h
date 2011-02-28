@@ -35,7 +35,10 @@
 // perhaps based on proxy.config.stat_api.max_stats_allowed or other configs. XXX
 #define PER_THREAD_DATA (1024*1024)
 
+// This is not used by the cache anymore, it uses proxy.config.cache.mutex_retry_delay
+// instead.
 #define MUTEX_RETRY_DELAY HRTIME_MSECONDS(20)
+
 /** Maximum number of accept events per thread. */
 #define MAX_ACCEPT_EVENTS 20
 
