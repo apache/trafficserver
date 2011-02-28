@@ -360,8 +360,9 @@ CONFIG proxy.config.cache.min_average_object_size INT 8000
    # disks would show up to TS as a single spindle.
 CONFIG proxy.config.cache.threads_per_disk INT 8
    # Time (in ms) to delay until retrying to acquire a cache lock. Setting
-   # this lower will reduce latencies in some cases, but consume more CPU.
-CONFIG proxy.config.cache.mutex_retry_delay INT 11
+   # this low can reduce latencies in some cases, but can consume more CPU.
+   # If you experience CPU spinning, try increasing this setting.
+CONFIG proxy.config.cache.mutex_retry_delay INT 2
 ##############################################################################
 #
 # DNS
