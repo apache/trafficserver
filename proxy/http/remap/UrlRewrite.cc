@@ -757,11 +757,10 @@ UrlRewrite::_doRemap(UrlMappingContainer &mapping_container, URL *request_url)
   request_url->host_set(toHost, toHostLen);
   request_url->port_set(map_to->port_get_raw());
 
-  // Extra byte is potentially needed for prefix path '/'.
-  // Added an extra 3 so that TS wouldn't crash in the field.
-  // Allocate a large buffer to avoid problems.
-  // Need to figure out why we need the 3 bytes or 512 bytes.
-  char newPath[(requestPathLen - fromPathLen) + toPathLen + 8]; // Should be +3, little extra padding won't hurt
+  // Should be +3, little extra padding won't hurt. Use the stack allocation
+  // for better performance (bummer that arrays of variable length is not supported
+  // on Solaris CC.
+  char *newPath = static_cast<char*>(alloca(sizeof(char*)*((requestPathLen - fromPathLen) + toPathLen + 8)));
   int newPathLen = 0;
 
   *newPath = 0;
