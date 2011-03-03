@@ -93,19 +93,34 @@ init_reverse_proxy()
 // odd ball configs, for example if you use the "CONNECT" method, or if you set
 // set proxy.config.url_remap.url_remap_mode to "2" (which is a completely undocumented "feature").
 bool
-request_url_remap(HttpTransact::State * s, HTTPHdr * request_header, char **redirect_url, char **orig_url, char *tag,
+request_url_remap(HttpTransact::State * s, HTTPHdr * request_header, char **redirect_url, char **orig_url,
                   unsigned int filter_mask)
 {
   NOWARN_UNUSED(s);
   NOWARN_UNUSED(request_header);
   NOWARN_UNUSED(redirect_url);
   NOWARN_UNUSED(orig_url);
-  NOWARN_UNUSED(tag);
   NOWARN_UNUSED(filter_mask);
   return false;
   // return rewrite_table ? rewrite_table->Remap(s, request_header, redirect_url, orig_url, tag, filter_mask) : false;
 }
 
+/**
+   This function is used to figure out if a URL needs to be remapped
+   according to the rules in remap.config.
+*/
+mapping_type
+request_url_remap_redirect(HTTPHdr *request_header, URL *redirect_url, char **orig_url)
+{
+  return rewrite_table ? rewrite_table->Remap_redirect(request_header, redirect_url, orig_url) : NONE;
+}
+
+bool
+response_url_remap(HTTPHdr *response_header)
+{
+  return rewrite_table ? rewrite_table->ReverseMap(response_header) : false;
+}
+ 
 
 //
 //

@@ -665,7 +665,14 @@ extern "C"
   extern tsapi const char* TS_URL_SCHEME_NNTP;
   extern tsapi const char* TS_URL_SCHEME_PROSPERO;
   extern tsapi const char* TS_URL_SCHEME_TELNET;
+  extern tsapi const char* TS_URL_SCHEME_TUNNEL;
   extern tsapi const char* TS_URL_SCHEME_WAIS;
+  extern tsapi const char* TS_URL_SCHEME_PNM;
+  extern tsapi const char* TS_URL_SCHEME_RTSP;
+  extern tsapi const char* TS_URL_SCHEME_RTSPU;
+  extern tsapi const char* TS_URL_SCHEME_MMS;
+  extern tsapi const char* TS_URL_SCHEME_MMSU;
+  extern tsapi const char* TS_URL_SCHEME_MMST;
 
   /* --------------------------------------------------------------------------
      URL scheme string lengths */

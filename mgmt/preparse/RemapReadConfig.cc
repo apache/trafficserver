@@ -113,12 +113,9 @@ parseRemapFile(int fd)
         fromScheme = fromURL.scheme_get(&fromSchemeLen);
         toScheme = toURL.scheme_get(&toSchemeLen);
 
-        if ((fromScheme != URL_SCHEME_HTTP
-             && fromScheme != URL_SCHEME_HTTPS
-             && fromScheme != URL_SCHEME_MMS && fromScheme != URL_SCHEME_RTSP) ||
-            (toScheme != URL_SCHEME_HTTP
-             && toScheme != URL_SCHEME_HTTPS && toScheme != URL_SCHEME_MMS && toScheme != URL_SCHEME_RTSP)) {
-          err = "Only http, https, mms, and rtsp remappings are supported";
+        if ((fromScheme != URL_SCHEME_HTTP && fromScheme != URL_SCHEME_HTTPS) ||
+            (toScheme != URL_SCHEME_HTTP && toScheme != URL_SCHEME_HTTPS)) {
+          err = "Only http and https remappings are supported";
           goto FAIL;
         }
         // Check to see if we have a complete URL, if not

@@ -91,7 +91,6 @@ obj_describe(HdrHeapObjImpl * obj, bool recurse)
 inline void
 HdrHeap::init()
 {
-
   m_data_start = m_free_start = ((char *) this) + HDR_HEAP_HDR_SIZE;
   m_magic = HDR_BUF_MAGIC_ALIVE;
   m_writeable = true;
@@ -122,7 +121,6 @@ HdrHeap::init()
 HdrHeap *
 new_HdrHeap(int size)
 {
-
   HdrHeap *h;
   if (size <= HDR_HEAP_DEFAULT_SIZE) {
     size = HDR_HEAP_DEFAULT_SIZE;
@@ -146,7 +144,6 @@ new_HdrHeap(int size)
 HdrStrHeap *
 new_HdrStrHeap(int requested_size)
 {
-
   // The callee is asking for a string heap to be created
   //  that can allocate at least size bytes.  As such we,
   //  need to include the size of the string heap header in
@@ -185,7 +182,6 @@ new_HdrStrHeap(int requested_size)
 void
 HdrHeap::destroy()
 {
-
   if (m_next) {
     m_next->destroy();
   }
@@ -205,7 +201,6 @@ HdrHeap::destroy()
 HdrHeapObjImpl *
 HdrHeap::allocate_obj(int nbytes, int type)
 {
-
   char *new_space;
   HdrHeapObjImpl *obj;
 
@@ -222,7 +217,6 @@ HdrHeap::allocate_obj(int nbytes, int type)
 
 
   while (1) {
-
     if ((unsigned) nbytes <= (h->m_free_size)) {
       new_space = h->m_free_start;
       h->m_free_start += nbytes;
@@ -259,7 +253,6 @@ HdrHeap::deallocate_obj(HdrHeapObjImpl * obj)
 char *
 HdrHeap::allocate_str(int nbytes)
 {
-
   int last_size = 0;
   char *new_space = NULL;
   ink_assert(m_writeable);
@@ -320,14 +313,12 @@ FAILED:
 char *
 HdrHeap::expand_str(const char *old_str, int old_len, int new_len)
 {
-
   char *rw_ptr = (char *) m_read_write_heap.m_ptr;
 
   if (rw_ptr) {
     // First check to see the old string is in this read-write string
     // heap
     if (old_str >= rw_ptr + STR_HEAP_HDR_SIZE && old_str < rw_ptr + m_read_write_heap->m_heap_size) {
-
       // We're in the heap.  Try to grow the string
       char *r = m_read_write_heap->expand((char *) old_str, old_len, new_len);
       if (r) {
@@ -362,7 +353,6 @@ HdrHeap::duplicate_str(const char *str, int nbytes)
 int
 HdrHeap::demote_rw_str_heap()
 {
-
   // First, see if we have any open slots for read
   //  only heaps
   for (int i = 0; i < HDR_BUF_RONLY_HEAPS; i++) {
@@ -395,7 +385,6 @@ HdrHeap::demote_rw_str_heap()
 void
 HdrHeap::coalesce_str_heaps(int incoming_size)
 {
-
   int new_heap_size = incoming_size;
   ink_assert(incoming_size >= 0);
   ink_assert(m_writeable);
@@ -438,7 +427,6 @@ HdrHeap::coalesce_str_heaps(int incoming_size)
 void
 HdrHeap::evacuate_from_str_heaps(HdrStrHeap * new_heap)
 {
-
 //    printf("Str Evac\n");
   // Loop over the objects in heap and call the evacuation
   //  function in each one
@@ -483,7 +471,6 @@ HdrHeap::evacuate_from_str_heaps(HdrStrHeap * new_heap)
 void
 HdrHeap::sanity_check_strs()
 {
-
   int num_heaps = 0;
   struct HeapCheck heaps[HDR_BUF_RONLY_HEAPS + 1];
 
@@ -499,7 +486,6 @@ HdrHeap::sanity_check_strs()
 
   for (int i = 0; i < HDR_BUF_RONLY_HEAPS; i++) {
     if (m_ronly_heap[i].m_heap_start != NULL) {
-
       heaps[num_heaps].start = m_ronly_heap[i].m_heap_start;
       heaps[num_heaps].end = m_ronly_heap[i].m_heap_start + m_ronly_heap[i].m_heap_len;
       num_heaps++;
@@ -555,7 +541,6 @@ HdrHeap::sanity_check_strs()
 int
 HdrHeap::marshal_length()
 {
-
   int len;
 
   // If there is more than one HdrHeap block, we'll
@@ -590,7 +575,6 @@ HdrHeap::marshal_length()
 static uint32_t
 compute_checksum(void *buf, int len)
 {
-
   uint32_t cksum = 0;
 
   while (len > 4) {
@@ -623,7 +607,6 @@ compute_checksum(void *buf, int len)
 int
 HdrHeap::marshal(char *buf, int len)
 {
-
   ink_assert((((uintptr_t) buf) & HDR_PTR_ALIGNMENT_MASK) == 0);
 
   HdrHeap *marshal_hdr = (HdrHeap *) buf;
@@ -731,7 +714,6 @@ HdrHeap::marshal(char *buf, int len)
 
   for (i = 0; i < HDR_BUF_RONLY_HEAPS; i++) {
     if (m_ronly_heap[i].m_heap_start != NULL) {
-
       if (m_ronly_heap[i].m_heap_len > len) {
         goto Failed;
       }
@@ -832,7 +814,6 @@ Failed:
 bool
 HdrHeap::check_marshalled(uint32_t buf_length)
 {
-
   if (this->m_magic != HDR_BUF_MAGIC_MARSHALED) {
     return false;
   }
@@ -987,7 +968,6 @@ HdrHeap::unmarshal(int buf_length, int obj_type, HdrHeapObjImpl ** found_obj, Re
 inline int
 HdrHeap::attach_str_heap(char *h_start, int h_len, RefCountObj * h_ref_obj, int *index)
 {
-
   // Loop over existing entries to see if this one is already present
   for (int z = 0; z < *index; z++) {
     if (m_ronly_heap[z].m_heap_start == h_start) {
@@ -1025,7 +1005,6 @@ HdrHeap::attach_str_heap(char *h_start, int h_len, RefCountObj * h_ref_obj, int 
 void
 HdrHeap::inherit_string_heaps(const HdrHeap * inherit_from)
 {
-
   // if heaps are the same, this is a no-op
   if (inherit_from == (const HdrHeap *) this)
     return;
@@ -1076,7 +1055,6 @@ HdrHeap::inherit_string_heaps(const HdrHeap * inherit_from)
     //  are put into the heap
     coalesce_str_heaps(inherit_str_size);
   } else {
-
     // Copy over read/write string heap if it exists
     if (inherit_from->m_read_write_heap) {
       int str_size = inherit_from->m_read_write_heap->m_heap_size -
@@ -1107,7 +1085,6 @@ HdrHeap::inherit_string_heaps(const HdrHeap * inherit_from)
 void
 HdrHeap::dump_heap(int len)
 {
-
   int count = 0;
   char *tmp = (char *) this;
   char *end;
@@ -1147,7 +1124,6 @@ HdrHeap::dump_heap(int len)
 void
 HdrStrHeap::free()
 {
-
   if (m_heap_size == HDR_STR_HEAP_DEFAULT_SIZE) {
     strHeapAllocator.free_void(this);
   } else {
@@ -1183,7 +1159,6 @@ HdrStrHeap::allocate(int nbytes)
 char *
 HdrStrHeap::expand(char *ptr, int old_size, int new_size)
 {
-
   unsigned int expand_size = new_size - old_size;
 
   ink_assert(ptr >= ((char *) this) + STR_HEAP_HDR_SIZE);
@@ -1217,7 +1192,6 @@ struct StrTest
 static void
 hdr_heap_test_verify(StrTest * str_test, int n)
 {
-
   for (int i = 0; i < n; i++) {
     char *ptr = str_test[i].ptr;
     int len = str_test[i].len;
@@ -1240,7 +1214,6 @@ hdr_heap_test_verify(StrTest * str_test, int n)
 void
 hdr_heap_test()
 {
-
   Note("Starting hdr heap test");
 
   HdrHeap *h = new_HdrHeap();

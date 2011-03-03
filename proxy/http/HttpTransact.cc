@@ -506,6 +506,7 @@ how_to_open_connection(HttpTransact::State* s)
     s->hdr_info.server_request.url_set(s->hdr_info.client_request.url_get());
 
     // TODO yeah, not sure everything here is correct with redirects
+    // This probably doesn't work properly, since request_url_remap() is broken.
     if (request_url_remap(s, &s->hdr_info.server_request, &remap_redirect, &s->unmapped_request_url)) {
       ink_assert(!remap_redirect);      // should not redirect in this code
       HttpTransact::initialize_state_variables_for_origin_server(s, &s->hdr_info.server_request, true);
@@ -632,7 +633,8 @@ HttpTransact::HandleBlindTunnel(State* s)
   bool url_remap_success = false;
   char *remap_redirect = NULL;
 
-  // TODO take a look at this
+  // TODO: take a look at this
+  // This probably doesn't work properly, since request_url_remap() is broken.
   if (url_remap_mode == URL_REMAP_DEFAULT || url_remap_mode == URL_REMAP_ALL) {
     url_remap_success = request_url_remap(s, &s->hdr_info.client_request, &remap_redirect, &s->unmapped_request_url);
   }
@@ -939,6 +941,16 @@ HttpTransact::EndRemapRequest(State* s)
   s->server_info.is_transparent = s->state_machine->ua_session->get_netvc()->get_is_other_side_transparent();
 
 done:
+  /**
+   * Since we don't want to return 404 Not Found error if there's
+   * redirect rule, the function to do redirect is moved before
+   * sending the 404 error.
+   **/
+  if (handleIfRedirect(s)) {
+    Debug("http_trans", "END HttpTransact::RemapRequest");
+    TRANSACT_RETURN(PROXY_INTERNAL_CACHE_NOOP, NULL);
+  }
+
   if (s->reverse_proxy) {
     Debug("url_rewrite", "s->reverse_proxy is true");
   } else {
@@ -1086,6 +1098,55 @@ HttpTransact::ModifyRequest(State* s)
 
   TRANSACT_RETURN(HTTP_API_READ_REQUEST_HDR, HttpTransact::StartRemapRequest);
 }
+
+// This function is supposed to figure out if this transaction is
+// susceptible to a redirection as specified by remap.config
+bool
+HttpTransact::handleIfRedirect(State *s)
+{
+  int answer;
+  URL redirect_url;
+
+  answer = request_url_remap_redirect(&s->hdr_info.client_request, &redirect_url, &s->unmapped_request_url);
+  if ((answer == PERMANENT_REDIRECT) || (answer == TEMPORARY_REDIRECT)) {
+    int remap_redirect_len;
+    char *remap_redirect;
+
+    remap_redirect = redirect_url.string_get_ref(&remap_redirect_len);
+    if (answer == TEMPORARY_REDIRECT) {
+      if ((s->client_info).http_version.m_version == HTTP_VERSION(1, 1)) {
+        build_error_response(s, (HTTPStatus) 307,
+                             /* which is HTTP/1.1 for HTTP_STATUS_MOVED_TEMPORARILY */
+                             "Redirect", "redirect#moved_temporarily",
+                             "%s <a href=\"%s\">%s</a>. %s",
+                             "The document you requested is now",
+                             remap_redirect, remap_redirect, "Please update your documents and bookmarks accordingly");
+      } else {
+        build_error_response(s,
+                             HTTP_STATUS_MOVED_TEMPORARILY,
+                             "Redirect",
+                             "redirect#moved_temporarily",
+                             "%s <a href=\"%s\">%s</a>. %s",
+                             "The document you requested is now",
+                             remap_redirect, remap_redirect, "Please update your documents and bookmarks accordingly");
+      }
+    } else {
+      build_error_response(s,
+                           HTTP_STATUS_MOVED_PERMANENTLY,
+                           "Redirect",
+                           "redirect#moved_permanently",
+                           "%s <a href=\"%s\">%s</a>. %s",
+                           "The document you requested is now",
+                           remap_redirect, remap_redirect, "Please update your documents and bookmarks accordingly");
+    }
+    s->hdr_info.client_response.value_set(MIME_FIELD_LOCATION, MIME_LEN_LOCATION, remap_redirect, remap_redirect_len);
+    redirect_url.destroy();
+    return true;
+  }
+
+  return false;
+}
+
 
 void
 HttpTransact::HandleRequest(State* s)
@@ -7956,6 +8017,13 @@ HttpTransact::build_response(State* s, HTTPHdr* base_response, HTTPHdr* outgoing
     HttpTransactHeaders::insert_via_header_in_response(s->http_config_param, s->next_hop_scheme, outgoing_response, s->via_string);
 
   HttpTransactHeaders::convert_response(outgoing_version, outgoing_response);
+
+  // process reverse mappings on the location header
+  HTTPStatus outgoing_status = outgoing_response->status_get();
+
+  if ((outgoing_status != 200) && (((outgoing_status >= 300) && (outgoing_status < 400)) || (outgoing_status == 201))) {
+    response_url_remap(outgoing_response);
+  }
 
   if (s->http_config_param->enable_http_stats) {
     if (s->hdr_info.server_response.valid() && s->http_config_param->wuts_enabled) {

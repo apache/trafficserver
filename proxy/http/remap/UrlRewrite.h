@@ -73,6 +73,8 @@ public:
   UrlRewrite(const char *file_var_in);
    ~UrlRewrite();
   int BuildTable();
+  mapping_type Remap_redirect(HTTPHdr * request_header, URL *redirect_url, char **orig_url);
+  bool ReverseMap(HTTPHdr *response_header);
   void SetReverseFlag(int flag);
   void Print();
 //  private:
@@ -127,28 +129,28 @@ public:
   MappingsStore temporary_redirects;
 
   bool forwardMappingLookup(URL *request_url, int request_port, const char *request_host,
-                            int request_host_len, UrlMappingContainer &mapping_container, char *tag = NULL)
+                            int request_host_len, UrlMappingContainer &mapping_container)
   {
     return _mappingLookup(forward_mappings, request_url, request_port, request_host, request_host_len,
-                          mapping_container, tag);
+                          mapping_container);
   }
   bool reverseMappingLookup(URL *request_url, int request_port, const char *request_host,
-                            int request_host_len, UrlMappingContainer &mapping_container, char *tag = NULL)
+                            int request_host_len, UrlMappingContainer &mapping_container)
   {
     return _mappingLookup(reverse_mappings, request_url, request_port, request_host, request_host_len,
-                          mapping_container, tag);
+                          mapping_container);
   }
   bool permanentRedirectLookup(URL *request_url, int request_port, const char *request_host,
-                               int request_host_len, UrlMappingContainer &mapping_container, char *tag = NULL)
+                               int request_host_len, UrlMappingContainer &mapping_container)
   {
     return _mappingLookup(permanent_redirects, request_url, request_port, request_host, request_host_len,
-                          mapping_container, tag);
+                          mapping_container);
   }
   bool temporaryRedirectLookup(URL *request_url, int request_port, const char *request_host,
-                               int request_host_len, UrlMappingContainer &mapping_container, char *tag = NULL)
+                               int request_host_len, UrlMappingContainer &mapping_container)
   {
     return _mappingLookup(temporary_redirects, request_url, request_port, request_host, request_host_len,
-                          mapping_container, tag);
+                          mapping_container);
   }
 
   int UrlWhack(char *toWhack, int *origLength);
@@ -177,12 +179,13 @@ public:
   remap_plugin_info *remap_pi_list;
 
 private:
+  void _doRemap(UrlMappingContainer &mapping_container, URL *request_url);
   bool _mappingLookup(MappingsStore &mappings, URL *request_url, int request_port, const char *request_host,
-                      int request_host_len, UrlMappingContainer &mapping_container, char *tag);
+                      int request_host_len, UrlMappingContainer &mapping_container);
   url_mapping *_tableLookup(InkHashTable * h_table, URL * request_url, int request_port, char *request_host,
-                            int request_host_len, char *tag);
+                            int request_host_len);
   bool _regexMappingLookup(RegexMappingList &regex_mappings, URL * request_url, int request_port, const char *request_host,
-                           int request_host_len, char *tag, int rank_ceiling,
+                           int request_host_len, int rank_ceiling,
                            UrlMappingContainer &mapping_container);
   int _expandSubstitutions(int *matches_info, const RegexMapping &reg_map, const char *matched_string, char *dest_buf,
                            int dest_buf_size);

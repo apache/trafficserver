@@ -106,10 +106,15 @@ tsapi const char *TS_URL_SCHEME_MAILTO;
 tsapi const char *TS_URL_SCHEME_NEWS;
 tsapi const char *TS_URL_SCHEME_NNTP;
 tsapi const char *TS_URL_SCHEME_PROSPERO;
+tsapi const char *TS_URL_SCHEME_TELNET;
+tsapi const char *TS_URL_SCHEME_TUNNEL;
+tsapi const char *TS_URL_SCHEME_WAIS;
+tsapi const char *TS_URL_SCHEME_PNM;
 tsapi const char *TS_URL_SCHEME_RTSP;
 tsapi const char *TS_URL_SCHEME_RTSPU;
-tsapi const char *TS_URL_SCHEME_TELNET;
-tsapi const char *TS_URL_SCHEME_WAIS;
+tsapi const char *TS_URL_SCHEME_MMS;
+tsapi const char *TS_URL_SCHEME_MMSU;
+tsapi const char *TS_URL_SCHEME_MMST;
 
 /* URL schemes string lengths */
 tsapi int TS_URL_LEN_FILE;
@@ -122,7 +127,14 @@ tsapi int TS_URL_LEN_NEWS;
 tsapi int TS_URL_LEN_NNTP;
 tsapi int TS_URL_LEN_PROSPERO;
 tsapi int TS_URL_LEN_TELNET;
+tsapi int TS_URL_LEN_TUNNEL;
 tsapi int TS_URL_LEN_WAIS;
+tsapi int TS_URL_LEN_PNM;
+tsapi int TS_URL_LEN_RTSP;
+tsapi int TS_URL_LEN_RTSPU;
+tsapi int TS_URL_LEN_MMS;
+tsapi int TS_URL_LEN_MMSU;
+tsapi int TS_URL_LEN_MMST;
 
 /* MIME fields */
 tsapi const char *TS_MIME_FIELD_ACCEPT;

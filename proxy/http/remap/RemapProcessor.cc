@@ -41,7 +41,7 @@ RemapProcessor::start(int num_threads)
 
 */
 bool
-RemapProcessor::setup_for_remap(HttpTransact::State * s)
+RemapProcessor::setup_for_remap(HttpTransact::State *s)
 {
   Debug("url_rewrite", "setting up for remap: %x", s);
   URL *request_url = NULL;
@@ -49,7 +49,6 @@ RemapProcessor::setup_for_remap(HttpTransact::State * s)
   HTTPHdr *request_header = &s->hdr_info.client_request;
   char **redirect_url = &s->remap_redirect;
   char **orig_url = &s->unmapped_request_url;
-  char *tag = NULL;
   const char *request_host;
   int request_host_len;
   int request_port;
@@ -84,7 +83,7 @@ RemapProcessor::setup_for_remap(HttpTransact::State * s)
 
   Debug("url_rewrite", "[lookup] attempting %s lookup", proxy_request ? "proxy" : "normal");
 
-  mapping_found = rewrite_table->forwardMappingLookup(request_url, request_port, request_host, request_host_len, s->url_map, tag);
+  mapping_found = rewrite_table->forwardMappingLookup(request_url, request_port, request_host, request_host_len, s->url_map);
 
   if (!proxy_request) { // do extra checks on a server request
 
@@ -99,7 +98,7 @@ RemapProcessor::setup_for_remap(HttpTransact::State * s)
     // If there's no host, we've already done this.
     if (!mapping_found && rewrite_table->nohost_rules && request_host_len) {
       Debug("url_rewrite", "[lookup] nothing matched");
-      mapping_found = rewrite_table->forwardMappingLookup(request_url, 0, "", 0, s->url_map, tag);
+      mapping_found = rewrite_table->forwardMappingLookup(request_url, 0, "", 0, s->url_map);
     }
 
     if (mapping_found && orig_url) {
@@ -122,7 +121,7 @@ RemapProcessor::setup_for_remap(HttpTransact::State * s)
 }
 
 bool
-RemapProcessor::finish_remap(HttpTransact::State * s)
+RemapProcessor::finish_remap(HttpTransact::State *s)
 {
   url_mapping *map = NULL;
   HTTPHdr *request_header = &s->hdr_info.client_request;
@@ -274,7 +273,7 @@ RemapProcessor::finish_remap(HttpTransact::State * s)
 }
 
 Action *
-RemapProcessor::perform_remap(Continuation * cont, HttpTransact::State * s)
+RemapProcessor::perform_remap(Continuation *cont, HttpTransact::State *s)
 {
   Debug("url_rewrite", "Beginning RemapProcessor::perform_remap");
   HTTPHdr *request_header = &s->hdr_info.client_request;

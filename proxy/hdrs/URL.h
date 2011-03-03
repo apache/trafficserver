@@ -77,12 +77,12 @@ struct URLImpl:public HdrHeapObjImpl
   // 8 bytes + 1 bit, will result in padding
 
   // Marshaling Functions
-  int marshal(MarshalXlate * str_xlate, int num_xlate);
+  int marshal(MarshalXlate *str_xlate, int num_xlate);
   void unmarshal(intptr_t offset);
-  void move_strings(HdrStrHeap * new_heap);
+  void move_strings(HdrStrHeap *new_heap);
 
   // Sanity Check Functions
-  void check_strings(HeapCheck * heaps, int num_heaps);
+  void check_strings(HeapCheck *heaps, int num_heaps);
 };
 
 
@@ -148,62 +148,62 @@ extern int url_hash_method;
 
 
 /* Private */
-void url_adjust(MarshalXlate * str_xlate, int num_xlate);
+void url_adjust(MarshalXlate *str_xlate, int num_xlate);
 
 /* Public */
 void url_init();
 
-URLImpl *url_create(HdrHeap * heap);
-void url_clear(URLImpl * url_impl);
-void url_nuke_proxy_stuff(URLImpl * d_url);
+URLImpl *url_create(HdrHeap *heap);
+void url_clear(URLImpl *url_impl);
+void url_nuke_proxy_stuff(URLImpl *d_url);
 
-URLImpl *url_copy(URLImpl * s_url, HdrHeap * s_heap, HdrHeap * d_heap, bool inherit_strs = true);
-void url_copy_onto(URLImpl * s_url, HdrHeap * s_heap, URLImpl * d_url, HdrHeap * d_heap, bool inherit_strs = true);
-void url_copy_onto_as_server_url(URLImpl * s_url, HdrHeap * s_heap,
-                                 URLImpl * d_url, HdrHeap * d_heap, bool inherit_strs = true);
+URLImpl *url_copy(URLImpl *s_url, HdrHeap *s_heap, HdrHeap *d_heap, bool inherit_strs = true);
+void url_copy_onto(URLImpl *s_url, HdrHeap *s_heap, URLImpl *d_url, HdrHeap *d_heap, bool inherit_strs = true);
+void url_copy_onto_as_server_url(URLImpl *s_url, HdrHeap *s_heap,
+                                 URLImpl *d_url, HdrHeap *d_heap, bool inherit_strs = true);
 
-int url_print(URLImpl * u, char *buf, int bufsize, int *bufindex, int *dumpoffset);
-void url_describe(HdrHeapObjImpl * raw, bool recurse);
+int url_print(URLImpl *u, char *buf, int bufsize, int *bufindex, int *dumpoffset);
+void url_describe(HdrHeapObjImpl *raw, bool recurse);
 
-int url_length_get(URLImpl * url);
-char *url_string_get(URLImpl * url, Arena * arena, int *length, HdrHeap * heap);
-void url_clear_string_ref(URLImpl * url);
-char *url_string_get_ref(HdrHeap * heap, URLImpl * url, int *length);
-void url_called_set(URLImpl * url);
-char *url_string_get_buf(URLImpl * url, char *dstbuf, int dstbuf_size, int *length);
+int url_length_get(URLImpl *url);
+char *url_string_get(URLImpl *url, Arena *arena, int *length, HdrHeap *heap);
+void url_clear_string_ref(URLImpl *url);
+char *url_string_get_ref(HdrHeap *heap, URLImpl *url, int *length);
+void url_called_set(URLImpl *url);
+char *url_string_get_buf(URLImpl *url, char *dstbuf, int dstbuf_size, int *length);
 
-const char *url_scheme_get(URLImpl * url, int *length);
-void url_MD5_get(URLImpl * url, INK_MD5 * md5);
-void url_host_MD5_get(URLImpl * url, INK_MD5 * md5);
-const char *url_scheme_set(HdrHeap * heap, URLImpl * url,
+const char *url_scheme_get(URLImpl *url, int *length);
+void url_MD5_get(URLImpl *url, INK_MD5 *md5);
+void url_host_MD5_get(URLImpl *url, INK_MD5 *md5);
+const char *url_scheme_set(HdrHeap *heap, URLImpl *url,
                            const char *value, int value_wks_idx, int length, bool copy_string);
 
 /* Internet specific */
-void url_user_set(HdrHeap * heap, URLImpl * url, const char *value, int length, bool copy_string);
-void url_password_set(HdrHeap * heap, URLImpl * url, const char *value, int length, bool copy_string);
-void url_host_set(HdrHeap * heap, URLImpl * url, const char *value, int length, bool copy_string);
-void url_port_set(HdrHeap * heap, URLImpl * url, unsigned int port);
+void url_user_set(HdrHeap *heap, URLImpl *url, const char *value, int length, bool copy_string);
+void url_password_set(HdrHeap *heap, URLImpl *url, const char *value, int length, bool copy_string);
+void url_host_set(HdrHeap *heap, URLImpl *url, const char *value, int length, bool copy_string);
+void url_port_set(HdrHeap *heap, URLImpl *url, unsigned int port);
 
 /* HTTP specific */
-void url_path_set(HdrHeap * heap, URLImpl * url, const char *value, int length, bool copy_string);
+void url_path_set(HdrHeap *heap, URLImpl *url, const char *value, int length, bool copy_string);
 
-void url_type_set(URLImpl * url, unsigned int type);
+void url_type_set(URLImpl *url, unsigned int type);
 
 /* HTTP specific */
-void url_params_set(HdrHeap * heap, URLImpl * url, const char *value, int length, bool copy_string);
-void url_query_set(HdrHeap * heap, URLImpl * url, const char *value, int length, bool copy_string);
-void url_fragment_set(HdrHeap * heap, URLImpl * url, const char *value, int length, bool copy_string);
+void url_params_set(HdrHeap *heap, URLImpl *url, const char *value, int length, bool copy_string);
+void url_query_set(HdrHeap *heap, URLImpl *url, const char *value, int length, bool copy_string);
+void url_fragment_set(HdrHeap *heap, URLImpl *url, const char *value, int length, bool copy_string);
 
-MIMEParseResult url_parse(HdrHeap * heap, URLImpl * url, const char **start, const char *end, bool copy_strings);
-MIMEParseResult url_parse_no_path_component_breakdown(HdrHeap * heap, URLImpl * url,
+MIMEParseResult url_parse(HdrHeap *heap, URLImpl *url, const char **start, const char *end, bool copy_strings);
+MIMEParseResult url_parse_no_path_component_breakdown(HdrHeap *heap, URLImpl *url,
                                                       const char **start, const char *end, bool copy_strings);
-MIMEParseResult url_parse_internet(HdrHeap * heap, URLImpl * url,
+MIMEParseResult url_parse_internet(HdrHeap *heap, URLImpl *url,
                                    const char **start, const char *end, bool copy_strings);
-MIMEParseResult url_parse_http(HdrHeap * heap, URLImpl * url, const char **start, const char *end, bool copy_strings);
-MIMEParseResult url_parse_http_no_path_component_breakdown(HdrHeap * heap, URLImpl * url,
+MIMEParseResult url_parse_http(HdrHeap *heap, URLImpl *url, const char **start, const char *end, bool copy_strings);
+MIMEParseResult url_parse_http_no_path_component_breakdown(HdrHeap *heap, URLImpl *url,
                                                            const char **start, const char *end, bool copy_strings);
 
-char *url_unescapify(Arena * arena, const char *str, int length);
+char *url_unescapify(Arena *arena, const char *str, int length);
 
 inline int
 url_canonicalize_port(int type, int port)
@@ -220,16 +220,16 @@ url_canonicalize_port(int type, int port)
 class URL:public HdrHeapSDKHandle
 {
 public:
-  URLImpl * m_url_impl;
+  URLImpl *m_url_impl;
 
   URL();
   ~URL();
 
   int valid() const;
 
-  void create(HdrHeap * h);
-  void copy(const URL * url);
-  void copy_shallow(const URL * url);
+  void create(HdrHeap *h);
+  void copy(const URL *url);
+  void copy_shallow(const URL *url);
   void clear();
   void reset();
   // Note that URL::destroy() is inherited from HdrHeapSDKHandle.
@@ -239,11 +239,11 @@ public:
 
   int length_get();
   void clear_string_ref();
-  char *string_get(Arena * arena, int *length = NULL);
+  char *string_get(Arena *arena, int *length = NULL);
   char *string_get_ref(int *length = NULL);
   char *string_get_buf(char *dstbuf, int dsbuf_size, int *length = NULL);
-  void MD5_get(INK_MD5 * md5);
-  void host_MD5_get(INK_MD5 * md5);
+  void MD5_get(INK_MD5 *md5);
+  void host_MD5_get(INK_MD5 *md5);
 
   const char *scheme_get(int *length);
   int scheme_get_wksidx();
@@ -277,7 +277,7 @@ public:
   MIMEParseResult parse_no_path_component_breakdown(const char *str, int length);
 
 public:
-  static char *unescapify(Arena * arena, const char *str, int length);
+  static char *unescapify(Arena *arena, const char *str, int length);
 
 private:
 
@@ -290,14 +290,17 @@ private:
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-inline URL::URL():m_url_impl(NULL)
+inline
+URL::URL()
+  : m_url_impl(NULL)
 {
 }
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-inline URL::~URL()
+inline
+URL::~URL()
 {
 }
 
@@ -314,7 +317,7 @@ URL::valid() const
   -------------------------------------------------------------------------*/
 
 inline void
-URL::create(HdrHeap * heap)
+URL::create(HdrHeap *heap)
 {
   if (heap) {
     m_heap = heap;
@@ -329,7 +332,7 @@ URL::create(HdrHeap * heap)
   -------------------------------------------------------------------------*/
 
 inline void
-URL::copy(const URL * url)
+URL::copy(const URL *url)
 {
   ink_debug_assert(url->valid());
   url_copy_onto(url->m_url_impl, url->m_heap, m_url_impl, m_heap);
@@ -339,7 +342,7 @@ URL::copy(const URL * url)
   -------------------------------------------------------------------------*/
 
 inline void
-URL::copy_shallow(const URL * url)
+URL::copy_shallow(const URL *url)
 {
   ink_debug_assert(url->valid());
   this->set(url);
@@ -396,7 +399,7 @@ URL::length_get()
   -------------------------------------------------------------------------*/
 
 inline char *
-URL::string_get(Arena * arena_or_null_for_malloc, int *length)
+URL::string_get(Arena *arena_or_null_for_malloc, int *length)
 {
   ink_debug_assert(valid());
   return url_string_get(m_url_impl, arena_or_null_for_malloc, length, m_heap);
@@ -430,7 +433,7 @@ URL::string_get_buf(char *dstbuf, int dsbuf_size, int *length)
   -------------------------------------------------------------------------*/
 
 inline void
-URL::MD5_get(INK_MD5 * md5)
+URL::MD5_get(INK_MD5 *md5)
 {
   ink_debug_assert(valid());
   url_MD5_get(m_url_impl, md5);
@@ -440,7 +443,7 @@ URL::MD5_get(INK_MD5 * md5)
   -------------------------------------------------------------------------*/
 
 inline void
-URL::host_MD5_get(INK_MD5 * md5)
+URL::host_MD5_get(INK_MD5 *md5)
 {
   ink_debug_assert(valid());
   url_host_MD5_get(m_url_impl, md5);
@@ -717,7 +720,7 @@ URL::parse_no_path_component_breakdown(const char *str, int length)
   -------------------------------------------------------------------------*/
 
 inline char *
-URL::unescapify(Arena * arena, const char *str, int length)
+URL::unescapify(Arena *arena, const char *str, int length)
 {
   return url_unescapify(arena, str, length);
 }
