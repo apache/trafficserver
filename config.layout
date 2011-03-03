@@ -189,3 +189,23 @@
     logdir:        /var/log/trafficserver
     cachedir: /var/cache/trafficserver
 </Layout>
+
+#   Gentoo Linux TrafficServer path layout.
+<Layout Gentoo>
+    prefix:        /usr
+    exec_prefix:   ${prefix}
+    bindir:        ${exec_prefix}/bin
+    sbindir:       ${exec_prefix}/sbin
+    libdir:        ${exec_prefix}/lib+
+    libexecdir:    ${libdir}/plugins
+    infodir:       ${prefix}/share/info
+    mandir:        ${prefix}/share/man
+    sysconfdir:    /etc+
+    datadir:       ${prefix}/share+
+    installbuilddir: ${datadir}/build
+    includedir:    ${prefix}/include+
+    localstatedir: /var+
+    runtimedir:    /var/run+
+    logdir:        /var/log+
+    cachedir:      /var/cache+
+</Layout>
