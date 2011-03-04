@@ -141,10 +141,10 @@ public:
   inkcoreapi ip_addr_t get_ip();
   inkcoreapi ip_addr_t get_client_ip();
 
-    HttpRequestData():hdr(NULL), hostname_str(NULL), api_info(NULL),
-    xact_start(0), src_ip(0), dest_ip(0), incoming_port(0), tag(NULL)
-  {
-  }
+  HttpRequestData()
+    : hdr(NULL), hostname_str(NULL), api_info(NULL),
+      xact_start(0), src_ip(0), dest_ip(0), incoming_port(0), tag(NULL)
+  { }
 
   HTTPHdr *hdr;
   char *hostname_str;

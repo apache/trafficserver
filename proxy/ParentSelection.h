@@ -47,8 +47,6 @@ struct matcher_line;
 struct ParentResult;
 class ParentRecord;
 
-#define PARENT_SELECTION_TIMEOUT            (HRTIME_HOUR*4)
-
 enum ParentResultType
 {
   PARENT_UNDEFINED, PARENT_DIRECT,
@@ -63,8 +61,8 @@ typedef ControlMatcher<ParentRecord, ParentResult> P_table;
 struct ParentResult
 {
   ParentResult()
-    : r(PARENT_UNDEFINED), hostname(NULL), port(0),
-      line_number(0), epoch(NULL), rec(NULL), last_parent(0), start_parent(0), wrap_around(false), retry(false)
+    : r(PARENT_UNDEFINED), hostname(NULL), port(0), line_number(0), epoch(NULL), rec(NULL),
+      last_parent(0), start_parent(0), wrap_around(false), retry(false)
   { };
 
   // For outside consumption
@@ -94,38 +92,38 @@ struct ParentConfigParams:public ConfigInfo
   //
   //   Does initial parent lookup
   //
-  inkcoreapi void findParent(HttpRequestData * rdata, ParentResult * result, char *tag = NULL);
+  inkcoreapi void findParent(HttpRequestData *rdata, ParentResult *result);
 
   // void markParentDown(ParentResult* rsult)
   //
   //    Marks the parent pointed to by result as down
   //
-  inkcoreapi void markParentDown(ParentResult * result);
+  inkcoreapi void markParentDown(ParentResult *result);
 
   // void recordRetrySuccess
   //
   //    After a successful retry, http calls this function
   //      to clear the bits indicating the parent is down
   //
-  void recordRetrySuccess(ParentResult * result);
+  void recordRetrySuccess(ParentResult *result);
 
   // void nextParent(RD* rdata, ParentResult* result);
   //
   //    Marks the parent pointed to by result as down and attempts
   //      to find the next parent
   //
-  inkcoreapi void nextParent(HttpRequestData * rdata, ParentResult * result);
+  inkcoreapi void nextParent(HttpRequestData *rdata, ParentResult *result);
 
   // bool parentExists(HttpRequestData* rdata)
   //
   //   Returns true if there is a parent matching the request data and
   //   false otherwise
-  bool parentExists(HttpRequestData * rdata);
+  bool parentExists(HttpRequestData *rdata);
 
   // bool apiParentExists(HttpRequestData* rdata)
   //
   //   Retures true if a parent has been set through the api
-  bool apiParentExists(HttpRequestData * rdata);
+  bool apiParentExists(HttpRequestData *rdata);
 
   P_table *ParentTable;
   ParentRecord *DefaultParent;
@@ -139,11 +137,12 @@ struct ParentConfig
 {
 public:
   static void startup();
-
   static void reconfigure();
-  inkcoreapi static ParentConfigParams *acquire();
-  inkcoreapi static void release(ParentConfigParams * params);
   static void print();
+
+  inkcoreapi static ParentConfigParams *acquire() { return (ParentConfigParams *) configProcessor.get(ParentConfig::m_id); }
+  inkcoreapi static void release(ParentConfigParams *params) { configProcessor.release(ParentConfig::m_id, params); }
+
 
   static int m_id;
 };
@@ -178,24 +177,24 @@ enum ParentRR_t
 //   A record for a configuration line in the parent.config
 //    file
 //
-class ParentRecord:public ControlBase
+class ParentRecord: public ControlBase
 {
 public:
-  ParentRecord();
+  ParentRecord()
+    : parents(NULL), num_parents(0), round_robin(P_NO_ROUND_ROBIN), rr_next(0), go_direct(true)
+  { }
+
   ~ParentRecord();
 
-  char *Init(matcher_line * line_info);
+  char *Init(matcher_line *line_info);
   bool DefaultInit(char *val);
-  void UpdateMatch(ParentResult * result, RD * rdata);
-  void FindParent(bool firstCall, ParentResult * result, RD * rdata, ParentConfigParams * config);
+  void UpdateMatch(ParentResult *result, RD *rdata);
+  void FindParent(bool firstCall, ParentResult *result, RD *rdata, ParentConfigParams *config);
   void Print();
   pRecord *parents;
   int num_parents;
 
-  bool bypass_ok()
-  {
-    return go_direct;
-  };
+  bool bypass_ok() const { return go_direct; }
 
   const char *scheme;
   //private:
@@ -205,16 +204,6 @@ public:
   bool go_direct;
 };
 
-inline
-ParentRecord::ParentRecord()
-  : parents(NULL),
-    num_parents(0),
-    round_robin(P_NO_ROUND_ROBIN),
-    rr_next(0),
-    go_direct(true)
-{
-}
-
 // Helper Functions
 ParentRecord *createDefaultParent(char *val);
 void reloadDefaultParent(char *val);
@@ -222,9 +211,9 @@ void reloadParentFile();
 int parentSelection_CB(const char *name, RecDataT data_type, RecData data, void *cookie);
 
 // Unit Test Functions
-void show_result(ParentResult * aParentResult);
-void br(HttpRequestData * h, const char *os_hostname, int dest_ip = 0);       // short for build request
-int verify(ParentResult * r, ParentResultType e, const char *h, int p);
+void show_result(ParentResult *aParentResult);
+void br(HttpRequestData *h, const char *os_hostname, int dest_ip = 0);       // short for build request
+int verify(ParentResult *r, ParentResultType e, const char *h, int p);
 
 /*
   For supporting multiple Socks servers, we essentially use the
@@ -236,16 +225,14 @@ int verify(ParentResult * r, ParentResultType e, const char *h, int p);
   All the members in ParentConfig are static. Right now
   we will duplicate the code for these static functions.
 */
-
 struct SocksServerConfig
 {
-public:
   static void startup();
-
   static void reconfigure();
-  static ParentConfigParams *acquire();
-  static void release(ParentConfigParams * params);
   static void print();
+
+  static ParentConfigParams *acquire() { return (ParentConfigParams *) configProcessor.get(SocksServerConfig::m_id); }
+  static void release(ParentConfigParams *params) { configProcessor.release(SocksServerConfig::m_id, params); }
 
   static int m_id;
 };
