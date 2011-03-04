@@ -194,7 +194,7 @@ public:
   ConfigUpdateCbTable();
   ~ConfigUpdateCbTable();
 
-  void insert(INKContInternal * contp, const char *name, const char *config_path);
+  void insert(INKContInternal * contp, const char *name);
   void invoke(const char *name);
   void invoke(INKContInternal * contp);
 

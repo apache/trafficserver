@@ -68,8 +68,6 @@ struct WebHttpContext
 
   const char *default_file;     // default file
   const char *doc_root;         // document root
-  const char *plugin_doc_root;  // plugin document root
-
 };
 
 WebHttpContext *WebHttpContextCreate(WebHttpConInfo * whci);

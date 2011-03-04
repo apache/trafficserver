@@ -1301,20 +1301,12 @@ ConfigUpdateCbTable::~ConfigUpdateCbTable()
 }
 
 void
-ConfigUpdateCbTable::insert(INKContInternal *contp, const char *name, const char *config_path)
+ConfigUpdateCbTable::insert(INKContInternal *contp, const char *name)
 {
   ink_assert(cb_table != NULL);
 
-  if (contp != NULL) {
-    if (name != NULL) {
-      ink_hash_table_insert(cb_table, (InkHashTableKey) name, (InkHashTableValue) contp);
-      if (config_path != NULL) {
-        char buffer[1024];
-        snprintf(buffer, sizeof(buffer), "%s\t%s", name, config_path);
-        RecSignalManager(MGMT_SIGNAL_PLUGIN_CONFIG_REG, buffer);
-      }
-    }
-  }
+  if (contp && name)
+    ink_hash_table_insert(cb_table, (InkHashTableKey) name, (InkHashTableValue) contp);
 }
 
 void
@@ -1330,7 +1322,7 @@ ConfigUpdateCbTable::invoke(const char *name)
     if (strcmp(name, "*") == 0) {
       ht_entry = ink_hash_table_iterator_first(cb_table, &ht_iter);
       while (ht_entry != NULL) {
-        contp = (INKContInternal *) ink_hash_table_entry_value(cb_table, ht_entry);
+        contp = (INKContInternal *)ink_hash_table_entry_value(cb_table, ht_entry);
         ink_assert(contp != NULL);
         invoke(contp);
         ht_entry = ink_hash_table_iterator_next(cb_table, &ht_iter);
@@ -4028,6 +4020,16 @@ TSConfigDataGet(TSConfig configp)
 // Management
 //
 ////////////////////////////////////////////////////////////////////
+
+void
+TSMgmtUpdateRegister(TSCont contp, const char *plugin_name)
+{
+  sdk_assert(sdk_sanity_check_iocore_structure(contp) == TS_SUCCESS);
+  sdk_assert(sdk_sanity_check_null_ptr((void*)plugin_name) == TS_SUCCESS);
+
+  global_config_cbs->insert((INKContInternal *)contp, plugin_name);
+}
+
 TSReturnCode
 TSMgmtIntGet(const char *var_name, TSMgmtInt *result)
 {

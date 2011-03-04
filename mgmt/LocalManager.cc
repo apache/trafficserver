@@ -704,19 +704,6 @@ LocalManager::handleMgmtMsgFromProcesses(MgmtMessageHdr * mh)
   case MGMT_SIGNAL_CONFIG_FILE_READ:
     mgmt_log(stderr, "[LocalManager::handleMgmtMsgFromProcesses] File done '%d'\n", data_raw);
     break;
-  case MGMT_SIGNAL_PLUGIN_CONFIG_REG:
-    {
-      char *at = strchr(data_raw, '\t');
-      if (at == NULL) {
-        mgmt_elog(stderr, "[LocalManager::handleMgmtMsgFromProcesses] Invalid plugin config msg '%s'\n", data_raw);
-      } else {
-        *at = '\0';
-        char *plugin_config_path = at + 1;
-        char *plugin_name = data_raw;
-        plugin_list.add(plugin_name, plugin_config_path);
-      }
-      break;
-    }
   case MGMT_SIGNAL_PLUGIN_ADD_REC:
     {
       char var_name[256];
@@ -1046,10 +1033,6 @@ LocalManager::startProxy()
     return false;
   }
   mgmt_log(stderr, "[LocalManager::startProxy] Launching ts process\n");
-
-
-  // INKqa10742
-  plugin_list.clear();
 
   pid_t pid;
 

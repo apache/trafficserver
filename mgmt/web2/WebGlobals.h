@@ -97,8 +97,6 @@ struct WebContext
   const char *defaultFile;
   char *docRoot;
   int docRootLen;
-  char *pluginDocRoot;
-  int pluginDocRootLen;
   int adminAuthEnabled;
   WebHttpAuthUser admin_user;   // admin user (always available)
   MgmtHashTable *other_users_ht;        // other users (can change dynamically)
@@ -160,7 +158,6 @@ extern WebContext autoconfContext;
 #define WEB_HTTP_STATE_MORE_DETAIL         0x02 // LESS_DETAIL if bit is 0
 #define WEB_HTTP_STATE_SUBMIT_WARN         0x04 // set if submission warning
 #define WEB_HTTP_STATE_SUBMIT_NOTE         0x08 // set if submission note
-#define WEB_HTTP_STATE_PLUGIN              0x10 // set if this a plugin request
 
 #define WEB_MAX_PAGE_QUERY_LEN             (32+1)
 #define WEB_MAX_EDIT_FILE_SIZE             (32*1024)    // Some browsers limit you to this

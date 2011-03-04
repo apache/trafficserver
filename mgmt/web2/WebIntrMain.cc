@@ -582,14 +582,6 @@ webIntr_main(void *x)
 
   lmgmt->syslogThrInit();
 
-  // Initialize the AutoConf Obj
-  // ewong: don't need anymore
-  //autoConfObj = new AutoConf();
-
-  // Set up frameset bindings
-  // ewong: don't need anymore
-  //initFrameBindings();
-
   // Set up the threads management
 #if defined(darwin)
   static int qnum = 0;
@@ -648,18 +640,6 @@ webIntr_main(void *x)
   }
 
   adminContext.defaultFile = "/index.ink";
-
-  // Figure out the plugin document root
-  RecString plugin_dir;
-  found = (RecGetRecordString_Xmalloc("proxy.config.plugin.plugin_dir", &plugin_dir) == REC_ERR_OKAY);
-  ink_assert(found);
-
-  adminContext.pluginDocRootLen = strlen(ts_base_dir) + strlen(plugin_dir) + strlen(DIR_SEP);
-  adminContext.pluginDocRoot = (char *) xmalloc(adminContext.pluginDocRootLen + 1);
-
-  snprintf(adminContext.pluginDocRoot, adminContext.pluginDocRootLen + 1,
-               "%s%s%s", ts_base_dir, DIR_SEP, plugin_dir);
-  xfree(plugin_dir);
 
   // setup our other_users hash-table (for WebHttpAuth)
   adminContext.other_users_ht = new MgmtHashTable("other_users_ht", false, InkHashTableKeyType_String);

@@ -73,8 +73,6 @@ traffic_manager_SOURCES = \
   AddConfigFilesHere.cc \
   Alarms.cc \
   Alarms.h \
-  AutoConf.cc \
-  AutoConf.h \
   BaseManager.cc \
   BaseManager.h \
   FileManager.cc \
@@ -89,9 +87,7 @@ traffic_manager_SOURCES = \
   RecordsConfig.cc \
   RecordsConfig.h \
   Rollback.cc \
-  Rollback.h \
-  WebPluginList.cc \
-  WebPluginList.h
+  Rollback.h
 
 traffic_manager_LDFLAGS = @EXTRA_CXX_LDFLAGS@ @EXPAT_LDFLAGS@
 traffic_manager_LDADD = \

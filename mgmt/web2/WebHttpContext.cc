@@ -65,7 +65,6 @@ WebHttpContextCreate(WebHttpConInfo * whci)
   whc->ssl_ctx = whci->context->SSL_Context;
   whc->default_file = whci->context->defaultFile;
   whc->doc_root = whci->context->docRoot;
-  whc->plugin_doc_root = whci->context->pluginDocRoot;
   whc->admin_user = whci->context->admin_user;
   whc->other_users_ht = whci->context->other_users_ht;
   whc->lang_dict_ht = whci->context->lang_dict_ht;
@@ -130,6 +129,5 @@ WebHttpContextPrint_Debug(WebHttpContext * whc)
     printf("[WebHttpContext]\n");
     printf("-> default_file    : %s\n", whc->default_file);
     printf("-> doc_root        : %s\n", whc->doc_root);
-    printf("-> plugin_doc_root : %s\n", whc->plugin_doc_root);
   }
 }

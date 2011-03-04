@@ -39,7 +39,6 @@
 #include "BaseManager.h"
 #include "ClusterCom.h"
 #include "VMap.h"
-#include "WebPluginList.h"
 #if TS_HAS_WCCP
 #include <wccp/Wccp.h>
 #endif
@@ -177,7 +176,6 @@ public:
   int syslog_facility;
 #endif
 
-  WebPluginList plugin_list;
 #if TS_HAS_WCCP
   wccp::Cache wccp_cache;
 # endif

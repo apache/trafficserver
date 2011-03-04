@@ -388,25 +388,6 @@ spawn_cgi(WebHttpContext * whc, const char *cgi_path, char **args, bool nowait, 
 
 #endif
 
-  // was this a plugin callout?
-  if (whc->request_state & WEB_HTTP_STATE_PLUGIN) {
-    // notify server plugin to update its config
-    if (success == true && query_string != NULL) {
-      char *plugin_name = new char[qlen];
-      const char *tmp = strstr(query_string, "INK_PLUGIN_NAME=");
-      if (tmp != NULL) {
-        tmp += strlen("INK_PLUGIN_NAME=");
-        for (i = 0; *tmp != '&' && *tmp != '\0'; tmp++) {
-          plugin_name[i++] = *tmp;
-        }
-        plugin_name[i] = '\0';
-        substituteUnsafeChars(plugin_name);
-        lmgmt->signalEvent(MGMT_EVENT_PLUGIN_CONFIG_UPDATE, plugin_name);
-      }
-      delete[]plugin_name;
-    }
-  }
-
   return WEB_HTTP_ERR_OKAY;
 
 }
@@ -1389,7 +1370,6 @@ WebHttpInit()
 void
 WebHttpHandleConnection(WebHttpConInfo * whci)
 {
-
   int err = WEB_HTTP_ERR_OKAY;
 
   WebHttpContext *whc;
@@ -1452,13 +1432,6 @@ WebHttpHandleConnection(WebHttpConInfo * whci)
       }
     }
 #endif
-    // Make a note if we are a plugin.  Being a plugin will affect our
-    // doc_root and how request files and doc_roots are joined to
-    // generate an absolute path.  See WebHttpAddDocRoot_Xmalloc()
-    if (strncmp(file, "/plugins/", 9) == 0) {
-      whc->request_state |= WEB_HTTP_STATE_PLUGIN;
-    }
-
   }
 
   // process query
@@ -1600,21 +1573,13 @@ WebHttpAddDocRoot_Xmalloc(WebHttpContext * whc, const char *file)
 
   int file_len = 0;
   char *doc_root_file;
-  bool is_plugin;
-
-  is_plugin = whc->request_state & WEB_HTTP_STATE_PLUGIN;
 
   file_len = strlen(file);
-  file_len += is_plugin ? strlen(whc->plugin_doc_root) : strlen(whc->doc_root);
+  file_len += strlen(whc->doc_root);
   doc_root_file = (char *) xmalloc(file_len + 1);
 
-  if (is_plugin) {
-    ink_strncpy(doc_root_file, whc->plugin_doc_root, file_len);
-    strncat(doc_root_file, file + strlen("/plugins"), file_len - strlen(doc_root_file));
-  } else {
-    ink_strncpy(doc_root_file, whc->doc_root, file_len);
-    strncat(doc_root_file, file, file_len - strlen(doc_root_file));
-  }
+  ink_strncpy(doc_root_file, whc->doc_root, file_len);
+  strncat(doc_root_file, file, file_len - strlen(doc_root_file));
 
   return doc_root_file;
 
