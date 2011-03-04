@@ -166,14 +166,14 @@ int64_t
 cache_bytes_used(int partition)
 {
   uint64_t used = 0;
-  int start, end;
+  int start = 0; // These defaults are for partition 0 or partition 1 (with partition.config)
+  int end = 1;
 
   if (-1 == partition) {
-    start = 0;
     end = gnpart;
-  } else {
-    start = partition;
-    end = partition + 1;
+  } else if (partition > 1) { // Special case when partition.config is used
+    start = partition - 1;
+    end = partition;
   }
   
   for (int i = start; i < end; i++) {
