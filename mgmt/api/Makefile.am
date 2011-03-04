@@ -53,8 +53,6 @@ libmgmtapilocal_a_SOURCES = \
   GenericParser.cc \
   GenericParser.h \
   INKMgmtAPI.cc \
-  MgmtPlugin.cc \
-  MgmtPlugin.h \
   NetworkUtilsDefs.h \
   NetworkUtilsLocal.cc \
   NetworkUtilsLocal.h \

@@ -45,7 +45,6 @@
 //INKqa09866
 #include "TSControlMain.h"
 #include "EventControlMain.h"
-#include "MgmtPlugin.h"
 
 #if !defined(linux)
 // Solaris header files forget this one
