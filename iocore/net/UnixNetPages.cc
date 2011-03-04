@@ -27,6 +27,7 @@
 
 #include "P_Net.h"
 #include "Show.h"
+#include "I_Tasks.h"
 
 struct ShowNet;
 typedef int (ShowNet::*ShowNetEventHandler) (int event, Event * data);
@@ -141,7 +142,7 @@ struct ShowNet: public ShowCont
                     "<th>Inactive Timeout</th>"
                     "<th>Active   Timeout</th>" "<th>Shutdown</th>" "<th>Comments</th>" "</tr>\n"));
     SET_HANDLER(&ShowNet::showConnectionsOnThread);
-    eventProcessor.eventthread[ET_NET][0]->schedule_imm(this);
+    eventProcessor.eventthread[ET_NET][0]->schedule_imm(this); // This can not use ET_TASK.
     return EVENT_CONT;
   }
 
@@ -181,7 +182,7 @@ struct ShowNet: public ShowCont
   {
     CHECK_SHOW(begin("Net Threads"));
     SET_HANDLER(&ShowNet::showSingleThread);
-    eventProcessor.eventthread[ET_NET][0]->schedule_imm(this);
+    eventProcessor.eventthread[ET_NET][0]->schedule_imm(this); // This can not use ET_TASK
     return EVENT_CONT;
   }
   int showSingleConnection(int event, Event * e)
@@ -209,6 +210,7 @@ register_ShowNet(Continuation * c, HTTPHdr * h)
   ShowNet *s = NEW(new ShowNet(c, h));
   int path_len;
   const char *path = h->url_get()->path_get(&path_len);
+
   SET_CONTINUATION_HANDLER(s, &ShowNet::showMain);
   if (STREQ_PREFIX(path, path_len, "connections")) {
     SET_CONTINUATION_HANDLER(s, &ShowNet::showConnections);
@@ -235,7 +237,7 @@ register_ShowNet(Continuation * c, HTTPHdr * h)
       s->port = atoi(gn + 1);
     SET_CONTINUATION_HANDLER(s, &ShowNet::showConnections);
   }
-  eventProcessor.schedule_imm(s, ET_NET);
+  eventProcessor.schedule_imm(s, ET_TASK);
   return &s->action;
 }
 

@@ -1341,7 +1341,7 @@ ConfigUpdateCbTable::invoke(const char *name)
 void
 ConfigUpdateCbTable::invoke(INKContInternal *contp)
 {
-  eventProcessor.schedule_imm(NEW(new ConfigUpdateCallback(contp)), ET_NET);
+  eventProcessor.schedule_imm(NEW(new ConfigUpdateCallback(contp)), ET_TASK);
 }
 
 ////////////////////////////////////////////////////////////////////

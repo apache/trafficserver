@@ -26,6 +26,7 @@
 #ifdef NON_MODULAR
 #include "api/ts/ts.h"
 #include "Show.h"
+#include "I_Tasks.h"
 
 struct ShowCache: public ShowCont {
   int part_index;
@@ -192,7 +193,7 @@ register_ShowCache(Continuation *c, HTTPHdr *h) {
   if (theshowcache->mutex->thread_holding)
     CONT_SCHED_LOCK_RETRY(theshowcache);
   else
-    eventProcessor.schedule_imm(theshowcache, ET_NET);
+    eventProcessor.schedule_imm(theshowcache, ET_TASK);
   return &theshowcache->action;
 }
 

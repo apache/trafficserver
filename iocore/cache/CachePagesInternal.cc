@@ -25,6 +25,7 @@
 
 #ifdef NON_MODULAR
 #include "Show.h"
+#include "I_Tasks.h"
 
 struct ShowCacheInternal: public ShowCont
 {
@@ -98,7 +99,7 @@ register_ShowCacheInternal(Continuation * c, HTTPHdr * h)
   if (theshowcacheInternal->mutex->thread_holding)
     CONT_SCHED_LOCK_RETRY(theshowcacheInternal);
   else
-    eventProcessor.schedule_imm(theshowcacheInternal, ET_NET);
+    eventProcessor.schedule_imm(theshowcacheInternal, ET_TASK);
   return &theshowcacheInternal->action;
 }
 
