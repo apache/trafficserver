@@ -1,5 +1,20 @@
                                                          -*- coding: utf-8 -*-
 
+Changes with Apache Traffic Server 2.1.7
+
+  *) [TS-657] Proper validation of RWW settings on startup.
+
+  *) [TS-688] Remove the "tag" modifier from parent.config.
+
+  *) [TS-682] Segfault when partition.config is used.
+
+  *) [TS-687] Build failures on FreeBSD8
+
+  *) [TS-684] config.layout for gentoo linux, may also be used on Fedora
+
+  *) [TS-675] Make redirect and reverse maps work again.
+
+
 Changes with Apache Traffic Server 2.1.6
 
   *) [TS-678] Add a config option for try-lock retry delay.
@@ -123,6 +138,7 @@ Changes with Apache Traffic Server 2.1.6
   *) [TS-627] Fixes for "make check" to succeed (author: Arno Toell). 
 
   *) [TS-632] Fixes for bad cast and cleanup for Intel CC.
+
 
 Changes with Apache Traffic Server 2.1.5
 
