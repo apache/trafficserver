@@ -22,8 +22,6 @@
  */
 
 
-
-
 #include "P_Cache.h"
 
 // Cache Inspector and State Pages
@@ -218,14 +216,11 @@ cache_stats_bytes_used_cb(const char *name, RecDataT data_type, RecData *data, R
 }
 
 static int
-update_cache_config(const char *name, RecDataT data_type, RecData data, void *cookie)
+validate_rww(int new_value)
 {
-  (void) name;
-  (void) data_type;
-  (void) cookie;
-  int new_value = data.rec_int;
   if (new_value) {
     float http_bg_fill;
+
     IOCORE_ReadConfigFloat(http_bg_fill, "proxy.config.http.background_fill_completed_threshold");
     if (http_bg_fill > 0.0) {
       Note("to enable reading while writing a document, %s should be 0.0: read while writing disabled",
@@ -237,8 +232,21 @@ update_cache_config(const char *name, RecDataT data_type, RecData data, void *co
            "proxy.config.cache.max_doc_size");
       return 0;
     }
+    return new_value;
   }
+  return 0;
+}
+
+static int
+update_cache_config(const char *name, RecDataT data_type, RecData data, void *cookie)
+{
+  NOWARN_UNUSED(name);
+  NOWARN_UNUSED(data_type);
+  NOWARN_UNUSED(cookie);
+
+  volatile int new_value = validate_rww(data.rec_int);
   cache_config_read_while_writer = new_value;
+
   return 0;
 }
 
@@ -2737,6 +2745,7 @@ ink_cache_init(ModuleVersion v)
   Debug("cache_init", "proxy.config.cache.alt_rewrite_max_size = %d", cache_config_alt_rewrite_max_size);
 
   IOCORE_EstablishStaticConfigInt32(cache_config_read_while_writer, "proxy.config.cache.enable_read_while_writer");
+  cache_config_read_while_writer = validate_rww(cache_config_read_while_writer);
   IOCORE_RegisterConfigUpdateFunc("proxy.config.cache.enable_read_while_writer", update_cache_config, NULL);
   Debug("cache_init", "proxy.config.cache.enable_read_while_writer = %d", cache_config_read_while_writer);
 
