@@ -64,6 +64,12 @@ WebHttpAuthInit()
   // of authentication privileges and settings
   g_auth_bypass_ht = ink_hash_table_create(InkHashTableKeyType_String);
   // splash page items
+  ink_hash_table_insert(g_auth_bypass_ht, "/", NULL);
+  ink_hash_table_insert(g_auth_bypass_ht, "/index.ink", NULL);
+  ink_hash_table_insert(g_auth_bypass_ht, "/images/ink_logo_slim.gif", NULL);
+  ink_hash_table_insert(g_auth_bypass_ht, "/images/ink_top_internet.jpg", NULL);
+  // snapshotting of java charts
+  ink_hash_table_insert(g_auth_bypass_ht, "/charting/chartsnap.cgi", NULL);
 
   return;
 
