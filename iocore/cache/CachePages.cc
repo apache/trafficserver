@@ -388,7 +388,7 @@ ShowCache::handleCacheEvent(int event, Event *e) {
       if (!cvio) {
         buffer = new_empty_MIOBuffer();
         buffer_reader = buffer->alloc_reader();
-        content_length = TSVConnCacheObjectSizeGet(cache_vc);
+        content_length = cache_vc->get_object_size();
         cvio = cache_vc->do_io_read(this, content_length, buffer);
       } else
         buffer_reader->consume(buffer_reader->read_avail());

@@ -78,7 +78,7 @@ main_handler(TSCont contp, TSEvent event, void *data)
     return prepare_to_die(contp);
   }
 
-  if (q_current_handler != &state_interface_with_server) {
+  if (q_current_handler != (TxnSMHandler)&state_interface_with_server) {
     if (event == TS_EVENT_VCONN_EOS) {
       return prepare_to_die(contp);
     }
@@ -168,7 +168,7 @@ state_start(TSCont contp, TSEvent event, void *data)
      the size of the client request, set the expecting size to be
      INT64_MAX, so that we will always get TS_EVENT_VCONN_READ_READY
      event, but never TS_EVENT_VCONN_READ_COMPLETE event. */
-  set_handler(txn_sm->q_current_handler, &state_interface_with_client);
+  set_handler(txn_sm->q_current_handler, (TxnSMHandler)&state_interface_with_client);
   txn_sm->q_client_read_vio = TSVConnRead(txn_sm->q_client_vc, (TSCont) contp, txn_sm->q_client_request_buffer, INT64_MAX);
 
   return TS_SUCCESS;
@@ -231,9 +231,9 @@ state_read_request_from_client(TSCont contp, TSEvent event, TSVIO vio)
 
         /* Start to do cache lookup */
         TSDebug("protocol", "Key material: file name is %d, %s*****", txn_sm->q_file_name, txn_sm->q_file_name);
-        txn_sm->q_key = (TSCacheKey) CacheKeyCreate(txn_sm->q_file_name);
+        txn_sm->q_key = (TSCacheKey)CacheKeyCreate(txn_sm->q_file_name);
 
-        set_handler(txn_sm->q_current_handler, &state_handle_cache_lookup);
+        set_handler(txn_sm->q_current_handler, (TxnSMHandler)&state_handle_cache_lookup);
         txn_sm->q_pending_action = TSCacheRead(contp, txn_sm->q_key);
 
         return TS_SUCCESS;
@@ -292,7 +292,7 @@ state_handle_cache_lookup(TSCont contp, TSEvent event, TSVConn vc)
     }
 
     /* Read doc from the cache. */
-    set_handler(txn_sm->q_current_handler, &state_handle_cache_read_response);
+    set_handler(txn_sm->q_current_handler, (TxnSMHandler)&state_handle_cache_read_response);
     txn_sm->q_cache_read_vio = TSVConnRead(txn_sm->q_cache_vc, contp, txn_sm->q_cache_read_buffer, response_size);
 
     break;
@@ -306,7 +306,7 @@ state_handle_cache_lookup(TSCont contp, TSEvent event, TSVConn vc)
     if (ret_val != TS_SUCCESS)
       TSError("fail to write into log");
 
-    set_handler(txn_sm->q_current_handler, &state_handle_cache_prepare_for_write);
+    set_handler(txn_sm->q_current_handler, (TxnSMHandler)&state_handle_cache_prepare_for_write);
     txn_sm->q_pending_action = TSCacheWrite(contp, txn_sm->q_key);
     break;
 
@@ -382,7 +382,7 @@ state_handle_cache_read_response(TSCont contp, TSEvent event, TSVIO vio)
 
     /* Open the write_vc, after getting doc from the origin server,
        write the doc into the cache. */
-    set_handler(txn_sm->q_current_handler, &state_handle_cache_prepare_for_write);
+    set_handler(txn_sm->q_current_handler, (TxnSMHandler)&state_handle_cache_prepare_for_write);
     TSAssert(txn_sm->q_pending_action == NULL);
     txn_sm->q_pending_action = TSCacheWrite(contp, txn_sm->q_key);
     break;
@@ -443,7 +443,7 @@ state_build_and_send_request(TSCont contp, TSEvent event, void *data)
   TSIOBufferWrite(txn_sm->q_server_request_buffer, txn_sm->q_client_request, strlen(txn_sm->q_client_request));
 
   /* First thing to do is to get the server IP from the server host name. */
-  set_handler(txn_sm->q_current_handler, &state_dns_lookup);
+  set_handler(txn_sm->q_current_handler, (TxnSMHandler)&state_dns_lookup);
   TSAssert(txn_sm->q_pending_action == NULL);
   txn_sm->q_pending_action = TSHostLookup(contp, txn_sm->q_server_name, strlen(txn_sm->q_server_name));
 
@@ -471,7 +471,7 @@ state_dns_lookup(TSCont contp, TSEvent event, TSHostLookupResult host_info)
   txn_sm->q_server_ip = TSHostLookupResultIPGet(host_info);
 
   /* Connect to the server using its IP. */
-  set_handler(txn_sm->q_current_handler, &state_connect_to_server);
+  set_handler(txn_sm->q_current_handler, (TxnSMHandler)&state_connect_to_server);
   TSAssert(txn_sm->q_pending_action == NULL);
   txn_sm->q_pending_action = TSNetConnect(contp, txn_sm->q_server_ip, txn_sm->q_server_port);
 
@@ -499,7 +499,7 @@ state_connect_to_server(TSCont contp, TSEvent event, TSVConn vc)
   txn_sm->q_server_vc = vc;
 
   /* server_vc will be used to write request and read response. */
-  set_handler(txn_sm->q_current_handler, &state_send_request_to_server);
+  set_handler(txn_sm->q_current_handler, (TxnSMHandler)&state_send_request_to_server);
 
   /* Actively write the request to the net_vc. */
   txn_sm->q_server_write_vio = TSVConnWrite(txn_sm->q_server_vc, contp,
@@ -524,7 +524,7 @@ state_send_request_to_server(TSCont contp, TSEvent event, TSVIO vio)
     vio = NULL;
 
     /* Waiting for the incoming response. */
-    set_handler(txn_sm->q_current_handler, &state_interface_with_server);
+    set_handler(txn_sm->q_current_handler, (TxnSMHandler)&state_interface_with_server);
     txn_sm->q_server_read_vio = TSVConnRead(txn_sm->q_server_vc, contp, txn_sm->q_server_response_buffer, INT64_MAX);
     break;
 
@@ -595,7 +595,7 @@ state_interface_with_server(TSCont contp, TSEvent event, TSVIO vio)
       TSIOBufferReaderFree(txn_sm->q_cache_response_buffer_reader);
 
       /* Open cache_vc to read data and send to client. */
-      set_handler(txn_sm->q_current_handler, &state_handle_cache_lookup);
+      set_handler(txn_sm->q_current_handler, (TxnSMHandler)&state_handle_cache_lookup);
       txn_sm->q_pending_action = TSCacheRead(contp, txn_sm->q_key);
     } else {                    /* not done with writing into cache */
 
@@ -692,7 +692,7 @@ state_write_to_cache(TSCont contp, TSEvent event, TSVIO vio)
       TSIOBufferReaderFree(txn_sm->q_cache_response_buffer_reader);
 
       /* Open cache_vc to read data and send to client. */
-      set_handler(txn_sm->q_current_handler, &state_handle_cache_lookup);
+      set_handler(txn_sm->q_current_handler, (TxnSMHandler)&state_handle_cache_lookup);
       txn_sm->q_pending_action = TSCacheRead(contp, txn_sm->q_key);
     } else {                    /* not done with writing into cache */
 
@@ -882,7 +882,7 @@ send_response_to_client(TSCont contp)
 
   TSDebug("protocol", " . resp_len is %d, response_len");
 
-  set_handler(txn_sm->q_current_handler, &state_interface_with_client);
+  set_handler(txn_sm->q_current_handler, (TxnSMHandler)&state_interface_with_client);
   txn_sm->q_client_write_vio = TSVConnWrite(txn_sm->q_client_vc, (TSCont) contp,
                                              txn_sm->q_client_response_buffer_reader, response_len);
   return TS_SUCCESS;

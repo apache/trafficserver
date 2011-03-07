@@ -754,14 +754,8 @@ public:
   */
   char &operator[] (int64_t i);
 
-  MIOBuffer *writer()
-  {
-    return mbuf;
-  }
-  MIOBuffer *allocated()
-  {
-    return mbuf;
-  }
+  MIOBuffer *writer() const { return mbuf; }
+  MIOBuffer *allocated() const { return mbuf; }
 
   MIOBufferAccessor *accessor;  // pointer back to the accessor
 
@@ -782,8 +776,9 @@ public:
   int64_t start_offset;
   int64_t size_limit;
 
-  IOBufferReader():accessor(NULL), mbuf(NULL), start_offset(0), size_limit(INT64_MAX) {
-  }
+  IOBufferReader()
+    : accessor(NULL), mbuf(NULL), start_offset(0), size_limit(INT64_MAX)
+  { }
 };
 
 /**

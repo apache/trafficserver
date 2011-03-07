@@ -89,6 +89,7 @@ my $W_CHAR_NOT_NULL = "returns the char* pointer directly, it can never be NULL"
 my $W_TIME_T = "returns the time_t directly";
 my $W_NOT_NULL_LEN = "the length parameter can no longer be a NULL pointer";
 my $W_TSCACHEKEY = "returns a TSCacheKey directly";
+my $W_TSAIOCALLBACK = "uses the new TSAIOCallback data type";
 my $W_NO_NULL_LENGTH = "1";
 my $W_NO_ERROR_PTR = "2";
 
@@ -222,11 +223,11 @@ my %TWO_2_THREE = (
   "TSMimeHdrFieldNameGet" => [$W_NO_NULL_LENGTH],
   "TSHttpHdrMethodGet" => [$W_NO_NULL_LENGTH],
   "TSHttpHdrReasonGet" => [$W_NO_NULL_LENGTH],
-  "TSCacheKeyGet" => [$W_NO_NULL_LENGTH],
-  "TSCacheHeaderKeyGet" => [$W_NO_NULL_LENGTH],
   "TSFetchRespGet" => [$W_NO_NULL_LENGTH],
   "TSHttpTxnConfigStringGet" => [$W_NO_NULL_LENGTH],
   "TS_ERROR_PTR" => [$W_NO_ERROR_PTR]
+  "TSAIOBufGet" => [$W_TSAIOCALLBACK],
+  "TSAIONBytesGet" => [$W_TSAIOCALLBACK],
 );
 
 

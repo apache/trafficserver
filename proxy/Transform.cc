@@ -593,7 +593,8 @@ TransformControl::handle_event(int event, void *edata)
   -------------------------------------------------------------------------*/
 
 NullTransform::NullTransform(ProxyMutex *_mutex)
- : INKVConnInternal(NULL, _mutex), m_output_buf(NULL), m_output_reader(NULL), m_output_vio(NULL)
+  : INKVConnInternal(NULL, reinterpret_cast<TSMutex>(_mutex)),
+    m_output_buf(NULL), m_output_reader(NULL), m_output_vio(NULL)
 {
   SET_HANDLER(&NullTransform::handle_event);
 
@@ -761,7 +762,7 @@ num_chars_for_int(int64_t i)
   -------------------------------------------------------------------------*/
 
 RangeTransform::RangeTransform(ProxyMutex *mut, MIMEField *range_field, HTTPInfo *cache_obj, HTTPHdr *transform_resp)
-  : INKVConnInternal(NULL, mut),
+  : INKVConnInternal(NULL, reinterpret_cast<TSMutex>(mut)),
     m_output_buf(NULL),
     m_output_reader(NULL),
     m_range_field(range_field),

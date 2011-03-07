@@ -157,7 +157,7 @@ TSThreadInit()
 
   thread->set_specific();
 
-  return thread;
+  return reinterpret_cast<TSThread>(thread);
 }
 
 void
@@ -206,7 +206,7 @@ TSMutexCreateInternal()
   sdk_assert(sdk_sanity_check_mutex((TSMutex)new_mutex) == TS_SUCCESS);
 
   new_mutex->refcount_inc();
-  return (TSMutex *)new_mutex;
+  return reinterpret_cast<TSMutex>(new_mutex);
 }
 
 int
@@ -260,7 +260,7 @@ TSVIOBufferGet(TSVIO viop)
   sdk_assert(sdk_sanity_check_iocore_structure(viop) == TS_SUCCESS);
 
   VIO *vio = (VIO *)viop;
-  return vio->get_writer();
+  return reinterpret_cast<TSIOBuffer>(vio->get_writer());
 }
 
 TSIOBufferReader
@@ -269,7 +269,7 @@ TSVIOReaderGet(TSVIO viop)
   sdk_assert(sdk_sanity_check_iocore_structure(viop) == TS_SUCCESS);
 
   VIO *vio = (VIO *)viop;
-  return vio->get_reader();
+  return reinterpret_cast<TSIOBufferReader>(vio->get_reader());
 }
 
 int64_t
@@ -362,7 +362,7 @@ INKUDPBind(TSCont contp, unsigned int ip, int port)
   sdk_assert(sdk_sanity_check_continuation(contp) == TS_SUCCESS);
 
   FORCE_PLUGIN_MUTEX(contp);
-  return (udpNet.UDPBind((Continuation *)contp, port, ip, INK_ETHERNET_MTU_SIZE, INK_ETHERNET_MTU_SIZE));
+  return reinterpret_cast<TSAction>(udpNet.UDPBind((Continuation *)contp, port, ip, INK_ETHERNET_MTU_SIZE, INK_ETHERNET_MTU_SIZE));
 }
 
 TSAction
@@ -394,7 +394,7 @@ INKUDPSendTo(TSCont contp, INKUDPConn udp, unsigned int ip, int port, char *data
      failed assert `!m_conn` */
 
   /* packet->setConnection ((UDPConnection *)udp); */
-  return conn->send((Continuation *)contp, packet);
+  return reinterpret_cast<TSAction>(conn->send((Continuation *)contp, packet));
 }
 
 
@@ -405,7 +405,7 @@ INKUDPRecvFrom(TSCont contp, INKUDPConn udp)
 
   FORCE_PLUGIN_MUTEX(contp);
   UDPConnection *conn = (UDPConnection *)udp;
-  return conn->recv((Continuation *)contp);
+  return reinterpret_cast<TSAction>(conn->recv((Continuation *)contp));
 }
 
 int
@@ -494,7 +494,7 @@ TSIOBufferCreate()
 
   // TODO: Should remove this when memory allocations can't fail.
   sdk_assert(sdk_sanity_check_iocore_structure(b) == TS_SUCCESS);
-  return (TSIOBuffer *)b;
+  return reinterpret_cast<TSIOBuffer>(b);
 }
 
 TSIOBuffer
@@ -506,7 +506,7 @@ TSIOBufferSizedCreate(TSIOBufferSizeIndex index)
 
   // TODO: Should remove this when memory allocations can't fail.
   sdk_assert(sdk_sanity_check_iocore_structure(b) == TS_SUCCESS);
-  return (TSIOBuffer *)b;
+  return reinterpret_cast<TSIOBuffer>(b);
 }
 
 void
@@ -665,9 +665,8 @@ TSIOBufferBlockReadStart(TSIOBufferBlock blockp, TSIOBufferReader readerp, int64
   char *p;
 
   p = blk->start();
-  if (avail) {
+  if (avail)
     *avail = blk->read_avail();
-  }
 
   if (blk == reader->block) {
     p += reader->start_offset;
@@ -784,7 +783,7 @@ TSIOBufferReaderStart(TSIOBufferReader readerp)
 
   if (r->block != NULL)
     r->skip_empty_blocks();
-  return (TSIOBufferBlock)r->block;
+  return reinterpret_cast<TSIOBufferBlock>(r->get_current_block());
 }
 
 void

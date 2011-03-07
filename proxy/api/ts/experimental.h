@@ -54,8 +54,8 @@ extern "C"
   tsapi TSReturnCode TSHttpTxnHookRegisteredFor(TSHttpTxn txnp, TSHttpHookID id, TSEventFunc funcp);
 
   /* IP Lookup */
-  typedef void *TSIPLookup;
-  typedef void *TSIPLookupState;
+  typedef struct tsapi_iplookup* TSIPLookup;
+  typedef struct tsapi_iplookupstate* TSIPLookupState;
   typedef void (*TSIPLookupPrintFunc) (void *data);
 
   tsapi void TSIPLookupPrint(TSIPLookup iplu, TSIPLookupPrintFunc pf);
@@ -236,7 +236,7 @@ extern "C"
 
   /* =====  Matcher Utils =====  */
 #define               TS_MATCHER_LINE_INVALID 0
-  typedef void *TSMatcherLine;
+  typedef struct tsapi_matcheline* TSMatcherLine;
 
   /****************************************************************************
    *  ??
@@ -389,7 +389,7 @@ extern "C"
   typedef void (*TSClusterStatusFunction) (TSNodeHandle_t *node, TSNodeStatus_t s);
 
   /****************************************************************************
-   *  Subscribe to node up/down status notification.     			    *
+   *  Subscribe to node up/down status notification.     		    *
    *	Return == 0 Success						    *
    *	Return != 0 Failure						    *
    * contact: OXY, DY
@@ -404,7 +404,7 @@ extern "C"
   tsapi int TSDeleteClusterStatusFunction(TSClusterStatusHandle_t *h);
 
   /****************************************************************************
-   *  Get the struct in_addr associated with the TSNodeHandle_t.	    	    *
+   *  Get the struct in_addr associated with the TSNodeHandle_t.	    *
    *	Return == 0 Success						    *
    *	Return != 0 Failure						    *
    * contact: OXY, DY
@@ -412,7 +412,7 @@ extern "C"
   tsapi int TSNodeHandleToIPAddr(TSNodeHandle_t *h, struct in_addr *in);
 
   /****************************************************************************
-   *  Get the TSNodeHandle_t for the local node.	    	    		    *
+   *  Get the TSNodeHandle_t for the local node.	    	    	    *
    *  contact: OXY, DY
    ****************************************************************************/
   tsapi void TSGetMyNodeHandle(TSNodeHandle_t *h);
@@ -433,8 +433,8 @@ extern "C"
   tsapi int TSAddClusterRPCFunction(TSClusterRPCKey_t k, TSClusterRPCFunction RPC_Function, TSClusterRPCHandle_t *h);
 
   /****************************************************************************
-   *  Delete the key to function association created via 			    *
-   *  TSAddClusterRPCFunction().						    *
+   *  Delete the key to function association created via 		    *
+   *  TSAddClusterRPCFunction().					    *
    *	Return == 0 Success						    *
    *	Return != 0 Failure						    *
    *  contact: OXY, DY
@@ -456,7 +456,7 @@ extern "C"
   tsapi TSClusterRPCMsg_t *TSAllocClusterRPCMsg(TSClusterRPCHandle_t *h, int data_size);
 
   /****************************************************************************
-   *  Send the RPC message to the specified node.			    	    *
+   *  Send the RPC message to the specified node.			    *
    *    Cluster frees the given memory on send.				    *
    *    RPC function frees memory on receive.				    *
    *	Return == 0 Success						    *

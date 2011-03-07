@@ -185,7 +185,7 @@ enum HttpPluginTunnel_t
 class CoreUtils;
 class PluginVCCore;
 
-class HttpSM:public Continuation
+class HttpSM: public Continuation
 {
   friend class HttpPagesHandler;
   friend class CoreUtils;

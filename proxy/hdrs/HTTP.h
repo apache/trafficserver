@@ -282,12 +282,12 @@ struct HTTPHdrImpl:public HdrHeapObjImpl
   MIMEHdrImpl *m_fields_impl;
 
   // Marshaling Functions
-  int marshal(MarshalXlate * ptr_xlate, int num_ptr, MarshalXlate * str_xlate, int num_str);
+  int marshal(MarshalXlate *ptr_xlate, int num_ptr, MarshalXlate *str_xlate, int num_str);
   void unmarshal(intptr_t offset);
-  void move_strings(HdrStrHeap * new_heap);
+  void move_strings(HdrStrHeap *new_heap);
 
   // Sanity Check Functions
-  void check_strings(HeapCheck * heaps, int num_heaps);
+  void check_strings(HeapCheck *heaps, int num_heaps);
 };
 
 struct HTTPValAccept
@@ -445,45 +445,45 @@ extern int HTTP_LEN_S_MAXAGE;
 extern int HTTP_LEN_NEED_REVALIDATE_ONCE;
 
 /* Private */
-void http_hdr_adjust(HTTPHdrImpl * hdrp, int32_t offset, int32_t length, int32_t delta);
+void http_hdr_adjust(HTTPHdrImpl *hdrp, int32_t offset, int32_t length, int32_t delta);
 
 /* Public */
 void http_init();
 
-inkcoreapi HTTPHdrImpl *http_hdr_create(HdrHeap * heap, HTTPType polarity);
-void http_hdr_init(HdrHeap * heap, HTTPHdrImpl * hh, HTTPType polarity);
-HTTPHdrImpl *http_hdr_clone(HTTPHdrImpl * s_hh, HdrHeap * s_heap, HdrHeap * d_heap);
-void http_hdr_copy_onto(HTTPHdrImpl * s_hh, HdrHeap * s_heap, HTTPHdrImpl * d_hh, HdrHeap * d_heap, bool inherit_strs);
+inkcoreapi HTTPHdrImpl *http_hdr_create(HdrHeap *heap, HTTPType polarity);
+void http_hdr_init(HdrHeap *heap, HTTPHdrImpl *hh, HTTPType polarity);
+HTTPHdrImpl *http_hdr_clone(HTTPHdrImpl *s_hh, HdrHeap *s_heap, HdrHeap *d_heap);
+void http_hdr_copy_onto(HTTPHdrImpl *s_hh, HdrHeap *s_heap, HTTPHdrImpl *d_hh, HdrHeap *d_heap, bool inherit_strs);
 
-inkcoreapi int http_hdr_print(HdrHeap * heap, HTTPHdrImpl * hh, char *buf, int bufsize, int *bufindex, int *dumpoffset);
+inkcoreapi int http_hdr_print(HdrHeap *heap, HTTPHdrImpl *hh, char *buf, int bufsize, int *bufindex, int *dumpoffset);
 
-void http_hdr_describe(HdrHeapObjImpl * obj, bool recurse = true);
+void http_hdr_describe(HdrHeapObjImpl *obj, bool recurse = true);
 
-int http_hdr_length_get(HTTPHdrImpl * hh);
+int http_hdr_length_get(HTTPHdrImpl *hh);
 // HTTPType               http_hdr_type_get (HTTPHdrImpl *hh);
 
 // int32_t                  http_hdr_version_get (HTTPHdrImpl *hh);
-inkcoreapi void http_hdr_version_set(HTTPHdrImpl * hh, int32_t ver);
+inkcoreapi void http_hdr_version_set(HTTPHdrImpl *hh, int32_t ver);
 
-const char *http_hdr_method_get(HTTPHdrImpl * hh, int *length);
-inkcoreapi void http_hdr_method_set(HdrHeap * heap, HTTPHdrImpl * hh,
+const char *http_hdr_method_get(HTTPHdrImpl *hh, int *length);
+inkcoreapi void http_hdr_method_set(HdrHeap *heap, HTTPHdrImpl *hh,
                                     const char *method, int16_t method_wks_idx, int method_length, bool must_copy);
 
-void http_hdr_url_set(HdrHeap * heap, HTTPHdrImpl * hh, URLImpl * url);
+void http_hdr_url_set(HdrHeap *heap, HTTPHdrImpl *hh, URLImpl *url);
 
 // HTTPStatus             http_hdr_status_get (HTTPHdrImpl *hh);
-void http_hdr_status_set(HTTPHdrImpl * hh, HTTPStatus status);
-const char *http_hdr_reason_get(HTTPHdrImpl * hh, int *length);
-void http_hdr_reason_set(HdrHeap * heap, HTTPHdrImpl * hh, const char *value, int length, bool must_copy);
+void http_hdr_status_set(HTTPHdrImpl *hh, HTTPStatus status);
+const char *http_hdr_reason_get(HTTPHdrImpl *hh, int *length);
+void http_hdr_reason_set(HdrHeap *heap, HTTPHdrImpl *hh, const char *value, int length, bool must_copy);
 const char *http_hdr_reason_lookup(HTTPStatus status);
 
-void http_parser_init(HTTPParser * parser);
-void http_parser_clear(HTTPParser * parser);
-MIMEParseResult http_parser_parse_req(HTTPParser * parser, HdrHeap * heap,
-                                      HTTPHdrImpl * hh, const char **start,
+void http_parser_init(HTTPParser *parser);
+void http_parser_clear(HTTPParser *parser);
+MIMEParseResult http_parser_parse_req(HTTPParser *parser, HdrHeap *heap,
+                                      HTTPHdrImpl *hh, const char **start,
                                       const char *end, bool must_copy_strings, bool eof);
-MIMEParseResult http_parser_parse_resp(HTTPParser * parser, HdrHeap * heap,
-                                       HTTPHdrImpl * hh, const char **start,
+MIMEParseResult http_parser_parse_resp(HTTPParser *parser, HdrHeap *heap,
+                                       HTTPHdrImpl *hh, const char **start,
                                        const char *end, bool must_copy_strings, bool eof);
 HTTPStatus http_parse_status(const char *start, const char *end);
 int32_t http_parse_version(const char *start, const char *end);
@@ -498,7 +498,7 @@ HTTPValCacheControl*   http_parse_cache_control (const char *buf, Arena *arena);
 const char*            http_parse_cache_directive (const char **buf);
 HTTPValRange*          http_parse_range (const char *buf, Arena *arena);
 */
-HTTPValTE *http_parse_te(const char *buf, int len, Arena * arena);
+HTTPValTE *http_parse_te(const char *buf, int len, Arena *arena);
 
 
 class HTTPVersion
@@ -528,7 +528,7 @@ class IOBufferReader;
 class HTTPHdr: public MIMEHdr
 {
 public:
-  HTTPHdrImpl * m_http;
+  HTTPHdrImpl *m_http;
   // This is all cached data and so is mutable.
   mutable URL m_url_cached;
   mutable int m_host_length; ///< Length of hostname.
@@ -547,13 +547,13 @@ public:
 
   int valid() const;
 
-  void create(HTTPType polarity, HdrHeap * heap = NULL);
+  void create(HTTPType polarity, HdrHeap *heap = NULL);
   void clear();
   void reset();
-  void copy(const HTTPHdr * hdr);
-  void copy_shallow(const HTTPHdr * hdr);
+  void copy(const HTTPHdr *hdr);
+  void copy_shallow(const HTTPHdr *hdr);
 
-  int unmarshal(char *buf, int len, RefCountObj * block_ref);
+  int unmarshal(char *buf, int len, RefCountObj *block_ref);
 
   int print(char *buf, int bufsize, int *bufindex, int *dumpoffset);
 
@@ -568,10 +568,10 @@ public:
   int method_get_wksidx();
   void method_set(const char *value, int length);
 
-  URL *url_create(URL * url);
+  URL *url_create(URL *url);
 
   URL *url_get() const;
-  URL *url_get(URL * url);
+  URL *url_get(URL *url);
   /** Get a string with the effective URL in it.
       If @a length is not @c NULL then the length of the string
       is stored in the int pointed to by @a length.
@@ -585,8 +585,8 @@ public:
     int* length = 0 ///< Store string length here.
   );
 
-  void url_set(URL * url);
-  void url_set_as_server_url(URL * url);
+  void url_set(URL *url);
+  void url_set_as_server_url(URL *url);
   void url_set(const char *str, int length);
 
   /** Get the target host name.
@@ -630,11 +630,11 @@ public:
   const char *reason_get(int *length);
   void reason_set(const char *value, int length);
 
-  MIMEParseResult parse_req(HTTPParser * parser, const char **start, const char *end, bool eof);
-  MIMEParseResult parse_resp(HTTPParser * parser, const char **start, const char *end, bool eof);
+  MIMEParseResult parse_req(HTTPParser *parser, const char **start, const char *end, bool eof);
+  MIMEParseResult parse_resp(HTTPParser *parser, const char **start, const char *end, bool eof);
 
-  MIMEParseResult parse_req(HTTPParser * parser, IOBufferReader * r, int *bytes_used, bool eof);
-  MIMEParseResult parse_resp(HTTPParser * parser, IOBufferReader * r, int *bytes_used, bool eof);
+  MIMEParseResult parse_req(HTTPParser *parser, IOBufferReader *r, int *bytes_used, bool eof);
+  MIMEParseResult parse_resp(HTTPParser *parser, IOBufferReader *r, int *bytes_used, bool eof);
 
 public:
   // Utility routines
@@ -798,7 +798,7 @@ HTTPHdr::valid() const
   -------------------------------------------------------------------------*/
 
 inline void
-HTTPHdr::create(HTTPType polarity, HdrHeap * heap)
+HTTPHdr::create(HTTPType polarity, HdrHeap *heap)
 {
   if (heap) {
     m_heap = heap;
@@ -835,7 +835,7 @@ HTTPHdr::reset()
   -------------------------------------------------------------------------*/
 
 inline void
-HTTPHdr::copy(const HTTPHdr * hdr)
+HTTPHdr::copy(const HTTPHdr *hdr)
 {
   ink_debug_assert(hdr->valid());
 
@@ -852,7 +852,7 @@ HTTPHdr::copy(const HTTPHdr * hdr)
   -------------------------------------------------------------------------*/
 
 inline void
-HTTPHdr::copy_shallow(const HTTPHdr * hdr)
+HTTPHdr::copy_shallow(const HTTPHdr *hdr)
 {
   ink_debug_assert(hdr->valid());
 
@@ -945,7 +945,7 @@ HTTPHdr::mark_target_dirty() const
   -------------------------------------------------------------------------*/
 
 inline HTTPType
-http_hdr_type_get(HTTPHdrImpl * hh)
+http_hdr_type_get(HTTPHdrImpl *hh)
 {
   return (hh->m_polarity);
 }
@@ -964,7 +964,7 @@ HTTPHdr::type_get() const
   -------------------------------------------------------------------------*/
 
 inline int32_t
-http_hdr_version_get(HTTPHdrImpl * hh)
+http_hdr_version_get(HTTPHdrImpl *hh)
 {
   return (hh->m_version);
 }
@@ -1029,7 +1029,7 @@ HTTPHdr::method_set(const char *value, int length)
   -------------------------------------------------------------------------*/
 
 inline URL *
-HTTPHdr::url_create(URL * u)
+HTTPHdr::url_create(URL *u)
 {
   ink_debug_assert(valid());
   ink_debug_assert(m_http->m_polarity == HTTP_TYPE_REQUEST);
@@ -1065,7 +1065,7 @@ HTTPHdr::url_get() const
   -------------------------------------------------------------------------*/
 
 inline URL *
-HTTPHdr::url_get(URL * url)
+HTTPHdr::url_get(URL *url)
 {
   ink_debug_assert(valid());
   ink_debug_assert(m_http->m_polarity == HTTP_TYPE_REQUEST);
@@ -1079,7 +1079,7 @@ HTTPHdr::url_get(URL * url)
   -------------------------------------------------------------------------*/
 
 inline void
-HTTPHdr::url_set(URL * url)
+HTTPHdr::url_set(URL *url)
 {
   ink_debug_assert(valid());
   ink_debug_assert(m_http->m_polarity == HTTP_TYPE_REQUEST);
@@ -1092,7 +1092,7 @@ HTTPHdr::url_set(URL * url)
   -------------------------------------------------------------------------*/
 
 inline void
-HTTPHdr::url_set_as_server_url(URL * url)
+HTTPHdr::url_set_as_server_url(URL *url)
 {
   ink_debug_assert(valid());
   ink_debug_assert(m_http->m_polarity == HTTP_TYPE_REQUEST);
@@ -1121,7 +1121,7 @@ HTTPHdr::url_set(const char *str, int length)
   -------------------------------------------------------------------------*/
 
 inline HTTPStatus
-http_hdr_status_get(HTTPHdrImpl * hh)
+http_hdr_status_get(HTTPHdrImpl *hh)
 {
   ink_debug_assert(hh->m_polarity == HTTP_TYPE_RESPONSE);
   return (HTTPStatus) hh->u.resp.m_status;
@@ -1179,7 +1179,7 @@ HTTPHdr::reason_set(const char *value, int length)
   -------------------------------------------------------------------------*/
 
 inline MIMEParseResult
-HTTPHdr::parse_req(HTTPParser * parser, const char **start, const char *end, bool eof)
+HTTPHdr::parse_req(HTTPParser *parser, const char **start, const char *end, bool eof)
 {
   ink_debug_assert(valid());
   ink_debug_assert(m_http->m_polarity == HTTP_TYPE_REQUEST);
@@ -1191,7 +1191,7 @@ HTTPHdr::parse_req(HTTPParser * parser, const char **start, const char *end, boo
   -------------------------------------------------------------------------*/
 
 inline MIMEParseResult
-HTTPHdr::parse_resp(HTTPParser * parser, const char **start, const char *end, bool eof)
+HTTPHdr::parse_resp(HTTPParser *parser, const char **start, const char *end, bool eof)
 {
   ink_debug_assert(valid());
   ink_debug_assert(m_http->m_polarity == HTTP_TYPE_RESPONSE);
@@ -1242,7 +1242,7 @@ enum
 struct HTTPCacheAlt
 {
   HTTPCacheAlt();
-  void copy(HTTPCacheAlt * to_copy);
+  void copy(HTTPCacheAlt *to_copy);
   void destroy();
 
   uint32_t m_magic;
@@ -1280,93 +1280,63 @@ struct HTTPCacheAlt
 class HTTPInfo
 {
 public:
-  HTTPCacheAlt * m_alt;
+  HTTPCacheAlt *m_alt;
 
-  HTTPInfo();
-  ~HTTPInfo();
+  HTTPInfo()
+    : m_alt(NULL)
+  { }
+
+  ~HTTPInfo()
+  {
+    clear();
+  }
+
+  void clear() { m_alt = NULL; }
+  bool valid() const { return (m_alt != NULL); }
 
   void create();
-  void clear();
   void destroy();
-  bool valid();
 
-  void copy(HTTPInfo * to_copy);
-  void copy_shallow(HTTPInfo * info);
-    HTTPInfo & operator =(const HTTPInfo & m);
+  void copy(HTTPInfo *to_copy);
+  void copy_shallow(HTTPInfo *info) { m_alt = info->m_alt; }
+  HTTPInfo & operator =(const HTTPInfo & m);
 
   inkcoreapi int marshal_length();
   inkcoreapi int marshal(char *buf, int len);
-  static int unmarshal(char *buf, int len, RefCountObj * block_ref);
-  void set_buffer_reference(RefCountObj * block_ref);
+  static int unmarshal(char *buf, int len, RefCountObj *block_ref);
+  void set_buffer_reference(RefCountObj *block_ref);
   int get_handle(char *buf, int len);
 
-  int32_t id_get()
-  {
-    return m_alt->m_id;
-  };
-  int32_t rid_get()
-  {
-    return m_alt->m_rid;
-  };
+  int32_t id_get() const { return m_alt->m_id; }
+  int32_t rid_get() { return m_alt->m_rid; }
+
+  void id_set(int32_t id) { m_alt->m_id = id; }
+  void rid_set(int32_t id) { m_alt->m_rid = id; }
+
   INK_MD5 object_key_get();
   void object_key_get(INK_MD5 *);
   bool compare_object_key(const INK_MD5 *);
   int64_t object_size_get();
-  void request_get(HTTPHdr * hdr)
-  {
-    hdr->copy_shallow(&m_alt->m_request_hdr);
-  };
-  void response_get(HTTPHdr * hdr)
-  {
-    hdr->copy_shallow(&m_alt->m_response_hdr);
-  };
 
-  HTTPHdr *request_get()
-  {
-    return &m_alt->m_request_hdr;
-  };
-  HTTPHdr *response_get()
-  {
-    return &m_alt->m_response_hdr;
-  };
-  URL *request_url_get(URL * url = NULL) {
-    return m_alt->m_request_hdr.url_get(url);
-  };
-  time_t request_sent_time_get()
-  {
-    return m_alt->m_request_sent_time;
-  };
-  time_t response_received_time_get()
-  {
-    return m_alt->m_response_received_time;
-  };
+  void request_get(HTTPHdr *hdr) { hdr->copy_shallow(&m_alt->m_request_hdr); }
+  void response_get(HTTPHdr *hdr) { hdr->copy_shallow(&m_alt->m_response_hdr); }
 
-  void id_set(int32_t id)
-  {
-    m_alt->m_id = id;
-  };
-  void rid_set(int32_t id)
-  {
-    m_alt->m_rid = id;
-  };
+  HTTPHdr *request_get() { return &m_alt->m_request_hdr; }
+  HTTPHdr *response_get() { return &m_alt->m_response_hdr; }
+
+  URL *request_url_get(URL *url = NULL) { return m_alt->m_request_hdr.url_get(url); }
+
+  time_t request_sent_time_get() { return m_alt->m_request_sent_time; }
+  time_t response_received_time_get() { return m_alt->m_response_received_time; }
+
   void object_key_set(INK_MD5 & md5);
   void object_size_set(int64_t size);
-  void request_set(const HTTPHdr * req)
-  {
-    m_alt->m_request_hdr.copy(req);
-  };
-  void response_set(const HTTPHdr * resp)
-  {
-    m_alt->m_response_hdr.copy(resp);
-  };
-  void request_sent_time_set(time_t t)
-  {
-    m_alt->m_request_sent_time = t;
-  };
-  void response_received_time_set(time_t t)
-  {
-    m_alt->m_response_received_time = t;
-  };
+
+  void request_set(const HTTPHdr *req) { m_alt->m_request_hdr.copy(req); }
+  void response_set(const HTTPHdr *resp) { m_alt->m_response_hdr.copy(resp); }
+
+  void request_sent_time_set(time_t t) { m_alt->m_request_sent_time = t; }
+  void response_received_time_set(time_t t) { m_alt->m_response_received_time = t; }
 
   // Sanity check functions
   static bool check_marshalled(char *buf, int len);
@@ -1374,25 +1344,6 @@ public:
 private:
   HTTPInfo(const HTTPInfo & h);
 };
-
-inline
-HTTPInfo::HTTPInfo():
-m_alt(NULL)
-{
-}
-
-inline
-HTTPInfo::~
-HTTPInfo()
-{
-  clear();
-}
-
-inline void
-HTTPInfo::clear()
-{
-  m_alt = NULL;
-}
 
 inline void
 HTTPInfo::destroy()
@@ -1407,18 +1358,6 @@ HTTPInfo::destroy()
     }
   }
   clear();
-}
-
-inline bool
-HTTPInfo::valid()
-{
-  return (m_alt != NULL);
-}
-
-inline void
-HTTPInfo::copy_shallow(HTTPInfo * hi)
-{
-  m_alt = hi->m_alt;
 }
 
 inline HTTPInfo &
@@ -1442,7 +1381,7 @@ HTTPInfo::object_key_get()
 }
 
 inline void
-HTTPInfo::object_key_get(INK_MD5 * md5)
+HTTPInfo::object_key_get(INK_MD5 *md5)
 {
   ((int32_t *) md5)[0] = m_alt->m_object_key[0];
   ((int32_t *) md5)[1] = m_alt->m_object_key[1];
@@ -1451,7 +1390,7 @@ HTTPInfo::object_key_get(INK_MD5 * md5)
 }
 
 inline bool
-HTTPInfo::compare_object_key(const INK_MD5 * md5)
+HTTPInfo::compare_object_key(const INK_MD5 *md5)
 {
   return ((m_alt->m_object_key[0] == ((int32_t *) md5)[0]) &&
           (m_alt->m_object_key[1] == ((int32_t *) md5)[1]) &&

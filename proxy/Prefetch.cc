@@ -288,8 +288,9 @@ ClassAllocator<PrefetchUrlEntry> prefetchUrlEntryAllocator("prefetchUrlEntryAllo
                                         (((status) == HTTP_STATUS_TEMPORARY_REDIRECT))))
 
 
-PrefetchTransform::PrefetchTransform(HttpSM * sm, HTTPHdr * resp)
-  : INKVConnInternal(NULL, sm->mutex), m_output_buf(NULL), m_output_vio(NULL), m_sm(sm)
+PrefetchTransform::PrefetchTransform(HttpSM *sm, HTTPHdr *resp)
+  : INKVConnInternal(NULL, reinterpret_cast<TSMutex>((ProxyMutex*)sm->mutex)),
+    m_output_buf(NULL), m_output_vio(NULL), m_sm(sm)
 {
   refcount_inc();
 
@@ -457,7 +458,7 @@ PrefetchTransform::handle_event(int event, void *edata)
 }
 
 int
-PrefetchTransform::redirect(HTTPHdr * resp)
+PrefetchTransform::redirect(HTTPHdr *resp)
 {
   HTTPHdr *req = NULL;
   int response_status = 0;
@@ -535,7 +536,7 @@ PrefetchTransform::redirect(HTTPHdr * resp)
 }
 
 int
-PrefetchTransform::parse_data(IOBufferReader * reader)
+PrefetchTransform::parse_data(IOBufferReader *reader)
 {
   char *url_start = NULL, *url_end = NULL;
 
@@ -586,7 +587,7 @@ PrefetchTransform::hash_add(char *s)
 				       (req_ip) == htonl((127<<24)|1))
 
 static void
-check_n_attach_prefetch_transform(HttpSM * sm, HTTPHdr * resp, bool from_cache)
+check_n_attach_prefetch_transform(HttpSM *sm, HTTPHdr *resp, bool from_cache)
 {
   INKVConnInternal *prefetch_trans;
 
@@ -643,10 +644,10 @@ check_n_attach_prefetch_transform(HttpSM * sm, HTTPHdr * resp, bool from_cache)
     TSPrefetchInfo info;
 
     HTTPHdr *req = &sm->t_state.hdr_info.client_request;
-    info.request_buf = req;
-    info.request_loc = req->m_http;
-    info.response_buf = resp;
-    info.response_loc = resp->m_http;
+    info.request_buf = reinterpret_cast<TSMBuffer>(req);
+    info.request_loc = reinterpret_cast<TSMLoc>(req->m_http);
+    info.response_buf = reinterpret_cast<TSMBuffer>(resp);
+    info.response_loc = reinterpret_cast<TSMLoc>(resp->m_http);
 
     info.client_ip = client_ip;
     info.embedded_url = 0;
@@ -667,7 +668,7 @@ check_n_attach_prefetch_transform(HttpSM * sm, HTTPHdr * resp, bool from_cache)
 
   if (prefetch_trans) {
     Debug("PrefetchParser", "Adding Prefetch Parser 0x%p\n", prefetch_trans);
-    TSHttpTxnHookAdd(sm, TS_HTTP_RESPONSE_TRANSFORM_HOOK, prefetch_trans);
+    TSHttpTxnHookAdd(reinterpret_cast<TSHttpTxn>(sm), TS_HTTP_RESPONSE_TRANSFORM_HOOK, reinterpret_cast<TSCont>(prefetch_trans));
 
     DUMP_HEADER("PrefetchParserHdrs", &sm->t_state.hdr_info.client_request, (int64_t)0,
                 "Request Header given for  Prefetch Parser");
@@ -715,7 +716,7 @@ PrefetchPlugin(TSCont contp, TSEvent event, void *edata)
   if (resp && resp->valid())
     check_n_attach_prefetch_transform(sm, resp, from_cache);
 
-  TSHttpTxnReenable(sm, TS_EVENT_HTTP_CONTINUE);
+  TSHttpTxnReenable(reinterpret_cast<TSHttpTxn>(sm), TS_EVENT_HTTP_CONTINUE);
 
   //Debug("PrefetchPlugin", "Returning after check_n_attach_prefetch_transform()\n");
 
@@ -835,7 +836,7 @@ PrefetchUrlBlaster::free()
 }
 
 void
-PrefetchUrlBlaster::writeBuffer(MIOBuffer * buf)
+PrefetchUrlBlaster::writeBuffer(MIOBuffer *buf)
 {
   //reverse the list:
   PrefetchUrlEntry *entry = NULL;
@@ -917,7 +918,7 @@ PrefetchUrlBlaster::udpUrlBlaster(int event, void *data)
 ClassAllocator<PrefetchBlaster> prefetchBlasterAllocator("PrefetchBlasterAllocator");
 
 int
-PrefetchBlaster::init(PrefetchUrlEntry * entry, HTTPHdr * req_hdr, PrefetchTransform * p_trans)
+PrefetchBlaster::init(PrefetchUrlEntry *entry, HTTPHdr *req_hdr, PrefetchTransform *p_trans)
 {
   mutex = new_ProxyMutex();
 
@@ -1053,7 +1054,7 @@ PrefetchBlaster::free()
 }
 
 bool
-isCookieUnique(HTTPHdr * req, const char *move_cookie, int move_cookie_len)
+isCookieUnique(HTTPHdr *req, const char *move_cookie, int move_cookie_len)
 {
   // another double for loop for multiple Cookie headers
   MIMEField *o_cookie = req->field_find(MIME_FIELD_COOKIE, MIME_LEN_COOKIE);
@@ -1115,8 +1116,8 @@ cookie_debug(const char *level, const char *value, int value_len)
 
 // resp_hdr is the server response for the top page
 void
-PrefetchBlaster::handleCookieHeaders(HTTPHdr * req_hdr,
-                                     HTTPHdr * resp_hdr,
+PrefetchBlaster::handleCookieHeaders(HTTPHdr *req_hdr,
+                                     HTTPHdr *resp_hdr,
                                      const char *domain_start,
                                      const char *domain_end, const char *thost_start, int thost_len, bool no_dot)
 {
@@ -1463,7 +1464,7 @@ PrefetchBlaster::handleEvent(int event, void *data)
 }
 
 static int
-copy_header(MIOBuffer * buf, HTTPHdr * hdr, const char *hdr_tail)
+copy_header(MIOBuffer *buf, HTTPHdr *hdr, const char *hdr_tail)
 {
   //copy the http header into to the buffer
   int64_t done = 0;
@@ -1715,8 +1716,8 @@ PrefetchBlaster::invokeBlaster()
 
     TSPrefetchInfo info;
 
-    info.request_buf = request;
-    info.request_loc = request->m_http;
+    info.request_buf = reinterpret_cast<TSMBuffer>(request);
+    info.request_loc = reinterpret_cast<TSMLoc>(request->m_http);
     info.response_buf = 0;
     info.response_loc = 0;
 
@@ -1973,7 +1974,7 @@ KeepAliveConnTable::ip_hash(unsigned int ip)
 }
 
 inline int
-KeepAliveConn::append(IOBufferReader * rdr)
+KeepAliveConn::append(IOBufferReader *rdr)
 {
   int64_t size = rdr->read_avail();
 
@@ -2011,7 +2012,7 @@ KeepAliveConnTable::free()
 ClassAllocator<KeepAliveLockHandler> prefetchLockHandlerAllocator("prefetchLockHandlerAllocator");
 
 int
-KeepAliveConnTable::append(unsigned int ip, MIOBuffer * buf, IOBufferReader * reader)
+KeepAliveConnTable::append(unsigned int ip, MIOBuffer *buf, IOBufferReader *reader)
 {
   int index = ip_hash(ip);
 
@@ -2046,7 +2047,7 @@ KeepAliveConnTable::append(unsigned int ip, MIOBuffer * buf, IOBufferReader * re
 }
 
 int
-KeepAliveConn::init(unsigned int xip, MIOBuffer * xbuf, IOBufferReader * xreader)
+KeepAliveConn::init(unsigned int xip, MIOBuffer *xbuf, IOBufferReader *xreader)
 {
   mutex = g_conn_table->arr[KeepAliveConnTable::ip_hash(xip)].mutex;
 

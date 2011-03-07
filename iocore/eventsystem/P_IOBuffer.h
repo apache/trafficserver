@@ -575,14 +575,14 @@ IOBufferReader::current_low_water()
 TS_INLINE IOBufferBlock *
 IOBufferReader::get_current_block()
 {
-  return (block);
+  return block;
 }
 
 TS_INLINE char *
 IOBufferReader::start()
 {
   if (block == 0)
-    return (0);
+    return 0;
   skip_empty_blocks();
   return block->start() + start_offset;
 }
@@ -591,7 +591,7 @@ TS_INLINE char *
 IOBufferReader::end()
 {
   if (block == 0)
-    return (0);
+    return 0;
   skip_empty_blocks();
   return block->end();
 }
@@ -600,7 +600,7 @@ TS_INLINE int64_t
 IOBufferReader::block_read_avail()
 {
   if (block == 0)
-    return (0);
+    return 0;
   skip_empty_blocks();
   return (int64_t) (block->end() - (block->start() + start_offset));
 }

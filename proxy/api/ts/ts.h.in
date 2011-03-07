@@ -569,31 +569,32 @@ extern "C"
   typedef float TSMgmtFloat;
   typedef char* TSMgmtString;
 
-  typedef void* TSFile;
+  typedef struct tsapi_file* TSFile;
 
-  typedef void* TSMLoc;
-  typedef void* TSMBuffer;
-  typedef void* TSHttpSsn;
-  typedef void* TSHttpTxn;
-  typedef void* TSHttpAltInfo;
-  typedef void* TSMimeParser;
-  typedef void* TSHttpParser;
-  typedef void* TSCacheKey;
-  typedef void* TSCacheHttpInfo;
-  typedef void* TSCacheTxn;
+  typedef struct tsapi_mloc* TSMLoc;
+  typedef struct tsapi_mbuffer* TSMBuffer;
+  typedef struct tsapi_httpssn* TSHttpSsn;
+  typedef struct tsapi_httptxn* TSHttpTxn;
+  typedef struct tsapi_httpaltinfo* TSHttpAltInfo;
+  typedef struct tsapi_mimeparser* TSMimeParser;
+  typedef struct tsapi_httpparser* TSHttpParser;
+  typedef struct tsapi_cachekey* TSCacheKey;
+  typedef struct tsapi_cachehttpinfo* TSCacheHttpInfo;
+  typedef struct tsapi_cachetxn* TSCacheTxn;
 
-  typedef void* TSVIO;
-  typedef void* TSThread;
-  typedef void* TSMutex;
-  typedef void* TSConfig;
-  typedef void* TSCont;
-  typedef void* TSAction;
-  typedef void* TSVConn;
-  typedef void* TSIOBuffer;
-  typedef void* TSIOBufferData;
-  typedef void* TSIOBufferBlock;
-  typedef void* TSIOBufferReader;
-  typedef void* TSHostLookupResult;
+  typedef struct tsapi_vio* TSVIO;
+  typedef struct tsapi_thread* TSThread;
+  typedef struct tsapi_mutex* TSMutex;
+  typedef struct tsapi_config* TSConfig;
+  typedef struct tsapi_cont* TSCont;
+  typedef struct tsapi_cont* TSVConn; /* a VConn is really a specialized TSCont */
+  typedef struct tsapi_action* TSAction;
+  typedef struct tsapi_iobuffer* TSIOBuffer;
+  typedef struct tsapi_iobufferdata* TSIOBufferData;
+  typedef struct tsapi_bufferblock* TSIOBufferBlock;
+  typedef struct tsapi_bufferreader* TSIOBufferReader;
+  typedef struct tsapi_hostlookupresult* TSHostLookupResult;
+  typedef struct tsapi_aiocallback* TSAIOCallback;
 
   typedef void *(*TSThreadFunc) (void* data);
   typedef int (*TSEventFunc) (TSCont contp, TSEvent event, void* edata);
@@ -2010,13 +2011,6 @@ extern "C"
   tsapi TSReturnCode TSCacheUrlSet(TSHttpTxn txnp, const char* url, int length);
 
   /* --------------------------------------------------------------------------
-     cache plugin */
-  tsapi TSReturnCode TSCacheKeyGet(TSCacheTxn txnp, void** key, int* length);
-  tsapi TSReturnCode TSCacheHeaderKeyGet(TSCacheTxn txnp, void** key, int* length);
-  tsapi TSIOBufferReader TSCacheBufferReaderGet(TSCacheTxn txnp);
-  tsapi TSHttpTxn TSCacheGetStateMachine(TSCacheTxn txnp);
-
-  /* --------------------------------------------------------------------------
      Configuration */
   tsapi unsigned int TSConfigSet(unsigned int id, void* data, TSConfigDestroyFunc funcp);
   tsapi TSConfig TSConfigGet(unsigned int id);
@@ -2650,7 +2644,7 @@ extern "C"
       log file using TSTextLogObjectWrite().
 
    */
-  typedef void* TSTextLogObject;
+  typedef struct tsapi_textlogobject* TSTextLogObject;
 
   typedef void (*TSRecordDumpCb) (TSRecordType rec_type, void* edata, int registered, const char* name, TSRecordDataType data_type, TSRecordData* datum);
 
@@ -2782,14 +2776,14 @@ extern "C"
 
       @return char* to the buffer
    */
-  tsapi char* TSAIOBufGet(void* data);
+  tsapi char* TSAIOBufGet(TSAIOCallback data);
 
   /**
       Async disk IO get number of bytes
 
       @return the number of bytes
    */
-  tsapi int TSAIONBytesGet(void* data);
+  tsapi int TSAIONBytesGet(TSAIOCallback data);
 
   /**
       Async disk IO write

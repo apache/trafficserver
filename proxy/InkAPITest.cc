@@ -222,14 +222,14 @@ REGRESSION_TEST(SDK_API_TSConfig) (RegressionTest * test, int atype, int *pstatu
   if (!test_config) {
     SDK_RPRINT(test, "TSConfigSet", "TestCase1", TC_FAIL, "can't correctly set global config structure");
     SDK_RPRINT(test, "TSConfigGet", "TestCase1", TC_FAIL, "can't correctly get global config structure");
-    TSConfigRelease(my_config_id, config);
+    TSConfigRelease(my_config_id, reinterpret_cast<TSConfig>(config));
     *pstatus = REGRESSION_TEST_FAILED;
     return;
   }
 
   if (TSConfigDataGet(test_config) != config) {
     SDK_RPRINT(test, "TSConfigDataGet", "TestCase1", TC_FAIL, "failed to get config data");
-    TSConfigRelease(my_config_id, config);
+    TSConfigRelease(my_config_id, reinterpret_cast<TSConfig>(config));
     *pstatus = REGRESSION_TEST_FAILED;
     return;
   }
@@ -238,7 +238,7 @@ REGRESSION_TEST(SDK_API_TSConfig) (RegressionTest * test, int atype, int *pstatu
   SDK_RPRINT(test, "TSConfigSet", "TestCase1", TC_PASS, "ok");
   SDK_RPRINT(test, "TSConfigDataGet", "TestCase1", TC_PASS, "ok");
 
-  TSConfigRelease(my_config_id, config);
+  TSConfigRelease(my_config_id, reinterpret_cast<TSConfig>(config));
   *pstatus = REGRESSION_TEST_PASSED;
   return;
 }
@@ -2315,9 +2315,8 @@ checkHttpTxnClientReqGet(SocketTest * test, void *data)
     return TS_EVENT_CONTINUE;
   }
 
-
-  if ((bufp == (&((HttpSM *) txnp)->t_state.hdr_info.client_request)) &&
-      (mloc == (((HttpSM *) txnp)->t_state.hdr_info.client_request.m_http))) {
+  if ((bufp == reinterpret_cast<TSMBuffer>(&((HttpSM *) txnp)->t_state.hdr_info.client_request)) &&
+      (mloc == reinterpret_cast<TSMLoc>(((HttpSM *)txnp)->t_state.hdr_info.client_request.m_http))) {
     test->test_client_req_get = true;
     SDK_RPRINT(test->regtest, "TSHttpTxnClientReqGet", "TestCase1", TC_PASS, "ok");
   } else {
@@ -2343,8 +2342,8 @@ checkHttpTxnClientRespGet(SocketTest * test, void *data)
     return TS_EVENT_CONTINUE;
   }
 
-  if ((bufp == (&((HttpSM *) txnp)->t_state.hdr_info.client_response)) &&
-      (mloc == (((HttpSM *) txnp)->t_state.hdr_info.client_response.m_http))) {
+  if ((bufp == reinterpret_cast<TSMBuffer>(&((HttpSM *) txnp)->t_state.hdr_info.client_response)) &&
+      (mloc == reinterpret_cast<TSMLoc>(((HttpSM *) txnp)->t_state.hdr_info.client_response.m_http))) {
     test->test_client_resp_get = true;
     SDK_RPRINT(test->regtest, "TSHttpTxnClientRespGet", "TestCase1", TC_PASS, "ok");
   } else {
@@ -2370,8 +2369,8 @@ checkHttpTxnServerReqGet(SocketTest * test, void *data)
     return TS_EVENT_CONTINUE;
   }
 
-  if ((bufp == (&((HttpSM *) txnp)->t_state.hdr_info.server_request)) &&
-      (mloc == (((HttpSM *) txnp)->t_state.hdr_info.server_request.m_http))) {
+  if ((bufp == reinterpret_cast<TSMBuffer>(&((HttpSM *) txnp)->t_state.hdr_info.server_request)) &&
+      (mloc == reinterpret_cast<TSMLoc>(((HttpSM *) txnp)->t_state.hdr_info.server_request.m_http))) {
     test->test_server_req_get = true;
     SDK_RPRINT(test->regtest, "TSHttpTxnServerReqGet", "TestCase1", TC_PASS, "ok");
   } else {
@@ -2397,8 +2396,8 @@ checkHttpTxnServerRespGet(SocketTest * test, void *data)
     return TS_EVENT_CONTINUE;
   }
 
-  if ((bufp == (&((HttpSM *) txnp)->t_state.hdr_info.server_response)) &&
-      (mloc == (((HttpSM *) txnp)->t_state.hdr_info.server_response.m_http))) {
+  if ((bufp == reinterpret_cast<TSMBuffer>(&((HttpSM *) txnp)->t_state.hdr_info.server_response)) &&
+      (mloc == reinterpret_cast<TSMLoc>(((HttpSM *) txnp)->t_state.hdr_info.server_response.m_http))) {
     test->test_server_resp_get = true;
     SDK_RPRINT(test->regtest, "TSHttpTxnServerRespGet", "TestCase1", TC_PASS, "ok");
   } else {
@@ -4890,7 +4889,7 @@ convert_mime_hdr_to_string(TSMBuffer bufp, TSMLoc hdr_loc)
 
 TSReturnCode
 compare_field_values(RegressionTest * test, TSMBuffer bufp1, TSMLoc hdr_loc1, TSMLoc field_loc1, TSMBuffer bufp2,
-                     TSMBuffer hdr_loc2, TSMLoc field_loc2, bool first_time)
+                     TSMLoc hdr_loc2, TSMLoc field_loc2, bool first_time)
 {
   NOWARN_UNUSED(first_time);
   int no_of_values1;
@@ -6299,8 +6298,8 @@ cache_hook_handler(TSCont contp, TSEvent event, void *edata)
       if (TSHttpTxnCachedReqGet(txnp, &reqbuf, &reqhdr) != TS_SUCCESS) {
         SDK_RPRINT(data->test, "TSHttpTxnCachedReqGet", "TestCase1", TC_FAIL, "TSHttpTxnCachedReqGet returns 0");
       } else {
-        if ((reqbuf == (((HttpSM *) txnp)->t_state.cache_req_hdr_heap_handle)) &&
-            (reqhdr == ((((HttpSM *) txnp)->t_state.cache_info.object_read->request_get())->m_http))) {
+        if ((reqbuf == reinterpret_cast<TSMBuffer>(((HttpSM *) txnp)->t_state.cache_req_hdr_heap_handle)) &&
+            (reqhdr == reinterpret_cast<TSMLoc>((((HttpSM *) txnp)->t_state.cache_info.object_read->request_get())->m_http))) {
           SDK_RPRINT(data->test, "TSHttpTxnCachedReqGet", "TestCase1", TC_PASS, "ok");
           data->test_passed_txn_cached_req_get = true;
         } else {
@@ -6311,8 +6310,8 @@ cache_hook_handler(TSCont contp, TSEvent event, void *edata)
       if (TSHttpTxnCachedRespGet(txnp, &respbuf, &resphdr) != TS_SUCCESS) {
         SDK_RPRINT(data->test, "TSHttpTxnCachedRespGet", "TestCase1", TC_FAIL, "TSHttpTxnCachedRespGet returns 0");
       } else {
-        if ((respbuf == (((HttpSM *) txnp)->t_state.cache_resp_hdr_heap_handle)) &&
-            (resphdr == ((((HttpSM *) txnp)->t_state.cache_info.object_read->response_get())->m_http))) {
+        if ((respbuf == reinterpret_cast<TSMBuffer>(((HttpSM *) txnp)->t_state.cache_resp_hdr_heap_handle)) &&
+            (resphdr == reinterpret_cast<TSMLoc>((((HttpSM *) txnp)->t_state.cache_info.object_read->response_get())->m_http))) {
           SDK_RPRINT(data->test, "TSHttpTxnCachedRespGet", "TestCase1", TC_PASS, "ok");
           data->test_passed_txn_cached_resp_get = true;
         } else {
@@ -6815,8 +6814,8 @@ transform_hook_handler(TSCont contp, TSEvent event, void *edata)
         SDK_RPRINT(data->test, "TSHttpTxnTransformRespGet", "TestCase", TC_FAIL, "TSHttpTxnTransformRespGet returns 0");
         data->test_passed_txn_transform_resp_get = false;
       } else {
-        if ((bufp == &(((HttpSM *) txnp)->t_state.hdr_info.transform_response)) &&
-            (hdr == (&(((HttpSM *) txnp)->t_state.hdr_info.transform_response))->m_http)) {
+        if ((bufp == reinterpret_cast<TSMBuffer>(&(((HttpSM *) txnp)->t_state.hdr_info.transform_response))) &&
+            (hdr == reinterpret_cast<TSMLoc>((&(((HttpSM *) txnp)->t_state.hdr_info.transform_response))->m_http))) {
           SDK_RPRINT(data->test, "TSHttpTxnTransformRespGet", "TestCase", TC_PASS, "ok");
         } else {
           SDK_RPRINT(data->test, "TSHttpTxnTransformRespGet", "TestCase", TC_FAIL, "Value's Mismatch");
@@ -7088,8 +7087,8 @@ altinfo_hook_handler(TSCont contp, TSEvent event, void *edata)
                    "TSHttpAltInfoClientReqGet doesn't return TS_SUCCESS");
         data->test_passed_txn_alt_info_client_req_get = false;
       } else {
-        if ((clientreqbuf == (&(((HttpAltInfo *) infop)->m_client_req))) &&
-            (clientreqhdr == ((HttpAltInfo *) infop)->m_client_req.m_http)) {
+        if ((clientreqbuf == reinterpret_cast<TSMBuffer>(&(((HttpAltInfo *)infop)->m_client_req))) &&
+            (clientreqhdr == reinterpret_cast<TSMLoc>(((HttpAltInfo *)infop)->m_client_req.m_http))) {
           SDK_RPRINT(data->test, "TSHttpAltInfoClientReqGet", "TestCase", TC_PASS, "ok");
         } else {
           SDK_RPRINT(data->test, "TSHttpAltInfoClientReqGet", "TestCase", TC_FAIL, "Value's Mismatch");
@@ -7102,8 +7101,8 @@ altinfo_hook_handler(TSCont contp, TSEvent event, void *edata)
                    "TSHttpAltInfoCachedReqGet doesn't return TS_SUCCESS");
         data->test_passed_txn_alt_info_cached_req_get = false;
       } else {
-        if ((cachereqbuf == (&(((HttpAltInfo *) infop)->m_cached_req))) &&
-            (cachereqhdr == ((HttpAltInfo *) infop)->m_cached_req.m_http)) {
+        if ((cachereqbuf == reinterpret_cast<TSMBuffer>(&(((HttpAltInfo *) infop)->m_cached_req))) &&
+            (cachereqhdr == reinterpret_cast<TSMLoc>(((HttpAltInfo *) infop)->m_cached_req.m_http))) {
           SDK_RPRINT(data->test, "TSHttpAltInfoCachedReqGet", "TestCase", TC_PASS, "ok");
         } else {
           SDK_RPRINT(data->test, "TSHttpAltInfoCachedReqGet", "TestCase", TC_FAIL, "Value's Mismatch");
@@ -7116,8 +7115,8 @@ altinfo_hook_handler(TSCont contp, TSEvent event, void *edata)
                    "TSHttpAltInfoCachedRespGet doesn't return TS_SUCCESS");
         data->test_passed_txn_alt_info_cached_resp_get = false;
       } else {
-        if ((cacherespbuf == (&(((HttpAltInfo *) infop)->m_cached_resp))) &&
-            (cacheresphdr == ((HttpAltInfo *) infop)->m_cached_resp.m_http)) {
+        if ((cacherespbuf == reinterpret_cast<TSMBuffer>(&(((HttpAltInfo *) infop)->m_cached_resp))) &&
+            (cacheresphdr == reinterpret_cast<TSMLoc>(((HttpAltInfo *) infop)->m_cached_resp.m_http))) {
           SDK_RPRINT(data->test, "TSHttpAltInfoCachedRespGet", "TestCase", TC_PASS, "ok");
         } else {
           SDK_RPRINT(data->test, "TSHttpAltInfoCachedRespGet", "TestCase", TC_FAIL, "Value's Mismatch");
@@ -7552,7 +7551,7 @@ REGRESSION_TEST(SDK_API_OVERRIDABLE_CONFIGS) (RegressionTest * test, int atype, 
   TSRecordDataType type;
   HttpSM* s = HttpSM::allocate();
   bool success = true;
-  TSHttpTxn txnp = static_cast<TSHttpTxn>(s); // Convenience ...
+  TSHttpTxn txnp = reinterpret_cast<TSHttpTxn>(s);
   TSMgmtInt ival;
   TSMgmtFloat fval;
   const char* sval;

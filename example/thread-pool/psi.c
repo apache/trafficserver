@@ -919,11 +919,6 @@ transformable(TSHttpTxn txnp)
   TSHandleMLocRelease(bufp, hdr_loc, field_loc);
 
   field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, MIME_FIELD_XPSI, -1);
-  if (value == TS_NULL_MLOC) {
-    TSError("[transformable] Error while searching XPSI field");
-    TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
-    return 0;
-  }
 
   TSHandleMLocRelease(bufp, hdr_loc, field_loc);
   TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
