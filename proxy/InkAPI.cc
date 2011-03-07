@@ -939,7 +939,7 @@ INKContInternal::destroy()
   } else {
     // TODO: Should this schedule on some other "thread" ?
     // TODO: we don't care about the return action?
-    eventProcessor.schedule_imm(this, ET_NET);
+    TSContSchedule((TSCont)this, 0, TS_THREAD_POOL_DEFAULT);
   }
 }
 
