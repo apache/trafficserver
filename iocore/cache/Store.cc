@@ -147,11 +147,9 @@ Store::sort()
       if (next && !strcmp(sd->pathname, next->pathname)) {
         if (!sd->file_pathname) {
           sd->blocks += next->blocks;
-        } else if (sd->offset == next->end()) {
-          sd->blocks += next->blocks;
-          sd->offset -= next->blocks;
-        } else if (sd->offset == next->end()) {
-          sd->blocks += next->blocks;
+        } else if (next->offset <= sd->end()) {
+          if (next->end() >= sd->end())
+            sd->blocks += (next->end() - sd->end());
         } else {
           sd = next;
           continue;
@@ -1071,8 +1069,8 @@ Store::clear(char *filename, bool clear_dirs)
       int fd =::open(path, O_RDWR | O_CREAT, 0644);
       if (fd < 0)
         return -1;
-      for (int b = 0; ds->blocks; b++)
-        if (socketManager.pwrite(fd, z, STORE_BLOCK_SIZE, ds->offset + (b * STORE_BLOCK_SIZE)) < 0) {
+      for (int b = 0; d->blocks; b++)
+        if (socketManager.pwrite(fd, z, STORE_BLOCK_SIZE, d->offset + (b * STORE_BLOCK_SIZE)) < 0) {
           close(fd);
           return -1;
         }
