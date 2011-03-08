@@ -36,12 +36,12 @@
  *
  */
 
-#include <sys/types.h>
 #include <stdint.h>
 
+#include <sys/types.h>
+#include <sys/socket.h>
+
 #define tsapi
-#define tsexp
-#define tsimp
 
 #ifdef __cplusplus
 extern "C"
@@ -637,7 +637,7 @@ extern "C"
         plugin.config.
 
    */
-  extern tsexp void TSPluginInit(int argc, const char* argv[]);
+  extern tsapi void TSPluginInit(int argc, const char* argv[]);
 
   /* --------------------------------------------------------------------------
      License */
@@ -652,7 +652,7 @@ extern "C"
       @return Zero if no license is required. Returns 1 if a license
         is required.
   */
-  extern tsexp int TSPluginLicenseRequired(void);
+  extern tsapi int TSPluginLicenseRequired(void);
 
   /* --------------------------------------------------------------------------
      URL schemes */
@@ -2107,6 +2107,7 @@ extern "C"
   tsapi unsigned int TSHttpTxnServerIPGet(TSHttpTxn txnp);
   tsapi unsigned int TSHttpTxnNextHopIPGet(TSHttpTxn txnp);
   tsapi int TSHttpTxnNextHopPortGet(TSHttpTxn txnp);
+  tsapi TSReturnCode TSHttpTxnOutgoingIPSet(TSHttpTxn txnp, const struct sockaddr *addr, socklen_t addrlen);
 
   tsapi void TSHttpTxnErrorBodySet(TSHttpTxn txnp, char* buf, int buflength, char* mimetype);
 

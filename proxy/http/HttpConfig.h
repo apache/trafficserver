@@ -432,7 +432,8 @@ struct OverridableHttpConfigParams {
 
        // Strings / floats must come last
        proxy_response_server_string(NULL), proxy_response_server_string_len(0),
-       cache_heuristic_lm_factor(0.0), freshness_fuzz_prob(0.0)
+       cache_heuristic_lm_factor(0.0), freshness_fuzz_prob(0.0),
+       outgoing_ip_to_bind_saddr(0)
   { }
 
   // IMPORTANT: All MgmtInt configs should come before any other string / float
@@ -549,6 +550,11 @@ struct OverridableHttpConfigParams {
 
   float cache_heuristic_lm_factor;
   float freshness_fuzz_prob;
+
+  ////////////////////////
+  //  Source IP         //
+  ////////////////////////
+  unsigned int outgoing_ip_to_bind_saddr; // This is kinda ugly for now, whatever ...
 };
 
 
@@ -588,7 +594,6 @@ public:
   unsigned int incoming_ip_to_bind_saddr;
 
   char *outgoing_ip_to_bind;
-  unsigned int outgoing_ip_to_bind_saddr;
 
   MgmtInt server_max_connections;
   MgmtInt origin_min_keep_alive_connections; // TODO: This one really ought to be overridable, but difficult right now.
@@ -900,7 +905,6 @@ HttpConfigParams::HttpConfigParams()
     incoming_ip_to_bind(0),
     incoming_ip_to_bind_saddr(0),
     outgoing_ip_to_bind(0),
-    outgoing_ip_to_bind_saddr(0),
     server_max_connections(0),
     origin_min_keep_alive_connections(0),
     parent_proxy_routing_enable(false),

@@ -4070,9 +4070,9 @@ HttpSM::do_http_server_open(bool raw)
                      t_state.txn_conf->sock_send_buffer_size_out,
                      t_state.txn_conf->sock_option_flag_out);
 
-  if (t_state.http_config_param->outgoing_ip_to_bind_saddr) {
+  if (t_state.txn_conf->outgoing_ip_to_bind_saddr) {
     opt.addr_binding = NetVCOptions::INTF_ADDR;
-    opt.local_addr = t_state.http_config_param->outgoing_ip_to_bind_saddr;
+    opt.local_addr = t_state.txn_conf->outgoing_ip_to_bind_saddr;
   } else if (t_state.server_info.is_transparent) {
     opt.addr_binding = NetVCOptions::FOREIGN_ADDR;
     opt.local_addr = t_state.client_info.ip;

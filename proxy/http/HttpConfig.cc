@@ -1138,7 +1138,7 @@ HttpConfig::startup()
 
   if (c.outgoing_ip_to_bind) {
     Debug("ip_binding", "outgoing_ip_to_bind: %s", c.outgoing_ip_to_bind);
-    c.outgoing_ip_to_bind_saddr = inet_addr(c.outgoing_ip_to_bind);
+    c.oride.outgoing_ip_to_bind_saddr = inet_addr(c.outgoing_ip_to_bind);
   }
 
   HttpEstablishStaticConfigLongLong(c.server_max_connections, "proxy.config.http.server_max_connections");
@@ -1425,7 +1425,7 @@ HttpConfig::reconfigure()
   params = NEW(new HttpConfigParams);
 
   params->incoming_ip_to_bind_saddr = m_master.incoming_ip_to_bind_saddr;
-  params->outgoing_ip_to_bind_saddr = m_master.outgoing_ip_to_bind_saddr;
+  params->oride.outgoing_ip_to_bind_saddr = m_master.oride.outgoing_ip_to_bind_saddr;
   params->proxy_hostname = xstrdup(m_master.proxy_hostname);
   params->proxy_hostname_len = (params->proxy_hostname) ? strlen(params->proxy_hostname) : 0;
   params->no_dns_forward_to_parent = INT_TO_BOOL(m_master.no_dns_forward_to_parent);

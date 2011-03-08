@@ -1056,7 +1056,6 @@ public:
     OverridableHttpConfigParams *txn_conf;
     OverridableHttpConfigParams my_txn_conf; // Storage for plugins, to avoid malloc
     
-
     // Methods
     void
     init()
@@ -1236,6 +1235,18 @@ public:
       pristine_url.clear();
       return;
     }
+
+    // Little helper function to setup the per-transaction configuration copy
+    void
+    setup_per_txn_configs()
+    {
+      if (txn_conf != &my_txn_conf) {
+        // Make sure we copy it first.
+        memcpy(&my_txn_conf, &http_config_param->oride, sizeof(my_txn_conf));
+        txn_conf = &my_txn_conf;
+      }
+    }
+
   }; // End of State struct.
 
 

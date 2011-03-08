@@ -421,6 +421,7 @@ _TSAssert(const char *text, const char *file, int line)
   (void)((EX) || (_TSReleaseAssert(#EX, __FILE__, __LINE__)))
 #endif
 
+
 ////////////////////////////////////////////////////////////////////
 //
 // SDK Interoperability Support
@@ -5118,6 +5119,34 @@ TSHttpTxnServerIPGet(TSHttpTxn txnp)
   return sm->t_state.server_info.ip;
 }
 
+// This API does currently not use or honor the port specified in the sockaddr.
+// This could change in a future version, but for now, leave it at 0 (or undef).
+TSReturnCode
+TSHttpTxnOutgoingIPSet(TSHttpTxn txnp, const struct sockaddr *addr, socklen_t addrlen)
+{
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+  HttpSM *sm = (HttpSM *) txnp;
+
+  sm->t_state.setup_per_txn_configs(); // Make sure the txn_conf struct is setup
+
+  // TODO: For now only, we really ought to make all "internal" IP representations
+  // use struct sockaddr_storage.
+  switch (addr->sa_family) {
+  case AF_INET:
+    {
+      sdk_assert(addrlen >= sizeof(struct sockaddr_in));
+      const struct sockaddr_in *v4addr = reinterpret_cast<const struct sockaddr_in *>(addr);
+      sm->t_state.txn_conf->outgoing_ip_to_bind_saddr = v4addr->sin_addr.s_addr;
+
+      return TS_SUCCESS;
+    }
+    break;
+  case AF_INET6:
+    break;
+  }
+  return TS_ERROR;
+}
+
 unsigned int
 TSHttpTxnNextHopIPGet(TSHttpTxn txnp)
 {
@@ -7321,11 +7350,7 @@ TSHttpTxnConfigIntSet(TSHttpTxn txnp, TSOverridableConfigKey conf, TSMgmtInt val
 
   HttpSM *s = reinterpret_cast<HttpSM*>(txnp);
 
-  // If this is the first time we're trying to modify a transaction config, copy it.
-  if (s->t_state.txn_conf != &s->t_state.my_txn_conf) {
-    memcpy(&s->t_state.my_txn_conf, &s->t_state.http_config_param->oride, sizeof(s->t_state.my_txn_conf));
-    s->t_state.txn_conf = &s->t_state.my_txn_conf;
-  }
+  s->t_state.setup_per_txn_configs();
 
   OverridableDataType type;
   TSMgmtInt *dest = static_cast<TSMgmtInt*>(_conf_to_memberp(conf, s, &type));
@@ -7369,11 +7394,7 @@ TSHttpTxnConfigFloatSet(TSHttpTxn txnp, TSOverridableConfigKey conf, TSMgmtFloat
   HttpSM *s = reinterpret_cast<HttpSM*>(txnp);
   OverridableDataType type;
 
-  // If this is the first time we're trying to modify a transaction config, copy it.
-  if (s->t_state.txn_conf != &s->t_state.my_txn_conf) {
-    memcpy(&s->t_state.my_txn_conf, &s->t_state.http_config_param->oride, sizeof(s->t_state.my_txn_conf));
-    s->t_state.txn_conf = &s->t_state.my_txn_conf;
-  }
+  s->t_state.setup_per_txn_configs();
 
   TSMgmtFloat* dest = static_cast<TSMgmtFloat*>(_conf_to_memberp(conf, s, &type));
 
@@ -7419,11 +7440,7 @@ TSHttpTxnConfigStringSet(TSHttpTxn txnp, TSOverridableConfigKey conf, const char
 
   HttpSM *s = (HttpSM*) txnp;
 
-  // If this is the first time we're trying to modify a transaction config, copy it.
-  if (s->t_state.txn_conf != &s->t_state.my_txn_conf) {
-    memcpy(&s->t_state.my_txn_conf, &s->t_state.http_config_param->oride, sizeof(s->t_state.my_txn_conf));
-    s->t_state.txn_conf = &s->t_state.my_txn_conf;
-  }
+  s->t_state.setup_per_txn_configs();
 
   switch (conf) {
   case TS_CONFIG_HTTP_RESPONSE_SERVER_STR:
