@@ -225,7 +225,7 @@ my %TWO_2_THREE = (
   "TSHttpHdrReasonGet" => [$W_NO_NULL_LENGTH],
   "TSFetchRespGet" => [$W_NO_NULL_LENGTH],
   "TSHttpTxnConfigStringGet" => [$W_NO_NULL_LENGTH],
-  "TS_ERROR_PTR" => [$W_NO_ERROR_PTR]
+  "TS_ERROR_PTR" => [$W_NO_ERROR_PTR],
   "TSAIOBufGet" => [$W_TSAIOCALLBACK],
   "TSAIONBytesGet" => [$W_TSAIOCALLBACK],
 );
