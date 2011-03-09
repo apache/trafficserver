@@ -190,6 +190,10 @@ update_cache_control_information_from_config(HttpTransact::State* s)
     s->cache_info.directives.does_client_permit_lookup = false;
     s->cache_info.directives.does_client_permit_storing = false;
   }
+
+  // Less than 0 means it wasn't overridden, so leave it alone.
+  if (s->cache_control.cache_responses_to_cookies >= 0)
+    s->txn_conf->cache_responses_to_cookies = s->cache_control.cache_responses_to_cookies;
 }
 
 inline bool

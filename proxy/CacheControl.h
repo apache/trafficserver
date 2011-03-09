@@ -81,6 +81,7 @@ public:
   bool ignore_client_no_cache;
   bool ignore_server_no_cache;
   bool ignore_client_cc_max_age;
+  int cache_responses_to_cookies; ///< Override for caching cookied responses.
 //  bool cache_auth_content;
 
   // Data for internal use only
@@ -109,6 +110,7 @@ CacheControlResult::CacheControlResult()
     ignore_client_no_cache(false),
     ignore_server_no_cache(false),
     ignore_client_cc_max_age(true),
+    cache_responses_to_cookies(-1), // do not change value
     //cache_auth_content(false),
     reval_line(-1),
     never_line(-1),
@@ -125,6 +127,7 @@ public:
   CacheControlRecord();
   CacheControlType directive;
   int time_arg;
+  int cache_responses_to_cookies;
   char *Init(matcher_line * line_info);
   inkcoreapi void UpdateMatch(CacheControlResult * result, RD * rdata);
   void Print();
@@ -133,6 +136,7 @@ public:
 inline
 CacheControlRecord::CacheControlRecord()
   : ControlBase(), directive(CC_INVALID), time_arg(0)
+                  , cache_responses_to_cookies(-1)
 {}
 
 //

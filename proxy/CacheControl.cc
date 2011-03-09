@@ -53,6 +53,8 @@
 #ifndef INK_NO_ACL
 static const char modulePrefix[] = "[CacheControl]";
 
+# define TWEAK_CACHE_RESPONSES_TO_COOKIES "cache-responses-to-cookies"
+
 static const char *CC_directive_str[CC_NUM_TYPES] = {
   "INVALID",
   "REVALIDATE_AFTER",
@@ -241,6 +243,10 @@ CacheControlRecord::Print()
     printf("\t\tDirective: INVALID\n");
     break;
   }
+  if (cache_responses_to_cookies >= 0)
+    printf("\t\t  - " TWEAK_CACHE_RESPONSES_TO_COOKIES ":%d\n",
+      cache_responses_to_cookies
+    );
   ControlBase::Print();
 }
 
@@ -266,6 +272,37 @@ CacheControlRecord::Init(matcher_line * line_info)
 
   this->line_num = line_info->line_num;
 
+  // First pass for optional tweaks.
+  for (int i = 0; i < MATCHER_MAX_TOKENS && line_info->num_el ; ++i) {
+    bool used = false;
+    label = line_info->line[0][i];
+    val = line_info->line[1][i];
+    if (!label) continue;
+
+    if (strcasecmp(label, TWEAK_CACHE_RESPONSES_TO_COOKIES) == 0) {
+      char* ptr = 0;
+      int v = strtol(val, &ptr, 0);
+      if (!ptr || v < 0 || v > 4) {
+        errBuf = static_cast<char*>(xmalloc(errBufLen * sizeof(char)));
+        snprintf(errBuf, errBufLen,
+          "Value for " TWEAK_CACHE_RESPONSES_TO_COOKIES
+          " must be an integer in the range 0..4"
+        );
+        return errBuf;
+      } else {
+        cache_responses_to_cookies = v;
+      }
+      used = true;
+    }
+
+    // Clip pair if used.
+    if (used) {
+      line_info->line[0][i] = 0;
+      --(line_info->num_el);
+    }
+  }
+
+  // Now look for the directive.
   for (int i = 0; i < MATCHER_MAX_TOKENS; i++) {
     label = line_info->line[0][i];
     val = line_info->line[1][i];
@@ -438,8 +475,21 @@ CacheControlRecord::UpdateMatch(CacheControlResult * result, RD * rdata)
     break;
   }
 
+  if (cache_responses_to_cookies >= 0)
+    result->cache_responses_to_cookies = cache_responses_to_cookies;
+
   if (match == true) {
-    Debug("cache_control", "Matched with for %s at line %d", CC_directive_str[this->directive], this->line_num);
+    char crtc_debug[80];
+    if (result->cache_responses_to_cookies >= 0)
+      sprintf(crtc_debug, " [" TWEAK_CACHE_RESPONSES_TO_COOKIES "=%d]",
+        result->cache_responses_to_cookies
+      );
+    else
+      crtc_debug[0] = 0;
+      
+    Debug("cache_control", "Matched with for %s at line %d%s",
+      CC_directive_str[this->directive], this->line_num, crtc_debug
+    );
   }
 }
 #else
