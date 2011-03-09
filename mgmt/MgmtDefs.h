@@ -42,6 +42,7 @@
 
 typedef int64_t MgmtIntCounter;
 typedef int64_t MgmtInt;
+typedef int8_t MgmtByte;
 typedef float MgmtFloat;
 typedef char *MgmtString;
 

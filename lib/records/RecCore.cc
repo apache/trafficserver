@@ -138,6 +138,20 @@ link_counter(const char *name, RecDataT data_type, RecData data, void *cookie)
   return REC_ERR_OKAY;
 }
 
+// This is a convenience wrapper, to allow us to treat the RecInt's as a
+// 1-byte entity internally.
+static int
+link_byte(const char *name, RecDataT data_type, RecData data, void *cookie)
+{
+  REC_NOWARN_UNUSED(name);
+  REC_NOWARN_UNUSED(data_type);
+  RecByte *rec_byte = (RecByte *) cookie;
+  RecByte byte = static_cast<RecByte>(data.rec_int);
+
+  ink_atomic_swap8(rec_byte, byte);
+  return REC_ERR_OKAY;
+}
+
 // mimic Config.cc::config_string_alloc_cb
 static int
 link_string_alloc(const char *name, RecDataT data_type, RecData data, void *cookie)
@@ -295,6 +309,15 @@ RecLinkConfigString(const char *name, RecString * rec_string)
   return RecRegisterConfigUpdateCb(name, link_string_alloc, (void *) rec_string);
 }
 
+int
+RecLinkConfigByte(const char *name, RecByte * rec_byte)
+{
+  if (RecGetRecordByte(name, rec_byte) == REC_ERR_FAIL) {
+    return REC_ERR_FAIL;
+  }
+  return RecRegisterConfigUpdateCb(name, link_byte, (void *) rec_byte);
+}
+
 
 //-------------------------------------------------------------------------
 // RecRegisterConfigUpdateCb
@@ -419,6 +442,16 @@ RecGetRecordCounter(const char *name, RecCounter * rec_counter, bool lock)
   RecData data;
   if ((err = RecGetRecord_Xmalloc(name, RECD_COUNTER, &data, lock)) == REC_ERR_OKAY)
     *rec_counter = data.rec_counter;
+  return err;
+}
+
+int
+RecGetRecordByte(const char *name, RecByte *rec_byte, bool lock)
+{
+  int err;
+  RecData data;
+  if ((err = RecGetRecord_Xmalloc(name, RECD_INT, &data, lock)) == REC_ERR_OKAY)
+    *rec_byte = data.rec_int;
   return err;
 }
 

@@ -409,13 +409,13 @@ struct OverridableHttpConfigParams {
        negative_caching_enabled(0), negative_caching_lifetime(0),
        cache_when_to_revalidate(0), keep_alive_enabled(0), keep_alive_post_out(0),
        sock_recv_buffer_size_out(0), sock_send_buffer_size_out(0), sock_option_flag_out(0),
-       anonymize_remove_from(false), anonymize_remove_referer(false), anonymize_remove_user_agent(false),
-       anonymize_remove_cookie(false), anonymize_remove_client_ip(false), anonymize_insert_client_ip(true),
-       append_xforwards_header(false), proxy_response_server_enabled(0),
+       anonymize_remove_from(0), anonymize_remove_referer(0), anonymize_remove_user_agent(0),
+       anonymize_remove_cookie(0), anonymize_remove_client_ip(0), anonymize_insert_client_ip(1),
+       append_xforwards_header(0), proxy_response_server_enabled(0),
        insert_squid_x_forwarded_for(0), send_http11_requests(3), // SEND_HTTP11_IF_REQUEST_11_AND_HOSTDB
-       cache_http(false), cache_ignore_client_no_cache(false),     cache_ignore_client_cc_max_age(true),
-       cache_ims_on_client_no_cache(false), cache_ignore_server_no_cache(false), cache_responses_to_cookies(0),
-       cache_ignore_auth(0), cache_urls_that_look_dynamic(false), cache_required_headers(0), // CACHE_REQUIRED_HEADERS_NONE
+       cache_http(0), cache_ignore_client_no_cache(0), cache_ignore_client_cc_max_age(1),
+       cache_ims_on_client_no_cache(0), cache_ignore_server_no_cache(0), cache_responses_to_cookies(0),
+       cache_ignore_auth(0), cache_urls_that_look_dynamic(0), cache_required_headers(0), // CACHE_REQUIRED_HEADERS_NONE
        insert_request_via_string(0), insert_response_via_string(0),
        cache_heuristic_min_lifetime(0), cache_heuristic_max_lifetime(0),
        cache_guaranteed_min_lifetime(0), cache_guaranteed_max_lifetime(0), cache_max_stale_age(0),
@@ -440,19 +440,19 @@ struct OverridableHttpConfigParams {
   // configs!!!
 
   // The first three configs used to be @-parameters in remap.config
-  MgmtInt maintain_pristine_host_hdr;
-  MgmtInt chunking_enabled;
+  MgmtByte maintain_pristine_host_hdr;
+  MgmtByte chunking_enabled;
 
   ////////////////////////////////
   //  Negative Response Caching //
   ////////////////////////////////
-  MgmtInt negative_caching_enabled;
+  MgmtByte negative_caching_enabled;
   MgmtInt negative_caching_lifetime;
 
-  MgmtInt cache_when_to_revalidate;
+  MgmtByte cache_when_to_revalidate;
 
-  MgmtInt keep_alive_enabled;
-  MgmtInt keep_alive_post_out;  // share server sessions for post
+  MgmtByte keep_alive_enabled;
+  MgmtByte keep_alive_post_out;  // share server sessions for post
 
   ///////////////////////////////////////
   // origin server connection settings //
@@ -464,41 +464,41 @@ struct OverridableHttpConfigParams {
   ///////////////////////////////////////////////////////////////////
   // Privacy: fields which are removed from the user agent request //
   ///////////////////////////////////////////////////////////////////
-  MgmtInt anonymize_remove_from;
-  MgmtInt anonymize_remove_referer;
-  MgmtInt anonymize_remove_user_agent;
-  MgmtInt anonymize_remove_cookie;
-  MgmtInt anonymize_remove_client_ip;
-  MgmtInt anonymize_insert_client_ip;
-  MgmtInt append_xforwards_header;
+  MgmtByte anonymize_remove_from;
+  MgmtByte anonymize_remove_referer;
+  MgmtByte anonymize_remove_user_agent;
+  MgmtByte anonymize_remove_cookie;
+  MgmtByte anonymize_remove_client_ip;
+  MgmtByte anonymize_insert_client_ip;
+  MgmtByte append_xforwards_header;
 
-  MgmtInt proxy_response_server_enabled;
+  MgmtByte proxy_response_server_enabled;
 
   /////////////////////
   // X-Forwarded-For //
   /////////////////////
-  MgmtInt insert_squid_x_forwarded_for;
+  MgmtByte insert_squid_x_forwarded_for;
 
   //////////////////////
   //  Version Hell    //
   //////////////////////
-  MgmtInt send_http11_requests;
+  MgmtByte send_http11_requests;
 
   ///////////////////
   // cache control //
   ///////////////////
-  MgmtInt cache_http;
-  MgmtInt cache_ignore_client_no_cache;
-  MgmtInt cache_ignore_client_cc_max_age;
-  MgmtInt cache_ims_on_client_no_cache;
-  MgmtInt cache_ignore_server_no_cache;
-  MgmtInt cache_responses_to_cookies;
-  MgmtInt cache_ignore_auth;
-  MgmtInt cache_urls_that_look_dynamic;
-  MgmtInt cache_required_headers;
+  MgmtByte cache_http;
+  MgmtByte cache_ignore_client_no_cache;
+  MgmtByte cache_ignore_client_cc_max_age;
+  MgmtByte cache_ims_on_client_no_cache;
+  MgmtByte cache_ignore_server_no_cache;
+  MgmtByte cache_responses_to_cookies;
+  MgmtByte cache_ignore_auth;
+  MgmtByte cache_urls_that_look_dynamic;
+  MgmtByte cache_required_headers;
 
-  MgmtInt insert_request_via_string;
-  MgmtInt insert_response_via_string;
+  MgmtByte insert_request_via_string;
+  MgmtByte insert_response_via_string;
 
   /////////////////////
   // cache variables //
@@ -598,18 +598,18 @@ public:
   MgmtInt server_max_connections;
   MgmtInt origin_min_keep_alive_connections; // TODO: This one really ought to be overridable, but difficult right now.
 
-  MgmtInt parent_proxy_routing_enable;
-  MgmtInt disable_ssl_parenting;
+  MgmtByte parent_proxy_routing_enable;
+  MgmtByte disable_ssl_parenting;
 
-  MgmtInt enable_url_expandomatic;
-  MgmtInt no_dns_forward_to_parent;
-  MgmtInt uncacheable_requests_bypass_parent;
-  MgmtInt no_origin_server_dns;
-  MgmtInt use_client_target_addr;
+  MgmtByte enable_url_expandomatic;
+  MgmtByte no_dns_forward_to_parent;
+  MgmtByte uncacheable_requests_bypass_parent;
+  MgmtByte no_origin_server_dns;
+  MgmtByte use_client_target_addr;
 
-  MgmtInt snarf_username_from_authorization;
+  MgmtByte snarf_username_from_authorization;
 
-  MgmtInt verbose_via_string;
+  MgmtByte verbose_via_string;
 
   char *proxy_request_via_string;
   int proxy_request_via_string_len;
@@ -619,8 +619,8 @@ public:
   //////////////////
   // WUTS headers //
   //////////////////
-  MgmtInt wuts_enabled;
-  MgmtInt log_spider_codes;
+  MgmtByte wuts_enabled;
+  MgmtByte log_spider_codes;
 
   ///////////////////////////////////
   // URL expansions for DNS lookup //
@@ -634,7 +634,7 @@ public:
   ///////////////////////////////////////////////////
   MgmtInt proxy_server_port;
   char *proxy_server_other_ports;
-  MgmtInt session_auth_cache_keep_alive_enabled;
+  MgmtByte session_auth_cache_keep_alive_enabled;
   MgmtInt origin_server_pipeline;
   MgmtInt user_agent_pipeline;
   MgmtInt share_server_sessions;
@@ -665,15 +665,15 @@ public:
   /////////////////////
   // Benchmark hacks //
   /////////////////////
-  MgmtInt insert_age_in_response;       // INKqa09853
-  MgmtInt avoid_content_spoofing;       // INKqa10426
-  MgmtInt enable_http_stats;    // INKqa09879
+  MgmtByte insert_age_in_response;
+  MgmtByte avoid_content_spoofing;
+  MgmtByte enable_http_stats;
 
   ///////////////////
   // ICP variables //
   ///////////////////
-  MgmtInt icp_enabled;
-  MgmtInt stale_icp_enabled;
+  MgmtByte icp_enabled;
+  MgmtByte stale_icp_enabled;
 
   char *cache_vary_default_text;
   char *cache_vary_default_images;
@@ -685,9 +685,9 @@ public:
   ///////////////////
   // cache control //
   ///////////////////
-  MgmtInt cache_enable_default_vary_headers;
-  MgmtInt cache_when_to_add_no_cache_to_msie_requests;
-  MgmtInt cache_range_lookup;
+  MgmtByte cache_enable_default_vary_headers;
+  MgmtByte cache_when_to_add_no_cache_to_msie_requests;
+  MgmtByte cache_range_lookup;
 
   ////////////////////////////////////////////
   // CONNECT ports (used to be == ssl_ports //
@@ -704,18 +704,18 @@ public:
   //////////
   // Push //
   //////////
-  MgmtInt push_method_enabled;
+  MgmtByte push_method_enabled;
 
   ////////////////////////////
   // HTTP Referer filtering //
   ////////////////////////////
-  MgmtInt referer_filter_enabled;
-  MgmtInt referer_format_redirect;
+  MgmtByte referer_filter_enabled;
+  MgmtByte referer_format_redirect;
 
   ////////////////////////////////////////////////////////
   // HTTP Accept-Encoding filtering based on User-Agent //
   ////////////////////////////////////////////////////////
-  MgmtInt accept_encoding_filter_enabled;
+  MgmtByte accept_encoding_filter_enabled;
 
   //////////////////////////
   // HTTP Quick filtering //
@@ -733,41 +733,41 @@ public:
   ///////////////////
   // reverse proxy //
   ///////////////////
-  MgmtInt reverse_proxy_enabled;
-  MgmtInt url_remap_required;
+  MgmtByte reverse_proxy_enabled;
+  MgmtByte url_remap_required;
   char *reverse_proxy_no_host_redirect;
   int reverse_proxy_no_host_redirect_len;
 
   ////////////////////////////
   //  Negative Revalidating //
   ////////////////////////////
-  MgmtInt negative_revalidating_enabled;
+  MgmtByte negative_revalidating_enabled;
   MgmtInt negative_revalidating_lifetime;
 
   ///////////////////
   // cop access    //
   ///////////////////
-  MgmtInt record_cop_page;
+  MgmtByte record_cop_page;
 
   ////////////////////////
   // record tcp_mem_hit //
   ////////////////////////
-  MgmtInt record_tcp_mem_hit;
+  MgmtByte record_tcp_mem_hit;
 
   /////////////////////
   // Error Reporting //
   /////////////////////
-  MgmtInt errors_log_error_pages;
+  MgmtByte errors_log_error_pages;
   MgmtInt slow_log_threshold;
 
   //////////////////////
   //  DOC IN CACHE NO DNS//
   //////////////////////
-  MgmtInt doc_in_cache_skip_dns;
+  MgmtByte doc_in_cache_skip_dns;
 
   MgmtInt default_buffer_size_index;
   MgmtInt default_buffer_water_mark;
-  MgmtInt enable_http_info;
+  MgmtByte enable_http_info;
 
   //////////////////////
   //  Breaking Specs  //
@@ -782,7 +782,7 @@ public:
   MgmtInt srv_enabled;          /* added by: ebalsa */
 
   //##############################################################################
-//#
+  //#
   //# Redirection
   //#
   //# 1. redirection_enabled: if set to 1, redirection is enabled.
@@ -791,7 +791,7 @@ public:
   //#
   //##############################################################################
 
-  MgmtInt redirection_enabled;
+  MgmtByte redirection_enabled;
   MgmtInt number_of_redirections;
   MgmtInt post_copy_size;
 
@@ -799,15 +799,15 @@ public:
   // Allow special handling of Accept* headers to be disabled to  //
   // avoid unnecessary creation of alternates                     //
   //////////////////////////////////////////////////////////////////
-  MgmtInt ignore_accept_mismatch;
-  MgmtInt ignore_accept_language_mismatch;
-  MgmtInt ignore_accept_encoding_mismatch;
-  MgmtInt ignore_accept_charset_mismatch;
+  MgmtByte ignore_accept_mismatch;
+  MgmtByte ignore_accept_language_mismatch;
+  MgmtByte ignore_accept_encoding_mismatch;
+  MgmtByte ignore_accept_charset_mismatch;
 
   ////////////////////////////////
   // Optimize gzip alternates   //
   ////////////////////////////////
-  MgmtInt normalize_ae_gzip;
+  MgmtByte normalize_ae_gzip;
 
   OverridableHttpConfigParams oride;
 
@@ -907,21 +907,21 @@ HttpConfigParams::HttpConfigParams()
     outgoing_ip_to_bind(0),
     server_max_connections(0),
     origin_min_keep_alive_connections(0),
-    parent_proxy_routing_enable(false),
+    parent_proxy_routing_enable(0),
     disable_ssl_parenting(0),
     enable_url_expandomatic(0),
     no_dns_forward_to_parent(0),
     uncacheable_requests_bypass_parent(1),
     no_origin_server_dns(0),
     use_client_target_addr(0),
-    //snarf_username_from_authorization(0),
+    snarf_username_from_authorization(0),
     verbose_via_string(0),
     proxy_request_via_string(0),
     proxy_request_via_string_len(0),
     proxy_response_via_string(0),
     proxy_response_via_string_len(0),
-    wuts_enabled(false),
-    log_spider_codes(false),
+    wuts_enabled(0),
+    log_spider_codes(0),
     url_expansions_string(0),
     url_expansions(0),
     num_url_expansions(0),
@@ -951,7 +951,7 @@ HttpConfigParams::HttpConfigParams()
     cache_vary_default_images(0),
     cache_vary_default_other(0),
     max_cache_open_write_retries(0),
-    cache_enable_default_vary_headers(false),
+    cache_enable_default_vary_headers(0),
     cache_when_to_add_no_cache_to_msie_requests(0),
     connect_ports_string(0),
     connect_ports(0),
@@ -976,7 +976,7 @@ HttpConfigParams::HttpConfigParams()
     fwd_proxy_auth_to_parent(0),
     cluster_time_delta(0),
     srv_enabled(0),
-    redirection_enabled(true),
+    redirection_enabled(1),
     number_of_redirections(0),
     post_copy_size(2048),
     ignore_accept_mismatch(0),
@@ -984,8 +984,7 @@ HttpConfigParams::HttpConfigParams()
     ignore_accept_encoding_mismatch(0),
     ignore_accept_charset_mismatch(0),
     normalize_ae_gzip(1)
-{
-}
+{ }
 
 inline
 HttpConfigParams::~HttpConfigParams()

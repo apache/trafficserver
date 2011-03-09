@@ -78,6 +78,7 @@ int RecLinkConfigInkU32(const char *name, uint32_t * p_uint32);
 int RecLinkConfigFloat(const char *name, RecFloat * rec_float);
 int RecLinkConfigCounter(const char *name, RecCounter * rec_counter);
 int RecLinkConfigString(const char *name, RecString * rec_string);
+int RecLinkConfigByte(const char *name, RecByte * rec_byte);
 
 int RecRegisterConfigUpdateCb(const char *name, RecConfigUpdateCb update_cb, void *cookie);
 int RecRegisterRawStatUpdateFunc(const char *name, RecRawStatBlock * rsb, int id, RecStatUpdateFunc update_func, void *cookie);
@@ -105,6 +106,8 @@ int RecGetRecordFloat(const char *name, RecFloat * rec_float, bool lock = true);
 int RecGetRecordString(const char *name, char *buf, int buf_len, bool lock = true);
 int RecGetRecordString_Xmalloc(const char *name, RecString * rec_string, bool lock = true);
 int RecGetRecordCounter(const char *name, RecCounter * rec_counter, bool lock = true);
+// Convenience to allow us to treat the RecInt as a single byte internally
+int RecGetRecordByte(const char *name, RecByte * rec_byte, bool lock = true);
 
 //------------------------------------------------------------------------
 // Record Attributes Reading
@@ -163,7 +166,7 @@ void RecSignalManager(int, const char *);
 #define REC_RegisterConfigUpdateFunc(_config_var_name, func, flag) \
   RecRegisterConfigUpdateCb(_config_var_name, func, flag)
 
-#define REC_EstablishStaticConfigInteger(_var, _config_var_name) do{ \
+#define REC_EstablishStaticConfigInteger(_var, _config_var_name) do { \
   RecLinkConfigInt(_config_var_name, &_var); \
   _var = (int64_t)REC_ConfigReadInteger(_config_var_name); \
 } while (0)
@@ -183,15 +186,17 @@ void RecSignalManager(int, const char *);
   _var = (RecString)REC_ConfigReadString(_config_var_name); \
 } while (0)
 
-#define REC_EstablishStaticConfigLongLong(_var, _config_var_name) do { \
-  RecLinkConfigCounter(_config_var_name, &_var); \
-  _var = (RecCounter)REC_ConfigReadCounter(_config_var_name); \
-} while (0)
-
 #define REC_EstablishStaticConfigFloat(_var, _config_var_name) do { \
   RecLinkConfigFloat(_config_var_name, &_var); \
   _var = (RecFloat)REC_ConfigReadFloat(_config_var_name); \
 } while (0)
+
+// Allow to treat our "INT" configs as a byte type internally. Note
+// that the byte type is just a wrapper around RECD_INT.
+#define REC_EstablishStaticConfigByte(_var, _config_var_name) do { \
+    RecLinkConfigByte(_config_var_name, &_var); \
+    _var = REC_ConfigReadInteger(_config_var_name) ? true : false; \
+  } while (0)
 
 RecInt REC_ConfigReadInteger(const char *name);
 char *REC_ConfigReadString(const char *name);

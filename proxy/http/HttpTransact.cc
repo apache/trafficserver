@@ -2558,9 +2558,8 @@ HttpTransact::HandleCacheOpenReadHit(State* s)
     Debug("http_seq", "[HttpTransact::HandleCacheOpenReadHit] " "Revalidate document with server");
 
 #ifndef INK_NO_ICP
-    if (s->http_config_param->icp_enabled && icp_dynamic_enabled
-        && s->http_config_param->stale_icp_enabled
-        && needs_authenticate == false && needs_cache_auth == false &&
+    if (s->http_config_param->icp_enabled && icp_dynamic_enabled && s->http_config_param->stale_icp_enabled &&
+        needs_authenticate == false && needs_cache_auth == false &&
         !s->hdr_info.client_request.is_pragma_no_cache_set() &&
         !s->hdr_info.client_request.is_cache_control_set(HTTP_VALUE_NO_CACHE)) {
       Debug("http_trans", "[HandleCacheOpenReadHit] ICP is configured" " and no no-cache in request; checking ICP for a STALE hit");

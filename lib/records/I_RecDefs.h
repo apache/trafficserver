@@ -52,6 +52,7 @@ typedef float RecFloat;
 typedef char *RecString;
 typedef const char *RecStringConst;
 typedef int64_t RecCounter;
+typedef int8_t RecByte;
 
 enum RecT
 {
