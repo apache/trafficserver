@@ -5122,7 +5122,7 @@ TSHttpTxnServerIPGet(TSHttpTxn txnp)
 // This API does currently not use or honor the port specified in the sockaddr.
 // This could change in a future version, but for now, leave it at 0 (or undef).
 TSReturnCode
-TSHttpTxnOutgoingIPSet(TSHttpTxn txnp, const struct sockaddr *addr, socklen_t addrlen)
+TSHttpTxnOutgoingAddrSet(TSHttpTxn txnp, const struct sockaddr *addr, socklen_t addrlen)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
   HttpSM *sm = (HttpSM *) txnp;

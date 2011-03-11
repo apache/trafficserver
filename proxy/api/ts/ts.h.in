@@ -2107,7 +2107,7 @@ extern "C"
   tsapi unsigned int TSHttpTxnServerIPGet(TSHttpTxn txnp);
   tsapi unsigned int TSHttpTxnNextHopIPGet(TSHttpTxn txnp);
   tsapi int TSHttpTxnNextHopPortGet(TSHttpTxn txnp);
-  tsapi TSReturnCode TSHttpTxnOutgoingIPSet(TSHttpTxn txnp, const struct sockaddr *addr, socklen_t addrlen);
+  tsapi TSReturnCode TSHttpTxnOutgoingAttrSet(TSHttpTxn txnp, const struct sockaddr *addr, socklen_t addrlen);
 
   tsapi void TSHttpTxnErrorBodySet(TSHttpTxn txnp, char* buf, int buflength, char* mimetype);
 
