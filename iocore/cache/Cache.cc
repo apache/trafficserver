@@ -585,8 +585,10 @@ CacheProcessor::start_internal(int flags)
         int sector_size = sd->hw_sector_size;
         if (sector_size < cache_config_force_sector_size)
           sector_size = cache_config_force_sector_size;
-        if (sd->hw_sector_size <= 0 || sector_size > STORE_BLOCK_SIZE)
-          Error("bad hardware sector size");
+        if (sd->hw_sector_size <= 0 || sector_size > STORE_BLOCK_SIZE) {
+          Warning("bad hardware sector size %d, resetting to %d", sector_size, STORE_BLOCK_SIZE);
+          sector_size = STORE_BLOCK_SIZE;
+        }
         off_t skip = ROUND_TO_STORE_BLOCK((sd->offset < START_POS ? START_POS + sd->alignment : sd->offset));
         blocks = blocks - ROUND_TO_STORE_BLOCK(sd->offset + skip);
         gdisks[gndisks]->open(path, blocks, skip, sector_size, fd, clear);

@@ -88,7 +88,6 @@ struct DiskHeader
 
 struct CacheDisk:public Continuation
 {
-
   DiskHeader *header;
   char *path;
   int header_len;
