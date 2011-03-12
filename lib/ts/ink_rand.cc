@@ -67,7 +67,6 @@ static uint64_t mag01[2]={0ULL, MATRIX_A};
 
 InkRand::InkRand(uint64_t d) {
   seed(d);
-  mti = NN+1;
 }
 
 void InkRand::seed(uint64_t seed) {
@@ -81,12 +80,6 @@ uint64_t InkRand::random() {
   uint64_t x;
 
   if (mti >= NN) { /* generate NN words at one time */
-
-    /* if init_genrand64() has not been called, */
-    /* a default initial seed is used     */
-    if (mti == NN+1) 
-      seed(5489ULL); 
-
     for (i=0;i<NN-MM;i++) {
       x = (mt[i]&UM)|(mt[i+1]&LM);
       mt[i] = mt[i+MM] ^ (x>>1) ^ mag01[(int)(x&1ULL)];
