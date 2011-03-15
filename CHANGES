@@ -1,6 +1,34 @@
                                                          -*- coding: utf-8 -*-
 
 Changes with Apache Traffic Server 2.1.7
+  *) [TS-705] Fixes for compiling with gcc v4.6.
+
+  *) [TS-706] hardware sector size's over 8K current report an Error
+   but are passed through resulting in lots of disk waste.
+
+  *) [TS-707] The random number generator from 1-23-2011 is using the
+   same seed for all threads = collisions in the cache
+
+  *) [TS-700] Need additional controls in cache.config.
+
+  *) [TS-696] make check fails on libtsutil due to missing libresolv
+   and librt. Author: Eric Connell.
+
+  *) [TS-691] LogFilter not working for "int" types.
+   Author: Eric Connell.
+
+  *) [TS-692] Add an experimental API to modify the outgoing IP address.
+
+  *) TS-676: logic in Store::clear and Store::read_config is wrong.
+  Author: mohan_zl.
+
+  *) [TS-680] Change many typedef void* types to anonymous structs.
+
+  *) [TS-690] Schedule some callbacks on the ET_TASK threads
+
+  *) TS-689 Restore TSMgmtUpdateRegister() to the SDK APIs.
+
+  *) [TS-550] Remove MgmtPlugin.{cc,h}.
 
   *) [TS-657] Proper validation of RWW settings on startup.
 
