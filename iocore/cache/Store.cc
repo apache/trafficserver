@@ -369,7 +369,7 @@ Store::write_config_data(int fd)
   return 0;
 }
 
-#if defined(freebsd) || defined(darwin) || defined(solaris)
+#if defined(freebsd) || defined(darwin)
 // TODO: Those are probably already included from the ink_platform.h
 #include <ctype.h>
 #include <sys/types.h>
@@ -380,9 +380,6 @@ Store::write_config_data(int fd)
 //#include <sys/diskslice.h>
 #elif defined(darwin)
 #include <sys/disk.h>
-#include <sys/statvfs.h>
-#elif defined(solaris)
-#include <sys/statfs.h>
 #include <sys/statvfs.h>
 #endif
 #include <string.h>
@@ -438,21 +435,12 @@ Span::init(char *an, int64_t size)
     return "unable to open";
   }
 
-#if defined(solaris)
-  struct statvfs fs;
-  if ((ret = fstatvfs(fd, &fs)) < 0) {
-    Warning("unable to statvfs '%s': %d %d, %s", n, ret, errno, strerror(errno));
-    socketManager.close(fd);
-    return "unable to statvfs";
-  }
-#else
   struct statfs fs;
   if ((ret = fstatfs(fd, &fs)) < 0) {
     Warning("unable to statfs '%s': %d %d, %s", n, ret, errno, strerror(errno));
     socketManager.close(fd);
     return "unable to statfs";
   }
-#endif
 
   hw_sector_size = fs.f_bsize;
   int64_t fsize = (int64_t) fs.f_blocks * (int64_t) fs.f_bsize;
@@ -550,6 +538,100 @@ Span::init(char *an, int64_t size)
     blocks--;
     offset = 1;
   }
+Lfail:
+  socketManager.close(fd);
+  return err;
+}
+#endif
+
+#if defined(solaris)
+// TODO: Those are probably already included from the ink_platform.h
+#include <ctype.h>
+#include <sys/types.h>
+#include <sys/param.h>
+#include <sys/mount.h>
+#include <sys/stat.h>
+#include <sys/statvfs.h>
+#include <string.h>
+
+const char *
+Span::init(char *filename, int64_t size)
+{
+  int devnum = 0;
+  const char *err = NULL;
+  int ret = 0;
+
+  //
+  // All file types on Solaris can be mmaped
+  //
+  is_mmapable_internal = true;
+
+  int fd = socketManager.open(filename, O_RDONLY);
+  if (fd < 0) {
+    Warning("unable to open '%s': %d, %s", filename, fd, strerror(errno));
+    return "unable to open";
+  }
+
+  // stat the file system
+  struct stat s;
+  if ((ret = fstat(fd, &s)) < 0) {
+    Warning("unable to fstat '%s': %d %d, %s", filename, ret, errno, strerror(errno));
+    err = "unable to fstat";
+    goto Lfail;
+  }
+
+
+  switch ((s.st_mode & S_IFMT)) {
+
+  case S_IFBLK:
+  case S_IFCHR:
+    devnum = s.st_rdev;
+    // maybe we should use lseek(fd, 0, SEEK_END) here (it is portable)
+    size = (int64_t) s.st_size;
+    hw_sector_size = s.st_blksize;
+    break;
+  case S_IFDIR:
+  case S_IFREG:
+    int64_t fsize;
+    struct statvfs fs;
+    if ((ret = fstatvfs(fd, &fs)) < 0) {
+      Warning("unable to statvfs '%s': %d %d, %s", filename, ret, errno, strerror(errno));
+      err = "unable to statvfs";
+      goto Lfail;
+    }
+
+    hw_sector_size = fs.f_bsize;
+    fsize = (int64_t) fs.f_blocks * (int64_t) hw_sector_size;
+
+    if (size <= 0 || size > fsize) {
+      Warning("bad or missing size for '%s': size %" PRId64 " fsize %" PRId64 "", filename, (int64_t) size, fsize);
+      err = "bad or missing size";
+      goto Lfail;
+    }
+
+    devnum = s.st_dev;
+    break;
+
+  default:
+    Warning("unknown file type '%s': %d", filename, s.st_mode);
+    err = "unknown file type";
+    goto Lfail;
+  }
+
+  // estimate the disk SOLARIS specific
+  if ((devnum >> 16) == 0x80) {
+    disk_id = (devnum >> 3) & 0x3F;
+  } else {
+    disk_id = devnum;
+  }
+
+  pathname = xstrdup(filename);
+  // is this right Seems like this should be size / hw_sector_size
+  blocks = size / STORE_BLOCK_SIZE;
+  file_pathname = !((s.st_mode & S_IFMT) == S_IFDIR);
+
+  Debug("cache_init", "Span::init - %s hw_sector_size = %d  size = %" PRId64 ", blocks = %" PRId64 ", disk_id = %d, file_pathname = %d", filename, hw_sector_size, size, blocks, disk_id, file_pathname);
+
 Lfail:
   socketManager.close(fd);
   return err;
