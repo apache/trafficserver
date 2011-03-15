@@ -269,6 +269,7 @@ intptr_t
 CoreUtils::read_core_memory(intptr_t offset, intptr_t vaddr, intptr_t length, char *buf, FILE * fp)
 {
   intptr_t index = find_vaddr(vaddr, arrayMem.length(), 0);
+
   if (inTable == false)
     return -1;
   else {
@@ -295,6 +296,7 @@ CoreUtils::read_from_core(intptr_t vaddr, intptr_t bytes, char *buf)
   intptr_t offset = arrayMem[index - 1].offset;
   intptr_t size = arrayMem[index - 1].fsize;
   intptr_t offset2 = abs(vaddr - vadd);
+
   if (bytes > (size - offset2))
     return -1;
   else {
@@ -337,15 +339,17 @@ CoreUtils::get_base_frame(intptr_t threadId, core_stack_state * coress)
   intptr_t framep = arrayLwp[threadId - 1].framep;
   // finds vaddress less than framep
   intptr_t index = find_vaddr(framep, arrayMem.length(), 0);
-
   intptr_t vadd = arrayMem[index - 1].vaddr;
   intptr_t off = arrayMem[index - 1].offset;
   intptr_t off2 = abs(vadd - framep);
   intptr_t size = arrayMem[index - 1].fsize;
 
+  memset(coress, 0, sizeof(coress));
+
   // seek to the framep offset
   if (fseek(fp, off + off2, SEEK_SET) != -1) {
     char *frameoff;
+
     if ((frameoff = (char *) malloc(sizeof(char) * sizeof(rwindow)))) {
       if (fread(frameoff, sizeof(rwindow), 1, fp) == 1) {
         // memcpy rwindow struct and print out
@@ -355,7 +359,6 @@ CoreUtils::get_base_frame(intptr_t threadId, core_stack_state * coress)
         coress->regs = regs;
         framep = regs.rw_in[6];
         coress->framep = framep;
-
       }
       free(frameoff);
     } else {
@@ -381,8 +384,8 @@ CoreUtils::get_next_frame(core_stack_state * coress)
     if (is_debug_tag_set("stack")) {
       printf("distance from end of the stack: %d\n", coress->stkbase - framep);
     }
-    int index = find_vaddr(framep, arrayMem.length(), 0);
 
+    int index = find_vaddr(framep, arrayMem.length(), 0);
     // finds vaddress less than framep
     int vadd = arrayMem[index - 1].vaddr;
     int off = arrayMem[index - 1].offset;
@@ -401,9 +404,7 @@ CoreUtils::get_next_frame(core_stack_state * coress)
           coress->regs = regs;
           framep = regs.rw_in[6];
           coress->framep = framep;
-
         }
-
       }
       free(frameoff);
     }
@@ -418,8 +419,8 @@ CoreUtils::find_stuff(StuffTest_f f)
   core_stack_state coress;
   int i;
   void *test_val;
-
   int id = get_active_thread_Id();
+
   get_base_frame(id, &coress);
 
   do {
@@ -445,7 +446,7 @@ CoreUtils::find_stuff(StuffTest_f f)
 // copies stack info for the thread's base frame to the given
 // core_stack_state pointer
 void
-CoreUtils::get_base_frame(intptr_t framep, core_stack_state * coress)
+CoreUtils::get_base_frame(intptr_t framep, core_stack_state *coress)
 {
   // finds vaddress less than framep
   intptr_t index = find_vaddr(framep, arrayMem.length(), 0);
@@ -455,6 +456,7 @@ CoreUtils::get_base_frame(intptr_t framep, core_stack_state * coress)
   intptr_t size = arrayMem[index - 1].fsize;
   intptr_t i = 0;
 
+  memset(coress, 0, sizeof(coress));
   D(printf("stkbase=%p\n", (void*)(vadd + size)));
   // seek to the framep offset
   if (fseek(fp, off + off2, SEEK_SET) != -1) {
@@ -464,7 +466,6 @@ CoreUtils::get_base_frame(intptr_t framep, core_stack_state * coress)
         coress->framep = (intptr_t) *frameoff;
         if (fread(frameoff, 4, 1, fp) == 1) {
           coress->pc = (intptr_t) *frameoff;
-
         }
         // read register arguments
         for (i = 0; i < NO_OF_ARGS; i++) {
@@ -532,10 +533,10 @@ CoreUtils::find_stuff(StuffTest_f f)
   core_stack_state coress;
   intptr_t i;
   void *test_val;
+  int framecount = 0;
 
   // Unwinding the stack
   D(printf("\nStack Trace:\n"));
-  int framecount = 0;
   D(printf("stack frame#%d framep=%p pc=%p\n", framecount, (void*)framep, (void*)pc));
   framecount++;
   get_base_frame(framep, &coress);
@@ -563,9 +564,9 @@ void
 CoreUtils::test_HdrHeap(void *arg)
 {
   HdrHeap *hheap_test = (HdrHeap *) arg;
-
   uint32_t *magic_ptr = &(hheap_test->m_magic);
   uint32_t magic = 0;
+
   if (read_from_core((intptr_t) magic_ptr, sizeof(uint32_t), (char *) &magic) != 0) {
     if (magic == HDR_BUF_MAGIC_ALIVE ||
         magic == HDR_BUF_MAGIC_DEAD || magic == HDR_BUF_MAGIC_CORRUPT || magic == HDR_BUF_MAGIC_MARSHALED) {
@@ -585,9 +586,8 @@ CoreUtils::test_HttpSM_from_tunnel(void *arg)
   HttpSM **hsm_ptr = (HttpSM **) (tmp + offset);
   HttpSM *hsm_test;
 
-  if (read_from_core((intptr_t) hsm_ptr, sizeof(HttpSM *), (char *) &hsm_test) == 0) {
+  if (read_from_core((intptr_t) hsm_ptr, sizeof(HttpSM *), (char *) &hsm_test) == 0)
     return;
-  }
 
   unsigned int *magic_ptr = &(hsm_test->magic);
   unsigned int magic = 0;
@@ -605,9 +605,9 @@ void
 CoreUtils::test_HttpSM(void *arg)
 {
   HttpSM *hsm_test = (HttpSM *) arg;
-
   unsigned int *magic_ptr = &(hsm_test->magic);
   unsigned int magic = 0;
+
   if (read_from_core((intptr_t) magic_ptr, sizeof(int), (char *) &magic) != 0) {
     if (magic == HTTP_SM_MAGIC_ALIVE || magic == HTTP_SM_MAGIC_DEAD) {
       printf("test_HttpSM:******MATCH*****\n");
@@ -699,9 +699,7 @@ CoreUtils::print_http_hdr(HTTPHdr * h, const char *name)
 int
 CoreUtils::load_http_hdr(HTTPHdr * core_hdr, HTTPHdr * live_hdr)
 {
-
   // Load HdrHeap chain
-
   HTTPHdr *http_hdr = core_hdr;
   HdrHeap *heap = (HdrHeap *) core_hdr->m_heap;
   HdrHeap *heap_ptr = (HdrHeap *) http_hdr->m_heap;
@@ -718,6 +716,7 @@ CoreUtils::load_http_hdr(HTTPHdr * core_hdr, HTTPHdr * live_hdr)
   intptr_t used;
   intptr_t i;
   intptr_t copy_size;
+
   // extracting the header heap from the core file
   do {
     if (read_from_core((intptr_t) heap, sizeof(HdrHeap), buf) == -1) {
@@ -919,7 +918,6 @@ Failed:
 void
 CoreUtils::dump_history(HttpSM * hsm)
 {
-
   printf("-------- Begin History -------------\n");
 
   // Loop through the history and dump it
@@ -956,6 +954,7 @@ CoreUtils::read_heap_header(intptr_t vaddr, intptr_t bytes, HdrHeap h)
   intptr_t offset = arrayMem[index - 1].offset;
   intptr_t size = arrayMem[index - 1].fsize;
   intptr_t offset2 = abs(vaddr - vadd);
+
   if (bytes > (size - offset2))
     return -1;
   else {
