@@ -710,7 +710,11 @@ Config_RestoreNetConfig(char *file)
   int ret = 0;
   char *TagValue = NULL;
   bool isFloppyConfig = false;
+
+  // TODO: Why is this only used / needed on Linux??
+#if defined(linux)
   int activeInterface[] = { 0, 0, 0, 0, 0 };
+#endif
 
   //this is the only way to know whether this is a floppy restore or not
 
@@ -772,7 +776,9 @@ Config_RestoreNetConfig(char *file)
       TagValue = netXml.getXmlTagValueAndAttribute(eth, "InterfaceIPAddress");
       if (TagValue != NULL) {
         Config_SetNIC_IP(eth, TagValue);
+#if defined(linux)
         activeInterface[count] = 1;
+#endif
         xfree(TagValue);
       } else if (count == 0)
         break;

@@ -662,12 +662,11 @@ CommandLineArgs::parse_arguments(char** argv) {
     cgi = 1;
 
     if (NULL != (query = getenv("QUERY_STRING"))) {
-      int len;
       char buffer[MAX_ORIG_STRING];
       char *tok, *sep_ptr, *val;
 
       ink_strlcpy(buffer, query, MAX_ORIG_STRING);
-      len = unescapifyStr(buffer);
+      unescapifyStr(buffer);
 
       for (tok = strtok_r(buffer, "&", &sep_ptr); tok != NULL;) {
         val = strchr(tok, '=');

@@ -252,7 +252,6 @@ spawn_cgi(WebHttpContext * whc, const char *cgi_path, char **args, bool nowait, 
   int qlen = 0;
   char content_length_buffer[10];
   EnvBlock env;
-  bool success = false;
   const char *a[MAX_ARGS + 2];
   int i;
 
@@ -307,9 +306,6 @@ spawn_cgi(WebHttpContext * whc, const char *cgi_path, char **args, bool nowait, 
     mgmt_elog(stderr, "[spawn_cgi] Unable to fork child process\n");
     WebHttpSetErrorResponse(whc, STATUS_INTERNAL_SERVER_ERROR);
     answerHdr->setStatus(STATUS_INTERNAL_SERVER_ERROR);
-
-  } else {
-    success = true;
   }
 #else
 
@@ -383,7 +379,6 @@ spawn_cgi(WebHttpContext * whc, const char *cgi_path, char **args, bool nowait, 
       replyMsg->copyFrom(buffer, nbytes);
     }
     CloseHandle(hChildStdoutR);
-    success = true;
   }
 
 #endif

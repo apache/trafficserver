@@ -318,10 +318,10 @@ DNSEntry::init(const char *x, int len, int qtype_arg,
 #if defined(darwin)
     static int qnum = 0;
     char sname[NAME_MAX];
-    int retval;
+
     qnum++;
     snprintf(sname,NAME_MAX,"%s%d","DNSEntry",qnum);
-    retval = ink_sem_unlink(sname); // FIXME: remove, semaphore should be properly deleted after usage
+    ink_sem_unlink(sname); // FIXME: remove, semaphore should be properly deleted after usage
     sem = ink_sem_open(sname, O_CREAT | O_EXCL, 0777, 0);
 #else /* !darwin */
     ink_sem_init(&sem, 0);

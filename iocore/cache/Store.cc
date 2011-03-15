@@ -404,22 +404,25 @@ Span::init(char *an, int64_t size)
   char *n = NULL;
   int n_len = 0;
   char real_n[PATH_NAME_MAX];
+
   if ((n_len = readlink(an, real_n, sizeof(real_n) - 1)) > 0) {
     real_n[n_len] = 0;
     if (*real_n != '/') {
       char *rs = strrchr(an, '/');
-      int l = (rs - an) + 1;
-      const char *ann = an;
-      if (!rs) {
-        ann = "./";
-        l = 2;
+      int l = 2;
+      const char *ann = "./";
+
+      if (rs) {
+        ann = an;
+        l = (rs - an) + 1;
       }
       memmove(real_n + l, real_n, strlen(real_n) + 1);
-      memcpy(real_n, an, l);
+      memcpy(real_n, ann, l);
     }
     n = real_n;
-  } else
+  } else {
     n = an;
+  }
 
   // stat the file system
 
