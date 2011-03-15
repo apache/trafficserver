@@ -16,14 +16,14 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-noinst_LIBRARIES = libtsconfig.a
+lib_LTLIBRARIES = libtsconfig.la
 noinst_PROGRAMS = test-tsconfig
 
 AM_YFLAGS = -d -p tsconfig
 
 AM_CPPFLAGS = \
-  -I$(top_srcdir)/lib \
-  -fPIC
+  -I$(top_srcdir)/lib
+
 
 BUILT_SOURCES = \
   TsConfigGrammar.c TsConfigGrammar.h TsConfigGrammar.hpp \
@@ -31,7 +31,7 @@ BUILT_SOURCES = \
 
 CLEANFILES = $(BUILT_SOURCES)
 
-libtsconfig_a_SOURCES = \
+libtsconfig_la_SOURCES = \
   TsConfigGrammar.y \
   TsConfigSyntax.l \
   Errata.cc \
@@ -47,7 +47,7 @@ libtsconfig_a_SOURCES = \
 
 test_tsconfig_SOURCES = test-tsconfig.cc
 
-test_tsconfig_LDADD = libtsconfig.a
+test_tsconfig_LDADD = libtsconfig.la
 
 # Strip to just the enum in the ts::config namespace so we can use
 # it more easily in C++.

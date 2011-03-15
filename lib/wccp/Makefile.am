@@ -37,5 +37,3 @@ libwccp_a_SOURCES = \
 
 #test_cache_SOURCES = \
 #  wccp-test-cache.cc
-
-#test_cache_LDADD = ./libwccp.a -lconfig++ -lcrypto
