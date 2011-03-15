@@ -17,11 +17,13 @@
 #  limitations under the License.
 
 noinst_LIBRARIES = libtsconfig.a
+noinst_PROGRAMS = test-tsconfig
 
 AM_YFLAGS = -d -p tsconfig
 
 AM_CPPFLAGS = \
-  -I$(top_srcdir)/lib
+  -I$(top_srcdir)/lib \
+  -fPIC
 
 BUILT_SOURCES = \
   TsConfigGrammar.c TsConfigGrammar.h TsConfigGrammar.hpp \
@@ -42,6 +44,10 @@ libtsconfig_a_SOURCES = \
   TsBuilder.h \
   TsValue.cc \
   TsValue.h
+
+test_tsconfig_SOURCES = test-tsconfig.cc
+
+test_tsconfig_LDADD = libtsconfig.a
 
 # Strip to just the enum in the ts::config namespace so we can use
 # it more easily in C++.

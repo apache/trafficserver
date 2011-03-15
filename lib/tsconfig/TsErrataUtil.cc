@@ -147,21 +147,21 @@ logf_errno(Errata::Code code, char const* format, ...) {
   Errata zret;
   va_list rest;
   va_start(rest, format);
-  return vlogf_errno(zret, Errata::Id(), code, format, rest);
+  return vlogf_errno(zret, 0, code, format, rest);
 }
 
 Errata
 logf_errno(Errata& errata, Errata::Code code, char const* format, ...) {
   va_list rest;
   va_start(rest, format);
-  return vlogf_errno(errata, Errata::Id(), code, format, rest);
+  return vlogf_errno(errata, 0, code, format, rest);
 }
 
 Errata
 logf_errno(RvBase& rv, Errata::Code code, char const* format, ...) {
     va_list rest;
     va_start(rest, format);
-    return vlogf_errno(rv._errata, Errata::Id(), code, format, rest);
+    return vlogf_errno(rv._errata, 0, code, format, rest);
 }
 // ------------------------------------------------------
 }} // namespace ts::msg

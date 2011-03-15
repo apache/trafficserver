@@ -39,6 +39,8 @@ size_t unescape_string(char* text, size_t len) {
     char* src = dst + 1; // skip escape char
     for ( *dst++ = *src++ ; src < limit ; ++src )
       if ('\\' != *src) *dst++ = *src;
+      else if (++src < limit) *dst++ = *src;
+      else *dst++ = '\\'; // trailing backslash.
     zret = dst - text;
   }
   return zret;
@@ -194,8 +196,8 @@ void Builder::literalValue(Token const& token) {
     } else if (STRING == token._type) {
         ++text._ptr, text._size -= 2;  // Don't include the quotes.
         text._size = unescape_string(text._ptr, text._size);
+        text._ptr[text._size] = 0; // OK because we have the trailing quote.
         cv = _v.makeString(text, _name);
-        token._s[token._n-1] = 0;
     } else {
         msg::logf(_errata, msg::WARN, PRE "Unexpected literal type %d.", token._type);
     }

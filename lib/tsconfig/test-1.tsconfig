@@ -1,0 +1,18 @@
+thing-1 = {
+  name = "0\12\\\345678\9";
+}
+
+list = (
+  {
+    prop1 = "Bob";
+    prop2 = "Dave";
+  },
+  {
+    prop1 = "Bobby";
+    prop2 = "Davy";
+  },
+  {
+    prop1 = "Robert";
+    prop2 = "David";
+  }
+)
