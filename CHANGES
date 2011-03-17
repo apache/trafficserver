@@ -1,6 +1,10 @@
                                                          -*- coding: utf-8 -*-
 
 Changes with Apache Traffic Server 2.1.7
+  *) [TS-711] Don't schedule remap.config reloads on a network threads.
+   We now schedule this task on an ET_TASK thread, which avoids blocking
+   a net-thread for several seconds (when reloading very large remaps).
+
   *) [TS-710] Do not dlopen / reload a remap plugin .so more than once.
 
   *) [TS-588] Change Remap plugin APIs to use URL TSMLoc, and normal
