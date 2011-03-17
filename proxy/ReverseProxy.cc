@@ -52,6 +52,7 @@
 // Global Ptrs
 static Ptr<ProxyMutex> reconfig_mutex = NULL;
 UrlRewrite *rewrite_table = NULL;
+remap_plugin_info *remap_pi_list; // We never reload the remap plugins, just append to 'em.
 
 // Tokens for the Callback function
 #define FILE_CHANGED 0

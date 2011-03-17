@@ -51,6 +51,7 @@ struct host_hdr_info;
 extern int url_remap_mode;
 
 extern UrlRewrite *rewrite_table;
+extern remap_plugin_info *remap_pi_list;
 
 // API Functions
 int init_reverse_proxy();

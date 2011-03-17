@@ -116,11 +116,13 @@ public:
   url_mapping *SetupPacMapping();       // manager proxy-autconfig mapping
   url_mapping *SetupBackdoorMapping();
   void PrintTable(InkHashTable * h_table);
+
   void DestroyStore(MappingsStore &store)
   {
     _destroyTable(store.hash_lookup);
     _destroyList(store.regex_list);
   }
+
   bool TableInsert(InkHashTable *h_table, url_mapping *mapping, const char *src_host);
 
   MappingsStore forward_mappings;
@@ -176,7 +178,6 @@ public:
   int num_rules_reverse;
   int num_rules_redirect_permanent;
   int num_rules_redirect_temporary;
-  remap_plugin_info *remap_pi_list;
 
 private:
   void _doRemap(UrlMappingContainer &mapping_container, URL *request_url);
