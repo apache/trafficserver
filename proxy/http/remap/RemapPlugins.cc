@@ -234,7 +234,9 @@ RemapPlugins::run_single_remap()
 
     _request_url->path_set(newPath, newPathLen);
 
-    if (map->homePageRedirect && fromPathLen == requestPathLen) {
+    // TODO: This is horribly wrong and broken, when can this trigger??? Check
+    // above, we already return on _s->remap_redirect ... 
+    if (map->homePageRedirect && fromPathLen == requestPathLen && _s->remap_redirect) {
       URL redirect_url;
 
       redirect_url.create(NULL);
