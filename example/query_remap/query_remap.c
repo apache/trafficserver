@@ -21,8 +21,8 @@
   limitations under the License.
 */
 
-#include <ts/remap.h>
 #include <ts/ts.h>
+#include <ts/remap.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
@@ -40,7 +40,8 @@ typedef struct _query_remap_info {
 } query_remap_info;
 
 
-int tsremap_init(TSRemapInterface *api_info,char *errbuf,int errbuf_size)
+int
+TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
 {
   /* Called at TS startup. Nothing needed for this plugin */
   TSDebug(PLUGIN_NAME , "remap plugin initialized");
@@ -48,7 +49,8 @@ int tsremap_init(TSRemapInterface *api_info,char *errbuf,int errbuf_size)
 }
 
 
-int tsremap_new_instance(int argc,char *argv[],ihandle *ih,char *errbuf,int errbuf_size)
+int
+TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_size)
 {
   /* Called for each remap rule using this plugin. The parameters are parsed here */
   int i;
@@ -81,14 +83,15 @@ int tsremap_new_instance(int argc,char *argv[],ihandle *ih,char *errbuf,int errb
     TSDebug(PLUGIN_NAME, " - Host %d: %s", i, qri->hosts[i]);
   }
 
-  *ih = (ihandle)qri;
+  *ih = (void*)qri;
   TSDebug(PLUGIN_NAME, "created instance %p", *ih);
   return 0;
 }
 
-void tsremap_delete_instance(ihandle ih)
+void
+TSRemapDeleteInstance(void* ih)
 {
-  /* Release instance memory allocated in tsremap_new_instance */
+  /* Release instance memory allocated in TSRemapNewInstance */
   int i;
   TSDebug(PLUGIN_NAME, "deleting instance %p", ih);
 
@@ -107,17 +110,18 @@ void tsremap_delete_instance(ihandle ih)
 }
 
 
-int tsremap_remap(ihandle ih, rhandle rh, TSRemapRequestInfo *rri)
+int
+TSRemapDoRemap(void* ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
 {
   int hostidx = -1;
   query_remap_info *qri = (query_remap_info*)ih;
 
   if (!qri) {
-    TSError(PLUGIN_NAME "NULL ihandle");
+    TSError(PLUGIN_NAME "NULL private data");
     return 0;
   }
 
-  TSDebug(PLUGIN_NAME, "tsremap_remap request: %.*s", rri->orig_url_size, rri->orig_url);
+  TSDebug(PLUGIN_NAME, "TSRemapDoRemap request: %.*s", rri->orig_url_size, rri->orig_url);
 
   if (rri && rri->request_query && rri->request_query_size > 0) {
     char *q, *key;

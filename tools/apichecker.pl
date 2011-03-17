@@ -75,6 +75,7 @@ sub ink2ts {
   return $ret;
 }
 
+# ts/ts.h warnings
 my $W_TSRETURNCODE = "returns TSReturnCode, check for == TS_SUCCESS (and not 0|1)";
 my $W_RETURN_DIRECT = "returns the value directly, it can not fail (don't check for TS_ERROR)";
 my $W_TSPARSERESULT = "returns TSParseResult, do not check for e.g. TS_ERROR";
@@ -90,9 +91,23 @@ my $W_TIME_T = "returns the time_t directly";
 my $W_NOT_NULL_LEN = "the length parameter can no longer be a NULL pointer";
 my $W_TSCACHEKEY = "returns a TSCacheKey directly";
 my $W_TSAIOCALLBACK = "uses the new TSAIOCallback data type";
+my $W_DEPRECATED = "is deprecated, do not use (ever!)";
 my $W_NO_NULL_LENGTH = "1";
 my $W_NO_ERROR_PTR = "2";
+my $W_RENAMED = "3";
+# ts/remap.h warnings
+my $W_IHANDLE = "is deprecated, use a plain void* instead";
+my $W_TSREMAPSTATUS = "returns TSRemapStatus, return appropriate message";
 
+my %RENAMED = (
+  "tsremap_init" => "TSRemapInit",
+  "tsremap_done" => "TSRemapDone",
+  "tsremap_new_instance" => "TSRemapNewInstance",
+  "tsremap_delete_instance" => "TSRemapDeleteInstance",
+  "tsremap_remap" => "TSRemapDoRemap",
+  "tsremap_os_response" => "TSRemapOSResponse",
+  "rhandle" => "TSHttpTXN",
+);
 
 my %TWO_2_THREE = (
   "TSPluginRegister" => [$W_TSRETURNCODE],
@@ -228,12 +243,39 @@ my %TWO_2_THREE = (
   "TS_ERROR_PTR" => [$W_NO_ERROR_PTR],
   "TSAIOBufGet" => [$W_TSAIOCALLBACK],
   "TSAIONBytesGet" => [$W_TSAIOCALLBACK],
+  # Remap API changes
+  "TSREMAP_INTERFACE" => [$W_DEPRECATED],
+  "tsremap_interface" => [$W_DEPRECATED],
+  "fp_tsremap_interface" => [$W_DEPRECATED],
+  "TSREMAP_FUNCNAME_INIT" => [$W_DEPRECATED],
+  "TSREMAP_FUNCNAME_DONE" => [$W_DEPRECATED],
+  "TSREMAP_FUNCNAME_NEW_INSTANCE" => [$W_DEPRECATED],
+  "TSREMAP_FUNCNAME_DELETE_INSTANCE" => [$W_DEPRECATED],
+  "TSREMAP_FUNCNAME_REMAP" => [$W_DEPRECATED],
+  "TSREMAP_FUNCNAME_OS_RESPONSE" => [$W_DEPRECATED],
+  "base_handle" => [$W_DEPRECATED],
+  "ihandle" => [$W_IHANDLE],
+  "rhandle" => [$W_RENAMED],
+  "tsremap_init" => [$W_RENAMED, $W_TSRETURNCODE],
+  "tsremap_done" =>  [$W_RENAMED],
+  "tsremap_new_instance" =>  [$W_RENAMED, $W_TSRETURNCODE],
+  "tsremap_delete_instance" =>  [$W_RENAMED],
+  "tsremap_remap" =>  [$W_RENAMED, $W_TSREMAPSTATUS],
+  "tsremap_os_response" => [$W_RENAMED],
 );
 
 
 #
 # Warning messages related to SDK v2 to v3 migration
 #
+sub header_write {
+  my $do_it = shift;
+  my $tok = shift;
+
+  print "--> $tok() <--\n" if $do_it;
+  return 0;
+}
+
 sub two2three {
   my $tokens = shift || return;
   my $line = shift || return;
@@ -241,18 +283,25 @@ sub two2three {
 
   return 0 if $line =~ /TSDebug/;
   foreach my $tok (@{$tokens}) {
+    my $hdr_write = 1;
     my $warns = $TWO_2_THREE{$tok};
     next unless $warns;
 
     foreach my $w (@{$warns}) {
       if ($w eq $W_NO_NULL_LENGTH) {
-        print "--> $tok() <--\n";
-        print "    + The length output parameter can not be NULL\n" if $line =~ /NULL/;
+        if ($line =~ /NULL/) {
+          print "    + The length output parameter can not be NULL\n";
+          $hdr_write = header_write($hdr_write, $tok);
+        }
       } elsif ($w eq $W_NO_ERROR_PTR) {
-        print "--> TS_ERROR_PTR <--\n";
+        $hdr_write = header_write($hdr_write, "TS_ERROR_PTR");
         print "    + no APIs can return TS_ERROR_PTR, you should not compare it\n";
+      } elsif ($w eq $W_RENAMED) {
+        $hdr_write = header_write($hdr_write, $tok);
+        print "    + is renamed to $RENAMED{$tok}\n";
       } else {
-        print "--> $tok() <--\n    + $w\n";
+        $hdr_write = header_write($hdr_write, $tok);
+        print "    + $w\n";
       }
     }
     $ret = 1;

@@ -25,8 +25,6 @@
 #define _URL_MAPPING_H_
 
 #include "AclFiltering.h"
-#include <deque>
-#include <map>
 #include "Main.h"
 #include "Error.h"
 #include "URL.h"
@@ -37,6 +35,9 @@
 #else
 #include <pcre.h>
 #endif
+
+static const unsigned int MAX_REMAP_PLUGIN_CHAIN = 10;
+
 
 /**
  * Used to store http referer strings (and/or regexp)
@@ -89,12 +90,11 @@ public:
   url_mapping(int rank = 0);
   ~url_mapping();
 
-  bool add_plugin(remap_plugin_info *);
-  remap_plugin_info *get_plugin(unsigned int);
+  bool add_plugin(remap_plugin_info *i, void* ih);
+  remap_plugin_info *get_plugin(unsigned int) const;
 
-  ihandle *get_instance(remap_plugin_info *);
-  ihandle *get_another_instance(remap_plugin_info * p);
-  void delete_instance(remap_plugin_info * p);
+  void* get_instance(unsigned int index) const { return _instance_data[index]; };
+  void delete_instance(unsigned int index);
 
   int from_path_len;
   URL fromURL;
@@ -115,10 +115,8 @@ public:
   int getRank() const { return _rank; };
 
 private:
-  bool set_instance(remap_plugin_info *, ihandle *);
-  std::deque<remap_plugin_info *>_plugin_list;
-  std::map<remap_plugin_info *, ihandle *>_instance_map;
-  int _cur_instance_count;
+  remap_plugin_info* _plugin_list[MAX_REMAP_PLUGIN_CHAIN];
+  void* _instance_data[MAX_REMAP_PLUGIN_CHAIN];
   int _rank;
   URL _default_to_url;
 

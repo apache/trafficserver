@@ -25,17 +25,22 @@
 
 ClassAllocator<RemapPlugins> pluginAllocator("RemapPluginsAlloc");
 
-int
+TSRemapStatus
 RemapPlugins::run_plugin(remap_plugin_info* plugin, char *origURLBuf, int origURLBufSize,
                          bool* plugin_modified_host, bool* plugin_modified_port, bool* plugin_modified_path)
 {
-  int plugin_retcode;
+  TSRemapStatus plugin_retcode;
   bool do_x_proto_check = true;
   TSRemapRequestInfo rri;
   int requestPort = 0;
   url_mapping *map = _map_container->getMapping();
   URL *map_from = &(map->fromURL);
   URL *map_to = _map_container->getToURL();
+
+  // Read-only
+  rri.mapFromUrl = reinterpret_cast<TSMLoc>(map_from);
+  rri.mapToUrl = reinterpret_cast<TSMLoc>(map_to);
+  rri.requestUrl = reinterpret_cast<TSMLoc>(_request_url);
 
   // The "to" part of the RRI struct always stays the same.
   rri.remap_to_host = map_to->host_get(&rri.remap_to_host_size);
@@ -71,7 +76,6 @@ RemapPlugins::run_plugin(remap_plugin_info* plugin, char *origURLBuf, int origUR
   // Get request matrix parameters
   rri.request_matrix = _request_url->params_get(&rri.request_matrix_size);
 
-  rri.size = sizeof(rri);
   rri.orig_url = origURLBuf;
   rri.orig_url_size = origURLBufSize;
 
@@ -88,18 +92,7 @@ RemapPlugins::run_plugin(remap_plugin_info* plugin, char *origURLBuf, int origUR
   // Get request Host
   rri.request_host = _request_url->host_get(&rri.request_host_size);
 
-  // Copy client IP address
-  rri.client_ip = _s ? _s->client_info.ip : 0;
-
-  // Get Cookie header
-  if (_request_header->presence(MIME_PRESENCE_COOKIE)) {
-    rri.request_cookie = _request_header->value_get(MIME_FIELD_COOKIE, MIME_LEN_COOKIE, &rri.request_cookie_size);
-  } else {
-    rri.request_cookie = NULL;
-    rri.request_cookie_size = 0;
-  }
-
-  ihandle *ih = map->get_instance(plugin);
+  void* ih = map->get_instance(_cur);
 
   ink_debug_assert(ih);
 
@@ -109,19 +102,20 @@ RemapPlugins::run_plugin(remap_plugin_info* plugin, char *origURLBuf, int origUR
     _s->remap_plugin_instance = ih;
   }
 
-  plugin_retcode = plugin->fp_tsremap_remap(*ih, _s ? (rhandle) (_s->state_machine) : NULL, &rri);
+  plugin_retcode = plugin->fp_tsremap_do_remap(ih, _s ? reinterpret_cast<TSHttpTxn>(_s->state_machine) : NULL, &rri);
 
   // First step after plugin remap must be "redirect url" check
-  if ( /*_s->remap_redirect && */ plugin_retcode && rri.redirect_url_size > 0) {
+  // if ( /*_s->remap_redirect && */ plugin_retcode && rri.redirect_url_size > 0) {
+  if ((TSREMAP_DID_REMAP == plugin_retcode || TSREMAP_DID_REMAP_STOP == plugin_retcode) && rri.redirect_url_size > 0) {
     if (rri.redirect_url[0]) {
       _s->remap_redirect = xstrndup(rri.redirect_url, rri.redirect_url_size);
     } else {
       _s->remap_redirect = xstrdup("http://www.apache.org");
     }
-    return 1;
+    return plugin_retcode;
   }
 
-  if (plugin_retcode) {
+  if (TSREMAP_DID_REMAP == plugin_retcode || TSREMAP_DID_REMAP_STOP == plugin_retcode) {
     // Modify the host
     if (rri.new_host_size > 0) {
       _request_url->host_set(rri.new_host, rri.new_host_size);
@@ -195,7 +189,6 @@ RemapPlugins::run_plugin(remap_plugin_info* plugin, char *origURLBuf, int origUR
   }
 
   return plugin_retcode;
-
 }
 
 /**
@@ -219,7 +212,7 @@ RemapPlugins::run_single_remap()
   bool plugin_modified_port = false;
   bool plugin_modified_path = false;
 
-  int plugin_retcode = 1;
+  TSRemapStatus plugin_retcode = TSREMAP_DID_REMAP;
 
   char *origURLBuf = NULL;
   int origURLBufSize;
@@ -266,9 +259,8 @@ RemapPlugins::run_single_remap()
 
   if (plugin) {
     Debug("url_rewrite", "Remapping rule id: %d matched; running it now", map->map_id);
-    plugin_retcode =
-      run_plugin(plugin, origURLBuf, origURLBufSize, &plugin_modified_host, &plugin_modified_port,
-                 &plugin_modified_path);
+    plugin_retcode = run_plugin(plugin, origURLBuf, origURLBufSize, &plugin_modified_host, &plugin_modified_port,
+                                &plugin_modified_path);
   } else if (_cur > 0) {
     _cur++;
     Debug("url_rewrite",
@@ -278,7 +270,7 @@ RemapPlugins::run_single_remap()
     return 1;
   }
 
-  if ((!plugin && _cur == 0) || plugin_retcode == 0) {
+  if ((!plugin && _cur == 0) || (TSREMAP_NO_REMAP == plugin_retcode || TSREMAP_NO_REMAP_STOP == plugin_retcode)) {
     // Handle cross protocol mapping when there are no remap plugin(s)
     // or if plugin did not make any modifications.
     Debug("url_rewrite", "no plugins available for this request");

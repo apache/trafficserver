@@ -997,8 +997,8 @@ public:
     bool acl_filtering_performed;
 
     // INK API/Remap API plugin interface
-    _tsremap_os_response *fp_tsremap_os_response;
-    ihandle remap_plugin_instance;
+    remap_plugin_info::_tsremap_os_response *fp_tsremap_os_response;
+    void* remap_plugin_instance;
     HTTPStatus http_return_code;
     int return_xbuf_size;
     bool return_xbuf_plain;

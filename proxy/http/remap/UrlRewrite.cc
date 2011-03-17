@@ -1686,12 +1686,12 @@ UrlRewrite::load_remap_plugin(char *argv[], int argc, url_mapping * mp, char *er
       snprintf(errbuf, errbufsize, "Can't load plugin \"%s\" - %s", c, err ? err : "Unknown dlopen() error");
       return -4;
     }
-    pi->fp_tsremap_init = (_tsremap_init *) dlsym(pi->dlh, TSREMAP_FUNCNAME_INIT);
-    pi->fp_tsremap_done = (_tsremap_done *) dlsym(pi->dlh, TSREMAP_FUNCNAME_DONE);
-    pi->fptsremap_new_instance = (_tsremap_new_instance *) dlsym(pi->dlh, TSREMAP_FUNCNAME_NEW_INSTANCE);
-    pi->fp_tsremap_delete_instance = (_tsremap_delete_instance *) dlsym(pi->dlh, TSREMAP_FUNCNAME_DELETE_INSTANCE);
-    pi->fp_tsremap_remap = (_tsremap_remap *) dlsym(pi->dlh, TSREMAP_FUNCNAME_REMAP);
-    pi->fp_tsremap_os_response = (_tsremap_os_response *) dlsym(pi->dlh, TSREMAP_FUNCNAME_OS_RESPONSE);
+    pi->fp_tsremap_init = (remap_plugin_info::_tsremap_init *) dlsym(pi->dlh, TSREMAP_FUNCNAME_INIT);
+    pi->fp_tsremap_done = (remap_plugin_info::_tsremap_done *) dlsym(pi->dlh, TSREMAP_FUNCNAME_DONE);
+    pi->fptsremap_new_instance = (remap_plugin_info::_tsremap_new_instance *) dlsym(pi->dlh, TSREMAP_FUNCNAME_NEW_INSTANCE);
+    pi->fp_tsremap_delete_instance = (remap_plugin_info::_tsremap_delete_instance *) dlsym(pi->dlh, TSREMAP_FUNCNAME_DELETE_INSTANCE);
+    pi->fp_tsremap_do_remap = (remap_plugin_info::_tsremap_do_remap *) dlsym(pi->dlh, TSREMAP_FUNCNAME_DO_REMAP);
+    pi->fp_tsremap_os_response = (remap_plugin_info::_tsremap_os_response *) dlsym(pi->dlh, TSREMAP_FUNCNAME_OS_RESPONSE);
 
     if (!pi->fp_tsremap_init) {
       snprintf(errbuf, errbufsize, "Can't find \"%s\" function in remap plugin \"%s\"", TSREMAP_FUNCNAME_INIT, c);
@@ -1700,8 +1700,8 @@ UrlRewrite::load_remap_plugin(char *argv[], int argc, url_mapping * mp, char *er
       snprintf(errbuf, errbufsize, "Can't find \"%s\" function in remap plugin \"%s\"",
                    TSREMAP_FUNCNAME_NEW_INSTANCE, c);
       retcode = -11;
-    } else if (!pi->fp_tsremap_remap) {
-      snprintf(errbuf, errbufsize, "Can't find \"%s\" function in remap plugin \"%s\"", TSREMAP_FUNCNAME_REMAP, c);
+    } else if (!pi->fp_tsremap_do_remap) {
+      snprintf(errbuf, errbufsize, "Can't find \"%s\" function in remap plugin \"%s\"", TSREMAP_FUNCNAME_DO_REMAP, c);
       retcode = -12;
     }
     if (retcode) {
@@ -1714,9 +1714,8 @@ UrlRewrite::load_remap_plugin(char *argv[], int argc, url_mapping * mp, char *er
     memset(&ri, 0, sizeof(ri));
     ri.size = sizeof(ri);
     ri.tsremap_version = TSREMAP_VERSION;
-    ri.fp_tsremap_interface = NULL;     /* we don't need it now */
 
-    if ((retcode = pi->fp_tsremap_init(&ri, tmpbuf, sizeof(tmpbuf) - 1)) != 0) {
+    if (pi->fp_tsremap_init(&ri, tmpbuf, sizeof(tmpbuf) - 1) != TS_SUCCESS) {
       Error("Failed to initialize plugin %s (non-zero retval) ... bailing out", pi->path);
       exit(-1);                 //see my comment re: exit() about 60 lines down
     }
@@ -1770,16 +1769,19 @@ UrlRewrite::load_remap_plugin(char *argv[], int argc, url_mapping * mp, char *er
     Debug("url_rewrite", "Argument %d: %s", k, parv[k]);
   }
 
-  ihandle *ih = mp->get_another_instance(pi);
+  void* ih;
+
   Debug("remap_plugin", "creating new plugin instance");
-  retcode = pi->fptsremap_new_instance(parc, parv, ih, tmpbuf, sizeof(tmpbuf) - 1);
+  TSReturnCode res = pi->fptsremap_new_instance(parc, parv, &ih, tmpbuf, sizeof(tmpbuf) - 1);
+
   Debug("remap_plugin", "done creating new plugin instance");
 
   xfree(parv[0]);               // fromURL
   xfree(parv[1]);               // toURL
 
-  if (retcode != 0) {
-    mp->delete_instance(pi);
+  if (res != TS_SUCCESS) {
+    // TODO: This is such serious failure, no reason to try to delete the instance.
+    // mp->delete_instance(pi);
     snprintf(errbuf, errbufsize, "Can't create new remap instance for plugin \"%s\" - %s", c,
                  tmpbuf[0] ? tmpbuf : "Unknown plugin error");
     Error("Failed to create new instance for plugin %s (non-zero retval)... bailing out", pi->path);
@@ -1796,7 +1798,7 @@ UrlRewrite::load_remap_plugin(char *argv[], int argc, url_mapping * mp, char *er
     return -6;
   }
 
-  mp->add_plugin(pi);
+  mp->add_plugin(pi, ih);
 
   return 0;
 }

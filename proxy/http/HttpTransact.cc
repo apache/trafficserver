@@ -3507,13 +3507,10 @@ HttpTransact::handle_response_from_server(State* s)
   HTTP_RELEASE_ASSERT(s->current.server == &s->server_info);
   int max_connect_retries = 0;
 
-  s->server_info.state = s->current.state;
-
   // plugin call
-  if (s->fp_tsremap_os_response)        // && s->current.state != CONNECTION_ALIVE)
-  {
-    s->fp_tsremap_os_response(s->remap_plugin_instance, (rhandle) (s->state_machine), s->current.state);
-  }
+  s->server_info.state = s->current.state;
+  if (s->fp_tsremap_os_response)
+    s->fp_tsremap_os_response(s->remap_plugin_instance, reinterpret_cast<TSHttpTxn>(s->state_machine), s->current.state);
 
   switch (s->current.state) {
   case CONNECTION_ALIVE:

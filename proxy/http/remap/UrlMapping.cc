@@ -30,18 +30,26 @@ url_mapping::url_mapping(int rank /* = 0 */)
   : from_path_len(0), fromURL(), homePageRedirect(false), unique(false), default_redirect_url(false),
     optional_referer(false), negative_referer(false), wildcard_from_scheme(false),
     tag(NULL), filter_redirect_url(NULL), referer_list(0),
-    redir_chunk_list(0), filter(NULL), _plugin_count(0), _cur_instance_count(0), _rank(rank), _default_to_url()
+    redir_chunk_list(0), filter(NULL), _plugin_count(0), _rank(rank), _default_to_url()
 {
+  memset(_plugin_list, 0, sizeof(_plugin_list));
+  memset(_instance_data, 0, sizeof(_instance_data));
 }
 
 
 /**
  *
 **/
-bool url_mapping::add_plugin(remap_plugin_info * i)
+bool
+url_mapping::add_plugin(remap_plugin_info* i, void* ih)
 {
-  _plugin_list.push_back(i);
+  if (_plugin_count >= MAX_REMAP_PLUGIN_CHAIN)
+    return false;
+
+  _plugin_list[_plugin_count] = i;
+  _instance_data[_plugin_count] = ih;
   _plugin_count++;
+
   return true;
 }
 
@@ -49,92 +57,27 @@ bool url_mapping::add_plugin(remap_plugin_info * i)
 /**
  *
 **/
-remap_plugin_info *
-url_mapping::get_plugin(unsigned int index)
+remap_plugin_info*
+url_mapping::get_plugin(unsigned int index) const
 {
   Debug("url_rewrite", "get_plugin says we have %d plugins and asking for plugin %d", _plugin_count, index);
-  if (_plugin_count == 0)
+  if ((_plugin_count == 0) || unlikely(index > _plugin_count))
     return NULL;
 
-  remap_plugin_info *plugin = NULL;
-
-  if (unlikely(index > _plugin_count)) {
-    return NULL;
-  }
-
-  std::deque<remap_plugin_info *>::iterator i;
-  unsigned int j = 0;
-
-  for (i = _plugin_list.begin(); i != _plugin_list.end(); i++) {
-    if (j == index) {
-      plugin = *i;
-      return plugin;
-    }
-    j++;
-  }
-
-  Debug("url_rewrite", "url_mapping::get_plugin could not find requested plugin");
-  return NULL;
+  return _plugin_list[_plugin_count];
 }
-
-
-/**
- *
-**/
-bool url_mapping::set_instance(remap_plugin_info * p, ihandle * h)
-{
-  Debug("url_rewrite", "Adding handle: %x to instance map for plugin: %x (%s) [cur:%d]", h, p, p->path, _cur_instance_count);
-  _instance_map[p] = h;
-  return true;
-}
-
-
-/**
- *
-**/
-ihandle *
-url_mapping::get_instance(remap_plugin_info * p)
-{
-  Debug("url_rewrite", "Requesting instance handle for plugin: %x [%s]", p, p->path);
-  ihandle *h = _instance_map[p];
-
-  Debug("url_rewrite", "Found instance handle: %x for plugin: %x [%s]", h, p, p->path);
-  return h;
-}
-
-/**
- *
-**/
-ihandle *
-url_mapping::get_another_instance(remap_plugin_info * p)
-{
-  ihandle *ih = NEW(new ihandle);
-
-  _cur_instance_count++;
-  if (_cur_instance_count >= 15) {
-    Error("Cant have more than 15 remap handles!");
-    Debug("url_rewrite", "Cant have more than 15 remap handles!");
-    abort();
-  }
-  set_instance(p, ih);
-  return ih;
-}
-
 
 /**
  *
 **/
 void
-url_mapping::delete_instance(remap_plugin_info * p)
+url_mapping::delete_instance(unsigned int index)
 {
-  Debug("url_rewrite", "Deleting instance handle and plugin for %x [%s]", p, p->path);
-  _cur_instance_count--;
-  ihandle *ih = get_instance(p);
+  void *ih = get_instance(index);
+  remap_plugin_info* p = get_plugin(index);
 
-  if (ih && p && p->fp_tsremap_delete_instance) {
-    p->fp_tsremap_delete_instance(*ih);
-    delete ih;
-  }
+  if (ih && p && p->fp_tsremap_delete_instance)
+    p->fp_tsremap_delete_instance(ih);
 }
 
 
@@ -150,28 +93,26 @@ url_mapping::~url_mapping()
   if (tag) {
     tag = (char *) xfree_null(tag);
   }
+
   if (filter_redirect_url) {
     filter_redirect_url = (char *) xfree_null(filter_redirect_url);
   }
+
   while ((r = referer_list) != 0) {
     referer_list = r->next;
     delete r;
   }
+
   while ((rc = redir_chunk_list) != 0) {
     redir_chunk_list = rc->next;
     delete rc;
   }
 
-  //iterate all plugins and delete them
-  std::deque<remap_plugin_info *>::iterator i;
-  remap_plugin_info *plugin = NULL;
+  // Delete all instance data
+  for (unsigned int i = 0; i < _plugin_count; ++i)
+    delete_instance(i);
 
-  for (i = _plugin_list.begin(); i != _plugin_list.end(); i++) {
-    plugin = *i;
-    if (plugin)
-      delete_instance(plugin);
-  }
-
+  // Delete filters
   while ((afr = filter) != NULL) {
     filter = afr->next;
     delete afr;
@@ -229,7 +170,7 @@ redirect_tag_str::parse_format_redirect_url(char *url)
 /**
  *
 **/
-referer_info::referer_info(char *_ref, bool * error_flag, char *errmsgbuf, int errmsgbuf_size):next(0), referer(0), referer_size(0), any(false), negative(false),
+referer_info::referer_info(char *_ref, bool *error_flag, char *errmsgbuf, int errmsgbuf_size):next(0), referer(0), referer_size(0), any(false), negative(false),
 regx_valid(false)
 {
   const char *error;

@@ -31,12 +31,11 @@
 #include "libts.h"
 #include "I_EventSystem.h"
 #include "RemapProcessor.h"
+#include "api/ts/ts.h"
 #include "api/ts/remap.h"
 #include "RemapPluginInfo.h"
 #include "HttpTransact.h"
 #include "ReverseProxy.h"
-
-static const unsigned int MAX_REMAP_PLUGIN_CHAIN = 10;
 
 /**
  * A class that represents a queue of plugins to run
@@ -58,7 +57,7 @@ struct RemapPlugins: public Continuation
 
   int run_remap(int, Event *);
   int run_single_remap();
-  int run_plugin(remap_plugin_info *, char *, int, bool *, bool *, bool *);
+  TSRemapStatus run_plugin(remap_plugin_info *, char *, int, bool *, bool *, bool *);
 
   Action action;
 

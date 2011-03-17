@@ -41,8 +41,8 @@
 #include <sys/time.h>
 #include <sys/resource.h>
 
-#include <ts/remap.h>
 #include <ts/ts.h>
+#include <ts/remap.h>
 
 #if __GNUC__ >= 3
 #ifndef likely
@@ -83,11 +83,10 @@ pthread_mutex_t
 
 /* ----------------------- remap_entry::remap_entry ------------------------ */
 remap_entry::remap_entry(int _argc, char *_argv[]):
-next(NULL),
-argc(0),
-argv(NULL)
+  next(NULL), argc(0), argv(NULL)
 {
   int i;
+
   if (_argc > 0 && _argv && (argv = (char **) malloc(sizeof(char *) * (_argc + 1))) != 0) {
     argc = _argc;
     for (i = 0; i < argc; i++)
@@ -100,6 +99,7 @@ argv(NULL)
 remap_entry::~remap_entry()
 {
   int i;
+
   if (argc && argv) {
     for (i = 0; i < argc; i++) {
       if (argv[i])
@@ -189,29 +189,29 @@ TSPluginInit(int argc, const char *argv[])
 
 // Plugin initialization code. Called immediately after dlopen() Only once!
 // Can perform internal initialization. For example, pthread_.... initialization.
-/* ------------------------- tsremap_init ---------------------------------- */
+/* ------------------------- TSRemapInit ---------------------------------- */
 int
-tsremap_init(TSRemapInterface * api_info, char *errbuf, int errbuf_size)
+TSRemapInit(TSRemapInterface * api_info, char *errbuf, int errbuf_size)
 {
-  fprintf(stderr, "Remap Plugin: tsremap_init()\n");
+  fprintf(stderr, "Remap Plugin: TSRemapInit()\n");
 
   if (!plugin_init_counter) {
     if (unlikely(!api_info)) {
-      return store_my_error_message(-1, errbuf, errbuf_size, "[tsremap_init] - Invalid TSRemapInterface argument");
+      return store_my_error_message(-1, errbuf, errbuf_size, "[TSRemapInit] - Invalid TSRemapInterface argument");
     }
     if (unlikely(api_info->size < sizeof(TSRemapInterface))) {
       return store_my_error_message(-2, errbuf, errbuf_size,
-                                    "[tsremap_init] - Incorrect size of TSRemapInterface structure %d. Should be at least %d bytes",
+                                    "[TSRemapInit] - Incorrect size of TSRemapInterface structure %d. Should be at least %d bytes",
                                     (int) api_info->size, (int) sizeof(TSRemapInterface));
     }
     if (unlikely(api_info->tsremap_version < TSREMAP_VERSION)) {
       return store_my_error_message(-3, errbuf, errbuf_size,
-                                    "[tsremap_init] - Incorrect API version %d.%d",
+                                    "[TSRemapInit] - Incorrect API version %d.%d",
                                     (api_info->tsremap_version >> 16), (api_info->tsremap_version & 0xffff));
     }
 
     if (pthread_mutex_init(&remap_plugin_global_mutex, 0) || pthread_mutex_init(&remap_entry::mutex, 0)) {      /* pthread_mutex_init - always returns 0. :) - impossible error */
-      return store_my_error_message(-4, errbuf, errbuf_size, "[tsremap_init] - Mutex initialization error");
+      return store_my_error_message(-4, errbuf, errbuf_size, "[TSRemapInit] - Mutex initialization error");
     }
     plugin_init_counter++;
   }
@@ -220,11 +220,11 @@ tsremap_init(TSRemapInterface * api_info, char *errbuf, int errbuf_size)
 
 // Plugin shutdown
 // Optional function.
-/* -------------------------- tsremap_done --------------------------------- */
+/* -------------------------- TSRemapDone --------------------------------- */
 int
-tsremap_done(void)
+TSRemapDone(void)
 {
-  fprintf(stderr, "Remap Plugin: tsremap_done()\n");
+  fprintf(stderr, "Remap Plugin: TSRemapDone()\n");
   /* do nothing */
 
   return 0;
@@ -233,48 +233,48 @@ tsremap_done(void)
 
 // Plugin new instance for new remapping rule.
 // This function can be called multiple times (depends on remap.config)
-/* ------------------------ tsremap_new_instance --------------------------- */
+/* ------------------------ TSRemapNewInstance --------------------------- */
 int
-tsremap_new_instance(int argc, char *argv[], ihandle * ih, char *errbuf, int errbuf_size)
+TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_size)
 {
   remap_entry *ri;
   int i;
 
 
-  fprintf(stderr, "Remap Plugin: tsremap_new_instance()\n");
+  fprintf(stderr, "Remap Plugin: TSRemapNewInstance()\n");
 
   if (argc < 2) {
     return store_my_error_message(-1, errbuf, errbuf_size,
-                                  "[tsremap_new_instance] - Incorrect number of arguments - %d", argc);
+                                  "[TSRemapNewInstance] - Incorrect number of arguments - %d", argc);
   }
   if (!argv || !ih) {
-    return store_my_error_message(-2, errbuf, errbuf_size, "[tsremap_new_instance] - Invalid argument(s)");
+    return store_my_error_message(-2, errbuf, errbuf_size, "[TSRemapNewInstance] - Invalid argument(s)");
   }
   // print all arguments for this particular remapping
   for (i = 0; i < argc; i++) {
-    fprintf(stderr, "[tsremap_new_instance] - argv[%d] = \"%s\"\n", i, argv[i]);
+    fprintf(stderr, "[TSRemapNewInstance] - argv[%d] = \"%s\"\n", i, argv[i]);
   }
 
   ri = new remap_entry(argc, argv);
 
   if (!ri) {
-    return store_my_error_message(-3, errbuf, errbuf_size, "[tsremap_new_instance] - Can't create remap_entry class");
+    return store_my_error_message(-3, errbuf, errbuf_size, "[TSRemapNewInstance] - Can't create remap_entry class");
   }
 
   remap_entry::add_to_list(ri);
 
-  *ih = (ihandle) ri;
+  *ih = (void*) ri;
 
   return 0;
 }
 
-/* ---------------------- tsremap_delete_instance -------------------------- */
+/* ---------------------- TSRemapDeleteInstance -------------------------- */
 void
-tsremap_delete_instance(ihandle ih)
+TSRemapDeleteInstance(void* ih)
 {
   remap_entry *ri = (remap_entry *) ih;
 
-  fprintf(stderr, "Remap Plugin: tsremap_delete_instance()\n");
+  fprintf(stderr, "Remap Plugin: TSRemapDeleteInstance()\n");
 
   remap_entry::remove_from_list(ri);
 
@@ -284,11 +284,10 @@ tsremap_delete_instance(ihandle ih)
 static volatile unsigned long processing_counter = 0;   // sequential counter
 static int arg_index = 0;
 
-/* -------------------------- tsremap_remap -------------------------------- */
+/* -------------------------- TSRemapDoRemap -------------------------------- */
 int
-tsremap_remap(ihandle ih, rhandle rh, TSRemapRequestInfo * rri)
+TSRemapDoRemap(void* ih, TSHttpTxn rh, TSRemapRequestInfo * rri)
 {
-  char *p;
   TSMBuffer cbuf;
   TSMLoc chdr;
   TSMLoc cfield;
@@ -296,32 +295,32 @@ tsremap_remap(ihandle ih, rhandle rh, TSRemapRequestInfo * rri)
   unsigned long _processing_counter = ++processing_counter;     // one more function call (in real life use mutex to protect this counter)
 
   remap_entry *ri = (remap_entry *) ih;
-  fprintf(stderr, "Remap Plugin: tsremap_remap()\n");
+  fprintf(stderr, "Remap Plugin: TSRemapDoRemap()\n");
 
   if (!ri || !rri)
     return 0;                   /* TS must remap this request */
-  p = (char *) &rri->client_ip;
-  fprintf(stderr, "[tsremap_remap] Client IP: %d.%d.%d.%d\n", (int) p[0], (int) p[1], (int) p[2], (int) p[3]);
-  fprintf(stderr, "[tsremap_remap] From: \"%s\"  To: \"%s\"\n", ri->argv[0], ri->argv[1]);
-  fprintf(stderr, "[tsremap_remap] OrigURL: \"");
+  /* TODO: This should be rewritten to use appropriate APIs from ts/ts.h
+  char *p = (char *) &rri->client_ip;
+  fprintf(stderr, "[TSRemapDoRemap] Client IP: %d.%d.%d.%d\n", (int) p[0], (int) p[1], (int) p[2], (int) p[3]);
+  */
+  fprintf(stderr, "[TSRemapDoRemap] From: \"%s\"  To: \"%s\"\n", ri->argv[0], ri->argv[1]);
+  fprintf(stderr, "[TSRemapDoRemap] OrigURL: \"");
   my_print_ascii_string(rri->orig_url, rri->orig_url_size);
-  fprintf(stderr, "\"\n[tsremap_remap] Request Host(%d): \"", rri->request_host_size);
+  fprintf(stderr, "\"\n[TSRemapDoRemap] Request Host(%d): \"", rri->request_host_size);
   my_print_ascii_string(rri->request_host, rri->request_host_size);
-  fprintf(stderr, "\"\n[tsremap_remap] Remap To Host: \"");
+  fprintf(stderr, "\"\n[TSRemapDoRemap] Remap To Host: \"");
   my_print_ascii_string(rri->remap_to_host, rri->remap_to_host_size);
-  fprintf(stderr, "\"\n[tsremap_remap] Remap From Host: \"");
+  fprintf(stderr, "\"\n[TSRemapDoRemap] Remap From Host: \"");
   my_print_ascii_string(rri->remap_from_host, rri->remap_from_host_size);
-  fprintf(stderr, "\"\n[tsremap_remap] Request Port: %d\n", rri->request_port);
-  fprintf(stderr, "[tsremap_remap] Remap From Port: %d\n", rri->remap_from_port);
-  fprintf(stderr, "[tsremap_remap] Remap To Port: %d\n", rri->remap_to_port);
-  fprintf(stderr, "[tsremap_remap] Request Path: \"");
+  fprintf(stderr, "\"\n[TSRemapDoRemap] Request Port: %d\n", rri->request_port);
+  fprintf(stderr, "[TSRemapDoRemap] Remap From Port: %d\n", rri->remap_from_port);
+  fprintf(stderr, "[TSRemapDoRemap] Remap To Port: %d\n", rri->remap_to_port);
+  fprintf(stderr, "[TSRemapDoRemap] Request Path: \"");
   my_print_ascii_string(rri->request_path, rri->request_path_size);
-  fprintf(stderr, "\"\n[tsremap_remap] Remap From Path: \"");
+  fprintf(stderr, "\"\n[TSRemapDoRemap] Remap From Path: \"");
   my_print_ascii_string(rri->remap_from_path, rri->remap_from_path_size);
-  fprintf(stderr, "\"\n[tsremap_remap] Remap To Path: \"");
+  fprintf(stderr, "\"\n[TSRemapDoRemap] Remap To Path: \"");
   my_print_ascii_string(rri->remap_to_path, rri->remap_to_path_size);
-  fprintf(stderr, "\"\n[tsremap_remap] Request cookie: \"");
-  my_print_ascii_string(rri->request_cookie, rri->request_cookie_size);
   fprintf(stderr, "\"\n");
 
 
@@ -344,7 +343,7 @@ tsremap_remap(ihandle ih, rhandle rh, TSRemapRequestInfo * rri)
   }
   // How to store plugin private arguments inside Traffic Server request processing block.
   if (TSHttpArgIndexReserve("remap_example", "Example remap plugin", &arg_index) == TS_SUCCESS) {
-    fprintf(stderr, "[tsremap_remap] Save processing counter %lu inside request processing block\n", _processing_counter);
+    fprintf(stderr, "[TSRemapDoRemap] Save processing counter %lu inside request processing block\n", _processing_counter);
     TSHttpTxnArgSet((TSHttpTxn) rh, arg_index, (void *) _processing_counter); // save counter
   }
   // How to cancel request processing and return error message to the client
@@ -380,15 +379,15 @@ tsremap_remap(ihandle ih, rhandle rh, TSRemapRequestInfo * rri)
   return retcode;
 }
 
-/* ----------------------- tsremap_os_response ----------------------------- */
+/* ----------------------- TSRemapOSResponse ----------------------------- */
 void
-tsremap_os_response(ihandle ih, rhandle rh, int os_response_type)
+TSRemapOSResponse(void* ih, TSHttpTxn rh, int os_response_type)
 {
   int request_id = -1;
-  void *data = TSHttpTxnArgGet((TSHttpTxn) rh, arg_index);  // read counter (we store it in tsremap_remap function call)
+  void *data = TSHttpTxnArgGet((TSHttpTxn) rh, arg_index);  // read counter (we store it in TSRemapDoRemap function call)
 
   if (data)
     request_id = *((int*)data);
-  fprintf(stderr, "[tsremap_os_response] Read processing counter %d from request processing block\n", request_id);
-  fprintf(stderr, "[tsremap_os_response] OS response status: %d\n", os_response_type);
+  fprintf(stderr, "[TSRemapOSResponse] Read processing counter %d from request processing block\n", request_id);
+  fprintf(stderr, "[TSRemapOSResponse] OS response status: %d\n", os_response_type);
 }
