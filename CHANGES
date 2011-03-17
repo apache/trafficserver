@@ -1,6 +1,16 @@
                                                          -*- coding: utf-8 -*-
 
 Changes with Apache Traffic Server 2.1.7
+  *) [TS-710] Do not dlopen / reload a remap plugin .so more than once.
+
+  *) [TS-588] Change Remap plugin APIs to use URL TSMLoc, and normal
+   ts/ts.h APIs for getting and setting components.
+
+  *) [TS-708] TsConfig doesn't handle backslashes correctly.
+
+  *) [TS-209] add support for raw disk on Solaris: credits: Igor Brezac
+    for both the code and testing!
+
   *) [TS-705] Fixes for compiling with gcc v4.6.
 
   *) [TS-706] hardware sector size's over 8K current report an Error
