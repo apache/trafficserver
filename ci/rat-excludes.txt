@@ -98,3 +98,4 @@ mgmt/traffic_manager
 proxy/traffic_logcat
 proxy/traffic_logstats
 proxy/traffic_sac
+lib/tsconfig/test-1.tsconfig
