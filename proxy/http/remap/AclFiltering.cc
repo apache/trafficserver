@@ -111,7 +111,7 @@ acl_filter_rule::print(void)
 }
 
 acl_filter_rule *
-acl_filter_rule::find_byname(acl_filter_rule * list, const char *_name)
+acl_filter_rule::find_byname(acl_filter_rule *list, const char *_name)
 {
   int _name_size = 0;
   acl_filter_rule *rp = 0;
@@ -125,7 +125,7 @@ acl_filter_rule::find_byname(acl_filter_rule * list, const char *_name)
 }
 
 void
-acl_filter_rule::delete_byname(acl_filter_rule ** rpp, const char *_name)
+acl_filter_rule::delete_byname(acl_filter_rule **rpp, const char *_name)
 {
   int _name_size = 0;
   acl_filter_rule *rp;
@@ -141,7 +141,7 @@ acl_filter_rule::delete_byname(acl_filter_rule ** rpp, const char *_name)
 }
 
 void
-acl_filter_rule::requeue_in_active_list(acl_filter_rule ** list, acl_filter_rule * rp)
+acl_filter_rule::requeue_in_active_list(acl_filter_rule **list, acl_filter_rule *rp)
 {
   if (likely(list && rp)) {
     if (rp->active_queue_flag == 0) {
@@ -163,7 +163,7 @@ acl_filter_rule::requeue_in_active_list(acl_filter_rule ** list, acl_filter_rule
 }
 
 void
-acl_filter_rule::requeue_in_passive_list(acl_filter_rule ** list, acl_filter_rule * rp)
+acl_filter_rule::requeue_in_passive_list(acl_filter_rule **list, acl_filter_rule *rp)
 {
   if (likely(list && rp)) {
     if (rp->active_queue_flag) {

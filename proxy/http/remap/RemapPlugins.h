@@ -55,9 +55,9 @@ struct RemapPlugins: public Continuation
   void setRequestHeader(HTTPHdr* h) {  _request_header = h; }
   void setHostHeaderInfo(host_hdr_info* h) { _hh_ptr = h; }
 
-  int run_remap(int, Event *);
+  int run_remap(int event, Event* e);
   int run_single_remap();
-  TSRemapStatus run_plugin(remap_plugin_info *, char *, int, bool *, bool *, bool *);
+  TSRemapStatus run_plugin(remap_plugin_info* plugin);
 
   Action action;
 

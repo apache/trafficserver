@@ -110,27 +110,28 @@ TSRemapDeleteInstance(void* ih)
 }
 
 
-int
+TSRemapStatus
 TSRemapDoRemap(void* ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
 {
   int hostidx = -1;
   query_remap_info *qri = (query_remap_info*)ih;
 
-  if (!qri) {
-    TSError(PLUGIN_NAME "NULL private data");
-    return 0;
+  if (!qri || !rri) {
+    TSError(PLUGIN_NAME "NULL private data or RRI");
+    return TSREMAP_NO_REMAP;
   }
 
-  TSDebug(PLUGIN_NAME, "TSRemapDoRemap request: %.*s", rri->orig_url_size, rri->orig_url);
-
-  if (rri && rri->request_query && rri->request_query_size > 0) {
+  int req_query_len;
+  const char* req_query = TSUrlHttpQueryGet(rri->requestBufp, rri->requestUrl, &req_query_len);
+  
+  if (req_query && req_query_len > 0) {
     char *q, *key;
     char *s = NULL;
 
     /* make a copy of the query, as it is read only */
-    q = (char*) TSmalloc(rri->request_query_size+1);
-    strncpy(q, rri->request_query, rri->request_query_size);
-    q[rri->request_query_size] = '\0';
+    q = (char*) TSmalloc(req_query_len+1);
+    strncpy(q, req_query, req_query_len);
+    q[req_query_len] = '\0';
 
     /* parse query parameters */
     for (key = strtok_r(q, "&", &s); key != NULL;) {
@@ -150,22 +151,22 @@ TSRemapDoRemap(void* ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
     TSfree(q);
 
     if (hostidx >= 0) {
-      rri->new_host_size = strlen(qri->hosts[hostidx]);
-      if (rri->new_host_size <= TSREMAP_RRI_MAX_HOST_SIZE) {
-        /* copy the chosen host into rri */
-        memcpy(rri->new_host, qri->hosts[hostidx], rri->new_host_size);
+      int req_host_len;
+      /* TODO: Perhaps use TSIsDebugTagSet() before calling TSUrlHostGet()... */
+      const char* req_host = TSUrlHostGet(rri->requestBufp, rri->requestUrl, &req_host_len);
 
-        TSDebug(PLUGIN_NAME, "host changed from [%.*s] to [%.*s]",
-                 rri->request_host_size, rri->request_host,
-                 rri->new_host_size, rri->new_host);
-        return 1; /* host has been modified */
+      if (TSUrlHostSet(rri->requestBufp, rri->requestUrl, qri->hosts[hostidx], strlen(qri->hosts[hostidx])) != TS_SUCCESS) {
+        TSDebug(PLUGIN_NAME, "Failed to modify the Host in request URL");
+        return TSREMAP_NO_REMAP;
       }
+      TSDebug(PLUGIN_NAME, "host changed from [%.*s] to [%s]", req_host_len, req_host, qri->hosts[hostidx]);
+      return TSREMAP_DID_REMAP; /* host has been modified */
     }
   }
 
   /* the request was not modified, TS will use the toURL from the remap rule */
   TSDebug(PLUGIN_NAME, "request not modified");
-  return 0;
+  return TSREMAP_NO_REMAP;
 }
 
 

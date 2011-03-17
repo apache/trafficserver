@@ -57,7 +57,7 @@ private:
   void reset(void);
 
 public:
-  acl_filter_rule * next;
+  acl_filter_rule *next;
   int filter_name_size;         // size of optional filter name
   char *filter_name;            // optional filter name
   unsigned int allow_flag:1,    // action allow deny
@@ -83,10 +83,10 @@ public:
   int add_argv(int _argc, char *_argv[]);
   void print(void);
 
-  static acl_filter_rule *find_byname(acl_filter_rule * list, const char *name);
-  static void delete_byname(acl_filter_rule ** list, const char *name);
-  static void requeue_in_active_list(acl_filter_rule ** list, acl_filter_rule * rp);
-  static void requeue_in_passive_list(acl_filter_rule ** list, acl_filter_rule * rp);
+  static acl_filter_rule *find_byname(acl_filter_rule *list, const char *name);
+  static void delete_byname(acl_filter_rule **list, const char *name);
+  static void requeue_in_active_list(acl_filter_rule **list, acl_filter_rule *rp);
+  static void requeue_in_passive_list(acl_filter_rule **list, acl_filter_rule *rp);
 };
 
 #endif

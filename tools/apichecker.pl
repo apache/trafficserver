@@ -106,7 +106,7 @@ my %RENAMED = (
   "tsremap_delete_instance" => "TSRemapDeleteInstance",
   "tsremap_remap" => "TSRemapDoRemap",
   "tsremap_os_response" => "TSRemapOSResponse",
-  "rhandle" => "TSHttpTXN",
+  "rhandle" => "TSHttpTxn",
 );
 
 my %TWO_2_THREE = (
@@ -262,6 +262,29 @@ my %TWO_2_THREE = (
   "tsremap_delete_instance" =>  [$W_RENAMED],
   "tsremap_remap" =>  [$W_RENAMED, $W_TSREMAPSTATUS],
   "tsremap_os_response" => [$W_RENAMED],
+  "orig_url" => [$W_DEPRECATED],
+  "orig_url_size" => [$W_DEPRECATED],
+  "request_port" =>  [$W_DEPRECATED],
+  "remap_from_port" =>  [$W_DEPRECATED],
+  "remap_to_port" =>  [$W_DEPRECATED],
+  "request_host" =>  [$W_DEPRECATED],
+  "remap_from_host" =>  [$W_DEPRECATED],
+  "remap_to_host" =>  [$W_DEPRECATED],
+  "request_path" =>  [$W_DEPRECATED],
+  "remap_from_path" =>  [$W_DEPRECATED],
+  "remap_to_path" =>  [$W_DEPRECATED],
+  "request_cookie" =>  [$W_DEPRECATED],
+  "request_matrix" =>  [$W_DEPRECATED],
+  "from_scheme" =>  [$W_DEPRECATED],
+  "to_scheme" =>  [$W_DEPRECATED],
+  "request_query" =>  [$W_DEPRECATED],
+  "new_host" =>  [$W_DEPRECATED],
+  "new_port" =>  [$W_DEPRECATED],
+  "new_path" =>  [$W_DEPRECATED],
+  "new_query" =>  [$W_DEPRECATED],
+  "new_matrix" =>  [$W_DEPRECATED],
+  "redirect_url" =>  [$W_DEPRECATED],
+  "require_ssl" =>  [$W_DEPRECATED],
 );
 
 
@@ -272,7 +295,7 @@ sub header_write {
   my $do_it = shift;
   my $tok = shift;
 
-  print "--> $tok() <--\n" if $do_it;
+  print "--> $tok <--\n" if $do_it;
   return 0;
 }
 
@@ -292,19 +315,22 @@ sub two2three {
         if ($line =~ /NULL/) {
           print "    + The length output parameter can not be NULL\n";
           $hdr_write = header_write($hdr_write, $tok);
+          $ret = 1;
         }
       } elsif ($w eq $W_NO_ERROR_PTR) {
         $hdr_write = header_write($hdr_write, "TS_ERROR_PTR");
         print "    + no APIs can return TS_ERROR_PTR, you should not compare it\n";
+        $ret = 1;
       } elsif ($w eq $W_RENAMED) {
         $hdr_write = header_write($hdr_write, $tok);
         print "    + is renamed to $RENAMED{$tok}\n";
+        $ret = 1;
       } else {
         $hdr_write = header_write($hdr_write, $tok);
         print "    + $w\n";
+        $ret = 1;
       }
     }
-    $ret = 1;
   }
 
   return $ret;
@@ -324,7 +350,7 @@ sub process {
   }
 
   while (<FILE>) {
-    my @tokens = split(/[^a-zA-Z0-9_]/);
+    my @tokens = split(/[^a-zA-Z0-9_\.]/);
 
     if (ink2ts(\@tokens, $_) || two2three(\@tokens, $_)) {
       print "$file:$line:$_\n";

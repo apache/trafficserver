@@ -70,8 +70,8 @@ public:
   char **argv;
     remap_entry(int _argc, char *_argv[]);
    ~remap_entry();
-  static void add_to_list(remap_entry * re);
-  static void remove_from_list(remap_entry * re);
+  static void add_to_list(remap_entry *re);
+  static void remove_from_list(remap_entry *re);
 };
 
 static int plugin_init_counter = 0;     /* remap plugin initialization counter */
@@ -111,7 +111,7 @@ remap_entry::~remap_entry()
 
 /* --------------------- remap_entry::add_to_list -------------------------- */
 void
-remap_entry::add_to_list(remap_entry * re)
+remap_entry::add_to_list(remap_entry *re)
 {
   if (likely(re && plugin_init_counter)) {
     pthread_mutex_lock(&mutex);
@@ -123,7 +123,7 @@ remap_entry::add_to_list(remap_entry * re)
 
 /* ------------------ remap_entry::remove_from_list ------------------------ */
 void
-remap_entry::remove_from_list(remap_entry * re)
+remap_entry::remove_from_list(remap_entry *re)
 {
   remap_entry **rre;
   if (likely(re && plugin_init_counter)) {
@@ -139,8 +139,8 @@ remap_entry::remove_from_list(remap_entry * re)
 }
 
 /* ----------------------- store_my_error_message -------------------------- */
-static int
-store_my_error_message(int retcode, char *err_msg_buf, int buf_size, const char *fmt, ...)
+static TSReturnCode
+store_my_error_message(TSReturnCode retcode, char *err_msg_buf, int buf_size, const char *fmt, ...)
 {
   if (likely(err_msg_buf && buf_size > 0 && fmt)) {
     va_list ap;
@@ -151,26 +151,6 @@ store_my_error_message(int retcode, char *err_msg_buf, int buf_size, const char 
     va_end(ap);
   }
   return retcode;               /* error code here */
-}
-
-/* -------------------------- my_print_ascii_string ------------------------ */
-static void
-my_print_ascii_string(const char *str, int str_size)
-{
-  char buf[1024];
-  int i, j;
-
-  if (str) {
-    for (i = 0; i < str_size;) {
-      if ((j = (str_size - i)) >= (int) sizeof(buf))
-        j = (int) (sizeof(buf) - 1);
-      memcpy(buf, str, j);
-      buf[j] = 0;
-      fprintf(stderr, "%s", buf);
-      str += j;
-      i += j;
-    }
-  }
 }
 
 void
@@ -190,51 +170,48 @@ TSPluginInit(int argc, const char *argv[])
 // Plugin initialization code. Called immediately after dlopen() Only once!
 // Can perform internal initialization. For example, pthread_.... initialization.
 /* ------------------------- TSRemapInit ---------------------------------- */
-int
-TSRemapInit(TSRemapInterface * api_info, char *errbuf, int errbuf_size)
+TSReturnCode
+TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
 {
   fprintf(stderr, "Remap Plugin: TSRemapInit()\n");
 
   if (!plugin_init_counter) {
     if (unlikely(!api_info)) {
-      return store_my_error_message(-1, errbuf, errbuf_size, "[TSRemapInit] - Invalid TSRemapInterface argument");
+      return store_my_error_message(TS_ERROR, errbuf, errbuf_size, "[TSRemapInit] - Invalid TSRemapInterface argument");
     }
     if (unlikely(api_info->size < sizeof(TSRemapInterface))) {
-      return store_my_error_message(-2, errbuf, errbuf_size,
+      return store_my_error_message(TS_ERROR, errbuf, errbuf_size,
                                     "[TSRemapInit] - Incorrect size of TSRemapInterface structure %d. Should be at least %d bytes",
                                     (int) api_info->size, (int) sizeof(TSRemapInterface));
     }
     if (unlikely(api_info->tsremap_version < TSREMAP_VERSION)) {
-      return store_my_error_message(-3, errbuf, errbuf_size,
+      return store_my_error_message(TS_ERROR, errbuf, errbuf_size,
                                     "[TSRemapInit] - Incorrect API version %d.%d",
                                     (api_info->tsremap_version >> 16), (api_info->tsremap_version & 0xffff));
     }
 
     if (pthread_mutex_init(&remap_plugin_global_mutex, 0) || pthread_mutex_init(&remap_entry::mutex, 0)) {      /* pthread_mutex_init - always returns 0. :) - impossible error */
-      return store_my_error_message(-4, errbuf, errbuf_size, "[TSRemapInit] - Mutex initialization error");
+      return store_my_error_message(TS_ERROR, errbuf, errbuf_size, "[TSRemapInit] - Mutex initialization error");
     }
     plugin_init_counter++;
   }
-  return 0;                     /* success */
+  return TS_SUCCESS;                     /* success */
 }
 
 // Plugin shutdown
 // Optional function.
 /* -------------------------- TSRemapDone --------------------------------- */
-int
+void
 TSRemapDone(void)
 {
   fprintf(stderr, "Remap Plugin: TSRemapDone()\n");
-  /* do nothing */
-
-  return 0;
 }
 
 
 // Plugin new instance for new remapping rule.
 // This function can be called multiple times (depends on remap.config)
 /* ------------------------ TSRemapNewInstance --------------------------- */
-int
+TSReturnCode
 TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_size)
 {
   remap_entry *ri;
@@ -244,11 +221,11 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
   fprintf(stderr, "Remap Plugin: TSRemapNewInstance()\n");
 
   if (argc < 2) {
-    return store_my_error_message(-1, errbuf, errbuf_size,
+    return store_my_error_message(TS_ERROR, errbuf, errbuf_size,
                                   "[TSRemapNewInstance] - Incorrect number of arguments - %d", argc);
   }
   if (!argv || !ih) {
-    return store_my_error_message(-2, errbuf, errbuf_size, "[TSRemapNewInstance] - Invalid argument(s)");
+    return store_my_error_message(TS_ERROR, errbuf, errbuf_size, "[TSRemapNewInstance] - Invalid argument(s)");
   }
   // print all arguments for this particular remapping
   for (i = 0; i < argc; i++) {
@@ -258,14 +235,14 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
   ri = new remap_entry(argc, argv);
 
   if (!ri) {
-    return store_my_error_message(-3, errbuf, errbuf_size, "[TSRemapNewInstance] - Can't create remap_entry class");
+    return store_my_error_message(TS_ERROR, errbuf, errbuf_size, "[TSRemapNewInstance] - Can't create remap_entry class");
   }
 
   remap_entry::add_to_list(ri);
 
   *ih = (void*) ri;
 
-  return 0;
+  return TS_SUCCESS;
 }
 
 /* ---------------------- TSRemapDeleteInstance -------------------------- */
@@ -285,62 +262,59 @@ static volatile unsigned long processing_counter = 0;   // sequential counter
 static int arg_index = 0;
 
 /* -------------------------- TSRemapDoRemap -------------------------------- */
-int
-TSRemapDoRemap(void* ih, TSHttpTxn rh, TSRemapRequestInfo * rri)
+TSRemapStatus
+TSRemapDoRemap(void* ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
 {
-  TSMBuffer cbuf;
-  TSMLoc chdr;
+  const char* temp;
+  const char* temp2;
+  int len, len2, port;
   TSMLoc cfield;
-  int retcode = 0;              // TS must perform actual remapping
   unsigned long _processing_counter = ++processing_counter;     // one more function call (in real life use mutex to protect this counter)
 
   remap_entry *ri = (remap_entry *) ih;
   fprintf(stderr, "Remap Plugin: TSRemapDoRemap()\n");
 
   if (!ri || !rri)
-    return 0;                   /* TS must remap this request */
-  /* TODO: This should be rewritten to use appropriate APIs from ts/ts.h
-  char *p = (char *) &rri->client_ip;
-  fprintf(stderr, "[TSRemapDoRemap] Client IP: %d.%d.%d.%d\n", (int) p[0], (int) p[1], (int) p[2], (int) p[3]);
-  */
+    return TSREMAP_NO_REMAP;                   /* TS must remap this request */
+
   fprintf(stderr, "[TSRemapDoRemap] From: \"%s\"  To: \"%s\"\n", ri->argv[0], ri->argv[1]);
-  fprintf(stderr, "[TSRemapDoRemap] OrigURL: \"");
-  my_print_ascii_string(rri->orig_url, rri->orig_url_size);
-  fprintf(stderr, "\"\n[TSRemapDoRemap] Request Host(%d): \"", rri->request_host_size);
-  my_print_ascii_string(rri->request_host, rri->request_host_size);
-  fprintf(stderr, "\"\n[TSRemapDoRemap] Remap To Host: \"");
-  my_print_ascii_string(rri->remap_to_host, rri->remap_to_host_size);
-  fprintf(stderr, "\"\n[TSRemapDoRemap] Remap From Host: \"");
-  my_print_ascii_string(rri->remap_from_host, rri->remap_from_host_size);
-  fprintf(stderr, "\"\n[TSRemapDoRemap] Request Port: %d\n", rri->request_port);
-  fprintf(stderr, "[TSRemapDoRemap] Remap From Port: %d\n", rri->remap_from_port);
-  fprintf(stderr, "[TSRemapDoRemap] Remap To Port: %d\n", rri->remap_to_port);
-  fprintf(stderr, "[TSRemapDoRemap] Request Path: \"");
-  my_print_ascii_string(rri->request_path, rri->request_path_size);
-  fprintf(stderr, "\"\n[TSRemapDoRemap] Remap From Path: \"");
-  my_print_ascii_string(rri->remap_from_path, rri->remap_from_path_size);
-  fprintf(stderr, "\"\n[TSRemapDoRemap] Remap To Path: \"");
-  my_print_ascii_string(rri->remap_to_path, rri->remap_to_path_size);
-  fprintf(stderr, "\"\n");
 
+  temp = TSUrlHostGet(rri->requestBufp, rri->requestUrl, &len);
+  fprintf(stderr, "[TSRemapDoRemap] Request Host(%d): \"%.*s\"\n", len, len, temp);
 
+  temp = TSUrlHostGet(rri->requestBufp, rri->mapToUrl, &len);
+  fprintf(stderr, "[TSRemapDoRemap] Remap To Host: \"%.*s\"\n", len, temp);
+
+  temp = TSUrlHostGet(rri->requestBufp, rri->mapFromUrl, &len);
+  fprintf(stderr, "[TSRemapDoRemap] Remap From Host: \"%.*s\"\n", len, temp);
+
+  fprintf(stderr, "[TSRemapDoRemap] Request Port: %d\n", TSUrlPortGet(rri->requestBufp, rri->requestUrl));
+  fprintf(stderr, "[TSRemapDoRemap] Remap From Port: %d\n", TSUrlPortGet(rri->requestBufp, rri->mapFromUrl));
+  fprintf(stderr, "[TSRemapDoRemap] Remap To Port: %d\n", TSUrlPortGet(rri->requestBufp, rri->mapToUrl));
+
+  temp = TSUrlPathGet(rri->requestBufp, rri->requestUrl, &len);
+  fprintf(stderr, "[TSRemapDoRemap] Request Path: \"%.*s\"\n", len, temp);
+
+  temp = TSUrlPathGet(rri->requestBufp, rri->mapFromUrl, &len);
+  fprintf(stderr, "[TSRemapDoRemap] Remap From Path: \"%.*s\"\n", len, temp);
+
+  temp = TSUrlPathGet(rri->requestBufp, rri->mapToUrl, &len);
+  fprintf(stderr, "[TSRemapDoRemap] Remap To Path: \"%.*s\"\n", len, temp);
 
   // InkAPI usage case
-  if (TSHttpTxnClientReqGet((TSHttpTxn) rh, &cbuf, &chdr) == TS_SUCCESS) {
-    const char *value;
-    if ((cfield = TSMimeHdrFieldFind(cbuf, chdr, TS_MIME_FIELD_DATE, -1)) != TS_NULL_MLOC) {
-      fprintf(stderr, "We have \"Date\" header in request\n");
-      value = TSMimeHdrFieldValueStringGet(cbuf, chdr, cfield, 0, NULL);
-      fprintf(stderr, "Header value: %s\n", value);
-    }
-    if ((cfield = TSMimeHdrFieldFind(cbuf, chdr, "MyHeader", sizeof("MyHeader") - 1)) != TS_NULL_MLOC) {
-      fprintf(stderr, "We have \"MyHeader\" header in request\n");
-      value = TSMimeHdrFieldValueStringGet(cbuf, chdr, cfield, 0, NULL);
-      fprintf(stderr, "Header value: %s\n", value);
-    }
-    TSHandleMLocRelease(cbuf, chdr, cfield);
-    TSHandleMLocRelease(cbuf, TS_NULL_MLOC, chdr);
+  const char *value;
+
+  if ((cfield = TSMimeHdrFieldFind(rri->requestBufp, rri->requestHdrp, TS_MIME_FIELD_DATE, -1)) != TS_NULL_MLOC) {
+    fprintf(stderr, "We have \"Date\" header in request\n");
+    value = TSMimeHdrFieldValueStringGet(rri->requestBufp, rri->requestHdrp, cfield, 0, NULL);
+    fprintf(stderr, "Header value: %s\n", value);
   }
+  if ((cfield = TSMimeHdrFieldFind(rri->requestBufp, rri->requestHdrp, "MyHeader", sizeof("MyHeader") - 1)) != TS_NULL_MLOC) {
+    fprintf(stderr, "We have \"MyHeader\" header in request\n");
+    value = TSMimeHdrFieldValueStringGet(rri->requestBufp, rri->requestHdrp, cfield, 0, NULL);
+    fprintf(stderr, "Header value: %s\n", value);
+  }
+
   // How to store plugin private arguments inside Traffic Server request processing block.
   if (TSHttpArgIndexReserve("remap_example", "Example remap plugin", &arg_index) == TS_SUCCESS) {
     fprintf(stderr, "[TSRemapDoRemap] Save processing counter %lu inside request processing block\n", _processing_counter);
@@ -360,23 +334,32 @@ TSRemapDoRemap(void* ih, TSHttpTxn rh, TSRemapRequestInfo * rri)
   }
   // hardcoded case for remapping
   // You need to check host and port if you are using the same plugin for multiple remapping rules
-  if (rri->request_host_size == 10 &&
-      !memcmp("flickr.com", rri->request_host, 10) &&
-      rri->request_port == 80 && rri->request_path_size >= 3 && !memcmp("47/", rri->request_path, 3)) {
-    rri->new_port = rri->remap_to_port; /* set new port */
+  temp = TSUrlHostGet(rri->requestBufp, rri->requestUrl, &len);
+  temp2 = TSUrlPathGet(rri->requestBufp, rri->requestUrl, &len2);
+  port = TSUrlPortGet(rri->requestBufp, rri->requestUrl);
 
-    strcpy(rri->new_host, "foo.bar.com");    /* set new host name */
-    rri->new_host_size = strlen(rri->new_host);
+  if (len == 10 && !memcmp("flickr.com", temp, 10) && port == 80 && len2 >= 3 && !memcmp("47/", temp2, 3)) {
+    char new_path[8192];
 
-    memcpy(rri->new_path, "47_copy", 7);
-    memcpy(&rri->new_path[7], &rri->request_path[2], rri->request_path_size - 2);
-    rri->new_path_size = rri->request_path_size + 5;
-    rri->new_path[rri->new_path_size] = 0;
+    // Ugly, but so is the rest of this "example"
+    if (len2 + 7 >= 8192)
+      return TSREMAP_NO_REMAP;
 
-    retcode = 7;                // 0x1 - host, 0x2 - host, 0x4 - path
+    if (TSUrlPortSet(rri->requestBufp, rri->mapToUrl, TSUrlPortGet(rri->requestBufp, rri->mapToUrl)) != TS_SUCCESS)
+      return TSREMAP_NO_REMAP;
+
+    if (TSUrlHostSet(rri->requestBufp, rri->requestUrl, "foo.bar.com", 11) != TS_SUCCESS)
+      return TSREMAP_NO_REMAP;
+
+    memcpy(new_path, "47_copy", 7);
+    memcpy(&new_path[7], &temp2[2], len2 - 2);
+
+    if (TSUrlPathSet(rri->requestBufp, rri->requestUrl, new_path, len2 + 5) == TS_SUCCESS)
+      return TSREMAP_DID_REMAP;
   }
 
-  return retcode;
+  // Failure ...
+  return TSREMAP_NO_REMAP;
 }
 
 /* ----------------------- TSRemapOSResponse ----------------------------- */

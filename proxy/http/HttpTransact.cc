@@ -8004,9 +8004,8 @@ HttpTransact::build_response(State* s, HTTPHdr* base_response, HTTPHdr* outgoing
 
   // If the response is prohibited from containing a body,
   //  we know the content length is trustable for keep-alive
-  if (is_response_body_precluded(status_code, s->method)) {
+  if (is_response_body_precluded(status_code, s->method))
     s->hdr_info.trust_response_cl = true;
-  }
 
   handle_response_keep_alive_headers(s, outgoing_version, outgoing_response);
 
@@ -8021,9 +8020,8 @@ HttpTransact::build_response(State* s, HTTPHdr* base_response, HTTPHdr* outgoing
   // process reverse mappings on the location header
   HTTPStatus outgoing_status = outgoing_response->status_get();
 
-  if ((outgoing_status != 200) && (((outgoing_status >= 300) && (outgoing_status < 400)) || (outgoing_status == 201))) {
+  if ((outgoing_status != 200) && (((outgoing_status >= 300) && (outgoing_status < 400)) || (outgoing_status == 201)))
     response_url_remap(outgoing_response);
-  }
 
   if (s->http_config_param->enable_http_stats) {
     if (s->hdr_info.server_response.valid() && s->http_config_param->wuts_enabled) {

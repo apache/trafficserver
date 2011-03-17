@@ -64,7 +64,7 @@ url_mapping::get_plugin(unsigned int index) const
   if ((_plugin_count == 0) || unlikely(index > _plugin_count))
     return NULL;
 
-  return _plugin_list[_plugin_count];
+  return _plugin_list[index];
 }
 
 /**

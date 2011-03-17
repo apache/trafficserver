@@ -119,7 +119,7 @@ check_remap_option(char *argv[], int argc, unsigned long findmode = 0, int *_ret
 
 */
 void
-SetHomePageRedirectFlag(url_mapping * new_mapping, URL &new_to_url)
+SetHomePageRedirectFlag(url_mapping *new_mapping, URL &new_to_url)
 {
   int fromLen, toLen;
   const char *from_path = new_mapping->fromURL.path_get(&fromLen);
@@ -360,7 +360,7 @@ validate_filter_args(acl_filter_rule ** rule_pp, char **argv, int argc, char *er
 
 
 static const char *
-parse_directive(BUILD_TABLE_INFO * bti, char *errbuf, int errbufsize)
+parse_directive(BUILD_TABLE_INFO *bti, char *errbuf, int errbufsize)
 {
   bool flg;
   char *directive = NULL;
@@ -395,8 +395,7 @@ parse_directive(BUILD_TABLE_INFO * bti, char *errbuf, int errbufsize)
     flg = ((rp = acl_filter_rule::find_byname(bti->rules_list, (const char *) bti->paramv[1])) == NULL) ? true : false;
     // coverity[alloc_arg]
     if ((cstr = validate_filter_args(&rp, bti->argv, bti->argc, errbuf, errbufsize)) == NULL && rp) {
-      if (flg)                  // new filter - add to list
-      {
+      if (flg) {                  // new filter - add to list
         Debug("url_rewrite", "[parse_directive] new rule \"%s\" was created", bti->paramv[1]);
         for (rpp = &bti->rules_list; *rpp; rpp = &((*rpp)->next));
         (*rpp = rp)->name(bti->paramv[1]);
@@ -447,7 +446,7 @@ parse_directive(BUILD_TABLE_INFO * bti, char *errbuf, int errbufsize)
 
 
 static const char *
-process_filter_opt(url_mapping * mp, BUILD_TABLE_INFO * bti, char *errStrBuf, int errStrBufSize)
+process_filter_opt(url_mapping *mp, BUILD_TABLE_INFO *bti, char *errStrBuf, int errStrBufSize)
 {
   acl_filter_rule *rp, **rpp;
   const char *errStr = NULL;
@@ -623,7 +622,7 @@ UrlRewrite::SetupBackdoorMapping()
 
 /** Deallocated a hash table and all the url_mappings in it. */
 void
-UrlRewrite::_destroyTable(InkHashTable * h_table)
+UrlRewrite::_destroyTable(InkHashTable *h_table)
 {
   InkHashTableEntry *ht_entry;
   InkHashTableIteratorState ht_iter;
@@ -678,7 +677,7 @@ UrlRewrite::Print()
 
 /** Debugging method. */
 void
-UrlRewrite::PrintTable(InkHashTable * h_table)
+UrlRewrite::PrintTable(InkHashTable *h_table)
 {
   InkHashTableEntry *ht_entry;
   InkHashTableIteratorState ht_iter;
@@ -711,7 +710,7 @@ UrlRewrite::PrintTable(InkHashTable * h_table)
 
 */
 url_mapping *
-UrlRewrite::_tableLookup(InkHashTable * h_table, URL * request_url,
+UrlRewrite::_tableLookup(InkHashTable *h_table, URL *request_url,
                         int request_port, char *request_host, int request_host_len)
 {
   UrlMappingPathIndex *ht_entry;
@@ -850,7 +849,7 @@ UrlRewrite::ReverseMap(HTTPHdr *response_header)
 
 /** Perform fast ACL filtering. */
 void
-UrlRewrite::PerformACLFiltering(HttpTransact::State *s, url_mapping * map)
+UrlRewrite::PerformACLFiltering(HttpTransact::State *s, url_mapping *map)
 {
   if (unlikely(!s || s->acl_filtering_performed || !s->client_connection_enabled))
     return;
@@ -1576,7 +1575,7 @@ UrlRewrite::BuildTable()
 
 */
 bool
-UrlRewrite::TableInsert(InkHashTable * h_table, url_mapping * mapping, const char *src_host)
+UrlRewrite::TableInsert(InkHashTable *h_table, url_mapping *mapping, const char *src_host)
 {
   char src_host_tmp_buf[1];
   UrlMappingPathIndex *ht_contents;
@@ -1605,7 +1604,7 @@ UrlRewrite::TableInsert(InkHashTable * h_table, url_mapping * mapping, const cha
 }
 
 int
-UrlRewrite::load_remap_plugin(char *argv[], int argc, url_mapping * mp, char *errbuf, int errbufsize, int jump_to_argc,
+UrlRewrite::load_remap_plugin(char *argv[], int argc, url_mapping *mp, char *errbuf, int errbufsize, int jump_to_argc,
                               int *plugin_found_at)
 {
   TSRemapInterface ri;
@@ -1814,10 +1813,10 @@ UrlRewrite::_mappingLookup(MappingsStore &mappings, URL *request_url,
                            int request_port, const char *request_host, int request_host_len,
                            UrlMappingContainer &mapping_container)
 {
-  char request_host_lower[TSREMAP_RRI_MAX_HOST_SIZE];
+  char request_host_lower[256];
 
   if (!request_host || !request_url ||
-      (request_host_len < 0) || (request_host_len >= TSREMAP_RRI_MAX_HOST_SIZE)) {
+      (request_host_len < 0) || (request_host_len >= 256)) {
     Debug("url_rewrite", "Invalid arguments!");
     return false;
   }
@@ -1956,11 +1955,11 @@ UrlRewrite::_regexMappingLookup(RegexMappingList &regex_mappings, URL *request_u
 
       mapping_container.set(reg_map.url_map);
 
-      char buf[TSREMAP_RRI_MAX_REDIRECT_URL];
+      char buf[4096];
       int buf_len;
 
       // Expand substitutions in the host field from the stored template
-      buf_len = _expandSubstitutions(matches_info, reg_map, request_host, buf, TSREMAP_RRI_MAX_REDIRECT_URL);
+      buf_len = _expandSubstitutions(matches_info, reg_map, request_host, buf, sizeof(buf));
       URL *expanded_url = mapping_container.createNewToURL();
       expanded_url->copy(&((reg_map.url_map)->_default_to_url));
       expanded_url->host_set(buf, buf_len);

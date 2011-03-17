@@ -40,72 +40,26 @@ extern "C"
   } TSRemapInterface;
 
 
-#define TSREMAP_RRI_MAX_HOST_SIZE    256
-#define TSREMAP_RRI_MAX_PATH_SIZE    (1024*2)
-#define TSREMAP_RRI_MAX_REDIRECT_URL (1024*2)
-
   typedef struct _tm_remap_request_info
   {
-    /* these URLs mloc's are read only, use normal ts/ts.h APIs for accesing  */
+    /* Important: You should *not* release these buf pointers or TSMLocs from your plugin! */
+
+    /* these URL mloc's are read only, use normal ts/ts.h APIs for accesing  */
     TSMLoc mapFromUrl;
     TSMLoc mapToUrl;
+
+    /* the request URL mloc and buffer pointers are read-write. You can read and modify the
+     requestUrl using normal ts/ts.h APIs, which is how you change the destination URL. */
     TSMLoc requestUrl;
 
-    /* the following fields are read only */
-    int request_port;           /* request port number */
-    int remap_from_port;        /* fromURL port number (from remap rule string) */
-    int remap_to_port;          /* toURL port number (from remap rule string) */
+    /* requestBufp and requestHdrp are the equivalent of calling TSHttpTxnClientReqGet(). */
+    TSMBuffer requestBufp;
+    TSMLoc requestHdrp;
 
-    const char* orig_url;       /* request URL */
-    int orig_url_size;          /* request URL size */
-
-    const char* request_host;   /* request host string (without '\0' at the end of the string) */
-    int request_host_size;      /* request host string size */
-
-    const char* remap_from_host;        /* fromURL host (from remap rule string) */
-    int remap_from_host_size;   /* fromURL host size */
-
-    const char* remap_to_host;  /* toURL host (from remap rule string) */
-    int remap_to_host_size;     /* toURL host size */
-
-    const char* request_path;   /* request path */
-    int request_path_size;      /* request path size */
-
-    const char* remap_from_path;        /* fromURL path (from remap rule string) */
-    int remap_from_path_size;   /* fromURL path size */
-
-    const char* remap_to_path;  /* toURL path (from remap rule string) */
-    int remap_to_path_size;     /* toURL path size */
-
-    const char* request_query;  /* request query string */
-    int request_query_size;     /* request query string size. A negative size means remove it completely. */
-
-    const char* request_matrix; /* request matrix string */
-    int request_matrix_size;    /* request matrix string size. A negative size means remove it completely. */
-
-    const char* from_scheme;    /* The "from" scheme (e.g. HTTP) */
-    int from_scheme_len;        /* The len of the "from" scheme */
-
-    const char* to_scheme;      /* The "to" scheme (e.g. HTTP) */
-    int to_scheme_len;          /* The len of the "to" scheme */
-
-    /* plugin can change the following fields */
-    char new_host[TSREMAP_RRI_MAX_HOST_SIZE];   /* new host string */
-    int new_host_size;          /* new host string size (if 0 - do not change request host) */
-    int new_port;               /* new port number (0 - do not change request port) */
-    char new_path[TSREMAP_RRI_MAX_PATH_SIZE];   /* new path string */
-    int new_path_size;          /* new path string size (0 - do not change request path) */
-    char new_query[TSREMAP_RRI_MAX_PATH_SIZE];  /* new query string */
-    int new_query_size;         /* new query string size (0 - do not change request query) */
-    char new_matrix[TSREMAP_RRI_MAX_PATH_SIZE]; /* new matrix parameter string */
-    int new_matrix_size;        /* new matrix parameter string size (0 - do not change matrix parameters) */
-    char redirect_url[TSREMAP_RRI_MAX_REDIRECT_URL];    /* redirect url (to redirect/reject request) */
-    int redirect_url_size;      /* redirect url size (0 - empty redirect url string) */
-    int require_ssl;            /* Require the toScheme to become SSL (e.g. HTTPS).  */
-    /*    0 -> Disable SSL if toScheme is SSL */
-    /*    1 -> Enable SSL if toScheme is not SSL */
-    /*   -1 (default) -> Don't modify scheme */
+    /* 0 - don't redirect, 1 - use the (new)request URL as a redirect */
+    int redirect;
   } TSRemapRequestInfo;
+
 
   /* This is the type returned by the TSRemapDoRemap() callback */
   typedef enum
@@ -113,7 +67,15 @@ extern "C"
     TSREMAP_NO_REMAP = 0,	/* No remaping was done, continue with next in chain */
     TSREMAP_DID_REMAP = 1,	/* Remapping was done, continue with next in chain */
     TSREMAP_NO_REMAP_STOP = 2,	/* No remapping was done, and stop plugin chain evaluation */
-    TSREMAP_DID_REMAP_STOP = 3	/* Remapping was done, but stop plugin chain evaluation */
+    TSREMAP_DID_REMAP_STOP = 3,	/* Remapping was done, but stop plugin chain evaluation */
+
+    /* In the future, the following error codes can also be used:
+       -400 to -499
+       -500 to -599
+       ....
+       This would allow a plugin to generate an error page. Right now,
+       setting the return code to any negative number is equivalent to TSREMAP_NO_REMAP */
+    TSREMAP_ERROR = -1		/* Some error, that should generate an error page */
   } TSRemapStatus;
 
 

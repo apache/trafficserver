@@ -613,7 +613,7 @@ CONFIG proxy.config.dump_mem_info_frequency INT 0
 CONFIG proxy.config.http.slow.log.threshold INT 0
 ##############################################################################
 #
-# Tasks
+# Thread pool for "misc" tasks, plugins etc. 2 is a good minimum.
 #
 ##############################################################################
-CONFIG proxy.config.task_threads INT 1
+CONFIG proxy.config.task_threads INT 2
