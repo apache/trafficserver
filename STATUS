@@ -10,6 +10,7 @@ Release history:
     [NOTE that x.{odd}.z versions are strictly Alpha/Beta releases,
           while x.{even}.z versions are Stable/GA releases.]
 
+    2.1.7-unstable  : Released on March 21, 2011
     2.1.6-unstable  : Released on March 3, 2011
     2.1.5-unstable  : Released on January 12, 2011
     2.1.4-unstable  : Released on November 12, 2010
@@ -37,7 +38,7 @@ RELEASE SHOWSTOPPERS:
 
 A list of all bugs scheduled for the next release can be found at
 
-  http://s.apache.org/ts-2.1.7
+  http://s.apache.org/ts-2.1.8
 
 
 RELEASE PROCESS
