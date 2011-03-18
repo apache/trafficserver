@@ -649,9 +649,9 @@ CacheVC::openReadMain(int event, Event * e)
       }
     }
     if (fragment)
-      doc_pos = seek_to - (int64_t)first_frag[fragment-1].offset;
+      doc_pos = doc->prefix_len() + seek_to - (int64_t)first_frag[fragment-1].offset;
     else
-      doc_pos = seek_to;
+      doc_pos = doc->prefix_len() + seek_to; 
     vio.ndone = 0;
     seek_to = 0;
     ntodo = vio.ntodo();
