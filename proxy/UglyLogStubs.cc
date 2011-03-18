@@ -37,8 +37,10 @@
 
 #include "P_Net.h"
 
+int cache_config_mutex_retry_delay = 2;
+
 int fds_limit = 8000;
-UDPNetProcessor &udpNet;
+UDPNetProcessor& udpNet; // = udpNetInternal;
 
 ClassAllocator<UDPPacketInternal> udpPacketAllocator("udpPacketAllocator");
 
@@ -51,14 +53,19 @@ UDPConnection::Release()
 void
 UDPNetProcessor::FreeBandwidth(Continuation * udpConn)
 {
+  NOWARN_UNUSED(udpConn);
   ink_release_assert(false);
 }
 
-NetProcessor& netProcessor;
+NetProcessor& netProcessor; //  = unix_netProcessor;
 
 Action *
 UnixNetProcessor::connect_re_internal(Continuation * cont, unsigned int ip, int port,  NetVCOptions * opt)
 {
+  NOWARN_UNUSED(cont);
+  NOWARN_UNUSED(ip);
+  NOWARN_UNUSED(port);
+  NOWARN_UNUSED(opt);
   ink_release_assert(false);
   return NULL;
 }
@@ -70,12 +77,16 @@ ConfigUpdateCbTable *global_config_cbs = NULL;
 void
 ConfigUpdateCbTable::invoke(const char *name)
 {
+  NOWARN_UNUSED(name);
   ink_release_assert(false);
 }
 
 const char *
 event_int_to_string(int event, int blen, char *buffer)
 {
+  NOWARN_UNUSED(event);
+  NOWARN_UNUSED(blen);
+  NOWARN_UNUSED(buffer);
   ink_release_assert(false);
   return NULL;
 }
@@ -94,6 +105,7 @@ this_machine()
 void
 LogConfig::setup_collation(LogConfig * prev_config)
 {
+  NOWARN_UNUSED(prev_config);
   ink_release_assert(false);
 }
 
@@ -101,12 +113,21 @@ void
 LogConfig::create_pre_defined_objects_with_filter(const PreDefinedFormatInfoList & pre_def_info_list, size_t num_filters,
                                                   LogFilter ** filter, const char *filt_name, bool force_extension)
 {
+  NOWARN_UNUSED(pre_def_info_list);
+  NOWARN_UNUSED(num_filters);
+  NOWARN_UNUSED(filter);
+  NOWARN_UNUSED(filt_name);
+  NOWARN_UNUSED(force_extension);
   ink_release_assert(false);
 }
 
 int
 LogHost::write(LogBuffer * lb, size_t * to_disk, size_t * to_net, size_t * to_pipe)
 {
+  NOWARN_UNUSED(lb);
+  NOWARN_UNUSED(to_disk);
+  NOWARN_UNUSED(to_net);
+  NOWARN_UNUSED(to_pipe);
   ink_release_assert(false);
   return 0;
 }
@@ -135,6 +156,21 @@ NetProcessor::AcceptOptions::reset()
 int
 net_accept(NetAccept * na, void *ep, bool blockable)
 {
+  NOWARN_UNUSED(na);
+  NOWARN_UNUSED(ep);
+  NOWARN_UNUSED(blockable);
   ink_release_assert(false);
   return 0;
+}
+
+
+// These are for clang / llvm
+
+int
+CacheVC::handleWrite(int event, Event *e)
+{
+  NOWARN_UNUSED(event);
+  NOWARN_UNUSED(e);
+  return 0;
+  ink_release_assert(false);
 }
