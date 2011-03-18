@@ -938,28 +938,15 @@ LogObjectManager::_solve_filename_conflicts(LogObject * log_object, int maxConfl
     bool conflicts = true;
 
     if (meta_info.file_open_successful()) {
-      if (meta_info.pre_panda_metafile()) {
-        // assume no conflicts if pre-panda metafile and
-        // write Panda style metafile with old creation_time and
-        // signature of the object requesting filename
-        //
-        time_t creation_time = 0;
-        meta_info.get_creation_time(&creation_time);
-        MetaInfo new_meta_info(filename, creation_time, log_object->get_signature());
+      bool got_sig = meta_info.get_log_object_signature(&signature);
+      uint64_t obj_sig = log_object->get_signature();
+      if (got_sig && signature == obj_sig) {
         conflicts = false;
-        Warning("Assuming no format conflicts exist for %s", filename);
-        Note("Added object_signature to metafile of %s", filename);
-      } else {
-        bool got_sig = meta_info.get_log_object_signature(&signature);
-        uint64_t obj_sig = log_object->get_signature();
-        if (got_sig && signature == obj_sig) {
-          conflicts = false;
-        }
-        Debug("log", "LogObjectManager::_solve_filename_conflicts\n"
-              "\tfilename = %s\n"
-              "\tmeta file signature = %" PRIu64 "\n"
-              "\tlog object signature = %" PRIu64 "\n" "\tconflicts = %d", filename, signature, obj_sig, conflicts);
       }
+      Debug("log", "LogObjectManager::_solve_filename_conflicts\n"
+            "\tfilename = %s\n"
+            "\tmeta file signature = %" PRIu64 "\n"
+            "\tlog object signature = %" PRIu64 "\n" "\tconflicts = %d", filename, signature, obj_sig, conflicts);
     }
 
     if (conflicts) {

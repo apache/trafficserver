@@ -149,10 +149,10 @@ int lock_process = DEFAULT_LOCK_PROCESS;
 extern int fds_limit;
 extern int cluster_port_number;
 extern int cache_clustering_enabled;
-char cluster_host[DOMAIN_NAME_MAX + 1] = DEFAULT_CLUSTER_HOST;
+char cluster_host[MAXDNAME + 1] = DEFAULT_CLUSTER_HOST;
 
 //         = DEFAULT_CLUSTER_PORT_NUMBER;
-char proxy_name[DOMAIN_NAME_MAX + 1] = "unknown";
+char proxy_name[MAXDNAME + 1] = "unknown";
 char command_string[512] = "";
 int remote_management_flag = DEFAULT_REMOTE_MANAGEMENT_FLAG;
 
@@ -1818,9 +1818,7 @@ main(int argc, char **argv)
 #endif
 
     cacheProcessor.start();
-
     udpNet.start(num_of_udp_threads);   // XXX : broken for __WIN32
-
     sslNetProcessor.start(getNumSSLThreads());
 
 #ifndef INK_NO_LOG

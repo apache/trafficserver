@@ -1764,10 +1764,6 @@ RemapObj::RemapObj(TokenList * tokens)
     m_ele->from_scheme = TS_SCHEME_HTTP;
   } else if (strcmp(fromTok[0], "https") == 0) {
     m_ele->from_scheme = TS_SCHEME_HTTPS;
-  } else if (strcmp(fromTok[0], "rtsp") == 0) {
-    m_ele->from_scheme = TS_SCHEME_RTSP;
-  } else if (strcmp(fromTok[0], "mms") == 0) {
-    m_ele->from_scheme = TS_SCHEME_MMS;
   } else {
     m_ele->from_scheme = TS_SCHEME_UNDEFINED;
     goto FORMAT_ERR;
@@ -1824,10 +1820,6 @@ RemapObj::RemapObj(TokenList * tokens)
     m_ele->to_scheme = TS_SCHEME_HTTP;
   } else if (strcmp(toTok[0], "https") == 0) {
     m_ele->to_scheme = TS_SCHEME_HTTPS;
-  } else if (strcmp(toTok[0], "rtsp") == 0) {
-    m_ele->to_scheme = TS_SCHEME_RTSP;
-  } else if (strcmp(toTok[0], "mms") == 0) {
-    m_ele->to_scheme = TS_SCHEME_MMS;
   } else {
     m_ele->to_scheme = TS_SCHEME_UNDEFINED;
     goto FORMAT_ERR;
@@ -1927,12 +1919,6 @@ RemapObj::formatEleToRule()
   case TS_SCHEME_HTTPS:
     strncat(buf, "https", sizeof(buf) - strlen(buf) - 1);
     break;
-  case TS_SCHEME_RTSP:
-    strncat(buf, "rtsp", sizeof(buf) - strlen(buf) - 1);
-    break;
-  case TS_SCHEME_MMS:
-    strncat(buf, "mms", sizeof(buf) - strlen(buf) - 1);
-    break;
   default:
     // Handled here:
     // TS_SCHEME_NONE, TS_SCHEME_UNDEFINED
@@ -1963,12 +1949,6 @@ RemapObj::formatEleToRule()
     break;
   case TS_SCHEME_HTTPS:
     strncat(buf, "https", sizeof(buf) - strlen(buf) - 1);
-    break;
-  case TS_SCHEME_RTSP:
-    strncat(buf, "rtsp", sizeof(buf) - strlen(buf) - 1);
-    break;
-  case TS_SCHEME_MMS:
-    strncat(buf, "mms", sizeof(buf) - strlen(buf) - 1);
     break;
   default:
     // Handled here:
@@ -2014,8 +1994,6 @@ bool RemapObj::isValid()
   switch (m_ele->from_scheme) {
   case TS_SCHEME_HTTP:
   case TS_SCHEME_HTTPS:
-  case TS_SCHEME_RTSP:
-  case TS_SCHEME_MMS:
     break;
   default:
     m_valid = false;
@@ -2024,8 +2002,6 @@ bool RemapObj::isValid()
   switch (m_ele->to_scheme) {
   case TS_SCHEME_HTTP:
   case TS_SCHEME_HTTPS:
-  case TS_SCHEME_RTSP:
-  case TS_SCHEME_MMS:
     break;
   default:
     m_valid = false;
@@ -2698,7 +2674,7 @@ bool UpdateObj::isValid()
   // check url
   if (!m_ele->url || strcmp(m_ele->url, "") == 0 ||
       strstr(m_ele->url, "\\") ||
-      (!strstr(m_ele->url, "http") && !strstr(m_ele->url, "rtsp"))) {
+      (!strstr(m_ele->url, "http"))) {
     m_valid = false;
   }
   // bug 49322: check that there are no "\" in the url or headers

@@ -109,7 +109,7 @@
     if (buf) { \
       marshal_str (buf, str, len); \
     } \
-    return (len); \
+    return len; \
 }
 
 // should be at least 22 bytes to always accomodate a converted
@@ -148,12 +148,13 @@ enum LogCacheWriteCodeType
 class LogAccess
 {                               // Abstract Base Class
 public:
-  inkcoreapi LogAccess():initialized(false)
-  {
-  };
-  inkcoreapi virtual ~ LogAccess()
-  {
-  };
+  inkcoreapi LogAccess()
+    : initialized(false)
+  { }
+
+  inkcoreapi virtual ~LogAccess()
+  { }
+
   inkcoreapi virtual void init();
 
   virtual LogEntryType entry_type() = 0;
@@ -229,40 +230,9 @@ public:
   //
   inkcoreapi virtual int marshal_transfer_time_ms(char *);      // INT
   inkcoreapi virtual int marshal_transfer_time_s(char *);       // INT
-  inkcoreapi virtual int marshal_bandwidth(char *);     // INT
   inkcoreapi virtual int marshal_file_size(char *);     // INT
   int marshal_entry_type(char *);       // INT
-  inkcoreapi virtual int marshal_time_to_first_client_byte_ms(char *);  // INT
-  inkcoreapi virtual int marshal_stream_type(char *);   // STR
-  inkcoreapi virtual int marshal_external_plugin_transaction_id(char *);        // INT
-  // MIXT SDK_VER_2
-  inkcoreapi virtual int marshal_external_plugin_string(char *);        // STR
-  // MIXT SDK_VER_2
-  inkcoreapi virtual int marshal_stream_duration_ms(char *);    // INT
 
-  // streaming media fields
-  //
-  inkcoreapi virtual int marshal_client_dns_name(char *);       // STR
-  inkcoreapi virtual int marshal_client_os(char *);     // STR
-  inkcoreapi virtual int marshal_client_os_version(char *);     // STR
-  inkcoreapi virtual int marshal_client_cpu(char *);    // STR
-  inkcoreapi virtual int marshal_client_player_version(char *); // STR
-  inkcoreapi virtual int marshal_client_player_language(char *);        // STR
-  inkcoreapi virtual int marshal_client_user_agent(char *);     // STR
-  inkcoreapi virtual int marshal_referer_url(char *);   // STR
-  inkcoreapi virtual int marshal_audio_codec(char *);   // STR
-  inkcoreapi virtual int marshal_video_codec(char *);   // STR
-  inkcoreapi virtual int marshal_client_bytes_received(char *); // INT
-  inkcoreapi virtual int marshal_client_pkts_received(char *);  // INT
-  inkcoreapi virtual int marshal_client_lost_pkts(char *);      // INT
-  inkcoreapi virtual int marshal_client_lost_net_pkts(char *);  // INT
-  inkcoreapi virtual int marshal_client_lost_continuous_pkts(char *);   // INT
-  inkcoreapi virtual int marshal_client_pkts_ecc_recover(char *);       // INT
-  inkcoreapi virtual int marshal_client_pkts_resent_recover(char *);    // INT
-  inkcoreapi virtual int marshal_client_resend_request(char *); // INT
-  inkcoreapi virtual int marshal_client_buffer_count(char *);   // INT
-  inkcoreapi virtual int marshal_client_buffer_ts(char *);      // INT
-  inkcoreapi virtual int marshal_client_quality_per(char *);    // INT
 
   // named fields from within a http header
   //

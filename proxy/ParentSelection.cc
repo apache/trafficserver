@@ -659,7 +659,7 @@ ParentRecord::ProcessParents(char *val)
     }
     // Check to make sure that the string will fit in the
     //  pRecord
-    if (tmp - current > DOMAIN_NAME_MAX) {
+    if (tmp - current > MAXDNAME) {
       errPtr = "Parent hostname is too long";
       goto MERROR;
     } else if (tmp - current == 0) {
@@ -969,7 +969,7 @@ setup_socks_servers(ParentRecord * rec_arr, int len)
         Warning("Could not resolve socks server name \"%s\". " "Please correct it", pr[i].hostname);
         ip = (uint8_t *) & bad_ip;
       }
-      snprintf(pr[i].hostname, DOMAIN_NAME_MAX + 1, "%hhu.%hhu.%hhu.%hhu", ip[0], ip[1], ip[2], ip[3]);
+      snprintf(pr[i].hostname, MAXDNAME + 1, "%hhu.%hhu.%hhu.%hhu", ip[0], ip[1], ip[2], ip[3]);
     }
   }
 

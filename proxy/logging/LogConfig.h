@@ -144,8 +144,8 @@ public:
     MIN_ROLLING_INTERVAL_SEC = 300
   };
 
-    LogConfig();
-   ~LogConfig();
+  LogConfig();
+  ~LogConfig();
 
   void init(LogConfig * previous_config = 0);
   void display(FILE * fd = stdout);
@@ -158,38 +158,31 @@ public:
   static void register_stat_callbacks();
   static void register_mgmt_callbacks();
 
-  bool am_collation_host()
-  {
-    return collation_mode == COLLATION_HOST;
-  };
   bool space_to_write(int64_t bytes_to_write);
-  bool space_is_short()
-  {
-    return !space_to_write(max_space_mb_headroom * LOG_MEGABYTE);
-  };
-  void increment_space_used(int bytes)
-  {
+
+  bool am_collation_host() const { return collation_mode == COLLATION_HOST; }
+  bool space_is_short() { return !space_to_write(max_space_mb_headroom * LOG_MEGABYTE); };
+
+  void increment_space_used(int bytes) {
     m_space_used += bytes;
     m_partition_space_left -= bytes;
-  };
+  }
+
   void update_space_used();
   void read_configuration_variables();
 
 // CVR This is the mgmt callback function, hence all the strange arguments
   static void *reconfigure_mgmt_variables(void *token, char *data_raw, int data_len);
 
-  int get_max_space_mb()
-  {
+  int get_max_space_mb() {
     return (use_orphan_log_space_value ? max_space_mb_for_orphan_logs : max_space_mb_for_logs);
-  };
-  void transfer_objects(LogConfig * old_config)
-  {
+  }
+
+  void transfer_objects(LogConfig * old_config) {
     log_object_manager.transfer_objects(old_config->log_object_manager);
-  };
-  bool has_api_objects()
-  {
-    return log_object_manager.has_api_objects();
-  };
+  }
+
+  bool has_api_objects() const { return log_object_manager.has_api_objects(); }
 
 public:
   bool initialized;
@@ -280,8 +273,7 @@ private:
 
     PreDefinedFormatInfo(LogFormat * fmt, char *fname, int ascii,
                          char *hdr):format(fmt), filename(fname), is_ascii(ascii), header(hdr)
-    {
-    };
+    { }
   };
 
 

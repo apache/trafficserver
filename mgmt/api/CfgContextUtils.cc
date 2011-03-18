@@ -959,12 +959,6 @@ pdest_sspec_to_string(TSPrimeDestT pd, char *pd_val, TSSspec * sspec)
         case TS_SCHEME_HTTPS:
           psize = snprintf(buf + buf_pos, sizeof(buf) - buf_pos, "scheme=https ");
           break;
-        case TS_SCHEME_RTSP:
-          psize = snprintf(buf + buf_pos, sizeof(buf) - buf_pos, "scheme=rtsp ");
-          break;
-        case TS_SCHEME_MMS:
-          psize = snprintf(buf + buf_pos, sizeof(buf) - buf_pos, "scheme=mms ");
-          break;
         default:
           psize = 0;
           break;
@@ -1275,12 +1269,7 @@ string_to_scheme_type(const char *scheme)
     return TS_SCHEME_HTTP;
   } else if (strcasecmp(scheme, "https") == 0) {
     return TS_SCHEME_HTTPS;
-  } else if (strcasecmp(scheme, "rtsp") == 0) {
-    return TS_SCHEME_RTSP;
-  } else if (strcasecmp(scheme, "mms") == 0) {
-    return TS_SCHEME_MMS;
   }
-
   return TS_SCHEME_UNDEFINED;
 }
 
@@ -1293,10 +1282,6 @@ scheme_type_to_string(TSSchemeT scheme)
     return xstrdup("http");
   case TS_SCHEME_HTTPS:
     return xstrdup("https");
-  case TS_SCHEME_RTSP:
-    return xstrdup("rtsp");
-  case TS_SCHEME_MMS:
-    return xstrdup("mms");
   default:
     break;
   }

@@ -20,9 +20,6 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-
-
-
 #ifndef LOG_UTILS_H
 #define LOG_UTILS_H
 
@@ -48,13 +45,8 @@ public:
     LOG_ALARM_N_TYPES
   };
 
-  static long timestamp()
-  {
-    //struct timeval tp;
-    //ink_gethrtimeofday (&tp, 0);
-    //return tp.tv_sec;
-    return (long) time(0);
-  }
+  static long timestamp() { return (long)time(0); }
+
   static int timestamp_to_str(long timestamp, char *buf, int size);
   static char *timestamp_to_netscape_str(long timestamp);
   static char *timestamp_to_date_str(long timestamp);
@@ -78,37 +70,4 @@ private:
   LogUtils(const LogUtils &);
   LogUtils & operator=(const LogUtils &);
 };
-
-enum LogDeleteProgram {
-  USE_DELETE,
-  USE_XFREE
-};
-
-class LogMemoryDeleter
-{
-public:
-  LogMemoryDeleter(char *buf, LogDeleteProgram p):m_buf(buf), m_p(p)
-  {
-  }
-   ~LogMemoryDeleter()
-  {
-    if (m_buf) {
-      switch (m_p) {
-      case USE_DELETE:
-        delete[]m_buf;
-        break;
-      case USE_XFREE:
-        xfree(m_buf);
-        break;
-      default:
-        ink_assert(!"invalid delete program for auto-deleter");
-      }
-    }
-  }
-
-private:
-  char *m_buf;
-  LogDeleteProgram m_p;
-};
-
 #endif

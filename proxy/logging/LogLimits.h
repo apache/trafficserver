@@ -24,8 +24,6 @@
 /***************************************************************************
  This file contains constants and other limitis used within the logging
  module.
-
-
  ***************************************************************************/
 
 #ifndef LOG_LIMITS_H
@@ -34,11 +32,6 @@
 enum
 {
   LOG_MAX_FORMAT_LINE = 2048,   /* "format:enable:..." */
-  LOG_MAX_TIMESTAMP_STRING = 128,       /* "Jan 1, 1970" */
-  LOG_MAX_HOSTNAME = 512,       /* "foobar.com" */
-  LOG_MAX_INT_STRING = 64,      /* "123456789" */
-  LOG_MAX_VERSION_STRING = 32,  /* "1.0" */
-  LOG_MAX_STATUS_STRING = 32,   /* "200" */
   LOG_MAX_FORMATTED_BUFFER = 20480,
   LOG_MAX_FORMATTED_LINE = 10240
 };

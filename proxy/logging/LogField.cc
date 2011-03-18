@@ -26,8 +26,6 @@
 
  This file implements the LogField object, which is the central
  representation of a logging field.
-
-
  ***************************************************************************/
 #include "libts.h"
 
@@ -70,12 +68,10 @@ const char *aggregate_names[] = {
   -------------------------------------------------------------------------*/
 
 // Generic field ctor
-
 LogField::LogField(const char *name, const char *symbol, Type type, MarshalFunc marshal, UnmarshalFunc unmarshal)
-  :
-  m_name(xstrdup(name)), m_symbol(xstrdup(symbol)), m_type(type), m_container(NO_CONTAINER), m_marshal_func(marshal),
-  m_unmarshal_func(unmarshal), m_unmarshal_func_map(NULL), m_agg_op(NO_AGGREGATE), m_agg_cnt(0), m_agg_val(0),
-  m_time_field(false), m_alias_map(0)
+  : m_name(xstrdup(name)), m_symbol(xstrdup(symbol)), m_type(type), m_container(NO_CONTAINER), m_marshal_func(marshal),
+    m_unmarshal_func(unmarshal), m_unmarshal_func_map(NULL), m_agg_op(NO_AGGREGATE), m_agg_cnt(0), m_agg_val(0),
+    m_time_field(false), m_alias_map(0)
 {
   ink_assert(m_name != NULL);
   ink_assert(m_symbol != NULL);
@@ -90,10 +86,9 @@ LogField::LogField(const char *name, const char *symbol, Type type, MarshalFunc 
 
 LogField::LogField(const char *name, const char *symbol, Type type,
                    MarshalFunc marshal, UnmarshalFuncWithMap unmarshal, Ptr<LogFieldAliasMap> map)
-  :
-  m_name(xstrdup(name)), m_symbol(xstrdup(symbol)), m_type(type), m_container(NO_CONTAINER), m_marshal_func(marshal),
-  m_unmarshal_func(NULL), m_unmarshal_func_map(unmarshal), m_agg_op(NO_AGGREGATE), m_agg_cnt(0), m_agg_val(0),
-  m_time_field(false), m_alias_map(map)
+  : m_name(xstrdup(name)), m_symbol(xstrdup(symbol)), m_type(type), m_container(NO_CONTAINER), m_marshal_func(marshal),
+    m_unmarshal_func(NULL), m_unmarshal_func_map(unmarshal), m_agg_op(NO_AGGREGATE), m_agg_cnt(0), m_agg_val(0),
+    m_time_field(false), m_alias_map(map)
 {
   ink_assert(m_name != NULL);
   ink_assert(m_symbol != NULL);
@@ -108,32 +103,10 @@ LogField::LogField(const char *name, const char *symbol, Type type,
 }
 
 // Container field ctor
-
 LogField::LogField(const char *field, Container container)
-  :
-m_name(xstrdup(field))
-  ,
-m_symbol(xstrdup(container_names[container]))
-  ,
-m_type(LogField::STRING)
-  ,
-m_container(container)
-  ,
-m_marshal_func(NULL)
-  ,
-m_unmarshal_func(NULL)
-  ,
-m_unmarshal_func_map(NULL)
-  ,
-m_agg_op(NO_AGGREGATE)
-  ,
-m_agg_cnt(0)
-  ,
-m_agg_val(0)
-  ,
-m_time_field(false)
-  ,
-m_alias_map(0)
+  : m_name(xstrdup(field)), m_symbol(xstrdup(container_names[container])), m_type(LogField::STRING),
+    m_container(container), m_marshal_func(NULL), m_unmarshal_func(NULL), m_unmarshal_func_map(NULL),
+    m_agg_op(NO_AGGREGATE), m_agg_cnt(0), m_agg_val(0), m_time_field(false), m_alias_map(0)
 {
   ink_assert(m_name != NULL);
   ink_assert(m_symbol != NULL);
@@ -145,7 +118,6 @@ m_alias_map(0)
                   || strcmp(m_symbol, "cqtn") == 0 || strcmp(m_symbol, "cqtd") == 0 || strcmp(m_symbol, "cqtt") == 0);
 
   switch (m_container) {
-
   case CQH:
   case PSH:
   case PQH:
@@ -172,32 +144,10 @@ m_alias_map(0)
 }
 
 // Copy ctor
-
-LogField::LogField(const LogField & rhs)
-  :
-m_name(xstrdup(rhs.m_name))
-  ,
-m_symbol(xstrdup(rhs.m_symbol))
-  ,
-m_type(rhs.m_type)
-  ,
-m_container(rhs.m_container)
-  ,
-m_marshal_func(rhs.m_marshal_func)
-  ,
-m_unmarshal_func(rhs.m_unmarshal_func)
-  ,
-m_unmarshal_func_map(rhs.m_unmarshal_func_map)
-  ,
-m_agg_op(rhs.m_agg_op)
-  ,
-m_agg_cnt(0)
-  ,
-m_agg_val(0)
-  ,
-m_time_field(rhs.m_time_field)
-  ,
-m_alias_map(rhs.m_alias_map)
+LogField::LogField(const LogField &rhs)
+  : m_name(xstrdup(rhs.m_name)), m_symbol(xstrdup(rhs.m_symbol)), m_type(rhs.m_type), m_container(rhs.m_container),
+    m_marshal_func(rhs.m_marshal_func), m_unmarshal_func(rhs.m_unmarshal_func), m_unmarshal_func_map(rhs.m_unmarshal_func_map),
+    m_agg_op(rhs.m_agg_op), m_agg_cnt(0), m_agg_val(0), m_time_field(rhs.m_time_field), m_alias_map(rhs.m_alias_map)
 {
   ink_assert(m_name != NULL);
   ink_assert(m_symbol != NULL);
@@ -207,7 +157,6 @@ m_alias_map(rhs.m_alias_map)
 /*-------------------------------------------------------------------------
   LogField::~LogField
   -------------------------------------------------------------------------*/
-
 LogField::~LogField()
 {
   xfree(m_name);
@@ -222,13 +171,11 @@ LogField::~LogField()
   marshalling routines that if the marshal buffer is NULL, only the size
   requirement is returned.
   -------------------------------------------------------------------------*/
-
 unsigned
-LogField::marshal_len(LogAccess * lad)
+LogField::marshal_len(LogAccess *lad)
 {
-  if (m_container == NO_CONTAINER) {
+  if (m_container == NO_CONTAINER)
     return (lad->*m_marshal_func) (NULL);
-  }
 
   switch (m_container) {
   case CQH:
@@ -262,9 +209,8 @@ LogField::marshal_len(LogAccess * lad)
 
   This routine will marshsal the given field into the buffer provided.
   -------------------------------------------------------------------------*/
-
 unsigned
-LogField::marshal(LogAccess * lad, char *buf)
+LogField::marshal(LogAccess *lad, char *buf)
 {
   if (m_container == NO_CONTAINER) {
     return (lad->*m_marshal_func) (buf);
@@ -300,7 +246,6 @@ LogField::marshal(LogAccess * lad, char *buf)
 /*-------------------------------------------------------------------------
   LogField::marshal_agg
   -------------------------------------------------------------------------*/
-
 unsigned
 LogField::marshal_agg(char *buf)
 {
@@ -343,7 +288,6 @@ LogField::marshal_agg(char *buf)
   This routine will invoke the proper unmarshalling routine to return a
   string that represents the ASCII value of the field.
   -------------------------------------------------------------------------*/
-
 unsigned
 LogField::unmarshal(char **buf, char *dest, int len)
 {
@@ -357,9 +301,8 @@ LogField::unmarshal(char **buf, char *dest, int len)
 /*-------------------------------------------------------------------------
   LogField::display
   -------------------------------------------------------------------------*/
-
 void
-LogField::display(FILE * fd)
+LogField::display(FILE *fd)
 {
   static const char *names[LogField::N_TYPES] = {
     "sINT",
@@ -372,7 +315,6 @@ LogField::display(FILE * fd)
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
-
 void
 LogField::set_aggregate_op(LogField::Aggregate agg_op)
 {
@@ -384,8 +326,6 @@ LogField::set_aggregate_op(LogField::Aggregate agg_op)
   }
 }
 
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
 
 void
 LogField::update_aggregate(int64_t val)
@@ -420,8 +360,6 @@ LogField::update_aggregate(int64_t val)
         "new val = %d, cnt = %d", m_symbol, val, m_agg_val, m_agg_cnt);
 }
 
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
 
 LogField::Container LogField::valid_container_name(char *name)
 {
@@ -433,8 +371,6 @@ LogField::Container LogField::valid_container_name(char *name)
   return LogField::NO_CONTAINER;
 }
 
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
 
 LogField::Aggregate LogField::valid_aggregate_name(char *name)
 {
@@ -446,8 +382,6 @@ LogField::Aggregate LogField::valid_aggregate_name(char *name)
   return LogField::NO_AGGREGATE;
 }
 
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
 
 bool LogField::fieldlist_contains_aggregates(char *fieldlist)
 {
@@ -469,11 +403,9 @@ bool LogField::fieldlist_contains_aggregates(char *fieldlist)
   heap with "new" and that each element is on at most ONE list.  To enforce
   this, items are copied by default, using the copy ctor.
   -------------------------------------------------------------------------*/
-
 LogFieldList::LogFieldList()
-:m_marshal_len(0)
-{
-}
+  : m_marshal_len(0)
+{ }
 
 LogFieldList::~LogFieldList()
 {
@@ -491,7 +423,7 @@ LogFieldList::clear()
 }
 
 void
-LogFieldList::add(LogField * field, bool copy)
+LogFieldList::add(LogField *field, bool copy)
 {
   ink_assert(field != NULL);
 
@@ -509,7 +441,7 @@ LogFieldList::add(LogField * field, bool copy)
 LogField *
 LogFieldList::find_by_name(const char *name) const
 {
-  for (LogField * f = first(); f; f = next(f)) {
+  for (LogField *f = first(); f; f = next(f)) {
     if (!strcmp(f->name(), name)) {
       return f;
     }
@@ -540,10 +472,10 @@ LogFieldList::find_by_symbol(const char *symbol) const
 }
 
 unsigned
-LogFieldList::marshal_len(LogAccess * lad)
+LogFieldList::marshal_len(LogAccess *lad)
 {
   int bytes = 0;
-  for (LogField * f = first(); f; f = next(f)) {
+  for (LogField *f = first(); f; f = next(f)) {
     if (f->type() != LogField::sINT) {
       bytes += f->marshal_len(lad);
     }
@@ -552,11 +484,11 @@ LogFieldList::marshal_len(LogAccess * lad)
 }
 
 unsigned
-LogFieldList::marshal(LogAccess * lad, char *buf)
+LogFieldList::marshal(LogAccess *lad, char *buf)
 {
   char *ptr;
   int bytes = 0;
-  for (LogField * f = first(); f; f = next(f)) {
+  for (LogField *f = first(); f; f = next(f)) {
     ptr = &buf[bytes];
     bytes += f->marshal(lad, ptr);
     ink_debug_assert(bytes % INK_MIN_ALIGN == 0);
@@ -569,7 +501,7 @@ LogFieldList::marshal_agg(char *buf)
 {
   char *ptr;
   int bytes = 0;
-  for (LogField * f = first(); f; f = next(f)) {
+  for (LogField *f = first(); f; f = next(f)) {
     ptr = &buf[bytes];
     bytes += f->marshal_agg(ptr);
   }
@@ -580,16 +512,16 @@ unsigned
 LogFieldList::count()
 {
   unsigned cnt = 0;
-  for (LogField * f = first(); f; f = next(f)) {
+  for (LogField *f = first(); f; f = next(f)) {
     cnt++;
   }
   return cnt;
 }
 
 void
-LogFieldList::display(FILE * fd)
+LogFieldList::display(FILE *fd)
 {
-  for (LogField * f = first(); f; f = next(f)) {
+  for (LogField *f = first(); f; f = next(f)) {
     f->display(fd);
   }
 }

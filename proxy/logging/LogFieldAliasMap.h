@@ -103,28 +103,28 @@ struct LogFieldAliasTableEntry
   bool valid;                   // entry in table is valid
   char *name;                   // the string equivalent
   size_t length;                // the length of the string
-    LogFieldAliasTableEntry():valid(false), name(NULL), length(0)
-  {
-  };
+
+  LogFieldAliasTableEntry()
+    : valid(false), name(NULL), length(0)
+  { }
 };
 
 class LogFieldAliasTable:public LogFieldAliasMap
 {
 private:
-
   size_t m_min;                 // minimum numeric value
   size_t m_max;                 // maximum numeric value
   size_t m_entries;             // number of entries in table
   LogFieldAliasTableEntry *m_table;     // array of table entries
 
 public:
+  LogFieldAliasTable()
+    : m_min(0), m_max(0), m_entries(0), m_table(0)
+  { }
 
-    LogFieldAliasTable():m_min(0), m_max(0), m_entries(0), m_table(0)
-  {
-  };
   ~LogFieldAliasTable() {
     delete[]m_table;
-  };
+  }
 
   void init(size_t numPairs, ...);
 
@@ -154,7 +154,7 @@ public:
     }
 
     return retVal;
-  };
+  }
 
   int asString(IntType key, char *buf, size_t bufLen, size_t * numCharsPtr = 0) const
   {
@@ -183,15 +183,13 @@ public:
       *numCharsPtr = numChars;
     }
     return retVal;
-  };
+  }
 };
 
 
 /*****************************************************************************
-
 The LogFieldAliasIP class implements a LogFieldAliasMap that converts IP
 addresses from their integer value to the "dot" notation and back.
-
  *****************************************************************************/
 
 class LogFieldAliasIP:public LogFieldAliasMap
@@ -209,31 +207,11 @@ public:
     {
       return INVALID_STRING;
     }
-  };
+  }
 
   int asString(IntType ip, char *buf, size_t bufLen, size_t * numCharsPtr = 0) const
   {
     return (LogUtils::ip_to_str(ip, buf, bufLen, numCharsPtr) ? BUFFER_TOO_SMALL : ALL_OK);
-/*
-	int retVal;
-	size_t numChars;
-	size_t n = snprintf (buf, bufLen, "%u.%u.%u.%u",
-				 (ip >> 24) & 0xff,
-				 (ip >> 16) & 0xff,
-				 (ip >> 8)  & 0xff,
-				 ip         & 0xff);
-	if (n < bufLen) {
-	    numChars = n;
-	    retVal = ALL_OK;
-	} else {
-	    numChars = bufLen - 1;
-	    retVal = BUFFER_TOO_SMALL;
-	}
-	if (numCharsPtr) {
-	    *numCharsPtr = numChars;
-	}
-	return retVal;
-*/
   };
 };
 
@@ -259,13 +237,12 @@ public:
     {
       return INVALID_STRING;
     }
-  };
+  }
 
   int asString(IntType ip, char *buf, size_t bufLen, size_t * numCharsPtr = 0) const
   {
-
     return (LogUtils::timestamp_to_hex_str(ip, buf, bufLen, numCharsPtr) ? BUFFER_TOO_SMALL : ALL_OK);
-  };
+  }
 };
 
 /*****************************************************************************
@@ -290,12 +267,12 @@ public:
     {
       return INVALID_STRING;
     }
-  };
+  }
 
   int asString(IntType time, char *buf, size_t bufLen, size_t * numCharsPtr = 0) const
   {
     return (LogUtils::timestamp_to_hex_str(time, buf, bufLen, numCharsPtr) ? BUFFER_TOO_SMALL : ALL_OK);
-  };
+  }
 };
 
 

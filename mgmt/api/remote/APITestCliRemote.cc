@@ -359,10 +359,6 @@ print_pd_sspec(TSPdSsFormat info)
   case TS_SCHEME_HTTPS:
     printf("HTTPS\n");
     break;
-  case TS_SCHEME_RTSP:
-  case TS_SCHEME_MMS:
-    printf("MIXT\n");
-    break;
   case TS_SCHEME_UNDEFINED:
     printf("UNDEFINED\n");
     break;
@@ -649,12 +645,6 @@ print_remap_ele(TSRemapEle * ele)
   case TS_SCHEME_HTTPS:
     strncat(buf, "https", sizeof(buf) - strlen(buf) - 1);
     break;
-  case TS_SCHEME_RTSP:
-    strncat(buf, "rtsp", sizeof(buf) - strlen(buf) - 1);
-    break;
-  case TS_SCHEME_MMS:
-    strncat(buf, "mms", sizeof(buf) - strlen(buf) - 1);
-    break;
   default:
     // Handled here:
     // TS_SCHEME_NONE, TS_SCHEME_UNDEFINED, TS_SCHEME_NONE,
@@ -686,12 +676,6 @@ print_remap_ele(TSRemapEle * ele)
     break;
   case TS_SCHEME_HTTPS:
     strncat(buf, "https", sizeof(buf) - strlen(buf) - 1);
-    break;
-  case TS_SCHEME_RTSP:
-    strncat(buf, "rtsp", sizeof(buf) - strlen(buf) - 1);
-    break;
-  case TS_SCHEME_MMS:
-    strncat(buf, "mms", sizeof(buf) - strlen(buf) - 1);
     break;
   default:
     // Handled here:

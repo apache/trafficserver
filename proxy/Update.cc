@@ -1531,12 +1531,10 @@ UpdateSM::HandleSMEvent(int event, Event * e)
 
 struct dispatch_entry scheme_dispatch_table[UpdateSM::N_SCHEMES] = {
   {&URL_SCHEME_HTTP, UpdateSM::http_scheme},
-  {&URL_SCHEME_RTSP, UpdateSM::rtsp_scheme}
 };
 
 struct dispatch_entry scheme_post_dispatch_table[UpdateSM::N_SCHEMES] = {
   {&URL_SCHEME_HTTP, UpdateSM::http_scheme_postproc},
-  {&URL_SCHEME_RTSP, UpdateSM::rtsp_scheme_postproc}
 };
 
 int
@@ -1594,41 +1592,6 @@ UpdateSM::http_scheme_postproc(UpdateSM * sm)
     sm->_EN->_update_event_status = UPDATE_EVENT_FAILED;
     sm->_return_status = UPDATE_EVENT_FAILED;
     break;
-  }
-  return 0;
-}
-
-// Not used anywhere.
-
-int
-UpdateSM::rtsp_scheme(UpdateSM * sm)
-{
-#ifdef GO_AWAY
-  int ret = INKMCOPreload(sm, INKContCreate(rtsp_progress_cont, NULL),
-                          sm->_EN->_url,
-                          (5 * 30720) /* MAX_PRELOAD_BANDWIDTH */ ,
-                          5);
-  if (ret) {
-    Debug("update", "Start RTSP GET id: %d", sm->_EN->_id);
-  }
-  return ret;
-#else
-  NOWARN_UNUSED(sm);
-#endif
-  return 0;
-}
-
-int
-UpdateSM::rtsp_scheme_postproc(UpdateSM * sm)
-{
-  // Map MCO return event code to internal status code
-
-  if (sm->_EN->_update_event_status == VC_EVENT_READ_COMPLETE) {
-    sm->_EN->_update_event_status = UPDATE_EVENT_SUCCESS;
-    sm->_return_status = UPDATE_EVENT_SUCCESS;
-  } else {
-    sm->_EN->_update_event_status = UPDATE_EVENT_FAILED;
-    sm->_return_status = UPDATE_EVENT_FAILED;
   }
   return 0;
 }

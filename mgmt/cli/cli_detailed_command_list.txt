@@ -15,7 +15,7 @@ everywhere, but it is also easier to document, maintain, and extend.
 commands.  It also supports scripting which means that a user can
 source and execute a file that contains traffic_shell commands. 
 	traffic_shell currently provides full configuration and monitoring
-functionality for Traffic Server and MIXT. 
+functionality for Traffic Server. 
 	traffic_shell is built on the same Management API as the
 Traffic Server WebUI.  The Management API (written in C code) handles
 updating config files and restarting TS or reloading config variables
@@ -24,7 +24,7 @@ for changes to take effect.
 Configurations of Traffic Server affected:
 
 	Platforms: Linux, Linux for OEMs, Solaris SPARC
-	Configurations: All TS and TS/MIXT configurations
+	Configurations: All TS configurations
 
 References on Feature:
 

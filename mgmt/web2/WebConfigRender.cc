@@ -76,7 +76,6 @@ writeCacheConfigTable(WebHttpContext * whc)
   char method[MAX_RULE_PART_SIZE];
   char scheme[MAX_RULE_PART_SIZE];
   char time_period[MAX_RULE_PART_SIZE];
-  char mixt[MAX_RULE_PART_SIZE];
   int count;
 
   textBuffer *output = whc->response_bdy;
@@ -129,10 +128,9 @@ writeCacheConfigTable(WebHttpContext * whc)
     memset(method, 0, MAX_RULE_PART_SIZE);
     memset(scheme, 0, MAX_RULE_PART_SIZE);
     memset(time_period, 0, MAX_RULE_PART_SIZE);
-    memset(mixt, 0, MAX_RULE_PART_SIZE);
     if (convert_cache_ele_to_html_format(ele, ruleType, pdType, time, src_ip,
                                          prefix, suffix, port, method, scheme,
-                                         time_period, mixt) != WEB_HTTP_ERR_OKAY) {
+                                         time_period) != WEB_HTTP_ERR_OKAY) {
       Debug("config", "[writeCacheConfigTable] invalid Ele, can't format - SKIP");
       continue;                 // invalid ele, so skip to next one
     }
@@ -160,7 +158,7 @@ writeCacheConfigTable(WebHttpContext * whc)
       output->copyFrom(time_period, strlen(time_period));
     HtmlRndrTdClose(output);
 
-    writeSecondarySpecsTableElem(output, time, src_ip, prefix, suffix, port, method, scheme, mixt);
+    writeSecondarySpecsTableElem(output, time, src_ip, prefix, suffix, port, method, scheme);
 
     HtmlRndrTrClose(output);
   }                             // end for loop
@@ -578,7 +576,6 @@ writeParentConfigTable(WebHttpContext * whc)
   char port[MAX_RULE_PART_SIZE];
   char method[MAX_RULE_PART_SIZE];
   char scheme[MAX_RULE_PART_SIZE];
-  char mixt[MAX_RULE_PART_SIZE];
   char parents[MAX_RULE_PART_SIZE];
   char round_robin[MAX_RULE_PART_SIZE];
   char direct[MAX_RULE_PART_SIZE];
@@ -634,12 +631,11 @@ writeParentConfigTable(WebHttpContext * whc)
     memset(port, 0, MAX_RULE_PART_SIZE);
     memset(method, 0, MAX_RULE_PART_SIZE);
     memset(scheme, 0, MAX_RULE_PART_SIZE);
-    memset(mixt, 0, MAX_RULE_PART_SIZE);
     memset(parents, 0, MAX_RULE_PART_SIZE);
     memset(round_robin, 0, MAX_RULE_PART_SIZE);
     memset(direct, 0, MAX_RULE_PART_SIZE);
     if (convert_parent_ele_to_html_format
-        (ele, pdType, time, src_ip, prefix, suffix, port, method, scheme, mixt, parents, round_robin,
+        (ele, pdType, time, src_ip, prefix, suffix, port, method, scheme, parents, round_robin,
          direct) != WEB_HTTP_ERR_OKAY) {
       Debug("config", "[writeParentConfigTable] invalid Ele, can't format - SKIP");
       continue;                 // invalid ele, so skip to next one
@@ -675,7 +671,7 @@ writeParentConfigTable(WebHttpContext * whc)
       output->copyFrom(direct, strlen(direct));
     HtmlRndrTdClose(output);
 
-    writeSecondarySpecsTableElem(output, time, src_ip, prefix, suffix, port, method, scheme, mixt);
+    writeSecondarySpecsTableElem(output, time, src_ip, prefix, suffix, port, method, scheme);
   }                             // end for loop
 
   // no rules
@@ -807,7 +803,6 @@ writeRemapConfigTable(WebHttpContext * whc)
   char to_scheme[MAX_RULE_PART_SIZE];
   char to_port[MAX_RULE_PART_SIZE];
   char to_path[MAX_RULE_PART_SIZE];
-  char mixt[MAX_RULE_PART_SIZE];
 
   int count;
 
@@ -874,9 +869,8 @@ writeRemapConfigTable(WebHttpContext * whc)
     memset(to_scheme, 0, MAX_RULE_PART_SIZE);
     memset(to_port, 0, MAX_RULE_PART_SIZE);
     memset(to_path, 0, MAX_RULE_PART_SIZE);
-    memset(mixt, 0, MAX_RULE_PART_SIZE);
     if (convert_remap_ele_to_html_format
-        (ele, rule_type, from_scheme, from_port, from_path, to_scheme, to_port, to_path, mixt) != WEB_HTTP_ERR_OKAY) {
+        (ele, rule_type, from_scheme, from_port, from_path, to_scheme, to_port, to_path) != WEB_HTTP_ERR_OKAY) {
       Debug("config", "[writeRemapConfigTable] invalid Ele, can't format - SKIP");
       continue;                 // invalid ele, so skip to next one
     }
@@ -928,11 +922,6 @@ writeRemapConfigTable(WebHttpContext * whc)
     HtmlRndrTdOpen(output, HTML_CSS_BODY_TEXT, HTML_ALIGN_LEFT, HTML_VALIGN_TOP, NULL, NULL, 0);
     HtmlRndrSpace(output, 2);
     output->copyFrom(to_path, strlen(to_path));
-    HtmlRndrTdClose(output);
-
-    HtmlRndrTdOpen(output, HTML_CSS_BODY_TEXT, HTML_ALIGN_LEFT, HTML_VALIGN_TOP, NULL, NULL, 0);
-    HtmlRndrSpace(output, 2);
-    output->copyFrom(mixt, strlen(mixt));
     HtmlRndrTdClose(output);
 
     HtmlRndrTrClose(output);
@@ -1422,7 +1411,6 @@ writeCacheRuleList(textBuffer * output)
   char method[MAX_RULE_PART_SIZE];
   char scheme[MAX_RULE_PART_SIZE];
   char time_period[MAX_RULE_PART_SIZE];
-  char mixt[MAX_RULE_PART_SIZE];
 
   count = TSCfgContextGetCount(ctx);
   for (i = 0; i < count; i++) {
@@ -1438,19 +1426,18 @@ writeCacheRuleList(textBuffer * output)
     memset(method, 0, MAX_RULE_PART_SIZE);
     memset(scheme, 0, MAX_RULE_PART_SIZE);
     memset(time_period, 0, MAX_RULE_PART_SIZE);
-    memset(mixt, 0, MAX_RULE_PART_SIZE);
     if (convert_cache_ele_to_html_format(ele, ruleType, pdType, time, src_ip,
                                          prefix, suffix, port, method, scheme,
-                                         time_period, mixt) != WEB_HTTP_ERR_OKAY) {
+                                         time_period) != WEB_HTTP_ERR_OKAY) {
       Debug("config", "[writeCacheRuleList] invalid Ele, can't format - SKIP");
       continue;                 // invalid ele, so skip to next one
     }
 
     memset(rule, 0, MAX_RULE_SIZE);
     snprintf(rule, MAX_RULE_SIZE,
-                 "ruleList[%d] = new Rule(\"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\");\n",
+                 "ruleList[%d] = new Rule(\"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\");\n",
                  i, ruleType, pdType, ele->cache_info.pd_val, time, src_ip, prefix, suffix, port, method, scheme,
-                 time_period, mixt);
+                 time_period);
 
     output->copyFrom(rule, strlen(rule));
   }
@@ -1690,7 +1677,6 @@ writeParentRuleList(textBuffer * output)
   char port[MAX_RULE_PART_SIZE];
   char method[MAX_RULE_PART_SIZE];
   char scheme[MAX_RULE_PART_SIZE];
-  char mixt[MAX_RULE_PART_SIZE];
   char parents[MAX_RULE_PART_SIZE];
   char round_robin[MAX_RULE_PART_SIZE];
   char direct[MAX_RULE_PART_SIZE];
@@ -1707,12 +1693,11 @@ writeParentRuleList(textBuffer * output)
     memset(port, 0, MAX_RULE_PART_SIZE);
     memset(method, 0, MAX_RULE_PART_SIZE);
     memset(scheme, 0, MAX_RULE_PART_SIZE);
-    memset(mixt, 0, MAX_RULE_PART_SIZE);
     memset(parents, 0, MAX_RULE_PART_SIZE);
     memset(round_robin, 0, MAX_RULE_PART_SIZE);
     memset(direct, 0, MAX_RULE_PART_SIZE);
     if (convert_parent_ele_to_html_format
-        (ele, pdType, time, src_ip, prefix, suffix, port, method, scheme, mixt, parents, round_robin,
+        (ele, pdType, time, src_ip, prefix, suffix, port, method, scheme, parents, round_robin,
          direct) != WEB_HTTP_ERR_OKAY) {
       Debug("config", "[writeParentConfigTable] invalid Ele, can't format - SKIP");
       continue;                 // invalid ele, so skip to next one
@@ -1720,8 +1705,8 @@ writeParentRuleList(textBuffer * output)
 
     memset(rule, 0, MAX_RULE_SIZE);
     snprintf(rule, MAX_RULE_SIZE,
-                 "ruleList[%d] = new Rule(\"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\");\n",
-                 i, pdType, ele->parent_info.pd_val, time, src_ip, prefix, suffix, port, method, scheme, mixt, parents,
+                 "ruleList[%d] = new Rule(\"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\");\n",
+                 i, pdType, ele->parent_info.pd_val, time, src_ip, prefix, suffix, port, method, scheme, parents,
                  round_robin, direct);
 
     output->copyFrom(rule, strlen(rule));
@@ -1809,7 +1794,6 @@ writeRemapRuleList(textBuffer * output)
   char to_scheme[MAX_RULE_PART_SIZE];
   char to_port[MAX_RULE_PART_SIZE];
   char to_path[MAX_RULE_PART_SIZE];
-  char mixt[MAX_RULE_PART_SIZE];
 
   count = TSCfgContextGetCount(ctx);
   for (i = 0; i < count; i++) {
@@ -1822,18 +1806,17 @@ writeRemapRuleList(textBuffer * output)
     memset(to_scheme, 0, MAX_RULE_PART_SIZE);
     memset(to_port, 0, MAX_RULE_PART_SIZE);
     memset(to_path, 0, MAX_RULE_PART_SIZE);
-    memset(mixt, 0, MAX_RULE_PART_SIZE);
     if (convert_remap_ele_to_html_format
-        (ele, rule_type, from_scheme, from_port, from_path, to_scheme, to_port, to_path, mixt) != WEB_HTTP_ERR_OKAY) {
+        (ele, rule_type, from_scheme, from_port, from_path, to_scheme, to_port, to_path) != WEB_HTTP_ERR_OKAY) {
       Debug("config", "[writeRemapRuleList] invalid Ele, can't format - SKIP");
       continue;                 // invalid ele, so skip to next one
     }
 
     memset(rule, 0, MAX_RULE_SIZE);
     snprintf(rule, MAX_RULE_SIZE,
-                 "ruleList[%d] = new Rule(\"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\",\"%s\",\"%s\" );\n",
+                 "ruleList[%d] = new Rule(\"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\",\"%s\",\"%s\" );\n",
                  i, rule_type, from_scheme, ele->from_host, from_port, from_path, to_scheme, ele->to_host, to_port,
-                 to_path, mixt);
+                 to_path);
 
     output->copyFrom(rule, strlen(rule));
   }
@@ -2057,7 +2040,6 @@ writeVaddrsRuleList(textBuffer * output)
 //    Method                    method
 //    Scheme                    scheme
 //    Time Period               time_period
-//    Media-IXT tag             mixt
 int
 writeCacheConfigForm(WebHttpContext * whc)
 {
@@ -2477,7 +2459,6 @@ writeMgmtAllowConfigForm(WebHttpContext * whc)
 //    Port                      port
 //    Method                    method
 //    Scheme                    scheme
-//    Media-IXT tag             mixt
 //    Parent List               parents
 //    Round Robin Type          round_robin
 //    Go Direct?                direct
@@ -2579,7 +2560,7 @@ writeParentConfigForm(WebHttpContext * whc)
 //-------------------------------------------------------------------------
 // Form Contains following:
 //    Partition #                   part_num
-//    Scheme Type (http/mixt)       scheme
+//    Scheme Type (http)       scheme
 //    partition size                size
 //    Size Format (absolute/%)      size_format
 int
@@ -2673,7 +2654,6 @@ writePartitionConfigForm(WebHttpContext * whc)
 //           host               to_host
 //           port               to_port
 //           path_prefix        to_path
-//    Media IXT tag             mixt
 int
 writeRemapConfigForm(WebHttpContext * whc)
 {
@@ -3376,7 +3356,7 @@ writeSecondarySpecsForm(WebHttpContext * whc, TSFileNameT file)
 // specifiers in a table data element, one sec spec per line.
 int
 writeSecondarySpecsTableElem(textBuffer * output, char *time, char *src_ip, char *prefix, char *suffix, char *port,
-                             char *method, char *scheme, char *mixt)
+                             char *method, char *scheme)
 {
   char line[30];
   bool hasSspecs = false;
@@ -3438,15 +3418,6 @@ writeSecondarySpecsTableElem(textBuffer * output, char *time, char *src_ip, char
     HtmlRndrBr(output);
     hasSspecs = true;
   }
-  if (strlen(mixt) > 0) {
-    HtmlRndrSpace(output, 2);
-    memset(line, 0, 30);
-    snprintf(line, 30, "mixt tag=%s", mixt);
-    output->copyFrom(line, strlen(line));
-    HtmlRndrBr(output);
-    hasSspecs = true;
-  }
-
   if (!hasSspecs) {
     HtmlRndrSpace(output, 2);
   }
@@ -3469,7 +3440,7 @@ convert_cache_ele_to_html_format(TSCacheEle * ele,
                                  char *time,
                                  char *src_ip,
                                  char *prefix,
-                                 char *suffix, char *port, char *method, char *scheme, char *time_period, char *mixt)
+                                 char *suffix, char *port, char *method, char *scheme, char *time_period)
 {
   char *hms_time;
 
@@ -3503,7 +3474,7 @@ convert_cache_ele_to_html_format(TSCacheEle * ele,
     goto Lerror;
   }
 
-  if (convert_pdss_to_html_format(ele->cache_info, pdType, time, src_ip, prefix, suffix, port, method, scheme, mixt) !=
+  if (convert_pdss_to_html_format(ele->cache_info, pdType, time, src_ip, prefix, suffix, port, method, scheme) !=
       WEB_HTTP_ERR_OKAY)
     goto Lerror;
 
@@ -3716,11 +3687,11 @@ convert_parent_ele_to_html_format(TSParentProxyEle * ele,
                                   char *suffix,
                                   char *port,
                                   char *method,
-                                  char *scheme, char *mixt, char *parents, char *round_robin, char *direct)
+                                  char *scheme,  char *parents, char *round_robin, char *direct)
 {
   char *plist;
 
-  if (convert_pdss_to_html_format(ele->parent_info, pdType, time, src_ip, prefix, suffix, port, method, scheme, mixt) !=
+  if (convert_pdss_to_html_format(ele->parent_info, pdType, time, src_ip, prefix, suffix, port, method, scheme) !=
       WEB_HTTP_ERR_OKAY)
     goto Lerror;
 
@@ -3807,9 +3778,8 @@ int
 convert_remap_ele_to_html_format(TSRemapEle * ele,
                                  char *rule_type,
                                  char *from_scheme, char *from_port, char *from_path,
-                                 char *to_scheme, char *to_port, char *to_path, char *mixt)
+                                 char *to_scheme, char *to_port, char *to_path)
 {
-  NOWARN_UNUSED(mixt);
   // rule type
   switch (ele->cfg_ele.type) {
   case TS_REMAP_MAP:
@@ -3836,12 +3806,6 @@ convert_remap_ele_to_html_format(TSRemapEle * ele,
   case TS_SCHEME_HTTPS:
     snprintf(from_scheme, MAX_RULE_PART_SIZE, "https");
     break;
-  case TS_SCHEME_RTSP:
-    snprintf(from_scheme, MAX_RULE_PART_SIZE, "rtsp");
-    break;
-  case TS_SCHEME_MMS:
-    snprintf(from_scheme, MAX_RULE_PART_SIZE, "mms");
-    break;
   default:
     goto Lerror;
   }
@@ -3864,12 +3828,6 @@ convert_remap_ele_to_html_format(TSRemapEle * ele,
     break;
   case TS_SCHEME_HTTPS:
     snprintf(to_scheme, MAX_RULE_PART_SIZE, "https");
-    break;
-  case TS_SCHEME_RTSP:
-    snprintf(to_scheme, MAX_RULE_PART_SIZE, "rtsp");
-    break;
-  case TS_SCHEME_MMS:
-    snprintf(to_scheme, MAX_RULE_PART_SIZE, "mms");
     break;
   default:
     goto Lerror;
@@ -4121,9 +4079,8 @@ convert_pdss_to_html_format(TSPdSsFormat info,
                             char *pdType,
                             char *time,
                             char *src_ip,
-                            char *prefix, char *suffix, char *port, char *method, char *scheme, char *mixt)
+                            char *prefix, char *suffix, char *port, char *method, char *scheme)
 {
-  NOWARN_UNUSED(mixt);
   char minA[3];
   char minB[3];
 
@@ -4222,12 +4179,6 @@ convert_pdss_to_html_format(TSPdSsFormat info,
     break;
   case TS_SCHEME_HTTPS:
     snprintf(scheme, MAX_RULE_PART_SIZE, "https");
-    break;
-  case TS_SCHEME_RTSP:
-    snprintf(scheme, MAX_RULE_PART_SIZE, "rtsp");
-    break;
-  case TS_SCHEME_MMS:
-    snprintf(scheme, MAX_RULE_PART_SIZE, "mms");
     break;
   case TS_SCHEME_NONE:
     snprintf(scheme, MAX_RULE_PART_SIZE, "none");
@@ -4418,36 +4369,31 @@ writeMethodSelect(textBuffer * html, const char *listName)
 void
 writeSchemeSelect(textBuffer * html, const char *listName)
 {
-  const char *options[5];
+  const char *options[3];
   options[0] = "";
   options[1] = "http";
   options[2] = "https";
-  options[3] = "rtsp";
-  options[4] = "mms";
 
-  HtmlRndrSelectList(html, listName, options, 6);
+  HtmlRndrSelectList(html, listName, options, 3);
 }
 
 void
 writeSchemeSelect_partition(textBuffer * html, const char *listName)
 {
-  const char *options[2];
+  const char *options[1];
   options[0] = "http";
-  options[1] = "mixt";
 
-  HtmlRndrSelectList(html, listName, options, 2);
+  HtmlRndrSelectList(html, listName, options, 1);
 }
 
 void
 writeSchemeSelect_remap(textBuffer * html, const char *listName)
 {
-  const char *options[4];
+  const char *options[2];
   options[0] = "http";
   options[1] = "https";
-  options[2] = "rtsp";
-  options[3] = "mms";
 
-  HtmlRndrSelectList(html, listName, options, 5);
+  HtmlRndrSelectList(html, listName, options, 2);
 }
 
 //-------------------------------------------------------------------------

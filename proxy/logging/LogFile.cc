@@ -41,7 +41,6 @@
 #include "I_Machine.h"
 #include "LogSock.h"
 
-#include "LogLimits.h"
 #include "LogField.h"
 #include "LogFilter.h"
 #include "LogFormat.h"
@@ -610,7 +609,6 @@ LogFile::write_ascii_logbuffer(LogBufferHeader * buffer_header, int fd, const ch
   }
 
   while ((entry_header = iter.next())) {
-
     fmt_line_bytes = LogBuffer::to_ascii(entry_header, format_type,
                                          &fmt_line[0], LOG_MAX_FORMATTED_LINE,
                                          fieldlist_str, printf_str, buffer_header->version, alt_format);
@@ -947,8 +945,7 @@ MetaInfo::_read_from_file()
                   "\tsignature string = %s\n" "\tsignature value = %" PRIu64 "", _filename, t, _log_object_signature);
           }
         } else if (line_number == 1) {
-          _creation_time = (time_t) atol(t);
-          _flags |= PRE_PANDA_METAFILE | VALID_CREATION_TIME;
+          ink_release_assert(!"no panda support");
         }
       }
       ++line_number;

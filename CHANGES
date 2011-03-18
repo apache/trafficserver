@@ -1,5 +1,11 @@
                                                          -*- coding: utf-8 -*-
 
+Changes with Apache Traffic Server 2.1.8
+  *) [TS-712] Fix compile problems with clang / llvm
+
+  *) [TS-545] parent.config (and perhaps other configs) have an unused
+   concept of "tags" for MIXT media. Cleanup remaining MIXT junk.
+
 Changes with Apache Traffic Server 2.1.7
   *) [TS-711] Don't schedule remap.config reloads on a network threads.
    We now schedule this task on an ET_TASK thread, which avoids blocking

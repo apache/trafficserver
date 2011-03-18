@@ -56,7 +56,7 @@ int http_accept_port_number = 0;
 int http_accept_file_descriptor = 0;
 int remote_management_flag = 0;
 int auto_clear_hostdb_flag = 0;
-char proxy_name[DOMAIN_NAME_MAX + 1] = "unknown";
+char proxy_name[MAXDNAME + 1] = "unknown";
 
 char system_root_dir[PATH_NAME_MAX + 1] = "";
 char system_config_directory[PATH_NAME_MAX + 1] = "";

@@ -157,7 +157,7 @@ public:
 //
 struct pRecord
 {
-  char hostname[DOMAIN_NAME_MAX + 1];
+  char hostname[MAXDNAME + 1];
   int port;
   int32_t failedAt;
   int failCount;

@@ -96,7 +96,7 @@ LogSock::listen(int accept_port)
 {
   struct sockaddr_in bind_addr;
   int size = sizeof(struct sockaddr_in);
-  char this_host[LOG_MAX_HOSTNAME];
+  char this_host[MAXDNAME];
   int ret;
   SOCKET accept_sd;
 
@@ -174,7 +174,7 @@ LogSock::listen(int accept_port)
   // initialize the first entry of the table for accepting incoming
   // connection requests.
   //
-  if (gethostname(&this_host[0], LOG_MAX_HOSTNAME) != 0) {
+  if (gethostname(&this_host[0], MAXDNAME) != 0) {
     snprintf(this_host, sizeof(this_host), "unknown-host");
   }
   init_cid(0, this_host, accept_port, accept_sd, LogSock::LS_STATE_INCOMING);

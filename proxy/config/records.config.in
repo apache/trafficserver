@@ -437,7 +437,6 @@ CONFIG proxy.config.log.extended2_log_is_ascii INT 1
 CONFIG proxy.config.log.extended2_log_name STRING extended2
 CONFIG proxy.config.log.extended2_log_header STRING NULL
 CONFIG proxy.config.log.separate_icp_logs INT 0
-CONFIG proxy.config.log.separate_mixt_logs INT 0
 CONFIG proxy.config.log.separate_host_logs INT 0
 LOCAL proxy.local.log.collation_mode INT 0
 CONFIG proxy.config.log.collation_host STRING NULL

@@ -47,7 +47,6 @@
 #include "P_Cache.h"
 #include "I_Machine.h"
 #include "LogAccess.h"
-#include "LogLimits.h"
 #include "LogField.h"
 #include "LogFilter.h"
 #include "LogUtils.h"
@@ -499,227 +498,7 @@ LogAccess::marshal_transfer_time_s(char *buf)
   -------------------------------------------------------------------------*/
 
 int
-LogAccess::marshal_bandwidth(char *buf)
-{
-  DEFAULT_INT_FIELD;
-}
-
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
-
-int
 LogAccess::marshal_file_size(char *buf)
-{
-  DEFAULT_INT_FIELD;
-}
-
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
-int
-LogAccess::marshal_time_to_first_client_byte_ms(char *buf)
-{
-  DEFAULT_INT_FIELD;
-}
-
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
-int
-LogAccess::marshal_stream_type(char *buf)
-{
-  DEFAULT_STR_FIELD;
-}
-
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
-int
-LogAccess::marshal_external_plugin_transaction_id(char *buf)
-{
-  DEFAULT_INT_FIELD;
-}
-
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
-//MIXT SDK_VER_2
-int
-LogAccess::marshal_external_plugin_string(char *buf)
-{
-  DEFAULT_STR_FIELD;
-}
-
-//MIXT SDK_VER_2
-
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
-int
-LogAccess::marshal_stream_duration_ms(char *buf)
-{
-  DEFAULT_INT_FIELD;
-}
-
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
-int
-LogAccess::marshal_client_dns_name(char *buf)
-{
-  DEFAULT_STR_FIELD;
-}
-
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
-int
-LogAccess::marshal_client_os(char *buf)
-{
-  DEFAULT_STR_FIELD;
-}
-
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
-int
-LogAccess::marshal_client_os_version(char *buf)
-{
-  DEFAULT_STR_FIELD;
-}
-
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
-int
-LogAccess::marshal_client_cpu(char *buf)
-{
-  DEFAULT_STR_FIELD;
-}
-
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
-int
-LogAccess::marshal_client_player_version(char *buf)
-{
-  DEFAULT_STR_FIELD;
-}
-
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
-int
-LogAccess::marshal_client_player_language(char *buf)
-{
-  DEFAULT_STR_FIELD;
-}
-
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
-int
-LogAccess::marshal_client_user_agent(char *buf)
-{
-  DEFAULT_STR_FIELD;
-}
-
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
-int
-LogAccess::marshal_referer_url(char *buf)
-{
-  DEFAULT_STR_FIELD;
-}
-
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
-int
-LogAccess::marshal_audio_codec(char *buf)
-{
-  DEFAULT_STR_FIELD;
-}
-
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
-int
-LogAccess::marshal_video_codec(char *buf)
-{
-  DEFAULT_STR_FIELD;
-}
-
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
-int
-LogAccess::marshal_client_bytes_received(char *buf)
-{
-  DEFAULT_INT_FIELD;
-}
-
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
-int
-LogAccess::marshal_client_pkts_received(char *buf)
-{
-  DEFAULT_INT_FIELD;
-}
-
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
-int
-LogAccess::marshal_client_lost_pkts(char *buf)
-{
-  DEFAULT_INT_FIELD;
-}
-
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
-int
-LogAccess::marshal_client_lost_net_pkts(char *buf)
-{
-  DEFAULT_INT_FIELD;
-}
-
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
-int
-LogAccess::marshal_client_lost_continuous_pkts(char *buf)
-{
-  DEFAULT_INT_FIELD;
-}
-
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
-int
-LogAccess::marshal_client_pkts_ecc_recover(char *buf)
-{
-  DEFAULT_INT_FIELD;
-}
-
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
-int
-LogAccess::marshal_client_pkts_resent_recover(char *buf)
-{
-  DEFAULT_INT_FIELD;
-}
-
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
-int
-LogAccess::marshal_client_resend_request(char *buf)
-{
-  DEFAULT_INT_FIELD;
-}
-
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
-int
-LogAccess::marshal_client_buffer_count(char *buf)
-{
-  DEFAULT_INT_FIELD;
-}
-
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
-int
-LogAccess::marshal_client_buffer_ts(char *buf)
-{
-  DEFAULT_INT_FIELD;
-}
-
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
-int
-LogAccess::marshal_client_quality_per(char *buf)
 {
   DEFAULT_INT_FIELD;
 }
@@ -1463,9 +1242,8 @@ LogAccess::unmarshal_record(char **buf, char *dest, int len)
   The caller is responsible for xfree'ing the return result.  If there are
   any problems, NULL is returned.
   -------------------------------------------------------------------------*/
-
 char *
-resolve_logfield_string(LogAccess * context, const char *format_str)
+resolve_logfield_string(LogAccess *context, const char *format_str)
 {
   if (!context) {
     Debug("log-resolve", "No context to resolve?");
@@ -1485,34 +1263,28 @@ resolve_logfield_string(LogAccess * context, const char *format_str)
   //
   char *printf_str = NULL;
   char *fields_str = NULL;
-  int n_fields = LogFormat::parse_format_string(format_str,
-                                                &printf_str, &fields_str);
-
-  Debug("log-resolve", "%d fields: %s", n_fields, fields_str);
-  Debug("log-resolve", "printf string: %s", printf_str);
-
-  //
-  // Make sure that we delete these strings no matter how we exit
-  //
-  LogMemoryDeleter d1(printf_str, USE_XFREE);
-  LogMemoryDeleter d2(fields_str, USE_XFREE);
+  int n_fields = LogFormat::parse_format_string(format_str, &printf_str, &fields_str);
 
   //
   // Perhaps there were no fields to resolve?  Then just return the
-  // format_str.
+  // format_str. Nothing to free here either.
   //
   if (!n_fields) {
     Debug("log-resolve", "No fields found; returning copy of format_str");
     return xstrdup(format_str);
   }
 
+  Debug("log-resolve", "%d fields: %s", n_fields, fields_str);
+  Debug("log-resolve", "printf string: %s", printf_str);
+
   LogFieldList fields;
   bool contains_aggregates;
-  int field_count = LogFormat::parse_symbol_string(fields_str, &fields,
-                                                   &contains_aggregates);
+  int field_count = LogFormat::parse_symbol_string(fields_str, &fields, &contains_aggregates);
 
   if (field_count != n_fields) {
-    Debug("log-resolve", "format_str contains %d invalid field symbols", n_fields - field_count);
+    Error("log-resolve", "format_str contains %d invalid field symbols", n_fields - field_count);
+    xfree(printf_str);
+    xfree(fields_str);
     return NULL;
   }
   //
@@ -1536,13 +1308,14 @@ resolve_logfield_string(LogAccess * context, const char *format_str)
   // So, we'll just guess.
   //
   char *result = (char *) xmalloc(8192);
-  memset(result, 0, 8192);      // makes sure the buffer is null terminated
-
   unsigned bytes_resolved = LogBuffer::resolve_custom_entry(&fields, printf_str, buf, result,
-                                                            8192, LogUtils::timestamp(), 0,
+                                                            8191, LogUtils::timestamp(), 0,
                                                             LOG_SEGMENT_VERSION);
-  ink_assert(bytes_resolved <= 8192);
+  ink_assert(bytes_resolved < 8192);
+  result[bytes_resolved] = 0; // NULL terminate
 
+  xfree(printf_str);
+  xfree(fields_str);
   xfree(buf);
 
   return result;

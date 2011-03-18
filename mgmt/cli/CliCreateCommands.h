@@ -36,17 +36,4 @@
 //
 int CliCreateCommands();
 
-////////////////////////////////////////////////////////////////
-// Called during Tcl_AppInit, this function creates the MIXT cli commands
-//
-
-int CliCreateMixtCmd();
-
-////////////////////////////////////////////////////////////////
-// Called during Tcl_AppInit, this function creates the UPGRADE cli commands
-//
-
-int CliCreateUpgradeCmd();
-
-
 #endif // __CLI_CREATE_COMMANDS_H__

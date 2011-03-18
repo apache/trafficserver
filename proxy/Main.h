@@ -41,7 +41,6 @@
 //
 // Constants
 //
-#define DOMAIN_NAME_MAX       255
 #define PATH_NAME_MAX         511
 
 #define ET_CACHE ET_CALL
@@ -67,9 +66,9 @@ extern int auto_clear_cache_flag;
 extern int lock_process;
 extern int fds_limit;
 extern int debug_level;
-extern char cluster_host[DOMAIN_NAME_MAX + 1];
+extern char cluster_host[MAXDNAME + 1];
 extern int cluster_port_number;
-extern char proxy_name[DOMAIN_NAME_MAX + 1];
+extern char proxy_name[MAXDNAME + 1];
 
 extern int remote_management_flag;
 extern char management_directory[PATH_NAME_MAX + 1];
@@ -80,7 +79,7 @@ inkcoreapi extern int CacheClusteringEnabled;
 extern int use_mp;
 
 // Debugging Configuration
-extern char debug_host[DOMAIN_NAME_MAX + 1];
+extern char debug_host[MAXDNAME + 1];
 extern int debug_port;
 
 // Default socket buffer limits

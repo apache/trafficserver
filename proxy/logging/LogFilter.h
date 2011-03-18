@@ -38,11 +38,9 @@
   function which, given a LogAccess object, returns true if
   the log entry is to be tossed out.
   -------------------------------------------------------------------------*/
-
 class LogFilter
 {
 public:
-
   enum Type
   {
     INT_FILTER = 0,
@@ -73,7 +71,7 @@ public:
   static const char *OPERATOR_NAME[];
 
   LogFilter(const char *name, LogField * field, Action action, Operator oper);
-  virtual ~ LogFilter();
+  virtual ~LogFilter();
 
   char *name() const { return m_name; }
   Type type() const { return m_type; }
@@ -83,10 +81,7 @@ public:
   virtual void display(FILE * fd = stdout) = 0;
   virtual void display_as_XML(FILE * fd = stdout) = 0;
 
-  void reverse()
-  {
-    m_action = (m_action == REJECT ? ACCEPT : REJECT);
-  };
+  void reverse() { m_action = (m_action == REJECT ? ACCEPT : REJECT); }
 
 protected:
   char *m_name;
@@ -111,7 +106,6 @@ private:
 
   Filter for string fields.
   -------------------------------------------------------------------------*/
-
 class LogFilterString:public LogFilter
 {
 public:
@@ -166,7 +160,6 @@ private:
 
   Filter for int fields.
   -------------------------------------------------------------------------*/
-
 class LogFilterInt:public LogFilter
 {
 public:

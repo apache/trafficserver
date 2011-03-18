@@ -82,14 +82,6 @@ Tcl_AppInit(Tcl_Interp * app_interp)
   if (CliCreateCommands() != CLI_OK)
     return CMD_ERROR;
 
-  /*
-  if (CliCreateMixtCmd() != CLI_OK)
-    return CMD_ERROR;
-  */
-
-  if (CliCreateUpgradeCmd() != CLI_OK)
-    return CMD_ERROR;
-
   Tcl_SetVar(interp, "tcl_rcFileName", "~/.tshellstartup", TCL_GLOBAL_ONLY);
 
 /* Evaluating a application specific tcl script After creating

@@ -333,25 +333,23 @@ public:
 
   enum
   {
-    N_SCHEMES = 3
+    N_SCHEMES = 1
   };
 
   static int http_scheme(UpdateSM *);
-  static int rtsp_scheme(UpdateSM *);
   static int http_scheme_postproc(UpdateSM *);
-  static int rtsp_scheme_postproc(UpdateSM *);
 
-    UpdateSM(UpdateScheduler *, Ptr<UpdateConfigParams>, UpdateEntry *);
-   ~UpdateSM();
+  UpdateSM(UpdateScheduler *, Ptr<UpdateConfigParams>, UpdateEntry *);
+  ~UpdateSM();
   void Start();
   int HandleSMEvent(int, Event *);
 
 public:
-    UpdateEntry * _EN;
+  UpdateEntry * _EN;
 
 private:
-    UpdateScheduler * _US;
-    Ptr<UpdateConfigParams> _CP;
+  UpdateScheduler * _US;
+  Ptr<UpdateConfigParams> _CP;
   state_t _state;
   int _return_status;
   int _retries;
@@ -359,7 +357,6 @@ private:
 
 struct dispatch_entry
 {
-public:
   const char **scheme;
   int (*func) (UpdateSM *);
 };
@@ -379,6 +376,7 @@ struct html_tag
 /////////////////////////////////////////////////////////////////////////////
 class ObjectReloadCont;
 class RecursiveHttpGet;
+
 typedef int (RecursiveHttpGet::*RecursiveHttpGetContHandler) (int, Event *);
 
 class HtmlParser
@@ -419,11 +417,10 @@ public:
     _attr_value_hash_char_index(-1), _attr_value_quoted(0),
     _html_doc_base(&default_zero_char, 128),
     _result(&default_zero_char, 128), allowable_html_tags(0), allowable_html_attrs(0)
-  {
-  }
+  { }
+
    ~HtmlParser()
-  {
-  }
+  { }
 
   void Init(char *url, struct html_tag *allowed_html_tags, struct html_tag *allowed_html_attrs = NULL) {
     _url = url;

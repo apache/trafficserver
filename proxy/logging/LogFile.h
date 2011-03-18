@@ -45,9 +45,7 @@ class LogObject;
   MetaInfo
 
   Meta information for LogFile
-
   -------------------------------------------------------------------------*/
-
 class MetaInfo
 {
 public:
@@ -57,9 +55,8 @@ public:
     // from metafile
     VALID_CREATION_TIME = 2,    // creation time is valid
     VALID_SIGNATURE = 4,        // signature is valid
-    PRE_PANDA_METAFILE = 8,     // metafile has pre-Panda format
     // (i.e., creation time only)
-    FILE_OPEN_SUCCESSFUL = 16   // metafile was opened successfully
+    FILE_OPEN_SUCCESSFUL = 8   // metafile was opened successfully
   };
 
   enum
@@ -83,7 +80,7 @@ public:
   {
     _build_name(filename);
     _read_from_file();
-  };
+  }
 
   MetaInfo(char *filename, time_t creation, uint64_t signature):_creation_time(creation),
     _log_object_signature(signature), _flags(VALID_CREATION_TIME | VALID_SIGNATURE)
@@ -91,7 +88,7 @@ public:
 
     _build_name(filename);
     _write_to_file();
-  };
+  }
 
   ~MetaInfo() {
     xfree(_filename);
@@ -105,7 +102,8 @@ public:
     } else {
       return false;
     }
-  };
+  }
+
   bool get_log_object_signature(uint64_t * signature)
   {
     if (_flags & VALID_SIGNATURE) {
@@ -114,19 +112,10 @@ public:
     } else {
       return false;
     }
-  };
-  bool data_from_metafile()
-  {
-    return (_flags & DATA_FROM_METAFILE ? true : false);
-  };
-  bool pre_panda_metafile()
-  {
-    return (_flags & PRE_PANDA_METAFILE ? true : false);
-  };
-  bool file_open_successful()
-  {
-    return (_flags & FILE_OPEN_SUCCESSFUL ? true : false);
-  };
+  }
+
+  bool data_from_metafile() const { return (_flags & DATA_FROM_METAFILE ? true : false); }
+  bool file_open_successful() { return (_flags & FILE_OPEN_SUCCESSFUL ? true : false); }
 };
 
 /*-------------------------------------------------------------------------
@@ -142,10 +131,11 @@ public:
 #ifndef TS_MICRO
           size_t ascii_buffer_size = 4 * 9216, size_t max_line_size = 9216,
 #else
-          size_t ascii_buffer_size = 1024, size_t max_line_size = 1024);
+          size_t ascii_buffer_size = 1024, size_t max_line_size = 1024,
 #endif
-  size_t overspill_report_count = 1000);
-  ~ LogFile();
+          size_t overspill_report_count = 1000);
+
+  ~LogFile();
 
   enum
   {
@@ -159,20 +149,17 @@ public:
 
   int write(LogBuffer * lb, size_t * to_disk = 0, size_t * to_net = 0, size_t * to_pipe = 0);
   int roll(long interval_start, long interval_end);
-  char *get_name()
-  {
-    return m_name;
-  }
+
+  char *get_name() const { return m_name; }
+
   void change_header(const char *header);
   void change_name(char *new_name);
-  LogFileFormat get_format()
-  {
-    return m_file_format;
-  };
-  const char *get_format_name()
-  {
+
+  LogFileFormat get_format() const { return m_file_format; }
+  const char *get_format_name() const {
     return (m_file_format == BINARY_LOG ? "binary" : (m_file_format == ASCII_PIPE ? "ascii_pipe" : "ascii"));
-  };
+  }
+
   static int write_ascii_logbuffer(LogBufferHeader * buffer_header, int fd, const char *path, char *alt_format = NULL);
   int write_ascii_logbuffer3(LogBufferHeader * buffer_header, char *alt_format = NULL);
   static bool rolled_logfile(char *file);
@@ -180,18 +167,17 @@ public:
 
   void display(FILE * fd = stdout);
   int open_file();
-  bool size_limit_exceeded()
-  {
+
+  bool size_limit_exceeded() {
     if (!m_filesystem_checks_done) {
       do_filesystem_checks();
     }
     return (m_has_size_limit ? (uint64_t) m_size_bytes > m_size_limit_bytes : false);
-  };
+  }
+
   int do_filesystem_checks();
-  off_t get_size_bytes()const
-  {
-    return m_size_bytes;
-  };
+
+  off_t get_size_bytes() const { return m_size_bytes; };
 
 private:
   void init();

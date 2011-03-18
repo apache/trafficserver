@@ -357,10 +357,12 @@ public:
   {
     return (logging_mode == FULL_LOGGING || logging_mode == LOG_TRANSACTIONS_ONLY);
   }
+
   inkcoreapi static bool error_logging_enabled()
   {
     return (logging_mode == FULL_LOGGING || logging_mode == LOG_ERRORS_ONLY);
   }
+
   inkcoreapi static int access(LogAccess * lad);
   inkcoreapi static int error(const char *format, ...);
 #else

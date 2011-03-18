@@ -1045,7 +1045,6 @@ RecordElement RecordsConfig[] = {
   //# 2 - No fingerprinting
   //# UNIMPLEMENTED CONFIG proxy.config.cache.fingerprint_method INT 2
   //# UNIMPLEMENTED: CONFIG proxy.config.cache.limits.http.quota FLOAT 1.0
-  //# UNIMPLEMENTED: CONFIG proxy.config.cache.limits.rtsp.quota FLOAT 1.0
 
   //##############################################################################
   //#

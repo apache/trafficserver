@@ -608,7 +608,6 @@ LogBuffer::update_header_data()
   This static function simply returns the greatest number of bytes than an
   entry can be and fit into a LogBuffer.
   -------------------------------------------------------------------------*/
-
 size_t LogBuffer::max_entry_bytes()
 {
   return (Log::config->log_buffer_size - sizeof(LogBufferHeader));
@@ -617,7 +616,6 @@ size_t LogBuffer::max_entry_bytes()
 /*-------------------------------------------------------------------------
   LogBuffer::resolve_custom_entry
   -------------------------------------------------------------------------*/
-
 int
 LogBuffer::resolve_custom_entry(LogFieldList * fieldlist,
                                 char *printf_str, char *read_from, char *write_to,
@@ -665,6 +663,7 @@ LogBuffer::resolve_custom_entry(LogFieldList * fieldlist,
   int printf_len = (int)::strlen(printf_str);   // OPTIMIZE
   int bytes_written = 0;
   int res, i;
+
   const char *buffer_size_exceeded_msg =
     "Traffic Server is skipping the current log entry because its size "
     "exceeds the maximum line (entry) size for an ascii log buffer";
@@ -677,7 +676,6 @@ LogBuffer::resolve_custom_entry(LogFieldList * fieldlist,
         // for timestamps that are not aggregates, we take the
         // value from the function argument;  otherwise we use the
         // unmarshaling function
-
         bool non_aggregate_timestamp = false;
 
         if (field->aggregate() == LogField::NO_AGGREGATE) {
@@ -809,7 +807,6 @@ LogBuffer::resolve_custom_entry(LogFieldList * fieldlist,
   space provided, and returns the length of the new string (not including
   trailing null, like strlen).
   -------------------------------------------------------------------------*/
-
 int
 LogBuffer::to_ascii(LogEntryHeader * entry, LogFormatType type,
                     char *buf, int buf_len, char *symbol_str, char *printf_str,

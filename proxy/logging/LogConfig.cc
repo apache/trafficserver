@@ -55,7 +55,6 @@
 #include "InkXml.h"
 
 #include "LogFormatType.h"
-#include "LogLimits.h"
 #include "LogField.h"
 #include "LogFilter.h"
 #include "LogFormat.h"
@@ -241,6 +240,7 @@ LogConfig::read_configuration_variables()
     max_space_mb_headroom = val;
   };
 
+  // TODO: We should mover this "parser" to lib/ts
   ptr = LOG_ConfigReadString("proxy.config.log.logfile_perm");
   if (ptr && strlen(ptr) == 9) {
     logfile_perm = 0;
@@ -1314,18 +1314,12 @@ LogConfig::register_mgmt_callbacks()
 
 bool LogConfig::space_to_write(int64_t bytes_to_write)
 {
-  int64_t
-    config_space,
-    partition_headroom;
-  int64_t
-    logical_space_used,
-    physical_space_left;
-  bool
-    space;
+  int64_t config_space, partition_headroom;
+  int64_t logical_space_used, physical_space_left;
+  bool space;
 
   config_space = (int64_t) get_max_space_mb() * LOG_MEGABYTE;
-  partition_headroom = (int64_t) PARTITION_HEADROOM_MB *
-    LOG_MEGABYTE;
+  partition_headroom = (int64_t) PARTITION_HEADROOM_MB * LOG_MEGABYTE;
 
   logical_space_used = m_space_used + bytes_to_write;
   physical_space_left = m_partition_space_left - (int64_t) bytes_to_write;

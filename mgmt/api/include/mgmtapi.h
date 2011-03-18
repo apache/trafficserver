@@ -349,8 +349,6 @@ extern "C"
     TS_SCHEME_NONE,
     TS_SCHEME_HTTP,
     TS_SCHEME_HTTPS,
-    TS_SCHEME_RTSP,
-    TS_SCHEME_MMS,
     TS_SCHEME_UNDEFINED
   } TSSchemeT;
 
@@ -716,7 +714,7 @@ extern "C"
   {
     TSCfgEle cfg_ele;
     int partition_num;          /* must be in range 1 - 255 */
-    TSPartitionSchemeT scheme; /* http, mixt */
+    TSPartitionSchemeT scheme; /* http */
     int partition_size;         /* >= 128 MB, multiple of 128 */
     TSSizeFormatT size_format; /* percentage or absolute */
   } TSPartitionEle;

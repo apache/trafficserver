@@ -87,7 +87,7 @@ int writeVaddrsConfigForm(WebHttpContext * whc);
 
 int writeSecondarySpecsForm(WebHttpContext * whc, TSFileNameT file);
 int writeSecondarySpecsTableElem(textBuffer * output, char *time, char *src_ip, char *prefix, char *suffix, char *port,
-                                 char *method, char *scheme, char *mixt);
+                                 char *method, char *scheme);
 
 
 // -------------------- CONVERSION FUNCTIONS ------------------------------
@@ -99,7 +99,7 @@ int convert_cache_ele_to_html_format(TSCacheEle * ele,
                                      char *src_ip,
                                      char *prefix,
                                      char *suffix,
-                                     char *port, char *method, char *scheme, char *time_period, char *mixt);
+                                     char *port, char *method, char *scheme, char *time_period);
 
 int convert_hosting_ele_to_html_format(TSHostingEle * ele, char *pdType, char *partitions);
 
@@ -121,7 +121,7 @@ int convert_parent_ele_to_html_format(TSParentProxyEle * ele,
                                       char *suffix,
                                       char *port,
                                       char *method,
-                                      char *scheme, char *mixt, char *parents, char *round_robin, char *direct);
+                                      char *scheme, char *parents, char *round_robin, char *direct);
 
 int convert_partition_ele_to_html_format(TSPartitionEle * ele,
                                          char *part_num, char *scheme, char *size, char *size_fmt);
@@ -129,7 +129,7 @@ int convert_partition_ele_to_html_format(TSPartitionEle * ele,
 int convert_remap_ele_to_html_format(TSRemapEle * ele,
                                      char *rule_type,
                                      char *from_scheme, char *from_port, char *from_path,
-                                     char *to_scheme, char *to_port, char *to_path, char *mixt);
+                                     char *to_scheme, char *to_port, char *to_path);
 
 int convert_socks_ele_to_html_format(TSSocksEle * ele,
                                      char *rule_type, char *dest_ip, char *user, char *passwd, char *servers, char *rr);
@@ -145,7 +145,7 @@ int convert_pdss_to_html_format(TSPdSsFormat info,
                                 char *pdType,
                                 char *time,
                                 char *src_ip,
-                                char *prefix, char *suffix, char *port, char *method, char *scheme, char *mixt);
+                                char *prefix, char *suffix, char *port, char *method, char *scheme);
 
 //------------------------- SELECT FUNCTIONS ------------------------------
 
