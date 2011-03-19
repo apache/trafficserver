@@ -152,7 +152,7 @@ traffic_server_LDADD = \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
   $(top_builddir)/lib/records/librecprocess.a \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
-  $(top_builddir)/lib/ts/.libs/libtsutil.a \
+  $(top_builddir)/lib/ts/libtsutil.la \
   @LIBTHREAD@ @LIBSOCKET@ @LIBNSL@ @LIBRESOLV@ @LIBRT@ \
   @LIBPCRE@ @LIBSSL@ @LIBTCL@ @LIBDL@ \
   @LIBEXPAT@ @LIBDEMANGLE@ @LIBICONV@ @LIBCAP@ \
