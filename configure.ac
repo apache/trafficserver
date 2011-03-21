@@ -297,20 +297,6 @@ AS_IF([test "x$enable_api" = "xyes"], [has_inkapi=1], [has_inkapi=0])
 AC_SUBST(has_inkapi)
 
 #
-# Detailed Logging (for debugging purposes)
-#
-AC_MSG_CHECKING([whether to enable detailed logging for debugging purposes])
-AC_ARG_ENABLE([detailed-log],
-  [AS_HELP_STRING([--enable-detailed-log],[enable detailed logging])],
-  [],
-  [enable_detailed_log=no]
-)
-AC_MSG_RESULT([$enable_detailed_log])
-TS_ARG_ENABLE_VAR([has],[detailed-log])
-AC_SUBST(has_detailed_log)
-AM_CONDITIONAL([BUILD_DETAILED_LOG], [test 0 -ne $has_detailed_log])
-
-#
 # WCCP
 #
 AC_MSG_CHECKING([whether to enable WCCP v2 support])

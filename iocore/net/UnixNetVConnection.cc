@@ -94,16 +94,6 @@ net_activity(UnixNetVConnection *vc, EThread *thread)
 void
 close_UnixNetVConnection(UnixNetVConnection *vc, EThread *t)
 {
-#if TS_USE_DETAILED_LOG
-  if (vc->loggingEnabled()) {
-    vc->addLogMessage("close_UnixNetVConnection");
-    // display the slow log for the http client session
-    if (vc->getLogsTotalTime() / HRTIME_MSECOND > 100)
-      vc->printLogs();
-    vc->clearLogs();
-  }
-#endif
-
   vc->cancel_OOB();
   vc->ep.stop();
   vc->con.close();
@@ -214,7 +204,6 @@ write_signal_error(NetHandler *nh, UnixNetVConnection *vc, int lerrno)
 static void
 read_from_net(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
 {
-  vc->addLogMessage("read from net");
   NetState *s = &vc->read;
   ProxyMutex *mutex = thread->mutex;
   MIOBufferAccessor & buf = s->vio.buffer;
@@ -223,13 +212,11 @@ read_from_net(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
   MUTEX_TRY_LOCK_FOR(lock, s->vio.mutex, thread, s->vio._cont);
 
   if (!lock || lock.m.m_ptr != s->vio.mutex.m_ptr) {
-    vc->addLogMessage("can't get lock");
     read_reschedule(nh, vc);
     return;
   }
   // if it is not enabled.
   if (!s->enabled || s->vio.op != VIO::READ) {
-    vc->addLogMessage("not enabled");
     read_disable(nh, vc);
     return;
   }
@@ -279,11 +266,6 @@ read_from_net(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
       total_read += rattempted;
     } while (r == rattempted && total_read < toread);
 
-    if (vc->loggingEnabled()) {
-      char message[256];
-      snprintf(message, sizeof(message), "rval: %" PRId64 " toread: %" PRId64 " ntodo: %" PRId64 " total_read: %" PRId64 "", r, toread, ntodo, total_read);
-      vc->addLogMessage(message);
-    }
     // if we have already moved some bytes successfully, summarize in r
     if (total_read != rattempted) {
       if (r <= 0)
@@ -296,7 +278,6 @@ read_from_net(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
 
       if (r == -EAGAIN || r == -ENOTCONN) {
         NET_DEBUG_COUNT_DYN_STAT(net_calls_to_read_nodata_stat, 1);
-        vc->addLogMessage("EAGAIN or ENOTCONN");
         vc->read.triggered = 0;
         nh->read_ready_list.remove(vc);
         return;
@@ -373,15 +354,12 @@ write_to_net(NetHandler *nh, UnixNetVConnection *vc, PollDescriptor *pd, EThread
 void
 write_to_net_io(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
 {
-  vc->addLogMessage("write to net io");
-
   NetState *s = &vc->write;
   ProxyMutex *mutex = thread->mutex;
 
   MUTEX_TRY_LOCK_FOR(lock, s->vio.mutex, thread, s->vio._cont);
 
   if (!lock || lock.m.m_ptr != s->vio.mutex.m_ptr) {
-    vc->addLogMessage("can't get lock");
     write_reschedule(nh, vc);
     return;
   }
@@ -459,12 +437,7 @@ write_to_net_io(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
 
   int64_t total_wrote = 0, wattempted = 0;
   int64_t r = vc->load_buffer_and_write(towrite, wattempted, total_wrote, buf);
-  if (vc->loggingEnabled()) {
-    char message[256];
-    snprintf(message, sizeof(message), "rval: %" PRId64 " towrite: %" PRId64 " ntodo: %" PRId64 " total_wrote: %" PRId64 "",
-             r, towrite, ntodo, total_wrote);
-    vc->addLogMessage(message);
-  }
+
   // if we have already moved some bytes successfully, summarize in r
   if (total_wrote != wattempted) {
     if (r <= 0)
@@ -527,7 +500,6 @@ write_to_net_io(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
 VIO *
 UnixNetVConnection::do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf)
 {
-  addLogMessage("do_io_read");
   ink_assert(!closed);
   read.vio.op = VIO::READ;
   read.vio.mutex = c->mutex;
@@ -549,7 +521,6 @@ UnixNetVConnection::do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf)
 VIO *
 UnixNetVConnection::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *reader, bool owner)
 {
-  addLogMessage("do_io_write");
   ink_assert(!closed);
   write.vio.op = VIO::WRITE;
   write.vio.mutex = c->mutex;
@@ -572,8 +543,6 @@ UnixNetVConnection::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader 
 void
 UnixNetVConnection::do_io_close(int alerrno /* = -1 */ )
 {
-  addLogMessage("UnixNetVConnection::do_io_close");
-
   disable_read(this);
   disable_write(this);
   read.vio.buffer.clear();
@@ -601,7 +570,6 @@ UnixNetVConnection::do_io_close(int alerrno /* = -1 */ )
 void
 UnixNetVConnection::do_io_shutdown(ShutdownHowTo_t howto)
 {
-  addLogMessage("UnixNetVConnection::do_io_shutdown");
   switch (howto) {
   case IO_SHUTDOWN_READ:
     socketManager.shutdown(((UnixNetVConnection *) this)->con.fd, 0);
@@ -986,9 +954,7 @@ UnixNetVConnection::acceptEvent(int event, Event *e)
 int
 UnixNetVConnection::mainEvent(int event, Event *e)
 {
-  addLogMessage("main event");
   ink_debug_assert(event == EVENT_IMMEDIATE || event == EVENT_INTERVAL);
-  /* BZ 31932 */
   ink_debug_assert(thread == this_ethread());
 
   MUTEX_TRY_LOCK(hlock, get_NetHandler(thread)->mutex, e->ethread);
@@ -1063,8 +1029,6 @@ UnixNetVConnection::mainEvent(int event, Event *e)
 int
 UnixNetVConnection::connectUp(EThread *t)
 {
-  addLogMessage("connectUp");
-
   thread = t;
   if (check_net_throttle(CONNECT, submit_time)) {
     check_throttle_warning();

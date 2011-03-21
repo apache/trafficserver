@@ -352,7 +352,6 @@ NetHandler::mainNetEvent(int event, Event *e)
       vc = epd->data.vc;
       if (get_ev_events(pd,x) & (EVENTIO_READ|EVENTIO_ERROR)) {
         vc->read.triggered = 1;
-        vc->addLogMessage("read triggered");
         if (!read_ready_list.in(vc))
           read_ready_list.enqueue(vc);
         else if (get_ev_events(pd,x) & EVENTIO_ERROR) {
@@ -364,7 +363,6 @@ NetHandler::mainNetEvent(int event, Event *e)
       vc = epd->data.vc;
       if (get_ev_events(pd,x) & (EVENTIO_WRITE|EVENTIO_ERROR)) {
         vc->write.triggered = 1;
-        vc->addLogMessage("write triggered");
         if (!write_ready_list.in(vc))
           write_ready_list.enqueue(vc);
         else if (get_ev_events(pd,x) & EVENTIO_ERROR) {

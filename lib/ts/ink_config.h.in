@@ -105,7 +105,6 @@
 #define TS_USE_KQUEUE                  @use_kqueue@
 #define TS_USE_PORT                    @use_port@
 #define TS_USE_POSIX_CAP               @use_posix_cap@
-#define TS_USE_DETAILED_LOG            @has_detailed_log@
 #define TS_USE_TPROXY                  @use_tproxy@
 
 /* OS API definitions */

@@ -99,9 +99,6 @@ net_accept(NetAccept * na, void *ep, bool blockable)
       NET_SUM_GLOBAL_DYN_STAT(net_connections_currently_open_stat, 1);
       vc->id = net_next_connection_number();
       na->alloc_cache = vc;
-#if TS_USE_DETAILED_LOG
-      vc->loggingInit();
-#endif
     }
     if ((res = na->server.accept(&vc->con)) < 0) {
       if (res == -EAGAIN || res == -ECONNABORTED || res == -EPIPE)
@@ -310,9 +307,6 @@ NetAccept::do_blocking_accept(NetAccept * master_na, EThread * t)
       vc->from_accept_thread = true;
       vc->id = net_next_connection_number();
       master_na->alloc_cache = vc;
-#if TS_USE_DETAILED_LOG
-      vc->loggingInit();
-#endif
     }
     ink_hrtime now = ink_get_hrtime();
 
@@ -430,13 +424,7 @@ NetAccept::acceptFastEvent(int event, void *ep)
     socklen_t sz = sizeof(vc->con.sa);
     int fd = socketManager.accept(server.fd, (struct sockaddr *) &vc->con.sa, &sz);
 
-#if TS_USE_DETAILED_LOG
-    vc->loggingInit();
-#endif
-
     if (likely(fd >= 0)) {
-      vc->addLogMessage("accepting the connection");
-
       Debug("iocore_net", "accepted a new socket: %d", fd);
       if (send_bufsize > 0) {
         if (unlikely(socketManager.set_sndbuf_size(fd, send_bufsize))) {

@@ -32,10 +32,6 @@
 #include "I_IOBuffer.h"
 #include "I_Socks.h"
 
-#if TS_USE_DETAILED_LOG
-#include "DetailedLog.h"
-#endif
-
 #define CONNECT_SUCCESS   1
 #define CONNECT_FAILURE   0
 
@@ -457,55 +453,6 @@ public:
     is_other_side_transparent = value;
   }
 
-#if TS_USE_DETAILED_LOG
-  void loggingInit()
-  {
-    if (logging == NULL) {
-      logging = new DetailedLog();
-    }
-  }
-  void addLogMessage(const char *message)
-  {
-    if (logging != NULL) {
-      logging->add(message);
-      logging->print();
-    }
-  }
-  void printLogs() const
-  {
-    if (logging != NULL)
-    {
-      logging->print();
-    }
-  }
-  void clearLogs()
-  {
-    if (logging != NULL) {
-      logging->clear();
-    }
-  }
-  ink_hrtime getLogsTotalTime() const
-  {
-    if (logging != NULL)
-    {
-      return logging->totalTime();
-    } else
-    {
-      return 0;
-    }
-  }
-  bool loggingEnabled() const
-  {
-    return (logging != NULL);
-  }
-  DetailedLog *logging;
-#else
-  // These are here to simplify the usage of these APIs, i.e. no need to
-  // add the #ifdef TS_USE_DETAILED_LOG a million times.
-  void addLogMessage(const char *message) { NOWARN_UNUSED(message); }
-  bool loggingEnabled() const { return false; }
-#endif
-
 private:
   NetVConnection(const NetVConnection &);
   NetVConnection & operator =(const NetVConnection &);
@@ -532,9 +479,6 @@ NetVConnection::NetVConnection():
   VConnection(NULL),
   attributes(0),
   thread(NULL),
-#if TS_USE_DETAILED_LOG
-  logging(NULL),
-#endif
   got_local_addr(0),
   got_remote_addr(0),
   is_internal_request(false),

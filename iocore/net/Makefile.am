@@ -95,11 +95,3 @@ if BUILD_TESTS
   libinknet_a_SOURCES += NetVCTest.cc \
     P_NetVCTest.h
 endif
-
-
-# TODO: These two should probably be moved to somewhere else (libintkomi++?)
-if BUILD_DETAILED_LOG
-  libinknet_a_SOURCES += \
-    DetailedLog.cc \
-    DetailedLog.h
-endif
