@@ -111,6 +111,7 @@ public:
   redirect_tag_str *redir_chunk_list;
   acl_filter_rule *filter;      // acl filtering (list of rules)
   unsigned int _plugin_count;
+  LINK(url_mapping, link);
 
   int getRank() const { return _rank; };
 

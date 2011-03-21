@@ -629,9 +629,9 @@ UrlRewrite::_destroyTable(InkHashTable *h_table)
     for (ht_entry = ink_hash_table_iterator_first(h_table, &ht_iter); ht_entry != NULL;) {
       item = (UrlMappingPathIndex *) ink_hash_table_entry_value(h_table, ht_entry);
       item->GetMappings(mappings);
-      for (UrlMappingPathIndex::MappingList::iterator mapping_iter = mappings.begin();
-           mapping_iter != mappings.end(); ++mapping_iter) {
-        delete *mapping_iter;
+
+      forl_LL(url_mapping, mapping_iter, mappings) {
+        delete mapping_iter;
       }
       mappings.clear();
       delete item;
@@ -679,14 +679,11 @@ UrlRewrite::PrintTable(InkHashTable *h_table)
   UrlMappingPathIndex *value;
   char from_url_buf[2048], to_url_buf[2048];
   UrlMappingPathIndex::MappingList mappings;
-  url_mapping *um;
 
   for (ht_entry = ink_hash_table_iterator_first(h_table, &ht_iter); ht_entry != NULL;) {
     value = (UrlMappingPathIndex *) ink_hash_table_entry_value(h_table, ht_entry);
     value->GetMappings(mappings);
-    for (UrlMappingPathIndex::MappingList::iterator mapping_iter = mappings.begin();
-         mapping_iter != mappings.end(); ++mapping_iter) {
-      um = *mapping_iter;
+    forl_LL(url_mapping, um, mappings) {
       um->fromURL.string_get_buf(from_url_buf, (int) sizeof(from_url_buf));
       um->_default_to_url.string_get_buf(to_url_buf, (int) sizeof(to_url_buf));
       printf("\t %s %s=> %s %s <%s> [plugins %s enabled; running with %u plugins]\n", from_url_buf,

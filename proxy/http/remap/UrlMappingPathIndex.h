@@ -24,7 +24,6 @@
 
 #define _URL_MAPPING_PATH_INDEX_H
 
-#include <list>
 #include <map>
 
 #include "URL.h"
@@ -35,13 +34,13 @@ class UrlMappingPathIndex
 {
 public:
   UrlMappingPathIndex()
-    { }
+  { }
 
   bool Insert(url_mapping *mapping);
 
   url_mapping *Search(URL *request_url, int request_port, bool normal_search = true) const;
 
-  typedef std::list<url_mapping *> MappingList;
+  typedef Queue<url_mapping> MappingList;
 
   void GetMappings(MappingList &mapping_list) const;
 

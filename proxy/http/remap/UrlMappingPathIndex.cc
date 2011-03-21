@@ -81,12 +81,13 @@ lFail:
 void
 UrlMappingPathIndex::GetMappings(MappingList &mapping_list) const
 {
-  for (UrlMappingGroup::const_iterator group_iter = m_tries.begin();
-       group_iter != m_tries.end(); ++group_iter) {
+  UrlMappingGroup::const_iterator group_iter;
+  UrlMappingTrie::ValuePointerList::const_iterator list_iter;
+
+  for (group_iter = m_tries.begin(); group_iter != m_tries.end(); ++group_iter) {
     const UrlMappingTrie::ValuePointerList &value_pointers = group_iter->second->GetValues();
-    for (UrlMappingTrie::ValuePointerList::const_iterator list_iter = value_pointers.begin();
-         list_iter != value_pointers.end(); ++list_iter) {
-      mapping_list.push_back(*(*list_iter));
+    for (list_iter = value_pointers.begin(); list_iter != value_pointers.end(); ++list_iter) {
+      mapping_list.enqueue(*(*list_iter));
     }
   }
 }

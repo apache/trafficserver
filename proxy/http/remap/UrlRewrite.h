@@ -33,7 +33,6 @@
 #else
 #include <pcre.h>
 #endif
-#include <list>
 
 #define URL_REMAP_FILTER_NONE         0x00000000
 #define URL_REMAP_FILTER_REFERER      0x00000001        /* enable "referer" header validation */
