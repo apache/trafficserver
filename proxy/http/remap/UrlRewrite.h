@@ -101,15 +101,17 @@ public:
     // to use
     int substitution_markers[MAX_REGEX_SUBS];
     int substitution_ids[MAX_REGEX_SUBS];
+
+    LINK(RegexMapping, link);
   };
 
-  typedef std::list<RegexMapping> RegexMappingList;
+  typedef Queue<RegexMapping> RegexMappingList;
 
   struct MappingsStore
   {
     InkHashTable *hash_lookup;
     RegexMappingList regex_list;
-    bool empty() { return ((hash_lookup == NULL) && (regex_list.size() == 0)); }
+    bool empty() { return ((hash_lookup == NULL) && regex_list.empty()); }
   };
 
   void PerformACLFiltering(HttpTransact::State * s, url_mapping * mapping);
@@ -188,12 +190,12 @@ private:
   bool _regexMappingLookup(RegexMappingList &regex_mappings, URL * request_url, int request_port, const char *request_host,
                            int request_host_len, int rank_ceiling,
                            UrlMappingContainer &mapping_container);
-  int _expandSubstitutions(int *matches_info, const RegexMapping &reg_map, const char *matched_string, char *dest_buf,
+  int _expandSubstitutions(int *matches_info, const RegexMapping *reg_map, const char *matched_string, char *dest_buf,
                            int dest_buf_size);
-  bool _processRegexMappingConfig(const char *from_host_lower, url_mapping *new_mapping, RegexMapping &reg_map);
+  bool _processRegexMappingConfig(const char *from_host_lower, url_mapping *new_mapping, RegexMapping *reg_map);
   void _destroyTable(InkHashTable *h_table);
   void _destroyList(RegexMappingList &regexes);
-  inline bool _addToStore(MappingsStore &store, url_mapping *new_mapping, RegexMapping &reg_map, char *src_host,
+  inline bool _addToStore(MappingsStore &store, url_mapping *new_mapping, RegexMapping *reg_map, char *src_host,
                           bool is_cur_mapping_regex, int &count);
 };
 

@@ -106,6 +106,7 @@ template <class C> struct Link : public SLink<C> {
 template <class C, class L = typename C::Link_link> class SLL {
  public:
   C *head;
+  bool empty() { return head == NULL; }
   void push(C *e);
   C *pop();
   void clear() { head = NULL; }
