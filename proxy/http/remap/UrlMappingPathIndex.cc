@@ -53,7 +53,7 @@ UrlMappingPathIndex::Insert(url_mapping *mapping)
 url_mapping *
 UrlMappingPathIndex::Search(URL *request_url, int request_port, bool normal_search /* = true */) const
 {
-  url_mapping **retval = 0;
+  url_mapping *retval = 0;
   int scheme_idx;
   UrlMappingTrie *trie;
   int path_len;
@@ -68,11 +68,11 @@ UrlMappingPathIndex::Search(URL *request_url, int request_port, bool normal_sear
   }
 
   path = request_url->path_get(&path_len);
-  if (!trie->Search(path, retval, path_len)) {
+  if (!(retval = trie->Search(path, path_len))) {
     Debug("UrlMappingPathIndex::Search", "Couldn't find entry for url with path [%.*s]", path_len, path);
     goto lFail;
   }
-  return *retval;
+  return retval;
 
 lFail:
   return 0;
@@ -82,13 +82,9 @@ void
 UrlMappingPathIndex::GetMappings(MappingList &mapping_list) const
 {
   UrlMappingGroup::const_iterator group_iter;
-  UrlMappingTrie::ValuePointerList::const_iterator list_iter;
 
   for (group_iter = m_tries.begin(); group_iter != m_tries.end(); ++group_iter) {
-    const UrlMappingTrie::ValuePointerList &value_pointers = group_iter->second->GetValues();
-    for (list_iter = value_pointers.begin(); list_iter != value_pointers.end(); ++list_iter) {
-      mapping_list.enqueue(*(*list_iter));
-    }
+    mapping_list.append(group_iter->second->GetValues());
   }
 }
 
