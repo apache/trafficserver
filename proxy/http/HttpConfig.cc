@@ -1503,7 +1503,7 @@ HttpConfig::reconfigure()
   params->oride.proxy_response_server_string = xstrdup(m_master.oride.proxy_response_server_string);
   params->oride.proxy_response_server_string_len = params->oride.proxy_response_server_string ?
     strlen(params->oride.proxy_response_server_string) : 0;
-  params->oride.proxy_response_server_enabled = INT_TO_BOOL(m_master.oride.proxy_response_server_enabled);
+  params->oride.proxy_response_server_enabled = m_master.oride.proxy_response_server_enabled;
 
   params->oride.insert_squid_x_forwarded_for = INT_TO_BOOL(m_master.oride.insert_squid_x_forwarded_for);
   params->insert_age_in_response = INT_TO_BOOL(m_master.insert_age_in_response);
