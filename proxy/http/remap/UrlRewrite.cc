@@ -734,19 +734,23 @@ UrlRewrite::_doRemap(UrlMappingContainer &mapping_container, URL *request_url)
   URL *map_to = mapping_container.getToURL();
   const char *toHost;
   const char *toPath;
+  const char *toScheme;
   int toPathLen;
   int toHostLen;
+  int toSchemeLen;
 
   requestPath = request_url->path_get(&requestPathLen);
   map_from->path_get(&fromPathLen);
 
   toHost = map_to->host_get(&toHostLen);
   toPath = map_to->path_get(&toPathLen);
+  toScheme = map_to->scheme_get(&toSchemeLen);
 
   Debug("url_rewrite", "_doRemap(): Remapping rule id: %d matched", mapPtr->map_id);
 
   request_url->host_set(toHost, toHostLen);
   request_url->port_set(map_to->port_get_raw());
+  request_url->scheme_set(toScheme, toSchemeLen);
 
   // Should be +3, little extra padding won't hurt. Use the stack allocation
   // for better performance (bummer that arrays of variable length is not supported
