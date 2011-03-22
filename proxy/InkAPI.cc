@@ -7461,7 +7461,6 @@ TSHttpTxnConfigStringGet(TSHttpTxn txnp, TSOverridableConfigKey conf, const char
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_null_ptr((void**)value) == TS_SUCCESS);
-  sdk_assert(sdk_sanity_check_null_ptr((void*)*value) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_null_ptr((void*)length) == TS_SUCCESS);
 
   HttpSM *sm = (HttpSM*) txnp;
