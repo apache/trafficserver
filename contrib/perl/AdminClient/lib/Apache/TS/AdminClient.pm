@@ -27,169 +27,190 @@ use IO::Socket::UNIX;
 use IO::Select;
 our $VERSION = "0.01";
 
-use constant { TS_FILE_READ => 0,
-               TS_FILE_WRITE => 1,
-               TS_RECORD_SET => 2,
-               TS_RECORD_GET => 3,
-               TS_PROXY_STATE_GET => 4,
-               TS_PROXY_STATE_SET => 5,
-               TS_RECONFIGURE => 6,
-               TS_RESTART => 7,
-               TS_BOUNCE => 8,
-               TS_EVENT_RESOLVE => 9,
-               TS_EVENT_GET_MLT => 10,
-               TS_EVENT_ACTIVE => 11,
-               TS_EVENT_REG_CALLBACK => 12,
-               TS_EVENT_UNREG_CALLBACK => 13,
-               TS_EVENT_NOTIFY => 14,
-               TS_SNAPSHOT_TAKE => 15,
-               TS_SNAPSHOT_RESTORE => 16,
-               TS_SNAPSHOT_REMOVE => 17,
-               TS_SNAPSHOT_GET_MLT => 18,
-               TS_DIAGS => 19,
-               TS_STATS_RESET => 20,
-               TS_ENCRYPT_TO_FILE => 21
+use constant {
+    TS_FILE_READ            => 0,
+    TS_FILE_WRITE           => 1,
+    TS_RECORD_SET           => 2,
+    TS_RECORD_GET           => 3,
+    TS_PROXY_STATE_GET      => 4,
+    TS_PROXY_STATE_SET      => 5,
+    TS_RECONFIGURE          => 6,
+    TS_RESTART              => 7,
+    TS_BOUNCE               => 8,
+    TS_EVENT_RESOLVE        => 9,
+    TS_EVENT_GET_MLT        => 10,
+    TS_EVENT_ACTIVE         => 11,
+    TS_EVENT_REG_CALLBACK   => 12,
+    TS_EVENT_UNREG_CALLBACK => 13,
+    TS_EVENT_NOTIFY         => 14,
+    TS_SNAPSHOT_TAKE        => 15,
+    TS_SNAPSHOT_RESTORE     => 16,
+    TS_SNAPSHOT_REMOVE      => 17,
+    TS_SNAPSHOT_GET_MLT     => 18,
+    TS_DIAGS                => 19,
+    TS_STATS_RESET          => 20,
+    TS_ENCRYPT_TO_FILE      => 21
 };
 
 # We treat both REC_INT and REC_COUNTER the same here
-use constant { TS_REC_INT => 0,
-               TS_REC_COUNTER => 0,
-               TS_REC_FLOAT => 2,
-               TS_REC_STRING => 3
+use constant {
+    TS_REC_INT     => 0,
+    TS_REC_COUNTER => 0,
+    TS_REC_FLOAT   => 2,
+    TS_REC_STRING  => 3
 };
 
-use constant { TS_ERR_OKAY => 0,
-               TS_ERR_READ_FILE => 1,
-               TS_ERR_WRITE_FILE => 2,
-               TS_ERR_PARSE_CONFIG_RULE => 3,
-               TS_ERR_INVALID_CONFIG_RULE => 4,
-               TS_ERR_NET_ESTABLISH => 5,
-               TS_ERR_NET_READ => 6,
-               TS_ERR_NET_WRITE => 7,
-               TS_ERR_NET_EOF => 8,
-               TS_ERR_NET_TIMEOUT => 9,
-               TS_ERR_SYS_CALL => 10,
-               TS_ERR_PARAMS => 11,
-               TS_ERR_FAIL => 12
+use constant {
+    TS_ERR_OKAY                => 0,
+    TS_ERR_READ_FILE           => 1,
+    TS_ERR_WRITE_FILE          => 2,
+    TS_ERR_PARSE_CONFIG_RULE   => 3,
+    TS_ERR_INVALID_CONFIG_RULE => 4,
+    TS_ERR_NET_ESTABLISH       => 5,
+    TS_ERR_NET_READ            => 6,
+    TS_ERR_NET_WRITE           => 7,
+    TS_ERR_NET_EOF             => 8,
+    TS_ERR_NET_TIMEOUT         => 9,
+    TS_ERR_SYS_CALL            => 10,
+    TS_ERR_PARAMS              => 11,
+    TS_ERR_FAIL                => 12
 };
-
 
 #
 # Constructor
 #
 sub new {
-  my $class = shift @_;
-  my $self = {};
-  my %args = @_;
+    my ( $class, %args ) = @_;
+    my $self = {};
 
-  $self->{_socket_path} = $args{socket_path} || "/usr/local/var/trafficserver/mgmtapisocket"; # TODO: fix on install
-  $self->{_socket} = undef;
+    $self->{_socket_path} = $args{socket_path} || _find_socket();
+    $self->{_socket} = undef;
+    croak
+"Unable to locate socket, please pass socket_pass with the management api socket location to Apache::TS::AdminClient"
+      if ( !$self->{_socket_path} );
+    if (   ( !-r $self->{_socket_path} )
+        or ( !-w $self->{_socket_path} )
+        or ( !-S $self->{_socket_path} ) )
+    {
+        croak "Unable to open $self->{_socket_path} for reads or writes";
 
-  if ( (! -r $self->{_socket_path}) or (! -w $self->{_socket_path}) or (! -S $self->{_socket_path}) ) {
-    croak "Unable to open $self->{_socket_path} for reads or writes";
-    # see croak in "sub open_socket()" for other source of carp errors
-  }
+        # see croak in "sub open_socket()" for other source of carp errors
+    }
 
-  $self->{_select} = IO::Select->new();
-  bless $self, $class;
+    $self->{_select} = IO::Select->new();
+    bless $self, $class;
 
-  $self->open_socket();
+    $self->open_socket();
 
-  return $self;
+    return $self;
+}
+
+sub _find_socket {
+    my @sockets_def = (
+        '/usr/local/var/trafficserver/mgmtapisocket',
+        '/var/trafficserver/mgmtapisocket'
+    );
+    foreach my $socket (@sockets_def) {
+        return $socket if ( -S $socket );
+    }
+    return undef;
 }
 
 #
 # Destructor
 #
 sub DESTROY {
-  my $self = shift;
-  return $self->close_socket();
+    my $self = shift;
+    return $self->close_socket();
 }
-
 
 #
 # Open the socket (Unix domain)
 #
 sub open_socket {
-  my $self = shift;
-  my %args = @_;
+    my $self = shift;
+    my %args = @_;
 
-  if (defined($self->{_socket})) {
-    if ($args{force} || $args{reopen}) {
-      $self->close_socket();
-    } else {
-      return undef ;
+    if ( defined( $self->{_socket} ) ) {
+        if ( $args{force} || $args{reopen} ) {
+            $self->close_socket();
+        }
+        else {
+            return undef;
+        }
     }
-  }
 
+    $self->{_socket} = IO::Socket::UNIX->new(
+        Type => SOCK_STREAM,
+        Peer => $self->{_socket_path}
+    ) or croak("Error opening socket - $@");
 
-  $self->{_socket} = IO::Socket::UNIX->new(Type => SOCK_STREAM, Peer => $self->{_socket_path}) or croak ("Error opening socket - $@");
+    return undef unless defined( $self->{_socket} );
+    $self->{_select}->add( $self->{_socket} );
 
-  return undef unless defined($self->{_socket});
-  $self->{_select}->add($self->{_socket});
-
-  return $self;
+    return $self;
 }
 
 sub close_socket {
-  my $self = shift;
+    my $self = shift;
 
-  # if socket doesn't exist, return as there's nothing to do.
-  return unless defined($self->{_socket});
+    # if socket doesn't exist, return as there's nothing to do.
+    return unless defined( $self->{_socket} );
 
-  # gracefully close socket.
-  $self->{_select}->remove($self->{_socket});
-  $self->{_socket}->close();
-  $self->{_socket} = undef;
+    # gracefully close socket.
+    $self->{_select}->remove( $self->{_socket} );
+    $self->{_socket}->close();
+    $self->{_socket} = undef;
 
-  return $self; 
+    return $self;
 }
-
 
 #
 # Get (read) a stat out of the local manager. Note that the assumption is
 # that you are calling this with an existing stats "name".
 #
 sub get_stat {
-  my $self = shift;
-  my $stat = shift;
-  my $res = "";
-  my $max_read_attempts = 25;
+    my ( $self, $stat ) = @_;
+    my $res               = "";
+    my $max_read_attempts = 25;
 
-  return undef unless defined($self->{_socket});
-  return undef unless $self->{_select}->can_write(10);
+    return undef unless defined( $self->{_socket} );
+    return undef unless $self->{_select}->can_write(10);
 
-  # This is a total hack for now, we need to wrap this into the proper mgmt API library.
-  $self->{_socket}->print(pack("sla*", TS_RECORD_GET, length($stat)), $stat);
-  
-  while ($res eq "") {
-    return undef if ($max_read_attempts-- < 0);
-    return undef unless $self->{_select}->can_read(10);
+# This is a total hack for now, we need to wrap this into the proper mgmt API library.
+    $self->{_socket}
+      ->print( pack( "sla*", TS_RECORD_GET, length($stat) ), $stat );
 
-    my $status = $self->{_socket}->sysread($res, 1024);
-    return undef unless defined($status) || ($status == 0);
-    
-  }
-  my @resp = unpack("sls", $res);
-  return undef unless (scalar(@resp) == 3);
+    while ( $res eq "" ) {
+        return undef if ( $max_read_attempts-- < 0 );
+        return undef unless $self->{_select}->can_read(10);
 
-  if ($resp[0] == TS_ERR_OKAY) {
-    if ($resp[2] < TS_REC_FLOAT) {
-      @resp = unpack("slsl", $res);
-      return undef unless (scalar(@resp) == 4);
-      return int($resp[3]);
-    } elsif ($resp[2] == TS_REC_FLOAT) {
-      @resp = unpack("slsf", $res);
-      return undef unless (scalar(@resp) == 4);
-      return $resp[3];
-    } elsif ($resp[2] == TS_REC_STRING) {
-      @resp = unpack("slsa*", $res);
-      return undef unless (scalar(@resp) == 4);
-      return float($resp[3]);
+        my $status = $self->{_socket}->sysread( $res, 1024 );
+        return undef unless defined($status) || ( $status == 0 );
+
     }
-  }
-    
-  return undef;
+    my @resp = unpack( "sls", $res );
+    return undef unless ( scalar(@resp) == 3 );
+
+    if ( $resp[0] == TS_ERR_OKAY ) {
+        if ( $resp[2] < TS_REC_FLOAT ) {
+            @resp = unpack( "slsl", $res );
+            return undef unless ( scalar(@resp) == 4 );
+            return int( $resp[3] );
+        }
+        elsif ( $resp[2] == TS_REC_FLOAT ) {
+            @resp = unpack( "slsf", $res );
+            return undef unless ( scalar(@resp) == 4 );
+            return $resp[3];
+        }
+        elsif ( $resp[2] == TS_REC_STRING ) {
+            @resp = unpack( "slsa*", $res );
+            return undef unless ( scalar(@resp) == 4 );
+            return $resp[3];
+        }
+    }
+
+    return undef;
 }
 
 1;
