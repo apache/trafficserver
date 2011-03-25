@@ -1291,10 +1291,8 @@ UrlRewrite::BuildTable()
             char refinfo_error_buf[1024];
             bool refinfo_error = false;
 
-            ri =
-              NEW(new
-                  referer_info((char *) bti.paramv[j - 1], &refinfo_error, refinfo_error_buf,
-                               sizeof(refinfo_error_buf)));
+            ri = NEW(new referer_info((char *) bti.paramv[j - 1], &refinfo_error, refinfo_error_buf,
+                                      sizeof(refinfo_error_buf)));
             if (refinfo_error) {
               snprintf(errBuf, sizeof(errBuf), "%s Incorrect Referer regular expression \"%s\" at line %d - %s",
                            modulePrefix, bti.paramv[j - 1], cln + 1, refinfo_error_buf);

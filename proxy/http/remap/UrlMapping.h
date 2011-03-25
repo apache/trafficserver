@@ -105,13 +105,13 @@ public:
   bool negative_referer;
   bool wildcard_from_scheme;    // from url is '/foo', only http or https for now
   char *tag;                    // tag
-  char *filter_redirect_url;    // redirect url
+  char *filter_redirect_url;    // redirect url when referer filtering enabled
   unsigned int map_id;
   referer_info *referer_list;
   redirect_tag_str *redir_chunk_list;
   acl_filter_rule *filter;      // acl filtering (list of rules)
   unsigned int _plugin_count;
-  LINK(url_mapping, link);
+  LINK(url_mapping, link); // For use with the Queue linked list
 
   int getRank() const { return _rank; };
 
@@ -128,13 +128,9 @@ private:
 
 class UrlMappingContainer {
 public:
-  UrlMappingContainer()
-    : _mapping(NULL), _toURLPtr(NULL), _heap(NULL)
+ UrlMappingContainer()
+   : _mapping(NULL), _toURLPtr(NULL), _heap(NULL)
     { }
-
-  UrlMappingContainer(url_mapping *m)
-    : _heap(NULL)
-    { set(m); }
 
   UrlMappingContainer(HdrHeap *heap)
     : _mapping(NULL), _toURLPtr(NULL), _heap(heap)
