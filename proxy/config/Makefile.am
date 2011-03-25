@@ -18,40 +18,47 @@
 
 SUBDIRS = body_factory
 EXTRA_DIST = \
-  records.config.in \
-  storage.config.in
+  records.config.default.in \
+  storage.config.default.in
 
 sysconfdir = $(pkgsysconfdir)
 nodist_sysconf_DATA = \
-  records.config \
-  storage.config
+  records.config.default \
+  storage.config.default
 
 webui_conf = \
-  admin_access.config
+  admin_access.config.default
 
 dist_sysconf_DATA =	\
-  ae_ua.config \
-  cache.config \
-  cluster.config \
-  congestion.config \
-  hosting.config \
-  icp.config \
-  ip_allow.config \
-  log_hosts.config \
-  logs_xml.config \
-  mgmt_allow.config \
-  mgr.cnf \
-  parent.config \
-  partition.config \
-  plugin.config \
-  plugin.db \
-  remap.config \
-  socks.config \
-  splitdns.config \
-  ssl_multicert.config \
-  stats.config.xml \
-  update.config \
-  vaddrs.config
+  ae_ua.config.default \
+  cache.config.default \
+  cluster.config.default \
+  congestion.config.default \
+  hosting.config.default \
+  icp.config.default \
+  ip_allow.config.default \
+  log_hosts.config.default \
+  logs_xml.config.default \
+  mgmt_allow.config.default \
+  mgr.cnf.default \
+  parent.config.default \
+  partition.config.default \
+  plugin.config.default \
+  plugin.db.default \
+  remap.config.default \
+  socks.config.default \
+  splitdns.config.default \
+  ssl_multicert.config.default \
+  stats.config.xml.default \
+  update.config.default \
+  vaddrs.config.default
+
+install-exec-hook:
+	for dfltcfgfile in $(dist_sysconf_DATA) $(nodist_sysconf_DATA) ; \
+	do \
+		cfgfile=`echo $$dfltcfgfile | sed 's/\.default$$//'` ; \
+		test -f $(sysconfdir)/$$cfgfile || mv $(sysconfdir)/$$dfltcfgfile $(sysconfdir)/$$cfgfile ; \
+	done
 
 if BUILD_WEBUI
   dist_sysconf_DATA += $(webui_conf)
