@@ -54,7 +54,7 @@
 #define AIO_NOT_IN_PROGRESS             0
 #define AIO_AGG_WRITE_IN_PROGRESS       -1
 #define AUTO_SIZE_RAM_CACHE             -1      // 1-1 with directory size
-#define DEFAULT_TARGET_FRAGMENT_SIZE    (65536 - sizeofDoc) // 64k
+#define DEFAULT_TARGET_FRAGMENT_SIZE    (1048576 - sizeofDoc) // 1MB
 
 
 #define dir_offset_evac_bucket(_o) \
