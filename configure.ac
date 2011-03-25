@@ -754,12 +754,12 @@ SC_LOAD_TCLCONFIG
 # expect tclConfig.sh to populate TCL_LIB_FLAG and TCL_INCLUDE_SPEC
 case $host_os in
   darwin*)
-    TCL_LIB_FLAG="-ltcl" # OSX fails to populate this variable
+    TCL_LIB_SPEC="-ltcl" # OSX fails to populate this variable
     ;;
   *)
    ;;
 esac
-AC_SUBST([LIBTCL],[$TCL_LIB_FLAG])
+AC_SUBST([LIBTCL],[$TCL_LIB_SPEC])
 
 case $host_os in
   freebsd*)

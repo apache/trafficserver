@@ -45,8 +45,8 @@ lib/ts/test_List
 lib/ts/test_arena
 lib/ts/test_atomic
 lib/ts/test_freelist
-proxy/config/records.config
-proxy/config/storage.config
+proxy/config/records.config.default
+proxy/config/storage.config.default
 
 mgmt/api/remote/traffic_api_cli_remote
 mgmt/tools/traffic_mcast_snoop
