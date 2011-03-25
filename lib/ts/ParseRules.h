@@ -871,13 +871,20 @@ ink_atoi(const char *str, int len)
   int num = 0;
   int negative = 0;
 
-  while (*str && ParseRules::is_wslfcr(*str) && len-- > 0)
+  while (len > 0 && *str && ParseRules::is_wslfcr(*str)) {
     str += 1;
+    len--;
+  }
 
-  if (unlikely(str[0] == '0' && str[1] == 'x')) {
+  if (len <= 1)
+    return 0;
+
+  if (unlikely(str[0] == '0' && len > 1 && str[1] == 'x')) {
     str += 2;
-    while (*str && ParseRules::is_hex(*str) && len-- > 0)
+    while (len > 0 && *str && ParseRules::is_hex(*str)) {
       num = (num << 4) + ink_get_hex(*str++);
+      len--;
+    }
   } else {
     if (unlikely(*str == '-')) {
       negative = 1;
@@ -888,10 +895,12 @@ ink_atoi(const char *str, int len)
        NOTE: we first compute the value as negative then correct the
        sign back to positive. This enables us to correctly parse MININT.
      */
-    while (*str && ParseRules::is_digit(*str) && len-- > 0)
+    while (len > 0 && *str && ParseRules::is_digit(*str)) {
       num = (num * 10) - (*str++ - '0');
+      len--;
+    }
 #if USE_SI_MULTILIERS
-    if (*str && len) {
+    if (len > 0 && *str) {
       if (*str == 'K')
         num = num * (1 << 10);
       else if (*str == 'M')

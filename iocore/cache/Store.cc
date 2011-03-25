@@ -652,7 +652,7 @@ Lfail:
 const char *
 Span::init(char *filename, int64_t size)
 {
-  int devnum = 0, fd, arg;
+  int devnum = 0, fd, arg = 0;
   int ret = 0, is_disk = 0;
   unsigned int heads, sectors, cylinders, adjusted_sec;
 
