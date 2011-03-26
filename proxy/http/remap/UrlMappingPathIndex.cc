@@ -20,8 +20,14 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 */
-#include "ink_config.h"
 #include "UrlMappingPathIndex.h"
+
+UrlMappingPathIndex::~UrlMappingPathIndex()
+{
+  for (UrlMappingGroup::iterator group_iter = m_tries.begin(); group_iter != m_tries.end(); ++group_iter)
+    delete group_iter->second; // Delete the Trie
+  m_tries.clear();
+}
 
 bool
 UrlMappingPathIndex::Insert(url_mapping *mapping)
@@ -79,20 +85,8 @@ lFail:
 }
 
 void
-UrlMappingPathIndex::GetMappings(MappingList &mapping_list) const
+UrlMappingPathIndex::Print()
 {
-  UrlMappingGroup::const_iterator group_iter;
-
-  for (group_iter = m_tries.begin(); group_iter != m_tries.end(); ++group_iter) {
-    mapping_list.append(group_iter->second->GetValues());
-  }
-}
-
-void
-UrlMappingPathIndex::Clear()
-{
-  for (UrlMappingGroup::iterator group_iter = m_tries.begin(); group_iter != m_tries.end(); ++group_iter) {
-    delete group_iter->second;
-  }
-  m_tries.clear();
+  for (UrlMappingGroup::iterator group_iter = m_tries.begin(); group_iter != m_tries.end(); ++group_iter)
+    group_iter->second->Print();
 }

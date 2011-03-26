@@ -21,7 +21,6 @@
     limitations under the License.
 */
 #ifndef _URL_MAPPING_PATH_INDEX_H
-
 #define _URL_MAPPING_PATH_INDEX_H
 
 #include <map>
@@ -36,19 +35,10 @@ public:
   UrlMappingPathIndex()
   { }
 
-  virtual ~UrlMappingPathIndex()
-  {
-    Clear();
-  }
-
+  virtual ~UrlMappingPathIndex();
   bool Insert(url_mapping *mapping);
-  url_mapping *Search(URL *request_url, int request_port, bool normal_search = true) const;
-
-  typedef Queue<url_mapping> MappingList;
-
-  void GetMappings(MappingList &mapping_list) const;
-  void Clear();
-
+  url_mapping* Search(URL *request_url, int request_port, bool normal_search = true) const;
+  void Print();
 
 private:
   typedef Trie<url_mapping> UrlMappingTrie;
@@ -59,7 +49,7 @@ private:
 
     UrlMappingTrieKey(int idx, int p)
       : scheme_wks_idx(idx), port(p)
-    { };
+    { }
     
     bool operator <(const UrlMappingTrieKey &rhs) const {
       if (scheme_wks_idx == rhs.scheme_wks_idx) {
@@ -92,7 +82,6 @@ private:
     }
     return 0;
   }
-
 };
 
 #endif // _URL_MAPPING_PATH_INDEX_H

@@ -47,9 +47,7 @@ public:
   // will return false if not found; else value_ptr will point to found value
   T* Search(const char *key, int key_len = -1);
   void Clear();
-
-  typedef Queue<T> ValuePointerList;
-  const ValuePointerList &GetValues() const { return m_value_list; }
+  void Print();
 
   virtual ~Trie() { Clear(); }
 
@@ -78,7 +76,7 @@ private:
   };
 
   Node m_root;
-  ValuePointerList m_value_list;
+  Queue<T> m_value_list;
 
   void _CheckArgs(const char *key, int &key_len) const;
   void _Clear(Node *node);
@@ -208,9 +206,20 @@ template<typename T>
 void
 Trie<T>::Clear()
 {
+  forl_LL(T, iter, m_value_list)
+    delete iter;
+  m_value_list.clear();
+
   _Clear(&m_root);
   m_root.Clear();
-  m_value_list.clear();
+}
+
+template<typename T>
+void
+Trie<T>::Print() {
+  // The class we contain must provide a ::Print() method.
+  forl_LL(T, iter, m_value_list)
+    iter->Print();
 }
 
 template<typename T>

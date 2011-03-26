@@ -95,9 +95,11 @@ public:
 
   void* get_instance(unsigned int index) const { return _instance_data[index]; };
   void delete_instance(unsigned int index);
+  void Print();
 
   int from_path_len;
   URL fromURL;
+  URL toUrl; // Default TO-URL (from remap.config)
   bool homePageRedirect;
   bool unique;                  // INKqa11970 - unique mapping
   bool default_redirect_url;
@@ -111,7 +113,7 @@ public:
   redirect_tag_str *redir_chunk_list;
   acl_filter_rule *filter;      // acl filtering (list of rules)
   unsigned int _plugin_count;
-  LINK(url_mapping, link); // For use with the Queue linked list
+  LINK(url_mapping, link); // For use with the main Queue linked list holding all the mapping
 
   int getRank() const { return _rank; };
 
@@ -119,10 +121,6 @@ private:
   remap_plugin_info* _plugin_list[MAX_REMAP_PLUGIN_CHAIN];
   void* _instance_data[MAX_REMAP_PLUGIN_CHAIN];
   int _rank;
-  URL _default_to_url;
-
-  friend class UrlRewrite;
-  friend class UrlMappingContainer;
 };
 
 
@@ -145,7 +143,7 @@ public:
   void set(url_mapping *m) { 
     deleteToURL();
     _mapping = m;
-    _toURLPtr = m ? &(m->_default_to_url) : NULL;
+    _toURLPtr = m ? &(m->toUrl) : NULL;
   }
 
   void set(HdrHeap *heap) {
