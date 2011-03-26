@@ -1,6 +1,30 @@
                                                          -*- coding: utf-8 -*-
 
 Changes with Apache Traffic Server 2.1.8
+  *) [TS-562] Fix TCL linking to honor custom library dirs.
+   Author: Eric Connell.
+
+  *) [TS-624] make install should not overwrite etc/trafficserver/.
+   Author: Eric Connell.
+
+  *) [TS-465] Allow for existing Server: string to not be overwritten.
+   This adds a new semantic for the value "2" to this option.
+
+  *) [TS-633] Fix reverse mapping with different schemes.
+   Author: Andreas Hartke.
+
+  *) [TS-715] Fixes and cleanup for Perl client. Author: Billy Vierra.
+
+  *) TS-550 Remove an unused / unsupported debug tool. Also update the
+   remap code to use our standard linked list (Queue in this case).
+
+  *) [TS-704] Link traffic_server dynamically to make distros happy,
+  since --disable-static will work.
+
+  *) [TS-545] Clean out more cruft from MIXT legacy.
+
+  *) [TS-713] Honor the offset within do_io_pread.
+
   *) [TS-712] Fix compile problems with clang / llvm
 
   *) [TS-545] parent.config (and perhaps other configs) have an unused
