@@ -197,7 +197,7 @@ preprocess_msg(struct SocketInfo sock_info, OpType * op_t, char **req)
   *op_t = (OpType) op;          // convert to proper format
 
   // check if invalid op type
-  if ((int) op >= TOTAL_NUM_OP_TYPES) {
+  if ((int) op > UNDEFINED_OP) {
     mgmt_elog("[preprocess_msg] ERROR: %d is invalid op type\n", op);
 
     // need to flush the invalid message from the socket
