@@ -95,6 +95,7 @@ mgmt/api/remote/traffic_api_cli_remote
 mgmt/cli/traffic_line
 mgmt/cli/traffic_shell
 mgmt/traffic_manager
+proxy/traffic_server
 proxy/traffic_logcat
 proxy/traffic_logstats
 proxy/traffic_sac
