@@ -34,7 +34,7 @@
 #define _CONTROL_BASE_H_
 
 #include "libts.h"
-#include <vector>
+
 class HttpRequestData;
 class Tokenizer;
 struct matcher_line;
@@ -86,7 +86,7 @@ protected:
   /// @internal Ugly but it's the only place external access is needed.
   char const* getSchemeModText() const;
 private:
-  typedef std::vector<Modifier*> Array;
+  typedef Vec<Modifier*> Array;
   Array _mods;
   const char *ProcessSrcIp(char *val, void **opaque_ptr);
   const char *ProcessTimeOfDay(char *val, void **opaque_ptr);

@@ -30,7 +30,6 @@
  ****************************************************************************/
 #include "HttpHeaderTokenizer.h"
 #include "ink_assert.h"
-#include <fstream.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>

@@ -23,6 +23,8 @@
 #ifndef _URL_MAPPING_PATH_INDEX_H
 #define _URL_MAPPING_PATH_INDEX_H
 
+#include "libts.h"
+#undef std  // FIXME: remove dependancy on the STL
 #include <map>
 
 #include "URL.h"

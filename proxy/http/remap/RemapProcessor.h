@@ -31,6 +31,7 @@
 #include "RemapPlugins.h"
 #include "RemapPluginInfo.h"
 #include "ReverseProxy.h"
+#undef std  // FIXME: remove dependency on the STL
 #include <map>
 
 #define EVENT_REMAP_START             (REMAP_EVENT_EVENTS_START+0)

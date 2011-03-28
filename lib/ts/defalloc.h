@@ -1,6 +1,6 @@
 /** @file
 
-  A brief file description
+  Default allocator: malloc/free
 
   @section license License
 
@@ -20,9 +20,13 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
+#ifndef _defalloc_H_
+#define  _defalloc_H_
 
-#include "HttpConnectionCount.h"
+class DefaultAlloc { public:
+  static void *alloc(int s) { return ::malloc(s); }
+  static void free(void *p) { ::free(p); }
+};
 
+#endif
 
-ConnectionCount ConnectionCount::_connectionCount;
-ink_mutex ConnectionCount::_mutex;

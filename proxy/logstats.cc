@@ -21,6 +21,8 @@
   limitations under the License.
  */
 
+#include "libts.h"
+#undef std  // FIXME: remove dependency on the STL
 #include "ink_config.h"
 #include "ink_file.h"
 #include "ink_unused.h"

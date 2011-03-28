@@ -17,7 +17,7 @@
 #  limitations under the License.
 
 noinst_PROGRAMS = mkdfa CompileParseRules
-check_PROGRAMS = test_atomic test_freelist test_arena test_List
+check_PROGRAMS = test_atomic test_freelist test_arena test_List test_Map test_Vec
 TESTS = $(check_PROGRAMS)
 
 lib_LTLIBRARIES = libtsutil.la
@@ -39,6 +39,7 @@ libtsutil_la_SOURCES = \
   DynArray.h \
   HostLookup.cc \
   HostLookup.h \
+  defalloc.h \
   ink_aiocb.h \
   ink_align.h \
   ink_apidefs.h \
@@ -143,6 +144,9 @@ libtsutil_la_SOURCES = \
   TextBuffer.h \
   Tokenizer.cc \
   Tokenizer.h \
+  Vec.h \
+  Vec.cc \
+  Map.h \
   Version.cc
 
 # Special hacks to generate the parser rules
@@ -166,6 +170,10 @@ test_arena_LDADD = libtsutil.la @LIBTHREAD@ @LIBTCL@ @LIBICONV@ @LIBEXECINFO@
 test_arena_LDFLAGS = @EXTRA_CXX_LDFLAGS@
 
 test_List_SOURCES = test_List.cc
+test_Map_SOURCES = test_Map.cc
+test_Map_LDADD = libtsutil.la
+test_Vec_SOURCES = test_Vec.cc
+test_Vec_LDADD = libtsutil.la
 
 CompileParseRules_SOURCES = CompileParseRules.cc
 
