@@ -187,7 +187,7 @@ writeHostingConfigTable(WebHttpContext * whc)
 {
   TSHostingEle *ele;
   char pdType[MAX_RULE_PART_SIZE];
-  char partitions[MAX_RULE_PART_SIZE];
+  char volumes[MAX_RULE_PART_SIZE];
   int count;
 
   textBuffer *output = whc->response_bdy;
@@ -213,7 +213,7 @@ writeHostingConfigTable(WebHttpContext * whc)
   HtmlRndrTdClose(output);
 
   HtmlRndrTdOpen(output, HTML_CSS_CONFIGURE_LABEL_SMALL, HTML_ALIGN_CENTER, HTML_VALIGN_NONE, NULL, NULL, 0);
-  HtmlRndrText(output, whc->lang_dict_ht, HTML_ID_CFG_EDIT_PARTITIONS);
+  HtmlRndrText(output, whc->lang_dict_ht, HTML_ID_CFG_EDIT_VOLUMES);
   HtmlRndrTdClose(output);
 
   count = TSCfgContextGetCount(ctx);
@@ -221,8 +221,8 @@ writeHostingConfigTable(WebHttpContext * whc)
     ele = (TSHostingEle *) TSCfgContextGetEleAt(ctx, i);
 
     memset(pdType, 0, MAX_RULE_PART_SIZE);
-    memset(partitions, 0, MAX_RULE_PART_SIZE);
-    if (convert_hosting_ele_to_html_format(ele, pdType, partitions) != WEB_HTTP_ERR_OKAY) {
+    memset(volumes, 0, MAX_RULE_PART_SIZE);
+    if (convert_hosting_ele_to_html_format(ele, pdType, volumes) != WEB_HTTP_ERR_OKAY) {
       Debug("config", "[writeHostingConfigTable] invalid Ele, can't format - SKIP");
       continue;                 // invalid ele, so skip to next one
     }
@@ -241,8 +241,8 @@ writeHostingConfigTable(WebHttpContext * whc)
 
     HtmlRndrTdOpen(output, HTML_CSS_BODY_TEXT, HTML_ALIGN_LEFT, HTML_VALIGN_TOP, NULL, NULL, 0);
     HtmlRndrSpace(output, 2);
-    if (strlen(partitions) > 0)
-      output->copyFrom(partitions, strlen(partitions));
+    if (strlen(volumes) > 0)
+      output->copyFrom(volumes, strlen(volumes));
     HtmlRndrTdClose(output);
 
     HtmlRndrTrClose(output);
@@ -693,10 +693,10 @@ writeParentConfigTable(WebHttpContext * whc)
 // writePartionConfigTable
 //-------------------------------------------------------------------------
 int
-writePartitionConfigTable(WebHttpContext * whc)
+writeVolumeConfigTable(WebHttpContext * whc)
 {
   // now write each rule as a row in the table
-  TSPartitionEle *ele;
+  TSVolumeEle *ele;
   char part_num[MAX_RULE_PART_SIZE];
   char scheme[MAX_RULE_PART_SIZE];
   char size[MAX_RULE_PART_SIZE];
@@ -704,10 +704,10 @@ writePartitionConfigTable(WebHttpContext * whc)
   int count;
 
   textBuffer *output = whc->response_bdy;
-  TSCfgContext ctx = TSCfgContextCreate(TS_FNAME_PARTITION);
+  TSCfgContext ctx = TSCfgContextCreate(TS_FNAME_VOLUME);
   TSError err = TSCfgContextGet(ctx);
   if (err != TS_ERR_OKAY) {
-    Debug("config", "[writePartitionConfigTable] Error: TSCfgContextGet failed");
+    Debug("config", "[writeVolumeConfigTable] Error: TSCfgContextGet failed");
     TSCfgContextDestroy(ctx);
     return WEB_HTTP_ERR_FAIL;
   }
@@ -718,7 +718,7 @@ writePartitionConfigTable(WebHttpContext * whc)
   HtmlRndrTrOpen(output, HTML_CSS_NONE, HTML_ALIGN_NONE);
 
   HtmlRndrTdOpen(output, HTML_CSS_CONFIGURE_LABEL_SMALL, HTML_ALIGN_CENTER, HTML_VALIGN_NONE, NULL, NULL, 0);
-  HtmlRndrText(output, whc->lang_dict_ht, HTML_ID_CFG_EDIT_PARTITION_NUM);
+  HtmlRndrText(output, whc->lang_dict_ht, HTML_ID_CFG_EDIT_VOLUME_NUM);
   HtmlRndrTdClose(output);
 
   HtmlRndrTdOpen(output, HTML_CSS_CONFIGURE_LABEL_SMALL, HTML_ALIGN_CENTER, HTML_VALIGN_NONE, NULL, NULL, 0);
@@ -731,14 +731,14 @@ writePartitionConfigTable(WebHttpContext * whc)
 
   count = TSCfgContextGetCount(ctx);
   for (int i = 0; i < count; i++) {
-    ele = (TSPartitionEle *) TSCfgContextGetEleAt(ctx, i);
+    ele = (TSVolumeEle *) TSCfgContextGetEleAt(ctx, i);
 
     memset(part_num, 0, MAX_RULE_PART_SIZE);
     memset(scheme, 0, MAX_RULE_PART_SIZE);
     memset(size, 0, MAX_RULE_PART_SIZE);
     memset(size_fmt, 0, MAX_RULE_PART_SIZE);
-    if (convert_partition_ele_to_html_format(ele, part_num, scheme, size, size_fmt) != WEB_HTTP_ERR_OKAY) {
-      Debug("config", "[writePartitionConfigTable] invalid Ele, can't format - SKIP");
+    if (convert_volume_ele_to_html_format(ele, part_num, scheme, size, size_fmt) != WEB_HTTP_ERR_OKAY) {
+      Debug("config", "[writeVolumeConfigTable] invalid Ele, can't format - SKIP");
       continue;                 // invalid ele, so skip to next one
     }
     // write the rule info into the table row
@@ -1469,23 +1469,23 @@ writeHostingRuleList(textBuffer * output)
   char rule[MAX_RULE_SIZE];
 
   char pdType[MAX_RULE_PART_SIZE];
-  char partitions[MAX_RULE_PART_SIZE];
+  char volumes[MAX_RULE_PART_SIZE];
 
   count = TSCfgContextGetCount(ctx);
   for (i = 0; i < count; i++) {
     ele = (TSHostingEle *) TSCfgContextGetEleAt(ctx, i);
 
     memset(pdType, 0, MAX_RULE_PART_SIZE);
-    memset(partitions, 0, MAX_RULE_PART_SIZE);
+    memset(volumes, 0, MAX_RULE_PART_SIZE);
 
-    if (convert_hosting_ele_to_html_format(ele, pdType, partitions) != WEB_HTTP_ERR_OKAY) {
+    if (convert_hosting_ele_to_html_format(ele, pdType, volumes) != WEB_HTTP_ERR_OKAY) {
       Debug("config", "[writeHostingRuleList] invalid Ele, can't format - SKIP");
       continue;                 // invalid ele, so skip to next one
     }
 
     memset(rule, 0, MAX_RULE_SIZE);
     snprintf(rule, MAX_RULE_SIZE, "ruleList[%d] = new Rule(\"%s\", \"%s\", \"%s\");\n",
-                 i, pdType, ele->pd_val, partitions);
+                 i, pdType, ele->pd_val, volumes);
 
     output->copyFrom(rule, strlen(rule));
   }
@@ -1717,19 +1717,19 @@ writeParentRuleList(textBuffer * output)
 }
 
 //-------------------------------------------------------------------------
-// writePartitionRuleList
+// writeVolumeRuleList
 //-------------------------------------------------------------------------
 int
-writePartitionRuleList(textBuffer * output)
+writeVolumeRuleList(textBuffer * output)
 {
-  TSPartitionEle *ele;
+  TSVolumeEle *ele;
   int count, i;
   const char ruleList[] = "var ruleList = new Object();\n";
 
-  TSCfgContext ctx = TSCfgContextCreate(TS_FNAME_PARTITION);
+  TSCfgContext ctx = TSCfgContextCreate(TS_FNAME_VOLUME);
   TSError err = TSCfgContextGet(ctx);
   if (err != TS_ERR_OKAY) {
-    mgmt_log(stderr, "[writePartitionRuleList] Error TSCfgContextGet");
+    mgmt_log(stderr, "[writeVolumeRuleList] Error TSCfgContextGet");
     return WEB_HTTP_ERR_FAIL;
   }
 
@@ -1744,14 +1744,14 @@ writePartitionRuleList(textBuffer * output)
 
   count = TSCfgContextGetCount(ctx);
   for (i = 0; i < count; i++) {
-    ele = (TSPartitionEle *) TSCfgContextGetEleAt(ctx, i);
+    ele = (TSVolumeEle *) TSCfgContextGetEleAt(ctx, i);
 
     memset(part_num, 0, MAX_RULE_PART_SIZE);
     memset(scheme, 0, MAX_RULE_PART_SIZE);
     memset(size, 0, MAX_RULE_PART_SIZE);
     memset(size_fmt, 0, MAX_RULE_PART_SIZE);
-    if (convert_partition_ele_to_html_format(ele, part_num, scheme, size, size_fmt) != WEB_HTTP_ERR_OKAY) {
-      Debug("config", "[writePartitionRuleList] invalid Ele, can't format - SKIP");
+    if (convert_volume_ele_to_html_format(ele, part_num, scheme, size, size_fmt) != WEB_HTTP_ERR_OKAY) {
+      Debug("config", "[writeVolumeRuleList] invalid Ele, can't format - SKIP");
       continue;                 // invalid ele, so skip to next one
     }
 
@@ -2132,7 +2132,7 @@ writeCacheConfigForm(WebHttpContext * whc)
 // Form Contains following:
 //    Primary Dest Type (only domain or hostname)    pd_type
 //    Primary Dest Value                             pd_val
-//    partitions (comma separated list of #'s)       partitions
+//    volumes (comma separated list of #'s)       volumes
 int
 writeHostingConfigForm(WebHttpContext * whc)
 {
@@ -2173,18 +2173,18 @@ writeHostingConfigForm(WebHttpContext * whc)
   HtmlRndrTdClose(output);
   HtmlRndrTrClose(output);
 
-  // Partitions
+  // Volumes
   HtmlRndrTrOpen(output, HTML_CSS_NONE, HTML_ALIGN_NONE);
   HtmlRndrTdOpen(output, HTML_CSS_BODY_TEXT, HTML_ALIGN_RIGHT, HTML_VALIGN_NONE, NULL, NULL, 0);
-  HtmlRndrText(output, whc->lang_dict_ht, HTML_ID_CFG_EDIT_PARTITIONS);
+  HtmlRndrText(output, whc->lang_dict_ht, HTML_ID_CFG_EDIT_VOLUMES);
   HtmlRndrTdClose(output);
   HtmlRndrTdOpen(output, HTML_CSS_BODY_TEXT, HTML_ALIGN_LEFT, HTML_VALIGN_NONE, NULL, NULL, 0);
-  HtmlRndrInput(output, HTML_CSS_BODY_TEXT, "text", "partitions", NULL, NULL, NULL);
+  HtmlRndrInput(output, HTML_CSS_BODY_TEXT, "text", "volumes", NULL, NULL, NULL);
   HtmlRndrTdClose(output);
   HtmlRndrTdOpen(output, HTML_CSS_CONFIGURE_HELP, HTML_ALIGN_LEFT, HTML_VALIGN_TOP, NULL, NULL, 0);
   HtmlRndrUlOpen(output);
   HtmlRndrLi(output);
-  HtmlRndrText(output, whc->lang_dict_ht, HTML_ID_CFG_EDIT_PARTITIONS_HELP);
+  HtmlRndrText(output, whc->lang_dict_ht, HTML_ID_CFG_EDIT_VOLUMES_HELP);
   HtmlRndrUlClose(output);
   HtmlRndrTdClose(output);
   HtmlRndrTrClose(output);
@@ -2556,25 +2556,25 @@ writeParentConfigForm(WebHttpContext * whc)
 }
 
 //-------------------------------------------------------------------------
-// writePartitionConfigForm
+// writeVolumeConfigForm
 //-------------------------------------------------------------------------
 // Form Contains following:
-//    Partition #                   part_num
+//    Volume #                   part_num
 //    Scheme Type (http)       scheme
-//    partition size                size
+//    volume size                size
 //    Size Format (absolute/%)      size_format
 int
-writePartitionConfigForm(WebHttpContext * whc)
+writeVolumeConfigForm(WebHttpContext * whc)
 {
   textBuffer *output = whc->response_bdy;
 
   // write "filename" hidden tag
-  HtmlRndrInput(output, HTML_CSS_NONE, HTML_TYPE_HIDDEN, HTML_CONFIG_FILE_TAG, HTML_FILE_PARTITION_CONFIG, NULL, NULL);
+  HtmlRndrInput(output, HTML_CSS_NONE, HTML_TYPE_HIDDEN, HTML_CONFIG_FILE_TAG, HTML_FILE_VOLUME_CONFIG, NULL, NULL);
 
-  // Partition Number
+  // Volume Number
   HtmlRndrTrOpen(output, HTML_CSS_NONE, HTML_ALIGN_NONE);
   HtmlRndrTdOpen(output, HTML_CSS_BODY_TEXT, HTML_ALIGN_RIGHT, HTML_VALIGN_NONE, NULL, NULL, 0);
-  HtmlRndrText(output, whc->lang_dict_ht, HTML_ID_CFG_EDIT_PARTITION_NUM);
+  HtmlRndrText(output, whc->lang_dict_ht, HTML_ID_CFG_EDIT_VOLUME_NUM);
   HtmlRndrTdClose(output);
   HtmlRndrTdOpen(output, HTML_CSS_BODY_TEXT, HTML_ALIGN_LEFT, HTML_VALIGN_NONE, NULL, NULL, 0);
   HtmlRndrInput(output, HTML_CSS_BODY_TEXT, "text", "part_num", NULL, NULL, NULL);
@@ -2582,7 +2582,7 @@ writePartitionConfigForm(WebHttpContext * whc)
   HtmlRndrTdOpen(output, HTML_CSS_BODY_TEXT, HTML_ALIGN_LEFT, HTML_VALIGN_TOP, NULL, NULL, 0);
   HtmlRndrUlOpen(output);
   HtmlRndrLi(output);
-  HtmlRndrText(output, whc->lang_dict_ht, HTML_ID_CFG_EDIT_PARTITION_NUM_HELP);
+  HtmlRndrText(output, whc->lang_dict_ht, HTML_ID_CFG_EDIT_VOLUME_NUM_HELP);
   HtmlRndrUlClose(output);
   HtmlRndrTdClose(output);
   HtmlRndrTrClose(output);
@@ -2593,7 +2593,7 @@ writePartitionConfigForm(WebHttpContext * whc)
   HtmlRndrText(output, whc->lang_dict_ht, HTML_ID_CFG_EDIT_SCHEME);
   HtmlRndrTdClose(output);
   HtmlRndrTdOpen(output, HTML_CSS_BODY_TEXT, HTML_ALIGN_LEFT, HTML_VALIGN_NONE, NULL, NULL, 0);
-  writeSchemeSelect_partition(output, "scheme");
+  writeSchemeSelect_volume(output, "scheme");
   HtmlRndrTdClose(output);
   HtmlRndrTdOpen(output, HTML_CSS_BODY_TEXT, HTML_ALIGN_LEFT, HTML_VALIGN_TOP, NULL, NULL, 0);
   HtmlRndrUlOpen(output);
@@ -2603,7 +2603,7 @@ writePartitionConfigForm(WebHttpContext * whc)
   HtmlRndrTdClose(output);
   HtmlRndrTrClose(output);
 
-  // partition size
+  // volume size
   HtmlRndrTrOpen(output, HTML_CSS_NONE, HTML_ALIGN_NONE);
   HtmlRndrTdOpen(output, HTML_CSS_BODY_TEXT, HTML_ALIGN_RIGHT, HTML_VALIGN_NONE, NULL, NULL, 0);
   HtmlRndrText(output, whc->lang_dict_ht, HTML_ID_CFG_EDIT_PSIZE);
@@ -2621,7 +2621,7 @@ writePartitionConfigForm(WebHttpContext * whc)
   HtmlRndrTdClose(output);
   HtmlRndrTrClose(output);
 
-  // partition size format
+  // volume size format
   HtmlRndrTrOpen(output, HTML_CSS_NONE, HTML_ALIGN_NONE);
   HtmlRndrTdOpen(output, HTML_CSS_BODY_TEXT, HTML_ALIGN_RIGHT, HTML_VALIGN_NONE, NULL, NULL, 0);
   HtmlRndrText(output, whc->lang_dict_ht, HTML_ID_CFG_EDIT_PSIZE_FMT);
@@ -3496,7 +3496,7 @@ Lerror:
 // convert_hosting_ele_to_html_format
 //-------------------------------------------------------------------------
 int
-convert_hosting_ele_to_html_format(TSHostingEle * ele, char *pdType, char *partitions)
+convert_hosting_ele_to_html_format(TSHostingEle * ele, char *pdType, char *volumes)
 {
   char *list;
 
@@ -3516,10 +3516,10 @@ convert_hosting_ele_to_html_format(TSHostingEle * ele, char *pdType, char *parti
   if (!ele->pd_val)
     goto Lerror;
 
-  // partitions list
-  if (ele->partitions) {
-    list = int_list_to_string(ele->partitions, ",");
-    ink_strncpy(partitions, list, MAX_RULE_PART_SIZE);
+  // volumes list
+  if (ele->volumes) {
+    list = int_list_to_string(ele->volumes, ",");
+    ink_strncpy(volumes, list, MAX_RULE_PART_SIZE);
     xfree(list);
   } else {
     goto Lerror;
@@ -3732,17 +3732,17 @@ Lerror:
 }
 
 //-------------------------------------------------------------------------
-// convert_partition_ele_to_html_format
+// convert_volume_ele_to_html_format
 //-------------------------------------------------------------------------
 int
-convert_partition_ele_to_html_format(TSPartitionEle * ele, char *part_num, char *scheme, char *size, char *size_fmt)
+convert_volume_ele_to_html_format(TSVolumeEle * ele, char *part_num, char *scheme, char *size, char *size_fmt)
 {
-  // partition number
-  snprintf(part_num, MAX_RULE_PART_SIZE, "%d", ele->partition_num);
+  // volume number
+  snprintf(part_num, MAX_RULE_PART_SIZE, "%d", ele->volume_num);
 
   // scheme
   switch (ele->scheme) {
-  case TS_PARTITION_HTTP:
+  case TS_VOLUME_HTTP:
     snprintf(scheme, MAX_RULE_PART_SIZE, "http");
     break;
   default:
@@ -3750,7 +3750,7 @@ convert_partition_ele_to_html_format(TSPartitionEle * ele, char *part_num, char 
   }
 
   // size
-  snprintf(size, MAX_RULE_PART_SIZE, "%d", ele->partition_size);
+  snprintf(size, MAX_RULE_PART_SIZE, "%d", ele->volume_size);
 
   // size format
   switch (ele->size_format) {
@@ -4378,7 +4378,7 @@ writeSchemeSelect(textBuffer * html, const char *listName)
 }
 
 void
-writeSchemeSelect_partition(textBuffer * html, const char *listName)
+writeSchemeSelect_volume(textBuffer * html, const char *listName)
 {
   const char *options[1];
   options[0] = "http";

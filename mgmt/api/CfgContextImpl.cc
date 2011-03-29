@@ -673,10 +673,10 @@ HostingObj::HostingObj(TokenList * tokens)
   if (!token->value) {
     goto FORMAT_ERR;
   }
-  if (strcmp(token->name, "partition") != 0) {
+  if (strcmp(token->name, "volume") != 0) {
     goto FORMAT_ERR;
   }
-  m_ele->partitions = string_to_int_list(token->value, LIST_DELIMITER);
+  m_ele->volumes = string_to_int_list(token->value, LIST_DELIMITER);
   return;
 
 FORMAT_ERR:
@@ -715,9 +715,9 @@ HostingObj::formatEleToRule()
     break;
   }
 
-  list_str = int_list_to_string(m_ele->partitions, ",");
+  list_str = int_list_to_string(m_ele->volumes, ",");
   strncat(buf, m_ele->pd_val, sizeof(buf) - strlen(buf) - 1);
-  strncat(buf, " partition=", sizeof(buf) - strlen(buf) - 1);
+  strncat(buf, " volume=", sizeof(buf) - strlen(buf) - 1);
   strncat(buf, list_str, sizeof(buf) - strlen(buf) - 1);
   xfree(list_str);
 
@@ -742,20 +742,20 @@ bool HostingObj::isValid()
     goto Lend;
   }
 
-  if (!m_ele->partitions || !TSIntListIsValid(m_ele->partitions, 0, 50000)) {
+  if (!m_ele->volumes || !TSIntListIsValid(m_ele->volumes, 0, 50000)) {
     m_valid = false;
     goto Lend;
   }
-  // check that each partition is between 1-255
-  len = TSIntListLen(m_ele->partitions);
+  // check that each volume is between 1-255
+  len = TSIntListLen(m_ele->volumes);
   for (i = 0; i < len; i++) {
-    part = TSIntListDequeue(m_ele->partitions);
+    part = TSIntListDequeue(m_ele->volumes);
     if (*part<1 || *part> 255) {
-      TSIntListEnqueue(m_ele->partitions, part);
+      TSIntListEnqueue(m_ele->volumes, part);
       m_valid = false;
       goto Lend;
     }
-    TSIntListEnqueue(m_ele->partitions, part);
+    TSIntListEnqueue(m_ele->volumes, part);
   }
 
 Lend:
@@ -1475,20 +1475,20 @@ ParentProxyObj::getCfgEleCopy()
 }
 
 //--------------------------------------------------------------------------
-// PartitionObj
+// VolumeObj
 //--------------------------------------------------------------------------
-PartitionObj::PartitionObj(TSPartitionEle * ele)
+VolumeObj::VolumeObj(TSVolumeEle * ele)
 {
   m_ele = ele;
   m_valid = true;
   m_valid = isValid();
 }
 
-PartitionObj::PartitionObj(TokenList * tokens)
+VolumeObj::VolumeObj(TokenList * tokens)
 {
   Token *token;
 
-  m_ele = TSPartitionEleCreate();
+  m_ele = TSVolumeEleCreate();
   m_ele->cfg_ele.error = TS_ERR_OKAY;
   m_valid = true;
 
@@ -1496,25 +1496,25 @@ PartitionObj::PartitionObj(TokenList * tokens)
     goto FORMAT_ERR;
   }
 
-  m_ele->cfg_ele.type = get_rule_type(tokens, TS_FNAME_PARTITION);
+  m_ele->cfg_ele.type = get_rule_type(tokens, TS_FNAME_VOLUME);
   if (m_ele->cfg_ele.type == TS_TYPE_UNDEFINED) {
     goto FORMAT_ERR;
   }
 
   token = tokens->first();
-  if (strcmp(token->name, "partition") || !token->value) {
+  if (strcmp(token->name, "volume") || !token->value) {
     goto FORMAT_ERR;
   }
-  m_ele->partition_num = ink_atoi(token->value);
+  m_ele->volume_num = ink_atoi(token->value);
 
   token = tokens->next(token);
   if (strcmp(token->name, "scheme") || !token->value) {
     goto FORMAT_ERR;
   }
   if (!strcmp(token->value, "http")) {
-    m_ele->scheme = TS_PARTITION_HTTP;
+    m_ele->scheme = TS_VOLUME_HTTP;
   } else {
-    m_ele->scheme = TS_PARTITION_UNDEFINED;
+    m_ele->scheme = TS_VOLUME_UNDEFINED;
   }
 
   token = tokens->next(token);
@@ -1527,7 +1527,7 @@ PartitionObj::PartitionObj(TokenList * tokens)
   } else {
     m_ele->size_format = TS_SIZE_FMT_ABSOLUTE;
   }
-  m_ele->partition_size = ink_atoi(token->value);
+  m_ele->volume_size = ink_atoi(token->value);
 
   return;
 
@@ -1536,13 +1536,13 @@ FORMAT_ERR:
   m_valid = false;
 }
 
-PartitionObj::~PartitionObj()
+VolumeObj::~VolumeObj()
 {
-  TSPartitionEleDestroy(m_ele);
+  TSVolumeEleDestroy(m_ele);
 }
 
 char *
-PartitionObj::formatEleToRule()
+VolumeObj::formatEleToRule()
 {
   if (!isValid()) {
     m_ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
@@ -1552,20 +1552,20 @@ PartitionObj::formatEleToRule()
   char buf[MAX_RULE_SIZE];
   memset(buf, 0, MAX_RULE_SIZE);
 
-  snprintf(buf, sizeof(buf), "partition=%d scheme=", m_ele->partition_num);
+  snprintf(buf, sizeof(buf), "volume=%d scheme=", m_ele->volume_num);
 
   switch (m_ele->scheme) {
-  case TS_PARTITION_HTTP:
+  case TS_VOLUME_HTTP:
     strncat(buf, "http", sizeof(buf) - strlen(buf) - 1);
     break;
   default:
     // Handled here:
-    // TS_PARTITION_UNDEFINED, TS_SIZE_FMT_ABSOLUTE, TS_SIZE_FMT_UNDEFINED
+    // TS_VOLUME_UNDEFINED, TS_SIZE_FMT_ABSOLUTE, TS_SIZE_FMT_UNDEFINED
     break;
   }
 
   size_t pos = strlen(buf);
-  snprintf(buf + pos, sizeof(buf) - pos, " size=%d", m_ele->partition_size);
+  snprintf(buf + pos, sizeof(buf) - pos, " size=%d", m_ele->volume_size);
   switch (m_ele->size_format) {
   case TS_SIZE_FMT_PERCENT:
     strncat(buf, "%", sizeof(buf) - strlen(buf) - 1);
@@ -1579,18 +1579,18 @@ PartitionObj::formatEleToRule()
   return xstrdup(buf);
 }
 
-bool PartitionObj::isValid()
+bool VolumeObj::isValid()
 {
   if (m_ele->cfg_ele.error != TS_ERR_OKAY) {
     m_valid = false;
   }
-  // partition nubmer must be between 1-255 inclusive
-  if (m_ele->partition_num < 1 || m_ele->partition_num > 255) {
+  // volume nubmer must be between 1-255 inclusive
+  if (m_ele->volume_num < 1 || m_ele->volume_num > 255) {
     m_valid = false;
   }
 
   switch (m_ele->scheme) {
-  case TS_PARTITION_HTTP:
+  case TS_VOLUME_HTTP:
     break;
   default:
     m_valid = false;
@@ -1598,11 +1598,11 @@ bool PartitionObj::isValid()
 
   // absolute size must be multiple of 128; percentage size <= 100
   if (m_ele->size_format == TS_SIZE_FMT_ABSOLUTE) {
-    if ((m_ele->partition_size < 0) || (m_ele->partition_size % 128)) {
+    if ((m_ele->volume_size < 0) || (m_ele->volume_size % 128)) {
       m_valid = false;
     }
   } else if (m_ele->size_format == TS_SIZE_FMT_PERCENT) {
-    if ((m_ele->partition_size < 0) || (m_ele->partition_size > 100)) {
+    if ((m_ele->volume_size < 0) || (m_ele->volume_size > 100)) {
       m_valid = false;
     }
   }
@@ -1614,9 +1614,9 @@ bool PartitionObj::isValid()
 }
 
 TSCfgEle *
-PartitionObj::getCfgEleCopy()
+VolumeObj::getCfgEleCopy()
 {
-  return (TSCfgEle *) copy_partition_ele(m_ele);
+  return (TSCfgEle *)copy_volume_ele(m_ele);
 }
 
 //--------------------------------------------------------------------------
@@ -2542,7 +2542,7 @@ StorageObj::formatEleToRule()
   char buf[MAX_RULE_SIZE];
   memset(buf, 0, MAX_RULE_SIZE);
 
-  if (m_ele->size < 0) {        // if size < 0, then raw partition
+  if (m_ele->size < 0) {        // if size < 0, then raw volume
     snprintf(buf, sizeof(buf), "%s", m_ele->pathname);
   } else {
     snprintf(buf, sizeof(buf), "%s %d", m_ele->pathname, m_ele->size);

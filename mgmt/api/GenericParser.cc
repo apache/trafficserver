@@ -224,8 +224,8 @@ Rule::parse(const char *const_rule, TSFileNameT filetype)
     return mgmt_allowParse(rule);
   case TS_FNAME_PARENT_PROXY: /* parent.config */
     return parentParse(rule);
-  case TS_FNAME_PARTITION:    /* partition.config */
-    return partitionParse(rule);
+  case TS_FNAME_VOLUME:    /* volume.config */
+    return volumeParse(rule);
   case TS_FNAME_PLUGIN:       /* plugin.config */
     return pluginParse(rule);
   case TS_FNAME_REMAP:        /* remap.config */
@@ -533,10 +533,10 @@ Rule::parentParse(char *rule)
 
 
 /**
- * partitionParse
+ * volumeParse
  **/
 TokenList *
-Rule::partitionParse(char *rule)
+Rule::volumeParse(char *rule)
 {
   return cacheParse(rule, 3, 3);
 }
@@ -984,8 +984,8 @@ RuleList::parse(char *fileBuf, const char *filename)
     m_filetype = TS_FNAME_MGMT_ALLOW;  /* mgmt_allow.config */
   } else if (strstr(filename, "parent.config")) {
     m_filetype = TS_FNAME_PARENT_PROXY;        /* parent.config */
-  } else if (strstr(filename, "partition.config")) {
-    m_filetype = TS_FNAME_PARTITION;   /* partition.config */
+  } else if (strstr(filename, "volume.config")) {
+    m_filetype = TS_FNAME_VOLUME;   /* volume.config */
   } else if (strstr(filename, "plugin.config")) {
     m_filetype = TS_FNAME_PLUGIN;      /* plugin.config */
   } else if (strstr(filename, "remap.config")) {

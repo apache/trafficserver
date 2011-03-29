@@ -1,6 +1,6 @@
 #
 # 
-# The purpose of this file is to specify the partitions that 
+# The purpose of this file is to specify the volumes that 
 # specific hostnames or domains should be stored in.
 #
 # Each line consists of a set of tag value pairs.  The pairs
@@ -14,14 +14,14 @@
 #
 #
 # Available directives are:
-# partition=  (comma separated list of partitions)
+# volume=  (comma separated list of volumes)
 #  
 # All requests that 
 # don't belong to the list of hostnames in this file go to the 
-# partitions specified with the hostname or domain name = '*'
+# volumes specified with the hostname or domain name = '*'
 # 
-# For example: to store all inktomi objects in partition 2 
-# hostname=www.example.com  partition=2
-# To direct all other requests to partitions 3 and 4
-# hostname=*	partition=3,4
+# For example: to store all inktomi objects in volume 2 
+# hostname=www.example.com  volume=2
+# To direct all other requests to volumes 3 and 4
+# hostname=*	volume=3,4
 #  

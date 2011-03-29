@@ -22,8 +22,8 @@
  */
 
 
-#ifndef _P_CACHE_PART_H__
-#define _P_CACHE_PART_H__
+#ifndef _P_CACHE_VOL_H__
+#define _P_CACHE_VOL_H__
 
 #define CACHE_BLOCK_SHIFT               9
 #define CACHE_BLOCK_SIZE                (1<<CACHE_BLOCK_SHIFT) // 512, smallest sector size
@@ -32,22 +32,21 @@
 #define ROUND_TO_SECTOR(_p, _x)         INK_ALIGN((_x), _p->sector_size)
 #define ROUND_TO(_x, _y)                INK_ALIGN((_x), (_y))
 
-// Part
-
-#define PART_MAGIC                      0xF1D0F00D
+// Vol (volumes)
+#define VOL_MAGIC                      0xF1D0F00D
 #define START_BLOCKS                    16      // 8k, STORE_BLOCK_SIZE
 #define START_POS                       ((off_t)START_BLOCKS * CACHE_BLOCK_SIZE)
 #define AGG_SIZE                        (4 * 1024 * 1024) // 4MB
 #define AGG_HIGH_WATER                  (AGG_SIZE / 2) // 2MB
 #define EVACUATION_SIZE                 (2 * AGG_SIZE)  // 8MB
-#define MAX_PART_SIZE                   ((off_t)512 * 1024 * 1024 * 1024 * 1024)
+#define MAX_VOL_SIZE                   ((off_t)512 * 1024 * 1024 * 1024 * 1024)
 #define STORE_BLOCKS_PER_CACHE_BLOCK    (STORE_BLOCK_SIZE / CACHE_BLOCK_SIZE)
-#define MAX_PART_BLOCKS                 (MAX_PART_SIZE / CACHE_BLOCK_SIZE)
+#define MAX_VOL_BLOCKS                 (MAX_VOL_SIZE / CACHE_BLOCK_SIZE)
 #define MAX_FRAG_SIZE                   (AGG_SIZE - sizeofDoc) // true max
 #define LEAVE_FREE                      DEFAULT_MAX_BUFFER_SIZE
 #define PIN_SCAN_EVERY                  16      // scan every 1/16 of disk
-#define PART_HASH_TABLE_SIZE            32707
-#define PART_HASH_EMPTY                 0xFFFF
+#define VOL_HASH_TABLE_SIZE             32707
+#define VOL_HASH_EMPTY                 0xFFFF
 #define LOOKASIDE_SIZE                  256
 #define EVACUATION_BUCKET_SIZE          (2 * EVACUATION_SIZE) // 16MB
 #define RECOVERY_SIZE                   EVACUATION_SIZE // 8MB
@@ -61,7 +60,7 @@
   (_o / (EVACUATION_BUCKET_SIZE / CACHE_BLOCK_SIZE))
 #define dir_evac_bucket(_e) dir_offset_evac_bucket(dir_offset(_e))
 #define offset_evac_bucket(_d, _o) \
-  dir_offset_evac_bucket((offset_to_part_offset(_d, _o)
+  dir_offset_evac_bucket((offset_to_vol_offset(_d, _o)
 
 // Documents
 
@@ -72,13 +71,13 @@
 #define sizeofDoc (((uint32_t)(uintptr_t)&((Doc*)0)->checksum)+(uint32_t)sizeof(uint32_t))
 
 struct Cache;
-struct Part;
+struct Vol;
 struct CacheDisk;
-struct PartInitInfo;
-struct DiskPart;
-struct CachePart;
+struct VolInitInfo;
+struct DiskVol;
+struct CacheVol;
 
-struct PartHeaderFooter
+struct VolHeaderFooter
 {
   unsigned int magic;
   VersionNumber version;
@@ -118,6 +117,7 @@ struct EvacuationBlock
       unsigned int unused:29;
     } f;
   };
+
   int readers;
   Dir dir;
   Dir new_dir;
@@ -127,7 +127,7 @@ struct EvacuationBlock
   LINK(EvacuationBlock, link);
 };
 
-struct Part:public Continuation
+struct Vol: public Continuation
 {
   char *path;
   char *hash_id;
@@ -136,8 +136,8 @@ struct Part:public Continuation
 
   char *raw_dir;
   Dir *dir;
-  PartHeaderFooter *header;
-  PartHeaderFooter *footer;
+  VolHeaderFooter *header;
+  VolHeaderFooter *footer;
   int segments;
   off_t buckets;
   off_t recover_pos;
@@ -166,11 +166,11 @@ struct Part:public Continuation
   DLL<EvacuationBlock> lookaside[LOOKASIDE_SIZE];
   CacheVC *doc_evacuator;
 
-  PartInitInfo *init_info;
+  VolInitInfo *init_info;
 
   CacheDisk *disk;
   Cache *cache;
-  CachePart *cache_part;
+  CacheVol *cache_vol;
   uint32_t last_sync_serial;
   uint32_t last_write_serial;
   uint32_t sector_size;
@@ -193,10 +193,10 @@ struct Part:public Continuation
   int begin_read_lock(CacheVC *cont);
   // unused read-write interlock code
   // currently http handles a write-lock failure by retrying the read
-  OpenDirEntry *open_read(INK_MD5 * key);
-  OpenDirEntry *open_read_lock(INK_MD5 * key, EThread * t);
-  int close_read(CacheVC * cont);
-  int close_read_lock(CacheVC * cont);
+  OpenDirEntry *open_read(INK_MD5 *key);
+  OpenDirEntry *open_read_lock(INK_MD5 *key, EThread *t);
+  int close_read(CacheVC *cont);
+  int close_read_lock(CacheVC *cont);
 
   int clear_dir();
 
@@ -248,11 +248,12 @@ struct Part:public Continuation
   int within_hit_evacuate_window(Dir *dir);
   uint32_t round_to_approx_size(uint32_t l);
 
-  Part():Continuation(new_ProxyMutex()), path(NULL), fd(-1),
-         dir(0), buckets(0), recover_pos(0), prev_recover_pos(0), scan_pos(0), skip(0), start(0),
-         len(0), data_blocks(0), hit_evacuate_window(0), agg_todo_size(0), agg_buf_pos(0), trigger(0),
-         evacuate_size(0), disk(NULL), last_sync_serial(0), last_write_serial(0), recover_wrapped(false),
-         dir_sync_waiting(0), dir_sync_in_progress(0), writing_end_marker(0) {
+  Vol()
+    : Continuation(new_ProxyMutex()), path(NULL), fd(-1),
+      dir(0), buckets(0), recover_pos(0), prev_recover_pos(0), scan_pos(0), skip(0), start(0),
+      len(0), data_blocks(0), hit_evacuate_window(0), agg_todo_size(0), agg_buf_pos(0), trigger(0),
+      evacuate_size(0), disk(NULL), last_sync_serial(0), last_write_serial(0), recover_wrapped(false),
+      dir_sync_waiting(0), dir_sync_in_progress(0), writing_end_marker(0) {
     open_dir.mutex = mutex;
 #if defined(_WIN32)
     agg_buffer = (char *) malloc(AGG_SIZE);
@@ -260,15 +261,15 @@ struct Part:public Continuation
     agg_buffer = (char *) ink_memalign(sysconf(_SC_PAGESIZE), AGG_SIZE);
 #endif
     memset(agg_buffer, 0, AGG_SIZE);
-    SET_HANDLER(&Part::aggWrite);
+    SET_HANDLER(&Vol::aggWrite);
   }
 
-  ~Part() {
+  ~Vol() {
     ink_memalign_free(agg_buffer);
   }
 };
 
-struct AIO_Callback_handler:public Continuation
+struct AIO_Callback_handler: public Continuation
 {
   int handle_disk_failure(int event, void *data);
 
@@ -277,19 +278,21 @@ struct AIO_Callback_handler:public Continuation
   }
 };
 
-struct CachePart
+struct CacheVol
 {
-  int part_number;
+  int vol_number;
   int scheme;
   int size;
-  int num_parts;
-  Part **parts;
-  DiskPart **disk_parts;
-  LINK(CachePart, link);
-  // per partition stats
-  RecRawStatBlock *part_rsb;
+  int num_vols;
+  Vol **vols;
+  DiskVol **disk_vols;
+  LINK(CacheVol, link);
+  // per volume stats
+  RecRawStatBlock *vol_rsb;
 
-  CachePart():part_number(-1), scheme(0), size(0), num_parts(0), parts(NULL), disk_parts(0), part_rsb(0) { }
+  CacheVol()
+    : vol_number(-1), scheme(0), size(0), num_vols(0), vols(NULL), disk_vols(0), vol_rsb(0)
+  { }
 };
 
 // element of the fragment table in the head of a multi-fragment document
@@ -326,118 +329,136 @@ struct Doc
 
 // Global Data
 
-extern Part **gpart;
-extern volatile int gnpart;
+extern Vol **gvol;
+extern volatile int gnvol;
 extern ClassAllocator<OpenDirEntry> openDirEntryAllocator;
 extern ClassAllocator<EvacuationBlock> evacuationBlockAllocator;
 extern ClassAllocator<EvacuationKey> evacuationKeyAllocator;
-extern unsigned short *part_hash_table;
+extern unsigned short *vol_hash_table;
 
 // inline Functions
 
 TS_INLINE int
-part_headerlen(Part *d) {
-  return ROUND_TO_STORE_BLOCK(sizeof(PartHeaderFooter) + sizeof(uint16_t) * (d->segments-1));
+vol_headerlen(Vol *d) {
+  return ROUND_TO_STORE_BLOCK(sizeof(VolHeaderFooter) + sizeof(uint16_t) * (d->segments-1));
 }
+
 TS_INLINE int
-part_dirlen(Part * d)
+vol_dirlen(Vol *d)
 {
-  return part_headerlen(d) + 
+  return vol_headerlen(d) + 
     ROUND_TO_STORE_BLOCK(d->buckets * DIR_DEPTH * d->segments * SIZEOF_DIR) +
-    ROUND_TO_STORE_BLOCK(sizeof(PartHeaderFooter));
+    ROUND_TO_STORE_BLOCK(sizeof(VolHeaderFooter));
 }
+
 TS_INLINE int
-part_direntries(Part * d)
+vol_direntries(Vol *d)
 {
   return d->buckets * DIR_DEPTH * d->segments;
 }
+
 TS_INLINE int
-part_out_of_phase_valid(Part * d, Dir * e)
+vol_out_of_phase_valid(Vol *d, Dir *e)
 {
   return (dir_offset(e) - 1 >= ((d->header->agg_pos - d->start) / CACHE_BLOCK_SIZE));
 }
+
 TS_INLINE int
-part_out_of_phase_agg_valid(Part * d, Dir * e)
+vol_out_of_phase_agg_valid(Vol *d, Dir *e)
 {
   return (dir_offset(e) - 1 >= ((d->header->agg_pos - d->start + AGG_SIZE) / CACHE_BLOCK_SIZE));
 }
+
 TS_INLINE int
-part_out_of_phase_write_valid(Part * d, Dir * e)
+vol_out_of_phase_write_valid(Vol *d, Dir *e)
 {
   return (dir_offset(e) - 1 >= ((d->header->write_pos - d->start) / CACHE_BLOCK_SIZE));
 }
+
 TS_INLINE int
-part_in_phase_valid(Part * d, Dir * e)
+vol_in_phase_valid(Vol *d, Dir *e)
 {
   return (dir_offset(e) - 1 < ((d->header->write_pos + d->agg_buf_pos - d->start) / CACHE_BLOCK_SIZE));
 }
+
 TS_INLINE off_t
-part_offset(Part * d, Dir * e)
+vol_offset(Vol *d, Dir *e)
 {
   return d->start + (off_t) dir_offset(e) * CACHE_BLOCK_SIZE - CACHE_BLOCK_SIZE;
 }
+
 TS_INLINE off_t
-offset_to_part_offset(Part * d, off_t pos)
+offset_to_vol_offset(Vol *d, off_t pos)
 {
   return ((pos - d->start + CACHE_BLOCK_SIZE) / CACHE_BLOCK_SIZE);
 }
+
 TS_INLINE off_t
-part_offset_to_offset(Part * d, off_t pos)
+vol_offset_to_offset(Vol *d, off_t pos)
 {
   return d->start + pos * CACHE_BLOCK_SIZE - CACHE_BLOCK_SIZE;
 }
+
 TS_INLINE Dir *
-part_dir_segment(Part * d, int s)
+vol_dir_segment(Vol *d, int s)
 {
   return (Dir *) (((char *) d->dir) + (s * d->buckets) * DIR_DEPTH * SIZEOF_DIR);
 }
+
 TS_INLINE int
-part_in_phase_agg_buf_valid(Part * d, Dir * e)
+vol_in_phase_agg_buf_valid(Vol *d, Dir *e)
 {
-  return (part_offset(d, e) >= d->header->write_pos && part_offset(d, e) < (d->header->write_pos + d->agg_buf_pos));
+  return (vol_offset(d, e) >= d->header->write_pos && vol_offset(d, e) < (d->header->write_pos + d->agg_buf_pos));
 }
+
 TS_INLINE uint32_t
 Doc::prefix_len()
 {
   return sizeofDoc + hlen + flen;
 }
+
 TS_INLINE uint32_t
 Doc::data_len()
 {
   return len - sizeofDoc - hlen - flen;
 }
+
 TS_INLINE int
 Doc::single_fragment()
 {
   return (total_len && (data_len() == total_len));
 }
+
 TS_INLINE uint32_t
 Doc::nfrags() {
   return flen / sizeof(Frag);
 }
+
 TS_INLINE Frag *
 Doc::frags()
 {
   return (Frag*)(((char *) this) + sizeofDoc);
 }
+
 TS_INLINE char *
 Doc::hdr()
 {
   return ((char *) this) + sizeofDoc + flen;
 }
+
 TS_INLINE char *
 Doc::data()
 {
   return ((char *) this) + sizeofDoc + flen + hlen;
 }
 
-int part_dir_clear(Part * d);
-int part_init(Part * d, char *s, off_t blocks, off_t skip, bool clear);
+int vol_dir_clear(Vol *d);
+int vol_init(Vol *d, char *s, off_t blocks, off_t skip, bool clear);
 
 // inline Functions
 
 TS_INLINE EvacuationBlock *
-evacuation_block_exists(Dir * dir, Part * p)
+evacuation_block_exists(Dir *dir, Vol *p)
 {
   EvacuationBlock *b = p->evacuate[dir_evac_bucket(dir)].head;
   for (; b; b = b->link.next)
@@ -447,7 +468,7 @@ evacuation_block_exists(Dir * dir, Part * p)
 }
 
 TS_INLINE void
-Part::cancel_trigger()
+Vol::cancel_trigger()
 {
   if (trigger) {
     trigger->cancel_action();
@@ -456,7 +477,7 @@ Part::cancel_trigger()
 }
 
 TS_INLINE EvacuationBlock *
-new_EvacuationBlock(EThread * t)
+new_EvacuationBlock(EThread *t)
 {
   EvacuationBlock *b = THREAD_ALLOC(evacuationBlockAllocator, t);
   b->init = 0;
@@ -467,7 +488,7 @@ new_EvacuationBlock(EThread * t)
 }
 
 TS_INLINE void
-free_EvacuationBlock(EvacuationBlock * b, EThread * t)
+free_EvacuationBlock(EvacuationBlock *b, EThread *t)
 {
   EvacuationKey *e = b->evac_frags.link.next;
   while (e) {
@@ -479,13 +500,13 @@ free_EvacuationBlock(EvacuationBlock * b, EThread * t)
 }
 
 TS_INLINE OpenDirEntry *
-Part::open_read(INK_MD5 * key)
+Vol::open_read(INK_MD5 *key)
 {
   return open_dir.open_read(key);
 }
 
 TS_INLINE int
-Part::within_hit_evacuate_window(Dir * xdir)
+Vol::within_hit_evacuate_window(Dir *xdir)
 {
   off_t oft = dir_offset(xdir) - 1;
   off_t write_off = (header->write_pos + AGG_SIZE - start) / CACHE_BLOCK_SIZE;
@@ -497,9 +518,9 @@ Part::within_hit_evacuate_window(Dir * xdir)
 }
 
 TS_INLINE uint32_t
-Part::round_to_approx_size(uint32_t l) {
+Vol::round_to_approx_size(uint32_t l) {
   uint32_t ll = round_to_approx_dir_size(l);
   return ROUND_TO_SECTOR(this, ll);
 }
 
-#endif /* _P_CACHE_PART_H__ */
+#endif /* _P_CACHE_VOL_H__ */

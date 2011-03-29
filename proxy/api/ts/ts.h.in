@@ -1986,7 +1986,7 @@ extern "C"
   /**
       Associates a host name to the cache key. Use this function if the
       cache has been partitioned by hostname. The hostname tells the
-      cache which partition to use for the object.
+      cache which volume to use for the object.
 
       @param key of the cached object.
       @param hostname to associate with the cache key.

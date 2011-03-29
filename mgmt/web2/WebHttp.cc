@@ -45,7 +45,6 @@
 #include "WebHttpSession.h"
 #include "WebHttpTree.h"
 #include "WebOverview.h"
-#include "WebConfig.h"
 
 #include "mgmtapi.h"
 //#include "I_AccCrypto.h"
@@ -1336,7 +1335,7 @@ WebHttpInit()
   ink_hash_table_insert(g_display_config_ht, HTML_FILE_IP_ALLOW_CONFIG, (void *) TS_FNAME_IP_ALLOW);
   ink_hash_table_insert(g_display_config_ht, HTML_FILE_MGMT_ALLOW_CONFIG, (void *) TS_FNAME_MGMT_ALLOW);
   ink_hash_table_insert(g_display_config_ht, HTML_FILE_PARENT_CONFIG, (void *) TS_FNAME_PARENT_PROXY);
-  ink_hash_table_insert(g_display_config_ht, HTML_FILE_PARTITION_CONFIG, (void *) TS_FNAME_PARTITION);
+  ink_hash_table_insert(g_display_config_ht, HTML_FILE_VOLUME_CONFIG, (void *) TS_FNAME_VOLUME);
   ink_hash_table_insert(g_display_config_ht, HTML_FILE_REMAP_CONFIG, (void *) TS_FNAME_REMAP);
   ink_hash_table_insert(g_display_config_ht, HTML_FILE_SOCKS_CONFIG, (void *) TS_FNAME_SOCKS);
   ink_hash_table_insert(g_display_config_ht, HTML_FILE_SPLIT_DNS_CONFIG, (void *) TS_FNAME_SPLIT_DNS);

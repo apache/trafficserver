@@ -29,7 +29,7 @@
 
 struct ShowCacheInternal: public ShowCont
 {
-  int part_index;
+  int vol_index;
   int seg_index;
   CacheKey show_cache_key;
   CacheVC *cache_vc;
@@ -37,20 +37,21 @@ struct ShowCacheInternal: public ShowCont
 
   int showMain(int event, Event * e);
   int showEvacuations(int event, Event * e);
-  int showPartEvacuations(int event, Event * e);
-  int showPartitions(int event, Event * e);
-  int showPartPartitions(int event, Event * e);
+  int showVolEvacuations(int event, Event * e);
+  int showVolumes(int event, Event * e);
+  int showVolVolumes(int event, Event * e);
   int showSegments(int event, Event * e);
   int showSegSegment(int event, Event * e);
 #ifdef CACHE_STAT_PAGES
   int showConnections(int event, Event * e);
-  int showPartConnections(int event, Event * e);
+  int showVolConnections(int event, Event * e);
 #endif
 
-    ShowCacheInternal(Continuation * c, HTTPHdr * h):ShowCont(c, h), part_index(0), seg_index(0)
+  ShowCacheInternal(Continuation * c, HTTPHdr * h)
+    : ShowCont(c, h), vol_index(0), seg_index(0)
   {
     SET_HANDLER(&ShowCacheInternal::showMain);
-  };
+  }
 
   ~ShowCacheInternal() {
   }
@@ -62,8 +63,8 @@ Action *register_ShowCacheInternal(Continuation * c, HTTPHdr * h);
 
 
 
-extern Part **gpart;
-extern volatile int gnpart;
+extern Vol **gvol;
+extern volatile int gnvol;
 
 
 // Stat Pages
@@ -92,8 +93,8 @@ register_ShowCacheInternal(Continuation * c, HTTPHdr * h)
 #endif
   else if (STREQ_PREFIX(path, "evacuations")) {
     SET_CONTINUATION_HANDLER(theshowcacheInternal, &ShowCacheInternal::showEvacuations);
-  } else if (STREQ_PREFIX(path, "partitions")) {
-    SET_CONTINUATION_HANDLER(theshowcacheInternal, &ShowCacheInternal::showPartitions);
+  } else if (STREQ_PREFIX(path, "volumes")) {
+    SET_CONTINUATION_HANDLER(theshowcacheInternal, &ShowCacheInternal::showVolumes);
   }
 
   if (theshowcacheInternal->mutex->thread_holding)
@@ -111,10 +112,10 @@ ShowCacheInternal::showMain(int event, Event * e)
 #ifdef CACHE_STAT_PAGES
   CHECK_SHOW(show("<H3>Show <A HREF=\"./connections\">Connections</A></H3>\n"
                   "<H3>Show <A HREF=\"./evacuations\">Evacuations</A></H3>\n"
-                  "<H3>Show <A HREF=\"./partitions\">Partitions</A></H3>\n"));
+                  "<H3>Show <A HREF=\"./volumes\">Volumes</A></H3>\n"));
 #else
   CHECK_SHOW(show("<H3>Show <A HREF=\"./evacuations\">Evacuations</A></H3>\n"
-                  "<H3>Show <A HREF=\"./partitions\">Partitions</A></H3>\n"));
+                  "<H3>Show <A HREF=\"./volumes\">Volumes</A></H3>\n"));
 #endif
   return complete(event, e);
 }
@@ -127,22 +128,22 @@ ShowCacheInternal::showConnections(int event, Event * e)
   CHECK_SHOW(show("<H3>Cache Connections</H3>\n"
                   "<table border=1><tr>"
                   "<th>Operation</th>"
-                  "<th>Partition</th>"
+                  "<th>Volume</th>"
                   "<th>URL/Hash</th>" "<th>Bytes Done</th>" "<th>Total Bytes</th>" "<th>Bytes Todo</th>" "</tr>\n"));
 
-  SET_HANDLER(&ShowCacheInternal::showPartConnections);
+  SET_HANDLER(&ShowCacheInternal::showVolConnections);
   CONT_SCHED_LOCK_RETRY_RET(this);
 }
 
 
 int
-ShowCacheInternal::showPartConnections(int event, Event * e)
+ShowCacheInternal::showVolConnections(int event, Event * e)
 {
-  CACHE_TRY_LOCK(lock, gpart[part_index]->mutex, mutex->thread_holding);
+  CACHE_TRY_LOCK(lock, gvol[vol_index]->mutex, mutex->thread_holding);
   if (!lock) {
     CONT_SCHED_LOCK_RETRY_RET(this);
   }
-  for (CacheVC * vc = (CacheVC *) gpart[part_index]->stat_cache_vcs.head; vc; vc = vc->stat_link.next) {
+  for (CacheVC * vc = (CacheVC *) gvol[vol_index]->stat_cache_vcs.head; vc; vc = vc->stat_link.next) {
 
     char nbytes[60], todo[60], url[81092];
     int ib = 0, xd = 0;
@@ -166,20 +167,20 @@ ShowCacheInternal::showPartConnections(int event, Event * e)
     } else
       vc->key.string(url);
     CHECK_SHOW(show("<tr>" "<td>%s</td>"        // operation
-                    "<td>%s</td>"       // Part
+                    "<td>%s</td>"       // Vol
                     "<td>%s</td>"       // URL/Hash
                     "<td>%d</td>"
                     "<td>%s</td>"
                     "<td>%s</td>"
                     "</tr>\n",
                     ((vc->vio.op == VIO::READ) ? "Read" : "Write"),
-                    vc->part->hash_id,
+                    vc->vol->hash_id,
                     url,
                     vc->vio.ndone,
                     vc->vio.nbytes == INT64_MAX ? "all" : nbytes, vc->vio.nbytes == INT64_MAX ? "all" : todo));
   }
-  part_index++;
-  if (part_index < gnpart)
+  vol_index++;
+  if (vol_index < gnvol)
     CONT_SCHED_LOCK_RETRY(this);
   else {
     CHECK_SHOW(show("</table>\n"));
@@ -199,15 +200,15 @@ ShowCacheInternal::showEvacuations(int event, Event * e)
                   "<table border=1><tr>"
                   "<th>Offset</th>" "<th>Estimated Size</th>" "<th>Reader Count</th>" "<th>Done</th>" "</tr>\n"));
 
-  SET_HANDLER(&ShowCacheInternal::showPartEvacuations);
+  SET_HANDLER(&ShowCacheInternal::showVolEvacuations);
   CONT_SCHED_LOCK_RETRY_RET(this);
 }
 
 
 int
-ShowCacheInternal::showPartEvacuations(int event, Event * e)
+ShowCacheInternal::showVolEvacuations(int event, Event * e)
 {
-  Part *p = gpart[part_index];
+  Vol *p = gvol[vol_index];
   CACHE_TRY_LOCK(lock, p->mutex, mutex->thread_holding);
   if (!lock)
     CONT_SCHED_LOCK_RETRY_RET(this);
@@ -217,7 +218,7 @@ ShowCacheInternal::showPartEvacuations(int event, Event * e)
   for (int i = 0; i < last; i++) {
     for (b = p->evacuate[i].head; b; b = b->link.next) {
       char offset[60];
-      sprintf(offset, "%" PRIu64 "", (uint64_t) part_offset(p, &b->dir));
+      sprintf(offset, "%" PRIu64 "", (uint64_t) vol_offset(p, &b->dir));
       CHECK_SHOW(show("<tr>" "<td>%s</td>"      // offset
                       "<td>%d</td>"     // estimated size
                       "<td>%d</td>"     // reader count
@@ -225,8 +226,8 @@ ShowCacheInternal::showPartEvacuations(int event, Event * e)
                       "</tr>\n", offset, (int) dir_approx_size(&b->dir), b->readers, b->f.done ? "yes" : "no"));
     }
   }
-  part_index++;
-  if (part_index < gnpart)
+  vol_index++;
+  if (vol_index < gnvol)
     CONT_SCHED_LOCK_RETRY(this);
   else {
     CHECK_SHOW(show("</table>\n"));
@@ -236,10 +237,10 @@ ShowCacheInternal::showPartEvacuations(int event, Event * e)
 }
 
 int
-ShowCacheInternal::showPartitions(int event, Event * e)
+ShowCacheInternal::showVolumes(int event, Event * e)
 {
-  CHECK_SHOW(begin("Cache Partitions"));
-  CHECK_SHOW(show("<H3>Cache Partitions</H3>\n"
+  CHECK_SHOW(begin("Cache Volumes"));
+  CHECK_SHOW(show("<H3>Cache Volumes</H3>\n"
                   "<table border=1><tr>"
                   "<th>ID</th>"
                   "<th>Blocks</th>"
@@ -250,15 +251,15 @@ ShowCacheInternal::showPartitions(int event, Event * e)
                   "<th>Write Agg Done</th>"
                   "<th>Phase</th>" "<th>Create Time</th>" "<th>Sync Serial</th>" "<th>Write Serial</th>" "</tr>\n"));
 
-  SET_HANDLER(&ShowCacheInternal::showPartPartitions);
+  SET_HANDLER(&ShowCacheInternal::showVolVolumes);
   CONT_SCHED_LOCK_RETRY_RET(this);
 }
 
 
 int
-ShowCacheInternal::showPartPartitions(int event, Event * e)
+ShowCacheInternal::showVolVolumes(int event, Event * e)
 {
-  Part *p = gpart[part_index];
+  Vol *p = gvol[vol_index];
   CACHE_TRY_LOCK(lock, p->mutex, mutex->thread_holding);
   if (!lock)
     CONT_SCHED_LOCK_RETRY_RET(this);
@@ -298,7 +299,7 @@ ShowCacheInternal::showPartPartitions(int event, Event * e)
 int
 ShowCacheInternal::showSegments(int event, Event * e)
 {
-  CHECK_SHOW(show("<H3>Cache Partition Segments</H3>\n"
+  CHECK_SHOW(show("<H3>Cache Volume Segments</H3>\n"
                   "<table border=1><tr>"
                   "<th>Free</th>"
                   "<th>Used</th>"
@@ -312,7 +313,7 @@ ShowCacheInternal::showSegments(int event, Event * e)
 int
 ShowCacheInternal::showSegSegment(int event, Event * e)
 {
-  Part *p = gpart[part_index];
+  Vol *p = gvol[vol_index];
   CACHE_TRY_LOCK(lock, p->mutex, mutex->thread_holding);
   if (!lock)
     CONT_SCHED_LOCK_RETRY_RET(this);
@@ -329,8 +330,8 @@ ShowCacheInternal::showSegSegment(int event, Event * e)
   else {
     CHECK_SHOW(show("</table>\n"));
     seg_index = 0;
-    part_index++;
-    if (part_index < gnpart)
+    vol_index++;
+    if (vol_index < gnvol)
       CONT_SCHED_LOCK_RETRY(this);
     else
       return complete(event, e);

@@ -1179,8 +1179,8 @@ fileUpdated(char *fname)
   } else if (strcmp(fname, "admin_access.config") == 0) {
     lmgmt->signalFileChange("admin_access.config");
 
-  } else if (strcmp(fname, "partition.config") == 0) {
-    mgmt_log(stderr, "[fileUpdated] partition.config changed, need restart\n");
+  } else if (strcmp(fname, "volume.config") == 0) {
+    mgmt_log(stderr, "[fileUpdated] volume.config changed, need restart\n");
 
   } else if (strcmp(fname, "hosting.config") == 0) {
     lmgmt->signalFileChange("proxy.config.cache.hosting_filename");

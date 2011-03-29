@@ -29,7 +29,7 @@
 #include "I_Tasks.h"
 
 struct ShowCache: public ShowCont {
-  int part_index;
+  int vol_index;
   int seg_index;
   int scan_flag;
   int urlstrs_index;
@@ -60,7 +60,7 @@ struct ShowCache: public ShowCont {
   int handleCacheScanCallback(int event, Event *e);
 
   ShowCache(Continuation *c, HTTPHdr *h): 
-    ShowCont(c, h), part_index(0), seg_index(0), scan_flag(0),
+    ShowCont(c, h), vol_index(0), seg_index(0), scan_flag(0),
     cache_vc(0), buffer(0), buffer_reader(0), content_length(0), cvio(0)
   {
     urlstrs_index = 0;
@@ -148,8 +148,6 @@ struct ShowCache: public ShowCont {
 };
 
 extern ShowCache *theshowcache;
-extern Part **gpart;
-extern volatile int gnpart;
 
 // Stat Pages
 ShowCache *theshowcache = NULL;

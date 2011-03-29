@@ -68,7 +68,7 @@ OpenDir::OpenDir()
 int
 OpenDir::open_write(CacheVC *cont, int allow_if_writers, int max_writers)
 {
-  ink_debug_assert(cont->part->mutex->thread_holding == this_ethread());
+  ink_debug_assert(cont->vol->mutex->thread_holding == this_ethread());
   unsigned int h = cont->first_key.word(0);
   int b = h % OPEN_DIR_BUCKETS;
   for (OpenDirEntry *d = bucket[b].head; d; d = d->link.next) {
@@ -132,7 +132,7 @@ OpenDir::signal_readers(int event, Event *e)
 int
 OpenDir::close_write(CacheVC *cont)
 {
-  ink_debug_assert(cont->part->mutex->thread_holding == this_ethread());
+  ink_debug_assert(cont->vol->mutex->thread_holding == this_ethread());
   cont->od->writers.remove(cont);
   cont->od->num_writers--;
   if (!cont->od->writers.head) {
@@ -162,10 +162,10 @@ OpenDir::open_read(INK_MD5 *key)
 int
 OpenDirEntry::wait(CacheVC *cont, int msec)
 {
-  ink_debug_assert(cont->part->mutex->thread_holding == this_ethread());
+  ink_debug_assert(cont->vol->mutex->thread_holding == this_ethread());
   cont->f.open_read_timeout = 1;
   ink_assert(!cont->trigger);
-  cont->trigger = cont->part->mutex->thread_holding->schedule_in_local(cont, HRTIME_MSECONDS(msec));
+  cont->trigger = cont->vol->mutex->thread_holding->schedule_in_local(cont, HRTIME_MSECONDS(msec));
   readers.push(cont);
   return EVENT_CONT;
 }
@@ -204,7 +204,7 @@ dir_bucket_loop_check(Dir *start_dir, Dir *seg)
 // adds all the directory entries
 // in a segment to the segment freelist
 void
-dir_init_segment(int s, Part *d)
+dir_init_segment(int s, Vol *d)
 {
   d->header->freelist[s] = 0;
   Dir *seg = dir_segment(s, d);
@@ -222,7 +222,7 @@ dir_init_segment(int s, Part *d)
 // break the infinite loop in directory entries
 // Note : abuse of the token bit in dir entries
 int
-dir_bucket_loop_fix(Dir *start_dir, int s, Part *d)
+dir_bucket_loop_fix(Dir *start_dir, int s, Vol *d)
 {
   if (!dir_bucket_loop_check(start_dir, dir_segment(s, d))) {
     Warning("Dir loop exists, clearing segment %d", s);
@@ -233,7 +233,7 @@ dir_bucket_loop_fix(Dir *start_dir, int s, Part *d)
 }
 
 int
-dir_freelist_length(Part *d, int s)
+dir_freelist_length(Vol *d, int s)
 {
   int free = 0;
   Dir *seg = dir_segment(s, d);
@@ -248,7 +248,7 @@ dir_freelist_length(Part *d, int s)
 }
 
 int
-dir_bucket_length(Dir *b, int s, Part *d)
+dir_bucket_length(Dir *b, int s, Vol *d)
 {
   Dir *e = b;
   int i = 0;
@@ -267,7 +267,7 @@ dir_bucket_length(Dir *b, int s, Part *d)
 }
 
 int
-check_dir(Part *d)
+check_dir(Vol *d)
 {
   int i, s;
   Debug("cache_check_dir", "inside check dir");
@@ -284,7 +284,7 @@ check_dir(Part *d)
 }
 
 inline void
-unlink_from_freelist(Dir *e, int s, Part *d)
+unlink_from_freelist(Dir *e, int s, Vol *d)
 {
   Dir *seg = dir_segment(s, d);
   Dir *p = dir_from_offset(dir_prev(e), seg);
@@ -298,7 +298,7 @@ unlink_from_freelist(Dir *e, int s, Part *d)
 }
 
 inline Dir *
-dir_delete_entry(Dir *e, Dir *p, int s, Part *d)
+dir_delete_entry(Dir *e, Dir *p, int s, Vol *d)
 {
   Dir *seg = dir_segment(s, d);
   int no = dir_next(e);
@@ -327,10 +327,10 @@ dir_delete_entry(Dir *e, Dir *p, int s, Part *d)
 }
 
 inline void
-dir_clean_bucket(Dir *b, int s, Part *part)
+dir_clean_bucket(Dir *b, int s, Vol *vol)
 {
   Dir *e = b, *p = NULL;
-  Dir *seg = dir_segment(s, part);
+  Dir *seg = dir_segment(s, vol);
 #ifdef LOOP_CHECK_MODE
   int loop_count = 0;
 #endif
@@ -338,17 +338,17 @@ dir_clean_bucket(Dir *b, int s, Part *part)
 #ifdef LOOP_CHECK_MODE
     loop_count++;
     if (loop_count > DIR_LOOP_THRESHOLD) {
-      if (dir_bucket_loop_fix(b, s, part))
+      if (dir_bucket_loop_fix(b, s, vol))
         return;
     }
 #endif
-    if (!dir_valid(part, e) || !dir_offset(e)) {
+    if (!dir_valid(vol, e) || !dir_offset(e)) {
       if (is_debug_tag_set("dir_clean"))
         Debug("dir_clean", "cleaning %p tag %X boffset %" PRId64 " b %p p %p l %d",
-              e, dir_tag(e), dir_offset(e), b, p, dir_bucket_length(b, s, part));
+              e, dir_tag(e), dir_offset(e), b, p, dir_bucket_length(b, s, vol));
       if (dir_offset(e))
-        CACHE_DEC_DIR_USED(part->mutex);
-      e = dir_delete_entry(e, p, s, part);
+        CACHE_DEC_DIR_USED(vol->mutex);
+      e = dir_delete_entry(e, p, s, vol);
       continue;
     }
     p = e;
@@ -357,7 +357,7 @@ dir_clean_bucket(Dir *b, int s, Part *part)
 }
 
 void
-dir_clean_segment(int s, Part *d)
+dir_clean_segment(int s, Vol *d)
 {
   Dir *seg = dir_segment(s, d);
   for (int i = 0; i < d->buckets; i++) {
@@ -367,7 +367,7 @@ dir_clean_segment(int s, Part *d)
 }
 
 void
-dir_clean_part(Part *d)
+dir_clean_vol(Vol *d)
 {
   for (int i = 0; i < d->segments; i++)
     dir_clean_segment(i, d);
@@ -375,16 +375,16 @@ dir_clean_part(Part *d)
 }
 
 void
-dir_clear_range(off_t start, off_t end, Part *part)
+dir_clear_range(off_t start, off_t end, Vol *vol)
 {
-  for (int i = 0; i < part->buckets * DIR_DEPTH * part->segments; i++) {
-    Dir *e = dir_index(part, i);
+  for (int i = 0; i < vol->buckets * DIR_DEPTH * vol->segments; i++) {
+    Dir *e = dir_index(vol, i);
     if (!dir_token(e) && dir_offset(e) >= (int64_t)start && dir_offset(e) < (int64_t)end) {
-      CACHE_DEC_DIR_USED(part->mutex);
+      CACHE_DEC_DIR_USED(vol->mutex);
       dir_set_offset(e, 0);     // delete
     }
   }
-  dir_clean_part(part);
+  dir_clean_vol(vol);
 }
 
 void
@@ -400,29 +400,29 @@ check_bucket_not_contains(Dir *b, Dir *e, Dir *seg)
 }
 
 void
-freelist_clean(int s, Part *part)
+freelist_clean(int s, Vol *vol)
 {
-  dir_clean_segment(s, part);
-  if (part->header->freelist[s])
+  dir_clean_segment(s, vol);
+  if (vol->header->freelist[s])
     return;
-  Warning("cache directory overflow on '%s' segment %d, purging...", part->path, s);
+  Warning("cache directory overflow on '%s' segment %d, purging...", vol->path, s);
   int n = 0;
-  Dir *seg = dir_segment(s, part);
-  for (int bi = 0; bi < part->buckets; bi++) {
+  Dir *seg = dir_segment(s, vol);
+  for (int bi = 0; bi < vol->buckets; bi++) {
     Dir *b = dir_bucket(bi, seg);
     for (int l = 0; l < DIR_DEPTH; l++) {
       Dir *e = dir_bucket_row(b, l);
       if (dir_head(e) && !(n++ % 10)) {
-        CACHE_DEC_DIR_USED(part->mutex);
+        CACHE_DEC_DIR_USED(vol->mutex);
         dir_set_offset(e, 0);   // delete
       }
     }
   }
-  dir_clean_segment(s, part);
+  dir_clean_segment(s, vol);
 }
 
 inline Dir *
-freelist_pop(int s, Part *d)
+freelist_pop(int s, Vol *d)
 {
   Dir *seg = dir_segment(s, d);
   Dir *e = dir_from_offset(d->header->freelist[s], seg);
@@ -443,7 +443,7 @@ freelist_pop(int s, Part *d)
 }
 
 int
-dir_segment_accounted(int s, Part *d, int offby, int *f, int *u, int *et, int *v, int *av, int *as)
+dir_segment_accounted(int s, Vol *d, int offby, int *f, int *u, int *et, int *v, int *av, int *as)
 {
   int free = dir_freelist_length(d, s);
   int used = 0, empty = 0;
@@ -487,7 +487,7 @@ dir_segment_accounted(int s, Part *d, int offby, int *f, int *u, int *et, int *v
 }
 
 void
-dir_free_entry(Dir *e, int s, Part *d)
+dir_free_entry(Dir *e, int s, Vol *d)
 {
   Dir *seg = dir_segment(s, d);
   unsigned int fo = d->header->freelist[s];
@@ -499,14 +499,14 @@ dir_free_entry(Dir *e, int s, Part *d)
 }
 
 int
-dir_probe(CacheKey *key, Part *d, Dir *result, Dir ** last_collision)
+dir_probe(CacheKey *key, Vol *d, Dir *result, Dir ** last_collision)
 {
   ink_debug_assert(d->mutex->thread_holding == this_ethread());
   int s = key->word(0) % d->segments;
   int b = key->word(1) % d->buckets;
   Dir *seg = dir_segment(s, d);
   Dir *e = NULL, *p = NULL, *collision = *last_collision;
-  Part *part = d;
+  Vol *vol = d;
   CHECK_DIR(d);
 #ifdef LOOP_CHECK_MODE
   if (dir_bucket_loop_fix(dir_bucket(b, seg), s, d))
@@ -535,7 +535,7 @@ Lagain:
           goto Lcont;
         }
         if (dir_valid(d, e)) {
-          DDebug("dir_probe_hit", "found %X %X part %d bucket %d boffset %" PRId64 "", key->word(0), key->word(1), d->fd, b, dir_offset(e));
+          DDebug("dir_probe_hit", "found %X %X vol %d bucket %d boffset %" PRId64 "", key->word(0), key->word(1), d->fd, b, dir_offset(e));
           dir_assign(result, e);
           *last_collision = e;
           ink_assert(dir_offset(e) * CACHE_BLOCK_SIZE < d->len);
@@ -557,13 +557,13 @@ Lagain:
     collision = NULL;
     goto Lagain;
   }
-  DDebug("dir_probe_miss", "missed %X %X on part %d bucket %d at %p", key->word(0), key->word(1), d->fd, b, seg);
+  DDebug("dir_probe_miss", "missed %X %X on vol %d bucket %d at %p", key->word(0), key->word(1), d->fd, b, seg);
   CHECK_DIR(d);
   return 0;
 }
 
 int
-dir_insert(CacheKey *key, Part *d, Dir *to_part)
+dir_insert(CacheKey *key, Vol *d, Dir *to_part)
 {
   ink_debug_assert(d->mutex->thread_holding == this_ethread());
   int s = key->word(0) % d->segments, l;
@@ -572,7 +572,7 @@ dir_insert(CacheKey *key, Part *d, Dir *to_part)
   Dir *seg = dir_segment(s, d);
   Dir *e = NULL;
   Dir *b = dir_bucket(bi, seg);
-  Part *part = d;
+  Vol *vol = d;
 #if defined(DEBUG) && defined(DO_CHECK_DIR_FAST)
   unsigned int t = DIR_MASK_TAG(key->word(2));
   Dir *col = b;
@@ -605,9 +605,9 @@ Llink:
 Lfill:
   dir_assign_data(e, to_part);
   dir_set_tag(e, key->word(2));
-  ink_assert(part_offset(d, e) < (d->skip + d->len));
+  ink_assert(vol_offset(d, e) < (d->skip + d->len));
   DDebug("dir_insert",
-        "insert %p %X into part %d bucket %d at %p tag %X %X boffset %" PRId64 "",
+        "insert %p %X into vol %d bucket %d at %p tag %X %X boffset %" PRId64 "",
          e, key->word(0), d->fd, bi, e, key->word(1), dir_tag(e), dir_offset(e));
   CHECK_DIR(d);
   d->header->dirty = 1;
@@ -616,7 +616,7 @@ Lfill:
 }
 
 int
-dir_overwrite(CacheKey *key, Part *d, Dir *dir, Dir *overwrite, bool must_overwrite)
+dir_overwrite(CacheKey *key, Vol *d, Dir *dir, Dir *overwrite, bool must_overwrite)
 {
   ink_debug_assert(d->mutex->thread_holding == this_ethread());
   int s = key->word(0) % d->segments, l;
@@ -630,7 +630,7 @@ dir_overwrite(CacheKey *key, Part *d, Dir *dir, Dir *overwrite, bool must_overwr
   int loop_count = 0;
   bool loop_possible = true;
 #endif
-  Part *part = d;
+  Vol *vol = d;
   CHECK_DIR(d);
 
   ink_assert((unsigned int) dir_approx_size(dir) <= (unsigned int) (MAX_FRAG_SIZE + sizeofDoc));        // XXX - size should be unsigned
@@ -679,9 +679,9 @@ Llink:
 Lfill:
   dir_assign_data(e, dir);
   dir_set_tag(e, t);
-  ink_assert(part_offset(d, e) < d->skip + d->len);
+  ink_assert(vol_offset(d, e) < d->skip + d->len);
   DDebug("dir_overwrite",
-        "overwrite %p %X into part %d bucket %d at %p tag %X %X boffset %" PRId64 "",
+        "overwrite %p %X into vol %d bucket %d at %p tag %X %X boffset %" PRId64 "",
          e, key->word(0), d->fd, bi, e, t, dir_tag(e), dir_offset(e));
   CHECK_DIR(d);
   d->header->dirty = 1;
@@ -689,7 +689,7 @@ Lfill:
 }
 
 int
-dir_delete(CacheKey *key, Part *d, Dir *del)
+dir_delete(CacheKey *key, Vol *d, Dir *del)
 {
   ink_debug_assert(d->mutex->thread_holding == this_ethread());
   int s = key->word(0) % d->segments;
@@ -699,7 +699,7 @@ dir_delete(CacheKey *key, Part *d, Dir *del)
 #ifdef LOOP_CHECK_MODE
   int loop_count = 0;
 #endif
-  Part *part = d;
+  Vol *vol = d;
   CHECK_DIR(d);
 
   e = dir_bucket(b, seg);
@@ -728,7 +728,7 @@ dir_delete(CacheKey *key, Part *d, Dir *del)
 // Lookaside Cache
 
 int
-dir_lookaside_probe(CacheKey *key, Part *d, Dir *result, EvacuationBlock ** eblock)
+dir_lookaside_probe(CacheKey *key, Vol *d, Dir *result, EvacuationBlock ** eblock)
 {
   ink_debug_assert(d->mutex->thread_holding == this_ethread());
   int i = key->word(3) % LOOKASIDE_SIZE;
@@ -750,7 +750,7 @@ dir_lookaside_probe(CacheKey *key, Part *d, Dir *result, EvacuationBlock ** eblo
 }
 
 int
-dir_lookaside_insert(EvacuationBlock *eblock, Part *d, Dir *to)
+dir_lookaside_insert(EvacuationBlock *eblock, Vol *d, Dir *to)
 {
   CacheKey *key = &eblock->evac_frags.earliest_key;
   DDebug("dir_lookaside", "insert %X %X, offset %d phase %d", key->word(0), key->word(1), (int) dir_offset(to), (int) dir_phase(to));
@@ -768,7 +768,7 @@ dir_lookaside_insert(EvacuationBlock *eblock, Part *d, Dir *to)
 }
 
 int
-dir_lookaside_fixup(CacheKey *key, Part *d)
+dir_lookaside_fixup(CacheKey *key, Vol *d)
 {
   ink_debug_assert(d->mutex->thread_holding == this_ethread());
   int i = key->word(3) % LOOKASIDE_SIZE;
@@ -790,7 +790,7 @@ dir_lookaside_fixup(CacheKey *key, Part *d)
 }
 
 void
-dir_lookaside_cleanup(Part *d)
+dir_lookaside_cleanup(Vol *d)
 {
   ink_debug_assert(d->mutex->thread_holding == this_ethread());
   for (int i = 0; i < LOOKASIDE_SIZE; i++) {
@@ -813,7 +813,7 @@ dir_lookaside_cleanup(Part *d)
 }
 
 void
-dir_lookaside_remove(CacheKey *key, Part *d)
+dir_lookaside_remove(CacheKey *key, Vol *d)
 {
   ink_debug_assert(d->mutex->thread_holding == this_ethread());
   int i = key->word(3) % LOOKASIDE_SIZE;
@@ -855,7 +855,7 @@ CacheSync::aio_write(int fd, char *b, int n, off_t o)
 }
 
 uint64_t
-dir_entries_used(Part *d)
+dir_entries_used(Vol *d)
 {
   uint64_t full = 0;
   uint64_t sfull = 0;
@@ -894,18 +894,18 @@ sync_cache_dir_on_shutdown(void)
   int buflen = 0;
 
   EThread *t = (EThread *) 0xdeadbeef;
-  for (int i = 0; i < gnpart; i++) {
+  for (int i = 0; i < gnvol; i++) {
     // the process is going down, do a blocking call
-    // dont release the partition's lock, there could
+    // dont release the volume's lock, there could
     // be another aggWrite in progress
-    MUTEX_TAKE_LOCK(gpart[i]->mutex, t);
-    Part *d = gpart[i];
+    MUTEX_TAKE_LOCK(gvol[i]->mutex, t);
+    Vol *d = gvol[i];
 
     if (DISK_BAD(d->disk)) {
       Debug("cache_dir_sync", "Dir %s: ignoring -- bad disk", d->hash_id);
       continue;
     }
-    int dirlen = part_dirlen(d);
+    int dirlen = vol_dirlen(d);
     if (!d->header->dirty && !d->dir_sync_in_progress) {
       Debug("cache_dir_sync", "Dir %s: ignoring -- not dirty", d->hash_id);
       continue;
@@ -957,7 +957,7 @@ sync_cache_dir_on_shutdown(void)
     off_t start = d->skip + (B ? dirlen : 0);
     B = pwrite(d->fd, buf, dirlen, start);
     ink_debug_assert(B == dirlen);
-    Debug("cache_dir_sync", "done syncing dir for part %s", d->hash_id);
+    Debug("cache_dir_sync", "done syncing dir for vol %s", d->hash_id);
   }
   Debug("cache_dir_sync", "sync done");
   if (buf)
@@ -978,8 +978,8 @@ CacheSync::mainEvent(int event, Event *e)
   }
 
 Lrestart:
-  if (part >= gnpart) {
-    part = 0;
+  if (vol >= gnvol) {
+    vol = 0;
     if (buf) {
       ink_memalign_free(buf);
       buf = 0;
@@ -995,7 +995,7 @@ Lrestart:
   if (event == AIO_EVENT_DONE) {
     // AIO Thread
     if (io.aio_result != (int) io.aiocb.aio_nbytes) {
-      Warning("part write error during directory sync '%s'", gpart[part]->hash_id);
+      Warning("vol write error during directory sync '%s'", gvol[vol]->hash_id);
       event = EVENT_NONE;
       goto Ldone;
     }
@@ -1003,12 +1003,12 @@ Lrestart:
     return EVENT_CONT;
   }
   {
-    CACHE_TRY_LOCK(lock, gpart[part]->mutex, mutex->thread_holding);
+    CACHE_TRY_LOCK(lock, gvol[vol]->mutex, mutex->thread_holding);
     if (!lock) {
       trigger = eventProcessor.schedule_in(this, HRTIME_MSECONDS(cache_config_mutex_retry_delay));
       return EVENT_CONT;
     }
-    Part *d = gpart[part];
+    Vol *d = gvol[vol];
 
 #ifdef HIT_EVACUATE
     // recompute hit_evacuate_window
@@ -1018,8 +1018,8 @@ Lrestart:
     if (DISK_BAD(d->disk))
       goto Ldone;
 
-    int headerlen = ROUND_TO_STORE_BLOCK(sizeof(PartHeaderFooter));
-    int dirlen = part_dirlen(d);
+    int headerlen = ROUND_TO_STORE_BLOCK(sizeof(VolHeaderFooter));
+    int dirlen = vol_dirlen(d);
     if (!writepos) {
       // start
       Debug("cache_dir_sync", "sync started");
@@ -1082,7 +1082,7 @@ Lrestart:
 Ldone:
   // done
   writepos = 0;
-  part++;
+  vol++;
   goto Lrestart;
 }
 
@@ -1092,7 +1092,7 @@ Ldone:
 
 #define HIST_DEPTH 8
 int
-Part::dir_check(bool fix)
+Vol::dir_check(bool fix)
 {
   NOWARN_UNUSED(fix);
   int hist[HIST_DEPTH + 1] = { 0 };
@@ -1259,7 +1259,7 @@ regress_rand_CacheKey(CacheKey *key)
 }
 
 void
-dir_corrupt_bucket(Dir *b, int s, Part *d)
+dir_corrupt_bucket(Dir *b, int s, Vol *d)
 {
   // coverity[secure_coding]
   int l = ((int) (dir_bucket_length(b, s, d) * drand48()));
@@ -1277,17 +1277,17 @@ EXCLUSIVE_REGRESSION_TEST(Cache_dir) (RegressionTest *t, int atype, int *status)
   ink_hrtime ttime;
   int ret = REGRESSION_TEST_PASSED;
 
-  if ((CacheProcessor::IsCacheEnabled() != CACHE_INITIALIZED) || gnpart < 1) {
+  if ((CacheProcessor::IsCacheEnabled() != CACHE_INITIALIZED) || gnvol < 1) {
     rprintf(t, "cache not ready/configured");
     *status = REGRESSION_TEST_FAILED;
     return;
   }
-  Part *d = gpart[0];
+  Vol *d = gvol[0];
   EThread *thread = this_ethread();
   MUTEX_TRY_LOCK(lock, d->mutex, thread);
   ink_release_assert(lock);
-  rprintf(t, "clearing part 0\n", free);
-  part_dir_clear(d);
+  rprintf(t, "clearing vol 0\n", free);
+  vol_dir_clear(d);
 
   // coverity[var_decl]
   Dir dir;
@@ -1358,7 +1358,7 @@ EXCLUSIVE_REGRESSION_TEST(Cache_dir) (RegressionTest *t, int atype, int *status)
     rprintf(t, "probe rate = %d / second\n", (int) ((newfree * (uint64_t) 1000000) / us));
 
 
-  for (int c = 0; c < part_direntries(d) * 0.75; c++) {
+  for (int c = 0; c < vol_direntries(d) * 0.75; c++) {
     regress_rand_CacheKey(&key);
     dir_insert(&key, d, &dir);
   }
@@ -1443,6 +1443,6 @@ EXCLUSIVE_REGRESSION_TEST(Cache_dir) (RegressionTest *t, int atype, int *status)
       ret = REGRESSION_TEST_FAILED;
 #endif
   }
-  part_dir_clear(d);
+  vol_dir_clear(d);
   *status = ret;
 }

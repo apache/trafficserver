@@ -317,7 +317,7 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.cache.max_disk_errors
  proxy.config.cache.max_doc_size
  proxy.config.cache.min_average_object_size
- proxy.config.cache.partition_filename
+ proxy.config.cache.volume_filename
  proxy.config.cache.permit.pinning
  proxy.config.cache.ram_cache_cutoff
  proxy.config.cache.ram_cache.size

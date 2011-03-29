@@ -42,7 +42,7 @@ struct RamCacheLRU: public RamCache {
   int put(INK_MD5 *key, IOBufferData *data, uint32_t len, bool copy = false, uint32_t auxkey1 = 0, uint32_t auxkey2 = 0);
   int fixup(INK_MD5 *key, uint32_t old_auxkey1, uint32_t old_auxkey2, uint32_t new_auxkey1, uint32_t new_auxkey2);
 
-  void init(int64_t max_bytes, Part *part);
+  void init(int64_t max_bytes, Vol *vol);
 
   // private
   uint16_t *seen;
@@ -50,12 +50,12 @@ struct RamCacheLRU: public RamCache {
   DList(RamCacheLRUEntry, hash_link) *bucket;
   int nbuckets;
   int ibuckets;
-  Part *part;
+  Vol *vol;
 
   void resize_hashtable();
   RamCacheLRUEntry *remove(RamCacheLRUEntry *e);
 
-  RamCacheLRU():bytes(0), objects(0), seen(0), bucket(0), nbuckets(0), ibuckets(0), part(NULL) {}
+  RamCacheLRU():bytes(0), objects(0), seen(0), bucket(0), nbuckets(0), ibuckets(0), vol(NULL) {}
 };
 
 ClassAllocator<RamCacheLRUEntry> ramCacheLRUEntryAllocator("RamCacheLRUEntry");
@@ -89,8 +89,8 @@ void RamCacheLRU::resize_hashtable() {
 }
 
 void
-RamCacheLRU::init(int64_t abytes, Part *apart) {
-  part = apart;
+RamCacheLRU::init(int64_t abytes, Vol *avol) {
+  vol = avol;
   max_bytes = abytes;
   DDebug("ram_cache", "initializing ram_cache %" PRId64 " bytes", abytes);
   if (!max_bytes)

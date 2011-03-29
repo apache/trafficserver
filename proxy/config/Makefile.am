@@ -42,7 +42,7 @@ dist_sysconf_DATA =	\
   mgmt_allow.config.default \
   mgr.cnf.default \
   parent.config.default \
-  partition.config.default \
+  volume.config.default \
   plugin.config.default \
   plugin.db.default \
   remap.config.default \

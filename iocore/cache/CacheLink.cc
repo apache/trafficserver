@@ -35,7 +35,7 @@ Cache::link(Continuation * cont, CacheKey * from, CacheKey * to, CacheFragType t
   ink_assert(caches[type] == this);
 
   CacheVC *c = new_CacheVC(cont);
-  c->part = key_to_part(from, hostname, host_len);
+  c->vol = key_to_vol(from, hostname, host_len);
   c->write_len = sizeof(*to);   // so that the earliest_key will be used
   c->f.use_first_key = 1;
   c->first_key = *from;
@@ -62,7 +62,7 @@ CacheVC::linkWrite(int event, Event * e)
   NOWARN_UNUSED(event);
   ink_assert(event == AIO_EVENT_DONE);
   set_io_not_in_progress();
-  dir_insert(&first_key, part, &dir);
+  dir_insert(&first_key, vol, &dir);
   if (_action.cancelled)
     goto Ldone;
   if (io.ok())
@@ -84,14 +84,14 @@ Cache::deref(Continuation * cont, CacheKey * key, CacheFragType type, char *host
 
   ink_assert(caches[type] == this);
 
-  Part *part = key_to_part(key, hostname, host_len);
+  Vol *vol = key_to_vol(key, hostname, host_len);
   Dir result;
   Dir *last_collision = NULL;
   CacheVC *c = NULL;
   {
-    MUTEX_TRY_LOCK(lock, part->mutex, cont->mutex->thread_holding);
+    MUTEX_TRY_LOCK(lock, vol->mutex, cont->mutex->thread_holding);
     if (lock) {
-      if (!dir_probe(key, part, &result, &last_collision)) {
+      if (!dir_probe(key, vol, &result, &last_collision)) {
         cont->handleEvent(CACHE_EVENT_DEREF_FAILED, (void *) -ECACHE_NO_DOC);
         return ACTION_RESULT_DONE;
       }
@@ -99,7 +99,7 @@ Cache::deref(Continuation * cont, CacheKey * key, CacheFragType type, char *host
     c = new_CacheVC(cont);
     SET_CONTINUATION_HANDLER(c, &CacheVC::derefRead);
     c->first_key = c->key = *key;
-    c->part = part;
+    c->vol = vol;
     c->dir = result;
     c->last_collision = last_collision;
 
@@ -136,7 +136,7 @@ CacheVC::derefRead(int event, Event * e)
     goto Lcollision;
   if ((int) io.aio_result != (int) io.aiocb.aio_nbytes)
     goto Ldone;
-  if (!dir_agg_valid(part, &dir)) {
+  if (!dir_agg_valid(vol, &dir)) {
     last_collision = NULL;
     goto Lcollision;
   }
@@ -150,12 +150,12 @@ CacheVC::derefRead(int event, Event * e)
   return free_CacheVC(this);
 
 Lcollision:{
-    CACHE_TRY_LOCK(lock, part->mutex, mutex->thread_holding);
+    CACHE_TRY_LOCK(lock, vol->mutex, mutex->thread_holding);
     if (!lock) {
       mutex->thread_holding->schedule_in_local(this, HRTIME_MSECONDS(cache_config_mutex_retry_delay));
       return EVENT_CONT;
     }
-    if (dir_probe(&key, part, &dir, &last_collision)) {
+    if (dir_probe(&key, vol, &dir, &last_collision)) {
       int ret = do_read_call(&first_key);
       if (ret == EVENT_RETURN)
         goto Lcallreturn;

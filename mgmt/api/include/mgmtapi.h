@@ -352,11 +352,11 @@ extern "C"
     TS_SCHEME_UNDEFINED
   } TSSchemeT;
 
-  typedef enum                  /* possible schemes to divide partition by */
+  typedef enum                  /* possible schemes to divide volume by */
   {
-    TS_PARTITION_HTTP,
-    TS_PARTITION_UNDEFINED
-  } TSPartitionSchemeT;
+    TS_VOLUME_HTTP,
+    TS_VOLUME_UNDEFINED
+  } TSVolumeSchemeT;
 
   typedef enum                  /* specifies how size is specified */
   {
@@ -389,7 +389,7 @@ extern "C"
     TS_FNAME_LOGS_XML,         /* logs_xml.config */
     TS_FNAME_MGMT_ALLOW,       /* mgmt_allow.config */
     TS_FNAME_PARENT_PROXY,     /* parent.config */
-    TS_FNAME_PARTITION,        /* partition.config */
+    TS_FNAME_VOLUME,        /* volume.config */
     TS_FNAME_PLUGIN,           /* plugin.config */
     TS_FNAME_REMAP,            /* remap.config */
     TS_FNAME_SOCKS,            /* socks.config */
@@ -429,7 +429,7 @@ extern "C"
     TS_MGMT_ALLOW,             /* mgmt_allow.config */
     TS_PP_PARENT,              /* parent.config */
     TS_PP_GO_DIRECT,
-    TS_PARTITION,              /* partition.config */
+    TS_VOLUME,              /* volume.config */
     TS_PLUGIN,                 /* plugin.config */
     TS_REMAP_MAP,              /* remap.config */
     TS_REMAP_REVERSE_MAP,
@@ -627,7 +627,7 @@ extern "C"
     TSCfgEle cfg_ele;
     TSPrimeDestT pd_type;
     char *pd_val;               /* domain or hostname  */
-    TSIntList partitions;      /* must be a list of ints */
+    TSIntList volumes;      /* must be a list of ints */
   } TSHostingEle;
 
 /* icp.config */
@@ -709,15 +709,15 @@ extern "C"
                                    not bypass parent heirarchies */
   } TSParentProxyEle;          /* exactly one of rr or parent_proxy_act must be defined */
 
-/* partition.config */
+/* volume.config */
   typedef struct
   {
     TSCfgEle cfg_ele;
-    int partition_num;          /* must be in range 1 - 255 */
-    TSPartitionSchemeT scheme; /* http */
-    int partition_size;         /* >= 128 MB, multiple of 128 */
+    int volume_num;          /* must be in range 1 - 255 */
+    TSVolumeSchemeT scheme; /* http */
+    int volume_size;         /* >= 128 MB, multiple of 128 */
     TSSizeFormatT size_format; /* percentage or absolute */
-  } TSPartitionEle;
+  } TSVolumeEle;
 
 /* plugin.config */
   typedef struct
@@ -779,8 +779,8 @@ extern "C"
   typedef struct
   {
     TSCfgEle cfg_ele;
-    char *pathname;             /* the name of a partition, directory, or file */
-    int size;                   /* size of the named pathname (in bytes); optional if raw partitions */
+    char *pathname;             /* the name of a disk partition, directory, or file */
+    int size;                   /* size of the named pathname (in bytes); optional if raw disk partitions */
   } TSStorageEle;
 
 /* update.config */
@@ -948,8 +948,8 @@ extern "C"
   tsapi void TSMgmtAllowEleDestroy(TSMgmtAllowEle * ele);
   tsapi TSParentProxyEle *TSParentProxyEleCreate(TSRuleTypeT type);
   tsapi void TSParentProxyEleDestroy(TSParentProxyEle * ele);
-  tsapi TSPartitionEle *TSPartitionEleCreate();
-  tsapi void TSPartitionEleDestroy(TSPartitionEle * ele);
+  tsapi TSVolumeEle *TSVolumeEleCreate();
+  tsapi void TSVolumeEleDestroy(TSVolumeEle * ele);
   tsapi TSPluginEle *TSPluginEleCreate();
   tsapi void TSPluginEleDestroy(TSPluginEle * ele);
   tsapi TSRemapEle *TSRemapEleCreate(TSRuleTypeT type);

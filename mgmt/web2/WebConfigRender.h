@@ -61,9 +61,9 @@ int writeParentConfigTable(WebHttpContext * whc);
 int writeParentRuleList(textBuffer * output);
 int writeParentConfigForm(WebHttpContext * whc);
 
-int writePartitionConfigTable(WebHttpContext * whc);
-int writePartitionRuleList(textBuffer * output);
-int writePartitionConfigForm(WebHttpContext * whc);
+int writeVolumeConfigTable(WebHttpContext * whc);
+int writeVolumeRuleList(textBuffer * output);
+int writeVolumeConfigForm(WebHttpContext * whc);
 
 int writeRemapConfigTable(WebHttpContext * whc);
 int writeRemapRuleList(textBuffer * output);
@@ -101,7 +101,7 @@ int convert_cache_ele_to_html_format(TSCacheEle * ele,
                                      char *suffix,
                                      char *port, char *method, char *scheme, char *time_period);
 
-int convert_hosting_ele_to_html_format(TSHostingEle * ele, char *pdType, char *partitions);
+int convert_hosting_ele_to_html_format(TSHostingEle * ele, char *pdType, char *volumes);
 
 int convert_icp_ele_to_html_format(TSIcpEle * ele,
                                    char *name,
@@ -123,7 +123,7 @@ int convert_parent_ele_to_html_format(TSParentProxyEle * ele,
                                       char *method,
                                       char *scheme, char *parents, char *round_robin, char *direct);
 
-int convert_partition_ele_to_html_format(TSPartitionEle * ele,
+int convert_volume_ele_to_html_format(TSVolumeEle * ele,
                                          char *part_num, char *scheme, char *size, char *size_fmt);
 
 int convert_remap_ele_to_html_format(TSRemapEle * ele,
@@ -161,7 +161,7 @@ void writePdTypeSelect_splitdns(textBuffer * html, const char *listName);
 void writeMethodSelect(textBuffer * html, const char *listName);
 void writeMethodSelect_push(textBuffer * html, const char *listName);
 void writeSchemeSelect(textBuffer * html, const char *listName);
-void writeSchemeSelect_partition(textBuffer * html, const char *listName);
+void writeSchemeSelect_volume(textBuffer * html, const char *listName);
 void writeSchemeSelect_remap(textBuffer * html, const char *listName);
 void writeHeaderTypeSelect(textBuffer * html, const char *listName);
 void writeCacheTypeSelect(textBuffer * html, const char *listName);

@@ -1083,7 +1083,7 @@ TSHostingEleCreate()
   ele->cfg_ele.error = TS_ERR_OKAY;
   ele->pd_type = TS_PD_UNDEFINED;
   ele->pd_val = NULL;
-  ele->partitions = TS_INVALID_LIST;
+  ele->volumes = TS_INVALID_LIST;
 
   return ele;
 }
@@ -1094,8 +1094,8 @@ TSHostingEleDestroy(TSHostingEle * ele)
   if (ele) {
     if (ele->pd_val)
       xfree(ele->pd_val);
-    if (ele->partitions)
-      TSIntListDestroy(ele->partitions);
+    if (ele->volumes)
+      TSIntListDestroy(ele->volumes);
     xfree(ele);
   }
   return;
@@ -1369,29 +1369,29 @@ TSParentProxyEleDestroy(TSParentProxyEle * ele)
 }
 
 /*-------------------------------------------------------------
- * TSPartitionEle
+ * TSVolumeEle
  *-------------------------------------------------------------*/
-tsapi TSPartitionEle *
-TSPartitionEleCreate()
+tsapi TSVolumeEle *
+TSVolumeEleCreate()
 {
-  TSPartitionEle *ele;
+  TSVolumeEle *ele;
 
-  ele = (TSPartitionEle *) xmalloc(sizeof(TSPartitionEle));
+  ele = (TSVolumeEle *) xmalloc(sizeof(TSVolumeEle));
   if (!ele)
     return NULL;
 
-  ele->cfg_ele.type = TS_PARTITION;
+  ele->cfg_ele.type = TS_VOLUME;
   ele->cfg_ele.error = TS_ERR_OKAY;
-  ele->partition_num = 0;
-  ele->scheme = TS_PARTITION_UNDEFINED;
-  ele->partition_size = 0;
+  ele->volume_num = 0;
+  ele->scheme = TS_VOLUME_UNDEFINED;
+  ele->volume_size = 0;
   ele->size_format = TS_SIZE_FMT_UNDEFINED;
 
   return ele;
 }
 
 tsapi void
-TSPartitionEleDestroy(TSPartitionEle * ele)
+TSVolumeEleDestroy(TSVolumeEle * ele)
 {
   if (ele) {
     xfree(ele);

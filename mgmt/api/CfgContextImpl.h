@@ -366,13 +366,13 @@ private:
   TSParentProxyEle * m_ele;
 };
 
-/* partition.config    *******************************************/
-class PartitionObj:public CfgEleObj
+/* volume.config    *******************************************/
+class VolumeObj:public CfgEleObj
 {
 public:
-  PartitionObj(TSPartitionEle * ele);
-  PartitionObj(TokenList * tokens);
-  ~PartitionObj();
+  VolumeObj(TSVolumeEle * ele);
+  VolumeObj(TokenList * tokens);
+  ~VolumeObj();
 
   virtual char *formatEleToRule();
   virtual bool isValid();
@@ -387,7 +387,7 @@ public:
   }
 
 private:
-  TSPartitionEle * m_ele;
+  TSVolumeEle * m_ele;
 };
 
 /* plugin.config    *******************************************/

@@ -82,7 +82,7 @@ initializeRegistry()
   configFiles->addFile("remap.config", false);
   configFiles->addFile("update.config", false);
   configFiles->addFile("admin_access.config", false);
-  configFiles->addFile("partition.config", false);
+  configFiles->addFile("volume.config", false);
   configFiles->addFile("hosting.config", false);
   configFiles->addFile("congestion.config", false);
   configFiles->addFile("plugin.config", false);

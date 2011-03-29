@@ -28,7 +28,7 @@ dist_webui_DATA = \
 	f_ip_allow_config.ink \
 	f_mgmt_allow_config.ink \
 	f_parent_config.ink \
-	f_partition_config.ink \
+	f_volume_config.ink \
 	f_remap_config.ink \
 	f_socks_config.ink \
 	f_split_dns_config.ink \

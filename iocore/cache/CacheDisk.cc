@@ -41,16 +41,16 @@ CacheDisk::open(char *s, off_t blocks, off_t askip, int ahw_sector_size, int fil
   uint64_t l;
   for (int i = 0; i < 3; i++) {
     l = (len * STORE_BLOCK_SIZE) - (start - skip);
-    if (l >= MIN_PART_SIZE) {
-      header_len = sizeof(DiskHeader) + (l / MIN_PART_SIZE - 1) * sizeof(DiskPartBlock);
+    if (l >= MIN_VOL_SIZE) {
+      header_len = sizeof(DiskHeader) + (l / MIN_VOL_SIZE - 1) * sizeof(DiskVolBlock);
     } else {
       header_len = sizeof(DiskHeader);
     }
     start = skip + header_len;
   }
 
-  disk_parts = (DiskPart **) xmalloc((l / MIN_PART_SIZE + 1) * sizeof(DiskPart **));
-  memset(disk_parts, 0, (l / MIN_PART_SIZE + 1) * sizeof(DiskPart **));
+  disk_vols = (DiskVol **) xmalloc((l / MIN_VOL_SIZE + 1) * sizeof(DiskVol **));
+  memset(disk_vols, 0, (l / MIN_VOL_SIZE + 1) * sizeof(DiskVol **));
   header_len = ROUND_TO_STORE_BLOCK(header_len);
   start = skip + header_len;
   num_usable_blocks = (off_t(len * STORE_BLOCK_SIZE) - (start - askip)) >> STORE_BLOCK_SHIFT;
@@ -80,17 +80,17 @@ CacheDisk::~CacheDisk()
 {
   if (path) {
     xfree(path);
-    for (int i = 0; i < (int) header->num_partitions; i++) {
-      DiskPartBlockQueue *q = NULL;
-      while (disk_parts[i] && (q = (disk_parts[i]->dpb_queue.pop()))) {
+    for (int i = 0; i < (int) header->num_volumes; i++) {
+      DiskVolBlockQueue *q = NULL;
+      while (disk_vols[i] && (q = (disk_vols[i]->dpb_queue.pop()))) {
         delete q;
       }
     }
-    xfree(disk_parts);
+    xfree(disk_vols);
     free(header);
   }
   if (free_blocks) {
-    DiskPartBlockQueue *q = NULL;
+    DiskVolBlockQueue *q = NULL;
     while ((q = (free_blocks->dpb_queue.pop()))) {
       delete q;
     }
@@ -101,7 +101,7 @@ CacheDisk::~CacheDisk()
 int
 CacheDisk::clearDisk()
 {
-  delete_all_partitions();
+  delete_all_volumes();
 
   io.aiocb.aio_offset = skip;
   io.aiocb.aio_buf = header;
@@ -148,7 +148,7 @@ CacheDisk::openStart(int event, void *data)
   }
 
   cleared = 0;
-  /* populate disk_parts */
+  /* populate disk_vols */
   update_header();
 
   SET_HANDLER(&CacheDisk::openDone);
@@ -198,23 +198,24 @@ CacheDisk::syncDone(int event, void *data)
 }
 
 /* size is in store blocks */
-DiskPartBlock *
-CacheDisk::create_partition(int number, off_t size_in_blocks, int scheme)
+DiskVolBlock *
+CacheDisk::create_volume(int number, off_t size_in_blocks, int scheme)
 {
   if (size_in_blocks == 0)
     return NULL;
 
-  DiskPartBlockQueue *q = free_blocks->dpb_queue.head;
-  DiskPartBlockQueue *closest_match = q;
+  DiskVolBlockQueue *q = free_blocks->dpb_queue.head;
+  DiskVolBlockQueue *closest_match = q;
 
   if (!q)
     return NULL;
-  off_t max_blocks = MAX_PART_SIZE >> STORE_BLOCK_SHIFT;
+
+  off_t max_blocks = MAX_VOL_SIZE >> STORE_BLOCK_SHIFT;
   size_in_blocks = (size_in_blocks <= max_blocks) ? size_in_blocks : max_blocks;
 
-  int blocks_per_part = PART_BLOCK_SIZE / STORE_BLOCK_SIZE;
-//  ink_assert(!(size_in_blocks % blocks_per_part));
-  DiskPartBlock *p = 0;
+  int blocks_per_vol = VOL_BLOCK_SIZE / STORE_BLOCK_SIZE;
+//  ink_assert(!(size_in_blocks % blocks_per_vol));
+  DiskVolBlock *p = 0;
   for (; q; q = q->link.next) {
     if (q->b->len >= (unsigned int) size_in_blocks) {
       p = q->b;
@@ -237,8 +238,8 @@ CacheDisk::create_partition(int number, off_t size_in_blocks, int scheme)
     ink_assert(size_in_blocks > (int) p->len);
     /* allocate in 128 megabyte chunks. The Remaining space should
        be thrown away */
-    size_in_blocks = (p->len - (p->len % blocks_per_part));
-    wasted_space += p->len % blocks_per_part;
+    size_in_blocks = (p->len - (p->len % blocks_per_vol));
+    wasted_space += p->len % blocks_per_vol;
   }
 
   free_blocks->dpb_queue.remove(q);
@@ -246,19 +247,19 @@ CacheDisk::create_partition(int number, off_t size_in_blocks, int scheme)
   free_blocks->size -= p->len;
 
   int new_size = p->len - size_in_blocks;
-  if (new_size >= blocks_per_part) {
-    /* create a new partition */
-    DiskPartBlock *dpb = &header->part_info[header->num_diskpart_blks];
+  if (new_size >= blocks_per_vol) {
+    /* create a new volume */
+    DiskVolBlock *dpb = &header->vol_info[header->num_diskvol_blks];
     *dpb = *p;
     dpb->len -= size_in_blocks;
     dpb->offset += ((off_t) size_in_blocks * STORE_BLOCK_SIZE);
 
-    DiskPartBlockQueue *new_q = NEW(new DiskPartBlockQueue());
+    DiskVolBlockQueue *new_q = NEW(new DiskVolBlockQueue());
     new_q->b = dpb;
     free_blocks->dpb_queue.enqueue(new_q);
     free_blocks->size += dpb->len;
     free_space += dpb->len;
-    header->num_diskpart_blks++;
+    header->num_diskvol_blks++;
   } else
     header->num_free--;
 
@@ -269,57 +270,57 @@ CacheDisk::create_partition(int number, off_t size_in_blocks, int scheme)
   header->num_used++;
 
   unsigned int i;
-  /* add it to its disk_part */
-  for (i = 0; i < header->num_partitions; i++) {
-    if (disk_parts[i]->part_number == number) {
-      disk_parts[i]->dpb_queue.enqueue(q);
-      disk_parts[i]->num_partblocks++;
-      disk_parts[i]->size += q->b->len;
+  /* add it to its disk_vol */
+  for (i = 0; i < header->num_volumes; i++) {
+    if (disk_vols[i]->vol_number == number) {
+      disk_vols[i]->dpb_queue.enqueue(q);
+      disk_vols[i]->num_volblocks++;
+      disk_vols[i]->size += q->b->len;
       break;
     }
   }
-  if (i == header->num_partitions) {
-    disk_parts[i] = NEW(new DiskPart());
-    disk_parts[i]->num_partblocks = 1;
-    disk_parts[i]->part_number = number;
-    disk_parts[i]->disk = this;
-    disk_parts[i]->dpb_queue.enqueue(q);
-    disk_parts[i]->size = q->b->len;
-    header->num_partitions++;
+  if (i == header->num_volumes) {
+    disk_vols[i] = NEW(new DiskVol());
+    disk_vols[i]->num_volblocks = 1;
+    disk_vols[i]->vol_number = number;
+    disk_vols[i]->disk = this;
+    disk_vols[i]->dpb_queue.enqueue(q);
+    disk_vols[i]->size = q->b->len;
+    header->num_volumes++;
   }
   return p;
 }
 
 
 int
-CacheDisk::delete_partition(int number)
+CacheDisk::delete_volume(int number)
 {
   unsigned int i;
-  for (i = 0; i < header->num_partitions; i++) {
-    if (disk_parts[i]->part_number == number) {
+  for (i = 0; i < header->num_volumes; i++) {
+    if (disk_vols[i]->vol_number == number) {
 
-      DiskPartBlockQueue *q;
-      for (q = disk_parts[i]->dpb_queue.head; q;) {
-        DiskPartBlock *p = q->b;
+      DiskVolBlockQueue *q;
+      for (q = disk_vols[i]->dpb_queue.head; q;) {
+        DiskVolBlock *p = q->b;
         p->type = CACHE_NONE_TYPE;
         p->free = 1;
         free_space += p->len;
         header->num_free++;
         header->num_used--;
-        DiskPartBlockQueue *temp_q = q->link.next;
-        disk_parts[i]->dpb_queue.remove(q);
+        DiskVolBlockQueue *temp_q = q->link.next;
+        disk_vols[i]->dpb_queue.remove(q);
         free_blocks->dpb_queue.enqueue(q);
         q = temp_q;
       }
-      free_blocks->num_partblocks += disk_parts[i]->num_partblocks;
-      free_blocks->size += disk_parts[i]->size;
+      free_blocks->num_volblocks += disk_vols[i]->num_volblocks;
+      free_blocks->size += disk_vols[i]->size;
 
-      delete disk_parts[i];
-      /* move all the other disk parts */
-      for (unsigned int j = i; j < (header->num_partitions - 1); j++) {
-        disk_parts[j] = disk_parts[j + 1];
+      delete disk_vols[i];
+      /* move all the other disk vols */
+      for (unsigned int j = i; j < (header->num_volumes - 1); j++) {
+        disk_vols[j] = disk_vols[j + 1];
       }
-      header->num_partitions--;
+      header->num_volumes--;
       return 0;
     }
   }
@@ -332,50 +333,50 @@ CacheDisk::update_header()
   unsigned int n = 0;
   unsigned int i, j;
   if (free_blocks) {
-    DiskPartBlockQueue *q = NULL;
+    DiskVolBlockQueue *q = NULL;
     while ((q = (free_blocks->dpb_queue.pop()))) {
       delete q;
     }
     delete free_blocks;
   }
-  free_blocks = NEW(new DiskPart());
-  free_blocks->part_number = -1;
+  free_blocks = NEW(new DiskVol());
+  free_blocks->vol_number = -1;
   free_blocks->disk = this;
-  free_blocks->num_partblocks = 0;
+  free_blocks->num_volblocks = 0;
   free_blocks->size = 0;
   free_space = 0;
 
-  for (i = 0; i < header->num_diskpart_blks; i++) {
-    DiskPartBlockQueue *dpbq = NEW(new DiskPartBlockQueue());
+  for (i = 0; i < header->num_diskvol_blks; i++) {
+    DiskVolBlockQueue *dpbq = NEW(new DiskVolBlockQueue());
     bool dpbq_referenced = false;
-    dpbq->b = &header->part_info[i];
-    if (header->part_info[i].free) {
-      free_blocks->num_partblocks++;
+    dpbq->b = &header->vol_info[i];
+    if (header->vol_info[i].free) {
+      free_blocks->num_volblocks++;
       free_blocks->size += dpbq->b->len;
       free_blocks->dpb_queue.enqueue(dpbq);
       dpbq_referenced = true;
       free_space += dpbq->b->len;
       continue;
     }
-    int part_number = header->part_info[i].number;
+    int vol_number = header->vol_info[i].number;
     for (j = 0; j < n; j++) {
-      if (disk_parts[j]->part_number == part_number) {
-        disk_parts[j]->dpb_queue.enqueue(dpbq);
+      if (disk_vols[j]->vol_number == vol_number) {
+        disk_vols[j]->dpb_queue.enqueue(dpbq);
         dpbq_referenced = true;
-        disk_parts[j]->num_partblocks++;
-        disk_parts[j]->size += dpbq->b->len;
+        disk_vols[j]->num_volblocks++;
+        disk_vols[j]->size += dpbq->b->len;
         break;
       }
     }
     if (j == n) {
-      // did not find a matching partition number. create a new
+      // did not find a matching volume number. create a new
       // one
-      disk_parts[j] = NEW(new DiskPart());
-      disk_parts[j]->part_number = part_number;
-      disk_parts[j]->disk = this;
-      disk_parts[j]->num_partblocks = 1;
-      disk_parts[j]->size = dpbq->b->len;
-      disk_parts[j]->dpb_queue.enqueue(dpbq);
+      disk_vols[j] = NEW(new DiskVol());
+      disk_vols[j]->vol_number = vol_number;
+      disk_vols[j]->disk = this;
+      disk_vols[j]->num_volblocks = 1;
+      disk_vols[j]->size = dpbq->b->len;
+      disk_vols[j]->dpb_queue.enqueue(dpbq);
       dpbq_referenced = true;
       n++;
     }
@@ -385,34 +386,34 @@ CacheDisk::update_header()
     }
   }
 
-  ink_assert(n == header->num_partitions);
+  ink_assert(n == header->num_volumes);
 }
 
-DiskPart *
-CacheDisk::get_diskpart(int part_number)
+DiskVol *
+CacheDisk::get_diskvol(int vol_number)
 {
   unsigned int i;
-  for (i = 0; i < header->num_partitions; i++) {
-    if (disk_parts[i]->part_number == part_number) {
-      return disk_parts[i];
+  for (i = 0; i < header->num_volumes; i++) {
+    if (disk_vols[i]->vol_number == vol_number) {
+      return disk_vols[i];
     }
   }
   return NULL;
 }
 
 int
-CacheDisk::delete_all_partitions()
+CacheDisk::delete_all_volumes()
 {
-  header->part_info[0].offset = start;
-  header->part_info[0].len = num_usable_blocks;
-  header->part_info[0].type = CACHE_NONE_TYPE;
-  header->part_info[0].free = 1;
+  header->vol_info[0].offset = start;
+  header->vol_info[0].len = num_usable_blocks;
+  header->vol_info[0].type = CACHE_NONE_TYPE;
+  header->vol_info[0].free = 1;
 
   header->magic = DISK_HEADER_MAGIC;
   header->num_used = 0;
-  header->num_partitions = 0;
+  header->num_volumes = 0;
   header->num_free = 1;
-  header->num_diskpart_blks = 1;
+  header->num_diskvol_blks = 1;
   header->num_blocks = len;
   cleared = 1;
   update_header();

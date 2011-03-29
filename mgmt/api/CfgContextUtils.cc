@@ -1452,8 +1452,8 @@ filename_to_string(TSFileNameT file)
   case TS_FNAME_PARENT_PROXY:
     return xstrdup("parent.config");
 
-  case TS_FNAME_PARTITION:
-    return xstrdup("partition.config");
+  case TS_FNAME_VOLUME:
+    return xstrdup("volume.config");
 
   case TS_FNAME_PLUGIN:
     return xstrdup("plugin.config");
@@ -1974,8 +1974,8 @@ create_ele_obj_from_rule_node(Rule * rule)
   case TS_PP_GO_DIRECT:
     ele = (CfgEleObj *) new ParentProxyObj(token_list);
     break;
-  case TS_PARTITION:          /* partition.config */
-    ele = (CfgEleObj *) new PartitionObj(token_list);
+  case TS_VOLUME:          /* volume.config */
+    ele = (CfgEleObj *) new VolumeObj(token_list);
     break;
   case TS_PLUGIN:
     ele = (CfgEleObj *) new PluginObj(token_list);
@@ -2075,8 +2075,8 @@ create_ele_obj_from_ele(TSCfgEle * ele)
     ele_obj = (CfgEleObj *) new ParentProxyObj((TSParentProxyEle *) ele);
     break;
 
-  case TS_PARTITION:          /* partition.config */
-    ele_obj = (CfgEleObj *) new PartitionObj((TSPartitionEle *) ele);
+  case TS_VOLUME:          /* volume.config */
+    ele_obj = (CfgEleObj *) new VolumeObj((TSVolumeEle *) ele);
     break;
 
   case TS_PLUGIN:
@@ -2202,8 +2202,8 @@ get_rule_type(TokenList * token_list, TSFileNameT file)
     }
     return TS_PP_PARENT;
 
-  case TS_FNAME_PARTITION:    /* partition.config */
-    return TS_PARTITION;
+  case TS_FNAME_VOLUME:    /* volume.config */
+    return TS_VOLUME;
 
   case TS_FNAME_PLUGIN:       /* plugin.config */
     return TS_PLUGIN;
@@ -2575,7 +2575,7 @@ copy_hosting_ele(TSHostingEle * ele)
   nele->pd_type = ele->pd_type;
   if (ele->pd_val)
     nele->pd_val = xstrdup(ele->pd_val);
-  ele->partitions = copy_int_list(ele->partitions);
+  ele->volumes = copy_int_list(ele->volumes);
 
   return nele;
 }
@@ -2730,21 +2730,21 @@ copy_parent_proxy_ele(TSParentProxyEle * ele)
   return nele;
 }
 
-TSPartitionEle *
-copy_partition_ele(TSPartitionEle * ele)
+TSVolumeEle *
+copy_volume_ele(TSVolumeEle * ele)
 {
   if (!ele) {
     return NULL;
   }
 
-  TSPartitionEle *nele = TSPartitionEleCreate();
+  TSVolumeEle *nele = TSVolumeEleCreate();
   if (!nele)
     return NULL;
 
   copy_cfg_ele(&(ele->cfg_ele), &(nele->cfg_ele));
-  nele->partition_num = ele->partition_num;
+  nele->volume_num = ele->volume_num;
   nele->scheme = ele->scheme;
-  nele->partition_size = ele->partition_size;
+  nele->volume_size = ele->volume_size;
   nele->size_format = ele->size_format;
 
   return nele;

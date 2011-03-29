@@ -27,7 +27,7 @@
 
 #include "P_CacheHttp.h"
 
-struct Part;
+struct Vol;
 struct CacheVC;
 
 /*
@@ -84,18 +84,18 @@ struct CacheVC;
 } while(0)
 // entry is valid
 #define dir_valid(_d, _e)                                               \
-  (_d->header->phase == dir_phase(_e) ? part_in_phase_valid(_d, _e) :   \
-                                        part_out_of_phase_valid(_d, _e))
+  (_d->header->phase == dir_phase(_e) ? vol_in_phase_valid(_d, _e) :   \
+                                        vol_out_of_phase_valid(_d, _e))
 // entry is valid and outside of write aggregation region
 #define dir_agg_valid(_d, _e)                                            \
-  (_d->header->phase == dir_phase(_e) ? part_in_phase_valid(_d, _e) :    \
-                                        part_out_of_phase_agg_valid(_d, _e))
+  (_d->header->phase == dir_phase(_e) ? vol_in_phase_valid(_d, _e) :    \
+                                        vol_out_of_phase_agg_valid(_d, _e))
 // entry may be valid or overwritten in the last aggregated write
 #define dir_write_valid(_d, _e)                                         \
-  (_d->header->phase == dir_phase(_e) ? part_in_phase_valid(_d, _e) :   \
-                                        part_out_of_phase_write_valid(_d, _e))
+  (_d->header->phase == dir_phase(_e) ? vol_in_phase_valid(_d, _e) :   \
+                                        vol_out_of_phase_write_valid(_d, _e))
 #define dir_agg_buf_valid(_d, _e)                                          \
-  (_d->header->phase == dir_phase(_e) && part_in_phase_agg_buf_valid(_d, _e))
+  (_d->header->phase == dir_phase(_e) && vol_in_phase_agg_buf_valid(_d, _e))
 #define dir_is_empty(_e) (!dir_offset(_e))
 #define dir_clear(_e) do { \
     (_e)->w[0] = 0; \
@@ -105,7 +105,7 @@ struct CacheVC;
     (_e)->w[4] = 0; \
 } while (0)
 #define dir_clean(_e) dir_set_offset(_e,0)
-#define dir_segment(_s, _d) part_dir_segment(_d, _s)
+#define dir_segment(_s, _d) vol_dir_segment(_d, _s)
 
 // OpenDir
 
@@ -216,7 +216,7 @@ struct FreeDir
 // INKqa11166 - Cache can not store 2 HTTP alternates simultaneously.
 // To allow this, move the vector from the CacheVC to the OpenDirEntry.
 // Each CacheVC now maintains a pointer to this vector. Adding/Deleting
-// alternates from this vector is done under the Part::lock. The alternate
+// alternates from this vector is done under the Vol::lock. The alternate
 // is deleted/inserted into the vector just before writing the vector disk
 // (CacheVC::updateVector).
 LINK_FORWARD_DECLARATION(CacheVC, opendir_link) // forward declaration
@@ -263,7 +263,7 @@ struct OpenDir: public Continuation
 
 struct CacheSync: public Continuation
 {
-  int part;
+  int vol;
   char *buf;
   int buflen;
   int writepos;
@@ -272,7 +272,7 @@ struct CacheSync: public Continuation
   int mainEvent(int event, Event *e);
   void aio_write(int fd, char *b, int n, off_t o);
 
-  CacheSync():Continuation(new_ProxyMutex()), part(0), buf(0), buflen(0), writepos(0), trigger(0)
+  CacheSync():Continuation(new_ProxyMutex()), vol(0), buf(0), buflen(0), writepos(0), trigger(0)
   {
     SET_HANDLER(&CacheSync::mainEvent);
   }
@@ -280,26 +280,26 @@ struct CacheSync: public Continuation
 
 // Global Functions
 
-void part_init_dir(Part *d);
-int dir_token_probe(CacheKey *, Part *, Dir *);
-int dir_probe(CacheKey *, Part *, Dir *, Dir **);
-int dir_insert(CacheKey *key, Part *d, Dir *to_part);
-int dir_overwrite(CacheKey *key, Part *d, Dir *to_part, Dir *overwrite, bool must_overwrite = true);
-int dir_delete(CacheKey *key, Part *d, Dir *del);
-int dir_lookaside_probe(CacheKey *key, Part *d, Dir *result, EvacuationBlock ** eblock);
-int dir_lookaside_insert(EvacuationBlock *b, Part *d, Dir *to);
-int dir_lookaside_fixup(CacheKey *key, Part *d);
-void dir_lookaside_cleanup(Part *d);
-void dir_lookaside_remove(CacheKey *key, Part *d);
-void dir_free_entry(Dir *e, int s, Part *d);
+void vol_init_dir(Vol *d);
+int dir_token_probe(CacheKey *, Vol *, Dir *);
+int dir_probe(CacheKey *, Vol *, Dir *, Dir **);
+int dir_insert(CacheKey *key, Vol *d, Dir *to_part);
+int dir_overwrite(CacheKey *key, Vol *d, Dir *to_part, Dir *overwrite, bool must_overwrite = true);
+int dir_delete(CacheKey *key, Vol *d, Dir *del);
+int dir_lookaside_probe(CacheKey *key, Vol *d, Dir *result, EvacuationBlock ** eblock);
+int dir_lookaside_insert(EvacuationBlock *b, Vol *d, Dir *to);
+int dir_lookaside_fixup(CacheKey *key, Vol *d);
+void dir_lookaside_cleanup(Vol *d);
+void dir_lookaside_remove(CacheKey *key, Vol *d);
+void dir_free_entry(Dir *e, int s, Vol *d);
 void dir_sync_init();
-int check_dir(Part *d);
-void dir_clean_part(Part *d);
-void dir_clear_range(off_t start, off_t end, Part *d);
-int dir_segment_accounted(int s, Part *d, int offby = 0,
+int check_dir(Vol *d);
+void dir_clean_vol(Vol *d);
+void dir_clear_range(off_t start, off_t end, Vol *d);
+int dir_segment_accounted(int s, Vol *d, int offby = 0,
                           int *free = 0, int *used = 0,
                           int *empty = 0, int *valid = 0, int *agg_valid = 0, int *avg_size = 0);
-uint64_t dir_entries_used(Part *d);
+uint64_t dir_entries_used(Vol *d);
 void sync_cache_dir_on_shutdown();
 
 // Global Data

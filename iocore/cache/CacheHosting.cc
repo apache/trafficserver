@@ -287,10 +287,10 @@ CacheHostTable::BuildTableFromString(char *file_buf)
 
   if (bufTok.Initialize(file_buf, SHARE_TOKS | ALLOW_EMPTY_TOKS) == 0) {
     // We have an empty file
-    /* no hosting customers -- put all the partitions in the
+    /* no hosting customers -- put all the volumes in the
        generic table */
     if (gen_host_rec.Init(type))
-      Warning("Problems encountered while initializing the Generic Partition");
+      Warning("Problems encountered while initializing the Generic Volume");
     return 0;
   }
   // First get the number of entries
@@ -345,11 +345,11 @@ CacheHostTable::BuildTableFromString(char *file_buf)
 
   // Make we have something to do before going on
   if (numEntries == 0) {
-    /* no hosting customers -- put all the partitions in the
+    /* no hosting customers -- put all the volumes in the
        generic table */
 
     if (gen_host_rec.Init(type)) {
-      Warning("Problems encountered while initializing the Generic Partition");
+      Warning("Problems encountered while initializing the Generic Volume");
     }
 
     if (first != NULL) {
@@ -373,7 +373,7 @@ CacheHostTable::BuildTableFromString(char *file_buf)
       ink_assert(match_data != NULL);
 
       if (!strcasecmp(match_data, "*")) {
-        // generic partitition - initialize the generic hostrecord */
+        // generic volume - initialize the generic hostrecord */
         // Make sure that the line_info is not bogus
         ink_assert(current->dest_entry < MATCHER_MAX_TOKENS);
 
@@ -381,13 +381,13 @@ CacheHostTable::BuildTableFromString(char *file_buf)
         if (current->dest_entry < MATCHER_MAX_TOKENS)
           current->line[0][current->dest_entry] = NULL;
         else
-          Warning("Problems encountered while initializing the Generic Partition");
+          Warning("Problems encountered while initializing the Generic Volume");
 
         current->num_el--;
         if (!gen_host_rec.Init(current, type))
           generic_rec_initd = 1;
         else
-          Warning("Problems encountered while initializing the Generic Partition");
+          Warning("Problems encountered while initializing the Generic Volume");
 
       } else {
         hostMatch->NewEntry(current);
@@ -407,7 +407,7 @@ CacheHostTable::BuildTableFromString(char *file_buf)
   if (!generic_rec_initd) {
     const char *cache_type = (type == CACHE_HTTP_TYPE) ? "http" : "mixt";
     snprintf(errBuf, sizeof(errBuf),
-             "No Partitions specified for Generic Hostnames for %s documents: %s cache will be disabled", cache_type,
+             "No Volumes specified for Generic Hostnames for %s documents: %s cache will be disabled", cache_type,
              cache_type);
     IOCORE_SignalError(errBuf, alarmAlready);
   }
@@ -446,40 +446,41 @@ CacheHostRecord::Init(int typ)
 {
 
   int i, j;
-  extern Queue<CachePart> cp_list;
+  extern Queue<CacheVol> cp_list;
   extern int cp_list_len;
   char err[1024];
+
   err[0] = 0;
-  num_part = 0;
+  num_vols = 0;
   type = typ;
-  cp = (CachePart **) xmalloc(cp_list_len * sizeof(CachePart *));
-  memset(cp, 0, cp_list_len * sizeof(CachePart *));
-  num_cachepart = 0;
-  CachePart *cachep = cp_list.head;
+  cp = (CacheVol **) xmalloc(cp_list_len * sizeof(CacheVol *));
+  memset(cp, 0, cp_list_len * sizeof(CacheVol *));
+  num_cachevols = 0;
+  CacheVol *cachep = cp_list.head;
   for (; cachep; cachep = cachep->link.next) {
     if (cachep->scheme == type) {
-      Debug("cache_hosting", "Host Record: %xd, Partition: %d, size: %u", this, cachep->part_number, cachep->size);
-      cp[num_cachepart] = cachep;
-      num_cachepart++;
-      num_part += cachep->num_parts;
+      Debug("cache_hosting", "Host Record: %xd, Volume: %d, size: %u", this, cachep->vol_number, cachep->size);
+      cp[num_cachevols] = cachep;
+      num_cachevols++;
+      num_vols += cachep->num_vols;
     }
   }
-  if (!num_cachepart) {
-    snprintf(err, 1024, "error: No partitions found for Cache Type %d\n", type);
+  if (!num_cachevols) {
+    snprintf(err, 1024, "error: No volumes found for Cache Type %d\n", type);
     IOCORE_SignalError(err, alarmAlready);
     return -1;
   }
-  parts = (Part **) xmalloc(num_part * sizeof(Part *));
+  vols = (Vol **) xmalloc(num_vols * sizeof(Vol *));
   int counter = 0;
-  for (i = 0; i < num_cachepart; i++) {
-    CachePart *cachep1 = cp[i];
-    for (j = 0; j < cachep1->num_parts; j++) {
-      parts[counter++] = cachep1->parts[j];
+  for (i = 0; i < num_cachevols; i++) {
+    CacheVol *cachep1 = cp[i];
+    for (j = 0; j < cachep1->num_vols; j++) {
+      vols[counter++] = cachep1->vols[j];
     }
   }
-  ink_assert(counter == num_part);
+  ink_assert(counter == num_vols);
 
-  build_part_hash_table(this);
+  build_vol_hash_table(this);
   return 0;
 }
 
@@ -487,10 +488,10 @@ int
 CacheHostRecord::Init(matcher_line * line_info, int typ)
 {
   int i, j;
-  extern Queue<CachePart> cp_list;
+  extern Queue<CacheVol> cp_list;
   char err[1024];
   err[0] = 0;
-  int is_part_present = 0;
+  int is_vol_present = 0;
   char config_file[PATH_NAME_MAX];
 
   IOCORE_ReadConfigString(config_file, "proxy.config.cache.hosting_filename", PATH_NAME_MAX);
@@ -501,20 +502,21 @@ CacheHostRecord::Init(matcher_line * line_info, int typ)
       continue;
     char *val;
 
-    if (!strcasecmp(label, "partition")) {
-      /* parse the list of partitions */
+    if (!strcasecmp(label, "volume")) {
+      /* parse the list of volumes */
       val = xstrdup(line_info->line[1][i]);
-      char *part_no = val;
+      char *vol_no = val;
       char *s = val;
-      int partition_number;
-      CachePart *cachep;
-      /* first find out the number of partitions */
+      int volume_number;
+      CacheVol *cachep;
+
+      /* first find out the number of volumes */
       while (*s) {
         if ((*s == ',')) {
-          num_cachepart++;
+          num_cachevols++;
           s++;
           if (!(*s)) {
-            const char *errptr = "A partition number expected";
+            const char *errptr = "A volume number expected";
             snprintf(err, 1024,
                          "%s discarding %s entry at line %d :%s",
                          "[CacheHosting]", config_file, line_info->line_num, errptr);
@@ -538,35 +540,35 @@ CacheHostRecord::Init(matcher_line * line_info, int typ)
         s++;
       }
       s = val;
-      num_cachepart++;
-      cp = (CachePart **) xmalloc(num_cachepart * sizeof(CachePart *));
-      memset(cp, 0, num_cachepart * sizeof(CachePart *));
-      num_cachepart = 0;
+      num_cachevols++;
+      cp = (CacheVol **) xmalloc(num_cachevols * sizeof(CacheVol *));
+      memset(cp, 0, num_cachevols * sizeof(CacheVol *));
+      num_cachevols = 0;
       while (1) {
         char c = *s;
         if ((c == ',') || (c == '\0')) {
           *s = '\0';
-          partition_number = atoi(part_no);
+          volume_number = atoi(vol_no);
 
           cachep = cp_list.head;
           for (; cachep; cachep = cachep->link.next) {
-            if (cachep->part_number == partition_number) {
-              is_part_present = 1;
+            if (cachep->vol_number == volume_number) {
+              is_vol_present = 1;
               if ((cachep->scheme == type)) {
                 Debug("cache_hosting",
-                      "Host Record: %xd, Partition: %d, size: %ld",
-                      this, partition_number, cachep->size * STORE_BLOCK_SIZE);
-                cp[num_cachepart] = cachep;
-                num_cachepart++;
-                num_part += cachep->num_parts;
+                      "Host Record: %xd, Volume: %d, size: %ld",
+                      this, volume_number, cachep->size * STORE_BLOCK_SIZE);
+                cp[num_cachevols] = cachep;
+                num_cachevols++;
+                num_vols += cachep->num_vols;
                 break;
               }
             }
           }
-          if (!is_part_present) {
+          if (!is_vol_present) {
             snprintf(err, 1024,
-                         "%s discarding %s entry at line %d : bad partition number [%d]",
-                         "[CacheHosting]", config_file, line_info->line_num, partition_number);
+                         "%s discarding %s entry at line %d : bad volume number [%d]",
+                         "[CacheHosting]", config_file, line_info->line_num, volume_number);
             IOCORE_SignalError(err, alarmAlready);
             if (val != NULL) {
               xfree(val);
@@ -575,7 +577,7 @@ CacheHostRecord::Init(matcher_line * line_info, int typ)
           }
           if (c == '\0')
             break;
-          part_no = s + 1;
+          vol_no = s + 1;
         }
         s++;
       }
@@ -594,26 +596,26 @@ CacheHostRecord::Init(matcher_line * line_info, int typ)
 
   if (i == MATCHER_MAX_TOKENS) {
     snprintf(err, 1024,
-                 "%s discarding %s entry at line %d : No partitions specified",
+                 "%s discarding %s entry at line %d : No volumes specified",
                  "[CacheHosting]", config_file, line_info->line_num);
     IOCORE_SignalError(err, alarmAlready);
     return -1;
   }
 
-  if (!num_part) {
+  if (!num_vols) {
     return -1;
   }
-  parts = (Part **) xmalloc(num_part * sizeof(Part *));
+  vols = (Vol **) xmalloc(num_vols * sizeof(Vol *));
   int counter = 0;
-  for (i = 0; i < num_cachepart; i++) {
-    CachePart *cachep = cp[i];
-    for (j = 0; j < cp[i]->num_parts; j++) {
-      parts[counter++] = cachep->parts[j];
+  for (i = 0; i < num_cachevols; i++) {
+    CacheVol *cachep = cp[i];
+    for (j = 0; j < cp[i]->num_vols; j++) {
+      vols[counter++] = cachep->vols[j];
     }
   }
-  ink_assert(counter == num_part);
+  ink_assert(counter == num_vols);
 
-  build_part_hash_table(this);
+  build_vol_hash_table(this);
   return 0;
 }
 
@@ -632,7 +634,7 @@ CacheHostRecord::Print()
 
 
 void
-ConfigPartitions::read_config_file()
+ConfigVolumes::read_config_file()
 {
 
 // File I/O Locals
@@ -641,13 +643,13 @@ ConfigPartitions::read_config_file()
   char *config_file = NULL;
   config_file_path[0] = '\0';
 
-  IOCORE_ReadConfigStringAlloc(config_file, "proxy.config.cache.partition_filename");
+  IOCORE_ReadConfigStringAlloc(config_file, "proxy.config.cache.volume_filename");
   ink_release_assert(config_file != NULL);
   Layout::relative_to(config_file_path, sizeof(config_file_path),
                       cache_system_config_directory, config_file);
   xfree(config_file);
 
-  file_buf = readIntoBuffer(config_file_path, "[CachePartition]", NULL);
+  file_buf = readIntoBuffer(config_file_path, "[CacheVolition]", NULL);
 
   if (file_buf == NULL) {
     Warning("Cannot read the config file: %s", config_file_path);
@@ -660,7 +662,7 @@ ConfigPartitions::read_config_file()
 }
 
 void
-ConfigPartitions::BuildListFromString(char *config_file_path, char *file_buf)
+ConfigVolumes::BuildListFromString(char *config_file_path, char *file_buf)
 {
 
 #define PAIR_ZERO 0
@@ -669,7 +671,7 @@ ConfigPartitions::BuildListFromString(char *config_file_path, char *file_buf)
 #define DONE 3
 #define INK_ERROR -1
 
-#define INK_ERROR_PARTITION -2  //added by YTS Team, yamsat for bug id 59632
+#define INK_ERROR_VOLUME -2  //added by YTS Team, yamsat for bug id 59632
 // Table build locals
   Tokenizer bufTok("\n");
   tok_iter_state i_state;
@@ -680,23 +682,23 @@ ConfigPartitions::BuildListFromString(char *config_file_path, char *file_buf)
   int total = 0;                //added by YTS Team, yamsat for bug id 59632
   char errBuf[1024];
 
-  char partition_seen[256];
+  char volume_seen[256];
   int state = 0;                //changed by YTS Team, yamsat for bug id 59632
   int manager_alarmed = false;
-  int partition_number = 0;
+  int volume_number = 0;
   int scheme = CACHE_NONE_TYPE;
   int size = 0;
   int in_percent = 0;
-  const char *matcher_name = "[CachePartition]";
+  const char *matcher_name = "[CacheVolition]";
 
-  memset(partition_seen, 0, sizeof(partition_seen));
-  num_partitions = 0;
-  num_stream_partitions = 0;
-  num_http_partitions = 0;
+  memset(volume_seen, 0, sizeof(volume_seen));
+  num_volumes = 0;
+  num_stream_volumes = 0;
+  num_http_volumes = 0;
 
   if (bufTok.Initialize(file_buf, SHARE_TOKS | ALLOW_EMPTY_TOKS) == 0) {
     // We have an empty file
-    /* no partitions */
+    /* no volumes */
     return;
   }
   // First get the number of entries
@@ -714,8 +716,8 @@ ConfigPartitions::BuildListFromString(char *config_file_path, char *file_buf)
       if (!(*tmp) && state == DONE) {
         /* add the config */
 
-        ConfigPart *configp = NEW(new ConfigPart());
-        configp->number = partition_number;
+        ConfigVol *configp = NEW(new ConfigVol());
+        configp->number = volume_number;
         if (in_percent) {
           configp->percent = size;
           configp->in_percent = 1;
@@ -726,13 +728,13 @@ ConfigPartitions::BuildListFromString(char *config_file_path, char *file_buf)
         configp->size = size;
         configp->cachep = NULL;
         cp_queue.enqueue(configp);
-        num_partitions++;
+        num_volumes++;
         if (scheme == CACHE_HTTP_TYPE)
-          num_http_partitions++;
+          num_http_volumes++;
         else
-          num_stream_partitions++;
+          num_stream_volumes++;
         Debug("cache_hosting",
-              "added partition=%d, scheme=%d, size=%d percent=%d\n", partition_number, scheme, size, in_percent);
+              "added volume=%d, scheme=%d, size=%d percent=%d\n", volume_number, scheme, size, in_percent);
         break;
       }
 
@@ -769,33 +771,30 @@ ConfigPartitions::BuildListFromString(char *config_file_path, char *file_buf)
 
       switch (state) {
       case PAIR_ZERO:
-        if (strcasecmp(tmp, "partition")) {
+        if (strcasecmp(tmp, "volume")) {
           state = INK_ERROR;
           break;
         }
-        tmp += 10;              //size of string partition including null
-        partition_number = atoi(tmp);
+        tmp += 7;              //size of string volume including null
+        volume_number = atoi(tmp);
 
-        // XXX should this be < 0 instead of < 1
-        if (partition_number<1 || partition_number> 255 || partition_seen[partition_number]) {
-
+        if (volume_number<1 || volume_number> 255 || volume_seen[volume_number]) {
           const char *err;
 
-          // XXX should this be < 0 instead of < 1
-          if (partition_number<1 || partition_number> 255) {
-            err = "Bad Partition Number";
+          if (volume_number<1 || volume_number> 255) {
+            err = "Bad Volume Number";
           } else {
-            err = "Partition Already Specified";
+            err = "Volume Already Specified";
           }
 
           snprintf(errBuf, sizeof(errBuf), "%s discarding %s entry at line %d : %s [%d]",
-                   matcher_name, config_file_path, line_num, err, partition_number);
+                   matcher_name, config_file_path, line_num, err, volume_number);
           IOCORE_SignalError(errBuf, manager_alarmed);
           state = INK_ERROR;
           break;
         }
 
-        partition_seen[partition_number] = 1;
+        volume_seen[volume_number] = 1;
         while (ParseRules::is_digit(*tmp))
           tmp++;
         state = PAIR_ONE;
@@ -838,10 +837,10 @@ ConfigPartitions::BuildListFromString(char *config_file_path, char *file_buf)
           //added by YTS Team, yamsat for bug id 59632
           total += size;
           if (size > 100 || total > 100) {
-            state = INK_ERROR_PARTITION;
-            if (state == INK_ERROR_PARTITION || *tmp) {
+            state = INK_ERROR_VOLUME;
+            if (state == INK_ERROR_VOLUME || *tmp) {
               snprintf(errBuf, sizeof(errBuf),
-                       "Total partition size added upto more than 100 percent,No partitions created");
+                       "Total volume size added upto more than 100 percent,No volumes created");
               IOCORE_SignalError(errBuf, manager_alarmed);
               break;
             }
@@ -864,8 +863,8 @@ ConfigPartitions::BuildListFromString(char *config_file_path, char *file_buf)
         break;
       }
       //added by YTS Team, yamsat for bug id 59632
-      if (state == INK_ERROR_PARTITION || *tmp) {
-        snprintf(errBuf, sizeof(errBuf), "Total partition size added upto more than 100 percent,No partitions created");
+      if (state == INK_ERROR_VOLUME || *tmp) {
+        snprintf(errBuf, sizeof(errBuf), "Total volume size added upto more than 100 percent,No volumes created");
         IOCORE_SignalError(errBuf, manager_alarmed);
         break;
       }
@@ -881,32 +880,32 @@ ConfigPartitions::BuildListFromString(char *config_file_path, char *file_buf)
 
 
 
-/* Test the cache partitioning with different configurations */
+/* Test the cache volumeing with different configurations */
 #define MEGS_128 (128 * 1024 * 1024)
-#define ROUND_TO_PART_SIZE(_x) (((_x) + (MEGS_128 - 1)) &~ (MEGS_128 - 1))
+#define ROUND_TO_VOL_SIZE(_x) (((_x) + (MEGS_128 - 1)) &~ (MEGS_128 - 1))
 extern CacheDisk **gdisks;
-extern Queue<CachePart> cp_list;
+extern Queue<CacheVol> cp_list;
 extern int cp_list_len;
-extern ConfigPartitions config_partitions;
-extern volatile int gnpart;
+extern ConfigVolumes config_volumes;
+extern volatile int gnvol;
 
 extern void cplist_init();
 extern int cplist_reconfigure();
 static int configs = 4;
 
-Queue<CachePart> saved_cp_list;
+Queue<CacheVol> saved_cp_list;
 int saved_cp_list_len;
-ConfigPartitions saved_config_partitions;
-int saved_gnpart;
+ConfigVolumes saved_config_volumes;
+int saved_gnvol;
 
-int ClearConfigPart(ConfigPartitions * configp);
-int ClearCachePartList(Queue<CachePart> *cpl, int len);
+int ClearConfigVol(ConfigVolumes * configp);
+int ClearCacheVolList(Queue<CacheVol> *cpl, int len);
 int create_config(RegressionTest * t, int i);
 int execute_and_verify(RegressionTest * t);
 void save_state();
 void restore_state();
 
-EXCLUSIVE_REGRESSION_TEST(Cache_part) (RegressionTest * t, int atype, int *status) {
+EXCLUSIVE_REGRESSION_TEST(Cache_vol) (RegressionTest * t, int atype, int *status) {
   NOWARN_UNUSED(atype);
   save_state();
   srand48(time(NULL));
@@ -925,79 +924,76 @@ EXCLUSIVE_REGRESSION_TEST(Cache_part) (RegressionTest * t, int atype, int *statu
 int
 create_config(RegressionTest * t, int num)
 {
-
-
   int i = 0;
-  int part_num = 1;
+  int vol_num = 1;
   // clear all old configurations before adding new test cases
-  config_partitions.clear_all();
+  config_volumes.clear_all();
   switch (num) {
   case 0:
     for (i = 0; i < gndisks; i++) {
       CacheDisk *d = gdisks[i];
       int blocks = d->num_usable_blocks;
-      if (blocks < STORE_BLOCKS_PER_PART) {
-        rprintf(t, "Cannot run Cache_part regression: not enough disk space\n");
+      if (blocks < STORE_BLOCKS_PER_VOL) {
+        rprintf(t, "Cannot run Cache_vol regression: not enough disk space\n");
         return 0;
       }
-      /* create 128 MB partitions */
-      for (; blocks >= STORE_BLOCKS_PER_PART; blocks -= STORE_BLOCKS_PER_PART) {
-        if (part_num > 255)
+      /* create 128 MB volumes */
+      for (; blocks >= STORE_BLOCKS_PER_VOL; blocks -= STORE_BLOCKS_PER_VOL) {
+        if (vol_num > 255)
           break;
-        ConfigPart *cp = NEW(new ConfigPart());
-        cp->number = part_num++;
+        ConfigVol *cp = NEW(new ConfigVol());
+        cp->number = vol_num++;
         cp->scheme = CACHE_HTTP_TYPE;
         cp->size = 128;
         cp->in_percent = 0;
         cp->cachep = 0;
-        config_partitions.cp_queue.enqueue(cp);
-        config_partitions.num_partitions++;
-        config_partitions.num_http_partitions++;
+        config_volumes.cp_queue.enqueue(cp);
+        config_volumes.num_volumes++;
+        config_volumes.num_http_volumes++;
       }
 
     }
-    rprintf(t, "%d 128 Megabyte Partitions\n", part_num - 1);
-
+    rprintf(t, "%d 128 Megabyte Volumes\n", vol_num - 1);
     break;
 
   case 1:
     {
       for (i = 0; i < gndisks; i++) {
-        gdisks[i]->delete_all_partitions();
+        gdisks[i]->delete_all_volumes();
       }
 
       // calculate the total free space
       uint64_t total_space = 0;
       for (i = 0; i < gndisks; i++) {
-        int part_blocks = gdisks[i]->num_usable_blocks;
+        int vol_blocks = gdisks[i]->num_usable_blocks;
         /* round down the blocks to the nearest
-           multiple of STORE_BLOCKS_PER_PART */
-        part_blocks = (part_blocks / STORE_BLOCKS_PER_PART)
-          * STORE_BLOCKS_PER_PART;
-        total_space += part_blocks;
+           multiple of STORE_BLOCKS_PER_VOL */
+        vol_blocks = (vol_blocks / STORE_BLOCKS_PER_VOL)
+          * STORE_BLOCKS_PER_VOL;
+        total_space += vol_blocks;
       }
 
       // make sure we have atleast 1280 M bytes
       if (total_space<(10 << 27)>> STORE_BLOCK_SHIFT) {
-        rprintf(t, "Not enough space for 10 partition\n");
+        rprintf(t, "Not enough space for 10 volume\n");
         return 0;
       }
 
-      part_num = 1;
+      vol_num = 1;
       rprintf(t, "Cleared  disk\n");
       for (i = 0; i < 10; i++) {
-        ConfigPart *cp = NEW(new ConfigPart());
-        cp->number = part_num++;
+        ConfigVol *cp = NEW(new ConfigVol());
+        cp->number = vol_num++;
         cp->scheme = CACHE_HTTP_TYPE;
         cp->size = 10;
         cp->percent = 10;
         cp->in_percent = 1;
         cp->cachep = 0;
-        config_partitions.cp_queue.enqueue(cp);
-        config_partitions.num_partitions++;
-        config_partitions.num_http_partitions++;
+        config_volumes.cp_queue.enqueue(cp);
+        config_volumes.num_volumes++;
+        config_volumes.num_http_volumes++;
       }
-      rprintf(t, "10 partition, 10 percent each\n");
+      rprintf(t, "10 volume, 10 percent each\n");
     }
     break;
 
@@ -1008,59 +1004,59 @@ create_config(RegressionTest * t, int num)
       /* calculate the total disk space */
       InkRand *gen = &this_ethread()->generator;
       uint64_t total_space = 0;
-      part_num = 1;
+      vol_num = 1;
       if (num == 2) {
-        rprintf(t, "Random Partitions after clearing the disks\n");
+        rprintf(t, "Random Volumes after clearing the disks\n");
       } else {
-        rprintf(t, "Random Partitions without clearing the disks\n");
+        rprintf(t, "Random Volumes without clearing the disks\n");
       }
 
       for (i = 0; i < gndisks; i++) {
-        int part_blocks = gdisks[i]->num_usable_blocks;
+        int vol_blocks = gdisks[i]->num_usable_blocks;
         /* round down the blocks to the nearest
-           multiple of STORE_BLOCKS_PER_PART */
-        part_blocks = (part_blocks / STORE_BLOCKS_PER_PART)
-          * STORE_BLOCKS_PER_PART;
-        total_space += part_blocks;
+           multiple of STORE_BLOCKS_PER_VOL */
+        vol_blocks = (vol_blocks / STORE_BLOCKS_PER_VOL)
+          * STORE_BLOCKS_PER_VOL;
+        total_space += vol_blocks;
 
         if (num == 2) {
-          gdisks[i]->delete_all_partitions();
+          gdisks[i]->delete_all_volumes();
         } else {
           gdisks[i]->cleared = 0;
         }
       }
       while (total_space > 0) {
-        if (part_num > 255)
+        if (vol_num > 255)
           break;
-        off_t modu = MAX_PART_SIZE;
-        if (total_space<(MAX_PART_SIZE>> STORE_BLOCK_SHIFT)) {
+        off_t modu = MAX_VOL_SIZE;
+        if (total_space<(MAX_VOL_SIZE>> STORE_BLOCK_SHIFT)) {
           modu = total_space * STORE_BLOCK_SIZE;
         }
 
         off_t random_size = (gen->random() % modu) + 1;
         /* convert to 128 megs multiple */
         int scheme = (random_size % 2) ? CACHE_HTTP_TYPE : CACHE_RTSP_TYPE;
-        random_size = ROUND_TO_PART_SIZE(random_size);
+        random_size = ROUND_TO_VOL_SIZE(random_size);
         int blocks = random_size / STORE_BLOCK_SIZE;
         ink_assert(blocks <= (int) total_space);
         total_space -= blocks;
 
-        ConfigPart *cp = NEW(new ConfigPart());
+        ConfigVol *cp = NEW(new ConfigVol());
 
-        cp->number = part_num++;
+        cp->number = vol_num++;
         cp->scheme = scheme;
         cp->size = random_size >> 20;
         cp->percent = 0;
         cp->in_percent = 0;
         cp->cachep = 0;
-        config_partitions.cp_queue.enqueue(cp);
-        config_partitions.num_partitions++;
+        config_volumes.cp_queue.enqueue(cp);
+        config_volumes.num_volumes++;
         if (cp->scheme == CACHE_HTTP_TYPE) {
-          config_partitions.num_http_partitions++;
-          rprintf(t, "partition=%d scheme=http size=%d\n", cp->number, cp->size);
+          config_volumes.num_http_volumes++;
+          rprintf(t, "volume=%d scheme=http size=%d\n", cp->number, cp->size);
         } else {
-          config_partitions.num_stream_partitions++;
-          rprintf(t, "partition=%d scheme=rtsp size=%d\n", cp->number, cp->size);
+          config_volumes.num_stream_volumes++;
+          rprintf(t, "volume=%d scheme=rtsp size=%d\n", cp->number, cp->size);
 
         }
       }
@@ -1080,53 +1076,53 @@ execute_and_verify(RegressionTest * t)
   cplist_init();
   cplist_reconfigure();
 
-  /* compare the partitions */
-  if (cp_list_len != config_partitions.num_partitions)
+  /* compare the volumes */
+  if (cp_list_len != config_volumes.num_volumes)
     return REGRESSION_TEST_FAILED;
 
-  /* check that the partitions and sizes
+  /* check that the volumes and sizes
      match the configuration */
   int matched = 0;
-  ConfigPart *cp = config_partitions.cp_queue.head;
-  CachePart *cachep;
+  ConfigVol *cp = config_volumes.cp_queue.head;
+  CacheVol *cachep;
 
-  for (i = 0; i < config_partitions.num_partitions; i++) {
+  for (i = 0; i < config_volumes.num_volumes; i++) {
     cachep = cp_list.head;
     while (cachep) {
-      if (cachep->part_number == cp->number) {
+      if (cachep->vol_number == cp->number) {
         if ((cachep->scheme != cp->scheme) ||
             (cachep->size != (cp->size << (20 - STORE_BLOCK_SHIFT))) || (cachep != cp->cachep)) {
-          rprintf(t, "Configuration and Actual partitions don't match\n");
+          rprintf(t, "Configuration and Actual volumes don't match\n");
           return REGRESSION_TEST_FAILED;
         }
 
-        /* check that the number of partitions match the ones
+        /* check that the number of volumes match the ones
            on disk */
         int d_no;
-        int m_parts = 0;
+        int m_vols = 0;
         for (d_no = 0; d_no < gndisks; d_no++) {
-          if (cachep->disk_parts[d_no]) {
-            DiskPart *dp = cachep->disk_parts[d_no];
-            if (dp->part_number != cachep->part_number) {
-              rprintf(t, "DiskParts and CacheParts don't match\n");
+          if (cachep->disk_vols[d_no]) {
+            DiskVol *dp = cachep->disk_vols[d_no];
+            if (dp->vol_number != cachep->vol_number) {
+              rprintf(t, "DiskVols and CacheVols don't match\n");
               return REGRESSION_TEST_FAILED;
             }
 
-            /* check the diskpartblock queue */
-            DiskPartBlockQueue *dpbq = dp->dpb_queue.head;
+            /* check the diskvolblock queue */
+            DiskVolBlockQueue *dpbq = dp->dpb_queue.head;
             while (dpbq) {
-              if (dpbq->b->number != cachep->part_number) {
-                rprintf(t, "DiskPart and DiskPartBlocks don't match\n");
+              if (dpbq->b->number != cachep->vol_number) {
+                rprintf(t, "DiskVol and DiskVolBlocks don't match\n");
                 return REGRESSION_TEST_FAILED;
               }
               dpbq = dpbq->link.next;
             }
 
-            m_parts += dp->num_partblocks;
+            m_vols += dp->num_volblocks;
           }
         }
-        if (m_parts != cachep->num_parts) {
-          rprintf(t, "Num partitions in CachePart and DiskPart don't match\n");
+        if (m_vols != cachep->num_vols) {
+          rprintf(t, "Num volumes in CacheVol and DiskVol don't match\n");
           return REGRESSION_TEST_FAILED;
         }
         matched++;
@@ -1136,29 +1132,29 @@ execute_and_verify(RegressionTest * t)
     }
   }
 
-  if (matched != config_partitions.num_partitions) {
-    rprintf(t, "Num of Partitions created and configured don't match\n");
+  if (matched != config_volumes.num_volumes) {
+    rprintf(t, "Num of Volumes created and configured don't match\n");
     return REGRESSION_TEST_FAILED;
   }
 
-  ClearConfigPart(&config_partitions);
+  ClearConfigVol(&config_volumes);
 
-  ClearCachePartList(&cp_list, cp_list_len);
+  ClearCacheVolList(&cp_list, cp_list_len);
 
   for (i = 0; i < gndisks; i++) {
     CacheDisk *d = gdisks[i];
     if (is_debug_tag_set("cache_hosting")) {
       int j;
 
-      Debug("cache_hosting", "Disk: %d: Part Blocks: %ld: Free space: %ld",
-            i, d->header->num_diskpart_blks, d->free_space);
-      for (j = 0; j < (int) d->header->num_partitions; j++) {
+      Debug("cache_hosting", "Disk: %d: Vol Blocks: %ld: Free space: %ld",
+            i, d->header->num_diskvol_blks, d->free_space);
+      for (j = 0; j < (int) d->header->num_volumes; j++) {
 
-        Debug("cache_hosting", "\tPart: %d Size: %d", d->disk_parts[j]->part_number, d->disk_parts[j]->size);
+        Debug("cache_hosting", "\tVol: %d Size: %d", d->disk_vols[j]->vol_number, d->disk_vols[j]->size);
       }
-      for (j = 0; j < (int) d->header->num_diskpart_blks; j++) {
+      for (j = 0; j < (int) d->header->num_diskvol_blks; j++) {
         Debug("cache_hosting", "\tBlock No: %d Size: %d Free: %d",
-              d->header->part_info[j].number, d->header->part_info[j].len, d->header->part_info[j].free);
+              d->header->vol_info[j].number, d->header->vol_info[j].len, d->header->vol_info[j].free);
       }
     }
   }
@@ -1166,36 +1162,36 @@ execute_and_verify(RegressionTest * t)
 }
 
 int
-ClearConfigPart(ConfigPartitions * configp)
+ClearConfigVol(ConfigVolumes * configp)
 {
 
   int i = 0;
-  ConfigPart *cp = NULL;
+  ConfigVol *cp = NULL;
   while ((cp = configp->cp_queue.dequeue())) {
     delete cp;
     i++;
   }
-  if (i != configp->num_partitions) {
+  if (i != configp->num_volumes) {
     Warning("failed");
     return 0;
   }
-  configp->num_partitions = 0;
-  configp->num_http_partitions = 0;
-  configp->num_stream_partitions = 0;
+  configp->num_volumes = 0;
+  configp->num_http_volumes = 0;
+  configp->num_stream_volumes = 0;
   return 1;
 }
 
 int
-ClearCachePartList(Queue<CachePart> *cpl, int len)
+ClearCacheVolList(Queue<CacheVol> *cpl, int len)
 {
 
   int i = 0;
-  CachePart *cp = NULL;
+  CacheVol *cp = NULL;
   while ((cp = cpl->dequeue())) {
-    if (cp->disk_parts)
-      xfree(cp->disk_parts);
-    if (cp->parts)
-      xfree(cp->parts);
+    if (cp->disk_vols)
+      xfree(cp->disk_vols);
+    if (cp->vols)
+      xfree(cp->vols);
     delete(cp);
     i++;
   }
@@ -1213,19 +1209,18 @@ save_state()
 {
   saved_cp_list = cp_list;
   saved_cp_list_len = cp_list_len;
-  memcpy(&saved_config_partitions, &config_partitions, sizeof(ConfigPartitions));
-  saved_gnpart = gnpart;
-  memset(&cp_list, 0, sizeof(Queue<CachePart>));
-  memset(&config_partitions, 0, sizeof(ConfigPartitions));
-  gnpart = 0;
+  memcpy(&saved_config_volumes, &config_volumes, sizeof(ConfigVolumes));
+  saved_gnvol = gnvol;
+  memset(&cp_list, 0, sizeof(Queue<CacheVol>));
+  memset(&config_volumes, 0, sizeof(ConfigVolumes));
+  gnvol = 0;
 }
 
 void
 restore_state()
 {
-
   cp_list = saved_cp_list;
   cp_list_len = saved_cp_list_len;
-  memcpy(&config_partitions, &saved_config_partitions, sizeof(ConfigPartitions));
-  gnpart = saved_gnpart;
+  memcpy(&config_volumes, &saved_config_volumes, sizeof(ConfigVolumes));
+  gnvol = saved_gnvol;
 }

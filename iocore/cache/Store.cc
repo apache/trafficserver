@@ -449,11 +449,11 @@ Span::init(char *an, int64_t size)
 
   case S_IFBLK:{
   case S_IFCHR:
-#ifdef HAVE_RAW_DISK_SUPPORT // FIXME: darwin, freebsd, solaris
+#ifdef HAVE_RAW_DISK_SUPPORT // FIXME: darwin, freebsd
       struct disklabel dl;
       struct diskslices ds;
       if (ioctl(fd, DIOCGDINFO, &dl) < 0) {
-      LpartError:
+      lvolError:
         Warning("unable to get label information for '%s': %s", n, strerror(errno));
         err = "unable to get label information";
         goto Lfail;
@@ -464,16 +464,16 @@ Span::init(char *an, int64_t size)
         if ((s2 = strrchr(s1, '/')))
           s1 = s2 + 1;
         else
-          goto LpartError;
+          goto lvolError;
         for (s2 = s1; *s2 && !ParseRules::is_digit(*s2); s2++);
         if (!*s2 || s2 == s1)
-          goto LpartError;
+          goto lvolError;
         while (ParseRules::is_digit(*++s2));
         s1 = s2;
         if (*s2 == 's') {
           slice = ink_atoi(s2 + 1);
           if (slice<1 || slice> MAX_SLICES - BASE_SLICE)
-            goto LpartError;
+            goto lvolError;
           slice = BASE_SLICE + slice - 1;
           while (ParseRules::is_digit(*++s2));
         }
@@ -484,13 +484,14 @@ Span::init(char *an, int64_t size)
         }
         if (slice >= 0) {
           if (ioctl(fd, DIOCGSLICEINFO, &ds) < 0)
-            goto LpartError;
+            goto lvolError;
           if (slice >= (int) ds.dss_nslices || !ds.dss_slices[slice].ds_size)
-            goto LpartError;
+            goto lvolError;
           fsize = (int64_t) ds.dss_slices[slice].ds_size * dl.d_secsize;
         } else {
           if (part < 0)
-            goto LpartError;
+            goto lvolError;
+          // This is odd, the dl struct isn't defined anywhere ...
           fsize = (int64_t) dl.d_partitions[part].p_size * dl.d_secsize;
         }
         devnum = s.st_rdev;
@@ -901,10 +902,10 @@ Store::try_realloc(Store & s, Store & diff)
               } else {
                 Span *x = NEW(new Span(*d));
                 x->pathname = xstrdup(x->pathname);
-                // d will be the first part
+                // d will be the first vol
                 d->blocks = sd->offset - d->offset;
                 d->link.next = x;
-                // x will be the last part
+                // x will be the last vol
                 x->offset = sd->offset + sd->blocks;
                 x->blocks -= x->offset - d->offset;
                 goto Lfound;

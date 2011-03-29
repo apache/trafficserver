@@ -272,12 +272,12 @@
 // hosting.config
 #define HTML_ID_CFG_EDIT_PDEST_TYPE_HELP_2  "s_text_760"
 #define HTML_ID_CFG_EDIT_PDEST_VALUE_HELP_2 "s_text_761"
-#define HTML_ID_CFG_EDIT_PARTITIONS         "s_text_762"
-#define HTML_ID_CFG_EDIT_PARTITIONS_HELP    "s_text_763"
+#define HTML_ID_CFG_EDIT_VOLUMES            "s_text_762"
+#define HTML_ID_CFG_EDIT_VOLUMES_HELP       "s_text_763"
 
-// partition.config
-#define HTML_ID_CFG_EDIT_PARTITION_NUM      "s_text_770"
-#define HTML_ID_CFG_EDIT_PARTITION_NUM_HELP "s_text_771"
+// volume.config
+#define HTML_ID_CFG_EDIT_VOLUME_NUM         "s_text_770"
+#define HTML_ID_CFG_EDIT_VOLUME_NUM_HELP    "s_text_771"
 #define HTML_ID_CFG_EDIT_SCHEME_HELP_3      "s_text_772"
 #define HTML_ID_CFG_EDIT_PSIZE              "s_text_773"
 #define HTML_ID_CFG_EDIT_PSIZE_HELP         "s_text_774"
@@ -419,7 +419,7 @@
 #define HTML_FILE_IP_ALLOW_CONFIG       "/configure/f_ip_allow_config.ink"
 #define HTML_FILE_MGMT_ALLOW_CONFIG     "/configure/f_mgmt_allow_config.ink"
 #define HTML_FILE_PARENT_CONFIG         "/configure/f_parent_config.ink"
-#define HTML_FILE_PARTITION_CONFIG      "/configure/f_partition_config.ink"
+#define HTML_FILE_VOLUME_CONFIG      "/configure/f_volume_config.ink"
 #define HTML_FILE_REMAP_CONFIG          "/configure/f_remap_config.ink"
 #define HTML_FILE_SOCKS_CONFIG          "/configure/f_socks_config.ink"
 #define HTML_FILE_SPLIT_DNS_CONFIG      "/configure/f_split_dns_config.ink"
@@ -432,7 +432,7 @@
 #define HTML_HELP_LINK_IP_ALLOW         "/help/ts.ink?help=ipallow.htm"
 #define HTML_HELP_LINK_MGMT_ALLOW       "/help/ts.ink?help=C_mgm.htm"
 #define HTML_HELP_LINK_PARENT           "/help/ts.ink?help=c_parent.htm"
-#define HTML_HELP_LINK_PARTITION        "/help/ts.ink?help=c_part.htm"
+#define HTML_HELP_LINK_VOLUME           "/help/ts.ink?help=c_part.htm"
 #define HTML_HELP_LINK_REMAP            "/help/ts.ink?help=c_remap.htm"
 #define HTML_HELP_LINK_SOCKS            "/help/ts.ink?help=c_socks.htm"
 #define HTML_HELP_LINK_SPLIT_DNS        "/help/ts.ink?help=c_split.htm"

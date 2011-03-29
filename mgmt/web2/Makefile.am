@@ -39,8 +39,6 @@ libweb_a_SOURCES = \
   MgmtRaf.h \
   WebCompatibility.cc \
   WebCompatibility.h \
-  WebConfig.cc \
-  WebConfig.h \
   WebConfigRender.cc \
   WebConfigRender.h \
   WebGlobals.h \

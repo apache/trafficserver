@@ -185,7 +185,7 @@ TSLogFormatEle *copy_log_format_ele(TSLogFormatEle * ele);
 TSLogObjectEle *copy_log_object_ele(TSLogObjectEle * ele);
 TSMgmtAllowEle *copy_mgmt_allow_ele(TSMgmtAllowEle * ele);
 TSParentProxyEle *copy_parent_proxy_ele(TSParentProxyEle * ele);
-TSPartitionEle *copy_partition_ele(TSPartitionEle * ele);
+TSVolumeEle *copy_volume_ele(TSVolumeEle * ele);
 TSPluginEle *copy_plugin_ele(TSPluginEle * ele);
 TSRemapEle *copy_remap_ele(TSRemapEle * ele);
 TSSocksEle *copy_socks_ele(TSSocksEle * ele);

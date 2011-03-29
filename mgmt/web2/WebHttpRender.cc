@@ -186,8 +186,8 @@ handle_config_table_object(WebHttpContext * whc, char *tag, char *arg)
     case INK_FNAME_PARENT_PROXY:
       err = writeParentConfigTable(whc);
       break;
-    case INK_FNAME_PARTITION:
-      err = writePartitionConfigTable(whc);
+    case INK_FNAME_VOLUME:
+      err = writeVolumeConfigTable(whc);
       break;
     case INK_FNAME_REMAP:
       err = writeRemapConfigTable(whc);
@@ -250,8 +250,8 @@ handle_help_config_link(WebHttpContext * whc, char *tag, char *arg)
       case INK_FNAME_PARENT_PROXY:
         whc->response_bdy->copyFrom(HTML_HELP_LINK_PARENT, strlen(HTML_HELP_LINK_PARENT));
         break;
-      case INK_FNAME_PARTITION:
-        whc->response_bdy->copyFrom(HTML_HELP_LINK_PARTITION, strlen(HTML_HELP_LINK_PARTITION));
+      case INK_FNAME_VOLUME:
+        whc->response_bdy->copyFrom(HTML_HELP_LINK_VOLUME, strlen(HTML_HELP_LINK_VOLUME));
         break;
       case INK_FNAME_REMAP:
         whc->response_bdy->copyFrom(HTML_HELP_LINK_REMAP, strlen(HTML_HELP_LINK_REMAP));
@@ -338,8 +338,8 @@ handle_dynamic_javascript(WebHttpContext * whc, char *tag, char *arg)
       case INK_FNAME_PARENT_PROXY:
         err = writeParentRuleList(whc->response_bdy);
         break;
-      case INK_FNAME_PARTITION:
-        err = writePartitionRuleList(whc->response_bdy);
+      case INK_FNAME_VOLUME:
+        err = writeVolumeRuleList(whc->response_bdy);
         break;
       case INK_FNAME_REMAP:
         err = writeRemapRuleList(whc->response_bdy);
@@ -435,8 +435,8 @@ handle_config_input_form(WebHttpContext * whc, char *tag, char *arg)
       case INK_FNAME_PARENT_PROXY:
         err = writeParentConfigForm(whc);
         break;
-      case INK_FNAME_PARTITION:
-        err = writePartitionConfigForm(whc);
+      case INK_FNAME_VOLUME:
+        err = writeVolumeConfigForm(whc);
         break;
       case INK_FNAME_REMAP:
         err = writeRemapConfigForm(whc);

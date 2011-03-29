@@ -498,7 +498,7 @@ print_hosting_ele(TSHostingEle * ele)
     break;
   }
 
-  print_int_list(ele->partitions);
+  print_int_list(ele->volumes);
 }
 
 void
@@ -568,20 +568,20 @@ print_parent_ele(TSParentProxyEle * ele)
 }
 
 void
-print_partition_ele(TSPartitionEle * ele)
+print_volume_ele(TSVolumeEle * ele)
 {
   if (!ele) {
     printf("can't print ele\n");
   }
 
-  printf("partition #: %d\n", ele->partition_num);
+  printf("volume #: %d\n", ele->volume_num);
   printf("scheme: %d\n", ele->scheme);
   switch (ele->size_format) {
   case TS_SIZE_FMT_ABSOLUTE:
-    printf("partition_size=%d\n", ele->partition_size);
+    printf("volume_size=%d\n", ele->volume_size);
     break;
   case TS_SIZE_FMT_PERCENT:
-    printf("partition_size=%% %d\n", ele->partition_size);
+    printf("volume_size=%% %d\n", ele->volume_size);
     break;
   default:
     // Handled here:
@@ -864,8 +864,8 @@ print_ele_list(TSFileNameT file, TSCfgContext ctx)
     case TS_FNAME_PARENT_PROXY:
       print_parent_ele((TSParentProxyEle *) ele);
       break;
-    case TS_FNAME_PARTITION:
-      print_partition_ele((TSPartitionEle *) ele);
+    case TS_FNAME_VOLUME:
+      print_volume_ele((TSVolumeEle *) ele);
       break;
     case TS_FNAME_PLUGIN:
       print_plugin_ele((TSPluginEle *) ele);
@@ -1618,8 +1618,8 @@ test_cfg_context_get(char *args)
     file = TS_FNAME_MGMT_ALLOW;
   } else if (strcmp(name, "parent.config") == 0) {
     file = TS_FNAME_PARENT_PROXY;
-  } else if (strcmp(name, "partition.config") == 0) {
-    file = TS_FNAME_PARTITION;
+  } else if (strcmp(name, "volume.config") == 0) {
+    file = TS_FNAME_VOLUME;
   } else if (strcmp(name, "plugin.config") == 0) {
     file = TS_FNAME_PLUGIN;
   } else if (strcmp(name, "remap.config") == 0) {
@@ -1694,8 +1694,8 @@ test_cfg_context_move(char *args)
     file = TS_FNAME_MGMT_ALLOW;
   } else if (strcmp(name, "parent.config") == 0) {
     file = TS_FNAME_PARENT_PROXY;
-  } else if (strcmp(name, "partition.config") == 0) {
-    file = TS_FNAME_PARTITION;
+  } else if (strcmp(name, "volume.config") == 0) {
+    file = TS_FNAME_VOLUME;
   } else if (strcmp(name, "remap.config") == 0) {
     file = TS_FNAME_REMAP;
   } else if (strcmp(name, "socks.config") == 0) {

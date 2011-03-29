@@ -38,7 +38,7 @@ Cache::scan(Continuation * cont, char *hostname, int host_len, int KB_per_second
   }
 
   CacheVC *c = new_CacheVC(cont);
-  c->part = NULL;
+  c->vol = NULL;
   /* do we need to make a copy */
   c->hostname = hostname;
   c->host_len = host_len;
@@ -46,19 +46,19 @@ Cache::scan(Continuation * cont, char *hostname, int host_len, int KB_per_second
   c->buf = new_IOBufferData(BUFFER_SIZE_FOR_XMALLOC(SCAN_BUF_SIZE), MEMALIGNED);
   c->scan_msec_delay = (SCAN_BUF_SIZE / KB_per_second);
   c->offset = 0;
-  SET_CONTINUATION_HANDLER(c, &CacheVC::scanPart);
+  SET_CONTINUATION_HANDLER(c, &CacheVC::scanVol);
   eventProcessor.schedule_in(c, HRTIME_MSECONDS(c->scan_msec_delay));
   cont->handleEvent(CACHE_EVENT_SCAN, c);
   return &c->_action;
 }
 
 int
-CacheVC::scanPart(int event, Event * e)
+CacheVC::scanVol(int event, Event * e)
 {
   NOWARN_UNUSED(e);
   NOWARN_UNUSED(event);
 
-  Debug("cache_scan_truss", "inside %p:scanPart", this);
+  Debug("cache_scan_truss", "inside %p:scanVol", this);
   if (_action.cancelled)
     return free_CacheVC(this);
   CacheHostRecord *rec = &theCache->hosttable->gen_host_rec;
@@ -68,14 +68,14 @@ CacheVC::scanPart(int event, Event * e)
     if (res.record)
       rec = res.record;
   }
-  if (!part) {
-    if (!rec->num_part)
+  if (!vol) {
+    if (!rec->num_vols)
       goto Ldone;
-    part = rec->parts[0];
+    vol = rec->vols[0];
   } else {
-    for (int i = 0; i < rec->num_part - 1; i++)
-      if (part == rec->parts[i]) {
-        part = rec->parts[i + 1];
+    for (int i = 0; i < rec->num_vols - 1; i++)
+      if (vol == rec->vols[i]) {
+        vol = rec->vols[i + 1];
         goto Lcont;
       }
     goto Ldone;
@@ -113,7 +113,7 @@ CacheVC::scanObject(int event, Event * e)
   if (_action.cancelled)
     return free_CacheVC(this);
 
-  CACHE_TRY_LOCK(lock, part->mutex, mutex->thread_holding);
+  CACHE_TRY_LOCK(lock, vol->mutex, mutex->thread_holding);
   if (!lock) {
     mutex->thread_holding->schedule_in_local(this, HRTIME_MSECONDS(cache_config_mutex_retry_delay));
     return EVENT_CONT;
@@ -121,7 +121,7 @@ CacheVC::scanObject(int event, Event * e)
 
   if (!fragment) {               // initialize for first read
     fragment = 1;
-    io.aiocb.aio_offset = part_offset_to_offset(part, 0);
+    io.aiocb.aio_offset = vol_offset_to_offset(vol, 0);
     io.aiocb.aio_nbytes = SCAN_BUF_SIZE;
     io.aiocb.aio_buf = buf->data();
     io.action = this;
@@ -150,10 +150,10 @@ CacheVC::scanObject(int event, Event * e)
 
     last_collision = NULL;
     while (1) {
-      if (!dir_probe(&doc->first_key, part, &dir, &last_collision))
+      if (!dir_probe(&doc->first_key, vol, &dir, &last_collision))
         goto Lskip;
-      if (!dir_agg_valid(part, &dir) || !dir_head(&dir) ||
-          (part_offset(part, &dir) != io.aiocb.aio_offset + ((char *) doc - buf->data())))
+      if (!dir_agg_valid(vol, &dir) || !dir_head(&dir) ||
+          (vol_offset(vol, &dir) != io.aiocb.aio_offset + ((char *) doc - buf->data())))
         continue;
       break;
     }
@@ -190,7 +190,7 @@ CacheVC::scanObject(int event, Event * e)
       // verify that the earliest block exists, reducing 'false hit' callbacks
       if (!(key == doc->key)) {
         last_collision = NULL;
-        if (!dir_probe(&key, part, &earliest_dir, &last_collision))
+        if (!dir_probe(&key, vol, &earliest_dir, &last_collision))
           continue;
       }
       earliest_key = key;
@@ -243,26 +243,26 @@ CacheVC::scanObject(int event, Event * e)
         return scanOpenWrite(EVENT_NONE, 0);
       }
     }
-    doc = (Doc *) ((char *) doc + part->round_to_approx_size(doc->len));
+    doc = (Doc *) ((char *) doc + vol->round_to_approx_size(doc->len));
     continue;
   Lskip:
 #endif
-    doc = (Doc *) ((char *) doc + part->round_to_approx_size(doc->len));
+    doc = (Doc *) ((char *) doc + vol->round_to_approx_size(doc->len));
   }
 #ifdef HTTP_CACHE
   vector.clear();
 #endif
   io.aiocb.aio_offset += (char *) doc - buf->data();
-  if (io.aiocb.aio_offset >= part->skip + part->len) {
-    SET_HANDLER(&CacheVC::scanPart);
+  if (io.aiocb.aio_offset >= vol->skip + vol->len) {
+    SET_HANDLER(&CacheVC::scanVol);
     eventProcessor.schedule_in(this, HRTIME_MSECONDS(scan_msec_delay));
     return EVENT_CONT;
   }
 
 Lread:
-  io.aiocb.aio_fildes = part->fd;
-  if ((off_t)(io.aiocb.aio_offset + io.aiocb.aio_nbytes) > (off_t)(part->skip + part->len))
-    io.aiocb.aio_nbytes = part->skip + part->len - io.aiocb.aio_offset;
+  io.aiocb.aio_fildes = vol->fd;
+  if ((off_t)(io.aiocb.aio_offset + io.aiocb.aio_nbytes) > (off_t)(vol->skip + vol->len))
+    io.aiocb.aio_nbytes = vol->skip + vol->len - io.aiocb.aio_offset;
   else
     io.aiocb.aio_nbytes = SCAN_BUF_SIZE;
   offset = 0;
@@ -299,7 +299,7 @@ CacheVC::scanOpenWrite(int event, Event * e)
   NOWARN_UNUSED(event);
   Debug("cache_scan_truss", "inside %p:scanOpenWrite", this);
   cancel_trigger();
-  // get partition lock
+  // get volume lock
   if (writer_lock_retry > SCAN_WRITER_LOCK_MAX_RETRY) {
     int r = _action.continuation->handleEvent(CACHE_EVENT_SCAN_OPERATION_BLOCKED, 0);
     Debug("cache_scan", "still havent got the writer lock, asking user..");
@@ -314,12 +314,12 @@ CacheVC::scanOpenWrite(int event, Event * e)
   }
   int ret = 0;
   {
-    CACHE_TRY_LOCK(lock, part->mutex, mutex->thread_holding);
+    CACHE_TRY_LOCK(lock, vol->mutex, mutex->thread_holding);
     if (!lock)
       VC_SCHED_LOCK_RETRY();
 
     Debug("cache_scan", "trying for writer lock");
-    if (part->open_write(this, false, 1)) {
+    if (vol->open_write(this, false, 1)) {
       writer_lock_retry++;
       SET_HANDLER(&CacheVC::scanOpenWrite);
       mutex->thread_holding->schedule_in_local(this, scan_msec_delay);
@@ -340,7 +340,7 @@ CacheVC::scanOpenWrite(int event, Event * e)
     Dir *l = NULL;
     Dir d;
     Doc *doc = (Doc *) (buf->data() + offset);
-    offset = (char *) doc - buf->data() + part->round_to_approx_size(doc->len);
+    offset = (char *) doc - buf->data() + vol->round_to_approx_size(doc->len);
     // if the doc contains some data, then we need to create
     // a new directory entry for this fragment. Remember the
     // offset and the key in earliest_key
@@ -353,8 +353,8 @@ CacheVC::scanOpenWrite(int event, Event * e)
     }
 
     while (1) {
-      if (!dir_probe(&first_key, part, &d, &l)) {
-        part->close_write(this);
+      if (!dir_probe(&first_key, vol, &d, &l)) {
+        vol->close_write(this);
         _action.continuation->handleEvent(CACHE_EVENT_SCAN_OPERATION_FAILED, 0);
         SET_HANDLER(&CacheVC::scanObject);
         return handleEvent(EVENT_IMMEDIATE, 0);
@@ -386,17 +386,17 @@ CacheVC::scanUpdateDone(int event, Event * e)
   NOWARN_UNUSED(event);
   Debug("cache_scan_truss", "inside %p:scanUpdateDone", this);
   cancel_trigger();
-  // get partition lock
-  CACHE_TRY_LOCK(lock, part->mutex, mutex->thread_holding);
+  // get volume lock
+  CACHE_TRY_LOCK(lock, vol->mutex, mutex->thread_holding);
   if (lock) {
     // insert a directory entry for the previous fragment
-    dir_overwrite(&first_key, part, &dir, &od->first_dir, false);
+    dir_overwrite(&first_key, vol, &dir, &od->first_dir, false);
     if (od->move_resident_alt) {
-      dir_insert(&od->single_doc_key, part, &od->single_doc_dir);
+      dir_insert(&od->single_doc_key, vol, &od->single_doc_dir);
     }
-    ink_debug_assert(part->open_read(&first_key));
+    ink_debug_assert(vol->open_read(&first_key));
     ink_debug_assert(this->od);
-    part->close_write(this);
+    vol->close_write(this);
     SET_HANDLER(&CacheVC::scanObject);
     return handleEvent(EVENT_IMMEDIATE, 0);
   } else {

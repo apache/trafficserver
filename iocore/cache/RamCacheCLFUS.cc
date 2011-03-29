@@ -76,10 +76,10 @@ struct RamCacheCLFUS : public RamCache {
   int put(INK_MD5 *key, IOBufferData *data, uint32_t len, bool copy = false, uint32_t auxkey1 = 0, uint32_t auxkey2 = 0);
   int fixup(INK_MD5 *key, uint32_t old_auxkey1, uint32_t old_auxkey2, uint32_t new_auxkey1, uint32_t new_auxkey2);
 
-  void init(int64_t max_bytes, Part *part);
+  void init(int64_t max_bytes, Vol *vol);
 
   // private
-  Part *part; // for stats
+  Vol *vol; // for stats
   int64_t history;
   int ibuckets;
   int nbuckets;
@@ -95,7 +95,7 @@ struct RamCacheCLFUS : public RamCache {
   RamCacheCLFUSEntry *destroy(RamCacheCLFUSEntry *e);
   void requeue_victims(RamCacheCLFUS *c, Que(RamCacheCLFUSEntry, lru_link) &victims);
   void tick(); // move CLOCK on history
-  RamCacheCLFUS(): max_bytes(0), bytes(0), objects(0), part(0), history(0), ibuckets(0), nbuckets(0), bucket(0),
+  RamCacheCLFUS(): max_bytes(0), bytes(0), objects(0), vol(0), history(0), ibuckets(0), nbuckets(0), bucket(0),
               seen(0), ncompressed(0), compressed(0) { }
 };
 
@@ -129,8 +129,8 @@ void RamCacheCLFUS::resize_hashtable() {
   memset(seen, 0, size);
 }
 
-void RamCacheCLFUS::init(int64_t abytes, Part *apart) {
-  part = apart;
+void RamCacheCLFUS::init(int64_t abytes, Vol *avol) {
+  vol = avol;
   max_bytes = abytes;
   DDebug("ram_cache", "initializing ram_cache %" PRId64 " bytes", abytes);
   if (!max_bytes)
@@ -301,7 +301,7 @@ RamCacheCLFUSEntry *RamCacheCLFUS::destroy(RamCacheCLFUSEntry *e) {
 void RamCacheCLFUS::compress_entries(EThread *thread, int do_at_most) {
   if (!cache_config_ram_cache_compress)
     return;
-  MUTEX_TAKE_LOCK(part->mutex, thread);
+  MUTEX_TAKE_LOCK(vol->mutex, thread);
   if (!compressed) {
     compressed = lru[0].head;
     ncompressed = 0;
@@ -334,7 +334,7 @@ void RamCacheCLFUS::compress_entries(EThread *thread, int do_at_most) {
       Ptr<IOBufferData> edata = e->data;
       uint32_t elen = e->len;
       INK_MD5 key = e->key;
-      MUTEX_UNTAKE_LOCK(part->mutex, thread);
+      MUTEX_UNTAKE_LOCK(vol->mutex, thread);
       b = (char*)xmalloc(l);
       bool failed = false;
       switch (ctype) {
@@ -364,7 +364,7 @@ void RamCacheCLFUS::compress_entries(EThread *thread, int do_at_most) {
         }
 #endif
       }
-      MUTEX_TAKE_LOCK(part->mutex, thread);
+      MUTEX_TAKE_LOCK(vol->mutex, thread);
       // see if the entry is till around
       {
         uint32_t i = key.word(3) % nbuckets;
@@ -423,7 +423,7 @@ void RamCacheCLFUS::compress_entries(EThread *thread, int do_at_most) {
     compressed = e->lru_link.next;
     ncompressed++;
   }
-  MUTEX_UNTAKE_LOCK(part->mutex, thread);
+  MUTEX_UNTAKE_LOCK(vol->mutex, thread);
   return;
 }
 
