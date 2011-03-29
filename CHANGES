@@ -1,6 +1,15 @@
                                                          -*- coding: utf-8 -*-
 
 Changes with Apache Traffic Server 2.1.8
+  *) [TS-728] Remove the --enable-webui option, since it doesn't
+   produce a running webui anyway. Also remove html2
+
+  *) [TS-685] Rename partition.config because it doesn't have
+   anything todo with disks. Also rename all code related to it
+   so as not to confuse anybody.
+
+  *) [TS-714] Fix traffic_shell hanging on every command
+
   *) [TS-562] Fix TCL linking to honor custom library dirs.
    Author: Eric Connell.
 
