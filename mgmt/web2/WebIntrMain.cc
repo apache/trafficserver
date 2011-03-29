@@ -555,9 +555,6 @@ webIntr_main(void *x)
 #if !defined(linux)
   sigset_t allSigs;             // Set of all signals
 #endif
-#if TS_HAS_WEBUI
-  char webFailMsg[] = "Management Web Services Failed to Initialize";
-#endif
   char pacFailMsg[] = "Auto-Configuration Service Failed to Initialize";
   //  char gphFailMsg[] = "Dynamic Graph Service Failed to Initialize";
   char mgmtapiFailMsg[] = "Traffic server managment API service Interface Failed to Initialize.";
@@ -568,9 +565,6 @@ webIntr_main(void *x)
 
   int addrLen;
   int i;
-#if TS_HAS_WEBUI
-  int sleepTime = 2;
-#endif
   // No Warning
   NOWARN_UNUSED(x);
 
@@ -646,19 +640,7 @@ webIntr_main(void *x)
 
   // setup our language dictionary hash-table
   adminContext.lang_dict_ht = new MgmtHashTable("lang_dict_ht", false, InkHashTableKeyType_String);
-
   adminContext.SSL_Context = NULL;
-
-#if TS_HAS_WEBUI
-  // configure components
-  configAuthEnabled();
-  configAuthAdminUser();
-  configAuthAdminPasswd();
-  configAuthOtherUsers();
-  // <@record> substitution requires WebHttpInit() first
-  // configLangDict();
-  configUI();
-#endif /* TS_HAS_WEBUI */
 
   configSSLenable();
   Debug("ui", "SSL enabled is %d\n", adminContext.SSLenabled);
@@ -781,31 +763,6 @@ webIntr_main(void *x)
 
   // Check our web contexts to make sure everything is
   //  OK.  If it is, go ahead and fire up the interfaces
-
-#if TS_HAS_WEBUI
-
-  if (checkWebContext(&adminContext, "Web Management") != 0) {
-    lmgmt->alarm_keeper->signalAlarm(MGMT_ALARM_WEB_ERROR, webFailMsg);
-    mgmt_elog(stderr, "[WebIntrMain] Web Interface Intialization failed.\n");
-  } else {
-    // Fire up the mgmt interface
-    while ((socketFD = newTcpSocket(webPort)) < 0) {
-
-      if (sleepTime >= 30) {
-        mgmt_elog(stderr, "[WebIntrMain] Could not create Web Interface socket.  Giving Up.\n");
-        lmgmt->alarm_keeper->signalAlarm(MGMT_ALARM_WEB_ERROR, webFailMsg);
-        break;
-      } else {
-        mgmt_elog(stderr, "[WebIntrMain] Unable to create Web Interface socket.  Will try again in %d seconds\n",
-                  sleepTime);
-        mgmt_sleep_sec(sleepTime);
-        sleepTime *= 2;
-      }
-    }
-  }
-
-#endif //TS_HAS_WEBUI
-
   if (checkWebContext(&autoconfContext, "Browser Auto-Configuration") != 0) {
     lmgmt->alarm_keeper->signalAlarm(MGMT_ALARM_WEB_ERROR, pacFailMsg);
   } else {
@@ -817,12 +774,8 @@ webIntr_main(void *x)
 
   // Initialze WebHttp Module
   WebHttpInit();
-#if TS_HAS_WEBUI
-  configLangDict();
-#endif /* TS_HAS_WEBUI */
 
   while (1) {
-
     FD_ZERO(&selectFDs);
 
     if (socketFD >= 0) {
@@ -880,13 +833,6 @@ webIntr_main(void *x)
 
       // Accept OK
       ink_mutex_acquire(&wGlobals.serviceThrLock);
-
-#if TS_HAS_WEBUI
-      // Check to see if there are any unprocessed config changes
-      if (webConfigChanged > 0) {
-        updateWebConfig();
-      }
-#endif /* TS_HAS_WEBUI */
 
       // If this a web manager, make sure that it is from an allowed ip addr
       if (((serviceThr == HTTP_THR) &&

@@ -26,9 +26,6 @@ nodist_sysconf_DATA = \
   records.config.default \
   storage.config.default
 
-webui_conf = \
-  admin_access.config.default
-
 dist_sysconf_DATA =	\
   ae_ua.config.default \
   cache.config.default \
@@ -59,7 +56,3 @@ install-exec-hook:
 		cfgfile=`echo $$dfltcfgfile | sed 's/\.default$$//'` ; \
 		test -f $(sysconfdir)/$$cfgfile || mv $(sysconfdir)/$$dfltcfgfile $(sysconfdir)/$$cfgfile ; \
 	done
-
-if BUILD_WEBUI
-  dist_sysconf_DATA += $(webui_conf)
-endif

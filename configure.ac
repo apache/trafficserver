@@ -270,20 +270,6 @@ AC_MSG_RESULT([$enable_remote_cov_commit])
 AC_SUBST([enable_remote_cov_commit])
 
 #
-# WebUI
-#
-AC_MSG_CHECKING([whether to enable Web UI])
-AC_ARG_ENABLE([webui],
-  [AS_HELP_STRING([--enable-webui],[enable Web UI [default: no]])],
-  [],
-  [enable_webui=no]
-)
-AC_MSG_RESULT([$enable_webui])
-TS_ARG_ENABLE_VAR([has],[webui])
-AC_SUBST(has_webui)
-AM_CONDITIONAL([BUILD_WEBUI], [test 0 -ne $has_webui])
-
-#
 # API
 #
 AC_MSG_CHECKING([whether to enable API and plugin support])
@@ -1201,14 +1187,6 @@ AC_CONFIG_FILES([mgmt/api/remote/Makefile])
 AC_CONFIG_FILES([mgmt/api/include/Makefile])
 AC_CONFIG_FILES([mgmt/cli/Makefile])
 AC_CONFIG_FILES([mgmt/cluster/Makefile])
-AS_IF([test "x$enable_webui" = "xyes"],
-  [AC_CONFIG_FILES([mgmt/html2/Makefile])
-   AC_CONFIG_FILES([mgmt/html2/configure/Makefile])
-   AC_CONFIG_FILES([mgmt/html2/images/Makefile])
-   AC_CONFIG_FILES([mgmt/html2/include/Makefile])
-   AC_CONFIG_FILES([mgmt/html2/monitor/Makefile])
-   AC_CONFIG_FILES([mgmt/html2/mrtg/Makefile])
-])
 AC_CONFIG_FILES([mgmt/Makefile])
 AC_CONFIG_FILES([mgmt/preparse/Makefile])
 AC_CONFIG_FILES([mgmt/stats/Makefile])

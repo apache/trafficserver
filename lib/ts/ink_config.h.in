@@ -118,7 +118,6 @@
 #define TS_IS_MICRO_BUILD              @is_micro_build@
 #define TS_HAS_STANDALONE_IOCORE       @has_standalone_iocore@
 #define TS_HAS_INKAPI                  @has_inkapi@
-#define TS_HAS_WEBUI                   @has_webui@
 #define TS_HAS_PURIFY                  @has_purify@
 #define TS_HAS_DEMANGLE                @has_demangle@
 #define TS_HAS_TESTS                   @has_tests@

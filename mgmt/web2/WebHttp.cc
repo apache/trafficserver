@@ -43,7 +43,6 @@
 #include "WebHttpMessage.h"
 #include "WebHttpRender.h"
 #include "WebHttpSession.h"
-#include "WebHttpTree.h"
 #include "WebOverview.h"
 
 #include "mgmtapi.h"
@@ -1343,14 +1342,8 @@ WebHttpInit()
   ink_hash_table_insert(g_display_config_ht, HTML_FILE_VADDRS_CONFIG, (void *) TS_FNAME_VADDRS);
 
   // initialize other modules
-#if TS_HAS_WEBUI
-  WebHttpAuthInit();
-#endif
   WebHttpLogInit();
   WebHttpSessionInit();
-#if TS_HAS_WEBUI
-  WebHttpRenderInit();
-#endif
 
   return;
 }
@@ -1386,13 +1379,6 @@ WebHttpHandleConnection(WebHttpConInfo * whci)
   if ((err = read_request(whc)) != WEB_HTTP_ERR_OKAY)
     goto Lerror_switch;
 
-#if TS_HAS_WEBUI
-  // authentication
-  if (whc->server_state & WEB_HTTP_SERVER_STATE_AUTH_ENABLED)
-    if (WebHttpAuthenticate(whc) != WEB_HTTP_ERR_OKAY)
-      goto Ltransaction_send;
-#endif
-
   // get our file information
   file = (char *) (whc->request->getFile());
   if (strcmp("/", file) == 0) {
@@ -1413,19 +1399,6 @@ WebHttpHandleConnection(WebHttpConInfo * whci)
       WebHttpSetErrorResponse(whc, STATUS_NOT_FOUND);
       goto Ltransaction_send;
     }
-  } else {
-#if TS_HAS_WEBUI
-    if (WebHttpTreeReturnRefresh(file)) {
-      // if we are handling a monitor/mrtg page, configure it to refresh
-      if (strncmp(file, "/monitor/", 9) == 0) {
-        whc->response_hdr->setRefresh(wGlobals.refreshRate);
-      } else if (strncmp(file, "/mrtg/", 6) == 0) {
-        whc->response_hdr->setRefresh(REFRESH_RATE_MRTG);
-      } else {                  // default
-        whc->response_hdr->setRefresh(wGlobals.refreshRate);
-      }
-    }
-#endif
   }
 
   // process query

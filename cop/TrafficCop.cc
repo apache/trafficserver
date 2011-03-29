@@ -1273,21 +1273,6 @@ test_server_http_port()
   return test_http_port(http_backdoor_port, request, server_timeout * 1000, ip, ip);
 }
 
-#if TS_HAS_WEBUI
-static int
-test_manager_http_port()
-{
-  char request[1024];
-
-  // Generate a request for a the 'synthetic.txt' document the manager
-  // servers up on the autoconf port.
-  snprintf(request, sizeof(request), "GET /synthetic.txt HTTP/1.0\r\n\r\n");
-
-  return test_http_port(autoconf_port, request, manager_timeout * 1000);
-}
-#endif
-
-
 static int
 heartbeat_manager()
 {
@@ -1318,28 +1303,6 @@ heartbeat_manager()
     }
   }
 
-#if TS_HAS_WEBUI
-  err = test_manager_http_port();
-
-  if (err < 0) {
-    manager_failures += 1;
-    cop_log(COP_WARNING, "manager heartbeat [http] failed [%d]\n", manager_failures);
-
-    if (manager_failures > 1) {
-      manager_failures = 0;
-      cop_log(COP_WARNING, "killing manager\n");
-      safe_kill(manager_lockfile, manager_binary, true);
-    }
-#ifdef TRACE_LOG_COP
-    cop_log(COP_DEBUG, "Leaving heartbeat_manager() --> %d\n", err);
-#endif
-    return err;
-  } else {
-    if (manager_failures)
-      cop_log(COP_WARNING, "manager heartbeat [http] succeeded\n");
-    manager_failures = 0;
-  }
-#endif // TS_HAS_WEBUI
 
 #ifdef TRACE_LOG_COP
   cop_log(COP_DEBUG, "Leaving heartbeat_manager() --> %d\n", err);

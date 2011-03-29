@@ -17,12 +17,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-if BUILD_WEBUI
-SUBDIRS = cluster preparse tools utils web2 html2 stats api cli
-else
 SUBDIRS = cluster preparse tools utils web2 stats api cli
-endif
-
 DIST_SUBDIRS = $(SUBDIRS)
 
 # This is for traffic_manager only (local manager)

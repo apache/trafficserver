@@ -64,9 +64,3 @@ libweb_a_SOURCES = \
   WebReconfig.h \
   WebUtils.cc \
   WebUtils.h
-
-if BUILD_WEBUI
-libweb_a_SOURCES += \
-  WebHttpTree.cc \
-  WebHttpTree.h
-endif
