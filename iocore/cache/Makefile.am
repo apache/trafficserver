@@ -54,7 +54,7 @@ libinkcache_a_SOURCES = \
   CacheLink.cc \
   CachePages.cc \
   CachePagesInternal.cc \
-  CachePart.cc \
+  CacheVol.cc \
   CacheRead.cc \
   CacheWrite.cc \
   I_Cache.h \
@@ -67,7 +67,7 @@ libinkcache_a_SOURCES = \
   P_CacheHosting.h \
   P_CacheHttp.h \
   P_CacheInternal.h \
-  P_CachePart.h \
+  P_CacheVol.h \
   P_RamCache.h \
   RamCacheLRU.cc \
   RamCacheCLFUS.cc \
