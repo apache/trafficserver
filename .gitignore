@@ -59,7 +59,6 @@ mgmt/cli/traffic_line
 mgmt/cli/traffic_shell
 mgmt/tools/shmem_clean
 mgmt/traffic_manager
-mgmt/html2/tune/navigation_tree.xml
 proxy/traffic_logcat
 proxy/traffic_logstats
 proxy/traffic_sac
