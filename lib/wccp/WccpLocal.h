@@ -1717,6 +1717,9 @@ public:
     RouterAssignListElt m_routers; ///< Routers.
   };
 
+  /// Force virtual desctructor.
+  virtual ~AltAssignComp() {}
+
   /// @name Accessors
   //@{
   /// Get the assignment type.
@@ -1774,6 +1777,9 @@ public:
   uint32_t getCacheCount() const;
   //@}
 
+  /// Force virtual desctructor.
+  virtual ~AltHashAssignComp() {}
+
   /// Fill out the component from an @c Assignment.
   virtual self& fill(
     MsgBuffer& buffer, ///< Target storage.
@@ -1807,6 +1813,9 @@ class AltMaskAssignComp
 public:
   typedef AltMaskAssignComp self; ///< Self reference type.
   typedef AltAssignComp super; ///< Parent type.
+  
+  /// Force virtual desctructor.
+  virtual ~AltMaskAssignComp() {}
 
   /// Fill out the component from an @c Assignment.
   virtual self& fill(
@@ -2094,6 +2103,9 @@ class BaseMsg {
 public:
   /// Default constructor.
   BaseMsg();
+  /// Destructor.
+  virtual ~BaseMsg() {}
+
   /// Set the message @a buffer.
   void setBuffer(
     MsgBuffer const& buffer ///< Storage for message.
