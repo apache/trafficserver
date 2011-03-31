@@ -83,7 +83,7 @@ vlogf(
   static size_t const SIZE = 8192;
   char buffer[SIZE];
   
-  n = vsnprintf(buffer, SIZE, format, rest);
+  vsnprintf(buffer, SIZE, format, rest);
   err.push(id, code, buffer);
   return err;
 }
