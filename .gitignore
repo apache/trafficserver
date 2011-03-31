@@ -85,6 +85,9 @@ example/app-template/records.config
 */*/.libs
 */*/*/.libs
 
+.svn
+*/.svn/
+
 tsxs
 
 GPATH
