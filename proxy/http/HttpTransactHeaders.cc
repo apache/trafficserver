@@ -1139,7 +1139,7 @@ HttpTransactHeaders::insert_via_header_in_response(HttpConfigParams *http_config
     *via_string++ = '[';
 
     // incoming_via can be max MAX_VIA_INDICES+1 long (i.e. around 25 or so)
-    if (http_config_param->verbose_via_string) {
+    if (http_config_param->verbose_via_string == 1) {
       via_string += nstrcpy(via_string, incoming_via);
     } else {
       memcpy(via_string, incoming_via + VIA_CACHE, VIA_PROXY - VIA_CACHE);
