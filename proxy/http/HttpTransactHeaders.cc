@@ -1092,7 +1092,7 @@ HttpTransactHeaders::insert_via_header_in_request(HttpConfigParams *http_config_
   *via_string++ = ')';
   *via_string = 0;
 
-  ink_assert((via_string - new_via_string) < (sizeof(new_via_string) - 1));
+  ink_assert((size_t)(via_string - new_via_string) < (sizeof(new_via_string) - 1));
   header->value_append(MIME_FIELD_VIA, MIME_LEN_VIA, new_via_string, via_string - new_via_string, true);
 }
 
@@ -1150,7 +1150,7 @@ HttpTransactHeaders::insert_via_header_in_response(HttpConfigParams *http_config
   *via_string++ = ')';
   *via_string = 0;
 
-  ink_assert((via_string - new_via_string) < (sizeof(new_via_string) - 1));
+  ink_assert((size_t)(via_string - new_via_string) < (sizeof(new_via_string) - 1));
   header->value_append(MIME_FIELD_VIA, MIME_LEN_VIA, new_via_string, via_string - new_via_string, true);
 }
 
