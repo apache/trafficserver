@@ -2271,8 +2271,6 @@ set_stats()
   TSRecordSetInt("proxy.process.http.current_server_transactions", 100, &action);
 
 
-  TSRecordSetFloat("proxy.node.http.cache_hit_ratio", 110.0, &action);
-  TSRecordSetFloat("proxy.node.http.bandwidth_hit_ratio", 110.0, &action);
   TSRecordSetFloat("proxy.node.bandwidth_hit_ratio", 110, &action);
   TSRecordSetFloat("proxy.node.hostdb.hit_ratio", 110, &action);
   TSRecordSetFloat("proxy.node.cache.percent_free", 110, &action);
@@ -2283,8 +2281,7 @@ set_stats()
   TSRecordSetFloat("proxy.node.http.cache_hit_ims_avg_10s", 100, &action);
   TSRecordSetFloat("proxy.node.client_throughput_out", 110, &action);
 
-  TSRecordSetInt("proxy.node.http.cache_hit_ratio_int_pct", 110, &action);
-  TSRecordSetInt("proxy.node.http.bandwidth_hit_ratio_int_pct", 110, &action);
+  TSRecordSetInt("proxy.node.cache_hit_ratio_int_pct", 110, &action);
   TSRecordSetInt("proxy.node.bandwidth_hit_ratio_int_pct", 110, &action);
   TSRecordSetInt("proxy.node.hostdb.hit_ratio_int_pct", 110, &action);
   TSRecordSetInt("proxy.node.proxy_running", 110, &action);
@@ -2298,21 +2295,20 @@ set_stats()
   TSRecordSetFloat("proxy.cluster.origin_server_total_bytes_avg_10s", 110, &action);
   TSRecordSetFloat("proxy.cluster.bandwidth_hit_ratio", 110, &action);
   TSRecordSetFloat("proxy.cluster.bandwidth_hit_ratio_avg_10s", 110, &action);
-  TSRecordSetFloat("proxy.cluster.http.cache_hit_ratio", 110, &action);
-  TSRecordSetFloat("proxy.cluster.http.bandwidth_hit_ratio", 110, &action);
+  TSRecordSetFloat("proxy.cluster.cache_hit_ratio", 110, &action);
 
-  TSRecordSetInt("proxy.cluster.http.cache_hit_ratio_int_pct", 110, &action);
+  TSRecordSetInt("proxy.cluster.cache_hit_ratio_int_pct", 110, &action);
   TSRecordSetInt("proxy.cluster.bandwidth_hit_ratio_int_pct", 110, &action);
-  TSRecordSetInt("proxy.cluster.http.cache_total_hits", 110, &action);
-  TSRecordSetInt("proxy.cluster.http.cache_total_misses", 110, &action);
+  TSRecordSetInt("proxy.cluster.cache_total_hits", 110, &action);
+  TSRecordSetInt("proxy.cluster.cache_total_misses", 110, &action);
   TSRecordSetInt("proxy.cluster.http.throughput", 110, &action);
 }
 
 void
 print_stats()
 {
-  TSFloat f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11;
-  TSInt i1, i2, i3, i4, i5, i6, i7, i8, i9, i10;
+  TSFloat f1, f2, f3, f4, f5, f6, f7, f8, f9;
+  TSInt i1, i2, i3, i4, i5, i6, i7, i8, i9;
 
   fprintf(stderr, "[print_stats]\n");
 
@@ -2328,50 +2324,46 @@ print_stats()
 
   fprintf(stderr, "%" PRId64 ", %" PRId64 ", %" PRId64 ", %" PRId64 ", %" PRId64 ", %" PRId64 ", %" PRId64 ", %" PRId64 "\n", i1, i2, i3, i4, i5, i6, i7, i8);
 
-  TSRecordGetFloat("proxy.node.http.cache_hit_ratio", &f1);
-  TSRecordGetFloat("proxy.node.http.bandwidth_hit_ratio", &f2);
-  TSRecordGetFloat("proxy.node.bandwidth_hit_ratio", &f3);
-  TSRecordGetFloat("proxy.node.hostdb.hit_ratio", &f4);
-  TSRecordGetFloat("proxy.node.cache.percent_free", &f5);
-  TSRecordGetFloat("proxy.node.cache_hit_ratio", &f6);
-  TSRecordGetFloat("proxy.node.bandwidth_hit_ratio_avg_10s", &f7);
-  TSRecordGetFloat("proxy.node.http.cache_hit_fresh_avg_10s", &f8);
-  TSRecordGetFloat("proxy.node.http.cache_hit_revalidated_avg_10s", &f9);
-  TSRecordGetFloat("proxy.node.http.cache_hit_ims_avg_10s", &f10);
-  TSRecordGetFloat("proxy.node.client_throughput_out", &f11);
+  TSRecordGetFloat("proxy.node.bandwidth_hit_ratio", &f1);
+  TSRecordGetFloat("proxy.node.hostdb.hit_ratio", &f2);
+  TSRecordGetFloat("proxy.node.cache.percent_free", &f3);
+  TSRecordGetFloat("proxy.node.cache_hit_ratio", &f4);
+  TSRecordGetFloat("proxy.node.bandwidth_hit_ratio_avg_10s", &f5);
+  TSRecordGetFloat("proxy.node.http.cache_hit_fresh_avg_10s", &f6);
+  TSRecordGetFloat("proxy.node.http.cache_hit_revalidated_avg_10s", &f7);
+  TSRecordGetFloat("proxy.node.http.cache_hit_ims_avg_10s", &f8);
+  TSRecordGetFloat("proxy.node.client_throughput_out", &f9);
 
-  fprintf(stderr, "NODE stats: \n%f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f\n",
-          f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11);
+  fprintf(stderr, "NODE stats: \n%f, %f, %f, %f, %f, %f, %f, %f, %f\n",
+          f1, f2, f3, f4, f5, f6, f7, f8, f9);
 
-  TSRecordGetInt("proxy.node.http.cache_hit_ratio_int_pct", &i1);
-  TSRecordGetInt("proxy.node.http.bandwidth_hit_ratio_int_pct", &i2);
-  TSRecordGetInt("proxy.node.bandwidth_hit_ratio_int_pct", &i3);
-  TSRecordGetInt("proxy.node.hostdb.hit_ratio_int_pct", &i4);
-  TSRecordGetInt("proxy.node.proxy_running", &i5);
-  TSRecordGetInt("proxy.node.hostdb.hit_ratio_int_pct", &i6);
-  TSRecordGetInt("proxy.node.proxy_running", &i7);
-  TSRecordGetInt("proxy.node.cache_hit_ratio_int_pct", &i8);
-  TSRecordGetInt("proxy.node.current_client_connections", &i9);
-  TSRecordGetInt("proxy.node.current_cache_connections", &i10);
+  TSRecordGetInt("proxy.node.cache_hit_ratio_int_pct", &i1);
+  TSRecordGetInt("proxy.node.bandwidth_hit_ratio_int_pct", &i2);
+  TSRecordGetInt("proxy.node.hostdb.hit_ratio_int_pct", &i3);
+  TSRecordGetInt("proxy.node.proxy_running", &i4);
+  TSRecordGetInt("proxy.node.hostdb.hit_ratio_int_pct", &i5);
+  TSRecordGetInt("proxy.node.proxy_running", &i6);
+  TSRecordGetInt("proxy.node.cache_hit_ratio_int_pct", &i7);
+  TSRecordGetInt("proxy.node.current_client_connections", &i8);
+  TSRecordGetInt("proxy.node.current_cache_connections", &i9);
 
-  fprintf(stderr, "%" PRId64 ", %" PRId64 ", %" PRId64 ", %" PRId64 ", %" PRId64 ", %" PRId64 ", %" PRId64 ", %" PRId64 ", %" PRId64 ", %" PRId64 "\n",
-          i1, i2, i3, i4, i5, i6, i7, i8, i9, i10);
+  fprintf(stderr, "%" PRId64 ", %" PRId64 ", %" PRId64 ", %" PRId64 ", %" PRId64 ", %" PRId64 ", %" PRId64 ", %" PRId64 ", %" PRId64 "\n",
+          i1, i2, i3, i4, i5, i6, i7, i8, i9);
 
   TSRecordGetFloat("proxy.cluster.user_agent_total_bytes_avg_10s", &f1);
   TSRecordGetFloat("proxy.cluster.origin_server_total_bytes_avg_10s", &f2);
   TSRecordGetFloat("proxy.cluster.bandwidth_hit_ratio", &f3);
   TSRecordGetFloat("proxy.cluster.bandwidth_hit_ratio_avg_10s", &f4);
-  TSRecordGetFloat("proxy.cluster.http.cache_hit_ratio", &f5);
-  TSRecordGetFloat("proxy.cluster.http.bandwidth_hit_ratio", &f6);
+  TSRecordGetFloat("proxy.cluster.cache_hit_ratio", &f5);
 
-  TSRecordGetInt("proxy.cluster.http.cache_hit_ratio_int_pct", &i1);
+  TSRecordGetInt("proxy.cluster.cache_hit_ratio_int_pct", &i1);
   TSRecordGetInt("proxy.cluster.bandwidth_hit_ratio_int_pct", &i2);
-  TSRecordGetInt("proxy.cluster.http.cache_total_hits", &i3);
-  TSRecordGetInt("proxy.cluster.http.cache_total_misses", &i4);
+  TSRecordGetInt("proxy.cluster.cache_total_hits", &i3);
+  TSRecordGetInt("proxy.cluster.cache_total_misses", &i4);
   TSRecordGetInt("proxy.cluster.http.throughput", &i5);
 
   fprintf(stderr, "CLUSTER stats: \n");
-  fprintf(stderr, "%f, %f, %f, %f, %f, %f\n", f1, f2, f3, f4, f5, f6);
+  fprintf(stderr, "%f, %f, %f, %f, %f\n", f1, f2, f3, f4, f5);
   fprintf(stderr, "%" PRId64 ", %" PRId64 ", %" PRId64 ", %" PRId64 ", %" PRId64 "\n", i1, i2, i3, i4, i5);
 
   fprintf(stderr, "PROCESS stats: \n");

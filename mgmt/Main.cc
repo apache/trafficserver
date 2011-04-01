@@ -886,8 +886,10 @@ main(int argc, char **argv)
       /* Proxy is not up, but we should still exchange config and alarm info */
       lmgmt->ccom->sendSharedData(false);
     }
+
     // Aggregate node statistics
-    overviewGenerator->doClusterAg();
+    // overviewGenerator->doClusterAg();
+
     lmgmt->ccom->checkPeers(&ticker);
     overviewGenerator->checkForUpdates();
 

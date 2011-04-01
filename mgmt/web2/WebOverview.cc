@@ -906,12 +906,6 @@ overviewPage::agCachePercentFree()
 
 // void overviewPage::agCacheHitRate()
 //
-//   Updates OLD proxy.cluster.http.cache_hit_ratio
-//               proxy.cluster.http.cache_total_hits
-//
-//           NEW proxy.cluster.cache_hit_ratio
-//               proxy.cluster.cache_total_hits
-//
 void
 overviewPage::agCacheHitRate()
 {
@@ -1009,11 +1003,6 @@ overviewPage::agCacheHitRate()
   if (totalAccess != 0) {
     hitRate = (MgmtFloat) ((double) totalHits / (double) totalAccess);
   }
-  // old stats
-  ink_assert(varSetFloat("proxy.cluster.http.cache_hit_ratio", hitRate));
-  ink_assert(varSetInt("proxy.cluster.http.cache_total_hits", totalHits));
-  ink_assert(varSetInt("proxy.cluster.http.cache_total_misses", totalMisses));
-
   // new stats
   ink_assert(varSetFloat("proxy.cluster.cache_hit_ratio", hitRate));
   ink_assert(varSetInt("proxy.cluster.cache_total_hits", totalHits));
@@ -1135,8 +1124,6 @@ overviewPage::agHostdbHitRate()
 
 // void overviewPage::agBandwidthHitRate()
 //
-//   Updates proxy.cluster.http.bandwidth_hit_ratio
-//
 void
 overviewPage::agBandwidthHitRate()
 {
@@ -1160,7 +1147,7 @@ overviewPage::agBandwidthHitRate()
   cacheOn = httpCacheOn;
 
   // Get total cluster hits first, only calculate bandwith if > 0
-  varIntFromName("proxy.cluster.http.cache_total_hits", &totalHits);
+  varIntFromName("proxy.cluster.cache_total_hits", &totalHits);
 
   // User Agent
 
@@ -1192,10 +1179,6 @@ overviewPage::agBandwidthHitRate()
   }
 
   if (setBW) {
-    // old stat
-    ink_assert(varSetFloat("proxy.cluster.http.bandwidth_hit_ratio", hitRate));
-
-    // new stat
     ink_assert(varSetFloat("proxy.cluster.bandwidth_hit_ratio", hitRate));
   }
   // get current time and delta to work with
@@ -1544,12 +1527,8 @@ overviewPage::doClusterAg()
 
   AgFloat_generic_scale_to_int("proxy.cluster.client_throughput_out",
                                "proxy.cluster.client_throughput_out_kbit", MBIT_TO_KBIT_SCALE);
-  AgFloat_generic_scale_to_int("proxy.cluster.http.cache_hit_ratio",
-                               "proxy.cluster.http.cache_hit_ratio_int_pct", PCT_TO_INTPCT_SCALE);
   AgFloat_generic_scale_to_int("proxy.cluster.cache_hit_ratio",
                                "proxy.cluster.cache_hit_ratio_int_pct", PCT_TO_INTPCT_SCALE);
-  AgFloat_generic_scale_to_int("proxy.cluster.http.bandwidth_hit_ratio",
-                               "proxy.cluster.http.bandwidth_hit_ratio_int_pct", PCT_TO_INTPCT_SCALE);
   AgFloat_generic_scale_to_int("proxy.cluster.bandwidth_hit_ratio",
                                "proxy.cluster.bandwidth_hit_ratio_int_pct", PCT_TO_INTPCT_SCALE);
   AgFloat_generic_scale_to_int("proxy.cluster.hostdb.hit_ratio",

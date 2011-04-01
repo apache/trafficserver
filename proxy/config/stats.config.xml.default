@@ -287,23 +287,14 @@
     <statistics
 	minimum="0"
 	maximum="100">
-        <destination>proxy.node.http.bandwidth_hit_ratio</destination>
-        <destination scope="cluster" operation="re-calculate">proxy.cluster.http.bandwidth_hit_ratio</destination>
+        <destination>proxy.node.bandwidth_hit_ratio</destination>
+        <destination scope="cluster" operation="re-calculate">proxy.cluster.bandwidth_hit_ratio</destination>
         <expression>
             (
             proxy.node.user_agent_total_bytes    -
             proxy.node.origin_server_total_bytes
             )                                    /
             proxy.node.user_agent_total_bytes
-        </expression>
-    </statistics>
-
-
-    <statistics
-	minimum="0">
-        <destination>proxy.node.bandwidth_hit_ratio</destination>
-        <expression>
-            proxy.node.http.bandwidth_hit_ratio
         </expression>
     </statistics>
 
@@ -1615,32 +1606,10 @@
 
     <statistics
 	minimum="0">
-        <destination>proxy.node.http.cache_hit_ratio_int_pct</destination>
-        <destination scope="cluster">proxy.cluster.http.cache_hit_ratio_int_pct</destination>
-        <expression>
-            proxy.node.http.cache_hit_ratio *
-            $PCT_TO_INTPCT_SCALE
-        </expression>
-    </statistics>
-
-
-    <statistics
-	minimum="0">
         <destination>proxy.node.cache_hit_ratio_int_pct</destination>
         <destination scope="cluster">proxy.cluster.cache_hit_ratio_int_pct</destination>
         <expression>
             proxy.node.cache_hit_ratio *
-            $PCT_TO_INTPCT_SCALE
-        </expression>
-    </statistics>
-
-
-    <statistics
-	minimum="0">
-        <destination>proxy.node.http.bandwidth_hit_ratio_int_pct</destination>
-        <destination scope="cluster">proxy.cluster.http.bandwidth_hit_ratio_int_pct</destination>
-        <expression>
-            proxy.node.http.bandwidth_hit_ratio *
             $PCT_TO_INTPCT_SCALE
         </expression>
     </statistics>
@@ -1734,25 +1703,6 @@
         <destination scope="cluster">proxy.cluster.http.parent_proxy_total_response_bytes</destination>
         <expression>
              proxy.node.http.parent_proxy_total_response_bytes
-        </expression>
-    </statistics>
-
-
-        <!-- old stats -->
-    <statistics
-	minimum="0">
-        <destination scope="cluster">proxy.cluster.http.cache_total_hits</destination>
-        <expression>
-            proxy.node.cache_total_hits
-        </expression>
-    </statistics>
-
-   
-   <statistics
-	minimum="0">
-        <destination scope="cluster">proxy.cluster.http.cache_total_misses</destination>
-        <expression>
-            proxy.node.cache_total_misses
         </expression>
     </statistics>
 
