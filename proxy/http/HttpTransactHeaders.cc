@@ -1038,11 +1038,11 @@ void
 HttpTransactHeaders::insert_via_header_in_request(HttpConfigParams *http_config_param, int scheme, HTTPHdr *header,
                                                   char *incoming_via)
 {
-  char new_via_string[8192];
+  char new_via_string[1024]; // 512-bytes for hostname+via string, 512-bytes for the debug info
   char *via_string = new_via_string;
 
-  if ((http_config_param->proxy_hostname_len + http_config_param->proxy_response_via_string_len) > 200) {
-    header->value_append(MIME_FIELD_VIA, MIME_LEN_VIA, "TrafficServer", 18, true);
+  if ((http_config_param->proxy_hostname_len + http_config_param->proxy_request_via_string_len) > 512) {
+    header->value_append(MIME_FIELD_VIA, MIME_LEN_VIA, "TrafficServer", 13, true);
     return;
   }
 
@@ -1071,12 +1071,15 @@ HttpTransactHeaders::insert_via_header_in_request(HttpConfigParams *http_config_
   *via_string++ = ']';
   *via_string++ = ' ';
   *via_string++ = '(';
-  via_string += nstrcpy(via_string, http_config_param->proxy_request_via_string);
+
+  memcpy(via_string, http_config_param->proxy_request_via_string, http_config_param->proxy_request_via_string_len);
+  via_string += http_config_param->proxy_request_via_string_len;
 
   if (http_config_param->verbose_via_string != 0) {
     *via_string++ = ' ';
     *via_string++ = '[';
 
+    // incoming_via can be max MAX_VIA_INDICES+1 long (i.e. around 25 or so)
     if (http_config_param->verbose_via_string == 1) {
       via_string += nstrcpy(via_string, incoming_via);
     } else {
@@ -1089,6 +1092,7 @@ HttpTransactHeaders::insert_via_header_in_request(HttpConfigParams *http_config_
   *via_string++ = ')';
   *via_string = 0;
 
+  ink_assert((via_string - new_via_string) < (sizeof(new_via_string) - 1));
   header->value_append(MIME_FIELD_VIA, MIME_LEN_VIA, new_via_string, via_string - new_via_string, true);
 }
 
@@ -1097,11 +1101,11 @@ void
 HttpTransactHeaders::insert_via_header_in_response(HttpConfigParams *http_config_param, int scheme, HTTPHdr *header,
                                                    char *incoming_via)
 {
-  char new_via_string[8192];
+  char new_via_string[1024]; // 512-bytes for hostname+via string, 512-bytes for the debug info
   char *via_string = new_via_string;
 
-  if ((http_config_param->proxy_hostname_len + http_config_param->proxy_response_via_string_len) > 200) {
-    header->value_append(MIME_FIELD_VIA, MIME_LEN_VIA, "TrafficServer", 18, true);
+  if ((http_config_param->proxy_hostname_len + http_config_param->proxy_response_via_string_len) > 512) {
+    header->value_append(MIME_FIELD_VIA, MIME_LEN_VIA, "TrafficServer", 13, true);
     return;
   }
 
@@ -1126,6 +1130,7 @@ HttpTransactHeaders::insert_via_header_in_response(HttpConfigParams *http_config
   via_string += nstrcpy(via_string, http_config_param->proxy_hostname);
   *via_string++ = ' ';
   *via_string++ = '(';
+
   memcpy(via_string, http_config_param->proxy_response_via_string, http_config_param->proxy_response_via_string_len);
   via_string += http_config_param->proxy_response_via_string_len;
 
@@ -1133,7 +1138,8 @@ HttpTransactHeaders::insert_via_header_in_response(HttpConfigParams *http_config
     *via_string++ = ' ';
     *via_string++ = '[';
 
-    if (http_config_param->verbose_via_string == 1) {
+    // incoming_via can be max MAX_VIA_INDICES+1 long (i.e. around 25 or so)
+    if (http_config_param->verbose_via_string) {
       via_string += nstrcpy(via_string, incoming_via);
     } else {
       memcpy(via_string, incoming_via + VIA_CACHE, VIA_PROXY - VIA_CACHE);
@@ -1144,6 +1150,7 @@ HttpTransactHeaders::insert_via_header_in_response(HttpConfigParams *http_config
   *via_string++ = ')';
   *via_string = 0;
 
+  ink_assert((via_string - new_via_string) < (sizeof(new_via_string) - 1));
   header->value_append(MIME_FIELD_VIA, MIME_LEN_VIA, new_via_string, via_string - new_via_string, true);
 }
 
