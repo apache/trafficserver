@@ -1,10 +1,14 @@
                                                          -*- coding: utf-8 -*-
 
 Changes with Apache Traffic Server 2.1.8
+  *) [TS-729] Fix bugs with Via Headers handling. (Note: This is
+   unlikely to have caused the crash the bug report)
+   Author Leif Hedstrom
+
   *) [TS-721] Incorrect http hit ratio in stats.
    This also removes a number of obsoleted stats and also disables
    stats aggregation in WebOverview.cc, one more nail to WebUI's
-   grave. Author: Leif
+   grave. Author: Leif Hedstrom
 
   *) [TS-728] Remove the --enable-webui option, since it doesn't
    produce a running webui anyway. Also remove html2
