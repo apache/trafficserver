@@ -55,20 +55,10 @@ CONFIG proxy.config.cluster.mcport INT 8089
 CONFIG proxy.config.cluster.mc_group_addr STRING 224.0.1.37
 CONFIG proxy.config.cluster.mc_ttl INT 1
 CONFIG proxy.config.cluster.log_bogus_mc_msgs INT 1
-CONFIG proxy.config.admin.html_doc_root STRING @rel_datadir@
-CONFIG proxy.config.admin.web_interface_port INT 8081
-CONFIG proxy.config.admin.autoconf_port INT 8083
-CONFIG proxy.config.admin.overseer_port INT 9898
+CONFIG proxy.config.admin.autoconf.port INT 8083
 CONFIG proxy.config.admin.admin_user STRING admin
-CONFIG proxy.config.admin.admin_password STRING 21232F297A57A5A743894A0
-CONFIG proxy.config.admin.basic_auth INT 1
-CONFIG proxy.config.admin.use_ssl INT 0
-CONFIG proxy.config.admin.ssl_cert_file STRING private_key.pem
 CONFIG proxy.config.admin.number_config_bak INT 3
 CONFIG proxy.config.admin.user_id STRING @pkgsysuser@
-CONFIG proxy.config.admin.ui_refresh_rate INT 30
-CONFIG proxy.config.admin.log_mgmt_access INT 0
-CONFIG proxy.config.admin.log_resolve_hostname INT 1
 ##############################################################################
 #
 # Process Manager
