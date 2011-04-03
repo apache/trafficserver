@@ -189,8 +189,7 @@ ParseRules::is_char(char c)
 #ifndef COMPILE_PARSE_RULES
   return (parseRulesCType[(unsigned char) c] & is_char_BIT);
 #else
-  /* if I don't cast, gnu gives a warning: condition is always true */
-  return (c >= 0 && (unsigned char) c <= (unsigned char) 127);
+  return ((c & 0x80) == 0);
 #endif
 }
 
@@ -250,7 +249,7 @@ ParseRules::is_ctl(char c)
 #ifndef COMPILE_PARSE_RULES
   return (parseRulesCType[(unsigned char) c] & is_ctl_BIT);
 #else
-  return ((c >= 0 && c <= 31) || c == 127);
+  return ((!(c & 0x80) && c <= 31) || c == 127);
 #endif
 }
 

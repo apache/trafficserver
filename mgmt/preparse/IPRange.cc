@@ -109,7 +109,7 @@ IPRange::read_table_from_file(int fd, const char *identifier_str, bool localip)
       c = EOF;                  // mimic behavior of getc on EOF
     // append null
     line[n] = '\0';
-    if (c == EOF)
+    if (c == (char)EOF)
       end_of_file = true;
     // first_string has the same length as line, so here we disable coverity check
     // coverity[secure_coding]
