@@ -48,75 +48,7 @@
  */
 #define HEAP_H
 #define STACK_H
-
 #endif // !_WIN32
-
-/* Converts a printable character to it's six bit representation */
-const unsigned char printableToSixBit[256] = {
-  64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64,
-  64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 62, 64, 64, 64, 63,
-  52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 64, 64, 64, 64, 64, 64, 64, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
-  10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 64, 64, 64, 64, 64, 64, 26, 27,
-  28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51,
-  64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64,
-  64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64,
-  64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64,
-  64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64,
-  64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64,
-  64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64
-};
-
-
-#define DECODE(x) printableToSixBit[(unsigned int)x]
-#define MAX_PRINT_VAL 63
-
-int
-UU_decode(const char *inBuffer, int outBufSize, unsigned char *outBuffer)
-{
-
-  int inBytes = 0;
-  int decodedBytes = 0;
-  unsigned char *outStart = outBuffer;
-  int inputBytesDecoded = 0;
-
-  // Figure out much encoded string is really there
-  while (printableToSixBit[(uint8_t)inBuffer[inBytes]] <= MAX_PRINT_VAL) {
-    inBytes++;
-  }
-
-  // Make sure there is sufficient space in the output buffer
-  //   if not shorten the number of bytes in
-  if ((((inBytes + 3) / 4) * 3) > outBufSize - 1) {
-    inBytes = ((outBufSize - 1) * 4) / 3;
-  }
-
-  for (int i = 0; i < inBytes; i += 4) {
-
-    outBuffer[0] = (unsigned char) (DECODE(inBuffer[0]) << 2 | DECODE(inBuffer[1]) >> 4);
-
-    outBuffer[1] = (unsigned char) (DECODE(inBuffer[1]) << 4 | DECODE(inBuffer[2]) >> 2);
-    outBuffer[2] = (unsigned char) (DECODE(inBuffer[2]) << 6 | DECODE(inBuffer[3]));
-
-    outBuffer += 3;
-    inBuffer += 4;
-    decodedBytes += 3;
-    inputBytesDecoded += 4;
-  }
-
-  // Check to see if we decoded a multiple of 4 four
-  //    bytes
-  if ((inBytes - inputBytesDecoded) & 0x3) {
-    if (DECODE(inBuffer[-2]) > MAX_PRINT_VAL) {
-      decodedBytes -= 2;
-    } else {
-      decodedBytes -= 1;
-    }
-  }
-
-  outStart[decodedBytes] = '\0';
-
-  return decodedBytes;
-}
 
 ssize_t
 socket_write(SocketInfo socketD, const char *buf, size_t nbyte)

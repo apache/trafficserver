@@ -308,14 +308,6 @@ extern "C"
     TS_LOG_MODE_UNDEFINED
   } TSLogModeT;
 
-  /* TODO: This should be removed */
-  typedef enum                  /* access privileges to news articles cached by Traffic Server  */
-  {
-    TS_MGMT_ALLOW_ALLOW,
-    TS_MGMT_ALLOW_DENY,
-    TS_MGMT_ALLOW_UNDEFINED
-  } TSMgmtAllowT;
-
   typedef enum                  /* methods of specifying groups of clients */
   {
     TS_CLIENT_GRP_IP,          /* ip range */
@@ -380,14 +372,12 @@ extern "C"
 
   typedef enum
   {
-    TS_FNAME_ADMIN_ACCESS,     /* admin_access.config */
     TS_FNAME_CACHE_OBJ,        /* cache.config */
     TS_FNAME_CONGESTION,       /* congestion.config */
     TS_FNAME_HOSTING,          /* hosting.config */
     TS_FNAME_ICP_PEER,         /* icp.config */
     TS_FNAME_IP_ALLOW,         /* ip_allow.config */
     TS_FNAME_LOGS_XML,         /* logs_xml.config */
-    TS_FNAME_MGMT_ALLOW,       /* mgmt_allow.config */
     TS_FNAME_PARENT_PROXY,     /* parent.config */
     TS_FNAME_VOLUME,        /* volume.config */
     TS_FNAME_PLUGIN,           /* plugin.config */
@@ -410,7 +400,6 @@ extern "C"
  */
   typedef enum
   {
-    TS_ADMIN_ACCESS,           /* admin_access.config */
     TS_CACHE_NEVER,            /* cache.config */
     TS_CACHE_IGNORE_NO_CACHE,
     TS_CACHE_IGNORE_CLIENT_NO_CACHE,
@@ -426,7 +415,6 @@ extern "C"
     TS_LOG_FILTER,             /* logs_xml.config */
     TS_LOG_OBJECT,
     TS_LOG_FORMAT,
-    TS_MGMT_ALLOW,             /* mgmt_allow.config */
     TS_PP_PARENT,              /* parent.config */
     TS_PP_GO_DIRECT,
     TS_VOLUME,              /* volume.config */
@@ -582,15 +570,6 @@ extern "C"
     TSError error;
   } TSCfgEle;
 
-/* admin_access.config */
-  typedef struct
-  {
-    TSCfgEle cfg_ele;
-    char *user;                 /* username */
-    char *password;             /* MD5 encrypted */
-    TSAccessT access;          /* type of access allowed for user */
-  } TSAdminAccessEle;
-
 /* cache.config */
   typedef struct
   {
@@ -686,14 +665,6 @@ extern "C"
     TSStringList protocols;    /* list of protocols, eg. http, nttp, icp */
     TSStringList server_hosts; /* list of host names */
   } TSLogObjectEle;
-
-/* mgmt_allow.config */
-  typedef struct
-  {
-    TSCfgEle cfg_ele;
-    TSIpAddrEle *src_ip_addr;  /* source ip address (single or range) */
-    TSMgmtAllowT action;
-  } TSMgmtAllowEle;
 
 /* parent.config */
   typedef struct
@@ -926,8 +897,6 @@ extern "C"
   tsapi void TSSspecDestroy(TSSspec * ele);
   tsapi TSPdSsFormat *TSPdSsFormatCreate();
   tsapi void TSPdSsFormatDestroy(TSPdSsFormat * ele);
-  tsapi TSAdminAccessEle *TSAdminAccessEleCreate();
-  tsapi void TSAdminAccessEleDestroy(TSAdminAccessEle * ele);
   tsapi TSCacheEle *TSCacheEleCreate(TSRuleTypeT type);
   tsapi void TSCacheEleDestroy(TSCacheEle * ele);
   tsapi TSCongestionEle *TSCongestionEleCreate();
@@ -944,8 +913,6 @@ extern "C"
   tsapi void TSLogFormatEleDestroy(TSLogFormatEle * ele);
   tsapi TSLogObjectEle *TSLogObjectEleCreate();
   tsapi void TSLogObjectEleDestroy(TSLogObjectEle * ele);
-  tsapi TSMgmtAllowEle *TSMgmtAllowEleCreate();
-  tsapi void TSMgmtAllowEleDestroy(TSMgmtAllowEle * ele);
   tsapi TSParentProxyEle *TSParentProxyEleCreate(TSRuleTypeT type);
   tsapi void TSParentProxyEleDestroy(TSParentProxyEle * ele);
   tsapi TSVolumeEle *TSVolumeEleCreate();

@@ -33,7 +33,6 @@
 
 #include "WebOverview.h"
 #include "WebGlobals.h"
-#include "WebHttpRender.h"
 #include "WebMgmtUtils.h"
 
 #include "LocalManager.h"

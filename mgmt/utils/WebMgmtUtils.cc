@@ -743,42 +743,6 @@ varType(const char *varName)
   return data_type;
 }
 
-// void computeXactMax()
-//
-//  Compute the maximum numder of transactions
-//   for the machine based on the number of processors
-//   and the load_factor
-//
-//   Store the result into a node var so that
-//    it gets passed around the cluster
-//
-void
-computeXactMax()
-{
-  int numCPU = 0;
-  RecFloat loadFactor = 0;
-  RecInt maxXact = 0;
-  int err = REC_ERR_FAIL;
-
-  numCPU = ink_number_of_processors();
-  err = RecGetRecordFloat("proxy.config.admin.load_factor", &loadFactor);
-
-  if (err == REC_ERR_OKAY || loadFactor < 20.0) {
-    mgmt_log(stderr, "[computeXactMax] Invalid Or Missing proxy.config.admin.load_factor.  Using default\n");
-    loadFactor = 43.0;
-  }
-  // The formula is: the first cpu counts as 1 and each subsequent CPU counts
-  //    as .5
-  if (numCPU > 1) {
-    numCPU--;
-    maxXact = (MgmtInt) (loadFactor * (1.0 + (numCPU * .5)));
-  } else {
-    maxXact = (MgmtInt) (loadFactor * 1);
-  }
-
-  ink_assert(varSetInt("proxy.node.xact_scale", maxXact));
-}
-
 
 // InkHashTable* processFormSubmission(char* submission)
 //
@@ -792,7 +756,6 @@ computeXactMax()
 InkHashTable *
 processFormSubmission(char *submission)
 {
-
   InkHashTable *nameVal = ink_hash_table_create(InkHashTableKeyType_String);
   Tokenizer updates("&\n\r");
   Tokenizer pair("=");

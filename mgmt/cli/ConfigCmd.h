@@ -49,7 +49,6 @@ typedef enum
   CMD_CONFIG_PORTS,
   CMD_CONFIG_PORTS_HTTP_SERVER,
   CMD_CONFIG_PORTS_HTTP_OTHER,
-  CMD_CONFIG_PORTS_WEBUI,
   CMD_CONFIG_PORTS_CLUSTER,
   CMD_CONFIG_PORTS_CLUSTER_RS,
   CMD_CONFIG_PORTS_CLUSTER_MC,
@@ -105,8 +104,6 @@ typedef enum
   CMD_CONFIG_FILTER,
   CMD_CONFIG_SECURITY,
   CMD_CONFIG_SECURITY_IP,
-  CMD_CONFIG_SECURITY_MGMT,
-  CMD_CONFIG_SECURITY_ADMIN,
   CMD_CONFIG_SECURITY_PASSWORD,
   CMD_CONFIG_PARENTS_STATUS,
   CMD_CONFIG_PARENTS_CACHE,
@@ -754,7 +751,6 @@ int Cmd_Enable(ClientData clientData, Tcl_Interp * interp, int argc, const char 
 int CmdArgs_Enable();
 
 int cliCheckIfEnabled(char *command);
-int cliVerifyPasswd(char *passwd);
 
 ////////////////////////////////////////////////////////////////
 // Cmd_Disable

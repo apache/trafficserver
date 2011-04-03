@@ -1424,9 +1424,6 @@ char *
 filename_to_string(TSFileNameT file)
 {
   switch (file) {
-  case TS_FNAME_ADMIN_ACCESS:
-    return xstrdup("admin_access.config");
-
   case TS_FNAME_CACHE_OBJ:
     return xstrdup("cache.config");
 
@@ -1445,9 +1442,6 @@ filename_to_string(TSFileNameT file)
 
   case TS_FNAME_LOGS_XML:
     return xstrdup("logs_xml.config");
-
-  case TS_FNAME_MGMT_ALLOW:
-    return xstrdup("mgmt_allow.config");
 
   case TS_FNAME_PARENT_PROXY:
     return xstrdup("parent.config");
@@ -1936,9 +1930,6 @@ create_ele_obj_from_rule_node(Rule * rule)
   // convert TokenList into an Ele
   // need switch statement to determine which Ele constructor to call
   switch (rule_type) {
-  case TS_ADMIN_ACCESS:       /* admin_access.config */
-    ele = (CfgEleObj *) new AdminAccessObj(token_list);
-    break;
   case TS_CACHE_NEVER:        /* all cache rules use same constructor */
   case TS_CACHE_IGNORE_NO_CACHE:
   case TS_CACHE_IGNORE_CLIENT_NO_CACHE:
@@ -1966,9 +1957,6 @@ create_ele_obj_from_rule_node(Rule * rule)
   case TS_LOG_OBJECT:
   case TS_LOG_FORMAT:
     //ele = (CfgEleObj *) new LogFilterObj(token_list);
-    break;
-  case TS_MGMT_ALLOW:         /* mgmt_allow.config */
-    ele = (CfgEleObj *) new MgmtAllowObj(token_list);
     break;
   case TS_PP_PARENT:          /* parent.config */
   case TS_PP_GO_DIRECT:
@@ -2029,10 +2017,6 @@ create_ele_obj_from_ele(TSCfgEle * ele)
     return NULL;
 
   switch (ele->type) {
-  case TS_ADMIN_ACCESS:       /* admin_access.config */
-    ele_obj = (CfgEleObj *) new AdminAccessObj((TSAdminAccessEle *) ele);
-    break;
-
   case TS_CACHE_NEVER:        /* cache.config */
   case TS_CACHE_IGNORE_NO_CACHE:      // fall-through
   case TS_CACHE_IGNORE_CLIENT_NO_CACHE:       // fall-through
@@ -2064,10 +2048,6 @@ create_ele_obj_from_ele(TSCfgEle * ele)
   case TS_LOG_OBJECT:         // fall-through
   case TS_LOG_FORMAT:         // fall-through
     //ele_obj = (CfgEleObj*) new LogFilterObj((TSLogFilterEle*)ele);
-    break;
-
-  case TS_MGMT_ALLOW:         /* mgmt_allow.config */
-    ele_obj = (CfgEleObj *) new MgmtAllowObj((TSMgmtAllowEle *) ele);
     break;
 
   case TS_PP_PARENT:          /* parent.config */
@@ -2137,9 +2117,6 @@ get_rule_type(TokenList * token_list, TSFileNameT file)
   /* Depending on the file and rule type, need to find out which
      token specifies which type of rule it is */
   switch (file) {
-  case TS_FNAME_ADMIN_ACCESS: /* admin_access.config */
-    return TS_ADMIN_ACCESS;
-
   case TS_FNAME_CACHE_OBJ:    /* cache.config */
     tok = token_list->first();
     while (tok != NULL) {
@@ -2189,9 +2166,6 @@ get_rule_type(TokenList * token_list, TSFileNameT file)
     //  TS_LOG_OBJECT,
     //  TS_LOG_FORMAT,
     return TS_LOG_FILTER;
-
-  case TS_FNAME_MGMT_ALLOW:   /* mgmt_allow.config */
-    return TS_MGMT_ALLOW;
 
   case TS_FNAME_PARENT_PROXY: /* parent.config */
     // search fro go_direct action name and recongize the value-> ture or false
@@ -2485,28 +2459,6 @@ copy_int_list(TSIntList list)
   return nlist;
 }
 
-//////////////////////////////////////////////////
-TSAdminAccessEle *
-copy_admin_access_ele(TSAdminAccessEle * ele)
-{
-  if (!ele)
-    return NULL;
-
-  TSAdminAccessEle *nele = TSAdminAccessEleCreate();
-  if (!nele)
-    return NULL;
-
-  copy_cfg_ele(&(ele->cfg_ele), &(nele->cfg_ele));
-
-  if (ele->user)
-    nele->user = xstrdup(ele->user);
-  if (ele->password)
-    nele->password = xstrdup(ele->password);
-  nele->access = ele->access;
-
-  return nele;
-}
-
 TSCacheEle *
 copy_cache_ele(TSCacheEle * ele)
 {
@@ -2666,22 +2618,6 @@ copy_log_format_ele(TSLogFormatEle * ele)
     nele->format = xstrdup(ele->format);
   nele->aggregate_interval_secs = ele->aggregate_interval_secs;
 
-  return nele;
-}
-
-TSMgmtAllowEle *
-copy_mgmt_allow_ele(TSMgmtAllowEle * ele)
-{
-  if (!ele) {
-    return NULL;
-  }
-
-  TSMgmtAllowEle *nele = TSMgmtAllowEleCreate();
-  if (!nele)
-    return NULL;
-  if (ele->src_ip_addr)
-    nele->src_ip_addr = copy_ip_addr_ele(ele->src_ip_addr);
-  nele->action = ele->action;
   return nele;
 }
 

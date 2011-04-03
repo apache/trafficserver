@@ -265,31 +265,15 @@ The Apache Traffic Server Administration Manual will explain what these strings 
 
  proxy.config.accept_threads
  proxy.config.task_threads
- proxy.config.admin.access_control_file
- proxy.config.admin.admin_password
  proxy.config.admin.admin_user
- proxy.config.admin.advanced_ui
  proxy.config.admin.autoconf.localhost_only
  proxy.config.admin.autoconf.pac_filename
  proxy.config.admin.autoconf_port
+ proxy.config.admin.autoconf.doc_root
  proxy.config.admin.autoconf.wpad_filename
- proxy.config.admin.basic_auth
  proxy.config.admin.cli_path
- proxy.config.admin.cli_port
- proxy.config.admin.html_doc_root
- proxy.config.admin.ip_allow.filename
- proxy.config.admin.lang_dict
- proxy.config.admin.load_factor
- proxy.config.admin.log_mgmt_access
- proxy.config.admin.log_resolve_hostname
  proxy.config.admin.number_config_bak
- proxy.config.admin.session
- proxy.config.admin.session.timeout
- proxy.config.admin.ssl_cert_file
- proxy.config.admin.ui_refresh_rate
  proxy.config.admin.user_id
- proxy.config.admin.use_ssl
- proxy.config.admin.web_interface_port
  proxy.config.alarm.abs_path
  proxy.config.alarm.bin
  proxy.config.alarm_email
@@ -392,7 +376,6 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.exec_thread.autoconfig
  proxy.config.exec_thread.autoconfig.scale
  proxy.config.exec_thread.limit
- proxy.config.feature_set
  proxy.config.header.parse.no_host_url_redirect
  proxy.config.history_info_enabled
  proxy.config.hostdb

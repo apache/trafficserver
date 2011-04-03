@@ -37,7 +37,6 @@
 #include "I_Layout.h"
 #include "Compatability.h"
 #include "LocalManager.h"
-#include "WebReconfig.h"
 #include "MgmtSocket.h"
 
 #if TS_USE_POSIX_CAP
@@ -54,8 +53,6 @@ LocalManager::SetForDup(void *hIOCPort, long lTProcId, void *hTh)
   NOWARN_UNUSED(hTh);
   return true;
 }
-
-
 
 void
 LocalManager::mgmtCleanup()
@@ -997,12 +994,6 @@ LocalManager::processEventQueue()
         }
         handled_by_mgmt = true;
       }
-      // admin_access.config
-      if (!(strcmp(data_raw, "admin_access.config"))) {
-        markAuthOtherUsersChange();
-        handled_by_mgmt = true;
-      }
-
     }
 
     if (!handled_by_mgmt) {

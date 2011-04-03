@@ -935,41 +935,6 @@ TSPdSsFormatDestroy(TSPdSsFormat * ele)
 }
 
 /*-------------------------------------------------------------
- * TSAdminAccessEle
- *-------------------------------------------------------------*/
-tsapi TSAdminAccessEle *
-TSAdminAccessEleCreate()
-{
-  TSAdminAccessEle *ele;
-
-  ele = (TSAdminAccessEle *) xmalloc(sizeof(TSAdminAccessEle));
-  if (!ele)
-    return NULL;
-
-  ele->cfg_ele.type = TS_ADMIN_ACCESS;
-  ele->cfg_ele.error = TS_ERR_OKAY;
-  ele->user = NULL;
-  ele->password = NULL;
-  ele->access = TS_ACCESS_UNDEFINED;
-
-  return ele;
-}
-
-tsapi void
-TSAdminAccessEleDestroy(TSAdminAccessEle * ele)
-{
-  if (ele) {
-    if (ele->user)
-      xfree(ele->user);
-    if (ele->password)
-      xfree(ele->password);
-    xfree(ele);
-  }
-  return;
-}
-
-
-/*-------------------------------------------------------------
  * CacheObj
  *-------------------------------------------------------------*/
 tsapi TSCacheEle *
@@ -1295,40 +1260,6 @@ TSLogObjectEleDestroy(TSLogObjectEle * ele)
   }
   return;
 }
-
-/*-------------------------------------------------------------
- * TSMgmtAllowEle
- *-------------------------------------------------------------*/
-tsapi TSMgmtAllowEle *
-TSMgmtAllowEleCreate()
-{
-
-  TSMgmtAllowEle *ele;
-
-  ele = (TSMgmtAllowEle *) xmalloc(sizeof(TSMgmtAllowEle));
-  if (!ele)
-    return NULL;
-
-  ele->cfg_ele.type = TS_MGMT_ALLOW;
-  ele->cfg_ele.error = TS_ERR_OKAY;
-  ele->src_ip_addr = TS_INVALID_IP_ADDR;
-  ele->action = TS_MGMT_ALLOW_UNDEFINED;
-
-  return ele;
-}
-
-tsapi void
-TSMgmtAllowEleDestroy(TSMgmtAllowEle * ele)
-{
-  if (ele) {
-    if (ele->src_ip_addr)
-      TSIpAddrEleDestroy(ele->src_ip_addr);
-    xfree(ele);
-  }
-  return;
-
-}
-
 
 /*-------------------------------------------------------------
  * TSParentProxyEleCreate

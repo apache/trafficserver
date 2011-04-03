@@ -831,7 +831,6 @@ Config_RestoreNetConfig(char *file)
     }
 
     // Get Admin GUI encrypted password.
-    char *e_gui_passwd;
     TSActionNeedT action_need, top_action_req = TS_ACTION_UNDEFINED;
     char *mail_address = netXml.getXmlTagValue("MailAddress");
     if (mail_address != NULL) {
@@ -844,24 +843,7 @@ Config_RestoreNetConfig(char *file)
       }
       xfree(mail_address);
     }
-    //Admin GUI passwd setting
-    char *gui_passwd = netXml.getXmlTagValue("AdminGUIPasswd");
-    if (gui_passwd != NULL) {
-      if (TSEncryptPassword(gui_passwd, &e_gui_passwd) != TS_ERR_OKAY) {
-        DPRINTF(("Config_FloppyNetRestore: failed to encrypt passwd %s!\n", gui_passwd));
-      } else {
-        if (MgmtRecordSet("proxy.config.admin.admin_password", e_gui_passwd, &action_need) != TS_ERR_OKAY) {
-          DPRINTF(("Config_FloppyNetRestore: failed to set new passwd %s!\n", gui_passwd));
-        } else {
-          if (action_need < top_action_req)     // a more "severe" action is needed...
-            top_action_req = action_need;
-          DPRINTF(("Config_FloppyNetRestore: set new passwd %s!\n", gui_passwd));
-        }
-      }
-      xfree(gui_passwd);
-      if (e_gui_passwd)
-        xfree(e_gui_passwd);
-    }
+
     // Make sure this is the last entry in these series. We restart traffic server here and hence
     // should be done at the very end.
     TagValue = netXml.getXmlTagValue("TimeZone");

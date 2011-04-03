@@ -28,8 +28,6 @@
  *
  *  WebUtils.h - Misc Utility Functions for the web server internface
  *
- *
- *
  ****************************************************************************/
 
 #include "ink_platform.h"
@@ -45,10 +43,8 @@ struct WebContext;
 struct SocketInfo
 {
   int fd;
-  void *SSLcon;
+  void *SSLcon; /* Currently unused */
 };
-
-int UU_decode(const char *inBuffer, int outBufSize, unsigned char *outBuffer);
 
 ssize_t socket_write(SocketInfo socketD, const char *buf, size_t nbyte);
 ssize_t socket_read(SocketInfo socketD, char *buf, size_t nbyte);

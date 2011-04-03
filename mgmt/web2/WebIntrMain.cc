@@ -37,8 +37,6 @@
 #include "MgmtUtils.h"
 #include "WebMgmtUtils.h"
 #include "WebIntrMain.h"
-#include "WebReconfig.h"
-#include "MgmtAllow.h"
 #include "Diags.h"
 #include "MgmtSocket.h"
 
@@ -53,10 +51,6 @@ extern "C"
   int usleep(unsigned int useconds);
 }
 #endif
-
-#include "openssl/ssl.h"
-#include "openssl/err.h"
-#include "openssl/crypto.h"
 
 /* Ugly hack - define HEADER_MD_5 to prevent the SSLeay md5.h
  *  header file from being included since it conflicts with the
@@ -91,171 +85,10 @@ WebInterFaceGlobals wGlobals;
 //     in this catagory.  The public key for the
 //     administration server is another example
 //
-WebContext adminContext;
 WebContext autoconfContext;
 
 // Used for storing argument values
-int web_port_arg = -1;
 int aconf_port_arg = -1;
-
-// Locks that SSleay uses
-static ink_mutex ssl_locks[CRYPTO_NUM_LOCKS];
-
-void
-SSLeay_mutex_cb(int mode, int type, const char *file, int line)
-{
-  NOWARN_UNUSED(file);
-  NOWARN_UNUSED(line);
-  ink_release_assert(type < CRYPTO_NUM_LOCKS);
-  ink_release_assert(type >= 0);
-  if (mode & CRYPTO_LOCK) {
-    Debug("ssl_lock", "Acquiring ssl lock %d", type);
-    ink_mutex_acquire(&ssl_locks[type]);
-  } else {
-    Debug("ssl_lock", "Releasing ssl lock %d", type);
-    ink_mutex_release(&ssl_locks[type]);
-  }
-}
-
-unsigned long
-SSLeay_tid_cb()
-{
-  return (unsigned long) ink_thread_self();
-}
-
-
-// init_SSL()
-//
-//  Set up SSL info - code derived from SSL
-//
-int
-init_SSL(char *sslCertFile, WebContext * wContext)
-{
-
-  // Hard coded error buffer size because that is how SSLeay
-  //   does it internally
-  //
-  char ssl_Error[256];
-  unsigned long sslErrno;
-
-  if (sslCertFile == NULL) {
-    mgmt_log(stderr, "[initSSL] No Certificate File was specified\n");
-    return -1;
-  }
-  // Setup thread/locking callbacks
-  for (int i = 0; i < CRYPTO_NUM_LOCKS; i++) {
-    ink_mutex_init(&ssl_locks[i], "SSLeay mutex");
-  }
-  CRYPTO_set_id_callback(SSLeay_tid_cb);
-  CRYPTO_set_locking_callback(SSLeay_mutex_cb);
-
-  SSL_load_error_strings();
-
-  SSLeay_add_ssl_algorithms();
-  wContext->SSL_Context = (SSL_CTX *) SSL_CTX_new(SSLv23_server_method());
-
-  if (SSL_CTX_use_PrivateKey_file(wContext->SSL_Context, sslCertFile, SSL_FILETYPE_PEM) <= 0) {
-    sslErrno = ERR_get_error();
-    ERR_error_string(sslErrno, ssl_Error);
-    mgmt_log(stderr, "[initSSL] Unable to set public key file: %s\n", ssl_Error);
-    goto SSL_FAILED;
-  }
-
-  if (SSL_CTX_use_certificate_file(wContext->SSL_Context, sslCertFile, SSL_FILETYPE_PEM) <= 0) {
-    sslErrno = ERR_get_error();
-    ERR_error_string(sslErrno, ssl_Error);
-    mgmt_log(stderr, "[initSSL] Unable to set certificate file: %s\n", ssl_Error);
-    goto SSL_FAILED;
-  }
-
-  /* Now we know that a key and cert have been set against
-   * the SSL context */
-  if (!SSL_CTX_check_private_key(wContext->SSL_Context)) {
-    sslErrno = ERR_get_error();
-    ERR_error_string(sslErrno, ssl_Error);
-    mgmt_log(stderr, "[initSSL] Private key does not match the certificate public key: %s\n", ssl_Error);
-    goto SSL_FAILED;
-  }
-  // Set a timeout so users connecting with http:// will not
-  //   have to wait forever for a timeout
-  SSL_CTX_set_timeout(wContext->SSL_Context, 3);
-
-  // Set SSL Read Ahead for higher performance
-  SSL_CTX_set_default_read_ahead(wContext->SSL_Context, 1);
-
-/* Since we are only shipping domestically right now, allow
-   higher grade ciphers
-   // Allow only Export Grade 40 bit secret ciphers
-  if(!SSL_CTX_set_cipher_list(wContext->SSL_Context,
-			      "EXP-RC4-MD5")) {
-    sslErrno = ERR_get_error();
-    ERR_error_string(sslErrno, ssl_Error);
-    mgmt_fatal(stderr,"[initSSL] Unable to set the prefered cipher list: %s\n", ssl_Error);
-  }
-  */
-
-  return 0;
-
-SSL_FAILED:
-  // Free up the SSL context on failure so we do not try to recycle
-  //   it if SSL gets turned off and back on again
-  if (wContext->SSL_Context != NULL) {
-    SSL_CTX_free(adminContext.SSL_Context);
-    wContext->SSL_Context = NULL;
-  }
-  return -1;
-}
-
-// void tmpFileDestructor(void* ptr)
-//
-//   Deletes the memory associated with the
-//     tmp file TSD
-//
-void
-tmpFileDestructor(void *ptr)
-{
-  xfree(ptr);
-}
-
-// static int setUpLogging()
-//    Returns the file descriptor of the file to log mgmt
-//      Web server access to.  Creates it if necessary
-//
-static int
-setUpLogging()
-{
-  struct stat s;
-  int err;
-  char *log_dir;
-  char log_file[PATH_NAME_MAX+1];
-
-  if ((err = stat(system_log_dir, &s)) < 0) {
-    ink_assert(RecGetRecordString_Xmalloc("proxy.config.log.logfile_dir", &log_dir)
-	       == REC_ERR_OKAY);
-    Layout::relative_to(system_log_dir, sizeof(system_log_dir),
-                        Layout::get()->prefix, log_dir);
-    if ((err = stat(log_dir, &s)) < 0) {
-      mgmt_elog("unable to stat() log dir'%s': %d %d, %s\n",
-                system_log_dir, err, errno, strerror(errno));
-      mgmt_elog("please set 'proxy.config.log.logfile_dir'\n");
-      //_exit(1);
-    } else {
-      ink_strncpy(system_log_dir,log_dir,sizeof(system_log_dir));
-    }
-  }
-  Layout::relative_to(log_file, sizeof(log_file),
-                      system_log_dir, log_dir);
-
-  int diskFD = open(log_file, O_WRONLY | O_APPEND | O_CREAT, 0644);
-
-  if (diskFD < 0) {
-    mgmt_log(stderr, "[setUpLogging] Unable to open log file (%s).  No logging will occur: %s\n", log_file,strerror(errno));
-  }
-
-  fcntl(diskFD, F_SETFD, 1);
-
-  return diskFD;
-}
 
 // int checkWebContext(WebContext* wctx, char* desc)
 //
@@ -433,26 +266,6 @@ newTcpSocket(int port)
 //  purposes
 static volatile int32_t numServiceThr = 0;
 
-void
-printServiceThr(int sig)
-{
-  NOWARN_UNUSED(sig);
-
-  fprintf(stderr, "Service Thread Array\n");
-  fprintf(stderr, " Service Thread Count : %d\n", numServiceThr);
-  for (int i = 0; i < MAX_SERVICE_THREADS; i++) {
-    if (wGlobals.serviceThrArray[i].threadId != 0 || wGlobals.serviceThrArray[i].fd != -1) {
-      fprintf(stderr,
-              " Slot %d : FD %d : ThrId %lu : StartTime %d : WaitForJoin %s : Shutdown %s\n",
-              i, wGlobals.serviceThrArray[i].fd,
-              (unsigned long) wGlobals.serviceThrArray[i].threadId,
-              (int) wGlobals.serviceThrArray[i].startTime,
-              wGlobals.serviceThrArray[i].waitingForJoin ? "true" : "false",
-              wGlobals.serviceThrArray[i].alreadyShutdown ? "true" : "false");
-    }
-  }
-}
-
 void *
 serviceThrReaper(void *arg)
 {
@@ -489,29 +302,6 @@ serviceThrReaper(void *arg)
           wGlobals.serviceThrArray[i].alreadyShutdown = false;
 
           numJoined++;
-
-        } else if ((currentTime > wGlobals.serviceThrArray[i].startTime + SOCKET_TIMEOUT) &&
-                   wGlobals.serviceThrArray[i].type == HTTP_THR &&
-                   wGlobals.serviceThrArray[i].alreadyShutdown == false) {
-
-          // Socket is presumed stuck.  Shutdown incoming
-          // traffic on the socket so the thread handeling
-          // socket will give up
-          shutdown(wGlobals.serviceThrArray[i].fd, 0);
-
-#if !defined(freebsd) && !defined(darwin)
-          ink_thread_cancel(wGlobals.serviceThrArray[i].threadId);
-#endif
-#if defined(darwin)
-          ink_sem_post(wGlobals.serviceThrCount);
-#else
-          ink_sem_post(&wGlobals.serviceThrCount);
-#endif
-          ink_atomic_increment((int32_t *) & numServiceThr, -1);
-
-          wGlobals.serviceThrArray[i].alreadyShutdown = true;
-          Debug("ui", "%s %d %s %d\n", "Shuting Down Socket FD ",
-                wGlobals.serviceThrArray[i].fd, "for thread", wGlobals.serviceThrArray[i].threadId);
         }
       }
     }
@@ -549,9 +339,7 @@ webIntr_main(void *x)
   struct sockaddr_in *clientInfo;       // Info about client connection
   ink_thread thrId;             // ID of service thread we just spawned
   fd_set selectFDs;             // FD set passed to select
-  int webPort = -1;             // Port for incoming HTTP connections
   int publicPort = -1;          // Port for incoming autoconf connections
-  int loggingEnabled;           // Whether to log accesses the mgmt server
 #if !defined(linux)
   sigset_t allSigs;             // Set of all signals
 #endif
@@ -604,49 +392,10 @@ webIntr_main(void *x)
   // Init mutex to only allow one submissions at a time
   ink_mutex_init(&wGlobals.submitLock, "Submission Mutex");
 
-  // Get our configuration information
-  //
-  // Set up the administration context
-  //
-  if (web_port_arg > 0) {
-    webPort = web_port_arg;
-  } else {
-    found = (RecGetRecordInt("proxy.config.admin.web_interface_port", &tempInt) == REC_ERR_OKAY);
-    webPort = (int) tempInt;
-    ink_assert(found);
-  }
-  Debug("ui", "[WebIntrMain] Starting up Web Server on Port %d\n", webPort);
-  wGlobals.webPort = webPort;
-
   // Fix for INKqa10514
   found = (RecGetRecordInt("proxy.config.admin.autoconf.localhost_only", &tempInt) == REC_ERR_OKAY);
   autoconf_localhost_only = (int) tempInt;
   ink_assert(found);
-
-  // Figure out the document root
-  found = (RecGetRecordString_Xmalloc("proxy.config.admin.html_doc_root", &(adminContext.docRoot)) == REC_ERR_OKAY);
-  ink_assert(found);
-
-  if (adminContext.docRoot == NULL) {
-    mgmt_fatal(stderr, "[WebIntrMain] No Document Root\n");
-  } else {
-    adminContext.docRootLen = strlen(adminContext.docRoot);
-  }
-
-  adminContext.defaultFile = "/index.ink";
-
-  // setup our other_users hash-table (for WebHttpAuth)
-  adminContext.other_users_ht = new MgmtHashTable("other_users_ht", false, InkHashTableKeyType_String);
-
-  // setup our language dictionary hash-table
-  adminContext.lang_dict_ht = new MgmtHashTable("lang_dict_ht", false, InkHashTableKeyType_String);
-  adminContext.SSL_Context = NULL;
-
-  configSSLenable();
-  Debug("ui", "SSL enabled is %d\n", adminContext.SSLenabled);
-
-  // Set up the ip based access control
-  configMgmtIpAllow();
 
   // Set up the client autoconfiguration context
   //
@@ -655,14 +404,13 @@ webIntr_main(void *x)
   if (aconf_port_arg > 0) {
     publicPort = aconf_port_arg;
   } else {
-    found = (RecGetRecordInt("proxy.config.admin.autoconf_port", &tempInt) == REC_ERR_OKAY);
+    found = (RecGetRecordInt("proxy.config.admin.autoconf.port", &tempInt) == REC_ERR_OKAY);
     publicPort = (int) tempInt;
     ink_assert(found);
   }
   Debug("ui", "[WebIntrMain] Starting Client AutoConfig Server on Port %d\n", publicPort);
 
-  found = (RecGetRecordString_Xmalloc("proxy.config.config_dir", &(autoconfContext.docRoot))
-           == REC_ERR_OKAY);
+  found = (RecGetRecordString_Xmalloc("proxy.config.admin.autoconf.doc_root", &(autoconfContext.docRoot)) == REC_ERR_OKAY);
   ink_assert(found);
 
   if (autoconfContext.docRoot == NULL) {
@@ -670,6 +418,7 @@ webIntr_main(void *x)
   } else {
     struct stat s;
     int err;
+
     if ((err = stat(autoconfContext.docRoot, &s)) < 0) {
       xfree(autoconfContext.docRoot);
       autoconfContext.docRoot = xstrdup(system_config_directory);
@@ -682,50 +431,7 @@ webIntr_main(void *x)
     }
     autoconfContext.docRootLen = strlen(autoconfContext.docRoot);
   }
-  autoconfContext.adminAuthEnabled = 0;
-  autoconfContext.admin_user.user[0] = '\0';
-  autoconfContext.admin_user.encrypt_passwd[0] = '\0';
-  autoconfContext.other_users_ht = 0;
-  autoconfContext.lang_dict_ht = 0;
-  autoconfContext.SSLenabled = 0;
-  autoconfContext.SSL_Context = NULL;
   autoconfContext.defaultFile = "/proxy.pac";
-  autoconfContext.AdvUIEnabled = 1;     // full Web UI by default
-  autoconfContext.FeatureSet = 1;       // default should be ?
-
-  // Set up a TSD key for use by WebFileEdit
-  ink_thread_key_create(&wGlobals.tmpFile, tmpFileDestructor);
-
-  // Set up a TSD for storing the request structure.  I would have
-  //   perfered to pass this along the call chain but I didn't think
-  //   of it until too late so I'm using a TSD
-  ink_thread_key_create(&wGlobals.requestTSD, NULL);
-
-  // Set up refresh Info
-  found = (RecGetRecordInt("proxy.config.admin.ui_refresh_rate", &tempInt) == REC_ERR_OKAY);
-  wGlobals.refreshRate = (int) tempInt;
-  ink_assert(found);
-
-  // Set up our logging configuration
-  found = (RecGetRecordInt("proxy.config.admin.log_mgmt_access", &tempInt) == REC_ERR_OKAY);
-  loggingEnabled = (int) tempInt;
-  if (found == true && loggingEnabled != 0) {
-    wGlobals.logFD = setUpLogging();
-  } else {
-    wGlobals.logFD = -1;
-
-  }
-  found = (RecGetRecordInt("proxy.config.admin.log_resolve_hostname", &tempInt) == REC_ERR_OKAY);
-  loggingEnabled = (int) tempInt;
-  if (found == true && loggingEnabled != 0) {
-    wGlobals.logResolve = true;
-  } else {
-    wGlobals.logResolve = false;
-  }
-
-  // Set for reconfiguration callbacks
-  setUpWebCB();
-
 
   // INKqa09866
   // fire up interface for ts configuration through API; use absolute path from root to
@@ -789,11 +495,7 @@ webIntr_main(void *x)
     // TODO: Should we check return value?
     mgmt_select(32, &selectFDs, (fd_set *) NULL, (fd_set *) NULL, NULL);
 
-    if (socketFD >= 0 && FD_ISSET(socketFD, &selectFDs)) {
-      // new HTTP Connection
-      acceptFD = socketFD;
-      serviceThr = HTTP_THR;
-    } else if (autoconfFD >= 0 && FD_ISSET(autoconfFD, &selectFDs)) {
+    if (autoconfFD >= 0 && FD_ISSET(autoconfFD, &selectFDs)) {
       acceptFD = autoconfFD;
       serviceThr = AUTOCONF_THR;
     } else {
@@ -820,13 +522,6 @@ webIntr_main(void *x)
 #endif
       ink_atomic_increment((int32_t *) & numServiceThr, -1);
     } else {                    // Accept succeeded
-
-      if (serviceThr == HTTP_THR) {
-        if (fcntl(clientFD, F_SETFD, FD_CLOEXEC) < 0) {
-          mgmt_elog(stderr, "[WebIntrMain] Unable to set close on exec flag\n");
-        }
-      }
-
       if (safe_setsockopt(clientFD, IPPROTO_TCP, TCP_NODELAY, ON, sizeof(int)) < 0) {
         mgmt_log(stderr, "[WebIntrMain]Failed to set sock options: %s\n", strerror(errno));
       }
@@ -835,11 +530,8 @@ webIntr_main(void *x)
       ink_mutex_acquire(&wGlobals.serviceThrLock);
 
       // If this a web manager, make sure that it is from an allowed ip addr
-      if (((serviceThr == HTTP_THR) &&
-           mgmt_allow_table->match(clientInfo->sin_addr.s_addr) == false)
-          // Fix for INKqa10514
-          || (serviceThr == AUTOCONF_THR && autoconf_localhost_only != 0 &&
-              strcmp(inet_ntoa(clientInfo->sin_addr), "127.0.0.1") != 0)) {
+      if (serviceThr == AUTOCONF_THR && autoconf_localhost_only != 0 &&
+          strcmp(inet_ntoa(clientInfo->sin_addr), "127.0.0.1") != 0) {
         mgmt_log("WARNING: connect by disallowed client %s, closing\n", inet_ntoa(clientInfo->sin_addr));
 #if defined(darwin)
         ink_sem_post(wGlobals.serviceThrCount);
@@ -902,40 +594,14 @@ void *
 serviceThrMain(void *info)
 {
   serviceThr_t *threadInfo = (serviceThr_t *) info;
-  ink_thread ourId;
   WebHttpConInfo httpInfo;
 
-  // dg: Added init to get rid of warning, ok since HTTP_THR must be #t
-  WebContext *secureCTX = NULL;
-
   lmgmt->syslogThrInit();
-
-  // Find out what our Id is.  We need to wait
-  //   for our spawning thread to update the
-  //   thread info structure
-  ink_mutex_acquire(&wGlobals.serviceThrLock);
-  ourId = threadInfo->threadId;
-
-  // While we have the lock, make a copy of
-  //   the web context if are on the secure admin port
-  if (threadInfo->type == HTTP_THR) {
-    secureCTX = (WebContext *) xmalloc(sizeof(WebContext));
-    memcpy(secureCTX, &adminContext, sizeof(WebContext));
-  }
-  ink_mutex_release(&wGlobals.serviceThrLock);
-
 
   // Do our work
   switch (threadInfo->type) {
   case NO_THR:                 // dg: added to handle init value
     ink_assert(false);
-    break;
-  case HTTP_THR:
-    httpInfo.fd = threadInfo->fd;
-    httpInfo.context = secureCTX;
-    httpInfo.clientInfo = threadInfo->clientInfo;
-    WebHttpHandleConnection(&httpInfo);
-    xfree(secureCTX);
     break;
   case AUTOCONF_THR:
     httpInfo.fd = threadInfo->fd;
@@ -953,8 +619,6 @@ serviceThrMain(void *info)
 
   // Mark ourselves ready to be reaped
   ink_mutex_acquire(&wGlobals.serviceThrLock);
-
-  ink_assert(ourId == threadInfo->threadId);
 
   threadInfo->waitingForJoin = true;
   threadInfo->fd = -1;

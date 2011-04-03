@@ -41,8 +41,5 @@ void WebHttpInit();
 void WebHttpHandleConnection(WebHttpConInfo * whci);
 
 void WebHttpSetErrorResponse(WebHttpContext * whc, HttpStatus_t error);
-char *WebHttpAddDocRoot_Xmalloc(WebHttpContext * whc, const char *file);
-
-int spawn_cgi(WebHttpContext * whc, const char *cgi_path, char **args, bool nowait, bool run_as_root);
-
+char *WebHttpAddDocRoot_Xmalloc(WebHttpContext * whc, const char *file, int file_len);
 #endif // _WEB_HTTP_H_

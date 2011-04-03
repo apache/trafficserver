@@ -80,42 +80,13 @@ u_getch(void)
   return returned;
 }
 
-int
-cliVerifyPasswd(char *passwd)
-{
-  char *e_passwd = NULL;
-  TSError status = TS_ERR_OKAY;
-  TSString old_passwd = NULL;
-
-  TSEncryptPassword(passwd, &e_passwd);
-  status = Cli_RecordGetString("proxy.config.admin.admin_password", &old_passwd);
-
-  if (status != TS_ERR_OKAY) {
-    if (e_passwd)
-      xfree(e_passwd);
-    return CLI_ERROR;
-  }
-  if (e_passwd) {
-    if (strcmp((char *) old_passwd, e_passwd)) {
-      xfree(e_passwd);
-      return CLI_ERROR;
-    }
-    xfree(e_passwd);
-  } else {
-
-    return CLI_ERROR;
-
-  }
-
-
-  return CLI_OK;
-}
-
 ////////////////////////////////////////////////////////////////
 // Cmd_Enable
 //
 // This is the callback
 // function for the "enable" command.
+// TODO: This currently doesn't do anything, these commands are
+//       always available.
 //
 // Parameters:
 //    clientData -- information about parsed arguments
@@ -165,27 +136,10 @@ Cmd_Enable(ClientData clientData, Tcl_Interp * interp, int argc, const char *arg
     Cli_Printf("Already Enabled\n");
     return CMD_OK;
   }
-  // TODO: Use here some proper getpass function
-  //       See APR's apr_password_get
-  char passwd[256], ch = 'p';
-  int i = 0;
-  printf("Password:");
-  fflush(stdout);
-  ch = u_getch();
-  while (ch != '\n' && ch != '\r') {
-    passwd[i] = ch;
-    i++;
-    ch = u_getch();
 
-  }
-  passwd[i] = 0;
-  if (cliVerifyPasswd(passwd) == CLI_ERROR) {
-    Cli_Printf("\nIncorrect Password\n");
-    return CMD_ERROR;
-  }
-  Cli_Printf("\n");
-  enable_restricted_commands = TRUE;
-  return CMD_OK;
+  // TODO: replace this assert with appropriate authentication
+  ink_release_assert(enable_restricted_commands);
+  return CMD_ERROR;
 }
 
 ////////////////////////////////////////////////////////////////
@@ -778,7 +732,6 @@ Cmd_ConfigPorts(ClientData clientData, Tcl_Interp * interp, int argc, const char
         return (ConfigPortsSet(argtable[0].parsed_args, argtable[0].data));
         break;
       case CMD_CONFIG_PORTS_HTTP_SERVER:
-      case CMD_CONFIG_PORTS_WEBUI:
       case CMD_CONFIG_PORTS_CLUSTER:
       case CMD_CONFIG_PORTS_CLUSTER_RS:
       case CMD_CONFIG_PORTS_CLUSTER_MC:
@@ -806,8 +759,6 @@ CmdArgs_ConfigPorts()
                  (char *) NULL, CMD_CONFIG_PORTS_HTTP_SERVER, "Set Ports for http-server", (char *) NULL);
   createArgument("http-other", 1, CLI_ARGV_OPTION_NAME_VALUE,
                  (char *) NULL, CMD_CONFIG_PORTS_HTTP_OTHER, "Set Ports for http-other", (char *) NULL);
-  createArgument("webui", 1, CLI_ARGV_OPTION_INT_VALUE,
-                 (char *) NULL, CMD_CONFIG_PORTS_WEBUI, "Set Ports for webui", (char *) NULL);
   createArgument("cluster", 1, CLI_ARGV_OPTION_INT_VALUE,
                  (char *) NULL, CMD_CONFIG_PORTS_CLUSTER, "Set Ports for cluster", (char *) NULL);
   createArgument("cluster-rs", 1, CLI_ARGV_OPTION_INT_VALUE,
@@ -947,12 +898,6 @@ Cmd_ConfigSecurity(ClientData clientData, Tcl_Interp * interp, int argc, const c
     case CMD_CONFIG_SECURITY_IP:
       return (Cli_ConfigFileURL_Action(TS_FNAME_IP_ALLOW, "ip_allow.config", argtable->arg_string));
 
-    case CMD_CONFIG_SECURITY_MGMT:
-      return (Cli_ConfigFileURL_Action(TS_FNAME_MGMT_ALLOW, "mgmt_allow.config", argtable->arg_string));
-
-    case CMD_CONFIG_SECURITY_ADMIN:
-      return (Cli_ConfigFileURL_Action(TS_FNAME_ADMIN_ACCESS, "admin_access.config", argtable->arg_string));
-
     case CMD_CONFIG_SECURITY_PASSWORD:
       return (ConfigSecurityPasswd());
     }
@@ -971,11 +916,6 @@ CmdArgs_ConfigSecurity()
 {
   createArgument("ip-allow", 1, CLI_ARGV_OPTION_NAME_VALUE,
                  (char *) NULL, CMD_CONFIG_SECURITY_IP, "Clients allowed to connect to proxy <url>", (char *) NULL);
-  createArgument("mgmt-allow", 1, CLI_ARGV_OPTION_NAME_VALUE,
-                 (char *) NULL, CMD_CONFIG_SECURITY_MGMT, "Clients allowed to connect to manager <url>", (char *) NULL);
-  createArgument("admin", 1, CLI_ARGV_OPTION_NAME_VALUE,
-                 (char *) NULL, CMD_CONFIG_SECURITY_ADMIN, "Administrator access to WebUI <url>", (char *) NULL);
-
   createArgument("password", 1, CLI_ARGV_CONSTANT,
                  (char *) NULL, CMD_CONFIG_SECURITY_PASSWORD, "Change Admin Password", (char *) NULL);
   return 0;
@@ -2523,9 +2463,6 @@ ConfigPortsSet(int arg_ref, void *valuePtr)
   case CMD_CONFIG_PORTS_HTTP_OTHER:
     status = Cli_RecordSetString("proxy.config.http.server_other_ports", (TSString) valuePtr, &action_need);
     break;
-  case CMD_CONFIG_PORTS_WEBUI:
-    status = Cli_RecordSetInt("proxy.config.admin.web_interface_port", *(TSInt *) valuePtr, &action_need);
-    break;
   case CMD_CONFIG_PORTS_CLUSTER:
     status = Cli_RecordSetInt("proxy.config.cluster.cluster_port", *(TSInt *) valuePtr, &action_need);
     break;
@@ -2585,13 +2522,6 @@ ConfigPortsGet(int arg_ref)
       Cli_Printf("none\n");
     }
     break;
-  case CMD_CONFIG_PORTS_WEBUI:
-    status = Cli_RecordGetInt("proxy.config.admin.web_interface_port", &int_val);
-    if (status) {
-      return status;
-    }
-    Cli_Printf("%d\n", int_val);
-    break;
   case CMD_CONFIG_PORTS_CLUSTER:
     status = Cli_RecordGetInt("proxy.config.cluster.cluster_port", &int_val);
     if (status) {
@@ -2650,75 +2580,9 @@ ConfigPortsGet(int arg_ref)
 int
 ConfigSecurityPasswd()
 {
-  char org_passwd[256], new_passwd1[256], new_passwd2[256], ch = 'p';
-  int i = 0;
-  char *e_passwd = NULL;
-  TSError status = TS_ERR_OKAY;
-  TSActionNeedT action_need = TS_ACTION_UNDEFINED;
-
   Cli_Debug("ConfigSecurityPasswd\n");
-
-  Cli_Printf("Enter Old Password:");
-  fflush(stdout);
-  ch = u_getch();
-  while (ch != '\n' && ch != '\r') {
-    org_passwd[i] = ch;
-    i++;
-    ch = u_getch();
-
-  }
-  org_passwd[i] = 0;
-
-  if (cliVerifyPasswd(org_passwd) == CLI_ERROR) {
-    Cli_Printf("\nIncorrect Password\n");
-    return CLI_ERROR;
-  }
-
-  Cli_Printf("\nEnter New Password:");
-  fflush(stdout);
-  i = 0;
-  ch = u_getch();
-  while (ch != '\n' && ch != '\r') {
-    new_passwd1[i] = ch;
-    i++;
-    ch = u_getch();
-
-  }
-  new_passwd1[i] = 0;
-
-  Cli_Printf("\nReEnter New Password:");
-  fflush(stdout);
-  i = 0;
-  ch = u_getch();
-  while (ch != '\n' && ch != '\r') {
-    new_passwd2[i] = ch;
-    i++;
-    ch = u_getch();
-
-  }
-  new_passwd2[i] = 0;
-
-  if (strcmp(new_passwd1, new_passwd2)) {
-    Cli_Printf("\nTwo New Passwords Aren't Same\n");
-    return CLI_ERROR;
-  }
-
-  TSEncryptPassword(new_passwd1, &e_passwd);
-  status = Cli_RecordSetString("proxy.config.admin.admin_password", (TSString) e_passwd, &action_need);
-
-  if (status != TS_ERR_OKAY) {
-    Cli_Printf("\nCannot Set The Password\n");
-    Cli_ConfigEnactChanges(action_need);
-    if (e_passwd)
-      xfree(e_passwd);
-    return CLI_ERROR;
-  }
-
-  Cli_Printf("\nPassword Set\n");
-  if (e_passwd)
-    xfree(e_passwd);
+  Cli_Printf("This command is currently a no-op");
   return CLI_OK;
-
 }
 
 // config remap sub-command

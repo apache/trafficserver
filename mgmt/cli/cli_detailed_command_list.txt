@@ -327,18 +327,13 @@ security		Security Configuration (only in Enable Mode)
 
     ts> show:security
 
-    Web Interface Port ----- 12    (proxy.config.admin.web_interface_port)
-
     Traffic Server Access
     (ip_allow.config contents)
 
-    Traffic Manager Access
-    (mgmt_allow.config contents)
     ts>
 
   implementation:
     Traffic Server Access specified in ip_allow.config (use MGMT API)
-    Traffic Manager Access specified in mgmt_allow.config (use MGMT API)
 
 cluster                Cluster Configuration
 
@@ -1365,24 +1360,7 @@ security		Security Configuration
     ts# config:security ip-allow http://example.com/ip_allow.config
     ts#
 
-  syntax: config:security mgmt-allow <url>
-
-    ts# config:security mgmt-allow http://example.com/mgmt_allow.config
-    ts#
-
   syntax: config:security admin <url>
-
-    ts# config:security admin http://example.com/admin_access.config
-    ts#
-
-parent			Parent Configuration
-			(on/off, parents, rules)
-  syntax: config:parent status <on | off>
-          config:parent name <parent>
-          config:parent rules <url>
-  args:   <on | off> = proxy.config.http.parent_proxy_routing_enable
-          <parent> = proxy.config.http.parent_proxies
-          <url> = retrieve file and use as parent.config
 
     ts# config:parent status on 
     ts#
@@ -1409,7 +1387,6 @@ ports			Ports used by Traffic Server
   args:   some variables are single-port while other can be a list of ports
           <http-server>     (proxy.config.http.server_port) single
           <http-other>      (proxy.config.http.server_other_ports) list
-          <webui>           (proxy.config.admin.web_interface_port) single
           <cluster>         (proxy.config.cluster_port) single
           <cluster-rs>      (proxy.config.cluster.rsport) single
           <cluster-mc>      (proxy.config.cluster.mcport) single

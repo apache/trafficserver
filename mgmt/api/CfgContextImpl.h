@@ -102,30 +102,6 @@ private:
 
 };
 
-/* admin_access.config    ****************************************/
-class AdminAccessObj:public CfgEleObj
-{
-public:
-  AdminAccessObj(TSAdminAccessEle * ele);
-  AdminAccessObj(TokenList * tokens);   //creates the ele
-  ~AdminAccessObj();
-
-  virtual char *formatEleToRule();
-  virtual bool isValid();
-  virtual TSCfgEle *getCfgEleCopy();
-  virtual TSCfgEle *getCfgEle()
-  {
-    return (TSCfgEle *) m_ele;
-  }
-  virtual TSRuleTypeT getRuleType()
-  {
-    return m_ele->cfg_ele.type;
-  }
-
-private:
-  TSAdminAccessEle * m_ele;
-};
-
 /* cache.config ***************************************************/
 class CacheObj:public CfgEleObj
 {
@@ -317,30 +293,6 @@ private:
   TSLogObjectEle * m_ele;
 };
 
-
-/* mgmt_allow.config   *******************************************/
-class MgmtAllowObj:public CfgEleObj
-{
-public:
-  MgmtAllowObj(TSMgmtAllowEle * ele);
-  MgmtAllowObj(TokenList * tokens);
-  ~MgmtAllowObj();
-
-  virtual char *formatEleToRule();
-  virtual bool isValid();
-  virtual TSCfgEle *getCfgEleCopy();
-  virtual TSCfgEle *getCfgEle()
-  {
-    return (TSCfgEle *) m_ele;
-  }
-  virtual TSRuleTypeT getRuleType()
-  {
-    return m_ele->cfg_ele.type;
-  }
-
-private:
-  TSMgmtAllowEle * m_ele;
-};
 
 /* parent.config       *******************************************/
 class ParentProxyObj:public CfgEleObj

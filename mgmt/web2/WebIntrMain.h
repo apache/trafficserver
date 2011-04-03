@@ -28,8 +28,6 @@
  *
  *  WebIntrMain.h - main loop for the Web Interface
  *
- *
- *
  ****************************************************************************/
 
 struct WebContext;
@@ -38,9 +36,7 @@ struct WebContext;
 
 void *webIntr_main(void *);
 void *serviceThrMain(void *info);
-int init_SSL(char *sslCertFile, WebContext * wContext);
 
-extern int web_port_arg;
 extern int aconf_port_arg;
 
 #endif

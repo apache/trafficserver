@@ -103,7 +103,6 @@ bool ProxyShutdown();
 int processSpawn(const char *args[], EnvBlock * env, textBuffer * input_buf, textBuffer * output_buf, bool nowait,
                  bool runAsRoot, bool * truncated = NULL);
 
-void computeXactMax();
 int setHostnameVar();
 void appendDefaultDomain(char *hostname, int bufLength);
 

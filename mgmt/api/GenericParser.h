@@ -201,12 +201,10 @@ private:
   TokenList *splitdnsParse(char *rule);
   TokenList *updateParse(char *rule);
   TokenList *vaddrsParse(char *rule);
-  TokenList *admin_accessParse(char *rule);
   TokenList *arm_securityParse(char *rule);
   TokenList *hostingParse(char *rule);
   TokenList *ip_allowParse(char *rule);
   TokenList *logs_xmlParse(char *rule);
-  TokenList *mgmt_allowParse(char *rule);
   TokenList *volumeParse(char *rule);
   TokenList *logsParse(char *rule);
   TokenList *pluginParse(char *rule);

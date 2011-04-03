@@ -35,14 +35,12 @@
 #include "TextBuffer.h"
 
 #include "WebGlobals.h"
-#include "WebHttpAuth.h"
+#include "mgmtapi.h"
 #include "WebHttpMessage.h"
 #include "WebUtils.h"
 
 struct WebHttpContext
 {
-
-  WebHttpAuthUser current_user; // current user and access privileges
   uint32_t request_state;         // client request state
   uint32_t server_state;          // bit-mask of enabled server features
   httpMessage *request;         // client request
@@ -56,22 +54,16 @@ struct WebHttpContext
   InkHashTable *submit_note_ht; // ht of info submission records
   sockaddr_in *client_info;     // client conection information
   SocketInfo si;                // socket information
-  ssl_ctx_st *ssl_ctx;          // SSL information
-
-  WebHttpAuthUser admin_user;   // admin user information
-  MgmtHashTable *other_users_ht;        // other user information
-
-  MgmtHashTable *lang_dict_ht;  // language dictionary
 
   char *top_level_render_file;  // top-level file to render
   char *cache_query_result;     // cache inspector query result
 
   const char *default_file;     // default file
   const char *doc_root;         // document root
+  int doc_root_len;             // length of doc_root
 };
 
 WebHttpContext *WebHttpContextCreate(WebHttpConInfo * whci);
 void WebHttpContextDestroy(WebHttpContext * whc);
-void WebHttpContextPrint_Debug(WebHttpContext * whc);
 
 #endif // _WEB_HTTP_CONTEXT_H_

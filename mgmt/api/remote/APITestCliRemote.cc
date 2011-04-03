@@ -368,43 +368,6 @@ print_pd_sspec(TSPdSsFormat info)
 }
 
 
-//
-// Ele printing functions
-//
-
-void
-print_admin_access_ele(TSAdminAccessEle * ele)
-{
-  if (!ele) {
-    fprintf(stderr, "print_admin_access_ele: ele is NULL\n");
-    return;
-  }
-
-  char accessType;
-  switch (ele->access) {
-  case TS_ACCESS_NONE:
-    accessType = '0';
-    break;
-  case TS_ACCESS_MONITOR:
-    accessType = '1';
-    break;
-  case TS_ACCESS_MONITOR_VIEW:
-    accessType = '2';
-    break;
-  case TS_ACCESS_MONITOR_CHANGE:
-    accessType = '3';
-    break;
-  default:
-    accessType = '?';           /* lv: to make gcc happy and don't brake fprintf */
-    // Handled here:
-    // TS_ACCESS_UNDEFINED
-    break;
-  }
-
-  fprintf(stderr, "%s:%s:%c:\n", ele->user, ele->password, accessType);
-  return;
-}
-
 void
 print_cache_ele(TSCacheEle * ele)
 {
@@ -534,16 +497,6 @@ print_icp_ele(TSIcpEle * ele)
 
 void
 print_ip_allow_ele(TSIpAllowEle * ele)
-{
-  if (!ele) {
-    printf("can't print ele\n");
-  }
-
-  print_ip_addr_ele(ele->src_ip_addr);
-}
-
-void
-print_mgmt_allow_ele(TSMgmtAllowEle * ele)
 {
   if (!ele) {
     printf("can't print ele\n");
@@ -841,9 +794,6 @@ print_ele_list(TSFileNameT file, TSCfgContext ctx)
     ele = TSCfgContextGetEleAt(ctx, i);
 
     switch (filename) {
-    case TS_FNAME_ADMIN_ACCESS:
-      print_admin_access_ele((TSAdminAccessEle *) ele);
-      break;
     case TS_FNAME_CACHE_OBJ:
       print_cache_ele((TSCacheEle *) ele);
       break;
@@ -858,9 +808,6 @@ print_ele_list(TSFileNameT file, TSCfgContext ctx)
       break;
     case TS_FNAME_LOGS_XML:
       break;                    /*NOT DONE */
-    case TS_FNAME_MGMT_ALLOW:
-      print_mgmt_allow_ele((TSMgmtAllowEle *) ele);
-      break;
     case TS_FNAME_PARENT_PROXY:
       print_parent_ele((TSParentProxyEle *) ele);
       break;
@@ -1600,9 +1547,7 @@ test_cfg_context_get(char *args)
   name[strlen(filename) - 1] = '\0';
 
   // convert file name to TSFileNameT
-  if (strcmp(name, "admin_access.config") == 0) {
-    file = TS_FNAME_ADMIN_ACCESS;
-  } else if (strcmp(name, "cache.config") == 0) {
+  if (strcmp(name, "cache.config") == 0) {
     file = TS_FNAME_CACHE_OBJ;
   } else if (strcmp(name, "congestion.config") == 0) {
     file = TS_FNAME_CONGESTION;
@@ -1614,8 +1559,6 @@ test_cfg_context_get(char *args)
     file = TS_FNAME_IP_ALLOW;
   } else if (strcmp(name, "logs_xml.config") == 0) {
     file = TS_FNAME_LOGS_XML;
-  } else if (strcmp(name, "mgmt_allow.config") == 0) {
-    file = TS_FNAME_MGMT_ALLOW;
   } else if (strcmp(name, "parent.config") == 0) {
     file = TS_FNAME_PARENT_PROXY;
   } else if (strcmp(name, "volume.config") == 0) {
@@ -1676,9 +1619,7 @@ test_cfg_context_move(char *args)
   name[strlen(filename) - 1] = '\0';
 
   // convert file name to TSFileNameT
-  if (strcmp(name, "admin_access.config") == 0) {
-    file = TS_FNAME_ADMIN_ACCESS;
-  } else if (strcmp(name, "cache.config") == 0) {
+  if (strcmp(name, "cache.config") == 0) {
     file = TS_FNAME_CACHE_OBJ;
   } else if (strcmp(name, "congestion.config") == 0) {
     file = TS_FNAME_CONGESTION;
@@ -1690,8 +1631,6 @@ test_cfg_context_move(char *args)
     file = TS_FNAME_IP_ALLOW;
   } else if (strcmp(name, "logs_xml.config") == 0) {
     file = TS_FNAME_LOGS_XML;
-  } else if (strcmp(name, "mgmt_allow.config") == 0) {
-    file = TS_FNAME_MGMT_ALLOW;
   } else if (strcmp(name, "parent.config") == 0) {
     file = TS_FNAME_PARENT_PROXY;
   } else if (strcmp(name, "volume.config") == 0) {

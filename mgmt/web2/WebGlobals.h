@@ -45,11 +45,9 @@
 
 #include "ink_mutex.h"
 #include "MgmtHashTable.h"
-#include "WebHttpAuth.h"
 
 extern "C"
 {
-  struct ssl_ctx_st;
   struct sockaddr_in;
 }
 
@@ -57,11 +55,7 @@ extern "C"
 enum UIthr_t
 {
   NO_THR = 0,
-  HTTP_THR,
-  GRAPH_THR,
-  CLI_THR,
-  AUTOCONF_THR,
-  OVERSEER_THR
+  AUTOCONF_THR
 };
 
 struct serviceThr_t
@@ -97,14 +91,6 @@ struct WebContext
   const char *defaultFile;
   char *docRoot;
   int docRootLen;
-  int adminAuthEnabled;
-  WebHttpAuthUser admin_user;   // admin user (always available)
-  MgmtHashTable *other_users_ht;        // other users (can change dynamically)
-  MgmtHashTable *lang_dict_ht;  // language dictionary (tag to string)
-  int SSLenabled;
-  int AdvUIEnabled;             /* 0=Simple UI, 1=Full UI, 2=RNI UI */
-  int FeatureSet;               /* bit field of features */
-  ssl_ctx_st *SSL_Context;
 };
 
 struct WebInterFaceGlobals
@@ -117,25 +103,13 @@ struct WebInterFaceGlobals
   ink_sem serviceThrCount;
 #endif
   serviceThr_t *serviceThrArray;
-  int webPort;
-  ink_thread_key tmpFile;       // used by WebFileEdit.cc
-  ink_thread_key requestTSD;
-  int logFD;
-  bool logResolve;
-  int refreshRate;
 };
 
 extern WebInterFaceGlobals wGlobals;
-extern WebContext adminContext;
 extern WebContext autoconfContext;
 
 #define MAX_SERVICE_THREADS 100
-#define MAX_VAR_LENGTH      256
-#define MAX_VAL_LENGTH      512
-#define MAX_PASSWD          32
 #define FILE_NAME_MAX       255
-#define MAX_CHECKSUM_LENGTH 32
-#define REFRESH_RATE_MRTG   300
 
 //-------------------------------------------------------------------------
 // web2 items
@@ -151,7 +125,6 @@ extern WebContext autoconfContext;
 #define WEB_HTTP_SERVER_STATE_WIN32        0x01
 #define WEB_HTTP_SERVER_STATE_UNIX         0x02
 #define WEB_HTTP_SERVER_STATE_AUTH_ENABLED 0x08
-#define WEB_HTTP_SERVER_STATE_SSL_ENABLED  0x10
 #define WEB_HTTP_SERVER_STATE_AUTOCONF     0x20
 
 #define WEB_HTTP_STATE_CONFIGURE           0x01 // MONITOR if bit is 0

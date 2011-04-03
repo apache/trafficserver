@@ -76,12 +76,10 @@ initializeRegistry()
   configFiles->addFile("vaddrs.config", false);
   configFiles->addFile("cache.config", false);
   configFiles->addFile("icp.config", false);
-  configFiles->addFile("mgmt_allow.config", false);
   configFiles->addFile("ip_allow.config", false);
   configFiles->addFile("parent.config", false);
   configFiles->addFile("remap.config", false);
   configFiles->addFile("update.config", false);
-  configFiles->addFile("admin_access.config", false);
   configFiles->addFile("volume.config", false);
   configFiles->addFile("hosting.config", false);
   configFiles->addFile("congestion.config", false);

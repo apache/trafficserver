@@ -516,7 +516,7 @@ UrlRewrite::UrlRewrite(const char *file_var_in)
   }
 
   REVERSE_ReadConfigInteger(reverse_proxy, "proxy.config.reverse_proxy.enabled");
-  REVERSE_ReadConfigInteger(mgmt_autoconf_port, "proxy.config.admin.autoconf_port");
+  REVERSE_ReadConfigInteger(mgmt_autoconf_port, "proxy.config.admin.autoconf.port");
   REVERSE_ReadConfigInteger(default_to_pac, "proxy.config.url_remap.default_to_server_pac");
   REVERSE_ReadConfigInteger(default_to_pac_port, "proxy.config.url_remap.default_to_server_pac_port");
   REVERSE_ReadConfigInteger(url_remap_mode, "proxy.config.url_remap.url_remap_mode");
