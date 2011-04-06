@@ -1,0 +1,12 @@
+To setup Solaris 10+ traffic server service, import the traffic server service
+manifest XML file
+
+    # svccfg import trafficserver.xml
+
+To start the service, issue the following command:
+
+    # svcadm enable application/apache/trafficserver
+
+To stop the service, use this command:
+
+    # svcadm disable application/apache/trafficserver

@@ -75,6 +75,7 @@ m4/lt~obsolete.m4
 
 rc/trafficserver
 rc/update_records
+rc/trafficserver.xml
 
 proxy/api/include/ts
 proxy/api/ts/ts.h
