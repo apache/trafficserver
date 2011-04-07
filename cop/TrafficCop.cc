@@ -670,7 +670,7 @@ read_config()
   read_config_string("proxy.config.output.logfile", log_filename, sizeof(log_filename));
   Layout::relative_to(log_file, sizeof(log_file), log_dir, log_filename);
   read_config_int("proxy.config.process_manager.mgmt_port", &http_backdoor_port);
-  read_config_int("proxy.config.admin.autoconf.port", &autoconf_port);
+  read_config_int("proxy.config.admin.autoconf_port", &autoconf_port);
   read_config_int("proxy.config.cluster.rsport", &rs_port);
   read_config_int("proxy.config.lm.sem_id", &sem_id);
 

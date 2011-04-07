@@ -246,7 +246,7 @@ RecordElement RecordsConfig[] = {
   ,
   {RECT_CONFIG, "proxy.config.cluster.log_bogus_mc_msgs", RECD_INT, "1", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.admin.autoconf.port", RECD_INT, "8083", RECU_RESTART_TM, RR_REQUIRED, RECC_INT, "[0-65535]", RECA_NULL}
+  {RECT_CONFIG, "proxy.config.admin.autoconf_port", RECD_INT, "8083", RECU_RESTART_TM, RR_REQUIRED, RECC_INT, "[0-65535]", RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.admin.autoconf.doc_root", RECD_STRING, "etc/trafficserver", RECU_NULL, RR_REQUIRED, RECC_NULL, NULL, RECA_NULL}
   ,

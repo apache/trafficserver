@@ -404,7 +404,7 @@ webIntr_main(void *x)
   if (aconf_port_arg > 0) {
     publicPort = aconf_port_arg;
   } else {
-    found = (RecGetRecordInt("proxy.config.admin.autoconf.port", &tempInt) == REC_ERR_OKAY);
+    found = (RecGetRecordInt("proxy.config.admin.autoconf_port", &tempInt) == REC_ERR_OKAY);
     publicPort = (int) tempInt;
     ink_assert(found);
   }
