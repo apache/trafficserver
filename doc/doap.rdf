@@ -28,7 +28,8 @@
     <homepage rdf:resource="http://trafficserver.apache.org" />
     <asfext:pmc rdf:resource="http://trafficserver.apache.org" />
     <shortdesc>Apache Traffic Server is an HTTP proxy cache.</shortdesc>
-    <description>Apache Traffic Server is fast, scalable and extensible HTTP/1.1 compliant caching proxy server.</description>
+    <description>Apache Traffic Server is fast, scalable and extensible HTTP/1.1 compliant caching proxy server. ATS can be used as a reverse, forward or even transparent HTTP proxy.
+    </description>
     <bug-database rdf:resource="https://issues.apache.org/jira/browse/TS" />
     <mailing-list rdf:resource="http://trafficserver.apache.org/" />
     <download-page rdf:resource="http://trafficserver.apache.org/downloads.html" />
