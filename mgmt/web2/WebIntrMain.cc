@@ -270,19 +270,16 @@ void *
 serviceThrReaper(void *arg)
 {
   NOWARN_UNUSED(arg);
-  time_t currentTime;
   int numJoined;
 
   lmgmt->syslogThrInit();
 
   while (1) {
-
     numJoined = 0;
 
     // coverity[lock][lockagain]
     ink_mutex_acquire(&wGlobals.serviceThrLock);
 
-    currentTime = time(NULL);
     for (int i = 0; i < MAX_SERVICE_THREADS; i++) {
       if (wGlobals.serviceThrArray[i].threadId != 0) {
         if (wGlobals.serviceThrArray[i].waitingForJoin == true) {
