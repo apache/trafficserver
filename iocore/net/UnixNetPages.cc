@@ -74,7 +74,8 @@ struct ShowNet: public ShowCont
       snprintf(interbuf, sizeof(interbuf), "[%s] %hhu.%hhu.%hhu.%hhu", vc->options.toString(vc->options.addr_binding), PRINT_IP(vc->options.local_addr));
       CHECK_SHOW(show("<tr>"
                       // "<td><a href=\"/connection/%d\">%d</a></td>"
-                      "<td>%d</td>" "<td>%s</td>"       // ipbuf
+                      "<td>%d</td>"     // ID
+                      "<td>%s</td>"     // ipbuf
                       "<td>%d</td>"     // port
                       "<td>%d</td>"     // fd
                       "<td>%s</td>"     // interbuf
@@ -91,7 +92,8 @@ struct ShowNet: public ShowCont
                       "<td>%d secs</td>"        // Activity timeout at
                       "<td>%d</td>"     // shutdown
                       "<td>-%s</td>"    // comments
-                      "</tr>\n", vc->id,        // vc->id,
+                      "</tr>\n",
+                      vc->id,
                       ipbuf,
                       vc->port,
                       vc->con.fd,
@@ -132,15 +134,16 @@ struct ShowNet: public ShowCont
                     "<th>Time Started</th>"
                     "<th>Thread</th>"
                     "<th>Read Enabled</th>"
-                    "<th>Read Priority</th>"
                     "<th>Read NBytes</th>"
                     "<th>Read NDone</th>"
                     "<th>Write Enabled</th>"
-                    "<th>Write Priority</th>"
                     "<th>Write NBytes</th>"
                     "<th>Write NDone</th>"
                     "<th>Inactive Timeout</th>"
-                    "<th>Active   Timeout</th>" "<th>Shutdown</th>" "<th>Comments</th>" "</tr>\n"));
+                    "<th>Active   Timeout</th>"
+                    "<th>Shutdown</th>"
+                    "<th>Comments</th>"
+                    "</tr>\n"));
     SET_HANDLER(&ShowNet::showConnectionsOnThread);
     eventProcessor.eventthread[ET_NET][0]->schedule_imm(this); // This can not use ET_TASK.
     return EVENT_CONT;
