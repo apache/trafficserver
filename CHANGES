@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 
 Changes with Apache Traffic Server 2.1.8
+  *) [TS-719] libtsutil.so is not self-contained.
+  Author: Igor Brezac.
+
   *) [TS-729] Fix bugs with Via Headers handling. (Note: This is
    unlikely to have caused the crash the bug report)
    Author Leif Hedstrom
