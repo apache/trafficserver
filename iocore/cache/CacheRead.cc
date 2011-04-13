@@ -181,7 +181,13 @@ CacheVC::openReadChooseWriter(int event, Event * e)
   CACHE_TRY_LOCK(lock, vol->mutex, mutex->thread_holding);
   if (!lock)
     VC_SCHED_LOCK_RETRY();
-
+  od = vol->open_read(&first_key); // recheck in case the lock failed
+  if (!od) {
+    MUTEX_RELEASE(lock);
+    write_vc = NULL;
+    SET_HANDLER(&CacheVC::openReadStartHead);
+    return openReadStartHead(event, e);
+  }
   if (frag_type != CACHE_FRAG_TYPE_HTTP) {
     ink_assert(od->num_writers == 1);
     w = od->writers.head;
