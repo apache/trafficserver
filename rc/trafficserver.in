@@ -105,7 +105,7 @@ elif [ -d /etc/init.d ]; then
 elif [ "$DISTRIB_ID" = "Darwin" ]; then
   SCRIPTNAME=$0 # Darwin
 elif [ "$DISTRIB_ID" = "FreeBSD" ]; then
-  SCRIPTNAME=/etc/rc.d/$NAME # FreeBSD
+  SCRIPTNAME=$0 # FreeBSD 
 else
   echo "This script needs to be ported to this OS"
   exit 1
@@ -136,6 +136,8 @@ test -f /etc/rc.d/init.d/functions && . /etc/rc.d/init.d/functions
 test -f /lib/lsb/init-functions && . /lib/lsb/init-functions
 
 # FreeBSD
+# NB: FreeBSD's ports system installs a run script in /usr/local/etc/rc.d/ 
+# with native OS rc.subr(8) features.
 test -f /etc/rc.subr && . /etc/rc.subr
 
 
@@ -316,9 +318,6 @@ case "$1" in
 	  kill $(cat $TC_PIDFILE)
 	  rm -f ${TC_PIDFILE}
       fi
-      name="$TM_NAME"
-      pidfile="$TM_PIDFILE"
-      run_rc_command "$1"
       if [ -e "$TM_PIDFILE" ]; then 
 	  kill $(cat $TM_PIDFILE)
 	  rm -f ${TM_PIDFILE}
@@ -361,8 +360,8 @@ case "$1" in
       esac
     else
       # This is the typical process for restart
-      $0 'stop'
-      $0 'start'
+      sh $0 'stop'
+      sh $0 'start'
     fi
   ;;
   status)
@@ -378,6 +377,19 @@ case "$1" in
       status=$?
       [ $status -eq 0 ] || /bin/echo -n "not "
       echo "running."
+    elif [ "$DISTRIB_ID" = "FreeBSD" ]; then
+	if pgrep $TM_NAME > /dev/null ; then 
+		echo "$TM_NAME running as pid `cat $TM_PIDFILE`" ; else 
+		echo "$TM_NAME not running" 
+	fi
+	if pgrep $TS_NAME > /dev/null ; then 
+		echo "$TS_NAME running as pid `cat $TS_PIDFILE`"; else 
+		echo "$TS_NAME not running" 
+	fi
+	if pgrep $TC_NAME > /dev/null ; then 
+		echo "$TC_NAME running as pid `cat $TC_PIDFILE`"; else 
+		echo "$TC_NAME not running" ; 
+	fi
       exit $status
     else
       echo "This script needs to be ported to this OS"
@@ -388,8 +400,8 @@ case "$1" in
     if [ "$DISTRIB_ID" = "fedora" -o "$DISTRIB_ID" = "redhat" ]; then
       if ! $0 'status'
       then
-        $0 'stop'
-        $0 'start'
+        sh $0 'stop'
+        sh $0 'start'
       fi
     else
       echo "This script needs to be ported to this OS"
@@ -405,7 +417,11 @@ case "$1" in
       echo "Usage: $0 {start|stop|restart|status}"
     elif [ "$DISTRIB_ID" = "Darwin" ]; then
       echo "Usage: $0 {start|stop|restart|status}"
-    else
+   elif [ "$DISTRIB_ID" = "FreeBSD" ]; then
+      echo "Usage: $0 Usage: (start|stop|restart|status)"
+      echo "NB: FreeBSD's ports system installs a rc script in"
+      echo "/usr/local/etc/rc.d/ with native rc.subr(8) features."
+   else
       echo "This script needs to be ported to this OS"
       exit 1
     fi
