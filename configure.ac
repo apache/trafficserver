@@ -330,13 +330,13 @@ AC_ARG_ENABLE([posix-cap],
 AC_MSG_RESULT([$enable_posix_cap])
 
 #
-# Disable ccache explicitly (it's enabled by default, if it exists)
+# Enble ccache explicitly (it's disabled by default, because of build problems in some cases)
 #
-AC_MSG_CHECKING([whether to explicitly disable ccache])
+AC_MSG_CHECKING([whether to enable ccache])
 AC_ARG_ENABLE([ccache],
-  [AS_HELP_STRING([--disable-ccache],[Disable ccache from being used])],
+  [AS_HELP_STRING([--enable-ccache],[Enable ccache (can cause bad builds)])],
   [],
-  [enable_ccache="yes"]
+  [enable_ccache="no"]
 )
 AC_MSG_RESULT([$enable_ccache])
 
@@ -428,7 +428,7 @@ REAL_CXXFLAGS="${CXXFLAGS}"
 AC_PROG_CC
 AC_PROG_CXX
 
-# Check for ccache (unless disabled explicitly)
+# Check for ccache (if explicitly enabled)
 if test "x$enable_ccache" = "xyes"; then
     AC_CHECK_PROG([CCACHE],[ccache],[ccache],[])
     if test "x${CCACHE}" = "xccache"; then
