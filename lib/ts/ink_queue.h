@@ -110,10 +110,11 @@ extern "C"
 #define SET_FREELIST_POINTER_VERSION(_x,_p,_v) \
 (_x).s.pointer = _p; (_x).s.version = _v
 #elif defined(__x86_64__)
-#define FREELIST_POINTER(_x) ((void*)(((((intptr_t)(_x).data)>>63)<<48)|(((intptr_t)(_x).data)&0xFFFFFFFFFFFFLL)))
-#define FREELIST_VERSION(_x) ((((intptr_t)(_x).data)<<1)>>49)
+#define FREELIST_POINTER(_x) ((void*)(((((intptr_t)(_x).data)<<16)>>16) | \
+ (((~((((intptr_t)(_x).data)<<16>>63)-1))>>48)<<48)))  // sign extend
+#define FREELIST_VERSION(_x) (((intptr_t)(_x).data)>>48)
 #define SET_FREELIST_POINTER_VERSION(_x,_p,_v) \
-  (_x).data = ((((intptr_t)(_p))&0x8000FFFFFFFFFFFFLL) | (((_v)&0x7FFFLL) << 48))
+  (_x).data = ((((intptr_t)(_p))&0x0000FFFFFFFFFFFFULL) | (((_v)&0xFFFFULL) << 48))
 #else
 #error "unsupported processor"
 #endif
