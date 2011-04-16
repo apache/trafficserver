@@ -515,7 +515,7 @@ case $host_os in
     TS_ADDTO(CPPFLAGS, [-I/opt/local/include])
     TS_ADDTO(LDFLAGS, [-L/opt/local/lib])
     ;;
-  freebsd*)
+  freebsd*|kfreebsd*)
     common_opt="-pipe -Wall -Werror"
     debug_opt="-ggdb3 $common_opt"
     release_opt="-g $common_opt -O3 -feliminate-unused-debug-symbols -fno-strict-aliasing"
@@ -660,6 +660,11 @@ case $host_os in
     EXTRA_CXX_LDFLAGS="-rdynamic"
     host_os_def=freebsd
     ;;
+  kfreebsd*)
+    EXTRA_CXX_LDFLAGS="-rdynamic"
+    host_os_def=freebsd
+    TS_ADDTO(CPPFLAGS, [-Dkfreebsd])
+    ;;
   solaris*)
     host_os_def=solaris
     ;;
@@ -669,6 +674,8 @@ case $host_os in
    ;;
 esac
 TS_ADDTO(CPPFLAGS, [-D$host_os_def])
+
+AC_MSG_NOTICE([Build for host OS: $host_os, arch: $host_cpu, optimization: $host_os_def])
 
 #
 # _Here_ is where we go ahead and add the _optimizations_ to already
@@ -748,7 +755,7 @@ esac
 AC_SUBST([LIBTCL],[$TCL_LIB_SPEC])
 
 case $host_os in
-  freebsd*)
+  freebsd*|kfreebsd*)
     TS_ADDTO(CPPFLAGS, [-I/usr/local/include])
     ;;
   solaris*)

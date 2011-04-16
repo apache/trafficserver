@@ -979,7 +979,7 @@ CoreUtils::process_EThread(EThread * eth_test)
 
     // This is not 64-bit correct. /leif
     printf("----------- EThread @ 0x%p ----------\n", eth_test);
-#if defined(freebsd) || defined(darwin)
+#if !defined(kfreebsd) && (defined(freebsd) || defined(darwin))
     printf("   thread_id: %p\n", loaded_eth->tid);
 #else
     printf("   thread_id: %i\n", (int) loaded_eth->tid);

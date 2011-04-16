@@ -728,7 +728,7 @@ spawn_manager()
     if (err < 0) {
       break;
     }
-#if !defined(linux) && !defined(freebsd) && !defined(darwin)
+#if defined(solaris) || defined(kfreebsd) || defined(unknown)
     err = semctl(err, 1, IPC_RMID);
 #else
     union semun dummy_semun;
@@ -1938,7 +1938,7 @@ main(int argc, char *argv[])
   signal(SIGTTIN, SIG_IGN);
 
   setsid();                     // Important, thanks Vlad. :)
-#if defined(freebsd)
+#if defined(freebsd) && !defined(kfreebsd)
   setpgrp(0,0);
 #else
   setpgrp();
