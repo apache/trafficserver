@@ -1,6 +1,32 @@
                                                          -*- coding: utf-8 -*-
 
 Changes with Apache Traffic Server 2.1.8
+  *) [TS-743] Support separate configs for keep-alive enabled for _in
+   and _out connections.
+
+  *) [TS-741] traffic_manager handles sockets incorrectly.
+
+  *) [TS-742] assert triggered wrongly (in debug builds).
+
+  *) [TS-740] Traffic Server fails to build on kfreebsd.
+   Author: Arno Toell.
+
+  *) [TS-737] Small hackish fix for rc/trafficserver.in so rc/trafficserver
+   will work with FreeBSD. Author: G Todd.
+
+  *) [TS-735] Disable ccache by default, use with --enable-ccache.
+
+  *) [TS-734] Remove unused fields in net stats pages.
+
+  *) [TS-212] Startup service support for Solaris. Author: Igor Brezac.
+
+  *) [TS-629] fix some non-portable char == unsigned char assumptions.
+
+  *) [TS-621] Update records.config.default.in with changed / removed
+   configs.
+
+  *) [TS-641] Remove a bunch of Web UI related configs and code.
+
   *) [TS-719] libtsutil.so is not self-contained.
   Author: Igor Brezac.
 
