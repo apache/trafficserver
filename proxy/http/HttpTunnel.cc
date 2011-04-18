@@ -955,7 +955,7 @@ HttpTunnel::producer_handler_dechunked(int event, HttpTunnelProducer * p)
   };
   // Since we will consume all the data if the server is actually finished
   //   we don't have to translate events like we do in the
-  //   case producer_hander_chunked()
+  //   case producer_handler_chunked()
   return event;
 }
 
@@ -1051,7 +1051,7 @@ bool HttpTunnel::producer_handler(int event, HttpTunnelProducer * p)
     event = producer_handler_dechunked(event, p);
 
     // If we were in PRECOMPLETE when this function was called
-    // and we are doing chuncking, then we just wrote the last
+    // and we are doing chunking, then we just wrote the last
     // chunk in the the function call above.  We are done with the
     // tunnel.
     if (event == HTTP_TUNNEL_EVENT_PRECOMPLETE) {
@@ -1082,11 +1082,10 @@ bool HttpTunnel::producer_handler(int event, HttpTunnelProducer * p)
     }
   }                             //end of added logic for partial copy of POST
 
-
   Debug("http_redirect", "[HttpTunnel::producer_handler] enable_redirection: [%d %d %d] event: %d",
         p->alive == true, sm->enable_redirection, (p->self_consumer && p->self_consumer->alive == true), event);
-  ink_assert(p->alive == true || event == HTTP_TUNNEL_EVENT_PRECOMPLETE || sm->enable_redirection ||
-             (p->self_consumer && p->self_consumer->alive == true));
+  ink_assert(p->alive == true || event == HTTP_TUNNEL_EVENT_PRECOMPLETE || event == VC_EVENT_EOS ||
+             sm->enable_redirection || (p->self_consumer && p->self_consumer->alive == true));
 
   switch (event) {
   case VC_EVENT_READ_READY:
