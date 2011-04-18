@@ -1083,7 +1083,8 @@ bool HttpTunnel::producer_handler(int event, HttpTunnelProducer * p)
   }                             //end of added logic for partial copy of POST
 
 
-  Debug("http_redirect", "[HttpTunnel::producer_handler] enable_redirection: %d event: %d", sm->enable_redirection, event);
+  Debug("http_redirect", "[HttpTunnel::producer_handler] enable_redirection: [%d %d %d] event: %d",
+        p->alive == true, sm->enable_redirection, (p->self_consumer && p->self_consumer->alive == true), event);
   ink_assert(p->alive == true || event == HTTP_TUNNEL_EVENT_PRECOMPLETE || sm->enable_redirection ||
              (p->self_consumer && p->self_consumer->alive == true));
 
@@ -1112,7 +1113,6 @@ bool HttpTunnel::producer_handler(int event, HttpTunnelProducer * p)
 
   case VC_EVENT_READ_COMPLETE:
   case VC_EVENT_EOS:
-
     // The producer completed
     p->alive = false;
     if (p->read_vio) {
