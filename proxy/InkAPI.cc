@@ -7178,8 +7178,11 @@ _conf_to_memberp(TSOverridableConfigKey conf, HttpSM* sm, OverridableDataType *t
   case TS_CONFIG_HTTP_CACHE_WHEN_TO_REVALIDATE:
     ret = &sm->t_state.txn_conf->cache_when_to_revalidate;
     break;
-  case TS_CONFIG_HTTP_KEEP_ALIVE_ENABLED:
-    ret = &sm->t_state.txn_conf->keep_alive_enabled;
+  case TS_CONFIG_HTTP_KEEP_ALIVE_ENABLED_IN:
+    ret = &sm->t_state.txn_conf->keep_alive_enabled_in;
+    break;
+  case TS_CONFIG_HTTP_KEEP_ALIVE_ENABLED_OUT:
+    ret = &sm->t_state.txn_conf->keep_alive_enabled_out;
     break;
   case TS_CONFIG_HTTP_KEEP_ALIVE_POST_OUT:
     ret = &sm->t_state.txn_conf->keep_alive_post_out;
@@ -7509,11 +7512,6 @@ TSHttpTxnConfigFind(const char* name, int length, TSOverridableConfigKey *conf, 
       cnf = TS_CONFIG_HTTP_CHUNKING_ENABLED;
     break;
 
-  case 36:
-    if (!strncmp(name, "proxy.config.http.keep_alive_enabled", length))
-      cnf = TS_CONFIG_HTTP_KEEP_ALIVE_ENABLED;
-    break;
-
   case 37:
     switch (name[length-1]) {
     case 'e':
@@ -7545,6 +7543,8 @@ TSHttpTxnConfigFind(const char* name, int length, TSOverridableConfigKey *conf, 
   case 39:
     if (!strncmp(name, "proxy.config.http.anonymize_remove_from", length))
       cnf = TS_CONFIG_HTTP_ANONYMIZE_REMOVE_FROM;
+    else if (!strncmp(name, "proxy.config.http.keep_alive_enabled_in", length))
+      cnf = TS_CONFIG_HTTP_KEEP_ALIVE_ENABLED_IN;
     break;
 
   case 40:
@@ -7565,6 +7565,9 @@ TSHttpTxnConfigFind(const char* name, int length, TSOverridableConfigKey *conf, 
       else if (!strncmp(name, "proxy.config.http.cache.required_headers", length))
         cnf = TS_CONFIG_HTTP_CACHE_REQUIRED_HEADERS;
       break;
+    case 't':
+      if (!strncmp(name, "proxy.config.http.keep_alive_enabled_out", length))
+        cnf = TS_CONFIG_HTTP_KEEP_ALIVE_ENABLED_OUT;
     case 'y':
       if (!strncmp(name, "proxy.config.http.cache.fuzz.probability", length))
         cnf = TS_CONFIG_HTTP_CACHE_FUZZ_PROBABILITY;

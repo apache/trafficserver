@@ -2573,7 +2573,7 @@ HttpTransact::HandleCacheOpenReadHit(State* s)
       // we haven't done the ICP lookup yet. The following is to
       // fake an icp_info to cater for build_request's needs
       s->icp_info.http_version.set(1, 0);
-      if (!s->txn_conf->keep_alive_enabled || s->http_config_param->origin_server_pipeline == 0) {
+      if (!s->txn_conf->keep_alive_enabled_out || s->http_config_param->origin_server_pipeline == 0) {
         s->icp_info.keep_alive = HTTP_NO_KEEPALIVE;
       } else {
         s->icp_info.keep_alive = HTTP_KEEPALIVE;
@@ -3049,7 +3049,7 @@ HttpTransact::HandleICPLookup(State* s)
     //   values are not initialized.
     // Force them to be initialized
     s->icp_info.http_version.set(1, 0);
-    if (!s->txn_conf->keep_alive_enabled || s->http_config_param->origin_server_pipeline == 0) {
+    if (!s->txn_conf->keep_alive_enabled_out || s->http_config_param->origin_server_pipeline == 0) {
       s->icp_info.keep_alive = HTTP_NO_KEEPALIVE;
     } else {
       s->icp_info.keep_alive = HTTP_KEEPALIVE;
@@ -5085,7 +5085,7 @@ HttpTransact::get_ka_info_from_host_db(State *s, ConnectionAttributes *server_in
   /////////////////////////////
   // origin server keep_alive //
   /////////////////////////////
-  if ((!s->txn_conf->keep_alive_enabled) || (s->http_config_param->origin_server_pipeline == 0)) {
+  if ((!s->txn_conf->keep_alive_enabled_out) || (s->http_config_param->origin_server_pipeline == 0)) {
     server_info->keep_alive = HTTP_NO_KEEPALIVE;
   }
   ///////////////////////////////
@@ -5635,7 +5635,7 @@ HttpTransact::initialize_state_variables_from_request(State* s, HTTPHdr* obsolet
   //
   MIMEField *pc = incoming_request->field_find(MIME_FIELD_PROXY_CONNECTION, MIME_LEN_PROXY_CONNECTION);
 
-  if (!s->txn_conf->keep_alive_enabled || (s->http_config_param->server_transparency_enabled && pc != NULL)) {
+  if (!s->txn_conf->keep_alive_enabled_in || (s->http_config_param->server_transparency_enabled && pc != NULL)) {
     s->client_info.keep_alive = HTTP_NO_KEEPALIVE;
 
     // If we need to send a close header later,

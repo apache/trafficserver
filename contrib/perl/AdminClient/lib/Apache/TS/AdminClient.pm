@@ -477,7 +477,8 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.http.insert_request_via_str
  proxy.config.http.insert_response_via_str
  proxy.config.http.insert_squid_x_forwarded_for
- proxy.config.http.keep_alive_enabled
+ proxy.config.http.keep_alive_enabled_in
+ proxy.config.http.keep_alive_enabled_out
  proxy.config.http.keep_alive_no_activity_timeout_in
  proxy.config.http.keep_alive_no_activity_timeout_out
  proxy.config.http.keep_alive_post_out

@@ -406,8 +406,8 @@ struct HttpConfigPortRange
 struct OverridableHttpConfigParams {
   OverridableHttpConfigParams()
     :  maintain_pristine_host_hdr(0), chunking_enabled(0),
-       negative_caching_enabled(0), negative_caching_lifetime(0),
-       cache_when_to_revalidate(0), keep_alive_enabled(0), keep_alive_post_out(0),
+       negative_caching_enabled(0), negative_caching_lifetime(0), cache_when_to_revalidate(0),
+       keep_alive_enabled_in(0), keep_alive_enabled_out(0), keep_alive_post_out(0),
        sock_recv_buffer_size_out(0), sock_send_buffer_size_out(0), sock_option_flag_out(0),
        anonymize_remove_from(0), anonymize_remove_referer(0), anonymize_remove_user_agent(0),
        anonymize_remove_cookie(0), anonymize_remove_client_ip(0), anonymize_insert_client_ip(1),
@@ -451,7 +451,8 @@ struct OverridableHttpConfigParams {
 
   MgmtByte cache_when_to_revalidate;
 
-  MgmtByte keep_alive_enabled;
+  MgmtByte keep_alive_enabled_in;
+  MgmtByte keep_alive_enabled_out;
   MgmtByte keep_alive_post_out;  // share server sessions for post
 
   ///////////////////////////////////////
