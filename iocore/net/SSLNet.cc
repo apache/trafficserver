@@ -235,28 +235,11 @@ SSLNetProcessor::initSSL(SslConfigParams * param)
 #else
   SSL_METHOD *meth = NULL;
 #endif
-  char *serverKeyPtr = NULL;
-
-  int randBuff[64];
-  int irand;
-  for (irand = 8; irand < 32; irand++) {
-    // coverity[secure_coding]
-    randBuff[irand] += rand();
-  }
-
-  uintptr_t *rbp = (uintptr_t *) randBuff;
-  *rbp++ += (uintptr_t) serverKeyPtr;
-  *rbp++ ^= *((uintptr_t *) (&meth));
-  srand((unsigned) time(NULL));
-
-  for (irand = 32; irand < 64; irand++)
-    randBuff[irand] ^= this_ethread()->generator.random();
-
-  RAND_seed((void *) randBuff, sizeof(randBuff));
-
+  // Note that we do not call RAND_seed() explicitly here, we depend on OpenSSL
+  // to do the seeding of the PRNG for us. This is the case for all platforms that
+  // has /dev/urandom for example.
 
   accept_port_number = param->ssl_accept_port_number;
-
   if ((unsigned int) accept_port_number >= 0xFFFF) {
     Error("\ncannot listen on port %d.\naccept port cannot be larger that 65535.\n"
                         "please check your Traffic Server configurations", accept_port_number);
@@ -324,78 +307,8 @@ SSLNetProcessor::initSSL(SslConfigParams * param)
     logSSLError("Cannot create new server contex.");
     return (-1);
   }
-  // if no path is given for the server private key,
-  // assume it is contained in the server certificate file.
-/*  serverKeyPtr = param->serverKeyPath;
-  if (serverKeyPtr == NULL)
-	  serverKeyPtr = param->serverCertPath;
-*/
+
   return (initSSLServerCTX(param, ctx, param->serverCertPath, param->serverKeyPath, true));
-
-/*
-  verify_depth = param->verify_depth;
-
-  // if no path is given for the server private key,
-  // assume it is contained in the server certificate file.
-  serverKeyPtr = param->serverKeyPath;
-  if (serverKeyPtr == NULL)
-	  serverKeyPtr = param->serverCertPath;
-
-  if (SSL_CTX_use_certificate_file(ctx, param->serverCertPath, SSL_FILETYPE_PEM) <= 0)
-  {
-    logSSLError("Cannot use server certificate file");
-    return(-2);
-  }
-
-  if(SSL_CTX_use_PrivateKey_file(ctx, serverKeyPtr, SSL_FILETYPE_PEM) <= 0)
-  {
-    logSSLError("Cannot use server private key file");
-    return(-3);
-  }
-
-  if(!SSL_CTX_check_private_key(ctx))
-  {
-    logSSLError("Server private key does not match the certificate public key");
-    return(-4);
-  }
-
-
-  if(param->clientCertLevel != 0)
-  {
-
-	if (param->CACertFilename != NULL && param->CACertPath != NULL)
-	{
-	  if ((!SSL_CTX_load_verify_locations(ctx, param->CACertFilename, param->CACertPath)) ||
-		(!SSL_CTX_set_default_verify_paths(ctx)))
-	  {
-		logSSLError("CA Certificate file or CA Certificate path invalid");
-		return(-5);
-	  }
-	}
-
-	if(param->clientCertLevel == 2)
-	  server_verify_client =    SSL_VERIFY_PEER |
-                                SSL_VERIFY_FAIL_IF_NO_PEER_CERT |
-								SSL_VERIFY_CLIENT_ONCE;
-	else if(param->clientCertLevel == 1)
-	        server_verify_client = SSL_VERIFY_PEER | SSL_VERIFY_CLIENT_ONCE;
-	else // disable client cert support
-	{
-	  server_verify_client=SSL_VERIFY_NONE;
-	   Error("Illegal Client Certification Level in records.config\n");
-	}
-
-	session_id_context = 1;
-
-	SSL_CTX_set_verify(ctx,server_verify_client, verify_callback);
-	SSL_CTX_set_verify_depth(ctx, verify_depth);
-	SSL_CTX_set_session_id_context(ctx,(const unsigned char *)&session_id_context,
-		sizeof session_id_context);
-
-	SSL_CTX_set_client_CA_list(ctx, SSL_load_client_CA_file(param->CACertFilename));
-  }
-  return(0);
-*/
 }
 
 int
@@ -518,26 +431,11 @@ SSLNetProcessor::initSSLClient(SslConfigParams * param)
   int client_verify_server;
   char *clientKeyPtr = NULL;
 
-  int randBuff[128];
-  int irand;
-  for (irand = 8; irand < 64; irand++) {
-    // coverity[secure_coding]
-    randBuff[irand] += rand();
-  }
-
-  uintptr_t *rbp = (uintptr_t *) randBuff;
-  *rbp++ += (uintptr_t) clientKeyPtr;
-  *rbp++ ^= *((uintptr_t *) (&meth));
-  srand((unsigned) time(NULL));
-
-  for (irand = 64; irand < 128; irand++)
-    randBuff[irand] ^= this_ethread()->generator.random();
-
-  RAND_seed((void *) randBuff, sizeof(randBuff));
+  // Note that we do not call RAND_seed() explicitly here, we depend on OpenSSL
+  // to do the seeding of the PRNG for us. This is the case for all platforms that
+  // has /dev/urandom for example.
 
   client_verify_server = param->clientVerify ? SSL_VERIFY_PEER : SSL_VERIFY_NONE;
-
-
   meth = SSLv23_client_method();
   client_ctx = SSL_CTX_new(meth);
 

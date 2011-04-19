@@ -115,8 +115,6 @@ SRVHosts::getWeightedHost(char *ret_val)
   }
   //Pick random number: 0..accum
   xx = SRVRand.random() % accum;
-  // srand(ink_get_hrtime());
-  // xx = rand() % accum;
 
   Debug("dns_srv", "picked %d as a random number", xx);
 
