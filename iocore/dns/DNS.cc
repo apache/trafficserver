@@ -63,12 +63,12 @@ ClassAllocator<HostEnt> dnsBufAllocator("dnsBufAllocator", 2);
 //
 // Function Prototypes
 //
-static bool dns_process(DNSHandler * h, HostEnt * ent, int len);
-static DNSEntry *get_dns(DNSHandler * h, uint16_t id);
+static bool dns_process(DNSHandler *h, HostEnt *ent, int len);
+static DNSEntry *get_dns(DNSHandler *h, uint16_t id);
 // returns true when e is done
-static void dns_result(DNSHandler * h, DNSEntry * e, HostEnt * ent, bool retry);
-static void write_dns(DNSHandler * h);
-static bool write_dns_event(DNSHandler * h, DNSEntry * e);
+static void dns_result(DNSHandler *h, DNSEntry *e, HostEnt *ent, bool retry);
+static void write_dns(DNSHandler *h);
+static bool write_dns_event(DNSHandler *h, DNSEntry *e);
 
 // "reliable" name to try. need to build up first.
 static int try_servers = 0;
@@ -78,11 +78,9 @@ char try_server_names[DEFAULT_NUM_TRY_SERVER][MAXDNAME];
 
 
 static inline char *
-strnchr(char *s, char c, int len)
-{
+strnchr(char *s, char c, int len) {
   while (*s && *s != c && len)
     ++s, --len;
-
   return *s == c ? s : (char *) NULL;
 }
 
@@ -94,20 +92,17 @@ ink_get16(const uint8_t *src) {
   return dst;
 }
 
+void HostEnt::free() {
+  dnsBufAllocator.free(this);
+}
+
 //
 //  Public functions
 //
 //  See documentation is header files and Memos
 //
-inline void
-DNSProcessor::free_hostent(HostEnt * ent)
-{
-  dnsBufAllocator.free(ent);
-}
-
 int
-DNSProcessor::start(int)
-{
+DNSProcessor::start(int) {
   //
   // Read configuration
   //
@@ -236,7 +231,7 @@ DNSProcessor::dns_init()
 
 */
 inline int
-ink_dn_expand(const u_char * msg, const u_char * eom, const u_char * comp_dn, u_char * exp_dn, int length)
+ink_dn_expand(const u_char *msg, const u_char *eom, const u_char *comp_dn, u_char *exp_dn, int length)
 {
   return::dn_expand((unsigned char *) msg, (unsigned char *) eom, (unsigned char *) comp_dn, (char *) exp_dn, length);
 }
@@ -249,12 +244,11 @@ DNSProcessor::DNSProcessor()
 
 void
 DNSEntry::init(const char *x, int len, int qtype_arg,
-               Continuation * acont, HostEnt ** wait, DNSHandler * adnsH, int dns_lookup_timeout)
+               Continuation *acont, DNSHandler *adnsH, int dns_lookup_timeout)
 {
   qtype = qtype_arg;
   submit_time = ink_get_hrtime();
   action = acont;
-  sem_ent = wait;
   submit_thread = acont->mutex->thread_holding;
 
 #ifdef SPLIT_DNS
@@ -314,19 +308,6 @@ DNSEntry::init(const char *x, int len, int qtype_arg,
     ink_strncpy(p, "in-addr.arpa", MAXDNAME - (p - qname + 1));
   }
 
-  if (sem_ent) {
-#if defined(darwin)
-    static int qnum = 0;
-    char sname[NAME_MAX];
-
-    qnum++;
-    snprintf(sname,NAME_MAX,"%s%d","DNSEntry",qnum);
-    ink_sem_unlink(sname); // FIXME: remove, semaphore should be properly deleted after usage
-    sem = ink_sem_open(sname, O_CREAT | O_EXCL, 0777, 0);
-#else /* !darwin */
-    ink_sem_init(&sem, 0);
-#endif /* !darwin */
-  }
   SET_HANDLER((DNSEntryHandler) & DNSEntry::mainEvent);
 }
 
@@ -378,7 +359,7 @@ DNSHandler::open_con(unsigned int aip, int aport, bool failed, int icon)
 
 */
 int
-DNSHandler::startEvent(int event, Event * e)
+DNSHandler::startEvent(int event, Event *e)
 {
   NOWARN_UNUSED(event);
   //
@@ -437,7 +418,7 @@ DNSHandler::startEvent(int event, Event * e)
   hander to a new nameserver.
 */
 int
-DNSHandler::startEvent_sdns(int event, Event * e)
+DNSHandler::startEvent_sdns(int event, Event *e)
 {
   NOWARN_UNUSED(event);
   Debug("dns", "DNSHandler::startEvent_sdns: on thread %d\n", e->ethread->id);
@@ -537,7 +518,7 @@ DNSHandler::try_primary_named(bool reopen)
 void
 DNSHandler::switch_named(int ndx)
 {
-  for (DNSEntry * e = entries.head; e; e = (DNSEntry *) e->link.next) {
+  for (DNSEntry *e = entries.head; e; e = (DNSEntry *) e->link.next) {
     e->written_flag = 0;
     if (e->retries < dns_retries)
       ++(e->retries);           // give them another chance
@@ -611,7 +592,7 @@ DNSHandler::rr_failure(int ndx)
     Warning("connection to all DNS servers lost, retrying");
     // actual retries will be done in retry_named called from mainEvent
     // mark any outstanding requests as not sent for later retry
-    for (DNSEntry * e = entries.head; e; e = (DNSEntry *) e->link.next) {
+    for (DNSEntry *e = entries.head; e; e = (DNSEntry *) e->link.next) {
       e->written_flag = 0;
       if (e->retries < dns_retries)
         ++(e->retries);         // give them another chance
@@ -620,7 +601,7 @@ DNSHandler::rr_failure(int ndx)
     }
   } else {
     // move outstanding requests that were sent to this nameserver to another
-    for (DNSEntry * e = entries.head; e; e = (DNSEntry *) e->link.next) {
+    for (DNSEntry *e = entries.head; e; e = (DNSEntry *) e->link.next) {
       if (e->which_ns == ndx) {
         e->written_flag = 0;
         if (e->retries < dns_retries)
@@ -647,7 +628,7 @@ good_rcode(char *buf)
 
 
 void
-DNSHandler::recv_dns(int event, Event * e)
+DNSHandler::recv_dns(int event, Event *e)
 {
   NOWARN_UNUSED(event);
   NOWARN_UNUSED(e);
@@ -660,8 +641,8 @@ DNSHandler::recv_dns(int event, Event * e)
 
       if (!hostent_cache)
         hostent_cache = dnsBufAllocator.alloc();
-
       HostEnt *buf = hostent_cache;
+
       int res = socketManager.recvfrom(dnsc->fd, buf->buf, MAX_DNS_PACKET_LEN, 0, (struct sockaddr *) &sa_from, &sa_length);
 
       if (res == -EAGAIN)
@@ -681,7 +662,6 @@ DNSHandler::recv_dns(int event, Event * e)
         continue;
       }
       hostent_cache = 0;
-      buf->ref_count = 1;
       buf->packet_size = res;
       Debug("dns", "received packet size = %d", res);
       if (dns_ns_rr) {
@@ -706,18 +686,19 @@ DNSHandler::recv_dns(int event, Event * e)
           }
         }
       }
-
+      Ptr<HostEnt> protect_hostent = buf;
       if (dns_process(this, buf, res)) {
         if (dnsc->num == name_server)
           received_one(name_server);
       }
+      hostent_cache = protect_hostent.to_ptr();
     }
   }
 }
 
 /** Main event for the DNSHandler. Attempt to read from and write to named. */
 int
-DNSHandler::mainEvent(int event, Event * e)
+DNSHandler::mainEvent(int event, Event *e)
 {
   recv_dns(event, e);
   if (dns_ns_rr) {
@@ -765,9 +746,9 @@ DNSHandler::mainEvent(int event, Event * e)
 
 /** Find a DNSEntry by id. */
 inline static DNSEntry *
-get_dns(DNSHandler * h, uint16_t id)
+get_dns(DNSHandler *h, uint16_t id)
 {
-  for (DNSEntry * e = h->entries.head; e; e = (DNSEntry *) e->link.next) {
+  for (DNSEntry *e = h->entries.head; e; e = (DNSEntry *) e->link.next) {
     if (e->once_written_flag)
       for (int j = 0; j < MAX_DNS_RETRIES; j++)
         if (e->id[j] == id)
@@ -781,9 +762,9 @@ get_dns(DNSHandler * h, uint16_t id)
 
 /** Find a DNSEntry by query name and type. */
 inline static DNSEntry *
-get_entry(DNSHandler * h, char *qname, int qtype)
+get_entry(DNSHandler *h, char *qname, int qtype)
 {
-  for (DNSEntry * e = h->entries.head; e; e = (DNSEntry *) e->link.next) {
+  for (DNSEntry *e = h->entries.head; e; e = (DNSEntry *) e->link.next) {
     if (e->qtype == qtype) {
       if (qtype == T_A) {
         if (!strcmp(qname, e->qname))
@@ -797,7 +778,7 @@ get_entry(DNSHandler * h, char *qname, int qtype)
 
 /** Write up to dns_max_dns_in_flight entries. */
 static void
-write_dns(DNSHandler * h)
+write_dns(DNSHandler *h)
 {
   ProxyMutex *mutex = h->mutex;
   DNS_INCREMENT_DYN_STAT(dns_total_lookups_stat);
@@ -871,7 +852,7 @@ DNSHandler::get_query_id()
 
 */
 static bool
-write_dns_event(DNSHandler * h, DNSEntry * e)
+write_dns_event(DNSHandler *h, DNSEntry *e)
 {
   ProxyMutex *mutex = h->mutex;
   char buffer[MAX_DNS_PACKET_LEN];
@@ -929,7 +910,7 @@ write_dns_event(DNSHandler * h, DNSEntry * e)
 
 
 int
-DNSEntry::delayEvent(int event, Event * e)
+DNSEntry::delayEvent(int event, Event *e)
 {
   (void) event;
   if (dnsProcessor.handler) {
@@ -942,7 +923,7 @@ DNSEntry::delayEvent(int event, Event * e)
 
 /** Handle timeout events. */
 int
-DNSEntry::mainEvent(int event, Event * e)
+DNSEntry::mainEvent(int event, Event *e)
 {
   switch (event) {
   default:
@@ -996,34 +977,21 @@ DNSEntry::mainEvent(int event, Event * e)
   }
 }
 
-
 Action *
-DNSProcessor::getby(const char *x, int len, int type,
-                    Continuation * cont, HostEnt ** wait, DNSHandler * adnsH, int timeout)
-{
+DNSProcessor::getby(const char *x, int len, int type, Continuation *cont, DNSHandler *adnsH, int timeout) {
   Debug("dns", "received query %s type = %d, timeout = %d", x, type, timeout);
   if (type == T_SRV) {
     Debug("dns_srv", "DNSProcessor::getby attempting an SRV lookup for %s, timeout = %d", x, timeout);
   }
-
   DNSEntry *e = dnsEntryAllocator.alloc();
-
   e->retries = dns_retries;
-  e->init(x, len, type, cont, wait, adnsH, timeout);
+  e->init(x, len, type, cont, adnsH, timeout);
   MUTEX_TRY_LOCK(lock, e->mutex, thread);
-  if (!lock) {
+  if (!lock)
     thread->schedule_imm(e);
-  } else {
+  else
     e->handleEvent(EVENT_IMMEDIATE, 0);
-  }
-  if (wait) {
-#if defined(darwin)
-    ink_sem_wait(e->sem);
-#else
-    ink_sem_wait(&e->sem);
-#endif
-  }
-  return wait ? ACTION_RESULT_DONE : &e->action;
+  return &e->action;
 }
 
 /**
@@ -1031,8 +999,7 @@ DNSProcessor::getby(const char *x, int len, int type,
   is a retry-able and we have retries left.
 */
 static void
-dns_result(DNSHandler * h, DNSEntry * e, HostEnt * ent, bool retry)
-{
+dns_result(DNSHandler *h, DNSEntry *e, HostEnt *ent, bool retry) {
   ProxyMutex *mutex = h->mutex;
   bool cancelled = (e->action.cancelled ? true : false);
 
@@ -1120,15 +1087,20 @@ dns_result(DNSHandler * h, DNSEntry * e, HostEnt * ent, bool retry)
   }
 
   DNSEntry *dup = NULL;
-
   while ((dup = e->dups.dequeue())) {
-    if (dup->post(h, ent, false)) {
+    if (dup->post(h, ent)) {
       e->dups.enqueue(dup);
       goto Lretry;
     }
   }
-  if (!e->post(h, ent, true))
+  if (!e->post(h, ent)) {
+    for (int i = 0; i < MAX_DNS_RETRIES; i++) {
+      if (e->id[i] < 0)
+        break;
+      h->release_query_id(e->id[i]);      
+    }
     return;
+  }
 Lretry:
   e->result_ent = ent;
   e->retries = 0;
@@ -1138,50 +1110,30 @@ Lretry:
 }
 
 int
-DNSEntry::post(DNSHandler * h, HostEnt * ent, bool freeable)
+DNSEntry::post(DNSHandler *h, HostEnt *ent)
 {
-  NOWARN_UNUSED(freeable);
   if (timeout) {
     timeout->cancel(this);
     timeout = NULL;
   }
-  if (sem_ent) {
-    // If this call was synchronous, post to the semaphore
-    *sem_ent = ent;
-#if defined(darwin)
-    ink_sem_post(sem);
-#else
-    ink_sem_post(&sem);
-#endif
-  } else {
-    result_ent = ent;
-    if (h->mutex->thread_holding == submit_thread) {
-      MUTEX_TRY_LOCK(lock, action.mutex, h->mutex->thread_holding);
-      if (!lock) {
-        Debug("dns", "failed lock for result %s", qname);
-        return 1;
-      }
-      postEvent(0, 0);
-    } else {
-      mutex = action.mutex;
-      SET_HANDLER(&DNSEntry::postEvent);
-      submit_thread->schedule_imm_signal(this);
+  result_ent = ent;
+  if (h->mutex->thread_holding == submit_thread) {
+    MUTEX_TRY_LOCK(lock, action.mutex, h->mutex->thread_holding);
+    if (!lock) {
+      Debug("dns", "failed lock for result %s", qname);
+      return 1;
     }
-    return 0;
+    postEvent(0, 0);
+  } else {
+    mutex = action.mutex;
+    SET_HANDLER(&DNSEntry::postEvent);
+    submit_thread->schedule_imm_signal(this);
   }
-  for (int i = 0; i < MAX_DNS_RETRIES; i++) {
-    if (id[i] < 0)
-      break;
-    h->release_query_id(id[i]);      
-  }
-  action.mutex = NULL;
-  mutex = NULL;
-  dnsEntryAllocator.free(this);
   return 0;
 }
 
 int
-DNSEntry::postEvent(int event, Event * e)
+DNSEntry::postEvent(int event, Event *e)
 {
   NOWARN_UNUSED(event);
   NOWARN_UNUSED(e);
@@ -1189,15 +1141,7 @@ DNSEntry::postEvent(int event, Event * e)
     Debug("dns", "called back continuation for %s", qname);
     action.continuation->handleEvent(DNS_EVENT_LOOKUP, result_ent);
   }
-  if (result_ent)
-    if (ink_atomic_increment(&result_ent->ref_count, -1) == 1)
-      dnsProcessor.free_hostent(result_ent);
-
-  for (int i = 0; i < MAX_DNS_RETRIES; i++) {
-    if (id[i] < 0)
-      break;
-    dnsH->release_query_id(id[i]);      
-  }
+  result_ent = NULL;
   action.mutex = NULL;
   mutex = NULL;
   dnsEntryAllocator.free(this);
@@ -1206,7 +1150,7 @@ DNSEntry::postEvent(int event, Event * e)
 
 /** Decode the reply from "named". */
 static bool
-dns_process(DNSHandler * handler, HostEnt * buf, int len)
+dns_process(DNSHandler *handler, HostEnt *buf, int len)
 {
   ProxyMutex *mutex = handler->mutex;
   HEADER *h = (HEADER *) (buf->buf);
@@ -1220,10 +1164,6 @@ dns_process(DNSHandler * handler, HostEnt * buf, int len)
   //
   if (!e || !e->written_flag) {
     Debug("dns", "unknown DNS id = %u", (uint16_t) ntohs(h->id));
-    if (!handler->hostent_cache)
-      handler->hostent_cache = buf;
-    else
-      dnsBufAllocator.free(buf);
     return false;               // cannot count this as a success
   }
   //
@@ -1515,10 +1455,6 @@ dns_process(DNSHandler * handler, HostEnt * buf, int len)
   }
 Lerror:;
   DNS_INCREMENT_DYN_STAT(dns_lookup_fail_stat);
-  if (!handler->hostent_cache)
-    handler->hostent_cache = buf;
-  else
-    dnsBufAllocator.free(buf);
   dns_result(handler, e, NULL, retry);
   return server_ok;
 }
@@ -1598,7 +1534,7 @@ struct DNSRegressionContinuation: public Continuation
   int i;
   RegressionTest *test;
 
-  int mainEvent(int event, HostEnt * he)
+  int mainEvent(int event, HostEnt *he)
   {
     (void) event;
     if (event == DNS_EVENT_LOOKUP) {
@@ -1624,7 +1560,7 @@ struct DNSRegressionContinuation: public Continuation
     }
   }
 
-  DNSRegressionContinuation(int ahosts, int atofind, const char **ahostnames, RegressionTest * t, int atype, int *astatus)
+  DNSRegressionContinuation(int ahosts, int atofind, const char **ahostnames, RegressionTest *t, int atype, int *astatus)
    :  Continuation(new_ProxyMutex()), hosts(ahosts), hostnames(ahostnames), type(atype),
       status(astatus), found(0), tofind(atofind), i(0), test(t) {
     SET_HANDLER((DNSRegContHandler) & DNSRegressionContinuation::mainEvent);
@@ -1638,7 +1574,7 @@ static const char *dns_test_hosts[] = {
   "www.coke.com"
 };
 
-REGRESSION_TEST(DNS) (RegressionTest * t, int atype, int *pstatus) {
+REGRESSION_TEST(DNS) (RegressionTest *t, int atype, int *pstatus) {
   eventProcessor.schedule_in(NEW(new DNSRegressionContinuation(4, 4, dns_test_hosts, t, atype, pstatus)),
                              HRTIME_SECONDS(1));
 }

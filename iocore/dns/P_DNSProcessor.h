@@ -157,46 +157,32 @@ struct DNSEntry: public Continuation
   int qname_len;
   char **domains;
   EThread *submit_thread;
-
   Action action;
-
   Event *timeout;
-  HostEnt *result_ent;
-
-  HostEnt **sem_ent;
-#if defined(darwin)
-  ink_sem *sem;
-#else
-  ink_sem sem;
-#endif
+  Ptr<HostEnt> result_ent;
   DNSHandler *dnsH;
-
-
   bool written_flag;
   bool once_written_flag;
   bool last;
   LINK(DNSEntry, dup_link);
   Que(DNSEntry, dup_link) dups;
 
-  int mainEvent(int event, Event * e);
-  int delayEvent(int event, Event * e);
-  int post(DNSHandler * h, HostEnt * ent, bool freeable);
-  int postEvent(int event, Event * e);
-
-  void init(const char *x, int len, int qtype_arg, Continuation * acont, HostEnt ** wait, DNSHandler * adnsH, int timeout);
+  int mainEvent(int event, Event *e);
+  int delayEvent(int event, Event *e);
+  int post(DNSHandler *h, HostEnt *ent);
+  int postEvent(int event, Event *e);
+  void init(const char *x, int len, int qtype_arg, Continuation *acont, DNSHandler *adnsH, int timeout);
 
    DNSEntry()
      : Continuation(NULL),
        qtype(0),
        retries(DEFAULT_DNS_RETRIES),
        which_ns(NO_NAMESERVER_SELECTED), submit_time(0), send_time(0), qname_len(0), domains(0),
-       timeout(0), result_ent(0), sem_ent(0), dnsH(0), written_flag(false), once_written_flag(false), last(false)
+       timeout(0), result_ent(0), dnsH(0), written_flag(false), once_written_flag(false), last(false)
   {
     for (int i = 0; i < MAX_DNS_RETRIES; i++)
       id[i] = -1;
-
     memset(qname, 0, MAXDNAME);
-    memset(&sem, 0, sizeof sem);
   }
 };
 
@@ -270,10 +256,10 @@ struct DNSHandler: public Continuation
              (HRTIME_SECONDS(dns_failover_try_period + failover_soon_number[i] * FAILOVER_SOON_RETRY))));
   }
 
-  void recv_dns(int event, Event * e);
-  int startEvent(int event, Event * e);
-  int startEvent_sdns(int event, Event * e);
-  int mainEvent(int event, Event * e);
+  void recv_dns(int event, Event *e);
+  int startEvent(int event, Event *e);
+  int startEvent_sdns(int event, Event *e);
+  int mainEvent(int event, Event *e);
 
   void open_con(unsigned int aip, int aport, bool failed = false, int icon = 0);
   void failover();

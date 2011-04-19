@@ -40,11 +40,9 @@
   one will exist per call until the user deletes them.
 
 */
-struct HostEnt
-{
+struct HostEnt : RefCountObj {
   struct hostent ent;
   uint32_t ttl;
-  int ref_count;
   int packet_size;
   char buf[MAX_DNS_PACKET_LEN];
   u_char *host_aliases[DNS_MAX_ALIASES];
@@ -53,9 +51,11 @@ struct HostEnt
 
   SRVHosts srv_hosts;
 
-  HostEnt()
-  {
-    memset(this, 0, sizeof(*this));
+  virtual void free();
+
+  HostEnt() { 
+    size_t base = sizeof(force_VFPT_to_top);  // preserve VFPT
+    memset(((char*)this) + base, 0, sizeof(*this) - base); 
   }
 };
 
@@ -65,30 +65,20 @@ struct DNSHandler;
 
 struct DNSProcessor: public Processor
 {
-  //
   // Public Interface
   //
 
-  // Non-blocking DNS lookup
-  //   calls: cont->handleEvent( DNS_EVENT_LOOKUP, HostEnt * ent) on success
+  // DNS lookup
+  //   calls: cont->handleEvent( DNS_EVENT_LOOKUP, HostEnt *ent) on success
   //          cont->handleEvent( DNS_EVENT_LOOKUP, NULL) on failure
-  // NOTE: the HostEnt * block is freed when the function returns
+  // NOTE: the HostEnt *block is freed when the function returns
   //
 
-  Action *gethostbyname(Continuation * cont, const char *name, DNSHandler * adnsH = 0, int timeout = 0);
-  Action *getSRVbyname(Continuation * cont, const char *name, DNSHandler * adnsH = 0, int timeout = 0);
-  Action *gethostbyname(Continuation * cont, const char *name, int len, int timeout = 0);
-  Action *gethostbyaddr(Continuation * cont, unsigned int ip, int timeout = 0);
+  Action *gethostbyname(Continuation *cont, const char *name, DNSHandler *adnsH = 0, int timeout = 0);
+  Action *getSRVbyname(Continuation *cont, const char *name, DNSHandler *adnsH = 0, int timeout = 0);
+  Action *gethostbyname(Continuation *cont, const char *name, int len, int timeout = 0);
+  Action *gethostbyaddr(Continuation *cont, unsigned int ip, int timeout = 0);
 
-  // Blocking DNS lookup, user must free the return HostEnt *
-  // NOTE: this HostEnt is big, please free these ASAP
-  //
-  HostEnt *gethostbyname(const char *name);
-  HostEnt *gethostbyaddr(unsigned int addr);
-  HostEnt *getSRVbyname(const char *name);
-
-  /** Free the returned HostEnt (only for Blocking versions). */
-  void free_hostent(HostEnt * ent);
 
   // Processor API
   //
@@ -102,14 +92,12 @@ struct DNSProcessor: public Processor
 
   DNSProcessor();
 
-  //
   // private:
   //
   EThread *thread;
   DNSHandler *handler;
   __ink_res_state l_res;
-  Action *getby(const char *x, int len, int type, Continuation * cont,
-                HostEnt ** wait, DNSHandler * adnsH = NULL, int timeout = 0);
+  Action *getby(const char *x, int len, int type, Continuation *cont, DNSHandler *adnsH = NULL, int timeout = 0);
   void dns_init();
 };
 
@@ -123,59 +111,28 @@ extern DNSProcessor dnsProcessor;
 // Inline Functions
 //
 
-inline HostEnt *
-DNSProcessor::getSRVbyname(const char *name)
+inline Action *
+DNSProcessor::getSRVbyname(Continuation *cont, const char *name, DNSHandler *adnsH, int timeout)
 {
-  HostEnt *ent = NULL;
-
-  getby(name, 0, T_SRV, NULL, &ent);
-  return ent;
+  return getby(name, 0, T_SRV, cont, adnsH, timeout);
 }
-
 
 inline Action *
-DNSProcessor::getSRVbyname(Continuation * cont, const char *name, DNSHandler * adnsH, int timeout)
+DNSProcessor::gethostbyname(Continuation *cont, const char *name, DNSHandler *adnsH, int timeout)
 {
-  return getby(name, 0, T_SRV, cont, 0, adnsH, timeout);
+  return getby(name, 0, T_A, cont, adnsH, timeout);
 }
-
 
 inline Action *
-DNSProcessor::gethostbyname(Continuation * cont, const char *name, DNSHandler * adnsH, int timeout)
+DNSProcessor::gethostbyname(Continuation *cont, const char *name, int len, int timeout)
 {
-  return getby(name, 0, T_A, cont, 0, adnsH, timeout);
+  return getby(name, len, T_A, cont, NULL, timeout);
 }
-
 
 inline Action *
-DNSProcessor::gethostbyname(Continuation * cont, const char *name, int len, int timeout)
+DNSProcessor::gethostbyaddr(Continuation *cont, unsigned int addr, int timeout)
 {
-  return getby(name, len, T_A, cont, 0, NULL, timeout);
-}
-
-
-inline Action *
-DNSProcessor::gethostbyaddr(Continuation * cont, unsigned int addr, int timeout)
-{
-  return getby((char *) &addr, sizeof(addr), T_PTR, cont, 0, NULL, timeout);
-}
-
-
-inline HostEnt *
-DNSProcessor::gethostbyname(const char *name)
-{
-  HostEnt *ent = NULL;
-  getby(name, 0, T_A, NULL, &ent);
-  return ent;
-}
-
-
-inline HostEnt *
-DNSProcessor::gethostbyaddr(unsigned int addr)
-{
-  HostEnt *ent = NULL;
-  getby((char *) &addr, sizeof(addr), T_PTR, NULL, &ent);
-  return ent;
+  return getby((char *) &addr, sizeof(addr), T_PTR, cont, NULL, timeout);
 }
 
 void ink_dns_init(ModuleVersion version);
