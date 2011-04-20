@@ -171,14 +171,6 @@ Log::add_to_inactive(LogObject * object)
   -------------------------------------------------------------------------*/
 
 /*-------------------------------------------------------------------------
-  PeriodicWakeup
-
-  This continuation is invoked each second to wake-up the flush thread,
-  just in case it's sleeping on the job.
-  -------------------------------------------------------------------------*/
-
-
-/*-------------------------------------------------------------------------
   Log::periodic_tasks
 
   This function contains all of the tasks that need to be done each
@@ -967,11 +959,9 @@ Log::_init()
     create_threads();
 
     // schedule periodic wakeup
+    // ToDo: Why was this removed??
     //
-//#ifndef INK_SINGLE_THREADED
-//      eventProcessor.schedule_every (NEW (new PeriodicWakeup()),
-//                                     HRTIME_SECOND, ET_CALL);
-//#endif // INK_SINGLE_THREADED
+    //      eventProcessor.schedule_every (NEW (new PeriodicWakeup()), HRTIME_SECOND, ET_CALL);
 
     init_status |= FULLY_INITIALIZED;
   }

@@ -148,7 +148,6 @@
 #else
 # define TS_NO_TRANSFORM                1
 # define TS_NO_API                      1
-# define INK_SINGLE_THREADED            1
 #endif
 
 #if TS_HAS_STANDALONE_IOCORE
