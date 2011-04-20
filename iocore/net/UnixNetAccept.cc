@@ -524,7 +524,6 @@ NetAccept::acceptFastEvent(int event, void *ep)
   } while (loop);
 
 Ldone:
-
   return EVENT_CONT;
 
 Lerror:

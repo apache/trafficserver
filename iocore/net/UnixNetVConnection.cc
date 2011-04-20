@@ -94,6 +94,7 @@ net_activity(UnixNetVConnection *vc, EThread *thread)
 void
 close_UnixNetVConnection(UnixNetVConnection *vc, EThread *t)
 {
+  NetHandler *nh = vc->nh;
   vc->cancel_OOB();
   vc->ep.stop();
   vc->con.close();
@@ -111,7 +112,6 @@ close_UnixNetVConnection(UnixNetVConnection *vc, EThread *t)
     vc->active_timeout = NULL;
   }
   vc->active_timeout_in = 0;
-  NetHandler *nh = vc->nh;
   nh->open_list.remove(vc);
   nh->read_ready_list.remove(vc);
   nh->write_ready_list.remove(vc);
@@ -673,6 +673,7 @@ UnixNetVConnection::reenable(VIO *vio)
     return;
   EThread *t = vio->mutex->thread_holding;
   ink_debug_assert(t == this_ethread());
+  ink_debug_assert(!closed);
   if (nh->mutex->thread_holding == t) {
     if (vio == &read.vio) {
       ep.modify(EVENTIO_READ);

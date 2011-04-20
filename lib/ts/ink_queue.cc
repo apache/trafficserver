@@ -75,6 +75,7 @@ inkcoreapi volatile int64_t fastalloc_mem_total = 0;
 #ifdef DEBUG
 #define SANITY
 #define DEADBEEF
+// #define CHECK_DEADBEEF  // broken
 #endif
 
 // #define MEMPROTECT 1
@@ -298,7 +299,9 @@ ink_freelist_new(InkFreeList * f)
       for (i = 0; i < f->chunk_size; i++) {
         char *a = ((char *) FREELIST_POINTER(item)) + i * type_size;
 #ifdef DEADBEEF
-        memset(a, 0xDEADCAFE, type_size);
+        const char str[4] = { (char) 0xde, (char) 0xad, (char) 0xbe, (char) 0xef };
+        for (int j = 0; j < (int)type_size; j++)
+          a[j] = str[j % 4];
 #endif
         ink_freelist_free(f, a);
 #ifdef MEMPROTECT
@@ -402,7 +405,7 @@ ink_freelist_free(InkFreeList * f, void *item)
   {
     // set string to DEADBEEF
     const char str[4] = { (char) 0xde, (char) 0xad, (char) 0xbe, (char) 0xef };
-
+#ifdef CHECK_DEADBEEF
     // search for DEADBEEF anywhere after a pointer offset in the item
     char *position = (char *) item + sizeof(void *);    // start
     char *end = (char *) item + f->type_size;   // end
@@ -420,9 +423,10 @@ ink_freelist_free(InkFreeList * f, void *item)
       }
       i = (i + 1) & 0x3;
     }
-
+#endif
     // set the entire item to DEADBEEF
-    memset(item, 0xDEADBEEF, f->type_size);
+    for (int j = 0; j < (int)f->type_size; j++)
+      ((char*)item)[j] = str[j % 4];
   }
 #endif /* DEADBEEF */
 
