@@ -1,6 +1,14 @@
                                                          -*- coding: utf-8 -*-
 
 Changes with Apache Traffic Server 2.1.8
+  *) [TS-744] Configurations to control SSL session reuse and cache
+  size. Authors: qianshi and Leif
+
+  *) [TS-716] Bug where NetVC could be double free'd.
+   Fix for DNS crash: bad memory management of HostEnt structures. It is
+   not clear that this fixes the bug entirely.  Some of the stack traces
+   are consistent with this bug, but some are not.  
+
   *) [TS-743] Support separate configs for keep-alive enabled for _in
    and _out connections.
 
