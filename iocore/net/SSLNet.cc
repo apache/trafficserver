@@ -321,6 +321,16 @@ SSLNetProcessor::initSSLServerCTX(SslConfigParams * param, SSL_CTX * lCtx,
 
   // disable selected protocols
   SSL_CTX_set_options(lCtx, param->ssl_ctx_options);
+  
+  switch (param->ssl_session_cache) {
+  case SslConfigParams::SSL_SESSION_CACHE_MODE_OFF:
+    SSL_CTX_set_session_cache_mode(lCtx, SSL_SESS_CACHE_OFF|SSL_SESS_CACHE_NO_INTERNAL);
+    break;
+  case SslConfigParams::SSL_SESSION_CACHE_MODE_SERVER:
+    SSL_CTX_set_session_cache_mode(lCtx, SSL_SESS_CACHE_SERVER);
+    SSL_CTX_sess_set_cache_size(lCtx, param->ssl_session_cache_size);
+    break;
+  }
 
   //might want to make configurable at some point.
   verify_depth = param->verify_depth;

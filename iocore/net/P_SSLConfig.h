@@ -75,32 +75,22 @@ public:
     SSL_ACCELERATOR_REQ_BOTH = 3
   };
 
-  SSL_TERMINATION_MODE getTerminationMode(void)
+  enum SSL_SESSION_CACHE_MODE
   {
-    return (termMode);
-  }
-  int getAcceptPort(void)
-  {
-    return (ssl_accept_port_number);
-  }
-  char *getConfigFilePath(void)
-  {
-    return (configFilePath);
-  }
-  char *getServerCertPathOnly(void)
-  {
-    return (serverCertPathOnly);
-  }
-  char *getServerKeyPathOnly(void)
-  {
-    return (serverKeyPathOnly);
-  }
+    SSL_SESSION_CACHE_MODE_OFF = 0,
+    SSL_SESSION_CACHE_MODE_SERVER = 1
+  };
+
+  SSL_TERMINATION_MODE getTerminationMode(void) const { return termMode; }
+  int getAcceptPort(void) const { return ssl_accept_port_number; }
+  char *getConfigFilePath(void) const { return configFilePath; }
+  char *getServerCertPathOnly(void) const { return serverCertPathOnly; }
+  char *getServerKeyPathOnly(void) const { return serverKeyPathOnly; }
 
   SslConfigParams();
-  virtual ~ SslConfigParams();
+  virtual ~SslConfigParams();
 
 private:
-
   void initialize();
   void cleanup();
 
@@ -120,6 +110,8 @@ private:
   int verify_depth;
   int ssl_accept_port_number;
   int sslAccelerator;
+  int ssl_session_cache;
+  int ssl_session_cache_size;
 
   char *clientCertPath;
   char *clientKeyPath;
@@ -150,13 +142,9 @@ public:
   static SslConfigParams *acquire();
   static void release(SslConfigParams * params);
 
-  static bool serverTerminationEnabled(void)
-  {
-    return (serverSSLTermination);
-  }
+  static bool serverTerminationEnabled(void) { return serverSSLTermination; }
 
 private:
-
   static void clearTermEnabled()
   {
     serverSSLTermination = 0;
