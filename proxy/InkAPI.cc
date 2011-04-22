@@ -2086,7 +2086,6 @@ URLPartSet(TSMBuffer bufp, TSMLoc obj, const char *value, int length, URLPartSet
 {
   sdk_assert(sdk_sanity_check_mbuffer(bufp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_url_handle(obj) == TS_SUCCESS);
-  sdk_assert(sdk_sanity_check_null_ptr((void*)value) == TS_SUCCESS);
 
   if (!isWriteable(bufp))
     return TS_ERROR;
@@ -2095,10 +2094,12 @@ URLPartSet(TSMBuffer bufp, TSMLoc obj, const char *value, int length, URLPartSet
   u.m_heap = ((HdrHeapSDKHandle *) bufp)->m_heap;
   u.m_url_impl = (URLImpl *) obj;
 
-  if (length < 0)
+  if (!value)
+    length = 0;
+  else if (length < 0)
     length = strlen(value);
+  (u.*url_f)(value, length);
 
-  (u.*url_f) (value, length);
   return TS_SUCCESS;
 }
 
@@ -2171,7 +2172,7 @@ TSUrlPortSet(TSMBuffer bufp, TSMLoc obj, int port)
   sdk_assert(sdk_sanity_check_mbuffer(bufp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_url_handle(obj) == TS_SUCCESS);
 
-  if (!isWriteable(bufp) || (port <= 0))
+  if (!isWriteable(bufp) || (port < 0))
     return TS_ERROR;
 
   URL u;

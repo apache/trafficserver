@@ -452,12 +452,16 @@ url_port_set(HdrHeap * heap, URLImpl * url, const char *value, int length, bool 
 void
 url_port_set(HdrHeap * heap, URLImpl * url, unsigned int port)
 {
-  char value[6];
-  int length;
-
   url_called_set(url);
-  length = ink_fast_itoa(port, value, sizeof(value));
-  mime_str_u16_set(heap, value, length, &(url->m_ptr_port), &(url->m_len_port), true);
+  if (port > 0) {
+    char value[6];
+    int length;
+
+    length = ink_fast_itoa(port, value, sizeof(value));
+    mime_str_u16_set(heap, value, length, &(url->m_ptr_port), &(url->m_len_port), true);
+  } else {
+    mime_str_u16_set(heap, NULL, 0, &(url->m_ptr_port), &(url->m_len_port), true);
+  }
   url->m_port = port;
 }
 
