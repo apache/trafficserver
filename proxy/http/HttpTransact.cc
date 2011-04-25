@@ -3762,7 +3762,7 @@ HttpTransact::retry_server_connection_not_open(State* s, ServerState_t conn_stat
   ink_debug_assert(s->current.attempts <= max_retries);
   ink_debug_assert(s->current.server->connect_failure != 0);
 
-  char *url_string = s->hdr_info.client_request.url_string_get(&s->arena) : NULL;
+  char *url_string = s->hdr_info.client_request.url_string_get(&s->arena);
 
   Debug("http_trans", "[%d] failed to connect [%d] to %u.%u.%u.%u", s->current.attempts, conn_state,
         PRINT_IP(s->current.server->ip));

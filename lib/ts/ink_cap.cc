@@ -18,10 +18,10 @@ DebugCapabilities(char const* tag) {
     Debug(tag,
       "uid=%u, gid=%u, euid=%u, egid=%u"
 # if TS_USE_POSIX_CAP
-      ", caps %s thread 0x%x",
+      ", caps %s thread 0x%x"
 # endif
-      (unsigned)getuid(), (unsigned)getgid(),
-      (unsigned)geteuid(), (unsigned)getegid()
+      ,(unsigned)getuid(), (unsigned)getgid()
+      ,(unsigned)geteuid(), (unsigned)getegid()
 # if TS_USE_POSIX_CAP
       ,caps_text
       ,pthread_self()
@@ -37,7 +37,11 @@ DebugCapabilities(char const* tag) {
 
 int
 PreserveCapabilities() {
-  return prctl(PR_SET_KEEPCAPS, 1);
+  int zret = 0;
+# if TS_USE_POSIX_CAP
+  zret = prctl(PR_SET_KEEPCAPS, 1);
+# endif
+  return zret;
 }
 
 // Adjust the capabilities to only those needed.
