@@ -1162,86 +1162,39 @@ mime_hdr_clone(MIMEHdrImpl * s_mh, HdrHeap * s_heap, HdrHeap * d_heap, bool inhe
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-struct MIMEFieldBlockXlate
+/** Move a pointer from one list to another, keeping the relative offset.
+ * @return A pointer that has the same relative offset to @a dest_base as
+ * @a dest_ptr does to @a src_base.
+ */
+static inline MIMEField *rebase(
+  MIMEField *dest_ptr, ///< Original pointer into @src_base memory.
+  void *dest_base,     ///< New base pointer.
+  void *src_base       ///< Original base pointer.
+) {
+  return reinterpret_cast<MIMEField *>
+    (reinterpret_cast<char *>(dest_ptr) + (static_cast<char *>(dest_base) - static_cast<char *>(src_base)));
+}
+
+static inline void relocate(MIMEField *field, MIMEFieldBlockImpl *dest_block, MIMEFieldBlockImpl *src_block)
 {
-  const char *old_f;
-  const char *old_l;
-  intptr_t delta;
-};
+  for ( ; src_block; src_block = src_block->m_next, dest_block = dest_block->m_next) {
+    ink_release_assert(dest_block) ;
+
+    if (field->m_next_dup >= src_block->m_field_slots &&
+        field->m_next_dup < src_block->m_field_slots + src_block->m_freetop) {
+      field->m_next_dup = rebase(field->m_next_dup, dest_block->m_field_slots, src_block->m_field_slots);
+      return;
+    }
+  }
+}
 
 void
-mime_hdr_field_block_list_adjust(int block_count, MIMEFieldBlockImpl * old_list, MIMEFieldBlockImpl * new_list)
+mime_hdr_field_block_list_adjust(int block_count, MIMEFieldBlockImpl *old_list, MIMEFieldBlockImpl *new_list)
 {
-  MIMEFieldBlockXlate xlate_base[1];
-  MIMEFieldBlockXlate *xlate_oflow = NULL;
-  MIMEFieldBlockXlate *xlate_table;
-  MIMEFieldBlockImpl *new_blk, *old_blk;
-  MIMEField *field;
-  int i, j;
-  int need_to_xlate = 0;
-
-  for (new_blk = new_list; (new_blk != NULL); new_blk = new_blk->m_next) {
-    for (i = 0; i < (int) new_blk->m_freetop; i++) {
-      field = &(new_blk->m_field_slots[i]);
-      if ((field->m_next_dup != NULL) && (field->m_readiness == MIME_FIELD_SLOT_READINESS_LIVE)) {
-        need_to_xlate = 1;
-        break;
-      }
-    }
-  }
-
-  if (!need_to_xlate) {
-    return;
-  }
-  ////////////////////////////////////////
-  // allocate a block translation table //
-  ////////////////////////////////////////
-
-  if (block_count <= 1) {
-    xlate_table = xlate_base;
-  } else {
-    xlate_oflow = (MIMEFieldBlockXlate *)
-      xmalloc(block_count * sizeof(MIMEFieldBlockXlate));
-    xlate_table = xlate_oflow;
-  }
-
-  ///////////////////////////////////////
-  // build the block translation table //
-  ///////////////////////////////////////
-  old_blk = old_list;
-  new_blk = new_list;
-  for (i = 0; i < block_count; i++) {
-    xlate_table[i].old_f = (const char *) old_blk;
-    xlate_table[i].old_l = xlate_table[i].old_f + sizeof(MIMEFieldBlockImpl) - 1;
-    xlate_table[i].delta = (intptr_t) ((const char *) new_blk - (const char *) old_blk);
-
-    old_blk = old_blk->m_next;
-    new_blk = new_blk->m_next;
-  }
-  ink_release_assert((old_blk == NULL) && (new_blk == NULL));
-
-  ////////////////////////////////////////////////////////////////////
-  // walk through each slot in the new list, and patch any dup ptrs //
-  // pointing to the old list into the right block in the new list  //
-  ////////////////////////////////////////////////////////////////////
-  for (new_blk = new_list; (new_blk != NULL); new_blk = new_blk->m_next) {
-    for (i = 0; i < (int) new_blk->m_freetop; i++) {
-      field = &(new_blk->m_field_slots[i]);
-      if ((field->m_readiness == MIME_FIELD_SLOT_READINESS_LIVE) && (field->m_next_dup != NULL)) {
-        for (j = 0; j < block_count; j++) {
-          const char *addr = (const char *) (field->m_next_dup);
-          if ((addr >= xlate_table[j].old_f) && (addr <= xlate_table[j].old_l)) {
-            field->m_next_dup = (MIMEField *) (addr + xlate_table[j].delta);
-            break;
-          }
-        }
-        ink_release_assert(j < block_count);
-      }
-    }
-  }
-
-  if (xlate_oflow)
-    xfree(xlate_oflow);
+  for (MIMEFieldBlockImpl *new_blk = new_list; new_blk; new_blk = new_blk->m_next)
+    for (MIMEField *field = new_blk->m_field_slots, *end=field + new_blk->m_freetop; field != end; ++field)
+      if (field->m_readiness == MIME_FIELD_SLOT_READINESS_LIVE && field->m_next_dup)
+        relocate(field, new_list, old_list);
 }
 
 /*-------------------------------------------------------------------------
