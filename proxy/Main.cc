@@ -47,10 +47,6 @@ extern "C" int plock(int);
 #include <mcheck.h>
 #endif
 
-#if TS_USE_POSIX_CAP
-#include <sys/capability.h>
-#endif
-
 #include "Main.h"
 #include "signals.h"
 #include "Error.h"
@@ -94,6 +90,8 @@ extern "C" int plock(int);
 #include "XmlUtils.h"
 
 #include "I_Tasks.h"
+
+#include <ts/ink_cap.h>
 
 #if TS_HAS_PROFILER
 #include <google/profiler.h>
@@ -1061,23 +1059,6 @@ init_core_size()
   }
 }
 
-#if TS_USE_POSIX_CAP
-// Restore the effective capabilities that we need.
-int
-restoreCapabilities() {
-  int zret = 0; // return value.
-  cap_t cap_set = cap_get_proc(); // current capabilities
-  // Capabilities to restore.
-  cap_value_t cap_list[] = { CAP_NET_ADMIN, CAP_NET_BIND_SERVICE };
-  static int const CAP_COUNT = sizeof(cap_list)/sizeof(*cap_list);
-
-  cap_set_flag(cap_set, CAP_EFFECTIVE, CAP_COUNT, cap_list, CAP_SET);
-  zret = cap_set_proc(cap_set);
-  cap_free(cap_set);
-  return zret;
-}
-#endif
-
 static void
 adjust_sys_settings(void)
 {
@@ -1110,9 +1091,6 @@ adjust_sys_settings(void)
 #endif
 
 #endif  // linux check
-#if TS_USE_POSIX_CAP
-  restoreCapabilities();
-#endif
 }
 
 struct ShowStats: public Continuation
@@ -1659,6 +1637,26 @@ main(int argc, char **argv)
   if (!num_task_threads)
     TS_ReadConfigInteger(num_task_threads, "proxy.config.task_threads");
 
+  // change the user of the process
+  // do this before we start threads so we control the user id of the
+  // threads (rather than have it change asynchronously during thread
+  // execution). We also need to do this before we fiddle with capabilities
+  // as those are thread local and if we change the user id it will
+  // modified the capabilities in other threads, breaking things.
+  const long max_login =  sysconf(_SC_LOGIN_NAME_MAX) <= 0 ? _POSIX_LOGIN_NAME_MAX :  sysconf(_SC_LOGIN_NAME_MAX);
+  char *user = (char *)xmalloc(max_login);
+  *user = '\0';
+  if ((TS_ReadConfigString(user, "proxy.config.admin.user_id",
+                           max_login) == REC_ERR_OKAY) &&
+                           user[0] != '\0' &&
+                           strcmp(user, "#-1")) {
+    PreserveCapabilities();
+    change_uid_gid(user);
+    RestrictCapabilities();
+    xfree(user);
+  }
+  DebugCapabilities("server");
+
   // This call is required for win_9xMe
   //without this this_ethread() is failing when
   //start_HttpProxyServer is called from main thread
@@ -1940,22 +1938,6 @@ main(int argc, char **argv)
 
     run_AutoStop();
   }
-
-  // change the user of the process
-  const long max_login =  sysconf(_SC_LOGIN_NAME_MAX) <= 0 ? _POSIX_LOGIN_NAME_MAX :  sysconf(_SC_LOGIN_NAME_MAX);
-  char *user = (char *)xmalloc(max_login);
-  *user = '\0';
-  if ((TS_ReadConfigString(user, "proxy.config.admin.user_id",
-                           max_login) == REC_ERR_OKAY) &&
-                           user[0] != '\0' &&
-                           strcmp(user, "#-1")) {
-    change_uid_gid(user);
-    xfree(user);
-  }
-  Debug("server",
-        "running as uid=%u, gid=%u, effective uid=%u, gid=%u",
-        (unsigned)getuid(), (unsigned)getgid(),
-        (unsigned)geteuid(), (unsigned)getegid());
 
   this_thread()->execute();
 }

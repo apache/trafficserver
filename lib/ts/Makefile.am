@@ -23,7 +23,7 @@ TESTS = $(check_PROGRAMS)
 lib_LTLIBRARIES = libtsutil.la
 
 libtsutil_la_LDFLAGS = -no-undefined -version-info @TS_LIBTOOL_VERSION@
-libtsutil_la_LIBADD = @LIBOBJS@ @LIBPCRE@ @LIBSSL@ @LIBTCL@ @LIBRESOLV@ @LIBRT@ @LIBICONV@ @LIBSOCKET@ @LIBNSL@ -lc
+libtsutil_la_LIBADD = @LIBOBJS@ @LIBPCRE@ @LIBSSL@ @LIBTCL@ @LIBRESOLV@ @LIBRT@ @LIBICONV@ @LIBSOCKET@ @LIBNSL@ @LIBCAP@ -lc
 
 libtsutil_la_SOURCES = \
   Allocator.cc \
@@ -53,6 +53,7 @@ libtsutil_la_SOURCES = \
   ink_base64.cc \
   ink_base64.h \
   ink_bool.h \
+  ink_cap.cc ink_cap.h \
   ink_code.cc \
   ink_code.h \
   ink_defs.cc \

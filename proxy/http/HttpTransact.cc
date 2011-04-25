@@ -832,7 +832,6 @@ HttpTransact::EndRemapRequest(State* s)
   Debug("http_trans", "START HttpTransact::EndRemapRequest");
 
   HTTPHdr *incoming_request = &s->hdr_info.client_request;
-  //URL *url = incoming_request->url_get();
   int method = incoming_request->method_get_wksidx();
   int host_len;
   const char *host = incoming_request->host_get(&host_len);
@@ -953,12 +952,6 @@ done:
   if (handleIfRedirect(s)) {
     Debug("http_trans", "END HttpTransact::RemapRequest");
     TRANSACT_RETURN(PROXY_INTERNAL_CACHE_NOOP, NULL);
-  }
-
-  if (s->reverse_proxy) {
-    Debug("url_rewrite", "s->reverse_proxy is true");
-  } else {
-    Debug("url_rewrite", "s->reverse_proxy is false");
   }
 
   if (is_debug_tag_set("http_chdr_describe") || is_debug_tag_set("http_trans") || is_debug_tag_set("url_rewrite")) {
@@ -3769,8 +3762,7 @@ HttpTransact::retry_server_connection_not_open(State* s, ServerState_t conn_stat
   ink_debug_assert(s->current.attempts <= max_retries);
   ink_debug_assert(s->current.server->connect_failure != 0);
 
-  URL *url = s->hdr_info.client_request.url_get();
-  char *url_string = url->valid()? url->string_get(&s->arena) : NULL;
+  char *url_string = s->hdr_info.client_request.url_string_get(&s->arena) : NULL;
 
   Debug("http_trans", "[%d] failed to connect [%d] to %u.%u.%u.%u", s->current.attempts, conn_state,
         PRINT_IP(s->current.server->ip));

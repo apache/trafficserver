@@ -4396,17 +4396,15 @@ void
 HttpSM::mark_host_failure(HostDBInfo * info, time_t time_down)
 {
   if (info->app.http_data.last_failure == 0) {
-    int url_len;
-    char *url_str;
-
-    URL *url = t_state.hdr_info.client_request.url_get();
-    url_str = url->string_get(&t_state.arena, &url_len);
+    char *url_str = t_state.hdr_info.client_request.url_string_get(&t_state.arena, 0);
     Log::error("CONNECT: could not connect to %u.%u.%u.%u "
                "for '%s' (setting last failure time)",
                ((unsigned char *) &t_state.current.server->ip)[0],
                ((unsigned char *) &t_state.current.server->ip)[1],
                ((unsigned char *) &t_state.current.server->ip)[2],
-               ((unsigned char *) &t_state.current.server->ip)[3], url_str);
+               ((unsigned char *) &t_state.current.server->ip)[3],
+               url_str ? url_str : "<none>"
+    );
     if (url_str)
       t_state.arena.str_free(url_str);
   }
