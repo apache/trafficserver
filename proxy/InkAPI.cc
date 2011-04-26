@@ -4701,10 +4701,6 @@ TSHttpTxnCacheLookupUrlGet(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc obj)
   HttpSM *sm = (HttpSM *) txnp;
   URL u, *l_url;
 
-  if (sm == NULL)
-    return TS_ERROR;
-
-  sdk_sanity_check_mbuffer(bufp);
   u.m_heap = ((HdrHeapSDKHandle *) bufp)->m_heap;
   u.m_url_impl = (URLImpl *) obj;
   if (!u.valid())
@@ -4729,7 +4725,6 @@ TSHttpTxnCachedUrlSet(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc obj)
   HttpSM *sm = (HttpSM *) txnp;
   URL u, *s_url;
 
-  sdk_sanity_check_mbuffer(bufp);
   u.m_heap = ((HdrHeapSDKHandle *) bufp)->m_heap;
   u.m_url_impl = (URLImpl *) obj;
   if (!u.valid())
@@ -5076,9 +5071,7 @@ TSHttpTxnTransformRespGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *obj)
   if (hptr->valid()) {
     *(reinterpret_cast<HTTPHdr**>(bufp)) = hptr;
     *obj = reinterpret_cast<TSMLoc>(hptr->m_http);
-    sdk_sanity_check_mbuffer(*bufp);
-
-    return TS_SUCCESS;
+    return sdk_sanity_check_mbuffer(*bufp);
   } 
 
   return TS_ERROR;
@@ -6855,9 +6848,8 @@ TSICPCachedReqGet(TSCont contp, TSMBuffer *bufp, TSMLoc *obj)
 
   *(reinterpret_cast<HdrHeapSDKHandle**>(bufp)) = *handle;
   *obj = reinterpret_cast<TSMLoc>(cached_hdr->m_http);
-  sdk_sanity_check_mbuffer(*bufp);
 
-  return TS_SUCCESS;
+  return sdk_sanity_check_mbuffer(*bufp);
 }
 
 TSReturnCode
@@ -6869,9 +6861,6 @@ TSICPCachedRespGet(TSCont contp, TSMBuffer *bufp, TSMLoc *obj)
 
   ICPPeerReadCont *sm = (ICPPeerReadCont *) contp;
   HTTPInfo *cached_obj;
-
-  if (sm == NULL)
-    return TS_ERROR;
 
   cached_obj = sm->_object_read;
   if (cached_obj == NULL || !cached_obj->valid())
@@ -6892,9 +6881,8 @@ TSICPCachedRespGet(TSCont contp, TSMBuffer *bufp, TSMLoc *obj)
 
   *(reinterpret_cast<HdrHeapSDKHandle**>(bufp)) = *handle;
   *obj = reinterpret_cast<TSMLoc>(cached_hdr->m_http);
-  sdk_sanity_check_mbuffer(*bufp);
 
-  return TS_SUCCESS;
+  return sdk_sanity_check_mbuffer(*bufp);
 }
 
 TSReturnCode
@@ -7003,8 +6991,7 @@ TSFetchPageRespGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *obj)
   if (hptr->valid()) {
     *(reinterpret_cast<HTTPHdr**>(bufp)) = hptr;
     *obj = reinterpret_cast<TSMLoc>(hptr->m_http);
-    if (sdk_sanity_check_mbuffer(*bufp) == TS_SUCCESS)
-      return TS_SUCCESS;
+    return sdk_sanity_check_mbuffer(*bufp);
   }
 
   return TS_ERROR;

@@ -190,12 +190,6 @@ extern "C"
   /* =====  ICP =====  */
   tsapi void TSHttpIcpDynamicSet(int value);
 
-  /* =====  Http Transactions =====  */
-  tsapi TSReturnCode TSHttpTxnCachedRespModifiableGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *offset);
-  tsapi TSReturnCode TSHttpTxnCacheLookupStatusSet(TSHttpTxn txnp, int cachelookup);
-  tsapi TSReturnCode TSHttpTxnCacheLookupUrlGet(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc obj);
-  tsapi TSReturnCode TSHttpTxnCachedUrlSet(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc obj);
-
   /****************************************************************************
    *  TSHttpTxnCacheLookupCountGet
    *  Return: TS_SUCESS/TS_ERROR
