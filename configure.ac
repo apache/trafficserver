@@ -533,6 +533,9 @@ case $host_os in
       AC_DEFINE([_POSIX_PTHREAD_SEMANTICS],1,
        [posix thread semantics]
       )
+      if test "$solaris_use_stlport4" != yes; then
+        _LT_TAGVAR(postdeps,CXX)='-library=Crun'
+      fi
     else # gcc
       common_opt="-pipe -Wall -Werror"
       debug_opt="-ggdb3 $common_opt"
