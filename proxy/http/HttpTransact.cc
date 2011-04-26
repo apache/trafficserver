@@ -2598,8 +2598,8 @@ HttpTransact::HandleCacheOpenReadHit(State* s)
 
     if (server_up || s->stale_icp_lookup) {
       if (!s->stale_icp_lookup && s->current.server->ip == 0) {
-        ink_release_assert(s->current.request_to == PARENT_PROXY ||
-                    s->http_config_param->no_dns_forward_to_parent != 0);
+//        ink_release_assert(s->current.request_to == PARENT_PROXY ||
+//                    s->http_config_param->no_dns_forward_to_parent != 0);
 
         // Set ourselves up to handle pending revalidate issues
         //  after the PP DNS lookup
@@ -2615,6 +2615,8 @@ HttpTransact::HandleCacheOpenReadHit(State* s)
         //
         if (s->current.request_to == PARENT_PROXY) {
           TRANSACT_RETURN(DNS_LOOKUP, PPDNSLookup);
+        } else if (s->current.request_to == ORIGIN_SERVER) {
+          TRANSACT_RETURN(DNS_LOOKUP, OSDNSLookup);
         } else {
           handle_parent_died(s);
           return;
