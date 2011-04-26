@@ -2754,6 +2754,8 @@ HttpSM::tunnel_handler_server(int event, HttpTunnelProducer * p)
       Debug("http", "[%" PRId64 "] [HttpSM::tunnel_handler_server] aborting cache writes due to server truncation", sm_id);
       tunnel.abort_cache_write_finish_others(p);
       t_state.current.server->abort = HttpTransact::ABORTED;
+      t_state.client_info.keep_alive = HTTP_NO_KEEPALIVE;
+      t_state.current.server->keep_alive = HTTP_NO_KEEPALIVE;
       if (t_state.http_config_param->log_spider_codes) {
         t_state.squid_codes.wuts_proxy_status_code = WUTS_PROXY_STATUS_SPIDER_TIMEOUT_WHILE_DRAINING;
         t_state.squid_codes.log_code = SQUID_LOG_ERR_SPIDER_TIMEOUT_WHILE_DRAINING;
