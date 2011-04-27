@@ -546,10 +546,12 @@ free_CacheVC(CacheVC *cont)
   Debug("cache_free", "free %p", cont);
   ProxyMutex *mutex = cont->mutex;
   Vol *vol = cont->vol;
-  CACHE_DECREMENT_DYN_STAT(cont->base_stat + CACHE_STAT_ACTIVE);
-  if (cont->closed > 0) {
-    CACHE_INCREMENT_DYN_STAT(cont->base_stat + CACHE_STAT_SUCCESS);
-  }                             // else abort,cancel
+  if (vol) {
+    CACHE_DECREMENT_DYN_STAT(cont->base_stat + CACHE_STAT_ACTIVE);
+    if (cont->closed > 0) {
+      CACHE_INCREMENT_DYN_STAT(cont->base_stat + CACHE_STAT_SUCCESS);
+    }                             // else abort,cancel
+  }
   ink_debug_assert(mutex->thread_holding == this_ethread());
   if (cont->trigger)
     cont->trigger->cancel();
