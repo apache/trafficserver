@@ -534,7 +534,7 @@ case $host_os in
        [posix thread semantics]
       )
       if test "$solaris_use_stlport4" != yes; then
-        _LT_TAGVAR(postdeps,CXX)='-library=Crun'
+        postdeps_CXX="-library=Crun"
       fi
     else # gcc
       common_opt="-pipe -Wall -Werror"
