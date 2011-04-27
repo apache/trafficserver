@@ -1498,10 +1498,12 @@ change_uid_gid(const char *user)
 
   char *buf = (char *)xmalloc(buflen);
 
-  if (geteuid()) {
-    // Not running as root
-    Debug("server",
-          "Can't change user to : %s because running with effective uid=%d",
+  if (0 != geteuid() && 0 == getuid()) seteuid(0); // revert euid if possible.
+  if (0 != geteuid()) {
+    // Not root so can't change user ID. Logging isn't operational yet so
+    // we have to write directly to stderr. Perhaps this should be fatal?
+    fprintf(stderr,
+          "Can't change user to '%s' because running with effective uid=%d",
           user, geteuid());
   }
   else {
@@ -1655,7 +1657,8 @@ main(int argc, char **argv)
     RestrictCapabilities();
     xfree(user);
   }
-  DebugCapabilities("server");
+  // Can't generate a log message yet, do that right after Diags is
+  // setup.
 
   // This call is required for win_9xMe
   //without this this_ethread() is failing when
@@ -1675,6 +1678,7 @@ main(int argc, char **argv)
   diags->prefix_str = "Server ";
   if (is_debug_tag_set("diags"))
     diags->dump();
+  DebugCapabilities("server"); // Can do this now, logging is up.
 
   // Check for core file
   if (core_file[0] != '\0') {
