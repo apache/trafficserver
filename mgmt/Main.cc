@@ -485,8 +485,6 @@ main(int argc, char **argv)
   time_t ticker;
   ink_thread webThrId;
 
-  while ((setsid() == (pid_t) - 1) && (errno == EINTR)) {
-  }
 
   // Set up the application version info
   appVersionInfo.setup(PACKAGE_NAME,"traffic_manager", PACKAGE_VERSION,
