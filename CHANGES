@@ -1,6 +1,26 @@
                                                          -*- coding: utf-8 -*-
 
 Changes with Apache Traffic Server 2.1.8
+  *) [TS-752] If you cancel a scan really quickly you can get a NULL
+  dereference. Also other important performance and correctness fixes
+  for the cache scanning code. Author: William Bardwell and jplevyak.
+
+  *) [TS-749] Connection hangs if origin server goes down in the middle of
+  a response. Author: William Bardwell.
+
+  *) [TS-753] TS-753 Some more cleanup in InkAPI, move a few experimental
+   APIs to ts.h
+
+  *) [TS-751] Experimental TSHttpTxnCacheLookupStatusSet(HIT_STALE) calls
+   cause a crash. Author: William Bardwell
+
+  *) [TS-748] Client side transparency doesn't work on trunk.
+
+  *) [TS-702] FATAL: MIME.cc:1250: failed assert `j < block_count`.
+  Author: Yakov Markovitch
+
+  *) [TS-746] Allow to remove URL fields with "NULL" (or 0) values.
+
   *) [TS-744] Configurations to control SSL session reuse and cache
   size. Authors: qianshi and Leif
 
