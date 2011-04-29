@@ -117,17 +117,15 @@
 /* KAME extensions: use higher bit to avoid conflict with ISC use */
 #define INK_RES_USE_DNAME   0x10000000      /*%< use DNAME */
 #define INK_RES_USE_EDNS0   0x40000000      /*%< use EDNS0 if configured */
-#define INK_RES_NO_NIBBLE2  0x80000000      /*%< disable alternate nibble lookup */
 
 #define INK_RES_DEFAULT     (INK_RES_RECURSE | INK_RES_DEFNAMES | \
-                         INK_RES_DNSRCH | INK_RES_NO_NIBBLE2)
+                         INK_RES_DNSRCH)
 
 #define INK_MAXNS                   32      /*%< max # name servers we'll track */
 #define INK_MAXDFLSRCH              3       /*%< # default domain levels to try */
 #define INK_MAXDNSRCH               6       /*%< max # domains in search path */
 #define INK_LOCALDOMAINPARTS        2       /*%< min levels in name that is "local" */
 #define INK_RES_TIMEOUT             5       /*%< min. seconds between retries */
-#define INK_MAXRESOLVSORT           10      /*%< number of net to sort on */
 #define INK_RES_TIMEOUT             5       /*%< min. seconds between retries */
 #define INK_RES_MAXNDOTS            15      /*%< should reflect bit field size */
 #define INK_RES_MAXRETRANS          30      /*%< only for resolv.conf/RES_OPTIONS */
@@ -217,10 +215,6 @@ struct __ink_res_state {
   unsigned ndots:4;               /*%< threshold for initial abs. query */
   unsigned nsort:4;               /*%< number of elements in sort_list[] */
   char    unused[3];
-  struct {
-    struct in_addr  addr;
-    u_int32_t       mask;
-  } sort_list[MAXRESOLVSORT];
   res_send_qhook qhook;           /*%< query hook */
   res_send_rhook rhook;           /*%< response hook */
   int     res_h_errno;            /*%< last one set for this context */
@@ -233,25 +227,14 @@ struct __ink_res_state {
     struct {
       u_int16_t               nscount;
       u_int16_t               nstimes[INK_MAXNS]; /*%< ms. */
-      int                     nssocks[INK_MAXNS];
       struct __ink_res_state_ext *ext;    /*%< extention for IPv6 */
     } _ext;
   } _u;
 };
 typedef __ink_res_state *ink_res_state;
 
-
 struct __ink_res_state_ext {
   union ink_res_sockaddr_union nsaddrs[INK_MAXNS];
-  struct sort_list {
-    int     af;
-    union {
-      struct in_addr  ina;
-      struct in6_addr in6a;
-    } addr, mask;
-  } sort_list[MAXRESOLVSORT];
-  char nsuffix[64];
-  char nsuffix2[64];
 };
 
 
@@ -267,4 +250,5 @@ int inet_aton(register const char *cp, struct in_addr *addr);
 int ink_ns_name_ntop(const u_char *src, char *dst, size_t dstsiz);
 
 
-#endif                          /* _ink_resolver_h_ */
+#endif   /* _ink_resolver_h_ */
+

@@ -93,12 +93,6 @@
 int inet_aton(register const char *cp, struct in_addr *addr);
 #endif
 
-#ifdef RESOLVSORT
-static const char sort_mask[] = "/&";
-#define ISSORTMASK(ch) (strchr(sort_mask, ch) != NULL)
-static u_int32_t net_mask __P((struct in_addr));
-#endif
-
 #if !defined(isascii)           /* XXX - could be a function */
 # define isascii(c) (!(c & 0200))
 #endif
@@ -116,18 +110,10 @@ static u_int32_t net_mask __P((struct in_addr));
  */
 static void
 ink_res_nclose(ink_res_state statp) {
-  int ns;
-
   if (statp->_vcsock >= 0) {
     (void) close(statp->_vcsock);
     statp->_vcsock = -1;
     statp->_flags &= ~(INK_RES_F_VC | INK_RES_F_CONN);
-  }
-  for (ns = 0; ns < statp->_u._ext.nscount; ns++) {
-    if (statp->_u._ext.nssocks[ns] != -1) {
-      (void) close(statp->_u._ext.nssocks[ns]);
-      statp->_u._ext.nssocks[ns] = -1;
-    }
   }
 }
 
@@ -232,7 +218,6 @@ ink_res_setoptions(ink_res_state statp, const char *options, const char *source)
   NOWARN_UNUSED(source);
   const char *cp = options;
   int i;
-  struct __ink_res_state_ext *ext = statp->_u._ext.ext;
 
 #ifdef DEBUG
   if (statp->options & INK_RES_DEBUG)
@@ -315,56 +300,14 @@ ink_res_setoptions(ink_res_state statp, const char *options, const char *source)
     else if (!strncmp(cp, "dname", sizeof("dname") - 1)) {
       statp->options |= INK_RES_USE_DNAME;
     }
-    else if (!strncmp(cp, "nibble:", sizeof("nibble:") - 1)) {
-      if (ext == NULL)
-        goto skip;
-      cp += sizeof("nibble:") - 1;
-      i = MIN(strcspn(cp, " \t"), sizeof(ext->nsuffix) - 1);
-      strncpy(ext->nsuffix, cp, i);
-      ext->nsuffix[i] = '\0';
-    }
-    else if (!strncmp(cp, "nibble2:", sizeof("nibble2:") - 1)) {
-      if (ext == NULL)
-        goto skip;
-      cp += sizeof("nibble2:") - 1;
-      i = MIN(strcspn(cp, " \t"), sizeof(ext->nsuffix2) - 1);
-      strncpy(ext->nsuffix2, cp, i);
-      ext->nsuffix2[i] = '\0';
-    }
-    else if (!strncmp(cp, "v6revmode:", sizeof("v6revmode:") - 1)) {
-      cp += sizeof("v6revmode:") - 1;
-      /* "nibble" and "bitstring" used to be valid */
-      if (!strncmp(cp, "single", sizeof("single") - 1)) {
-        statp->options |= INK_RES_NO_NIBBLE2;
-      } else if (!strncmp(cp, "both", sizeof("both") - 1)) {
-        statp->options &= ~INK_RES_NO_NIBBLE2;
-      }
-    }
     else {
       /* XXX - print a warning here? */
     }
-  skip:
     /* skip to next run of spaces */
     while (*cp && *cp != ' ' && *cp != '\t')
       cp++;
   }
 }
-
-#ifdef RESOLVSORT
-/* XXX - should really support CIDR which means explicit masks always. */
-static u_int32_t
-ink_net_mask(in)		/*!< XXX - should really use system's version of this  */
-  struct in_addr in;
-{
-  register u_int32_t i = ntohl(in.s_addr);
-
-  if (IN_CLASSA(i))
-    return (htonl(IN_CLASSA_NET));
-  else if (IN_CLASSB(i))
-    return (htonl(IN_CLASSB_NET));
-  return (htonl(IN_CLASSC_NET));
-}
-#endif
 
 static u_int
 ink_res_randomid(void) {
@@ -372,20 +315,6 @@ ink_res_randomid(void) {
 
   gettimeofday(&now, NULL);
   return (0xffff & (now.tv_sec ^ now.tv_usec ^ getpid()));
-}
-
-const char *
-ink_res_get_nibblesuffix(ink_res_state statp) {
-  if (statp->_u._ext.ext)
-    return (statp->_u._ext.ext->nsuffix);
-  return ("ip6.arpa");
-}
-
-const char *
-ink_res_get_nibblesuffix2(ink_res_state statp) {
-  if (statp->_u._ext.ext)
-    return (statp->_u._ext.ext->nsuffix2);
-  return ("ip6.int");
 }
 
 /*%
@@ -420,10 +349,6 @@ ink_res_init(ink_res_state statp, const unsigned int *pHostList, const int *pPor
   int nserv = 0;
   int haveenv = 0;
   int havesearch = 0;
-#ifdef RESOLVSORT
-  int nsort = 0;
-  char *net;
-#endif
   int dots;
   int maxns = INK_MAXNS;
 
@@ -449,8 +374,6 @@ ink_res_init(ink_res_state statp, const unsigned int *pHostList, const int *pPor
   if (statp->_u._ext.ext != NULL) {
     memset(statp->_u._ext.ext, 0, sizeof(*statp->_u._ext.ext));
     statp->_u._ext.ext->nsaddrs[0].sin = statp->nsaddr_list[0].sin;
-    strcpy(statp->_u._ext.ext->nsuffix, "ip6.arpa");
-    strcpy(statp->_u._ext.ext->nsuffix2, "ip6.int");
   } else {
     /*
      * Historically res_init() rarely, if at all, failed.
@@ -468,10 +391,6 @@ ink_res_init(ink_res_state statp, const unsigned int *pHostList, const int *pPor
     statp->res_h_errno = NETDB_INTERNAL;
     maxns = 0;
   }
-#ifdef RESOLVSORT
-  statp->nsort = 0;
-#endif
-
 
 #ifdef	SOLARIS2
   /*
@@ -679,58 +598,11 @@ ink_res_init(ink_res_state statp, const unsigned int *pHostList, const int *pPor
         }
         continue;
       }
-#ifdef RESOLVSORT
-      if (MATCH(buf, "sortlist")) {
-        struct in_addr a;
-
-        cp = buf + sizeof("sortlist") - 1;
-        while (nsort < INK_MAXRESOLVSORT) {
-          while (*cp == ' ' || *cp == '\t')
-            cp++;
-          if (*cp == '\0' || *cp == '\n' || *cp == ';')
-            break;
-          net = cp;
-          while (*cp && !ISSORTMASK(*cp) && *cp != ';' &&
-                 isascii(*cp) && !isspace((unsigned char)*cp))
-            cp++;
-          n = *cp;
-          *cp = 0;
-          if (inet_aton(net, &a)) {
-            statp->sort_list[nsort].addr = a;
-            if (ISSORTMASK(n)) {
-              *cp++ = n;
-              net = cp;
-              while (*cp && *cp != ';' &&
-                     isascii(*cp) &&
-                     !isspace((unsigned char)*cp))
-                cp++;
-              n = *cp;
-              *cp = 0;
-              if (inet_aton(net, &a)) {
-                statp->sort_list[nsort].mask = a.s_addr;
-              } else {
-                statp->sort_list[nsort].mask =
-                  net_mask(statp->sort_list[nsort].addr);
-              }
-            } else {
-              statp->sort_list[nsort].mask =
-                net_mask(statp->sort_list[nsort].addr);
-            }
-            nsort++;
-          }
-          *cp = n;
-        }
-        continue;
-      }
-#endif
       if (MATCH(buf, "options")) {
         ink_res_setoptions(statp, buf + sizeof("options") - 1, "conf");
         continue;
       }
     }
-#ifdef RESOLVSORT
-    statp->nsort = nsort;
-#endif
     (void) fclose(fp);
   }
 
