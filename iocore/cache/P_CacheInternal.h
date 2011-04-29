@@ -481,6 +481,12 @@ struct CacheVC: public CacheVConnection
 #endif
     } f;
   };
+  // BTF optimization used to skip reading stuff in cache partition that doesn't contain any
+  // dir entries.
+  char *scan_vol_map; 
+  // BTF fix to handle objects that overlapped over two different reads,
+  // this is how much we need to back up the buffer to get the start of the overlapping object.
+  off_t scan_fix_buffer_offset;
   //end region C
 };
 
@@ -588,6 +594,8 @@ free_CacheVC(CacheVC *cont)
   cont->alternate_index = CACHE_ALT_INDEX_DEFAULT;
   if (cont->frag && cont->frag != cont->integral_frags)
     xfree(cont->frag);
+  if (cont->scan_vol_map)
+    xfree(cont->scan_vol_map);
   memset((char *) &cont->vio, 0, cont->size_to_init);
 #ifdef CACHE_STAT_PAGES
   ink_assert(!cont->stat_link.next && !cont->stat_link.prev);

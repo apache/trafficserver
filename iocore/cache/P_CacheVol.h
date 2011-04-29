@@ -411,6 +411,13 @@ vol_in_phase_agg_buf_valid(Vol *d, Dir *e)
   return (vol_offset(d, e) >= d->header->write_pos && vol_offset(d, e) < (d->header->write_pos + d->agg_buf_pos));
 }
 
+// length of the partition not including the offset of location 0.
+TS_INLINE off_t
+vol_relative_length(Vol *v, off_t start_offset)
+{
+   return (v->len + v->skip) - start_offset;
+}
+
 TS_INLINE uint32_t
 Doc::prefix_len()
 {

@@ -90,6 +90,66 @@ Ldone:
   return free_CacheVC(this);
 }
 
+/* Next block with some data in it in this partition.  Returns end of partition if no more
+ * locations.
+ *
+ * d - Vol
+ * vol_map - precalculated map
+ * offset - offset to start looking at (and data at this location has not been read yet). */
+static off_t next_in_map(Vol *d, char *vol_map, off_t offset)
+{
+  off_t start_offset = vol_offset_to_offset(d, 0);
+  off_t new_off = (offset - start_offset);
+  off_t vol_len = vol_relative_length(d, start_offset);
+
+  while (new_off < vol_len && !vol_map[new_off / SCAN_BUF_SIZE]) new_off += SCAN_BUF_SIZE;
+  if (new_off >= vol_len) return vol_len + start_offset;
+  return new_off + start_offset;
+}
+
+// Function in CacheDir.cc that we need for make_vol_map().
+int
+dir_bucket_loop_fix(Dir *start_dir, int s, Vol *d);
+
+// TODO: If we used a bit vector, we could make a smaller map structure.
+// TODO: If we saved a high water mark we could have a smaller buf, and avoid searching it
+// when we are asked about the highest interesting offset.
+/* Make map of what blocks in partition are used.
+ *
+ * d - Vol to make a map of. */
+static char *make_vol_map(Vol *d)
+{
+  // Map will be one byte for each SCAN_BUF_SIZE bytes.
+  off_t start_offset = vol_offset_to_offset(d, 0);
+  off_t vol_len = vol_relative_length(d, start_offset);
+  size_t map_len = (vol_len + (SCAN_BUF_SIZE - 1)) / SCAN_BUF_SIZE;
+  char *vol_map = (char *)xmalloc(map_len);
+  if (!vol_map) return NULL;
+  memset(vol_map, 0, map_len);
+
+  // Scan directories.
+  // Copied from dir_entries_used() and modified to fill in the map instead.
+  for (int s = 0; s < d->segments; s++) {
+    Dir *seg = dir_segment(s, d);
+    for (int b = 0; b < d->buckets; b++) {
+      Dir *e = dir_bucket(b, seg);
+      if (dir_bucket_loop_fix(e, s, d)) {
+        break;
+      }
+      while (e) {
+        if (dir_offset(e)) {
+            off_t offset = vol_offset(d, e) - start_offset;
+            if (offset <= vol_len) vol_map[offset / SCAN_BUF_SIZE] = 1;
+        }
+        e = next_dir(e, seg);
+        if (!e)
+          break;
+      }
+    }
+  }
+  return vol_map;
+}
+
 int
 CacheVC::scanObject(int event, Event * e)
 {
@@ -97,8 +157,6 @@ CacheVC::scanObject(int event, Event * e)
   NOWARN_UNUSED(event);
 
   Debug("cache_scan_truss", "inside %p:scanObject", this);
-  if (_action.cancelled)
-    return free_CacheVC(this);
 
   Doc *doc = NULL;
   void *result = NULL;
@@ -107,6 +165,8 @@ CacheVC::scanObject(int event, Event * e)
   char hname[500];
   bool hostinfo_copied = false;
 #endif
+  off_t next_object_len = 0;
+  bool might_need_overlap_read = false;
 
   cancel_trigger();
   set_io_not_in_progress();
@@ -115,17 +175,22 @@ CacheVC::scanObject(int event, Event * e)
 
   CACHE_TRY_LOCK(lock, vol->mutex, mutex->thread_holding);
   if (!lock) {
+    Debug("cache_scan_truss", "delay %p:scanObject", this);
     mutex->thread_holding->schedule_in_local(this, HRTIME_MSECONDS(cache_config_mutex_retry_delay));
     return EVENT_CONT;
   }
 
   if (!fragment) {               // initialize for first read
     fragment = 1;
-    io.aiocb.aio_offset = vol_offset_to_offset(vol, 0);
+    scan_vol_map = make_vol_map(vol);
+    io.aiocb.aio_offset = next_in_map(vol, scan_vol_map, vol_offset_to_offset(vol, 0));
+    if (io.aiocb.aio_offset >= (off_t)(vol->skip + vol->len))
+      goto Ldone;
     io.aiocb.aio_nbytes = SCAN_BUF_SIZE;
     io.aiocb.aio_buf = buf->data();
     io.action = this;
     io.thread = AIO_CALLBACK_THREAD_ANY;
+    Debug("cache_scan_truss", "read %p:scanObject", this);
     goto Lread;
   }
 
@@ -135,13 +200,26 @@ CacheVC::scanObject(int event, Event * e)
   }
 
   doc = (Doc *) (buf->data() + offset);
-  while ((char *) doc < buf->data() + io.aiocb.aio_nbytes) {
+  // If there is data in the buffer before the start that is from a partial object read previously
+  // Fix things as if we read it this time.
+  if (scan_fix_buffer_offset) {
+    io.aio_result += scan_fix_buffer_offset;
+    io.aiocb.aio_nbytes += scan_fix_buffer_offset;
+    io.aiocb.aio_offset -= scan_fix_buffer_offset;
+    io.aiocb.aio_buf = (char *)io.aiocb.aio_buf - scan_fix_buffer_offset;
+    scan_fix_buffer_offset = 0;
+  }
+  while ((off_t)((char *) doc - buf->data()) + next_object_len < (off_t)io.aiocb.aio_nbytes) {
+    might_need_overlap_read = false;
+    doc = (Doc *) ((char *) doc + next_object_len);
+    next_object_len = vol->round_to_approx_size(doc->len);
 #ifdef HTTP_CACHE
     int i;
     bool changed;
 
     if (doc->magic != DOC_MAGIC) {
-      doc = (Doc *)((char *) doc + CACHE_BLOCK_SIZE);
+      next_object_len = CACHE_BLOCK_SIZE;
+      Debug("cache_scan_truss", "blockskip %p:scanObject", this);
       continue;
     }
       
@@ -157,8 +235,10 @@ CacheVC::scanObject(int event, Event * e)
         continue;
       break;
     }
-    if (doc->data() - buf->data() > (int) io.aiocb.aio_nbytes)
+    if (doc->data() - buf->data() > (int) io.aiocb.aio_nbytes) {
+      might_need_overlap_read = true;
       goto Lskip;
+    }
     {
       char *tmp = doc->hdr();
       int len = doc->hlen;
@@ -178,7 +258,7 @@ CacheVC::scanObject(int event, Event * e)
     hostinfo_copied = 0;
     for (i = 0; i < vector.count(); i++) {
       if (!vector.get(i)->valid())
-        continue;
+        goto Lskip;
       if (!hostinfo_copied) {
         memccpy(hname, vector.get(i)->request_get()->url_get()->host_get(&hlen), 0, 500);
         hname[hlen] = 0;
@@ -243,16 +323,35 @@ CacheVC::scanObject(int event, Event * e)
         return scanOpenWrite(EVENT_NONE, 0);
       }
     }
-    doc = (Doc *) ((char *) doc + vol->round_to_approx_size(doc->len));
     continue;
-  Lskip:
+  Lskip:;
 #endif
-    doc = (Doc *) ((char *) doc + vol->round_to_approx_size(doc->len));
   }
 #ifdef HTTP_CACHE
   vector.clear();
 #endif
-  io.aiocb.aio_offset += (char *) doc - buf->data();
+    // If we had an object that went past the end of the buffer, and it is small enough to fix,
+    // fix it.
+  if (might_need_overlap_read &&
+      ((off_t)((char *) doc - buf->data()) + next_object_len > (off_t)io.aiocb.aio_nbytes) &&
+      next_object_len > 0) {
+    off_t partial_object_len = io.aiocb.aio_nbytes - ((char *)doc - buf->data());
+    // Copy partial object to beginning of the buffer.
+    memmove(buf->data(), (char *)doc, partial_object_len);
+    io.aiocb.aio_offset += io.aiocb.aio_nbytes;
+    io.aiocb.aio_nbytes = SCAN_BUF_SIZE - partial_object_len;
+    io.aiocb.aio_buf = buf->data() + partial_object_len;
+    scan_fix_buffer_offset = partial_object_len;
+  } else { // Normal case, where we ended on a object boundary.
+    io.aiocb.aio_offset += ((char *)doc - buf->data()) + next_object_len;
+    Debug("cache_scan_truss", "next %p:scanObject %lld", this, io.aiocb.aio_offset);
+    io.aiocb.aio_offset = next_in_map(vol, scan_vol_map, io.aiocb.aio_offset);
+    Debug("cache_scan_truss", "next_in_map %p:scanObject %lld", this, io.aiocb.aio_offset);
+    io.aiocb.aio_nbytes = SCAN_BUF_SIZE;
+    io.aiocb.aio_buf = buf->data();
+    scan_fix_buffer_offset = 0;
+  }
+
   if (io.aiocb.aio_offset >= vol->skip + vol->len) {
     SET_HANDLER(&CacheVC::scanVol);
     eventProcessor.schedule_in(this, HRTIME_MSECONDS(scan_msec_delay));
@@ -263,13 +362,14 @@ Lread:
   io.aiocb.aio_fildes = vol->fd;
   if ((off_t)(io.aiocb.aio_offset + io.aiocb.aio_nbytes) > (off_t)(vol->skip + vol->len))
     io.aiocb.aio_nbytes = vol->skip + vol->len - io.aiocb.aio_offset;
-  else
-    io.aiocb.aio_nbytes = SCAN_BUF_SIZE;
   offset = 0;
   ink_assert(ink_aio_read(&io) >= 0);
+  Debug("cache_scan_truss", "read %p:scanObject %lld %lld", this, 
+    (off_t)io.aiocb.aio_offset, (off_t)io.aiocb.aio_nbytes);
   return EVENT_CONT;
 
 Ldone:
+   Debug("cache_scan_truss", "done %p:scanObject", this);
   _action.continuation->handleEvent(CACHE_EVENT_SCAN_DONE, result);
 #ifdef HTTP_CACHE
 Lcancel:
@@ -315,8 +415,10 @@ CacheVC::scanOpenWrite(int event, Event * e)
   int ret = 0;
   {
     CACHE_TRY_LOCK(lock, vol->mutex, mutex->thread_holding);
-    if (!lock)
+    if (!lock) {
+      Debug("cache_scan", "vol->mutex %p:scanOpenWrite", this);
       VC_SCHED_LOCK_RETRY();
+    }
 
     Debug("cache_scan", "trying for writer lock");
     if (vol->open_write(this, false, 1)) {
