@@ -6628,6 +6628,12 @@ HttpSM::set_next_state()
       HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::state_mark_os_down);
 
       ink_debug_assert(t_state.dns_info.looking_up == HttpTransact::ORIGIN_SERVER);
+
+      // TODO: This might not be optimal (or perhaps even correct), but it will 
+      // effectively mark the host as down. What's odd is that state_mark_os_down
+      // above isn't triggering.
+      HttpSM::do_hostdb_update_if_necessary();
+
       do_hostdb_lookup();
       break;
     }
