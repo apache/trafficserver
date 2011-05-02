@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 
 Changes with Apache Traffic Server 2.1.8
+  *) [TS-750] TS does not fail-over if one origin server for a 2 address
+   hostname. Author: William Bardwell.
+
   *) [TS-752] If you cancel a scan really quickly you can get a NULL
   dereference. Also other important performance and correctness fixes
   for the cache scanning code. Author: William Bardwell and jplevyak.
