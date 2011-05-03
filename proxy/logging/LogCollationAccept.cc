@@ -36,10 +36,10 @@
 // LogCollationAccept::LogCollationAccept
 //-------------------------------------------------------------------------
 
-LogCollationAccept::LogCollationAccept(int port):
-  Continuation(new_ProxyMutex()),
-  m_port(port),
-  m_pending_event(NULL)
+LogCollationAccept::LogCollationAccept(int port)
+  : Continuation(new_ProxyMutex()),
+    m_port(port),
+    m_pending_event(NULL)
 {
 
   SET_HANDLER((LogCollationAcceptHandler) & LogCollationAccept::accept_event);
@@ -47,9 +47,8 @@ LogCollationAccept::LogCollationAccept(int port):
   // appended to itself if multiple do_io_reads are called requesting
   // small amounts of data.  Most arguments are default except for the
   // last one which we will set to true.
-  m_accept_action = netProcessor.accept(this, m_port, AF_INET, false, INADDR_ANY, NULL, false, NO_FD, ACCEPTEX_POOL_SIZE, true);
+  m_accept_action = netProcessor.accept(this, m_port, AF_INET, 0, false, INADDR_ANY, NULL, false, NO_FD, ACCEPTEX_POOL_SIZE, true);
   ink_assert(NULL != m_accept_action);
-
 }
 
 //-------------------------------------------------------------------------
@@ -58,7 +57,6 @@ LogCollationAccept::LogCollationAccept(int port):
 
 LogCollationAccept::~LogCollationAccept()
 {
-
   Debug("log-collation", "LogCollationAccept::~LogCollationAccept");
 
   // stop the netProcessor
@@ -83,7 +81,6 @@ LogCollationAccept::~LogCollationAccept()
   if (m_pending_event && (m_pending_event != ACTION_RESULT_DONE)) {
     m_pending_event->cancel();
   }
-
 }
 
 //-------------------------------------------------------------------------
@@ -93,11 +90,9 @@ LogCollationAccept::~LogCollationAccept()
 int
 LogCollationAccept::accept_event(int event, NetVConnection * net_vc)
 {
-
   LogCollationHostSM *sm;
 
   switch (event) {
-
   case NET_EVENT_ACCEPT:
     sm = NEW(new LogCollationHostSM(net_vc));
     ink_assert(NULL != sm);
@@ -109,5 +104,4 @@ LogCollationAccept::accept_event(int event, NetVConnection * net_vc)
   }
 
   return EVENT_CONT;
-
 }

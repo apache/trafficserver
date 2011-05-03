@@ -865,8 +865,6 @@ RecordElement RecordsConfig[] = {
   ,
   {RECT_CONFIG, "proxy.config.net.sock_mss_in", RECD_INT, "0", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.net.nt.main_accept_pool_size", RECD_INT, "500", RECU_RESTART_TS, RR_NULL, RECC_NULL, NULL, RECA_NULL}
-  ,
 
   //##############################################################################
   //#

@@ -743,7 +743,7 @@ static int
 synserver_start(SocketServer * s)
 {
   TSAssert(s->magic == MAGIC_ALIVE);
-  s->accept_action = TSNetAccept(s->accept_cont, s->accept_port);
+  s->accept_action = TSNetAccept(s->accept_cont, s->accept_port, -1, 0);
   return 1;
 }
 

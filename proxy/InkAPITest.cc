@@ -331,7 +331,7 @@ REGRESSION_TEST(SDK_API_TSNetVConn) (RegressionTest * test, int atype, int *psta
   TSCont server_cont = TSContCreate(server_handler, server_mutex);
   TSCont client_cont = TSContCreate(client_handler, client_mutex);
 
-  TSNetAccept(server_cont, server_port);
+  TSNetAccept(server_cont, server_port, -1, 0);
 
   unsigned int server_ip = IP(127, 0, 0, 1);
   TSNetConnect(client_cont, server_ip, server_port);

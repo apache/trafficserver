@@ -96,7 +96,7 @@ protocol_init(int accept_port, int server_port)
      When there are requests coming in, contp's handler
      should be called, in this case, contp's handler
      is accept_event, see AcceptSM.c */
-  pending_action = TSNetAccept(contp, accept_port);
+  pending_action = TSNetAccept(contp, accept_port, -1, 1);
 }
 
 int

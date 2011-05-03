@@ -61,7 +61,7 @@ SSLNetProcessor::start(int number_of_ssl_threads)
   ET_SSL = eventProcessor.spawn_event_threads(number_of_ssl_threads);
   if (err == 0)
     err = UnixNetProcessor::start();
-  return (err);
+  return err;
 }
 
 
@@ -87,20 +87,20 @@ SSLNetProcessor::upgradeEtype(EventType & etype)
 EventType
 SSLNetAccept::getEtype()
 {
-  return (ET_SSL);
+  return ET_SSL;
 }
 
 // Functions all THREAD_FREE and THREAD_ALLOC to be performed
 // for both SSL and regular NetVConnection transparent to
 // accept functions.
 UnixNetVConnection *
-SSLNetAccept::allocateThread(EThread * t)
+SSLNetAccept::allocateThread(EThread *t)
 {
   return ((UnixNetVConnection *) THREAD_ALLOC(sslNetVCAllocator, t));
 }
 
 void
-SSLNetAccept::freeThread(UnixNetVConnection * vc, EThread * t)
+SSLNetAccept::freeThread(UnixNetVConnection *vc, EThread *t)
 {
   ink_assert(!vc->from_accept_thread);
   THREAD_FREE((SSLNetVConnection *) vc, sslNetVCAllocator, t);
@@ -119,13 +119,13 @@ SSLNetAccept::allocateGlobal()
 // have them in both places, but it saves a bunch of
 // connect code from being duplicated.
 UnixNetVConnection *
-SSLNetProcessor::allocateThread(EThread * t)
+SSLNetProcessor::allocateThread(EThread *t)
 {
   return ((UnixNetVConnection *) THREAD_ALLOC(sslNetVCAllocator, t));
 }
 
 void
-SSLNetProcessor::freeThread(UnixNetVConnection * vc, EThread * t)
+SSLNetProcessor::freeThread(UnixNetVConnection *vc, EThread *t)
 {
   ink_assert(!vc->from_accept_thread);
   THREAD_FREE((SSLNetVConnection *) vc, sslNetVCAllocator, t);

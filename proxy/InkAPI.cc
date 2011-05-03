@@ -6090,15 +6090,21 @@ TSNetConnect(TSCont contp, unsigned int ip, int port)
 }
 
 TSAction
-TSNetAccept(TSCont contp, int port)
+TSNetAccept(TSCont contp, int port, int domain, int accept_threads)
 {
   sdk_assert(sdk_sanity_check_continuation(contp) == TS_SUCCESS);
   sdk_assert(port > 0);
+  sdk_assert(accept_threads >= -1);
 
+  // TODO: Does this imply that only one "accept thread" could be
+  // doing an accept at any time?
   FORCE_PLUGIN_MUTEX(contp);
 
+  if (domain < 0)
+    domain = AF_INET;
+
   INKContInternal *i = (INKContInternal *) contp;
-  return (TSAction)netProcessor.accept(i, port);
+  return (TSAction)netProcessor.accept(i, port, domain, accept_threads);
 }
 
 /* DNS Lookups */

@@ -2349,7 +2349,7 @@ extern "C"
    */
   tsapi TSAction TSNetConnect(TSCont contp, unsigned int ip, int port);
 
-  tsapi TSAction TSNetAccept(TSCont contp, int port);
+  tsapi TSAction TSNetAccept(TSCont contp, int port, int domain, int accept_threads);
 
   /* --------------------------------------------------------------------------
      DNS Lookups */
