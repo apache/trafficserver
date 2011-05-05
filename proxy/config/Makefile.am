@@ -53,5 +53,5 @@ install-exec-hook:
 	for dfltcfgfile in $(dist_sysconf_DATA) $(nodist_sysconf_DATA) ; \
 	do \
 		cfgfile=`echo $$dfltcfgfile | sed 's/\.default$$//'` ; \
-		test -f $(sysconfdir)/$$cfgfile || mv $(sysconfdir)/$$dfltcfgfile $(sysconfdir)/$$cfgfile ; \
+		test -f $(DESTDIR)/$(sysconfdir)/$$cfgfile || mv $(DESTDIR)/$(sysconfdir)/$$dfltcfgfile $(DESTDIR)/$(sysconfdir)/$$cfgfile ; \
 	done
