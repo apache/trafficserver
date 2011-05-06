@@ -1441,6 +1441,7 @@ UrlRewrite::BuildTable()
     if ((bti.remap_optflg & REMAP_OPTFLG_PLUGIN) != 0 && (maptype == FORWARD_MAP || maptype == FORWARD_MAP_REFERER)) {
       if ((check_remap_option(bti.argv, bti.argc, REMAP_OPTFLG_PLUGIN, &tok_count) & REMAP_OPTFLG_PLUGIN) != 0) {
         int plugin_found_at = 0;
+        int jump_to_argc = 0;
 
         // this loads the first plugin
         if (load_remap_plugin(bti.argv, bti.argc, new_mapping, errStrBuf, sizeof(errStrBuf), 0, &plugin_found_at)) {
@@ -1452,7 +1453,8 @@ UrlRewrite::BuildTable()
         }
         //this loads any subsequent plugins (if present)
         while (plugin_found_at) {
-          int ret = load_remap_plugin(bti.argv, bti.argc, new_mapping, errStrBuf, sizeof(errStrBuf), plugin_found_at,
+          jump_to_argc += plugin_found_at;
+          int ret = load_remap_plugin(bti.argv, bti.argc, new_mapping, errStrBuf, sizeof(errStrBuf), jump_to_argc,
                                       &plugin_found_at);
           if (ret) {
             Debug("remap_plugin", "Remap plugin load error - %s", errStrBuf[0] ? errStrBuf : "Unknown error");
