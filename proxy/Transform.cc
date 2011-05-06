@@ -851,7 +851,7 @@ RangeTransform::parse_range_and_compare()
         s = value;
       }
       
-      m_ranges[i]._start = mime_parse_int64(s, e);
+      m_ranges[i]._start = ((s==e)?-1:mime_parse_int64(s, e));
 
       e++;
       s = e;
