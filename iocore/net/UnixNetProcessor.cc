@@ -177,7 +177,7 @@ UnixNetProcessor::accept_internal(Continuation * cont,
         NetAccept *a;
 
         for (int i=1; i < accept_threads; ++i) {
-          a = NEW(new NetAccept);
+          a = createNetAccept();
           *a = *na;
           a->init_accept_loop();
           Debug("iocore_net_accept", "Created accept thread #%d for port %d", i, opt.port);
