@@ -1901,10 +1901,10 @@ main(int argc, char **argv)
 
     if (http_enabled) {
       start_HttpProxyServer(http_accept_file_descriptor, http_accept_port_number, ssl_accept_file_descriptor, num_accept_threads);
-    }
 #ifndef INK_NO_ICP
-    icpProcessor.start();
+      icpProcessor.start();
 #endif
+    }
 
     // "Task" processor, possibly with its own set of task threads
     tasksProcessor.start(num_task_threads);
@@ -1925,8 +1925,8 @@ main(int argc, char **argv)
     updateManager.start();
 
     void *mgmt_restart_shutdown_callback(void *, char *, int data_len);
-    pmgmt->registerMgmtCallback(MGMT_EVENT_SHUTDOWN, mgmt_restart_shutdown_callback, NULL);
 
+    pmgmt->registerMgmtCallback(MGMT_EVENT_SHUTDOWN, mgmt_restart_shutdown_callback, NULL);
     pmgmt->registerMgmtCallback(MGMT_EVENT_RESTART, mgmt_restart_shutdown_callback, NULL);
 
     Note("traffic server running");
