@@ -91,7 +91,6 @@ static int autoconf_port = 8083;
 static int rs_port = 8088;
 static MgmtClusterType cluster_type = NO_CLUSTER;
 static int http_backdoor_port = 8084;
-static char http_backdoor_ip[PATH_MAX];
 
 static int manager_failures = 0;
 static int server_failures = 0;
@@ -528,13 +527,6 @@ build_config_table(FILE * fp)
 #endif
 }
 
-static int
-config_exists(const char *str)
-{
-  InkHashTableValue hval;
-  return ink_hash_table_lookup(configTable, str, &hval);
-}
-
 static void
 read_config_string(const char *str, char *val, size_t val_len)
 {
@@ -676,19 +668,6 @@ read_config()
 
   read_config_int("proxy.local.cluster.type", &tmp_int);
   cluster_type = static_cast<MgmtClusterType>(tmp_int);
-
-  // If TS is going to bind to incoming_ip_to_bind, we need to make
-  // sure we connect to it when heartbeating TS on the http_backdoor
-  // port.  Also, we need to make sure we bind our outgoing TS
-  // heartbeat connection to the same ip.  This binding is necessary
-  // so that when HTTP checks the client_ip of the backdoor
-  // connection, it knows that it's from someone on the local
-  // machine.
-  if (config_exists("proxy.local.incoming_ip_to_bind")) {
-    read_config_string("proxy.local.incoming_ip_to_bind", http_backdoor_ip, sizeof(http_backdoor_ip));
-  } else {
-    ink_strncpy(http_backdoor_ip, "NULL", sizeof(http_backdoor_ip));
-  }
 
   read_config_string("proxy.config.syslog_facility", syslog_fac_str, sizeof(syslog_fac_str));
   process_syslog_config();
@@ -1262,15 +1241,13 @@ static int
 test_server_http_port()
 {
   char request[1024] = {'\0'};
-  char *ip = NULL;
-  char localhost[] = "127.0.0.1";
+  static char localhost[] = "127.0.0.1";
 
   // Generate a request for a the 'synthetic.txt' document the manager
   // servers up on the autoconf port.
   snprintf(request, sizeof(request), "GET http://127.0.0.1:%d/synthetic.txt HTTP/1.0\r\n\r\n", autoconf_port);
 
-  ip = (strcmp(http_backdoor_ip, "NULL") == 0) ? localhost : http_backdoor_ip;
-  return test_http_port(http_backdoor_port, request, server_timeout * 1000, ip, ip);
+  return test_http_port(http_backdoor_port, request, server_timeout * 1000, localhost, localhost);
 }
 
 static int

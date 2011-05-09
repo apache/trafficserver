@@ -40,33 +40,17 @@ HttpAccept::mainEvent(int event, void *data)
     NetVConnection *netvc = (NetVConnection *) data;
     unsigned int client_ip = netvc->get_remote_ip();
 
-    if (backdoor) {
-      unsigned int lip = 0;
-      unsigned char *plip = (unsigned char *) &lip;
-      plip[0] = 127;
-      plip[1] = 0;
-      plip[2] = 0;
-      plip[3] = 1;
-      if (client_ip != this_machine()->ip && client_ip != lip
-          && client_ip != HttpConfig::m_master.incoming_ip_to_bind_saddr) {
-        char ip_string[32];
-        unsigned char *p = (unsigned char *) &(client_ip);
+    // The backdoor port is now only bound to "localhost", so reason to
+    // check for if it's incoming from "localhost" or not.
+    if (!backdoor && ip_allow_table && (!ip_allow_table->match(client_ip))) {
+      char ip_string[32];
+      unsigned char *p = (unsigned char *) &(client_ip);
 
-        snprintf(ip_string, sizeof(ip_string), "%d.%d.%d.%d", p[0], p[1], p[2], p[3]);
-        Warning("connect by disallowed client %s on backdoor, closing", ip_string);
-        netvc->do_io_close();
-        return (VC_EVENT_CONT);
-      }
-    } else {
-      if (ip_allow_table && (!ip_allow_table->match(client_ip))) {
-        char ip_string[32];
-        unsigned char *p = (unsigned char *) &(client_ip);
+      snprintf(ip_string, sizeof(ip_string), "%d.%d.%d.%d", p[0], p[1], p[2], p[3]);
+      Warning("connect by disallowed client %s, closing", ip_string);
+      netvc->do_io_close();
 
-        snprintf(ip_string, sizeof(ip_string), "%d.%d.%d.%d", p[0], p[1], p[2], p[3]);
-        Warning("connect by disallowed client %s, closing", ip_string);
-        netvc->do_io_close();
-        return (VC_EVENT_CONT);
-      }
+      return VC_EVENT_CONT;
     }
 
     netvc->attributes = attr;
@@ -75,26 +59,27 @@ HttpAccept::mainEvent(int event, void *data)
     HttpClientSession *new_session = THREAD_ALLOC_INIT(httpClientSessionAllocator, netvc->thread);
 
     new_session->new_connection(netvc, backdoor);
-    return (EVENT_CONT);
-  } else {
-    /////////////////
-    // EVENT_ERROR //
-    /////////////////
-    if (((long) data) == -ECONNABORTED) {
-      /////////////////////////////////////////////////
-      // Under Solaris, when accept() fails and sets //
-      // errno to EPROTO, it means the client has    //
-      // sent a TCP reset before the connection has  //
-      // been accepted by the server...  Note that   //
-      // in 2.5.1 with the Internet Server Supplement//
-      // and also in 2.6 the errno for this case has //
-      // changed from EPROTO to ECONNABORTED.        //
-      /////////////////////////////////////////////////
-
-      // FIX: add time to user_agent_hangup
-      HTTP_SUM_DYN_STAT(http_ua_msecs_counts_errors_pre_accept_hangups_stat, 0);
-    }
-    MachineFatal("HTTP accept received fatal error: errno = %d", -((int)(intptr_t)data));
-    return (EVENT_CONT);
+    return EVENT_CONT;
   }
+
+  /////////////////
+  // EVENT_ERROR //
+  /////////////////
+  if (((long) data) == -ECONNABORTED) {
+    /////////////////////////////////////////////////
+    // Under Solaris, when accept() fails and sets //
+    // errno to EPROTO, it means the client has    //
+    // sent a TCP reset before the connection has  //
+    // been accepted by the server...  Note that   //
+    // in 2.5.1 with the Internet Server Supplement//
+    // and also in 2.6 the errno for this case has //
+    // changed from EPROTO to ECONNABORTED.        //
+    /////////////////////////////////////////////////
+
+    // FIX: add time to user_agent_hangup
+    HTTP_SUM_DYN_STAT(http_ua_msecs_counts_errors_pre_accept_hangups_stat, 0);
+  }
+
+  MachineFatal("HTTP accept received fatal error: errno = %d", -((int)(intptr_t)data));
+  return EVENT_CONT;
 }

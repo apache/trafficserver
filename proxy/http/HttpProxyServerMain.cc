@@ -305,7 +305,7 @@ start_HttpProxyServer(int fd, int port, int ssl_fd, int accept_threads)
       for (int i = 0; http_port_attr_array[i].fd != NO_FD; i++) {
         HttpPortEntry & e = http_port_attr_array[i];
         if (e.fd)
-          netProcessor.main_accept(NEW(new HttpAccept(e.type)), e.fd, NULL, NULL, false, opt);
+          netProcessor.main_accept(NEW(new HttpAccept(e.type)), e.fd, NULL, NULL, false, false, opt);
       }
     } else {
       // If traffic_server wasn't started with -A, get the list
@@ -314,7 +314,7 @@ start_HttpProxyServer(int fd, int port, int ssl_fd, int accept_threads)
     }
   }
   if (!http_port_attr_array) {
-    netProcessor.main_accept(NEW(new HttpAccept(type)), fd,  NULL, NULL, false, opt);
+    netProcessor.main_accept(NEW(new HttpAccept(type)), fd,  NULL, NULL, false, false, opt);
 
     if (http_other_port_array) {
       for (int i = 0; http_other_port_array[i].port != -1; i++) {
@@ -325,7 +325,7 @@ start_HttpProxyServer(int fd, int port, int ssl_fd, int accept_threads)
           opt.port = e.port;
           opt.domain = e.domain;
           opt.f_outbound_transparent = e.f_outbound_transparent;
-          netProcessor.main_accept(NEW(new HttpAccept(e.type)), fd, NULL, NULL, false, opt);
+          netProcessor.main_accept(NEW(new HttpAccept(e.type)), fd, NULL, NULL, false, false, opt);
         }
       }
     }
@@ -333,7 +333,7 @@ start_HttpProxyServer(int fd, int port, int ssl_fd, int accept_threads)
     for (int i = 0; http_port_attr_array[i].fd != NO_FD; i++) {
       HttpPortEntry & e = http_port_attr_array[i];
       if (!e.fd) {
-        netProcessor.main_accept(NEW(new HttpAccept(type)), fd, NULL, NULL, false, opt);
+        netProcessor.main_accept(NEW(new HttpAccept(type)), fd, NULL, NULL, false, false, opt);
       }
     }
   }
@@ -344,7 +344,7 @@ start_HttpProxyServer(int fd, int port, int ssl_fd, int accept_threads)
     opt.reset();
     opt.port = sslParam->getAcceptPort();
     opt.accept_threads = accept_threads;
-    sslNetProcessor.main_accept(NEW(new HttpAccept(SERVER_PORT_SSL)), ssl_fd, 0, 0, false, opt);
+    sslNetProcessor.main_accept(NEW(new HttpAccept(SERVER_PORT_SSL)), ssl_fd, 0, 0, false, false, opt);
   }
 
   sslTerminationConfig.release(sslParam);
@@ -368,5 +368,6 @@ start_HttpProxyServerBackDoor(int port, int accept_threads)
 
   opt.port = port;
   opt.accept_threads = accept_threads;
-  netProcessor.main_accept(NEW(new HttpAccept(SERVER_PORT_DEFAULT, true)), NO_FD, 0, 0, false, opt);
+  // The backdoor only binds the loopback interface
+  netProcessor.main_accept(NEW(new HttpAccept(SERVER_PORT_DEFAULT, true)), NO_FD, 0, 0, false, true, opt);
 }

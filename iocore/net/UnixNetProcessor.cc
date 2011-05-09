@@ -106,23 +106,33 @@ NetProcessor::accept(Continuation * cont,
 }
 
 Action *
-NetProcessor::main_accept(Continuation * cont, SOCKET fd,
-                          sockaddr * bound_sockaddr, int *bound_sockaddr_size,
-                          bool accept_only,
-                          AcceptOptions const& opt
-                          )
+NetProcessor::main_accept(Continuation * cont, SOCKET fd, sockaddr * bound_sockaddr, int *bound_sockaddr_size,
+                          bool accept_only, bool localhost_only, AcceptOptions const& opt)
 {
   (void) accept_only;           // NT only
   Debug("iocore_net_processor", "NetProcessor::main_accept - port %d,recv_bufsize %d, send_bufsize %d, sockopt 0x%0lX",
         opt.port, opt.recv_bufsize, opt.send_bufsize, opt.sockopt_flags);
-  return ((UnixNetProcessor *) this)->accept_internal(cont, fd,
-                                                      bound_sockaddr,
-                                                      bound_sockaddr_size,
-                                                      true,
-                                                      net_accept,
-                                                      ((UnixNetProcessor *) this)->incoming_ip_to_bind_saddr,
-                                                      ((UnixNetProcessor *) this)->incoming_ip_to_bind,
-                                                      opt);
+  if (localhost_only) {
+    static char localhost[] = "127.0.0.1";
+
+    return ((UnixNetProcessor *) this)->accept_internal(cont, fd,
+                                                        bound_sockaddr,
+                                                        bound_sockaddr_size,
+                                                        true,
+                                                        net_accept,
+                                                        inet_addr(localhost),
+                                                        localhost,
+                                                        opt);
+  } else {
+    return ((UnixNetProcessor *) this)->accept_internal(cont, fd,
+                                                        bound_sockaddr,
+                                                        bound_sockaddr_size,
+                                                        true,
+                                                        net_accept,
+                                                        ((UnixNetProcessor *) this)->incoming_ip_to_bind_saddr,
+                                                        ((UnixNetProcessor *) this)->incoming_ip_to_bind,
+                                                        opt);
+  }
 }
 
 

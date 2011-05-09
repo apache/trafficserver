@@ -110,7 +110,7 @@ ClusterAccept::ClusterAcceptEvent(int event, void *data)
 	opt.domain = AF_INET;
         accept_action = netProcessor.main_accept(this, NO_FD,
                                                  NULL, NULL,
-                                                 false, opt);
+                                                 false, false, opt);
         if (!accept_action) {
           Warning("Unable to accept cluster connections on port: %d", cluster_port);
         } else {

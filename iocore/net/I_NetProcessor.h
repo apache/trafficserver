@@ -183,7 +183,7 @@ public:
 
   */
   virtual Action *main_accept(Continuation * cont, SOCKET listen_socket_in, sockaddr * bound_sockaddr = NULL,
-                              int *bound_sockaddr_size = NULL, bool accept_only = false,
+                              int *bound_sockaddr_size = NULL, bool accept_only = false, bool localhost_only = false,
                               AcceptOptions const& opt = DEFAULT_ACCEPT_OPTIONS);
 
   /**
