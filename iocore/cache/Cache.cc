@@ -185,16 +185,6 @@ cache_bytes_used(int volume)
   return used;
 }
 
-int64_t
-cache_bytes_total(void)
-{
-  int64_t total = 0;
-  for (int i = 0; i < gnvol; i++)
-    total += gvol[i]->len - vol_dirlen(gvol[i]) - EVACUATION_SIZE;
-
-  return total;
-}
-
 int
 cache_stats_bytes_used_cb(const char *name, RecDataT data_type, RecData *data, RecRawStatBlock *rsb, int id)
 {
