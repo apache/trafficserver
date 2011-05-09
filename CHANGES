@@ -1,6 +1,18 @@
                                                          -*- coding: utf-8 -*-
 
 Changes with Apache Traffic Server 2.1.9
+  *) [TS-765] Make the backdoor port (8084 by default) only listen
+   on 127.0.0.1
+
+  *) [TS-762] Range values like -10 are processed. Author: William
+   Bardwell.
+
+  *) [TS-761] Fixed bug where 3 (or more) remap plugins in a chain
+   couldn't be loaded.
+
+  *) [TS-763] When creating multiple SSL accept threads, we use the
+   wrong instantiator.
+
   *) [TS-757] Change TSNetAccept() API to take an option for enabling
     (and number of) accept threads.
 
