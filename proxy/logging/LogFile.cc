@@ -45,7 +45,6 @@
 #include "LogFilter.h"
 #include "LogFormat.h"
 #include "LogBuffer.h"
-#include "LogBufferV1.h"
 #include "LogFile.h"
 #include "LogHost.h"
 #include "LogObject.h"
@@ -582,7 +581,6 @@ LogFile::write_ascii_logbuffer(LogBufferHeader * buffer_header, int fd, const ch
   int fmt_line_bytes = 0;
   int bytes = 0;
 
-  LogBufferHeaderV1 *v1_buffer_header;
   LogFormatType format_type;
   char *fieldlist_str;
   char *printf_str;
@@ -593,13 +591,6 @@ LogFile::write_ascii_logbuffer(LogBufferHeader * buffer_header, int fd, const ch
 
     fieldlist_str = buffer_header->fmt_fieldlist();
     printf_str = buffer_header->fmt_printf();
-    break;
-
-  case 1:
-    v1_buffer_header = (LogBufferHeaderV1 *) buffer_header;
-    format_type = (LogFormatType) v1_buffer_header->format_type;
-    fieldlist_str = v1_buffer_header->symbol_str;
-    printf_str = v1_buffer_header->printf_str;
     break;
 
   default:
@@ -652,7 +643,6 @@ LogFile::write_ascii_logbuffer3(LogBufferHeader * buffer_header, char *alt_forma
   int fmt_buf_bytes = 0;
   int total_bytes = 0;
 
-  LogBufferHeaderV1 *v1_buffer_header;
   LogFormatType format_type;
   char *fieldlist_str;
   char *printf_str;
@@ -662,13 +652,6 @@ LogFile::write_ascii_logbuffer3(LogBufferHeader * buffer_header, char *alt_forma
     format_type = (LogFormatType) buffer_header->format_type;
     fieldlist_str = buffer_header->fmt_fieldlist();
     printf_str = buffer_header->fmt_printf();
-    break;
-
-  case 1:
-    v1_buffer_header = (LogBufferHeaderV1 *) buffer_header;
-    format_type = (LogFormatType) v1_buffer_header->format_type;
-    fieldlist_str = v1_buffer_header->symbol_str;
-    printf_str = v1_buffer_header->printf_str;
     break;
 
   default:
