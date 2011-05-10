@@ -1155,6 +1155,8 @@ HttpConfig::startup()
   HttpEstablishStaticConfigByte(c.disable_ssl_parenting, "proxy.local.http.parent_proxy.disable_connect_tunneling");
   HttpEstablishStaticConfigByte(c.no_dns_forward_to_parent, "proxy.config.http.no_dns_just_forward_to_parent");
   HttpEstablishStaticConfigByte(c.uncacheable_requests_bypass_parent, "proxy.config.http.uncacheable_requests_bypass_parent");
+  HttpEstablishStaticConfigByte(c.doc_in_cache_skip_dns, "proxy.config.http.doc_in_cache_skip_dns");
+
   HttpEstablishStaticConfigByte(c.no_origin_server_dns, "proxy.config.http.no_origin_server_dns");
   HttpEstablishStaticConfigByte(c.use_client_target_addr, "proxy.config.http.use_client_target_addr");
   HttpEstablishStaticConfigByte(c.oride.maintain_pristine_host_hdr, "proxy.config.url_remap.pristine_host_hdr");
