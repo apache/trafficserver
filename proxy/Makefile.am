@@ -128,7 +128,7 @@ if BUILD_TESTS
     TestHook.cc
 endif
 
-traffic_server_LDFLAGS = @EXTRA_CXX_LDFLAGS@
+traffic_server_LDFLAGS = @EXTRA_CXX_LDFLAGS@ @LIBTOOL_LINK_FLAGS@
 traffic_server_LDADD = \
   http/libhttp.a \
   http/remap/libhttp_remap.a \
@@ -159,7 +159,7 @@ traffic_server_LDADD = \
   @LIBMLD@ @LIBEXC@ -lm @LIBEV@ @LIBPROFILER@ @LIBEXECINFO@
 
 traffic_logcat_SOURCES = logcat.cc
-traffic_logcat_LDFLAGS = @EXTRA_CXX_LDFLAGS@
+traffic_logcat_LDFLAGS = @EXTRA_CXX_LDFLAGS@ @LIBTOOL_LINK_FLAGS@
 traffic_logcat_LDADD = \
   signals.o \
   InkXml.o \
@@ -182,7 +182,7 @@ if BUILD_TESTS
 endif
 
 traffic_logstats_SOURCES = logstats.cc
-traffic_logstats_LDFLAGS = @EXTRA_CXX_LDFLAGS@
+traffic_logstats_LDFLAGS = @EXTRA_CXX_LDFLAGS@ @LIBTOOL_LINK_FLAGS@
 traffic_logstats_LDADD = \
   signals.o \
   InkXml.o \
@@ -200,7 +200,7 @@ traffic_logstats_LDADD = \
   @LIBEXECINFO@
 
 traffic_sac_SOURCES = sac.cc
-traffic_sac_LDFLAGS = @EXTRA_CXX_LDFLAGS@
+traffic_sac_LDFLAGS = @EXTRA_CXX_LDFLAGS@ @LIBTOOL_LINK_FLAGS@
 traffic_sac_LDADD = \
   ICP.o \
   ICPConfig.o \

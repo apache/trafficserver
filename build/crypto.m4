@@ -90,11 +90,7 @@ if test "$enable_openssl" != "no"; then
   if test "$openssl_base_dir" != "/usr"; then
     TS_ADDTO(CPPFLAGS, [-I${openssl_include}])
     TS_ADDTO(LDFLAGS, [-L${openssl_ldflags}])
-    case $host_os in
-      solaris*)
-        TS_ADDTO(LDFLAGS, [-R${openssl_ldflags}])
-        ;;
-    esac
+    TS_ADDTO(LIBTOOL_LINK_FLAGS, [-rpath ${openssl_ldflags}])
   fi
   AC_CHECK_LIB(crypto, BN_init, AC_CHECK_LIB(ssl, SSL_accept, [openssl_have_libs=1],,-lcrypto))
   if test "$openssl_have_libs" != "0"; then

@@ -26,7 +26,7 @@ proc_manager_SOURCES = proc_manager.cc \
 		       sio_raf_server.cc \
 		       test_utils.cc
 
-proc_manager_LDFLAGS = @EXTRA_CXX_LDFLAGS@
+proc_manager_LDFLAGS = @EXTRA_CXX_LDFLAGS@ @LIBTOOL_LINK_FLAGS@
 proc_manager_LDADD = $(top_builddir)/lib/ts/libtsutil.la \
 		     @LIBSOCKET@ @LIBNSL@ \
 		     @LIBRESOLV@ @LIBRT@ @LIBTHREAD@ -lm @LIBDL@
@@ -40,7 +40,7 @@ test_log_collate_SOURCES = test_log_collate.cc \
 			   sio_raf_server.cc \
 		           test_utils.cc
 
-test_log_collate_LDFLAGS = @EXTRA_CXX_LDFLAGS@
+test_log_collate_LDFLAGS = @EXTRA_CXX_LDFLAGS@ @LIBTOOL_LINK_FLAGS@
 test_log_collate_LDADD = $(top_builddir)/lib/ts/libtsutil.la \
 		     	 @LIBSOCKET@ @LIBNSL@ \
 		     	 @LIBRESOLV@ @LIBRT@ @LIBTHREAD@ -lm @LIBDL@
@@ -56,7 +56,7 @@ test_exec_SOURCES = test_exec.cc \
 		    test_results.cc \
 	            test_utils.cc
 
-test_exec_LDFLAGS = @EXTRA_CXX_LDFLAGS@
+test_exec_LDFLAGS = @EXTRA_CXX_LDFLAGS@ @LIBTOOL_LINK_FLAGS@
 test_exec_LDADD = $(top_builddir)/lib/ts/libtsutil.a \
 		     -L/usr/local/lib  \
 		     $(top_builddir)/f_pkg/misc/perl5.6.1/lib/DynaLoader.a \

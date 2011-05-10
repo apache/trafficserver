@@ -70,7 +70,7 @@ libtrafficshell_a_SOURCES = \
   UtilCmds.cc \
   UtilCmds.h
 
-traffic_shell_LDFLAGS =	$(EXTRA_CXX_LDFLAGS)
+traffic_shell_LDFLAGS =	$(EXTRA_CXX_LDFLAGS) @LIBTOOL_LINK_FLAGS@
 traffic_shell_LDADD = \
   libtrafficshell.a \
   $(top_builddir)/mgmt/api/remote/libtsmgmt.la \
@@ -81,7 +81,7 @@ traffic_shell_LDADD = \
   @LIBTHREAD@ @LIBSOCKET@ @LIBNSL@ @LIBRESOLV@ \
   @LIBRT@ @LIBEXECINFO@ @LIBPCRE@
 
-traffic_line_LDFLAGS = @EXTRA_CXX_LDFLAGS@
+traffic_line_LDFLAGS = @EXTRA_CXX_LDFLAGS@ @LIBTOOL_LINK_FLAGS@
 traffic_line_LDADD = \
   $(top_builddir)/mgmt/api/remote/libtsmgmt.la \
   $(top_builddir)/lib/ts/libtsutil.la \

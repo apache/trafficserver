@@ -84,7 +84,7 @@ traffic_manager_SOURCES = \
   Rollback.cc \
   Rollback.h
 
-traffic_manager_LDFLAGS = @EXTRA_CXX_LDFLAGS@ @EXPAT_LDFLAGS@
+traffic_manager_LDFLAGS = @EXTRA_CXX_LDFLAGS@ @EXPAT_LDFLAGS@ @LIBTOOL_LINK_FLAGS@
 traffic_manager_LDADD = \
   cluster/libcluster.a \
   stats/libstats.a \

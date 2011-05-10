@@ -27,7 +27,7 @@ bin_PROGRAMS = tsapp
 
 tsapp_SOURCES = app-template.cc
 
-tsapp_LDFLAGS = @EXTRA_CXX_LDFLAGS@
+tsapp_LDFLAGS = @EXTRA_CXX_LDFLAGS@ @LIBTOOL_LINK_FLAGS@
 tsapp_LDADD =  \
 	$(top_builddir)/proxy/libTrafficServerStandalone.a \
 	$(top_builddir)/proxy/hdrs/libhdrs.a \
