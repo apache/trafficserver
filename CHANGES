@@ -1,6 +1,14 @@
                                                          -*- coding: utf-8 -*-
 
 Changes with Apache Traffic Server 2.1.9
+  *) [TS-738] 'make check` fails on x86.
+
+  *) [TS-771] Remove remaining v1 log buffer code.
+
+  *) [TS-562] Make --with-openssl path be honored with an -rpath to
+   libtool. This also fixes the same problem with other libraries,
+   e.g. pcre, zlib etc.
+
   *) [TS-765] Make the backdoor port (8084 by default) only listen
    on 127.0.0.1
 
