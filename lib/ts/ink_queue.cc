@@ -612,7 +612,7 @@ ink_atomiclist_push(InkAtomicList * l, void *item)
   head_p head;
   head_p item_pair;
   int result = 0;
-  void *h = NULL;
+  volatile void *h = NULL;
   ink_assert(*adr_of_next == NULL);
   do {
     INK_QUEUE_LD64(head, l->head);

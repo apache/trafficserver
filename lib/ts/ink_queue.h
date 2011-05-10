@@ -77,11 +77,11 @@ extern "C"
 #if (defined(__i386__) || defined(__arm__)) && (SIZEOF_VOIDP == 4)
     struct
     {
-      void *pointer;
-      int32_t version;
+      volatile void *pointer;
+      volatile int32_t version;
     } s;
 #endif
-    int64_t data;
+    volatile int64_t data;
   } head_p;
 
 /*
