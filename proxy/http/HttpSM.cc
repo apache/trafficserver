@@ -425,7 +425,7 @@ HttpSM::init()
   t_state.init();
   // Added to skip dns if the document is in cache. DNS will be forced if there is a ip based based ACL in cache control or parent.config or if the doc_in_cache_skip_dns is disabled or if http caching is disabled
   t_state.force_dns = (ip_rule_in_CacheControlTable() || t_state.parent_params->ParentTable->ipMatch ||
-                       !(t_state.http_config_param->doc_in_cache_skip_dns) || !(t_state.txn_conf->cache_http));
+                       !(t_state.txn_conf->doc_in_cache_skip_dns) || !(t_state.txn_conf->cache_http));
 
   http_parser_init(&http_parser);
 

@@ -429,6 +429,7 @@ struct OverridableHttpConfigParams {
        down_server_timeout(0), client_abort_threshold(0),
        freshness_fuzz_time(0), freshness_fuzz_min_time(0),
        max_cache_open_read_retries(0), cache_open_read_retry_time(0),
+       doc_in_cache_skip_dns(1),
 
        // Strings / floats must come last
        proxy_response_server_string(NULL), proxy_response_server_string_len(0),
@@ -540,6 +541,11 @@ struct OverridableHttpConfigParams {
   // open read failure retries.
   MgmtInt max_cache_open_read_retries;
   MgmtInt cache_open_read_retry_time;   // time is in mseconds
+
+  //////////////////////
+  //  DOC IN CACHE NO DNS//
+  //////////////////////
+  MgmtByte doc_in_cache_skip_dns;
 
   // IMPORTANT: Here comes all strings / floats configs.
 
@@ -761,11 +767,6 @@ public:
   MgmtByte errors_log_error_pages;
   MgmtInt slow_log_threshold;
 
-  //////////////////////
-  //  DOC IN CACHE NO DNS//
-  //////////////////////
-  MgmtByte doc_in_cache_skip_dns;
-
   MgmtInt default_buffer_size_index;
   MgmtInt default_buffer_water_mark;
   MgmtByte enable_http_info;
@@ -970,7 +971,6 @@ HttpConfigParams::HttpConfigParams()
     record_cop_page(0),
     record_tcp_mem_hit(0),
     errors_log_error_pages(0),
-    doc_in_cache_skip_dns(1),       // Added for SKIPPING DNS If DOC IN CACHE
     default_buffer_size_index(0),
     default_buffer_water_mark(0),
     enable_http_info(0),
