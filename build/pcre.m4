@@ -83,11 +83,7 @@ if test "$enable_pcre" != "no"; then
   if test "$pcre_base_dir" != "/usr"; then
     TS_ADDTO(CPPFLAGS, [-I${pcre_include}])
     TS_ADDTO(LDFLAGS, [-L${pcre_ldflags}])
-    case $host_os in
-      solaris*)
-        TS_ADDTO(LDFLAGS, [-R${pcre_ldflags}])
-        ;;
-    esac
+    TS_ADDTO(LIBTOOL_LINK_FLAGS, [-rpath ${pcre_ldflags}])
   fi
   AC_CHECK_LIB(pcre, pcre_exec, [pcre_have_libs=1])
   if test "$pcre_have_libs" != "0"; then

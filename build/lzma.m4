@@ -82,11 +82,7 @@ if test "$enable_lzma" != "no"; then
   if test "$lzma_base_dir" != "/usr"; then
     TS_ADDTO(CPPFLAGS, [-I${lzma_include}])
     TS_ADDTO(LDFLAGS, [-L${lzma_ldflags}])
-    case $host_os in
-      solaris*)
-        TS_ADDTO(LDFLAGS, [-R${lzma_ldflags}])
-        ;;
-    esac
+    TS_ADDTO(LIBTOOL_LINK_FLAGS, [-rpath ${zma_ldflags}])
   fi
   AC_CHECK_LIB(lzma, lzma_code, [lzma_have_libs=1])
   if test "$lzma_have_libs" != "0"; then

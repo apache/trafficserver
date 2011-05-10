@@ -82,11 +82,7 @@ if test "$enable_zlib" != "no"; then
   if test "$zlib_base_dir" != "/usr"; then
     TS_ADDTO(CPPFLAGS, [-I${zlib_include}])
     TS_ADDTO(LDFLAGS, [-L${zlib_ldflags}])
-    case $host_os in
-      solaris*)
-        TS_ADDTO(LDFLAGS, [-R${zlib_ldflags}])
-        ;;
-    esac
+    TS_ADDTO(LIBTOOL_LINK_FLAGS, [-rpath ${zlib_ldflags}])
   fi
   AC_CHECK_LIB(z, compressBound, [zlib_have_libs=1])
   if test "$zlib_have_libs" != "0"; then
