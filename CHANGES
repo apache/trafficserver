@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 
 Changes with Apache Traffic Server 2.1.9
+  *) [TS-772] Make proxy.config.http.doc_in_cache_skip_dns overridable.
+
   *) [TS-770] proxy.config.http.doc_in_cache_skip_dns is not being read
    from records.config. Author: Yakov Markovitch
 
