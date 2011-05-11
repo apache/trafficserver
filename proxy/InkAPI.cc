@@ -7310,6 +7310,9 @@ _conf_to_memberp(TSOverridableConfigKey conf, HttpSM* sm, OverridableDataType *t
   case TS_CONFIG_HTTP_CACHE_FUZZ_MIN_TIME:
     ret = &sm->t_state.txn_conf->freshness_fuzz_min_time;
     break;
+  case TS_CONFIG_HTTP_DOC_IN_CACHE_SKIP_DNS:
+    ret = &sm->t_state.txn_conf->doc_in_cache_skip_dns;
+    break;
 
   case TS_CONFIG_HTTP_CACHE_HEURISTIC_LM_FACTOR:
     typ = OVERRIDABLE_TYPE_FLOAT;
@@ -7539,6 +7542,8 @@ TSHttpTxnConfigFind(const char* name, int length, TSOverridableConfigKey *conf, 
       cnf = TS_CONFIG_HTTP_ANONYMIZE_REMOVE_FROM;
     else if (!strncmp(name, "proxy.config.http.keep_alive_enabled_in", length))
       cnf = TS_CONFIG_HTTP_KEEP_ALIVE_ENABLED_IN;
+    else if (!strncmp(name, "proxy.config.http.doc_in_cache_skip_dns", length))
+      cnf = TS_CONFIG_HTTP_DOC_IN_CACHE_SKIP_DNS;
     break;
 
   case 40:

@@ -7535,6 +7535,7 @@ const char *SDK_Overridable_Configs[] = {
   "proxy.config.http.down_server.abort_threshold",
   "proxy.config.http.cache.fuzz.time",
   "proxy.config.http.cache.fuzz.min_time",
+  "proxy.config.http.doc_in_cache_skip_dns",
 
   // These are "special", since they are not MgmtInt's
   "proxy.config.http.response_server_str",
