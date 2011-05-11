@@ -948,7 +948,7 @@ struct Cache
 {
   volatile int cache_read_done;
   volatile int total_good_nvol;
-  int total_nvol;
+  volatile int total_nvol;
   volatile int ready;
   int64_t cache_size;             //in store block size
   CacheHostTable *hosttable;

@@ -140,7 +140,7 @@ CacheDisk::openStart(int event, void *data)
     return openDone(EVENT_IMMEDIATE, 0);
   }
 
-  if (header->magic != DISK_HEADER_MAGIC || header->num_blocks != len) {
+  if (header->magic != DISK_HEADER_MAGIC || header->num_blocks != (uint64_t)len) {
     Warning("disk header different for disk %s: clearing the disk", path);
     SET_HANDLER(&CacheDisk::clearDone);
     clearDisk();
