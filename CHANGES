@@ -1,6 +1,10 @@
                                                          -*- coding: utf-8 -*-
 
 Changes with Apache Traffic Server 2.1.9
+  *) [TS-773] Traffic server has a hard limit of 512 gigabytes per RAW
+  disk partition. This fix required changing the disk structure which
+  will result in a total disk cache clear (wipe) after upgrading.
+
   *) [TS-772] Make proxy.config.http.doc_in_cache_skip_dns overridable.
 
   *) [TS-770] proxy.config.http.doc_in_cache_skip_dns is not being read
