@@ -54,6 +54,13 @@ EXTRA_PROGRAMS = \
 EXTRA_LIBRARIES	= \
   libTrafficServerStandalone.a
 
+if STATIC_LIBTS
+   which_libts = $(top_builddir)/lib/ts/.libs/libtsutil.a
+else
+   which_libts = $(top_builddir)/lib/ts/libtsutil.la
+endif
+
+
 EXTRA_DIST = InkAPITestTool.cc example_alarm_bin.sh example_prep.sh
 
 traffic_server_SOURCES = \
@@ -152,7 +159,7 @@ traffic_server_LDADD = \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
   $(top_builddir)/lib/records/librecprocess.a \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
-  $(top_builddir)/lib/ts/libtsutil.la \
+  $(which_libts) \
   @LIBTHREAD@ @LIBSOCKET@ @LIBNSL@ @LIBRESOLV@ @LIBRT@ \
   @LIBPCRE@ @LIBSSL@ @LIBTCL@ @LIBDL@ \
   @LIBEXPAT@ @LIBDEMANGLE@ @LIBICONV@ @LIBCAP@ \

@@ -1,6 +1,10 @@
                                                          -*- coding: utf-8 -*-
 
 Changes with Apache Traffic Server 2.1.9
+  *) [TS-774] Add a new configure option, --enable-static-libts,
+   which avoids the dynamic linking hassles involved with the
+   dynamic nature of libts. This is for devs only.
+
   *) [TS-773] Traffic server has a hard limit of 512 gigabytes per RAW
   disk partition. This fix required changing the disk structure which
   will result in a total disk cache clear (wipe) after upgrading.

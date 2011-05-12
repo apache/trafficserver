@@ -258,6 +258,19 @@ AS_IF([test 0 -ne $has_standalone_iocore],
 AM_CONDITIONAL([STANDALONE_IOCORE], [test 0 -ne $has_standalone_iocore])
 
 #
+# Force some static linkage (for testing / development only)
+#
+AC_MSG_CHECKING([whether to build some static libts (dev only)])
+AC_ARG_ENABLE([static-libts],
+  [AS_HELP_STRING([--enable-static-libts],[build some static libts (dev only)])],
+  [],
+  [enable_static_libts=no]
+)
+AC_MSG_RESULT([$enable_static_libts])
+TS_ARG_ENABLE_VAR([has],[static-libts])
+AM_CONDITIONAL([STATIC_LIBTS], [test 0 -ne $has_static_libts])
+
+#
 # Remote Coverity Prevent commit
 #
 AC_MSG_CHECKING([whether to commit cov defects to remote host])
