@@ -64,8 +64,6 @@ _strlen(const char *src)
   return (int) (src - old_src);
 }
 
-void *ink_memchr(const void *as, int ac, size_t an);
-
 /***********************************************************************
  *                                                                     *
  *                     Str (string/length list cell)                   *

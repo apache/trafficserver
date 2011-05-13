@@ -206,6 +206,7 @@ IOBufferReader::read(void *ab, int64_t len)
   return bytes;
 }
 
+// TODO: I don't think this method is used anywhere, so perhaps get rid of it ?
 int64_t
 IOBufferReader::memchr(char c, int64_t len, int64_t offset)
 {
@@ -227,7 +228,7 @@ IOBufferReader::memchr(char c, int64_t len, int64_t offset)
     else
       bytes = len;
     char *s = b->start() + offset;
-    char *p = (char *) ink_memchr(s, c, bytes);
+    char *p = (char *) ::memchr(s, c, bytes);
     if (p)
       return (int64_t) (o - start_offset + p - s);
     o += bytes;

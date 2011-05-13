@@ -107,6 +107,10 @@ RemapProcessor::setup_for_remap(HttpTransact::State *s)
       // we need to copy it. Perhaps it's because it's simpler to just
       // do the remap on the URL and then fix the field at the end.
       request_header->set_url_target_from_host_field();
+
+      // TODO: This is pretty slow, and only used for logging. Can we by chance avoid
+      // doing this is nothing is known to need it ? Perhaps the log library could
+      // have a table with status of what resources is necessary.
       *orig_url = request_url->string_get_ref(NULL);
     }
   }

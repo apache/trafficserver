@@ -1469,14 +1469,11 @@ is_response_body_precluded(HTTPStatus status_code, int method)
   }
 }
 
-inkcoreapi extern
-  ink_time_t
-ink_cluster_time(void);
+inkcoreapi extern ink_time_t ink_cluster_time(void);
 
 inline void
 HttpTransact::update_stat(State* s, int stat, ink_statval_t increment)
 {
-
   if (s->current_stats->next_insert >= StatBlockEntries) {
     // This a rare operation and we want to avoid the
     //   code bloat of inlining it everywhere so

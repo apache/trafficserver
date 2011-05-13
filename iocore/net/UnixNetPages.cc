@@ -225,7 +225,7 @@ register_ShowNet(Continuation * c, HTTPHdr * h)
     s->sarg = xstrndup(query, query_len);
     char *gn = NULL;
     if (s->sarg)
-      gn = (char *) ink_memchr(s->sarg, '=', strlen(s->sarg));
+      gn = (char *)memchr(s->sarg, '=', strlen(s->sarg));
     if (gn)
       s->ip = ink_inet_addr(gn + 1);
     SET_CONTINUATION_HANDLER(s, &ShowNet::showConnections);
@@ -235,7 +235,7 @@ register_ShowNet(Continuation * c, HTTPHdr * h)
     s->sarg = xstrndup(query, query_len);
     char *gn = NULL;
     if (s->sarg)
-      gn = (char *) ink_memchr(s->sarg, '=', strlen(s->sarg));
+      gn = (char *)memchr(s->sarg, '=', strlen(s->sarg));
     if (gn)
       s->port = atoi(gn + 1);
     SET_CONTINUATION_HANDLER(s, &ShowNet::showConnections);

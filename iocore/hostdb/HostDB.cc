@@ -197,10 +197,10 @@ struct HostDBTestRR: public Continuation
     while (outstanding < 40) {
       if (!nb)
         goto Lreturn;
-      char *end = (char *) ink_memchr(b, '\n', nb);
+      char *end = (char *)memchr(b, '\n', nb);
       if (!end)
         read_some();
-      end = (char *) ink_memchr(b, '\n', nb);
+      end = (char *)memchr(b, '\n', nb);
       if (!end)
         nb = 0;
       else {
@@ -2199,7 +2199,7 @@ register_ShowHostDB(Continuation * c, HTTPHdr * h)
     s->sarg = xstrndup(query, query_len);
     char *gn = NULL;
     if (s->sarg)
-      gn = (char *) ink_memchr(s->sarg, '=', strlen(s->sarg));
+      gn = (char *)memchr(s->sarg, '=', strlen(s->sarg));
     if (gn)
       s->ip = ink_inet_addr(gn + 1);
     SET_CONTINUATION_HANDLER(s, &ShowHostDB::showLookup);
@@ -2210,7 +2210,7 @@ register_ShowHostDB(Continuation * c, HTTPHdr * h)
     s->sarg = xstrndup(query, query_len);
     char *gn = NULL;
     if (s->sarg)
-      gn = (char *) ink_memchr(s->sarg, '=', strlen(s->sarg));
+      gn = (char *)memchr(s->sarg, '=', strlen(s->sarg));
     if (gn)
       s->name = gn + 1;
     SET_CONTINUATION_HANDLER(s, &ShowHostDB::showLookup);
