@@ -106,11 +106,13 @@ CONFIG proxy.config.http.server_other_ports STRING NULL
 CONFIG proxy.config.http.connect_ports STRING 443 563
 CONFIG proxy.config.http.insert_request_via_str INT 1
 CONFIG proxy.config.http.insert_response_via_str INT 0
+CONFIG proxy.config.http.verbose_via_str INT 2
 CONFIG proxy.config.http.response_server_enabled INT 1
 CONFIG proxy.config.http.enable_url_expandomatic INT 0
 CONFIG proxy.config.http.no_dns_just_forward_to_parent INT 0
 CONFIG proxy.config.http.uncacheable_requests_bypass_parent INT 1
-CONFIG proxy.config.http.keep_alive_enabled INT 1
+CONFIG proxy.config.http.keep_alive_enabled_in INT 1
+CONFIG proxy.config.http.keep_alive_enabled_out INT 1
 CONFIG proxy.config.http.chunking_enabled INT 1
    # send http11 requests:
    #   0 - Never
@@ -127,7 +129,7 @@ CONFIG proxy.config.http.user_agent_pipeline INT 8
    # HTTP referer filtering #
    ##########################
 CONFIG proxy.config.http.referer_filter INT 0
-CONFIG proxy.config.http.referer_format_redirect INT 1
+CONFIG proxy.config.http.referer_format_redirect INT 0
 CONFIG proxy.config.http.referer_default_redirect STRING http://www.example.com/
    ##############################
    # parent proxy configuration #
@@ -159,12 +161,12 @@ CONFIG proxy.config.http.background_fill_completed_threshold FLOAT 0.5
    ##################################
    # origin server connect attempts #
    ##################################
-CONFIG proxy.config.http.connect_attempts_max_retries INT 10
-CONFIG proxy.config.http.connect_attempts_max_retries_dead_server INT 4
+CONFIG proxy.config.http.connect_attempts_max_retries INT 6
+CONFIG proxy.config.http.connect_attempts_max_retries_dead_server INT 3
 CONFIG proxy.config.http.connect_attempts_rr_retries INT 3
-CONFIG proxy.config.http.connect_attempts_timeout INT 20
+CONFIG proxy.config.http.connect_attempts_timeout INT 30
 CONFIG proxy.config.http.post_connect_attempts_timeout INT 1800
-CONFIG proxy.config.http.down_server.cache_time INT 180
+CONFIG proxy.config.http.down_server.cache_time INT 300
 CONFIG proxy.config.http.down_server.abort_threshold INT 10
    ##################################
    # congestion control             #
@@ -295,7 +297,7 @@ CONFIG proxy.config.body_factory.response_suppression_mode INT 0
 # Net Subsystem
 #
 ##############################################################################
-CONFIG proxy.config.net.connections_throttle INT 10000
+CONFIG proxy.config.net.connections_throttle INT 30000
    # Enable defer accept / accept filtering. On Linux, this is a timeout, sec.
 CONFIG proxy.config.net.defer_accept INT @defer_accept@
 ##############################################################################
@@ -405,7 +407,7 @@ CONFIG proxy.config.log.logging_enabled INT 3
 CONFIG proxy.config.log.max_secs_per_buffer INT 5
 CONFIG proxy.config.log.max_space_mb_for_logs INT 25000
 CONFIG proxy.config.log.max_space_mb_for_orphan_logs INT 25
-CONFIG proxy.config.log.max_space_mb_headroom INT 3000
+CONFIG proxy.config.log.max_space_mb_headroom INT 1000
 CONFIG proxy.config.log.hostname STRING localhost
 CONFIG proxy.config.log.logfile_dir STRING @rel_logdir@
 CONFIG proxy.config.log.logfile_perm STRING rw-r--r--
