@@ -876,9 +876,6 @@ main(int argc, char **argv)
       lmgmt->ccom->sendSharedData(false);
     }
 
-    // Aggregate node statistics
-    // overviewGenerator->doClusterAg();
-
     lmgmt->ccom->checkPeers(&ticker);
     overviewGenerator->checkForUpdates();
 

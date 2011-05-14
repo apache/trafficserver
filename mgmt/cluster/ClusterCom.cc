@@ -383,8 +383,8 @@ ClusterCom::ClusterCom(unsigned long oip, char *host, int port, char *group, int
   ink_filepath_merge(cluster_conf, sizeof(cluster_conf), p, cluster_file, INK_FILEPATH_TRUENAME);
   // XXX: Shouldn't we pass the cluster_conf to the Rollback ???
   //
-  Debug("ccom", "[ClusterCom::ClusterCom] Using  cluster file: %s", cluster_file);
-  Debug("ccom", "[ClusterCom::ClusterCom] Using  cluster conf: %s", cluster_conf);
+  Debug("ccom", "[ClusterCom::ClusterCom] Using cluster file: %s", cluster_file);
+  Debug("ccom", "[ClusterCom::ClusterCom] Using cluster conf: %s", cluster_conf);
   cluster_file_rb = new Rollback(cluster_file, false);
 
   xfree(cluster_file);
@@ -435,13 +435,8 @@ ClusterCom::ClusterCom(unsigned long oip, char *host, int port, char *group, int
   peers = ink_hash_table_create(InkHashTableKeyType_String);
   mismatchLog = ink_hash_table_create(InkHashTableKeyType_String);
 
-  /*
-   * Setup a temporary area for collating the node stats safe since
-   * these are static
-   */
-  // fix me -- what does aggregated_node_data do?
-
-  ink_thread_create(drainIncomingChannel, 0);   /* Spin drainer thread */
+  if (cluster_type != NO_CLUSTER)
+    ink_thread_create(drainIncomingChannel, 0);   /* Spin drainer thread */
   return;
 }                               /* End ClusterCom::ClusterCom */
 
@@ -459,6 +454,9 @@ ClusterCom::checkPeers(time_t * ticker)
   time_t t = time(NULL);
   InkHashTableEntry *entry;
   InkHashTableIteratorState iterator_state;
+
+  if (cluster_type == NO_CLUSTER)
+    return;
 
   if ((t - *ticker) > 5) {
     int num_peers = 0;
@@ -639,6 +637,9 @@ ClusterCom::generateClusterDelta(void)
   long highest_delta = 0L;
   InkHashTableEntry *entry;
   InkHashTableIteratorState iterator_state;
+
+  if (cluster_type == NO_CLUSTER)
+    return;
 
   ink_mutex_acquire(&(mutex));
   for (entry = ink_hash_table_iterator_first(peers, &iterator_state);
