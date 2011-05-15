@@ -467,6 +467,10 @@ CONFIG proxy.config.url_remap.pristine_host_hdr INT 1
    #   0 - none
    #   1 - SSL enabled
 CONFIG proxy.config.ssl.enabled INT 0
+   # The number of SSL threads is a multiplier of number of CPUs and
+   # proxy.config.exec_thread.autoconfig.scale by default. You can
+   # override that here (set it to a non-zero value).
+CONFIG proxy.config.ssl.number.threads INT 0
    # proxy.config.ssl.accelerator_required should be:
    #   0 - not required
    #   1 - required for SSL; won't start SSL if card not present

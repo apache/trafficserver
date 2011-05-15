@@ -1409,29 +1409,20 @@ getNumSSLThreads(void)
   // enabled, leave num of ssl threads one, incase a remap rule
   // requires traffic server to act as an ssl client.
   if (ssl_enabled) {
-    if (config_num_ssl_threads != 0)
+    if (config_num_ssl_threads != 0) {
       num_of_ssl_threads = config_num_ssl_threads;
-    else if (ssl_blocking != 0)
-      num_of_ssl_threads = number_of_processors * 4;
-    else {
+    } else {
+      float autoconfig_scale = 1.5;
+
       ink_assert(number_of_processors);
-      switch (number_of_processors) {
-      case 0:
-        break;
-      case 1:
-      case 2:
-        num_of_ssl_threads = number_of_processors;
-        break;
-      case 3:
-      case 4:
-      default:
-        num_of_ssl_threads = number_of_processors * 2;
-        break;
-      }
+      TS_ReadConfigFloat(autoconfig_scale, "proxy.config.exec_thread.autoconfig.scale");
+      num_of_ssl_threads = number_of_processors * autoconfig_scale;
+      if (ssl_blocking != 0)
+        num_of_ssl_threads *= 2; // Double when blocking I/O
     }
   }
-  return (num_of_ssl_threads);
 
+  return num_of_ssl_threads;
 }
 
 static void
