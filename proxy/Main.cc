@@ -129,7 +129,6 @@ int number_of_processors = ink_number_of_processors();
 int num_of_net_threads = DEFAULT_NUMBER_OF_THREADS;
 int num_of_cluster_threads = DEFAULT_NUMBER_OF_CLUSTER_THREADS;
 int num_of_udp_threads = DEFAULT_NUMBER_OF_UDP_THREADS;
-int num_of_ssl_threads = DEFAULT_NUMBER_OF_SSL_THREADS;
 int num_accept_threads  = DEFAULT_NUM_ACCEPT_THREADS;
 int num_task_threads = DEFAULT_NUM_TASK_THREADS;
 int run_test_hook = 0;
@@ -1397,11 +1396,9 @@ int
 getNumSSLThreads(void)
 {
   int ssl_enabled = 0;
-  int config_num_ssl_threads = 0;
-  int ssl_blocking = 0;
+  int num_of_ssl_threads = 0;
+
   TS_ReadConfigInteger(ssl_enabled, "proxy.config.ssl.enabled");
-  TS_ReadConfigInteger(config_num_ssl_threads, "proxy.config.ssl.number.threads");
-  TS_ReadConfigInteger(ssl_blocking, "proxy.config.ssl.accelerator.type");
 
   // Set number of ssl threads equal to num of processors if
   // SSL is enabled so it will scale properly.  If an accelerator card
@@ -1409,6 +1406,12 @@ getNumSSLThreads(void)
   // enabled, leave num of ssl threads one, incase a remap rule
   // requires traffic server to act as an ssl client.
   if (ssl_enabled) {
+    int config_num_ssl_threads = 0;
+    int ssl_blocking = 0;
+
+    TS_ReadConfigInteger(config_num_ssl_threads, "proxy.config.ssl.number.threads");
+    TS_ReadConfigInteger(ssl_blocking, "proxy.config.ssl.accelerator.type");
+
     if (config_num_ssl_threads != 0) {
       num_of_ssl_threads = config_num_ssl_threads;
     } else {
@@ -1416,7 +1419,11 @@ getNumSSLThreads(void)
 
       ink_assert(number_of_processors);
       TS_ReadConfigFloat(autoconfig_scale, "proxy.config.exec_thread.autoconfig.scale");
-      num_of_ssl_threads = number_of_processors * autoconfig_scale;
+      num_of_ssl_threads = (int)((float)number_of_processors * autoconfig_scale);
+
+      // Last resort
+      if (num_of_ssl_threads <= 0)
+        num_of_ssl_threads = config_num_ssl_threads * 2;
       if (ssl_blocking != 0)
         num_of_ssl_threads *= 2; // Double when blocking I/O
     }
