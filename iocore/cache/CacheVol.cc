@@ -194,7 +194,7 @@ CacheVC::scanObject(int event, Event * e)
     goto Lread;
   }
 
-  if ((int) io.aio_result != (int) io.aiocb.aio_nbytes) {
+  if ((size_t)io.aio_result != (size_t) io.aiocb.aio_nbytes) {
     result = (void *) -ECACHE_READ_FAIL;
     goto Ldone;
   }

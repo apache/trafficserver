@@ -343,11 +343,11 @@ vol_headerlen(Vol *d) {
   return ROUND_TO_STORE_BLOCK(sizeof(VolHeaderFooter) + sizeof(uint16_t) * (d->segments-1));
 }
 
-TS_INLINE int
+TS_INLINE size_t
 vol_dirlen(Vol *d)
 {
   return vol_headerlen(d) + 
-    ROUND_TO_STORE_BLOCK(d->buckets * DIR_DEPTH * d->segments * SIZEOF_DIR) +
+    ROUND_TO_STORE_BLOCK(((size_t)d->buckets) * DIR_DEPTH * d->segments * SIZEOF_DIR) +
     ROUND_TO_STORE_BLOCK(sizeof(VolHeaderFooter));
 }
 

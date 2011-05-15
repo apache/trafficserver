@@ -891,7 +891,7 @@ sync_cache_dir_on_shutdown(void)
 {
   Debug("cache_dir_sync", "sync started");
   char *buf = NULL;
-  int buflen = 0;
+  size_t buflen = 0;
 
   EThread *t = (EThread *) 0xdeadbeef;
   for (int i = 0; i < gnvol; i++) {
@@ -905,7 +905,7 @@ sync_cache_dir_on_shutdown(void)
       Debug("cache_dir_sync", "Dir %s: ignoring -- bad disk", d->hash_id);
       continue;
     }
-    int dirlen = vol_dirlen(d);
+    size_t dirlen = vol_dirlen(d);
     if (!d->header->dirty && !d->dir_sync_in_progress) {
       Debug("cache_dir_sync", "Dir %s: ignoring -- not dirty", d->hash_id);
       continue;
@@ -953,7 +953,7 @@ sync_cache_dir_on_shutdown(void)
     d->footer->sync_serial = d->header->sync_serial;
     CHECK_DIR(d);
     memcpy(buf, d->raw_dir, dirlen);
-    int B = d->header->sync_serial & 1;
+    size_t B = d->header->sync_serial & 1;
     off_t start = d->skip + (B ? dirlen : 0);
     B = pwrite(d->fd, buf, dirlen, start);
     ink_debug_assert(B == dirlen);
@@ -994,7 +994,7 @@ Lrestart:
   }
   if (event == AIO_EVENT_DONE) {
     // AIO Thread
-    if (io.aio_result != (int) io.aiocb.aio_nbytes) {
+    if (io.aio_result != (int64_t)io.aiocb.aio_nbytes) {
       Warning("vol write error during directory sync '%s'", gvol[vol]->hash_id);
       event = EVENT_NONE;
       goto Ldone;
@@ -1019,7 +1019,7 @@ Lrestart:
       goto Ldone;
 
     int headerlen = ROUND_TO_STORE_BLOCK(sizeof(VolHeaderFooter));
-    int dirlen = vol_dirlen(d);
+    size_t dirlen = vol_dirlen(d);
     if (!writepos) {
       // start
       Debug("cache_dir_sync", "sync started");
@@ -1054,22 +1054,22 @@ Lrestart:
       memcpy(buf, d->raw_dir, dirlen);
       d->dir_sync_in_progress = 1;
     }
-    int B = d->header->sync_serial & 1;
+    size_t B = d->header->sync_serial & 1;
     off_t start = d->skip + (B ? dirlen : 0);
 
     if (!writepos) {
       // write header
       aio_write(d->fd, buf + writepos, headerlen, start + writepos);
       writepos += headerlen;
-    } else if (writepos < dirlen - headerlen) {
+    } else if (writepos < (off_t)dirlen - headerlen) {
       // write part of body
       int l = SYNC_MAX_WRITE;
-      if (writepos + l > dirlen - headerlen)
+      if (writepos + l > (off_t)dirlen - headerlen)
         l = dirlen - headerlen - writepos;
       aio_write(d->fd, buf + writepos, l, start + writepos);
       writepos += l;
-    } else if (writepos < dirlen) {
-      ink_assert(writepos == dirlen - headerlen);
+    } else if (writepos < (off_t)dirlen) {
+      ink_assert(writepos == (off_t)dirlen - headerlen);
       // write footer
       aio_write(d->fd, buf + writepos, headerlen, start + writepos);
       writepos += headerlen;

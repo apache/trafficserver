@@ -390,7 +390,7 @@ cache_op(AIOCallbackInternal *op)
   bool read = (op->aiocb.aio_lio_opcode == LIO_READ) ? 1 : 0;
   for (; op; op = (AIOCallbackInternal *) op->then) {
     ink_aiocb_t *a = &op->aiocb;
-    int err, res = 0;
+    ssize_t err, res = 0;
 
     while (a->aio_nbytes - res > 0) {
       do {
@@ -408,7 +408,7 @@ cache_op(AIOCallbackInternal *op)
       res += err;
     }
     op->aio_result = res;
-    ink_assert(op->aio_result == (int) a->aio_nbytes);
+    ink_assert(op->aio_result == (int64_t) a->aio_nbytes);
   }
   return 1;
 }

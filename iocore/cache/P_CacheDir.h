@@ -265,8 +265,8 @@ struct CacheSync: public Continuation
 {
   int vol;
   char *buf;
-  int buflen;
-  int writepos;
+  size_t buflen;
+  off_t writepos;
   AIOCallbackInternal io;
   Event *trigger;
   int mainEvent(int event, Event *e);

@@ -978,7 +978,7 @@ vol_init_dir(Vol *d)
 void
 vol_clear_init(Vol *d)
 {
-  int dir_len = vol_dirlen(d);
+  size_t dir_len = vol_dirlen(d);
   memset(d->raw_dir, 0, dir_len);
   vol_init_dir(d);
   d->header->magic = VOL_MAGIC;
@@ -997,7 +997,7 @@ vol_clear_init(Vol *d)
 int
 vol_dir_clear(Vol *d)
 {
-  int dir_len = vol_dirlen(d);
+  size_t dir_len = vol_dirlen(d);
   vol_clear_init(d);
 
   if (pwrite(d->fd, d->raw_dir, dir_len, d->skip) < 0) {
@@ -1010,7 +1010,7 @@ vol_dir_clear(Vol *d)
 int
 Vol::clear_dir()
 {
-  int dir_len = vol_dirlen(this);
+  size_t dir_len = vol_dirlen(this);
   vol_clear_init(this);
 
   SET_HANDLER(&Vol::handle_dir_clear);
@@ -1112,17 +1112,17 @@ Vol::init(char *s, off_t blocks, off_t dir_skip, bool clear)
 int
 Vol::handle_dir_clear(int event, void *data)
 {
-  int dir_len = vol_dirlen(this);
+  size_t dir_len = vol_dirlen(this);
   AIOCallback *op;
 
   if (event == AIO_EVENT_DONE) {
     op = (AIOCallback *) data;
-    if ((int) op->aio_result != (int) op->aiocb.aio_nbytes) {
+    if ((size_t) op->aio_result != (size_t) op->aiocb.aio_nbytes) {
       Warning("unable to clear cache directory '%s'", hash_id);
       fd = -1;
     }
 
-    if ((int) op->aiocb.aio_nbytes == dir_len) {
+    if (op->aiocb.aio_nbytes == dir_len) {
       /* clear the header for directory B. We don't need to clear the
          whole of directory B. The header for directory B starts at
          skip + len */
@@ -1145,7 +1145,7 @@ Vol::handle_dir_read(int event, void *data)
   AIOCallback *op = (AIOCallback *) data;
 
   if (event == AIO_EVENT_DONE) {
-    if ((int) op->aio_result != (int) op->aiocb.aio_nbytes) {
+    if ((size_t) op->aio_result != (size_t) op->aiocb.aio_nbytes) {
       clear_dir();
       return EVENT_DONE;
     }
@@ -1230,7 +1230,7 @@ Vol::handle_recover_from_data(int event, void *data)
     if ((off_t)(recover_pos + io.aiocb.aio_nbytes) > (off_t)(skip + len))
       io.aiocb.aio_nbytes = (skip + len) - recover_pos;
   } else if (event == AIO_EVENT_DONE) {
-    if ((int) io.aiocb.aio_nbytes != (int) io.aio_result) {
+    if ((size_t) io.aiocb.aio_nbytes != (size_t) io.aio_result) {
       Warning("disk read error on recover '%s', clearing", hash_id);
       goto Lclear;
     }
@@ -1424,7 +1424,7 @@ Ldone:{
       aio->then = (i < 2) ? &(init_info->vol_aio[i + 1]) : 0;
     }
     int footerlen = ROUND_TO_STORE_BLOCK(sizeof(VolHeaderFooter));
-    int dirlen = vol_dirlen(this);
+    size_t dirlen = vol_dirlen(this);
     int B = header->sync_serial & 1;
     off_t ss = skip + (B ? dirlen : 0);
 
@@ -1483,7 +1483,7 @@ Vol::handle_header_read(int event, void *data)
     for (int i = 0; i < 4; i++) {
       ink_assert(op != 0);
       hf[i] = (VolHeaderFooter *) (op->aiocb.aio_buf);
-      if ((int) op->aio_result != (int) op->aiocb.aio_nbytes) {
+      if ((size_t) op->aio_result != (size_t) op->aiocb.aio_nbytes) {
         clear_dir();
         return EVENT_DONE;
       }
@@ -2084,7 +2084,7 @@ CacheVC::removeEvent(int event, Event *e)
       goto Lcollision;
     }
     // check read completed correct FIXME: remove bad vols
-    if ((int) io.aio_result != (int) io.aiocb.aio_nbytes)
+    if ((size_t) io.aio_result != (size_t) io.aiocb.aio_nbytes)
       goto Ldone;
     {
       // verify that this is our document

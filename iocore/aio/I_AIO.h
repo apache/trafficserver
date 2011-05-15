@@ -67,7 +67,7 @@ struct AIOCallback: public Continuation
   EThread *thread;
   AIOCallback *then;
   // set on return from aio_read/aio_write
-  int aio_result;
+  int64_t aio_result;
 
   int ok();
   AIOCallback() : thread(AIO_CALLBACK_THREAD_ANY), then(0) {

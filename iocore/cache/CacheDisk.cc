@@ -117,7 +117,7 @@ CacheDisk::clearDone(int event, void *data)
   NOWARN_UNUSED(data);
   ink_assert(event == AIO_EVENT_DONE);
 
-  if ((int) io.aiocb.aio_nbytes != (int) io.aio_result) {
+  if ((size_t) io.aiocb.aio_nbytes != (size_t) io.aio_result) {
     Warning("Could not clear disk header for disk %s: declaring disk bad", path);
     SET_DISK_BAD(this);
   }
@@ -133,7 +133,7 @@ CacheDisk::openStart(int event, void *data)
   NOWARN_UNUSED(data);
   ink_assert(event == AIO_EVENT_DONE);
 
-  if ((int) io.aiocb.aio_nbytes != (int) io.aio_result) {
+  if ((size_t) io.aiocb.aio_nbytes != (size_t) io.aio_result) {
     Warning("could not read disk header for disk %s: declaring disk bad", path);
     SET_DISK_BAD(this);
     SET_HANDLER(&CacheDisk::openDone);
@@ -188,7 +188,7 @@ CacheDisk::syncDone(int event, void *data)
 
   ink_assert(event == AIO_EVENT_DONE);
 
-  if ((int) io.aiocb.aio_nbytes != (int) io.aio_result) {
+  if ((size_t) io.aiocb.aio_nbytes != (size_t) io.aio_result) {
     Warning("Error writing disk header for disk %s:disk bad", path);
     SET_DISK_BAD(this);
     return EVENT_DONE;
@@ -217,7 +217,7 @@ CacheDisk::create_volume(int number, off_t size_in_blocks, int scheme)
 //  ink_assert(!(size_in_blocks % blocks_per_vol));
   DiskVolBlock *p = 0;
   for (; q; q = q->link.next) {
-    if (q->b->len >= (unsigned int) size_in_blocks) {
+    if ((off_t)q->b->len >= size_in_blocks) {
       p = q->b;
       q->new_block = 1;
       break;
@@ -235,7 +235,7 @@ CacheDisk::create_volume(int number, off_t size_in_blocks, int scheme)
     q = closest_match;
     p = q->b;
     q->new_block = 1;
-    ink_assert(size_in_blocks > (int) p->len);
+    ink_assert(size_in_blocks > (off_t) p->len);
     /* allocate in 128 megabyte chunks. The Remaining space should
        be thrown away */
     size_in_blocks = (p->len - (p->len % blocks_per_vol));
@@ -246,8 +246,8 @@ CacheDisk::create_volume(int number, off_t size_in_blocks, int scheme)
   free_space -= p->len;
   free_blocks->size -= p->len;
 
-  int new_size = p->len - size_in_blocks;
-  if (new_size >= blocks_per_vol) {
+  size_t new_size = p->len - size_in_blocks;
+  if (new_size >= (size_t)blocks_per_vol) {
     /* create a new volume */
     DiskVolBlock *dpb = &header->vol_info[header->num_diskvol_blks];
     *dpb = *p;
