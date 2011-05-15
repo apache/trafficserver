@@ -1,6 +1,18 @@
                                                          -*- coding: utf-8 -*-
 
 Changes with Apache Traffic Server 2.1.9
+  *) TS-781 Cleanup of unusual configs, and better defaults making
+  records.config leaner, and a little more useful.
+
+  *) TS-780 Retune the number of SSL threads.
+
+  *) [TS-775] Disable cluster autodiscovery via multicast when
+  clustering is disabled. This should hopefully fix run-time errors
+  with Ubuntu 11.x.
+
+  *) [TS-776] memchr in glibc has evolved, and is faster than our
+   version, replaced.
+
   *) [TS-774] Add a new configure option, --enable-static-libts,
    which avoids the dynamic linking hassles involved with the
    dynamic nature of libts. This is for devs only.
