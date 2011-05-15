@@ -1161,8 +1161,6 @@ HttpConfig::startup()
   HttpEstablishStaticConfigByte(c.use_client_target_addr, "proxy.config.http.use_client_target_addr");
   HttpEstablishStaticConfigByte(c.oride.maintain_pristine_host_hdr, "proxy.config.url_remap.pristine_host_hdr");
 
-  HttpEstablishStaticConfigByte(c.snarf_username_from_authorization, "proxy.config.http.snarf_username_from_authorization");
-
   HttpEstablishStaticConfigByte(c.enable_url_expandomatic, "proxy.config.http.enable_url_expandomatic");
 
   HttpEstablishStaticConfigByte(c.oride.insert_request_via_string, "proxy.config.http.insert_request_via_str");
@@ -1424,8 +1422,6 @@ HttpConfig::reconfigure()
   params->no_origin_server_dns = INT_TO_BOOL(m_master.no_origin_server_dns);
   params->use_client_target_addr = INT_TO_BOOL(m_master.use_client_target_addr);
   params->oride.maintain_pristine_host_hdr = INT_TO_BOOL(m_master.oride.maintain_pristine_host_hdr);
-
-  params->snarf_username_from_authorization = INT_TO_BOOL(m_master.snarf_username_from_authorization);
 
   params->disable_ssl_parenting = INT_TO_BOOL(m_master.disable_ssl_parenting);
 

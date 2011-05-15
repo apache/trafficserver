@@ -20,23 +20,21 @@
 #
 ##############################################################################
 CONFIG proxy.config.proxy_name STRING @build_machine@
-CONFIG proxy.config.bin_path STRING @rel_bindir@
-CONFIG proxy.config.proxy_binary STRING traffic_server
-CONFIG proxy.config.proxy_binary_opts STRING -M
-CONFIG proxy.config.manager_binary STRING traffic_manager
-CONFIG proxy.config.cli_binary STRING traffic_line
-CONFIG proxy.config.watch_script STRING traffic_cop
-CONFIG proxy.config.env_prep STRING example_prep.sh
 CONFIG proxy.config.config_dir STRING @rel_sysconfdir@
+CONFIG proxy.config.proxy_binary_opts STRING -M
+CONFIG proxy.config.env_prep STRING example_prep.sh
 CONFIG proxy.config.temp_dir STRING /tmp
 CONFIG proxy.config.alarm_email STRING @pkgsysuser@
 CONFIG proxy.config.syslog_facility STRING LOG_DAEMON
-CONFIG proxy.config.cop.core_signal INT 0
 CONFIG proxy.config.output.logfile STRING traffic.out
-CONFIG proxy.config.cop.linux_min_swapfree_kb INT 10240
-CONFIG proxy.config.cop.linux_min_memfree_kb INT 10240
 CONFIG proxy.config.snapshot_dir STRING snapshots
 CONFIG proxy.config.system.mmap_max INT 2097152
+##############################################################################
+#
+# Main threads configuration (worker threads). Also see configurations for
+# SSL threads, disk I/O threads and task threads in their respective areas.
+#
+##############################################################################
 CONFIG proxy.config.exec_thread.autoconfig INT 1
 CONFIG proxy.config.exec_thread.autoconfig.scale FLOAT 1.5
 CONFIG proxy.config.exec_thread.limit INT 2
@@ -46,16 +44,6 @@ CONFIG proxy.config.accept_threads INT 1
 # Local Manager
 #
 ##############################################################################
-CONFIG proxy.config.lm.sem_id INT 11452
-   # cluster type requires restart to change
-   # 1 is full clustering, 2 is mgmt only, 3 is no clustering
-LOCAL proxy.local.cluster.type INT 3
-CONFIG proxy.config.cluster.rsport INT 8088
-CONFIG proxy.config.cluster.mcport INT 8089
-CONFIG proxy.config.cluster.mc_group_addr STRING 224.0.1.37
-CONFIG proxy.config.cluster.mc_ttl INT 1
-CONFIG proxy.config.cluster.log_bogus_mc_msgs INT 1
-CONFIG proxy.config.admin.autoconf_port INT 8083
 CONFIG proxy.config.admin.admin_user STRING admin
 CONFIG proxy.config.admin.number_config_bak INT 3
 CONFIG proxy.config.admin.user_id STRING @pkgsysuser@
@@ -64,13 +52,8 @@ CONFIG proxy.config.admin.user_id STRING @pkgsysuser@
 # Process Manager
 #
 ##############################################################################
+CONFIG proxy.config.admin.autoconf_port INT 8083
 CONFIG proxy.config.process_manager.mgmt_port INT 8084
-##############################################################################
-#
-# Virtual IP Manager
-#
-##############################################################################
-CONFIG proxy.config.vmap.enabled INT 0
 ##############################################################################
 #
 # In order to only bind a specific IP, use the following config, as in 
@@ -122,7 +105,6 @@ CONFIG proxy.config.http.chunking_enabled INT 1
    #         has returned 1.1 before
 CONFIG proxy.config.http.send_http11_requests INT 1
 CONFIG proxy.config.http.share_server_sessions INT 1
-CONFIG proxy.config.http.record_heartbeat INT 0
 CONFIG proxy.config.http.origin_server_pipeline INT 1
 CONFIG proxy.config.http.user_agent_pipeline INT 8
    ##########################
@@ -186,9 +168,8 @@ CONFIG proxy.config.http.anonymize_remove_user_agent INT 0
 CONFIG proxy.config.http.anonymize_remove_cookie INT 0
 CONFIG proxy.config.http.anonymize_remove_client_ip INT 0
 CONFIG proxy.config.http.anonymize_insert_client_ip INT 1
-CONFIG proxy.config.http.append_xforwards_header INT 0
 CONFIG proxy.config.http.anonymize_other_header_list STRING NULL
-CONFIG proxy.config.http.snarf_username_from_authorization INT 0
+CONFIG proxy.config.http.append_xforwards_header INT 0
 CONFIG proxy.config.http.insert_squid_x_forwarded_for INT 1
    ############
    # security #
@@ -248,7 +229,7 @@ CONFIG proxy.config.http.cache.enable_default_vary_headers INT 0
    #    3 - never stale
    #    4 - always revalidate if request is conditional, else default is used
 CONFIG proxy.config.http.cache.when_to_revalidate INT 0
-   # MSIE browsers currently don't send no-cache headers to
+   # Some old MSIE browsers don't send no-cache headers to
    # reverse proxies or transparent caches, this variable controls
    # when to add no-cache headers to MSIE requests:
    #  -1 - no-cache is never added, stats are not updated
@@ -277,6 +258,11 @@ CONFIG proxy.config.http.cache.fuzz.probability FLOAT 0.005
 CONFIG proxy.config.http.cache.vary_default_text STRING NULL
 CONFIG proxy.config.http.cache.vary_default_images STRING NULL
 CONFIG proxy.config.http.cache.vary_default_other STRING NULL
+   ##############################################################
+   # The HTTP stats are expensive, turn off you don't need them #
+   ##############################################################
+CONFIG proxy.config.http.enable_http_stats INT 1
+
 ##############################################################################
 #
 # Customizable User Response Pages
@@ -287,7 +273,6 @@ CONFIG proxy.config.http.cache.vary_default_other STRING NULL
    # 2 - enable language-targeted user response pages
 CONFIG proxy.config.body_factory.enable_customizations INT 0
 CONFIG proxy.config.body_factory.enable_logging INT 0
-CONFIG proxy.config.body_factory.template_sets_dir STRING @rel_sysconfdir@/body_factory
    # 0 - never suppress generated responses
    # 1 - always suppress generated responses
    # 2 - suppress responses for intercepted traffic
@@ -305,7 +290,15 @@ CONFIG proxy.config.net.defer_accept INT @defer_accept@
 # Cluster Subsystem
 #
 ##############################################################################
+   # cluster type requires restart to change
+   # 1 is full clustering, 2 is mgmt only, 3 is no clustering
+LOCAL proxy.local.cluster.type INT 3
 CONFIG proxy.config.cluster.cluster_port INT 8086
+CONFIG proxy.config.cluster.rsport INT 8088
+CONFIG proxy.config.cluster.mcport INT 8089
+CONFIG proxy.config.cluster.mc_group_addr STRING 224.0.1.37
+CONFIG proxy.config.cluster.mc_ttl INT 1
+CONFIG proxy.config.cluster.log_bogus_mc_msgs INT 1
 CONFIG proxy.config.cluster.ethernet_interface STRING @default_net_iface@
 ##############################################################################
 #
@@ -430,6 +423,7 @@ CONFIG proxy.config.log.extended2_log_name STRING extended2
 CONFIG proxy.config.log.extended2_log_header STRING NULL
 CONFIG proxy.config.log.separate_icp_logs INT 0
 CONFIG proxy.config.log.separate_host_logs INT 0
+   # Log collation allows you to do "remote logging"
 LOCAL proxy.local.log.collation_mode INT 0
 CONFIG proxy.config.log.collation_host STRING NULL
 CONFIG proxy.config.log.collation_port INT 8085
@@ -456,7 +450,10 @@ CONFIG proxy.config.header.parse.no_host_url_redirect STRING NULL
 ##############################################################################
 CONFIG proxy.config.url_remap.default_to_server_pac INT 0
 CONFIG proxy.config.url_remap.default_to_server_pac_port INT -1
+   # To enable forward proxy, you must turn off remap_required
 CONFIG proxy.config.url_remap.remap_required INT 1
+   # Pristine host header is the "original" (request) header. Make sure your
+   # origin expects them in reverse proxy.
 CONFIG proxy.config.url_remap.pristine_host_hdr INT 1
 ##############################################################################
 #
@@ -471,29 +468,12 @@ CONFIG proxy.config.ssl.enabled INT 0
    # proxy.config.exec_thread.autoconfig.scale by default. You can
    # override that here (set it to a non-zero value).
 CONFIG proxy.config.ssl.number.threads INT 0
-   # proxy.config.ssl.accelerator_required should be:
-   #   0 - not required
-   #   1 - required for SSL; won't start SSL if card not present
-   #   2 - required for SSL; won't start TS if card not present
-CONFIG proxy.config.ssl.accelerator_required INT 0
    # The following three variables can be
    # set to 0 to disable SSLv2, SSLv3,
    # and/or TLSv1
 CONFIG proxy.config.ssl.SSLv2 INT 1
 CONFIG proxy.config.ssl.SSLv3 INT 1
 CONFIG proxy.config.ssl.TLSv1 INT 1
-   # proxy.config.ssl.accelerator.type should be:
-   #   0 - none (software algorithms)
-   #   1 - NCipher Nfast accelerator card
-   #   2 - Rainbow Crypto Swift accelerator card
-   #   3 - Compaq Atalla accelerator card
-CONFIG proxy.config.ssl.accelerator.type INT 0
-   # the following accelerator library paths only need
-   # to be changed if the default path was not used
-   # while installing the accelerator card.
-CONFIG proxy.config.ssl.atalla.lib.path STRING /opt/atalla/lib
-CONFIG proxy.config.ssl.ncipher.lib.path STRING /opt/nfast/toolkits/hwcrhk
-CONFIG proxy.config.ssl.cswift.lib.path STRING /usr/lib
 CONFIG proxy.config.ssl.server_port INT 443
    # Client certification level should be:
    # 0 no client certificates
@@ -538,7 +518,7 @@ CONFIG proxy.config.ssl.client.CA.cert.filename STRING NULL
 CONFIG proxy.config.ssl.client.CA.cert.path STRING NULL
 ##############################################################################
 #
-# ICP Configuration
+# ICP Configuration. NOTE! ICP is currently broken NOTE!
 #
 ##############################################################################
    # icp modes
@@ -562,13 +542,6 @@ CONFIG proxy.config.update.retry_interval INT 2
 CONFIG proxy.config.update.concurrent_updates INT 100
 ##############################################################################
 #
-# Plug-in Configuration
-#
-##############################################################################
-   # Directory in which to find plugins
-CONFIG proxy.config.plugin.plugin_dir STRING @rel_libexecdir@
-##############################################################################
-#
 # Socket send/recv buffer sizes (0 == don't call setsockopt() )
 #
 ##############################################################################
@@ -584,7 +557,6 @@ CONFIG proxy.config.net.sock_recv_buffer_size_out INT 0
 #
 ##############################################################################
 CONFIG proxy.config.core_limit INT -1
-CONFIG proxy.config.auth.enabled INT 0
 ##############################################################################
 #
 # Debugging

@@ -66,10 +66,10 @@ RecordElement RecordsConfig[] = {
   ,
   {RECT_CONFIG, "proxy.config.env_prep", RECD_STRING, "example_prep.sh", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.config_dir", RECD_STRING, "etc/trafficserver", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
+  {RECT_CONFIG, "proxy.config.config_dir", RECD_STRING, TS_BUILD_SYSCONFDIR, RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
   // Jira TS-21
-  {RECT_CONFIG, "proxy.config.local_state_dir", RECD_STRING, "var/trafficserver", RECU_RESTART_TS, RR_NULL, RECC_NULL, NULL, RECA_NULL}
+  {RECT_CONFIG, "proxy.config.local_state_dir", RECD_STRING, TS_BUILD_RUNTIMEDIR, RECU_RESTART_TS, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.temp_dir", RECD_STRING, "/tmp", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
@@ -248,7 +248,7 @@ RecordElement RecordsConfig[] = {
   ,
   {RECT_CONFIG, "proxy.config.admin.autoconf_port", RECD_INT, "8083", RECU_RESTART_TM, RR_REQUIRED, RECC_INT, "[0-65535]", RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.admin.autoconf.doc_root", RECD_STRING, "etc/trafficserver", RECU_NULL, RR_REQUIRED, RECC_NULL, NULL, RECA_NULL}
+  {RECT_CONFIG, "proxy.config.admin.autoconf.doc_root", RECD_STRING, TS_BUILD_SYSCONFDIR, RECU_NULL, RR_REQUIRED, RECC_NULL, NULL, RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.admin.autoconf.localhost_only", RECD_INT, "0", RECU_RESTART_TM, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
   ,
@@ -379,7 +379,7 @@ RecordElement RecordsConfig[] = {
   ,
   {RECT_CONFIG, "proxy.config.username.cache.size", RECD_INT, "5000", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.username.cache.storage_path", RECD_STRING, "var/trafficserver", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
+  {RECT_CONFIG, "proxy.config.username.cache.storage_path", RECD_STRING, TS_BUILD_CACHEDIR, RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.username.cache.storage_size", RECD_INT, "15728640", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
@@ -633,8 +633,6 @@ RecordElement RecordsConfig[] = {
   ,
   {RECT_CONFIG, "proxy.config.http.anonymize_other_header_list", RECD_STRING, NULL, RECU_DYNAMIC, RR_NULL, RECC_STR, ".*", RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.http.snarf_username_from_authorization", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
-  ,
   {RECT_CONFIG, "proxy.config.http.insert_squid_x_forwarded_for", RECD_INT, "1", RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.http.insert_age_in_response", RECD_INT, "1", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
@@ -778,7 +776,7 @@ RecordElement RecordsConfig[] = {
   ,
   {RECT_CONFIG, "proxy.config.body_factory.enable_logging", RECD_INT, "0", RECU_RESTART_TS, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.body_factory.template_sets_dir", RECD_STRING, "etc/trafficserver/body_factory", RECU_RESTART_TS, RR_NULL, RECC_STR, "^[^[:space:]]+$", RECA_NULL}
+  {RECT_CONFIG, "proxy.config.body_factory.template_sets_dir", RECD_STRING, TS_BUILD_SYSCONFDIR "/body_factory", RECU_RESTART_TS, RR_NULL, RECC_STR, "^[^[:space:]]+$", RECA_NULL}
   ,
   //# 0 - never suppress generated responses
   //# 1 - always suppress generated responses
@@ -1059,7 +1057,7 @@ RecordElement RecordsConfig[] = {
   //       # in entries, may not be changed while running
   {RECT_CONFIG, "proxy.config.hostdb.size", RECD_INT, "200000", RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.hostdb.storage_path", RECD_STRING, "var/trafficserver", RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
+  {RECT_CONFIG, "proxy.config.hostdb.storage_path", RECD_STRING, TS_BUILD_CACHEDIR, RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.hostdb.storage_size", RECD_INT, "33554432", RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
@@ -1147,7 +1145,7 @@ RecordElement RecordsConfig[] = {
   ,
   {RECT_CONFIG, "proxy.config.log.hostname", RECD_STRING, "localhost", RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.log.logfile_dir", RECD_STRING, "var/log/trafficserver", RECU_DYNAMIC, RR_NULL, RECC_STR, "^[^[:space:]]+$", RECA_NULL}
+  {RECT_CONFIG, "proxy.config.log.logfile_dir", RECD_STRING, TS_BUILD_LOGDIR, RECU_DYNAMIC, RR_NULL, RECC_STR, "^[^[:space:]]+$", RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.log.logfile_perm", RECD_STRING, "rw-r--r--", RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
@@ -1305,7 +1303,7 @@ RecordElement RecordsConfig[] = {
   ,
   {RECT_CONFIG, "proxy.config.ssl.server.cert.filename", RECD_STRING, "server.pem", RECU_RESTART_TS, RR_NULL, RECC_STR, "^[^[:space:]]+$", RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.ssl.server.cert.path", RECD_STRING, "etc/trafficserver", RECU_RESTART_TS, RR_NULL, RECC_NULL, NULL, RECA_NULL}
+  {RECT_CONFIG, "proxy.config.ssl.server.cert.path", RECD_STRING, TS_BUILD_SYSCONFDIR, RECU_RESTART_TS, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.ssl.server.cert_chain.filename", RECD_STRING, NULL, RECU_RESTART_TS, RR_NULL, RECC_STR, NULL, RECA_NULL}
   ,
@@ -1323,7 +1321,7 @@ RecordElement RecordsConfig[] = {
   ,
   {RECT_CONFIG, "proxy.config.ssl.client.cert.filename", RECD_STRING, NULL, RECU_RESTART_TS, RR_NULL, RECC_STR, "^[^[:space:]]*$", RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.ssl.client.cert.path", RECD_STRING, "etc/trafficserver", RECU_RESTART_TS, RR_NULL, RECC_NULL, NULL, RECA_NULL}
+  {RECT_CONFIG, "proxy.config.ssl.client.cert.path", RECD_STRING, TS_BUILD_SYSCONFDIR, RECU_RESTART_TS, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.ssl.client.private_key.filename", RECD_STRING, NULL, RECU_RESTART_TS, RR_NULL, RECC_STR, "^[^[:space:]]*$", RECA_NULL}
   ,
@@ -1400,11 +1398,11 @@ RecordElement RecordsConfig[] = {
   //# Plug-in Configuration
   //##############################################################################
   //# Directory in which to find plugins
-  {RECT_CONFIG, "proxy.config.plugin.plugin_dir", RECD_STRING, "libexec/trafficserver", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
+  {RECT_CONFIG, "proxy.config.plugin.plugin_dir", RECD_STRING, TS_BUILD_LIBEXECDIR, RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.plugin.plugin_mgmt_dir", RECD_STRING, "etc/trafficserver/plugins_mgmt", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
+  {RECT_CONFIG, "proxy.config.plugin.plugin_mgmt_dir", RECD_STRING, TS_BUILD_SYSCONFDIR "/plugins_mgmt", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.plugin.extensions_dir", RECD_STRING, "var/trafficserver", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
+  {RECT_CONFIG, "proxy.config.plugin.extensions_dir", RECD_STRING, TS_BUILD_RUNTIMEDIR, RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
 
   //##############################################################################

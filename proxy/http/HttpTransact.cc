@@ -1215,10 +1215,7 @@ HttpTransact::HandleRequest(State* s)
     setup_plugin_request_intercept(s);
     return;
   }
-  // grab the username from the authorization header, if configured
-  if (s->http_config_param->snarf_username_from_authorization) {
-    //snarf_username_from_authorization_hdr(s);
-  }
+
   // if the request is a trace or options request, decrement the
   // max-forwards value. if the incoming max-forwards value was 0,
   // then we have to return a response to the client with the

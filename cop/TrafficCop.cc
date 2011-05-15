@@ -74,18 +74,18 @@ static int check_memory_min_swapfree_kb = 10240;
 static int check_memory_min_memfree_kb = 10240;
 
 static int syslog_facility = LOG_DAEMON;
-static char syslog_fac_str[PATH_MAX];
+static char syslog_fac_str[PATH_MAX] = "LOG_DAEMON";
 
 static int killsig = SIGKILL;
 static int coresig = 0;
 
-static char admin_user[80] = TS_PKGSYSUSER;
+static char admin_user[80];
 static char manager_binary[PATH_MAX] = "traffic_manager";
 static char server_binary[PATH_MAX] = "traffic_server";
 static char manager_options[OPTIONS_LEN_MAX] = "";
 
 static char log_file[PATH_MAX] = "traffic.out";
-static char bin_path[PATH_MAX];
+static char bin_path[PATH_MAX] = "bin";
 
 static int autoconf_port = 8083;
 static int rs_port = 8088;
@@ -121,7 +121,7 @@ static const int kill_timeout = 1 * 60; //  1 min
 
 static int child_pid = 0;
 static int child_status = 0;
-static int sem_id = -1;
+static int sem_id = 11452;
 
 AppVersionInfo appVersionInfo;
 static InkHashTable *configTable = NULL;
@@ -528,13 +528,16 @@ build_config_table(FILE * fp)
 }
 
 static void
-read_config_string(const char *str, char *val, size_t val_len)
+read_config_string(const char *str, char *val, size_t val_len, bool miss_ok = false)
 {
   InkHashTableValue hval;
   char *p, *buf;
 
   if (!ink_hash_table_lookup(configTable, str, &hval)) {
-    goto ConfigStrFatalError;
+    if (miss_ok)
+      return;
+    else
+      goto ConfigStrFatalError;
   }
   buf = (char *) hval;
 
@@ -569,11 +572,10 @@ read_config_int(const char *str, int *val, bool miss_ok = false)
   char *p, *buf;
 
   if (!ink_hash_table_lookup(configTable, str, &hval)) {
-    if (miss_ok) {
+    if (miss_ok)
       return;
-    } else {
+    else
       goto ConfigIntFatalError;
-    }
   }
   buf = (char *) hval;
 
@@ -638,10 +640,11 @@ read_config()
   build_config_table(fp);
   fclose(fp);
 
+  read_config_string("proxy.config.manager_binary", manager_binary, sizeof(manager_binary), true);
   read_config_string("proxy.config.admin.user_id", admin_user, sizeof(admin_user));
-  read_config_string("proxy.config.manager_binary", manager_binary, sizeof(manager_binary));
-  read_config_string("proxy.config.proxy_binary", server_binary, sizeof(server_binary));
-  read_config_string("proxy.config.bin_path", bin_path, sizeof(bin_path));
+  read_config_string("proxy.config.proxy_binary", server_binary, sizeof(server_binary), true);
+
+  read_config_string("proxy.config.bin_path", bin_path, sizeof(bin_path), true);
   Layout::get()->relative(bin_path, sizeof(bin_path), bin_path);
   if (access(bin_path, R_OK) == -1) {
     ink_strlcpy(bin_path, Layout::get()->bindir, sizeof(bin_path));
@@ -661,20 +664,20 @@ read_config()
   }
   read_config_string("proxy.config.output.logfile", log_filename, sizeof(log_filename));
   Layout::relative_to(log_file, sizeof(log_file), log_dir, log_filename);
-  read_config_int("proxy.config.process_manager.mgmt_port", &http_backdoor_port);
-  read_config_int("proxy.config.admin.autoconf_port", &autoconf_port);
-  read_config_int("proxy.config.cluster.rsport", &rs_port);
-  read_config_int("proxy.config.lm.sem_id", &sem_id);
+  read_config_int("proxy.config.process_manager.mgmt_port", &http_backdoor_port, true);
+  read_config_int("proxy.config.admin.autoconf_port", &autoconf_port, true);
+  read_config_int("proxy.config.cluster.rsport", &rs_port, true);
+  read_config_int("proxy.config.lm.sem_id", &sem_id, true);
 
   read_config_int("proxy.local.cluster.type", &tmp_int);
   cluster_type = static_cast<MgmtClusterType>(tmp_int);
 
-  read_config_string("proxy.config.syslog_facility", syslog_fac_str, sizeof(syslog_fac_str));
+  read_config_string("proxy.config.syslog_facility", syslog_fac_str, sizeof(syslog_fac_str), true);
   process_syslog_config();
-  read_config_int("proxy.config.cop.core_signal", &coresig);
+  read_config_int("proxy.config.cop.core_signal", &coresig, true);
 
-  read_config_int("proxy.config.cop.linux_min_swapfree_kb", &check_memory_min_swapfree_kb);
-  read_config_int("proxy.config.cop.linux_min_memfree_kb", &check_memory_min_memfree_kb);
+  read_config_int("proxy.config.cop.linux_min_swapfree_kb", &check_memory_min_swapfree_kb, true);
+  read_config_int("proxy.config.cop.linux_min_memfree_kb", &check_memory_min_memfree_kb, true);
 
 #ifdef TRACE_LOG_COP
   cop_log(COP_DEBUG, "Leaving read_config()\n");

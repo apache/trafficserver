@@ -1354,7 +1354,6 @@ public:
 
   static HostNameExpansionError_t try_to_expand_host_name(State* s);
 
-  static void snarf_username_from_authorization_hdr(State* s);
   static bool setup_auth_lookup(State* s);
   static bool will_this_request_self_loop(State* s);
   static bool is_request_likely_cacheable(State* s, HTTPHdr* request);
