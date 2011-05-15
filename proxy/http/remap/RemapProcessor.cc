@@ -29,7 +29,8 @@ extern ClassAllocator<RemapPlugins> pluginAllocator;
 int
 RemapProcessor::start(int num_threads)
 {
-  ET_REMAP = eventProcessor.spawn_event_threads(num_threads);  // ET_REMAP is a class member
+  if (_use_separate_remap_thread)
+    ET_REMAP = eventProcessor.spawn_event_threads(num_threads);  // ET_REMAP is a class member
   return 0;
 }
 
@@ -309,7 +310,6 @@ RemapProcessor::perform_remap(Continuation *cont, HttpTransact::State *s)
     do {
       ret = plugins->run_single_remap();
     } while (ret == 0);
-    //THREAD_FREE(plugins, pluginAllocator, t);
     pluginAllocator.free(plugins);
     return ACTION_RESULT_DONE;
   } else {

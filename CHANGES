@@ -1,25 +1,28 @@
                                                          -*- coding: utf-8 -*-
 
 Changes with Apache Traffic Server 2.1.9
-  *) TS-781 Cleanup of unusual configs, and better defaults making
-  records.config leaner, and a little more useful.
+  *) [TS-782] Remap processor creates a remap thread even when asked not
+   to. 
 
-  *) TS-780 Retune the number of SSL threads.
+  *) [TS-781] Cleanup of unusual configs, and better defaults making
+   records.config leaner, and a little more useful. 
+
+  *) [TS-780] Retune the number of SSL threads.
 
   *) [TS-775] Disable cluster autodiscovery via multicast when
-  clustering is disabled. This should hopefully fix run-time errors
-  with Ubuntu 11.x.
+   clustering is disabled. This should hopefully fix run-time errors
+   with Ubuntu 11.x. 
 
   *) [TS-776] memchr in glibc has evolved, and is faster than our
    version, replaced.
 
-  *) [TS-774] Add a new configure option, --enable-static-libts,
-   which avoids the dynamic linking hassles involved with the
-   dynamic nature of libts. This is for devs only.
+  *) [TS-774] Add a new configure option, --enable-static-libts, which
+   avoids the dynamic linking hassles involved with the dynamic nature
+   of libts. This is for devs only. 
 
   *) [TS-773] Traffic server has a hard limit of 512 gigabytes per RAW
-  disk partition. This fix required changing the disk structure which
-  will result in a total disk cache clear (wipe) after upgrading.
+   disk partition. This fix required changing the disk structure which
+   will result in a total disk cache clear (wipe) after upgrading.
 
   *) [TS-772] Make proxy.config.http.doc_in_cache_skip_dns overridable.
 
@@ -32,10 +35,10 @@ Changes with Apache Traffic Server 2.1.9
 
   *) [TS-562] Make --with-openssl path be honored with an -rpath to
    libtool. This also fixes the same problem with other libraries,
-   e.g. pcre, zlib etc.
+   e.g. pcre, zlib etc. 
 
-  *) [TS-765] Make the backdoor port (8084 by default) only listen
-   on 127.0.0.1
+  *) [TS-765] Make the backdoor port (8084 by default) only listen on
+   127.0.0.1 .
 
   *) [TS-762] Range values like -10 are processed. Author: William
    Bardwell.
