@@ -37,22 +37,15 @@
 
 package Apache::TS::Config::Records;
 
+use Apache::TS::Config;
+
 use warnings;
 use strict;
-
 require 5.006;
 
 use Carp;
 
 our $VERSION = "1.0";
-
-
-# This should get moved to a TS::Config.pm module (one level above here).
-use constant {
-    TS_CONF_UNMODIFIED     => 0,
-    TS_CONF_MODIFIED       => 1,
-    TS_CONF_REMOVED        => 2
-};
 
 
 #
