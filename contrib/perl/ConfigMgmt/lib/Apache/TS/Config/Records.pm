@@ -31,7 +31,7 @@
 # my $recedit = new Apache::TS::Config::Records(file => "/tmp/records.config");
 # $recedit->set(conf => "proxy.config.log.extended_log_enabled",
 #               val => "123");
-# $recedit->write("/tmp/records.config.new");
+# $recedit->write(file => "/tmp/records.config.new");
 #
 ############################################################################
 
@@ -47,14 +47,24 @@ use Carp;
 our $VERSION = "1.0";
 
 
+# This should get moved to a TS::Config.pm module (one level above here).
+
+use constant {
+    TS_CONF_UNMODIFIED     => 0,
+    TS_CONF_MODIFIED       => 1,
+    TS_CONF_REMOVED        => 2
+};
+
+
 #
 # Constructor
 #
 sub new {
     my ($class, %args) = @_;
     my $self = {};
+    my $f = $args{file} || $args{filename} || $_[0] || "-";
 
-    $self->{_filename} = $args{file};  # Filename to open when loading and saving
+    $self->{_filename} = $f;  # Filename to open when loading and saving
     $self->{_configs} = [];            # Storage, and to to preserve order
     $self->{_lookup} = {};             # For faster lookup, indexes into the above
     $self->{_ix} = -1;                 # Empty
@@ -79,7 +89,7 @@ sub load {
         chomp;
         my @p = split(/\s+/, $_, 4);
 
-        push(@{$self->{_configs}}, [$_, \@p, 0]);
+        push(@{$self->{_configs}}, [$_, \@p, TS_CONF_UNMODIFIED]);
 
         ++($self->{_ix});
         next unless ($#p == 3) && (($p[0] eq "LOCAL") || ($p[0] eq "CONFIG"));
@@ -101,7 +111,7 @@ sub load {
 sub get {
     my $self = shift;
     my %args = @_;
-    my $c = $args{conf} || $args{config} || $@[0];
+    my $c = $args{conf} || $args{config} || $_[0];
     my $ix = $self->{_lookup}->{$c};
 
     return [] unless defined($ix);
@@ -115,8 +125,8 @@ sub get {
 sub set {
     my $self = shift;
     my %args = @_;
-    my $c = $args{conf} || $args{config} || $@[0];
-    my $v = $args{val} || $args{value} || $@[1];
+    my $c = $args{conf} || $args{config} || $_[0];
+    my $v = $args{val} || $args{value} || $_[1];
     my $ix = $self->{_lookup}->{$c};
 
     if (!defined($ix)) {
@@ -127,8 +137,9 @@ sub set {
     my $val = $self->{_configs}->[$ix];
 
     @{$val->[1]}[3] = $v;
-    $val->[2] = 1; # Modified
+    $val->[2] = TS_CONF_MODIFIED;
 }
+
 
 #
 # Remove a configuration from the file.
@@ -136,6 +147,11 @@ sub set {
 sub remove {
     my $self = shift;
     my %args = @_;
+    my $c = $args{conf} || $args{config} || $_[0];
+
+    my $ix = $self->{_lookup}->{$c};
+
+    $self->{_configs}->[$ix]->[2] = TS_CONF_REMOVED if defined($ix);
 }
 
 
@@ -155,7 +171,7 @@ sub append {
 sub write {
     my $self = shift;
     my %args = @_;
-    my $filename = $args{filename} || "-";
+    my $filename = $args{file} || $args{filename} || $_[0] || "-";
 
     if ($filename ne "-") {
         close(STDOUT);
@@ -163,11 +179,12 @@ sub write {
     }
 
     foreach (@{$self->{_configs}}) {
-        if ($_->[2]) {
-            # Modified
+        if ($_->[2] == TS_CONF_UNMODIFIED) {
+            print $_->[0], "\n";
+        } elsif ($_->[2] == TS_CONF_MODIFIED) {
             print join(" ", @{$_->[1]}), "\n";
         } else {
-            print $_->[0], "\n";
+            # No-op if removed
         }
     }
 }
