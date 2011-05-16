@@ -130,6 +130,14 @@ sub set {
     $val->[2] = 1; # Modified
 }
 
+#
+# Remove a configuration from the file.
+#
+sub remove {
+    my $self = shift;
+    my %args = @_;
+}
+
 
 #
 # Append anything to the "end" of the configuration. We will assure that
