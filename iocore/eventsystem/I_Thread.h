@@ -73,6 +73,8 @@ typedef THREADAPI_RETURN_TYPE(THREADAPI * ThreadFunction) (void *arg);
 
 extern ProxyMutex *global_mutex;
 
+static const int MAX_THREAD_NAME_LENGTH  = 16;
+
 /**
   Base class for the threads in the Event System. Thread is the base
   class for all the thread classes in the Event System. Objects of the
@@ -127,7 +129,7 @@ private:
   Thread & operator =(const Thread &);
 
 public:
-  void start(ThreadFunction f = NULL, void *a = NULL, size_t stacksize = 0);
+  void start(const char* name, ThreadFunction f = NULL, void *a = NULL, size_t stacksize = 0);
 
   virtual void execute()
   {  }

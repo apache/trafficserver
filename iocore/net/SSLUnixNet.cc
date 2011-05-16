@@ -58,7 +58,7 @@ SSLNetProcessor::start(int number_of_ssl_threads)
   if (number_of_ssl_threads < 1)
     return -1;
 
-  ET_SSL = eventProcessor.spawn_event_threads(number_of_ssl_threads);
+  ET_SSL = eventProcessor.spawn_event_threads(number_of_ssl_threads, "ET_SSL");
   if (err == 0)
     err = UnixNetProcessor::start();
   return err;

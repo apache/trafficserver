@@ -73,7 +73,6 @@ typedef timestruc_t ink_timestruc;
 //      The POSIX threads interface
 //
 //////////////////////////////////////////////////////////////////////////////
-
 #if defined(POSIX_THREAD)
 
 static inline void
@@ -311,6 +310,17 @@ ink_create_pipe( int pfd[2])
   ink_assert(pipe(pfd)==0);
 }
 #endif
+
+// This define is from Linux's <sys/prctl.h> and is most likely very
+// Linux specific... Feel free to add support for other platforms
+// that has a feature to give a thread specific name / tag.
+static inline void
+ink_set_thread_name(const char* name)
+{
+#if defined(HAVE_SYS_PRCTL_H) && defined(PR_SET_NAME)
+  prctl(PR_SET_NAME, name, 0, 0, 0);
+#endif /* no prctl.h and PR_SET_NAME not supported */
+}
 
 #endif /* #if defined(POSIX_THREAD) */
 

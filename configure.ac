@@ -936,6 +936,7 @@ TS_FLAG_HEADERS([sys/epoll.h \
                   sys/ioctl.h \
                   sys/byteorder.h \
                   sys/sockio.h \
+		  sys/prctl.h \
                   arpa/inet.h \
                   arpa/nameser.h \
                   arpa/nameser_compat.h \

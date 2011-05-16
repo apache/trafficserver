@@ -72,13 +72,16 @@ struct thread_data_internal
   ThreadFunction f;
   void *a;
   Thread *me;
+  char name[MAX_THREAD_NAME_LENGTH];
 };
 
 static void *
 spawn_thread_internal(void *a)
 {
   thread_data_internal *p = (thread_data_internal *) a;
+
   p->me->set_specific();
+  ink_set_thread_name(p->name);
   if (p->f)
     p->f(p->a);
   else
@@ -88,14 +91,17 @@ spawn_thread_internal(void *a)
 }
 
 void
-Thread::start(ThreadFunction f, void *a, size_t stacksize)
+Thread::start(const char* name, ThreadFunction f, void *a, size_t stacksize)
 {
-  if (0 == stacksize) {
-    REC_ReadConfigInteger(stacksize, "proxy.config.thread.default.stacksize");
-  }
   thread_data_internal *p = (thread_data_internal *) xmalloc(sizeof(thread_data_internal));
+
+  if (0 == stacksize)
+    REC_ReadConfigInteger(stacksize, "proxy.config.thread.default.stacksize");
+
   p->f = f;
   p->a = a;
   p->me = this;
+  memset(p->name, 0, MAX_THREAD_NAME_LENGTH);
+  ink_strncpy(p->name, name, MAX_THREAD_NAME_LENGTH - 1);
   this->tid = ink_thread_create(spawn_thread_internal, (void *) p, 0, stacksize);
 }

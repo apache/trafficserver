@@ -212,8 +212,10 @@ struct AIOThreadInfo:public Continuation
 static AIO_Reqs *
 aio_init_fildes(int fildes, int fromAPI = 0)
 {
+  char thr_name[MAX_THREAD_NAME_LENGTH];
   int i;
   AIO_Reqs *request = (AIO_Reqs *) malloc(sizeof(AIO_Reqs));
+
   memset(request, 0, sizeof(AIO_Reqs));
 
   INK_WRITE_MEMORY_BARRIER;
@@ -244,7 +246,8 @@ aio_init_fildes(int fildes, int fromAPI = 0)
       thr_info = new AIOThreadInfo(request, 1);
     else
       thr_info = new AIOThreadInfo(request, 0);
-    ink_assert(eventProcessor.spawn_thread(thr_info));
+    snprintf(thr_name, MAX_THREAD_NAME_LENGTH, "[ET_AIO %d]", i);
+    ink_assert(eventProcessor.spawn_thread(thr_info, thr_name));
   }
 
   /* the num_filedes should be incremented after initializing everything.

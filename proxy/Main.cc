@@ -1927,6 +1927,9 @@ main(int argc, char **argv)
     pmgmt->registerMgmtCallback(MGMT_EVENT_SHUTDOWN, mgmt_restart_shutdown_callback, NULL);
     pmgmt->registerMgmtCallback(MGMT_EVENT_RESTART, mgmt_restart_shutdown_callback, NULL);
 
+    // The main thread also becomes a net thread.
+    ink_set_thread_name("[ET_NET 0]");
+
     Note("traffic server running");
 
 #if TS_HAS_TESTS

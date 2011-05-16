@@ -365,15 +365,15 @@ RecProcessStart()
   Debug("statsproc", "Starting sync processors:");
   raw_stat_sync_cont *rssc = NEW(new raw_stat_sync_cont(new_ProxyMutex()));
   Debug("statsproc", "\traw-stat syncer");
-  eventProcessor.spawn_thread(rssc);
+  eventProcessor.spawn_thread(rssc, "[STAT_SYNC]");
 
   config_update_cont *cuc = NEW(new config_update_cont(new_ProxyMutex()));
   Debug("statsproc", "\tconfig syncer");
-  eventProcessor.spawn_thread(cuc);
+  eventProcessor.spawn_thread(cuc, "[CONF_SYNC]");
 
   sync_cont *sc = NEW(new sync_cont(new_ProxyMutex()));
   Debug("statsproc", "\tremote syncer");
-  eventProcessor.spawn_thread(sc);
+  eventProcessor.spawn_thread(sc, "[REM_SYNC]");
 
   g_started = true;
 

@@ -204,7 +204,7 @@ NetAccept::init_accept_loop()
     action_->mutex = action_->continuation->mutex;
   }
   SET_CONTINUATION_HANDLER(this, &NetAccept::acceptLoopEvent);
-  eventProcessor.spawn_thread(this);
+  eventProcessor.spawn_thread(this, "ts[ACCEPT]");
 }
 
 

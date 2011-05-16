@@ -119,7 +119,7 @@ DNSProcessor::start(int) {
   IOCORE_EstablishStaticConfigInt32(dns_thread, "proxy.config.dns.dedicated_thread");
 
   if (dns_thread > 0) {
-    ET_DNS = eventProcessor.spawn_event_threads(1); // TODO: Hmmm, should we just get a single thread some other way?
+    ET_DNS = eventProcessor.spawn_event_threads(1, "ET_DNS"); // TODO: Hmmm, should we just get a single thread some other way?
     initialize_thread_for_net(eventProcessor.eventthread[ET_DNS][0], 0);
   } else {
     // Initialize the first event thread for DNS.

@@ -983,7 +983,7 @@ Log::create_threads()
     ink_mutex_init(&flush_mutex, "Flush thread mutex");
     ink_cond_init(&flush_cond);
     Continuation *flush_continuation = NEW(new LoggingFlushContinuation);
-    Event *flush_event = eventProcessor.spawn_thread(flush_continuation);
+    Event *flush_event = eventProcessor.spawn_thread(flush_continuation, "[LOGGING]");
     flush_thread = flush_event->ethread->tid;
 
 #if !defined(IOCORE_LOG_COLLATION)

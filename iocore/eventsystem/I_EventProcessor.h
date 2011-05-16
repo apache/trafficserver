@@ -103,7 +103,7 @@ public:
     @return event object representing the start of the thread.
 
   */
-  Event * spawn_thread(Continuation * cont, ink_sem * sem = NULL);
+  Event *spawn_thread(Continuation * cont, const char *thr_name, ink_sem * sem = NULL);
 
   /**
     Spawns a group of threads for an event type. Spawns the number of
@@ -114,7 +114,7 @@ public:
     @return EventType or thread id for the new group of threads.
 
   */
-  EventType spawn_event_threads(int n_threads);
+  EventType spawn_event_threads(int n_threads, const char* et_name);
 
 
   /**

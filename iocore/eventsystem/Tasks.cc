@@ -31,6 +31,6 @@ int
 TasksProcessor::start(int task_threads)
 {
   if (task_threads > 0)
-    ET_TASK = eventProcessor.spawn_event_threads(task_threads);
+    ET_TASK = eventProcessor.spawn_event_threads(task_threads, "ET_TASK");
   return 0;
 }
