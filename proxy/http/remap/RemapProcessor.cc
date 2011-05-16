@@ -294,30 +294,30 @@ RemapProcessor::perform_remap(Continuation *cont, HttpTransact::State *s)
     return ACTION_RESULT_DONE;
   }
 
-  // EThread *t = cont->mutex->thread_holding;
-  // RemapPlugins *plugins = THREAD_ALLOC_INIT(pluginAllocator, t);
+  if (_use_separate_remap_thread) {
+    RemapPlugins *plugins = pluginAllocator.alloc();
 
-  RemapPlugins *plugins = pluginAllocator.alloc();
+    plugins->setState(s);
+    plugins->setRequestUrl(request_url);
+    plugins->setRequestHeader(request_header);
+    plugins->setHostHeaderInfo(hh_info);
 
-  plugins->setMap(&(s->url_map));
-  plugins->setRequestUrl(request_url);
-  plugins->setRequestHeader(request_header);
-  plugins->setState(s);
-  plugins->setHostHeaderInfo(hh_info);
-
-  if (!_use_separate_remap_thread) {    // lets not schedule anything on our thread group (ET_REMAP), instead, just execute inline
-    int ret = 0;
-    do {
-      ret = plugins->run_single_remap();
-    } while (ret == 0);
-    pluginAllocator.free(plugins);
-    return ACTION_RESULT_DONE;
-  } else {
+    // Execute "inline" if not using separate remap threads.
     ink_debug_assert(cont->mutex->thread_holding == this_ethread());
     plugins->mutex = cont->mutex;
     plugins->action = cont;
     SET_CONTINUATION_HANDLER(plugins, &RemapPlugins::run_remap);
     eventProcessor.schedule_imm(plugins, ET_REMAP);
+
     return &plugins->action;
+  } else {
+    RemapPlugins plugins(s, request_url, request_header, hh_info);
+    int ret = 0;
+
+    do {
+      ret = plugins.run_single_remap();
+    } while (ret == 0);
+
+    return ACTION_RESULT_DONE;
   }
 }
