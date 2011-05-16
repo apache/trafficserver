@@ -1,6 +1,11 @@
                                                          -*- coding: utf-8 -*-
 
 Changes with Apache Traffic Server 2.1.9
+  *) [TS-779] Set thread name for various event types.
+
+  *) [TS-784] Don not use class allocator for remap processing when no
+   remap threads are enabled.
+
   *) [TS-782] Remap processor creates a remap thread even when asked not
    to. 
 
