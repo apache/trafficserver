@@ -29,9 +29,6 @@
 # use Apache::TS::Config::Records;
 #
 # my $recedit = new Apache::TS::Config::Records(file => "/tmp/records.config");
-#
-# $recedit->load();
-#
 # $recedit->set(conf => "proxy.config.log.extended_log_enabled",
 #               val => "123");
 # $recedit->write("/tmp/records.config.new");
@@ -57,11 +54,13 @@ sub new {
     my ($class, %args) = @_;
     my $self = {};
 
-    $self->{filename} = $args{file};   # Filename to open when loading and saving
+    $self->{_filename} = $args{file};  # Filename to open when loading and saving
     $self->{_configs} = [];            # Storage, and to to preserve order
     $self->{_lookup} = {};             # For faster lookup, indexes into the above
     $self->{_ix} = -1;                 # Empty
     bless $self, $class;
+
+    $self->load() if $self->{_filename};
 
     return $self;
 }
@@ -73,7 +72,7 @@ sub new {
 sub load {
     my $self = shift;
     my %args = @_;
-    my $filename = $args{filename} || $self->{filename} || die "Need a filename to load";
+    my $filename = $args{filename} || $self->{_filename} || die "Need a filename to load";
 
     open(FH, "<$filename");
     while (<FH>) {
