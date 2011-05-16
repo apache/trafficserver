@@ -211,6 +211,7 @@ CONFIG proxy.config.http.cache.ignore_client_no_cache INT 1
 CONFIG proxy.config.http.cache.ims_on_client_no_cache INT 1
 CONFIG proxy.config.http.cache.ignore_server_no_cache INT 0
 CONFIG proxy.config.http.cache.ignore_client_cc_max_age INT 0
+CONFIG proxy.config.http.normalize_ae_gzip INT 0       
    # cache responses to cookies has 5 options:
    #   0 - do not cache any responses to cookies
    #   1 - cache for any content-type
