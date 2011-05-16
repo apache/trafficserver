@@ -61,7 +61,7 @@ use constant {
 sub new {
     my ($class, %args) = @_;
     my $self = {};
-    my $f = $args{file} || $args{filename} || $_[0] || "-";
+    my $f = $args{file} || $args{filename} ||  "-";
 
     $self->{_filename} = $f;  # Filename to open when loading and saving
     $self->{_configs} = [];            # Storage, and to to preserve order
@@ -111,7 +111,7 @@ sub load {
 sub get {
     my $self = shift;
     my %args = @_;
-    my $c = $args{conf} || $args{config} || $_[0];
+    my $c = $args{conf} || $args{config};
     my $ix = $self->{_lookup}->{$c};
 
     return [] unless defined($ix);
@@ -147,7 +147,7 @@ sub set {
 sub remove {
     my $self = shift;
     my %args = @_;
-    my $c = $args{conf} || $args{config} || $_[0];
+    my $c = $args{conf} || $args{config};
 
     my $ix = $self->{_lookup}->{$c};
 
@@ -163,7 +163,7 @@ sub remove {
 sub append {
     my $self = shift;
     my %args = @_;
-    my $line = $args{line} || $_[0];
+    my $line = $args{line};
 
     my @p = split(/\s+/, $line, 4);
 
@@ -185,7 +185,7 @@ sub append {
 sub write {
     my $self = shift;
     my %args = @_;
-    my $filename = $args{file} || $args{filename} || $_[0] || "-";
+    my $filename = $args{file} || $args{filename} || "-";
 
     if ($filename ne "-") {
         close(STDOUT);
