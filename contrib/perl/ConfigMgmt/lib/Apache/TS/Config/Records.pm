@@ -48,7 +48,6 @@ our $VERSION = "1.0";
 
 
 # This should get moved to a TS::Config.pm module (one level above here).
-
 use constant {
     TS_CONF_UNMODIFIED     => 0,
     TS_CONF_MODIFIED       => 1,
@@ -93,6 +92,7 @@ sub load {
 
         ++($self->{_ix});
         next unless ($#p == 3) && (($p[0] eq "LOCAL") || ($p[0] eq "CONFIG"));
+        print "Warning! duplicate configuration $p[1]\n" if exists($self->{_lookup}->{$p[1]});
       
         $self->{_lookup}->{$p[1]} = $self->{_ix};
     }
@@ -157,11 +157,25 @@ sub remove {
 
 #
 # Append anything to the "end" of the configuration. We will assure that
-# no duplicated configurations are added.
+# no duplicated configurations are added. Note that this takes a single
+# line.
 #
 sub append {
     my $self = shift;
     my %args = @_;
+    my $line = $args{line} || $_[0];
+
+    my @p = split(/\s+/, $line, 4);
+
+    # Don't appending duplicated configs
+    if (($#p == 3) && exists($self->{_lookup}->{$p[1]})) {
+        print "Warning: duplicate configuration $p[1]\n";
+        return;
+    }
+
+    push(@{$self->{_configs}}, [$line, \@p, TS_CONF_UNMODIFIED]);
+    ++($self->{_ix});
+    $self->{_lookup}->{$p[1]} = $self->{_ix} if ($#p == 3) && (($p[0] eq "LOCAL") || ($p[0] eq "CONFIG"));
 }
 
 
