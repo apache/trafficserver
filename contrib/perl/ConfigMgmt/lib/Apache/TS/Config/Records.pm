@@ -82,7 +82,7 @@ sub load {
     $fn = $args{filename} unless defined($fn);
     $fn = $self->{_filename} unless defined($fn);
 
-    open(FH, "<$fn");
+    open(FH, "<$fn") || die "Can't open file $fn for reading";
     while (<FH>) {
         chomp;
         my @p = split(/\s+/, $_, 4);
