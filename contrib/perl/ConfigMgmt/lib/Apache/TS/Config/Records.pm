@@ -142,14 +142,16 @@ sub set {
     my $ix = $self->{_lookup}->{$c};
 
     if (!defined($ix)) {
-        print "Error: set(): No such configuration exists: $c\n";
-        return;
+      my $type = $args{type};
+
+      $type = "INT" unless defined($type);
+      $self->append(line => "CONFIG $c $type $v");
+    } else {
+        my $val = $self->{_configs}->[$ix];
+
+        @{$val->[1]}[3] = $v;
+        $val->[2] = TS_CONF_MODIFIED;
     }
-
-    my $val = $self->{_configs}->[$ix];
-
-    @{$val->[1]}[3] = $v;
-    $val->[2] = TS_CONF_MODIFIED;
 }
 
 
