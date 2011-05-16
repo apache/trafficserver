@@ -61,9 +61,12 @@ use constant {
 sub new {
     my ($class, %args) = @_;
     my $self = {};
-    my $f = $args{file} || $args{filename} ||  "-";
+    my $fn = $args{file};
 
-    $self->{_filename} = $f;  # Filename to open when loading and saving
+    $fn = $args{filename} unless defined($fn);
+    $fn = "-" unless defined($fn);
+
+    $self->{_filename} = $fn;  # Filename to open when loading and saving
     $self->{_configs} = [];            # Storage, and to to preserve order
     $self->{_lookup} = {};             # For faster lookup, indexes into the above
     $self->{_ix} = -1;                 # Empty
@@ -81,9 +84,12 @@ sub new {
 sub load {
     my $self = shift;
     my %args = @_;
-    my $filename = $args{filename} || $self->{_filename} || die "Need a filename to load";
+    my $fn = $args{file};
 
-    open(FH, "<$filename");
+    $fn = $args{filename} unless defined($fn);
+    $fn = $self->{_filename} unless defined($fn);
+
+    open(FH, "<$fn");
     while (<FH>) {
         chomp;
         my @p = split(/\s+/, $_, 4);
@@ -111,7 +117,9 @@ sub load {
 sub get {
     my $self = shift;
     my %args = @_;
-    my $c = $args{conf} || $args{config};
+    my $c = $args{conf};
+
+    $c = $args{config} unless defined($c);
     my $ix = $self->{_lookup}->{$c};
 
     return [] unless defined($ix);
@@ -125,8 +133,12 @@ sub get {
 sub set {
     my $self = shift;
     my %args = @_;
-    my $c = $args{conf} || $args{config} || $_[0];
-    my $v = $args{val} || $args{value} || $_[1];
+    my $c = $args{conf};
+    my $v = $args{val};
+
+    $c = $args{config} unless defined($c);
+    $v = $args{value} unless defined($v);
+
     my $ix = $self->{_lookup}->{$c};
 
     if (!defined($ix)) {
@@ -147,7 +159,9 @@ sub set {
 sub remove {
     my $self = shift;
     my %args = @_;
-    my $c = $args{conf} || $args{config};
+    my $c = $args{conf};
+
+    $c = $args{config} unless defined($c);
 
     my $ix = $self->{_lookup}->{$c};
 
@@ -185,11 +199,14 @@ sub append {
 sub write {
     my $self = shift;
     my %args = @_;
-    my $filename = $args{file} || $args{filename} || "-";
+    my $fn = $args{file};
 
-    if ($filename ne "-") {
+    $fn = $args{filename} unless defined($fn);
+    $fn = "-" unless defined($fn);
+
+    if ($fn ne "-") {
         close(STDOUT);
-        open(STDOUT, ">$filename") || die "Can't open $filename for writing";
+        open(STDOUT, ">$fn") || die "Can't open $fn for writing";
     }
 
     foreach (@{$self->{_configs}}) {
