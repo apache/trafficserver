@@ -470,9 +470,9 @@ CONFIG proxy.config.ssl.enabled INT 0
    # override that here (set it to a non-zero value).
 CONFIG proxy.config.ssl.number.threads INT 0
    # The following three variables can be
-   # set to 0 to disable SSLv2, SSLv3,
-   # and/or TLSv1
-CONFIG proxy.config.ssl.SSLv2 INT 1
+   # set to 0 to disable SSLv2, SSLv3, and/or TLSv1.
+   # SSLv2 is disabled by default for security concern.
+CONFIG proxy.config.ssl.SSLv2 INT 0
 CONFIG proxy.config.ssl.SSLv3 INT 1
 CONFIG proxy.config.ssl.TLSv1 INT 1
 CONFIG proxy.config.ssl.server_port INT 443
