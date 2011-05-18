@@ -313,10 +313,14 @@ HttpTransactCache::calculate_quality_of_match(CacheLookupHttpConfig * http_confi
   MIMEField *cached_accept_field;
   MIMEField *content_field;
 
+  // For PURGE requests, any alternate is good really.
+  if (client_request->method_get_wksidx() == HTTP_WKSIDX_PURGE)
+    return (float)1.0;
+
   // BZ49848 - for cached negative respones, we don't check for the
   // Accept* headers. This should also be good for the 301 response.
   if (obj_origin_server_response->status_get() != HTTP_STATUS_OK)
-    return (float) 1.0;
+    return (float)1.0;
 
   q[1] = (q[2] = (q[3] = -2.0));        /* just to make debug output happy :) */
 

@@ -52,17 +52,18 @@ public:
   inkcoreapi int marshal(char *buf, int length);
   int unmarshal(Arena * arena, const char *buf, int length);
 
-    CacheLookupHttpConfig():cache_global_user_agent_header(false),
+  CacheLookupHttpConfig():
+    cache_global_user_agent_header(false),
     cache_enable_default_vary_headers(false),
     ignore_accept_mismatch(false),
     ignore_accept_language_mismatch(false),
     ignore_accept_encoding_mismatch(false),
     ignore_accept_charset_mismatch(false),
     cache_vary_default_text(NULL), cache_vary_default_images(NULL), cache_vary_default_other(NULL)
-  {
-  }
-  void *operator  new(size_t size, void *mem);
-  void operator  delete(void *mem);
+  { }
+
+  void *operator new(size_t size, void *mem);
+  void operator delete(void *mem);
 };
 
 extern ClassAllocator<CacheLookupHttpConfig> CacheLookupHttpConfigAllocator;
@@ -70,16 +71,14 @@ extern ClassAllocator<CacheLookupHttpConfig> CacheLookupHttpConfigAllocator;
 extern CacheLookupHttpConfig global_cache_lookup_config;
 
 inline void *
-  CacheLookupHttpConfig::operator
-new(size_t size, void *mem)
+CacheLookupHttpConfig::operator new(size_t size, void *mem)
 {
   (void) size;
   return mem;
 }
 
 inline void
-  CacheLookupHttpConfig::operator
-delete(void *mem)
+CacheLookupHttpConfig::operator delete(void *mem)
 {
   CacheLookupHttpConfigAllocator.free((CacheLookupHttpConfig *) mem);
 }
