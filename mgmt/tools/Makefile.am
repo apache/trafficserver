@@ -27,12 +27,7 @@ AM_CPPFLAGS = \
 MGMT_DEFS = @MGMT_DEFS@
 DEFS += $(MGMT_DEFS)
 
-noinst_PROGRAMS = traffic_shmem_clean
 noinst_LIBRARIES = libinksysapi.a libinkconfigapi.a
-
-traffic_shmem_clean_SOURCES = ShmemClean.cc
-traffic_shmem_clean_LDFLAGS = @EXTRA_CXX_LDFLAGS@ @LIBTOOL_LINK_FLAGS@
-
 libinksysapi_a_SOURCES = SysAPI.cc SysAPI.h
 
 libinkconfigapi_a_SOURCES = \
