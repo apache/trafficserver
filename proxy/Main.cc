@@ -326,7 +326,7 @@ init_system()
   RecInt stackDump;
   bool found = (RecGetRecordInt("proxy.config.stack_dump_enabled", &stackDump) == REC_ERR_OKAY);
 
-  if(found == false) {
+  if (found == false) {
     Warning("Unable to determine stack_dump_enabled , assuming enabled");
     stackDump = 1;
   }
@@ -336,9 +336,6 @@ init_system()
   syslog(LOG_NOTICE, "NOTE: --- Server Starting ---");
   syslog(LOG_NOTICE, "NOTE: Server Version: %s", appVersionInfo.FullVersionInfoStr);
 
-  //
-  // Check cycle counter resolution
-  //
   //
   // Delimit file Descriptors
   //
@@ -1655,6 +1652,7 @@ main(int argc, char **argv)
     RestrictCapabilities();
     xfree(user);
   }
+
   // Can't generate a log message yet, do that right after Diags is
   // setup.
 
@@ -1677,6 +1675,19 @@ main(int argc, char **argv)
   if (is_debug_tag_set("diags"))
     diags->dump();
   DebugCapabilities("server"); // Can do this now, logging is up.
+
+  // Check if we should do mlockall()
+#if defined(MCL_FUTURE)
+  int mlock_flags = 0;
+  TS_ReadConfigInteger(mlock_flags, "proxy.config.mlock_enabled");
+
+  if (mlock_flags == 2) {
+    if (0 != mlockall(MCL_CURRENT | MCL_FUTURE))
+      Warning("Unable to mlockall() on startup");
+    else
+      Debug("server", "Succesfully called mlockall()");
+  }
+#endif
 
   // Check for core file
   if (core_file[0] != '\0') {

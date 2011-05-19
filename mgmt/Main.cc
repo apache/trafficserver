@@ -1224,7 +1224,7 @@ restoreCapabilities() {
   int zret = 0; // return value.
   cap_t cap_set = cap_get_proc(); // current capabilities
   // Make a list of the capabilities we want turned on.
-  cap_value_t cap_list[] = { CAP_NET_ADMIN, CAP_NET_BIND_SERVICE };
+  cap_value_t cap_list[] = { CAP_NET_ADMIN, CAP_NET_BIND_SERVICE, CAP_IPC_LOCK };
   static int const CAP_COUNT = sizeof(cap_list)/sizeof(*cap_list);
 
   cap_set_flag(cap_set, CAP_EFFECTIVE, CAP_COUNT, cap_list, CAP_SET);
