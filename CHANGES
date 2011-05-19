@@ -1,6 +1,18 @@
                                                          -*- coding: utf-8 -*-
 
 Changes with Apache Traffic Server 2.1.9
+  *) [TS-783] Port ATS to IA64. Author: Arno Toell.
+
+  *) [TS-778] Compile Fails on Solaris 10 (gcc). Author: Igor Brezac.
+
+  *) [TS-404] Add a new API, TSOSIpSet() which allows you to bypass the
+    origin server DNS lookup.
+
+  *) [TS-791] Remove ShmemClean.cc, it's no longer needed.
+
+  *) [TS-786] Add a perl module to edit a records.config configuration
+  file.
+
   *) [TS-779] Set thread name for various event types.
 
   *) [TS-784] Don not use class allocator for remap processing when no
