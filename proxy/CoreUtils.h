@@ -60,7 +60,6 @@ struct core_stack_state
 #include <string.h>
 #include <math.h>
 #include <assert.h>
-#include <asm/ptrace.h>         // for structure pt_regs
 #include <elf.h>
 #if TS_USE_LIBEV
 #undef EV_NONE
