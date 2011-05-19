@@ -29,6 +29,7 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include "defalloc.h"
+#include "ink_assert.h"
 
 // Simple Vector class, also supports open hashed sets
 
@@ -624,7 +625,7 @@ Vec<C,A,S>::addx() {
   if (v == e) {
     v = (C*)A::alloc(VEC_INITIAL_SIZE * sizeof(C));
     memcpy(v, &e[0], n * sizeof(C));
-    assert(n < VEC_INITIAL_SIZE);
+    ink_assert(n < VEC_INITIAL_SIZE);
     memset(&v[n], 0, (VEC_INITIAL_SIZE - n) * sizeof(C));
   } else {
     if ((n & (n-1)) == 0) {

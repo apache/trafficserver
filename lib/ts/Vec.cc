@@ -23,7 +23,6 @@
 /* UnionFind after Tarjan */
 
 #include <stdint.h>
-#include <assert.h>
 #include "Vec.h"
 
 uintptr_t prime2[] = {
@@ -72,7 +71,7 @@ uintptr_t open_hash_primes[256] = {
 // binary search over intervals
 static int
 i_find(Intervals *i, int x) {
-  assert(i->n);
+  ink_assert(i->n);
   int l = 0, h = i->n;
  Lrecurse:
   if (h <= l + 2) {
@@ -130,7 +129,7 @@ Intervals::insert(int x) {
     }
     goto Lmore;
   } else {
-    assert(x < v[l]);
+    ink_assert(x < v[l]);
     if (x == v[l] - 1) {
       v[l]--;
       goto Lmerge;

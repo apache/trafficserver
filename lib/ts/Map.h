@@ -26,7 +26,7 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include <assert.h>
+#include "ink_assert.h"
 #include "List.h"
 #include "Vec.h"
 
@@ -54,7 +54,7 @@ template <class K, class C> class MapElem {
   C     value;
   bool operator==(MapElem &e) { return e.key == key; }
   operator uintptr_t(void) { return (uintptr_t)(uintptr_t)key; }
-  MapElem(uintptr_t x) { assert(!x); key = 0; }
+  MapElem(uintptr_t x) { ink_assert(!x); key = 0; }
   MapElem(K akey, C avalue) : key(akey), value(avalue) {}
   MapElem(MapElem &e) : key(e.key), value(e.value) {}
   MapElem() : key(0) {}
