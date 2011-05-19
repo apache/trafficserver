@@ -6128,6 +6128,17 @@ TSHostLookupResultIPGet(TSHostLookupResult lookup_result)
   return ((HostDBInfo *)lookup_result)->ip();
 }
 
+void
+TSOSIpSet(TSHttpTxn txnp, unsigned int ip)
+{
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+  HttpSM *sm = (HttpSM *) txnp;
+  HttpTransact::State *s = &(sm->t_state);
+
+  s->dns_info.lookup_success = true;
+  s->host_db_info.ip() = ip;
+}
+
 /*
  * checks if the cache is ready
  */

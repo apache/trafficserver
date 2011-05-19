@@ -2356,6 +2356,10 @@ extern "C"
      DNS Lookups */
   tsapi TSAction TSHostLookup(TSCont contp, char* hostname, int namelen);
   tsapi unsigned int TSHostLookupResultIPGet(TSHostLookupResult lookup_result);
+  tsapi void TSOSIpSet(TSHttpTxn txnp, unsigned int ip);
+  // TODO: Eventually, we might want something like this as well, but it requires
+  // support for building the HostDBInfo struct:
+  // tsapi void TSHostLookupResultSet(TSHttpTxn txnp, TSHostLookupResult result);
 
   /* --------------------------------------------------------------------------
      Cache VConnections */

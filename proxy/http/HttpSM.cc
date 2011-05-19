@@ -404,26 +404,19 @@ HttpSM::init()
   // selection from alternates happens correctly.
   t_state.cache_info.config.cache_global_user_agent_header = t_state.http_config_param->global_user_agent_header ? true : false;
   t_state.cache_info.config.ignore_accept_mismatch = t_state.http_config_param->ignore_accept_mismatch ? true : false;
-
-  t_state.cache_info.config.ignore_accept_language_mismatch =
-    t_state.http_config_param->ignore_accept_language_mismatch ? true : false;
-
-  t_state.cache_info.config.ignore_accept_encoding_mismatch =
-    t_state.http_config_param->ignore_accept_encoding_mismatch ? true : false;
-
-  t_state.cache_info.config.ignore_accept_charset_mismatch =
-    t_state.http_config_param->ignore_accept_charset_mismatch ? true : false;
-
-
-  t_state.cache_info.config.cache_enable_default_vary_headers =
-    t_state.http_config_param->cache_enable_default_vary_headers ? true : false;
+  t_state.cache_info.config.ignore_accept_language_mismatch = t_state.http_config_param->ignore_accept_language_mismatch ? true : false;
+  t_state.cache_info.config.ignore_accept_encoding_mismatch = t_state.http_config_param->ignore_accept_encoding_mismatch ? true : false;
+  t_state.cache_info.config.ignore_accept_charset_mismatch = t_state.http_config_param->ignore_accept_charset_mismatch ? true : false;
+  t_state.cache_info.config.cache_enable_default_vary_headers = t_state.http_config_param->cache_enable_default_vary_headers ? true : false;
 
   t_state.cache_info.config.cache_vary_default_text = t_state.http_config_param->cache_vary_default_text;
   t_state.cache_info.config.cache_vary_default_images = t_state.http_config_param->cache_vary_default_images;
   t_state.cache_info.config.cache_vary_default_other = t_state.http_config_param->cache_vary_default_other;
 
   t_state.init();
-  // Added to skip dns if the document is in cache. DNS will be forced if there is a ip based based ACL in cache control or parent.config or if the doc_in_cache_skip_dns is disabled or if http caching is disabled
+  // Added to skip dns if the document is in cache. DNS will be forced if there is a ip based ACL in
+  // cache control or parent.config or if the doc_in_cache_skip_dns is disabled or if http caching is disabled
+  // TODO: This probably doesn't honor this as a per-transaction overridable config.
   t_state.force_dns = (ip_rule_in_CacheControlTable() || t_state.parent_params->ParentTable->ipMatch ||
                        !(t_state.txn_conf->doc_in_cache_skip_dns) || !(t_state.txn_conf->cache_http));
 
@@ -6413,30 +6406,30 @@ HttpSM::set_next_state()
         t_state.dns_info.lookup_success = true;
         call_transact_and_set_next_state(NULL);
         break;
+      } else if (t_state.dns_info.lookup_success) { // Already set, from a plugin presumably
+        ink_assert(t_state.host_db_info.ip());
+        Debug("dns", "[HttpTransact::HandleRequest] Skipping DNS lookup, provided by plugin");
+        call_transact_and_set_next_state(NULL);
+        break;
       }
 
       HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::state_hostdb_lookup);
 
       ink_assert(t_state.dns_info.looking_up != HttpTransact::UNDEFINED_LOOKUP);
       do_hostdb_lookup();
-
-
       break;
     }
 
   case HttpTransact::REVERSE_DNS_LOOKUP:
     {
       HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::state_hostdb_reverse_lookup);
-
       do_hostdb_reverse_lookup();
-
       break;
     }
 
   case HttpTransact::CACHE_LOOKUP:
     {
       HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::state_cache_open_read);
-
       do_cache_lookup_and_read();
       break;
     }
