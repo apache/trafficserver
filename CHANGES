@@ -1,6 +1,15 @@
                                                          -*- coding: utf-8 -*-
 
 Changes with Apache Traffic Server 2.1.9
+  *) [TS-769] Fixed infinite loop when getting a 505 response from the
+   origin and the connection is keep-alive.  Now downgrading keep-alive
+   all the time along with the protocol.
+
+  *) [TS-788] Cleaned up the request and response cacheable apis.
+
+  *) [TS-792] Add a config option (disabled by default) to support
+  mlock() and mlockall().
+
   *) [TS-783] Port ATS to IA64. Author: Arno Toell.
 
   *) [TS-778] Compile Fails on Solaris 10 (gcc). Author: Igor Brezac.
