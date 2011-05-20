@@ -5002,21 +5002,21 @@ TSHttpTxnAborted(TSHttpTxn txnp)
 }
 
 void
-TSHttpTxnSetReqCacheableSet(TSHttpTxn txnp)
+TSHttpTxnReqCacheableSet(TSHttpTxn txnp, int flag)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 
   HttpSM* sm = (HttpSM*)txnp;
-  sm->t_state.api_req_cacheable = true;
+  sm->t_state.api_req_cacheable = (flag != 0);
 }
 
 void
-TSHttpTxnSetRespCacheableSet(TSHttpTxn txnp)
+TSHttpTxnRespCacheableSet(TSHttpTxn txnp, int flag)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 
   HttpSM* sm = (HttpSM*)txnp;
-  sm->t_state.api_resp_cacheable = true;
+  sm->t_state.api_resp_cacheable = (flag != 0);
 }
 
 int

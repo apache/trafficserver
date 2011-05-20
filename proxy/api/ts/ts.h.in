@@ -2077,8 +2077,8 @@ extern "C"
   tsapi TSReturnCode TSHttpTxnServerRespGet(TSHttpTxn txnp, TSMBuffer* bufp, TSMLoc* offset);
   tsapi TSReturnCode TSHttpTxnCachedReqGet(TSHttpTxn txnp, TSMBuffer* bufp, TSMLoc* offset);
   tsapi TSReturnCode TSHttpTxnCachedRespGet(TSHttpTxn txnp, TSMBuffer* bufp, TSMLoc* offset);
-  tsapi void TSHttpTxnSetRespCacheableSet(TSHttpTxn txnp);
-  tsapi void TSHttpTxnSetReqCacheableSet(TSHttpTxn txnp);
+  tsapi void TSHttpTxnRespCacheableSet(TSHttpTxn txnp, int flag);
+  tsapi void TSHttpTxnReqCacheableSet(TSHttpTxn txnp, int flag);
   tsapi TSReturnCode TSFetchPageRespGet (TSHttpTxn txnp, TSMBuffer* bufp, TSMLoc* offset);
   tsapi char* TSFetchRespGet(TSHttpTxn txnp, int* length);
   tsapi TSReturnCode TSHttpTxnCacheLookupStatusGet(TSHttpTxn txnp, int* lookup_status);
