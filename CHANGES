@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 
 Changes with Apache Traffic Server 2.1.9
+  *) [TS-797] Wrong delete used in stats processor.
+
   *) [TS-769] Fixed infinite loop when getting a 505 response from the
    origin and the connection is keep-alive.  Now downgrading keep-alive
    all the time along with the protocol.

@@ -86,7 +86,7 @@ startElement(void *userData, const char *name, const char **atts)
     break;
 
   case EXPR_TAG:
-    exprContent = NEW(new char[BUFSIZ * 10]);   // Will free up at endElement
+    exprContent = (char*)xmalloc(BUFSIZ * 10);
     memset(exprContent, 0, BUFSIZ * 10);
     break;
 
@@ -129,8 +129,7 @@ endElement(void *userData, const char *name)
     break;
 
   case EXPR_TAG:
-    statObject->assignExpr(exprContent);
-    delete(exprContent);
+    statObject->assignExpr(exprContent); // This hands over ownership of exprContent
     // fall through
 
   default:
@@ -155,15 +154,11 @@ charDataHandler(void *userData, const XML_Char * name, int len)
   }
 
   if (currentTag == EXPR_TAG) {
-
     strncat(exprContent, content, ((BUFSIZ * 10) - strlen(exprContent) - 1));
 
   } else {
-
     statObject->assignDst(content, nodeVar, sumClusterVar);
-
   }
-
 }
 
 

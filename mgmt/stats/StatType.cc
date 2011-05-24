@@ -507,7 +507,7 @@ StatObject::assignDst(const char *str, bool m_node_var, bool m_sum_var)
  * ------------------------
  */
 void
-StatObject::assignExpr(const char *str)
+StatObject::assignExpr(char *str)
 {
   StatExprToken *statToken = NULL;
 
@@ -515,7 +515,8 @@ StatObject::assignExpr(const char *str)
     Debug(MODULE_INIT, "EXPRESSION: %s\n", str);
   }
   ink_debug_assert(m_expr_string == NULL);
-  m_expr_string = xstrdup(str);
+  // We take ownership here
+  m_expr_string = str;
 
   Tokenizer exprTok(" ");
   exprTok.Initialize(str);
