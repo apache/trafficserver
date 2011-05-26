@@ -2173,10 +2173,10 @@ checkHttpTxnClientIPGet(SocketTest * test, void *data)
 
   if (ntohl(ip) == actual_ip) {
     test->test_client_ip_get = true;
-    SDK_RPRINT(test->regtest, "TSHttpTxnClientIPGet", "TestCase1", TC_PASS, "ok [%08x]", ip);
+    SDK_RPRINT(test->regtest, "TSHttpTxnClientIPGet", "TestCase1", TC_PASS, "ok [%0.8x]", ip);
   } else {
     test->test_client_ip_get = false;
-    SDK_RPRINT(test->regtest, "TSHttpTxnClientIPGet", "TestCase1", TC_FAIL, "Value's Mismatch [expected %08x got %08x]", actual_ip, ip);
+    SDK_RPRINT(test->regtest, "TSHttpTxnClientIPGet", "TestCase1", TC_FAIL, "Value's Mismatch [expected %0.8x got %0.8x]", actual_ip, ip);
   }
   return TS_EVENT_CONTINUE;
 
@@ -2203,7 +2203,7 @@ checkHttpTxnNextHopIPGet(SocketTest * test, void *data)
     SDK_RPRINT(test->regtest, "TSHttpTxnNextHopIPGet", "TestCase1", TC_PASS, "ok");
   } else {
     test->test_next_hop_ip_get = false;
-    SDK_RPRINT(test->regtest, "TSHttpTxnNextHopIPGet", "TestCase1", TC_FAIL, "Value's Mismatch [expected %08x got %08x]", actual_ip, nexthopip);
+    SDK_RPRINT(test->regtest, "TSHttpTxnNextHopIPGet", "TestCase1", TC_FAIL, "Value's Mismatch [expected %0.8x got %0.8x]", actual_ip, nexthopip);
   }
 
   return TS_EVENT_CONTINUE;
@@ -2255,10 +2255,10 @@ checkHttpTxnClientIncomingPortGet(SocketTest * test, void *data)
     test->test_client_incoming_port_get = false;
     return TS_EVENT_CONTINUE;
   }
-  port = ink_inet_port_cast(ptr);
+  port = ntohs(ink_inet_port_cast(ptr));
 
   if (TSMgmtIntGet("proxy.config.http.server_port", &port_from_config_file) != TS_SUCCESS) {
-    port_from_config_file = htons(8080);
+    port_from_config_file = 8080;
   }
 
   TSDebug(UTDBG_TAG, "TS HTTP port = %x, Txn incoming client port %x", (int) port_from_config_file, port);

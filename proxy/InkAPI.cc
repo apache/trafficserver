@@ -5081,9 +5081,16 @@ sockaddr const*
 TSHttpTxnClientAddrGet(TSHttpTxn txnp)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+ 
+  TSHttpSsn ssnp = TSHttpTxnSsnGet(txnp);
+  HttpClientSession *cs = reinterpret_cast<HttpClientSession *>(ssnp);
 
-  HttpSM *sm = (HttpSM*) txnp;
-  return ink_inet_sa_cast(&sm->t_state.client_info.addr);
+  if (cs == NULL) return 0;
+
+  NetVConnection *vc = cs->get_netvc();
+  if (vc == NULL) return 0;
+
+  return ink_inet_sa_cast(vc->get_remote_addr());
 }
 
 unsigned int
@@ -5100,7 +5107,7 @@ TSHttpTxnIncomingAddrGet(TSHttpTxn txnp) {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
  
   TSHttpSsn ssnp = TSHttpTxnSsnGet(txnp);
-  HttpClientSession *cs = (HttpClientSession *) ssnp;
+  HttpClientSession *cs = reinterpret_cast<HttpClientSession *>(ssnp);
 
   if (cs == NULL) return 0;
 
