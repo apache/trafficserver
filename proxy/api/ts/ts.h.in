@@ -613,7 +613,7 @@ extern "C"
   {
     const char* request;
     int request_len;
-    unsigned int ip;
+    sockaddr_storage ip;
     int port;
     TSCont contp;
     TSFetchEvent events;
@@ -2085,31 +2085,82 @@ extern "C"
 
   tsapi TSReturnCode TSHttpTxnTransformRespGet(TSHttpTxn txnp, TSMBuffer* bufp, TSMLoc* offset);
 
-  /**
+  /** Get client address for transaction @a txnp.
       Retrieves the socket address of the remote client that has
-      connected to Traffic Server for the current transaction. The
+      connected to Traffic Server for transaction @a txnp. The
       return structure is the generic socket address storage in
       order to be address-family agnostic. The user of this function
       can then go on to do the approriate thing with the type
       specified in the ss_family field of the structure whether
       that be for IPv4, IPv6, or any other address family.
 
-      @sa socket.h for description of struct sockaddr_storage
-
-      @param txnp HTTP transaction of the connection.
-      @return generic socket address storage.
+      @return Client address for connection to client in transaction @a txnp.
 
    */
-  tsapi const struct sockaddr_storage* INKHttpTxnClientSockAddrGet(TSHttpTxn txnp);
+  tsapi struct sockaddr const* TSHttpTxnClientAddrGet(
+    TSHttpTxn txnp ///< Transaction.
+  );
+  /** Get the incoming address.
+   
+      @note The pointer is valid only for the current callback. Clients
+      that need to keep the value across callbacks must maintain their
+      own storage.
+      
+      @return Local address of the client connection for transaction @a txnp.
+  */
+  tsapi struct sockaddr const* TSHttpTxnIncomingAddrGet(
+    TSHttpTxn txnp ///< Transaction.
+  );
+  /** Get the origin server address.
+   * 
+      @note The pointer is valid only for the current callback. Clients
+      that need to keep the value across callbacks must maintain their
+      own storage.
+      
+      @return The address of the origin server for transaction @a txnp.
+  */
+  tsapi struct sockaddr const* TSHttpTxnServerAddrGet(
+    TSHttpTxn txnp ///< Transaction.
+  );
+  /** Set the origin server address.
 
-  tsapi unsigned int TSHttpTxnClientIPGet(TSHttpTxn txnp);
+      This must be invoked before the origin server address is looked up.
+      If called no lookup is done, the address @a addr is used instead.
+      
+      @return @c TS_SUCCESS if the origin server address is set, @c TS_ERROR otherwise.
+  */
+  tsapi TSReturnCode TSHttpTxnServerAddrSet(
+    TSHttpTxn txnp, ///< Transaction
+    struct sockaddr const* addr ///< Address for origin server.
+  );
+
+  /** Get the next hop address.
+   * 
+      @note The pointer is valid only for the current callback. Clients
+      that need to keep the value across callbacks must maintain their
+      own storage.
+      
+      @return The address of the next hop for transaction @a txnp.
+  */
+  tsapi struct sockaddr const* TSHttpTxnNextHopAddrGet(
+    TSHttpTxn txnp ///< Transaction.
+  );
+
   tsapi TSReturnCode TSHttpTxnClientFdGet(TSHttpTxn txnp, int* fdp);
-  tsapi TSReturnCode TSHttpTxnClientRemotePortGet(TSHttpTxn txnp, int* portp);
-  tsapi int TSHttpTxnClientIncomingPortGet(TSHttpTxn txnp);
-  tsapi unsigned int TSHttpTxnServerIPGet(TSHttpTxn txnp);
-  tsapi unsigned int TSHttpTxnNextHopIPGet(TSHttpTxn txnp);
-  tsapi int TSHttpTxnNextHopPortGet(TSHttpTxn txnp);
-  tsapi TSReturnCode TSHttpTxnOutgoingAttrSet(TSHttpTxn txnp, const struct sockaddr *addr, socklen_t addrlen);
+  tsapi TSReturnCode TSHttpTxnOutgoingAddrSet(TSHttpTxn txnp, struct sockaddr const* addr);
+  
+  /// @deprecated Use TSHttpTxnClientAddrGet
+  tsapi TS_DEPRECATED unsigned int TSHttpTxnClientIPGet(TSHttpTxn txnp);
+  /// @deprecated Use TSHttpTxnClientAddrGet
+  tsapi TS_DEPRECATED TSReturnCode TSHttpTxnClientRemotePortGet(TSHttpTxn txnp, int* portp);
+  /// @deprecated Use TSHttpTxnIncomingAddrGet
+  tsapi TS_DEPRECATED int TSHttpTxnClientIncomingPortGet(TSHttpTxn txnp);
+  /// @deprecated Use TSHttpTxnServerAddrGet
+  tsapi TS_DEPRECATED unsigned int TSHttpTxnServerIPGet(TSHttpTxn txnp);
+  /// @deprecated Use TSHttpTxnNextHopAddrGet
+  tsapi TS_DEPRECATED unsigned int TSHttpTxnNextHopIPGet(TSHttpTxn txnp);
+  /// @deprecated Use TSHttpTxnNextHopAddrGet
+  tsapi TS_DEPRECATED int TSHttpTxnNextHopPortGet(TSHttpTxn txnp);
 
   tsapi void TSHttpTxnErrorBodySet(TSHttpTxn txnp, char* buf, int buflength, char* mimetype);
 
@@ -2265,10 +2316,10 @@ extern "C"
       @param log_port port (in network byte order) that connection will
         be logged as coming from.
       @param vc will be set to point to the new TSVConn on success.
-
+      
    */
-  tsapi TSVConn TSHttpConnect(unsigned int log_ip, int log_port);
-  tsapi void TSFetchUrl(const char* request,int request_len, unsigned int ip, int port , TSCont contp, TSFetchWakeUpOptions callback_options,TSFetchEvent event);
+  tsapi TSVConn TSHttpConnect(struct sockaddr const* addr);
+  tsapi void TSFetchUrl(const char* request,int request_len, struct sockaddr const* addr, TSCont contp, TSFetchWakeUpOptions callback_options,TSFetchEvent event);
   tsapi void TSFetchPages(TSFetchUrlParams_t* params);
 
   /* Check if HTTP State machine is internal or not */
@@ -2312,6 +2363,8 @@ extern "C"
   /**
       Returns the IP address of the remote host with which Traffic Server
       is connected through the vconnection vc.
+      
+      @deprecated Use TSNetVConnRemoteAddrGet
 
       @param vc representing a connection that your plugin has opened
         between Traffic Server and a (remote) host.
@@ -2319,9 +2372,12 @@ extern "C"
         network byte order. Note: this value is 32-bit, for IPv4.
 
    */
-  tsapi unsigned int TSNetVConnRemoteIPGet(TSVConn vc);
+  tsapi TS_DEPRECATED unsigned int TSNetVConnRemoteIPGet(TSVConn vc);
+  
+  tsapi struct sockaddr const* TSNetVConnRemoteAddrGet(TSVConn vc);
 
-  tsapi int TSNetVConnRemotePortGet(TSVConn vc);
+  /// @deprecated Use TSNetVConnRemoteAddrGet
+  tsapi TS_DEPRECATED int TSNetVConnRemotePortGet(TSVConn vc);
 
   /**
       Opens a network connection to the host specified by ip on the port
@@ -2340,23 +2396,25 @@ extern "C"
       your plugin needs to look for an TS_EVENT_VCONN_WRITE_READY to
       be sure that the connection is successfully opened.
 
-      @param contp continuation that is called back when the attempted
-        net connection either succeeds or fails.
-      @param ip of the host to connect to, in network byte order.
-      @param port of the host to connect to, in host byte order.
       @return something allows you to check if the connection is complete,
         or cancel the attempt to connect.
 
    */
-  tsapi TSAction TSNetConnect(TSCont contp, unsigned int ip, int port);
+  tsapi TSAction TSNetConnect(
+    TSCont contp, ///< continuation that is called back when the attempted net connection either succeeds or fails.
+    struct sockaddr const* to ///< Address to which to connect.
+  );
 
   tsapi TSAction TSNetAccept(TSCont contp, int port, int domain, int accept_threads);
 
   /* --------------------------------------------------------------------------
      DNS Lookups */
   tsapi TSAction TSHostLookup(TSCont contp, char* hostname, int namelen);
-  tsapi unsigned int TSHostLookupResultIPGet(TSHostLookupResult lookup_result);
-  tsapi void TSOSIpSet(TSHttpTxn txnp, unsigned int ip);
+  /// @deprecated Use TSHostLookupResultAddrGet
+  tsapi TS_DEPRECATED unsigned int TSHostLookupResultIPGet(TSHostLookupResult lookup_result);
+  tsapi struct sockaddr const* TSHostLookupResultAddrGet(TSHostLookupResult lookup_result);
+  /// @deprecated Use TSHttpTxnServerAddrSet
+  tsapi TS_DEPRECATED void TSOSIpSet(TSHttpTxn txnp, unsigned int ip);
   // TODO: Eventually, we might want something like this as well, but it requires
   // support for building the HostDBInfo struct:
   // tsapi void TSHostLookupResultSet(TSHttpTxn txnp, TSHostLookupResult result);

@@ -201,7 +201,7 @@ HttpClientSession::new_connection(NetVConnection * new_vc, bool backdoor)
   // check what type of socket address we just accepted
   // by looking at the address family value of sockaddr_storage
   // and logging to stat system
-  switch(new_vc->get_remote_addr().ss_family) {
+  switch(new_vc->get_remote_addr()->ss_family) {
     case AF_INET:
       HTTP_INCREMENT_DYN_STAT(http_total_client_connections_ipv4_stat);
     break;

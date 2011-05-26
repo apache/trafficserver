@@ -267,6 +267,8 @@ struct HostDBInfo
 
   uint64_t md5_high;
 
+  sockaddr_in6 ip6;
+
   bool failed() {
     return !ip();
   }

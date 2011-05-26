@@ -1,6 +1,10 @@
                                                          -*- coding: utf-8 -*-
 
 Changes with Apache Traffic Server 2.1.9
+  *) [TS-679] The external API was changed to make it IPv6 compliant
+     (although it doesn't actually work with IPv6). Old API functions
+     were deprecated but not removed.
+
   *) [TS-797] Wrong delete used in stats processor.
 
   *) [TS-769] Fixed infinite loop when getting a 505 response from the

@@ -23,22 +23,22 @@
 
 #include "I_NetVConnection.h"
 
-TS_INLINE const struct sockaddr_storage &
+TS_INLINE sockaddr_storage const*
 NetVConnection::get_remote_addr()
 {
   if (!got_remote_addr) {
     set_remote_addr();
     got_remote_addr = 1;
   }
-  return remote_addr;
+  return &remote_addr;
 }
 
 TS_INLINE unsigned int
 NetVConnection::get_remote_ip()
 {
-  switch (get_remote_addr().ss_family) {
+  switch (get_remote_addr()->ss_family) {
   case AF_INET:
-    return (unsigned int)((struct sockaddr_in *)&(get_remote_addr()))->sin_addr.s_addr;
+    return (unsigned int)((struct sockaddr_in *)(get_remote_addr()))->sin_addr.s_addr;
   default:
     return 0;
   }
@@ -48,42 +48,42 @@ NetVConnection::get_remote_ip()
 TS_INLINE int
 NetVConnection::get_remote_port()
 {
-  switch (get_remote_addr().ss_family) {
+  switch (get_remote_addr()->ss_family) {
   case AF_INET:
-    return ntohs(((struct sockaddr_in *)&(get_remote_addr()))->sin_port);
+    return ntohs(((struct sockaddr_in *)(get_remote_addr()))->sin_port);
   case AF_INET6:
-    return ntohs(((struct sockaddr_in6 *)&(get_remote_addr()))->sin6_port);
+    return ntohs(((struct sockaddr_in6 *)(get_remote_addr()))->sin6_port);
   default:
     return 0;
   }
 }
 
-TS_INLINE const struct sockaddr_storage &
+TS_INLINE sockaddr_storage const*
 NetVConnection::get_local_addr()
 {
   if (!got_local_addr) {
     set_local_addr();
     switch (local_addr.ss_family) {
     case AF_INET:
-      if (((struct sockaddr_in *)&(local_addr))->sin_addr.s_addr || ((struct sockaddr_in *)&(local_addr))->sin_port) {
+      if (((struct sockaddr_in *)(&local_addr))->sin_addr.s_addr || ((struct sockaddr_in *)&(local_addr))->sin_port) {
         got_local_addr = 1;
       }
       break;
     case AF_INET6:
-      if (((struct sockaddr_in6 *)&(local_addr))->sin6_addr.s6_addr || ((struct sockaddr_in6 *)&(local_addr))->sin6_port) {
+      if (((struct sockaddr_in6 *)(&local_addr))->sin6_addr.s6_addr || ((struct sockaddr_in6 *)(&local_addr))->sin6_port) {
         got_local_addr = 1;
       }
     }
   }
-  return local_addr;
+  return &local_addr;
 }
 
 TS_INLINE unsigned int
 NetVConnection::get_local_ip()
 {
-  switch (get_local_addr().ss_family) {
+  switch (get_local_addr()->ss_family) {
   case AF_INET:
-    return (unsigned int)((struct sockaddr_in *)&(get_local_addr()))->sin_addr.s_addr;
+    return (unsigned int)((struct sockaddr_in *)(get_local_addr()))->sin_addr.s_addr;
   default:
     return 0;
   }
@@ -92,11 +92,11 @@ NetVConnection::get_local_ip()
 TS_INLINE int
 NetVConnection::get_local_port()
 {
-  switch (get_local_addr().ss_family) {
+  switch (get_local_addr()->ss_family) {
   case AF_INET:
-    return ntohs(((struct sockaddr_in *)&(get_local_addr()))->sin_port);
+    return ntohs(((struct sockaddr_in *)(get_local_addr()))->sin_port);
   case AF_INET6:
-    return ntohs(((struct sockaddr_in6 *)&(get_local_addr()))->sin6_port);
+    return ntohs(((struct sockaddr_in6 *)(get_local_addr()))->sin6_port);
   default:
     return 0;
   }

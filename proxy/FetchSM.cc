@@ -52,7 +52,9 @@ void
 FetchSM::httpConnect()
 {
   Debug(DEBUG_TAG, "[%s] calling httpconnect write", __FUNCTION__);
-  http_vc = TSHttpConnect(_ip, _port);
+  sockaddr_storage addr;
+  ink_inet_ip4_set(&addr, _ip, _port);
+  http_vc = TSHttpConnect(ink_inet_sa_cast(&addr));
 
   PluginVC *vc = (PluginVC *) http_vc;
 

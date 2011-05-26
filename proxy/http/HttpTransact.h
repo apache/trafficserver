@@ -783,8 +783,8 @@ public:
     // (big-endian) 32-bit number.  Each of the dotted
     // components is a byte, so:
     // 0x25364758 = 0x25.0x36.0x47.0x58 = 37.54.71.88 in decimal.
-    unsigned int ip;
-    struct sockaddr_storage addr;
+    in_addr_t ip;
+    sockaddr_storage addr;
 
     // port to connect to, except for client
     // connection where it is port on proxy
@@ -813,7 +813,8 @@ public:
         port_attribute(SERVER_PORT_DEFAULT),
         is_transparent(false)
     {
-      memset(&addr, 0, sizeof(addr));
+      ink_inet_init(&addr);
+//      memset(&addr, 0, sizeof(addr));
     }
   } ConnectionAttributes;
 

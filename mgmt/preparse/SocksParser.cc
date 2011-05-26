@@ -23,16 +23,3 @@
 
 #include "ink_unused.h"    /* MAGIC_EDITING_TAG */
 #include "IPRange.h"
-
-char *
-SocksParser(int fd)
-{
-  IPRange ip_range;
-  return ip_range.read_table_from_file(fd, "no_socks");
-}
-
-char *
-SocksParser(FILE * fp)
-{
-  return (SocksParser(fileno(fp)));
-}
