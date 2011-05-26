@@ -5125,6 +5125,10 @@ TSHttpTxnServerAddrGet(TSHttpTxn txnp)
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 
   HttpSM *sm = reinterpret_cast<HttpSM *>(txnp);
+  ink_inet_ip4_set(&sm->t_state.server_info.addr,
+    sm->t_state.server_info.ip,
+    sm->t_state.server_info.port
+  );
   return ink_inet_sa_cast(&sm->t_state.server_info.addr);
 }
 
