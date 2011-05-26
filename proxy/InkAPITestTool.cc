@@ -789,6 +789,7 @@ synserver_accept_handler(TSCont contp, TSEvent event, void *data)
   TSAssert(s->magic == MAGIC_ALIVE);
 
   if (event == TS_EVENT_NET_ACCEPT_FAILED) {
+    Warning("Synserver failed to bind to port %d.", ntohs(s->accept_port));
     ink_release_assert(!"Synserver must be able to bind to a port, check system netstat");
     TSDebug(SDBG_TAG, "NET_ACCEPT_FAILED");
     return TS_EVENT_IMMEDIATE;

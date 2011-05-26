@@ -284,14 +284,16 @@ client_handler(TSCont contp, TSEvent event, void *data)
     SDK_RPRINT(SDK_NetVConn_test, "TSNetAccept", "TestCase1", TC_PASS, "ok");
     SDK_RPRINT(SDK_NetVConn_test, "TSNetConnect", "TestCase1", TC_PASS, "ok");
 
-    in_addr_t input_server_ip = 0;
-    int input_server_port = 0;
     sockaddr const* addr = TSNetVConnRemoteAddrGet(static_cast<TSVConn>(data));
-    input_server_ip = ink_inet_ip4_addr_cast(addr);
-    input_server_port = ink_inet_port_cast(addr);
+    in_addr_t input_server_ip = ink_inet_ip4_addr_cast(addr);
+    uint16_t input_server_port = ntohs(ink_inet_port_cast(addr));
 
-    if (input_server_ip != htonl(LOCAL_IP)) {
-      SDK_RPRINT(SDK_NetVConn_test, "TSNetVConnRemoteIPGet", "TestCase1", TC_FAIL, "server ip is incorrect");
+    if (input_server_ip != LOCAL_IP) {
+      char s[INET6_ADDRSTRLEN];
+      inet_ntop(addr->sa_family, addr, s, sizeof s);
+      in_addr a;
+      a.s_addr = LOCAL_IP;
+      SDK_RPRINT(SDK_NetVConn_test, "TSNetVConnRemoteIPGet", "TestCase1", TC_FAIL, "server ip [%s] is incorrect - expected [%x]", s, inet_ntoa(a));
 
       TSContDestroy(contp);
       // Fix me: how to deal with server side cont?
@@ -301,7 +303,7 @@ client_handler(TSCont contp, TSEvent event, void *data)
       SDK_RPRINT(SDK_NetVConn_test, "TSNetVConnRemoteIPGet", "TestCase1", TC_PASS, "ok");
 
     if (input_server_port != server_port) {
-      SDK_RPRINT(SDK_NetVConn_test, "TSNetVConnRemotePortGet", "TestCase1", TC_FAIL, "server port is incorrect");
+      SDK_RPRINT(SDK_NetVConn_test, "TSNetVConnRemotePortGet", "TestCase1", TC_FAIL, "server port [%d] is incorrect -- expected [%d]", input_server_port, server_port);
 
       TSContDestroy(contp);
       // Fix me: how to deal with server side cont?
@@ -2282,26 +2284,26 @@ checkHttpTxnClientRemotePortGet(SocketTest * test, void *data)
   uint16_t port;
   uint16_t browser_port;
   TSHttpTxn txnp = (TSHttpTxn) data;
-  sockaddr const* ptr = TSHttpTxnIncomingAddrGet(txnp);
+  sockaddr const* ptr = TSHttpTxnClientAddrGet(txnp);
 
   browser_port = test->browser->local_port;
 
   if (0 == ptr) {
-    SDK_RPRINT(test->regtest, "TSHttpTxnClientIncomingAddrGet", "TestCase2", TC_FAIL,
-               "TSHttpTxnIncomingAddrGet returned 0 pointer.");
+    SDK_RPRINT(test->regtest, "TSHttpTxnClientClientAddrGet", "TestCase2", TC_FAIL,
+               "TSHttpTxnClientAddrGet returned 0 pointer.");
     test->test_client_remote_port_get = false;
     return TS_EVENT_CONTINUE;
   }
 
-  port = ink_inet_port_cast(ptr);
+  port = ntohs(ink_inet_port_cast(ptr));
   TSDebug(UTDBG_TAG, "Browser port = %x, Txn remote port = %x", browser_port, port);
 
   if (port == browser_port) {
-    SDK_RPRINT(test->regtest, "TSHttpTxnClientRemotePortGet", "TestCase1", TC_PASS, "ok");
+    SDK_RPRINT(test->regtest, "TSHttpTxnClientAddrGet", "TestCase1", TC_PASS, "ok");
     test->test_client_remote_port_get = true;
   } else {
-    SDK_RPRINT(test->regtest, "TSHttpTxnClientRemotePortGet", "TestCase1", TC_FAIL,
-               "Value's Mismatch. From Function: %d Expected Value: %d", ntohs(port), browser_port);
+    SDK_RPRINT(test->regtest, "TSHttpTxnClientAddrGet", "TestCase1", TC_FAIL,
+               "Value's Mismatch. From Function: %d Expected Value: %d", port, browser_port);
     test->test_client_remote_port_get = false;
   }
   return TS_EVENT_CONTINUE;
