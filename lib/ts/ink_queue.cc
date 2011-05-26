@@ -478,17 +478,17 @@ ink_freelists_dump_baselinerel(FILE * f)
   if (f == NULL)
     f = stderr;
 
-  fprintf(f, " allocated  | in-use     |  count  | type size  |   free list name\n");
-  fprintf(f, "rel. to base|rel. to base|         |            |                 \n");
-  fprintf(f, "------------|------------|---------|------------|----------------------------------\n");
+  fprintf(f, "     allocated      |       in-use       |  count  | type size  |   free list name\n");
+  fprintf(f, "  relative to base  |  relative to base  |         |            |                 \n");
+  fprintf(f, "--------------------|--------------------|---------|------------|----------------------------------\n");
 
   fll = freelists;
   while (fll) {
     int a = fll->fl->allocated - fll->fl->allocated_base;
     if (a != 0) {
-      fprintf(f, " %10u | %10u | %7u | %10u | memory/%s\n",
-              (fll->fl->allocated - fll->fl->allocated_base) * fll->fl->type_size,
-              (fll->fl->count - fll->fl->count_base) * fll->fl->type_size,
+      fprintf(f, " %18" PRIu64 " | %18" PRIu64 " | %7u | %10u | memory/%s\n",
+              (uint64_t)(fll->fl->allocated - fll->fl->allocated_base) * (uint64_t)fll->fl->type_size,
+              (uint64_t)(fll->fl->count - fll->fl->count_base) * (uint64_t)fll->fl->type_size,
               fll->fl->count - fll->fl->count_base, fll->fl->type_size, fll->fl->name ? fll->fl->name : "<unknown>");
     }
     fll = fll->next;
@@ -502,14 +502,14 @@ ink_freelists_dump(FILE * f)
   if (f == NULL)
     f = stderr;
 
-  fprintf(f, " allocated  | in-use     | type size  |   free list name\n");
-  fprintf(f, "------------|------------|------------|----------------------------------\n");
+  fprintf(f, "     allocated      |        in-use      | type size  |   free list name\n");
+  fprintf(f, "--------------------|--------------------|------------|----------------------------------\n");
 
   fll = freelists;
   while (fll) {
-    fprintf(f, " %10u | %10u | %10u | memory/%s\n",
-            fll->fl->allocated * fll->fl->type_size,
-            fll->fl->count * fll->fl->type_size, fll->fl->type_size, fll->fl->name ? fll->fl->name : "<unknown>");
+    fprintf(f, " %18" PRIu64 " | %18" PRIu64 " | %10u | memory/%s\n",
+            (uint64_t)fll->fl->allocated * (uint64_t)fll->fl->type_size,
+            (uint64_t)fll->fl->count * (uint64_t)fll->fl->type_size, fll->fl->type_size, fll->fl->name ? fll->fl->name : "<unknown>");
     fll = fll->next;
   }
 }
