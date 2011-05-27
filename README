@@ -46,6 +46,7 @@ plugins to build large scale web applications.
     tcl-devel
     expat-devel
     pcre
+    libcap-devel
 
   Fedora 8 EC2 (Kernel: 2.6.21.7-2.ec2.v1.2.fc8xen):
     FC8 on EC2 requires unique configure declarations, please see that section
@@ -78,6 +79,7 @@ plugins to build large scale web applications.
     expat 
     libexpat-dev 
     libpcre3-dev
+    libcap-dev
 
   Ubuntu EC2 9.10:
     NOTE: Alternately you may use the install scripts in 'contrib' which 
