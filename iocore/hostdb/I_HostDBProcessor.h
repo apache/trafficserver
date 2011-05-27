@@ -366,8 +366,8 @@ struct HostDBRoundRobin
                     (sizeof(char) * MAXDNAME * (HOST_DB_MAX_ROUND_ROBIN_INFO - nn)));
     } else {
       return (int) (sizeof(HostDBRoundRobin) -
-                    sizeof(rr_srv_hosts) -
-                    sizeof(HostDBInfo) * (HOST_DB_MAX_ROUND_ROBIN_INFO - nn));
+                    sizeof(HostDBInfo) * (HOST_DB_MAX_ROUND_ROBIN_INFO - nn) -
+                    sizeof(char) * MAXDNAME * HOST_DB_MAX_ROUND_ROBIN_INFO);
     }
   }
 
