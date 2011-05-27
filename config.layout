@@ -176,18 +176,18 @@
     exec_prefix:   ${prefix}
     bindir:        ${exec_prefix}/bin
     sbindir:       ${exec_prefix}/sbin
-    libdir:        ${exec_prefix}/lib
+    libdir:        ${exec_prefix}/lib+
     libexecdir:    ${exec_prefix}/lib/trafficserver/modules
     infodir:       ${prefix}/share/info
     mandir:        ${prefix}/share/man
-    sysconfdir:    /etc/trafficserver
-    datadir:       ${prefix}/share/trafficserver
+    sysconfdir:    /etc+
+    datadir:       /var/cache+
     installbuilddir: ${prefix}/share/trafficserver/build
-    includedir:    ${prefix}/include/trafficserver
-    localstatedir: /var/lock/trafficserver
-    runtimedir:    /var/run/trafficserver
-    logdir:        /var/log/trafficserver
-    cachedir: /var/cache/trafficserver
+    includedir:    ${prefix}/include
+    localstatedir: /var/run
+    runtimedir:    /var/run+
+    logdir:        /var/log+
+    cachedir: /var/cache+
 </Layout>
 
 #   Gentoo Linux TrafficServer path layout.
