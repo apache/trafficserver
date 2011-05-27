@@ -1,6 +1,14 @@
                                                          -*- coding: utf-8 -*-
 
 Changes with Apache Traffic Server 2.1.9
+  *) [TS-805] HostDB wastes a lot of storage for round-robin entries,
+   and the calculations of size are off.
+
+  *) [TS-806] TS_ADDTO removes duplicates, so avoid this by using the
+   -R option to libtool
+
+  *) [TS-793] Improve print statements for ink_freelist debugging.
+
   *) [TS-679] The external API was changed to make it IPv6 compliant
      (although it doesn't actually work with IPv6). Old API functions
      were deprecated but not removed.
