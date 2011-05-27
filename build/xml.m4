@@ -90,7 +90,7 @@ if test "$enable_expat" != "no"; then
   if test "$expat_base_dir" != "/usr"; then
     TS_ADDTO(CPPFLAGS, [-I${expat_include}])
     TS_ADDTO(LDFLAGS, [-L${expat_ldflags}])
-    TS_ADDTO(LIBTOOL_LINK_FLAGS, [-rpath ${expat_ldflags}])
+    TS_ADDTO(LIBTOOL_LINK_FLAGS, [-R${expat_ldflags}])
   fi
   AC_CHECK_LIB(expat, XML_SetUserData, [expat_have_libs=1])
   if test "$expat_have_libs" != "0"; then
