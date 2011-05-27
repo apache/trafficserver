@@ -295,10 +295,7 @@ struct MultiCacheBase: public MultiCacheHeader
     return NULL;
   }
 
-  virtual float estimated_heap_bytes_per_entry()
-  {
-    return 0.0;
-  }
+  virtual size_t estimated_heap_bytes_per_entry() const { return 0; }
 
   void print_info(FILE * fp);
 

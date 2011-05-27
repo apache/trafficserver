@@ -1058,7 +1058,7 @@ RecordElement RecordsConfig[] = {
   {RECT_CONFIG, "proxy.config.hostdb.filename", RECD_STRING, "host.db", RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
   //       # in entries, may not be changed while running
-  {RECT_CONFIG, "proxy.config.hostdb.size", RECD_INT, "200000", RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
+  {RECT_CONFIG, "proxy.config.hostdb.size", RECD_INT, "120000", RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.hostdb.storage_path", RECD_STRING, TS_BUILD_CACHEDIR, RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,

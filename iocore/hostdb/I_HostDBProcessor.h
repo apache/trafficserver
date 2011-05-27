@@ -120,8 +120,7 @@ struct HostDBRoundRobin;
 struct HostDBInfo
 {
   // Public Interface
-  unsigned int &ip()
-  {
+  unsigned int &ip()  {
     return data.ip;
   }
 
@@ -269,27 +268,13 @@ struct HostDBInfo
 
   sockaddr_in6 ip6;
 
-  bool failed() {
-    return !ip();
-  }
+  bool failed() { return !ip(); }
+  void set_failed() { ip() = 0;  }
 
-  void set_failed()
-  {
-    ip() = 0;
-  }
+  void set_deleted() { deleted = 1; }
+  bool is_deleted() const { return deleted; }
 
-  void set_deleted()
-  {
-    deleted = 1;
-  }
-
-  bool is_deleted() {
-    return deleted;
-  }
-
-  bool is_empty() {
-    return !full;
-  }
+  bool is_empty() const { return !full; }
 
   void set_empty()
   {
@@ -307,6 +292,7 @@ struct HostDBInfo
   void set_full(uint64_t folded_md5, int buckets)
   {
     uint64_t ttag = folded_md5 / buckets;
+
     if (!ttag)
       ttag = 1;
     md5_low_low = (unsigned int) ttag;
@@ -335,8 +321,8 @@ struct HostDBInfo
   int heap_size();
   int *heap_offset_ptr();
 
-HostDBInfo():
-  srv_weight(0), srv_priority(0), srv_port(0), srv_count(0), is_srv(0),
+HostDBInfo()
+  : srv_weight(0), srv_priority(0), srv_port(0), srv_count(0), is_srv(0),
     ip_timestamp(0),
     ip_timeout_interval(0), full(0), backed(0), deleted(0), hits(0), round_robin(0), reverse_dns(0), md5_low_low(0),
     md5_low(0), md5_high(0) {
@@ -378,9 +364,10 @@ struct HostDBRoundRobin
       return (int) ((sizeof(HostDBRoundRobin)) -
                     (sizeof(HostDBInfo) * (HOST_DB_MAX_ROUND_ROBIN_INFO - nn)) -
                     (sizeof(char) * MAXDNAME * (HOST_DB_MAX_ROUND_ROBIN_INFO - nn)));
-    } else
-    {
-      return (int) (sizeof(HostDBRoundRobin) - sizeof(HostDBInfo) * (HOST_DB_MAX_ROUND_ROBIN_INFO - nn));
+    } else {
+      return (int) (sizeof(HostDBRoundRobin) -
+                    sizeof(rr_srv_hosts) -
+                    sizeof(HostDBInfo) * (HOST_DB_MAX_ROUND_ROBIN_INFO - nn));
     }
   }
 

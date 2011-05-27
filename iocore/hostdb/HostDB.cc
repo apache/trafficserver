@@ -1989,23 +1989,21 @@ bool HostDBInfo::match(INK_MD5 & md5, int bucket, int buckets)
   if (md5[1] != md5_high)
     return false;
 
-  uint64_t
-    folded_md5 = fold_md5(md5);
-  uint64_t
-    ttag = folded_md5 / buckets;
+  uint64_t folded_md5 = fold_md5(md5);
+  uint64_t ttag = folded_md5 / buckets;
 
   if (!ttag)
     ttag = 1;
+
   struct
   {
-    unsigned int
-      md5_low_low:
-      24;
-    unsigned int
-      md5_low;
+    unsigned int md5_low_low:24;
+    unsigned int md5_low;
   } tmp;
+
   tmp.md5_low_low = (unsigned int) ttag;
   tmp.md5_low = (unsigned int) (ttag >> 24);
+
   return tmp.md5_low_low == md5_low_low && tmp.md5_low == md5_low;
 }
 
