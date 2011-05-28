@@ -70,7 +70,7 @@ int cache_config_hit_evacuate_percent = 10;
 int cache_config_hit_evacuate_size_limit = 0;
 #endif
 int cache_config_force_sector_size = 0;
-int cache_config_target_fragment_size = 1048576;
+int cache_config_target_fragment_size = DEFAULT_TARGET_FRAGMENT_SIZE;
 int cache_config_agg_write_backlog = AGG_SIZE * 2;
 int cache_config_enable_checksum = 0;
 int cache_config_alt_rewrite_max_size = 4096;
