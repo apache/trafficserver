@@ -613,7 +613,7 @@ extern "C"
   {
     const char* request;
     int request_len;
-    sockaddr_storage ip;
+    struct sockaddr_storage ip;
     int port;
     TSCont contp;
     TSFetchEvent events;
