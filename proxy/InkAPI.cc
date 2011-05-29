@@ -7632,12 +7632,20 @@ TSHttpTxnConfigFind(const char* name, int length, TSOverridableConfigKey *conf, 
     break;
 
   case 39:
-    if (!strncmp(name, "proxy.config.http.anonymize_remove_from", length))
-      cnf = TS_CONFIG_HTTP_ANONYMIZE_REMOVE_FROM;
-    else if (!strncmp(name, "proxy.config.http.keep_alive_enabled_in", length))
-      cnf = TS_CONFIG_HTTP_KEEP_ALIVE_ENABLED_IN;
-    else if (!strncmp(name, "proxy.config.http.doc_in_cache_skip_dns", length))
-      cnf = TS_CONFIG_HTTP_DOC_IN_CACHE_SKIP_DNS;
+    switch (name[length-1]) {
+    case 'm':
+      if (!strncmp(name, "proxy.config.http.anonymize_remove_from", length))
+        cnf = TS_CONFIG_HTTP_ANONYMIZE_REMOVE_FROM;
+      break;
+    case 'n':
+      if (!strncmp(name, "proxy.config.http.keep_alive_enabled_in", length))
+        cnf = TS_CONFIG_HTTP_KEEP_ALIVE_ENABLED_IN;
+      break;
+    case 's':
+      if (!strncmp(name, "proxy.config.http.doc_in_cache_skip_dns", length))
+        cnf = TS_CONFIG_HTTP_DOC_IN_CACHE_SKIP_DNS;
+      break;
+    }
     break;
 
   case 40:
@@ -7661,6 +7669,7 @@ TSHttpTxnConfigFind(const char* name, int length, TSOverridableConfigKey *conf, 
     case 't':
       if (!strncmp(name, "proxy.config.http.keep_alive_enabled_out", length))
         cnf = TS_CONFIG_HTTP_KEEP_ALIVE_ENABLED_OUT;
+      break;
     case 'y':
       if (!strncmp(name, "proxy.config.http.cache.fuzz.probability", length))
         cnf = TS_CONFIG_HTTP_CACHE_FUZZ_PROBABILITY;
