@@ -1,5 +1,11 @@
                                                          -*- coding: utf-8 -*-
 
+Changes with Apache Traffic Server 3.0.0
+  *) [TS-810] Typo in switch statement + slight improvement.
+
+  *) [TS-809] ts.h broken when compiling C plugins.
+
+
 Changes with Apache Traffic Server 2.1.9
   *) [TS-805] HostDB wastes a lot of storage for round-robin entries,
    and the calculations of size are off.
