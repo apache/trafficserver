@@ -1052,7 +1052,7 @@ UrlRewrite::BuildTable()
   char *fromHost_lower = NULL;
   char *fromHost_lower_ptr = NULL;
   char fromHost_lower_buf[1024];
-  url_mapping *new_mapping;
+  url_mapping *new_mapping = NULL;
   mapping_type maptype;
   referer_info *ri;
   int origLength;
@@ -1099,23 +1099,24 @@ UrlRewrite::BuildTable()
 
     // Strip leading whitespace
     while (*cur_line && isascii(*cur_line) && isspace(*cur_line))
-      cur_line++;
+      ++cur_line;
 
     if ((cur_line_size = strlen((char *) cur_line)) <= 0) {
       cur_line = tokLine(NULL, &tok_state);
-      cln++;
+      ++cln;
       continue;
     }
+
     // Strip trailing whitespace
     cur_line_tmp = cur_line + cur_line_size - 1;
     while (cur_line_tmp != cur_line && isascii(*cur_line_tmp) && isspace(*cur_line_tmp)) {
       *cur_line_tmp = '\0';
-      cur_line_tmp--;
+      --cur_line_tmp;
     }
 
     if ((cur_line_size = strlen((char *) cur_line)) <= 0 || *cur_line == '#' || *cur_line == '\0') {
       cur_line = tokLine(NULL, &tok_state);
-      cln++;
+      ++cln;
       continue;
     }
 
@@ -1135,11 +1136,8 @@ UrlRewrite::BuildTable()
     // Initial verification for number of arguments
     if (bti.paramc<1 || (bti.paramc < 3 && bti.paramv[0][0] != '.') || bti.paramc> BUILD_TABLE_MAX_ARGS) {
       snprintf(errBuf, sizeof(errBuf), "%s Malformed line %d in file %s", modulePrefix, cln + 1, config_file_path);
-      Debug("url_rewrite", "[BuildTable] %s", errBuf);
-      SignalError(errBuf, alarm_already);
-      cur_line = tokLine(NULL, &tok_state);
-      cln++;
-      continue;
+      errStr = errStrBuf;
+      goto MAP_ERROR;
     }
     // just check all major flags/optional arguments
     bti.remap_optflg = check_remap_option(bti.argv, bti.argc);
@@ -1149,11 +1147,12 @@ UrlRewrite::BuildTable()
     if (bti.paramv[0][0] == '.') {
       if ((errStr = parse_directive(&bti, errStrBuf, sizeof(errStrBuf))) != NULL) {
         snprintf(errBuf, sizeof(errBuf) - 1, "%s Error on line %d - %s", modulePrefix, cln + 1, errStr);
-        Debug("url_rewrite", "[BuildTable] %s", errBuf);
-        SignalError(errBuf, alarm_already);
+        errStr = errStrBuf;
+        goto MAP_ERROR;
       }
+      // We skip the rest of the parsing here.
       cur_line = tokLine(NULL, &tok_state);
-      cln++;
+      ++cln;
       continue;
     }
 
@@ -1179,11 +1178,8 @@ UrlRewrite::BuildTable()
       maptype = FORWARD_MAP_REFERER;
     } else {
       snprintf(errBuf, sizeof(errBuf) - 1, "%s Unknown mapping type at line %d", modulePrefix, cln + 1);
-      Debug("url_rewrite", "[BuildTable] - %s", errBuf);
-      SignalError(errBuf, alarm_already);
-      cur_line = tokLine(NULL, &tok_state);
-      cln++;
-      continue;
+      errStr = errStrBuf;
+      goto MAP_ERROR;
     }
 
     new_mapping = NEW(new url_mapping(cln));  // use line # for rank for now
@@ -1360,40 +1356,6 @@ UrlRewrite::BuildTable()
       Debug("url_rewrite_regex", "Configured regex rule for host [%s]", fromHost_lower);
     }
 
-    add_result = false;
-
-    switch (maptype) {
-    case FORWARD_MAP:
-    case FORWARD_MAP_REFERER:
-      if ((add_result = _addToStore(forward_mappings, new_mapping, reg_map, fromHost_lower,
-                                    is_cur_mapping_regex, num_rules_forward)) == true) {
-        // @todo: is this applicable to regex mapping too?
-        SetHomePageRedirectFlag(new_mapping, new_mapping->toUrl);
-      }
-      break;
-    case REVERSE_MAP:
-      add_result = _addToStore(reverse_mappings, new_mapping, reg_map, fromHost_lower,
-                               is_cur_mapping_regex, num_rules_reverse);
-      new_mapping->homePageRedirect = false;
-      break;
-    case PERMANENT_REDIRECT:
-      add_result = _addToStore(permanent_redirects, new_mapping, reg_map, fromHost_lower,
-                               is_cur_mapping_regex, num_rules_redirect_permanent);
-      break;
-    case TEMPORARY_REDIRECT:
-      add_result = _addToStore(temporary_redirects, new_mapping, reg_map, fromHost_lower,
-                               is_cur_mapping_regex, num_rules_redirect_temporary);
-      break;
-    default:
-      // 'default' required to avoid compiler warning; unsupported map
-      // type would have been dealt with much before this
-      break;
-    };
-
-    if (!add_result) {
-      goto MAP_WARNING;
-    }
-
     // If a TS receives a request on a port which is set to tunnel mode
     // (ie, blind forwarding) and a client connects directly to the TS,
     // then the TS will use its IPv4 address and remap rules given
@@ -1446,20 +1408,14 @@ UrlRewrite::BuildTable()
         // this loads the first plugin
         if (load_remap_plugin(bti.argv, bti.argc, new_mapping, errStrBuf, sizeof(errStrBuf), 0, &plugin_found_at)) {
           Debug("remap_plugin", "Remap plugin load error - %s", errStrBuf[0] ? errStrBuf : "Unknown error");
-          Debug("url_rewrite", "Remap plugin load error - %s", errStrBuf[0] ? errStrBuf : "Unknown error");
-          ink_error(errStrBuf);
           errStr = errStrBuf;
           goto MAP_ERROR;
         }
         //this loads any subsequent plugins (if present)
         while (plugin_found_at) {
           jump_to_argc += plugin_found_at;
-          int ret = load_remap_plugin(bti.argv, bti.argc, new_mapping, errStrBuf, sizeof(errStrBuf), jump_to_argc,
-                                      &plugin_found_at);
-          if (ret) {
+          if (load_remap_plugin(bti.argv, bti.argc, new_mapping, errStrBuf, sizeof(errStrBuf), jump_to_argc, &plugin_found_at)) {
             Debug("remap_plugin", "Remap plugin load error - %s", errStrBuf[0] ? errStrBuf : "Unknown error");
-            Debug("url_rewrite", "Remap plugin load error - %s", errStrBuf[0] ? errStrBuf : "Unknown error");
-            ink_error(errStrBuf);
             errStr = errStrBuf;
             goto MAP_ERROR;
           }
@@ -1467,31 +1423,60 @@ UrlRewrite::BuildTable()
       }
     }
 
+    // Now add the mapping to appropriate container
+    add_result = false;
+    switch (maptype) {
+    case FORWARD_MAP:
+    case FORWARD_MAP_REFERER:
+      if ((add_result = _addToStore(forward_mappings, new_mapping, reg_map, fromHost_lower,
+                                    is_cur_mapping_regex, num_rules_forward)) == true) {
+        // @todo: is this applicable to regex mapping too?
+        SetHomePageRedirectFlag(new_mapping, new_mapping->toUrl);
+      }
+      break;
+    case REVERSE_MAP:
+      add_result = _addToStore(reverse_mappings, new_mapping, reg_map, fromHost_lower,
+                               is_cur_mapping_regex, num_rules_reverse);
+      new_mapping->homePageRedirect = false;
+      break;
+    case PERMANENT_REDIRECT:
+      add_result = _addToStore(permanent_redirects, new_mapping, reg_map, fromHost_lower,
+                               is_cur_mapping_regex, num_rules_redirect_permanent);
+      break;
+    case TEMPORARY_REDIRECT:
+      add_result = _addToStore(temporary_redirects, new_mapping, reg_map, fromHost_lower,
+                               is_cur_mapping_regex, num_rules_redirect_temporary);
+      break;
+    default:
+      // 'default' required to avoid compiler warning; unsupported map
+      // type would have been dealt with much before this
+      break;
+    }
+    if (!add_result)
+      goto MAP_WARNING;
+
     if (unlikely(fromHost_lower_ptr))
       fromHost_lower_ptr = (char *) xfree_null(fromHost_lower_ptr);
 
     cur_line = tokLine(NULL, &tok_state);
-    cln++;
+    ++cln;
     continue;
 
-  MAP_WARNING:
-    Error("Could not add rule at line #%d; Continuing with remaining lines", cln + 1);
-    if (new_mapping) {
-      delete new_mapping;
-      new_mapping = NULL;
-    }
-    continue;
-
+    // Deal with error / warning scenarios
   MAP_ERROR:
     snprintf(errBuf, sizeof(errBuf), "%s %s at line %d", modulePrefix, errStr, cln + 1);
     SignalError(errBuf, alarm_already);
+    ink_error(errBuf);
+
+  MAP_WARNING:
+    Warning("Could not add rule at line #%d; Continuing with remaining lines", cln + 1);
     if (new_mapping) {
       delete new_mapping;
       new_mapping = NULL;
     }
     cur_line = tokLine(NULL, &tok_state);
-    cln++;
-    return 1;
+    ++cln;
+    continue;
   }                             /* end of while(cur_line != NULL) */
 
   clear_xstr_array(bti.paramv, sizeof(bti.paramv) / sizeof(char *));

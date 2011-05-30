@@ -48,7 +48,7 @@ url_mapping::add_plugin(remap_plugin_info* i, void* ih)
 
   _plugin_list[_plugin_count] = i;
   _instance_data[_plugin_count] = ih;
-  _plugin_count++;
+  ++_plugin_count;
 
   return true;
 }

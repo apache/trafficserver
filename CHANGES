@@ -1,6 +1,13 @@
                                                          -*- coding: utf-8 -*-
 
+Changes with Apache Traffic Server 3.1.0
+  *) 
+
+
 Changes with Apache Traffic Server 3.0.0
+  *) [TS-798] We add broken remap rules when we encounter parse errors of
+   remap.config.
+
   *) [TS-810] Typo in switch statement + slight improvement.
 
   *) [TS-809] ts.h broken when compiling C plugins.
