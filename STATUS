@@ -1,4 +1,4 @@
-Traffic Server 2.1 STATUS:                                              -*-text-*-
+Traffic Server 3.0 STATUS:                                              -*-text-*-
 Last modified at [$Date$]
 
 The current version of this file can be found at:
@@ -10,19 +10,9 @@ Release history:
     [NOTE that x.{odd}.z versions are strictly Alpha/Beta releases,
           while x.{even}.z versions are Stable/GA releases.]
 
-    2.1.9-unstable  : Released on May 30, 2011
-    2.1.8-unstable  : Released on May 5, 2011
-    2.1.7-unstable  : Released on March 21, 2011
-    2.1.6-unstable  : Released on March 3, 2011
-    2.1.5-unstable  : Released on January 12, 2011
-    2.1.4-unstable  : Released on November 12, 2010
-    2.1.3-unstable  : Released on September 23, 2010
-    2.1.2-unstable  : Released on August 31, 2010
-    2.1.1-unstable  : Released on June 7, 2010
-    2.1.0-unstable  : Released on May 17, 2010
+    3.0.0           : Released on <xyz>, 2011
     2.0.1           : Released on August 31, 2010
     2.0.0           : Released on April 28, 2010
-    2.0.0-alpha     : Released March 13, 2010
 
 
 Contributors looking for a mission:
@@ -36,12 +26,30 @@ Contributors looking for a mission:
   * Open bugs in the bug database.
 
 
+CURRENT RELEASE NOTES:
+
+
 RELEASE SHOWSTOPPERS:
 
-A list of all bugs scheduled for the next release can be found at
+A list of all bugs open for the next v3.0.1 release can be found at
 
-  http://s.apache.org/ts-2.1.9
+  http://s.apache.org/ts-3.0.1
 
+
+PATCHES ACCEPTED TO BACKPORT FROM TRUNK:
+  [ start all new proposals below, under PATCHES PROPOSED. ]
+
+
+PATCHES PROPOSED TO BACKPORT FROM TRUNK:
+  [ New proposals should be added at the end of the list ]
+
+  * remap: If we encounter parsing errors of remap.config, i.e. a broken
+           configuration, we end up adding it to the remap containers
+           anyways. This is not a broken configuration, it's also a
+           configuration that is free()'d back to the heap. This is bad.
+    Trunk patch: http://svn.apache.org/viewvc?rev=1129268&view=rev
+    Jira: https://issues.apache.org/jira/browse/TS-798
+    +1: zwoop
 
 RELEASE PROCESS
 
