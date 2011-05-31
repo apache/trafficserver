@@ -48,6 +48,7 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
            anyways. This is not a broken configuration, it's also a
            configuration that is free()'d back to the heap. This is bad.
     Trunk patch: http://svn.apache.org/viewvc?rev=1129268&view=rev
+                 http://svn.apache.org/viewvc?rev=1129704&view=rev
     Jira: https://issues.apache.org/jira/browse/TS-798
     +1: zwoop
 
