@@ -1466,7 +1466,7 @@ UrlRewrite::BuildTable()
   MAP_ERROR:
     snprintf(errBuf, sizeof(errBuf), "%s %s at line %d", modulePrefix, errStr, cln + 1);
     SignalError(errBuf, alarm_already);
-    ink_error(errBuf);
+    ink_fatal(1, errBuf);
 
   MAP_WARNING:
     Warning("Could not add rule at line #%d; Continuing with remaining lines", cln + 1);
