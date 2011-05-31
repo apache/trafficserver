@@ -37,7 +37,7 @@ Usage: $0 OPTIONS
 
 OPTIONS
 
-	-f|--file     File which PUSH
+	-f|--file     Which file to PUSH
 	-u|--url      URL where to PUSH
 	-v|--verbose  Print the PUSHed content to stdout
 
@@ -51,13 +51,13 @@ HELP
 die ("--file and --url must be given!" ) unless ( $f_name && $url) ;
 
 open (my $fh, '<', $f_name) or die $!;
-binmode $fh;
 my $uri = URI->new($url);
 my $f_type = mimetype($f_name);
 
 #
 # read the file in one go:
 #
+binmode $fh;
 my $f = do { local $/; <$fh> };
 my $len_content = length($f) + 2;
 
@@ -66,7 +66,8 @@ my $response = "HTTP/1.0 200 OK${CRLF}Content-type: ${f_type}${CRLF}Content-leng
 my $len_push = length $response;
 
 my $sock = IO::Socket::INET->new(PeerAddr => $uri->host, PeerPort => $uri->port, Proto => 'tcp') or die "Error creating socket: $!";
-print "PUSH ${url} HTTP/1.0${CRLF}Content-Length: ${len_push}${CRLF}${CRLF}${response}" if ($debug);
-print $sock "PUSH $url HTTP/1.0${CRLF}Content-Length: ${len_push}${CRLF}${CRLF}${response}";
+my $push = "PUSH ${url} HTTP/1.0${CRLF}Content-Length: ${len_push}${CRLF}${CRLF}${response}";
+print $push if ($debug);
+print $sock $push;
 print do { local $/; <$sock> };
 
