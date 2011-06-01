@@ -37,7 +37,8 @@ A list of all bugs open for the next v3.0.1 release can be found at
 
 
 PATCHES ACCEPTED TO BACKPORT FROM TRUNK:
-  [ start all new proposals below, under PATCHES PROPOSED. ]
+  [ start all new proposals below, under PATCHES PROPOSED. Keep accepted
+    proposals here, in chronological order. ]
 
   * remap: If we encounter parsing errors of remap.config, i.e. a broken
            configuration, we end up adding it to the remap containers
