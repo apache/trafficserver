@@ -39,6 +39,15 @@ A list of all bugs open for the next v3.0.1 release can be found at
 PATCHES ACCEPTED TO BACKPORT FROM TRUNK:
   [ start all new proposals below, under PATCHES PROPOSED. ]
 
+  * remap: If we encounter parsing errors of remap.config, i.e. a broken
+           configuration, we end up adding it to the remap containers
+           anyways. This is not a broken configuration, it's also a
+           configuration that is free()'d back to the heap. This is bad.
+    Trunk patch: http://svn.apache.org/viewvc?rev=1129268&view=rev
+                 http://svn.apache.org/viewvc?rev=1129704&view=rev
+    Jira: https://issues.apache.org/jira/browse/TS-798
+    +1: zwoop, ericb, bcall
+
 
 PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   [ New proposals should be added at the end of the list ]
