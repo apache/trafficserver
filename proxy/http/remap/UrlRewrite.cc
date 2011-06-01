@@ -1390,7 +1390,8 @@ UrlRewrite::BuildTable()
             if (bti.paramv[3] != NULL)
               u_mapping->tag = xstrdup(&(bti.paramv[3][0]));
             if (!TableInsert(forward_mappings.hash_lookup, u_mapping, ipv4_name)) {
-              goto MAP_WARNING;
+              errStr = "Unable to add mapping rule to lookup table";
+              goto MAP_ERROR;
             }
             num_rules_forward++;
             SetHomePageRedirectFlag(u_mapping, u_mapping->toUrl);
@@ -1452,8 +1453,10 @@ UrlRewrite::BuildTable()
       // type would have been dealt with much before this
       break;
     }
-    if (!add_result)
-      goto MAP_WARNING;
+    if (!add_result) {
+      errStr = "Unable to add mapping rule to lookup table";
+      goto MAP_ERROR;
+    }
 
     if (unlikely(fromHost_lower_ptr))
       fromHost_lower_ptr = (char *) xfree_null(fromHost_lower_ptr);
@@ -1464,19 +1467,10 @@ UrlRewrite::BuildTable()
 
     // Deal with error / warning scenarios
   MAP_ERROR:
+    Warning("Could not add rule at line #%d; Aborting!", cln + 1);
     snprintf(errBuf, sizeof(errBuf), "%s %s at line %d", modulePrefix, errStr, cln + 1);
     SignalError(errBuf, alarm_already);
-    ink_error(errBuf);
-
-  MAP_WARNING:
-    Warning("Could not add rule at line #%d; Continuing with remaining lines", cln + 1);
-    if (new_mapping) {
-      delete new_mapping;
-      new_mapping = NULL;
-    }
-    cur_line = tokLine(NULL, &tok_state);
-    ++cln;
-    continue;
+    ink_fatal(1, errBuf);
   }                             /* end of while(cur_line != NULL) */
 
   clear_xstr_array(bti.paramv, sizeof(bti.paramv) / sizeof(char *));
