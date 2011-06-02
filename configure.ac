@@ -469,8 +469,26 @@ AC_CHECK_TOOL(AR, ar, ar)
 AC_ISC_POSIX
 AS_IF([test "x$enable_wccp" = "xyes"],
   [
-    AC_PROG_YACC
+
+    # If flex is found, set output variable LEX to ‘flex’ 
+    # Otherwise set LEX to ‘lex’ 
+    # If neither variant is available, set LEX to ‘:’;
     AC_PROG_LEX
+    AS_IF([test "x$LEX" = "x:"  ],
+       AC_MSG_ERROR([Need flex when enabling WCCP])
+    )
+
+    # If bison is found, set output variable YACC to ‘bison -y’. 
+    # Otherwise, if byacc is found, set YACC to ‘byacc’. 
+    # Otherwise set YACC to ‘yacc’. 
+    AC_PROG_YACC
+    AS_IF([test "x$YACC" = "xyacc" ],
+	AC_CHECK_PROG([YACCBIN],[yacc],[yacc],[])
+	AS_IF([test "x$YACCBIN" = "x"],
+		AC_MSG_ERROR([Need at YACC when enabling WCCP])
+	)
+    )
+
   ]
 )
 
