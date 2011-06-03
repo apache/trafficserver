@@ -1,6 +1,12 @@
                                                          -*- coding: utf-8 -*-
 
 Changes with Apache Traffic Server 3.1.0
+  *) [TS-818] Assertion/abort when starting TS with SOCKS proxy enabled.
+   Author: Yakov Markovitch
+
+  *) [TS-815] make sure that a missing yacc/bison|flex/lex is *fatal* when
+   building with wccp. Author: Arno Toll.
+
   *) [TS-798] We add broken remap rules when we encounter parse errors of
    remap.config.
 
