@@ -39,6 +39,11 @@ A list of all bugs open for the next v3.0.1 release can be found at
 PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   [ New proposals should be added at the end of the list ]
 
+  * SOCKS: Assertion/abort when starting TS with SOCKS proxy enabled
+    Trunk patch: http://svn.apache.org/viewvc?rev=1131080&view=rev
+    Jira: https://issues.apache.org/jira/browse/TS-818
+    +1: zwoop
+
 
 RELEASE PROCESS
 
