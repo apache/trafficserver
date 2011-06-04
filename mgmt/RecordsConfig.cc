@@ -1134,7 +1134,7 @@ RecordElement RecordsConfig[] = {
   //# 2: full logging
   {RECT_CONFIG, "proxy.config.log.logging_enabled", RECD_INT, "3", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-4]", RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.log.log_buffer_size", RECD_INT, "16384", RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
+  {RECT_CONFIG, "proxy.config.log.log_buffer_size", RECD_INT, "9216", RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.log.max_entries_per_buffer", RECD_INT, "200", RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
