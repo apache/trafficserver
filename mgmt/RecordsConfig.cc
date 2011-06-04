@@ -78,7 +78,7 @@ RecordElement RecordsConfig[] = {
   {RECT_CONFIG, "proxy.config.syslog_facility", RECD_STRING, "LOG_DAEMON", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
   //# Negative core limit means max out limit
-  {RECT_CONFIG, "proxy.config.core_limit", RECD_INT, "0", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
+  {RECT_CONFIG, "proxy.config.core_limit", RECD_INT, "-1", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.stack_dump_enabled", RECD_INT, "1", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
