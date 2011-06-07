@@ -1938,6 +1938,19 @@ mime_field_value_str_from_strlist(HdrHeap * heap, int *new_str_len_return, StrLi
   return new_value;
 }
 
+// Make sure that there is enough space for a header value string with out calling coalesce_str_heaps()
+// when we have pointers into the heap. TODO: This might need to attention for a future release, but
+// ok for now. /leif
+static void verify_heap_prealloc(HdrHeap *heap, size_t prealloc_len)
+{
+    // If there just isn't enough free space in the read-write heap.
+    if (heap->m_read_write_heap && heap->m_read_write_heap->m_free_size <= prealloc_len) {
+        // Allocate enough space, 'free' it, and then coalesce it so it will actually be free not just lost.
+        heap->free_string(heap->allocate_str(prealloc_len), prealloc_len);
+        heap->coalesce_str_heaps();
+    }
+}
+
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
@@ -1948,6 +1961,8 @@ mime_field_value_set_comma_val(HdrHeap * heap, MIMEHdrImpl * mh,
   int len;
   Str *cell;
   StrList list(false);
+
+  verify_heap_prealloc(heap, field->m_len_value + 2 + new_piece_len);
 
   // (1) rip the value into tokens, keeping surrounding quotes, but not whitespace
   HttpCompat::parse_tok_list(&list, 0, field->m_ptr_value, field->m_len_value, ',');
@@ -1978,6 +1993,8 @@ mime_field_value_delete_comma_val(HdrHeap * heap, MIMEHdrImpl * mh, MIMEField * 
   int len;
   Str *cell;
   StrList list(false);
+
+  verify_heap_prealloc(heap, field->m_len_value);
 
   // (1) rip the value into tokens, keeping surrounding quotes, but not whitespace
   HttpCompat::parse_tok_list(&list, 0, field->m_ptr_value, field->m_len_value, ',');
@@ -2025,6 +2042,7 @@ mime_field_value_insert_comma_val(HdrHeap * heap, MIMEHdrImpl * mh,
   Str *cell, *prev;
   StrList list(false);
 
+  verify_heap_prealloc(heap, field->m_len_value + 2 + new_piece_len);
   // (1) rip the value into tokens, keeping surrounding quotes, but not whitespace
   HttpCompat::parse_tok_list(&list, 0, field->m_ptr_value, field->m_len_value, ',');
 
@@ -2064,6 +2082,8 @@ mime_field_value_extend_comma_val(HdrHeap * heap, MIMEHdrImpl * mh,
   int trimmed, len;
   size_t extended_len;
   char *dest, *temp_ptr, temp_buf[128];
+
+  verify_heap_prealloc(heap, field->m_len_value + 2 + new_piece_len);
 
   // (1) rip the value into tokens, keeping surrounding quotes, but not whitespace
   HttpCompat::parse_tok_list(&list, 0, field->m_ptr_value, field->m_len_value, ',');
