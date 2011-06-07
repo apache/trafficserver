@@ -6324,6 +6324,10 @@ HttpTransact::is_response_cacheable(State* s, HTTPHdr* request, HTTPHdr* respons
       return false;
     }
   }
+  if (response_code == HTTP_STATUS_SEE_OTHER ||
+      response_code == HTTP_STATUS_UNAUTHORIZED ||
+      response_code == HTTP_STATUS_PROXY_AUTHENTICATION_REQUIRED)
+    return false;
   // let is_negative_caching_approriate decide what to do
   return true;
 /* Since we weren't caching response obtained with
