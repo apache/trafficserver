@@ -139,7 +139,6 @@ RecLocalInit(Diags * _diags)
     return REC_ERR_OKAY;
   }
 
-  g_records_tree = new RecTree(NULL);
   g_mode_type = RECM_SERVER;
 
   if (RecCoreInit(RECM_SERVER, _diags) == REC_ERR_FAIL) {

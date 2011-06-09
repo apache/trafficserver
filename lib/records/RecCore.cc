@@ -224,6 +224,7 @@ RecCoreInit(RecModeT mode_type, Diags *_diags)
     bool file_exists = true;
     g_rec_config_fpath = Layout::relative_to(Layout::get()->sysconfdir, REC_CONFIG_FILE REC_SHADOW_EXT);
     if (RecFileExists(g_rec_config_fpath) == REC_ERR_FAIL) {
+      xfree((char *)g_rec_config_fpath);
       g_rec_config_fpath = Layout::relative_to(Layout::get()->sysconfdir, REC_CONFIG_FILE);
       if (RecFileExists(g_rec_config_fpath) == REC_ERR_FAIL) {
         RecLog(DL_Warning, "Could not find '%s', system will run with defaults\n", REC_CONFIG_FILE);
@@ -345,6 +346,7 @@ RecRegisterConfigUpdateCb(const char *name, RecConfigUpdateCb update_cb, void *c
       memset(new_callback, 0, sizeof(RecConfigUpdateCbList));
       new_callback->update_cb = update_cb;
       new_callback->update_cookie = cookie;
+
       new_callback->next = NULL;
 
       ink_debug_assert(new_callback);

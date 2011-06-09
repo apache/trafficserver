@@ -238,7 +238,6 @@ RecMessageInit(RecModeT mode_type)
 int
 RecMessageSend(RecMessage * msg)
 {
-
   int msg_size;
 
   // Make a copy of the record, but truncate it to the size actually used
@@ -253,7 +252,6 @@ RecMessageSend(RecMessage * msg)
   }
 
   return REC_ERR_OKAY;
-
 }
 
 //-------------------------------------------------------------------------
@@ -262,21 +260,16 @@ RecMessageSend(RecMessage * msg)
 //
 //-------------------------------------------------------------------------
 #elif defined (REC_BUILD_STUB)
-
 #else
-
 #error "Required #define not specificed; expected REC_BUILD_STAND_ALONE, REC_BUILD_MGMT, or REC_BUILD_STUB"
-
 #endif
 
 //-------------------------------------------------------------------------
 // RecMessageAlloc
 //-------------------------------------------------------------------------
-
 RecMessage *
 RecMessageAlloc(RecMessageT msg_type, int initial_size)
 {
-
   RecMessage *msg;
 
   msg = (RecMessage *) xmalloc(sizeof(RecMessageHdr) + initial_size);
@@ -288,7 +281,6 @@ RecMessageAlloc(RecMessageT msg_type, int initial_size)
   msg->entries = 0;
 
   return msg;
-
 }
 
 //-------------------------------------------------------------------------
@@ -308,7 +300,6 @@ RecMessageFree(RecMessage * msg)
 RecMessage *
 RecMessageMarshal_Realloc(RecMessage * msg, const RecRecord * record)
 {
-
   int msg_ele_size;
   int rec_name_len = -1;
   int rec_data_str_len = -1;
@@ -392,7 +383,6 @@ RecMessageMarshal_Realloc(RecMessage * msg, const RecRecord * record)
   msg->entries += 1;
 
   return msg;
-
 }
 
 //-------------------------------------------------------------------------
@@ -402,12 +392,10 @@ RecMessageMarshal_Realloc(RecMessage * msg, const RecRecord * record)
 int
 RecMessageUnmarshalFirst(RecMessage * msg, RecMessageItr * itr, RecRecord ** record)
 {
-
   itr->ele_hdr = (RecMessageEleHdr *) ((char *) msg + msg->o_start);
   itr->next = 1;
 
   return RecMessageUnmarshalNext(msg, NULL, record);
-
 }
 
 //-------------------------------------------------------------------------
@@ -417,7 +405,6 @@ RecMessageUnmarshalFirst(RecMessage * msg, RecMessageItr * itr, RecRecord ** rec
 int
 RecMessageUnmarshalNext(RecMessage * msg, RecMessageItr * itr, RecRecord ** record)
 {
-
   RecMessageEleHdr *eh;
   RecRecord *r;
 
@@ -464,7 +451,6 @@ RecMessageUnmarshalNext(RecMessage * msg, RecMessageItr * itr, RecRecord ** reco
   *record = r;
 
   return REC_ERR_OKAY;
-
 }
 
 //-------------------------------------------------------------------------
@@ -474,7 +460,6 @@ RecMessageUnmarshalNext(RecMessage * msg, RecMessageItr * itr, RecRecord ** reco
 int
 RecMessageRegisterRecvCb(RecMessageRecvCb recv_cb, void *cookie)
 {
-
   if (g_recv_cb) {
     return REC_ERR_FAIL;
   }
@@ -482,7 +467,6 @@ RecMessageRegisterRecvCb(RecMessageRecvCb recv_cb, void *cookie)
   g_recv_cb = recv_cb;
 
   return REC_ERR_OKAY;
-
 }
 
 //-------------------------------------------------------------------------
@@ -506,7 +490,6 @@ RecMessageRecvThis(void *cookie, char *data_raw, int data_len)
 RecMessage *
 RecMessageReadFromDisk(const char *fpath)
 {
-
   RecMessageHdr msg_hdr;
   RecMessage *msg = NULL;
   RecHandle h_file;
@@ -539,7 +522,6 @@ Ldone:
   }
 
   return msg;
-
 }
 
 //-------------------------------------------------------------------------
@@ -549,7 +531,6 @@ Ldone:
 int
 RecMessageWriteToDisk(RecMessage *msg, const char *fpath)
 {
-
   int msg_size;
   RecHandle h_file;
   int bytes_written;
@@ -568,7 +549,6 @@ RecMessageWriteToDisk(RecMessage *msg, const char *fpath)
   }
 
   return REC_ERR_OKAY;
-
 }
 
 //

@@ -127,10 +127,16 @@ public:
   //              it should not be destroyed during a reconfiguration
   // WRITES_TO_PIPE: object writes to a named pipe rather than to a file
 
-  LogObject(LogFormat * format, const char *log_dir, const char *basename,
+  LogObject(LogFormat *format, const char *log_dir, const char *basename,
+            LogFileFormat file_format, const char *header,
+            int rolling_enabled, int rolling_interval_sec = 0, int rolling_offset_hr = 0, int rolling_size_mb = 0);
+  LogObject(LogFormat format, const char *log_dir, const char *basename,
             LogFileFormat file_format, const char *header,
             int rolling_enabled, int rolling_interval_sec = 0, int rolling_offset_hr = 0, int rolling_size_mb = 0);
 private:
+  void init(LogFormat * format, const char *log_dir, const char *basename,
+            LogFileFormat file_format, const char *header,
+            int rolling_enabled, int rolling_interval_sec = 0, int rolling_offset_hr = 0, int rolling_size_mb = 0);
   LogObject(LogObject &);
 
 public:

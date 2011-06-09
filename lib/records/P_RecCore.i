@@ -572,6 +572,9 @@ RecReadStatsFile()
 
   ink_rwlock_unlock(&g_records_rwlock);
 
+  if (m)
+    xfree(m);
+
   return REC_ERR_OKAY;
 }
 

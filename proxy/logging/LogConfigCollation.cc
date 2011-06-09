@@ -54,8 +54,8 @@ LogConfig::create_pre_defined_objects_with_filter(const PreDefinedFormatInfoList
                                                   LogFilter ** filter, const char *filt_name, bool force_extension)
 {
   PreDefinedFormatInfo *pdi;
-  for (pdi = pre_def_info_list.head; pdi != NULL; pdi = (pdi->link).next) {
 
+  for (pdi = pre_def_info_list.head; pdi != NULL; pdi = (pdi->link).next) {
     char *obj_fname;
     char obj_filt_fname[PATH_MAX];
     if (filt_name) {
