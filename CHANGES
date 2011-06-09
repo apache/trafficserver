@@ -4,6 +4,11 @@ Changes with Apache Traffic Server 3.1.0
   *) [TS-828] Various memory leaks and uninitialized values. Author:
    William Bardwell.
 
+  *) [TS-815] make sure that a missing yacc/bison|flex/lex is *fatal* when
+   building with wccp. Author: Arno Toll.
+
+
+Changes with Apache Traffic Server 3.0.0
   *) [TS-827] TSMimeHdrFieldValueStringInsert() can use freed memory to
   edit headers. Author: William Bardwell.
 
@@ -15,17 +20,12 @@ Changes with Apache Traffic Server 3.1.0
   *) [TS-818] Assertion/abort when starting TS with SOCKS proxy enabled.
    Author: Yakov Markovitch
 
-  *) [TS-815] make sure that a missing yacc/bison|flex/lex is *fatal* when
-   building with wccp. Author: Arno Toll.
-
-  *) [TS-798] We add broken remap rules when we encounter parse errors of
-   remap.config.
-
-
-Changes with Apache Traffic Server 3.0.0
   *) [TS-810] Typo in switch statement + slight improvement.
 
   *) [TS-809] ts.h broken when compiling C plugins.
+
+  *) [TS-798] We add broken remap rules when we encounter parse errors of
+   remap.config.
 
 
 Changes with Apache Traffic Server 2.1.9
