@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 
 Changes with Apache Traffic Server 3.0.0
+  *) [TS-820] Restore log buffer size to previous defaults.
+
   *) [TS-798] We add broken remap rules when we encounter parse errors of
    remap.config.
 
