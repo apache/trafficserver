@@ -59,6 +59,8 @@ test/SDKtest/client/thinktime.slow
 doc/dot/
 doc/Doxyfile
 doc/Doxyfile.in
+lib/tsconfig/test-tsconfig
+lib/tsconfig/TsConfigGrammar.hpp
 lib/ts/ParseRulesCType
 lib/ts/ParseRulesCTypeToLower
 lib/ts/ParseRulesCTypeToUpper

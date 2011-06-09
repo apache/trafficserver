@@ -1,4 +1,4 @@
-%code top {
+%code requires {
 /** @file
 
     TS Configuration grammar.
@@ -21,7 +21,9 @@
     See the License for the specific language governing permissions and
     limitations under the License.
  */
+}
 
+%code top {
 # include "TsConfigTypes.h"
 # include <malloc.h>
 
