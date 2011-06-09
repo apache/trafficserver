@@ -431,11 +431,6 @@ SocksEntry::mainEvent(int event, void *data)
   return ret;
 }
 
-#define SOCKS_REG_STAT(stat)						\
-  RecRegisterRawStat(net_rsb, RECT_PROCESS,				\
-		     "proxy.process.socks." #stat, RECD_INT, RECP_NULL,	\
-		     socks_##stat##_stat, RecRawStatSyncSum)
-
 void
 loadSocksConfiguration(socks_conf_struct * socks_conf_stuff)
 {
@@ -514,9 +509,6 @@ loadSocksConfiguration(socks_conf_struct * socks_conf_stuff)
     goto error;
   }
   Debug("Socks", "Socks Turned on");
-  SOCKS_REG_STAT(connections_successful);
-  SOCKS_REG_STAT(connections_unsuccessful);
-  SOCKS_REG_STAT(connections_currently_open);
   ::close(socks_config_fd);
 
   return;

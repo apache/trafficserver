@@ -1,14 +1,23 @@
                                                          -*- coding: utf-8 -*-
 
 Changes with Apache Traffic Server 3.0.0
+  *) [TS-827] TSMimeHdrFieldValueStringInsert() can use freed memory to
+  edit headers. Author: William Bardwell.
+
+  *) [TS-825] negative caching caches responses that should never be
+   cached: Author: William Bardwell.
+
   *) [TS-820] Restore log buffer size to previous defaults.
 
-  *) [TS-798] We add broken remap rules when we encounter parse errors of
-   remap.config.
+  *) [TS-818] Assertion/abort when starting TS with SOCKS proxy enabled.
+   Author: Yakov Markovitch
 
   *) [TS-810] Typo in switch statement + slight improvement.
 
   *) [TS-809] ts.h broken when compiling C plugins.
+
+  *) [TS-798] We add broken remap rules when we encounter parse errors of
+   remap.config.
 
 
 Changes with Apache Traffic Server 2.1.9
