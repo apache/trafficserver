@@ -10,6 +10,7 @@ Release history:
     [NOTE that x.{odd}.z versions are strictly Alpha/Beta releases,
           while x.{even}.z versions are Stable/GA releases.]
 
+    3.0.1           : Released on <xyz>, 2011
     3.0.0           : Released on June 13th, 2011
     2.0.1           : Released on August 31, 2010
     2.0.0           : Released on April 28, 2010
@@ -38,6 +39,12 @@ A list of all bugs open for the next v3.0.1 release can be found at
 
 PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   [ New proposals should be added at the end of the list ]
+
+  * core: Various memory leaks and uninitialized values.
+    Trunk patch: http://svn.apache.org/viewvc?view=revision&revision=1133639
+    Jira: https://issues.apache.org/jira/browse/TS-828
+    +1: zwoop
+
 
 
 RELEASE PROCESS
