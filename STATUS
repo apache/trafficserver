@@ -48,7 +48,7 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   * build: Build failure with custom lmza directory location.
     Trunk patch: http://svn.apache.org/viewvc?rev=1135769&view=rev
     Jira: https://issues.apache.org/jira/browse/TS-839
-    +1: zwoop
+    +1: zwoop, igalic
 
 
 
