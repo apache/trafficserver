@@ -305,7 +305,7 @@ HostDBCache::start(int flags)
     i++;
   }
   ink_strncpy(storage_path, system_root_dir, sizeof(storage_path));
-  strcat(storage_path, DIR_SEP);
+  strcat(storage_path, "\\");
   strcat(storage_path, szPath);
 #else
   IOCORE_ReadConfigString(storage_path, "proxy.config.hostdb.storage_path", PATH_NAME_MAX);

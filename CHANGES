@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 
 Changes with Apache Traffic Server 3.1.0
+  *) [TS-359] Remove DIR_SEP and use slash directly.
+
   *) [TS-839] Build problems when specifying lmza location.
 
   *) [TS-828] Various memory leaks and uninitialized values. Author:

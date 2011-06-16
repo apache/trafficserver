@@ -675,7 +675,6 @@ mgmt_getAddrForIntr(char *intrName, struct in_addr * addr, int *mtu)
   close(fakeSocket);
 
 #else /* _WIN32 */
-
   // There is no notion of network interface names on NT.
   // So we use a winnt_intr.config file to give each of
   // the interface a name.
@@ -684,9 +683,9 @@ mgmt_getAddrForIntr(char *intrName, struct in_addr * addr, int *mtu)
   FILE *fp = NULL;
 
 #ifdef LOCAL_MANAGER
-  snprintf(intr_file, sizeof(intr_file), "%s%sconfig%s%s", ts_base_dir, DIR_SEP, DIR_SEP, "winnt_intr.config");
+  snprintf(intr_file, sizeof(intr_file), "%s\\config\\%s", ts_base_dir, "winnt_intr.config");
 #else
-  snprintf(intr_file, sizeof(intr_file), "%s%sconfig%s%s", system_base_install, DIR_SEP, DIR_SEP, "winnt_intr.config");
+  snprintf(intr_file, sizeof(intr_file), "%s\\config\\%s", system_base_install, "winnt_intr.config");
 #endif
 
   if ((fp = fopen(intr_file, "r")) == NULL) {

@@ -128,7 +128,7 @@ checkWebContext(WebContext * wctx, const char *desc)
   }
 
   defaultFile.copyFrom(wctx->docRoot, strlen(wctx->docRoot));
-  defaultFile.copyFrom(DIR_SEP, 1);
+  defaultFile.copyFrom("/", 1); // TODO: Win32 support here ?
   defaultFile.copyFrom(wctx->defaultFile, strlen(wctx->defaultFile));
 
   if (stat(defaultFile.bufPtr(), &fInfo) < 0) {
@@ -438,8 +438,8 @@ webIntr_main(void *x)
 
   bzero(api_sock_path, 1024);
   bzero(event_sock_path, 1024);
-  snprintf(api_sock_path, sizeof(api_sock_path), "%s%smgmtapisocket", system_runtime_dir, DIR_SEP);
-  snprintf(event_sock_path, sizeof(event_sock_path), "%s%seventapisocket", system_runtime_dir, DIR_SEP);
+  snprintf(api_sock_path, sizeof(api_sock_path), "%s/mgmtapisocket", system_runtime_dir);
+  snprintf(event_sock_path, sizeof(event_sock_path), "%s/eventapisocket", system_runtime_dir);
 
   // INKqa12562: MgmtAPI sockets should be created with 775 permission
   mode_t oldmask = umask(S_IWOTH);

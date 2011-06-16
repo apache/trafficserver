@@ -46,9 +46,6 @@ template<class T> T max(const T a, const T b)
   return a > b ? a : b;
 }
 
-// Define the directory separator for UNIX
-#define DIR_SEP "/"
-
 #define _O_ATTRIB_NORMAL  0x0000
 #define _O_ATTRIB_OVERLAPPED 0x0000
 
