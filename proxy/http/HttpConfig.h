@@ -50,12 +50,6 @@
 #include "libts.h"
 #include "ProxyConfig.h"
 
-#undef MgmtInt
-#undef MgmtFloat
-#define MgmtInt RecInt
-#define MgmtFloat RecFloat
-
-
 #include "P_RecProcess.h"
 
 

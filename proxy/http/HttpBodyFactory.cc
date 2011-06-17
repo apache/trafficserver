@@ -265,10 +265,6 @@ config_callback(const char *name, RecDataT data_type, RecData data, void *cookie
   return (0);
 }
 
-//#ifdef MODULARIZED
-//void HttpBodyFactory::reconfigure(const char* name, RecDataT data_type,
-//                                  RecData data, void *cookie)
-//#else
 void
 HttpBodyFactory::reconfigure()
 //#endif

@@ -167,10 +167,6 @@
 #define TS_PKGSYSUSER                   "@pkgsysuser@"
 #define TS_PKGSYSGROUP                  "@pkgsysgroup@"
 
-/* TODO: Fix those always defined features */
-#define MODULARIZED
-
-
 /* Various "build" defines */
 #define TS_BUILD_PREFIX "@prefix@"
 #define TS_BUILD_EXEC_PREFIX "@rel_exec_prefix@"

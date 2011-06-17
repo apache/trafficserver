@@ -39,8 +39,6 @@
 
 #define BYTES_TO_MBIT_SCALE (8/1000000.0)
 
-#if defined MODULARIZED
-
 #define ERROR_VALUE      0
 #define StatDataT        RecDataT
 #define StatFloat        RecFloat
@@ -72,26 +70,6 @@ struct StatFloatSamples
     return (current_time - previous_time);
   }
 };
-
-#else
-
-#include "MgmtDefs.h"
-#define ERROR_VALUE      -9999.0
-#define StatDataT        MgmtType
-#define StatFloat        MgmtFloat
-#define StatInt          MgmtInt
-#define StatCounter      MgmtIntCounter
-#define StatString       MgmtString
-
-#define STAT_INT         INK_INT
-#define STAT_FLOAT       INK_FLOAT
-#define STAT_STRING      INK_STRING
-#define STAT_COUNTER     INK_COUNTER
-#define STAT_CONST       INK_STAT_CONST
-#define STAT_FX          INK_STAT_FX
-
-#define StatFloatSamples StatTwoFloatSamples
-#endif
 
 // Urgly workaround -- no optimization in HPUX
 #if defined(hpux)

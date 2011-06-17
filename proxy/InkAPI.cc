@@ -6889,7 +6889,7 @@ TSMgmtConfigIntSet(const char *var_name, TSMgmtInt value)
   int buffer_size = strlen(var_name) + 1 + 32 + 1 + 64 + 1;
 
   buffer = (char *) alloca(buffer_size);
-  snprintf(buffer, buffer_size, "%s %d %" PRId64 "", var_name, INK_INT, value);
+  snprintf(buffer, buffer_size, "%s %d %" PRId64 "", var_name, MGMT_INT, value);
 
   // tell manager to set the configuration; note that this is not
   // transactional (e.g. we return control to the plugin before the

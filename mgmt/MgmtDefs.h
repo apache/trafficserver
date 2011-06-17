@@ -48,14 +48,12 @@ typedef char *MgmtString;
 
 typedef enum
 {
-  INVALID = -1,
-  INK_INT = 0,
-  INK_FLOAT = 1,
-  INK_STRING = 2,
-  INK_COUNTER = 3,
-  INK_STAT_CONST = 4,           // Added for the StatProcessor
-  INK_STAT_FX = 5,              // Added for the StatProcessor
-  MAX_MGMT_TYPE = 6
+  MGMT_INVALID = -1,
+  MGMT_INT = 0,
+  MGMT_FLOAT = 1,
+  MGMT_STRING = 2,
+  MGMT_COUNTER = 3,
+  MGMT_TYPE_MAX = 4
 } MgmtType;
 
 /*
@@ -78,24 +76,6 @@ struct StatTwoIntSamples
   MgmtInt current_value;
 
   MgmtInt diff_value()
-  {
-    return (current_value - previous_value);
-  }
-  ink_hrtime diff_time()
-  {
-    return (current_time - previous_time);
-  }
-};
-
-struct StatTwoFloatSamples
-{
-  const char *lm_record_name;
-  ink_hrtime previous_time;
-  ink_hrtime current_time;
-  MgmtFloat previous_value;
-  MgmtFloat current_value;
-
-  MgmtFloat diff_value()
   {
     return (current_value - previous_value);
   }

@@ -738,16 +738,16 @@ LocalManager::handleMgmtMsgFromProcesses(MgmtMessageHdr * mh)
       // stype is an enum type, so cast to an int* to avoid warnings. /leif
       int tokens = sscanf(data_raw, "%255s %d %255s", var_name, (int *) &stype, var_value);
       if (tokens != 3) {
-        stype = INVALID;
+        stype = MGMT_INVALID;
       }
       switch (stype) {
-      case INK_INT:
+      case MGMT_INT:
         RecSetRecordInt(var_name, ink_atoi64(var_value));
         break;
-      case INK_COUNTER:
-      case INK_FLOAT:
-      case INK_STRING:
-      case INVALID:
+      case MGMT_COUNTER:
+      case MGMT_FLOAT:
+      case MGMT_STRING:
+      case MGMT_INVALID:
       default:
         mgmt_elog(stderr,
                   "[LocalManager::handleMgmtMsgFromProcesses] " "Invalid plugin set-config msg '%s'\n", data_raw);
