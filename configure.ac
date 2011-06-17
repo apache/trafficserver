@@ -343,6 +343,17 @@ AC_ARG_ENABLE([posix-cap],
 AC_MSG_RESULT([$enable_posix_cap])
 
 #
+# use hwloc library when possible (can be disabled)
+#
+AC_MSG_CHECKING([whether to use hwloc library])
+AC_ARG_ENABLE([hwloc],
+  [AS_HELP_STRING([--disable-hwloc],[Don't use the hwloc library])],
+  [],
+  [enable_hwloc="yes"]
+)
+AC_MSG_RESULT([$enable_hwloc])
+
+#
 # Enble ccache explicitly (it's disabled by default, because of build problems in some cases)
 #
 AC_MSG_CHECKING([whether to enable ccache])
@@ -938,6 +949,21 @@ AS_IF([test "x$enable_posix_cap" = "xyes"],
   )
 )
 AC_SUBST(use_posix_cap)
+
+# Check for hwloc library.
+# If we don't find it, disable checking for header.
+use_hwloc=0
+AS_IF([test "x$enable_hwloc" = "xyes"],
+  AC_CHECK_LIB([hwloc],[hwloc_topology_init],
+    [AC_SUBST([LIBHWLOC], ["-lhwloc"])
+     use_hwloc=1
+    ],
+    [enable_hwloc=no]
+  )
+)
+AC_SUBST(use_hwloc)
+
+
 # -----------------------------------------------------------------------------
 # 5. CHECK FOR HEADER FILES
 
@@ -1048,6 +1074,14 @@ if test "x${enable_posix_cap}" = "xyes"; then
   AC_CHECK_HEADERS([sys/capability.h],
     [],
     [AC_MSG_FAILURE([POSIX capabilities header not found. Try --disable-posix-cap])],
+    []
+  )
+fi
+
+if test "x${enable_hwloc}" = "xyes"; then
+  AC_CHECK_HEADERS([hwloc.h],
+    [],
+    [AC_MSG_FAILURE([hwloc header not found. Try --disable-hwloc])],
     []
   )
 fi

@@ -27,8 +27,6 @@
    Created On      : Fri Feb  5 18:22:05 1999
 
    Description:
-
-
  ****************************************************************************/
 #include "libts.h"
 
@@ -178,15 +176,6 @@ init_system_syslog_log_configure(void)
   }
 }
 
-
-/*
-void
-init_system_logging()
-{
-  //  iObject::Init();
-  //  iLogBufferBuffer::Init();
-}
-*/
 
 void
 init_system_adjust_num_of_net_threads(void)

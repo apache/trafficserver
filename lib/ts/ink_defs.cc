@@ -43,6 +43,25 @@
 int off = 0;
 int on = 1;
 
+#if TS_USE_HWLOC
+#include <hwloc.h>
+static hwloc_topology_t gTopology;
+static bool hwloc_setup = false;
+
+// Little helper to initialize the hwloc topology, once.
+void static inline
+setup_hwloc()
+{
+  if (hwloc_setup)
+    return;
+
+  hwloc_topology_init(&gTopology);
+  hwloc_topology_load(gTopology);
+
+  hwloc_setup = true;
+}
+#endif
+
 int
 ink_sys_name_release(char *name, int namelen, char *release, int releaselen)
 {
@@ -93,6 +112,18 @@ ink_sys_name_release(char *name, int namelen, char *release, int releaselen)
 int
 ink_number_of_processors()
 {
+#if TS_USE_HWLOC
+  int cu;
+  int pu;
+
+  setup_hwloc();
+  cu = hwloc_get_nbobjs_by_type(gTopology, HWLOC_OBJ_CORE);
+  pu = hwloc_get_nbobjs_by_type(gTopology, HWLOC_OBJ_PU);
+  if (pu > cu)
+    return cu + (pu - cu)/4;
+  else
+    return cu;
+#else
 #if defined(freebsd)
   int mib[2], n;
   mib[0] = CTL_HW;
@@ -102,6 +133,8 @@ ink_number_of_processors()
     return 1;
   return n;
 #else
-  return sysconf(_SC_NPROCESSORS_ONLN); // number of Net threads
-#endif
+  return sysconf(_SC_NPROCESSORS_ONLN); // number of processing units (includes Hyper Threading)
+#endif /* freebsd */
+
+#endif /* TS_HAVE_HWLOC_H */
 }

@@ -1,6 +1,12 @@
                                                          -*- coding: utf-8 -*-
 
 Changes with Apache Traffic Server 3.1.0
+  *) [TS-648] Use hwloc library when available. This can be disabled
+   with --disable-hwloc.
+
+  *) [TS-398] Autoscaling threads vs Hyper Threading. This requires
+   support for hwloc as well.
+
   *) [TS-760] Cleanup mgmt types.
 
   *) [TS-359] Remove DIR_SEP and use slash directly.

@@ -106,6 +106,7 @@
 #define TS_USE_PORT                    @use_port@
 #define TS_USE_POSIX_CAP               @use_posix_cap@
 #define TS_USE_TPROXY                  @use_tproxy@
+#define TS_USE_HWLOC                   @use_hwloc@
 
 /* OS API definitions */
 #define GETHOSTBYNAME_R_HOSTENT_DATA    @gethostbyname_r_hostent_data@
