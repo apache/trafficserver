@@ -53,7 +53,7 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   * build: remove uninstall target from build system
     Trunk patch: http://svn.apache.org/viewvc?rev=1136958&view=rev
     Jira: https://issues.apache.org/jira/browse/TS-842
-    +1: igalic
+    +1: igalic, zwoop
 
 
 
