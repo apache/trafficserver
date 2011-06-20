@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 
 Changes with Apache Traffic Server 3.1.0
+  *) [TS-826] TSHttpTxnErrorBodySet() can leak memory. Author: William
+  Bardwell.
+
   *) [TS-840] Regression checks fail (again) due to faulty assert use.
    Author: Arno Toell.
 
