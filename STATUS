@@ -59,8 +59,12 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
     As most packages run make check, we should fix this.
     Trunk patch: http://svn.apache.org/viewvc?view=revision&revision=1137111
     Jira: https://issues.apache.org/jira/browse/TS-840
-    +1: igalic
+    +1: igalic, zwoop
 
+  * API: TSHttpTxnErrorBodySet() can leak memory.
+    Trunk patch: http://svn.apache.org/viewvc?rev=1137775&view=rev
+    Jira: https://issues.apache.org/jira/browse/TS-826
+    +1: zwoop
 
 
 RELEASE PROCESS
