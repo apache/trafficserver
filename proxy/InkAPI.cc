@@ -5232,11 +5232,15 @@ TSHttpTxnErrorBodySet(TSHttpTxn txnp, char *buf, int buflength, char *mimetype)
   sdk_assert(buflength > 0);
 
   HttpSM *sm = (HttpSM *) txnp;
+  HttpTransact::State *s = &(sm->t_state);
 
-  sm->t_state.internal_msg_buffer = buf;
-  sm->t_state.internal_msg_buffer_type = mimetype;
-  sm->t_state.internal_msg_buffer_size = buflength;
-  sm->t_state.internal_msg_buffer_fast_allocator_size = -1;
+  if (s->internal_msg_buffer)
+    HttpTransact::free_internal_msg_buffer(s->internal_msg_buffer, s->internal_msg_buffer_fast_allocator_size);
+
+  s->internal_msg_buffer = buf;
+  s->internal_msg_buffer_type = mimetype;
+  s->internal_msg_buffer_size = buflength;
+  s->internal_msg_buffer_fast_allocator_size = -1;
 }
 
 void
