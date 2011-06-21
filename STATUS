@@ -66,6 +66,11 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
     Jira: https://issues.apache.org/jira/browse/TS-826
     +1: zwoop
 
+  * net: Bad timeout when using CONNECT method
+    Trunk patch: http://svn.apache.org/viewvc?rev=1137844&view=rev
+    Jira: https://issues.apache.org/jira/browse/TS-847
+    +1: zwoop
+
 
 RELEASE PROCESS
 
