@@ -1,6 +1,6 @@
                                                          -*- coding: utf-8 -*-
 
-Changes with Apache Traffic Server 3.0.0
+Changes with Apache Traffic Server 3.0.1
   *) [TS-839] Build problems when specifying lmza location.
 
   *) [TS-840] Regression checks fail (again) due to faulty assert use.
@@ -8,6 +8,8 @@ Changes with Apache Traffic Server 3.0.0
 
   *) [TS-847] Bad timeout when using CONNECT method.
 
+
+Changes with Apache Traffic Server 3.0.0
   *) [TS-827] TSMimeHdrFieldValueStringInsert() can use freed memory to
   edit headers. Author: William Bardwell.
 
