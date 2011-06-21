@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 
 Changes with Apache Traffic Server 3.0.0
+  *) [TS-847] Bad timeout when using CONNECT method.
+
   *) [TS-827] TSMimeHdrFieldValueStringInsert() can use freed memory to
   edit headers. Author: William Bardwell.
 
