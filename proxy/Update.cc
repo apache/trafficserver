@@ -505,6 +505,7 @@ UpdateEntry::ValidDepth(char *s, char *e)
   // Note: string 's' is null terminated.
 
   _max_depth = atoi(s);
+
   if ((_max_depth >= MIN_DEPTH) && (_max_depth <= MAX_DEPTH)) {
     return 0;                   // Valid data
   } else {
@@ -531,7 +532,6 @@ UpdateEntry::ComputeScheduleTime()
 {
   ink_hrtime ht;
   time_t cur_time;
-  time_t start_time_delta;
   struct tm cur_tm;
 
   if (_expired) {
@@ -541,24 +541,24 @@ UpdateEntry::ComputeScheduleTime()
       return;
     }
   }
+
   ht = ink_get_based_hrtime();
   cur_time = ht / HRTIME_SECOND;
-  ink_localtime_r(&cur_time, &cur_tm);
 
   if (!_start_time) {
-    // Initial case
-    if (cur_tm.tm_hour == _offset_hour) {
-      start_time_delta = 24 * SECONDS_PER_HOUR;
+    time_t zero_hour; // absolute time of offset hour.
 
-    } else if (cur_tm.tm_hour < _offset_hour) {
-      start_time_delta = (_offset_hour - cur_tm.tm_hour) * SECONDS_PER_HOUR;
-
-    } else {
-      start_time_delta = ((24 - cur_tm.tm_hour) + _offset_hour) * SECONDS_PER_HOUR;
-    }
-    start_time_delta -= ((cur_tm.tm_min * SECONDS_PER_MIN) + cur_tm.tm_sec);
-    _start_time = cur_time + start_time_delta;
-
+    // Get the current time in a TM struct so we can
+    // zero out the minute and second.
+    ink_localtime_r(&cur_time, &cur_tm);
+    cur_tm.tm_hour = _offset_hour;
+    cur_tm.tm_min = 0;
+    cur_tm.tm_sec = 0;
+    // Now we can find out when the offset hour is today.
+    zero_hour = convert_tm(&cur_tm);
+    // If it's in the future, back up a day and use that as the base.
+    if (zero_hour > cur_time) zero_hour -= 24 * SECONDS_PER_HOUR;
+    _start_time = cur_time + (_interval - ((cur_time - zero_hour) % _interval));
   } else {
     // Compute next start time
     _start_time += _interval;
@@ -924,10 +924,10 @@ UpdateConfigManager::GetDataLine(int fd, int bufsize, char *buf, int field_delim
     //         does not exist in any data field.
     ////////////////////////////////////////////////////////////////////
 
-    // Just return data if we have a comment line
-
-    if (!bytes_read && *line == '#') {
-      return rlen;
+    if (0 == bytes_read) {
+      // A comment line, just return.
+      if (*line == '#') return rlen;
+      else if (1 == rlen) continue; // leading blank line, ignore.
     }
     bytes_read += rlen;
 
