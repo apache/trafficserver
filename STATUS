@@ -45,11 +45,6 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
     Jira: https://issues.apache.org/jira/browse/TS-828
     +1: zwoop, zym
 
-  * build: Build failure with custom lmza directory location.
-    Trunk patch: http://svn.apache.org/viewvc?rev=1135769&view=rev
-    Jira: https://issues.apache.org/jira/browse/TS-839
-    +1: zwoop, igalic, zym
-
   * build: remove uninstall target from build system
     Trunk patch: http://svn.apache.org/viewvc?rev=1136958&view=rev
     Jira: https://issues.apache.org/jira/browse/TS-842

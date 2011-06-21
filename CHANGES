@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 
 Changes with Apache Traffic Server 3.0.0
+  *) [TS-839] Build problems when specifying lmza location.
+
   *) [TS-840] Regression checks fail (again) due to faulty assert use.
    Author: Arno Toell.
 
