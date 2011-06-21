@@ -24,7 +24,7 @@
 
 #include <stdint.h>
 #include <stdio.h>
-#include <assert.h>
+#include <ink_assert.h>
 #include "Vec.h"
 
 int main(int argc, char **argv) {
@@ -35,7 +35,7 @@ int main(int argc, char **argv) {
     v.add((void*)(intptr_t)i);
   for (int i = 0; i < 100; i++)
     t += (int)(intptr_t)v.v[i];
-  assert(t == tt);
+  ink_assert(t == tt);
 
   t = 0;
   for (int i = 1; i < 100; i++)
@@ -48,7 +48,7 @@ int main(int argc, char **argv) {
   for (int i = 0; i < vv.n; i++)
     if (vv.v[i])
       t += (int)(intptr_t)vv.v[i];
-  assert(t == tt + 1000 * tt);
+  ink_assert(t == tt + 1000 * tt);
 
   v.clear();
   v.reserve(1000);
@@ -57,41 +57,41 @@ int main(int argc, char **argv) {
     v.add((void*)(intptr_t)i);
   for (int i = 0; i < 1000; i++)
     t += (int)(intptr_t)v.v[i];
-  assert(t == 999 * 500);
+  ink_assert(t == 999 * 500);
   printf("%d %d\n", v.n, v.i);
 
   Intervals in;
   in.insert(1);
-  assert(in.n == 2);
+  ink_assert(in.n == 2);
   in.insert(2);
-  assert(in.n == 2);
+  ink_assert(in.n == 2);
   in.insert(6);
-  assert(in.n == 4);
+  ink_assert(in.n == 4);
   in.insert(7);
-  assert(in.n == 4);
+  ink_assert(in.n == 4);
   in.insert(9);
-  assert(in.n == 6);
+  ink_assert(in.n == 6);
   in.insert(4);
-  assert(in.n == 8);
+  ink_assert(in.n == 8);
   in.insert(5);
-  assert(in.n == 6);
+  ink_assert(in.n == 6);
   in.insert(3);
-  assert(in.n == 4);
+  ink_assert(in.n == 4);
   in.insert(8);
-  assert(in.n == 2);
+  ink_assert(in.n == 2);
 
   UnionFind uf;
   uf.size(4);
   uf.unify(0,1);
   uf.unify(2,3);
-  assert(uf.find(2) == uf.find(3));
-  assert(uf.find(0) == uf.find(1));
-  assert(uf.find(0) != uf.find(3));
-  assert(uf.find(1) != uf.find(3));
-  assert(uf.find(1) != uf.find(2));
-  assert(uf.find(0) != uf.find(2));
+  ink_assert(uf.find(2) == uf.find(3));
+  ink_assert(uf.find(0) == uf.find(1));
+  ink_assert(uf.find(0) != uf.find(3));
+  ink_assert(uf.find(1) != uf.find(3));
+  ink_assert(uf.find(1) != uf.find(2));
+  ink_assert(uf.find(0) != uf.find(2));
   uf.unify(1,2);
-  assert(uf.find(0) == uf.find(3));
-  assert(uf.find(1) == uf.find(3));
+  ink_assert(uf.find(0) == uf.find(3));
+  ink_assert(uf.find(1) == uf.find(3));
   printf("test_Vec PASSED\n");
 }

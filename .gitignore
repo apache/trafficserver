@@ -45,6 +45,8 @@ lib/ts/test_List
 lib/ts/test_arena
 lib/ts/test_atomic
 lib/ts/test_freelist
+lib/ts/test_Map
+lib/ts/test_Vec
 proxy/config/records.config.default
 proxy/config/storage.config.default
 

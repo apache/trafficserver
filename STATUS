@@ -55,12 +55,6 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
     Jira: https://issues.apache.org/jira/browse/TS-842
     +1: igalic, zwoop
 
-  * test: Regression checks fail (again) due to faulty assert use.
-    As most packages run make check, we should fix this.
-    Trunk patch: http://svn.apache.org/viewvc?view=revision&revision=1137111
-    Jira: https://issues.apache.org/jira/browse/TS-840
-    +1: igalic, zwoop, zym
-
   * API: TSHttpTxnErrorBodySet() can leak memory.
     Trunk patch: http://svn.apache.org/viewvc?rev=1137775&view=rev
     Jira: https://issues.apache.org/jira/browse/TS-826
