@@ -390,7 +390,7 @@ struct CheckConnect:public Continuation
                     int _timeout, NetVCOptions * opt)
   {
     action_ = cont;
-    timeout = HRTIME_MSECONDS(_timeout);
+    timeout = HRTIME_SECONDS(_timeout);
     recursion++;
     netProcessor.connect_re(this, ip, port, opt);
     recursion--;
