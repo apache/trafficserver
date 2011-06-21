@@ -1,4 +1,9 @@
                                                          -*- coding: utf-8 -*-
+Changes with Apache Traffic Server 3.0.4
+
+  *) [TS-845] make proxy.config.cluster.ethernet_interface default to
+   loopback interface: lo on linux and lo0 on bsd derivatives
+
 Changes with Apache Traffic Server 3.0.3
 
   *) [TS-876] forward map based on request receive port
