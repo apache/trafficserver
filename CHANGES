@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 
 Changes with Apache Traffic Server 3.1.0
+  *) [TS-845] make proxy.config.cluster.ethernet_interface default to
+   loopback interface: lo on linux and lo0 on bsd derivatives
+
   *) [TS-847] Bad timeout when using CONNECT method.
 
   *) [TS-826] TSHttpTxnErrorBodySet() can leak memory. Author: William

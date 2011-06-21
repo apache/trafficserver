@@ -1168,7 +1168,7 @@ AS_IF([test "x$enable_tproxy" != "xno"], [
 AC_SUBST(use_tproxy)
 AC_SUBST(ip_transparent)
 
-TS_CHECK_DEFAULT_IFACE
+TS_CHECK_LOOPBACK_IFACE
 TS_CHECK_GETHOSTBYNAME_R_STYLE
 
 #

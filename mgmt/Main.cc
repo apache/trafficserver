@@ -808,6 +808,7 @@ main(int argc, char **argv)
                group_addr, "224.0.1.0 - 239.255.255.255");
   }
 
+  /* TODO: Do we really need to init cluster communication? */
   lmgmt->initCCom(cluster_port, group_addr, cluster_server_port);       /* Setup cluster communication */
 
   lmgmt->initMgmtProcessServer();       /* Setup p-to-p process server */

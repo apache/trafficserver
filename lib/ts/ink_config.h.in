@@ -186,4 +186,6 @@
 #define TS_BUILD_CACHEDIR "@rel_cachedir@"
 #define TS_BUILD_INFODIR "@rel_infodir@"
 
+#define TS_BUILD_DEFAULT_LOOPBACK_IFACE "@default_loopback_iface@"
+
 #endif /* _ink_config_h */

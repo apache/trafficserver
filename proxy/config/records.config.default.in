@@ -300,7 +300,7 @@ CONFIG proxy.config.cluster.mcport INT 8089
 CONFIG proxy.config.cluster.mc_group_addr STRING 224.0.1.37
 CONFIG proxy.config.cluster.mc_ttl INT 1
 CONFIG proxy.config.cluster.log_bogus_mc_msgs INT 1
-CONFIG proxy.config.cluster.ethernet_interface STRING @default_net_iface@
+CONFIG proxy.config.cluster.ethernet_interface STRING @default_loopback_iface@
 ##############################################################################
 #
 # Cache
