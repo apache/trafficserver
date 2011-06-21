@@ -43,12 +43,12 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   * core: Various memory leaks and uninitialized values.
     Trunk patch: http://svn.apache.org/viewvc?view=revision&revision=1133639
     Jira: https://issues.apache.org/jira/browse/TS-828
-    +1: zwoop
+    +1: zwoop, zym
 
   * build: Build failure with custom lmza directory location.
     Trunk patch: http://svn.apache.org/viewvc?rev=1135769&view=rev
     Jira: https://issues.apache.org/jira/browse/TS-839
-    +1: zwoop, igalic
+    +1: zwoop, igalic, zym
 
   * build: remove uninstall target from build system
     Trunk patch: http://svn.apache.org/viewvc?rev=1136958&view=rev
@@ -59,17 +59,17 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
     As most packages run make check, we should fix this.
     Trunk patch: http://svn.apache.org/viewvc?view=revision&revision=1137111
     Jira: https://issues.apache.org/jira/browse/TS-840
-    +1: igalic, zwoop
+    +1: igalic, zwoop, zym
 
   * API: TSHttpTxnErrorBodySet() can leak memory.
     Trunk patch: http://svn.apache.org/viewvc?rev=1137775&view=rev
     Jira: https://issues.apache.org/jira/browse/TS-826
-    +1: zwoop
+    +1: zwoop, zym
 
   * net: Bad timeout when using CONNECT method
     Trunk patch: http://svn.apache.org/viewvc?rev=1137844&view=rev
     Jira: https://issues.apache.org/jira/browse/TS-847
-    +1: zwoop
+    +1: zwoop, zym
 
 
 RELEASE PROCESS
