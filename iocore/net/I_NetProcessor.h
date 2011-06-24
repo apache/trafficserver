@@ -224,7 +224,7 @@ public:
     @param ip machine to connect to.
     @param port port to connect to.
     @param timeout for connect, the cont will get NET_EVENT_OPEN_FAILED
-      if connection could not be established for timeout msecs. The
+      if connection could not be established for timeout secs. The
       default is 30 secs.
     @param options @see NetVCOptions.
 
