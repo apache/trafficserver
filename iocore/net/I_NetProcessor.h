@@ -28,7 +28,7 @@
 #include "I_EventSystem.h"
 #include "I_Socks.h"
 struct socks_conf_struct;
-#define NET_CONNECT_TIMEOUT (30*1000)
+#define NET_CONNECT_TIMEOUT 30
 
 struct NetVCOptions;
 
