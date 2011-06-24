@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 
 Changes with Apache Traffic Server 3.1.0
+  *) [TS-822] make cluster thread number configable
+
   *) [TS-845] make proxy.config.cluster.ethernet_interface default to
    loopback interface: lo on linux and lo0 on bsd derivatives
 

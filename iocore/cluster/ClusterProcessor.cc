@@ -33,6 +33,7 @@
 /*************************************************************************/
 int cluster_port_number = DEFAULT_CLUSTER_PORT_NUMBER;
 int cache_clustering_enabled = 0;
+int num_of_cluster_threads = DEFAULT_NUMBER_OF_CLUSTER_THREADS;
 
 ClusterProcessor clusterProcessor;
 RecRawStatBlock *cluster_rsb = NULL;
@@ -667,6 +668,8 @@ ClusterProcessor::init()
   else {
     IOCORE_ReadConfigInteger(cluster_port, "proxy.config.cluster.cluster_port");
   }
+  if (num_of_cluster_threads == DEFAULT_NUMBER_OF_CLUSTER_THREADS)
+    IOCORE_ReadConfigInteger(num_of_cluster_threads, "proxy.config.cluster.threads");
 
   IOCORE_EstablishStaticConfigInt32(CacheClusterMonitorEnabled, "proxy.config.cluster.enable_monitor");
   IOCORE_EstablishStaticConfigInt32(CacheClusterMonitorIntervalSecs, "proxy.config.cluster.monitor_interval_secs");
@@ -723,7 +726,7 @@ ClusterProcessor::start()
 #endif
   if (cache_clustering_enabled && (cacheProcessor.IsCacheEnabled() == CACHE_INITIALIZED)) {
 
-    ET_CLUSTER = eventProcessor.spawn_event_threads(1, "ET_CLUSTER");
+    ET_CLUSTER = eventProcessor.spawn_event_threads(num_of_cluster_threads, "ET_CLUSTER");
     for (int i = 0; i < eventProcessor.n_threads_for_type[ET_CLUSTER]; i++) {
       initialize_thread_for_net(eventProcessor.eventthread[ET_CLUSTER][i], i);
     }

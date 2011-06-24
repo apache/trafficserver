@@ -102,7 +102,6 @@ extern "C" int plock(int);
 //
 #define DEFAULT_NUMBER_OF_THREADS         ink_number_of_processors()
 #define DEFAULT_NUMBER_OF_UDP_THREADS     1
-#define DEFAULT_NUMBER_OF_CLUSTER_THREADS 1
 #define DEFAULT_NUMBER_OF_SSL_THREADS     0
 #define DEFAULT_NUM_ACCEPT_THREADS        0
 #define DEFAULT_NUM_TASK_THREADS          0
@@ -127,7 +126,7 @@ int stack_trace_flag = DEFAULT_STACK_TRACE_FLAG;
 
 int number_of_processors = ink_number_of_processors();
 int num_of_net_threads = DEFAULT_NUMBER_OF_THREADS;
-int num_of_cluster_threads = DEFAULT_NUMBER_OF_CLUSTER_THREADS;
+extern int num_of_cluster_threads;
 int num_of_udp_threads = DEFAULT_NUMBER_OF_UDP_THREADS;
 int num_accept_threads  = DEFAULT_NUM_ACCEPT_THREADS;
 int num_task_threads = DEFAULT_NUM_TASK_THREADS;

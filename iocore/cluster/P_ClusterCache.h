@@ -71,6 +71,7 @@
 
 
 #define DEFAULT_CLUSTER_PORT_NUMBER         0
+#define DEFAULT_NUMBER_OF_CLUSTER_THREADS   1
 #define DEFAULT_CLUSTER_HOST                ""
 
 #define MAX_CLUSTER_SEND_LENGTH             INT_MAX
