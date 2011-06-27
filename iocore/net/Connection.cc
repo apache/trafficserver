@@ -239,10 +239,10 @@ Server::listen(int port_number, int domain, bool non_blocking, int recv_bufsize,
   memset(&hints, 0, sizeof(hints));
   hints.ai_family = domain;
   hints.ai_socktype = SOCK_STREAM;
-  hints.ai_flags = AI_PASSIVE|AI_NUMERICHOST|AI_ADDRCONFIG;
+  hints.ai_flags = AI_PASSIVE|AI_NUMERICHOST;
   gai_errno = getaddrinfo(accept_ip_str, port, &hints, &ai_res);
   if(0 != gai_errno) {
-    Error("getaddrinfo error %i: %s", gai_errno, gai_strerror(gai_errno));
+    Error("getaddrinfo %s:%s error %i: %s", accept_ip_str, port, gai_errno, gai_strerror(gai_errno));
     return -1;
   }
 
