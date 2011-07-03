@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 
 Changes with Apache Traffic Server 3.1.0
+  *) [TS-868] build fails with --as-needed. Author: Ilya Barygin.
+
   *) [TS-851] run TS without a real interface
 
   *) [TS-822] make cluster thread number configable
