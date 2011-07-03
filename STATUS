@@ -55,9 +55,14 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
     Jira: https://issues.apache.org/jira/browse/TS-826
     +1: zwoop, zym
 
+  * Build: build fails with --as-needed --no-copy-dt-needed-entries
+    Trunk patch: http://svn.apache.org/viewvc?rev=1142523&view=rev
+    Jira: https://issues.apache.org/jira/browse/TS-868
+    +1: igalic
 
 RELEASE PROCESS
 
 The Traffic Server release process is documented at
 
-    http://cwiki.apache.org/confluence/display/TS/ReleaseProcess
+    https://cwiki.apache.org/confluence/display/TS/ReleaseProcess
+    https://cwiki.apache.org/confluence/display/TS/3.0.x-Series
