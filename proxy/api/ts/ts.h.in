@@ -2588,6 +2588,7 @@ extern "C"
   tsapi void TSIOBufferReaderConsume(TSIOBufferReader readerp, int64_t nbytes);
   tsapi int64_t TSIOBufferReaderAvail(TSIOBufferReader readerp);
 
+   tsapi struct sockaddr const* TSNetVConnLocalAddrGet(TSVConn vc);
 
   /* --------------------------------------------------------------------------
      Stats based on librecords raw stats (this is prefered API until we rewrite

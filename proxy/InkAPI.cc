@@ -6123,6 +6123,14 @@ TSVConnActiveTimeoutCancel(TSVConn connp)
 }
 
 sockaddr const*
+TSNetVConnLocalAddrGet(TSVConn connp) {
+  sdk_assert(sdk_sanity_check_iocore_structure(connp) == TS_SUCCESS);
+  NetVConnection* vc = reinterpret_cast<NetVConnection*>(connp);
+  return ink_inet_sa_cast(vc->get_local_addr());
+}
+
+
+sockaddr const*
 TSNetVConnRemoteAddrGet(TSVConn connp) {
   sdk_assert(sdk_sanity_check_iocore_structure(connp) == TS_SUCCESS);
   NetVConnection* vc = reinterpret_cast<NetVConnection*>(connp);
