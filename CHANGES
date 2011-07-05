@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 
 Changes with Apache Traffic Server 3.1.0
+  *) [TS-860] Built in error for host not found looks like Internet Explorer
+  error. Author: William Bardwell.
+
   *) [TS-861] Need a way to disable Vary: Accept-Encoding checking so a plugin
   can take care of that. Author: William Bardwell.
 
