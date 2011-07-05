@@ -1245,6 +1245,13 @@ HttpTransactCache::CalcVariability(CacheLookupHttpConfig * http_config_params,
           !ink_string_fast_strcasecmp((char *) field->str, "User-Agent"))
         continue;
 
+      // Disable Vary mismatch checking for Accept-Encoding.  This is only safe to
+      // set if you are promising to fix any Accept-Encoding/Content-Encoding mismatches.
+      if (http_config_params->ignore_accept_encoding_mismatch && 
+          !ink_string_fast_strcasecmp((char *) field->str, "Accept-Encoding"))
+        continue;
+
+
 
       ///////////////////////////////////////////////////////////////////
       // Take the current vary field and look up the headers in        //
