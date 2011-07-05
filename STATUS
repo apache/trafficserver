@@ -58,7 +58,13 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   * Build: build fails with --as-needed --no-copy-dt-needed-entries
     Trunk patch: http://svn.apache.org/viewvc?rev=1142523&view=rev
     Jira: https://issues.apache.org/jira/browse/TS-868
-    +1: igalic
+    +1: igalic, zwoop
+
+  * HTTP: Built in error for host not found looks like Internet Explorer
+          error.
+    Trunk patch: http://svn.apache.org/viewvc?rev=1143116&view=rev
+    Jira: https://issues.apache.org/jira/browse/TS-860
+    +1: zwoop
 
 RELEASE PROCESS
 
