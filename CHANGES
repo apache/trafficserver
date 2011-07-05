@@ -1,6 +1,16 @@
                                                          -*- coding: utf-8 -*-
 
 Changes with Apache Traffic Server 3.1.0
+  *) [TS-861] Need a way to disable Vary: Accept-Encoding checking so a plugin
+  can take care of that. Author: William Bardwell.
+
+  *) [TS-862] Need to be able to make keep alive connections not shared on a
+  per-transaction basis. Author: William Bardwell.
+
+  *) [TS-865] Need to get address for a VConn from a plugin similar to how you
+   can get it for the various things in a transaction. Author: William
+   Bardwell.
+
   *) [TS-868] build fails with --as-needed. Author: Ilya Barygin.
 
   *) [TS-851] run TS without a real interface
