@@ -48,6 +48,9 @@ extern "C"
   tsapi void TSCacheHttpInfoKeySet(TSCacheHttpInfo infop, TSCacheKey key);
   tsapi void TSCacheHttpInfoSizeSet(TSCacheHttpInfo infop, int64_t size);
   tsapi int TSCacheHttpInfoVector(TSCacheHttpInfo infop, void *data, int length);
+  tsapi time_t TSCacheHttpInfoReqSentTimeGet(TSCacheHttpInfo infop);
+  tsapi time_t TSCacheHttpInfoRespReceivedTimeGet(TSCacheHttpInfo infop);
+  int64_t TSCacheHttpInfoSizeGet(TSCacheHttpInfo infop);
 
   /* Do not edit these apis, used internally */
   tsapi int TSMimeHdrFieldEqual(TSMBuffer bufp, TSMLoc hdr_obj, TSMLoc field1, TSMLoc field2);

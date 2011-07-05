@@ -3926,6 +3926,27 @@ TSCacheHttpInfoRespGet(TSCacheHttpInfo infop, TSMBuffer *bufp, TSMLoc *obj)
   sdk_sanity_check_mbuffer(*bufp);
 }
 
+time_t
+TSCacheHttpInfoReqSentTimeGet(TSCacheHttpInfo infop)
+{
+  CacheHTTPInfo *info = (CacheHTTPInfo *) infop;
+  return info->request_sent_time_get();
+}
+
+time_t
+TSCacheHttpInfoRespReceivedTimeGet(TSCacheHttpInfo infop)
+{
+  CacheHTTPInfo *info = (CacheHTTPInfo *) infop;
+  return info->response_received_time_get();
+}
+
+int64_t
+TSCacheHttpInfoSizeGet(TSCacheHttpInfo infop)
+{
+  CacheHTTPInfo *info = (CacheHTTPInfo *) infop;
+  return info->object_size_get();
+}
+
 void
 TSCacheHttpInfoReqSet(TSCacheHttpInfo infop, TSMBuffer bufp, TSMLoc obj)
 {

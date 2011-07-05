@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 
 Changes with Apache Traffic Server 3.1.0
+  *) [TS-864] Need more information from CacheHttpInfo (req time, resp time,
+  size). Author: William Bardwell.
+
   *) [TS-860] Built in error for host not found looks like Internet Explorer
   error. Author: William Bardwell.
 
