@@ -7868,5 +7868,17 @@ TSHttpTxnConfigFind(const char* name, int length, TSOverridableConfigKey *conf, 
   return ((cnf != TS_CONFIG_NULL) ? TS_SUCCESS: TS_ERROR);
 }
 
+TSReturnCode
+TSHttpTxnPrivateSessionSet(TSHttpTxn txnp, int private_session)
+{
+  if (sdk_sanity_check_txn(txnp) != TS_SUCCESS) {
+    return TS_ERROR;
+  }
+  HttpSM *sm = (HttpSM *) txnp;
+  if (sm->set_server_session_private(private_session)) {
+    return TS_SUCCESS;
+  }
+  return TS_ERROR;
+}
 
 #endif //TS_NO_API

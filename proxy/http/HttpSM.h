@@ -509,6 +509,9 @@ protected:
 
 public:
   LINK(HttpSM, debug_link);
+
+public:
+  bool set_server_session_private(bool private_session);
 };
 
 //Function to get the cache_sm object - YTS Team, yamsat

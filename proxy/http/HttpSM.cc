@@ -6923,13 +6923,15 @@ HttpSM::redirect_request(const char *redirect_url, const int redirect_len)
   DUMP_HEADER("http_hdrs", &t_state.hdr_info.client_request, sm_id, "Framed Client Request..checking");
 }
 
-void HttpSM::set_http_schedule(Continuation *contp)
+void
+HttpSM::set_http_schedule(Continuation *contp)
 {
   HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::get_http_schedule);
   schedule_cont = contp;
 }
 
-int HttpSM::get_http_schedule(int event, void * data)
+int
+HttpSM::get_http_schedule(int event, void * data)
 {
   NOWARN_UNUSED(data);
   bool plugin_lock;
@@ -6956,3 +6958,14 @@ int HttpSM::get_http_schedule(int event, void * data)
 
   return 0;
 }
+
+bool
+HttpSM::set_server_session_private(bool private_session)
+{
+  if (server_session != NULL) {
+    server_session->private_session = private_session;
+    return true;
+  }
+  return false;
+}
+
