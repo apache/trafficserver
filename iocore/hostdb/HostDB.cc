@@ -1238,7 +1238,7 @@ HostDBContinuation::dnsPendingEvent(int event, Event * e)
     // we timed out, return a failure to the user
     MUTEX_TRY_LOCK_FOR(lock, action.mutex, ((Event *) e)->ethread, action.continuation);
     if (!lock) {
-      ((Event *) e)->schedule_in(HOST_DB_RETRY_PERIOD);
+      timeout = eventProcessor.schedule_in(this, HOST_DB_RETRY_PERIOD);
       return EVENT_CONT;
     }
     if (!action.cancelled && action.continuation)

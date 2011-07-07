@@ -81,9 +81,10 @@ net_activity(UnixNetVConnection *vc, EThread *thread)
       vc->inactivity_timeout = 0;
   }
 #else
-  vc->next_inactivity_timeout_at = 0;
   if (vc->inactivity_timeout_in)
     vc->next_inactivity_timeout_at = ink_get_hrtime() + vc->inactivity_timeout_in;
+  else
+    vc->next_inactivity_timeout_at = 0;
 #endif
 
 }
@@ -113,6 +114,7 @@ close_UnixNetVConnection(UnixNetVConnection *vc, EThread *t)
   }
   vc->active_timeout_in = 0;
   nh->open_list.remove(vc);
+  nh->cop_list.remove(vc);
   nh->read_ready_list.remove(vc);
   nh->write_ready_list.remove(vc);
   if (vc->read.in_enabled_list) {
