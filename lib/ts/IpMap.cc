@@ -926,7 +926,7 @@ protected:
   static void inc(
     Metric& m ///< Incremented in place.
   ) {
-    uint8_t* addr = m.sin6_addr.__in6_u.__u6_addr8;
+    uint8_t* addr = m.sin6_addr.s6_addr;
     uint8_t* b = addr + INK_IP6_SIZE;
     do {
       ++*--b;
@@ -937,7 +937,7 @@ protected:
   static void dec(
     Metric& m ///< Decremented in place.
   ) {
-    uint8_t* addr = m.sin6_addr.__in6_u.__u6_addr8;
+    uint8_t* addr = m.sin6_addr.s6_addr;
     uint8_t* b = addr + INK_IP6_SIZE;
     do {
       --*--b;
