@@ -112,7 +112,7 @@ struct NetAccept:public Continuation
   virtual void init_accept(EThread * t = NULL);
   virtual void init_accept_per_thread();
   // 0 == success
-  int do_listen(bool non_blocking);
+  int do_listen(bool non_blocking, bool transparent = false);
 
   int do_blocking_accept(NetAccept * master_na, EThread * t);
   virtual int acceptEvent(int event, void *e);

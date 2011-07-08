@@ -125,10 +125,12 @@ net_accept(NetAccept * na, void *ep, bool blockable)
     vc->action_ = *na->action_;
     vc->set_is_transparent(na->server.f_inbound_transparent);
     vc->set_is_other_side_transparent(na->server.f_outbound_transparent);
-    Debug("http_tproxy", "Marking accepted %sconnection on %x as%s outbound transparent.\n",
-	  na->server.f_inbound_transparent ? "transparent " : "",
-	  na, na->server.f_outbound_transparent ? "" : " not"
-	  );
+    Debug(
+      "http_tproxy",
+      "Marking accepted %sconnection on %x as%s outbound transparent.\n",
+      na->server.f_inbound_transparent ? "inbound transparent " : "",
+      na, na->server.f_outbound_transparent ? "" : " not"
+    );
     vc->closed  = 0;
     SET_CONTINUATION_HANDLER(vc, (NetVConnHandler) & UnixNetVConnection::acceptEvent);
 
@@ -265,18 +267,18 @@ NetAccept::init_accept_per_thread()
 
 
 int
-NetAccept::do_listen(bool non_blocking)
+NetAccept::do_listen(bool non_blocking, bool transparent)
 {
   int res = 0;
 
   if (server.fd != NO_FD) {
-    if ((res = server.setup_fd_for_listen(non_blocking, recv_bufsize, send_bufsize))) {
+    if ((res = server.setup_fd_for_listen(non_blocking, recv_bufsize, send_bufsize, transparent))) {
       Warning("unable to listen on main accept port %d: errno = %d, %s", port, errno, strerror(errno));
       goto Lretry;
     }
   } else {
   Lretry:
-    if ((res = server.listen(port, domain, non_blocking, recv_bufsize, send_bufsize)))
+    if ((res = server.listen(port, domain, non_blocking, recv_bufsize, send_bufsize, transparent)))
       Warning("unable to listen on port %d: %d %d, %s", port, res, errno, strerror(errno));
   }
   if (callback_on_open && !action_->cancelled) {
@@ -347,8 +349,8 @@ NetAccept::do_blocking_accept(NetAccept * master_na, EThread * t)
     vc->accept_port = ntohs(((struct sockaddr_in *)(&(server.sa)))->sin_port);
     vc->set_is_transparent(master_na->server.f_inbound_transparent);
     vc->set_is_other_side_transparent(master_na->server.f_outbound_transparent);
-    Debug("http_tproxy", "Marking accepted %sconnect on %x as%s outbound transparent.\n",
-	  master_na->server.f_inbound_transparent ? "transparent " : "",
+    Debug("http_tproxy", "Marking accepted %sconnection on %x as%s outbound transparent.\n",
+	  master_na->server.f_inbound_transparent ? "inbound transparent " : "",
 	  master_na, master_na->server.f_outbound_transparent ? "" : " not"
 	  );
     vc->mutex = new_ProxyMutex();

@@ -493,7 +493,7 @@ static int
 synclient_txn_send_request(ClientTxn * txn, char *request)
 {
   TSCont cont;
-  sockaddr_storage addr;
+  sockaddr_in addr;
 
   TSAssert(txn->magic == MAGIC_ALIVE);
   txn->request = xstrdup(request);

@@ -5111,7 +5111,7 @@ TSHttpTxnClientAddrGet(TSHttpTxn txnp)
   NetVConnection *vc = cs->get_netvc();
   if (vc == NULL) return 0;
 
-  return ink_inet_sa_cast(vc->get_remote_addr());
+  return vc->get_remote_addr();
 }
 
 unsigned int
@@ -5135,7 +5135,7 @@ TSHttpTxnIncomingAddrGet(TSHttpTxn txnp) {
   NetVConnection *vc = cs->get_netvc();
   if (vc == NULL) return 0;
 
-  return ink_inet_sa_cast(vc->get_local_addr());
+  return vc->get_local_addr();
 }
 
 int
@@ -5153,7 +5153,8 @@ TSHttpTxnServerAddrGet(TSHttpTxn txnp)
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 
   HttpSM *sm = reinterpret_cast<HttpSM *>(txnp);
-  ink_inet_ip4_set(&sm->t_state.server_info.addr,
+  ink_inet_ip4_set(
+    ink_inet_sa_cast(&sm->t_state.server_info.addr),
     sm->t_state.server_info.ip,
     sm->t_state.server_info.port
   );
@@ -6147,7 +6148,7 @@ sockaddr const*
 TSNetVConnLocalAddrGet(TSVConn connp) {
   sdk_assert(sdk_sanity_check_iocore_structure(connp) == TS_SUCCESS);
   NetVConnection* vc = reinterpret_cast<NetVConnection*>(connp);
-  return ink_inet_sa_cast(vc->get_local_addr());
+  return vc->get_local_addr();
 }
 
 
@@ -6155,7 +6156,7 @@ sockaddr const*
 TSNetVConnRemoteAddrGet(TSVConn connp) {
   sdk_assert(sdk_sanity_check_iocore_structure(connp) == TS_SUCCESS);
   NetVConnection* vc = reinterpret_cast<NetVConnection*>(connp);
-  return ink_inet_sa_cast(vc->get_remote_addr());
+  return vc->get_remote_addr();
 }
 
 
@@ -6231,7 +6232,7 @@ TSHostLookupResultAddrGet(TSHostLookupResult lookup_result)
 {
   sdk_assert(sdk_sanity_check_hostlookup_structure(lookup_result) == TS_SUCCESS);
   HostDBInfo* di = reinterpret_cast<HostDBInfo*>(lookup_result);
-  ink_inet_ip4_set(ink_inet_ss_cast(&di->ip6), di->ip());
+  ink_inet_ip4_set(ink_inet_sa_cast(&di->ip6), di->ip());
   return ink_inet_sa_cast(&di->ip6);
 }
 
@@ -7138,8 +7139,9 @@ TSFetchPages(TSFetchUrlParams_t *params)
 
   while (myparams != NULL) {
     FetchSM *fetch_sm =  FetchSMAllocator.alloc();
-    in_addr_t ip = ink_inet_ip4_addr_cast(&myparams->ip);
-    uint16_t port = ink_inet_port_cast(&myparams->ip);
+    sockaddr* addr = ink_inet_sa_cast(&myparams->ip);
+    in_addr_t ip = ink_inet_ip4_addr_cast(addr);
+    uint16_t port = ink_inet_port_cast(addr);
 
     fetch_sm->init((Continuation*)myparams->contp, myparams->options,myparams->events, myparams->request, myparams->request_len, ip, port);
     fetch_sm->httpConnect();

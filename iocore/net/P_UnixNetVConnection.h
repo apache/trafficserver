@@ -257,7 +257,7 @@ TS_INLINE void
 UnixNetVConnection::set_local_addr()
 {
   int local_sa_size = sizeof(local_addr);
-  safe_getsockname(con.fd, (sockaddr *) & local_addr, &local_sa_size);
+  safe_getsockname(con.fd, ink_inet_sa_cast(&local_addr), &local_sa_size);
 }
 
 TS_INLINE ink_hrtime

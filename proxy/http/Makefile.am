@@ -21,6 +21,7 @@ SUBDIRS = remap
 AM_CPPFLAGS = \
   $(iocore_include_dirs) \
   -I$(top_srcdir)/proxy \
+  -I$(top_srcdir)/lib \
   -I$(top_srcdir)/lib/records \
   -I$(top_srcdir)/mgmt \
   -I$(top_srcdir)/mgmt/preparse \

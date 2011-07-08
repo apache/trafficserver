@@ -369,7 +369,7 @@ public:
   virtual ink_hrtime get_inactivity_timeout() = 0;
 
   /** Returns local sockaddr storage. */
-  sockaddr_storage const* get_local_addr();
+  sockaddr const* get_local_addr();
 
   /** Returns local ip. */
   unsigned int get_local_ip();
@@ -378,7 +378,7 @@ public:
   int get_local_port();
 
   /** Returns remote sockaddr storage. */
-  sockaddr_storage const* get_remote_addr();
+  sockaddr const* get_remote_addr();
 
   /** Returns remote ip. */
   unsigned int get_remote_ip();
@@ -458,8 +458,9 @@ private:
   NetVConnection & operator =(const NetVConnection &);
 
 protected:
-  struct sockaddr_storage local_addr;
-  struct sockaddr_storage remote_addr;
+  // An IPv6 struct suffices for IP addresses.
+  struct sockaddr_in6 local_addr;
+  struct sockaddr_in6 remote_addr;
 
   int got_local_addr;
   int got_remote_addr;

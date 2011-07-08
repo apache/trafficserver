@@ -129,8 +129,12 @@ Connection::close()
 }
 
 int
-Server::setup_fd_for_listen(bool non_blocking, int recv_bufsize, int send_bufsize)
-{
+Server::setup_fd_for_listen(
+  bool non_blocking,
+  int recv_bufsize,
+  int send_bufsize,
+  bool transparent
+) {
   int res = 0;
 #ifdef SEND_BUF_SIZE
   {
@@ -212,6 +216,20 @@ Server::setup_fd_for_listen(bool non_blocking, int recv_bufsize, int send_bufsiz
     if ((res = safe_getsockname(fd, (struct sockaddr *) &sa, &namelen)))
       goto Lerror;
   }
+
+  if (transparent) {
+#if TS_USE_TPROXY
+    int transparent_value = 1;
+    Debug("http_tproxy", "Listen port inbound transparency enabled.\n");
+    if (setsockopt(fd, SOL_IP, TS_IP_TRANSPARENT, &transparent_value, sizeof(transparent_value)) == -1) {
+      Error("[Server::setup_fd_for_listen] Unable to set transparent socket option [%d] %s\n", errno, strerror(errno));
+      _exit(1);
+    }
+#else
+    Error("[Server::setup_fd_for_listen] Transparency requested but TPROXY not configured\n");
+#endif
+  }
+
   return 0;
 Lerror:
   res = -errno;
@@ -223,7 +241,7 @@ Lerror:
 
 
 int
-Server::listen(int port_number, int domain, bool non_blocking, int recv_bufsize, int send_bufsize)
+Server::listen(int port_number, int domain, bool non_blocking, int recv_bufsize, int send_bufsize, bool transparent)
 {
   ink_assert(fd == NO_FD);
   int res = 0;
@@ -334,6 +352,19 @@ Server::listen(int port_number, int domain, bool non_blocking, int recv_bufsize,
   if ((res = safe_setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, ON, sizeof(int))) < 0)
     goto Lerror;
 #endif
+
+  if (transparent) {
+#if TS_USE_TPROXY
+    int transparent_value = 1;
+    Debug("http_tproxy", "Listen port inbound transparency enabled.\n");
+    if (setsockopt(fd, SOL_IP, TS_IP_TRANSPARENT, &transparent_value, sizeof(transparent_value)) == -1) {
+      Error("[Server::listen] Unable to set transparent socket option [%d] %s\n", errno, strerror(errno));
+      _exit(1);
+    }
+#else
+    Error("[Server::listen] Transparency requested but TPROXY not configured\n");
+#endif
+  }
 
 #if defined(linux)
   if (NetProcessor::accept_mss > 0)

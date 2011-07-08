@@ -18,6 +18,7 @@
 
 AM_CPPFLAGS = \
   -I$(top_srcdir)/iocore/eventsystem \
+  -I$(top_srcdir)/lib \
   -I$(top_srcdir)/lib/records
 
 DEFS += @IOCORE_MODULARIZED_DEFS@

@@ -17,6 +17,7 @@
 #  limitations under the License.
 
 AM_CPPFLAGS = \
+  -I$(top_srcdir)/lib \
   -I$(top_srcdir)/lib/records
 
 DEFS += @IOCORE_MODULARIZED_DEFS@

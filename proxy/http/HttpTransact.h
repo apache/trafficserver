@@ -784,7 +784,7 @@ public:
     // components is a byte, so:
     // 0x25364758 = 0x25.0x36.0x47.0x58 = 37.54.71.88 in decimal.
     in_addr_t ip;
-    sockaddr_storage addr;
+    sockaddr_in6 addr;
 
     // port to connect to, except for client
     // connection where it is port on proxy
@@ -813,8 +813,7 @@ public:
         port_attribute(SERVER_PORT_DEFAULT),
         is_transparent(false)
     {
-      ink_inet_init(&addr);
-//      memset(&addr, 0, sizeof(addr));
+      memset(&addr, 0, sizeof(addr));
     }
   } ConnectionAttributes;
 

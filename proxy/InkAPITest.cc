@@ -336,7 +336,7 @@ REGRESSION_TEST(SDK_API_TSNetVConn) (RegressionTest * test, int atype, int *psta
 
   TSNetAccept(server_cont, server_port, -1, 0);
 
-  sockaddr_storage addr;
+  sockaddr_in addr;
   ink_inet_ip4_set(&addr, INADDR_LOOPBACK, server_port);
   TSNetConnect(client_cont, ink_inet_sa_cast(&addr));
 }
@@ -7430,7 +7430,7 @@ EXCLUSIVE_REGRESSION_TEST(SDK_API_TSHttpConnectIntercept) (RegressionTest * test
   /* Now send a request to the OS via TS using TSHttpConnect */
 
   /* ip and log do not matter as it is used for logging only */
-  sockaddr_storage addr;
+  sockaddr_in addr;
   ink_inet_ip4_set(&addr, 1, 1);
   data->vc = TSHttpConnect(ink_inet_sa_cast(&addr));
   synclient_txn_send_request_to_vc(data->browser, data->request, data->vc);
@@ -7470,7 +7470,7 @@ EXCLUSIVE_REGRESSION_TEST(SDK_API_TSHttpConnectServerIntercept) (RegressionTest 
   /* Now send a request to the OS via TS using TSHttpConnect */
 
   /* ip and log do not matter as it is used for logging only */
-  sockaddr_storage addr;
+  sockaddr_in addr;
   ink_inet_ip4_set(&addr, 2, 2);
   data->vc = TSHttpConnect(ink_inet_sa_cast(&addr));
 

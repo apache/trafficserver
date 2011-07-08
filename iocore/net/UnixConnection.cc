@@ -53,6 +53,8 @@ Connection::setup_mc_send(unsigned int mc_ip, int mc_port,
   ink_assert(fd == NO_FD);
   int res = 0;
   int enable_reuseaddr = 1;
+  sockaddr_in* sa_in = ink_inet_ip4_cast(&sa);
+  sockaddr_in bind_sa;
 
   if ((res = socketManager.mc_socket(AF_INET, SOCK_DGRAM, 0, non_blocking)) < 0)
     goto Lerror;
@@ -63,19 +65,12 @@ Connection::setup_mc_send(unsigned int mc_ip, int mc_port,
     goto Lerror;
   }
 
-  struct sockaddr_in bind_sa;
-  memset(&bind_sa, 0, sizeof(bind_sa));
-  bind_sa.sin_family = AF_INET;
-  bind_sa.sin_port = htons(my_port);
-  bind_sa.sin_addr.s_addr = my_ip;
+  ink_inet_ip4_set(&bind_sa, my_ip, htons(my_port));
   if ((res = socketManager.ink_bind(fd, (struct sockaddr *) &bind_sa, sizeof(bind_sa), IPPROTO_UDP)) < 0) {
     goto Lerror;
   }
 
-  sa.ss_family = AF_INET;
-  ((struct sockaddr_in *)(&sa))->sin_port = htons(mc_port);
-  ((struct sockaddr_in *)(&sa))->sin_addr.s_addr = mc_ip;
-  memset(&(((struct sockaddr_in *)(&sa))->sin_zero), 0, 8);
+  ink_inet_ip4_set(sa_in, mc_ip, htons(mc_port));
 
 #ifdef SET_CLOSE_ON_EXEC
   if ((res = safe_fcntl(fd, F_SETFD, 1)) < 0)
@@ -116,6 +111,7 @@ Connection::setup_mc_receive(unsigned int mc_ip, int mc_port,
   (void) c;
   int res = 0;
   int enable_reuseaddr = 1;
+  sockaddr_in* sa_in = ink_inet_ip4_cast(&sa);
 
   if ((res = socketManager.socket(AF_INET, SOCK_DGRAM, 0)) < 0)
     goto Lerror;
@@ -130,10 +126,7 @@ Connection::setup_mc_receive(unsigned int mc_ip, int mc_port,
   if ((res = safe_setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (char *) &enable_reuseaddr, sizeof(enable_reuseaddr)) < 0))
     goto Lerror;
 
-  memset(&sa, 0, sizeof(sa));
-  sa.ss_family = AF_INET;
-  ((struct sockaddr_in *)(&sa))->sin_addr.s_addr = mc_ip;
-  ((struct sockaddr_in *)(&sa))->sin_port = htons(mc_port);
+  ink_inet_ip4_set(sa_in, mc_ip, htons(mc_port));
 
   if ((res = socketManager.ink_bind(fd, (struct sockaddr *) &sa, sizeof(sa), IPPROTO_TCP)) < 0)
     goto Lerror;
@@ -298,13 +291,8 @@ Connection::open(NetVCOptions const& opt)
 
   // Local address/port.
   struct sockaddr_in bind_sa;
-  memset(&bind_sa, 0, sizeof(bind_sa));
-  bind_sa.sin_family = AF_INET;
-  bind_sa.sin_port = htons(local_port);
-  bind_sa.sin_addr.s_addr = local_addr;
-  if (-1 == socketManager.ink_bind(fd,
-				   reinterpret_cast<struct sockaddr *>(&bind_sa),
-				   sizeof(bind_sa)))
+  ink_inet_ip4_set(&bind_sa, local_addr, htons(local_port));
+  if (-1==socketManager.ink_bind(fd,ink_inet_sa_cast(&bind_sa),sizeof bind_sa))
     return -errno;
 
   cleanup.reset();

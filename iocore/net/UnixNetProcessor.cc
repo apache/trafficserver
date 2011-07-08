@@ -170,7 +170,17 @@ UnixNetProcessor::accept_internal(Continuation * cont,
   na->server.accept_ip_str = accept_ip_str;
   na->server.f_outbound_transparent = opt.f_outbound_transparent;
   na->server.f_inbound_transparent = opt.f_inbound_transparent;
-  if (opt.f_outbound_transparent) Debug("http_tproxy", "Marking accept server %x on port %d as outbound transparent.\n", na, opt.port);
+  if (opt.f_outbound_transparent || opt.f_inbound_transparent) {
+    Debug(
+      "http_tproxy",
+      "Marking accept server %x on port %d as %s%s%s transparent.\n",
+      na, opt.port,
+      (opt.f_outbound_transparent ? "outbound" : ""),
+      (opt.f_outbound_transparent && opt.f_inbound_transparent ? ", " : ""),
+      (opt.f_inbound_transparent ? "inbound" : "")
+    );
+  }
+
   na->action_ = NEW(new NetAcceptAction());
   *na->action_ = cont;
   na->action_->server = &na->server;
@@ -183,7 +193,7 @@ UnixNetProcessor::accept_internal(Continuation * cont,
     na->mutex = cont->mutex;
   if (frequent_accept) { // true
     if (accept_threads > 0)  {
-      if (0 == na->do_listen(BLOCKING)) {
+      if (0 == na->do_listen(BLOCKING, opt.f_inbound_transparent)) {
         NetAccept *a;
 
         for (int i=1; i < accept_threads; ++i) {

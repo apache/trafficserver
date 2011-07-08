@@ -23,81 +23,62 @@
 
 #include "I_NetVConnection.h"
 
-TS_INLINE sockaddr_storage const*
+TS_INLINE sockaddr const*
 NetVConnection::get_remote_addr()
 {
   if (!got_remote_addr) {
     set_remote_addr();
     got_remote_addr = 1;
   }
-  return &remote_addr;
+  return ink_inet_sa_cast(&remote_addr);
 }
 
 TS_INLINE unsigned int
 NetVConnection::get_remote_ip()
 {
-  switch (get_remote_addr()->ss_family) {
-  case AF_INET:
-    return (unsigned int)((struct sockaddr_in *)(get_remote_addr()))->sin_addr.s_addr;
-  default:
-    return 0;
-  }
+  sockaddr const* addr = this->get_remote_addr();
+  return ink_inet_is_ip4(addr)
+    ? ink_inet_ip4_addr_cast(addr)
+    : 0;
 }
 
 
+/// @return The remote port in host order.
 TS_INLINE int
 NetVConnection::get_remote_port()
 {
-  switch (get_remote_addr()->ss_family) {
-  case AF_INET:
-    return ntohs(((struct sockaddr_in *)(get_remote_addr()))->sin_port);
-  case AF_INET6:
-    return ntohs(((struct sockaddr_in6 *)(get_remote_addr()))->sin6_port);
-  default:
-    return 0;
-  }
+  return ink_inet_get_port(this->get_remote_addr());
 }
 
-TS_INLINE sockaddr_storage const*
+TS_INLINE sockaddr const*
 NetVConnection::get_local_addr()
 {
   if (!got_local_addr) {
     set_local_addr();
-    switch (local_addr.ss_family) {
-    case AF_INET:
-      if (((struct sockaddr_in *)(&local_addr))->sin_addr.s_addr || ((struct sockaddr_in *)&(local_addr))->sin_port) {
-        got_local_addr = 1;
-      }
-      break;
-    case AF_INET6:
-      if (((struct sockaddr_in6 *)(&local_addr))->sin6_addr.s6_addr || ((struct sockaddr_in6 *)(&local_addr))->sin6_port) {
-        got_local_addr = 1;
-      }
+    sockaddr* a = ink_inet_sa_cast(&local_addr); // cache required type.
+    if (
+      (ink_inet_is_ip(a) && ink_inet_port_cast(a)) // IP and has a port.
+      || (ink_inet_is_ip4(a) && ink_inet_ip4_addr_cast(a)) // IPv4
+      || (ink_inet_is_ip6(a) && !IN6_IS_ADDR_UNSPECIFIED(&ink_inet_ip6_addr_cast(a)))
+    ) {
+      got_local_addr = 1;
     }
   }
-  return &local_addr;
+  return ink_inet_sa_cast(&local_addr);
 }
 
 TS_INLINE unsigned int
 NetVConnection::get_local_ip()
 {
-  switch (get_local_addr()->ss_family) {
-  case AF_INET:
-    return (unsigned int)((struct sockaddr_in *)(get_local_addr()))->sin_addr.s_addr;
-  default:
-    return 0;
-  }
+  sockaddr const* addr = this->get_local_addr();
+  return ink_inet_is_ip4(addr)
+    ? ink_inet_ip4_addr_cast(addr)
+    : 0;
 }
 
+/// @return The local port in host order.
 TS_INLINE int
 NetVConnection::get_local_port()
 {
-  switch (get_local_addr()->ss_family) {
-  case AF_INET:
-    return ntohs(((struct sockaddr_in *)(get_local_addr()))->sin_port);
-  case AF_INET6:
-    return ntohs(((struct sockaddr_in6 *)(get_local_addr()))->sin6_port);
-  default:
-    return 0;
-  }
+  return ink_inet_get_port(this->get_local_addr());
 }
