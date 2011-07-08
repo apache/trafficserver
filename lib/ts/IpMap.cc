@@ -953,7 +953,7 @@ protected:
 };
 
 inline int cmp(sockaddr_in6 const& lhs, sockaddr_in6 const& rhs) {
-  return memcmp(lhs.sin6_addr.__in6_u.__u6_addr8, rhs.sin6_addr.__in6_u.__u6_addr8, INK_IP6_SIZE);
+  return memcmp(lhs.sin6_addr.s6_addr, rhs.sin6_addr.s6_addr, INK_IP6_SIZE);
 }
 
 // Helper functions
