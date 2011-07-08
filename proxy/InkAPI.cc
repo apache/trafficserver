@@ -6232,8 +6232,8 @@ TSHostLookupResultAddrGet(TSHostLookupResult lookup_result)
 {
   sdk_assert(sdk_sanity_check_hostlookup_structure(lookup_result) == TS_SUCCESS);
   HostDBInfo* di = reinterpret_cast<HostDBInfo*>(lookup_result);
-  ink_inet_ip4_set(ink_inet_sa_cast(&di->ip6), di->ip());
-  return ink_inet_sa_cast(&di->ip6);
+  ink_inet_ip4_set(&di->ip_addr, di->ip());
+  return ink_inet_sa_cast(&di->ip_addr);
 }
 
 in_addr_t

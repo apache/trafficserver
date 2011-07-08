@@ -69,7 +69,7 @@ Connection::Connection()
   , is_bound(false)
   , is_connected(false)
 {
-  memset(&sa, 0, sizeof(struct sockaddr_storage));
+  memset(&sa, 0, sizeof(sa));
 }
 
 

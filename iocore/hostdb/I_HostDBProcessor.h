@@ -266,7 +266,7 @@ struct HostDBInfo
 
   uint64_t md5_high;
 
-  sockaddr_in6 ip6;
+  sockaddr_in6 ip_addr; // used only by API as storage.
 
   bool failed() { return !ip(); }
   void set_failed() { ip() = 0;  }
