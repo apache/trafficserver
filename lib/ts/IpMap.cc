@@ -1072,7 +1072,7 @@ IpMap::unmark(
 
 IpMap::iterator
 IpMap::begin() {
-  Node* x;
+  Node* x = 0;
   if (_m4) x = _m4->getHead();
   if (!x && _m6) x = _m6->getHead();
   return iterator(this, x);
