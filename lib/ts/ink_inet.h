@@ -364,10 +364,11 @@ inline int ink_inet_cmp(
     }
   } else if (AF_INET6 == ltype) {
     if (AF_INET6 == rtype) {
+      sockaddr_in6 const* lhs_in6 = ink_inet_ip6_cast(lhs);
       zret = memcmp(
-        &ink_inet_ip6_cast(lhs)->sin6_addr,
+        &lhs_in6->sin6_addr,
         &ink_inet_ip6_cast(rhs)->sin6_addr,
-        sizeof(sockaddr_in6::sin6_addr)
+        sizeof(lhs_in6->sin6_addr)
       );
     } else {
       ink_assert(AF_INET == rtype);
