@@ -1,6 +1,11 @@
                                                          -*- coding: utf-8 -*-
 
 Changes with Apache Traffic Server 3.1.0
+  *) [TS-833]: Continuation::handleEvent deadbeef fix, authors jplevyak and
+  taorui.
+
+  *) [TS-834]: InactivityCopy::check_inactivity crash.
+
   *) [TS-864] Need more information from CacheHttpInfo (req time, resp time,
   size). Author: William Bardwell.
 
