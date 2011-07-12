@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 
 Changes with Apache Traffic Server 3.0.1
+  *) [TS-828]: Various memory leaks and uninitialized values.
+    Author: William Bardwell 
+
   *) [TS-839] Build problems when specifying lmza location.
 
   *) [TS-840] Regression checks fail (again) due to faulty assert use.

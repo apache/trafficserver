@@ -148,19 +148,19 @@ SplitDNSConfig::startup()
 void
 SplitDNSConfig::reconfigure()
 {
-  SplitDNS *params = NEW(new SplitDNS);
-
-  params->m_SplitDNSlEnable = gsplit_dns_enabled;
-
   if (0 == gsplit_dns_enabled)
     return;
 
+  SplitDNS *params = NEW(new SplitDNS);
+
+  params->m_SplitDNSlEnable = gsplit_dns_enabled;
   params->m_DNSSrvrTable = NEW(new DNS_table("proxy.config.dns.splitdns.filename", modulePrefix, &sdns_dest_tags));
 
   params->m_numEle = params->m_DNSSrvrTable->getEntryCount();
   if (0 == params->m_DNSSrvrTable || (0 == params->m_numEle)) {
     Warning("No NAMEDs provided! Disabling SplitDNS");
     gsplit_dns_enabled = 0;
+    delete params;
     return;
   }
 

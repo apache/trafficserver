@@ -813,7 +813,6 @@ LogConfig::setup_pre_defined_info(PreDefinedFormatInfoList * preDefInfoList)
   global_format_list.add(fmt, false);
   Debug("log", "squid format added to the global format list");
 
-
   if (squid_log_enabled) {
     pdfi = NEW(new PreDefinedFormatInfo(fmt, squid_log_name, squid_log_is_ascii, squid_log_header));
     preDefInfoList->enqueue(pdfi);
@@ -956,9 +955,7 @@ LogConfig::split_by_protocol(const PreDefinedFormatInfoList & pre_def_info_list)
 size_t
   LogConfig::split_by_hostname(const PreDefinedFormatInfoList & pre_def_info_list, LogFilter * reject_protocol_filter)
 {
-
   size_t n_hosts;
-
   char **host = read_log_hosts_file(&n_hosts);  // allocates memory for array
 
   if (n_hosts) {
@@ -1105,6 +1102,12 @@ LogConfig::setup_log_objects()
 
   if (is_debug_tag_set("log")) {
     log_object_manager.display();
+  }
+
+  PreDefinedFormatInfo *pdfi;
+  while (!pre_def_info_list.empty()) {
+    pdfi = pre_def_info_list.pop();
+    delete pdfi;
   }
 }
 

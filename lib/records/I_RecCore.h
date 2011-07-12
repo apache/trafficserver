@@ -181,8 +181,16 @@ void RecSignalManager(int, const char *);
   _var = (int32_t)REC_ConfigReadInteger(_config_var_name); \
 } while (0)
 
+/*
+ * RecLinkConfigString allocates the RecString and stores the ptr to it (&var).
+ * So before changing _var (the RecString) we have to free the original one.
+ * Really, we somehow need to know whether RecLinkConfigString allocated _var.
+ * For now, we're using the return value to indicate this, even though it's
+ * not always the case.  If we're wrong, we'll leak the RecString.
+ */
 #define REC_EstablishStaticConfigStringAlloc(_var, _config_var_name) do { \
-  RecLinkConfigString(_config_var_name, &_var); \
+  if (RecLinkConfigString(_config_var_name, &_var) == REC_ERR_OKAY) \
+    xfree(_var); \
   _var = (RecString)REC_ConfigReadString(_config_var_name); \
 } while (0)
 

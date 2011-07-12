@@ -287,7 +287,6 @@ RecProcessInit(RecModeT mode_type, Diags *_diags)
     return REC_ERR_OKAY;
   }
 
-  g_records_tree = new RecTree(NULL);
   g_mode_type = mode_type;
 
   if (RecCoreInit(mode_type, _diags) == REC_ERR_FAIL) {

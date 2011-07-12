@@ -195,18 +195,18 @@ LogFormat::init_variables(const char *name, const char *fieldlist_str, const cha
   -------------------------------------------------------------------------*/
 
 LogFormat::LogFormat(LogFormatType type)
-:m_interval_sec(0)
-  , m_interval_next(0)
-  , m_agg_marshal_space(NULL)
-  , m_valid(false)
-  , m_name_str(NULL)
-  , m_name_id(0)
-  , m_fieldlist_str(NULL)
-  , m_fieldlist_id(0)
-  , m_field_count(0)
-  , m_printf_str(NULL)
-  , m_aggregate(false)
-  , m_format_str(NULL)
+  : m_interval_sec(0),
+    m_interval_next(0),
+    m_agg_marshal_space(NULL),
+    m_valid(false),
+    m_name_str(NULL),
+    m_name_id(0),
+    m_fieldlist_str(NULL),
+    m_fieldlist_id(0),
+    m_field_count(0),
+    m_printf_str(NULL),
+    m_aggregate(false),
+    m_format_str(NULL)
 {
   switch (type) {
   case SQUID_LOG:
@@ -246,30 +246,18 @@ LogFormat::LogFormat(LogFormatType type)
   -------------------------------------------------------------------------*/
 
 LogFormat::LogFormat(const char *name, const char *format_str, unsigned interval_sec)
-  :
-m_interval_sec(0)
-  ,
-m_interval_next(0)
-  ,
-m_agg_marshal_space(NULL)
-  ,
-m_valid(false)
-  ,
-m_name_str(NULL)
-  ,
-m_name_id(0)
-  ,
-m_fieldlist_str(NULL)
-  ,
-m_fieldlist_id(0)
-  ,
-m_field_count(0)
-  ,
-m_printf_str(NULL)
-  ,
-m_aggregate(false)
-  ,
-m_format_str(NULL)
+  : m_interval_sec(0),
+    m_interval_next(0),
+    m_agg_marshal_space(NULL),
+    m_valid(false),
+    m_name_str(NULL),
+    m_name_id(0),
+    m_fieldlist_str(NULL),
+    m_fieldlist_id(0),
+    m_field_count(0),
+    m_printf_str(NULL),
+    m_aggregate(false),
+    m_format_str(NULL)
 {
   setup(name, format_str, interval_sec);
   m_format_type = CUSTOM_LOG;
@@ -284,30 +272,18 @@ m_format_str(NULL)
 // delete this.
 //
 LogFormat::LogFormat(const char *name, const char *fieldlist_str, const char *printf_str, unsigned interval_sec)
-  :
-m_interval_sec(0)
-  ,
-m_interval_next(0)
-  ,
-m_agg_marshal_space(NULL)
-  ,
-m_valid(false)
-  ,
-m_name_str(NULL)
-  ,
-m_name_id(0)
-  ,
-m_fieldlist_str(NULL)
-  ,
-m_fieldlist_id(0)
-  ,
-m_field_count(0)
-  ,
-m_printf_str(NULL)
-  ,
-m_aggregate(false)
-  ,
-m_format_str(NULL)
+  : m_interval_sec(0),
+    m_interval_next(0),
+    m_agg_marshal_space(NULL),
+    m_valid(false),
+    m_name_str(NULL),
+    m_name_id(0),
+    m_fieldlist_str(NULL),
+    m_fieldlist_id(0),
+    m_field_count(0),
+    m_printf_str(NULL),
+    m_aggregate(false),
+    m_format_str(NULL)
 {
   init_variables(name, fieldlist_str, printf_str, interval_sec);
   m_format_type = CUSTOM_LOG;
@@ -320,32 +296,19 @@ m_format_str(NULL)
   -------------------------------------------------------------------------*/
 
 LogFormat::LogFormat(const LogFormat & rhs)
-  :
-m_interval_sec(0)
-  ,
-m_interval_next(0)
-  ,
-m_agg_marshal_space(NULL)
-  ,
-m_valid(rhs.m_valid)
-  ,
-m_name_str(NULL)
-  ,
-m_name_id(0)
-  ,
-m_fieldlist_str(NULL)
-  ,
-m_fieldlist_id(0)
-  ,
-m_field_count(0)
-  ,
-m_printf_str(NULL)
-  ,
-m_aggregate(false)
-  ,
-m_format_str(NULL)
-  ,
-m_format_type(rhs.m_format_type)
+  : m_interval_sec(0),
+    m_interval_next(0),
+    m_agg_marshal_space(NULL),
+    m_valid(rhs.m_valid),
+    m_name_str(NULL),
+    m_name_id(0),
+    m_fieldlist_str(NULL),
+    m_fieldlist_id(0),
+    m_field_count(0),
+    m_printf_str(NULL),
+    m_aggregate(false),
+    m_format_str(NULL),
+    m_format_type(rhs.m_format_type)
 {
   if (m_valid) {
     if (m_format_type == TEXT_LOG) {

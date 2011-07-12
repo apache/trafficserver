@@ -482,6 +482,7 @@ NetVConnection::NetVConnection():
   got_local_addr(0),
   got_remote_addr(0),
   is_internal_request(false),
+  is_transparent(false),
   is_other_side_transparent(false)
 {
   memset(&local_addr, 0, sizeof(local_addr));

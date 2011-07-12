@@ -83,11 +83,35 @@ LogObject::LogObject(LogFormat * format, const char *log_dir,
                      const char *basename, LogFileFormat file_format,
                      const char *header, int rolling_enabled,
                      int rolling_interval_sec, int rolling_offset_hr, int rolling_size_mb)
-:m_alt_filename(NULL)
-  , m_flags(0)
-  , m_signature(0)
-  , m_ref_count(0)
-  , m_log_buffer(NULL)
+  : m_alt_filename(NULL),
+    m_flags(0),
+    m_signature(0),
+    m_ref_count(0),
+    m_log_buffer(NULL)
+{
+  init(format, log_dir, basename, file_format, header, rolling_enabled, rolling_interval_sec,
+       rolling_offset_hr, rolling_size_mb);
+}
+
+LogObject::LogObject(LogFormat format, const char *log_dir,
+                     const char *basename, LogFileFormat file_format,
+                     const char *header, int rolling_enabled,
+                     int rolling_interval_sec, int rolling_offset_hr, int rolling_size_mb)
+  : m_alt_filename(NULL),
+    m_flags(0),
+    m_signature(0),
+    m_ref_count(0),
+    m_log_buffer(NULL)
+{
+  init(&format, log_dir, basename, file_format, header, rolling_enabled, rolling_interval_sec,
+       rolling_offset_hr, rolling_size_mb);
+}
+
+void
+LogObject::init(LogFormat * format, const char *log_dir,
+                     const char *basename, LogFileFormat file_format,
+                     const char *header, int rolling_enabled,
+                     int rolling_interval_sec, int rolling_offset_hr, int rolling_size_mb)
 {
   LogBuffer *tmp_lb_array[(DELAY_DELETE_SIZE + (DELAY_DELETE_SIZE / 4))];
   int i;
@@ -737,11 +761,10 @@ LogObject::do_filesystem_checks()
 /*-------------------------------------------------------------------------
   TextLogObject::TextLogObject
   -------------------------------------------------------------------------*/
-
-TextLogObject::TextLogObject(const char *name, const char *log_dir, bool timestamps, const char *header, int rolling_enabled, int rolling_interval_sec, int rolling_offset_hr, int rolling_size_mb):
-
-LogObject(NEW(new LogFormat(TEXT_LOG)), log_dir, name, ASCII_LOG, header,
-          rolling_enabled, rolling_interval_sec, rolling_offset_hr, rolling_size_mb), m_timestamps(timestamps)
+TextLogObject::TextLogObject(const char *name, const char *log_dir, bool timestamps, const char *header, int rolling_enabled,
+                             int rolling_interval_sec, int rolling_offset_hr, int rolling_size_mb)
+  : LogObject(LogFormat(TEXT_LOG), log_dir, name, ASCII_LOG, header,
+              rolling_enabled, rolling_interval_sec, rolling_offset_hr, rolling_size_mb), m_timestamps(timestamps)
 {
 }
 
