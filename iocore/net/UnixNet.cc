@@ -92,7 +92,7 @@ PollCont::pollEvent(int event, Event *e) {
   if (likely(net_handler)) {
     /* checking to see whether there are connections on the ready_queue (either read or write) that need processing [ebalsa] */
     if (likely
-        (!net_handler->read_ready_list.empty() || !net_handler->read_ready_list.empty() ||
+        (!net_handler->read_ready_list.empty() || !net_handler->write_ready_list.empty() ||
          !net_handler->read_enable_list.empty() || !net_handler->write_enable_list.empty())) {
       NetDebug("iocore_net_poll", "rrq: %d, wrq: %d, rel: %d, wel: %d", net_handler->read_ready_list.empty(),
                net_handler->write_ready_list.empty(), net_handler->read_enable_list.empty(),
