@@ -43,7 +43,7 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   * core: Various memory leaks and uninitialized values.
     Trunk patch: http://svn.apache.org/viewvc?view=revision&revision=1133639
     Jira: https://issues.apache.org/jira/browse/TS-828
-    +1: zwoop, zym
+    +1: zwoop, zym, igalic
 
   * build: remove uninstall target from build system
     Trunk patch: http://svn.apache.org/viewvc?rev=1136958&view=rev
@@ -64,14 +64,14 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
           error.
     Trunk patch: http://svn.apache.org/viewvc?rev=1143116&view=rev
     Jira: https://issues.apache.org/jira/browse/TS-860
-    +1: zwoop
+    +1: zwoop, igalic
 
   * DNS: Continuation::handleEvent deadbeef fix. Will fix most of the dns
          related crashes
     Trunk patch: http://svn.apache.org/viewvc?rev=1144096&view=rev
                  http://svn.apache.org/viewvc?rev=1144746&view=rev
     Jira: https://issues.apache.org/jira/browse/TS-833
-    +1: zym
+    +1: zym, igalic
 
   * Management: cop Crash, InactivityCop::check_inactivity, event=2, UnixNet.cc:57
     Trunk patch: http://svn.apache.org/viewvc?rev=1144094&view=rev
