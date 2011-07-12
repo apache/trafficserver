@@ -1,14 +1,38 @@
 # include "IpMap.h"
-// # include <iostream>
 
-/*  Don't bother to look at this code if you don't know how a
-    red/black tree works. There are so many good references on the
+/** @file
+    IP address map support.
+
+    Provide the ability to create a range based mapping for the IP
+    address space. Addresses can be added and removed and each address
+    is associated with arbitrary client data.
+
+    @internal Don't bother to look at this code if you don't know how
+    a red/black tree works. There are so many good references on the
     subject it's a waste to have some inferior version here. The
     methods on @c Node follow the standard implementation except for
     being parameterized by direction (so that, for instance, right
     rotate and left rotate are both done by the @c rotate method with
     a direction argument).
-*/
+
+    @section license License
+
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements.  See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership.  The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+ */
 
 // Validation / printing disabled until I figure out how to generalize so
 // as to not tie reporting into a particular project environment.

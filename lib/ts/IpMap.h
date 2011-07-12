@@ -1,7 +1,6 @@
 # if ! defined(TS_IP_MAP_HEADER)
 # define TS_IP_MAP_HEADER
 
-# include <ts/ink_assert.h>
 # include <ts/ink_inet.h>
 # include <ts/IntrusiveDList.h>
 
@@ -55,17 +54,19 @@ namespace ts { namespace detail {
   class Ip6Map; // Forward declare.
 
   /** A node in a red/black tree.
+
       This class provides only the basic tree operations. The client
-      must provide the search and decision logic. This enables this class
-      to be a base class for templated nodes with much less code duplication.
+      must provide the search and decision logic. This enables this
+      class to be a base class for templated nodes with much less code
+      duplication.
   */
   struct RBNode {
-    typedef RBNode self; //!< self reference type
+    typedef RBNode self; ///< self reference type
 
-    //! Node colors
+    /// Node colors
     typedef enum { RED, BLACK } Color;
 
-    //! Directional constants
+    /// Directional constants
     typedef enum { NONE, LEFT, RIGHT } Direction;
 
     /// Get a child by direction.
@@ -94,8 +95,8 @@ namespace ts { namespace detail {
     /// @return The color of the node.
     Color getColor() const { return _color; }
 
-    //! Reverse a direction
-    /** @return @c LEFT if @a d is @c RIGHT, @c RIGHT if @a d is @c LEFT,
+    /** Reverse a direction
+        @return @c LEFT if @a d is @c RIGHT, @c RIGHT if @a d is @c LEFT,
         @c NONE otherwise.
     */
     Direction flip(Direction d) {
@@ -234,7 +235,7 @@ namespace ts { namespace detail {
     not supported (any particular range of addresses must be a single
     protocol but ranges of both types can be in the map).
 
-    Use @c mark to mark / set/ add addresses to the map.
+    Use @c mark to mark / set / add addresses to the map.
     Use @c unmark to unset addresses (setting the client data to 0 does
     @b not remove the address -- this is for the convenience of clients
     that do not need data, only membership). @c contains tests for
