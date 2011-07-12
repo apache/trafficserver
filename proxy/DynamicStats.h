@@ -111,6 +111,7 @@ _D(stuffer_total_objects)
 _D(stuffer_total_bytes_received)
 _D(stuffer_open_read_blocks)
 _D(stuffer_ram_cache_hits)
+_D(stuffer_ram_cache_misses)
 _D(stuffer_url_lookup_misses)
 _D(stuffer_total_objects_pushed)
 #endif

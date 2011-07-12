@@ -2591,6 +2591,7 @@ register_cache_stats(RecRawStatBlock *rsb, const char *prefix)
   RecRegisterRawStat(rsb, RECT_PROCESS, stat_str, RECD_INT, RECP_NULL, (int) cache_ram_cache_bytes_total_stat, RecRawStatSyncSum);
   REG_INT("ram_cache.bytes_used", cache_ram_cache_bytes_stat);
   REG_INT("ram_cache.hits", cache_ram_cache_hits_stat);
+  REG_INT("ram_cache.misses", cache_ram_cache_misses_stat);
   REG_INT("pread_count", cache_pread_count_stat);
   REG_INT("percent_full", cache_percent_full_stat);
   REG_INT("lookup.active", cache_lookup_active_stat);

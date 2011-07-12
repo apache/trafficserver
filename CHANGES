@@ -1,6 +1,10 @@
                                                          -*- coding: utf-8 -*-
 
 Changes with Apache Traffic Server 3.1.0
+  *) [TS-869]: The stat code for ram_cache miss is lost, Author: mohan_zl
+
+  *) [TS-873]: Wrong code in iocore/net/UnixNet.cc, Author: mohan_zl
+
   *) [TS-833]: Continuation::handleEvent deadbeef fix, authors jplevyak and
   taorui.
 
