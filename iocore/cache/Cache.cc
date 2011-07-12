@@ -2695,11 +2695,9 @@ ink_cache_init(ModuleVersion v)
   }
   // TODO: These are left here, since they are only registered if HIT_EVACUATE is enabled.
 #ifdef HIT_EVACUATE
-  IOCORE_RegisterConfigInteger(RECT_CONFIG, "proxy.config.cache.hit_evacuate_percent", 0, RECU_DYNAMIC, RECC_NULL, NULL);
   IOCORE_EstablishStaticConfigInt32(cache_config_hit_evacuate_percent, "proxy.config.cache.hit_evacuate_percent");
   Debug("cache_init", "proxy.config.cache.hit_evacuate_percent = %d", cache_config_hit_evacuate_percent);
 
-  IOCORE_RegisterConfigInteger(RECT_CONFIG, "proxy.config.cache.hit_evacuate_size_limit", 0, RECU_DYNAMIC, RECC_NULL, NULL);
   IOCORE_EstablishStaticConfigInt32(cache_config_hit_evacuate_size_limit, "proxy.config.cache.hit_evacuate_size_limit");
   Debug("cache_init", "proxy.config.cache.hit_evacuate_size_limit = %d", cache_config_hit_evacuate_size_limit);
 #endif

@@ -36,7 +36,7 @@ struct EvacuationBlock;
 
 // Compilation Options
 
-//#define HIT_EVACUATE                    1
+#define HIT_EVACUATE                    1
 #define ALTERNATES                      1
 // #define CACHE_LOCK_FAIL_RATE         0.001
 // #define CACHE_AGG_FAIL_RATE          0.005

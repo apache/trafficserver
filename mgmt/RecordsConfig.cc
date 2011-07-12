@@ -918,7 +918,15 @@ RecordElement RecordsConfig[] = {
   ,
   {RECT_CONFIG, "proxy.config.cluster.cluster_load_exceed_duration", RECD_INT, "4", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
-
+  //##############################################################################
+  //#
+  //# HIT_EVACUATE
+  //#
+  //##############################################################################
+  {RECT_CONFIG, "proxy.config.cache.hit_evacuate_percent", RECD_INT, "0", RECU_RESTART_TS, RR_NULL, RECC_NULL, NULL, RECA_NULL}
+  ,
+  {RECT_CONFIG, "proxy.config.cache.hit_evacuate_size_limit", RECD_INT, "0", RECU_RESTART_TS, RR_NULL, RECC_NULL, NULL, RECA_NULL}
+  ,
   //##############################################################################
   //#
   //# Cache
