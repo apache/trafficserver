@@ -383,6 +383,7 @@ Mutex_trylock(
 {
 
   ink_assert(t != 0);
+  ink_debug_assert(t == (EThread*)this_thread());
   if (m->thread_holding != t) {
     if (!ink_mutex_try_acquire(&m->the_mutex)) {
 #ifdef DEBUG

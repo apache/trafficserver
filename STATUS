@@ -61,13 +61,6 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
     Jira: https://issues.apache.org/jira/browse/TS-860
     +1: zwoop, igalic
 
-  * DNS: Continuation::handleEvent deadbeef fix. Will fix most of the dns
-         related crashes
-    Trunk patch: http://svn.apache.org/viewvc?rev=1144096&view=rev
-                 http://svn.apache.org/viewvc?rev=1144746&view=rev
-    Jira: https://issues.apache.org/jira/browse/TS-833
-    +1: zym, igalic, zwoop
-
   * Management: cop Crash, InactivityCop::check_inactivity, event=2, UnixNet.cc:57
     Trunk patch: http://svn.apache.org/viewvc?rev=1144094&view=rev
     Jira: https://issues.apache.org/jira/browse/TS-834

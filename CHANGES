@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 
 Changes with Apache Traffic Server 3.0.1
+  *) [TS-833] Continuation::handleEvent deadbeef fix. This fixes most of the
+    dns related crashes
+
   *) [TS-828]: Various memory leaks and uninitialized values.
     Author: William Bardwell 
 

@@ -986,7 +986,7 @@ DNSProcessor::getby(const char *x, int len, int type, Continuation *cont, DNSHan
   DNSEntry *e = dnsEntryAllocator.alloc();
   e->retries = dns_retries;
   e->init(x, len, type, cont, adnsH, timeout);
-  MUTEX_TRY_LOCK(lock, e->mutex, thread);
+  MUTEX_TRY_LOCK(lock, e->mutex, this_ethread());
   if (!lock)
     thread->schedule_imm(e);
   else
