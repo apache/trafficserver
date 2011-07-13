@@ -101,8 +101,6 @@ handle_client_lookup(TSHttpTxn txnp, TSCont contp)
 #endif
 
   const char *host;
-  char *clientstring;
-  struct in_addr tempstruct;
 
   /*
    * Here we declare local coupled statistics variables:
@@ -136,17 +134,24 @@ handle_client_lookup(TSHttpTxn txnp, TSCont contp)
    */
   INKStatFloatAddTo(local_requests_all, 1.0);
 
+  if (TSIsDebugTagSet("redirect")) {
+    struct sockaddr const* addr = TSHttpTxnClientAddrGet(txnp);
 
-#if !defined (_WIN32)
-  clientip = (in_addr_t) TSHttpTxnClientIPGet(txnp);
-#else
-  clientip = TSHttpTxnClientIPGet(txnp);
-#endif
+    if (addr) {
+      socklen_t addr_size = 0;
 
+      if (addr->sa_family == AF_INET)
+        addr_size = sizeof(struct sockaddr_in);
+      else if (addr->sa_family == AF_INET6)
+        addr_size = sizeof(struct sockaddr_in6);
+      if (addr_size > 0) {
+        char clientstring[INET6_ADDRSTRLEN];
 
-  tempstruct.s_addr = clientip;
-  clientstring = inet_ntoa(tempstruct);
-  TSDebug("redirect", "clientip is %s and block_ip is %s", clientstring, block_ip);
+        if (NULL != inet_ntop(addr->sa_family, addr, clientstring, addr_size))
+          TSDebug("redirect", "clientip is %s and block_ip is %s", clientstring, block_ip);
+      }
+    }
+  }
 
   if (TSHttpTxnClientReqGet(txnp, &bufp, &hdr_loc) != TS_SUCCESS) {
     TSError("couldn't retrieve client request header\n");

@@ -21,6 +21,7 @@
   limitations under the License.
  */
 
+#include <netinet/in.h>
 #include "TxnSM.h"
 
 extern TSTextLogObject protocol_plugin_log;
@@ -458,6 +459,8 @@ int
 state_dns_lookup(TSCont contp, TSEvent event, TSHostLookupResult host_info)
 {
   TxnSM *txn_sm = (TxnSM *) TSContDataGet(contp);
+  struct sockaddr const* q_server_addr;
+  struct sockaddr_in ip_addr;
 
   TSDebug("protocol", "enter state_dns_lookup");
 
@@ -468,12 +471,16 @@ state_dns_lookup(TSCont contp, TSEvent event, TSHostLookupResult host_info)
   txn_sm->q_pending_action = NULL;
 
   /* Get the server IP from data structure TSHostLookupResult. */
-  txn_sm->q_server_ip = TSHostLookupResultIPGet(host_info);
+  q_server_addr = TSHostLookupResultAddrGet(host_info);
 
   /* Connect to the server using its IP. */
   set_handler(txn_sm->q_current_handler, (TxnSMHandler)&state_connect_to_server);
   TSAssert(txn_sm->q_pending_action == NULL);
-  txn_sm->q_pending_action = TSNetConnect(contp, txn_sm->q_server_ip, txn_sm->q_server_port);
+  TSAssert(q_server_addr->sa_family == AF_INET); /* NO IPv6 in this plugin */
+
+  memcpy(&ip_addr, q_server_addr, sizeof(ip_addr));
+  ip_addr.sin_port = txn_sm->q_server_port;
+  txn_sm->q_pending_action = TSNetConnect(contp, (struct sockaddr const*)&ip_addr);
 
   return TS_SUCCESS;
 }

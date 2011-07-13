@@ -171,6 +171,7 @@ transform_connect(TSCont contp, TransformData * data)
 {
   TSAction action;
   int content_length;
+  struct sockaddr_in ip_addr;
 
   data->state = STATE_CONNECT;
 
@@ -205,7 +206,14 @@ transform_connect(TSCont contp, TransformData * data)
     return 0;
   }
 
-  action = TSNetConnect(contp, server_ip, server_port);
+  /* TODO: This only supports IPv4, probably should be changed at some point, but
+     it's an example ... */
+  memset(&ip_addr, 0, sizeof(ip_addr));
+  ip_addr.sin_family = AF_INET;
+  ip_addr.sin_addr.s_addr = server_ip; /* Should be in network byte order */
+  ip_addr.sin_port = server_port;
+  action = TSNetConnect(contp, (struct sockaddr const*)&ip_addr);
+
   if (!TSActionDone(action)) {
     data->pending_action = action;
   }
