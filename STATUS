@@ -66,6 +66,12 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
     Jira: https://issues.apache.org/jira/browse/TS-834
     +1: zym, zwoop
 
+  * API: TSFetchRestpGet(), TSFetchPageResptGet() and TSFetchUrl() have
+         incorrect asserts.
+    Trunk patch: http://svn.apache.org/viewvc?rev=1146414&view=rev
+    Jira: https://issues.apache.org/jira/browse/TS-875
+    +1: zwoop
+
 RELEASE PROCESS
 
 The Traffic Server release process is documented at
