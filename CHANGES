@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 
 Changes with Apache Traffic Server 3.1.0
+  *) [TS-875] TSFetchRestpGet(), TSFetchPageResptGet() and TSFetchUrl() have
+   incorrect asserts. Author: Manjesh Nilange.
+
   *) [TS-853] Fix a few example plugins to use the new (appropriate) sockaddr
    based APIs (and not the deprecated APIs).
 
