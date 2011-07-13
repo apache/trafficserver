@@ -781,7 +781,7 @@ TS_CHECK_ZLIB
 TS_CHECK_LZMA
 
 #
-# Tcl macros provided by m4/tcl.m4
+# Tcl macros provided by build/tcl.m4
 #
 # this will error out if tclConfig.sh is not found
 SC_PATH_TCLCONFIG
