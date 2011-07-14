@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 
 Changes with Apache Traffic Server 3.0.1
+  *) [TS-826] TSHttpTxnErrorBodySet() can leak memory.
+    Author: William Bardwell 
+
   *) [TS-833] Continuation::handleEvent deadbeef fix. This fixes most of the
     dns related crashes
 
