@@ -246,6 +246,7 @@ public:
   QueM(UnixNetVConnection, NetState, read, ready_link) read_ready_list;
   QueM(UnixNetVConnection, NetState, write, ready_link) write_ready_list;
   Que(UnixNetVConnection, link) open_list;
+  DList(UnixNetVConnection, cop_link) cop_list;
   ASLLM(UnixNetVConnection, NetState, read, enable_link) read_enable_list;
   ASLLM(UnixNetVConnection, NetState, write, enable_link) write_enable_list;
 
@@ -457,9 +458,8 @@ read_disable(NetHandler * nh, UnixNetVConnection * vc)
     }
   }
 #else
-  if (vc->next_inactivity_timeout_at)
-    if (!vc->write.enabled)
-      vc->next_inactivity_timeout_at = 0;
+  if (!vc->write.enabled)
+    vc->next_inactivity_timeout_at = 0;
 #endif
   vc->read.enabled = 0;
   nh->read_ready_list.remove(vc);
@@ -477,9 +477,8 @@ write_disable(NetHandler * nh, UnixNetVConnection * vc)
     }
   }
 #else
-  if (vc->next_inactivity_timeout_at)
-    if (!vc->read.enabled)
-      vc->next_inactivity_timeout_at = 0;
+  if (!vc->read.enabled)
+    vc->next_inactivity_timeout_at = 0;
 #endif
   vc->write.enabled = 0;
   nh->write_ready_list.remove(vc);

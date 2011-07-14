@@ -39,61 +39,53 @@ extern "C" void fd_reify(struct ev_loop *);
 // INKqa10496
 // One Inactivity cop runs on each thread once every second and
 // loops through the list of NetVCs and calls the timeouts
-struct InactivityCop:public Continuation
-{
-  InactivityCop(ProxyMutex *m):Continuation(m)
-  {
+struct InactivityCop : public Continuation {
+  InactivityCop(ProxyMutex *m):Continuation(m) {
     SET_HANDLER(&InactivityCop::check_inactivity);
   }
-  int check_inactivity(int event, Event *e)
-  {
+  int check_inactivity(int event, Event *e) {
     (void) event;
     ink_hrtime now = ink_get_hrtime();
     NetHandler *nh = get_NetHandler(this_ethread());
-    UnixNetVConnection *vc = nh->open_list.head, *vc_next = 0;
-    while (vc) {
-      vc_next = (UnixNetVConnection*)vc->link.next;
-      if (vc->inactivity_timeout_in && vc->next_inactivity_timeout_at && vc->next_inactivity_timeout_at < now){
+    // Copy the list and use pop() to catch any closes caused by callbacks.
+    forl_LL(UnixNetVConnection, vc, nh->open_list)
+      nh->cop_list.push(vc);
+    while (UnixNetVConnection *vc = nh->cop_list.pop()) {
+      if (vc->closed) {
+        close_UnixNetVConnection(vc, e->ethread);
+        continue;
+      } 
+      if (vc->next_inactivity_timeout_at && vc->next_inactivity_timeout_at < now)
         vc->handleEvent(EVENT_IMMEDIATE, e);
-      } else {
-        if (vc->closed)
-          close_UnixNetVConnection(vc, e->ethread);
-      }
-      vc = vc_next;
     }
     return 0;
   }
 };
 #endif
 
-PollCont::PollCont(ProxyMutex *m, int pt):Continuation(m), net_handler(NULL), poll_timeout(pt)
+PollCont::PollCont(ProxyMutex *m, int pt):Continuation(m), net_handler(NULL), poll_timeout(pt) {
+  pollDescriptor = NEW(new PollDescriptor);
+  pollDescriptor->init();
+  SET_HANDLER(&PollCont::pollEvent);
+}
+
+PollCont::PollCont(ProxyMutex *m, NetHandler *nh, int pt):Continuation(m), net_handler(nh), poll_timeout(pt)
 {
   pollDescriptor = NEW(new PollDescriptor);
   pollDescriptor->init();
   SET_HANDLER(&PollCont::pollEvent);
 }
 
-PollCont::PollCont(ProxyMutex *m, NetHandler *nh, int pt):Continuation(m), net_handler(nh),
-poll_timeout(pt)
-{
-  pollDescriptor = NEW(new PollDescriptor);
-  pollDescriptor->init();
-  SET_HANDLER(&PollCont::pollEvent);
-}
-
-PollCont::~PollCont()
-{
+PollCont::~PollCont() {
   delete pollDescriptor;
 }
 
 //
-// Changed by YTS Team, yamsat
 // PollCont continuation which does the epoll_wait
 // and stores the resultant events in ePoll_Triggered_Events
 //
 int
-PollCont::pollEvent(int event, Event *e)
-{
+PollCont::pollEvent(int event, Event *e) {
   (void) event;
   (void) e;
 
