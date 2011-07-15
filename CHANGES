@@ -1,7 +1,10 @@
                                                          -*- coding: utf-8 -*-
 
 Changes with Apache Traffic Server 3.0.1
-  *)i [TS-834] InactivityCop::check_inactivity crash
+  *) [TS-875]: TSFetchRestpGet(), TSFetchPageResptGet() and TSFetchUrl() have
+    incorrect asserts. Author: Manjesh Nilange 
+
+  *) [TS-834] InactivityCop::check_inactivity crash
 
   *) [TS-826] TSHttpTxnErrorBodySet() can leak memory.
     Author: William Bardwell 
