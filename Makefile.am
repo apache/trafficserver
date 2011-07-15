@@ -79,6 +79,5 @@ help:
    echo 'help             display this list of make targets' && \
    echo 'install          install by copying the built files to system-wide dirs' && \
    echo 'install-strip    same as install but then strips debugging symbols' && \
-   echo 'install-examples install examples by copying the built files to system-wide dirs' && \
-   echo 'uninstall        opposite of install, removes installed files'
+   echo 'install-examples install examples by copying the built files to system-wide dirs'
 
