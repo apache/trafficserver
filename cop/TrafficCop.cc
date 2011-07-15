@@ -185,17 +185,19 @@ chown_file_to_user(const char *file, const char *user)
         uid = (int)geteuid();
       }
       pwd = getpwuid((uid_t)uid);
-    }
-    else {
+    } else {
       pwd = getpwnam(user);
     }
-  }
-  if (pwd) {
-    if (chown(file, pwd->pw_uid, pwd->pw_gid) < 0) {
-      //cop_log(COP_FATAL, "cop couldn't chown the  file: %s\n", file);
+
+    if (pwd) {
+      if (chown(file, pwd->pw_uid, pwd->pw_gid) < 0) {
+        //cop_log(COP_FATAL, "cop couldn't chown the  file: %s\n", file);
+      }
+    } else {
+      cop_log(COP_FATAL, "can't get passwd entry for the admin user '%s' - [%d] %s\n", user, errno, strerror(errno));
     }
   } else {
-    cop_log(COP_FATAL, "can't get passwd entry for the admin user\n");
+    cop_log(COP_FATAL, "Admin user was the empty string.\n");
   }
 }
 static void
