@@ -191,7 +191,10 @@ chown_file_to_user(const char *file, const char *user)
 
     if (pwd) {
       if (chown(file, pwd->pw_uid, pwd->pw_gid) < 0) {
-        //cop_log(COP_FATAL, "cop couldn't chown the  file: %s\n", file);
+        cop_log(
+	  COP_FATAL, "cop couldn't chown the  file: '%s' [%d] %s\n",
+	  file, errno, strerror(errno)
+	);
       }
     } else {
       cop_log(COP_FATAL, "can't get passwd entry for the admin user '%s' - [%d] %s\n", user, errno, strerror(errno));
