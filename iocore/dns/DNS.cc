@@ -76,7 +76,6 @@ static int local_num_entries = 1;
 static int attempt_num_entries = 1;
 char try_server_names[DEFAULT_NUM_TRY_SERVER][MAXDNAME];
 
-
 static inline char *
 strnchr(char *s, char c, int len) {
   while (*s && *s != c && len)
@@ -613,17 +612,18 @@ DNSHandler::rr_failure(int ndx)
   }
 }
 
+static inline unsigned int get_rcode(char* buff) {
+  return reinterpret_cast<HEADER*>(buff)->rcode;
+}
+
+static inline unsigned int get_rcode(HostEnt* ent) {
+  return get_rcode(reinterpret_cast<char*>(ent));
+}
+
 static bool
-good_rcode(char *buf)
-{
-  HEADER *h = (HEADER *) buf;
-  switch (h->rcode) {
-  default:
-    return false;
-  case NOERROR:
-  case NXDOMAIN:
-    return true;
-  }
+good_rcode(char *buff) {
+  unsigned int r = get_rcode(buff);
+  return NOERROR == r || NXDOMAIN == r;
 }
 
 
@@ -665,7 +665,7 @@ DNSHandler::recv_dns(int event, Event *e)
       buf->packet_size = res;
       Debug("dns", "received packet size = %d", res);
       if (dns_ns_rr) {
-        Debug("dns", "round-robin: nameserver %d DNS response code = %d", dnsc->num, ((HEADER *) buf->buf)->rcode);
+        Debug("dns", "round-robin: nameserver %d DNS response code = %d", dnsc->num, get_rcode(buf));
         if (good_rcode(buf->buf)) {
           received_one(dnsc->num);
           if (ns_down[dnsc->num]) {
@@ -677,7 +677,7 @@ DNSHandler::recv_dns(int event, Event *e)
         }
       } else {
         if (!dnsc->num) {
-          Debug("dns", "primary DNS response code = %d", ((HEADER *) buf->buf)->rcode);
+          Debug("dns", "primary DNS response code = %d", get_rcode(buf));
           if (good_rcode(buf->buf)) {
             if (name_server)
               recover();
@@ -855,17 +855,20 @@ static bool
 write_dns_event(DNSHandler *h, DNSEntry *e)
 {
   ProxyMutex *mutex = h->mutex;
-  char buffer[MAX_DNS_PACKET_LEN];
+  union {
+    HEADER _h;
+    char _b[MAX_DNS_PACKET_LEN];
+  } blob;
   int r = 0;
 
-  if ((r = _ink_res_mkquery(h->m_res, e->qname, e->qtype, buffer)) <= 0) {
+  if ((r = _ink_res_mkquery(h->m_res, e->qname, e->qtype, blob._b)) <= 0) {
     Debug("dns", "cannot build query: %s", e->qname);
     dns_result(h, e, NULL, false);
     return true;
   }
 
   uint16_t i = h->get_query_id();
-  ((HEADER *) (buffer))->id = htons(i);
+  blob._h.id = htons(i);
   if (e->id[dns_retries - e->retries] >= 0) {
     //clear previous id in case named was switched or domain was expanded
     h->release_query_id(e->id[dns_retries - e->retries]);
@@ -873,7 +876,7 @@ write_dns_event(DNSHandler *h, DNSEntry *e)
   e->id[dns_retries - e->retries] = i;
   Debug("dns", "send query for %s to fd %d", e->qname, h->con[h->name_server].fd);
 
-  int s = socketManager.send(h->con[h->name_server].fd, buffer, r, 0);
+  int s = socketManager.send(h->con[h->name_server].fd, blob._b, r, 0);
   if (s != r) {
     Debug("dns", "send() failed: qname = %s, %d != %d, nameserver= %d", e->qname, s, r, h->name_server);
     // changed if condition from 'r < 0' to 's < 0' - 8/2001 pas

@@ -764,13 +764,13 @@ mgmt_localhost_ip()
 #if defined(LOCAL_MANAGER)
   bool found;
   char *hostname;
-  unsigned int ip;
+  in_addr ip;
   int rec_err = RecGetRecordString_Xmalloc("proxy.node.hostname_FQ", &hostname);
   found = (rec_err == REC_ERR_OKAY);
   if (found && hostname) {
-    ip = host_to_ip(hostname);
-    if (ip != INADDR_ANY) {
-      return inet_ntoa(*(struct in_addr *) &ip);
+    ip.s_addr = host_to_ip(hostname);
+    if (ip.s_addr != INADDR_ANY) {
+      return inet_ntoa(ip);
     }
   }
 #endif

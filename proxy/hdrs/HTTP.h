@@ -1364,18 +1364,19 @@ inline HTTPInfo &
 HTTPInfo::operator =(const HTTPInfo & m)
 {
   m_alt = m.m_alt;
-  return (*this);
+  return *this;
 }
 
 inline INK_MD5
 HTTPInfo::object_key_get()
 {
   INK_MD5 val;
+  int32_t* pi = reinterpret_cast<int32_t*>(&val);
 
-  ((int32_t *) & val)[0] = m_alt->m_object_key[0];
-  ((int32_t *) & val)[1] = m_alt->m_object_key[1];
-  ((int32_t *) & val)[2] = m_alt->m_object_key[2];
-  ((int32_t *) & val)[3] = m_alt->m_object_key[3];
+  pi[0] = m_alt->m_object_key[0];
+  pi[1] = m_alt->m_object_key[1];
+  pi[2] = m_alt->m_object_key[2];
+  pi[3] = m_alt->m_object_key[3];
 
   return val;
 }
@@ -1383,44 +1384,51 @@ HTTPInfo::object_key_get()
 inline void
 HTTPInfo::object_key_get(INK_MD5 *md5)
 {
-  ((int32_t *) md5)[0] = m_alt->m_object_key[0];
-  ((int32_t *) md5)[1] = m_alt->m_object_key[1];
-  ((int32_t *) md5)[2] = m_alt->m_object_key[2];
-  ((int32_t *) md5)[3] = m_alt->m_object_key[3];
+  int32_t* pi = reinterpret_cast<int32_t*>(md5);
+  pi[0] = m_alt->m_object_key[0];
+  pi[1] = m_alt->m_object_key[1];
+  pi[2] = m_alt->m_object_key[2];
+  pi[3] = m_alt->m_object_key[3];
 }
 
 inline bool
 HTTPInfo::compare_object_key(const INK_MD5 *md5)
 {
-  return ((m_alt->m_object_key[0] == ((int32_t *) md5)[0]) &&
-          (m_alt->m_object_key[1] == ((int32_t *) md5)[1]) &&
-          (m_alt->m_object_key[2] == ((int32_t *) md5)[2]) && (m_alt->m_object_key[3] == ((int32_t *) md5)[3]));
+  int32_t const* pi = reinterpret_cast<int32_t const*>(md5);
+  return ((m_alt->m_object_key[0] == pi[0]) &&
+          (m_alt->m_object_key[1] == pi[1]) &&
+          (m_alt->m_object_key[2] == pi[2]) &&
+          (m_alt->m_object_key[3] == pi[3])
+         );
 }
 
 inline int64_t
 HTTPInfo::object_size_get()
 {
   int64_t val;
+  int32_t* pi = reinterpret_cast<int32_t*>(&val);
 
-  ((int32_t *) & val)[0] = m_alt->m_object_size[0];
-  ((int32_t *) & val)[1] = m_alt->m_object_size[1];
+  pi[0] = m_alt->m_object_size[0];
+  pi[1] = m_alt->m_object_size[1];
   return val;
 }
 
 inline void
 HTTPInfo::object_key_set(INK_MD5 & md5)
 {
-  m_alt->m_object_key[0] = ((int32_t *) & md5)[0];
-  m_alt->m_object_key[1] = ((int32_t *) & md5)[1];
-  m_alt->m_object_key[2] = ((int32_t *) & md5)[2];
-  m_alt->m_object_key[3] = ((int32_t *) & md5)[3];
+  int32_t* pi = reinterpret_cast<int32_t*>(&md5);
+  m_alt->m_object_key[0] = pi[0];
+  m_alt->m_object_key[1] = pi[1];
+  m_alt->m_object_key[2] = pi[2];
+  m_alt->m_object_key[3] = pi[3];
 }
 
 inline void
 HTTPInfo::object_size_set(int64_t size)
 {
-  m_alt->m_object_size[0] = ((int32_t *) & size)[0];
-  m_alt->m_object_size[1] = ((int32_t *) & size)[1];
+  int32_t* pi = reinterpret_cast<int32_t*>(&size);
+  m_alt->m_object_size[0] = pi[0];
+  m_alt->m_object_size[1] = pi[1];
 }
 
 
