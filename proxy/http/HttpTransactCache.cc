@@ -169,7 +169,6 @@ int
 HttpTransactCache::SelectFromAlternates(CacheHTTPInfoVector * cache_vector,
                                         HTTPHdr * client_request, CacheLookupHttpConfig * http_config_params)
 {
-  CacheKey zero_key(0, 0);
   time_t current_age, best_age = NUM_SECONDS_IN_ONE_YEAR;
   time_t t_now = 0;
   int best_index = -1;
