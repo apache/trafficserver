@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 
 Changes with Apache Traffic Server 3.0.1
+  *) [TS-868] build fails with --as-needed. Author: Ilya Barygin.
+
   *) [TS-860] Built in error for host not found looks like Internet Explorer
     error. Author: William Bardwell 
 
