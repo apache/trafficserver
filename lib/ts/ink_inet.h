@@ -25,10 +25,8 @@
 #if !defined (_ink_inet_h_)
 #define _ink_inet_h_
 
-#include "ink_platform.h"
-#include "ink_port.h"
-#include "ink_apidefs.h"
-#include <ts/ink_assert.h>
+#include <sys/socket.h>
+#include <ts/ink_apidefs.h>
 
 #define INK_GETHOSTBYNAME_R_DATA_SIZE 1024
 #define INK_GETHOSTBYADDR_R_DATA_SIZE 1024
@@ -320,20 +318,22 @@ inline bool ink_inet_copy(
 }
 
 /** Compare two addresses.
-    This is valid for IPv4, IPv6, and the unspecified address type.
+    This is useful for IPv4, IPv6, and the unspecified address type.
     If the addresses are of different types they are ordered
-    UNSPEC < IPv4 < IPv6
-    Otherwise
-     - all UNSPEC addresses are the same.
+
+    Non-IP < IPv4 < IPv6
+
+     - all non-IP addresses are the same ( including @c AF_UNSPEC )
      - IPv4 addresses are compared numerically (host order)
-     - IPv6 addresses are compared byte wise from left to right.
+     - IPv6 addresses are compared byte wise in network order (MSB to LSB)
 
     @return
       - -1 if @a lhs is less than @a rhs.
       - 0 if @a lhs is identical to @a rhs.
       - 1 if @a lhs is greater than @a rhs.
+
     @internal This looks like a lot of code for an inline but I think it
-    should compile down quite a bit.
+    should compile down to something reasonable.
 */
 inline int ink_inet_cmp(
   sockaddr const* lhs, ///< Left hand operand.
@@ -343,24 +343,19 @@ inline int ink_inet_cmp(
   uint16_t rtype = rhs->sa_family;
   uint16_t ltype = lhs->sa_family;
 
-  // Handle the UNSPEC cases on both sides to make the
-  // other logic simpler.
-  if (AF_UNSPEC == ltype) {
-    ink_assert(AF_INET == rtype || AF_INET6 == rtype);
-    return AF_UNSPEC == rtype ? 0 : -1;
-  } else if (AF_UNSPEC == rtype) {
-    ink_assert(AF_INET == ltype || AF_INET6 == ltype);
-    return 1; // because lhs is not UNSPEC.
-  } else if (AF_INET == ltype) {
+  // We lump all non-IP addresses into a single equivalence class
+  // that is less than an IP address. This includes AF_UNSPEC.
+  if (AF_INET == ltype) {
     if (AF_INET == rtype) {
       in_addr_t la = ntohl(ink_inet_ip4_cast(lhs)->sin_addr.s_addr);
       in_addr_t ra = ntohl(ink_inet_ip4_cast(rhs)->sin_addr.s_addr);
       if (la < ra) zret = -1;
       else if (la > ra) zret = 1;
       else zret = 0;
-    } else {
-      ink_assert(AF_INET6 == rtype);
+    } else if (AF_INET6 == rtype) {
       zret = -1; // IPv4 addresses are before IPv6
+    } else {
+      zret = 1;
     }
   } else if (AF_INET6 == ltype) {
     if (AF_INET6 == rtype) {
@@ -371,11 +366,14 @@ inline int ink_inet_cmp(
         sizeof(lhs_in6->sin6_addr)
       );
     } else {
-      ink_assert(AF_INET == rtype);
-      zret = 1; // IPv6 always greater than IPv4
+      zret = 1; // IPv6 greater than any other type.
     }
+  } else if (AF_INET == rtype || AF_INET6 == rtype) {
+    // ltype is non-IP so it's less than either IP type.
+    zret = -1;
   } else {
-    ink_assert(false && "Only IP addresses can be compared");
+    // Both types are non-IP so they're equal.
+    zret = 0;
   }
 
   return zret;

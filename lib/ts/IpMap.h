@@ -1,8 +1,11 @@
 # if ! defined(TS_IP_MAP_HEADER)
 # define TS_IP_MAP_HEADER
 
+# include "ink_platform.h"
+# include "ink_port.h"
 # include <ts/ink_inet.h>
 # include <ts/IntrusiveDList.h>
+# include <ts/ink_assert.h>
 
 /** @file
 
