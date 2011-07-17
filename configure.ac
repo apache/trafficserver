@@ -115,7 +115,7 @@ AC_SUBST([build_person])
 AC_SUBST([build_group])
 
 AC_ARG_WITH([user],
-  [AS_HELP_STRING([--with-user],[specify the system user [default: nobody]])],
+  [AS_HELP_STRING([--with-user],[specify the system user [default=nobody]])],
   [
   with_user="$withval"
   ],[
@@ -125,7 +125,7 @@ AC_ARG_WITH([user],
 
 default_group="`id -ng $with_user`"
 AC_ARG_WITH([group],
-  [AS_HELP_STRING([--with-group],[specify the system group [default: nobody]])],
+  [AS_HELP_STRING([--with-group],[specify the system group [default=nobody]])],
   [
   with_group="$withval"
   ],[
@@ -224,7 +224,7 @@ AC_MSG_RESULT([$enable_libev])
 #
 AC_MSG_CHECKING([whether to enable micro-TS])
 AC_ARG_ENABLE([micro],
-  [AS_HELP_STRING([--enable-micro],[enable micro-TS build [default: no]])],
+  [AS_HELP_STRING([--enable-micro],[enable micro-TS build [default=no]])],
   [],
   [enable_micro=no]
 )
