@@ -1225,7 +1225,11 @@ restoreCapabilities() {
   int zret = 0; // return value.
   cap_t cap_set = cap_get_proc(); // current capabilities
   // Make a list of the capabilities we want turned on.
-  cap_value_t cap_list[] = { CAP_NET_ADMIN, CAP_NET_BIND_SERVICE, CAP_IPC_LOCK };
+  cap_value_t cap_list[] = {
+    CAP_NET_ADMIN, ///< Set socket transparency.
+    CAP_NET_BIND_SERVICE, ///< Low port (e.g. 80) binding.
+    CAP_IPC_LOCK ///< Lock IPC objects.
+  };
   static int const CAP_COUNT = sizeof(cap_list)/sizeof(*cap_list);
 
   cap_set_flag(cap_set, CAP_EFFECTIVE, CAP_COUNT, cap_list, CAP_SET);
@@ -1308,7 +1312,7 @@ runAsUser(char *userName)
     }
 
 #if TS_USE_POSIX_CAP
-    if (restoreCapabilities()) {
+    if (0 != restoreCapabilities()) {
       mgmt_elog(stderr, "[runAsUser] Error: Failed to restore capabilities after switch to user %s.\n", userName);
     }
 #endif

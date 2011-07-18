@@ -26,7 +26,8 @@
 
 # include <TsErrataUtil.h>
 # include <sys/stat.h>
-# include <malloc.h>
+# include <stdio.h>
+# include <stdlib.h>
 
 # if !defined(_MSC_VER)
 # define _fileno fileno

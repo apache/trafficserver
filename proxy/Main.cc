@@ -1556,6 +1556,7 @@ main(int argc, char **argv)
 #if TS_HAS_PROFILER
   ProfilerStart("/tmp/ts.prof");
 #endif
+  bool found_admin_user = false;
 
   NOWARN_UNUSED(argc);
 
@@ -1634,24 +1635,31 @@ main(int argc, char **argv)
   if (!num_task_threads)
     TS_ReadConfigInteger(num_task_threads, "proxy.config.task_threads");
 
-  // change the user of the process
-  // do this before we start threads so we control the user id of the
-  // threads (rather than have it change asynchronously during thread
-  // execution). We also need to do this before we fiddle with capabilities
-  // as those are thread local and if we change the user id it will
-  // modified the capabilities in other threads, breaking things.
   const long max_login =  sysconf(_SC_LOGIN_NAME_MAX) <= 0 ? _POSIX_LOGIN_NAME_MAX :  sysconf(_SC_LOGIN_NAME_MAX);
   char *user = (char *)xmalloc(max_login);
   *user = '\0';
-  if ((TS_ReadConfigString(user, "proxy.config.admin.user_id",
-                           max_login) == REC_ERR_OKAY) &&
-                           user[0] != '\0' &&
-                           strcmp(user, "#-1")) {
+  found_admin_user = 
+    (REC_ERR_OKAY ==
+      TS_ReadConfigString(user, "proxy.config.admin.user_id", max_login)
+    )
+    && user[0] != '\0'
+    && 0 != strcmp(user, "#-1")
+    ;
+
+# if TS_USE_POSIX_CAPS
+  // Change the user of the process.
+  // Do this before we start threads so we control the user id of the
+  // threads (rather than have it change asynchronously during thread
+  // execution). We also need to do this before we fiddle with capabilities
+  // as those are thread local and if we change the user id it will
+  // modify the capabilities in other threads, breaking things.
+  if (found_admin_user) {
     PreserveCapabilities();
     change_uid_gid(user);
     RestrictCapabilities();
     xfree(user);
   }
+# endif
 
   // Can't generate a log message yet, do that right after Diags is
   // setup.
@@ -1954,6 +1962,13 @@ main(int argc, char **argv)
 
     run_AutoStop();
   }
+
+# if ! TS_USE_POSIX_CAP
+  if (found_admin_user) {
+    change_uid_gid(user);
+    xfree(user);
+  }
+# endif
 
   this_thread()->execute();
 }
