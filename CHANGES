@@ -1,6 +1,15 @@
                                                          -*- coding: utf-8 -*-
 
 Changes with Apache Traffic Server 3.1.0
+  *) [TS-882] traffic_logstats dies when printing log.
+
+  *) [TS-804] libcap required when running standalone.
+
+  *) [TS-730] Allow for the SSL Cipher Suite to be configured.
+
+  *) [TS-881] Better error message from TrafficCop when admin user lookup
+   fails.
+
   *) [TS-875] TSFetchRestpGet(), TSFetchPageResptGet() and TSFetchUrl() have
    incorrect asserts. Author: Manjesh Nilange.
 
