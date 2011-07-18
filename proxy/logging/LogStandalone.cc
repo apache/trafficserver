@@ -28,6 +28,7 @@
  ***************************************************************************/
 
 #include "libts.h"
+#include "ink_sys_control.h"
 #include "signals.h"
 #include "DiagsConfig.h"
 #include "Main.h"
@@ -74,34 +75,6 @@ DiagsConfig *diagsConfig = NULL;
 HttpBodyFactory *body_factory = NULL;
 AppVersionInfo appVersionInfo;
 
-
-/*-------------------------------------------------------------------------
-  max_out_limit
-  -------------------------------------------------------------------------*/
-#if defined(linux)
-   /* Stupid PICKY stupid (did I mention that?) C++ compielrs */
-#define RLIMCAST enum __rlimit_resource
-#else
-#define RLIMCAST int
-#endif
-
-static rlim_t
-max_out_limit(int which, bool max_it)
-{
-  struct rlimit rl;
-
-  ink_release_assert(getrlimit((RLIMCAST) which, &rl) >= 0);
-  if (max_it) {
-    rl.rlim_cur = rl.rlim_max;
-    ink_release_assert(setrlimit((RLIMCAST) which, &rl) >= 0);
-  }
-
-  ink_release_assert(getrlimit((RLIMCAST) which, &rl) >= 0);
-  rlim_t ret = rl.rlim_cur;
-
-  return ret;
-}
-
 /*-------------------------------------------------------------------------
   init_system
   -------------------------------------------------------------------------*/
@@ -109,9 +82,7 @@ max_out_limit(int which, bool max_it)
 void
 init_system()
 {
-
-  fds_limit = max_out_limit(RLIMIT_NOFILE, true);
-
+  fds_limit = ink_max_out_rlimit(RLIMIT_NOFILE, true, false);
 
   init_signals();
   syslog(LOG_NOTICE, "NOTE: --- SAC Starting ---");

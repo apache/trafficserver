@@ -39,45 +39,6 @@
 #include "Initialize.h" // TODO: move to I_Initialize.h ???
 
 
-#define set_rlimit(name,max_it,ulim_it) max_out_limit(#name, name, max_it, ulim_it)
-static rlim_t
-max_out_limit(const char *name, int which, bool max_it = true, bool unlim_it = true)
-{
-  struct rlimit rl;
-
-#if defined(linux)
-#  define MAGIC_CAST(x) (enum __rlimit_resource)(x)
-#else
-#  define MAGIC_CAST(x) x
-#endif
-
-  if (max_it) {
-    ink_release_assert(getrlimit(MAGIC_CAST(which), &rl) >= 0);
-    if (rl.rlim_cur != rl.rlim_max) {
-#if defined(darwin)
-      if (which == RLIMIT_NOFILE)
-        rl.rlim_cur = fmin(OPEN_MAX, rl.rlim_max);
-      else
-        rl.rlim_cur = rl.rlim_max;
-#else
-      rl.rlim_cur = rl.rlim_max;
-#endif
-      ink_release_assert(setrlimit(MAGIC_CAST(which), &rl) >= 0);
-    }
-  }
-
-  if (unlim_it) {
-    ink_release_assert(getrlimit(MAGIC_CAST(which), &rl) >= 0);
-    if (rl.rlim_cur != RLIM_INFINITY) {
-      rl.rlim_cur = (rl.rlim_max = RLIM_INFINITY);
-      ink_release_assert(setrlimit(MAGIC_CAST(which), &rl) >= 0);
-    }
-  }
-  ink_release_assert(getrlimit(MAGIC_CAST(which), &rl) >= 0);
-  //syslog(LOG_NOTICE, "NOTE: %s(%d):cur(%d),max(%d)", name, which, (int)rl.rlim_cur, (int)rl.rlim_max);
-  return rl.rlim_cur;
-}
-
 //
 // Initialize operating system related information/services
 //
@@ -85,13 +46,13 @@ void
 init_system_settings(void)
 {
   // Delimit file Descriptors
-  fds_limit = set_rlimit(RLIMIT_NOFILE, true, false);
+  fds_limit = ink_max_out_rlimit(RLIMIT_NOFILE, true, false);
 
-  set_rlimit(RLIMIT_STACK,true,true);
-  set_rlimit(RLIMIT_DATA,true,true);
-  set_rlimit(RLIMIT_FSIZE, true, false);
+  ink_max_out_rlimit(RLIMIT_STACK,true,true);
+  ink_max_out_rlimit(RLIMIT_DATA,true,true);
+  ink_max_out_rlimit(RLIMIT_FSIZE, true, false);
 #ifdef RLIMIT_RSS
-  set_rlimit(RLIMIT_RSS,true,true);
+  ink_max_out_rlimit(RLIMIT_RSS,true,true);
 #endif
 }
 
