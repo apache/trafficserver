@@ -106,6 +106,7 @@ private:
   char *cswiftAccelLibPath;
   char *atallaAccelLibPath;
   char *broadcomAccelLibPath;
+  char *cipherSuite;
   int clientCertLevel;
   int verify_depth;
   int ssl_accept_port_number;

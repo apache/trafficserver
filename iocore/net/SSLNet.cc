@@ -339,25 +339,25 @@ SSLNetProcessor::initSSLServerCTX(SslConfigParams * param, SSL_CTX * lCtx,
   if (defaultEnabled) {
     if (SSL_CTX_use_certificate_file(lCtx, param->serverCertPath, SSL_FILETYPE_PEM) <= 0) {
       logSSLError("Cannot use server certificate file");
-      return (-2);
+      return -2;
     }
     if (param->serverKeyPath != NULL) {
       if (SSL_CTX_use_PrivateKey_file(lCtx, param->serverKeyPath, SSL_FILETYPE_PEM) <= 0) {
         logSSLError("Cannot use server private key file");
-        return (-3);
+        return -3;
       }
     } else                      // assume key is contained in the cert file.
     {
       if (SSL_CTX_use_PrivateKey_file(lCtx, param->serverCertPath, SSL_FILETYPE_PEM) <= 0) {
         logSSLError("Cannot use server private key file");
-        return (-3);
+        return -3;
       }
     }
 
     if (param->serverCertChainPath) {
       if (SSL_CTX_add_extra_chain_cert_file(lCtx, param->serverCertChainPath) <= 0) {
         logSSLError("Cannot use server certificate chain file");
-        return (-2);
+        return -2;
       }
     }
   } else {
@@ -368,20 +368,20 @@ SSLNetProcessor::initSSLServerCTX(SslConfigParams * param, SSL_CTX * lCtx,
     ink_strlcat(completeServerCertPath, serverCertPtr, completeServerCertPathSize);
     if (SSL_CTX_use_certificate_file(lCtx, completeServerCertPath, SSL_FILETYPE_PEM) <= 0) {
       logSSLError("Cannot use server certificate file");
-      return (-2);
+      return -2;
     }
 
     if (serverKeyPtr == NULL)   // assume private key is contained in cert obtained from multicert file.
     {
       if (SSL_CTX_use_PrivateKey_file(lCtx, completeServerCertPath, SSL_FILETYPE_PEM) <= 0) {
         logSSLError("Cannot use server private key file");
-        return (-3);
+        return -3;
       }
     } else {
       if (param->getServerKeyPathOnly() != NULL) {
         if (SSL_CTX_use_PrivateKey_file(lCtx, serverKeyPtr, SSL_FILETYPE_PEM) <= 0) {
           logSSLError("Cannot use server private key file");
-          return (-3);
+          return -3;
         }
       } else {
         logSSLError("Empty ssl private key path in records.config.");
@@ -394,7 +394,7 @@ SSLNetProcessor::initSSLServerCTX(SslConfigParams * param, SSL_CTX * lCtx,
 
   if (!SSL_CTX_check_private_key(lCtx)) {
     logSSLError("Server private key does not match the certificate public key");
-    return (-4);
+    return -4;
   }
 
 
@@ -404,7 +404,7 @@ SSLNetProcessor::initSSLServerCTX(SslConfigParams * param, SSL_CTX * lCtx,
       if ((!SSL_CTX_load_verify_locations(lCtx, param->CACertFilename, param->CACertPath)) ||
           (!SSL_CTX_set_default_verify_paths(lCtx))) {
         logSSLError("CA Certificate file or CA Certificate path invalid");
-        return (-5);
+        return -5;
       }
     }
 
@@ -426,7 +426,15 @@ SSLNetProcessor::initSSLServerCTX(SslConfigParams * param, SSL_CTX * lCtx,
 
     SSL_CTX_set_client_CA_list(lCtx, SSL_load_client_CA_file(param->CACertFilename));
   }
-  return (0);
+
+
+  if (param->cipherSuite != NULL) {
+    if (!SSL_CTX_set_cipher_list(lCtx, param->cipherSuite)) {
+      logSSLError("Invalid Cipher Suite in records.config");
+      return -6;
+    }
+  }
+  return 0;
 
 }
 

@@ -475,6 +475,12 @@ CONFIG proxy.config.ssl.number.threads INT 0
 CONFIG proxy.config.ssl.SSLv2 INT 0
 CONFIG proxy.config.ssl.SSLv3 INT 1
 CONFIG proxy.config.ssl.TLSv1 INT 1
+   # The following two variables control the Cipher Suite traffic Server
+   # uses for HTTPS connnections and whether to prefer the client
+   # selected (default) or the server selected
+   # Our default SSL Cipher Suite tries to be reasonably fast and strong.
+CONFIG proxy.config.ssl.server.cipher_suite STRING RC4-SHA:AES128-SHA:DES-CBC3-SHA:AES256-SHA:ALL:!aNULL:!EXP:!LOW:!MD5:!SSLV2:!NULL
+CONFIG proxy.config.ssl.server.honor_cipher suite INT 0
 CONFIG proxy.config.ssl.server_port INT 443
    # Client certification level should be:
    # 0 no client certificates

@@ -53,6 +53,7 @@ SslConfigParams::SslConfigParams()
     CACertFilename = CACertPath =
     clientCertPath = clientKeyPath =
     clientCACertFilename = clientCACertPath =
+    cipherSuite =
     serverKeyPathOnly = ncipherAccelLibPath = cswiftAccelLibPath = atallaAccelLibPath = broadcomAccelLibPath = NULL;
 
   clientCertLevel = client_verify_depth = verify_depth = clientVerify = sslAccelerator = 0;
@@ -137,6 +138,10 @@ SslConfigParams::cleanup()
     xfree(broadcomAccelLibPath);
     broadcomAccelLibPath = NULL;
   }
+  if (cipherSuite) {
+    xfree(cipherSuite);
+    cipherSuite = NULL;
+  }
 
   clientCertLevel = client_verify_depth = verify_depth = clientVerify = sslAccelerator = 0;
   ssl_accept_port_number = -1;
@@ -176,7 +181,10 @@ SslConfigParams::initialize()
   ssl_mode &= SSL_TERM_MODE_BOTH;
   termMode = (SSL_TERMINATION_MODE) ssl_mode;
 
+  IOCORE_ReadConfigStringAlloc(cipherSuite, "proxy.config.ssl.server.cipher_suite");
+
   /* if ssl is enabled and we require an accelerator */
+  /* XXX: This code does not work */
   if ((termMode & SSL_TERM_MODE_BOTH) && (ssl_accelerator_required & SSL_ACCELERATOR_REQ_BOTH)) {
     if (system(NULL)) {
       ret_val = system("bin/openssl_accelerated >/dev/null 2>&1");
@@ -245,16 +253,21 @@ SslConfigParams::initialize()
     i++;
   }
 #endif
-  int prot;
-  IOCORE_ReadConfigInteger(prot, "proxy.config.ssl.SSLv2");
-  if (!prot)
+  int options;
+  IOCORE_ReadConfigInteger(options, "proxy.config.ssl.SSLv2");
+  if (!options)
     ssl_ctx_options |= SSL_OP_NO_SSLv2;
-  IOCORE_ReadConfigInteger(prot, "proxy.config.ssl.SSLv3");
-  if (!prot)
+  IOCORE_ReadConfigInteger(options, "proxy.config.ssl.SSLv3");
+  if (!options)
     ssl_ctx_options |= SSL_OP_NO_SSLv3;
-  IOCORE_ReadConfigInteger(prot, "proxy.config.ssl.TLSv1");
-  if (!prot)
+  IOCORE_ReadConfigInteger(options, "proxy.config.ssl.TLSv1");
+  if (!options)
     ssl_ctx_options |= SSL_OP_NO_TLSv1;
+#ifdef SSL_OP_CIPHER_SERVER_PREFERENCE
+  IOCORE_ReadConfigInteger(options, "proxy.config.ssl.server.honor_cipher_suite");
+  if (!options)
+    ssl_ctx_options |= SSL_OP_CIPHER_SERVER_PREFERENCE;
+#endif
 
   IOCORE_ReadConfigString(serverCertFilename, "proxy.config.ssl.server.cert.filename", PATH_NAME_MAX);
   IOCORE_ReadConfigString(serverCertRelativePath, "proxy.config.ssl.server.cert.path", PATH_NAME_MAX);
