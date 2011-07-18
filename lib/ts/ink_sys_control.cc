@@ -22,6 +22,7 @@
  */
 
 #include "ink_sys_control.h"
+#include "ink_platform.h"
 #include "ink_assert.h"
 
 rlim_t
