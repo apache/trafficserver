@@ -40,7 +40,15 @@ A list of all bugs open for the next v3.0.2 release can be found at
 PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   [ New proposals should be added at the end of the list ]
 
+  *) traffic_logstats: Dies when printing log
+   Trunk patches: http://svn.apache.org/viewvc?view=revision&revision=1148096
+   http://svn.apache.org/viewvc?view=revision&revision=1148103
+   Jira: https://issues.apache.org/jira/browse/TS-882
 
+  *) SSL: Allow for the SSL Cipher Suite to be configured.
+   Trunk patch: http://svn.apache.org/viewvc?view=revision&revision=1147994
+   Jira: https://issues.apache.org/jira/browse/TS-730
+   +1: igalic
 
 RELEASE PROCESS
 
