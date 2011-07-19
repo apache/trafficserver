@@ -36,29 +36,5 @@
 #endif
 
 extern int net_config_poll_timeout;
-extern int net_config_fds_throttle;
-extern int net_config_listen_backlog;
 
-// SSL config
-extern int net_config_ssl_mode;
-extern int net_config_sslAccelerator;
-extern int net_config_ssl_accept_port_number;
-extern int net_config_clientCertLevel;
-extern const char *net_config_atallaAccelLibPath;
-extern const char *net_config_ncipherAccelLibPath;
-extern const char *net_config_cswiftAccelLibPath;
-extern const char *net_config_serverCertFilename;
-extern const char *net_config_serverCertRelativePath;
-extern const char *net_config_multicert_config_file;
-extern char *net_config_ssl_server_private_key_filename;
-extern char *net_config_ssl_server_private_key_path;
-extern char *net_config_CACertFilename;
-extern char *net_config_CACertRelativePath;
-extern int net_config_clientVerify;
-extern char *net_config_ssl_client_cert_filename;
-extern const char *net_config_ssl_client_cert_path;
-extern char *net_config_ssl_client_private_key_filename;
-extern char *net_config_ssl_client_private_key_path;
-extern char *net_config_clientCACertFilename;
-extern char *net_config_clientCACertRelativePath;
 #endif
