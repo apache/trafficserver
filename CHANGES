@@ -1,6 +1,10 @@
                                                          -*- coding: utf-8 -*-
 
 Changes with Apache Traffic Server 3.1.0
+
+  *) [TS-816] Other ports now obey specified options for both normal
+   and standalone usage.
+
   *) [TS-882] traffic_logstats dies when printing log.
 
   *) [TS-804] libcap required when running standalone.

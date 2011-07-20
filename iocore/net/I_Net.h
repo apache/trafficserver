@@ -64,7 +64,7 @@
 #define ACCEPTEX_POOL_SIZE                1
 #endif
 
-#define NO_FD                             (-1)
+static int const NO_FD = -1;
 
 #define NET_EVENT_OPEN                    (NET_EVENT_EVENTS_START)
 #define NET_EVENT_OPEN_FAILED             (NET_EVENT_EVENTS_START+1)

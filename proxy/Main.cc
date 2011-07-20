@@ -846,7 +846,7 @@ check_for_root_uid()
 // static void print_accept_fd(HttpPortEntry* e)
 //
 static void
-print_accept_fd(HttpPortEntry * e)
+print_accept_fd(HttpEntryPoint * e)
 {
   if (e) {
     printf("Accept FDs: ");
@@ -858,7 +858,9 @@ print_accept_fd(HttpPortEntry * e)
   }
 }
 
-// static HttpPortEntry* parse_accept_fd_list()
+extern void get_connection_attributes(const char *attr, HttpEntryPoint *result);
+
+// static HttpEntryPoint* parse_accept_fd_list()
 //
 // Parses the list of FD's and types sent in by the manager
 //   with the -A flag
@@ -871,77 +873,52 @@ print_accept_fd(HttpPortEntry * e)
 //
 // If there is no -A arg, returns NULL
 //
-//  Otherwise returns an array of HttpPortEntry which
-//   is terminated with a HttpPortEntry with the fd
+//  Otherwise returns an array of HttpEntryPoint which
+//   is terminated with a HttpEntryPoint with the fd
 //   field set to NO_FD
 //
-static HttpPortEntry *
+static HttpEntryPoint *
 parse_accept_fd_list()
 {
-  HttpPortEntry *accept_array;
+  HttpEntryPoint *accept_array;
   int accept_index = 0;
   int list_entries;
-  char *cur_entry;
-  char *attr_str;
-  HttpPortTypes attr = SERVER_PORT_DEFAULT;;
-  int fd = 0;
+  int fd = ts::NO_FD;
   Tokenizer listTok(",");
 
-  if (!accept_fd_list[0] || (list_entries = listTok.Initialize(accept_fd_list, SHARE_TOKS)) <= 0)
+  if (!accept_fd_list[0]
+    || (list_entries = listTok.Initialize(accept_fd_list, SHARE_TOKS)) <= 0
+  )
     return 0;
 
-  accept_array = new HttpPortEntry[list_entries + 1];
-  accept_array[0].fd = NO_FD;
+  // Add one because we use NO_FD as an array termination mark later.
+  accept_array = new HttpEntryPoint[list_entries + 1];
 
-  for (int i = 0; i < list_entries; i++) {
-    cur_entry = (char *) listTok[i];
+  for (int i = 0; i < list_entries; ++i) {
+    HttpEntryPoint* pent = accept_array + accept_index;
+    char const* cur_entry = listTok[i];
+    char* next;
 
     // Check to see if there is a port attribute
-    attr_str = strchr(cur_entry, ':');
+    char const* attr_str = strchr(cur_entry, ':');
     if (attr_str != NULL) {
-      *attr_str = '\0';
       attr_str = attr_str + 1;
     }
     // Handle the file descriptor
-    fd = strtoul(cur_entry, NULL, 10);
-
-    // Handle reading the attribute
-    if (attr_str == NULL) {
-      attr = SERVER_PORT_DEFAULT;
-    } else {
-      if (strlen(attr_str) > 2) {
-        Warning("too many port attribute fields (more than 2) '%s'", attr);
-        attr = SERVER_PORT_DEFAULT;
-      } else {
-        switch (*attr_str) {
-        case 'S':
-          // S is the special case of SSL term
-          ink_assert(ssl_accept_file_descriptor == NO_FD);
-          ssl_accept_file_descriptor = fd;
-          continue;
-        case 'C':
-          attr = SERVER_PORT_COMPRESSED;
-          break;
-        case 'T':
-          attr = SERVER_PORT_BLIND_TUNNEL;
-          break;
-        case 'X':
-        case '=':
-        case '<':
-        case '>':
-        case '\0':
-          attr = SERVER_PORT_DEFAULT;
-          break;
-        default:
-          Warning("unknown port attribute '%s'", attr_str);
-          attr = SERVER_PORT_DEFAULT;
-        };
-      }
+    fd = strtoul(cur_entry, &next, 10);
+    if (next == cur_entry) {
+      Warning("Failed to parse file descriptor '%s'", cur_entry);
+      continue; // number parsing failure
     }
 
-    accept_array[accept_index].fd = fd;
-    accept_array[accept_index].type = attr;
-    accept_index++;
+    // Handle reading the attribute
+    get_connection_attributes(attr_str, pent);
+    if (SERVER_PORT_SSL == pent->type) {
+      ink_assert(ssl_accept_file_descriptor == NO_FD);
+      ssl_accept_file_descriptor = fd;
+      continue;
+    }
+    accept_array[accept_index++].fd = fd;
   }
 
   ink_assert(accept_index < list_entries + 1);
@@ -950,10 +927,6 @@ parse_accept_fd_list()
 
   return accept_array;
 }
-
-#if defined(linux)
-#include <sys/prctl.h>
-#endif
 
 static int
 set_core_size(const char *name, RecDataT data_type, RecData data, void *opaque_token)
@@ -1515,7 +1488,7 @@ main(int argc, char **argv)
 #if TS_HAS_PROFILER
   ProfilerStart("/tmp/ts.prof");
 #endif
-  bool found_admin_user = false;
+  bool admin_user_p = false;
 
   NOWARN_UNUSED(argc);
 
@@ -1597,7 +1570,7 @@ main(int argc, char **argv)
   const long max_login =  sysconf(_SC_LOGIN_NAME_MAX) <= 0 ? _POSIX_LOGIN_NAME_MAX :  sysconf(_SC_LOGIN_NAME_MAX);
   char *user = (char *)xmalloc(max_login);
   *user = '\0';
-  found_admin_user = 
+  admin_user_p = 
     (REC_ERR_OKAY ==
       TS_ReadConfigString(user, "proxy.config.admin.user_id", max_login)
     )
@@ -1605,14 +1578,14 @@ main(int argc, char **argv)
     && 0 != strcmp(user, "#-1")
     ;
 
-# if TS_USE_POSIX_CAPS
+# if TS_USE_POSIX_CAP
   // Change the user of the process.
   // Do this before we start threads so we control the user id of the
   // threads (rather than have it change asynchronously during thread
   // execution). We also need to do this before we fiddle with capabilities
   // as those are thread local and if we change the user id it will
   // modify the capabilities in other threads, breaking things.
-  if (found_admin_user) {
+  if (admin_user_p) {
     PreserveCapabilities();
     change_uid_gid(user);
     RestrictCapabilities();
@@ -1641,7 +1614,9 @@ main(int argc, char **argv)
   diags->prefix_str = "Server ";
   if (is_debug_tag_set("diags"))
     diags->dump();
+# if TS_USE_POSIX_CAP
   DebugCapabilities("server"); // Can do this now, logging is up.
+# endif
 
   // Check if we should do mlockall()
 #if defined(MCL_FUTURE)
@@ -1689,10 +1664,10 @@ main(int argc, char **argv)
   init_http_aeua_filter();
 
   // Parse the accept port list from the manager
-  http_port_attr_array = parse_accept_fd_list();
+  http_open_port_array = parse_accept_fd_list();
 
   if (is_debug_tag_set("accept_fd"))
-    print_accept_fd(http_port_attr_array);
+    print_accept_fd(http_open_port_array);
 
 
   // Sanity checks
@@ -1923,8 +1898,9 @@ main(int argc, char **argv)
   }
 
 # if ! TS_USE_POSIX_CAP
-  if (found_admin_user) {
+  if (admin_user_p) {
     change_uid_gid(user);
+    DebugCapabilities("server");
     xfree(user);
   }
 # endif

@@ -33,6 +33,7 @@
 #ifndef _Main_h_
 #define	_Main_h_
 
+#include <ts/ink_defs.h>
 #include "libts.h"
 #include "Regression.h"
 #include "I_Version.h"
@@ -107,29 +108,33 @@ enum HttpPortTypes
   SERVER_PORT_SSL
 };
 
-struct HttpPortEntry
-{
-  int fd;
-  HttpPortTypes type;
+struct HttpEntryPoint {
+  int fd; ///< Pre-opened file descriptor if present.
+  HttpPortTypes type; ///< Type of connection.
+  int port; ///< Port on which to listent.
+  unsigned int domain; ///< Networking domain.
+  /// Set if inbound connects (from client) are/were transparent.
+  bool f_inbound_transparent;
+  /// Set if outbound connections (to origin servers) are transparent.
+  bool f_outbound_transparent;
+
+  HttpEntryPoint()
+    : fd(ts::NO_FD)
+    , type(SERVER_PORT_DEFAULT)
+    , port(-1)
+    , domain(AF_INET)
+    , f_inbound_transparent(false)
+    , f_outbound_transparent(false)
+  { }
 };
 
-extern HttpPortEntry *http_port_attr_array;
+/// Ports that are already open (passed via -A from manager).
+extern HttpEntryPoint *http_open_port_array;
+/// Ports to open in this process.
+extern HttpEntryPoint *http_other_port_array;
 
 extern Version version;
 extern AppVersionInfo appVersionInfo;
-
-struct HttpOtherPortEntry
-{
-  int port;
-  int domain;
-  HttpPortTypes type;
-  /// Set if outbound connections (to origin servers) are transparent.
-  bool f_outbound_transparent;
-  /// Set if inbound connects (from client) are/were transparent.
-  bool f_inbound_transparent;
-};
-extern HttpOtherPortEntry *http_other_port_array;
-
 
 #define TS_ReadConfigInteger            REC_ReadConfigInteger
 #define TS_ReadConfigFloat              REC_ReadConfigFloat
