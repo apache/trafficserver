@@ -480,7 +480,7 @@ CONFIG proxy.config.ssl.TLSv1 INT 1
    # selected (default) or the server selected
    # Our default SSL Cipher Suite tries to be reasonably fast and strong.
 CONFIG proxy.config.ssl.server.cipher_suite STRING RC4-SHA:AES128-SHA:DES-CBC3-SHA:AES256-SHA:ALL:!aNULL:!EXP:!LOW:!MD5:!SSLV2:!NULL
-CONFIG proxy.config.ssl.server.honor_cipher suite INT 0
+CONFIG proxy.config.ssl.server.honor_cipher_order INT 0
 CONFIG proxy.config.ssl.server_port INT 443
    # Client certification level should be:
    # 0 no client certificates

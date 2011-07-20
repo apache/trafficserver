@@ -264,7 +264,7 @@ SslConfigParams::initialize()
   if (!options)
     ssl_ctx_options |= SSL_OP_NO_TLSv1;
 #ifdef SSL_OP_CIPHER_SERVER_PREFERENCE
-  IOCORE_ReadConfigInteger(options, "proxy.config.ssl.server.honor_cipher_suite");
+  IOCORE_ReadConfigInteger(options, "proxy.config.ssl.server.honor_cipher_order");
   if (!options)
     ssl_ctx_options |= SSL_OP_CIPHER_SERVER_PREFERENCE;
 #endif
