@@ -79,7 +79,10 @@ static char syslog_fac_str[PATH_MAX] = "LOG_DAEMON";
 static int killsig = SIGKILL;
 static int coresig = 0;
 
-static char admin_user[80];
+static char admin_user[256];
+static uid_t admin_uid;
+static gid_t admin_gid;
+static bool admin_user_p = false;
 static char manager_binary[PATH_MAX] = "traffic_manager";
 static char server_binary[PATH_MAX] = "traffic_server";
 static char manager_options[OPTIONS_LEN_MAX] = "";
@@ -173,34 +176,16 @@ cop_log(int priority, const char *format, ...)
 }
 
 void
-chown_file_to_user(const char *file, const char *user)
-{
-  struct passwd *pwd = NULL;
-
-  if (user && *user) {
-    if (*user == '#') {
-      int uid = atoi(user + 1);
-      if (uid == -1) {
-        // XXX: Can this call hapen after setuid?
-        uid = (int)geteuid();
-      }
-      pwd = getpwuid((uid_t)uid);
-    } else {
-      pwd = getpwnam(user);
+chown_file_to_admin_user(const char *file) {
+  if (admin_user_p) {
+    if (chown(file, admin_uid, admin_gid) < 0) {
+      cop_log(
+        COP_FATAL,
+        "cop couldn't chown the file: '%s' for '%s' (%d/%d) : [%d] %s\n",
+        file, admin_user, admin_uid, admin_gid,
+        errno, strerror(errno)
+      );
     }
-
-    if (pwd) {
-      if (chown(file, pwd->pw_uid, pwd->pw_gid) < 0) {
-        cop_log(
-	  COP_FATAL, "cop couldn't chown the  file: '%s' [%d] %s\n",
-	  file, errno, strerror(errno)
-	);
-      }
-    } else {
-      cop_log(COP_FATAL, "can't get passwd entry for the admin user '%s' - [%d] %s\n", user, errno, strerror(errno));
-    }
-  } else {
-    cop_log(COP_FATAL, "Admin user was the empty string.\n");
   }
 }
 static void
@@ -377,7 +362,7 @@ static void
 safe_kill(const char *lockfile_name, const char *pname, bool group)
 {
   Lockfile lockfile(lockfile_name);
-  chown_file_to_user(lockfile_name, admin_user);
+  chown_file_to_admin_user(lockfile_name);
 
 #ifdef TRACE_LOG_COP
   cop_log(COP_DEBUG, "Entering safe_kill(%s, %s, %d)\n", lockfile_name, pname, group);
@@ -390,7 +375,7 @@ safe_kill(const char *lockfile_name, const char *pname, bool group)
   } else {
     lockfile.Kill(killsig, coresig, pname);
   }
-  chown_file_to_user(lockfile_name, admin_user);
+  chown_file_to_admin_user(lockfile_name);
 
   alarm(0);
   set_alarm_death();
@@ -609,6 +594,35 @@ ConfigIntFatalError:
 }
 
 
+bool
+get_admin_user() {
+  struct passwd *pwd = NULL;
+
+  read_config_string("proxy.config.admin.user_id", admin_user, sizeof(admin_user));
+
+  if (*admin_user) {
+    if (*admin_user == '#') {
+      int uid = atoi(admin_user + 1);
+      if (uid == -1) {
+        // XXX: Can this call hapen after setuid?
+        uid = (int)geteuid();
+      }
+      pwd = getpwuid((uid_t)uid);
+    } else {
+      pwd = getpwnam(admin_user);
+    }
+
+    if (pwd) {
+      admin_uid = pwd->pw_uid;
+      admin_gid = pwd->pw_gid;
+      admin_user_p = true;
+    } else {
+      cop_log(COP_FATAL, "can't get passwd entry for the admin user '%s' - [%d] %s\n", admin_user, errno, strerror(errno));
+    }
+  }
+  return admin_user_p;
+}
+
 static void
 read_config()
 {
@@ -646,8 +660,8 @@ read_config()
   fclose(fp);
 
   read_config_string("proxy.config.manager_binary", manager_binary, sizeof(manager_binary), true);
-  read_config_string("proxy.config.admin.user_id", admin_user, sizeof(admin_user));
   read_config_string("proxy.config.proxy_binary", server_binary, sizeof(server_binary), true);
+  get_admin_user();
 
   read_config_string("proxy.config.bin_path", bin_path, sizeof(bin_path), true);
   Layout::get()->relative(bin_path, sizeof(bin_path), bin_path);
@@ -688,7 +702,6 @@ read_config()
   cop_log(COP_DEBUG, "Leaving read_config()\n");
 #endif
 }
-
 
 static void
 spawn_manager()
@@ -1422,7 +1435,7 @@ check_programs()
   // it means there is no manager running.
   Lockfile manager_lf(manager_lockfile);
   err = manager_lf.Open(&holding_pid);
-  chown_file_to_user(manager_lockfile, admin_user);
+  chown_file_to_admin_user(manager_lockfile);
 #if defined(linux)
   // if lockfile held, but process doesn't exist, killall and try again
   if (err == 0) {
@@ -1642,8 +1655,8 @@ check(void *arg)
   for (;;) {
     // problems with the ownership of this file as root Make sure it is
     // owned by the admin user
-    chown_file_to_user(manager_lockfile, admin_user);
-    chown_file_to_user(server_lockfile, admin_user);
+    chown_file_to_admin_user(manager_lockfile);
+    chown_file_to_admin_user(server_lockfile);
 
     alarm(2 * (sleep_time + manager_timeout * 2 + server_timeout));
 
