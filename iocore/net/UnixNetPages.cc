@@ -41,7 +41,7 @@ struct ShowNet: public ShowCont
   {
     CHECK_SHOW(begin("Net"));
     CHECK_SHOW(show("<H3>Show <A HREF=\"./connections\">Connections</A></H3>\n"
-                    "<H3>Show <A HREF=\"./threads\">Net Threads</A></H3>\n"
+                    //"<H3>Show <A HREF=\"./threads\">Net Threads</A></H3>\n"
                     "<form method = GET action = \"./ips\">\n"
                     "Show Connections to/from IP (e.g. 127.0.0.1):<br>\n"
                     "<input type=text name=ip size=64 maxlength=256>\n"
@@ -73,7 +73,7 @@ struct ShowNet: public ShowCont
       char interbuf[80];
       snprintf(interbuf, sizeof(interbuf), "[%s] %hhu.%hhu.%hhu.%hhu", vc->options.toString(vc->options.addr_binding), PRINT_IP(vc->options.local_addr));
       CHECK_SHOW(show("<tr>"
-                      // "<td><a href=\"/connection/%d\">%d</a></td>"
+                      //"<td><a href=\"/connection/%d\">%d</a></td>"
                       "<td>%d</td>"     // ID
                       "<td>%s</td>"     // ipbuf
                       "<td>%d</td>"     // port
@@ -83,11 +83,11 @@ struct ShowNet: public ShowCont
                       "<td>%d secs ago</td>"    // start time
                       "<td>%d</td>"     // thread id
                       "<td>%d</td>"     // read enabled
-                      "<td>%d</td>"     // read NBytes
-                      "<td>%d</td>"     // read NDone
+                      "<td>%" PRId64 "</td>"     // read NBytes
+                      "<td>%" PRId64 "</td>"     // read NDone
                       "<td>%d</td>"     // write enabled
-                      "<td>%d</td>"     // write nbytes
-                      "<td>%d</td>"     // write ndone
+                      "<td>%" PRId64 "</td>"     // write nbytes
+                      "<td>%" PRId64 "</td>"     // write ndone
                       "<td>%d secs</td>"        // Inactivity timeout at
                       "<td>%d secs</td>"        // Activity timeout at
                       "<td>%d</td>"     // shutdown
