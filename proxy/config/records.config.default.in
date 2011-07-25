@@ -219,6 +219,7 @@ CONFIG proxy.config.http.normalize_ae_gzip INT 0
    #   3 - cache for all but text content-types
    #   4 - cache for all but text content-types except OS response
    #       without "Set-Cookie" or with "Cache-Control: public"
+   # See also cache-responses-to-cookies in cache.config.
 CONFIG proxy.config.http.cache.cache_responses_to_cookies INT 1
 CONFIG proxy.config.http.cache.ignore_authentication INT 0
 CONFIG proxy.config.http.cache.cache_urls_that_look_dynamic INT 1

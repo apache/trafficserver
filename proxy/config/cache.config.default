@@ -38,6 +38,14 @@
 #     revalidate=<time>
 #     ttl-in-cache=<time>             (force caching and expire after <time>)
 #
+# Each line may also contain various "tweaks" which adjust caching parameters.
+#   Tweaks are
+#     cache-responses-to-cookies=<value>
+#       - Change the style of caching with regard to cookies. This effectively
+#         overrides the configuration parameter
+#           proxy.config.http.cache.cache_responses_to_cookies
+#         and uses the same values with the same semantics. The override happens
+#         only for requests that match.
 #
 # Examples
 #
