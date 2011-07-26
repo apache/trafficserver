@@ -209,7 +209,7 @@ extern int http_accept_port_number;
 #define MAX_NET_BUCKETS                           256
 #define MAX_EPOLL_ARRAY_SIZE                      (1024*16)
 #define MAX_EPOLL_TIMEOUT                         50    /* mseconds */
-/* NOTE: moved DEFAULT_POLL_TIMEOUT to I_NetConfig.h */
+/* NOTE: moved DEFAULT_POLL_TIMEOUT to I_Net.h */
 #define NET_THROTTLE_DELAY                        50    /* mseconds */
 #define INK_MIN_PRIORITY                          0
 

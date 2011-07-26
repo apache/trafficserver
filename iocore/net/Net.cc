@@ -32,6 +32,7 @@
 #include "P_Net.h"
 
 RecRawStatBlock *net_rsb = NULL;
+int net_config_poll_timeout = DEFAULT_POLL_TIMEOUT;
 
 static inline void
 configure_net(void)
