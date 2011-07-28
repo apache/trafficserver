@@ -94,41 +94,6 @@ uint16_t ink_inet_port(const struct sockaddr *addr);
 /// Size in bytes of an IPv6 address.
 size_t const INK_IP6_SIZE = sizeof(in6_addr);
 
-/** Write a null terminated string for @a addr to @a dst.
-    A buffer of size INET6_ADDRSTRLEN suffices, including a terminating nul.
- */
-char const* ink_inet_ntop(
-  const sockaddr *addr, ///< Address.
-  char *dst, ///< Output buffer.
-  size_t size ///< Length of buffer.
-);
-
-static size_t const INET6_ADDRPORTSTRLEN = INET6_ADDRSTRLEN + 6;
-
-/** Write a null terminated string for @a addr to @a dst with port.
-    A buffer of size INET6_ADDRPORTSTRLEN suffices, including a terminating nul.
- */
-char const* ink_inet_nptop(
-  const sockaddr *addr, ///< Address.
-  char *dst, ///< Output buffer.
-  size_t size ///< Length of buffer.
-);
-
-/** Convert @a text to an IP address and write it to @a addr.
-
-    @a text is expected to be an explicit address, not a hostname.  No
-    hostname resolution is done.
-
-    @note This uses @c getaddrinfo internally and so involves memory
-    allocation.
-
-    @return 0 on success, non-zero on failure.
-*/
-int ink_inet_pton(
-  char const* text, ///< [in] text.
-  sockaddr* addr ///< [out] address
-);
-
 /// Reset an address to invalid.
 /// @note Useful for marking a member as not yet set.
 inline void ink_inet_invalidate(sockaddr* addr) {
@@ -144,6 +109,12 @@ inline bool ink_inet_is_ip(sockaddr const* addr) {
 /// @return @c true if the address is IPv4, @c false otherwise.
 inline bool ink_inet_is_ip4(sockaddr const* addr) {
   return AF_INET == addr->sa_family;
+}
+/// Test for IPv4 protocol.
+/// @note Convenience overload.
+/// @return @c true if the address is IPv4, @c false otherwise.
+inline bool ink_inet_is_ip4(sockaddr_in6 const* addr) {
+  return AF_INET == addr->sin6_family;
 }
 /// Test for IPv6 protocol.
 /// @return @c true if the address is IPv6, @c false otherwise.
@@ -267,6 +238,7 @@ inline in_addr_t& ink_inet_ip4_addr_cast(sockaddr* addr) {
     : (dummy = 0)
     ;
 }
+
 /** Access the IPv4 address.
 
     If this is not an IPv4 address a zero valued address is returned.
@@ -282,6 +254,33 @@ inline in_addr_t const& ink_inet_ip4_addr_cast(sockaddr const* addr) {
     : static_cast<in_addr_t const&>(dummy = 0)
     ;
 }
+
+/** Access the IPv4 address.
+
+    If this is not an IPv4 address a zero valued address is returned.
+    @note This is direct access to the address so it will be in
+    network order.
+    @note Convenience overload.
+
+    @return A reference to the IPv4 address in @a addr.
+*/
+inline in_addr_t& ink_inet_ip4_addr_cast(sockaddr_in6* addr) {
+  return ink_inet_ip4_addr_cast(ink_inet_sa_cast(addr));
+}
+
+/** Access the IPv4 address.
+
+    If this is not an IPv4 address a zero valued address is returned.
+    @note This is direct access to the address so it will be in
+    network order.
+    @note Convenience overload.
+
+    @return A reference to the IPv4 address in @a addr.
+*/
+inline in_addr_t const& ink_inet_ip4_addr_cast(sockaddr_in6 const* addr) {
+  return ink_inet_ip4_addr_cast(ink_inet_sa_cast(addr));
+}
+
 /** Access the IPv6 address.
 
     If this is not an IPv6 address a zero valued address is returned.
@@ -294,7 +293,6 @@ inline in6_addr& ink_inet_ip6_addr_cast(sockaddr* addr) {
   return ink_inet_ip6_cast(addr)->sin6_addr;
 }
   
-
 /// @name Address operators
 //@{
 
@@ -379,6 +377,14 @@ inline int ink_inet_cmp(
   return zret;
 }
 
+/** Compare two addresses.
+    @note Convenience overload.
+    @see ink_inet_cmp(sockaddr const* lhs, sockaddr const* rhs)
+*/
+inline int ink_inet_cmp(sockaddr_in6 const* lhs, sockaddr_in6 const* rhs) {
+  return ink_inet_cmp(ink_inet_sa_cast(lhs), ink_inet_sa_cast(rhs));
+}
+
 //@}
 
 /// Get IP TCP/UDP port.
@@ -435,6 +441,59 @@ inline void ink_inet_ip4_set(
   uint16_t port = 0 ///< port, network order.
 ) {
   ink_inet_ip4_set(ink_inet_ip4_cast(dst), ip4, port);
+}
+
+/** Write a null terminated string for @a addr to @a dst.
+    A buffer of size INET6_ADDRSTRLEN suffices, including a terminating nul.
+ */
+char const* ink_inet_ntop(
+  const sockaddr *addr, ///< Address.
+  char *dst, ///< Output buffer.
+  size_t size ///< Length of buffer.
+);
+
+static size_t const INET6_ADDRPORTSTRLEN = INET6_ADDRSTRLEN + 6;
+
+/** Write a null terminated string for @a addr to @a dst with port.
+    A buffer of size INET6_ADDRPORTSTRLEN suffices, including a terminating nul.
+ */
+char const* ink_inet_nptop(
+  const sockaddr *addr, ///< Address.
+  char *dst, ///< Output buffer.
+  size_t size ///< Length of buffer.
+);
+
+/** Convert @a text to an IP address and write it to @a addr.
+
+    @a text is expected to be an explicit address, not a hostname.  No
+    hostname resolution is done.
+
+    @note This uses @c getaddrinfo internally and so involves memory
+    allocation.
+
+    @return 0 on success, non-zero on failure.
+*/
+int ink_inet_pton(
+  char const* text, ///< [in] text.
+  sockaddr* addr ///< [out] address
+);
+
+/** Convert @a text to an IP address and write it to @a addr.
+
+    @a text is expected to be an explicit address, not a hostname.  No
+    hostname resolution is done.
+
+    @note This uses @c getaddrinfo internally and so involves memory
+    allocation.
+    @note Convenience overload.
+
+    @return 0 on success, non-zero on failure.
+*/
+inline int ink_inet_pton(
+  char const* text, ///< [in] text.
+  sockaddr_in6* addr ///< [out] address
+) {
+  return ink_inet_pton(text, ink_inet_sa_cast(addr));
 }
 
 /** Storage for an IP address.

@@ -313,7 +313,7 @@ validate_filter_args(acl_filter_rule ** rule_pp, char **argv, int argc, char *er
         ipi->invert = true;
       strncpy(tmpbuf, argptr, sizeof(tmpbuf) - 1);
       tmpbuf[sizeof(tmpbuf) - 1] = 0; // important! use copy of argument
-      if (ExtractIpRange(tmpbuf, (unsigned long*) &ipi->start, &ipi->end) != NULL) {
+      if (ExtractIpRange(tmpbuf, &ipi->start, &ipi->end) != NULL) {
         Debug("url_rewrite", "[validate_filter_args] Unable to parse IP value in %s", argv[i]);
         snprintf(errStrBuf, errStrBufSize, "Unable to parse IP value in %s", argv[i]);
         errStrBuf[errStrBufSize - 1] = 0;

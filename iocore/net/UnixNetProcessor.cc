@@ -250,7 +250,7 @@ UnixNetProcessor::connect_re_internal(Continuation * cont,
                            * we need to connect using socks server even
                            * if this ip is in no_socks list.
                            */
-                          !socks_conf_stuff->ip_range.match(ip))
+                          !socks_conf_stuff->ip_map.contains(ip))
 #endif
     );
   SocksEntry *socksEntry = NULL;

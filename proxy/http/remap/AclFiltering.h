@@ -36,8 +36,8 @@
 
 typedef struct src_ip_info_t
 {
-  unsigned long start;          // IPv4 address value stores start of a range (host byte order)
-  unsigned long end;            // IPv4 address value stores end of a range (host byte order)
+  in_addr_t start;          // IPv4 address value stores start of a range (host byte order)
+  in_addr_t end;            // IPv4 address value stores end of a range (host byte order)
   bool invert;                  // Should we "invert" the meaning of this IP range ("not in range")
 
   void reset(void)

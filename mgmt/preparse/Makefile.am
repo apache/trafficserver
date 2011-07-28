@@ -24,8 +24,6 @@ DEFS += $(MGMT_DEFS)
 noinst_LIBRARIES = libpreparse.a
 
 libpreparse_a_SOURCES = \
-  IPRange.cc \
-  IPRange.h \
   RemapReadConfig.cc \
   SocksParser.cc \
   StoreReadConfig.cc

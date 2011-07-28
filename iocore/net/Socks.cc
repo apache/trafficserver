@@ -32,6 +32,7 @@
 
 #include "P_Net.h"
 #include "I_Layout.h"
+#include <ts/IpMapConf.h>
 
 socks_conf_struct *g_socks_conf_stuff = 0;
 
@@ -495,7 +496,12 @@ loadSocksConfiguration(socks_conf_struct * socks_conf_stuff)
     goto error;
   }
 #ifdef SOCKS_WITH_TS
-  tmp = socks_conf_stuff->ip_range.read_table_from_file(socks_config_fd, "no_socks");
+  tmp = Load_IpMap_From_File(
+    &socks_conf_stuff->ip_map,
+    socks_config_fd,
+    "no_socks"
+  );
+//  tmp = socks_conf_stuff->ip_range.read_table_from_file(socks_config_fd, "no_socks");
 
   if (tmp) {
     Error("SOCKS Config: Error while reading ip_range: %s.", tmp);

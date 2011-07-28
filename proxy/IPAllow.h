@@ -42,14 +42,13 @@ void reloadIPAllow();
 //    a reconfig event happens that the old table gets thrown
 //    away
 //
-#define IP_ALLOW_TIMEOUT            (HRTIME_HOUR*1)
+static uint64_t const IP_ALLOW_TIMEOUT = HRTIME_HOUR;
 
 // INKqa05845
-#define IP_ALLOW 1
-#define IP_DENY -1
-class IpAllowRecord
-{
-public:
+static int const IP_ALLOW = 1;
+static int const IP_DENY = -1;
+
+struct IpAllowRecord {
   int access;
   int line_num;
 };

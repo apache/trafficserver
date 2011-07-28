@@ -27,6 +27,7 @@
 #include "HdrUtils.h"
 #include "HttpCompat.h"
 #include "I_Layout.h"
+#include <ts/IpMapConf.h>
 
 #ifdef PREFETCH
 
@@ -609,7 +610,7 @@ check_n_attach_prefetch_transform(HttpSM *sm, HTTPHdr *resp, bool from_cache)
             "since recursion depth(%d) is greater than max allowed (%d)", rec_depth, prefetch_config.max_recursion);
       return;
     }
-  } else if (!prefetch_config.ip_range.match(client_ip)) {
+  } else if (!prefetch_config.ip_map.contains(client_ip)) {
     Debug("PrefetchParser", "client (%u.%u.%u.%u) does not match any of the "
           "prefetch_children mentioned in configuration\n", IPSTRARGS(client_ip));
     return;
@@ -1875,7 +1876,7 @@ PrefetchConfiguration::readConfiguration()
   }
 
   char *temp_str;
-  if ((temp_str = ip_range.read_table_from_file(fd, "prefetch_children", FALSE)) != 0) {
+  if ((temp_str = Load_IpMap_From_File(&ip_map, fd, "prefetch_children")) != 0) {
     Error("PrefetchProcessor: Error in reading ip_range from %s: %.256s\n", conf_path, temp_str);
     xfree(temp_str);
     goto Lerror;

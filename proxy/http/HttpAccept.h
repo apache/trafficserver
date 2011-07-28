@@ -28,8 +28,6 @@
 #include "P_EventSystem.h"
 #include "HttpConfig.h"
 #include "HTTP.h"
-#include "IPRange.h"
-
 
 /**
    The continuation mutex is NULL to allow parellel accepts in NT. The

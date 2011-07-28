@@ -28,12 +28,11 @@
 
 #ifdef SOCKS_WITH_TS
 #include "ParentSelection.h"
-#include "IPRange.h"
+#include <ts/IpMap.h>
 #endif
 
 enum
 {
-
   //types of events for Socks auth handlers
   SOCKS_AUTH_OPEN,
   SOCKS_AUTH_WRITE_COMPLETE,
@@ -59,7 +58,7 @@ struct socks_conf_struct
   unsigned short http_port;
 
 #ifdef SOCKS_WITH_TS
-  IPRange ip_range;
+  IpMap ip_map;
 #endif
 
 #ifndef SOCKS_WITH_TS

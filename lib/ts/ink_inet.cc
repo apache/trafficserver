@@ -194,3 +194,23 @@ uint16_t ink_inet_port(const struct sockaddr *addr)
 
   return port;
 }
+
+int ink_inet_pton(char const* text, sockaddr* addr) {
+  int zret = -1;
+  addrinfo hints; // [out]
+  addrinfo *ai; // [in]
+
+  memset(&hints, 0, sizeof(hints));
+  hints.ai_family = PF_UNSPEC;
+  hints.ai_flags = AI_NUMERICHOST|AI_PASSIVE;
+  if (0 == (zret = getaddrinfo(text, 0, &hints, &ai))) {
+    if (addr) {
+      if (ink_inet_copy(addr, ai->ai_addr))
+        zret = 0;
+    } else if (ink_inet_is_ip(addr)) {
+      zret = 0;
+    }
+    freeaddrinfo(ai);
+  }
+  return zret;
+}

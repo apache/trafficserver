@@ -744,7 +744,7 @@ IpMapBase<N>::print() {
 }
 
 //----------------------------------------------------------------------------
-typedef Interval<uint32_t, uint32_t> Ip4Span;
+typedef Interval<in_addr_t, in_addr_t> Ip4Span;
 
 /** Node for IPv4 map.
     We store the address in host order in the @a _min and @a _max
@@ -1028,7 +1028,7 @@ class Ip6Map : public IpMapBase<Ip6Node> {
 //----------------------------------------------------------------------------
 namespace {
   ///< @return The network order IPv4 address in @a target.
-  inline uint32_t const& ip4_addr(sockaddr const* target) {
+  inline in_addr_t const& ip4_addr(sockaddr const* target) {
     return ink_inet_ip4_cast(target)->sin_addr.s_addr;
   }
 }
@@ -1058,6 +1058,11 @@ IpMap::contains(sockaddr const* target, void** ptr) {
   return zret;
 }
 
+bool
+IpMap::contains(in_addr_t target, void** ptr) {
+  return _m4->contains(ntohl(target));
+}
+
 IpMap&
 IpMap::mark(
   sockaddr const* min,
@@ -1075,7 +1080,7 @@ IpMap::mark(
 }
 
 IpMap&
-IpMap::mark(uint32_t min, uint32_t max, void* data) {
+IpMap::mark(in_addr_t min, in_addr_t max, void* data) {
   this->force4()->mark(min, max, data);
   return *this;
 }

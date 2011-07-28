@@ -24,7 +24,7 @@
 #ifndef _PREFETCH_H_
 #define _PREFETCH_H_
 
-#include "IPRange.h"
+#include <ts/IpMap.h>
 #include "TransformInternal.h"
 
 #ifdef PREFETCH
@@ -54,7 +54,7 @@ extern BlasterUrlList *multicastUrlBlaster;
 struct PrefetchConfiguration
 {
   int prefetch_enabled;
-  IPRange ip_range;
+  IpMap ip_map;
   struct html_tag *html_tags_table;
   struct html_tag *html_attrs_table;
 

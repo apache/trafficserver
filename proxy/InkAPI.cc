@@ -6870,7 +6870,7 @@ char *
 TSMatcherExtractIPRange(char *match_str, uint32_t *addr1, uint32_t *addr2)
 {
   sdk_assert(sdk_sanity_check_null_ptr((void*)match_str) == TS_SUCCESS);
-  return (char*)ExtractIpRange(match_str, (ip_addr_t *) addr1, (ip_addr_t *) addr2);
+  return (char*)ExtractIpRange(match_str, addr1, addr2);
 }
 
 TSMatcherLine

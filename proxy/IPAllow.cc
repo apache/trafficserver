@@ -180,8 +180,8 @@ IpAllow::BuildTable()
   char errBuf[1024];
   char *file_buf = NULL;
   int line_num = 0;
-  ip_addr_t addr1 = 0;
-  ip_addr_t addr2 = 0;
+  in_addr_t addr1 = 0;
+  in_addr_t addr2 = 0;
   matcher_line line_info;
   bool alarmAlready = false;
 

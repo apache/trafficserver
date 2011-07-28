@@ -38,8 +38,23 @@ char *readIntoBuffer(char *file_path, const char *module_name, int *read_size_pt
 
 int unescapifyStr(char *buffer);
 
-typedef unsigned long ip_addr_t;
-const char *ExtractIpRange(char *match_str, ip_addr_t * addr1, ip_addr_t * addr2);
+/** Extract an IP range.
+    @a min and @a max should be at least the size of @c sockaddr_in6 to hold
+    an IP address.
+*/
+char const* ExtractIpRange(
+  char *match_str,
+  sockaddr* min,
+  sockaddr* max
+);
+
+/// Convenience overload for IPv4.
+char const* ExtractIpRange(
+  char *match_str,
+  in_addr_t * addr1, ///< [in,out] Returned address in host order.
+  in_addr_t * addr2 ///< [in,out] Returned address in host order.
+);
+
 char *tokLine(char *buf, char **last);
 
 const char *processDurationString(char *str, int *seconds);

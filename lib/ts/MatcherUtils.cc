@@ -139,8 +139,23 @@ unescapifyStr(char *buffer)
   return (write - buffer);
 }
 
-//   char* ExtractIpRange(char* match_str, ip_addr_t* addr1,
-//                         ip_addr_t* addr2)
+char const*
+ExtractIpRange(char* match_str, in_addr_t* min, in_addr_t* max) {
+  sockaddr_in6 min6, max6;
+  char const* zret = ExtractIpRange(match_str, ink_inet_sa_cast(&min6), ink_inet_sa_cast(&max6));
+  if (0 == zret) { // success
+    if (ink_inet_is_ip4(&min6) && ink_inet_is_ip4(&max6)) {
+      if (min) *min = ntohl(ink_inet_ip4_addr_cast(&min6));
+      if (max) *max = ntohl(ink_inet_ip4_addr_cast(&max6));
+    } else {
+      zret = "The addresses were not IPv4 addresses.";
+    }
+  }
+  return zret;
+}
+
+//   char* ExtractIpRange(char* match_str, sockaddr* addr1,
+//                         sockaddr* addr2)
 //
 //   Attempts to extract either an Ip Address or an IP Range
 //     from match_str.  The range should be two addresses
@@ -154,19 +169,15 @@ unescapifyStr(char *buffer)
 //     that describes the reason for the error.
 //
 const char *
-ExtractIpRange(char *match_str, ip_addr_t *addr1, ip_addr_t *addr2)
+ExtractIpRange(char *match_str, sockaddr* addr1, sockaddr* addr2)
 {
   Tokenizer rangeTok("-/");
-  bool mask = false;
+  bool mask = strchr(match_str, '/') != NULL;
   int mask_bits;
   int mask_val;
   int numToks;
-  ip_addr_t addr1_local;
-  ip_addr_t addr2_local;
+  sockaddr_in6 la1, la2;
 
-  if (strchr(match_str, '/') != NULL) {
-    mask = true;
-  }
   // Extract the IP addresses from match data
   numToks = rangeTok.Initialize(match_str, SHARE_TOKS);
 
@@ -176,15 +187,17 @@ ExtractIpRange(char *match_str, ip_addr_t *addr1, ip_addr_t *addr2)
     return "malformed IP range";
   }
 
-  addr1_local = htonl(inet_addr(rangeTok[0]));
-
-  if (addr1_local == (ip_addr_t) - 1 && strcmp(rangeTok[0], "255.255.255.255") != 0) {
-    return "malformed ip address";
+  if (0 != ink_inet_pton(rangeTok[0], &la1)) {
+    return "malformed IP address";
   }
+
   // Handle a IP range
   if (numToks == 2) {
 
-    if (mask == true) {
+    if (mask) {
+      if (!ink_inet_is_ip4(&la1)) {
+        return "Masks supported only for IPv4";
+      }
       // coverity[secure_coding]
       if (sscanf(rangeTok[1], "%d", &mask_bits) != 1) {
         return "bad mask specification";
@@ -197,28 +210,28 @@ ExtractIpRange(char *match_str, ip_addr_t *addr1, ip_addr_t *addr2)
       if (mask_bits == 32) {
         mask_val = 0;
       } else {
-        mask_val = 0xffffffff >> mask_bits;
+        mask_val = htonl(0xffffffff >> mask_bits);
       }
-
-      addr2_local = addr1_local | mask_val;
-      addr1_local = addr1_local & (mask_val ^ 0xffffffff);
+      in_addr_t a = ink_inet_ip4_addr_cast(&la1);
+      ink_inet_ip4_set(&la2, a | mask_val);
+      ink_inet_ip4_set(&la1, a & (mask_val ^ 0xffffffff));
 
     } else {
-      addr2_local = htonl(inet_addr(rangeTok[1]));
-      if (addr2_local == (ip_addr_t) - 1 && strcmp(rangeTok[1], "255.255.255.255") != 0) {
+      if (0 != ink_inet_pton(rangeTok[1], &la2)) {
         return "malformed ip address at range end";
       }
     }
 
-    if (addr1_local > addr2_local) {
+    if (1 == ink_inet_cmp(&la1, &la2)) {
       return "range start greater than range end";
     }
+
+    ink_inet_copy(addr2, ink_inet_sa_cast(&la2));
   } else {
-    addr2_local = addr1_local;
+    ink_inet_copy(addr2, ink_inet_sa_cast(&la1));
   }
 
-  *addr1 = addr1_local;
-  *addr2 = addr2_local;
+  ink_inet_copy(addr1, ink_inet_sa_cast(&la1));
   return NULL;
 }
 

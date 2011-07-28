@@ -346,8 +346,39 @@ public:
       @return This object.
   */
   self& mark(
-    uint32_t min, ///< Minimum address (network order).
-    uint32_t max, ///< Maximum address (network order).
+    in_addr_t min, ///< Minimum address (network order).
+    in_addr_t max, ///< Maximum address (network order).
+    void* data = 0 ///< Client data.
+  );
+
+  /** Mark an IPv4 address @a addr with @a data.
+      This is equivalent to calling @c mark(addr, addr, data).
+      @note Convenience overload for IPv4 addresses.
+      @return This object.
+  */
+  self& mark(
+    in_addr_t addr, ///< Address (network order).
+    void* data = 0 ///< Client data.
+  );
+
+  /** Mark a range.
+      All addresses in the range [ @a min , @a max ] are marked with @a data.
+      @note Convenience overload for IPv6 addresses.
+      @return This object.
+  */
+  self& mark(
+    sockaddr_in6 const* min, ///< Minimum address (network order).
+    sockaddr_in6 const* max, ///< Maximum address (network order).
+    void* data = 0 ///< Client data.
+  );
+
+  /** Mark an IPv6 address @a addr with @a data.
+      This is equivalent to calling @c mark(addr, addr, data).
+      @note Convenience overload for IPv6 addresses.
+      @return This object.
+  */
+  self& mark(
+    sockaddr_in6 const* addr, ///< Address (network order).
     void* data = 0 ///< Client data.
   );
 
@@ -370,7 +401,20 @@ public:
       is set to the client data for the address.
   */
   bool contains(
-    sockaddr const* target, ///< Search target value.
+    sockaddr const* target, ///< Search target (network order).
+    void **ptr = 0 ///< Client data return.
+  );
+
+  /** Test for membership.
+
+      @note Covenience overload for IPv4.
+
+      @return @c true if the address is in the map, @c false if not.
+      If the address is in the map and @a ptr is not @c NULL, @c *ptr
+      is set to the client data for the address.
+  */
+  bool contains(
+    in_addr_t target, ///< Search target (network order).
     void **ptr = 0 ///< Client data return.
   );
 
@@ -397,6 +441,18 @@ protected:
   ts::detail::Ip6Map* _m6; ///< Map of IPv6 addresses.
   
 };
+
+inline IpMap& IpMap::mark(in_addr_t addr, void* data) {
+  return this->mark(addr, addr, data);
+}
+
+inline IpMap& IpMap::mark(sockaddr_in6 const* addr, void* data) {
+  return this->mark(ink_inet_sa_cast(addr), ink_inet_sa_cast(addr), data);
+}
+
+inline IpMap& IpMap::mark(sockaddr_in6 const* min, sockaddr_in6 const* max, void* data) {
+  return this->mark(ink_inet_sa_cast(min), ink_inet_sa_cast(max), data);
+}
 
 inline IpMap::iterator
 IpMap::end() {

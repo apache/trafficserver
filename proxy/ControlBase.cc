@@ -250,8 +250,8 @@ IPortMod::make(char* value, char const ** error) {
 // ----------
 struct SrcIPMod : public ControlBase::Modifier {
   // Stored in host order because that's how they are compared.
-  ip_addr_t start_addr; ///< Start address in HOST order.
-  ip_addr_t end_addr; ///< End address in HOST order.
+  in_addr_t start_addr; ///< Start address in HOST order.
+  in_addr_t end_addr; ///< End address in HOST order.
 
   static char const * const NAME;
 
