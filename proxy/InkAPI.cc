@@ -1625,6 +1625,7 @@ api_init()
     // Setup the version string for returning to plugins
     ink_strncpy(traffic_server_version, appVersionInfo.VersionStr, sizeof(traffic_server_version));
     // Extract the elements.
+    // coverity[secure_coding]
     if (sscanf(traffic_server_version, "%d.%d.%d", &ts_major_version, &ts_minor_version, &ts_patch_version) != 3) {
       Warning("Unable to parse traffic server version string '%s'\n", traffic_server_version);
     }
