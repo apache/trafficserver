@@ -2,6 +2,8 @@
 
 Changes with Apache Traffic Server 3.1.0
 
+  *) IpLookup was removed from the experimental API.
+
   *) proxy.config.http.cache.cache_responses_to_cookies can now be overridden
      on a per request basis in cache.config.
 

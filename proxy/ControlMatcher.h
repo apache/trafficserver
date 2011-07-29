@@ -98,7 +98,7 @@
 #endif
 
 #include "DynArray.h"
-#include "IpLookup.h"
+#include <ts/IpMap.h>
 
 #include "ink_port.h"
 #include "HTTP.h"
@@ -121,9 +121,9 @@ public:
   }
   virtual char *get_string() = 0;
   virtual const char *get_host() = 0;
-  virtual ip_addr_t get_ip() = 0;
+  virtual in_addr_t get_ip() = 0;
 
-  virtual ip_addr_t get_client_ip() = 0;
+  virtual in_addr_t get_client_ip() = 0;
   enum RD_Type
   { RD_NULL, RD_HTTP, RD_CONGEST_ENTRY };
   virtual RD_Type data_type(void)
@@ -138,8 +138,8 @@ class HttpRequestData:public RequestData
 public:
   inkcoreapi char *get_string();
   inkcoreapi const char *get_host();
-  inkcoreapi ip_addr_t get_ip();
-  inkcoreapi ip_addr_t get_client_ip();
+  inkcoreapi in_addr_t get_ip();
+  inkcoreapi in_addr_t get_client_ip();
 
   HttpRequestData()
     : hdr(NULL), hostname_str(NULL), api_info(NULL),
@@ -150,8 +150,8 @@ public:
   char *hostname_str;
   _HttpApiInfo *api_info;
   time_t xact_start;
-  ip_addr_t src_ip;
-  ip_addr_t dest_ip;
+  in_addr_t src_ip;
+  in_addr_t dest_ip;
   uint16_t incoming_port;
   char *tag;
 };
@@ -227,7 +227,7 @@ template<class Data, class Result> class IpMatcher {
 public:
   IpMatcher(const char *name, const char *filename);
   ~IpMatcher();
-  void Match(ip_addr_t ip_addr, RD * rdata, Result * result);
+  void Match(in_addr_t ip_addr, RD * rdata, Result * result);
   void AllocateSpace(int num_entries);
   char *NewEntry(matcher_line * line_info);
   void Print();
@@ -241,9 +241,9 @@ public:
   };
 
   //private:
-  //void MatchArray(ip_addr_t addr, RD* rdata, Result* result, void* array);
+  //void MatchArray(in_addr_t addr, RD* rdata, Result* result, void* array);
   static void PrintFunc(void *opaque_data);
-  IpLookup *ip_lookup;          // Data structure to do lookups
+  IpMap ip_map;          // Data structure to do lookups
   Data *data_array;             // array of the data lements with in the table
   int array_len;                // size of the arrays
   int num_el;                   // number of elements in the table

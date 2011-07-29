@@ -56,17 +56,6 @@ extern "C"
   tsapi int TSMimeHdrFieldEqual(TSMBuffer bufp, TSMLoc hdr_obj, TSMLoc field1, TSMLoc field2);
   tsapi TSReturnCode TSHttpTxnHookRegisteredFor(TSHttpTxn txnp, TSHttpHookID id, TSEventFunc funcp);
 
-  /* IP Lookup */
-  typedef struct tsapi_iplookup* TSIPLookup;
-  typedef struct tsapi_iplookupstate* TSIPLookupState;
-  typedef void (*TSIPLookupPrintFunc) (void *data);
-
-  tsapi void TSIPLookupPrint(TSIPLookup iplu, TSIPLookupPrintFunc pf);
-  tsapi void TSIPLookupNewEntry(TSIPLookup iplu, uint32_t addr1, uint32_t addr2, void *data);
-  tsapi int TSIPLookupMatch(TSIPLookup iplu, uint32_t addr, void **data);
-  tsapi TSReturnCode TSIPLookupMatchFirst(TSIPLookup iplu, uint32_t addr, TSIPLookupState iplus, void **data);
-  tsapi TSReturnCode TSIPLookupMatchNext(TSIPLookup iplu, TSIPLookupState iplus, void **data);
-
   /* for Media-IXT mms over http */
   typedef enum
     {

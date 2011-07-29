@@ -6794,64 +6794,6 @@ TSHttpTxnClientRemotePortGet(TSHttpTxn txnp, int *portp)
   return TS_SUCCESS;
 }
 
-/* IP Lookup */
-
-// This is very suspicious, TSILookup is a (void *), so how on earth
-// can we try to delete an instance of it?
-void
-TSIPLookupNewEntry(TSIPLookup iplu, uint32_t addr1, uint32_t addr2, void *data)
-{
-  IpLookup *my_iplu = (IpLookup *) iplu;
-
-  if (my_iplu) {
-    my_iplu->NewEntry((ip_addr_t) addr1, (ip_addr_t) addr2, data);
-  }
-}
-
-int
-TSIPLookupMatch(TSIPLookup iplu, uint32_t addr, void **data)
-{
-  void *dummy;
-  IpLookup *my_iplu = (IpLookup *) iplu;
-
-  if (!data) {
-    data = &dummy;
-  }
-  return (my_iplu ? my_iplu->Match((ip_addr_t) addr, data) : 0);
-}
-
-TSReturnCode
-TSIPLookupMatchFirst(TSIPLookup iplu, uint32_t addr, TSIPLookupState iplus, void **data)
-{
-  IpLookup *my_iplu = (IpLookup *) iplu;
-  IpLookupState *my_iplus = (IpLookupState *) iplus;
-  if (my_iplu && my_iplus && my_iplu->MatchFirst(addr, my_iplus, data))
-    return TS_SUCCESS;
-
-  return TS_ERROR;
-}
-
-TSReturnCode
-TSIPLookupMatchNext(TSIPLookup iplu, TSIPLookupState iplus, void **data)
-{
-  IpLookup *my_iplu = (IpLookup *) iplu;
-  IpLookupState *my_iplus = (IpLookupState *) iplus;
-
-  if (my_iplu && my_iplus && my_iplu->MatchNext(my_iplus, data))
-    return TS_SUCCESS;
-
-  return TS_ERROR;
-}
-
-void
-TSIPLookupPrint(TSIPLookup iplu, TSIPLookupPrintFunc pf)
-{
-  IpLookup *my_iplu = (IpLookup *) iplu;
-
-  if (my_iplu)
-    my_iplu->Print((IpLookupPrintFunc) pf);
-}
-
 /* Matcher Utils */
 char *
 TSMatcherReadIntoBuffer(char *file_name, int *file_len)

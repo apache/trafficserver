@@ -383,7 +383,7 @@ struct CCCongestionDBTestCont: public Continuation
   CongestionControlRecord *rule;
   CongestionDB *db;
   int dbsize;
-  CongestionEntry *gen_CongestionEntry(ip_addr_t ip, int congested = 0);
+  CongestionEntry *gen_CongestionEntry(in_addr_t ip, int congested = 0);
 
 
     CCCongestionDBTestCont(ProxyMutexPtr _mutex, RegressionTest * _test):Continuation(_mutex),
@@ -403,7 +403,7 @@ struct CCCongestionDBTestCont: public Continuation
 };
 
 CongestionEntry *
-CCCongestionDBTestCont::gen_CongestionEntry(ip_addr_t ip, int congested)
+CCCongestionDBTestCont::gen_CongestionEntry(in_addr_t ip, int congested)
 {
   char *hostname;
   struct in_addr addr;

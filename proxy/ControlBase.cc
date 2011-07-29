@@ -267,8 +267,8 @@ ControlBase::Modifier::Type SrcIPMod::type() const { return MOD_SRC_IP; }
 char const * SrcIPMod::name() const { return NAME; }
 
 void SrcIPMod::print(FILE* f) const {
-  ip_addr_t a1 = htonl(start_addr);
-  ip_addr_t a2 = htonl(end_addr);
+  in_addr_t a1 = htonl(start_addr);
+  in_addr_t a2 = htonl(end_addr);
   fprintf(f, "%s=%d.%d.%d.%d-%d.%d.%d.%d  ",
     this->name(), TS_IP_OCTETS(a1), TS_IP_OCTETS(a2)
   );

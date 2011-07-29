@@ -608,7 +608,7 @@ FailHistory::regist_event(long t, int n)
 //----------------------------------------------------------
 // CongestionEntry Implementation
 //----------------------------------------------------------
-CongestionEntry::CongestionEntry(const char *hostname, ip_addr_t ip, CongestionControlRecord * rule, uint64_t key)
+CongestionEntry::CongestionEntry(const char *hostname, in_addr_t ip, CongestionControlRecord * rule, uint64_t key)
 :m_key(key),
 m_ip(ip),
 m_last_congested(0),

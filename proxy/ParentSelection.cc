@@ -1052,7 +1052,7 @@ SocksServerConfig::print()
 }
 
 void
-request_to_data(HttpRequestData * req, ip_addr_t srcip, ip_addr_t dstip, const char *str)
+request_to_data(HttpRequestData * req, in_addr_t srcip, in_addr_t dstip, const char *str)
 {
   HTTPParser parser;
 

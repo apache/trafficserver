@@ -38,11 +38,11 @@ HttpAccept::mainEvent(int event, void *data)
     // if client address forbidden, close immediately //
     ////////////////////////////////////////////////////
     NetVConnection *netvc = (NetVConnection *) data;
-    unsigned int client_ip = netvc->get_remote_ip();
+    in_addr_t client_ip = netvc->get_remote_ip();
 
     // The backdoor port is now only bound to "localhost", so reason to
     // check for if it's incoming from "localhost" or not.
-    if (!backdoor && ip_allow_table && (!ip_allow_table->match(client_ip))) {
+    if (!backdoor && IpAllow::instance() && (!IpAllow::instance()->match(client_ip))) {
       char ip_string[32];
       unsigned char *p = (unsigned char *) &(client_ip);
 

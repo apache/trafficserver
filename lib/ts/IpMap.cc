@@ -413,7 +413,7 @@ template <
   bool contains(
     ArgType target, ///< Search target value.
     void **ptr = 0 ///< Client data return.
-  );
+  ) const;
 
   /** Erase entire map.
 
@@ -466,16 +466,19 @@ template <
   */
   void validate();
 
+  /// @return The number of distinct ranges.
+  size_t getCount() const;
+
   /// Print all spans.
   /// @return This map.
   self& print();
   
   // Helper methods.
-  N* prev(RBNode* n) { return static_cast<N*>(n->_prev); }
-  N* next(RBNode* n) { return static_cast<N*>(n->_next); }
-  N* parent(RBNode* n) { return static_cast<N*>(n->_parent); }
-  N* left(RBNode* n) { return static_cast<N*>(n->_left); }
-  N* right(RBNode* n) { return static_cast<N*>(n->_right); }
+  N* prev(RBNode* n) const { return static_cast<N*>(n->_prev); }
+  N* next(RBNode* n) const { return static_cast<N*>(n->_next); }
+  N* parent(RBNode* n) const { return static_cast<N*>(n->_parent); }
+  N* left(RBNode* n) const { return static_cast<N*>(n->_left); }
+  N* right(RBNode* n) const { return static_cast<N*>(n->_right); }
   N* getHead() { return static_cast<N*>(_list.getHead()); }
   N* getTail() { return static_cast<N*>(_list.getTail()); }
 
@@ -523,8 +526,20 @@ IpMapBase<N>::mark(ArgType min, ArgType max, void* payload) {
   N* n = this->lowerBound(min); // current node.
   N* x = 0; // New node, gets set if we re-use an existing one.
 
-  /*  We have lots of special cases here primarily to minimize memory allocation
-      by re-using an existing node as often as possible.
+  /* Some subtlety - for IPv6 we overload the compare operators to do
+     the right thing, but we can't overload pointer
+     comparisons. Therefore we carefully never compare pointers in
+     this logic. Only @a min and @a max can be pointers, everything
+     else is an instance or a reference. Since there's no good reason
+     to compare @a min and @a max this isn't particularly tricky, but
+     it's good to keep in mind. If we were somewhat more clever, we
+     would provide static less than and equal operators in the
+     template class @a N and convert all the comparisons to use only
+     those two via static function call.
+  */
+
+  /*  We have lots of special cases here primarily to minimize memory
+      allocation by re-using an existing node as often as possible.
   */
   if (n) {
     Metric min_1 = N::deref(min);
@@ -532,9 +547,10 @@ IpMapBase<N>::mark(ArgType min, ArgType max, void* payload) {
     if (n->_min == min) {
       // Could be another span further left which is adjacent.
       // Coalesce if the data is the same.
-      if (n->_prev && prev(n)->_data == payload && prev(n)->_max == min_1) {
-        x = prev(n);
-        n = x; // need to back up n because we've moved our frame of reference back.
+      N* p = prev(n);
+      if (p && p->_data == payload && p->_max == min_1) {
+        x = p;
+        n = x; // need to back up n because frame of reference moved.
         x->setMax(max);
       } else if (n->_max <= max) {
         // Span will be subsumed by request span so it's available for use.
@@ -697,7 +713,7 @@ IpMapBase<N>::remove(N* n) {
 }
 
 template <typename N> bool
-IpMapBase<N>::contains(ArgType x, void** ptr) {
+IpMapBase<N>::contains(ArgType x, void** ptr) const {
   bool zret = false;
   N* n = _root; // current node to test.
   while (n) {
@@ -711,6 +727,8 @@ IpMapBase<N>::contains(ArgType x, void** ptr) {
   }
   return zret;
 }
+
+template < typename N > size_t IpMapBase<N>::getCount() const { return _list.getCount(); }
 //----------------------------------------------------------------------------
 template <typename N> void
 IpMapBase<N>::validate() {
@@ -758,12 +776,12 @@ public:
 
   /// Construct with values.
   Ip4Node(
-    ArgType min, ///< Minimum address (network order).
-    ArgType max, ///< Maximum address (network order).
+    ArgType min, ///< Minimum address (host order).
+    ArgType max, ///< Maximum address (host order).
     void* data ///< Client data.
-  ) : Node(data), Ip4Span(ntohl(min), ntohl(max)) {
-    ink_inet_ip4_set(ink_inet_sa_cast(&_sa._min), min);
-    ink_inet_ip4_set(ink_inet_sa_cast(&_sa._max), max);
+  ) : Node(data), Ip4Span(min, max) {
+    ink_inet_ip4_set(ink_inet_sa_cast(&_sa._min), htonl(min));
+    ink_inet_ip4_set(ink_inet_sa_cast(&_sa._max), htonl(max));
   }
   /// @return The minimum value of the interval.
   virtual sockaddr const* min() {
@@ -802,24 +820,6 @@ protected:
     return *this;
   }
   
-  // Static helper methods for Metric.
-  
-  /** Compare two metrics.
-      @return
-        - -1 if @a lhs < @a rhs
-        -  0 if @a lhs == @a rhs
-        -  1 if @a lhs > @a rhs
-  */
-  static int cmp(
-    ArgType lhs,
-    ArgType rhs
-  ) {
-    return lhs < rhs ? -1
-      : lhs > rhs ? 1
-      : 0
-      ;
-  }
-  
   /// Increment a metric.
   static void inc(
     Metric& m ///< Incremented in place.
@@ -839,6 +839,13 @@ protected:
     ArgType addr ///< Argument to dereference.
   ) {
     return addr;
+  }
+
+  /// @return The argument type for the @a metric.
+  static ArgType argue(
+    Metric const& metric
+  ) {
+    return metric;
   }
   
   struct {
@@ -931,21 +938,6 @@ protected:
     return this->setMax(&max);
   }
   
-  // Static helper methods for Metric.
-  
-  /** Compare two metrics.
-      @return
-        - -1 if @a lhs < @a rhs
-        -  0 if @a lhs == @a rhs
-        -  1 if @a lhs > @a rhs
-  */
-  static int cmp(
-    ArgType lhs,
-    ArgType rhs
-  ) {
-    return ink_inet_cmp(ink_inet_sa_cast(lhs), ink_inet_sa_cast(rhs));
-  }
-  
   /// Increment a metric.
   static void inc(
     Metric& m ///< Incremented in place.
@@ -1019,19 +1011,15 @@ inline bool operator>(sockaddr_in6 const& lhs, sockaddr_in6 const* rhs) {
   return 1 == ts::detail::cmp(lhs, *rhs);
 }
 
+// We declare this after the helper operators and inside this namespace
+// so that the template uses these for comparisons.
+
 class Ip6Map : public IpMapBase<Ip6Node> {
   friend class ::IpMap;
 };
 
-}} // end namespaces
-
+}} // end ts::detail
 //----------------------------------------------------------------------------
-namespace {
-  ///< @return The network order IPv4 address in @a target.
-  inline in_addr_t const& ip4_addr(sockaddr const* target) {
-    return ink_inet_ip4_cast(target)->sin_addr.s_addr;
-  }
-}
 IpMap::~IpMap() {
   delete _m4;
   delete _m6;
@@ -1044,11 +1032,11 @@ IpMap::force4() {
 }
 
 bool
-IpMap::contains(sockaddr const* target, void** ptr) {
+IpMap::contains(sockaddr const* target, void** ptr) const {
   bool zret = false;
   if (AF_INET == target->sa_family) {
     if (_m4) {
-      zret = _m4->contains(ntohl(ip4_addr(target)));
+      zret = _m4->contains(ntohl(ink_inet_ip4_addr_cast(target)));
     }
   } else if (AF_INET6 == target->sa_family) {
     if (_m6) {
@@ -1059,8 +1047,8 @@ IpMap::contains(sockaddr const* target, void** ptr) {
 }
 
 bool
-IpMap::contains(in_addr_t target, void** ptr) {
-  return _m4->contains(ntohl(target));
+IpMap::contains(in_addr_t target, void** ptr) const {
+  return _m4->contains(ntohl(target), ptr);
 }
 
 IpMap&
@@ -1071,10 +1059,14 @@ IpMap::mark(
 ) {
   ink_assert(min->sa_family == max->sa_family);
   if (AF_INET == min->sa_family) {
-    this->force4()->mark(ip4_addr(min), ip4_addr(max), data);
+    this->force4()->mark(
+      ntohl(ink_inet_ip4_addr_cast(min)),
+      ntohl(ink_inet_ip4_addr_cast(max)),
+      data
+    );
   } else if (AF_INET6 == min->sa_family) {
     if (!_m6) _m6 = new ts::detail::Ip6Map;
-    _m6->mark(ink_inet_ip6_cast(min), ink_inet_ip6_cast(max));
+    _m6->mark(ink_inet_ip6_cast(min), ink_inet_ip6_cast(max), data);
   }
   return *this;
 }
@@ -1092,11 +1084,19 @@ IpMap::unmark(
 ) {
   ink_assert(min->sa_family == max->sa_family);
   if (AF_INET == min->sa_family) {
-    if (_m4) _m4->unmark(ip4_addr(min), ip4_addr(max));
+    if (_m4) _m4->unmark(ink_inet_ip4_addr_cast(min), ink_inet_ip4_addr_cast(max));
   } else if (AF_INET6 == min->sa_family) {
     if (_m6) _m6->unmark(ink_inet_ip6_cast(min), ink_inet_ip6_cast(max));
   }
   return *this;
+}
+
+size_t
+IpMap::getCount() const {
+  size_t zret = 0;
+  if (_m4) zret += _m4->getCount();
+  if (_m6) zret += _m6->getCount();
+  return zret;
 }
 
 IpMap::iterator
@@ -1114,7 +1114,7 @@ IpMap::iterator::operator ++ () {
     // and if so, move to the v6 list (if it's there).
     Node* x = static_cast<Node*>(_node->_next);
     if (!x && _tree->_m4 && _tree->_m6 && _node == _tree->_m4->getTail())
-      x = _tree->_m6->getTail();
+      x = _tree->_m6->getHead();
     _node = x;
   }
   return *this;

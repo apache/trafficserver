@@ -403,7 +403,7 @@ public:
   bool contains(
     sockaddr const* target, ///< Search target (network order).
     void **ptr = 0 ///< Client data return.
-  );
+  ) const;
 
   /** Test for membership.
 
@@ -416,12 +416,14 @@ public:
   bool contains(
     in_addr_t target, ///< Search target (network order).
     void **ptr = 0 ///< Client data return.
-  );
+  ) const;
 
   /// Iterator for first element.
   iterator begin();
   /// Iterator past last element.
   iterator end();
+  /// @return Number of distinct ranges in the map.
+  size_t getCount() const;
 
   /** Validate internal data structures.
       @note Intended for debugging, not general client use.

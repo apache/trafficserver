@@ -7355,9 +7355,11 @@ cont_test_handler(TSCont contp, TSEvent event, void *edata)
       } else {
         body_expected = "Body for response 10";
       }
-      TSDebug(UTDBG_TAG, "Body Response = \n|%s|\nBody Expected = \n|%s|", body_response, body_expected);
+      TSDebug(UTDBG_TAG, "Body Response = \n|%s|\nBody Expected = \n|%s|", body_response ? body_response : "*NULL*", body_expected);
 
-      if (strncmp(body_response, body_expected, strlen(body_expected)) != 0) {
+      if (!body_response
+        || strncmp(body_response, body_expected, strlen(body_expected)) != 0
+      ) {
         if (data->test_case == TEST_CASE_CONNECT_ID1) {
           SDK_RPRINT(data->test, "TSHttpConnect", "TestCase1", TC_FAIL, "Unexpected response");
           SDK_RPRINT(data->test, "TSHttpTxnIntercept", "TestCase1", TC_FAIL, "Unexpected response");

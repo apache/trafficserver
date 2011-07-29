@@ -55,6 +55,15 @@ char const* ExtractIpRange(
   in_addr_t * addr2 ///< [in,out] Returned address in host order.
 );
 
+/// Convenience overload for IPv6.
+inline char const* ExtractIpRange(
+  char *match_str,
+  sockaddr_in6* addr1, ///< [in,out] Returned address in network order.
+  sockaddr_in6* addr2 ///< [in,out] Returned address in network order.
+) {
+  return ExtractIpRange(match_str, ink_inet_sa_cast(addr1), ink_inet_sa_cast(addr2));
+}
+
 char *tokLine(char *buf, char **last);
 
 const char *processDurationString(char *str, int *seconds);

@@ -31,11 +31,12 @@
 #ifndef _IP_ALLOW_H_
 #define _IP_ALLOW_H_
 
-#include "IpLookup.h"
 #include "Main.h"
+#include <ts/IpMap.h>
+#include <vector>
 
-void initIPAllow();
-void reloadIPAllow();
+// forward declare in name only so it can be a friend.
+struct IPAllow_UpdateContinuation;
 
 //
 // Timeout the IpAllowTable * this amount of time after the
@@ -44,53 +45,61 @@ void reloadIPAllow();
 //
 static uint64_t const IP_ALLOW_TIMEOUT = HRTIME_HOUR;
 
-// INKqa05845
-static int const IP_ALLOW = 1;
-static int const IP_DENY = -1;
-
-struct IpAllowRecord {
-  int access;
-  int line_num;
+enum AclOp {
+  ACL_OP_ALLOW, ///< Allow access.
+  ACL_OP_DENY, ///< Deny access.
 };
 
-class IpAllow:public IpLookup
-{
+struct AclRecord {
+  AclOp _op;
+  int _src_line;
+
+  AclRecord(AclOp op, int ln) : _op(op), _src_line(ln) { }
+};
+
+class IpAllow {
+  friend int main(int, char**);
+  friend struct IPAllow_UpdateContinuation;
 public:
+  typedef IpAllow self; ///< Self reference type.
+
   IpAllow(const char *config_var, const char *name, const char *action_val);
    ~IpAllow();
   int BuildTable();
   void Print();
-  bool match(ip_addr_t ip);
+  bool match(in_addr_t addr);
+
+  /// @return The global instance.
+  static self* instance();
 private:
+
+  static void InitInstance();
+  static void ReloadInstance();
+
   const char *config_file_var;
   char config_file_path[PATH_NAME_MAX];
   const char *module_name;
   const char *action;
-  bool err_allow_all;
+  bool _allow_all;
+  IpMap _map;
+  std::vector<AclRecord> _acls;
+
+  static self* _instance;
 };
 
-extern IpAllow *ip_allow_table;
+inline IpAllow* IpAllow::instance() { return _instance; }
 
-// INKqa05845
 inline bool
-IpAllow::match(ip_addr_t ip)
-{
-  if (err_allow_all == true) {
-    return true;
-  } else {
-    IpAllowRecord *cur = NULL, *result = NULL;
-    IpLookupState s;
-    bool found;
-    found = IpLookup::MatchFirst(ip, &s, (void **) &cur);
-    result = cur;
-    while (found) {
-      if (cur->line_num < result->line_num) {
-        result = cur;
-      }
-      found = IpLookup::MatchNext(&s, (void **) &cur);
+IpAllow::match(in_addr_t addr) {
+  bool zret = _allow_all;
+  if (!zret) {
+    void* raw;
+    if (_map.contains(addr, &raw)) {
+      AclRecord* acl = static_cast<AclRecord*>(raw);
+      zret = acl && ACL_OP_ALLOW == acl->_op;
     }
-    return ((result != NULL) && (result->access == IP_ALLOW));
   }
+  return zret;
 }
 
 #endif

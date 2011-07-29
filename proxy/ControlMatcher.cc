@@ -70,13 +70,13 @@ HttpRequestData::get_host()
   return hostname_str;
 }
 
-ip_addr_t
+in_addr_t
 HttpRequestData::get_ip()
 {
   return dest_ip;
 }
 
-ip_addr_t
+in_addr_t
 HttpRequestData::get_client_ip()
 {
   return src_ip;
@@ -436,7 +436,6 @@ template<class Data, class Result> void HostRegexMatcher<Data, Result>::Match(RD
 // IpMatcher<Data,Result>::IpMatcher()
 //
 template<class Data, class Result> IpMatcher<Data, Result>::IpMatcher(const char *name, const char *filename):
-ip_lookup(NULL),
 data_array(NULL),
 array_len(-1),
 num_el(-1),
@@ -450,7 +449,6 @@ file_name(filename)
 //
 template<class Data, class Result> IpMatcher<Data, Result>::~IpMatcher()
 {
-  delete ip_lookup;
   delete[]data_array;
 }
 
@@ -461,8 +459,6 @@ template<class Data, class Result> void IpMatcher<Data, Result>::AllocateSpace(i
 {
   // Should not have been allocated before
   ink_assert(array_len == -1);
-
-  ip_lookup = NEW(new IpLookup(matcher_name));
 
   data_array = NEW(new Data[num_entries]);
 
@@ -522,47 +518,38 @@ template<class Data, class Result> char *IpMatcher<Data, Result>::NewEntry(match
     return errBuf;
   }
 
-  ip_lookup->NewEntry(addr1, addr2, cur_d);
+  ip_map.mark(addr1, addr2, cur_d);
 
-  num_el++;
+  ++num_el;
   return NULL;
 }
 
 //
-// void IpMatcherData,Result>::Match(ip_addr_t addr, RD* rdata, Result* result)
+// void IpMatcherData,Result>::Match(in_addr_t addr, RD* rdata, Result* result)
 //
 template<class Data, class Result>
-  void IpMatcher<Data, Result>::Match(ip_addr_t addr, RD * rdata, Result * result)
+  void IpMatcher<Data, Result>::Match(in_addr_t addr, RD * rdata, Result * result)
 {
-  Data *cur;
-  bool found;
-  IpLookupState s;
-
-  found = ip_lookup->MatchFirst(addr, &s, (void **) &cur);
-
-  while (found == true) {
-
-    ink_assert(cur != NULL);
-
+  void* raw;
+  if (ip_map.contains(addr, &raw)) {
+    Data *cur = static_cast<Data*>(raw);
+    ink_assert(cur != 0);
     cur->UpdateMatch(result, rdata);
-
-    found = ip_lookup->MatchNext(&s, (void **) &cur);
   }
 }
 
 
 template<class Data, class Result> void IpMatcher<Data, Result>::Print()
 {
-  printf("\tIp Matcher with %d elements\n", num_el);
-  if (ip_lookup != NULL) {
-    ip_lookup->Print(IpMatcher<Data, Result>::PrintFunc);
+  printf("\tIp Matcher with %d elements, %d ranges.\n", num_el, ip_map.getCount());
+  for ( IpMap::iterator spot(ip_map.begin()), limit(ip_map.end()) ; spot != limit ; ++spot) {
+    char b1[INET6_ADDRSTRLEN], b2[INET6_ADDRSTRLEN];
+    printf("\tRange %s - %s ",
+      ink_inet_ntop(spot->min(), b1, sizeof b1),
+      ink_inet_ntop(spot->max(), b2, sizeof b2)
+    );
+    static_cast<Data*>(spot->data())->Print();
   }
-}
-
-template<class Data, class Result> void IpMatcher<Data, Result>::PrintFunc(void *opaque_data)
-{
-  Data *ptr = (Data *) opaque_data;
-  ptr->Print();
 }
 
 template<class Data, class Result>

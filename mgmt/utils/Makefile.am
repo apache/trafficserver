@@ -45,8 +45,6 @@ libutils_lm_a_SOURCES = \
   EnvBlock.h \
   ExpandingArray.cc \
   ExpandingArray.h \
-  IpLookup.cc \
-  IpLookup.h \
   MgmtSchema.cc \
   MgmtSchema.h \
   MgmtUtils.cc \
@@ -57,8 +55,6 @@ libutils_lm_a_SOURCES = \
   XmlUtils.h
 
 libutils_p_a_SOURCES = \
-  IpLookup.cc \
-  IpLookup.h \
   MgmtUtils.cc \
   MgmtUtils.h \
   XmlUtils.cc \

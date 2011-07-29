@@ -199,8 +199,8 @@ public:
 
   const char *get_host();
 
-  ip_addr_t get_ip();
-  ip_addr_t get_client_ip();
+  in_addr_t get_ip();
+  in_addr_t get_client_ip();
 
   const char *m_pHost;
 };
@@ -238,18 +238,18 @@ DNSRequestData::get_host()
 /* --------------------------------------------------------------
    DNSRequestData::get_ip()
    -------------------------------------------------------------- */
-TS_INLINE ip_addr_t DNSRequestData::get_ip()
+TS_INLINE in_addr_t DNSRequestData::get_ip()
 {
-  return (ip_addr_t) 0;
+  return (in_addr_t) 0;
 }
 
 
 /* --------------------------------------------------------------
    DNSRequestData::get_client_ip()
    -------------------------------------------------------------- */
-TS_INLINE ip_addr_t DNSRequestData::get_client_ip()
+TS_INLINE in_addr_t DNSRequestData::get_client_ip()
 {
-  return (ip_addr_t) 0;
+  return (in_addr_t) 0;
 }
 
 /* --------------------------------------------------------------

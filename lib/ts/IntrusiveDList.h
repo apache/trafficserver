@@ -179,7 +179,7 @@ public:
   };
 
   /// Default constructor (empty list).
-  IntrusiveDList() : _head(0), _tail(0) { }
+  IntrusiveDList() : _head(0), _tail(0), _count(0) { }
   /// Empty check.
   /// @return @c true if the list is empty.
   bool isEmpty() const { return 0 == _head; }
@@ -193,6 +193,7 @@ public:
     if (_head) _head->*P = elt;
     _head = elt;
     if (! _tail) _tail = _head; // empty to non-empty transition
+    ++_count;
     return *this;
   }
   /// Add @elt as the last element in the list.
@@ -205,6 +206,7 @@ public:
     if (_tail) _tail->*N = elt;
     _tail = elt;
     if (! _head) _head = _tail; // empty to non-empty transition
+    ++_count;
     return *this;
   }
   /// Remove the first element of the list.
@@ -218,6 +220,7 @@ public:
       else _tail = 0; // non-empty to empty transition.
       zret->*N = 0; // erase traces of list.
       zret->*P = 0;
+      --_count;
     }
     return zret;
   }
@@ -232,6 +235,7 @@ public:
       else _head = 0; // non-empty to empty transition.
       zret->*N = 0; // erase traces of list.
       zret->*P = 0;
+      --_count;
     }
     return zret;
   }
@@ -249,6 +253,7 @@ public:
     target->*N = elt;
     if (elt->*N) elt->*N->*P = elt;
     if (target == _tail) _tail = elt;
+    ++_count;
     return *this;
   }
   /// Insert a new element @a elt before @a target.
@@ -265,6 +270,7 @@ public:
     target->*P = elt;
     if (elt->*P) elt->*P->*N = elt;
     if (target == _head) _head = elt;
+    ++_count;
     return *this;
   }
   /// Take @a elt out of this list.
@@ -277,12 +283,15 @@ public:
     if (elt == _head) _head = elt->*N;
     if (elt == _tail) _tail = elt->*P;
     elt->*P = elt->*N = 0;
+    --_count;
     return *this;
   }
   /// Remove all elements.
   /// @note @b No memory management is done!
   /// @return This container.
-  self& clear() { _head = _tail = 0; return *this; }
+  self& clear() { _head = _tail = 0; _count = 0; return *this; }
+  /// @return Number of elements in the list.
+  size_t getCount() const { return _count; }
 
   /// Get an iterator to the first element.
   iterator begin() { return iterator(this, _head); }
@@ -295,6 +304,7 @@ public:
 protected:
   T* _head; ///< First element in list.
   T* _tail; ///< Last element in list.
+  size_t _count; ///< # of elements in list.
 };
 
 # endif // TS_INTRUSIVE_DOUBLE_LIST_HEADER

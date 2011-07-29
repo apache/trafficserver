@@ -204,7 +204,7 @@ struct CongestionEntry: public RequestData
   // key in the hash table;
   uint64_t m_key;
   // host info
-  ip_addr_t m_ip;
+  in_addr_t m_ip;
   char *m_hostname;
 
   // Pointer to the congestion.config entry
@@ -228,7 +228,7 @@ struct CongestionEntry: public RequestData
   // Reference count
   int m_ref_count;
 
-    CongestionEntry(const char *hostname, ip_addr_t ip, CongestionControlRecord * rule, uint64_t key);
+    CongestionEntry(const char *hostname, in_addr_t ip, CongestionControlRecord * rule, uint64_t key);
     CongestionEntry();
     virtual ~ CongestionEntry();
 
@@ -241,13 +241,13 @@ struct CongestionEntry: public RequestData
   {
     return m_hostname;
   }
-  virtual ip_addr_t get_ip()
+  virtual in_addr_t get_ip()
   {
     return m_ip;
   }
-  virtual ip_addr_t get_client_ip()
+  virtual in_addr_t get_client_ip()
   {
-    return (ip_addr_t) 0;
+    return (in_addr_t) 0;
   }
   virtual RD_Type data_type(void)
   {

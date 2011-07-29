@@ -75,7 +75,7 @@ public:
     {
       uint64_t m_key;
       char *m_hostname;
-      ip_addr_t m_ip;
+      in_addr_t m_ip;
       CongestionControlRecord *m_rule;
       CongestionEntry **m_ppEntry;
     } entry_info;
@@ -624,7 +624,7 @@ remove_congested_entry(char *buf, MIOBuffer * out_buffer)
     len = snprintf(msg, MSG_LEN, "host=%s prefix=%s removed\n", p, prefix ? prefix : "(nil)");
   } else if (strncasecmp(buf, "ip=", 3) == 0) {
     char *p = buf + 3;
-    ip_addr_t ip = 0;
+    in_addr_t ip = 0;
     char *prefix = strchr(p, '/');
     int prelen = 0;
     if (prefix) {
@@ -633,7 +633,7 @@ remove_congested_entry(char *buf, MIOBuffer * out_buffer)
       prelen = strlen(prefix);
     }
     ip = htonl(inet_addr(p));
-    if (ip == (ip_addr_t) - 1 && strcmp(p, "255.255.255.255") != 0) {
+    if (ip == (in_addr_t) - 1 && strcmp(p, "255.255.255.255") != 0) {
       len = snprintf(msg, MSG_LEN, "invalid ip: %s\n", buf);
     } else {
       key = make_key(NULL, 0, ip, prefix, prelen);
