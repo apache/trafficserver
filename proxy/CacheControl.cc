@@ -481,7 +481,7 @@ CacheControlRecord::UpdateMatch(CacheControlResult * result, RD * rdata)
   if (match == true) {
     char crtc_debug[80];
     if (result->cache_responses_to_cookies >= 0)
-      sprintf(crtc_debug, " [" TWEAK_CACHE_RESPONSES_TO_COOKIES "=%d]",
+      snprintf(crtc_debug, sizeof(crtc_debug), " [" TWEAK_CACHE_RESPONSES_TO_COOKIES "=%d]",
         result->cache_responses_to_cookies
       );
     else
