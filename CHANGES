@@ -1,6 +1,27 @@
                                                          -*- coding: utf-8 -*-
 
 Changes with Apache Traffic Server 3.1.0
+  *) [TS-889] Disable warnings on deprecated APIs for Darwin (OSX). This
+  fixes build problesm on OSX 10.7 (Lion) when using the system OpenSSL.
+
+  *) [TS-890] update remap.config comments on regexes to be
+  accurate. Author: Manjesh Nilange.
+
+  *) TS-885 service trafficserver condrestart does the opposite of what´s
+    intended. Author: Jan-Frode Myklebust
+
+  *) [TS-898] "fixed" problems reported by Coverity
+    1. Changed sprintf to snprintf
+    2. ignore error on sscanf that is safe
+
+  *) [TS-807] no config item "proxy.config.hostdb.disable_reverse_lookup" in
+  hostdb. Author: weijin.
+
+  *) [TS-883] Fix help / usage text to be, ehm, correct.
+
+  *) [TS-567] Cleanup, removing unecessary, and unsupported, debug features.
+
+  *) [TS-848] fix crash in net pages and remove useless option.
 
   *) IpLookup was removed from the experimental API.
 
