@@ -398,7 +398,7 @@ case "$1" in
   ;;
   condrestart)
     if [ "$DISTRIB_ID" = "fedora" -o "$DISTRIB_ID" = "redhat" ]; then
-      if ! $0 'status'
+      if $0 'status'
       then
         sh $0 'stop'
         sh $0 'start'
