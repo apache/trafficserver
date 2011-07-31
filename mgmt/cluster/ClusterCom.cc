@@ -1428,12 +1428,12 @@ ClusterCom::constructSharedGenericPacket(char *message, int max, RecT packet_typ
     if (rec->rec_type == RECT_NODE) {
       switch (rec->data_type) {
       case RECD_COUNTER:
-        sprintf(tmp, "%d:%d: %" PRId64 "\n", cnt, rec->data_type, rec->data.rec_counter);
+        snprintf(tmp, sizeof(tmp), "%d:%d: %" PRId64 "\n", cnt, rec->data_type, rec->data.rec_counter);
         ink_strncpy(&message[running_sum], tmp, (max - running_sum));
         running_sum += strlen(tmp);
         break;
       case RECD_INT:
-        sprintf(tmp, "%d:%d: %" PRId64 "\n", cnt, rec->data_type, rec->data.rec_int);
+        snprintf(tmp, sizeof(tmp), "%d:%d: %" PRId64 "\n", cnt, rec->data_type, rec->data.rec_int);
         ink_strncpy(&message[running_sum], tmp, (max - running_sum));
         running_sum += strlen(tmp);
         break;

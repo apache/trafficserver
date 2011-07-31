@@ -442,7 +442,7 @@ overviewRecord::varStrFromName(const char *varNameConst, char *bufVal, int bufLe
     } else if (formatOption == 'c') {
       commaStrFromInt(data.int_data, bufVal);
     } else {
-      sprintf(bufVal, "%" PRId64 "", data.int_data);
+      snprintf(bufVal, bufLen, "%" PRId64 "", data.int_data);
     }
     break;
   case RECD_COUNTER:
@@ -454,7 +454,7 @@ overviewRecord::varStrFromName(const char *varNameConst, char *bufVal, int bufLe
     } else if (formatOption == 'c') {
       commaStrFromInt(data.counter_data, bufVal);
     } else {
-      sprintf(bufVal, "%" PRId64 "", data.counter_data);
+      snprintf(bufVal, bufLen, "%" PRId64 "", data.counter_data);
     }
     break;
   case RECD_FLOAT:

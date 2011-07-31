@@ -563,7 +563,7 @@ varStrFromName(const char *varNameConst, char *bufVal, int bufLen)
     } else if (formatOption == 'c') {
       commaStrFromInt(data.rec_int, bufVal);
     } else {
-      sprintf(bufVal, "%" PRId64 "", data.rec_int);
+      snprintf(bufVal, bufLen, "%" PRId64 "", data.rec_int);
     }
     break;
 
@@ -576,7 +576,7 @@ varStrFromName(const char *varNameConst, char *bufVal, int bufLen)
     } else if (formatOption == 'c') {
       commaStrFromInt(data.rec_counter, bufVal);
     } else {
-      sprintf(bufVal, "%" PRId64 "", data.rec_counter);
+      snprintf(bufVal, bufLen, "%" PRId64 "", data.rec_counter);
     }
     break;
   case RECD_FLOAT:

@@ -57,6 +57,7 @@ parseStorageFile(int fd)
     while (*e && !isdigit(*e))
       e++;
     if (e && *e) {
+      // coverity[secure_coding]
       if (1 != sscanf(e, "%" PRId64 "", &size)) {
         err = "error parsing size";
         goto Lfail;
