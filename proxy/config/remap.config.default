@@ -111,8 +111,7 @@
 #  Regex support: Regular expressions can be specified in the rules with the 
 #  following limitations:
 #
-#  1) Only the host field can have regexes - the scheme, port and other fields cannot
-#     (use yts_regex_remap plugin for path manipulation using regexes)
+#  1) Only the host field can have regexes - the scheme, port and other fields cannot.
 #  2) The number of capturing sub-patterns is limited to 9; this means $0 through $9 can
 #     be used as substitution place holders ($0 will be the entire input string)
 #  3) The number of substitutions in the expansion string is limited to 10
