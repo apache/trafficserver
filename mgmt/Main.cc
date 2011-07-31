@@ -312,7 +312,7 @@ init_dirs(bool use_librecords = true)
       _exit(1);
     }
   }
-  strcpy(mgmt_path, system_config_directory);
+  ink_strncpy(mgmt_path, system_config_directory, sizeof(mgmt_path));
 
   if (access(system_runtime_dir, W_OK) == -1) {
     if (use_librecords) {
