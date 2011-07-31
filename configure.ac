@@ -550,7 +550,7 @@ case $host_os in
     fi
     ;;
   darwin*)
-    common_opt="-pipe -Wall -Werror"
+    common_opt="-pipe -Wall -Werror -Wno-deprecated-declarations"
     debug_opt="-ggdb3 $common_opt"
     release_opt="-g $common_opt -O3 -feliminate-unused-debug-symbols -fno-strict-aliasing"
     cxx_opt="-Wno-invalid-offsetof"
