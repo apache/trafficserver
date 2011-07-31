@@ -45,37 +45,32 @@
 #include "ink_port.h"
 #include "ink_resource.h"
 
-#ifdef USE_DALLOC
-#include "DAllocatore.h"
-#endif
-
 #define RND16(_x)               (((_x)+15)&~15)
 
 /** Allocator for fixed size memory blocks. */
 class Allocator
 {
 public:
-#ifdef USE_DALLOC
-  DAllocator da;
-#else
-  InkFreeList fl;
-#endif
-
   /**
     Allocate a block of memory (size specified during construction
     of Allocator.
-
   */
-  void *alloc_void();
+  void *
+  alloc_void()
+  {
+    return ink_freelist_new(&this->fl);
+  }
 
   /** Deallocate a block of memory allocated by the Allocator. */
-  void free_void(void *ptr);
-
-    Allocator()
+  void
+  free_void(void *ptr)
   {
-#ifndef USE_DALLOC
+    ink_freelist_free(&this->fl, ptr);
+  }
+
+  Allocator()
+  {
     memset(&fl, 0, sizeof fl);
-#endif
   }
 
   /**
@@ -85,12 +80,21 @@ public:
     @param element_size size of memory blocks to be allocated.
     @param chunk_size number of units to be allocated if free pool is empty.
     @param alignment of objects must be a power of 2.
-
   */
-  Allocator(const char *name, unsigned int element_size, unsigned int chunk_size = 128, unsigned int alignment = 8);
+  Allocator(const char *name, unsigned int element_size, unsigned int chunk_size = 128, unsigned int alignment = 8)
+  {
+    ink_freelist_init(&fl, name, element_size, chunk_size, 0, alignment);
+  }
 
   /** Re-initialize the parameters of the allocator. */
-  void re_init(const char *name, unsigned int element_size, unsigned int chunk_size, unsigned int alignment);
+  void
+  re_init(const char *name, unsigned int element_size, unsigned int chunk_size, unsigned int alignment)
+  {
+    ink_freelist_init(&this->fl, name, element_size, chunk_size, 0, alignment);
+  }
+
+protected:
+  InkFreeList fl;
 };
 
 /**
@@ -102,26 +106,39 @@ public:
   copied onto the new objects. This is done for performance reasons.
 
 */
-template<class C> class ClassAllocator:public Allocator {
+template<class C> class ClassAllocator: public Allocator {
 public:
-
   /** Allocates objects of the templated type. */
-  C * alloc();
+  C*
+  alloc()
+  {
+    void *ptr = ink_freelist_new(&this->fl);
+
+    if (sizeof(C) < 512) {
+      for (unsigned int i = 0; i < RND16(sizeof(C)) / sizeof(int64_t); i++)
+        ((int64_t *) ptr)[i] = ((int64_t *) &this->proto.typeObject)[i];
+    } else
+      memcpy(ptr, &this->proto.typeObject, sizeof(C));
+    return (C *) ptr;
+  }
 
   /**
     Deallocates objects of the templated type.
 
     @param ptr pointer to be freed.
-
   */
-  void free(C * ptr);
+  void
+  free(C * ptr)
+  {
+    ink_freelist_free(&this->fl, ptr);
+  }
 
   /**
     Allocate objects of the templated type via the inherited interface
     using void pointers.
-
   */
-  void *alloc_void()
+  void*
+  alloc_void()
   {
     return (void *) alloc();
   }
@@ -131,9 +148,9 @@ public:
     interface using void pointers.
 
     @param ptr pointer to be freed.
-
   */
-  void free_void(void *ptr)
+  void
+  free_void(void *ptr)
   {
     free((C *) ptr);
   }
@@ -144,12 +161,13 @@ public:
     @param name some identifying name, used for mem tracking purposes.
     @param chunk_size number of units to be allocated if free pool is empty.
     @param alignment of objects must be a power of 2.
-
   */
-  ClassAllocator(const char *name, unsigned int chunk_size = 128, unsigned int alignment = 16);
+  ClassAllocator(const char *name, unsigned int chunk_size = 128, unsigned int alignment = 16)
+  {
+    ink_freelist_init(&this->fl, name, RND16(sizeof(C)), chunk_size, 0, RND16(alignment));
+  }
 
-  /** Private data. */
-  struct _proto
+  struct
   {
     C typeObject;
     int64_t space_holder;
@@ -170,7 +188,22 @@ template<class C> class SparceClassAllocator:public ClassAllocator<C> {
 public:
 
   /** Allocates objects of the templated type. */
-  C * alloc();
+  C*
+  alloc()
+  {
+    void *ptr = ink_freelist_new(&this->fl);
+
+    if (!_instantiate) {
+      if (sizeof(C) < 512) {
+        for (unsigned int i = 0; i < RND16(sizeof(C)) / sizeof(int64_t); i++)
+          ((int64_t *) ptr)[i] = ((int64_t *) &this->proto.typeObject)[i];
+      } else
+        memcpy(ptr, &this->proto.typeObject, sizeof(C));
+    } else
+      (*_instantiate) ((C *) &this->proto.typeObject, (C *) ptr);
+    return (C *) ptr;
+  }
+
 
   /**
     Create a new class specific SparceClassAllocator.
@@ -181,151 +214,15 @@ public:
     @param instantiate_func
 
   */
-  SparceClassAllocator(const char *name,
-                       unsigned int chunk_size = 128,
-                       unsigned int alignment = 16, void (*instantiate_func) (C * proto, C * instance) = NULL);
-  /** Private data. */
-  void (*instantiate) (C * proto, C * instance);
+  SparceClassAllocator(const char *name, unsigned int chunk_size = 128, unsigned int alignment = 16,
+                       void (*instantiate_func) (C * proto, C * instance) = NULL)
+    : ClassAllocator<C>(name, chunk_size, alignment)
+  {
+    _instantiate = instantiate_func;       // NULL by default
+  }
+
+private:
+  void (*_instantiate) (C* proto, C* instance);
 };
 
-inline void
-Allocator::re_init(const char *name, unsigned int element_size, unsigned int chunk_size, unsigned int alignment)
-{
-#ifdef USE_DALLOC
-  da.init(name, element_size, alignment);
-#else
-  ink_freelist_init(&this->fl, name, element_size, chunk_size, 0, alignment);
-#endif
-}
-
-#if !defined (PURIFY) && !defined (_NO_FREELIST)
-inline void *
-Allocator::alloc_void()
-{
-#ifdef USE_DALLOC
-  return this->da.alloc();
-#else
-  return ink_freelist_new(&this->fl);
-#endif
-}
-
-inline void
-Allocator::free_void(void *ptr)
-{
-#ifdef USE_DALLOC
-  this->da.free(ptr);
-#else
-  ink_freelist_free(&this->fl, ptr);
-#endif
-}
-#else
-// no freelist, non WIN32 platform
-inline void *
-Allocator::alloc_void()
-{
-  return (void *) ink_memalign(this->fl.alignment, this->fl.type_size);
-}
-inline void
-Allocator::free_void(void *ptr)
-{
-  if (likely(ptr))
-    ::free(ptr);
-  return;
-}
-#endif /* end no freelist */
-
-template<class C> inline
-  ClassAllocator<C>::ClassAllocator(const char *name, unsigned int chunk_size, unsigned int alignment)
-{
-#ifdef USE_DALLOC
-  this->da.init(name, RND16(sizeof(C)), RND16(alignment));
-#else
-#if !defined(_NO_FREELIST)
-  ink_freelist_init(&this->fl, name, RND16(sizeof(C)), chunk_size, 0, RND16(alignment));
-#endif //_NO_FREELIST
-#endif /* USE_DALLOC */
-}
-
-template<class C> inline
-SparceClassAllocator<C>::SparceClassAllocator(const char *name, unsigned int chunk_size, unsigned int alignment,
-                                              void (*instantiate_func) (C * proto, C * instance)) : ClassAllocator <C> (name, chunk_size, alignment)
-{
-  instantiate = instantiate_func;       // NULL by default
-}
-
-#if !defined (PURIFY) && !defined (_NO_FREELIST)
-
-// use freelist
-template<class C> inline C * ClassAllocator<C>::alloc()
-{
-#ifdef USE_DALLOC
-  void *ptr = this->da.alloc();
-#else
-  void *ptr = ink_freelist_new(&this->fl);
-#endif
-  if (sizeof(C) < 512) {
-    for (unsigned int i = 0; i < RND16(sizeof(C)) / sizeof(int64_t); i++)
-      ((int64_t *) ptr)[i] = ((int64_t *) &this->proto.typeObject)[i];
-  } else
-    memcpy(ptr, &this->proto.typeObject, sizeof(C));
-  return (C *) ptr;
-}
-
-template<class C> inline C * SparceClassAllocator<C>::alloc()
-{
-#ifdef USE_DALLOC
-  void *ptr = this->da.alloc();
-#else
-  void *ptr = ink_freelist_new(&this->fl);
-#endif
-  if (!instantiate) {
-    if (sizeof(C) < 512) {
-      for (unsigned int i = 0; i < RND16(sizeof(C)) / sizeof(int64_t); i++)
-        ((int64_t *) ptr)[i] = ((int64_t *) &this->proto.typeObject)[i];
-    } else
-      memcpy(ptr, &this->proto.typeObject, sizeof(C));
-  } else
-    (*instantiate) ((C *) &this->proto.typeObject, (C *) ptr);
-  return (C *) ptr;
-}
-
-template<class C> inline void ClassAllocator<C>::free(C * ptr)
-{
-#ifdef USE_DALLOC
-  this->da.free(ptr);
-#else
-  ink_freelist_free(&this->fl, ptr);
-#endif
-  return;
-}
-
-#else  // _NO_FREELIST
-
-// no freelist
-template<class C> inline C * ClassAllocator<C>::alloc()
-{
-  void *ptr = (void *) ink_memalign(8, sizeof(C));
-  memcpy(ptr, &this->proto.typeObject, sizeof(C));
-  return (C *) ptr;
-}
-
-template<class C> inline C * SparceClassAllocator<C>::alloc()
-{
-  void *ptr = (void *) ink_memalign(8, sizeof(C));
-
-  if (instantiate == NULL)
-    memcpy(ptr, &this->proto.typeObject, sizeof(C));
-  else
-    (*instantiate) ((C *) &this->proto.typeObject, (C *) ptr);
-
-  return (C *) ptr;
-}
-
-template<class C> inline void ClassAllocator<C>::free(C * ptr)
-{
-  if (ptr)
-    ::free(ptr);
-  return;
-}
-#endif  // _NO_FREELIST
 #endif  // _Allocator_h_

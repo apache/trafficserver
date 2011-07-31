@@ -28,14 +28,12 @@ libtsutil_la_LDFLAGS = -no-undefined -version-info @TS_LIBTOOL_VERSION@
 libtsutil_la_LIBADD = @LIBOBJS@ @LIBPCRE@ @LIBSSL@ @LIBTCL@ @LIBRESOLV@ @LIBRT@ @LIBICONV@ @LIBSOCKET@ @LIBNSL@ @LIBCAP@ @LIBHWLOC@ -lc
 
 libtsutil_la_SOURCES = \
-  Allocator.cc \
   Allocator.h \
   Arena.cc \
   Arena.h \
   Bitops.cc \
   Bitops.h \
   Compatability.h \
-  DAllocator.h \
   Diags.cc \
   Diags.h \
   DynArray.h \
