@@ -649,7 +649,7 @@ static ArgumentDescription argument_descriptions[] = {
 static int n_argument_descriptions = SIZE(argument_descriptions);
 
 static const char *USAGE_LINE =
-  "Usage: " PROGRAM_NAME " [-l logfile] [-o origin[,...]] [-O originfile] [-m minhits] [-inshv]";
+  "Usage: " PROGRAM_NAME " [-f logfile] [-o origin[,...]] [-O originfile] [-m minhits] [-inshv]";
 
 void
 CommandLineArgs::parse_arguments(char** argv) {
