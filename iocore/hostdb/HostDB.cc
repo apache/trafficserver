@@ -390,7 +390,7 @@ HostDBProcessor::start(int)
   // Register configuration callback, and establish configuation links
   //
   IOCORE_EstablishStaticConfigInt32(hostdb_ttl_mode, "proxy.config.hostdb.ttl_mode");
-  IOCORE_EstablishStaticConfigInt32(hostdb_disable_reverse_lookup, "proxy.config.hostdb.disable_reverse_lookup");
+  IOCORE_EstablishStaticConfigInt32(hostdb_disable_reverse_lookup, "proxy.config.cache.hostdb.disable_reverse_lookup");
   IOCORE_EstablishStaticConfigInt32(hostdb_re_dns_on_reload, "proxy.config.hostdb.re_dns_on_reload");
   IOCORE_EstablishStaticConfigInt32(hostdb_migrate_on_demand, "proxy.config.hostdb.migrate_on_demand");
   IOCORE_EstablishStaticConfigInt32(hostdb_strict_round_robin, "proxy.config.hostdb.strict_round_robin");
