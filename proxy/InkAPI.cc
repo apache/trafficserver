@@ -7090,15 +7090,17 @@ TSFetchPages(TSFetchUrlParams_t *params)
 }
 
 void
-TSFetchUrl(const char* headers, int request_len, unsigned int ip, int port , TSCont contp, TSFetchWakeUpOptions callback_options,TSFetchEvent events)
+TSFetchUrl(const char* headers, int request_len, sockaddr const* ip , TSCont contp, TSFetchWakeUpOptions callback_options,TSFetchEvent events)
 {
   if (callback_options != NO_CALLBACK) {
     sdk_assert(sdk_sanity_check_continuation(contp) == TS_SUCCESS);
   }
 
   FetchSM *fetch_sm =  FetchSMAllocator.alloc();
+  in_addr_t addr = ink_inet_ip4_addr_cast(ip);
+  unsigned short port = ink_inet_port_cast(ip);
 
-  fetch_sm->init((Continuation*)contp, callback_options, events, headers, request_len, ip,port);
+  fetch_sm->init((Continuation*)contp, callback_options, events, headers, request_len, addr, port);
   fetch_sm->httpConnect();
 }
 
