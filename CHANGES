@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 
 Changes with Apache Traffic Server 3.1.0
+  *) [TS-901] Valgrind found minor leaks and uninitialized variables.
+   Author: William Bardwell.
+
   *) [TS-863] Make proxy.config.http.keep_alive_no_activity_timeout_out
    configurable per transaction. Author: William Bardwell.
 
