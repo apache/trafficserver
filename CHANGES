@@ -1,13 +1,16 @@
                                                          -*- coding: utf-8 -*-
 
 Changes with Apache Traffic Server 3.1.0
+  *) [TS-863] Make proxy.config.http.keep_alive_no_activity_timeout_out
+   configurable per transaction. Author: William Bardwell.
+
   *) [TS-859] Make parent proxy not not work anymore.
 
   *) [TS-889] Disable warnings on deprecated APIs for Darwin (OSX). This
-  fixes build problesm on OSX 10.7 (Lion) when using the system OpenSSL.
+   fixes build problesm on OSX 10.7 (Lion) when using the system OpenSSL.
 
   *) [TS-890] update remap.config comments on regexes to be
-  accurate. Author: Manjesh Nilange.
+   accurate. Author: Manjesh Nilange.
 
   *) TS-885 service trafficserver condrestart does the opposite of what´s
     intended. Author: Jan-Frode Myklebust
@@ -17,7 +20,7 @@ Changes with Apache Traffic Server 3.1.0
     2. ignore error on sscanf that is safe
 
   *) [TS-807] no config item "proxy.config.hostdb.disable_reverse_lookup" in
-  hostdb. Author: weijin.
+   hostdb. Author: weijin.
 
   *) [TS-883] Fix help / usage text to be, ehm, correct.
 
@@ -28,7 +31,7 @@ Changes with Apache Traffic Server 3.1.0
   *) IpLookup was removed from the experimental API.
 
   *) proxy.config.http.cache.cache_responses_to_cookies can now be overridden
-     on a per request basis in cache.config.
+   on a per request basis in cache.config.
 
   *) [TS-816] Other ports now obey specified options for both normal
    and standalone usage.
