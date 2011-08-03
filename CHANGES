@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 
 Changes with Apache Traffic Server 3.1.0
+  *) [TS-859] Make parent proxy not not work anymore.
+
   *) [TS-889] Disable warnings on deprecated APIs for Darwin (OSX). This
   fixes build problesm on OSX 10.7 (Lion) when using the system OpenSSL.
 
