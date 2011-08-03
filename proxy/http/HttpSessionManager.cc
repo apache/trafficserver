@@ -99,8 +99,8 @@ SessionBucket::session_handler(int event, void *data)
           Debug("http_ss", "[%" PRId64 "] [session_bucket] session received io notice [%s], "
                 "reseting timeout to maintain minimum number of connections", s->con_id,
                 HttpDebugNames::get_event_name(event));
-          s->get_netvc()->set_inactivity_timeout(HRTIME_SECONDS(http_config_params->keep_alive_no_activity_timeout_out));
-          s->get_netvc()->set_active_timeout(HRTIME_SECONDS(http_config_params->keep_alive_no_activity_timeout_out));
+          s->get_netvc()->set_inactivity_timeout(s->get_netvc()->get_inactivity_timeout());
+          s->get_netvc()->set_active_timeout(s->get_netvc()->get_active_timeout());
           found = true;
           break;
         }
@@ -316,8 +316,8 @@ HttpSessionManager::release_session(HttpServerSession * to_release)
     to_release->do_io_write(bucket, 0, NULL);
 
     // we probably don't need the active timeout set, but will leave it for now
-    to_release->get_netvc()->set_inactivity_timeout(HRTIME_SECONDS(HttpConfig::m_master.keep_alive_no_activity_timeout_out));
-    to_release->get_netvc()->set_active_timeout(HRTIME_SECONDS(HttpConfig::m_master.keep_alive_no_activity_timeout_out));
+    to_release->get_netvc()->set_inactivity_timeout(to_release->get_netvc()->get_inactivity_timeout());
+    to_release->get_netvc()->set_active_timeout(to_release->get_netvc()->get_active_timeout());
     Debug("http_ss", "[%" PRId64 "] [release session] " "session placed into shared pool", to_release->con_id);
     return HSM_DONE;
   } else {

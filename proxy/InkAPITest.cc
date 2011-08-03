@@ -7537,6 +7537,7 @@ const char *SDK_Overridable_Configs[] = {
   "proxy.config.http.cache.guaranteed_max_lifetime",
   "proxy.config.http.cache.max_stale_age",
   "proxy.config.http.keep_alive_no_activity_timeout_in",
+  "proxy.config.http.keep_alive_no_activity_timeout_out",
   "proxy.config.http.transaction_no_activity_timeout_in",
   "proxy.config.http.transaction_no_activity_timeout_out",
   "proxy.config.http.transaction_active_timeout_out",

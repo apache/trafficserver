@@ -414,6 +414,7 @@ struct OverridableHttpConfigParams {
        cache_heuristic_min_lifetime(0), cache_heuristic_max_lifetime(0),
        cache_guaranteed_min_lifetime(0), cache_guaranteed_max_lifetime(0), cache_max_stale_age(0),
        keep_alive_no_activity_timeout_in(0),
+       keep_alive_no_activity_timeout_out(0),
        transaction_no_activity_timeout_in(0), transaction_no_activity_timeout_out(0),
        transaction_active_timeout_out(0),
        origin_max_connections(0),
@@ -509,6 +510,7 @@ struct OverridableHttpConfigParams {
   // connection variables. timeouts are in seconds //
   ///////////////////////////////////////////////////
   MgmtInt keep_alive_no_activity_timeout_in;
+  MgmtInt keep_alive_no_activity_timeout_out;
   MgmtInt transaction_no_activity_timeout_in;
   MgmtInt transaction_no_activity_timeout_out;
   MgmtInt transaction_active_timeout_out;
@@ -637,7 +639,6 @@ public:
   MgmtInt origin_server_pipeline;
   MgmtInt user_agent_pipeline;
   MgmtInt share_server_sessions;
-  MgmtInt keep_alive_no_activity_timeout_out;
   MgmtInt transaction_active_timeout_in;
   MgmtInt accept_no_activity_timeout;
   MgmtInt background_fill_active_timeout;
@@ -924,7 +925,6 @@ HttpConfigParams::HttpConfigParams()
     origin_server_pipeline(0),
     user_agent_pipeline(0),
     share_server_sessions(0),
-    keep_alive_no_activity_timeout_out(0),
     transaction_active_timeout_in(0),
     accept_no_activity_timeout(0),
     background_fill_active_timeout(0),

@@ -7342,6 +7342,9 @@ _conf_to_memberp(TSOverridableConfigKey conf, HttpSM* sm, OverridableDataType *t
   case TS_CONFIG_HTTP_KEEP_ALIVE_NO_ACTIVITY_TIMEOUT_IN:
     ret = &sm->t_state.txn_conf->keep_alive_no_activity_timeout_in;
     break;
+  case TS_CONFIG_HTTP_KEEP_ALIVE_NO_ACTIVITY_TIMEOUT_OUT:
+    ret = &sm->t_state.txn_conf->keep_alive_no_activity_timeout_out;
+    break;
   case TS_CONFIG_HTTP_TRANSACTION_NO_ACTIVITY_TIMEOUT_IN:
     ret = &sm->t_state.txn_conf->transaction_no_activity_timeout_in;
     break;
@@ -7811,6 +7814,10 @@ TSHttpTxnConfigFind(const char* name, int length, TSOverridableConfigKey *conf, 
     case 'n':
       if (!strncmp(name, "proxy.config.http.transaction_no_activity_timeout_in", length))
         cnf = TS_CONFIG_HTTP_TRANSACTION_NO_ACTIVITY_TIMEOUT_IN;
+      break;
+    case 't':
+      if (!strncmp(name, "proxy.config.http.keep_alive_no_activity_timeout_out", length))
+        cnf = TS_CONFIG_HTTP_KEEP_ALIVE_NO_ACTIVITY_TIMEOUT_OUT;
       break;
     }
     break;
