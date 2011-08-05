@@ -96,7 +96,7 @@ struct DNSProcessor: public Processor
   //
   EThread *thread;
   DNSHandler *handler;
-  __ink_res_state l_res;
+  ts_imp_res_state l_res;
   Action *getby(const char *x, int len, int type, Continuation *cont, DNSHandler *adnsH = NULL, int timeout = 0);
   void dns_init();
 };

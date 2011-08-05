@@ -512,9 +512,9 @@ SplitDNSRecord::Init(matcher_line * line_info)
   }
 
   DNSHandler *dnsH = new DNSHandler;
-  ink_res_state res = new __ink_res_state;
+  ink_res_state res = new ts_imp_res_state;
 
-  memset(res, 0, sizeof(__ink_res_state));
+  memset(res, 0, sizeof(ts_imp_res_state));
   if ((-1 == ink_res_init(res, m_servers.x_server_ip, m_servers.x_dns_server_port,
                           m_servers.x_def_domain, m_servers.x_domain_srch_list, NULL))) {
     snprintf(errBuf, errBufLen, "Failed to build res record for the servers %u ... on port %d",

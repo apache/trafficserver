@@ -1,6 +1,11 @@
                                                          -*- coding: utf-8 -*-
 
 Changes with Apache Traffic Server 3.1.0
+  *) [TS-903] Internal resolver library now IPv6 compatible.
+     IP address matching libraries removed, replaced with IpMap which is
+     faster and IPv6 compatible. SOCKS and IpAllow configurations files
+     will now parse IPv6 ranges, although they do not current have effect.
+
   *) [TS-901] Valgrind found minor leaks and uninitialized variables.
    Author: William Bardwell.
 
