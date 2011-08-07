@@ -33,6 +33,7 @@
 #include "ink_unused.h"
 #include "I_Layout.h"
 #include "I_Version.h"
+#include "P_Net.h"
 
 #define PROGRAM_NAME  "traffic_sac"
 
