@@ -44,6 +44,7 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
    Trunk patches: http://svn.apache.org/viewvc?view=revision&revision=1148096
    http://svn.apache.org/viewvc?view=revision&revision=1148103
    Jira: https://issues.apache.org/jira/browse/TS-882
+   +1: zwoop
 
   *) SSL: Allow for the SSL Cipher Suite to be configured.
    Trunk patch: http://svn.apache.org/viewvc?view=revision&revision=1147994
@@ -52,9 +53,15 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
    +1: igalic
 
    *) HTTP: ATS requesting to origin instead to the parent server
-   Trunk patches: http://svn.apache.org/viewvc?view=revision&revision=1153236
-   Jira: https://issues.apache.org/jira/browse/TS-859
-   +1: zwoop
+    Trunk patches: http://svn.apache.org/viewvc?view=revision&revision=1153236
+    Jira: https://issues.apache.org/jira/browse/TS-859
+    +1: zwoop
+
+   *) HTTP: We do not honor / use the configuration option for
+      proxy.config.http.forward.proxy_auth_to_parent.
+    Trunk patch: http://svn.apache.org/viewvc?view=revision&revision=1154744
+    Jira: https://issues.apache.org/jira/browse/TS-906
+    +1: zwoop
 
 RELEASE PROCESS
 
