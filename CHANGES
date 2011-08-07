@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 
 Changes with Apache Traffic Server 3.1.0
+  *) [TS-906] ATS doesn't use proxy.config.http.forward.proxy_auth_to_parent.
+
   *) [TS-592] DNS internals are now IPv6 compatible. Externally this means
      DNS servers with IPv6 addresses can be used although only IPv4 responses
      are useful until other IPv6 upgrades are done.
