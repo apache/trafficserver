@@ -39,6 +39,8 @@
 
 int cache_config_mutex_retry_delay = 2;
 
+DNSConnection::Options const DNSConnection::DEFAULT_OPTIONS;
+
 int fds_limit = 8000;
 UDPNetProcessor& udpNet; // = udpNetInternal;
 
