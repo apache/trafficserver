@@ -50,7 +50,7 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
    Trunk patch: http://svn.apache.org/viewvc?view=revision&revision=1147994
    http://svn.apache.org/viewvc?view=revision&revision=1148983
    Jira: https://issues.apache.org/jira/browse/TS-730
-   +1: igalic
+   +1: igalic, zwoop
 
    *) HTTP: ATS requesting to origin instead to the parent server
     Trunk patches: http://svn.apache.org/viewvc?view=revision&revision=1153236
