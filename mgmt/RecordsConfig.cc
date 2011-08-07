@@ -1050,6 +1050,10 @@ RecordElement RecordsConfig[] = {
   ,
   {RECT_CONFIG, "proxy.config.dns.nameservers", RECD_STRING, NULL, RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
+  {RECT_CONFIG, "proxy.config.dns.local_ipv6", RECD_STRING, NULL, RECU_RESTART_TS, RR_NULL, RECC_STR, NULL, RECA_NULL} 
+  ,
+  {RECT_CONFIG, "proxy.config.dns.local_ipv4", RECD_STRING, NULL, RECU_RESTART_TS, RR_NULL, RECC_STR, NULL, RECA_NULL} 
+  ,
   {RECT_CONFIG, "proxy.config.dns.resolv_conf", RECD_STRING, "/etc/resolv.conf", RECU_RESTART_TS, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.dns.round_robin_nameservers", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}

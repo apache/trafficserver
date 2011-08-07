@@ -77,7 +77,8 @@ struct DNSProcessor: public Processor
   Action *gethostbyname(Continuation *cont, const char *name, DNSHandler *adnsH = 0, int timeout = 0);
   Action *getSRVbyname(Continuation *cont, const char *name, DNSHandler *adnsH = 0, int timeout = 0);
   Action *gethostbyname(Continuation *cont, const char *name, int len, int timeout = 0);
-  Action *gethostbyaddr(Continuation *cont, unsigned int ip, int timeout = 0);
+  Action *gethostbyaddr(Continuation *cont, in_addr_t ip, int timeout = 0);
+  Action *gethostbyaddr(Continuation *cont, sockaddr const* ip, int timeout = 0);
 
 
   // Processor API
@@ -88,7 +89,7 @@ struct DNSProcessor: public Processor
 
   // Open/close a link to a 'named' (done in start())
   //
-  void open(unsigned int ip = DEFAULT_DOMAIN_NAME_SERVER, int port = DOMAIN_SERVICE_PORT, int options = _res.options);
+  void open(sockaddr const* ns = 0, int options = _res.options);
 
   DNSProcessor();
 
@@ -97,6 +98,8 @@ struct DNSProcessor: public Processor
   EThread *thread;
   DNSHandler *handler;
   ts_imp_res_state l_res;
+  ts_ip_endpoint local_ipv6;
+  ts_ip_endpoint local_ipv4;
   Action *getby(const char *x, int len, int type, Continuation *cont, DNSHandler *adnsH = NULL, int timeout = 0);
   void dns_init();
 };
@@ -130,9 +133,17 @@ DNSProcessor::gethostbyname(Continuation *cont, const char *name, int len, int t
 }
 
 inline Action *
-DNSProcessor::gethostbyaddr(Continuation *cont, unsigned int addr, int timeout)
+DNSProcessor::gethostbyaddr(Continuation *cont, in_addr_t addr, int timeout)
 {
-  return getby((char *) &addr, sizeof(addr), T_PTR, cont, NULL, timeout);
+  sockaddr_in ip;
+  ink_inet_ip4_set(&ip, addr);
+  return getby(reinterpret_cast<char const*>(&ip), 0, T_PTR, cont, NULL, timeout);
+}
+
+inline Action *
+DNSProcessor::gethostbyaddr(Continuation *cont, sockaddr const* addr, int timeout)
+{
+  return getby(reinterpret_cast<char const*>(addr), 0, T_PTR, cont, NULL, timeout);
 }
 
 void ink_dns_init(ModuleVersion version);

@@ -70,6 +70,7 @@
 #define	_ink_resolver_h_
 
 #include "ink_platform.h"
+#include <ts/ink_inet.h>
 #include <resolv.h>
 #include <arpa/nameser.h>
 #ifdef HAVE_NET_PPP_DEFS_H
@@ -180,21 +181,6 @@
 } while (0)
 #endif
 
-/** A union to hold the standard IP address structures.
-    We use the term "endpoint" because these contain more than just the
-    raw address, all of the data for an IP endpoint is present.
-
-    @internal This might be useful to promote to avoid strict aliasing
-    problems.  Experiment with it here to see how it works in the
-    field.
-
- */
-union ts_ip_endpoint {
-  struct sockaddr_in      sin; ///< IPv4
-  struct sockaddr_in6     sin6; ///< IPv6
-  struct sockaddr         sa; ///< Generic addres.
-};
-
 // Do we really need these to be C compatible? - AMC
 struct ts_imp_res_state {
   int     retrans;                /*%< retransmission time interval */
@@ -205,7 +191,7 @@ struct ts_imp_res_state {
   u_long  options;                /*%< option flags - see below. */
 #endif
   int     nscount;                /*%< number of name servers */
-  union ts_ip_endpoint nsaddr_list[INK_MAXNS];    /*%< address of name server */
+  ts_ip_endpoint nsaddr_list[INK_MAXNS];    /*%< address of name server */
   u_short id;                     /*%< current message id */
   char    *dnsrch[MAXDNSRCH+1];   /*%< components of domain to search */
   char    defdname[256];          /*%< default domain (deprecated) */
@@ -229,17 +215,8 @@ typedef ts_imp_res_state *ink_res_state;
 
 int ink_res_init(
   ink_res_state,
-  sockaddr const** pHostList,
-  const char *pDefDomain = NULL,
-  const char *pSearchList = NULL,
-  const char *pResolvConf = NULL
-);
-
-// Backwards compatibility version.
-int ink_res_init(
-  ink_res_state,
-  in_addr_t const* pHostList,
-  int const* pPortList = NULL,
+  ts_ip_endpoint const* pHostList,
+  size_t pHostListSize,
   const char *pDefDomain = NULL,
   const char *pSearchList = NULL,
   const char *pResolvConf = NULL

@@ -1,6 +1,12 @@
                                                          -*- coding: utf-8 -*-
 
 Changes with Apache Traffic Server 3.1.0
+  *) [TS-592] DNS internals are now IPv6 compatible. Externally this means
+     DNS servers with IPv6 addresses can be used although only IPv4 responses
+     are useful until other IPv6 upgrades are done.
+
+  *) [TS-907] The source address for DNS requests can be set.
+
   *) [TS-903] Internal resolver library now IPv6 compatible.
      IP address matching libraries removed, replaced with IpMap which is
      faster and IPv6 compatible. SOCKS and IpAllow configurations files

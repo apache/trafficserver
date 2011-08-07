@@ -364,14 +364,11 @@ SplitDNSRecord::ProcessDNSHosts(char *val)
       *tmp = 0;
     }
 
-    unsigned int addr = inet_addr(current);
-
-    if (((uint32_t)-1) == htonl(addr)) {
+    if (0 != ink_inet_pton(current, &m_servers.x_server_ip[i].sa)) {
       return "invalid IP address given for a DNS server";
     }
 
-    m_servers.x_server_ip[i] = addr;
-    m_servers.x_dns_server_port[i] = port ? port : NAMESERVER_PORT;
+    ink_inet_port_cast(&m_servers.x_server_ip[i].sa) = htons(port ? port : NAMESERVER_PORT);
 
     if ((MAXDNAME * 2 - 1) > totsz) {
       sz = strlen(current);
@@ -506,7 +503,7 @@ SplitDNSRecord::Init(matcher_line * line_info)
     }
   }
 
-  if (this->m_servers.x_server_ip[0] == 0) {
+  if (!ink_inet_is_ip(&m_servers.x_server_ip[0].sa)) {
     snprintf(errBuf, errBufLen, "%s No server specified in splitdns.config at line %d", modulePrefix, line_num);
     return errBuf;
   }
@@ -515,18 +512,20 @@ SplitDNSRecord::Init(matcher_line * line_info)
   ink_res_state res = new ts_imp_res_state;
 
   memset(res, 0, sizeof(ts_imp_res_state));
-  if ((-1 == ink_res_init(res, m_servers.x_server_ip, m_servers.x_dns_server_port,
+  if ((-1 == ink_res_init(res, m_servers.x_server_ip, m_dnsSrvr_cnt,
                           m_servers.x_def_domain, m_servers.x_domain_srch_list, NULL))) {
-    snprintf(errBuf, errBufLen, "Failed to build res record for the servers %u ... on port %d",
-             m_servers.x_server_ip[0], m_servers.x_dns_server_port[0]);
+    char ab[INET6_ADDRPORTSTRLEN];
+    snprintf(errBuf, errBufLen,
+      "Failed to build res record for the servers %s ...",
+      ink_inet_ntop(&m_servers.x_server_ip[0].sa, ab, sizeof ab)
+    );
     return errBuf;
   }
 
   dnsH->m_res = res;
   dnsH->mutex = SplitDNSConfig::dnsHandler_mutex;
   dnsH->options = res->options;
-  dnsH->ip = DEFAULT_DOMAIN_NAME_SERVER;
-  dnsH->port = DOMAIN_SERVICE_PORT;
+  ink_inet_invalidate(&dnsH->ip.sa); // Mark to use default DNS.
 
   m_servers.x_dnsH = dnsH;
 
@@ -575,13 +574,9 @@ SplitDNSRecord::UpdateMatch(SplitDNSResult * result, RD * rdata)
 void
 SplitDNSRecord::Print()
 {
-  struct in_addr address;
-
   for (int i = 0; i < m_dnsSrvr_cnt; i++) {
-    address.s_addr = m_servers.x_server_ip[i];
-    char *pAdr = inet_ntoa(address);
-
-    Debug("splitdns_config", " %s:%d ", pAdr, m_servers.x_dns_server_port[i]);
+    char ab[INET6_ADDRPORTSTRLEN];
+    Debug("splitdns_config", " %s ", ink_inet_ntop(&m_servers.x_server_ip[i].sa, ab, sizeof ab));
   }
 }
 

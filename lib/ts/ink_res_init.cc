@@ -244,39 +244,6 @@ ink_res_randomid(void) {
   return (0xffff & (now.tv_sec ^ now.tv_usec ^ getpid()));
 }
 
-int ink_res_init(
-  ink_res_state statp,
-  in_addr_t const* pHostList,
-  int const* pPortList,
-  const char *pDefDomain,
-  const char *pSearchList,
-  const char *pResolvConf
-) {
-  size_t n = 0;
-  sockaddr_in* ip_ptr;
-  sockaddr const** ptr_refs;
-  
-  // Count addresses.
-  if (pHostList)
-    for ( in_addr_t const* p = pHostList ; INADDR_ANY != *p ; ++p, ++n )
-      ; // empty
-
-  sockaddr_in* addrs = n ? static_cast<sockaddr_in*>(alloca(n * sizeof(sockaddr_in))) : 0;
-  // one extra for terminating null.
-  sockaddr const** refs = static_cast<sockaddr const**>(alloca((n + 1) * sizeof(sockaddr*)));
-
-  for ( ip_ptr = addrs, ptr_refs = refs
-      ; n
-      ; --n, ++pHostList, ++pPortList, ++ptr_refs, ++ip_ptr
-  ) {
-    ink_inet_ip4_set(ip_ptr, *pHostList, *pPortList);
-    *ptr_refs = ink_inet_sa_cast(ip_ptr);
-  }
-  *ptr_refs = 0;
-  return ink_res_init(statp, refs, pDefDomain, pSearchList, pResolvConf);
-}
-
-
 /*%
  * Set up default settings.  If the configuration file exist, the values
  * there will have precedence.  Otherwise, the server address is set to
@@ -303,7 +270,8 @@ int ink_res_init(
 int
 ink_res_init(
   ink_res_state statp, ///< State object to update.
-  sockaddr const** pHostList, ///< Additional servers.
+  ts_ip_endpoint const* pHostList, ///< Additional servers.
+  size_t pHostListSize, ///< # of entries in @a pHostList.
   const char *pDefDomain, ///< Default domain (may be NULL).
   const char *pSearchList, ///< Unknown
   const char *pResolvConf ///< Path to configuration file.
@@ -312,11 +280,11 @@ ink_res_init(
   register char *cp, **pp;
   register int n;
   char buf[BUFSIZ];
-  int nserv = 0;
+  size_t nserv = 0;
   int haveenv = 0;
   int havesearch = 0;
   int dots;
-  int maxns = INK_MAXNS;
+  size_t maxns = INK_MAXNS;
 
   // INK_RES_SET_H_ERRNO(statp, 0);
   statp->res_h_errno = 0;
@@ -436,10 +404,15 @@ ink_res_init(
   /* -------------------------------------------
      we must be provided with atleast a named!
      ------------------------------------------- */
-  for ( ; nserv< INK_MAXNS && pHostList && pHostList[nserv] && ink_inet_is_ip(pHostList[nserv]) 
+  if (pHostList) {
+    if (pHostListSize > INK_MAXNS) pHostListSize = INK_MAXNS;
+    for (
+        ; nserv < pHostListSize
+          && ink_inet_is_ip(&pHostList[nserv].sa) 
         ; ++nserv
-  ) {
-    ink_inet_copy(&statp->nsaddr_list[nserv].sa, pHostList[nserv]);
+    ) {
+      ink_inet_copy(&statp->nsaddr_list[nserv].sa, &pHostList[nserv].sa);
+    }
   }
 
 #define	MATCH(line, name)                       \

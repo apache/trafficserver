@@ -50,7 +50,7 @@
 DNSConnection::DNSConnection():
   fd(NO_FD), num(0), generator((uint32_t)((uintptr_t)time(NULL) ^ (uintptr_t) this)), handler(NULL)
 {
-  memset(&sa, 0, sizeof(struct sockaddr_in));
+  memset(&ip, 0, sizeof(ip));
 }
 
 DNSConnection::~DNSConnection()
@@ -79,58 +79,79 @@ DNSConnection::trigger()
 }
 
 int
-DNSConnection::connect(unsigned int ip, int port,
-                       bool non_blocking_connect, bool use_tcp, bool non_blocking, bool bind_random_port)
+DNSConnection::connect(sockaddr const* addr, Options const& opt)
+//                       bool non_blocking_connect, bool use_tcp, bool non_blocking, bool bind_random_port)
 {
   ink_assert(fd == NO_FD);
+  ink_assert(ink_inet_is_ip(addr));
 
   int res = 0;
   short Proto;
+  uint8_t af = addr->sa_family;
+  ts_ip_endpoint bind_addr;
+  size_t bind_size = 0;
 
-  if (use_tcp) {
+  if (opt._use_tcp) {
     Proto = IPPROTO_TCP;
-    if ((res = socketManager.socket(AF_INET, SOCK_STREAM, 0)) < 0)
+    if ((res = socketManager.socket(af, SOCK_STREAM, 0)) < 0)
       goto Lerror;
   } else {
     Proto = IPPROTO_UDP;
-    if ((res = socketManager.socket(AF_INET, SOCK_DGRAM, 0)) < 0)
+    if ((res = socketManager.socket(af, SOCK_DGRAM, 0)) < 0)
       goto Lerror;
   }
 
   fd = res;
 
-  if (bind_random_port) {
+  memset(&bind_addr, 0, sizeof bind_addr);
+  bind_addr.sa.sa_family = af;
+
+  if (AF_INET6 == af) {
+    if (ink_inet_is_ip6(opt._local_ipv6)) {
+      ink_inet_copy(&bind_addr.sa, opt._local_ipv6);
+    } else {
+      bind_addr.sin6.sin6_addr = in6addr_any;
+    }
+    bind_size = sizeof(sockaddr_in6);
+  } else if (AF_INET == af) {
+      if (ink_inet_is_ip4(opt._local_ipv4))
+        ink_inet_copy(&bind_addr.sa, opt._local_ipv4);
+      else
+        bind_addr.sin.sin_addr.s_addr = INADDR_ANY;
+      bind_size = sizeof(sockaddr_in);
+  } else {
+    ink_assert(!"Target DNS address must be IP.");
+  }
+
+  if (opt._bind_random_port) {
     int retries = 0;
     while (retries++ < 10000) {
-      struct sockaddr_in bind_sa;
-      memset(&sa, 0, sizeof(bind_sa));
-      bind_sa.sin_family = AF_INET;
-      bind_sa.sin_addr.s_addr = INADDR_ANY;
+      ip_port_text_buffer b;
       uint32_t p = generator.random();
-      p = (uint16_t)((p % (LAST_RANDOM_PORT - FIRST_RANDOM_PORT)) + FIRST_RANDOM_PORT);
-      bind_sa.sin_port = htons(p);
-      Debug("dns", "random port = %u\n", p);
-      if ((res = socketManager.ink_bind(fd, (struct sockaddr *) &bind_sa, sizeof(bind_sa), Proto)) < 0) {
+      p = static_cast<uint16_t>((p % (LAST_RANDOM_PORT - FIRST_RANDOM_PORT)) + FIRST_RANDOM_PORT);
+      ink_inet_port_cast(&bind_addr.sa) = htons(p); // stuff port in sockaddr.
+      Debug("dns", "random port = %s\n", ink_inet_nptop(&bind_addr.sa, b, sizeof b));
+      if ((res = socketManager.ink_bind(fd, &bind_addr.sa, bind_size, Proto)) < 0) {
         continue;
       }
       goto Lok;
     }
     Warning("unable to bind random DNS port");
   Lok:;
+  } else if (ink_inet_is_ip(&bind_addr.sa)) {
+    ip_text_buffer b;
+    res = socketManager.ink_bind(fd, &bind_addr.sa, bind_size, Proto);
+    if (res < 0) Warning("Unable to bind local address to %s.",
+      ink_inet_ntop(&bind_addr.sa, b, sizeof b));
   }
 
-  sa.sin_family = AF_INET;
-  sa.sin_port = htons(port);
-  sa.sin_addr.s_addr = ip;
-  memset(&sa.sin_zero, 0, 8);
-
-  if (non_blocking_connect)
+  if (opt._non_blocking_connect)
     if ((res = safe_nonblocking(fd)) < 0)
       goto Lerror;
 
   // cannot do this after connection on non-blocking connect
 #ifdef SET_TCP_NO_DELAY
-  if (use_tcp)
+  if (opt._use_tcp)
     if ((res = safe_setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, ON, sizeof(int))) < 0)
       goto Lerror;
 #endif
@@ -143,12 +164,15 @@ DNSConnection::connect(unsigned int ip, int port,
     goto Lerror;
 #endif
 
-  res =::connect(fd, (struct sockaddr *) &sa, sizeof(struct sockaddr_in));
+  ink_inet_copy(&ip.sa, addr);
+  res =::connect(fd, addr, ink_inet_ip_size(addr));
 
   if (!res || ((res < 0) && (errno == EINPROGRESS || errno == EWOULDBLOCK))) {
-    if (!non_blocking_connect && non_blocking)
+    if (!opt._non_blocking_connect && opt._non_blocking_io)
       if ((res = safe_nonblocking(fd)) < 0)
         goto Lerror;
+    // Shouldn't we turn off non-blocking when it's a non-blocking connect
+    // and blocking IO?
   } else
     goto Lerror;
 

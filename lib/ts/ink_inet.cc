@@ -165,18 +165,21 @@ ink_inet_addr(const char *s)
 
 const char *ink_inet_ntop(const struct sockaddr *addr, char *dst, size_t size)
 {
-  void *address = NULL;
+  char const* zret = 0;
 
   switch (addr->sa_family) {
   case AF_INET:
-    address = &((struct sockaddr_in *)addr)->sin_addr;
+    zret = inet_ntop(AF_INET, &ink_inet_ip4_addr_cast(addr), dst, size);
     break;
   case AF_INET6:
-    address = &((struct sockaddr_in6 *)addr)->sin6_addr;
+    zret = inet_ntop(AF_INET6, &ink_inet_ip6_addr_cast(addr), dst, size);
+    break;
+  default:
+    zret = dst;
+    snprintf(dst, size, "*Not IP address [%u]*", addr->sa_family);
     break;
   }
-
-  return inet_ntop(addr->sa_family, address, dst, size);
+  return zret;
 }
 
 uint16_t ink_inet_port(const struct sockaddr *addr)
@@ -195,19 +198,58 @@ uint16_t ink_inet_port(const struct sockaddr *addr)
   return port;
 }
 
+char const* ink_inet_nptop(
+  sockaddr const* addr,
+  char* dst, size_t size
+) {
+  char buff[INET6_ADDRSTRLEN];
+  snprintf(dst, size, "%s:%u",
+    ink_inet_ntop(addr, buff, sizeof(buff)),
+    ink_inet_get_port(addr)
+  );
+  return dst;
+}
+
 int ink_inet_pton(char const* text, sockaddr* addr) {
   int zret = -1;
   addrinfo hints; // [out]
   addrinfo *ai; // [in]
+  char* copy; // needed for handling brackets.
+
+  if ('[' == *text) {
+    /* Ugly. In a number of places we must use bracket notation
+       to support port numbers. Rather than mucking with that
+       everywhere, we'll tweak it here. Experimentally we can't
+       depend on getaddrinfo to handle it. Note that the text
+       buffer size includes space for the nul, so a bracketed
+       address is at most that size - 1 + 2 -> size+1.
+
+       It just gets better. In order to bind link local addresses
+       the scope_id must be set to the interface index. That's
+       most easily done by appending a %intf (where "intf" is the
+       name of the interface) to the address. Which makes
+       the address potentially larger than the standard maximum.
+       So we can't depend on that sizing.
+    */
+
+    size_t n = strlen(text);
+    copy = static_cast<char*>(alloca(n)); // n-1 would probably be OK.
+    if (']' == text[n-1]) {
+      strncpy(copy, text+1, n-2);
+      copy[n-2] = 0;
+      text = copy;
+    } else {
+      // Bad format, getaddrinfo isn't going to succeed.
+      return zret;
+    }
+  }
 
   memset(&hints, 0, sizeof(hints));
   hints.ai_family = PF_UNSPEC;
   hints.ai_flags = AI_NUMERICHOST|AI_PASSIVE;
   if (0 == (zret = getaddrinfo(text, 0, &hints, &ai))) {
-    if (addr) {
-      if (ink_inet_copy(addr, ai->ai_addr))
-        zret = 0;
-    } else if (ink_inet_is_ip(addr)) {
+    if (ink_inet_is_ip(ai->ai_addr)) {
+      if (addr) ink_inet_copy(addr, ai->ai_addr);
       zret = 0;
     }
     freeaddrinfo(ai);
