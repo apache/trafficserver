@@ -3984,7 +3984,7 @@ HttpTransact::handle_100_continue_response(State* s)
 void
 HttpTransact::build_response_copy(State* s, HTTPHdr* base_response,HTTPHdr* outgoing_response, HTTPVersion outgoing_version)
 {
-  HttpTransactHeaders::copy_header_fields(base_response, outgoing_response, s->http_config_param->fwd_proxy_auth_to_parent,
+  HttpTransactHeaders::copy_header_fields(base_response, outgoing_response, s->txn_conf->fwd_proxy_auth_to_parent,
                                           s->current.now);
   HttpTransactHeaders::convert_response(outgoing_version, outgoing_response);   // http version conversion
   HttpTransactHeaders::add_server_header_to_response(s->txn_conf, outgoing_response);
@@ -7773,7 +7773,7 @@ HttpTransact::build_request(State* s, HTTPHdr* base_request, HTTPHdr* outgoing_r
     }
   }
 
-  HttpTransactHeaders::copy_header_fields(base_request, outgoing_request, s->http_config_param->fwd_proxy_auth_to_parent);
+  HttpTransactHeaders::copy_header_fields(base_request, outgoing_request, s->txn_conf->fwd_proxy_auth_to_parent);
   add_client_ip_to_outgoing_request(s, outgoing_request);
   HttpTransactHeaders::process_connection_headers(base_request, outgoing_request);
   HttpTransactHeaders::remove_privacy_headers_from_request(s->http_config_param, s->txn_conf, outgoing_request);
@@ -7886,7 +7886,7 @@ HttpTransact::build_response(State* s, HTTPHdr* base_response, HTTPHdr* outgoing
     HttpTransactHeaders::build_base_response(outgoing_response, status_code, reason_phrase, strlen(reason_phrase), s->current.now);
   } else {
     if ((status_code == HTTP_STATUS_NONE) || (status_code == base_response->status_get())) {
-      HttpTransactHeaders::copy_header_fields(base_response, outgoing_response, s->http_config_param->fwd_proxy_auth_to_parent);
+      HttpTransactHeaders::copy_header_fields(base_response, outgoing_response, s->txn_conf->fwd_proxy_auth_to_parent);
       HttpTransactHeaders::process_connection_headers(base_response, outgoing_response);
 
       if (s->http_config_param->insert_age_in_response)

@@ -7510,6 +7510,7 @@ const char *SDK_Overridable_Configs[] = {
   "proxy.config.net.sock_recv_buffer_size_out",
   "proxy.config.net.sock_send_buffer_size_out",
   "proxy.config.net.sock_option_flag_out",
+  "proxy.config.http.forward.proxy_auth_to_parent",
   "proxy.config.http.anonymize_remove_from",
   "proxy.config.http.anonymize_remove_referer",
   "proxy.config.http.anonymize_remove_user_agent",

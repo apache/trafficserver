@@ -1218,7 +1218,7 @@ HttpConfig::startup()
   HttpEstablishStaticConfigLongLong(c.oride.sock_send_buffer_size_out, "proxy.config.net.sock_send_buffer_size_out");
   HttpEstablishStaticConfigLongLong(c.oride.sock_option_flag_out, "proxy.config.net.sock_option_flag_out");
 
-  c.fwd_proxy_auth_to_parent = 0;
+  HttpEstablishStaticConfigByte(c.oride.fwd_proxy_auth_to_parent, "proxy.config.http.forward.proxy_auth_to_parent");
 
   HttpEstablishStaticConfigByte(c.oride.anonymize_remove_from, "proxy.config.http.anonymize_remove_from");
   HttpEstablishStaticConfigByte(c.oride.anonymize_remove_referer, "proxy.config.http.anonymize_remove_referer");
@@ -1436,7 +1436,6 @@ HttpConfig::reconfigure()
   }
 
   params->parent_proxy_routing_enable = INT_TO_BOOL(m_master.parent_proxy_routing_enable);
-  params->fwd_proxy_auth_to_parent = 0;
   params->enable_url_expandomatic = INT_TO_BOOL(m_master.enable_url_expandomatic);
 
   params->oride.insert_request_via_string = INT_TO_BOOL(m_master.oride.insert_request_via_string);
@@ -1486,6 +1485,8 @@ HttpConfig::reconfigure()
   params->oride.sock_recv_buffer_size_out = m_master.oride.sock_recv_buffer_size_out;
   params->oride.sock_send_buffer_size_out = m_master.oride.sock_send_buffer_size_out;
   params->oride.sock_option_flag_out = m_master.oride.sock_option_flag_out;
+
+  params->oride.fwd_proxy_auth_to_parent = INT_TO_BOOL(m_master.oride.fwd_proxy_auth_to_parent);
 
   params->oride.anonymize_remove_from = INT_TO_BOOL(m_master.oride.anonymize_remove_from);
   params->oride.anonymize_remove_referer = INT_TO_BOOL(m_master.oride.anonymize_remove_referer);

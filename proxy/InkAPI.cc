@@ -7263,6 +7263,9 @@ _conf_to_memberp(TSOverridableConfigKey conf, HttpSM* sm, OverridableDataType *t
   case TS_CONFIG_NET_SOCK_OPTION_FLAG_OUT:
     ret = &sm->t_state.txn_conf->sock_option_flag_out;
     break;
+  case TS_CONFIG_HTTP_FORWARD_PROXY_AUTH_TO_PARENT:
+    ret = &sm->t_state.txn_conf->fwd_proxy_auth_to_parent;
+    break;
   case TS_CONFIG_HTTP_ANONYMIZE_REMOVE_FROM:
     ret = &sm->t_state.txn_conf->anonymize_remove_from;
     break;
@@ -7765,6 +7768,10 @@ TSHttpTxnConfigFind(const char* name, int length, TSOverridableConfigKey *conf, 
     case 's':
       if (!strncmp(name, "proxy.config.http.connect_attempts_max_retries", length))
         cnf = TS_CONFIG_HTTP_CONNECT_ATTEMPTS_MAX_RETRIES;
+      break;
+    case 't':
+      if (!strncmp(name, "proxy.config.http.forward.proxy_auth_to_parent", length))
+        cnf = TS_CONFIG_HTTP_FORWARD_PROXY_AUTH_TO_PARENT;
       break;
     }
     break;

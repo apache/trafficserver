@@ -403,9 +403,11 @@ struct OverridableHttpConfigParams {
        negative_caching_enabled(0), negative_caching_lifetime(0), cache_when_to_revalidate(0),
        keep_alive_enabled_in(0), keep_alive_enabled_out(0), keep_alive_post_out(0),
        sock_recv_buffer_size_out(0), sock_send_buffer_size_out(0), sock_option_flag_out(0),
+       fwd_proxy_auth_to_parent(0),
        anonymize_remove_from(0), anonymize_remove_referer(0), anonymize_remove_user_agent(0),
        anonymize_remove_cookie(0), anonymize_remove_client_ip(0), anonymize_insert_client_ip(1),
        append_xforwards_header(0), proxy_response_server_enabled(0),
+
        insert_squid_x_forwarded_for(0), send_http11_requests(3), // SEND_HTTP11_IF_REQUEST_11_AND_HOSTDB
        cache_http(0), cache_ignore_client_no_cache(0), cache_ignore_client_cc_max_age(1),
        cache_ims_on_client_no_cache(0), cache_ignore_server_no_cache(0), cache_responses_to_cookies(0),
@@ -457,6 +459,8 @@ struct OverridableHttpConfigParams {
   MgmtInt sock_recv_buffer_size_out;
   MgmtInt sock_send_buffer_size_out;
   MgmtInt sock_option_flag_out;
+
+  MgmtByte fwd_proxy_auth_to_parent;
 
   ///////////////////////////////////////////////////////////////////
   // Privacy: fields which are removed from the user agent request //
@@ -764,12 +768,6 @@ public:
   MgmtInt default_buffer_water_mark;
   MgmtByte enable_http_info;
 
-  //////////////////////
-  //  Breaking Specs  //
-  //  mostly for BofA //
-  //////////////////////
-  MgmtInt fwd_proxy_auth_to_parent;
-
   // Cluster time delta is not a config variable,
   //  rather it is the time skew which the manager observes
   int32_t cluster_time_delta;
@@ -967,7 +965,6 @@ HttpConfigParams::HttpConfigParams()
     default_buffer_size_index(0),
     default_buffer_water_mark(0),
     enable_http_info(0),
-    fwd_proxy_auth_to_parent(0),
     cluster_time_delta(0),
     srv_enabled(0),
     redirection_enabled(1),
