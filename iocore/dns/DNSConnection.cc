@@ -43,6 +43,8 @@
 
 #define ROUNDUP(x, y) ((((x)+((y)-1))/(y))*(y))
 
+DNSConnection::Options const DNSConnection::DEFAULT_OPTIONS;
+
 //
 // Functions
 //
