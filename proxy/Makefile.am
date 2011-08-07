@@ -177,6 +177,7 @@ traffic_logcat_LDADD = \
   $(top_builddir)/mgmt/libmgmt_p.a \
   $(top_builddir)/lib/records/librecprocess.a \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
+  $(top_builddir)/iocore/dns/libinkdns.a \
   $(top_builddir)/lib/ts/libtsutil.la \
   @LIBTHREAD@ @LIBSOCKET@ @LIBNSL@ @LIBRESOLV@ @LIBRT@ \
   @LIBPCRE@ @LIBSSL@ @LIBTCL@ @LIBDL@ @LIBEV@ \
