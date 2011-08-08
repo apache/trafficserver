@@ -52,16 +52,23 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
    Jira: https://issues.apache.org/jira/browse/TS-730
    +1: igalic, zwoop
 
-   *) HTTP: ATS requesting to origin instead to the parent server
-    Trunk patches: http://svn.apache.org/viewvc?view=revision&revision=1153236
-    Jira: https://issues.apache.org/jira/browse/TS-859
-    +1: zwoop
+  *) HTTP: ATS requesting to origin instead to the parent server
+   Trunk patches: http://svn.apache.org/viewvc?view=revision&revision=1153236
+   Jira: https://issues.apache.org/jira/browse/TS-859
+   +1: zwoop
 
-   *) HTTP: We do not honor / use the configuration option for
-      proxy.config.http.forward.proxy_auth_to_parent.
-    Trunk patch: http://svn.apache.org/viewvc?view=revision&revision=1154744
-    Jira: https://issues.apache.org/jira/browse/TS-906
-    +1: zwoop
+  *) HTTP: We do not honor / use the configuration option for
+     proxy.config.http.forward.proxy_auth_to_parent.
+   Trunk patch: http://svn.apache.org/viewvc?view=revision&revision=1154744
+   Jira: https://issues.apache.org/jira/browse/TS-906
+   +1: zwoop
+
+
+  *) SSL: it's pretty much totally busted, a miracle that it works.
+   Trunk patch: http://svn.apache.org/viewvc?view=revision&revision=1155125
+   Jira: https://issues.apache.org/jira/browse/TS-888
+   +1: zwoop
+
 
 RELEASE PROCESS
 
