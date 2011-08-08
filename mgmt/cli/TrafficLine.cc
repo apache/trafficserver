@@ -113,7 +113,7 @@ handleArgInvocation()
       TSActionNeedT action;
 
       if ((err = TSRecordSet(SetVar, VarValue, &action)) != TS_ERR_OKAY)
-        fprintf(stderr, "%s: Only configuration vars can be set\n", programName);
+        fprintf(stderr, "%s: Please correct your variable name and|or value\n", programName);
       return err;
     }
   } else if (*VarValue != '\0') {       // We have a value but no variable to set
