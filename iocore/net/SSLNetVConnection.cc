@@ -204,9 +204,9 @@ SSLNetVConnection::net_read_io(NetHandler * nh, EThread * lthread)
       write.triggered = 0;
       nh->write_ready_list.remove(this);
     } else if (ret == EVENT_DONE) {
-      write.triggered = 1;
-      if (write.enabled)
-        nh->write_ready_list.in_or_enqueue(this);
+      read.triggered = 1;
+      if (read.enabled)
+        nh->read_ready_list.in_or_enqueue(this);
     } else
       readReschedule(nh);
     return;

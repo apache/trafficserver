@@ -386,9 +386,9 @@ write_to_net_io(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
       vc->write.triggered = 0;
       nh->write_ready_list.remove(vc);
     } else if (ret == EVENT_DONE) {
-      vc->read.triggered = 1;
-      if (vc->read.enabled)
-        nh->read_ready_list.in_or_enqueue(vc);
+      vc->write.triggered = 1;
+      if (vc->write.enabled)
+        nh->write_ready_list.in_or_enqueue(vc);
     } else
       write_reschedule(nh, vc);
     return;
