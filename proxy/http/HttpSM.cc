@@ -2149,7 +2149,13 @@ HttpSM::state_handle_stat_page(int event, void *data)
     if (data) {
       StatPageData *spd = (StatPageData *) data;
       t_state.internal_msg_buffer = spd->data;
-      t_state.internal_msg_buffer_type = spd->type;
+      if (spd->type)
+        t_state.internal_msg_buffer_type = spd->type;
+      else {
+        Debug("http_zym", "spd->type is null");
+        t_state.internal_msg_buffer_type = (char *) xmalloc(10);
+        snprintf(t_state.internal_msg_buffer_type, 10, "text/html");
+      }
       t_state.internal_msg_buffer_size = spd->length;
       t_state.internal_msg_buffer_fast_allocator_size = -1;
     }
