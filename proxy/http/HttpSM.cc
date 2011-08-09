@@ -2152,8 +2152,7 @@ HttpSM::state_handle_stat_page(int event, void *data)
       if (spd->type)
         t_state.internal_msg_buffer_type = spd->type;
       else {
-        t_state.internal_msg_buffer_type = (char *) xmalloc(10);
-        snprintf(t_state.internal_msg_buffer_type, 10, "text/html");
+        t_state.internal_msg_buffer_type = const_cast<char*>("text/html");
       }
       t_state.internal_msg_buffer_size = spd->length;
       t_state.internal_msg_buffer_fast_allocator_size = -1;
