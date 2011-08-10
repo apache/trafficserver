@@ -2843,7 +2843,8 @@ MuxPagesHandler::handle_callback(int event, void *edata)
       StatPageData data;
 
       data.data = response;
-      data.type = const_cast<char*>("text/html");
+      data.type = (char *) xmalloc(10);
+      snprintf(data.type, 10, "text/html");
       data.length = response_length;
       response = NULL;
 
