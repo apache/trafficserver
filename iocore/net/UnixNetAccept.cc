@@ -147,24 +147,6 @@ Ldone:
 }
 
 
-//
-// Special purpose MAIN proxy accept code
-// Seperate accept thread function
-//
-int
-net_accept_main_blocking(NetAccept * na, Event * e, bool blockable)
-{
-  (void) blockable;
-  (void) e;
-
-  EThread *t = this_ethread();
-
-  while (1)
-    na->do_blocking_accept(na, t);
-  return -1;
-}
-
-
 UnixNetVConnection *
 NetAccept::allocateThread(EThread * t)
 {
@@ -201,10 +183,6 @@ EventType NetAccept::getEtype()
 void
 NetAccept::init_accept_loop()
 {
-  if (!action_->continuation->mutex) {
-    action_->continuation->mutex = new_ProxyMutex();
-    action_->mutex = action_->continuation->mutex;
-  }
   SET_CONTINUATION_HANDLER(this, &NetAccept::acceptLoopEvent);
   eventProcessor.spawn_thread(this, "[ACCEPT]");
 }
@@ -293,7 +271,7 @@ NetAccept::do_listen(bool non_blocking, bool transparent)
 
 
 int
-NetAccept::do_blocking_accept(NetAccept * master_na, EThread * t)
+NetAccept::do_blocking_accept(EThread * t)
 {
   int res = 0;
   int loop = accept_till_done;
@@ -302,13 +280,13 @@ NetAccept::do_blocking_accept(NetAccept * master_na, EThread * t)
   //do-while for accepting all the connections
   //added by YTS Team, yamsat
   do {
-    vc = (UnixNetVConnection *) master_na->alloc_cache;
+    vc = (UnixNetVConnection *)alloc_cache;
     if (likely(!vc)) {
       //vc = allocateThread(t);
       vc = allocateGlobal(); // Bypass proxy / thread allocator
       vc->from_accept_thread = true;
       vc->id = net_next_connection_number();
-      master_na->alloc_cache = vc;
+      alloc_cache = vc;
     }
     ink_hrtime now = ink_get_hrtime();
 
@@ -340,18 +318,18 @@ NetAccept::do_blocking_accept(NetAccept * master_na, EThread * t)
       return -1;
     }
     check_emergency_throttle(vc->con);
-    master_na->alloc_cache = NULL;
+    alloc_cache = NULL;
 
     NET_SUM_GLOBAL_DYN_STAT(net_connections_currently_open_stat, 1);
     vc->submit_time = now;
     vc->ip = ((struct sockaddr_in *)(&(vc->con.sa)))->sin_addr.s_addr;
     vc->port = ntohs(((struct sockaddr_in *)(&(vc->con.sa)))->sin_port);
     vc->accept_port = ntohs(((struct sockaddr_in *)(&(server.sa)))->sin_port);
-    vc->set_is_transparent(master_na->server.f_inbound_transparent);
-    vc->set_is_other_side_transparent(master_na->server.f_outbound_transparent);
+    vc->set_is_transparent(server.f_inbound_transparent);
+    vc->set_is_other_side_transparent(server.f_outbound_transparent);
     Debug("http_tproxy", "Marking accepted %sconnection on %x as%s outbound transparent.\n",
-	  master_na->server.f_inbound_transparent ? "inbound transparent " : "",
-	  master_na, master_na->server.f_outbound_transparent ? "" : " not"
+	  server.f_inbound_transparent ? "inbound transparent " : "",
+	  this, server.f_outbound_transparent ? "" : " not"
 	  );
     vc->mutex = new_ProxyMutex();
     vc->action_ = *action_;
@@ -543,9 +521,12 @@ NetAccept::acceptLoopEvent(int event, Event * e)
 {
   (void) event;
   (void) e;
+  EThread *t = this_ethread();
+
   while (1)
-    if (net_accept_main_blocking(this, e, true) < 0)
-      break;
+    do_blocking_accept(t);
+
+  // Don't think this ever happens ...
   NET_DECREMENT_DYN_STAT(net_accepts_currently_open_stat);
   delete this;
   return EVENT_DONE;

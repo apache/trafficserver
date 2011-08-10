@@ -893,10 +893,9 @@ int
 UnixNetVConnection::startEvent(int event, Event *e)
 {
   (void) event;
-  MUTEX_TRY_LOCK(lock, action_.mutex, e->ethread);
-  MUTEX_TRY_LOCK(lock2, get_NetHandler(e->ethread)->mutex, e->ethread);
 
-  if (!lock || !lock2) {
+  MUTEX_TRY_LOCK(lock, get_NetHandler(e->ethread)->mutex, e->ethread);
+  if (!lock) {
     e->schedule_in(NET_RETRY_DELAY);
     return EVENT_CONT;
   }
@@ -912,9 +911,9 @@ UnixNetVConnection::acceptEvent(int event, Event *e)
 {
   (void) event;
   thread = e->ethread;
-  MUTEX_TRY_LOCK(lock, action_.mutex, e->ethread);
-  MUTEX_TRY_LOCK(lock2, get_NetHandler(thread)->mutex, e->ethread);
-  if (!lock || !lock2) {
+
+  MUTEX_TRY_LOCK(lock, get_NetHandler(thread)->mutex, e->ethread);
+  if (!lock) {
     if (event == EVENT_NONE) {
       thread->schedule_in(this, NET_RETRY_DELAY);
       return EVENT_DONE;
@@ -1098,7 +1097,6 @@ UnixNetVConnection::free(EThread *t)
   got_local_addr = 0;
   read.vio.mutex.clear();
   write.vio.mutex.clear();
-  action_.mutex.clear();
   this->mutex.clear();
   flags = 0;
   accept_port = 0;

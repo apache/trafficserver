@@ -106,7 +106,7 @@ NetProcessor::accept(Continuation * cont,
 }
 
 Action *
-NetProcessor::main_accept(Continuation * cont, SOCKET fd, sockaddr * bound_sockaddr, int *bound_sockaddr_size,
+NetProcessor::main_accept(Continuation *cont, SOCKET fd, sockaddr *bound_sockaddr, int *bound_sockaddr_size,
                           bool accept_only, bool localhost_only, AcceptOptions const& opt)
 {
   (void) accept_only;           // NT only
@@ -138,7 +138,7 @@ NetProcessor::main_accept(Continuation * cont, SOCKET fd, sockaddr * bound_socka
 
 
 Action *
-UnixNetProcessor::accept_internal(Continuation * cont,
+UnixNetProcessor::accept_internal(Continuation *cont,
                                   int fd,
                                   struct sockaddr * bound_sockaddr,
                                   int *bound_sockaddr_size,

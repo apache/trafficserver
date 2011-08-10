@@ -114,7 +114,7 @@ struct NetAccept:public Continuation
   // 0 == success
   int do_listen(bool non_blocking, bool transparent = false);
 
-  int do_blocking_accept(NetAccept * master_na, EThread * t);
+  int do_blocking_accept(EThread * t);
   virtual int acceptEvent(int event, void *e);
   virtual int acceptFastEvent(int event, void *e);
   int acceptLoopEvent(int event, Event * e);

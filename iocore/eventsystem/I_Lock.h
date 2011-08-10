@@ -65,10 +65,9 @@ extern void lock_taken(const char *file, int line, const char *handler);
   allow you to lock/unlock the underlying mutex object.
 
 */
-class ProxyMutex:public RefCountObj
+class ProxyMutex: public RefCountObj
 {
 public:
-
   /**
     Underlying mutex object.
 
@@ -87,7 +86,7 @@ public:
 
   */
   volatile EThreadPtr thread_holding;
-
+  
   int nthread_holding;
 
 #ifdef DEBUG
@@ -118,7 +117,7 @@ public:
     new_ProxyMutex function, which provides a faster allocation.
 
   */
-    ProxyMutex()
+  ProxyMutex()
   {
     thread_holding = NULL;
     nthread_holding = 0;
@@ -172,14 +171,15 @@ extern inkcoreapi ClassAllocator<ProxyMutex> mutexAllocator;
 class ProxyMutexPtr
 {
 public:
-
   /**
     Constructor of the ProxyMutexPtr class. You can provide a pointer
     to a ProxyMutex object or set it at a later time with the
     assignment operator.
 
   */
-ProxyMutexPtr(ProxyMutex * ptr = 0):m_ptr(ptr) {
+  ProxyMutexPtr(ProxyMutex * ptr = 0)
+    : m_ptr(ptr)
+  {
     if (m_ptr)
       REF_COUNT_OBJ_REFCOUNT_INC(m_ptr);
   }
@@ -194,7 +194,8 @@ ProxyMutexPtr(ProxyMutex * ptr = 0):m_ptr(ptr) {
     @param src Constant ref to the ProxyMutexPtr to initialize from.
 
   */
-  ProxyMutexPtr(const ProxyMutexPtr & src):m_ptr(src.m_ptr)
+  ProxyMutexPtr(const ProxyMutexPtr & src)
+    : m_ptr(src.m_ptr)
   {
     if (m_ptr)
       REF_COUNT_OBJ_REFCOUNT_INC(m_ptr);
@@ -206,7 +207,8 @@ ProxyMutexPtr(ProxyMutex * ptr = 0):m_ptr(ptr) {
     reference to the object (reference count equal to zero).
 
   */
-  ~ProxyMutexPtr() {
+  ~ProxyMutexPtr()
+  {
     if (m_ptr && !m_ptr->refcount_dec())
       m_ptr->free();
   }
@@ -222,7 +224,8 @@ ProxyMutexPtr(ProxyMutex * ptr = 0):m_ptr(ptr) {
     @param p The reference to the ProxyMutex object.
 
   */
-  ProxyMutexPtr & operator =(ProxyMutex * p) {
+  ProxyMutexPtr & operator =(ProxyMutex * p)
+  {
     ProxyMutex *temp_ptr = m_ptr;
     if (m_ptr == p)
       return (*this);
@@ -246,7 +249,8 @@ ProxyMutexPtr(ProxyMutex * ptr = 0):m_ptr(ptr) {
     @param src The ProxyMutexPtr to get the ProxyMutex reference from.
 
   */
-  ProxyMutexPtr & operator =(const ProxyMutexPtr & src) {
+  ProxyMutexPtr & operator =(const ProxyMutexPtr & src)
+  {
     return (operator =(src.m_ptr));
   }
 
@@ -281,7 +285,7 @@ ProxyMutexPtr(ProxyMutex * ptr = 0):m_ptr(ptr) {
   */
   operator  ProxyMutex *() const
   {
-    return (m_ptr);
+    return m_ptr;
   }
 
   /**
@@ -294,7 +298,7 @@ ProxyMutexPtr(ProxyMutex * ptr = 0):m_ptr(ptr) {
   */
   ProxyMutex *operator ->() const
   {
-    return (m_ptr);
+    return m_ptr;
   }
 
   /**
@@ -574,19 +578,14 @@ struct MutexLock
     m.clear();
   }
 
-  ~MutexLock() {
+  ~MutexLock()
+  {
     if (m)
       Mutex_unlock(m, m->thread_holding);
   }
 
-  int operator!()
-  {
-    return false;
-  }
-  operator  bool()
-  {
-    return true;
-  }
+  int operator!() const { return false; }
+  operator bool() { return true; }
 };
 
 struct MutexTryLock
@@ -624,7 +623,8 @@ struct MutexTryLock
         m = am;
   }
 
-  ~MutexTryLock() {
+  ~MutexTryLock()
+  {
     if (m.m_ptr)
       Mutex_unlock(m.m_ptr, m.m_ptr->thread_holding);
   }
@@ -638,14 +638,8 @@ struct MutexTryLock
     lock_acquired = false;
   }
 
-  int operator!()
-  {
-    return !lock_acquired;
-  }
-  operator  bool()
-  {
-    return lock_acquired;
-  }
+  int operator!() const { return !lock_acquired; }
+  operator bool() const { return lock_acquired; }
 };
 
 inline void

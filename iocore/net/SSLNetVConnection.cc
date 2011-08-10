@@ -397,7 +397,6 @@ SSLNetVConnection::free(EThread * t) {
   got_local_addr = 0;
   read.vio.mutex.clear();
   write.vio.mutex.clear();
-  action_.mutex.clear();
   this->mutex.clear();
   flags = 0;
   SET_CONTINUATION_HANDLER(this, (SSLNetVConnHandler) & SSLNetVConnection::startEvent);
