@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 
 Changes with Apache Traffic Server 3.1.0
+  *) [TS-911] Remove unecessary lock in HTTP accept.
+
   *) [TS-813] fix http_ui /stat/ to response with content type
 
   *) [TS-849] fix some variables for traffic_line -s setting
