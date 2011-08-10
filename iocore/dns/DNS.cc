@@ -1534,7 +1534,7 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
         } else {
           int nn;
           buf->ent.h_length = n;
-          buf->ent.h_addrtype = C_IN;
+          buf->ent.h_addrtype = T_A == type ? AF_INET : AF_INET6;
           buf->ent.h_name = (char *) bp;
           nn = strlen((char *) bp) + 1;
           Debug("dns", "received %s name = %s", QtypeName(type), bp);

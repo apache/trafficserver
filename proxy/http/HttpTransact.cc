@@ -1409,7 +1409,7 @@ HttpTransact::PPDNSLookup(State* s)
     }
   } else {
     // lookup succeeded, open connection to p.p.
-    s->parent_info.ip = s->host_db_info.ip();
+    s->parent_info.ip = ink_inet_ip4_addr_cast(s->host_db_info.ip());
     get_ka_info_from_host_db(s, &s->parent_info, &s->client_info, &s->host_db_info);
     s->parent_info.dns_round_robin = s->dns_info.round_robin;
 
@@ -1463,7 +1463,7 @@ HttpTransact::ReDNSRoundRobin(State* s)
 
     // Our ReDNS of the server succeeeded so update the necessary
     //  information and try again
-    s->server_info.ip = s->host_db_info.ip();
+    s->server_info.ip =ink_inet_ip4_addr_cast( s->host_db_info.ip());
     s->request_data.dest_ip = s->server_info.ip;
     get_ka_info_from_host_db(s, &s->server_info, &s->client_info, &s->host_db_info);
     s->server_info.dns_round_robin = s->dns_info.round_robin;
@@ -1605,7 +1605,7 @@ HttpTransact::OSDNSLookup(State* s)
   // Check to see if can fullfill expect requests based on the cached
   // update some state variables with hostdb information that has
   // been provided.
-  s->server_info.ip = s->host_db_info.ip();
+  s->server_info.ip = ink_inet_ip4_addr_cast(s->host_db_info.ip());
   s->request_data.dest_ip = s->server_info.ip;
   get_ka_info_from_host_db(s, &s->server_info, &s->client_info, &s->host_db_info);
   s->server_info.dns_round_robin = s->dns_info.round_robin;
@@ -3575,7 +3575,8 @@ HttpTransact::delete_srv_entry(State* s, int max_retries)
 
   MUTEX_TRY_LOCK(lock, bucket_mutex, thread);
   if (lock) {
-    HostDBInfo *r = probe(bucket_mutex, md5, hostname, len, 1, port, pDS, false, true);
+    ts_ip_endpoint ip;
+    HostDBInfo *r = probe(bucket_mutex, md5, hostname, len, ink_inet_ip4_set(&ip.sa, INADDR_ANY, htons(port)), pDS, false, true);
     if (r) {
       if (r->is_srv) {
         Debug("dns_srv", "Marking SRV records for %s [Origin: %s] as bad", hostname, s->dns_info.lookup_name);
@@ -3625,7 +3626,7 @@ HttpTransact::delete_srv_entry(State* s, int max_retries)
 
         new_r->ip_timeout_interval = 45;        /* good for 45 seconds, then lets re-validate? */
         new_r->ip_timestamp = hostdb_current_interval;
-        new_r->ip() = 1;
+        ink_inet_invalidate(new_r->ip());
 
         /* these go into the RR area */
         int n = new_r->srv_count;
@@ -3640,7 +3641,7 @@ HttpTransact::delete_srv_entry(State* s, int max_retries)
           int i = 0;
           while ((srv_entry = still_ok_hosts.dequeue())) {
             Debug("dns_srv", "Re-adding %s to HostDB [as a RR] after %s failed", srv_entry->getHost(), s->dns_info.lookup_name);
-            rr_data->info[i].ip() = 1;
+            ink_inet_invalidate(rr_data->info[i].ip());
             rr_data->info[i].round_robin = 0;
             rr_data->info[i].reverse_dns = 0;
 
@@ -6695,7 +6696,7 @@ HttpTransact::will_this_request_self_loop(State* s)
   if (s->dns_info.lookup_success) {
     int dns_host_ip, host_port, local_ip, local_port;
 
-    dns_host_ip = s->host_db_info.ip();
+    dns_host_ip = ink_inet_ip4_addr_cast(s->host_db_info.ip());
     local_ip = this_machine()->ip;
 
     if (dns_host_ip == local_ip) {

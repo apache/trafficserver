@@ -119,21 +119,18 @@ struct HostDBRoundRobin;
 
 struct HostDBInfo
 {
-  // Public Interface
-  unsigned int &ip()  {
-    return data.ip;
-  }
+  /** Internal IP address data.
+      This is at least large enough to hold an IPv6 address.
+  */
+  sockaddr* ip()  { return &data.ip.sa; }
+  sockaddr const* ip() const { return &data.ip.sa; }
 
   char *hostname();
   char *srvname();
   HostDBRoundRobin *rr();
 
   /** Indicate that the HostDBInfo is BAD and should be deleted. */
-  void bad()
-  {
-    full = 0;
-  }
-
+  void bad() { full = 0; }
 
   /** Check the HostDBInfo or selected RR entry of a HostDBInfo is ok. */
   int ok(bool byname, HostDBInfo * rr = NULL) {
@@ -145,7 +142,7 @@ struct HostDBInfo
     } else if (byname) {
       if (reverse_dns)
         goto Lbad;
-      if (!ip())
+      if (!ink_inet_is_ip(ip()))
         goto Lbad;
     } else {
       if (!reverse_dns)
@@ -220,27 +217,25 @@ struct HostDBInfo
     database. Any new user fields must be added to this function.
 
   */
-  void set_from(HostDBInfo & info)
+  void set_from(HostDBInfo const& that)
   {
-    ip() = info.ip();
-    ip_timestamp = info.ip_timestamp;
-    ip_timeout_interval = info.ip_timeout_interval;
-    round_robin = info.round_robin;
-    reverse_dns = info.reverse_dns;
-    app.allotment.application1 = info.app.allotment.application1;
-    app.allotment.application2 = info.app.allotment.application2;
+    memcpy(&data, &that.data, sizeof data);
+    ip_timestamp = that.ip_timestamp;
+    ip_timeout_interval = that.ip_timeout_interval;
+    round_robin = that.round_robin;
+    reverse_dns = that.reverse_dns;
+    app.allotment.application1 = that.app.allotment.application1;
+    app.allotment.application2 = that.app.allotment.application2;
   }
 
 
   //
   // Private
   //
-  union
-  {
-    unsigned int ip;
-    int hostname_offset;
-    // int srv_host_offset;
-    uint64_t dummy_pad;
+
+  union {
+    ts_ip_endpoint ip; ///< IP address / port data.
+    int hostname_offset; ///< Some hostname thing.
   } data;
 
   unsigned int srv_weight:16;
@@ -266,10 +261,8 @@ struct HostDBInfo
 
   uint64_t md5_high;
 
-  sockaddr_in6 ip_addr; // used only by API as storage.
-
-  bool failed() { return !ip(); }
-  void set_failed() { ip() = 0;  }
+  bool failed() { return !ink_inet_is_ip(ip()); }
+  void set_failed() { ink_inet_invalidate(ip());  }
 
   void set_deleted() { deleted = 1; }
   bool is_deleted() const { return deleted; }
@@ -302,7 +295,7 @@ struct HostDBInfo
 
   void reset()
   {
-    ip() = 0;
+    ink_inet_invalidate(ip());
     app.allotment.application1 = 0;
     app.allotment.application2 = 0;
     backed = 0;
@@ -322,17 +315,28 @@ struct HostDBInfo
   int *heap_offset_ptr();
 
 HostDBInfo()
-  : srv_weight(0), srv_priority(0), srv_port(0), srv_count(0), is_srv(0),
-    ip_timestamp(0),
-    ip_timeout_interval(0), full(0), backed(0), deleted(0), hits(0), round_robin(0), reverse_dns(0), md5_low_low(0),
-    md5_low(0), md5_high(0) {
+  : srv_weight(0)
+  , srv_priority(0)
+  , srv_port(0)
+  , srv_count(0)
+  , is_srv(0)
+  , ip_timestamp(0)
+  , ip_timeout_interval(0)
+  , full(0)
+  , backed(0)
+  , deleted(0)
+  , hits(0)
+  , round_robin(0)
+  , reverse_dns(0)
+  , md5_low_low(0)
+  , md5_low(0), md5_high(0) {
 #ifdef PURIFY
     memset(&app, 0, sizeof(app));
 #else
     app.allotment.application1 = 0;
     app.allotment.application2 = 0;
 #endif
-    ip() = 0;
+    ink_inet_invalidate(ip());
 
     return;
   }
@@ -371,10 +375,22 @@ struct HostDBRoundRobin
     }
   }
 
-  HostDBInfo *find_ip(unsigned int ip);
-  HostDBInfo *select_best(unsigned int client_ip, HostDBInfo * r = NULL);
+  HostDBInfo *find_ip(sockaddr const* addr);
+  HostDBInfo *select_best(sockaddr const* client_ip, HostDBInfo * r = NULL);
 
-  HostDBInfo *select_best_http(unsigned int client_ip, time_t now, int32_t fail_window);
+  HostDBInfo *select_best_http(sockaddr const* client_ip, time_t now, int32_t fail_window);
+
+  HostDBInfo *select_best(in_addr_t client_ip, HostDBInfo * r = NULL) {
+    sockaddr_in ip4;
+    ink_inet_ip4_set(&ip4, client_ip);
+    return this->select_best(ink_inet_sa_cast(&ip4), r);
+  }
+
+  HostDBInfo *select_best_http(in_addr_t client_ip, time_t now, int32_t fail_window) {
+    sockaddr_in ip4;
+    ink_inet_ip4_set(&ip4, client_ip);
+    return this->select_best_http(ink_inet_sa_cast(&ip4), now, fail_window);
+  }
 
   HostDBInfo *increment_round_robin()
   {
@@ -432,12 +448,19 @@ struct HostDBProcessor: public Processor
   Action *getSRVbyname_imm(Continuation * cont, process_srv_info_pfn process_srv_info, char *hostname, int len = 0,
                            int port = 0, int flags = HOSTDB_DO_NOT_FORCE_DNS, int timeout = 0);
 
-  Action *getbyname_imm(Continuation * cont, process_hostdb_info_pfn process_hostdb_info, char *hostname, int len = 0,
-                        int port = 0, int flags = HOSTDB_DO_NOT_FORCE_DNS, int timeout = 0);
+  Action *getbyname_imm(
+    Continuation * cont,
+    process_hostdb_info_pfn process_hostdb_info,
+    char *hostname,
+    int len = 0,
+    int port = 0,
+    int flags = HOSTDB_DO_NOT_FORCE_DNS,
+    int timeout = 0
+  );
 
 
   /** Lookup Hostinfo by addr */
-  Action *getbyaddr_re(Continuation * cont, unsigned int aip)
+  Action *getbyaddr_re(Continuation * cont, sockaddr const* aip)
   {
     return getby(cont, NULL, 0, 0, aip, false);
   }
@@ -450,18 +473,29 @@ struct HostDBProcessor: public Processor
     you will get a different IP address.
 
   */
-  Action *failed_connect_on_ip_for_name(Continuation * cont,
-                                        unsigned int aip, char *hostname, int len = 0, int port = 0);
+  Action *failed_connect_on_ip_for_name(
+    Continuation * cont,
+    sockaddr const* aip,
+    char *hostname, int len = 0
+  );
 
   /** Set the application information (fire-and-forget). */
   void setbyname_appinfo(char *hostname, int len, int port, HostDBApplicationInfo * app)
   {
-    setby(hostname, len, port, 0, app);
+    sockaddr_in addr;
+    ink_inet_ip4_set(&addr, INADDR_ANY, port);
+    setby(hostname, len, ink_inet_sa_cast(&addr), app);
   }
 
-  void setbyaddr_appinfo(unsigned int ip, HostDBApplicationInfo * app)
+  void setbyaddr_appinfo(sockaddr const* addr, HostDBApplicationInfo * app) {
+    this->setby(0, 0, addr, app);
+  }
+
+  void setbyaddr_appinfo(in_addr_t ip, HostDBApplicationInfo * app)
   {
-    setby(0, 0, 0, ip, app);
+    sockaddr_in addr;
+    ink_inet_ip4_set(&addr, ip);
+    this->setby(0, 0, ink_inet_sa_cast(&addr), app);
   }
 
   /** Configuration. */
@@ -475,9 +509,23 @@ struct HostDBProcessor: public Processor
 
   // Private
   HostDBCache *cache();
-  Action *getby(Continuation * cont, char *hostname, int len, int port,
-                unsigned int ip, bool aforce_dns, int timeout = 0);
-  void setby(char *hostname, int len, int port, unsigned int aip, HostDBApplicationInfo * app);
+  Action *getby(
+    Continuation * cont,
+    char *hostname, int len,
+    sockaddr const* ip,
+    bool aforce_dns, int timeout = 0
+  );
+  /** Set something.
+      @a aip can carry address and / or port information. If setting just
+      by a port value, the address should be set to INADDR_ANY which is of
+      type IPv4.
+   */
+  void setby(
+    char *hostname, ///< Hostname.
+    int len, ///< Length of hostname.
+    sockaddr const* aip, ///< Address and/or port.
+    HostDBApplicationInfo * app ///< I don't know.
+  );
 
 };
 

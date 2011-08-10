@@ -313,9 +313,9 @@ LogCollationClientSM::client_dns(int event, HostDBInfo * hostdb_info)
       return client_done(LOG_COLL_EVENT_SWITCH, NULL);
     }
     // careful!!! could have problems later!!!
-    m_log_host->m_ip = hostdb_info->ip();
-    m_log_host->m_ipstr = (char *) xmalloc(32);
-    LogUtils::ip_to_str(m_log_host->m_ip, m_log_host->m_ipstr, 32);
+    m_log_host->m_ip = ink_inet_ip4_addr_cast(hostdb_info->ip());
+    m_log_host->m_ipstr = (char *) xmalloc(INET6_ADDRSTRLEN);
+    ink_inet_ntop(hostdb_info->ip(), m_log_host->m_ipstr, INET6_ADDRSTRLEN);
 
     return client_open(LOG_COLL_EVENT_SWITCH, NULL);
 

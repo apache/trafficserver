@@ -59,7 +59,8 @@
 // Update these if there is a change to MultiCacheBase
 // There is a separate HOST_DB_CACHE_[MAJOR|MINOR]_VERSION
 #define MULTI_CACHE_MAJOR_VERSION    2
-#define MULTI_CACHE_MINOR_VERSION    0
+#define MULTI_CACHE_MINOR_VERSION    1
+// 2.1 - IPv6 compatible
 
 #define MULTI_CACHE_HEAP_HIGH_WATER  0.8
 

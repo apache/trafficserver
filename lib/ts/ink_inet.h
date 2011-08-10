@@ -357,7 +357,8 @@ inline uint32_t const* ink_inet_ip_addr32_cast(sockaddr const* addr) {
 
 /** Copy the address from @a src to @a dst if it's IP.
     This attempts to do a minimal copy based on the type of @a src.
-    If @a src is not an IP address type it is @b not copied.
+    If @a src is not an IP address type it is @b not copied and
+    @a dst is marked as invalid.
     @return @c true if @a src was an IP address, @c false otherwise.
 */
 inline bool ink_inet_copy(
@@ -365,9 +366,11 @@ inline bool ink_inet_copy(
   sockaddr const* src ///< Source object.
 ) {
   size_t n = 0;
-  switch (src->sa_family) {
-  case AF_INET: n = sizeof(sockaddr_in); break;
-  case AF_INET6: n = sizeof(sockaddr_in6); break;
+  if (src) {
+    switch (src->sa_family) {
+    case AF_INET: n = sizeof(sockaddr_in); break;
+    case AF_INET6: n = sizeof(sockaddr_in6); break;
+    }
   }
   if (n) memcpy(dst, src, n);
   else ink_inet_invalidate(dst);
@@ -470,6 +473,13 @@ inline int ink_inet_cmp(sockaddr_in6 const* lhs, sockaddr_in6 const* rhs) {
 inline bool ink_inet_eq(sockaddr const* lhs, sockaddr const* rhs) {
   return 0 == ink_inet_cmp(lhs, rhs);
 }
+inline bool ink_inet_eq(ts_ip_endpoint const& lhs, ts_ip_endpoint const& rhs) {
+  return 0 == ink_inet_cmp(&lhs.sa, &rhs.sa);
+}
+
+inline bool operator == (ts_ip_endpoint const& lhs, ts_ip_endpoint const& rhs) {
+  return 0 == ink_inet_cmp(&lhs.sa, &rhs.sa);
+}
 
 //@}
 
@@ -494,7 +504,7 @@ inline in_addr_t ink_inet_get_ip4_addr(
 }
 
 /// Write IPv4 data to storage @a dst.
-inline void ink_inet_ip4_set(
+inline sockaddr* ink_inet_ip4_set(
   sockaddr_in* dst, ///< Destination storage.
   in_addr_t addr, ///< address, IPv4 network order.
   uint16_t port = 0 ///< port, network order.
@@ -503,17 +513,18 @@ inline void ink_inet_ip4_set(
   dst->sin_family = AF_INET;
   dst->sin_addr.s_addr = addr;
   dst->sin_port = port;
+  return ink_inet_sa_cast(dst);
 }
 
 /** Write IPv4 data to @a dst.
     @note Convenience overload.
 */
-inline void ink_inet_ip4_set(
+inline sockaddr* ink_inet_ip4_set(
   sockaddr_in6* dst, ///< Destination storage.
   in_addr_t ip4, ///< address, IPv4 network order.
   uint16_t port = 0 ///< port, network order.
 ) {
-  ink_inet_ip4_set(ink_inet_ip4_cast(dst), ip4, port);
+  return ink_inet_ip4_set(ink_inet_ip4_cast(dst), ip4, port);
 }
 
 /** Write IPv4 data to storage @a dst.
@@ -521,12 +532,12 @@ inline void ink_inet_ip4_set(
     This is the generic overload. Caller must verify that @a dst is at
     least @c sizeof(sockaddr_in) bytes.
 */
-inline void ink_inet_ip4_set(
+inline sockaddr* ink_inet_ip4_set(
   sockaddr* dst, ///< Destination storage.
   in_addr_t ip4, ///< address, IPv4 network order.
   uint16_t port = 0 ///< port, network order.
 ) {
-  ink_inet_ip4_set(ink_inet_ip4_cast(dst), ip4, port);
+  return ink_inet_ip4_set(ink_inet_ip4_cast(dst), ip4, port);
 }
 
 /// Write IPv6 address to storage @a dst.

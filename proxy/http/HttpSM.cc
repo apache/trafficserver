@@ -2115,11 +2115,14 @@ HttpSM::state_mark_os_down(int event, void *data)
       ink_assert(t_state.current.server != NULL);
       ink_assert(t_state.current.request_to == HttpTransact::ORIGIN_SERVER);
       if (t_state.current.server) {
-        mark_down = r->rr()->find_ip(t_state.current.server->ip);
+        ts_ip_endpoint ip;
+        ink_inet_ip4_set(&ip.sa, t_state.current.server->ip);
+        mark_down = r->rr()->find_ip(&ip.sa);
+//        mark_down = r->rr()->find_ip(t_state.current.server->ip);
       }
     } else {
       // No longer a round robin, check to see if our address is the same
-      if (t_state.host_db_info.ip() == r->ip()) {
+      if (ink_inet_eq(t_state.host_db_info.ip(), r->ip())) {
         mark_down = r;
       }
     }
@@ -3770,8 +3773,9 @@ HttpSM::do_hostdb_reverse_lookup()
 
   Debug("http_seq", "[HttpSM::do_hostdb_reverse_lookup] Doing reverse DNS Lookup");
 
-  uint32_t addr = ink_inet_addr(t_state.dns_info.lookup_name);
-  Action *dns_lookup_action_handle = hostDBProcessor.getbyaddr_re(this, addr);
+  ts_ip_endpoint addr;
+  ink_inet_pton(t_state.dns_info.lookup_name, &addr.sa);
+  Action *dns_lookup_action_handle = hostDBProcessor.getbyaddr_re(this, &addr.sa);
 
   if (dns_lookup_action_handle != ACTION_RESULT_DONE) {
     ink_assert(!pending_action);
@@ -3792,7 +3796,9 @@ HttpSM::do_hostdb_update_if_necessary()
   }
   // If we failed back over to the origin server, we don't have our
   //   hostdb information anymore which means we shouldn't update the hostdb
-  if (t_state.current.server->ip != t_state.host_db_info.ip()) {
+  ts_ip_endpoint ip;
+  ink_inet_ip4_set(&ip.sa, t_state.current.server->ip);
+  if (!ink_inet_eq(&ip.sa, t_state.host_db_info.ip())) {
     Debug("http", "[%" PRId64 "] skipping hostdb update due to server failover", sm_id);
     return;
   }
@@ -3830,8 +3836,12 @@ HttpSM::do_hostdb_update_if_necessary()
   }
 
   if (issue_update) {
-    hostDBProcessor.setby(t_state.current.server->name, 0,
-                          t_state.current.server->port, t_state.current.server->ip, &t_state.host_db_info.app);
+    ts_ip_endpoint ip;
+    hostDBProcessor.setby(t_state.current.server->name,
+      strlen(t_state.current.server->name),
+      ink_inet_ip4_set(&ip.sa, t_state.current.server->ip, t_state.current.server->port),
+      &t_state.host_db_info.app
+    );
   }
 
   return;
@@ -6411,7 +6421,7 @@ HttpSM::set_next_state()
            by the 'use_client_target_addr' configuration parameter.
         */
         Debug("dns", "[HttpTransact::HandleRequest] Skipping DNS lookup for client supplied target %u.%u.%u.%u.\n", PRINT_IP(addr));
-        t_state.host_db_info.ip() = addr;
+        ink_inet_ip4_set(t_state.host_db_info.ip(), addr);
         t_state.dns_info.lookup_success = true;
         call_transact_and_set_next_state(NULL);
         break;

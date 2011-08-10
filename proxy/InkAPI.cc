@@ -6233,15 +6233,14 @@ TSHostLookupResultAddrGet(TSHostLookupResult lookup_result)
 {
   sdk_assert(sdk_sanity_check_hostlookup_structure(lookup_result) == TS_SUCCESS);
   HostDBInfo* di = reinterpret_cast<HostDBInfo*>(lookup_result);
-  ink_inet_ip4_set(&di->ip_addr, di->ip());
-  return ink_inet_sa_cast(&di->ip_addr);
+  return di->ip();
 }
 
 in_addr_t
 TSHostLookupResultIpGet(TSHostLookupResult lookup_result)
 {
   sdk_assert(sdk_sanity_check_hostlookup_structure(lookup_result) == TS_SUCCESS);
-  return ((HostDBInfo *)lookup_result)->ip();
+  return ink_inet_ip4_addr_cast(((HostDBInfo *)lookup_result)->ip());
 }
 
 void
@@ -6252,7 +6251,7 @@ TSOSIpSet(TSHttpTxn txnp, unsigned int ip)
   HttpTransact::State *s = &(sm->t_state);
 
   s->dns_info.lookup_success = true;
-  s->host_db_info.ip() = ip;
+  ink_inet_ip4_set(s->host_db_info.ip(), ip);
 }
 
 /*
