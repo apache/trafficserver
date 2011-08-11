@@ -119,10 +119,6 @@ public:
 
   */
   ProxyMutexPtr mutex;
-  /** Thread ID of thread currently executing this continuation.
-      Set to zero when not being executed.
-   */
-  uint32_t in_thread;
 
   /**
     Link to other continuations.
@@ -198,8 +194,7 @@ Continuation::Continuation(ProxyMutex * amutex)
 #ifdef DEBUG
     handler_name(NULL),
 #endif
-             mutex(amutex),
-             in_thread(0)
+             mutex(amutex)
 { }
 
 #endif /*_Continuation_h_*/

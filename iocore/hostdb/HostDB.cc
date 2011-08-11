@@ -90,7 +90,7 @@ is_addr_valid(
 ) {
   return 
     (AF_INET == af && INADDR_ANY != *(reinterpret_cast<in_addr_t*>(ptr)))
-    || (AF_INET6 == af && !IN6_IS_ADDR_UNSPECIFIED(ptr))
+    || (AF_INET6 == af && !IN6_IS_ADDR_UNSPECIFIED(reinterpret_cast<in6_addr*>(ptr)))
     ;
 }
 
