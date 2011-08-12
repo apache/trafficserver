@@ -2310,7 +2310,8 @@ _mime_scanner_init(MIMEScanner * scanner)
   scanner->m_line = NULL;
   scanner->m_line_size = 0;
   scanner->m_line_length = 0;
-  scanner->m_state = MIME_SCANNER_STATE_START;
+  scanner->m_state = MIME_PARSE_BEFORE;
+
 }
 
 //////////////////////////////////////////////////////
@@ -2380,259 +2381,117 @@ mime_scanner_get(MIMEScanner * S,
                  const char **raw_input_s,
                  const char *raw_input_e,
                  const char **output_s,
-                 const char **output_e, bool * output_shares_raw_input, bool raw_input_eof, int raw_input_scan_type)
-{
+  const char **output_e, bool * output_shares_raw_input,
+  bool raw_input_eof, ///< All data has been received for this header.
+  int raw_input_scan_type
+) {
   const char *raw_input_c, *lf_ptr;
+  MIMEParseResult zret = PARSE_CONT;
 
   ink_debug_assert((raw_input_s != NULL) && (*raw_input_s != NULL));
   ink_debug_assert(raw_input_e != NULL);
 
   raw_input_c = *raw_input_s;
 
-  // first try fastpath
-  if ((S->m_line_length == 0) && (S->m_state == MIME_SCANNER_STATE_START)) {
-    if ((raw_input_c<raw_input_e) && (*raw_input_c> '\r')) {
-      ++raw_input_c;
-      lf_ptr = (const char *) memchr(raw_input_c, '\n', raw_input_e - raw_input_c);
+  while (PARSE_CONT == zret && raw_input_c < raw_input_e) {
+    ptrdiff_t runway = raw_input_e - raw_input_c; // remaining input.
+    switch (S->m_state) {
+    case MIME_PARSE_BEFORE: // waiting to find a field.
+      // If we find leading CR LF then it's the last line of the header.
+      if (ParseRules::is_cr(*raw_input_c)
+        && runway >= 2
+        && ParseRules::is_lf(raw_input_c[1])
+      ) {
+        raw_input_c += 2;
+        zret = PARSE_OK;
+      } else {
+        S->m_state = MIME_PARSE_INSIDE;
+      }
+      break;
+    case MIME_PARSE_INSIDE:
+      lf_ptr = static_cast<char const*>(memchr(raw_input_c, ParseRules::CHAR_LF, runway));
       if (lf_ptr) {
         raw_input_c = lf_ptr + 1;
-        if ((raw_input_scan_type == MIME_SCANNER_TYPE_LINE) || ((raw_input_c < raw_input_e) && (!is_ws(*raw_input_c)))) {
-          *output_s = *raw_input_s;
-          *output_e = raw_input_c;
-          *output_shares_raw_input = true;
-          *raw_input_s = raw_input_c;   // consume input data
-          return PARSE_OK;
+        if (MIME_SCANNER_TYPE_LINE == raw_input_scan_type) {
+          zret = PARSE_OK;
+          S->m_state = MIME_PARSE_BEFORE;
+        } else {
+          S->m_state = MIME_PARSE_AFTER;
         }
+      } else {
+        raw_input_c = raw_input_e; // grab all that's available.
       }
-    } else if ((raw_input_e >= raw_input_c + 2) &&
-               ParseRules::is_cr(*raw_input_c) && ParseRules::is_lf(*(raw_input_c + 1))) {
-      raw_input_c += 2;
+      break;
+    case MIME_PARSE_AFTER:
+      // After a LF. Might be the end or a continuation.
+      if (ParseRules::is_ws(*raw_input_c)) {
+        S->m_state = MIME_PARSE_INSIDE; // back inside the field.
+      } else {
+        S->m_state = MIME_PARSE_BEFORE; // field terminated.
+        zret = PARSE_OK;
+      }
+      break;
+    }
+  }
+
+  ptrdiff_t data_size = raw_input_c - *raw_input_s;
+
+  if (data_size && S->m_line_length) {
+    // If we're already accumulating, continue to do so if we have data.
+    mime_scanner_append(S, *raw_input_s, data_size);
+    data_size = 0;
+  }
+
+  if (PARSE_CONT == zret) {
+    // data ran out before we got a clear final result.
+    // There a number of things we need to check and possibly adjust
+    // that result. It's less complex to do this cleanup than handle
+    // in the parser state machine.
+    if (raw_input_eof) {
+      // Should never return PARSE_CONT if we've hit EOF.
+      if (0 == data_size) {
+        // all input previously consumed. If we're between fields, that's cool.
+        if (MIME_PARSE_INSIDE != S->m_state) {
+          S->m_state = MIME_PARSE_BEFORE; // probably not needed...
+          zret = PARSE_DONE;
+        } else {
+          zret = PARSE_ERROR; // unterminated field.
+        }
+      } else if (MIME_PARSE_AFTER == S->m_state) {
+        // Special case it seems - need to accept the final field
+        // even if there's no header terminating CR LF. We check for
+        // absolute end of input because otherwise this might be
+        // a multiline field where we haven't seen the next leading space.
+        S->m_state = MIME_PARSE_BEFORE;
+        zret = PARSE_OK;
+      } else {
+        // Partial input, no field / line CR LF
+        zret = PARSE_ERROR; // Unterminated field.
+      }
+    } else if (data_size) {
+      // Inside a field but more data is expected. Save what we've got.
+      mime_scanner_append(S, *raw_input_s, data_size);
+    }
+  } 
+
+  // adjust out arguments.
+  if (PARSE_CONT != zret) {
+    if (0 != S->m_line_length) {
+      *output_s = S->m_line;
+      *output_e = *output_s + S->m_line_length;
+      *output_shares_raw_input = false;
+      S->m_line_length = 0;
+      S->m_line = 0;
+    } else {
       *output_s = *raw_input_s;
       *output_e = raw_input_c;
       *output_shares_raw_input = true;
-      *raw_input_s = raw_input_c;       // consume input data
-      return PARSE_OK;
     }
   }
-  // fastpath conditions didn't match -- fall through to general case
-
-  raw_input_c = *raw_input_s;
-
-  int data_size;
-
-  *output_s = NULL;
-  *output_e = NULL;
-
-  //////////////////////////////////////////////////////////////////////
-  // enter with data in [*raw_input_s .. raw_input_e] & scan the data //
-  // according to the scanning state --- if exiting the scanner and   //
-  // not in SCANNING_DONE, save data btw *raw_input_s & raw_input_e,  //
-  // and return for more data.                                        //
-  //////////////////////////////////////////////////////////////////////
-
-
-loop:
-  ink_debug_assert(raw_input_e >= raw_input_c);
-
-  switch (S->m_state) {
-    ////////////////////////////////////////////////////////////////////
-    // STATE_START --- seen 0 characters, need to look for presence   //
-    //      of leading CRLF or LF because this is a special line, and //
-    //      should not lead to continuation line processing after it. //
-    ////////////////////////////////////////////////////////////////////
-
-  case MIME_SCANNER_STATE_START:
-    {
-      if (raw_input_c >= raw_input_e)
-        break;                  // out of data
-      if (ParseRules::is_cr(*raw_input_c)) {
-        ++raw_input_c;
-        S->m_state = MIME_SCANNER_STATE_CHAR_2;
-      } else if (ParseRules::is_lf(*raw_input_c)) {
-        ++raw_input_c;
-        S->m_state = MIME_SCANNER_STATE_DONE;   // no cont after blank line
-        break;
-      } else {
-        ++raw_input_c;
-        S->m_state = MIME_SCANNER_STATE_SCANNING_FOR_LF;
-        goto loop;
-      }
-    }
-
-    ////////////////////////////////////////////////////////////////////
-    // STATE_CHAR_2 --- first character was a CR, and we want to see  //
-    //      if this character is an LF.  We do this because a line    //
-    //      starting with CRLF is special, and should not lead to     //
-    //      continuation line processing after it.                    //
-    ////////////////////////////////////////////////////////////////////
-
-  case MIME_SCANNER_STATE_CHAR_2:
-    {
-      if (raw_input_c >= raw_input_e)
-        break;                  // out of data
-      if (ParseRules::is_lf(*raw_input_c)) {
-        ++raw_input_c;
-        S->m_state = MIME_SCANNER_STATE_DONE;
-        break;
-      } else {
-        ++raw_input_c;
-        S->m_state = MIME_SCANNER_STATE_SCANNING_FOR_LF;
-      }
-    }
-
-    //////////////////////////////////////////////////////////////////////
-    // STATE_SCANNING_FOR_LF --- the line did not start with LF or CRLF //
-    //      so, we now just gobble up characters until we find final LF //
-    //////////////////////////////////////////////////////////////////////
-
-  case MIME_SCANNER_STATE_SCANNING_FOR_LF:
-    {
-      lf_ptr = (const char *)
-        memchr(raw_input_c, '\n', raw_input_e - raw_input_c);
-
-      // if found LF, eat through it, else eat till end of buffer
-      raw_input_c = (lf_ptr ? lf_ptr + 1 : raw_input_e);
-      if (!lf_ptr)
-        break;                  // out of data before LF
-
-      // no continuation lines when MIME_SCANNER_TYPE_LINE
-      if (raw_input_scan_type == MIME_SCANNER_TYPE_LINE) {
-        S->m_state = MIME_SCANNER_STATE_DONE;
-        break;
-      }
-      S->m_state = MIME_SCANNER_STATE_SCANNING_FOR_CONTINUATION;
-    }
-
-    ////////////////////////////////////////////////////////////////////
-    // STATE_SCANNING_FOR_CONTINUATION --- we have found the trailing //
-    //      LF, but we can't return the line yet, because if the next //
-    //      line starts with a space, we need to glue the next line   //
-    //      onto this line as a continuation line.                    //
-    //                                                                //
-    //      Note that we DO need to handle the case of EOS specially  //
-    //      here, because if we don't, on EOS we'll conclude that     //
-    //      the line is actually not complete yet, and will return    //
-    //      PARSE_ERROR instead of a successful line.  We can't       //
-    //      require that all lines are followed by characters to      //
-    //      disambiguate continuation lines.                          //
-    ////////////////////////////////////////////////////////////////////
-
-  case MIME_SCANNER_STATE_SCANNING_FOR_CONTINUATION:
-    {
-      if (raw_input_c >= raw_input_e)   // out of data
-      {
-        if (raw_input_eof)
-          S->m_state = MIME_SCANNER_STATE_DONE;
-        break;
-      }
-
-      if (!is_ws(*raw_input_c)) // peek at character, if not WS, no cont line
-      {
-        S->m_state = MIME_SCANNER_STATE_DONE;
-        break;                  // done with line
-      } else {
-        S->m_state = MIME_SCANNER_STATE_EATING_WS;
-        break;                  // save away pre-WS data
-      }
-    }
-
-    ////////////////////////////////////////////////////////////////////
-    // MIME_SCANNER_STATE_EATING_WS --- the next character after the  //
-    //      final LF was indeed whitespace, so we need to consume all //
-    //      the whitespace characters up to the first non-whitespace. //
-    //                                                                //
-    //      Before we were called, the previous line had already been //
-    //      copied into the line buffer, so when we break out of this //
-    //      state, all the non whitespace data can be glued onto the  //
-    //      stuff in the line buffer.                                 //
-    ////////////////////////////////////////////////////////////////////
-
-  case MIME_SCANNER_STATE_EATING_WS:
-    {
-      while ((raw_input_c < raw_input_e) && is_ws(*raw_input_c))
-        ++raw_input_c;
-
-      *raw_input_s = raw_input_c;       // eat up input characters
-      if (raw_input_c < raw_input_e)    // now treat line normal line
-      {
-        S->m_state = MIME_SCANNER_STATE_SCANNING_FOR_LF;
-        goto loop;
-      }
-      break;                    // out of data
-    }
-
-  default:
-    ink_release_assert(0);
-  }
-
-  ///////////////////////////////////////////////////////////////////////
-  // we get here if we are out of data, or we are done with a line, or //
-  // we are beginning to eat continuation-line whitespace and want to  //
-  // save away the current line data.                                  //
-  //                                                                   //
-  // if we are done scanning, and have no pre-existing buffered data,  //
-  // we can use the raw input data directly as the next parser line,   //
-  // otherwise we append the data to the scanner buffer.               //
-  ///////////////////////////////////////////////////////////////////////
-
-  data_size = (int) (raw_input_c - *raw_input_s);
-
-  if ((S->m_state == MIME_SCANNER_STATE_DONE) && (S->m_line_length == 0)) {
-    *output_s = *raw_input_s;
-    *output_e = raw_input_c;
-    *output_shares_raw_input = true;
-  } else {
-    if (data_size) {
-      mime_scanner_append(S, *raw_input_s, data_size);
-      if (S->m_state == MIME_SCANNER_STATE_EATING_WS) {
-        if (S->m_line_length && (S->m_line[S->m_line_length - 1] == ParseRules::CHAR_LF)) {
-          --S->m_line_length;
-          if (S->m_line_length && (S->m_line[S->m_line_length - 1] == ParseRules::CHAR_CR))
-            --S->m_line_length;
-        }
-      }
-    }
-
-    *output_s = S->m_line;
-    *output_e = *output_s + S->m_line_length;
-    *output_shares_raw_input = false;
-  }
-
-  ///////////////////////////////////////////////////////////
-  // we either have:                                       //
-  //    a full line ready:                     PARSE_OK    //
-  //    a partial line ready, but not at eof:  PARSE_CONT  //
-  //    a partial line ready, but at eof:      PARSE_ERROR //
-  //    zero bytes ready, but are out of data: PARSE_DONE  //
-  ///////////////////////////////////////////////////////////
-
-  *raw_input_s = raw_input_c;   // consume input data
-
-#ifdef DEBUG
-  ink_debug_assert(*output_e - *output_s >= 0);
-  checksum_block(*output_s, (int) (*output_e - *output_s));
-#endif
-
-  if (S->m_state == MIME_SCANNER_STATE_DONE)    // got LF, line ready
-  {
-    S->m_line_length = 0;
-    S->m_state = MIME_SCANNER_STATE_START;
-    return PARSE_OK;
-  } else {
-    if (*raw_input_s < raw_input_e)
-      goto loop;
-    else if (!raw_input_eof)    // no LF yet, need more data
-      return PARSE_CONT;
-    else                        // ack!  no LF but EOF!
-    {
-      if (S->m_line_length > 0)
-        return PARSE_ERROR;
-      else
-        return PARSE_DONE;
-    }
-  }
+  
+  *raw_input_s = raw_input_c; // mark input consumed.
+  return zret;
 }
-
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 

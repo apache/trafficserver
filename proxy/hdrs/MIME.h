@@ -52,12 +52,12 @@ enum
   UNDEFINED_COUNT = -1
 };
 
-#define MIME_SCANNER_STATE_START			0
-#define MIME_SCANNER_STATE_CHAR_2			1
-#define MIME_SCANNER_STATE_SCANNING_FOR_LF		2
-#define	MIME_SCANNER_STATE_SCANNING_FOR_CONTINUATION	3
-#define	MIME_SCANNER_STATE_EATING_WS			4
-#define	MIME_SCANNER_STATE_DONE				5
+/// Parsing state.
+enum MimeParseState {
+  MIME_PARSE_BEFORE, ///< Before a field.
+  MIME_PARSE_INSIDE, ///< Inside a field.
+  MIME_PARSE_AFTER,  ///< After a field.
+};
 
 #define MIME_SCANNER_TYPE_LINE				0
 #define MIME_SCANNER_TYPE_FIELD				1
@@ -259,7 +259,8 @@ struct MIMEScanner
   //int m_type;               // what kind of scanner: raw line, or field (this has never been used)
   int m_line_length;            // size of real live data in buffer
   int m_line_size;              // total allocated size of buffer
-  int m_state;                  // state of scanning state machine
+//  int m_state;                  // state of scanning state machine
+  MimeParseState m_state; ///< Parsing machine state.
 };
 
 
