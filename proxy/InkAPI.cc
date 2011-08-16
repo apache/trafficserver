@@ -7110,9 +7110,11 @@ TSHttpIsInternalRequest(TSHttpTxn txnp)
 
   TSHttpSsn ssnp = TSHttpTxnSsnGet(txnp);
   HttpClientSession *cs = (HttpClientSession *) ssnp;
-  NetVConnection *vc = cs->get_netvc();
+  if (!cs)
+    return TS_ERROR;
 
-  if (!cs || !vc)
+  NetVConnection *vc = cs->get_netvc();
+  if (!vc)
     return TS_ERROR;
 
   return vc->get_is_internal_request() ? TS_SUCCESS : TS_ERROR;
