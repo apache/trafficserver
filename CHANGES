@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 
 Changes with Apache Traffic Server 3.1.0
+  *) [TS-918] Allow interval-based rotation for round robin entries.
+   Author: M. Nunberg.
+
   *) [TS-916] TSHttpIsInternalRequest() crashes if client connection is
    terminated prematurely. Author: Manjesh Nilange.
 
