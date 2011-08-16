@@ -46,6 +46,7 @@
 
 HostDBProcessor hostDBProcessor;
 int HostDBProcessor::hostdb_strict_round_robin = 0;
+int HostDBProcessor::hostdb_timed_round_robin = 0;
 int hostdb_enable = true;
 int hostdb_migrate_on_demand = true;
 int hostdb_cluster = false;
@@ -417,6 +418,7 @@ HostDBProcessor::start(int)
   IOCORE_EstablishStaticConfigInt32(hostdb_re_dns_on_reload, "proxy.config.hostdb.re_dns_on_reload");
   IOCORE_EstablishStaticConfigInt32(hostdb_migrate_on_demand, "proxy.config.hostdb.migrate_on_demand");
   IOCORE_EstablishStaticConfigInt32(hostdb_strict_round_robin, "proxy.config.hostdb.strict_round_robin");
+  IOCORE_EstablishStaticConfigInt32(hostdb_timed_round_robin, "proxy.config.hostdb.timed_round_robin");
   IOCORE_EstablishStaticConfigInt32(hostdb_cluster, "proxy.config.hostdb.cluster");
   IOCORE_EstablishStaticConfigInt32(hostdb_cluster_round_robin, "proxy.config.hostdb.cluster.round_robin");
   IOCORE_EstablishStaticConfigInt32(hostdb_lookup_timeout, "proxy.config.hostdb.lookup_timeout");

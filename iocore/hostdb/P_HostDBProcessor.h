@@ -210,9 +210,10 @@ HostDBRoundRobin::select_best(sockaddr const* client_ip, HostDBInfo * r)
 }
 
 inline HostDBInfo *
-HostDBRoundRobin::select_best_http(sockaddr const* client_ip, time_t now, int32_t fail_window)
+HostDBRoundRobin::select_best_http(sockaddr const* client_ip, ink_time_t now, int32_t fail_window)
 {
   bool bad = (n <= 0 || n > HOST_DB_MAX_ROUND_ROBIN_INFO || good <= 0 || good > HOST_DB_MAX_ROUND_ROBIN_INFO);
+
   if (bad) {
     ink_assert(!"bad round robin size");
     return NULL;
@@ -222,8 +223,19 @@ HostDBRoundRobin::select_best_http(sockaddr const* client_ip, time_t now, int32_
   int best_up = -1;
 
   if (HostDBProcessor::hostdb_strict_round_robin) {
+    Debug("hostdb", "Using strict round robin");
     best_up = current++ % good;
+  } else if (HostDBProcessor::hostdb_timed_round_robin > 0) {
+    Debug("hostdb", "Using timed round-robin for HTTP");
+    if ((now - timed_rr_ctime) > HostDBProcessor::hostdb_timed_round_robin) {
+      Debug("hostdb", "Timed interval expired.. rotating");
+      ++current;
+      timed_rr_ctime = now;
+    }
+    best_up = current % good;
+    Debug("hostdb", "Using %d for best_up", best_up);
   } else {
+    Debug("hostdb", "Using default round robin");
     unsigned int best_hash_any = 0;
     unsigned int best_hash_up = 0;
     sockaddr const* ip;

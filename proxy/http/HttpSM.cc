@@ -2003,11 +2003,14 @@ HttpSM::process_hostdb_info(HostDBInfo * r)
     t_state.dns_info.lookup_success = true;
 
     if (r->round_robin) {
-      // Since the time elapsed between current time and
-      // client_request_time may be very large, we cannot use
-      // client_request_time
-      // to approximate current time when calling select_best_http().
-      rr = r->rr()->select_best_http(t_state.client_info.ip, ink_cluster_time(), (int) t_state.txn_conf->down_server_timeout);
+      // TODO: IPv6 ?
+      sockaddr_in ip4;
+
+      ink_inet_ip4_set(&ip4, t_state.client_info.ip);
+      // Since the time elapsed between current time and client_request_time
+      // may be very large, we cannot use client_request_time to approximate
+      // current time when calling select_best_http().
+      rr = r->rr()->select_best_http(ink_inet_sa_cast(&ip4), ink_cluster_time(), (int) t_state.txn_conf->down_server_timeout);
       t_state.dns_info.round_robin = true;
     } else {
       rr = r;

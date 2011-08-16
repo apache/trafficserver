@@ -352,6 +352,7 @@ struct HostDBRoundRobin
   short good;
 
   unsigned short current;
+  ink_time_t timed_rr_ctime;
 
   HostDBInfo info[HOST_DB_MAX_ROUND_ROBIN_INFO];
   char rr_srv_hosts[HOST_DB_MAX_ROUND_ROBIN_INFO][MAXDNAME];
@@ -377,20 +378,7 @@ struct HostDBRoundRobin
 
   HostDBInfo *find_ip(sockaddr const* addr);
   HostDBInfo *select_best(sockaddr const* client_ip, HostDBInfo * r = NULL);
-
-  HostDBInfo *select_best_http(sockaddr const* client_ip, time_t now, int32_t fail_window);
-
-  HostDBInfo *select_best(in_addr_t client_ip, HostDBInfo * r = NULL) {
-    sockaddr_in ip4;
-    ink_inet_ip4_set(&ip4, client_ip);
-    return this->select_best(ink_inet_sa_cast(&ip4), r);
-  }
-
-  HostDBInfo *select_best_http(in_addr_t client_ip, time_t now, int32_t fail_window) {
-    sockaddr_in ip4;
-    ink_inet_ip4_set(&ip4, client_ip);
-    return this->select_best_http(ink_inet_sa_cast(&ip4), now, fail_window);
-  }
+  HostDBInfo *select_best_http(sockaddr const* client_ip, ink_time_t now, int32_t fail_window);
 
   HostDBInfo *increment_round_robin()
   {
@@ -405,7 +393,7 @@ struct HostDBRoundRobin
   }
 
   HostDBRoundRobin()
-  : n(0), good(0), current(0)
+    : n(0), good(0), current(0), timed_rr_ctime(0)
   { }
 
 };
@@ -500,6 +488,7 @@ struct HostDBProcessor: public Processor
 
   /** Configuration. */
   static int hostdb_strict_round_robin;
+  static int hostdb_timed_round_robin;
 
   // Processor Interface
   /* hostdb does not use any dedicated event threads
