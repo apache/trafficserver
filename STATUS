@@ -72,6 +72,7 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
      terminated prematurely
    Trunk patch: http://svn.apache.org/viewvc?view=revision&revision=1158321
    Jira: https://issues.apache.org/jira/browse/TS-916
+   +1: zwoop
 
 
 RELEASE PROCESS
