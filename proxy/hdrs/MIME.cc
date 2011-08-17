@@ -2481,7 +2481,6 @@ mime_scanner_get(MIMEScanner * S,
       *output_e = *output_s + S->m_line_length;
       *output_shares_raw_input = false;
       S->m_line_length = 0;
-      S->m_line = 0;
     } else {
       *output_s = *raw_input_s;
       *output_e = raw_input_c;
