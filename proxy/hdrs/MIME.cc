@@ -2436,12 +2436,6 @@ mime_scanner_get(MIMEScanner * S,
 
   ptrdiff_t data_size = raw_input_c - *raw_input_s;
 
-  if (data_size && S->m_line_length) {
-    // If we're already accumulating, continue to do so if we have data.
-    mime_scanner_append(S, *raw_input_s, data_size);
-    data_size = 0;
-  }
-
   if (PARSE_CONT == zret) {
     // data ran out before we got a clear final result.
     // There a number of things we need to check and possibly adjust
@@ -2471,8 +2465,14 @@ mime_scanner_get(MIMEScanner * S,
     } else if (data_size) {
       // Inside a field but more data is expected. Save what we've got.
       mime_scanner_append(S, *raw_input_s, data_size);
+      data_size = 0; // Don't append again.
     }
   } 
+
+  if (data_size && S->m_line_length) {
+    // If we're already accumulating, continue to do so if we have data.
+    mime_scanner_append(S, *raw_input_s, data_size);
+  }
 
   // adjust out arguments.
   if (PARSE_CONT != zret) {
