@@ -1,6 +1,11 @@
                                                          -*- coding: utf-8 -*-
 
 Changes with Apache Traffic Server 3.1.0
+  *) [TS-880] Major performance problem with second request on same
+   keep-alive connection. This is a partial fix, another 2x improvement
+   can be made, but too risky right now. Authors: William Bardwell and
+   weijin.
+
   *) [TS-900] TSHttpTxnNewCacheLookupDo (experimental) breaks requests
    to origin server. Author: William Bardwell.
 
