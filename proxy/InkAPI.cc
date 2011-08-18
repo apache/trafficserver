@@ -4803,8 +4803,7 @@ TSHttpTxnNewCacheLookupDo(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc url_loc)
     }
   }
 
-  // copy the new_url to both client_request and lookup_url
-  client_url->copy(&new_url);
+  // copy the new_url to lookup_url
   l_url->copy(&new_url);
 
   // bypass HttpTransact::HandleFiltering
