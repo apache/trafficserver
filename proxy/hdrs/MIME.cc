@@ -526,10 +526,10 @@ checksum_block(const char *s, int len)
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
+#ifdef DEBUG
 void
 mime_hdr_sanity_check(MIMEHdrImpl * mh)
 {
-#if (! TRACK_FIELD_FIND_CALLS)
   MIMEFieldBlockImpl *fblock, *blk, *last_fblock;
   MIMEField *field, *next_dup;
   uint32_t slot_index, index;
@@ -618,8 +618,8 @@ mime_hdr_sanity_check(MIMEHdrImpl * mh)
 
   ink_release_assert(last_fblock == mh->m_fblock_list_tail);
   ink_release_assert(masksum == mh->m_presence_bits);
-#endif
 }
+#endif
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
@@ -1330,14 +1330,14 @@ mime_hdr_field_find(MIMEHdrImpl * mh, const char *field_name_str, int field_name
 
   is_wks = hdrtoken_is_wks(field_name_str);
 #if TRACK_FIELD_FIND_CALLS
-  Debug("mime_hdr_field_find(hdr 0x%X, field %.*s): is_wks = %d\n", mh, field_name_len, field_name_str, is_wks);
+  Debug("http", "mime_hdr_field_find(hdr 0x%X, field %.*s): is_wks = %d\n", mh, field_name_len, field_name_str, is_wks);
 #endif
 
   if (is_wks) {
     token_info = hdrtoken_wks_to_prefix(field_name_str);
     if ((token_info->wks_info.mask) && ((mh->m_presence_bits & token_info->wks_info.mask) == 0)) {
 #if TRACK_FIELD_FIND_CALLS
-      Debug("mime_hdr_field_find(hdr 0x%X, field %.*s): MISS (due to presence bits)\n",
+      Debug("http", "mime_hdr_field_find(hdr 0x%X, field %.*s): MISS (due to presence bits)\n",
             mh, field_name_len, field_name_str);
 #endif
       return NULL;
@@ -1352,13 +1352,13 @@ mime_hdr_field_find(MIMEHdrImpl * mh, const char *field_name_str, int field_name
         MIMEField *f = _mime_hdr_field_list_search_by_slotnum(mh, slotnum);
         ink_debug_assert((f == NULL) || f->is_live());
 #if TRACK_FIELD_FIND_CALLS
-        Debug("mime_hdr_field_find(hdr 0x%X, field %.*s): %s (due to slot accelerators)\n",
+        Debug("http", "mime_hdr_field_find(hdr 0x%X, field %.*s): %s (due to slot accelerators)\n",
               mh, field_name_len, field_name_str, (f ? "HIT" : "MISS"));
 #endif
         return f;
       } else {
 #if TRACK_FIELD_FIND_CALLS
-        Debug("mime_hdr_field_find(hdr 0x%X, field %.*s): UNKNOWN (slot too big)\n",
+        Debug("http", "mime_hdr_field_find(hdr 0x%X, field %.*s): UNKNOWN (slot too big)\n",
               mh, field_name_len, field_name_str);
 #endif
       }
@@ -1372,7 +1372,7 @@ mime_hdr_field_find(MIMEHdrImpl * mh, const char *field_name_str, int field_name
     MIMEField *f = _mime_hdr_field_list_search_by_wks(mh, token_info->wks_idx);
     ink_debug_assert((f == NULL) || f->is_live());
 #if TRACK_FIELD_FIND_CALLS
-    Debug("mime_hdr_field_find(hdr 0x%X, field %.*s): %s (due to WKS list walk)\n",
+    Debug("http", "mime_hdr_field_find(hdr 0x%X, field %.*s): %s (due to WKS list walk)\n",
           mh, field_name_len, field_name_str, (f ? "HIT" : "MISS"));
 #endif
     return f;
@@ -1381,7 +1381,7 @@ mime_hdr_field_find(MIMEHdrImpl * mh, const char *field_name_str, int field_name
 
     ink_debug_assert((f == NULL) || f->is_live());
 #if TRACK_FIELD_FIND_CALLS
-    Debug("mime_hdr_field_find(hdr 0x%X, field %.*s): %s (due to strcmp list walk)\n",
+    Debug("http", "mime_hdr_field_find(hdr 0x%X, field %.*s): %s (due to strcmp list walk)\n",
           mh, field_name_len, field_name_str, (f ? "HIT" : "MISS"));
 #endif
     return f;
