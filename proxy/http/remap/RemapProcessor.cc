@@ -61,10 +61,14 @@ RemapProcessor::setup_for_remap(HttpTransact::State *s)
 
   ink_assert(redirect_url != NULL);
 
-  if (unlikely(rewrite_table->num_rules_forward == 0)) {
-    ink_assert(rewrite_table->forward_mappings.empty());
+  if (unlikely((rewrite_table->num_rules_forward == 0) &&
+               (rewrite_table->num_rules_forward_with_recv_port == 0))) {
+    ink_assert(rewrite_table->forward_mappings.empty() &&
+               rewrite_table->forward_mappings_with_recv_port.empty());
+    Debug("url_rewrite", "[lookup] No forward mappings found; Skipping...");
     return false;
   }
+
   // Since we are called before request validity checking
   // occurs, make sure that we have both a valid request
   // header and a valid URL
@@ -85,7 +89,23 @@ RemapProcessor::setup_for_remap(HttpTransact::State *s)
 
   Debug("url_rewrite", "[lookup] attempting %s lookup", proxy_request ? "proxy" : "normal");
 
-  mapping_found = rewrite_table->forwardMappingLookup(request_url, request_port, request_host, request_host_len, s->url_map);
+  if (rewrite_table->num_rules_forward_with_recv_port) {
+    Debug("url_rewrite", "[lookup] forward mappings with recv port found; Using recv port %d",
+          s->client_info.port);
+    if (rewrite_table->forwardMappingWithRecvPortLookup(request_url, s->client_info.port,
+                                                         request_host, request_host_len, s->url_map)) {
+      Debug("url_rewrite", "Found forward mapping with recv port");
+      mapping_found = true;
+    } else if (rewrite_table->num_rules_forward == 0) {
+      ink_assert(rewrite_table->forward_mappings.empty());
+      Debug("url_rewrite", "No forward mappings left");
+      return false;
+    }
+  }
+
+  if (!mapping_found) {
+    mapping_found = rewrite_table->forwardMappingLookup(request_url, request_port, request_host, request_host_len, s->url_map);
+  }
 
   if (!proxy_request) { // do extra checks on a server request
 
