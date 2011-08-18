@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 
 Changes with Apache Traffic Server 3.1.0
+  *) [TS-900] TSHttpTxnNewCacheLookupDo (experimental) breaks requests
+   to origin server. Author: William Bardwell.
+
   *) [TS-918] Allow interval-based rotation for round robin entries.
    Author: M. Nunberg.
 
