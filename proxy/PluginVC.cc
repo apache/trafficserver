@@ -788,9 +788,23 @@ PluginVC::setup_event_cb(ink_hrtime in, Event ** e_ptr)
     // We locked the pointer so we can now allocate an event
     //   to call us back
     if (in == 0) {
-      *e_ptr = eventProcessor.schedule_imm(this);
-    } else {
-      *e_ptr = eventProcessor.schedule_in(this, in);
+      if(this_ethread()->tt == REGULAR) {
+	 this_ethread()->schedule_imm(this);
+      }
+      else
+      {
+         *e_ptr = eventProcessor.schedule_imm(this);
+      }
+    } 
+    else 
+    {
+      if(this_ethread()->tt == REGULAR) {
+        *e_ptr = this_ethread()->schedule_in(this,in);
+      }
+      else
+      {
+        *e_ptr = eventProcessor.schedule_in(this, in);
+      }
     }
   }
 }
