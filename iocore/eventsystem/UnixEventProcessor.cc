@@ -53,7 +53,7 @@ EventProcessor::spawn_event_threads(int n_threads, const char* et_name)
 
   n_thread_groups++;
   n_ethreads += n_threads;
-  Debug("iocore_thread", "Created thread group id %d", new_thread_group_id);
+  Debug("iocore_thread", "Created thread group '%s' id %d with %d threads", et_name, new_thread_group_id, n_threads); 
 
   return new_thread_group_id;
 }
@@ -98,6 +98,7 @@ EventProcessor::start(int n_event_threads)
     all_ethreads[i]->start(thr_name);
   }
 
+  Debug("iocore_thread", "Created event thread group id %d with %d threads", ET_CALL, n_event_threads);
   return 0;
 }
 

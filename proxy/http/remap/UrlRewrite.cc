@@ -479,7 +479,7 @@ UrlRewrite::UrlRewrite(const char *file_var_in)
  : nohost_rules(0), reverse_proxy(0), backdoor_enabled(0),
    mgmt_autoconf_port(0), default_to_pac(0), default_to_pac_port(0), file_var(NULL), ts_name(NULL),
    http_default_redirect_url(NULL), num_rules_forward(0), num_rules_reverse(0), num_rules_redirect_permanent(0),
-   num_rules_redirect_temporary(0)
+   num_rules_redirect_temporary(0), num_rules_forward_with_recv_port(0)
 {
 
   forward_mappings.hash_lookup = reverse_mappings.hash_lookup =

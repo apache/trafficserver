@@ -34,12 +34,12 @@ NetProcessor::AcceptOptions&
 NetProcessor::AcceptOptions::reset()
 {
   port = 0;
-  accept_threads = 0;
+  accept_threads = -1;
   domain = AF_INET;
   etype = ET_NET;
   f_callback_on_open = false;
   localhost_only = false;
-  frequent_accept = false;
+  frequent_accept = true;
   recv_bufsize = 0;
   send_bufsize = 0;
   sockopt_flags = 0;
