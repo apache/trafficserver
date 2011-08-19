@@ -1,6 +1,12 @@
                                                          -*- coding: utf-8 -*-
 
 Changes with Apache Traffic Server 3.1.0
+  *) [TS-867] moving to a different thread only if the pluginvc is invoked
+   from a non regular thread.
+
+  *) [TS-876] forward map based on request receive port. Author: Manjesh
+   Nilange.
+
   *) [TS-880] Major performance problem with second request on same
    keep-alive connection. This is a partial fix, another 2x improvement
    can be made, but too risky right now. Authors: William Bardwell and
