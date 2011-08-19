@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 
 Changes with Apache Traffic Server 3.1.0
+  *) [TS-925] Switch from integer thread IDs to hex thread IDs with the
+   diagnostics output. Author: Brian Geffon.
+
   *) [TS-919] All of iocore is now IPv6 compatible.
 
   *) [TS-867] moving to a different thread only if the pluginvc is invoked
