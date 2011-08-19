@@ -81,7 +81,7 @@ struct NetVCOptions;
 struct Connection
 {
   SOCKET fd; ///< Socket for connection.
-  sockaddr_in6 sa; ///< Remote address.
+  ts_ip_endpoint addr; ///< Associated address.
   bool is_bound; ///< Flag for already bound to a local address.
   bool is_connected; ///< Flag for already connected.
 
@@ -111,8 +111,7 @@ struct Connection
       @see open
   */
   int connect(
-	   uint32_t addr, ///< Remote address.
-	   uint16_t port, ///< Remote port.
+           sockaddr const* to, ///< Remote address and port.
 	   NetVCOptions const& opt = DEFAULT_OPTIONS ///< Socket options
 	   );
 
@@ -120,19 +119,65 @@ struct Connection
   /// Set the internal socket address struct.
   /// @internal Used only by ICP.
   void setRemote(
-		 uint32_t addr, ///< Remote IP address.
-		 uint16_t port ///< Remote port.
+    sockaddr const* remote_addr ///< Address and port.
 	     ) {
-    ink_inet_ip4_set(&sa, addr, htons(port));
+    ink_inet_copy(&addr, remote_addr);
   }
+
+  /**
+    @deprecated preserve backward compatibility with non-IPv6 iocore
+  */
+  void setRemote(
+    in_addr_t ip,
+    int port
+	     ) {
+	ink_inet_ip4_set(&addr.sin, ip, htons(port));
+  }
+
     
-  int setup_mc_send(unsigned int mc_ip, int mc_port,
-                    unsigned int my_ip, int my_port,
+  int setup_mc_send(sockaddr const* mc_addr,
+                    sockaddr const* my_addr,
                     bool non_blocking = NON_BLOCKING,
                     unsigned char mc_ttl = 1, bool mc_loopback = DISABLE_MC_LOOPBACK, Continuation * c = NULL);
 
-  int setup_mc_receive(unsigned int mc_ip, int port,
+  /**
+    @deprecated preserve backward compatibility with non-IPv6 iocore
+  */
+
+  int setup_mc_send(unsigned int mc_ip, int mc_port,
+                    unsigned int my_ip, int my_port,
+                    bool non_blocking = NON_BLOCKING,
+                    unsigned char mc_ttl = 1, bool mc_loopback = DISABLE_MC_LOOPBACK, Continuation * c = NULL)
+  {
+    struct sockaddr_in mc_addr;
+    struct sockaddr_in my_addr;
+
+    ink_inet_ip4_set(&mc_addr, mc_ip, htons(mc_port));
+    ink_inet_ip4_set(&my_addr, my_ip, htons(my_port));
+
+    return setup_mc_send(
+        ink_inet_sa_cast(&mc_addr), 
+        ink_inet_sa_cast(&my_addr), 
+        non_blocking, mc_ttl, mc_loopback, c);
+  }                 
+
+
+  int setup_mc_receive(sockaddr const* from,
                        bool non_blocking = NON_BLOCKING, Connection * sendchan = NULL, Continuation * c = NULL);
+
+  /**
+   @deprecated preserve backward compatibility with non-IPv6 iocore
+  */
+
+  int setup_mc_receive(unsigned int mc_ip, int port,
+                       bool non_blocking = NON_BLOCKING, Connection * sendchan = NULL, Continuation * c = NULL)
+  {
+    struct sockaddr_in mc_addr;
+    ink_inet_ip4_set(&mc_addr, mc_ip, port);
+
+    return setup_mc_receive(ink_inet_sa_cast(&mc_addr), non_blocking, sendchan, c);
+  }
+
 
   int close();                  // 0 on success, -errno on failure
 
@@ -156,8 +201,7 @@ struct Server: public Connection
   //
   // IP address in network byte order
   //
-  unsigned int accept_ip;
-  char *accept_ip_str;
+  ts_ip_endpoint accept_addr;
 
   /// If set, transparently connect to origin server for requests.
   bool f_outbound_transparent;
@@ -172,12 +216,12 @@ struct Server: public Connection
   int accept(Connection * c);
 
   //
-  // Listen on a socket. We assume the port is in host by orderr, but
-  // that the IP address (specified by accept_ip) has already been
+  // Listen on a socket. We assume the port is in host by order, but
+  // that the IP address (specified by accept_addr) has already been
   // converted into network byte order
   //
 
-  int listen(int port, int domain = AF_INET, bool non_blocking = false, int recv_bufsize = 0, int send_bufsize = 0, bool transparent = false);
+  int listen(bool non_blocking = false, int recv_bufsize = 0, int send_bufsize = 0, bool transparent = false);
   int setup_fd_for_listen(
     bool non_blocking = false,
     int recv_bufsize = 0,
@@ -187,10 +231,10 @@ struct Server: public Connection
 
   Server()
     : Connection()
-    , accept_ip(INADDR_ANY)
-    , accept_ip_str(NULL)
     , f_outbound_transparent(false)
-  { }
+  {
+    memset(&accept_addr, 0, sizeof(accept_addr));
+  }
 };
 
 #endif /*_Connection_h*/

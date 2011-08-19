@@ -50,8 +50,8 @@ public:
   };
 
   SOCKET getFd();
-  void setBinding(struct sockaddr_in *);
-  inkcoreapi int getBinding(struct sockaddr_in *);
+  void setBinding(struct sockaddr const *);
+  inkcoreapi int getBinding(struct sockaddr *);
 
   void destroy();
   int shouldDestroy();

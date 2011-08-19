@@ -37,7 +37,7 @@
 
 int safe_setsockopt(int s, int level, int optname, char *optval, int optlevel);
 int safe_getsockopt(int s, int level, int optname, char *optval, int *optlevel);
-int safe_bind(int s, struct sockaddr *name, int namelen);
+int safe_bind(int s, struct sockaddr const* name, int namelen);
 int safe_listen(int s, int backlog);
 int safe_getsockname(int s, struct sockaddr *name, int *namelen);
 

@@ -52,6 +52,8 @@ public:
     /// Should we use accept threads? If so, how many?
     int accept_threads;
     /// Communication domain (default: AF_INET)
+    /// @note Ignored if an explicit incoming address is set in the
+    /// the configuration (@c incoming_ip_to_bind).
     int domain;
     /// Event type to generate on accept.
     EventType etype;
@@ -60,6 +62,13 @@ public:
 	or @c NET_EVENT_ACCEPT_FAILED on success and failure resp.
     */
     bool f_callback_on_open;
+    /** Accept only on the loopback address.
+        Default: @c false.
+     */
+    bool localhost_only;
+    /// Are frequent accepts expected?
+    /// Default: @c false.
+    bool frequent_accept;
 
     /// Socket receive buffer size.
     /// 0 => OS default.
@@ -105,6 +114,23 @@ public:
     @param cont Continuation to be called back with events this
       continuation is not locked on callbacks and so the handler must
       be re-entrant.
+    @param addr address and/or port to bind.
+    @param opt Accept options.
+    @return Action, that can be cancelled to cancel the accept. The
+      port becomes free immediately.
+   */
+  inkcoreapi virtual Action * accept(
+    Continuation * cont,
+    sockaddr const* addr,
+    AcceptOptions const& opt = DEFAULT_ACCEPT_OPTIONS
+  );
+
+  /**
+    @deprecated preserve backward compatibility with non-IPv6 iocore
+    
+    @param cont Continuation to be called back with events this
+      continuation is not locked on callbacks and so the handler must
+      be re-entrant.
     @param port port to bind for accept.
     @param domain communication domain
     @param frequent_accept if true, accept is done on all event
@@ -115,7 +141,6 @@ public:
     @param callback_on_open if true, cont is called back with
       NET_EVENT_ACCEPT_SUCCEED, or NET_EVENT_ACCEPT_FAILED on success
       and failure resp.
-    @param listen_socket_in if passed, used for listening.
     @param accept_pool_size NT specific, better left unspecified.
     @param accept_only can be used to customize accept, accept a
       connection only if there is some data to be read. This works
@@ -132,6 +157,7 @@ public:
       port becomes free immediately.
 
   */
+
   inkcoreapi virtual Action * accept(Continuation * cont, int port, int domain = AF_INET, int accept_threads = -1,
                                      bool frequent_accept = false,
                                      // not used
@@ -142,7 +168,27 @@ public:
                                      sockaddr * bound_sockaddr = 0,
                                      int *bound_sockaddr_size = 0,
                                      int recv_bufsize = 0,
-                                     int send_bufsize = 0, uint32_t sockopt_flag = 0, EventType etype = ET_NET);
+                                     int send_bufsize = 0, uint32_t sockopt_flag = 0, EventType etype = ET_NET)
+  {
+    ts_ip_endpoint ip;
+    AcceptOptions opt;
+    
+    if (accept_ip_str != NULL) {
+        ink_inet_pton(accept_ip_str, &ip.sa);
+        ink_inet_port_cast(&ip) = htons(port);
+        opt.domain = ip.sa.sa_family;
+    } else {
+      ink_inet_ip4_set(&ip, accept_ip, htons(port));
+    }
+
+    opt.send_bufsize = send_bufsize;
+    opt.recv_bufsize = recv_bufsize;
+    opt.sockopt_flags = sockopt_flag;
+    opt.accept_threads = accept_threads;
+    opt.etype = etype;
+    opt.frequent_accept = frequent_accept;
+    return accept(cont, &ip.sa, opt);
+  }
 
   /**
     Accepts incoming connections on port. Accept connections on port.
@@ -158,6 +204,24 @@ public:
     Re-entrant callbacks (based on callback_on_open flag):
       - cont->handleEvent(NET_EVENT_ACCEPT_SUCCEED, 0) on successful accept init
       - cont->handleEvent(NET_EVENT_ACCEPT_FAILED, 0) on accept init failure
+
+    @param cont Continuation to be called back with events this
+      continuation is not locked on callbacks and so the handler must
+      be re-entrant.
+    @param listen_socket_in if passed, used for listening.
+    @param opt Accept options.
+    @return Action, that can be cancelled to cancel the accept. The
+      port becomes free immediately.
+
+  */
+  virtual Action *main_accept(
+    Continuation * cont,
+    SOCKET listen_socket_in,
+    AcceptOptions const& opt = DEFAULT_ACCEPT_OPTIONS
+  );
+
+  /**
+    @deprecated preserve backward compatibility with non-IPv6 iocore
 
     @param cont Continuation to be called back with events this
       continuation is not locked on callbacks and so the handler must
@@ -182,10 +246,21 @@ public:
       port becomes free immediately.
 
   */
-  virtual Action *main_accept(Continuation * cont, SOCKET listen_socket_in, sockaddr * bound_sockaddr = NULL,
-                              int *bound_sockaddr_size = NULL, bool accept_only = false, bool localhost_only = false,
-                              AcceptOptions const& opt = DEFAULT_ACCEPT_OPTIONS);
-
+  virtual Action *main_accept(
+    Continuation * cont,
+    SOCKET listen_socket_in,
+    sockaddr * bound_sockaddr = NULL,
+    int *bound_sockaddr_size = NULL,
+    bool accept_only = false,
+    bool localhost_only = false,
+    AcceptOptions const& opt = DEFAULT_ACCEPT_OPTIONS
+  )
+  {
+    AcceptOptions new_opt = opt;
+    new_opt.localhost_only = localhost_only;
+    return main_accept(cont, listen_socket_in, new_opt);
+  }
+    
   /**
     Open a NetVConnection for connection oriented I/O. Connects
     through sockserver if netprocessor is configured to use socks
@@ -202,14 +277,31 @@ public:
     @see connect_s()
 
     @param cont Continuation to be called back with events.
-    @param ip machine to connect to.
-    @param port port to connect to.
+    @param addr target address and port to connect to.
     @param options @see NetVCOptions.
 
   */
 
-  inkcoreapi Action *connect_re(Continuation * cont,
-                                unsigned int ip, int port, NetVCOptions * options = NULL);
+  inkcoreapi Action *connect_re(
+    Continuation * cont,
+    sockaddr const* addr,
+    NetVCOptions * options = NULL
+  );
+
+  /**
+    @deprecated preserve backward compatibility with non-IPv6 iocore
+  */
+  inkcoreapi Action *connect_re(
+    Continuation * cont,
+    unsigned int ip,
+    int port,
+    NetVCOptions * options = NULL
+  ) {
+    struct sockaddr_in addr;
+
+    ink_inet_ip4_set(&addr, ip, htons(port));
+    return connect_re(cont, ink_inet_sa_cast(&addr), options);
+  }
 
   /**
     Open a NetVConnection for connection oriented I/O. This call
@@ -221,20 +313,38 @@ public:
     asynchronous type connect is desired use connect_re().
 
     @param cont Continuation to be called back with events.
-    @param ip machine to connect to.
-    @param port port to connect to.
+    @param addr Address to which to connect (includes port).
     @param timeout for connect, the cont will get NET_EVENT_OPEN_FAILED
-      if connection could not be established for timeout secs. The
+      if connection could not be established for timeout msecs. The
       default is 30 secs.
     @param options @see NetVCOptions.
 
     @see connect_re()
 
   */
-  Action *connect_s(Continuation * cont,
-                    unsigned int ip,
-                    int port,
-                    int timeout = NET_CONNECT_TIMEOUT, NetVCOptions * opts = NULL);
+  Action *connect_s(
+    Continuation * cont,
+    sockaddr const* addr,
+    int timeout = NET_CONNECT_TIMEOUT,
+    NetVCOptions * opts = NULL
+  );
+
+  /**
+    @deprecated preserve backward compatibility with non-IPv6 iocore
+  */
+
+  Action *connect_s(
+    Continuation * cont,
+    unsigned int ip,
+    int port,
+    int timeout = NET_CONNECT_TIMEOUT,
+    NetVCOptions * opts = NULL
+  ) {
+    struct sockaddr_in addr;
+
+    ink_inet_ip4_set(&addr, ip, htons(port));
+    return connect_s(cont, ink_inet_sa_cast(&addr), timeout, opts);
+  }
 
   /**
     Starts the Netprocessor. This has to be called before doing any

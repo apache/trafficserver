@@ -200,8 +200,8 @@ private:
   MIOBuffer *a_to_p_buffer;
   IOBufferReader *a_to_p_reader;
 
-  struct sockaddr_storage passive_addr_struct;
-  struct sockaddr_storage active_addr_struct;
+  ts_ip_endpoint passive_addr_struct;
+  ts_ip_endpoint active_addr_struct;
 
   void *passive_data;
   void *active_data;
@@ -224,8 +224,8 @@ passive_data(NULL),
 active_data(NULL),
 id(0)
 {
-  memset(&active_addr_struct, 0, sizeof(struct sockaddr_storage));
-  memset(&passive_addr_struct, 0, sizeof(struct sockaddr_storage));
+  memset(&active_addr_struct, 0, sizeof active_addr_struct);
+  memset(&passive_addr_struct, 0, sizeof passive_addr_struct);
 
   id = ink_atomic_increment(&nextid, 1);
 }

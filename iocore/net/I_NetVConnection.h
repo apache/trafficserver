@@ -48,10 +48,18 @@ enum NetDataType
     This class holds various options a user can specify for
     NetVConnection. Various clients need many slightly different
     features. This is an attempt to prevent out of control growth of
-    the connection method signatures.
+    the connection method signatures. Only options of interest need to
+    be explicitly set -- the rest get sensible default values.
 
-    Only options of interest need to be explicitly set --
-    the rest get sensible default values.
+    @note Binding addresses is a bit complex. It is not currently
+    possible to bind indiscriminately across protocols, which means
+    any connection must commit to IPv4 or IPv6. For this reason the
+    connection logic will look at the address family of @a local_addr
+    even if @a addr_binding is @c ANY_ADDR and bind to any address in
+    that protocol. If it's not an IP protocol, IPv4 will be used.
+
+    @note Port values are encoded in the address. Use a port value
+    of 0 to indicate "don't care".
 */
 struct NetVCOptions {
   typedef NetVCOptions self; ///< Self reference type.
@@ -66,6 +74,9 @@ struct NetVCOptions {
   ip_protocol_t ip_proto;
 
   /** The set of ways in which the local address should be bound.
+
+      The protocol is set by the contents of @a local_addr regardless
+      of this value. @c ANY_ADDR will override only the address.
 
       @note The difference between @c INTF_ADDR and @c FOREIGN_ADDR is
       whether transparency is enabled on the socket. It is the
@@ -83,23 +94,10 @@ struct NetVCOptions {
     FOREIGN_ADDR ///< Bind to foreign address in @a local_addr.
   };
 
-  /// The set of ways in which the local port should be bound.
-  enum port_bind_style {
-    ANY_PORT, ///< Bind to any available local port (don't care, default).
-    FIXED_PORT ///< Bind to the port in @a local_port.
-  };
-
-  /// Port to use for local side of connection.
-  /// @note Ignored if @a port_binding is @c ANY_PORT.
-  /// @see port_binding
-  uint16_t local_port;
-  /// How to bind local port.
-  /// @note Default is @c ANY_PORT.
-  port_bind_style port_binding;
   /// Address to use for local side of connection.
   /// @note Ignored if @a addr_binding is @c ANY_ADDR.
   /// @see addr_binding
-  uint32_t local_addr;
+  ts_ip_endpoint local_addr;
   /// How to bind the local address.
   /// @note Default is @c ANY_ADDR.
   addr_bind_style addr_binding;
@@ -371,20 +369,25 @@ public:
   /** Returns local sockaddr storage. */
   sockaddr const* get_local_addr();
 
-  /** Returns local ip. */
-  unsigned int get_local_ip();
+  /** Returns local ip.
+      @deprecated get_local_addr() should be used instead for AF_INET6 compatibility.
+  */
+  
+  in_addr_t get_local_ip();
 
   /** Returns local port. */
-  int get_local_port();
+  uint16_t get_local_port();
 
   /** Returns remote sockaddr storage. */
   sockaddr const* get_remote_addr();
 
-  /** Returns remote ip. */
-  unsigned int get_remote_ip();
+  /** Returns remote ip. 
+      @deprecated get_remote_addr() should be used instead for AF_INET6 compatibility.
+  */
+  in_addr_t get_remote_ip();
 
   /** Returns remote port. */
-  int get_remote_port();
+  uint16_t get_remote_port();
 
   /** Structure holding user options. */
   NetVCOptions options;
@@ -458,12 +461,11 @@ private:
   NetVConnection & operator =(const NetVConnection &);
 
 protected:
-  // An IPv6 struct suffices for IP addresses.
-  struct sockaddr_in6 local_addr;
-  struct sockaddr_in6 remote_addr;
+  ts_ip_endpoint local_addr;
+  ts_ip_endpoint remote_addr;
 
-  int got_local_addr;
-  int got_remote_addr;
+  bool got_local_addr;
+  bool got_remote_addr;
 
   bool is_internal_request;
   /// Set if this connection is transparent.

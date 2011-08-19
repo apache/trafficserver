@@ -358,11 +358,15 @@ INKBasedTimeGet()
 
 TSAction
 INKUDPBind(TSCont contp, unsigned int ip, int port)
-{
+{  
   sdk_assert(sdk_sanity_check_continuation(contp) == TS_SUCCESS);
-
+    
   FORCE_PLUGIN_MUTEX(contp);
-  return reinterpret_cast<TSAction>(udpNet.UDPBind((Continuation *)contp, port, ip, INK_ETHERNET_MTU_SIZE, INK_ETHERNET_MTU_SIZE));
+
+  struct sockaddr_in addr;
+  ink_inet_ip4_set(&addr, ip, htons(port));
+  
+  return reinterpret_cast<TSAction>(udpNet.UDPBind((Continuation *)contp, ink_inet_sa_cast(&addr), INK_ETHERNET_MTU_SIZE, INK_ETHERNET_MTU_SIZE));
 }
 
 TSAction
@@ -374,9 +378,7 @@ INKUDPSendTo(TSCont contp, INKUDPConn udp, unsigned int ip, int port, char *data
   UDPPacket *packet = new_UDPPacket();
   UDPConnection *conn = (UDPConnection *)udp;
 
-  packet->to.sin_family = PF_INET;
-  packet->to.sin_port = htons(port);
-  packet->to.sin_addr.s_addr = ip;
+  ink_inet_ip4_set(&packet->to, ip, htons(port));
 
   IOBufferBlock *blockp = new_IOBufferBlock();
   blockp->alloc(BUFFER_SIZE_INDEX_32K);
@@ -438,7 +440,7 @@ INKUDPPacketFromAddressGet(INKUDPPacket packet)
   sdk_assert(sdk_sanity_check_null_ptr((void*)packet) == TS_SUCCESS);
 
   UDPPacket *p = (UDPPacket *)packet;
-  return (p->from.sin_addr.s_addr);
+  return ink_inet_ip4_addr_cast(&p->from);
 }
 
 int
@@ -447,7 +449,7 @@ INKUDPPacketFromPortGet(INKUDPPacket packet)
   sdk_assert(sdk_sanity_check_null_ptr((void*)packet) == TS_SUCCESS);
 
   UDPPacket *p = (UDPPacket *)packet;
-  return (ntohs(p->from.sin_port));
+  return ink_inet_get_port(&p->from);
 }
 
 INKUDPConn

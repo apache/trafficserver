@@ -46,11 +46,7 @@
 
 #define UTDBG_TAG "sdk_ut"
 
-static in_addr_t const LOCAL_IP = INADDR_LOOPBACK;//  0x7f000001    // 127.0.0.1
-
 /******************************************************************************/
-
-
 
 /* Use SDK_RPRINT to report failure or success for each test case */
 int
@@ -285,15 +281,16 @@ client_handler(TSCont contp, TSEvent event, void *data)
     SDK_RPRINT(SDK_NetVConn_test, "TSNetConnect", "TestCase1", TC_PASS, "ok");
 
     sockaddr const* addr = TSNetVConnRemoteAddrGet(static_cast<TSVConn>(data));
-    in_addr_t input_server_ip = ink_inet_ip4_addr_cast(addr);
-    uint16_t input_server_port = ntohs(ink_inet_port_cast(addr));
+    uint16_t input_server_port = ink_inet_get_port(addr);
 
-    if (input_server_ip != LOCAL_IP) {
-      char s[INET6_ADDRSTRLEN];
-      inet_ntop(addr->sa_family, addr, s, sizeof s);
-      in_addr a;
-      a.s_addr = LOCAL_IP;
-      SDK_RPRINT(SDK_NetVConn_test, "TSNetVConnRemoteIPGet", "TestCase1", TC_FAIL, "server ip [%s] is incorrect - expected [%x]", s, inet_ntoa(a));
+    if (!ink_inet_is_loopback(addr)) {
+      ip_text_buffer s, ipb;
+      ts_ip_endpoint loopback;
+      ink_inet_ip4_set(&loopback, htonl(INADDR_LOOPBACK));
+      SDK_RPRINT(SDK_NetVConn_test, "TSNetVConnRemoteIPGet", "TestCase1", TC_FAIL, "server ip [%s] is incorrect - expected [%s]",
+        ink_inet_ntop(addr, s, sizeof s),
+        ink_inet_ntop(&loopback.sa, ipb, sizeof ipb)
+      );
 
       TSContDestroy(contp);
       // Fix me: how to deal with server side cont?
@@ -336,9 +333,9 @@ REGRESSION_TEST(SDK_API_TSNetVConn) (RegressionTest * test, int atype, int *psta
 
   TSNetAccept(server_cont, server_port, -1, 0);
 
-  sockaddr_in addr;
-  ink_inet_ip4_set(&addr, INADDR_LOOPBACK, server_port);
-  TSNetConnect(client_cont, ink_inet_sa_cast(&addr));
+  ts_ip_endpoint addr;
+  ink_inet_ip4_set(&addr, htonl(INADDR_LOOPBACK), htons(server_port));
+  TSNetConnect(client_cont, &addr.sa);
 }
 
 /* TSCache, TSVConn, TSVIO */
@@ -2164,21 +2161,21 @@ checkHttpTxnClientIPGet(SocketTest * test, void *data)
   sockaddr const* ptr;
   in_addr_t ip;
   TSHttpTxn txnp = (TSHttpTxn) data;
-  in_addr_t actual_ip = LOCAL_IP;     /* 127.0.0.1 is expected because the client is on the same machine */
+  in_addr_t actual_ip = htonl(INADDR_LOOPBACK);     /* 127.0.0.1 is expected because the client is on the same machine */
 
   ptr = TSHttpTxnClientAddrGet(txnp);
-  if (ptr == 0 || (ip = ink_inet_ip4_addr_cast(ptr)) == 0) {
+  if (ptr == 0 || INADDR_ANY == (ip = ink_inet_ip4_addr_cast(ptr))) {
     test->test_client_ip_get = false;
     SDK_RPRINT(test->regtest, "TSHttpTxnClientIPGet", "TestCase1", TC_FAIL, "TSHttpTxnClientIPGet returns 0 %s", ptr ? "address" : "pointer");
     return TS_EVENT_CONTINUE;
   }
 
-  if (ntohl(ip) == actual_ip) {
+  if (ip == actual_ip) {
     test->test_client_ip_get = true;
     SDK_RPRINT(test->regtest, "TSHttpTxnClientIPGet", "TestCase1", TC_PASS, "ok [%0.8x]", ip);
   } else {
     test->test_client_ip_get = false;
-    SDK_RPRINT(test->regtest, "TSHttpTxnClientIPGet", "TestCase1", TC_FAIL, "Value's Mismatch [expected %0.8x got %0.8x]", actual_ip, ip);
+    SDK_RPRINT(test->regtest, "TSHttpTxnClientIPGet", "TestCase1", TC_FAIL, "Value's Mismatch [expected %.8x got %.8x]", actual_ip, ip);
   }
   return TS_EVENT_CONTINUE;
 
@@ -2189,7 +2186,7 @@ static int
 checkHttpTxnNextHopIPGet(SocketTest * test, void *data)
 {
   TSHttpTxn txnp = (TSHttpTxn) data;
-  in_addr_t actual_ip = LOCAL_IP;     /* 127.0.0.1 is expected because the client is on the same machine */
+  in_addr_t actual_ip = htonl(INADDR_LOOPBACK);     /* 127.0.0.1 is expected because the client is on the same machine */
   sockaddr const* ptr;
   in_addr_t nexthopip;
 
@@ -2200,7 +2197,7 @@ checkHttpTxnNextHopIPGet(SocketTest * test, void *data)
     return TS_EVENT_CONTINUE;
   }
 
-  if (ntohl(nexthopip) == actual_ip) {
+  if (nexthopip == actual_ip) {
     test->test_next_hop_ip_get = true;
     SDK_RPRINT(test->regtest, "TSHttpTxnNextHopIPGet", "TestCase1", TC_PASS, "ok");
   } else {
@@ -2220,7 +2217,7 @@ checkHttpTxnServerIPGet(SocketTest * test, void *data)
   sockaddr const* ptr;
   in_addr_t ip;
   TSHttpTxn txnp = (TSHttpTxn) data;
-  in_addr_t actual_ip = ntohl(LOCAL_IP);      /* 127.0.0.1 is expected because the client is on the same machine */
+  in_addr_t actual_ip = htonl(INADDR_LOOPBACK);      /* 127.0.0.1 is expected because the client is on the same machine */
 
   ptr = TSHttpTxnServerAddrGet(txnp);
   if (0 == ptr || 0 == (ip = ink_inet_ip4_addr_cast(ptr))) {
@@ -2257,7 +2254,7 @@ checkHttpTxnClientIncomingPortGet(SocketTest * test, void *data)
     test->test_client_incoming_port_get = false;
     return TS_EVENT_CONTINUE;
   }
-  port = ntohs(ink_inet_port_cast(ptr));
+  port = ink_inet_get_port(ptr);
 
   if (TSMgmtIntGet("proxy.config.http.server_port", &port_from_config_file) != TS_SUCCESS) {
     port_from_config_file = 8080;
@@ -2295,7 +2292,7 @@ checkHttpTxnClientRemotePortGet(SocketTest * test, void *data)
     return TS_EVENT_CONTINUE;
   }
 
-  port = ntohs(ink_inet_port_cast(ptr));
+  port = ink_inet_get_port(ptr);
   TSDebug(UTDBG_TAG, "Browser port = %x, Txn remote port = %x", browser_port, port);
 
   if (port == browser_port) {
@@ -7406,6 +7403,7 @@ done:
 EXCLUSIVE_REGRESSION_TEST(SDK_API_TSHttpConnectIntercept) (RegressionTest * test, int atype, int *pstatus)
 {
   NOWARN_UNUSED(atype);
+
   *pstatus = REGRESSION_TEST_INPROGRESS;
 
   TSDebug(UTDBG_TAG, "Starting test TSHttpConnectIntercept");
@@ -7447,6 +7445,7 @@ EXCLUSIVE_REGRESSION_TEST(SDK_API_TSHttpConnectIntercept) (RegressionTest * test
 EXCLUSIVE_REGRESSION_TEST(SDK_API_TSHttpConnectServerIntercept) (RegressionTest * test, int atype, int *pstatus)
 {
   NOWARN_UNUSED(atype);
+
   *pstatus = REGRESSION_TEST_INPROGRESS;
 
   TSDebug(UTDBG_TAG, "Starting test TSHttpConnectServerintercept");

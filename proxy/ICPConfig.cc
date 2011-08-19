@@ -871,14 +871,14 @@ ParentSiblingPeer::SendMsg_re(Continuation * cont, void *token, struct msghdr * 
     Peer *p = _ICPpr->FindPeer(&to->sin_addr, ntohs(to->sin_port));
     ink_assert(p);
 
-    msg->msg_name = (caddr_t) & (p->GetSendChan())->sa;
-    msg->msg_namelen = sizeof((p->GetSendChan())->sa);
+    msg->msg_name = (caddr_t) & (p->GetSendChan())->addr;
+    msg->msg_namelen = sizeof((p->GetSendChan())->addr);
     Action *a = udpNet.sendmsg_re(cont, token, lp->GetSendFD(), msg);
     return a;
   } else {
     // Send to default host
-    msg->msg_name = (caddr_t) & _chan.sa;
-    msg->msg_namelen = sizeof(_chan.sa);
+    msg->msg_name = (caddr_t) & _chan.addr;
+    msg->msg_namelen = sizeof(_chan.addr);
     Action *a = udpNet.sendmsg_re(cont, token, lp->GetSendFD(), msg);
     return a;
   }
@@ -1029,8 +1029,8 @@ MultiCastPeer::SendMsg_re(Continuation * cont, void *token, struct msghdr * msg,
     a = ((ParentSiblingPeer *) p)->SendMsg_re(cont, token, msg, 0);
   } else {
     // Send to MultiCast group
-    msg->msg_name = (caddr_t) & _send_chan.sa;
-    msg->msg_namelen = sizeof(_send_chan.sa);
+    msg->msg_name = (caddr_t) & _send_chan.addr;
+    msg->msg_namelen = sizeof(_send_chan.addr);
     a = udpNet.sendmsg_re(cont, token, _send_chan.fd, msg);
   }
   return a;

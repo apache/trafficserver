@@ -3842,7 +3842,7 @@ HttpSM::do_hostdb_update_if_necessary()
     ts_ip_endpoint ip;
     hostDBProcessor.setby(t_state.current.server->name,
       strlen(t_state.current.server->name),
-      ink_inet_ip4_set(&ip.sa, t_state.current.server->ip, t_state.current.server->port),
+      ink_inet_ip4_set(&ip.sa, t_state.current.server->ip, htons(t_state.current.server->port)),
       &t_state.host_db_info.app
     );
   }
@@ -4089,10 +4089,10 @@ HttpSM::do_http_server_open(bool raw)
 
   if (t_state.txn_conf->outgoing_ip_to_bind_saddr) {
     opt.addr_binding = NetVCOptions::INTF_ADDR;
-    opt.local_addr = t_state.txn_conf->outgoing_ip_to_bind_saddr;
+    ink_inet_ip4_set(&opt.local_addr, t_state.txn_conf->outgoing_ip_to_bind_saddr);
   } else if (t_state.server_info.is_transparent) {
     opt.addr_binding = NetVCOptions::FOREIGN_ADDR;
-    opt.local_addr = t_state.client_info.ip;
+    ink_inet_ip4_set(&opt.local_addr, t_state.client_info.ip);
   }
 
   Debug("http", "[%" PRId64 "] open connection to %s: %u.%u.%u.%u",

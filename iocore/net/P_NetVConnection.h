@@ -28,12 +28,12 @@ NetVConnection::get_remote_addr()
 {
   if (!got_remote_addr) {
     set_remote_addr();
-    got_remote_addr = 1;
+    got_remote_addr = true;
   }
-  return ink_inet_sa_cast(&remote_addr);
+  return &remote_addr.sa;
 }
 
-TS_INLINE unsigned int
+TS_INLINE in_addr_t
 NetVConnection::get_remote_ip()
 {
   sockaddr const* addr = this->get_remote_addr();
@@ -44,7 +44,7 @@ NetVConnection::get_remote_ip()
 
 
 /// @return The remote port in host order.
-TS_INLINE int
+TS_INLINE uint16_t
 NetVConnection::get_remote_port()
 {
   return ink_inet_get_port(this->get_remote_addr());
@@ -55,19 +55,18 @@ NetVConnection::get_local_addr()
 {
   if (!got_local_addr) {
     set_local_addr();
-    sockaddr* a = ink_inet_sa_cast(&local_addr); // cache required type.
     if (
-      (ink_inet_is_ip(a) && ink_inet_port_cast(a)) // IP and has a port.
-      || (ink_inet_is_ip4(a) && ink_inet_ip4_addr_cast(a)) // IPv4
-      || (ink_inet_is_ip6(a) && !IN6_IS_ADDR_UNSPECIFIED(&ink_inet_ip6_addr_cast(a)))
+      (ink_inet_is_ip(&local_addr) && ink_inet_port_cast(&local_addr)) // IP and has a port.
+      || (ink_inet_is_ip4(&local_addr) && INADDR_ANY != ink_inet_ip4_addr_cast(&local_addr)) // IPv4
+      || (ink_inet_is_ip6(&local_addr) && !IN6_IS_ADDR_UNSPECIFIED(&local_addr.sin6.sin6_addr))
     ) {
       got_local_addr = 1;
     }
   }
-  return ink_inet_sa_cast(&local_addr);
+  return &local_addr.sa;
 }
 
-TS_INLINE unsigned int
+TS_INLINE in_addr_t
 NetVConnection::get_local_ip()
 {
   sockaddr const* addr = this->get_local_addr();
@@ -77,7 +76,7 @@ NetVConnection::get_local_ip()
 }
 
 /// @return The local port in host order.
-TS_INLINE int
+TS_INLINE uint16_t
 NetVConnection::get_local_port()
 {
   return ink_inet_get_port(this->get_local_addr());

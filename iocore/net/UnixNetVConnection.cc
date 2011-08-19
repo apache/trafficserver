@@ -765,10 +765,11 @@ UnixNetVConnection::UnixNetVConnection()
     next_inactivity_timeout_at(0),
 #endif
     active_timeout(NULL), nh(NULL),
-    id(0), ip(0), accept_port(0), port(0), flags(0), recursion(0), submit_time(0), oob_ptr(0),
+    id(0), accept_port(0), flags(0), recursion(0), submit_time(0), oob_ptr(0),
     from_accept_thread(false)
 {
-  memset(&local_sa, 0, sizeof local_sa);
+  memset(&local_addr, 0, sizeof local_addr);
+  memset(&server_addr, 0, sizeof server_addr);
   SET_HANDLER((NetVConnHandler) & UnixNetVConnection::startEvent);
 }
 
@@ -1040,12 +1041,22 @@ UnixNetVConnection::connectUp(EThread *t)
     free(t);
     return CONNECT_FAILURE;
   }
+
+  // Create an AF_INET6 socket if we're going to connect to an AF_INET6
+  // address.
+  if (ink_inet_is_ip6(&server_addr) &&
+        (options.addr_binding == NetVCOptions::ANY_ADDR ||
+         !ink_inet_is_ip(&options.local_addr))) {
+    ink_inet_ip6_set(&options.local_addr, in6addr_any);
+  }
+  
   //
   // Initialize this UnixNetVConnection
   //
+  char addrbuf[INET6_ADDRSTRLEN];
   int res = 0;
-  Debug("iocore_net", "connectUp:: local_addr=%u.%u.%u.%u [%s]\n",
-	   PRINT_IP(options.local_addr),
+  Debug("iocore_net", "connectUp:: local_addr=%s [%s]\n",
+           ink_inet_ntop(&options.local_addr.sa, addrbuf, sizeof(addrbuf)),
 	   NetVCOptions::toString(options.addr_binding)
 	   );
 
@@ -1062,7 +1073,7 @@ UnixNetVConnection::connectUp(EThread *t)
       free(t);
       return CONNECT_FAILURE;
     }
-    res = con.connect(ip, port, options);
+    res = con.connect(&server_addr.sa, options);
   }
 
   if (res) {

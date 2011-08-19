@@ -65,9 +65,9 @@ namespace {
   }
   inline void set_loopback(sockaddr* addr) {
     if (prefer_ipv6_p())
-      ink_inet_ip6_set(addr, in6addr_any, DOMAIN_SERVICE_PORT);
+      ink_inet_ip6_set(addr, in6addr_loopback, htons(DOMAIN_SERVICE_PORT));
     else
-      ink_inet_ip4_set(addr, INADDR_LOOPBACK, DOMAIN_SERVICE_PORT);
+      ink_inet_ip4_set(addr, htonl(INADDR_LOOPBACK), htons(DOMAIN_SERVICE_PORT));
   }
   inline void set_loopback(ts_ip_endpoint* ip) {
     set_loopback(&ip->sa);

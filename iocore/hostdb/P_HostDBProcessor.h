@@ -41,8 +41,8 @@ inline unsigned int HOSTDB_CLIENT_IP_HASH(
       in_addr_t ip2 = ink_inet_ip4_addr_cast(rhs);
       zret = (ip1 >> 16) ^ ip1 ^ ip2 ^ (ip2 >> 16);
     } else if (ink_inet_is_ip6(lhs)) {
-      uint32_t const* ip1 = ink_inet_ip_addr32_cast(lhs);
-      uint32_t const* ip2 = ink_inet_ip_addr32_cast(rhs);
+      uint32_t const* ip1 = ink_inet_addr32_cast(lhs);
+      uint32_t const* ip2 = ink_inet_addr32_cast(rhs);
       for ( int i = 0 ; i < 4 ; ++i, ++ip1, ++ip2 ) {
         zret ^= (*ip1 >> 16) ^ *ip1 ^ *ip2 ^ (*ip2 >> 16);
       }

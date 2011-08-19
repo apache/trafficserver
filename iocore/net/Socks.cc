@@ -54,19 +54,19 @@ SocksEntry::init(ProxyMutex * m, SocksNetVC * vc, unsigned char socks_support, u
 
   SET_HANDLER(&SocksEntry::startEvent);
 
-  ip = vc->ip;
-  port = vc->port;
+  ink_inet_copy(&target_addr, vc->get_local_addr());
 
 #ifdef SOCKS_WITH_TS
   req_data.hdr = 0;
   req_data.hostname_str = 0;
   req_data.api_info = 0;
   req_data.xact_start = time(0);
-  req_data.dest_ip = ip;
+
+  assert(ink_inet_is_ip4(&target_addr));
+  req_data.dest_ip = ink_inet_ip4_addr_cast(&target_addr);
 
   //we dont have information about the source. set to destination's
-  req_data.src_ip = ip;
-  req_data.incoming_port = port;
+  req_data.src_ip = ink_inet_ip4_addr_cast(&target_addr);
 
   server_params = SocksServerConfig::acquire();
 #endif
@@ -103,23 +103,33 @@ SocksEntry::findServer()
 
   switch (server_result.r) {
   case PARENT_SPECIFIED:
-    server_ip = inet_addr(server_result.hostname);
-    server_port = server_result.port;
+    // Original was inet_addr, but should hostnames work?
+    // ink_inet_pton only supports numeric (because other clients
+    // explicitly want to avoid hostname lookups).
+    if (0 == ink_inet_pton(server_result.hostname, &server_addr)) {
+      ink_inet_port_cast(&server_addr) = htons(server_result.port);
+    } else {
+      Debug("SocksParent", "Invalid parent server specified %s", server_result.hostname);
+    }
     break;
 
   default:
     ink_debug_assert(!"Unexpected event");
   case PARENT_DIRECT:
   case PARENT_FAIL:
-    server_ip = (unsigned int) -1;
+    memset(&server_addr, 0, sizeof(server_addr));
   }
 #else
-  server_ip = (nattempts > netProcessor.socks_conf_stuff->connection_attempts)
-    ? (unsigned int) -1 : g_socks_conf_stuff->socks_server;
-  server_port = g_socks_conf_stuff->socks_server_port;
+  if (nattempts > netProcessor.socks_conf_stuff->connection_attempts)
+    memset(&server_addr, 0, sizeof(server_addr));
+  else ink_inet_copy(server_addr, g_socks_conf_stuff->socks_server);
 #endif // SOCKS_WITH_TS
 
-  Debug("SocksParents", "findServer result: %u.%u.%u.%u:%d", PRINT_IP(server_ip), server_port);
+  char buff[INET6_ADDRSTRLEN];
+  Debug("SocksParents", "findServer result: %s:%d",
+  ink_inet_ntop(&server_addr.sa, buff, sizeof(buff)),
+  ink_inet_get_port(&server_addr)
+  );
 }
 
 void
@@ -153,8 +163,7 @@ SocksEntry::free()
       netVConnection->do_io_read(this, 0, 0);
       netVConnection->do_io_write(this, 0, 0);
       netVConnection->action_ = action_;        //assign the original continuation
-      netVConnection->ip = ip;
-      netVConnection->port = port;      // we already have the lock for the continuation
+      ink_inet_copy(&netVConnection->server_addr, &server_addr);
       Debug("Socks", "Sent success to HTTP");
       NET_INCREMENT_DYN_STAT(socks_connections_successful_stat);
       action_.continuation->handleEvent(NET_EVENT_OPEN, netVConnection);
@@ -187,11 +196,12 @@ SocksEntry::startEvent(int event, void *data)
       timeout = NULL;
     }
 
-    Debug("Socks", "Failed to connect to %u.%u.%u.%u:%d", PRINT_IP(server_ip), server_port);
+    char buff[INET6_ADDRPORTSTRLEN];
+    Debug("Socks", "Failed to connect to %s", ink_inet_nptop(&server_addr.sa, buff, sizeof(buff)));
 
     findServer();
 
-    if (server_ip == (uint32_t) - 1) {
+    if (!ink_inet_is_ip(&server_addr)) {
       Debug("Socks", "Unable to open connection to the SOCKS server");
       lerrno = ESOCK_NO_SOCK_SERVER_CONN;
       free();
@@ -214,7 +224,7 @@ SocksEntry::startEvent(int event, void *data)
 
     NetVCOptions options;
     options.socks_support = NO_SOCKS;
-    netProcessor.connect_re(this, server_ip, server_port, &options);
+    netProcessor.connect_re(this, &server_addr.sa, &options);
   }
 
   return EVENT_CONT;
@@ -243,28 +253,45 @@ SocksEntry::mainEvent(int event, void *data)
 
       p[n_bytes++] = version;
       p[n_bytes++] = (socks_cmd == NORMAL_SOCKS) ? SOCKS_CONNECT : socks_cmd;
-      ts = (unsigned short) htons(port);
+      ts = ntohs(ink_inet_port_cast(&server_addr));
 
       if (version == SOCKS5_VERSION) {
         p[n_bytes++] = 0;       //Reserved
-        p[n_bytes++] = 1;       //IPv4 addr
-        p[n_bytes++] = ((unsigned char *) &ip)[0];
-        p[n_bytes++] = ((unsigned char *) &ip)[1];
-        p[n_bytes++] = ((unsigned char *) &ip)[2];
-        p[n_bytes++] = ((unsigned char *) &ip)[3];
+        if (ink_inet_is_ip4(&server_addr)) {
+          p[n_bytes++] = 1;       //IPv4 addr
+          memcpy(p + n_bytes,
+            &server_addr.sin.sin_addr,
+            4
+          );
+          n_bytes += 4;
+        } else if (ink_inet_is_ip6(&server_addr)) {
+          p[n_bytes++] = 4;       //IPv6 addr
+          memcpy(p + n_bytes,
+            &server_addr.sin6.sin6_addr,
+            INK_IP6_SIZE
+          );
+          n_bytes += INK_IP6_SIZE;
+        } else {
+          Debug("Socks", "SOCKS supports only IP addresses.");
+        }
       }
 
-      p[n_bytes++] = ((unsigned char *) &ts)[0];
-      p[n_bytes++] = ((unsigned char *) &ts)[1];
+      memcpy(p + n_bytes, &ts, 2);
+      n_bytes += 2;
 
       if (version == SOCKS4_VERSION) {
-        //for socks4, ip addr is after the port
-        p[n_bytes++] = ((unsigned char *) &ip)[0];
-        p[n_bytes++] = ((unsigned char *) &ip)[1];
-        p[n_bytes++] = ((unsigned char *) &ip)[2];
-        p[n_bytes++] = ((unsigned char *) &ip)[3];
+        if (ink_inet_is_ip4(&server_addr)) {
+          //for socks4, ip addr is after the port
+          memcpy(p + n_bytes,
+            &server_addr.sin.sin_addr,
+            4
+          );
+          n_bytes += 4;
 
-        p[n_bytes++] = 0;       // NULL
+          p[n_bytes++] = 0;       // NULL
+        } else {
+          Debug("Socks", "SOCKS v4 supports only IPv4 addresses.");
+        }
       }
 
     }

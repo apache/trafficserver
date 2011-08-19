@@ -1007,13 +1007,13 @@ CoreUtils::process_NetVC(UnixNetVConnection * nvc_test)
 
   if (read_from_core((intptr_t) nvc_test, sizeof(UnixNetVConnection), buf) != -1) {
     UnixNetVConnection *loaded_nvc = (UnixNetVConnection *) buf;
-
+    
     // Probably not 64-bit safe. /leif
+    char addrbuf[INET6_ADDRSTRLEN];
     printf("----------- UnixNetVConnection @ 0x%p ----------\n", nvc_test);
-    printf("     ip: %hhu.%hhu.%hhu.%hhu    port: %d\n",
-           ((unsigned char *) &loaded_nvc->ip)[0],
-           ((unsigned char *) &loaded_nvc->ip)[1],
-           ((unsigned char *) &loaded_nvc->ip)[2], ((unsigned char *) &loaded_nvc->ip)[3], loaded_nvc->port);
+    printf("     ip: %s    port: %d\n",
+        ink_inet_ntop(&loaded_nvc->server_addr.sa, addrbuf, sizeof(addrbuf)), 
+        ink_inet_get_port(&loaded_nvc->server_addr));
     printf("     closed: %d\n\n", loaded_nvc->closed);
     printf("     read state: \n");
     print_netstate(&loaded_nvc->read);

@@ -69,7 +69,7 @@ Connection::Connection()
   , is_bound(false)
   , is_connected(false)
 {
-  memset(&sa, 0, sizeof(sa));
+  memset(&addr, 0, sizeof(addr));
 }
 
 
@@ -83,9 +83,9 @@ int
 Server::accept(Connection * c)
 {
   int res = 0;
-  socklen_t sz = sizeof(c->sa);
+  socklen_t sz = sizeof(c->addr);
 
-  res = socketManager.accept(fd, (struct sockaddr *)&c->sa, &sz);
+  res = socketManager.accept(fd, &c->addr.sa, &sz);
   if (res < 0)
     return res;
   c->fd = res;
@@ -212,8 +212,8 @@ Server::setup_fd_for_listen(
     if ((res = safe_nonblocking(fd)) < 0)
       goto Lerror;
   {
-    int namelen = sizeof(sa);
-    if ((res = safe_getsockname(fd, (struct sockaddr *) &sa, &namelen)))
+    int namelen = sizeof(addr);
+    if ((res = safe_getsockname(fd, &addr.sa, &namelen)))
       goto Lerror;
   }
 
@@ -241,38 +241,19 @@ Lerror:
 
 
 int
-Server::listen(int port_number, int domain, bool non_blocking, int recv_bufsize, int send_bufsize, bool transparent)
+Server::listen(bool non_blocking, int recv_bufsize, int send_bufsize, bool transparent)
 {
   ink_assert(fd == NO_FD);
   int res = 0;
-  int gai_errno = 0;
+  int namelen;
 
-  char port[6] = {'\0'};
-  struct addrinfo hints;
-  struct addrinfo *ai_res = NULL;
-  struct addrinfo *ai = NULL;
-  socklen_t addrlen = 0;  // keep track of length of socket address info
-  snprintf(port, sizeof(port), "%d", port_number);
-
-  memset(&hints, 0, sizeof(hints));
-  hints.ai_family = domain;
-  hints.ai_socktype = SOCK_STREAM;
-  hints.ai_flags = AI_PASSIVE|AI_NUMERICHOST;
-  gai_errno = getaddrinfo(accept_ip_str, port, &hints, &ai_res);
-  if(0 != gai_errno) {
-    Error("getaddrinfo %s:%s error %i: %s", accept_ip_str, port, gai_errno, gai_strerror(gai_errno));
-    return -1;
+  if (!ink_inet_is_ip(&accept_addr)) {
+    ink_inet_ip4_set(&addr, INADDR_ANY,0);
+  } else {
+    ink_inet_copy(&addr, &accept_addr);
   }
 
-  ai = ai_res;
-
-  res = socketManager.socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
-
-  memset(&sa, 0, sizeof(sa));
-  addrlen = ai->ai_addrlen;  // save value for later since ai will be freed asap
-  memcpy(&sa, ai->ai_addr, ai->ai_addrlen);
-
-  freeaddrinfo(ai_res);
+  res = socketManager.socket(addr.sa.sa_family, SOCK_STREAM, IPPROTO_TCP);
 
   if (res < 0)
     return res;
@@ -334,13 +315,13 @@ Server::listen(int port_number, int domain, bool non_blocking, int recv_bufsize,
   }
 #endif
 
-  if (domain == AF_INET6 && (res = safe_setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, ON, sizeof(int))) < 0)
+  if (ink_inet_is_ip6(&addr) && (res = safe_setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, ON, sizeof(int))) < 0)
     goto Lerror;
 
   if ((res = safe_setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, ON, sizeof(int))) < 0)
     goto Lerror;
 
-  if ((res = socketManager.ink_bind(fd, (struct sockaddr *) &sa, addrlen, IPPROTO_TCP)) < 0) {
+  if ((res = socketManager.ink_bind(fd, &addr.sa, ink_inet_ip_size(&addr.sa), IPPROTO_TCP)) < 0) {
     goto Lerror;
   }
 #ifdef SET_TCP_NO_DELAY
@@ -377,16 +358,15 @@ Server::listen(int port_number, int domain, bool non_blocking, int recv_bufsize,
   if (non_blocking)
     if ((res = safe_nonblocking(fd)) < 0)
       goto Lerror;
-  if (!port_number) {
-    int namelen = sizeof(sa);
-    if ((res = safe_getsockname(fd, (struct sockaddr *) &sa, &namelen)))
+  // Original just did this on port == 0.
+  namelen = sizeof(addr);
+  if ((res = safe_getsockname(fd, &addr.sa, &namelen)))
       goto Lerror;
-  }
   return 0;
 
 Lerror:
   if (fd != NO_FD)
     close();
-  Error("Could not bind or listen to port %d (error: %d)", port_number, res);
+  Error("Could not bind or listen to port %d (error: %d)", ink_inet_get_port(&addr), res);
   return res;
 }

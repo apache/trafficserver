@@ -34,6 +34,8 @@
 
 #include "I_Version.h"
 #include "I_EventSystem.h"
+#include "ink_inet.h"
+
 /**
    UDP service
 
@@ -47,9 +49,14 @@ public:
 
   //this function was interanal intially.. this is required for public and
   //interface probably should change.
-  bool CreateUDPSocket(int *resfd, struct sockaddr_in *addr,
-                       Action ** status,
-                       int my_port, unsigned int my_ip = 0, int send_bufsize = 0, int recv_bufsize = 0);
+  bool CreateUDPSocket(
+    int *resfd,
+    sockaddr const* remote_addr,
+    sockaddr* local_addr,
+    int* local_addr_len,
+    Action ** status,
+    int send_bufsize = 0, int recv_bufsize = 0
+  );
 
   /**
      create UDPConnection
@@ -63,8 +70,7 @@ public:
 
      @param c Continuation that is called back with newly created
      socket.
-     @param my_port Local port to be bound (required)
-     @param my_ip Local IP to be bound (optional).  Defaults to '0' (INADDR_ANY)
+     @param addr Address to bind (includes port)
      @param send_bufsize (optional) Socket buffer size for sending.
      Limits how much outstanding data to OS before it is able to send
      to the NIC.
@@ -73,17 +79,18 @@ public:
      @return Action* Always returns ACTION_RESULT_DONE if socket was
      created successfuly, or ACTION_IO_ERROR if not.
   */
-  inkcoreapi Action *UDPBind(Continuation * c, int my_port, int my_ip = 0, int send_bufsize = 0, int recv_bufsize = 0);
+  inkcoreapi Action *UDPBind(Continuation * c, sockaddr const* addr, int send_bufsize = 0, int recv_bufsize = 0);
 
   // The mess again: the complier won't let me stick UDPConnection here.
-  void UDPClassifyConnection(Continuation * udpConn, int destIP);
+  void UDPClassifyConnection(Continuation * udpConn, InkInetAddr const& addr);
 
   // create pairs of UDPConnections in which the first connection is
   // on a even-#'ed port and the second connection is on the next
   // odd-#'ed port.  Create "nPairs" of such connections.
   Action *UDPCreatePortPairs(Continuation *, int nPairs,
-                             unsigned int myIP = 0,
-                             unsigned int destIP = 0, int send_bufsize = 0, int recv_bufsize = 0);
+    sockaddr const* local_addr,
+    sockaddr const* remote_addr,
+    int send_bufsize = 0, int recv_bufsize = 0);
 
   // Regarding sendto_re, sendmsg_re, recvfrom_re:
   // * You may be called back on 'c' with completion or error status.
@@ -105,13 +112,13 @@ public:
   // * You can get other info about the completed operation through use
   //   of the completionUtil class.
   Action *sendto_re(Continuation * c, void *token, int fd,
-                    struct sockaddr *toaddr, int toaddrlen, IOBufferBlock * buf, int len);
+                    sockaddr const* toaddr, int toaddrlen, IOBufferBlock * buf, int len);
   // I/O buffers referenced by msg must be pinned by the caller until
   // continuation is called back.
   Action *sendmsg_re(Continuation * c, void *token, int fd, struct msghdr *msg);
 
   Action *recvfrom_re(Continuation * c, void *token, int fd,
-                      struct sockaddr *fromaddr, socklen_t *fromaddrlen,
+                      sockaddr *fromaddr, socklen_t *fromaddrlen,
                       IOBufferBlock * buf, int len, bool useReadCont = true, int timeout = 0);
   // Continuation is really a UDPConnection; due to the include mess, we stick in the
   // base-class of UDPConnection.

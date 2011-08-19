@@ -130,7 +130,13 @@ inline void ink_inet_invalidate(ts_ip_endpoint* ip) {
 /// Test for IP protocol.
 /// @return @c true if the address is IP, @c false otherwise.
 inline bool ink_inet_is_ip(sockaddr const* addr) {
-  return addr && (AF_INET == addr->sa_family || AF_INET6 == addr->sa_family);
+  return addr
+    && (AF_INET == addr->sa_family || AF_INET6 == addr->sa_family);
+}
+/// @return @c true if the address is IP, @c false otherwise.
+inline bool ink_inet_is_ip(ts_ip_endpoint const* addr) {
+  return addr
+    && (AF_INET == addr->sa.sa_family || AF_INET6 == addr->sa.sa_family);
 }
 /// Test for IPv4 protocol.
 /// @return @c true if the address is IPv4, @c false otherwise.
@@ -140,30 +146,27 @@ inline bool ink_inet_is_ip4(sockaddr const* addr) {
 /// Test for IPv4 protocol.
 /// @note Convenience overload.
 /// @return @c true if the address is IPv4, @c false otherwise.
-inline bool ink_inet_is_ip4(sockaddr_in6 const* addr) {
-  return addr && AF_INET == addr->sin6_family;
+inline bool ink_inet_is_ip4(ts_ip_endpoint const* addr) {
+  return addr && AF_INET == addr->sa.sa_family;
 }
 /// Test for IPv6 protocol.
 /// @return @c true if the address is IPv6, @c false otherwise.
 inline bool ink_inet_is_ip6(sockaddr const* addr) {
   return addr && AF_INET6 == addr->sa_family;
 }
+/// Test for IPv6 protocol.
+/// @note Convenience overload.
+/// @return @c true if the address is IPv6, @c false otherwise.
+inline bool ink_inet_is_ip6(ts_ip_endpoint const* addr) {
+  return addr && AF_INET6 == addr->sa.sa_family;
+}
+
 /// @return @c true if the address families are compatible.
 inline bool ink_inet_are_compatible(
   sockaddr const* lhs, ///< Address to test.
   sockaddr const* rhs  ///< Address to test.
 ) {
   return lhs->sa_family == rhs->sa_family;
-}
-
-/// @return An appropriate size based on the address family.
-inline size_t ink_inet_ip_size(
-  sockaddr const* addr ///< Address object.
-) {
-  return AF_INET == addr->sa_family ? sizeof(sockaddr_in)
-    : AF_INET6 == addr->sa_family ? sizeof(sockaddr_in6)
-    : 0
-    ;
 }
 
 // IP address casting.
@@ -221,6 +224,13 @@ inline sockaddr_in const* ink_inet_ip4_cast(sockaddr_in6 const* a) {
   return static_cast<sockaddr_in const*>(static_cast<void const*>(a));
 }
 
+inline sockaddr_in& ink_inet_ip4_cast(sockaddr_in6& a) {
+  return *static_cast<sockaddr_in*>(static_cast<void*>(&a));
+}
+inline sockaddr_in const& ink_inet_ip4_cast(sockaddr_in6 const& a) {
+  return *static_cast<sockaddr_in const*>(static_cast<void const*>(&a));
+}
+
 inline sockaddr_in6* ink_inet_ip6_cast(sockaddr* a) {
   return static_cast<sockaddr_in6*>(static_cast<void*>(a));
 }
@@ -233,6 +243,32 @@ inline sockaddr_in6& ink_inet_ip6_cast(sockaddr& a) {
 inline sockaddr_in6 const& ink_inet_ip6_cast(sockaddr const& a) {
   return *static_cast<sockaddr_in6 const*>(static_cast<void const*>(&a));
 }
+
+/// @return An appropriate size based on the address family.
+inline size_t ink_inet_ip_size(
+  sockaddr const* addr ///< Address object.
+) {
+  return AF_INET == addr->sa_family ? sizeof(sockaddr_in)
+    : AF_INET6 == addr->sa_family ? sizeof(sockaddr_in6)
+    : 0
+    ;
+}
+inline size_t ink_inet_ip_size(
+  ts_ip_endpoint const* addr ///< Address object.
+) {
+  return AF_INET == addr->sa.sa_family ? sizeof(sockaddr_in)
+    : AF_INET6 == addr->sa.sa_family ? sizeof(sockaddr_in6)
+    : 0
+    ;
+}
+
+/// @return An appropriate size based on the address family.
+inline size_t ink_inet_ip_size(
+  sockaddr_in6 const* addr ///< Address object.
+) {
+  return ink_inet_ip_size(ink_inet_sa_cast(addr));
+}
+
 /** Get a reference to the port in an address.
     @note Because this is direct access, the port value is in network order.
     @see ink_inet_get_port.
@@ -249,15 +285,14 @@ inline uint16_t& ink_inet_port_cast(sockaddr* sa) {
       : (dummy = 0)
     ;
 }
-/** Get a reference to the port in an address.
-    @note Because this is direct access, the port value is in network order.
-    @see ink_inet_get_port.
-    @return A reference to the port value in an IPv4 or IPv6 address.
-    @internal This is primarily for internal use but it might be handy for
-    clients so it is exposed.
-*/
 inline uint16_t const& ink_inet_port_cast(sockaddr const* sa) {
   return ink_inet_port_cast(const_cast<sockaddr*>(sa));
+}
+inline uint16_t const& ink_inet_port_cast(ts_ip_endpoint const* ip) {
+  return ink_inet_port_cast(const_cast<sockaddr*>(&ip->sa));
+}
+inline uint16_t& ink_inet_port_cast(ts_ip_endpoint* ip) {
+  return ink_inet_port_cast(&ip->sa);
 }
 
 /** Access the IPv4 address.
@@ -301,8 +336,8 @@ inline in_addr_t const& ink_inet_ip4_addr_cast(sockaddr const* addr) {
 
     @return A reference to the IPv4 address in @a addr.
 */
-inline in_addr_t& ink_inet_ip4_addr_cast(sockaddr_in6* addr) {
-  return ink_inet_ip4_addr_cast(ink_inet_sa_cast(addr));
+inline in_addr_t& ink_inet_ip4_addr_cast(ts_ip_endpoint* ip) {
+  return ink_inet_ip4_addr_cast(&ip->sa);
 }
 
 /** Access the IPv4 address.
@@ -314,8 +349,8 @@ inline in_addr_t& ink_inet_ip4_addr_cast(sockaddr_in6* addr) {
 
     @return A reference to the IPv4 address in @a addr.
 */
-inline in_addr_t const& ink_inet_ip4_addr_cast(sockaddr_in6 const* addr) {
-  return ink_inet_ip4_addr_cast(ink_inet_sa_cast(addr));
+inline in_addr_t const& ink_inet_ip4_addr_cast(ts_ip_endpoint const* ip) {
+  return ink_inet_ip4_addr_cast(&ip->sa);
 }
 
 /** Access the IPv6 address.
@@ -332,6 +367,12 @@ inline in6_addr& ink_inet_ip6_addr_cast(sockaddr* addr) {
 inline in6_addr const& ink_inet_ip6_addr_cast(sockaddr const* addr) {
   return ink_inet_ip6_cast(addr)->sin6_addr;
 }
+inline in6_addr& ink_inet_ip6_addr_cast(ts_ip_endpoint* ip) {
+  return ip->sin6.sin6_addr;
+}
+inline in6_addr const& ink_inet_ip6_addr_cast(ts_ip_endpoint const* ip) {
+  return ip->sin6.sin6_addr;
+}
 
 /** Cast an IP address to an array of @c uint32_t.
     @note The size of the array is dependent on the address type which
@@ -339,7 +380,7 @@ inline in6_addr const& ink_inet_ip6_addr_cast(sockaddr const* addr) {
     @return A pointer to the address information in @a addr or @c NULL
     if @a addr is not an IP address.
 */
-inline uint32_t* ink_inet_ip_addr32_cast(sockaddr* addr) {
+inline uint32_t* ink_inet_addr32_cast(sockaddr* addr) {
   uint32_t* zret = 0;
   switch(addr->sa_family) {
   case AF_INET: zret = reinterpret_cast<uint32_t*>(&ink_inet_ip4_addr_cast(addr)); break;
@@ -347,10 +388,59 @@ inline uint32_t* ink_inet_ip_addr32_cast(sockaddr* addr) {
   }
   return zret;
 }
-inline uint32_t const* ink_inet_ip_addr32_cast(sockaddr const* addr) {
-  return ink_inet_ip_addr32_cast(const_cast<sockaddr*>(addr));
+inline uint32_t const* ink_inet_addr32_cast(sockaddr const* addr) {
+  return ink_inet_addr32_cast(const_cast<sockaddr*>(addr));
 }
 
+/** Cast an IP address to an array of @c uint8_t.
+    @note The size of the array is dependent on the address type which
+    must be checked independently of this function.
+    @return A pointer to the address information in @a addr or @c NULL
+    if @a addr is not an IP address.
+*/
+inline uint8_t* ink_inet_addr8_cast(sockaddr* addr) {
+  uint8_t* zret = 0;
+  switch(addr->sa_family) {
+  case AF_INET: zret = reinterpret_cast<uint8_t*>(&ink_inet_ip4_addr_cast(addr)); break;
+  case AF_INET6: zret = reinterpret_cast<uint8_t*>(&ink_inet_ip6_addr_cast(addr)); break;
+  }
+  return zret;
+}
+inline uint8_t const* ink_inet_addr8_cast(sockaddr const* addr) {
+  return ink_inet_addr8_cast(const_cast<sockaddr*>(addr));
+}
+inline uint8_t* ink_inet_addr8_cast(ts_ip_endpoint* ip) {
+  return ink_inet_addr8_cast(&ip->sa);
+}
+inline uint8_t const* ink_inet_addr8_cast(ts_ip_endpoint const* ip) {
+  return ink_inet_addr8_cast(&ip->sa);
+}
+
+/// @return @c true if this is an IP loopback address, @c false otherwise.
+inline bool ink_inet_is_loopback(sockaddr const* ip) {
+  return ip
+    && (
+      (AF_INET == ip->sa_family && htonl(INADDR_LOOPBACK) == ink_inet_ip4_addr_cast(ip))
+      ||
+      (AF_INET6 == ip->sa_family && IN6_IS_ADDR_LOOPBACK(&ink_inet_ip6_addr_cast(ip)))
+    );
+}
+
+inline bool ink_inet_is_loopback(ts_ip_endpoint const* ip) {
+  return ink_inet_is_loopback(&ip->sa);
+}
+
+inline bool ink_inet_is_multicast(sockaddr const* ip) {
+  return ip
+    && (
+      (AF_INET == ip->sa_family && 0xe == *ink_inet_addr8_cast(ip))
+      ||
+      (AF_INET6 == ip->sa_family && IN6_IS_ADDR_MULTICAST(&ink_inet_ip6_addr_cast(ip)))
+    );
+}
+inline bool ink_inet_is_multicast(ts_ip_endpoint const* ip) {
+  return ink_inet_is_multicast(&ip->sa);
+}
   
 /// @name Address operators
 //@{
@@ -378,16 +468,16 @@ inline bool ink_inet_copy(
 }
 
 inline bool ink_inet_copy(
-  sockaddr_in6* dst, ///< Destination object.
+  ts_ip_endpoint* dst, ///< Destination object.
   sockaddr const* src ///< Source object.
 ) {
-  return ink_inet_copy(ink_inet_sa_cast(dst), src);
+  return ink_inet_copy(&dst->sa, src);
 }
 inline bool ink_inet_copy(
-  ts_ip_endpoint* dst,
-  sockaddr const* src
+  ts_ip_endpoint* dst, ///< Destination object.
+  ts_ip_endpoint const* src ///< Source object.
 ) {
-  return ink_inet_copy(&dst->sa, src);
+  return ink_inet_copy(&dst->sa, &src->sa);
 }
 inline bool ink_inet_copy(
   sockaddr* dst,
@@ -473,12 +563,15 @@ inline int ink_inet_cmp(sockaddr_in6 const* lhs, sockaddr_in6 const* rhs) {
 inline bool ink_inet_eq(sockaddr const* lhs, sockaddr const* rhs) {
   return 0 == ink_inet_cmp(lhs, rhs);
 }
-inline bool ink_inet_eq(ts_ip_endpoint const& lhs, ts_ip_endpoint const& rhs) {
-  return 0 == ink_inet_cmp(&lhs.sa, &rhs.sa);
+inline bool ink_inet_eq(ts_ip_endpoint const* lhs, ts_ip_endpoint const* rhs) {
+  return 0 == ink_inet_cmp(&lhs->sa, &rhs->sa);
 }
 
 inline bool operator == (ts_ip_endpoint const& lhs, ts_ip_endpoint const& rhs) {
   return 0 == ink_inet_cmp(&lhs.sa, &rhs.sa);
+}
+inline bool operator != (ts_ip_endpoint const& lhs, ts_ip_endpoint const& rhs) {
+  return 0 != ink_inet_cmp(&lhs.sa, &rhs.sa);
 }
 
 //@}
@@ -493,6 +586,18 @@ inline uint16_t ink_inet_get_port(
   // by value.
   return ntohs(ink_inet_port_cast(const_cast<sockaddr*>(addr)));
 }
+
+/// Get IP TCP/UDP port.
+/// @return The port in host order for an IPv4 or IPv6 address,
+/// or zero if neither.
+inline uint16_t ink_inet_get_port(
+  ts_ip_endpoint const* ip ///< Address with port.
+) {
+  // We can discard the const because this function returns
+  // by value.
+  return ntohs(ink_inet_port_cast(const_cast<sockaddr*>(&ip->sa)));
+}
+
 
 /** Extract the IPv4 address.
     @return Host order IPv4 address.
@@ -520,11 +625,11 @@ inline sockaddr* ink_inet_ip4_set(
     @note Convenience overload.
 */
 inline sockaddr* ink_inet_ip4_set(
-  sockaddr_in6* dst, ///< Destination storage.
+  ts_ip_endpoint* dst, ///< Destination storage.
   in_addr_t ip4, ///< address, IPv4 network order.
   uint16_t port = 0 ///< port, network order.
 ) {
-  return ink_inet_ip4_set(ink_inet_ip4_cast(dst), ip4, port);
+  return ink_inet_ip4_set(&dst->sin, ip4, port);
 }
 
 /** Write IPv4 data to storage @a dst.
@@ -539,10 +644,10 @@ inline sockaddr* ink_inet_ip4_set(
 ) {
   return ink_inet_ip4_set(ink_inet_ip4_cast(dst), ip4, port);
 }
-
-/// Write IPv6 address to storage @a dst.
-/// @note convenience overload.
-inline void ink_inet_ip6_set(
+/** Write IPv6 data to storage @a dst.
+    @return @a dst cast to @c sockaddr*.
+ */
+inline sockaddr* ink_inet_ip6_set(
   sockaddr_in6* dst, ///< Destination storage.
   in6_addr const& addr, ///< address in network order.
   uint16_t port = 0 ///< Port, network order.
@@ -551,15 +656,27 @@ inline void ink_inet_ip6_set(
   dst->sin6_family = AF_INET6;
   memcpy(&dst->sin6_addr, &addr, sizeof addr);
   dst->sin6_port = port;
+  return ink_inet_sa_cast(dst);
 }
-
-/// Write IPv6 address to storage @a dst.
-inline void ink_inet_ip6_set(
+/** Write IPv6 data to storage @a dst.
+    @return @a dst cast to @c sockaddr*.
+ */
+inline sockaddr* ink_inet_ip6_set(
   sockaddr* dst, ///< Destination storage.
   in6_addr const& addr, ///< address in network order.
   uint16_t port = 0 ///< Port, network order.
 ) {
-  ink_inet_ip6_set(ink_inet_ip6_cast(dst), addr, port);
+  return ink_inet_ip6_set(ink_inet_ip6_cast(dst), addr, port);
+}
+/** Write IPv6 data to storage @a dst.
+    @return @a dst cast to @c sockaddr*.
+ */
+inline sockaddr* ink_inet_ip6_set(
+  ts_ip_endpoint* dst, ///< Destination storage.
+  in6_addr const& addr, ///< address in network order.
+  uint16_t port = 0 ///< Port, network order.
+) {
+  return ink_inet_ip6_set(&dst->sin6, addr, port);
 }
 
 /** Write a null terminated string for @a addr to @a dst.
@@ -570,6 +687,17 @@ char const* ink_inet_ntop(
   char *dst, ///< Output buffer.
   size_t size ///< Length of buffer.
 );
+
+/** Write a null terminated string for @a addr to @a dst.
+    A buffer of size INET6_ADDRSTRLEN suffices, including a terminating nul.
+ */
+inline char const* ink_inet_ntop(
+  const sockaddr_in6 *addr, ///< Address.
+  char *dst, ///< Output buffer.
+  size_t size ///< Length of buffer.
+) {
+  return ink_inet_ntop(ink_inet_sa_cast(addr), dst, size);
+}
 
 /// Buffer size sufficient for IPv6 address and port.
 static size_t const INET6_ADDRPORTSTRLEN = INET6_ADDRSTRLEN + 6;
@@ -586,6 +714,18 @@ char const* ink_inet_nptop(
   char *dst, ///< Output buffer.
   size_t size ///< Length of buffer.
 );
+
+/** Write a null terminated string for @a addr to @a dst with port.
+    A buffer of size INET6_ADDRPORTSTRLEN suffices, including a terminating nul.
+ */
+inline char const* ink_inet_nptop(
+  const sockaddr_in6 *addr, ///< Address.
+  char *dst, ///< Output buffer.
+  size_t size ///< Length of buffer.
+) {
+  return ink_inet_nptop(ink_inet_sa_cast(addr), dst, size);
+}
+
 
 /** Convert @a text to an IP address and write it to @a addr.
 
@@ -634,21 +774,25 @@ inline int ink_inet_pton(
     makes sense.
     @note This is not easily used as an address for system calls.
 */
-struct InkIpAddr {
-  typedef InkIpAddr self; ///< Self reference type.
+struct InkInetAddr {
+  typedef InkInetAddr self; ///< Self reference type.
 
   /// Default construct (invalid address).
-  InkIpAddr() : _family(AF_UNSPEC) {}
+  InkInetAddr() : _family(AF_UNSPEC) {}
   /// Construct as IPv4 @a addr.
-  explicit InkIpAddr(
-    in_addr_t addr ///< Address to assign.
+  explicit InkInetAddr(
+    uint32_t addr ///< Address to assign.
   ) : _family(AF_INET) {
     _addr._ip4 = addr;
   }
-  /// Construct from @c sockaddr_storage.
-  explicit InkIpAddr(sockaddr const& addr) { this->assign(&addr); }
-  /// Construct from @c sockaddr_storage.
-  explicit InkIpAddr(sockaddr const* addr) { this->assign(addr); }
+  /// Construct from @c sockaddr.
+  explicit InkInetAddr(sockaddr const* addr) { this->assign(addr); }
+  /// Construct from @c sockaddr_in6.
+  explicit InkInetAddr(sockaddr_in6 const& addr) { this->assign(ink_inet_sa_cast(&addr)); }
+  /// Construct from @c sockaddr_in6.
+  explicit InkInetAddr(sockaddr_in6 const* addr) { this->assign(ink_inet_sa_cast(addr)); }
+  /// Construct from @c ts_ip_endpoint.
+  explicit InkInetAddr(ts_ip_endpoint const& addr) { this->assign(&addr.sa); }
 
   /// Assign sockaddr storage.
   self& assign(sockaddr const* addr) {
@@ -691,7 +835,5 @@ struct InkIpAddr {
     in6_addr  _ip6; ///< IPv6 address storage.
   } _addr;
 };
-
-// --
 
 #endif // _ink_inet.h

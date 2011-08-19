@@ -333,6 +333,7 @@ start_HttpProxyServerBackDoor(int port, int accept_threads)
 
   opt.port = port;
   opt.accept_threads = accept_threads;
+  
   // The backdoor only binds the loopback interface
   netProcessor.main_accept(NEW(new HttpAccept(SERVER_PORT_DEFAULT, true)), NO_FD, 0, 0, false, true, opt);
 }

@@ -164,7 +164,7 @@ safe_ioctl(int fd, int request, char *arg)
 }
 
 int
-safe_bind(int s, struct sockaddr *name, int namelen)
+safe_bind(int s, struct sockaddr const* name, int namelen)
 {
   int r;
   CHECK_PLAUSIBLE_SOCKADDR(name, __FILE__, __LINE__);

@@ -72,7 +72,7 @@ struct SocketManager
   int64_t pwrite(int fd, void *buf, int len, off_t offset, char *tag = NULL);
 
   int send(int fd, void *buf, int len, int flags);
-  int sendto(int fd, void *buf, int len, int flags, struct sockaddr *to, int tolen);
+  int sendto(int fd, void *buf, int len, int flags, struct sockaddr const* to, int tolen);
   int sendmsg(int fd, struct msghdr *m, int flags, void *pOLP = 0);
   int64_t lseek(int fd, off_t offset, int whence);
   int fstat(int fd, struct stat *);
@@ -119,7 +119,7 @@ struct SocketManager
       @return 0 if successful, -errno on error.
    */
   int close(int sock);
-  int ink_bind(int s, struct sockaddr *name, int namelen, short protocol = 0);
+  int ink_bind(int s, struct sockaddr const* name, int namelen, short protocol = 0);
 
   int pagesize;
 

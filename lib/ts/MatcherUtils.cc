@@ -141,12 +141,12 @@ unescapifyStr(char *buffer)
 
 char const*
 ExtractIpRange(char* match_str, in_addr_t* min, in_addr_t* max) {
-  sockaddr_in6 min6, max6;
-  char const* zret = ExtractIpRange(match_str, ink_inet_sa_cast(&min6), ink_inet_sa_cast(&max6));
+  ts_ip_endpoint ip_min, ip_max;
+  char const* zret = ExtractIpRange(match_str, &ip_min.sa, &ip_max.sa);
   if (0 == zret) { // success
-    if (ink_inet_is_ip4(&min6) && ink_inet_is_ip4(&max6)) {
-      if (min) *min = ntohl(ink_inet_ip4_addr_cast(&min6));
-      if (max) *max = ntohl(ink_inet_ip4_addr_cast(&max6));
+    if (ink_inet_is_ip4(&ip_min) && ink_inet_is_ip4(&ip_max)) {
+      if (min) *min = ntohl(ink_inet_ip4_addr_cast(&ip_min));
+      if (max) *max = ntohl(ink_inet_ip4_addr_cast(&ip_max));
     } else {
       zret = "The addresses were not IPv4 addresses.";
     }
@@ -176,7 +176,7 @@ ExtractIpRange(char *match_str, sockaddr* addr1, sockaddr* addr2)
   int mask_bits;
   int mask_val;
   int numToks;
-  sockaddr_in6 la1, la2;
+  ts_ip_endpoint la1, la2;
 
   // Extract the IP addresses from match data
   numToks = rangeTok.Initialize(match_str, SHARE_TOKS);
@@ -187,7 +187,7 @@ ExtractIpRange(char *match_str, sockaddr* addr1, sockaddr* addr2)
     return "malformed IP range";
   }
 
-  if (0 != ink_inet_pton(rangeTok[0], &la1)) {
+  if (0 != ink_inet_pton(rangeTok[0], &la1.sa)) {
     return "malformed IP address";
   }
 
@@ -222,16 +222,16 @@ ExtractIpRange(char *match_str, sockaddr* addr1, sockaddr* addr2)
       }
     }
 
-    if (1 == ink_inet_cmp(&la1, &la2)) {
+    if (1 == ink_inet_cmp(&la1.sa, &la2.sa)) {
       return "range start greater than range end";
     }
 
-    ink_inet_copy(addr2, ink_inet_sa_cast(&la2));
+    ink_inet_copy(addr2, &la2);
   } else {
-    ink_inet_copy(addr2, ink_inet_sa_cast(&la1));
+    ink_inet_copy(addr2, &la1);
   }
 
-  ink_inet_copy(addr1, ink_inet_sa_cast(&la1));
+  ink_inet_copy(addr1, &la1);
   return NULL;
 }
 

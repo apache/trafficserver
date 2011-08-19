@@ -879,16 +879,10 @@ void
 PluginVC::set_local_addr()
 {
   if (vc_type == PLUGIN_VC_ACTIVE) {
-    ink_inet_copy(
-      ink_inet_sa_cast(&local_addr),
-      ink_inet_sa_cast(&core_obj->active_addr_struct)
-    );
+    ink_inet_copy(&local_addr, &core_obj->active_addr_struct);
 //    local_addr = core_obj->active_addr_struct;
   } else {
-    ink_inet_copy(
-      ink_inet_sa_cast(&local_addr),
-      ink_inet_sa_cast(&core_obj->passive_addr_struct)
-    );
+    ink_inet_copy(&local_addr, &core_obj->passive_addr_struct);
 //    local_addr = core_obj->passive_addr_struct;
   }
 }
@@ -897,17 +891,9 @@ void
 PluginVC::set_remote_addr()
 {
   if (vc_type == PLUGIN_VC_ACTIVE) {
-    ink_inet_copy(
-      ink_inet_sa_cast(&remote_addr),
-      ink_inet_sa_cast(&core_obj->passive_addr_struct)
-    );
-//    remote_addr = core_obj->passive_addr_struct;
+    ink_inet_copy(&remote_addr, &core_obj->passive_addr_struct);
   } else {
-    ink_inet_copy(
-      ink_inet_sa_cast(&remote_addr),
-      ink_inet_sa_cast(&core_obj->active_addr_struct)
-    );
-//    remote_addr = core_obj->active_addr_struct;
+    ink_inet_copy(&remote_addr, &core_obj->active_addr_struct);
   }
 }
 

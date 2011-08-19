@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 
 Changes with Apache Traffic Server 3.1.0
+  *) [TS-919] All of iocore is now IPv6 compatible.
+
   *) [TS-867] moving to a different thread only if the pluginvc is invoked
    from a non regular thread.
 

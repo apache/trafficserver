@@ -254,7 +254,7 @@ SocketManager::send(int fd, void *buf, int size, int flags)
 }
 
 TS_INLINE int
-SocketManager::sendto(int fd, void *buf, int len, int flags, struct sockaddr *to, int tolen)
+SocketManager::sendto(int fd, void *buf, int len, int flags, struct sockaddr const* to, int tolen)
 {
   int r;
   do {

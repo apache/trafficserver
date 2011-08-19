@@ -670,7 +670,7 @@ HostDBProcessor::getby(Continuation * cont,
   void *pDS = 0;
   EThread *thread = this_ethread();
   ProxyMutex *mutex = thread->mutex;
-  unsigned short port = ink_inet_port_cast(ip);
+  unsigned short port = ink_inet_get_port(ip);
   ip_text_buffer ipb;
 
   HOSTDB_INCREMENT_DYN_STAT(hostdb_total_lookups_stat);
@@ -783,7 +783,7 @@ HostDBProcessor::getbyname_re(Continuation * cont, char *ahostname, int len, int
   ProxyMutex *mutex = thread->mutex;
   sockaddr_in ip;
 
-  ink_inet_ip4_set(&ip, INADDR_ANY, port);
+  ink_inet_ip4_set(&ip, INADDR_ANY, htons(port));
 
   if (flags & HOSTDB_FORCE_DNS_ALWAYS)
     force_dns = true;
@@ -825,7 +825,7 @@ HostDBProcessor::getSRVbyname_imm(Continuation * cont, process_srv_info_pfn proc
   }
 
   sockaddr_in ip;
-  ink_inet_ip4_set(&ip, INADDR_ANY, port);
+  ink_inet_ip4_set(&ip, INADDR_ANY, htons(port));
 
   if (!len)
     len = strlen(hostname);
@@ -881,7 +881,7 @@ HostDBProcessor::getbyname_imm(Continuation * cont, process_hostdb_info_pfn proc
   ProxyMutex *mutex = thread->mutex;
   sockaddr_in ip_store;
   sockaddr* ip = ink_inet_sa_cast(&ip_store);
-  ink_inet_ip4_set(ip, INADDR_ANY, port);
+  ink_inet_ip4_set(ip, INADDR_ANY, htons(port));
 
   if (flags & HOSTDB_FORCE_DNS_ALWAYS)
     force_dns = true;
@@ -988,7 +988,7 @@ HostDBProcessor::setby(char *hostname, int len, sockaddr const* ip, HostDBApplic
     return;
 
   INK_MD5 md5;
-  unsigned short port = ink_inet_port_cast(ip);
+  unsigned short port = ink_inet_get_port(ip);
 
   // if it is by name, INK_MD5 the name
   //
@@ -1097,7 +1097,7 @@ HostDBProcessor::failed_connect_on_ip_for_name(Continuation * cont, sockaddr con
   INK_MD5 md5;
   char *pServerLine = 0;
   void *pDS = 0;
-  unsigned short port = ink_inet_port_cast(ip);
+  unsigned short port = ink_inet_get_port(ip);
 
 #ifdef SPLIT_DNS
   SplitDNS *pSD = 0;

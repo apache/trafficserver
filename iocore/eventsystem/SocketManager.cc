@@ -112,7 +112,7 @@ safe_mlock(caddr_t addr, size_t len, caddr_t end)
 }
 
 int
-SocketManager::ink_bind(int s, struct sockaddr *name, int namelen, short Proto)
+SocketManager::ink_bind(int s, struct sockaddr const* name, int namelen, short Proto)
 {
   (void) Proto;
   return safe_bind(s, name, namelen);

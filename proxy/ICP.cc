@@ -2399,8 +2399,8 @@ ICPProcessor::CancelPendingReads()
   r->_ICPmsg.h.version = ~r->_ICPmsg.h.version; // bogus message
 
   Peer *lp = GetLocalPeer();
-  r->_sendMsgHdr.msg_name = (caddr_t) & (lp->GetSendChan())->sa;
-  r->_sendMsgHdr.msg_namelen = sizeof((lp->GetSendChan())->sa);
+  r->_sendMsgHdr.msg_name = (caddr_t) & (lp->GetSendChan())->addr;
+  r->_sendMsgHdr.msg_namelen = sizeof((lp->GetSendChan())->addr);
   udpNet.sendmsg_re(r, r, lp->GetSendFD(), &r->_sendMsgHdr);
 }
 

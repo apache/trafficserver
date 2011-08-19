@@ -5156,7 +5156,7 @@ TSHttpTxnServerAddrGet(TSHttpTxn txnp)
   ink_inet_ip4_set(
     ink_inet_sa_cast(&sm->t_state.server_info.addr),
     sm->t_state.server_info.ip,
-    sm->t_state.server_info.port
+    htons(sm->t_state.server_info.port)
   );
   return ink_inet_sa_cast(&sm->t_state.server_info.addr);
 }
@@ -5841,7 +5841,7 @@ TSHttpConnect(sockaddr const* addr)
   sdk_assert(addr);
 
   in_addr_t ip = ink_inet_ip4_addr_cast(addr);
-  uint16_t port = ink_inet_port_cast(addr);
+  uint16_t port = ink_inet_get_port(addr);
 
   sdk_assert(ip);
   sdk_assert(port);
@@ -6186,7 +6186,7 @@ TSNetConnect(TSCont contp, sockaddr const* addr)
   sdk_assert(addr);
   sdk_assert(ink_inet_is_ip4(addr));
   in_addr_t ip = ink_inet_ip4_addr_cast(addr);
-  uint16_t port = ink_inet_port_cast(addr);
+  uint16_t port = ink_inet_get_port(addr);
   sdk_assert(ip != 0 && port != 0);
 
   FORCE_PLUGIN_MUTEX(contp);
@@ -7079,7 +7079,7 @@ TSFetchPages(TSFetchUrlParams_t *params)
     FetchSM *fetch_sm =  FetchSMAllocator.alloc();
     sockaddr* addr = ink_inet_sa_cast(&myparams->ip);
     in_addr_t ip = ink_inet_ip4_addr_cast(addr);
-    uint16_t port = ink_inet_port_cast(addr);
+    uint16_t port = ink_inet_get_port(addr);
 
     fetch_sm->init((Continuation*)myparams->contp, myparams->options,myparams->events, myparams->request, myparams->request_len, ip, port);
     fetch_sm->httpConnect();

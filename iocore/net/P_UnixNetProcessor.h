@@ -36,18 +36,24 @@ class UnixNetVConnection;
 struct UnixNetProcessor:public NetProcessor
 {
 public:
-virtual Action *accept_internal (Continuation * cont,
-				 int fd,
-				 sockaddr * bound_sockaddr = NULL,
-				 int *bound_sockaddr_size = NULL,
-				 bool frequent_accept = true,
-				 AcceptFunctionPtr fn = net_accept,
-				 unsigned int accept_ip = INADDR_ANY,
-				 char *accept_ip_str = NULL,
-				 AcceptOptions const &opt = DEFAULT_ACCEPT_OPTIONS);
+  virtual Action *accept_internal (
+    Continuation * cont,
+    int fd,
+    sockaddr const* accept_addr, ///< Address on which to listen.
+    AcceptOptions const &opt
+  );
 
-  Action *connect_re_internal(Continuation * cont, unsigned int ip, int port, NetVCOptions * options = NULL);
-  Action *connect(Continuation * cont, UnixNetVConnection ** vc, unsigned int ip, int port, NetVCOptions * opt = NULL);
+  Action *connect_re_internal(
+    Continuation * cont,
+    sockaddr const* target,
+    NetVCOptions * options = NULL
+  );
+  Action *connect(
+    Continuation * cont,
+    UnixNetVConnection ** vc,
+    sockaddr const* target,
+    NetVCOptions * opt = NULL
+  );
 
   // Virtual function allows etype to be upgraded to ET_SSL for SSLNetProcessor.  Does
   // nothing for NetProcessor
@@ -74,16 +80,18 @@ virtual Action *accept_internal (Continuation * cont,
   EThread **netthreads;
 
   char *incoming_ip_to_bind;
-  int incoming_ip_to_bind_saddr;
+  ts_ip_endpoint incoming_ip_to_bind_saddr;
 };
 
 
 TS_INLINE Action *
-NetProcessor::connect_re(Continuation * cont, unsigned int ip, int port, NetVCOptions * opts)
-{
-  return static_cast<UnixNetProcessor *>(this)->connect_re_internal(cont, ip, port, opts);
+NetProcessor::connect_re(
+  Continuation * cont,
+  sockaddr const* addr,
+  NetVCOptions * opts
+) {
+  return static_cast<UnixNetProcessor *>(this)->connect_re_internal(cont, addr, opts);
 }
-
 
 extern UnixNetProcessor unix_netProcessor;
 

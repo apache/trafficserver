@@ -62,14 +62,16 @@ struct socks_conf_struct
 #endif
 
 #ifndef SOCKS_WITH_TS
-  unsigned int socks_server;
-  int socks_server_port;
+  ts_ip_endpoint server_addr;
 #endif
 
     socks_conf_struct():socks_needed(0), server_connect_timeout(0), socks_timeout(100), default_version(5),
     user_name_n_passwd(NULL), user_name_n_passwd_len(0),
     per_server_connection_attempts(1), connection_attempts(0), accept_enabled(0), accept_port(0), http_port(1080)
   {
+# if !defined(SOCKS_WITH_TS)
+    memset(&server_addr, 0, sizeof(server_addr));
+# endif
   }
 };
 
@@ -112,11 +114,11 @@ struct SocksEntry:public Continuation
 
   SocksNetVC *netVConnection;
 
-  unsigned int ip;              // ip address in the original request
-  int port;                     // port number in the original request
+  // Changed from @a ip and @a port.
+  ts_ip_endpoint target_addr; ///< Original target address.
+  // Changed from @a server_ip, @a server_port.
+  ts_ip_endpoint server_addr; ///< Origin server address.
 
-  unsigned int server_ip;
-  int server_port;
   int nattempts;
 
   Action action_;
@@ -143,9 +145,11 @@ struct SocksEntry:public Continuation
   void free();
 
     SocksEntry():Continuation(NULL), netVConnection(0),
-    ip(0), port(0), server_ip(0), server_port(0), nattempts(0),
+    nattempts(0),
     lerrno(0), timeout(0), version(5), write_done(false), auth_handler(NULL), socks_cmd(NORMAL_SOCKS)
   {
+    memset(&target_addr, 0, sizeof(target_addr));
+    memset(&server_addr, 0, sizeof(server_addr));
   }
 };
 

@@ -62,11 +62,10 @@ UDPNetProcessor::FreeBandwidth(Continuation * udpConn)
 NetProcessor& netProcessor; //  = unix_netProcessor;
 
 Action *
-UnixNetProcessor::connect_re_internal(Continuation * cont, unsigned int ip, int port,  NetVCOptions * opt)
+UnixNetProcessor::connect_re_internal(Continuation * cont, sockaddr const* target,  NetVCOptions * opt)
 {
   NOWARN_UNUSED(cont);
-  NOWARN_UNUSED(ip);
-  NOWARN_UNUSED(port);
+  NOWARN_UNUSED(target);
   NOWARN_UNUSED(opt);
   ink_release_assert(false);
   return NULL;
