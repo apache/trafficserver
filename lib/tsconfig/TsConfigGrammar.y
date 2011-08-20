@@ -25,7 +25,7 @@
 
 %code top {
 # include "TsConfigTypes.h"
-# include <malloc.h>
+# include <stdlib.h>
 
 // Inhibit Bison definitions.
 # define YYMALLOC malloc
