@@ -6406,7 +6406,8 @@ HttpSM::set_next_state()
         t_state.dns_info.lookup_success = true;
         call_transact_and_set_next_state(NULL);
         break;
-      } else if (t_state.dns_info.lookup_success) { // Already set, from a plugin presumably
+      } else if (t_state.parent_result.r == PARENT_UNDEFINED && t_state.dns_info.lookup_success) {
+        // Already set, and we don't have a parent proxy to lookup
         ink_assert(t_state.host_db_info.ip());
         Debug("dns", "[HttpTransact::HandleRequest] Skipping DNS lookup, provided by plugin");
         call_transact_and_set_next_state(NULL);

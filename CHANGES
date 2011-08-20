@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 
 Changes with Apache Traffic Server 3.0.1
+  *) [TS-859] ATS requesting to origin instead to the parent server
+
   *) [TS-842] remove uninstall target from build system
 
   *) [TS-868] build fails with --as-needed. Author: Ilya Barygin.
