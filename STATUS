@@ -75,6 +75,11 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
    Jira: https://issues.apache.org/jira/browse/TS-867
    +1: zwoop
 
+  *) Core: dont use malloc.h (fails on FBSD)
+   Trunk patch: http://svn.apache.org/viewvc?view=rev&rev=1159906
+   Jira: https://issues.apache.org/jira/browse/TS-927
+   +1: zwoop
+
 
 RELEASE PROCESS
 
