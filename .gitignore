@@ -100,3 +100,9 @@ GSYMS
 GTAGS
 ETAGS
 CTAGS
+
+lib/tsconfig/TsConfigGrammar.c
+lib/tsconfig/TsConfigGrammar.h
+lib/tsconfig/TsConfigGrammar.hpp
+lib/tsconfig/TsConfigSyntax.c
+lib/tsconfig/test-tsconfig
