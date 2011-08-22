@@ -185,15 +185,7 @@ extern int http_accept_port_number;
 #define THROTTLE_FD_HEADROOM                      (128 + 64)    // CACHE_DB_FDS + 64
 
 #define TRANSIENT_ACCEPT_ERROR_MESSAGE_EVERY      HRTIME_HOURS(24)
-#define ACCEPT_THREAD_POLL_TIMEOUT                100   // msecs
-#define NET_PRIORITY_MSEC                         4
-#define NET_PRIORITY_PERIOD                       HRTIME_MSECONDS(NET_PRIORITY_MSEC)
-// p' = p + (p / NET_PRIORITY_LOWER)
-#define NET_PRIORITY_LOWER                        2
-// p' = p / NET_PRIORITY_HIGHER
-#define NET_PRIORITY_HIGHER                       2
 #define NET_RETRY_DELAY                           HRTIME_MSECONDS(10)
-#define MAX_ACCEPT_PERIOD                         HRTIME_MSECONDS(100)
 
 // also the 'throttle connect headroom'
 #define THROTTLE_AT_ONCE                          5
@@ -205,13 +197,7 @@ extern int http_accept_port_number;
 #define NET_THROTTLE_MESSAGE_EVERY                HRTIME_MINUTES(10)
 #define NET_PERIOD                                -HRTIME_MSECONDS(5)
 #define ACCEPT_PERIOD                             -HRTIME_MSECONDS(4)
-#define NET_INITIAL_PRIORITY                      0
-#define MAX_NET_BUCKETS                           256
-#define MAX_EPOLL_ARRAY_SIZE                      (1024*16)
-#define MAX_EPOLL_TIMEOUT                         50    /* mseconds */
-/* NOTE: moved DEFAULT_POLL_TIMEOUT to I_Net.h */
 #define NET_THROTTLE_DELAY                        50    /* mseconds */
-#define INK_MIN_PRIORITY                          0
 
 #define PRINT_IP(x) ((uint8_t*)&(x))[0],((uint8_t*)&(x))[1], ((uint8_t*)&(x))[2],((uint8_t*)&(x))[3]
 
