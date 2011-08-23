@@ -1863,7 +1863,7 @@ ClusterHandler::add_small_controlmsg_descriptors()
     c->freeall();
     p = (char *) DOUBLE_ALIGN(p);
 #ifdef PURIFY
-    if ((unsigned int) endp < (unsigned int) p)
+    if ((uintptr_t) endp < (uintptr_t) p)
       memset(endp, 0, (p - endp));
 #endif
   }

@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 
 Changes with Apache Traffic Server 3.1.0
+  *) Make sure --enable-purify works again
+
   *) [TS-888] Fix SSL by enabling the right direction on successful setup.
 
   *) [TS-925] Switch from integer thread IDs to hex thread IDs with the
