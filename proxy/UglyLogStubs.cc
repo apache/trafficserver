@@ -175,3 +175,9 @@ CacheVC::handleWrite(int event, Event *e)
   return 0;
   ink_release_assert(false);
 }
+
+// LogHost destructor will need this, for solaris
+#include "LogCollationClientSM.h"
+LogCollationClientSM::~LogCollationClientSM()
+{
+}

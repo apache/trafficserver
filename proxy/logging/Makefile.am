@@ -67,14 +67,14 @@ liblogging_a_SOURCES = \
   LogHost.cc \
   LogHost.h \
   LogUtils.cc \
-  LogUtils.h \
-  LogCollationBase.h \
-  LogCollationClientSM.cc \
-  LogCollationClientSM.h
+  LogUtils.h
 
 liblogcollation_a_SOURCES = \
   LogConfigCollation.cc \
   LogCollationAccept.cc \
   LogCollationAccept.h \
+  LogCollationBase.h \
+  LogCollationClientSM.cc \
+  LogCollationClientSM.h \
   LogCollationHostSM.cc \
   LogCollationHostSM.h
