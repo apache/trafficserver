@@ -69,6 +69,8 @@ LogCollationClientSM::LogCollationClientSM(LogHost * log_host):
   m_send_reader(NULL),
   m_pending_action(NULL),
   m_pending_event(NULL),
+  m_abort_vio(NULL),
+  m_abort_buffer(NULL),
   m_buffer_send_list(NULL), m_buffer_in_iocore(NULL), m_flow(LOG_COLL_FLOW_ALLOW), m_log_host(log_host), m_id(ID++)
 {
   Debug("log-coll", "[%d]client::constructor", m_id);

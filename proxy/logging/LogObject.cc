@@ -174,6 +174,12 @@ LogObject::~LogObject()
 
   flush_buffers(0, 0, 0);
 
+  // here we need to free LogHost if it is remote logging.
+  if (is_collation_client()) {
+    if (m_host_list.count()) {
+      m_host_list.clear();
+    }
+  }
   delete m_logFile;
   xfree(m_basename);
   xfree(m_filename);

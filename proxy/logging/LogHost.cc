@@ -222,6 +222,10 @@ LogHost::disconnect()
     m_sock->close(m_sock_fd);
     m_sock_fd = -1;
   }
+  if (m_log_collation_client_sm) {
+    delete m_log_collation_client_sm;
+    m_log_collation_client_sm = NULL;
+  }
   m_connected = false;
 }
 
