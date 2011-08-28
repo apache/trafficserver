@@ -41,7 +41,7 @@ DebugCapabilities(char const* tag) {
     Debug(tag,
       "uid=%u, gid=%u, euid=%u, egid=%u"
 #     if TS_USE_POSIX_CAP
-        ", caps %s thread 0x%x"
+        ", caps %s core=%s thread=0x%x"
 #     endif
       ,static_cast<unsigned int>(getuid())
       ,static_cast<unsigned int>(getgid())
@@ -49,6 +49,7 @@ DebugCapabilities(char const* tag) {
       ,static_cast<unsigned int>(getegid())
 #     if TS_USE_POSIX_CAP
         ,caps_text
+        ,prctl(PR_GET_DUMPABLE) != 1 ? "disabled" : "enabled"
         ,pthread_self()
 #     endif
     );
@@ -84,5 +85,20 @@ RestrictCapabilities() {
     zret = cap_set_proc(caps);
     cap_free(caps);
 #  endif
+  return zret;
+}
+
+int
+EnableCoreFile(bool flag) {
+  int zret = 0;
+# if defined(linux)
+    int state = flag ? 1 : 0;
+    if (0 > (zret = prctl(PR_SET_DUMPABLE, state, 0, 0, 0))) {
+      Warning("Unable to set PR_DUMPABLE : %s", strerror(errno));
+    } else if (state != prctl(PR_GET_DUMPABLE)) {
+      zret = ENOSYS; // best guess
+      Warning("Call to set PR_DUMPABLE was ineffective");
+    }
+# endif  // linux check
   return zret;
 }

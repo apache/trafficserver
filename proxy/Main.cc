@@ -137,6 +137,7 @@ int http_accept_file_descriptor = NO_FD;
 int ssl_accept_file_descriptor = NO_FD;
 char accept_fd_list[1024] = "";
 char core_file[255] = "";
+bool enable_core_file_p = false; // Enable core file dump?
 int command_flag = DEFAULT_COMMAND_FLAG;
 #if TS_HAS_TESTS
 char regression_test[1024] = "";
@@ -950,15 +951,8 @@ set_core_size(const char *name, RecDataT data_type, RecData data, void *opaque_t
     if (setrlimit(RLIMIT_CORE, &lim) < 0) {
       failed = true;
     }
-#if defined(linux)
-#ifndef PR_SET_DUMPABLE
-#define PR_SET_DUMPABLE 4
-#endif
-    // bz57317
-    if (size != 0)
-      prctl(PR_SET_DUMPABLE, 1, 0, 0, 0);
-#endif  // linux check
-
+    enable_core_file_p = size != 0;
+    EnableCoreFile(enable_core_file_p);
   }
 
   if (failed == true) {
@@ -1476,6 +1470,10 @@ change_uid_gid(const char *user)
     }
   }
   xfree(buf);
+
+  // Ugly but this gets reset when the process user ID is changed so
+  // it must be udpated here.
+  EnableCoreFile(enable_core_file_p);
 }
 
 //

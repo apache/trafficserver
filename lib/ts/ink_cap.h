@@ -36,4 +36,12 @@ extern int PreserveCapabilities();
 /// @return 0 on success, non-zero otherwise.
 extern int RestrictCapabilities();
 
+/** Control generate of core file on crash.
+    @a flag sets whether core files are enabled on crash.
+    @return 0 on success, @c errno on failre.
+ */
+extern int EnableCoreFile(
+  bool flag ///< New enable state.
+);
+
 #endif
