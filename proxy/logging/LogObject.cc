@@ -1187,7 +1187,8 @@ LogObjectManager::check_buffer_expiration(long time_now)
 }
 
 
-size_t LogObjectManager::flush_buffers(size_t * to_disk, size_t * to_net, size_t * to_pipe)
+size_t
+LogObjectManager::flush_buffers(size_t * to_disk, size_t * to_net, size_t * to_pipe)
 {
   size_t i;
   size_t bytes_flushed;
