@@ -603,6 +603,7 @@ public:
   char *outgoing_ip_to_bind;
 
   MgmtInt server_max_connections;
+  MgmtInt server_tcp_init_cwnd;
   MgmtInt origin_min_keep_alive_connections; // TODO: This one really ought to be overridable, but difficult right now.
 
   MgmtByte parent_proxy_routing_enable;
@@ -899,6 +900,7 @@ HttpConfigParams::HttpConfigParams()
     incoming_ip_to_bind_saddr(0),
     outgoing_ip_to_bind(0),
     server_max_connections(0),
+    server_tcp_init_cwnd(0),
     origin_min_keep_alive_connections(0),
     parent_proxy_routing_enable(0),
     disable_ssl_parenting(0),

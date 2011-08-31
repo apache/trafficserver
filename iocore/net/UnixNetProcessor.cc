@@ -175,6 +175,16 @@ UnixNetProcessor::accept_internal(
     setsockopt(na->server.fd, IPPROTO_TCP, TCP_DEFER_ACCEPT, &accept_timeout, sizeof(int));
   }
 #endif
+#ifdef TCP_INIT_CWND
+ int tcp_init_cwnd = 0;
+ IOCORE_ReadConfigInteger(tcp_init_cwnd, "proxy.config.http.server_tcp_init_cwnd");
+ if(tcp_init_cwnd > 0) {
+    Debug("net", "Setting initial congestion window to %d", tcp_init_cwnd);
+    if(setsockopt(na->server.fd, IPPROTO_TCP, TCP_INIT_CWND, &tcp_init_cwnd, sizeof(int)) != 0) {
+      Error("Cannot set initial congestion window to %d", tcp_init_cwnd);
+    }
+ }
+#endif
   return na->action_;
 }
 
