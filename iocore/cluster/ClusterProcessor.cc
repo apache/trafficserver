@@ -136,7 +136,9 @@ ClusterProcessor::internal_invoke_remote(ClusterMachine * m, int cluster_fn,
 
       MUTEX_TRY_LOCK(lock, ch->mutex, tt);
       if (!lock) {
-        return 1;
+		if(ch->thread && ch->thread->signal_hook)
+		  ch->thread->signal_hook(ch->thread);
+		return 1;
       }
       if (steal)
         ch->steal_thread(tt);
@@ -144,7 +146,7 @@ ClusterProcessor::internal_invoke_remote(ClusterMachine * m, int cluster_fn,
     }
   } else {
     c->mutex = ch->mutex;
-    eventProcessor.schedule_imm(c);
+    eventProcessor.schedule_imm_signal(c);
     return 0;
   }
 }
@@ -265,6 +267,8 @@ ClusterProcessor::open_local(Continuation * cont, ClusterMachine * m, ClusterVCT
     }
     vc->action_ = cont;
     ink_atomiclist_push(&ch->external_incoming_open_local, (void *) vc);
+	if(ch->thread && ch->thread->signal_hook)
+	  ch->thread->signal_hook(ch->thread);
     return CLUSTER_DELAYED_OPEN;
 
 #ifdef CLUSTER_THREAD_STEALING
@@ -330,7 +334,7 @@ ClusterProcessor::connect_local(Continuation * cont, ClusterVCToken * token, int
     }
     vc->mutex = ch->mutex;
     vc->action_ = cont;
-    ch->thread->schedule_imm(vc);
+    ch->thread->schedule_imm_signal(vc);
     return CLUSTER_DELAYED_OPEN;
 #ifdef CLUSTER_THREAD_STEALING
   } else {

@@ -150,7 +150,7 @@ ClusterAccept::ClusterAcceptMachine(NetVConnection * NetVC)
   ch->machine = NEW(new ClusterMachine(NULL, remote_ip));
   ch->ip = remote_ip;
   ch->net_vc = NetVC;
-  eventProcessor.schedule_imm(ch, ET_CLUSTER);
+  eventProcessor.schedule_imm_signal(ch, ET_CLUSTER);
   return 1;
 }
 

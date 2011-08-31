@@ -1,5 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.1.1
+  *) [TS-931] cluster latency too high, about 24ms. this change will cut
+   the latency from 20+ms to about 10ms. Author: weijin
+
   *) [TS-896] When logging config changes, we should check if it is remote
    logging and clean up the collation client related data.
 

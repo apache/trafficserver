@@ -587,7 +587,7 @@ ClusterState::IOComplete()
     if (lock) {
       ch->handleEvent(EVENT_IMMEDIATE, (void *) 0);
     } else {
-      eventProcessor.schedule_imm(ch, ET_CLUSTER);
+      eventProcessor.schedule_imm_signal(ch, ET_CLUSTER);
     }
   }
 }
@@ -1086,7 +1086,7 @@ ClusterHandler::startClusterEvent(int event, Event * e)
 #ifdef CLUSTER_IMMEDIATE_NETIO
         e->schedule_every(-CLUSTER_PERIOD);     // Negative event
 #else
-        e->schedule_every(CLUSTER_PERIOD);
+        e->schedule_every(-CLUSTER_PERIOD);
 #endif
         cluster_periodic_event = e;
 
