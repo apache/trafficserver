@@ -252,6 +252,7 @@ init_system_diags(char *bdt, char *bat)
   diags_log_fp = fopen(diags_logpath, "w");
   if (diags_log_fp) {
     int status;
+    chown_file_to_user(diag_logpath,admin_user);
     status = setvbuf(diags_log_fp, NULL, _IOLBF, 512);
     if (status != 0) {
       fclose(diags_log_fp);
