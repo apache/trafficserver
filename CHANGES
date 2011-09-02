@@ -1,5 +1,10 @@
-                                                         -*- coding: utf-8 -*-
+s                                                         -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.1.1
+  *) [TS-941] invalid cast of off_t math to int. Author: B Wyatt.
+
+  *) [TS-940] Add new configuration option, and solaris support, to set
+  an initial congestion window size, proxy.config.http.server_tcp_init_cwnd.
+
   *) [TS-931] cluster latency too high, about 24ms. this change will cut
    the latency from 20+ms to about 10ms. Author: weijin
 
