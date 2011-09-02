@@ -111,6 +111,7 @@ public:
   virtual SOCKET get_socket();
   virtual void set_local_addr();
   virtual void set_remote_addr();
+  virtual int set_tcp_init_cwnd(int init_cwnd);
 
   virtual bool get_data(int id, void *data);
   virtual bool set_data(int id, void *data);

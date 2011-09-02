@@ -235,6 +235,7 @@ public:
 
   virtual void set_local_addr();
   virtual void set_remote_addr();
+  virtual int set_tcp_init_cwnd(int init_cwnd);
 };
 
 extern ClassAllocator<UnixNetVConnection> netVCAllocator;
@@ -331,6 +332,21 @@ UnixNetVConnection::cancel_active_timeout()
     active_timeout = NULL;
     active_timeout_in = 0;
   }
+}
+
+TS_INLINE int
+UnixNetVConnection::set_tcp_init_cwnd(int init_cwnd)
+{
+#ifdef TCP_INIT_CWND
+  int rv;
+  uint32_t val = init_cwnd;
+  rv = setsockopt(con.fd, IPPROTO_TCP, TCP_INIT_CWND, &val, sizeof(val));
+  Debug("socket", "Setting TCP initial congestion window (%d) -> %d", init_cwnd, rv);
+  return rv;
+#else
+  Debug("socket", "Setting TCP initial congestion window %d -> unsupported", init_cwnd);
+  return -1;
+#endif
 }
 
 TS_INLINE UnixNetVConnection::~UnixNetVConnection() { }

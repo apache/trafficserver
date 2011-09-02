@@ -60,7 +60,7 @@ HttpClientSession::HttpClientSession()
   : VConnection(NULL), con_id(0), client_vc(NULL), magic(HTTP_CS_MAGIC_DEAD),
     transact_count(0), half_close(false), conn_decrease(false), bound_ss(NULL),
     read_buffer(NULL), current_reader(NULL), read_state(HCS_INIT),
-    ka_vio(NULL), slave_ka_vio(NULL),
+    ka_vio(NULL), slave_ka_vio(NULL), tcp_init_cwnd_set(false),
     cur_hook_id(TS_HTTP_LAST_HOOK), cur_hook(NULL),
     cur_hooks(0), backdoor_connect(false), hooks_set(0),
     m_active(false)
@@ -249,7 +249,24 @@ HttpClientSession::do_io_read(Continuation * c, int64_t nbytes, MIOBuffer * buf)
 VIO *
 HttpClientSession::do_io_write(Continuation * c, int64_t nbytes, IOBufferReader * buf, bool owner)
 {
+  /* conditionally set the tcp initial congestion window
+     before our first write. */
+  Debug("http_cs", "tcp_init_cwnd_set %d\n", (int)tcp_init_cwnd_set);
+  if(!tcp_init_cwnd_set) {
+    tcp_init_cwnd_set = true;
+    set_tcp_init_cwnd();
+  }
   return client_vc->do_io_write(c, nbytes, buf, owner);
+}
+
+void
+HttpClientSession::set_tcp_init_cwnd()
+{
+  int desired_tcp_init_cwnd = current_reader->t_state.txn_conf->server_tcp_init_cwnd;
+  Debug("http_cs", "desired TCP congestion window is %d\n", desired_tcp_init_cwnd);
+  if(desired_tcp_init_cwnd == 0) return;
+  if(get_netvc()->set_tcp_init_cwnd(desired_tcp_init_cwnd) != 0)
+    Debug("http_cs", "set_tcp_init_cwnd(%d) failed", desired_tcp_init_cwnd);
 }
 
 void

@@ -897,6 +897,11 @@ PluginVC::set_remote_addr()
   }
 }
 
+int
+PluginVC::set_tcp_init_cwnd(int init_cwnd)
+{
+  return -1;
+}
 
 bool
 PluginVC::get_data(int id, void *data)

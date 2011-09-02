@@ -7293,6 +7293,9 @@ _conf_to_memberp(TSOverridableConfigKey conf, HttpSM* sm, OverridableDataType *t
   case TS_CONFIG_HTTP_INSERT_SQUID_X_FORWARDED_FOR:
     ret = &sm->t_state.txn_conf->insert_squid_x_forwarded_for;
     break;
+  case TS_CONFIG_HTTP_SERVER_TCP_INIT_CWND:
+    ret = &sm->t_state.txn_conf->server_tcp_init_cwnd;
+    break;
   case TS_CONFIG_HTTP_SEND_HTTP11_REQUESTS:
     ret = &sm->t_state.txn_conf->send_http11_requests;
     break;
@@ -7612,8 +7615,16 @@ TSHttpTxnConfigFind(const char* name, int length, TSOverridableConfigKey *conf, 
     break;
 
   case 38:
-    if (!strncmp(name, "proxy.config.http.send_http11_requests", length))
-      cnf = TS_CONFIG_HTTP_SEND_HTTP11_REQUESTS;
+    switch (name[length-1]) {
+    case 'd':
+      if (!strncmp(name, "proxy.config.http.server_tcp_init_cwnd", length))
+        cnf = TS_CONFIG_HTTP_SERVER_TCP_INIT_CWND;
+      break;
+    case 's':
+      if (!strncmp(name, "proxy.config.http.send_http11_requests", length))
+        cnf = TS_CONFIG_HTTP_SEND_HTTP11_REQUESTS;
+      break;
+    }
     break;
 
   case 39:

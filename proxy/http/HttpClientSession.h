@@ -95,6 +95,7 @@ private:
   int state_keep_alive(int event, void *data);
   int state_slave_keep_alive(int event, void *data);
   int state_wait_for_close(int event, void *data);
+  void set_tcp_init_cwnd();
 
   void handle_api_return(int event);
   int state_api_callout(int event, void *data);
@@ -113,6 +114,7 @@ private:
 
   NetVConnection *client_vc;
   int magic;
+  bool tcp_init_cwnd_set;
   int transact_count;
   bool half_close;
   bool conn_decrease;

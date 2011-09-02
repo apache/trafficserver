@@ -403,7 +403,7 @@ struct OverridableHttpConfigParams {
        negative_caching_enabled(0), negative_caching_lifetime(0), cache_when_to_revalidate(0),
        keep_alive_enabled_in(0), keep_alive_enabled_out(0), keep_alive_post_out(0),
        sock_recv_buffer_size_out(0), sock_send_buffer_size_out(0), sock_option_flag_out(0),
-       fwd_proxy_auth_to_parent(0),
+       fwd_proxy_auth_to_parent(0), server_tcp_init_cwnd(0),
        anonymize_remove_from(0), anonymize_remove_referer(0), anonymize_remove_user_agent(0),
        anonymize_remove_cookie(0), anonymize_remove_client_ip(0), anonymize_insert_client_ip(1),
        append_xforwards_header(0), proxy_response_server_enabled(0),
@@ -452,6 +452,7 @@ struct OverridableHttpConfigParams {
   MgmtByte keep_alive_enabled_in;
   MgmtByte keep_alive_enabled_out;
   MgmtByte keep_alive_post_out;  // share server sessions for post
+  MgmtInt server_tcp_init_cwnd;
 
   ///////////////////////////////////////
   // origin server connection settings //
@@ -603,7 +604,6 @@ public:
   char *outgoing_ip_to_bind;
 
   MgmtInt server_max_connections;
-  MgmtInt server_tcp_init_cwnd;
   MgmtInt origin_min_keep_alive_connections; // TODO: This one really ought to be overridable, but difficult right now.
 
   MgmtByte parent_proxy_routing_enable;
@@ -900,7 +900,6 @@ HttpConfigParams::HttpConfigParams()
     incoming_ip_to_bind_saddr(0),
     outgoing_ip_to_bind(0),
     server_max_connections(0),
-    server_tcp_init_cwnd(0),
     origin_min_keep_alive_connections(0),
     parent_proxy_routing_enable(0),
     disable_ssl_parenting(0),

@@ -423,6 +423,9 @@ public:
 
   virtual SOCKET get_socket() = 0;
 
+  /** Set the TCP initial congestion window */
+  virtual int set_tcp_init_cwnd(int init_cwnd) = 0;
+
   /** Set local sock addr struct. */
   virtual void set_local_addr() = 0;
 
