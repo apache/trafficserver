@@ -3734,9 +3734,10 @@ HttpTransact::retry_server_connection_not_open(State* s, ServerState_t conn_stat
   // on the first connect attempt failure //
   // record the failue                   //
   //////////////////////////////////////////
-  Log::error("CONNECT:[%d] could not connect [%s] to %u.%u.%u.%u for '%s'", s->current.attempts,
-             HttpDebugNames::get_server_state_name(conn_state),
-             PRINT_IP(s->current.server->ip), url_string ? url_string : "<none>");
+  if (0 == s->current.attempts)
+    Log::error("CONNECT:[%d] could not connect [%s] to %u.%u.%u.%u for '%s'", s->current.attempts,
+               HttpDebugNames::get_server_state_name(conn_state),
+               PRINT_IP(s->current.server->ip), url_string ? url_string : "<none>");
 
   if (url_string) {
     s->arena.str_free(url_string);
