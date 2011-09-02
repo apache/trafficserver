@@ -694,8 +694,8 @@ Ldone:
 int
 Vol::evac_range(off_t low, off_t high, int evac_phase)
 {
-  int s = offset_to_vol_offset(this, low);
-  int e = offset_to_vol_offset(this, high);
+  off_t s = offset_to_vol_offset(this, low);
+  off_t e = offset_to_vol_offset(this, high);
   int si = dir_offset_evac_bucket(s);
   int ei = dir_offset_evac_bucket(e);
 
