@@ -58,9 +58,10 @@ ClassAllocator<HttpClientSession> httpClientSessionAllocator("httpClientSessionA
 
 HttpClientSession::HttpClientSession()
   : VConnection(NULL), con_id(0), client_vc(NULL), magic(HTTP_CS_MAGIC_DEAD),
+    tcp_init_cwnd_set(false),
     transact_count(0), half_close(false), conn_decrease(false), bound_ss(NULL),
     read_buffer(NULL), current_reader(NULL), read_state(HCS_INIT),
-    ka_vio(NULL), slave_ka_vio(NULL), tcp_init_cwnd_set(false),
+    ka_vio(NULL), slave_ka_vio(NULL),
     cur_hook_id(TS_HTTP_LAST_HOOK), cur_hook(NULL),
     cur_hooks(0), backdoor_connect(false), hooks_set(0),
     m_active(false)
