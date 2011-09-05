@@ -1,6 +1,6 @@
 /** @file
 
-  A brief file description
+  Memory allocation routines for libts
 
   @section license License
 
@@ -20,15 +20,6 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-
-/****************************************************************************
-
-  ink_memory.c
-
-  Memory allocation routines for libts
-
- ****************************************************************************/
-
 #include "libts.h"
 
 #include <assert.h>
@@ -176,92 +167,3 @@ ats_free(void *ptr)
   else
     ink_warning("ats_free: freeing a NULL pointer");
 }                               /* End ats_free */
-
-
-void *
-ats_memcpy(void *s1, const void *s2, int n)
-{
-  register int i;
-  register char *s, *d;
-
-  s = (char *) s2;
-  d = (char *) s1;
-
-  if (n <= 8) {
-    switch (n) {
-    case 0:
-      break;
-    case 1:
-      d[0] = s[0];
-      break;
-    case 2:
-      d[0] = s[0];
-      d[1] = s[1];
-      break;
-    case 3:
-      d[0] = s[0];
-      d[1] = s[1];
-      d[2] = s[2];
-      break;
-    case 4:
-      d[0] = s[0];
-      d[1] = s[1];
-      d[2] = s[2];
-      d[3] = s[3];
-      break;
-    case 5:
-      d[0] = s[0];
-      d[1] = s[1];
-      d[2] = s[2];
-      d[3] = s[3];
-      d[4] = s[4];
-      break;
-    case 6:
-      d[0] = s[0];
-      d[1] = s[1];
-      d[2] = s[2];
-      d[3] = s[3];
-      d[4] = s[4];
-      d[5] = s[5];
-      break;
-    case 7:
-      d[0] = s[0];
-      d[1] = s[1];
-      d[2] = s[2];
-      d[3] = s[3];
-      d[4] = s[4];
-      d[5] = s[5];
-      d[6] = s[6];
-      break;
-    case 8:
-      d[0] = s[0];
-      d[1] = s[1];
-      d[2] = s[2];
-      d[3] = s[3];
-      d[4] = s[4];
-      d[5] = s[5];
-      d[6] = s[6];
-      d[7] = s[7];
-      break;
-    default:
-      ink_assert(0);
-    }
-  } else if (n < 128) {
-    for (i = 0; i + 7 < n; i += 8) {
-      d[i + 0] = s[i + 0];
-      d[i + 1] = s[i + 1];
-      d[i + 2] = s[i + 2];
-      d[i + 3] = s[i + 3];
-      d[i + 4] = s[i + 4];
-      d[i + 5] = s[i + 5];
-      d[i + 6] = s[i + 6];
-      d[i + 7] = s[i + 7];
-    }
-    for (; i < n; i++)
-      d[i] = s[i];
-  } else {
-    memcpy(s1, s2, n);
-  }
-
-  return s1;
-}                               /* End ats_memcpy */

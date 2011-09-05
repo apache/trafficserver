@@ -348,7 +348,7 @@ StateMachine::fill()
   // write header
   if (hdr_bytes_left) {
     copy_size = min(n, hdr_bytes_left);
-    ats_memcpy(ptr, scratch_space + header_size_written, copy_size);
+    memcpy(ptr, scratch_space + header_size_written, copy_size);
     ptr += copy_size;
     header_size_written += copy_size;
     hdr_bytes_left -= copy_size;

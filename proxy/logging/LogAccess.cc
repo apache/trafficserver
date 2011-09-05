@@ -697,7 +697,7 @@ LogAccess::marshal_record(char *record, char *buf)
           num_chars =::strlen(out_buf) + 1;
           if (num_chars > max_chars) {
             // truncate string and write ellipsis at the end
-            ats_memcpy(ascii_buf, out_buf, max_chars - 4);
+            memcpy(ascii_buf, out_buf, max_chars - 4);
             ascii_buf[max_chars - 1] = 0;
             ascii_buf[max_chars - 2] = '.';
             ascii_buf[max_chars - 3] = '.';
@@ -723,7 +723,7 @@ LogAccess::marshal_record(char *record, char *buf)
   }
 
   ink_debug_assert(num_chars <= max_chars);
-  ats_memcpy(buf, out_buf, num_chars);
+  memcpy(buf, out_buf, num_chars);
 
 #ifdef PURIFY
   for (unsigned int i = num_chars + 1; i < max_chars; ++i) {

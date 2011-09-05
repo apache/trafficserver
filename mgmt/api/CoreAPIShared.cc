@@ -262,7 +262,7 @@ connectDirect(const char *host, int port, uint64_t timeout)
   if (!pHostent) {
     goto error;
   }
-  ats_memcpy((caddr_t)&(name.sin_addr), pHostent->h_addr, pHostent->h_length);
+  memcpy((caddr_t)&(name.sin_addr), pHostent->h_addr, pHostent->h_length);
 
   do {
     err = connect(sock, (struct sockaddr *) &name, sizeof(name));

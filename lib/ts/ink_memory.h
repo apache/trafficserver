@@ -36,7 +36,6 @@ extern "C"
   void *ats_memalign(size_t alignment, size_t size);
   void ats_free(void *ptr);
   void ats_memalign_free(void *ptr);
-  void *ats_memcpy(void *s1, const void *s2, int n);
 
 #ifdef __cplusplus
 }
