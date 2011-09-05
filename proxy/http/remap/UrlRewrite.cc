@@ -532,8 +532,8 @@ UrlRewrite::UrlRewrite(const char *file_var_in)
     Warning("something failed during BuildTable() -- check your remap plugins!");
   }
 
-  pcre_malloc = &ink_malloc;
-  pcre_free = &ink_free;
+  pcre_malloc = &ats_malloc;
+  pcre_free = &ats_free;
 
   if (is_debug_tag_set("url_rewrite"))
     Print();
@@ -1978,7 +1978,7 @@ UrlRewrite::_destroyList(RegexMappingList &mappings)
       pcre_free(list_iter->re_extra);
     }
     if (list_iter->to_url_host_template) {
-      ink_free(list_iter->to_url_host_template);
+      ats_free(list_iter->to_url_host_template);
     }
     delete list_iter;
   }
@@ -2058,7 +2058,7 @@ UrlRewrite::_processRegexMappingConfig(const char *from_host_lower, url_mapping 
   // in this buffer
   str = new_mapping->toUrl.host_get(&str_index); // reusing str and str_index
   reg_map->to_url_host_template_len = str_index;
-  reg_map->to_url_host_template = static_cast<char *>(ink_malloc(str_index));
+  reg_map->to_url_host_template = static_cast<char *>(ats_malloc(str_index));
   memcpy(reg_map->to_url_host_template, str, str_index);
 
   return true;
@@ -2073,7 +2073,7 @@ UrlRewrite::_processRegexMappingConfig(const char *from_host_lower, url_mapping 
     reg_map->re_extra = NULL;
   }
   if (reg_map->to_url_host_template) {
-    ink_free(reg_map->to_url_host_template);
+    ats_free(reg_map->to_url_host_template);
     reg_map->to_url_host_template = NULL;
     reg_map->to_url_host_template_len = 0;
   }

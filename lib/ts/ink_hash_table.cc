@@ -60,7 +60,7 @@ ink_hash_table_create(InkHashTableKeyType key_type)
   Tcl_HashTable *tcl_ht_ptr;
   int tcl_key_type;
 
-  tcl_ht_ptr = ink_type_malloc(Tcl_HashTable);
+  tcl_ht_ptr = (Tcl_HashTable*)ats_malloc(sizeof(Tcl_HashTable));
 
   tcl_key_type = -1;
   if (key_type == InkHashTableKeyType_String)
@@ -92,7 +92,7 @@ ink_hash_table_destroy(InkHashTable * ht_ptr)
 
   tcl_ht_ptr = (Tcl_HashTable *) ht_ptr;
   Tcl_DeleteHashTable(tcl_ht_ptr);
-  ink_free(tcl_ht_ptr);
+  ats_free(tcl_ht_ptr);
   return (InkHashTable *) 0;
 }                               /* End ink_hash_table_destroy */
 
@@ -114,7 +114,7 @@ _ink_hash_table_free_entry_value(InkHashTable * ht_ptr, InkHashTableEntry * e)
 
   value = ink_hash_table_entry_value(ht_ptr, e);
   if (value != NULL) {
-    ink_free(value);
+    ats_free(value);
   }
 
   return (0);
@@ -454,8 +454,8 @@ ink_hash_table_replace_string(InkHashTable * ht_ptr, char *string_key, char *str
   if (new_value == 0) {
     old_str = (char *) ink_hash_table_entry_value(ht_ptr, he_ptr);
     if (old_str)
-      ink_free(old_str);
+      ats_free(old_str);
   }
 
-  ink_hash_table_set_entry(ht_ptr, he_ptr, (InkHashTableValue) (ink_duplicate_string(string_value)));
+  ink_hash_table_set_entry(ht_ptr, he_ptr, (InkHashTableValue)(xstrdup(string_value)));
 }                               /* End ink_hash_table_replace_string */

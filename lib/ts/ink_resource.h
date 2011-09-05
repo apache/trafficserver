@@ -86,23 +86,20 @@ static inline void
 xfree(void *mem)
 {
   if (mem)
-    ink_free(mem);
+    ats_free(mem);
 }
 static inline void *
 xfree_null(void *mem)
 {
   if (mem)
-    ink_free(mem);
+    ats_free(mem);
   return NULL;
 }
 
-//#else
-//#define xfree(_mem)  if(_mem){ink_free((_mem));}
-//#define xfree_null(_mem)  if(_mem){ink_free((_mem));_mem = NULL;}
 #endif
 
-#define xmalloc(s)        ink_malloc ((s))
-#define xrealloc(p,s)     ink_realloc ((p),(s))
+#define xmalloc(s)        ats_malloc ((s))
+#define xrealloc(p,s)     ats_realloc ((p),(s))
 #define xstrdup(p)        _xstrdup ((p), -1, NULL)
 #define xstrndup(p,n)     _xstrdup ((p), n, NULL)
 #define xtrack(p)         p

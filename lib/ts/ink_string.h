@@ -53,7 +53,6 @@ inkcoreapi char *ink_strncpy(char *dest, const char *src, int n);
 inkcoreapi char *ink_string_concatenate_strings(char *dest, ...);
 inkcoreapi char *ink_string_concatenate_strings_n(char *dest, int n, ...);
 inkcoreapi char *ink_string_append(char *dest, char *src, int n);
-inkcoreapi char *ink_string_duplicate(char *ptr);
 inkcoreapi char *ink_string_find_dotted_extension(char *str, char *ext, int max_ext_len);
 
 /* these are supposed to make your life easier */

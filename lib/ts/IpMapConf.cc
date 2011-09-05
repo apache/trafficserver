@@ -73,7 +73,7 @@ Load_IpMap_From_File(IpMap* map, int fd, const char *key_str) {
   FILE* f = fdopen(dup(fd), "r"); // dup so we don't close the original fd.
   if (f) zret = Load_IpMap_From_File(map, f, key_str);
   else {
-    zret = (char *) ink_malloc(ERR_STRING_LEN);
+    zret = (char *)ats_malloc(ERR_STRING_LEN);
     snprintf(zret, ERR_STRING_LEN, "Unable to reopen file descriptor as stream %d:%s", errno, strerror(errno));
   }
   return zret;
@@ -117,7 +117,7 @@ Load_IpMap_From_File(IpMap* map, FILE* f, const char *key_str)
       if (!skip_space(line, n, i)) break;
 
       if (0 != read_addr(line, n,  &i, ink_inet_sa_cast(&laddr), err_buff)) {
-        char *error_str = (char *) ink_malloc(ERR_STRING_LEN);
+        char *error_str = (char *)ats_malloc(ERR_STRING_LEN);
         snprintf(error_str, ERR_STRING_LEN, "Invalid input configuration (%s) at line %d offset %d - '%s'", err_buff, line_no, i, line);
         return error_str;
       }
@@ -134,24 +134,24 @@ Load_IpMap_From_File(IpMap* map, FILE* f, const char *key_str)
         // Now, read the end of the IP range
         ++i;
         if (!skip_space(line, n, i)) {
-          char *error_str = (char *) ink_malloc(ERR_STRING_LEN);
+          char *error_str = (char *)ats_malloc(ERR_STRING_LEN);
           snprintf(error_str, ERR_STRING_LEN, "Invalid input (unterminated range) at line %d offset %d - '%s'", line_no, i, line);
           return error_str;
         } else if (0 != read_addr(line, n, &i, ink_inet_sa_cast(&raddr), err_buff)) {
-          char *error_str = (char *) ink_malloc(ERR_STRING_LEN);
+          char *error_str = (char *)ats_malloc(ERR_STRING_LEN);
           snprintf(error_str, ERR_STRING_LEN, "Invalid input (%s) at line %d offset %d - '%s'", err_buff, line_no, i, line);
           return error_str;
         }
         map->mark(ink_inet_sa_cast(&laddr), ink_inet_sa_cast(&raddr));
         if (!skip_space(line, n, i)) break;
         if (line[i] != ',') {
-          char *error_str = (char *) ink_malloc(ERR_STRING_LEN);
+          char *error_str = (char *)ats_malloc(ERR_STRING_LEN);
           snprintf(error_str, ERR_STRING_LEN, "Invalid input (expecting comma) at line %d offset %d - '%s'", line_no, i, line);
           return error_str;
         }
         ++i;
       } else {
-        char *error_str = (char *) ink_malloc(ERR_STRING_LEN);
+        char *error_str = (char *)ats_malloc(ERR_STRING_LEN);
         snprintf(error_str, ERR_STRING_LEN, "Invalid input (expecting dash or comma) at line %d offset %d", line_no, i);
         return error_str;
       }

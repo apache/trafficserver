@@ -111,7 +111,7 @@ ink_freelist_init(InkFreeList * f,
 
   /* its safe to add to this global list because ink_freelist_init()
      is only called from single-threaded initialization code. */
-  if ((fll = (ink_freelist_list *) ink_malloc(sizeof(ink_freelist_list))) != 0) {
+  if ((fll = (ink_freelist_list *)ats_malloc(sizeof(ink_freelist_list))) != 0) {
     fll->fl = f;
     fll->next = freelists;
     freelists = fll;
@@ -147,7 +147,8 @@ ink_freelist_init(InkFreeList * f,
 InkFreeList *
 ink_freelist_create(const char *name, uint32_t type_size, uint32_t chunk_size, uint32_t offset, uint32_t alignment)
 {
-  InkFreeList *f = ink_type_malloc(InkFreeList);
+  InkFreeList *f = (InkFreeList *)ats_malloc(sizeof(InkFreeList));
+
   ink_freelist_init(f, name, type_size, chunk_size, offset, alignment);
   return f;
 }
@@ -213,9 +214,9 @@ ink_freelist_new(InkFreeList * f)
     ink_mutex_release(&(f->freelist_mutex));
 
     if (alignment) {
-      foo = ink_memalign(alignment, type_size);
+      foo = ats_memalign(alignment, type_size);
     } else {
-      foo = ink_malloc(type_size);
+      foo = ats_malloc(type_size);
     }
     if (likely(foo))
       fl_memadd(type_size);
@@ -258,9 +259,9 @@ ink_freelist_new(InkFreeList * f)
       char *oldsbrk = (char *) sbrk(0), *newsbrk = NULL;
 #endif
       if (f->alignment)
-        newp = ink_memalign(f->alignment, f->chunk_size * type_size);
+        newp = ats_memalign(f->alignment, f->chunk_size * type_size);
       else
-        newp = ink_malloc(f->chunk_size * type_size);
+        newp = ats_malloc(f->chunk_size * type_size);
       if (newp)
         fl_memadd(f->chunk_size * type_size);
 #ifdef DEBUG
@@ -280,7 +281,7 @@ ink_freelist_new(InkFreeList * f)
         add = 0;
         mask = ~0;
       }
-      newp = ink_malloc(f->chunk_size * type_size + add);
+      newp = ats_malloc(f->chunk_size * type_size + add);
       if (newp)
         fl_memadd(f->chunk_size * type_size + add);
       newp = (void *) ((((uintptr_t) newp) + add) & mask);

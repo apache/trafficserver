@@ -1,6 +1,6 @@
 /** @file
 
-  A brief file description
+  Memory allocation routines for libts.
 
   @section license License
 
@@ -20,15 +20,6 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-
-/****************************************************************************
-
-  ink_memory.h
-
-  Memory allocation routines for libts
-
- ****************************************************************************/
-
 #ifndef _ink_memory_h_
 #define	_ink_memory_h_
 
@@ -39,26 +30,13 @@
 extern "C"
 {
 #endif                          /* __cplusplus */
-
-  typedef struct
-  {
-    void *ptr;
-    unsigned int length;
-  } InkMemoryBlock;
-
-#define ink_type_malloc(type)       (type *)ink_malloc(sizeof(type));
-#define ink_type_malloc_n(n,type)   (type *)ink_malloc((n) * sizeof(type));
-#define ink_type_calloc(n,type)     (type *)ink_calloc((n),sizeof(type));
-
-  void *ink_malloc(size_t size);
-  void *ink_calloc(size_t nelem, size_t elsize);
-  void *ink_realloc(void *ptr, size_t size);
-  void *ink_memalign(size_t alignment, size_t size);
-  void ink_free(void *ptr);
-  void ink_memalign_free(void *ptr);
-  char *ink_duplicate_string(char *ptr);        /* obsoleted by ink_string_duplicate --- don't use */
-  void *ink_memcpy(void *s1, const void *s2, int n);
-  void ink_bcopy(void *s1, void *s2, size_t n);
+  void *ats_malloc(size_t size);
+  void *ats_calloc(size_t nelem, size_t elsize);
+  void *ats_realloc(void *ptr, size_t size);
+  void *ats_memalign(size_t alignment, size_t size);
+  void ats_free(void *ptr);
+  void ats_memalign_free(void *ptr);
+  void *ats_memcpy(void *s1, const void *s2, int n);
 
 #ifdef __cplusplus
 }

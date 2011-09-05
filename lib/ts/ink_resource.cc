@@ -707,14 +707,14 @@ void
 _xfree(void *mem)
 {
   if (likely(mem))
-    ink_free(mem);
+    ats_free(mem);
 }
 
 void *
 _xfree_null(void *mem)
 {
   if (likely(mem))
-    ink_free(mem);
+    ats_free(mem);
   return NULL;
 }
 
@@ -723,14 +723,14 @@ void *
 _xmalloc(unsigned int size, const char *path)
 {
   NOWARN_UNUSED(path);
-  return ink_malloc(size);
+  return ats_malloc(size);
 }
 
 void *
 _xrealloc(void *ptr, unsigned int size, const char *path)
 {
   NOWARN_UNUSED(path);
-  return ink_realloc(ptr, size);
+  return ats_realloc(ptr, size);
 }
 
 char *
@@ -743,7 +743,7 @@ _xstrdup(const char *str, int length, const char *path)
     if (length < 0) {
       length = strlen(str);
     }
-    newstr = (char *) ink_malloc(length + 1);
+    newstr = (char *)ats_malloc(length + 1);
     if (likely(newstr != NULL)) {
       strncpy(newstr, str, length);
       newstr[length] = '\0';

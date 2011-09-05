@@ -940,8 +940,8 @@ sync_cache_dir_on_shutdown(void)
 
     if (buflen < dirlen) {
       if (buf)
-        ink_memalign_free(buf);
-      buf = (char *) ink_memalign(sysconf(_SC_PAGESIZE), dirlen);       // buf = (char*) valloc (dirlen);
+        ats_memalign_free(buf);
+      buf = (char *)ats_memalign(sysconf(_SC_PAGESIZE), dirlen);       // buf = (char*) valloc (dirlen);
       buflen = dirlen;
     }
 
@@ -961,7 +961,7 @@ sync_cache_dir_on_shutdown(void)
   }
   Debug("cache_dir_sync", "sync done");
   if (buf)
-    ink_memalign_free(buf);
+    ats_memalign_free(buf);
 }
 
 
@@ -981,7 +981,7 @@ Lrestart:
   if (vol >= gnvol) {
     vol = 0;
     if (buf) {
-      ink_memalign_free(buf);
+      ats_memalign_free(buf);
       buf = 0;
       buflen = 0;
     }
@@ -1044,8 +1044,8 @@ Lrestart:
       d->header->dirty = 0;
       if (buflen < dirlen) {
         if (buf)
-          ink_memalign_free(buf);
-        buf = (char *) ink_memalign(sysconf(_SC_PAGESIZE), dirlen);
+          ats_memalign_free(buf);
+        buf = (char *)ats_memalign(sysconf(_SC_PAGESIZE), dirlen);
         buflen = dirlen;
       }
       d->header->sync_serial++;

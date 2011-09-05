@@ -35,9 +35,9 @@ DFA::~DFA()
     if (p->_re)
       pcre_free(p->_re);
     if(p->_p)
-      ink_free(p->_p);
+      ats_free(p->_p);
     t = p->_next;
-    ink_free(p);
+    ats_free(p);
     p = t;
   } 
 }
@@ -49,7 +49,7 @@ DFA::build(const char *pattern, REFlags flags)
   int erroffset;
   dfa_pattern* ret;
   
-  ret = (dfa_pattern*) ink_malloc(sizeof(dfa_pattern));
+  ret = (dfa_pattern*)ats_malloc(sizeof(dfa_pattern));
   ret->_p = NULL;
   
   if (flags & RE_CASE_INSENSITIVE)
@@ -58,14 +58,14 @@ DFA::build(const char *pattern, REFlags flags)
     ret->_re = pcre_compile(pattern, PCRE_ANCHORED, &error, &erroffset, NULL);
   
   if (error) {
-    ink_free(ret);
+    ats_free(ret);
     return NULL;
   }
   
   ret->_pe = pcre_study(ret->_re, 0, &error);
   
   if (error) {
-    ink_free(ret);
+    ats_free(ret);
     return NULL;
   }
   

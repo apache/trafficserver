@@ -189,29 +189,6 @@ ink_string_append(char *dest, char *src, int n)
 
 /*---------------------------------------------------------------------------*
 
-  char *ink_string_duplicate(char *ptr)
-
-  This routine allocates memory for the string <ptr>, and copies the string
-  into the new buffer.  The pointer to the new buffer is returned.
-
- *---------------------------------------------------------------------------*/
-
-char *
-ink_string_duplicate(char *ptr)
-{
-  char *n = NULL;
-
-  if (likely(ptr)) {
-    const size_t nSize = strlen(ptr) + 1;
-    n = (char *) ink_malloc(nSize);
-    ink_strncpy(n, ptr, nSize);
-  }
-  return (n);
-}                               /* End ink_string_duplicate */
-
-
-/*---------------------------------------------------------------------------*
-
   char *ink_string_find_dotted_extension(char *str, char *ext, int max_ext_len)
 
   This routine takes a string <str>, copies the period-separated extension to

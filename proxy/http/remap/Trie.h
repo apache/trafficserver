@@ -122,7 +122,7 @@ Trie<T>::Insert(const char *key, T* value, int rank, int key_len /* = -1 */)
     if (!next_node) {
       while (i < key_len) {
         Debug("Trie::Insert", "Creating child node for char %c (%d)", key[i], key[i]);
-        curr_node->SetChild(key[i], static_cast<Node*>(ink_malloc(sizeof(Node))));
+        curr_node->SetChild(key[i], static_cast<Node*>(ats_malloc(sizeof(Node))));
         curr_node = curr_node->GetChild(key[i]);
         curr_node->Clear();
         ++i;
@@ -197,7 +197,7 @@ Trie<T>::_Clear(Node *node)
     child = node->GetChild(i);
     if (child) {
       _Clear(child);
-      ink_free(child);
+      ats_free(child);
     }
   }
 }

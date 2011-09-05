@@ -47,7 +47,7 @@
 
 
 void *
-ink_malloc(size_t size)
+ats_malloc(size_t size)
 {
   void *ptr = NULL;
 
@@ -63,48 +63,48 @@ ink_malloc(size_t size)
   if (likely(size > 0)) {
     if (unlikely((ptr = malloc(size)) == NULL)) {
       xdump();
-      ink_fatal(1, "ink_malloc: couldn't allocate %d bytes", size);
+      ink_fatal(1, "ats_malloc: couldn't allocate %d bytes", size);
     }
   }
-  return (ptr);
-}                               /* End ink_malloc */
+  return ptr;
+}                               /* End ats_malloc */
 
 
 void *
-ink_calloc(size_t nelem, size_t elsize)
+ats_calloc(size_t nelem, size_t elsize)
 {
   void *ptr = calloc(nelem, elsize);
   if (unlikely(ptr == NULL)) {
     xdump();
-    ink_fatal(1, "ink_calloc: couldn't allocate %d %d byte elements", nelem, elsize);
+    ink_fatal(1, "ats_calloc: couldn't allocate %d %d byte elements", nelem, elsize);
   }
-  return (ptr);
-}                               /* End ink_calloc */
+  return ptr;
+}                               /* End ats_calloc */
 
 
 void *
-ink_realloc(void *ptr, size_t size)
+ats_realloc(void *ptr, size_t size)
 {
   void *newptr = realloc(ptr, size);
   if (unlikely(newptr == NULL)) {
     xdump();
-    ink_fatal(1, "ink_realloc: couldn't reallocate %d bytes", size);
+    ink_fatal(1, "ats_realloc: couldn't reallocate %d bytes", size);
   }
-  return (newptr);
-}                               /* End ink_realloc */
+  return newptr;
+}                               /* End ats_realloc */
 
 
 void
-ink_memalign_free(void *ptr)
+ats_memalign_free(void *ptr)
 {
   if (likely(ptr)) {
-    ink_free(ptr);
+    ats_free(ptr);
   }
 }
 
 
 void *
-ink_memalign(size_t alignment, size_t size)
+ats_memalign(size_t alignment, size_t size)
 {
 #ifndef NO_MEMALIGN
 
@@ -112,28 +112,28 @@ ink_memalign(size_t alignment, size_t size)
 
 #if TS_HAS_POSIX_MEMALIGN
   if (alignment <= 8)
-    return ink_malloc(size);
+    return ats_malloc(size);
 
   int retcode = posix_memalign(&ptr, alignment, size);
   if (unlikely(retcode)) {
     if (retcode == EINVAL) {
-      ink_fatal(1, "ink_memalign: couldn't allocate %d bytes at alignment %d - invalid alignment parameter",
+      ink_fatal(1, "ats_memalign: couldn't allocate %d bytes at alignment %d - invalid alignment parameter",
                 (int) size, (int) alignment);
     } else if (retcode == ENOMEM) {
-      ink_fatal(1, "ink_memalign: couldn't allocate %d bytes at alignment %d - insufficient memory",
+      ink_fatal(1, "ats_memalign: couldn't allocate %d bytes at alignment %d - insufficient memory",
                 (int) size, (int) alignment);
     } else {
-      ink_fatal(1, "ink_memalign: couldn't allocate %d bytes at alignment %d - unknown error %d",
+      ink_fatal(1, "ats_memalign: couldn't allocate %d bytes at alignment %d - unknown error %d",
                 (int) size, (int) alignment, retcode);
     }
   }
 #else
   ptr = memalign(alignment, size);
   if (unlikely(ptr == NULL)) {
-    ink_fatal(1, "ink_memalign: couldn't allocate %d bytes at alignment %d", (int) size, (int) alignment);
+    ink_fatal(1, "ats_memalign: couldn't allocate %d bytes at alignment %d", (int) size, (int) alignment);
   }
 #endif
-  return (ptr);
+  return ptr;
 #else
 #if defined(freebsd) || defined(darwin)
   /*
@@ -166,29 +166,20 @@ ink_memalign(size_t alignment, size_t size)
 # endif
 #endif /* #ifndef NO_MEMALIGN */
   return NULL;
-}                               /* End ink_memalign */
+}                               /* End ats_memalign */
 
 void
-ink_free(void *ptr)
+ats_free(void *ptr)
 {
   if (likely(ptr != NULL))
     free(ptr);
   else
-    ink_warning("ink_free: freeing a NULL pointer");
-}                               /* End ink_free */
+    ink_warning("ats_free: freeing a NULL pointer");
+}                               /* End ats_free */
 
-
-/* this routine has been renamed --- this stub is for portability & will disappear */
-
-char *
-ink_duplicate_string(char *ptr)
-{
-  ink_assert(!"don't use this slow code!");
-  return (ink_string_duplicate(ptr));
-}                               /* End ink_duplicate_string */
 
 void *
-ink_memcpy(void *s1, const void *s2, int n)
+ats_memcpy(void *s1, const void *s2, int n)
 {
   register int i;
   register char *s, *d;
@@ -272,12 +263,5 @@ ink_memcpy(void *s1, const void *s2, int n)
     memcpy(s1, s2, n);
   }
 
-  return (s1);
-}                               /* End ink_memcpy */
-
-void
-ink_bcopy(void *s1, void *s2, size_t n)
-{
-  ink_assert(!"don't use this slow code!");
-  ink_memcpy(s2, s1, n);
-}                               /* End ink_bcopy */
+  return s1;
+}                               /* End ats_memcpy */

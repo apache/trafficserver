@@ -1,6 +1,7 @@
 /** @file
 
-  A brief file description
+  This file contains functions that are shared by local and remote
+  API; in particular it has helper functions used by TSMgmtAPI.cc
 
   @section license License
 
@@ -20,17 +21,6 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-
-/*****************************************************************************
- * Filename: CoreAPIShared.cc
- * Purpose: This file contains functions that are shared by local and remote
- *          API; in particular it has helper functions used by TSMgmtAPI.cc
- * Created: 01/20/00
- * Created by: Lan Tran
- *
- *
- ***************************************************************************/
-
 #include "libts.h"
 
 #include "CoreAPIShared.h"
@@ -266,13 +256,13 @@ connectDirect(const char *host, int port, uint64_t timeout)
   // Connect to the specified port on the machine we're running on.
   name.sin_family = AF_INET;
   name.sin_port = htons(port);
-  //name.sin_addr.s_addr = inet_addr ("127.0.0.1");
+
   struct hostent *pHostent;
   pHostent = gethostbyname(host);
   if (!pHostent) {
     goto error;
   }
-  bcopy(pHostent->h_addr, (caddr_t) & (name.sin_addr), pHostent->h_length);
+  ats_memcpy((caddr_t)&(name.sin_addr), pHostent->h_addr, pHostent->h_length);
 
   do {
     err = connect(sock, (struct sockaddr *) &name, sizeof(name));

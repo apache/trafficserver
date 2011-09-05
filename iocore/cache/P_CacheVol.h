@@ -256,16 +256,16 @@ struct Vol: public Continuation
       dir_sync_waiting(0), dir_sync_in_progress(0), writing_end_marker(0) {
     open_dir.mutex = mutex;
 #if defined(_WIN32)
-    agg_buffer = (char *) malloc(AGG_SIZE);
+    agg_buffer = (char *)ats_malloc(AGG_SIZE);
 #else
-    agg_buffer = (char *) ink_memalign(sysconf(_SC_PAGESIZE), AGG_SIZE);
+    agg_buffer = (char *)ats_memalign(sysconf(_SC_PAGESIZE), AGG_SIZE);
 #endif
     memset(agg_buffer, 0, AGG_SIZE);
     SET_HANDLER(&Vol::aggWrite);
   }
 
   ~Vol() {
-    ink_memalign_free(agg_buffer);
+    ats_memalign_free(agg_buffer);
   }
 };
 
