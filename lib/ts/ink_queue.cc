@@ -111,12 +111,10 @@ ink_freelist_init(InkFreeList * f,
 
   /* its safe to add to this global list because ink_freelist_init()
      is only called from single-threaded initialization code. */
-  if ((fll = (ink_freelist_list *)ats_malloc(sizeof(ink_freelist_list))) != 0) {
-    fll->fl = f;
-    fll->next = freelists;
-    freelists = fll;
-  }
-  ink_assert(fll != NULL);
+  fll = (ink_freelist_list *)ats_malloc(sizeof(ink_freelist_list));
+  fll->fl = f;
+  fll->next = freelists;
+  freelists = fll;
 
   f->name = name;
   f->offset = offset;
@@ -218,9 +216,7 @@ ink_freelist_new(InkFreeList * f)
     } else {
       foo = ats_malloc(type_size);
     }
-    if (likely(foo))
-      fl_memadd(type_size);
-
+    fl_memadd(type_size);
 
 #ifdef MEMPROTECT
     if (type_size >= MEMPROTECT_SIZE) {
@@ -262,8 +258,7 @@ ink_freelist_new(InkFreeList * f)
         newp = ats_memalign(f->alignment, f->chunk_size * type_size);
       else
         newp = ats_malloc(f->chunk_size * type_size);
-      if (newp)
-        fl_memadd(f->chunk_size * type_size);
+      fl_memadd(f->chunk_size * type_size);
 #ifdef DEBUG
       newsbrk = (char *) sbrk(0);
       ink_atomic_increment(&fastmemtotal, newsbrk - oldsbrk);
@@ -282,8 +277,7 @@ ink_freelist_new(InkFreeList * f)
         mask = ~0;
       }
       newp = ats_malloc(f->chunk_size * type_size + add);
-      if (newp)
-        fl_memadd(f->chunk_size * type_size + add);
+      fl_memadd(f->chunk_size * type_size + add);
       newp = (void *) ((((uintptr_t) newp) + add) & mask);
       SET_FREELIST_POINTER_VERSION(item, newp, 0);
 #endif

@@ -28,6 +28,8 @@
 #include <stdlib.h>
 #include "ink_resource.h"
 
+// TODO: TS-567 Clean this up!
+
 #ifdef TRACK_MEMORY
 
 #define NEW(mem)        _xtrack_helper (mem, RES_MEM_PATH)

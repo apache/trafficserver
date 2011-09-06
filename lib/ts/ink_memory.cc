@@ -44,7 +44,7 @@ ats_malloc(size_t size)
 
   /*
    * There's some nasty code in libts that expects
-   * a MALLOC of a zero-sized item to wotk properly. Rather
+   * a MALLOC of a zero-sized item to work properly. Rather
    * than allocate any space, we simply return a NULL to make
    * certain they die quickly & don't trash things.
    */
@@ -60,7 +60,6 @@ ats_malloc(size_t size)
   return ptr;
 }                               /* End ats_malloc */
 
-
 void *
 ats_calloc(size_t nelem, size_t elsize)
 {
@@ -71,7 +70,6 @@ ats_calloc(size_t nelem, size_t elsize)
   }
   return ptr;
 }                               /* End ats_calloc */
-
 
 void *
 ats_realloc(void *ptr, size_t size)
@@ -84,7 +82,6 @@ ats_realloc(void *ptr, size_t size)
   return newptr;
 }                               /* End ats_realloc */
 
-
 void
 ats_memalign_free(void *ptr)
 {
@@ -92,7 +89,6 @@ ats_memalign_free(void *ptr)
     ats_free(ptr);
   }
 }
-
 
 void *
 ats_memalign(size_t alignment, size_t size)
