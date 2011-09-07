@@ -309,10 +309,10 @@ CoreUtils::read_from_core(intptr_t vaddr, intptr_t bytes, char *buf)
            *buf++ = getc(fp);
            }
            buf -= bytes;*/
-          free(frameoff);
+          ats_free(frameoff);
           return bytes;
         }
-        free(frameoff);
+        ats_free(frameoff);
       }
     } else
       return -1;
@@ -360,7 +360,7 @@ CoreUtils::get_base_frame(intptr_t threadId, core_stack_state * coress)
         framep = regs.rw_in[6];
         coress->framep = framep;
       }
-      free(frameoff);
+      ats_free(frameoff);
     } else {
       printf("Failed to seek to top of the stack\n");
     }
@@ -406,7 +406,7 @@ CoreUtils::get_next_frame(core_stack_state * coress)
           coress->framep = framep;
         }
       }
-      free(frameoff);
+      ats_free(frameoff);
     }
   }
   return 1;
@@ -474,7 +474,7 @@ CoreUtils::get_base_frame(intptr_t framep, core_stack_state *coress)
           }
         }
       }
-      free(frameoff);
+      ats_free(frameoff);
     }
   } else {
     printf("Failed to seek to top of the stack\n");
@@ -504,7 +504,7 @@ CoreUtils::get_next_frame(core_stack_state * coress)
       if (fread(frameoff, 4, 1, fp) == 1) {
         coress->framep = (intptr_t) *frameoff;
         if (*frameoff == NULL) {
-          free(frameoff);
+          ats_free(frameoff);
           return 0;
         }
         if (fread(frameoff, 4, 1, fp) == 1) {
@@ -516,7 +516,7 @@ CoreUtils::get_next_frame(core_stack_state * coress)
           }
         }
       }
-      free(frameoff);
+      ats_free(frameoff);
     }
     return 1;
   }
@@ -631,7 +631,7 @@ CoreUtils::process_HttpSM(HttpSM * core_ptr)
     if (read_from_core((intptr_t) core_ptr, sizeof(HttpSM), (char *) http_sm) < 0) {
       // This is not 64-bit correct ... /leif
       printf("ERROR: Failed to read httpSM @ 0x%p from core\n", core_ptr);
-      free(http_sm);
+      ats_free(http_sm);
       return;
     }
 
@@ -673,7 +673,7 @@ CoreUtils::process_HttpSM(HttpSM * core_ptr)
       }
     }
 
-    free(http_sm);
+    ats_free(http_sm);
   } else
     printf("process_HttpSM : last_seen_http_sm == core_ptr\n");
 }
@@ -806,7 +806,7 @@ CoreUtils::load_http_hdr(HTTPHdr * core_hdr, HTTPHdr * live_hdr)
 
     char *free_start = (char *) (((HdrStrHeap *) str_hdr)->m_free_start);
     int nto_copy = abs((char *) copy_start - free_start);
-    free(str_hdr);
+    ats_free(str_hdr);
 #if defined(__GNUC__)
     char rw_heap[sizeof(char) * nto_copy];
 #else
@@ -986,7 +986,7 @@ CoreUtils::process_EThread(EThread * eth_test)
     //    printf("   NetHandler: 0x%x\n\n", (int) loaded_eth->netHandler);
   }
 
-  free(buf);
+  ats_free(buf);
 }
 
 static void
@@ -1020,7 +1020,7 @@ CoreUtils::process_NetVC(UnixNetVConnection * nvc_test)
     print_netstate(&loaded_nvc->write);
   }
 
-  free(buf);
+  ats_free(buf);
 }
 
 
@@ -1194,7 +1194,7 @@ process_core(char *fname)
               size -= len;
             }
           }
-          free(nhdr);
+          ats_free(nhdr);
         }
       }
     }
@@ -1352,7 +1352,7 @@ process_core(char *fname)
               size -= len;
             }
           }
-          free(nhdr);
+          ats_free(nhdr);
         }
       }
     }

@@ -198,7 +198,7 @@ private:
   void _clearData()
   {
     if (_data && !(_mode & OVERWRITE_INPUT_STRING)) {
-      free(_data);
+      ats_free(_data);
     }
   }
 

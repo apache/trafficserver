@@ -92,8 +92,10 @@ Cmd_Show(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[
   cmdinfo[i] = 0;
   Cli_Printf("Following are the available show commands\n");
   Cli_Printf(cmdinfo + strlen("show "));
-  free(cmdinfo);
-  free(temp);
+
+  ats_free(cmdinfo);
+  ats_free(temp);
+
   return 0;
 
 }

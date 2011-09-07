@@ -129,12 +129,12 @@ cliParseArgument(int argc, const char **argv, cli_CommandInfo * commandInfo)
     parsedArgTable[i].arg_int = CLI_DEFAULT_INT_OR_FLOAT_VALUE;
 
     if (parsedArgTable[i].data && (parsedArgTable[i].data != (char *) NULL)) {
-      free(parsedArgTable[i].data);
+      ats_free(parsedArgTable[i].data);
       parsedArgTable[i].data = (char *) NULL;
 
     }
     if (parsedArgTable[i].arg_string && parsedArgTable[i].arg_string != (char *) NULL) {
-      free(parsedArgTable[i].arg_string);
+      ats_free(parsedArgTable[i].arg_string);
       parsedArgTable[i].arg_string = (char *) NULL;
     }
   }
@@ -178,7 +178,7 @@ cliParseArgument(int argc, const char **argv, cli_CommandInfo * commandInfo)
         if (prevMatchPtr != NULL && prevPtr == prevMatchPtr) {
           if (prevMatchPtr->type == CLI_ARGV_OPTION_NAME_VALUE) {
             if (prev_parsedInfoPtr->arg_string) {
-              free(prev_parsedInfoPtr->arg_string);
+              ats_free(prev_parsedInfoPtr->arg_string);
               prev_parsedInfoPtr->arg_string = NULL;
             }
           }

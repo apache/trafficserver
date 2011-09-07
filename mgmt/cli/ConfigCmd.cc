@@ -247,8 +247,10 @@ Cmd_Config(ClientData clientData, Tcl_Interp * interp, int argc, const char *arg
   cmdinfo[i] = 0;
   Cli_Printf("Following are the available config commands\n");
   Cli_Printf(cmdinfo + strlen("config "));
-  free(cmdinfo);
-  free(temp);
+
+  ats_free(cmdinfo);
+  ats_free(temp);
+
   return CLI_OK;
 
 }

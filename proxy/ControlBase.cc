@@ -351,7 +351,7 @@ void TextMod::print(FILE* f) const {
 
 TextMod::TextMod() : text(0,0) {}
 TextMod::~TextMod() {
-  if (text.data()) free(text.data());
+  free(text.data());
 }
 
 // ----------

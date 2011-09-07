@@ -330,7 +330,7 @@ _zorch_file(void *arg)
           break;
         info->fsize += amount;
       }
-      free(vals);
+      ats_free(vals);
     }
     delete info;
     ink_atomic_increment((int *) &nzorchers, -1);

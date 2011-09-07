@@ -38,7 +38,7 @@ HttpMessageBody::StatusCodeName(HTTPStatus status_code)
   (using malloc), and places the result body in the buffer. The body
   will be NUL terminated.
 
-  The caller must free() the returned object when done.
+  The caller must ats_free() the returned object when done.
 
   The reason string allows you to override the default reason phrase for
   the status code. If it is NULL, the default is used. If format is NULL

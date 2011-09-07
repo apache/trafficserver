@@ -724,7 +724,7 @@ ParentRecord::DefaultInit(char *val)
 //
 //    Returns NULL if everything is OK
 //      Otherwise, returns an error string that the caller MUST
-//        DEALLOCATE with free()
+//        DEALLOCATE with ats_free()
 //
 char *
 ParentRecord::Init(matcher_line * line_info)

@@ -101,11 +101,9 @@ remap_entry::~remap_entry()
   int i;
 
   if (argc && argv) {
-    for (i = 0; i < argc; i++) {
-      if (argv[i])
-        free(argv[i]);
-    }
-    free(argv);
+    for (i = 0; i < argc; i++)
+      ats_free(argv[i]);
+    ats_free(argv);
   }
 }
 

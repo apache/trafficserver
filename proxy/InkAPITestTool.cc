@@ -459,9 +459,8 @@ synclient_txn_delete(ClientTxn * txn)
     TSActionCancel(txn->connect_action);
     txn->connect_action = NULL;
   }
-  if (txn->request) {
-    free(txn->request);
-  }
+
+  ats_free(txn->request);
   txn->magic = MAGIC_DEAD;
   TSfree(txn);
   return 1;

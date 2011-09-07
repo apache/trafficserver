@@ -1331,7 +1331,7 @@ Net_SetEncryptedRootPassword(char *password)
           strtok_r(buf, ":", &remainingTokens);
           strtok_r(NULL, ":", &remainingTokens);
           fprintf(tmp, "root:%s:%s", password, remainingTokens);
-          free(buf);
+          ats_free(buf);
         }
       }
       NOWARN_UNUSED_RETURN(fgets(buffer, 1024, fp));

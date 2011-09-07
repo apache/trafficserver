@@ -312,7 +312,7 @@ main(int argc, char *argv[])
 
   if ((bind(fd, (struct sockaddr *) &saddr, sizeof(saddr))) < 0) {
     perror("bind(udp_fd)");
-    free(pkt_buf);
+    ats_free(pkt_buf);
     return 0;
   }
 
@@ -331,5 +331,5 @@ main(int argc, char *argv[])
       stream_hash_table->deleteStaleStreams(now);
   }
 
-  free(pkt_buf);
+  ats_free(pkt_buf);
 }

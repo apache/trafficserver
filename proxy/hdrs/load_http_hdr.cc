@@ -101,13 +101,13 @@ process_http_hdr_impl(HdrHeapObjImpl * obj, int offset)
     printf("    is a request hdr\n");
     s = load_string(hhdr->u.req.m_ptr_method, hhdr->u.req.m_len_method, offset);
     printf("    method: %s\n", s);
-    free(s);
+    ats_free(s);
   } else if (hhdr->m_polarity == HTTP_TYPE_RESPONSE) {
     printf("    is a response hdr\n");
     printf("    status code: %d\n", (int) hhdr->u.resp.m_status);
     s = load_string(hhdr->u.resp.m_ptr_reason, hhdr->u.resp.m_len_reason, offset);
     printf("    method: %s\n", s);
-    free(s);
+    ats_free(s);
   }
 }
 
@@ -133,8 +133,8 @@ process_mime_block_impl(MIMEFieldBlockImpl * mblock, int offset)
     }
     v = load_string(f->m_ptr_value, f->m_len_value, offset);
     printf("    (%d) %s: %s\n", i, n, v);
-    free(n);
-    free(v);
+    ats_free(n);
+    ats_free(v);
   }
 }
 
