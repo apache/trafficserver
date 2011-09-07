@@ -1900,7 +1900,7 @@ main(int argc, char **argv)
   if (admin_user_p) {
     change_uid_gid(user);
     DebugCapabilities("server");
-    xfree(user);
+    ats_free(user);
   }
 # endif
 
