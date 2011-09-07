@@ -52,41 +52,25 @@ void init_pdss_format(TSPdSsFormat * info);
 void *
 _TSmalloc(unsigned int size, const char *path)
 {
-#ifdef PURIFY
   return ats_malloc(size);
-#else
-  return _xmalloc(size, path);
-#endif
 }
 
 void *
 _TSrealloc(void *ptr, unsigned int size, const char *path)
 {
-#ifdef PURIFY
   return xrealloc(ptr, size);
-#else
-  return _xrealloc(ptr, size, path);
-#endif
 }
 
 char *
 _TSstrdup(const char *str, int length, const char *path)
 {
-#ifdef PURIFY
   return xstrndup(str, length);
-#else
-  return _xstrdup(str, length, path);
-#endif
 }
 
 void
 _TSfree(void *ptr)
 {
-#ifdef PURIFY
   xfree(ptr);
-#else
-  _xfree(ptr);
-#endif
 }
 
 

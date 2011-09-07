@@ -50,13 +50,6 @@ _xfree_null(void *mem)
 
 
 void *
-_xmalloc(unsigned int size, const char *path)
-{
-  NOWARN_UNUSED(path);
-  return ats_malloc(size);
-}
-
-void *
 _xrealloc(void *ptr, unsigned int size, const char *path)
 {
   NOWARN_UNUSED(path);

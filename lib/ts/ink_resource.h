@@ -73,7 +73,6 @@ xfree_null(void *mem)
 #define xstrdup(p)        _xstrdup ((p), -1, NULL)
 #define xstrndup(p,n)     _xstrdup ((p), n, NULL)
 
-void *_xmalloc(unsigned int size, const char *path);
 void *_xrealloc(void *ptr, unsigned int size, const char *path);
 char *_xstrdup(const char *str, int length, const char *path);
 void _xfree(void *ptr);
