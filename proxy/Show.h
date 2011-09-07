@@ -54,7 +54,7 @@ struct ShowCont: public Continuation
     va_end(va_scratch);
     if (done > l - 256)
     {
-      char *start2 = (char *) xrealloc(start, (ebuf - start) * 2);
+      char *start2 = (char *)ats_realloc(start, (ebuf - start) * 2);
         ebuf = start2 + (ebuf - start) * 2;
         buf = start2 + (buf - start);
         start = start2;

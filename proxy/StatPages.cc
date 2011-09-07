@@ -163,7 +163,7 @@ BaseStatPagesHandler::resp_add(const char *fmt, ...)
     if (!response) {
       response = (char *)ats_malloc(size);
     } else {
-      response = (char *) xrealloc(response, size);
+      response = (char *)ats_realloc(response, size);
     }
     response_size = size;
   }

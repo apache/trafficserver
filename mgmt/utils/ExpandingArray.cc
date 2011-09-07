@@ -68,7 +68,7 @@ ExpandingArray::addEntry(void *entry)
 
   if (numValidValues == internalArraySize) {
     // Time to increase the size of the array
-    internalArray = (void **) xrealloc(internalArray, 2 * sizeof(void *) * internalArraySize);
+    internalArray = (void **)ats_realloc(internalArray, 2 * sizeof(void *) * internalArraySize);
     internalArraySize *= 2;
   }
 

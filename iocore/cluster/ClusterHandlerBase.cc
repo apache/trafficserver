@@ -649,12 +649,10 @@ bool ClusterHandler::check_channel(int c)
       }
     }
     // Allocate ClusterVConnection table entries
-    channels = (ClusterVConnection **)
-      xrealloc(channels, n_channels * sizeof(ClusterVConnection *));
+    channels = (ClusterVConnection **)ats_realloc(channels, n_channels * sizeof(ClusterVConnection *));
 
     // Allocate ChannelData table entries
-    channel_data = (struct ChannelData **)
-      xrealloc(channel_data, n_channels * sizeof(struct ChannelData *));
+    channel_data = (struct ChannelData **)ats_realloc(channel_data, n_channels * sizeof(struct ChannelData *));
 
     for (int i = old_channels; i < n_channels; i++) {
       if (local_channel(i)) {

@@ -97,7 +97,7 @@ ink_killall_get_pidv_xmalloc(const char *pname, pid_t ** pidv, int *pidvcnt)
           if (*pidvcnt >= pidvsize) {
             pid_t *pidv_realloc;
             pidvsize *= 2;
-            if (!(pidv_realloc = (pid_t *) xrealloc(*pidv, pidvsize * sizeof(pid_t)))) {
+            if (!(pidv_realloc = (pid_t *)ats_realloc(*pidv, pidvsize * sizeof(pid_t)))) {
               ats_free(*pidv);
               goto l_error;
             } else {

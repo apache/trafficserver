@@ -58,7 +58,7 @@ _TSmalloc(unsigned int size, const char *path)
 void *
 _TSrealloc(void *ptr, unsigned int size, const char *path)
 {
-  return xrealloc(ptr, size);
+  return ats_realloc(ptr, size);
 }
 
 char *

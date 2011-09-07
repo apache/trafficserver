@@ -119,7 +119,7 @@ CfgContextCommit(CfgContext * ctx, LLQ * errRules)
     size += len + 1;
     if (size > max_file_size) {
       max_file_size *= 2;
-      new_text = (char *) xrealloc(new_text, max_file_size + 1);
+      new_text = (char *)ats_realloc(new_text, max_file_size + 1);
       if (!new_text) {          // out of memory
         return TS_ERR_FAIL;
       }

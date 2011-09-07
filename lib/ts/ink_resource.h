@@ -54,11 +54,9 @@ struct Resource
 #define RES_TRACK_MEMORY_DEFAULT 0      /* default value for res_track_memory variable */
 
 
-#define xrealloc(p,s)     ats_realloc ((p),(s))
 #define xstrdup(p)        _xstrdup ((p), -1, NULL)
 #define xstrndup(p,n)     _xstrdup ((p), n, NULL)
 
-void *_xrealloc(void *ptr, unsigned int size, const char *path);
 char *_xstrdup(const char *str, int length, const char *path);
 
 void xdump(void);

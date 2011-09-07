@@ -134,7 +134,7 @@ struct Store
   void extend(int i)
   {
     if (i > n_disks) {
-      disk = (Span **) xrealloc(disk, i * sizeof(Span *));
+      disk = (Span **)ats_realloc(disk, i * sizeof(Span *));
       for (int j = n_disks; j < i; j++)
         disk[j] = NULL;
       n_disks = i;

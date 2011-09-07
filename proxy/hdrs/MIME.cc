@@ -2358,7 +2358,7 @@ mime_scanner_append(MIMEScanner * scanner, const char *data, int data_size)
     if (scanner->m_line == NULL) {       // if no buffer yet, allocate one
       scanner->m_line = (char *)ats_malloc(scanner->m_line_size);
     } else {
-      scanner->m_line = (char *) xrealloc(scanner->m_line, scanner->m_line_size);
+      scanner->m_line = (char *)ats_realloc(scanner->m_line, scanner->m_line_size);
     }
   }
   ////////////////////////////////////////////////

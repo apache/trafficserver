@@ -762,7 +762,7 @@ FileImpl::fread(void *buf, int length)
       while (amount > (m_bufsize - m_bufpos)) {
         m_bufsize *= 2;
       }
-      m_buf = (char *) xrealloc(m_buf, m_bufsize);
+      m_buf = (char *)ats_realloc(m_buf, m_bufsize);
     }
 
     do {
@@ -1649,7 +1649,8 @@ _TSmalloc(size_t size, const char *path)
 void *
 _TSrealloc(void *ptr, size_t size, const char *path)
 {
-  return _xrealloc(ptr, size, path);
+  NOWARN_UNUSED(path);
+  return ats_realloc(ptr, size);
 }
 
 // length has to be int64_t and not size_t, since -1 means to call strlen() to get length

@@ -33,13 +33,6 @@ volatile int res_track_memory = RES_TRACK_MEMORY_DEFAULT;
 
 /*-------------------------------------------------------------------------
 -------------------------------------------------------------------------*/
-void *
-_xrealloc(void *ptr, unsigned int size, const char *path)
-{
-  NOWARN_UNUSED(path);
-  return ats_realloc(ptr, size);
-}
-
 char *
 _xstrdup(const char *str, int length, const char *path)
 {

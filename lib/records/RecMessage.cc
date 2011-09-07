@@ -338,7 +338,7 @@ RecMessageMarshal_Realloc(RecMessage * msg, const RecRecord * record)
   // get some space in our buffer
   while (msg->o_end - msg->o_write < msg_ele_size) {
     int realloc_size = (msg->o_end - msg->o_start) * 2;
-    msg = (RecMessage *) xrealloc(msg, sizeof(RecMessageHdr) + realloc_size);
+    msg = (RecMessage *)ats_realloc(msg, sizeof(RecMessageHdr) + realloc_size);
     msg->o_end = msg->o_start + realloc_size;
   }
   ele_hdr = (RecMessageEleHdr *) ((char *) msg + msg->o_write);

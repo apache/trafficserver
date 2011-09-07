@@ -125,7 +125,7 @@ textBuffer::enlargeBuffer(int N)
       newSize *= 2;
     }
 
-    newSpace = (char *) xrealloc(bufferStart, newSize);
+    newSpace = (char *)ats_realloc(bufferStart, newSize);
     if (newSpace != NULL) {
       nextAdd = newSpace + (unsigned int) (nextAdd - bufferStart);
       bufferStart = newSpace;
