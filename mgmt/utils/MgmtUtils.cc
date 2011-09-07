@@ -622,7 +622,7 @@ mgmt_getAddrForIntr(char *intrName, struct in_addr * addr, int *mtu)
   lastlen = 0;
   len = 128 * sizeof(struct ifreq);     // initial buffer size guess
   for (;;) {
-    ifbuf = (char *) xmalloc(len);
+    ifbuf = (char *)ats_malloc(len);
     memset(ifbuf, 0, len);      // prevent UMRs
     ifc.ifc_len = len;
     ifc.ifc_buf = ifbuf;
@@ -766,6 +766,7 @@ mgmt_localhost_ip()
   char *hostname;
   in_addr ip;
   int rec_err = RecGetRecordString_Xmalloc("proxy.node.hostname_FQ", &hostname);
+
   found = (rec_err == REC_ERR_OKAY);
   if (found && hostname) {
     ip.s_addr = host_to_ip(hostname);

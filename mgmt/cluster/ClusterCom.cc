@@ -800,7 +800,7 @@ ClusterCom::handleMultiCastMessage(char *message)
   /* Have we see this guy before? */
   ink_mutex_acquire(&(mutex));  /* Grab cluster lock to access hash table */
   if (ink_hash_table_lookup(peers, (InkHashTableKey) ip, &hash_value) == 0) {
-    ink_assert((p = (ClusterPeerInfo *) xmalloc(sizeof(ClusterPeerInfo))));
+    ink_assert((p = (ClusterPeerInfo *)ats_malloc(sizeof(ClusterPeerInfo))));
     p->inet_address = inet_addr(ip);
     p->num_virt_addrs = 0;
 
@@ -809,7 +809,7 @@ ClusterCom::handleMultiCastMessage(char *message)
     // how many RECT_NODE stats there are. I'm hoping it's negligible though, but worst
     // case we can reoptimize this later (and more efficiently).
     int cnt = 0;
-    p->node_rec_data.recs = (RecRecord *) xmalloc(sizeof(RecRecord) * g_num_records);
+    p->node_rec_data.recs = (RecRecord *)ats_malloc(sizeof(RecRecord) * g_num_records);
     for (int j = 0; j < g_num_records; j++) {
       RecRecord *rec = &(g_records[j]);
 
@@ -957,7 +957,7 @@ ClusterCom::handleMultiCastStatPacket(char *last, ClusterPeerInfo * peer)
             xfree(rec->data.rec_string);
           }
           int rec_string_size = strlen(tmp_msg_val) + 1;
-          ink_assert((rec->data.rec_string = (RecString) xmalloc(rec_string_size)));
+          ink_assert((rec->data.rec_string = (RecString)ats_malloc(rec_string_size)));
           ink_strncpy(rec->data.rec_string, tmp_msg_val, rec_string_size);
         }
         break;
@@ -1009,7 +1009,7 @@ extract_locals(MgmtHashTable * local_ht, char *record_buffer)
     // is this line a LOCAL?
     if (strncmp(q, "LOCAL", strlen("LOCAL")) == 0) {
       int line_cp_len = strlen(line) + 1;
-      line_cp = (char *) xmalloc(line_cp_len);
+      line_cp = (char *)ats_malloc(line_cp_len);
       ink_strncpy(line_cp, line, line_cp_len);
       q += strlen("LOCAL");
       while ((*q == ' ') || (*q == '\t'))
@@ -1156,7 +1156,7 @@ ClusterCom::handleMultiCastFilePacket(char *last, char *ip)
           } else {
             our_locals_ht = NEW(new MgmtHashTable("our_locals_ht", true, InkHashTableKeyType_String));
             our_rec_cfg_cp_len = our_rec_cfg->spaceUsed();
-            our_rec_cfg_cp = (char *) xmalloc(our_rec_cfg_cp_len + 1);
+            our_rec_cfg_cp = (char *)ats_malloc(our_rec_cfg_cp_len + 1);
             ink_strncpy(our_rec_cfg_cp, our_rec_cfg->bufPtr(), (our_rec_cfg_cp_len + 1));
             extract_locals(our_locals_ht, our_rec_cfg_cp);
             reply_new = NEW(new textBuffer(reply->spaceUsed()));

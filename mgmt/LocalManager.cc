@@ -437,7 +437,7 @@ LocalManager::initCCom(int port, char *addr, int sport)
   // Set the cluster ip addr variable so that proxy can read it
   //    and flush it to disk
   const size_t envBuf_size = strlen(envVar) + strlen(clusterAddrStr) + 1;
-  envBuf = (char *) xmalloc(envBuf_size);
+  envBuf = (char *)ats_malloc(envBuf_size);
   ink_strncpy(envBuf, envVar, envBuf_size);
   strncat(envBuf, clusterAddrStr, envBuf_size - strlen(envBuf) - 1);
   ink_release_assert(putenv(envBuf) == 0);
@@ -958,7 +958,7 @@ LocalManager::signalEvent(int msg_id, const char *data_raw, int data_len)
 {
   MgmtMessageHdr *mh;
 
-  mh = (MgmtMessageHdr *) xmalloc(sizeof(MgmtMessageHdr) + data_len);
+  mh = (MgmtMessageHdr *)ats_malloc(sizeof(MgmtMessageHdr) + data_len);
   mh->msg_id = msg_id;
   mh->data_len = data_len;
   memcpy((char *) mh + sizeof(MgmtMessageHdr), data_raw, data_len);

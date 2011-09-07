@@ -484,7 +484,7 @@ PrefetchTransform::redirect(HTTPHdr *resp)
     int redirect_url_len = 0;
     const char *tmp_url = resp->value_get(MIME_FIELD_LOCATION, MIME_LEN_LOCATION, &redirect_url_len);
 
-    redirect_url = (char *) xmalloc(redirect_url_len + 1);
+    redirect_url = (char *)ats_malloc(redirect_url_len + 1);
     strncpy(redirect_url, tmp_url, redirect_url_len);
     redirect_url[redirect_url_len] = '\0';
     Debug("PrefetchTransform", "redirect_url = %s\n", redirect_url);
@@ -1106,7 +1106,7 @@ inline void
 cookie_debug(const char *level, const char *value, int value_len)
 {
   if (is_debug_tag_set("PrefetchCookies")) {
-    char *str = (char *) xmalloc(value_len + 1);
+    char *str = (char *)ats_malloc(value_len + 1);
     memcpy(str, value, value_len);
     str[value_len] = 0;
     Debug("PrefetchCookies", "Processing %s value: %s", level, str);
@@ -1939,8 +1939,8 @@ PrefetchConfiguration::readHtmlTags(int fd, html_tag ** ptags, html_tag ** pattr
   }
 
   if (ntags > 0) {
-    html_tag *xtags = (html_tag *) xmalloc((ntags + 3) * sizeof(html_tag));
-    ink_assert(xtags);
+    html_tag *xtags = (html_tag *)ats_malloc((ntags + 3) * sizeof(html_tag));
+
     memcpy(xtags, &tags[0], ntags * sizeof(tags[0]));
     //the following two are always added
     xtags[ntags].tag = "base";
@@ -1951,7 +1951,7 @@ PrefetchConfiguration::readHtmlTags(int fd, html_tag ** ptags, html_tag ** pattr
 
     *ptags = xtags;
     if (attrs_exist) {
-      html_tag *xattrs = (html_tag *) xmalloc((ntags + 3) * sizeof(html_tag));
+      html_tag *xattrs = (html_tag *)ats_malloc((ntags + 3) * sizeof(html_tag));
       memcpy(xattrs, &attrs[0], 256 * sizeof(html_tag));
       *pattrs = xattrs;
     } else

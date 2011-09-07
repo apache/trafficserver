@@ -127,7 +127,7 @@ HttpBodyFactory::fabricate_with_old_api(const char *type, HttpTransact::State * 
   if (context->return_xbuf_plain && format) {
     int l = ink_bvsprintf(NULL, format, ap);
     if (l < max_buffer_length) {
-      buffer = (char *) xmalloc(l + 1);
+      buffer = (char *)ats_malloc(l + 1);
       *resulting_buffer_length = ink_bvsprintf(buffer, format, ap);
       plain_flag = true;
     }
@@ -631,8 +631,7 @@ HttpBodyFactory::load_sets_from_directory(char *set_dir)
   }
 
   new_table_of_sets = NEW(new RawHashTable(RawHashTable_KeyType_String));
-  entry_buffer = (struct dirent *)
-    xmalloc(sizeof(struct dirent) + MAXPATHLEN + 1);
+  entry_buffer = (struct dirent *)ats_malloc(sizeof(struct dirent) + MAXPATHLEN + 1);
 
   //////////////////////////////////////////
   // loop over each language subdirectory //
@@ -714,8 +713,7 @@ HttpBodyFactory::load_body_set_from_directory(char *set_name, char *tmpl_dir)
 
   Debug("body_factory", "  body_set = 0x%0X (set_name '%s', lang '%s', charset '%s')",
         body_set, body_set->set_name, body_set->content_language, body_set->content_charset);
-  entry_buffer = (struct dirent *)
-    xmalloc(sizeof(struct dirent) + MAXPATHLEN + 1);
+  entry_buffer = (struct dirent *)ats_malloc(sizeof(struct dirent) + MAXPATHLEN + 1);
 
   while ((readdir_r(dir, entry_buffer, &result) == 0) && (result != NULL)) {
     HttpBodyTemplate *tmpl;
@@ -993,7 +991,7 @@ HttpBodyTemplate::load_from_file(char *dir, char *file)
   ////////////////////////////////////////
 
   new_byte_count = stat_buf.st_size;
-  new_template_buffer = (char *) xmalloc(new_byte_count + 1);
+  new_template_buffer = (char *)ats_malloc(new_byte_count + 1);
   bytes_read = read(fd, new_template_buffer, new_byte_count);
   new_template_buffer[new_byte_count] = '\0';
   close(fd);
@@ -1019,7 +1017,7 @@ HttpBodyTemplate::load_from_file(char *dir, char *file)
   template_buffer = new_template_buffer;
   byte_count = new_byte_count;
   size_t pathlen = strlen(path) + 1;
-  template_pathname = (char *) xmalloc(pathlen);
+  template_pathname = (char *)ats_malloc(pathlen);
   ink_strncpy(template_pathname, path, pathlen);
 
   return (1);

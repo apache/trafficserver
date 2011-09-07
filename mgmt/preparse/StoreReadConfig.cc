@@ -67,7 +67,8 @@ parseStorageFile(int fd)
   return NULL;
 Lfail:
   int e_size = 1000;
-  char *e = (char *) xmalloc(e_size);
+  char *e = (char *)ats_malloc(e_size);
+
   snprintf(e, e_size, "Error reading storage.config: %s line %d\n", err, ln);
   return e;
 }

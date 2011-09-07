@@ -810,7 +810,7 @@ CoreUtils::load_http_hdr(HTTPHdr * core_hdr, HTTPHdr * live_hdr)
 #if defined(__GNUC__)
     char rw_heap[sizeof(char) * nto_copy];
 #else
-    char *rw_heap = (char *)xmalloc(sizeof(char) * nto_copy);
+    char *rw_heap = (char *)ats_malloc(sizeof(char) * nto_copy);
 #endif
     if (read_from_core((intptr_t) copy_start, nto_copy, rw_heap) == -1) {
       printf("Cannot read from core\n");
@@ -833,7 +833,7 @@ CoreUtils::load_http_hdr(HTTPHdr * core_hdr, HTTPHdr * live_hdr)
 #if defined(__GNUC__)
       char ro_heap[sizeof(char) * heap->m_ronly_heap[i].m_heap_len];
 #else
-      char * ro_heap = (char *) xmalloc(sizeof(char) * heap->m_ronly_heap[i].m_heap_len);
+      char * ro_heap = (char *)ats_malloc(sizeof(char) * heap->m_ronly_heap[i].m_heap_len);
 #endif
       if (read_from_core((intptr_t) heap->m_ronly_heap[i].m_heap_start, heap->m_ronly_heap[i].m_heap_len, ro_heap) == -1) {
         printf("Cannot read from core\n");

@@ -270,7 +270,7 @@ template<class Data, class Result> void RegexMatcher<Data, Result>::AllocateSpac
   // Should not have been allocated before
   ink_assert(array_len == -1);
 
-  re_array = (pcre**) xmalloc(sizeof(pcre*) * num_entries);
+  re_array = (pcre**)ats_malloc(sizeof(pcre*) * num_entries);
   memset(re_array, 0, sizeof(pcre*) * num_entries);
 
   data_array = NEW(new Data[num_entries]);
@@ -309,7 +309,7 @@ template<class Data, class Result> char *RegexMatcher<Data, Result>::NewEntry(ma
   // Create the compiled regular expression
   re_array[num_el] = pcre_compile(pattern, 0, &error, &erroffset, NULL);
   if (!re_array[num_el]) {
-    errBuf = (char *) xmalloc(1024 * sizeof(char));
+    errBuf = (char *)ats_malloc(1024 * sizeof(char));
     *errBuf = '\0';
     snprintf(errBuf, 1024, "%s regular expression error at line %d position %d : %s",
                  matcher_name, line_info->line_num, erroffset, error);
@@ -502,7 +502,7 @@ template<class Data, class Result> char *IpMatcher<Data, Result>::NewEntry(match
   errPtr = ExtractIpRange(match_data, &addr1, &addr2);
   if (errPtr != NULL) {
     const size_t errorSize = 1024;
-    errBuf = (char *) xmalloc(errorSize * sizeof(char));
+    errBuf = (char *)ats_malloc(errorSize * sizeof(char));
     snprintf(errBuf, errorSize, "%s %s at %s line %d", matcher_name, errPtr, file_name, line_info->line_num);
     return errBuf;
   }
@@ -696,7 +696,7 @@ template<class Data, class Result> int ControlMatcher<Data, Result>::BuildTableF
 
     if (*tmp != '#' && *tmp != '\0') {
 
-      current = (matcher_line *) xmalloc(sizeof(matcher_line));
+      current = (matcher_line *)ats_malloc(sizeof(matcher_line));
       errPtr = parseConfigLine((char *) tmp, current, config_tags);
 
       if (errPtr != NULL) {

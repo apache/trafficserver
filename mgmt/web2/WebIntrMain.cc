@@ -506,7 +506,7 @@ webIntr_main(void *x)
     ink_atomic_increment((int32_t *) & numServiceThr, 1);
 
     // coverity[alloc_fn]
-    clientInfo = (struct sockaddr_in *) xmalloc(sizeof(struct sockaddr_in));
+    clientInfo = (struct sockaddr_in *)ats_malloc(sizeof(struct sockaddr_in));
     addrLen = sizeof(struct sockaddr_in);
 
     // coverity[noescape]

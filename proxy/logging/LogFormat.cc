@@ -87,7 +87,7 @@ LogFormat::setup(const char *name, const char *format_str, unsigned interval_sec
   } else {
     const char *tag = " %<phn>";
     const size_t m_format_str_size = strlen(format_str) + (m_tagging_on ? strlen(tag) : 0) + 1;
-    m_format_str = (char *) xmalloc(m_format_str_size);
+    m_format_str = (char *)ats_malloc(m_format_str_size);
     ink_strncpy(m_format_str, format_str, m_format_str_size);
     if (m_tagging_on) {
       Note("Log tagging enabled, adding %%<phn> field at the end of " "format %s", name);
@@ -154,7 +154,7 @@ LogFormat::init_variables(const char *name, const char *fieldlist_str, const cha
     m_valid = false;
   } else {
     if (m_aggregate) {
-      m_agg_marshal_space = (char *) xmalloc(m_field_count * INK_MIN_ALIGN);
+      m_agg_marshal_space = (char *)ats_malloc(m_field_count * INK_MIN_ALIGN);
     }
 
     if (m_name_str) {
@@ -613,7 +613,7 @@ LogFormat::parse_symbol_string(const char *symbol_string, LogFieldList *field_li
   combination of printf characters and logging field names, separating this
   combined format string into a normal printf string and a fieldlist.  The
   number of logging fields parsed will be returned.  The two strings
-  returned are allocated with xmalloc, and should be released by the
+  returned are allocated with ats_malloc, and should be released by the
   caller.  The function returns -1 on error.
 
   For 3.1, I've added the ability to log summary information using
@@ -637,9 +637,8 @@ LogFormat::parse_format_string(const char *format_str, char **printf_str, char *
   // string.
   //
   unsigned len = (unsigned)::strlen(format_str);
-  *printf_str = (char *) xmalloc(len + 1);
-  *fields_str = (char *) xmalloc(len + 1);
-  ink_assert(*printf_str != NULL && *fields_str != NULL);
+  *printf_str = (char *)ats_malloc(len + 1);
+  *fields_str = (char *)ats_malloc(len + 1);
 
   unsigned printf_pos = 0;
   unsigned fields_pos = 0;

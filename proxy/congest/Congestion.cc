@@ -128,7 +128,7 @@ CongestionControlRecord::validate()
 
 #define IsGt0(var)\
   if ( var < 1 ) { \
-    error_buf = (char*) xmalloc(error_len); \
+    error_buf = (char*)ats_malloc(error_len); \
     snprintf(error_buf, error_len, "line %d: invalid %s = %d, %s must > 0", \
 	    line_num, #var, var, #var); \
     cleanup(); \
@@ -140,7 +140,7 @@ CongestionControlRecord::validate()
   if (max_connection_failures >= CONG_RULE_MAX_max_connection_failures ||
       (max_connection_failures <= 0 && max_connection_failures != CONG_RULE_ULIMITED_max_connection_failures)
     ) {
-    error_buf = (char *) xmalloc(error_len);
+    error_buf = (char *)ats_malloc(error_len);
     snprintf(error_buf, error_len, "line %d: invalid %s = %d not in [1, %d) range",
              line_num, "max_connection_failures", max_connection_failures, CONG_RULE_MAX_max_connection_failures);
     cleanup();
@@ -234,7 +234,7 @@ CongestionControlRecord::Init(matcher_line * line_info)
     tmp = ProcessModifiers(line_info);
 
     if (tmp != NULL) {
-      errBuf = (char *) xmalloc(errBufLen * sizeof(char));
+      errBuf = (char *)ats_malloc(errBufLen * sizeof(char));
       snprintf(errBuf, errBufLen, "%s %s at line %d in congestion.config", congestPrefix, tmp, line_num);
       return errBuf;
     }

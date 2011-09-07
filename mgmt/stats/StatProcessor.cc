@@ -86,7 +86,7 @@ startElement(void *userData, const char *name, const char **atts)
     break;
 
   case EXPR_TAG:
-    exprContent = (char*)xmalloc(BUFSIZ * 10);
+    exprContent = (char*)ats_malloc(BUFSIZ * 10);
     memset(exprContent, 0, BUFSIZ * 10);
     break;
 

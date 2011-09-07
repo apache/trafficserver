@@ -947,7 +947,7 @@ mime_init_date_format_table()
   last_days = now_days + 366;
   num_days = last_days - first_days + 1;
 
-  _days_to_mdy_fast_lookup_table = (MDY *) xmalloc(num_days * sizeof(MDY));
+  _days_to_mdy_fast_lookup_table = (MDY *)ats_malloc(num_days * sizeof(MDY));
   _days_to_mdy_fast_lookup_table_first_day = first_days;
   _days_to_mdy_fast_lookup_table_last_day = last_days;
 
@@ -2112,7 +2112,7 @@ mime_field_value_extend_comma_val(HdrHeap * heap, MIMEHdrImpl * mh,
   if (extended_len <= sizeof(temp_buf))
     temp_ptr = temp_buf;
   else
-    temp_ptr = (char *) xmalloc(extended_len);
+    temp_ptr = (char *)ats_malloc(extended_len);
 
   // (7) construct new extended token
   dest = temp_ptr;
@@ -2347,20 +2347,17 @@ mime_scanner_append(MIMEScanner * scanner, const char *data, int data_size)
   // if not enough space, allocate or grow the buffer //
   //////////////////////////////////////////////////////
 
-  if (data_size > free_size)    // need to allocate/grow the buffer
-  {
+  if (data_size > free_size) {    // need to allocate/grow the buffer
     if (scanner->m_line_size == 0)      // buffer should be at least 128 bytes
       scanner->m_line_size = 128;
 
-    while (free_size < data_size)       // grow buffer by powers of 2
-    {
+    while (free_size < data_size) {      // grow buffer by powers of 2
       scanner->m_line_size *= 2;
       free_size = scanner->m_line_size - scanner->m_line_length;
     }
 
-    if (scanner->m_line == NULL)        // if no buffer yet, allocate one
-    {
-      scanner->m_line = (char *) xmalloc(scanner->m_line_size);
+    if (scanner->m_line == NULL) {       // if no buffer yet, allocate one
+      scanner->m_line = (char *)ats_malloc(scanner->m_line_size);
     } else {
       scanner->m_line = (char *) xrealloc(scanner->m_line, scanner->m_line_size);
     }

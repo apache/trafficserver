@@ -1338,7 +1338,7 @@ parse_log_buff(LogBufferHeader * buf_header, bool summary = false)
             if (origin_set ? (origin_set->find(tok) != origin_set->end()) : 1) {
               o_iter = origins.find(tok);
               if (origins.end() == o_iter) {
-                o_stats = (OriginStats *) xmalloc(sizeof(OriginStats));
+                o_stats = (OriginStats *)ats_malloc(sizeof(OriginStats));
                 memset(o_stats, 0, sizeof(OriginStats));
                 init_elapsed(o_stats);
                 o_server = xstrdup(tok);

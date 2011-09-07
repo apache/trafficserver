@@ -1410,8 +1410,7 @@ LogConfig::update_space_used()
     //
     ink_release_assert(name_max > 0);
 
-    m_dir_entry = (struct dirent *) xmalloc(sizeof(struct dirent) + name_max + 1);
-    ink_assert(m_dir_entry != NULL);
+    m_dir_entry = (struct dirent *)ats_malloc(sizeof(struct dirent) + name_max + 1);
   }
 
   total_space_used = 0LL;
@@ -1668,7 +1667,7 @@ LogConfig::read_xml_log_config(int from_memory)
     int filedes[2];
     int nbytes = sizeof(xml_config_buffer);
     const size_t ptr_size = nbytes + 20;
-    char *ptr = (char *) xmalloc(ptr_size);
+    char *ptr = (char *)ats_malloc(ptr_size);
 
     if (pipe(filedes) != 0) {
       Note("xml parsing: Error in Opening a pipe\n");
