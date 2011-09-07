@@ -23,9 +23,11 @@
 #ifndef _defalloc_H_
 #define  _defalloc_H_
 
+#include "ink_memory.h"
+
 class DefaultAlloc { public:
-  static void *alloc(int s) { return ::malloc(s); }
-  static void free(void *p) { ::free(p); }
+  static void *alloc(int s) { return ats_malloc(s); }
+  static void free(void *p) { ats_free(p); }
 };
 
 #endif

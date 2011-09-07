@@ -214,7 +214,7 @@ aio_init_fildes(int fildes, int fromAPI = 0)
 {
   char thr_name[MAX_THREAD_NAME_LENGTH];
   int i;
-  AIO_Reqs *request = (AIO_Reqs *) malloc(sizeof(AIO_Reqs));
+  AIO_Reqs *request = (AIO_Reqs *)ats_malloc(sizeof(AIO_Reqs));
 
   memset(request, 0, sizeof(AIO_Reqs));
 

@@ -133,7 +133,7 @@ ats_memalign(size_t alignment, size_t size)
   case 4:
   case 8:
   case 16:
-    return malloc(size);
+    return ats_malloc(size);
   case 32:
   case 64:
   case 128:

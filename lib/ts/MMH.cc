@@ -489,8 +489,8 @@ main()
     uint32_t h[4];
   } h;
 
-  xxh = (i4_t *) malloc(4 * sizeof(uint32_t) * TEST_COLLISIONS);
-  xf = (double *) malloc(sizeof(double) * TEST_COLLISIONS);
+  xxh = (i4_t *)ats_malloc(4 * sizeof(uint32_t) * TEST_COLLISIONS);
+  xf = (double *)ats_malloc(sizeof(double) * TEST_COLLISIONS);
 
   printf("test collisions\n");
   char *sc1 = "http://npdev:19080/1.6664000000/4000";
@@ -522,13 +522,13 @@ main()
 
   unsigned char *s = (unsigned char *) MMH_x;
   int l = sizeof(MMH_x);
-  unsigned char *s1 = (unsigned char *) malloc(l + 3);
+  unsigned char *s1 = (unsigned char *)ats_malloc(l + 3);
   s1 += 1;
   memcpy(s1, s, l);
-  unsigned char *s2 = (unsigned char *) malloc(l + 3);
+  unsigned char *s2 = (unsigned char *)ats_malloc(l + 3);
   s2 += 2;
   memcpy(s2, s, l);
-  unsigned char *s3 = (unsigned char *) malloc(l + 3);
+  unsigned char *s3 = (unsigned char *)ats_malloc(l + 3);
   s3 += 3;
   memcpy(s3, s, l);
 

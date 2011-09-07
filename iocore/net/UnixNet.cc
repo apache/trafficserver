@@ -206,7 +206,7 @@ initialize_thread_for_net(EThread *thread, int thread_index)
 #endif
 
   thread->signal_hook = net_signal_hook_function;
-  thread->ep = (EventIO*)malloc(sizeof(EventIO));
+  thread->ep = (EventIO*)ats_malloc(sizeof(EventIO));
   thread->ep->type = EVENTIO_ASYNC_SIGNAL;
 #if TS_HAS_EVENTFD
   thread->ep->start(pd, thread->evfd, 0, EVENTIO_READ);

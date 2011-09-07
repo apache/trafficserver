@@ -44,7 +44,6 @@
 # define __pure               __attribute__ ((pure))
 # define __const      __attribute__ ((const))
 # define __noreturn   __attribute__ ((noreturn))
-# define __malloc     __attribute__ ((malloc))
 # define __must_check __attribute__ ((warn_unused_result))
 # define __deprecated __attribute__ ((deprecated))
 # define __used               __attribute__ ((used))

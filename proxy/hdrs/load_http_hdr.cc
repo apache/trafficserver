@@ -84,7 +84,7 @@ load_string(const char *s, int len, int offset)
     copy_from = "<BAD>";
     len = strlen(copy_from);
   }
-  char *r = (char *) malloc(len + 1);
+  char *r = (char *)ats_malloc(len + 1);
   memcpy(r, copy_from, len);
   r[len] = '\0';
   return r;
@@ -211,7 +211,7 @@ load_buffer(int fd, hdr_type h_type)
     exit(1);
   }
 
-  char *file_buf = (char *) malloc(sizeof(char) * (s_info.st_size + 1));
+  char *file_buf = (char *)ats_malloc(sizeof(char) * (s_info.st_size + 1));
   file_buf[s_info.st_size] = '\0';
 
 
@@ -258,7 +258,7 @@ load_buffer(int fd, hdr_type h_type)
   hdr_size = (num_lines * 16);
   heap_load_size = hdr_size;
 
-  char *hdr_heap = (char *) malloc(hdr_size);
+  char *hdr_heap = (char *)ats_malloc(hdr_size);
   int bytes_read = 0;
   int cur_line = 0;
 

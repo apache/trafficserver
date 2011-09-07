@@ -87,7 +87,7 @@ remap_entry::remap_entry(int _argc, char *_argv[]):
 {
   int i;
 
-  if (_argc > 0 && _argv && (argv = (char **) malloc(sizeof(char *) * (_argc + 1))) != 0) {
+  if (_argc > 0 && _argv && (argv = (char **)TSmalloc(sizeof(char *) * (_argc + 1))) != 0) {
     argc = _argc;
     for (i = 0; i < argc; i++)
       argv[i] = TSstrdup(_argv[i]);

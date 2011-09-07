@@ -302,7 +302,7 @@ CoreUtils::read_from_core(intptr_t vaddr, intptr_t bytes, char *buf)
   else {
     if (fseek(fp, offset2 + offset, SEEK_SET) != -1) {
       char *frameoff;
-      if ((frameoff = (char *) malloc(sizeof(char) * bytes))) {
+      if ((frameoff = (char *)ats_malloc(sizeof(char) * bytes))) {
         if (fread(frameoff, bytes, 1, fp) == 1) {
           memcpy(buf, frameoff, bytes);
           /*for(int j =0; j < bytes; j++) {
@@ -350,7 +350,7 @@ CoreUtils::get_base_frame(intptr_t threadId, core_stack_state * coress)
   if (fseek(fp, off + off2, SEEK_SET) != -1) {
     char *frameoff;
 
-    if ((frameoff = (char *) malloc(sizeof(char) * sizeof(rwindow)))) {
+    if ((frameoff = (char *)ats_malloc(sizeof(char) * sizeof(rwindow)))) {
       if (fread(frameoff, sizeof(rwindow), 1, fp) == 1) {
         // memcpy rwindow struct and print out
         struct rwindow regs, *r;
@@ -394,7 +394,7 @@ CoreUtils::get_next_frame(core_stack_state * coress)
     // seek to the framep offset
     if (fseek(fp, off + off2, SEEK_SET) != -1) {
       char *frameoff;
-      if ((frameoff = (char *) malloc(sizeof(char) * sizeof(rwindow)))) {
+      if ((frameoff = (char *)ats_malloc(sizeof(char) * sizeof(rwindow)))) {
         if (fread(frameoff, sizeof(rwindow), 1, fp) == 1) {
 
           // memcpy rwindow struct and print out
@@ -461,7 +461,7 @@ CoreUtils::get_base_frame(intptr_t framep, core_stack_state *coress)
   // seek to the framep offset
   if (fseek(fp, off + off2, SEEK_SET) != -1) {
     void **frameoff;
-    if ((frameoff = (void **) malloc(sizeof(long)))) {
+    if ((frameoff = (void **)ats_malloc(sizeof(long)))) {
       if (fread(frameoff, 4, 1, fp) == 1) {
         coress->framep = (intptr_t) *frameoff;
         if (fread(frameoff, 4, 1, fp) == 1) {
@@ -500,7 +500,7 @@ CoreUtils::get_next_frame(core_stack_state * coress)
   // seek to the framep offset
   if (fseek(fp, off + off2, SEEK_SET) != -1) {
     void **frameoff;
-    if ((frameoff = (void **) malloc(sizeof(long)))) {
+    if ((frameoff = (void **)ats_malloc(sizeof(long)))) {
       if (fread(frameoff, 4, 1, fp) == 1) {
         coress->framep = (intptr_t) *frameoff;
         if (*frameoff == NULL) {
@@ -626,7 +626,7 @@ CoreUtils::process_HttpSM(HttpSM * core_ptr)
 
   // extracting the HttpSM from the core file
   if (last_seen_http_sm != core_ptr) {
-    HttpSM *http_sm = (HttpSM *) malloc(sizeof(HttpSM));
+    HttpSM *http_sm = (HttpSM *)ats_malloc(sizeof(HttpSM));
 
     if (read_from_core((intptr_t) core_ptr, sizeof(HttpSM), (char *) http_sm) < 0) {
       // This is not 64-bit correct ... /leif
@@ -703,7 +703,7 @@ CoreUtils::load_http_hdr(HTTPHdr * core_hdr, HTTPHdr * live_hdr)
   HTTPHdr *http_hdr = core_hdr;
   HdrHeap *heap = (HdrHeap *) core_hdr->m_heap;
   HdrHeap *heap_ptr = (HdrHeap *) http_hdr->m_heap;
-  char *buf = (char *) malloc(sizeof(char) * sizeof(HdrHeap));
+  char *buf = (char *)ats_malloc(sizeof(char) * sizeof(HdrHeap));
   intptr_t ptr_heaps = 0;
   intptr_t ptr_heap_size = 0;
   intptr_t ptr_xl_size = 2;
@@ -729,9 +729,9 @@ CoreUtils::load_http_hdr(HTTPHdr * core_hdr, HTTPHdr * live_hdr)
     heap = heap->m_next;
   } while (heap && ((intptr_t) heap != 0x1));
 
-  swizzle_heap = (HdrHeap *) malloc(sizeof(HdrHeap));
+  swizzle_heap = (HdrHeap *)ats_malloc(sizeof(HdrHeap));
   live_hdr->m_heap = swizzle_heap;
-  ptr_data = (char *) malloc(sizeof(char) * ptr_heap_size);
+  ptr_data = (char *)ats_malloc(sizeof(char) * ptr_heap_size);
   //heap = (HdrHeap*)http_hdr->m_heap;
 
   //  Build Hdr Heap Translation Table
@@ -798,7 +798,7 @@ CoreUtils::load_http_hdr(HTTPHdr * core_hdr, HTTPHdr * live_hdr)
   if (heap->m_read_write_heap) {
     HdrStrHeap *hdr = (HdrStrHeap *) heap->m_read_write_heap.m_ptr;
     char *copy_start = ((char *) heap->m_read_write_heap.m_ptr) + sizeof(HdrStrHeap);
-    char *str_hdr = (char *) malloc(sizeof(char) * sizeof(HdrStrHeap));
+    char *str_hdr = (char *)ats_malloc(sizeof(char) * sizeof(HdrStrHeap));
     if (read_from_core((intptr_t) hdr, sizeof(HdrStrHeap), str_hdr) == -1) {
       printf("Cannot read from core\n");
       _exit(0);
@@ -971,8 +971,7 @@ CoreUtils::read_heap_header(intptr_t vaddr, intptr_t bytes, HdrHeap h)
 void
 CoreUtils::process_EThread(EThread * eth_test)
 {
-
-  char *buf = (char *) malloc(sizeof(char) * sizeof(EThread));
+  char *buf = (char *)ats_malloc(sizeof(char) * sizeof(EThread));
 
   if (read_from_core((intptr_t) eth_test, sizeof(EThread), buf) != -1) {
     EThread *loaded_eth = (EThread *) buf;
@@ -1003,7 +1002,7 @@ print_netstate(NetState * n)
 void
 CoreUtils::process_NetVC(UnixNetVConnection * nvc_test)
 {
-  char *buf = (char *) malloc(sizeof(char) * sizeof(UnixNetVConnection));
+  char *buf = (char *)ats_malloc(sizeof(char) * sizeof(UnixNetVConnection));
 
   if (read_from_core((intptr_t) nvc_test, sizeof(UnixNetVConnection), buf) != -1) {
     UnixNetVConnection *loaded_nvc = (UnixNetVConnection *) buf;
@@ -1120,7 +1119,7 @@ process_core(char *fname)
       printf("NOTE\n");
       if (fseek(fp, phdr.p_offset, SEEK_SET) != -1) {
         Elf32_Nhdr *nhdr, *thdr;
-        if ((nhdr = (Elf32_Nhdr *) malloc(sizeof(Elf32_Nhdr) * phdr.p_filesz))) {
+        if ((nhdr = (Elf32_Nhdr *)ats_malloc(sizeof(Elf32_Nhdr) * phdr.p_filesz))) {
           if (fread(nhdr, phdr.p_filesz, 1, fp) == 1) {
             int size = phdr.p_filesz;
             int sum = 0;
@@ -1275,7 +1274,7 @@ process_core(char *fname)
 
       if (fseek(fp, phdr.p_offset, SEEK_SET) != -1) {
         Elf32_Nhdr *nhdr, *thdr;
-        if ((nhdr = (Elf32_Nhdr *) malloc(sizeof(Elf32_Nhdr) * phdr.p_filesz))) {
+        if ((nhdr = (Elf32_Nhdr *)ats_malloc(sizeof(Elf32_Nhdr) * phdr.p_filesz))) {
           if (fread(nhdr, phdr.p_filesz, 1, fp) == 1) {
             int size = phdr.p_filesz;
             int sum = 0;

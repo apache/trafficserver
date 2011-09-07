@@ -167,7 +167,7 @@ int main() {
 	const char* v = iter.get_first(tests[i], strlen(tests[i]), &len);
 
 	while (v) {
-	    char* str_v = (char*)malloc(len+1);
+	    char* str_v = (char*)ats_malloc(len+1);
 	    memcpy(str_v, v, len);
 	    str_v[len] = '\0';
 	    printf ("%s|", str_v);

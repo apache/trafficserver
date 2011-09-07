@@ -1299,7 +1299,7 @@ br(HttpRequestData * h, const char *os_hostname, int dest_ip)
 
   h->hdr = new HTTPHdr();
   h->hdr->create(HTTP_TYPE_REQUEST);
-  h->hostname_str = (char *) malloc(hostname_len);
+  h->hostname_str = (char *)ats_malloc(hostname_len);
   ink_strncpy(h->hostname_str, os_hostname, hostname_len);
   h->xact_start = time(NULL);
   h->src_ip = 0;

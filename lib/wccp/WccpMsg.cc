@@ -92,7 +92,7 @@ CacheIdBox&
 CacheIdBox::require(size_t n) {
   if (m_cap < n) {
     if (m_base && m_cap) free(m_base);
-    m_base = static_cast<CacheIdElt*>(malloc(n));
+    m_base = static_cast<CacheIdElt*>(ats_malloc(n));
     m_cap = n;
   }
   memset(m_base, 0, m_cap);
@@ -1540,7 +1540,7 @@ detail::Assignment::fill(cache::GroupData& group, uint32_t addr) {
     + 4096;
   if (m_buffer.getSize() < size) {
     free(m_buffer.getBase());
-    m_buffer.set(malloc(size), size);
+    m_buffer.set(ats_malloc(size), size);
   }
   m_buffer.reset();
 

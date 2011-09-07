@@ -1032,7 +1032,7 @@ Vol::init(char *s, off_t blocks, off_t dir_skip, bool clear)
   dir_skip = ROUND_TO_STORE_BLOCK((dir_skip < START_POS ? START_POS : dir_skip));
   path = xstrdup(s);
   const size_t hash_id_size = strlen(s) + 32;
-  hash_id = (char *) malloc(hash_id_size);
+  hash_id = (char *)ats_malloc(hash_id_size);
   ink_strncpy(hash_id, s, hash_id_size);
   const size_t s_size = strlen(s);
   snprintf(hash_id + s_size, (hash_id_size - s_size), " %" PRIu64 ":%" PRIu64 "",
@@ -1054,7 +1054,7 @@ Vol::init(char *s, off_t blocks, off_t dir_skip, bool clear)
 
   evacuate_size = (int) (len / EVACUATION_BUCKET_SIZE) + 2;
   int evac_len = (int) evacuate_size * sizeof(DLL<EvacuationBlock>);
-  evacuate = (DLL<EvacuationBlock> *)malloc(evac_len);
+  evacuate = (DLL<EvacuationBlock> *)ats_malloc(evac_len);
   memset(evacuate, 0, evac_len);
 
 #if !defined (_WIN32)
@@ -1068,7 +1068,7 @@ Vol::init(char *s, off_t blocks, off_t dir_skip, bool clear)
      we never free this */
   size_t alignment = getpagesize();
   size_t mem_to_alloc = vol_dirlen(this) + (alignment - 1);
-  raw_dir = (char *) malloc(mem_to_alloc);
+  raw_dir = (char *)ats_malloc(mem_to_alloc);
   raw_dir = (char *) align_pointer_forward(raw_dir, alignment);
 #endif
 
@@ -1222,7 +1222,7 @@ Vol::handle_recover_from_data(int event, void *data)
       recover_pos = start;
     }
 #if defined(_WIN32)
-    io.aiocb.aio_buf = (char *) malloc(RECOVERY_SIZE);
+    io.aiocb.aio_buf = (char *)ats_malloc(RECOVERY_SIZE);
 #else
     io.aiocb.aio_buf = (char *) valloc(RECOVERY_SIZE);
 #endif

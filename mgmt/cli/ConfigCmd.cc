@@ -225,10 +225,10 @@ Cmd_Config(ClientData clientData, Tcl_Interp * interp, int argc, const char *arg
   Tcl_Eval(interp, "info commands config* ");
 
   size_t cmdinfo_len = strlen(Tcl_GetStringResult(interp)) + 2;
-  cmdinfo = (char *) malloc(sizeof(char) * cmdinfo_len);
+  cmdinfo = (char *)ats_malloc(sizeof(char) * cmdinfo_len);
   ink_strncpy(cmdinfo, Tcl_GetStringResult(interp), cmdinfo_len);
   size_t temp_len = strlen(cmdinfo) + 20;
-  temp = (char *) malloc(sizeof(char) * temp_len);
+  temp = (char *)ats_malloc(sizeof(char) * temp_len);
   ink_strncpy(temp, "lsort \"", temp_len);
   strncat(temp, cmdinfo, temp_len - strlen(temp));
   strncat(temp, "\"", temp_len - strlen(temp));

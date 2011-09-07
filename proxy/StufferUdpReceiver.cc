@@ -302,13 +302,7 @@ main(int argc, char *argv[])
 
   stream_hash_table = new StreamHashTable(257);
 
-  char *pkt_buf = (char *) malloc(UDP_BUF_SIZE);
-
-  if (!pkt_buf) {
-    perror("malloc()");
-    return 0;
-  }
-
+  char *pkt_buf = (char *)ats_malloc(UDP_BUF_SIZE);
   int fd = socket(PF_INET, SOCK_DGRAM, 0);
 
   struct sockaddr_in saddr;

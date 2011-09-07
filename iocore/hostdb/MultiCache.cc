@@ -319,7 +319,7 @@ _zorch_file(void *arg)
   char *vals;
 
   if (info) {
-    if ((vals = (char *) malloc(MAX_ZORCH_BUFFER)) != NULL) {
+    if ((vals = (char *)ats_malloc(MAX_ZORCH_BUFFER)) != NULL) {
       memset(vals, info->val, MAX_ZORCH_BUFFER);
       while (info->fsize < info->size) {
         amount = MAX_ZORCH_BUFFER;
