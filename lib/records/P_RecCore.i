@@ -754,7 +754,7 @@ RecReadConfigFile()
     RecDataClear(data_type, &data);
 
     // update our g_rec_config_contents_xxx
-    cfe = (RecConfigFileEntry *) xmalloc(sizeof(RecConfigFileEntry));
+    cfe = (RecConfigFileEntry *)ats_malloc(sizeof(RecConfigFileEntry));
     cfe->entry_type = RECE_RECORD;
     cfe->entry = xstrdup(name_str);
     enqueue(g_rec_config_contents_llq, (void *) cfe);
@@ -764,7 +764,7 @@ RecReadConfigFile()
   L_next_line:
     // store this line into g_rec_config_contents_llq so that we can
     // write it out later
-    cfe = (RecConfigFileEntry *) xmalloc(sizeof(RecConfigFileEntry));
+    cfe = (RecConfigFileEntry *)ats_malloc(sizeof(RecConfigFileEntry));
     cfe->entry_type = RECE_COMMENT;
     cfe->entry = xstrdup(line);
     enqueue(g_rec_config_contents_llq, (void *) cfe);
@@ -810,7 +810,7 @@ RecSyncConfigToTB(textBuffer * tb)
       if (REC_TYPE_IS_CONFIG(r->rec_type)) {
         if (r->sync_required & REC_DISK_SYNC_REQUIRED) {
           if (!ink_hash_table_isbound(g_rec_config_contents_ht, r->name)) {
-            cfe = (RecConfigFileEntry *) xmalloc(sizeof(RecConfigFileEntry));
+            cfe = (RecConfigFileEntry *)ats_malloc(sizeof(RecConfigFileEntry));
             cfe->entry_type = RECE_RECORD;
             cfe->entry = xstrdup(r->name);
             enqueue(g_rec_config_contents_llq, (void *) cfe);

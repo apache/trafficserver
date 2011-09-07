@@ -80,7 +80,7 @@ recv_thr(void *data)
     if (RecPipeRead(h_pipe, (char *) (&msg_hdr), sizeof(RecMessageHdr)) == REC_ERR_FAIL) {
       ink_release_assert("Pipe read failed");
     }
-    msg = (RecMessage *) xmalloc((msg_hdr.o_end - msg_hdr.o_start) + sizeof(RecMessageHdr));
+    msg = (RecMessage *)ats_malloc((msg_hdr.o_end - msg_hdr.o_start) + sizeof(RecMessageHdr));
     memcpy(msg, &msg_hdr, sizeof(RecMessageHdr));
     if (RecPipeRead(h_pipe, (char *) (msg) + msg_hdr.o_start, msg_hdr.o_end - msg_hdr.o_start) == REC_ERR_FAIL) {
       ink_release_assert("Pipe read failed");
@@ -185,7 +185,7 @@ RecMessageSend(RecMessage * msg)
   // Make a copy of the record, but truncate it to the size actually used
   if (g_mode_type == RECM_CLIENT || g_mode_type == RECM_SERVER) {
     msg_cpy_size = sizeof(RecMessageHdr) + (msg->o_write - msg->o_start);
-    msg_cpy = (RecMessage *) xmalloc(msg_cpy_size);
+    msg_cpy = (RecMessage *)ats_malloc(msg_cpy_size);
     memcpy(msg_cpy, msg, msg_cpy_size);
     msg_cpy->o_end = msg_cpy->o_write;
     enqueue(g_send_llq, (void *) msg_cpy);
@@ -272,7 +272,7 @@ RecMessageAlloc(RecMessageT msg_type, int initial_size)
 {
   RecMessage *msg;
 
-  msg = (RecMessage *) xmalloc(sizeof(RecMessageHdr) + initial_size);
+  msg = (RecMessage *)ats_malloc(sizeof(RecMessageHdr) + initial_size);
   memset(msg, 0, sizeof(RecMessageHdr) + initial_size);
   msg->msg_type = msg_type;
   msg->o_start = sizeof(RecMessageHdr);
@@ -501,7 +501,7 @@ RecMessageReadFromDisk(const char *fpath)
   if (RecFileRead(h_file, (char *) (&msg_hdr), sizeof(RecMessageHdr), &bytes_read) == REC_ERR_FAIL) {
     goto Lerror;
   }
-  msg = (RecMessage *) xmalloc((msg_hdr.o_end - msg_hdr.o_start) + sizeof(RecMessageHdr));
+  msg = (RecMessage *)ats_malloc((msg_hdr.o_end - msg_hdr.o_start) + sizeof(RecMessageHdr));
   memcpy(msg, &msg_hdr, sizeof(RecMessageHdr));
   if (RecFileRead(h_file, (char *) (msg) + msg_hdr.o_start,
                   msg_hdr.o_end - msg_hdr.o_start, &bytes_read) == REC_ERR_FAIL) {

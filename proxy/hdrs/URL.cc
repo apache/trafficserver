@@ -589,7 +589,7 @@ url_string_get(URLImpl * url, Arena * arena, int *length, HdrHeap * heap)
   int index = 0;
   int offset = 0;
 
-  buf = arena ? arena->str_alloc(len) : (char *) xmalloc(len + 1);
+  buf = arena ? arena->str_alloc(len) : (char *)ats_malloc(len + 1);
 
   url_print(url, buf, len, &index, &offset);
   buf[len] = '\0';
@@ -811,7 +811,7 @@ url_to_string(URLImpl * url, Arena * arena, int *length)
   if (arena)
     str = arena->str_alloc(len);
   else
-    str = (char *) xmalloc(len + 1);
+    str = (char *)ats_malloc(len + 1);
 
   idx = 0;
 

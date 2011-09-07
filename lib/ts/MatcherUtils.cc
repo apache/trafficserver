@@ -73,26 +73,23 @@ readIntoBuffer(char *file_path, const char *module_name, int *read_size_ptr)
   // Allocate a buffer large enough to hold the entire file
   //   File size should be small and this makes it easy to
   //   do two passes on the file
-  if ((file_buf = (char *) xmalloc((file_info.st_size + 1))) != NULL) {
-    // Null terminate the buffer so that string operations will work
-    file_buf[file_info.st_size] = '\0';
+  file_buf = (char *)ats_malloc(file_info.st_size + 1);
+  // Null terminate the buffer so that string operations will work
+  file_buf[file_info.st_size] = '\0';
 
-    read_size = (file_info.st_size > 0) ? read(fd, file_buf, file_info.st_size) : 0;
+  read_size = (file_info.st_size > 0) ? read(fd, file_buf, file_info.st_size) : 0;
 
-    // Check to make sure that we got the whole file
-    if (read_size < 0) {
-      Error("%s Read of %s file failed : %s", module_name, file_path, strerror(errno));
-      xfree(file_buf);
-      file_buf = NULL;
-    } else if (read_size < file_info.st_size) {
-      // We don't want to signal this error on WIN32 because the sizes
-      // won't match if the file contains any CR/LF sequence.
-      Error("%s Only able to read %d bytes out %d for %s file",
-            module_name, read_size, (int) file_info.st_size, file_path);
-      file_buf[read_size] = '\0';
-    }
-  } else {
-    Error("%s Insufficient memory to read %s file", module_name, file_path);
+  // Check to make sure that we got the whole file
+  if (read_size < 0) {
+    Error("%s Read of %s file failed : %s", module_name, file_path, strerror(errno));
+    xfree(file_buf);
+    file_buf = NULL;
+  } else if (read_size < file_info.st_size) {
+    // We don't want to signal this error on WIN32 because the sizes
+    // won't match if the file contains any CR/LF sequence.
+    Error("%s Only able to read %d bytes out %d for %s file",
+          module_name, read_size, (int) file_info.st_size, file_path);
+    file_buf[read_size] = '\0';
   }
 
   if (file_buf && read_size_ptr) {

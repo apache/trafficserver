@@ -394,10 +394,10 @@ RecAllocateRawStatBlock(int num_stats)
     return NULL;
   }
   // create the raw-stat-block structure
-  rsb = (RecRawStatBlock *) xmalloc(sizeof(RecRawStatBlock));
+  rsb = (RecRawStatBlock *)ats_malloc(sizeof(RecRawStatBlock));
   memset(rsb, 0, sizeof(RecRawStatBlock));
   rsb->ethr_stat_offset = ethr_stat_offset;
-  rsb->global = (RecRawStat **) xmalloc(num_stats * sizeof(RecRawStat *));
+  rsb->global = (RecRawStat **)ats_malloc(num_stats * sizeof(RecRawStat *));
   memset(rsb->global, 0, num_stats * sizeof(RecRawStat *));
   rsb->num_stats = 0;
   rsb->max_stats = num_stats;

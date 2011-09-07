@@ -546,7 +546,7 @@ main(int argc, char **argv)
               size_of_args += 1;
               size_of_args += strlen((argv[j++]));
             }
-            ink_assert((tsArgs = (char *) xmalloc(size_of_args + 1)));
+            tsArgs = (char *)ats_malloc(size_of_args + 1);
 
             j = 0;
             while (i < argc) {

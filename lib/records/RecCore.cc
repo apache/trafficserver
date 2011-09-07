@@ -165,7 +165,7 @@ link_string_alloc(const char *name, RecDataT data_type, RecData data, void *cook
   int len = -1;
   if (_ss) {
     len = strlen(_ss);
-    _new_value = (RecString) xmalloc(len + 1);
+    _new_value = (RecString)ats_malloc(len + 1);
     memcpy(_new_value, _ss, len + 1);
   }
 
@@ -197,7 +197,7 @@ RecCoreInit(RecModeT mode_type, Diags *_diags)
   g_num_records = 0;
 
   // initialize record array for our internal stats (this can be reallocated later)
-  g_records = (RecRecord *) xmalloc(REC_MAX_RECORDS * sizeof(RecRecord));
+  g_records = (RecRecord *)ats_malloc(REC_MAX_RECORDS * sizeof(RecRecord));
   memset(g_records, 0, REC_MAX_RECORDS * sizeof(RecRecord));
 
   // initialize record hash index
@@ -342,7 +342,7 @@ RecRegisterConfigUpdateCb(const char *name, RecConfigUpdateCb update_cb, void *c
          }
        */
 
-      RecConfigUpdateCbList *new_callback = (RecConfigUpdateCbList *) xmalloc(sizeof(RecConfigUpdateCbList));
+      RecConfigUpdateCbList *new_callback = (RecConfigUpdateCbList *)ats_malloc(sizeof(RecConfigUpdateCbList));
       memset(new_callback, 0, sizeof(RecConfigUpdateCbList));
       new_callback->update_cb = update_cb;
       new_callback->update_cookie = cookie;
@@ -642,7 +642,7 @@ RecGetRecordDefaultDataString_Xmalloc(char *name, char **buf, bool lock)
   RecRecord *r = NULL;
 
   if (ink_hash_table_lookup(g_records_ht, name, (void **) &r)) {
-    *buf = (char *) xmalloc(sizeof(char) * 1024);
+    *buf = (char *)ats_malloc(sizeof(char) * 1024);
     memset(*buf, 0, 1024);
     err = REC_ERR_OKAY;
 
@@ -950,7 +950,7 @@ RecGetRecordPrefix_Xmalloc(char *prefix, char **buf, int *buf_len)
   int num_matched = 0;
   char *result = NULL;
 
-  result = (char *) xmalloc(result_size * sizeof(char));
+  result = (char *)ats_malloc(result_size * sizeof(char));
   memset(result, 0, result_size * sizeof(char));
 
   int i;

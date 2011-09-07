@@ -886,7 +886,7 @@ MetaInfo::_build_name(const char *filename)
 
   // 7 = 1 (dot at beginning) + 5 (".meta") + 1 (null terminating)
   //
-  _filename = (char *) xmalloc(l + 7);
+  _filename = (char *)ats_malloc(l + 7);
 
   if (i < 0) {
     ink_string_concatenate_strings(_filename, ".", filename, ".meta", NULL);

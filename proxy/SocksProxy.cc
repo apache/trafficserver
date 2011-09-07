@@ -461,12 +461,12 @@ SocksProxy::setupHttpRequest(unsigned char *p)
 
   case SOCKS_ATYPE_FQHN:
     //This is stored as a zero terminicated string
-    a->addr.buf = (unsigned char *) xmalloc(p[4] + 1);
+    a->addr.buf = (unsigned char *)ats_malloc(p[4] + 1);
     memcpy(a->addr.buf, &p[5], p[4]);
     a->addr.buf[p[4]] = 0;
     break;
   case SOCKS_ATYPE_IPV6:
-    //a->addr.buf = (unsigned char *) xmalloc(16);
+    //a->addr.buf = (unsigned char *)ats_malloc(16);
     //memcpy(a->addr.buf, &p[4], 16);
     //dont think we will use "proper" IPv6 addr anytime soon.
     //just use the last 4 octets as IPv4 addr:

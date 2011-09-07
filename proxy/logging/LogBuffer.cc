@@ -113,12 +113,8 @@ iLogBufferBuffer::New_iLogBufferBuffer(size_t _buf_size)
     if (!ob) {
       ob = new iLogBufferBuffer();
       if (ob) {
-        if ((ob->buf = (char *) xmalloc(_buf_size)) == 0) {
-          delete ob;
-          ob = 0;
-        } else {
-          ob->real_buf_size = _buf_size;
-        }
+        ob->buf = (char *)ats_malloc(_buf_size);
+        ob->real_buf_size = _buf_size;
       }
     }
 
@@ -178,7 +174,7 @@ iObject::operator new(size_t _size)
   ink_mutex_release(&iObjectMutex);
 
   if (!ob)
-    ob = (iObject *) xmalloc(_size);
+    ob = (iObject *)ats_malloc(_size);
 
   if (likely(ob)) {
     memset(ob, 0, _size);
@@ -629,10 +625,9 @@ LogBuffer::resolve_custom_entry(LogFieldList * fieldlist,
   if (alt_fieldlist && alt_printf_str) {
     LogField *f, *g;
     int n_alt_fields = alt_fieldlist->count();
-    if (unlikely((readfrom_map = (int *) xmalloc(n_alt_fields * sizeof(int))) == NULL))
-      return 0;
     int i = 0;
 
+    readfrom_map = (int *)ats_malloc(n_alt_fields * sizeof(int));
     for (f = alt_fieldlist->first(); f; f = alt_fieldlist->next(f)) {
       int readfrom_pos = 0;
       bool found_match = false;

@@ -127,7 +127,7 @@ ShowCont(Continuation * c, HTTPHdr * h):
     NOWARN_UNUSED(h);
     mutex = c->mutex;
     action = c;
-    buf = (char *) xmalloc(32000);
+    buf = (char *)ats_malloc(32000);
     start = buf;
     ebuf = buf + 32000;
   }

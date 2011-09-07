@@ -837,7 +837,7 @@ public:
   /**
     Adds by reference len bytes of data pointed to by b to the end
     of the buffer.  b MUST be a pointer to the beginning of  block
-    allocated from the xmalloc() routine. The data will be deallocated
+    allocated from the ats_xmalloc() routine. The data will be deallocated
     by the buffer once all readers on the buffer have consumed it.
 
   */

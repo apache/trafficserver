@@ -63,7 +63,7 @@ EThread::EThread(ThreadType att, int anid)
     tt(att),
     eventsem(NULL)
 {
-  ethreads_to_be_signalled = (EThread **) xmalloc(MAX_EVENT_THREADS * sizeof(EThread *));
+  ethreads_to_be_signalled = (EThread **)ats_malloc(MAX_EVENT_THREADS * sizeof(EThread *));
   memset((char *) ethreads_to_be_signalled, 0, MAX_EVENT_THREADS * sizeof(EThread *));
   memset(thread_private, 0, PER_THREAD_DATA);
 #if TS_HAS_EVENTFD

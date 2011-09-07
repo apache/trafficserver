@@ -315,7 +315,7 @@ main(int argc, char *argv[])
                                                      BINARY_LOG_OBJECT_FILENAME_EXTENSION) ==
                                               0 ? n - bin_ext_len : n) : n);
 
-          char *out_filename = (char *) xmalloc(copy_len + ascii_ext_len + 1);
+          char *out_filename = (char *)ats_malloc(copy_len + ascii_ext_len + 1);
 
           memcpy(out_filename, file_arguments[i], copy_len);
           memcpy(&out_filename[copy_len], ASCII_LOG_OBJECT_FILENAME_EXTENSION, ascii_ext_len);

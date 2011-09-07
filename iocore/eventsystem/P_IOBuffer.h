@@ -299,7 +299,7 @@ IOBufferData::alloc(int64_t size_index, AllocType type)
     if (BUFFER_SIZE_INDEX_IS_FAST_ALLOCATED(size_index))
       _data = (char *) ioBufAllocator[size_index].alloc_void();
     else if (BUFFER_SIZE_INDEX_IS_XMALLOCED(size_index))
-      _data = (char *) xmalloc(BUFFER_SIZE_FOR_XMALLOC(size_index));
+      _data = (char *)ats_malloc(BUFFER_SIZE_FOR_XMALLOC(size_index));
     break;
   }
 }
@@ -1107,7 +1107,7 @@ MIOBuffer::alloc(int64_t i)
 TS_INLINE void
 MIOBuffer::alloc_xmalloc(int64_t buf_size)
 {
-  char *b = (char *) xmalloc(buf_size);
+  char *b = (char *)ats_malloc(buf_size);
   set_xmalloced(b, buf_size);
 }
 

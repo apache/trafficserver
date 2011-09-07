@@ -2692,7 +2692,7 @@ CacheContinuation::replyLookupEvent(int event, void *d)
     CacheOpReplyMsg *msg;
     int flen = CacheOpReplyMsg::sizeof_fixedlen_msg();
 #ifdef PURIFY
-    msg = (CacheOpReplyMsg *) xmalloc(flen);
+    msg = (CacheOpReplyMsg *)ats_malloc(flen);
 #else
     msg = (CacheOpReplyMsg *) ALLOCA_DOUBLE(flen);
 #endif

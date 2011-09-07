@@ -180,14 +180,14 @@ StrListOverflow *
 StrListOverflow::create_heap(int user_size)
 {
   // I'm aligning the first allocation since the old implementation
-  //  used to do this by calling xmalloc.  I assume it doesn't
+  //  used to do this by calling ats_malloc.  I assume it doesn't
   //  matter since we are talking about strings but since this is a
   //  last minute emergency bug fix, I'm not take any changes.  If
   //  allocations are not of aligned values then subsequents allocations
   //  aren't aligned, again mirroring the previous implemnetation
   int total_size = overflow_head_hdr_size + user_size;
 
-  StrListOverflow *o = (StrListOverflow *) xmalloc(total_size);
+  StrListOverflow *o = (StrListOverflow *)ats_malloc(total_size);
   o->init();
   o->heap_size = user_size;
 

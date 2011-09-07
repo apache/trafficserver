@@ -1428,7 +1428,7 @@ getFilesInDirectory(char *managedDir, ExpandingArray * fileList)
   // The fun of Solaris - readdir_r requires a buffer passed into it
   //   The man page says this obscene expression gives us the proper
   //     size
-  dirEntry = (struct dirent *) xmalloc(sizeof(struct dirent) + pathconf(".", _PC_NAME_MAX) + 1);
+  dirEntry = (struct dirent *)ats_malloc(sizeof(struct dirent) + pathconf(".", _PC_NAME_MAX) + 1);
 
   struct dirent *result;
   while (readdir_r(dir, dirEntry, &result) == 0) {
@@ -1444,7 +1444,7 @@ getFilesInDirectory(char *managedDir, ExpandingArray * fileList)
     } else {
       // Ignore ., .., and any dot files
       if (fileName && *fileName != '.') {
-        fileListEntry = (fileEntry *) xmalloc(sizeof(fileEntry));
+        fileListEntry = (fileEntry *)ats_malloc(sizeof(fileEntry));
         fileListEntry->c_time = fileInfo.st_ctime;
         ink_strncpy(fileListEntry->name, fileName, FILE_NAME_MAX);
         fileList->addEntry(fileListEntry);
@@ -1475,7 +1475,7 @@ getFilesInDirectory(char *managedDir, ExpandingArray * fileList)
     } else {
       // Ignore ., .., and any dot files
       if (fileName && *fileName != '.') {
-        fileListEntry = (fileEntry *) xmalloc(sizeof(fileEntry));
+        fileListEntry = (fileEntry *)ats_malloc(sizeof(fileEntry));
         fileListEntry->c_time = fileInfo.st_ctime;
         strcpy(fileListEntry->name, fileName);
         fileList->addEntry(fileListEntry);
