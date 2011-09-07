@@ -34,15 +34,6 @@ volatile int res_track_memory = RES_TRACK_MEMORY_DEFAULT;
 /*-------------------------------------------------------------------------
 -------------------------------------------------------------------------*/
 void *
-_xfree_null(void *mem)
-{
-  if (likely(mem))
-    ats_free(mem);
-  return NULL;
-}
-
-
-void *
 _xrealloc(void *ptr, unsigned int size, const char *path)
 {
   NOWARN_UNUSED(path);

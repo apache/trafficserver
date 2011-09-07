@@ -70,7 +70,7 @@ StringHash::~StringHash()
         delete he;
       }
     }
-    hash = (StringHashEntry **) xfree_null(hash);
+    hash = (StringHashEntry **)ats_free_null(hash);
   }
 }
 
@@ -176,8 +176,7 @@ StringHash::find_or_add(void *_ptr, const char *_str, int _strsize)
 // ===============================================================================
 StringHashEntry & StringHashEntry::clean()
 {
-  if (str)
-    str = (char *) xfree_null(str);
+  str = (char *)ats_free_null(str);
   hash_table_index = (strsize = 0);
   hashid = 0;
   return *this;

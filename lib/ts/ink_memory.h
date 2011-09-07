@@ -35,6 +35,7 @@ extern "C"
   void *ats_realloc(void *ptr, size_t size);
   void *ats_memalign(size_t alignment, size_t size);
   void ats_free(void *ptr);
+  void* ats_free_null(void *ptr);
   void ats_memalign_free(void *ptr);
 
 #ifdef __cplusplus

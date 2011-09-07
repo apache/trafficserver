@@ -168,11 +168,8 @@ static void
 clear_xstr_array(char *v[], int vsize)
 {
   if (v && vsize > 0) {
-    for (int i = 0; i < vsize; i++) {
-      if (v[i]) {
-        v[i] = (char *) xfree_null(v[i]);
-      }
-    }
+    for (int i = 0; i < vsize; i++)
+      v[i] = (char *)ats_free_null(v[i]);
   }
 }
 
@@ -1479,8 +1476,7 @@ UrlRewrite::BuildTable()
       goto MAP_ERROR;
     }
 
-    if (unlikely(fromHost_lower_ptr))
-      fromHost_lower_ptr = (char *) xfree_null(fromHost_lower_ptr);
+    fromHost_lower_ptr = (char *)ats_free_null(fromHost_lower_ptr);
 
     cur_line = tokLine(NULL, &tok_state);
     ++cln;

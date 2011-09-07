@@ -53,16 +53,6 @@ struct Resource
 // with jemalloc / tcmalloc's features of enabling memory debugging.
 #define RES_TRACK_MEMORY_DEFAULT 0      /* default value for res_track_memory variable */
 
-#ifdef __cplusplus
-
-static inline void *
-xfree_null(void *mem)
-{
-  if (mem)
-    ats_free(mem);
-  return NULL;
-}
-#endif
 
 #define xrealloc(p,s)     ats_realloc ((p),(s))
 #define xstrdup(p)        _xstrdup ((p), -1, NULL)
@@ -70,7 +60,6 @@ xfree_null(void *mem)
 
 void *_xrealloc(void *ptr, unsigned int size, const char *path);
 char *_xstrdup(const char *str, int length, const char *path);
-void *_xfree_null(void *ptr);
 
 void xdump(void);
 

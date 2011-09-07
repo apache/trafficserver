@@ -157,7 +157,7 @@ HttpBodyFactory::fabricate_with_old_api(const char *type, HttpTransact::State * 
                  set, type, *resulting_buffer_length, max_buffer_length);
     }
     *resulting_buffer_length = 0;
-    buffer = (char *) xfree_null(buffer);
+    buffer = (char *)ats_free_null(buffer);
   }
   /////////////////////////////////////////////////////////////////////
   // handle return of instantiated template or internal default, and //

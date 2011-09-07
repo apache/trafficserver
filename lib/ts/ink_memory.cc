@@ -161,3 +161,11 @@ ats_free(void *ptr)
   if (likely(ptr != NULL))
     free(ptr);
 }                               /* End ats_free */
+
+void*
+ats_free_null(void *ptr)
+{
+  if (likely(ptr != NULL))
+    free(ptr);
+  return NULL;
+}                               /* End ats_free_null */

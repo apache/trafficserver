@@ -90,13 +90,8 @@ url_mapping::~url_mapping()
   redirect_tag_str *rc;
   acl_filter_rule *afr;
 
-  if (tag) {
-    tag = (char *) xfree_null(tag);
-  }
-
-  if (filter_redirect_url) {
-    filter_redirect_url = (char *) xfree_null(filter_redirect_url);
-  }
+  tag = (char *)ats_free_null(tag);
+  filter_redirect_url = (char *)ats_free_null(filter_redirect_url);
 
   while ((r = referer_list) != 0) {
     referer_list = r->next;

@@ -1809,7 +1809,7 @@ HttpUserAgent_RegxEntry::create(char *_refexp_str, char *errmsgbuf, int errmsgbu
   char *c, *refexp_str, refexp_str_buf[2048];
   bool retcode = false;
 
-  user_agent_str = (char *) xfree_null(user_agent_str);
+  user_agent_str = (char *)ats_free_null(user_agent_str);
   user_agent_str_size = 0;
   stype = STRTYPE_UNKNOWN;
   if (regx_valid) {
@@ -1856,7 +1856,7 @@ HttpUserAgent_RegxEntry::create(char *_refexp_str, char *errmsgbuf, int errmsgbu
         if (regx == NULL) {
           if (errmsgbuf && (errmsgbuf_size - 1) > 0)
             ink_strncpy(errmsgbuf, error, errmsgbuf_size - 1);
-          user_agent_str = (char *) xfree_null(user_agent_str);
+          user_agent_str = (char *)ats_free_null(user_agent_str);
           retcode = false;
         } else
           regx_valid = true;

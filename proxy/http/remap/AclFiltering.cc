@@ -34,7 +34,7 @@ acl_filter_rule::reset(void)
 {
   int i;
   for (i = (argc = 0); i < ACL_FILTER_MAX_ARGV; i++) {
-    argv[i] = (char *) xfree_null(argv[i]);
+    argv[i] = (char *)ats_free_null(argv[i]);
   }
   for (i = (method_cnt = 0); i < ACL_FILTER_MAX_METHODS; i++) {
     method_array[i] = 0;
@@ -79,7 +79,7 @@ int
 acl_filter_rule::name(const char *_name)
 {
   filter_name_size = 0;
-  filter_name = (char *) xfree_null(filter_name);
+  filter_name = (char *)ats_free_null(filter_name);
   if (_name && _name[0] && (filter_name = xstrdup(_name)) != NULL) {
     filter_name_size = strlen(filter_name);
   }
