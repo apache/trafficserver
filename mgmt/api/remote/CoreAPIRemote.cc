@@ -128,7 +128,7 @@ send_and_parse_list(OpType op, LLQ * list)
   tokens.Initialize(list_str, COPY_TOKS);
   tok = tokens.iterFirst(&i_state);
   while (tok != NULL) {
-    enqueue(list, xstrdup(tok));        // add token to LLQ
+    enqueue(list, ats_strdup(tok));        // add token to LLQ
     tok = tokens.iterNext(&i_state);
   }
 
@@ -466,7 +466,7 @@ MgmtRecordGet(const char *rec_name, TSRecordEle * rec_ele)
   if (!rec_name || !rec_ele)
     return TS_ERR_PARAMS;
 
-  rec_ele->rec_name = xstrdup(rec_name);
+  rec_ele->rec_name = ats_strdup(rec_name);
 
   // create and send request
   ret = send_record_get_request(main_socket_fd, rec_ele->rec_name);
@@ -490,7 +490,7 @@ MgmtRecordGet(const char *rec_name, TSRecordEle * rec_ele)
     rec_ele->float_val = *(TSFloat *) val;
     break;
   case TS_REC_STRING:
-    rec_ele->string_val = xstrdup((char *) val);
+    rec_ele->string_val = ats_strdup((char *) val);
     break;
   default:                     // ERROR - invalid record type
     return TS_ERR_FAIL;

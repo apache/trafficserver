@@ -40,9 +40,9 @@ var_name_ptr(NULL),
 num_leaf(0)
 {
   if (t) {
-    node_name = xstrdup(t);
+    node_name = ats_strdup(t);
   } else {
-    node_name = xstrdup("root");
+    node_name = ats_strdup("root");
   }
 }
 

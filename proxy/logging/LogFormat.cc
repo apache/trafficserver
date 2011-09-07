@@ -163,7 +163,7 @@ LogFormat::init_variables(const char *name, const char *fieldlist_str, const cha
       m_name_id = 0;
     }
     if (name) {
-      m_name_str = xstrdup(name);
+      m_name_str = ats_strdup(name);
       m_name_id = id_from_name(m_name_str);
     }
 
@@ -173,11 +173,11 @@ LogFormat::init_variables(const char *name, const char *fieldlist_str, const cha
       m_fieldlist_id = 0;
     }
     if (fieldlist_str) {
-      m_fieldlist_str = xstrdup(fieldlist_str);
+      m_fieldlist_str = ats_strdup(fieldlist_str);
       m_fieldlist_id = id_from_name(m_fieldlist_str);
     }
 
-    m_printf_str = xstrdup(printf_str);
+    m_printf_str = ats_strdup(printf_str);
     m_interval_sec = interval_sec;
     m_interval_next = LogUtils::timestamp();
 
@@ -226,7 +226,7 @@ LogFormat::LogFormat(LogFormatType type)
     // indicate this, the format_str will be NULL
     //
   case TEXT_LOG:
-    m_name_str = xstrdup("text");
+    m_name_str = ats_strdup("text");
     m_valid = true;
     break;
   default:
@@ -312,9 +312,9 @@ LogFormat::LogFormat(const LogFormat & rhs)
 {
   if (m_valid) {
     if (m_format_type == TEXT_LOG) {
-      m_name_str = xstrdup(rhs.m_name_str);
+      m_name_str = ats_strdup(rhs.m_name_str);
     } else {
-      m_format_str = rhs.m_format_str ? xstrdup(rhs.m_format_str) : 0;
+      m_format_str = rhs.m_format_str ? ats_strdup(rhs.m_format_str) : 0;
       init_variables(rhs.m_name_str, rhs.m_fieldlist_str, rhs.m_printf_str, rhs.m_interval_sec);
     }
   }
@@ -439,7 +439,7 @@ LogFormat::format_from_specification(char *spec, char **file_name, char **file_h
     Debug("log-format", "token expected");
     return NULL;
   }
-  *file_name = xstrdup(token);
+  *file_name = ats_strdup(token);
 
   //
   // Next should be the file type, either "ASCII" or "BINARY"
@@ -469,7 +469,7 @@ LogFormat::format_from_specification(char *spec, char **file_name, char **file_h
   // set header to NULL if "none" was specified (a NULL header means
   // "write no header" to the rest of the logging system)
   //
-  *file_header = strcmp(token, "none") == 0 ? NULL : xstrdup(token);
+  *file_header = strcmp(token, "none") == 0 ? NULL : ats_strdup(token);
 
   Debug("log-format", "custom:%d:%s:%s:%s:%d:%s", format_id, format_name, format_str, *file_name, *file_type, token);
 
@@ -512,7 +512,7 @@ LogFormat::parse_symbol_string(const char *symbol_string, LogFieldList *field_li
   //
   // strtok will mangle the input string; we'll make a copy for that.
   //
-  sym_str = xstrdup(symbol_string);
+  sym_str = ats_strdup(symbol_string);
   symbol = strtok(sym_str, ",");
 
   while (symbol != NULL) {

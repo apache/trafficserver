@@ -64,7 +64,7 @@ _TSrealloc(void *ptr, unsigned int size, const char *path)
 char *
 _TSstrdup(const char *str, int length, const char *path)
 {
-  return xstrndup(str, length);
+  return ats_strndup(str, length);
 }
 
 void
@@ -941,7 +941,7 @@ TSCongestionEleCreate()
   ele->dead_os_conn_timeout = 15;
   ele->dead_os_conn_retries = 1;
   ele->max_connection = -1;
-  ele->error_page_uri = xstrdup("congestion#retryAfter");
+  ele->error_page_uri = ats_strdup("congestion#retryAfter");
 
   return ele;
 }
@@ -1899,7 +1899,7 @@ TSGetErrorMessage(TSError err_id)
     break;
   }
 
-  err_msg = xstrdup(msg);
+  err_msg = ats_strdup(msg);
   return err_msg;
 }
 
@@ -2006,24 +2006,24 @@ TSReadFromUrlEx(const char *url, char **header, int *headerSize, char **body, in
   const char *tempPath = strstr(url, "/");
   char *host_and_port;
   if (tempPath) {
-    host_and_port = xstrndup(url, strlen(url) - strlen(tempPath));
+    host_and_port = ats_strndup(url, strlen(url) - strlen(tempPath));
     tempPath += 1;              // advance one position to get rid of leading '/'
-    httpPath = xstrdup(tempPath);
+    httpPath = ats_strdup(tempPath);
   } else {
-    host_and_port = xstrdup(url);
-    httpPath = xstrdup("");
+    host_and_port = ats_strdup(url);
+    httpPath = ats_strdup("");
   }
 
   // the port proceed by a ":", if it exists
   char *colon = strstr(host_and_port, ":");
   if (colon) {
-    httpHost = xstrndup(host_and_port, strlen(host_and_port) - strlen(colon));
+    httpHost = ats_strndup(host_and_port, strlen(host_and_port) - strlen(colon));
     colon += 1;                 // advance one position to get rid of leading ':'
     httpPort = ink_atoi(colon);
     if (httpPort <= 0)
       httpPort = HTTP_PORT;
   } else {
-    httpHost = xstrdup(host_and_port);
+    httpHost = ats_strdup(host_and_port);
   }
   ats_free(host_and_port);
 
@@ -2047,8 +2047,8 @@ TSReadFromUrlEx(const char *url, char **header, int *headerSize, char **body, in
     goto END;
 
   if (header && headerSize)
-    *header = xstrndup(hdr_temp, *headerSize);
-  *body = xstrndup(bdy_temp, *bodySize);
+    *header = ats_strndup(hdr_temp, *headerSize);
+  *body = ats_strndup(bdy_temp, *bodySize);
 
 END:
   ats_free(httpHost);
@@ -2091,7 +2091,7 @@ TSLookupFromCacheUrl(TSString url, TSString * info)
   if ((err = parseHTTPResponse(response, &header, &hdr_size, &body, &bdy_size)) != TS_ERR_OKAY)
     goto END;
 
-  *info = xstrndup(body, bdy_size);
+  *info = ats_strndup(body, bdy_size);
 
 END:
   return err;
@@ -2129,7 +2129,7 @@ TSLookupFromCacheUrlRegex(TSString url_regex, TSString * list)
   if ((err = parseHTTPResponse(response, &header, &hdr_size, &body, &bdy_size)) != TS_ERR_OKAY)
     goto END;
 
-  *list = xstrndup(body, bdy_size);
+  *list = ats_strndup(body, bdy_size);
 END:
   return err;
 }
@@ -2166,7 +2166,7 @@ TSDeleteFromCacheUrl(TSString url, TSString * info)
   if ((err = parseHTTPResponse(response, &header, &hdr_size, &body, &bdy_size)) != TS_ERR_OKAY)
     goto END;
 
-  *info = xstrndup(body, bdy_size);
+  *info = ats_strndup(body, bdy_size);
 
 END:
   return err;
@@ -2204,7 +2204,7 @@ TSDeleteFromCacheUrlRegex(TSString url_regex, TSString * list)
   if ((err = parseHTTPResponse(response, &header, &hdr_size, &body, &bdy_size)) != TS_ERR_OKAY)
     goto END;
 
-  *list = xstrndup(body, bdy_size);
+  *list = ats_strndup(body, bdy_size);
 END:
   return err;
 }
@@ -2241,7 +2241,7 @@ TSInvalidateFromCacheUrlRegex(TSString url_regex, TSString * list)
   if ((err = parseHTTPResponse(response, &header, &hdr_size, &body, &bdy_size)) != TS_ERR_OKAY)
     goto END;
 
-  *list = xstrndup(body, bdy_size);
+  *list = ats_strndup(body, bdy_size);
 END:
   return err;
 }
@@ -2608,6 +2608,6 @@ resetHostName(TSRmServerEle * ele, const char *hostname, const char *tail)
 
   ats_free(ele->str_val);
   snprintf(buff, sizeof(buff), "%s.%s", hostname, tail);
-  ele->str_val = xstrdup(buff);
+  ele->str_val = ats_strdup(buff);
   return;
 }

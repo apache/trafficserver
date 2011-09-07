@@ -127,7 +127,7 @@ process_mime_block_impl(MIMEFieldBlockImpl * mblock, int offset)
   for (unsigned int i = 0; i < freetop; i++) {
     MIMEField *f = &mblock->m_field_slots[i];
     if (hdrtoken_is_valid_wks_idx(f->m_wks_idx)) {
-      n = xstrdup(hdrtoken_index_to_wks(f->m_wks_idx));
+      n = ats_strdup(hdrtoken_index_to_wks(f->m_wks_idx));
     } else {
       n = load_string(f->m_ptr_name, f->m_len_name, offset);
     }

@@ -461,7 +461,7 @@ RecSetRecord(RecT rec_type, const char *name, RecDataT data_type, RecData *data,
       }
       rec_mutex_release(&(r1->lock));
     } else {
-      // We don't need to xstrdup() here as we will make copies of any
+      // We don't need to ats_strdup() here as we will make copies of any
       // strings when we marshal them into our RecMessage buffer.
       RecRecord r2;
       memset(&r2, 0, sizeof(RecRecord));
@@ -665,7 +665,7 @@ RecReadConfigFile()
   line = line_tok.iterFirst(&line_tok_state);
   line_num = 1;
   while (line) {
-    char *lc = xstrdup(line);
+    char *lc = ats_strdup(line);
     char *lt = lc;
     char *ln;
 
@@ -752,7 +752,7 @@ RecReadConfigFile()
     // update our g_rec_config_contents_xxx
     cfe = (RecConfigFileEntry *)ats_malloc(sizeof(RecConfigFileEntry));
     cfe->entry_type = RECE_RECORD;
-    cfe->entry = xstrdup(name_str);
+    cfe->entry = ats_strdup(name_str);
     enqueue(g_rec_config_contents_llq, (void *) cfe);
     ink_hash_table_insert(g_rec_config_contents_ht, name_str, NULL);
     goto L_done;
@@ -762,7 +762,7 @@ RecReadConfigFile()
     // write it out later
     cfe = (RecConfigFileEntry *)ats_malloc(sizeof(RecConfigFileEntry));
     cfe->entry_type = RECE_COMMENT;
-    cfe->entry = xstrdup(line);
+    cfe->entry = ats_strdup(line);
     enqueue(g_rec_config_contents_llq, (void *) cfe);
 
   L_done:
@@ -808,7 +808,7 @@ RecSyncConfigToTB(textBuffer * tb)
           if (!ink_hash_table_isbound(g_rec_config_contents_ht, r->name)) {
             cfe = (RecConfigFileEntry *)ats_malloc(sizeof(RecConfigFileEntry));
             cfe->entry_type = RECE_RECORD;
-            cfe->entry = xstrdup(r->name);
+            cfe->entry = ats_strdup(r->name);
             enqueue(g_rec_config_contents_llq, (void *) cfe);
             ink_hash_table_insert(g_rec_config_contents_ht, r->name, NULL);
           }

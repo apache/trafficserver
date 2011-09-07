@@ -227,7 +227,7 @@ register_ShowNet(Continuation * c, HTTPHdr * h)
   } else if (STREQ_PREFIX(path, path_len, "ips")) {
     int query_len;
     const char *query = h->url_get()->query_get(&query_len);
-    s->sarg = xstrndup(query, query_len);
+    s->sarg = ats_strndup(query, query_len);
     char *gn = NULL;
     if (s->sarg)
       gn = (char *)memchr(s->sarg, '=', strlen(s->sarg));
@@ -237,7 +237,7 @@ register_ShowNet(Continuation * c, HTTPHdr * h)
   } else if (STREQ_PREFIX(path, path_len, "ports")) {
     int query_len;
     const char *query = h->url_get()->query_get(&query_len);
-    s->sarg = xstrndup(query, query_len);
+    s->sarg = ats_strndup(query, query_len);
     char *gn = NULL;
     if (s->sarg)
       gn = (char *)memchr(s->sarg, '=', strlen(s->sarg));

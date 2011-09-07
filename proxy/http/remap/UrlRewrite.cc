@@ -486,7 +486,7 @@ UrlRewrite::UrlRewrite(const char *file_var_in)
   char *config_file = NULL;
 
   ink_assert(file_var_in != NULL);
-  this->file_var = xstrdup(file_var_in);
+  this->file_var = ats_strdup(file_var_in);
   config_file_path[0] = '\0';
 
   REVERSE_ReadConfigStringAlloc(config_file, file_var_in);
@@ -502,7 +502,7 @@ UrlRewrite::UrlRewrite(const char *file_var_in)
   if (this->ts_name == NULL) {
     pmgmt->signalManager(MGMT_SIGNAL_CONFIG_ERROR, "Unable to read proxy.config.proxy_name");
     Warning("%s Unable to determine proxy name.  Incorrect redirects could be generated", modulePrefix);
-    this->ts_name = xstrdup("");
+    this->ts_name = ats_strdup("");
   }
 
   this->http_default_redirect_url = NULL;
@@ -510,7 +510,7 @@ UrlRewrite::UrlRewrite(const char *file_var_in)
   if (this->http_default_redirect_url == NULL) {
     pmgmt->signalManager(MGMT_SIGNAL_CONFIG_ERROR, "Unable to read proxy.config.http.referer_default_redirect");
     Warning("%s Unable to determine default redirect url for \"referer\" filter.", modulePrefix);
-    this->http_default_redirect_url = xstrdup("http://www.apache.org");
+    this->http_default_redirect_url = ats_strdup("http://www.apache.org");
   }
 
   REVERSE_ReadConfigInteger(reverse_proxy, "proxy.config.reverse_proxy.enabled");
@@ -1137,9 +1137,9 @@ UrlRewrite::BuildTable()
     for (int j = 0; j < tok_count; j++) {
       if (((char *) whiteTok[j])[0] == '@') {
         if (((char *) whiteTok[j])[1])
-          bti.argv[bti.argc++] = xstrdup(&(((char *) whiteTok[j])[1]));
+          bti.argv[bti.argc++] = ats_strdup(&(((char *) whiteTok[j])[1]));
       } else {
-        bti.paramv[bti.paramc++] = xstrdup((char *) whiteTok[j]);
+        bti.paramv[bti.paramc++] = ats_strdup((char *) whiteTok[j]);
       }
     }
 
@@ -1272,7 +1272,7 @@ UrlRewrite::BuildTable()
     // Check if a tag is specified.
     if (bti.paramv[3] != NULL) {
       if (maptype == FORWARD_MAP_REFERER) {
-        new_mapping->filter_redirect_url = xstrdup(bti.paramv[3]);
+        new_mapping->filter_redirect_url = ats_strdup(bti.paramv[3]);
         if (!strcasecmp(bti.paramv[3], "<default>") || !strcasecmp(bti.paramv[3], "default") ||
             !strcasecmp(bti.paramv[3], "<default_redirect_url>") || !strcasecmp(bti.paramv[3], "default_redirect_url"))
           new_mapping->default_redirect_url = true;
@@ -1308,7 +1308,7 @@ UrlRewrite::BuildTable()
           }
         }
       } else {
-        new_mapping->tag = xstrdup(&(bti.paramv[3][0]));
+        new_mapping->tag = ats_strdup(&(bti.paramv[3][0]));
       }
     }
     // Check to see the fromHost remapping is a relative one
@@ -1398,7 +1398,7 @@ UrlRewrite::BuildTable()
             u_mapping->toUrl.create(NULL);
             u_mapping->toUrl.copy(&new_mapping->toUrl);
             if (bti.paramv[3] != NULL)
-              u_mapping->tag = xstrdup(&(bti.paramv[3][0]));
+              u_mapping->tag = ats_strdup(&(bti.paramv[3][0]));
             bool insert_result = (maptype != FORWARD_MAP_WITH_RECV_PORT) ? 
               TableInsert(forward_mappings.hash_lookup, u_mapping, ipv4_name) :
               TableInsert(forward_mappings_with_recv_port.hash_lookup, u_mapping, ipv4_name);
@@ -1708,14 +1708,14 @@ UrlRewrite::load_remap_plugin(char *argv[], int argc, url_mapping *mp, char *err
     snprintf(errbuf, errbufsize, "Can't load fromURL from URL class");
     return -6;
   }
-  parv[parc++] = xstrdup(err);
+  parv[parc++] = ats_strdup(err);
   ats_free(err);
 
   if ((err = mp->toUrl.string_get(NULL)) == NULL) {
     snprintf(errbuf, errbufsize, "Can't load toURL from URL class");
     return -6;
   }
-  parv[parc++] = xstrdup(err);
+  parv[parc++] = ats_strdup(err);
   ats_free(err);
 
   bool plugin_encountered = false;

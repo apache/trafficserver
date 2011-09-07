@@ -79,11 +79,11 @@ int congestionControlLocalTime = 0;
 
 CongestionControlRecord::CongestionControlRecord(const CongestionControlRecord & rec)
 {
-  prefix = xstrdup(rec.prefix);
+  prefix = ats_strdup(rec.prefix);
   prefix_len = rec.prefix_len;
   port = rec.port;
   congestion_scheme = rec.congestion_scheme;
-  error_page = xstrdup(rec.error_page);
+  error_page = ats_strdup(rec.error_page);
   max_connection_failures = rec.max_connection_failures;
   fail_window = rec.fail_window;
   proxy_retry_interval = rec.proxy_retry_interval;
@@ -136,7 +136,7 @@ CongestionControlRecord::validate()
   }
 
   if (error_page == NULL)
-    error_page = xstrdup(DEFAULT_error_page);
+    error_page = ats_strdup(DEFAULT_error_page);
   if (max_connection_failures >= CONG_RULE_MAX_max_connection_failures ||
       (max_connection_failures <= 0 && max_connection_failures != CONG_RULE_ULIMITED_max_connection_failures)
     ) {
@@ -212,9 +212,9 @@ CongestionControlRecord::Init(matcher_line * line_info)
         congestion_scheme = PER_IP;
       }
     } else if (strcasecmp(label, "error_page") == 0) {
-      error_page = xstrdup(val);
+      error_page = ats_strdup(val);
     } else if (strcasecmp(label, "prefix") == 0) {
-      prefix = xstrdup(val);
+      prefix = ats_strdup(val);
       prefix_len = strlen(prefix);
       rank += 1;
       // prefix will be used in the ControlBase
@@ -616,7 +616,7 @@ m_congested(0),
 m_stat_congested_conn_failures(0),
 m_M_congested(0), m_last_M_congested(0), m_num_connections(0), m_stat_congested_max_conn(0), m_ref_count(1)
 {
-  m_hostname = xstrdup(hostname);
+  m_hostname = ats_strdup(hostname);
   rule->get();
   pRecord = rule;
   clearFailHistory();

@@ -40,19 +40,13 @@ _xstrdup(const char *str, int length, const char *path)
   char *newstr;
 
   if (likely(str)) {
-    if (length < 0) {
+    if (length < 0)
       length = strlen(str);
-    }
-    // TODO: TS-567 shouldn't have to check the return value here.
+
     newstr = (char *)ats_malloc(length + 1);
-    if (likely(newstr != NULL)) {
-      strncpy(newstr, str, length);
-      newstr[length] = '\0';
-      return newstr;
-    }
-    fprintf(stderr, "FATAL: could not allocate %d bytes in _xstrdup\n", length + 1);
-    ink_stack_trace_dump();
-    _exit(1);
+    strncpy(newstr, str, length);
+    newstr[length] = '\0';
+    return newstr;
   }
   return NULL;
 }

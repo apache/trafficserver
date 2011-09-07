@@ -316,7 +316,7 @@ template<class Data, class Result> char *RegexMatcher<Data, Result>::NewEntry(ma
     re_array[num_el] = NULL;
     return errBuf;
   }
-  re_str[num_el] = xstrdup(pattern);
+  re_str[num_el] = ats_strdup(pattern);
 
   // Remove our consumed label from the parsed line
   line_info->line[0][line_info->dest_entry] = 0;
@@ -361,7 +361,7 @@ template<class Data, class Result> void RegexMatcher<Data, Result>::Match(RD * r
   // Can't do a regex match with a NULL string so
   //  use an empty one instead
   if (url_str == NULL) {
-    url_str = xstrdup("");
+    url_str = ats_strdup("");
   }
   // INKqa12980
   // The function unescapifyStr() is already called in
@@ -565,7 +565,7 @@ template<class Data, class Result>
   ink_assert(config_tags != NULL);
 
   matcher_name = name;
-  config_file_var = xstrdup(file_var);
+  config_file_var = ats_strdup(file_var);
   config_file_path[0] = '\0';
 
   REC_ReadConfigStringAlloc(config_file, config_file_var);

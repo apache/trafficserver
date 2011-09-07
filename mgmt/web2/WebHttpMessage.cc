@@ -159,7 +159,7 @@ httpMessage::addRequestLine(char *request)
 
   // Make a copy of the string so that we
   //   log it later
-  client_request = xstrdup(request);
+  client_request = ats_strdup(request);
   requestLen = strlen(client_request);
   if (requestLen > 0 && client_request[requestLen - 1] == '\r') {
     client_request[requestLen - 1] = '\0';
@@ -491,7 +491,7 @@ httpResponse::writeHdr(SocketInfo socketD)
   hdr.copyFrom(dateStr, strlen(dateStr));
   hdr.copyFrom(buffer, strlen(buffer));
   hdr.copyFrom("\r\n", 2);
-  dateResponse = xstrdup(buffer);
+  dateResponse = ats_strdup(buffer);
 
   // Not cachable if marked not cachable, or has no L-M date
   if ((getCachable() == 0) || (lastMod == -1)) {
@@ -540,7 +540,7 @@ void
 httpResponse::setContentType(const char *str)
 {
   if (str != NULL) {
-    explicitConType = xstrdup(str);
+    explicitConType = ats_strdup(str);
   }
 }
 
@@ -548,7 +548,7 @@ void
 httpResponse::setRealm(const char *realm)
 {
   if (realm != NULL) {
-    authRealm = xstrdup(realm);
+    authRealm = ats_strdup(realm);
   }
 }
 
@@ -556,7 +556,7 @@ void
 httpResponse::setRefreshURL(const char *url)
 {
   if (url != NULL) {
-    refreshURL = xstrdup(url);
+    refreshURL = ats_strdup(url);
   }
 }
 
@@ -564,7 +564,7 @@ void
 httpResponse::setLocationURL(const char *url)
 {
   if (url != NULL) {
-    locationURL = xstrdup(url);
+    locationURL = ats_strdup(url);
   }
 }
 

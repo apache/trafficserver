@@ -377,7 +377,7 @@ bool MethodMod::check(HttpRequestData* req) const {
 MethodMod*
 MethodMod::make(char * value, char const **) {
   MethodMod* mod = new MethodMod;
-  mod->text.set(xstrdup(value), strlen(value));
+  mod->text.set(ats_strdup(value), strlen(value));
   return mod;
 }
 
@@ -414,7 +414,7 @@ PrefixMod::make(char * value, char const ** error ) {
   // strip leading slashes because get_path which is used later
   // doesn't include them from the URL.
   while ('/' == *value) ++value;
-  mod->text.set(xstrdup(value), strlen(value));
+  mod->text.set(ats_strdup(value), strlen(value));
   return mod;
 }
 // ----------
@@ -439,7 +439,7 @@ bool SuffixMod::check(HttpRequestData* req) const {
 SuffixMod*
 SuffixMod::make(char * value, char const ** error ) {
   SuffixMod* mod = new SuffixMod;
-  mod->text.set(xstrdup(value), strlen(value));
+  mod->text.set(ats_strdup(value), strlen(value));
   return mod;
 }
 
@@ -461,7 +461,7 @@ bool TagMod::check(HttpRequestData* req) const {
 TagMod*
 TagMod::make(char * value, char const ** error ) {
   TagMod* mod = new TagMod;
-  mod->text.set(xstrdup(value), strlen(value));
+  mod->text.set(ats_strdup(value), strlen(value));
   return mod;
 }
 // ----------

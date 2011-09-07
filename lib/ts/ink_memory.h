@@ -38,6 +38,9 @@ extern "C"
   void* ats_free_null(void *ptr);
   void ats_memalign_free(void *ptr);
 
+#define ats_strdup(p)        _xstrdup((p), -1, NULL)
+#define ats_strndup(p,n)     _xstrdup((p), n, NULL)
+
 #ifdef __cplusplus
 }
 #endif                          /* __cplusplus */

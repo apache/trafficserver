@@ -314,7 +314,7 @@ LocalManager::LocalManager(char *mpath, bool proxy_on)
   char *absolute_config_path = Layout::get()->relative(config_path);
   ats_free(config_path);
   if (access(absolute_config_path, R_OK) == -1) {
-    config_path = xstrdup(system_config_directory);
+    config_path = ats_strdup(system_config_directory);
     if (access(config_path, R_OK) == -1) {
         mgmt_elog("[LocalManager::LocalManager] unable to access() directory '%s': %d, %s\n",
                 config_path, errno, strerror(errno));

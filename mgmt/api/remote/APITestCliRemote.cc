@@ -685,16 +685,16 @@ print_split_dns_ele(TSSplitDnsEle * ele)
   char *pd_name = 0;
   switch (ele->pd_type) {
   case TS_PD_DOMAIN:
-    pd_name = xstrdup("dest_domain");
+    pd_name = ats_strdup("dest_domain");
     break;
   case TS_PD_HOST:
-    pd_name = xstrdup("dest_host");
+    pd_name = ats_strdup("dest_host");
     break;
   case TS_PD_URL_REGEX:
-    pd_name = xstrdup("url_regex");
+    pd_name = ats_strdup("url_regex");
     break;
   default:
-    pd_name = xstrdup("?????");
+    pd_name = ats_strdup("?????");
     // Handled here:
     // TS_PD_IP, TS_PD_UNDEFINED
     break;
@@ -1840,7 +1840,7 @@ test_cfg_plugin()
   ele = (TSPluginEle *) cfg_ele;
   if (ele) {
     //free(ele->name);
-    ele->name = xstrdup("change-plugin.so");
+    ele->name = ats_strdup("change-plugin.so");
   }
 
   // remove the second ele
@@ -1851,11 +1851,11 @@ test_cfg_plugin()
   printf("test_socks_set: appending a new ele...\n");
   ele = TSPluginEleCreate();
 
-  ele->name = xstrdup("new-plugin.so");
+  ele->name = ats_strdup("new-plugin.so");
 
   ele->args = TSStringListCreate();
-  TSStringListEnqueue(ele->args, xstrdup("arg1"));
-  TSStringListEnqueue(ele->args, xstrdup("arg2"));
+  TSStringListEnqueue(ele->args, ats_strdup("arg1"));
+  TSStringListEnqueue(ele->args, ats_strdup("arg2"));
   TSCfgContextAppendEle(ctx, (TSCfgEle *) ele);
 
   // commit change

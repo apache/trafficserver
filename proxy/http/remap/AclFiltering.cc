@@ -66,7 +66,7 @@ acl_filter_rule::add_argv(int _argc, char *_argv[])
   int real_cnt = 0;
   if (likely(_argv)) {
     for (int i = 0; i < _argc && argc < ACL_FILTER_MAX_ARGV; i++) {
-      if (likely(_argv[i] && (argv[argc] = xstrdup(_argv[i])) != NULL)) {
+      if (likely(_argv[i] && (argv[argc] = ats_strdup(_argv[i])) != NULL)) {
         real_cnt++;
         argc++;
       }
@@ -80,7 +80,7 @@ acl_filter_rule::name(const char *_name)
 {
   filter_name_size = 0;
   filter_name = (char *)ats_free_null(filter_name);
-  if (_name && _name[0] && (filter_name = xstrdup(_name)) != NULL) {
+  if (_name && _name[0] && (filter_name = ats_strdup(_name)) != NULL) {
     filter_name_size = strlen(filter_name);
   }
   return filter_name_size;

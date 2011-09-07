@@ -45,7 +45,7 @@ void
 Token::setName(const char *str)
 {
   name = (char *) strtrim(str);
-  //name = xstrdup(str_copy); DOESN't WORK
+  //name = ats_strdup(str_copy); DOESN't WORK
 }
 
 //
@@ -56,8 +56,8 @@ void
 Token::setValue(const char *str)
 {
   char *str_copy = (char *) strtrim(str);
-  // Can't use xstrdup after strtrim?
-  //  value = xstrdup(str);
+  // Can't use ats_strdup after strtrim?
+  //  value = ats_strdup(str);
   ink_assert(value == NULL);
   if (str_copy) {
     size_t len = strlen(str_copy);
@@ -147,21 +147,21 @@ void
 Rule::setRuleStr(const char *str)
 {
   ink_assert(m_comment == NULL);
-  m_ruleStr = xstrdup(str);
+  m_ruleStr = ats_strdup(str);
 }
 
 void
 Rule::setComment(const char *str)
 {
   ink_assert(m_comment == NULL);
-  m_comment = xstrdup(str);
+  m_comment = ats_strdup(str);
 }
 
 void
 Rule::setErrorHint(const char *str)
 {
   ink_assert(m_errorHint == NULL);
-  m_errorHint = xstrdup(str);
+  m_errorHint = ats_strdup(str);
 }
 
 Rule::~Rule()
@@ -335,7 +335,7 @@ Rule::cacheParse(char *rule, unsigned short minNumToken, unsigned short maxNumTo
            for TSqa09488 */
         const char *secondEqual = strstr(strstr(tokenStr, "="), "=");
         secondEqual++;
-        subtoken = xstrdup(secondEqual);
+        subtoken = ats_strdup(secondEqual);
       }
       insideQuote = inQuote(subtoken);
 
@@ -644,7 +644,7 @@ Rule::socksParse(char *rule)
              for TSqa09488 */
           const char *secondEqual = strstr(strstr(tokenStr, "="), "=");
           secondEqual++;
-          subtoken = xstrdup(secondEqual);
+          subtoken = ats_strdup(secondEqual);
         }
         insideQuote = inQuote(subtoken);
 
@@ -924,7 +924,7 @@ RuleList::Print()
 void
 RuleList::parse(char *fileBuf, const char *filename)
 {
-  m_filename = xstrdup(filename);
+  m_filename = ats_strdup(filename);
 
   if (strstr(filename, "cache.config")) {
     m_filetype = TS_FNAME_CACHE_OBJ;   /* cache.config */
@@ -1050,7 +1050,7 @@ strtrim(char *str) {
 const char *
 strtrim(const char *str_in, char chr)
 {
-  char *str = xstrdup(str_in);
+  char *str = ats_strdup(str_in);
 
   char *str_ptr = str;          // so we can free str later if it changes
   while (*str == chr) {
@@ -1060,7 +1060,7 @@ strtrim(const char *str_in, char chr)
     str[strlen(str) - 1] = '\0';
   }
 
-  char *newStr = xstrdup(str);
+  char *newStr = ats_strdup(str);
   ats_free(str_ptr);
   return newStr;
 }

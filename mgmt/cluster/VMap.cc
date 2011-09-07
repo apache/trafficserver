@@ -132,7 +132,7 @@ VMap::VMap(char *interface, unsigned long ip, ink_mutex * m)
   num_nics = 0;
 
 
-  this->interface = xstrdup(interface);
+  this->interface = ats_strdup(interface);
   enabled_init = false;         // don't whether enabled, but definitely no init'd
   turning_off = false;          // we are not turning off VIP
 

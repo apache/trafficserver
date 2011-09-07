@@ -2241,7 +2241,7 @@ register_ShowHostDB(Continuation * c, HTTPHdr * h)
     s->force = !ptr_len_ncasecmp(path + 3, path_len - 3, "force", 5);
     int query_len;
     const char *query = h->url_get()->query_get(&query_len);
-    s->sarg = xstrndup(query, query_len);
+    s->sarg = ats_strndup(query, query_len);
     char *gn = NULL;
     if (s->sarg)
       gn = (char *)memchr(s->sarg, '=', strlen(s->sarg));
@@ -2253,7 +2253,7 @@ register_ShowHostDB(Continuation * c, HTTPHdr * h)
     s->force = !ptr_len_ncasecmp(path + 5, path_len - 5, "force", 5);
     int query_len;
     const char *query = h->url_get()->query_get(&query_len);
-    s->sarg = xstrndup(query, query_len);
+    s->sarg = ats_strndup(query, query_len);
     char *gn = NULL;
     if (s->sarg)
       gn = (char *)memchr(s->sarg, '=', strlen(s->sarg));

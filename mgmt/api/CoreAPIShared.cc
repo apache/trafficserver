@@ -513,5 +513,5 @@ get_event_name(int id)
     return NULL;
   }
 
-  return xstrdup(name);
+  return ats_strdup(name);
 }

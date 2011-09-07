@@ -281,7 +281,7 @@ UpdateEntry::ValidURL(char *s, char *e)
   _URLhandle.create(NULL);
   err = _URLhandle.parse(&url_start, url_end);
   if (err >= 0) {
-    _url = xstrdup(s);
+    _url = ats_strdup(s);
     return 0;                   // Valid URL
   } else {
     _URLhandle.destroy();
@@ -383,7 +383,7 @@ UpdateEntry::ValidHeaders(char *s, char *e)
 
   // At least 1 valid header exists
 
-  _request_headers = xstrdup(s);
+  _request_headers = ats_strdup(s);
   return 0;                     // OK; > 1 valid headers
 }
 
@@ -1674,7 +1674,7 @@ RecursiveHttpGet::RecursiveHttpGetEvent(int event, Event * d)
         } else {
           // Complete remaining UpdateEntry initializations
 
-          ue->_request_headers = xstrdup(_request_headers);
+          ue->_request_headers = ats_strdup(_request_headers);
           ue->BuildHttpRequest();
           ue->Init(1);          // Derived URL
 

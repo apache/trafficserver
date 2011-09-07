@@ -155,7 +155,7 @@ plugin_load(int argc, char *argv[], bool internal)
   //    plugin we're starting up
   ink_assert(plugin_reg_current == NULL);
   plugin_reg_current = new PluginRegInfo;
-  plugin_reg_current->plugin_path = xstrdup(path);
+  plugin_reg_current->plugin_path = ats_strdup(path);
 
   init_func_w_handle_t inith = (init_func_w_handle_t) dll_findsym(handle, "TSPluginInitwDLLHandle");
   if (inith) {

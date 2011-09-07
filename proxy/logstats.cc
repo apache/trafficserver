@@ -449,7 +449,7 @@ public:
       if (_size > 0)
         _stack.splice(_stack.begin(), _stack, l);
     } else { // "new" URL
-      const char *u = xstrdup(url); // We own it.
+      const char *u = ats_strdup(url); // We own it.
       LruStack::iterator l = _stack.end();
 
       if (_size > 0) {
@@ -1340,7 +1340,7 @@ parse_log_buff(LogBufferHeader * buf_header, bool summary = false)
                 o_stats = (OriginStats *)ats_malloc(sizeof(OriginStats));
                 memset(o_stats, 0, sizeof(OriginStats));
                 init_elapsed(o_stats);
-                o_server = xstrdup(tok);
+                o_server = ats_strdup(tok);
                 if (o_stats && o_server) {
                   o_stats->server = o_server;
                   origins[o_server] = o_stats;
@@ -2296,7 +2296,7 @@ main(int argc, char *argv[])
         if (end > start) {
           char *buf;
 
-          buf = xstrdup(line.substr(start, end).c_str());
+          buf = ats_strdup(line.substr(start, end).c_str());
           if (buf)
             origin_set->insert(buf);
         }

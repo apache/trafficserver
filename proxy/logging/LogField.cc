@@ -69,7 +69,7 @@ const char *aggregate_names[] = {
 
 // Generic field ctor
 LogField::LogField(const char *name, const char *symbol, Type type, MarshalFunc marshal, UnmarshalFunc unmarshal)
-  : m_name(xstrdup(name)), m_symbol(xstrdup(symbol)), m_type(type), m_container(NO_CONTAINER), m_marshal_func(marshal),
+  : m_name(ats_strdup(name)), m_symbol(ats_strdup(symbol)), m_type(type), m_container(NO_CONTAINER), m_marshal_func(marshal),
     m_unmarshal_func(unmarshal), m_unmarshal_func_map(NULL), m_agg_op(NO_AGGREGATE), m_agg_cnt(0), m_agg_val(0),
     m_time_field(false), m_alias_map(0)
 {
@@ -86,7 +86,7 @@ LogField::LogField(const char *name, const char *symbol, Type type, MarshalFunc 
 
 LogField::LogField(const char *name, const char *symbol, Type type,
                    MarshalFunc marshal, UnmarshalFuncWithMap unmarshal, Ptr<LogFieldAliasMap> map)
-  : m_name(xstrdup(name)), m_symbol(xstrdup(symbol)), m_type(type), m_container(NO_CONTAINER), m_marshal_func(marshal),
+  : m_name(ats_strdup(name)), m_symbol(ats_strdup(symbol)), m_type(type), m_container(NO_CONTAINER), m_marshal_func(marshal),
     m_unmarshal_func(NULL), m_unmarshal_func_map(unmarshal), m_agg_op(NO_AGGREGATE), m_agg_cnt(0), m_agg_val(0),
     m_time_field(false), m_alias_map(map)
 {
@@ -104,7 +104,7 @@ LogField::LogField(const char *name, const char *symbol, Type type,
 
 // Container field ctor
 LogField::LogField(const char *field, Container container)
-  : m_name(xstrdup(field)), m_symbol(xstrdup(container_names[container])), m_type(LogField::STRING),
+  : m_name(ats_strdup(field)), m_symbol(ats_strdup(container_names[container])), m_type(LogField::STRING),
     m_container(container), m_marshal_func(NULL), m_unmarshal_func(NULL), m_unmarshal_func_map(NULL),
     m_agg_op(NO_AGGREGATE), m_agg_cnt(0), m_agg_val(0), m_time_field(false), m_alias_map(0)
 {
@@ -145,7 +145,7 @@ LogField::LogField(const char *field, Container container)
 
 // Copy ctor
 LogField::LogField(const LogField &rhs)
-  : m_name(xstrdup(rhs.m_name)), m_symbol(xstrdup(rhs.m_symbol)), m_type(rhs.m_type), m_container(rhs.m_container),
+  : m_name(ats_strdup(rhs.m_name)), m_symbol(ats_strdup(rhs.m_symbol)), m_type(rhs.m_type), m_container(rhs.m_container),
     m_marshal_func(rhs.m_marshal_func), m_unmarshal_func(rhs.m_unmarshal_func), m_unmarshal_func_map(rhs.m_unmarshal_func_map),
     m_agg_op(rhs.m_agg_op), m_agg_cnt(0), m_agg_val(0), m_time_field(rhs.m_time_field), m_alias_map(rhs.m_alias_map)
 {

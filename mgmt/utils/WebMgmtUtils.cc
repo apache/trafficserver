@@ -531,7 +531,7 @@ varStrFromName(const char *varNameConst, char *bufVal, int bufLen)
   ///  b - bytes.  Ints and Counts only.  Amounts are
   //       transformed into one of GB, MB, KB, or B
   //
-  varName = xstrdup(varNameConst);
+  varName = ats_strdup(varNameConst);
   varNameLen = strlen(varName);
   if (varNameLen > 3 && varName[varNameLen - 2] == '\\') {
     formatOption = varName[varNameLen - 1];
@@ -769,7 +769,7 @@ processFormSubmission(char *submission)
     return NULL;
   }
 
-  submission_copy = xstrdup(submission);
+  submission_copy = ats_strdup(submission);
   numUpdates = updates.Initialize(submission_copy, SHARE_TOKS);
 
   for (int i = 0; i < numUpdates; i++) {
@@ -781,14 +781,14 @@ processFormSubmission(char *submission)
     //    a value.  If the submission is invalid, just forget
     //    about it.
     if (pairNum == 1 || pairNum == 2) {
-      name = xstrdup(pair[0]);
+      name = ats_strdup(pair[0]);
       substituteUnsafeChars(name);
 
       // If the value is blank, store it as a null
       if (pairNum == 1) {
         value = NULL;
       } else {
-        value = xstrdup(pair[1]);
+        value = ats_strdup(pair[1]);
         substituteUnsafeChars(value);
       }
 
@@ -828,7 +828,7 @@ processFormSubmission_noSubstitute(char *submission)
     return NULL;
   }
 
-  submission_copy = xstrdup(submission);
+  submission_copy = ats_strdup(submission);
   numUpdates = updates.Initialize(submission_copy, SHARE_TOKS);
 
   for (int i = 0; i < numUpdates; i++) {
@@ -840,13 +840,13 @@ processFormSubmission_noSubstitute(char *submission)
     //    a value.  If the submission is invalid, just forget
     //    about it.
     if (pairNum == 1 || pairNum == 2) {
-      name = xstrdup(pair[0]);
+      name = ats_strdup(pair[0]);
 
       // If the value is blank, store it as a null
       if (pairNum == 1) {
         value = NULL;
       } else {
-        value = xstrdup(pair[1]);
+        value = ats_strdup(pair[1]);
       }
 
       ink_hash_table_insert(nameVal, name, value);

@@ -83,7 +83,7 @@ clusterHandler(0)
       ink_release_assert(!gethostname(localhost, 1023));
       ahostname = localhost;
     }
-    hostname = xstrdup(ahostname);
+    hostname = ats_strdup(ahostname);
 
     // If we are running if the manager, it the our ip address for
     //   clustering from the manager, so the manager can control what
@@ -135,7 +135,7 @@ clusterHandler(0)
       *(uint32_t *) & x = (uint32_t) ip;
       Debug("machine_debug", "unable to reverse DNS %u.%u.%u.%u: %d", x[0], x[1], x[2], x[3], data.herrno);
     } else
-      hostname = xstrdup(r->h_name);
+      hostname = ats_strdup(r->h_name);
   }
   if (hostname)
     hostname_len = strlen(hostname);
@@ -230,7 +230,7 @@ read_MachineList(char *filename, int afd)
           } else {
             char s[256];
             snprintf(s, sizeof s, "bad ip, line %d", ln);
-            return (MachineList *) xstrdup(s);
+            return (MachineList *) ats_strdup(s);
           }
         }
         l->machine[i].port = atoi(port);
@@ -246,7 +246,7 @@ read_MachineList(char *filename, int afd)
         } else {
           char s[256];
           snprintf(s, sizeof s, "bad port, line %d", ln);
-          return (MachineList *) xstrdup(s);
+          return (MachineList *) ats_strdup(s);
         }
       }
     }
@@ -262,7 +262,7 @@ read_MachineList(char *filename, int afd)
         return NULL;
       } else
         ats_free(l);
-      return (MachineList *) xstrdup("number of machines does not match length of list\n");
+      return (MachineList *) ats_strdup("number of machines does not match length of list\n");
     }
   }
   return (afd != -1) ? (MachineList *) NULL : l;

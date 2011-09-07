@@ -54,7 +54,7 @@ const char *LogFilter::ACTION_NAME[] = { "REJECT", "ACCEPT" };
   between the classes and I think should be removed.     ltavera
   -------------------------------------------------------------------------*/
 LogFilter::LogFilter(const char *name, LogField * field, LogFilter::Action action, LogFilter::Operator oper)
-  : m_name(xstrdup(name)), m_field(NULL) , m_action(action), m_operator(oper), m_type(INT_FILTER), m_num_values(0)
+  : m_name(ats_strdup(name)), m_field(NULL) , m_action(action), m_operator(oper), m_type(INT_FILTER), m_num_values(0)
 {
   m_field = NEW(new LogField(*field));
   ink_assert(m_field);
@@ -84,7 +84,7 @@ LogFilterString::_setValues(size_t n, char **value)
     m_length = NEW(new size_t[n]);
     ink_assert(m_value && m_value_uppercase && m_length);
     for (size_t i = 0; i < n; ++i) {
-      m_value[i] = xstrdup(value[i]);
+      m_value[i] = ats_strdup(value[i]);
       m_length[i] = strlen(value[i]);
       m_value_uppercase[i] = (char *)ats_malloc((unsigned int) m_length[i] + 1);
       size_t j;

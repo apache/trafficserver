@@ -210,11 +210,11 @@ apiEventCallback(alarm_t newAlarm, char *ip, char *desc)
   newEvent = TSEventCreate();
   newEvent->id = newAlarm;
   newEvent->name = get_event_name(newEvent->id);
-  //newEvent->ip   = xstrdup(ip);
+  //newEvent->ip   = ats_strdup(ip);
   if (desc)
-    newEvent->description = xstrdup(desc);
+    newEvent->description = ats_strdup(desc);
   else
-    newEvent->description = xstrdup("None");
+    newEvent->description = ats_strdup("None");
 
   //add it to the mgmt_events list
   ink_mutex_acquire(&mgmt_events_lock);

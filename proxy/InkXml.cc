@@ -36,8 +36,8 @@
 
 InkXmlAttr::InkXmlAttr(char *tag, char *value)
 {
-  m_tag = xstrdup(tag);
-  m_value = xstrdup(value);
+  m_tag = ats_strdup(tag);
+  m_value = ats_strdup(value);
 }
 
 InkXmlAttr::~InkXmlAttr()
@@ -58,7 +58,7 @@ InkXmlAttr::display(FILE * fd)
 
 InkXmlObject::InkXmlObject(char *object_name, bool dup_attrs_allowed)
 {
-  m_object_name = xstrdup(object_name);
+  m_object_name = ats_strdup(object_name);
   m_dup_attrs_allowed = dup_attrs_allowed;
 }
 
@@ -134,7 +134,7 @@ InkXmlConfigFile::InkXmlConfigFile(char *config_file):
 m_line(0),
 m_col(0)
 {
-  m_config_file = xstrdup(config_file);
+  m_config_file = ats_strdup(config_file);
 }
 
 InkXmlConfigFile::~InkXmlConfigFile()

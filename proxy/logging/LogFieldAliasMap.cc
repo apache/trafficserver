@@ -70,7 +70,7 @@ LogFieldAliasTable::init(size_t numPairs, ...)
     size_t i = val - m_min;
     name = va_arg(ap, char *);
 
-    m_table[i].name = xstrdup(name);
+    m_table[i].name = ats_strdup(name);
     m_table[i].length = strlen(name);
     m_table[i].valid = true;
   }

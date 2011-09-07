@@ -496,7 +496,7 @@ synclient_txn_send_request(ClientTxn * txn, char *request)
   sockaddr_in addr;
 
   TSAssert(txn->magic == MAGIC_ALIVE);
-  txn->request = xstrdup(request);
+  txn->request = ats_strdup(request);
   SET_TEST_HANDLER(txn->current_handler, synclient_txn_connect_handler);
 
   cont = TSContCreate(synclient_txn_main_handler, TSMutexCreate());
@@ -513,7 +513,7 @@ synclient_txn_send_request_to_vc(ClientTxn * txn, char *request, TSVConn vc)
 {
   TSCont cont;
   TSAssert(txn->magic == MAGIC_ALIVE);
-  txn->request = xstrdup(request);
+  txn->request = ats_strdup(request);
   SET_TEST_HANDLER(txn->current_handler, synclient_txn_connect_handler);
 
   cont = TSContCreate(synclient_txn_main_handler, TSMutexCreate());

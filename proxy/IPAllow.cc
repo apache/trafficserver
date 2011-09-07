@@ -150,7 +150,7 @@ IpAllow::IpAllow(
 
   char *config_file;
 
-  config_file_var = xstrdup(config_var);
+  config_file_var = ats_strdup(config_var);
   config_file_path[0] = '\0';
 
   IPAllowReadConfigStringAlloc(config_file, (char *) config_file_var);

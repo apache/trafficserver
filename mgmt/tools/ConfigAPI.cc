@@ -1130,7 +1130,7 @@ XmlObject::getXmlTagValue(const char *XmlTagName)
   strncat(XmlTagValue, "\0", sizeof(XmlTagValue) - strlen(XmlTagValue) - 1);
   if (strlen(XmlTagValue) == 0)
     return NULL;
-  return xstrdup(XmlTagValue);
+  return ats_strdup(XmlTagValue);
 }
 
 
@@ -1154,7 +1154,7 @@ XmlObject::getXmlTagValueAndAttribute(char *XmlAttribute, const char *XmlTagName
           strncat(XmlTagValue, parentNode->getChildNode(XmlTagName, tagCount)->getNodeValue(),
                   sizeof(XmlTagValue) - strlen(XmlTagValue) - 1);
           strncat(XmlTagValue, "\0", sizeof(XmlTagValue) - strlen(XmlTagValue) - 1);
-          return xstrdup(XmlTagValue);
+          return ats_strdup(XmlTagValue);
         }
       }
     }

@@ -207,7 +207,7 @@ ProxyStateSet(TSProxyStateT state, TSCacheClearT clear)
 
     if (strlen(tsArgs) > 0) {   /* Passed command line args for proxy */
       ats_free(lmgmt->proxy_options);
-      lmgmt->proxy_options = xstrdup(tsArgs);
+      lmgmt->proxy_options = ats_strdup(tsArgs);
       mgmt_log("[ProxyStateSet] Traffic Server Args: '%s'\n", lmgmt->proxy_options);
     }
 
@@ -313,7 +313,7 @@ MgmtRecordGet(const char *rec_name, TSRecordEle * rec_ele)
   Debug("RecOp", "[MgmtRecordGet] Start\n");
 
   // initialize the record name
-  rec_ele->rec_name = xstrdup(rec_name);
+  rec_ele->rec_name = ats_strdup(rec_name);
   memset(rec_val, 0, MAX_BUF_SIZE);
 
   // get variable type; returns INVALID if invalid rec_name
@@ -352,9 +352,9 @@ MgmtRecordGet(const char *rec_name, TSRecordEle * rec_ele)
 
     if (rec_val[0] != '\0') {   // non-NULL string value
       // allocate memory & duplicate string value
-      str_val = xstrdup(rec_val);
+      str_val = ats_strdup(rec_val);
     } else {
-      str_val = xstrdup("NULL");
+      str_val = ats_strdup("NULL");
     }
 
     rec_ele->rec_type = TS_REC_STRING;
@@ -566,7 +566,7 @@ ReadFile(TSFileNameT file, char **text, int *size, int *version)
   old_file_lines = old_file_content->bufPtr();
   old_file_len = strlen(old_file_lines);
 
-  *text = xstrdup(old_file_lines);      //make copy before deleting textBuffer
+  *text = ats_strdup(old_file_lines);      //make copy before deleting textBuffer
   *size = old_file_len;
 
   delete old_file_content;      // delete textBuffer
@@ -879,7 +879,7 @@ SnapshotGetMlt(LLQ * snapshots)
   for (int i = 0; i < num_snaps; i++) {
     snap_name = (char *) (snap_list[i]);
     if (snap_name)
-      enqueue(snapshots, xstrdup(snap_name));
+      enqueue(snapshots, ats_strdup(snap_name));
   }
 
   return TS_ERR_OKAY;

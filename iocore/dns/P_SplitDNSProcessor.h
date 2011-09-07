@@ -219,7 +219,7 @@ TS_INLINE DNSRequestData::DNSRequestData()
 TS_INLINE char *
 DNSRequestData::get_string()
 {
-  return xstrdup((char *) m_pHost);
+  return ats_strdup((char *) m_pHost);
 }
 
 

@@ -249,7 +249,7 @@ FileManager::fileChanged(const char *baseFileName)
   for (cb = cblist.head; cb != NULL; cb = cb->link.next) {
     // Dup the string for each callback to be
     //  defensive incase it modified when it is not supposed to be
-    filenameCopy = xstrdup(baseFileName);
+    filenameCopy = ats_strdup(baseFileName);
     (*cb->func) (filenameCopy);
     ats_free(filenameCopy);
   }

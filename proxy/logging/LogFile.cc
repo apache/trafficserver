@@ -88,14 +88,13 @@ static const int FILESIZE_SAFE_THRESHOLD_FACTOR = 10;
 
 LogFile::LogFile(const char *name, const char *header, LogFileFormat format,
                  uint64_t signature, size_t ascii_buffer_size, size_t max_line_size, size_t overspill_report_count)
-  :
-m_file_format(format),
-m_name(xstrdup(name)),
-m_header(xstrdup(header)),
-m_signature(signature),
-m_meta_info(NULL),
-m_max_line_size(max_line_size),
-m_overspill_report_count(overspill_report_count)
+  : m_file_format(format),
+    m_name(ats_strdup(name)),
+    m_header(ats_strdup(header)),
+    m_signature(signature),
+    m_meta_info(NULL),
+    m_max_line_size(max_line_size),
+    m_overspill_report_count(overspill_report_count)
 {
   init();
   m_ascii_buffer_size = (ascii_buffer_size < max_line_size ? max_line_size : ascii_buffer_size);
@@ -161,7 +160,7 @@ void
 LogFile::change_name(char *new_name)
 {
   ats_free(m_name);
-  m_name = xstrdup(new_name);
+  m_name = ats_strdup(new_name);
 }
 
 /*-------------------------------------------------------------------------
@@ -172,7 +171,7 @@ void
 LogFile::change_header(const char *header)
 {
   ats_free(m_header);
-  m_header = xstrdup(header);
+  m_header = ats_strdup(header);
 }
 
 /*-------------------------------------------------------------------------

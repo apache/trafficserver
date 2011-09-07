@@ -159,7 +159,7 @@ redirect_tag_str::parse_format_redirect_url(char *url)
         if ((r->type = type) == 's') {
           char svd = *c;
           *c = 0;
-          r->chunk_str = xstrdup(url);
+          r->chunk_str = ats_strdup(url);
           *c = svd;
           url = c;
         } else
@@ -193,7 +193,7 @@ regx_valid(false)
       negative = true;
       _ref++;
     }
-    if ((referer = xstrdup(_ref)) != 0) {
+    if ((referer = ats_strdup(_ref)) != 0) {
       referer_size = strlen(referer);
       if (!strcmp(referer, "*"))
         any = true;

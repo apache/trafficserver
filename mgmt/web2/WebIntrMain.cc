@@ -418,7 +418,7 @@ webIntr_main(void *x)
 
     if ((err = stat(autoconfContext.docRoot, &s)) < 0) {
       ats_free(autoconfContext.docRoot);
-      autoconfContext.docRoot = xstrdup(system_config_directory);
+      autoconfContext.docRoot = ats_strdup(system_config_directory);
       if ((err = stat(autoconfContext.docRoot, &s)) < 0) {
         mgmt_elog("[WebIntrMain] unable to stat() directory '%s': %d %d, %s\n",
                 autoconfContext.docRoot, err, errno, strerror(errno));

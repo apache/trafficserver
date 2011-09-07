@@ -576,7 +576,7 @@ PrefetchTransform::hash_add(char *s)
       return NULL;
 
   *e = prefetchUrlEntryAllocator.alloc();
-  (*e)->init(xstrdup(s), md5);
+  (*e)->init(ats_strdup(s), md5);
 
   return *e;
 }
@@ -1921,13 +1921,13 @@ PrefetchConfiguration::readHtmlTags(int fd, html_tag ** ptags, html_tag ** pattr
     // coverity[secure_coding]
     if ((num = sscanf(buf, " html_tag %63s %63s %63s %63s", tag, attr, attr_tag, attr_attr)) >= 2) {
       Debug("Prefetch", "Read html_tag: %s %s\n", tag, attr);
-      tags[ntags].tag = xstrdup(tag);
-      tags[ntags].attr = xstrdup(attr);
+      tags[ntags].tag = ats_strdup(tag);
+      tags[ntags].attr = ats_strdup(attr);
       if (num >= 4) {
         if (!attrs_exist)
           attrs_exist = true;
-        attrs[ntags].tag = xstrdup(attr_tag);
-        attrs[ntags].tag = xstrdup(attr_attr);
+        attrs[ntags].tag = ats_strdup(attr_tag);
+        attrs[ntags].tag = ats_strdup(attr_attr);
       }
       ntags++;
     }

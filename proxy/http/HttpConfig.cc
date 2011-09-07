@@ -1416,7 +1416,7 @@ HttpConfig::reconfigure()
 
   params->incoming_ip_to_bind_saddr = m_master.incoming_ip_to_bind_saddr;
   params->oride.outgoing_ip_to_bind_saddr = m_master.oride.outgoing_ip_to_bind_saddr;
-  params->proxy_hostname = xstrdup(m_master.proxy_hostname);
+  params->proxy_hostname = ats_strdup(m_master.proxy_hostname);
   params->proxy_hostname_len = (params->proxy_hostname) ? strlen(params->proxy_hostname) : 0;
   params->no_dns_forward_to_parent = INT_TO_BOOL(m_master.no_dns_forward_to_parent);
   params->uncacheable_requests_bypass_parent = INT_TO_BOOL(m_master.uncacheable_requests_bypass_parent);
@@ -1443,19 +1443,19 @@ HttpConfig::reconfigure()
   params->oride.insert_request_via_string = INT_TO_BOOL(m_master.oride.insert_request_via_string);
   params->oride.insert_response_via_string = INT_TO_BOOL(m_master.oride.insert_response_via_string);
   params->verbose_via_string = INT_TO_BYTE(m_master.verbose_via_string);
-  params->proxy_request_via_string = xstrdup(m_master.proxy_request_via_string);
+  params->proxy_request_via_string = ats_strdup(m_master.proxy_request_via_string);
   params->proxy_request_via_string_len = (params->proxy_request_via_string) ? strlen(params->proxy_request_via_string) : 0;
-  params->proxy_response_via_string = xstrdup(m_master.proxy_response_via_string);
+  params->proxy_response_via_string = ats_strdup(m_master.proxy_response_via_string);
   params->proxy_response_via_string_len = (params->proxy_response_via_string) ? strlen(params->proxy_response_via_string) : 0;
 
   params->wuts_enabled = INT_TO_BOOL(m_master.wuts_enabled);
   params->log_spider_codes = INT_TO_BOOL(m_master.log_spider_codes);
 
-  params->url_expansions_string = xstrdup(m_master.url_expansions_string);
+  params->url_expansions_string = ats_strdup(m_master.url_expansions_string);
   params->url_expansions = parse_url_expansions(params->url_expansions_string, &params->num_url_expansions);
 
   params->proxy_server_port = m_master.proxy_server_port;
-  params->proxy_server_other_ports = xstrdup(m_master.proxy_server_other_ports);
+  params->proxy_server_other_ports = ats_strdup(m_master.proxy_server_other_ports);
   params->oride.keep_alive_enabled_in = INT_TO_BOOL(m_master.oride.keep_alive_enabled_in);
   params->oride.keep_alive_enabled_out = INT_TO_BOOL(m_master.oride.keep_alive_enabled_out);
   params->oride.chunking_enabled = INT_TO_BOOL(m_master.oride.chunking_enabled);
@@ -1497,13 +1497,13 @@ HttpConfig::reconfigure()
   params->oride.anonymize_remove_client_ip = INT_TO_BOOL(m_master.oride.anonymize_remove_client_ip);
   params->oride.anonymize_insert_client_ip = INT_TO_BOOL(m_master.oride.anonymize_insert_client_ip);
   params->oride.append_xforwards_header = INT_TO_BOOL(m_master.oride.append_xforwards_header);
-  params->anonymize_other_header_list = xstrdup(m_master.anonymize_other_header_list);
+  params->anonymize_other_header_list = ats_strdup(m_master.anonymize_other_header_list);
 
-  params->global_user_agent_header = xstrdup(m_master.global_user_agent_header);
+  params->global_user_agent_header = ats_strdup(m_master.global_user_agent_header);
   params->global_user_agent_header_size = params->global_user_agent_header ?
     strlen(params->global_user_agent_header) : 0;
 
-  params->oride.proxy_response_server_string = xstrdup(m_master.oride.proxy_response_server_string);
+  params->oride.proxy_response_server_string = ats_strdup(m_master.oride.proxy_response_server_string);
   params->oride.proxy_response_server_string_len = params->oride.proxy_response_server_string ?
     strlen(params->oride.proxy_response_server_string) : 0;
   params->oride.proxy_response_server_enabled = m_master.oride.proxy_response_server_enabled;
@@ -1529,9 +1529,9 @@ HttpConfig::reconfigure()
   params->oride.freshness_fuzz_min_time = m_master.oride.freshness_fuzz_min_time;
   params->oride.freshness_fuzz_prob = m_master.oride.freshness_fuzz_prob;
 
-  params->cache_vary_default_text = xstrdup(m_master.cache_vary_default_text);
-  params->cache_vary_default_images = xstrdup(m_master.cache_vary_default_images);
-  params->cache_vary_default_other = xstrdup(m_master.cache_vary_default_other);
+  params->cache_vary_default_text = ats_strdup(m_master.cache_vary_default_text);
+  params->cache_vary_default_images = ats_strdup(m_master.cache_vary_default_images);
+  params->cache_vary_default_other = ats_strdup(m_master.cache_vary_default_other);
 
   // open read failure retries
   params->oride.max_cache_open_read_retries = m_master.oride.max_cache_open_read_retries;
@@ -1561,7 +1561,7 @@ HttpConfig::reconfigure()
   params->oride.cache_required_headers = INT_TO_BYTE(m_master.oride.cache_required_headers);
   params->cache_range_lookup = INT_TO_BOOL(m_master.cache_range_lookup);
 
-  params->connect_ports_string = xstrdup(m_master.connect_ports_string);
+  params->connect_ports_string = ats_strdup(m_master.connect_ports_string);
   params->connect_ports = parse_ports_list(params->connect_ports_string);
 
   params->request_hdr_max_size = m_master.request_hdr_max_size;
@@ -1579,7 +1579,7 @@ HttpConfig::reconfigure()
   params->default_buffer_size_index = m_master.default_buffer_size_index;
   params->default_buffer_water_mark = m_master.default_buffer_water_mark;
   params->enable_http_info = INT_TO_BOOL(m_master.enable_http_info);
-  params->reverse_proxy_no_host_redirect = xstrdup(m_master.reverse_proxy_no_host_redirect);
+  params->reverse_proxy_no_host_redirect = ats_strdup(m_master.reverse_proxy_no_host_redirect);
   params->reverse_proxy_no_host_redirect_len =
     params->reverse_proxy_no_host_redirect ? strlen(params->reverse_proxy_no_host_redirect) : 0;
 
@@ -1846,24 +1846,22 @@ HttpUserAgent_RegxEntry::create(char *_refexp_str, char *errmsgbuf, int errmsgbu
     } else
       return store_error_message(errmsgbuf, errmsgbuf_size, "Incorrect string type - must start with '.'");
 
-    if ((user_agent_str = xstrdup(refexp_str)) != NULL) {
-      retcode = true;
-      if (stype == STRTYPE_REGEXP) {
-        const char* error;
-        int erroffset;
+    user_agent_str = ats_strdup(refexp_str);
+    retcode = true;
+    if (stype == STRTYPE_REGEXP) {
+      const char* error;
+      int erroffset;
 
-        regx = pcre_compile((const char *) user_agent_str, PCRE_CASELESS, &error, &erroffset, NULL);
-        if (regx == NULL) {
-          if (errmsgbuf && (errmsgbuf_size - 1) > 0)
-            ink_strncpy(errmsgbuf, error, errmsgbuf_size - 1);
-          user_agent_str = (char *)ats_free_null(user_agent_str);
-          retcode = false;
-        } else
-          regx_valid = true;
-      }
-      user_agent_str_size = user_agent_str ? strlen(user_agent_str) : 0;
-    } else
-      return store_error_message(errmsgbuf, errmsgbuf_size, "Memory allocation error (xstrdup)");
+      regx = pcre_compile((const char *) user_agent_str, PCRE_CASELESS, &error, &erroffset, NULL);
+      if (regx == NULL) {
+        if (errmsgbuf && (errmsgbuf_size - 1) > 0)
+          ink_strncpy(errmsgbuf, error, errmsgbuf_size - 1);
+        user_agent_str = (char *)ats_free_null(user_agent_str);
+        retcode = false;
+      } else
+        regx_valid = true;
+    }
+    user_agent_str_size = user_agent_str ? strlen(user_agent_str) : 0;
   }
   return retcode;
 }

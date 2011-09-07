@@ -258,7 +258,7 @@ DNSProcessor::dns_init()
     Debug("dns", "Nameserver list specified \"%s\"\n", dns_ns_list);
     int i;
     char *last;
-    char *ns_list = xstrdup(dns_ns_list);
+    char *ns_list = ats_strdup(dns_ns_list);
     char *ns = (char *) ink_strtok_r(ns_list, " ,;\t\r", &last);
 
     for (i = 0, nserv = 0 ; (i < MAX_NAMED) && ns ; ++i) {

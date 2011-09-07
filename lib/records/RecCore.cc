@@ -764,7 +764,7 @@ RecRegisterConfig(RecT rec_type, const char *name, RecDataT data_type,
     if (r->config_meta.check_expr) {
       ats_free(r->config_meta.check_expr);
     }
-    r->config_meta.check_expr = xstrdup(check_expr);
+    r->config_meta.check_expr = ats_strdup(check_expr);
     r->config_meta.update_cb_list = NULL;
     r->config_meta.access_type = access_type;
     rec_mutex_release(&(r->lock));
@@ -847,7 +847,7 @@ RecForceInsert(RecRecord * record)
     r->config_meta.update_type = record->config_meta.update_type;
     r->config_meta.check_type = record->config_meta.check_type;
     ats_free(r->config_meta.check_expr);
-    r->config_meta.check_expr = xstrdup(record->config_meta.check_expr);
+    r->config_meta.check_expr = ats_strdup(record->config_meta.check_expr);
     r->config_meta.access_type = record->config_meta.access_type;
   }
 

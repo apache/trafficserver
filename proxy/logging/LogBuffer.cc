@@ -855,7 +855,7 @@ LogBuffer::to_ascii(LogEntryHeader * entry, LogFormatType type,
     if (fieldlist_cache_entries < FIELDLIST_CACHE_SIZE) {
       Debug("log-fieldlist", "Fieldlist cached as entry %d", fieldlist_cache_entries);
       fieldlist_cache[fieldlist_cache_entries].fieldlist = fieldlist;
-      fieldlist_cache[fieldlist_cache_entries].symbol_str = xstrdup(symbol_str);
+      fieldlist_cache[fieldlist_cache_entries].symbol_str = ats_strdup(symbol_str);
       fieldlist_cache_entries++;
     }
   }

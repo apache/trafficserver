@@ -529,7 +529,7 @@ Span::init(char *an, int64_t size)
     disk_id = devnum;
   }
 
-  pathname = xstrdup(an);
+  pathname = ats_strdup(an);
   blocks = size / STORE_BLOCK_SIZE;
   file_pathname = !((s.st_mode & S_IFMT) == S_IFDIR);
 
@@ -624,7 +624,7 @@ Span::init(char *filename, int64_t size)
     disk_id = devnum;
   }
 
-  pathname = xstrdup(filename);
+  pathname = ats_strdup(filename);
   // is this right Seems like this should be size / hw_sector_size
   blocks = size / STORE_BLOCK_SIZE;
   file_pathname = !((s.st_mode & S_IFMT) == S_IFDIR);
@@ -754,7 +754,7 @@ Span::init(char *filename, int64_t size)
     Debug("cache_init", "Span::init physical sectors %u total size %" PRId64 " geometry size %" PRId64 " store blocks %" PRId64 "", 
           physsectors, hw_sector_size * (int64_t)physsectors, size, blocks);
 
-    pathname = xstrdup(filename);
+    pathname = ats_strdup(filename);
     file_pathname = 1;
   } else {
     Debug("cache_init", "Span::init - is_disk = %d, raw device = %s", is_disk, (major(devnum) == 162) ? "yes" : "no");
@@ -767,7 +767,7 @@ Span::init(char *filename, int64_t size)
       is_disk = 1;
       is_mmapable_internal = false;     /* I -think- */
       file_pathname = 1;
-      pathname = xstrdup(filename);
+      pathname = ats_strdup(filename);
       isRaw = 1;
 
       if (size <= 0)
@@ -780,7 +780,7 @@ Span::init(char *filename, int64_t size)
        * don't particularly understand that behaviour, so I'll just ignore it.
        * :) */
 
-      pathname = xstrdup(filename);
+      pathname = ats_strdup(filename);
       if (!file_pathname)
         if (size <= 0)
           return "When using directories for cache storage, you must specify a size\n";
@@ -823,7 +823,7 @@ try_alloc(Store & target, Span * source, unsigned int start_blocks, bool one_onl
         a = blocks;
       Span *d = NEW(new Span(*source));
 
-      d->pathname = xstrdup(source->pathname);
+      d->pathname = ats_strdup(source->pathname);
       d->blocks = a;
       d->file_pathname = source->file_pathname;
       d->offset = source->offset;
@@ -899,7 +899,7 @@ Store::try_realloc(Store & s, Store & diff)
                 goto Lfound;
               } else {
                 Span *x = NEW(new Span(*d));
-                x->pathname = xstrdup(x->pathname);
+                x->pathname = ats_strdup(x->pathname);
                 // d will be the first vol
                 d->blocks = sd->offset - d->offset;
                 d->link.next = x;
@@ -1021,7 +1021,7 @@ Span::read(int fd)
   if (sscanf(buf, "%s", p) != 1) {
     return (-1);
   }
-  pathname = xstrdup(p);
+  pathname = ats_strdup(p);
   if (get_int64(fd, blocks) < 0) {
     return -1;
   }
@@ -1120,7 +1120,7 @@ Span *
 Span::dup()
 {
   Span *ds = NEW(new Span(*this));
-  ds->pathname = xstrdup(pathname);
+  ds->pathname = ats_strdup(pathname);
   if (ds->link.next)
     ds->link.next = ds->link.next->dup();
   return ds;

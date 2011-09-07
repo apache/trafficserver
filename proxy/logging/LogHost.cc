@@ -54,7 +54,7 @@
   -------------------------------------------------------------------------*/
 
 LogHost::LogHost(char *object_filename, uint64_t object_signature)
-  : m_object_filename(xstrdup(object_filename))
+  : m_object_filename(ats_strdup(object_filename))
   , m_object_signature(object_signature)
   , m_ip(0)
   , m_ipstr(NULL)
@@ -71,11 +71,11 @@ LogHost::LogHost(char *object_filename, uint64_t object_signature)
 }
 
 LogHost::LogHost(const LogHost & rhs)
-  : m_object_filename(xstrdup(rhs.m_object_filename))
+  : m_object_filename(ats_strdup(rhs.m_object_filename))
   , m_object_signature(rhs.m_object_signature)
   , m_ip(rhs.m_ip)
-  , m_ipstr(xstrdup(rhs.m_ipstr))
-  , m_name(xstrdup(rhs.m_name))
+  , m_ipstr(ats_strdup(rhs.m_ipstr))
+  , m_name(ats_strdup(rhs.m_name))
   , m_port(rhs.m_port)
   , m_sock(NULL)
   , m_sock_fd(-1)
@@ -118,7 +118,7 @@ LogHost::set_name_port(char *hostname, unsigned int pt)
   m_ipstr = (char *)ats_malloc(32);
   LogUtils::ip_to_str(m_ip, m_ipstr, 32);
 #endif
-  m_name = xstrdup(hostname);
+  m_name = ats_strdup(hostname);
   m_port = pt;
 
   Debug("log-host", "LogHost established as %s:%u", name(), port());
@@ -138,8 +138,8 @@ LogHost::set_ipstr_port(char *ipstr, unsigned int pt)
   clear();                      // remove all previous state for this LogHost
 
   m_ip = htonl(LogUtils::str_to_ip(ipstr));
-  m_ipstr = xstrdup(ipstr);
-  m_name = xstrdup(ipstr);
+  m_ipstr = ats_strdup(ipstr);
+  m_name = ats_strdup(ipstr);
   m_port = pt;
 
   Debug("log-host", "LogHost established as %s:%u", name(), port());

@@ -57,7 +57,7 @@ CommentObj::~CommentObj()
 char *
 CommentObj::formatEleToRule()
 {
-  return xstrdup(m_ele->comment);
+  return ats_strdup(m_ele->comment);
 }
 
 bool CommentObj::isValid()
@@ -199,7 +199,7 @@ CacheObj::formatEleToRule()
     break;
   }
 
-  return xstrdup(buf);
+  return ats_strdup(buf);
 }
 
 bool CacheObj::isValid()
@@ -290,7 +290,7 @@ CongestionObj::CongestionObj(TokenList * tokens)
   } else if (strcmp(tok->name, "host_regex") == 0) {
     m_ele->pd_type = TS_PD_URL_REGEX;
   }
-  m_ele->pd_val = xstrdup(tok->value);
+  m_ele->pd_val = ats_strdup(tok->value);
 
   // check for remaining tags
   tok = tokens->next(tok);
@@ -299,7 +299,7 @@ CongestionObj::CongestionObj(TokenList * tokens)
       goto FORMAT_ERR;
     }
     if (strcmp(tok->name, "prefix") == 0) {
-      m_ele->prefix = xstrdup(tok->value);
+      m_ele->prefix = ats_strdup(tok->value);
     } else if (strcmp(tok->name, "port") == 0) {
       m_ele->port = ink_atoi(tok->value);
     } else if (strcmp(tok->name, "congestion_scheme") == 0) {
@@ -331,7 +331,7 @@ CongestionObj::CongestionObj(TokenList * tokens)
     } else if (strcmp(tok->name, "max_connection") == 0) {
       m_ele->max_connection = ink_atoi(tok->value);
     } else if (strcmp(tok->name, "error_page_uri") == 0) {
-      m_ele->error_page_uri = xstrdup(tok->value);
+      m_ele->error_page_uri = ats_strdup(tok->value);
     } else {
       goto FORMAT_ERR;
     }
@@ -449,7 +449,7 @@ CongestionObj::formatEleToRule()
     ;
   }
 
-  return xstrdup(buf);
+  return ats_strdup(buf);
 }
 
 bool CongestionObj::isValid()
@@ -511,7 +511,7 @@ HostingObj::HostingObj(TokenList * tokens)
   } else {
     goto FORMAT_ERR;
   }
-  m_ele->pd_val = xstrdup(token->value);
+  m_ele->pd_val = ats_strdup(token->value);
 
   // Second Token
   token = tokens->next(token);
@@ -566,7 +566,7 @@ HostingObj::formatEleToRule()
   strncat(buf, list_str, sizeof(buf) - strlen(buf) - 1);
   ats_free(list_str);
 
-  return xstrdup(buf);
+  return ats_strdup(buf);
 }
 
 bool HostingObj::isValid()
@@ -659,7 +659,7 @@ IcpObj::IcpObj(TokenList * tokens)
     switch (i) {
     case 0:
       if (strlen(alias) > 0)
-        m_ele->peer_hostname = xstrdup(alias);
+        m_ele->peer_hostname = ats_strdup(alias);
       break;
     case 1:
       if (strlen(alias) > 0) {
@@ -768,13 +768,13 @@ IcpObj::formatEleToRule()
   if (m_ele->peer_host_ip_addr)
     ip_str1 = ip_addr_to_string(m_ele->peer_host_ip_addr);
   else
-    ip_str1 = xstrdup("");
+    ip_str1 = ats_strdup("");
 
   // optional field
   if (m_ele->mc_ip_addr)
     ip_str2 = ip_addr_to_string(m_ele->mc_ip_addr);
   else
-    ip_str2 = xstrdup("0.0.0.0");
+    ip_str2 = ats_strdup("0.0.0.0");
 
   if (m_ele->peer_hostname) {
     snprintf(buf, sizeof(buf), "%s:%s:%d:%d:%d:%d:%s:",
@@ -800,7 +800,7 @@ IcpObj::formatEleToRule()
   ats_free(ip_str1);
   ats_free(ip_str2);
 
-  return xstrdup(buf);
+  return ats_strdup(buf);
 }
 
 bool IcpObj::isValid()
@@ -950,7 +950,7 @@ IpAllowObj::formatEleToRule()
     break;
   }
 
-  rule = xstrdup(buf);
+  rule = ats_strdup(buf);
   return rule;
 }
 
@@ -1153,7 +1153,7 @@ ParentProxyObj::formatEleToRule()
     strncat(buf, "go_direct=false", sizeof(buf) - strlen(buf) - 1);
   }
 
-  return xstrdup(buf);
+  return ats_strdup(buf);
 }
 
 bool ParentProxyObj::isValid()
@@ -1284,7 +1284,7 @@ VolumeObj::formatEleToRule()
     break;
   }
 
-  return xstrdup(buf);
+  return ats_strdup(buf);
 }
 
 bool VolumeObj::isValid()
@@ -1358,7 +1358,7 @@ PluginObj::PluginObj(TokenList * tokens)
   if (strcmp(token->name, "") == 0) {
     goto FORMAT_ERR;
   }
-  m_ele->name = xstrdup(token->name);
+  m_ele->name = ats_strdup(token->name);
 
   // arguments
   token = tokens->next(token);
@@ -1366,7 +1366,7 @@ PluginObj::PluginObj(TokenList * tokens)
     if (m_ele->args == TS_INVALID_LIST)
       m_ele->args = TSStringListCreate();
     if (token->name)
-      TSStringListEnqueue(m_ele->args, xstrdup(token->name));
+      TSStringListEnqueue(m_ele->args, ats_strdup(token->name));
     token = tokens->next(token);
   }
 
@@ -1402,7 +1402,7 @@ PluginObj::formatEleToRule()
     snprintf(buf, sizeof(buf), "%s", m_ele->name);
   }
 
-  return xstrdup(buf);
+  return ats_strdup(buf);
 }
 
 bool PluginObj::isValid()
@@ -1478,7 +1478,7 @@ RemapObj::RemapObj(TokenList * tokens)
   }
 
   // from host
-  m_ele->from_host = xstrdup(fromTok[3]);
+  m_ele->from_host = ats_strdup(fromTok[3]);
 
   current = 4;
   if (fromTok[4]) {
@@ -1505,7 +1505,7 @@ RemapObj::RemapObj(TokenList * tokens)
         buf[strlen(buf) - 1] = '\0';    // truncate the last '/'
       }
 
-      m_ele->from_path_prefix = xstrdup(buf);
+      m_ele->from_path_prefix = ats_strdup(buf);
     }
   } else {
     if ((token->name)[strlen(token->name) - 1] == '/') {
@@ -1513,7 +1513,7 @@ RemapObj::RemapObj(TokenList * tokens)
       ink_strncpy(buf, m_ele->from_host, sizeof(buf));
       ats_free(m_ele->from_host);
       strncat(buf, "/", sizeof(buf) - strlen(buf) - 1);
-      m_ele->from_host = xstrdup(buf);
+      m_ele->from_host = ats_strdup(buf);
     }
   }
 
@@ -1534,7 +1534,7 @@ RemapObj::RemapObj(TokenList * tokens)
   }
 
   // to host
-  m_ele->to_host = xstrdup(toTok[3]);
+  m_ele->to_host = ats_strdup(toTok[3]);
 
   current = 4;
   if (toTok[4]) {
@@ -1561,7 +1561,7 @@ RemapObj::RemapObj(TokenList * tokens)
         buf[strlen(buf) - 1] = '\0';    // truncate the last '/'
       }
 
-      m_ele->to_path_prefix = xstrdup(buf);
+      m_ele->to_path_prefix = ats_strdup(buf);
     }
   } else {
     if ((token->value)[strlen(token->value) - 1] == '/') {
@@ -1570,7 +1570,7 @@ RemapObj::RemapObj(TokenList * tokens)
       ink_strncpy(buf, m_ele->to_host, sizeof(buf));
       ats_free(m_ele->to_host);
       strncat(buf, "/", sizeof(buf) - strlen(buf) - 1);
-      m_ele->to_host = xstrdup(buf);
+      m_ele->to_host = ats_strdup(buf);
 
     }
   }
@@ -1679,7 +1679,7 @@ RemapObj::formatEleToRule()
     strncat(buf, m_ele->to_path_prefix, sizeof(buf) - strlen(buf) - 1);
   }
 
-  return xstrdup(buf);
+  return ats_strdup(buf);
 }
 
 bool RemapObj::isValid()
@@ -1779,13 +1779,13 @@ SocksObj::SocksObj(TokenList * tokens)
     if (strcmp(tok->value, "u") == 0) {
       tok = tokens->next(tok);
       if (tok && tok->name) {
-        m_ele->username = xstrdup(tok->name);
+        m_ele->username = ats_strdup(tok->name);
       } else {
         goto FORMAT_ERR;
       }
       if (tok && tok->name) {
         tok = tokens->next(tok);
-        m_ele->password = xstrdup(tok->name);
+        m_ele->password = ats_strdup(tok->name);
       } else {
         goto FORMAT_ERR;
       }
@@ -1913,7 +1913,7 @@ SocksObj::formatEleToRule()
     }
   }
 
-  return xstrdup(buf);
+  return ats_strdup(buf);
 }
 
 // the rule must either have an ip addr list (exclusive) OR
@@ -2001,21 +2001,21 @@ SplitDnsObj::SplitDnsObj(TokenList * tokens)
         goto FORMAT_ERR;
       }
       m_ele->pd_type = TS_PD_DOMAIN;
-      m_ele->pd_val = xstrdup(tok->value);
+      m_ele->pd_val = ats_strdup(tok->value);
     } else if (strcmp(tok->name, "dest_host") == 0) {
       if ((m_ele->pd_type != TS_PD_UNDEFINED) || (m_ele->pd_val != NULL) || (!tok->value)) {
         // fields are already defined!!
         goto FORMAT_ERR;
       }
       m_ele->pd_type = TS_PD_HOST;
-      m_ele->pd_val = xstrdup(tok->value);
+      m_ele->pd_val = ats_strdup(tok->value);
     } else if (strcmp(tok->name, "url_regex") == 0) {
       if ((m_ele->pd_type != TS_PD_UNDEFINED) || (m_ele->pd_val != NULL) || (!tok->value)) {
         // fields are already defined!!
         goto FORMAT_ERR;
       }
       m_ele->pd_type = TS_PD_URL_REGEX;
-      m_ele->pd_val = xstrdup(tok->value);
+      m_ele->pd_val = ats_strdup(tok->value);
     } else if (strcmp(tok->name, "named") == 0) {
       if ((m_ele->dns_servers_addrs != NULL) || (!tok->value)) {
         // fields are already defined!!
@@ -2027,7 +2027,7 @@ SplitDnsObj::SplitDnsObj(TokenList * tokens)
         // fields are already defined!!
         goto FORMAT_ERR;
       }
-      m_ele->def_domain = xstrdup(tok->value);
+      m_ele->def_domain = ats_strdup(tok->value);
     } else if (strcmp(tok->name, "search_list") == 0) {
       if ((m_ele->search_list != NULL) || (!tok->value)) {
         // fields are already defined!!
@@ -2067,16 +2067,16 @@ SplitDnsObj::formatEleToRule()
   char *pd_name;
   switch (m_ele->pd_type) {
   case TS_PD_DOMAIN:
-    pd_name = xstrdup("dest_domain");
+    pd_name = ats_strdup("dest_domain");
     break;
   case TS_PD_HOST:
-    pd_name = xstrdup("dest_host");
+    pd_name = ats_strdup("dest_host");
     break;
   case TS_PD_URL_REGEX:
-    pd_name = xstrdup("url_regex");
+    pd_name = ats_strdup("url_regex");
     break;
   default:
-    pd_name = xstrdup("");      // lv: just to make this junk workable
+    pd_name = ats_strdup("");      // lv: just to make this junk workable
     // Handled here:
     // TS_PD_IP, TS_PD_UNDEFINED
     break;
@@ -2145,7 +2145,7 @@ SplitDnsObj::formatEleToRule()
 
   ats_free(pd_name);
 
-  return xstrdup(buf);
+  return ats_strdup(buf);
 }
 
 bool SplitDnsObj::isValid()
@@ -2219,7 +2219,7 @@ StorageObj::StorageObj(TokenList * tokens)
   if (!tok->name) {
     goto FORMAT_ERR;            // no pathname specified
   } else {
-    m_ele->pathname = xstrdup(tok->name);
+    m_ele->pathname = ats_strdup(tok->name);
   }
 
   // check if size is specified
@@ -2255,7 +2255,7 @@ StorageObj::formatEleToRule()
     snprintf(buf, sizeof(buf), "%s %d", m_ele->pathname, m_ele->size);
   }
 
-  return xstrdup(buf);
+  return ats_strdup(buf);
 }
 
 bool StorageObj::isValid()
@@ -2310,7 +2310,7 @@ UpdateObj::UpdateObj(TokenList * tokens)
   if (strcmp(token->name, "") == 0) {
     goto FORMAT_ERR;
   }
-  m_ele->url = xstrdup(token->name);
+  m_ele->url = ats_strdup(token->name);
 
   // Request_headers
   token = tokens->next(token);
@@ -2370,7 +2370,7 @@ UpdateObj::formatEleToRule()
              m_ele->url, m_ele->offset_hour, m_ele->interval, m_ele->recursion_depth);
   }
 
-  return xstrdup(buf);
+  return ats_strdup(buf);
 }
 
 bool UpdateObj::isValid()
@@ -2459,7 +2459,7 @@ VirtIpAddrObj::VirtIpAddrObj(TokenList * tokens)
   if (tok->value != NULL) {
     goto FORMAT_ERR;
   }
-  m_ele->intr = xstrdup(tok->name);
+  m_ele->intr = ats_strdup(tok->name);
 
   // Subinterface
   tok = tokens->next(tok);
@@ -2496,7 +2496,7 @@ VirtIpAddrObj::formatEleToRule()
   snprintf(buf, sizeof(buf), "%s %s %d", ip_str, m_ele->intr, m_ele->sub_intr);
   ats_free(ip_str);
 
-  return xstrdup(buf);
+  return ats_strdup(buf);
 }
 
 bool VirtIpAddrObj::isValid()

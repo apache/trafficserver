@@ -106,7 +106,7 @@ LogConfig::setup_default_values()
   if (!gethostname(name, bufSize)) {
     ink_strncpy(name, "unknown_host_name", sizeof(name));
   }
-  hostname = xstrdup(name);
+  hostname = ats_strdup(name);
 
   log_buffer_size = (int) (10 * LOG_KILOBYTE);
   max_entries_per_buffer = 100;
@@ -115,7 +115,7 @@ LogConfig::setup_default_values()
   max_space_mb_for_orphan_logs = 25;
   max_space_mb_headroom = 10;
   logfile_perm = 0644;
-  logfile_dir = xstrdup(".");
+  logfile_dir = ats_strdup(".");
 
   separate_icp_logs = 1;
   separate_host_logs = FALSE;
@@ -123,29 +123,29 @@ LogConfig::setup_default_values()
   squid_log_enabled = TRUE;
   xuid_logging_enabled = TRUE;
   squid_log_is_ascii = TRUE;
-  squid_log_name = xstrdup("squid");
+  squid_log_name = ats_strdup("squid");
   squid_log_header = NULL;
 
   common_log_enabled = FALSE;
   common_log_is_ascii = TRUE;
-  common_log_name = xstrdup("common");
+  common_log_name = ats_strdup("common");
   common_log_header = NULL;
 
   extended_log_enabled = FALSE;
   extended_log_is_ascii = TRUE;
-  extended_log_name = xstrdup("extended");
+  extended_log_name = ats_strdup("extended");
   extended_log_header = NULL;
 
   extended2_log_enabled = FALSE;
   extended2_log_is_ascii = TRUE;
-  extended2_log_name = xstrdup("extended2");
+  extended2_log_name = ats_strdup("extended2");
   extended2_log_header = NULL;
 
   collation_mode = NO_COLLATION;
-  collation_host = xstrdup("none");
+  collation_host = ats_strdup("none");
   collation_port = 0;
   collation_host_tagged = FALSE;
-  collation_secret = xstrdup("foobar");
+  collation_secret = ats_strdup("foobar");
   collation_retry_sec = 0;
   collation_max_send_buffers = 0;
 
@@ -157,8 +157,8 @@ LogConfig::setup_default_values()
   roll_log_files_now = FALSE;
 
   custom_logs_enabled = FALSE;
-  xml_config_file = xstrdup("logs_xml.config");
-  hosts_config_file = xstrdup("log_hosts.config");
+  xml_config_file = ats_strdup("logs_xml.config");
+  hosts_config_file = ats_strdup("log_hosts.config");
 
 /* The default values for the search log                         */
 
@@ -178,9 +178,9 @@ LogConfig::setup_default_values()
 /* containing these strings will not be parsed.                  */
   search_url_filter = NULL;
 /* Logging system captures all the URLs in this log file.        */
-  search_log_file_one = xstrdup("search_log1");
+  search_log_file_one = ats_strdup("search_log1");
 /* Logging system captures only cache miss URLs to this log file.*/
-  search_log_file_two = xstrdup("search_log2");
+  search_log_file_two = ats_strdup("search_log2");
 
   sampling_frequency = 1;
   file_stat_frequency = 16;
@@ -296,7 +296,7 @@ LogConfig::read_configuration_variables()
         fprintf(stderr,"please set 'proxy.config.log.logfile_dir'\n");
         _exit(1);
       }
-      logfile_dir = xstrdup(system_log_dir);
+      logfile_dir = ats_strdup(system_log_dir);
     }
   }
 
@@ -1434,7 +1434,7 @@ LogConfig::update_space_used()
         //
         // then add this entry to the candidate list
         //
-        candidates[candidate_count].name = xstrdup(path);
+        candidates[candidate_count].name = ats_strdup(path);
         candidates[candidate_count].size = (int64_t) sbuf.st_size;
         candidates[candidate_count].mtime = sbuf.st_mtime;
         candidate_count++;
@@ -2246,7 +2246,7 @@ LogConfig::read_log_hosts_file(size_t * num_hosts)
             continue;
           }
           LogUtils::strip_trailing_newline(line);
-          hosts[i] = xstrdup(line);
+          hosts[i] = ats_strdup(line);
           ++i;
         }
         ink_assert(i == nhosts);

@@ -319,7 +319,7 @@ HttpBodyFactory::reconfigure()
         Warning(" Please set 'proxy.config.body_factory.template_sets_dir' ");
       } else {
         ats_free(directory_of_template_sets);
-        directory_of_template_sets = xstrdup(system_config_directory);
+        directory_of_template_sets = ats_strdup(system_config_directory);
       }
     }
   }
@@ -788,7 +788,7 @@ HttpBodySet::init(char *set, char *dir)
   if (fd < 0)
     return (-1);
 
-  this->set_name = xstrdup(set);
+  this->set_name = ats_strdup(set);
 
   if (this->table_of_pages)
     delete(this->table_of_pages);
@@ -861,10 +861,10 @@ HttpBodySet::init(char *set, char *dir)
 
     if (strcasecmp(name, "Content-Language") == 0) {
       ats_free(this->content_language);
-      this->content_language = xstrdup(value);
+      this->content_language = ats_strdup(value);
     } else if (strcasecmp(name, "Content-Charset") == 0) {
       ats_free(this->content_charset);
-      this->content_charset = xstrdup(value);
+      this->content_charset = ats_strdup(value);
     }
   }
 
@@ -874,12 +874,12 @@ HttpBodySet::init(char *set, char *dir)
 
   if (!this->content_language) {
     if (strcmp(set, "default") == 0)
-      this->content_language = xstrdup("en");
+      this->content_language = ats_strdup("en");
     else
-      this->content_language = xstrdup(set);
+      this->content_language = ats_strdup(set);
   }
   if (!this->content_charset)
-    this->content_charset = xstrdup("iso-8859-1");
+    this->content_charset = ats_strdup("iso-8859-1");
 
   close(fd);
   return (lines_added);

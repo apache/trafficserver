@@ -71,7 +71,7 @@ Machine::Machine(char *ahostname, unsigned int aip)
       ink_release_assert(!gethostname(localhost, 1023));
       ahostname = localhost;
     }
-    hostname = xstrdup(ahostname);
+    hostname = ats_strdup(ahostname);
 
     ink_gethostbyname_r_data data;
     struct hostent *r = ink_gethostbyname_r(ahostname, &data);
@@ -102,7 +102,7 @@ Machine::Machine(char *ahostname, unsigned int aip)
       *(uint32_t *) & x = (uint32_t) ip;
       Debug("machine_debug", "unable to reverse DNS %hhu.%hhu.%hhu.%hhu: %d", x[0], x[1], x[2], x[3], data.herrno);
     } else
-      hostname = xstrdup(r->h_name);
+      hostname = ats_strdup(r->h_name);
   }
 
   if (hostname)

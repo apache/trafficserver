@@ -115,10 +115,10 @@ diags_log_fp(_diags_log_fp), show_location(0)
   base_debug_tags = NULL;
   base_action_tags = NULL;
   if (bdt && *bdt) {
-    base_debug_tags = xstrdup(bdt);
+    base_debug_tags = ats_strdup(bdt);
   }
   if (bat && *bat) {
-    base_action_tags = xstrdup(bat);
+    base_action_tags = ats_strdup(bat);
   }
 
   config.enabled[DiagsTagType_Debug] = (base_debug_tags != NULL);

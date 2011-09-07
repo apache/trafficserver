@@ -338,7 +338,7 @@ SslConfigParams::initialize()
   else {
     // XXX: private_key.filename is relative to prefix or sysconfdir?
     //
-    serverKeyPathOnly = xstrdup(Layout::get()->prefix);
+    serverKeyPathOnly = ats_strdup(Layout::get()->prefix);
   }
   if (ssl_server_private_key_filename != NULL) {
     serverKeyPath = Layout::relative_to(serverKeyPathOnly, ssl_server_private_key_filename);
@@ -394,7 +394,7 @@ SslConfigParams::initialize()
   IOCORE_ReadConfigStringAlloc(ssl_client_cert_path, "proxy.config.ssl.client.cert.path");
 
   if (ssl_client_cert_path == NULL) {
-    ssl_client_cert_path = xstrdup(Layout::get()->prefix);
+    ssl_client_cert_path = ats_strdup(Layout::get()->prefix);
   }
   if (ssl_client_cert_filename != NULL) {
     char *abs_path = Layout::get()->relative(ssl_client_cert_path);
@@ -420,7 +420,7 @@ SslConfigParams::initialize()
   IOCORE_ReadConfigStringAlloc(ssl_client_private_key_path, "proxy.config.ssl.client.private_key.path");
 
   if (ssl_client_private_key_path == NULL) {
-    ssl_client_private_key_path = xstrdup(Layout::get()->prefix);
+    ssl_client_private_key_path = ats_strdup(Layout::get()->prefix);
   }
 
   if (ssl_client_private_key_filename != NULL) {

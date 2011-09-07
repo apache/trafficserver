@@ -27,7 +27,7 @@
 int
 CacheDisk::open(char *s, off_t blocks, off_t askip, int ahw_sector_size, int fildes, bool clear)
 {
-  path = xstrdup(s);
+  path = ats_strdup(s);
   hw_sector_size = ahw_sector_size;
   fd = fildes;
   skip = askip;

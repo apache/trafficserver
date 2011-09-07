@@ -457,5 +457,5 @@ ink_hash_table_replace_string(InkHashTable * ht_ptr, char *string_key, char *str
       ats_free(old_str);
   }
 
-  ink_hash_table_set_entry(ht_ptr, he_ptr, (InkHashTableValue)(xstrdup(string_value)));
+  ink_hash_table_set_entry(ht_ptr, he_ptr, (InkHashTableValue)(ats_strdup(string_value)));
 }                               /* End ink_hash_table_replace_string */

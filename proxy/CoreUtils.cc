@@ -926,7 +926,7 @@ CoreUtils::dump_history(HttpSM * hsm)
     int e = (int) hsm->history[i].event;
     char *fileline = load_string(hsm->history[i].fileline);
 
-    fileline = (fileline != NULL) ? fileline : xstrdup("UNKNOWN");
+    fileline = (fileline != NULL) ? fileline : ats_strdup("UNKNOWN");
 
 #if defined(_WIN32)
     // Visual C++ preprocessor is unable to stringify __LINE__
@@ -1031,7 +1031,7 @@ CoreUtils::load_string(const char *addr)
   int index = 0;
 
   if (addr == NULL) {
-    return xstrdup("NONE");
+    return ats_strdup("NONE");
   }
 
   while (index < 2048) {
@@ -1040,7 +1040,7 @@ CoreUtils::load_string(const char *addr)
     }
 
     if (buf[index] == '\0') {
-      return xstrdup(buf);
+      return ats_strdup(buf);
     }
     index++;
   }

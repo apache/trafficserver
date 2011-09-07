@@ -510,7 +510,7 @@ build_config_table(FILE * fp)
     }
     varname[i] = '\0';
 
-    ink_hash_table_insert(configTable, varname, xstrdup(buffer));
+    ink_hash_table_insert(configTable, varname, ats_strdup(buffer));
   }
 #ifdef TRACE_LOG_COP
   cop_log(COP_DEBUG, "Leaving build_config_table(%d)\n", fp);

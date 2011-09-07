@@ -83,8 +83,8 @@ string_to_ip_addr_ele(const char *str)
     ele->type = TS_IP_RANGE;
     const_ip_a = range_tokens[0];
     const_ip_b = range_tokens[1];
-    ip_a = xstrdup(const_ip_a);
-    ip_b = xstrdup(const_ip_b);
+    ip_a = ats_strdup(const_ip_a);
+    ip_b = ats_strdup(const_ip_b);
 
     // determine if ip's are cidr type; only test if ip_a is cidr, assume both are same
     cidr_tokens.Initialize(ip_a, COPY_TOKS);
@@ -154,7 +154,7 @@ ip_addr_ele_to_string(TSIpAddrEle * ele)
     }
 
     ats_free(ip_a_str);
-    str = xstrdup(buf);
+    str = ats_strdup(buf);
 
     return str;
   } else if (ele->type == TS_IP_RANGE) {       // RANGE TYPE
@@ -173,7 +173,7 @@ ip_addr_ele_to_string(TSIpAddrEle * ele)
     }
     ats_free(ip_a_str);
     ats_free(ip_b_str);
-    str = xstrdup(buf);
+    str = ats_strdup(buf);
 
     return str;
   }
@@ -201,7 +201,7 @@ ip_addr_to_string(TSIpAddr ip)
   if (!ccu_checkIpAddr(ip)) {
     return NULL;
   }
-  return xstrdup((char *) ip);
+  return ats_strdup((char *) ip);
 }
 
 /* ----------------------------------------------------------------------------
@@ -218,7 +218,7 @@ string_to_ip_addr(const char *str)
     return TS_INVALID_IP_ADDR;
 
   char *copy;
-  copy = xstrdup(str);
+  copy = ats_strdup(str);
   return (TSIpAddr) copy;
 }
 
@@ -262,7 +262,7 @@ ip_addr_list_to_string(IpAddrList * list, const char *delimiter)
     enqueue((LLQ *) list, ip_ele);      // return ip to list
   }
 
-  new_str = xstrdup(buf);
+  new_str = ats_strdup(buf);
 
   return new_str;
 }
@@ -356,7 +356,7 @@ port_list_to_string(PortList * ports, const char *delimiter)
     enqueue((LLQ *) ports, port_ele);   // return TSPortEle to list
   }
 
-  str = xstrdup(buf);
+  str = ats_strdup(buf);
   return str;
 
 Lerror:
@@ -425,7 +425,7 @@ port_ele_to_string(TSPortEle * ele)
     snprintf(buf, sizeof(buf), "%d%c%d", ele->port_a, RANGE_DELIMITER, ele->port_b);
   }
 
-  str = xstrdup(buf);
+  str = ats_strdup(buf);
   return str;
 }
 
@@ -510,7 +510,7 @@ string_list_to_string(TSStringList str_list, const char *delimiter)
     enqueue((LLQ *) str_list, str_ele);
   }
 
-  list_str = xstrdup(buf);
+  list_str = ats_strdup(buf);
   return list_str;
 }
 
@@ -533,7 +533,7 @@ string_to_string_list(const char *str, const char *delimiter)
 
   TSStringList str_list = TSStringListCreate();
   for (int i = 0; i < tokens.getNumber(); i++) {
-    TSStringListEnqueue(str_list, xstrdup(tokens[i]));
+    TSStringListEnqueue(str_list, ats_strdup(tokens[i]));
   }
 
   return str_list;
@@ -575,7 +575,7 @@ int_list_to_string(TSIntList list, const char *delimiter)
     }
     enqueue((LLQ *) list, elem);
   }
-  return xstrdup(buf);
+  return ats_strdup(buf);
 }
 
 /* ---------------------------------------------------------------
@@ -701,7 +701,7 @@ domain_list_to_string(TSDomainList list, const char *delimiter)
     enqueue((LLQ *) list, domain);
   }
 
-  list_str = xstrdup(buf);
+  list_str = ats_strdup(buf);
   return list_str;
 }
 
@@ -730,7 +730,7 @@ domain_to_string(TSDomain * domain)
     return NULL;                // invalid TSDomain
   }
 
-  dom_str = xstrdup(buf);
+  dom_str = ats_strdup(buf);
 
   return dom_str;
 }
@@ -761,7 +761,7 @@ string_to_domain(const char *str)
   token = ink_strtok_r(buf, ":", &token_pos);
   remain = token_pos;
   if (token)
-    dom->domain_val = xstrdup(token);
+    dom->domain_val = ats_strdup(token);
   else
     goto Lerror;
 
@@ -960,7 +960,7 @@ pdest_sspec_to_string(TSPrimeDestT pd, char *pd_val, TSSspec * sspec)
     }
   } while (0);
 
-  str = xstrdup(buf);
+  str = ats_strdup(buf);
   return str;
 }
 
@@ -1003,7 +1003,7 @@ string_to_pdss_format(const char *str, TSPdSsFormat * pdss)
   // pd_value
   if (!tokens[2])
     goto Lerror;
-  pdss->pd_val = xstrdup(tokens[2]);
+  pdss->pd_val = ats_strdup(tokens[2]);
 
   // check secondary specifiers; exists only if not empty string
   // time
@@ -1013,15 +1013,15 @@ string_to_pdss_format(const char *str, TSPdSsFormat * pdss)
   }
   // src_ip
   if (strlen(tokens[4]) > 0) {
-    pdss->sec_spec.src_ip = xstrdup(tokens[4]);
+    pdss->sec_spec.src_ip = ats_strdup(tokens[4]);
   }
   // prefix
   if (strlen(tokens[5]) > 0) {
-    pdss->sec_spec.prefix = xstrdup(tokens[5]);
+    pdss->sec_spec.prefix = ats_strdup(tokens[5]);
   }
   // suffix
   if (strlen(tokens[6]) > 0) {
-    pdss->sec_spec.suffix = xstrdup(tokens[6]);
+    pdss->sec_spec.suffix = ats_strdup(tokens[6]);
   }
   // port
   if (strlen(tokens[7]) > 0) {  // no port
@@ -1069,7 +1069,7 @@ hms_time_to_string(TSHmsTime time)
       (psize = snprintf(buf + buf_pos, sizeof(buf) - buf_pos, "%ds", time.s)) > 0)
     buf_pos += psize;
 
-  str = xstrdup(buf);
+  str = ats_strdup(buf);
 
   return str;
 }
@@ -1234,13 +1234,13 @@ header_type_to_string(TSHdrT hdr)
   // header type
   switch (hdr) {
   case TS_HDR_DATE:
-    return xstrdup("date");
+    return ats_strdup("date");
   case TS_HDR_HOST:
-    return xstrdup("host");
+    return ats_strdup("host");
   case TS_HDR_COOKIE:
-    return xstrdup("cookie");
+    return ats_strdup("cookie");
   case TS_HDR_CLIENT_IP:
-    return xstrdup("client_ip");
+    return ats_strdup("client_ip");
   default:
     break;
   }
@@ -1270,9 +1270,9 @@ scheme_type_to_string(TSSchemeT scheme)
 {
   switch (scheme) {
   case TS_SCHEME_HTTP:
-    return xstrdup("http");
+    return ats_strdup("http");
   case TS_SCHEME_HTTPS:
-    return xstrdup("https");
+    return ats_strdup("https");
   default:
     break;
   }
@@ -1308,15 +1308,15 @@ method_type_to_string(TSMethodT method)
 {
   switch (method) {
   case TS_METHOD_GET:
-    return xstrdup("get");
+    return ats_strdup("get");
   case TS_METHOD_POST:
-    return xstrdup("post");
+    return ats_strdup("post");
   case TS_METHOD_PUT:
-    return xstrdup("put");
+    return ats_strdup("put");
   case TS_METHOD_TRACE:
-    return xstrdup("trace");
+    return ats_strdup("trace");
   case TS_METHOD_PUSH:
-    return xstrdup("push");
+    return ats_strdup("push");
   default:
     break;
   }
@@ -1333,9 +1333,9 @@ connect_type_to_string(TSConnectT conn)
 {
   switch (conn) {
   case TS_CON_UDP:
-    return xstrdup("udp");
+    return ats_strdup("udp");
   case TS_CON_TCP:
-    return xstrdup("tcp");
+    return ats_strdup("tcp");
   default:
     break;
   }
@@ -1363,9 +1363,9 @@ multicast_type_to_string(TSMcTtlT mc)
 {
   switch (mc) {
   case TS_MC_TTL_SINGLE_SUBNET:
-    return xstrdup("single_subnet");
+    return ats_strdup("single_subnet");
   case TS_MC_TTL_MULT_SUBNET:
-    return xstrdup("multiple_subnet");
+    return ats_strdup("multiple_subnet");
   default:
     break;
   }
@@ -1394,11 +1394,11 @@ round_robin_type_to_string(TSRrT rr)
 {
   switch (rr) {
   case TS_RR_TRUE:
-    return xstrdup("true");
+    return ats_strdup("true");
   case TS_RR_FALSE:
-    return xstrdup("false");
+    return ats_strdup("false");
   case TS_RR_STRICT:
-    return xstrdup("strict");
+    return ats_strdup("strict");
   default:
     break;
   }
@@ -1416,50 +1416,50 @@ filename_to_string(TSFileNameT file)
 {
   switch (file) {
   case TS_FNAME_CACHE_OBJ:
-    return xstrdup("cache.config");
+    return ats_strdup("cache.config");
 
   case TS_FNAME_CONGESTION:
-    return xstrdup("congestion.config");
+    return ats_strdup("congestion.config");
 
   case TS_FNAME_HOSTING:
-    return xstrdup("hosting.config");
+    return ats_strdup("hosting.config");
 
   case TS_FNAME_ICP_PEER:
-    return xstrdup("icp.config");
+    return ats_strdup("icp.config");
 
   case TS_FNAME_IP_ALLOW:
-    return xstrdup("ip_allow.config");
+    return ats_strdup("ip_allow.config");
 
 
   case TS_FNAME_LOGS_XML:
-    return xstrdup("logs_xml.config");
+    return ats_strdup("logs_xml.config");
 
   case TS_FNAME_PARENT_PROXY:
-    return xstrdup("parent.config");
+    return ats_strdup("parent.config");
 
   case TS_FNAME_VOLUME:
-    return xstrdup("volume.config");
+    return ats_strdup("volume.config");
 
   case TS_FNAME_PLUGIN:
-    return xstrdup("plugin.config");
+    return ats_strdup("plugin.config");
 
   case TS_FNAME_REMAP:
-    return xstrdup("remap.config");
+    return ats_strdup("remap.config");
 
   case TS_FNAME_SOCKS:
-    return xstrdup("socks.config");
+    return ats_strdup("socks.config");
 
   case TS_FNAME_SPLIT_DNS:
-    return xstrdup("splitdns.config");
+    return ats_strdup("splitdns.config");
 
   case TS_FNAME_STORAGE:
-    return xstrdup("storage.config");
+    return ats_strdup("storage.config");
 
   case TS_FNAME_UPDATE_URL:
-    return xstrdup("update.config");
+    return ats_strdup("update.config");
 
   case TS_FNAME_VADDRS:
-    return xstrdup("vaddrs.config");
+    return ats_strdup("vaddrs.config");
 
 
   default:                     /* no such config file */
@@ -1508,13 +1508,13 @@ admin_acc_type_to_string(TSAccessT access)
 {
   switch (access) {
   case TS_ACCESS_NONE:
-    return xstrdup("none");
+    return ats_strdup("none");
   case TS_ACCESS_MONITOR:
-    return xstrdup("monitor_only");
+    return ats_strdup("monitor_only");
   case TS_ACCESS_MONITOR_VIEW:
-    return xstrdup("monitor_config_view");
+    return ats_strdup("monitor_config_view");
   case TS_ACCESS_MONITOR_CHANGE:
-    return xstrdup("monitor_config_change");
+    return ats_strdup("monitor_config_change");
   default:
     break;
   }
@@ -1563,7 +1563,7 @@ tokens_to_pdss_format(TokenList * tokens, Token * first_tok, TSPdSsFormat * pdss
   } else {
     return NULL;                //INVALID primary destination specifier
   }
-  pdss->pd_val = xstrdup(first_tok->value);
+  pdss->pd_val = ats_strdup(first_tok->value);
 
 
   // iterate through tokens checking for sec specifiers
@@ -1583,13 +1583,13 @@ tokens_to_pdss_format(TokenList * tokens, Token * first_tok, TSPdSsFormat * pdss
           string_to_time_struct(tok->value, &(pdss->sec_spec));
           goto next_token;
         case 1:                // src_ip
-          pdss->sec_spec.src_ip = xstrdup(tok->value);
+          pdss->sec_spec.src_ip = ats_strdup(tok->value);
           goto next_token;
         case 2:                // prefix
-          pdss->sec_spec.prefix = xstrdup(tok->value);
+          pdss->sec_spec.prefix = ats_strdup(tok->value);
           goto next_token;
         case 3:                // suffix
-          pdss->sec_spec.suffix = xstrdup(tok->value);
+          pdss->sec_spec.suffix = ats_strdup(tok->value);
           goto next_token;
         case 4:                // port
           pdss->sec_spec.port = string_to_port_ele(tok->value);
@@ -2250,11 +2250,11 @@ copy_sspec(TSSspec * src, TSSspec * dst)
   dst->time.hour_b = src->time.hour_b;
   dst->time.min_b = src->time.min_b;
   if (src->src_ip)
-    dst->src_ip = xstrdup(src->src_ip);
+    dst->src_ip = ats_strdup(src->src_ip);
   if (src->prefix)
-    dst->prefix = xstrdup(src->prefix);
+    dst->prefix = ats_strdup(src->prefix);
   if (src->suffix)
-    dst->suffix = xstrdup(src->suffix);
+    dst->suffix = ats_strdup(src->suffix);
   dst->port = copy_port_ele(src->port);
   dst->method = src->method;
   dst->scheme = src->scheme;
@@ -2269,7 +2269,7 @@ copy_pdss_format(TSPdSsFormat * src_pdss, TSPdSsFormat * dst_pdss)
 
   dst_pdss->pd_type = src_pdss->pd_type;
   if (src_pdss->pd_val)
-    dst_pdss->pd_val = xstrdup(src_pdss->pd_val);
+    dst_pdss->pd_val = ats_strdup(src_pdss->pd_val);
   copy_sspec(&(src_pdss->sec_spec), &(dst_pdss->sec_spec));
 }
 
@@ -2296,11 +2296,11 @@ copy_ip_addr_ele(TSIpAddrEle * src_ele)
   dst_ele = TSIpAddrEleCreate();
   dst_ele->type = src_ele->type;
   if (src_ele->ip_a)
-    dst_ele->ip_a = xstrdup(src_ele->ip_a);
+    dst_ele->ip_a = ats_strdup(src_ele->ip_a);
   dst_ele->cidr_a = src_ele->cidr_a;
   dst_ele->port_a = src_ele->port_a;
   if (src_ele->ip_b)
-    dst_ele->ip_b = xstrdup(src_ele->ip_b);
+    dst_ele->ip_b = ats_strdup(src_ele->ip_b);
   dst_ele->cidr_b = src_ele->cidr_b;
   dst_ele->port_b = src_ele->port_b;
 
@@ -2332,7 +2332,7 @@ copy_domain(TSDomain * src_dom)
 
   dst_dom = TSDomainCreate();
   if (src_dom->domain_val)
-    dst_dom->domain_val = xstrdup(src_dom->domain_val);
+    dst_dom->domain_val = ats_strdup(src_dom->domain_val);
   dst_dom->port = src_dom->port;
 
   return dst_dom;
@@ -2418,7 +2418,7 @@ copy_string_list(TSStringList list)
   count = TSStringListLen(list);
   for (i = 0; i < count; i++) {
     ele = TSStringListDequeue(list);
-    nele = xstrdup(ele);
+    nele = ats_strdup(ele);
     TSStringListEnqueue(list, ele);
     TSStringListEnqueue(nlist, nele);
   }
@@ -2481,9 +2481,9 @@ copy_congestion_ele(TSCongestionEle * ele)
   copy_cfg_ele(&(ele->cfg_ele), &(nele->cfg_ele));
   //copy_pdss_format(&(ele->congestion_info), &(nele->congestion_info));
   nele->pd_type = ele->pd_type;
-  nele->pd_val = xstrdup(ele->pd_val);
+  nele->pd_val = ats_strdup(ele->pd_val);
   if (ele->prefix)
-    nele->prefix = xstrdup(ele->prefix);
+    nele->prefix = ats_strdup(ele->prefix);
   nele->port = ele->port;
   nele->scheme = ele->scheme;
   nele->max_connection_failures = ele->max_connection_failures;
@@ -2497,7 +2497,7 @@ copy_congestion_ele(TSCongestionEle * ele)
   nele->dead_os_conn_retries = ele->dead_os_conn_retries;
   nele->max_connection = ele->max_connection;
   if (ele->error_page_uri)
-    nele->error_page_uri = xstrdup(ele->error_page_uri);
+    nele->error_page_uri = ats_strdup(ele->error_page_uri);
 
   return nele;
 }
@@ -2517,7 +2517,7 @@ copy_hosting_ele(TSHostingEle * ele)
   copy_cfg_ele(&(ele->cfg_ele), &(nele->cfg_ele));
   nele->pd_type = ele->pd_type;
   if (ele->pd_val)
-    nele->pd_val = xstrdup(ele->pd_val);
+    nele->pd_val = ats_strdup(ele->pd_val);
   ele->volumes = copy_int_list(ele->volumes);
 
   return nele;
@@ -2536,15 +2536,15 @@ copy_icp_ele(TSIcpEle * ele)
 
   copy_cfg_ele(&(ele->cfg_ele), &(nele->cfg_ele));
   if (ele->peer_hostname)
-    nele->peer_hostname = xstrdup(ele->peer_hostname);
+    nele->peer_hostname = ats_strdup(ele->peer_hostname);
   if (ele->peer_host_ip_addr)
-    nele->peer_host_ip_addr = xstrdup(ele->peer_host_ip_addr);
+    nele->peer_host_ip_addr = ats_strdup(ele->peer_host_ip_addr);
   nele->peer_type = ele->peer_type;
   nele->peer_proxy_port = ele->peer_proxy_port;
   nele->peer_icp_port = ele->peer_icp_port;
   nele->is_multicast = ele->is_multicast;
   if (ele->mc_ip_addr)
-    nele->mc_ip_addr = xstrdup(ele->mc_ip_addr);
+    nele->mc_ip_addr = ats_strdup(ele->mc_ip_addr);
   nele->mc_ttl = ele->mc_ttl;
 
   return nele;
@@ -2580,12 +2580,12 @@ copy_log_filter_ele(TSLogFilterEle * ele)
   copy_cfg_ele(&(ele->cfg_ele), &(nele->cfg_ele));
   nele->action = ele->action;
   if (ele->filter_name)
-    ele->filter_name = xstrdup(nele->filter_name);
+    ele->filter_name = ats_strdup(nele->filter_name);
   if (ele->log_field)
-    nele->log_field = xstrdup(ele->log_field);
+    nele->log_field = ats_strdup(ele->log_field);
   nele->compare_op = ele->compare_op;
   if (ele->compare_str)
-    nele->compare_str = xstrdup(ele->compare_str);
+    nele->compare_str = ats_strdup(ele->compare_str);
   nele->compare_int = ele->compare_int;
 
   return nele;
@@ -2604,9 +2604,9 @@ copy_log_format_ele(TSLogFormatEle * ele)
 
   copy_cfg_ele(&(ele->cfg_ele), &(nele->cfg_ele));
   if (ele->name)
-    nele->name = xstrdup(ele->name);
+    nele->name = ats_strdup(ele->name);
   if (ele->format)
-    nele->format = xstrdup(ele->format);
+    nele->format = ats_strdup(ele->format);
   nele->aggregate_interval_secs = ele->aggregate_interval_secs;
 
   return nele;
@@ -2625,9 +2625,9 @@ copy_log_object_ele(TSLogObjectEle * ele)
 
   copy_cfg_ele(&(ele->cfg_ele), &(nele->cfg_ele));
   if (ele->format_name)
-    nele->format_name = xstrdup(ele->format_name);
+    nele->format_name = ats_strdup(ele->format_name);
   if (ele->file_name)
-    nele->file_name = xstrdup(ele->file_name);
+    nele->file_name = ats_strdup(ele->file_name);
   nele->log_mode = ele->log_mode;
   nele->collation_hosts = copy_domain_list(ele->collation_hosts);
   nele->filters = copy_string_list(ele->filters);
@@ -2690,7 +2690,7 @@ copy_plugin_ele(TSPluginEle * ele)
 
   copy_cfg_ele(&(ele->cfg_ele), &(nele->cfg_ele));
   if (ele->name)
-    nele->name = xstrdup(ele->name);
+    nele->name = ats_strdup(ele->name);
   nele->args = copy_string_list(ele->args);
 
   return nele;
@@ -2711,16 +2711,16 @@ copy_remap_ele(TSRemapEle * ele)
   nele->map = ele->map;
   nele->from_scheme = ele->from_scheme;
   if (ele->from_host)
-    nele->from_host = xstrdup(ele->from_host);
+    nele->from_host = ats_strdup(ele->from_host);
   nele->from_port = ele->from_port;
   if (ele->from_path_prefix)
-    nele->from_path_prefix = xstrdup(ele->from_path_prefix);
+    nele->from_path_prefix = ats_strdup(ele->from_path_prefix);
   nele->to_scheme = ele->to_scheme;
   if (ele->to_host)
-    nele->to_host = xstrdup(ele->to_host);
+    nele->to_host = ats_strdup(ele->to_host);
   nele->to_port = ele->to_port;
   if (ele->to_path_prefix)
-    nele->to_path_prefix = xstrdup(ele->to_path_prefix);
+    nele->to_path_prefix = ats_strdup(ele->to_path_prefix);
 
   return nele;
 }
@@ -2742,9 +2742,9 @@ copy_socks_ele(TSSocksEle * ele)
   nele->socks_servers = copy_domain_list(ele->socks_servers);
   nele->rr = ele->rr;
   if (ele->username)
-    nele->username = xstrdup(ele->username);
+    nele->username = ats_strdup(ele->username);
   if (ele->password)
-    nele->password = xstrdup(ele->password);
+    nele->password = ats_strdup(ele->password);
 
   return nele;
 }
@@ -2763,10 +2763,10 @@ copy_split_dns_ele(TSSplitDnsEle * ele)
   copy_cfg_ele(&(ele->cfg_ele), &(nele->cfg_ele));
   nele->pd_type = ele->pd_type;
   if (ele->pd_val)
-    nele->pd_val = xstrdup(ele->pd_val);
+    nele->pd_val = ats_strdup(ele->pd_val);
   nele->dns_servers_addrs = copy_domain_list(ele->dns_servers_addrs);
   if (ele->def_domain)
-    nele->def_domain = xstrdup(ele->def_domain);
+    nele->def_domain = ats_strdup(ele->def_domain);
   nele->search_list = copy_domain_list(ele->search_list);
 
   return nele;
@@ -2785,7 +2785,7 @@ copy_storage_ele(TSStorageEle * ele)
 
   copy_cfg_ele(&(ele->cfg_ele), &(nele->cfg_ele));
   if (ele->pathname)
-    nele->pathname = xstrdup(ele->pathname);
+    nele->pathname = ats_strdup(ele->pathname);
   nele->size = ele->size;
 
   return nele;
@@ -2804,7 +2804,7 @@ copy_update_ele(TSUpdateEle * ele)
 
   copy_cfg_ele(&(ele->cfg_ele), &(nele->cfg_ele));
   if (ele->url)
-    nele->url = xstrdup(ele->url);
+    nele->url = ats_strdup(ele->url);
   nele->headers = copy_string_list(ele->headers);
   nele->offset_hour = ele->offset_hour;
   nele->interval = ele->interval;
@@ -2828,8 +2828,8 @@ copy_virt_ip_addr_ele(TSVirtIpAddrEle * ele)
 
   // copy cfg ele
   copy_cfg_ele(&(ele->cfg_ele), &(new_ele->cfg_ele));
-  new_ele->ip_addr = xstrdup(ele->ip_addr);
-  new_ele->intr = xstrdup(ele->intr);
+  new_ele->ip_addr = ats_strdup(ele->ip_addr);
+  new_ele->intr = ats_strdup(ele->intr);
   new_ele->sub_intr = ele->sub_intr;
 
   return new_ele;
@@ -2858,7 +2858,7 @@ comment_ele_create(char *comment)
   ele->cfg_ele.type = TS_TYPE_COMMENT;
   ele->cfg_ele.error = TS_ERR_OKAY;
   if (comment)
-    ele->comment = xstrdup(comment);
+    ele->comment = ats_strdup(comment);
   else                          // comment is NULL
     ele->comment = NULL;
 

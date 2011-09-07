@@ -756,7 +756,7 @@ ClusterProcessor::connect(char *hostname)
   //
   ClusterHandler *ch = NEW(new ClusterHandler);
   SET_CONTINUATION_HANDLER(ch, (ClusterContHandler) & ClusterHandler::connectClusterEvent);
-  ch->hostname = xstrdup(hostname);
+  ch->hostname = ats_strdup(hostname);
   ch->connector = true;
   eventProcessor.schedule_imm(ch, ET_CLUSTER);
 }

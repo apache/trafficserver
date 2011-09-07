@@ -63,7 +63,7 @@ StatExprToken::copy(const StatExprToken & source)
   m_arith_symbol = source.m_arith_symbol;
 
   if (source.m_token_name != NULL) {
-    m_token_name = xstrdup(source.m_token_name);
+    m_token_name = ats_strdup(source.m_token_name);
   }
 
   m_token_type = source.m_token_type;
@@ -97,12 +97,12 @@ StatExprToken::assignTokenName(const char *name)
   if (isdigit(name[0])) {
 
     // numerical constant
-    m_token_name = xstrdup("CONSTANT");
+    m_token_name = ats_strdup("CONSTANT");
     m_token_type = STAT_CONST;
 
   } else {
 
-    m_token_name = xstrdup(name);
+    m_token_name = ats_strdup(name);
     assignTokenType();
   }
 

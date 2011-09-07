@@ -504,7 +504,7 @@ CacheHostRecord::Init(matcher_line * line_info, int typ)
 
     if (!strcasecmp(label, "volume")) {
       /* parse the list of volumes */
-      val = xstrdup(line_info->line[1][i]);
+      val = ats_strdup(line_info->line[1][i]);
       char *vol_no = val;
       char *s = val;
       int volume_number;

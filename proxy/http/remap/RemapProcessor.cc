@@ -228,15 +228,15 @@ RemapProcessor::finish_remap(HttpTransact::State *s)
             }
           }
           tmp_redirect_buf[sizeof(tmp_redirect_buf) - 1] = 0;
-          *redirect_url = xstrdup(tmp_redirect_buf);
+          *redirect_url = ats_strdup(tmp_redirect_buf);
         }
       } else {
-        *redirect_url = xstrdup(rewrite_table->http_default_redirect_url);
+        *redirect_url = ats_strdup(rewrite_table->http_default_redirect_url);
       }
 
       if (*redirect_url == NULL) {
         *redirect_url =
-          xstrdup(map->filter_redirect_url ? map->filter_redirect_url : rewrite_table->http_default_redirect_url);
+          ats_strdup(map->filter_redirect_url ? map->filter_redirect_url : rewrite_table->http_default_redirect_url);
       }
 
       return false;
@@ -263,7 +263,7 @@ RemapProcessor::finish_remap(HttpTransact::State *s)
                                                               MIME_LEN_HOST,
                                                               &old_host_hdr_len);
       if (old_host_hdr) {
-        old_host_hdr = xstrndup(old_host_hdr, old_host_hdr_len);
+        old_host_hdr = ats_strndup(old_host_hdr, old_host_hdr_len);
         Debug("url_rewrite", "Host: Header before rewrite %.*s", old_host_hdr_len, old_host_hdr);
         ats_free(old_host_hdr);
       }

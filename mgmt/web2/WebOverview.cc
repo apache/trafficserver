@@ -87,7 +87,7 @@ overviewRecord::overviewRecord(unsigned long inet_addr, bool local, ClusterPeerI
     nameFailed.s_addr = inetAddr;
     mgmt_log("[overviewRecord::overviewRecord] Unable to find hostname for %s\n", inet_ntoa(nameFailed));
     ats_free(name_l);              // about to overwrite name_l, so we need to free it first
-    name_l = xstrdup(inet_ntoa(nameFailed));
+    name_l = ats_strdup(inet_ntoa(nameFailed));
   }
 
   const size_t hostNameLen = strlen(name_l) + 1;
@@ -359,7 +359,7 @@ overviewRecord::readString(const char *name, bool * found)
       order -= node_rec_first_ix; // Offset
       ink_release_assert(order < node_rec_data.num_recs);
       ink_debug_assert(order < node_rec_data.num_recs);
-      rec = xstrdup(node_rec_data.recs[order].data.rec_string);
+      rec = ats_strdup(node_rec_data.recs[order].data.rec_string);
     }
   } else {
     rec_status = RecGetRecordString_Xmalloc(name, &rec);
@@ -412,7 +412,7 @@ overviewRecord::varStrFromName(const char *varNameConst, char *bufVal, int bufLe
   ///  b - bytes.  Ints and Counts only.  Amounts are
   //       transformed into one of GB, MB, KB, or B
   //
-  varName = xstrdup(varNameConst);
+  varName = ats_strdup(varNameConst);
   varNameLen = strlen(varName);
   if (varNameLen > 3 && varName[varNameLen - 2] == '\\') {
     formatOption = varName[varNameLen - 1];
@@ -755,7 +755,7 @@ overviewPage::getClusterHosts(ExpandingArray * hosts)
 
   for (int i = 0; i < number; i++) {
     current = (overviewRecord *) sortRecords[i];
-    hosts->addEntry(xstrdup(current->hostname));
+    hosts->addEntry(ats_strdup(current->hostname));
   }
 
   ink_mutex_release(&accessLock);
@@ -1502,7 +1502,7 @@ overviewPage::resolvePeerHostname_ml(const char *peerIP)
 
   if (ink_hash_table_lookup(nodeRecords, (InkHashTableKey) ipAddr, &lookup)) {
     peerRecord = (overviewRecord *) lookup;
-    returnName = xstrdup(peerRecord->hostname);
+    returnName = ats_strdup(peerRecord->hostname);
   }
 
   return returnName;

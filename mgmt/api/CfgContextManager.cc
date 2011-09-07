@@ -107,7 +107,7 @@ CfgContextCommit(CfgContext * ctx, LLQ * errRules)
     rule = ele->formatEleToRule();      // use polymorphism
     if (!rule) {
       err = TS_ERR_INVALID_CONFIG_RULE;
-      rule = xstrdup(FORMAT_TO_RULE_ERROR);
+      rule = ats_strdup(FORMAT_TO_RULE_ERROR);
       if (errRules) {
         iPtr = (int *)ats_malloc(sizeof(int));
         *iPtr = index;

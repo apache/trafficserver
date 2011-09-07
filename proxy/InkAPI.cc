@@ -1763,15 +1763,15 @@ TSPluginRegister(TSSDKVersion sdk_version, TSPluginRegistrationInfo *plugin_info
   }
 
   if (plugin_info->plugin_name) {
-    plugin_reg_current->plugin_name = xstrdup(plugin_info->plugin_name);
+    plugin_reg_current->plugin_name = ats_strdup(plugin_info->plugin_name);
   }
 
   if (plugin_info->vendor_name) {
-    plugin_reg_current->vendor_name = xstrdup(plugin_info->vendor_name);
+    plugin_reg_current->vendor_name = ats_strdup(plugin_info->vendor_name);
   }
 
   if (plugin_info->support_email) {
-    plugin_reg_current->support_email = xstrdup(plugin_info->support_email);
+    plugin_reg_current->support_email = ats_strdup(plugin_info->support_email);
   }
 
   return TS_SUCCESS;
@@ -5386,10 +5386,10 @@ TSHttpArgIndexReserve(const char* name, const char* description, int *arg_idx)
   int volatile ix = ink_atomic_increment(&next_argv_index, 1);
 
   if (ix < HTTP_SSN_TXN_MAX_USER_ARG) {
-    state_arg_table[ix].name = xstrdup(name);
+    state_arg_table[ix].name = ats_strdup(name);
     state_arg_table[ix].name_len = strlen(state_arg_table[ix].name);
     if (description)
-      state_arg_table[ix].description = xstrdup(description);
+      state_arg_table[ix].description = ats_strdup(description);
     *arg_idx = ix;
 
     return TS_SUCCESS;

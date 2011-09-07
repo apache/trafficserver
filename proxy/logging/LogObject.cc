@@ -274,7 +274,7 @@ LogObject::rename(char *new_name)
   // the LogObject to match the new filename.
   //
   ats_free(m_alt_filename);
-  m_alt_filename = xstrdup(new_name);
+  m_alt_filename = ats_strdup(new_name);
   m_logFile->change_name(new_name);
 }
 
