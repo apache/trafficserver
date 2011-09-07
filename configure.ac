@@ -825,14 +825,13 @@ if test "x${enable_xml}" != "xyes"; then
 fi
 
 TS_FLAG_FUNCS([clock_gettime kqueue epoll_ctl posix_memalign posix_fadvise lrand48_r srand48_r port_create])
-TS_FLAG_FUNCS([strndup strlcpy strlcat])
+TS_FLAG_FUNCS([strlcpy strlcat])
 
 AC_SUBST(has_clock_gettime)
 AC_SUBST(has_posix_memalign)
 AC_SUBST(has_posix_fadvise)
 AC_SUBST(has_lrand48_r)
 AC_SUBST(has_srand48_r)
-AC_SUBST(has_strndup)
 AC_SUBST(has_strlcpy)
 AC_SUBST(has_strlcat)
 

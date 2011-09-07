@@ -55,31 +55,6 @@ inkcoreapi char *ink_string_concatenate_strings_n(char *dest, int n, ...);
 inkcoreapi char *ink_string_append(char *dest, char *src, int n);
 inkcoreapi char *ink_string_find_dotted_extension(char *str, char *ext, int max_ext_len);
 
-/* these are supposed to make your life easier */
-
-/*
- * the results of all of these are put in freshly malloc()ed memory
- */
-
-        /*
-         *  s = ink_string_mpath(2, "/foo", false, "bar", false);
-         */
-char *ink_string_mpath(int nstrings, ...);
-        /*
-         * s = ink_string_mcopy(old);
-         */
-char *ink_string_mcopy(char *source);
-        /*
-         *  s = ink_string_mjoin(2, "/foo", false, "/bar", false);
-         */
-char *ink_string_mjoin(int nstrings, ...);
-
-/* Missing fcns */
-#if TS_HAS_STRNDUP
-#define  ink_strndup strndup
-#else
-char *ink_strndup(const char *str, size_t n);
-#endif
 /*
  * Copy src to string dst of size siz.  At most siz-1 characters
  * will be copied.  Always NUL terminates (unless siz == 0).

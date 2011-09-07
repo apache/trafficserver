@@ -92,7 +92,6 @@
 #define TS_HAS_POSIX_FADVISE           @has_posix_fadvise@
 #define TS_HAS_LRAND48_R               @has_lrand48_r@
 #define TS_HAS_SRAND48_R               @has_srand48_r@
-#define TS_HAS_STRNDUP                 @has_strndup@
 #define TS_HAS_STRLCPY                 @has_strlcpy@
 #define TS_HAS_STRLCAT                 @has_strlcat@
 

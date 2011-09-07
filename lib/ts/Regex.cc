@@ -70,7 +70,7 @@ DFA::build(const char *pattern, REFlags flags)
   }
   
   ret->_idx = 0;
-  ret->_p = ink_strndup(pattern,strlen(pattern));
+  ret->_p = ats_strndup(pattern, strlen(pattern));
   ret->_next = NULL;
   return ret;
 }

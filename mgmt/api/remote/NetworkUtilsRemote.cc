@@ -1263,7 +1263,7 @@ parse_file_read_reply(int fd, int *ver, int *size, char **text)
 
   // check size before reading text
   if ((*size) <= 0) {
-    *text = ink_strndup("", 1);                 // set to empty string
+    *text = ats_strndup("", 1);                 // set to empty string
   } else {
     // now we got the size, we can read everything into our msg * then parse it
     *text = (char *)ats_malloc(sizeof(char) * (f_size + 1));
