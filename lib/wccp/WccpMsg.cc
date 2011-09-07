@@ -24,6 +24,7 @@
 # include <errno.h>
 # include <openssl/md5.h>
 # include <TsException.h>
+# include "ink_memory.h"
 
 namespace wccp {
 // ------------------------------------------------------
