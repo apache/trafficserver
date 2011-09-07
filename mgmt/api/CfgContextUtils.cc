@@ -612,11 +612,9 @@ string_to_int_list(const char *str_list, const char *delimiter)
   for (i = 0; i < numToks; i++) {
     if (!isNumber(tokens[i]))
       goto Lerror;
-    ele = (int *) xmalloc(sizeof(int));
-    if (ele) {
-      *ele = ink_atoi(tokens[i]);       // What about we can't convert? ERROR?
-      TSIntListEnqueue(list, ele);
-    }
+    ele = (int *)ats_malloc(sizeof(int));
+    *ele = ink_atoi(tokens[i]);       // What about we can't convert? ERROR?
+    TSIntListEnqueue(list, ele);
   }
 
   return list;

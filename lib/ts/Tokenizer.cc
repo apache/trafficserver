@@ -241,7 +241,7 @@ Tokenizer::addToken(char *startAddr, int length)
     startAddr[length] = '\0';
     add_ptr = startAddr;
   } else {
-    add_ptr = (char *) xmalloc(length + 1);
+    add_ptr = (char *)ats_malloc(length + 1);
     memcpy(add_ptr, startAddr, length);
     add_ptr[length] = '\0';
   }
@@ -256,7 +256,7 @@ Tokenizer::addToken(char *startAddr, int length)
   //   if there is not a next one
   if (add_index >= TOK_NODE_ELEMENTS) {
     if (add_node->next == NULL) {
-      add_node->next = (tok_node *) xmalloc(sizeof(tok_node));
+      add_node->next = (tok_node *)ats_malloc(sizeof(tok_node));
       memset(add_node->next, 0, sizeof(tok_node));
     }
     add_node = add_node->next;

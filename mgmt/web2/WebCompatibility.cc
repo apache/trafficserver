@@ -49,7 +49,7 @@ WebGetHostname_Xmalloc(sockaddr_in * client_info)
 
   hostname_tmp = r ? r->h_name : inet_ntoa(client_info->sin_addr);
   size_t len = strlen(hostname_tmp) + 1;
-  hostname = (char *) xmalloc(len);
+  hostname = (char *)ats_malloc(len);
   ink_strncpy(hostname, hostname_tmp, len);
 
   return hostname;
@@ -149,7 +149,7 @@ WebFileImport_Xmalloc(const char *file, char **file_buf, int *file_size)
   if ((h_file = WebFileOpenR(file)) == WEB_HANDLE_INVALID)
     goto Lerror;
   *file_size = WebFileGetSize(h_file);
-  *file_buf = (char *) xmalloc(*file_size + 1);
+  *file_buf = (char *)ats_malloc(*file_size + 1);
   if (WebFileRead(h_file, *file_buf, *file_size, &bytes_read) == WEB_HTTP_ERR_FAIL)
     goto Lerror;
   if (bytes_read != *file_size)

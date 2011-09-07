@@ -86,11 +86,11 @@ cluster_load_msg_sequence_number(0), cluster_load_msg_start_sequence_number(0)
   Debug("cluster_monitor", "cluster_load_exceed_duration=%d", cluster_load_exceed_duration);
 
   int nbytes = sizeof(int) * num_ping_response_buckets;
-  ping_response_buckets = (int *) xmalloc(nbytes);
+  ping_response_buckets = (int *)ats_malloc(nbytes);
   memset((char *) ping_response_buckets, 0, nbytes);
 
   nbytes = sizeof(ink_hrtime) * ping_history_buf_length;
-  ping_response_history_buf = (ink_hrtime *) xmalloc(nbytes);
+  ping_response_history_buf = (ink_hrtime *)ats_malloc(nbytes);
   memset((char *) ping_response_history_buf, 0, nbytes);
 
   last_ping_message_sent = HRTIME_SECONDS(0);

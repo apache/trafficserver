@@ -107,7 +107,7 @@ RecFileImport_Xmalloc(const char *file, char **file_buf, int *file_size)
     *file_size = 0;
     if ((h_file = RecFileOpenR(file)) != REC_HANDLE_INVALID) {
       *file_size = RecFileGetSize(h_file);
-      *file_buf = (char *) xmalloc(*file_size + 1);
+      *file_buf = (char *)ats_malloc(*file_size + 1);
       if (RecFileRead(h_file, *file_buf, *file_size, &bytes_read) != REC_ERR_FAIL && bytes_read == *file_size) {
         (*file_buf)[*file_size] = '\0';
         err = REC_ERR_OKAY;

@@ -162,7 +162,7 @@ SSLCertLookup::extractIPAndCert(matcher_line * line_info, char **addr, char **ce
       if (value != NULL) {
         int buf_len = sizeof(char) * (strlen(value) + 1);
 
-        *addr = (char *) xmalloc(buf_len);
+        *addr = (char *)ats_malloc(buf_len);
         ink_strncpy(*addr, (const char *) value, buf_len);
 //              testAddr = inet_addr (addr);
       }
@@ -172,7 +172,7 @@ SSLCertLookup::extractIPAndCert(matcher_line * line_info, char **addr, char **ce
       if (value != NULL) {
         int buf_len = sizeof(char) * (strlen(value) + 1);
 
-        *cert = (char *) xmalloc(buf_len);
+        *cert = (char *)ats_malloc(buf_len);
         ink_strncpy(*cert, (const char *) value, buf_len);
       }
     }
@@ -181,7 +181,7 @@ SSLCertLookup::extractIPAndCert(matcher_line * line_info, char **addr, char **ce
       if (value != NULL) {
         int buf_len = sizeof(char) * (strlen(value) + 1);
 
-        *priKey = (char *) xmalloc(buf_len);
+        *priKey = (char *)ats_malloc(buf_len);
         ink_strncpy(*priKey, (const char *) value, buf_len);
       }
     }

@@ -211,7 +211,7 @@ read_MachineList(char *filename, int afd)
       if (n == -1 && ParseRules::is_digit(*line)) {
         n = atoi(line);
         if (n > 0) {
-          l = (MachineList *) xmalloc(sizeof(MachineList) + (n - 1) * sizeof(MachineListElement));
+          l = (MachineList *)ats_malloc(sizeof(MachineList) + (n - 1) * sizeof(MachineListElement));
           l->n = 0;
         } else {
           l = NULL;

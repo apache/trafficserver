@@ -154,7 +154,7 @@ VMap::VMap(char *interface, unsigned long ip, ink_mutex * m)
 
     tmp_addr.s_addr = ip;
 
-    ink_assert((tmp_realip_info = (RealIPInfo *) xmalloc(sizeof(RealIPInfo))));
+    tmp_realip_info = (RealIPInfo *)ats_malloc(sizeof(RealIPInfo));
     tmp_realip_info->real_ip = tmp_addr;
     tmp_realip_info->mappings_for_interface = true;
 
@@ -184,7 +184,7 @@ VMap::VMap(char *interface, unsigned long ip, ink_mutex * m)
     lastlen = 0;
     len = 128 * sizeof(struct ifreq);   // initial buffer size guess
     for (;;) {
-      ifbuf = (char *) xmalloc(len);
+      ifbuf = (char *)ats_malloc(len);
       memset(ifbuf, 0, len);    // prevent UMRs
       ifc.ifc_len = len;
       ifc.ifc_buf = ifbuf;
@@ -220,7 +220,7 @@ VMap::VMap(char *interface, unsigned long ip, ink_mutex * m)
 
             tmp = (struct sockaddr_in *) &ifr->ifr_ifru.ifru_addr;
 
-            ink_assert((tmp_realip_info = (RealIPInfo *) xmalloc(sizeof(RealIPInfo))));
+            tmp_realip_info = (RealIPInfo *)ats_malloc(sizeof(RealIPInfo));
             tmp_realip_info->real_ip = tmp->sin_addr;
             tmp_realip_info->mappings_for_interface = false;
 
@@ -413,7 +413,7 @@ VMap::lt_readAListFile(char *data)
 
   num_addrs = tmp_num_addrs;
   if (num_addrs) {
-    addr_list = (unsigned long *) xmalloc(sizeof(unsigned long) * num_addrs);
+    addr_list = (unsigned long *)ats_malloc(sizeof(unsigned long) * num_addrs);
   } else {                      /* Handle the case where there are no addrs in the file */
     addr_list = NULL;
     fclose(fin);
@@ -439,7 +439,7 @@ VMap::lt_readAListFile(char *data)
 
     addr_list[tmp_num_addrs++] = inet_addr(tmp_addr);
 
-    ink_assert((tmp_val = (VIPInfo *) xmalloc(sizeof(VIPInfo))));
+    tmp_val = (VIPInfo *)ats_malloc(sizeof(VIPInfo));
 
     strncpy(tmp_val->interface, tmp_interface, MAX_INTERFACE - 2);
     strncpy(tmp_val->sub_interface_id, tmp_id, MAX_SUB_ID - 2);
@@ -593,7 +593,7 @@ VMap::rl_map(char *virt_ip, char *real_ip)
     return false;
   }
 
-  ink_assert((entry = (bool *) xmalloc(sizeof(bool))));
+  entry = (bool *)ats_malloc(sizeof(bool));
   *entry = true;
 
   if (!real_ip) {
@@ -684,7 +684,7 @@ VMap::rl_checkConflict(char *virt_ip)
       mgmt_fatal(stderr, "[VMap::rl_checkConflict] Corrupt VMap entry('%s'), bailing\n", key);
     }
     size_t buf3_len = strlen(buf2) * sizeof(char) + 1;
-    ink_assert((buf3 = (char *) xmalloc(buf3_len)));
+    buf3 = (char *)ats_malloc(buf3_len);
     ink_strncpy(buf3, buf2, buf3_len);
     return buf3;
   }

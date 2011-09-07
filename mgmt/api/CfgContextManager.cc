@@ -99,7 +99,7 @@ CfgContextCommit(CfgContext * ctx, LLQ * errRules)
   if (!ctx)
     return TS_ERR_PARAMS;
 
-  new_text = (char *) xmalloc(max_file_size + 1);
+  new_text = (char *)ats_malloc(max_file_size + 1);
   new_text[0] = '\0';
   ele = ctx->first();
   index = 0;
@@ -109,7 +109,7 @@ CfgContextCommit(CfgContext * ctx, LLQ * errRules)
       err = TS_ERR_INVALID_CONFIG_RULE;
       rule = xstrdup(FORMAT_TO_RULE_ERROR);
       if (errRules) {
-        iPtr = (int *) xmalloc(sizeof(int));
+        iPtr = (int *)ats_malloc(sizeof(int));
         *iPtr = index;
         enqueue(errRules, (void *) iPtr);
       }

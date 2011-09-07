@@ -49,7 +49,7 @@ CacheDisk::open(char *s, off_t blocks, off_t askip, int ahw_sector_size, int fil
     start = skip + header_len;
   }
 
-  disk_vols = (DiskVol **) xmalloc((l / MIN_VOL_SIZE + 1) * sizeof(DiskVol **));
+  disk_vols = (DiskVol **)ats_malloc((l / MIN_VOL_SIZE + 1) * sizeof(DiskVol **));
   memset(disk_vols, 0, (l / MIN_VOL_SIZE + 1) * sizeof(DiskVol **));
   header_len = ROUND_TO_STORE_BLOCK(header_len);
   start = skip + header_len;

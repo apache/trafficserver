@@ -58,16 +58,9 @@ InkHashTable *accepted_con;     // a list of all accepted client connections
 ClientT *
 create_client()
 {
-  ClientT *ele;
+  ClientT *ele = (ClientT *)ats_malloc(sizeof(ClientT));
 
-  ele = (ClientT *) xmalloc(sizeof(ClientT));
-  if (!ele)
-    return NULL;
-
-  ele->adr = (struct sockaddr *) xmalloc(sizeof(struct sockaddr));
-  if (!ele->adr)
-    return NULL;
-
+  ele->adr = (struct sockaddr *)ats_malloc(sizeof(struct sockaddr));
   return ele;
 }
 

@@ -523,7 +523,7 @@ IOBufferBlock::realloc_xmalloc(void *b, int64_t buf_size)
 TS_INLINE void
 IOBufferBlock::realloc_xmalloc(int64_t buf_size)
 {
-  realloc_set_internal(xmalloc(buf_size), buf_size, -buf_size);
+  realloc_set_internal(ats_malloc(buf_size), buf_size, -buf_size);
 }
 
 TS_INLINE void

@@ -238,9 +238,9 @@ RecTree::rec_tree_get_list(char *path_name, char ***buf, int *count)
     RecTreeDebug("RecTreeGetList subtree %s has %d leafs\n", subtree->this_node->node_name, (*count));
   }
 
-  *buf = (char **) xmalloc(sizeof(char *) * (*count));
+  *buf = (char **)ats_malloc(sizeof(char *) * (*count));
   for (i = 0; i < (*count); i++) {
-    (*buf)[i] = (char *) xmalloc(sizeof(char));
+    (*buf)[i] = (char *)ats_malloc(sizeof(char));
   }
 
   int index = 0;

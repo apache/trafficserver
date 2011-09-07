@@ -46,13 +46,11 @@ textBuffer::textBuffer(int size)
       size = 1024;
     }
 
-    bufferStart = (char *) xmalloc(size);
-    if (bufferStart != NULL) {
-      nextAdd = bufferStart;
-      currentSize = size;
-      spaceLeft = size - 1;     // Leave room for a terminator;
-      nextAdd[0] = '\0';
-    }
+    bufferStart = (char *)ats_malloc(size);
+    nextAdd = bufferStart;
+    currentSize = size;
+    spaceLeft = size - 1;     // Leave room for a terminator;
+    nextAdd[0] = '\0';
   }
 }
 

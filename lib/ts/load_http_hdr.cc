@@ -118,7 +118,7 @@ load_buffer(int fd, hdr_type h_type)
     exit(1);
   }
 
-  char *file_buf = (char *) xmalloc(sizeof(char) * (s_info.st_size + 1));
+  char *file_buf = (char *)ats_malloc(sizeof(char) * (s_info.st_size + 1));
   file_buf[s_info.st_size] = '\0';
 
 
@@ -161,7 +161,7 @@ load_buffer(int fd, hdr_type h_type)
     mbuf_size *= 2;
   }
 
-  char *mbuf = (char *) xmalloc(mbuf_size);
+  char *mbuf = (char *)ats_malloc(mbuf_size);
   int bytes_read = 0;
   int cur_line = 0;
 

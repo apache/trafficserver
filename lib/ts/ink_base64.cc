@@ -46,7 +46,7 @@
 #endif
 #define decode(A) ((unsigned int)codes[(unsigned char)input[A]])
 
-// NOTE: ink_base64_decode returns xmalloc'd memory
+// NOTE: ink_base64_decode returns ats_xmalloc'd memory
 
 char *
 ink_base64_decode(const char *input, int input_len, int *output_len)
@@ -76,9 +76,7 @@ ink_base64_decode(const char *input, int input_len, int *output_len)
   // compute ciphertext length
   for (len = 0; len < input_len && input[len] != '='; len++);
 
-  output = obuf = (char *) xmalloc((len * 6) / 8 + 4);
-  ink_assert(output != NULL);
-
+  output = obuf = (char *)ats_malloc((len * 6) / 8 + 4);
   while (len > 0) {
     *output++ = decode(0) << 2 | decode(1) >> 4;
     *output++ = decode(1) << 4 | decode(2) >> 2;
@@ -104,7 +102,7 @@ ink_base64_decode(const char *input, int input_len, int *output_len)
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-// NOTE: ink_base64_encode returns xmalloc'd memory
+// NOTE: ink_base64_encode returns ats_malloc'd memory
 
 char *
 ink_base64_encode(const char *input, int input_len, int *output_len)
@@ -123,9 +121,7 @@ ink_base64_encode_unsigned(const unsigned char *input, int input_len, int *outpu
 
   len = input_len;
 
-  output = obuf = (char *) xmalloc((len * 8) / 6 + 4);
-  ink_assert(output != NULL);
-
+  output = obuf = (char *)ats_malloc((len * 8) / 6 + 4);
   while (len > 2) {
     *output++ = codes[(input[0] >> 2) & 077];
 

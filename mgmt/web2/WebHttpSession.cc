@@ -143,7 +143,7 @@ WebHttpSessionStore(char *key, void *data, WebHttpSessionDeleter deleter_func)
     goto Ldone;
   }
   time(&now);
-  session = (session_ele *) xmalloc(sizeof(session_ele));
+  session = (session_ele *)ats_malloc(sizeof(session_ele));
   session->created = now;
   session->data = data;
   session->deleter_func = deleter_func;
@@ -205,10 +205,10 @@ Ldone:
 char *
 WebHttpMakeSessionKey_Xmalloc()
 {
-  char *session_key_str = (char *) xmalloc(SESSION_KEY_LEN + 2);
+  char *session_key_str = (char *)ats_malloc(SESSION_KEY_LEN + 2);
   long session_key = WebRand();
   // note: snprintf takes the buffer length, not the string
-  // length? Add 2 to xmalloc above to be safe.  ^_^
+  // length? Add 2 to ats_malloc above to be safe.  ^_^
   snprintf(session_key_str, SESSION_KEY_LEN + 1, "%lx", session_key);
   return session_key_str;
 }

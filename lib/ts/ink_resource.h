@@ -69,7 +69,6 @@ xfree_null(void *mem)
 }
 #endif
 
-#define xmalloc(s)        ats_malloc ((s))
 #define xrealloc(p,s)     ats_realloc ((p),(s))
 #define xstrdup(p)        _xstrdup ((p), -1, NULL)
 #define xstrndup(p,n)     _xstrdup ((p), n, NULL)
@@ -101,14 +100,14 @@ public:
   { }
 
   /// Construct from allocated memory.
-  /// @note @a ptr must refer to memory allocated @c xmalloc.
+  /// @note @a ptr must refer to memory allocated @c ats_malloc.
   explicit xptr(T* ptr)
     : m_ptr(ptr)
   { }
 
   /// Construct and initialized with memory for @a n instances of @a T.
   explicit xptr(size_t n)
-    : m_ptr(xmalloc(sizeof(T) * n))
+    : m_ptr(ats_malloc(sizeof(T) * n))
   { }
 
   /// Destructor - free memory held by this instance.
@@ -118,7 +117,7 @@ public:
   }
 
   /// Assign memory.
-  /// @note @a ptr must be allocated via @c xmalloc.
+  /// @note @a ptr must be allocated via @c ats_malloc.
   self& operator = (T* ptr) {
     xfree(m_ptr);
     m_ptr = ptr;
@@ -162,7 +161,7 @@ private:
 /** Combine two strings as file paths.
     Trailing and leading separators for @a lhs and @a rhs respectively
     are handled to yield exactly one separator.
-    @return A newly @x xmalloc string of the combined paths.
+    @return A newly @x ats_malloc string of the combined paths.
 */
 inline char*
 path_join (xptr<char> const& lhs, xptr<char> const& rhs)
@@ -174,7 +173,7 @@ path_join (xptr<char> const& lhs, xptr<char> const& rhs)
   if (ln && lhs[ln-1] == '/') --ln; // drop trailing separator.
   if (rn && *rptr == '/') --rn, ++rptr; // drop leading separator.
 
-  char* x = static_cast<char*>(xmalloc(ln + rn + 2));
+  char* x = static_cast<char*>(ats_malloc(ln + rn + 2));
 
   memcpy(x, lhs, ln);
   x[ln] = '/';

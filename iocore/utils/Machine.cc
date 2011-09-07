@@ -115,11 +115,11 @@ Machine::Machine(char *ahostname, unsigned int aip)
   memset(x, 0, sizeof(x));
   *(uint32_t *) & x = (uint32_t) ip;
   const size_t ip_string_size = sizeof(char) * 16;
-  ip_string = (char *) xmalloc(ip_string_size);
+  ip_string = (char *)ats_malloc(ip_string_size);
   snprintf(ip_string, ip_string_size, "%hhu.%hhu.%hhu.%hhu", x[0], x[1], x[2], x[3]);
   ip_string_len = strlen(ip_string);
 
-  ip_hex_string = (char*)xmalloc(9);
+  ip_hex_string = (char*)ats_malloc(9);
   memset(ip_hex_string, 0, 9);
   nstrhex(ip_hex_string, ip);
   ip_hex_string_len = strlen(ip_hex_string);

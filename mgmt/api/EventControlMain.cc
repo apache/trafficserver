@@ -54,20 +54,13 @@ InkHashTable *accepted_clients; // list of all accepted client connections
 EventClientT *
 new_event_client()
 {
-  EventClientT *ele;
-
-  ele = (EventClientT *) xmalloc(sizeof(EventClientT));
-  if (!ele)
-    return NULL;
+  EventClientT *ele = (EventClientT *)ats_malloc(sizeof(EventClientT));
 
   // now set the alarms registered section
   for (int i = 0; i < NUM_EVENTS; i++)
     ele->events_registered[i] = 0;
 
-  ele->adr = (struct sockaddr *) xmalloc(sizeof(struct sockaddr));
-  if (!ele->adr)
-    return NULL;
-
+  ele->adr = (struct sockaddr *)ats_malloc(sizeof(struct sockaddr));
   return ele;
 }
 

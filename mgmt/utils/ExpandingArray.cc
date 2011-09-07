@@ -33,7 +33,7 @@ ExpandingArray::ExpandingArray(int initialSize, bool freeContents)
     initialSize = EA_MIN_SIZE;
   }
 
-  internalArray = (void **) xmalloc(initialSize * sizeof(void *));
+  internalArray = (void **)ats_malloc(initialSize * sizeof(void *));
 
   freeContentsOnDestruct = freeContents;
   internalArraySize = initialSize;

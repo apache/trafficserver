@@ -79,8 +79,7 @@ ink_killall_get_pidv_xmalloc(const char *pname, pid_t ** pidv, int *pidvcnt)
     goto l_error;
 
   *pidvcnt = 0;
-  if (!(*pidv = (pid_t *) xmalloc(pidvsize * sizeof(pid_t))))
-    goto l_error;
+  *pidv = (pid_t *)ats_malloc(pidvsize * sizeof(pid_t));
 
   while ((de = readdir(dir))) {
     if (!(pid = (pid_t) atoi(de->d_name)) || pid == self)

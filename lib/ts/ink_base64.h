@@ -37,7 +37,7 @@
  *
  */
 
-// These functions return xmalloc'd memory which caller needs to xfree
+// These functions return ats_malloc'd memory which caller needs to xfree
 inkcoreapi char *ink_base64_decode(const char *input, int input_len, int *output_len);
 char *ink_base64_encode(const char *input, int input_len, int *output_len);
 char *ink_base64_encode_unsigned(const unsigned char *input, int input_len, int *output_len);

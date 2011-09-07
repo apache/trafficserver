@@ -42,10 +42,10 @@ int ink_killall(const char *pname, int sig);
 
 /*-------------------------------------------------------------------------
    ink_killall_get_pidv_xmalloc
-   - Get all pid's named 'pname' and stores into xmalloc'd
+   - Get all pid's named 'pname' and stores into ats_malloc'd
      pid_t array, 'pidv'
    - Returns: -1 error (pidv: set to NULL; pidvcnt: set to 0)
-               0 okay (pidv: xmalloc'd pid vector; pidvcnt: number of pid's;
+               0 okay (pidv: ats_malloc'd pid vector; pidvcnt: number of pid's;
 	               if pidvcnt is set to 0, then pidv will be set to NULL)
   -------------------------------------------------------------------------*/
 int ink_killall_get_pidv_xmalloc(const char *pname, pid_t ** pidv, int *pidvcnt);

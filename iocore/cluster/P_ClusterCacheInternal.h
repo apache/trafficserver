@@ -214,7 +214,7 @@ struct CacheContinuation:public Continuation
     if (rw_buf_msg_len <= DEFAULT_MAX_BUFFER_SIZE) {
       rw_buf_msg = new_IOBufferData(buffer_size_to_index(rw_buf_msg_len, MAX_BUFFER_SIZE_INDEX));
     } else {
-      rw_buf_msg = new_xmalloc_IOBufferData(xmalloc(rw_buf_msg_len), rw_buf_msg_len);
+      rw_buf_msg = new_xmalloc_IOBufferData(ats_malloc(rw_buf_msg_len), rw_buf_msg_len);
     }
   }
 
