@@ -362,7 +362,7 @@ SSLNetProcessor::initSSLServerCTX(SslConfigParams * param, SSL_CTX * lCtx,
     }
   } else {
     const size_t completeServerCertPathSize = strlen(param->getServerCertPathOnly()) + strlen(serverCertPtr) + 1;
-    completeServerCertPath = (char *) xmalloc(completeServerCertPathSize);
+    completeServerCertPath = (char *)ats_malloc(completeServerCertPathSize);
 
     ink_strncpy(completeServerCertPath, (const char *) param->getServerCertPathOnly(), completeServerCertPathSize);
     ink_strlcat(completeServerCertPath, serverCertPtr, completeServerCertPathSize);

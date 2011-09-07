@@ -134,7 +134,7 @@ HttpTransactHeaders::insert_supported_methods_in_response(HTTPHdr *response, int
     alloced_buffer = NULL;
     value_buffer = inline_buffer;
   } else {
-    alloced_buffer = (char *) xmalloc(bytes);
+    alloced_buffer = (char *)ats_malloc(bytes);
     value_buffer = alloced_buffer;
   }
 

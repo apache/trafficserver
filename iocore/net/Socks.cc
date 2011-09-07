@@ -586,7 +586,7 @@ loadSocksAuthInfo(int fd, socks_conf_struct * socks_stuff)
 
       socks_stuff->user_name_n_passwd_len = len1 + len2 + 2;
 
-      char *ptr = (char *) xmalloc(socks_stuff->user_name_n_passwd_len);
+      char *ptr = (char *)ats_malloc(socks_stuff->user_name_n_passwd_len);
       ptr[0] = len1;
       memcpy(&ptr[1], user_name, len1);
       ptr[len1 + 1] = len2;

@@ -1417,7 +1417,7 @@ change_uid_gid(const char *user)
     ink_fatal_die("sysconf() failed for _SC_GETPW_R_SIZE_MAX");
   }
 
-  char *buf = (char *)xmalloc(buflen);
+  char *buf = (char *)ats_malloc(buflen);
 
   if (0 != geteuid() && 0 == getuid()) seteuid(0); // revert euid if possible.
   if (0 != geteuid()) {
@@ -1566,7 +1566,8 @@ main(int argc, char **argv)
     TS_ReadConfigInteger(num_task_threads, "proxy.config.task_threads");
 
   const long max_login =  sysconf(_SC_LOGIN_NAME_MAX) <= 0 ? _POSIX_LOGIN_NAME_MAX :  sysconf(_SC_LOGIN_NAME_MAX);
-  char *user = (char *)xmalloc(max_login);
+  char *user = (char *)ats_malloc(max_login);
+
   *user = '\0';
   admin_user_p = 
     (REC_ERR_OKAY ==

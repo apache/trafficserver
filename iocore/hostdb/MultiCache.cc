@@ -1246,9 +1246,8 @@ MultiCacheHeapGC(Continuation *acont, MultiCacheBase *amc):
   Continuation(amc->locks[0]), cont(acont), mc(amc), partition(0), n_offsets(0) {
 
     SET_HANDLER((MCacheHeapGCHandler) & MultiCacheHeapGC::startEvent);
-    offset_table = (OffsetTable *)
-      xmalloc(sizeof(OffsetTable) *
-              ((mc->totalelements / MULTI_CACHE_PARTITIONS) + mc->elements[mc->levels - 1] * 3 + 1));
+    offset_table = (OffsetTable *)ats_malloc(sizeof(OffsetTable) *
+        ((mc->totalelements / MULTI_CACHE_PARTITIONS) + mc->elements[mc->levels - 1] * 3 + 1));
     // flip halfspaces
     mutex = mc->locks[partition];
     mc->heap_halfspace = mc->heap_halfspace ? 0 : 1;
@@ -1312,7 +1311,7 @@ UnsunkPtrRegistry::alloc_data()
 {
   int bs = MULTI_CACHE_UNSUNK_PTR_BLOCK_SIZE(mc->totalelements);
   size_t s = bs * sizeof(UnsunkPtr);
-  ptrs = (UnsunkPtr *) xmalloc(s);
+  ptrs = (UnsunkPtr *)ats_malloc(s);
   for (int i = 0; i < bs; i++) {
     ptrs[i].offset = 0;
     ptrs[i].poffset = (int *) &ptrs[i + 1];

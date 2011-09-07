@@ -121,7 +121,7 @@ CacheHostMatcher::Match(char *rdata, int rlen, CacheHostResult * result)
 
   if (rlen == 0)
     return;
-  char *data = (char *) xmalloc(rlen + 1);
+  char *data = (char *)ats_malloc(rlen + 1);
   memcpy(data, rdata, rlen);
   *(data + rlen) = '\0';
   HostLookupState s;
@@ -306,7 +306,7 @@ CacheHostTable::BuildTableFromString(char *file_buf)
 
     if (*tmp != '#' && *tmp != '\0') {
 
-      current = (matcher_line *) xmalloc(sizeof(matcher_line));
+      current = (matcher_line *)ats_malloc(sizeof(matcher_line));
       errPtr = parseConfigLine((char *) tmp, current, config_tags);
 
       if (errPtr != NULL) {
@@ -453,7 +453,7 @@ CacheHostRecord::Init(int typ)
   err[0] = 0;
   num_vols = 0;
   type = typ;
-  cp = (CacheVol **) xmalloc(cp_list_len * sizeof(CacheVol *));
+  cp = (CacheVol **)ats_malloc(cp_list_len * sizeof(CacheVol *));
   memset(cp, 0, cp_list_len * sizeof(CacheVol *));
   num_cachevols = 0;
   CacheVol *cachep = cp_list.head;
@@ -470,7 +470,7 @@ CacheHostRecord::Init(int typ)
     IOCORE_SignalError(err, alarmAlready);
     return -1;
   }
-  vols = (Vol **) xmalloc(num_vols * sizeof(Vol *));
+  vols = (Vol **)ats_malloc(num_vols * sizeof(Vol *));
   int counter = 0;
   for (i = 0; i < num_cachevols; i++) {
     CacheVol *cachep1 = cp[i];
@@ -541,7 +541,7 @@ CacheHostRecord::Init(matcher_line * line_info, int typ)
       }
       s = val;
       num_cachevols++;
-      cp = (CacheVol **) xmalloc(num_cachevols * sizeof(CacheVol *));
+      cp = (CacheVol **)ats_malloc(num_cachevols * sizeof(CacheVol *));
       memset(cp, 0, num_cachevols * sizeof(CacheVol *));
       num_cachevols = 0;
       while (1) {
@@ -605,7 +605,7 @@ CacheHostRecord::Init(matcher_line * line_info, int typ)
   if (!num_vols) {
     return -1;
   }
-  vols = (Vol **) xmalloc(num_vols * sizeof(Vol *));
+  vols = (Vol **)ats_malloc(num_vols * sizeof(Vol *));
   int counter = 0;
   for (i = 0; i < num_cachevols; i++) {
     CacheVol *cachep = cp[i];

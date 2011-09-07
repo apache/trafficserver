@@ -316,7 +316,7 @@ LogCollationClientSM::client_dns(int event, HostDBInfo * hostdb_info)
     }
     // careful!!! could have problems later!!!
     m_log_host->m_ip = ink_inet_ip4_addr_cast(hostdb_info->ip());
-    m_log_host->m_ipstr = (char *) xmalloc(INET6_ADDRSTRLEN);
+    m_log_host->m_ipstr = (char *)ats_malloc(INET6_ADDRSTRLEN);
     ink_inet_ntop(hostdb_info->ip(), m_log_host->m_ipstr, INET6_ADDRSTRLEN);
 
     return client_open(LOG_COLL_EVENT_SWITCH, NULL);
@@ -531,7 +531,7 @@ LogCollationClientSM::client_init(int event, void *data)
       ink_gethostbyname_r_data data;
       struct hostent *ent = ink_gethostbyname_r(m_log_host->m_name, &data);
       m_log_host->m_ip = *(unsigned int *) ent->h_addr_list[0];
-      m_log_host->m_ipstr = (char *) xmalloc(32);
+      m_log_host->m_ipstr = (char *)ats_malloc(32);
       LogUtils::ip_to_str(m_log_host->m_ip, m_log_host->m_ipstr, 32);
       return client_open(LOG_COLL_EVENT_SWITCH, NULL);
 #endif

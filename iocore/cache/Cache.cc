@@ -521,7 +521,7 @@ CacheProcessor::start_internal(int flags)
   /* read the config file and create the data structures corresponding
      to the file */
   gndisks = theCacheStore.n_disks;
-  gdisks = (CacheDisk **) xmalloc(gndisks * sizeof(CacheDisk *));
+  gdisks = (CacheDisk **)ats_malloc(gndisks * sizeof(CacheDisk *));
 
   gndisks = 0;
   ink_aio_set_callback(new AIO_Callback_handler());
@@ -615,7 +615,7 @@ CacheProcessor::diskInitialized()
       // create a new array
       CacheDisk **p_good_disks;
       if ((gndisks - bad_disks) > 0)
-        p_good_disks = (CacheDisk **) xmalloc((gndisks - bad_disks) * sizeof(CacheDisk *));
+        p_good_disks = (CacheDisk **)ats_malloc((gndisks - bad_disks) * sizeof(CacheDisk *));
       else
         p_good_disks = 0;
 
@@ -662,7 +662,7 @@ CacheProcessor::diskInitialized()
       }
     }
 
-    gvol = (Vol **) xmalloc(gnvol * sizeof(Vol *));
+    gvol = (Vol **)ats_malloc(gnvol * sizeof(Vol *));
     memset(gvol, 0, gnvol * sizeof(Vol *));
     gnvol = 0;
     for (i = 0; i < gndisks; i++) {
@@ -1550,8 +1550,8 @@ void
 build_vol_hash_table(CacheHostRecord *cp)
 {
   int num_vols = cp->num_vols;
-  unsigned int *mapping = (unsigned int *) xmalloc(sizeof(unsigned int) * num_vols);
-  Vol **p = (Vol **) xmalloc(sizeof(Vol *) * num_vols);
+  unsigned int *mapping = (unsigned int *)ats_malloc(sizeof(unsigned int) * num_vols);
+  Vol **p = (Vol **)ats_malloc(sizeof(Vol *) * num_vols);
 
   memset(mapping, 0, num_vols * sizeof(unsigned int));
   memset(p, 0, num_vols * sizeof(Vol *));
@@ -1587,7 +1587,7 @@ build_vol_hash_table(CacheHostRecord *cp)
 
   unsigned int *forvol = (unsigned int *) alloca(sizeof(unsigned int) * num_vols);
   unsigned int *rnd = (unsigned int *) alloca(sizeof(unsigned int) * num_vols);
-  unsigned short *ttable = (unsigned short *) xmalloc(sizeof(unsigned short) * VOL_HASH_TABLE_SIZE);
+  unsigned short *ttable = (unsigned short *)ats_malloc(sizeof(unsigned short) * VOL_HASH_TABLE_SIZE);
 
   for (i = 0; i < num_vols; i++) {
     forvol[i] = (VOL_HASH_TABLE_SIZE * (p[i]->len >> STORE_BLOCK_SHIFT)) / total;
@@ -1775,7 +1775,7 @@ Cache::open(bool clear, bool fix)
   CacheVol *cp = cp_list.head;
   for (; cp; cp = cp->link.next) {
     if (cp->scheme == scheme) {
-      cp->vols = (Vol **) xmalloc(cp->num_vols * sizeof(Vol *));
+      cp->vols = (Vol **)ats_malloc(cp->num_vols * sizeof(Vol *));
       int vol_no = 0;
       for (i = 0; i < gndisks; i++) {
         if (cp->disk_vols[i] && !DISK_BAD(cp->disk_vols[i]->disk)) {
@@ -2203,7 +2203,7 @@ cplist_init()
         new_p->num_vols = dp[j]->num_volblocks;
         new_p->size = dp[j]->size;
         new_p->scheme = dp[j]->dpb_queue.head->b->type;
-        new_p->disk_vols = (DiskVol **) xmalloc(gndisks * sizeof(DiskVol *));
+        new_p->disk_vols = (DiskVol **)ats_malloc(gndisks * sizeof(DiskVol *));
         memset(new_p->disk_vols, 0, gndisks * sizeof(DiskVol *));
         new_p->disk_vols[i] = dp[j];
         cp_list.enqueue(new_p);
@@ -2272,7 +2272,7 @@ cplist_reconfigure()
     CacheVol *cp = NEW(new CacheVol());
     cp->vol_number = 0;
     cp->scheme = CACHE_HTTP_TYPE;
-    cp->disk_vols = (DiskVol **) xmalloc(gndisks * sizeof(DiskVol *));
+    cp->disk_vols = (DiskVol **)ats_malloc(gndisks * sizeof(DiskVol *));
     memset(cp->disk_vols, 0, gndisks * sizeof(DiskVol *));
     cp_list.enqueue(cp);
     cp_list_len++;
@@ -2365,7 +2365,7 @@ cplist_reconfigure()
         // we did not find a corresponding entry in cache vol...creat one
 
         CacheVol *new_cp = NEW(new CacheVol());
-        new_cp->disk_vols = (DiskVol **) xmalloc(gndisks * sizeof(DiskVol *));
+        new_cp->disk_vols = (DiskVol **)ats_malloc(gndisks * sizeof(DiskVol *));
         memset(new_cp->disk_vols, 0, gndisks * sizeof(DiskVol *));
         if (create_volume(config_vol->number, size_in_blocks, config_vol->scheme, new_cp))
           return -1;

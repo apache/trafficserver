@@ -283,7 +283,7 @@ CacheControlRecord::Init(matcher_line * line_info)
       char* ptr = 0;
       int v = strtol(val, &ptr, 0);
       if (!ptr || v < 0 || v > 4) {
-        errBuf = static_cast<char*>(xmalloc(errBufLen * sizeof(char)));
+        errBuf = static_cast<char*>(ats_malloc(errBufLen * sizeof(char)));
         snprintf(errBuf, errBufLen,
           "Value for " TWEAK_CACHE_RESPONSES_TO_COOKIES
           " must be an integer in the range 0..4"
@@ -331,7 +331,7 @@ CacheControlRecord::Init(matcher_line * line_info)
        // directive = CC_CACHE_AUTH_CONTENT;
        // d_found = true;
       } else {
-        errBuf = (char *) xmalloc(errBufLen * sizeof(char));
+        errBuf = (char *)ats_malloc(errBufLen * sizeof(char));
         snprintf(errBuf, errBufLen, "%s Invalid action at line %d in cache.config", modulePrefix, line_num);
         return errBuf;
       }
@@ -354,7 +354,7 @@ CacheControlRecord::Init(matcher_line * line_info)
           this->time_arg = time_in;
 
         } else {
-          errBuf = (char *) xmalloc(errBufLen * sizeof(char));
+          errBuf = (char *)ats_malloc(errBufLen * sizeof(char));
           snprintf(errBuf, errBufLen, "%s %s at line %d in cache.config", modulePrefix, tmp, line_num);
           return errBuf;
         }
@@ -370,7 +370,7 @@ CacheControlRecord::Init(matcher_line * line_info)
   }
 
   if (d_found == false) {
-    errBuf = (char *) xmalloc(errBufLen * sizeof(char));
+    errBuf = (char *)ats_malloc(errBufLen * sizeof(char));
     snprintf(errBuf, errBufLen, "%s No directive in cache.config at line %d", modulePrefix, line_num);
     return errBuf;
   }
@@ -379,7 +379,7 @@ CacheControlRecord::Init(matcher_line * line_info)
     tmp = ProcessModifiers(line_info);
 
     if (tmp != NULL) {
-      errBuf = (char *) xmalloc(errBufLen * sizeof(char));
+      errBuf = (char *)ats_malloc(errBufLen * sizeof(char));
       snprintf(errBuf, errBufLen, "%s %s at line %d in cache.config", modulePrefix, tmp, line_num);
       return errBuf;
     }

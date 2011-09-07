@@ -2158,7 +2158,7 @@ HttpSM::state_handle_stat_page(int event, void *data)
       if (spd->type)
         t_state.internal_msg_buffer_type = spd->type;
       else {
-        t_state.internal_msg_buffer_type = (char *) xmalloc(10);
+        t_state.internal_msg_buffer_type = (char *)ats_malloc(10);
         snprintf(t_state.internal_msg_buffer_type, 10, "text/html");
       }
       t_state.internal_msg_buffer_size = spd->length;
@@ -6289,7 +6289,7 @@ HttpSM::dump_state_hdr(HTTPHdr *h, const char *s)
   // Dump the client request if available
   if (h->valid()) {
     int l = h->length_get();
-    char *hdr_buf = (char *) xmalloc(l + 1);
+    char *hdr_buf = (char *)ats_malloc(l + 1);
     int index = 0;
     int offset = 0;
 
@@ -6928,7 +6928,7 @@ HttpSM::redirect_request(const char *redirect_url, const int redirect_len)
 #if defined(__GNUC__)
       char buf[host_len + 7];
 #else
-      char *buf = (char *)xmalloc(host_len + 7);
+      char *buf = (char *)ats_malloc(host_len + 7);
 #endif
       strncpy(buf, host, host_len);
       host_len += snprintf(buf + host_len, sizeof(buf) - host_len, ":%d", port);

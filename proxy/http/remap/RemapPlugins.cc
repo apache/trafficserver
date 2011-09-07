@@ -179,7 +179,7 @@ RemapPlugins::run_single_remap()
     unsigned int newPathLenNeed = (requestPathLen - fromPathLen) + toPathLen + 8; // 3 + some padding
 
     if (newPathLenNeed > sizeof(newPathTmp)) {
-      newPath = (newPathAlloc = (char *) xmalloc(newPathLenNeed));
+      newPath = (newPathAlloc = (char *)ats_malloc(newPathLenNeed));
       if (debug_on) {
         memset(newPath, 0, newPathLenNeed);
       }

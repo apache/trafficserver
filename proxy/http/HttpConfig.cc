@@ -1127,7 +1127,7 @@ HttpConfig::startup()
   c.proxy_hostname_len = -1;
 
   if (c.proxy_hostname == NULL) {
-    c.proxy_hostname = (char *) xmalloc(sizeof(char));
+    c.proxy_hostname = (char *)ats_malloc(sizeof(char));
     c.proxy_hostname[0] = '\0';
   }
 
@@ -1979,7 +1979,7 @@ HttpConfig::parse_url_expansions(char *url_expansions_str, int *num_expansions)
 
   // Now extract the URL expansions
   if (count) {
-    expansions = (char **) xmalloc(count * sizeof(char *));
+    expansions = (char **)ats_malloc(count * sizeof(char *));
     start = url_expansions_str;
     for (i = 0; i < count; i++) {
       // Skip whitespace

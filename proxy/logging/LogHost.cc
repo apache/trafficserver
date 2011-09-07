@@ -115,7 +115,7 @@ LogHost::set_name_port(char *hostname, unsigned int pt)
   m_ip = 0;                     // make sure ip is 0 for iocore
 #if !defined(IOCORE_LOG_COLLATION)
   m_ip = LogUtils::ip_from_host(hostname);
-  m_ipstr = (char *) xmalloc(32);
+  m_ipstr = (char *)ats_malloc(32);
   LogUtils::ip_to_str(m_ip, m_ipstr, 32);
 #endif
   m_name = xstrdup(hostname);
@@ -237,8 +237,8 @@ LogHost::create_orphan_LogFile_object()
 
   const char *orphan_ext = "orphan";
   unsigned name_len = (unsigned) (strlen(m_object_filename) + strlen(name()) + strlen(orphan_ext) + 16);
-  char *name_buf = (char *) xmalloc(name_len);
-  ink_assert(name_buf != NULL);
+  char *name_buf = (char *)ats_malloc(name_len);
+
   // NT: replace ':'s with '-'s.  This change is necessary because
   // NT doesn't like filenames with ':'s in them.  ^_^
   snprintf(name_buf, name_len, "%s%s%s-%u.%s",

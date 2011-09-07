@@ -123,8 +123,8 @@ static char *make_vol_map(Vol *d)
   off_t start_offset = vol_offset_to_offset(d, 0);
   off_t vol_len = vol_relative_length(d, start_offset);
   size_t map_len = (vol_len + (SCAN_BUF_SIZE - 1)) / SCAN_BUF_SIZE;
-  char *vol_map = (char *)xmalloc(map_len);
-  if (!vol_map) return NULL;
+  char *vol_map = (char *)ats_malloc(map_len);
+
   memset(vol_map, 0, map_len);
 
   // Scan directories.

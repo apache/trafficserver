@@ -524,7 +524,7 @@ how_to_open_connection(HttpTransact::State* s)
         // to the default port.
         int port = url->port_get();
         if (port != url_canonicalize_port(URL_TYPE_HTTP, 0)) {
-          char *buf = (char *) xmalloc(host_len + 15);
+          char *buf = (char *)ats_malloc(host_len + 15);
           strncpy(buf, host, host_len);
           host_len += snprintf(buf + host_len, host_len + 15, ":%d", port);
           s->hdr_info.server_request.value_set(MIME_FIELD_HOST, MIME_LEN_HOST, buf, host_len);
@@ -1043,7 +1043,7 @@ HttpTransact::ModifyRequest(State* s)
     char *buf = NULL;
 
     if (port > 0) {
-      buf = (char *) xmalloc(host_val_len + 15);
+      buf = (char *)ats_malloc(host_val_len + 15);
       strncpy(buf, hostname, host_val_len);
       host_val_len += snprintf(buf + host_val_len, host_val_len + 15, ":%d", port);
       host_val = (const char**)(&buf);
@@ -5490,7 +5490,7 @@ HttpTransact::handle_trace_and_options_requests(State* s, HTTPHdr* incoming_hdr)
         s->internal_msg_buffer = (char *) ioBufAllocator[s->internal_msg_buffer_fast_allocator_size].alloc_void();
       } else {
         s->internal_msg_buffer_fast_allocator_size = -1;
-        s->internal_msg_buffer = (char *) xmalloc(s->internal_msg_buffer_size);
+        s->internal_msg_buffer = (char *)ats_malloc(s->internal_msg_buffer_size);
       }
 
       // clear the stupid buffer
@@ -7811,7 +7811,7 @@ HttpTransact::build_request(State* s, HTTPHdr* base_request, HTTPHdr* outgoing_r
     // to the default port.
     int port = url->port_get();
     if (port != url_canonicalize_port(URL_TYPE_HTTP, 0)) {
-      char *buf = (char *) xmalloc(host_len + 15);
+      char *buf = (char *) ats_malloc(host_len + 15);
       strncpy(buf, host, host_len);
       host_len += snprintf(buf + host_len, host_len + 15, ":%d", port);
       outgoing_request->value_set(MIME_FIELD_HOST, MIME_LEN_HOST, buf, host_len);

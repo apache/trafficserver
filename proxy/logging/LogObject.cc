@@ -249,8 +249,8 @@ LogObject::generate_filenames(const char *log_dir, const char *basename, LogFile
   int basename_len = len + ext_len + 1; // include null terminator
   int total_len = dir_len + 1 + basename_len;   // include '/'
 
-  m_filename = (char *) xmalloc(total_len);
-  m_basename = (char *) xmalloc(basename_len);
+  m_filename = (char *)ats_malloc(total_len);
+  m_basename = (char *)ats_malloc(basename_len);
 
   memcpy(m_filename, log_dir, dir_len);
   m_filename[dir_len++] = '/';
@@ -333,7 +333,7 @@ uint64_t LogObject::compute_signature(LogFormat * format, char *filename, unsign
 
   if (fl && ps && filename) {
     int buf_size = strlen(fl) + strlen(ps) + strlen(filename) + 2;
-    char *buffer = (char *) xmalloc(buf_size);
+    char *buffer = (char *)ats_malloc(buf_size);
 
     ink_string_concatenate_strings(buffer, fl, ps, filename, flags & LogObject::BINARY ? "B" :
                                    (flags & LogObject::WRITES_TO_PIPE ? "P" : "A"), NULL);

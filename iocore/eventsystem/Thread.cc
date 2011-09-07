@@ -93,7 +93,7 @@ spawn_thread_internal(void *a)
 void
 Thread::start(const char* name, ThreadFunction f, void *a, size_t stacksize)
 {
-  thread_data_internal *p = (thread_data_internal *) xmalloc(sizeof(thread_data_internal));
+  thread_data_internal *p = (thread_data_internal *)ats_malloc(sizeof(thread_data_internal));
 
   if (0 == stacksize)
     REC_ReadConfigInteger(stacksize, "proxy.config.thread.default.stacksize");

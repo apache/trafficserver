@@ -458,7 +458,7 @@ SplitDNSRecord::Init(matcher_line * line_info)
 {
   const char *errPtr = NULL;
   const int errBufLen = 1024;
-  char *errBuf = (char *) xmalloc(errBufLen * sizeof(char));
+  char *errBuf = (char *)ats_malloc(errBufLen * sizeof(char));
   const char *tmp;
   char *label;
   char *val;
