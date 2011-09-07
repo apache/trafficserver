@@ -170,7 +170,7 @@ parseRemapFile(int fd)
   return NULL;
 
 FAIL:
-  errBuf = (char *) xmalloc(1024);
+  errBuf = (char *)ats_malloc(1024);
   snprintf(errBuf, 1024, "[Entry %d] %s", entry, err);
   return errBuf;
 }

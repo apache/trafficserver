@@ -55,8 +55,8 @@ StringHash::StringHash(int _hash_size, bool _ignore_case)
     hash_mask_size++;
   }
 
-  if ((hash = (StringHashEntry **) xmalloc(hash_size * sizeof(StringHashEntry *))) != NULL)
-    memset(hash, 0, hash_size * sizeof(StringHashEntry *));
+  hash = (StringHashEntry **)ats_malloc(hash_size * sizeof(StringHashEntry *));
+  memset(hash, 0, hash_size * sizeof(StringHashEntry *));
   //printf("StringHash::StringHash  hash = 0x%0X, mask = 0x%0lX, hash_mask_size = %d\n",hash_size,(long)hash_mask,hash_mask_size);
 }
 
@@ -127,10 +127,9 @@ StringHash::find_or_add(void *_ptr, const char *_str, int _strsize)
 
   if (ignore_case) {
     if (unlikely(_strsize >= (int) sizeof(tbuf))) {
-      if ((tbufp = (tbuf_alloc = (char *) xmalloc(_strsize + 1))) == NULL) {
-        tbufp = &tbuf[0];
-        _strsize = (int) (sizeof(tbuf) - 1);
-      }
+      tbufp = (tbuf_alloc = (char *)ats_malloc(_strsize + 1));
+      tbufp = &tbuf[0];
+      _strsize = (int) (sizeof(tbuf) - 1);
     } else
       tbufp = &tbuf[0];
     for (htid = 0; htid < _strsize; htid++) {
@@ -195,10 +194,10 @@ StringHashEntry::setstr(const char *_str, int _strsize)
   }
   if ((strsize = _strsize) < 0)
     strsize = strlen(_str);
-  if (likely((str = (char *) xmalloc(strsize + 1)) != NULL)) {
-    if (strsize)
-      memcpy(str, _str, strsize);
-    str[strsize] = 0;
-  }
+  str = (char *)ats_malloc(strsize + 1);
+  if (strsize)
+    memcpy(str, _str, strsize);
+  str[strsize] = 0;
+
   return str;
 }

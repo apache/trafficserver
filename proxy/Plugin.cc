@@ -209,7 +209,7 @@ plugin_expand(char *arg)
       if (RecGetRecordFloat(arg, &float_val) != REC_ERR_OKAY) {
         goto not_found;
       }
-      str = (char *) xmalloc(128);
+      str = (char *)ats_malloc(128);
       snprintf(str, 128, "%f", (float) float_val);
       return str;
       break;
@@ -220,7 +220,7 @@ plugin_expand(char *arg)
       if (RecGetRecordInt(arg, &int_val) != REC_ERR_OKAY) {
         goto not_found;
       }
-      str = (char *) xmalloc(128);
+      str = (char *)ats_malloc(128);
       snprintf(str, 128, "%ld", (long int) int_val);
       return str;
       break;
@@ -231,7 +231,7 @@ plugin_expand(char *arg)
       if (RecGetRecordCounter(arg, &count_val) != REC_ERR_OKAY) {
         goto not_found;
       }
-      str = (char *) xmalloc(128);
+      str = (char *)ats_malloc(128);
       snprintf(str, 128, "%ld", (long int) count_val);
       return str;
       break;

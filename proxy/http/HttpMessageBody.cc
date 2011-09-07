@@ -72,7 +72,7 @@ HttpMessageBody::MakeErrorBodyVA(int64_t max_buffer_length,
       if (output_length > max_buffer_length)
         return (NULL);
       else
-        outbuf = (char *) xmalloc(output_length);
+        outbuf = (char *)ats_malloc(output_length);
     }
 
     l = 0;

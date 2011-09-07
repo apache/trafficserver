@@ -160,7 +160,7 @@ HdrTest::test_error_page_selection()
   for (i = 0; i < nsets; i++) {
     HttpBodySetRawData *body_set;
 
-    body_set = (HttpBodySetRawData *) xmalloc(sizeof(HttpBodySetRawData));
+    body_set = (HttpBodySetRawData *)ats_malloc(sizeof(HttpBodySetRawData));
     body_set->magic = 0;
     body_set->set_name = (char *) (sets[i].set_name);
     body_set->content_language = (char *) (sets[i].content_language);
@@ -910,8 +910,8 @@ comp_http_hdr(HTTPHdr * h1, HTTPHdr * h2)
     return "length mismatch";
   }
 
-  h1_pbuf = (char *) xmalloc(h1_len + 1);
-  h2_pbuf = (char *) xmalloc(h2_len + 1);
+  h1_pbuf = (char *)ats_malloc(h1_len + 1);
+  h2_pbuf = (char *)ats_malloc(h2_len + 1);
 
   p_index = p_dumpoffset = 0;
   rval = h1->print(h1_pbuf, h1_len, &p_index, &p_dumpoffset);

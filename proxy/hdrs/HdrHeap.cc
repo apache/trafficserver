@@ -126,7 +126,7 @@ new_HdrHeap(int size)
     size = HDR_HEAP_DEFAULT_SIZE;
     h = (HdrHeap *) hdrHeapAllocator.alloc_void();
   } else {
-    h = (HdrHeap *) xmalloc(size);
+    h = (HdrHeap *)ats_malloc(size);
   }
 
 //    Debug("hdrs", "Allocated header heap in size %d", size);
@@ -157,7 +157,7 @@ new_HdrStrHeap(int requested_size)
     sh = (HdrStrHeap *) strHeapAllocator.alloc_void();
   } else {
     alloc_size = ROUND(alloc_size, HDR_STR_HEAP_DEFAULT_SIZE*2);
-    sh = (HdrStrHeap *) xmalloc(alloc_size);
+    sh = (HdrStrHeap *)ats_malloc(alloc_size);
   }
 
 //    Debug("hdrs", "Allocated string heap in size %d", alloc_size);

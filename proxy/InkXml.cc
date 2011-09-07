@@ -30,14 +30,6 @@
 
 #include "InkXml.h"
 
-/*--- for stand-alone testing
-#define xstrdup strdup
-#define xfree free
-#define xmalloc malloc
-#define NEW(x) x
-#define ink_isspace isspace
----*/
-
 /*-------------------------------------------------------------------------
   InkXmlAttr
   -------------------------------------------------------------------------*/

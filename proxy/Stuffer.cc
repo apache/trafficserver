@@ -123,7 +123,7 @@ buildParentIPTable()
 
   stuffer_num_parents = n;
   if (n > 0) {
-    stuffer_parent_ip_array = (uint32_t *) xmalloc(n * sizeof(uint32_t));
+    stuffer_parent_ip_array = (uint32_t *)ats_malloc(n * sizeof(uint32_t));
     memcpy(stuffer_parent_ip_array, &ips[0], n * sizeof(uint32_t));
     for (int i = 0; i < n; i++) {
       unsigned char *str = (unsigned char *) &ips[i];
@@ -260,12 +260,10 @@ Stuffer::mainEvent(int event, void *data)
         while ((null_pos = reader->memchr(0)) >= 0) {
           null_pos++;
 
-          char *str = (char *) xmalloc(null_pos);
-          if (str) {
-            reader->read(str, null_pos);
-            stuffer_htable->add(str);
-          } else
-            reader->consume(null_pos);
+          char *str = (char *)ats_malloc(null_pos);
+
+          reader->read(str, null_pos);
+          stuffer_htable->add(str);
 
           cur_ntodo -= null_pos;
           if (cur_ntodo <= 0) {
@@ -650,7 +648,7 @@ int
 StufferCacheIncomingRequest(CacheVC * cache_vc)
 {
   /* extract url out of this vc.
-     use local buffer to avoid another xmalloc(), otherwise we could just
+     use local buffer to avoid another ats_malloc(), otherwise we could just
      use url_obj->string_get() */
 #define BUF_SIZE 512
   char url[BUF_SIZE];

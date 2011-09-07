@@ -121,7 +121,7 @@ ProcessManager::signalManager(int msg_id, const char *data_raw, int data_len)
 
   MgmtMessageHdr *mh;
 
-  mh = (MgmtMessageHdr *) xmalloc(sizeof(MgmtMessageHdr) + data_len);
+  mh = (MgmtMessageHdr *)ats_malloc(sizeof(MgmtMessageHdr) + data_len);
   mh->msg_id = msg_id;
   mh->data_len = data_len;
   memcpy((char *) mh + sizeof(MgmtMessageHdr), data_raw, data_len);

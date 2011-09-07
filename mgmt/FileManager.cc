@@ -472,7 +472,7 @@ FileManager::removeSnap(const char *snapName, const char *snapDir)
     return SNAP_NOT_FOUND;
   }
 
-  dirEntrySpace = (struct dirent *) xmalloc(sizeof(struct dirent) + pathconf(".", _PC_NAME_MAX) + 1);
+  dirEntrySpace = (struct dirent *)ats_malloc(sizeof(struct dirent) + pathconf(".", _PC_NAME_MAX) + 1);
 
   while (readdir_r(dir, dirEntrySpace, &entryPtr) == 0) {
     if (!entryPtr)

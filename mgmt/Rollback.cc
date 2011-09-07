@@ -162,7 +162,7 @@ root_access_needed(root_access_needed_)
         int fd = openFile(ACTIVE_VERSION, O_RDWR | O_CREAT | O_BINARY);
 #endif
         if (fd >= 0) {
-          alarmMsg = (char *) xmalloc(2048);
+          alarmMsg = (char *)ats_malloc(2048);
           snprintf(alarmMsg, 2048, "Created zero length place holder for config file %s", fileName);
           mgmt_log(stderr, "[RollBack::Rollback] %s\n", alarmMsg);
           lmgmt->alarm_keeper->signalAlarm(MGMT_ALARM_CONFIG_UPDATE_FAILED, alarmMsg);
@@ -223,7 +223,7 @@ root_access_needed(root_access_needed_)
   testFD = openFile(ACTIVE_VERSION, O_RDWR, &testErrno);
   if (testFD < 0) {
     // We failed to open read-write
-    alarmMsg = (char *) xmalloc(2048);
+    alarmMsg = (char *)ats_malloc(2048);
     testFD = openFile(ACTIVE_VERSION, O_RDONLY, &testErrno);
 
     if (testFD < 0) {
@@ -619,7 +619,7 @@ UPDATE_CLEANUP:
   //   to manipulate the disk, the error might not get
   //   written to disk
   if (returnCode != OK_ROLLBACK) {
-    alarmMsg = (char *) xmalloc(1024);
+    alarmMsg = (char *)ats_malloc(1024);
     snprintf(alarmMsg, 1024, "[TrafficManager] Configuration File Update Failed: %s", strerror(errno));
     lmgmt->alarm_keeper->signalAlarm(MGMT_ALARM_CONFIG_UPDATE_FAILED, alarmMsg);
     xfree(alarmMsg);
@@ -810,7 +810,7 @@ Rollback::findVersions_ml(ExpandingArray * listNames)
   // The fun of Solaris - readdir_r requires a buffer passed into it
   //   The man page says this obscene expression gives us the proper
   //     size
-  dirEntrySpace = (struct dirent *) xmalloc(sizeof(struct dirent) + pathconf(".", _PC_NAME_MAX) + 1);
+  dirEntrySpace = (struct dirent *)ats_malloc(sizeof(struct dirent) + pathconf(".", _PC_NAME_MAX) + 1);
 
   while (readdir_r(dir, dirEntrySpace, &entryPtr) == 0) {
     if (!entryPtr)
@@ -912,7 +912,7 @@ Rollback::extractVersionInfo(ExpandingArray * listNames, const char *testFileNam
             versionInfo *verInfo;
 
             if (statFile(version, &fileInfo) >= 0) {
-              verInfo = (versionInfo *) xmalloc(sizeof(versionInfo));
+              verInfo = (versionInfo *)ats_malloc(sizeof(versionInfo));
               verInfo->version = version;
               verInfo->modTime = fileInfo.st_mtime;
               listNames->addEntry((void *) verInfo);

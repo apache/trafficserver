@@ -76,7 +76,7 @@ config_string_alloc_cb(void *data, void *value)
   int len = -1;
   if (_ss) {
     len = strlen(_ss);
-    _new_value = (char *) xmalloc(len + 1);
+    _new_value = (char *)ats_malloc(len + 1);
     memcpy(_new_value, _ss, len + 1);
   }
 

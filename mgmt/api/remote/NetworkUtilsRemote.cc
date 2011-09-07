@@ -542,9 +542,7 @@ send_request_name(int fd, OpType op, char *name)
   }
 
   total_len = SIZE_OP_T + SIZE_LEN + msg_len;
-  msg_buf = (char *) xmalloc(sizeof(char) * total_len);
-  if (!msg_buf)
-    return TS_ERR_SYS_CALL;
+  msg_buf = (char *)ats_malloc(sizeof(char) * total_len);
 
   // fill in op type
   op_t = (int16_t) op;
@@ -591,9 +589,7 @@ send_request_name_value(int fd, OpType op, const char *name, const char *value)
   val_size = strlen(value);
   msg_len = (SIZE_LEN * 2) + name_len + val_size;
   total_len = SIZE_OP_T + SIZE_LEN + msg_len;
-  msg_buf = (char *) xmalloc(sizeof(char) * (total_len));
-  if (!msg_buf)
-    return TS_ERR_SYS_CALL;
+  msg_buf = (char *)ats_malloc(sizeof(char) * (total_len));
 
   // fill in op type
   op_t = (int16_t) op;
@@ -716,9 +712,7 @@ send_file_write_request(int fd, TSFileNameT file, int ver, int size, char *text)
 
   msg_len = SIZE_FILE_T + SIZE_VER + SIZE_LEN + size;
   total_len = SIZE_OP_T + SIZE_LEN + msg_len;
-  msg_buf = (char *) xmalloc(sizeof(char) * total_len);
-  if (!msg_buf)
-    return TS_ERR_SYS_CALL;
+  msg_buf = (char *)ats_malloc(sizeof(char) * total_len);
 
   // fill in op type
   op = (int16_t) FILE_WRITE;
@@ -775,9 +769,7 @@ send_record_get_request(int fd, char *rec_name)
     return TS_ERR_PARAMS;
 
   total_len = SIZE_OP_T + SIZE_LEN + strlen(rec_name);
-  msg_buf = (char *) xmalloc(sizeof(char) * total_len);
-  if (!msg_buf)
-    return TS_ERR_SYS_CALL;
+  msg_buf = (char *)ats_malloc(sizeof(char) * total_len);
 
   // fill in op type
   op = (int16_t) RECORD_GET;
@@ -998,9 +990,7 @@ send_diags_msg(int fd, TSDiagsT mode, const char *diag_msg)
   diag_msg_len = (int32_t) strlen(diag_msg);
   msg_len = SIZE_DIAGS_T + SIZE_LEN + diag_msg_len;
   total_len = SIZE_OP_T + SIZE_LEN + msg_len;
-  msg_buf = (char *) xmalloc(sizeof(char) * total_len);
-  if (!msg_buf)
-    return TS_ERR_SYS_CALL;
+  msg_buf = (char *)ats_malloc(sizeof(char) * total_len);
 
   // fill in op type
   op_t = (int16_t) DIAGS;
@@ -1155,11 +1145,7 @@ parse_reply_list(int fd, char **list)
   }
 
   // get the delimited event list string
-  *list = (char *) xmalloc(sizeof(char) * (list_size + 1));
-  if (!(*list)) {
-    return TS_ERR_SYS_CALL;
-  }
-
+  *list = (char *)ats_malloc(sizeof(char) * (list_size + 1));
   amount_read = 0;
   while (amount_read < list_size) {
     ret = read(fd, (void *) *list, list_size - amount_read);
@@ -1284,11 +1270,7 @@ parse_file_read_reply(int fd, int *ver, int *size, char **text)
     *text = ink_strndup("", 1);                 // set to empty string
   } else {
     // now we got the size, we can read everything into our msg * then parse it
-    *text = (char *) xmalloc(sizeof(char) * (f_size + 1));
-    if (!(*text)) {
-      return TS_ERR_SYS_CALL;
-    }
-
+    *text = (char *)ats_malloc(sizeof(char) * (f_size + 1));
     amount_read = 0;
     while (amount_read < f_size) {
       ret = read(fd, (void *) *text, f_size - amount_read);
@@ -1411,13 +1393,9 @@ parse_record_get_reply(int fd, TSRecordT * rec_type, void **rec_val)
   // get record value
   // allocate correct amount of memory for record value
   if (*rec_type == TS_REC_STRING)
-    *rec_val = xmalloc(sizeof(char) * (rec_size + 1));
+    *rec_val = ats_malloc(sizeof(char) * (rec_size + 1));
   else
-    *rec_val = xmalloc(sizeof(char) * (rec_size));
-
-  if (!(*rec_val)) {
-    return TS_ERR_SYS_CALL;
-  }
+    *rec_val = ats_malloc(sizeof(char) * (rec_size));
 
   amount_read = 0;
   while (amount_read < rec_size) {
@@ -1716,7 +1694,7 @@ parse_event_notification(int fd, TSEvent * event)
   }
 
   // read the event name
-  event_name = (char *) xmalloc(sizeof(char) * (msg_len + 1));
+  event_name = (char *)ats_malloc(sizeof(char) * (msg_len + 1));
   amount_read = 0;
   while (amount_read < msg_len) {
     ret = read(fd, (void *) event_name, msg_len - amount_read);
@@ -1758,7 +1736,7 @@ parse_event_notification(int fd, TSEvent * event)
   }
 
   // read the event description
-  desc = (char *) xmalloc(sizeof(char) * (msg_len + 1));
+  desc = (char *)ats_malloc(sizeof(char) * (msg_len + 1));
   amount_read = 0;
   while (amount_read < msg_len) {
     ret = read(fd, (void *) desc, msg_len - amount_read);

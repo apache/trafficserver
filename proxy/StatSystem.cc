@@ -286,7 +286,7 @@ write_stats_snap()
   {
     int stats_size = MAX_HTTP_TRANS_STATS - NO_HTTP_TRANS_STATS + MAX_DYN_STATS - NO_DYN_STATS;
     int buf_size = sizeof(unsigned int) * 3 + stats_size * (sizeof(global_dyn_stats[0].sum) + sizeof(global_dyn_stats[0].count));
-    buf = (char *) xmalloc(buf_size);
+    buf = (char *)ats_malloc(buf_size);
     char *p = buf;
     int i = 0;
 
@@ -413,7 +413,7 @@ stat_callback(Continuation * cont, HTTPHdr * header)
   int buffer_len = 0;
   int num_prefix_buffer;
 
-  char *var_prefix = (char *) xmalloc((length + 1) * sizeof(char));
+  char *var_prefix = (char *)ats_malloc((length + 1) * sizeof(char));
   memset(var_prefix, 0, ((length + 1) * sizeof(char)));
   strncpy(var_prefix, path, length);
 
@@ -424,7 +424,7 @@ stat_callback(Continuation * cont, HTTPHdr * header)
   if (!empty) {
 
     result_size = (buffer_len + 16) * sizeof(char);
-    result = (char *) xmalloc(result_size);
+    result = (char *)ats_malloc(result_size);
     memset(result, 0, result_size);
 
     snprintf(result, result_size - 7, "<pre>\n%s", buffer);
@@ -456,22 +456,19 @@ static Action *
 testpage_callback(Continuation * cont, HTTPHdr *)
 {
   const int buf_size = 64000;
-  char *buffer = (char *) xmalloc(buf_size);
+  char *buffer = (char *)ats_malloc(buf_size);
 
-  if (buffer) {
-    for (int i = 0; i < buf_size; i++) {
-      buffer[i] = (char) ('a' + (i % 26));
-    }
-    buffer[buf_size - 1] = '\0';
-
-    StatPageData data;
-
-    data.data = buffer;
-    data.length = strlen(buffer);
-    cont->handleEvent(STAT_PAGE_SUCCESS, &data);
-  } else {
-    cont->handleEvent(STAT_PAGE_FAILURE, NULL);
+  for (int i = 0; i < buf_size; i++) {
+    buffer[i] = (char) ('a' + (i % 26));
   }
+  buffer[buf_size - 1] = '\0';
+
+  StatPageData data;
+
+  data.data = buffer;
+  data.length = strlen(buffer);
+  cont->handleEvent(STAT_PAGE_SUCCESS, &data);
+
   return ACTION_RESULT_DONE;
 }
 

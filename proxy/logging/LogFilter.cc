@@ -86,7 +86,7 @@ LogFilterString::_setValues(size_t n, char **value)
     for (size_t i = 0; i < n; ++i) {
       m_value[i] = xstrdup(value[i]);
       m_length[i] = strlen(value[i]);
-      m_value_uppercase[i] = (char *) xmalloc((unsigned int) m_length[i] + 1);
+      m_value_uppercase[i] = (char *)ats_malloc((unsigned int) m_length[i] + 1);
       size_t j;
       for (j = 0; j < m_length[i]; ++j) {
         m_value_uppercase[i][j] = ParseRules::ink_toupper(m_value[i][j]);
@@ -206,8 +206,7 @@ bool LogFilterString::toss_this_entry(LogAccess * lad)
   size_t marsh_len = m_field->marshal_len(lad);      // includes null termination
 
   if (marsh_len > BUFSIZE) {
-    big_buf = (char *) xmalloc((unsigned int) marsh_len);
-    ink_assert(big_buf != NULL);
+    big_buf = (char *)ats_malloc((unsigned int) marsh_len);
     buf = big_buf;
   }
 
@@ -236,7 +235,7 @@ bool LogFilterString::toss_this_entry(LogAccess * lad)
   case CASE_INSENSITIVE_CONTAIN:
     {
       if (big_buf) {
-        big_buf_upper = (char *) xmalloc((unsigned int) marsh_len);
+        big_buf_upper = (char *)ats_malloc((unsigned int) marsh_len);
         buf_upper = big_buf_upper;
       }
       for (size_t i = 0; i < marsh_len; i++) {

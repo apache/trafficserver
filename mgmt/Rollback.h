@@ -111,7 +111,7 @@ struct versionInfo
 //  findVersions(ExpandingArray* listNames) - scans the config directory for
 //    all versions of the file.  If listNames is not NULL, pointers to versionInfo
 //    structures are inserted into it.  If is the callee's responsibility
-//    to xfree the versionInfo structures.  They are allocated by xmalloc
+//    to xfree the versionInfo structures.  They are allocated by ats_malloc
 //
 // private functions
 //

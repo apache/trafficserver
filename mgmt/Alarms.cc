@@ -317,7 +317,7 @@ Alarms::signalAlarm(alarm_t a, const char *desc, const char *ip)
     }
   }
 
-  ink_assert((atmp = (Alarm *) xmalloc(sizeof(Alarm))));
+  atmp = (Alarm *)ats_malloc(sizeof(Alarm));
   atmp->type = a;
   atmp->linger = true;
   atmp->seen = true;
@@ -356,21 +356,15 @@ ALARM_REPEAT:
   if (atmp->description)
     xfree(atmp->description);
   const size_t atmp_desc_size = sizeof(char) * (strlen(desc) + 1);
-  ink_assert(atmp->description = (char *) xmalloc(atmp_desc_size));
+  atmp->description = (char *)ats_malloc(atmp_desc_size);
   ink_strncpy(atmp->description, desc, atmp_desc_size);
-
   ink_mutex_release(&mutex);
 
 #if defined(MGMT_API)
   if (mgmt_alarm_event_q) {
     // ADDED CODE here is where we Add to the queue of alarms one more
-    EventNoticeForm *new_alarm;
+    EventNoticeForm *new_alarm = (EventNoticeForm *)ats_malloc(sizeof(EventNoticeForm));
 
-    new_alarm = (EventNoticeForm *) xmalloc(sizeof(EventNoticeForm));
-    if (!new_alarm) {
-      Debug("alarm", "can't xmalloc so can't create new alarm struct.\n");
-      return;
-    }
     // allocated space copy over values
     // remember AlarmID start from 0 exactly 1 off but everything else
     // matches
@@ -381,14 +375,11 @@ ALARM_REPEAT:
     new_alarm->seen = atmp->seen;
     if (!atmp->local)
       new_alarm->inet_address = atmp->inet_address;
-    if (!atmp->description)
+    if (!atmp->description) {
       new_alarm->description = NULL;
-    else {
-      new_alarm->description = (char *) xmalloc(sizeof(char) * (strlen(atmp->description) + 1));
-      if (!new_alarm->description)
-        new_alarm->description = NULL;  // rather have alarm without description than drop it completely
-      else
-        strcpy(new_alarm->description, atmp->description);
+    } else {
+      new_alarm->description = (char *)ats_malloc(sizeof(char) * (strlen(atmp->description) + 1));
+      strcpy(new_alarm->description, atmp->description);
     }
 
     // new alarm is complete now add it
@@ -407,7 +398,7 @@ ALARM_REPEAT:
     AlarmCallbackFunc func = (AlarmCallbackFunc) ink_hash_table_entry_value(remote_alarms, entry);
     if (ip) {
       const size_t tmp_size = sizeof(char) * (strlen(ip) + 1);
-      ink_assert((tmp = (char *) xmalloc(tmp_size)));
+      tmp = (char *)ats_malloc(tmp_size);
       ink_strncpy(tmp, ip, tmp_size);
     } else {
       tmp = NULL;
@@ -415,7 +406,7 @@ ALARM_REPEAT:
 
     if (desc) {
       const size_t tmp2_size = sizeof(char) * (strlen(desc) + 1);
-      ink_assert((tmp2 = (char *) xmalloc(tmp2_size)));
+      tmp2 = (char *)ats_malloc(tmp2_size);
       ink_strncpy(tmp2, desc, tmp2_size);
     } else {
       tmp2 = NULL;
