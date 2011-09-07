@@ -1238,7 +1238,7 @@ LogAccess::unmarshal_record(char **buf, char *dest, int len)
   resolve_logfield_string
 
   This function resolves the given custom log format string using the given
-  LogAccess context and returns the resulting string, which is xmalloc'd.
+  LogAccess context and returns the resulting string, which is ats_malloc'd.
   The caller is responsible for xfree'ing the return result.  If there are
   any problems, NULL is returned.
   -------------------------------------------------------------------------*/
@@ -1295,9 +1295,9 @@ resolve_logfield_string(LogAccess *context, const char *format_str)
   Debug("log-resolve", "Marshaling data from LogAccess into buffer ...");
   context->init();
   unsigned bytes_needed = fields.marshal_len(context);
-  char *buf = (char *) xmalloc(bytes_needed);
-  ink_assert(buf != NULL);
+  char *buf = (char *) ats_malloc(bytes_needed);
   unsigned bytes_used = fields.marshal(context, buf);
+
   ink_assert(bytes_needed == bytes_used);
   Debug("log-resolve", "    %u bytes marshalled", bytes_used);
 
@@ -1307,7 +1307,7 @@ resolve_logfield_string(LogAccess *context, const char *format_str)
   // we're not sure how much space it will take when it's unmarshalled.
   // So, we'll just guess.
   //
-  char *result = (char *) xmalloc(8192);
+  char *result = (char *) ats_malloc(8192);
   unsigned bytes_resolved = LogBuffer::resolve_custom_entry(&fields, printf_str, buf, result,
                                                             8191, LogUtils::timestamp(), 0,
                                                             LOG_SEGMENT_VERSION);

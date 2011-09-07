@@ -1096,7 +1096,7 @@ Vol::dir_check(bool fix)
 {
   NOWARN_UNUSED(fix);
   int hist[HIST_DEPTH + 1] = { 0 };
-  int *shist = (int*)xmalloc(segments * sizeof(int));
+  int *shist = (int*)ats_malloc(segments * sizeof(int));
   memset(shist, 0, segments * sizeof(int));
   int j;
   int stale = 0, full = 0, empty = 0;

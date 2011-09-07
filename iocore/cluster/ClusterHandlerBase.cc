@@ -660,8 +660,7 @@ bool ClusterHandler::check_channel(int c)
       if (local_channel(i)) {
         if (i > LAST_DEDICATED_CHANNEL) {
           channels[i] = (ClusterVConnection *) 1;       // mark as invalid
-          channel_data[i] = (struct ChannelData *)
-            xmalloc(sizeof(struct ChannelData));
+          channel_data[i] = (struct ChannelData *)ats_malloc(sizeof(struct ChannelData));
           memset(channel_data[i], 0, sizeof(struct ChannelData));
           channel_data[i]->channel_number = i;
           free_local_channels.enqueue(channel_data[i]);

@@ -1231,7 +1231,7 @@ CacheVC::openWriteCloseDataDone(int event, Event *e)
       else {
         if (fragment-1 >= INTEGRAL_FRAGS && IS_POWER_2((uint32)(fragment-1))) {
           Frag *t = frag;
-          frag = (Frag*)xmalloc(sizeof(Frag) * (fragment-1)*2);
+          frag = (Frag*)ats_malloc(sizeof(Frag) * (fragment-1)*2);
           memcpy(frag, t, sizeof(Frag) * (fragment-1));
           if (t != integral_frags)
             xfree(t);
@@ -1333,7 +1333,7 @@ CacheVC::openWriteWriteDone(int event, Event *e)
       else {
         if (fragment-1 >= INTEGRAL_FRAGS && IS_POWER_2((uint32_t)(fragment-1))) {
           Frag *t = frag;
-          frag = (Frag*)xmalloc(sizeof(Frag) * (fragment-1)*2);
+          frag = (Frag*)ats_malloc(sizeof(Frag) * (fragment-1)*2);
           memcpy(frag, t, sizeof(Frag) * (fragment-1));
           if (t != integral_frags)
             xfree(t);

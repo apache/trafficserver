@@ -161,7 +161,7 @@ is_inkeylist(char *key, ...)
 
 /**
   Cleanup *char[] array - each item in array must be allocated via
-  xmalloc or similar "x..." function.
+  ats_malloc or similar "x..." function.
 
 */
 static void
@@ -1347,10 +1347,7 @@ UrlRewrite::BuildTable()
 
 
     if (unlikely(fromHostLen >= (int) sizeof(fromHost_lower_buf))) {
-      if (unlikely((fromHost_lower = (fromHost_lower_ptr = (char *) xmalloc(fromHostLen + 1))) == NULL)) {
-        fromHost_lower = &fromHost_lower_buf[0];
-        fromHostLen = (int) (sizeof(fromHost_lower_buf) - 1);
-      }
+      fromHost_lower = (fromHost_lower_ptr = (char *)ats_malloc(fromHostLen + 1));
     } else {
       fromHost_lower = &fromHost_lower_buf[0];
     }

@@ -275,8 +275,7 @@ ink_string_mpath(int nstrings, ...)
       return e[slash];
     } else {
       const size_t nsSize = ts + 1;
-      p = (ns = (char *) xmalloc(nsSize));
-      ink_assert(ns);
+      p = (ns = (char *)ats_malloc(nsSize));
       for (i = slash; i < nstrings - 1; i++) {
         ink_strncpy(p, e[i], (nsSize - (p - ns)));
         p += s[i];
@@ -308,7 +307,7 @@ ink_string_mcopy(char *source)
 
   if (likely(source)) {
     const size_t nSize = strlen(source) + 1;
-    n = (char *) xmalloc(nSize);
+    n = (char *)ats_malloc(nSize);
     ink_strncpy(n, source, nSize);
   }
   return n;
@@ -353,7 +352,7 @@ ink_string_mjoin(int nstrings, ...)
       }
     }
     const size_t nsSize = ts + 1;
-    p = (ns = (char *) xmalloc(nsSize));
+    p = (ns = (char *)ats_malloc(nsSize));
     for (i = slash; i < nstrings - 1; i++) {
       ink_strncpy(p, e[i], (nsSize - (p - ns)));
       p += s[i];
@@ -376,7 +375,8 @@ ink_strndup(const char *str, size_t n)
 
   if (likely(str)) {
     size_t len = strlen(str);
-    cstr = (char *)xmalloc(len + 1);
+    cstr = (char *)ats_malloc(len + 1);
+    // TODO: TS-567 do we really want to deal with strndup of size 0?
     if (cstr == NULL)
       return (NULL);
     memcpy(cstr, str, len);

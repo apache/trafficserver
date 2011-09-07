@@ -750,7 +750,7 @@ FileImpl::fread(void *buf, int length)
   if (!m_buf) {
     m_bufpos = 0;
     m_bufsize = 1024;
-    m_buf = (char *) xmalloc(m_bufsize);
+    m_buf = (char *)ats_malloc(m_bufsize);
   }
 
   if (m_bufpos < length) {
@@ -803,7 +803,7 @@ FileImpl::fwrite(const void *buf, int length)
   if (!m_buf) {
     m_bufpos = 0;
     m_bufsize = 1024;
-    m_buf = (char *) xmalloc(m_bufsize);
+    m_buf = (char *)ats_malloc(m_bufsize);
   }
 
   p = (const char *) buf;
@@ -1642,7 +1642,8 @@ api_init()
 void *
 _TSmalloc(size_t size, const char *path)
 {
-  return _xmalloc(size, path);
+  NOWARN_UNUSED(path);
+  return ats_malloc(size);
 }
 
 void *
@@ -1661,7 +1662,7 @@ _TSstrdup(const char *str, int64_t length, const char *path)
 void
 _TSfree(void *ptr)
 {
-  _xfree(ptr);
+  ats_free(ptr);
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -2285,11 +2286,7 @@ TSUrlHttpFragmentSet(TSMBuffer bufp, TSMLoc obj, const char *value, int length)
 TSMimeParser
 TSMimeParserCreate(void)
 {
-  TSMimeParser parser;
-
-  parser = reinterpret_cast<TSMimeParser>(xmalloc(sizeof(MIMEParser)));
-  // TODO: Should remove this when memory allocation can't fail.
-  sdk_assert(sdk_sanity_check_mime_parser(parser) == TS_SUCCESS);
+  TSMimeParser parser = reinterpret_cast<TSMimeParser>(ats_malloc(sizeof(MIMEParser)));
 
   mime_parser_init((MIMEParser *) parser);
   return parser;
@@ -3324,11 +3321,7 @@ TSMimeHdrFieldValueDelete(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int idx)
 TSHttpParser
 TSHttpParserCreate(void)
 {
-  TSHttpParser parser;
-
-  // xmalloc should be set to not fail IMO.
-  parser = reinterpret_cast<TSHttpParser>(xmalloc(sizeof(HTTPParser)));
-  sdk_assert(sdk_sanity_check_http_parser(parser) == TS_SUCCESS);
+  TSHttpParser parser = reinterpret_cast<TSHttpParser>(ats_malloc(sizeof(HTTPParser)));
   http_parser_init((HTTPParser *) parser);
 
   return parser;
@@ -3861,7 +3854,7 @@ TSCacheKeyHostNameSet(TSCacheKey key, const char *hostname, int host_len)
   CacheInfo *i = (CacheInfo *) key;
   /* need to make a copy of the hostname. The caller
      might deallocate it anytime in the future */
-  i->hostname = (char *) xmalloc(host_len);
+  i->hostname = (char *)ats_malloc(host_len);
   memcpy(i->hostname, hostname, host_len);
   i->len = host_len;
   return TS_SUCCESS;
@@ -6817,7 +6810,7 @@ TSMatcherExtractIPRange(char *match_str, uint32_t *addr1, uint32_t *addr2)
 TSMatcherLine
 TSMatcherLineCreate(void)
 {
-  return reinterpret_cast<TSMatcherLine>(xmalloc(sizeof(matcher_line)));
+  return reinterpret_cast<TSMatcherLine>(ats_malloc(sizeof(matcher_line)));
 }
 
 void
@@ -6915,7 +6908,7 @@ TSICPCachedReqGet(TSCont contp, TSMBuffer *bufp, TSMLoc *obj)
   HdrHeapSDKHandle **handle = &(sm->_cache_req_hdr_heap_handle);
 
   if (*handle == NULL) {
-    *handle = (HdrHeapSDKHandle *) xmalloc(sizeof(HdrHeapSDKHandle));
+    *handle = (HdrHeapSDKHandle *)ats_malloc(sizeof(HdrHeapSDKHandle));
     (*handle)->m_heap = cached_hdr->m_heap;
   }
 
@@ -6948,7 +6941,7 @@ TSICPCachedRespGet(TSCont contp, TSMBuffer *bufp, TSMLoc *obj)
   HdrHeapSDKHandle **handle = &(sm->_cache_resp_hdr_heap_handle);
 
   if (*handle == NULL) {
-    *handle = (HdrHeapSDKHandle *) xmalloc(sizeof(HdrHeapSDKHandle));
+    *handle = (HdrHeapSDKHandle *)ats_malloc(sizeof(HdrHeapSDKHandle));
     (*handle)->m_heap = cached_hdr->m_heap;
   }
 
@@ -7015,11 +7008,7 @@ TSRedirectUrlSet(TSHttpTxn txnp, const char* url, const int url_len)
     sm->redirect_url_len = 0;
   }
 
-  sm->redirect_url = (char*)xmalloc(url_len + 1);
-  // TODO: Should remove this when malloc is guaranteed to fail.
-  sdk_assert(sdk_sanity_check_null_ptr((void*)sm->redirect_url) == TS_SUCCESS);
-
-
+  sm->redirect_url = (char*)ats_malloc(url_len + 1);
   ink_strncpy(sm->redirect_url, (char*)url, url_len + 1);
   sm->redirect_url_len = url_len;
   // have to turn redirection on for this transaction if user wants to redirect to another URL
