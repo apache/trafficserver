@@ -1889,7 +1889,7 @@ chopWhiteSpaces_alloc(char *str)
 
   // eliminate trailing white spaces
   len = strcspn(str, " ");
-  newStr = (char *) xmalloc(len + 1);
+  newStr = (char *)ats_malloc(len + 1);
   memset(newStr, 0, len + 1);
   strncpy(newStr, str, len);
 
@@ -2450,7 +2450,7 @@ copy_int_list(TSIntList list)
   count = TSIntListLen(list);
   for (i = 0; i < count; i++) {
     elem = TSIntListDequeue(list);
-    nelem = (int *) xmalloc(sizeof(int));
+    nelem = (int *)ats_malloc(sizeof(int));
     *nelem = *elem;
     TSIntListEnqueue(list, elem);
     TSIntListEnqueue(nlist, nelem);
@@ -2862,7 +2862,7 @@ comment_ele_create(char *comment)
 {
   INKCommentEle *ele;
 
-  ele = (INKCommentEle *) xmalloc(sizeof(INKCommentEle));
+  ele = (INKCommentEle *)ats_malloc(sizeof(INKCommentEle));
 
   ele->cfg_ele.type = TS_TYPE_COMMENT;
   ele->cfg_ele.error = TS_ERR_OKAY;

@@ -65,7 +65,7 @@ Token::setValue(const char *str)
   ink_assert(value == NULL);
   if (str_copy) {
     size_t len = strlen(str_copy);
-    value = (char *) xmalloc(sizeof(char) * (BUFSIZ));
+    value = (char *)ats_malloc(sizeof(char) * (BUFSIZ));
     len = (len < BUFSIZ) ? len : BUFSIZ - 1;
     memcpy(value, str_copy, len);
     value[len] = '\0';
@@ -1023,14 +1023,12 @@ RuleList::parse(char *fileBuf, TSFileNameT filetype)
         rule->tokenList = m_tokenList;
       } else {
         //rule->setComment("## WARNING: The following configuration rule is invalid!");
-        char *error_rule;
         size_t error_rule_size = sizeof(char) * (strlen(line) + strlen("#ERROR: ") + 1);
-        error_rule = (char *) xmalloc(error_rule_size);
-        if (error_rule) {
-          snprintf(error_rule, error_rule_size, "#ERROR: %s", line);
-          rule->setComment(error_rule);
-          xfree(error_rule);
-        }
+        char *error_rule = (char *)ats_malloc(error_rule_size);
+
+        snprintf(error_rule, error_rule_size, "#ERROR: %s", line);
+        rule->setComment(error_rule);
+        xfree(error_rule);
       }
     }
 

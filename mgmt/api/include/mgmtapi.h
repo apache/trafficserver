@@ -1053,7 +1053,7 @@ extern "C"
 /*--- password operations -------------------------------------------------*/
 /* TSEncryptPassword: encrypts a password
  * Input: passwd - a password string to encrypt (can be NULL)
- * Output: e_passwd - an encrypted passwd (xmalloc's memory)
+ * Output: e_passwd - an encrypted passwd (ats_malloc's memory)
  */
   tsapi TSError TSEncryptPassword(char *passwd, char **e_passwd);
 

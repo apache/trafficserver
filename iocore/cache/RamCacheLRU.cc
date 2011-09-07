@@ -70,7 +70,7 @@ void RamCacheLRU::resize_hashtable() {
   int anbuckets = bucket_sizes[ibuckets];
   DDebug("ram_cache", "resize hashtable %d", anbuckets);
   int64_t s = anbuckets * sizeof(DList(RamCacheLRUEntry, hash_link));
-  DList(RamCacheLRUEntry, hash_link) *new_bucket = (DList(RamCacheLRUEntry, hash_link) *)xmalloc(s);
+  DList(RamCacheLRUEntry, hash_link) *new_bucket = (DList(RamCacheLRUEntry, hash_link) *)ats_malloc(s);
   memset(new_bucket, 0, s);
   if (bucket) {
     for (int64_t i = 0; i < nbuckets; i++) {
@@ -84,7 +84,7 @@ void RamCacheLRU::resize_hashtable() {
   nbuckets = anbuckets;
   if (seen) xfree(seen);
   int size = bucket_sizes[ibuckets] * sizeof(uint16_t);
-  seen = (uint16_t*)xmalloc(size);
+  seen = (uint16_t*)ats_malloc(size);
   memset(seen, 0, size);
 }
 

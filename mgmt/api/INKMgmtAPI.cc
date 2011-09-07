@@ -53,7 +53,7 @@ void *
 _TSmalloc(unsigned int size, const char *path)
 {
 #ifdef PURIFY
-  return xmalloc(size);
+  return ats_malloc(size);
 #else
   return _xmalloc(size, path);
 #endif
@@ -712,10 +712,7 @@ init_pdss_format(TSPdSsFormat * info)
 tsapi TSEvent *
 TSEventCreate(void)
 {
-  TSEvent *event;
-  event = (TSEvent *) xmalloc(sizeof(TSEvent));
-  if (!event)
-    return NULL;
+  TSEvent *event = (TSEvent *)ats_malloc(sizeof(TSEvent));
 
   event->id = -1;
   event->name = NULL;
@@ -741,11 +738,7 @@ TSEventDestroy(TSEvent * event)
 tsapi TSRecordEle *
 TSRecordEleCreate(void)
 {
-  TSRecordEle *ele;
-
-  ele = (TSRecordEle *) xmalloc(sizeof(TSRecordEle));
-  if (!ele)
-    return NULL;
+  TSRecordEle *ele = (TSRecordEle *)ats_malloc(sizeof(TSRecordEle));
 
   ele->rec_name = NULL;
   ele->rec_type = TS_REC_UNDEFINED;
@@ -769,11 +762,7 @@ TSRecordEleDestroy(TSRecordEle * ele)
 tsapi TSIpAddrEle *
 TSIpAddrEleCreate(void)
 {
-  TSIpAddrEle *ele;
-
-  ele = (TSIpAddrEle *) xmalloc(sizeof(TSIpAddrEle));
-  if (!ele)
-    return NULL;
+  TSIpAddrEle *ele = (TSIpAddrEle *)ats_malloc(sizeof(TSIpAddrEle));
 
   /* set default values */
   ele->type = TS_IP_UNDEFINED;
@@ -803,11 +792,7 @@ TSIpAddrEleDestroy(TSIpAddrEle * ele)
 tsapi TSPortEle *
 TSPortEleCreate(void)
 {
-  TSPortEle *ele;
-
-  ele = (TSPortEle *) xmalloc(sizeof(TSPortEle));
-  if (!ele)
-    return NULL;
+  TSPortEle *ele = (TSPortEle *)ats_malloc(sizeof(TSPortEle));
 
   ele->port_a = TS_INVALID_PORT;
   ele->port_b = TS_INVALID_PORT;
@@ -826,11 +811,7 @@ TSPortEleDestroy(TSPortEle * ele)
 tsapi TSDomain *
 TSDomainCreate()
 {
-  TSDomain *ele;
-
-  ele = (TSDomain *) xmalloc(sizeof(TSDomain));
-  if (!ele)
-    return NULL;
+  TSDomain *ele = (TSDomain *)ats_malloc(sizeof(TSDomain));
 
   ele->domain_val = NULL;
   ele->port = TS_INVALID_PORT;
@@ -852,11 +833,7 @@ TSDomainDestroy(TSDomain * ele)
 tsapi TSSspec *
 TSSspecCreate(void)
 {
-  TSSspec *sec_spec;
-
-  sec_spec = (TSSspec *) xmalloc(sizeof(TSSspec));
-  if (!sec_spec)
-    return NULL;
+  TSSspec *sec_spec = (TSSspec *)ats_malloc(sizeof(TSSspec));
 
   /* set defaults */
   sec_spec->active = 0;
@@ -891,11 +868,7 @@ TSSspecDestroy(TSSspec * ele)
 tsapi TSPdSsFormat *
 TSPdSsFormatCreate(void)
 {
-  TSPdSsFormat *ele;
-
-  ele = (TSPdSsFormat *) xmalloc(sizeof(TSPdSsFormat));
-  if (!ele)
-    return NULL;
+  TSPdSsFormat *ele = (TSPdSsFormat *)ats_malloc(sizeof(TSPdSsFormat));
 
   /* should set default values here */
   ele->pd_type = TS_PD_UNDEFINED;
@@ -951,9 +924,7 @@ TSCacheEleCreate(TSRuleTypeT type)
       type != TS_CACHE_TTL_IN_CACHE && type != TS_CACHE_AUTH_CONTENT && type != TS_TYPE_UNDEFINED)
     return NULL;                // invalid type
 
-  ele = (TSCacheEle *) xmalloc(sizeof(TSCacheEle));
-  if (!ele)
-    return NULL;
+  ele = (TSCacheEle *)ats_malloc(sizeof(TSCacheEle));
 
   /* set defaults */
   ele->cfg_ele.type = type;
@@ -986,11 +957,7 @@ TSCacheEleDestroy(TSCacheEle * ele)
 tsapi TSCongestionEle *
 TSCongestionEleCreate()
 {
-  TSCongestionEle *ele;
-
-  ele = (TSCongestionEle *) xmalloc(sizeof(TSCongestionEle));
-  if (!ele)
-    return NULL;
+  TSCongestionEle *ele = (TSCongestionEle *)ats_malloc(sizeof(TSCongestionEle));
 
   /* set defaults */
   ele->cfg_ele.type = TS_CONGESTION;
@@ -1038,11 +1005,7 @@ TSCongestionEleDestroy(TSCongestionEle * ele)
 tsapi TSHostingEle *
 TSHostingEleCreate()
 {
-  TSHostingEle *ele;
-
-  ele = (TSHostingEle *) xmalloc(sizeof(TSHostingEle));
-  if (!ele)
-    return NULL;
+  TSHostingEle *ele = (TSHostingEle *)ats_malloc(sizeof(TSHostingEle));
 
   ele->cfg_ele.type = TS_HOSTING;
   ele->cfg_ele.error = TS_ERR_OKAY;
@@ -1072,11 +1035,7 @@ TSHostingEleDestroy(TSHostingEle * ele)
 tsapi TSIcpEle *
 TSIcpEleCreate()
 {
-  TSIcpEle *ele;
-
-  ele = (TSIcpEle *) xmalloc(sizeof(TSIcpEle));
-  if (!ele)
-    return NULL;
+  TSIcpEle *ele = (TSIcpEle *)ats_malloc(sizeof(TSIcpEle));
 
   /* set defaults */
   ele->cfg_ele.type = TS_ICP;
@@ -1116,11 +1075,7 @@ tsapi TSIpAllowEle *
 TSIpAllowEleCreate()
 {
 
-  TSIpAllowEle *ele;
-
-  ele = (TSIpAllowEle *) xmalloc(sizeof(TSIpAllowEle));
-  if (!ele)
-    return NULL;
+  TSIpAllowEle *ele = (TSIpAllowEle *)ats_malloc(sizeof(TSIpAllowEle));
 
   ele->cfg_ele.type = TS_IP_ALLOW;
   ele->cfg_ele.error = TS_ERR_OKAY;
@@ -1149,11 +1104,7 @@ TSIpAllowEleDestroy(TSIpAllowEle * ele)
 tsapi TSLogFilterEle *
 TSLogFilterEleCreate()
 {
-  TSLogFilterEle *ele;
-
-  ele = (TSLogFilterEle *) xmalloc(sizeof(TSLogFilterEle));
-  if (!ele)
-    return NULL;
+  TSLogFilterEle *ele = (TSLogFilterEle *)ats_malloc(sizeof(TSLogFilterEle));
 
   ele->cfg_ele.type = TS_LOG_FILTER;
   ele->cfg_ele.error = TS_ERR_OKAY;
@@ -1187,11 +1138,7 @@ TSLogFilterEleDestroy(TSLogFilterEle * ele)
 tsapi TSLogFormatEle *
 TSLogFormatEleCreate()
 {
-  TSLogFormatEle *ele;
-
-  ele = (TSLogFormatEle *) xmalloc(sizeof(TSLogFormatEle));
-  if (!ele)
-    return NULL;
+  TSLogFormatEle *ele = (TSLogFormatEle *)ats_malloc(sizeof(TSLogFormatEle));
 
   ele->cfg_ele.type = TS_LOG_FORMAT;
   ele->cfg_ele.error = TS_ERR_OKAY;
@@ -1221,11 +1168,7 @@ TSLogFormatEleDestroy(TSLogFormatEle * ele)
 tsapi TSLogObjectEle *
 TSLogObjectEleCreate()
 {
-  TSLogObjectEle *ele;
-
-  ele = (TSLogObjectEle *) xmalloc(sizeof(TSLogObjectEle));
-  if (!ele)
-    return NULL;
+  TSLogObjectEle *ele = (TSLogObjectEle *)ats_malloc(sizeof(TSLogObjectEle));
 
   ele->cfg_ele.type = TS_LOG_OBJECT;
   ele->cfg_ele.error = TS_ERR_OKAY;
@@ -1272,9 +1215,7 @@ TSParentProxyEleCreate(TSRuleTypeT type)
   if (type != TS_PP_PARENT && type != TS_PP_GO_DIRECT && type != TS_TYPE_UNDEFINED)
     return NULL;
 
-  ele = (TSParentProxyEle *) xmalloc(sizeof(TSParentProxyEle));
-  if (!ele)
-    return NULL;
+  ele = (TSParentProxyEle *)ats_malloc(sizeof(TSParentProxyEle));
 
   ele->cfg_ele.type = type;
   ele->cfg_ele.error = TS_ERR_OKAY;
@@ -1305,11 +1246,7 @@ TSParentProxyEleDestroy(TSParentProxyEle * ele)
 tsapi TSVolumeEle *
 TSVolumeEleCreate()
 {
-  TSVolumeEle *ele;
-
-  ele = (TSVolumeEle *) xmalloc(sizeof(TSVolumeEle));
-  if (!ele)
-    return NULL;
+  TSVolumeEle *ele = (TSVolumeEle *)ats_malloc(sizeof(TSVolumeEle));
 
   ele->cfg_ele.type = TS_VOLUME;
   ele->cfg_ele.error = TS_ERR_OKAY;
@@ -1336,11 +1273,7 @@ TSVolumeEleDestroy(TSVolumeEle * ele)
 tsapi TSPluginEle *
 TSPluginEleCreate()
 {
-  TSPluginEle *ele;
-
-  ele = (TSPluginEle *) xmalloc(sizeof(TSPluginEle));
-  if (!ele)
-    return NULL;
+  TSPluginEle *ele = (TSPluginEle *)ats_malloc(sizeof(TSPluginEle));
 
   ele->cfg_ele.type = TS_PLUGIN;
   ele->cfg_ele.error = TS_ERR_OKAY;
@@ -1376,10 +1309,7 @@ TSRemapEleCreate(TSRuleTypeT type)
       type != TS_REMAP_REDIRECT && type != TS_REMAP_REDIRECT_TEMP && type != TS_TYPE_UNDEFINED)
     return NULL;
 
-  ele = (TSRemapEle *) xmalloc(sizeof(TSRemapEle));
-  if (!ele)
-    return NULL;
-
+  ele = (TSRemapEle *)ats_malloc(sizeof(TSRemapEle));
   ele->cfg_ele.type = type;
   ele->cfg_ele.error = TS_ERR_OKAY;
   ele->map = true;
@@ -1417,10 +1347,7 @@ TSRemapEleDestroy(TSRemapEle * ele)
 TSSocksEle *
 TSSocksEleCreate(TSRuleTypeT type)
 {
-  TSSocksEle *ele;
-  ele = (TSSocksEle *) xmalloc(sizeof(TSSocksEle));
-  if (!ele)
-    return NULL;
+  TSSocksEle *ele = (TSSocksEle *)ats_malloc(sizeof(TSSocksEle));
 
   ele->cfg_ele.type = type;
   ele->cfg_ele.error = TS_ERR_OKAY;
@@ -1458,10 +1385,7 @@ TSSocksEleDestroy(TSSocksEle * ele)
 TSSplitDnsEle *
 TSSplitDnsEleCreate()
 {
-  TSSplitDnsEle *ele;
-  ele = (TSSplitDnsEle *) xmalloc(sizeof(TSSplitDnsEle));
-  if (!ele)
-    return NULL;
+  TSSplitDnsEle *ele = (TSSplitDnsEle *)ats_malloc(sizeof(TSSplitDnsEle));
 
   ele->cfg_ele.type = TS_SPLIT_DNS;
   ele->cfg_ele.error = TS_ERR_OKAY;
@@ -1497,10 +1421,7 @@ TSSplitDnsEleDestroy(TSSplitDnsEle * ele)
 TSStorageEle *
 TSStorageEleCreate()
 {
-  TSStorageEle *ele;
-  ele = (TSStorageEle *) xmalloc(sizeof(TSStorageEle));
-  if (!ele)
-    return NULL;
+  TSStorageEle *ele = (TSStorageEle *)ats_malloc(sizeof(TSStorageEle));
 
   ele->cfg_ele.type = TS_STORAGE;
   ele->cfg_ele.error = TS_ERR_OKAY;
@@ -1527,10 +1448,7 @@ TSStorageEleDestroy(TSStorageEle * ele)
 TSUpdateEle *
 TSUpdateEleCreate()
 {
-  TSUpdateEle *ele;
-  ele = (TSUpdateEle *) xmalloc(sizeof(TSUpdateEle));
-  if (!ele)
-    return NULL;
+  TSUpdateEle *ele = (TSUpdateEle *)ats_malloc(sizeof(TSUpdateEle));
 
   ele->cfg_ele.type = TS_UPDATE_URL;
   ele->cfg_ele.error = TS_ERR_OKAY;
@@ -1562,10 +1480,7 @@ TSUpdateEleDestroy(TSUpdateEle * ele)
 TSVirtIpAddrEle *
 TSVirtIpAddrEleCreate()
 {
-  TSVirtIpAddrEle *ele;
-  ele = (TSVirtIpAddrEle *) xmalloc(sizeof(TSVirtIpAddrEle));
-  if (!ele)
-    return NULL;
+  TSVirtIpAddrEle *ele = (TSVirtIpAddrEle *)ats_malloc(sizeof(TSVirtIpAddrEle));
 
   ele->cfg_ele.type = TS_VADDRS;
   ele->cfg_ele.error = TS_ERR_OKAY;
@@ -1670,9 +1585,7 @@ TSRecordGetString(const char *rec_name, TSString *string_val)
     goto END;
 
   str_size = strlen(ele->string_val) + 1;
-  str = (char *) xmalloc(sizeof(char) * str_size);
-  if (!str)
-    return TS_ERR_SYS_CALL;
+  str = (char *)ats_malloc(sizeof(char) * str_size);
   ink_strncpy(str, ele->string_val, str_size);
   *string_val = str;
 
@@ -2071,9 +1984,7 @@ TSEncryptPassword(char *passwd, char **e_passwd)
   ink_debug_assert(TS_ENCRYPT_PASSWD_LEN <= passwd_md5_str_len);
 
   const size_t md5StringSize = (passwd_md5_str_len + 1) * sizeof(char);
-  passwd_md5_str = (char *) xmalloc(md5StringSize);
-  if (!passwd_md5_str)
-    return TS_ERR_FAIL;
+  passwd_md5_str = (char *)ats_malloc(md5StringSize);
 
   ink_code_incr_md5_init(&md5_context);
   ink_code_incr_md5_update(&md5_context, passwd, strlen(passwd));

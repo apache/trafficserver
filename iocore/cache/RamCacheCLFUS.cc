@@ -111,7 +111,7 @@ void RamCacheCLFUS::resize_hashtable() {
   int anbuckets = bucket_sizes[ibuckets];
   DDebug("ram_cache", "resize hashtable %d", anbuckets);
   int64_t s = anbuckets * sizeof(DList(RamCacheCLFUSEntry, hash_link));
-  DList(RamCacheCLFUSEntry, hash_link) *new_bucket = (DList(RamCacheCLFUSEntry, hash_link) *)xmalloc(s);
+  DList(RamCacheCLFUSEntry, hash_link) *new_bucket = (DList(RamCacheCLFUSEntry, hash_link) *)ats_malloc(s);
   memset(new_bucket, 0, s);
   if (bucket) {
     for (int64_t i = 0; i < nbuckets; i++) {
@@ -125,7 +125,7 @@ void RamCacheCLFUS::resize_hashtable() {
   nbuckets = anbuckets;
   if (seen) xfree(seen);
   int size = bucket_sizes[ibuckets] * sizeof(uint16_t);
-  seen = (uint16_t*)xmalloc(size);
+  seen = (uint16_t*)ats_malloc(size);
   memset(seen, 0, size);
 }
 
@@ -167,7 +167,7 @@ int RamCacheCLFUS::get(INK_MD5 *key, Ptr<IOBufferData> *ret_data, uint32_t auxke
       if (!e->flag_bits.lru) { // in memory
         e->hits++;
         if (e->flag_bits.compressed) {
-          b = (char*)xmalloc(e->len);
+          b = (char*)ats_malloc(e->len);
           switch (e->flag_bits.compressed) {
             default: goto Lfailed;
             case CACHE_COMPRESSION_FASTLZ: {
@@ -335,7 +335,7 @@ void RamCacheCLFUS::compress_entries(EThread *thread, int do_at_most) {
       uint32_t elen = e->len;
       INK_MD5 key = e->key;
       MUTEX_UNTAKE_LOCK(vol->mutex, thread);
-      b = (char*)xmalloc(l);
+      b = (char*)ats_malloc(l);
       bool failed = false;
       switch (ctype) {
         default: goto Lfailed;
@@ -386,7 +386,7 @@ void RamCacheCLFUS::compress_entries(EThread *thread, int do_at_most) {
         goto Lfailed;
       if (l < e->len) {
         e->flag_bits.compressed = cache_config_ram_cache_compress;
-        bb = (char*)xmalloc(l);
+        bb = (char*)ats_malloc(l);
         memcpy(bb, b, l);
         xfree(b);
         e->compressed_len = l;
@@ -397,7 +397,7 @@ void RamCacheCLFUS::compress_entries(EThread *thread, int do_at_most) {
       } else {
         xfree(b);
         e->flag_bits.compressed = 0;
-        bb = (char*)xmalloc(e->len);
+        bb = (char*)ats_malloc(e->len);
         memcpy(bb, e->data->data(), e->len);
         int64_t delta = ((int64_t)e->len) - (int64_t)e->size;
         bytes += delta;
@@ -467,7 +467,7 @@ int RamCacheCLFUS::put(INK_MD5 *key, IOBufferData *data, uint32_t len, bool copy
         e->size = size;
         e->data = data;
       } else {
-        char *b = (char*)xmalloc(len);
+        char *b = (char*)ats_malloc(len);
         memcpy(b, data->data(), len);
         e->data = new_xmalloc_IOBufferData(b, len);
         e->data->_mem_type = DEFAULT_ALLOC;
@@ -560,7 +560,7 @@ Linsert:
   if (!copy)
     e->data = data;
   else {
-    char *b = (char*)xmalloc(len);
+    char *b = (char*)ats_malloc(len);
     memcpy(b, data->data(), len);
     e->data = new_xmalloc_IOBufferData(b, len);
     e->data->_mem_type = DEFAULT_ALLOC;

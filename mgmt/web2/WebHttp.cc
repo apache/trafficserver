@@ -698,7 +698,7 @@ WebHttpSetErrorResponse(WebHttpContext * whc, HttpStatus_t error)
 char *
 WebHttpAddDocRoot_Xmalloc(WebHttpContext * whc, const char *file, int file_len)
 {
-  char *doc_root_file = (char *)xmalloc(file_len + whc->doc_root_len + 1);
+  char *doc_root_file = (char *)ats_malloc(file_len + whc->doc_root_len + 1);
 
   memcpy(doc_root_file, whc->doc_root, whc->doc_root_len);
   memcpy(doc_root_file + whc->doc_root_len, file, file_len);

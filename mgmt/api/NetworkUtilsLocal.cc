@@ -225,12 +225,7 @@ preprocess_msg(struct SocketInfo sock_info, OpType * op_t, char **req)
     *req = NULL;
     Debug("ts_main", "[preprocess_msg] request message = NULL\n");
   } else {
-    *req = (char *) xmalloc(sizeof(char) * (req_len + 1));
-    if (!(*req)) {
-      ret = TS_ERR_SYS_CALL;
-      goto Lerror;
-    }
-
+    *req = (char *)ats_malloc(sizeof(char) * (req_len + 1));
     ret = socket_read_n(sock_info, *req, req_len);
     if (ret != TS_ERR_OKAY) {
       xfree(*req);
@@ -311,9 +306,7 @@ parse_file_write_request(char *req, TSFileNameT * file, int *ver, int *size, cha
   *size = (int) f_size;
 
   // get file text
-  *text = (char *) xmalloc(sizeof(char) * (f_size + 1));
-  if (!(*text))
-    return TS_ERR_SYS_CALL;
+  *text = (char *)ats_malloc(sizeof(char) * (f_size + 1));
   memcpy(*text, req + SIZE_FILE_T + SIZE_VER + SIZE_LEN, f_size);
   (*text)[f_size] = '\0';       // end buffer
 
@@ -346,17 +339,13 @@ parse_request_name_value(char *req, char **name_1, char **val_1)
   memcpy(&val_len, req + SIZE_LEN, SIZE_LEN);
 
   // get record name
-  name = (char *) xmalloc(sizeof(char) * (name_len + 1));
-  if (!name)
-    return TS_ERR_SYS_CALL;
+  name = (char *)ats_malloc(sizeof(char) * (name_len + 1));
   memcpy(name, req + SIZE_LEN + SIZE_LEN, name_len);
   name[name_len] = '\0';        // end string
   *name_1 = name;
 
   // get record value - can be a MgmtInt, MgmtCounter ...
-  val = (char *) xmalloc(sizeof(char) * (val_len + 1));
-  if (!val)
-    return TS_ERR_SYS_CALL;
+  val = (char *)ats_malloc(sizeof(char) * (val_len + 1));
   memcpy(val, req + SIZE_LEN + SIZE_LEN + name_len, val_len);
   val[val_len] = '\0';          // end string
   *val_1 = val;
@@ -392,9 +381,7 @@ parse_diags_request(char *req, TSDiagsT * mode, char **diag_msg)
   memcpy(&msg_len, req + SIZE_DIAGS_T, SIZE_LEN);
 
   // get msg
-  *diag_msg = (char *) xmalloc(sizeof(char) * (msg_len + 1));
-  if (!(*diag_msg))
-    return TS_ERR_SYS_CALL;
+  *diag_msg = (char *)ats_malloc(sizeof(char) * (msg_len + 1));
   memcpy(*diag_msg, req + SIZE_DIAGS_T + SIZE_LEN, msg_len);
   (*diag_msg)[msg_len] = '\0';  // end buffer
 
@@ -491,9 +478,7 @@ send_reply_list(struct SocketInfo sock_info, TSError retval, char *list)
   }
 
   total_len = SIZE_ERR_T + SIZE_LEN + strlen(list);
-  msg = (char *) xmalloc(sizeof(char) * total_len);
-  if (!msg)
-    return TS_ERR_SYS_CALL;    // ERROR - malloc failed
+  msg = (char *)ats_malloc(sizeof(char) * total_len);
 
   // write the return value
   ret_val = (int16_t) retval;
@@ -544,9 +529,7 @@ send_record_get_reply(struct SocketInfo sock_info, TSError retval, void *val, in
   }
 
   total_len = SIZE_ERR_T + SIZE_LEN + SIZE_REC_T + val_size;
-  msg = (char *) xmalloc(sizeof(char) * total_len);
-  if (!msg)
-    return TS_ERR_SYS_CALL;    // ERROR - malloc failed
+  msg = (char *)ats_malloc(sizeof(char) * total_len);
 
   // write the return value
   ret_val = (int16_t) retval;
@@ -592,9 +575,7 @@ send_record_set_reply(struct SocketInfo sock_info, TSError retval, TSActionNeedT
   int16_t action_t, ret_val;
 
   total_len = SIZE_ERR_T + SIZE_ACTION_T;
-  msg = (char *) xmalloc(sizeof(char) * total_len);
-  if (!msg)
-    return TS_ERR_SYS_CALL;    // ERROR - malloc failed!
+  msg = (char *)ats_malloc(sizeof(char) * total_len);
 
   // write the return value
   ret_val = (int16_t) retval;
@@ -639,9 +620,7 @@ send_file_read_reply(struct SocketInfo sock_info, TSError retval, int ver, int s
 
   // allocate space for buffer
   msg_len = SIZE_ERR_T + SIZE_VER + SIZE_LEN + size;
-  msg = (char *) xmalloc(sizeof(char) * msg_len);
-  if (!msg)
-    return TS_ERR_SYS_CALL;
+  msg = (char *)ats_malloc(sizeof(char) * msg_len);
 
   // write the return value
   ret_val = (int16_t) retval;
@@ -718,9 +697,7 @@ send_event_active_reply(struct SocketInfo sock_info, TSError retval, bool active
   int16_t is_active, ret_val;
 
   total_len = SIZE_ERR_T + SIZE_BOOL;
-  msg = (char *) xmalloc(sizeof(char) * total_len);
-  if (!msg)
-    return TS_ERR_SYS_CALL;    // ERROR - malloc failed!
+  msg = (char *)ats_malloc(sizeof(char) * total_len);
 
   // write the return value
   ret_val = (int16_t) retval;
@@ -763,9 +740,7 @@ send_event_notification(struct SocketInfo sock_info, TSEvent * event)
   name_len = strlen(event->name);
   desc_len = strlen(event->description);
   total_len = SIZE_OP_T + (SIZE_LEN * 2) + name_len + desc_len;
-  msg = (char *) xmalloc(sizeof(char) * total_len);
-  if (!msg)
-    return TS_ERR_SYS_CALL;    // ERROR - malloc failed!
+  msg = (char *)ats_malloc(sizeof(char) * total_len);
 
   // write the operation
   op_t = (int16_t) EVENT_NOTIFY;

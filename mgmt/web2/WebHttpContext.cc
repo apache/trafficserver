@@ -45,7 +45,7 @@ WebHttpContext *
 WebHttpContextCreate(WebHttpConInfo * whci)
 {
 
-  WebHttpContext *whc = (WebHttpContext *) xmalloc(sizeof(WebHttpContext));
+  WebHttpContext *whc = (WebHttpContext *)ats_malloc(sizeof(WebHttpContext));
 
   // memset to 0; note strings are zero'd too
   memset(whc, 0, sizeof(WebHttpContext));

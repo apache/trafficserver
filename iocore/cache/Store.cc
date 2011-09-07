@@ -1080,7 +1080,7 @@ Store::read(int fd, char *aname)
   if (sscanf(buf, "%d\n", &n_disks) != 1)
     return (-1);
 
-  disk = (Span **) xmalloc(sizeof(Span *) * n_disks);
+  disk = (Span **)ats_malloc(sizeof(Span *) * n_disks);
   if (!disk)
     return -1;
   memset(disk, 0, sizeof(Span *) * n_disks);
@@ -1132,7 +1132,7 @@ void
 Store::dup(Store & s)
 {
   s.n_disks = n_disks;
-  s.disk = (Span **) xmalloc(sizeof(Span *) * n_disks);
+  s.disk = (Span **)ats_malloc(sizeof(Span *) * n_disks);
   for (int i = 0; i < n_disks; i++)
     s.disk[i] = disk[i]->dup();
 }
