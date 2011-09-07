@@ -629,7 +629,7 @@ CacheProcessor::diskInitialized()
           p_good_disks[insert_at++] = gdisks[i];
         }
       }
-      xfree(gdisks);
+      ats_free(gdisks);
       gdisks = p_good_disks;
       gndisks = gndisks - bad_disks;
     }
@@ -1579,8 +1579,8 @@ build_vol_hash_table(CacheHostRecord *cp)
       new_Freer(cp->vol_hash_table, CACHE_MEM_FREE_TIMEOUT);
     }
     cp->vol_hash_table = NULL;
-    xfree(mapping);
-    xfree(p);
+    ats_free(mapping);
+    ats_free(p);
     return;
   }
 
@@ -1625,8 +1625,8 @@ build_vol_hash_table(CacheHostRecord *cp)
   if (cp->vol_hash_table) {
     new_Freer(cp->vol_hash_table, CACHE_MEM_FREE_TIMEOUT);
   }
-  xfree(mapping);
-  xfree(p);
+  ats_free(mapping);
+  ats_free(p);
   cp->vol_hash_table = ttable;
 }
 

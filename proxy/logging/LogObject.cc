@@ -186,9 +186,9 @@ LogObject::~LogObject()
     }
   }
   delete m_logFile;
-  xfree(m_basename);
-  xfree(m_filename);
-  xfree(m_alt_filename);
+  ats_free(m_basename);
+  ats_free(m_filename);
+  ats_free(m_alt_filename);
   delete m_format;
   delete m_log_buffer;
 }
@@ -273,7 +273,7 @@ LogObject::rename(char *new_name)
   // while solving filename conflicts. It DOES NOT modify the signature of
   // the LogObject to match the new filename.
   //
-  xfree(m_alt_filename);
+  ats_free(m_alt_filename);
   m_alt_filename = xstrdup(new_name);
   m_logFile->change_name(new_name);
 }
@@ -343,7 +343,7 @@ uint64_t LogObject::compute_signature(LogFormat * format, char *filename, unsign
     md5s.encodeBuffer(buffer, buf_size - 1);
     signature = md5s.fold();
 
-    xfree(buffer);
+    ats_free(buffer);
   }
   return signature;
 }

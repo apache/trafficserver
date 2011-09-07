@@ -147,7 +147,7 @@ StrListOverflow::clean()
 
   while (current_free) {
     next_free = current_free->next;
-    xfree(current_free);
+    ats_free(current_free);
     current_free = next_free;
   }
 }

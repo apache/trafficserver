@@ -158,8 +158,7 @@ HttpTransactHeaders::insert_supported_methods_in_response(HTTPHdr *response, int
   field->value_append(response->m_heap, response->m_mime, value_buffer, bytes);
 
   // step 6: free up temp storage
-  if (alloced_buffer)
-    xfree(alloced_buffer);
+  ats_free(alloced_buffer);
 }
 
 

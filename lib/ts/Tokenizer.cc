@@ -72,16 +72,13 @@ Tokenizer::~Tokenizer()
   while (cur != NULL) {
 
     if (options & COPY_TOKS) {
-      for (int i = 0; i < TOK_NODE_ELEMENTS; i++) {
-        if (cur->el[i] != NULL) {
-          xfree(cur->el[i]);
-        }
-      }
+      for (int i = 0; i < TOK_NODE_ELEMENTS; i++)
+        ats_free(cur->el[i]);
     }
 
     next = cur->next;
     if (root == false) {
-      xfree(cur);
+      ats_free(cur);
     } else {
       root = false;
     }
@@ -356,11 +353,8 @@ Tokenizer::ReUse()
 
   while (cur_node != NULL) {
     if (options & COPY_TOKS) {
-      for (int i = 0; i < TOK_NODE_ELEMENTS; i++) {
-        if (cur_node->el[i] != NULL) {
-          xfree(cur_node->el[i]);
-        }
-      }
+      for (int i = 0; i < TOK_NODE_ELEMENTS; i++)
+        ats_free(cur_node->el[i]);
     }
     memset(cur_node->el, 0, sizeof(char *) * TOK_NODE_ELEMENTS);
     cur_node = cur_node->next;

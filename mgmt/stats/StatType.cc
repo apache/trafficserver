@@ -200,13 +200,8 @@ bool StatExprToken::assignTokenType()
 void
 StatExprToken::clean()
 {
-  if (m_token_name != NULL) {
-    xfree(m_token_name);
-  }
-
-  if (m_token_value_delta != NULL) {
-    delete(m_token_value_delta);
-  }
+  ats_free(m_token_name);
+  delete m_token_value_delta;
 }
 
 
@@ -460,18 +455,10 @@ StatObject::StatObject(unsigned identifier)
 void
 StatObject::clean()
 {
-  if (m_expr_string) {
-    xfree(m_expr_string);
-  }
-  if (m_node_dest) {
-    delete m_node_dest;
-  }
-  if (m_cluster_dest) {
-    delete m_cluster_dest;
-  }
-  if (m_postfix) {
-    delete m_postfix;
-  }
+  ats_free(m_expr_string);
+  delete m_node_dest;
+  delete m_cluster_dest;
+  delete m_postfix;
 }
 
 

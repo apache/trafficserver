@@ -544,7 +544,7 @@ SplitDNSRecord::Init(matcher_line * line_info)
   }
 
   if (errBuf)
-    xfree(errBuf);
+    ats_free(errBuf);
 
   return NULL;
 }

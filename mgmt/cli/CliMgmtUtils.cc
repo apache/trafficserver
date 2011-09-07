@@ -220,7 +220,7 @@ Cli_DisplayRules(TSFileNameT fname)
       // Fix TSqa12220: use printf directly since Cli_Printf may
       // not allocate enough buffer space to display the file contents
       puts(text);
-      xfree(text);
+      ats_free(text);
     } else {
       Cli_Printf("no rules\n");
     }
@@ -255,15 +255,13 @@ Cli_SetConfigFileFromUrl(TSFileNameT file, const char *url)
   if ((status = TSConfigFileWrite(file, buf, size, version))) {
     Cli_Debug(ERR_CONFIG_FILE_WRITE, file);
     Cli_DisplayMgmtAPI_Error(status);
-    if (size) {
-      xfree(buf);
-    }
+    if (size)
+      ats_free(buf);
     return status;
   }
 
-  if (size) {
-    xfree(buf);
-  }
+  if (size)
+    ats_free(buf);
 
   Cli_Printf("Successfully updated config file.\n");
 

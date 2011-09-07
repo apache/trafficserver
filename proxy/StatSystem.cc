@@ -320,15 +320,13 @@ write_stats_snap()
     if (socketManager.write(fd, buf, buf_size) != buf_size)
       goto Lerror;
   }
-  if (buf)
-    xfree(buf);
+  ats_free(buf);
   //close(fd);
   socketManager.close(fd);
   Debug("stats", "snapped stats");
   return;
 Lerror:
-  if (buf)
-    xfree(buf);
+  ats_free(buf);
   Warning("unable to snap statistics");
   //close(fd);
   socketManager.close(fd);
@@ -419,7 +417,7 @@ stat_callback(Continuation * cont, HTTPHdr * header)
 
   num_prefix_buffer = RecGetRecordPrefix_Xmalloc(var_prefix, &buffer, &buffer_len);
   empty = (num_prefix_buffer == 0);
-  xfree(var_prefix);
+  ats_free(var_prefix);
 
   if (!empty) {
 
@@ -440,14 +438,10 @@ stat_callback(Continuation * cont, HTTPHdr * header)
     data.length = strlen(result);
     cont->handleEvent(STAT_PAGE_SUCCESS, &data);
   } else {
-    if (result) {
-      xfree(result);
-    }
+    ats_free(result);
     cont->handleEvent(STAT_PAGE_FAILURE, NULL);
   }
-
-  if (buffer)
-    xfree(buffer);
+  ats_free(buffer);
 
   return ACTION_RESULT_DONE;
 }

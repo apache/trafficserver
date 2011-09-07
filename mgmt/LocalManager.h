@@ -58,29 +58,13 @@ public:
     delete alarm_keeper;
     delete virt_map;
     delete ccom;
-    if (config_path)
-    {
-      xfree(config_path);
-    }
-    if (bin_path)
-    {
-      xfree(bin_path);
-    }
-    if (absolute_proxy_binary) {
-      xfree(absolute_proxy_binary);
-    }
-    if (proxy_name) {
-      xfree(proxy_name);
-    }
-    if (proxy_binary) {
-      xfree(proxy_binary);
-    }
-    if (proxy_options) {
-      xfree(proxy_options);
-    }
-    if (env_prep) {
-      xfree(env_prep);
-    }
+    ats_free(config_path);
+    ats_free(bin_path);
+    ats_free(absolute_proxy_binary);
+    ats_free(proxy_name);
+    ats_free(proxy_binary);
+    ats_free(proxy_options);
+    ats_free(env_prep);
   };
 
   void initAlarm();

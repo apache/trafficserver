@@ -348,7 +348,7 @@ check_lockfile()
     }
     _exit(1);
   }
-  xfree(lockfile);
+  ats_free(lockfile);
 }
 
 static void
@@ -1176,7 +1176,7 @@ syslog_log_configure()
   }
   // TODO: Not really, what's up with this?
   Debug("server", "Setting syslog facility to %d\n", syslog_facility);
-  xfree(facility_str);
+  ats_free(facility_str);
 }
 
 // void syslog_thr_init()
@@ -1469,7 +1469,7 @@ change_uid_gid(const char *user)
       }
     }
   }
-  xfree(buf);
+  ats_free(buf);
 
   // Ugly but this gets reset when the process user ID is changed so
   // it must be udpated here.
@@ -1588,7 +1588,7 @@ main(int argc, char **argv)
     PreserveCapabilities();
     change_uid_gid(user);
     RestrictCapabilities();
-    xfree(user);
+    ats_free(user);
   }
 # endif
 
@@ -1649,7 +1649,7 @@ main(int argc, char **argv)
     char bwFilename[PATH_NAME_MAX];
 
     snprintf(bwFilename, sizeof(bwFilename), "%s/%s", system_config_directory, filename);
-    xfree(filename);
+    ats_free(filename);
 
     Debug("bw-mgmt", "Looking to read: %s for bw-mgmt", bwFilename);
     schema.LoadFile(bwFilename);

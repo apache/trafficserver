@@ -135,7 +135,7 @@ CacheHostMatcher::Match(char *rdata, int rlen, CacheHostResult * result)
 
     r = host_lookup->MatchNext(&s, &opaque_ptr);
   }
-  xfree(data);
+  ats_free(data);
 }
 
 //
@@ -208,7 +208,7 @@ CacheHostTable::CacheHostTable(Cache * c, int typ)
   ink_release_assert(config_file != NULL);
   Layout::relative_to(config_file_path, sizeof(config_file_path),
                       cache_system_config_directory, config_file);
-  xfree(config_file);
+  ats_free(config_file);
   hostMatch = NULL;
 
   m_numEntries = this->BuildTable();
@@ -313,7 +313,7 @@ CacheHostTable::BuildTableFromString(char *file_buf)
         snprintf(errBuf, sizeof(errBuf), "%s discarding %s entry at line %d : %s",
                  matcher_name, config_file_path, line_num, errPtr);
         IOCORE_SignalError(errBuf, alarmAlready);
-        xfree(current);
+        ats_free(current);
       } else {
 
         // Line parsed ok.  Figure out what the destination
@@ -353,7 +353,7 @@ CacheHostTable::BuildTableFromString(char *file_buf)
     }
 
     if (first != NULL) {
-      xfree(first);
+      ats_free(first);
     }
     return 0;
   }
@@ -401,7 +401,7 @@ CacheHostTable::BuildTableFromString(char *file_buf)
     // Deallocate the parsing structure
     last = current;
     current = current->next;
-    xfree(last);
+    ats_free(last);
   }
 
   if (!generic_rec_initd) {
@@ -437,7 +437,7 @@ CacheHostTable::BuildTable()
   }
 
   ret = BuildTableFromString(file_buf);
-  xfree(file_buf);
+  ats_free(file_buf);
   return ret;
 }
 
@@ -522,7 +522,7 @@ CacheHostRecord::Init(matcher_line * line_info, int typ)
                          "[CacheHosting]", config_file, line_info->line_num, errptr);
             IOCORE_SignalError(err, alarmAlready);
             if (val != NULL) {
-              xfree(val);
+              ats_free(val);
             }
             return -1;
           }
@@ -533,7 +533,7 @@ CacheHostRecord::Init(matcher_line * line_info, int typ)
                        "[CacheHosting]", config_file, line_info->line_num, *s);
           IOCORE_SignalError(err, alarmAlready);
           if (val != NULL) {
-            xfree(val);
+            ats_free(val);
           }
           return -1;
         }
@@ -571,7 +571,7 @@ CacheHostRecord::Init(matcher_line * line_info, int typ)
                          "[CacheHosting]", config_file, line_info->line_num, volume_number);
             IOCORE_SignalError(err, alarmAlready);
             if (val != NULL) {
-              xfree(val);
+              ats_free(val);
             }
             return -1;
           }
@@ -582,7 +582,7 @@ CacheHostRecord::Init(matcher_line * line_info, int typ)
         s++;
       }
       if (val != NULL) {
-        xfree(val);
+        ats_free(val);
       }
       break;
     }
@@ -647,7 +647,7 @@ ConfigVolumes::read_config_file()
   ink_release_assert(config_file != NULL);
   Layout::relative_to(config_file_path, sizeof(config_file_path),
                       cache_system_config_directory, config_file);
-  xfree(config_file);
+  ats_free(config_file);
 
   file_buf = readIntoBuffer(config_file_path, "[CacheVolition]", NULL);
 
@@ -657,7 +657,7 @@ ConfigVolumes::read_config_file()
   }
 
   BuildListFromString(config_file_path, file_buf);
-  xfree(file_buf);
+  ats_free(file_buf);
   return;
 }
 
@@ -1186,10 +1186,8 @@ ClearCacheVolList(Queue<CacheVol> *cpl, int len)
   int i = 0;
   CacheVol *cp = NULL;
   while ((cp = cpl->dequeue())) {
-    if (cp->disk_vols)
-      xfree(cp->disk_vols);
-    if (cp->vols)
-      xfree(cp->vols);
+    ats_free(cp->disk_vols);
+    ats_free(cp->vols);
     delete(cp);
     i++;
   }

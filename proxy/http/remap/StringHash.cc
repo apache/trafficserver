@@ -167,8 +167,7 @@ StringHash::find_or_add(void *_ptr, const char *_str, int _strsize)
       he = NULL;
     }
   }
-  if (unlikely(tbuf_alloc))
-    xfree(tbuf_alloc);
+  ats_free(tbuf_alloc);
   return he;
 }
 

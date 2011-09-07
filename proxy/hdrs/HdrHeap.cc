@@ -194,7 +194,7 @@ HdrHeap::destroy()
   if (m_size == HDR_HEAP_DEFAULT_SIZE) {
     hdrHeapAllocator.free_void(this);
   } else {
-    xfree(this);
+    ats_free(this);
   }
 }
 
@@ -1127,7 +1127,7 @@ HdrStrHeap::free()
   if (m_heap_size == HDR_STR_HEAP_DEFAULT_SIZE) {
     strHeapAllocator.free_void(this);
   } else {
-    xfree(this);
+    ats_free(this);
   }
 }
 

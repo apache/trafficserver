@@ -306,7 +306,7 @@ DNSProcessor::dns_init()
 
       ns = (char *) ink_strtok_r(NULL, " ,;\t\r", &last);
     }
-    xfree(ns_list);
+    ats_free(ns_list);
   }
   // The default domain (4th param) and search list (5th param) will
   // come from /etc/resolv.conf.

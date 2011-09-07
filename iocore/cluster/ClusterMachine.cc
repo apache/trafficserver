@@ -145,8 +145,7 @@ clusterHandler(0)
 
 ClusterMachine::~ClusterMachine()
 {
-  if (hostname)
-    xfree(hostname);
+  ats_free(hostname);
 }
 
 #ifndef INK_NO_CLUSTER
@@ -262,7 +261,7 @@ read_MachineList(char *filename, int afd)
         Warning("read machine list failure, length mismatch");
         return NULL;
       } else
-        xfree(l);
+        ats_free(l);
       return (MachineList *) xstrdup("number of machines does not match length of list\n");
     }
   }

@@ -352,8 +352,7 @@ PrefetchTransform::~PrefetchTransform()
 
   if (m_output_buf)
     free_MIOBuffer(m_output_buf);
-  if (url)
-    xfree(url);
+  ats_free(url);
 }
 
 int
@@ -508,8 +507,8 @@ PrefetchTransform::redirect(HTTPHdr *resp)
       Debug("PrefetchTransform", "Redirect url to HTTP Hdr Location: \'%s\'\n", redirect_url);
       if (strncmp(redirect_url, req_url, location_len) == 0) {
         Debug("PrefetchTransform", "'%s' -> '%s' - Could be a loop. Discontinuing this path.\n", req_url, redirect_url);
-        xfree(redirect_url);
-        xfree(req_url);
+        ats_free(redirect_url);
+        ats_free(req_url);
         return 0;
       }
 
@@ -517,8 +516,8 @@ PrefetchTransform::redirect(HTTPHdr *resp)
 
       if (!entry) {
         Debug("PrefetchParserURLs", "Ignoring duplicate url '%s'", redirect_url);
-        xfree(redirect_url);
-        xfree(req_url);
+        ats_free(redirect_url);
+        ats_free(req_url);
         return 0;
       }
 
@@ -527,12 +526,10 @@ PrefetchTransform::redirect(HTTPHdr *resp)
 
       PrefetchBlaster *blaster = prefetchBlasterAllocator.alloc();
       blaster->init(entry, &m_sm->t_state.hdr_info.client_request, this);
-      if (req_url)
-        xfree(req_url);
+      ats_free(req_url);
     }
   }
-  if (redirect_url)
-    xfree(redirect_url);
+  ats_free(redirect_url);
   return 0;
 }
 
@@ -964,7 +961,7 @@ PrefetchBlaster::init(PrefetchUrlEntry *entry, HTTPHdr *req_hdr, PrefetchTransfo
     char *topurl = req_hdr->url_get()->string_get(NULL, &topurl_len);
     if (topurl) {
       request->value_set(MIME_FIELD_REFERER, MIME_LEN_REFERER, topurl, topurl_len);
-      xfree(topurl);
+      ats_free(topurl);
     }
   }
 
@@ -1110,8 +1107,7 @@ cookie_debug(const char *level, const char *value, int value_len)
     memcpy(str, value, value_len);
     str[value_len] = 0;
     Debug("PrefetchCookies", "Processing %s value: %s", level, str);
-    if (str)
-      xfree(str);
+    ats_free(str);
   }
 }
 
@@ -1865,9 +1861,8 @@ PrefetchConfiguration::readConfiguration()
     Warning("PrefetchProcessor: No prefetch configuration file specified. Prefetch disabled\n");
     goto Lerror;
   }
-  Layout::relative_to(conf_path, sizeof(conf_path),
-                      system_config_directory, conf_file_name);
-  xfree(conf_file_name);
+  Layout::relative_to(conf_path, sizeof(conf_path), system_config_directory, conf_file_name);
+  ats_free(conf_file_name);
 
   fd = open(conf_path, O_RDONLY);
   if (fd < 0) {
@@ -1878,7 +1873,7 @@ PrefetchConfiguration::readConfiguration()
   char *temp_str;
   if ((temp_str = Load_IpMap_From_File(&ip_map, fd, "prefetch_children")) != 0) {
     Error("PrefetchProcessor: Error in reading ip_range from %s: %.256s\n", conf_path, temp_str);
-    xfree(temp_str);
+    ats_free(temp_str);
     goto Lerror;
   }
 

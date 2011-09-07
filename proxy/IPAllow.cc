@@ -156,7 +156,7 @@ IpAllow::IpAllow(
   IPAllowReadConfigStringAlloc(config_file, (char *) config_file_var);
   ink_release_assert(config_file != NULL);
   ink_filepath_make(config_file_path, sizeof(config_file_path), system_config_directory, config_file);
-  xfree(config_file);
+  ats_free(config_file);
 }
 
 IpAllow::~IpAllow()
@@ -294,6 +294,6 @@ IpAllow::BuildTable()
     Print();
   }
 
-  xfree(file_buf);
+  ats_free(file_buf);
   return 0;
 }

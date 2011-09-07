@@ -48,13 +48,12 @@ ink_killall(const char *pname, int sig)
   }
 
   if (pidvcnt == 0) {
-    xfree(pidv);
+    ats_free(pidv);
     return 0;
   }
 
   err = ink_killall_kill_pidv(pidv, pidvcnt, sig);
-
-  xfree(pidv);
+  ats_free(pidv);
 
   return err;
 
@@ -99,7 +98,7 @@ ink_killall_get_pidv_xmalloc(const char *pname, pid_t ** pidv, int *pidvcnt)
             pid_t *pidv_realloc;
             pidvsize *= 2;
             if (!(pidv_realloc = (pid_t *) xrealloc(*pidv, pidvsize * sizeof(pid_t)))) {
-              xfree(*pidv);
+              ats_free(*pidv);
               goto l_error;
             } else {
               *pidv = pidv_realloc;
@@ -116,7 +115,7 @@ ink_killall_get_pidv_xmalloc(const char *pname, pid_t ** pidv, int *pidvcnt)
   closedir(dir);
 
   if (*pidvcnt == 0) {
-    xfree(*pidv);
+    ats_free(*pidv);
     *pidv = 0;
   }
 

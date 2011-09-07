@@ -50,9 +50,7 @@ num_leaf(0)
 
 RecTreeNode::~RecTreeNode()
 {
-  if (node_name) {
-    xfree(node_name);
-  }
+  ats_free(node_name);
 }
 
 /**

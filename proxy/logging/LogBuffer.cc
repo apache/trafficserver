@@ -789,8 +789,7 @@ LogBuffer::resolve_custom_entry(LogFieldList * fieldlist,
     }
   }
 
-  if (readfrom_map)
-    xfree(readfrom_map);
+  ats_free(readfrom_map);
   return bytes_written;
 }
 
@@ -887,12 +886,9 @@ LogBuffer::to_ascii(LogEntryHeader * entry, LogFormatType type,
   }
 
   if (bad_alt_format) {
-    if (alt_fieldlist)
-      delete alt_fieldlist;
-    if (alt_printf_str)
-      xfree(alt_printf_str);
-    if (alt_symbol_str)
-      xfree(alt_symbol_str);
+    delete alt_fieldlist;
+    ats_free(alt_printf_str);
+    ats_free(alt_symbol_str);
     alt_fieldlist = NULL;
     alt_printf_str = NULL;
     alt_symbol_str = NULL;
@@ -903,12 +899,9 @@ LogBuffer::to_ascii(LogEntryHeader * entry, LogFormatType type,
                                  entry->timestamp_usec, buffer_version,
                                  alt_fieldlist, alt_printf_str);
 
-  if (alt_fieldlist)
-    delete alt_fieldlist;
-  if (alt_printf_str)
-    xfree(alt_printf_str);
-  if (alt_symbol_str)
-    xfree(alt_symbol_str);
+  delete alt_fieldlist;
+  ats_free(alt_printf_str);
+  ats_free(alt_symbol_str);
 
   return ret;
 }

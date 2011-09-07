@@ -165,10 +165,8 @@ CongestionControlRecord::cleanup()
     pRecord->put();
     pRecord = NULL;
   }
-  if (prefix)
-    xfree(prefix), prefix = NULL;
-  if (error_page)
-    xfree(error_page), error_page = NULL;
+  ats_free(prefix), prefix = NULL;
+  ats_free(error_page), error_page = NULL;
 }
 
 typedef unsigned short cong_hist_t;
@@ -424,7 +422,7 @@ m_M_congested(0), m_last_M_congested(0), m_num_connections(0), m_stat_congested_
 inline CongestionEntry::~CongestionEntry()
 {
   if (m_hostname)
-    xfree(m_hostname), m_hostname = NULL;
+    ats_free(m_hostname), m_hostname = NULL;
   m_hist_lock = NULL;
   if (pRecord)
     pRecord->put(), pRecord = NULL;

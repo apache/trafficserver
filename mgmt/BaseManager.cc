@@ -53,9 +53,9 @@ BaseManager::~BaseManager()
 
   while (!queue_is_empty(mgmt_event_queue)) {
     MgmtMessageHdr *mh = (MgmtMessageHdr *) dequeue(mgmt_event_queue);
-    xfree(mh);
+    ats_free(mh);
   }
-  xfree(mgmt_event_queue);
+  ats_free(mgmt_event_queue);
 
   for (entry = ink_hash_table_iterator_first(mgmt_callback_table,
                                              &iterator_state);
@@ -63,12 +63,10 @@ BaseManager::~BaseManager()
     MgmtCallbackList *tmp, *cb_list = (MgmtCallbackList *) entry;
 
     for (tmp = cb_list->next; tmp; tmp = cb_list->next) {
-      xfree(cb_list);
+      ats_free(cb_list);
       cb_list = tmp;
     }
-    if (cb_list) {
-      xfree(cb_list);
-    }
+    ats_free(cb_list);
   }
 
   return;

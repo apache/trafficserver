@@ -241,10 +241,10 @@ template<class Data, class Result> RegexMatcher<Data, Result>::~RegexMatcher()
 {
   for (int i = 0; i < num_el; i++) {
     pcre_free(re_array[i]);
-    xfree(re_str[i]);
+    ats_free(re_str[i]);
   }
   delete[]re_str;
-  xfree(re_array);
+  ats_free(re_array);
   delete[]data_array;
 }
 
@@ -330,7 +330,7 @@ template<class Data, class Result> char *RegexMatcher<Data, Result>::NewEntry(ma
     num_el++;
   } else {
     // There was a problem so undo the effects this function
-    xfree(re_str[num_el]);
+    ats_free(re_str[num_el]);
     re_str[num_el] = NULL;
     pcre_free(re_array[num_el]);
     re_array[num_el] = NULL;
@@ -380,7 +380,7 @@ template<class Data, class Result> void RegexMatcher<Data, Result>::Match(RD * r
     } // else it's -1 which means no match was found.
 
   }
-  xfree(url_str);
+  ats_free(url_str);
 }
 
 //
@@ -574,7 +574,7 @@ template<class Data, class Result>
     ink_release_assert(config_file != NULL);
     ink_filepath_make(config_file_path, sizeof(config_file_path), system_config_directory, config_file);
   }
-  xfree(config_file);
+  ats_free(config_file);
 
   reMatch = NULL;
   hostMatch = NULL;
@@ -590,20 +590,12 @@ template<class Data, class Result>
 
 template<class Data, class Result> ControlMatcher<Data, Result>::~ControlMatcher()
 {
-  xfree(config_file_var);
+  ats_free(config_file_var);
 
-  if (reMatch != NULL) {
-    delete reMatch;
-  }
-  if (hostMatch != NULL) {
-    delete hostMatch;
-  }
-  if (ipMatch != NULL) {
-    delete ipMatch;
-  }
-  if (hrMatch != NULL) {
-    delete hrMatch;
-  }
+  delete reMatch;
+  delete hostMatch;
+  delete ipMatch;
+  delete hrMatch;
 }
 
 // void ControlMatcher<Data, Result>::Print()
@@ -705,7 +697,7 @@ template<class Data, class Result> int ControlMatcher<Data, Result>::BuildTableF
                    matcher_name, config_file_path, line_num, errPtr);
           SignalError(errBuf, alarmAlready);
         }
-        xfree(current);
+        ats_free(current);
       } else {
 
         // Line parsed ok.  Figure out what the destination
@@ -746,7 +738,7 @@ template<class Data, class Result> int ControlMatcher<Data, Result>::BuildTableF
 
   // Make we have something to do before going on
   if (numEntries == 0) {
-    xfree(first);
+    ats_free(first);
     return 0;
   }
   // Now allocate space for the record pointers
@@ -794,13 +786,13 @@ template<class Data, class Result> int ControlMatcher<Data, Result>::BuildTableF
     //   the NewEntry
     if (errPtr != NULL) {
       SignalError(errPtr, alarmAlready);
-      //xfree(errPtr); // XXX - why are we trying to free
+      //ats_free(errPtr); // XXX - why are we trying to free
       errPtr = NULL;
     }
     // Deallocate the parsing structure
     last = current;
     current = current->next;
-    xfree(last);
+    ats_free(last);
   }
 
   ink_assert(second_pass == numEntries);
@@ -825,7 +817,7 @@ template<class Data, class Result> int ControlMatcher<Data, Result>::BuildTable(
   }
 
   ret = BuildTableFromString(file_buf);
-  xfree(file_buf);
+  ats_free(file_buf);
   return ret;
 }
 

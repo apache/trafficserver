@@ -77,7 +77,7 @@
 extern "C"
 {
   int statvfs(const char *, struct statvfs *);
-};
+}
 #endif
 
 #define DISK_IS_CONFIG_FULL_MESSAGE \
@@ -213,32 +213,32 @@ LogConfig::read_configuration_variables()
   val = (int) LOG_ConfigReadInteger("proxy.config.log.log_buffer_size");
   if (val > 0) {
     log_buffer_size = val;
-  };
+  }
 
   val = (int) LOG_ConfigReadInteger("proxy.config.log.max_entries_per_buffer");
   if (val > 0) {
     max_entries_per_buffer = val;
-  };
+  }
 
   val = (int) LOG_ConfigReadInteger("proxy.config.log.max_secs_per_buffer");
   if (val > 0) {
     max_secs_per_buffer = val;
-  };
+  }
 
   val = (int) LOG_ConfigReadInteger("proxy.config.log.max_space_mb_for_logs");
   if (val > 0) {
     max_space_mb_for_logs = val;
-  };
+  }
 
   val = (int) LOG_ConfigReadInteger("proxy.config.log.max_space_mb_for_" "orphan_logs");
   if (val > 0) {
     max_space_mb_for_orphan_logs = val;
-  };
+  }
 
   val = (int) LOG_ConfigReadInteger("proxy.config.log.max_space_mb_headroom");
   if (val > 0) {
     max_space_mb_headroom = val;
-  };
+  }
 
   // TODO: We should mover this "parser" to lib/ts
   ptr = LOG_ConfigReadString("proxy.config.log.logfile_perm");
@@ -271,23 +271,23 @@ LogConfig::read_configuration_variables()
     c++;
     if (*c == 'x')
       logfile_perm |= S_IXOTH;
-    xfree(ptr);
+    ats_free(ptr);
   }
 
   ptr = LOG_ConfigReadString("proxy.config.log.hostname");
   if (ptr != NULL) {
-    xfree(hostname);
+    ats_free(hostname);
     hostname = ptr;
-  };
+  }
 
   ptr = LOG_ConfigReadString("proxy.config.log.logfile_dir");
   if (ptr != NULL) {
-    xfree(logfile_dir);
+    ats_free(logfile_dir);
     // Make it relative from Layout
     logfile_dir = Layout::get()->relative(ptr);
-    xfree(ptr);
+    ats_free(ptr);
     if (access(logfile_dir, W_OK) == -1) {
-      xfree(logfile_dir);
+      ats_free(logfile_dir);
       logfile_dir = NULL;
       if (access(system_log_dir, W_OK) == -1) {
         // Try 'system_root_dir/var/log/trafficserver' directory
@@ -320,99 +320,99 @@ LogConfig::read_configuration_variables()
   val = (int) LOG_ConfigReadInteger("proxy.config.log.squid_log_enabled");
   if (val == 0 || val == 1) {
     squid_log_enabled = val;
-  };
+  }
 
   // X-UID logging enabled.
   val = (int) LOG_ConfigReadInteger("proxy.config.log.xuid_logging_enabledq");
   if (val == 0 || val == 1) {
     xuid_logging_enabled = val;
-  };
+  }
 
   val = (int) LOG_ConfigReadInteger("proxy.config.log.squid_log_is_ascii");
   if (val == 0 || val == 1) {
     squid_log_is_ascii = val;
-  };
+  }
 
   ptr = LOG_ConfigReadString("proxy.config.log.squid_log_name");
   if (ptr != NULL) {
-    xfree(squid_log_name);
+    ats_free(squid_log_name);
     squid_log_name = ptr;
-  };
+  }
 
   ptr = LOG_ConfigReadString("proxy.config.log.squid_log_header");
   if (ptr != NULL) {
-    xfree(squid_log_header);
+    ats_free(squid_log_header);
     squid_log_header = ptr;
-  };
+  }
 
   // COMMON
   val = (int) LOG_ConfigReadInteger("proxy.config.log.common_log_enabled");
   if (val == 0 || val == 1) {
     common_log_enabled = val;
-  };
+  }
 
   val = (int) LOG_ConfigReadInteger("proxy.config.log.common_log_is_ascii");
   if (val == 0 || val == 1) {
     common_log_is_ascii = val;
-  };
+  }
 
   ptr = LOG_ConfigReadString("proxy.config.log.common_log_name");
   if (ptr != NULL) {
-    xfree(common_log_name);
+    ats_free(common_log_name);
     common_log_name = ptr;
-  };
+  }
 
   ptr = LOG_ConfigReadString("proxy.config.log.common_log_header");
   if (ptr != NULL) {
-    xfree(common_log_header);
+    ats_free(common_log_header);
     common_log_header = ptr;
-  };
+  }
 
   // EXTENDED
   val = (int) LOG_ConfigReadInteger("proxy.config.log.extended_log_enabled");
   if (val == 0 || val == 1) {
     extended_log_enabled = val;
-  };
+  }
 
   val = (int) LOG_ConfigReadInteger("proxy.config.log.extended_log_is_ascii");
   if (val == 0 || val == 1) {
     extended_log_is_ascii = val;
-  };
+  }
 
   ptr = LOG_ConfigReadString("proxy.config.log.extended_log_name");
   if (ptr != NULL) {
-    xfree(extended_log_name);
+    ats_free(extended_log_name);
     extended_log_name = ptr;
-  };
+  }
 
   ptr = LOG_ConfigReadString("proxy.config.log.extended_log_header");
   if (ptr != NULL) {
-    xfree(extended_log_header);
+    ats_free(extended_log_header);
     extended_log_header = ptr;
-  };
+  }
 
   // EXTENDED2
   val = (int) LOG_ConfigReadInteger("proxy.config.log.extended2_log_enabled");
   if (val == 0 || val == 1) {
     extended2_log_enabled = val;
-  };
+  }
 
   val = (int) LOG_ConfigReadInteger("proxy.config.log.extended2_log_is_ascii");
   if (val == 0 || val == 1) {
     extended2_log_is_ascii = val;
-  };
+  }
 
   ptr = LOG_ConfigReadString("proxy.config.log.extended2_log_name");
   if (ptr != NULL) {
-    xfree(extended2_log_name);
+    ats_free(extended2_log_name);
     extended2_log_name = ptr;
-  };
+  }
 
   ptr = LOG_ConfigReadString("proxy.config.log.extended2_log_header");
   if (ptr != NULL) {
-    xfree(extended2_log_header);
+    ats_free(extended2_log_header);
     extended2_log_header = ptr;
-  };
+  }
 
 
   // SPLITTING
@@ -423,12 +423,12 @@ LogConfig::read_configuration_variables()
   val = (int) LOG_ConfigReadInteger("proxy.config.log.separate_icp_logs");
   if (val == 0 || val == 1 || val == -1) {
     separate_icp_logs = val;
-  };
+  }
 
   val = (int) LOG_ConfigReadInteger("proxy.config.log.separate_host_logs");
   if (val == 0 || val == 1) {
     separate_host_logs = val;
-  };
+  }
 
 
   // COLLATION
@@ -439,35 +439,35 @@ LogConfig::read_configuration_variables()
 
   ptr = LOG_ConfigReadString("proxy.config.log.collation_host");
   if (ptr != NULL) {
-    xfree(collation_host);
+    ats_free(collation_host);
     collation_host = ptr;
-  };
+  }
 
   val = (int) LOG_ConfigReadInteger("proxy.config.log.collation_port");
   if (val >= 0) {
     collation_port = val;
-  };
+  }
 
   val = (int) LOG_ConfigReadInteger("proxy.config.log.collation_host_tagged");
   if (val == 0 || val == 1) {
     collation_host_tagged = val;
-  };
+  }
 
   ptr = LOG_ConfigReadString("proxy.config.log.collation_secret");
   if (ptr != NULL) {
-    xfree(collation_secret);
+    ats_free(collation_secret);
     collation_secret = ptr;
-  };
+  }
 
   val = (int) LOG_ConfigReadInteger("proxy.config.log.collation_retry_sec");
   if (val >= 0) {
     collation_retry_sec = val;
-  };
+  }
 
   val = (int) LOG_ConfigReadInteger("proxy.config.log.collation_max_send_buffers");
   if (val >= 0) {
     collation_max_send_buffers = val;
-  };
+  }
 
 
   // ROLLING
@@ -483,57 +483,57 @@ LogConfig::read_configuration_variables()
   val = (int) LOG_ConfigReadInteger("proxy.config.log." "auto_delete_rolled_files");
   if (val == 0 || val == 1) {
     auto_delete_rolled_files = val;
-  };
+  }
 
   // CUSTOM LOGGING
   val = (int) LOG_ConfigReadInteger("proxy.config.log.custom_logs_enabled");
   if (val == 0 || val == 1) {
     custom_logs_enabled = val;
-  };
+  }
 
   ptr = LOG_ConfigReadString("proxy.config.log.xml_config_file");
   if (ptr != NULL) {
-    xfree(xml_config_file);
+    ats_free(xml_config_file);
     xml_config_file = ptr;
-  };
+  }
 
   ptr = LOG_ConfigReadString("proxy.config.log.hosts_config_file");
   if (ptr != NULL) {
-    xfree(hosts_config_file);
+    ats_free(hosts_config_file);
     hosts_config_file = ptr;
-  };
+  }
 
   // PERFORMANCE
   val = (int) LOG_ConfigReadInteger("proxy.config.log.sampling_frequency");
   if (val > 0) {
     sampling_frequency = val;
-  };
+  }
 
   val = (int) LOG_ConfigReadInteger("proxy.config.log.file_stat_frequency");
   if (val > 0) {
     file_stat_frequency = val;
-  };
+  }
 
   val = (int) LOG_ConfigReadInteger("proxy.config.log.space_used_frequency");
   if (val > 0) {
     space_used_frequency = val;
-  };
+  }
 
   // ASCII BUFFER
   val = (int) LOG_ConfigReadInteger("proxy.config.log.ascii_buffer_size");
   if (val > 0) {
     ascii_buffer_size = val;
-  };
+  }
 
   val = (int) LOG_ConfigReadInteger("proxy.config.log.max_line_size");
   if (val > 0) {
     max_line_size = val;
-  };
+  }
 
   val = (int) LOG_ConfigReadInteger("proxy.config.log.overspill_report_count");
   if (val > 0) {
     overspill_report_count = val;
-  };
+  }
 
 /* The following variables are initialized after reading the     */
 /* variable values from records.config                           */
@@ -637,23 +637,23 @@ LogConfig::~LogConfig()
 //    delete m_log_collation_accept;
 #endif
 
-  xfree(hostname);
-  xfree(logfile_dir);
-  xfree(squid_log_name);
-  xfree(squid_log_header);
-  xfree(common_log_name);
-  xfree(common_log_header);
-  xfree(extended_log_name);
-  xfree(extended_log_header);
-  xfree(extended2_log_name);
-  xfree(extended2_log_header);
-  xfree(collation_host);
-  xfree(collation_secret);
-  xfree(xml_config_file);
-  xfree(hosts_config_file);
-  xfree(search_log_file_one);
-  xfree(search_log_file_two);
-  xfree(m_dir_entry);
+  ats_free(hostname);
+  ats_free(logfile_dir);
+  ats_free(squid_log_name);
+  ats_free(squid_log_header);
+  ats_free(common_log_name);
+  ats_free(common_log_header);
+  ats_free(extended_log_name);
+  ats_free(extended_log_header);
+  ats_free(extended2_log_name);
+  ats_free(extended2_log_header);
+  ats_free(collation_host);
+  ats_free(collation_secret);
+  ats_free(xml_config_file);
+  ats_free(hosts_config_file);
+  ats_free(search_log_file_one);
+  ats_free(search_log_file_two);
+  ats_free(m_dir_entry);
 }
 
 /*-------------------------------------------------------------------------
@@ -1515,7 +1515,7 @@ LogConfig::update_space_used()
   // Clean up the candidate array
   //
   for (i = 0; i < candidate_count; i++) {
-    xfree(candidates[i].name);
+    ats_free(candidates[i].name);
   }
 
   //
@@ -1678,12 +1678,12 @@ LogConfig::read_xml_log_config(int from_memory)
     nbytes = strlen(ptr);
     if (write(filedes[1], ptr, nbytes) != nbytes) {
       Note("Error in writing to pipe.");
-      xfree(ptr);
+      ats_free(ptr);
       close(filedes[1]);
       close(filedes[0]);
       return;
     }
-    xfree(ptr);
+    ats_free(ptr);
     close(filedes[1]);
 
     if (log_config.parse(filedes[0]) < 0) {

@@ -91,7 +91,7 @@ LogHost::LogHost(const LogHost & rhs)
 LogHost::~LogHost()
 {
   clear();
-  xfree(m_object_filename);
+  ats_free(m_object_filename);
 }
 
 //
@@ -248,7 +248,7 @@ LogHost::create_orphan_LogFile_object()
   //
   m_orphan_file = NEW(new LogFile(name_buf, NULL, ASCII_LOG, m_object_signature));
   ink_assert(m_orphan_file != NULL);
-  xfree(name_buf);
+  ats_free(name_buf);
 }
 
 #ifndef TS_MICRO
@@ -287,14 +287,10 @@ LogHost::clear()
 
   disconnect();
 
-  if (m_name)
-    xfree(m_name);
-  if (m_ipstr)
-    xfree(m_ipstr);
-  if (m_sock)
-    delete m_sock;
-  if (m_orphan_file)
-    delete m_orphan_file;
+  ats_free(m_name);
+  ats_free(m_ipstr);
+  delete m_sock;
+  delete m_orphan_file;
 
   m_ip = 0;
   m_ipstr = NULL;

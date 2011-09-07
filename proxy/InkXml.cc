@@ -42,8 +42,8 @@ InkXmlAttr::InkXmlAttr(char *tag, char *value)
 
 InkXmlAttr::~InkXmlAttr()
 {
-  xfree(m_tag);
-  xfree(m_value);
+  ats_free(m_tag);
+  ats_free(m_value);
 }
 
 void
@@ -64,7 +64,7 @@ InkXmlObject::InkXmlObject(char *object_name, bool dup_attrs_allowed)
 
 InkXmlObject::~InkXmlObject()
 {
-  xfree(m_object_name);
+  ats_free(m_object_name);
   clear_tags();
 }
 
@@ -139,7 +139,7 @@ m_col(0)
 
 InkXmlConfigFile::~InkXmlConfigFile()
 {
-  xfree(m_config_file);
+  ats_free(m_config_file);
   clear_objects();
 }
 

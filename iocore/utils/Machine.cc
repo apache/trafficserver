@@ -127,10 +127,7 @@ Machine::Machine(char *ahostname, unsigned int aip)
 
 Machine::~Machine()
 {
-  if (hostname)
-    xfree(hostname);
-  if (ip_string)
-    xfree(ip_string);
-  if (ip_hex_string)
-    xfree(ip_hex_string);
+  ats_free(hostname);
+  ats_free(ip_string);
+  ats_free(ip_hex_string);
 }

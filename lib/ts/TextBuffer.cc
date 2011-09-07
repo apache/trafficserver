@@ -56,7 +56,7 @@ textBuffer::textBuffer(int size)
 
 textBuffer::~textBuffer()
 {
-  xfree(bufferStart);
+  ats_free(bufferStart);
 }
 
 // void textBuffer::reUse()

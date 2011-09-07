@@ -297,7 +297,7 @@ plugin_init(const char *config_dir, bool internal)
     RecGetRecordString_Xmalloc("proxy.config.plugin.extensions_dir", (char**)&cfg);
     if (cfg != NULL) {
       extensions_dir = Layout::get()->relative(cfg);
-      xfree(cfg);
+      ats_free(cfg);
       cfg = NULL;
     }
     ink_filepath_make(path, sizeof(path), config_dir, "plugin.db");
@@ -373,11 +373,8 @@ plugin_init(const char *config_dir, bool internal)
 
     plugin_load(argc, argv, internal);
 
-    for (i = 0; i < argc; i++) {
-      if (vars[i]) {
-        xfree(vars[i]);
-      }
-    }
+    for (i = 0; i < argc; i++)
+      ats_free(vars[i]);
   }
 
   close(fd);

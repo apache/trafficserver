@@ -114,9 +114,9 @@ SSLCertLookup::buildTable()
             addInfoToHash(addr, sslCert, priKey);
             ret = 1;
           }
-          xfree(sslCert);
-          xfree(priKey);
-          xfree(addr);
+          ats_free(sslCert);
+          ats_free(priKey);
+          ats_free(addr);
           addr = NULL;
           sslCert = NULL;
           priKey = NULL;
@@ -138,7 +138,7 @@ SSLCertLookup::buildTable()
     Print();
   }
 */
-  xfree(file_buf);
+  ats_free(file_buf);
   return ret;
 }
 

@@ -132,8 +132,7 @@ send_and_parse_list(OpType op, LLQ * list)
     tok = tokens.iterNext(&i_state);
   }
 
-  if (list_str)
-    xfree(list_str);
+  ats_free(list_str);
   return TS_ERR_OKAY;
 }
 
@@ -497,8 +496,7 @@ MgmtRecordGet(const char *rec_name, TSRecordEle * rec_ele)
     return TS_ERR_FAIL;
   }
 
-  if (val)
-    xfree(val);
+  ats_free(val);
   return TS_ERR_OKAY;
 }
 

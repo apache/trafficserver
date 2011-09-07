@@ -255,7 +255,7 @@ handle_default(WebHttpContext * whc, const char *file)
   // open the requested file
   if ((h_file = WebFileOpenR(doc_root_file)) == WEB_HANDLE_INVALID) {
     //could not find file
-    xfree(doc_root_file);
+    ats_free(doc_root_file);
     response_hdr->setStatus(STATUS_NOT_FOUND);
     WebHttpSetErrorResponse(whc, STATUS_NOT_FOUND);
     return WEB_HTTP_ERR_REQUEST_ERROR;
@@ -270,7 +270,7 @@ handle_default(WebHttpContext * whc, const char *file)
     response_hdr->setStatus(STATUS_NOT_FOUND);
     WebHttpSetErrorResponse(whc, STATUS_NOT_FOUND);
     WebFileClose(h_file);
-    xfree(doc_root_file);
+    ats_free(doc_root_file);
     return WEB_HTTP_ERR_REQUEST_ERROR;
   }
   // Check to see if the clients copy is up to date.  Ignore the
@@ -291,7 +291,7 @@ handle_default(WebHttpContext * whc, const char *file)
   response_hdr->setLastMod(file_date_gmt);
 
   WebFileClose(h_file);
-  xfree(doc_root_file);
+  ats_free(doc_root_file);
 
   return WEB_HTTP_ERR_OKAY;
 

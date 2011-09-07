@@ -182,8 +182,7 @@ private:
 
   ~iLogBufferBuffer()
   {
-    if (buf)
-      xfree(buf);
+    ats_free(buf);
     real_buf_size = (size = 0);
   }
 

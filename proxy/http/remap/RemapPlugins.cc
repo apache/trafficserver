@@ -270,8 +270,7 @@ RemapPlugins::run_single_remap()
       redirect_url.destroy();
     }
 
-    if (unlikely(newPathAlloc))
-      xfree(newPathAlloc);
+    ats_free(newPathAlloc);
   }
 
 done:

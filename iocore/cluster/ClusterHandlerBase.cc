@@ -148,7 +148,7 @@ ClusterControl::free_data()
       ink_release_assert(*(((char *) data) - DATA_HDR) == size_index);         
     } else {
       // malloc'ed memory, not alloced via real_alloc_data().
-      // Data will be xfree()'ed when IOBufferBlock is freed
+      // Data will be ats_free()'ed when IOBufferBlock is freed
     }
     iob_block = 0;              // free memory
   }

@@ -166,7 +166,7 @@ root_access_needed(root_access_needed_)
           snprintf(alarmMsg, 2048, "Created zero length place holder for config file %s", fileName);
           mgmt_log(stderr, "[RollBack::Rollback] %s\n", alarmMsg);
           lmgmt->alarm_keeper->signalAlarm(MGMT_ALARM_CONFIG_UPDATE_FAILED, alarmMsg);
-          xfree(alarmMsg);
+          ats_free(alarmMsg);
           closeFile(fd);
         } else {
           mgmt_fatal(stderr,
@@ -240,7 +240,7 @@ root_access_needed(root_access_needed_)
       lmgmt->alarm_keeper->signalAlarm(MGMT_ALARM_CONFIG_UPDATE_FAILED, alarmMsg);
       closeFile(testFD);
     }
-    xfree(alarmMsg);
+    ats_free(alarmMsg);
   } else {
     closeFile(testFD);
   }
@@ -622,7 +622,7 @@ UPDATE_CLEANUP:
     alarmMsg = (char *)ats_malloc(1024);
     snprintf(alarmMsg, 1024, "[TrafficManager] Configuration File Update Failed: %s", strerror(errno));
     lmgmt->alarm_keeper->signalAlarm(MGMT_ALARM_CONFIG_UPDATE_FAILED, alarmMsg);
-    xfree(alarmMsg);
+    ats_free(alarmMsg);
 
     // Remove both the link from currentVersion_local
     // to the active version and the new version
@@ -828,7 +828,7 @@ Rollback::findVersions_ml(ExpandingArray * listNames)
 
   }
 
-  xfree(dirEntrySpace);
+  ats_free(dirEntrySpace);
   closedir(dir);
 
 #else

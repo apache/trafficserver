@@ -171,10 +171,7 @@ link_string_alloc(const char *name, RecDataT data_type, RecData data, void *cook
 
   RecString _temp2 = data.rec_string;
   data.rec_string = _new_value;
-
-  if (_temp2 != 0) {
-    xfree(_temp2);
-  }
+  ats_free(_temp2);
 
   return REC_ERR_OKAY;
 }
@@ -224,7 +221,7 @@ RecCoreInit(RecModeT mode_type, Diags *_diags)
     bool file_exists = true;
     g_rec_config_fpath = Layout::relative_to(Layout::get()->sysconfdir, REC_CONFIG_FILE REC_SHADOW_EXT);
     if (RecFileExists(g_rec_config_fpath) == REC_ERR_FAIL) {
-      xfree((char *)g_rec_config_fpath);
+      ats_free((char *)g_rec_config_fpath);
       g_rec_config_fpath = Layout::relative_to(Layout::get()->sysconfdir, REC_CONFIG_FILE);
       if (RecFileExists(g_rec_config_fpath) == REC_ERR_FAIL) {
         RecLog(DL_Warning, "Could not find '%s', system will run with defaults\n", REC_CONFIG_FILE);
@@ -658,7 +655,7 @@ RecGetRecordDefaultDataString_Xmalloc(char *name, char **buf, bool lock)
         strncpy(*buf, r->data_default.rec_string, 1023);
         buf[1023] = '\0';
       } else {
-        xfree(*buf);
+        ats_free(*buf);
         *buf = NULL;
       }
       break;
@@ -667,7 +664,7 @@ RecGetRecordDefaultDataString_Xmalloc(char *name, char **buf, bool lock)
       break;
     default:
       ink_debug_assert(!"Unexpected RecD type");
-      xfree(*buf);
+      ats_free(*buf);
       *buf = NULL;
       break;
     }
@@ -765,7 +762,7 @@ RecRegisterConfig(RecT rec_type, const char *name, RecDataT data_type,
     r->config_meta.update_type = update_type;
     r->config_meta.check_type = check_type;
     if (r->config_meta.check_expr) {
-      xfree(r->config_meta.check_expr);
+      ats_free(r->config_meta.check_expr);
     }
     r->config_meta.check_expr = xstrdup(check_expr);
     r->config_meta.update_cb_list = NULL;
@@ -849,9 +846,7 @@ RecForceInsert(RecRecord * record)
     r->config_meta.update_required = record->config_meta.update_required;
     r->config_meta.update_type = record->config_meta.update_type;
     r->config_meta.check_type = record->config_meta.check_type;
-    if (r->config_meta.check_expr) {
-      xfree(r->config_meta.check_expr);
-    }
+    ats_free(r->config_meta.check_expr);
     r->config_meta.check_expr = xstrdup(record->config_meta.check_expr);
     r->config_meta.access_type = record->config_meta.access_type;
   }

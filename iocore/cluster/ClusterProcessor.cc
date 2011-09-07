@@ -71,7 +71,7 @@ ClusterProcessor::internal_invoke_remote(ClusterMachine * m, int cluster_fn,
   if (!ch || (!malloced && !((unsigned int) cluster_fn < (uint32_t) SIZE_clusterFunction))) {
     // Invalid message or node is down, free message data
     if (malloced) {
-      xfree(data);
+      ats_free(data);
     }
     if (cmsg) {
       invoke_remote_data_args *args = (invoke_remote_data_args *)

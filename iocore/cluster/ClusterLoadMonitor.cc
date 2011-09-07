@@ -115,11 +115,11 @@ ClusterLoadMonitor::~ClusterLoadMonitor()
   //
   ink_release_assert(!periodic_action);
   if (ping_response_buckets) {
-    xfree(ping_response_buckets);
+    ats_free(ping_response_buckets);
     ping_response_buckets = 0;
   }
   if (ping_response_history_buf) {
-    xfree(ping_response_history_buf);
+    ats_free(ping_response_history_buf);
     ping_response_history_buf = 0;
   }
 }

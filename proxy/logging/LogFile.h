@@ -91,7 +91,7 @@ public:
   }
 
   ~MetaInfo() {
-    xfree(_filename);
+    ats_free(_filename);
   }
 
   bool get_creation_time(time_t * time)

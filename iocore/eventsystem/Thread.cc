@@ -86,7 +86,7 @@ spawn_thread_internal(void *a)
     p->f(p->a);
   else
     p->me->execute();
-  xfree(a);
+  ats_free(a);
   return NULL;
 }
 

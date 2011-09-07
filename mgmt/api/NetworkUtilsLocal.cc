@@ -228,7 +228,7 @@ preprocess_msg(struct SocketInfo sock_info, OpType * op_t, char **req)
     *req = (char *)ats_malloc(sizeof(char) * (req_len + 1));
     ret = socket_read_n(sock_info, *req, req_len);
     if (ret != TS_ERR_OKAY) {
-      xfree(*req);
+      ats_free(*req);
       goto Lerror;
     }
     // add end of string to end of msg
@@ -495,7 +495,7 @@ send_reply_list(struct SocketInfo sock_info, TSError retval, char *list)
 
   // now push it to the socket
   ret = socket_write_n(sock_info, msg, total_len);
-  xfree(msg);
+  ats_free(msg);
 
   return ret;
 }
@@ -551,7 +551,7 @@ send_record_get_reply(struct SocketInfo sock_info, TSError retval, void *val, in
 
   // now push it to the socket
   ret = socket_write_n(sock_info, msg, total_len);
-  xfree(msg);
+  ats_free(msg);
 
   return ret;
 }
@@ -587,8 +587,7 @@ send_record_set_reply(struct SocketInfo sock_info, TSError retval, TSActionNeedT
 
   // now push it to the socket
   ret = socket_write_n(sock_info, msg, total_len);
-
-  xfree(msg);
+  ats_free(msg);
 
   return ret;
 }
@@ -642,8 +641,7 @@ send_file_read_reply(struct SocketInfo sock_info, TSError retval, int ver, int s
 
   // now push it to the socket
   ret = socket_write_n(sock_info, msg, msg_len);
-
-  xfree(msg);
+  ats_free(msg);
 
   return ret;
 }
@@ -709,8 +707,7 @@ send_event_active_reply(struct SocketInfo sock_info, TSError retval, bool active
 
   // now push it to the socket
   ret = socket_write_n(sock_info, msg, total_len);
-
-  xfree(msg);
+  ats_free(msg);
 
   return ret;
 }
@@ -762,8 +759,7 @@ send_event_notification(struct SocketInfo sock_info, TSEvent * event)
 
   // now push it to the socket
   ret = socket_write_n(sock_info, msg, total_len);
-
-  xfree(msg);
+  ats_free(msg);
 
   return ret;
 }

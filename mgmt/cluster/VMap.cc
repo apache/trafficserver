@@ -199,7 +199,7 @@ VMap::VMap(char *interface, unsigned long ip, ink_mutex * m)
         lastlen = ifc.ifc_len;
       }
       len *= 2;
-      xfree(ifbuf);
+      ats_free(ifbuf);
     }
 
     ifr = ifc.ifc_req;
@@ -229,7 +229,7 @@ VMap::VMap(char *interface, unsigned long ip, ink_mutex * m)
                 mgmt_log("[VMap::VMap] Already added interface '%s'. Not adding for"
                          " real IP '%s'\n", ifr->ifr_name, inet_ntoa(tmp_realip_info->real_ip));
               }
-              xfree(tmp_realip_info);
+              ats_free(tmp_realip_info);
             } else {
               ink_hash_table_insert(interface_realip_map, ifr->ifr_name, (void *) tmp_realip_info);
               num_nics++;
@@ -251,7 +251,7 @@ VMap::VMap(char *interface, unsigned long ip, ink_mutex * m)
       ifr = (struct ifreq *) (((char *) ifr) + sizeof(*ifr));
 #endif
     }
-    xfree(ifbuf);
+    ats_free(ifbuf);
     close(tmp_socket);
   }
 
@@ -272,18 +272,14 @@ VMap::VMap(char *interface, unsigned long ip, ink_mutex * m)
 
 VMap::~VMap()
 {
-  if (id_map) {
+  if (id_map)
     ink_hash_table_destroy_and_xfree_values(id_map);
-  }
+
   ink_hash_table_destroy_and_xfree_values(interface_realip_map);
   ink_hash_table_destroy(our_map);
   ink_hash_table_destroy(ext_map);
-  if (this->interface) {
-    xfree(this->interface);
-  }
-  if (addr_list) {
-    xfree(addr_list);
-  }
+  ats_free(this->interface);
+  ats_free(addr_list);
 }                               /* End VMap::~VMap */
 
 
@@ -364,7 +360,7 @@ VMap::lt_runGambit()
 
   if (conf_addr) {              /* If there was a conflict, resolve it */
     rl_resolveConflict(vaddr, conf_addr);
-    xfree(conf_addr);
+    ats_free(conf_addr);
   }
 
   ink_mutex_release(mutex);
@@ -514,7 +510,7 @@ VMap::rl_clearUnSeen(char *ip)
     if (strstr(key, ip)) {
       if (!*tmp) {
         ink_hash_table_delete(ext_map, key);    /* Safe in iterator? */
-        xfree(tmp);
+        ats_free(tmp);
       } else {
         numAddrs++;
       }
@@ -601,7 +597,7 @@ VMap::rl_map(char *virt_ip, char *real_ip)
 
     if (!upAddr(virt_ip)) {
       mgmt_elog(stderr, "[VMap::rl_map] upAddr failed\n");
-      xfree(entry);
+      ats_free(entry);
       return false;
     }
   }
@@ -637,7 +633,7 @@ VMap::rl_unmap(char *virt_ip, char *real_ip)
     }
   }
   ink_hash_table_delete(tmp, buf);
-  xfree(hash_value);
+  ats_free(hash_value);
   return true;
 }                               /* End VMap::rl_unmap */
 

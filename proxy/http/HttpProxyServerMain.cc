@@ -281,7 +281,7 @@ start_HttpProxyServer(int fd, int port, int ssl_fd, int accept_threads)
       );
       opt.f_outbound_transparent = attr.f_outbound_transparent;
       opt.f_inbound_transparent = attr.f_inbound_transparent;
-      xfree(attr_string);
+      ats_free(attr_string);
     }
 
     netProcessor.main_accept(NEW(new HttpAccept(type)), fd,  NULL, NULL, false, false, opt);

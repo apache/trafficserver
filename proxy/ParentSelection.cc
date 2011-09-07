@@ -149,9 +149,8 @@ ParentConfig::reconfigure()
   // Handle default parent
   PARENT_ReadConfigStringAlloc(default_val, default_var);
   params->DefaultParent = createDefaultParent(default_val);
-  if (default_val) {
-    xfree(default_val);
-  }
+  ats_free(default_val);
+
   // Handle parent timeout
   PARENT_ReadConfigInteger(retry_time, retry_var);
   params->ParentRetryTime = retry_time;
@@ -678,10 +677,9 @@ ParentRecord::ProcessParents(char *val)
   return NULL;
 
 MERROR:
-  if (parents != NULL) {
-    xfree(parents);
-    parents = NULL;
-  }
+  ats_free(parents);
+  parents = NULL;
+
   return errPtr;
 }
 
@@ -711,7 +709,7 @@ ParentRecord::DefaultInit(char *val)
     errBuf = (char *)ats_malloc(1024);
     snprintf(errBuf, 1024, "%s %s for default parent proxy", modulePrefix, errPtr);
     SignalError(errBuf, alarmAlready);
-    xfree(errBuf);
+    ats_free(errBuf);
     return false;
   } else {
     return true;
@@ -836,7 +834,7 @@ ParentRecord::UpdateMatch(ParentResult * result, RD * rdata)
 
 ParentRecord::~ParentRecord()
 {
-  xfree(parents);
+  ats_free(parents);
 }
 
 void
@@ -994,9 +992,7 @@ SocksServerConfig::reconfigure()
   // Handle default parent
   PARENT_ReadConfigStringAlloc(default_val, "proxy.config.socks.default_servers");
   params->DefaultParent = createDefaultParent(default_val);
-  if (default_val) {
-    xfree(default_val);
-  }
+  ats_free(default_val);
 
   if (params->DefaultParent)
     setup_socks_servers(params->DefaultParent, 1);

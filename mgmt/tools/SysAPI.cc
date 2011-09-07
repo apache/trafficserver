@@ -1008,7 +1008,7 @@ NetConfig_Action(int index, ...)
     command_path = Layout::relative_to(Layout::get()->bindir, "net_config");
     res = execv(command_path, (char* const*)argv);
 
-    xfree(command_path);
+    ats_free(command_path);
     if (res != 0) {
       DPRINTF(("[SysAPI] fail to call net_config\n"));
     }
@@ -1292,7 +1292,7 @@ TimeConfig_Action(int index, bool restart ...)
     command_path = Layout::relative_to(Layout::get()->bindir, "time_config");
     res = execv(command_path, (char* const*)argv);
 
-    xfree(command_path);
+    ats_free(command_path);
     if (res != 0) {
       DPRINTF(("[SysAPI] fail to call time_config\n"));
     }
@@ -2504,7 +2504,7 @@ NetConfig_Action(int index, ...)
     }
     _exit(res);
   }
-  xfree(command_path);
+  ats_free(command_path);
   return 0;
 }
 
@@ -2772,7 +2772,7 @@ TimeConfig_Action(int index, bool restart ...)
 
     command_path = Layout::relative_to(Layout::get()->bindir, "time_config");
     res = execv(command_path, (char* const*) argv);
-    xfree(command_path);
+    ats_free(command_path);
     if (res != 0) {
       DPRINTF(("[SysAPI] fail to call time_config"));
     }

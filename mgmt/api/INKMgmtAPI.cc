@@ -70,7 +70,7 @@ _TSstrdup(const char *str, int length, const char *path)
 void
 _TSfree(void *ptr)
 {
-  xfree(ptr);
+  ats_free(ptr);
 }
 
 
@@ -499,11 +499,7 @@ TSStringListDestroy(TSStringList strl)
   /* dequeue each element and free it */
   while (!queue_is_empty((LLQ *) strl)) {
     str = (char *) dequeue((LLQ *) strl);
-
-    if (!str)
-      continue;
-
-    xfree(str);
+    ats_free(str);
   }
 
   delete_queue((LLQ *) strl);
@@ -595,11 +591,7 @@ TSIntListDestroy(TSIntList intl)
   /* dequeue each element and free it */
   while (!queue_is_empty((LLQ *) intl)) {
     iPtr = (int *) dequeue((LLQ *) intl);
-
-    if (!iPtr)
-      continue;
-
-    xfree(iPtr);
+    ats_free(iPtr);
   }
 
   delete_queue((LLQ *) intl);
@@ -710,11 +702,9 @@ tsapi void
 TSEventDestroy(TSEvent * event)
 {
   if (event) {
-    if (event->name)
-      xfree(event->name);
-    if (event->description)
-      xfree(event->description);
-    xfree(event);
+    ats_free(event->name);
+    ats_free(event->description);
+    ats_free(event);
   }
   return;
 }
@@ -734,11 +724,10 @@ tsapi void
 TSRecordEleDestroy(TSRecordEle * ele)
 {
   if (ele) {
-    if (ele->rec_name)
-      xfree(ele->rec_name);
+    ats_free(ele->rec_name);
     if (ele->rec_type == TS_REC_STRING && ele->string_val)
-      xfree(ele->string_val);
-    xfree(ele);
+      ats_free(ele->string_val);
+    ats_free(ele);
   }
   return;
 }
@@ -763,11 +752,9 @@ tsapi void
 TSIpAddrEleDestroy(TSIpAddrEle * ele)
 {
   if (ele) {
-    if (ele->ip_a)
-      xfree(ele->ip_a);
-    if (ele->ip_b)
-      xfree(ele->ip_b);
-    xfree(ele);
+    ats_free(ele->ip_a);
+    ats_free(ele->ip_b);
+    ats_free(ele);
   }
 
   return;
@@ -787,8 +774,7 @@ TSPortEleCreate(void)
 tsapi void
 TSPortEleDestroy(TSPortEle * ele)
 {
-  if (ele)
-    xfree(ele);
+  ats_free(ele);
   return;
 }
 
@@ -807,10 +793,8 @@ tsapi void
 TSDomainDestroy(TSDomain * ele)
 {
   if (ele) {
-    // this is okay because TSIpAddr is also a char*
-    if (ele->domain_val)
-      xfree(ele->domain_val);
-    xfree(ele);
+    ats_free(ele->domain_val);
+    ats_free(ele);
   }
 }
 
@@ -838,13 +822,11 @@ tsapi void
 TSSspecDestroy(TSSspec * ele)
 {
   if (ele) {
-    if (ele->prefix)
-      xfree(ele->prefix);
-    if (ele->suffix)
-      xfree(ele->suffix);
+    ats_free(ele->prefix);
+    ats_free(ele->suffix);
     if (ele->port)
       TSPortEleDestroy(ele->port);
-    xfree(ele);
+    ats_free(ele);
   }
   return;
 }
@@ -877,16 +859,13 @@ tsapi void
 TSPdSsFormatDestroy(TSPdSsFormat * ele)
 {
   if (ele) {
-    if (ele->pd_val)
-      xfree(ele->pd_val);
-    if (ele->sec_spec.src_ip)
-      xfree(ele->sec_spec.src_ip);
-    if (ele->sec_spec.prefix)
-      xfree(ele->sec_spec.prefix);
-    if (ele->sec_spec.suffix)
-      xfree(ele->sec_spec.suffix);
+    ats_free(ele->pd_val);
+    ats_free(ele->sec_spec.src_ip);
+    ats_free(ele->sec_spec.prefix);
+    ats_free(ele->sec_spec.suffix);
     if (ele->sec_spec.port)
       TSPortEleDestroy(ele->sec_spec.port);
+    ats_free(ele);
   }
   return;
 }
@@ -927,7 +906,7 @@ TSCacheEleDestroy(TSCacheEle * ele)
 {
   if (ele) {
     TSPdSsFormatDestroy(&(ele->cache_info));
-    xfree(ele);
+    ats_free(ele);
   }
   return;
 }
@@ -971,13 +950,10 @@ tsapi void
 TSCongestionEleDestroy(TSCongestionEle * ele)
 {
   if (ele) {
-    if (ele->pd_val)
-      xfree(ele->pd_val);
-    if (ele->prefix)
-      xfree(ele->prefix);
-    if (ele->error_page_uri)
-      xfree(ele->error_page_uri);
-    xfree(ele);
+    ats_free(ele->pd_val);
+    ats_free(ele->prefix);
+    ats_free(ele->error_page_uri);
+    ats_free(ele);
   }
   return;
 }
@@ -1004,11 +980,10 @@ tsapi void
 TSHostingEleDestroy(TSHostingEle * ele)
 {
   if (ele) {
-    if (ele->pd_val)
-      xfree(ele->pd_val);
+    ats_free(ele->pd_val);
     if (ele->volumes)
       TSIntListDestroy(ele->volumes);
-    xfree(ele);
+    ats_free(ele);
   }
   return;
 }
@@ -1041,13 +1016,10 @@ tsapi void
 TSIcpEleDestroy(TSIcpEle * ele)
 {
   if (ele) {
-    if (ele->peer_hostname)
-      xfree(ele->peer_hostname);
-    if (ele->peer_host_ip_addr)
-      xfree(ele->peer_host_ip_addr);
-    if (ele->mc_ip_addr)
-      xfree(ele->mc_ip_addr);
-    xfree(ele);
+    ats_free(ele->peer_hostname);
+    ats_free(ele->peer_host_ip_addr);
+    ats_free(ele->mc_ip_addr);
+    ats_free(ele);
   }
   return;
 }
@@ -1075,7 +1047,7 @@ TSIpAllowEleDestroy(TSIpAllowEle * ele)
   if (ele) {
     if (ele->src_ip_addr)
       TSIpAddrEleDestroy(ele->src_ip_addr);
-    xfree(ele);
+    ats_free(ele);
   }
   return;
 
@@ -1105,13 +1077,10 @@ tsapi void
 TSLogFilterEleDestroy(TSLogFilterEle * ele)
 {
   if (ele) {
-    if (ele->filter_name)
-      xfree(ele->filter_name);
-    if (ele->log_field)
-      xfree(ele->log_field);
-    if (ele->compare_str)
-      xfree(ele->compare_str);
-    xfree(ele);
+    ats_free(ele->filter_name);
+    ats_free(ele->log_field);
+    ats_free(ele->compare_str);
+    ats_free(ele);
   }
   return;
 }
@@ -1137,11 +1106,9 @@ tsapi void
 TSLogFormatEleDestroy(TSLogFormatEle * ele)
 {
   if (ele) {
-    if (ele->name)
-      xfree(ele->name);
-    if (ele->format)
-      xfree(ele->format);
-    xfree(ele);
+    ats_free(ele->name);
+    ats_free(ele->format);
+    ats_free(ele);
   }
   return;
 }
@@ -1171,10 +1138,8 @@ tsapi void
 TSLogObjectEleDestroy(TSLogObjectEle * ele)
 {
   if (ele) {
-    if (ele->format_name)
-      xfree(ele->format_name);
-    if (ele->file_name)
-      xfree(ele->file_name);
+    ats_free(ele->format_name);
+    ats_free(ele->file_name);
     if (ele->collation_hosts)
       TSDomainListDestroy(ele->collation_hosts);
     if (ele->filters)
@@ -1183,7 +1148,7 @@ TSLogObjectEleDestroy(TSLogObjectEle * ele)
       TSStringListDestroy(ele->protocols);
     if (ele->server_hosts)
       TSStringListDestroy(ele->server_hosts);
-    xfree(ele);
+    ats_free(ele);
   }
   return;
 }
@@ -1218,7 +1183,7 @@ TSParentProxyEleDestroy(TSParentProxyEle * ele)
     TSPdSsFormatDestroy(&(ele->parent_info));
     if (ele->proxy_list)
       TSDomainListDestroy(ele->proxy_list);
-    xfree(ele);
+    ats_free(ele);
   }
 
   return;
@@ -1245,9 +1210,7 @@ TSVolumeEleCreate()
 tsapi void
 TSVolumeEleDestroy(TSVolumeEle * ele)
 {
-  if (ele) {
-    xfree(ele);
-  }
+  ats_free(ele);
   return;
 }
 
@@ -1271,11 +1234,10 @@ tsapi void
 TSPluginEleDestroy(TSPluginEle * ele)
 {
   if (ele) {
-    if (ele->name)
-      xfree(ele->name);
+    ats_free(ele->name);
     if (ele->args)
       TSStringListDestroy(ele->args);
-    xfree(ele);
+    ats_free(ele);
   }
   return;
 }
@@ -1313,15 +1275,11 @@ void
 TSRemapEleDestroy(TSRemapEle * ele)
 {
   if (ele) {
-    if (ele->from_host)
-      xfree(ele->from_host);
-    if (ele->from_path_prefix)
-      xfree(ele->from_path_prefix);
-    if (ele->to_host)
-      xfree(ele->to_host);
-    if (ele->to_path_prefix)
-      xfree(ele->to_path_prefix);
-    xfree(ele);
+    ats_free(ele->from_host);
+    ats_free(ele->from_path_prefix);
+    ats_free(ele->to_host);
+    ats_free(ele->to_path_prefix);
+    ats_free(ele);
   }
 }
 
@@ -1355,11 +1313,9 @@ TSSocksEleDestroy(TSSocksEle * ele)
       TSIpAddrEleDestroy(ele->dest_ip_addr);
     if (ele->socks_servers)
       TSDomainListDestroy(ele->socks_servers);
-    if (ele->username)
-      xfree(ele->username);
-    if (ele->password)
-      xfree(ele->password);
-    xfree(ele);
+    ats_free(ele->username);
+    ats_free(ele->password);
+    ats_free(ele);
   }
 }
 
@@ -1386,15 +1342,13 @@ void
 TSSplitDnsEleDestroy(TSSplitDnsEle * ele)
 {
   if (ele) {
-    if (ele->pd_val)
-      xfree(ele->pd_val);
+    ats_free(ele->pd_val);
     if (ele->dns_servers_addrs)
       TSDomainListDestroy(ele->dns_servers_addrs);
-    if (ele->def_domain)
-      xfree(ele->def_domain);
+    ats_free(ele->def_domain);
     if (ele->search_list)
       TSDomainListDestroy(ele->search_list);
-    xfree(ele);
+    ats_free(ele);
   }
   return;
 }
@@ -1419,9 +1373,8 @@ void
 TSStorageEleDestroy(TSStorageEle * ele)
 {
   if (ele) {
-    if (ele->pathname)
-      xfree(ele->pathname);
-    xfree(ele);
+    ats_free(ele->pathname);
+    ats_free(ele);
   }
   return;
 }
@@ -1449,11 +1402,10 @@ void
 TSUpdateEleDestroy(TSUpdateEle * ele)
 {
   if (ele) {
-    if (ele->url)
-      xfree(ele->url);
+    ats_free(ele->url);
     if (ele->headers)
       TSStringListDestroy(ele->headers);
-    xfree(ele);
+    ats_free(ele);
   }
   return;
 }
@@ -1479,11 +1431,9 @@ void
 TSVirtIpAddrEleDestroy(TSVirtIpAddrEle * ele)
 {
   if (ele) {
-    if (ele->intr)
-      xfree(ele->intr);
-    if (ele->ip_addr)
-      xfree(ele->ip_addr);
-    xfree(ele);
+    ats_free(ele->intr);
+    ats_free(ele->ip_addr);
+    ats_free(ele);
   }
 }
 
@@ -2075,7 +2025,7 @@ TSReadFromUrlEx(const char *url, char **header, int *headerSize, char **body, in
   } else {
     httpHost = xstrdup(host_and_port);
   }
-  xfree(host_and_port);
+  ats_free(host_and_port);
 
   hFD = connectDirect(httpHost, httpPort, timeout);
   if (hFD == -1) {
@@ -2101,10 +2051,9 @@ TSReadFromUrlEx(const char *url, char **header, int *headerSize, char **body, in
   *body = xstrndup(bdy_temp, *bodySize);
 
 END:
-  if (httpHost)
-    xfree(httpHost);
-  if (httpPath)
-    xfree(httpPath);
+  ats_free(httpHost);
+  ats_free(httpPath);
+
   return status;
 }
 
@@ -2657,7 +2606,7 @@ resetHostName(TSRmServerEle * ele, const char *hostname, const char *tail)
 {
   char buff[MAX_RULE_SIZE];
 
-  xfree(ele->str_val);
+  ats_free(ele->str_val);
   snprintf(buff, sizeof(buff), "%s.%s", hostname, tail);
   ele->str_val = xstrdup(buff);
   return;

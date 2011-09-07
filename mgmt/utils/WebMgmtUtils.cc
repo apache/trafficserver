@@ -542,14 +542,14 @@ varStrFromName(const char *varNameConst, char *bufVal, int bufLen)
 
     // Return not found for unknown format options
     if (formatOption != 'b' && formatOption != 'm' && formatOption != 'c' && formatOption != 'p') {
-      xfree(varName);
+      ats_free(varName);
       return false;
     }
   }
 
   err = RecGetRecordDataType(varName, &varDataType);
   if (err == REC_ERR_FAIL) {
-    xfree(varName);
+    ats_free(varName);
     return false;
   }
 
@@ -596,14 +596,14 @@ varStrFromName(const char *varNameConst, char *bufVal, int bufLen)
     } else {
       ink_strncpy(bufVal, data.rec_string, bufLen);
     }
-    xfree(data.rec_string);
+    ats_free(data.rec_string);
     break;
   default:
     found = false;
     break;
   }
 
-  xfree(varName);
+  ats_free(varName);
   return found;
 }
 
@@ -657,9 +657,8 @@ MgmtData::MgmtData()
 
 MgmtData::~MgmtData()
 {
-  if (type == RECD_STRING) {
-    xfree(data.rec_string);
-  }
+  if (type == RECD_STRING)
+    ats_free(data.rec_string);
 }
 
 // MgmtData::compareFromString(const char* str, strLen)
@@ -794,10 +793,10 @@ processFormSubmission(char *submission)
       }
 
       ink_hash_table_insert(nameVal, name, value);
-      xfree(name);
+      ats_free(name);
     }
   }
-  xfree(submission_copy);
+  ats_free(submission_copy);
 
   return nameVal;
 }
@@ -851,10 +850,10 @@ processFormSubmission_noSubstitute(char *submission)
       }
 
       ink_hash_table_insert(nameVal, name, value);
-      xfree(name);
+      ats_free(name);
     }
   }
-  xfree(submission_copy);
+  ats_free(submission_copy);
 
   return nameVal;
 }
@@ -1453,7 +1452,7 @@ getFilesInDirectory(char *managedDir, ExpandingArray * fileList)
     delete[]filePath;
   }
 
-  xfree(dirEntry);
+  ats_free(dirEntry);
   closedir(dir);
 #else
   // Append '\*' as a wildcard for FindFirstFile()

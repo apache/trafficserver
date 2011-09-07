@@ -252,7 +252,7 @@ public:
   /**********************************************************************
   * purpose: loads a null terminated string from the core file
   * inputs: core file string address
-  * outputs: char* pointing to live string. call deallocs via xfree()
+  * outputs: char* pointing to live string. call deallocs via ats_free()
   ***********************************************************************/
   static char *load_string(const char *addr);
 

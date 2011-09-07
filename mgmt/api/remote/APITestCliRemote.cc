@@ -390,8 +390,7 @@ print_cache_ele(TSCacheEle * ele)
 
   snprintf(buf, sizeof(buf), "%s ", pd_str);
   buf_pos = strlen(buf);
-  xfree(pd_str);
-
+  ats_free(pd_str);
 
   // now format the message
   switch (ele->cfg_ele.type) {
@@ -412,14 +411,14 @@ print_cache_ele(TSCacheEle * ele)
     if (!time_str)
       return;
     snprintf(buf + buf_pos, sizeof(buf) - buf_pos, "pin-in-cache=%s", time_str);
-    xfree(time_str);
+    ats_free(time_str);
     break;
   case TS_CACHE_REVALIDATE:
     time_str = hms_time_to_string(ele->time_period);
     if (!time_str)
       return;
     snprintf(buf + buf_pos, sizeof(buf) - buf_pos, "revalidate=%s", time_str);
-    xfree(time_str);
+    ats_free(time_str);
     break;
   default:                     /* invalid action directive */
     printf("hello..\n");
@@ -712,7 +711,7 @@ print_split_dns_ele(TSSplitDnsEle * ele)
     strncat(buf, "named=", sizeof(buf) - strlen(buf) - 1);
     str = ip_addr_list_to_string((LLQ *) ele->dns_servers_addrs, " ");
     strncat(buf, str, sizeof(buf) - strlen(buf) - 1);
-    xfree(str);
+    ats_free(str);
     strncat(buf, " ", sizeof(buf) - strlen(buf) - 1);
   }
 
@@ -726,13 +725,11 @@ print_split_dns_ele(TSSplitDnsEle * ele)
     strncat(buf, "search_list=", sizeof(buf) - strlen(buf) - 1);
     str = domain_list_to_string(ele->search_list, " ");
     strncat(buf, str, sizeof(buf) - strlen(buf) - 1);
-    xfree(str);
+    ats_free(str);
     strncat(buf, " ", sizeof(buf) - strlen(buf) - 1);
   }
   printf("%s\n", buf);
-
-  if (pd_name)
-    xfree(pd_name);
+  ats_free(pd_name);
 
   return;
 }

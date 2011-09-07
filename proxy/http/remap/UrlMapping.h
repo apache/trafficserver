@@ -70,7 +70,7 @@ public:
   {
     type = 0;
     if (chunk_str) {
-      xfree(chunk_str);
+      ats_free(chunk_str);
       chunk_str = NULL;
     }
   }

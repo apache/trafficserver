@@ -187,8 +187,7 @@ Store::delete_all()
     if (disk[i])
       delete disk[i];
   n_disks = 0;
-  if (disk)
-    ::xfree(disk);
+  ats_free(disk);
   disk = NULL;
 }
 
@@ -199,8 +198,7 @@ Store::~Store()
 
 Span::~Span()
 {
-  if (pathname)
-    xfree(pathname);
+  ats_free(pathname);
   if (link.next)
     delete link.next;
 }
@@ -317,10 +315,10 @@ Store::read_config(int fd)
       IOCORE_SignalWarning(REC_SIGNAL_SYSTEM_ERROR, buf);
       Debug("cache_init", "Store::read_config - %s", buf);
       delete ns;
-      xfree(pp);
+      ats_free(pp);
       continue;
     }
-    xfree(pp);
+    ats_free(pp);
     n_dsstore++;
 
     // new Span

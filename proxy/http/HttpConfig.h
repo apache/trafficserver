@@ -982,26 +982,23 @@ HttpConfigParams::HttpConfigParams()
 inline
 HttpConfigParams::~HttpConfigParams()
 {
-  xfree(proxy_hostname);
-  xfree(proxy_request_via_string);
-  xfree(proxy_response_via_string);
-  xfree(url_expansions_string);
-  xfree(proxy_server_other_ports);
-  xfree(anonymize_other_header_list);
-  xfree(global_user_agent_header);
-  xfree(oride.proxy_response_server_string);
-  xfree(cache_vary_default_text);
-  xfree(cache_vary_default_images);
-  xfree(cache_vary_default_other);
-  xfree(connect_ports_string);
-  xfree(reverse_proxy_no_host_redirect);
+  ats_free(proxy_hostname);
+  ats_free(proxy_request_via_string);
+  ats_free(proxy_response_via_string);
+  ats_free(url_expansions_string);
+  ats_free(proxy_server_other_ports);
+  ats_free(anonymize_other_header_list);
+  ats_free(global_user_agent_header);
+  ats_free(oride.proxy_response_server_string);
+  ats_free(cache_vary_default_text);
+  ats_free(cache_vary_default_images);
+  ats_free(cache_vary_default_other);
+  ats_free(connect_ports_string);
+  ats_free(reverse_proxy_no_host_redirect);
+  ats_free(url_expansions);
 
   if (connect_ports) {
     delete connect_ports;
-  }
-
-  if (url_expansions) {
-    xfree(url_expansions);
   }
 }
 #endif /* #ifndef _HttpConfig_h_ */

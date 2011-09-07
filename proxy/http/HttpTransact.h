@@ -1201,9 +1201,9 @@ public:
       if (internal_msg_buffer) {
         free_internal_msg_buffer(internal_msg_buffer, internal_msg_buffer_fast_allocator_size);
       }
-      //if (unmapped_request_url) xfree(unmapped_request_url);
+      //if (unmapped_request_url) ats_free(unmapped_request_url);
       if (internal_msg_buffer_type)
-        xfree(internal_msg_buffer_type);
+        ats_free(internal_msg_buffer_type);
 
       ParentConfig::release(parent_params);
       parent_params = NULL;
@@ -1411,7 +1411,7 @@ HttpTransact::free_internal_msg_buffer(char *buffer, int64_t size)
   if (size >= 0) {
     ioBufAllocator[size].free_void(buffer);
   } else {
-    xfree(buffer);
+    ats_free(buffer);
   }
 }
 

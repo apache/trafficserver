@@ -1160,7 +1160,7 @@ Vol::dir_check(bool fix)
       printf("\n" "                           ");
   }
   printf("\n");
-  ::xfree(shist);
+  ats_free(shist);
   return 0;
 }
 

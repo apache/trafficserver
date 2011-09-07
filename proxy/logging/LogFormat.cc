@@ -106,8 +106,8 @@ LogFormat::setup(const char *name, const char *format_str, unsigned interval_sec
       m_valid = false;
     }
 
-    xfree(fieldlist_str);
-    xfree(printf_str);
+    ats_free(fieldlist_str);
+    ats_free(printf_str);
   }
 }
 
@@ -158,7 +158,7 @@ LogFormat::init_variables(const char *name, const char *fieldlist_str, const cha
     }
 
     if (m_name_str) {
-      xfree(m_name_str);
+      ats_free(m_name_str);
       m_name_str = NULL;
       m_name_id = 0;
     }
@@ -168,7 +168,7 @@ LogFormat::init_variables(const char *name, const char *fieldlist_str, const cha
     }
 
     if (m_fieldlist_str) {
-      xfree(m_fieldlist_str);
+      ats_free(m_fieldlist_str);
       m_fieldlist_str = NULL;
       m_fieldlist_id = 0;
     }
@@ -326,11 +326,11 @@ LogFormat::LogFormat(const LogFormat & rhs)
 
 LogFormat::~LogFormat()
 {
-  xfree(m_name_str);
-  xfree(m_fieldlist_str);
-  xfree(m_printf_str);
-  xfree(m_agg_marshal_space);
-  xfree(m_format_str);
+  ats_free(m_name_str);
+  ats_free(m_fieldlist_str);
+  ats_free(m_printf_str);
+  ats_free(m_agg_marshal_space);
+  ats_free(m_format_str);
   m_valid = false;
 }
 
@@ -602,7 +602,7 @@ LogFormat::parse_symbol_string(const char *symbol_string, LogFieldList *field_li
     symbol = strtok(NULL, ",");
   }
 
-  xfree(sym_str);
+  ats_free(sym_str);
   return field_count;
 }
 

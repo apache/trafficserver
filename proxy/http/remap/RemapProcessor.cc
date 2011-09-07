@@ -265,7 +265,7 @@ RemapProcessor::finish_remap(HttpTransact::State *s)
       if (old_host_hdr) {
         old_host_hdr = xstrndup(old_host_hdr, old_host_hdr_len);
         Debug("url_rewrite", "Host: Header before rewrite %.*s", old_host_hdr_len, old_host_hdr);
-        xfree(old_host_hdr);
+        ats_free(old_host_hdr);
       }
     }
     //

@@ -5435,7 +5435,7 @@ HttpSM::setup_internal_transfer(HttpSMHandler handler_arg)
                                                  MIME_LEN_CONTENT_TYPE,
                                                  t_state.internal_msg_buffer_type,
                                                  strlen(t_state.internal_msg_buffer_type));
-      xfree(t_state.internal_msg_buffer_type);
+      ats_free(t_state.internal_msg_buffer_type);
       t_state.internal_msg_buffer_type = NULL;
     }
   } else {
@@ -6025,7 +6025,7 @@ HttpSM::kill_this()
     HTTP_SM_SET_DEFAULT_HANDLER(NULL);
 
     if (redirect_url != NULL) {
-      xfree(redirect_url);
+      ats_free(redirect_url);
       redirect_url = NULL;
       redirect_url_len = 0;
     }
@@ -6297,7 +6297,7 @@ HttpSM::dump_state_hdr(HTTPHdr *h, const char *s)
 
     hdr_buf[l] = '\0';
     Error("  ----  %s [%" PRId64 "] ----\n%s\n", s, sm_id, hdr_buf);
-    xfree(hdr_buf);
+    ats_free(hdr_buf);
   }
 }
 
@@ -6850,7 +6850,7 @@ HttpSM::do_redirect()
 
       if (redirect_url != NULL) {
         redirect_request(redirect_url, redirect_url_len);
-        xfree(redirect_url);
+        ats_free(redirect_url);
         redirect_url = NULL;
         redirect_url_len = 0;
         HTTP_INCREMENT_DYN_STAT(http_total_x_redirect_stat);
@@ -6934,7 +6934,7 @@ HttpSM::redirect_request(const char *redirect_url, const int redirect_len)
       host_len += snprintf(buf + host_len, sizeof(buf) - host_len, ":%d", port);
       t_state.hdr_info.client_request.value_set(MIME_FIELD_HOST, MIME_LEN_HOST, buf, host_len);
 #if !defined(__GNUC__)
-      xfree(buf);
+      ats_free(buf);
 #endif
     } else {
       // the client request didn't have a host, so remove it from the headers

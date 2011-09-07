@@ -161,7 +161,7 @@ TS_INLINE void
 SocksAddrType::reset()
 {
   if (type != SOCKS_ATYPE_IPV4 && addr.buf) {
-    xfree(addr.buf);
+    ats_free(addr.buf);
   }
 
   addr.buf = 0;

@@ -86,14 +86,14 @@ overviewRecord::overviewRecord(unsigned long inet_addr, bool local, ClusterPeerI
   if (name_found == false || name_l == NULL) {
     nameFailed.s_addr = inetAddr;
     mgmt_log("[overviewRecord::overviewRecord] Unable to find hostname for %s\n", inet_ntoa(nameFailed));
-    xfree(name_l);              // about to overwrite name_l, so we need to free it first
+    ats_free(name_l);              // about to overwrite name_l, so we need to free it first
     name_l = xstrdup(inet_ntoa(nameFailed));
   }
 
   const size_t hostNameLen = strlen(name_l) + 1;
   this->hostname = new char[hostNameLen];
   ink_strncpy(this->hostname, name_l, hostNameLen);
-  xfree(name_l);
+  ats_free(name_l);
 }
 
 overviewRecord::~overviewRecord()
@@ -423,12 +423,12 @@ overviewRecord::varStrFromName(const char *varNameConst, char *bufVal, int bufLe
 
     // Return not found for unknown format options
     if (formatOption != 'b' && formatOption != 'm' && formatOption != 'c' && formatOption != 'p') {
-      xfree(varName);
+      ats_free(varName);
       return false;
     }
   }
   if (RecGetRecordDataType(varName, &varDataType) == REC_ERR_FAIL) {
-    xfree(varName);
+    ats_free(varName);
     return false;
   }
 
@@ -474,7 +474,7 @@ overviewRecord::varStrFromName(const char *varNameConst, char *bufVal, int bufLe
     } else {
       ink_strncpy(bufVal, data.string_data, bufLen);
     }
-    xfree(data.string_data);
+    ats_free(data.string_data);
     break;
   case RECD_NULL:
   default:
@@ -482,7 +482,7 @@ overviewRecord::varStrFromName(const char *varNameConst, char *bufVal, int bufLe
     break;
   }
 
-  xfree(varName);
+  ats_free(varName);
   return found;
 }
 
@@ -1568,13 +1568,8 @@ overviewAlarmCallback(alarm_t newAlarm, char *ip, char *desc)
 
 AlarmListable::~AlarmListable()
 {
-  if (ip != NULL) {
-    xfree(ip);
-  }
-
-  if (desc != NULL) {
-    xfree(desc);
-  }
+  ats_free(ip);
+  ats_free(desc);
 }
 
 // int hostSortFunc(const void* arg1, const void* arg2)

@@ -233,20 +233,18 @@ ClusterHandler::~ClusterHandler()
   if (machine)
     free_ClusterMachine(machine);
   machine = NULL;
-  if (hostname)
-    xfree(hostname);
+  ats_free(hostname);
   hostname = NULL;
-  if (channels)
-    xfree(channels);
+  ats_free(channels);
   channels = NULL;
   if (channel_data) {
     for (int i = 0; i < n_channels; ++i) {
       if (channel_data[i]) {
-        xfree(channel_data[i]);
+        ats_free(channel_data[i]);
         channel_data[i] = 0;
       }
     }
-    xfree(channel_data);
+    ats_free(channel_data);
     channel_data = NULL;
   }
   if (read_vcs)

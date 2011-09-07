@@ -60,7 +60,7 @@ send_thr(void *data)
     if (RecPipeWrite(h_pipe, (char *) msg_hdr, msg_size) == REC_ERR_FAIL) {
       ink_release_assert("Pipe write failed, message lost");
     }
-    xfree(msg_hdr);
+    ats_free(msg_hdr);
   }
   return NULL;
 }
@@ -119,7 +119,7 @@ recv_cb_thr(void *data)
     if (g_recv_cb) {
       msg = (RecMessage *) dequeue(g_recv_llq);
       RecMessageRecvThis(0, (char *) msg, 0);
-      xfree(msg);
+      ats_free(msg);
     }
   }
   return NULL;
@@ -290,7 +290,7 @@ RecMessageAlloc(RecMessageT msg_type, int initial_size)
 int
 RecMessageFree(RecMessage * msg)
 {
-  xfree(msg);
+  ats_free(msg);
   return REC_ERR_OKAY;
 }
 
@@ -511,10 +511,8 @@ RecMessageReadFromDisk(const char *fpath)
   goto Ldone;
 
 Lerror:
-  if (msg != NULL) {
-    xfree(msg);
-    msg = NULL;
-  }
+  ats_free(msg);
+  msg = NULL;
 
 Ldone:
   if (h_file != REC_HANDLE_INVALID) {

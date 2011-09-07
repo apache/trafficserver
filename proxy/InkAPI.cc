@@ -730,7 +730,7 @@ FileImpl::fclose()
   }
 
   if (m_buf) {
-    xfree(m_buf);
+    ats_free(m_buf);
     m_buf = NULL;
     m_bufsize = 0;
     m_bufpos = 0;
@@ -1730,7 +1730,7 @@ TSPluginDirGet(void)
     }
     Layout::relative_to(path, sizeof(path),
                         Layout::get()->prefix, plugin_dir);
-    xfree(plugin_dir);
+    ats_free(plugin_dir);
   }
 
   return path;
@@ -2306,7 +2306,7 @@ TSMimeParserDestroy(TSMimeParser parser)
   sdk_assert(sdk_sanity_check_mime_parser(parser) == TS_SUCCESS);
 
   mime_parser_clear((MIMEParser *) parser);
-  xfree(parser);
+  ats_free(parser);
 }
 
 /***********/
@@ -3339,7 +3339,7 @@ TSHttpParserDestroy(TSHttpParser parser)
 {
   sdk_assert(sdk_sanity_check_http_parser(parser) == TS_SUCCESS);
   http_parser_clear((HTTPParser *) parser);
-  xfree(parser);
+  ats_free(parser);
 }
 
 /***********/
@@ -3883,8 +3883,7 @@ TSCacheKeyDestroy(TSCacheKey key)
 
   CacheInfo *i = (CacheInfo *) key;
 
-  if (i->hostname)
-    xfree(i->hostname);
+  ats_free(i->hostname);
   i->magic = CACHE_INFO_MAGIC_DEAD;
   delete i;
   return TS_SUCCESS;
@@ -6817,8 +6816,7 @@ void
 TSMatcherLineDestroy(TSMatcherLine ml)
 {
   sdk_assert(sdk_sanity_check_null_ptr((void*)ml) == TS_SUCCESS);
-  if (ml)
-    xfree(ml);
+  ats_free(ml);
 }
 
 const char *
@@ -7003,7 +7001,7 @@ TSRedirectUrlSet(TSHttpTxn txnp, const char* url, const int url_len)
   HttpSM *sm = (HttpSM*) txnp;
 
   if (sm->redirect_url != NULL) {
-    xfree(sm->redirect_url);
+    ats_free(sm->redirect_url);
     sm->redirect_url = NULL;
     sm->redirect_url_len = 0;
   }

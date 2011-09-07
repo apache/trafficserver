@@ -160,6 +160,4 @@ ats_free(void *ptr)
 {
   if (likely(ptr != NULL))
     free(ptr);
-  else
-    ink_warning("ats_free: freeing a NULL pointer");
 }                               /* End ats_free */

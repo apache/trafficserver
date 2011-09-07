@@ -322,7 +322,7 @@ main(int argc, char *argv[])
           out_filename[copy_len + ascii_ext_len] = 0;
 
           out_fd = open_output_file(out_filename);
-          xfree(out_filename);
+          ats_free(out_filename);
 
           if (out_fd < 0) {
             error = DATA_PROCESSING_ERROR;

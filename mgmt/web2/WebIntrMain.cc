@@ -417,7 +417,7 @@ webIntr_main(void *x)
     int err;
 
     if ((err = stat(autoconfContext.docRoot, &s)) < 0) {
-      xfree(autoconfContext.docRoot);
+      ats_free(autoconfContext.docRoot);
       autoconfContext.docRoot = xstrdup(system_config_directory);
       if ((err = stat(autoconfContext.docRoot, &s)) < 0) {
         mgmt_elog("[WebIntrMain] unable to stat() directory '%s': %d %d, %s\n",
@@ -536,7 +536,7 @@ webIntr_main(void *x)
         ink_sem_post(&wGlobals.serviceThrCount);
 #endif
         ink_atomic_increment((int32_t *) & numServiceThr, -1);
-        xfree(clientInfo);
+        ats_free(clientInfo);
         close_socket(clientFD);
       } else {                  // IP is allowed
 
@@ -612,7 +612,7 @@ serviceThrMain(void *info)
     break;
   }
 
-  xfree(threadInfo->clientInfo);
+  ats_free(threadInfo->clientInfo);
 
   // Mark ourselves ready to be reaped
   ink_mutex_acquire(&wGlobals.serviceThrLock);

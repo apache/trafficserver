@@ -236,9 +236,7 @@ lockfile_kill_internal(pid_t init_pid, int init_sig, pid_t pid, const char *pnam
     }
   } while ((err == 0) || ((err < 0) && (errno == EINTR)));
 
-  if (pidv) {
-    xfree(pidv);
-  }
+  ats_free(pidv);
 
 #else
 

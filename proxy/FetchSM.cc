@@ -40,7 +40,7 @@ FetchSM::cleanUp()
   mutex.clear();
   http_parser_clear(&http_parser);
   client_response_hdr.destroy();
-  xfree(client_response);
+  ats_free(client_response);
 
   PluginVC *vc = (PluginVC *) http_vc;
 

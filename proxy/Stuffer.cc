@@ -379,7 +379,7 @@ StufferCacheWriter::free()
     StufferURLPromise *p = stuffer_htable->lookup(url);
     if (p)
       p->free(true);
-    xfree(url);
+    ats_free(url);
     url = 0;
   }
 
@@ -612,7 +612,7 @@ StufferURLPromise::free(bool obj_pushed)
   }
 
   stuffer_htable->remove(this);
-  xfree(url);
+  ats_free(url);
   stufferURLPromiseAllocator.free(this);
 }
 
@@ -721,7 +721,7 @@ StufferHashTable::add(char *url)
   StufferURLPromise **e = position(url);
   if (*e) {
     //right now we just neglect the URL
-    xfree(url);
+    ats_free(url);
     return;
   }
 

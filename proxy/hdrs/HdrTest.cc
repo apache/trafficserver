@@ -916,22 +916,22 @@ comp_http_hdr(HTTPHdr * h1, HTTPHdr * h2)
   p_index = p_dumpoffset = 0;
   rval = h1->print(h1_pbuf, h1_len, &p_index, &p_dumpoffset);
   if (rval != 1) {
-    xfree(h1_pbuf);
-    xfree(h2_pbuf);
+    ats_free(h1_pbuf);
+    ats_free(h2_pbuf);
     return "hdr print failed";
   }
 
   p_index = p_dumpoffset = 0;
   rval = h2->print(h2_pbuf, h2_len, &p_index, &p_dumpoffset);
   if (rval != 1) {
-    xfree(h1_pbuf);
-    xfree(h2_pbuf);
+    ats_free(h1_pbuf);
+    ats_free(h2_pbuf);
     return "hdr print failed";
   }
 
   rval = memcmp(h1_pbuf, h2_pbuf, h1_len);
-  xfree(h1_pbuf);
-  xfree(h2_pbuf);
+  ats_free(h1_pbuf);
+  ats_free(h2_pbuf);
 
   if (rval != 0) {
     return "compare failed";

@@ -82,14 +82,16 @@ typedef int (FreerContinuation::*FreerContHandler) (int, void *);
 struct FreerContinuation: public Continuation
 {
   void *p;
+
   int dieEvent(int event, Event * e)
   {
     (void) event;
     (void) e;
-    xfree(p);
+    ats_free(p);
     delete this;
-      return EVENT_DONE;
+    return EVENT_DONE;
   }
+
   FreerContinuation(void *ap):Continuation(NULL), p(ap)
   {
     SET_HANDLER((FreerContHandler) & FreerContinuation::dieEvent);

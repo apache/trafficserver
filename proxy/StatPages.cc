@@ -133,10 +133,7 @@ bool StatPagesManager::is_cache_inspector_page(URL * url)
 void
 BaseStatPagesHandler::resp_clear()
 {
-  if (response) {
-    xfree(response);
-  }
-
+  ats_free(response);
   response = NULL;
   response_size = 0;
   response_length = 0;

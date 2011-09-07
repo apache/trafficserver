@@ -190,7 +190,7 @@ void RecSignalManager(int, const char *);
  */
 #define REC_EstablishStaticConfigStringAlloc(_var, _config_var_name) do { \
   if (RecLinkConfigString(_config_var_name, &_var) == REC_ERR_OKAY) \
-    xfree(_var); \
+    ats_free(_var);                                                    \
   _var = (RecString)REC_ConfigReadString(_config_var_name); \
 } while (0)
 

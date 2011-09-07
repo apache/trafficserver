@@ -67,8 +67,7 @@ HttpMessageBody::MakeErrorBodyVA(int64_t max_buffer_length,
 
   for (pass = 1; pass <= 2; pass++) {
     if (pass == 2) {
-      if (outbuf)
-        xfree(outbuf);
+      ats_free(outbuf);
       if (output_length > max_buffer_length)
         return (NULL);
       else

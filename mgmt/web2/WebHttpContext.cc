@@ -100,10 +100,9 @@ WebHttpContextDestroy(WebHttpContext * whc)
       ink_hash_table_destroy(whc->submit_warn_ht);
     if (whc->submit_note_ht)
       ink_hash_table_destroy(whc->submit_note_ht);
-    if (whc->top_level_render_file)
-      xfree(whc->top_level_render_file);
-    if (whc->cache_query_result)
-      xfree(whc->cache_query_result);
-    xfree(whc);
+
+    ats_free(whc->top_level_render_file);
+    ats_free(whc->cache_query_result);
+    ats_free(whc);
   }
 }

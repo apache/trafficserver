@@ -148,7 +148,7 @@ MultiFile::WalkFiles(ExpandingArray * fileList)
     delete[]filePath;
   }
 
-  xfree(dirEntry);
+  ats_free(dirEntry);
   closedir(dir);
 #else
   // Append '\*' as a wildcard for FindFirstFile()

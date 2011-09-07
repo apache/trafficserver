@@ -79,14 +79,14 @@ CacheDisk::open(char *s, off_t blocks, off_t askip, int ahw_sector_size, int fil
 CacheDisk::~CacheDisk()
 {
   if (path) {
-    xfree(path);
+    ats_free(path);
     for (int i = 0; i < (int) header->num_volumes; i++) {
       DiskVolBlockQueue *q = NULL;
       while (disk_vols[i] && (q = (disk_vols[i]->dpb_queue.pop()))) {
         delete q;
       }
     }
-    xfree(disk_vols);
+    ats_free(disk_vols);
     free(header);
   }
   if (free_blocks) {

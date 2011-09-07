@@ -1253,7 +1253,7 @@ MultiCacheHeapGC(Continuation *acont, MultiCacheBase *amc):
     mc->heap_halfspace = mc->heap_halfspace ? 0 : 1;
   }
   ~MultiCacheHeapGC() {
-    xfree(offset_table);
+    ats_free(offset_table);
   }
 };
 
@@ -1302,8 +1302,7 @@ UnsunkPtrRegistry::UnsunkPtrRegistry()
 
 UnsunkPtrRegistry::~UnsunkPtrRegistry()
 {
-  if (ptrs)
-    xfree(ptrs);
+  ats_free(ptrs);
 }
 
 void

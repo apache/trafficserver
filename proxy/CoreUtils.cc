@@ -824,7 +824,7 @@ CoreUtils::load_http_hdr(HTTPHdr * core_hdr, HTTPHdr * live_hdr)
     str_size += nto_copy;
     str_heaps++;
 #if !defined(__GNUC__)
-    xfree(rw_heap);
+    ats_free(rw_heap);
 #endif
   }
 
@@ -849,7 +849,7 @@ CoreUtils::load_http_hdr(HTTPHdr * core_hdr, HTTPHdr * live_hdr)
       str_heaps++;
       str_size += heap->m_ronly_heap[i].m_heap_len;
 #if !defined(__GNUC__)
-      xfree(ro_heap);
+      ats_free(ro_heap);
 #endif
     }
   }
@@ -940,7 +940,7 @@ CoreUtils::dump_history(HttpSM * hsm)
     const char *msg = event_int_to_string(e, sizeof(buffer), buffer);
     printf("   event string: \"%s\"\n", msg);
 
-    xfree(fileline);
+    ats_free(fileline);
   }
 
   printf("-------- End History -----------\n\n");

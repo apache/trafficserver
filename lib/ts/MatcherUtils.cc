@@ -82,7 +82,7 @@ readIntoBuffer(char *file_path, const char *module_name, int *read_size_ptr)
   // Check to make sure that we got the whole file
   if (read_size < 0) {
     Error("%s Read of %s file failed : %s", module_name, file_path, strerror(errno));
-    xfree(file_buf);
+    ats_free(file_buf);
     file_buf = NULL;
   } else if (read_size < file_info.st_size) {
     // We don't want to signal this error on WIN32 because the sizes

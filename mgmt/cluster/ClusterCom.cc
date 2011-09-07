@@ -387,7 +387,7 @@ ClusterCom::ClusterCom(unsigned long oip, char *host, int port, char *group, int
   Debug("ccom", "[ClusterCom::ClusterCom] Using cluster conf: %s", cluster_conf);
   cluster_file_rb = new Rollback(cluster_file, false);
 
-  xfree(cluster_file);
+  ats_free(cluster_file);
 
   if (ink_sys_name_release(sys_name, sizeof(sys_name), sys_release, sizeof(sys_release)) >= 0) {
     mgmt_log("[ClusterCom::ClusterCom] Node running on OS: '%s' Release: '%s'\n", sys_name, sys_release);
@@ -950,12 +950,10 @@ ClusterCom::handleMultiCastStatPacket(char *last, ClusterPeerInfo * peer)
         }
 
         if (strcmp(tmp_msg_val, "NULL") == 0 && rec->data.rec_string) {
-          xfree(rec->data.rec_string);
+          ats_free(rec->data.rec_string);
           rec->data.rec_string = NULL;
         } else if (!(strcmp(tmp_msg_val, "NULL") == 0)) {
-          if (rec->data.rec_string) {
-            xfree(rec->data.rec_string);
-          }
+          ats_free(rec->data.rec_string);
           int rec_string_size = strlen(tmp_msg_val) + 1;
           ink_assert((rec->data.rec_string = (RecString)ats_malloc(rec_string_size)));
           ink_strncpy(rec->data.rec_string, tmp_msg_val, rec_string_size);
@@ -1017,7 +1015,7 @@ extract_locals(MgmtHashTable * local_ht, char *record_buffer)
       name = q;
       if (scan_and_terminate(q, ' ', '\t')) {
         Debug("ccom_rec", "[extract_locals] malformed line: %s\n", name);
-        xfree(line_cp);
+        ats_free(line_cp);
         continue;
       }
       local_ht->mgmt_hash_table_insert(name, line_cp);
@@ -1168,7 +1166,7 @@ ClusterCom::handleMultiCastFilePacket(char *last, char *ip)
               delete reply;
               reply = reply_new;
             }
-            xfree(our_rec_cfg_cp);
+            ats_free(our_rec_cfg_cp);
             delete our_rec_cfg;
             delete our_locals_ht;
           }
@@ -2370,7 +2368,7 @@ checkBackDoor(int req_fd, char *message)
           char *val = REC_readString(variable, &found);
           if (found) {
             rep_len = snprintf(reply, sizeof(reply), "\nRecord '%s' Val: '%s'\n", variable, val);
-            xfree(val);
+            ats_free(val);
           }
           break;
         }

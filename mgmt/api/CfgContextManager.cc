@@ -127,8 +127,7 @@ CfgContextCommit(CfgContext * ctx, LLQ * errRules)
     strncat(new_text, rule, len);
     strncat(new_text, "\n", 1);
 
-    if (rule)
-      xfree(rule);
+    ats_free(rule);
     if (ele->getRuleType() != TS_TYPE_COMMENT)
       index++;
     ele = ctx->next(ele);
@@ -137,7 +136,7 @@ CfgContextCommit(CfgContext * ctx, LLQ * errRules)
   // commit new file
   ver = ctx->getVersion();
   ret = WriteFile(ctx->getFilename(), new_text, size, ver);
-  xfree(new_text);
+  ats_free(new_text);
   if (ret != TS_ERR_OKAY)
     return TS_ERR_FAIL;        // couldn't write file
 
@@ -169,8 +168,9 @@ CfgContextGet(CfgContext * ctx)
   // get copy of the file
   ret = ReadFile(ctx->getFilename(), &old_text, &size, &ver);
   if (ret != TS_ERR_OKAY) {
+    // TODO: Hmmm, this looks almost like a memory leak, why the strcmp ??
     if (old_text && strcmp(old_text, "") != 0)
-      xfree(old_text);          // need to free memory
+      ats_free(old_text);          // need to free memory
     return ret;                 // Pass the error code along
   }
   // store version number
@@ -189,14 +189,14 @@ CfgContextGet(CfgContext * ctx)
 
     ret = ctx->addEle(ele);
     if (ret != TS_ERR_OKAY) {
-      if (old_text)
-        xfree(old_text);        // need to free memory
+      ats_free(old_text);        // need to free memory
       return ret;
     }
   }
   delete(rule_list);            // free RuleList memory
+  // TODO: Hmmm, this looks almost like a memory leak, why the strcmp ??
   if (old_text && strcmp(old_text, "") != 0)
-    xfree(old_text);            // need to free memory
+    ats_free(old_text);            // need to free memory
   return TS_ERR_OKAY;
 }
 

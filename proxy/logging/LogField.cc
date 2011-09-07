@@ -159,8 +159,8 @@ LogField::LogField(const LogField &rhs)
   -------------------------------------------------------------------------*/
 LogField::~LogField()
 {
-  xfree(m_name);
-  xfree(m_symbol);
+  ats_free(m_name);
+  ats_free(m_symbol);
 }
 
 /*-------------------------------------------------------------------------

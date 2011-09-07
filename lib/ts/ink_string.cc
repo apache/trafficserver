@@ -36,7 +36,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-
 #define INK_MAX_STRING_ARRAY_SIZE 128
 
 /*---------------------------------------------------------------------------*
@@ -269,7 +268,7 @@ ink_string_mpath(int nstrings, ...)
     if ((slash == nstrings - 1) && f[slash]) {
       for (i = 0; i < nstrings - 1; i++) {
         if (f[i])
-          xfree(e[i]);
+          ats_free(e[i]);
       }
       va_end(ap);
       return e[slash];
@@ -284,8 +283,9 @@ ink_string_mpath(int nstrings, ...)
       ink_strncpy(p, e[nstrings - 1], (nsSize - (p - ns)));
     }
     for (i = 0; i < nstrings; i++) {
+      // TODO: This seems horribly wrong...
       if (f[i])
-        xfree(e[i]);
+        ats_free(e[i]);
     }
     va_end(ap);
   }
@@ -360,7 +360,7 @@ ink_string_mjoin(int nstrings, ...)
     ink_strncpy(p, e[nstrings - 1], (nsSize - (p - ns)));
     for (i = 0; i < nstrings; i++) {
       if (f[i])
-        xfree(e[i]);
+        ats_free(e[i]);
     }
     va_end(ap);
   }

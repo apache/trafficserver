@@ -146,8 +146,8 @@ Diags::~Diags()
 {
   diags_log_fp = NULL;
 
-  xfree(base_debug_tags);
-  xfree(base_action_tags);
+  ats_free(base_debug_tags);
+  ats_free(base_action_tags);
 
   deactivate_all(DiagsTagType_Debug);
   deactivate_all(DiagsTagType_Action);

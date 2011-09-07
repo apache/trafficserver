@@ -463,8 +463,7 @@ public:
         } else {
           l = _cur++;
         }
-        if (l->url)
-          xfree(const_cast<char*>(l->url)); // We no longer own this string.
+        ats_free(const_cast<char*>(l->url)); // We no longer own this string.
       } else {
         l = _stack.insert(l, UrlStats()); // This seems faster than having a static "template" ...
       }
@@ -538,7 +537,7 @@ private:
   {
     for (LruStack::iterator l=_stack.begin(); l != _stack.end(); ++l) {
       if (free && l->url)
-        xfree(const_cast<char*>(l->url));
+        ats_free(const_cast<char*>(l->url));
       memset(&(*l), 0, sizeof(UrlStats));
     }
   }

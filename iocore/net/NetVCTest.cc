@@ -214,7 +214,7 @@ NetVCTest::fill_buffer(MIOBuffer * buf, uint8_t * seed, int bytes)
   }
 
   buf->write(space, to_add);
-  xfree(space);
+  ats_free(space);
 
   return to_add;
 }

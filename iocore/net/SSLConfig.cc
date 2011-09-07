@@ -75,71 +75,71 @@ void
 SslConfigParams::cleanup()
 {
   if (serverCertPath) {
-    xfree(serverCertPath);
+    ats_free(serverCertPath);
     serverCertPath = NULL;
   }
   if (serverCertChainPath) {
-    xfree(serverCertChainPath);
+    ats_free(serverCertChainPath);
     serverCertChainPath = NULL;
   }
   if (serverKeyPath) {
-    xfree(serverKeyPath);
+    ats_free(serverKeyPath);
     serverKeyPath = NULL;
   }
   if (CACertFilename) {
-    xfree(CACertFilename);
+    ats_free(CACertFilename);
     CACertFilename = NULL;
   }
   if (CACertPath) {
-    xfree(CACertPath);
+    ats_free(CACertPath);
     CACertPath = NULL;
   }
   if (clientCertPath) {
-    xfree(clientCertPath);
+    ats_free(clientCertPath);
     clientCertPath = NULL;
   }
   if (clientKeyPath) {
-    xfree(clientKeyPath);
+    ats_free(clientKeyPath);
     clientKeyPath = NULL;
   }
   if (clientCACertFilename) {
-    xfree(clientCACertFilename);
+    ats_free(clientCACertFilename);
     clientCACertFilename = NULL;
   }
   if (clientCACertPath) {
-    xfree(clientCACertPath);
+    ats_free(clientCACertPath);
     clientCACertPath = NULL;
   }
   if (configFilePath) {
-    xfree(configFilePath);
+    ats_free(configFilePath);
     configFilePath = NULL;
   }
   if (serverCertPathOnly) {
-    xfree(serverCertPathOnly);
+    ats_free(serverCertPathOnly);
     serverCertPathOnly = NULL;
   }
   if (serverKeyPathOnly) {
-    xfree(serverKeyPathOnly);
+    ats_free(serverKeyPathOnly);
     serverKeyPathOnly = NULL;
   }
   if (ncipherAccelLibPath) {
-    xfree(ncipherAccelLibPath);
+    ats_free(ncipherAccelLibPath);
     ncipherAccelLibPath = NULL;
   }
   if (cswiftAccelLibPath) {
-    xfree(cswiftAccelLibPath);
+    ats_free(cswiftAccelLibPath);
     cswiftAccelLibPath = NULL;
   }
   if (atallaAccelLibPath) {
-    xfree(atallaAccelLibPath);
+    ats_free(atallaAccelLibPath);
     atallaAccelLibPath = NULL;
   }
   if (broadcomAccelLibPath) {
-    xfree(broadcomAccelLibPath);
+    ats_free(broadcomAccelLibPath);
     broadcomAccelLibPath = NULL;
   }
   if (cipherSuite) {
-    xfree(cipherSuite);
+    ats_free(cipherSuite);
     cipherSuite = NULL;
   }
 
@@ -305,7 +305,7 @@ SslConfigParams::initialize()
       i++;
     }
 #endif
-    xfree(cert_chain);
+    ats_free(cert_chain);
   }
 
   IOCORE_ReadConfigStringAlloc(multicert_config_file, "proxy.config.ssl.server.multicert.filename");
@@ -320,7 +320,7 @@ SslConfigParams::initialize()
       i++;
     }
 #endif
-    xfree(multicert_config_file);
+    ats_free(multicert_config_file);
   }
   // Added Alloc as a temp fix for warnings generated
   // by the ReadConfigString Macro when a string is NULL.
@@ -333,7 +333,7 @@ SslConfigParams::initialize()
 
   if (ssl_server_private_key_path != NULL) {
     serverKeyPathOnly = Layout::get()->relative(ssl_server_private_key_path);
-    xfree(ssl_server_private_key_path);
+    ats_free(ssl_server_private_key_path);
   }
   else {
     // XXX: private_key.filename is relative to prefix or sysconfdir?
@@ -351,14 +351,14 @@ SslConfigParams::initialize()
       i++;
     }
 #endif
-    xfree(ssl_server_private_key_filename);
+    ats_free(ssl_server_private_key_filename);
   }
 
   ssl_server_private_key_path = NULL;
 
   IOCORE_ReadConfigStringAlloc(CACertFilename, "proxy.config.ssl.CA.cert.filename");
   if (CACertFilename && (*CACertFilename == 0)) {
-    xfree(CACertFilename);
+    ats_free(CACertFilename);
     CACertFilename = NULL;
   }
 
@@ -376,8 +376,8 @@ SslConfigParams::initialize()
       i++;
     }
 #endif
-    xfree(abs_path);
-    xfree(CACertRelativePath);
+    ats_free(abs_path);
+    ats_free(CACertRelativePath);
   }
 
   // SSL session cache configurations
@@ -408,10 +408,10 @@ SslConfigParams::initialize()
       i++;
     }
 #endif
-    xfree(abs_path);
-    xfree(ssl_client_cert_filename);
+    ats_free(abs_path);
+    ats_free(ssl_client_cert_filename);
   }
-  xfree(ssl_client_cert_path);
+  ats_free(ssl_client_cert_path);
 
   ssl_client_cert_filename = NULL;
   ssl_client_cert_path = NULL;
@@ -435,17 +435,17 @@ SslConfigParams::initialize()
       i++;
     }
 #endif
-    xfree(abs_path);
-    xfree(ssl_client_private_key_filename);
+    ats_free(abs_path);
+    ats_free(ssl_client_private_key_filename);
   }
-  xfree(ssl_client_private_key_path);
+  ats_free(ssl_client_private_key_path);
 
   ssl_client_private_key_path = NULL;
 
 
   IOCORE_ReadConfigStringAlloc(clientCACertFilename, "proxy.config.ssl.client.CA.cert.filename");
   if (clientCACertFilename && (*clientCACertFilename == 0)) {
-    xfree(clientCACertFilename);
+    ats_free(clientCACertFilename);
     clientCACertFilename = NULL;
   }
 
@@ -464,7 +464,7 @@ SslConfigParams::initialize()
       i++;
     }
 #endif
-    xfree(clientCACertRelativePath);
+    ats_free(clientCACertRelativePath);
   }
 }
 

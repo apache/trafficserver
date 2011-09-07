@@ -336,11 +336,11 @@ ICPPeerReadCont::reset(int full_reset)
     PeerReadDataAllocator.free(this->_state);
   }
   if (_cache_req_hdr_heap_handle) {
-    xfree(_cache_req_hdr_heap_handle);
+    ats_free(_cache_req_hdr_heap_handle);
     _cache_req_hdr_heap_handle = NULL;
   }
   if (_cache_resp_hdr_heap_handle) {
-    xfree(_cache_resp_hdr_heap_handle);
+    ats_free(_cache_resp_hdr_heap_handle);
     _cache_resp_hdr_heap_handle = NULL;
   }
 }
@@ -1087,7 +1087,7 @@ ICPRequestCont::~ICPRequestCont()
 
   if (_ICPmsg.h.opcode == ICP_OP_QUERY) {
     if (_ICPmsg.un.query.URL) {
-      xfree(_ICPmsg.un.query.URL);
+      ats_free(_ICPmsg.un.query.URL);
     }
   }
   if (pendingActions) {

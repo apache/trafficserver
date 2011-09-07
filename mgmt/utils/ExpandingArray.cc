@@ -45,10 +45,10 @@ ExpandingArray::~ExpandingArray()
 
   if (freeContentsOnDestruct == true) {
     for (int i = 0; i < numValidValues; i++) {
-      xfree(internalArray[i]);
+      ats_free(internalArray[i]);
     }
   }
-  xfree(internalArray);
+  ats_free(internalArray);
 }
 
 void *

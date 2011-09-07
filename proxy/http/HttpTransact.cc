@@ -528,11 +528,11 @@ how_to_open_connection(HttpTransact::State* s)
           strncpy(buf, host, host_len);
           host_len += snprintf(buf + host_len, host_len + 15, ":%d", port);
           s->hdr_info.server_request.value_set(MIME_FIELD_HOST, MIME_LEN_HOST, buf, host_len);
-          xfree(buf);
+          ats_free(buf);
         } else {
           s->hdr_info.server_request.value_set(MIME_FIELD_HOST, MIME_LEN_HOST, host, host_len);
         }
-        xfree(remap_redirect);  // This apparently shouldn't happen...
+        ats_free(remap_redirect);  // This apparently shouldn't happen...
       }
       // Stripping out the host name from the URL
       if (s->current.server == &s->server_info && s->next_hop_scheme == URL_WKSIDX_HTTP) {
@@ -547,11 +547,7 @@ how_to_open_connection(HttpTransact::State* s)
       char *d_hst = (char *) s->hdr_info.server_request.value_get(MIME_FIELD_HOST, MIME_LEN_HOST, &host_len);
       if (d_hst)
         Debug("cdn", "Host Hdr: %s", d_hst);
-
-      if (d_url) {
-        //s->arena.str_free (d_url); <- vl: incorrect one sinse it was allocated without arena
-        xfree(d_url);
-      }
+      ats_free(d_url);
     }
     s->cdn_remap_complete = true;       // It doesn't matter if there was an actual remap or not
     s->transact_return_point = HttpTransact::OSDNSLookup;
@@ -850,7 +846,7 @@ HttpTransact::EndRemapRequest(State* s)
                            "\"<em>%s</em>\".<p>", s->remap_redirect);
     }
     s->hdr_info.client_response.value_set(MIME_FIELD_LOCATION, MIME_LEN_LOCATION, s->remap_redirect, strlen(s->remap_redirect));
-    xfree(s->remap_redirect);
+    ats_free(s->remap_redirect);
     s->reverse_proxy = false;
     goto done;
   }
@@ -1063,9 +1059,7 @@ HttpTransact::ModifyRequest(State* s)
       s->hdr_info.client_request.field_value_set(host_field, *host_val, host_val_len);
     }
 
-    if (buf)
-      xfree(buf);
-
+    ats_free(buf);
     request->mark_target_dirty();
   }
 
@@ -7815,7 +7809,7 @@ HttpTransact::build_request(State* s, HTTPHdr* base_request, HTTPHdr* outgoing_r
       strncpy(buf, host, host_len);
       host_len += snprintf(buf + host_len, host_len + 15, ":%d", port);
       outgoing_request->value_set(MIME_FIELD_HOST, MIME_LEN_HOST, buf, host_len);
-      xfree(buf);
+      ats_free(buf);
     } else {
       outgoing_request->value_set(MIME_FIELD_HOST, MIME_LEN_HOST, host, host_len);
     }

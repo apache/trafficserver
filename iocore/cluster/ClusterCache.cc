@@ -2708,7 +2708,7 @@ CacheContinuation::replyLookupEvent(int event, void *d)
 #endif
       clusterProcessor.invoke_remote(from, CACHE_OP_RESULT_CLUSTER_FUNCTION, msg, len);
 #ifdef PURIFY
-      xfree(msg);
+      ats_free(msg);
 #endif
     }
   } else {

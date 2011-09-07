@@ -384,27 +384,13 @@ httpMessage::addRequestBody(SocketInfo socketD)
 
 httpMessage::~httpMessage()
 {
-  if (body != NULL) {
-    delete[]body;
-  }
+  delete[]body;
+  delete[]file;
+  delete[]referer;
+  delete[]conType_str;
+  delete[]authMessage;
 
-  if (file != NULL) {
-    delete[]file;
-  }
-
-  if (referer != NULL) {
-    delete[]referer;
-  }
-
-  if (conType_str != NULL) {
-    delete[]conType_str;
-  }
-
-  if (authMessage != NULL) {
-    delete[]authMessage;
-  }
-
-  xfree(client_request);
+  ats_free(client_request);
   delete parser;
 }
 
@@ -439,23 +425,11 @@ httpResponse::httpResponse()
 
 httpResponse::~httpResponse()
 {
-  if (explicitConType != NULL) {
-    xfree(explicitConType);
-  }
-
-  if (authRealm != NULL) {
-    xfree(authRealm);
-  }
-
-  if (refreshURL != NULL) {
-    xfree(refreshURL);
-  }
-
-  if (locationURL != NULL) {
-    xfree(locationURL);
-  }
-
-  xfree(dateResponse);
+  ats_free(explicitConType);
+  ats_free(authRealm);
+  ats_free(refreshURL);
+  ats_free(locationURL);
+  ats_free(dateResponse);
 }
 
 int

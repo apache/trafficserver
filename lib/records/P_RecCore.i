@@ -571,9 +571,7 @@ RecReadStatsFile()
   }
 
   ink_rwlock_unlock(&g_records_rwlock);
-
-  if (m)
-    xfree(m);
+  ats_free(m);
 
   return REC_ERR_OKAY;
 }
@@ -653,10 +651,8 @@ RecReadConfigFile()
   // clear our g_rec_config_contents_xxx structures
   while (!queue_is_empty(g_rec_config_contents_llq)) {
     cfe = (RecConfigFileEntry *) dequeue(g_rec_config_contents_llq);
-    if (cfe->entry) {
-      xfree(cfe->entry);
-    }
-    xfree(cfe);
+    ats_free(cfe->entry);
+    ats_free(cfe);
   }
   ink_hash_table_destroy(g_rec_config_contents_ht);
   g_rec_config_contents_ht = ink_hash_table_create(InkHashTableKeyType_String);
@@ -772,13 +768,13 @@ RecReadConfigFile()
   L_done:
     line = line_tok.iterNext(&line_tok_state);
     line_num++;
-    xfree(lc);
+    ats_free(lc);
   }
 
   // release our hash table
   ink_rwlock_unlock(&g_records_rwlock);
   ink_mutex_release(&g_rec_config_lock);
-  xfree(fbuf);
+  ats_free(fbuf);
 
   return REC_ERR_OKAY;
 }

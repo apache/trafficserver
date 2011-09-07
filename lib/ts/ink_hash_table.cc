@@ -128,7 +128,7 @@ _ink_hash_table_xfree_entry_value(InkHashTable * ht_ptr, InkHashTableEntry * e)
 
   value = ink_hash_table_entry_value(ht_ptr, e);
   if (value != NULL) {
-    xfree(value);
+    ats_free(value);
   }
 
   return (0);

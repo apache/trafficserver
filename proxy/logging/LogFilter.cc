@@ -65,7 +65,7 @@ LogFilter::LogFilter(const char *name, LogField * field, LogFilter::Action actio
   -------------------------------------------------------------------------*/
 LogFilter::~LogFilter()
 {
-  xfree(m_name);
+  ats_free(m_name);
   delete m_field;
 }
 
@@ -143,8 +143,8 @@ LogFilterString::~LogFilterString()
 {
   if (m_num_values > 0) {
     for (size_t i = 0; i < m_num_values; ++i) {
-      xfree(m_value[i]);
-      xfree(m_value_uppercase[i]);
+      ats_free(m_value[i]);
+      ats_free(m_value_uppercase[i]);
     }
     delete[]m_value;
     delete[]m_value_uppercase;
@@ -248,13 +248,8 @@ bool LogFilterString::toss_this_entry(LogAccess * lad)
     ink_assert(!"INVALID FILTER OPERATOR");
   }
 
-  if (big_buf) {
-    xfree(big_buf);
-  }
-
-  if (big_buf_upper) {
-    xfree(big_buf_upper);
-  }
+  ats_free(big_buf);
+  ats_free(big_buf_upper);
 
   return ((m_action == REJECT && cond_satisfied) || (m_action == ACCEPT && !cond_satisfied));
 }

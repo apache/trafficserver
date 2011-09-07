@@ -33,13 +33,6 @@ volatile int res_track_memory = RES_TRACK_MEMORY_DEFAULT;
 
 /*-------------------------------------------------------------------------
 -------------------------------------------------------------------------*/
-void
-_xfree(void *mem)
-{
-  if (likely(mem))
-    ats_free(mem);
-}
-
 void *
 _xfree_null(void *mem)
 {

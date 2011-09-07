@@ -325,7 +325,7 @@ IOBufferData::dealloc()
     if (BUFFER_SIZE_INDEX_IS_FAST_ALLOCATED(_size_index))
       ioBufAllocator[_size_index].free_void(_data);
     else if (BUFFER_SIZE_INDEX_IS_XMALLOCED(_size_index))
-      xfree(_data);
+      ats_free(_data);
     break;
   }
   _data = 0;

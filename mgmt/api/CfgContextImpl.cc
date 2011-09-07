@@ -148,7 +148,7 @@ CacheObj::formatEleToRule()
     return NULL;
   }
   strncat(buf, pd_str, sizeof(buf) - strlen(buf) - 1);
-  xfree(pd_str);
+  ats_free(pd_str);
 
   switch (m_ele->cfg_ele.type) {
   case TS_CACHE_NEVER:
@@ -171,7 +171,7 @@ CacheObj::formatEleToRule()
     time_str = hms_time_to_string(m_ele->time_period);
     if (time_str) {
       strncat(buf, time_str, sizeof(buf) - strlen(buf) - 1);
-      xfree(time_str);
+      ats_free(time_str);
     }
     strncat(buf, " ", sizeof(buf) - strlen(buf) - 1);
     break;
@@ -180,7 +180,7 @@ CacheObj::formatEleToRule()
     time_str = hms_time_to_string(m_ele->time_period);
     if (time_str) {
       strncat(buf, time_str, sizeof(buf) - strlen(buf) - 1);
-      xfree(time_str);
+      ats_free(time_str);
     }
     strncat(buf, " ", sizeof(buf) - strlen(buf) - 1);
     break;
@@ -189,7 +189,7 @@ CacheObj::formatEleToRule()
     time_str = hms_time_to_string(m_ele->time_period);
     if (time_str) {
       strncat(buf, time_str, sizeof(buf) - strlen(buf) - 1);
-      xfree(time_str);
+      ats_free(time_str);
     }
     strncat(buf, " ", sizeof(buf) - strlen(buf) - 1);
     break;
@@ -229,8 +229,7 @@ bool CacheObj::isValid()
     if (!timeStr) {
       m_valid = false;
     }
-    if (timeStr)
-      xfree(timeStr);
+    ats_free(timeStr);
   default:
     // Handled here:
     // Lots of cases ...
@@ -565,7 +564,7 @@ HostingObj::formatEleToRule()
   strncat(buf, m_ele->pd_val, sizeof(buf) - strlen(buf) - 1);
   strncat(buf, " volume=", sizeof(buf) - strlen(buf) - 1);
   strncat(buf, list_str, sizeof(buf) - strlen(buf) - 1);
-  xfree(list_str);
+  ats_free(list_str);
 
   return xstrdup(buf);
 }
@@ -798,10 +797,9 @@ IcpObj::formatEleToRule()
     break;
   }
 
-  if (ip_str1)
-    xfree(ip_str1);
-  if (ip_str2)
-    xfree(ip_str2);
+  ats_free(ip_str1);
+  ats_free(ip_str2);
+
   return xstrdup(buf);
 }
 
@@ -934,7 +932,7 @@ IpAllowObj::formatEleToRule()
     char *ip_str = ip_addr_ele_to_string(m_ele->src_ip_addr);
     if (ip_str) {
       strncat(buf, ip_str, sizeof(buf) - strlen(buf) - 1);
-      xfree(ip_str);
+      ats_free(ip_str);
     }
   }
 
@@ -1102,7 +1100,7 @@ ParentProxyObj::formatEleToRule()
   if (!pd_str)
     return NULL;
   strncat(buf, pd_str, sizeof(buf) - strlen(buf) - 1);
-  xfree(pd_str);
+  ats_free(pd_str);
 
   // round_robin
   if ((m_ele->rr != TS_RR_NONE) && (m_ele->rr != TS_RR_UNDEFINED)) {
@@ -1136,7 +1134,7 @@ ParentProxyObj::formatEleToRule()
     strncat(buf, "parent=\"", sizeof(buf) - strlen(buf) - 1);
     if (list_str) {
       strncat(buf, list_str, sizeof(buf) - strlen(buf) - 1);
-      xfree(list_str);
+      ats_free(list_str);
     }
     strncat(buf, "\"", sizeof(buf) - strlen(buf) - 1);
 
@@ -1399,7 +1397,7 @@ PluginObj::formatEleToRule()
   list_str = string_list_to_string(m_ele->args, " ");
   if (list_str) {
     snprintf(buf, sizeof(buf), "%s %s", m_ele->name, list_str);
-    xfree(list_str);
+    ats_free(list_str);
   } else {
     snprintf(buf, sizeof(buf), "%s", m_ele->name);
   }
@@ -1513,7 +1511,7 @@ RemapObj::RemapObj(TokenList * tokens)
     if ((token->name)[strlen(token->name) - 1] == '/') {
       memset(buf, 0, MAX_RULE_SIZE);
       ink_strncpy(buf, m_ele->from_host, sizeof(buf));
-      xfree(m_ele->from_host);
+      ats_free(m_ele->from_host);
       strncat(buf, "/", sizeof(buf) - strlen(buf) - 1);
       m_ele->from_host = xstrdup(buf);
     }
@@ -1570,7 +1568,7 @@ RemapObj::RemapObj(TokenList * tokens)
 
       memset(buf, 0, MAX_RULE_SIZE);
       ink_strncpy(buf, m_ele->to_host, sizeof(buf));
-      xfree(m_ele->to_host);
+      ats_free(m_ele->to_host);
       strncat(buf, "/", sizeof(buf) - strlen(buf) - 1);
       m_ele->to_host = xstrdup(buf);
 
@@ -1858,7 +1856,7 @@ SocksObj::formatEleToRule()
     char *str_list = ip_addr_list_to_string((LLQ *) m_ele->ip_addrs, ",");
     if (str_list) {
       snprintf(buf, sizeof(buf), "no_socks %s", str_list);
-      xfree(str_list);
+      ats_free(str_list);
     } else {
       return NULL;              // invalid ip_addr_list
     }
@@ -1870,7 +1868,7 @@ SocksObj::formatEleToRule()
     if (ip_str) {
       strncat(buf, "dest_ip=", sizeof(buf) - strlen(buf) - 1);
       strncat(buf, ip_str, sizeof(buf) - strlen(buf) - 1);
-      xfree(ip_str);
+      ats_free(ip_str);
     } else {
       return NULL;              // invalid IP
     }
@@ -1886,7 +1884,7 @@ SocksObj::formatEleToRule()
         strncat(buf, "parent=\"", sizeof(buf) - strlen(buf) - 1);
         strncat(buf, list_str, sizeof(buf) - strlen(buf) - 1);
         strncat(buf, "\"", sizeof(buf) - strlen(buf) - 1);
-        xfree(list_str);
+        ats_free(list_str);
       } else {
         return NULL;            // invalid list
       }
@@ -2108,7 +2106,7 @@ SplitDnsObj::formatEleToRule()
       if (strstr(temp, " ")) {
         strncat(buf, "\"", sizeof(buf) - strlen(buf) - 1);
       }
-      xfree(temp);
+      ats_free(temp);
     }
     strncat(buf, " ", sizeof(buf) - strlen(buf) - 1);
   }
@@ -2136,7 +2134,7 @@ SplitDnsObj::formatEleToRule()
       if (strstr(temp, " ")) {
         strncat(buf, "\"", sizeof(buf) - strlen(buf) - 1);
       }
-      xfree(temp);
+      ats_free(temp);
     }
     strncat(buf, " ", sizeof(buf) - strlen(buf) - 1);
   }
@@ -2145,8 +2143,7 @@ SplitDnsObj::formatEleToRule()
     buf[strlen(buf) - 1] = '\0';
   }
 
-  if (pd_name)
-    xfree(pd_name);
+  ats_free(pd_name);
 
   return xstrdup(buf);
 }
@@ -2367,7 +2364,7 @@ UpdateObj::formatEleToRule()
   if (list_str) {
     snprintf(buf, sizeof(buf), "%s\\%s\\%d\\%d\\%d\\",
              m_ele->url, list_str, m_ele->offset_hour, m_ele->interval, m_ele->recursion_depth);
-    xfree(list_str);
+    ats_free(list_str);
   } else {
     snprintf(buf, sizeof(buf), "%s\\\\%d\\%d\\%d\\",
              m_ele->url, m_ele->offset_hour, m_ele->interval, m_ele->recursion_depth);
@@ -2393,7 +2390,7 @@ bool UpdateObj::isValid()
   if (list_str) {
     if (strstr(list_str, "\\"))
       m_valid = false;
-    xfree(list_str);
+    ats_free(list_str);
   }
   // offset hour range is 00-23
   if (m_ele->offset_hour < 0 || m_ele->offset_hour > 23)
@@ -2497,8 +2494,7 @@ VirtIpAddrObj::formatEleToRule()
 
   ip_str = ip_addr_to_string(m_ele->ip_addr);
   snprintf(buf, sizeof(buf), "%s %s %d", ip_str, m_ele->intr, m_ele->sub_intr);
-  if (ip_str)
-    xfree(ip_str);
+  ats_free(ip_str);
 
   return xstrdup(buf);
 }

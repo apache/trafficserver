@@ -163,7 +163,7 @@ LocalManager::clearStats()
         mgmt_log(stderr, "[LocalManager::clearStats] Unlink of %s failed : %s\n", REC_RAW_STATS_FILE, strerror(errno));
       }
     }
-    xfree(statsPath);
+    ats_free(statsPath);
   }
 }
 
@@ -253,7 +253,7 @@ LocalManager::LocalManager(char *mpath, bool proxy_on)
       char *main_server_port_attributes = (char *) REC_readString("proxy.config.http.server_port_attr", &found);
       ink_strncpy((char *) proxy_server_port_attributes[pnum],
                   main_server_port_attributes, sizeof(proxy_server_port_attributes[pnum]));
-      xfree(main_server_port_attributes);
+      ats_free(main_server_port_attributes);
       pnum++;
     }
   }
@@ -301,7 +301,7 @@ LocalManager::LocalManager(char *mpath, bool proxy_on)
       Debug("lm", "[LocalManager::LocalManager] Unable to listen on all other ports,"
             " max number of other ports exceeded(max == %d)\n", MAX_PROXY_SERVER_PORTS);
     }
-    xfree(proxy_server_other_ports);
+    ats_free(proxy_server_other_ports);
   }
   // Bind proxy ports to incoming_ip_to_bind
   char *incoming_ip_to_bind_str = REC_readString("proxy.local.incoming_ip_to_bind", &found);
@@ -312,7 +312,7 @@ LocalManager::LocalManager(char *mpath, bool proxy_on)
   }
   config_path = REC_readString("proxy.config.config_dir", &found);
   char *absolute_config_path = Layout::get()->relative(config_path);
-  xfree(config_path);
+  ats_free(config_path);
   if (access(absolute_config_path, R_OK) == -1) {
     config_path = xstrdup(system_config_directory);
     if (access(config_path, R_OK) == -1) {
@@ -358,14 +358,14 @@ LocalManager::LocalManager(char *mpath, bool proxy_on)
   env_prep = REC_readString("proxy.config.env_prep", &found);
   // Calculate configured bin_path from the prefix
   char *absolute_bin_path = Layout::get()->relative(bin_path);
-  xfree(bin_path);
+  ats_free(bin_path);
   bin_path = absolute_bin_path;
   // Calculate proxy_binary from the absolute bin_path
   absolute_proxy_binary = Layout::relative_to(absolute_bin_path, proxy_binary);
 
   if (access(absolute_proxy_binary, R_OK | X_OK) == -1) {
     // Try 'Layout::bindir' directory
-    xfree(absolute_proxy_binary);
+    ats_free(absolute_proxy_binary);
     absolute_proxy_binary = Layout::relative_to(Layout::get()->bindir, proxy_binary);
     // coverity[fs_check_call]
     if (access(absolute_proxy_binary, R_OK | X_OK) == -1) {
@@ -446,10 +446,8 @@ LocalManager::initCCom(int port, char *addr, int sport)
   virt_map = new VMap(intrName, cluster_addr.s_addr, &lmgmt->ccom->mutex);
   virt_map->downAddrs();        // Just to be safe
   ccom->establishChannels();
+  ats_free(intrName);
 
-  if (intrName) {
-    xfree(intrName);
-  }
   return;
 }
 
@@ -874,7 +872,7 @@ LocalManager::sendMgmtMsgToProcesses(MgmtMessageHdr * mh)
                 "Invalid 'data_raw' for MGMT_EVENT_CONFIG_FILE_UPDATE\n");
       ink_assert(false);
     }
-    xfree(fname);
+    ats_free(fname);
     break;
   }
 
@@ -1007,8 +1005,7 @@ LocalManager::processEventQueue()
       Debug("lm", "[TrafficManager] ==> Sending signal event '%d'\n", mh->msg_id);
       lmgmt->sendMgmtMsgToProcesses(mh);
     }
-
-    xfree(mh);
+    ats_free(mh);
   }
 }
 

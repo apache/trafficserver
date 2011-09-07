@@ -232,17 +232,16 @@ _offset_hour(0), _interval(0), _max_depth(0), _start_time(0), _expired(0), _sche
 
 UpdateEntry::~UpdateEntry()
 {
-  if (_url) {
-    xfree(_url);
-    _url = NULL;
-  }
+  ats_free(_url);
+  _url = NULL;
+
   if (_URLhandle.valid()) {
     _URLhandle.destroy();
   }
-  if (_request_headers) {
-    xfree(_request_headers);
-    _request_headers = NULL;
-  }
+
+  ats_free(_request_headers);
+  _request_headers = NULL;
+
   // INKqa12891: _http_hdr can be NULL
   if (_http_hdr && _http_hdr->valid()) {
     _http_hdr->destroy();

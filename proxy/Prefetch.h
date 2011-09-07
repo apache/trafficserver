@@ -140,8 +140,7 @@ inline void
 PrefetchUrlEntry::free()
 {
   if (refcount_dec() == 0) {
-    if (url)
-      xfree(url);
+    ats_free(url);
     prefetchUrlEntryAllocator.free(this);
   }
 }

@@ -214,23 +214,20 @@ Layout::Layout(const char *_prefix)
 
 Layout::~Layout()
 {
-#define SafeFree(x) \
-  if (x) xfree(x);
-
-  SafeFree(prefix);
-  SafeFree(exec_prefix);
-  SafeFree(bindir);
-  SafeFree(sbindir);
-  SafeFree(sysconfdir);
-  SafeFree(datadir);
-  SafeFree(includedir);
-  SafeFree(libdir);
-  SafeFree(libexecdir);
-  SafeFree(localstatedir);
-  SafeFree(runtimedir);
-  SafeFree(logdir);
-  SafeFree(mandir);
-  SafeFree(infodir);
-  SafeFree(cachedir);
+  ats_free(prefix);
+  ats_free(exec_prefix);
+  ats_free(bindir);
+  ats_free(sbindir);
+  ats_free(sysconfdir);
+  ats_free(datadir);
+  ats_free(includedir);
+  ats_free(libdir);
+  ats_free(libexecdir);
+  ats_free(localstatedir);
+  ats_free(runtimedir);
+  ats_free(logdir);
+  ats_free(mandir);
+  ats_free(infodir);
+  ats_free(cachedir);
 }
 

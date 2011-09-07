@@ -222,8 +222,7 @@ regx_valid(false)
 **/
 referer_info::~referer_info()
 {
-  if (referer)
-    xfree(referer);
+  ats_free(referer);
   referer = 0;
   referer_size = 0;
 

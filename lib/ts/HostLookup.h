@@ -79,12 +79,14 @@ typedef void (*HostLookupPrintFunc) (void *opaque_data);
 
 struct HostLookupState
 {
-  HostLookupState():cur(NULL), table_level(0), array_index(0), hostname(NULL), host_copy(NULL), host_copy_next(NULL)
-  {
-  };
+  HostLookupState()
+    : cur(NULL), table_level(0), array_index(0), hostname(NULL), host_copy(NULL), host_copy_next(NULL)
+  { }
+
   ~HostLookupState() {
-    xfree(host_copy);
-  };
+    ats_free(host_copy);
+  }
+
   HostBranch *cur;
   int table_level;
   int array_index;

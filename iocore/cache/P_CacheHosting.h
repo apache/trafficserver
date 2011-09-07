@@ -41,12 +41,9 @@ struct CacheHostRecord
   void Print();
   ~CacheHostRecord()
   {
-    if (vols)
-      xfree(vols);
-    if (vol_hash_table)
-      xfree(vol_hash_table);
-    if (cp)
-      xfree(cp);
+    ats_free(vols);
+    ats_free(vol_hash_table);
+    ats_free(cp);
   }
 
   int type;

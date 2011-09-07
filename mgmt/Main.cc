@@ -675,7 +675,7 @@ main(int argc, char **argv)
       facility_int = LOG_DAEMON;
     } else {
       facility_int = facility_string_to_int(facility_str);
-      xfree(facility_str);
+      ats_free(facility_str);
       if (facility_int < 0) {
         mgmt_elog("Bad syslog facility specified.  Defaulting to DAEMON\n");
         facility_int = LOG_DAEMON;
@@ -718,9 +718,7 @@ main(int argc, char **argv)
 
   /* Update cmd line overrides/environmental overrides/etc */
   if (tsArgs) {                 /* Passed command line args for proxy */
-    if (lmgmt->proxy_options) {
-      xfree(lmgmt->proxy_options);
-    }
+    ats_free(lmgmt->proxy_options);
     lmgmt->proxy_options = tsArgs;
     mgmt_log(stderr, "[main] Traffic Server Args: '%s'\n", lmgmt->proxy_options);
   }

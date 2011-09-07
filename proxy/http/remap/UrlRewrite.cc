@@ -526,7 +526,7 @@ UrlRewrite::UrlRewrite(const char *file_var_in)
   ink_strncpy(config_file_path, system_config_directory, sizeof(config_file_path));
   strncat(config_file_path, "/", sizeof(config_file_path) - strlen(config_file_path) - 1);
   strncat(config_file_path, config_file, sizeof(config_file_path) - strlen(config_file_path) - 1);
-  xfree(config_file);
+  ats_free(config_file);
 
   if (this->BuildTable() != 0) {
     Warning("something failed during BuildTable() -- check your remap plugins!");
@@ -542,9 +542,9 @@ UrlRewrite::UrlRewrite(const char *file_var_in)
 
 UrlRewrite::~UrlRewrite()
 {
-  xfree(this->file_var);
-  xfree(this->ts_name);
-  xfree(this->http_default_redirect_url);
+  ats_free(this->file_var);
+  ats_free(this->ts_name);
+  ats_free(this->http_default_redirect_url);
 
   DestroyStore(forward_mappings);
   DestroyStore(reverse_mappings);
@@ -1546,8 +1546,7 @@ UrlRewrite::BuildTable()
     forward_mappings_with_recv_port.hash_lookup = ink_hash_table_destroy(
       forward_mappings_with_recv_port.hash_lookup);
   }
-
-  xfree(file_buf);
+  ats_free(file_buf);
 
   return 0;
 }
@@ -1714,14 +1713,14 @@ UrlRewrite::load_remap_plugin(char *argv[], int argc, url_mapping *mp, char *err
     return -6;
   }
   parv[parc++] = xstrdup(err);
-  xfree(err);
+  ats_free(err);
 
   if ((err = mp->toUrl.string_get(NULL)) == NULL) {
     snprintf(errbuf, errbufsize, "Can't load toURL from URL class");
     return -6;
   }
   parv[parc++] = xstrdup(err);
-  xfree(err);
+  ats_free(err);
 
   bool plugin_encountered = false;
   // how many plugin parameters we have for this remapping
@@ -1758,8 +1757,8 @@ UrlRewrite::load_remap_plugin(char *argv[], int argc, url_mapping *mp, char *err
 
   Debug("remap_plugin", "done creating new plugin instance");
 
-  xfree(parv[0]);               // fromURL
-  xfree(parv[1]);               // toURL
+  ats_free(parv[0]);               // fromURL
+  ats_free(parv[1]);               // toURL
 
   if (res != TS_SUCCESS) {
     // TODO: This is such serious failure, no reason to try to delete the instance.

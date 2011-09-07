@@ -5478,7 +5478,7 @@ REGRESSION_TEST(SDK_API_TSTextLog) (RegressionTest * test, int atype, int *pstat
   char *tmp = REC_ConfigReadString("proxy.config.log.logfile_dir");
   snprintf(logname, sizeof(logname), "RegressionTestLog%d.log", (int) getpid());
   snprintf(fullpath_logname, sizeof(fullpath_logname), "%s/%s", tmp, logname);
-  // xfree(tmp);
+  // ats_free(tmp);
 
   retVal = TSTextLogObjectCreate(logname, TS_LOG_MODE_ADD_TIMESTAMP, &log);
   if (retVal != TS_SUCCESS) {

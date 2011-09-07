@@ -58,15 +58,15 @@ public:
     while (!queue_is_empty(mgmt_signal_queue))
     {
       char *sig = (char *) dequeue(mgmt_signal_queue);
-        xfree(sig);
+      ats_free(sig);
     }
-    xfree(mgmt_signal_queue);
-  };
+    ats_free(mgmt_signal_queue);
+  }
 
   void start()
   {
     ink_thread_create(startProcessManager, 0);
-  };
+  }
 
   void stop()
   {
@@ -76,7 +76,7 @@ public:
 #else
     CloseHandle(local_manager_hpipe);
 #endif
-  };
+  }
 
   inkcoreapi void signalManager(int msg_id, const char *data_str);
   inkcoreapi void signalManager(int msg_id, const char *data_raw, int data_len);

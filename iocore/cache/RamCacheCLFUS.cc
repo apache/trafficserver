@@ -119,11 +119,11 @@ void RamCacheCLFUS::resize_hashtable() {
       while ((e = bucket[i].pop()))
         new_bucket[e->key.word(3) % anbuckets].push(e);
     }
-    xfree(bucket);
+    ats_free(bucket);
   }
   bucket = new_bucket;
   nbuckets = anbuckets;
-  if (seen) xfree(seen);
+  ats_free(seen);
   int size = bucket_sizes[ibuckets] * sizeof(uint16_t);
   seen = (uint16_t*)ats_malloc(size);
   memset(seen, 0, size);
@@ -232,7 +232,7 @@ Lerror:
   CACHE_SUM_DYN_STAT_THREAD(cache_ram_cache_misses_stat, 1);
   return 0;
 Lfailed:
-  xfree(b);
+  ats_free(b);
   e = destroy(e);
   DDebug("ram_cache", "get %X %d %d Z_ERR", key->word(3), auxkey1, auxkey2);
   goto Lerror;
@@ -388,14 +388,14 @@ void RamCacheCLFUS::compress_entries(EThread *thread, int do_at_most) {
         e->flag_bits.compressed = cache_config_ram_cache_compress;
         bb = (char*)ats_malloc(l);
         memcpy(bb, b, l);
-        xfree(b);
+        ats_free(b);
         e->compressed_len = l;
         int64_t delta = ((int64_t)l) - (int64_t)e->size;
         bytes += delta;
         CACHE_SUM_DYN_STAT_THREAD(cache_ram_cache_bytes_stat, delta);
         e->size = l;
       } else {
-        xfree(b);
+        ats_free(b);
         e->flag_bits.compressed = 0;
         bb = (char*)ats_malloc(e->len);
         memcpy(bb, e->data->data(), e->len);
@@ -411,7 +411,7 @@ void RamCacheCLFUS::compress_entries(EThread *thread, int do_at_most) {
     }
     goto Lcontinue;
   Lfailed:
-    xfree(b);
+    ats_free(b);
     e->flag_bits.incompressible = 1;
   Lcontinue:;
     DDebug("ram_cache", "compress %X %d %d %d %d %d %d %d",

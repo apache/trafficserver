@@ -637,7 +637,7 @@ mgmt_getAddrForIntr(char *intrName, struct in_addr * addr, int *mtu)
       lastlen = ifc.ifc_len;
     }
     len *= 2;
-    xfree(ifbuf);
+    ats_free(ifbuf);
   }
 
   ifr = ifc.ifc_req;
@@ -671,7 +671,7 @@ mgmt_getAddrForIntr(char *intrName, struct in_addr * addr, int *mtu)
     ifr = (struct ifreq *) (((char *) ifr) + sizeof(*ifr));
 #endif
   }
-  xfree(ifbuf);
+  ats_free(ifbuf);
   close(fakeSocket);
 
 #else /* _WIN32 */

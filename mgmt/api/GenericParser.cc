@@ -37,12 +37,8 @@ Token::Token():name(NULL), value(NULL)
 
 Token::~Token()
 {
-  if (name) {
-    xfree(name);
-  }
-  if (value) {
-    xfree(value);
-  }
+  ats_free(name);
+  ats_free(value);
 }
 
 void
@@ -69,7 +65,7 @@ Token::setValue(const char *str)
     len = (len < BUFSIZ) ? len : BUFSIZ - 1;
     memcpy(value, str_copy, len);
     value[len] = '\0';
-    xfree(str_copy);
+    ats_free(str_copy);
   }
 }
 
@@ -88,8 +84,7 @@ Token::appendValue(const char *str)
     strncat(value, str_copy, BUFSIZ - strlen(value) - 1);;
   }
   firstTime = false;
-  if (str_copy)
-    xfree(str_copy);
+  ats_free(str_copy);
 }
 
 void
@@ -171,21 +166,11 @@ Rule::setErrorHint(const char *str)
 
 Rule::~Rule()
 {
-  if (tokenList) {
-    delete(tokenList);
-  }
-  if (m_comment) {
-    xfree(m_comment);
-  }
-  if (m_errorHint) {
-    xfree(m_errorHint);
-  }
-  if (m_ruleStr) {
-    xfree(m_ruleStr);
-  }
-  if (m_filename) {
-    xfree(m_filename);
-  }
+  delete tokenList;
+  ats_free(m_comment);
+  ats_free(m_errorHint);
+  ats_free(m_ruleStr);
+  ats_free(m_filename);
 }
 
 void
@@ -364,13 +349,13 @@ Rule::cacheParse(char *rule, unsigned short minNumToken, unsigned short maxNumTo
         //          printf("%s 1\n", subtoken);
         token->appendValue(newStr);
       }
-      xfree((char *) newStr);
+      ats_free((void*)newStr);
 
     } else {
       //      printf("%s 2\n", tokenStr);
       newStr = strtrim(tokenStr, '\"');
       token->appendValue(newStr);
-      xfree((char *) newStr);
+      ats_free((void*)newStr);
       insideQuote = inQuote(tokenStr);
       if (insideQuote) {
         //              printf("enqueue\n");
@@ -673,13 +658,13 @@ Rule::socksParse(char *rule)
           //          printf("%s 1\n", subtoken);
           token->appendValue(newStr);
         }
-        xfree((char *) newStr);
+        ats_free((void*)newStr);
 
       } else {
         //      printf("%s 2\n", tokenStr);
         newStr = strtrim(tokenStr, '\"');
         token->appendValue(newStr);
-        xfree((char *) newStr);
+        ats_free((void*)newStr);
         insideQuote = inQuote(tokenStr);
         if (insideQuote) {
           //              printf("enqueue\n");
@@ -760,13 +745,13 @@ Rule::splitdnsParse(char *rule)
         //          printf("%s 1\n", subtoken);
         token->appendValue(newStr);
       }
-      xfree((char *) newStr);
+      ats_free((void*)newStr);
 
     } else {
       //            printf("%s 2\n", tokenStr);
       newStr = strtrim(tokenStr, '\"');
       token->appendValue(newStr);
-      xfree((char *) newStr);
+      ats_free((void*)newStr);
       insideQuote = inQuote(tokenStr);
       if (insideQuote) {
         //              printf("enqueue\n");
@@ -912,9 +897,8 @@ RuleList::RuleList()
 
 RuleList::~RuleList()
 {
-  if (m_filename) {
-    xfree(m_filename);
-  }
+  ats_free(m_filename);
+
   Rule *rule = NULL;
   while ((rule = dequeue())) {
     delete rule;
@@ -1028,7 +1012,7 @@ RuleList::parse(char *fileBuf, TSFileNameT filetype)
 
         snprintf(error_rule, error_rule_size, "#ERROR: %s", line);
         rule->setComment(error_rule);
-        xfree(error_rule);
+        ats_free(error_rule);
       }
     }
 
@@ -1077,6 +1061,6 @@ strtrim(const char *str_in, char chr)
   }
 
   char *newStr = xstrdup(str);
-  xfree(str_ptr);
+  ats_free(str_ptr);
   return newStr;
 }

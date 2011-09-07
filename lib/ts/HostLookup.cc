@@ -605,7 +605,7 @@ hostArray::~hostArray()
   for (int i = 0; i < num_el; i++) {
     ink_assert(branch_array[i] != NULL);
     ink_assert(match_data[i] != NULL);
-    xfree(match_data[i]);
+    ats_free(match_data[i]);
   }
 }
 
@@ -791,7 +791,7 @@ HostLookup::~HostLookup()
   if (leaf_array != NULL) {
     // Free up the match strings
     for (int i = 0; i < num_el; i++) {
-      xfree(leaf_array[i].match);
+      ats_free(leaf_array[i].match);
     }
     delete[]leaf_array;
   }
@@ -1110,7 +1110,7 @@ HostLookup::TableInsert(const char *match_data, int index, bool domain_record)
   //   HOST_BRANCH
   cur->leaf_indexs(cur->leaf_indexs.length()) = index;
 
-  xfree(match_copy);
+  ats_free(match_copy);
 }
 
 // bool HostLookup::MatchArray(HostLookupState* s, void**opaque_ptr, DynArray<int>& array,

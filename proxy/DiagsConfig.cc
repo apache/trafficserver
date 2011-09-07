@@ -118,7 +118,7 @@ DiagsConfig::reconfigure_diags()
     all_found = all_found && found;
     if (found) {
       parse_output_string(p, &(c.outputs[l]));
-      xfree(p);
+      ats_free(p);
     } else {
       SrcLoc loc(__FILE__, __FUNCTION__, __LINE__);
       diags->print(NULL, DL_Error, NULL, &loc, "can't find config variable '%s'\n", record_name);
@@ -170,11 +170,8 @@ DiagsConfig::reconfigure_diags()
   ////////////////////////////////////
   // free the record.config strings //
   ////////////////////////////////////
-
-  if (dt)
-    xfree(dt);
-  if (at)
-    xfree(at);
+  ats_free(dt);
+  ats_free(at);
 }
 
 
@@ -422,5 +419,4 @@ DiagsConfig::~DiagsConfig()
     diags_log_fp = NULL;
   }
   delete diags;
-//  xfree(diags);
 }

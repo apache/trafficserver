@@ -584,7 +584,7 @@ LogAccess::marshal_config_str_var(char *config_var, char *buf)
   if (buf) {
     marshal_str(buf, str, len);
   }
-  xfree(str);
+  ats_free(str);
   return len;
 }
 
@@ -1239,7 +1239,7 @@ LogAccess::unmarshal_record(char **buf, char *dest, int len)
 
   This function resolves the given custom log format string using the given
   LogAccess context and returns the resulting string, which is ats_malloc'd.
-  The caller is responsible for xfree'ing the return result.  If there are
+  The caller is responsible for ats_free'ing the return result.  If there are
   any problems, NULL is returned.
   -------------------------------------------------------------------------*/
 char *
@@ -1283,8 +1283,8 @@ resolve_logfield_string(LogAccess *context, const char *format_str)
 
   if (field_count != n_fields) {
     Error("log-resolve", "format_str contains %d invalid field symbols", n_fields - field_count);
-    xfree(printf_str);
-    xfree(fields_str);
+    ats_free(printf_str);
+    ats_free(fields_str);
     return NULL;
   }
   //
@@ -1314,9 +1314,9 @@ resolve_logfield_string(LogAccess *context, const char *format_str)
   ink_assert(bytes_resolved < 8192);
   result[bytes_resolved] = 0; // NULL terminate
 
-  xfree(printf_str);
-  xfree(fields_str);
-  xfree(buf);
+  ats_free(printf_str);
+  ats_free(fields_str);
+  ats_free(buf);
 
   return result;
 }

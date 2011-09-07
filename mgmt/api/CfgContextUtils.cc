@@ -105,20 +105,16 @@ string_to_ip_addr_ele(const char *str)
       goto Lerror;
   }
 
-  if (ip_a)
-    xfree(ip_a);
-  if (ip_b)
-    xfree(ip_b);
+  ats_free(ip_a);
+  ats_free(ip_b);
   return ele;
 
 Lerror:
-  if (ip_a)
-    xfree(ip_a);
-  if (ip_b)
-    xfree(ip_b);
+  ats_free(ip_a);
+  ats_free(ip_b);
   TSIpAddrEleDestroy(ele);
-  return NULL;
 
+  return NULL;
 }
 
 
@@ -157,7 +153,7 @@ ip_addr_ele_to_string(TSIpAddrEle * ele)
       snprintf(buf, sizeof(buf), "%s", ip_a_str);
     }
 
-    xfree(ip_a_str);
+    ats_free(ip_a_str);
     str = xstrdup(buf);
 
     return str;
@@ -175,19 +171,16 @@ ip_addr_ele_to_string(TSIpAddrEle * ele)
     } else {                    // not cidr type
       snprintf(buf, sizeof(buf), "%s%c%s", ip_a_str, RANGE_DELIMITER, ip_b_str);
     }
-    if (ip_a_str)
-      xfree(ip_a_str);
-    if (ip_b_str)
-      xfree(ip_b_str);
+    ats_free(ip_a_str);
+    ats_free(ip_b_str);
     str = xstrdup(buf);
+
     return str;
   }
 
 Lerror:
-  if (ip_a_str)
-    xfree(ip_a_str);
-  if (ip_b_str)
-    xfree(ip_b_str);
+  ats_free(ip_a_str);
+  ats_free(ip_b_str);
   return NULL;
 }
 
@@ -264,7 +257,7 @@ ip_addr_list_to_string(IpAddrList * list, const char *delimiter)
     else
       snprintf(buf + buf_pos, sizeof(buf) - buf_pos, "%s%s", ip_str, delimiter);
     buf_pos = strlen(buf);
-    xfree(ip_str);
+    ats_free(ip_str);
 
     enqueue((LLQ *) list, ip_ele);      // return ip to list
   }
@@ -704,7 +697,7 @@ domain_list_to_string(TSDomainList list, const char *delimiter)
         buf_pos += psize;
     }
 
-    xfree(dom_str);
+    ats_free(dom_str);
     enqueue((LLQ *) list, domain);
   }
 
@@ -894,7 +887,7 @@ pdest_sspec_to_string(TSPrimeDestT pd, char *pd_val, TSSspec * sspec)
         }
         if (buf_pos<sizeof(buf) && (psize = snprintf(buf + buf_pos, sizeof(buf) - buf_pos, "src_ip=%s ", src_ip))> 0)
           buf_pos += psize;
-        xfree(src_ip);
+        ats_free(src_ip);
       }
       // prefix?
       if (sspec->prefix) {
@@ -915,7 +908,7 @@ pdest_sspec_to_string(TSPrimeDestT pd, char *pd_val, TSSspec * sspec)
           if (buf_pos < sizeof(buf) &&
               (psize = snprintf(buf + buf_pos, sizeof(buf) - buf_pos, "port=%s ", portStr)) > 0)
             buf_pos += psize;
-          xfree(portStr);
+          ats_free(portStr);
         }
       }
       // method
@@ -1681,36 +1674,36 @@ ccu_checkIpAddr(const char *addr, const char *min_addr, const char *max_addr)
   if ((addrToks.Initialize(new_addr, ALLOW_EMPTY_TOKS)) != 4 ||
       (minToks.Initialize((char *) min_addr, ALLOW_EMPTY_TOKS)) != 4 ||
       (maxToks.Initialize((char *) max_addr, ALLOW_EMPTY_TOKS)) != 4) {
-    xfree(new_addr);
+    ats_free(new_addr);
     return false;               // Wrong number of parts
   }
   // IP can't end in a "." either
   len = strlen(new_addr);
   if (new_addr[len - 1] == '.') {
-    xfree(new_addr);
+    ats_free(new_addr);
     return false;
   }
   // Check all four parts of the ip address to make
   //  sure that they are valid
   for (int i = 0; i < 4; i++) {
     if (!isNumber(addrToks[i])) {
-      xfree(new_addr);
+      ats_free(new_addr);
       return false;
     }
     // coverity[secure_coding]
     if (sscanf(addrToks[i], "%d", &addrQ) != 1 ||
         sscanf(minToks[i], "%d", &minQ) != 1 || sscanf(maxToks[i], "%d", &maxQ) != 1) {
-      xfree(new_addr);
+      ats_free(new_addr);
       return false;
     }
 
     if (addrQ<minQ || addrQ> maxQ) {
-      xfree(new_addr);
+      ats_free(new_addr);
       return false;
     }
   }
 
-  xfree(new_addr);
+  ats_free(new_addr);
   return true;
 }
 
@@ -2876,9 +2869,9 @@ void
 comment_ele_destroy(INKCommentEle * ele)
 {
   if (ele) {
-    if (ele->comment)
-      xfree(ele->comment);
-    xfree(ele);
+    ats_free(ele->comment);
+    ats_free(ele);
   }
+
   return;
 }

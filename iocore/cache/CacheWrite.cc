@@ -1234,7 +1234,7 @@ CacheVC::openWriteCloseDataDone(int event, Event *e)
           frag = (Frag*)ats_malloc(sizeof(Frag) * (fragment-1)*2);
           memcpy(frag, t, sizeof(Frag) * (fragment-1));
           if (t != integral_frags)
-            xfree(t);
+            ats_free(t);
         }
       }
       frag[fragment-1].offset = write_pos;
@@ -1336,7 +1336,7 @@ CacheVC::openWriteWriteDone(int event, Event *e)
           frag = (Frag*)ats_malloc(sizeof(Frag) * (fragment-1)*2);
           memcpy(frag, t, sizeof(Frag) * (fragment-1));
           if (t != integral_frags)
-            xfree(t);
+            ats_free(t);
         }
       }
       frag[fragment-1].offset = write_pos;

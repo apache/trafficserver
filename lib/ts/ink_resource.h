@@ -54,12 +54,7 @@ struct Resource
 #define RES_TRACK_MEMORY_DEFAULT 0      /* default value for res_track_memory variable */
 
 #ifdef __cplusplus
-static inline void
-xfree(void *mem)
-{
-  if (mem)
-    ats_free(mem);
-}
+
 static inline void *
 xfree_null(void *mem)
 {
@@ -75,7 +70,6 @@ xfree_null(void *mem)
 
 void *_xrealloc(void *ptr, unsigned int size, const char *path);
 char *_xstrdup(const char *str, int length, const char *path);
-void _xfree(void *ptr);
 void *_xfree_null(void *ptr);
 
 void xdump(void);
@@ -112,13 +106,13 @@ public:
   /// Destructor - free memory held by this instance.
   ~xptr()
   {
-    xfree(m_ptr);
+    ats_free(m_ptr);
   }
 
   /// Assign memory.
   /// @note @a ptr must be allocated via @c ats_malloc.
   self& operator = (T* ptr) {
-    xfree(m_ptr);
+    ats_free(m_ptr);
     m_ptr = ptr;
     return *this;
   }

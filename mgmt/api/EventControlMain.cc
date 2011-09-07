@@ -76,9 +76,8 @@ void
 delete_event_client(EventClientT * client)
 {
   if (client) {
-    if (client->adr)
-      xfree(client->adr);
-    xfree(client);
+    ats_free(client->adr);
+    ats_free(client);
   }
   return;
 }
@@ -183,9 +182,7 @@ delete_event_queue(LLQ * q)
 
   while (!queue_is_empty(q)) {
     ele = (TSEvent *) dequeue(q);
-    if (ele) {
-      xfree(ele);
-    }
+    ats_free(ele);
   }
 
   delete_queue(q);
@@ -346,8 +343,7 @@ event_callback_main(void *arg)
 
             case EVENT_REG_CALLBACK:
               handle_event_reg_callback(client_entry, req);
-              if (req)
-                xfree(req);     // free the request allocated by preprocess_msg
+              ats_free(req);     // free the request allocated by preprocess_msg
               if (ret == TS_ERR_NET_WRITE || ret == TS_ERR_NET_EOF) {
                 Debug("event", "[event_callback_main] ERROR: handle_event_reg_callback\n");
                 remove_event_client(client_entry, accepted_clients);
@@ -359,8 +355,7 @@ event_callback_main(void *arg)
             case EVENT_UNREG_CALLBACK:
 
               handle_event_unreg_callback(client_entry, req);
-              if (req)
-                xfree(req);     // free the request allocated by preprocess_msg
+              ats_free(req);     // free the request allocated by preprocess_msg
               if (ret == TS_ERR_NET_WRITE || ret == TS_ERR_NET_EOF) {
                 Debug("event", "[event_callback_main] ERROR: handle_event_unreg_callback\n");
                 remove_event_client(client_entry, accepted_clients);

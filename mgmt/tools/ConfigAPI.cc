@@ -743,14 +743,14 @@ Config_RestoreNetConfig(char *file)
     TagValue = netXml.getXmlTagValue("HostName");
     if (TagValue != NULL) {
       Config_SetHostname(TagValue);
-      xfree(TagValue);
+      ats_free(TagValue);
     }
 
 
     TagValue = netXml.getXmlTagValue("DNSSearch");
     if (TagValue != NULL) {
       Config_SetDomain(TagValue);
-      xfree(TagValue);
+      ats_free(TagValue);
     }
 
     // Check that we always have eth0. If eth0 is missing, exit.
@@ -762,7 +762,7 @@ Config_RestoreNetConfig(char *file)
       TagValue = netXml.getXmlTagValueAndAttribute(eth, "PerNICDefaultGateway");
       if (TagValue != NULL) {
         Config_SetNIC_Gateway(eth, TagValue);
-        xfree(TagValue);
+        ats_free(TagValue);
       } else if (count == 0)
         break;
       snprintf(eth, sizeof(eth), "eth%d", ++count);
@@ -779,7 +779,7 @@ Config_RestoreNetConfig(char *file)
 #if defined(linux)
         activeInterface[count] = 1;
 #endif
-        xfree(TagValue);
+        ats_free(TagValue);
       } else if (count == 0)
         break;
       snprintf(eth, sizeof(eth), "eth%d", ++count);
@@ -805,7 +805,7 @@ Config_RestoreNetConfig(char *file)
       TagValue = netXml.getXmlTagValueAndAttribute(eth, "InterfaceNetmask");
       if (TagValue != NULL) {
         Config_SetNIC_Netmask(eth, TagValue);
-        xfree(TagValue);
+        ats_free(TagValue);
       } else if (count == 0)
         break;
       snprintf(eth, sizeof(eth), "eth%d", ++count);
@@ -814,20 +814,20 @@ Config_RestoreNetConfig(char *file)
     TagValue = netXml.getXmlTagValue("DefaultGateway");
     if (TagValue != NULL) {
       Config_SetDefaultRouter(TagValue);
-      xfree(TagValue);
+      ats_free(TagValue);
     }
 
 
     TagValue = netXml.getXmlTagValue("DNSServer");
     if (TagValue != NULL) {
       Config_SetDNS_Servers(TagValue);
-      xfree(TagValue);
+      ats_free(TagValue);
     }
 
     TagValue = netXml.getXmlTagValue("NTPServers");
     if (TagValue != NULL) {
       Config_SetNTP_Servers(0, TagValue);
-      xfree(TagValue);
+      ats_free(TagValue);
     }
 
     // Get Admin GUI encrypted password.
@@ -841,7 +841,7 @@ Config_RestoreNetConfig(char *file)
           top_action_req = action_need;
         DPRINTF(("Config_FloppyNetRestore: set new mail_address %s!\n", mail_address));
       }
-      xfree(mail_address);
+      ats_free(mail_address);
     }
 
     // Make sure this is the last entry in these series. We restart traffic server here and hence
@@ -859,7 +859,7 @@ Config_RestoreNetConfig(char *file)
 #endif
       }
     }
-    xfree(TagValue);
+    ats_free(TagValue);
   }
 
   setreuid(old_euid, old_euid); //happens only for floppy config

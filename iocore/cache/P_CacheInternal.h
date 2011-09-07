@@ -593,9 +593,9 @@ free_CacheVC(CacheVC *cont)
   cont->writer_buf.clear();
   cont->alternate_index = CACHE_ALT_INDEX_DEFAULT;
   if (cont->frag && cont->frag != cont->integral_frags)
-    xfree(cont->frag);
+    ats_free(cont->frag);
   if (cont->scan_vol_map)
-    xfree(cont->scan_vol_map);
+    ats_free(cont->scan_vol_map);
   memset((char *) &cont->vio, 0, cont->size_to_init);
 #ifdef CACHE_STAT_PAGES
   ink_assert(!cont->stat_link.next && !cont->stat_link.prev);

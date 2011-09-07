@@ -83,7 +83,7 @@ deleter_main(void *unused)
         if (now - session->created > SESSION_EXPIRES) {
           ink_hash_table_delete(g_session_ht, key);
           session->deleter_func(session->data);
-          xfree(session);
+          ats_free(session);
         } else {
           session_count++;
         }
@@ -196,7 +196,7 @@ WebHttpSessionDelete(char *key)
   }
   ink_hash_table_delete(g_session_ht, key);
   session->deleter_func(session->data);
-  xfree(session);
+  ats_free(session);
 Ldone:
   ink_mutex_release(&g_session_mutex);
   return err;

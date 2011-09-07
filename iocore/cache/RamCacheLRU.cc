@@ -78,12 +78,14 @@ void RamCacheLRU::resize_hashtable() {
       while ((e = bucket[i].pop()))
         new_bucket[e->key.word(3) % anbuckets].push(e);
     }
-    xfree(bucket);
+    ats_free(bucket);
   }
   bucket = new_bucket;
   nbuckets = anbuckets;
-  if (seen) xfree(seen);
+  ats_free(seen);
+
   int size = bucket_sizes[ibuckets] * sizeof(uint16_t);
+
   seen = (uint16_t*)ats_malloc(size);
   memset(seen, 0, size);
 }

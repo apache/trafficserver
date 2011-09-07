@@ -64,10 +64,8 @@ void
 set_socket_paths(const char *path)
 {
   // free previously set paths if needed
-  if (main_socket_path)
-    xfree(main_socket_path);
-  if (event_socket_path)
-    xfree(event_socket_path);
+  ats_free(main_socket_path);
+  ats_free(event_socket_path);
 
   // construct paths based on user input
   // form by replacing "mgmtapisocket" with "eventapisocket"
@@ -558,8 +556,7 @@ send_request_name(int fd, OpType op, char *name)
 
   // send message
   err = socket_write_conn(fd, msg_buf, total_len);
-  if (msg_buf)
-    xfree(msg_buf);
+  ats_free(msg_buf);
   return err;
 }
 
@@ -617,7 +614,7 @@ send_request_name_value(int fd, OpType op, const char *name, const char *value)
 
   // send message
   err = socket_write_conn(fd, msg_buf, total_len);
-  xfree(msg_buf);
+  ats_free(msg_buf);
   return err;
 }
 
@@ -743,7 +740,7 @@ send_file_write_request(int fd, TSFileNameT file, int ver, int size, char *text)
 
   // send message
   err = socket_write_conn(fd, msg_buf, total_len);
-  xfree(msg_buf);
+  ats_free(msg_buf);
   return err;
 }
 
@@ -786,7 +783,7 @@ send_record_get_request(int fd, char *rec_name)
 
   // send message
   err = socket_write_conn(fd, msg_buf, total_len);
-  xfree(msg_buf);
+  ats_free(msg_buf);
   return err;
 }
 
@@ -885,7 +882,7 @@ send_register_all_callbacks(int fd, CallbackTable * cb_table)
       event_name = (char *) get_event_name(event_id);
       if (event_name) {
         err = send_request_name(fd, EVENT_REG_CALLBACK, event_name);
-        xfree(event_name);      // free memory
+        ats_free(event_name);      // free memory
         if (err != TS_ERR_OKAY) {
           send_err = err;       // save the type of send error
           no_errors = false;
@@ -949,7 +946,7 @@ send_unregister_all_callbacks(int fd, CallbackTable * cb_table)
     if (reg_callback[k] == 0) { // event has no registered callbacks
       event_name = get_event_name(k);
       err = send_request_name(fd, EVENT_UNREG_CALLBACK, event_name);
-      xfree(event_name);
+      ats_free(event_name);
       if (err != TS_ERR_OKAY) {
         send_err = err;         //save the type of the sending error
         no_errors = false;
@@ -1011,8 +1008,7 @@ send_diags_msg(int fd, TSDiagsT mode, const char *diag_msg)
 
   // send message
   err = socket_write_conn(fd, msg_buf, total_len);
-  if (msg_buf)
-    xfree(msg_buf);
+  ats_free(msg_buf);
   return err;
 }
 
@@ -1154,13 +1150,13 @@ parse_reply_list(int fd, char **list)
       if (errno == EAGAIN)
         continue;
       else {
-        xfree(*list);
+        ats_free(*list);
         return TS_ERR_NET_READ;
       }
     }
 
     if (ret == 0) {
-      xfree(*list);
+      ats_free(*list);
       return TS_ERR_NET_EOF;
     }
 
@@ -1279,13 +1275,13 @@ parse_file_read_reply(int fd, int *ver, int *size, char **text)
         if (errno == EAGAIN)
           continue;
         else {
-          xfree(*text);
+          ats_free(*text);
           return TS_ERR_NET_READ;
         }
       }
 
       if (ret == 0) {
-        xfree(*text);
+        ats_free(*text);
         return TS_ERR_NET_EOF;
       }
 
@@ -1405,13 +1401,13 @@ parse_record_get_reply(int fd, TSRecordT * rec_type, void **rec_val)
       if (errno == EAGAIN)
         continue;
       else {
-        xfree(*rec_val);
+        ats_free(*rec_val);
         return TS_ERR_NET_READ;
       }
     }
 
     if (ret == 0) {
-      xfree(*rec_val);
+      ats_free(*rec_val);
       return TS_ERR_NET_EOF;
     }
 
@@ -1765,16 +1761,12 @@ parse_event_notification(int fd, TSEvent * event)
   return TS_ERR_OKAY;
 
 ERROR_READ:
-  if (event_name)
-    xfree(event_name);
-  if (desc)
-    xfree(desc);
+  ats_free(event_name);
+  ats_free(desc);
   return TS_ERR_NET_READ;
 
 ERROR_EOF:
-  if (event_name)
-    xfree(event_name);
-  if (desc)
-    xfree(desc);
+  ats_free(event_name);
+  ats_free(desc);
   return TS_ERR_NET_EOF;
 }

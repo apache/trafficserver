@@ -66,7 +66,7 @@ blk_free(ArenaBlock * blk)
   if (size == DEFAULT_BLOCK_SIZE) {
     defaultSizeArenaBlock.free_void(blk);
   } else {
-    xfree(blk);
+    ats_free(blk);
   }
 }
 

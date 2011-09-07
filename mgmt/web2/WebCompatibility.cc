@@ -160,14 +160,12 @@ WebFileImport_Xmalloc(const char *file, char **file_buf, int *file_size)
 
 Lerror:
 
-  if (*file_buf)
-    xfree(*file_buf);
+  ats_free(*file_buf);
   *file_buf = 0;
   *file_size = 0;
   err = WEB_HTTP_ERR_FAIL;
 
 Ldone:
-
   if (h_file != WEB_HANDLE_INVALID)
     WebFileClose(h_file);
 

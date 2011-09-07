@@ -108,7 +108,7 @@ EThread::~EThread()
   if (n_ethreads_to_be_signalled > 0)
     flush_signals(this);
   if (ethreads_to_be_signalled)
-    xfree(ethreads_to_be_signalled);
+    ats_free(ethreads_to_be_signalled);
 }
 
 bool

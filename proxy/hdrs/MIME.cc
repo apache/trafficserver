@@ -2141,7 +2141,7 @@ mime_field_value_extend_comma_val(HdrHeap * heap, MIMEHdrImpl * mh,
 
   // (11) free up any temporary storage
   if (extended_len > sizeof(temp_buf))
-    xfree(temp_ptr);
+    ats_free(temp_ptr);
 }
 
 /*-------------------------------------------------------------------------
@@ -2330,8 +2330,7 @@ mime_scanner_init(MIMEScanner * scanner)
 void
 mime_scanner_clear(MIMEScanner * scanner)
 {
-  if (scanner->m_line)
-    xfree(scanner->m_line);
+  ats_free(scanner->m_line);
   _mime_scanner_init(scanner);
 }
 

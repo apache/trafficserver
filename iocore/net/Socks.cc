@@ -513,7 +513,7 @@ loadSocksConfiguration(socks_conf_struct * socks_conf_stuff)
 
   Layout::relative_to(config_pathname, sizeof(config_pathname),
                       Layout::get()->sysconfdir, socks_config_file);
-  xfree(socks_config_file);
+  ats_free(socks_config_file);
   Debug("Socks", "Socks Config File: %s", config_pathname);
 
   socks_config_fd =::open(config_pathname, O_RDONLY);
@@ -532,7 +532,7 @@ loadSocksConfiguration(socks_conf_struct * socks_conf_stuff)
 
   if (tmp) {
     Error("SOCKS Config: Error while reading ip_range: %s.", tmp);
-    xfree(tmp);
+    ats_free(tmp);
     goto error;
   }
 #endif

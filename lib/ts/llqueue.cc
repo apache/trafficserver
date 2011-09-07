@@ -106,9 +106,7 @@ delete_queue(LLQ * Q)
   // actually empty ...
   //
   //    LLQrec * qrec;
-  if (Q) {
-    xfree(Q);
-  }
+  ats_free(Q);
   return;
 }
 
@@ -227,7 +225,7 @@ dequeue(LLQ * Q)
 
   d = rec->data;
 //freerec(Q, rec);
-  xfree(rec);
+  ats_free(rec);
 
   Q->len--;
   ink_mutex_release(&(Q->mux));

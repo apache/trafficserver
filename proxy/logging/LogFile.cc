@@ -132,8 +132,8 @@ LogFile::~LogFile()
   Debug("log-file", "entering LogFile destructor, this=%p", this);
   close_file();
 
-  xfree(m_name);
-  xfree(m_header);
+  ats_free(m_name);
+  ats_free(m_header);
   delete m_meta_info;
   delete[]m_ascii_buffer;
   m_ascii_buffer = 0;
@@ -160,7 +160,7 @@ bool LogFile::exists(const char *pathname)
 void
 LogFile::change_name(char *new_name)
 {
-  xfree(m_name);
+  ats_free(m_name);
   m_name = xstrdup(new_name);
 }
 
@@ -171,7 +171,7 @@ LogFile::change_name(char *new_name)
 void
 LogFile::change_header(const char *header)
 {
-  xfree(m_header);
+  ats_free(m_header);
   m_header = xstrdup(header);
 }
 

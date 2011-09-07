@@ -311,16 +311,14 @@ HttpBodyFactory::reconfigure()
   rec_err = RecGetRecordString_Xmalloc("proxy.config.body_factory.template_sets_dir", &s);
   all_found = all_found && (rec_err == REC_ERR_OKAY);
   if (rec_err == REC_ERR_OKAY) {
-    if (directory_of_template_sets) {
-      xfree(directory_of_template_sets);
-    }
+    ats_free(directory_of_template_sets);
     directory_of_template_sets = s;
     if ((err = stat(directory_of_template_sets, &st)) < 0) {
       if ((err = stat(system_config_directory, &st)) < 0) {
         Warning("Unable to stat() directory '%s': %d %d, %s", system_config_directory, err, errno, strerror(errno));
         Warning(" Please set 'proxy.config.body_factory.template_sets_dir' ");
       } else {
-        xfree(directory_of_template_sets);
+        ats_free(directory_of_template_sets);
         directory_of_template_sets = xstrdup(system_config_directory);
       }
     }
@@ -666,7 +664,7 @@ HttpBodyFactory::load_sets_from_directory(char *set_dir)
     }
   }
 
-  xfree(entry_buffer);
+  ats_free(entry_buffer);
   closedir(dir);
 
   return (new_table_of_sets);
@@ -743,7 +741,7 @@ HttpBodyFactory::load_body_set_from_directory(char *set_name, char *tmpl_dir)
       body_set->set_template_by_name(entry_buffer->d_name, tmpl);
     }
   }
-  xfree(entry_buffer);
+  ats_free(entry_buffer);
   closedir(dir);
   return (body_set);
 }
@@ -769,12 +767,9 @@ HttpBodySet::HttpBodySet()
 
 HttpBodySet::~HttpBodySet()
 {
-  if (set_name)
-    xfree(set_name);
-  if (content_language)
-    xfree(content_language);
-  if (content_charset)
-    xfree(content_charset);
+  ats_free(set_name);
+  ats_free(content_language);
+  ats_free(content_charset);
   if (table_of_pages)
     delete table_of_pages;
 }
@@ -865,12 +860,10 @@ HttpBodySet::init(char *set, char *dir)
     //////////////////////////////////////////////////
 
     if (strcasecmp(name, "Content-Language") == 0) {
-      if (this->content_language)
-        xfree(this->content_language);
+      ats_free(this->content_language);
       this->content_language = xstrdup(value);
     } else if (strcasecmp(name, "Content-Charset") == 0) {
-      if (this->content_charset)
-        xfree(this->content_charset);
+      ats_free(this->content_charset);
       this->content_charset = xstrdup(value);
     }
   }
@@ -946,12 +939,10 @@ HttpBodyTemplate::~HttpBodyTemplate()
 void
 HttpBodyTemplate::reset()
 {
-  if (template_buffer != NULL)
-    xfree(template_buffer);
+  ats_free(template_buffer);
   template_buffer = NULL;
   byte_count = 0;
-  if (template_pathname != NULL)
-    xfree(template_pathname);
+  ats_free(template_pathname);
 }
 
 
@@ -1003,7 +994,7 @@ HttpBodyTemplate::load_from_file(char *dir, char *file)
   if (bytes_read != new_byte_count) {
     Warning("reading template file '%s', got %d bytes instead of %d (%s)",
             path, bytes_read, new_byte_count, (strerror(errno) ? strerror(errno) : "unknown error"));
-    xfree(new_template_buffer);
+    ats_free(new_template_buffer);
     return (0);
   }
 

@@ -149,7 +149,7 @@ ProcessManager::processEventQueue()
       mgmt_log(stderr, "[ProcessManager::processEventQueue] Shutdown msg received, exiting\n");
       _exit(0);
     }                           /* Exit on shutdown */
-    xfree(mh);
+    ats_free(mh);
     ret = true;
   }
   return ret;
@@ -177,7 +177,7 @@ ProcessManager::processSignalQueue()
       mgmt_fatal(stderr, "[ProcessManager::processSignalQueue] Error writing message!");
       //ink_assert(enqueue(mgmt_signal_queue, mh));
     } else {
-      xfree(mh);
+      ats_free(mh);
       ret = true;
     }
   }

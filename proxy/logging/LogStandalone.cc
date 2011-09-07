@@ -204,8 +204,7 @@ check_lockfile(const char *config_dir, const char *pgm_name)
     }
     _exit(1);
   }
-  xfree(lockfile);
-
+  ats_free(lockfile);
 }
 
 /*-------------------------------------------------------------------------

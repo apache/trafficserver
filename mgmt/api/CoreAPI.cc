@@ -201,14 +201,12 @@ ProxyStateSet(TSProxyStateT state, TSCacheClearT clear)
         goto Lerror;
 
       snprintf(tsArgs, MAX_BUF_SIZE, "%s", proxy_options);
-      xfree(proxy_options);
+      ats_free(proxy_options);
       break;
     }
 
     if (strlen(tsArgs) > 0) {   /* Passed command line args for proxy */
-      if (lmgmt->proxy_options) {
-        xfree(lmgmt->proxy_options);
-      }
+      ats_free(lmgmt->proxy_options);
       lmgmt->proxy_options = xstrdup(tsArgs);
       mgmt_log("[ProxyStateSet] Traffic Server Args: '%s'\n", lmgmt->proxy_options);
     }
@@ -553,10 +551,10 @@ ReadFile(TSFileNameT file, char **text, int *size, int *version)
   ret = configFiles->getRollbackObj(fname, &file_rb);
   if (ret != TRUE) {
     Debug("FileOp", "[get_lines_from_file] Can't get Rollback for file: %s\n", fname);
-    xfree(fname);
+    ats_free(fname);
     return TS_ERR_READ_FILE;
   }
-  xfree(fname);
+  ats_free(fname);
   ver = file_rb->getCurrentVersion();
   file_rb->getVersion(ver, &old_file_content);
   *version = ver;
@@ -608,7 +606,7 @@ WriteFile(TSFileNameT file, char *text, int size, int version)
     mgmt_log(stderr, "[CfgFileIO::WriteFile] ERROR getting rollback object\n");
     //goto generate_error_msg;
   }
-  xfree(fname);
+  ats_free(fname);
 
   // if version < 0 then, just use next version in sequence;
   // otherwise check if trying to commit an old version
@@ -800,9 +798,8 @@ SnapshotTake(char *snapshot_name)
   // XXX: Why was that offset to config dir?
   //      Any path should be prefix relative thought
   //
-  Layout::relative_to(snapDir, sizeof(snapDir), Layout::get()->sysconfdir,
-                      snapDirFromRecordsConf);
-  xfree(snapDirFromRecordsConf);
+  Layout::relative_to(snapDir, sizeof(snapDir), Layout::get()->sysconfdir, snapDirFromRecordsConf);
+  ats_free(snapDirFromRecordsConf);
 
   SnapResult result = configFiles->takeSnap(snapshot_name, snapDir);
   if (result != SNAP_OK)
@@ -827,12 +824,11 @@ SnapshotRestore(char *snapshot_name)
   // XXX: Why was that offset to config dir?
   //      Any path should be prefix relative thought
   //
-  Layout::relative_to(snapDir, sizeof(snapDir), Layout::get()->sysconfdir,
-                      snapDirFromRecordsConf);
-  xfree(snapDirFromRecordsConf);
+  Layout::relative_to(snapDir, sizeof(snapDir), Layout::get()->sysconfdir, snapDirFromRecordsConf);
+  ats_free(snapDirFromRecordsConf);
 
   SnapResult result = configFiles->restoreSnap(snapshot_name, snapDir);
-  xfree(snapDirFromRecordsConf);
+  ats_free(snapDirFromRecordsConf);
   if (result != SNAP_OK)
     return TS_ERR_FAIL;
   else
@@ -855,12 +851,11 @@ SnapshotRemove(char *snapshot_name)
   // XXX: Why was that offset to config dir?
   //      Any path should be prefix relative thought
   //
-  Layout::relative_to(snapDir, sizeof(snapDir), Layout::get()->sysconfdir,
-                      snapDirFromRecordsConf);
-  xfree(snapDirFromRecordsConf);
+  Layout::relative_to(snapDir, sizeof(snapDir), Layout::get()->sysconfdir, snapDirFromRecordsConf);
+  ats_free(snapDirFromRecordsConf);
 
   SnapResult result = configFiles->removeSnap(snapshot_name, snapDir);
-  xfree(snapDirFromRecordsConf);
+  ats_free(snapDirFromRecordsConf);
   if (result != SNAP_OK)
     return TS_ERR_FAIL;
   else

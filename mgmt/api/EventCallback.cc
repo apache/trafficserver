@@ -68,11 +68,7 @@ void
 delete_event_callback(EventCallbackT * event_cb)
 {
 
-  if (event_cb) {
-    // LAN - can't free the data if don't know what it is?
-    //if (event_cb->data) xfree(event_cb->data);
-    xfree(event_cb);
-  }
+  ats_free(event_cb);
   return;
 }
 
@@ -134,7 +130,7 @@ delete_callback_table(CallbackTable * cb_table)
   //destroy lock
   ink_mutex_destroy(&cb_table->event_callback_lock);
 
-  xfree(cb_table);
+  ats_free(cb_table);
 
   return;
 }

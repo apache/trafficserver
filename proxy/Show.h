@@ -83,7 +83,7 @@ struct ShowCont: public Continuation
       action.continuation->handleEvent(STAT_PAGE_SUCCESS, &data);
       start = 0;
     } else {
-      xfree(start);
+      ats_free(start);
       start = NULL;
     }
     return done(VIO::CLOSE, event, e);
@@ -91,7 +91,7 @@ struct ShowCont: public Continuation
 
   int complete_error(int event, Event * e)
   {
-    xfree(start);
+    ats_free(start);
     start = NULL;
     if (!action.cancelled)
       action.continuation->handleEvent(STAT_PAGE_FAILURE, NULL);
@@ -115,7 +115,7 @@ struct ShowCont: public Continuation
     NOWARN_UNUSED(event);
     NOWARN_UNUSED(data);
     if (sarg) {
-      xfree(sarg);
+      ats_free(sarg);
       sarg = NULL;
     }
     delete this;
@@ -133,7 +133,7 @@ ShowCont(Continuation * c, HTTPHdr * h):
   }
   ~ShowCont() {
     if (start)
-      xfree(start);
+      ats_free(start);
   }
 };
 

@@ -159,10 +159,8 @@ Alarms::resolveAlarm(alarm_t a, char *ip)
 
   if (!ip && ink_hash_table_lookup(local_alarms, buf, &hash_value) != 0) {
     ink_hash_table_delete(local_alarms, buf);
-    if (((Alarm *) hash_value)->description) {
-      xfree(((Alarm *) hash_value)->description);
-    }
-    xfree(hash_value);
+    ats_free(((Alarm *)hash_value)->description);
+    ats_free(hash_value);
   } else if (ip && ink_hash_table_lookup(remote_alarms, buf, &hash_value) != 0) {
     char buf2[1024];
 
@@ -172,7 +170,7 @@ Alarms::resolveAlarm(alarm_t a, char *ip)
       return;
     }
     ink_hash_table_delete(remote_alarms, buf);
-    xfree(hash_value);
+    ats_free(hash_value);
   }
   ink_mutex_release(&mutex);
 
@@ -353,8 +351,7 @@ ALARM_REPEAT:
   ink_assert(new_desc = (char *) alloca(new_desc_size));
   snprintf(new_desc, new_desc_size, "[%s] %s", my_ctime_str, desc);
   desc = new_desc;
-  if (atmp->description)
-    xfree(atmp->description);
+  ats_free(atmp->description);
   const size_t atmp_desc_size = sizeof(char) * (strlen(desc) + 1);
   atmp->description = (char *)ats_malloc(atmp_desc_size);
   ink_strncpy(atmp->description, desc, atmp_desc_size);
@@ -471,8 +468,8 @@ Alarms::clearUnSeen(char *ip)
     if (strstr(key, ip)) {      /* Make sure alarm is for correct ip */
       if (!tmp->seen) {         /* Make sure we did not see it in peer's report */
         ink_hash_table_delete(remote_alarms, key);      /* Safe in iterator? */
-        xfree(tmp->description);
-        xfree(tmp);
+        ats_free(tmp->description);
+        ats_free(tmp);
       }
     }
   }
@@ -669,13 +666,9 @@ Alarms::execAlarmBin(const char *desc)
 #endif // !_WIN32
 
   // free memory
-  if (alarm_email_from_name)
-    xfree(alarm_email_from_name);
-  if (alarm_email_from_addr)
-    xfree(alarm_email_from_addr);
-  if (alarm_email_to_addr)
-    xfree(alarm_email_to_addr);
-
+  ats_free(alarm_email_from_name);
+  ats_free(alarm_email_from_addr);
+  ats_free(alarm_email_to_addr);
 }
 
 //

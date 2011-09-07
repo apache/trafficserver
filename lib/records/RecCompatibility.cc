@@ -112,7 +112,7 @@ RecFileImport_Xmalloc(const char *file, char **file_buf, int *file_size)
         (*file_buf)[*file_size] = '\0';
         err = REC_ERR_OKAY;
       } else {
-        xfree(*file_buf);
+        ats_free(*file_buf);
         *file_buf = 0;
         *file_size = 0;
       }

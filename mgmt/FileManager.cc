@@ -251,7 +251,7 @@ FileManager::fileChanged(const char *baseFileName)
     //  defensive incase it modified when it is not supposed to be
     filenameCopy = xstrdup(baseFileName);
     (*cb->func) (filenameCopy);
-    xfree(filenameCopy);
+    ats_free(filenameCopy);
   }
   ink_mutex_release(&cbListLock);
 }
@@ -492,7 +492,7 @@ FileManager::removeSnap(const char *snapName, const char *snapDir)
     delete[]snapFilePath;
   }
 
-  xfree(dirEntrySpace);
+  ats_free(dirEntrySpace);
   closedir(dir);
 #else
   // Append '\*' as a wildcard for FindFirstFile()

@@ -62,7 +62,7 @@ void
 RecDataClear(RecDataT data_type, RecData * data)
 {
   if ((data_type == RECD_STRING) && (data->rec_string)) {
-    xfree(data->rec_string);
+    ats_free(data->rec_string);
   }
   memset(data, 0, sizeof(RecData));
 }
@@ -80,15 +80,13 @@ RecDataSet(RecDataT data_type, RecData * data_dst, RecData * data_src)
   case RECD_STRING:
     if (data_src->rec_string == NULL) {
       if (data_dst->rec_string != NULL) {
-        xfree(data_dst->rec_string);
+        ats_free(data_dst->rec_string);
         data_dst->rec_string = NULL;
         rec_set = true;
       }
     } else if (((data_dst->rec_string) && (strcmp(data_dst->rec_string, data_src->rec_string) != 0)) ||
                ((data_dst->rec_string == NULL) && (data_src->rec_string != NULL))) {
-      if (data_dst->rec_string) {
-        xfree(data_dst->rec_string);
-      }
+      ats_free(data_dst->rec_string);
       data_dst->rec_string = xstrdup(data_src->rec_string);
       rec_set = true;
     }
@@ -135,9 +133,8 @@ RecDataSetFromInk64(RecDataT data_type, RecData * data_dst, int64_t data_int64)
   case RECD_STRING:
     {
       char buf[32 + 1];
-      if (data_dst->rec_string) {
-        xfree(data_dst->rec_string);
-      }
+
+      ats_free(data_dst->rec_string);
       snprintf(buf, 32, "%" PRId64 "", data_int64);
       data_dst->rec_string = xstrdup(buf);
       break;
@@ -170,9 +167,8 @@ RecDataSetFromFloat(RecDataT data_type, RecData * data_dst, float data_float)
   case RECD_STRING:
     {
       char buf[32 + 1];
-      if (data_dst->rec_string) {
-        xfree(data_dst->rec_string);
-      }
+
+      ats_free(data_dst->rec_string);
       snprintf(buf, 32, "%f", data_float);
       data_dst->rec_string = xstrdup(buf);
       break;
