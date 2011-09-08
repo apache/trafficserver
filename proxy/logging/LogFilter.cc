@@ -166,10 +166,13 @@ bool
 LogFilterString::operator==(LogFilterString & rhs)
 {
   if (m_type == rhs.m_type &&
-      m_field == rhs.m_field &&
-      m_action == rhs.m_action && m_operator == rhs.m_operator && m_num_values == rhs.m_num_values) {
+      *m_field == *rhs.m_field &&
+      m_action == rhs.m_action &&
+      m_operator == rhs.m_operator &&
+      m_num_values == rhs.m_num_values) {
     for (size_t i = 0; i < m_num_values; i++) {
-      if (m_length[i] != rhs.m_length[i] || strncmp(m_value[i], rhs.m_value[i], m_length[i])) {
+      if (m_length[i] != rhs.m_length[i] ||
+          strncmp(m_value[i], rhs.m_value[i], m_length[i])) {
         return false;
       }
     }
@@ -420,8 +423,10 @@ LogFilterInt::~LogFilterInt()
 bool LogFilterInt::operator==(LogFilterInt & rhs)
 {
   if (m_type == rhs.m_type &&
-      m_field == rhs.m_field &&
-      m_action == rhs.m_action && m_operator == rhs.m_operator && m_num_values == rhs.m_num_values) {
+      * m_field == * rhs.m_field &&
+      m_action == rhs.m_action &&
+      m_operator == rhs.m_operator &&
+      m_num_values == rhs.m_num_values) {
     for (size_t i = 0; i < m_num_values; i++) {
       if (m_value[i] != rhs.m_value[i]) {
         return false;
@@ -517,14 +522,18 @@ filters_are_equal(LogFilter * filt1, LogFilter * filt2)
 {
   bool ret = false;
 
+  // TODO: we should check name here
   if (filt1->type() == filt2->type()) {
     if (filt1->type() == LogFilter::INT_FILTER) {
+      Debug("log-filter-compare", "int compare");
       ret = (*((LogFilterInt *) filt1) == *((LogFilterInt *) filt2));
     } else if (filt1->type() == LogFilter::STRING_FILTER) {
       ret = (*((LogFilterString *) filt1) == *((LogFilterString *) filt2));
     } else {
       ink_debug_assert(!"invalid filter type");
     }
+  } else {
+    Debug("log-filter-compare", "type diff");
   }
   return ret;
 }
@@ -560,7 +569,6 @@ bool LogFilterList::operator==(LogFilterList & rhs)
       f = first();
     LogFilter *
       rhsf = rhs.first();
-
     while (true) {
       if (!(f || rhsf)) {
         return true;

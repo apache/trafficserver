@@ -171,6 +171,31 @@ Log::add_to_inactive(LogObject * object)
   -------------------------------------------------------------------------*/
 
 /*-------------------------------------------------------------------------
+  PeriodicWakeup
+
+  This continuation is invoked each second to wake-up the flush thread,
+  just in case it's sleeping on the job.
+  -------------------------------------------------------------------------*/
+
+struct PeriodicWakeup;
+typedef int (PeriodicWakeup::*PeriodicWakeupHandler)(int, void *);
+struct PeriodicWakeup : Continuation {
+
+    int wakeup (int event, Event *e)
+    {
+        NOWARN_UNUSED (event); NOWARN_UNUSED (e);
+        ink_cond_signal (&Log::flush_cond);
+        return EVENT_CONT;
+    }
+
+    PeriodicWakeup () : Continuation (new_ProxyMutex())
+    {
+        SET_HANDLER ((PeriodicWakeupHandler)&PeriodicWakeup::wakeup);
+    }
+};
+
+
+/*-------------------------------------------------------------------------
   Log::periodic_tasks
 
   This function contains all of the tasks that need to be done each
@@ -249,12 +274,12 @@ Log::periodic_tasks(long time_now)
       Log::config->roll_log_files_now = FALSE;
     } else {
       if (error_log) {
-        num_rolled += error_log->roll_files_if_needed(time_now);
+        num_rolled += error_log->roll_files(time_now);
       }
       if (global_scrap_object) {
-        num_rolled += global_scrap_object->roll_files_if_needed(time_now);
+        num_rolled += global_scrap_object->roll_files(time_now);
       }
-      num_rolled += Log::config->log_object_manager.roll_files_if_needed(time_now);
+      num_rolled += Log::config->log_object_manager.roll_files(time_now);
     }
 
   }
@@ -848,18 +873,11 @@ Log::handle_logging_mode_change(const char *name, RecDataT data_type, RecData da
 void
 Log::init(int flags)
 {
-  iObject::Init();
-  iLogBufferBuffer::Init();
-
   maxInactiveObjects = LOG_OBJECT_ARRAY_DELTA;
   numInactiveObjects = 0;
-  inactive_objects = new LogObject *[maxInactiveObjects];
+  inactive_objects = new LogObject*[maxInactiveObjects];
 
   collation_accept_file_descriptor = NO_FD;
-
-  // initialize logging fields
-  //
-  init_fields();
 
   // store the configuration flags
   //
@@ -867,15 +885,15 @@ Log::init(int flags)
 
   // create the configuration object
   //
-  config = NEW(new LogConfig);
-  ink_assert(config != NULL);
+  config = NEW (new LogConfig);
+  ink_assert (config != NULL);
 
-  // set the logging_mode and initialize
+  // set the logging_mode and read config variables if needed
   //
   if (config_flags & LOGCAT) {
     logging_mode = LOG_NOTHING;
-  } else {
-
+  }
+  else {
     log_rsb = RecAllocateRawStatBlock((int) log_stat_count);
     LogConfig::register_stat_callbacks();
 
@@ -884,53 +902,66 @@ Log::init(int flags)
 
     if (config_flags & STANDALONE_COLLATOR) {
       logging_mode = LOG_TRANSACTIONS_ONLY;
-      config->collation_mode = LogConfig::COLLATION_HOST;
-    } else {
+    }
+    else {
       int val = (int) LOG_ConfigReadInteger("proxy.config.log.logging_enabled");
-      if (val<LOG_NOTHING || val> FULL_LOGGING) {
+      if (val < LOG_NOTHING || val > FULL_LOGGING) {
         logging_mode = FULL_LOGGING;
-        Warning("proxy.config.log.logging_enabled has an invalid " "value, setting it to %d", logging_mode);
-      } else {
+        Warning("proxy.config.log.logging_enabled has an invalid "
+          "value, setting it to %d", logging_mode);
+      }
+      else {
         logging_mode = (LoggingMode) val;
       }
     }
+  }
 
-    config->init();
-    _init();
+  // if remote management is enabled, do all necessary initialization to
+  // be able to handle a logging mode change
+  //
+  if (!(config_flags & NO_REMOTE_MANAGEMENT)) {
+
+    LOG_RegisterConfigUpdateFunc("proxy.config.log.logging_enabled",
+        &Log::handle_logging_mode_change, NULL);
+
+    LOG_RegisterLocalUpdateFunc("proxy.local.log.collation_mode",
+        &Log::handle_logging_mode_change, NULL);
+
+    // we must create the flush thread since it takes care of the
+    // periodic events (should this behavior be reversed ?)
+    //
+    create_threads();
+
+#ifndef INK_SINGLE_THREADED
+    eventProcessor.schedule_every(NEW (new PeriodicWakeup()), HRTIME_SECOND,
+        ET_CALL);
+#endif
+    init_status |= PERIODIC_WAKEUP_SCHEDULED;
 
     // Clear any stat values that need to be reset on startup
     //
-    LOG_CLEAR_DYN_STAT(log_stat_log_files_open_stat);
-    LOG_CLEAR_DYN_STAT(log_stat_log_files_space_used_stat);
-/*
-        The following variables are not cleared at startup, although
-	we probably should because otherwise their meaning is not very
-	clear. When did we start counting? Does it make sense to have
-	these values since the Traffic Server was setup on the
-	machine?
+    LOG_CLEAR_DYN_STAT( log_stat_log_files_open_stat);
+  }
 
-	LOG_CLEAR_DYN_STAT(log_stat_bytes_written_to_disk_stat);
-	LOG_CLEAR_DYN_STAT(log_stat_bytes_sent_to_network_stat);
-	LOG_CLEAR_DYN_STAT(log_stat_bytes_received_from_network_stat);
-	LOG_CLEAR_DYN_STAT(log_stat_event_log_access_stat);
-	LOG_CLEAR_DYN_STAT(log_stat_event_log_access_skip_stat);
-	LOG_CLEAR_DYN_STAT(log_stat_event_log_access_fail_stat);
-	LOG_CLEAR_DYN_STAT(log_stat_event_log_error_stat);
-*/
-    // if remote management is enabled, do all necessary initialization to
-    // be able to handle a logging mode change
-    //
-    if (!(config_flags & NO_REMOTE_MANAGEMENT)) {
-
-      LOG_RegisterConfigUpdateFunc("proxy.config.log.logging_enabled", &Log::handle_logging_mode_change, NULL);
-      LOG_RegisterLocalUpdateFunc("proxy.local.log.collation_mode", &Log::handle_logging_mode_change, NULL);
+  if (config_flags & LOGCAT) {
+    init_fields();
+  }
+  else {
+    Debug("log-config", "Log::init(): logging_mode = %d "
+        "init status = %d", logging_mode, init_status);
+    init_when_enabled();
+    if (config_flags & STANDALONE_COLLATOR) {
+      config->collation_mode = LogConfig::COLLATION_HOST;
     }
+    config->init();
   }
 }
 
 void
-Log::_init()
+Log::init_when_enabled()
 {
+  init_fields();
+
   if (!(init_status & FULLY_INITIALIZED)) {
 
     if (!(config_flags & STANDALONE_COLLATOR)) {
@@ -1120,29 +1151,24 @@ Log::va_error(char *format, va_list ap)
 void *
 Log::flush_thread_main(void *args)
 {
+  NOWARN_UNUSED (args);
   time_t now, last_time = 0;
-  size_t total_bytes, bytes_to_disk, bytes_to_net, bytes_to_pipe;
+  size_t buffers_flushed;
 
   Debug("log-flush", "Log flush thread is alive ...");
 
   while (true) {
-    ink_timestruc timeout_time;
+    buffers_flushed = 0;
 
-    bytes_to_disk = (bytes_to_net = (bytes_to_pipe = 0));
-    total_bytes = config->log_object_manager.flush_buffers(&bytes_to_disk, &bytes_to_net, &bytes_to_pipe);
+    buffers_flushed = config->log_object_manager.flush_buffers();
 
     if (error_log)
-      total_bytes += error_log->flush_buffers(&bytes_to_disk, &bytes_to_net, &bytes_to_pipe);
+      buffers_flushed += error_log->flush_buffers();
 
-    config->increment_space_used(bytes_to_disk);
+    // config->increment_space_used(bytes_to_disk);
+    // TODO: the bytes_to_disk should be set to Log
 
-    // Update statistics
-    //
-    LOG_SUM_GLOBAL_DYN_STAT(log_stat_bytes_written_to_disk_stat, bytes_to_disk);
-    LOG_SUM_GLOBAL_DYN_STAT(log_stat_bytes_sent_to_network_stat, bytes_to_net);
-
-    Debug("log-flush", "%d bytes flushed this round [ %d to disk, %d to net, %d to pipe]",
-          total_bytes, bytes_to_disk, bytes_to_net, bytes_to_pipe);
+    Debug("log-flush","%d buffers flushed this round", buffers_flushed);
 
     // Time to work on periodic events??
     //
@@ -1158,22 +1184,10 @@ Log::flush_thread_main(void *args)
     // check the queue and find there is nothing to do, then wait
     // again.
     //
-    //ink_cond_wait (&flush_cond, &flush_mutex);
-
-    // vl: we should use ink_cond_timedwait in order to be sure that this thread is alive at least once per second
-    // to execute periodic_tasks()
-    memset(&timeout_time, 0, sizeof(timeout_time));
-    ink_mutex_acquire(&flush_mutex);
-    while (flush_counter < FLUSH_THREAD_MIN_FLUSH_COUNTER && now <= last_time) {
-      timeout_time.tv_sec = (now = time(NULL)) + FLUSH_THREAD_SLEEP_TIMEOUT;
-      if (ink_cond_timedwait(&flush_cond, &flush_mutex, &timeout_time) == ETIMEDOUT)
-        break;
-    }
-    flush_counter = 0;
-    ink_mutex_release(&flush_mutex);
+    ink_cond_wait (&flush_cond, &flush_mutex);
   }
   /* NOTREACHED */
-  return args;
+  return NULL;
 }
 
 /*-------------------------------------------------------------------------

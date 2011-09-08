@@ -1,5 +1,8 @@
 s                                                         -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.1.1
+  *) [TS-168] revert iObject and other changes, make collation client work
+   in the clean way.
+
   *) [TS-941] invalid cast of off_t math to int. Author: B Wyatt.
 
   *) [TS-940] Add new configuration option, and solaris support, to set

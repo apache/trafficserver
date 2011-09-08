@@ -52,7 +52,7 @@ public:
   bool connected(bool ping);
   bool connect();
   void disconnect();
-  int write(LogBuffer * lb, size_t * to_disk, size_t * to_net, size_t * to_pipe);
+  int write(LogBuffer * lb);
 
   char *name() const { return (char *) ((m_name) ? m_name : "UNKNOWN"); }
   unsigned port() const { return m_port; }
@@ -68,8 +68,8 @@ public:
 private:
   void clear();
   bool authenticated();
-  int orphan_write(LogBuffer * lb, size_t * to_disk = 0);
-  int orphan_write_and_delete(LogBuffer * lb, size_t * to_disk = 0);
+  int orphan_write(LogBuffer * lb);
+  int orphan_write_and_delete(LogBuffer * lb);
   void create_orphan_LogFile_object();
 
 private:
@@ -108,7 +108,7 @@ public:
   void add(LogHost * host, bool copy = true);
   unsigned count();
   void clear();
-  int write(LogBuffer * lb, size_t * to_disk = 0, size_t * to_net = 0, size_t * to_pipe = 0);
+  int write(LogBuffer * lb);
 
   LogHost *first() { return m_host_list.head; }
   LogHost *next(LogHost * here) { return (here->link).next; }

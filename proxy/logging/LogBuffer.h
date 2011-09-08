@@ -129,99 +129,12 @@ union LB_State
   } s;
 };
 
-
-/* ---------------------------------- iObject ------------------------------ */
-class iObjectActivator;
-class iObject
-{
-private:
-  static iObject *free_heap;    /* list of free blocks */
-  static ink_mutex iObjectMutex;        /* mutex for access to iObject class global variables */
-
-  size_t class_size;            /* real class size */
-  iObject *next_object;
-
-
-protected:
-  iObject(const iObject &);   /* declared; not implemented - block copying and assignment */
-  iObject & operator=(const iObject &);       /* ditto */
-
-public:
-  static void Init(void);
-  void *operator  new(size_t size);
-  void operator  delete(void *p);
-
- iObject()
- {                             /* nop */
- }
-
- virtual ~iObject()
- {                             /* nop */
- }
-
- friend class iObjectActivator;
-};
-
-/* ------------------------------ iLogBufferBuffer ------------------------- */
-class iLogBufferBuffer
-{
-private:
-  static iLogBufferBuffer *free_heap;   /* list of free blocks */
-  static ink_mutex iLogBufferBufferMutex;       /* mutex for access iLogBufferBuffer class global variables */
-
-  iLogBufferBuffer *next;
-  size_t real_buf_size;
-
-
-  iLogBufferBuffer()
-  {
-    next = 0;
-    buf = 0;
-    real_buf_size = (size = 0);
-  }
-
-  ~iLogBufferBuffer()
-  {
-    ats_free(buf);
-    real_buf_size = (size = 0);
-  }
-
-protected:
-  iLogBufferBuffer(const iLogBufferBuffer &);   /* declared; not implemented - block copying and assignment */
-  iLogBufferBuffer & operator=(const iLogBufferBuffer &);       /* ditto */
-
-public:
-  char *buf;
-  size_t size;
-
-  static void Init(void);
-  static iLogBufferBuffer *New_iLogBufferBuffer(size_t _buf_size);
-  static iLogBufferBuffer *Delete_iLogBufferBuffer(iLogBufferBuffer * _b);
-
-  friend class iObjectActivator;
-};
-
-/* ---------------------------- iObjectActivator --------------------------- */
-class iObjectActivator
-{
-public:
-  iObjectActivator()
-  {
-    iObject::Init();
-    iLogBufferBuffer::Init();
-  }
-
-  ~iObjectActivator()
-  {                             /* nop */
-  }
-};
-
 /*-------------------------------------------------------------------------
   LogBuffer
   -------------------------------------------------------------------------*/
 #define CLASS_SIGN_LOGBUFFER 0xFACE5370 /* LogBuffer class signature */
 
-class LogBuffer:public iObject
+class LogBuffer
 {
 public:
   unsigned long sign;           /* class signature (must be CLASS_SIGN_LOGBUFFER) */
@@ -282,7 +195,7 @@ public:
     return m_owner;
   };
 
-  Link<LogBuffer> link;
+  LINK(LogBuffer, link);;
 
   // static variables
   static vint32 M_ID;
@@ -301,8 +214,6 @@ public:
   static void convert_to_host_order(LogBufferHeader * header);
 
 private:
-  iLogBufferBuffer * m_bb;      // real buffer
-  char *m_new_buffer;           // new buffer (must be free)
   char *m_unaligned_buffer;     // the unaligned buffer
   char *m_buffer;               // the buffer
   size_t m_size;                // the buffer size
@@ -342,14 +253,13 @@ class LogFile;
 class LogBufferList
 {
 private:
-  LogBuffer * m_list;
-  LogBuffer *m_list_last_ptr;
+  Queue<LogBuffer> m_buffer_list;
   ink_mutex m_mutex;
   int m_size;
 
 public:
-    LogBufferList();
-   ~LogBufferList();
+  LogBufferList();
+  ~LogBufferList();
 
   void add(LogBuffer * lb);
   LogBuffer *get(void);

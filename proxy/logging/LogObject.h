@@ -69,46 +69,39 @@ Debug("log-api-mutex", _f)
 class LogBufferManager
 {
 private:
-  ink_mutex _flush_array_mutex; // synchronize access to flush_array
-  LogBuffer *_flush_list;
-  LogBuffer **_flush_list_last;
+  int _flush_array_lock;
+
+  LogBuffer *_flush_array[2][FLUSH_ARRAY_SIZE];
   LogBuffer *_delay_delete_array[DELAY_DELETE_SIZE];
-  int _head;                    // index of next buffer in deleted list
+
+  int _num_flush_buffers[2];          // number of buffers in queue
+  int _open_flush_array;              // index of queue accepting buffers
+  int _head;                          // index of next buffer to be deleted
 
 public:
  LogBufferManager()
-   : _flush_list(0), _head(0)
+   : _flush_array_lock(0), _open_flush_array(0), _head(0)
   {
-    _flush_list_last = &_flush_list;
-    for (int i = 0; i < DELAY_DELETE_SIZE; i++)
-      _delay_delete_array[i] = 0;
-    ink_mutex_init(&_flush_array_mutex, "_flush_array_mutex");
+    _num_flush_buffers[0] = 0;
+    _num_flush_buffers[1] = 0;
+    for (int i=0; i<DELAY_DELETE_SIZE; ++i) _delay_delete_array[i] = 0;
   }
 
   ~LogBufferManager();
 
   void add_to_flush_queue(LogBuffer * buffer)
   {
-    if (buffer && buffer->sign == CLASS_SIGN_LOGBUFFER) {
-      ink_mutex_acquire(&_flush_array_mutex);
-      (*_flush_list_last = buffer)->next_flush = 0;
-      _flush_list_last = &buffer->next_flush;
-      ink_mutex_release(&_flush_array_mutex);
-    }
+    while (!ink_atomic_cas(&_flush_array_lock, 0, 1));
+
+    ink_release_assert(_num_flush_buffers[_open_flush_array] <
+                       FLUSH_ARRAY_SIZE);
+    int idx = _num_flush_buffers[_open_flush_array]++;
+    _flush_array[_open_flush_array][idx] = buffer;
+
+    _flush_array_lock = 0;
   }
 
-  LogBuffer *get_flush_queue(void)
-  {
-    LogBuffer *list;
-    ink_mutex_acquire(&_flush_array_mutex);
-    list = _flush_list;
-    _flush_list = 0;
-    _flush_list_last = &_flush_list;
-    ink_mutex_release(&_flush_array_mutex);
-    return list;
-  }
-
-  size_t flush_buffers(LogBufferSink * sink, size_t * to_disk, size_t * to_net, size_t * to_pipe);
+  size_t flush_buffers(LogBufferSink *sink);
 };
 
 
@@ -128,18 +121,10 @@ public:
   // WRITES_TO_PIPE: object writes to a named pipe rather than to a file
 
   LogObject(LogFormat *format, const char *log_dir, const char *basename,
-            LogFileFormat file_format, const char *header,
-            int rolling_enabled, int rolling_interval_sec = 0, int rolling_offset_hr = 0, int rolling_size_mb = 0);
-  LogObject(LogFormat format, const char *log_dir, const char *basename,
-            LogFileFormat file_format, const char *header,
-            int rolling_enabled, int rolling_interval_sec = 0, int rolling_offset_hr = 0, int rolling_size_mb = 0);
-private:
-  void init(LogFormat * format, const char *log_dir, const char *basename,
-            LogFileFormat file_format, const char *header,
-            int rolling_enabled, int rolling_interval_sec = 0, int rolling_offset_hr = 0, int rolling_size_mb = 0);
+                 LogFileFormat file_format, const char *header,
+                 int rolling_enabled, int rolling_interval_sec = 0,
+                 int rolling_offset_hr = 0, int rolling_size_mb = 0);
   LogObject(LogObject &);
-
-public:
   virtual ~LogObject();
 
   void add_filter(LogFilter * filter, bool copy = true);
@@ -152,21 +137,24 @@ public:
   };
 
   int log(LogAccess * lad, char *text_entry = NULL);
-  int roll_files_if_needed(long time_now = 0);
 
-  int roll_files(long time_now = 0) {
-    return _roll_files(m_last_roll_time, time_now ? time_now : LogUtils::timestamp());
-  }
+  int roll_files(long time_now = 0);
 
   void add_to_flush_queue(LogBuffer * buffer)
   {
     m_buffer_manager.add_to_flush_queue(buffer);
   }
 
-  size_t flush_buffers(size_t * to_disk, size_t * to_net, size_t * to_pipe)
+  size_t flush_buffers()
   {
-    return (m_logFile) ? m_buffer_manager.flush_buffers(m_logFile, to_disk, to_net, to_pipe) :
-      m_buffer_manager.flush_buffers(&m_host_list, to_disk, to_net, to_pipe);
+    size_t nfb;
+
+    if (m_logFile) {
+      nfb = m_buffer_manager.flush_buffers(m_logFile);
+    } else {
+      nfb = m_buffer_manager.flush_buffers(&m_host_list);
+    }
+    return nfb;
   }
 
   void check_buffer_expiration(long time_now);
@@ -217,7 +205,7 @@ public:
     _setup_rolling(m_rolling_enabled, rolling_interval_sec, m_rolling_offset_hr, m_rolling_size_mb);
   }
 
-  void set_rolling_offset_hr(int rolling_offset_hr)
+ void set_rolling_offset_hr(int rolling_offset_hr)
   {
     _setup_rolling(m_rolling_enabled, m_rolling_interval_sec, rolling_offset_hr, m_rolling_size_mb);
   }
@@ -382,7 +370,7 @@ public:
 
 private:
 
-    LogObject ** _objects;      // array of objects managed
+  LogObject ** _objects;      // array of objects managed
   size_t _numObjects;           // the number of objects managed
   size_t _maxObjects;           // the maximum capacity of the array
   // of objects managed
@@ -453,19 +441,13 @@ public:
     return _numObjects;
   }
 
-  int roll_files(long time_now = 0) {
-    return _roll_files(time_now, false);
-  }
-
-  int roll_files_if_needed(long time_now = 0) {
-    return _roll_files(time_now, true);
-  }
+  int roll_files(long time_now);
 
   int log(LogAccess * lad);
   void display(FILE * str = stdout);
   void add_filter_to_all(LogFilter * filter);
   LogObject *find_by_format_name(const char *name);
-  size_t flush_buffers(size_t * to_disk, size_t * to_net = 0, size_t * to_pipe = 0);
+  size_t flush_buffers();
   void open_local_pipes();
   void transfer_objects(LogObjectManager & mgr);
 
@@ -476,6 +458,15 @@ public:
   size_t get_num_collation_clients();
 };
 
+inline int LogObjectManager::roll_files(long time_now)
+{
+    int num_rolled = 0;
+    for (size_t i=0; i < _numObjects; i++)
+    {
+        num_rolled += _objects[i]->roll_files(time_now);
+    }
+    return num_rolled;
+};
 
 inline int
 LogObjectManager::log(LogAccess * lad)

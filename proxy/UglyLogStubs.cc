@@ -101,37 +101,56 @@ this_machine()
   return NULL;
 }
 
-
-#include "LogConfig.h"
-void
-LogConfig::setup_collation(LogConfig * prev_config)
+#include "LogCollationAccept.h"
+LogCollationAccept::LogCollationAccept(int port)
+  : Continuation(new_ProxyMutex()),
+    m_port(port),
+    m_pending_event(NULL)
 {
-  NOWARN_UNUSED(prev_config);
-  ink_release_assert(false);
+}
+LogCollationAccept::~LogCollationAccept()
+{
 }
 
-void
-LogConfig::create_pre_defined_objects_with_filter(const PreDefinedFormatInfoList & pre_def_info_list, size_t num_filters,
-                                                  LogFilter ** filter, const char *filt_name, bool force_extension)
+//
+//int
+//LogHost::write(LogBuffer * lb)
+//{
+//  NOWARN_UNUSED(lb);
+//  ink_release_assert(false);
+//  return 0;
+//}
+
+#include "LogCollationClientSM.h"
+LogCollationClientSM::LogCollationClientSM(LogHost * log_host):
+  Continuation(new_ProxyMutex()),
+  m_host_vc(NULL),
+  m_host_vio(NULL),
+  m_auth_buffer(NULL),
+  m_auth_reader(NULL),
+  m_send_buffer(NULL),
+  m_send_reader(NULL),
+  m_pending_action(NULL),
+  m_pending_event(NULL),
+  m_abort_vio(NULL),
+  m_abort_buffer(NULL),
+  m_buffer_send_list(NULL), m_buffer_in_iocore(NULL), m_flow(LOG_COLL_FLOW_ALLOW), m_log_host(log_host), m_id(0)
 {
-  NOWARN_UNUSED(pre_def_info_list);
-  NOWARN_UNUSED(num_filters);
-  NOWARN_UNUSED(filter);
-  NOWARN_UNUSED(filt_name);
-  NOWARN_UNUSED(force_extension);
-  ink_release_assert(false);
+  Debug("log-coll", "[%d]client::constructor", m_id);
+}
+
+LogCollationClientSM::~LogCollationClientSM()
+{
 }
 
 int
-LogHost::write(LogBuffer * lb, size_t * to_disk, size_t * to_net, size_t * to_pipe)
+LogCollationClientSM::send(LogBuffer * log_buffer)
 {
-  NOWARN_UNUSED(lb);
-  NOWARN_UNUSED(to_disk);
-  NOWARN_UNUSED(to_net);
-  NOWARN_UNUSED(to_pipe);
+  NOWARN_UNUSED(log_buffer);
   ink_release_assert(false);
   return 0;
 }
+
 
 // TODO: The following was necessary only for Solaris, should examine more.
 NetVCOptions const Connection::DEFAULT_OPTIONS;
@@ -174,10 +193,4 @@ CacheVC::handleWrite(int event, Event *e)
   NOWARN_UNUSED(e);
   return 0;
   ink_release_assert(false);
-}
-
-// LogHost destructor will need this, for solaris
-#include "LogCollationClientSM.h"
-LogCollationClientSM::~LogCollationClientSM()
-{
 }

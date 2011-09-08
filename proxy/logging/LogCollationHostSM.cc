@@ -325,10 +325,7 @@ LogCollationHostSM::host_recv(int event, void *data)
         //
         log_buffer = NEW(new LogBuffer(log_object, log_buffer_header));
         log_object->add_to_flush_queue(log_buffer);
-        ink_mutex_acquire(&Log::flush_mutex);
-        Log::flush_counter++;
         ink_cond_signal(&Log::flush_cond);
-        ink_mutex_release(&Log::flush_mutex);
       }
 
 #if defined(LOG_BUFFER_TRACKING)

@@ -69,132 +69,6 @@ FieldListCacheElement fieldlist_cache[FIELDLIST_CACHE_SIZE];
 int fieldlist_cache_entries = 0;
 vint32 LogBuffer::M_ID = 0;
 
-//iObjectActivator  iObjectActivatorInstance;     /* just to do ::Init() before main() */
-
-iObject *iObject::free_heap = 0;       /* list of free blocks */
-ink_mutex iObject::iObjectMutex;        /* mutex for access iObject class global variables */
-
-iLogBufferBuffer *iLogBufferBuffer::free_heap = 0;      /* list of free blocks */
-ink_mutex iLogBufferBuffer::iLogBufferBufferMutex;      /* mutex for access iLogBufferBuffer class global variables */
-
-
-/* --------------------- iStaticBuf_LogBuffer::Init ------------------------ */
-void
-iLogBufferBuffer::Init(void)
-{
-  ink_mutex_init(&iLogBufferBufferMutex, "iLogBufferBufferMutex");
-}
-
-/* ------------------ iLogBufferBuffer::New_iLogBufferBuffer --------------- */
-iLogBufferBuffer *
-iLogBufferBuffer::New_iLogBufferBuffer(size_t _buf_size)
-{
-  iLogBufferBuffer **objj, **objj_best = 0;
-  iLogBufferBuffer *ob = 0, *ob_best = 0;
-
-  if (_buf_size > 0) {
-    ink_mutex_acquire(&iLogBufferBufferMutex);
-    for (objj = &free_heap; (ob = *objj) != 0; objj = &(ob->next)) {
-      if (ob->real_buf_size == _buf_size) {
-        *objj = ob->next;
-        break;
-      } else if (ob->real_buf_size > _buf_size) {
-        if (!ob_best || ob_best->real_buf_size > ob->real_buf_size) {
-          ob_best = ob;
-          objj_best = objj;
-        }
-      }
-    }
-    if (!ob && ob_best && objj_best) {
-      *objj_best = (ob = ob_best)->next;
-    }
-    ink_mutex_release(&iLogBufferBufferMutex);
-
-    if (!ob) {
-      ob = new iLogBufferBuffer();
-      if (ob) {
-        ob->buf = (char *)ats_malloc(_buf_size);
-        ob->real_buf_size = _buf_size;
-      }
-    }
-
-    if (likely(ob)) {           /* we need to touch it in order to be sure that this
-                                   page in the physical memory, plus, we zero it! */
-      memset(ob->buf, 0, ob->real_buf_size);
-      ob->size = _buf_size;
-    }
-  }
-  return ob;
-}
-
-/* ----------------- iLogBufferBuffer::Delete_iLogBufferBuffer ------------- */
-iLogBufferBuffer *
-iLogBufferBuffer::Delete_iLogBufferBuffer(iLogBufferBuffer * _b)
-{
-  if (likely(_b)) {
-    ink_mutex_acquire(&iLogBufferBufferMutex);
-    _b->next = free_heap;
-    free_heap = _b;
-    ink_mutex_release(&iLogBufferBufferMutex);
-  }
-  return (iLogBufferBuffer *) 0;
-}
-
-/* --------------------------- iObject::Init ------------------------------- */
-void
-iObject::Init(void)
-{
-  ink_mutex_init(&iObjectMutex, "iObjectMutex");
-}
-
-/* ---------------------------- iObject::new ------------------------------- */
-void *
-iObject::operator new(size_t _size)
-{
-  iObject **objj, **objj_best = NULL;
-  iObject *ob = NULL, *ob_best = NULL;
-  size_t real_size = _size;
-
-  ink_mutex_acquire(&iObjectMutex);
-  for (objj = &free_heap; (ob = *objj) != NULL; objj = &(ob->next_object)) {
-    if (ob->class_size == _size) {
-      *objj = ob->next_object;
-      break;
-    } else if (ob->class_size > _size) {
-      if (!ob_best || ob_best->class_size > ob->class_size) {
-        ob_best = ob;
-        objj_best = objj;
-      }
-    }
-  }
-  if (!ob && ob_best && objj_best) {
-    *objj_best = (ob = ob_best)->next_object;
-    real_size = ob->class_size;
-  }
-  ink_mutex_release(&iObjectMutex);
-
-  if (!ob)
-    ob = (iObject *)ats_malloc(_size);
-
-  if (likely(ob)) {
-    memset(ob, 0, _size);
-    ob->class_size = real_size;
-  }
-  return (void *) ob;
-}
-
-/* --------------------------- iObject::delete ----------------------------- */
-void
-iObject::operator delete(void *p)
-{
-  iObject *ob = (iObject *) p;
-
-  ink_mutex_acquire(&iObjectMutex);
-  ob->next_object = free_heap;
-  free_heap = ob;
-  ink_mutex_release(&iObjectMutex);
-}
-
 /*-------------------------------------------------------------------------
   The following LogBufferHeader routines are used to grab strings out from
   the data section using the offsets held in the buffer header.
@@ -261,25 +135,19 @@ LogBufferHeader::log_filename()
   -------------------------------------------------------------------------*/
 
 LogBuffer::LogBuffer(LogObject * owner, size_t size, size_t buf_align, size_t write_align):
-  sign(CLASS_SIGN_LOGBUFFER),
   next_flush(NULL),
   next_list(NULL),
-  m_new_buffer(NULL),
   m_size(size),
   m_buf_align(buf_align),
   m_write_align(write_align), m_max_entries(Log::config->max_entries_per_buffer), m_owner(owner)
 {
   size_t hdr_size;
 
-//    Debug("log-logbuffer","LogBuffer::LogBuffer(owner,size=%ld, buf_align=%ld,write_align=%ld)",
-//          size,buf_align,write_align);
-
-  // create the buffer: size + LB_DEFAULT_ALIGN(512)
-  m_bb = iLogBufferBuffer::New_iLogBufferBuffer(size + buf_align);
-  ink_assert(m_bb != NULL);
-
-  m_unaligned_buffer = m_bb->buf;
-  m_buffer = (char *) align_pointer_forward(m_unaligned_buffer, buf_align);
+  // create the buffer
+  //
+  m_unaligned_buffer = NEW (new char [size + buf_align]);
+  m_buffer = (char *)align_pointer_forward(m_unaligned_buffer,
+                                           buf_align);
 
   // add the header
   hdr_size = _add_buffer_header();
@@ -293,15 +161,13 @@ LogBuffer::LogBuffer(LogObject * owner, size_t size, size_t buf_align, size_t wr
 
   m_expiration_time = LogUtils::timestamp() + Log::config->max_secs_per_buffer;
 
-//    Debug("log-logbuffer","[%p] Created buffer %u for %s at address %p, size %d",
-//        this_ethread(), m_id, m_owner->get_base_filename(), m_buffer, (int)size);
+  Debug("log-logbuffer","[%p] Created buffer %u for %s at address %p, size %d",
+        this_ethread(), m_id, m_owner->get_base_filename(), m_buffer, (int)size);
 }
 
 LogBuffer::LogBuffer(LogObject * owner, LogBufferHeader * header):
-  sign(CLASS_SIGN_LOGBUFFER),
   next_flush(NULL),
   next_list(NULL),
-  m_bb(NULL),
   m_unaligned_buffer(NULL),
   m_buffer((char *) header),
   m_size(0),
@@ -313,34 +179,26 @@ LogBuffer::LogBuffer(LogObject * owner, LogBufferHeader * header):
   // no checkout writes or checkin writes are allowed. This is enforced
   // by the asserts in checkout_write and checkin_write
 
-//    Debug("log-logbuffer","LogBuffer::LogBuffer(owner,header)");
-
-  m_new_buffer = (char *) header;       /* must be deleted inside destructor */
-
   // update the buffer id (m_id gets the old value)
   //
   m_id = (uint32_t) ink_atomic_increment((pvint32) & M_ID, 1);
 
-//    Debug("log-logbuffer","[%p] Created buffer %u for %s at address %p",
-//        this_ethread(), m_id, m_owner->get_base_filename(), m_buffer);
+  Debug("log-logbuffer","[%p] Created buffer %u for %s at address %p",
+        this_ethread(), m_id, m_owner->get_base_filename(), m_buffer);
 }
 
 LogBuffer::~LogBuffer()
 {
-  ink_assert(sign == CLASS_SIGN_LOGBUFFER);     /* vl: FIXME remove it later */
-  if (sign == CLASS_SIGN_LOGBUFFER) {
-    sign = 0;
-    m_unaligned_buffer = (m_buffer = 0);
-    m_size = 0;
-    if (m_new_buffer) {
-      delete m_new_buffer;
-      m_new_buffer = 0;
-    }
-    m_bb = iLogBufferBuffer::Delete_iLogBufferBuffer(m_bb);
-//      Debug("log-logbuffer", "[%p] Deleted buffer %u", this_ethread(), m_id);
+  if (m_unaligned_buffer) {
+    delete [] m_unaligned_buffer;
+  } else {
+    delete [] m_buffer;
   }
-//    else
-//      Debug("log-logbuffer", "Incorrect signature 0x%08lX inside LogBuffer::~LogBuffer()", sign);
+
+  Debug("log-logbuffer", "[%p] Deleted buffer %u at address %p",
+        this_ethread(), m_id, m_unaligned_buffer?m_unaligned_buffer:m_buffer);
+  m_buffer = 0;
+  m_unaligned_buffer = 0;
 }
 
 /*-------------------------------------------------------------------------
@@ -355,10 +213,7 @@ LogBuffer::LB_ResultCode LogBuffer::checkout_write(size_t * write_offset, size_t
   // LogBuffer::LogBuffer(LogObject *owner, LogBufferHeader *header)
   // was used to construct the object
   //
-  //ink_debug_assert(m_unaligned_buffer);
-
-  ink_assert(sign == CLASS_SIGN_LOGBUFFER);
-  ink_assert(m_unaligned_buffer != NULL);
+  ink_debug_assert(m_unaligned_buffer);
 
   LB_ResultCode
     ret_val = LB_BUSY;
@@ -472,9 +327,7 @@ LogBuffer::LB_ResultCode LogBuffer::checkin_write(size_t write_offset)
   // LogBuffer::LogBuffer(LogObject *owner, LogBufferHeader *header)
   // was used to construct the object
   //
-  //ink_debug_assert(m_unaligned_buffer);
-  ink_assert(sign == CLASS_SIGN_LOGBUFFER);
-  ink_assert(m_unaligned_buffer != NULL);
+  ink_debug_assert(m_unaligned_buffer);
 
   LB_ResultCode ret_val = LB_OK;
   LB_State old_s, new_s;
@@ -517,7 +370,6 @@ LogBuffer::_add_buffer_header()
 {
   size_t header_len;
 
-  ink_assert(sign == CLASS_SIGN_LOGBUFFER);
   //
   // initialize the header
   //
@@ -588,7 +440,6 @@ LogBuffer::update_header_data()
   // only update the header if the LogBuffer did not receive its data
   // upon construction (i.e., if m_unaligned_buffer was allocated)
   //
-  ink_assert(sign == CLASS_SIGN_LOGBUFFER);
 
   if (m_unaligned_buffer) {
     m_header->entry_count = m_state.s.num_entries;
@@ -1048,7 +899,6 @@ LogBuffer::convert_to_host_order(LogBufferHeader * header)
 LogBufferList::LogBufferList()
 {
   m_size = 0;
-  m_list_last_ptr = (m_list = 0);
   ink_mutex_init(&m_mutex, "LogBufferList");
 }
 
@@ -1058,18 +908,12 @@ LogBufferList::LogBufferList()
 
 LogBufferList::~LogBufferList()
 {
-  LogBuffer *lb, *_list;
+  LogBuffer *lb;
   ink_mutex_acquire(&m_mutex);
-  _list = m_list;
-  m_list_last_ptr = (m_list = 0);
   m_size = 0;
-  ink_mutex_release(&m_mutex);
-
-  while ((lb = _list) != NULL) {
-    _list = lb->next_list;
-    delete lb;
+  while ((lb = get()) != NULL) {
+      delete lb;
   }
-  ink_mutex_acquire(&m_mutex);
   ink_mutex_release(&m_mutex);
   ink_mutex_destroy(&m_mutex);
 }
@@ -1082,13 +926,10 @@ void
 LogBufferList::add(LogBuffer * lb)
 {
   ink_assert(lb != NULL);
-  lb->next_list = 0;
+
   ink_mutex_acquire(&m_mutex);
-  if (m_list && m_list_last_ptr) {
-    m_list_last_ptr->next_list = lb;
-  } else
-    m_list = lb;
-  m_list_last_ptr = lb;
+  m_buffer_list.enqueue (lb);
+  ink_assert(m_size >= 0);
   m_size++;
   ink_mutex_release(&m_mutex);
 }
@@ -1103,13 +944,14 @@ LogBufferList::get()
   LogBuffer *lb;
 
   ink_mutex_acquire(&m_mutex);
-
-  if ((lb = m_list) != 0) {
-    if ((m_list = lb->next_list) == 0)
-      m_list_last_ptr = 0;
+  lb =  m_buffer_list.dequeue ();
+  if (lb != NULL) {
     m_size--;
+    ink_assert(m_size >= 0);
+//      hrtime_t t = gethrtime();
+//      printf("%lld removed buffer %p from queue %p, size = %d\n", t, lb,
+//           this, m_size);
   }
-  ink_assert(m_size >= 0);
   ink_mutex_release(&m_mutex);
   return lb;
 }

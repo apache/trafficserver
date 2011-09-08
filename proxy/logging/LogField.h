@@ -100,6 +100,7 @@ public:
   unsigned marshal_agg(char *buf);
   unsigned unmarshal(char **buf, char *dest, int len);
   void display(FILE * fd = stdout);
+  bool operator==(LogField & rhs);
 
   char *name()
   {

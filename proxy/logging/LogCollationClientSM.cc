@@ -693,9 +693,9 @@ LogCollationClientSM::client_send(int event, VIO * vio)
 #endif // defined(LOG_BUFFER_TRACKING)
 
     // done with the buffer, delete it
+    Debug("log-coll", "[%d]client::client_send - m_buffer_in_iocore[%p] to delete_list", m_id, m_buffer_in_iocore);
     delete m_buffer_in_iocore;
     m_buffer_in_iocore = NULL;
-    Debug("log-coll", "[%d]client::client_send - m_buffer_in_iocore to delete_list", m_id);
 
     // switch back to client_send
     return client_send(LOG_COLL_EVENT_SWITCH, NULL);

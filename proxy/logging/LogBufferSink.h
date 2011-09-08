@@ -35,7 +35,7 @@ the network
 class LogBufferSink
 {
 public:
-  virtual int write(LogBuffer * buffer, size_t * to_disk, size_t * to_net, size_t * to_pipe) = 0;
+  virtual int write(LogBuffer * buffer) = 0;
     virtual ~ LogBufferSink()
   {
   };

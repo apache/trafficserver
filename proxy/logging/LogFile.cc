@@ -96,17 +96,6 @@ LogFile::LogFile(const char *name, const char *header, LogFileFormat format,
     m_max_line_size(max_line_size),
     m_overspill_report_count(overspill_report_count)
 {
-  init();
-  m_ascii_buffer_size = (ascii_buffer_size < max_line_size ? max_line_size : ascii_buffer_size);
-  m_ascii_buffer = NEW(new char[m_ascii_buffer_size]);
-  m_overspill_buffer = NEW(new char[m_max_line_size]);
-
-  Debug("log-file", "exiting LogFile constructor, m_name=%s, this=%p", m_name, this);
-}
-
-void
-LogFile::init()
-{
   delete m_meta_info;
   m_meta_info = NULL;
   m_overspill_bytes = 0;
@@ -117,11 +106,43 @@ LogFile::init()
   m_end_time = 0L;
   m_bytes_written = 0;
   m_size_bytes = 0;
-  m_has_size_limit = false;
-  m_size_limit_bytes = 0;
-  m_filesystem_checks_done = false;
+  m_ascii_buffer_size = (ascii_buffer_size < max_line_size ? max_line_size : ascii_buffer_size);
+  m_ascii_buffer = NEW(new char[m_ascii_buffer_size]);
+  m_overspill_buffer = NEW(new char[m_max_line_size]);
+
+  Debug("log-file", "exiting LogFile constructor, m_name=%s, this=%p", m_name, this);
 }
 
+/*-------------------------------------------------------------------------
+  LogFile::LogFile
+
+  This (copy) contructor builds a LogFile object from another LogFile object.
+  -------------------------------------------------------------------------*/
+
+LogFile::LogFile (const LogFile& copy)
+  : m_file_format (copy.m_file_format),
+    m_name  (ats_strdup (copy.m_name)),
+    m_header  (ats_strdup (copy.m_header)),
+    m_signature (copy.m_signature),
+    m_meta_info (NULL),
+    m_ascii_buffer_size (copy.m_ascii_buffer_size),
+    m_max_line_size (copy.m_max_line_size),
+    m_overspill_bytes (0),
+    m_overspill_written (0),
+    m_attempts_to_write_overspill (0),
+    m_overspill_report_count (copy.m_overspill_report_count),
+    m_fd (-1),
+    m_start_time (0L),
+    m_end_time (0L),
+    m_bytes_written (0)
+{
+    ink_debug_assert(m_ascii_buffer_size >= m_max_line_size);
+    m_ascii_buffer = NEW (new char[m_ascii_buffer_size]);
+    m_overspill_buffer = NEW (new char[m_max_line_size]);
+
+    Debug("log-file", "exiting LogFile copy constructor, m_name=%s, this=%p",
+          m_name, this);
+}
 /*-------------------------------------------------------------------------
   LogFile::~LogFile
   -------------------------------------------------------------------------*/
@@ -297,7 +318,6 @@ LogFile::close_file()
     // are running) and these won't be visible in Traffic Manager
     LOG_SUM_GLOBAL_DYN_STAT(log_stat_log_files_open_stat, -1);
   }
-  m_filesystem_checks_done = false;
 }
 
 /*-------------------------------------------------------------------------
@@ -456,6 +476,7 @@ LogFile::roll(long interval_start, long interval_end)
   // reset m_start_time
   //
   m_start_time = 0;
+  m_bytes_written = 0;
 
   Status("The logfile %s was rolled to %s.", m_name, roll_name);
 
@@ -468,16 +489,16 @@ LogFile::roll(long interval_start, long interval_end)
   Write the given LogBuffer data onto this file
   -------------------------------------------------------------------------*/
 int
-LogFile::write(LogBuffer * lb, size_t * to_disk, size_t * to_net, size_t * to_pipe)
+LogFile::write(LogBuffer * lb)
 {
-  NOWARN_UNUSED(to_net);
   if (lb == NULL) {
     Note("Cannot write LogBuffer to LogFile %s; LogBuffer is NULL", m_name);
     return -1;
   }
   LogBufferHeader *buffer_header = lb->header();
   if (buffer_header == NULL) {
-    Note("Cannot write LogBuffer to LogFile %s; LogBufferHeader is NULL", m_name);
+    Note("Cannot write LogBuffer to LogFile %s; LogBufferHeader is NULL",
+        m_name);
     return -1;
   }
   if (buffer_header->entry_count == 0) {
@@ -485,13 +506,7 @@ LogFile::write(LogBuffer * lb, size_t * to_disk, size_t * to_net, size_t * to_pi
     Note("LogBuffer with 0 entries for LogFile %s, nothing to write", m_name);
     return 0;
   }
-  // check if size limit has been exceeded and roll file if that is the case
 
-  if (size_limit_exceeded()) {
-    Warning("File %s will be rolled because its size is close to "
-            "or exceeds the operating system filesize limit", get_name());
-    roll(0, LogUtils::timestamp());
-  }
   // make sure we're open & ready to write
 
   check_fd();
@@ -509,30 +524,19 @@ LogFile::write(LogBuffer * lb, size_t * to_disk, size_t * to_net, size_t * to_pi
     // don't change between buffers), it's not worth trying to separate
     // out the buffer-dependent data from the buffer-independent data.
     //
-    if (!Log::config->logging_space_exhausted) {
-      bytes = writeln((char *) buffer_header, buffer_header->byte_count, m_fd, m_name);
-      if (bytes > 0 && to_disk) {
-        *to_disk += bytes;
-      }
-    }
-  } else if (m_file_format == ASCII_LOG) {
+    bytes = buffer_header->byte_count;
+    writeln((char*) buffer_header, bytes, m_fd, m_name);
+  }
+  else if (m_file_format == ASCII_LOG || m_file_format == ASCII_PIPE) {
     bytes = write_ascii_logbuffer3(buffer_header);
-    if (bytes > 0 && to_disk) {
-      *to_disk += bytes;
-    }
 #if defined(LOG_BUFFER_TRACKING)
-    Debug("log-buftrak", "[%d]LogFile::write - ascii write complete", buffer_header->id);
+    Debug("log-buftrak", "[%d]LogFile::write - ascii write complete",
+        buffer_header->id);
 #endif // defined(LOG_BUFFER_TRACKING)
-  } else if (m_file_format == ASCII_PIPE) {
-    bytes = write_ascii_logbuffer3(buffer_header);
-    if (bytes > 0 && to_pipe) {
-      *to_pipe += bytes;
-    }
-#if defined(LOG_BUFFER_TRACKING)
-    Debug("log-buftrak", "[%d]LogFile::write - ascii pipe write complete", buffer_header->id);
-#endif // defined(LOG_BUFFER_TRACKING)
-  } else {
-    Error("Cannot write LogBuffer to LogFile %s; invalid file format: %d", m_name, m_file_format);
+  }
+  else {
+    Note("Cannot write LogBuffer to LogFile %s; invalid file format: %d",
+        m_name, m_file_format);
     return -1;
   }
 
@@ -545,14 +549,7 @@ LogFile::write(LogBuffer * lb, size_t * to_disk, size_t * to_net, size_t * to_pi
   if (!m_start_time)
     m_start_time = buffer_header->low_timestamp;
   m_end_time = buffer_header->high_timestamp;
-
-  // update bytes written and file size (if not a pipe)
-  //
   m_bytes_written += bytes;
-  if (m_file_format != ASCII_PIPE) {
-    m_size_bytes += bytes;
-  }
-
   return bytes;
 }
 
@@ -828,36 +825,6 @@ void
 LogFile::display(FILE * fd)
 {
   fprintf(fd, "Logfile: %s, %s\n", get_name(), (is_open())? "file is open" : "file is not open");
-}
-
-int
-LogFile::do_filesystem_checks()
-{
-  int ret_val = 0;
-
-  int e = LogUtils::file_is_writeable(m_name, &m_size_bytes,
-                                      &m_has_size_limit,
-                                      &m_size_limit_bytes);
-
-  if (e == 1) {
-    Error("Log file %s is not a regular file or pipe", m_name);
-    ret_val = -1;
-  } else if (e == -1) {
-    Error("Filesystem checks for log file %s failed: %s", m_name, strerror(errno));
-    ret_val = -1;
-  } else if (m_has_size_limit) {
-    uint64_t safe_threshold =
-      (m_file_format == ASCII_PIPE ? 0 : Log::config->log_buffer_size * FILESIZE_SAFE_THRESHOLD_FACTOR);
-    if (safe_threshold > m_size_limit_bytes) {
-      Error("Filesize limit is too low for log file %s", m_name);
-      ret_val = -1;
-    } else {
-      m_size_limit_bytes = m_size_limit_bytes - safe_threshold;
-    }
-  }
-
-  m_filesystem_checks_done = true;
-  return ret_val;
 }
 
 /***************************************************************************

@@ -124,8 +124,6 @@ public:
 
 class LogFile:public LogBufferSink
 {
-private:
-  LogFile(const LogFile &);
 public:
   LogFile(const char *name, const char *header, LogFileFormat format, uint64_t signature,
 #ifndef TS_MICRO
@@ -134,7 +132,7 @@ public:
           size_t ascii_buffer_size = 1024, size_t max_line_size = 1024,
 #endif
           size_t overspill_report_count = 1000);
-
+  LogFile(const LogFile &);
   ~LogFile();
 
   enum
@@ -147,7 +145,7 @@ public:
     LOG_FILE_FILESYSTEM_CHECKS_FAILED
   };
 
-  int write(LogBuffer * lb, size_t * to_disk = 0, size_t * to_net = 0, size_t * to_pipe = 0);
+  int write(LogBuffer * lb);
   int roll(long interval_start, long interval_end);
 
   char *get_name() const { return m_name; }
@@ -168,19 +166,10 @@ public:
   void display(FILE * fd = stdout);
   int open_file();
 
-  bool size_limit_exceeded() {
-    if (!m_filesystem_checks_done) {
-      do_filesystem_checks();
-    }
-    return (m_has_size_limit ? (uint64_t) m_size_bytes > m_size_limit_bytes : false);
-  }
-
-  int do_filesystem_checks();
-
-  off_t get_size_bytes() const { return m_size_bytes; };
+  off_t get_size_bytes() const { return m_file_format != ASCII_PIPE? m_bytes_written : 0; };
+  int do_filesystem_checks() { return 0; }; // TODO: this need to be tidy up when to redo the file checking
 
 private:
-  void init();
   bool is_open()
   {
     return (m_fd >= 0);
@@ -218,9 +207,6 @@ private:
   long m_end_time;
   uint64_t m_bytes_written;
   off_t m_size_bytes;           // current size of file in bytes
-  bool m_has_size_limit;        // true if file has a size limit
-  uint64_t m_size_limit_bytes;    // maximum file size in bytes
-  bool m_filesystem_checks_done;        // file system checks have been done
 
 public:
   Link<LogFile> link;

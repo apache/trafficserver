@@ -314,6 +314,21 @@ LogField::display(FILE *fd)
 }
 
 /*-------------------------------------------------------------------------
+  LogField::operator==
+
+  This operator does only care of the name and m_symbol, may need
+  do check on others layter.
+  -------------------------------------------------------------------------*/
+bool
+LogField::operator==(LogField & rhs) {
+  if (strcmp(name(), rhs.name()) || strcmp(symbol(), rhs.symbol())) {
+    return false;
+  } else {
+    return true;
+  }
+}
+
+/*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 void
 LogField::set_aggregate_op(LogField::Aggregate agg_op)

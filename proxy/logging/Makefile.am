@@ -70,7 +70,6 @@ liblogging_a_SOURCES = \
   LogUtils.h
 
 liblogcollation_a_SOURCES = \
-  LogConfigCollation.cc \
   LogCollationAccept.cc \
   LogCollationAccept.h \
   LogCollationBase.h \
