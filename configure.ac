@@ -766,10 +766,6 @@ AC_CHECK_LIB([iconv],[libiconv_open],[AC_SUBST([LIBICONV],["-liconv"])])
 AC_CHECK_LIB([ev],[ev_sleep],[AC_SUBST([LIBEV],["-lev"])])
 
 #
-# Check for tcmalloc
-TS_CHECK_TCMALLOC
-
-#
 # Check for SSL presence and usability
 TS_CHECK_CRYPTO
 if test "x${enable_crypto}" != "xyes"; then
@@ -965,6 +961,10 @@ AS_IF([test "x$enable_hwloc" = "xyes"],
   )
 )
 AC_SUBST(use_hwloc)
+
+#
+# Check for tcmalloc
+TS_CHECK_TCMALLOC
 
 # -----------------------------------------------------------------------------
 # 5. CHECK FOR HEADER FILES
