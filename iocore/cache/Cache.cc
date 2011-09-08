@@ -584,8 +584,12 @@ CacheProcessor::start_internal(int flags)
         gdisks[gndisks]->open(path, blocks, skip, sector_size, fd, clear);
         gndisks++;
       }
-    } else
-      Warning("cache unable to open '%s': %s", path, strerror(errno));
+    } else {
+      if (errno == EINVAL)
+        Warning("cache unable to open '%s': It must be placed on a file system that supports direct I/O.", path);
+      else
+        Warning("cache unable to open '%s': %s", path, strerror(errno));
+    }
   }
 
   if (gndisks == 0) {
