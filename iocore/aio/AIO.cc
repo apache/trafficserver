@@ -528,7 +528,9 @@ aio_thread_main(void *arg)
         op->thread->schedule_imm_signal(op);
       ink_mutex_acquire(&my_aio_req->aio_mutex);
     } while (1);
-    ink_cond_wait(&my_aio_req->aio_cond, &my_aio_req->aio_mutex);
+    timespec ten_msec_timespec = ink_based_hrtime_to_timespec(ink_get_hrtime() + HRTIME_MSECONDS(10));
+    ink_cond_timedwait(&my_aio_req->aio_cond, &my_aio_req->aio_mutex,
+                       &ten_msec_timespec);
   }
   return 0;
 }
