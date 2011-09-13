@@ -128,6 +128,15 @@ Connection::close()
   }
 }
 
+static int
+add_http_filter(int fd) {
+  int err = -1;
+#if defined(SOL_FILTER) && defined(FIL_ATTACH)
+  err = setsockopt(fd, SOL_FILTER, FIL_ATTACH, "httpf", 6);
+#endif
+  return err;
+}
+
 int
 Server::setup_fd_for_listen(
   bool non_blocking,
@@ -135,7 +144,12 @@ Server::setup_fd_for_listen(
   int send_bufsize,
   bool transparent
 ) {
+
   int res = 0;
+
+  if (http_accept_filter)
+    add_http_filter(fd);
+
 #ifdef SEND_BUF_SIZE
   {
     int send_buf_size = SEND_BUF_SIZE;
@@ -258,6 +272,9 @@ Server::listen(bool non_blocking, int recv_bufsize, int send_bufsize, bool trans
   if (res < 0)
     return res;
   fd = res;
+
+  if (http_accept_filter)
+    add_http_filter(fd);
 
 #ifdef SEND_BUF_SIZE
   {

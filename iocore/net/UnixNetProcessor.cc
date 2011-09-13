@@ -135,6 +135,12 @@ UnixNetProcessor::accept_internal(
     );
   }
 
+  int should_filter_int = 0;
+  na->server.http_accept_filter = false;
+  IOCORE_ReadConfigInteger(should_filter_int, "proxy.config.net.defer_accept");
+  if (should_filter_int > 0 && opt.etype == ET_NET)
+    na->server.http_accept_filter = true;
+
   na->action_ = NEW(new NetAcceptAction());
   *na->action_ = cont;
   na->action_->server = &na->server;
@@ -169,10 +175,8 @@ UnixNetProcessor::accept_internal(
 #ifdef TCP_DEFER_ACCEPT
   // set tcp defer accept timeout if it is configured, this will not trigger an accept until there is
   // data on the socket ready to be read
-  int accept_timeout = 0;
-  IOCORE_ReadConfigInteger(accept_timeout, "proxy.config.net.defer_accept");
-  if (accept_timeout > 0) {
-    setsockopt(na->server.fd, IPPROTO_TCP, TCP_DEFER_ACCEPT, &accept_timeout, sizeof(int));
+  if (should_filter_int > 0) {
+    setsockopt(na->server.fd, IPPROTO_TCP, TCP_DEFER_ACCEPT, &should_filter_int, sizeof(int));
   }
 #endif
 #ifdef TCP_INIT_CWND

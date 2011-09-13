@@ -208,6 +208,9 @@ struct Server: public Connection
   /// If set, the related incoming connect was transparent.
   bool f_inbound_transparent;
 
+  /// If set, a kernel HTTP accept filter
+  bool http_accept_filter;
+
   //
   // Use this call for the main proxy accept
   //
