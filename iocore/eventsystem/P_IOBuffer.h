@@ -291,8 +291,7 @@ IOBufferData::alloc(int64_t size_index, AllocType type)
       _data = (char *) ioBufAllocator[size_index].alloc_void();
     // coverity[dead_error_condition]
     else if (BUFFER_SIZE_INDEX_IS_XMALLOCED(size_index))
-      // coverity[dead_error_line]
-      _data = (char *) valloc(index_to_buffer_size(size_index));
+      _data = (char *)ats_memalign(sysconf(_SC_PAGESIZE), index_to_buffer_size(size_index));
     break;
   default:
   case DEFAULT_ALLOC:

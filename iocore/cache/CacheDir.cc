@@ -941,7 +941,7 @@ sync_cache_dir_on_shutdown(void)
     if (buflen < dirlen) {
       if (buf)
         ats_memalign_free(buf);
-      buf = (char *)ats_memalign(sysconf(_SC_PAGESIZE), dirlen);       // buf = (char*) valloc (dirlen);
+      buf = (char *)ats_memalign(sysconf(_SC_PAGESIZE), dirlen);
       buflen = dirlen;
     }
 

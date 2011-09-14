@@ -250,7 +250,6 @@ ink_freelist_new(InkFreeList * f)
 #endif /* MEMPROTECT */
 
       void *newp = NULL;
-#ifndef NO_MEMALIGN
 #ifdef DEBUG
       char *oldsbrk = (char *) sbrk(0), *newsbrk = NULL;
 #endif
@@ -266,21 +265,6 @@ ink_freelist_new(InkFreeList * f)
          newsbrk - oldsbrk, fastmemtotal); */
 #endif
       SET_FREELIST_POINTER_VERSION(item, newp, 0);
-#else
-      uintptr_t add;
-      uintptr_t mask;
-      if (f->alignment) {
-        add = f->alignment - 1;
-        mask = ~(uintptr_t) add;
-      } else {
-        add = 0;
-        mask = ~0;
-      }
-      newp = ats_malloc(f->chunk_size * type_size + add);
-      fl_memadd(f->chunk_size * type_size + add);
-      newp = (void *) ((((uintptr_t) newp) + add) & mask);
-      SET_FREELIST_POINTER_VERSION(item, newp, 0);
-#endif
 
 #if !defined(INK_USE_MUTEX_FOR_FREELISTS)
       ink_atomic_increment((int *) &f->allocated, f->chunk_size);

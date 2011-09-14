@@ -130,9 +130,10 @@ struct VolInitInfo
   VolInitInfo()
   {
     recover_pos = 0;
-    if ((vol_h_f = (char *) valloc(4 * STORE_BLOCK_SIZE)) != NULL)
-      memset(vol_h_f, 0, 4 * STORE_BLOCK_SIZE);
+    vol_h_f = (char *)ats_memalign(sysconf(_SC_PAGESIZE), 4 * STORE_BLOCK_SIZE);
+    memset(vol_h_f, 0, 4 * STORE_BLOCK_SIZE);
   }
+
   ~VolInitInfo()
   {
     for (int i = 0; i < 4; i++) {
@@ -1061,21 +1062,7 @@ Vol::init(char *s, off_t blocks, off_t dir_skip, bool clear)
   evacuate = (DLL<EvacuationBlock> *)ats_malloc(evac_len);
   memset(evacuate, 0, evac_len);
 
-#if !defined (_WIN32)
-  raw_dir = (char *) valloc(vol_dirlen(this));
-#else
-  /* the directory should be page aligned for raw disk transfers.
-     WIN32 does not support valloc
-     or memalign, so we need to allocate extra space and then align the
-     pointer ourselves.
-     Don't need to keep track of the pointer to the original memory since
-     we never free this */
-  size_t alignment = getpagesize();
-  size_t mem_to_alloc = vol_dirlen(this) + (alignment - 1);
-  raw_dir = (char *)ats_malloc(mem_to_alloc);
-  raw_dir = (char *) align_pointer_forward(raw_dir, alignment);
-#endif
-
+  raw_dir = (char *)ats_memalign(sysconf(_SC_PAGESIZE), vol_dirlen(this));
   dir = (Dir *) (raw_dir + vol_headerlen(this));
   header = (VolHeaderFooter *) raw_dir;
   footer = (VolHeaderFooter *) (raw_dir + vol_dirlen(this) - ROUND_TO_STORE_BLOCK(sizeof(VolHeaderFooter)));
@@ -1225,12 +1212,7 @@ Vol::handle_recover_from_data(int event, void *data)
       recover_wrapped = 1;
       recover_pos = start;
     }
-#if defined(_WIN32)
-    io.aiocb.aio_buf = (char *)ats_malloc(RECOVERY_SIZE);
-#else
-    io.aiocb.aio_buf = (char *) valloc(RECOVERY_SIZE);
-#endif
-    io.aiocb.aio_nbytes = RECOVERY_SIZE;
+    io.aiocb.aio_buf = (char *)ats_memalign(sysconf(_SC_PAGESIZE), RECOVERY_SIZE);
     if ((off_t)(recover_pos + io.aiocb.aio_nbytes) > (off_t)(skip + len))
       io.aiocb.aio_nbytes = (skip + len) - recover_pos;
   } else if (event == AIO_EVENT_DONE) {

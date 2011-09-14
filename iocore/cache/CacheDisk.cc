@@ -55,12 +55,7 @@ CacheDisk::open(char *s, off_t blocks, off_t askip, int ahw_sector_size, int fil
   start = skip + header_len;
   num_usable_blocks = (off_t(len * STORE_BLOCK_SIZE) - (start - askip)) >> STORE_BLOCK_SHIFT;
 
-#if defined(_WIN32)
-  header = (DiskHeader *)ats_malloc(header_len);
-#else
-  header = (DiskHeader *) valloc(header_len);
-#endif
-
+  header = (DiskHeader *)ats_memalign(sysconf(_SC_PAGESIZE), header_len);
   memset(header, 0, header_len);
   if (clear) {
     SET_HANDLER(&CacheDisk::clearDone);

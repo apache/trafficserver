@@ -82,19 +82,11 @@ ats_realloc(void *ptr, size_t size)
   return newptr;
 }                               /* End ats_realloc */
 
-void
-ats_memalign_free(void *ptr)
-{
-  if (likely(ptr)) {
-    ats_free(ptr);
-  }
-}
-
+// TODO: For Win32 platforms, we need to figure out what to do with memalign.
+// The older code had ifdef's around such calls, turning them into ats_malloc().
 void *
 ats_memalign(size_t alignment, size_t size)
 {
-#ifndef NO_MEMALIGN
-
   void *ptr;
 
 #if TS_HAS_POSIX_MEMALIGN
@@ -102,6 +94,7 @@ ats_memalign(size_t alignment, size_t size)
     return ats_malloc(size);
 
   int retcode = posix_memalign(&ptr, alignment, size);
+
   if (unlikely(retcode)) {
     if (retcode == EINVAL) {
       ink_fatal(1, "ats_memalign: couldn't allocate %d bytes at alignment %d - invalid alignment parameter",
@@ -121,38 +114,6 @@ ats_memalign(size_t alignment, size_t size)
   }
 #endif
   return ptr;
-#else
-#if defined(freebsd) || defined(darwin)
-  /*
-   * DEC malloc calims to align for "any allocatable type",
-   * and the following code checks that.
-   */
-  switch (alignment) {
-  case 1:
-  case 2:
-  case 4:
-  case 8:
-  case 16:
-    return ats_malloc(size);
-  case 32:
-  case 64:
-  case 128:
-  case 256:
-  case 512:
-  case 1024:
-  case 2048:
-  case 4096:
-  case 8192:
-    return valloc(size);
-  default:
-    abort();
-    break;
-  }
-# else
-#       error "Need a memalign"
-# endif
-#endif /* #ifndef NO_MEMALIGN */
-  return NULL;
 }                               /* End ats_memalign */
 
 void
@@ -169,3 +130,11 @@ ats_free_null(void *ptr)
     free(ptr);
   return NULL;
 }                               /* End ats_free_null */
+
+void
+ats_memalign_free(void *ptr)
+{
+  if (likely(ptr)) {
+    free(ptr);
+  }
+}

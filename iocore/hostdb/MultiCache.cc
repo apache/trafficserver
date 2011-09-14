@@ -385,7 +385,7 @@ MultiCacheBase::mmap_data(bool private_flag, bool zero_fill)
   // open files
   //
   if (!store || !store->n_disks)
-    goto Lvalloc;
+    goto Lalloc;
   for (i = 0; i < store->n_disks; i++) {
     Span *ds = store->disk[i];
     for (int j = 0; j < store->disk[i]->paths(); j++) {
@@ -400,7 +400,7 @@ MultiCacheBase::mmap_data(bool private_flag, bool zero_fill)
       if (fds[n_fds] < 0) {
         if (!zero_fill) {
           Warning("unable to open file '%s': %d, %s", path, errno, strerror(errno));
-          goto Lvalloc;
+          goto Lalloc;
         }
         fds[n_fds] = 0;
       }
@@ -408,7 +408,7 @@ MultiCacheBase::mmap_data(bool private_flag, bool zero_fill)
         if (zorch_file(path, fds[n_fds], (int64_t) d->blocks * (int64_t) STORE_BLOCK_SIZE, 0)) {
           Warning("unable to set file size '%s' to %" PRId64 ": %d, %s",
                   (int64_t) d->blocks * STORE_BLOCK_SIZE, path, errno, strerror(errno));
-          goto Lvalloc;
+          goto Lalloc;
         }
       }
       n_fds++;
@@ -510,12 +510,13 @@ MultiCacheBase::mmap_data(bool private_flag, bool zero_fill)
     if (fds[i] >= 0)
       ink_assert(!socketManager.close(fds[i]));
   return 0;
-Lvalloc:
+Lalloc:
   {
     if (data)
       free(data);
     char *cur = 0;
-    data = (char *) valloc(totalsize);
+
+    data = (char *)ats_memalign(sysconf(_SC_PAGESIZE), totalsize);
     cur = data + STORE_BLOCK_SIZE * blocks_in_level(0);
     if (levels > 1)
       cur = data + STORE_BLOCK_SIZE * blocks_in_level(1);
