@@ -1588,7 +1588,7 @@ UrlRewrite::load_remap_plugin(char *argv[], int argc, url_mapping *mp, char *err
   TSRemapInterface ri;
   struct stat stat_buf;
   remap_plugin_info *pi;
-  char *c, *err, tmpbuf[2048], *parv[1024], default_path[PATH_MAX];
+  char *c, *err, tmpbuf[2048], *parv[1024], default_path[PATH_NAME_MAX];
   char *new_argv[1024];
   int idx = 0, retcode = 0;
   int parc = 0;
@@ -1626,12 +1626,12 @@ UrlRewrite::load_remap_plugin(char *argv[], int argc, url_mapping *mp, char *err
     const char *plugin_default_path = TSPluginDirGet();
 
     // Try with the plugin path instead
-    if (strlen(c) + strlen(plugin_default_path) > (PATH_MAX - 1)) {
+    if (strlen(c) + strlen(plugin_default_path) > (PATH_NAME_MAX - 1)) {
       Debug("remap_plugin", "way too large a path specified for remap plugin");
       return -3;
     }
 
-    snprintf(default_path, PATH_MAX, "%s/%s", plugin_default_path, c);
+    snprintf(default_path, PATH_NAME_MAX, "%s/%s", plugin_default_path, c);
     Debug("remap_plugin", "attempting to stat default plugin path: %s", default_path);
 
     if (stat(default_path, &stat_buf) == 0) {

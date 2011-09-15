@@ -1651,7 +1651,6 @@ REGRESSION_TEST(SDK_API_TSIOBufferReaderClone) (RegressionTest * test, int atype
   *pstatus = REGRESSION_TEST_INPROGRESS;
 
   TSIOBuffer bufp = TSIOBufferSizedCreate(TS_IOBUFFER_SIZE_INDEX_4K);
-
   TSIOBufferReader readerp = TSIOBufferReaderAlloc(bufp);
 
   TSIOBufferProduce(bufp, 10);
@@ -5470,8 +5469,8 @@ REGRESSION_TEST(SDK_API_TSTextLog) (RegressionTest * test, int atype, int *pstat
   TSTextLogObject log;
   TSReturnCode retVal;
 
-  char logname[128];
-  char fullpath_logname[128];
+  char logname[PATH_NAME_MAX];
+  char fullpath_logname[PATH_NAME_MAX];
 
   /* Generate a random log file name, so if we run the test several times, we won't use the
      same log file name. */

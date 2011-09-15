@@ -29,7 +29,6 @@
 #define TS_INLINE inline
 #endif
 
-#define PATH_NAME_MAX 511
 #include "libts.h"
 #include "P_EventSystem.h"
 #include "P_AIO.h"

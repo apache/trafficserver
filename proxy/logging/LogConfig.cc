@@ -1,6 +1,6 @@
 /** @file
 
-  A brief file description
+  This file implements the LogConfig object.
 
   @section license License
 
@@ -21,12 +21,6 @@
   limitations under the License.
  */
 
-/***************************************************************************
- LogConfig.cc
-
- This file implements the LogConfig object.
-
- ***************************************************************************/
 #include "libts.h"
 #include "I_Layout.h"
 
@@ -970,9 +964,9 @@ LogConfig::create_pre_defined_objects_with_filter(const PreDefinedFormatInfoList
 
   for (pdi = pre_def_info_list.head; pdi != NULL; pdi = (pdi->link).next) {
     char *obj_fname;
-    char obj_filt_fname[PATH_MAX];
+    char obj_filt_fname[PATH_NAME_MAX];
     if (filt_name) {
-      ink_string_concatenate_strings_n(obj_filt_fname, PATH_MAX, pdi->filename, "-", filt_name, NULL);
+      ink_string_concatenate_strings_n(obj_filt_fname, PATH_NAME_MAX, pdi->filename, "-", filt_name, NULL);
       obj_fname = obj_filt_fname;
     } else {
       obj_fname = pdi->filename;
@@ -982,7 +976,7 @@ LogConfig::create_pre_defined_objects_with_filter(const PreDefinedFormatInfoList
       ink_string_append(obj_filt_fname,
                         (char *) (pdi->is_ascii ?
                                   ASCII_LOG_OBJECT_FILENAME_EXTENSION :
-                                  BINARY_LOG_OBJECT_FILENAME_EXTENSION), PATH_MAX);
+                                  BINARY_LOG_OBJECT_FILENAME_EXTENSION), PATH_NAME_MAX);
     }
     // create object with filters
     //
@@ -1755,17 +1749,17 @@ static char xml_config_buffer[] = "<LogFilter> \
 void
 LogConfig::read_xml_log_config(int from_memory)
 {
-  char config_path[PATH_MAX];
+  char config_path[PATH_NAME_MAX];
 
   if (from_memory) {
-    snprintf(config_path, PATH_MAX, "%s", "from_memory");
+    snprintf(config_path, PATH_NAME_MAX, "%s", "from_memory");
     Debug("log", "Reading from memory %s", config_path);
   } else {
     if (xml_config_file == NULL) {
       Note("No log config file to read");
       return;
     }
-    snprintf(config_path, PATH_MAX, "%s/%s", system_config_directory, xml_config_file);
+    snprintf(config_path, PATH_NAME_MAX, "%s/%s", system_config_directory, xml_config_file);
   }
 
 
@@ -2322,11 +2316,11 @@ LogConfig::read_xml_log_config(int from_memory)
 char **
 LogConfig::read_log_hosts_file(size_t * num_hosts)
 {
-  char config_path[PATH_MAX];
+  char config_path[PATH_NAME_MAX];
   char line[LOG_MAX_FORMAT_LINE];
   char **hosts = NULL;
 
-  snprintf(config_path, PATH_MAX, "%s/%s", system_config_directory, hosts_config_file);
+  snprintf(config_path, PATH_NAME_MAX, "%s/%s", system_config_directory, hosts_config_file);
 
   Debug("log-config", "Reading log hosts from %s", config_path);
 

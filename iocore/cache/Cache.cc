@@ -530,7 +530,7 @@ CacheProcessor::start_internal(int flags)
   config_volumes.read_config_file();
   for (i = 0; i < theCacheStore.n_disks; i++) {
     sd = theCacheStore.disk[i];
-    char path[PATH_MAX];
+    char path[PATH_NAME_MAX];
     int opts = O_RDWR;
     ink_strlcpy(path, sd->pathname, sizeof(path));
     if (!sd->file_pathname) {

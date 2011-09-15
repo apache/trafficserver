@@ -1,6 +1,7 @@
 /** @file
 
-  A brief file description
+  Class definition for virtual ip cluster mgmt. Maintains the virtual
+  map for the cluster and provides support for mapping operations.
 
   @section license License
 
@@ -20,17 +21,6 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-
-/*
- * VMap.h
- *   Class definition for virtual ip cluster mgmt. Maintains the virtual
- * map for the cluster and provides support for mapping operations.
- *
- * $Date: 2003-06-01 18:37:37 $
- *
- *
- */
-
 #ifndef _VMAP_H
 #define _VMAP_H
 
@@ -158,8 +148,8 @@ public:
   PMIB_IPADDRTABLE GetMyAddrTable(BOOL sort);
   ULONG SearchAddrinMyAddrTable(PMIB_IPADDRTABLE AddrTable, IPAddr item);
 #else
-  char vip_conf[PATH_MAX];
-  char absolute_vipconf_binary[PATH_MAX];
+  char vip_conf[PATH_NAME_MAX];
+  char absolute_vipconf_binary[PATH_NAME_MAX];
 #endif
 
   int enabled;

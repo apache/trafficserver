@@ -1,6 +1,6 @@
 /** @file
 
-  A brief file description
+  String and text processing routines for libts
 
   @section license License
 
@@ -20,14 +20,6 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-
-/****************************************************************************
-
-  ink_string.c
-
-  String and text processing routines for libts
-
- ****************************************************************************/
 
 #include "libts.h"   /* MAGIC_EDITING_TAG */
 

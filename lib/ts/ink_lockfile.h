@@ -1,6 +1,6 @@
 /** @file
 
-  A brief file description
+  Definitions for the Lockfile class.
 
   @section license License
 
@@ -19,16 +19,6 @@
   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   See the License for the specific language governing permissions and
   limitations under the License.
- */
-
-/**************************************
- *
- * ink_lockfile.h
- *   Definitions for the Lockfile class.
- *
- * $Date: 2006-03-31 04:25:35 $
- *
- *
  */
 
 #ifndef __INK_LOCKFILE_H__
@@ -110,7 +100,7 @@ public:
   void KillGroup(int sig, int initial_sig = 0, const char *pname = NULL);
 
 private:
-  char fname[PATH_MAX];
+  char fname[PATH_NAME_MAX];
   int fd;
 };
 

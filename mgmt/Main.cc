@@ -1,6 +1,6 @@
 /** @file
 
-  A brief file description
+  Entry point to the traffic manager.
 
   @section license License
 
@@ -19,15 +19,6 @@
   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   See the License for the specific language governing permissions and
   limitations under the License.
- */
-
-/*
- *
- * Main.cc
- * - Entry point to the traffic manager.
- * - Splitted off from LocalManager.cc on 10/23/98.
- *
- *
  */
 
 #include "ink_config.h"
@@ -130,14 +121,14 @@ void SigChldHandler(int sig);
 void
 check_lockfile()
 {
-  char lockfile[PATH_MAX];
+  char lockfile[PATH_NAME_MAX];
   int err;
   pid_t holding_pid;
 
   //////////////////////////////////////
   // test for presence of server lock //
   //////////////////////////////////////
-  Layout::relative_to(lockfile, PATH_MAX, Layout::get()->runtimedir, SERVER_LOCK);
+  Layout::relative_to(lockfile, PATH_NAME_MAX, Layout::get()->runtimedir, SERVER_LOCK);
   Lockfile server_lockfile(lockfile);
   err = server_lockfile.Open(&holding_pid);
   if (err == 1) {
@@ -163,7 +154,7 @@ check_lockfile()
   ///////////////////////////////////////////
   // try to get the exclusive manager lock //
   ///////////////////////////////////////////
-  Layout::relative_to(lockfile, PATH_MAX, Layout::get()->runtimedir, MANAGER_LOCK);
+  Layout::relative_to(lockfile, PATH_NAME_MAX, Layout::get()->runtimedir, MANAGER_LOCK);
   Lockfile manager_lockfile(lockfile);
   err = manager_lockfile.Get(&holding_pid);
   if (err != 1) {

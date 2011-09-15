@@ -1,6 +1,6 @@
 /** @file
 
-  A brief file description
+  Proxy Side Include plugin (PSI)
 
   @section license License
 

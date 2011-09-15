@@ -1,6 +1,6 @@
 /** @file
 
-  A brief file description
+  Main entry point for the traffic_cop application.
 
   @section license License
 
@@ -61,11 +61,11 @@ union semun
 static const char *root_dir;
 static const char *runtime_dir;
 static const char *config_dir;
-static char config_file[PATH_MAX];
+static char config_file[PATH_NAME_MAX];
 
-static char cop_lockfile[PATH_MAX];
-static char manager_lockfile[PATH_MAX];
-static char server_lockfile[PATH_MAX];
+static char cop_lockfile[PATH_NAME_MAX];
+static char manager_lockfile[PATH_NAME_MAX];
+static char server_lockfile[PATH_NAME_MAX];
 
 #if defined(linux)
 static bool check_memory_required = false;
@@ -74,7 +74,7 @@ static int check_memory_min_swapfree_kb = 10240;
 static int check_memory_min_memfree_kb = 10240;
 
 static int syslog_facility = LOG_DAEMON;
-static char syslog_fac_str[PATH_MAX] = "LOG_DAEMON";
+static char syslog_fac_str[PATH_NAME_MAX] = "LOG_DAEMON";
 
 static int killsig = SIGKILL;
 static int coresig = 0;
@@ -83,12 +83,12 @@ static char admin_user[256];
 static uid_t admin_uid;
 static gid_t admin_gid;
 static bool admin_user_p = false;
-static char manager_binary[PATH_MAX] = "traffic_manager";
-static char server_binary[PATH_MAX] = "traffic_server";
+static char manager_binary[PATH_NAME_MAX] = "traffic_manager";
+static char server_binary[PATH_NAME_MAX] = "traffic_server";
 static char manager_options[OPTIONS_LEN_MAX] = "";
 
-static char log_file[PATH_MAX] = "traffic.out";
-static char bin_path[PATH_MAX] = "bin";
+static char log_file[PATH_NAME_MAX] = "traffic.out";
+static char bin_path[PATH_NAME_MAX] = "bin";
 
 static int autoconf_port = 8083;
 static int rs_port = 8088;
@@ -629,8 +629,8 @@ read_config()
   FILE *fp;
   struct stat stat_buf;
   static time_t last_mod = 0;
-  char log_dir[PATH_MAX];
-  char log_filename[PATH_MAX];
+  char log_dir[PATH_NAME_MAX];
+  char log_filename[PATH_NAME_MAX];
   int tmp_int;
 
 #ifdef TRACE_LOG_COP
@@ -706,7 +706,7 @@ read_config()
 static void
 spawn_manager()
 {
-  char prog[PATH_MAX];
+  char prog[PATH_NAME_MAX];
   char *options[OPTIONS_MAX];
   char *last;
   char *tok;
@@ -768,7 +768,7 @@ spawn_manager()
   //  of the way (TSqa2232)
   // coverity[fs_check_call]
   if (access(log_file, W_OK) < 0 && errno == EACCES) {
-    char old_log_file[PATH_MAX];
+    char old_log_file[PATH_NAME_MAX];
     snprintf(old_log_file, sizeof(old_log_file), "%s.old", log_file);
     // coverity[toctou]
     rename(log_file, old_log_file);
@@ -1613,7 +1613,7 @@ check_memory()
 static int
 check_no_run()
 {
-  char path[PATH_MAX * 2];
+  char path[PATH_NAME_MAX * 2];
   struct stat info;
   int err;
 

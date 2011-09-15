@@ -1,6 +1,6 @@
 /** @file
 
-  A brief file description
+  Some utility and support functions for the management module.
 
   @section license License
 
@@ -19,14 +19,6 @@
   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   See the License for the specific language governing permissions and
   limitations under the License.
- */
-
-/**************************************
- *
- * MgmtUtils.h
- *   Some utility and support functions for the management module.
- *
- *
  */
 
 #include "ink_unused.h"      /* MAGIC_EDITING_TAG */
@@ -679,7 +671,7 @@ mgmt_getAddrForIntr(char *intrName, struct in_addr * addr, int *mtu)
   // So we use a winnt_intr.config file to give each of
   // the interface a name.
 
-  char intr_file[PATH_MAX + 1];
+  char intr_file[PATH_NAME_MAX + 1];
   FILE *fp = NULL;
 
 #ifdef LOCAL_MANAGER

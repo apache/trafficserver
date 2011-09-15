@@ -35,10 +35,6 @@
 #include "I_EventSystem.h"
 #include "I_Store.h"
 
-#ifndef PATH_NAME_MAX
-#define PATH_NAME_MAX         511
-#endif
-
 //
 // Constants
 //

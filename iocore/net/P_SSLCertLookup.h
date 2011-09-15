@@ -26,8 +26,6 @@
 #include "libts.h"
 #include "P_SSLNetProcessor.h"
 
-#define PATH_NAME_MAX         511
-
 class SSLCertLookup
 {
   bool buildTable();

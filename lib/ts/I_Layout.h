@@ -67,7 +67,7 @@ struct Layout
   /**
    Return file path relative to Layout->prefix
    Store the path to buf. The buf should be large eough to store
-   PATH_MAX characters
+   PATH_NAME_MAX characters
 
    */
   void relative(char *buf, size_t bufsz, const char *file);
@@ -83,7 +83,7 @@ struct Layout
   /**
    Return file path relative to dir
    Store the path to buf. The buf should be large eough to store
-   PATH_MAX characters
+   PATH_NAME_MAX characters
    Example usage: Layout::relative_to(default_layout()->sysconfdir, "foo.bar");
 
   */

@@ -1,5 +1,7 @@
-s                                                         -*- coding: utf-8 -*-
+                                                         -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.1.1
+  *) [TS-84] Unify all code to use PATH_NAME_MAX, and increase it to 4K.
+
   *) [TS-168] revert iObject and other changes, make collation client work
    in the clean way.
 

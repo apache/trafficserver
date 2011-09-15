@@ -1,6 +1,6 @@
 /** @file
 
-  A brief file description
+  This is the primary include file for the proxy cache system.
 
   @section license License
 
@@ -20,16 +20,6 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-
-/****************************************************************************
-
-  Main.h
-
-  This is the primary include file for the proxy cache system.
-
-
- ****************************************************************************/
-
 #ifndef _Main_h_
 #define	_Main_h_
 
@@ -42,8 +32,6 @@
 //
 // Constants
 //
-#define PATH_NAME_MAX         511
-
 #define ET_CACHE ET_CALL
 
 // TODO: consolidate location of these defaults
