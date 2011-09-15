@@ -1,5 +1,17 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.1.1
+  *) [TS-924] More efficient sharing of origin connections.
+    
+   This also overloads the config for shared connections as follows:
+    
+       #  0 - Never
+       #  1 - Share, with a single global connection pool
+       #  2 - Share, with a connection pool per worker thread
+       CONFIG proxy.config.http.share_server_sessions INT 1
+    
+   This option is now per-request (remap or plugin) overridable. This is
+   heavily based on William Bardwells and Weijin's work.
+
   *) [TS-84] Unify all code to use PATH_NAME_MAX, and increase it to 4K.
 
   *) [TS-168] revert iObject and other changes, make collation client work
@@ -870,7 +882,7 @@ Changes with Apache Traffic Server 2.1.4
   *) Experimental supoprt for a dedicated DNS thread. This can be enabled
    with the records.config option
 
-   	   CONFIG proxy.config.dns.dedicated_thread INT 1
+      CONFIG proxy.config.dns.dedicated_thread INT 1
 
   This feature is possibly useful for very busy forward or transparent
   proxies [TS-307].
@@ -950,7 +962,7 @@ Changes with Apache Traffic Server 2.1.3
    new standard). Autodetected for raw devices on Linux (no support for
    other OSes yet), and added a new configuration
 
-   	 CONFIG proxy.config.cache.force_sector_size INT 4096
+       CONFIG proxy.config.cache.force_sector_size INT 4096
 
    This change invalidates the entire cache as well, since it's no longer
    compatible [TS-43].

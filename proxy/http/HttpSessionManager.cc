@@ -47,7 +47,8 @@ initialize_thread_for_http_sessions(EThread *thread, int thread_index)
 
   thread->l1_hash = NEW(new SessionBucket[HSM_LEVEL1_BUCKETS]);
   for (int i = 0; i < HSM_LEVEL1_BUCKETS; ++i)
-    thread->l1_hash[i].mutex = thread->mutex;
+    thread->l1_hash[i].mutex = new_ProxyMutex();
+  //thread->l1_hash[i].mutex = thread->mutex;
 }
 
 
