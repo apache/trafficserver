@@ -42,23 +42,24 @@
 /** Maximum number of accept events per thread. */
 #define MAX_ACCEPT_EVENTS 20
 
-struct UDPNetHandler;
 struct DiskHandler;
-struct LogConfiguration;
-struct LogEventForwarder;
 struct EventIO;
 
 class SessionBucket;
-class NetHandler;
 class Event;
 class Continuation;
-class IOBufferData;
-class IOBufferBlock;
 
-enum ThreadType
-{ REGULAR = 0, MONITOR, DEDICATED };
-enum teThreadType
-{ keAsyncThread = 0, keBoundThread, keSpawnThread };
+enum ThreadType {
+  REGULAR = 0,
+  MONITOR,
+  DEDICATED
+};
+
+enum teThreadType {
+  keAsyncThread = 0,
+  keBoundThread,
+  keSpawnThread
+};
 
 /**
   Event System specific type of thread.
@@ -90,10 +91,9 @@ enum teThreadType
   @see Event
 
 */
-class EThread:public Thread
+class EThread: public Thread
 {
 public:
-
   /*-------------------------------------------------------*\
   |  Common Interface                                       |
   \*-------------------------------------------------------*/
@@ -115,8 +115,8 @@ public:
       of this callback.
 
   */
-  Event * schedule_imm(Continuation * c, int callback_event = EVENT_IMMEDIATE, void *cookie = NULL);
-  Event * schedule_imm_signal(Continuation * c, int callback_event = EVENT_IMMEDIATE, void *cookie = NULL);
+  Event *schedule_imm(Continuation *c, int callback_event = EVENT_IMMEDIATE, void *cookie = NULL);
+  Event *schedule_imm_signal(Continuation *c, int callback_event = EVENT_IMMEDIATE, void *cookie = NULL);
 
   /**
     Schedules the continuation on this EThread to receive an event
@@ -137,7 +137,7 @@ public:
       of this callback.
 
   */
-  Event *schedule_at(Continuation * c,
+  Event *schedule_at(Continuation *c,
                      ink_hrtime atimeout_at, int callback_event = EVENT_INTERVAL, void *cookie = NULL);
 
   /**
@@ -158,7 +158,7 @@ public:
       of this callback.
 
   */
-  Event *schedule_in(Continuation * c,
+  Event *schedule_in(Continuation *c,
                      ink_hrtime atimeout_in, int callback_event = EVENT_INTERVAL, void *cookie = NULL);
 
   /**
@@ -180,7 +180,7 @@ public:
       of this callback.
 
   */
-  Event *schedule_every(Continuation * c, ink_hrtime aperiod, int callback_event = EVENT_INTERVAL, void *cookie = NULL);
+  Event *schedule_every(Continuation *c, ink_hrtime aperiod, int callback_event = EVENT_INTERVAL, void *cookie = NULL);
 
   /**
     Schedules the continuation on this EThread to receive an event
@@ -198,7 +198,7 @@ public:
       of this callback.
 
   */
-  Event *schedule_imm_local(Continuation * c, int callback_event = EVENT_IMMEDIATE, void *cookie = NULL);
+  Event *schedule_imm_local(Continuation *c, int callback_event = EVENT_IMMEDIATE, void *cookie = NULL);
 
   /**
     Schedules the continuation on this EThread to receive an event
@@ -219,7 +219,7 @@ public:
       of this callback.
 
   */
-  Event *schedule_at_local(Continuation * c,
+  Event *schedule_at_local(Continuation *c,
                            ink_hrtime atimeout_at, int callback_event = EVENT_INTERVAL, void *cookie = NULL);
 
   /**
@@ -241,7 +241,7 @@ public:
       of this callback.
 
   */
-  Event *schedule_in_local(Continuation * c,
+  Event *schedule_in_local(Continuation *c,
                            ink_hrtime atimeout_in, int callback_event = EVENT_INTERVAL, void *cookie = NULL);
 
   /**
@@ -262,22 +262,20 @@ public:
       of this callback.
 
   */
-  Event *schedule_every_local(Continuation * c,
+  Event *schedule_every_local(Continuation *c,
                               ink_hrtime aperiod, int callback_event = EVENT_INTERVAL, void *cookie = NULL);
 
   /* private */
 
-  Event *schedule_local(Event * e);
+  Event *schedule_local(Event *e);
 
   InkRand generator;
   ProxyAllocator eventAllocator;
   ProxyAllocator netVCAllocator;
   ProxyAllocator sslNetVCAllocator;
-  ProxyAllocator inkioNetVCAllocator;
   ProxyAllocator httpClientSessionAllocator;
   ProxyAllocator httpServerSessionAllocator;
   ProxyAllocator cacheVConnectionAllocator;
-  ProxyAllocator newCacheVConnectionAllocator;
   ProxyAllocator openDirEntryAllocator;
   ProxyAllocator ramCacheCLFUSEntryAllocator;
   ProxyAllocator ramCacheLRUEntryAllocator;
@@ -287,31 +285,25 @@ public:
   ProxyAllocator ioBufAllocator[DEFAULT_BUFFER_SIZES];
 
 private:
-
   // prevent unauthorized copies (Not implemented)
-    EThread(const EThread &);
-    EThread & operator =(const EThread &);
+  EThread(const EThread &);
+  EThread & operator =(const EThread &);
 
   /*-------------------------------------------------------*\
   |  UNIX Interface                                         |
   \*-------------------------------------------------------*/
 
 public:
-
-    EThread();
-    EThread(ThreadType att, int anid);
-    EThread(ThreadType att, Event *e, ink_sem *sem);
-    virtual ~ EThread();
+  EThread();
+  EThread(ThreadType att, int anid);
+  EThread(ThreadType att, Event *e, ink_sem *sem);
+  virtual ~EThread();
 
   Event *schedule_spawn(Continuation *cont);
-
   Event *schedule(Event *e, bool fast_signal = false);
 
   /** Block of memory to allocate thread specific data e.g. stat system arrays. */
   char thread_private[PER_THREAD_DATA];
-
-  // private data for UDP net processor
-  //UDPNetHandler *udpNetHandler;
 
   /** Private Data for the Disk Processor. */
   DiskHandler *diskHandler;
@@ -338,8 +330,8 @@ public:
   // Private Interface
 
   void execute();
-  void process_event(Event * e, int calling_code);
-  void free_event(Event * e);
+  void process_event(Event *e, int calling_code);
+  void free_event(Event *e);
   void (*signal_hook)(EThread *);
 
 #if TS_HAS_EVENTFD
@@ -352,6 +344,8 @@ public:
   ThreadType tt;
   Event *oneevent;              // For dedicated event thread
   ink_sem *eventsem;            // For dedicated event thread
+
+  SessionBucket* l1_hash;
 };
 
 /**
@@ -362,8 +356,9 @@ public:
 class ink_dummy_for_new
 {
 };
+
 inline void *operator
-new(size_t, ink_dummy_for_new * p)
+new(size_t, ink_dummy_for_new *p)
 {
   return (void *) p;
 }

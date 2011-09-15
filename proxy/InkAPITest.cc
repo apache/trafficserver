@@ -7505,6 +7505,7 @@ const char *SDK_Overridable_Configs[] = {
   "proxy.config.http.keep_alive_enabled_in",
   "proxy.config.http.keep_alive_enabled_out",
   "proxy.config.http.keep_alive_post_out",
+  "proxy.config.http.share_server_sessions",
   "proxy.config.net.sock_recv_buffer_size_out",
   "proxy.config.net.sock_send_buffer_size_out",
   "proxy.config.net.sock_option_flag_out",

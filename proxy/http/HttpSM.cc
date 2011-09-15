@@ -1610,7 +1610,11 @@ HttpSM::state_http_server_open(int event, void *data)
 
   switch (event) {
   case NET_EVENT_OPEN:
-    session = THREAD_ALLOC_INIT(httpServerSessionAllocator, mutex->thread_holding);
+    session = (2 == t_state.txn_conf->share_server_sessions) ? 
+      THREAD_ALLOC_INIT(httpServerSessionAllocator, mutex->thread_holding) :
+      httpServerSessionAllocator.alloc();
+    session->share_session = t_state.txn_conf->share_server_sessions;
+
     // If origin_max_connections or origin_min_keep_alive_connections is
     // set then we are metering the max and or min number
     // of connections per host.  Set enable_origin_connection_limiting
@@ -4139,7 +4143,7 @@ HttpSM::do_http_server_open(bool raw)
   // to do this but as far I can tell the code that prevented keep-alive if
   // there is a request body has been removed.
 
-  if (raw == false && t_state.http_config_param->share_server_sessions &&
+  if (raw == false && t_state.txn_conf->share_server_sessions &&
       (t_state.txn_conf->keep_alive_post_out == 1 || t_state.hdr_info.request_content_length == 0) &&
       ua_session != NULL) {
     shared_result = httpSessionManager.acquire_session(this,    // state machine
@@ -4169,7 +4173,7 @@ HttpSM::do_http_server_open(bool raw)
   // This bug was due to when share_server_sessions is set to 0
   // and we have keep-alive, we are trying to open a new server session
   // when we already have an attached server session.
-  else if ((!t_state.http_config_param->share_server_sessions) && (ua_session != NULL)) {
+  else if ((!t_state.txn_conf->share_server_sessions) && (ua_session != NULL)) {
     HttpServerSession *existing_ss = ua_session->get_server_session();
 
     if (existing_ss) {
@@ -5059,7 +5063,7 @@ HttpSM::attach_server_session(HttpServerSession * s)
   server_session->mutex = this->mutex;
 
   HTTP_INCREMENT_DYN_STAT(http_current_server_transactions_stat);
-  s->server_trans_stat++;
+  ++s->server_trans_stat;
 
   // Record the VC in our table
   server_entry = vc_table.new_entry();

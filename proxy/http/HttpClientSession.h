@@ -45,17 +45,15 @@ class HttpServerSession;
 
 class SecurityContext;
 
-class HttpClientSession:public VConnection
+class HttpClientSession: public VConnection
 {
 public:
   HttpClientSession();
   void cleanup();
   virtual void destroy();
 
-public:
   static HttpClientSession *allocate();
 
-public:
   void new_connection(NetVConnection * new_vc, bool backdoor = false);
 
   virtual VIO *do_io_read(Continuation * c, int64_t nbytes = INT64_MAX, MIOBuffer * buf = 0);
@@ -135,6 +133,7 @@ private:
   TSHttpHookID cur_hook_id;
   APIHook *cur_hook;
   int cur_hooks;
+  bool proxy_allocated;
 
   // api_hooks must not be changed directly
   //  Use ssn_hook_{ap,pre}pend so hooks_set is

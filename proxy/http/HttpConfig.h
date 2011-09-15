@@ -402,13 +402,12 @@ struct OverridableHttpConfigParams {
     :  maintain_pristine_host_hdr(0), chunking_enabled(0),
        negative_caching_enabled(0), negative_caching_lifetime(0), cache_when_to_revalidate(0),
        keep_alive_enabled_in(0), keep_alive_enabled_out(0), keep_alive_post_out(0),
-       server_tcp_init_cwnd(0),
+       server_tcp_init_cwnd(0), share_server_sessions(0),
        sock_recv_buffer_size_out(0), sock_send_buffer_size_out(0), sock_option_flag_out(0),
        fwd_proxy_auth_to_parent(0), 
        anonymize_remove_from(0), anonymize_remove_referer(0), anonymize_remove_user_agent(0),
        anonymize_remove_cookie(0), anonymize_remove_client_ip(0), anonymize_insert_client_ip(1),
        append_xforwards_header(0), proxy_response_server_enabled(0),
-
        insert_squid_x_forwarded_for(0), send_http11_requests(3), // SEND_HTTP11_IF_REQUEST_11_AND_HOSTDB
        cache_http(0), cache_ignore_client_no_cache(0), cache_ignore_client_cc_max_age(1),
        cache_ims_on_client_no_cache(0), cache_ignore_server_no_cache(0), cache_responses_to_cookies(0),
@@ -454,6 +453,8 @@ struct OverridableHttpConfigParams {
   MgmtByte keep_alive_enabled_out;
   MgmtByte keep_alive_post_out;  // share server sessions for post
   MgmtInt server_tcp_init_cwnd;
+
+  MgmtByte share_server_sessions;
 
   ///////////////////////////////////////
   // origin server connection settings //
@@ -644,7 +645,6 @@ public:
   MgmtByte session_auth_cache_keep_alive_enabled;
   MgmtInt origin_server_pipeline;
   MgmtInt user_agent_pipeline;
-  MgmtInt share_server_sessions;
   MgmtInt transaction_active_timeout_in;
   MgmtInt accept_no_activity_timeout;
   MgmtInt background_fill_active_timeout;
@@ -924,7 +924,6 @@ HttpConfigParams::HttpConfigParams()
     session_auth_cache_keep_alive_enabled(0),
     origin_server_pipeline(0),
     user_agent_pipeline(0),
-    share_server_sessions(0),
     transaction_active_timeout_in(0),
     accept_no_activity_timeout(0),
     background_fill_active_timeout(0),

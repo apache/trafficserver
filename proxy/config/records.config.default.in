@@ -104,6 +104,10 @@ CONFIG proxy.config.http.chunking_enabled INT 1
    #   3 - if the client request is 1.1 & the server
    #         has returned 1.1 before
 CONFIG proxy.config.http.send_http11_requests INT 1
+   # Share server connections
+   #  0 - Never
+   #  1 - Share, with a single global connection pool
+   #  2 - Share, with a connection pool per worker thread
 CONFIG proxy.config.http.share_server_sessions INT 1
 CONFIG proxy.config.http.origin_server_pipeline INT 1
 CONFIG proxy.config.http.user_agent_pipeline INT 8

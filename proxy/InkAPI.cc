@@ -7242,6 +7242,9 @@ _conf_to_memberp(TSOverridableConfigKey conf, HttpSM* sm, OverridableDataType *t
   case TS_CONFIG_HTTP_KEEP_ALIVE_POST_OUT:
     ret = &sm->t_state.txn_conf->keep_alive_post_out;
     break;
+  case TS_CONFIG_HTTP_SHARE_SERVER_SESSIONS:
+    ret = &sm->t_state.txn_conf->share_server_sessions;
+    break;
   case TS_CONFIG_NET_SOCK_RECV_BUFFER_SIZE_OUT:
     ret = &sm->t_state.txn_conf->sock_recv_buffer_size_out;
     break;
@@ -7628,6 +7631,8 @@ TSHttpTxnConfigFind(const char* name, int length, TSOverridableConfigKey *conf, 
     case 's':
       if (!strncmp(name, "proxy.config.http.doc_in_cache_skip_dns", length))
         cnf = TS_CONFIG_HTTP_DOC_IN_CACHE_SKIP_DNS;
+      else if (!strncmp(name, "proxy.config.http.share_server_sessions", length))
+        cnf = TS_CONFIG_HTTP_SHARE_SERVER_SESSIONS;
       break;
     }
     break;

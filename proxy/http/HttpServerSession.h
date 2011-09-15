@@ -56,7 +56,7 @@ enum HSS_State {
   HSS_INIT,
   HSS_ACTIVE,
   HSS_KA_CLIENT_SLAVE,
-    HSS_KA_SHARED
+  HSS_KA_SHARED
 };
 
 enum {
@@ -72,15 +72,14 @@ public:
       server_ip(0), server_port(0), hostname_hash(),
       host_hash_computed(false), con_id(0), transact_count(0),
       state(HSS_INIT), to_parent_proxy(false), server_trans_stat(0),
-      private_session(false),
+      private_session(false), share_session(0),
       enable_origin_connection_limiting(false),
-      connection_count(NULL),
-      read_buffer(NULL), server_vc(NULL), magic(HTTP_SS_MAGIC_DEAD), buf_reader(NULL)
-    { }
+      connection_count(NULL), read_buffer(NULL),
+      server_vc(NULL), magic(HTTP_SS_MAGIC_DEAD), buf_reader(NULL)
+  { }
 
   void destroy();
-  static HttpServerSession *allocate();
-  void new_connection(NetVConnection * new_vc);
+  void new_connection(NetVConnection *new_vc);
 
   void reset_read_buffer(void)
   {
@@ -96,14 +95,14 @@ public:
     return buf_reader;
   };
 
-  virtual VIO *do_io_read(Continuation * c, int64_t nbytes = INT64_MAX, MIOBuffer * buf = 0);
+  virtual VIO *do_io_read(Continuation *c, int64_t nbytes = INT64_MAX, MIOBuffer *buf = 0);
 
-  virtual VIO *do_io_write(Continuation * c = NULL, int64_t nbytes = INT64_MAX, IOBufferReader * buf = 0, bool owner = false);
+  virtual VIO *do_io_write(Continuation *c = NULL, int64_t nbytes = INT64_MAX, IOBufferReader *buf = 0, bool owner = false);
 
   virtual void do_io_close(int lerrno = -1);
   virtual void do_io_shutdown(ShutdownHowTo_t howto);
 
-  virtual void reenable(VIO * vio);
+  virtual void reenable(VIO *vio);
 
   void release();
   void attach_hostname(const char *hostname);
@@ -136,7 +135,9 @@ public:
   // Sessions become if authenication headers
   //  are sent over them
   bool private_session;
-  //bool www_auth_content;
+
+  // Copy of the owning SM's share_server_session setting
+  int share_session;
 
   LINK(HttpServerSession, lru_link);
   LINK(HttpServerSession, hash_link);
