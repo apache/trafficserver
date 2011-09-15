@@ -40,6 +40,9 @@
 class HttpClientSession;
 class HttpSM;
 
+void
+initialize_thread_for_http_sessions(EThread *thread, int thread_index);
+
 #ifndef TS_MICRO
 #define  HSM_LEVEL1_BUCKETS   127
 #define  HSM_LEVEL2_BUCKETS   63
@@ -65,6 +68,7 @@ class HttpSessionManager
 public:
   HttpSessionManager()
     { }
+
   ~HttpSessionManager()
     { }
 

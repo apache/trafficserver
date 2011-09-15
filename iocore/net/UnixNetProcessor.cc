@@ -420,14 +420,16 @@ UnixNetProcessor::start(int)
 
   n_netthreads = eventProcessor.n_threads_for_type[etype];
   netthreads = eventProcessor.eventthread[etype];
-  for (int i = 0; i < n_netthreads; i++) {
+  for (int i = 0; i < n_netthreads; ++i) {
     initialize_thread_for_net(netthreads[i], i);
+#ifndef STANDALONE_IOCORE
+    extern void initialize_thread_for_http_sessions(EThread *thread, int thread_index);
+    initialize_thread_for_http_sessions(netthreads[i], i);
+#endif
   }
 
-  if (
-    0 == (incoming_ip_to_bind = IOCORE_ConfigReadString("proxy.local.incoming_ip_to_bind"))
-    || 0 != ink_inet_pton(incoming_ip_to_bind, &incoming_ip_to_bind_saddr)
-  )
+  if (0 == (incoming_ip_to_bind = IOCORE_ConfigReadString("proxy.local.incoming_ip_to_bind")) ||
+      0 != ink_inet_pton(incoming_ip_to_bind, &incoming_ip_to_bind_saddr))
     memset(&incoming_ip_to_bind_saddr, 0, sizeof(incoming_ip_to_bind_saddr));
 
   RecData d;

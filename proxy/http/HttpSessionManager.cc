@@ -39,6 +39,18 @@
 #define FIRST_LEVEL_HASH(x)   x % HSM_LEVEL1_BUCKETS
 #define SECOND_LEVEL_HASH(x)  x % HSM_LEVEL2_BUCKETS
 
+// Initialize a thread to handle HTTP session management
+void
+initialize_thread_for_http_sessions(EThread *thread, int thread_index)
+{
+  NOWARN_UNUSED(thread_index);
+
+  thread->l1_hash = NEW(new SessionBucket[HSM_LEVEL1_BUCKETS]);
+  for (int i = 0; i < HSM_LEVEL1_BUCKETS; ++i)
+    thread->l1_hash[i].mutex = thread->mutex;
+}
+
+
 HttpSessionManager httpSessionManager;
 
 SessionBucket::SessionBucket()
@@ -253,13 +265,7 @@ HttpSessionManager::acquire_session(Continuation *cont, unsigned int ip, int por
     ink_code_MMH((unsigned char *) hostname, strlen(hostname), (unsigned char *) &hostname_hash);
 
   if (2 == sm->t_state.txn_conf->share_server_sessions) {
-    // Initialize the per-THread buckets if necessary
-    if (NULL == ua_session->mutex->thread_holding->l1_hash) {
-      ethread->l1_hash = NEW(new SessionBucket[HSM_LEVEL1_BUCKETS]);
-      for (int i = 0; i < HSM_LEVEL1_BUCKETS; ++i)
-        ethread->l1_hash[i].mutex = ethread->mutex;
-    }
-
+    ink_assert(ethread->l1_hash);
     return _acquire_session(ethread->l1_hash + l1_index, ip, port, hostname_hash, sm);
   } else {
     SessionBucket *bucket = g_l1_hash + l1_index;
