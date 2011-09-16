@@ -118,9 +118,20 @@ ink_res_setservers(ink_res_state statp, ts_ip_endpoint const* set, int cnt) {
   /* cause rtt times to be forgotten */
   statp->nscount = 0;
 
+  /* The goal here seems to be to compress the source list (@a set) by
+     squeezing out invalid addresses. We handle the special case where
+     the destination and sourcea are the same.
+  */
   int nserv = 0;
   for ( ts_ip_endpoint const* limit = set + cnt ; nserv < INK_MAXNS && set < limit ; ++set ) {
-    if (ink_inet_copy(&statp->nsaddr_list[nserv].sa, &set->sa)) ++nserv;
+    ts_ip_endpoint* dst = &statp->nsaddr_list[nserv];
+
+    if (dst == set) {
+      if (ink_inet_is_ip(&set->sa))
+        ++nserv;
+    } else if (ink_inet_copy(&dst->sa, &set->sa)) {
+      ++nserv;
+    }
   }
   statp->nscount = nserv;
 }

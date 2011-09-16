@@ -419,7 +419,7 @@ DNSHandler::open_con(sockaddr const* target, bool failed, int icon)
 
   Debug("dns", "open_con: opening connection %s", ink_inet_nptop(target, ip_text, sizeof ip_text));
 
-  if (!icon) {
+  if (!icon && target) {
     ink_inet_copy(&ip, target);
   }
 
@@ -510,7 +510,7 @@ DNSHandler::startEvent(int event, Event *e)
       }
       dns_ns_rr_init_down = 0;
     } else {
-      open_con(&ip.sa);
+      open_con(0); // use current target address.
       n_con = 1;
     }
     e->ethread->schedule_every(this, DNS_PERIOD);
