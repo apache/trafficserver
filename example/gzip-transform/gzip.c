@@ -219,6 +219,7 @@ gzip_transform_one(GzipData * data, TSIOBufferReader input_reader, int amount)
 
       /* Encode */
       err = deflate(&data->zstrm, Z_NO_FLUSH);
+      TSDebug("gzip-transform", "deflate() returned %d", err);
 
       if (olength > data->zstrm.avail_out) {
         TSIOBufferProduce(data->output_buffer, olength - data->zstrm.avail_out);

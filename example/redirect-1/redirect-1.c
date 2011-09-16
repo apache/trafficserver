@@ -95,7 +95,7 @@ handle_client_lookup(TSHttpTxn txnp, TSCont contp)
   int host_length;
 
 #if !defined (_WIN32)
-  in_addr_t clientip;
+  in_addr_t clientip = 0;
 #else
   unsigned int clientip;
 #endif
@@ -181,6 +181,7 @@ handle_client_lookup(TSHttpTxn txnp, TSCont contp)
     goto done;
   }
 
+  /* TODO: This is odd, clientip is never set ... */
   if (ip_deny == clientip) {
     TSHttpTxnHookAdd(txnp, TS_HTTP_SEND_RESPONSE_HDR_HOOK, contp);
 

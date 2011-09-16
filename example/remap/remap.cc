@@ -102,8 +102,8 @@ remap_entry::~remap_entry()
 
   if (argc && argv) {
     for (i = 0; i < argc; i++)
-      ats_free(argv[i]);
-    ats_free(argv);
+      TSfree(argv[i]);
+    TSfree(argv);
   }
 }
 
