@@ -28,16 +28,16 @@
 AppVersionInfo::AppVersionInfo()
 {
   defined = 0;
-  ink_strncpy(PkgStr, "?", sizeof(PkgStr));
-  ink_strncpy(AppStr, "?", sizeof(AppStr));
-  ink_strncpy(VersionStr, "?", sizeof(VersionStr));
-  ink_strncpy(BldNumStr, "?", sizeof(BldNumStr));
-  ink_strncpy(BldTimeStr, "?", sizeof(BldTimeStr));
-  ink_strncpy(BldDateStr, "?", sizeof(BldDateStr));
-  ink_strncpy(BldMachineStr, "?", sizeof(BldMachineStr));
-  ink_strncpy(BldPersonStr, "?", sizeof(BldPersonStr));
-  ink_strncpy(BldCompileFlagsStr, "?", sizeof(BldCompileFlagsStr));
-  ink_strncpy(FullVersionInfoStr, "?", sizeof(FullVersionInfoStr));
+  ink_strlcpy(PkgStr, "?", sizeof(PkgStr));
+  ink_strlcpy(AppStr, "?", sizeof(AppStr));
+  ink_strlcpy(VersionStr, "?", sizeof(VersionStr));
+  ink_strlcpy(BldNumStr, "?", sizeof(BldNumStr));
+  ink_strlcpy(BldTimeStr, "?", sizeof(BldTimeStr));
+  ink_strlcpy(BldDateStr, "?", sizeof(BldDateStr));
+  ink_strlcpy(BldMachineStr, "?", sizeof(BldMachineStr));
+  ink_strlcpy(BldPersonStr, "?", sizeof(BldPersonStr));
+  ink_strlcpy(BldCompileFlagsStr, "?", sizeof(BldCompileFlagsStr));
+  ink_strlcpy(FullVersionInfoStr, "?", sizeof(FullVersionInfoStr));
   // coverity[uninit_member]
 }
 
@@ -68,8 +68,8 @@ AppVersionInfo::setup(const char *pkg_name, const char *app_name, const char *ap
   ///////////////////////////////////////////
   // now construct the version information //
   ///////////////////////////////////////////
-  ink_strncpy(PkgStr, pkg_name, sizeof(PkgStr));
-  ink_strncpy(AppStr, app_name, sizeof(AppStr));
+  ink_strlcpy(PkgStr, pkg_name, sizeof(PkgStr));
+  ink_strlcpy(AppStr, app_name, sizeof(AppStr));
   snprintf(VersionStr, sizeof(VersionStr), "%s", app_version);
   snprintf(BldNumStr, sizeof(BldNumStr), "%d%d%d", month, day, hour);
   snprintf(BldTimeStr, sizeof(BldTimeStr), "%s", build_time);
@@ -86,25 +86,25 @@ AppVersionInfo::setup(const char *pkg_name, const char *app_name, const char *ap
   // the manager doesn't like empty strings, so prevent them //
   /////////////////////////////////////////////////////////////
   if (PkgStr[0] == '\0')
-    ink_strncpy(PkgStr, "?", sizeof(PkgStr));
+    ink_strlcpy(PkgStr, "?", sizeof(PkgStr));
   if (AppStr[0] == '\0')
-    ink_strncpy(AppStr, "?", sizeof(AppStr));
+    ink_strlcpy(AppStr, "?", sizeof(AppStr));
   if (VersionStr[0] == '\0')
-    ink_strncpy(VersionStr, "?", sizeof(VersionStr));
+    ink_strlcpy(VersionStr, "?", sizeof(VersionStr));
   if (BldNumStr[0] == '\0')
-    ink_strncpy(BldNumStr, "?", sizeof(BldNumStr));
+    ink_strlcpy(BldNumStr, "?", sizeof(BldNumStr));
   if (BldTimeStr[0] == '\0')
-    ink_strncpy(BldTimeStr, "?", sizeof(BldTimeStr));
+    ink_strlcpy(BldTimeStr, "?", sizeof(BldTimeStr));
   if (BldDateStr[0] == '\0')
-    ink_strncpy(BldDateStr, "?", sizeof(BldDateStr));
+    ink_strlcpy(BldDateStr, "?", sizeof(BldDateStr));
   if (BldMachineStr[0] == '\0')
-    ink_strncpy(BldMachineStr, "?", sizeof(BldMachineStr));
+    ink_strlcpy(BldMachineStr, "?", sizeof(BldMachineStr));
   if (BldPersonStr[0] == '\0')
-    ink_strncpy(BldPersonStr, "?", sizeof(BldPersonStr));
+    ink_strlcpy(BldPersonStr, "?", sizeof(BldPersonStr));
   if (BldCompileFlagsStr[0] == '\0')
-    ink_strncpy(BldCompileFlagsStr, "?", sizeof(BldCompileFlagsStr));
+    ink_strlcpy(BldCompileFlagsStr, "?", sizeof(BldCompileFlagsStr));
   if (FullVersionInfoStr[0] == '\0')
-    ink_strncpy(FullVersionInfoStr, "?", sizeof(FullVersionInfoStr));
+    ink_strlcpy(FullVersionInfoStr, "?", sizeof(FullVersionInfoStr));
 
   defined = 1;
 }

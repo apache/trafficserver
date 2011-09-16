@@ -96,7 +96,7 @@ Layout::relative(char *buf, size_t bufsz, const char *file)
     ink_error("Provided buffer is too small: %d, required %d\n", bufsz, path_len);
   }
   else {
-    strcpy(buf, path);
+    ink_strlcpy(buf, path, bufsz);
   }
 }
 
@@ -130,7 +130,7 @@ Layout::relative_to(char *buf, size_t bufsz, const char *dir, const char *file)
     ink_error("Provided buffer is too small: %d, required %d\n", bufsz, path_len);
   }
   else {
-    strcpy(buf, path);
+    ink_strlcpy(buf, path, bufsz);
   }
 }
 
@@ -149,14 +149,14 @@ Layout::Layout(const char *_prefix)
         ink_error("TS_ROOT environment variable is too big: %d, max %d\n", len, PATH_NAME_MAX -1);
         return;
       }
-      strcpy(path, env_path);
+      ink_strlcpy(path, env_path, sizeof(path));
       while (len > 1 && path[len - 1] == '/') {
         path[len - 1] = '\0';
         --len;
       }
     } else {
         // Use compile time --prefix
-      ink_strncpy(path, TS_BUILD_PREFIX, sizeof(path));
+      ink_strlcpy(path, TS_BUILD_PREFIX, sizeof(path));
     }
 
     if (access(path, R_OK) == -1) {
