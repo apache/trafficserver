@@ -54,6 +54,29 @@ ink_strncpy(char *dest, const char *src, int n)
   return (dest);
 }                               /* End ink_strncpy */
 
+/*---------------------------------------------------------------------------*
+
+  char *ink_strncat(char *dest, char *src, int n)
+
+  This routine is a safer version of strncat which always NUL terminates
+  the destination string.  Note that this routine has the SAME semantics
+  as strncat, such as concatinating exactly n bytes, padding dest with NULs
+  is necessary.  Use ink_string_copy for a non-padding version.
+
+ *---------------------------------------------------------------------------*/
+
+char *
+ink_strncat(char *dest, const char *src, int n)
+{
+  if (likely(src && dest)) {
+    if (n > 1)
+      strncat(dest, src, (n - 1));
+    if (n > 0)
+      dest[n - 1] = '\0';
+  }
+
+  return (dest);
+}                               /* End ink_strncat */
 
 /*---------------------------------------------------------------------------*
 
