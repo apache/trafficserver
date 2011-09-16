@@ -1623,7 +1623,7 @@ api_init()
     memset(state_arg_table, 0, sizeof(state_arg_table));
 
     // Setup the version string for returning to plugins
-    ink_strncpy(traffic_server_version, appVersionInfo.VersionStr, sizeof(traffic_server_version));
+    ink_strlcpy(traffic_server_version, appVersionInfo.VersionStr, sizeof(traffic_server_version));
     // Extract the elements.
     // coverity[secure_coding]
     if (sscanf(traffic_server_version, "%d.%d.%d", &ts_major_version, &ts_minor_version, &ts_patch_version) != 3) {
@@ -1658,6 +1658,18 @@ char *
 _TSstrdup(const char *str, int64_t length, const char *path)
 {
   return _xstrdup(str, length, path);
+}
+
+size_t
+_TSstrlcpy(char *dst, const char *str, size_t siz)
+{
+  return ink_strlcpy(dst, str, siz);
+}
+
+size_t
+_TSstrlcat(char *dst, const char *str, size_t siz)
+{
+  return ink_strlcat(dst, str, siz);
 }
 
 void
@@ -5498,8 +5510,7 @@ TSHttpTxnSetHttpRetBody(TSHttpTxn txnp, const char *body_msg, int plain_msg_flag
   s->return_xbuf[0] = 0;
   s->return_xbuf_plain = false;
   if (body_msg) {
-    strncpy(s->return_xbuf, body_msg, HTTP_TRANSACT_STATE_MAX_XBUF_SIZE - 1);
-    s->return_xbuf[HTTP_TRANSACT_STATE_MAX_XBUF_SIZE - 1] = 0;
+    ink_strlcpy(s->return_xbuf, body_msg, HTTP_TRANSACT_STATE_MAX_XBUF_SIZE);
     s->return_xbuf_size = strlen(s->return_xbuf);
     s->return_xbuf_plain = plain_msg_flag;
   }
@@ -7008,7 +7019,7 @@ TSRedirectUrlSet(TSHttpTxn txnp, const char* url, const int url_len)
   }
 
   sm->redirect_url = (char*)ats_malloc(url_len + 1);
-  ink_strncpy(sm->redirect_url, (char*)url, url_len + 1);
+  ink_strlcpy(sm->redirect_url, (char*)url, url_len + 1);
   sm->redirect_url_len = url_len;
   // have to turn redirection on for this transaction if user wants to redirect to another URL
   if (sm->enable_redirection == false) {
