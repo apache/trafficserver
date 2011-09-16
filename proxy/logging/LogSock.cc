@@ -127,7 +127,7 @@ LogSock::listen(int accept_port)
     return -1;
   }
   // REUSEADDR
-  if ((ret = safe_setsockopt(accept_sd, SOL_SOCKET, SO_REUSEADDR, ON, sizeof(int))) < 0) {
+  if ((ret = safe_setsockopt(accept_sd, SOL_SOCKET, SO_REUSEADDR, SOCKOPT_ON, sizeof(int))) < 0) {
     Warning("Could not set option REUSEADDR on socket (%d): %s", ret, strerror(errno));
     return -1;
   }
@@ -142,12 +142,12 @@ LogSock::listen(int accept_port)
     return -1;
   }
 
-  if ((ret = safe_setsockopt(accept_sd, IPPROTO_TCP, TCP_NODELAY, ON, sizeof(int))) < 0) {
+  if ((ret = safe_setsockopt(accept_sd, IPPROTO_TCP, TCP_NODELAY, SOCKOPT_ON, sizeof(int))) < 0) {
     Warning("Could not set option TCP_NODELAY on socket (%d): %s", ret, strerror(errno));
     return -1;
   }
 
-  if ((ret = safe_setsockopt(accept_sd, SOL_SOCKET, SO_KEEPALIVE, ON, sizeof(int))) < 0) {
+  if ((ret = safe_setsockopt(accept_sd, SOL_SOCKET, SO_KEEPALIVE, SOCKOPT_ON, sizeof(int))) < 0) {
     Warning("Could not set option SO_KEEPALIVE on socket (%d): %s", ret, strerror(errno));
     return -1;
   }
@@ -273,12 +273,12 @@ LogSock::connect(unsigned host_ip, int port)
     return LogSock::LS_ERROR_SOCKET;
   }
 
-  if ((ret = safe_setsockopt(connect_sd, IPPROTO_TCP, TCP_NODELAY, ON, sizeof(int))) < 0) {
+  if ((ret = safe_setsockopt(connect_sd, IPPROTO_TCP, TCP_NODELAY, SOCKOPT_ON, sizeof(int))) < 0) {
     Note("Could not set option TCP_NODELAY on socket (%d): %s", ret, strerror(errno));
     return -1;
   }
 
-  if ((ret = safe_setsockopt(connect_sd, SOL_SOCKET, SO_KEEPALIVE, ON, sizeof(int))) < 0) {
+  if ((ret = safe_setsockopt(connect_sd, SOL_SOCKET, SO_KEEPALIVE, SOCKOPT_ON, sizeof(int))) < 0) {
     Note("Could not set option SO_KEEPALIVE on socket (%d): %s", ret, strerror(errno));
     return -1;
   }

@@ -519,7 +519,7 @@ webIntr_main(void *x)
 #endif
       ink_atomic_increment((int32_t *) & numServiceThr, -1);
     } else {                    // Accept succeeded
-      if (safe_setsockopt(clientFD, IPPROTO_TCP, TCP_NODELAY, ON, sizeof(int)) < 0) {
+      if (safe_setsockopt(clientFD, IPPROTO_TCP, TCP_NODELAY, SOCKOPT_ON, sizeof(int)) < 0) {
         mgmt_log(stderr, "[WebIntrMain]Failed to set sock options: %s\n", strerror(errno));
       }
 

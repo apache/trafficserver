@@ -429,11 +429,11 @@ NetAccept::acceptFastEvent(int event, void *ep)
         }
       }
       if (sockopt_flags & 1) {  // we have to disable Nagle
-        safe_setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, ON, sizeof(int));
+        safe_setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, SOCKOPT_ON, sizeof(int));
         Debug("socket", "::acceptFastEvent: setsockopt() TCP_NODELAY on socket");
       }
       if (sockopt_flags & 2) {
-        safe_setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, ON, sizeof(int));
+        safe_setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, SOCKOPT_ON, sizeof(int));
         Debug("socket", "::acceptFastEvent: setsockopt() SO_KEEPALIVE on socket");
       }
       do {

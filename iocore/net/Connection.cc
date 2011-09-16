@@ -101,7 +101,7 @@ Server::accept(Connection * c)
 #endif
 #ifdef SET_SO_KEEPALIVE
   // enables 2 hour inactivity probes, also may fix IRIX FIN_WAIT_2 leak
-  if ((res = safe_setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, ON, sizeof(int))) < 0)
+  if ((res = safe_setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, SOCKOPT_ON, sizeof(int))) < 0)
     goto Lerror;
 #endif
 
@@ -202,12 +202,12 @@ Server::setup_fd_for_listen(
   }
 #endif
 #ifdef SET_TCP_NO_DELAY
-  if ((res = safe_setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, ON, sizeof(int))) < 0)
+  if ((res = safe_setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, SOCKOPT_ON, sizeof(int))) < 0)
     goto Lerror;
 #endif
 #ifdef SET_SO_KEEPALIVE
   // enables 2 hour inactivity probes, also may fix IRIX FIN_WAIT_2 leak
-  if ((res = safe_setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, ON, sizeof(int))) < 0)
+  if ((res = safe_setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, SOCKOPT_ON, sizeof(int))) < 0)
     goto Lerror;
 #endif
 
@@ -332,22 +332,22 @@ Server::listen(bool non_blocking, int recv_bufsize, int send_bufsize, bool trans
   }
 #endif
 
-  if (ink_inet_is_ip6(&addr) && (res = safe_setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, ON, sizeof(int))) < 0)
+  if (ink_inet_is_ip6(&addr) && (res = safe_setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, SOCKOPT_ON, sizeof(int))) < 0)
     goto Lerror;
 
-  if ((res = safe_setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, ON, sizeof(int))) < 0)
+  if ((res = safe_setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, SOCKOPT_ON, sizeof(int))) < 0)
     goto Lerror;
 
   if ((res = socketManager.ink_bind(fd, &addr.sa, ink_inet_ip_size(&addr.sa), IPPROTO_TCP)) < 0) {
     goto Lerror;
   }
 #ifdef SET_TCP_NO_DELAY
-  if ((res = safe_setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, ON, sizeof(int))) < 0)
+  if ((res = safe_setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, SOCKOPT_ON, sizeof(int))) < 0)
     goto Lerror;
 #endif
 #ifdef SET_SO_KEEPALIVE
   // enables 2 hour inactivity probes, also may fix IRIX FIN_WAIT_2 leak
-  if ((res = safe_setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, ON, sizeof(int))) < 0)
+  if ((res = safe_setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, SOCKOPT_ON, sizeof(int))) < 0)
     goto Lerror;
 #endif
 

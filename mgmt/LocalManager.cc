@@ -1289,7 +1289,7 @@ bindProxyPort(int proxy_port, char *incoming_ip_to_bind_str, int domain, bool tr
     _exit(1);
   }
   if (domain == AF_INET6) {
-    if (setsockopt(proxy_port_fd, IPPROTO_IPV6, IPV6_V6ONLY, ON, sizeof(int)) < 0) {
+    if (setsockopt(proxy_port_fd, IPPROTO_IPV6, IPV6_V6ONLY, SOCKOPT_ON, sizeof(int)) < 0) {
       mgmt_elog(stderr, "[bindProxyPort] Unable to set socket options: %d : %s\n", proxy_port, strerror(errno));
     }
   }

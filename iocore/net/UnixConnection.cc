@@ -274,11 +274,11 @@ Connection::open(NetVCOptions const& opt)
 
   if (SOCK_STREAM == sock_type) {
     if (opt.sockopt_flags & NetVCOptions::SOCK_OPT_NO_DELAY) {
-      safe_setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, ON, sizeof(int));
+      safe_setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, SOCKOPT_ON, sizeof(int));
       Debug("socket", "::open: setsockopt() TCP_NODELAY on socket");
     }
     if (opt.sockopt_flags & NetVCOptions::SOCK_OPT_KEEP_ALIVE) {
-      safe_setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, ON, sizeof(int));
+      safe_setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, SOCKOPT_ON, sizeof(int));
       Debug("socket", "::open: setsockopt() SO_KEEPALIVE on socket");
     }
   }
