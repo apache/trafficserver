@@ -233,10 +233,9 @@ int ink_inet_pton(char const* text, sockaddr* addr) {
     */
 
     size_t n = strlen(text);
-    copy = static_cast<char*>(alloca(n)); // n-1 would probably be OK.
+    copy = static_cast<char*>(alloca(n-1));
     if (']' == text[n-1]) {
-      strncpy(copy, text+1, n-2);
-      copy[n-2] = 0;
+      ink_strlcpy(copy, text+1, n-1);
       text = copy;
     } else {
       // Bad format, getaddrinfo isn't going to succeed.

@@ -308,12 +308,12 @@ ink_filepath_make(char *path, int pathsz, const char *rootpath, const char *addp
 
   if (addpath[0] == '/') {
     // If addpath is rooted, then rootpath is unused.
-    ink_strncpy(path, addpath, pathsz);
+    ink_strlcpy(path, addpath, pathsz);
     return 0;
   }
   if (!rootpath || !*rootpath) {
     // If there's no rootpath return the addpath
-    ink_strncpy(path, addpath, pathsz);
+    ink_strlcpy(path, addpath, pathsz);
     return 0;
   }
   rootlen = strlen(rootpath);
@@ -322,10 +322,13 @@ ink_filepath_make(char *path, int pathsz, const char *rootpath, const char *addp
     *path = '\0';
     return (int)maxlen;
   }
-  strcpy(path, rootpath);
+  ink_strlcpy(path, rootpath, pathsz);
   path += rootlen;
-  if (*(path - 1) != '/')
+  pathsz -= rootlen;
+  if (*(path - 1) != '/') {
     *(path++) = '/';
-  strcpy(path, addpath);
+    --pathsz;
+  }
+  ink_strlcpy(path, addpath, pathsz);
   return 0;
 }

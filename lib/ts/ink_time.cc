@@ -602,7 +602,7 @@ ink_time_first_day_of_year(int year)
 void
 ink_time_day_to_string(int day, char *buffer, const size_t bufferSize)
 {
-  ink_strncpy(buffer, _day_names[day], bufferSize);
+  ink_strlcpy(buffer, _day_names[day], bufferSize);
 }                               /* End ink_time_day_to_string */
 
 
@@ -617,7 +617,7 @@ ink_time_day_to_string(int day, char *buffer, const size_t bufferSize)
 void
 ink_time_month_to_string(int month, char *buffer, const size_t bufferSize)
 {
-  ink_strncpy(buffer, _month_names[month - 1], bufferSize);
+  ink_strlcpy(buffer, _month_names[month - 1], bufferSize);
 }                               /* End ink_time_month_to_string */
 
 

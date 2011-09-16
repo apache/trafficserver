@@ -47,7 +47,7 @@ public:
   // coverity[uninit_member]
   Lockfile(const char *filename):fd(0)
   {
-    ink_strncpy(fname, filename, sizeof(fname));
+    ink_strlcpy(fname, filename, sizeof(fname));
   }
 
   ~Lockfile(void)
@@ -56,7 +56,7 @@ public:
 
   void SetLockfileName(const char *filename)
   {
-    ink_strncpy(fname, filename, sizeof(fname));
+    ink_strlcpy(fname, filename, sizeof(fname));
   }
 
   const char *GetLockfileName(void)

@@ -83,7 +83,7 @@ process_arg(ArgumentDescription * argument_descriptions,
         *(int64_t *) argument_descriptions[i].location = ink_atoi64(arg);
         break;
       case 'S':
-        strncpy((char *) argument_descriptions[i].location, arg, atoi(argument_descriptions[i].type + 1));
+        ink_strlcpy((char *) argument_descriptions[i].location, arg, atoi(argument_descriptions[i].type + 1));
         break;
       default:
         ink_fatal(1, (char *) "bad argument description");
@@ -158,7 +158,7 @@ process_args(ArgumentDescription * argument_descriptions, int n_argument_descrip
         *(int64_t *) argument_descriptions[i].location = atoll(env);
         break;
       case 'S':
-        strncpy((char *) argument_descriptions[i].location, env, atoi(argument_descriptions[i].type + 1));
+        ink_strlcpy((char *) argument_descriptions[i].location, env, atoi(argument_descriptions[i].type + 1));
         break;
       }
     }

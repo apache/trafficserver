@@ -328,17 +328,14 @@ ink_res_init(
         buf[0] = '.';
       cp = strchr(buf, '.');
       cp = (cp == NULL) ? buf : (cp + 1);
-      strncpy(statp->defdname, cp,
-              sizeof(statp->defdname) - 1);
-      statp->defdname[sizeof(statp->defdname) - 1] = '\0';
+      ink_strlcpy(statp->defdname, cp, sizeof(statp->defdname));
     }
   }
 #endif	/* SOLARIS2 */
 
 	/* Allow user to override the local domain definition */
   if ((cp = getenv("LOCALDOMAIN")) != NULL) {
-    (void)strncpy(statp->defdname, cp, sizeof(statp->defdname) - 1);
-    statp->defdname[sizeof(statp->defdname) - 1] = '\0';
+    (void)ink_strlcpy(statp->defdname, cp, sizeof(statp->defdname));
     haveenv++;
 
     /*
@@ -380,12 +377,12 @@ ink_res_init(
      ---------------------------------------------- */
 
   if (pDefDomain && '\0' != *pDefDomain && '\n' != *pDefDomain) {
-    strncpy(statp->defdname, pDefDomain, sizeof(statp->defdname) - 1);
+    ink_strlcpy(statp->defdname, pDefDomain, sizeof(statp->defdname));
     if ((cp = strpbrk(statp->defdname, " \t\n")) != NULL)
       *cp = '\0';
   }
   if (pSearchList && '\0' != *pSearchList && '\n' != *pSearchList) {
-    strncpy(statp->defdname, pSearchList, sizeof(statp->defdname) - 1);
+    ink_strlcpy(statp->defdname, pSearchList, sizeof(statp->defdname));
     if ((cp = strchr(statp->defdname, '\n')) != NULL)
       *cp = '\0';
     /*
@@ -446,8 +443,7 @@ ink_res_init(
           cp++;
         if ((*cp == '\0') || (*cp == '\n'))
           continue;
-        strncpy(statp->defdname, cp, sizeof(statp->defdname) - 1);
-        statp->defdname[sizeof(statp->defdname) - 1] = '\0';
+        ink_strlcpy(statp->defdname, cp, sizeof(statp->defdname));
         if ((cp = strpbrk(statp->defdname, " \t\n")) != NULL)
           *cp = '\0';
         havesearch = 0;
@@ -462,8 +458,7 @@ ink_res_init(
           cp++;
         if ((*cp == '\0') || (*cp == '\n'))
           continue;
-        strncpy(statp->defdname, cp, sizeof(statp->defdname) - 1);
-        statp->defdname[sizeof(statp->defdname) - 1] = '\0';
+        ink_strlcpy(statp->defdname, cp, sizeof(statp->defdname));
         if ((cp = strchr(statp->defdname, '\n')) != NULL)
           *cp = '\0';
         /*
@@ -528,7 +523,7 @@ ink_res_init(
     statp->nscount = nserv;
 
   if (statp->defdname[0] == 0 && gethostname(buf, sizeof(statp->defdname) - 1) == 0 && (cp = strchr(buf, '.')) != NULL)
-    strcpy(statp->defdname, cp + 1);
+    ink_strlcpy(statp->defdname, cp + 1, sizeof(statp->defdname));
 
   /* find components of local domain that might be searched */
   if (havesearch == 0) {
