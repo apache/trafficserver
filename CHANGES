@@ -1,6 +1,15 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.1.1
+  *) [TS-567] A number of memory allocation clean up, and improvements. We
+   now also support building with tcmalloc, jemalloc, and you can also turn
+   off the freelist feature (for better debugging). [TBD TBD!]
+
+  *) [TS-950] Make the HTTP header regressions work on 32-bit, inefficient,
+   but it works.
+
   *) [TS-956] fix the building with zlib-1.2.5.1.
+
+  *) [TS-953] consolidate string copy/concat for examples.
 
   *) [TS-924] More efficient sharing of origin connections.
     
@@ -15,6 +24,8 @@ Changes with Apache Traffic Server 3.1.1
    heavily based on William Bardwells and Weijin's work.
 
   *) [TS-84] Unify all code to use PATH_NAME_MAX, and increase it to 4K.
+
+  *) [TS-943] Implement support for HTTP accept filters.
 
   *) [TS-168] revert iObject and other changes, make collation client work
    in the clean way.
