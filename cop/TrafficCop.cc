@@ -547,7 +547,7 @@ read_config_string(const char *str, char *val, size_t val_len, bool miss_ok = fa
     p += 1;
   }
 
-  ink_strncpy(val, p, val_len);
+  ink_strlcpy(val, p, val_len);
   return;
 
 ConfigStrFatalError:
@@ -1038,7 +1038,7 @@ error:
 }
 
 static int
-read_manager_string(const char *variable, char *value)
+read_manager_string(const char *variable, char *value, size_t val_len)
 {
   char buffer[4096];
   char request[1024];
@@ -1086,8 +1086,7 @@ read_manager_string(const char *variable, char *value)
     return -1;
   }
 
-  strncpy(value, p, e - p);
-  value[e - p] = '\0';
+  ink_strlcpy(value, p, val_len);
 
   return 0;
 }
@@ -1164,7 +1163,7 @@ test_rs_port()
   char buffer[4096];
   int err;
 
-  err = read_manager_string("proxy.config.manager_binary", buffer);
+  err = read_manager_string("proxy.config.manager_binary", buffer, sizeof(buffer));
   if (err < 0) {
     return err;
   }
@@ -1229,8 +1228,8 @@ test_http_port(int port, char *request, int timeout, char *ip = NULL, char *ip_t
   }
 
   if (strncmp(p, "200", 3) != 0) {
-    char pstatus[4] = { '\0', '\0', '\0', '\0' };
-    strncpy(pstatus, p, 3);
+    char pstatus[4] = { 0 };
+    ink_strlcpy(pstatus, p, sizeof(pstatus));
     cop_log(COP_WARNING, "(http test) received non-200 status(%s)\n", pstatus);
     return -1;
   }
