@@ -2090,7 +2090,7 @@ add_snapshot(char *args)
   char *snap_name = strtok(args, ":");
   snap_name = strtok(NULL, ":");
   fprintf(stderr, "add snapshot: %s\n", snap_name);
-  name = TSstrdup(snap_name);
+  char *name = TSstrdup(snap_name);
 
   TSError err = TSSnapshotTake(name);
   print_err("TSSnapshotTake", err);
@@ -2104,7 +2104,7 @@ remove_snapshot(char *args)
   char *snap_name = strtok(args, ":");
   snap_name = strtok(NULL, ":");
   fprintf(stderr, "remove snapshot: %s\n", snap_name);
-  name = TSstrdup(snap_name);
+  char *name = TSstrdup(snap_name);
 
   TSError err = TSSnapshotRemove(name);
   print_err("TSSnapshotRemove", err);
@@ -2118,7 +2118,7 @@ restore_snapshot(char *args)
   char *snap_name = strtok(args, ":");
   snap_name = strtok(NULL, ":");
   fprintf(stderr, "resotre snapshot: %s\n", snap_name);
-  name = TSstrdup(snap_name);
+  char *name = TSstrdup(snap_name);
 
   TSError err = TSSnapshotRestore(name);
   print_err("TSSnapshotRestore", err);
