@@ -1013,6 +1013,10 @@ HdrTest::test_http_hdr_copy_over_aux(int testnum, const char *request, const cha
   if (comp_str)
     goto done;
 
+  // The APIs for copying headers uses memcpy() which can be unsafe for
+  // overlapping memory areas. It's unclear to me why these tests were
+  // created in the first place honestly, since nothing else does this.
+#if 0
     /*** (4) Copying over yourself ***/
   copy1.copy(&copy1);
   comp_str = comp_http_hdr(&req_hdr, &copy1);
@@ -1023,6 +1027,7 @@ HdrTest::test_http_hdr_copy_over_aux(int testnum, const char *request, const cha
   comp_str = comp_http_hdr(&resp_hdr, &copy2);
   if (comp_str)
     goto done;
+#endif
 
     /*** (5) Gender bending copying ***/
   copy1.copy(&resp_hdr);
