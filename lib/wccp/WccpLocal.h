@@ -32,11 +32,6 @@
 # include <malloc.h>
 # include <map>
 
-namespace ts {
-/// Null / invalid file descriptor.
-static const int NO_FD = -1;
-}
-
 namespace wccp {
 
 // Forward declares
