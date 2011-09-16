@@ -410,8 +410,7 @@ RecGetRecordString(const char *name, char *buf, int buf_len, bool lock)
       if (r->data.rec_string == NULL) {
         buf[0] = '\0';
       } else {
-        strncpy(buf, r->data.rec_string, buf_len - 1);
-        buf[buf_len - 1] = '\0';
+        ink_strlcpy(buf, r->data.rec_string, buf_len);
       }
     }
     rec_mutex_release(&(r->lock));
@@ -652,8 +651,7 @@ RecGetRecordDefaultDataString_Xmalloc(char *name, char **buf, bool lock)
       break;
     case RECD_STRING:
       if (r->data_default.rec_string) {
-        strncpy(*buf, r->data_default.rec_string, 1023);
-        buf[1023] = '\0';
+        ink_strlcpy(*buf, r->data_default.rec_string, 1024);
       } else {
         ats_free(*buf);
         *buf = NULL;

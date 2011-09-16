@@ -198,7 +198,7 @@ RecPipeCreate(const char *base_path, const char *name)
 
   memset(&servaddr, 0, sizeof(servaddr));
   servaddr.sun_family = AF_UNIX;
-  ink_strncpy(servaddr.sun_path, path, sizeof(servaddr.sun_path));
+  ink_strlcpy(servaddr.sun_path, path, sizeof(servaddr.sun_path));
 
   int optval = 1;
   if (setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR, (char *) &optval, sizeof(int)) < 0) {
@@ -252,7 +252,7 @@ RecPipeConnect(const char *base_path, const char *name)
   // Setup Connection to LocalManager */
   memset((char *) &servaddr, 0, sizeof(servaddr));
   servaddr.sun_family = AF_UNIX;
-  ink_strncpy(servaddr.sun_path, path, sizeof(servaddr.sun_path));
+  ink_strlcpy(servaddr.sun_path, path, sizeof(servaddr.sun_path));
   servaddr_len = sizeof(servaddr.sun_family) + strlen(servaddr.sun_path);
 
   if ((sockfd = socket(AF_UNIX, SOCK_STREAM, 0)) < 0) {
