@@ -570,16 +570,16 @@ print_remap_ele(TSRemapEle * ele)
 
   switch (ele->cfg_ele.type) {
   case TS_REMAP_MAP:
-    strncat(buf, "map", sizeof(buf) - strlen(buf) - 1);
+    ink_strlcat(buf, "map", sizeof(buf));
     break;
   case TS_REMAP_REVERSE_MAP:
-    strncat(buf, "reverse_map", sizeof(buf) - strlen(buf) - 1);
+    ink_strlcat(buf, "reverse_map", sizeof(buf));
     break;
   case TS_REMAP_REDIRECT:
-    strncat(buf, "redirect", sizeof(buf) - strlen(buf) - 1);
+    ink_strlcat(buf, "redirect", sizeof(buf));
     break;
   case TS_REMAP_REDIRECT_TEMP:
-    strncat(buf, "redirect_temporary", sizeof(buf) - strlen(buf) - 1);
+    ink_strlcat(buf, "redirect_temporary", sizeof(buf));
     break;
   default:
     // Handled here:
@@ -587,15 +587,15 @@ print_remap_ele(TSRemapEle * ele)
     break;
   }
   // space delimitor
-  strncat(buf, " ", sizeof(buf) - strlen(buf) - 1);
+  ink_strlcat(buf, " ", sizeof(buf));
 
   // from scheme
   switch (ele->from_scheme) {
   case TS_SCHEME_HTTP:
-    strncat(buf, "http", sizeof(buf) - strlen(buf) - 1);
+    ink_strlcat(buf, "http", sizeof(buf));
     break;
   case TS_SCHEME_HTTPS:
-    strncat(buf, "https", sizeof(buf) - strlen(buf) - 1);
+    ink_strlcat(buf, "https", sizeof(buf));
     break;
   default:
     // Handled here:
@@ -603,11 +603,11 @@ print_remap_ele(TSRemapEle * ele)
     // TS_SCHEME_UNDEFINED
     break;
   }
-  strncat(buf, "://", sizeof(buf) - strlen(buf) - 1);
+  ink_strlcat(buf, "://", sizeof(buf));
 
   // from host
   if (ele->from_host) {
-    strncat(buf, ele->from_host, sizeof(buf) - strlen(buf) - 1);
+    ink_strlcat(buf, ele->from_host, sizeof(buf));
   }
   // from port
   if (ele->from_port != TS_INVALID_PORT) {
@@ -615,30 +615,30 @@ print_remap_ele(TSRemapEle * ele)
   }
   // from host path
   if (ele->from_path_prefix) {
-    strncat(buf, "/", sizeof(buf) - strlen(buf) - 1);
-    strncat(buf, ele->from_path_prefix, sizeof(buf) - strlen(buf) - 1);
+    ink_strlcat(buf, "/", sizeof(buf));
+    ink_strlcat(buf, ele->from_path_prefix, sizeof(buf));
   }
   // space delimitor
-  strncat(buf, " ", sizeof(buf) - strlen(buf) - 1);
+  ink_strlcat(buf, " ", sizeof(buf));
 
   // to scheme
   switch (ele->to_scheme) {
   case TS_SCHEME_HTTP:
-    strncat(buf, "http", sizeof(buf) - strlen(buf) - 1);
+    ink_strlcat(buf, "http", sizeof(buf));
     break;
   case TS_SCHEME_HTTPS:
-    strncat(buf, "https", sizeof(buf) - strlen(buf) - 1);
+    ink_strlcat(buf, "https", sizeof(buf));
     break;
   default:
     // Handled here:
     // TS_SCHEME_NONE, TS_SCHEME_UNDEFINED
     break;
   }
-  strncat(buf, "://", sizeof(buf) - strlen(buf) - 1);
+  ink_strlcat(buf, "://", sizeof(buf));
 
   // to host
   if (ele->to_host) {
-    strncat(buf, ele->to_host, sizeof(buf) - strlen(buf) - 1);
+    ink_strlcat(buf, ele->to_host, sizeof(buf));
   }
   // to port
   if (ele->to_port != TS_INVALID_PORT) {
@@ -646,8 +646,8 @@ print_remap_ele(TSRemapEle * ele)
   }
   // to host path
   if (ele->to_path_prefix) {
-    strncat(buf, "/", sizeof(buf) - strlen(buf) - 1);
-    strncat(buf, ele->to_path_prefix, sizeof(buf) - strlen(buf) - 1);
+    ink_strlcat(buf, "/", sizeof(buf));
+    ink_strlcat(buf, ele->to_path_prefix, sizeof(buf));
   }
 
   printf("%s\n", buf);
@@ -701,32 +701,32 @@ print_split_dns_ele(TSSplitDnsEle * ele)
   }
 
   if (ele->pd_val) {
-    strncat(buf, pd_name, sizeof(buf) - strlen(buf) - 1);
-    strncat(buf, "=", sizeof(buf) - strlen(buf) - 1);
-    strncat(buf, ele->pd_val, sizeof(buf) - strlen(buf) - 1);
-    strncat(buf, " ", sizeof(buf) - strlen(buf) - 1);
+    ink_strlcat(buf, pd_name, sizeof(buf));
+    ink_strlcat(buf, "=", sizeof(buf));
+    ink_strlcat(buf, ele->pd_val, sizeof(buf));
+    ink_strlcat(buf, " ", sizeof(buf));
   }
 
   if (ele->dns_servers_addrs) {
-    strncat(buf, "named=", sizeof(buf) - strlen(buf) - 1);
+    ink_strlcat(buf, "named=", sizeof(buf));
     str = ip_addr_list_to_string((LLQ *) ele->dns_servers_addrs, " ");
-    strncat(buf, str, sizeof(buf) - strlen(buf) - 1);
+    ink_strlcat(buf, str, sizeof(buf));
     ats_free(str);
-    strncat(buf, " ", sizeof(buf) - strlen(buf) - 1);
+    ink_strlcat(buf, " ", sizeof(buf));
   }
 
   if (ele->def_domain) {
-    strncat(buf, "dns_server=", sizeof(buf) - strlen(buf) - 1);
-    strncat(buf, ele->def_domain, sizeof(buf) - strlen(buf) - 1);
-    strncat(buf, " ", sizeof(buf) - strlen(buf) - 1);
+    ink_strlcat(buf, "dns_server=", sizeof(buf));
+    ink_strlcat(buf, ele->def_domain, sizeof(buf));
+    ink_strlcat(buf, " ", sizeof(buf));
   }
 
   if (ele->search_list) {
-    strncat(buf, "search_list=", sizeof(buf) - strlen(buf) - 1);
+    ink_strlcat(buf, "search_list=", sizeof(buf));
     str = domain_list_to_string(ele->search_list, " ");
-    strncat(buf, str, sizeof(buf) - strlen(buf) - 1);
+    ink_strlcat(buf, str, sizeof(buf));
     ats_free(str);
-    strncat(buf, " ", sizeof(buf) - strlen(buf) - 1);
+    ink_strlcat(buf, " ", sizeof(buf));
   }
   printf("%s\n", buf);
   ats_free(pd_name);
@@ -1187,9 +1187,7 @@ test_rec_get(char *rec_name)
   TSError ret;
   char *name;
 
-  name = (char *) TSmalloc(sizeof(char) * (strlen(rec_name)));
-  strncpy(name, rec_name, strlen(rec_name) - 1);
-  name[strlen(rec_name) - 1] = '\0';
+  name = ats_strdup(rec_name);
   printf("[test_rec_get] Get Record: %s\n", name);
 
   // retrieve a string value record using generic RecordGet
@@ -1244,28 +1242,28 @@ test_record_get_mlt(void)
 
   const size_t v1_size = (sizeof(char) * (strlen("proxy.config.proxy_name") + 1));
   v1 = (char *) TSmalloc(v1_size);
-  ink_strncpy(v1, "proxy.config.proxy_name", v1_size);
+  ink_strlcpy(v1, "proxy.config.proxy_name", v1_size);
   const size_t v2_size = (sizeof(char) * (strlen("proxy.config.bin_path") + 1));
   v2 = (char *) TSmalloc(v2_size);
-  ink_strncpy(v2, "proxy.config.bin_path", v2_size);
+  ink_strlcpy(v2, "proxy.config.bin_path", v2_size);
   const size_t v3_size = (sizeof(char) * (strlen("proxy.config.manager_binary") + 1));
   v3 = (char *) TSmalloc(v3_size);
-  ink_strncpy(v3, "proxy.config.manager_binary", v3_size);
+  ink_strlcpy(v3, "proxy.config.manager_binary", v3_size);
   const size_t v4_size = (sizeof(char) * (strlen("proxy.config.cli_binary") + 1));
   v4 = (char *) TSmalloc(v4_size);
-  ink_strncpy(v4, "proxy.config.cli_binary", v4_size);
+  ink_strlcpy(v4, "proxy.config.cli_binary", v4_size);
   const size_t v5_size = (sizeof(char) * (strlen("proxy.config.watch_script") + 1));
   v5 = (char *) TSmalloc(v5_size);
-  ink_strncpy(v5, "proxy.config.watch_script", v5_size);
+  ink_strlcpy(v5, "proxy.config.watch_script", v5_size);
   const size_t v6_size = (sizeof(char) * (strlen("proxy.config.env_prep") + 1));
   v6 = (char *) TSmalloc(v6_size);
-  ink_strncpy(v6, "proxy.config.env_prep", v6_size);
+  ink_strlcpy(v6, "proxy.config.env_prep", v6_size);
   const size_t v7_size = (sizeof(char) * (strlen("proxy.config.cop.core_signal") + 1));
   v7 = (char *) TSmalloc(v7_size);
-  ink_strncpy(v7, "proxy.config.cop.core_signal", v7_size);
+  ink_strlcpy(v7, "proxy.config.cop.core_signal", v7_size);
   const size_t v8_size = (sizeof(char) * (strlen("proxy.config.http.cache.fuzz.probability") + 1));
   v8 = (char *) TSmalloc(v8_size);
-  ink_strncpy(v8, "proxy.config.http.cache.fuzz.probability", v8_size);
+  ink_strlcpy(v8, "proxy.config.http.cache.fuzz.probability", v8_size);
 
   // add the names to the get_list
   TSStringListEnqueue(name_list, v1);
@@ -1337,37 +1335,27 @@ test_record_set_mlt(void)
   list = TSListCreate();
 
   ele1 = TSRecordEleCreate();  // TS_TYPE_UNDEFINED action
-  const size_t ele1_rec_name_size = (sizeof(char) * (strlen("proxy.config.cli_binary") + 1));
-  ele1->rec_name = (char *) TSmalloc(ele1_rec_name_size);
-  ink_strncpy(ele1->rec_name, "proxy.config.cli_binary", ele1_rec_name_size);
+  ele1->rec_name = TSstrdup("proxy.config.cli_binary");
   ele1->rec_type = TS_REC_STRING;
   ele1->string_val = TSstrdup(ele1->rec_name);
 
   ele2 = TSRecordEleCreate();  // reread action
-  const size_t ele2_rec_name_size = (sizeof(char) * (strlen("proxy.config.http.cache.fuzz.probability") + 1));
-  ele2->rec_name = (char *) TSmalloc(ele2_rec_name_size);
-  ink_strncpy(ele2->rec_name, "proxy.config.http.cache.fuzz.probability", ele2_rec_name_size);
+  ele2->rec_name = TSstrdup("proxy.config.http.cache.fuzz.probability");
   ele2->rec_type = TS_REC_FLOAT;
   ele2->float_val = 0.1234;
 
   ele3 = TSRecordEleCreate();  // undefined action
-  const size_t ele3_rec_name_size = (sizeof(char) * (strlen("proxy.config.cop.core_signal") + 1));
-  ele3->rec_name = (char *) TSmalloc(ele3_rec_name_size);
-  ink_strncpy(ele3->rec_name, "proxy.config.cop.core_signal", ele3_rec_name_size);
+  ele3->rec_name = TSstrdup("proxy.config.cop.core_signal");
   ele3->rec_type = TS_REC_INT;
   ele3->int_val = -4;
 
   ele4 = TSRecordEleCreate();  //restart TM
-  const size_t ele4_rec_name_size = (sizeof(char) * (strlen("proxy.local.cluster.type") + 1));
-  ele4->rec_name = (char *) TSmalloc(ele4_rec_name_size);
-  ink_strncpy(ele4->rec_name, "proxy.local.cluster.type", ele4_rec_name_size);
+  ele4->rec_name = (char *) TSstrdup("proxy.local.cluster.type");
   ele4->rec_type = TS_REC_INT;
   ele4->int_val = 2;
 
   ele5 = TSRecordEleCreate();  // reread action
-  const size_t ele5_rec_name_size = (sizeof(char) * (strlen("proxy.config.cluster.mc_ttl") + 1));
-  ele5->rec_name = (char *) TSmalloc(ele5_rec_name_size);
-  ink_strncpy(ele5->rec_name, "proxy.config.cluster.mc_ttl", ele5_rec_name_size);
+  ele5->rec_name = (char *) TSstrdup("proxy.config.cluster.mc_ttl");
   ele5->rec_type = TS_REC_INT;
   ele5->int_val = 555;
 
@@ -1539,9 +1527,7 @@ test_cfg_context_get(char *args)
   char *filename = strtok(args, ":");
   filename = strtok(NULL, ":");
   fprintf(stderr, "modify file: %s\n", filename);
-  char *name = (char *) TSmalloc(sizeof(char) * (strlen(filename)));
-  ink_strncpy(name, filename, strlen(filename));
-  name[strlen(filename) - 1] = '\0';
+  char *name = TSstrdup(filename);
 
   // convert file name to TSFileNameT
   if (strcmp(name, "cache.config") == 0) {
@@ -1611,9 +1597,7 @@ test_cfg_context_move(char *args)
   char *filename = strtok(args, ":");
   filename = strtok(NULL, ":");
   fprintf(stderr, "modify file: %s\n", filename);
-  char *name = (char *) TSmalloc(sizeof(char) * (strlen(filename)));
-  ink_strncpy(name, filename, strlen(filename));
-  name[strlen(filename) - 1] = '\0';
+  char *name =TSstrdup(filename);
 
   // convert file name to TSFileNameT
   if (strcmp(name, "cache.config") == 0) {
@@ -1740,12 +1724,8 @@ test_cfg_context_ops()
   printf("\nappend new ele\n");
   ele = TSVirtIpAddrEleCreate();
   if (ele) {
-    const size_t ip_addr_size = (sizeof(char) * (strlen("201.201.201.201") + 1));
-    ele->ip_addr = (char *) TSmalloc(ip_addr_size);
-    ink_strncpy(ele->ip_addr, "201.201.201.201", ip_addr_size);
-    const size_t intr_size = (sizeof(char) * (strlen("appended") + 1));
-    ele->intr = (char *) TSmalloc(intr_size);
-    ink_strncpy(ele->intr, "appended", intr_size);
+    ele->ip_addr = TSstrdup("201.201.201.201");
+    ele->intr = TSstrdup("appended");
     ele->sub_intr = 201;
     err = TSCfgContextAppendEle(ctx, (TSCfgEle *) ele);
     if (err != TS_ERR_OKAY) {
@@ -1763,12 +1743,8 @@ test_cfg_context_ops()
   printf("\nINSERT NEW ELE at %d index\n", insert_at);
   ele = TSVirtIpAddrEleCreate();
   if (ele) {
-    const size_t ip_addr_size = (sizeof(char) * (strlen("101.101.101.101") + 1));
-    ele->ip_addr = (char *) TSmalloc(ip_addr_size);
-    ink_strncpy(ele->ip_addr, "101.101.101.101", ip_addr_size);
-    const size_t intr_size = (sizeof(char) * (strlen("inserted") + 1));
-    ele->intr = (char *) TSmalloc(intr_size);
-    ink_strncpy(ele->intr, "inserted", intr_size);
+    ele->ip_addr = TSstrdup("101.101.101.101");
+    ele->intr = (char *) TSstrdup("inserted");
     ele->sub_intr = 100;
     err = TSCfgContextInsertEleAt(ctx, (TSCfgEle *) ele, insert_at);
     if (err != TS_ERR_OKAY) {
@@ -2018,9 +1994,7 @@ try_resolve(char *event_name)
   TSError ret;
   char *name;
 
-  name = (char *) TSmalloc(sizeof(char) * (strlen(event_name)));
-  strncpy(name, event_name, strlen(event_name) - 1);
-  name[strlen(event_name) - 1] = '\0';
+  name = TSstrdup(event_name);
   printf("[try_resolve] Resolving event: %s\n", name);
 
   if (check_active(name)) {     // resolve events
@@ -2116,9 +2090,7 @@ add_snapshot(char *args)
   char *snap_name = strtok(args, ":");
   snap_name = strtok(NULL, ":");
   fprintf(stderr, "add snapshot: %s\n", snap_name);
-  char *name = (char *) TSmalloc(sizeof(char) * (strlen(snap_name)));
-  strncpy(name, snap_name, strlen(snap_name) - 1);
-  name[strlen(snap_name) - 1] = '\0';
+  name = TSstrdup(snap_name);
 
   TSError err = TSSnapshotTake(name);
   print_err("TSSnapshotTake", err);
@@ -2132,9 +2104,7 @@ remove_snapshot(char *args)
   char *snap_name = strtok(args, ":");
   snap_name = strtok(NULL, ":");
   fprintf(stderr, "remove snapshot: %s\n", snap_name);
-  char *name = (char *) TSmalloc(sizeof(char) * (strlen(snap_name)));
-  strncpy(name, snap_name, strlen(snap_name) - 1);
-  name[strlen(snap_name) - 1] = '\0';
+  name = TSstrdup(snap_name);
 
   TSError err = TSSnapshotRemove(name);
   print_err("TSSnapshotRemove", err);
@@ -2148,9 +2118,7 @@ restore_snapshot(char *args)
   char *snap_name = strtok(args, ":");
   snap_name = strtok(NULL, ":");
   fprintf(stderr, "resotre snapshot: %s\n", snap_name);
-  char *name = (char *) TSmalloc(sizeof(char) * (strlen(snap_name)));
-  strncpy(name, snap_name, strlen(snap_name) - 1);
-  name[strlen(snap_name) - 1] = '\0';
+  name = TSstrdup(snap_name);
 
   TSError err = TSSnapshotRestore(name);
   print_err("TSSnapshotRestore", err);
