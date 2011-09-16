@@ -28,6 +28,7 @@
 # include <stdarg.h>
 # include <errno.h>
 # include <TsErrataUtil.h>
+# include "ink_string.h"
 
 namespace ts { namespace msg {
 
@@ -38,8 +39,7 @@ Errata::Code DEBUG = 0; /// Debugging information.
 
 # if defined(_MSC_VER)
 char* strerror_r(int err, char* s, size_t n) {
-    strncpy(s, strerror(err), n-1);
-    s[n-1] = 0; // guarantee null termination.
+    ink_strlcpy(s, strerror(err), n);
     return s;
 }
 
