@@ -411,8 +411,8 @@ TSPluginInit(int argc, const char *argv[])
     url_redirect = TSstrdup(argv[2]);
     uri_len = strlen(prefix) + strlen(url_redirect) + 1;
     uri_redirect = TSmalloc(uri_len);
-    strcpy(uri_redirect, prefix);
-    strcat(uri_redirect, url_redirect);
+    TSstrlcpy(uri_redirect, prefix, uri_len);
+    TSstrlcat(uri_redirect, url_redirect, uri_len);
 
   } else {
     TSError("Incorrect syntax in plugin.conf:  correct usage is" "redirect-1.so ip_deny url_redirect");

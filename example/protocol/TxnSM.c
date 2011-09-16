@@ -216,7 +216,7 @@ state_read_request_from_client(TSCont contp, TSEvent event, TSVIO vio)
 
     if (bytes_read > 0) {
       temp_buf = (char *) get_info_from_buffer(txn_sm->q_client_request_buffer_reader);
-      strcat(txn_sm->q_client_request, temp_buf);
+      TSstrlcat(txn_sm->q_client_request, temp_buf, MAX_REQUEST_LENGTH + 1);
       TSfree(temp_buf);
 
       /* Check if the request is fully read, if so, do cache lookup. */
@@ -947,13 +947,13 @@ parse_request(char *request, char *server_name, char *file_name)
 {
   char *temp = strtok(request, " ");
   if (temp != NULL)
-    strcpy(server_name, temp);
+    TSstrlcpy(server_name, temp, MAX_SERVER_NAME_LENGTH + 1);
   else
     return 0;
 
   temp = strtok(NULL, " ");
   if (temp != NULL)
-    strcpy(file_name, temp);
+    TSstrlcpy(file_name, temp, MAX_FILE_NAME_LENGTH + 1);
   else
     return 0;
 

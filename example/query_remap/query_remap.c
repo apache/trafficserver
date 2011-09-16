@@ -129,9 +129,7 @@ TSRemapDoRemap(void* ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
     char *s = NULL;
 
     /* make a copy of the query, as it is read only */
-    q = (char*) TSmalloc(req_query_len+1);
-    strncpy(q, req_query, req_query_len);
-    q[req_query_len] = '\0';
+    q = (char*) TSstrndup(req_query, req_query_len+1);
 
     /* parse query parameters */
     for (key = strtok_r(q, "&", &s); key != NULL;) {

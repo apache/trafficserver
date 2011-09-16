@@ -71,7 +71,7 @@ load_dictionary(char *dict, uLong * adler)
   while (!feof(fp)) {
     if (fscanf(fp, "%s\n", dict + i) == 1) {
       i = strlen(dict);
-      strcat(dict + i, " ");
+      TSstrlcat(dict + i, " ", sizeof(dict) - i);
       i++;
     }
   }
@@ -534,7 +534,7 @@ void
 TSPluginInit(int argc, const char *argv[])
 {
   if (argc == 2) {
-    strcpy(preload_file, argv[1]);
+    TSstrlcpy(preload_file, argv[1], sizeof(preload_file));
     preload = 1;
     load_dictionary(dictionary, &dictId);
   }

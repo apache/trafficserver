@@ -159,10 +159,10 @@ int main(int argc, char * argv[])
   }
 
   // Get TS directories
-  ink_strncpy(system_root_dir, Layout::get()->prefix, sizeof(system_root_dir));
-  ink_strncpy(system_config_directory, Layout::get()->sysconfdir, sizeof(system_config_directory));
-  ink_strncpy(system_runtime_dir, Layout::get()->runtimedir, sizeof(system_runtime_dir));
-  ink_strncpy(system_log_dir, Layout::get()->logdir, sizeof(system_log_dir));
+  ink_strlcpy(system_root_dir, Layout::get()->prefix, sizeof(system_root_dir));
+  ink_strlcpy(system_config_directory, Layout::get()->sysconfdir, sizeof(system_config_directory));
+  ink_strlcpy(system_runtime_dir, Layout::get()->runtimedir, sizeof(system_runtime_dir));
+  ink_strlcpy(system_log_dir, Layout::get()->logdir, sizeof(system_log_dir));
 
   if (system_root_dir[0] && (chdir(system_root_dir) < 0)) {
     fprintf(stderr,"unable to change to root directory \"%s\" [%d '%s']\n", system_root_dir, errno, strerror(errno));
