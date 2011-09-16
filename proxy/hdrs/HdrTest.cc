@@ -1074,7 +1074,7 @@ HdrTest::test_http_hdr_print_and_copy_aux(int testnum,
   int cpy_bufsize = sizeof(cpy_buf);
   int cpy_bufindex, cpy_dumpoffset, cpy_ret;
 
-  char marshal_buf[2048];
+  char *marshal_buf = (char*)ats_malloc(2048);
   int marshal_bufsize = sizeof(cpy_buf);
 
     /*** (1) parse the request string into hdr ***/
@@ -1106,6 +1106,7 @@ HdrTest::test_http_hdr_print_and_copy_aux(int testnum,
   marshal_hdr.unmarshal(marshal_buf, marshal_len, &ref);
   new_hdr.create(HTTP_TYPE_REQUEST);
   new_hdr.copy(&marshal_hdr);
+  ats_free(marshal_buf);
 
     /*** (3) print the request header and copy to buffers ***/
 
