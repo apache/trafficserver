@@ -417,11 +417,13 @@ DNSHandler::open_con(sockaddr const* target, bool failed, int icon)
   ip_port_text_buffer ip_text;
   PollDescriptor *pd = get_PollDescriptor(dnsProcessor.thread);
 
-  Debug("dns", "open_con: opening connection %s", ink_inet_nptop(target, ip_text, sizeof ip_text));
-
   if (!icon && target) {
     ink_inet_copy(&ip, target);
+  } else if (!target) {
+    target = &ip.sa;
   }
+
+  Debug("dns", "open_con: opening connection %s", ink_inet_nptop(target, ip_text, sizeof ip_text));
 
   if (con[icon].fd != NO_FD) {  // Remove old FD from epoll fd
     con[icon].eio.stop();
