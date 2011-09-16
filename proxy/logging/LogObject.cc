@@ -104,6 +104,7 @@ LogObject::LogObject(LogFormat *format, const char *log_dir,
       m_rolling_interval_sec (rolling_interval_sec),
       m_rolling_offset_hr (rolling_offset_hr),
       m_rolling_size_mb (rolling_size_mb),
+      m_last_roll_time(0),
       m_ref_count (0),
       m_log_buffer (NULL)
 {
