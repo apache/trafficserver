@@ -415,7 +415,7 @@ initialize_process_manager()
   }
 
   if (access(management_directory, R_OK) == -1) {
-    ink_strncpy(management_directory, Layout::get()->sysconfdir, PATH_NAME_MAX);
+    ink_strlcpy(management_directory, Layout::get()->sysconfdir, sizeof(management_directory));
     if (access(management_directory, R_OK) == -1) {
       fprintf(stderr,"unable to access() management path '%s': %d, %s\n", management_directory, errno, strerror(errno));
       fprintf(stderr,"please set management path via command line '-d <managment directory>'\n");
@@ -1222,15 +1222,15 @@ init_http_aeua_filter(void)
       ++cname;
       --j;
     }
-    ink_strncpy(buf, system_config_directory, sizeof(buf));
+    ink_strlcpy(buf, system_config_directory, sizeof(buf));
     if ((i = strlen(buf)) >= 0) {
       if (!i || (buf[i - 1] != '/' && buf[i - 1] != '\\' && i < (int) sizeof(buf))) {
-        strncat(buf, "/", 1);
+        ink_strlcat(buf, "/", sizeof(buf));
         ++i;
       }
     }
     if ((i + j + 1) < (int) sizeof(buf))
-      strncat(buf, cname, sizeof(_cname) - 1);
+      ink_strlcat(buf, cname, sizeof(buf));
   }
 
   i = HttpConfig::init_aeua_filter(buf[0] ? buf : NULL);
@@ -1504,8 +1504,8 @@ main(int argc, char **argv)
 
   // Before accessing file system initialize Layout engine
   Layout::create();
-  ink_strncpy(system_root_dir, Layout::get()->prefix, PATH_NAME_MAX);
-  ink_strncpy(management_directory, Layout::get()->sysconfdir, PATH_NAME_MAX);
+  ink_strlcpy(system_root_dir, Layout::get()->prefix, sizeof(system_root_dir));
+  ink_strlcpy(management_directory, Layout::get()->sysconfdir, sizeof(management_directory));
   chdir_root(); // change directory to the install root of traffic server.
 
   process_args(argument_descriptions, n_argument_descriptions, argv);

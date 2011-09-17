@@ -44,7 +44,7 @@ _xstrdup(const char *str, int length, const char *path)
       length = strlen(str);
 
     newstr = (char *)ats_malloc(length + 1);
-    ink_strlcpy(newstr, str, length);
+    ink_strlcpy(newstr, str, length + 1);
     return newstr;
   }
   return NULL;
