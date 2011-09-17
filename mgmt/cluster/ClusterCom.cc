@@ -341,7 +341,7 @@ ClusterCom::ClusterCom(unsigned long oip, char *host, int port, char *group, int
   memset(&broadcast_addr, 0, sizeof(broadcast_addr));
   memset(&receive_addr, 0, sizeof(receive_addr));
 
-  ink_strncpy(our_host, host, sizeof(our_host));
+  ink_strlcpy(our_host, host, sizeof(our_host));
   our_ip = oip;
 
   /* Get the cluster type */
@@ -404,7 +404,7 @@ ClusterCom::ClusterCom(unsigned long oip, char *host, int port, char *group, int
     mgmt_fatal(stderr, "[ClusterCom::ClusterCom] mc group length to large!\n");
   }
 
-  ink_strncpy(mc_group, group, sizeof(mc_group));
+  ink_strlcpy(mc_group, group, sizeof(mc_group));
   mc_port = port;
   reliable_server_port = sport;
 
@@ -479,7 +479,7 @@ ClusterCom::checkPeers(time_t * ticker)
         struct in_addr addr;
         addr.s_addr = tmp->inet_address;
 
-        ink_strncpy(cip, inet_ntoa(addr), sizeof(cip));
+        ink_strlcpy(cip, inet_ntoa(addr), sizeof(cip));
 
         Debug("ccom",
               "[ClusterCom::checkPeers] DEAD! %s idle since: %ld naddrs: %d\n", cip, idle_since, tmp->num_virt_addrs);
@@ -956,7 +956,7 @@ ClusterCom::handleMultiCastStatPacket(char *last, ClusterPeerInfo * peer)
           ats_free(rec->data.rec_string);
           int rec_string_size = strlen(tmp_msg_val) + 1;
           ink_assert((rec->data.rec_string = (RecString)ats_malloc(rec_string_size)));
-          ink_strncpy(rec->data.rec_string, tmp_msg_val, rec_string_size);
+          ink_strlcpy(rec->data.rec_string, tmp_msg_val, rec_string_size);
         }
         break;
       }
@@ -1006,9 +1006,7 @@ extract_locals(MgmtHashTable * local_ht, char *record_buffer)
       q++;
     // is this line a LOCAL?
     if (strncmp(q, "LOCAL", strlen("LOCAL")) == 0) {
-      int line_cp_len = strlen(line) + 1;
-      line_cp = (char *)ats_malloc(line_cp_len);
-      ink_strncpy(line_cp, line, line_cp_len);
+      line_cp = ats_strdup(line);
       q += strlen("LOCAL");
       while ((*q == ' ') || (*q == '\t'))
         q++;
@@ -1145,7 +1143,6 @@ ClusterCom::handleMultiCastFilePacket(char *last, char *ip)
         if (!file_update_failure && (strcmp(file, "records.config") == 0)) {
           textBuffer *our_rec_cfg;
           char *our_rec_cfg_cp;
-          int our_rec_cfg_cp_len;
           textBuffer *reply_new;
           MgmtHashTable *our_locals_ht;
 
@@ -1153,9 +1150,7 @@ ClusterCom::handleMultiCastFilePacket(char *last, char *ip)
             file_update_failure = true;
           } else {
             our_locals_ht = NEW(new MgmtHashTable("our_locals_ht", true, InkHashTableKeyType_String));
-            our_rec_cfg_cp_len = our_rec_cfg->spaceUsed();
-            our_rec_cfg_cp = (char *)ats_malloc(our_rec_cfg_cp_len + 1);
-            ink_strncpy(our_rec_cfg_cp, our_rec_cfg->bufPtr(), (our_rec_cfg_cp_len + 1));
+            our_rec_cfg_cp = ats_strdup(our_rec_cfg->bufPtr());
             extract_locals(our_locals_ht, our_rec_cfg_cp);
             reply_new = NEW(new textBuffer(reply->spaceUsed()));
             if (!insert_locals(reply_new, reply, our_locals_ht)) {
@@ -1320,7 +1315,7 @@ ClusterCom::sendSharedData(bool send_proxy_heart_beat)
   /* Alarm Message */
   memset(message, 0, 61440);
   resolved_addr.s_addr = our_ip;
-  ink_strncpy(addr, inet_ntoa(resolved_addr), sizeof(addr));
+  ink_strlcpy(addr, inet_ntoa(resolved_addr), sizeof(addr));
   lmgmt->alarm_keeper->constructAlarmMessage(addr, message, 61440);
   sendOutgoingMessage(message, strlen(message));
 
@@ -1367,7 +1362,7 @@ ClusterCom::constructSharedGenericPacket(char *message, int max, RecT packet_typ
   running_sum = constructSharedPacketHeader(message, inet_ntoa(resolved_addr), max);
 
   if (packet_type == RECT_NODE) {
-    ink_strncpy(&message[running_sum], "type: stat\n", (max - running_sum));
+    ink_strlcpy(&message[running_sum], "type: stat\n", (max - running_sum));
     running_sum += strlen("type: stat\n");
     ink_release_assert(running_sum < max);
   } else {
@@ -1380,7 +1375,7 @@ ClusterCom::constructSharedGenericPacket(char *message, int max, RecT packet_typ
   } else {
     snprintf(tmp, sizeof(tmp), "os: unknown\n");
   }
-  ink_strncpy(&message[running_sum], tmp, (max - running_sum));
+  ink_strlcpy(&message[running_sum], tmp, (max - running_sum));
   running_sum += strlen(tmp);
   ink_release_assert(running_sum < max);
 
@@ -1390,29 +1385,29 @@ ClusterCom::constructSharedGenericPacket(char *message, int max, RecT packet_typ
   } else {
     snprintf(tmp, sizeof(tmp), "rel: unknown\n");
   }
-  ink_strncpy(&message[running_sum], tmp, (max - running_sum));
+  ink_strlcpy(&message[running_sum], tmp, (max - running_sum));
   running_sum += strlen(tmp);
   ink_release_assert(running_sum < max);
 
   snprintf(tmp, sizeof(tmp), "hostname: %s\n", our_host);
-  ink_strncpy(&message[running_sum], tmp, (max - running_sum));
+  ink_strlcpy(&message[running_sum], tmp, (max - running_sum));
   running_sum += strlen(tmp);
   ink_release_assert(running_sum < max);
 
   snprintf(tmp, sizeof(tmp), "port: %d\n", cluster_port);
-  ink_strncpy(&message[running_sum], tmp, (max - running_sum));
+  ink_strlcpy(&message[running_sum], tmp, (max - running_sum));
   running_sum += strlen(tmp);
   ink_release_assert(running_sum < max);
 
   snprintf(tmp, sizeof(tmp), "ccomport: %d\n", reliable_server_port);
-  ink_strncpy(&message[running_sum], tmp, (max - running_sum));
+  ink_strlcpy(&message[running_sum], tmp, (max - running_sum));
   running_sum += strlen(tmp);
   ink_release_assert(running_sum < max);
 
   /* Current time stamp, for xntp like synching */
   if (time(NULL) > 0) {
     snprintf(tmp, sizeof(tmp), "time: %" PRId64 "\n", (int64_t)time(NULL));
-    ink_strncpy(&message[running_sum], tmp, (max - running_sum));
+    ink_strlcpy(&message[running_sum], tmp, (max - running_sum));
     running_sum += strlen(tmp);
   } else {
     mgmt_elog(stderr, "[ClusterCom::constructSharedPacket] time failed\n");
@@ -1427,17 +1422,17 @@ ClusterCom::constructSharedGenericPacket(char *message, int max, RecT packet_typ
       switch (rec->data_type) {
       case RECD_COUNTER:
         snprintf(tmp, sizeof(tmp), "%d:%d: %" PRId64 "\n", cnt, rec->data_type, rec->data.rec_counter);
-        ink_strncpy(&message[running_sum], tmp, (max - running_sum));
+        ink_strlcpy(&message[running_sum], tmp, (max - running_sum));
         running_sum += strlen(tmp);
         break;
       case RECD_INT:
         snprintf(tmp, sizeof(tmp), "%d:%d: %" PRId64 "\n", cnt, rec->data_type, rec->data.rec_int);
-        ink_strncpy(&message[running_sum], tmp, (max - running_sum));
+        ink_strlcpy(&message[running_sum], tmp, (max - running_sum));
         running_sum += strlen(tmp);
         break;
       case RECD_FLOAT:
         snprintf(tmp, sizeof(tmp), "%d:%d: %f\n", cnt, rec->data_type, rec->data.rec_float);
-        ink_strncpy(&message[running_sum], tmp, (max - running_sum));
+        ink_strlcpy(&message[running_sum], tmp, (max - running_sum));
         running_sum += strlen(tmp);
         break;
       case RECD_STRING:
@@ -1446,7 +1441,7 @@ ClusterCom::constructSharedGenericPacket(char *message, int max, RecT packet_typ
         } else {
           snprintf(tmp, sizeof(tmp), "%d:%d: NULL\n", cnt, rec->data_type);
         }
-        ink_strncpy(&message[running_sum], tmp, (max - running_sum));
+        ink_strlcpy(&message[running_sum], tmp, (max - running_sum));
         running_sum += strlen(tmp);
         break;
       default:
@@ -1508,7 +1503,7 @@ ClusterCom::constructSharedFilePacket(char *message, int max)
   resolved_addr.s_addr = our_ip;
   running_sum = constructSharedPacketHeader(message, inet_ntoa(resolved_addr), max);
 
-  ink_strncpy(&message[running_sum], "type: files\n", (max - running_sum));
+  ink_strlcpy(&message[running_sum], "type: files\n", (max - running_sum));
   running_sum += strlen("type: files\n");
   ink_release_assert(running_sum < max);
 
@@ -1547,7 +1542,7 @@ ClusterCom::constructSharedFilePacket(char *message, int max)
       time_t mod = 0;
 
       snprintf(tmp, sizeof(tmp), "%s %d %" PRId64 "\n", line, ver, (int64_t)mod);
-      ink_strncpy(&message[running_sum], tmp, (max - running_sum));
+      ink_strlcpy(&message[running_sum], tmp, (max - running_sum));
       running_sum += strlen(tmp);
       ink_release_assert(running_sum < max);
     } else {
@@ -1911,7 +1906,7 @@ ClusterCom::rl_sendReliableMessage(unsigned long addr, const char *buf, int len)
 
   address.s_addr = addr;
 
-  ink_strncpy(string_addr, inet_ntoa(address), sizeof(string_addr));
+  ink_strlcpy(string_addr, inet_ntoa(address), sizeof(string_addr));
   if (ink_hash_table_lookup(peers, string_addr, &hash_value) == 0) {
     return false;
   }
@@ -1968,7 +1963,7 @@ ClusterCom::sendReliableMessage(unsigned long addr, char *buf, int len, char *re
   if (take_lock) {
     ink_mutex_acquire(&mutex);
   }
-  ink_strncpy(string_addr, inet_ntoa(address), sizeof(string_addr));
+  ink_strlcpy(string_addr, inet_ntoa(address), sizeof(string_addr));
   if (ink_hash_table_lookup(peers, string_addr, &hash_value) == 0) {
     if (take_lock) {
       ink_mutex_release(&mutex);
@@ -2052,7 +2047,7 @@ ClusterCom::sendReliableMessageReadTillClose(unsigned long addr, char *buf, int 
 
   address.s_addr = addr;
   ink_mutex_acquire(&mutex);
-  ink_strncpy(string_addr, inet_ntoa(address), sizeof(string_addr));
+  ink_strlcpy(string_addr, inet_ntoa(address), sizeof(string_addr));
   if (ink_hash_table_lookup(peers, string_addr, &hash_value) == 0) {
     ink_mutex_release(&mutex);
     return false;
@@ -2393,7 +2388,7 @@ checkBackDoor(int req_fd, char *message)
     }
     // TODO: I think this is correct, it used to do lmgmt->record_data-> ...
     if (RecSetRecordConvert(variable, value) == REC_ERR_OKAY) {
-      ink_strncpy(reply, "\nRecord Updated\n\n", sizeof(reply));
+      ink_strlcpy(reply, "\nRecord Updated\n\n", sizeof(reply));
       mgmt_writeline(req_fd, reply, strlen(reply));
     } else {
       mgmt_elog("[checkBackDoor] Assignment to unknown variable requested '%s'\n", variable);
@@ -2417,7 +2412,7 @@ checkBackDoor(int req_fd, char *message)
       mgmt_writeline(req_fd, tmp_msg, strlen(tmp_msg));
 
       addr.s_addr = tmp->inet_address;
-      ink_strncpy(ip_addr, inet_ntoa(addr), sizeof(ip_addr));
+      ink_strlcpy(ip_addr, inet_ntoa(addr), sizeof(ip_addr));
       snprintf(reply, sizeof(reply), "Peer: %s   naddrs: %d", ip_addr, tmp->num_virt_addrs);
       mgmt_writeline(req_fd, reply, strlen(reply));
 
@@ -2438,9 +2433,9 @@ checkBackDoor(int req_fd, char *message)
     return true;
   } else if (strstr(message, "dump: lm")) {
 
-    ink_strncpy(reply, "---------------------------", sizeof(reply));
+    ink_strlcpy(reply, "---------------------------", sizeof(reply));
     mgmt_writeline(req_fd, reply, strlen(reply));
-    ink_strncpy(reply, "Local Manager:\n", sizeof(reply));
+    ink_strlcpy(reply, "Local Manager:\n", sizeof(reply));
     mgmt_writeline(req_fd, reply, strlen(reply));
 
     snprintf(reply, sizeof(reply), "\tproxy_running: %s", (lmgmt->proxy_running ? "true" : "false"));
@@ -2477,7 +2472,7 @@ checkBackDoor(int req_fd, char *message)
     mgmt_writeline(req_fd, reply, strlen(reply));
 #endif
 
-    ink_strncpy(reply, "---------------------------\n", sizeof(reply));
+    ink_strlcpy(reply, "---------------------------\n", sizeof(reply));
     mgmt_writeline(req_fd, reply, strlen(reply));
     return true;
   } else if (strstr(message, "cluster: ")) {

@@ -74,7 +74,7 @@ VMap::init()
 //    RecordType type;
 
   if (enabled) {
-    ink_strncpy(vip_conf, "vip_config", sizeof(vip_conf));
+    ink_strlcpy(vip_conf, "vip_config", sizeof(vip_conf));
     snprintf(absolute_vipconf_binary, sizeof(absolute_vipconf_binary), "%s/%s", lmgmt->bin_path, vip_conf);
 
     /* Make sure vip_config is setuid root */
@@ -320,7 +320,7 @@ VMap::lt_runGambit()
 
     for (i = 0; i < num_addrs; i++) {   /* See if there is an unbound interface */
       virtual_addr.s_addr = addr_list[i];
-      ink_strncpy(vaddr, inet_ntoa(virtual_addr), sizeof(vaddr));
+      ink_strlcpy(vaddr, inet_ntoa(virtual_addr), sizeof(vaddr));
       if (rl_boundAddr(vaddr) == 0) {
         mgmt_log(stderr, "[VMap::lt_runGambit] Unmapped vaddr: '%s'\n", vaddr);
         break;
@@ -337,7 +337,7 @@ VMap::lt_runGambit()
       }
 
       if (init && ((no < num_interfaces) || (no == num_interfaces && real_addr.s_addr < our_ip))) {
-        ink_strncpy(raddr, inet_ntoa(real_addr), sizeof(raddr));
+        ink_strlcpy(raddr, inet_ntoa(real_addr), sizeof(raddr));
         rl_remote_map(vaddr, raddr);
       } else if (!rl_map(vaddr)) {      /* We are the winner, map it to us */
         mgmt_elog(stderr, "[VMap::lt_runGambit] Map failed for vaddr: %s\n", vaddr);
@@ -350,7 +350,7 @@ VMap::lt_runGambit()
 
   for (i = 0; i < num_addrs; i++) {     /* Check for conflicts with your interfaces */
     virtual_addr.s_addr = addr_list[i];
-    ink_strncpy(vaddr, inet_ntoa(virtual_addr), sizeof(vaddr));
+    ink_strlcpy(vaddr, inet_ntoa(virtual_addr), sizeof(vaddr));
 
     if ((conf_addr = rl_checkConflict(vaddr))) {
       mgmt_log(stderr, "[VMap::lt_runGambit] Conflict w/addr: '%s'\n", vaddr);
@@ -437,13 +437,8 @@ VMap::lt_readAListFile(char *data)
 
     tmp_val = (VIPInfo *)ats_malloc(sizeof(VIPInfo));
 
-    strncpy(tmp_val->interface, tmp_interface, MAX_INTERFACE - 2);
-    strncpy(tmp_val->sub_interface_id, tmp_id, MAX_SUB_ID - 2);
-
-    tmp_val->interface[MAX_INTERFACE - 1] = '\0';
-    tmp_val->sub_interface_id[MAX_SUB_ID - 1] = '\0';
-
-
+    ink_strlcpy(tmp_val->interface, tmp_interface, sizeof(tmp_val->interface));
+    ink_strlcpy(tmp_val->sub_interface_id, tmp_id, sizeof(tmp_val->sub_interface_id));
     ink_hash_table_insert(id_map, tmp_addr, (void *) tmp_val);
 
     // we don't need to do mgmt ping stuff on NT the way its done on UNIX
@@ -581,7 +576,7 @@ VMap::rl_map(char *virt_ip, char *real_ip)
     snprintf(buf, sizeof(buf), "%s %s", virt_ip, real_ip);
   } else {
     tmp = our_map;
-    ink_strncpy(buf, virt_ip, sizeof(buf));
+    ink_strlcpy(buf, virt_ip, sizeof(buf));
   }
 
   if (ink_hash_table_lookup(tmp, buf, &hash_value) != 0) {
@@ -618,7 +613,7 @@ VMap::rl_unmap(char *virt_ip, char *real_ip)
     snprintf(buf, sizeof(buf), "%s %s", virt_ip, real_ip);
   } else {
     tmp = our_map;
-    ink_strncpy(buf, virt_ip, sizeof(buf));
+    ink_strlcpy(buf, virt_ip, sizeof(buf));
   }
 
   if (ink_hash_table_lookup(tmp, buf, &hash_value) == 0) {
@@ -671,18 +666,15 @@ VMap::rl_checkConflict(char *virt_ip)
   }
 
   if (in_our_map && in_ext_map) {
-    char *buf, buf2[80], *buf3;
+    char *buf, buf2[80];
 
     if ((buf = strstr(key, " ")) != NULL) {
       buf++;
-      ink_strncpy(buf2, buf, sizeof(buf2));
+      ink_strlcpy(buf2, buf, sizeof(buf2));
     } else {
       mgmt_fatal(stderr, "[VMap::rl_checkConflict] Corrupt VMap entry('%s'), bailing\n", key);
     }
-    size_t buf3_len = strlen(buf2) * sizeof(char) + 1;
-    buf3 = (char *)ats_malloc(buf3_len);
-    ink_strncpy(buf3, buf2, buf3_len);
-    return buf3;
+    return ats_strdup(buf2);
   }
   return NULL;
 }                               /* End VMap::rl_checkConflict */
@@ -773,7 +765,7 @@ VMap::rl_remap(char *virt_ip, char *cur_ip, char *dest_ip, int cur_naddr, int de
     struct in_addr addr;
     addr.s_addr = our_ip;
 
-    ink_strncpy(buf, inet_ntoa(addr), sizeof(buf));
+    ink_strlcpy(buf, inet_ntoa(addr), sizeof(buf));
     tmp = our_map;
   }
 
@@ -862,7 +854,7 @@ VMap::rl_boundTo(char *virt_ip)
       char *buf, buf2[80];
       if ((buf = strstr(key, " ")) != NULL) {
         buf++;
-        ink_strncpy(buf2, buf, sizeof(buf2));
+        ink_strlcpy(buf2, buf, sizeof(buf2));
       } else {
         mgmt_fatal(stderr, "[VMap::rl_boundTo] Corrupt VMap entry('%s'), bailing\n", key);
       }
@@ -897,7 +889,7 @@ VMap::lt_constructVMapMessage(char *ip, char *message, int max)
     return;
   }
 
-  ink_strncpy(&message[n], "type: vmap\n", max - n);
+  ink_strlcpy(&message[n], "type: vmap\n", max - n);
   n += strlen("type: vmap\n");
   bsum = n;
 
@@ -912,7 +904,7 @@ VMap::lt_constructVMapMessage(char *ip, char *message, int max)
     if (!((n + (int) strlen(buf)) < max)) {
       break;
     }
-    ink_strncpy(&message[n], buf, max - n);
+    ink_strlcpy(&message[n], buf, max - n);
     n += strlen(buf);
   }
   ink_mutex_release(mutex);
@@ -924,7 +916,7 @@ VMap::lt_constructVMapMessage(char *ip, char *message, int max)
       }
       return;
     }
-    ink_strncpy(&message[n], "virt: none\n", max - n);
+    ink_strlcpy(&message[n], "virt: none\n", max - n);
     n += strlen("virt: none\n");
   }
   return;
@@ -947,9 +939,9 @@ VMap::rl_rebalance()
   low = lmgmt->ccom->lowestPeer(&naddr_low);
   high = lmgmt->ccom->highestPeer(&naddr_high);
   tmp_addr.s_addr = high;
-  ink_strncpy(high_ip, inet_ntoa(tmp_addr), sizeof(high_ip));
+  ink_strlcpy(high_ip, inet_ntoa(tmp_addr), sizeof(high_ip));
   tmp_addr.s_addr = low;
-  ink_strncpy(low_ip, inet_ntoa(tmp_addr), sizeof(low_ip));
+  ink_strlcpy(low_ip, inet_ntoa(tmp_addr), sizeof(low_ip));
 
   if (naddr_low == -1 || naddr_high == -1) {
     return;
@@ -959,12 +951,12 @@ VMap::rl_rebalance()
     naddr_low = num_interfaces;
     tmp_addr.s_addr = our_ip;
     low = our_ip;
-    ink_strncpy(low_ip, inet_ntoa(tmp_addr), sizeof(low_ip));
+    ink_strlcpy(low_ip, inet_ntoa(tmp_addr), sizeof(low_ip));
   } else if (naddr_high<num_interfaces || (naddr_high == num_interfaces && our_ip> high)) {
     naddr_high = num_interfaces;
     tmp_addr.s_addr = our_ip;
     high = our_ip;
-    ink_strncpy(high_ip, inet_ntoa(tmp_addr), sizeof(high_ip));
+    ink_strlcpy(high_ip, inet_ntoa(tmp_addr), sizeof(high_ip));
   }
 #ifdef DEBUG_VMAP
   Debug("vmap",
@@ -982,7 +974,7 @@ VMap::rl_rebalance()
 
       entry = ink_hash_table_iterator_first(our_map, &iterator_state);
       key = (char *) ink_hash_table_entry_key(ext_map, entry);
-      ink_strncpy(tmp_key, key, sizeof(tmp_key));
+      ink_strlcpy(tmp_key, key, sizeof(tmp_key));
 
       mgmt_log(stderr, "[VMap::rl_rebalance] Remapping vaddr: '%s' from: '%s' to: '%s'\n", key, high_ip, low_ip);
       if (!rl_remap(key, high_ip, low_ip, naddr_high, naddr_low)) {
@@ -1135,7 +1127,7 @@ VMap::rl_downAddrs()
     char str_addr[1024];
     struct in_addr address;
     address.s_addr = addr_list[i];
-    ink_strncpy(str_addr, inet_ntoa(address), sizeof(str_addr));
+    ink_strlcpy(str_addr, inet_ntoa(address), sizeof(str_addr));
     rl_unmap(str_addr);
   }
   return;
@@ -1156,7 +1148,7 @@ VMap::downAddrs()
     char str_addr[1024];
     struct in_addr address;
     address.s_addr = addr_list[i];
-    ink_strncpy(str_addr, inet_ntoa(address), sizeof(str_addr));
+    ink_strlcpy(str_addr, inet_ntoa(address), sizeof(str_addr));
     downAddr(str_addr);
     ink_hash_table_delete(our_map, str_addr);   /* Make sure removed */
   }
@@ -1194,7 +1186,7 @@ VMap::downOurAddrs()
       char str_addr[1024];
       struct in_addr address;
       address.s_addr = addr_list[i];
-      ink_strncpy(str_addr, inet_ntoa(address), sizeof(str_addr));
+      ink_strlcpy(str_addr, inet_ntoa(address), sizeof(str_addr));
       downAddr(str_addr);
       ink_hash_table_delete(our_map, str_addr); /* Make sure removed */
     }
