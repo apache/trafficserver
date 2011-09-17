@@ -172,7 +172,7 @@ newUNIXsocket(char *fpath)
   }
 
   serv_addr.sun_family = AF_UNIX;
-  ink_strncpy(serv_addr.sun_path, fpath, sizeof(serv_addr.sun_path));
+  ink_strlcpy(serv_addr.sun_path, fpath, sizeof(serv_addr.sun_path));
 #if defined(darwin) || defined(freebsd)
   servlen = sizeof(struct sockaddr_un);
 #else

@@ -92,7 +92,7 @@ overviewRecord::overviewRecord(unsigned long inet_addr, bool local, ClusterPeerI
 
   const size_t hostNameLen = strlen(name_l) + 1;
   this->hostname = new char[hostNameLen];
-  ink_strncpy(this->hostname, name_l, hostNameLen);
+  ink_strlcpy(this->hostname, name_l, hostNameLen);
   ats_free(name_l);
 }
 
@@ -469,10 +469,8 @@ overviewRecord::varStrFromName(const char *varNameConst, char *bufVal, int bufLe
     data.string_data = this->readString(varName, &found);
     if (data.string_data == NULL) {
       bufVal[0] = '\0';
-    } else if (strlen(data.string_data) < (size_t) (bufLen - 1)) {
-      ink_strncpy(bufVal, data.string_data, bufLen);
     } else {
-      ink_strncpy(bufVal, data.string_data, bufLen);
+      ink_strlcpy(bufVal, data.string_data, bufLen);
     }
     ats_free(data.string_data);
     break;

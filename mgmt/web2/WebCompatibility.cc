@@ -39,7 +39,6 @@ char *
 WebGetHostname_Xmalloc(sockaddr_in * client_info)
 {
   ink_gethostbyaddr_r_data data;
-  char *hostname;
   char *hostname_tmp;
 
   struct hostent *r = ink_gethostbyaddr_r((char *) &client_info->sin_addr.s_addr,
@@ -48,11 +47,7 @@ WebGetHostname_Xmalloc(sockaddr_in * client_info)
                                           &data);
 
   hostname_tmp = r ? r->h_name : inet_ntoa(client_info->sin_addr);
-  size_t len = strlen(hostname_tmp) + 1;
-  hostname = (char *)ats_malloc(len);
-  ink_strncpy(hostname, hostname_tmp, len);
-
-  return hostname;
+  return ats_strdup(hostname_tmp);
 
 }
 

@@ -120,7 +120,7 @@ adjustCmdLine(char *cmdLine, int cmdline_len, const char *cgiFullPath)
   if (interpreter) {
     snprintf(cmdLine, cmdline_len, "\"%s\" \"%s\"", interpreter, cgiFullPath);
   } else {
-    ink_strncpy(cmdLine, cgiFullPath, cmdline_len);
+    ink_strlcpy(cmdLine, cgiFullPath, cmdline_len);
   }
   return;
 }
