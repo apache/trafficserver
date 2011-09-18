@@ -96,15 +96,15 @@ StatDescriptor::CreateDescriptor(const char *prefix, char *name, size_t name_len
     return NULL;
 
   if (prefix) {
-    t = &tv[0];
+    t = tv;
     int pln = strlen(prefix);
     int nln = strlen(name);
     if (pln + nln > 126)
       return NULL;              // return &G_NULL_STAT;
 
-    ink_strncpy(t, prefix, name_len);
-    t[pln] = '.';
-    ink_strncpy(t + pln + 1, name, name_len - pln - 1);
+    ink_strlcpy(t, prefix, name_len);
+    t[pln] = '.'; t[pln + 1] = 0;
+    ink_strlcat(t, name, name_len);
   }
 
   return CreateDescriptor(t, init_value);
@@ -122,15 +122,15 @@ StatDescriptor::CreateDescriptor(const char *prefix, char *name, size_t name_len
   // return &G_NULL_STAT;
 
   if (prefix) {
-    t = &tv[0];
+    t = tv;
     int pln = strlen(prefix);
     int nln = strlen(name);
     if (pln + nln > 126)
       return NULL;              // return &G_NULL_STAT;
 
-    ink_strncpy(t, prefix, name_len);
-    t[pln] = '.';
-    ink_strncpy(t + pln + 1, name, name_len - pln - 1);
+    ink_strlcpy(t, prefix, name_len);
+    t[pln] = '.'; t[pln + 1] = 0;
+    ink_strlcat(t, name, name_len);
   }
 
   return CreateDescriptor(t, init_value);
@@ -156,7 +156,7 @@ StatDescriptor::CreateDescriptor(const char *name, int64_t init_value)
     ink_assert(ref.m_name == NULL);
     size_t len = strlen(name) + 1;
     ref.m_name = new char[len];
-    ink_strncpy(ref.m_name, name, len);
+    ink_strlcpy(ref.m_name, name, len);
     ref.m_type = RECD_INT;
     ref.m_value.rec_int = init_value;
     ref.m_magic = ALIVE;
@@ -187,7 +187,7 @@ StatDescriptor::CreateDescriptor(const char *name, float init_value)
     ink_assert(ref.m_name == NULL);
     size_t len = strlen(name) + 1;
     ref.m_name = new char[len];
-    ink_strncpy(ref.m_name, name, len);
+    ink_strlcpy(ref.m_name, name, len);
     ref.m_type = RECD_FLOAT;
     ref.m_value.rec_float = init_value;
     ref.m_magic = ALIVE;

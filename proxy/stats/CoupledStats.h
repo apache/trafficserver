@@ -31,7 +31,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <limits.h>
-#include <string.h>
 #include <sys/types.h>
 
 #include "ink_resource.h"
@@ -103,7 +102,7 @@ m_snap_taken(false)
   if (!name || strlen(name) >= 80) {
     name = "nil_category";
   }
-  ink_strncpy(&m_name[0], name, sizeof(m_name));
+  ink_strlcpy(m_name, name, sizeof(m_name));
 
   ink_mutex_init(&m_mux, "CoupledStatMutex");
   grow_check(NULL);
