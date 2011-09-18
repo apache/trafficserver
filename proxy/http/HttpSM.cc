@@ -1948,8 +1948,7 @@ HttpSM::process_srv_info(HostDBInfo * r)
   /* we didnt get any SRV records, continue w normal lookup */
   if (!r->srv_count) {
     Debug("dns_srv", "No SRV records were available, continuing to lookup %s", t_state.dns_info.lookup_name);
-    strncpy(&new_host[0], t_state.dns_info.lookup_name, MAXDNAME);
-    new_host[MAXDNAME - 1] = '\0';
+    ink_strlcpy(new_host, t_state.dns_info.lookup_name, sizeof(new_host));
     goto lookup;
   }
 
@@ -1957,8 +1956,7 @@ HttpSM::process_srv_info(HostDBInfo * r)
 
   if (*new_host == '\0') {
     Debug("dns_srv", "Weighted host returned was NULL or blank!, using %s as origin", t_state.dns_info.lookup_name);
-    strncpy(&new_host[0], t_state.dns_info.lookup_name, MAXDNAME);
-    new_host[MAXDNAME - 1] = '\0';
+    ink_strlcpy(new_host, t_state.dns_info.lookup_name, sizeof(new_host));
   } else {
     Debug("dns_srv", "Weighted host now: %s", new_host);
   }
@@ -3715,9 +3713,8 @@ HttpSM::do_hostdb_lookup()
   if (use_srv_records) {
     char* d = t_state.dns_info.srv_hostname;
 
-    memcpy(d, "_http._tcp.", 11);
-    ink_strncpy(d+11, t_state.server_info.name, MAXDNAME - 11);
-    d[MAXDNAME - 1] = '\0'; // Just to be sure it's NULL terminated in case of truncation
+    memcpy(d, "_http._tcp.", 11); // don't copy '\0'
+    ink_strlcpy(d + 11, t_state.server_info.name, sizeof(d) - 11 ); // all in the name of performance!
 
     Debug("dns_srv", "Beginning lookup of SRV records for origin %s", d);
     HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::state_srv_lookup);
@@ -6154,28 +6151,19 @@ HttpSM::update_stats()
       ink_hrtime_from_msec(t_state.http_config_param->slow_log_threshold) < total_time) {
     // get the url to log
     URL *url = t_state.hdr_info.client_request.url_get();
-    char url_string[256];
+    char url_string[256] = "";
     if (url != NULL && url->valid()) {
-      url->string_get_buf(url_string, 256);
-    } else {
-      strncpy(url_string, "", sizeof(url_string));
+      url->string_get_buf(url_string, sizeof(url_string));
     }
 
     // unique id
-    char unique_id_string[128];
+    char unique_id_string[128] = "";
     if (url != NULL && url->valid()) {
       int length = 0;
       const char *field = t_state.hdr_info.client_request.value_get(MIME_FIELD_X_ID, MIME_LEN_X_ID, &length);
       if (field != NULL) {
-        if ((int)sizeof(unique_id_string) < length)
-          length =  (int)sizeof(unique_id_string);
-        strncpy(unique_id_string, field, length);
-        unique_id_string[length] = '\0';
-      } else {
-        strncpy(unique_id_string, "", sizeof(unique_id_string));
+        ink_strlcpy(unique_id_string, field, sizeof(unique_id_string));
       }
-    } else {
-      strncpy(unique_id_string, "", sizeof(unique_id_string));
     }
 
     // set the fd for the request
@@ -6932,7 +6920,7 @@ HttpSM::redirect_request(const char *redirect_url, const int redirect_len)
 #else
       char *buf = (char *)ats_malloc(host_len + 7);
 #endif
-      strncpy(buf, host, host_len);
+      ink_strlcpy(buf, host, host_len);
       host_len += snprintf(buf + host_len, sizeof(buf) - host_len, ":%d", port);
       t_state.hdr_info.client_request.value_set(MIME_FIELD_HOST, MIME_LEN_HOST, buf, host_len);
 #if !defined(__GNUC__)

@@ -78,8 +78,8 @@ HttpBodyFactory::fabricate_with_old_api(const char *type, HttpTransact::State * 
 
   *resulting_buffer_length = 0;
 
-  ink_strncpy(content_language_out_buf, "en", content_language_buf_size);
-  ink_strncpy(content_type_out_buf, "text/html", content_type_buf_size);
+  ink_strlcpy(content_language_out_buf, "en", content_language_buf_size);
+  ink_strlcpy(content_type_out_buf, "text/html", content_type_buf_size);
 
   ///////////////////////////////////////////////////////////////////
   // if logging turned on, buffer up the URL string for simplicity //
@@ -1007,9 +1007,7 @@ HttpBodyTemplate::load_from_file(char *dir, char *file)
   reset();
   template_buffer = new_template_buffer;
   byte_count = new_byte_count;
-  size_t pathlen = strlen(path) + 1;
-  template_pathname = (char *)ats_malloc(pathlen);
-  ink_strncpy(template_pathname, path, pathlen);
+  template_pathname = ats_strdup(path);
 
   return (1);
 }

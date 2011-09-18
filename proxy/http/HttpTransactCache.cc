@@ -646,7 +646,7 @@ HttpTransactCache::calculate_quality_of_accept_charset_match(MIMEField * accept_
   // get the charset of this content-type //
   c_raw = content_field->value_get(&c_raw_len);
   if (!HttpCompat::lookup_param_in_semicolon_string(c_raw, c_raw_len, "charset", c_charset, sizeof(c_charset) - 1)) {
-    ink_strncpy(c_charset, default_charset, sizeof(c_charset));
+    ink_strlcpy(c_charset, default_charset, sizeof(c_charset));
   }
   // Now loop over Accept-Charset field values.
   // TODO: Should we check the return value (count) from this?
@@ -1516,19 +1516,19 @@ CacheLookupHttpConfig::marshal(char *buf, int length)
   len = (cache_vary_default_text ? strlen(cache_vary_default_text) + 1 : 1);
   if ((length -= len) < 0)
     return -1;
-  ink_strncpy(p, (cache_vary_default_text ? cache_vary_default_text : ""), len);
+  ink_strlcpy(p, (cache_vary_default_text ? cache_vary_default_text : ""), length);
   p += len;
 
   len = (cache_vary_default_images ? strlen(cache_vary_default_images) + 1 : 1);
   if ((length -= len) < 0)
     return -1;
-  ink_strncpy(p, (cache_vary_default_images ? cache_vary_default_images : ""), len);
+  ink_strlcpy(p, (cache_vary_default_images ? cache_vary_default_images : ""), length);
   p += len;
 
   len = (cache_vary_default_other ? strlen(cache_vary_default_other) + 1 : 1);
   if ((length -= len) < 0)
     return -1;
-  ink_strncpy(p, (cache_vary_default_other ? cache_vary_default_other : ""), len);
+  ink_strlcpy(p, (cache_vary_default_other ? cache_vary_default_other : ""), length);
   p += len;
 
   return (p - buf);

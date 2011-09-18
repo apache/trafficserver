@@ -1681,17 +1681,14 @@ read_string(FILE * fp, char *buf, int size)
 }
 
 static bool
-store_error_message(char *err_msg_buf, int buf_size, const char *fmt, ...)
+store_error_message(char *err_msg_buf, int err_msg_buf_size, const char *fmt, ...)
 {
-  if (likely(err_msg_buf && buf_size > 0)) {
+  if (likely(err_msg_buf && err_msg_buf_size > 0)) {
     char buf[2048];
     va_list ap;
     va_start(ap, fmt);
     (void) vsnprintf(buf, sizeof(buf) - 1, fmt, ap);
-    buf[sizeof(buf) - 1] = 0;
-    err_msg_buf[0] = 0;
-    strncpy(err_msg_buf, buf, buf_size - 1);
-    err_msg_buf[buf_size - 1] = 0;
+    ink_strlcpy(err_msg_buf, buf, err_msg_buf_size);
     va_end(ap);
   }
   return false;
@@ -1821,9 +1818,8 @@ HttpUserAgent_RegxEntry::create(char *_refexp_str, char *errmsgbuf, int errmsgbu
 
 
   if (_refexp_str && *_refexp_str) {
-    strncpy(refexp_str_buf, _refexp_str, sizeof(refexp_str_buf) - 1);
-    refexp_str_buf[sizeof(refexp_str_buf) - 1] = 0;
-    refexp_str = &refexp_str_buf[0];
+    ink_strlcpy(refexp_str_buf, _refexp_str, sizeof(refexp_str_buf));
+    refexp_str = refexp_str_buf;
 
     Debug("http_aeua", "[HttpUserAgent_RegxEntry::create] - \"%s\"", refexp_str);
     while (*refexp_str && (*refexp_str == ' ' || *refexp_str == '\t'))
@@ -1855,7 +1851,7 @@ HttpUserAgent_RegxEntry::create(char *_refexp_str, char *errmsgbuf, int errmsgbu
       regx = pcre_compile((const char *) user_agent_str, PCRE_CASELESS, &error, &erroffset, NULL);
       if (regx == NULL) {
         if (errmsgbuf && (errmsgbuf_size - 1) > 0)
-          ink_strncpy(errmsgbuf, error, errmsgbuf_size - 1);
+          ink_strlcpy(errmsgbuf, error, errmsgbuf_size);
         user_agent_str = (char *)ats_free_null(user_agent_str);
         retcode = false;
       } else

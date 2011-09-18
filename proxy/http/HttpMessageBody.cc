@@ -77,8 +77,7 @@ HttpMessageBody::MakeErrorBodyVA(int64_t max_buffer_length,
     l = 0;
     p = outbuf;
 
-    error_title[sizeof(error_title) - 1] = '\0';
-    strncpy(error_title, reason, sizeof(error_title) - 1);
+    ink_strlcpy(error_title, reason, sizeof(error_title));
 
     p = (pass == 1 ? (char *) NULL : &(outbuf[l]));
     l += ink_bsprintf(p, "<HEAD><TITLE>%s</TITLE></HEAD>\n", error_title) - 1;

@@ -524,11 +524,10 @@ how_to_open_connection(HttpTransact::State* s)
         // to the default port.
         int port = url->port_get();
         if (port != url_canonicalize_port(URL_TYPE_HTTP, 0)) {
-          char *buf = (char *)ats_malloc(host_len + 15);
-          strncpy(buf, host, host_len);
-          host_len += snprintf(buf + host_len, host_len + 15, ":%d", port);
+          char *buf = (char *)alloca(host_len + 15);
+          memcpy(buf, host, host_len); 
+          host_len += snprintf(buf + host_len, 15, ":%d", port);
           s->hdr_info.server_request.value_set(MIME_FIELD_HOST, MIME_LEN_HOST, buf, host_len);
-          ats_free(buf);
         } else {
           s->hdr_info.server_request.value_set(MIME_FIELD_HOST, MIME_LEN_HOST, host, host_len);
         }
@@ -1039,9 +1038,9 @@ HttpTransact::ModifyRequest(State* s)
     char *buf = NULL;
 
     if (port > 0) {
-      buf = (char *)ats_malloc(host_val_len + 15);
-      strncpy(buf, hostname, host_val_len);
-      host_val_len += snprintf(buf + host_val_len, host_val_len + 15, ":%d", port);
+      buf = (char *)alloca(host_val_len + 15);
+      memcpy(buf, hostname, host_val_len);
+      host_val_len += snprintf(buf + host_val_len, 15, ":%d", port);
       host_val = (const char**)(&buf);
     }
 
@@ -1059,7 +1058,6 @@ HttpTransact::ModifyRequest(State* s)
       s->hdr_info.client_request.field_value_set(host_field, *host_val, host_val_len);
     }
 
-    ats_free(buf);
     request->mark_target_dirty();
   }
 
@@ -3643,8 +3641,7 @@ HttpTransact::delete_srv_entry(State* s, int max_retries)
             rr_data->info[i].srv_priority = srv_entry->getPriority();
             rr_data->info[i].srv_port = srv_entry->getPort();
 
-            ink_strncpy(rr_data->rr_srv_hosts[i], srv_entry->getHost(), MAXDNAME);
-            rr_data->rr_srv_hosts[i][MAXDNAME - 1] = '\0';
+            ink_strlcpy(rr_data->rr_srv_hosts[i], srv_entry->getHost(), sizeof(rr_data->rr_srv_hosts[i]));
             rr_data->info[i].is_srv = true;
 
             rr_data->info[i].md5_high = new_r->md5_high;
@@ -7805,11 +7802,10 @@ HttpTransact::build_request(State* s, HTTPHdr* base_request, HTTPHdr* outgoing_r
     // to the default port.
     int port = url->port_get();
     if (port != url_canonicalize_port(URL_TYPE_HTTP, 0)) {
-      char *buf = (char *) ats_malloc(host_len + 15);
-      strncpy(buf, host, host_len);
-      host_len += snprintf(buf + host_len, host_len + 15, ":%d", port);
+      char *buf = (char *) alloca(host_len + 15);
+      memcpy(buf, host, host_len);
+      host_len += snprintf(buf + host_len, 15, ":%d", port);
       outgoing_request->value_set(MIME_FIELD_HOST, MIME_LEN_HOST, buf, host_len);
-      ats_free(buf);
     } else {
       outgoing_request->value_set(MIME_FIELD_HOST, MIME_LEN_HOST, host, host_len);
     }
