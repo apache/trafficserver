@@ -193,7 +193,7 @@ RemapPlugins::run_single_remap()
     *newPath = 0;
 
     // Purify load run with QT in a reverse proxy indicated
-    // a UMR/ABR/MSE in the line where we do a *newPath == '/' and the strncpy
+    // a UMR/ABR/MSE in the line where we do a *newPath == '/' and the ink_strlcpy
     // that follows it.  The problem occurs if
     // requestPathLen,fromPathLen,toPathLen are all 0; in this case, we never
     // initialize newPath, but still de-ref it in *newPath == '/' comparison.

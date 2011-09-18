@@ -178,7 +178,12 @@ redirect_tag_str::parse_format_redirect_url(char *url)
 /**
  *
 **/
-referer_info::referer_info(char *_ref, bool *error_flag, char *errmsgbuf, int errmsgbuf_size):next(0), referer(0), referer_size(0), any(false), negative(false),
+referer_info::referer_info(char *_ref, bool *error_flag, char *errmsgbuf, int errmsgbuf_size):
+next(0),
+referer(0),
+referer_size(0),
+any(false),
+negative(false),
 regx_valid(false)
 {
   const char *error;
@@ -201,7 +206,7 @@ regx_valid(false)
         regx = pcre_compile(referer, PCRE_CASELESS, &error, &erroffset, NULL);
         if (!regx) {
           if (errmsgbuf && (errmsgbuf_size - 1) > 0)
-            ink_strncpy(errmsgbuf, error, errmsgbuf_size - 1);
+            ink_strlcpy(errmsgbuf, error, errmsgbuf_size);
           if (error_flag)
             *error_flag = true;
         } else

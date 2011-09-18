@@ -308,8 +308,8 @@ validate_filter_args(acl_filter_rule ** rule_pp, char **argv, int argc, char *er
       ipi = &rule->src_ip_array[rule->src_ip_cnt];
       if (ul & REMAP_OPTFLG_INVERT)
         ipi->invert = true;
-      strncpy(tmpbuf, argptr, sizeof(tmpbuf) - 1);
-      tmpbuf[sizeof(tmpbuf) - 1] = 0; // important! use copy of argument
+      ink_strlcpy(tmpbuf, argptr, sizeof(tmpbuf));
+      // important! use copy of argument
       if (ExtractIpRange(tmpbuf, &ipi->start, &ipi->end) != NULL) {
         Debug("url_rewrite", "[validate_filter_args] Unable to parse IP value in %s", argv[i]);
         snprintf(errStrBuf, errStrBufSize, "Unable to parse IP value in %s", argv[i]);
@@ -520,9 +520,9 @@ UrlRewrite::UrlRewrite(const char *file_var_in)
   REVERSE_ReadConfigInteger(url_remap_mode, "proxy.config.url_remap.url_remap_mode");
   REVERSE_ReadConfigInteger(backdoor_enabled, "proxy.config.url_remap.handle_backdoor_urls");
 
-  ink_strncpy(config_file_path, system_config_directory, sizeof(config_file_path));
-  strncat(config_file_path, "/", sizeof(config_file_path) - strlen(config_file_path) - 1);
-  strncat(config_file_path, config_file, sizeof(config_file_path) - strlen(config_file_path) - 1);
+  ink_strlcpy(config_file_path, system_config_directory, sizeof(config_file_path));
+  ink_strlcat(config_file_path, "/", sizeof(config_file_path));
+  ink_strlcat(config_file_path, config_file, sizeof(config_file_path));
   ats_free(config_file);
 
   if (this->BuildTable() != 0) {
