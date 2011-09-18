@@ -98,7 +98,7 @@ LogConfig::setup_default_values()
   const unsigned int bufSize = 512;
   char name[bufSize];
   if (!gethostname(name, bufSize)) {
-    ink_strncpy(name, "unknown_host_name", sizeof(name));
+    ink_strlcpy(name, "unknown_host_name", sizeof(name));
   }
   hostname = ats_strdup(name);
 

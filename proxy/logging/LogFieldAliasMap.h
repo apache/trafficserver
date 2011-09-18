@@ -1,6 +1,6 @@
 /** @file
 
-  A brief file description
+  This file implements an abstract class to map between numbers of type IntType
 
   @section license License
 
@@ -19,13 +19,13 @@
   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   See the License for the specific language governing permissions and
   limitations under the License.
+
+  @section description
+  This file implements an abstract class to map between numbers of type IntType
+  and strings. The purpose is to obtain one representation from the other so that
+  easily remembered names can be used to refer to log fields of integer type.
  */
 
-/***************************************************************************
- LogFieldAliasMap.h
-
-
- ***************************************************************************/
 
 #ifndef LOG_FIELD_ALIAS_MAP_H
 #define LOG_FIELD_ALIAS_MAP_H
@@ -167,7 +167,7 @@ public:
       register size_t l = m_table[i].length;
       if (l < bufLen)
       {
-        ink_strncpy(buf, m_table[key - m_min].name, bufLen);
+        ink_strlcpy(buf, m_table[key - m_min].name, bufLen);
         numChars = l;
         retVal = ALL_OK;
       } else

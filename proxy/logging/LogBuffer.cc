@@ -1,6 +1,6 @@
 /** @file
 
-  A brief file description
+  This file implements the LogBuffer class, a thread-safe buffer for
 
   @section license License
 
@@ -19,17 +19,13 @@
   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   See the License for the specific language governing permissions and
   limitations under the License.
+
+  @section description
+  This file implements the LogBuffer class, a thread-safe buffer for
+  recording log entries. See the header file LogBuffer.h for more
+  information on the structure of a LogBuffer.
  */
 
-/***************************************************************************
- LogBuffer.cc
-
- This file implements the LogBuffer class, which is a thread-safe buffer
- for recording log entries.  See the header file LogBuffer.h for more
- information on the structure of a LogBuffer.
-
-
- ***************************************************************************/
 
 #include "libts.h"
 #include "ink_unused.h"
@@ -358,8 +354,7 @@ LogBuffer::add_header_str(char *str, char *buf_ptr, unsigned buf_len)
 {
   unsigned len = 0;
   if (likely(str && (len = (unsigned) (strlen(str) + 1)) < buf_len)) {
-    ink_strncpy(buf_ptr, str, buf_len);
-    buf_ptr[len] = '\0';
+    ink_strlcpy(buf_ptr, str, buf_len);
   }
   return len;
 }

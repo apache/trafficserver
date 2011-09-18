@@ -602,7 +602,7 @@ LogObject::log(LogAccess * lad, char *text_entry)
     bytes_used = m_format->m_field_list.marshal(lad, &(*buffer)[offset]);
     ink_assert(bytes_needed >= bytes_used);
   } else if (text_entry) {
-    ink_strncpy(&(*buffer)[offset], text_entry, bytes_needed);
+    ink_strlcpy(&(*buffer)[offset], text_entry, bytes_needed);
   }
 
   LogBuffer::LB_ResultCode result_code = buffer->checkin_write(offset);

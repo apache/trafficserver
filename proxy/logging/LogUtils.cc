@@ -1,6 +1,7 @@
 /** @file
 
-  A brief file description
+ This file contains a set of utility routines that are used throughout the
+ logging implementation.
 
   @section license License
 
@@ -21,14 +22,6 @@
   limitations under the License.
  */
 
-/***************************************************************************
- LogUtils.cc
-
- This file contains a set of utility routines that are used throughout the
- logging implementation.
-
-
- ***************************************************************************/
 
 #include "ink_config.h"
 #include "ink_unused.h"
@@ -156,7 +149,7 @@ LogUtils::timestamp_to_netscape_str(long timestamp)
                             sign, offset / 60, offset % 60);
 
     strftime(timebuf, 64 - glen, "%d/%b/%Y:%H:%M:%S ", tms);
-    strncat(timebuf, gmtstr, sizeof(timebuf) - strlen(timebuf) - 1);
+    ink_strlcat(timebuf, gmtstr, sizeof(timebuf));
     last_timestamp = timestamp;
   }
   return timebuf;

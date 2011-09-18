@@ -1,6 +1,6 @@
 /** @file
 
-  A brief file description
+  This file implements the LogAccess class.
 
   @section license License
 
@@ -19,23 +19,19 @@
   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   See the License for the specific language governing permissions and
   limitations under the License.
+
+  @section description
+  This file implements the LogAccess class.  However, LogAccess is an
+  abstract base class, providing an interface that logging uses to get
+  information from a module, such as HTTP or ICP.  Each module derives a
+  specific implementation from this base class (such as LogAccessHttp), and
+  implements the virtual accessor functions there.
+
+  The LogAccess class also defines a set of static functions that are used
+  to provide support for marshalling and unmarshalling support for the other
+  LogAccess derived classes.
  */
 
-/***************************************************************************
- LogAccess.cc
-
- This file implements the LogAccess class.  However, LogAccess is an
- abstract base class, providing an interface that logging uses to get
- information from a module, such as HTTP or ICP.  Each module derives a
- specific implementation from this base class (such as LogAccessHttp), and
- implements the virtual accessor functions there.
-
- The LogAccess class also defines a set of static functions that are used
- to provide support for marshalling and unmarshalling support for the other
- LogAccess derived classes.
-
-
- ***************************************************************************/
 #include "ink_unused.h"
 
 #include "libts.h"
@@ -751,7 +747,7 @@ LogAccess::marshal_str(char *dest, const char *source, int padded_len)
   if (source == NULL || source[0] == 0 || padded_len == 0) {
     source = DEFAULT_STR;
   }
-  ink_strncpy(dest, source, padded_len);
+  ink_strlcpy(dest, source, padded_len);
 
 #ifdef DEBUG
   //
@@ -813,7 +809,7 @@ LogAccess::unmarshal_with_map(int64_t code, char *dest, int len, Ptr<LogFieldAli
       char invalidCodeMsg[bufSize];
       codeStrLen = snprintf(invalidCodeMsg, 64, "%s(%" PRId64 ")", msg, code);
       if (codeStrLen < bufSize && codeStrLen < len) {
-        ink_strncpy(dest, invalidCodeMsg, len);
+        ink_strlcpy(dest, invalidCodeMsg, len);
       } else {
         codeStrLen = -1;
       }

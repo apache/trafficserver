@@ -103,7 +103,7 @@ initialize_process_manager()
   }
 
   if (management_directory[0] == '\0') {
-    ink_strncpy(management_directory, Layout::get()->sysconfdir, PATH_NAME_MAX);
+    ink_strlcpy(management_directory, Layout::get()->sysconfdir, sizeof(management_directory));
     if (access(management_directory, R_OK) == -1) {
       fprintf(stderr,"unable to access() management path '%s': %d, %s\n",
               management_directory, errno, strerror(errno));

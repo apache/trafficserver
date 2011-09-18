@@ -21,11 +21,6 @@
   limitations under the License.
  */
 
-/***************************************************************************
- LogSock.cc
-
-
- ***************************************************************************/
 #include "ink_unused.h"
 
 #include "P_EventSystem.h"
@@ -38,14 +33,13 @@ static const int LS_DOMAIN = AF_INET;
 static const int LS_SOCKTYPE = SOCK_STREAM;
 static const int LS_PROTOCOL = 0;
 
-/*-------------------------------------------------------------------------
+/**
   LogSock
 
   The constructor establishes the connection table (ct) and initializes the
   first entry of the table (index 0) to be the port on which new
   connections are accepted.
-  -------------------------------------------------------------------------*/
-
+*/ 
 LogSock::LogSock(int max_connects)
   :
 ct((ConnectTable *) NULL),
@@ -66,12 +60,11 @@ m_max_connections(max_connects + 1)
   Debug("log-sock", "LogSocket established");
 }
 
-/*-------------------------------------------------------------------------
+/**
   LogSock::~LogSock
 
   Shut down all connections and delete memory for the tables.
-  -------------------------------------------------------------------------*/
-
+*/ 
 LogSock::~LogSock()
 {
   Debug("log-sock", "shutting down LogSocket on [%s:%d]", ct[0].host, ct[0].port);
@@ -81,16 +74,15 @@ LogSock::~LogSock()
   delete[]ct;                   // delete the connection table
 }
 
-/*-------------------------------------------------------------------------
+/**
   LogSock::listen
 
   This routine sets up the LogSock to begin accepting connections on the
-  given accept port.  A maximum number of connections is also specified,
+  given @param accept port.  A maximum number of connections is also specified,
   which is used to establish the size of the listen queue.
 
-  Return zero if all goes well, -1 otherwise.
-  -------------------------------------------------------------------------*/
-
+  @Return zero if all goes well, -1 otherwise.
+*/
 int
 LogSock::listen(int accept_port)
 {
@@ -185,14 +177,14 @@ LogSock::listen(int accept_port)
   return 0;
 }
 
-/*-------------------------------------------------------------------------
+/**
   LogSock::accept
 
   Accept a new connection.  This is a blocking operation, so you may want
   to use one of the non-blocking pending_XXX calls to see if there is a
-  connection first.  This returns the table index for the new connection.
-  -------------------------------------------------------------------------*/
-
+  connection first.
+  @return This returns the table index for the new connection.
+*/
 int
 LogSock::accept()
 {
@@ -225,13 +217,12 @@ LogSock::accept()
   return cid;
 }
 
-/*-------------------------------------------------------------------------
+/**
   LogSock::connect
 
   Establish a new connection to another machine [host:port], and place this
   information into the connection and poll tables.
-  -------------------------------------------------------------------------*/
-
+*/  
 int
 LogSock::connect(char *host, int port)
 {
@@ -301,14 +292,14 @@ LogSock::connect(unsigned host_ip, int port)
   return cid;
 }
 
-/*-------------------------------------------------------------------------
+/**
   LogSock::pending_data
 
   This private routine checks for incoming data on some of the socket
-  descriptors.  Returns true if there is something incoming, with *cid
+  descriptors.
+  @return Returns true if there is something incoming, with *cid
   set to the index corresponding to the incoming socket.
-  -------------------------------------------------------------------------*/
-
+*/ 
 bool LogSock::pending_data(int *cid, int timeout_msec, bool include_connects)
 {
   int
@@ -390,12 +381,11 @@ bool LogSock::pending_data(int *cid, int timeout_msec, bool include_connects)
   return false;
 }
 
-/*-------------------------------------------------------------------------
+/**
   LogSock::pending_any
 
   Check for incomming data on any of the INCOMING sockets.
-  -------------------------------------------------------------------------*/
-
+*/
 bool LogSock::pending_any(int *cid, int timeout_msec)
 {
   ink_assert(cid != NULL);
@@ -421,24 +411,22 @@ bool LogSock::pending_message_any(int *cid, int timeout_msec)
   return pending_data(cid, timeout_msec, false);
 }
 
-/*-------------------------------------------------------------------------
+/**
   LogSock::pending_message_on
 
   Check for incomming data on the specified socket.
-  -------------------------------------------------------------------------*/
-
+*/
 bool LogSock::pending_message_on(int cid, int timeout_msec)
 {
   return pending_data(&cid, timeout_msec, false);
 }
 
-/*-------------------------------------------------------------------------
+/**
   LogSock::pending_connect
 
   Check for an incoming connection request on the socket reserved for that
   (cid = 0).
-  -------------------------------------------------------------------------*/
-
+*/
 bool LogSock::pending_connect(int timeout_msec)
 {
   int
@@ -450,13 +438,12 @@ bool LogSock::pending_connect(int timeout_msec)
   }
 }
 
-/*-------------------------------------------------------------------------
+/**
   LogSock::close
 
   Close one (cid specified) or all (no argument) sockets, except for the
   incomming connection socket.
-  -------------------------------------------------------------------------*/
-
+*/
 void
 LogSock::close(int cid)
 {
@@ -479,13 +466,12 @@ LogSock::close()
   }
 }
 
-/*-------------------------------------------------------------------------
+/**
   LogSock::write
 
   Write data onto the socket corresponding to the given cid.  Return the
   number of bytes actually written.
-  -------------------------------------------------------------------------*/
-
+*/
 int
 LogSock::write(int cid, void *buf, int bytes)
 {
@@ -522,14 +508,13 @@ LogSock::write(int cid, void *buf, int bytes)
   return::send(ct[cid].sd, (char *) buf, bytes, 0);
 }
 
-/*-------------------------------------------------------------------------
+/**
   LogSock::read
 
   Read data from the specified connection.  This is a blocking call, so you
   may want to use one of the pending_XXX calls to see if there is anything
   to read first.  Returns number of bytes read.
-  -------------------------------------------------------------------------*/
-
+*/
 int
 LogSock::read(int cid, void *buf, unsigned maxsize)
 {
@@ -553,15 +538,14 @@ LogSock::read(int cid, void *buf, unsigned maxsize)
   return read_body(ct[cid].sd, buf, size);
 }
 
-/*-------------------------------------------------------------------------
+/**
   LogSock::read_alloc
 
   This routine reads data from the specified connection, and returns a
   pointer to newly allocated space (allocated with new) containing the
   data.  The number of bytes read is set in the argument size, which is
   expected to be a pointer to an int.
-  -------------------------------------------------------------------------*/
-
+*/
 void *
 LogSock::read_alloc(int cid, int *size)
 {
@@ -591,9 +575,8 @@ LogSock::read_alloc(int cid, int *size)
   return data;
 }
 
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
-
+/**
+*/
 bool LogSock::is_connected(int cid, bool ping)
 {
   int
@@ -622,9 +605,8 @@ bool LogSock::is_connected(int cid, bool ping)
   }
 }
 
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
-
+/**
+*/
 void
 LogSock::check_connections()
 {
@@ -638,12 +620,11 @@ LogSock::check_connections()
   }
 }
 
-/*-------------------------------------------------------------------------
+/**
   This routine will check to ensure that the client connecting is
   authorized to use the log collation port.  To authorize, the client is
   expected to send the logging secret string.
-  -------------------------------------------------------------------------*/
-
+*/
 bool LogSock::authorized_client(int cid, char *key)
 {
   //
@@ -669,8 +650,8 @@ bool LogSock::authorized_client(int cid, char *key)
   return false;
 }
 
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
+/**
+*/
 char *
 LogSock::connected_host(int cid)
 {
@@ -678,9 +659,8 @@ LogSock::connected_host(int cid)
   return ct[cid].host;
 }
 
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
-
+/**
+*/
 int
 LogSock::connected_port(int cid)
 {
@@ -692,10 +672,9 @@ LogSock::connected_port(int cid)
   LOCAL ROUTINES
   -------------------------------------------------------------------------*/
 
-/*-------------------------------------------------------------------------
+/**
   LogSock::new_cid
-  -------------------------------------------------------------------------*/
-
+*/
 int
 LogSock::new_cid()
 {
@@ -711,10 +690,9 @@ LogSock::new_cid()
   return cid;
 }
 
-/*-------------------------------------------------------------------------
+/**
   LogSock::init_cid
-  -------------------------------------------------------------------------*/
-
+*/
 void
 LogSock::init_cid(int cid, char *host, int port, int sd, LogSock::State state)
 {
@@ -727,7 +705,7 @@ LogSock::init_cid(int cid, char *host, int port, int sd, LogSock::State state)
   if (host != NULL) {
     const size_t host_size = strlen(host) + 1;
     ct[cid].host = NEW(new char[host_size]);
-    ink_strncpy(ct[cid].host, host, sizeof(host_size));
+    ink_strlcpy(ct[cid].host, host, host_size);
   } else {
     ct[cid].host = NULL;
   }
@@ -737,9 +715,8 @@ LogSock::init_cid(int cid, char *host, int port, int sd, LogSock::State state)
   ct[cid].state = state;
 }
 
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
-
+/**
+*/
 int
 LogSock::read_header(int sd, LogSock::MsgHeader * header)
 {
@@ -755,9 +732,8 @@ LogSock::read_header(int sd, LogSock::MsgHeader * header)
   return bytes;
 }
 
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
-
+/**
+*/
 int
 LogSock::read_body(int sd, void *buf, int bytes)
 {

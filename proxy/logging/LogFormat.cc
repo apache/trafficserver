@@ -88,10 +88,10 @@ LogFormat::setup(const char *name, const char *format_str, unsigned interval_sec
     const char *tag = " %<phn>";
     const size_t m_format_str_size = strlen(format_str) + (m_tagging_on ? strlen(tag) : 0) + 1;
     m_format_str = (char *)ats_malloc(m_format_str_size);
-    ink_strncpy(m_format_str, format_str, m_format_str_size);
+    ink_strlcpy(m_format_str, format_str, m_format_str_size);
     if (m_tagging_on) {
       Note("Log tagging enabled, adding %%<phn> field at the end of " "format %s", name);
-      strncat(m_format_str, tag, m_format_str_size - strlen(m_format_str) - 1);
+      ink_strlcat(m_format_str, tag, m_format_str_size);
     };
 
     char *printf_str = NULL;
