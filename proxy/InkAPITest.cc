@@ -4419,9 +4419,9 @@ REGRESSION_TEST(SDK_API_TSMimeHdrField) (RegressionTest * test, int atype, int *
         char *expected_value;
         size_t len = strlen(field5Value1) + strlen(field5Value1Append) + 1;
         expected_value = (char *) TSmalloc(len);
-        memset(expected_value, 0, strlen(field5Value1) + strlen(field5Value1Append) + 1);
-        ink_strncpy(expected_value, field5Value1, len);
-        strncat(expected_value, field5Value1Append, len - strlen(expected_value) - 1);
+        memset(expected_value, 0, len);
+        ink_strlcpy(expected_value, field5Value1, len);
+        ink_strlcat(expected_value, field5Value1Append, len);
         if ((strncmp(fieldValueAppendGet, expected_value, lengthFieldValueAppended) == 0) &&
             (lengthFieldValueAppended = strlen(expected_value))) {
           SDK_RPRINT(test, "TSMimeHdrFieldValueAppend", "TestCase1", TC_PASS, "ok");
@@ -6730,7 +6730,7 @@ load(const char *append_string)
   blk = TSIOBufferStart(append_buffer);
   p = TSIOBufferBlockWriteStart(blk, &avail);
 
-  ink_strncpy(p, append_string, avail);
+  ink_strlcpy(p, append_string, avail);
   if (append_string != NULL) {
     TSIOBufferProduce(append_buffer, strlen(append_string));
   }

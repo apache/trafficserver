@@ -77,7 +77,7 @@ RequestInput::run()
   unsigned writeBytes = (m_len < maxBytes) ? m_len : maxBytes;
 
 
-  strncpy(buff, m_sp, writeBytes);
+  writeBytes = ink_strlcpy(buff, m_sp, maxBytes);
   m_cb->wrote(writeBytes);
 
   m_len -= writeBytes;

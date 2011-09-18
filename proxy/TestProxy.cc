@@ -1,6 +1,6 @@
 /** @file
 
-  A brief file description
+  This file implements the functionality to test the Proxy
 
   @section license License
 
@@ -22,10 +22,6 @@
  */
 
 #include "ink_unused.h"        /* MAGIC_EDITING_TAG */
-/****************************************************************************
-
-  TestProxy.cc
- ****************************************************************************/
 
 #include <limits.h>
 #include "Net.h"
@@ -145,19 +141,18 @@ struct TestProxy:Continuation
       url = strchr(thost, '/'); // done before portStr stompage */
       temp = strchr(thost, ' ');
       ink_assert(temp - thost < 1024);
-      strncpy(url_str, thost, temp - thost);
-      url_str[temp - thost] = '\0';
+      ink_strlcpy(url_str, thost, sizeof(url_str));
       if (!url)
         return done();
       char *portStr = strchr(thost, ':');
       *url = 0;
       if (portStr == NULL) {
         port = 80;
-        strcpy(host, thost);
+        ink_strlcpy(host, thost, sizeof(host));
       } else {
         *portStr = '\0';        /* close off the hostname */
         port = atoi(portStr + 1);
-        strcpy(host, thost);
+        ink_strlcpy(host, thost, sizeof(host));
         *portStr = ':';
       }
       url_end = strchr(url + 1, ' ');

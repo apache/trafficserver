@@ -1,6 +1,6 @@
 /** @file
 
-  A brief file description
+  test code for sanity checking the header system is functioning properly
 
   @section license License
 
@@ -21,16 +21,6 @@
   limitations under the License.
  */
 
-/****************************************************************************
-
-   test_header.cc
-
-   Description:
-       test code for sanity checking the header system is functioning
-         properly
-
-
- ****************************************************************************/
 
 #include <stdlib.h>
 #include <string.h>
@@ -1004,7 +994,7 @@ test_str_replace_slice()
   int failures = 0;
 
   // (1) prepend
-  strcpy(buff, "de, fr, en");
+  ink_strlcpy(buff, "de, fr, en", sizeof(buff));
   targ = buff + 0;
   repl = "oo, ";
   good = "oo, de, fr, en";
@@ -1014,7 +1004,7 @@ test_str_replace_slice()
     ++failures;
   }
   // (2) append
-  strcpy(buff, "de, fr, en");
+  ink_strlcpy(buff, "de, fr, en", sizeof(buff));
   targ = buff + 10;
   repl = ", bloop";
   good = "de, fr, en, bloop";
@@ -1024,7 +1014,7 @@ test_str_replace_slice()
     ++failures;
   }
   // (3) delete middle
-  strcpy(buff, "de, fr, en");
+  ink_strlcpy(buff, "de, fr, en", sizeof(buff));
   targ = buff + 4;
   repl = "";
   good = "de, en";
