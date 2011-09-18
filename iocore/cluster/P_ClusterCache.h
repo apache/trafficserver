@@ -626,7 +626,7 @@ struct ClusterProcessor
   //
 
   // Invoke a function on a remote node
-  //   marshall your own data, provide a continuation for timeouts and errors
+  //   marshal your own data, provide a continuation for timeouts and errors
   //
   // Options: CLUSTER_OPT_DELAY, CLUSTER_OPT_STEAL, CLUSTER_OPT_DATA_IS_OCONTROL
   // Returns: 1 for immediate send, 0 for delayed, -1 for error
