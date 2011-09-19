@@ -77,7 +77,7 @@ static bool recordRegexCheck(const char *pattern, const char *value);
 int
 Net_GetHostname(char *hostname, size_t hostname_len)
 {
-  ink_strncpy(hostname, "", hostname_len);
+  hostname[0] = 0;
   return (gethostname(hostname, 256));
 }
 
@@ -167,7 +167,7 @@ Net_GetDefaultRouter(char *router, size_t router_len)
     char buffer[256];
     FILE *fp;
 
-    ink_strncpy(command, "/sbin/route -n > /tmp/route_status", sizeof(command));
+    ink_strlcpy(command, "/sbin/route -n > /tmp/route_status", sizeof(command));
     remove(tmp_file);
     if (system(command) == -1) {
       DPRINTF(("[Net_GetDefaultRouter] run route -n\n"));
@@ -193,7 +193,7 @@ Net_GetDefaultRouter(char *router, size_t router_len)
       NOWARN_UNUSED_RETURN(fgets(buffer, 256, fp));
     }
     if (find_UG) {
-      ink_strncpy(router, gw_start, router_len);
+      ink_strlcpy(router, gw_start, router_len);
       fclose(fp);
       return 0;
     }
@@ -236,7 +236,7 @@ int
 Net_GetDomain(char *domain, size_t domain_len)
 {
   //  domain can be defined using search or domain keyword
-  ink_strncpy(domain, "", domain_len);
+  domain[0] = 0;
   return !find_value("/etc/resolv.conf", "search", domain, domain_len, " ", 0);
 
   /**
@@ -266,11 +266,11 @@ int
 Net_GetDNS_Servers(char *dns, size_t dns_len)
 {
   char ip[80];
-  ink_strncpy(dns, "", dns_len);
+  dns[0] = 0;
   int i = 0;
   while (find_value("/etc/resolv.conf", "nameserver", ip, sizeof(ip), " ", i++)) {
-    strncat(dns, ip, dns_len - strlen(dns) - 1);
-    strncat(dns, " ", dns_len - strlen(dns) - 1);
+    ink_strlcat(dns, ip, dns_len);
+    ink_strlcat(dns, " ", dns_len);
   }
   return 0;
 }
@@ -289,7 +289,7 @@ Net_SetDNS_Servers(char *dns)
     return -1;
   }
   // check all IP addresses for validity
-  strncpy(buff, dns, 512);
+  ink_strlcpy(buff, dns, sizeof(buff));
   buff[511] = '\0';
   tmp1 = buff;
   while ((tmp2 = strtok(tmp1, " \t")) != NULL) {
@@ -311,7 +311,7 @@ Net_SetDNS_Servers(char *dns)
 int
 Net_GetDNS_Server(char *server, size_t server_len, int no)
 {
-  ink_strncpy(server, "", server_len);
+  server[0] = 0;
   return (!find_value("/etc/resolv.conf", "nameserver", server, server_len, " ", no));
 }
 
@@ -320,10 +320,9 @@ Net_GetNetworkIntCount()
 {
 
   FILE *net_device;
-  char buffer[200];
+  char buffer[200] = "";
   int count = 0;
 
-  *buffer = '\0';
   // for each NIC
   net_device = fopen("/proc/net/dev", "r");
   while (!feof(net_device)) {
@@ -340,7 +339,7 @@ Net_GetNetworkIntCount()
 int
 Net_GetNetworkInt(int int_num, char *interface, size_t interface_len)
 {
-  ink_strncpy(interface, "", interface_len);
+  interface[0] = 0;
 
   FILE *net_device;
   char buffer[200];
@@ -367,7 +366,7 @@ Net_GetNetworkInt(int int_num, char *interface, size_t interface_len)
   space_len = strspn(buffer, " ");
   tmp = buffer + space_len;
 
-  ink_strncpy(interface, tmp, interface_len);
+  ink_strlcpy(interface, tmp, interface_len);
 
   return 0;
 
@@ -379,19 +378,19 @@ Net_GetNIC_Status(char *interface, char *status, size_t status_len)
 
   char ifcfg[80], command[80];
 
-  ink_strncpy(status, "", status_len);
+  status[0] = 0;
 
-  ink_strncpy(ifcfg, "/etc/sysconfig/network-scripts/ifcfg-", sizeof(ifcfg));
-  strncat(ifcfg, interface, (sizeof(ifcfg) - strlen(ifcfg) - 1));
+  ink_strlcpy(ifcfg, "/etc/sysconfig/network-scripts/ifcfg-", sizeof(ifcfg));
+  ink_strlcat(ifcfg, interface, sizeof(ifcfg));
 
-  ink_strncpy(command, "/sbin/ifconfig | grep ", sizeof(command));
-  strncat(command, interface, (sizeof(command) - strlen(command) - 1));
-  strncat(command, " >/dev/null 2>&1", (sizeof(command) - strlen(command) - 1));
+  ink_strlcpy(command, "/sbin/ifconfig | grep ", sizeof(command));
+  ink_strlcat(command, interface, sizeof(command));
+  ink_strlcat(command, " >/dev/null 2>&1", sizeof(command));
 
   if (system(command) == 0) {
-    ink_strncpy(status, "up", status_len);
+    ink_strlcpy(status, "up", status_len);
   } else {
-    ink_strncpy(status, "down", status_len);
+    ink_strlcpy(status, "down", status_len);
   }
   return 0;
 }
@@ -402,16 +401,16 @@ Net_GetNIC_Start(char *interface, char *start, size_t start_len)
 
   char ifcfg[80], value[80];
 
-  ink_strncpy(start, "", start_len);
+  start[0] = 0;
 
-  ink_strncpy(ifcfg, "/etc/sysconfig/network-scripts/ifcfg-", sizeof(ifcfg));
-  strncat(ifcfg, interface, (sizeof(ifcfg) - strlen(ifcfg) - 1));
+  ink_strlcpy(ifcfg, "/etc/sysconfig/network-scripts/ifcfg-", sizeof(ifcfg));
+  ink_strlcat(ifcfg, interface, sizeof(ifcfg));
 
   if (find_value(ifcfg, "ONBOOT", value, sizeof(value), "=", 0)) {
     if (strcasecmp(value, "yes") == 0) {
-      ink_strncpy(start, "onboot", start_len);
+      ink_strlcpy(start, "onboot", start_len);
     } else {
-      ink_strncpy(start, "not-onboot", start_len);
+      ink_strlcpy(start, "not-onboot", start_len);
     }
     return 0;
   } else {
@@ -425,21 +424,21 @@ Net_GetNIC_Protocol(char *interface, char *protocol, size_t protocol_len)
 
   char ifcfg[80], value[80];
 
-  ink_strncpy(protocol, "", protocol_len);
+  protocol[0] = 0;
 
-  ink_strncpy(ifcfg, "/etc/sysconfig/network-scripts/ifcfg-", sizeof(ifcfg));
-  strncat(ifcfg, interface, (sizeof(ifcfg) - strlen(ifcfg) - 1));
+  ink_strlcpy(ifcfg, "/etc/sysconfig/network-scripts/ifcfg-", sizeof(ifcfg));
+  ink_strlcat(ifcfg, interface, sizeof(ifcfg));
 
   if (find_value(ifcfg, "BOOTPROTO", value, sizeof(value), "=", 0)) {
     if ((strcasecmp(value, "none") == 0) || (strcasecmp(value, "static") == 0) || (strcasecmp(value, "dhcp") == 0)) {
-      ink_strncpy(protocol, value, protocol_len);
+      ink_strlcpy(protocol, value, protocol_len);
     } else {
-      ink_strncpy(protocol, "none", protocol_len);
+      ink_strlcpy(protocol, "none", protocol_len);
     }
     return 0;
   } else {
     //if there is no BOOTPROTO, assume the default is "none" now
-    ink_strncpy(protocol, "none", protocol_len);
+    ink_strlcpy(protocol, "none", protocol_len);
     return 1;
   }
 }
@@ -451,11 +450,11 @@ Net_GetNIC_IP(char *interface, char *ip, size_t ip_len)
   char ifcfg[80], protocol[80], status[80];
   char command[80];
 
-  ink_strncpy(ip, "", ip_len);
+  ip[0] = 0;
   Net_GetNIC_Protocol(interface, protocol, sizeof(protocol));
   if (strcmp(protocol, "none") == 0 || strcmp(protocol, "static") == 0) {
-    ink_strncpy(ifcfg, "/etc/sysconfig/network-scripts/ifcfg-", sizeof(ifcfg));
-    strncat(ifcfg, interface, (sizeof(ifcfg) - strlen(ifcfg) - 1));
+    ink_strlcpy(ifcfg, "/etc/sysconfig/network-scripts/ifcfg-", sizeof(ifcfg));
+    ink_strlcat(ifcfg, interface, sizeof(ifcfg));
 
     return (!find_value(ifcfg, "IPADDR", ip, ip_len, "=", 0));
   } else {
@@ -465,10 +464,10 @@ Net_GetNIC_IP(char *interface, char *ip, size_t ip_len)
       char buffer[256];
       FILE *fp;
 
-      ink_strncpy(command, "/sbin/ifconfig ", sizeof(command));
-      strncat(command, interface, (sizeof(command) - strlen(command) - 1));
-      strncat(command, " >", (sizeof(command) - strlen(command) - 1));
-      strncat(command, tmp_file, (sizeof(command) - strlen(command) - 1));
+      ink_strlcpy(command, "/sbin/ifconfig ", sizeof(command));
+      ink_strlcat(command, interface, sizeof(command));
+      ink_strlcat(command, " >", sizeof(command));
+      ink_strlcat(command, tmp_file, sizeof(command));
 
       remove(tmp_file);
       if (system(command) == -1) {
@@ -495,7 +494,7 @@ Net_GetNIC_IP(char *interface, char *ip, size_t ip_len)
       }
 
       if (addr_start)
-        ink_strncpy(ip, addr_start, ip_len);
+        ink_strlcpy(ip, addr_start, ip_len);
       fclose(fp);
       return 0;
     }
@@ -510,11 +509,11 @@ Net_GetNIC_Netmask(char *interface, char *netmask, size_t netmask_len)
   char ifcfg[80], protocol[80], status[80];
   char command[80];
 
-  ink_strncpy(netmask, "", netmask_len);
+  netmask[0] = 0;
   Net_GetNIC_Protocol(interface, protocol, sizeof(protocol));
   if (strcmp(protocol, "none") == 0 || strcmp(protocol, "static") == 0) {
-    ink_strncpy(ifcfg, "/etc/sysconfig/network-scripts/ifcfg-", sizeof(ifcfg));
-    strncat(ifcfg, interface, (sizeof(ifcfg) - strlen(ifcfg) - 1));
+    ink_strlcpy(ifcfg, "/etc/sysconfig/network-scripts/ifcfg-", sizeof(ifcfg));
+    ink_strlcat(ifcfg, interface, sizeof(ifcfg));
     return (!find_value(ifcfg, "NETMASK", netmask, netmask_len, "=", 0));
   } else {
     Net_GetNIC_Status(interface, status, sizeof(status));
@@ -523,10 +522,10 @@ Net_GetNIC_Netmask(char *interface, char *netmask, size_t netmask_len)
       char buffer[256];
       FILE *fp;
 
-      ink_strncpy(command, "/sbin/ifconfig ", sizeof(command));
-      strncat(command, interface, (sizeof(command) - strlen(command) - 1));
-      strncat(command, " >", (sizeof(command) - strlen(command) - 1));
-      strncat(command, tmp_file, (sizeof(command) - strlen(command) - 1));
+      ink_strlcpy(command, "/sbin/ifconfig ", sizeof(command));
+      ink_strlcat(command, interface, sizeof(command));
+      ink_strlcat(command, " >", sizeof(command));
+      ink_strlcat(command, tmp_file, sizeof(command));
 
       remove(tmp_file);
       if (system(command) == -1) {
@@ -553,7 +552,7 @@ Net_GetNIC_Netmask(char *interface, char *netmask, size_t netmask_len)
       }
 
       if (mask_start)
-        ink_strncpy(netmask, mask_start, netmask_len);
+        ink_strlcpy(netmask, mask_start, netmask_len);
       fclose(fp);
       return 0;
     }
@@ -568,9 +567,9 @@ Net_GetNIC_Gateway(char *interface, char *gateway, size_t gateway_len)
 
   char ifcfg[80];
 
-  ink_strncpy(gateway, "", gateway_len);
-  ink_strncpy(ifcfg, "/etc/sysconfig/network-scripts/ifcfg-", sizeof(ifcfg));
-  strncat(ifcfg, interface, (sizeof(ifcfg) - strlen(ifcfg) - 1));
+  gateway[0] = 0;
+  ink_strlcpy(ifcfg, "/etc/sysconfig/network-scripts/ifcfg-", sizeof(ifcfg));
+  ink_strlcat(ifcfg, interface, sizeof(ifcfg));
 
   return (!find_value(ifcfg, "GATEWAY", gateway, gateway_len, "=", 0));
 }
@@ -687,15 +686,15 @@ Net_SetNIC_Up(char *interface, char *onboot, char *protocol, char *ip, char *net
   //char *new_gateway;
 
   if (strcmp(onboot, "onboot") == 0) {
-    ink_strncpy(onboot_bool, "1", sizeof(onboot_bool));
+    ink_strlcpy(onboot_bool, "1", sizeof(onboot_bool));
   } else {
-    ink_strncpy(onboot_bool, "0", sizeof(onboot_bool));
+    ink_strlcpy(onboot_bool, "0", sizeof(onboot_bool));
   }
 
   if (strcmp(protocol, "dhcp") == 0) {
-    ink_strncpy(protocol_bool, "0", sizeof(protocol_bool));
+    ink_strlcpy(protocol_bool, "0", sizeof(protocol_bool));
   } else {
-    ink_strncpy(protocol_bool, "1", sizeof(protocol_bool));
+    ink_strlcpy(protocol_bool, "1", sizeof(protocol_bool));
   }
 
   if (!Net_IsValid_IP(ip))
@@ -811,7 +810,7 @@ find_value(const char *pathname, const char *key, char *value, size_t value_len,
 
   int str_len = strlen(key);
 
-  ink_strncpy(value, "", value_len);
+  value[0] = 0;
   // coverity[fs_check_call]
   if (access(pathname, R_OK)) {
     return find;
@@ -855,7 +854,7 @@ find_value(const char *pathname, const char *key, char *value, size_t value_len,
             }
             *cur = '\0';
 
-            ink_strncpy(value, pos, value_len);
+            ink_strlcpy(value, pos, value_len);
 
             if (value[strlen(value) - 1] == '\n') {
               value[strlen(value) - 1] = '\0';
@@ -899,7 +898,7 @@ Net_IsValid_IP(char *ip_addr)
     return 1;
   }
 
-  ink_strncpy(addr, ip_addr, sizeof(addr));
+  ink_strlcpy(addr, ip_addr, sizeof(addr));
 
   octet1[0] = '\0';
   octet2[0] = '\0';
@@ -1178,7 +1177,7 @@ Time_SetDate(bool restart, char *month, char *day, char *year)
 int
 Time_GetNTP_Servers(char *server, size_t server_len)
 {
-  ink_strncpy(server, "", server_len);
+  server[0] = 0;
   return (!find_value("/etc/ntp.conf", "server", server, server_len, " ", 0));
 }
 
@@ -1197,7 +1196,7 @@ Time_SetNTP_Servers(bool restart, char *server)
 int
 Time_GetNTP_Server(char *server, size_t server_len, int no)
 {
-  ink_strncpy(server, "", server_len);
+  server[0] = 0;
   return (!find_value("/etc/ntp.conf", "server", server, server_len, " ", no));
 }
 
@@ -1208,14 +1207,14 @@ Time_GetNTP_Status(char *status, size_t status_len)
   FILE *fp;
   char buffer[1024];
 
-  ink_strncpy(status, "", status_len);
+  status[0] = 0;
 
   fp = popen("/etc/init.d/ntpd status", "r");
   NOWARN_UNUSED_RETURN(fgets(buffer, 1024, fp));
   if (strstr(buffer, "running") != NULL) {
-    ink_strncpy(status, "on", status_len);
+    ink_strlcpy(status, "on", status_len);
   } else {
-    ink_strncpy(status, "off", status_len);
+    ink_strlcpy(status, "off", status_len);
   }
 
   pclose(fp);
@@ -1368,12 +1367,12 @@ Get_Value(char *buffer, size_t buffer_len, char *buf, int location)
   char *tmp_buffer;
   int i = 1;
 
-  ink_strncpy(buffer, strtok(buf, " "), buffer_len);
+  ink_strlcpy(buffer, strtok(buf, " "), buffer_len);
 
   if (buffer[0] == '"') {
     tmp_buffer = strtok(NULL, "\"");
-    strncat(buffer, tmp_buffer, (buffer_len - strlen(buffer) - 1));
-    strncat(buffer, "\"", (buffer_len - strlen(buffer) - 1));
+    ink_strlcat(buffer, tmp_buffer, buffer_len);
+    ink_strlcat(buffer, "\"", buffer_len);
   }
 
   if (location == 1) {
@@ -1384,13 +1383,13 @@ Get_Value(char *buffer, size_t buffer_len, char *buf, int location)
   }
   while ((tmp_buffer = strtok(NULL, " ")) != NULL) {
     if (tmp_buffer[0] == '"') {
-      ink_strncpy(buffer, tmp_buffer, buffer_len);
+      ink_strlcpy(buffer, tmp_buffer, buffer_len);
       tmp_buffer = strtok(NULL, "\"");
-      strncat(buffer, " ", (buffer_len - strlen(buffer) - 1));
-      strncat(buffer, tmp_buffer, (buffer_len - strlen(buffer) - 1));
-      strncat(buffer, "\"", (buffer_len - strlen(buffer) - 1));
+      ink_strlcat(buffer, " ", buffer_len);
+      ink_strlcat(buffer, tmp_buffer, buffer_len);
+      ink_strlcat(buffer, "\"", buffer_len);
     } else
-      ink_strncpy(buffer, tmp_buffer, buffer_len);
+      ink_strlcpy(buffer, tmp_buffer, buffer_len);
     i++;
     if (i == location) {
       char *ptr = strchr(buffer, '\n');
@@ -1480,8 +1479,8 @@ static bool recordRegexCheck(const char *pattern, const char *value);
 int
 Net_GetHostname(char *hostname, size_t hostname_len)
 {
-  strcpy(hostname, "");
-  return (gethostname(hostname, 256));
+  hostname[0] = 0;
+  return (gethostname(hostname, hostname_len));
 }
 
 int
@@ -1676,7 +1675,7 @@ int
 Net_GetDomain(char *domain, size_t domain_len)
 {
   //  domain can be defined using search or domain keyword
-  strcpy(domain, "");
+  domain[0] = 0;
   return !find_value("/etc/resolv.conf", "search", domain, " ", 0);
   /*  if there is bug file against this, we should search for domain keyword as well
      if (!find_value("/etc/resolv.conf", "search", domain, " ", 0)) {
@@ -1705,11 +1704,11 @@ int
 Net_GetDNS_Servers(char *dns, size_t dns_len)
 {
   char ip[80];
-  strcpy(dns, "");
+  dns[0] = 0;
   int i = 0;
   while (find_value("/etc/resolv.conf", "nameserver", ip, " ", i++)) {
-    strcat(dns, ip);
-    strcat(dns, " ");
+    ink_strlcpy(dns, ip, dns_len);
+    ink_strlcat(dns, " ", dns_len);
   }
   return 0;
 }
@@ -1727,7 +1726,7 @@ Net_SetDNS_Servers(char *dns)
     return -1;
   }
   // check all IP addresses for validity
-  strncpy(buff, dns, 512);
+  ink_strlcpy(buff, dns, sizeof(buff));
   tmp1 = buff;
   while ((tmp2 = strtok(tmp1, " \t")) != NULL) {
     DPRINTF(("Net_SetDNS_Servers: tmp2 %s\n", tmp2));
@@ -1748,7 +1747,7 @@ Net_SetDNS_Servers(char *dns)
 int
 Net_GetDNS_Server(char *server, int no)
 {
-  strcpy(server, "");
+  server[0] = 0;
   return (!find_value("/etc/resolv.conf", "nameserver", server, " ", no));
 }
 
@@ -1773,9 +1772,9 @@ Net_GetNetworkIntCount()
 }
 
 int
-Net_GetNetworkInt(int int_num, char *interface, size_t interface_len)//FIXME: use interface_len
+Net_GetNetworkInt(int int_num, char *interface, size_t interface_len)
 {
-  strcpy(interface, "");
+  interface[0] = 0;
 
   const int BUFFLEN = 200;
   char buffer[BUFFLEN];
@@ -1815,7 +1814,7 @@ Net_GetNetworkInt(int int_num, char *interface, size_t interface_len)//FIXME: us
       pos = buffer + strlen("/etc/hostname.");
 
     if (pos != NULL) {
-      strcpy(interface, pos);
+      ink_strlcpy(interface, pos, interface_len);
       if (interface[strlen(interface) - 1] == '\n') {
         interface[strlen(interface) - 1] = '\0';
       }
@@ -1826,7 +1825,7 @@ Net_GetNetworkInt(int int_num, char *interface, size_t interface_len)//FIXME: us
 }
 
 int
-Net_GetNIC_Status(char *interface, char *status, size_t status_len) // FIXME: use status_line
+Net_GetNIC_Status(char *interface, char *status, size_t status_len)
 {
   const int BUFFLEN = 80;
   char buffer[BUFFLEN];
@@ -1841,9 +1840,9 @@ Net_GetNIC_Status(char *interface, char *status, size_t status_len) // FIXME: us
   }
   pclose(fd);
   if (atoi(buffer) == 1)
-    strcpy(status, "up");
+    ink_strlcpy(status, "up", status_len);
   else
-    strcpy(status, "down");
+    ink_strlcpy(status, "down", status_len);
   return 0;
 }
 
@@ -1857,9 +1856,9 @@ Net_GetNIC_Start(char *interface, char *start, size_t start_len)
 
   // if /etc/hostname.<interface> file exist, return true, else return false
   if ((fd = fopen(hostnamefile, "r")) != NULL)
-    strcpy(start, "onboot");
+    ink_strlcpy(start, "onboot", start_len);
   else
-    strcpy(start, "not-onboot");
+    ink_strlcpy(start, "not-onboot", start_len);
   return 0;
 }
 
@@ -1872,9 +1871,9 @@ Net_GetNIC_Protocol(char *interface, char *protocol, size_t protocol_len)
   snprintf(dhcp_filename, sizeof(dhcp_filename), "/etc/dhcp.%s", interface);
 
   if ((fd = fopen(dhcp_filename, "r")) == NULL)
-    strcpy(protocol, "static");
+    ink_strlcpy(protocol, "static", protocol_len);
   else
-    strcpy(protocol, "dhcp");
+    ink_strlcpy(protocol, "dhcp", protocol_len);
 
   return 0;
 }
@@ -2017,7 +2016,7 @@ Net_GetNIC_IP(char *interface, char *ip, size_t nic_ip_len)//FIXME: use nic_ip_l
 int
 Net_GetNIC_Netmask(char *interface, char *netmask, size_t netmask_len)
 {
-  strcpy(netmask, "");          // bug 50628, initialize for null value
+  netmask[0] = 0; // bug 50628, initialize for null value
   int status = parseIfconfig(interface, "netmask ", netmask);
 
   if (status != 0) {            // when network interface is down
@@ -2070,13 +2069,13 @@ Net_GetNIC_Netmask(char *interface, char *netmask, size_t netmask_len)
         curMatchingBits = getMatchingBits(cur_network, ip_addr);
         if (curMatchingBits > maxMatchingBits) {
           maxMatchingBits = curMatchingBits;
-          ink_strncpy(winnerMask, cur_netmask, sizeof(winnerMask));
+          ink_strlcpy(winnerMask, cur_netmask, sizeof(winnerMask));
         }
       }
       fgets(buffer, BUFFLEN, fd);
     }
     if (maxMatchingBits > 0)
-      strcpy(netmask, winnerMask);
+      ink_strlcpy(netmask, winnerMask, netmask_len);
     fclose(fd);
     status = 0;
   }
@@ -2386,7 +2385,7 @@ Net_IsValid_IP(char *ip_addr)
     return 1;
   }
 
-  ink_strncpy(addr, ip_addr, sizeof(addr));
+  ink_strlcpy(addr, ip_addr, sizeof(addr));
 
   octet1[0] = '\0';
   octet2[0] = '\0';

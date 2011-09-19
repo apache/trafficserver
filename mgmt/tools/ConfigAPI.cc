@@ -84,7 +84,7 @@ Config_SetHostname(char *hostname)
   //printf("Inside Config_SetHostname(), hostname = %s\n", hostname);
 
   //validate
-  ink_strncpy(old_hostname, "", sizeof(old_hostname));
+  ink_strlcpy(old_hostname, "", sizeof(old_hostname));
   if (hostname == NULL)
     return -1;
 
@@ -140,7 +140,7 @@ Config_SetDefaultRouter(char *router)
   status = Config_GetDefaultRouter(old_router, sizeof(old_router));
   if (status) {
     DPRINTF(("Config_SetDefaultRouter: Couldn't read old router name\n"));
-    ink_strncpy(old_router, "", sizeof(old_router));
+    ink_strlcpy(old_router, "", sizeof(old_router));
   }
 
   DPRINTF(("Config_SetDefaultRouter: router %s\n", router));
@@ -188,7 +188,7 @@ Config_SetDomain(const char *domain)
   status = Config_GetDomain(old_domain, sizeof(old_domain));
   if (status) {
     DPRINTF(("Config_SetDomain: Couldn't retrieve old domain\n"));
-    ink_strncpy(old_domain, "", sizeof(old_domain));
+    ink_strlcpy(old_domain, "", sizeof(old_domain));
   }
   status = Net_SetDomain(domain);
   if (status) {
@@ -233,7 +233,7 @@ Config_SetDNS_Servers(char *dns)
   status = Config_GetDNS_Servers(old_dns, sizeof(old_dns));
   if (status) {
     DPRINTF(("Config_SetDNS_Servers: falied to retrieve old dns name\n"));
-    ink_strncpy(old_dns, "", sizeof(old_dns));
+    ink_strlcpy(old_dns, "", sizeof(old_dns));
   }
   status = Net_SetDNS_Servers(dns);
   if (status) {
@@ -1110,8 +1110,7 @@ XmlObject::LoadFile(char *file)
 char *
 XmlObject::getXmlTagValue(const char *XmlTagName)
 {
-  char XmlTagValue[1024];
-  ink_strncpy(XmlTagValue, "", sizeof(XmlTagValue));
+  char XmlTagValue[1024] = "";
 
   for (int parent = 0; parent < xmlDom.getChildCount(); parent++) {
     XMLNode *parentNode = xmlDom.getChildNode(parent);
@@ -1119,15 +1118,14 @@ XmlObject::getXmlTagValue(const char *XmlTagName)
       int XmlTagCount = parentNode->getChildCount(XmlTagName);
       for (int tagCount = 0; tagCount < XmlTagCount; tagCount++) {
         if (parentNode->getChildNode(XmlTagName, tagCount)->getNodeValue() != NULL) {
-          strncat(XmlTagValue, parentNode->getChildNode(XmlTagName, tagCount)->getNodeValue(),
-                  sizeof(XmlTagValue) - strlen(XmlTagValue) - 1);
+          ink_strlcat(XmlTagValue, parentNode->getChildNode(XmlTagName, tagCount)->getNodeValue(),
+                  sizeof(XmlTagValue));
           if (tagCount + 1 < XmlTagCount)
-            strncat(XmlTagValue, " ", sizeof(XmlTagValue) - strlen(XmlTagValue) - 1);
+            ink_strlcat(XmlTagValue, " ", sizeof(XmlTagValue));
         }
       }
     }
   }
-  strncat(XmlTagValue, "\0", sizeof(XmlTagValue) - strlen(XmlTagValue) - 1);
   if (strlen(XmlTagValue) == 0)
     return NULL;
   return ats_strdup(XmlTagValue);
@@ -1137,8 +1135,7 @@ XmlObject::getXmlTagValue(const char *XmlTagName)
 char *
 XmlObject::getXmlTagValueAndAttribute(char *XmlAttribute, const char *XmlTagName)
 {
-  char XmlTagValue[1024];
-  ink_strncpy(XmlTagValue, "", sizeof(XmlTagValue));
+  char XmlTagValue[1024] = "";
 
   for (int parent = 0; parent < xmlDom.getChildCount(); parent++) {
     XMLNode *parentNode = xmlDom.getChildNode(parent);
@@ -1151,9 +1148,8 @@ XmlObject::getXmlTagValueAndAttribute(char *XmlAttribute, const char *XmlTagName
                                                                                                     tagCount)->
                                                                                        m_pAList[0].pAValue,
                                                                                        XmlAttribute) == 0)) {
-          strncat(XmlTagValue, parentNode->getChildNode(XmlTagName, tagCount)->getNodeValue(),
-                  sizeof(XmlTagValue) - strlen(XmlTagValue) - 1);
-          strncat(XmlTagValue, "\0", sizeof(XmlTagValue) - strlen(XmlTagValue) - 1);
+          ink_strlcat(XmlTagValue, parentNode->getChildNode(XmlTagName, tagCount)->getNodeValue(),
+                  sizeof(XmlTagValue));
           return ats_strdup(XmlTagValue);
         }
       }
