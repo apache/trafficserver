@@ -105,11 +105,11 @@ EnvBlock::toString(void)
   while (ht_entry != NULL && i < str_len) {
     name = (const char *) ink_hash_table_entry_key(table, ht_entry);
     value = (const char *) ink_hash_table_entry_value(table, ht_entry);
-    ink_strncpy(env_str + i, name, str_len - i);
+    ink_strlcpy(env_str + i, name, str_len - i);
     i += strlen(name);
-    ink_strncpy(env_str + i, "=", str_len - i);
+    ink_strlcpy(env_str + i, "=", str_len - i);
     i++;
-    ink_strncpy(env_str + i, value - i, str_len - i);
+    ink_strlcpy(env_str + i, value - i, str_len - i);
     i += strlen(value) + 1;
     ht_entry = ink_hash_table_iterator_next(table, &ht_iter);
   }

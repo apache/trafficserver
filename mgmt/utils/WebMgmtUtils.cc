@@ -592,9 +592,9 @@ varStrFromName(const char *varNameConst, char *bufVal, int bufLen)
     if (data.rec_string == NULL) {
       bufVal[0] = '\0';
     } else if (strlen(data.rec_string) < (size_t) (bufLen - 1)) {
-      ink_strncpy(bufVal, data.rec_string, bufLen);
+      ink_strlcpy(bufVal, data.rec_string, bufLen);
     } else {
-      ink_strncpy(bufVal, data.rec_string, bufLen);
+      ink_strlcpy(bufVal, data.rec_string, bufLen);
     }
     ats_free(data.rec_string);
     break;
@@ -936,26 +936,26 @@ substituteForHTMLChars(const char *buffer)
   int inLength = strlen(buffer);        // how long the orig buffer in
 
   // Maximum character expansion is one to three
-  unsigned int bufferToAllocate = (inLength * 5);
-  safeBuf = new char[bufferToAllocate + 1];
+  unsigned int bufferToAllocate = (inLength * 5) + 1;
+  safeBuf = new char[bufferToAllocate];
   safeCurrent = safeBuf;
 
   while (*inCurrent != '\0') {
     switch (*inCurrent) {
     case '"':
-      ink_strncpy(safeCurrent, "&quot;", bufferToAllocate);
+      ink_strlcpy(safeCurrent, "&quot;", bufferToAllocate);
       safeCurrent += 6;
       break;
     case '<':
-      ink_strncpy(safeCurrent, "&lt;", bufferToAllocate);
+      ink_strlcpy(safeCurrent, "&lt;", bufferToAllocate);
       safeCurrent += 4;
       break;
     case '>':
-      ink_strncpy(safeCurrent, "&gt;", bufferToAllocate);
+      ink_strlcpy(safeCurrent, "&gt;", bufferToAllocate);
       safeCurrent += 4;
       break;
     case '&':
-      ink_strncpy(safeCurrent, "&amp;", bufferToAllocate);
+      ink_strlcpy(safeCurrent, "&amp;", bufferToAllocate);
       safeCurrent += 5;
       break;
     default:
@@ -1064,8 +1064,8 @@ appendDefaultDomain(char *hostname, int bufLength)
   if (strchr(hostname, '.') == NULL) {
     if (_res.defdname[0] != '\0') {
       if (bufLength - 2 >= (int) (strlen(hostname) + strlen(_res.defdname))) {
-        strncat(hostname, ".", bufLength - strlen(hostname));
-        strncat(hostname, _res.defdname, MAXDNAME - 2 - strlen(hostname));
+        ink_strlcat(hostname, ".", bufLength);
+        ink_strlcat(hostname, _res.defdname, bufLength);
       } else {
         if (error_before == 0) {
           mgmt_log(stderr, "%s %s\n", "[appendDefaultDomain] Domain name is too long.", msg);
@@ -1362,7 +1362,7 @@ processSpawn(const char *args[],
             safebuf = substituteForHTMLChars(buffer);
             if (safebuf) {
               if (strlen(safebuf) < sizeof(buffer)) {
-                ink_strncpy(buffer, safebuf, sizeof(buffer));
+                ink_strlcpy(buffer, safebuf, sizeof(buffer));
               }
               delete[]safebuf;
             }
@@ -1427,7 +1427,7 @@ getFilesInDirectory(char *managedDir, ExpandingArray * fileList)
   // The fun of Solaris - readdir_r requires a buffer passed into it
   //   The man page says this obscene expression gives us the proper
   //     size
-  dirEntry = (struct dirent *)ats_malloc(sizeof(struct dirent) + pathconf(".", _PC_NAME_MAX) + 1);
+  dirEntry = (struct dirent *)alloca(sizeof(struct dirent) + pathconf(".", _PC_NAME_MAX) + 1);
 
   struct dirent *result;
   while (readdir_r(dir, dirEntry, &result) == 0) {
@@ -1445,14 +1445,13 @@ getFilesInDirectory(char *managedDir, ExpandingArray * fileList)
       if (fileName && *fileName != '.') {
         fileListEntry = (fileEntry *)ats_malloc(sizeof(fileEntry));
         fileListEntry->c_time = fileInfo.st_ctime;
-        ink_strncpy(fileListEntry->name, fileName, FILE_NAME_MAX);
+        ink_strlcpy(fileListEntry->name, fileName, sizeof(fileListEntry->name));
         fileList->addEntry(fileListEntry);
       }
     }
     delete[]filePath;
   }
 
-  ats_free(dirEntry);
   closedir(dir);
 #else
   // Append '\*' as a wildcard for FindFirstFile()
@@ -1476,7 +1475,7 @@ getFilesInDirectory(char *managedDir, ExpandingArray * fileList)
       if (fileName && *fileName != '.') {
         fileListEntry = (fileEntry *)ats_malloc(sizeof(fileEntry));
         fileListEntry->c_time = fileInfo.st_ctime;
-        strcpy(fileListEntry->name, fileName);
+        ink_strlcpy(fileListEntry->name, fileName, sizeof(fileListEntry->name));
         fileList->addEntry(fileListEntry);
       }
     }
@@ -1510,23 +1509,23 @@ newPathString(const char *s1, const char *s2)
   if (*s2 == '/') {
     // If addpath is rooted, then rootpath is unused.
     newStr = new char[addLen];
-    strcpy(newStr, s2);
+    ink_strlcpy(newStr, s2, addLen);
     return newStr;
   }
   if (!s1 || !*s1) {
     // If there's no rootpath return the addpath
     newStr = new char[addLen];
-    strcpy(newStr, s2);
+    ink_strlcpy(newStr, s2, addLen);
     return newStr;
   }
   srcLen = strlen(s1);
   newStr = new char[srcLen + addLen + 1];
   ink_assert(newStr != NULL);
 
-  strcpy(newStr, s1);
+  ink_strlcpy(newStr, s1, srcLen + addLen + 1);
   if (newStr[srcLen - 1] != '/')
     newStr[srcLen++] = '/';
-  strcpy(&newStr[srcLen], s2);
+  ink_strlcpy(&newStr[srcLen], s2, srcLen + addLen + 1);
 
   return newStr;
 }
