@@ -179,12 +179,12 @@ TSReturnCode
 TSRemapInit(TSRemapInterface* api_info, char *errbuf, int errbuf_size)
 {
   if (!api_info) {
-    strncpy(errbuf, "[TSRemapInit] - Invalid TSRemapInterface argument", errbuf_size - 1);
+    TSstrlcpy(errbuf, "[TSRemapInit] - Invalid TSRemapInterface argument", errbuf_size);
     return TS_ERROR;
   }
 
   if (api_info->size < sizeof(TSRemapInterface)) {
-    strncpy(errbuf, "[TSRemapInit] - Incorrect size of TSRemapInterface structure", errbuf_size - 1);
+    TSstrlcpy(errbuf, "[TSRemapInit] - Incorrect size of TSRemapInterface structure", errbuf_size);
     return TS_ERROR;
   }
 
