@@ -154,7 +154,7 @@ charDataHandler(void *userData, const XML_Char * name, int len)
   }
 
   if (currentTag == EXPR_TAG) {
-    strncat(exprContent, content, ((BUFSIZ * 10) - strlen(exprContent) - 1));
+    ink_strlcat(exprContent, content, BUFSIZ * 10); // see above for the size
 
   } else {
     statObject->assignDst(content, nodeVar, sumClusterVar);
