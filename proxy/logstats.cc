@@ -651,7 +651,8 @@ static const char *USAGE_LINE =
   "Usage: " PROGRAM_NAME " [-f logfile] [-o origin[,...]] [-O originfile] [-m minhits] [-inshv]";
 
 void
-CommandLineArgs::parse_arguments(char** argv) {
+CommandLineArgs::parse_arguments(char** argv)
+{
   // process command-line arguments
   process_args(argument_descriptions, n_argument_descriptions, argv, USAGE_LINE);
 
@@ -666,7 +667,7 @@ CommandLineArgs::parse_arguments(char** argv) {
       char buffer[MAX_ORIG_STRING];
       char *tok, *sep_ptr, *val;
 
-      ink_strlcpy(buffer, query, MAX_ORIG_STRING);
+      ink_strlcpy(buffer, query, sizeof(buffer));
       unescapifyStr(buffer);
 
       for (tok = strtok_r(buffer, "&", &sep_ptr); tok != NULL;) {
@@ -674,7 +675,7 @@ CommandLineArgs::parse_arguments(char** argv) {
         if (val)
           *(val++) = '\0';
         if (0 == strncmp(tok, "origin_list", 11)) {
-          ink_strlcpy(origin_list, val, MAX_ORIG_STRING);
+          ink_strlcpy(origin_list, val, sizeof(origin_list));
         } else if (0 == strncmp(tok, "state_tag", 9)) {
           ink_strlcpy(state_tag, val, sizeof(state_tag));
         } else if (0 == strncmp(tok, "max_origins", 11)) {
@@ -736,11 +737,11 @@ struct ExitStatus
     if (l > level)
       level = l;
     if (n)
-      strncat(notice, n, sizeof(notice) - strlen(notice) - 1);
+      ink_strlcat(notice, n, sizeof(notice));
   }
 
   void append(const char *n) {
-    strncat(notice, n, sizeof(notice) - strlen(notice) - 1);
+    ink_strlcat(notice, n, sizeof(notice));
   }
 };
 
@@ -2230,7 +2231,7 @@ main(int argc, char *argv[])
   parse_errors = 0;
 
   // Get log directory
-  ink_strlcpy(system_log_dir, Layout::get()->logdir, PATH_NAME_MAX);
+  ink_strlcpy(system_log_dir, Layout::get()->logdir, sizeof(system_log_dir));
   if (-1 == access(system_log_dir, R_OK)) {
     fprintf(stderr, "unable to change to log directory \"%s\" [%d '%s']\n", system_log_dir, errno, strerror(errno));
     fprintf(stderr, " please set correct path in env variable TS_ROOT \n");

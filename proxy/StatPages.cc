@@ -78,7 +78,7 @@ StatPagesManager::handle_http(Continuation * cont, HTTPHdr * header, int client_
     int i;
 
     h = url->host_get(&host_len);
-    ink_strncpy(host, h, host_len >= 1023 ? 1024 : host_len + 1);
+    ink_strlcpy(host, h, sizeof(host));
     host_len = unescapifyStr(host);
 
     for (i = 0; i < n_stat_pages; i++) {
@@ -101,7 +101,7 @@ bool StatPagesManager::is_stat_page(URL * url)
   if (h == NULL || length < 2)
     return false;
 
-  ink_strncpy(host, h, length >= 1023 ? 1024 : length + 1);
+  ink_strlcpy(host, h, sizeof(host));
   length = unescapifyStr(host);
 
   if ((host[0] == '{') && (host[length - 1] == '}'))
@@ -119,8 +119,7 @@ bool StatPagesManager::is_cache_inspector_page(URL * url)
   if (h == NULL || length < 2)
     return false;
 
-  ink_strncpy(host, h, length >= 1023 ? 1024 : length + 1);
-  host[length] = '\0';
+  ink_strlcpy(host, h, sizeof(host));
   length = unescapifyStr(host);
 
   if (strncmp(host, "{cache}", length) == 0)

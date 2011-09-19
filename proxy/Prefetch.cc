@@ -483,9 +483,8 @@ PrefetchTransform::redirect(HTTPHdr *resp)
     int redirect_url_len = 0;
     const char *tmp_url = resp->value_get(MIME_FIELD_LOCATION, MIME_LEN_LOCATION, &redirect_url_len);
 
-    redirect_url = (char *)ats_malloc(redirect_url_len + 1);
-    strncpy(redirect_url, tmp_url, redirect_url_len);
-    redirect_url[redirect_url_len] = '\0';
+    redirect_url = (char *)alloca(redirect_url_len + 1);
+    ink_strlcpy(redirect_url, tmp_url, redirect_url_len + 1);
     Debug("PrefetchTransform", "redirect_url = %s\n", redirect_url);
   } else {
     response_status = -1;
@@ -507,7 +506,6 @@ PrefetchTransform::redirect(HTTPHdr *resp)
       Debug("PrefetchTransform", "Redirect url to HTTP Hdr Location: \'%s\'\n", redirect_url);
       if (strncmp(redirect_url, req_url, location_len) == 0) {
         Debug("PrefetchTransform", "'%s' -> '%s' - Could be a loop. Discontinuing this path.\n", req_url, redirect_url);
-        ats_free(redirect_url);
         ats_free(req_url);
         return 0;
       }
@@ -516,7 +514,6 @@ PrefetchTransform::redirect(HTTPHdr *resp)
 
       if (!entry) {
         Debug("PrefetchParserURLs", "Ignoring duplicate url '%s'", redirect_url);
-        ats_free(redirect_url);
         ats_free(req_url);
         return 0;
       }
@@ -529,7 +526,6 @@ PrefetchTransform::redirect(HTTPHdr *resp)
       ats_free(req_url);
     }
   }
-  ats_free(redirect_url);
   return 0;
 }
 
@@ -993,18 +989,16 @@ PrefetchBlaster::init(PrefetchUrlEntry *entry, HTTPHdr *req_hdr, PrefetchTransfo
                       p_trans->domain_start, p_trans->domain_end,
                       p_trans->host_start, p_trans->host_len, p_trans->no_dot_in_host);
 
+  // FIXME? ip_len is pretty useless here.
   int ip_len;
   const char *ip_str;
   if (IS_RECURSIVE_PREFETCH(entry->req_ip) &&
       (ip_str = request->value_get(MIME_FIELD_CLIENT_IP, MIME_LEN_CLIENT_IP, &ip_len))) {
     //this is a recursive prefetch. get child ip address from
     //Client-IP header
-    if (ip_len > 15)
-      ip_len = 15;
 
     char ip_buf[16];
-    strncpy(ip_buf, ip_str, ip_len);
-    ip_buf[ip_len] = '\0';
+    ink_strlcpy(ip_buf, ip_str, sizeof(ip_buf));
 
     entry->child_ip = inet_addr(ip_buf);
   } else

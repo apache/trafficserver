@@ -2021,7 +2021,7 @@ ICPProcessor::BuildPeerList()
   // parents and siblings.
   //
   Pcfg = _ICPConfig->indexToPeerConfigData(0);
-  ink_strncpy(Pcfg->_hostname, "localhost", sizeof(Pcfg->_hostname));
+  ink_strlcpy(Pcfg->_hostname, "localhost", sizeof(Pcfg->_hostname));
   Pcfg->_ctype = PeerConfigData::CTYPE_LOCAL;
 
   // Get IP address for given interface

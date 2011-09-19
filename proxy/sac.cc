@@ -1,6 +1,6 @@
 /** @file
 
-  A brief file description
+  Standalone Collator
 
   @section license License
 
@@ -21,13 +21,6 @@
   limitations under the License.
  */
 
-/***************************************************************************
- sac.cc
-
- Standalone Collator
-
-
- ***************************************************************************/
 #include "ink_config.h"
 #include "ink_file.h"
 #include "ink_unused.h"
@@ -101,7 +94,7 @@ main(int argc, char *argv[])
   process_args(argument_descriptions, n_argument_descriptions, argv);
 
   // Get log directory
-  ink_strlcpy(system_log_dir, Layout::get()->logdir, PATH_NAME_MAX);
+  ink_strlcpy(system_log_dir, Layout::get()->logdir, sizeof(system_log_dir));
   if (access(system_log_dir, R_OK) == -1) {
     fprintf(stderr, "unable to change to log directory \"%s\" [%d '%s']\n", system_log_dir, errno, strerror(errno));
     fprintf(stderr, " please set correct path in env variable TS_ROOT \n");
@@ -109,7 +102,7 @@ main(int argc, char *argv[])
   }
 
   management_directory[0] = 0;
-  strncat(management_directory, system_config_directory, 256 - 1);
+  ink_strlcat(management_directory, system_config_directory, sizeof(management_directory));
 
   // check for the version number request
   //

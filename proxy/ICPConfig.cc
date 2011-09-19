@@ -543,9 +543,9 @@ ICPConfiguration::icp_config_change_callback(void *data, void *value, int startu
   ink_assert(filename);
   char ConfigFilePath[PATH_NAME_MAX];
   if (filename) {
-    ink_strncpy(ConfigFilePath, system_config_directory, sizeof(ConfigFilePath));
-    strncat(ConfigFilePath, "/", sizeof(ConfigFilePath) - strlen(ConfigFilePath) - 1);
-    strncat(ConfigFilePath, filename, sizeof(ConfigFilePath) - strlen(ConfigFilePath) - 1);
+    ink_strlcpy(ConfigFilePath, system_config_directory, sizeof(ConfigFilePath));
+    ink_strlcat(ConfigFilePath, "/", sizeof(ConfigFilePath));
+    ink_strlcat(ConfigFilePath, filename, sizeof(ConfigFilePath));
   }
   int fd = open(ConfigFilePath, O_RDONLY);
   if (fd < 0) {
@@ -622,8 +622,7 @@ ICPConfiguration::icp_config_change_callback(void *data, void *value, int startu
     next = strchr(cur, ':');
     *next++ = 0;
     if (cur != (next - 1)) {
-      strncpy(P[n]._hostname, cur, PeerConfigData::HOSTNAME_SIZE);
-      P[n]._hostname[PeerConfigData::HOSTNAME_SIZE - 1] = 0;
+      ink_strlcpy(P[n]._hostname, cur, PeerConfigData::HOSTNAME_SIZE);
     } else {
       P[n]._hostname[0] = 0;
     }

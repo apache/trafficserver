@@ -411,13 +411,12 @@ stat_callback(Continuation * cont, HTTPHdr * header)
   int buffer_len = 0;
   int num_prefix_buffer;
 
-  char *var_prefix = (char *)ats_malloc((length + 1) * sizeof(char));
+  char *var_prefix = (char *)alloca((length + 1) * sizeof(char));
   memset(var_prefix, 0, ((length + 1) * sizeof(char)));
-  strncpy(var_prefix, path, length);
+  ink_strlcpy(var_prefix, path, length + 1);
 
   num_prefix_buffer = RecGetRecordPrefix_Xmalloc(var_prefix, &buffer, &buffer_len);
   empty = (num_prefix_buffer == 0);
-  ats_free(var_prefix);
 
   if (!empty) {
 
@@ -432,7 +431,7 @@ stat_callback(Continuation * cont, HTTPHdr * header)
   if (!empty) {
     StatPageData data;
 
-    strncat(result, "</pre>\n", result_size - strlen(result) - 1);
+    ink_strlcat(result, "</pre>\n", result_size);
 
     data.data = result;
     data.length = strlen(result);

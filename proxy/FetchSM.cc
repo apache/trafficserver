@@ -99,7 +99,7 @@ FetchSM::get_info_from_buffer(IOBufferReader *the_reader)
   info = (char *)ats_malloc(sizeof(char) * (read_avail+1));
   client_response = info;
 
-  //strncpy(info, _headers.data(), hdr_size);
+  //ink_strlcpy(info, _headers.data(), sizeof(char) * (read_avail+1));
   //info += hdr_size;
 
   /* Read the data out of the reader */

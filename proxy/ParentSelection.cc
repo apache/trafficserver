@@ -1,6 +1,6 @@
 /** @file
 
-  A brief file description
+  Implementation of Parent Proxy routing
 
   @section license License
 
@@ -21,11 +21,6 @@
   limitations under the License.
  */
 
-/*****************************************************************************
- *
- *  ParentSelection.cc - Implementation of Parent Proxy routing
- *
- ****************************************************************************/
 
 #include "ink_unused.h"  /* MAGIC_EDITING_TAG */
 
@@ -1084,7 +1079,7 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION) (RegressionTest * t, int intensity_le
   config.startup();
   params->ParentEnable = true;
   char tbl[2048];
-#define T(x) strncat(tbl,x, sizeof(tbl));
+#define T(x) ink_strlcat(tbl,x, sizeof(tbl));
 #define REBUILD params->ParentTable = new P_table("", "ParentSelection Unit Test Table", &http_dest_tags, ALLOW_HOST_TABLE | ALLOW_REGEX_TABLE | ALLOW_IP_TABLE | DONT_BUILD_TABLE); params->ParentTable->BuildTableFromString(tbl);
   HttpRequestData *request = NULL;
   ParentResult *result = NULL;
@@ -1291,12 +1286,9 @@ verify(ParentResult * r, ParentResultType e, const char *h, int p)
 void
 br(HttpRequestData * h, const char *os_hostname, int dest_ip)
 {
-  int hostname_len = strlen(os_hostname) + 1;
-
   h->hdr = new HTTPHdr();
   h->hdr->create(HTTP_TYPE_REQUEST);
-  h->hostname_str = (char *)ats_malloc(hostname_len);
-  ink_strncpy(h->hostname_str, os_hostname, hostname_len);
+  h->hostname_str = (char *)ats_strdup(os_hostname);
   h->xact_start = time(NULL);
   h->src_ip = 0;
   h->dest_ip = dest_ip;

@@ -886,9 +886,9 @@ UpdateConfigManager::BuildUpdateList()
 
   char ConfigFilePath[PATH_NAME_MAX];
   if (_filename) {
-    ink_strncpy(ConfigFilePath, system_config_directory, sizeof(ConfigFilePath));
-    strncat(ConfigFilePath, "/", sizeof(ConfigFilePath) - strlen(ConfigFilePath) - 1);
-    strncat(ConfigFilePath, _filename, sizeof(ConfigFilePath) - strlen(ConfigFilePath) - 1);
+    ink_strlcpy(ConfigFilePath, system_config_directory, sizeof(ConfigFilePath));
+    ink_strlcat(ConfigFilePath, "/", sizeof(ConfigFilePath));
+    ink_strlcat(ConfigFilePath, _filename, sizeof(ConfigFilePath));
   } else {
     return (UpdateConfigList *) NULL;
   }
