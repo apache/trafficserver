@@ -1,6 +1,6 @@
 /** @file
 
-  A brief file description
+  This file contains the CLI's "config" command implementation.
 
   @section license License
 
@@ -19,16 +19,12 @@
   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   See the License for the specific language governing permissions and
   limitations under the License.
- */
-
-/****************************************************************
- * Filename: ConfigCmd.cc
- * Purpose: This file contains the CLI's "config" command implementation.
- *
- *  createArgument("timezone",1,CLI_ARGV_OPTION_INT_VALUE,
+ 
+  @section description createArgument("timezone",1,CLI_ARGV_OPTION_INT_VALUE,
 		  (char*)NULL, CMD_CONFIG_TIMEZONE, "Time Zone",
                   (char*)NULL);
- ****************************************************************/
+ */
+
 
 #include "libts.h"
 #include "I_Layout.h"
@@ -225,16 +221,16 @@ Cmd_Config(ClientData clientData, Tcl_Interp * interp, int argc, const char *arg
   Tcl_Eval(interp, "info commands config* ");
 
   size_t cmdinfo_len = strlen(Tcl_GetStringResult(interp)) + 2;
-  cmdinfo = (char *)ats_malloc(sizeof(char) * cmdinfo_len);
-  ink_strncpy(cmdinfo, Tcl_GetStringResult(interp), cmdinfo_len);
+  cmdinfo = (char *)alloca(sizeof(char) * cmdinfo_len);
+  ink_strlcpy(cmdinfo, Tcl_GetStringResult(interp), cmdinfo_len);
   size_t temp_len = strlen(cmdinfo) + 20;
-  temp = (char *)ats_malloc(sizeof(char) * temp_len);
-  ink_strncpy(temp, "lsort \"", temp_len);
-  strncat(temp, cmdinfo, temp_len - strlen(temp));
-  strncat(temp, "\"", temp_len - strlen(temp));
+  temp = (char *)alloca(sizeof(char) * temp_len);
+  ink_strlcpy(temp, "lsort \"", temp_len);
+  ink_strlcat(temp, cmdinfo, temp_len);
+  ink_strlcat(temp, "\"", temp_len);
 
   Tcl_Eval(interp, temp);
-  ink_strncpy(cmdinfo, Tcl_GetStringResult(interp), cmdinfo_len);
+  ink_strlcpy(cmdinfo, Tcl_GetStringResult(interp), cmdinfo_len);
   i = i + strlen("config ");
   while (cmdinfo[i] != 0) {
     if (cmdinfo[i] == ' ') {
@@ -247,9 +243,6 @@ Cmd_Config(ClientData clientData, Tcl_Interp * interp, int argc, const char *arg
   cmdinfo[i] = 0;
   Cli_Printf("Following are the available config commands\n");
   Cli_Printf(cmdinfo + strlen("config "));
-
-  ats_free(cmdinfo);
-  ats_free(temp);
 
   return CLI_OK;
 
@@ -2785,7 +2778,7 @@ ConfigTimezone(int index, int setvar)
   char new_zone[1024];
   char *zone;
 
-  ink_strncpy(new_zone, "", sizeof(new_zone));
+  new_zone[0] = 0;
 
   fp = fopen(zonetable, "r");
   tmp = fopen("/tmp/zonetab.tmp", "w");
@@ -2821,7 +2814,7 @@ ConfigTimezone(int index, int setvar)
     }
     if (setvar) {
       if (index == i) {
-        ink_strncpy(new_zone, zone, sizeof(new_zone));
+        ink_strlcpy(new_zone, zone, sizeof(new_zone));
       }
     }
     NOWARN_UNUSED_RETURN(fgets(buffer, 1024, fp));
@@ -3512,10 +3505,10 @@ ConfigVirtualipAdd(char *ip, char *device, int subinterface, int setvar)
 
     size = strlen(ip);
     VipElePtr->ip_addr = new char[size + 1];
-    ink_strncpy(VipElePtr->ip_addr, ip, size + 1);
+    ink_strlcpy(VipElePtr->ip_addr, ip, size + 1);
     size = strlen(device);
     VipElePtr->intr = new char[size + 1];
-    ink_strncpy(VipElePtr->intr, device, size + 1);
+    ink_strlcpy(VipElePtr->intr, device, size + 1);
     VipElePtr->sub_intr = subinterface;
     VipCtx = TSCfgContextCreate(TS_FNAME_VADDRS);
     if (TSCfgContextGet(VipCtx) != TS_ERR_OKAY)
@@ -4991,7 +4984,7 @@ find_value(const char *pathname, const char *key, char *value, int value_len, co
   int counter = 0;
 
 #if defined(linux) || defined(darwin) || defined(freebsd) || defined(solaris)
-  ink_strncpy(value, "", value_len);
+  value[0] = 0;
   // coverity[fs_check_call]
   if (access(pathname, R_OK)) {
     return find;
@@ -5012,7 +5005,7 @@ find_value(const char *pathname, const char *key, char *value, int value_len, co
               close_quot = strrchr(pos, '"');
               *close_quot = '\0';
             }
-            ink_strncpy(value, pos, value_len);
+            ink_strlcpy(value, pos, value_len);
 
             if (value[strlen(value) - 1] == '\n') {
               value[strlen(value) - 1] = '\0';

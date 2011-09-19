@@ -120,7 +120,7 @@ cliAddCommandtoHashtable(const char *name, cli_ArgvInfo * argtable,
   if (helpString != NULL) {
     int helpString_size = sizeof(char) * (strlen(helpString) + 1);
     commandinfo->helpString = (char *) ckalloc(helpString_size);
-    ink_strncpy(commandinfo->helpString, helpString, helpString_size);
+    ink_strlcpy(commandinfo->helpString, helpString, helpString_size);
   }
 
   /*

@@ -1,6 +1,6 @@
 /** @file
 
-  A brief file description
+  This file contains the CLI's "config:write" command implementation
 
   @section license License
 
@@ -21,12 +21,6 @@
   limitations under the License.
  */
 
-/****************************************************************
- * Filename: ConfigUpgradeWriteCmd.cc
- * Purpose: This file contains the CLI's "config:write"
-   command implementation.
- *
- ****************************************************************/
 
 #include "libts.h"
 #include <ConfigCmd.h>
@@ -232,7 +226,7 @@ CIFCWriteEntry::PrintEle()
 int
 CIFCWriteEntry::ConfigWriteIFCHead(char *ts_version, char *build_date, char *platform, int nodes)
 {
-  ink_strncpy(KeyWord, IFC_HEAD, sizeof(KeyWord));
+  ink_strlcpy(KeyWord, IFC_HEAD, sizeof(KeyWord));
   snprintf(Input, sizeof(Input), "%s\n%s\n%s\n%d", ts_version, build_date, platform, nodes);
   CountOn = 0;
   return (ConfigWriteIFCEle());
@@ -241,34 +235,34 @@ CIFCWriteEntry::ConfigWriteIFCHead(char *ts_version, char *build_date, char *pla
 int
 CIFCWriteEntry::ConfigWriteIFCFeature(char *input)
 {
-  ink_strncpy(KeyWord, IFC_FEATURE, sizeof(KeyWord));
+  ink_strlcpy(KeyWord, IFC_FEATURE, sizeof(KeyWord));
   CountOn = 0;
-  ink_strncpy(Input, input, sizeof(Input));
+  ink_strlcpy(Input, input, sizeof(Input));
   return (ConfigWriteIFCEle());
 }
 
 int
 CIFCWriteEntry::ConfigWriteIFCTar(char *input)
 {
-  ink_strncpy(KeyWord, IFC_TAR, sizeof(KeyWord));
+  ink_strlcpy(KeyWord, IFC_TAR, sizeof(KeyWord));
   CountOn = 1;
-  ink_strncpy(Input, input, sizeof(Input));
+  ink_strlcpy(Input, input, sizeof(Input));
   return (ConfigWriteIFCEle());
 }
 
 int
 CIFCWriteEntry::ConfigWriteIFCCommonTar(char *input)
 {
-  ink_strncpy(KeyWord, IFC_COMMON_TAR, sizeof(KeyWord));
+  ink_strlcpy(KeyWord, IFC_COMMON_TAR, sizeof(KeyWord));
   CountOn = 1;
-  ink_strncpy(Input, input, sizeof(Input));
+  ink_strlcpy(Input, input, sizeof(Input));
   return (ConfigWriteIFCEle());
 }
 
 int
 CIFCWriteEntry::ConfigWriteIFCTarInfo(char *tar, char *filelist)
 {
-  ink_strncpy(KeyWord, IFC_TAR_INFO, sizeof(KeyWord));
+  ink_strlcpy(KeyWord, IFC_TAR_INFO, sizeof(KeyWord));
   CountOn = 0;
   snprintf(Input, sizeof(Input), "%s:\n%s", tar, filelist);
   return (ConfigWriteIFCEle());
@@ -277,16 +271,16 @@ CIFCWriteEntry::ConfigWriteIFCTarInfo(char *tar, char *filelist)
 int
 CIFCWriteEntry::ConfigWriteIFCBinGroup(char *input)
 {
-  ink_strncpy(KeyWord, IFC_BIN_GROUP, sizeof(KeyWord));
+  ink_strlcpy(KeyWord, IFC_BIN_GROUP, sizeof(KeyWord));
   CountOn = 1;
-  ink_strncpy(Input, input, sizeof(Input));
+  ink_strlcpy(Input, input, sizeof(Input));
   return (ConfigWriteIFCEle());
 }
 
 int
 CIFCWriteEntry::ConfigWriteIFCBinDir(char *subdir, char *filelist)
 {
-  ink_strncpy(KeyWord, IFC_BIN_DIR, sizeof(KeyWord));
+  ink_strlcpy(KeyWord, IFC_BIN_DIR, sizeof(KeyWord));
   CountOn = 1;
   snprintf(Input, sizeof(Input), "%s:%s", subdir, filelist);
   return (ConfigWriteIFCEle());
@@ -295,25 +289,25 @@ CIFCWriteEntry::ConfigWriteIFCBinDir(char *subdir, char *filelist)
 int
 CIFCWriteEntry::ConfigWriteIFCBinCommon(char *input)
 {
-  ink_strncpy(KeyWord, IFC_BIN_COMMON, sizeof(KeyWord));
+  ink_strlcpy(KeyWord, IFC_BIN_COMMON, sizeof(KeyWord));
   CountOn = 1;
-  ink_strncpy(Input, input, sizeof(Input));
+  ink_strlcpy(Input, input, sizeof(Input));
   return (ConfigWriteIFCEle());
 }
 
 int
 CIFCWriteEntry::ConfigWriteIFCLibGroup(char *input)
 {
-  ink_strncpy(KeyWord, IFC_LIB_GROUP, sizeof(KeyWord));
+  ink_strlcpy(KeyWord, IFC_LIB_GROUP, sizeof(KeyWord));
   CountOn = 1;
-  ink_strncpy(Input, input, sizeof(Input));
+  ink_strlcpy(Input, input, sizeof(Input));
   return (ConfigWriteIFCEle());
 }
 
 int
 CIFCWriteEntry::ConfigWriteIFCLibDir(char *subdir, char *filelist)
 {
-  ink_strncpy(KeyWord, IFC_LIB_DIR, sizeof(KeyWord));
+  ink_strlcpy(KeyWord, IFC_LIB_DIR, sizeof(KeyWord));
   CountOn = 1;
   snprintf(Input, sizeof(Input), "%s:%s", subdir, filelist);
   return (ConfigWriteIFCEle());
@@ -322,25 +316,25 @@ CIFCWriteEntry::ConfigWriteIFCLibDir(char *subdir, char *filelist)
 int
 CIFCWriteEntry::ConfigWriteIFCLibCommon(char *input)
 {
-  ink_strncpy(KeyWord, IFC_LIB_COMMON, sizeof(KeyWord));
+  ink_strlcpy(KeyWord, IFC_LIB_COMMON, sizeof(KeyWord));
   CountOn = 1;
-  ink_strncpy(Input, input, sizeof(Input));
+  ink_strlcpy(Input, input, sizeof(Input));
   return (ConfigWriteIFCEle());
 }
 
 int
 CIFCWriteEntry::ConfigWriteIFCConfigGroup(char *input)
 {
-  ink_strncpy(KeyWord, IFC_CONFIG_GROUP, sizeof(KeyWord));
+  ink_strlcpy(KeyWord, IFC_CONFIG_GROUP, sizeof(KeyWord));
   CountOn = 1;
-  ink_strncpy(Input, input, sizeof(Input));
+  ink_strlcpy(Input, input, sizeof(Input));
   return (ConfigWriteIFCEle());
 }
 
 int
 CIFCWriteEntry::ConfigWriteIFCConfigDir(char *subdir, char *filelist)
 {
-  ink_strncpy(KeyWord, IFC_CONFIG_DIR, sizeof(KeyWord));
+  ink_strlcpy(KeyWord, IFC_CONFIG_DIR, sizeof(KeyWord));
   CountOn = 1;
   snprintf(Input, sizeof(Input), "%s:%s", subdir, filelist);
   return (ConfigWriteIFCEle());
@@ -349,9 +343,9 @@ CIFCWriteEntry::ConfigWriteIFCConfigDir(char *subdir, char *filelist)
 int
 CIFCWriteEntry::ConfigWriteIFCConfigCommon(char *input)
 {
-  ink_strncpy(KeyWord, IFC_CONFIG_COMMON, sizeof(KeyWord));
+  ink_strlcpy(KeyWord, IFC_CONFIG_COMMON, sizeof(KeyWord));
   CountOn = 1;
-  ink_strncpy(Input, input, sizeof(Input));
+  ink_strlcpy(Input, input, sizeof(Input));
   return (ConfigWriteIFCEle());
 }
 
@@ -359,9 +353,9 @@ CIFCWriteEntry::ConfigWriteIFCConfigCommon(char *input)
 int
 CIFCWriteEntry::ConfigWriteIFCCommonFile(char *input)
 {
-  ink_strncpy(KeyWord, IFC_COMMON_FILE, sizeof(KeyWord));
+  ink_strlcpy(KeyWord, IFC_COMMON_FILE, sizeof(KeyWord));
   CountOn = 1;
-  ink_strncpy(Input, input, sizeof(Input));
+  ink_strlcpy(Input, input, sizeof(Input));
   return (ConfigWriteIFCEle());
 }
 

@@ -1,6 +1,6 @@
 /** @file
 
-  A brief file description
+  contains the implementation for parsing CLI arguments
 
   @section license License
 
@@ -19,20 +19,15 @@
   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   See the License for the specific language governing permissions and
   limitations under the License.
+
+  @section Description
+  cliParseArgument(int argc,char **argv,cli_ArgvInfo *argTable)
+  compares the given arguments with the expected arguments and
+  returns error if they are not same
+  If arguments are are valid it converts string arguments to the proper type
  */
 
 
-/*cliParseArgument.c
-
- *
- *      cliParseArgument(int argc,char **argv,cli_ArgvInfo *argTable)
- *      compares the given arguments with the expected arguments and
- *      returns error if they are not same
- *      If arguments are are valid it converts string arguments to the proper type
- *
- *
- *      Date : 12/11/00
- */
 
 
 #include <tcl.h>
@@ -143,7 +138,7 @@ cliParseArgument(int argc, const char **argv, cli_CommandInfo * commandInfo)
   parsedInfoPtr = parsedArgTable;
   srcIndex = 1;
   while (argc > 0) {
-    ink_strncpy(curArg, argv[srcIndex], sizeof(curArg));
+    ink_strlcpy(curArg, argv[srcIndex], sizeof(curArg));
     argc--;
     srcIndex++;
     length = strlen(curArg);

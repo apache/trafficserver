@@ -1,6 +1,6 @@
 /** @file
 
-  A brief file description
+  This file contains various utility functions which call the TSMgmtAPI.
 
   @section license License
 
@@ -21,13 +21,6 @@
   limitations under the License.
  */
 
-/****************************************************************
- * Filename: CliMgmtUtils.cc
- * Purpose: This file contains various utility functions which
- *          call the TSMgmtAPI.
- *
- *
- ****************************************************************/
 
 #include "libts.h"
 #include "I_Layout.h"
@@ -552,7 +545,7 @@ int
 GetTSDirectory(char *ts_path, size_t ts_path_len)
 {
 
-  ink_strncpy(ts_path, Layout::get()->bindir, ts_path_len);
+  ink_strlcpy(ts_path, Layout::get()->bindir, ts_path_len);
   if (access(ts_path, R_OK) == -1) {
     Cli_Error("unable to access() '%s': %d, %s\n",
               ts_path, errno, strerror(errno));

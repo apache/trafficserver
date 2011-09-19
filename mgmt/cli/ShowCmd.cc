@@ -1,6 +1,6 @@
 /** @file
 
-  A brief file description
+  This file contains the "show" command implementation.
 
   @section license License
 
@@ -21,12 +21,6 @@
   limitations under the License.
  */
 
-/****************************************************************
- * Filename: ShowCmd.cc
- * Purpose: This file contains the "show" command implementation.
- *
- *
- ****************************************************************/
 
 #include <stdlib.h>
 #include <string.h>
@@ -71,15 +65,15 @@ Cmd_Show(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[
   Tcl_Eval(interp, "info commands show* ");
 
   int cmdinfo_size = sizeof(char) * (strlen(Tcl_GetStringResult(interp)) + 2);
-  cmdinfo = (char *)ats_malloc(cmdinfo_size);
-  ink_strncpy(cmdinfo, Tcl_GetStringResult(interp), cmdinfo_size);
+  cmdinfo = (char *)alloca(cmdinfo_size);
+  ink_strlcpy(cmdinfo, Tcl_GetStringResult(interp), cmdinfo_size);
   int temp_size = sizeof(char) * (strlen(cmdinfo) + 20);
-  temp = (char *)ats_malloc(temp_size);
-  ink_strncpy(temp, "lsort \"", temp_size);
-  strncat(temp, cmdinfo, temp_size - strlen(temp) - 1);
-  strncat(temp, "\"", temp_size - strlen(temp) - 1);
+  temp = (char *)alloca(temp_size);
+  ink_strlcpy(temp, "lsort \"", temp_size);
+  ink_strlcat(temp, cmdinfo, temp_size);
+  ink_strlcat(temp, "\"", temp_size);
   Tcl_Eval(interp, temp);
-  ink_strncpy(cmdinfo, Tcl_GetStringResult(interp), cmdinfo_size);
+  ink_strlcpy(cmdinfo, Tcl_GetStringResult(interp), cmdinfo_size);
   i = i + strlen("show ");
   while (cmdinfo[i] != 0) {
     if (cmdinfo[i] == ' ') {
@@ -92,9 +86,6 @@ Cmd_Show(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[
   cmdinfo[i] = 0;
   Cli_Printf("Following are the available show commands\n");
   Cli_Printf(cmdinfo + strlen("show "));
-
-  ats_free(cmdinfo);
-  ats_free(temp);
 
   return 0;
 

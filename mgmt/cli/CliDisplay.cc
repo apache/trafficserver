@@ -1,6 +1,6 @@
 /** @file
 
-  A brief file description
+  Implementation of CliDisplay routines for the use of TB
 
   @section license License
 
@@ -21,13 +21,6 @@
   limitations under the License.
  */
 
-/****************************************************************
- * Filename: TBCliDisplay.cc
- * Purpose: This file contains the implementation of CliDisplay
- *          routines for the use of TB
- *
- *
- ****************************************************************/
 
 #include "libts.h"
 #include "CliDisplay.h"
@@ -157,9 +150,9 @@ Cli_Debug(const char *string, ...)
 
   // allocate enough room for "debug: " at beginning of string
   const size_t new_string_size = strlen(string) + 8;
-  char *new_string = new char[new_string_size];
-  ink_strncpy(new_string, "debug: ", new_string_size);
-  strncat(new_string, string, (new_string_size - strlen(new_string) - 1));
+  char *new_string = (char *)alloca(new_string_size);
+  ink_strlcpy(new_string, "debug: ", new_string_size);
+  ink_strlcat(new_string, string, new_string_size );
 
   va_start(ap, string);
   if (CliPrintLevel & CLI_PRINT_DEBUG) {
@@ -175,8 +168,6 @@ Cli_Debug(const char *string, ...)
     }
   }
   va_end(ap);
-
-  delete[]new_string;
 
   return CLI_OK;
 }

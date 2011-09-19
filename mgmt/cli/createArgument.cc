@@ -1,6 +1,6 @@
 /** @file
 
-  A brief file description
+  This file provides basic create Argument defintion, for any new arguments.
 
   @section license License
 
@@ -21,18 +21,6 @@
   limitations under the License.
  */
 
-/*
- *   createArgument.cc --
- *
- *
- *    This file provides basic create Argument defintion,
- *    for any new arguments.
- *
- *
- *
- *
- *    Dated  : 12/11/2000.
- */
 
 #include <stdlib.h>
 #include <tcl.h>
@@ -69,7 +57,7 @@ createArgument(const char *argument, int position, int commandoption,
 
   size_t key_len = sizeof(char) * (strlen(argument) + 1);
   aCliArgvTable->key = (char *) ckalloc(key_len);
-  ink_strncpy(aCliArgvTable->key, argument, key_len);
+  ink_strlcpy(aCliArgvTable->key, argument, key_len);
 
   aCliArgvTable->position = position;
 
@@ -96,14 +84,14 @@ createArgument(const char *argument, int position, int commandoption,
   if (defValue != NULL) {
     size_t def_len = sizeof(char) * (strlen(defValue) + 1);
     aCliArgvTable->def = (char *) ckalloc(def_len);
-    ink_strncpy(aCliArgvTable->def, defValue, def_len);
+    ink_strlcpy(aCliArgvTable->def, defValue, def_len);
   }
 
 
   if (helpString != NULL) {
     size_t help_len = sizeof(char) * (strlen(helpString) + 1);
     aCliArgvTable->help = (char *) ckalloc(help_len);
-    ink_strncpy(aCliArgvTable->help, helpString, help_len);
+    ink_strlcpy(aCliArgvTable->help, helpString, help_len);
   }
 
   reqd_args = findRequired(cliGetOrgArgvInfo());
