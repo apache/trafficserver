@@ -1510,18 +1510,13 @@ TSError
 TSRecordGetString(const char *rec_name, TSString *string_val)
 {
   TSError ret;
-  char *str;
-  size_t str_size = 0;
 
   TSRecordEle *ele = TSRecordEleCreate();
   ret = MgmtRecordGet(rec_name, ele);
   if (ret != TS_ERR_OKAY)
     goto END;
 
-  str_size = strlen(ele->string_val) + 1;
-  str = (char *)ats_malloc(sizeof(char) * str_size);
-  ink_strncpy(str, ele->string_val, str_size);
-  *string_val = str;
+  *string_val = ats_strdup(ele->string_val);
 
 END:
   TSRecordEleDestroy(ele);

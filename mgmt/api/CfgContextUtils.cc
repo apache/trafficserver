@@ -757,7 +757,7 @@ string_to_domain(const char *str)
   dom = TSDomainCreate();
 
   // get hostname
-  ink_strncpy(buf, str, sizeof(buf));
+  ink_strlcpy(buf, str, sizeof(buf));
   token = ink_strtok_r(buf, ":", &token_pos);
   remain = token_pos;
   if (token)
@@ -1864,7 +1864,6 @@ char *
 chopWhiteSpaces_alloc(char *str)
 {
   int len;
-  char *newStr;
 
   if (!str)
     return NULL;
@@ -1880,11 +1879,8 @@ chopWhiteSpaces_alloc(char *str)
 
   // eliminate trailing white spaces
   len = strcspn(str, " ");
-  newStr = (char *)ats_malloc(len + 1);
-  memset(newStr, 0, len + 1);
-  strncpy(newStr, str, len);
 
-  return newStr;
+  return ats_strndup(str, len + 1);
 }
 
 /***************************************************************

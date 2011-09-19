@@ -158,7 +158,7 @@ ts_connect()
   // setup Unix domain socket
   memset(&client_sock, 0, sizeof(sockaddr_un));
   client_sock.sun_family = AF_UNIX;
-  ink_strncpy(client_sock.sun_path, main_socket_path, sizeof(client_sock.sun_path));
+  ink_strlcpy(client_sock.sun_path, main_socket_path, sizeof(client_sock.sun_path));
 #if defined(darwin) || defined(freebsd)
   sockaddr_len = sizeof(sockaddr_un);
 #else
@@ -183,7 +183,7 @@ ts_connect()
   // setup Unix domain socket
   memset(&client_event_sock, 0, sizeof(sockaddr_un));
   client_event_sock.sun_family = AF_UNIX;
-  ink_strncpy(client_event_sock.sun_path, event_socket_path, sizeof(client_sock.sun_path));
+  ink_strlcpy(client_event_sock.sun_path, event_socket_path, sizeof(client_sock.sun_path));
 #if defined(darwin) || defined(freebsd)
   sockaddr_len = sizeof(sockaddr_un);
 #else

@@ -1,6 +1,6 @@
 /** @file
 
-  A brief file description
+  Implementation of CfgContext class and all the CfgEleObj subclasses
 
   @section license License
 
@@ -21,11 +21,6 @@
   limitations under the License.
  */
 
-/***********************************************************************
- * CfgContextImpl.cc
- *
- * Implementation of CfgContext class and all the CfgEleObj subclasses
- ***********************************************************************/
 
 #include "libts.h"
 #include "ink_platform.h"
@@ -147,51 +142,51 @@ CacheObj::formatEleToRule()
     m_ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
     return NULL;
   }
-  strncat(buf, pd_str, sizeof(buf) - strlen(buf) - 1);
+  ink_strlcat(buf, pd_str, sizeof(buf));
   ats_free(pd_str);
 
   switch (m_ele->cfg_ele.type) {
   case TS_CACHE_NEVER:
-    strncat(buf, "action=never-cache ", sizeof(buf) - strlen(buf) - 1);
+    ink_strlcat(buf, "action=never-cache ", sizeof(buf));
     break;
   case TS_CACHE_IGNORE_NO_CACHE:
-    strncat(buf, "action=ignore-no-cache ", sizeof(buf) - strlen(buf) - 1);
+    ink_strlcat(buf, "action=ignore-no-cache ", sizeof(buf));
     break;
   case TS_CACHE_IGNORE_CLIENT_NO_CACHE:
-    strncat(buf, "action=ignore-client-no-cache ", sizeof(buf) - strlen(buf) - 1);
+    ink_strlcat(buf, "action=ignore-client-no-cache ", sizeof(buf));
     break;
   case TS_CACHE_IGNORE_SERVER_NO_CACHE:
-    strncat(buf, "action=ignore-server-no-cache ", sizeof(buf) - strlen(buf) - 1);
+    ink_strlcat(buf, "action=ignore-server-no-cache ", sizeof(buf));
     break;
   case TS_CACHE_AUTH_CONTENT:
-    strncat(buf, "action=cache-auth-content ", sizeof(buf) - strlen(buf) - 1);
+    ink_strlcat(buf, "action=cache-auth-content ", sizeof(buf));
     break;
   case TS_CACHE_PIN_IN_CACHE:
-    strncat(buf, "pin-in-cache=", sizeof(buf) - strlen(buf) - 1);
+    ink_strlcat(buf, "pin-in-cache=", sizeof(buf));
     time_str = hms_time_to_string(m_ele->time_period);
     if (time_str) {
-      strncat(buf, time_str, sizeof(buf) - strlen(buf) - 1);
+      ink_strlcat(buf, time_str, sizeof(buf));
       ats_free(time_str);
     }
-    strncat(buf, " ", sizeof(buf) - strlen(buf) - 1);
+    ink_strlcat(buf, " ", sizeof(buf));
     break;
   case TS_CACHE_REVALIDATE:
-    strncat(buf, "revalidate=", sizeof(buf) - strlen(buf) - 1);
+    ink_strlcat(buf, "revalidate=", sizeof(buf));
     time_str = hms_time_to_string(m_ele->time_period);
     if (time_str) {
-      strncat(buf, time_str, sizeof(buf) - strlen(buf) - 1);
+      ink_strlcat(buf, time_str, sizeof(buf));
       ats_free(time_str);
     }
-    strncat(buf, " ", sizeof(buf) - strlen(buf) - 1);
+    ink_strlcat(buf, " ", sizeof(buf));
     break;
   case TS_CACHE_TTL_IN_CACHE:
-    strncat(buf, "ttl-in-cache=", sizeof(buf) - strlen(buf) - 1);
+    ink_strlcat(buf, "ttl-in-cache=", sizeof(buf));
     time_str = hms_time_to_string(m_ele->time_period);
     if (time_str) {
-      strncat(buf, time_str, sizeof(buf) - strlen(buf) - 1);
+      ink_strlcat(buf, time_str, sizeof(buf));
       ats_free(time_str);
     }
-    strncat(buf, " ", sizeof(buf) - strlen(buf) - 1);
+    ink_strlcat(buf, " ", sizeof(buf));
     break;
   default:
     // Handled here:
@@ -549,10 +544,10 @@ HostingObj::formatEleToRule()
 
   switch (m_ele->pd_type) {
   case TS_PD_HOST:
-    strncat(buf, "hostname=", sizeof(buf) - strlen(buf) - 1);
+    ink_strlcat(buf, "hostname=", sizeof(buf));
     break;
   case TS_PD_DOMAIN:
-    strncat(buf, "domain=", sizeof(buf) - strlen(buf) - 1);
+    ink_strlcat(buf, "domain=", sizeof(buf));
     break;
   default:
     // Handled here:
@@ -561,9 +556,9 @@ HostingObj::formatEleToRule()
   }
 
   list_str = int_list_to_string(m_ele->volumes, ",");
-  strncat(buf, m_ele->pd_val, sizeof(buf) - strlen(buf) - 1);
-  strncat(buf, " volume=", sizeof(buf) - strlen(buf) - 1);
-  strncat(buf, list_str, sizeof(buf) - strlen(buf) - 1);
+  ink_strlcat(buf, m_ele->pd_val, sizeof(buf));
+  ink_strlcat(buf, " volume=", sizeof(buf));
+  ink_strlcat(buf, list_str, sizeof(buf));
   ats_free(list_str);
 
   return ats_strdup(buf);
@@ -787,13 +782,13 @@ IcpObj::formatEleToRule()
 
   switch (m_ele->mc_ttl) {
   case TS_MC_TTL_SINGLE_SUBNET:
-    strncat(buf, "1:", sizeof(buf) - strlen(buf) - 1);
+    ink_strlcat(buf, "1:", sizeof(buf));
     break;
   case TS_MC_TTL_MULT_SUBNET:
-    strncat(buf, "2:", sizeof(buf) - strlen(buf) - 1);
+    ink_strlcat(buf, "2:", sizeof(buf));
     break;
   case TS_MC_TTL_UNDEFINED:
-    strncat(buf, "0:", sizeof(buf) - strlen(buf) - 1);
+    ink_strlcat(buf, "0:", sizeof(buf));
     break;
   }
 
@@ -927,22 +922,22 @@ IpAllowObj::formatEleToRule()
   char buf[MAX_RULE_SIZE];
   memset(buf, 0, MAX_RULE_SIZE);
 
-  ink_strncpy(buf, "src_ip=", sizeof(buf));
+  ink_strlcpy(buf, "src_ip=", sizeof(buf));
   if (m_ele->src_ip_addr) {
     char *ip_str = ip_addr_ele_to_string(m_ele->src_ip_addr);
     if (ip_str) {
-      strncat(buf, ip_str, sizeof(buf) - strlen(buf) - 1);
+      ink_strlcat(buf, ip_str, sizeof(buf));
       ats_free(ip_str);
     }
   }
 
-  strncat(buf, " action=", sizeof(buf) - strlen(buf) - 1);
+  ink_strlcat(buf, " action=", sizeof(buf));
   switch (m_ele->action) {
   case TS_IP_ALLOW_ALLOW:
-    strncat(buf, "ip_allow", sizeof(buf) - strlen(buf) - 1);
+    ink_strlcat(buf, "ip_allow", sizeof(buf));
     break;
   case TS_IP_ALLOW_DENY:
-    strncat(buf, "ip_deny", sizeof(buf) - strlen(buf) - 1);
+    ink_strlcat(buf, "ip_deny", sizeof(buf));
     break;
   default:
     // Handled here:
@@ -1099,24 +1094,24 @@ ParentProxyObj::formatEleToRule()
   pd_str = pdest_sspec_to_string(m_ele->parent_info.pd_type, m_ele->parent_info.pd_val, &(m_ele->parent_info.sec_spec));
   if (!pd_str)
     return NULL;
-  strncat(buf, pd_str, sizeof(buf) - strlen(buf) - 1);
+  ink_strlcat(buf, pd_str, sizeof(buf));
   ats_free(pd_str);
 
   // round_robin
   if ((m_ele->rr != TS_RR_NONE) && (m_ele->rr != TS_RR_UNDEFINED)) {
     if (!isspace(buf[strlen(buf) - 1])) {
-      strncat(buf, " ", sizeof(buf) - strlen(buf) - 1);
+      ink_strlcat(buf, " ", sizeof(buf));
     }
-    strncat(buf, "round_robin=", sizeof(buf) - strlen(buf) - 1);
+    ink_strlcat(buf, "round_robin=", sizeof(buf));
     switch (m_ele->rr) {
     case TS_RR_TRUE:
-      strncat(buf, "true", sizeof(buf) - strlen(buf) - 1);
+      ink_strlcat(buf, "true", sizeof(buf));
       break;
     case TS_RR_STRICT:
-      strncat(buf, "strict", sizeof(buf) - strlen(buf) - 1);
+      ink_strlcat(buf, "strict", sizeof(buf));
       break;
     case TS_RR_FALSE:
-      strncat(buf, "false", sizeof(buf) - strlen(buf) - 1);
+      ink_strlcat(buf, "false", sizeof(buf));
       break;
     default:
       // Handled here:
@@ -1128,29 +1123,29 @@ ParentProxyObj::formatEleToRule()
   if (m_ele->proxy_list != NULL) {
     // include space delimiter if not already exist
     if (!isspace(buf[strlen(buf) - 1])) {
-      strncat(buf, " ", sizeof(buf) - strlen(buf) - 1);
+      ink_strlcat(buf, " ", sizeof(buf));
     }
     list_str = domain_list_to_string(m_ele->proxy_list, ";");
-    strncat(buf, "parent=\"", sizeof(buf) - strlen(buf) - 1);
+    ink_strlcat(buf, "parent=\"", sizeof(buf));
     if (list_str) {
-      strncat(buf, list_str, sizeof(buf) - strlen(buf) - 1);
+      ink_strlcat(buf, list_str, sizeof(buf));
       ats_free(list_str);
     }
-    strncat(buf, "\"", sizeof(buf) - strlen(buf) - 1);
+    ink_strlcat(buf, "\"", sizeof(buf));
 
   }
 
   if (m_ele->direct) {
     // include space delimiter if not already exist
     if (!isspace(buf[strlen(buf) - 1])) {
-      strncat(buf, " ", sizeof(buf) - strlen(buf) - 1);
+      ink_strlcat(buf, " ", sizeof(buf));
     }
-    strncat(buf, "go_direct=true", sizeof(buf) - strlen(buf) - 1);
+    ink_strlcat(buf, "go_direct=true", sizeof(buf));
   } else {
     if (!isspace(buf[strlen(buf) - 1])) {
-      strncat(buf, " ", sizeof(buf) - strlen(buf) - 1);
+      ink_strlcat(buf, " ", sizeof(buf));
     }
-    strncat(buf, "go_direct=false", sizeof(buf) - strlen(buf) - 1);
+    ink_strlcat(buf, "go_direct=false", sizeof(buf));
   }
 
   return ats_strdup(buf);
@@ -1264,7 +1259,7 @@ VolumeObj::formatEleToRule()
 
   switch (m_ele->scheme) {
   case TS_VOLUME_HTTP:
-    strncat(buf, "http", sizeof(buf) - strlen(buf) - 1);
+    ink_strlcat(buf, "http", sizeof(buf));
     break;
   default:
     // Handled here:
@@ -1276,7 +1271,7 @@ VolumeObj::formatEleToRule()
   snprintf(buf + pos, sizeof(buf) - pos, " size=%d", m_ele->volume_size);
   switch (m_ele->size_format) {
   case TS_SIZE_FMT_PERCENT:
-    strncat(buf, "%", sizeof(buf) - strlen(buf) - 1);
+    ink_strlcat(buf, "%", sizeof(buf));
     break;
   default:
     // Handled here:
@@ -1497,8 +1492,8 @@ RemapObj::RemapObj(TokenList * tokens)
       memset(buf, 0, MAX_RULE_SIZE);
 
       for (int i = current; fromTok[i]; i++) {
-        strncat(buf, fromTok[i], sizeof(buf) - strlen(buf) - 1);
-        strncat(buf, "/", sizeof(buf) - strlen(buf) - 1);
+        ink_strlcat(buf, fromTok[i], sizeof(buf));
+        ink_strlcat(buf, "/", sizeof(buf));
       }
 
       if ((token->name)[strlen(token->name) - 1] != '/') {
@@ -1510,9 +1505,9 @@ RemapObj::RemapObj(TokenList * tokens)
   } else {
     if ((token->name)[strlen(token->name) - 1] == '/') {
       memset(buf, 0, MAX_RULE_SIZE);
-      ink_strncpy(buf, m_ele->from_host, sizeof(buf));
+      ink_strlcpy(buf, m_ele->from_host, sizeof(buf));
       ats_free(m_ele->from_host);
-      strncat(buf, "/", sizeof(buf) - strlen(buf) - 1);
+      ink_strlcat(buf, "/", sizeof(buf));
       m_ele->from_host = ats_strdup(buf);
     }
   }
@@ -1553,8 +1548,8 @@ RemapObj::RemapObj(TokenList * tokens)
       memset(buf, 0, MAX_RULE_SIZE);
 
       for (int i = current; toTok[i]; i++) {
-        strncat(buf, toTok[i], sizeof(buf) - strlen(buf) - 1);
-        strncat(buf, "/", sizeof(buf) - strlen(buf) - 1);
+        ink_strlcat(buf, toTok[i], sizeof(buf));
+        ink_strlcat(buf, "/", sizeof(buf));
       }
 
       if ((token->name)[strlen(token->name) - 1] != '/') {
@@ -1567,9 +1562,9 @@ RemapObj::RemapObj(TokenList * tokens)
     if ((token->value)[strlen(token->value) - 1] == '/') {
 
       memset(buf, 0, MAX_RULE_SIZE);
-      ink_strncpy(buf, m_ele->to_host, sizeof(buf));
+      ink_strlcpy(buf, m_ele->to_host, sizeof(buf));
       ats_free(m_ele->to_host);
-      strncat(buf, "/", sizeof(buf) - strlen(buf) - 1);
+      ink_strlcat(buf, "/", sizeof(buf));
       m_ele->to_host = ats_strdup(buf);
 
     }
@@ -1600,16 +1595,16 @@ RemapObj::formatEleToRule()
 
   switch (m_ele->cfg_ele.type) {
   case TS_REMAP_MAP:
-    strncat(buf, "map", sizeof(buf) - strlen(buf) - 1);
+    ink_strlcat(buf, "map", sizeof(buf));
     break;
   case TS_REMAP_REVERSE_MAP:
-    strncat(buf, "reverse_map", sizeof(buf) - strlen(buf) - 1);
+    ink_strlcat(buf, "reverse_map", sizeof(buf));
     break;
   case TS_REMAP_REDIRECT:
-    strncat(buf, "redirect", sizeof(buf) - strlen(buf) - 1);
+    ink_strlcat(buf, "redirect", sizeof(buf));
     break;
   case TS_REMAP_REDIRECT_TEMP:
-    strncat(buf, "redirect_temporary", sizeof(buf) - strlen(buf) - 1);
+    ink_strlcat(buf, "redirect_temporary", sizeof(buf));
     break;
   default:
     // Handled here:
@@ -1617,26 +1612,26 @@ RemapObj::formatEleToRule()
     break;
   }
   // space delimitor
-  strncat(buf, " ", sizeof(buf) - strlen(buf) - 1);
+  ink_strlcat(buf, " ", sizeof(buf));
 
   // from scheme
   switch (m_ele->from_scheme) {
   case TS_SCHEME_HTTP:
-    strncat(buf, "http", sizeof(buf) - strlen(buf) - 1);
+    ink_strlcat(buf, "http", sizeof(buf));
     break;
   case TS_SCHEME_HTTPS:
-    strncat(buf, "https", sizeof(buf) - strlen(buf) - 1);
+    ink_strlcat(buf, "https", sizeof(buf));
     break;
   default:
     // Handled here:
     // TS_SCHEME_NONE, TS_SCHEME_UNDEFINED
     break;
   }
-  strncat(buf, "://", sizeof(buf) - strlen(buf) - 1);
+  ink_strlcat(buf, "://", sizeof(buf));
 
   // from host
   if (m_ele->from_host) {
-    strncat(buf, m_ele->from_host, sizeof(buf) - strlen(buf) - 1);
+    ink_strlcat(buf, m_ele->from_host, sizeof(buf));
   }
   // from port
   if (m_ele->from_port != TS_INVALID_PORT) {
@@ -1644,30 +1639,30 @@ RemapObj::formatEleToRule()
   }
   // from host path
   if (m_ele->from_path_prefix) {
-    strncat(buf, "/", sizeof(buf) - strlen(buf) - 1);
-    strncat(buf, m_ele->from_path_prefix, sizeof(buf) - strlen(buf) - 1);
+    ink_strlcat(buf, "/", sizeof(buf));
+    ink_strlcat(buf, m_ele->from_path_prefix, sizeof(buf));
   }
   // space delimitor
-  strncat(buf, " ", sizeof(buf) - strlen(buf) - 1);
+  ink_strlcat(buf, " ", sizeof(buf));
 
   // to scheme
   switch (m_ele->to_scheme) {
   case TS_SCHEME_HTTP:
-    strncat(buf, "http", sizeof(buf) - strlen(buf) - 1);
+    ink_strlcat(buf, "http", sizeof(buf));
     break;
   case TS_SCHEME_HTTPS:
-    strncat(buf, "https", sizeof(buf) - strlen(buf) - 1);
+    ink_strlcat(buf, "https", sizeof(buf));
     break;
   default:
     // Handled here:
     // TS_SCHEME_NONE, TS_SCHEME_UNDEFINED
     break;
   }
-  strncat(buf, "://", sizeof(buf) - strlen(buf) - 1);
+  ink_strlcat(buf, "://", sizeof(buf));
 
   // to host
   if (m_ele->to_host) {
-    strncat(buf, m_ele->to_host, sizeof(buf) - strlen(buf) - 1);
+    ink_strlcat(buf, m_ele->to_host, sizeof(buf));
   }
   // to port
   if (m_ele->to_port != TS_INVALID_PORT) {
@@ -1675,8 +1670,8 @@ RemapObj::formatEleToRule()
   }
   // to host path
   if (m_ele->to_path_prefix) {
-    strncat(buf, "/", sizeof(buf) - strlen(buf) - 1);
-    strncat(buf, m_ele->to_path_prefix, sizeof(buf) - strlen(buf) - 1);
+    ink_strlcat(buf, "/", sizeof(buf));
+    ink_strlcat(buf, m_ele->to_path_prefix, sizeof(buf));
   }
 
   return ats_strdup(buf);
@@ -1866,8 +1861,8 @@ SocksObj::formatEleToRule()
     // destination ip
     char *ip_str = ip_addr_ele_to_string((TSIpAddrEle *) m_ele->dest_ip_addr);
     if (ip_str) {
-      strncat(buf, "dest_ip=", sizeof(buf) - strlen(buf) - 1);
-      strncat(buf, ip_str, sizeof(buf) - strlen(buf) - 1);
+      ink_strlcat(buf, "dest_ip=", sizeof(buf));
+      ink_strlcat(buf, ip_str, sizeof(buf));
       ats_free(ip_str);
     } else {
       return NULL;              // invalid IP
@@ -1877,13 +1872,13 @@ SocksObj::formatEleToRule()
     if (m_ele->socks_servers != NULL) {
       // include space delimiter if not already exist
       if (!isspace(buf[strlen(buf) - 1])) {
-        strncat(buf, " ", sizeof(buf) - strlen(buf) - 1);
+        ink_strlcat(buf, " ", sizeof(buf));
       }
       char *list_str = domain_list_to_string(m_ele->socks_servers, ";");
       if (list_str) {
-        strncat(buf, "parent=\"", sizeof(buf) - strlen(buf) - 1);
-        strncat(buf, list_str, sizeof(buf) - strlen(buf) - 1);
-        strncat(buf, "\"", sizeof(buf) - strlen(buf) - 1);
+        ink_strlcat(buf, "parent=\"", sizeof(buf));
+        ink_strlcat(buf, list_str, sizeof(buf));
+        ink_strlcat(buf, "\"", sizeof(buf));
         ats_free(list_str);
       } else {
         return NULL;            // invalid list
@@ -1892,18 +1887,18 @@ SocksObj::formatEleToRule()
     // round-robin, if specified
     if ((m_ele->rr != TS_RR_NONE) && (m_ele->rr != TS_RR_UNDEFINED)) {
       if (!isspace(buf[strlen(buf) - 1])) {
-        strncat(buf, " ", sizeof(buf) - strlen(buf) - 1);
+        ink_strlcat(buf, " ", sizeof(buf));
       }
-      strncat(buf, "round_robin=", sizeof(buf) - strlen(buf) - 1);
+      ink_strlcat(buf, "round_robin=", sizeof(buf));
       switch (m_ele->rr) {
       case TS_RR_TRUE:
-        strncat(buf, "true", sizeof(buf) - strlen(buf) - 1);
+        ink_strlcat(buf, "true", sizeof(buf));
         break;
       case TS_RR_STRICT:
-        strncat(buf, "strict", sizeof(buf) - strlen(buf) - 1);
+        ink_strlcat(buf, "strict", sizeof(buf));
         break;
       case TS_RR_FALSE:
-        strncat(buf, "false", sizeof(buf) - strlen(buf) - 1);
+        ink_strlcat(buf, "false", sizeof(buf));
         break;
       default:
         // Handled here:
@@ -2083,60 +2078,60 @@ SplitDnsObj::formatEleToRule()
   }
 
   if (m_ele->pd_val) {
-    strncat(buf, pd_name, sizeof(buf) - strlen(buf) - 1);
-    strncat(buf, "=", sizeof(buf) - strlen(buf) - 1);
+    ink_strlcat(buf, pd_name, sizeof(buf));
+    ink_strlcat(buf, "=", sizeof(buf));
     if (strstr(m_ele->pd_val, " ")) {
-      strncat(buf, "\"", sizeof(buf) - strlen(buf) - 1);
+      ink_strlcat(buf, "\"", sizeof(buf));
     }
-    strncat(buf, m_ele->pd_val, sizeof(buf) - strlen(buf) - 1);
+    ink_strlcat(buf, m_ele->pd_val, sizeof(buf));
     if (strstr(m_ele->pd_val, " ")) {
-      strncat(buf, "\"", sizeof(buf) - strlen(buf) - 1);
+      ink_strlcat(buf, "\"", sizeof(buf));
     }
-    strncat(buf, " ", sizeof(buf) - strlen(buf) - 1);
+    ink_strlcat(buf, " ", sizeof(buf));
   }
 
   if (m_ele->dns_servers_addrs) {
-    strncat(buf, "named=", sizeof(buf) - strlen(buf) - 1);
+    ink_strlcat(buf, "named=", sizeof(buf));
     char *temp = domain_list_to_string((LLQ *) m_ele->dns_servers_addrs, ";");
     if (temp) {
       if (strstr(temp, " ")) {
-        strncat(buf, "\"", sizeof(buf) - strlen(buf) - 1);
+        ink_strlcat(buf, "\"", sizeof(buf));
       }
-      strncat(buf, temp, sizeof(buf) - strlen(buf) - 1);
+      ink_strlcat(buf, temp, sizeof(buf));
       if (strstr(temp, " ")) {
-        strncat(buf, "\"", sizeof(buf) - strlen(buf) - 1);
+        ink_strlcat(buf, "\"", sizeof(buf));
       }
       ats_free(temp);
     }
-    strncat(buf, " ", sizeof(buf) - strlen(buf) - 1);
+    ink_strlcat(buf, " ", sizeof(buf));
   }
 
   if (m_ele->def_domain) {
-    strncat(buf, "def_domain=", sizeof(buf) - strlen(buf) - 1);
+    ink_strlcat(buf, "def_domain=", sizeof(buf));
     if (strstr(m_ele->def_domain, " ")) {
-      strncat(buf, "\"", sizeof(buf) - strlen(buf) - 1);
+      ink_strlcat(buf, "\"", sizeof(buf));
     }
-    strncat(buf, m_ele->def_domain, sizeof(buf) - strlen(buf) - 1);
+    ink_strlcat(buf, m_ele->def_domain, sizeof(buf));
     if (strstr(m_ele->def_domain, " ")) {
-      strncat(buf, "\"", sizeof(buf) - strlen(buf) - 1);
+      ink_strlcat(buf, "\"", sizeof(buf));
     }
-    strncat(buf, " ", sizeof(buf) - strlen(buf) - 1);
+    ink_strlcat(buf, " ", sizeof(buf));
   }
 
   if (m_ele->search_list) {
-    strncat(buf, "search_list=", sizeof(buf) - strlen(buf) - 1);
+    ink_strlcat(buf, "search_list=", sizeof(buf));
     char *temp = domain_list_to_string(m_ele->search_list, ";");
     if (temp) {
       if (strstr(temp, " ")) {
-        strncat(buf, "\"", sizeof(buf) - strlen(buf) - 1);
+        ink_strlcat(buf, "\"", sizeof(buf));
       }
-      strncat(buf, temp, sizeof(buf) - strlen(buf) - 1);
+      ink_strlcat(buf, temp, sizeof(buf));
       if (strstr(temp, " ")) {
-        strncat(buf, "\"", sizeof(buf) - strlen(buf) - 1);
+        ink_strlcat(buf, "\"", sizeof(buf));
       }
       ats_free(temp);
     }
-    strncat(buf, " ", sizeof(buf) - strlen(buf) - 1);
+    ink_strlcat(buf, " ", sizeof(buf));
   }
   // chop the last space
   while (isspace(buf[strlen(buf) - 1])) {

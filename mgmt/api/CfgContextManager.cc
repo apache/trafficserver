@@ -32,6 +32,7 @@
  *
  ***************************************************************************/
 #include "ink_platform.h"
+#include "ink_string.h"
 #include "CfgContextManager.h"
 #include "CfgContextUtils.h"
 #include "CoreAPI.h"
@@ -120,12 +121,9 @@ CfgContextCommit(CfgContext * ctx, LLQ * errRules)
     if (size > max_file_size) {
       max_file_size *= 2;
       new_text = (char *)ats_realloc(new_text, max_file_size + 1);
-      if (!new_text) {          // out of memory
-        return TS_ERR_FAIL;
-      }
     }
-    strncat(new_text, rule, len);
-    strncat(new_text, "\n", 1);
+    ink_strlcat(new_text, rule, max_file_size + 1);
+    ink_strlcat(new_text, "\n", max_file_size + 1);
 
     ats_free(rule);
     if (ele->getRuleType() != TS_TYPE_COMMENT)

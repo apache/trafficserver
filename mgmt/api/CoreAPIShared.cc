@@ -459,55 +459,55 @@ get_event_name(int id)
   memset(name, 0, MAX_EVENT_NAME_SIZE);
   switch (id) {
   case MGMT_ALARM_PROXY_PROCESS_DIED:
-    ink_strncpy(name, "MGMT_ALARM_PROXY_PROCESS_DIED", sizeof(name));
+    ink_strlcpy(name, "MGMT_ALARM_PROXY_PROCESS_DIED", sizeof(name));
     break;
   case MGMT_ALARM_PROXY_PROCESS_BORN:
-    ink_strncpy(name, "MGMT_ALARM_PROXY_PROCESS_BORN", sizeof(name));
+    ink_strlcpy(name, "MGMT_ALARM_PROXY_PROCESS_BORN", sizeof(name));
     break;
   case MGMT_ALARM_PROXY_PEER_BORN:
-    ink_strncpy(name, "MGMT_ALARM_PROXY_PEER_BORN", sizeof(name));
+    ink_strlcpy(name, "MGMT_ALARM_PROXY_PEER_BORN", sizeof(name));
     break;
   case MGMT_ALARM_PROXY_PEER_DIED:
-    ink_strncpy(name, "MGMT_ALARM_PROXY_PEER_DIED", sizeof(name));
+    ink_strlcpy(name, "MGMT_ALARM_PROXY_PEER_DIED", sizeof(name));
     break;
   case MGMT_ALARM_PROXY_CONFIG_ERROR:
-    ink_strncpy(name, "MGMT_ALARM_PROXY_CONFIG_ERROR", sizeof(name));
+    ink_strlcpy(name, "MGMT_ALARM_PROXY_CONFIG_ERROR", sizeof(name));
     break;
   case MGMT_ALARM_PROXY_SYSTEM_ERROR:
-    ink_strncpy(name, "MGMT_ALARM_PROXY_SYSTEM_ERROR", sizeof(name));
+    ink_strlcpy(name, "MGMT_ALARM_PROXY_SYSTEM_ERROR", sizeof(name));
     break;
   case MGMT_ALARM_PROXY_LOG_SPACE_CRISIS:
-    ink_strncpy(name, "MGMT_ALARM_PROXY_LOG_SPACE_CRISIS", sizeof(name));
+    ink_strlcpy(name, "MGMT_ALARM_PROXY_LOG_SPACE_CRISIS", sizeof(name));
     break;
   case MGMT_ALARM_PROXY_CACHE_ERROR:
-    ink_strncpy(name, "MGMT_ALARM_PROXY_CACHE_ERROR", sizeof(name));
+    ink_strlcpy(name, "MGMT_ALARM_PROXY_CACHE_ERROR", sizeof(name));
     break;
   case MGMT_ALARM_PROXY_CACHE_WARNING:
-    ink_strncpy(name, "MGMT_ALARM_PROXY_CACHE_WARNING", sizeof(name));
+    ink_strlcpy(name, "MGMT_ALARM_PROXY_CACHE_WARNING", sizeof(name));
     break;
   case MGMT_ALARM_PROXY_LOGGING_ERROR:
-    ink_strncpy(name, "MGMT_ALARM_PROXY_LOGGING_ERROR", sizeof(name));
+    ink_strlcpy(name, "MGMT_ALARM_PROXY_LOGGING_ERROR", sizeof(name));
     break;
   case MGMT_ALARM_PROXY_LOGGING_WARNING:
-    ink_strncpy(name, "MGMT_ALARM_PROXY_LOGGING_WARNING", sizeof(name));
+    ink_strlcpy(name, "MGMT_ALARM_PROXY_LOGGING_WARNING", sizeof(name));
     break;
   case MGMT_ALARM_MGMT_TEST:
-    ink_strncpy(name, "MGMT_ALARM_MGMT_TEST", sizeof(name));
+    ink_strlcpy(name, "MGMT_ALARM_MGMT_TEST", sizeof(name));
     break;
   case MGMT_ALARM_CONFIG_UPDATE_FAILED:
-    ink_strncpy(name, "MGMT_ALARM_CONFIG_UPDATE_FAILED", sizeof(name));
+    ink_strlcpy(name, "MGMT_ALARM_CONFIG_UPDATE_FAILED", sizeof(name));
     break;
   case MGMT_ALARM_WEB_ERROR:
-    ink_strncpy(name, "MGMT_ALARM_WEB_ERROR", sizeof(name));
+    ink_strlcpy(name, "MGMT_ALARM_WEB_ERROR", sizeof(name));
     break;
   case MGMT_ALARM_PING_FAILURE:
-    ink_strncpy(name, "MGMT_ALARM_PING_FAILURE", sizeof(name));
+    ink_strlcpy(name, "MGMT_ALARM_PING_FAILURE", sizeof(name));
     break;
   case MGMT_ALARM_MGMT_CONFIG_ERROR:
-    ink_strncpy(name, "MGMT_ALARM_MGMT_CONFIG_ERROR", sizeof(name));
+    ink_strlcpy(name, "MGMT_ALARM_MGMT_CONFIG_ERROR", sizeof(name));
     break;
   case MGMT_ALARM_ADD_ALARM:
-    ink_strncpy(name, "MGMT_ALARM_ADD_ALARM", sizeof(name));
+    ink_strlcpy(name, "MGMT_ALARM_ADD_ALARM", sizeof(name));
     break;
   default:
     return NULL;

@@ -79,9 +79,9 @@ Token::appendValue(const char *str)
     setValue(str_copy);
   } else {
     if (!firstTime) {
-      strncat(value, " ", BUFSIZ - strlen(value) - 1);
+      ink_strlcat(value, " ", BUFSIZ);
     }
-    strncat(value, str_copy, BUFSIZ - strlen(value) - 1);;
+    ink_strlcat(value, str_copy, BUFSIZ);
   }
   firstTime = false;
   ats_free(str_copy);
