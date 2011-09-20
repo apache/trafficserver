@@ -328,9 +328,9 @@ HostDBCache::start(int flags)
       szPath[i] = '\\';
     i++;
   }
-  ink_strncpy(storage_path, system_root_dir, sizeof(storage_path));
-  strcat(storage_path, "\\");
-  strcat(storage_path, szPath);
+  ink_strlcpy(storage_path, system_root_dir, sizeof(storage_path));
+  ink_strlcat(storage_path, "\\", sizeof(storage_path));
+  ink_strlcat(storage_path, szPath, sizeof(storage_path));
 #else
   IOCORE_ReadConfigString(storage_path, "proxy.config.hostdb.storage_path", PATH_NAME_MAX);
 #endif
@@ -345,7 +345,7 @@ HostDBCache::start(int flags)
 
   // XXX: Should this be W_OK?
   if (access(storage_path, R_OK) == -1) {
-    ink_strncpy(storage_path, system_runtime_dir, sizeof(storage_path));
+    ink_strlcpy(storage_path, system_runtime_dir, sizeof(storage_path));
     if (access(storage_path, R_OK) == -1) {
       Warning("Unable to access() directory '%s': %d, %s", storage_path, errno, strerror(errno));
       Warning(" Please set 'proxy.config.hostdb.storage_path' or 'proxy.config.local_state_dir' ");
@@ -1220,7 +1220,7 @@ HostDBContinuation::lookup_done(sockaddr const* aip, char *aname, bool around_ro
       i->round_robin = around_robin;
       i->reverse_dns = false;
       if (name != aname) {
-        ink_strncpy(name, aname, MAXDNAME);
+        ink_strlcpy(name, aname, sizeof(name));
       }
       i->is_srv = false;
     } else if (is_srv()) {
@@ -1244,7 +1244,7 @@ HostDBContinuation::lookup_done(sockaddr const* aip, char *aname, bool around_ro
       i->is_srv = true;
 
       if (name != aname) {
-        ink_strncpy(name, aname, MAXDNAME);
+        ink_strlcpy(name, aname, sizeof(name));
       }
 
     } else {
@@ -1252,7 +1252,7 @@ HostDBContinuation::lookup_done(sockaddr const* aip, char *aname, bool around_ro
       const size_t s_size = strlen(aname) + 1;
       void *s = hostDB.alloc(&i->data.hostname_offset, s_size);
       if (s) {
-        ink_strncpy((char *) s, aname, s_size);
+        ink_strlcpy((char *) s, aname, s_size);
         i->round_robin = false;
         i->reverse_dns = true;
         i->is_srv = false;
@@ -1437,7 +1437,7 @@ HostDBContinuation::dnsEvent(int event, HostEnt * e)
               item.srv_priority = t->getPriority();
               item.srv_port = t->getPort();
 
-              ink_strncpy(rr_data->rr_srv_hosts[i], t->getHost(), MAXDNAME);
+              ink_strlcpy(rr_data->rr_srv_hosts[i], t->getHost(), MAXDNAME);
               rr_data->rr_srv_hosts[i][MAXDNAME - 1] = '\0';
               item.is_srv = true;
 
@@ -1542,7 +1542,7 @@ HostDBContinuation::make_get_message(char *buf, int size)
   msg->cont = this;
 
   // name
-  ink_strncpy(msg->name, name, sizeof(msg->name));
+  ink_strlcpy(msg->name, name, sizeof(msg->name));
 
   // length
   int len = sizeof(HostDB_get_message) - MAXDNAME + strlen(name) + 1;
@@ -1643,7 +1643,7 @@ HostDBContinuation::make_put_message(HostDBInfo * r, Continuation * c, char *buf
   }
 
   // name
-  ink_strncpy(msg->name, name, sizeof(msg->name));
+  ink_strlcpy(msg->name, name, sizeof(msg->name));
 
   // length
   int len = sizeof(HostDB_put_message) - MAXDNAME + strlen(name) + 1;
