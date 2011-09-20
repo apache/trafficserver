@@ -1,6 +1,6 @@
 /** @file
 
-  A brief file description
+  This file contains code for class to allow rollback of configuration files 
 
   @section license License
 
@@ -21,7 +21,6 @@
   limitations under the License.
  */
 
-/****************************************************************************/
 #include "libts.h"
 #include "LocalManager.h"
 #include "Rollback.h"
@@ -31,13 +30,6 @@
 #include "ExpandingArray.h"
 #include "MgmtSocket.h"
 
-/****************************************************************************
- *
- *  Rollback.cc - code  for class to allow rollback of configuration
- *                  files
- *
- *
- ****************************************************************************/
 
 #define MAX_VERSION_DIGITS 11
 #define DEFAULT_BACKUPS 2
@@ -76,7 +68,7 @@ root_access_needed(root_access_needed_)
   // Copy the file name
   fileNameLen = strlen(baseFileName);
   fileName = new char[fileNameLen + 1];
-  ink_strncpy(fileName, baseFileName, fileNameLen + 1);
+  ink_strlcpy(fileName, baseFileName, fileNameLen + 1);
 
 
   // Get the configuration directory - SHOULD BE CENTRALIZED SOMEWHERE

@@ -1,6 +1,6 @@
 /** @file
 
-  A brief file description
+  The Local Manager process of the management system.
 
   @section license License
 
@@ -21,14 +21,6 @@
   limitations under the License.
  */
 
-/*
- *
- * LocalManager.cc
- * - The Local Manager process of the management system.
- * - The main loop has been migrated to Main.cc
- *
- *
- */
 
 #include "libts.h"
 #include "ink_platform.h"
@@ -233,7 +225,7 @@ LocalManager::LocalManager(char *mpath, bool proxy_on)
     mgmt_log("Bad or missing proxy.config.lm.sem_id value; using default id %d\n", MGMT_SEMID_DEFAULT);
     mgmt_sync_key = MGMT_SEMID_DEFAULT;
   }
-  ink_strncpy(pserver_path, system_runtime_dir, sizeof(pserver_path));
+  ink_strlcpy(pserver_path, system_runtime_dir, sizeof(pserver_path));
 
   virt_map = NULL;
 
@@ -251,7 +243,7 @@ LocalManager::LocalManager(char *mpath, bool proxy_on)
     if (found) {
       proxy_server_port[pnum] = port;
       char *main_server_port_attributes = (char *) REC_readString("proxy.config.http.server_port_attr", &found);
-      ink_strncpy((char *) proxy_server_port_attributes[pnum],
+      ink_strlcpy((char *) proxy_server_port_attributes[pnum],
                   main_server_port_attributes, sizeof(proxy_server_port_attributes[pnum]));
       ats_free(main_server_port_attributes);
       pnum++;
@@ -267,7 +259,7 @@ LocalManager::LocalManager(char *mpath, bool proxy_on)
     ink_assert(found);
     if (found) {
       proxy_server_port[pnum] = ssl_term_port;
-      ink_strncpy((char *) proxy_server_port_attributes[pnum], "S", sizeof(proxy_server_port_attributes[pnum]));
+      ink_strlcpy((char *) proxy_server_port_attributes[pnum], "S", sizeof(proxy_server_port_attributes[pnum]));
       pnum++;
     }
   }
@@ -291,7 +283,7 @@ LocalManager::LocalManager(char *mpath, bool proxy_on)
       int port_no = atoi(cport);
 
       proxy_server_port[pnum] = port_no;
-      ink_strncpy((char *) proxy_server_port_attributes[pnum], attr, sizeof(proxy_server_port_attributes[pnum]));
+      ink_strlcpy((char *) proxy_server_port_attributes[pnum], attr, sizeof(proxy_server_port_attributes[pnum]));
 
       Debug("lm", "[LocalManager::LocalManager] Adding port (%s, %d, '%s')\n", cport, port_no, attr);
       cport = ink_strtok_r(NULL, " ", &last);
@@ -438,8 +430,8 @@ LocalManager::initCCom(int port, char *addr, int sport)
   //    and flush it to disk
   const size_t envBuf_size = strlen(envVar) + strlen(clusterAddrStr) + 1;
   envBuf = (char *)ats_malloc(envBuf_size);
-  ink_strncpy(envBuf, envVar, envBuf_size);
-  strncat(envBuf, clusterAddrStr, envBuf_size - strlen(envBuf) - 1);
+  ink_strlcpy(envBuf, envVar, envBuf_size);
+  ink_strlcat(envBuf, clusterAddrStr, envBuf_size);
   ink_release_assert(putenv(envBuf) == 0);
 
   ccom = new ClusterCom(cluster_addr.s_addr, hostname, port, addr, sport, pserver_path);
@@ -481,7 +473,7 @@ LocalManager::initMgmtProcessServer()
 
   memset(&serv_addr, 0, sizeof(serv_addr));
   serv_addr.sun_family = AF_UNIX;
-  ink_strncpy(serv_addr.sun_path, fpath, sizeof(serv_addr.sun_path));
+  ink_strlcpy(serv_addr.sun_path, fpath, sizeof(serv_addr.sun_path));
 #if defined(darwin) || defined(freebsd)
   servlen = sizeof(struct sockaddr_un);
 #else

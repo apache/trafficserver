@@ -1,6 +1,6 @@
 /** @file
 
-  A brief file description
+  File contains the member function defs and thread loop for the process manager.
 
   @section license License
 
@@ -21,16 +21,6 @@
   limitations under the License.
  */
 
-/*
- *
- * ProcessManager.cc
- *   The Process Manager of the management system. File contains the
- * member function defs and thread loop for the process manager.
- *
- * $Date: 2007-10-05 16:56:44 $
- *
- *
- */
 
 #include "libts.h"
 #undef HTTP_CACHE
@@ -85,7 +75,7 @@ ProcessManager::ProcessManager(bool rlm, char *mpath):
 BaseManager(), require_lm(rlm), mgmt_sync_key(0), local_manager_sockfd(0)
 {
   NOWARN_UNUSED(mpath);
-  ink_strncpy(pserver_path, Layout::get()->runtimedir, sizeof(pserver_path));
+  ink_strlcpy(pserver_path, Layout::get()->runtimedir, sizeof(pserver_path));
   mgmt_signal_queue = create_queue();
 
   // Set temp. process/manager timeout. Will be reconfigure later.
@@ -205,7 +195,7 @@ ProcessManager::initLMConnection()
   serv_addr.sun_family = AF_UNIX;
 
   snprintf(message, sizeof(message), "%s/%s", pserver_path, LM_CONNECTION_SERVER);
-  ink_strncpy(serv_addr.sun_path, message, sizeof(serv_addr.sun_path));
+  ink_strlcpy(serv_addr.sun_path, message, sizeof(serv_addr.sun_path));
 #if defined(darwin) || defined(freebsd)
   servlen = sizeof(sockaddr_un);
 #else

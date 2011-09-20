@@ -80,7 +80,7 @@ MultiFile::addTableEntries(ExpandingArray * fileList, textBuffer * output)
     output->copyFrom(dataOpen, dataOpenLen);
 
     if (ink_ctime_r(&current->c_time, dateBuf) == NULL) {
-      ink_strncpy(dateBuf, "<em>No time-stamp</em>", sizeof(dateBuf));
+      ink_strlcpy(dateBuf, "<em>No time-stamp</em>", sizeof(dateBuf));
     }
     output->copyFrom(dateBuf, strlen(dateBuf));
     output->copyFrom(dataClose, dataCloseLen);
@@ -141,7 +141,7 @@ MultiFile::WalkFiles(ExpandingArray * fileList)
       if (*fileName != '.' && isManaged(fileName)) {
         fileListEntry = (fileEntry *)ats_malloc(sizeof(fileEntry));
         fileListEntry->c_time = fileInfo.st_ctime;
-        ink_strncpy(fileListEntry->name, fileName, sizeof(fileListEntry->name));
+        ink_strlcpy(fileListEntry->name, fileName, sizeof(fileListEntry->name));
         fileList->addEntry(fileListEntry);
       }
     }
@@ -172,7 +172,7 @@ MultiFile::WalkFiles(ExpandingArray * fileList)
       if (*fileName != '.' && isManaged(fileName)) {
         fileListEntry = (fileEntry *)ats_malloc(sizeof(fileEntry));
         fileListEntry->c_time = fileInfo.st_ctime;
-        strcpy(fileListEntry->name, fileName);
+        ink_strlcpy(fileListEntry->name, fileName, sizeof(fileListEntry->name));
         fileList->addEntry(fileListEntry);
       }
     }
@@ -264,23 +264,23 @@ MultiFile::newPathString(const char *s1, const char *s2)
   if (*s2 == '/') {
     // If addpath is rooted, then rootpath is unused.
     newStr = new char[addLen];
-    strcpy(newStr, s2);
+    ink_strlcpy(newStr, s2, addLen);
     return newStr;
   }
   if (!s1 || !*s1) {
     // If there's no rootpath return the addpath
     newStr = new char[addLen];
-    strcpy(newStr, s2);
+    ink_strlcpy(newStr, s2, addLen);
     return newStr;
   }
   srcLen = strlen(s1);
   newStr = new char[srcLen + addLen + 1];
   ink_assert(newStr != NULL);
 
-  strcpy(newStr, s1);
+  ink_strlcpy(newStr, s1, addLen);
   if (newStr[srcLen - 1] != '/')
     newStr[srcLen++] = '/';
-  strcpy(&newStr[srcLen], s2);
+  ink_strlcpy(&newStr[srcLen], s2, addLen - srcLen);
 
   return newStr;
 }

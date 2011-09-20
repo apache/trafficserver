@@ -1,6 +1,6 @@
 /** @file
 
-  A brief file description
+  Function defs for the Alarms keeper.
 
   @section license License
 
@@ -21,15 +21,6 @@
   limitations under the License.
  */
 
-/*
- *
- * Alarms.cc
- *   Function defs for the Alarms keeper.
- *
- * $Date: 2007-10-05 16:56:44 $
- *
- *
- */
 
 #include "libts.h"
 #include "LocalManager.h"
@@ -249,7 +240,7 @@ Alarms::signalAlarm(alarm_t a, const char *desc, const char *ip)
         }
       }
     } else {
-      ink_strncpy(prev_alarm_text, desc, sizeof(prev_alarm_text));
+      ink_strlcpy(prev_alarm_text, desc, sizeof(prev_alarm_text));
       last_sent = time(0);
     }
   }
@@ -354,7 +345,7 @@ ALARM_REPEAT:
   ats_free(atmp->description);
   const size_t atmp_desc_size = sizeof(char) * (strlen(desc) + 1);
   atmp->description = (char *)ats_malloc(atmp_desc_size);
-  ink_strncpy(atmp->description, desc, atmp_desc_size);
+  ink_strlcpy(atmp->description, desc, atmp_desc_size);
   ink_mutex_release(&mutex);
 
 #if defined(MGMT_API)
@@ -375,8 +366,7 @@ ALARM_REPEAT:
     if (!atmp->description) {
       new_alarm->description = NULL;
     } else {
-      new_alarm->description = (char *)ats_malloc(sizeof(char) * (strlen(atmp->description) + 1));
-      strcpy(new_alarm->description, atmp->description);
+      new_alarm->description = ats_strdup(atmp->description);
     }
 
     // new alarm is complete now add it
@@ -394,17 +384,13 @@ ALARM_REPEAT:
     char *tmp, *tmp2;
     AlarmCallbackFunc func = (AlarmCallbackFunc) ink_hash_table_entry_value(remote_alarms, entry);
     if (ip) {
-      const size_t tmp_size = sizeof(char) * (strlen(ip) + 1);
-      tmp = (char *)ats_malloc(tmp_size);
-      ink_strncpy(tmp, ip, tmp_size);
+      tmp = (char *)ats_strdup(ip);
     } else {
       tmp = NULL;
     }
 
     if (desc) {
-      const size_t tmp2_size = sizeof(char) * (strlen(desc) + 1);
-      tmp2 = (char *)ats_malloc(tmp2_size);
-      ink_strncpy(tmp2, desc, tmp2_size);
+      tmp2 = ats_strdup(desc);
     } else {
       tmp2 = NULL;
     }
@@ -505,7 +491,7 @@ Alarms::constructAlarmMessage(char *ip, char *message, int max)
     return;
   }
 
-  ink_strncpy(&message[n], "type: alarm\n", max - n);
+  ink_strlcpy(&message[n], "type: alarm\n", max - n);
   n += strlen("type: alarm\n");
   bsum = n;
   for (entry = ink_hash_table_iterator_first(local_alarms, &iterator_state);
@@ -522,7 +508,7 @@ Alarms::constructAlarmMessage(char *ip, char *message, int max)
     if (!((n + (int) strlen(buf)) < max)) {
       break;
     }
-    ink_strncpy(&message[n], buf, max - n);
+    ink_strlcpy(&message[n], buf, max - n);
     n += strlen(buf);
   }
 
@@ -533,7 +519,7 @@ Alarms::constructAlarmMessage(char *ip, char *message, int max)
       }
       return;
     }
-    ink_strncpy(&message[n], "alarm: none\n", max - n);
+    ink_strlcpy(&message[n], "alarm: none\n", max - n);
     n += strlen("alarm: none\n");
   }
   ink_mutex_release(&mutex);

@@ -1,6 +1,6 @@
 /** @file
 
-  A brief file description
+  Code for class to manage configuration updates
 
   @section license License
 
@@ -33,12 +33,6 @@
 #include "MgmtSocket.h"
 
 
-/****************************************************************************
- *
- *  FileManager.cc - Code for class to manage configuration updates
- *
- *
- ****************************************************************************/
 
 static const char snapDir[] = "snapshots";
 
@@ -85,7 +79,7 @@ FileManager::FileManager()
     Layout::get()->relative(configTmp, sizeof(configTmp), configTmp);
   }
   if (access(configTmp, R_OK) == -1) {
-    ink_strncpy(configTmp, system_config_directory,sizeof(configTmp));
+    ink_strlcpy(configTmp, system_config_directory,sizeof(configTmp));
     if (access(configTmp, R_OK) == -1) {
         mgmt_elog("[FileManager::FileManager] unable to access() directory '%s': %d, %s\n",
                 mgmt_path, errno, strerror(errno));

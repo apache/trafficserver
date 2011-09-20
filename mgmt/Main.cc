@@ -287,9 +287,9 @@ init_dirs(bool use_librecords = true)
 {
   char buf[PATH_NAME_MAX + 1];
 
-  ink_strncpy(system_config_directory, Layout::get()->sysconfdir, PATH_NAME_MAX);
-  ink_strncpy(system_runtime_dir, Layout::get()->runtimedir, PATH_NAME_MAX);
-  ink_strncpy(system_log_dir, Layout::get()->logdir, PATH_NAME_MAX);
+  ink_strlcpy(system_config_directory, Layout::get()->sysconfdir, sizeof(system_config_directory));
+  ink_strlcpy(system_runtime_dir, Layout::get()->runtimedir, sizeof(system_runtime_dir));
+  ink_strlcpy(system_log_dir, Layout::get()->logdir, sizeof(system_log_dir));
 
   if (access(system_config_directory, R_OK) == -1) {
     if (use_librecords) {
@@ -303,7 +303,7 @@ init_dirs(bool use_librecords = true)
       _exit(1);
     }
   }
-  ink_strncpy(mgmt_path, system_config_directory, sizeof(mgmt_path));
+  ink_strlcpy(mgmt_path, system_config_directory, sizeof(mgmt_path));
 
   if (access(system_runtime_dir, W_OK) == -1) {
     if (use_librecords) {
@@ -405,8 +405,8 @@ main(int argc, char **argv)
 {
   // Before accessing file system initialize Layout engine
   Layout::create();
-  ink_strncpy(system_root_dir, Layout::get()->prefix, PATH_NAME_MAX);
-  ink_strncpy(mgmt_path, Layout::get()->sysconfdir, PATH_NAME_MAX);
+  ink_strlcpy(system_root_dir, Layout::get()->prefix, sizeof(system_root_dir));
+  ink_strlcpy(mgmt_path, Layout::get()->sysconfdir, sizeof(mgmt_path));
 
   // change the directory to the "root" directory
   chdir_root();
@@ -485,12 +485,10 @@ main(int argc, char **argv)
 #if TS_USE_DIAGS
           } else if (strcmp(argv[i], "-debug") == 0) {
             ++i;
-            strncpy(debug_tags, argv[i], 1023);
-            debug_tags[1023] = '\0';
+            ink_strlcpy(debug_tags, argv[i], sizeof(debug_tags));
           } else if (strcmp(argv[i], "-action") == 0) {
             ++i;
-            strncpy(action_tags, argv[i], 1023);
-            action_tags[1023] = '\0';
+            ink_strlcpy(action_tags, argv[i], sizeof(debug_tags));
 #endif
           } else if (strcmp(argv[i], "-path") == 0) {
             ++i;
@@ -500,7 +498,7 @@ main(int argc, char **argv)
               exit(1);
             }
 
-            ink_strncpy(mgmt_path, argv[i], sizeof(mgmt_path));
+            ink_strlcpy(mgmt_path, argv[i], sizeof(mgmt_path));
             /*
                } else if(strcmp(argv[i], "-lmConf") == 0) {
                ++i;
