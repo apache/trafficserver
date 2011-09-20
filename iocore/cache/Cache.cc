@@ -1213,6 +1213,7 @@ Vol::handle_recover_from_data(int event, void *data)
       recover_pos = start;
     }
     io.aiocb.aio_buf = (char *)ats_memalign(sysconf(_SC_PAGESIZE), RECOVERY_SIZE);
+    io.aiocb.aio_nbytes = RECOVERY_SIZE;
     if ((off_t)(recover_pos + io.aiocb.aio_nbytes) > (off_t)(skip + len))
       io.aiocb.aio_nbytes = (skip + len) - recover_pos;
   } else if (event == AIO_EVENT_DONE) {
