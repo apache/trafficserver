@@ -193,13 +193,10 @@ read_MachineList(char *filename, int afd)
   MachineList *l = NULL;
   ink_assert(filename || (afd != -1));
   char p[PATH_NAME_MAX];
-  size_t remaining_str_size = sizeof p;
   if (filename) {
-    ink_strncpy(p, cache_system_config_directory, remaining_str_size);
-    remaining_str_size -= strlen(cache_system_config_directory);
-    strncat(p, "/", remaining_str_size);
-    remaining_str_size--;
-    strncat(p, filename, remaining_str_size);
+    ink_strlcpy(p, cache_system_config_directory, sizeof(p));
+    ink_strlcat(p, "/", sizeof(p));
+    ink_strlcat(p, filename, sizeof(p));
   }
   int fd = ((afd != -1) ? afd : open(p, O_RDONLY));
   if (fd >= 0) {
