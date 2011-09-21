@@ -1860,7 +1860,7 @@ print_detail_stats(const OriginStats * stat, bool json=false)
     std::cout << std::endl;
 
   format_line(json ? "error.client_abort" : "Client aborted", stat->results.errors.client_abort, stat->total, json);
-  format_line(json ? "error.conenct_failed" : "Connect failed", stat->results.errors.connect_fail, stat->total, json);
+  format_line(json ? "error.connect_failed" : "Connect failed", stat->results.errors.connect_fail, stat->total, json);
   format_line(json ? "error.invalid_request" : "Invalid request", stat->results.errors.invalid_req, stat->total, json);
   format_line(json ? "error.unknown" : "Unknown error(99)", stat->results.errors.unknown, stat->total, json);
   format_line(json ? "error.other" : "Other errors", stat->results.errors.other, stat->total, json);

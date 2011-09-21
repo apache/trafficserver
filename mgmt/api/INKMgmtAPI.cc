@@ -1865,7 +1865,7 @@ TSGetErrorMessage(TSError err_id)
     snprintf(msg, sizeof(msg), "[%d] Invalid configuration rule reached.", err_id);
     break;
   case TS_ERR_NET_ESTABLISH:
-    snprintf(msg, sizeof(msg), "[%d] Error establishing socket conenction.", err_id);
+    snprintf(msg, sizeof(msg), "[%d] Error establishing socket connection.", err_id);
     break;
   case TS_ERR_NET_READ:       /* Error reading from socket */
     snprintf(msg, sizeof(msg), "[%d] Error reading from socket.", err_id);

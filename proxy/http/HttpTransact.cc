@@ -2784,7 +2784,7 @@ HttpTransact::build_response_from_cache(State* s, HTTPWarningCode warning_code)
 //
 //
 // Possible Next States From Here:
-// - result of how_to_open_conenction
+// - result of how_to_open_connection
 //
 ///////////////////////////////////////////////////////////////////////////////
 void

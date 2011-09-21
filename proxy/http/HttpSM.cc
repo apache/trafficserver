@@ -2863,7 +2863,7 @@ HttpSM::tunnel_handler_server(int event, HttpTunnelProducer * p)
     // If the client is still around, attach the server session
     // to so the next ka request can use it.  We bind privately to the
     // client to add some degree of affinity to the system.  However,
-    // we turn off private binding when outbound conenctions are being
+    // we turn off private binding when outbound connections are being
     // limit since it makes it too expensive to initiate a purge of idle
     // server keep-alive sessions
     if (ua_session && t_state.client_info.keep_alive == HTTP_KEEPALIVE &&
