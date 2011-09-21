@@ -1,5 +1,7 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.1.1
+  *) TS[962] ypo of key name in logstats.cc. Author: Nick Berry.
+
   *) [TS-958] Fix a few valgrind memory check errors.
 
   *) [TS-567] A number of memory allocation clean up, and improvements. We
