@@ -1,6 +1,6 @@
 /** @file
 
-  A brief file description
+  Support for SRV records
 
   @section license License
 
@@ -19,19 +19,15 @@
   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   See the License for the specific language governing permissions and
   limitations under the License.
- */
 
-/*
-
-  indent -ncs -nut -npcs -l 132 -br SRV.cc
-
+  @section description
         Support for SRV records
 
         http://www.faqs.org/rfcs/rfc2782.html
         http://www.nongnu.org/ruli/
         http://libsrv.cvs.sourceforge.net/libsrv/libsrv/src/libsrv.c
+ */
 
-*/
 
 #include "P_DNS.h"
 
@@ -128,8 +124,7 @@ SRVHosts::getWeightedHost(char *ret_val)
   Debug("dns_srv", "using SRV record of: pri: %d, wei: %d, port: %d, host: %s",
         i->getPriority(), i->getWeight(), i->getPort(), i->getHost());
 
-  ink_strncpy(ret_val, i->getHost(), MAXDNAME);
-  ret_val[MAXDNAME - 1] = '\0';
+  ink_strlcpy(ret_val, i->getHost(), MAXDNAME);
   if (strcmp(ret_val, "") == 0 || strcmp(ret_val, ".") == 0) {
     goto err;
   }

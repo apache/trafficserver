@@ -150,7 +150,7 @@ make_ipv4_ptr(in_addr_t addr, char *buffer)
       *p++ = ((u[0] / 10) % 10) + '0';
     *p++ = u[0] % 10 + '0';
     *p++ = '.';
-    ink_strncpy(p, "in-addr.arpa", MAXDNAME - (p - buffer + 1));    
+    ink_strlcpy(p, "in-addr.arpa", MAXDNAME - (p - buffer + 1));    
 }
 
 void
@@ -168,7 +168,7 @@ make_ipv6_ptr(in6_addr const* addr, char *buffer)
         *p++ = '.';
     }
 
-    ink_strncpy(p, "ip6.arpa", MAXDNAME - (p - buffer + 1));
+    ink_strlcpy(p, "ip6.arpa", MAXDNAME - (p - buffer + 1));
 }
 
 //  Public functions
@@ -389,8 +389,7 @@ DNSEntry::init(const char *x, int len, int qtype_arg,
       qname_len = len;
       qname[len] = 0;
     } else {
-      strncpy(qname, x, MAXDNAME);
-      qname[MAXDNAME - 1] = '\0';
+      ink_strlcpy(qname, x, MAXDNAME);
       qname_len = strlen(qname);
     }
   } else {                    //T_PTR
@@ -1053,7 +1052,7 @@ DNSEntry::mainEvent(int event, Event *e)
         domains = dnsH->m_res->dnsrch;
       if (domains && !strnchr(qname, '.', MAXDNAME)) {
         qname[qname_len] = '.';
-        ink_strncpy(qname + qname_len + 1, *domains, MAXDNAME - (qname_len + 1));
+        ink_strlcpy(qname + qname_len + 1, *domains, MAXDNAME - (qname_len + 1));
         qname_len = strlen(qname);
         ++domains;
       }
@@ -1148,10 +1147,10 @@ dns_result(DNSHandler *h, DNSEntry *e, HostEnt *ent, bool retry) {
           }
           if (e->qname[e->qname_len - 1] != '.') {
             e->qname[e->qname_len] = '.';
-            ink_strncpy(e->qname + e->qname_len + 1, *e->domains, MAXDNAME - (e->qname_len + 1));
+            ink_strlcpy(e->qname + e->qname_len + 1, *e->domains, MAXDNAME - (e->qname_len + 1));
             e->qname_len = strlen(e->qname);
           } else {
-            ink_strncpy(e->qname + e->qname_len, *e->domains, MAXDNAME - e->qname_len);
+            ink_strlcpy(e->qname + e->qname_len, *e->domains, MAXDNAME - e->qname_len);
             e->qname_len = strlen(e->qname);
           }
         } else {
@@ -1160,7 +1159,7 @@ dns_result(DNSHandler *h, DNSEntry *e, HostEnt *ent, bool retry) {
             goto LnextDomain;
           }
           e->qname[e->qname_len] = '.';
-          ink_strncpy(e->qname + e->qname_len + 1, *e->domains, MAXDNAME - (e->qname_len + 1));
+          ink_strlcpy(e->qname + e->qname_len + 1, *e->domains, MAXDNAME - (e->qname_len + 1));
           e->qname_len = strlen(e->qname);
         }
         ++(e->domains);
@@ -1404,7 +1403,7 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
     if (local_num_entries >= DEFAULT_NUM_TRY_SERVER) {
       if ((attempt_num_entries % 50) == 0) {
         try_servers = (try_servers + 1) % SIZE(try_server_names);
-        strncpy(try_server_names[try_servers], e->qname, strlen(e->qname));
+        ink_strlcpy(try_server_names[try_servers], e->qname, MAXDNAME);
         memset(&try_server_names[try_servers][strlen(e->qname)], 0, 1);
         attempt_num_entries = 0;
       }
@@ -1412,7 +1411,7 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
     } else {
       // fill up try_server_names for try_primary_named
       try_servers = local_num_entries++;
-      strncpy(try_server_names[try_servers], e->qname, strlen(e->qname));
+      ink_strlcpy(try_server_names[try_servers], e->qname, MAXDNAME);
       memset(&try_server_names[try_servers][strlen(e->qname)], 0, 1);
     }
 
@@ -1467,7 +1466,7 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
           ++error;
           break;
         }
-        ink_strncpy((char *) bp, (char *) tbuf, buflen);
+        ink_strlcpy((char *) bp, (char *) tbuf, buflen);
         bp += n;
         buflen -= n;
         Debug("dns", "received cname = %s", tbuf);
@@ -1574,7 +1573,7 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
       //
       if (!buf->ent.h_name) {
         Debug("dns", "inserting name = %s", e->qname);
-        ink_strncpy((char *) bp, e->qname, sizeof(buf->hostbuf) - (bp - buf->hostbuf));
+        ink_strlcpy((char *) bp, e->qname, sizeof(buf->hostbuf) - (bp - buf->hostbuf));
         buf->ent.h_name = (char *) bp;
       }
       dns_result(handler, e, buf, retry);
