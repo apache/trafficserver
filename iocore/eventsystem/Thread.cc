@@ -102,6 +102,6 @@ Thread::start(const char* name, ThreadFunction f, void *a, size_t stacksize)
   p->a = a;
   p->me = this;
   memset(p->name, 0, MAX_THREAD_NAME_LENGTH);
-  ink_strncpy(p->name, name, MAX_THREAD_NAME_LENGTH - 1);
+  ink_strlcpy(p->name, name, MAX_THREAD_NAME_LENGTH);
   this->tid = ink_thread_create(spawn_thread_internal, (void *) p, 0, stacksize);
 }
