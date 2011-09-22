@@ -1,6 +1,6 @@
 /** @file
 
-  A brief file description
+  A simple remap plugin for ATS
 
   @section license License
 
@@ -19,13 +19,16 @@
   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   See the License for the specific language governing permissions and
   limitations under the License.
+
+  @section description
+  Build this sample remap plugin using tsxs:
+
+    $ tsxs -v -C remap.cc -o remap.so
+
+  To install it:
+    # tsxs -i -o remap.so
  */
 
-/* ------------------------------------------------------------------------- */
-/* -                            remap.cc                                   - */
-/* ------------------------------------------------------------------------- */
-// remap.cc - simple remap plugin for YTS
-// g++ -D_FILE_OFFSET_BITS=64 -shared -I./ -o remap.so remap.cc
 
 #include <stdio.h>
 #include <stdlib.h>
