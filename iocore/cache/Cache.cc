@@ -1038,7 +1038,7 @@ Vol::init(char *s, off_t blocks, off_t dir_skip, bool clear)
   path = ats_strdup(s);
   const size_t hash_id_size = strlen(s) + 32;
   hash_id = (char *)ats_malloc(hash_id_size);
-  ink_strncpy(hash_id, s, hash_id_size);
+  ink_strlcpy(hash_id, s, hash_id_size);
   const size_t s_size = strlen(s);
   snprintf(hash_id + s_size, (hash_id_size - s_size), " %" PRIu64 ":%" PRIu64 "",
            (uint64_t)dir_skip, (uint64_t)blocks);

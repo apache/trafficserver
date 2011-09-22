@@ -73,10 +73,8 @@ struct ShowCache: public ShowCont {
 
     // process the query string
     if (u->query_get(&query_len)) {
-      strncpy(query, u->query_get(&query_len), query_len);
-      query[query_len] = '\0';
-      strncpy(unescapedQuery, query, query_len);
-      unescapedQuery[query_len] = '\0';
+      ink_strlcpy(query, u->query_get(&query_len), query_len);
+      ink_strlcpy(unescapedQuery, query, query_len);
 
       query_len = unescapifyStr(query);
 
@@ -103,9 +101,7 @@ struct ShowCache: public ShowCont {
       }
       // initialize url array
       show_cache_urlstrs = NEW(new char[nstrings + 1][500]);
-      for (int si = 0; si < nstrings + 1; si++)
-        for (int sj = 0; sj < 500; sj++)
-          show_cache_urlstrs[si][sj] = '\0';    // zeroing out mem
+      memset(show_cache_urlstrs, '\0', (nstrings + 1) * 500 * sizeof (char *));
 
       char *q, *t;
       p = strstr(unescapedQuery, "url=");
@@ -119,8 +115,7 @@ struct ShowCache: public ShowCont {
           q = strstr(p, "%0D%0A");      // we used this in the JS to separate urls
           if (!q)
             q = t;
-          strncpy(show_cache_urlstrs[s], p, q - p);
-          show_cache_urlstrs[s][q - p] = '\0';
+          ink_strlcpy(show_cache_urlstrs[s], p, sizeof(show_cache_urlstrs[s]));
           p = q + 6;            // +6 ==> strlen(%0D%0A)
         }
       }
