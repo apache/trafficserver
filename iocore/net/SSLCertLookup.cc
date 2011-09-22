@@ -163,7 +163,7 @@ SSLCertLookup::extractIPAndCert(matcher_line * line_info, char **addr, char **ce
         int buf_len = sizeof(char) * (strlen(value) + 1);
 
         *addr = (char *)ats_malloc(buf_len);
-        ink_strncpy(*addr, (const char *) value, buf_len);
+        ink_strlcpy(*addr, (const char *) value, buf_len);
 //              testAddr = inet_addr (addr);
       }
     }
@@ -173,7 +173,7 @@ SSLCertLookup::extractIPAndCert(matcher_line * line_info, char **addr, char **ce
         int buf_len = sizeof(char) * (strlen(value) + 1);
 
         *cert = (char *)ats_malloc(buf_len);
-        ink_strncpy(*cert, (const char *) value, buf_len);
+        ink_strlcpy(*cert, (const char *) value, buf_len);
       }
     }
 
@@ -182,7 +182,7 @@ SSLCertLookup::extractIPAndCert(matcher_line * line_info, char **addr, char **ce
         int buf_len = sizeof(char) * (strlen(value) + 1);
 
         *priKey = (char *)ats_malloc(buf_len);
-        ink_strncpy(*priKey, (const char *) value, buf_len);
+        ink_strlcpy(*priKey, (const char *) value, buf_len);
       }
     }
   }

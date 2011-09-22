@@ -100,7 +100,7 @@ init_diags(char *bdt, char *bat)
 {
   FILE *diags_log_fp;
   char diags_logpath[500];
-  strcpy(diags_logpath, DIAGS_LOG_FILE);
+  ink_strlcpy(diags_logpath, DIAGS_LOG_FILE, sizeof(diags_logpath));
 
   diags_log_fp = fopen(diags_logpath, "a+");
   if (diags_log_fp) {

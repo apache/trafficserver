@@ -364,7 +364,7 @@ SSLNetProcessor::initSSLServerCTX(SslConfigParams * param, SSL_CTX * lCtx,
     const size_t completeServerCertPathSize = strlen(param->getServerCertPathOnly()) + strlen(serverCertPtr) + 1;
     completeServerCertPath = (char *)ats_malloc(completeServerCertPathSize);
 
-    ink_strncpy(completeServerCertPath, (const char *) param->getServerCertPathOnly(), completeServerCertPathSize);
+    ink_strlcpy(completeServerCertPath, (const char *) param->getServerCertPathOnly(), completeServerCertPathSize);
     ink_strlcat(completeServerCertPath, serverCertPtr, completeServerCertPathSize);
     if (SSL_CTX_use_certificate_file(lCtx, completeServerCertPath, SSL_FILETYPE_PEM) <= 0) {
       logSSLError("Cannot use server certificate file");

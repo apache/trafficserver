@@ -185,7 +185,7 @@ test_main()
   resp_blk = new_IOBufferBlock();
   resp_blk->alloc(6);
   char *b = resp_blk->start();
-  strcpy(b, response_hdr);
+  ink_strlcpy(b, response_hdr, resp_blk->block_size());
   memset(b + strlen(response_hdr), 'x', 8000);
   resp_blk->fill(doc_len = strlen(response_hdr) + 8000);
 
