@@ -107,6 +107,7 @@ int Net_GetNetworkIntCount();
 int Net_GetNetworkInt(int int_num, char *interface, size_t interface_len);
 int Net_GetNIC_Protocol(char *interface, char *protocol, size_t protocol_len);
 int Net_GetNIC_Start(char *interface, char *start, size_t start_len);
+int Net_GetNIC_Status(char *interface, char *status, size_t status_len);
 int Net_SetNIC_Up(char *interface, char *onboot, char *protocol, char *ip, char *netmask, const char *gateway);
 int Net_GetNIC_Gateway(char *interface, char *gateway, size_t gateway_len);
 int Net_GetNIC_Netmask(char *interface, char *netmask, size_t netmask_len);
@@ -1883,16 +1884,18 @@ Net_SetNIC_Up(char *interface, char *onboot, char *protocol, char *ip, char *net
   Net_GetDefaultRouter(default_gateway, sizeof(default_gateway));
 
   if (strcmp(onboot, "onboot") == 0) {
-    ink_strlcpy(onboot_bool, "1", sizeof(onboot_bool));
+    onboot[0] = '1';
   } else {
-    ink_strlcpy(onboot_bool, "0", sizeof(onboot_bool));
+    onboot[0] = '0';
   }
+  onboot[1] = '\0';
 
   if (strcmp(protocol, "dhcp") == 0) {
-    ink_strlcpy(protocol_bool, "0", sizeof(protocol_bool));
+    protocol[0] = '0';
   } else {
-    ink_strlcpy(protocol_bool, "1", sizeof(protocol_bool));
+    protocol[0] = '1';
   }
+  protocol[1] = '\0';
 
   status = NetConfig_Action(NETCONFIG_INTF_UP, interface, protocol, ip, netmask, onboot, gateway,
                             old_ip, old_mask, old_gateway, default_gateway);
