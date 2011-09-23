@@ -3,7 +3,6 @@ Copyright 2010 The Apache Software Foundation
 
 This product includes software developed at
 The Apache Software Foundation (http://www.apache.org/).
-Pavlov Media (http://pavlovmedia.com)
 Network Geographics (http://network-geographics.com)
 ~~~
 
@@ -19,8 +18,5 @@ You may obtain a copy of the License at
 
 ~~~
 
-lib/wccp developed by Network Geographics on behalf of Pavlov Media.
-Copyright (C) 2010 Pavlov Media, Inc.
-
-lib/tsconfig
+lib/wccp and lib/tsconfig developed by Network Geographics.
 Copyright (C) 2010 Network Geographics, Inc.

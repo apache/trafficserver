@@ -902,7 +902,6 @@ HttpTransact::EndRemapRequest(State* s)
         build_error_response(s, HTTP_STATUS_MOVED_TEMPORARILY, "Redirect For Explanation", "request#no_host",
                              "\"<em>%s</em>\".<p>", redirect_url);
         s->hdr_info.client_response.value_set(MIME_FIELD_LOCATION, MIME_LEN_LOCATION, redirect_url, redirect_url_len);
-      // Pavlov - here is where to handle getting the origin server address
       // socket when there is no host. Need to handle DNS failure elsewhere.
       } else if (host == NULL) {    /* no host */
         build_error_response(s, HTTP_STATUS_BAD_REQUEST, "Host Header Required", "request#no_host",
