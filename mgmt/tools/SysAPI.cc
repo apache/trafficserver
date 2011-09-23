@@ -47,6 +47,20 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
+
+#endif
+
+#if defined(solaris)
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/time.h>
+#include <stdarg.h>
+
+
+#include "ParseRules.h"
+
+#endif
+
 #define NETCONFIG_HOSTNAME  0
 #define NETCONFIG_GATEWAY   1
 #define NETCONFIG_DOMAIN    2
@@ -67,6 +81,28 @@
 #define DPRINTF(x)
 #endif
 
+
+const char *
+strcasestr(char *container, char *substr)
+{
+  return ParseRules::strcasestr(container, substr);
+}
+
+// go through string, ane terminate it with \0
+void
+makeStr(char *str)
+{
+  char *p = str;
+  while (*p) {
+    if (*p == '\n') {
+      *p = '\0';
+      return;
+    }
+    p++;
+  }
+}
+
+
 int NetConfig_Action(int index, ...);
 int TimeConfig_Action(int index, bool restart, ...);
 int Net_GetNIC_Values(char *interface, char *status, char *onboot, char *static_ip, char *ip, char *netmask,
@@ -80,7 +116,7 @@ Net_GetHostname(char *hostname, size_t hostname_len)
   hostname[0] = 0;
   return (gethostname(hostname, hostname_len));
 }
-
+  
 int
 Net_SetHostname(char *hostname)
 {
@@ -120,7 +156,12 @@ Net_SetHostname(char *hostname)
       if (strlen(name) > 0) {
         Net_GetNIC_Status(name, nic_status, sizeof(nic_status));
         Net_GetNIC_Protocol(name, protocol, sizeof(protocol));
-        if ((strcmp("up", nic_status) == 0) && (!found) && (strcasecmp(protocol, "dhcp") != 0)) {
+#if !defined (solaris)
+        if ((strcmp("up", nic_status) == 0) && (!found) ) {
+#else
+        if ((strcmp("up", nic_status) == 0) && (!found)  
+            && (strcasecmp(protocol, "dhcp") != 0)) {
+#endif
           //we can use this interface
           Net_GetNIC_IP(name, ip_addr, sizeof(ip_addr));
           found = true;
@@ -148,59 +189,6 @@ isLineCommented(char *line)
     p++;
   }
   return true;
-}
-
-
-int
-Net_GetDefaultRouter(char *router, size_t router_len)
-{
-
-  int value;
-  router[0] = '\0';
-  value = find_value("/etc/sysconfig/network", "GATEWAY", router, router_len, "=", 0);
-  DPRINTF(("[Net_GetDefaultRouter] Find returned %d\n", value));
-  if (value) {
-    return !value;
-  } else {
-    char command[80];
-    const char *tmp_file = "/tmp/route_status";
-    char buffer[256];
-    FILE *fp;
-
-    ink_strlcpy(command, "/sbin/route -n > /tmp/route_status", sizeof(command));
-    remove(tmp_file);
-    if (system(command) == -1) {
-      DPRINTF(("[Net_GetDefaultRouter] run route -n\n"));
-      return -1;
-    }
-
-    fp = fopen(tmp_file, "r");
-    if (fp == NULL) {
-      DPRINTF(("[Net_GetDefaultRouter] can not open the temp file\n"));
-      return -1;
-    }
-
-    char *gw_start;
-    bool find_UG = false;
-    NOWARN_UNUSED_RETURN(fgets(buffer, 256, fp));
-    while (!feof(fp)) {
-      if (strstr(buffer, "UG") != NULL) {
-        find_UG = true;
-        strtok(buffer, " \t");
-        gw_start = strtok(NULL, " \t");
-        break;
-      }
-      NOWARN_UNUSED_RETURN(fgets(buffer, 256, fp));
-    }
-    if (find_UG) {
-      ink_strlcpy(router, gw_start, router_len);
-      fclose(fp);
-      return 0;
-    }
-    fclose(fp);
-  }
-  return 1;
-
 }
 
 int
@@ -255,6 +243,7 @@ Net_SetDomain(const char *domain)
   return status;
 }
 
+
 int
 Net_GetDNS_Servers(char *dns, size_t dns_len)
 {
@@ -283,7 +272,6 @@ Net_SetDNS_Servers(char *dns)
   }
   // check all IP addresses for validity
   ink_strlcpy(buff, dns, sizeof(buff));
-  buff[511] = '\0';
   tmp1 = buff;
   while ((tmp2 = strtok(tmp1, " \t")) != NULL) {
     DPRINTF(("Net_SetDNS_Servers: tmp2 %s\n", tmp2));
@@ -300,6 +288,397 @@ Net_SetDNS_Servers(char *dns)
 
   return status;
 }
+
+int
+Net_SetNIC_Down(char *interface)
+{
+  int status;
+  char ip[80];
+
+  if (!Net_IsValid_Interface(interface))
+    return -1;
+
+  status = NetConfig_Action(NETCONFIG_INTF_DOWN, interface);
+  if (status) {
+    return status;
+  }
+
+  Net_GetNIC_IP(interface, ip, sizeof(ip));
+
+  return status;
+}
+
+int
+Net_SetNIC_StartOnBoot(char *interface, char *onboot)
+{
+  char nic_protocol[80], nic_ip[80], nic_netmask[80], nic_gateway[80];
+
+  Net_GetNIC_Protocol(interface, nic_protocol, sizeof(nic_protocol));
+  Net_GetNIC_IP(interface, nic_ip, sizeof(nic_ip));
+  Net_GetNIC_Netmask(interface, nic_netmask, sizeof(nic_netmask));
+  Net_GetNIC_Gateway(interface, nic_gateway, sizeof(nic_gateway));
+
+  return (Net_SetNIC_Up(interface, onboot, nic_protocol, nic_ip, nic_netmask, nic_gateway));
+}
+
+int
+Net_SetNIC_BootProtocol(char *interface, char *nic_protocol)
+{
+  char nic_boot[80], nic_ip[80], nic_netmask[80], nic_gateway[80];
+#if !defined(freebsd) && !defined(darwin)
+  Net_GetNIC_Start(interface, nic_boot, sizeof(nic_boot));
+  Net_GetNIC_IP(interface, nic_ip, sizeof(nic_ip));
+  Net_GetNIC_Netmask(interface, nic_netmask, sizeof(nic_netmask));
+  Net_GetNIC_Gateway(interface, nic_gateway, sizeof(nic_gateway));
+
+  return (Net_SetNIC_Up(interface, nic_boot, nic_protocol, nic_ip, nic_netmask, nic_gateway));
+#else
+  return -1;
+#endif
+}
+
+int
+Net_SetNIC_IP(char *interface, char *nic_ip)
+{
+#if !defined(freebsd) && !defined(darwin) && !defined(solaris)
+  char nic_boot[80], nic_protocol[80], nic_netmask[80], nic_gateway[80], old_ip[80];
+  Net_GetNIC_IP(interface, old_ip, sizeof(old_ip));
+  Net_GetNIC_Start(interface, nic_boot, sizeof(nic_boot));
+  Net_GetNIC_Protocol(interface, nic_protocol, sizeof(nic_protocol));
+  Net_GetNIC_Netmask(interface, nic_netmask, sizeof(nic_netmask));
+  Net_GetNIC_Gateway(interface, nic_gateway, sizeof(nic_gateway));
+
+  return (Net_SetNIC_Up(interface, nic_boot, nic_protocol, nic_ip, nic_netmask, nic_gateway));
+#else
+  return -1;
+#endif
+}
+
+int
+Net_SetNIC_Netmask(char *interface, char *nic_netmask)
+{
+#if !defined(freebsd) && !defined(darwin) && !defined(solaris)
+  char nic_boot[80], nic_protocol[80], nic_ip[80], nic_gateway[80];
+  Net_GetNIC_Start(interface, nic_boot, sizeof(nic_boot));
+  Net_GetNIC_Protocol(interface, nic_protocol, sizeof(nic_protocol));
+  Net_GetNIC_IP(interface, nic_ip, sizeof(nic_ip));
+  Net_GetNIC_Gateway(interface, nic_gateway, sizeof(nic_gateway));
+
+  return (Net_SetNIC_Up(interface, nic_boot, nic_protocol, nic_ip, nic_netmask, nic_gateway));
+#else
+  return -1;
+#endif
+}
+
+int
+Net_SetNIC_Gateway(char *interface, char *nic_gateway)
+{
+#if !defined(freebsd) && !defined(darwin) && !defined(solaris)
+  char nic_boot[80], nic_protocol[80], nic_ip[80], nic_netmask[80];
+  Net_GetNIC_Start(interface, nic_boot, sizeof(nic_boot));
+  Net_GetNIC_Protocol(interface, nic_protocol, sizeof(nic_protocol));
+  Net_GetNIC_IP(interface, nic_ip, sizeof(nic_ip));
+  Net_GetNIC_Netmask(interface, nic_netmask, sizeof(nic_netmask));
+  DPRINTF(("Net_SetNIC_Gateway:: interface %s onboot %s protocol %s ip %s netmask %s gateway %s\n", interface, nic_boot,
+           nic_protocol, nic_ip, nic_netmask, nic_gateway));
+
+  return (Net_SetNIC_Up(interface, nic_boot, nic_protocol, nic_ip, nic_netmask, nic_gateway));
+#else
+  return -1;
+#endif
+}
+
+int
+Net_IsValid_Interface(char *interface)
+{
+  char name[80];
+
+  if (interface == NULL) {
+    return 0;
+  }
+  int count = Net_GetNetworkIntCount();
+  for (int i = 0; i < count; i++) {
+    Net_GetNetworkInt(i, name, sizeof(name));
+    if (strcmp(name, interface) == 0)
+      return 1;
+  }
+  return 0;
+}
+
+int
+find_value(const char *pathname, const char *key, char *value, size_t value_len, const char *delim, int no)
+{
+  char buffer[1024];
+  char *pos;
+  char *open_quot, *close_quot;
+  FILE *fp;
+  int find = 0;
+  int counter = 0;
+
+  int str_len = strlen(key);
+
+  value[0] = 0;
+  // coverity[fs_check_call]
+  if (access(pathname, R_OK)) {
+    return find;
+  }
+  // coverity[toctou]
+  if ((fp = fopen(pathname, "r")) != NULL) {
+    NOWARN_UNUSED_RETURN(fgets(buffer, 1024, fp));
+
+    while (!feof(fp)) {
+      if (!isLineCommented(buffer) &&   // skip if line is commented
+          (strstr(buffer, key) != NULL) && ((strncmp((buffer + str_len), "=", 1) == 0) ||
+                                            (strncmp((buffer + str_len), " ", 1) == 0) ||
+                                            (strncmp((buffer + str_len), "\t", 1) == 0))) {
+        if (counter != no) {
+          counter++;
+        } else {
+          find = 1;
+
+          pos = strstr(buffer, delim);
+          if (pos == NULL && (strcmp(delim, " ") == 0)) {       // anniec - give tab a try
+            pos = strstr(buffer, "\t");
+          }
+          if (pos != NULL) {
+            pos++;
+            if ((open_quot = strchr(pos, '"')) != NULL) {
+              pos = open_quot + 1;
+              close_quot = strrchr(pos, '"');
+              *close_quot = '\0';
+            }
+            //Bug49159, Dell use "'" in the ifcfg-ethx file
+            else if ((open_quot = strchr(pos, '\'')) != NULL) {
+              pos = open_quot + 1;
+              close_quot = strrchr(pos, '\'');
+              *close_quot = '\0';
+            }
+            //filter the comment on the same line
+            char *cur;
+            cur = pos;
+            while (*cur != '#' && *cur != '\0') {
+              cur++;
+            }
+            *cur = '\0';
+
+            ink_strlcpy(value, pos, value_len);
+
+            if (value[strlen(value) - 1] == '\n') {
+              value[strlen(value) - 1] = '\0';
+            }
+          }
+          break;
+        }
+      }
+      NOWARN_UNUSED_RETURN(fgets(buffer, 1024, fp));
+    }
+    fclose(fp);
+  }
+  return find;
+}
+
+int
+Time_GetTime(char *hour, const size_t hourSize, char *minute, const size_t minuteSize, char *second,
+             const size_t secondSize)
+{
+  int status;
+  struct tm *my_tm;
+  struct timeval tv;
+
+  status = gettimeofday(&tv, NULL);
+  if (status != 0) {
+    return status;
+  }
+  my_tm = localtime(&(tv.tv_sec));
+
+  snprintf(hour, hourSize, "%d", my_tm->tm_hour);
+  snprintf(minute, minuteSize, "%d", my_tm->tm_min);
+  snprintf(second, secondSize, "%d", my_tm->tm_sec);
+
+  return status;
+}
+
+int
+Time_SetTime(bool restart, char *hour, char *minute, char *second)
+{
+  int status;
+
+  status = TimeConfig_Action(TIMECONFIG_TIME, restart, hour, minute, second);
+
+  return status;
+}
+
+int
+Time_SetTimezone(bool restart, char *timezone)
+{
+  int status;
+
+  status = TimeConfig_Action(3, restart, timezone);
+
+  return status;
+}
+
+int
+Time_GetDate(char *month, const size_t monthSize, char *day, const size_t daySize, char *year, const size_t yearSize)
+{
+  int status;
+  struct tm *my_tm;
+  struct timeval tv;
+
+  status = gettimeofday(&tv, NULL);
+  if (status != 0) {
+    return status;
+  }
+  my_tm = localtime(&(tv.tv_sec));
+
+  snprintf(month, monthSize, "%d", my_tm->tm_mon + 1);
+  snprintf(day, daySize, "%d", my_tm->tm_mday);
+  snprintf(year, yearSize, "%d", my_tm->tm_year + 1900);
+
+  return status;
+}
+
+int
+Time_SetDate(bool restart, char *month, char *day, char *year)
+{
+  int status;
+
+  status = TimeConfig_Action(TIMECONFIG_DATE, restart, month, day, year);
+
+  return status;
+}
+
+int
+TimeConfig_Action(int index, bool restart ...)
+{
+  const char *argv[20];
+  pid_t pid;
+  int status;
+
+  va_list ap;
+  va_start(ap, restart);
+
+  argv[0] = "time_config";
+  if (restart) {
+    argv[1] = "1";
+  } else {
+    argv[1] = "0";
+  }
+
+  switch (index) {
+  case TIMECONFIG_TIME:
+    argv[2] = "1";
+    argv[3] = va_arg(ap, char *);
+    argv[4] = va_arg(ap, char *);
+    argv[5] = va_arg(ap, char *);
+    argv[6] = NULL;
+    break;
+  case TIMECONFIG_DATE:
+    argv[2] = "2";
+    argv[3] = va_arg(ap, char *);
+    argv[4] = va_arg(ap, char *);
+    argv[5] = va_arg(ap, char *);
+    argv[6] = NULL;
+    break;
+  case TIMECONFIG_TIMEZONE:
+    argv[2] = "3";
+    argv[3] = va_arg(ap, char *);
+    argv[4] = NULL;
+    break;
+  case TIMECONFIG_NTP:
+    argv[2] = "4";
+    argv[3] = va_arg(ap, char *);
+    argv[4] = NULL;
+    break;
+  }
+  va_end(ap);
+
+  if ((pid = fork()) < 0) {
+    exit(1);
+  } else if (pid > 0) {
+    wait(&status);
+  } else {
+    int res;
+
+    //close(1);  // close STDOUT
+    //close(2);  // close STDERR
+
+    char *command_path;
+
+    command_path = Layout::relative_to(Layout::get()->bindir, "time_config");
+    res = execv(command_path, (char* const*)argv);
+
+    ats_free(command_path);
+    if (res != 0) {
+      DPRINTF(("[SysAPI] fail to call time_config\n"));
+    }
+    _exit(res);
+  }
+  return 0;
+}
+
+int
+Net_SetSMTP_Server(char *server)
+{
+  NOWARN_UNUSED(server);
+  return 0;
+}
+
+
+#if defined(linux) || defined(freebsd) || defined(darwin)
+
+int
+Net_GetDefaultRouter(char *router, size_t router_len)
+{
+
+  int value;
+  router[0] = '\0';
+  value = find_value("/etc/sysconfig/network", "GATEWAY", router, router_len, "=", 0);
+  DPRINTF(("[Net_GetDefaultRouter] Find returned %d\n", value));
+  if (value) {
+    return !value;
+  } else {
+    char command[80];
+    const char *tmp_file = "/tmp/route_status";
+    char buffer[256];
+    FILE *fp;
+
+    ink_strlcpy(command, "/sbin/route -n > /tmp/route_status", sizeof(command));
+    remove(tmp_file);
+    if (system(command) == -1) {
+      DPRINTF(("[Net_GetDefaultRouter] run route -n\n"));
+      return -1;
+    }
+
+    fp = fopen(tmp_file, "r");
+    if (fp == NULL) {
+      DPRINTF(("[Net_GetDefaultRouter] can not open the temp file\n"));
+      return -1;
+    }
+
+    char *gw_start;
+    bool find_UG = false;
+    NOWARN_UNUSED_RETURN(fgets(buffer, 256, fp));
+    while (!feof(fp)) {
+      if (strstr(buffer, "UG") != NULL) {
+        find_UG = true;
+        strtok(buffer, " \t");
+        gw_start = strtok(NULL, " \t");
+        break;
+      }
+      NOWARN_UNUSED_RETURN(fgets(buffer, 256, fp));
+    }
+    if (find_UG) {
+      ink_strlcpy(router, gw_start, router_len);
+      fclose(fp);
+      return 0;
+    }
+    fclose(fp);
+  }
+  return 1;
+
+}
+
 
 int
 Net_GetDNS_Server(char *server, size_t server_len, int no)
@@ -568,103 +947,6 @@ Net_GetNIC_Gateway(char *interface, char *gateway, size_t gateway_len)
 }
 
 int
-Net_SetNIC_Down(char *interface)
-{
-  int status;
-  char ip[80];
-
-  if (!Net_IsValid_Interface(interface))
-    return -1;
-
-  status = NetConfig_Action(NETCONFIG_INTF_DOWN, interface);
-  if (status) {
-    return status;
-  }
-
-  Net_GetNIC_IP(interface, ip, sizeof(ip));
-
-  return status;
-}
-
-int
-Net_SetNIC_StartOnBoot(char *interface, char *onboot)
-{
-  char nic_protocol[80], nic_ip[80], nic_netmask[80], nic_gateway[80];
-
-  Net_GetNIC_Protocol(interface, nic_protocol, sizeof(nic_protocol));
-  Net_GetNIC_IP(interface, nic_ip, sizeof(nic_ip));
-  Net_GetNIC_Netmask(interface, nic_netmask, sizeof(nic_netmask));
-  Net_GetNIC_Gateway(interface, nic_gateway, sizeof(nic_gateway));
-
-  return (Net_SetNIC_Up(interface, onboot, nic_protocol, nic_ip, nic_netmask, nic_gateway));
-}
-
-int
-Net_SetNIC_BootProtocol(char *interface, char *nic_protocol)
-{
-  char nic_boot[80], nic_ip[80], nic_netmask[80], nic_gateway[80];
-#if !defined(freebsd) && !defined(darwin)
-  Net_GetNIC_Start(interface, nic_boot, sizeof(nic_boot));
-  Net_GetNIC_IP(interface, nic_ip, sizeof(nic_ip));
-  Net_GetNIC_Netmask(interface, nic_netmask, sizeof(nic_netmask));
-  Net_GetNIC_Gateway(interface, nic_gateway, sizeof(nic_gateway));
-#endif
-  return (Net_SetNIC_Up(interface, nic_boot, nic_protocol, nic_ip, nic_netmask, nic_gateway));
-}
-
-int
-Net_SetNIC_IP(char *interface, char *nic_ip)
-{
-  //int status;
-#if !defined(freebsd) && !defined(darwin)
-  char nic_boot[80], nic_protocol[80], nic_netmask[80], nic_gateway[80], old_ip[80];
-  Net_GetNIC_IP(interface, old_ip, sizeof(old_ip));
-  Net_GetNIC_Start(interface, nic_boot, sizeof(nic_boot));
-  Net_GetNIC_Protocol(interface, nic_protocol, sizeof(nic_protocol));
-  Net_GetNIC_Netmask(interface, nic_netmask, sizeof(nic_netmask));
-  Net_GetNIC_Gateway(interface, nic_gateway, sizeof(nic_gateway));
-
-  return (Net_SetNIC_Up(interface, nic_boot, nic_protocol, nic_ip, nic_netmask, nic_gateway));
-#else
-  return -1;
-#endif
-}
-
-int
-Net_SetNIC_Netmask(char *interface, char *nic_netmask)
-{
-#if !defined(freebsd) && !defined(darwin) && !defined(solaris)
-  char nic_boot[80], nic_protocol[80], nic_ip[80], nic_gateway[80];
-  Net_GetNIC_Start(interface, nic_boot, sizeof(nic_boot));
-  Net_GetNIC_Protocol(interface, nic_protocol, sizeof(nic_protocol));
-  Net_GetNIC_IP(interface, nic_ip, sizeof(nic_ip));
-  Net_GetNIC_Gateway(interface, nic_gateway, sizeof(nic_gateway));
-
-  return (Net_SetNIC_Up(interface, nic_boot, nic_protocol, nic_ip, nic_netmask, nic_gateway));
-#else
-  return -1;
-#endif
-}
-
-int
-Net_SetNIC_Gateway(char *interface, char *nic_gateway)
-{
-#if !defined(freebsd) && !defined(darwin) && !defined(solaris)
-  char nic_boot[80], nic_protocol[80], nic_ip[80], nic_netmask[80];
-  Net_GetNIC_Start(interface, nic_boot, sizeof(nic_boot));
-  Net_GetNIC_Protocol(interface, nic_protocol, sizeof(nic_protocol));
-  Net_GetNIC_IP(interface, nic_ip, sizeof(nic_ip));
-  Net_GetNIC_Netmask(interface, nic_netmask, sizeof(nic_netmask));
-  DPRINTF(("Net_SetNIC_Gateway:: interface %s onboot %s protocol %s ip %s netmask %s gateway %s\n", interface, nic_boot,
-           nic_protocol, nic_ip, nic_netmask, nic_gateway));
-
-  return (Net_SetNIC_Up(interface, nic_boot, nic_protocol, nic_ip, nic_netmask, nic_gateway));
-#else
-  return -1;
-#endif
-}
-
-int
 Net_SetNIC_Up(char *interface, char *onboot, char *protocol, char *ip, char *netmask, const char *gateway)
 {
   int status;
@@ -736,24 +1018,6 @@ Net_DisableInterface(char *interface)
 
 #endif /* linux */
 
-
-int
-Net_IsValid_Interface(char *interface)
-{
-  char name[80];
-
-  if (interface == NULL) {
-    return 0;
-  }
-  int count = Net_GetNetworkIntCount();
-  for (int i = 0; i < count; i++) {
-    Net_GetNetworkInt(i, name, sizeof(name));
-    if (strcmp(name, interface) == 0)
-      return 1;
-  }
-  return 0;
-}
-
 int
 Sys_User_Root(int *old_euid)
 {
@@ -791,77 +1055,6 @@ Sys_Grp_Inktomi(int egid)
 }
 
 
-int
-find_value(const char *pathname, const char *key, char *value, size_t value_len, const char *delim, int no)
-{
-  char buffer[1024];
-  char *pos;
-  char *open_quot, *close_quot;
-  FILE *fp;
-  int find = 0;
-  int counter = 0;
-
-  int str_len = strlen(key);
-
-  value[0] = 0;
-  // coverity[fs_check_call]
-  if (access(pathname, R_OK)) {
-    return find;
-  }
-  // coverity[toctou]
-  if ((fp = fopen(pathname, "r")) != NULL) {
-    NOWARN_UNUSED_RETURN(fgets(buffer, 1024, fp));
-
-    while (!feof(fp)) {
-      if (!isLineCommented(buffer) &&   // skip if line is commented
-          (strstr(buffer, key) != NULL) && ((strncmp((buffer + str_len), "=", 1) == 0) ||
-                                            (strncmp((buffer + str_len), " ", 1) == 0) ||
-                                            (strncmp((buffer + str_len), "\t", 1) == 0))) {
-        if (counter != no) {
-          counter++;
-        } else {
-          find = 1;
-
-          pos = strstr(buffer, delim);
-          if (pos == NULL && (strcmp(delim, " ") == 0)) {       // anniec - give tab a try
-            pos = strstr(buffer, "\t");
-          }
-          if (pos != NULL) {
-            pos++;
-            if ((open_quot = strchr(pos, '"')) != NULL) {
-              pos = open_quot + 1;
-              close_quot = strrchr(pos, '"');
-              *close_quot = '\0';
-            }
-            //Bug49159, Dell use "'" in the ifcfg-ethx file
-            else if ((open_quot = strchr(pos, '\'')) != NULL) {
-              pos = open_quot + 1;
-              close_quot = strrchr(pos, '\'');
-              *close_quot = '\0';
-            }
-            //filter the comment on the same line
-            char *cur;
-            cur = pos;
-            while (*cur != '#' && *cur != '\0') {
-              cur++;
-            }
-            *cur = '\0';
-
-            ink_strlcpy(value, pos, value_len);
-
-            if (value[strlen(value) - 1] == '\n') {
-              value[strlen(value) - 1] = '\0';
-            }
-          }
-          break;
-        }
-      }
-      NOWARN_UNUSED_RETURN(fgets(buffer, 1024, fp));
-    }
-    fclose(fp);
-  }
-  return find;
-}
 
 int
 Net_IsValid_Hostname(char *hostname)
@@ -1074,78 +1267,6 @@ Time_GetTimezone(char *timezone, size_t timezone_len)
 }
 
 int
-Time_SetTimezone(bool restart, char *timezone)
-{
-  int status;
-
-  status = TimeConfig_Action(3, restart, timezone);
-
-  return status;
-}
-
-int
-Time_GetTime(char *hour, const size_t hourSize, char *minute, const size_t minuteSize, char *second,
-             const size_t secondSize)
-{
-  int status;
-  struct tm *my_tm;
-  struct timeval tv;
-
-  status = gettimeofday(&tv, NULL);
-  if (status != 0) {
-    return status;
-  }
-  my_tm = localtime(&(tv.tv_sec));
-
-  snprintf(hour, hourSize, "%d", my_tm->tm_hour);
-  snprintf(minute, minuteSize, "%d", my_tm->tm_min);
-  snprintf(second, secondSize, "%d", my_tm->tm_sec);
-
-  return status;
-}
-
-int
-Time_SetTime(bool restart, char *hour, char *minute, char *second)
-{
-  int status;
-
-  status = TimeConfig_Action(TIMECONFIG_TIME, restart, hour, minute, second);
-
-  return status;
-}
-
-
-int
-Time_GetDate(char *month, const size_t monthSize, char *day, const size_t daySize, char *year, const size_t yearSize)
-{
-  int status;
-  struct tm *my_tm;
-  struct timeval tv;
-
-  status = gettimeofday(&tv, NULL);
-  if (status != 0) {
-    return status;
-  }
-  my_tm = localtime(&(tv.tv_sec));
-
-  snprintf(month, monthSize, "%d", my_tm->tm_mon + 1);
-  snprintf(day, daySize, "%d", my_tm->tm_mday);
-  snprintf(year, yearSize, "%d", my_tm->tm_year + 1900);
-
-  return status;
-}
-
-int
-Time_SetDate(bool restart, char *month, char *day, char *year)
-{
-  int status;
-
-  status = TimeConfig_Action(TIMECONFIG_DATE, restart, month, day, year);
-
-  return status;
-}
-
-int
 Time_GetNTP_Servers(char *server, size_t server_len)
 {
   server[0] = 0;
@@ -1202,82 +1323,7 @@ Time_SetNTP_Off()
   return status;
 }
 
-int
-TimeConfig_Action(int index, bool restart ...)
-{
-  const char *argv[20];
-  pid_t pid;
-  int status;
 
-  va_list ap;
-  va_start(ap, restart);
-
-  argv[0] = "time_config";
-  if (restart) {
-    argv[1] = "1";
-  } else {
-    argv[1] = "0";
-  }
-
-  switch (index) {
-  case TIMECONFIG_TIME:
-    argv[2] = "1";
-    argv[3] = va_arg(ap, char *);
-    argv[4] = va_arg(ap, char *);
-    argv[5] = va_arg(ap, char *);
-    argv[6] = NULL;
-    break;
-  case TIMECONFIG_DATE:
-    argv[2] = "2";
-    argv[3] = va_arg(ap, char *);
-    argv[4] = va_arg(ap, char *);
-    argv[5] = va_arg(ap, char *);
-    argv[6] = NULL;
-    break;
-  case TIMECONFIG_TIMEZONE:
-    argv[2] = "3";
-    argv[3] = va_arg(ap, char *);
-    argv[4] = NULL;
-    break;
-  case TIMECONFIG_NTP:
-    argv[2] = "4";
-    argv[3] = va_arg(ap, char *);
-    argv[4] = NULL;
-    break;
-  }
-  va_end(ap);
-
-  if ((pid = fork()) < 0) {
-    exit(1);
-  } else if (pid > 0) {
-    wait(&status);
-  } else {
-    int res;
-
-    //close(1);  // close STDOUT
-    //close(2);  // close STDERR
-
-    char *command_path;
-
-    command_path = Layout::relative_to(Layout::get()->bindir, "time_config");
-    res = execv(command_path, (char* const*)argv);
-
-    ats_free(command_path);
-    if (res != 0) {
-      DPRINTF(("[SysAPI] fail to call time_config\n"));
-    }
-    _exit(res);
-  }
-  return 0;
-}
-
-
-int
-Net_SetSMTP_Server(char *server)
-{
-  NOWARN_UNUSED(server);
-  return 0;
-}
 
 int
 Net_GetSMTP_Server(char *server)
@@ -1330,155 +1376,9 @@ Get_Value(char *buffer, size_t buffer_len, char *buf, int location)
   return -1;
 }
 
-
 #endif /* defined(linux) || defined(freebsd) || defined(darwin) */
 
 #if defined(solaris)
-
-#include "SysAPI.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/wait.h>
-#include <sys/time.h>
-#include <stdarg.h>
-#include <string.h>
-
-#include <ctype.h>
-
-#include "ink_string.h"
-
-#include "mgmtapi.h"
-
-#include <arpa/inet.h>
-#include <netinet/in.h>
-#include <sys/types.h>
-
-#include "ParseRules.h"
-
-#define NETCONFIG_HOSTNAME  0
-#define NETCONFIG_GATEWAY   1
-#define NETCONFIG_DOMAIN    2
-#define NETCONFIG_DNS       3
-#define NETCONFIG_INTF_UP   4
-#define NETCONFIG_INTF_DOWN 5
-
-#define TIMECONFIG_ALL	    0
-#define TIMECONFIG_TIME     1
-#define TIMECONFIG_DATE     2
-#define TIMECONFIG_TIMEZONE 3
-#define TIMECONFIG_NTP      4
-
-//#define DEBUG_SYSAPI
-#ifdef DEBUG_SYSAPI
-#define DPRINTF(x)  printf x
-#else
-#define DPRINTF(x)
-#endif
-
-const char *
-strcasestr(char *container, char *substr)
-{
-  return ParseRules::strcasestr(container, substr);
-}
-
-// go through string, ane terminate it with \0
-void
-makeStr(char *str)
-{
-  char *p = str;
-  while (*p) {
-    if (*p == '\n') {
-      *p = '\0';
-      return;
-    }
-    p++;
-  }
-}
-
-int NetConfig_Action(int index, ...);
-int TimeConfig_Action(int index, bool restart, ...);
-int Net_GetNIC_Values(char *interface, char *status, char *onboot, char *static_ip, char *ip, char *netmask,
-                      char *gateway);
-int find_value(const char *pathname, const char *key, char *value, size_t value_len, const char *delim, int no);
-static bool recordRegexCheck(const char *pattern, const char *value);
-
-int
-Net_GetHostname(char *hostname, size_t hostname_len)
-{
-  hostname[0] = 0;
-  return (gethostname(hostname, hostname_len));
-}
-
-int
-Net_SetHostname(char *hostname)
-{
-  int status;
-  char old_hostname[256], protocol[80];
-  char ip_addr[80], name[80], nic_status[80];
-  bool found = false;
-
-  old_hostname[0] = '\0';
-
-  DPRINTF(("Net_SetHostname: hostname %s\n", hostname));
-
-  if (!Net_IsValid_Hostname(hostname)) {
-    DPRINTF(("Net_SetHostname: invalid hostname\n"));
-    return -1;
-  }
-
-  Net_GetHostname(old_hostname,sizeof(old_hostname));
-  if (!strlen(old_hostname)) {
-    DPRINTF(("Net_SetHostname: failed to get old_hostname\n"));
-    return -1;
-  }
-  //Fix for BZ48925 - adding the correct ip to /etc/hosts
-  //First get an IP of a valid interface - we don't care so much which one as we don't
-  //use it in TS - it is just a place holder for Real Proxy with no DNS server (see BZ38199)
-
-  ip_addr[0] = 0;
-  int count = Net_GetNetworkIntCount();
-  if (count == 0) {             //this means we didn't find any interface
-    ip_addr[0] = 0;
-  } else {
-    name[0] = 0;
-    nic_status[0] = 0;
-    protocol[0] = 0;
-    for (int i = 0; i < count; i++) {   //since we are looping - we will get the "last" available IP - doesn't matter to us
-      Net_GetNetworkInt(i, name, sizeof(name)); //we know we have at least one
-      if (name != NULL) {
-        Net_GetNIC_Status(name, nic_status, sizeof(nic_status));
-        Net_GetNIC_Protocol(name, protocol, sizeof(protocol));
-        if ((strcmp("up", nic_status) == 0) && (!found)) {
-          //we can use this interface
-          Net_GetNIC_IP(name, ip_addr, sizeof(ip_addr));
-          found = true;
-        }
-      }
-    }
-  }
-  DPRINTF(("Net_SetHostname: calling INKSetHostname \"%s %s %s\"\n", hostname, old_hostname, ip_addr));
-  status = NetConfig_Action(NETCONFIG_HOSTNAME, hostname, old_hostname, ip_addr);
-
-  return status;
-}
-
-// return true if the line is commented out, or if line is blank
-// return false otherwise
-bool
-isLineCommented(char *line)
-{
-  char *p = line;
-  while (*p) {
-    if (*p == '#')
-      return true;
-    if (!isspace(*p) && *p != '#')
-      return false;
-    p++;
-  }
-  return true;
-}
 
 int
 getDefaultRouterViaNetstat(char *gateway)
@@ -1570,107 +1470,6 @@ Net_GetDefaultRouter(char *router, size_t router_len)
   return 1;                     // follow Linux behavior, return 1 if not found, with no error
 }
 
-int
-Net_SetDefaultRouter(char *router)
-{
-  int status;
-  char old_router[80];
-
-  DPRINTF(("Net_SetDefaultRouter: router %s\n", router));
-
-  if (!Net_IsValid_IP(router)) {
-    DPRINTF(("Net_SetDefaultRouter: invalid IP\n"));
-    return -1;
-  }
-
-
-  Net_GetDefaultRouter(old_router, sizeof(old_router));
-  if (!strlen(old_router)) {
-    DPRINTF(("Net_SetHostname: failed to get old_router\n"));
-    return -1;
-  }
-
-  status = NetConfig_Action(NETCONFIG_GATEWAY, router, old_router);
-  DPRINTF(("Net_SetDefaultRouter: NetConfig_Action returned %d\n", status));
-  if (status) {
-    return status;
-  }
-
-  return status;
-}
-
-int
-Net_GetDomain(char *domain, size_t domain_len)
-{
-  //  domain can be defined using search or domain keyword
-  domain[0] = 0;
-  return !find_value("/etc/resolv.conf", "search", domain, domain_len, " ", 0);
-  /*  if there is bug file against this, we should search for domain keyword as well
-     if (!find_value("/etc/resolv.conf", "search", domain, domain_len, " ", 0)) {
-     return (!find_value("/etc/resolv.conf", "domain", domain, domain_len, " ", 0));
-     }else
-     return 0;
-   */
-}
-
-int
-Net_SetDomain(const char *domain)
-{
-  int status;
-
-  DPRINTF(("Net_SetDomain: domain %s\n", domain));
-
-  status = NetConfig_Action(NETCONFIG_DOMAIN, domain);
-  if (status) {
-    return status;
-  }
-
-  return status;
-}
-
-int
-Net_GetDNS_Servers(char *dns, size_t dns_len)
-{
-  char ip[80];
-  dns[0] = 0;
-  int i = 0;
-  while (find_value("/etc/resolv.conf", "nameserver", ip, sizeof(ip), " ", i++)) {
-    ink_strlcpy(dns, ip, dns_len);
-    ink_strlcat(dns, " ", dns_len);
-  }
-  return 0;
-}
-
-int
-Net_SetDNS_Servers(char *dns)
-{
-  int status;
-  char buff[512];
-  char *tmp1, *tmp2;
-
-  DPRINTF(("Net_SetDNS_Servers: dns %s\n", dns));
-
-  if (dns == NULL) {
-    return -1;
-  }
-  // check all IP addresses for validity
-  ink_strlcpy(buff, dns, sizeof(buff));
-  tmp1 = buff;
-  while ((tmp2 = strtok(tmp1, " \t")) != NULL) {
-    DPRINTF(("Net_SetDNS_Servers: tmp2 %s\n", tmp2));
-    if (!Net_IsValid_IP(tmp2)) {
-      return -1;
-    }
-    tmp1 = NULL;
-  }
-  DPRINTF(("Net_SetDNS_Servers: dns %s\n", dns));
-  status = NetConfig_Action(NETCONFIG_DNS, dns);
-  if (status) {
-    return status;
-  }
-
-  return status;
-}
 
 int
 Net_GetNetworkIntCount()
@@ -2046,115 +1845,6 @@ Net_GetNIC_Gateway(char *interface, char *gateway, size_t gateway_len)
 }
 
 int
-Net_SetNIC_Down(char *interface)
-{
-  int status;
-  char ip[80];
-
-  if (!Net_IsValid_Interface(interface))
-    return -1;
-
-  status = NetConfig_Action(NETCONFIG_INTF_DOWN, interface);
-  if (status) {
-    return status;
-  }
-
-  Net_GetNIC_IP(interface, ip, sizeof(ip));
-
-  return status;
-}
-
-int
-Net_SetNIC_StartOnBoot(char *interface, char *onboot)
-{
-  char nic_protocol[80], nic_ip[80], nic_netmask[80], nic_gateway[80];
-
-  Net_GetNIC_Protocol(interface, nic_protocol,sizeof(nic_protocol));
-  Net_GetNIC_IP(interface, nic_ip, sizeof(nic_ip));
-  Net_GetNIC_Netmask(interface, nic_netmask, sizeof(nic_netmask));
-  Net_GetNIC_Gateway(interface, nic_gateway, sizeof(nic_gateway));
-
-  return (Net_SetNIC_Up(interface, onboot, nic_protocol, nic_ip, nic_netmask, nic_gateway));
-}
-
-int
-Net_SetNIC_BootProtocol(char *interface, char *nic_protocol)
-{
-  char nic_boot[80], nic_ip[80], nic_netmask[80], nic_gateway[80];
-#if !defined(freebsd) && !defined(darwin)
-  Net_GetNIC_Start(interface, nic_boot, sizeof(nic_boot));
-  Net_GetNIC_IP(interface, nic_ip, sizeof(nic_ip));
-  Net_GetNIC_Netmask(interface, nic_netmask, sizeof(nic_netmask));
-  Net_GetNIC_Gateway(interface, nic_gateway, sizeof(nic_gateway));
-
-  return (Net_SetNIC_Up(interface, nic_boot, nic_protocol, nic_ip, nic_netmask, nic_gateway));
-#else
-  return -1;
-#endif
-}
-
-int
-Net_SetNIC_IP(char *interface, char *nic_ip)
-{
-  //int status;
-  // XXX: Why this test?
-  //      We are inside #define host_os == solaris
-  //
-#if !defined(freebsd) && !defined(darwin) && !defined(solaris)
-  char nic_boot[80], nic_protocol[80], nic_netmask[80], nic_gateway[80], old_ip[80];
-  Net_GetNIC_IP(interface, old_ip, sizeof(old_ip));
-  Net_GetNIC_Start(interface, nic_boot);
-  Net_GetNIC_Protocol(interface, nic_protocol);
-  Net_GetNIC_Netmask(interface, nic_netmask, sizeof(nic_netmask));
-  Net_GetNIC_Gateway(interface, nic_gateway);
-
-  return (Net_SetNIC_Up(interface, nic_boot, nic_protocol, nic_ip, nic_netmask, nic_gateway));
-#else
-  return -1;
-#endif
-}
-
-int
-Net_SetNIC_Netmask(char *interface, char *nic_netmask)
-{
-  // XXX: Why this test?
-  //      We are inside #define host_os == solaris
-  //
-#if !defined(freebsd) && !defined(darwin) && !defined(solaris)
-  char nic_boot[80], nic_protocol[80], nic_ip[80], nic_gateway[80];
-  Net_GetNIC_Start(interface, nic_boot);
-  Net_GetNIC_Protocol(interface, nic_protocol);
-  Net_GetNIC_IP(interface, nic_ip, sizeof(nic_ip));
-  Net_GetNIC_Gateway(interface, nic_gateway);
-
-  return (Net_SetNIC_Up(interface, nic_boot, nic_protocol, nic_ip, nic_netmask, nic_gateway));
-#else
-  return -1;
-#endif
-}
-
-int
-Net_SetNIC_Gateway(char *interface, char *nic_gateway)
-{
-  // XXX: Why this test?
-  //      We are inside #define host_os == solaris
-  //
-#if !defined(freebsd) && !defined(darwin) && !defined(solaris)
-  char nic_boot[80], nic_protocol[80], nic_ip[80], nic_netmask[80];
-  Net_GetNIC_Start(interface, nic_boot);
-  Net_GetNIC_Protocol(interface, nic_protocol);
-  Net_GetNIC_IP(interface, nic_ip, sizeof(nic_ip));
-  Net_GetNIC_Netmask(interface, nic_netmask, sizeof(nic_netmask));
-
-  //   DPRINTF(("Net_SetNIC_Gateway:: interface %s onboot %s protocol %s ip %s netmask %s gateway %s\n", interface, nic_boot, nic_protocol, nic_ip, nic_netmask, nic_gateway));
-
-  return (Net_SetNIC_Up(interface, nic_boot, nic_protocol, nic_ip, nic_netmask, nic_gateway));
-#else
-  return -1;
-#endif
-}
-
-int
 Net_SetNIC_Up(char *interface, char *onboot, char *protocol, char *ip, char *netmask, const char *gateway)
 {
   int status;
@@ -2181,21 +1871,16 @@ Net_SetNIC_Up(char *interface, char *onboot, char *protocol, char *ip, char *net
   Net_GetNIC_Gateway(interface, old_gateway, sizeof(old_gateway));
   Net_GetDefaultRouter(default_gateway, sizeof(default_gateway));
 
-  if (strcmp(protocol, "static") == 0) {
-    protocol[0] = '1';
-    protocol[1] = 0;
-  } else if (strcmp(protocol, "dhcp") == 0) {
-    protocol[0] = '0';
-    protocol[1] = 0;
+  if (strcmp(onboot, "onboot") == 0) {
+    ink_strlcpy(onboot_bool, "1", sizeof(onboot_bool));
+  } else {
+    ink_strlcpy(onboot_bool, "0", sizeof(onboot_bool));
   }
 
-
-  if (strcmp(onboot, "onboot") == 0) {
-    protocol[0] = '1';
-    protocol[1] = 0;
-  } else if (strcmp(onboot, "not-onboot") == 0) {
-    protocol[0] = '0';
-    protocol[1] = 0;
+  if (strcmp(protocol, "dhcp") == 0) {
+    ink_strlcpy(protocol_bool, "0", sizeof(protocol_bool));
+  } else {
+    ink_strlcpy(protocol_bool, "1", sizeof(protocol_bool));
   }
 
   status = NetConfig_Action(NETCONFIG_INTF_UP, interface, protocol, ip, netmask, onboot, gateway,
@@ -2209,22 +1894,6 @@ Net_SetNIC_Up(char *interface, char *onboot, char *protocol, char *ip, char *net
   return status;
 }
 
-int
-Net_IsValid_Interface(char *interface)
-{
-  char name[80];
-
-  if (interface == NULL) {
-    return 0;
-  }
-  int count = Net_GetNetworkIntCount();
-  for (int i = 0; i < count; i++) {
-    Net_GetNetworkInt(i, name, sizeof(name));
-    if (strcmp(name, interface) == 0)
-      return 1;
-  }
-  return 0;
-}
 
 int
 Net_IsValid_Hostname(char *hostname)
@@ -2429,77 +2098,6 @@ Time_SortTimezone()
   return 0;
 }
 
-int
-Time_SetTimezone(bool restart, char *timezone)
-{
-  int status;
-
-  status = TimeConfig_Action(3, restart, timezone);
-
-  return status;
-}
-
-int
-Time_GetTime(char *hour, char *minute, char *second)
-{
-  int status;
-  struct tm *my_tm;
-  struct timeval tv;
-
-  status = gettimeofday(&tv, NULL);
-  if (status != 0) {
-    return status;
-  }
-  my_tm = localtime(&(tv.tv_sec));
-
-  sprintf(hour, "%d", my_tm->tm_hour);
-  sprintf(minute, "%d", my_tm->tm_min);
-  sprintf(second, "%d", my_tm->tm_sec);
-
-  return status;
-}
-
-int
-Time_SetTime(bool restart, char *hour, char *minute, char *second)
-{
-  int status;
-
-  status = TimeConfig_Action(TIMECONFIG_TIME, restart, hour, minute, second);
-
-  return status;
-}
-
-
-int
-Time_GetDate(char *month, char *day, char *year)
-{
-  int status;
-  struct tm *my_tm;
-  struct timeval tv;
-
-  status = gettimeofday(&tv, NULL);
-  if (status != 0) {
-    return status;
-  }
-  my_tm = localtime(&(tv.tv_sec));
-
-  sprintf(month, "%d", my_tm->tm_mon + 1);
-  sprintf(day, "%d", my_tm->tm_mday);
-  sprintf(year, "%d", my_tm->tm_year + 1900);
-
-  return status;
-}
-
-int
-Time_SetDate(bool restart, char *month, char *day, char *year)
-{
-  int status;
-
-  status = TimeConfig_Action(TIMECONFIG_DATE, restart, month, day, year);
-
-  return status;
-}
-
 
 int
 Time_SetNTP_Servers(bool restart, char *server)
@@ -2514,87 +2112,6 @@ Time_SetNTP_Servers(bool restart, char *server)
 
 int
 Time_GetNTP_Server(char *server, int no)
-{
-  return 0;
-}
-
-int
-TimeConfig_Action(int index, bool restart ...)
-{
-  const char *argv[20];
-  pid_t pid;
-  int status;
-
-  va_list ap;
-  va_start(ap, restart);
-
-  argv[0] = "time_config";
-  if (restart) {
-    argv[1] = "1";
-  } else {
-    argv[1] = "0";
-  }
-
-  switch (index) {
-  case TIMECONFIG_TIME:
-    argv[2] = "1";
-    argv[3] = va_arg(ap, char *);
-    argv[4] = va_arg(ap, char *);
-    argv[5] = va_arg(ap, char *);
-    argv[6] = NULL;
-    break;
-  case TIMECONFIG_DATE:
-    argv[2] = "2";
-    argv[3] = va_arg(ap, char *);
-    argv[4] = va_arg(ap, char *);
-    argv[5] = va_arg(ap, char *);
-    argv[6] = NULL;
-    break;
-  case TIMECONFIG_TIMEZONE:
-    argv[2] = "3";
-    argv[3] = va_arg(ap, char *);
-    argv[4] = NULL;
-    break;
-  case TIMECONFIG_NTP:
-    argv[2] = "4";
-    argv[3] = va_arg(ap, char *);
-    argv[4] = NULL;
-    break;
-  }
-  va_end(ap);
-
-  if ((pid = fork()) < 0) {
-    exit(1);
-  } else if (pid > 0) {
-    waitpid(pid, &status, 0);
-  } else {
-    int res;
-
-    //close(1);  // close STDOUT
-    //close(2);  // close STDERR
-
-    char *command_path;
-
-    command_path = Layout::relative_to(Layout::get()->bindir, "time_config");
-    res = execv(command_path, (char* const*) argv);
-    ats_free(command_path);
-    if (res != 0) {
-      DPRINTF(("[SysAPI] fail to call time_config"));
-    }
-    _exit(res);
-  }
-
-  return 0;
-}
-
-int
-Net_SetSMTP_Server(char *server)
-{
-  return 0;
-}
-
-int
-Net_GetSMTP_Server(char *server)
 {
   return 0;
 }

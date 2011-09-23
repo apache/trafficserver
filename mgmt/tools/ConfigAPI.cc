@@ -483,9 +483,7 @@ Config_GetTime(char *hour, const size_t hourSize, char *minute, const size_t min
                const size_t secondSize)
 {
   int status = -1;
-#if !defined(freebsd) && !defined(darwin) && !defined(solaris)
   status = Time_GetTime(hour, hourSize, minute, minuteSize, second, secondSize);
-#endif
   return status;
 }
 
@@ -497,9 +495,7 @@ Config_SetTime(bool restart, char *hour, char *minute, char *second)
   if (hour == NULL || minute == NULL || second == NULL) {
     return -1;
   }
-#if !defined(freebsd) && !defined(darwin)
   status = Time_SetTime(restart, hour, minute, second);
-#endif
   return status;
 }
 
@@ -507,9 +503,7 @@ int
 Config_GetDate(char *month, const size_t monthSize, char *day, const size_t daySize, char *year, const size_t yearSize)
 {
   int status = -1;
-#if !defined(freebsd) && !defined(darwin) && !defined(solaris)
   status = Time_GetDate(month, monthSize, day, daySize, year, yearSize);
-#endif
   return status;
 }
 
@@ -521,9 +515,7 @@ Config_SetDate(bool restart, char *month, char *day, char *year)
   if (month == NULL || day == NULL || year == NULL) {
     return -1;
   }
-#if !defined(freebsd) && !defined(darwin) && !defined(solaris)
   status = Time_SetDate(restart, month, day, year);
-#endif
   return status;
 }
 
@@ -634,61 +626,37 @@ Config_SaveVersion(char *file)
 int
 Config_GetNTP_Status(char *status, size_t status_len)
 {
-#if !defined(freebsd) && !defined(darwin) && !defined(solaris)
   return Time_GetNTP_Status(status, status_len);
-#else
-  return -1;
-#endif
 }
 
 int
 Config_SetNTP_Off(void)
 {
-#if !defined(freebsd) && !defined(darwin)
   return Time_SetNTP_Off();
-#else
-  return -1;
-#endif
 }
 
 int
 Config_User_Root(int *old_euid)
 {
-#if !defined(freebsd) && !defined(darwin)
   return Sys_User_Root(old_euid);
-#else
-  return -1;
-#endif
 }
 
 int
 Config_User_Inktomi(int euid)
 {
-#if !defined(freebsd) && !defined(darwin)
   return Sys_User_Inktomi(euid);
-#else
-  return -1;
-#endif
 }
 
 int
 Config_Grp_Root(int *old_egid)
 {
-#if !defined(freebsd) && !defined(darwin)
   return Sys_Grp_Root(old_egid);
-#else
-  return -1;
-#endif
 }
 
 int
 Config_Grp_Inktomi(int egid)
 {
-#if !defined(freebsd) && !defined(darwin)
   return Sys_Grp_Inktomi(egid);
-#else
-  return -1;
-#endif
 }
 
 #if defined(linux)
@@ -1165,21 +1133,13 @@ XmlObject::getXmlTagValueAndAttribute(char *XmlAttribute, const char *XmlTagName
 int
 Config_SetSMTP_Server(char *server)
 {
-#if !defined(freebsd) && !defined(darwin)
   return (Net_SetSMTP_Server(server));
-#else
-  return -1;
-#endif
 }
 
 int
 Config_GetSMTP_Server(char *server)
 {
-#if !defined(freebsd) && !defined(darwin)
   return (Net_GetSMTP_Server(server));
-#else
-  return -1;
-#endif
 }
 
 
