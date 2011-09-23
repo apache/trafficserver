@@ -1401,7 +1401,6 @@ int NetConfig_Action(int index, ...);
 int TimeConfig_Action(int index, bool restart, ...);
 int Net_GetNIC_Values(char *interface, char *status, char *onboot, char *static_ip, char *ip, char *netmask,
                       char *gateway);
-int find_value(const char *pathname, const char *key, char *value, const char *delim, int no);
 static bool recordRegexCheck(const char *pattern, const char *value);
 
 int
@@ -1604,10 +1603,10 @@ Net_GetDomain(char *domain, size_t domain_len)
 {
   //  domain can be defined using search or domain keyword
   domain[0] = 0;
-  return !find_value("/etc/resolv.conf", "search", domain, " ", 0);
+  return !find_value("/etc/resolv.conf", "search", domain, domain_len " ", 0);
   /*  if there is bug file against this, we should search for domain keyword as well
-     if (!find_value("/etc/resolv.conf", "search", domain, " ", 0)) {
-     return (!find_value("/etc/resolv.conf", "domain", domain, " ", 0));
+     if (!find_value("/etc/resolv.conf", "search", domain, domain_len " ", 0)) {
+     return (!find_value("/etc/resolv.conf", "domain", domain, domain_len " ", 0));
      }else
      return 0;
    */
@@ -1634,7 +1633,7 @@ Net_GetDNS_Servers(char *dns, size_t dns_len)
   char ip[80];
   dns[0] = 0;
   int i = 0;
-  while (find_value("/etc/resolv.conf", "nameserver", ip, " ", i++)) {
+  while (find_value("/etc/resolv.conf", "nameserver", ip, sizeof(ip), " ", i++)) {
     ink_strlcpy(dns, ip, dns_len);
     ink_strlcat(dns, " ", dns_len);
   }
@@ -1670,13 +1669,6 @@ Net_SetDNS_Servers(char *dns)
   }
 
   return status;
-}
-
-int
-Net_GetDNS_Server(char *server, int no)
-{
-  server[0] = 0;
-  return (!find_value("/etc/resolv.conf", "nameserver", server, " ", no));
 }
 
 int
