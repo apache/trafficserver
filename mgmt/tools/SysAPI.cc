@@ -78,7 +78,7 @@ int
 Net_GetHostname(char *hostname, size_t hostname_len)
 {
   hostname[0] = 0;
-  return (gethostname(hostname, 256));
+  return (gethostname(hostname, hostname_len));
 }
 
 int
@@ -1401,6 +1401,7 @@ int NetConfig_Action(int index, ...);
 int TimeConfig_Action(int index, bool restart, ...);
 int Net_GetNIC_Values(char *interface, char *status, char *onboot, char *static_ip, char *ip, char *netmask,
                       char *gateway);
+int find_value(const char *pathname, const char *key, char *value, size_t value_len, const char *delim, int no);
 static bool recordRegexCheck(const char *pattern, const char *value);
 
 int
@@ -1603,10 +1604,10 @@ Net_GetDomain(char *domain, size_t domain_len)
 {
   //  domain can be defined using search or domain keyword
   domain[0] = 0;
-  return !find_value("/etc/resolv.conf", "search", domain, domain_len " ", 0);
+  return !find_value("/etc/resolv.conf", "search", domain, domain_len, " ", 0);
   /*  if there is bug file against this, we should search for domain keyword as well
-     if (!find_value("/etc/resolv.conf", "search", domain, domain_len " ", 0)) {
-     return (!find_value("/etc/resolv.conf", "domain", domain, domain_len " ", 0));
+     if (!find_value("/etc/resolv.conf", "search", domain, domain_len, " ", 0)) {
+     return (!find_value("/etc/resolv.conf", "domain", domain, domain_len, " ", 0));
      }else
      return 0;
    */
