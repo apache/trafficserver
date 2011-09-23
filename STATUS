@@ -38,6 +38,21 @@ A list of all bugs open for the next v3.0.2 release can be found at
 
 PATCHES ACCEPTED TO BACKPORT FROM TRUNK:
 
+  *) SSL: Allow for the SSL Cipher Suite to be configured.
+   Trunk patch: http://svn.apache.org/viewvc?view=rev&revision=1147994
+   http://svn.apache.org/viewvc?view=rev&revision=1148983
+   Jira: https://issues.apache.org/jira/browse/TS-730
+   +1: igalic, zwoop, jim
+
+  *) SSL: it's pretty much totally busted, a miracle that it works.
+   Trunk patch: http://svn.apache.org/viewvc?view=rev&revision=1155125
+   Jira: https://issues.apache.org/jira/browse/TS-888
+   +1: zwoop, igalic, jim
+
+  *) Core: dont use malloc.h (fails on FBSD)
+   Trunk patch: http://svn.apache.org/viewvc?view=rev&rev=1159906
+   Jira: https://issues.apache.org/jira/browse/TS-927
+   +1: zwoop, igalic, jim
 
 PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   [ New proposals should be added at the end of the list ]
@@ -48,22 +63,11 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
    Jira: https://issues.apache.org/jira/browse/TS-882
    +1: zwoop
 
-  *) SSL: Allow for the SSL Cipher Suite to be configured.
-   Trunk patch: http://svn.apache.org/viewvc?view=rev&revision=1147994
-   http://svn.apache.org/viewvc?view=rev&revision=1148983
-   Jira: https://issues.apache.org/jira/browse/TS-730
-   +1: igalic, zwoop, jim
-
   *) HTTP: We do not honor / use the configuration option for
      proxy.config.http.forward.proxy_auth_to_parent.
    Trunk patch: http://svn.apache.org/viewvc?view=rev&revision=1154744
    Jira: https://issues.apache.org/jira/browse/TS-906
    +1: zwoop, jim
-
-  *) SSL: it's pretty much totally busted, a miracle that it works.
-   Trunk patch: http://svn.apache.org/viewvc?view=rev&revision=1155125
-   Jira: https://issues.apache.org/jira/browse/TS-888
-   +1: zwoop, igalic, jim
 
   *) API: TSHttpIsInternalRequest() crashes if client connection is
      terminated prematurely
@@ -76,11 +80,6 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
                   http://svn.apache.org/viewvc?view=rev&revision=1159436
    Jira: https://issues.apache.org/jira/browse/TS-867
    +1: zwoop
-
-  *) Core: dont use malloc.h (fails on FBSD)
-   Trunk patch: http://svn.apache.org/viewvc?view=rev&rev=1159906
-   Jira: https://issues.apache.org/jira/browse/TS-927
-   +1: zwoop, igalic, jim
 
   *) Logging: traffic_logstats provides conflicting help
    Trunk patches: http://svn.apache.org/viewvc?view=rev&revision=1152536
