@@ -116,7 +116,7 @@ AIOTestData::ink_aio_stats(int event, void *d)
   ink_hrtime now = ink_get_hrtime();
   double time_msec = (double) (now - start) / (double) HRTIME_MSECOND;
   int i = (aio_reqs[0] == NULL)? 1 : 0;
-  for (; i < num_filedes; i++) {
+  for (; i < num_filedes; ++i)
     printf("%0.2f\t%i\t%i\t%i\n", time_msec, aio_reqs[i]->filedes, aio_reqs[i]->pending, aio_reqs[i]->queued);
   printf("Num Requests: %i Num Queued: %i num Moved: %i\n\n", data->num_req, data->num_queue, data->num_temp);
   eventProcessor.schedule_in(this, HRTIME_MSECONDS(50), ET_CALL);
