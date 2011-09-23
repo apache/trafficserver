@@ -542,8 +542,9 @@ hdrtoken_hash_init()
  *                                                                     *
  ***********************************************************************/
 
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
+/**
+  @return returns 0 for n=0, unit*n for n <= unit
+*/
 
 static inline unsigned int
 snap_up_to_multiple(unsigned int n, unsigned int unit)
@@ -551,9 +552,8 @@ snap_up_to_multiple(unsigned int n, unsigned int unit)
   return (((n + (unit - 1)) / unit) * unit);
 }
 
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
-
+/**
+*/
 void
 hdrtoken_init()
 {
@@ -606,8 +606,9 @@ hdrtoken_init()
       heap_ptr += sizeof(HdrTokenHeapPrefix);   // advance heap ptr past index
       hdrtoken_strs[i] = heap_ptr;      // record string pointer
       // coverity[secure_coding]
-      strcpy((char *) hdrtoken_strs[i], _hdrtoken_strs[i]);     // copy string into heap
+      ink_strlcpy((char *) hdrtoken_strs[i], _hdrtoken_strs[i], heap_size - sizeof(HdrTokenHeapPrefix));     // copy string into heap
       heap_ptr += sstr_len;     // advance heap ptr past string
+      heap_size -= sstr_len;
     }
 
     // Set the token types for certain tokens
