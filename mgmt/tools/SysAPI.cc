@@ -783,6 +783,13 @@ Net_SetSMTP_Server(char *server)
   return 0;
 }
 
+int
+Net_GetSMTP_Server(char *server)
+{
+  NOWARN_UNUSED(server);
+  return 0;
+}
+
 
 #if defined(linux) || defined(freebsd) || defined(darwin)
 
@@ -1336,13 +1343,6 @@ Time_SetNTP_Off()
 }
 
 
-
-int
-Net_GetSMTP_Server(char *server)
-{
-  NOWARN_UNUSED(server);
-  return 0;
-}
 
 #define MV_BINARY "/bin/mv"
 
@@ -1980,7 +1980,7 @@ Time_GetNTP_Server(char *server, int no)
 }
 
 int
-Time_GetNTP_Status(char *status)
+Time_GetNTP_Status(char *status, size_t status_len)
 {
   return 0;
 }
