@@ -103,6 +103,15 @@ makeStr(char *str)
 }
 
 
+int Net_GetNetworkIntCount();
+int Net_GetNetworkInt(int int_num, char *interface, size_t interface_len);
+int Net_GetNIC_Protocol(char *interface, char *protocol, size_t protocol_len);
+int Net_GetNIC_Start(char *interface, char *start, size_t start_len);
+int Net_SetNIC_Up(char *interface, char *onboot, char *protocol, char *ip, char *netmask, const char *gateway);
+int Net_GetNIC_Gateway(char *interface, char *gateway, size_t gateway_len);
+int Net_GetNIC_Netmask(char *interface, char *netmask, size_t netmask_len);
+int Net_GetNIC_IP(char *interface, char *ip, size_t ip_len);
+int Net_GetDefaultRouter(char *router, size_t router_len);
 int NetConfig_Action(int index, ...);
 int TimeConfig_Action(int index, bool restart, ...);
 int Net_GetNIC_Values(char *interface, char *status, char *onboot, char *static_ip, char *ip, char *netmask,
@@ -116,7 +125,107 @@ Net_GetHostname(char *hostname, size_t hostname_len)
   hostname[0] = 0;
   return (gethostname(hostname, hostname_len));
 }
+
+
+int
+Net_IsValid_Hostname(char *hostname)
+{
+
+  if (hostname == NULL) {
+    return 0;
+  } else if (strstr(hostname, " ") != NULL || hostname[strlen(hostname) - 1] == '.') {
+    return 0;
+  } else if (!recordRegexCheck(".+\\..+\\..+", hostname)) {
+    return 0;
+  }
+  return 1;
+}
   
+int
+NetConfig_Action(int index, ...)
+{
+  const char *argv[10];
+  pid_t pid;
+  int status;
+
+  va_list ap;
+  va_start(ap, index);
+
+  argv[0] = "net_config";
+
+  switch (index) {
+  case NETCONFIG_HOSTNAME:
+    argv[1] = "0";
+    argv[2] = va_arg(ap, char *);
+    argv[3] = va_arg(ap, char *);
+    argv[4] = va_arg(ap, char *);
+    argv[5] = NULL;
+    break;
+  case NETCONFIG_GATEWAY:
+    argv[1] = "1";
+    argv[2] = va_arg(ap, char *);
+    argv[3] = va_arg(ap, char *);
+    argv[4] = NULL;
+    break;
+  case NETCONFIG_DOMAIN:
+    argv[1] = "2";
+    argv[2] = va_arg(ap, char *);
+    argv[3] = NULL;
+    break;
+  case NETCONFIG_DNS:
+    argv[1] = "3";
+    argv[2] = va_arg(ap, char *);
+    argv[3] = NULL;
+    break;
+  case NETCONFIG_INTF_UP:
+    argv[1] = "4";
+    argv[2] = va_arg(ap, char *);       // nic_name
+    argv[3] = va_arg(ap, char *);       // static_ip (1/0)
+    argv[4] = va_arg(ap, char *);       // ip
+    argv[5] = va_arg(ap, char *);       // netmask
+    argv[6] = va_arg(ap, char *);       // onboot (1/0)
+    argv[7] = va_arg(ap, char *);       // gateway_ip
+    argv[8] = NULL;
+    break;
+  case NETCONFIG_INTF_DOWN:
+    argv[1] = "5";
+    argv[2] = va_arg(ap, char *);
+    argv[3] = NULL;
+    break;
+  case NETCONFIG_INTF_DISABLE:
+    argv[1] = "8";
+    argv[2] = va_arg(ap, char *);
+    argv[3] = NULL;
+    break;
+  }
+
+  va_end(ap);
+
+  if ((pid = fork()) < 0) {
+    exit(1);
+  } else if (pid > 0) {
+    wait(&status);
+  } else {
+    int res;
+
+    close(1);                   // close STDOUT
+    close(2);                   // close STDERR
+
+    char *command_path;
+
+    command_path = Layout::relative_to(Layout::get()->bindir, "net_config");
+    res = execv(command_path, (char* const*)argv);
+
+    ats_free(command_path);
+    if (res != 0) {
+      DPRINTF(("[SysAPI] fail to call net_config\n"));
+    }
+    _exit(res);
+  }
+
+  return 0;
+}
+
 int
 Net_SetHostname(char *hostname)
 {
@@ -189,6 +298,54 @@ isLineCommented(char *line)
     p++;
   }
   return true;
+}
+
+// return 1 if the IP addr valid, return 0 if invalid
+//    valid IP address is four decimal numbers (0-255) separated by dots
+int
+Net_IsValid_IP(char *ip_addr)
+{
+  char addr[80];
+  char octet1[80], octet2[80], octet3[80], octet4[80];
+  int byte1, byte2, byte3, byte4;
+  char junk[256];
+
+  if (ip_addr == NULL) {
+    return 1;
+  }
+
+  ink_strlcpy(addr, ip_addr, sizeof(addr));
+
+  octet1[0] = '\0';
+  octet2[0] = '\0';
+  octet3[0] = '\0';
+  octet4[0] = '\0';
+  junk[0] = '\0';
+
+  // each of the octet? is not shorter than addr, so no overflow will happen
+  // disable coverity check in this case
+  // coverity[secure_coding]
+  int matches = sscanf(addr, "%[0-9].%[0-9].%[0-9].%[0-9]%[^0-9]",
+                       octet1, octet2, octet3, octet4, junk);
+
+  if (matches != 4) {
+    return 0;
+  }
+
+  byte1 = octet1[0] ? atoi(octet1) : 0;
+  byte2 = octet2[0] ? atoi(octet2) : 0;
+  byte3 = octet3[0] ? atoi(octet3) : 0;
+  byte4 = octet4[0] ? atoi(octet4) : 0;
+
+  if (byte1<0 || byte1> 255 || byte2<0 || byte2> 255 || byte3<0 || byte3> 255 || byte4<0 || byte4> 255) {
+    return 0;
+  }
+
+  if (strlen(junk)) {
+    return 0;
+  }
+
+  return 1;
 }
 
 int
@@ -290,6 +447,23 @@ Net_SetDNS_Servers(char *dns)
 }
 
 int
+Net_IsValid_Interface(char *interface)
+{
+  char name[80];
+
+  if (interface == NULL) {
+    return 0;
+  }
+  int count = Net_GetNetworkIntCount();
+  for (int i = 0; i < count; i++) {
+    Net_GetNetworkInt(i, name, sizeof(name));
+    if (strcmp(name, interface) == 0)
+      return 1;
+  }
+  return 0;
+}
+
+int
 Net_SetNIC_Down(char *interface)
 {
   int status;
@@ -324,8 +498,8 @@ Net_SetNIC_StartOnBoot(char *interface, char *onboot)
 int
 Net_SetNIC_BootProtocol(char *interface, char *nic_protocol)
 {
-  char nic_boot[80], nic_ip[80], nic_netmask[80], nic_gateway[80];
 #if !defined(freebsd) && !defined(darwin)
+  char nic_boot[80], nic_ip[80], nic_netmask[80], nic_gateway[80];
   Net_GetNIC_Start(interface, nic_boot, sizeof(nic_boot));
   Net_GetNIC_IP(interface, nic_ip, sizeof(nic_ip));
   Net_GetNIC_Netmask(interface, nic_netmask, sizeof(nic_netmask));
@@ -388,22 +562,6 @@ Net_SetNIC_Gateway(char *interface, char *nic_gateway)
 #endif
 }
 
-int
-Net_IsValid_Interface(char *interface)
-{
-  char name[80];
-
-  if (interface == NULL) {
-    return 0;
-  }
-  int count = Net_GetNetworkIntCount();
-  for (int i = 0; i < count; i++) {
-    Net_GetNetworkInt(i, name, sizeof(name));
-    if (strcmp(name, interface) == 0)
-      return 1;
-  }
-  return 0;
-}
 
 int
 find_value(const char *pathname, const char *key, char *value, size_t value_len, const char *delim, int no)
@@ -1055,153 +1213,6 @@ Sys_Grp_Inktomi(int egid)
 }
 
 
-
-int
-Net_IsValid_Hostname(char *hostname)
-{
-
-  if (hostname == NULL) {
-    return 0;
-  } else if (strstr(hostname, " ") != NULL || hostname[strlen(hostname) - 1] == '.') {
-    return 0;
-  } else if (!recordRegexCheck(".+\\..+\\..+", hostname)) {
-    return 0;
-  }
-  return 1;
-}
-
-// return 1 if the IP addr valid, return 0 if invalid
-//    valid IP address is four decimal numbers (0-255) separated by dots
-int
-Net_IsValid_IP(char *ip_addr)
-{
-  char addr[80];
-  char octet1[80], octet2[80], octet3[80], octet4[80];
-  int byte1, byte2, byte3, byte4;
-  char junk[256];
-
-  if (ip_addr == NULL) {
-    return 1;
-  }
-
-  ink_strlcpy(addr, ip_addr, sizeof(addr));
-
-  octet1[0] = '\0';
-  octet2[0] = '\0';
-  octet3[0] = '\0';
-  octet4[0] = '\0';
-  junk[0] = '\0';
-
-  // each of the octet? is not shorter than addr, so no overflow will happen
-  // disable coverity check in this case
-  // coverity[secure_coding]
-  int matches = sscanf(addr, "%[0-9].%[0-9].%[0-9].%[0-9]%[^0-9]",
-                       octet1, octet2, octet3, octet4, junk);
-
-  if (matches != 4) {
-    return 0;
-  }
-
-  byte1 = octet1[0] ? atoi(octet1) : 0;
-  byte2 = octet2[0] ? atoi(octet2) : 0;
-  byte3 = octet3[0] ? atoi(octet3) : 0;
-  byte4 = octet4[0] ? atoi(octet4) : 0;
-
-  if (byte1<0 || byte1> 255 || byte2<0 || byte2> 255 || byte3<0 || byte3> 255 || byte4<0 || byte4> 255) {
-    return 0;
-  }
-
-  if (strlen(junk)) {
-    return 0;
-  }
-
-  return 1;
-}
-
-int
-NetConfig_Action(int index, ...)
-{
-  const char *argv[10];
-  pid_t pid;
-  int status;
-
-  va_list ap;
-  va_start(ap, index);
-
-  argv[0] = "net_config";
-
-  switch (index) {
-  case NETCONFIG_HOSTNAME:
-    argv[1] = "0";
-    argv[2] = va_arg(ap, char *);
-    argv[3] = va_arg(ap, char *);
-    argv[4] = va_arg(ap, char *);
-    argv[5] = NULL;
-    break;
-  case NETCONFIG_GATEWAY:
-    argv[1] = "1";
-    argv[2] = va_arg(ap, char *);
-    argv[3] = va_arg(ap, char *);
-    argv[4] = NULL;
-    break;
-  case NETCONFIG_DOMAIN:
-    argv[1] = "2";
-    argv[2] = va_arg(ap, char *);
-    argv[3] = NULL;
-    break;
-  case NETCONFIG_DNS:
-    argv[1] = "3";
-    argv[2] = va_arg(ap, char *);
-    argv[3] = NULL;
-    break;
-  case NETCONFIG_INTF_UP:
-    argv[1] = "4";
-    argv[2] = va_arg(ap, char *);       // nic_name
-    argv[3] = va_arg(ap, char *);       // static_ip (1/0)
-    argv[4] = va_arg(ap, char *);       // ip
-    argv[5] = va_arg(ap, char *);       // netmask
-    argv[6] = va_arg(ap, char *);       // onboot (1/0)
-    argv[7] = va_arg(ap, char *);       // gateway_ip
-    argv[8] = NULL;
-    break;
-  case NETCONFIG_INTF_DOWN:
-    argv[1] = "5";
-    argv[2] = va_arg(ap, char *);
-    argv[3] = NULL;
-    break;
-  case NETCONFIG_INTF_DISABLE:
-    argv[1] = "8";
-    argv[2] = va_arg(ap, char *);
-    argv[3] = NULL;
-    break;
-  }
-
-  va_end(ap);
-
-  if ((pid = fork()) < 0) {
-    exit(1);
-  } else if (pid > 0) {
-    wait(&status);
-  } else {
-    int res;
-
-    close(1);                   // close STDOUT
-    close(2);                   // close STDERR
-
-    char *command_path;
-
-    command_path = Layout::relative_to(Layout::get()->bindir, "net_config");
-    res = execv(command_path, (char* const*)argv);
-
-    ats_free(command_path);
-    if (res != 0) {
-      DPRINTF(("[SysAPI] fail to call net_config\n"));
-    }
-    _exit(res);
-  }
-
-  return 0;
-}
 
 
 bool
@@ -1892,157 +1903,6 @@ Net_SetNIC_Up(char *interface, char *onboot, char *protocol, char *ip, char *net
   }
 
   return status;
-}
-
-
-int
-Net_IsValid_Hostname(char *hostname)
-{
-
-  if (hostname == NULL) {
-    return 0;
-  } else if (strstr(hostname, " ") != NULL || hostname[strlen(hostname) - 1] == '.') {
-    return 0;
-  } else if (!recordRegexCheck(".+\\..+\\..+", hostname)) {
-    return 0;
-  }
-  return 1;
-}
-
-// return 1 if the IP addr valid, return 0 if invalid
-//    valid IP address is four decimal numbers (0-255) separated by dots
-int
-Net_IsValid_IP(char *ip_addr)
-{
-  char addr[80];
-  char octet1[16], octet2[16], octet3[16], octet4[16];
-  int byte1 = 0, byte2 = 0, byte3 = 0, byte4 = 0;
-  char junk[256];
-
-  if (ip_addr == NULL) {
-    return 1;
-  }
-
-  ink_strlcpy(addr, ip_addr, sizeof(addr));
-
-  octet1[0] = '\0';
-  octet2[0] = '\0';
-  octet3[0] = '\0';
-  octet4[0] = '\0';
-  junk[0] = '\0';
-
-  int matches = sscanf(addr, "%[0-9].%[0-9].%[0-9].%[0-9]%[^0-9]",
-                       octet1, octet2, octet3, octet4, junk);
-
-  if (matches != 4) {
-    return 0;
-  }
-
-  if (octet1[0])
-    byte1 = atoi(octet1);
-  if (octet2[0])
-    byte2 = atoi(octet2);
-  if (octet3[0])
-    byte3 = atoi(octet3);
-  if (octet4[0])
-    byte4 = atoi(octet4);
-
-  if (byte1<0 || byte1> 255 || byte2<0 || byte2> 255 || byte3<0 || byte3> 255 || byte4<0 || byte4> 255) {
-    return 0;
-  }
-
-  if (strlen(junk)) {
-    return 0;
-  }
-
-  return 1;
-}
-
-int
-NetConfig_Action(int index, ...)
-{
-  const char *argv[20];
-  pid_t pid;
-  int status;
-
-  va_list ap;
-  va_start(ap, index);
-
-  char *command_path;
-
-  command_path = Layout::relative_to(Layout::get()->bindir, "net_config");
-
-
-  argv[0] = command_path;
-
-  switch (index) {
-  case NETCONFIG_HOSTNAME:
-    argv[1] = "0";
-    argv[2] = va_arg(ap, char *);
-    argv[3] = va_arg(ap, char *);
-    argv[4] = va_arg(ap, char *);
-    argv[5] = NULL;
-    break;
-  case NETCONFIG_GATEWAY:
-    argv[1] = "1";
-    argv[2] = va_arg(ap, char *);
-    argv[3] = va_arg(ap, char *);
-    argv[4] = NULL;
-    break;
-  case NETCONFIG_DOMAIN:
-    argv[1] = "2";
-    argv[2] = va_arg(ap, char *);
-    argv[3] = NULL;
-    break;
-  case NETCONFIG_DNS:
-    argv[1] = "3";
-    argv[2] = va_arg(ap, char *);
-    argv[3] = NULL;
-    break;
-  case NETCONFIG_INTF_UP:
-    argv[1] = "4";
-    argv[2] = va_arg(ap, char *);       // nic_name
-    argv[3] = va_arg(ap, char *);       // static_ip (1/0)
-    argv[4] = va_arg(ap, char *);       // ip
-    argv[5] = va_arg(ap, char *);       // netmask
-    argv[6] = va_arg(ap, char *);       // onboot (1/0)
-    argv[7] = va_arg(ap, char *);       // gateway_ip
-    argv[8] = va_arg(ap, char *);       // old_ip
-    argv[9] = va_arg(ap, char *);       // old_mask
-    argv[10] = va_arg(ap, char *);      // old_gateway
-    argv[11] = va_arg(ap, char *);      // default_gateway
-    argv[12] = NULL;
-    break;
-  case NETCONFIG_INTF_DOWN:
-    argv[1] = "5";
-    argv[2] = va_arg(ap, char *);
-    argv[3] = NULL;
-    break;
-  }
-
-  va_end(ap);
-
-  if ((pid = fork()) < 0) {
-    exit(1);
-  } else if (pid > 0) {
-    waitpid(pid, &status, 0);
-  } else {
-    int res;
-
-    close(1);                   // close STDOUT
-    close(2);                   // close STDERR
-    seteuid(0);
-    setreuid(0, 0);
-
-    res = execv(command_path, (char* const*) argv);
-
-    if (res != 0) {
-      DPRINTF(("[SysAPI] fail to call net_config"));
-    }
-    _exit(res);
-  }
-  ats_free(command_path);
-  return 0;
 }
 
 bool
