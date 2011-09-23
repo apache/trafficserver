@@ -238,13 +238,6 @@ Net_GetDomain(char *domain, size_t domain_len)
   //  domain can be defined using search or domain keyword
   domain[0] = 0;
   return !find_value("/etc/resolv.conf", "search", domain, domain_len, " ", 0);
-
-  /**
-  if (!find_value("/etc/resolv.conf", "search", domain, " ", 0)) {
-    return (!find_value("/etc/resolv.conf", "domain", domain, " ", 0));
-  }else
-    return 1;
-  **/
 }
 
 int
@@ -1091,28 +1084,6 @@ Time_SetTimezone(bool restart, char *timezone)
 }
 
 int
-Net_GetEncryptedRootPassword(char **password)
-{
-  char shadowPasswd[1024];
-  //int status = 0;
-  int old_euid;
-  int find = 0;
-  //char *passwd = NULL;
-
-  old_euid = getuid();
-  seteuid(0);
-  setreuid(0, 0);
-
-  find = find_value("/etc/shadow", "root", shadowPasswd, sizeof(shadowPasswd), ":", 0);
-  if (find == 0)
-    *password = NULL;
-  else
-    *password = strtok(ats_strdup(shadowPasswd), ":");
-  setreuid(old_euid, old_euid);
-  return 0;
-}
-
-int
 Time_GetTime(char *hour, const size_t hourSize, char *minute, const size_t minuteSize, char *second,
              const size_t secondSize)
 {
@@ -1300,49 +1271,6 @@ TimeConfig_Action(int index, bool restart ...)
   return 0;
 }
 
-
-
-int
-Net_SetEncryptedRootPassword(char *password)
-{
-
-
-  char *remainingTokens;
-  FILE *fp, *tmp;
-  char buffer[1025];
-  int old_euid;
-
-  old_euid = getuid();
-  seteuid(0);
-  setreuid(0, 0);
-
-
-  fp = fopen("/etc/shadow", "r");
-  tmp = fopen("/tmp/shadow", "w");
-  if ((fp != NULL) && (tmp != NULL)) {
-    NOWARN_UNUSED_RETURN(fgets(buffer, 1024, fp));
-    while (!feof(fp)) {
-      if (strncmp(buffer, "root", 4) != 0) {
-        fputs(buffer, tmp);
-      } else {
-        char *buf;
-        if ((buf = ats_strdup(buffer)) != NULL) {
-          strtok_r(buf, ":", &remainingTokens);
-          strtok_r(NULL, ":", &remainingTokens);
-          fprintf(tmp, "root:%s:%s", password, remainingTokens);
-          ats_free(buf);
-        }
-      }
-      NOWARN_UNUSED_RETURN(fgets(buffer, 1024, fp));
-    }
-
-    fclose(fp);
-    fclose(tmp);
-    NOWARN_UNUSED_RETURN(system("/bin/mv -f /tmp/shadow /etc/shadow"));
-  }
-  setreuid(old_euid, old_euid);
-  return 0;
-}
 
 int
 Net_SetSMTP_Server(char *server)
@@ -1962,7 +1890,7 @@ getMatchingBits(char *network, char *ip)
 int
 Net_GetNIC_IP(char *interface, char *ip, size_t nic_ip_len)//FIXME: use nic_ip_len
 {
-  strcpy(ip, "");               // bug 50628, initialize for null value
+  ip[0] = 0;               // bug 50628, initialize for null value
   int status = parseIfconfig(interface, "inet ", ip);
   if (status != 0) {            // in case of network down
     const int BUFFLEN = 1024;
@@ -2103,7 +2031,7 @@ Net_GetNIC_Gateway(char *interface, char *gateway, size_t gateway_len)
 {
   // command is netstat -rn | grep <interface name> | grep G
   // the 2nd column is the Gateway
-  strcpy(gateway, "");
+  gateway[0] = 0;
   const int BUFFLEN = 200;
   char command[BUFFLEN];
   char buffer[BUFFLEN];
@@ -2260,16 +2188,22 @@ Net_SetNIC_Up(char *interface, char *onboot, char *protocol, char *ip, char *net
   Net_GetNIC_Gateway(interface, old_gateway, sizeof(old_gateway));
   Net_GetDefaultRouter(default_gateway, sizeof(default_gateway));
 
-  if (strcmp(protocol, "static") == 0)
-    strcpy(protocol, "1");
-  else if (strcmp(protocol, "dhcp") == 0)
-    strcpy(protocol, "0");
+  if (strcmp(protocol, "static") == 0) {
+    protocol[0] = '1';
+    protocol[1] = 0;
+  } else if (strcmp(protocol, "dhcp") == 0) {
+    protocol[0] = '0';
+    protocol[1] = 0;
+  }
 
 
-  if (strcmp(onboot, "onboot") == 0)
-    strcpy(onboot, "1");
-  else if (strcmp(onboot, "not-onboot") == 0)
-    strcpy(onboot, "0");
+  if (strcmp(onboot, "onboot") == 0) {
+    protocol[0] = '1';
+    protocol[1] = 0;
+  } else if (strcmp(onboot, "not-onboot") == 0) {
+    protocol[0] = '0';
+    protocol[1] = 0;
+  }
 
   status = NetConfig_Action(NETCONFIG_INTF_UP, interface, protocol, ip, netmask, onboot, gateway,
                             old_ip, old_mask, old_gateway, default_gateway);
@@ -2297,64 +2231,6 @@ Net_IsValid_Interface(char *interface)
       return 1;
   }
   return 0;
-}
-
-int
-find_value(const char *pathname, const char *key, char *value, const char *delim, int no)
-{
-  char buffer[1024];
-  char *pos;
-  char *open_quot, *close_quot;
-  FILE *fp;
-  int find = 0;
-  int counter = 0;
-
-  strcpy(value, "");
-  if (access(pathname, R_OK)) {
-    return find;
-  }
-
-
-  fp = fopen(pathname, "r");
-
-  char *state = fgets(buffer, 1024, fp);
-  if (state == NULL) {          // empty file
-    DPRINTF(("[find_value] has empty config file\n"));
-    return -1;
-  }
-
-  while (!feof(fp)) {
-    if (!isLineCommented(buffer) &&     // skip if line is commented
-        strstr(buffer, key) != NULL) {
-      if (counter != no) {
-        counter++;
-      } else {
-        find = 1;
-
-        pos = strstr(buffer, delim);
-        if (pos == NULL && (strcmp(delim, " ") == 0)) { // anniec - give tab a try
-          pos = strstr(buffer, "\t");
-        }
-        if (pos != NULL) {
-          pos++;
-          if ((open_quot = strchr(pos, '"')) != NULL) {
-            pos = open_quot + 1;
-            close_quot = strrchr(pos, '"');
-            *close_quot = '\0';
-          }
-          strcpy(value, pos);
-
-
-          if (value[strlen(value) - 1] == '\n') {
-            value[strlen(value) - 1] = '\0';
-          }
-        }
-        break;
-      }
-    }
-    fgets(buffer, 80, fp);
-  }
-  return find;
 }
 
 int
@@ -2561,17 +2437,6 @@ Time_SortTimezone()
 }
 
 int
-Time_GetTimezone(char *timezone)
-{
-  //const char *zonetable="/usr/share/zoneinfo/zone.tab";
-  //char buffer[1024];
-
-  return (!find_value("/etc/sysconfig/clock", "ZONE", timezone, "=", 0));
-}
-
-
-
-int
 Time_SetTimezone(bool restart, char *timezone)
 {
   int status;
@@ -2579,28 +2444,6 @@ Time_SetTimezone(bool restart, char *timezone)
   status = TimeConfig_Action(3, restart, timezone);
 
   return status;
-}
-
-int
-Net_GetEncryptedRootPassword(char **password)
-{
-  char shadowPasswd[1024];
-  //int status = 0;
-  int old_euid;
-  int find = 0;
-  //char *passwd = NULL;
-
-  old_euid = getuid();
-  seteuid(0);
-  setreuid(0, 0);
-
-  find = find_value("/etc/shadow", "root", shadowPasswd, ":", 0);
-  if (find == 0)
-    *password = NULL;
-  else
-    *password = strtok(ats_strdup(shadowPasswd), ":");
-  setreuid(old_euid, old_euid);
-  return 0;
 }
 
 int
@@ -2664,36 +2507,6 @@ Time_SetDate(bool restart, char *month, char *day, char *year)
   return status;
 }
 
-int
-Time_GetNTP_Servers(char *server)
-{
-  FILE *fp;
-  const char *ntpconf = "/etc/ntp.conf";
-  char buffer[1024];
-  char *option, *server_name = NULL;
-
-  fp = fopen(ntpconf, "r");
-  if (fp == NULL) {
-    DPRINTF(("[Net_GetNTP_Servers] can not open the file /etc/net.conf\n"));
-    return -1;
-  }
-  fgets(buffer, 1024, fp);
-  while (!feof(fp)) {
-    if (buffer[0] != '#') {
-      option = strtok(buffer, " \t");
-      if (strcmp(option, "server") == 0) {
-        server_name = strtok(NULL, " \t");
-        break;                  //Assume only one ntp server is in the ntp.conf
-      }
-    }
-    fgets(buffer, 1024, fp);
-  }
-  if (server_name != NULL) {
-    strcpy(server, server_name);
-  }
-
-  return 0;
-}
 
 int
 Time_SetNTP_Servers(bool restart, char *server)
@@ -2778,42 +2591,6 @@ TimeConfig_Action(int index, bool restart ...)
     _exit(res);
   }
 
-  return 0;
-}
-
-int
-Net_SetEncryptedRootPassword(char *password)
-{
-  char *remainingTokens;
-  FILE *fp, *tmp;
-  char buffer[1025];
-  int old_euid;
-
-  old_euid = getuid();
-  seteuid(0);
-  setreuid(0, 0);
-
-
-  fp = fopen("/etc/shadow", "r");
-  tmp = fopen("/tmp/shadow", "w");
-  if ((fp != NULL) && (tmp != NULL)) {
-    fgets(buffer, 1024, fp);
-    while (!feof(fp)) {
-      if (strncmp(buffer, "root", 4) != 0) {
-        fputs(buffer, tmp);
-      } else {
-        char *toks = strtok_r(ats_strdup(buffer), ":", &remainingTokens);
-        toks = strtok_r(NULL, ":", &remainingTokens);
-        fprintf(tmp, "root:%s:%s", password, remainingTokens);
-      }
-      fgets(buffer, 1024, fp);
-    }
-
-    fclose(fp);
-    fclose(tmp);
-    system("/bin/mv -f /tmp/shadow /etc/shadow");
-  }
-  setreuid(old_euid, old_euid);
   return 0;
 }
 

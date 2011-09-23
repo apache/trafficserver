@@ -59,8 +59,6 @@ extern int Net_IsValid_Hostname(char *hostname);
 extern int Net_IsValid_IP(char *ip);
 extern int Time_GetTimezone(char *timezone, size_t timezone_len);
 extern int Time_SetTimezone(bool restart, char *timezone);
-extern int Net_GetEncryptedRootPassword(char **password);
-extern int Net_SetEncryptedRootPassword(char *password);
 //extern int Net_SaveNetConfig(char *file);
 extern int Time_SortTimezone(void);
 extern int Time_GetTime(char *hour, const size_t hourSize, char *minute, const size_t minuteSize, char *second,
