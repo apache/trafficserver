@@ -36,6 +36,8 @@ A list of all bugs open for the next v3.0.2 release can be found at
 
   http://s.apache.org/ts-3.0.2
 
+PATCHES ACCEPTED TO BACKPORT FROM TRUNK:
+
 
 PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   [ New proposals should be added at the end of the list ]
