@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.1.1
-  *) TS[962] ypo of key name in logstats.cc. Author: Nick Berry.
+  *) [TS-955] Fix the logging regression testing.
+
+  *) [TS-962] typo of key name in logstats.cc. Author: Nick Berry.
 
   *) [TS-958] Fix a few valgrind memory check errors.
 

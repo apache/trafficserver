@@ -840,7 +840,7 @@ TextLogObject::write(const char *format, ...)
   single entry (line) in the text file.  If timestamps are on, then the
   entry will be preceeded by a timestamp.
 
-  Returns the number of bytes written to the file.
+  Returns ReturnCodeFlags.
   -------------------------------------------------------------------------*/
 int
 TextLogObject::va_write(const char *format, va_list ap)

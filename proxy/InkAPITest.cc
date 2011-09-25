@@ -5413,6 +5413,7 @@ typedef struct
   int *pstatus;
   char *fullpath_logname;
   unsigned long magic;
+  TSTextLogObject log;
 } LogTestData;
 
 
@@ -5423,6 +5424,7 @@ log_test_handler(TSCont contp, TSEvent event, void *edata)
   TSFile filep;
   char buf[1024];
   bool str_found;
+  int retVal = 0;
 
   TSAssert(event == TS_EVENT_TIMEOUT);
 
@@ -5435,26 +5437,66 @@ log_test_handler(TSCont contp, TSEvent event, void *edata)
     SDK_RPRINT(data->test, "TSTextLogObject", "TestCase1", TC_FAIL, "can not open log file %s", data->fullpath_logname);
     *(data->pstatus) = REGRESSION_TEST_FAILED;
     return -1;
-  }
-
-  str_found = false;
-  while (TSfgets(filep, buf, 1024) != NULL) {
-    if (strstr(buf, LOG_TEST_PATTERN) != NULL) {
-      str_found = true;
-      break;
+  } else {
+    // The logfile is created
+    str_found = false;
+    while (TSfgets(filep, buf, 1024) != NULL) {
+      if (strstr(buf, LOG_TEST_PATTERN) != NULL) {
+        str_found = true;
+        break;
+      }
+    }
+    TSfclose(filep);
+    if (str_found == false) {
+      SDK_RPRINT(data->test, "TSTextLogObject", "TestCase1", TC_FAIL, "can not find pattern %s in log file", LOG_TEST_PATTERN);
+      *(data->pstatus) = REGRESSION_TEST_FAILED;
+      return -1;
     }
   }
-  TSfclose(filep);
-  if (str_found == false) {
-    SDK_RPRINT(data->test, "TSTextLogObject", "TestCase1", TC_FAIL, "can not find pattern %s in log file", LOG_TEST_PATTERN);
+
+  retVal = TSTextLogObjectDestroy(data->log);
+  if (retVal != TS_SUCCESS) {
+    SDK_RPRINT(data->test, "TSTextLogObjectDestroy", "TestCase1", TC_FAIL, "can not destroy log object");
     *(data->pstatus) = REGRESSION_TEST_FAILED;
     return -1;
+  } else {
+    SDK_RPRINT(data->test, "TSTextLogObjectDestroy", "TestCase1", TC_PASS, "ok");
   }
 
   *(data->pstatus) = REGRESSION_TEST_PASSED;
+  SDK_RPRINT(data->test, "TSTextLogObject", "TestCase1", TC_PASS, "ok");
+
+
+  // figure out the matainfo file for cleanup.
+  // code from MetaInfo::_build_name(const char *filename)
+  int i = -1, l = 0;
+  char c;
+  while (c = data->fullpath_logname[l], c != 0) {
+    if (c == '/') {
+      i = l;
+    }
+    ++l;
+  }
+
+  // 7 = 1 (dot at beginning) + 5 (".meta") + 1 (null terminating)
+  //
+  char *meta_filename = (char *)ats_malloc(l + 7);
+
+  if (i < 0) {
+    ink_string_concatenate_strings(meta_filename, ".", data->fullpath_logname, ".meta", NULL);
+  } else {
+    memcpy(meta_filename, data->fullpath_logname, i + 1);
+    ink_string_concatenate_strings(&meta_filename[i + 1], ".", &data->fullpath_logname[i + 1]
+                                   , ".meta", NULL);
+  }
+
+  unlink(data->fullpath_logname);
+  unlink(meta_filename);
+  TSfree(data->fullpath_logname);
+  TSfree(meta_filename);
+  meta_filename = NULL;
 
   data->magic = MAGIC_DEAD;
-  TSfree(data->fullpath_logname);
   TSfree(data);
   data = NULL;
 
@@ -5479,6 +5521,7 @@ REGRESSION_TEST(SDK_API_TSTextLog) (RegressionTest * test, int atype, int *pstat
   snprintf(fullpath_logname, sizeof(fullpath_logname), "%s/%s", tmp, logname);
   // ats_free(tmp);
 
+  unlink(TSstrdup(fullpath_logname));
   retVal = TSTextLogObjectCreate(logname, TS_LOG_MODE_ADD_TIMESTAMP, &log);
   if (retVal != TS_SUCCESS) {
     SDK_RPRINT(test, "TSTextLogObjectCreate", "TestCase1", TC_FAIL, "can not create log object");
@@ -5500,25 +5543,16 @@ REGRESSION_TEST(SDK_API_TSTextLog) (RegressionTest * test, int atype, int *pstat
   TSTextLogObjectFlush(log);
   SDK_RPRINT(test, "TSTextLogObjectFlush", "TestCase1", TC_PASS, "ok");
 
-  retVal = TSTextLogObjectDestroy(log);
-  if (retVal != TS_SUCCESS) {
-    SDK_RPRINT(test, "TSTextLogObjectDestroy", "TestCase1", TC_FAIL, "can not destroy log object");
-    *pstatus = REGRESSION_TEST_FAILED;
-    return;
-  } else {
-    SDK_RPRINT(test, "TSTextLogObjectDestroy", "TestCase1", TC_PASS, "ok");
-  }
-
-
   TSCont log_test_cont = TSContCreate(log_test_handler, TSMutexCreate());
   LogTestData *data = (LogTestData *) TSmalloc(sizeof(LogTestData));
   data->test = test;
   data->pstatus = pstatus;
   data->fullpath_logname = TSstrdup(fullpath_logname);
   data->magic = MAGIC_ALIVE;
+  data->log = log;
   TSContDataSet(log_test_cont, data);
 
-  TSContSchedule(log_test_cont, 5000, TS_THREAD_POOL_DEFAULT);
+  TSContSchedule(log_test_cont, 6000, TS_THREAD_POOL_DEFAULT);
   return;
 }
 

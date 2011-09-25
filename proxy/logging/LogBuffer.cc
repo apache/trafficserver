@@ -211,20 +211,14 @@ LogBuffer::LB_ResultCode LogBuffer::checkout_write(size_t * write_offset, size_t
   //
   ink_debug_assert(m_unaligned_buffer);
 
-  LB_ResultCode
-    ret_val = LB_BUSY;
-  LB_State
-    old_s,
-    new_s;
-  size_t
-    offset = 0;
+  LB_ResultCode ret_val = LB_BUSY;
+  LB_State old_s, new_s;
+  size_t offset = 0;
   size_t actual_write_size = INK_ALIGN(write_size + sizeof(LogEntryHeader), m_write_align);
 
-  uint64_t
-    retries = (uint64_t) - 1;
+  uint64_t retries = (uint64_t) - 1;
   do {
-    old_s = m_state;
-    new_s = old_s;
+    new_s = old_s = m_state;
 
     if (old_s.s.full) {
       // the buffer has already been set to full by somebody else
@@ -275,7 +269,6 @@ LogBuffer::LB_ResultCode LogBuffer::checkout_write(size_t * write_offset, size_t
 
       if (switch_state(old_s, new_s)) {
         // we succeded in setting the new state
-
         break;
       }
     }
@@ -329,8 +322,7 @@ LogBuffer::LB_ResultCode LogBuffer::checkin_write(size_t write_offset)
   LB_State old_s, new_s;
 
   do {
-    old_s = m_state;
-    new_s = old_s;
+    new_s = old_s = m_state;
 
     ink_assert(write_offset < old_s.s.offset);
     ink_assert(old_s.s.num_writers > 0);
