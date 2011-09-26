@@ -1,6 +1,15 @@
                                                          -*- coding: utf-8 -*-
 
 Changes with Apache Traffic Server 3.0.1
+  *) [TS-833] traffic_logstats provides conflicting help output
+
+  *) [TS-730] Allow for the SSL Cipher Suite to be configured
+
+  *) [TS-927] don't use malloc.h, it fails on FreeBSD
+    Author: Radim Kolar
+
+  *) [TS-888] fix SSL by enabling the right direction on successful setup
+
   *) [TS-859] ATS requesting to origin instead to the parent server
 
   *) [TS-842] remove uninstall target from build system
