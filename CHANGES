@@ -1,6 +1,6 @@
                                                          -*- coding: utf-8 -*-
 
-Changes with Apache Traffic Server 3.0.1
+Changes with Apache Traffic Server 3.0.2
   *) [TS-833] traffic_logstats provides conflicting help output
 
   *) [TS-730] Allow for the SSL Cipher Suite to be configured
@@ -12,6 +12,7 @@ Changes with Apache Traffic Server 3.0.1
 
   *) [TS-859] ATS requesting to origin instead to the parent server
 
+Changes with Apache Traffic Server 3.0.1
   *) [TS-842] remove uninstall target from build system
 
   *) [TS-868] build fails with --as-needed. Author: Ilya Barygin.
