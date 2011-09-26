@@ -726,7 +726,7 @@ LogAccess::marshal_record(char *record, char *buf)
   ink_memcpy(buf, out_buf, num_chars);
 
 #ifdef PURIFY
-  for (int i = num_chars + 1; i < max_chars; ++i) {
+  for (unsigned int i = num_chars + 1; i < max_chars; ++i) {
     buf[i] = '$';
   }
 #endif
