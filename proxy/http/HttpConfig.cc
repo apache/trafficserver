@@ -1698,6 +1698,7 @@ store_error_message(char *err_msg_buf, int err_msg_buf_size, const char *fmt, ..
 //
 //  HttpConfig::init_aeua_filter()
 //
+// TODO: make aeua_filter more flex
 ////////////////////////////////////////////////////////////////
 int
 HttpConfig::init_aeua_filter(char *config_fname)

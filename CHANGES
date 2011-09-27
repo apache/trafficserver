@@ -1,5 +1,7 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.1.1
+  *) [TS-957] remove IE6 from the white list of ae_ua filter
+
   *) [TS-955] Fix the logging regression testing.
 
   *) [TS-962] typo of key name in logstats.cc. Author: Nick Berry.

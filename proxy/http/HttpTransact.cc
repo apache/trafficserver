@@ -676,8 +676,6 @@ HttpTransact::perform_accept_encoding_filtering(State* s)
   bool retcode = false;
   bool ua_match = false;
 
-  //fprintf(stderr,"HttpTransact::perform_accept_encoding_filtering - start\n");
-
   client_request = &s->hdr_info.client_request;
 
   // Make sense to check Accept-Encoding if UserAgent is present (and matches)
@@ -687,12 +685,11 @@ HttpTransact::perform_accept_encoding_filtering(State* s)
       u_agent_len = (int) (sizeof(tmp_ua_buf) - 1);
     memcpy(tmp_ua_buf, u_agent, u_agent_len);
     tmp_ua_buf[u_agent_len] = '\0';
-    //fprintf(stderr,"User-Agent: \"%s\"\n",tmp_ua_buf);
 
     // TODO: Do we really want to do these hardcoded checks still?
-    // Check hardcoded case MSIE[6-9] & Mozilla/4
+    // Check hardcoded case MSIE>6 & Mozilla>4
     if ((c = strstr(tmp_ua_buf, "MSIE")) != NULL) {
-      if (c[5] >= '6' && c[5] <= '9')
+      if (c[5] >= '7' && c[5] <= '9')
         return false;           // Don't change anything for IE > 6
       ua_match = true;
     } else if (!strncasecmp(tmp_ua_buf, "mozilla", 7)) {
@@ -733,21 +730,19 @@ HttpTransact::perform_accept_encoding_filtering(State* s)
        will accept any content coding. In this case, if "identity" is one of the available content-codings,
        then the server SHOULD use the "identity" content-coding, unless it has additional information that
        a different content-coding is meaningful to the client." */
-    if (ua_match && (accept_field = client_request->field_find(MIME_FIELD_ACCEPT_ENCODING, MIME_LEN_ACCEPT_ENCODING)) != NULL) {        // char const *a_encoding = NULL;
-      // int a_encoding_len = 0;
-      //if((a_encoding = accept_field->value_get(&a_encoding_len)) != 0 && a_encoding_len > 0)
-      //{ fprintf(stderr,"Accept-Encoding: \"");
-      //  for(int i = 0;i < a_encoding_len;i++) { fprintf(stderr,"%c",a_encoding[i]); }
-      //  fprintf(stderr,"\" - before  \"");
-      //}
-      // Accept-Encoding: identity
-      client_request->field_value_set(accept_field, "identity", 8);     // ", *;q=0"
-      //if((a_encoding = accept_field->value_get(&a_encoding_len)) != 0 && a_encoding_len > 0)
-      //{ for(int i = 0;i < a_encoding_len;i++) { fprintf(stderr,"%c",a_encoding[i]); }
-      //  fprintf(stderr,"\" - after\n");
-      //}
-      retcode = true;
+    if (ua_match) {
+      Debug("http_trans", "HttpTransact::ModifyRequest, insert identity Accept-Encoding");
+      accept_field = client_request->field_find(MIME_FIELD_ACCEPT_ENCODING, MIME_LEN_ACCEPT_ENCODING);
+      if (!accept_field) {
+        accept_field = client_request->field_create(MIME_FIELD_ACCEPT_ENCODING, MIME_LEN_ACCEPT_ENCODING);
+        if (accept_field)
+          client_request->field_attach(accept_field);
+      }
+      if (accept_field) {
+        client_request->field_value_set(accept_field, HTTP_VALUE_IDENTITY, HTTP_LEN_IDENTITY);
+      }
     }
+    retcode = true;
   }                             // end of 'user-agent'
   return retcode;
 }
