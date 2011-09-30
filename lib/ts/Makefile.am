@@ -107,6 +107,8 @@ libtsutil_la_SOURCES = \
   ink_string++.cc \
   ink_string.h \
   ink_string++.h \
+  ink_sys_control.cc \
+  ink_sys_control.h \
   ink_syslog.cc \
   ink_syslog.h \
   ink_thread.cc \
