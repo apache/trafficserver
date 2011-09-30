@@ -38,11 +38,6 @@ A list of all bugs open for the next v3.0.2 release can be found at
 
 PATCHES ACCEPTED TO BACKPORT FROM TRUNK:
 
-  *) Logging: traffic_logstats provides conflicting help
-   Trunk patches: http://svn.apache.org/viewvc?view=rev&revision=1152536
-   Jira: https://issues.apache.org/jira/browse/TS-883
-   +1: igalic, jim, zym
-
   *) traffic_logstats: Dies when printing log
    Trunk patches: http://svn.apache.org/viewvc?view=rev&revision=1148096
    http://svn.apache.org/viewvc?view=rev&revision=1148103
