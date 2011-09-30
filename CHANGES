@@ -1,7 +1,16 @@
                                                          -*- coding: utf-8 -*-
 
 Changes with Apache Traffic Server 3.0.2
-  *) [TS-833] traffic_logstats provides conflicting help output
+  *) [TS-901] Valgrind found minor leaks and uninitialized variables
+    Author: William Bardwell
+
+  *) [TS-916] TSHttpIsInternalRequest() crashes if client connection is
+    terminated prematurely.
+    Author: Manjesh Nilange
+
+  *) [TS-882] traffic_logstats dies when printing log.
+
+  *) [TS-883] traffic_logstats provides conflicting help output
 
   *) [TS-730] Allow for the SSL Cipher Suite to be configured
 
