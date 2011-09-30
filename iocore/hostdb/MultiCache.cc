@@ -45,7 +45,7 @@
 #define MULTI_CACHE_PAUSE_TIME       HRTIME_MSECONDS(1000)
 
 MultiCacheBase::MultiCacheBase()
-:store(0), mapped_header(NULL), data(0), lowest_level_data(0), miss_stat(0), buckets_per_partitionF8(0)
+  : store(0), mapped_header(NULL), data(0), lowest_level_data(0), miss_stat(0), buckets_per_partitionF8(0)
 {
   filename[0] = 0;
   memset(hit_stat, 0, sizeof(hit_stat));
@@ -55,7 +55,7 @@ MultiCacheBase::MultiCacheBase()
 }
 
 inline int
-store_verify(Store * store)
+store_verify(Store *store)
 {
   if (!store)
     return 0;
@@ -67,10 +67,10 @@ store_verify(Store * store)
   return 1;
 }
 
-MultiCacheHeader::MultiCacheHeader():
-magic(MULTI_CACHE_MAGIC_NUMBER), levels(0),
-tag_bits(0), max_hits(0), elementsize(0),
-buckets(0), totalelements(0), totalsize(0), nominal_elements(0), heap_size(0), heap_halfspace(0)
+MultiCacheHeader::MultiCacheHeader()
+  : magic(MULTI_CACHE_MAGIC_NUMBER), levels(0),
+    tag_bits(0), max_hits(0), elementsize(0),
+    buckets(0), totalelements(0), totalsize(0), nominal_elements(0), heap_size(0), heap_halfspace(0)
 {
   memset(level_offset, 0, sizeof(level_offset));
   memset(bucketsize, 0, sizeof(bucketsize));
@@ -108,7 +108,7 @@ MultiCacheBase::blocks_in_level(int level)
 // The higher levels (lower in number) contain fewer.
 //
 int
-MultiCacheBase::initialize(Store * astore, char *afilename,
+MultiCacheBase::initialize(Store *astore, char *afilename,
                            int aelements, int abuckets, int alevels,
                            int level0_elements_per_bucket,
                            int level1_elements_per_bucket, int level2_elements_per_bucket)
@@ -199,6 +199,8 @@ MultiCacheBase::initialize(Store * astore, char *afilename,
   //
   //  Spread alloc from the store (using storage that can be mmapped)
   //
+  if (store)
+    delete store;
   store = NEW(new Store);
   astore->spread_alloc(*store, blocks, true);
   unsigned int got = store->total_blocks();
@@ -432,6 +434,7 @@ MultiCacheBase::mmap_data(bool private_flag, bool zero_fill)
 #if !defined(darwin)
     fd = socketManager.open("/dev/zero", O_RDONLY, 0645);
     if (fd < 0) {
+      store = saved;
       Warning("unable to open /dev/zero: %d, %s", errno, strerror(errno));
       goto Labort;
     }
@@ -466,26 +469,36 @@ MultiCacheBase::mmap_data(bool private_flag, bool zero_fill)
     data = cur;
 
     cur = mmap_region(blocks_in_level(0), fds, cur, private_flag, fd);
-    if (!cur)
+    if (!cur) {
+      store = saved;
       goto Labort;
+    }
     if (levels > 1)
       cur = mmap_region(blocks_in_level(1), fds, cur, private_flag, fd);
-    if (!cur)
+    if (!cur) {
+      store = saved;
       goto Labort;
+    }
     if (levels > 2)
       cur = mmap_region(blocks_in_level(2), fds, cur, private_flag, fd);
-    if (!cur)
+    if (!cur) {
+      store = saved;
       goto Labort;
+    }
 
     if (heap_size) {
       heap = cur;
       cur = mmap_region(bytes_to_blocks(heap_size), fds, cur, private_flag, fd);
-      if (!cur)
+      if (!cur) {
+        store = saved;
         goto Labort;
+      }
     }
     mapped_header = (MultiCacheHeader *) cur;
-    if (!mmap_region(1, fds, cur, private_flag, fd))
+    if (!mmap_region(1, fds, cur, private_flag, fd)) {
+      store = saved;
       goto Labort;
+    }
 #if !defined(darwin)
     ink_assert(!socketManager.close(fd));
 #endif
@@ -606,7 +619,7 @@ MultiCacheBase::write_config(const char *config_filename, int nominal_size, int 
 }
 
 int
-MultiCacheBase::open(Store * s, const char *config_filename, char *db_filename, int db_size,
+MultiCacheBase::open(Store *s, const char *config_filename, char *db_filename, int db_size,
                      bool reconfigure, bool fix, bool silent)
 {
   int ret = 0;
@@ -820,7 +833,7 @@ MultiCacheBase::verify_header()
 }
 
 void
-MultiCacheBase::print_info(FILE * fp)
+MultiCacheBase::print_info(FILE *fp)
 {                               // STDIO OK
   fprintf(fp, "    Elements:       %-10d\n", totalelements);
   fprintf(fp, "    Size (bytes):   %-10u\n", totalsize);
@@ -1053,7 +1066,7 @@ struct MultiCacheSync: public Continuation
   Continuation *cont;
   int before_used;
 
-  int heapEvent(int event, Event * e)
+  int heapEvent(int event, Event *e)
   {
     if (!partition) {
       before_used = mc->heap_used[mc->heap_halfspace];
@@ -1073,7 +1086,7 @@ struct MultiCacheSync: public Continuation
     return mcEvent(event, e);
   }
 
-  int mcEvent(int event, Event * e)
+  int mcEvent(int event, Event *e)
   {
     (void) event;
     if (partition >= MULTI_CACHE_PARTITIONS) {
@@ -1095,7 +1108,7 @@ struct MultiCacheSync: public Continuation
     return EVENT_CONT;
   }
 
-  int pauseEvent(int event, Event * e)
+  int pauseEvent(int event, Event *e)
   {
     (void) event;
     (void) e;
@@ -1108,7 +1121,7 @@ struct MultiCacheSync: public Continuation
     return EVENT_CONT;
   }
 
-MultiCacheSync(Continuation * acont, MultiCacheBase * amc):
+MultiCacheSync(Continuation *acont, MultiCacheBase *amc):
   Continuation(amc->locks[0]), partition(0), mc(amc), cont(acont), before_used(0) {
     mutex = mc->locks[partition];
     SET_HANDLER((MCacheSyncHandler) & MultiCacheSync::heapEvent);
@@ -1120,7 +1133,7 @@ MultiCacheSync(Continuation * acont, MultiCacheBase * amc):
 //
 
 UnsunkPtrRegistry *
-MultiCacheBase::fixup_heap_offsets(int partition, int before_used, UnsunkPtrRegistry * r, int base)
+MultiCacheBase::fixup_heap_offsets(int partition, int before_used, UnsunkPtrRegistry *r, int base)
 {
   if (!r)
     r = &unsunk[partition];
@@ -1178,7 +1191,7 @@ struct MultiCacheHeapGC: public Continuation
   int n_offsets;
   OffsetTable *offset_table;
 
-  int startEvent(int event, Event * e)
+  int startEvent(int event, Event *e)
   {
     (void) event;
     if (partition < MULTI_CACHE_PARTITIONS)
@@ -1229,7 +1242,7 @@ struct MultiCacheHeapGC: public Continuation
     return EVENT_DONE;
   }
 
-MultiCacheHeapGC(Continuation * acont, MultiCacheBase * amc):
+MultiCacheHeapGC(Continuation *acont, MultiCacheBase *amc):
   Continuation(amc->locks[0]), cont(acont), mc(amc), partition(0), n_offsets(0) {
 
     SET_HANDLER((MCacheHeapGCHandler) & MultiCacheHeapGC::startEvent);
@@ -1246,7 +1259,7 @@ MultiCacheHeapGC(Continuation * acont, MultiCacheBase * amc):
 };
 
 void
-MultiCacheBase::sync_partitions(Continuation * cont)
+MultiCacheBase::sync_partitions(Continuation *cont)
 {
   // don't try to sync if we were not correctly initialized
   if (data && mapped_header) {
@@ -1258,7 +1271,7 @@ MultiCacheBase::sync_partitions(Continuation * cont)
 }
 
 void
-MultiCacheBase::copy_heap_data(char *src, int s, int *pi, int partition, MultiCacheHeapGC * gc)
+MultiCacheBase::copy_heap_data(char *src, int s, int *pi, int partition, MultiCacheHeapGC *gc)
 {
   char *dest = (char *) alloc(NULL, s);
   Debug("multicache", "copy %X to %X", src, dest);

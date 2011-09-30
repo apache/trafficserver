@@ -1668,7 +1668,7 @@ main(int argc, char **argv)
     char bwFilename[PATH_NAME_MAX];
 
     snprintf(bwFilename, sizeof(bwFilename), "%s/%s", system_config_directory, filename);
-
+    xfree(filename);
 
     Debug("bw-mgmt", "Looking to read: %s for bw-mgmt", bwFilename);
     schema.LoadFile(bwFilename);
