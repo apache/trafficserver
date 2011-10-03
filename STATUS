@@ -54,7 +54,7 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
    Trunk patches: http://svn.apache.org/viewvc?view=rev&revision=1159376
                   http://svn.apache.org/viewvc?view=rev&revision=1159436
    Jira: https://issues.apache.org/jira/browse/TS-867
-   +1: zwoop, zym
+   +1: zwoop, zym, jim
 
 
   *) test: tests failing on some Debian sid and Solaris
