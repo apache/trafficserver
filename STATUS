@@ -59,7 +59,7 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   *) Build: Allow for our default -O3 options to be overriden via CFLAGS/CXXFLAGS
    Trunk patches: http://svn.apache.org/viewvc?rev=1175914&view=rev
    Jira: https://issues.apache.org/jira/browse/TS-967
-   +1: igalic
+   +1: igalic, jim
 
 
 RELEASE PROCESS
