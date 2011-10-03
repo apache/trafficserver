@@ -974,8 +974,10 @@ AS_IF([test "x$enable_hwloc" = "xyes"],
 AC_SUBST(use_hwloc)
 
 #
-# Check for tcmalloc
+# Check for tcmalloc and jemalloc
+TS_CHECK_JEMALLOC
 TS_CHECK_TCMALLOC
+
 
 # -----------------------------------------------------------------------------
 # 5. CHECK FOR HEADER FILES

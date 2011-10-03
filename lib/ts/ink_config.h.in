@@ -84,6 +84,9 @@
 #define TS_HAS_LIBZ                    @zlibh@
 #define TS_HAS_LZMA                    @lzmah@
 #define TS_HAS_EXPAT                   @expath@
+#define TS_HAS_JEMALLOC                @jemalloch@
+#define TS_HAS_TCMALLOC                @has_tcmalloc@
+
 
 /* Features */
 #define TS_HAS_EVENTFD                 @has_eventfd@

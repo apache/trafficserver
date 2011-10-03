@@ -18,9 +18,6 @@ dnl
 dnl tcmalloc.m4: Trafficserver's tcmalloc autoconf macros
 dnl
 
-dnl
-dnl TS_CHECK_TCMALLOC: look for tcmalloc libraries
-dnl
 dnl This is kinda fugly, but need a way to both specify a directory and which
 dnl of the many tcmalloc libraries to use ...
 AC_DEFUN([TS_CHECK_TCMALLOC], [
@@ -33,9 +30,13 @@ AC_ARG_WITH([tcmalloc-lib],
   ]
 )
 
-AC_ARG_WITH(tcmalloc, [AC_HELP_STRING([--with-tcmalloc=DIR], [use the tcmalloc library])],
+has_tcmalloc=0
+AC_ARG_WITH([tcmalloc], [AC_HELP_STRING([--with-tcmalloc=DIR], [use the tcmalloc library])],
 [
   if test "$withval" != "no"; then
+    if test "x${enable_jemalloc}" = "xyes"; then
+      AC_MSG_ERROR([Cannot compile with both tcmalloc and jemalloc])
+    fi
     tcmalloc_have_libs=0
     if test "x$withval" != "xyes" && test "x$withval" != "x"; then
       tcmalloc_ldflags="$withval/lib"
@@ -45,7 +46,9 @@ AC_ARG_WITH(tcmalloc, [AC_HELP_STRING([--with-tcmalloc=DIR], [use the tcmalloc l
     AC_CHECK_LIB(${with_tcmalloc_lib}, tc_cfree , [tcmalloc_have_lib=1])
     if test "$tcmalloc_have_lib" != "0"; then
       TS_ADDTO(LIBS, [-l${with_tcmalloc_lib}])
+      has_tcmalloc=1      
     fi
   fi
 ])
+AC_SUBST(has_tcmalloc)
 ])

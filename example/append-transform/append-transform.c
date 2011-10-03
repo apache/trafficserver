@@ -88,8 +88,8 @@ handle_transform(TSCont contp)
   TSVConn output_conn;
   TSVIO write_vio;
   MyData *data;
-  int towrite;
-  int avail;
+  int64_t towrite;
+  int64_t avail;
 
   /* Get the output connection where we'll write data to. */
   output_conn = TSTransformOutputVConnGet(contp);
