@@ -26,6 +26,19 @@
 #include <ctype.h>
 #include <strings.h>
 
+#include "ink_config.h"
+
+#if TS_HAS_JEMALLOC
+#include <jemalloc/jemalloc.h>
+/* TODO: Should this have a value ? */
+#define ATS_MMAP_MAX 0
+#else
+#if HAVE_MALLOC_H
+#include <malloc.h>
+#define ATS_MMAP_MAX M_MMAP_MAX
+#endif // ! HAVE_MALLOC_H
+#endif // ! TS_HAS_JEMALLOC
+
 #ifdef __cplusplus
 extern "C"
 {
@@ -37,6 +50,7 @@ extern "C"
   void ats_free(void *ptr);
   void* ats_free_null(void *ptr);
   void ats_memalign_free(void *ptr);
+  int ats_mallopt(int param, int value);
 
 #define ats_strdup(p)        _xstrdup((p), -1, NULL)
 #define ats_strndup(p,n)     _xstrdup((p), n, NULL)

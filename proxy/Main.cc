@@ -989,9 +989,9 @@ adjust_sys_settings(void)
   int fds_throttle = -1;
 
   TS_ReadConfigInteger(mmap_max, "proxy.config.system.mmap_max");
-  if (mmap_max >= 0) {
-    mallopt(M_MMAP_MAX, mmap_max);      /*  INKqa10797: MALLOC_MMAP_MAX_=32768; export MALLOC_MMAP_MAX_ */
-  }
+  if (mmap_max >= 0)
+    ats_mallopt(ATS_MMAP_MAX, mmap_max);
+
   TS_ReadConfigInteger(fds_throttle, "proxy.config.net.connections_throttle");
 
   if (!getrlimit(RLIMIT_NOFILE, &lim)) {

@@ -29,7 +29,6 @@
 // Needed for template use of byte ordering functions.
 # include <netinet/in.h>
 # include <memory.h>
-# include <malloc.h>
 # include <map>
 
 namespace wccp {

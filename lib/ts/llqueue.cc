@@ -25,9 +25,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#if !defined(freebsd) && !defined(darwin)
-#include <malloc.h>
-#endif
 #include <assert.h>
 #include <limits.h>
 

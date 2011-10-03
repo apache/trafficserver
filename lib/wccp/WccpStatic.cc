@@ -26,6 +26,7 @@
 # include <net/if.h>
 # include <stdarg.h>
 # include <errno.h>
+# include <stdio.h>
 
 namespace wccp {
 // ------------------------------------------------------
