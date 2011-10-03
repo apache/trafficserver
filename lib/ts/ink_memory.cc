@@ -164,6 +164,8 @@ ats_memalign_free(void *ptr)
 // This effectively makes mallopt() a no-op (currently) when tcmalloc
 // or jemalloc is used. This might break our usage for increasing the
 // number of mmap areas (ToDo: Do we still really need that??).
+//
+// TODO: I think we might be able to get rid of this?
 int
 ats_mallopt(int param, int value)
 {
@@ -173,7 +175,9 @@ ats_mallopt(int param, int value)
 #if TS_HAS_TCMALLOC
 // TODO: tcmalloc code ?
 #else
+#if defined(linux)
   return mallopt(param, value);
+#endif // ! defined(linux)
 #endif // ! TS_HAS_TCMALLOC
 #endif // ! TS_HAS_JEMALLOC
   return 0;

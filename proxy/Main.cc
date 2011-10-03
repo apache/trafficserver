@@ -988,6 +988,7 @@ adjust_sys_settings(void)
   int mmap_max = -1;
   int fds_throttle = -1;
 
+  // TODO: I think we might be able to get rid of this?
   TS_ReadConfigInteger(mmap_max, "proxy.config.system.mmap_max");
   if (mmap_max >= 0)
     ats_mallopt(ATS_MMAP_MAX, mmap_max);
