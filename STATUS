@@ -53,13 +53,14 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   *) test: tests failing on some Debian sid and Solaris
    Trunk patches: http://svn.apache.org/viewvc?rev=1171365&view=rev
    Jira: https://issues.apache.org/jira/browse/TS-969
-   +1: igalic, zym
+   +1: igalic, zym, zwoop
    +0: jim (patch looks good but cannot test)
+   zwoop says: Seems harmless to me, since it's in regression only.
 
   *) Build: Allow for our default -O3 options to be overriden via CFLAGS/CXXFLAGS
    Trunk patches: http://svn.apache.org/viewvc?rev=1175914&view=rev
    Jira: https://issues.apache.org/jira/browse/TS-967
-   +1: igalic, jim
+   +1: igalic, jim, zwoop
 
 
 RELEASE PROCESS
