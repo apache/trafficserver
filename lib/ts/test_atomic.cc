@@ -141,7 +141,7 @@ cycle_data(void *d)
 
     // Place listItems into random queues
     while (pli) {
-      assert((pli->data1 ^ pli->data2 ^ pli->data3 ^ pli->data4) == pli->check);
+      ink_assert((pli->data1 ^ pli->data2 ^ pli->data3 ^ pli->data4) == pli->check);
       pli_next = (struct listItem *) pli->link;
       pli->link = 0;
       ink_atomiclist_push(&alists[(me + rand()) % MAX_ATOMIC_LISTS], (void *) pli);
@@ -225,7 +225,7 @@ main(int argc, const char *argv[])
 
     init_data();
     for (id = 0; id < MAX_TEST_THREADS; id++) {
-      assert(thr_create(NULL, 0, cycle_data, (void *) id, THR_NEW_LWP, NULL) == 0);
+      ink_assert(thr_create(NULL, 0, cycle_data, (void *) id, THR_NEW_LWP, NULL) == 0);
     }
   }
   while (1) {

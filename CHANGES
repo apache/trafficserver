@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 
 Changes with Apache Traffic Server 3.0.2
+  *) [TS-969] tests failing on some Debian sid and Solaris
+
   *) [TS-867] PluginVC crashes with TSFetchURL
 
   *) [TS-901] Valgrind found minor leaks and uninitialized variables
