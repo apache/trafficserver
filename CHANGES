@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 
 Changes with Apache Traffic Server 3.0.2
+  *) [TS-967]: Allow for our default -O3 options to be overriden via CFLAGS/CXXFLAGS
+   Author: Arno Toell and igalic
+
   *) [TS-969] tests failing on some Debian sid and Solaris
 
   *) [TS-867] PluginVC crashes with TSFetchURL

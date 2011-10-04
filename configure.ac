@@ -485,6 +485,17 @@ AC_ARG_VAR([PERL], [full path of Perl executable])
 CFLAGS="${REAL_CFLAGS}"
 CXXFLAGS="${REAL_CXXFLAGS}"
 
+AC_MSG_CHECKING([checking whether to auto-set compile optimizing flags])
+has_optimizer_flags=`$as_echo "$CFLAGS $CXXFLAGS" | ${AWK} '/-x?O.?/{print "no"}'`
+AS_IF([test "x${has_optimizer_flags}" = "xno"],
+	[ optimizing_flags='' ],
+	[
+		has_optimizer_flags='yes'
+		optimizing_flags='-O3'
+	]
+)
+AC_MSG_RESULT([${has_optimizer_flags} ${optimizing_flags}])
+
 base_cc=`basename $CC`
 # These are shortcuts used in combination for the compiler options below
 case $host_os in
@@ -509,21 +520,21 @@ case $host_os in
       # TODO: We should try to eliminate more of these -wd exclusions.
       common_opt="-pipe -Wall -wd111 -wd279 -wd383 -wd522 -wd444 -wd873 -wd981 -wd1418 -wd1419 -wd1572 -wd1720 -wd2256 -wd2259"
       debug_opt="-ggdb3 $common_opt"
-      release_opt="-g $common_opt -O2 -axsse4.2 -fno-strict-aliasing"
+      release_opt="-g $common_opt $optimization_flags -axsse4.2 -fno-strict-aliasing"
       cxx_opt="-Wno-invalid-offsetof"
     else # gcc
     # This is useful for finding odd conversions
     #    common_opt="-pipe -Wall -Werror -Wconversion -Wno-sign-conversion"
       common_opt="-pipe -Wall -Werror"
       debug_opt="-ggdb3 $common_opt"
-      release_opt="-g $common_opt -O3 -feliminate-unused-debug-symbols -fno-strict-aliasing"
+      release_opt="-g $common_opt $optimizing_flags -feliminate-unused-debug-symbols -fno-strict-aliasing"
       cxx_opt="-Wno-invalid-offsetof"
     fi
     ;;
   darwin*)
     common_opt="-pipe -Wall -Werror"
     debug_opt="-ggdb3 $common_opt"
-    release_opt="-g $common_opt -O3 -feliminate-unused-debug-symbols -fno-strict-aliasing"
+    release_opt="-g $common_opt $optimizing_flags -feliminate-unused-debug-symbols -fno-strict-aliasing"
     cxx_opt="-Wno-invalid-offsetof"
     TS_ADDTO(CPPFLAGS, [-I/opt/local/include])
     TS_ADDTO(LDFLAGS, [-L/opt/local/lib])
@@ -531,7 +542,7 @@ case $host_os in
   freebsd*|kfreebsd*)
     common_opt="-pipe -Wall -Werror"
     debug_opt="-ggdb3 $common_opt"
-    release_opt="-g $common_opt -O3 -feliminate-unused-debug-symbols -fno-strict-aliasing"
+    release_opt="-g $common_opt $optimizing_flags -feliminate-unused-debug-symbols -fno-strict-aliasing"
     cxx_opt="-Wno-invalid-offsetof"
     TS_ADDTO(LDFLAGS, [-L/usr/local/lib])
     ;;
@@ -539,7 +550,7 @@ case $host_os in
     if test "x${base_cc}" = "xcc"; then
       common_opt="-mt -m64 -D__WORDSIZE=64" # FIXME: arch should be detected
       debug_opt="-g $common_opt"
-      release_opt="-g $common_opt -xO3"
+      release_opt="-g $common_opt $optimizing_flags"
       cxx_opt="-library=stlport4"
       cxx_dbg="+w2"
       cxx_rel="-erroff"
@@ -552,7 +563,7 @@ case $host_os in
     else # gcc
       common_opt="-pipe -Wall -Werror"
       debug_opt="-ggdb3 $common_opt"
-      release_opt="-g $common_opt -O3 -feliminate-unused-debug-symbols -fno-strict-aliasing"
+      release_opt="-g $common_opt $optimizing_flags -feliminate-unused-debug-symbols -fno-strict-aliasing"
       cxx_opt="-Wno-invalid-offsetof"
     fi
     TS_ADDTO(LDFLAGS, [-L/lib])
@@ -561,7 +572,7 @@ case $host_os in
   *)
     common_opt="-pipe -Wall -Werror"
     debug_opt="-ggdb3 $common_opt"
-    release_opt="-g $common_opt -O3 -feliminate-unused-debug-symbols -fno-strict-aliasing"
+    release_opt="-g $common_opt $optimizing_flags -feliminate-unused-debug-symbols -fno-strict-aliasing"
     cxx_opt="-Wno-invalid-offsetof"
     ;;
 esac
