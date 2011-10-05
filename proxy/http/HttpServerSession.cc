@@ -78,7 +78,10 @@ HttpServerSession::new_connection(NetVConnection *new_vc)
     if (connection_count == NULL)
       connection_count = ConnectionCount::getInstance();
     connection_count->incrementCount(server_ip);
-    Debug("http_ss", "[%" PRId64 "] new connection, ip: %u, count: %u", con_id, server_ip, connection_count->getCount(server_ip));
+    char addrbuf[INET6_ADDRSTRLEN];
+    Debug("http_ss", "[%" PRId64 "] new connection, ip: %s, count: %u", 
+        con_id, 
+        ink_inet_ntop(&server_ip.sa, addrbuf, sizeof(addrbuf)), connection_count->getCount(server_ip));
   }
 #ifdef LAZY_BUF_ALLOC
   read_buffer = new_empty_MIOBuffer(HTTP_SERVER_RESP_HDR_BUFFER_INDEX);
@@ -128,8 +131,11 @@ HttpServerSession::do_io_close(int alerrno)
   if (enable_origin_connection_limiting == true) {
     if (connection_count->getCount(server_ip) > 0) {
       connection_count->incrementCount(server_ip, -1);
+      char addrbuf[INET6_ADDRSTRLEN];
       Debug("http_ss", "[%" PRId64 "] connection closed, ip: %u, count: %u",
-            con_id, server_ip, connection_count->getCount(server_ip));
+            con_id, 
+            ink_inet_ntop(&server_ip.sa, addrbuf, sizeof(addrbuf)), 
+            connection_count->getCount(server_ip));
     } else {
       Error("http_ss", "[%" PRId64 "] number of connections should be greater then zero: %u",
             con_id, connection_count->getCount(server_ip));

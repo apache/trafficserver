@@ -73,7 +73,7 @@ public:
     { }
 
   HSMresult_t acquire_session(Continuation *cont,
-                              unsigned int ip, int port,
+                              sockaddr const* addr,
                               const char *hostname, HttpClientSession *ua_session, HttpSM *sm);
   HSMresult_t release_session(HttpServerSession *to_release);
   void purge_keepalives();

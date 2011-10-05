@@ -1,6 +1,6 @@
 /** @file
 
-  A brief file description
+  Support class for describing the local machine.
 
   @section license License
 
@@ -25,109 +25,119 @@
 #include "I_Machine.h"
 
 // Singleton
-static Machine *machine = NULL;
+Machine* Machine::_instance = NULL;
 
-// Moved from HttpTransactHeaders.cc, we should probably move this somewhere ...
-#define H(_x) (((_x)>9)?((_x)-10+'A'):((_x)+'0'))
 int
-nstrhex(char *d, unsigned int i)
-{
-  unsigned char *p = (unsigned char *) &i;
-  d[0] = H(p[0] >> 4);
-  d[1] = H(p[0] & 0xF);
-  d[2] = H(p[1] >> 4);
-  d[3] = H(p[1] & 0xF);
-  d[4] = H(p[2] >> 4);
-  d[5] = H(p[2] & 0xF);
-  d[6] = H(p[3] >> 4);
-  d[7] = H(p[3] & 0xF);
-  return 8;
-}
+nstrhex(char *dst, uint8_t const* src, size_t len) {
+  int zret = 0;
+  for ( uint8_t const* limit = src + len ; src < limit ; ++src, zret += 2 ) {
+    uint8_t n1 = (*src >> 4) & 0xF; // high nybble.
+    uint8_t n0 = *src & 0xF; // low nybble.
 
-
-// Machine class. TODO: This has to deal with IPv6!
-Machine *
-this_machine()
-{
-  if (machine == NULL) {
-    ink_assert("need to call create_this_machine before accessing" "this_machine()");
+    *dst++ = n1 > 9 ? n1 + 'A' - 10 : n1 + '0';
+    *dst++ = n0 > 9 ? n0 + 'A' - 10 : n0 + '0';
   }
-  return machine;
+  *dst = 0; // terminate but don't include that in the length.
+  return zret;
 }
 
-void
-create_this_machine(char *hostname, unsigned int ip)
-{
-  machine = NEW(new Machine(hostname, ip));
+Machine*
+Machine::instance() {
+  ink_assert(_instance || !"Machine instance accessed before initialization");
+  return Machine::_instance;
 }
 
-Machine::Machine(char *ahostname, unsigned int aip)
-  : hostname(ahostname), ip(aip)
-{
-  if (!aip) {
-    char localhost[1024];
+Machine*
+Machine::init(char const* name, sockaddr const* ip) {
+  ink_assert(!_instance || !"Machine instance initialized twice.");
+  Machine::_instance = new Machine(name, ip);
+  return Machine::_instance;
+}
 
-    if (!ahostname) {
-      ink_release_assert(!gethostname(localhost, 1023));
-      ahostname = localhost;
+Machine::Machine(char const* the_hostname, sockaddr const* addr)
+  : hostname(0), hostname_len(0)
+  , ip_string_len(0)
+  , ip_hex_string_len(0)
+{
+  char localhost[1024];
+  int status; // return for system calls.
+
+  ip_string[0] = 0;
+  ip_hex_string[0] = 0;
+  ink_zero(ip);
+  ink_zero(ip4);
+  ink_zero(ip6);
+
+  localhost[sizeof(localhost)-1] = 0; // ensure termination.
+
+  if (!ink_inet_is_ip(addr)) {
+    addrinfo ai_hints;
+    addrinfo* ai_ret = 0;
+
+    if (!the_hostname) {
+      ink_release_assert(!gethostname(localhost, sizeof(localhost)-1));
+      the_hostname = localhost;
     }
-    hostname = ats_strdup(ahostname);
+    hostname = ats_strdup(the_hostname);
 
-    ink_gethostbyname_r_data data;
-    struct hostent *r = ink_gethostbyname_r(ahostname, &data);
-
-    if (!r) {
-      Warning("unable to DNS %s: %d", ahostname, data.herrno);
-      ip = 0;
+    ink_zero(ai_hints);
+    ai_hints.ai_flags = AI_ADDRCONFIG; // require existence of IP family addr.
+    status = getaddrinfo(hostname, 0, &ai_hints, &ai_ret);
+    if (0 != status) {
+      Warning("Unable to determine local host '%s' address information - %s"
+        , hostname
+        , gai_strerror(status)
+      );
     } else {
-      ip = (unsigned int) -1;   // 0xFFFFFFFF
-      for (int i = 0; r->h_addr_list[i]; i++) {
-        if (ip > *(unsigned int *) r->h_addr_list[i])
-          ip = *(unsigned int *) r->h_addr_list[i];
+      for (addrinfo* spot = ai_ret ; spot ; spot = spot->ai_next ) {
+        if (AF_INET == spot->ai_family) {
+          if (!ink_inet_is_ip4(&ip4)) {
+            ink_inet_copy(&ip4, spot->ai_addr);
+            if (!ink_inet_is_ip(&ip))
+              ink_inet_copy(&ip, spot->ai_addr);
+            if (ink_inet_is_ip6(&ip6)) break; // got both families, done.
+          }
+        } else if (AF_INET6 == spot->ai_family) {
+          if (!ink_inet_is_ip6(&ip6)) {
+            ink_inet_copy(&ip6, spot->ai_addr);
+            if (!ink_inet_is_ip(&ip))
+              ink_inet_copy(&ip, spot->ai_addr);
+            if (ink_inet_is_ip4(&ip4)) break; // got both families, done.
+          }
+        }
       }
-      if (ip == (unsigned int) -1)
-        ip = 0;
+      freeaddrinfo(ai_ret);
     }
-    //ip = htonl(ip); for the alpha! TODO
-  } else {
-    ip = aip;
+  } else { // address provided.
+    ink_inet_copy(&ip, addr);
+    if (ink_inet_is_ip4(addr)) ink_inet_copy(&ip4, addr);
+    else if (ink_inet_is_ip6(addr)) ink_inet_copy(&ip6, addr);
 
-    ink_gethostbyaddr_r_data data;
-    struct hostent *r = ink_gethostbyaddr_r((char *) &ip, sizeof(int), AF_INET, &data);
+    status = getnameinfo(
+      addr, ink_inet_ip_size(addr),
+      localhost, sizeof(localhost) - 1,
+      0, 0, // do not request service info
+      0 // no flags.
+    );
 
-    if (r == NULL) {
-      unsigned char x[4];
-
-      memset(x, 0, sizeof(x));
-      *(uint32_t *) & x = (uint32_t) ip;
-      Debug("machine_debug", "unable to reverse DNS %hhu.%hhu.%hhu.%hhu: %d", x[0], x[1], x[2], x[3], data.herrno);
+    if (0 != status) {
+      ip_text_buffer ipbuff;
+      Warning("Failed to find hostname for address '%s' - %s"
+        , ink_inet_ntop(addr, ipbuff, sizeof(ipbuff))
+        , gai_strerror(status)
+      );
     } else
-      hostname = ats_strdup(r->h_name);
+      hostname = ats_strdup(localhost);
   }
 
-  if (hostname)
-    hostname_len = strlen(hostname);
-  else
-    hostname_len = 0;
+  hostname_len = hostname ? strlen(hostname) : 0;
 
-  unsigned char x[4];
-
-  memset(x, 0, sizeof(x));
-  *(uint32_t *) & x = (uint32_t) ip;
-  const size_t ip_string_size = sizeof(char) * 16;
-  ip_string = (char *)ats_malloc(ip_string_size);
-  snprintf(ip_string, ip_string_size, "%hhu.%hhu.%hhu.%hhu", x[0], x[1], x[2], x[3]);
+  ink_inet_ntop(&ip.sa, ip_string, sizeof(ip_string));
   ip_string_len = strlen(ip_string);
-
-  ip_hex_string = (char*)ats_malloc(9);
-  memset(ip_hex_string, 0, 9);
-  nstrhex(ip_hex_string, ip);
-  ip_hex_string_len = strlen(ip_hex_string);
+  ip_hex_string_len =  nstrhex(ip_hex_string, ink_inet_addr8_cast(&ip), ink_inet_addr_size(&ip));
 }
 
 Machine::~Machine()
 {
   ats_free(hostname);
-  ats_free(ip_string);
-  ats_free(ip_hex_string);
 }

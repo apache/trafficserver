@@ -25,6 +25,20 @@
   This file is created for Prefetch API and is used only by Hughes
 */
 
+/// Type of connection.
+typedef enum
+{
+  ILL_BLAST = 0,
+  UDP_BLAST,
+  TCP_BLAST,
+  MULTICAST_BLAST
+} PrefetchBlastType;
+
+typedef struct {
+  PrefetchBlastType type;
+  ts_ip_endpoint ip;
+} PrefetchBlastData;
+
 typedef struct
 {
 
@@ -37,7 +51,7 @@ typedef struct
   TSMLoc response_loc;
 
   /*child ip addr in network order */
-  unsigned int client_ip;
+  ts_ip_endpoint client_ip;
 
   /*the embedded url parsed by the parser */
   const char *embedded_url;
@@ -55,9 +69,13 @@ typedef struct
    */
   int object_buf_status;
 
-  /*method of sending data to child */
-  unsigned int url_proto;
-  unsigned int url_response_proto;
+  /** Method of sending data to child.
+
+      If set to @c MULTICAST_BLAST then the corresponding address
+      value must be set to a multicast address to use.
+   */
+  PrefetchBlastData url_blast;
+  PrefetchBlastData url_response_blast;
 
 } TSPrefetchInfo;
 
@@ -67,12 +85,6 @@ enum
 {                               /* return type for TSPrefetchHook */
   TS_PREFETCH_CONTINUE,
   TS_PREFETCH_DISCONTINUE
-};
-
-enum
-{
-  TS_PREFETCH_PROTO_TCP = 1,
-  TS_PREFETCH_PROTO_UDP
 };
 
 enum

@@ -244,7 +244,7 @@ inline sockaddr_in6 const& ink_inet_ip6_cast(sockaddr const& a) {
   return *static_cast<sockaddr_in6 const*>(static_cast<void const*>(&a));
 }
 
-/// @return An appropriate size based on the address family.
+/// @return The @c sockaddr size for the family of @a addr.
 inline size_t ink_inet_ip_size(
   sockaddr const* addr ///< Address object.
 ) {
@@ -261,12 +261,22 @@ inline size_t ink_inet_ip_size(
     : 0
     ;
 }
-
-/// @return An appropriate size based on the address family.
-inline size_t ink_inet_ip_size(
-  sockaddr_in6 const* addr ///< Address object.
+/// @return The size of the IP address only.
+inline size_t ink_inet_addr_size(
+  sockaddr const* addr ///< Address object.
 ) {
-  return ink_inet_ip_size(ink_inet_sa_cast(addr));
+  return AF_INET == addr->sa_family ? sizeof(in_addr_t)
+    : AF_INET6 == addr->sa_family ? sizeof(in6_addr)
+    : 0
+    ;
+}
+inline size_t ink_inet_addr_size(
+  ts_ip_endpoint const* addr ///< Address object.
+) {
+  return AF_INET == addr->sa.sa_family ? sizeof(in_addr_t)
+    : AF_INET6 == addr->sa.sa_family ? sizeof(in6_addr)
+    : 0
+    ;
 }
 
 /** Get a reference to the port in an address.
@@ -397,6 +407,7 @@ inline uint32_t const* ink_inet_addr32_cast(sockaddr const* addr) {
     must be checked independently of this function.
     @return A pointer to the address information in @a addr or @c NULL
     if @a addr is not an IP address.
+    @see ink_inet_addr_size
 */
 inline uint8_t* ink_inet_addr8_cast(sockaddr* addr) {
   uint8_t* zret = 0;
@@ -552,8 +563,8 @@ inline int ink_inet_cmp(
     @note Convenience overload.
     @see ink_inet_cmp(sockaddr const* lhs, sockaddr const* rhs)
 */
-inline int ink_inet_cmp(sockaddr_in6 const* lhs, sockaddr_in6 const* rhs) {
-  return ink_inet_cmp(ink_inet_sa_cast(lhs), ink_inet_sa_cast(rhs));
+inline int ink_inet_cmp(ts_ip_endpoint const* lhs, ts_ip_endpoint const* rhs) {
+  return ink_inet_cmp(&lhs->sa, &rhs->sa);
 }
 
 /** Check if two addresses are equal.
@@ -692,11 +703,11 @@ char const* ink_inet_ntop(
     A buffer of size INET6_ADDRSTRLEN suffices, including a terminating nul.
  */
 inline char const* ink_inet_ntop(
-  const sockaddr_in6 *addr, ///< Address.
+  ts_ip_endpoint const* addr, ///< Address.
   char *dst, ///< Output buffer.
   size_t size ///< Length of buffer.
 ) {
-  return ink_inet_ntop(ink_inet_sa_cast(addr), dst, size);
+  return ink_inet_ntop(&addr->sa, dst, size);
 }
 
 /// Buffer size sufficient for IPv6 address and port.
@@ -719,11 +730,11 @@ char const* ink_inet_nptop(
     A buffer of size INET6_ADDRPORTSTRLEN suffices, including a terminating nul.
  */
 inline char const* ink_inet_nptop(
-  const sockaddr_in6 *addr, ///< Address.
+  ts_ip_endpoint const*addr, ///< Address.
   char *dst, ///< Output buffer.
   size_t size ///< Length of buffer.
 ) {
-  return ink_inet_nptop(ink_inet_sa_cast(addr), dst, size);
+  return ink_inet_nptop(&addr->sa, dst, size);
 }
 
 
@@ -766,6 +777,10 @@ inline int ink_inet_pton(
 ) {
   return ink_inet_pton(text, &addr->sa);
 }
+
+/** Generic IP address hash function.
+*/    
+uint32_t ink_inet_hash(sockaddr const* addr);
 
 /** Storage for an IP address.
     In some cases we want to store just the address and not the

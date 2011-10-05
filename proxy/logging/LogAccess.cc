@@ -369,7 +369,7 @@ int
 LogAccess::marshal_proxy_host_name(char *buf)
 {
   char *str = NULL;
-  Machine *machine = this_machine();
+  Machine *machine = Machine::instance();
 
   if (machine) {
     str = machine->hostname;
@@ -388,7 +388,7 @@ int
 LogAccess::marshal_proxy_host_ip(char *buf)
 {
   char *str = NULL;
-  Machine *machine = this_machine();
+  Machine *machine = Machine::instance();
   int len = 0;
 
   if (machine) {

@@ -1760,7 +1760,7 @@ main(int argc, char **argv)
 
     NetProcessor::accept_mss = accept_mss;
     netProcessor.start();
-    create_this_machine();
+    Machine::init();
 #ifndef INK_NO_HOSTDB
     dnsProcessor.start();
     if (hostDBProcessor.start() < 0)

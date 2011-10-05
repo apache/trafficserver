@@ -196,8 +196,8 @@ IpAllow::BuildTable()
   char errBuf[1024];
   char *file_buf = NULL;
   int line_num = 0;
-  sockaddr_in6 addr1;
-  sockaddr_in6 addr2;
+  ts_ip_endpoint addr1;
+  ts_ip_endpoint addr2;
   matcher_line line_info;
   bool alarmAlready = false;
 
@@ -234,7 +234,7 @@ IpAllow::BuildTable()
 
         ink_assert(line_info.type == MATCH_IP);
 
-        errPtr = ExtractIpRange(line_info.line[1][line_info.dest_entry], &addr1, &addr2);
+        errPtr = ExtractIpRange(line_info.line[1][line_info.dest_entry], &addr1.sa, &addr2.sa);
 
         if (errPtr != NULL) {
           snprintf(errBuf, sizeof(errBuf), "%s discarding %s entry at line %d : %s",
@@ -261,7 +261,7 @@ IpAllow::BuildTable()
                 // Color with index because at this point the address
                 // is volatile.
                 _map.mark(
-                  &addr1, &addr2,
+                  &addr1.sa, &addr2.sa,
                   reinterpret_cast<void*>(_acls.size()-1)
                 );
               } else {

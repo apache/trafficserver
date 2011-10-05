@@ -5125,7 +5125,7 @@ TSHttpTxnClientIPGet(TSHttpTxn txnp)
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 
   HttpSM *sm = (HttpSM *) txnp;
-  return sm->t_state.client_info.ip;
+  return ink_inet_ip4_addr_cast(&sm->t_state.client_info.addr);
 }
 
 sockaddr const*
@@ -5149,7 +5149,7 @@ TSHttpTxnClientIncomingPortGet(TSHttpTxn txnp)
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 
   HttpSM *sm = (HttpSM *) txnp;
-  return sm->t_state.client_info.port;
+  return ink_inet_get_port(&sm->t_state.client_info.addr);
 }
 
 sockaddr const*
@@ -5158,12 +5158,7 @@ TSHttpTxnServerAddrGet(TSHttpTxn txnp)
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 
   HttpSM *sm = reinterpret_cast<HttpSM *>(txnp);
-  ink_inet_ip4_set(
-    ink_inet_sa_cast(&sm->t_state.server_info.addr),
-    sm->t_state.server_info.ip,
-    htons(sm->t_state.server_info.port)
-  );
-  return ink_inet_sa_cast(&sm->t_state.server_info.addr);
+  return &sm->t_state.server_info.addr.sa;
 }
 
 unsigned int
@@ -5172,7 +5167,7 @@ TSHttpTxnServerIPGet(TSHttpTxn txnp)
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 
   HttpSM *sm = (HttpSM *) txnp;
-  return sm->t_state.server_info.ip;
+  return ink_inet_ip4_addr_cast(&sm->t_state.server_info.addr.sa);
 }
 
 // This API does currently not use or honor the port specified in the sockaddr.
@@ -5184,22 +5179,9 @@ TSHttpTxnOutgoingAddrSet(TSHttpTxn txnp, const struct sockaddr *addr, socklen_t 
   HttpSM *sm = (HttpSM *) txnp;
 
   sm->t_state.setup_per_txn_configs(); // Make sure the txn_conf struct is setup
+  ink_inet_copy(&sm->t_state.txn_conf->outgoing_ip_to_bind_saddr.sa, addr);
+  ink_inet_port_cast(&sm->t_state.txn_conf->outgoing_ip_to_bind_saddr) = 0;
 
-  // TODO: For now only, we really ought to make all "internal" IP representations
-  // use struct sockaddr_storage.
-  switch (addr->sa_family) {
-  case AF_INET:
-    {
-      sdk_assert(addrlen >= sizeof(struct sockaddr_in));
-      const struct sockaddr_in *v4addr = reinterpret_cast<const struct sockaddr_in *>(addr);
-      sm->t_state.txn_conf->outgoing_ip_to_bind_saddr = v4addr->sin_addr.s_addr;
-
-      return TS_SUCCESS;
-    }
-    break;
-  case AF_INET6:
-    break;
-  }
   return TS_ERROR;
 }
 
@@ -5214,13 +5196,9 @@ TSHttpTxnNextHopAddrGet(TSHttpTxn txnp)
      * Return zero if the server structure is not yet constructed.
      */
   if (sm->t_state.current.server == NULL)
-    return 0;
-  // IPv6 - is this set elsewhere? Can't be sure.
-//  ink_inet_ip4_set(&sm->t_state.current.server->addr,
-//    sm->t_state.current.server->ip,
-//    sm->t_state.current.server->port
-//  );
-  return ink_inet_sa_cast(&sm->t_state.current.server->addr);
+    return NULL;
+
+  return &sm->t_state.current.server->addr.sa;
 }
 
 in_addr_t
@@ -5234,7 +5212,7 @@ TSHttpTxnNextHopIPGet(TSHttpTxn txnp)
      */
   if (sm->t_state.current.server == NULL)
     return 0;
-  return sm->t_state.current.server->ip;
+  return ink_inet_ip4_addr_cast(&sm->t_state.current.server->addr.sa);
 }
 
 int
@@ -5246,7 +5224,7 @@ TSHttpTxnNextHopPortGet(TSHttpTxn txnp)
   int port = 0;
 
   if (sm && sm->t_state.current.server)
-    port = sm->t_state.current.server->port;
+    port = ink_inet_get_port(&sm->t_state.current.server->addr);
   return port;
 }
 
@@ -6187,16 +6165,13 @@ TSAction
 TSNetConnect(TSCont contp, sockaddr const* addr)
 {
   sdk_assert(sdk_sanity_check_continuation(contp) == TS_SUCCESS);
-  sdk_assert(addr);
-  sdk_assert(ink_inet_is_ip4(addr));
-  in_addr_t ip = ink_inet_ip4_addr_cast(addr);
-  uint16_t port = ink_inet_get_port(addr);
-  sdk_assert(ip != 0 && port != 0);
+  sdk_assert(ink_inet_is_ip(addr));
 
   FORCE_PLUGIN_MUTEX(contp);
 
-  INKContInternal *i = (INKContInternal *) contp;
-  return (TSAction)netProcessor.connect_re(i, ip, port);
+  return reinterpret_cast<TSAction>(
+    netProcessor.connect_re(reinterpret_cast<INKContInternal*>(contp), addr)
+  );
 }
 
 TSAction
@@ -6817,6 +6792,13 @@ TSMatcherExtractIPRange(char *match_str, uint32_t *addr1, uint32_t *addr2)
   sdk_assert(sdk_sanity_check_null_ptr((void*)match_str) == TS_SUCCESS);
   return (char*)ExtractIpRange(match_str, addr1, addr2);
 }
+// Conflict in header due to overload (must be C compatible).
+char *
+TSMatcherExtractIPRange(char *match_str, sockaddr* addr1, sockaddr* addr2)
+{
+  sdk_assert(sdk_sanity_check_null_ptr((void*)match_str) == TS_SUCCESS);
+  return (char*)ExtractIpRange(match_str, addr1, addr2);
+}
 
 TSMatcherLine
 TSMatcherLineCreate(void)
@@ -7092,6 +7074,7 @@ TSFetchUrl(const char* headers, int request_len, sockaddr const* ip , TSCont con
   if (callback_options != NO_CALLBACK) {
     sdk_assert(sdk_sanity_check_continuation(contp) == TS_SUCCESS);
   }
+  sdk_assert(ink_inet_is_ip4(ip));
 
   FetchSM *fetch_sm =  FetchSMAllocator.alloc();
   in_addr_t addr = ink_inet_ip4_addr_cast(ip);

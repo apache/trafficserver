@@ -197,8 +197,8 @@ public:
 
   const char *get_host();
 
-  in_addr_t get_ip(); // unused required virtual method.
-  in_addr_t get_client_ip(); // unused required virtual method.
+  sockaddr const* get_ip(); // unused required virtual method.
+  sockaddr const* get_client_ip(); // unused required virtual method.
 
   const char *m_pHost;
 };
@@ -236,18 +236,18 @@ DNSRequestData::get_host()
 /* --------------------------------------------------------------
    DNSRequestData::get_ip()
    -------------------------------------------------------------- */
-TS_INLINE in_addr_t DNSRequestData::get_ip()
+TS_INLINE sockaddr const* DNSRequestData::get_ip()
 {
-  return 0;
+  return NULL;
 }
 
 
 /* --------------------------------------------------------------
    DNSRequestData::get_client_ip()
    -------------------------------------------------------------- */
-TS_INLINE in_addr_t DNSRequestData::get_client_ip()
+TS_INLINE sockaddr const* DNSRequestData::get_client_ip()
 {
-  return 0;
+  return NULL;
 }
 
 /* --------------------------------------------------------------

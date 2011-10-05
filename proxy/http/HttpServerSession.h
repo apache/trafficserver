@@ -69,14 +69,16 @@ class HttpServerSession : public VConnection
 public:
   HttpServerSession()
     : VConnection(NULL),
-      server_ip(0), server_port(0), hostname_hash(),
+      hostname_hash(),
       host_hash_computed(false), con_id(0), transact_count(0),
       state(HSS_INIT), to_parent_proxy(false), server_trans_stat(0),
       private_session(false), share_session(0),
       enable_origin_connection_limiting(false),
       connection_count(NULL), read_buffer(NULL),
       server_vc(NULL), magic(HTTP_SS_MAGIC_DEAD), buf_reader(NULL)
-  { }
+    { 
+      ink_zero(server_ip);
+    }
 
   void destroy();
   void new_connection(NetVConnection *new_vc);
@@ -112,8 +114,7 @@ public:
   };
 
   // Keys for matching hostnames
-  unsigned int server_ip;
-  int server_port;
+  ts_ip_endpoint server_ip;
   INK_MD5 hostname_hash;
   bool host_hash_computed;
 

@@ -121,9 +121,9 @@ public:
   }
   virtual char *get_string() = 0;
   virtual const char *get_host() = 0;
-  virtual in_addr_t get_ip() = 0;
+  virtual sockaddr const* get_ip() = 0;
 
-  virtual in_addr_t get_client_ip() = 0;
+  virtual sockaddr const* get_client_ip() = 0;
   enum RD_Type
   { RD_NULL, RD_HTTP, RD_CONGEST_ENTRY };
   virtual RD_Type data_type(void)
@@ -138,20 +138,23 @@ class HttpRequestData:public RequestData
 public:
   inkcoreapi char *get_string();
   inkcoreapi const char *get_host();
-  inkcoreapi in_addr_t get_ip();
-  inkcoreapi in_addr_t get_client_ip();
+  inkcoreapi sockaddr const* get_ip();
+  inkcoreapi sockaddr const* get_client_ip();
 
   HttpRequestData()
     : hdr(NULL), hostname_str(NULL), api_info(NULL),
-      xact_start(0), src_ip(0), dest_ip(0), incoming_port(0), tag(NULL)
-  { }
+      xact_start(0), incoming_port(0), tag(NULL)
+  { 
+    ink_zero(src_ip);
+    ink_zero(dest_ip);
+  }
 
   HTTPHdr *hdr;
   char *hostname_str;
   _HttpApiInfo *api_info;
   time_t xact_start;
-  in_addr_t src_ip;
-  in_addr_t dest_ip;
+  ts_ip_endpoint src_ip;
+  ts_ip_endpoint dest_ip;
   uint16_t incoming_port;
   char *tag;
 };
@@ -227,7 +230,7 @@ template<class Data, class Result> class IpMatcher {
 public:
   IpMatcher(const char *name, const char *filename);
   ~IpMatcher();
-  void Match(in_addr_t ip_addr, RD * rdata, Result * result);
+  void Match(sockaddr const* ip_addr, RD * rdata, Result * result);
   void AllocateSpace(int num_entries);
   char *NewEntry(matcher_line * line_info);
   void Print();

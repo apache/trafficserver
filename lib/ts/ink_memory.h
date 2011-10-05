@@ -57,6 +57,13 @@ extern "C"
 
 #ifdef __cplusplus
 }
+
+template < typename T >
+T& ink_zero(T& t) {
+  memset(&t, 0, sizeof(t));
+  return t;
+}
+
 #endif                          /* __cplusplus */
 
 #endif

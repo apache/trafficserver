@@ -202,7 +202,7 @@ struct CongestionEntry: public RequestData
   // key in the hash table;
   uint64_t m_key;
   // host info
-  in_addr_t m_ip;
+  ts_ip_endpoint m_ip;
   char *m_hostname;
 
   // Pointer to the congestion.config entry
@@ -226,7 +226,7 @@ struct CongestionEntry: public RequestData
   // Reference count
   int m_ref_count;
 
-    CongestionEntry(const char *hostname, in_addr_t ip, CongestionControlRecord * rule, uint64_t key);
+    CongestionEntry(const char *hostname, sockaddr const* ip, CongestionControlRecord * rule, uint64_t key);
     CongestionEntry();
     virtual ~ CongestionEntry();
 
@@ -239,13 +239,13 @@ struct CongestionEntry: public RequestData
   {
     return m_hostname;
   }
-  virtual in_addr_t get_ip()
+  virtual sockaddr const* get_ip()
   {
-    return m_ip;
+    return &m_ip.sa;
   }
-  virtual in_addr_t get_client_ip()
+  virtual const sockaddr* get_client_ip()
   {
-    return (in_addr_t) 0;
+    return NULL;
   }
   virtual RD_Type data_type(void)
   {
@@ -410,11 +410,12 @@ CongestionEntry::clearFailHistory()
 }
 
 inline CongestionEntry::CongestionEntry()
-:m_key(0), m_ip(0), m_hostname(NULL), pRecord(NULL),
+:m_key(0), m_hostname(NULL), pRecord(NULL),
 m_last_congested(0), m_congested(0),
 m_stat_congested_conn_failures(0),
 m_M_congested(0), m_last_M_congested(0), m_num_connections(0), m_stat_congested_max_conn(0), m_ref_count(1)
 {
+  memset(&m_ip, 0, sizeof(m_ip));
   m_hist_lock = new_ProxyMutex();
 }
 
@@ -451,9 +452,9 @@ void initCongestionControl();
 CongestionControlRecord *CongestionControlled(RD * rdata);
 void reloadCongestionControl();
 
-uint64_t make_key(char *hostname, int len, unsigned long ip, CongestionControlRecord * record);
-uint64_t make_key(char *hostname, unsigned long ip, CongestionControlRecord * record);
-uint64_t make_key(char *hostname, int len, unsigned long ip, char *prefix, int prelen, short port = 0);
+uint64_t make_key(char *hostname, int len, sockaddr const* ip, CongestionControlRecord * record);
+uint64_t make_key(char *hostname, sockaddr const* ip, CongestionControlRecord * record);
+uint64_t make_key(char *hostname, int len, sockaddr const* ip, char *prefix, int prelen, short port = 0);
 
 //----------------------------------------------------
 // the following functions are actually declared in

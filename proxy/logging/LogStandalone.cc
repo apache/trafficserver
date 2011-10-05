@@ -256,7 +256,7 @@ init_log_standalone(const char *pgm_name, bool one_copy)
 
   1) does not call initialize_process_manager
   2) initializes the diags with use_records = false
-  3) does not call create_this_machine
+  3) does not call Machine::init()
   4) assumes multiple copies of the application can run, so does not
      do lock checking
   -------------------------------------------------------------------------*/

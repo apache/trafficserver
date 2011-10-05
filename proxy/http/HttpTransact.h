@@ -779,17 +779,16 @@ public:
     bool connect_failure;
     TransferEncoding_t transfer_encoding;
 
-    // The mapping is that the IP is an unsigned network
-    // (big-endian) 32-bit number.  Each of the dotted
-    // components is a byte, so:
-    // 0x25364758 = 0x25.0x36.0x47.0x58 = 37.54.71.88 in decimal.
-    in_addr_t ip;
-    sockaddr_in6 addr;
-
+    ts_ip_endpoint addr;    // replaces 'ip' field
+    
     // port to connect to, except for client
     // connection where it is port on proxy
     // that client connected to.
-    int port;
+    // This field is managed separately from the port
+    // part of 'addr' above as in various cases the two
+    // are set/manipulated independently and things are
+    // clearer this way.
+    uint16_t port; // host order.
     ServerState_t state;
     AbortState_t abort;
     HttpPortTypes port_attribute;
@@ -807,7 +806,7 @@ public:
         dns_round_robin(false),
         connect_failure(false),
         transfer_encoding(NO_TRANSFER_ENCODING),
-        ip(0), port(0),
+        port(0),
         state(STATE_UNDEFINED),
         abort(ABORT_UNDEFINED),
         port_attribute(SERVER_PORT_DEFAULT),

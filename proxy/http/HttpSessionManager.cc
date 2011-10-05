@@ -36,8 +36,8 @@
 #include "HttpSM.h"
 #include "HttpDebugNames.h"
 
-#define FIRST_LEVEL_HASH(x)   x % HSM_LEVEL1_BUCKETS
-#define SECOND_LEVEL_HASH(x)  x % HSM_LEVEL2_BUCKETS
+#define FIRST_LEVEL_HASH(x)   ink_inet_hash(x) % HSM_LEVEL1_BUCKETS
+#define SECOND_LEVEL_HASH(x)  ink_inet_hash(x) % HSM_LEVEL2_BUCKETS
 
 // Initialize a thread to handle HTTP session management
 void
@@ -89,7 +89,7 @@ SessionBucket::session_handler(int event, void *data)
   }
 
   // Search the 2nd level bucket for appropriate netvc
-  int l2_index = SECOND_LEVEL_HASH(net_vc->get_remote_ip());
+  int l2_index = SECOND_LEVEL_HASH(net_vc->get_remote_addr());
   HttpConfigParams *http_config_params = HttpConfig::acquire();
   bool found = false;
 
@@ -167,7 +167,7 @@ HttpSessionManager::purge_keepalives()
       while (b->lru_list.head) {
         HttpServerSession *sess = b->lru_list.head;
         b->lru_list.remove(sess);
-        int l2_index = SECOND_LEVEL_HASH(sess->server_ip);
+        int l2_index = SECOND_LEVEL_HASH(&sess->server_ip.sa);
         b->l2_hash[l2_index].remove(sess);
         sess->do_io_close();
       }
@@ -178,7 +178,7 @@ HttpSessionManager::purge_keepalives()
 }
 
 HSMresult_t
-_acquire_session(SessionBucket *bucket, unsigned int ip, int port, INK_MD5 &hostname_hash, HttpSM *sm)
+_acquire_session(SessionBucket *bucket, sockaddr const* ip, INK_MD5 &hostname_hash, HttpSM *sm)
 {
   HttpServerSession *b;
   HttpServerSession *to_return = NULL;
@@ -190,7 +190,9 @@ _acquire_session(SessionBucket *bucket, unsigned int ip, int port, INK_MD5 &host
   //  the 2nd level bucket
   b = bucket->l2_hash[l2_index].head;
   while (b != NULL) {
-    if (b->server_ip == ip && b->server_port == port) {
+    if (ink_inet_eq(&b->server_ip.sa, ip) &&
+      ink_inet_port_cast(ip) == ink_inet_port_cast(&b->server_ip)
+    ) {
       if (hostname_hash == b->hostname_hash) {
         bucket->lru_list.remove(b);
         bucket->l2_hash[l2_index].remove(b);
@@ -209,7 +211,7 @@ _acquire_session(SessionBucket *bucket, unsigned int ip, int port, INK_MD5 &host
 }
 
 HSMresult_t
-HttpSessionManager::acquire_session(Continuation *cont, unsigned int ip, int port,
+HttpSessionManager::acquire_session(Continuation *cont, sockaddr const* ip,
                                     const char *hostname, HttpClientSession *ua_session, HttpSM *sm)
 {
   NOWARN_UNUSED(cont);
@@ -234,7 +236,9 @@ HttpSessionManager::acquire_session(Continuation *cont, unsigned int ip, int por
   if (to_return != NULL) {
     ua_session->attach_server_session(NULL);
 
-    if (to_return->server_ip == ip && to_return->server_port == port) {
+    if (ink_inet_eq(&to_return->server_ip.sa, ip) &&
+      ink_inet_port_cast(&to_return->server_ip) == ink_inet_port_cast(ip)
+    ) {
       if (!hash_computed) {
         ink_code_MMH((unsigned char *) hostname, strlen(hostname), (unsigned char *) &hostname_hash);
         hash_computed = true;
@@ -267,13 +271,13 @@ HttpSessionManager::acquire_session(Continuation *cont, unsigned int ip, int por
 
   if (2 == sm->t_state.txn_conf->share_server_sessions) {
     ink_assert(ethread->l1_hash);
-    return _acquire_session(ethread->l1_hash + l1_index, ip, port, hostname_hash, sm);
+    return _acquire_session(ethread->l1_hash + l1_index, ip, hostname_hash, sm);
   } else {
     SessionBucket *bucket = g_l1_hash + l1_index;
 
     MUTEX_TRY_LOCK(lock, bucket->mutex, ethread);
     if (lock) {
-      return _acquire_session(bucket, ip, port, hostname_hash, sm);
+      return _acquire_session(bucket, ip, hostname_hash, sm);
     } else {
       Debug("http_ss", "[acquire session] could not acquire session due to lock contention");
     }
@@ -286,7 +290,7 @@ HttpSessionManager::acquire_session(Continuation *cont, unsigned int ip, int por
 HSMresult_t
 _release_session(SessionBucket *bucket, HttpServerSession *to_release)
 {
-  int l2_index = SECOND_LEVEL_HASH(to_release->server_ip);
+  int l2_index = SECOND_LEVEL_HASH(&to_release->server_ip.sa);
 
   ink_assert(l2_index < HSM_LEVEL2_BUCKETS);
 
@@ -317,7 +321,7 @@ HSMresult_t
 HttpSessionManager::release_session(HttpServerSession *to_release)
 {
   EThread *ethread = this_ethread();
-  int l1_index = FIRST_LEVEL_HASH(to_release->server_ip);
+  int l1_index = FIRST_LEVEL_HASH(&to_release->server_ip.sa);
 
   ink_assert(l1_index < HSM_LEVEL1_BUCKETS);
 

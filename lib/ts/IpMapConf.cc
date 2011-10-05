@@ -42,6 +42,11 @@ read_addr(
   int k;
   char dst[INET6_ADDRSTRLEN];
   char* src = line + *i;
+  bool bracketed_p = false;
+
+  // Allow enclosing brackets to be more consistent but
+  // don't bother passing it to @c ntop.
+  if (*i < n && '[' == *src) ++*i, ++src, bracketed_p = true;
 
   for ( k = 0
       ; k < INET6_ADDRSTRLEN
@@ -50,6 +55,11 @@ read_addr(
       ; ++k, ++*i, ++src
   ) {
     dst[k] = *src;
+  }
+
+  if (bracketed_p && (! *i < n || ']' != *src)) {
+    snprintf(err, ERR_STRING_LEN, "Unclosed brackets");
+    return EINVAL;
   }
 
   if (k == sizeof(dst)) {
@@ -96,7 +106,7 @@ Load_IpMap_From_File(IpMap* map, FILE* f, const char *key_str)
 {
   int i, n, line_no;
   int key_len = strlen(key_str);
-  sockaddr_in6 laddr, raddr;
+  ts_ip_endpoint laddr, raddr;
   char line[MAX_LINE_SIZE];
   char err_buff[ERR_STRING_LEN];
 
@@ -116,7 +126,7 @@ Load_IpMap_From_File(IpMap* map, FILE* f, const char *key_str)
     while (true) {
       if (!skip_space(line, n, i)) break;
 
-      if (0 != read_addr(line, n,  &i, ink_inet_sa_cast(&laddr), err_buff)) {
+      if (0 != read_addr(line, n,  &i, &laddr.sa, err_buff)) {
         char *error_str = (char *)ats_malloc(ERR_STRING_LEN);
         snprintf(error_str, ERR_STRING_LEN, "Invalid input configuration (%s) at line %d offset %d - '%s'", err_buff, line_no, i, line);
         return error_str;
@@ -137,12 +147,12 @@ Load_IpMap_From_File(IpMap* map, FILE* f, const char *key_str)
           char *error_str = (char *)ats_malloc(ERR_STRING_LEN);
           snprintf(error_str, ERR_STRING_LEN, "Invalid input (unterminated range) at line %d offset %d - '%s'", line_no, i, line);
           return error_str;
-        } else if (0 != read_addr(line, n, &i, ink_inet_sa_cast(&raddr), err_buff)) {
+        } else if (0 != read_addr(line, n, &i, &raddr.sa, err_buff)) {
           char *error_str = (char *)ats_malloc(ERR_STRING_LEN);
           snprintf(error_str, ERR_STRING_LEN, "Invalid input (%s) at line %d offset %d - '%s'", err_buff, line_no, i, line);
           return error_str;
         }
-        map->mark(ink_inet_sa_cast(&laddr), ink_inet_sa_cast(&raddr));
+        map->mark(&laddr.sa, &raddr.sa);
         if (!skip_space(line, n, i)) break;
         if (line[i] != ',') {
           char *error_str = (char *)ats_malloc(ERR_STRING_LEN);

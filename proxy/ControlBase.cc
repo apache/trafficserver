@@ -250,8 +250,8 @@ IPortMod::make(char* value, char const ** error) {
 // ----------
 struct SrcIPMod : public ControlBase::Modifier {
   // Stored in host order because that's how they are compared.
-  in_addr_t start_addr; ///< Start address in HOST order.
-  in_addr_t end_addr; ///< End address in HOST order.
+  ts_ip_endpoint start_addr; ///< Start address in HOST order.
+  ts_ip_endpoint end_addr; ///< End address in HOST order.
 
   static char const * const NAME;
 
@@ -267,22 +267,24 @@ ControlBase::Modifier::Type SrcIPMod::type() const { return MOD_SRC_IP; }
 char const * SrcIPMod::name() const { return NAME; }
 
 void SrcIPMod::print(FILE* f) const {
-  in_addr_t a1 = htonl(start_addr);
-  in_addr_t a2 = htonl(end_addr);
-  fprintf(f, "%s=%d.%d.%d.%d-%d.%d.%d.%d  ",
-    this->name(), TS_IP_OCTETS(a1), TS_IP_OCTETS(a2)
+  ip_text_buffer b1, b2;
+  fprintf(f, "%s=%s-%s  "
+    ,this->name()
+    , ink_inet_ntop(&start_addr.sa, b1, sizeof(b1))
+    , ink_inet_ntop(&end_addr.sa, b2, sizeof(b2))
   );
 }
 bool SrcIPMod::check(HttpRequestData* req) const {
   // Compare in host order
-  uint32_t addr = ntohl(req->src_ip);
-  return start_addr <= addr && addr <= end_addr;
+  return ink_inet_cmp(&start_addr, &req->src_ip) <= 0
+    && ink_inet_cmp(&req->src_ip, &end_addr) <= 0
+    ;
 }
 SrcIPMod*
 SrcIPMod::make(char * value, char const ** error ) {
   SrcIPMod tmp;
   SrcIPMod* zret = 0;
-  *error = ExtractIpRange(value, &tmp.start_addr, &tmp.end_addr);
+  *error = ExtractIpRange(value, &tmp.start_addr.sa, &tmp.end_addr.sa);
 
   if (!*error) zret = new SrcIPMod(tmp);
   return zret;

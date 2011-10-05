@@ -51,6 +51,10 @@ Changes with Apache Traffic Server 3.1.1
 
   *) [TS-936] Fix problems with core file generation on Linux.
 
+Changes with Apache Traffic Server 3.1.1
+
+  *) [TS-930] Fixed TSNetConnect to use network order for port.
+
 Changes with Apache Traffic Server 3.1.0
   *) Make sure --enable-purify works again
 
@@ -59,7 +63,8 @@ Changes with Apache Traffic Server 3.1.0
   *) [TS-925] Switch from integer thread IDs to hex thread IDs with the
    diagnostics output. Author: Brian Geffon.
 
-  *) [TS-919] All of iocore is now IPv6 compatible.
+  *) [TS-919] All of iocore is now IPv6 compatible. Much of this work
+   was contributed by Yossi Gottlieb.
 
   *) [TS-867] moving to a different thread only if the pluginvc is invoked
    from a non regular thread.

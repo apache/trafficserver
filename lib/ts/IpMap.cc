@@ -1036,11 +1036,11 @@ IpMap::contains(sockaddr const* target, void** ptr) const {
   bool zret = false;
   if (AF_INET == target->sa_family) {
     if (_m4) {
-      zret = _m4->contains(ntohl(ink_inet_ip4_addr_cast(target)));
+      zret = _m4->contains(ntohl(ink_inet_ip4_addr_cast(target)), ptr);
     }
   } else if (AF_INET6 == target->sa_family) {
     if (_m6) {
-      zret = _m6->contains(ink_inet_ip6_cast(target));
+      zret = _m6->contains(ink_inet_ip6_cast(target), ptr);
     }
   }
   return zret;

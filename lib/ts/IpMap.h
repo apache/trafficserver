@@ -363,22 +363,22 @@ public:
 
   /** Mark a range.
       All addresses in the range [ @a min , @a max ] are marked with @a data.
-      @note Convenience overload for IPv6 addresses.
+      @note Convenience overload.
       @return This object.
   */
   self& mark(
-    sockaddr_in6 const* min, ///< Minimum address (network order).
-    sockaddr_in6 const* max, ///< Maximum address (network order).
+    ts_ip_endpoint const* min, ///< Minimum address (network order).
+    ts_ip_endpoint const* max, ///< Maximum address (network order).
     void* data = 0 ///< Client data.
   );
 
   /** Mark an IPv6 address @a addr with @a data.
       This is equivalent to calling @c mark(addr, addr, data).
-      @note Convenience overload for IPv6 addresses.
+      @note Convenience overload.
       @return This object.
   */
   self& mark(
-    sockaddr_in6 const* addr, ///< Address (network order).
+    ts_ip_endpoint const* addr, ///< Address (network order).
     void* data = 0 ///< Client data.
   );
 
@@ -418,6 +418,11 @@ public:
     void **ptr = 0 ///< Client data return.
   ) const;
 
+  bool contains(
+    ts_ip_endpoint const* target, ///< Search target (network order).
+    void **ptr = 0 ///< Client data return.
+  ) const;
+
   /// Iterator for first element.
   iterator begin();
   /// Iterator past last element.
@@ -448,12 +453,16 @@ inline IpMap& IpMap::mark(in_addr_t addr, void* data) {
   return this->mark(addr, addr, data);
 }
 
-inline IpMap& IpMap::mark(sockaddr_in6 const* addr, void* data) {
-  return this->mark(ink_inet_sa_cast(addr), ink_inet_sa_cast(addr), data);
+inline IpMap& IpMap::mark(ts_ip_endpoint const* addr, void* data) {
+  return this->mark(&addr->sa, &addr->sa, data);
 }
 
-inline IpMap& IpMap::mark(sockaddr_in6 const* min, sockaddr_in6 const* max, void* data) {
-  return this->mark(ink_inet_sa_cast(min), ink_inet_sa_cast(max), data);
+inline IpMap& IpMap::mark(ts_ip_endpoint const* min, ts_ip_endpoint const* max, void* data) {
+  return this->mark(&min->sa, &max->sa, data);
+}
+
+inline bool IpMap::contains(ts_ip_endpoint const* target, void** ptr) const {
+  return this->contains(&target->sa, ptr);
 }
 
 inline IpMap::iterator

@@ -134,7 +134,7 @@ main(int argc, char *argv[])
   eventProcessor.start(ink_number_of_processors());
   ink_net_init(makeModuleVersion(1, 0, PRIVATE_MODULE_HEADER));
   netProcessor.start();
-  create_this_machine(NULL, 0);
+  Machine::init();
 
   Log::init(Log::NO_REMOTE_MANAGEMENT | Log::STANDALONE_COLLATOR);
 

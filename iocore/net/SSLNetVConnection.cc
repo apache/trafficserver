@@ -450,15 +450,15 @@ int
 SSLNetVConnection::sslStartHandShake(int event, int &err)
 {
   SSL_CTX *ctx = NULL;
-  sockaddr_in6 sa;
-  int namelen = sizeof(sa);
+  ts_ip_endpoint ip;
+  int namelen = sizeof(ip);
 
   if (event == SSL_EVENT_SERVER) {
     if (ssl == NULL) {
       if (sslCertLookup.multipleCerts) {
         char buff[INET6_ADDRSTRLEN];
-        safe_getsockname(get_socket(), ink_inet_sa_cast(&sa), &namelen);
-        ink_inet_ntop(&sa, buff, sizeof(buff));
+        safe_getsockname(get_socket(), &ip.sa, &namelen);
+        ink_inet_ntop(&ip.sa, buff, sizeof(buff));
         ctx = sslCertLookup.findInfoInHash(buff);
         if (ctx == NULL)
           ctx = ssl_NetProcessor.ctx;

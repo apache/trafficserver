@@ -33,19 +33,6 @@
 #include "api/ts/experimental.h"
 #include "api/ts/InkAPIHughes.h"
 
-#define IPSTRARGS(ip) (unsigned int) ((unsigned char *) &(ip))[0],	\
-		      (unsigned int) ((unsigned char *) &(ip))[1],	\
-	              (unsigned int) ((unsigned char *) &(ip))[2],	\
-	              (unsigned int) ((unsigned char *) &(ip))[3]
-
-typedef enum
-{
-  ILL_BLAST = 0,
-  UDP_BLAST = TS_PREFETCH_PROTO_UDP,
-  TCP_BLAST = TS_PREFETCH_PROTO_TCP
-    //MULTICAST_BLAST = TS_PREFETCH_PROTO_UDP_MULTICAST
-} PrefetchBlastType;
-
 class BlasterUrlList;
 class PrefetchUrlBlaster;
 class PrefetchBlaster;
@@ -64,8 +51,8 @@ struct PrefetchConfiguration
   int url_buffer_size;
   int url_buffer_timeout;
 
-  unsigned int default_url_proto;
-  unsigned int default_data_proto;
+  PrefetchBlastData default_url_blast;
+  PrefetchBlastData default_data_blast;
 
   int keepalive_timeout;
   int push_cached_objects;
@@ -90,8 +77,12 @@ public:
   PrefetchUrlEntry()
     : url(0), len(INT_MAX), resp_blaster(0),
       object_buf_status(TS_PREFETCH_OBJ_BUF_NOT_NEEDED),
-      req_ip(0), child_ip(0), url_multicast_ip(0), data_multicast_ip(0), blaster_link(0), hash_link(0)
+      blaster_link(0), hash_link(0)
   {
+    ink_zero(req_ip);
+    ink_zero(child_ip);
+    ink_zero(url_multicast_ip);
+    ink_zero(data_multicast_ip);
     refcount_inc();
   }
 
@@ -112,16 +103,14 @@ public:
   int len;
   INK_MD5 md5;
 
-  //PrefetchBlastType   resp_blast_proto;
-  //HTTPHdr *           request;
   PrefetchBlaster *resp_blaster;
 
   int object_buf_status;
 
-  uint32_t req_ip;                /*ip address where request is coming from */
-  uint32_t child_ip;
-  uint32_t url_multicast_ip;
-  uint32_t data_multicast_ip;
+  ts_ip_endpoint req_ip;     /*ip address where request is coming from */
+  ts_ip_endpoint child_ip;
+  ts_ip_endpoint url_multicast_ip;
+  ts_ip_endpoint data_multicast_ip;
 
   PrefetchUrlEntry *blaster_link;
   PrefetchUrlEntry *hash_link;
@@ -176,12 +165,9 @@ public:
   VIO *m_output_vio;
 
   HttpSM *m_sm;
-  //HTTPHdr *m_request;
-  //HTTPHdr *m_response;
 
   char *url;
 
-  //unsigned int                child_ip;
   HtmlParser html_parser;
 
   PrefetchUrlEntry *hash_table[HASH_TABLE_LENGTH];
@@ -196,6 +182,8 @@ public:
   bool no_dot_in_host;
 };
 
+extern PrefetchBlastData const UDP_BLAST_DATA;
+extern PrefetchBlastData const TCP_BLAST_DATA;
 
 //blaster
 class BlasterUrlList:public Continuation
@@ -204,20 +192,20 @@ class BlasterUrlList:public Continuation
   int timeout;                  //in milliseconds
   Action *action;
   int mtu;
-  PrefetchBlastType blast_proto;
+  PrefetchBlastData blast;
 
   PrefetchUrlEntry *list_head;
   int cur_len;
 
 public:
   BlasterUrlList()
-    : Continuation(), timeout(0), action(0), mtu(0), blast_proto(ILL_BLAST), list_head(0), cur_len(0)
+    : Continuation(), timeout(0), action(0), mtu(0), list_head(0), cur_len(0)
   {  }
 
-  void init(PrefetchBlastType btype = UDP_BLAST, int tout = 0, int xmtu = INT_MAX) {
+  void init(PrefetchBlastData const& bdata = UDP_BLAST_DATA, int tout = 0, int xmtu = INT_MAX) {
     SET_HANDLER((int (BlasterUrlList::*)(int, void *))(&BlasterUrlList::handleEvent));
     mutex = new_ProxyMutex();
-    blast_proto = btype;
+    blast = bdata;
     timeout = tout;
     mtu = xmtu;
   }
@@ -243,16 +231,17 @@ public:
   typedef int (PrefetchUrlBlaster::*EventHandler) (int, void *);
 
     PrefetchUrlBlaster()
-  : url_head(0), proto(ILL_BLAST), action(0)
+  : url_head(0), action(0)
   {
+    ink_zero(blast);
   }
 
-  void init(PrefetchUrlEntry * list_head, PrefetchBlastType u_proto = UDP_BLAST);
+  void init(PrefetchUrlEntry * list_head, PrefetchBlastData const& u_bd = UDP_BLAST_DATA);
 
   void free();
 
   PrefetchUrlEntry *url_head;
-  PrefetchBlastType proto;
+  PrefetchBlastData blast;
 
   Action *action;
 
@@ -265,14 +254,14 @@ public:
 extern ClassAllocator<PrefetchUrlBlaster> prefetchUrlBlasterAllocator;
 
 void
-PrefetchUrlBlaster::init(PrefetchUrlEntry * list_head, PrefetchBlastType u_proto)
+PrefetchUrlBlaster::init(PrefetchUrlEntry * list_head, PrefetchBlastData const& u_bd)
 {
   /* More clean up necessary... we should not need this class
      XXXXXXXXX */
   mutex = new_ProxyMutex();
 
   url_head = list_head;
-  proto = u_proto;
+  blast = u_bd;
 
   MUTEX_LOCK(lock, mutex, this_ethread());
 
@@ -283,7 +272,7 @@ inline void
 BlasterUrlList::invokeUrlBlaster()
 {
   PrefetchUrlBlaster *u_blaster = prefetchUrlBlasterAllocator.alloc();
-  u_blaster->init(list_head, blast_proto);
+  u_blaster->init(list_head, blast);
   list_head = NULL;
   cur_len = 0;
 }
@@ -296,7 +285,7 @@ public:
 
     PrefetchBlaster()
   : Continuation(), url_ent(0), transform(0), url_list(0), request(0),
-    cache_http_info(0), buf(0), reader(0), serverVC(0), data_proto(0), n_pkts_sent(0), seq_no(0), io_block(0)
+    cache_http_info(0), buf(0), reader(0), serverVC(0), n_pkts_sent(0), seq_no(0), io_block(0)
   {
   };
   ~PrefetchBlaster() {
@@ -330,7 +319,7 @@ public:
 
   VConnection *serverVC;
 
-  unsigned int data_proto;
+  PrefetchBlastData data_blast;
 
   CacheLookupHttpConfig cache_lookup_config;
 
@@ -357,16 +346,16 @@ class KeepAliveConn: public Continuation
 public:
 
   KeepAliveConn()
-    : Continuation(), ip(0), nbytes_added(0)
-  { }
+    : Continuation(),  nbytes_added(0)
+  { ink_zero(ip); }
 
-  int init(unsigned int ip, MIOBuffer * buf, IOBufferReader * reader);
+  int init(ts_ip_endpoint const& ip, MIOBuffer * buf, IOBufferReader * reader);
   void free();
 
   int append(IOBufferReader * reader);
   int handleEvent(int event, void *data);
 
-  unsigned int ip;
+  ts_ip_endpoint ip;
 
   MIOBuffer *buf;
   IOBufferReader *reader;
@@ -391,8 +380,8 @@ public:
 
   int init();
   void free();
-  static int ip_hash(unsigned int ip);
-  int append(unsigned int ip, MIOBuffer * buf, IOBufferReader * reader);
+  static int ip_hash(ts_ip_endpoint const& ip);
+  int append(ts_ip_endpoint const& ip, MIOBuffer * buf, IOBufferReader * reader);
 
   typedef struct
   {
@@ -410,15 +399,15 @@ class KeepAliveLockHandler: public Continuation
 
 public:
   KeepAliveLockHandler()
-  :Continuation(), ip(0)
-  {
+    :Continuation()  {
+    ink_zero(ip);
   };
 
-  void init(unsigned int xip, MIOBuffer * xbuf, IOBufferReader * xreader)
+  void init(ts_ip_endpoint const& xip, MIOBuffer * xbuf, IOBufferReader * xreader)
   {
-    mutex = g_conn_table->arr[KeepAliveConnTable::ip_hash(ip)].mutex;
+    mutex = g_conn_table->arr[KeepAliveConnTable::ip_hash(xip)].mutex;
 
-    ip = xip;
+    ink_inet_copy(&ip, &xip);
     buf = xbuf;
     reader = xreader;
 
@@ -432,7 +421,7 @@ public:
 
   int handleEvent(int event, void *data);
 
-  unsigned int ip;
+  ts_ip_endpoint ip;
   MIOBuffer *buf;
   IOBufferReader *reader;
 };

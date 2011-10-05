@@ -318,7 +318,7 @@ find_server_and_update_current_info(HttpTransact::State* s)
       //  to go the origin server, we can only obey this if we
       //  dns'ed the origin server
       if (s->parent_result.r == PARENT_DIRECT && s->http_config_param->no_dns_forward_to_parent != 0) {
-        ink_assert(s->server_info.ip == 0);
+        ink_assert(!ink_inet_is_ip(&s->server_info.addr));
         s->parent_result.r = PARENT_FAIL;
       }
       break;
@@ -1219,10 +1219,11 @@ HttpTransact::HandleRequest(State* s)
     // origin server. Ignore the no_dns_just_forward_to_parent setting.
     // we need to see if the hostname is an
     //   ip address since the parent selection code result
-    //   could change as a result of this ip address
-    uint32_t addr = ink_inet_addr(s->server_info.name);
-    if ((int32_t) addr != -1) {
-      s->request_data.dest_ip = addr;
+    //   could change as a result of this ip address    
+    ts_ip_endpoint addr;
+    ink_inet_pton(s->server_info.name, &addr);
+    if (ink_inet_is_ip(&addr)) {
+      ink_inet_copy(&s->request_data.dest_ip, &addr);
     }
 
     if (s->parent_params->parentExists(&s->request_data)) {
@@ -1230,7 +1231,7 @@ HttpTransact::HandleRequest(State* s)
       //  DNS service available, we just want to forward the request
       //  the parent proxy.  In this case, we never find out the
       //  origin server's ip.  So just skip past OSDNS
-      s->server_info.ip = 0;
+      ink_inet_invalidate(&s->server_info.addr);
       StartAccessControl(s);
       return;
     } else if (s->http_config_param->no_origin_server_dns) {
@@ -1382,7 +1383,7 @@ HttpTransact::PPDNSLookup(State* s)
   if (!s->dns_info.lookup_success) {
     // DNS lookup of parent failed, find next parent or o.s.
     find_server_and_update_current_info(s);
-    if (s->current.server->ip == 0) {
+    if (!ink_inet_is_ip(&s->current.server->addr)) {
       if (s->current.request_to == PARENT_PROXY) {
         TRANSACT_RETURN(DNS_LOOKUP, PPDNSLookup);
       } else {
@@ -1395,12 +1396,13 @@ HttpTransact::PPDNSLookup(State* s)
     }
   } else {
     // lookup succeeded, open connection to p.p.
-    s->parent_info.ip = ink_inet_ip4_addr_cast(s->host_db_info.ip());
+    ink_inet_copy(&s->parent_info.addr, s->host_db_info.ip());
     get_ka_info_from_host_db(s, &s->parent_info, &s->client_info, &s->host_db_info);
     s->parent_info.dns_round_robin = s->dns_info.round_robin;
 
-    Debug("http_trans", "[PPDNSLookup] DNS lookup for sm_id[%d] successful IP: %u.%u.%u.%u", s->state_machine->sm_id,
-          PRINT_IP(s->parent_info.ip));
+    char addrbuf[INET6_ADDRSTRLEN];
+    Debug("http_trans", "[PPDNSLookup] DNS lookup for sm_id[%d] successful IP: %s", s->state_machine->sm_id,
+          ink_inet_ntop(&s->parent_info.addr.sa, addrbuf, sizeof(addrbuf)));
   }
 
   // Since this function can be called serveral times while retrying
@@ -1449,13 +1451,14 @@ HttpTransact::ReDNSRoundRobin(State* s)
 
     // Our ReDNS of the server succeeeded so update the necessary
     //  information and try again
-    s->server_info.ip =ink_inet_ip4_addr_cast( s->host_db_info.ip());
-    s->request_data.dest_ip = s->server_info.ip;
+    ink_inet_copy(&s->server_info.addr, s->host_db_info.ip());
+    ink_inet_copy(&s->request_data.dest_ip, &s->server_info.addr);
     get_ka_info_from_host_db(s, &s->server_info, &s->client_info, &s->host_db_info);
     s->server_info.dns_round_robin = s->dns_info.round_robin;
 
-    Debug("http_trans", "[ReDNSRoundRobin] DNS lookup for O.S. successful IP: %u.%u.%u.%u",
-          PRINT_IP(s->server_info.ip));
+    char addrbuf[INET6_ADDRSTRLEN];
+    Debug("http_trans", "[ReDNSRoundRobin] DNS lookup for O.S. successful IP: %s",
+          ink_inet_ntop(&s->server_info.addr.sa, addrbuf, sizeof(addrbuf)));
 
     s->next_action = how_to_open_connection(s);
   } else {
@@ -1591,12 +1594,14 @@ HttpTransact::OSDNSLookup(State* s)
   // Check to see if can fullfill expect requests based on the cached
   // update some state variables with hostdb information that has
   // been provided.
-  s->server_info.ip = ink_inet_ip4_addr_cast(s->host_db_info.ip());
-  s->request_data.dest_ip = s->server_info.ip;
+  ink_inet_copy(&s->server_info.addr, s->host_db_info.ip());
+  ink_inet_copy(&s->request_data.dest_ip, &s->server_info.addr);
   get_ka_info_from_host_db(s, &s->server_info, &s->client_info, &s->host_db_info);
   s->server_info.dns_round_robin = s->dns_info.round_robin;
+
+  char addrbuf[INET6_ADDRSTRLEN];
   Debug("http_trans", "[OSDNSLookup] DNS lookup for O.S. successful "
-        "IP: %u.%u.%u.%u", PRINT_IP(s->server_info.ip));
+        "IP: %s", ink_inet_ntop(&s->server_info.addr.sa, addrbuf, sizeof(addrbuf)));
 
   // so the dns lookup was a success, but the lookup succeeded on
   // a hostname which was expanded by the traffic server. we should
@@ -2543,7 +2548,7 @@ HttpTransact::HandleCacheOpenReadHit(State* s)
     }
 
     if (server_up || s->stale_icp_lookup) {
-      if (!s->stale_icp_lookup && s->current.server->ip == 0) {
+      if (!s->stale_icp_lookup && !ink_inet_is_ip(&s->current.server->addr)) {
 //        ink_release_assert(s->current.request_to == PARENT_PROXY ||
 //                    s->http_config_param->no_dns_forward_to_parent != 0);
 
@@ -2933,7 +2938,7 @@ HttpTransact::HandleCacheOpenReadMiss(State* s)
 
   if (!h->is_cache_control_set(HTTP_VALUE_ONLY_IF_CACHED)) {
     find_server_and_update_current_info(s);
-    if (s->current.server->ip == 0) {
+    if (!ink_inet_is_ip(&s->current.server->addr)) {
       ink_release_assert(s->current.request_to == PARENT_PROXY ||
                   s->http_config_param->no_dns_forward_to_parent != 0);
       if (s->current.request_to == PARENT_PROXY) {
@@ -2978,13 +2983,15 @@ HttpTransact::HandleICPLookup(State* s)
   if (s->icp_lookup_success == true) {
     HTTP_INCREMENT_TRANS_STAT(http_icp_suggested_lookups_stat);
     Debug("http_trans", "[HandleICPLookup] Success, sending request to icp suggested host.");
-    s->icp_info.ip = s->icp_ip_result.sin_addr.s_addr;
-    // store the port information in native byte order
+    ink_inet_ip4_set(&s->icp_info.addr, s->icp_ip_result.sin_addr.s_addr);
     s->icp_info.port = ntohs(s->icp_ip_result.sin_port);
 
     // TODO in this case we should go to the miss case
     // just a little shy about using goto's, that's all.
-    ink_release_assert((s->icp_info.port != s->client_info.port) || (s->icp_info.ip != this_machine()->ip));
+    ink_release_assert(
+        (s->icp_info.port != s->client_info.port) || 
+        (ink_inet_cmp(&s->icp_info.addr.sa, &Machine::instance()->ip.sa) != 0)
+    );        
 
     // Since the ICPDNSLookup is not called, these two
     //   values are not initialized.
@@ -3006,10 +3013,10 @@ HttpTransact::HandleICPLookup(State* s)
     SET_VIA_STRING(VIA_DETAIL_CACHE_LOOKUP, VIA_DETAIL_MISS_NOT_CACHED);
     Debug("http_trans", "[HandleICPLookup] Failure, sending request to forward server.");
     s->parent_info.name = NULL;
-    s->parent_info.port = 0;
+    ink_zero(s->parent_info.addr);
 
     find_server_and_update_current_info(s);
-    if (s->current.server->ip == 0) {
+    if (!ink_inet_is_ip(&s->current.server->addr)) {
       if (s->current.request_to == PARENT_PROXY) {
         TRANSACT_RETURN(DNS_LOOKUP, PPDNSLookup);
       } else {
@@ -3288,7 +3295,7 @@ HttpTransact::handle_response_from_icp_suggested_host(State* s)
     // send request to parent proxy now if there is
     // one or else directly to the origin server.
     find_server_and_update_current_info(s);
-    if (s->current.server->ip == 0) {
+    if (!ink_inet_is_ip(&s->current.server->addr)) {
       if (s->current.request_to == PARENT_PROXY) {
         TRANSACT_RETURN(DNS_LOOKUP, PPDNSLookup);
       } else {
@@ -3352,8 +3359,9 @@ HttpTransact::handle_response_from_parent(State* s)
 
       s->current.server->connect_failure = 1;
 
-      Debug("http_trans", "[%d] failed to connect to parent %u.%u.%u.%u", s->current.attempts,
-            PRINT_IP(s->current.server->ip));
+      char addrbuf[INET6_ADDRSTRLEN];
+      Debug("http_trans", "[%d] failed to connect to parent %s", s->current.attempts,
+            ink_inet_ntop(&s->current.server->addr.sa, addrbuf, sizeof(addrbuf)));
 
       // If the request is not retryable, just give up!
       if (!is_request_retryable(s)) {
@@ -3676,9 +3684,11 @@ HttpTransact::delete_srv_entry(State* s, int max_retries)
 void
 HttpTransact::delete_server_rr_entry(State* s, int max_retries)
 {
+  char addrbuf[INET6_ADDRSTRLEN];
+  
   if (diags->on()) {
-    DebugOn("http_trans", "[%d] failed to connect to %u.%u.%u.%u", s->current.attempts,
-            PRINT_IP(s->current.server->ip));
+    DebugOn("http_trans", "[%d] failed to connect to %s", s->current.attempts,
+            ink_inet_ntop(&s->current.server->addr.sa, addrbuf, sizeof(addrbuf)));
     DebugOn("http_trans", "[delete_server_rr_entry] marking rr entry " "down and finding next one");
   }
   ink_debug_assert(s->current.server->connect_failure);
@@ -3709,20 +3719,23 @@ HttpTransact::retry_server_connection_not_open(State* s, ServerState_t conn_stat
   ink_debug_assert(s->current.state != ACTIVE_TIMEOUT);
   ink_debug_assert(s->current.attempts <= max_retries);
   ink_debug_assert(s->current.server->connect_failure != 0);
+  char addrbuf[INET6_ADDRSTRLEN];
 
   char *url_string = s->hdr_info.client_request.url_string_get(&s->arena);
 
-  Debug("http_trans", "[%d] failed to connect [%d] to %u.%u.%u.%u", s->current.attempts, conn_state,
-        PRINT_IP(s->current.server->ip));
+  Debug("http_trans", "[%d] failed to connect [%d] to %s", s->current.attempts, conn_state,
+        ink_inet_ntop(&s->current.server->addr.sa, addrbuf, sizeof(addrbuf)));
 
   //////////////////////////////////////////
   // on the first connect attempt failure //
   // record the failue                   //
   //////////////////////////////////////////
   if (0 == s->current.attempts)
-    Log::error("CONNECT:[%d] could not connect [%s] to %u.%u.%u.%u for '%s'", s->current.attempts,
-               HttpDebugNames::get_server_state_name(conn_state),
-               PRINT_IP(s->current.server->ip), url_string ? url_string : "<none>");
+    Log::error("CONNECT:[%d] could not connect [%s] to %s for '%s'",
+     s->current.attempts,
+     HttpDebugNames::get_server_state_name(conn_state),
+     ink_inet_ntop(&s->current.server->addr.sa, addrbuf, sizeof(addrbuf)), url_string ? url_string : "<none>"
+    );
 
   if (url_string) {
     s->arena.str_free(url_string);
@@ -5151,13 +5164,12 @@ HttpTransact::add_client_ip_to_outgoing_request(State* s, HTTPHdr* request)
 {
   char ip_string[INET6_ADDRSTRLEN + 1] = {'\0'};
   size_t ip_string_size = 0;
-  unsigned char *p = (unsigned char *) &s->client_info.ip;
 
-  if (unlikely(!p))
+  if (!ink_inet_is_ip(&s->client_info.addr.sa))
     return;
 
   // Always prepare the IP string.
-  if (ink_inet_ntop((struct sockaddr *)&s->client_info.addr, ip_string + 1, sizeof(ip_string) - 1) != NULL) {
+  if (ink_inet_ntop(&s->client_info.addr.sa, ip_string + 1, sizeof(ip_string) - 1) != NULL) {
     ip_string[0] = ' ';         // Leading space always, in case we need to concatenate this IP
     ip_string_size += strlen(ip_string);
   } else {
@@ -5676,10 +5688,10 @@ HttpTransact::initialize_state_variables_from_request(State* s, HTTPHdr* obsolet
   }
   s->request_data.hdr = &s->hdr_info.client_request;
   s->request_data.hostname_str = s->arena.str_store(host_name, host_len);
-  s->request_data.src_ip = s->client_info.ip;
-  s->request_data.dest_ip = 0;
+  ink_inet_copy(&s->request_data.src_ip, &s->client_info.addr);
+  memset(&s->request_data.dest_ip, 0, sizeof(s->request_data.dest_ip));
   if (s->state_machine->ua_session) {
-    s->request_data.incoming_port = (uint16_t) ntohs(s->state_machine->ua_session->get_netvc()->get_local_port());
+    s->request_data.incoming_port = s->state_machine->ua_session->get_netvc()->get_local_port();
   }
   s->request_data.xact_start = s->client_request_time;
   s->request_data.api_info = &s->api_info;
@@ -6566,9 +6578,8 @@ HttpTransact::process_quick_http_filter(State* s, int method)
     return;
   }
 
-  // TODO: This currently only deal with IPv4, we should support ::1 for IPv6 too.
   // Exempt for "localhost", avoid denying for localhost.
-  if (((int)s->client_info.ip == 16777343)) {
+  if (ink_inet_is_loopback(&s->client_info.addr)) {
     return;
   }
 
@@ -6680,14 +6691,9 @@ HttpTransact::will_this_request_self_loop(State* s)
   // check if we are about to self loop //
   ////////////////////////////////////////
   if (s->dns_info.lookup_success) {
-    int dns_host_ip, host_port, local_ip, local_port;
-
-    dns_host_ip = ink_inet_ip4_addr_cast(s->host_db_info.ip());
-    local_ip = this_machine()->ip;
-
-    if (dns_host_ip == local_ip) {
-      host_port = s->hdr_info.client_request.url_get()->port_get();
-      local_port = s->client_info.port;
+    if (ink_inet_eq(s->host_db_info.ip(), &Machine::instance()->ip.sa)) {
+      uint16_t host_port = s->hdr_info.client_request.url_get()->port_get();
+      uint16_t local_port = ink_inet_get_port(&s->client_info.addr);
       if (host_port == local_port) {
         switch (s->dns_info.looking_up) {
         case ORIGIN_SERVER:
@@ -6711,7 +6717,7 @@ HttpTransact::will_this_request_self_loop(State* s)
     // Now check for a loop using the Via string.
     // Since we insert our ip_address (in hex) into outgoing Via strings,
     // look for our_ip address in the request's via string.
-    if (local_ip > 0) {
+    if (ink_inet_is_ip(&Machine::instance()->ip)) {
       MIMEField *via_field = s->hdr_info.client_request.field_find(MIME_FIELD_VIA, MIME_LEN_VIA);
 
       while (via_field) {
@@ -6720,9 +6726,9 @@ HttpTransact::will_this_request_self_loop(State* s)
         int via_len;
         const char *via_string = via_field->value_get(&via_len);
 
-        if (via_string && ptr_len_str(via_string, via_len, this_machine()->ip_hex_string)) {
+        if (via_string && ptr_len_str(via_string, via_len, Machine::instance()->ip_hex_string)) {
           Debug("http_transact", "[will_this_request_self_loop] Incoming via: %.*s has (%s[%s] (%s))", via_len, via_string,
-                s->http_config_param->proxy_hostname, this_machine()->ip_hex_string, s->http_config_param->proxy_request_via_string);
+                s->http_config_param->proxy_hostname, Machine::instance()->ip_hex_string, s->http_config_param->proxy_request_via_string);
           build_error_response(s, HTTP_STATUS_BAD_REQUEST, "Multi-Hop Cycle Detected",
                                "request#cycle_detected", "Your request is prohibited because it would cause a cycle.");
           return TRUE;
@@ -8197,12 +8203,13 @@ HttpTransact::build_error_response(State *s, HTTPStatus status_code, const char 
   }
 
   if (s->http_config_param->errors_log_error_pages) {
-    char ip_string[128];
-    unsigned char *p = (unsigned char *) &s->client_info.ip;
+    char ip_string[INET6_ADDRSTRLEN];
 
-    snprintf(ip_string, sizeof(ip_string), "%d.%d.%d.%d", p[0], p[1], p[2], p[3]);
-    Log::error("RESPONSE: sent %s status %d (%s) for '%s'", ip_string, status_code, reason_phrase,
-               (url_string ? url_string : "<none>"));
+    Log::error("RESPONSE: sent %s status %d (%s) for '%s'", 
+        ink_inet_ntop(&s->client_info.addr.sa, ip_string, sizeof(ip_string)), 
+        status_code, 
+        reason_phrase,
+        (url_string ? url_string : "<none>"));
   }
 
   if (url_string) {

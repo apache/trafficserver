@@ -179,7 +179,7 @@ validate_filter_args(acl_filter_rule ** rule_pp, char **argv, int argc, char *er
   acl_filter_rule *rule;
   unsigned long ul;
   char *argptr, tmpbuf[1024];
-  SRC_IP_INFO *ipi;
+  src_ip_info_t *ipi;
   int i, j, m;
   bool new_rule_flg = false;
 
@@ -310,7 +310,7 @@ validate_filter_args(acl_filter_rule ** rule_pp, char **argv, int argc, char *er
         ipi->invert = true;
       ink_strlcpy(tmpbuf, argptr, sizeof(tmpbuf));
       // important! use copy of argument
-      if (ExtractIpRange(tmpbuf, &ipi->start, &ipi->end) != NULL) {
+      if (ExtractIpRange(tmpbuf, &ipi->start.sa, &ipi->end.sa) != NULL) {
         Debug("url_rewrite", "[validate_filter_args] Unable to parse IP value in %s", argv[i]);
         snprintf(errStrBuf, errStrBufSize, "Unable to parse IP value in %s", argv[i]);
         errStrBuf[errStrBufSize - 1] = 0;
@@ -846,7 +846,7 @@ UrlRewrite::PerformACLFiltering(HttpTransact::State *s, url_mapping *map)
     i = (method = s->hdr_info.client_request.method_get_wksidx()) - HTTP_WKSIDX_CONNECT;
     if (likely(i >= 0 && i < ACL_FILTER_MAX_METHODS)) {
       bool client_enabled_flag = true;
-      unsigned long client_ip = ntohl(s->client_info.ip);
+      ink_release_assert(ink_inet_is_ip(&s->client_info.addr));
       for (acl_filter_rule * rp = map->filter; rp; rp = rp->next) {
         bool match = true;
         if (rp->method_valid) {
@@ -856,7 +856,7 @@ UrlRewrite::PerformACLFiltering(HttpTransact::State *s, url_mapping *map)
         if (match && rp->src_ip_valid) {
           match = false;
           for (int j = 0; j < rp->src_ip_cnt && !match; j++) {
-            res = (rp->src_ip_array[j].start <= client_ip && client_ip <= rp->src_ip_array[j].end) ? 1 : 0;
+            res = rp->src_ip_array[j].contains(s->client_info.addr) ? 1 : 0;
             if (rp->src_ip_array[j].invert) {
               if (res != 1)
                 match = true;

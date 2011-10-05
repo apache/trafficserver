@@ -50,7 +50,7 @@ acl_filter_rule::reset(void)
 acl_filter_rule::acl_filter_rule():next(NULL), filter_name_size(0), filter_name(NULL), allow_flag(1),
 method_valid(0), src_ip_valid(0), active_queue_flag(0), argc(0)
 {
-  memset(argv, 0, sizeof(argv));
+  ink_zero(argv);
   reset();
 }
 
@@ -100,10 +100,11 @@ acl_filter_rule::print(void)
   printf("\n");
   printf("src_ip_cnt=%d\n", src_ip_cnt);
   for (i = 0; i < src_ip_cnt; i++) {
-    struct in_addr in;
-    in.s_addr = htonl((uint32_t) src_ip_array[i].start);
-    in.s_addr = htonl((uint32_t) src_ip_array[i].end);
-    printf(" - %s\n", inet_ntoa(in));
+    ip_text_buffer b1, b2;
+    printf("%s - %s"
+      , ink_inet_ntop(&src_ip_array[i].start.sa, b1, sizeof(b1))
+      , ink_inet_ntop(&src_ip_array[i].end.sa, b2, sizeof(b2))
+    );
   }
   for (i = 0; i < argc; i++) {
     printf("argv[%d] = \"%s\"\n", i, argv[i]);

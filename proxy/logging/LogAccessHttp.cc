@@ -639,13 +639,14 @@ LogAccessHttp::marshal_proxy_req_server_name(char *buf)
   return len;
 }
 
+// TODO: Change marshalling code to support both IPv4 and IPv6 addresses.
 int
 LogAccessHttp::marshal_proxy_req_server_ip(char *buf)
 {
   if (buf) {
     unsigned int the_ip = 0;
     if (m_http_sm->t_state.current.server != NULL) {
-      the_ip = m_http_sm->t_state.current.server->ip;
+      the_ip = ink_inet_ip4_addr_cast(&m_http_sm->t_state.current.server->addr);
     }
     marshal_int(buf, (int64_t)ntohl(the_ip));
   }
@@ -668,15 +669,16 @@ LogAccessHttp::marshal_proxy_hierarchy_route(char *buf)
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
+// TODO: Change marshalling code to support both IPv4 and IPv6 addresses.
 int
 LogAccessHttp::marshal_server_host_ip(char *buf)
 {
   if (buf) {
     unsigned int val = 0;
-    val = m_http_sm->t_state.server_info.ip;
+    val = ink_inet_ip4_addr_cast(&m_http_sm->t_state.server_info.addr);
     if (val == 0) {
       if (m_http_sm->t_state.current.server != NULL) {
-        val = m_http_sm->t_state.current.server->ip;
+        val = ink_inet_ip4_addr_cast(&m_http_sm->t_state.current.server->addr);
       }
     }
     marshal_int(buf, (int64_t)ntohl(val));

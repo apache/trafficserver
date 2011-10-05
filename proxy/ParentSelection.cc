@@ -509,7 +509,15 @@ ParentRecord::FindParent(bool first_call, ParentResult * result, RD * rdata, Par
         break;
       case P_HASH_ROUND_ROBIN:
         // INKqa12817 - make sure to convert to host byte order
-        cur_index = ntohl(rdata->get_client_ip()) % num_parents;
+        // Why was it important to do host order here?  And does this have any
+        // impact with the transition to IPv6?  The IPv4 functionality is 
+        // preserved for now anyway as ink_inet_hash returns the 32-bit address in
+        // that case.
+        if (rdata->get_client_ip() != NULL) {
+            cur_index = ntohl(ink_inet_hash(rdata->get_client_ip())) % num_parents;
+        } else {
+            cur_index = 0;
+        }
         break;
       case P_NO_ROUND_ROBIN:
         cur_index = result->start_parent = 0;
@@ -1043,12 +1051,15 @@ SocksServerConfig::print()
 }
 
 void
-request_to_data(HttpRequestData * req, in_addr_t srcip, in_addr_t dstip, const char *str)
+request_to_data(HttpRequestData * req, sockaddr const* srcip, sockaddr const* dstip, const char *str)
 {
   HTTPParser parser;
 
-  req->src_ip = srcip;
-  req->dest_ip = dstip;
+  ink_zero(req->src_ip);
+  ink_inet_copy(&req->src_ip.sa, srcip);
+  ink_zero(req->dest_ip);
+  ink_inet_copy(&req->dest_ip.sa, dstip);
+
   req->hdr = NEW(new HTTPHdr);
 
   http_parser_init(&parser);
@@ -1058,8 +1069,6 @@ request_to_data(HttpRequestData * req, in_addr_t srcip, in_addr_t dstip, const c
   http_parser_clear(&parser);
 }
 
-
-#define IP(a,b,c,d) htonl((a) << 24 | (b) << 16 | (c) << 8 | (d))
 
 static int passes;
 static int fails;
@@ -1116,7 +1125,10 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION) (RegressionTest * t, int intensity_le
       (!g && !b && !i && (v == 17))), 2)
     // Test 3 - 6 Parenting Table
     tbl[0] = '\0';
-  T("dest_ip=209.131.62.14 parent=cat:37,dog:24 round_robin=strict\n")  /* L1 */
+# define TEST_IP4_ADDR "209.131.62.14"
+# define TEST_IP6_ADDR "BEEF:DEAD:ABBA:CAFE:1337:1E1F:5EED:C0FF"
+  T("dest_ip=" TEST_IP4_ADDR " parent=cat:37,dog:24 round_robin=strict\n")  /* L1 */
+  T("dest_ip=" TEST_IP6_ADDR " parent=zwoop:37,jMCg:24 round_robin=strict\n")  /* L1 */
     T("dest_host=www.pilot.net parent=pilot_net:80\n")  /* L2 */
     T("url_regex=snoopy parent=odie:80,garfield:80 round_robin=true\n") /* L3 */
     T("dest_domain=i.am parent=amy:80,katie:80,carissa:771 round_robin=false\n")        /* L4 */
@@ -1134,18 +1146,23 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION) (RegressionTest * t, int intensity_le
     T("dest_host=pluto scheme=HTTP parent=strategy:80\n")       /* L16 */
     REBUILD
     // Test 3
-    ST(3) REINIT br(request, "numeric_host", IP(209, 131, 62, 14));
+    ts_ip_endpoint ip;
+    ink_inet_pton(TEST_IP4_ADDR, &ip.sa);
+    ST(3) REINIT br(request, "numeric_host", &ip.sa);
   FP RE(verify(result, PARENT_SPECIFIED, "cat", 37) + verify(result, PARENT_SPECIFIED, "dog", 24), 3)
-    // Test 4
-    ST(4) REINIT br(request, "www.pilot.net");
-  FP RE(verify(result, PARENT_SPECIFIED, "pilot_net", 80), 4)
+    ink_inet_pton(TEST_IP6_ADDR, &ip.sa);
+    ST(4) REINIT br(request, "numeric_host", &ip.sa);
+  FP RE(verify(result, PARENT_SPECIFIED, "zwoop", 37) + verify(result, PARENT_SPECIFIED, "jMCg", 24), 4)
     // Test 5
-    ST(5) REINIT br(request, "www.snoopy.net");
+    ST(5) REINIT br(request, "www.pilot.net");
+  FP RE(verify(result, PARENT_SPECIFIED, "pilot_net", 80), 5)
+    // Test 6
+    ST(6) REINIT br(request, "www.snoopy.net");
   const char *snoopy_dog = "http://www.snoopy.com/";
   request->hdr->url_set(snoopy_dog, strlen(snoopy_dog));
   FP RE(verify(result, PARENT_SPECIFIED, "odie", 80) + verify(result, PARENT_SPECIFIED, "garfield", 80), 5)
-    // Test 6
-    ST(6) REINIT br(request, "a.rabbit.i.am");
+    // Test 7
+    ST(7) REINIT br(request, "a.rabbit.i.am");
   FP RE(verify(result, PARENT_SPECIFIED, "amy", 80) +
         verify(result, PARENT_SPECIFIED, "katie", 80) + verify(result, PARENT_SPECIFIED, "carissa", 771), 6)
     // Test 6+ BUGBUG needs to be fixed
@@ -1174,73 +1191,73 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION) (RegressionTest * t, int intensity_le
     tbl[0] = '\0';
   T("dest_domain=rabbit.net parent=fuzzy:80,fluffy:80,furry:80,frisky:80 round_robin=strict go_direct=true\n")
     REBUILD
-    // Test 7
-    ST(7) REINIT br(request, "i.am.rabbit.net");
+    // Test 8
+    ST(8) REINIT br(request, "i.am.rabbit.net");
   FP RE(verify(result, PARENT_SPECIFIED, "fuzzy", 80), 7)
     params->markParentDown(result);
 
-  // Test 8
-  ST(8) REINIT br(request, "i.am.rabbit.net");
+  // Test 9
+  ST(9) REINIT br(request, "i.am.rabbit.net");
   FP RE(verify(result, PARENT_SPECIFIED, "fluffy", 80), 8)
-    // Test 9
-    ST(9) REINIT br(request, "i.am.rabbit.net");
-  FP RE(verify(result, PARENT_SPECIFIED, "furry", 80), 9)
     // Test 10
     ST(10) REINIT br(request, "i.am.rabbit.net");
-  FP RE(verify(result, PARENT_SPECIFIED, "frisky", 80), 10)
-    // restart the loop
+  FP RE(verify(result, PARENT_SPECIFIED, "furry", 80), 9)
     // Test 11
     ST(11) REINIT br(request, "i.am.rabbit.net");
-  FP RE(verify(result, PARENT_SPECIFIED, "fluffy", 80), 11)
+  FP RE(verify(result, PARENT_SPECIFIED, "frisky", 80), 10)
+    // restart the loop
     // Test 12
     ST(12) REINIT br(request, "i.am.rabbit.net");
-  FP RE(verify(result, PARENT_SPECIFIED, "fluffy", 80), 12)
+  FP RE(verify(result, PARENT_SPECIFIED, "fluffy", 80), 11)
     // Test 13
     ST(13) REINIT br(request, "i.am.rabbit.net");
-  FP RE(verify(result, PARENT_SPECIFIED, "furry", 80), 13)
+  FP RE(verify(result, PARENT_SPECIFIED, "fluffy", 80), 12)
     // Test 14
     ST(14) REINIT br(request, "i.am.rabbit.net");
+  FP RE(verify(result, PARENT_SPECIFIED, "furry", 80), 13)
+    // Test 15
+    ST(15) REINIT br(request, "i.am.rabbit.net");
   FP RE(verify(result, PARENT_SPECIFIED, "frisky", 80), 14)
     params->markParentDown(result);
 
   // restart the loop
 
-  // Test 15
-  ST(15) REINIT br(request, "i.am.rabbit.net");
+  // Test 16
+  ST(16) REINIT br(request, "i.am.rabbit.net");
   FP RE(verify(result, PARENT_SPECIFIED, "fluffy", 80), 15)
-    // Test 16
-    ST(16) REINIT br(request, "i.am.rabbit.net");
-  FP RE(verify(result, PARENT_SPECIFIED, "fluffy", 80), 16)
     // Test 17
     ST(17) REINIT br(request, "i.am.rabbit.net");
-  FP RE(verify(result, PARENT_SPECIFIED, "furry", 80), 17)
+  FP RE(verify(result, PARENT_SPECIFIED, "fluffy", 80), 16)
     // Test 18
     ST(18) REINIT br(request, "i.am.rabbit.net");
-  FP RE(verify(result, PARENT_SPECIFIED, "fluffy", 80), 18)
-    // restart the loop
+  FP RE(verify(result, PARENT_SPECIFIED, "furry", 80), 17)
     // Test 19
     ST(19) REINIT br(request, "i.am.rabbit.net");
-  FP RE(verify(result, PARENT_SPECIFIED, "fluffy", 80), 19)
+  FP RE(verify(result, PARENT_SPECIFIED, "fluffy", 80), 18)
+    // restart the loop
     // Test 20
     ST(20) REINIT br(request, "i.am.rabbit.net");
-  FP RE(verify(result, PARENT_SPECIFIED, "fluffy", 80), 20)
+  FP RE(verify(result, PARENT_SPECIFIED, "fluffy", 80), 19)
     // Test 21
     ST(21) REINIT br(request, "i.am.rabbit.net");
+  FP RE(verify(result, PARENT_SPECIFIED, "fluffy", 80), 20)
+    // Test 22
+    ST(22) REINIT br(request, "i.am.rabbit.net");
   FP RE(verify(result, PARENT_SPECIFIED, "furry", 80), 21)
     params->markParentDown(result);
 
-  // Test 22 - 31
-  for (i = 0; i < 10; i++) {
-    ST(22 + i) REINIT br(request, "i.am.rabbit.net");
-    FP RE(verify(result, PARENT_SPECIFIED, "fluffy", 80), 22 + i)
+  // Test 23 - 32
+  for (i = 23; i < 33; i++) {
+    ST(i) REINIT br(request, "i.am.rabbit.net");
+    FP RE(verify(result, PARENT_SPECIFIED, "fluffy", 80), i)
   }
 
   params->markParentDown(result);       // now they're all down
 
-  // Test 32 - 131
-  for (i = 0; i < 100; i++) {
-    ST(32 + i) REINIT br(request, "i.am.rabbit.net");
-    FP RE(verify(result, PARENT_DIRECT, 0, 0), 32 + i)
+  // Test 33 - 132
+  for (i = 33; i < 133; i++) {
+    ST(i) REINIT br(request, "i.am.rabbit.net");
+    FP RE(verify(result, PARENT_DIRECT, 0, 0), i)
   }
 
   // sleep(5); // parents should come back up; they don't
@@ -1249,19 +1266,19 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION) (RegressionTest * t, int intensity_le
   // Fix: The following tests failed because
   // br() should set xact_start correctly instead of 0.
 
-  // Test 132 - 631
-  for (i = 0; i < 40; i++) {
-    ST(132 + i) REINIT br(request, "i.am.rabbit.net");
+  // Test 133 - 172
+  for (i = 133; i < 173; i++) {
+    ST(i) REINIT br(request, "i.am.rabbit.net");
     FP sleep(1);
-    switch ((i + 1) % 4) {
+    switch (i % 4) {
     case 0:
-      RE(verify(result, PARENT_SPECIFIED, "fuzzy", 80), 132 + i) break;
+      RE(verify(result, PARENT_SPECIFIED, "fuzzy", 80), i) break;
     case 1:
-      RE(verify(result, PARENT_SPECIFIED, "fluffy", 80), 132 + i) break;
+      RE(verify(result, PARENT_SPECIFIED, "fluffy", 80), i) break;
     case 2:
-      RE(verify(result, PARENT_SPECIFIED, "furry", 80), 132 + i) break;
+      RE(verify(result, PARENT_SPECIFIED, "furry", 80), i) break;
     case 3:
-      RE(verify(result, PARENT_SPECIFIED, "frisky", 80), 132 + i) break;
+      RE(verify(result, PARENT_SPECIFIED, "frisky", 80), i) break;
     default:
       ink_assert(0);
     }
@@ -1284,14 +1301,15 @@ verify(ParentResult * r, ParentResultType e, const char *h, int p)
 
 // br creates an HttpRequestData object
 void
-br(HttpRequestData * h, const char *os_hostname, int dest_ip)
+br(HttpRequestData * h, const char *os_hostname, sockaddr const* dest_ip)
 {
   h->hdr = new HTTPHdr();
   h->hdr->create(HTTP_TYPE_REQUEST);
   h->hostname_str = (char *)ats_strdup(os_hostname);
   h->xact_start = time(NULL);
-  h->src_ip = 0;
-  h->dest_ip = dest_ip;
+  ink_zero(h->src_ip);
+  ink_zero(h->dest_ip);
+  ink_inet_copy(&h->dest_ip.sa, dest_ip);
   h->incoming_port = 80;
   h->api_info = new _HttpApiInfo();
 }

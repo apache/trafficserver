@@ -445,7 +445,7 @@ LogFile::roll(long interval_start, long interval_end)
   snprintf(roll_name, MAXPATHLEN, "%s%s%s.%s-%s%s",
                m_name,
                LOGFILE_SEPARATOR_STRING,
-               this_machine()->hostname, start_time_ext, end_time_ext, LOGFILE_ROLLED_EXTENSION);
+               Machine::instance()->hostname, start_time_ext, end_time_ext, LOGFILE_ROLLED_EXTENSION);
 
   //
   // It may be possible that the file we want to roll into already
@@ -460,7 +460,7 @@ LogFile::roll(long interval_start, long interval_end)
     snprintf(roll_name, MAXPATHLEN, "%s%s%s.%s-%s.%d%s",
                  m_name,
                  LOGFILE_SEPARATOR_STRING,
-                 this_machine()->hostname, start_time_ext, end_time_ext, version, LOGFILE_ROLLED_EXTENSION);
+                 Machine::instance()->hostname, start_time_ext, end_time_ext, version, LOGFILE_ROLLED_EXTENSION);
     version++;
   }
 

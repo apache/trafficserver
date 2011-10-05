@@ -243,7 +243,7 @@ int ink_inet_pton(char const* text, sockaddr* addr) {
     }
   }
 
-  memset(&hints, 0, sizeof(hints));
+  ink_zero(hints);
   hints.ai_family = PF_UNSPEC;
   hints.ai_flags = AI_NUMERICHOST|AI_PASSIVE;
   if (0 == (zret = getaddrinfo(text, 0, &hints, &ai))) {
@@ -254,4 +254,19 @@ int ink_inet_pton(char const* text, sockaddr* addr) {
     freeaddrinfo(ai);
   }
   return zret;
+}
+
+uint32_t ink_inet_hash(sockaddr const* addr) {
+  union md5sum {
+    unsigned char c[16];
+    uint32_t i;
+  } zret;
+  zret.i = 0;
+
+  if (ink_inet_is_ip4(addr)) {
+    zret.i = ink_inet_ip4_addr_cast(addr);
+  } else if (ink_inet_is_ip6(addr)) {
+    ink_code_md5(const_cast<uint8_t*>(ink_inet_addr8_cast(addr)), INK_IP6_SIZE, zret.c);
+  }
+  return zret.i;
 }

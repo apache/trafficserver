@@ -30,23 +30,26 @@
 // ===============================================================================
 // ACL like filtering defs (per one remap rule)
 
-#define ACL_FILTER_MAX_METHODS 16
-#define ACL_FILTER_MAX_SRC_IP  128
-#define ACL_FILTER_MAX_ARGV    512
+static int const ACL_FILTER_MAX_METHODS = 16;
+static int const ACL_FILTER_MAX_SRC_IP = 128;
+static int const ACL_FILTER_MAX_ARGV = 512;
 
-typedef struct src_ip_info_t
-{
-  in_addr_t start;          // IPv4 address value stores start of a range (host byte order)
-  in_addr_t end;            // IPv4 address value stores end of a range (host byte order)
-  bool invert;                  // Should we "invert" the meaning of this IP range ("not in range")
+struct src_ip_info_t {
+  ts_ip_endpoint start; ///< Minimum value in range.
+  ts_ip_endpoint end; ///< Maximum value in range.
+  bool invert;      ///< Should we "invert" the meaning of this IP range ("not in range")
 
-  void reset(void)
-  {
-    start = (end = 0);
+  void reset() {
+    ink_zero(start);
+    ink_zero(end);
     invert = false;
   }
 
-} SRC_IP_INFO;
+  /// @return @c true if @a ip is inside @a this range.
+  bool contains(ts_ip_endpoint const& ip) {
+    return ink_inet_cmp(&start, &ip) <= 0 && ink_inet_cmp(&ip, &end) <= 0;
+  }
+};
 
 /**
  *
@@ -76,9 +79,9 @@ public:
 
   // src_ip
   int src_ip_cnt;               // how many valid src_ip rules we have
-  SRC_IP_INFO src_ip_array[ACL_FILTER_MAX_SRC_IP];
-    acl_filter_rule();
-   ~acl_filter_rule();
+  src_ip_info_t src_ip_array[ACL_FILTER_MAX_SRC_IP];
+  acl_filter_rule();
+  ~acl_filter_rule();
   int name(const char *_name = NULL);
   int add_argv(int _argc, char *_argv[]);
   void print(void);

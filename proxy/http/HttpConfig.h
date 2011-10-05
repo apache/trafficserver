@@ -430,9 +430,10 @@ struct OverridableHttpConfigParams {
 
        // Strings / floats must come last
        proxy_response_server_string(NULL), proxy_response_server_string_len(0),
-       cache_heuristic_lm_factor(0.0), freshness_fuzz_prob(0.0),
-       outgoing_ip_to_bind_saddr(0)
-  { }
+       cache_heuristic_lm_factor(0.0), freshness_fuzz_prob(0.0)
+  { 
+    ink_zero(outgoing_ip_to_bind_saddr);
+  }
 
   // IMPORTANT: All MgmtInt configs should come before any other string / float
   // configs!!!
@@ -564,7 +565,7 @@ struct OverridableHttpConfigParams {
   ////////////////////////
   //  Source IP         //
   ////////////////////////
-  unsigned int outgoing_ip_to_bind_saddr; // This is kinda ugly for now, whatever ...
+  ts_ip_endpoint outgoing_ip_to_bind_saddr; // This is kinda ugly for now, whatever ...
 };
 
 

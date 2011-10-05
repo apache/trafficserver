@@ -70,16 +70,16 @@ HttpRequestData::get_host()
   return hostname_str;
 }
 
-in_addr_t
+sockaddr const*
 HttpRequestData::get_ip()
 {
-  return dest_ip;
+  return &dest_ip.sa;
 }
 
-in_addr_t
+sockaddr const*
 HttpRequestData::get_client_ip()
 {
-  return src_ip;
+  return &src_ip.sa;
 }
 
 /*************************************************************
@@ -483,7 +483,7 @@ template<class Data, class Result> char *IpMatcher<Data, Result>::NewEntry(match
   const char *errPtr;
   char *errBuf;
   char *match_data;
-  in_addr_t addr1, addr2;
+  ts_ip_endpoint addr1, addr2;
 
   // Make sure space has been allocated
   ink_assert(num_el >= 0);
@@ -499,7 +499,7 @@ template<class Data, class Result> char *IpMatcher<Data, Result>::NewEntry(match
   ink_assert(match_data != NULL);
 
   // Extract the IP range
-  errPtr = ExtractIpRange(match_data, &addr1, &addr2);
+  errPtr = ExtractIpRange(match_data, &addr1.sa, &addr2.sa);
   if (errPtr != NULL) {
     const size_t errorSize = 1024;
     errBuf = (char *)ats_malloc(errorSize * sizeof(char));
@@ -518,7 +518,7 @@ template<class Data, class Result> char *IpMatcher<Data, Result>::NewEntry(match
     return errBuf;
   }
 
-  ip_map.mark(addr1, addr2, cur_d);
+  ip_map.mark(&addr1.sa, &addr2.sa, cur_d);
 
   ++num_el;
   return NULL;
@@ -528,7 +528,7 @@ template<class Data, class Result> char *IpMatcher<Data, Result>::NewEntry(match
 // void IpMatcherData,Result>::Match(in_addr_t addr, RD* rdata, Result* result)
 //
 template<class Data, class Result>
-  void IpMatcher<Data, Result>::Match(in_addr_t addr, RD * rdata, Result * result)
+  void IpMatcher<Data, Result>::Match(sockaddr const* addr, RD * rdata, Result * result)
 {
   void* raw;
   if (ip_map.contains(addr, &raw)) {

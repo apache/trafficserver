@@ -1067,8 +1067,8 @@ HttpTransactHeaders::insert_via_header_in_request(HttpConfigParams *http_config_
   }
   via_string += nstrcpy(via_string, http_config_param->proxy_hostname);
   *via_string++ = '[';
-  memcpy(via_string, this_machine()->ip_hex_string, this_machine()->ip_hex_string_len);
-  via_string += this_machine()->ip_hex_string_len;
+  memcpy(via_string, Machine::instance()->ip_hex_string, Machine::instance()->ip_hex_string_len);
+  via_string += Machine::instance()->ip_hex_string_len;
   *via_string++ = ']';
   *via_string++ = ' ';
   *via_string++ = '(';

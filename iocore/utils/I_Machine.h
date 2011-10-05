@@ -42,20 +42,45 @@
   multiple IP addresses, the numerically lowest IP address is used.
   The IP address is stored in the network byte order.
 
+  @internal This does not handle multi-homed systems. That should be
+  fixed.
+
  */
-struct Machine
-{
+struct Machine {
+  typedef Machine self; ///< Self reference type.
+
   char *hostname;               // name of the internet host
   int hostname_len;             // size of the string pointed to by hostname
 
-  unsigned int ip;              // IP address of the host (network order)
-  char *ip_string;              // IP address of the host as a string.
+  ts_ip_endpoint ip;      ///< Prefered IP address of the host (network order)
+  ts_ip_endpoint ip4;     ///< IPv4 address if present.
+  ts_ip_endpoint ip6;     ///< IPv6 address if present.
+
+  ip_text_buffer ip_string;              // IP address of the host as a string.
   int ip_string_len;
-  char *ip_hex_string;          // IP address of the host as a hex string
+
+  char ip_hex_string[INK_IP6_SIZE*2 + 1]; ///< IP address as hex string
   int ip_hex_string_len;
 
-  Machine(char *hostname = 0, unsigned int ip = 0);
   ~Machine();
+
+  /** Initialize the singleton.
+      If @a hostname or @a ip are @c NULL then system defaults are used.
+
+      @note This must be called before called @c instance so that the
+      singleton is not @em inadvertently default initialized.
+  */
+  static self* init(
+    char const* name = 0, ///< Host name of the machine.
+    sockaddr const* addr = 0 ///< Primary IP adddress of the machine.
+  );
+  /// @return The global instance of this class.
+  static self* instance();
+
+protected:
+  Machine(char const* hostname, sockaddr const* addr);
+
+  static self* _instance; ///< Singleton for the class.
 };
 
 /**

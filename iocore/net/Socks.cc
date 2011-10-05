@@ -63,10 +63,10 @@ SocksEntry::init(ProxyMutex * m, SocksNetVC * vc, unsigned char socks_support, u
   req_data.xact_start = time(0);
 
   assert(ink_inet_is_ip4(&target_addr));
-  req_data.dest_ip = ink_inet_ip4_addr_cast(&target_addr);
+  ink_inet_copy(&req_data.dest_ip, &target_addr);
 
   //we dont have information about the source. set to destination's
-  req_data.src_ip = ink_inet_ip4_addr_cast(&target_addr);
+  ink_inet_copy(&req_data.src_ip, &target_addr);
 
   server_params = SocksServerConfig::acquire();
 #endif

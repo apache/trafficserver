@@ -92,11 +92,8 @@ event_int_to_string(int event, int blen, char *buffer)
   return NULL;
 }
 
-
-struct Machine;
-Machine *
-this_machine()
-{
+struct Machine {  static Machine* instance(); };
+Machine* Machine::instance() {
   ink_release_assert(false);
   return NULL;
 }
