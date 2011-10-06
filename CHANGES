@@ -1,7 +1,7 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.1.1
   *) [TS-945] Convert transparent forward requests to server style when
-     forwarding to a parent proxy.
+     forwarding to a parent proxy. Contributed by Yossi Gottlieb.
 
   *) [TS-957] remove IE6 from the white list of ae_ua filter
 
