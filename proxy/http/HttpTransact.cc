@@ -7815,6 +7815,18 @@ HttpTransact::build_request(State* s, HTTPHdr* base_request, HTTPHdr* outgoing_r
       (s->next_hop_scheme == URL_WKSIDX_HTTP || s->next_hop_scheme == URL_WKSIDX_HTTPS)) {
     HttpTransactHeaders::remove_host_name_from_url(outgoing_request);
   }
+
+  // If we're going to a parent proxy, make sure we pass host and port
+  // in the URL even if we didn't get them (e.g. transparent proxy)
+  if (s->current.request_to == PARENT_PROXY &&
+      !outgoing_request->is_target_in_url()) {
+    Debug("http_trans", "[build_request] adding target to URL for parent proxy");
+
+    // No worry about HTTP/0.9 because we reject forward proxy requests that
+    // don't have a host anywhere.
+    outgoing_request->set_url_target_from_host_field();
+  }
+
   // If the response is most likely not cacheable, eg, request with Authorization,
   // do we really want to remove conditional headers to get large 200 response?
   // Answer: NO.  Since if the response is most likely not cacheable,
