@@ -75,7 +75,6 @@ inkcoreapi volatile int64_t fastalloc_mem_total = 0;
 #ifdef DEBUG
 #define SANITY
 #define DEADBEEF
-// #define CHECK_DEADBEEF  // broken
 #endif
 
 // #define MEMPROTECT 1
@@ -358,27 +357,8 @@ ink_freelist_free(InkFreeList * f, void *item)
 
 #ifdef DEADBEEF
   {
-    // set string to DEADBEEF
-    const char str[4] = { (char) 0xde, (char) 0xad, (char) 0xbe, (char) 0xef };
-#ifdef CHECK_DEADBEEF
-    // search for DEADBEEF anywhere after a pointer offset in the item
-    char *position = (char *) item + sizeof(void *);    // start
-    char *end = (char *) item + f->type_size;   // end
+    static const char str[4] = { (char) 0xde, (char) 0xad, (char) 0xbe, (char) 0xef };
 
-    int i, j;
-    for (i = sizeof(void *) & 0x3, j = 0; position < end; ++position) {
-      if (i == j) {
-        if (*position == str[i]) {
-          if (j++ == 3) {
-            ink_fatal(1, "ink_freelist_free: trying to free item twice");
-          }
-        }
-      } else {
-        j = 0;
-      }
-      i = (i + 1) & 0x3;
-    }
-#endif
     // set the entire item to DEADBEEF
     for (int j = 0; j < (int)f->type_size; j++)
       ((char*)item)[j] = str[j % 4];
