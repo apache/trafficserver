@@ -126,12 +126,9 @@ ink_freelist_init(InkFreeList * f,
 #if defined(INK_USE_MUTEX_FOR_FREELISTS)
   ink_mutex_init(&(f->inkfreelist_mutex), name);
 #endif
-#if (defined(USE_SPINLOCK_FOR_FREELIST) || defined(CHECK_FOR_DOUBLE_FREE))
+#if defined(USE_SPINLOCK_FOR_FREELIST)
   ink_mutex_init(&(f->freelist_mutex), name);
   f->head = NULL;
-#ifdef CHECK_FOR_DOUBLE_FREE
-  f->tail = NULL;
-#endif
 #else
   SET_FREELIST_POINTER_VERSION(f->head, FROM_PTR(0), 0);
 #endif
@@ -168,7 +165,7 @@ ink_freelist_new(InkFreeList * f)
 #endif                          /* !INK_USE_MUTEX_FOR_FREELISTS */
 {                               //static uint32_t cntf = 0;
 
-#if (defined(USE_SPINLOCK_FOR_FREELIST) || defined(CHECK_FOR_DOUBLE_FREE))
+#if defined(USE_SPINLOCK_FOR_FREELIST)
   void *foo;
   uint32_t type_size = f->type_size;
 
@@ -183,10 +180,6 @@ ink_freelist_new(InkFreeList * f)
      * We have something on the free list..
      */
     void_p *h = (void_p *) f->head;
-#ifdef CHECK_FOR_DOUBLE_FREE
-    if (f->head == f->tail)
-      f->tail = NULL;
-#endif /* CHECK_FOR_DOUBLE_FREE */
 
     foo = (void *) h;
     f->head = (volatile void_p *) *h;
@@ -227,7 +220,7 @@ ink_freelist_new(InkFreeList * f)
     return foo;
   }
 
-#else /* #if (defined(USE_SPINLOCK_FOR_FREELIST) || defined(CHECK_FOR_DOUBLE_FREE)) */
+#else /* #if (defined(USE_SPINLOCK_FOR_FREELIST) */
   head_p item;
   head_p next;
   int result = 0;
@@ -330,7 +323,7 @@ ink_freelist_new(InkFreeList * f)
   ink_atomic_increment64(&fastalloc_mem_in_use, (int64_t) f->type_size);
 
   return TO_PTR(FREELIST_POINTER(item));
-#endif /* #if (defined(USE_SPINLOCK_FOR_FREELIST) || defined(CHECK_FOR_DOUBLE_FREE)) */
+#endif /* #if (defined(USE_SPINLOCK_FOR_FREELIST) */
 }
 typedef volatile void *volatile_void_p;
 
@@ -342,32 +335,15 @@ void
 ink_freelist_free(InkFreeList * f, void *item)
 #endif                          /* !INK_USE_MUTEX_FOR_FREELISTS */
 {
-#if (defined(USE_SPINLOCK_FOR_FREELIST) || defined(CHECK_FOR_DOUBLE_FREE))
+#if defined(USE_SPINLOCK_FOR_FREELIST)
   void_p *foo;
 
   //printf("ink_freelist_free\n");
   ink_mutex_acquire(&(f->freelist_mutex));
 
   foo = (void_p *) item;
-#ifdef CHECK_FOR_DOUBLE_FREE
-  void_p *p = (void_p *) f->head;
-  while (p) {
-    if (p == (void_p *) item)
-      ink_release_assert(!"ink_freelist_free: Double free");
-    p = (void_p *) * p;
-  }
-
-  if (f->tail)
-    *f->tail = foo;
-  *foo = (void_p) NULL;
-
-  if (f->head == NULL)
-    f->head = foo;
-  f->tail = foo;
-#else
   *foo = (void_p) f->head;
   f->head = foo;
-#endif
   f->count -= 1;
 
   ink_mutex_release(&(f->freelist_mutex));

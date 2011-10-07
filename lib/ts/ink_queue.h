@@ -59,7 +59,6 @@
 */
 
 /* #define USE_SPINLOCK_FOR_FREELIST */
-/* #define CHECK_FOR_DOUBLE_FREE */
 
 #ifdef __cplusplus
 extern "C"
@@ -123,19 +122,16 @@ extern "C"
 
   typedef struct
   {
-#if (defined(INK_USE_MUTEX_FOR_FREELISTS) || defined(CHECK_FOR_DOUBLE_FREE))
+#if defined(INK_USE_MUTEX_FOR_FREELISTS)
     ink_mutex inkfreelist_mutex;
 #endif
-#if (defined(USE_SPINLOCK_FOR_FREELIST) || defined(CHECK_FOR_DOUBLE_FREE))
+#if defined(USE_SPINLOCK_FOR_FREELIST)
     /*
       This assumes  we will never use anything other than Pthreads
       on alpha
     */
     ink_mutex freelist_mutex;
     volatile void_p *head;
-#ifdef CHECK_FOR_DOUBLE_FREE
-    volatile void_p *tail;
-#endif
 #else
     volatile head_p head;
 #endif
