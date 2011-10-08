@@ -58,8 +58,6 @@
 #endif
 */
 
-/* #define USE_SPINLOCK_FOR_FREELIST */
-
 #ifdef __cplusplus
 extern "C"
 {
@@ -122,17 +120,7 @@ extern "C"
 
   typedef struct
   {
-#if defined(USE_SPINLOCK_FOR_FREELIST)
-    /*
-      This assumes  we will never use anything other than Pthreads
-      on alpha
-    */
-    ink_mutex freelist_mutex;
-    volatile void_p *head;
-#else
     volatile head_p head;
-#endif
-
     const char *name;
     uint32_t type_size, chunk_size, count, allocated, offset, alignment;
     uint32_t allocated_base, count_base;

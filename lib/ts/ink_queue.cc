@@ -122,12 +122,7 @@ ink_freelist_init(InkFreeList * f,
   f->alignment = alignment;
   f->chunk_size = chunk_size;
   f->type_size = type_size;
-#if defined(USE_SPINLOCK_FOR_FREELIST)
-  ink_mutex_init(&(f->freelist_mutex), name);
-  f->head = NULL;
-#else
   SET_FREELIST_POINTER_VERSION(f->head, FROM_PTR(0), 0);
-#endif
 
   f->count = 0;
   f->allocated = 0;
@@ -154,70 +149,10 @@ int fastmemtotal = 0;
 
 void *
 ink_freelist_new(InkFreeList * f)
-{                               //static uint32_t cntf = 0;
-
-#if defined(USE_SPINLOCK_FOR_FREELIST)
-  void *foo;
-  uint32_t type_size = f->type_size;
-
-  ink_mutex_acquire(&(f->freelist_mutex));
-  ink_assert(f->type_size != 0);
-
-  //printf("ink_freelist_new %d - %d - %u\n",f ->type_size,(f->head != NULL) ? 1 : 0,cntf++);
-
-
-  if (f->head != NULL) {
-    /*
-     * We have something on the free list..
-     */
-    void_p *h = (void_p *) f->head;
-
-    foo = (void *) h;
-    f->head = (volatile void_p *) *h;
-    f->count += 1;
-    ink_mutex_release(&(f->freelist_mutex));
-    return foo;
-  } else {
-    /*
-     * Might as well unlock the freelist mutex, since
-     * we're just going to do a malloc now..
-     */
-    uint32_t alignment;
-
-#ifdef MEMPROTECT
-    if (type_size >= MEMPROTECT_SIZE) {
-      if (f->alignment < page_size)
-        f->alignment = page_size;
-      type_size = ((type_size + page_size - 1) / page_size) * page_size * 2;
-    }
-#endif /* MEMPROTECT */
-
-    alignment = f->alignment;
-    ink_mutex_release(&(f->freelist_mutex));
-
-    if (alignment) {
-      foo = ats_memalign(alignment, type_size);
-    } else {
-      foo = ats_malloc(type_size);
-    }
-    fl_memadd(type_size);
-
-#ifdef MEMPROTECT
-    if (type_size >= MEMPROTECT_SIZE) {
-      if (mprotect((char *) foo + type_size - page_size, page_size, PROT_NONE) < 0)
-        perror("mprotect");
-    }
-#endif /* MEMPROTECT */
-    return foo;
-  }
-
-#else /* #if (defined(USE_SPINLOCK_FOR_FREELIST) */
+{
   head_p item;
   head_p next;
   int result = 0;
-
-  //printf("ink_freelist_new %d - %d - %u\n",f ->type_size,(f->head != NULL) ? 1 : 0,cntf++);
-
 
   do {
     INK_QUEUE_LD64(item, f->head);
@@ -299,28 +234,12 @@ ink_freelist_new(InkFreeList * f)
   ink_atomic_increment64(&fastalloc_mem_in_use, (int64_t) f->type_size);
 
   return TO_PTR(FREELIST_POINTER(item));
-#endif /* #if (defined(USE_SPINLOCK_FOR_FREELIST) */
 }
 typedef volatile void *volatile_void_p;
 
 void
 ink_freelist_free(InkFreeList * f, void *item)
 {
-#if defined(USE_SPINLOCK_FOR_FREELIST)
-  xyz
-  void_p *foo;
-
-  //printf("ink_freelist_free\n");
-  ink_mutex_acquire(&(f->freelist_mutex));
-
-  foo = (void_p *) item;
-  *foo = (void_p) f->head;
-  f->head = foo;
-  f->count -= 1;
-
-  ink_mutex_release(&(f->freelist_mutex));
-#else
-
   volatile_void_p *adr_of_next = (volatile_void_p *) ADDRESS_OF_NEXT(item, f->offset);
   head_p h;
   head_p item_pair;
@@ -358,7 +277,6 @@ ink_freelist_free(InkFreeList * f, void *item)
 
   ink_atomic_increment((int *) &f->count, -1);
   ink_atomic_increment64(&fastalloc_mem_in_use, -(int64_t) f->type_size);
-#endif
 }
 
 void
