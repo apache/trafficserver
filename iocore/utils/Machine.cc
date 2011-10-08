@@ -77,14 +77,13 @@ Machine::Machine(char const* the_hostname, sockaddr const* addr)
          we accept that only if we can't find anything else. Next best
          are non-routables and the best are "global" addresses.
       */
-      enum { NA, LO, NR, MC, GA } spot_type = NA, type = NA, ip4_type = NA, ip6_type = NA;
+      enum { NA, LO, NR, MC, GA } spot_type = NA, ip4_type = NA, ip6_type = NA;
       for (ifaddrs* spot = ifa_addrs ; spot ; spot = spot->ifa_next ) {
         
         if (!ink_inet_is_ip(spot->ifa_addr)) spot_type = NA;
         else if (ink_inet_is_loopback(spot->ifa_addr)) spot_type = LO;
         else if (ink_inet_is_nonroutable(spot->ifa_addr)) spot_type = NR;
         else if (ink_inet_is_multicast(spot->ifa_addr)) spot_type = MC;
-        else type = GA;
 
         if (spot_type == NA) continue; // Next!
 
