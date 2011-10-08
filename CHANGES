@@ -1,7 +1,15 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.1.1
+  *) [TS-938] Fix VIA to avoid loopback address.
+
   *) [TS-945] Convert transparent forward requests to server style when
      forwarding to a parent proxy. Contributed by Yossi Gottlieb.
+
+  *) [TS-926] IPv6 conversion of iocore.
+
+  *) [TS-967] This is a simplified version of Arno Toell's patch which does
+   the same: Check if any -O options where given, and if so, use those, if
+   not, use our default -O3.
 
   *) [TS-957] remove IE6 from the white list of ae_ua filter
 
@@ -13,7 +21,7 @@ Changes with Apache Traffic Server 3.1.1
 
   *) [TS-567] A number of memory allocation clean up, and improvements. We
    now also support building with tcmalloc, jemalloc, and you can also turn
-   off the freelist feature (for better debugging). [TBD TBD!]
+   off the freelist feature (for better debugging).
 
   *) [TS-950] Make the HTTP header regressions work on 32-bit, inefficient,
    but it works.
@@ -53,8 +61,6 @@ Changes with Apache Traffic Server 3.1.1
    logging and clean up the collation client related data.
 
   *) [TS-936] Fix problems with core file generation on Linux.
-
-Changes with Apache Traffic Server 3.1.1
 
   *) [TS-930] Fixed TSNetConnect to use network order for port.
 
