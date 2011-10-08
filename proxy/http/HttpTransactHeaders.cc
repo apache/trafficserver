@@ -1066,9 +1066,23 @@ HttpTransactHeaders::insert_via_header_in_request(HttpConfigParams *http_config_
     *via_string++ = ' ';
   }
   via_string += nstrcpy(via_string, http_config_param->proxy_hostname);
+
+  /* If we have an outbound IP address, use that. Otherwise use the
+     global value in @c Machine.
+  */
   *via_string++ = '[';
-  memcpy(via_string, Machine::instance()->ip_hex_string, Machine::instance()->ip_hex_string_len);
-  via_string += Machine::instance()->ip_hex_string_len;
+  sockaddr const* outbound_ip = &http_config_param->oride.outgoing_ip_to_bind_saddr.sa;
+  if (ink_inet_is_ip(outbound_ip)) {
+    int l = ink_inet_to_hex(
+      outbound_ip,
+      via_string,
+      sizeof(new_via_string) - (via_string - new_via_string)
+    );
+    via_string += l;
+  } else {
+    memcpy(via_string, Machine::instance()->ip_hex_string, Machine::instance()->ip_hex_string_len);
+    via_string += Machine::instance()->ip_hex_string_len;
+  }
   *via_string++ = ']';
   *via_string++ = ' ';
   *via_string++ = '(';

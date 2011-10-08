@@ -23,23 +23,10 @@
 
 #include "libts.h"
 #include "I_Machine.h"
+#include <ifaddrs.h>
 
 // Singleton
 Machine* Machine::_instance = NULL;
-
-int
-nstrhex(char *dst, uint8_t const* src, size_t len) {
-  int zret = 0;
-  for ( uint8_t const* limit = src + len ; src < limit ; ++src, zret += 2 ) {
-    uint8_t n1 = (*src >> 4) & 0xF; // high nybble.
-    uint8_t n0 = *src & 0xF; // low nybble.
-
-    *dst++ = n1 > 9 ? n1 + 'A' - 10 : n1 + '0';
-    *dst++ = n0 > 9 ? n0 + 'A' - 10 : n0 + '0';
-  }
-  *dst = 0; // terminate but don't include that in the length.
-  return zret;
-}
 
 Machine*
 Machine::instance() {
@@ -71,42 +58,54 @@ Machine::Machine(char const* the_hostname, sockaddr const* addr)
   localhost[sizeof(localhost)-1] = 0; // ensure termination.
 
   if (!ink_inet_is_ip(addr)) {
-    addrinfo ai_hints;
-    addrinfo* ai_ret = 0;
-
     if (!the_hostname) {
       ink_release_assert(!gethostname(localhost, sizeof(localhost)-1));
       the_hostname = localhost;
     }
     hostname = ats_strdup(the_hostname);
 
-    ink_zero(ai_hints);
-    ai_hints.ai_flags = AI_ADDRCONFIG; // require existence of IP family addr.
-    status = getaddrinfo(hostname, 0, &ai_hints, &ai_ret);
+    ifaddrs* ifa_addrs = 0;
+    status = getifaddrs(&ifa_addrs);
     if (0 != status) {
       Warning("Unable to determine local host '%s' address information - %s"
         , hostname
-        , gai_strerror(status)
+        , strerror(errno)
       );
     } else {
-      for (addrinfo* spot = ai_ret ; spot ; spot = spot->ai_next ) {
-        if (AF_INET == spot->ai_family) {
-          if (!ink_inet_is_ip4(&ip4)) {
-            ink_inet_copy(&ip4, spot->ai_addr);
-            if (!ink_inet_is_ip(&ip))
-              ink_inet_copy(&ip, spot->ai_addr);
-            if (ink_inet_is_ip6(&ip6)) break; // got both families, done.
+      /* Loop through the interface addresses. We have to prioritize
+         the values a little bit. The worst is the loopback address,
+         we accept that only if we can't find anything else. Next best
+         are non-routables and the best are "global" addresses.
+      */
+      enum { NA, LO, NR, MC, GA } spot_type = NA, type = NA, ip4_type = NA, ip6_type = NA;
+      for (ifaddrs* spot = ifa_addrs ; spot ; spot = spot->ifa_next ) {
+        
+        if (!ink_inet_is_ip(spot->ifa_addr)) spot_type = NA;
+        else if (ink_inet_is_loopback(spot->ifa_addr)) spot_type = LO;
+        else if (ink_inet_is_nonroutable(spot->ifa_addr)) spot_type = NR;
+        else if (ink_inet_is_multicast(spot->ifa_addr)) spot_type = MC;
+        else type = GA;
+
+        if (spot_type == NA) continue; // Next!
+
+        if (ink_inet_is_ip4(spot->ifa_addr)) {
+          if (spot_type > ip4_type) {
+            ink_inet_copy(&ip4, spot->ifa_addr);
+            ip4_type = spot_type;
           }
-        } else if (AF_INET6 == spot->ai_family) {
-          if (!ink_inet_is_ip6(&ip6)) {
-            ink_inet_copy(&ip6, spot->ai_addr);
-            if (!ink_inet_is_ip(&ip))
-              ink_inet_copy(&ip, spot->ai_addr);
-            if (ink_inet_is_ip4(&ip4)) break; // got both families, done.
+        } else if (ink_inet_is_ip6(spot->ifa_addr)) {
+          if (spot_type > ip6_type) {
+            ink_inet_copy(&ip6, spot->ifa_addr);
+            ip6_type = spot_type;
           }
         }
       }
-      freeaddrinfo(ai_ret);
+      freeifaddrs(ifa_addrs);
+      // What about the general address? Prefer IPv4?
+      if (ip4_type >= ip6_type)
+        ink_inet_copy(&ip.sa, &ip4.sa);
+      else
+        ink_inet_copy(&ip.sa, &ip6.sa);
     }
   } else { // address provided.
     ink_inet_copy(&ip, addr);
@@ -134,7 +133,7 @@ Machine::Machine(char const* the_hostname, sockaddr const* addr)
 
   ink_inet_ntop(&ip.sa, ip_string, sizeof(ip_string));
   ip_string_len = strlen(ip_string);
-  ip_hex_string_len =  nstrhex(ip_hex_string, ink_inet_addr8_cast(&ip), ink_inet_addr_size(&ip));
+  ip_hex_string_len = ink_inet_to_hex(&ip.sa, ip_hex_string, sizeof(ip_hex_string));
 }
 
 Machine::~Machine()

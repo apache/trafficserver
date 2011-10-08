@@ -1135,14 +1135,16 @@ HttpConfig::startup()
 
   if (c.incoming_ip_to_bind) {
     Debug("ip_binding", "incoming_ip_to_bind: %s", c.incoming_ip_to_bind);
-    c.incoming_ip_to_bind_saddr = inet_addr(c.incoming_ip_to_bind);
+    if (0 != ink_inet_pton(c.incoming_ip_to_bind, &c.incoming_ip_to_bind_saddr.sa))
+      Warning("Invalid address '%s' for 'proxy.local.incoming_ip_to_bind'", c.incoming_ip_to_bind);
   }
 
   RecGetRecordString_Xmalloc("proxy.local.outgoing_ip_to_bind", &(c.outgoing_ip_to_bind));
 
   if (c.outgoing_ip_to_bind) {
     Debug("ip_binding", "outgoing_ip_to_bind: %s", c.outgoing_ip_to_bind);
-    ink_inet_pton(c.outgoing_ip_to_bind, &c.oride.outgoing_ip_to_bind_saddr);
+    if (0 != ink_inet_pton(c.outgoing_ip_to_bind, &c.oride.outgoing_ip_to_bind_saddr))
+      Warning("Invalid address '%s' for 'proxy.local.outgoing_ip_to_bind'", c.outgoing_ip_to_bind);
   }
 
   HttpEstablishStaticConfigLongLong(c.server_max_connections, "proxy.config.http.server_max_connections");

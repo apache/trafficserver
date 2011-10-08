@@ -270,3 +270,26 @@ uint32_t ink_inet_hash(sockaddr const* addr) {
   }
   return zret.i;
 }
+
+int
+ink_inet_to_hex(sockaddr const* src, char* dst, size_t len) {
+  int zret = 0;
+  ink_assert(len);
+  char const* dst_limit = dst + len - 1; // reserve null space.
+  if (ink_inet_is_ip(src)) {
+    uint8_t const* data = ink_inet_addr8_cast(src);
+    for ( uint8_t const* src_limit = data + ink_inet_addr_size(src)
+        ; data < src_limit && dst+1 < dst_limit
+        ; ++data, zret += 2
+    ) {
+    uint8_t n1 = (*data >> 4) & 0xF; // high nybble.
+    uint8_t n0 = *data & 0xF; // low nybble.
+
+    *dst++ = n1 > 9 ? n1 + 'A' - 10 : n1 + '0';
+    *dst++ = n0 > 9 ? n0 + 'A' - 10 : n0 + '0';
+    }
+  }
+  *dst = 0; // terminate but don't include that in the length.
+  return zret;
+}
+

@@ -452,6 +452,22 @@ inline bool ink_inet_is_multicast(sockaddr const* ip) {
 inline bool ink_inet_is_multicast(ts_ip_endpoint const* ip) {
   return ink_inet_is_multicast(&ip->sa);
 }
+
+inline bool ink_inet_is_nonroutable(sockaddr const* ip) {
+  bool zret = false;
+  if (ink_inet_is_ip4(ip)) {
+    in_addr_t a = ink_inet_ip4_addr_cast(ip);
+    zret = ((a & htonl(0xFF000000)) == htonl(0x0A000000)) ||
+      ((a & htonl(0xFFFF0000)) == htonl(0xC0A80000)) ||
+      ((a & htonl(0xFFF00000)) == htonl(0xAC100000))
+      ;
+  } // should we do something for IPv6 addresses?
+  return zret;
+}
+
+inline bool ink_inet_is_nonroutable(ts_ip_endpoint const* ip) {
+  return ink_inet_is_nonroutable(&ip->sa);
+}
   
 /// @name Address operators
 //@{
@@ -781,6 +797,18 @@ inline int ink_inet_pton(
 /** Generic IP address hash function.
 */    
 uint32_t ink_inet_hash(sockaddr const* addr);
+
+/** Convert address to string as a hexidecimal value.
+    The string is always nul terminated, the output string is clipped
+    if @a dst is insufficient.
+    @return The length of the resulting string (not including nul).
+*/
+int
+ink_inet_to_hex(
+  sockaddr const* addr, ///< Address to convert. Must be IP.
+  char* dst, ///< Destination buffer.
+  size_t len ///< Length of @a dst.
+);
 
 /** Storage for an IP address.
     In some cases we want to store just the address and not the

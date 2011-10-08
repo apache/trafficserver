@@ -1760,7 +1760,6 @@ main(int argc, char **argv)
 
     NetProcessor::accept_mss = accept_mss;
     netProcessor.start();
-    Machine::init();
 #ifndef INK_NO_HOSTDB
     dnsProcessor.start();
     if (hostDBProcessor.start() < 0)
@@ -1847,6 +1846,17 @@ main(int argc, char **argv)
                    "please check your Traffic Server configurations", http_accept_port_number);
       return (1);
     }
+
+    /* Set up the machine with the outbound address if that's set,
+       or the inbound address if set, otherwise let it default.
+    */
+    sockaddr const* machine_addr = 0;
+    if (ink_inet_is_ip(&HttpConfig::m_master.oride.outgoing_ip_to_bind_saddr)) {
+      machine_addr = &HttpConfig::m_master.oride.outgoing_ip_to_bind_saddr.sa;
+    } else if (ink_inet_is_ip(&HttpConfig::m_master.incoming_ip_to_bind_saddr)) {
+      machine_addr = &HttpConfig::m_master.incoming_ip_to_bind_saddr.sa;
+    }
+    Machine::init(0, machine_addr);
 
     int http_enabled = 1;
     TS_ReadConfigInteger(http_enabled, "proxy.config.http.enabled");
