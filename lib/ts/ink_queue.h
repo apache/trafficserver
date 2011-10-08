@@ -122,9 +122,6 @@ extern "C"
 
   typedef struct
   {
-#if defined(INK_USE_MUTEX_FOR_FREELISTS)
-    ink_mutex inkfreelist_mutex;
-#endif
 #if defined(USE_SPINLOCK_FOR_FREELIST)
     /*
       This assumes  we will never use anything other than Pthreads
@@ -154,29 +151,8 @@ extern "C"
   inkcoreapi void ink_freelist_init(InkFreeList * fl, const char *name,
                                     uint32_t type_size, uint32_t chunk_size,
                                     uint32_t offset_to_next, uint32_t alignment);
-#if !defined(INK_USE_MUTEX_FOR_FREELISTS)
   inkcoreapi void *ink_freelist_new(InkFreeList * f);
   inkcoreapi void ink_freelist_free(InkFreeList * f, void *item);
-#else                           /* INK_USE_MUTEX_FOR_FREELISTS */
-  inkcoreapi void *ink_freelist_new_wrap(InkFreeList * f);
-  static inline void *ink_freelist_new(InkFreeList * f)
-  {
-    void *retval = NULL;
-
-    ink_mutex_acquire(&(f->inkfreelist_mutex));
-    retval = ink_freelist_new_wrap(f);
-    ink_mutex_release(&(f->inkfreelist_mutex));
-    return retval;
-  }
-
-  inkcoreapi void ink_freelist_free_wrap(InkFreeList * f, void *item);
-  static inline void ink_freelist_free(InkFreeList * f, void *item)
-  {
-    ink_mutex_acquire(&(f->inkfreelist_mutex));
-    ink_freelist_free_wrap(f, item);
-    ink_mutex_release(&(f->inkfreelist_mutex));
-  }
-#endif /* INK_USE_MUTEX_FOR_FREELISTS */
   void ink_freelists_dump(FILE * f);
   void ink_freelists_dump_baselinerel(FILE * f);
   void ink_freelists_snap_baseline();
