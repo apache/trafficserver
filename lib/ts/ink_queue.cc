@@ -150,6 +150,7 @@ int fastmemtotal = 0;
 void *
 ink_freelist_new(InkFreeList * f)
 {
+#if TS_USE_FREELIST
   head_p item;
   head_p next;
   int result = 0;
@@ -234,12 +235,22 @@ ink_freelist_new(InkFreeList * f)
   ink_atomic_increment64(&fastalloc_mem_in_use, (int64_t) f->type_size);
 
   return TO_PTR(FREELIST_POINTER(item));
+#else // ! TS_USE_FREELIST
+  void *newp = NULL;
+
+  if (f->alignment)
+    newp = ats_memalign(f->alignment, f->chunk_size * f->type_size);
+  else
+    newp = ats_malloc(f->chunk_size * f->type_size);
+  return newp;
+#endif
 }
 typedef volatile void *volatile_void_p;
 
 void
 ink_freelist_free(InkFreeList * f, void *item)
 {
+#if TS_USE_FREELIST
   volatile_void_p *adr_of_next = (volatile_void_p *) ADDRESS_OF_NEXT(item, f->offset);
   head_p h;
   head_p item_pair;
@@ -277,11 +288,18 @@ ink_freelist_free(InkFreeList * f, void *item)
 
   ink_atomic_increment((int *) &f->count, -1);
   ink_atomic_increment64(&fastalloc_mem_in_use, -(int64_t) f->type_size);
+#else
+  if (f->alignment)
+    ats_memalign_free(item);
+  else
+    ats_free(item);
+#endif
 }
 
 void
 ink_freelists_snap_baseline()
 {
+#if TS_USE_FREELIST
   ink_freelist_list *fll;
   fll = freelists;
   while (fll) {
@@ -289,11 +307,15 @@ ink_freelists_snap_baseline()
     fll->fl->count_base = fll->fl->count;
     fll = fll->next;
   }
+#else // ! TS_USE_FREELIST
+  // TODO?
+#endif
 }
 
 void
 ink_freelists_dump_baselinerel(FILE * f)
 {
+#if TS_USE_FREELIST
   ink_freelist_list *fll;
   if (f == NULL)
     f = stderr;
@@ -313,11 +335,15 @@ ink_freelists_dump_baselinerel(FILE * f)
     }
     fll = fll->next;
   }
+#else // ! TS_USE_FREELIST
+  // TODO?
+#endif
 }
 
 void
 ink_freelists_dump(FILE * f)
 {
+#if TS_USE_FREELIST
   ink_freelist_list *fll;
   if (f == NULL)
     f = stderr;
@@ -332,11 +358,11 @@ ink_freelists_dump(FILE * f)
             (uint64_t)fll->fl->count * (uint64_t)fll->fl->type_size, fll->fl->type_size, fll->fl->name ? fll->fl->name : "<unknown>");
     fll = fll->next;
   }
+#else // ! TS_USE_FREELIST
+  // TODO?
+#endif
 }
 
-
-#define INK_FREELIST_CREATE(T, n) \
-ink_freelist_create("<unknown>", sizeof(T), n, (uintptr_t)&((T *)0)->next, 4)
 
 void
 ink_atomiclist_init(InkAtomicList * l, const char *name, uint32_t offset_to_next)
