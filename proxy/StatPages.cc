@@ -73,12 +73,15 @@ StatPagesManager::handle_http(Continuation * cont, HTTPHdr * header, int client_
   if (((m_enabled == 1 || m_enabled == 3) && is_cache_inspector_page(url)) ||
       ((m_enabled == 2 || m_enabled == 3) && is_stat_page(url) && !is_cache_inspector_page(url))) {
     int host_len;
-    char host[1024];
+    char host[MAXDNAME + 1];
     const char *h;
     int i;
 
     h = url->host_get(&host_len);
-    ink_strlcpy(host, h, sizeof(host));
+    if (host_len > MAXDNAME)
+      host_len = MAXDNAME;
+    memcpy(host, h, host_len);
+    host[host_len] = '\0';
     host_len = unescapifyStr(host);
 
     for (i = 0; i < n_stat_pages; i++) {
@@ -92,16 +95,18 @@ StatPagesManager::handle_http(Continuation * cont, HTTPHdr * header, int client_
   return ACTION_RESULT_DONE;
 }
 
-bool StatPagesManager::is_stat_page(URL * url)
+bool
+StatPagesManager::is_stat_page(URL * url)
 {
   int length;
   const char *h = url->host_get(&length);
-  char host[1024];
+  char host[MAXDNAME + 1];
 
-  if (h == NULL || length < 2)
+  if (h == NULL || length < 2 || length > MAXDNAME)
     return false;
 
-  ink_strlcpy(host, h, sizeof(host));
+  memcpy(host, h, length);
+  host[length] = '\0';
   length = unescapifyStr(host);
 
   if ((host[0] == '{') && (host[length - 1] == '}'))
@@ -110,16 +115,18 @@ bool StatPagesManager::is_stat_page(URL * url)
   return false;
 }
 
-bool StatPagesManager::is_cache_inspector_page(URL * url)
+bool
+StatPagesManager::is_cache_inspector_page(URL * url)
 {
   int length;
   const char *h = url->host_get(&length);
-  char host[1024];
+  char host[MAXDNAME + 1];
 
-  if (h == NULL || length < 2)
+  if (h == NULL || length < 2 || length > MAXDNAME)
     return false;
 
-  ink_strlcpy(host, h, sizeof(host));
+  memcpy(host, h, length);
+  host[length] = '\0';
   length = unescapifyStr(host);
 
   if (strncmp(host, "{cache}", length) == 0)

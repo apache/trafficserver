@@ -406,20 +406,20 @@ stat_callback(Continuation * cont, HTTPHdr * header)
   url = header->url_get();
   path = url->path_get(&length);
 
-
   char *buffer = NULL;
   int buffer_len = 0;
   int num_prefix_buffer;
 
   char *var_prefix = (char *)alloca((length + 1) * sizeof(char));
+
   memset(var_prefix, 0, ((length + 1) * sizeof(char)));
-  ink_strlcpy(var_prefix, path, length + 1);
+  if (path && length > 0)
+    ink_strlcpy(var_prefix, path, length + 1);
 
   num_prefix_buffer = RecGetRecordPrefix_Xmalloc(var_prefix, &buffer, &buffer_len);
   empty = (num_prefix_buffer == 0);
 
   if (!empty) {
-
     result_size = (buffer_len + 16) * sizeof(char);
     result = (char *)ats_malloc(result_size);
     memset(result, 0, result_size);
