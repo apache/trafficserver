@@ -501,7 +501,9 @@ LogCollationClientSM::client_init(int event, void *data)
   case LOG_COLL_EVENT_SWITCH:
     m_client_state = LOG_COLL_CLIENT_INIT;
     ink_assert(m_pending_event == NULL);
+    ink_mutex_acquire(&(mutex->the_mutex));
     m_pending_event = eventProcessor.schedule_imm(this);
+    ink_mutex_release(&(mutex->the_mutex));
     return EVENT_CONT;
 
   case EVENT_IMMEDIATE:

@@ -1,5 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.1.1
+  *) [TS-932] Fix m_pending_event == NULL crash in LogCollationClientSM.cc
+   Author: weijin
+
   *) [TS-979] Found a few places where we can segfault with strlcpy.
 
   *) [TS-938] Fix VIA to avoid loopback address.
