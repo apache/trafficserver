@@ -2303,7 +2303,6 @@ HttpTransact::HandleCacheOpenReadHitFreshness(State* s)
 void
 HttpTransact::CallOSDNSLookup(State* s)
 {
-//printf("into HttpTransact::CallOSDNSLookup **\n");
   TRANSACT_RETURN(DNS_LOOKUP, OSDNSLookup);
 }
 
@@ -2717,10 +2716,8 @@ HttpTransact::build_response_from_cache(State* s, HTTPWarningCode warning_code)
       // only if the cached response is a 200 OK
       if (client_response_code == HTTP_STATUS_OK && client_request->presence(MIME_PRESENCE_RANGE)) {
         s->state_machine->do_range_setup_if_necessary();
-        if (s->range_setup == RANGE_NOT_SATISFIABLE &&
-            s->http_config_param->reverse_proxy_enabled) {
+        if (s->range_setup == RANGE_NOT_SATISFIABLE && s->http_config_param->reverse_proxy_enabled) {
           build_error_response(s, HTTP_STATUS_RANGE_NOT_SATISFIABLE, "Requested Range Not Satisfiable","","");
-
           s->cache_info.action = CACHE_DO_NO_ACTION;
           s->next_action = PROXY_INTERNAL_CACHE_NOOP;
           break;
@@ -4108,7 +4105,6 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State* s)
 
     } else if (s->cache_info.action == CACHE_DO_UPDATE && is_request_conditional(&s->hdr_info.server_request)) {
       // CACHE_DO_UPDATE and server response is cacheable
-
       if (is_request_conditional(&s->hdr_info.client_request)) {
         if (s->txn_conf->cache_when_to_revalidate != 4)
           client_response_code =
@@ -4136,6 +4132,12 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State* s)
           s->cache_info.action = CACHE_DO_UPDATE;
           s->next_action = SERVER_READ;
         } else {
+          if (s->hdr_info.client_request.presence(MIME_PRESENCE_RANGE)) {
+            s->state_machine->do_range_setup_if_necessary();
+            // Note that even if the Range request is not satisfiable, we
+            // update and serve this cache. This will give a 200 response to
+            // a bad client, but allows us to avoid pegging the origin (e.g. abuse).
+          }
           s->cache_info.action = CACHE_DO_SERVE_AND_UPDATE;
           s->next_action = SERVE_FROM_CACHE;
         }
