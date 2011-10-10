@@ -168,7 +168,7 @@ ts_connect()
 #endif
   // connect call
   if (connect(main_socket_fd, (struct sockaddr *) &client_sock, sockaddr_len) < 0) {
-    //fprintf(stderr, "[connect] ERROR (main_socket_fd %d): %s\n", main_socket_fd, strerror(int(errno)));
+    fprintf(stderr, "[connect] ERROR (main_socket_fd %d): %s\n", main_socket_fd, strerror(int(errno)));
     close(main_socket_fd);
     main_socket_fd = -1;
     goto ERROR;                 //connection is down

@@ -1,5 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.0.3
+  *) [TS-830] Better error when there are CLI permission problems, or
+   other problems preventing operation. Author: AdunGaos.
+
   *) [TS-1046] Add possibility to extend tsxs command line for -Iincludes.
 
   *) [TS-1047] fix lots of spelling mistakes
