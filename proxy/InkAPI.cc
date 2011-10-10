@@ -3083,6 +3083,23 @@ TSMimeHdrFieldValueIntGet(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int idx)
   return mime_parse_int(value_str, value_str + value_len);
 }
 
+int64_t
+TSMimeHdrFieldValueInt64Get(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int idx)
+{
+  sdk_assert(sdk_sanity_check_mbuffer(bufp) == TS_SUCCESS);
+  sdk_assert((sdk_sanity_check_mime_hdr_handle(hdr) == TS_SUCCESS) ||
+             (sdk_sanity_check_http_hdr_handle(hdr) == TS_SUCCESS));
+  sdk_assert(sdk_sanity_check_field_handle(field, hdr) == TS_SUCCESS);
+
+  int value_len;
+  const char *value_str = TSMimeFieldValueGet(bufp, field, idx, &value_len);
+
+  if (value_str == NULL)
+    return 0;
+
+  return mime_parse_int64(value_str, value_str + value_len);
+}
+
 unsigned int
 TSMimeHdrFieldValueUintGet(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int idx)
 {
@@ -3164,6 +3181,28 @@ TSMimeHdrFieldValueIntSet(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int idx, int
 
   char tmp[16];
   int len = mime_format_int(tmp, value, sizeof(tmp));
+
+  TSMimeFieldValueSet(bufp, field, idx, tmp, len);
+  return TS_SUCCESS;
+}
+
+TSReturnCode
+TSMimeHdrFieldValueInt64Set(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int idx, int64_t value)
+{
+  // Allow to modify the buffer only
+  // if bufp is modifiable. If bufp is not modifiable return
+  // TS_ERROR. If allowed, return TS_SUCCESS. Changed the
+  // return value of function from void to TSReturnCode.
+  sdk_assert(sdk_sanity_check_mbuffer(bufp) == TS_SUCCESS);
+  sdk_assert((sdk_sanity_check_mime_hdr_handle(hdr) == TS_SUCCESS) ||
+             (sdk_sanity_check_http_hdr_handle(hdr) == TS_SUCCESS));
+  sdk_assert(sdk_sanity_check_field_handle(field, hdr) == TS_SUCCESS);
+
+  if (!isWriteable(bufp))
+    return TS_ERROR;
+
+  char tmp[20];
+  int len = mime_format_int64(tmp, value, sizeof(tmp));
 
   TSMimeFieldValueSet(bufp, field, idx, tmp, len);
   return TS_SUCCESS;

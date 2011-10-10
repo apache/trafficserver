@@ -1,5 +1,7 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.1.1
+  *) [TS-964] Add 64-bit integer plugin APIs for HTTP headers.
+
   *) [TS-932] Fix m_pending_event == NULL crash in LogCollationClientSM.cc
    Author: weijin
 
