@@ -98,6 +98,10 @@ StatPagesManager::handle_http(Continuation * cont, HTTPHdr * header, int client_
 bool
 StatPagesManager::is_stat_page(URL * url)
 {
+  // This gets called from the state machine, so we should optimize here and not in caller.
+  if (m_enabled <= 0)
+    return false;
+
   int length;
   const char *h = url->host_get(&length);
   char host[MAXDNAME + 1];
