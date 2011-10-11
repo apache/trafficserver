@@ -721,10 +721,8 @@ LogAccess::marshal_record(char *record, char *buf)
   ink_debug_assert(num_chars <= max_chars);
   memcpy(buf, out_buf, num_chars);
 
-#ifdef PURIFY
-  for (unsigned int i = num_chars + 1; i < max_chars; ++i) {
-    buf[i] = '$';
-  }
+#if TS_HAS_PURIFY
+  memset(buf + num_chars + 1, '$', max_chars - num_chars - 1);
 #endif
 
   return max_chars;

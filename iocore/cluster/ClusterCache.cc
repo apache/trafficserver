@@ -433,7 +433,7 @@ CacheContinuation::do_op(Continuation * c, ClusterMachine * mp, void *args,
   // Determine the type of the "Over The Wire" (OTW) message header and
   //   initialize it.
   //
-#ifdef PURIFY
+#if TS_HAS_PURIFY
   if (data)
     memset(data, 0, op_to_sizeof_fixedlen_msg(opcode));
 #endif
@@ -464,7 +464,7 @@ CacheContinuation::do_op(Continuation * c, ClusterMachine * mp, void *args,
       if (!data) {
         data_len = op_to_sizeof_fixedlen_msg(opcode);
         data = (char *) ALLOCA_DOUBLE(data_len);
-#ifdef PURIFY
+#if TS_HAS_PURIFY
         memset(data, 0, data_len);
 #endif
       }
@@ -2511,7 +2511,7 @@ CacheContinuation::do_remote_lookup(Continuation * cont, CacheKey * key,
   ClusterMachine *past_probes[CONFIGURATION_HISTORY_PROBE_DEPTH] = { 0 };
   int mlen = op_to_sizeof_fixedlen_msg(CACHE_LOOKUP_OP) + ((hostname && hostname_len) ? hostname_len : 0);
   CacheLookupMsg *msg = (CacheLookupMsg *) ALLOCA_DOUBLE(mlen);
-#ifdef PURIFY
+#if TS_HAS_PURIFY
   memset((char *) msg, 0, mlen);
 #endif
   msg->init();
@@ -2691,7 +2691,7 @@ CacheContinuation::replyLookupEvent(int event, void *d)
   if (vers == CacheOpReplyMsg::CACHE_OP_REPLY_MESSAGE_VERSION) {
     CacheOpReplyMsg *msg;
     int flen = CacheOpReplyMsg::sizeof_fixedlen_msg();
-#ifdef PURIFY
+#if TS_HAS_PURIFY
     msg = (CacheOpReplyMsg *)ats_malloc(flen);
 #else
     msg = (CacheOpReplyMsg *) ALLOCA_DOUBLE(flen);
@@ -2707,7 +2707,7 @@ CacheContinuation::replyLookupEvent(int event, void *d)
       log_cache_op_sndmsg(seq_number, event, "cache_result");
 #endif
       clusterProcessor.invoke_remote(from, CACHE_OP_RESULT_CLUSTER_FUNCTION, msg, len);
-#ifdef PURIFY
+#if TS_HAS_PURIFY
       ats_free(msg);
 #endif
     }

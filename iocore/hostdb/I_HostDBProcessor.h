@@ -329,7 +329,7 @@ HostDBInfo()
   , reverse_dns(0)
   , md5_low_low(0)
   , md5_low(0), md5_high(0) {
-#ifdef PURIFY
+#if TS_HAS_PURIFY
     memset(&app, 0, sizeof(app));
 #else
     app.allotment.application1 = 0;

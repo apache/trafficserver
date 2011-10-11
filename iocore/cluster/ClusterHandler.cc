@@ -1852,7 +1852,7 @@ ClusterHandler::add_small_controlmsg_descriptors()
     c->free_data();
     c->mutex = NULL;
     p += c->len;
-#ifdef PURIFY
+#if TS_HAS_PURIFY
     char *endp = p;
 #endif
     ink_hrtime now = ink_get_hrtime();
@@ -1860,7 +1860,7 @@ ClusterHandler::add_small_controlmsg_descriptors()
     LOG_EVENT_TIME(c->submit_time, cluster_send_time_dist, cluster_send_events);
     c->freeall();
     p = (char *) DOUBLE_ALIGN(p);
-#ifdef PURIFY
+#if TS_HAS_PURIFY
     if (endp < p)
       memset(endp, 0, (p - endp));
 #endif
