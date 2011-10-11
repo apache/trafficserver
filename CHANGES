@@ -14,7 +14,8 @@ Changes with Apache Traffic Server 3.1.1
 
   *) [TS-979] Found a few places where we can segfault with strlcpy.
 
-  *) [TS-938] Fix VIA to avoid loopback address.
+  *) [TS-938] Fix VIA to avoid loopback address. For Solaris only IPv4
+   is supported.
 
   *) [TS-945] Convert transparent forward requests to server style when
      forwarding to a parent proxy. Contributed by Yossi Gottlieb.

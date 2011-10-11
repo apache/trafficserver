@@ -79,6 +79,7 @@
 #define TS_HAVE_NETINET_IP_H           @netinet_iph@
 #define TS_HAVE_NETINET_IP_ICMP_H      @netinet_ip_icmph@
 #define TS_HAVE_EXECINFO_H             @execinfoh@
+#define TS_HAVE_IFADDRS_H               @ifaddrsh@
 
 /* Libraries */
 #define TS_HAS_LIBZ                    @zlibh@

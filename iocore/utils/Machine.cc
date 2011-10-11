@@ -23,7 +23,11 @@
 
 #include "libts.h"
 #include "I_Machine.h"
+
+# if TS_HAVE_IFADDRS_H
 #include <ifaddrs.h>
+# else
+# endif
 
 // Singleton
 Machine* Machine::_instance = NULL;
@@ -64,42 +68,80 @@ Machine::Machine(char const* the_hostname, sockaddr const* addr)
     }
     hostname = ats_strdup(the_hostname);
 
-    ifaddrs* ifa_addrs = 0;
-    status = getifaddrs(&ifa_addrs);
+#   if TS_HAVE_IFADDRS_H
+      ifaddrs* ifa_addrs = 0;
+      status = getifaddrs(&ifa_addrs);
+#   else
+      int s = socket(AF_INET, SOCK_DGRAM, 0);
+      // This number is hard to determine, but needs to be much larger than
+      // you would expect. On a normal system with just two interfaces and
+      // one address / interface the return count is 120. Stack space is
+      // cheap so it's best to go big.
+      static const int N_REQ = 1024;
+      ifconf conf;
+      ifreq req[N_REQ];
+      if (0 <= s) {
+        conf.ifc_len = sizeof(req);
+        conf.ifc_req = req;
+        status = ioctl(s, SIOCGIFCONF, &conf);
+        close(s);
+      } else {
+        status = -1;
+      }
+#   endif
+
     if (0 != status) {
       Warning("Unable to determine local host '%s' address information - %s"
         , hostname
         , strerror(errno)
       );
     } else {
-      /* Loop through the interface addresses. We have to prioritize
-         the values a little bit. The worst is the loopback address,
-         we accept that only if we can't find anything else. Next best
-         are non-routables and the best are "global" addresses.
-      */
-      enum { NA, LO, NR, MC, GA } spot_type = NA, ip4_type = NA, ip6_type = NA;
-      for (ifaddrs* spot = ifa_addrs ; spot ; spot = spot->ifa_next ) {
-        
-        if (!ink_inet_is_ip(spot->ifa_addr)) spot_type = NA;
-        else if (ink_inet_is_loopback(spot->ifa_addr)) spot_type = LO;
-        else if (ink_inet_is_nonroutable(spot->ifa_addr)) spot_type = NR;
-        else if (ink_inet_is_multicast(spot->ifa_addr)) spot_type = MC;
+      // Loop through the interface addresses and prefer by type.
+      enum {
+        NA, // Not an (IP) Address.
+        LO, // Loopback.
+        NR, // Non-Routable.
+        MC, // Multicast.
+        GA  // Globally unique Address.
+      } spot_type = NA, ip4_type = NA, ip6_type = NA;
+      sockaddr const* ifip;
+      for (
+#     if TS_HAVE_IFADDRS_H
+        ifaddrs* spot = ifa_addrs ; spot ; spot = spot->ifa_next
+#     else
+          ifreq* spot = req, *req_limit = req + (conf.ifc_len/sizeof(*req)) ; spot < req_limit ; ++spot
+#     endif
+      ) {
+#     if TS_HAVE_IFADDRS_H
+        ifip = spot->ifa_addr;
+#     else
+        ifip = &spot->ifr_addr;
+#     endif
+
+        if (!ink_inet_is_ip(ifip)) spot_type = NA;
+        else if (ink_inet_is_loopback(ifip)) spot_type = LO;
+        else if (ink_inet_is_nonroutable(ifip)) spot_type = NR;
+        else if (ink_inet_is_multicast(ifip)) spot_type = MC;
 
         if (spot_type == NA) continue; // Next!
 
-        if (ink_inet_is_ip4(spot->ifa_addr)) {
+        if (ink_inet_is_ip4(ifip)) {
           if (spot_type > ip4_type) {
-            ink_inet_copy(&ip4, spot->ifa_addr);
+            ink_inet_copy(&ip4, ifip);
             ip4_type = spot_type;
           }
-        } else if (ink_inet_is_ip6(spot->ifa_addr)) {
+        } else if (ink_inet_is_ip6(ifip)) {
           if (spot_type > ip6_type) {
-            ink_inet_copy(&ip6, spot->ifa_addr);
+            ink_inet_copy(&ip6, ifip);
             ip6_type = spot_type;
           }
         }
       }
+
+#     if TS_HAVE_IFADDRS_H
       freeifaddrs(ifa_addrs);
+#     endif
+
       // What about the general address? Prefer IPv4?
       if (ip4_type >= ip6_type)
         ink_inet_copy(&ip.sa, &ip4.sa);

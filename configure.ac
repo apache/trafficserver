@@ -1031,7 +1031,8 @@ TS_FLAG_HEADERS([sys/epoll.h \
                   sys/sysmacros.h \
                   math.h \
                   stdint.h \
-                  net/ppp_defs.h])
+                  net/ppp_defs.h \
+                  ifaddrs.h])
 
 AC_SUBST(sys_epollh)
 AC_SUBST(sys_eventh)
@@ -1067,6 +1068,7 @@ AC_SUBST(sys_paramh)
 AC_SUBST(sys_sysmacrosh)
 AC_SUBST(mathh)
 AC_SUBST(net_ppp_defsh)
+AC_SUBST(ifaddrsh)
 
 TS_FLAG_HEADERS([netinet/ip.h], [], [],
                  [[#ifdef HAVE_SYS_TYPES_H
