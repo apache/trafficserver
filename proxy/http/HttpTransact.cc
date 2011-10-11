@@ -5439,16 +5439,10 @@ bool
 HttpTransact::handle_trace_and_options_requests(State* s, HTTPHdr* incoming_hdr)
 {
   ink_debug_assert(incoming_hdr->type_get() == HTTP_TYPE_REQUEST);
-  if (s->method == HTTP_WKSIDX_GET)
-    return false;
 
-  if (s->method == HTTP_WKSIDX_TRACE) {
-    HTTP_INCREMENT_TRANS_STAT(http_trace_requests_stat);
-  } else if (s->method == HTTP_WKSIDX_OPTIONS) {
-    HTTP_INCREMENT_TRANS_STAT(http_options_requests_stat);
-  } else {
+  // This only applies to TRACE and OPTIONS
+  if ((s->method != HTTP_WKSIDX_TRACE) && (s->method != HTTP_WKSIDX_OPTIONS))
     return false;
-  }
 
   // If there is no Max-Forwards request header, just return false.
   if (!incoming_hdr->presence(MIME_PRESENCE_MAX_FORWARDS)) {
@@ -5652,6 +5646,10 @@ HttpTransact::initialize_state_variables_from_request(State* s, HTTPHdr* obsolet
     HTTP_INCREMENT_TRANS_STAT(http_trace_requests_stat);
   } else if (s->method == HTTP_WKSIDX_PUSH) {
     HTTP_INCREMENT_TRANS_STAT(http_push_requests_stat);
+  } else if (s->method == HTTP_WKSIDX_OPTIONS) {
+    HTTP_INCREMENT_TRANS_STAT(http_options_requests_stat);
+  } else if (s->method == HTTP_WKSIDX_TRACE) {
+    HTTP_INCREMENT_TRANS_STAT(http_trace_requests_stat);
   } else {
     HTTP_INCREMENT_TRANS_STAT(http_extension_method_requests_stat);
     SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_METHOD);
