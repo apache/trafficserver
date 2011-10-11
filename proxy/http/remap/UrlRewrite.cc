@@ -476,7 +476,7 @@ UrlRewrite::UrlRewrite(const char *file_var_in)
  : nohost_rules(0), reverse_proxy(0), backdoor_enabled(0),
    mgmt_autoconf_port(0), default_to_pac(0), default_to_pac_port(0), file_var(NULL), ts_name(NULL),
    http_default_redirect_url(NULL), num_rules_forward(0), num_rules_reverse(0), num_rules_redirect_permanent(0),
-   num_rules_redirect_temporary(0), num_rules_forward_with_recv_port(0)
+   num_rules_redirect_temporary(0), num_rules_forward_with_recv_port(0), _valid(false)
 {
 
   forward_mappings.hash_lookup = reverse_mappings.hash_lookup =
@@ -525,15 +525,16 @@ UrlRewrite::UrlRewrite(const char *file_var_in)
   ink_strlcat(config_file_path, config_file, sizeof(config_file_path));
   ats_free(config_file);
 
-  if (this->BuildTable() != 0) {
+  if (0 == this->BuildTable()) {
+    _valid = true;
+    pcre_malloc = &ats_malloc;
+    pcre_free = &ats_free;
+
+    if (is_debug_tag_set("url_rewrite"))
+      Print();
+  } else {
     Warning("something failed during BuildTable() -- check your remap plugins!");
   }
-
-  pcre_malloc = &ats_malloc;
-  pcre_free = &ats_free;
-
-  if (is_debug_tag_set("url_rewrite"))
-    Print();
 }
 
 
@@ -548,6 +549,7 @@ UrlRewrite::~UrlRewrite()
   DestroyStore(permanent_redirects);
   DestroyStore(temporary_redirects);
   DestroyStore(forward_mappings_with_recv_port);
+  _valid = false;
 }
 
 /** Sets the reverse proxy flag. */
@@ -1085,7 +1087,7 @@ UrlRewrite::BuildTable()
   memset(&bti, 0, sizeof(bti));
 
   if ((file_buf = readIntoBuffer(config_file_path, modulePrefix, NULL)) == NULL) {
-    ink_error("Can't load remapping configuration file - %s", config_file_path);
+    Warning("Can't load remapping configuration file - %s", config_file_path);
     return 1;
   }
 
@@ -1487,7 +1489,7 @@ UrlRewrite::BuildTable()
     Warning("Could not add rule at line #%d; Aborting!", cln + 1);
     snprintf(errBuf, sizeof(errBuf), "%s %s at line %d", modulePrefix, errStr, cln + 1);
     SignalError(errBuf, alarm_already);
-    ink_fatal(1, errBuf);
+    return 2;
   }                             /* end of while(cur_line != NULL) */
 
   clear_xstr_array(bti.paramv, sizeof(bti.paramv) / sizeof(char *));

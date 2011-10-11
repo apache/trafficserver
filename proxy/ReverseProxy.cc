@@ -78,6 +78,13 @@ init_reverse_proxy()
   reconfig_mutex = new_ProxyMutex();
   rewrite_table = NEW(new UrlRewrite("proxy.config.url_remap.filename"));
 
+  if (!rewrite_table->is_valid()) {
+    Warning("Can not load the remap table, exiting out!");
+    // TODO: For now, I _exit() out of here, because otherwise we'll keep generating
+    // core files (if enabled) when starting up with a bad remap.config file.
+    _exit(-1);
+  }
+
   REVERSE_RegisterConfigUpdateFunc("proxy.config.url_remap.filename", url_rewrite_CB, (void *) FILE_CHANGED);
   REVERSE_RegisterConfigUpdateFunc("proxy.config.proxy_name", url_rewrite_CB, (void *) TSNAME_CHANGED);
   REVERSE_RegisterConfigUpdateFunc("proxy.config.reverse_proxy.enabled", url_rewrite_CB, (void *) REVERSE_CHANGED);
@@ -183,10 +190,17 @@ reloadUrlRewrite()
   UrlRewrite *newTable;
 
   Debug("url_rewrite", "remap.config updated, reloading...");
-  eventProcessor.schedule_in(new UR_FreerContinuation(rewrite_table), URL_REWRITE_TIMEOUT, ET_TASK);
   newTable = new UrlRewrite("proxy.config.url_remap.filename");
-  Debug("url_rewrite", "remap.config done reloading!");
-  ink_atomic_swap_ptr(&rewrite_table, newTable);
+  if (newTable->is_valid()) {
+    eventProcessor.schedule_in(new UR_FreerContinuation(rewrite_table), URL_REWRITE_TIMEOUT, ET_TASK);
+    Debug("url_rewrite", "remap.config done reloading!");
+    ink_atomic_swap_ptr(&rewrite_table, newTable);
+  } else {
+    static const char* msg = "failed to reload remap.config, not replacing!";
+    delete newTable;
+    Debug("url_rewrite", msg);
+    Warning(msg);
+  }
 }
 
 int

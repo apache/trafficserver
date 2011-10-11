@@ -71,12 +71,13 @@ class UrlRewrite
 {
 public:
   UrlRewrite(const char *file_var_in);
-   ~UrlRewrite();
+  ~UrlRewrite();
   int BuildTable();
   mapping_type Remap_redirect(HTTPHdr * request_header, URL *redirect_url, char **orig_url);
   bool ReverseMap(HTTPHdr *response_header);
   void SetReverseFlag(int flag);
   void Print();
+  bool is_valid() const { return _valid; };
 //  private:
 
   static const int MAX_REGEX_SUBS = 10;
@@ -190,6 +191,7 @@ public:
   int num_rules_forward_with_recv_port;
 
 private:
+  bool _valid;
   void _doRemap(UrlMappingContainer &mapping_container, URL *request_url);
   bool _mappingLookup(MappingsStore &mappings, URL *request_url, int request_port, const char *request_host,
                       int request_host_len, UrlMappingContainer &mapping_container);
