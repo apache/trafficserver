@@ -87,6 +87,10 @@ Changes with Apache Traffic Server 3.1.1
   *) [TS-930] Fixed TSNetConnect to use network order for port.
 
 Changes with Apache Traffic Server 3.1.0
+  *) [TS-747] Add a new option, proxy.config.ssl.compression, to turn
+   SSL compression on / off. This currently only works with OpenSSL
+   v1.0.0 and later.
+
   *) Make sure --enable-purify works again
 
   *) [TS-888] Fix SSL by enabling the right direction on successful setup.
