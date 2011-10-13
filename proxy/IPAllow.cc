@@ -260,8 +260,8 @@ IpAllow::BuildTable()
                 _acls.push_back(AclRecord(op, line_num));
                 // Color with index because at this point the address
                 // is volatile.
-                _map.mark(
-                  &addr1.sa, &addr2.sa,
+                _map.fill(
+                  &addr1, &addr2,
                   reinterpret_cast<void*>(_acls.size()-1)
                 );
               } else {

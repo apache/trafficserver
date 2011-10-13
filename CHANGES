@@ -1,5 +1,10 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.1.1
+
+  *) [TS-963] Change the way ip_allow is parsed to be consistent with
+   earlier versions (first match). Added default IPv6 allow. Added
+   regression tests for the underlying IpMap class.
+
   *) [TS-948] Don't reload or load a broken remap.config.
 
   *) [TS-824] Range requests that result in cache refresh give 200 status

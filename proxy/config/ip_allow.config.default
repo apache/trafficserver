@@ -7,3 +7,4 @@
 # Rules are applied in the order listed starting from the top.
 #
 src_ip=0.0.0.0-255.255.255.255		action=ip_allow
+src_ip=::-ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff action=ip_allow

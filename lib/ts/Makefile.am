@@ -125,7 +125,7 @@ libtsutil_la_SOURCES = \
   lockfile.cc \
   I_Layout.h \
   IntrusiveDList.h \
-  IpMap.h IpMap.cc IpMapConf.h IpMapConf.cc \
+  IpMap.h IpMap.cc IpMapConf.h IpMapConf.cc IpMapTest.cc \
   Layout.cc \
   MatcherUtils.cc \
   MatcherUtils.h \

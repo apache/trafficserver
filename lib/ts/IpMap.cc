@@ -381,7 +381,7 @@ template <
   typedef typename N::Metric Metric;   ///< Import type.g482
 
   IpMapBase() : _root(0) {}
-  ~IpMapBase() { this->erase(); }
+  ~IpMapBase() { this->clear(); }
 
   /** Mark a range.
       All addresses in the range [ @a min , @a max ] are marked with @a data.
@@ -404,6 +404,22 @@ template <
     ArgType max
   );
 
+  /** Fill addresses.
+
+      This background fills using the range. All addresses in the
+      range that are @b not present in the map are added. No
+      previously present address is changed.
+
+      @note This is useful for filling in first match tables.
+
+      @return This object.
+  */
+  self& fill(
+    ArgType min,
+    ArgType max,
+    void* data = 0
+  );
+
   /** Test for membership.
 
       @return @c true if the address is in the map, @c false if not.
@@ -415,16 +431,14 @@ template <
     void **ptr = 0 ///< Client data return.
   ) const;
 
-  /** Erase entire map.
-
-      All addresses are discarded.
+  /** Remove all addresses in the map.
 
       @note This is much faster than using @c unmark with a range of
       all addresses.
 
-      @return This map.
+      @return This object.
   */
-  self& erase();
+  self& clear();
 
   /** Lower bound for @a target.  @return The node whose minimum value
       is the largest that is not greater than @a target, or @c NULL if
@@ -508,7 +522,7 @@ IpMapBase<N>::lowerBound(ArgType target) {
 }
 
 template < typename N > IpMapBase<N>&
-IpMapBase<N>::erase() {
+IpMapBase<N>::clear() {
   // Delete everything.
   N* n = static_cast<N*>(_list.getHead());
   while (n) {
@@ -522,9 +536,113 @@ IpMapBase<N>::erase() {
 }
 
 template < typename N > IpMapBase<N>&
+IpMapBase<N>::fill(ArgType rmin, ArgType rmax, void* payload) {
+  // Leftmost node of interest with n->_min <= min.
+  N* n = this->lowerBound(rmin);
+  N* x = 0; // New node (if any).
+  // Need copies because we will modify these.
+  Metric min = N::deref(rmin);
+  Metric max = N::deref(rmax);
+
+  // Handle cases involving a node of interest to the left of the
+  // range.
+  if (n) {
+    Metric min_1 = min;
+    N::dec(min_1);
+    if (n->_max < min_1) { // no overlap, move on to next node.
+      n = next(n);
+    } else if (n->_max >= max) { // incoming range is covered, just discard.
+      return *this;
+    } else if (n->_data != payload) { // different payload, clip range on left.
+      min = n->_max;
+      N::inc(min);
+      n = next(n);
+    } else { // skew overlap with same payload, use node and continue.
+      x = n;
+      n = next(n);
+    }
+  } else {
+    n = this->getHead();
+  }
+
+  // Work through the rest of the nodes of interest.
+  // Invariant: n->_min >= min
+  Metric max_plus1 = max;
+  N::inc(max_plus1);
+  /* Notes:
+     - max (and thence max_plus1) never change during the loop.
+     - we must have either x != 0 or adjust min but not both.
+  */
+  while (n) {
+    if (n->_data == payload) {
+      if (x) {
+        if (n->_min <= max_plus1) { // overlap so extend x and drop n.
+          x->setMax(n->_max);
+          this->remove(n);
+          if (x->_max >= max) return *this; // all done.
+          n = next(x);
+        } else {
+          // have the space to finish off the range.
+          x->setMax(max);
+          return *this;
+        }
+      } else { // not carrying a span.
+        if (n->_min <= max_plus1) { // overlap, extend and continue.
+          x = n;
+          x->setMin(min);
+          if (n->_max >= max) return *this; // extend n covers range.
+          n = next(n);
+        } else { // no overlap, space to complete range.
+          N* y = new N(min, max, payload);
+          this->insertBefore(n, y);
+          return *this;
+        }
+      }
+    } else { // different payload
+      if (x) {
+        if (max < n->_min) { // range ends before n starts, done.
+          x->setMax(max);
+          return *this;
+        } else if (max <= n->_max) { // range ends before n, done.
+          x->setMaxMinusOne(n->_min);
+          return *this;
+        } else { // n is contained in range, skip over it.
+          x->setMaxMinusOne(n->_min);
+          x = 0;
+          min = n->_max;
+          N::inc(min);
+          n = next(n);
+        }
+      } else {
+        if (min < n->_min) { // Need a span before n.
+          N* y = new N(min, n->_min, payload);
+          y->decrementMax();
+          this->insertBefore(n, y);
+        }
+        if (max <= n->_max) return *this;
+        min = n->_max;
+        N::inc(min);
+        n = next(n);
+      }
+    }
+  }
+  // Invariant: min is larger than any existing range maximum.
+  if (x) {
+    x->setMax(max);
+  } else {
+    this->append(new N(min, max, payload));
+  }
+  return *this;
+}
+
+template < typename N > IpMapBase<N>&
 IpMapBase<N>::mark(ArgType min, ArgType max, void* payload) {
   N* n = this->lowerBound(min); // current node.
   N* x = 0; // New node, gets set if we re-use an existing one.
+
+  // Several places it is handy to have max+1.
+  Metric max_plus = N::deref(max);
+  N::inc(max_plus);
 
   /* Some subtlety - for IPv6 we overload the compare operators to do
      the right thing, but we can't overload pointer
@@ -559,8 +677,6 @@ IpMapBase<N>::mark(ArgType min, ArgType max, void* payload) {
       } else if (n->_data == payload) {
         return *this; // request is covered by existing span with the same data
       } else {
-        Metric max_plus = N::deref(max);
-        N::inc(max_plus);
         // request span is covered by existing span.
         x = new N(min, max, payload); //
         n->setMin(max_plus); // clip existing.
@@ -586,8 +702,6 @@ IpMapBase<N>::mark(ArgType min, ArgType max, void* payload) {
       // Existing span covers new span but with a different payload.
       // We split it, put the new span in between and we're done.
       N* r;
-      Metric max_plus = N::deref(max);
-      N::inc(max_plus);
       x = new N(min, max, payload);
       r = new N(max_plus, n->_max, n->_data);
       n->setMax(min_1);
@@ -601,27 +715,43 @@ IpMapBase<N>::mark(ArgType min, ArgType max, void* payload) {
       if (n) this->insertBefore(n, x);
       else this->append(x); // note that since n == 0 we'll just return.
     }
+  } else if (0 != (n = this->getHead()) &&
+    n->_data == payload &&
+    n->_min <= max_plus
+  ) {
+    // Same payload with overlap, re-use.
+    x = n;
+    n = next(n);
+    x->setMin(min);
+    if (x->_max < max) x->setMax(max);
   } else {
     x = new N(min, max, payload);
     this->prepend(x);
-    n = next(x);
   }
 
   // At this point, @a x has the node for this span and all existing spans of
   // interest start at or past this span.
   while (n) {
-    if (n->_max <= max) {
-      x = n;
-      n = next(n);
-      this->remove(x);
-    } else if (n->_min > max) {
-      // no overlap so we're done.
-      break;
-    } else {
-      Metric max_plus = N::deref(max);
-      // just right overlap, clip and we're done.
-      N::inc(max_plus);
+    if (n->_data == payload) {
+      if (n->_max <= max_plus) { // completely covered, drop span, continue
+        N* r = next(n);
+        this->remove(n);
+        n = r;
+      } else if (n->_min <= max_plus) {// skew overlap on the right.
+        x->setMax(n->_max);
+        this->remove(n);
+        break;
+      } else { // no overlap, done
+        break;
+      }
+    } else if (n->_max <= max) { // covered, discard and continue.
+      N* r = next(n);
+      this->remove(n);
+      n = r;
+    } else if (n->_min <= max) { // skew overlap, clip and done.
       n->setMin(max_plus);
+      break;
+    } else { // no overlap, done.
       break;
     }
   }
@@ -820,6 +950,31 @@ protected:
     return *this;
   }
   
+  /** Set the maximum value to one less than @a max.
+      @return This object.
+  */
+  self& setMaxMinusOne(
+    ArgType max ///< One more than maximum value.
+  ) {
+    this->setMax(max);
+    dec(_max);
+    return *this;
+  }
+  /** Set the minimum value to one more than @a min.
+      @return This object.
+  */
+  self& setMinPlusOne(
+    ArgType min ///< One less than minimum value.
+  ) {
+    this->setMin(min);
+    inc(_max);
+    return *this;
+  }
+  /** Decremement the maximum value in place.
+      @return This object.
+  */
+  self& decrementMax() { dec(_max); return *this; }
+
   /// Increment a metric.
   static void inc(
     Metric& m ///< Incremented in place.
@@ -937,6 +1092,30 @@ protected:
   ) {
     return this->setMax(&max);
   }
+  /** Set the maximum value to one less than @a max.
+      @return This object.
+  */
+  self& setMaxMinusOne(
+    Metric const& max ///< One more than maximum value.
+  ) {
+    this->setMax(max);
+    dec(_max);
+    return *this;
+  }
+  /** Set the minimum value to one more than @a min.
+      @return This object.
+  */
+  self& setMinPlusOne(
+    Metric const& min ///< One less than minimum value.
+  ) {
+    this->setMin(min);
+    inc(_max);
+    return *this;
+  }
+  /** Decremement the maximum value in place.
+      @return This object.
+  */
+  self& decrementMax() { dec(_max); return *this; }
   
   /// Increment a metric.
   static void inc(
@@ -944,6 +1123,8 @@ protected:
   ) {
     uint8_t* addr = m.sin6_addr.s6_addr;
     uint8_t* b = addr + INK_IP6_SIZE;
+    // Ripple carry. Walk up the address incrementing until we don't
+    // have a carry.
     do {
       ++*--b;
     } while (b > addr && 0 == *b);
@@ -955,6 +1136,8 @@ protected:
   ) {
     uint8_t* addr = m.sin6_addr.s6_addr;
     uint8_t* b = addr + INK_IP6_SIZE;
+    // Ripple borrow. Walk up the address decrementing until we don't
+    // have a borrow.
     do {
       --*--b;
     } while (b > addr && static_cast<uint8_t>(0xFF) == *b);
@@ -975,6 +1158,9 @@ inline int cmp(sockaddr_in6 const& lhs, sockaddr_in6 const& rhs) {
 // Helper functions
 
 /// Less than.
+inline bool operator<(sockaddr_in6 const& lhs, sockaddr_in6 const& rhs) {
+  return -1 == ts::detail::cmp(lhs, rhs);
+}
 inline bool operator<(sockaddr_in6 const* lhs, sockaddr_in6 const& rhs) {
   return -1 == ts::detail::cmp(*lhs, rhs);
 }
@@ -997,6 +1183,10 @@ inline bool operator==(sockaddr_in6 const& lhs, sockaddr_in6 const& rhs) {
 /// Less than or equal.
 inline bool operator<=(sockaddr_in6 const& lhs, sockaddr_in6 const* rhs) {
   return 1 != ts::detail::cmp(lhs, *rhs);
+}
+/// Less than or equal.
+inline bool operator<=(sockaddr_in6 const& lhs, sockaddr_in6 const& rhs) {
+  return 1 != ts::detail::cmp(lhs, rhs);
 }
 /// Greater than or equal.
 inline bool operator>=(sockaddr_in6 const& lhs, sockaddr_in6 const& rhs) {
@@ -1031,24 +1221,26 @@ IpMap::force4() {
   return _m4;
 }
 
+inline ts::detail::Ip6Map*
+IpMap::force6() {
+  if (!_m6) _m6 = new ts::detail::Ip6Map;
+  return _m6;
+}
+
 bool
 IpMap::contains(sockaddr const* target, void** ptr) const {
   bool zret = false;
   if (AF_INET == target->sa_family) {
-    if (_m4) {
-      zret = _m4->contains(ntohl(ink_inet_ip4_addr_cast(target)), ptr);
-    }
+    zret = _m4 && _m4->contains(ntohl(ink_inet_ip4_addr_cast(target)), ptr);
   } else if (AF_INET6 == target->sa_family) {
-    if (_m6) {
-      zret = _m6->contains(ink_inet_ip6_cast(target), ptr);
-    }
+    zret = _m6 && _m6->contains(ink_inet_ip6_cast(target), ptr);
   }
   return zret;
 }
 
 bool
 IpMap::contains(in_addr_t target, void** ptr) const {
-  return _m4->contains(ntohl(target), ptr);
+  return _m4 && _m4->contains(ntohl(target), ptr);
 }
 
 IpMap&
@@ -1065,15 +1257,14 @@ IpMap::mark(
       data
     );
   } else if (AF_INET6 == min->sa_family) {
-    if (!_m6) _m6 = new ts::detail::Ip6Map;
-    _m6->mark(ink_inet_ip6_cast(min), ink_inet_ip6_cast(max), data);
+    this->force6()->mark(ink_inet_ip6_cast(min), ink_inet_ip6_cast(max), data);
   }
   return *this;
 }
 
 IpMap&
 IpMap::mark(in_addr_t min, in_addr_t max, void* data) {
-  this->force4()->mark(min, max, data);
+  this->force4()->mark(ntohl(min), ntohl(max), data);
   return *this;
 }
 
@@ -1084,10 +1275,45 @@ IpMap::unmark(
 ) {
   ink_assert(min->sa_family == max->sa_family);
   if (AF_INET == min->sa_family) {
-    if (_m4) _m4->unmark(ink_inet_ip4_addr_cast(min), ink_inet_ip4_addr_cast(max));
+    if (_m4)
+      _m4->unmark(
+        ntohl(ink_inet_ip4_addr_cast(min)),
+        ntohl(ink_inet_ip4_addr_cast(max))
+      );
   } else if (AF_INET6 == min->sa_family) {
     if (_m6) _m6->unmark(ink_inet_ip6_cast(min), ink_inet_ip6_cast(max));
   }
+  return *this;
+}
+
+IpMap&
+IpMap::unmark(in_addr_t min, in_addr_t max) {
+  if (_m4) _m4->unmark(ntohl(min), ntohl(max));
+  return *this;
+}
+
+IpMap&
+IpMap::fill(
+  sockaddr const* min,
+  sockaddr const* max,
+  void* data
+) {
+  ink_assert(min->sa_family == max->sa_family);
+  if (AF_INET == min->sa_family) {
+    this->force4()->fill(
+      ntohl(ink_inet_ip4_addr_cast(min)),
+      ntohl(ink_inet_ip4_addr_cast(max)),
+      data
+    );
+  } else if (AF_INET6 == min->sa_family) {
+    this->force6()->fill(ink_inet_ip6_cast(min), ink_inet_ip6_cast(max), data);
+  }
+  return *this;
+}
+
+IpMap&
+IpMap::fill(in_addr_t min, in_addr_t max, void* data) {
+  this->force4()->fill(ntohl(min), ntohl(max), data);
   return *this;
 }
 
@@ -1097,6 +1323,13 @@ IpMap::getCount() const {
   if (_m4) zret += _m4->getCount();
   if (_m6) zret += _m6->getCount();
   return zret;
+}
+
+IpMap&
+IpMap::clear() {
+  if (_m4) _m4->clear();
+  if (_m6) _m6->clear();
+  return *this;
 }
 
 IpMap::iterator

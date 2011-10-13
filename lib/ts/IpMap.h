@@ -393,6 +393,39 @@ public:
     sockaddr const* min, ///< Minimum value.
     sockaddr const* max  ///< Maximum value.
   );
+  /// Unmark overload.
+  self& unmark(
+    in_addr_t min, ///< Minimum of range to unmark.
+    in_addr_t max  ///< Maximum of range to unmark.
+  );
+
+  /** Fill addresses.
+
+      This background fills using the range. All addresses in the
+      range that are @b not present in the map are added. No
+      previously present address is changed.
+
+      @note This is useful for filling in first match tables.
+
+      @return This object.
+  */
+  self& fill(
+    sockaddr const* min,
+    sockaddr const* max,
+    void* data = 0
+  );
+  /// Fill addresses (overload).
+  self& fill(
+    ts_ip_endpoint const* min,
+    ts_ip_endpoint const* max,
+    void* data = 0
+  );
+  /// Fill addresses (overload).
+  self& fill(
+    in_addr_t min,
+    in_addr_t max,
+    void* data = 0
+  );
 
   /** Test for membership.
 
@@ -423,6 +456,13 @@ public:
     void **ptr = 0 ///< Client data return.
   ) const;
 
+  /** Remove all addresses from the map.
+
+      @note This is much faster than @c unmark.
+      @return This object.
+  */
+  self& clear();
+
   /// Iterator for first element.
   iterator begin();
   /// Iterator past last element.
@@ -443,6 +483,9 @@ protected:
   /// Force the IPv4 map to exist.
   /// @return The IPv4 map.
   ts::detail::Ip4Map* force4();
+  /// Force the IPv6 map to exist.
+  /// @return The IPv6 map.
+  ts::detail::Ip6Map* force6();
   
   ts::detail::Ip4Map* _m4; ///< Map of IPv4 addresses.
   ts::detail::Ip6Map* _m6; ///< Map of IPv6 addresses.
@@ -459,6 +502,10 @@ inline IpMap& IpMap::mark(ts_ip_endpoint const* addr, void* data) {
 
 inline IpMap& IpMap::mark(ts_ip_endpoint const* min, ts_ip_endpoint const* max, void* data) {
   return this->mark(&min->sa, &max->sa, data);
+}
+
+inline IpMap& IpMap::fill(ts_ip_endpoint const* min, ts_ip_endpoint const* max, void* data) {
+  return this->fill(&min->sa, &max->sa, data);
 }
 
 inline bool IpMap::contains(ts_ip_endpoint const* target, void** ptr) const {
