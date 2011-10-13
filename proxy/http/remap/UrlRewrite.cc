@@ -1667,7 +1667,7 @@ UrlRewrite::load_remap_plugin(char *argv[], int argc, url_mapping *mp, char *err
     }
     pi->fp_tsremap_init = (remap_plugin_info::_tsremap_init *) dlsym(pi->dlh, TSREMAP_FUNCNAME_INIT);
     pi->fp_tsremap_done = (remap_plugin_info::_tsremap_done *) dlsym(pi->dlh, TSREMAP_FUNCNAME_DONE);
-    pi->fptsremap_new_instance = (remap_plugin_info::_tsremap_new_instance *) dlsym(pi->dlh, TSREMAP_FUNCNAME_NEW_INSTANCE);
+    pi->fp_tsremap_new_instance = (remap_plugin_info::_tsremap_new_instance *) dlsym(pi->dlh, TSREMAP_FUNCNAME_NEW_INSTANCE);
     pi->fp_tsremap_delete_instance = (remap_plugin_info::_tsremap_delete_instance *) dlsym(pi->dlh, TSREMAP_FUNCNAME_DELETE_INSTANCE);
     pi->fp_tsremap_do_remap = (remap_plugin_info::_tsremap_do_remap *) dlsym(pi->dlh, TSREMAP_FUNCNAME_DO_REMAP);
     pi->fp_tsremap_os_response = (remap_plugin_info::_tsremap_os_response *) dlsym(pi->dlh, TSREMAP_FUNCNAME_OS_RESPONSE);
@@ -1675,7 +1675,7 @@ UrlRewrite::load_remap_plugin(char *argv[], int argc, url_mapping *mp, char *err
     if (!pi->fp_tsremap_init) {
       snprintf(errbuf, errbufsize, "Can't find \"%s\" function in remap plugin \"%s\"", TSREMAP_FUNCNAME_INIT, c);
       retcode = -10;
-    } else if (!pi->fptsremap_new_instance) {
+    } else if (!pi->fp_tsremap_new_instance) {
       snprintf(errbuf, errbufsize, "Can't find \"%s\" function in remap plugin \"%s\"",
                    TSREMAP_FUNCNAME_NEW_INSTANCE, c);
       retcode = -11;
@@ -1751,7 +1751,7 @@ UrlRewrite::load_remap_plugin(char *argv[], int argc, url_mapping *mp, char *err
   void* ih;
 
   Debug("remap_plugin", "creating new plugin instance");
-  TSReturnCode res = pi->fptsremap_new_instance(parc, parv, &ih, tmpbuf, sizeof(tmpbuf) - 1);
+  TSReturnCode res = pi->fp_tsremap_new_instance(parc, parv, &ih, tmpbuf, sizeof(tmpbuf) - 1);
 
   Debug("remap_plugin", "done creating new plugin instance");
 
@@ -1759,21 +1759,9 @@ UrlRewrite::load_remap_plugin(char *argv[], int argc, url_mapping *mp, char *err
   ats_free(parv[1]);               // toURL
 
   if (res != TS_SUCCESS) {
-    // TODO: This is such serious failure, no reason to try to delete the instance.
-    // mp->delete_instance(pi);
     snprintf(errbuf, errbufsize, "Can't create new remap instance for plugin \"%s\" - %s", c,
                  tmpbuf[0] ? tmpbuf : "Unknown plugin error");
-    Error("Failed to create new instance for plugin %s (non-zero retval)... bailing out", pi->path);
- 	 	 /**
-		 * fail here, otherwise we *will* fail later
-		 * and that's some jacked backtrace inside CreateTableLookup [see bug 2316658]
-		 * at least this one will be obvious
-		 * We *really* don't want to continue when a plugin failed to init. We can't
-		 * guarantee we are remapping what the user thought we were going to remap.
-		 * using something nice like exit() would be more ideal, but this should be
-		 * caught in development, anyway.
-     **/
-    exit(-1);
+    Warning("Failed to create new instance for plugin %s (not a TS_SUCCESS return)", pi->path);
     return -6;
   }
 
