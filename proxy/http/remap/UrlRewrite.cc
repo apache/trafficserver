@@ -23,7 +23,6 @@
 
 #include "UrlRewrite.h"
 #include "Main.h"
-#include "Error.h"
 #include "P_EventSystem.h"
 #include "StatSystem.h"
 #include "P_Cache.h"
@@ -1504,8 +1503,9 @@ UrlRewrite::BuildTable()
     if (TableInsert(forward_mappings.hash_lookup, new_mapping, "")) {
       num_rules_forward++;
     } else {
-      Error("Could not insert backdoor mapping into store");
+      Warning("Could not insert backdoor mapping into store");
       delete new_mapping;
+      return 3;
     }
   }
   // Add the default mapping to the manager PAC file
@@ -1515,8 +1515,9 @@ UrlRewrite::BuildTable()
     if (TableInsert(forward_mappings.hash_lookup, new_mapping, "")) {
       num_rules_forward++;
     } else {
-      Error("Could not insert pac mapping into store");
+      Warning("Could not insert pac mapping into store");
       delete new_mapping;
+      return 3;
     }
   }
   // Destroy unused tables
@@ -1569,7 +1570,7 @@ UrlRewrite::TableInsert(InkHashTable *h_table, url_mapping *mapping, const char 
     // There is already a path index for this host
     if (ht_contents == NULL) {
       // why should this happen?
-      Error("Found entry cannot be null!");
+      Warning("Found entry cannot be null!");
       return false;
     }
   } else {
@@ -1577,7 +1578,7 @@ UrlRewrite::TableInsert(InkHashTable *h_table, url_mapping *mapping, const char 
     ink_hash_table_insert(h_table, src_host, ht_contents);
   }
   if (!ht_contents->Insert(mapping)) {
-    Error("Could not insert new mapping");
+    Warning("Could not insert new mapping");
     return false;
   }
   return true;
@@ -1695,7 +1696,7 @@ UrlRewrite::load_remap_plugin(char *argv[], int argc, url_mapping *mp, char *err
     ri.tsremap_version = TSREMAP_VERSION;
 
     if (pi->fp_tsremap_init(&ri, tmpbuf, sizeof(tmpbuf) - 1) != TS_SUCCESS) {
-      Error("Failed to initialize plugin %s (non-zero retval) ... bailing out", pi->path);
+      Warning("Failed to initialize plugin %s (non-zero retval) ... bailing out", pi->path);
       exit(-1);                 //see my comment re: exit() about 60 lines down
     }
     Debug("remap_plugin", "Remap plugin \"%s\" - initialization completed", c);
@@ -1858,7 +1859,7 @@ UrlRewrite::_expandSubstitutions(int *matches_info, const RegexMapping *reg_map,
   return cur_buf_size;
 
  lOverFlow:
-  Error("Overflow while expanding substitutions");
+  Warning("Overflow while expanding substitutions");
   return 0;
 }
 
@@ -1940,7 +1941,7 @@ UrlRewrite::_regexMappingLookup(RegexMappingList &regex_mappings, URL *request_u
       Debug("url_rewrite_regex", "Request URL host [%.*s] did NOT match regex in mapping of rank %d",
             request_host_len, request_host, reg_map_rank);
     } else {
-      Error("pcre_exec() failed with error code %d", match_result);
+      Warning("pcre_exec() failed with error code %d", match_result);
       break;
     }
   }
@@ -1994,24 +1995,24 @@ UrlRewrite::_processRegexMappingConfig(const char *from_host_lower, url_mapping 
   // as this one will be NULL-terminated (required by pcre_compile)
   reg_map->re = pcre_compile(from_host_lower, 0, &str, &str_index, NULL);
   if (reg_map->re == NULL) {
-    Error("pcre_compile failed! Regex has error starting at %s", from_host_lower + str_index);
+    Warning("pcre_compile failed! Regex has error starting at %s", from_host_lower + str_index);
     goto lFail;
   }
 
   reg_map->re_extra = pcre_study(reg_map->re, 0, &str);
   if ((reg_map->re_extra == NULL) && (str != NULL)) {
-    Error("pcre_study failed with message [%s]", str);
+    Warning("pcre_study failed with message [%s]", str);
     goto lFail;
   }
 
   int n_captures;
   if (pcre_fullinfo(reg_map->re, reg_map->re_extra, PCRE_INFO_CAPTURECOUNT, &n_captures) != 0) {
-    Error("pcre_fullinfo failed!");
+    Warning("pcre_fullinfo failed!");
     goto lFail;
   }
   if (n_captures >= MAX_REGEX_SUBS) { // off by one for $0 (implicit capture)
-    Error("Regex has %d capturing subpatterns (including entire regex); Max allowed: %d",
-          n_captures + 1, MAX_REGEX_SUBS);
+    Warning("Regex has %d capturing subpatterns (including entire regex); Max allowed: %d",
+            n_captures + 1, MAX_REGEX_SUBS);
     goto lFail;
   }
 
@@ -2019,13 +2020,13 @@ UrlRewrite::_processRegexMappingConfig(const char *from_host_lower, url_mapping 
   for (int i = 0; i < (to_host_len - 1); ++i) {
     if (to_host[i] == '$') {
       if (substitution_count > MAX_REGEX_SUBS) {
-        Error("Cannot have more than %d substitutions in mapping with host [%s]",
-              MAX_REGEX_SUBS, from_host_lower);
+        Warning("Cannot have more than %d substitutions in mapping with host [%s]",
+                MAX_REGEX_SUBS, from_host_lower);
         goto lFail;
       }
       substitution_id = to_host[i + 1] - '0';
       if ((substitution_id < 0) || (substitution_id > n_captures)) {
-        Error("Substitution id [%c] has no corresponding capture pattern in regex [%s]",
+        Warning("Substitution id [%c] has no corresponding capture pattern in regex [%s]",
               to_host[i + 1], from_host_lower);
         goto lFail;
       }
