@@ -1697,26 +1697,26 @@ UrlRewrite::load_remap_plugin(char *argv[], int argc, url_mapping *mp, char *err
 
     if (pi->fp_tsremap_init(&ri, tmpbuf, sizeof(tmpbuf) - 1) != TS_SUCCESS) {
       Warning("Failed to initialize plugin %s (non-zero retval) ... bailing out", pi->path);
-      exit(-1);                 //see my comment re: exit() about 60 lines down
+      return -5;
     }
     Debug("remap_plugin", "Remap plugin \"%s\" - initialization completed", c);
   }
 
   if (!pi->dlh) {
     snprintf(errbuf, errbufsize, "Can't load plugin \"%s\"", c);
-    return -5;
+    return -6;
   }
 
   if ((err = mp->fromURL.string_get(NULL)) == NULL) {
     snprintf(errbuf, errbufsize, "Can't load fromURL from URL class");
-    return -6;
+    return -7;
   }
   parv[parc++] = ats_strdup(err);
   ats_free(err);
 
   if ((err = mp->toUrl.string_get(NULL)) == NULL) {
     snprintf(errbuf, errbufsize, "Can't load toURL from URL class");
-    return -6;
+    return -7;
   }
   parv[parc++] = ats_strdup(err);
   ats_free(err);
@@ -1763,7 +1763,7 @@ UrlRewrite::load_remap_plugin(char *argv[], int argc, url_mapping *mp, char *err
     snprintf(errbuf, errbufsize, "Can't create new remap instance for plugin \"%s\" - %s", c,
                  tmpbuf[0] ? tmpbuf : "Unknown plugin error");
     Warning("Failed to create new instance for plugin %s (not a TS_SUCCESS return)", pi->path);
-    return -6;
+    return -8;
   }
 
   mp->add_plugin(pi, ih);
