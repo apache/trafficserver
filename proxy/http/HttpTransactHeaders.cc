@@ -1036,18 +1036,20 @@ HttpTransactHeaders::insert_server_header_in_response(const char *server_tag, in
 //
 ///////////////////////////////////////////////////////////////////////////////
 void
-HttpTransactHeaders::insert_via_header_in_request(HttpConfigParams *http_config_param, int scheme, HTTPHdr *header,
-                                                  char *incoming_via)
+HttpTransactHeaders::insert_via_header_in_request(HttpTransact::State *s, HTTPHdr *header)
 {
   char new_via_string[1024]; // 512-bytes for hostname+via string, 512-bytes for the debug info
   char *via_string = new_via_string;
 
-  if ((http_config_param->proxy_hostname_len + http_config_param->proxy_request_via_string_len) > 512) {
+  if ((s->http_config_param->proxy_hostname_len + s->http_config_param->proxy_request_via_string_len) > 512) {
     header->value_append(MIME_FIELD_VIA, MIME_LEN_VIA, "TrafficServer", 13, true);
     return;
   }
 
+  char *incoming_via = s->via_string;
+  int scheme = s->orig_scheme;
   ink_assert(scheme >= 0);
+
   int scheme_len = hdrtoken_index_to_length(scheme);
   int32_t hversion = header->version_get().m_version;
 
@@ -1065,7 +1067,7 @@ HttpTransactHeaders::insert_via_header_in_request(HttpConfigParams *http_config_
     *via_string++ = '0' + HTTP_MINOR(hversion);
     *via_string++ = ' ';
   }
-  via_string += nstrcpy(via_string, http_config_param->proxy_hostname);
+  via_string += nstrcpy(via_string, s->http_config_param->proxy_hostname);
 
   *via_string++ = '[';
   /* I thought we should use the transaction local outgoing IP address but
@@ -1078,22 +1080,20 @@ HttpTransactHeaders::insert_via_header_in_request(HttpConfigParams *http_config_
   *via_string++ = ' ';
   *via_string++ = '(';
 
-  memcpy(via_string, http_config_param->proxy_request_via_string, http_config_param->proxy_request_via_string_len);
-  via_string += http_config_param->proxy_request_via_string_len;
+  memcpy(via_string, s->http_config_param->proxy_request_via_string, s->http_config_param->proxy_request_via_string_len);
+  via_string += s->http_config_param->proxy_request_via_string_len;
 
-  if (http_config_param->verbose_via_string != 0) {
-    *via_string++ = ' ';
-    *via_string++ = '[';
+  *via_string++ = ' ';
+  *via_string++ = '[';
 
-    // incoming_via can be max MAX_VIA_INDICES+1 long (i.e. around 25 or so)
-    if (http_config_param->verbose_via_string == 1) {
-      via_string += nstrcpy(via_string, incoming_via);
-    } else {
-      memcpy(via_string, incoming_via + VIA_CLIENT, VIA_SERVER - VIA_CLIENT);
-      via_string += VIA_SERVER - VIA_CLIENT;
-    }
-    *via_string++ = ']';
+  // incoming_via can be max MAX_VIA_INDICES+1 long (i.e. around 25 or so)
+  if (s->txn_conf->insert_request_via_string < 2) {
+    via_string += nstrcpy(via_string, incoming_via);
+  } else {
+    memcpy(via_string, incoming_via + VIA_CLIENT, VIA_SERVER - VIA_CLIENT);
+    via_string += VIA_SERVER - VIA_CLIENT;
   }
+  *via_string++ = ']';
 
   *via_string++ = ')';
   *via_string = 0;
@@ -1104,16 +1104,18 @@ HttpTransactHeaders::insert_via_header_in_request(HttpConfigParams *http_config_
 
 
 void
-HttpTransactHeaders::insert_via_header_in_response(HttpConfigParams *http_config_param, int scheme, HTTPHdr *header,
-                                                   char *incoming_via)
+HttpTransactHeaders::insert_via_header_in_response(HttpTransact::State *s, HTTPHdr *header)
 {
   char new_via_string[1024]; // 512-bytes for hostname+via string, 512-bytes for the debug info
   char *via_string = new_via_string;
 
-  if ((http_config_param->proxy_hostname_len + http_config_param->proxy_response_via_string_len) > 512) {
+  if ((s->http_config_param->proxy_hostname_len + s->http_config_param->proxy_response_via_string_len) > 512) {
     header->value_append(MIME_FIELD_VIA, MIME_LEN_VIA, "TrafficServer", 13, true);
     return;
   }
+
+  char *incoming_via =  s->via_string;
+  int scheme = s->next_hop_scheme;
 
   ink_assert(scheme >= 0);
   int scheme_len = hdrtoken_index_to_length(scheme);
@@ -1133,26 +1135,25 @@ HttpTransactHeaders::insert_via_header_in_response(HttpConfigParams *http_config
     *via_string++ = '0' + HTTP_MINOR(hversion);
     *via_string++ = ' ';
   }
-  via_string += nstrcpy(via_string, http_config_param->proxy_hostname);
+  via_string += nstrcpy(via_string, s->http_config_param->proxy_hostname);
   *via_string++ = ' ';
   *via_string++ = '(';
 
-  memcpy(via_string, http_config_param->proxy_response_via_string, http_config_param->proxy_response_via_string_len);
-  via_string += http_config_param->proxy_response_via_string_len;
+  memcpy(via_string, s->http_config_param->proxy_response_via_string, s->http_config_param->proxy_response_via_string_len);
+  via_string += s->http_config_param->proxy_response_via_string_len;
 
-  if (http_config_param->verbose_via_string != 0) {
-    *via_string++ = ' ';
-    *via_string++ = '[';
+  *via_string++ = ' ';
+  *via_string++ = '[';
 
-    // incoming_via can be max MAX_VIA_INDICES+1 long (i.e. around 25 or so)
-    if (http_config_param->verbose_via_string == 1) {
-      via_string += nstrcpy(via_string, incoming_via);
-    } else {
-      memcpy(via_string, incoming_via + VIA_CACHE, VIA_PROXY - VIA_CACHE);
-      via_string += VIA_PROXY - VIA_CACHE;
-    }
-    *via_string++ = ']';
+  // incoming_via can be max MAX_VIA_INDICES+1 long (i.e. around 25 or so)
+  if (s->txn_conf->insert_request_via_string < 2) {
+    via_string += nstrcpy(via_string, incoming_via);
+  } else {
+    memcpy(via_string, incoming_via + VIA_CACHE, VIA_PROXY - VIA_CACHE);
+    via_string += VIA_PROXY - VIA_CACHE;
   }
+  *via_string++ = ']';
+
   *via_string++ = ')';
   *via_string = 0;
 

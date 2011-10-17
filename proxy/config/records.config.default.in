@@ -87,9 +87,16 @@ CONFIG proxy.config.http.server_port_attr STRING X
 # CONFIG proxy.config.http.server_other_ports STRING 8080:X6
 CONFIG proxy.config.http.server_other_ports STRING NULL
 CONFIG proxy.config.http.connect_ports STRING 443 563
+   # The via settings have three values
+   #  0 - Do not modify / set this via header
+   #  1 - Update the via, with normal verbosity
+   #  2 - Update the via, with higher verbosity
 CONFIG proxy.config.http.insert_request_via_str INT 1
 CONFIG proxy.config.http.insert_response_via_str INT 0
-CONFIG proxy.config.http.verbose_via_str INT 2
+   # Insert a Server: header, this has three values
+   #   0 - Don't add or modify the Server: header
+   #   1 - Add a Server: header
+   #   2 - Only add a Server: header if one doesn't exist already
 CONFIG proxy.config.http.response_server_enabled INT 1
 CONFIG proxy.config.http.enable_url_expandomatic INT 0
 CONFIG proxy.config.http.no_dns_just_forward_to_parent INT 0

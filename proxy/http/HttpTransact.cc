@@ -7780,7 +7780,7 @@ HttpTransact::build_request(State* s, HTTPHdr* base_request, HTTPHdr* outgoing_r
     s->orig_scheme = URL_WKSIDX_HTTP;
 
   if (s->txn_conf->insert_request_via_string)
-    HttpTransactHeaders::insert_via_header_in_request(s->http_config_param, s->orig_scheme, outgoing_request, s->via_string);
+    HttpTransactHeaders::insert_via_header_in_request(s, outgoing_request);
 
   // We build 1.1 request header and then convert as necessary to
   //  the appropriate version in HttpTransact::build_request
@@ -7975,7 +7975,7 @@ HttpTransact::build_response(State* s, HTTPHdr* base_response, HTTPHdr* outgoing
     s->next_hop_scheme = URL_WKSIDX_HTTP;
 
   if (s->txn_conf->insert_response_via_string)
-    HttpTransactHeaders::insert_via_header_in_response(s->http_config_param, s->next_hop_scheme, outgoing_response, s->via_string);
+    HttpTransactHeaders::insert_via_header_in_response(s, outgoing_response);
 
   HttpTransactHeaders::convert_response(outgoing_version, outgoing_response);
 

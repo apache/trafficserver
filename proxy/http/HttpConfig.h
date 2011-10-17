@@ -618,8 +618,6 @@ public:
   MgmtByte no_origin_server_dns;
   MgmtByte use_client_target_addr;
 
-  MgmtByte verbose_via_string;
-
   char *proxy_request_via_string;
   int proxy_request_via_string_len;
   char *proxy_response_via_string;
@@ -909,7 +907,6 @@ HttpConfigParams::HttpConfigParams()
     uncacheable_requests_bypass_parent(1),
     no_origin_server_dns(0),
     use_client_target_addr(0),
-    verbose_via_string(0),
     proxy_request_via_string(0),
     proxy_request_via_string_len(0),
     proxy_response_via_string(0),

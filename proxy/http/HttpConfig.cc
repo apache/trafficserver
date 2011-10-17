@@ -1168,7 +1168,6 @@ HttpConfig::startup()
 
   HttpEstablishStaticConfigByte(c.oride.insert_request_via_string, "proxy.config.http.insert_request_via_str");
   HttpEstablishStaticConfigByte(c.oride.insert_response_via_string, "proxy.config.http.insert_response_via_str");
-  HttpEstablishStaticConfigByte(c.verbose_via_string, "proxy.config.http.verbose_via_str");
 
   HttpEstablishStaticConfigStringAlloc(c.proxy_request_via_string, "proxy.config.http.request_via_str");
   c.proxy_request_via_string_len = -1;
@@ -1444,7 +1443,6 @@ HttpConfig::reconfigure()
 
   params->oride.insert_request_via_string = INT_TO_BOOL(m_master.oride.insert_request_via_string);
   params->oride.insert_response_via_string = INT_TO_BOOL(m_master.oride.insert_response_via_string);
-  params->verbose_via_string = INT_TO_BYTE(m_master.verbose_via_string);
   params->proxy_request_via_string = ats_strdup(m_master.proxy_request_via_string);
   params->proxy_request_via_string_len = (params->proxy_request_via_string) ? strlen(params->proxy_request_via_string) : 0;
   params->proxy_response_via_string = ats_strdup(m_master.proxy_response_via_string);

@@ -535,7 +535,6 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.http_ui_enabled
  proxy.config.http.uncacheable_requests_bypass_parent
  proxy.config.http.user_agent_pipeline
- proxy.config.http.verbose_via_str
  proxy.config.http.wuts_enabled
  proxy.config.icp.default_reply_port
  proxy.config.icp.enabled

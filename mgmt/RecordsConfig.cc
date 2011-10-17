@@ -419,8 +419,6 @@ RecordElement RecordsConfig[] = {
   //        # 0 - no extra info added to string
   //        # 1 - all extra information added
   //        # 2 - some extra info added
-  {RECT_CONFIG, "proxy.config.http.verbose_via_str", RECD_INT, "2", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
-  ,
   {RECT_CONFIG, "proxy.config.http.request_via_str", RECD_STRING, "ApacheTrafficServer/" PACKAGE_VERSION, RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.http.response_via_str", RECD_STRING, "ApacheTrafficServer/" PACKAGE_VERSION, RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
