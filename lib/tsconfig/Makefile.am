@@ -51,5 +51,5 @@ test_tsconfig_LDADD = libtsconfig.la
 
 # Strip to just the enum in the ts::config namespace so we can use
 # it more easily in C++.
-TsConfigGrammar.hpp: TsConfigGrammar.h
-	$(SED) -f BisonHeaderToC++.sed $< > $@
+TsConfigGrammar.hpp: TsConfigGrammar.h BisonHeaderToC++.sed
+	$(SED) -f BisonHeaderToC++.sed TsConfigGrammar.h > $@
