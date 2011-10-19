@@ -1,5 +1,7 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.1.1
+  *) [TS-985] ts/ts.h uses C++ comments, which are technically not C.
+
   *) [TS-928] Compile problem in TsErrataUtil on FreeBSD 8.
 
   *) [TS-973] Eliminate proxy.config.http.verbose_via_str.
