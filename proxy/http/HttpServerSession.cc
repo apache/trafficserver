@@ -41,7 +41,7 @@ ClassAllocator<HttpServerSession> httpServerSessionAllocator("httpServerSessionA
 void
 HttpServerSession::destroy()
 {
-  ink_release_assert(server_vc == NULL);
+  ink_release_assert(server_vc.getVC() == NULL);
   ink_assert(read_buffer);
   ink_assert(server_trans_stat == 0);
   magic = HTTP_SS_MAGIC_DEAD;
@@ -119,7 +119,7 @@ HttpServerSession::do_io_close(int alerrno)
     this->server_trans_stat--;
   }
 
-  server_vc->do_io_close(alerrno);
+  server_vc.do_locked_io_close(alerrno);
   Debug("http_ss", "[%" PRId64 "] session closed", con_id);
   server_vc = NULL;
 

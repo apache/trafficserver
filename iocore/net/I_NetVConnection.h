@@ -402,6 +402,7 @@ public:
 
   unsigned int attributes;
   EThread *thread;
+  volatile uint32_t generation; ///< Counter for re-use checking.
 
   /// PRIVATE: The public interface is VIO::reenable()
   virtual void reenable(VIO * vio) = 0;
@@ -459,6 +460,88 @@ public:
     is_other_side_transparent = value;
   }
 
+  /** Struct for holding a reference to a connection.
+      The problem is that connections are accessed across thread boundaries
+      and re-used so that a pointer to a VC can become not only stale
+      but a reference to another connection entirely aynchronously. The
+      lock is contained within the connection so it can't be reliably accessed
+      from just a raw pointer.
+  */
+  struct Handle {
+    typedef Handle self; ///< Self reference type.
+
+    NetVConnection* _vc; ///< Pointer to the VC.
+    uint32_t _generation; ///< Generation of VC when assigned.
+    ProxyMutexPtr _mutex; ///< Shared mutex with VC at time of assignment.
+    
+    /// Default constructor.
+    Handle() : _vc(0), _generation(0) {}
+    /// Construct from VC.
+    Handle(NetVConnection* vc) { *this = vc; }
+    /// Assign VC.
+    self& operator = (NetVConnection* vc) {
+      _vc = vc;
+      if (vc) {
+        _mutex = vc->mutex;
+        _generation = vc->generation;
+      } else {
+        _generation = 0;
+        _mutex.clear();
+      }
+      return *this;
+    }
+
+    /// Dereference operator.
+    NetVConnection* operator -> () { return _vc; }
+    /// Get referenced VC.
+    NetVConnection* getVC() { return _vc; }
+    /// Get pointer mutex.
+    ProxyMutexPtr& getMutex() { return _mutex; }
+    /** Check if this reference is still valid.
+        This should only be called under lock of @a _mutex.
+        @return @c true 
+    */
+    bool isValid() {
+      return _vc && // have a connection
+        _mutex.m_ptr == _vc->mutex.m_ptr && // and it's still the same mutex
+        _generation == _vc->generation // and same generation.
+        ;
+    }
+    /** Invoke @c do_io_close on the underlying VC.
+        This handles locking and validating the VC. If a lock can be obtained
+        then the operation is performed immediately. If not then it is
+        scheduled on the thread holding the lock.
+    */
+    void do_locked_io_close(int lerrno = -1);
+  };
+
+  /** A subclass of @c Handle that can be used in @c IntrusivePtrList.
+   */
+
+  /** Use this to schedule closing the connection.
+
+      This can be needed if the connection is part of a transaction
+      but being handled in another thread. The continuation mutex is a
+      shared reference to the VC mutex so that it is not garbage
+      collected and can be checked against the VC after being locked.
+  */
+  struct Close_callback : public Continuation {
+    typedef Continuation super; ///< Super type.
+    typedef Close_callback self; ///< Self reference type.
+
+    Handle _vcptr; ///< Reference to the target VC.
+    int _lerrno; ///< Errno value to pass to @c do_io_close.
+
+    int try_close(int, Event *);
+
+    Close_callback(Handle const& vcptr, int lerrno = -1)
+      : super(&*(vcptr._mutex))
+      , _vcptr(vcptr)
+      , _lerrno(lerrno) {
+      SET_HANDLER(&self::try_close);
+    }
+  };
+
 private:
   NetVConnection(const NetVConnection &);
   NetVConnection & operator =(const NetVConnection &);
@@ -485,14 +568,15 @@ NetVConnection::NetVConnection():
   VConnection(NULL),
   attributes(0),
   thread(NULL),
+  generation(1),
   got_local_addr(0),
   got_remote_addr(0),
   is_internal_request(false),
   is_transparent(false),
   is_other_side_transparent(false)
 {
-  memset(&local_addr, 0, sizeof(local_addr));
-  memset(&remote_addr, 0, sizeof(remote_addr));
+  ink_zero(local_addr);
+  ink_zero(remote_addr);
 }
 
 #endif

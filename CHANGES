@@ -1,5 +1,10 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.1.1
+
+  *) [TS-934] Added some wrapping around NetVConnection for server
+   handling so that connection objects can be safely locked across
+   threads.
+
   *) [TS-991] Fixed race / stall condition for WCCP during restart.
 
   *) [TS-985] ts/ts.h uses C++ comments, which are technically not C.

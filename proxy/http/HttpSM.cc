@@ -5931,8 +5931,8 @@ HttpSM::kill_this()
     if (second_cache_sm)
       second_cache_sm->end_both();
     transform_cache_sm.end_both();
-    tunnel.deallocate_buffers();
     vc_table.cleanup_all();
+    tunnel.deallocate_buffers();
 
     // It possible that a plugin added transform hook
     //   but the hook never executed due to a client abort

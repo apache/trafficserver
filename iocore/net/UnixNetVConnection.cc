@@ -1106,11 +1106,12 @@ UnixNetVConnection::free(EThread *t)
 {
   NET_SUM_GLOBAL_DYN_STAT(net_connections_currently_open_stat, -1);
   // clear variables for reuse
+  ++generation;
+  this->mutex.clear();
   got_remote_addr = 0;
   got_local_addr = 0;
   read.vio.mutex.clear();
   write.vio.mutex.clear();
-  this->mutex.clear();
   flags = 0;
   accept_port = 0;
   SET_CONTINUATION_HANDLER(this, (NetVConnHandler) & UnixNetVConnection::startEvent);

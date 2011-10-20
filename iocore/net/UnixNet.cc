@@ -51,6 +51,7 @@ struct InactivityCop : public Continuation {
     forl_LL(UnixNetVConnection, vc, nh->open_list)
       nh->cop_list.push(vc);
     while (UnixNetVConnection *vc = nh->cop_list.pop()) {
+      MUTEX_LOCK(lock, vc->mutex, this_ethread());
       if (vc->closed) {
         close_UnixNetVConnection(vc, e->ethread);
         continue;

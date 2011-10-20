@@ -110,7 +110,7 @@ public:
   void attach_hostname(const char *hostname);
   NetVConnection *get_netvc()
   {
-    return server_vc;
+    return server_vc.getVC();
   };
 
   // Keys for matching hostnames
@@ -160,7 +160,7 @@ public:
 private:
   HttpServerSession(HttpServerSession &);
 
-  NetVConnection *server_vc;
+  NetVConnection::Handle server_vc;
   int magic;
 
   IOBufferReader *buf_reader;
