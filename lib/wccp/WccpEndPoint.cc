@@ -784,6 +784,7 @@ CacheImpl::handleISeeYou(IpHeader const& ip_hdr, ts::Buffer const& chunk) {
       );
     }
   }
+  time_t then = ar_spot->m_recv.m_time; // used for comparisons later.
   ar_spot->m_recv.set(now, recv_id);
   ar_spot->m_generation = msg.m_router_view.getChangeNumber();
   router_idx = ar_spot - group.m_routers.begin();
@@ -815,6 +816,11 @@ CacheImpl::handleISeeYou(IpHeader const& ip_hdr, ts::Buffer const& chunk) {
       ac_spot->m_src.resize(group.m_routers.size());
       logf(LVL_INFO, "Added cache %s to view %d", ip_addr_to_str(cache.getAddr()), group.m_svc.getSvcId());
       view_changed = true;
+    } else {
+      // Check if the cache wasn't reported last time but was reported
+      // this time. In that case we need to bump the view to trigger
+      // assignment generation.
+      if (ac_spot->m_src[router_idx].m_time != then) view_changed = true;
     }
     ac_spot->m_id.fill(cache);
     // If cache is this cache, update data in router record.

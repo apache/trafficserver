@@ -1,5 +1,7 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.1.1
+  *) [TS-991] Fixed race / stall condition for WCCP during restart.
+
   *) [TS-985] ts/ts.h uses C++ comments, which are technically not C.
 
   *) [TS-928] Compile problem in TsErrataUtil on FreeBSD 8.
