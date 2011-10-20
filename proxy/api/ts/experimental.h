@@ -138,9 +138,6 @@ extern "C"
 #define TS_HRTIME_USECONDS(_x) HRTIME_USECONDS(_x)
 #define TS_HRTIME_NSECONDS(_x) HRTIME_NSECONDS(_x)
 
-  /* ===== Time ===== */
-  tsapi TSHRTime TSBasedTimeGet();
-
   /****************************************************************************
    *  Get time when Http TXN started / ended
    ****************************************************************************/
