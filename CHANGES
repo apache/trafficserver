@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.1.1
 
+  *) [TS-994] Removed the extra splace from X-Forwarded-For.
+
   *) [TS-934] Added some wrapping around NetVConnection for server
    handling so that connection objects can be safely locked across
    threads.

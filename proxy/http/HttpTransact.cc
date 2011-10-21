@@ -5171,8 +5171,7 @@ HttpTransact::add_client_ip_to_outgoing_request(State* s, HTTPHdr* request)
     return;
 
   // Always prepare the IP string.
-  if (ink_inet_ntop(&s->client_info.addr.sa, ip_string + 1, sizeof(ip_string) - 1) != NULL) {
-    ip_string[0] = ' ';         // Leading space always, in case we need to concatenate this IP
+  if (ink_inet_ntop(&s->client_info.addr.sa, ip_string, sizeof(ip_string)) != NULL) {
     ip_string_size += strlen(ip_string);
   } else {
     // Failure, omg
@@ -5187,32 +5186,30 @@ HttpTransact::add_client_ip_to_outgoing_request(State* s, HTTPHdr* request)
     bool client_ip_set = request->presence(MIME_PRESENCE_CLIENT_IP);
     Debug("http_trans", "client_ip_set = %d", client_ip_set);
 
-    if (!client_ip_set && ip_string_size > 1) {
-      request->value_set(MIME_FIELD_CLIENT_IP, MIME_LEN_CLIENT_IP, ip_string + 1, ip_string_size - 1);
-      Debug("http_trans", "inserted request header 'Client-ip: %s'", ip_string + 1);
+    if (!client_ip_set && ip_string_size > 0) {
+      request->value_set(MIME_FIELD_CLIENT_IP, MIME_LEN_CLIENT_IP, ip_string, ip_string_size);
+      Debug("http_trans", "inserted request header 'Client-ip: %s'", ip_string);
     }
   }
 
   if (s->txn_conf->insert_squid_x_forwarded_for) {
-    // Use insert an extra space in the front so we're append,
-    //   everything looks ok.  If we're not appending, we'll
-    //   skip over it
-    if (ip_string_size > 1) {
+    if (ip_string_size > 0) {
       MIMEField *x_for;
 
       if ((x_for = request->field_find(MIME_FIELD_X_FORWARDED_FOR, MIME_LEN_X_FORWARDED_FOR)) != 0) {
-        // My undersanding is that X-Forwarded header does
-        // not use comma to separate tokens...
-        // but...
-        //  According to http://www.openinfo.co.uk/apache/
-        //  "If a request has passed through multiple proxies then the X-Forwarded-For may
-        //   contain several IPs like this: X-Forwarded-For: client1, proxy1, proxy2 "
+        // http://en.wikipedia.org/wiki/X-Forwarded-For
+        // The X-Forwarded-For (XFF) HTTP header field is a de facto standard
+        // for identifying the originating IP address of a client connecting
+        // to a web server through an HTTP proxy or load balancer. This is a
+        // non-RFC-standard request field which was introduced by the Squid
+        // caching proxy server's developers.
+        //   X-Forwarded-For: client1, proxy1, proxy2
         request->field_value_append(x_for, ip_string, ip_string_size, true);  // true => comma must be inserted
       } else {
-        request->value_set(MIME_FIELD_X_FORWARDED_FOR, MIME_LEN_X_FORWARDED_FOR, ip_string + 1, ip_string_size - 1);
+        request->value_set(MIME_FIELD_X_FORWARDED_FOR, MIME_LEN_X_FORWARDED_FOR, ip_string, ip_string_size);
       }
       Debug("http_trans", "[add_client_ip_to_outgoing_request] Appended connecting client's "
-            "(%s) to the X-Forwards header", ip_string + 1);
+            "(%s) to the X-Forwards header", ip_string);
     }
   }
 }
