@@ -315,12 +315,12 @@ class PeerConfigData
 
 public:
     PeerConfigData();
-    PeerConfigData(int ctype, struct in_addr *ip_addr, int proxy_port, int icp_port)
-  : _ctype(ctype), _ip_addr(*ip_addr),
-    _proxy_port(proxy_port), _icp_port(icp_port), _mc_member(0), _mc_ttl(0), _my_ip_addr(*ip_addr)
+    PeerConfigData(int ctype, InkInetAddr const& ip_addr, int proxy_port, int icp_port)
+      : _ctype(ctype), _ip_addr(ip_addr),
+      _proxy_port(proxy_port), _icp_port(icp_port), _mc_member(0), _mc_ttl(0),
+      _my_ip_addr(ip_addr)
   {
     _hostname[0] = 0;
-    _mc_ip_addr.s_addr = 0;
   }
    ~PeerConfigData()
   {
@@ -334,9 +334,9 @@ public:
   {
     return _ctype;
   }
-  inline struct in_addr *GetIP()
+  inline InkInetAddr const& GetIPAddr()
   {
-    return &_my_ip_addr;
+    return _my_ip_addr;
   }
   inline int GetProxyPort()
   {
@@ -350,9 +350,9 @@ public:
   {
     return _mc_member;
   }
-  inline struct in_addr *GetMultiCastIP()
+  inline InkInetAddr const& GetMultiCastIPAddr()
   {
-    return &_mc_ip_addr;
+    return _mc_ip_addr;
   }
   inline int GetMultiCastTTL()
   {
@@ -361,7 +361,7 @@ public:
 
   // Static member functions
   static PeerType_t CTypeToPeerType_t(int);
-  static int GetHostIPByName(char *, struct in_addr *);
+  static int GetHostIPByName(char *, InkInetAddr&);
 
   enum
   { HOSTNAME_SIZE = 256 };
@@ -378,20 +378,20 @@ private:
   //---------------------------------------------------------
   char _hostname[HOSTNAME_SIZE];
   int _ctype;
-  struct in_addr _ip_addr;
+  InkInetAddr _ip_addr;
   int _proxy_port;
   int _icp_port;
   //-------------------
   // MultiCast data
   //-------------------
   int _mc_member;
-  struct in_addr _mc_ip_addr;
+  InkInetAddr _mc_ip_addr;
   int _mc_ttl;
 
   //----------------------------------------------
   // Computed data not subject to "==" test
   //----------------------------------------------
-  struct in_addr _my_ip_addr;
+  InkInetAddr _my_ip_addr;
 };
 
 //---------------------------------------------------------------
@@ -508,19 +508,18 @@ public:
   void LogRecvMsg(ICPMsg_t *, int);
 
   // Pure virtual functions
-  virtual struct in_addr *GetIP() = 0;
-  virtual int GetPort() = 0;
-  virtual Action *SendMsg_re(Continuation *, void *, struct msghdr *, struct sockaddr_in *to) = 0;
+  virtual sockaddr* GetIP() = 0;
+  virtual Action *SendMsg_re(Continuation *, void *, struct msghdr *, struct sockaddr const* to) = 0;
   virtual Action *RecvFrom_re(Continuation *, void *, IOBufferBlock *, int, struct sockaddr *, socklen_t *) = 0;
   virtual int GetRecvFD() = 0;
   virtual int GetSendFD() = 0;
   virtual int ExpectedReplies(BitMap *) = 0;
-  virtual int ValidSender(struct sockaddr_in *) = 0;
-  virtual void LogSendMsg(ICPMsg_t *, struct sockaddr_in *) = 0;
+  virtual int ValidSender(sockaddr *) = 0;
+  virtual void LogSendMsg(ICPMsg_t *, sockaddr const*) = 0;
   virtual int IsOnline() = 0;
   virtual Connection *GetSendChan() = 0;
   virtual Connection *GetRecvChan() = 0;
-  virtual int ExtToIntRecvSockAddr(struct sockaddr_in *, struct sockaddr_in *) = 0;
+  virtual int ExtToIntRecvSockAddr(sockaddr const*, sockaddr *) = 0;
 
   enum
   { OFFLINE_THRESHOLD = 20 };
@@ -569,7 +568,7 @@ public:
   // these shouldn't be public
   // this is for delayed I/O
   Ptr<IOBufferBlock> buf;
-  struct sockaddr_in fromaddr;
+  ts_ip_endpoint fromaddr;
   socklen_t fromaddrlen;
   int notFirstRead;             // priming the reads
   Action *readAction;           // outstanding read
@@ -614,16 +613,15 @@ public:
       delete _pconfig;
   }
   int GetProxyPort();
-  virtual struct in_addr *GetIP();
-  virtual int GetPort();
-  virtual Action *SendMsg_re(Continuation *, void *, struct msghdr *, struct sockaddr_in *to);
+  virtual sockaddr* GetIP();
+  virtual Action *SendMsg_re(Continuation *, void *, struct msghdr *, struct sockaddr const* to);
   virtual Action *RecvFrom_re(Continuation *, void *, IOBufferBlock *, int, struct sockaddr *, socklen_t *);
   virtual int GetRecvFD();
   virtual int GetSendFD();
   virtual int ExpectedReplies(BitMap *);
-  virtual int ValidSender(struct sockaddr_in *);
-  virtual void LogSendMsg(ICPMsg_t *, struct sockaddr_in *);
-  virtual int ExtToIntRecvSockAddr(struct sockaddr_in *in, struct sockaddr_in *out);
+  virtual int ValidSender(struct sockaddr*);
+  virtual void LogSendMsg(ICPMsg_t *, sockaddr const*);
+  virtual int ExtToIntRecvSockAddr(sockaddr const* in, sockaddr* out);
   inline virtual int IsOnline()
   {
     return 1;
@@ -648,6 +646,7 @@ public:
 private:
   // Class data declarations
   PeerConfigData * _pconfig;    // associated config data
+  ts_ip_endpoint _ip; ///< Cache for GetIP().
   Connection _chan;
 };
 
@@ -657,23 +656,28 @@ private:
 class MultiCastPeer:public Peer
 {
 public:
-  MultiCastPeer(struct in_addr *, int, int, ICPProcessor *);
+  MultiCastPeer(InkInetAddr const&, uint16_t, int, ICPProcessor *);
   ~MultiCastPeer()
   {
   }
   int GetTTL();
   int AddMultiCastChild(Peer * P);
-  Peer *FindMultiCastChild(struct in_addr *ip, int port);
+  /** Find the multicast child peer with IP address @a ip on @a port.
+      If @a port is 0 the port is not checked.
+  */
+  Peer *FindMultiCastChild(
+    InkInetAddr const& ip, ///< IP address.
+    uint16_t port = 0 ///< Port (host order).
+  );
 
-  virtual struct in_addr *GetIP();
-  virtual int GetPort();
-  virtual Action *SendMsg_re(Continuation *, void *, struct msghdr *, struct sockaddr_in *to);
+  virtual sockaddr* GetIP();
+  virtual Action *SendMsg_re(Continuation *, void *, struct msghdr *, struct sockaddr const* to);
   virtual Action *RecvFrom_re(Continuation *, void *, IOBufferBlock *, int, struct sockaddr *, socklen_t *);
   virtual int GetRecvFD();
   virtual int GetSendFD();
   virtual int ExpectedReplies(BitMap *);
-  virtual int ValidSender(struct sockaddr_in *);
-  virtual void LogSendMsg(ICPMsg_t *, struct sockaddr_in *);
+  virtual int ValidSender(struct sockaddr*);
+  virtual void LogSendMsg(ICPMsg_t *, sockaddr const*);
   virtual int IsOnline();
   inline virtual Connection *GetRecvChan()
   {
@@ -683,12 +687,12 @@ public:
   {
     return &_send_chan;
   }
-  inline virtual int ExtToIntRecvSockAddr(struct sockaddr_in *in, struct sockaddr_in *out)
+  inline virtual int ExtToIntRecvSockAddr(sockaddr const* in, sockaddr* out)
   {
-    Peer *P = FindMultiCastChild(&in->sin_addr, 0);
+    Peer *P = FindMultiCastChild(InkInetAddr(in));
     if (P) {
-      out->sin_addr = in->sin_addr;
-      out->sin_port = htons(P->GetPort());
+      ink_inet_copy(out, in);
+      ink_inet_port_cast(out) = ink_inet_port_cast(P->GetIP());
       return 1;
     } else {
       return 0;
@@ -702,7 +706,7 @@ private:
   //---------------------------
   // Multicast specific data
   //---------------------------
-  struct sockaddr_in _mc_addr;
+  ts_ip_endpoint _mc_ip;
   int _mc_ttl;
   struct multicast_data
   {
@@ -763,7 +767,14 @@ public:
   } ReconfigState_t;
   ReconfigState_t ReconfigureStateMachine(ReconfigState_t, int, int);
 
-  Peer *FindPeer(struct in_addr *, int);
+  Peer *FindPeer(InkInetAddr const& ip, uint16_t port = 0);
+  Peer *FindPeer(ts_ip_endpoint const& ip) {
+    return this->FindPeer(InkInetAddr(&ip), ink_inet_get_port(&ip));
+  }
+  Peer *FindPeer(sockaddr const* ip) {
+    return this->FindPeer(InkInetAddr(ip), ink_inet_get_port(ip));
+  }
+
   inline Peer *GetLocalPeer()
   {
     return _LocalPeer;
@@ -836,9 +847,9 @@ private:
     _PendingIcpQueries--;
   }
 
-  Peer *GenericFindListPeer(struct in_addr *, int, int, Ptr<Peer> *);
-  Peer *FindSendListPeer(struct in_addr *, int);
-  Peer *FindRecvListPeer(struct in_addr *, int);
+  Peer *GenericFindListPeer(InkInetAddr const&, uint16_t, int, Ptr<Peer> *);
+  Peer *FindSendListPeer(InkInetAddr const&, uint16_t);
+  Peer *FindRecvListPeer(InkInetAddr const&, uint16_t);
   int AddPeer(Peer *);
   int AddPeerToSendList(Peer *);
   int AddPeerToRecvList(Peer *);
@@ -1066,7 +1077,7 @@ public:
       Ptr<IOBufferBlock> _buf;       // the buffer with the ICP message in it
     ICPMsg_t *_rICPmsg;
     int _rICPmsg_len;
-    struct sockaddr_in _sender; // sender of rICPmsg
+    ts_ip_endpoint _sender; // sender of rICPmsg
     URL _cachelookupURL;
     int _queryResult;
     ICPRequestCont *_ICPReqCont;
@@ -1188,7 +1199,7 @@ private:
   URL *_url;
 
   // Return data
-  struct sockaddr_in _ret_sockaddr;
+  ts_ip_endpoint _ret_sockaddr;
   ICPreturn_t _ret_status;
   class Action _act;
 

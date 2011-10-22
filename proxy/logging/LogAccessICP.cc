@@ -69,7 +69,7 @@ int
 LogAccessICP::marshal_client_host_ip(char *buf)
 {
   if (buf) {
-    int64_t ip = m_icp_log->GetClientIP()->s_addr;
+    int64_t ip = ink_inet_ip4_addr_cast(m_icp_log->GetClientIP());
     // ip is already in network order
     marshal_int(buf, (int64_t)ntohl(ip));
   }

@@ -120,7 +120,7 @@ struct Connection
   /// @internal Used only by ICP.
   void setRemote(
     sockaddr const* remote_addr ///< Address and port.
-	     ) {
+  ) {
     ink_inet_copy(&addr, remote_addr);
   }
 
@@ -130,7 +130,7 @@ struct Connection
   void setRemote(
     in_addr_t ip,
     int port
-	     ) {
+  ) {
 	ink_inet_ip4_set(&addr.sin, ip, htons(port));
   }
 

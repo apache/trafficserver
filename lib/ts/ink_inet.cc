@@ -293,3 +293,51 @@ ink_inet_to_hex(sockaddr const* src, char* dst, size_t len) {
   return zret;
 }
 
+sockaddr* ink_inet_ip_set(
+  sockaddr* dst,
+  InkInetAddr const& addr,
+  uint16_t port
+) {
+  if (AF_INET == addr._family) ink_inet_ip4_set(dst, addr._addr._ip4, port);
+  else if (AF_INET6 == addr._family) ink_inet_ip6_set(dst, addr._addr._ip6, port);
+  else ink_inet_invalidate(dst);
+  return dst;
+}
+
+int
+InkInetAddr::load(char const* text) {
+  ts_ip_endpoint ip;
+  int zret = ink_inet_pton(text, &ip);
+  *this = ip;
+  return zret;
+}
+
+char*
+InkInetAddr::toString(char* dest, size_t len) const {
+  ts_ip_endpoint ip;
+  ip.assign(*this);
+  ink_inet_ntop(&ip, dest, len);
+  return dest;
+}
+
+bool
+InkInetAddr::isMulticast() const {
+  return (AF_INET == _family && 0xe == _addr._byte[0]) ||
+    (AF_INET6 == _family && IN6_IS_ADDR_MULTICAST(&_addr._ip6))
+    ;
+}
+
+bool
+operator == (InkInetAddr const& lhs, sockaddr const* rhs) {
+  bool zret = false;
+  if (lhs._family == rhs->sa_family) {
+    if (AF_INET == lhs._family) {
+      zret = lhs._addr._ip4 == ink_inet_ip4_addr_cast(rhs);
+    } else if (AF_INET6 == lhs._family) {
+      zret = 0 == memcmp(&lhs._addr._ip6, &ink_inet_ip6_addr_cast(rhs), sizeof(in6_addr));
+    } else { // map all non-IP to the same thing.
+      zret = true;
+    }
+  } // else different families, not equal.
+  return zret;
+}

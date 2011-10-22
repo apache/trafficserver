@@ -51,7 +51,7 @@ public:
   {
   }
   ink_hrtime GetElapsedTime();
-  struct in_addr *GetClientIP();
+  sockaddr const* GetClientIP();
   SquidLogCode GetAction();
   const char *GetCode();
   int GetSize();

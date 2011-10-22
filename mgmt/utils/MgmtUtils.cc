@@ -584,7 +584,7 @@ get_interface_mtu(int sock_fd, struct ifreq *ifr)
 #endif
 
 bool
-mgmt_getAddrForIntr(char *intrName, struct in_addr * addr, int *mtu)
+mgmt_getAddrForIntr(char *intrName, sockaddr* addr, int *mtu)
 {
   bool found = false;
 
@@ -645,7 +645,7 @@ mgmt_getAddrForIntr(char *intrName, struct in_addr * addr, int *mtu)
         // Only look at the address if it an internet address
         if (ifr->ifr_ifru.ifru_addr.sa_family == AF_INET) {
           tmp = (struct sockaddr_in *) &ifr->ifr_ifru.ifru_addr;
-          *addr = tmp->sin_addr;
+          ink_inet_ip4_cast(addr)->sin_addr = tmp->sin_addr;
           found = true;
 
           if (mtu)

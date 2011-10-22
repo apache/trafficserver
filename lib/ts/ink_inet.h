@@ -31,6 +31,8 @@
 #define INK_GETHOSTBYNAME_R_DATA_SIZE 1024
 #define INK_GETHOSTBYADDR_R_DATA_SIZE 1024
 
+class InkInetAddr; // forward declare.
+
 /** A union to hold the standard IP address structures.
     By standard we mean @c sockaddr compliant.
 
@@ -47,9 +49,23 @@
 
  */
 union ts_ip_endpoint {
+  typedef ts_ip_endpoint self; ///< Self reference type.
+
+  struct sockaddr         sa; ///< Generic address.
   struct sockaddr_in      sin; ///< IPv4
   struct sockaddr_in6     sin6; ///< IPv6
-  struct sockaddr         sa; ///< Generic address.
+
+  self& assign(
+    sockaddr const* ip ///< Source address, family, port.
+  );
+  /// Construct from an @a addr and @a port.
+  self& assign(
+    InkInetAddr const& addr, ///< Address and address family.
+    uint16_t port = 0 ///< Port (network order).
+  );
+
+  /// Access to port.
+  uint16_t& port();
 };
 
 struct ink_gethostbyname_r_data
@@ -548,9 +564,9 @@ inline int ink_inet_cmp(
       if (la < ra) zret = -1;
       else if (la > ra) zret = 1;
       else zret = 0;
-    } else if (AF_INET6 == rtype) {
-      zret = -1; // IPv4 addresses are before IPv6
-    } else {
+    } else if (AF_INET6 == rtype) { // IPv4 < IPv6
+      zret = -1;
+    } else { // IP > not IP
       zret = 1;
     }
   } else if (AF_INET6 == ltype) {
@@ -812,9 +828,7 @@ ink_inet_to_hex(
 
 /** Storage for an IP address.
     In some cases we want to store just the address and not the
-    ancillary information (such as port, or flow data) in
-    @c sockaddr_storage. There are a couple of cases where this
-    makes sense.
+    ancillary information (such as port, or flow data).
     @note This is not easily used as an address for system calls.
 */
 struct InkInetAddr {
@@ -824,9 +838,15 @@ struct InkInetAddr {
   InkInetAddr() : _family(AF_UNSPEC) {}
   /// Construct as IPv4 @a addr.
   explicit InkInetAddr(
-    uint32_t addr ///< Address to assign.
+    in_addr_t addr ///< Address to assign.
   ) : _family(AF_INET) {
     _addr._ip4 = addr;
+  }
+  /// Construct as IPv6 @a addr.
+  explicit InkInetAddr(
+    in6_addr const& addr ///< Address to assign.
+  ) : _family(AF_INET6) {
+    _addr._ip6 = addr;
   }
   /// Construct from @c sockaddr.
   explicit InkInetAddr(sockaddr const* addr) { this->assign(addr); }
@@ -836,6 +856,8 @@ struct InkInetAddr {
   explicit InkInetAddr(sockaddr_in6 const* addr) { this->assign(ink_inet_sa_cast(addr)); }
   /// Construct from @c ts_ip_endpoint.
   explicit InkInetAddr(ts_ip_endpoint const& addr) { this->assign(&addr.sa); }
+  /// Construct from @c ts_ip_endpoint.
+  explicit InkInetAddr(ts_ip_endpoint const* addr) { this->assign(&addr->sa); }
 
   /// Assign sockaddr storage.
   self& assign(sockaddr const* addr) {
@@ -843,12 +865,32 @@ struct InkInetAddr {
     if (ink_inet_is_ip4(addr)) {
       _addr._ip4 = ink_inet_ip4_addr_cast(addr);
     } else if (ink_inet_is_ip6(addr)) {
-      memcpy(&_addr._ip6, &ink_inet_ip6_cast(addr)->sin6_addr, INK_IP6_SIZE);
+      _addr._ip6 = ink_inet_ip6_addr_cast(addr);
     } else {
       _family = AF_UNSPEC;
     }
     return *this;
   }
+  /// Assign from end point.
+  self& operator = (ts_ip_endpoint const& ip) {
+    return this->assign(&ip.sa);
+  }
+
+  /** Load from string.
+      The address is copied to this object if the conversion is successful,
+      otherwise this object is invalidated.
+      @return 0 on success, non-zero on failure.
+  */
+  int load(
+    char const* str ///< Nul terminated input string.
+  );
+  /** Output to a string.
+      @return The string @a dest.
+  */
+  char* toString(
+    char* dest, ///< [out] Destination string buffer.
+    size_t len ///< [in] Size of buffer.
+  ) const;
 
   /// Equality.
   bool operator==(self const& that) {
@@ -869,14 +911,78 @@ struct InkInetAddr {
 
   /// Test for validity.
   bool isValid() const { return _family == AF_INET || _family == AF_INET6; }
+  /// Make invalid.
+  self& invalidate() { _family = AF_UNSPEC; return *this; }
+  /// Test for multicast
+  bool isMulticast() const;
 
-  uint8_t _family; ///< Protocol family.
-  uint8_t _pad[3]; ///< Pad it out.
+  uint16_t _family; ///< Protocol family.
   /// Address data.
   union {
     in_addr_t _ip4; ///< IPv4 address storage.
     in6_addr  _ip6; ///< IPv6 address storage.
+    uint8_t   _byte[INK_IP6_SIZE]; ///< As raw bytes.
   } _addr;
 };
+
+// Associated operators.
+bool operator == (InkInetAddr const& lhs, sockaddr const* rhs);
+inline bool operator == (sockaddr const* lhs, InkInetAddr const& rhs) {
+  return rhs == lhs;
+}
+inline bool operator != (InkInetAddr const& lhs, sockaddr const* rhs) {
+  return ! (lhs == rhs);
+}
+inline bool operator != (sockaddr const* lhs, InkInetAddr const& rhs) {
+  return ! (rhs == lhs);
+}
+inline bool operator == (InkInetAddr const& lhs, ts_ip_endpoint const& rhs) {
+  return lhs == &rhs.sa;
+}
+inline bool operator == (ts_ip_endpoint const& lhs, InkInetAddr const& rhs) {
+  return &lhs.sa == rhs;
+}
+inline bool operator != (InkInetAddr const& lhs, ts_ip_endpoint const& rhs) {
+  return ! (lhs == &rhs.sa);
+}
+inline bool operator != (ts_ip_endpoint const& lhs, InkInetAddr const& rhs) {
+  return ! (rhs == &lhs.sa);
+}
+
+/// Write IP @a addr to storage @a dst.
+/// @return @s dst.
+sockaddr* ink_inet_ip_set(
+  sockaddr* dst, ///< Destination storage.
+  InkInetAddr const& addr, ///< source address.
+  uint16_t port = 0 ///< port, network order.
+);
+
+/** Convert @a text to an IP address and write it to @a addr.
+    Convenience overload.
+    @return 0 on success, non-zero on failure.
+*/
+inline int ink_inet_pton(
+  char const* text, ///< [in] text.
+  InkInetAddr& addr ///< [out] address
+) {
+  return addr.load(text) ? 0 : -1;
+}
+
+inline ts_ip_endpoint&
+ts_ip_endpoint::assign(InkInetAddr const& addr, uint16_t port) {
+  ink_inet_ip_set(&sa, addr, port); 
+  return *this;
+}
+
+inline ts_ip_endpoint&
+ts_ip_endpoint::assign(sockaddr const* ip) {
+  ink_inet_copy(&sa, ip);
+  return *this;
+}
+
+inline uint16_t&
+ts_ip_endpoint::port() {
+  return ink_inet_port_cast(&sa);
+}
 
 #endif // _ink_inet.h
