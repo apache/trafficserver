@@ -1,5 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.1.1
+  *) TS-997 ATS crashes on remap plugin initialization failure.
+   Author: Manjesh Nilange.
+
   *) [TS-988] Updated ICP for IPv6.
 
   *) [TS-994] Removed the extra splace from X-Forwarded-For.

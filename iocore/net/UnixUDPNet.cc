@@ -230,6 +230,8 @@ private:
 
 ClassAllocator<UDPReadContinuation> udpReadContAllocator("udpReadContAllocator");
 
+#define UNINITIALIZED_EVENT_PTR (Event *)0xdeadbeef
+
 UDPReadContinuation::UDPReadContinuation(Event * completionToken)
 : Continuation(NULL), event(completionToken), readbuf(NULL),
   readlen(0), fromaddrlen(0), fd(-1), ifd(-1), period(0), elapsed_time(0), timeout_interval(0)
@@ -241,7 +243,7 @@ UDPReadContinuation::UDPReadContinuation(Event * completionToken)
 }
 
 UDPReadContinuation::UDPReadContinuation()
-: Continuation(NULL), event(0), readbuf(NULL),
+: Continuation(NULL), event(UNINITIALIZED_EVENT_PTR), readbuf(NULL),
   readlen(0), fromaddrlen(0), fd(-1), ifd(-1), period(0), elapsed_time(0), timeout_interval(0)
 {
 }
@@ -292,9 +294,12 @@ UDPReadContinuation::init_read(int rfd, IOBufferBlock * buf, int len, struct soc
 
 UDPReadContinuation::~UDPReadContinuation()
 {
-  ink_assert(event != NULL);
-  completionUtil::destroy(event);
-  event = NULL;
+  if (event != UNINITIALIZED_EVENT_PTR)
+  {
+    ink_assert(event != NULL);
+    completionUtil::destroy(event);
+    event = NULL;
+  }
 }
 
 void
