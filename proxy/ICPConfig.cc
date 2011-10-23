@@ -573,14 +573,6 @@ ICPConfiguration::icp_config_change_callback(void *data, void *value, int startu
   //***********************************************************************
   const int colons_per_entry = 8;       // expected ':' separators per entry
 
-  // TODO: These are never used.
-#if 0
-  struct in_addr mc_min_ip_addr;
-  struct in_addr mc_max_ip_addr;
-  mc_min_ip_addr.s_addr = inet_addr("224.0.0.0");
-  mc_max_ip_addr.s_addr = inet_addr("239.255.255.255");
-#endif
-
   int error = 0;
   int ln = 0;
   int n_colons;
