@@ -1637,6 +1637,23 @@ main(int argc, char **argv)
     process_core(core_file);
     _exit(0);
   }
+
+  // We need to do this early so we can initialize the Machine
+  // singleton, which depends on configuration values loaded in this.
+  // We want to initialize Machine as early as possible because it
+  // has other dependencies. Hopefully not in init_HttpProxyServer().
+  init_HttpProxyServer();
+  /* Set up the machine with the outbound address if that's set,
+     or the inbound address if set, otherwise let it default.
+  */
+  sockaddr const* machine_addr = 0;
+  if (ink_inet_is_ip(&HttpConfig::m_master.oride.outgoing_ip_to_bind_saddr)) {
+    machine_addr = &HttpConfig::m_master.oride.outgoing_ip_to_bind_saddr.sa;
+  } else if (ink_inet_is_ip(&HttpConfig::m_master.incoming_ip_to_bind_saddr)) {
+    machine_addr = &HttpConfig::m_master.incoming_ip_to_bind_saddr.sa;
+  }
+  Machine::init(0, machine_addr);
+
   // pmgmt->start() must occur after initialization of Diags but
   // before calling RecProcessInit()
 
@@ -1837,7 +1854,6 @@ main(int argc, char **argv)
     transformProcessor.start();
 #endif
 
-    init_HttpProxyServer();
     if (!http_accept_port_number) {
       TS_ReadConfigInteger(http_accept_port_number, "proxy.config.http.server_port");
     }
@@ -1846,17 +1862,6 @@ main(int argc, char **argv)
                    "please check your Traffic Server configurations", http_accept_port_number);
       return (1);
     }
-
-    /* Set up the machine with the outbound address if that's set,
-       or the inbound address if set, otherwise let it default.
-    */
-    sockaddr const* machine_addr = 0;
-    if (ink_inet_is_ip(&HttpConfig::m_master.oride.outgoing_ip_to_bind_saddr)) {
-      machine_addr = &HttpConfig::m_master.oride.outgoing_ip_to_bind_saddr.sa;
-    } else if (ink_inet_is_ip(&HttpConfig::m_master.incoming_ip_to_bind_saddr)) {
-      machine_addr = &HttpConfig::m_master.incoming_ip_to_bind_saddr.sa;
-    }
-    Machine::init(0, machine_addr);
 
     int http_enabled = 1;
     TS_ReadConfigInteger(http_enabled, "proxy.config.http.enabled");
