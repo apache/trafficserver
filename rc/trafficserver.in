@@ -82,6 +82,7 @@ eval TS_BASE="`echo $TS_ROOT | ${ESED} -e 's;@prefix@$;;'`"
 TC_NAME=${TC_NAME:-traffic_cop}
 TM_NAME=${TM_NAME:-traffic_manager}
 TS_NAME=${TS_NAME:-traffic_server}
+TL_NAME=${TL_NAME:-traffic_line}
 TC_DAEMON=${TC_DAEMON:-$TS_BASE@exp_bindir@/traffic_cop}
 TC_DAEMON_ARGS=""
 TM_DAEMON=${TM_DAEMON:-$TS_BASE@exp_bindir@/traffic_manager}
@@ -230,22 +231,6 @@ do_stop()
   return "$RETVAL"
 }
 
-#
-# Ubuntu: Function that sends a SIGHUP to the daemon/service
-#
-do_reload()
-{
-  #
-  # If the daemon can reload its configuration without
-  # restarting (for example, when it is sent a SIGHUP),
-  # then implement that here.
-  #
-  start-stop-daemon --stop --signal 1 --quiet --pidfile $TS_PIDFILE --name $TS_NAME
-  return 0
-}
-
-
-
 # main
 case "$1" in
   start)
@@ -327,15 +312,31 @@ case "$1" in
       exit 1
     fi
   ;;
-  #reload|force-reload)
-  #
-  # If do_reload() is not implemented then leave this commented out
-  # and leave 'force-reload' as an alias for 'restart'.
-  #
-  #log_daemon_msg "Reloading $DESC" "$NAME"
-  #do_reload
-  #log_end_msg $?
-  #;;
+  reload|force-reload)
+    if [ "$DISTRIB_ID" = "ubuntu" -o "$DISTRIB_ID" = "debian" ] ; then
+      test "x$VERBOSE" != "xno" && log_daemon_msg "Reloading ${NAME}:"
+      retval=0
+      $TL_NAME -x
+      test "$?" -ne 0 -a "$?" -ne 1 && retval=1
+      test "x$VERBOSE" != "xno" && log_daemon_msg "$retval"
+      exit "$retval"
+    elif [ "$DISTRIB_ID" = "fedora" -o "$DISTRIB_ID" = "redhat" ]; then
+      action "Reloading ${NAME}:" $TL_NAME -x
+    elif [ "$DISTRIB_ID" = "suse" ]; then
+      echo -n "Reloading ${NAME}"
+      $TL_NAME -x
+      rc_status -v
+    elif [ "$DISTRIB_ID" = "Darwin" ]; then
+      echo "Reloading ${NAME}"
+      $TL_NAME -x
+    elif [ "$DISTRIB_ID" = "FreeBSD" ]; then
+      echo "Reloading ${NAME}"
+      $TL_NAME -x
+    else
+        echo "This script needs to be ported to this OS"
+        exit 1
+    fi
+  ;;
   restart|force-reload)
     if [ "$DISTRIB_ID" = "ubuntu" -o "$DISTRIB_ID" = "debian" ] ; then
       #
