@@ -191,7 +191,7 @@ init_HttpProxyServer(void)
 #ifndef INK_NO_REVERSE
   init_reverse_proxy();
 #endif
-  HttpConfig::startup();
+//  HttpConfig::startup();
   httpSessionManager.init();
   http_pages_init();
   ink_mutex_init(&debug_sm_list_mutex, "HttpSM Debug List");

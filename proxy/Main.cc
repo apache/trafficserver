@@ -1642,7 +1642,7 @@ main(int argc, char **argv)
   // singleton, which depends on configuration values loaded in this.
   // We want to initialize Machine as early as possible because it
   // has other dependencies. Hopefully not in init_HttpProxyServer().
-  init_HttpProxyServer();
+  HttpConfig::startup();
   /* Set up the machine with the outbound address if that's set,
      or the inbound address if set, otherwise let it default.
   */
@@ -1854,6 +1854,7 @@ main(int argc, char **argv)
     transformProcessor.start();
 #endif
 
+    init_HttpProxyServer();
     if (!http_accept_port_number) {
       TS_ReadConfigInteger(http_accept_port_number, "proxy.config.http.server_port");
     }
