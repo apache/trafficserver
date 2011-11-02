@@ -424,15 +424,13 @@ SecurityComp::setOption(Option opt) {
 SecurityComp&
 SecurityComp::setKey(char const* key) {
   m_local_key = true;
-  memset(m_key, 0, KEY_SIZE);
-  ink_strlcpy(m_key, key, KEY_SIZE);
+  strncpy(m_key, key, KEY_SIZE);
   return *this;
 }
 
 void
 SecurityComp::setDefaultKey(char const* key) {
-  memset(m_default_key, 0, KEY_SIZE);
-  ink_strlcpy(m_default_key, key, KEY_SIZE);
+  strncpy(m_default_key, key, KEY_SIZE);
 }
 
 SecurityComp&

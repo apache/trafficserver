@@ -49,8 +49,7 @@ Impl::GroupData::GroupData()
 Impl::GroupData&
 Impl::GroupData::setKey(char const* key) {
   m_use_security_key = true;
-  memset(m_security_key, 0, SecurityComp::KEY_SIZE);
-  ink_strlcpy(m_security_key, key, SecurityComp::KEY_SIZE);
+  strncpy(m_security_key, key, SecurityComp::KEY_SIZE);
   return *this;
 }
 
@@ -146,7 +145,7 @@ Impl::useMD5Security(ts::ConstBuffer const& key) {
   m_use_security_key = true;
   memset(m_security_key, 0, SecurityComp::KEY_SIZE);
   // Great. Have to cast or we get a link error.
-  ink_strlcpy(m_security_key, key._ptr, std::min(key._size, static_cast<size_t>(SecurityComp::KEY_SIZE)));
+  memcpy(m_security_key, key._ptr, std::min(key._size, static_cast<size_t>(SecurityComp::KEY_SIZE)));
 }
 
 SecurityOption
