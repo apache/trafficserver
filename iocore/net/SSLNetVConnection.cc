@@ -197,12 +197,14 @@ SSLNetVConnection::net_read_io(NetHandler * nh, EThread * lthread)
     if (ret == EVENT_ERROR) {
       this->read.triggered = 0;
       readSignalError(nh, err);
-    } else if (ret == SSL_HANDSHAKE_WANT_READ || ret == SSL_HANDSHAKE_WANT_ACCEPT || ret == SSL_HANDSHAKE_WANT_CONNECT
-               || ret == SSL_HANDSHAKE_WANT_WRITE) {
+    } else if (ret == SSL_HANDSHAKE_WANT_READ || ret == SSL_HANDSHAKE_WANT_ACCEPT) {
       read.triggered = 0;
       nh->read_ready_list.remove(this);
+      readReschedule(nh);
+    } else if (ret == SSL_HANDSHAKE_WANT_CONNECT || ret == SSL_HANDSHAKE_WANT_WRITE) {
       write.triggered = 0;
       nh->write_ready_list.remove(this);
+      writeReschedule(nh);
     } else if (ret == EVENT_DONE) {
       read.triggered = 1;
       if (read.enabled)
