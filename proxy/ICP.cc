@@ -2295,11 +2295,13 @@ ICPProcessor::Reconfigure(int global_config_changed, int peer_config_changed)
   _ICPConfig->UpdateGlobalConfig();
   _ICPConfig->UpdatePeerConfig();
 
-  int status;
-  if ((status = BuildPeerList()) == 0) {
-    status = SetupListenSockets();
+  int status = -1;
+  if (_ICPConfig->globalConfig()->ICPconfigured()) {
+    if ((status = BuildPeerList()) == 0) {
+      status = SetupListenSockets();
+    }
+    DumpICPConfig();
   }
-  DumpICPConfig();
   return status;
 }
 

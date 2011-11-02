@@ -1368,7 +1368,7 @@ RecordElement RecordsConfig[] = {
   //#       enabled=1 Allow receive of ICP queries
   //#       enabled=2 Allow send/receive of ICP queries
   //##############################################################################
-  {RECT_CONFIG, "proxy.config.icp.enabled", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-2]", RECA_NULL}
+  {RECT_CONFIG, "proxy.config.icp.enabled", RECD_INT, "0", RECU_RESTART_TS, RR_NULL, RECC_INT, "[0-2]", RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.icp.stale_icp_enabled", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_INT, NULL, RECA_NULL}
   ,

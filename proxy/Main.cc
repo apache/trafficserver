@@ -1868,9 +1868,14 @@ main(int argc, char **argv)
     TS_ReadConfigInteger(http_enabled, "proxy.config.http.enabled");
 
     if (http_enabled) {
+#ifndef INK_NO_ICP
+      int icp_enabled = 0;
+      TS_ReadConfigInteger(icp_enabled, "proxy.config.icp.enabled");
+#endif
       start_HttpProxyServer(http_accept_file_descriptor, http_accept_port_number, ssl_accept_file_descriptor, num_accept_threads);
 #ifndef INK_NO_ICP
-      icpProcessor.start();
+      if (icp_enabled)
+        icpProcessor.start();
 #endif
     }
 
