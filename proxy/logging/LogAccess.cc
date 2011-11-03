@@ -796,14 +796,18 @@ LogAccess::marshal_ip(char* dest, sockaddr const* ip) {
   LogFieldIp data;
   int len = sizeof(data);
   if (ink_inet_is_ip4(ip)) {
-    LogFieldIp4* ip4 = static_cast<LogFieldIp4*>(&data);
-    ip4->_family = AF_INET;
-    ip4->_addr = ink_inet_ip4_addr_cast(ip);
+    if (dest) {
+      LogFieldIp4* ip4 = static_cast<LogFieldIp4*>(&data);
+      ip4->_family = AF_INET;
+      ip4->_addr = ink_inet_ip4_addr_cast(ip);
+    }
     len = sizeof(*ip4);
   } else if (ink_inet_is_ip6(ip)) {
-    LogFieldIp6* ip6 = static_cast<LogFieldIp6*>(&data);
-    ip6->_family = AF_INET6;
-    ip6->_addr = ink_inet_ip6_addr_cast(ip);
+    if (dest) {
+      LogFieldIp6* ip6 = static_cast<LogFieldIp6*>(&data);
+      ip6->_family = AF_INET6;
+      ip6->_addr = ink_inet_ip6_addr_cast(ip);
+    }
     len = sizeof(*ip6);
   } else {
     data._family = AF_UNSPEC;

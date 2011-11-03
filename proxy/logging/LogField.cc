@@ -307,7 +307,8 @@ LogField::display(FILE *fd)
   static const char *names[LogField::N_TYPES] = {
     "sINT",
     "dINT",
-    "STR"
+    "STR",
+    "IP"
   };
 
   fprintf(fd, "    %30s %10s %5s\n", m_name, m_symbol, names[m_type]);
