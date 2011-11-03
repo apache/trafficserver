@@ -405,7 +405,6 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.http.anonymize_remove_from
  proxy.config.http.anonymize_remove_referer
  proxy.config.http.anonymize_remove_user_agent
- proxy.config.http.append_xforwards_header
  proxy.config.http.avoid_content_spoofing
  proxy.config.http.background_fill_active_timeout
  proxy.config.http.background_fill_completed_threshold

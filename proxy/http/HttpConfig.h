@@ -407,7 +407,7 @@ struct OverridableHttpConfigParams {
        fwd_proxy_auth_to_parent(0), 
        anonymize_remove_from(0), anonymize_remove_referer(0), anonymize_remove_user_agent(0),
        anonymize_remove_cookie(0), anonymize_remove_client_ip(0), anonymize_insert_client_ip(1),
-       append_xforwards_header(0), proxy_response_server_enabled(0),
+       proxy_response_server_enabled(0),
        insert_squid_x_forwarded_for(0), send_http11_requests(3), // SEND_HTTP11_IF_REQUEST_11_AND_HOSTDB
        cache_http(0), cache_ignore_client_no_cache(0), cache_ignore_client_cc_max_age(1),
        cache_ims_on_client_no_cache(0), cache_ignore_server_no_cache(0), cache_responses_to_cookies(0),
@@ -475,7 +475,6 @@ struct OverridableHttpConfigParams {
   MgmtByte anonymize_remove_cookie;
   MgmtByte anonymize_remove_client_ip;
   MgmtByte anonymize_insert_client_ip;
-  MgmtByte append_xforwards_header;
 
   MgmtByte proxy_response_server_enabled;
 

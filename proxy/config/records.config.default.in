@@ -180,7 +180,6 @@ CONFIG proxy.config.http.anonymize_remove_cookie INT 0
 CONFIG proxy.config.http.anonymize_remove_client_ip INT 0
 CONFIG proxy.config.http.anonymize_insert_client_ip INT 1
 CONFIG proxy.config.http.anonymize_other_header_list STRING NULL
-CONFIG proxy.config.http.append_xforwards_header INT 0
 CONFIG proxy.config.http.insert_squid_x_forwarded_for INT 1
    ############
    # security #

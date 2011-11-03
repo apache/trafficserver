@@ -1,5 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.1.1
+  *) [TS-1012] Eliminate proxy.config.http.append_xforwards_header, which
+   is never used.
+ 
   *) [TS-1004] Transformation plugins cause connection close when content
    length is not known ahead. Author: Otto van der Schaaf.
 

@@ -7308,9 +7308,6 @@ _conf_to_memberp(TSOverridableConfigKey conf, HttpSM* sm, OverridableDataType *t
   case TS_CONFIG_HTTP_ANONYMIZE_INSERT_CLIENT_IP:
     ret = &sm->t_state.txn_conf->anonymize_insert_client_ip;
     break;
-  case TS_CONFIG_HTTP_APPEND_XFORWARDS_HEADER:
-    ret = &sm->t_state.txn_conf->append_xforwards_header;
-    break;
   case TS_CONFIG_HTTP_RESPONSE_SERVER_ENABLED:
     ret = &sm->t_state.txn_conf->proxy_response_server_enabled;
     break;
@@ -7710,9 +7707,7 @@ TSHttpTxnConfigFind(const char* name, int length, TSOverridableConfigKey *conf, 
         cnf = TS_CONFIG_HTTP_ANONYMIZE_REMOVE_COOKIE;
       break;
     case 'r':
-      if (!strncmp(name, "proxy.config.http.append_xforwards_header", length))
-        cnf = TS_CONFIG_HTTP_APPEND_XFORWARDS_HEADER;
-      else if (!strncmp(name, "proxy.config.http.insert_response_via_str", length))
+      if (!strncmp(name, "proxy.config.http.insert_response_via_str", length))
         cnf = TS_CONFIG_HTTP_INSERT_RESPONSE_VIA_STR;
       break;
     }
