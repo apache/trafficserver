@@ -1222,10 +1222,12 @@ parse_log_buff(LogBufferHeader * buf_header, bool summary = false)
       case P_STATE_IP:
         state = P_STATE_RESULT;
         // Just skip the IP, we no longer assume it's always the same.
-        //
-        // TODO address IP logged in text format (that's not good)
-        // Warning: This is maybe not IPv6 safe.
-        read_from += LogAccess::strlen(read_from);
+        {
+          LogFieldIp* ip = reinterpret_cast<LogFieldIp*>(read_from);
+          if (AF_INET == ip->_family) read_from += sizeof(LogFieldIp4);
+          else if (AF_INET6 == ip->_family) read_from += sizeof(LogFieldIp6);
+          else read_from += sizeof(LogFieldIp);
+        }
         break;
 
       case P_STATE_RESULT:
