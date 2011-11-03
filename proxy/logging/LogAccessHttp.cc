@@ -140,17 +140,7 @@ LogAccessHttp::init()
 int
 LogAccessHttp::marshal_client_host_ip(char *buf)
 {
-  char *str = NULL;
-  int len = INK_MIN_ALIGN;
-  char buffer[INET6_ADDRSTRLEN];
-
-  str = const_cast<char*>(ink_inet_ntop(((struct sockaddr *)&(m_http_sm->t_state.client_info.addr)), buffer, sizeof(buffer)));
-  len = LogAccess::strlen(str);
-
-  if (buf) {
-    marshal_str (buf, str, len);
-  }
-  return len;
+  return marshal_ip(buf, &m_http_sm->t_state.client_info.addr.sa);
 }
 
 /*-------------------------------------------------------------------------
@@ -673,17 +663,7 @@ LogAccessHttp::marshal_proxy_hierarchy_route(char *buf)
 int
 LogAccessHttp::marshal_server_host_ip(char *buf)
 {
-  if (buf) {
-    unsigned int val = 0;
-    val = ink_inet_ip4_addr_cast(&m_http_sm->t_state.server_info.addr);
-    if (val == 0) {
-      if (m_http_sm->t_state.current.server != NULL) {
-        val = ink_inet_ip4_addr_cast(&m_http_sm->t_state.current.server->addr);
-      }
-    }
-    marshal_int(buf, (int64_t)ntohl(val));
-  }
-  return INK_MIN_ALIGN;
+  return marshal_ip(buf, &m_http_sm->t_state.server_info.addr.sa);
 }
 
 

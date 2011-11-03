@@ -112,6 +112,14 @@
     return len; \
 }
 
+#define DEFAULT_IP_FIELD {\
+    int len = sizeof(LogFieldIp); \
+    if (buf) { \
+      len = marshal_ip (buf, NULL); \
+    } \
+    return len; \
+}
+
 // should be at least 22 bytes to always accomodate a converted
 // MgmtInt, MgmtIntCounter or MgmtFloat. 22 bytes is enough for 64 bit
 // ints + sign + eos, and enough for %e floating point representation
@@ -270,7 +278,9 @@ public:
   static int unmarshal_http_version(char **buf, char *dest, int len);
   static int unmarshal_http_text(char **buf, char *dest, int len);
   static int unmarshal_http_status(char **buf, char *dest, int len);
-  static int unmarshal_ip(char **buf, char *dest, int len, Ptr<LogFieldAliasMap> map);
+  static int unmarshal_ip(char** buf, ts_ip_endpoint* dest);
+  static int unmarshal_ip_to_str(char **buf, char *dest, int len);
+  static int unmarshal_ip_to_hex(char** buf, char* dest, int len);
   static int unmarshal_hierarchy(char **buf, char *dest, int len, Ptr<LogFieldAliasMap> map);
   static int unmarshal_finish_status(char **buf, char *dest, int len, Ptr<LogFieldAliasMap> map);
   static int unmarshal_cache_code(char **buf, char *dest, int len, Ptr<LogFieldAliasMap> map);
@@ -286,12 +296,13 @@ public:
   // so that there are no alignment problems with the int values.
   //
   static int round_strlen(int len);
-  static int strlen(char *str);
+  static int strlen(char const* str);
 
 public:
   inkcoreapi static void marshal_int(char *dest, int64_t source);
   inkcoreapi static void marshal_str(char *dest, const char *source, int padded_len);
   inkcoreapi static void marshal_mem(char *dest, const char *source, int actual_len, int padded_len);
+  inkcoreapi static int marshal_ip(char *dest, sockaddr const* ip);
 
   bool initialized;
 
@@ -315,7 +326,7 @@ LogAccess::round_strlen(int len)
   -------------------------------------------------------------------------*/
 
 inline int
-LogAccess::strlen(char *str)
+LogAccess::strlen(char const* str)
 {
   if (str == NULL || str[0] == 0) {
     return round_strlen(sizeof(DEFAULT_STR));

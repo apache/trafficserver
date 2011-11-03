@@ -80,7 +80,7 @@ LogAccess::init()
 int
 LogAccess::marshal_client_host_ip(char *buf)
 {
-  DEFAULT_STR_FIELD;
+  DEFAULT_IP_FIELD;
 }
 
 /*-------------------------------------------------------------------------
@@ -339,7 +339,7 @@ LogAccess::marshal_proxy_req_server_name(char *buf)
 int
 LogAccess::marshal_proxy_req_server_ip(char *buf)
 {
-  DEFAULT_INT_FIELD;
+  DEFAULT_IP_FIELD;
 }
 
 /*-------------------------------------------------------------------------
@@ -387,18 +387,7 @@ LogAccess::marshal_proxy_host_name(char *buf)
 int
 LogAccess::marshal_proxy_host_ip(char *buf)
 {
-  char *str = NULL;
-  Machine *machine = Machine::instance();
-  int len = 0;
-
-  if (machine) {
-    str = machine->ip_string;
-    len = LogAccess::strlen(str);
-  }
-  if (buf) {
-    marshal_str(buf, str, len);
-  }
-  return len;
+  return marshal_ip(buf, &Machine::instance()->ip.sa);
 }
 
 
@@ -408,7 +397,7 @@ LogAccess::marshal_proxy_host_ip(char *buf)
 int
 LogAccess::marshal_server_host_ip(char *buf)
 {
-  DEFAULT_INT_FIELD;
+  DEFAULT_IP_FIELD;
 }
 
 /*-------------------------------------------------------------------------
@@ -795,6 +784,35 @@ LogAccess::marshal_mem(char *dest, const char *source, int actual_len, int padde
 #endif
 }
 
+/*-------------------------------------------------------------------------
+  LogAccess::marshal_ip
+
+  Marshal an IP address in a reasonably compact way. If the address isn't
+  valid (NULL or not IP) then marshal an invalid address record.
+  -------------------------------------------------------------------------*/
+
+int
+LogAccess::marshal_ip(char* dest, sockaddr const* ip) {
+  LogFieldIp data;
+  int len = sizeof(data);
+  if (ink_inet_is_ip4(ip)) {
+    LogFieldIp4* ip4 = static_cast<LogFieldIp4*>(&data);
+    ip4->_family = AF_INET;
+    ip4->_addr = ink_inet_ip4_addr_cast(ip);
+    len = sizeof(*ip4);
+  } else if (ink_inet_is_ip6(ip)) {
+    LogFieldIp6* ip6 = static_cast<LogFieldIp6*>(&data);
+    ip6->_family = AF_INET6;
+    ip6->_addr = ink_inet_ip6_addr_cast(ip);
+    len = sizeof(*ip6);
+  } else {
+    data._family = AF_UNSPEC;
+  }
+
+  if (dest) memcpy(dest, &data, len);
+  return INK_ALIGN_DEFAULT(len);
+}
+
 inline int
 LogAccess::unmarshal_with_map(int64_t code, char *dest, int len, Ptr<LogFieldAliasMap> map, const char *msg)
 {
@@ -1116,19 +1134,65 @@ LogAccess::unmarshal_http_status(char **buf, char *dest, int len)
 /*-------------------------------------------------------------------------
   LogAccess::unmarshal_ip
 
-  Retrieve the int pointed at by the buffer and treat as an IP address.
-  Convert to a string and return the string.  Advance the buffer pointer.
-  String has the form "ddd.ddd.ddd.ddd".
+  Retrieve an IP address directly.
   -------------------------------------------------------------------------*/
-
 int
-LogAccess::unmarshal_ip(char **buf, char *dest, int len, Ptr<LogFieldAliasMap> map)
+LogAccess::unmarshal_ip(char **buf, ts_ip_endpoint* dest)
 {
+  int len = sizeof(LogFieldIp); // of object processed.
+
   ink_assert(buf != NULL);
   ink_assert(*buf != NULL);
   ink_assert(dest != NULL);
 
-  return (LogAccess::unmarshal_with_map(unmarshal_int(buf), dest, len, map));
+  LogFieldIp* raw = reinterpret_cast<LogFieldIp*>(*buf);
+  if (AF_INET == raw->_family) {
+    LogFieldIp4* ip4 = static_cast<LogFieldIp4*>(raw);
+    ink_inet_ip4_set(dest, ip4->_addr);
+    len = sizeof(*ip4);
+  } else if (AF_INET6 == raw->_family) {
+    LogFieldIp6* ip6 = static_cast<LogFieldIp6*>(raw);
+    ink_inet_ip6_set(dest, ip6->_addr);
+    len = sizeof(*ip6);
+  } else {
+    ink_inet_invalidate(dest);
+  }
+  len = INK_ALIGN_DEFAULT(len);
+  *buf += len;
+  return len;
+}
+
+/*-------------------------------------------------------------------------
+  LogAccess::unmarshal_ip_to_str
+
+  Retrieve the IP addresspointed at by the buffer and convert to a
+  string in standard format. The string is written to @a dest and its
+  length (not including nul) is returned. @a *buf is advanced.
+  -------------------------------------------------------------------------*/
+
+int
+LogAccess::unmarshal_ip_to_str(char **buf, char *dest, int len)
+{
+  ts_ip_endpoint ip;
+
+  unmarshal_ip(buf, &ip);
+  return ink_inet_ntop(&ip, dest, len) ? ::strlen(dest) : -1;
+}
+
+/*-------------------------------------------------------------------------
+  LogAccess::unmarshal_ip_to_hex
+
+  Retrieve the int pointed at by the buffer and treat as an IP
+  address.  Convert to a string in byte oriented hexadeciaml and
+  return the string.  Advance the buffer pointer.
+  -------------------------------------------------------------------------*/
+
+int
+LogAccess::unmarshal_ip_to_hex(char **buf, char *dest, int len)
+{
+  ts_ip_endpoint ip;
+  unmarshal_ip(buf, &ip);
+  return ink_inet_to_hex(&ip.sa, dest, len);
 }
 
 /*-------------------------------------------------------------------------

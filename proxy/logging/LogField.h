@@ -55,6 +55,7 @@ public:
     sINT = 0,
     dINT,
     STRING,
+    IP, ///< IP Address.
     N_TYPES
   };
 
@@ -200,6 +201,26 @@ private:
   // -- member functions that are not allowed --
   LogFieldList(const LogFieldList & rhs);
   LogFieldList & operator=(const LogFieldList & rhs);
+};
+
+/** Base IP address data.
+    To unpack an IP address, the generic memory is first cast to
+    this type to get the family. That pointer can then be static_cast
+    to the appropriate subtype to get the actual address data.
+
+    @note We don't use our own enum for the family. Instead we use
+    @c AF_INET and @c AF_INET6.
+*/
+struct LogFieldIp {
+  uint16_t _family; ///< IP address family.
+};
+/// IPv4 address as log field.
+struct LogFieldIp4 : public LogFieldIp {
+  in_addr_t _addr; ///< IPv4 address.
+};
+/// IPv6 address as log field.
+struct LogFieldIp6 : public LogFieldIp {
+  in6_addr _addr; ///< IPv6 address.
 };
 
 #endif
