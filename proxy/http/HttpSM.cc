@@ -5636,6 +5636,10 @@ HttpSM::setup_transfer_from_transform()
   transform_info.entry->in_tunnel = true;
   ua_entry->in_tunnel = true;
 
+  if ( t_state.client_info.receive_chunked_response ) {
+    tunnel.set_producer_chunking_action(p, client_response_hdr_bytes, TCA_CHUNK_CONTENT);
+  }
+
   return p;
 }
 

@@ -7006,7 +7006,7 @@ HttpTransact::handle_response_keep_alive_headers(State* s, HTTPVersion ver, HTTP
         !is_response_body_precluded(s->hdr_info.client_response.status_get(), s->method) &&
          // we do not need chunked encoding for internal error messages
          // that are sent to the client if the server response is not valid.
-         ((s->source == SOURCE_HTTP_ORIGIN_SERVER &&
+         (( (s->source == SOURCE_HTTP_ORIGIN_SERVER || s->source == SOURCE_TRANSFORM) &&
          s->hdr_info.server_response.valid() &&
          // if we receive a 304, we will serve the client from the
          // cache and thus do not need chunked encoding.
