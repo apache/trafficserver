@@ -177,8 +177,16 @@ public:
   Action *connect_re(Continuation * c);
   void kill_no_connect();
 
-  void set_active_addr(uint32_t ip, int port);
-  void set_passive_addr(uint32_t ip, int port);
+  /// Set the active address.
+  void set_active_addr(
+    in_addr_t ip, ///< IPv4 address in host order.
+    int port ///< IP Port in host order.
+  );
+  /// Set the passive address.
+  void set_passive_addr(
+    in_addr_t ip, ///< IPv4 address in host order.
+    int port ///< IP port in host order.
+  );
 
   void set_active_data(void *data);
   void set_passive_data(void *data);

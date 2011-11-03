@@ -1,5 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.1.1
+
+  *) TS-982 Fixed PluginVC set active/passive address. Clarified that
+   it expects host order input.
+
   *) [TS-1012] Eliminate proxy.config.http.append_xforwards_header, which
    is never used.
  
