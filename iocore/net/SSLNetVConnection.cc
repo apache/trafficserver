@@ -33,6 +33,7 @@
 #define SSL_HANDSHAKE_WANT_WRITE  7
 #define SSL_HANDSHAKE_WANT_ACCEPT 8
 #define SSL_HANDSHAKE_WANT_CONNECT 9
+#define SSL_WRITE_WOULD_BLOCK     10
 ClassAllocator<SSLNetVConnection> sslNetVCAllocator("sslNetVCAllocator");
 
 
@@ -99,10 +100,13 @@ ssl_read_from_net(NetHandler * nh, UnixNetVConnection * vc, EThread * lthread, i
         continue;
 
       case SSL_ERROR_WANT_WRITE:
+        event = SSL_WRITE_WOULD_BLOCK;
+        Debug("ssl", "[SSL_NetVConnection::ssl_read_from_net] SSL_ERROR_WOULD_BLOCK(write)");
+        break;
       case SSL_ERROR_WANT_READ:
       case SSL_ERROR_WANT_X509_LOOKUP:
         event = SSL_READ_WOULD_BLOCK;
-        Debug("ssl", "[SSL_NetVConnection::ssl_read_from_net] SSL_ERROR_WOULD_BLOCK");
+        Debug("ssl", "[SSL_NetVConnection::ssl_read_from_net] SSL_ERROR_WOULD_BLOCK(read)");
         break;
       case SSL_ERROR_SYSCALL:
         if (rres != 0) {
@@ -246,10 +250,12 @@ SSLNetVConnection::net_read_io(NetHandler * nh, EThread * lthread)
     // how did we exit the while loop above? should never happen.
     ink_debug_assert(false);
     break;
+  case SSL_WRITE_WOULD_BLOCK:
   case SSL_READ_WOULD_BLOCK:
     if (lock.m.m_ptr != s->vio.mutex.m_ptr) {
       Debug("ssl", "ssl_read_from_net, mutex switched");
-      readReschedule(nh);
+      if(ret == SSL_READ_WOULD_BLOCK) readReschedule(nh);
+      else writeReschedule(nh);
       return;
     }
     // reset the tigger and remove from the ready queue
@@ -257,6 +263,10 @@ SSLNetVConnection::net_read_io(NetHandler * nh, EThread * lthread)
     read.triggered = 0;
     nh->read_ready_list.remove(this);
     Debug("ssl", "read_from_net, read finished - would block");
+#ifdef TS_USE_PORT
+    if(ret == SSL_READ_WOULD_BLOCK) readReschedule(nh);
+    else writeReschedule(nh);
+#endif
     break;
 
   case SSL_READ_EOS:
