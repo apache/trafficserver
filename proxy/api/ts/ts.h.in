@@ -2147,7 +2147,13 @@ extern "C"
 
   tsapi TSReturnCode TSHttpTxnClientFdGet(TSHttpTxn txnp, int* fdp);
   tsapi TSReturnCode TSHttpTxnOutgoingAddrSet(TSHttpTxn txnp, struct sockaddr const* addr);
-  
+
+  /* TS-1008: the above TXN calls for the Client conn should work with SSN */
+  tsapi struct sockaddr const* TSHttpSsnClientAddrGet(TSHttpSsn ssnp);
+  tsapi struct sockaddr const* TSHttpSsnIncomingAddrGet(TSHttpSsn ssnp);
+  tsapi TSReturnCode TSHttpSsnClientFdGet(TSHttpSsn ssnp, int* fdp);
+  /* TS-1008 END */
+
   /** @deprecated Use TSHttpTxnClientAddrGet */
   tsapi TS_DEPRECATED unsigned int TSHttpTxnClientIPGet(TSHttpTxn txnp);
   /** @deprecated Use TSHttpTxnClientAddrGet */

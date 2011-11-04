@@ -130,6 +130,8 @@ Changes with Apache Traffic Server 3.1.1
 
   *) [TS-930] Fixed TSNetConnect to use network order for port.
 
+  *) [TS-1008] Add API to get TCP connection from SSN.
+
 Changes with Apache Traffic Server 3.1.0
   *) Make sure --enable-purify works again
 

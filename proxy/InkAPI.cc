@@ -5143,11 +5143,8 @@ TSHttpTxnTransformRespGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *obj)
 }
 
 sockaddr const*
-TSHttpTxnClientAddrGet(TSHttpTxn txnp)
+TSHttpSsnClientAddrGet(TSHttpSsn ssnp)
 {
-  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
- 
-  TSHttpSsn ssnp = TSHttpTxnSsnGet(txnp);
   HttpClientSession *cs = reinterpret_cast<HttpClientSession *>(ssnp);
 
   if (cs == NULL) return 0;
@@ -5156,6 +5153,14 @@ TSHttpTxnClientAddrGet(TSHttpTxn txnp)
   if (vc == NULL) return 0;
 
   return vc->get_remote_addr();
+}
+sockaddr const*
+TSHttpTxnClientAddrGet(TSHttpTxn txnp)
+{
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+ 
+  TSHttpSsn ssnp = TSHttpTxnSsnGet(txnp);
+  return TSHttpSsnClientAddrGet(ssnp);
 }
 
 unsigned int
@@ -5168,10 +5173,7 @@ TSHttpTxnClientIPGet(TSHttpTxn txnp)
 }
 
 sockaddr const*
-TSHttpTxnIncomingAddrGet(TSHttpTxn txnp) {
-  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
- 
-  TSHttpSsn ssnp = TSHttpTxnSsnGet(txnp);
+TSHttpSsnIncomingAddrGet(TSHttpSsn ssnp) {
   HttpClientSession *cs = reinterpret_cast<HttpClientSession *>(ssnp);
 
   if (cs == NULL) return 0;
@@ -5180,6 +5182,13 @@ TSHttpTxnIncomingAddrGet(TSHttpTxn txnp) {
   if (vc == NULL) return 0;
 
   return vc->get_local_addr();
+}
+sockaddr const*
+TSHttpTxnIncomingAddrGet(TSHttpTxn txnp) {
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+ 
+  TSHttpSsn ssnp = TSHttpTxnSsnGet(txnp);
+  return TSHttpSsnIncomingAddrGet(ssnp);
 }
 
 int
@@ -6768,12 +6777,10 @@ TSTextLogObjectRollingOffsetHrSet(TSTextLogObject the_object, int rolling_offset
 }
 
 TSReturnCode
-TSHttpTxnClientFdGet(TSHttpTxn txnp, int *fdp)
+TSHttpSsnClientFdGet(TSHttpSsn ssnp, int *fdp)
 {
-  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_null_ptr((void*)fdp) == TS_SUCCESS);
 
-  TSHttpSsn ssnp = TSHttpTxnSsnGet(txnp);
   HttpClientSession *cs = (HttpClientSession *) ssnp;
 
   if (cs == NULL)
@@ -6785,6 +6792,15 @@ TSHttpTxnClientFdGet(TSHttpTxn txnp, int *fdp)
 
   *fdp = vc->get_socket();
   return TS_SUCCESS;
+}
+TSReturnCode
+TSHttpTxnClientFdGet(TSHttpTxn txnp, int *fdp)
+{
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+  sdk_assert(sdk_sanity_check_null_ptr((void*)fdp) == TS_SUCCESS);
+
+  TSHttpSsn ssnp = TSHttpTxnSsnGet(txnp);
+  return TSHttpSsnClientFdGet(ssnp, fdp);
 }
 
 TSReturnCode
