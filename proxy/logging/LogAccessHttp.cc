@@ -633,14 +633,12 @@ LogAccessHttp::marshal_proxy_req_server_name(char *buf)
 int
 LogAccessHttp::marshal_proxy_req_server_ip(char *buf)
 {
-  if (buf) {
-    unsigned int the_ip = 0;
-    if (m_http_sm->t_state.current.server != NULL) {
-      the_ip = ink_inet_ip4_addr_cast(&m_http_sm->t_state.current.server->addr);
-    }
-    marshal_int(buf, (int64_t)ntohl(the_ip));
-  }
-  return INK_MIN_ALIGN;
+  return marshal_ip(
+    buf,
+    m_http_sm->t_state.current.server != NULL
+      ? &m_http_sm->t_state.current.server->addr.sa
+      : 0
+  );
 }
 
 /*-------------------------------------------------------------------------
@@ -663,7 +661,17 @@ LogAccessHttp::marshal_proxy_hierarchy_route(char *buf)
 int
 LogAccessHttp::marshal_server_host_ip(char *buf)
 {
-  return marshal_ip(buf, &m_http_sm->t_state.server_info.addr.sa);
+  sockaddr const* ip = 0;
+  ip = &m_http_sm->t_state.server_info.addr.sa;
+  if (! ink_inet_is_ip(ip)) {
+    if (m_http_sm->t_state.current.server) {
+      ip = &m_http_sm->t_state.current.server->addr.sa;
+      if (! ink_inet_is_ip(ip)) ip = 0;
+    } else {
+      ip = 0;
+    }
+  }
+  return marshal_ip(buf, ip);
 }
 
 

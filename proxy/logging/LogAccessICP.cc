@@ -163,7 +163,7 @@ LogAccessICP::marshal_proxy_resp_content_type(char *buf)
   // FIXME: need to ensure that m_icp_log->GetContentType() is NUL-terminated
   //
   char *ct_str = (char *) m_icp_log->GetContentType();
-  int ct_len = strlen(ct_str);
+  int ct_len = ::strlen(ct_str);
 
   // FIXME: need to be sure remove_content_type_attributecan mutate ct_str
   //

@@ -316,11 +316,9 @@ LogAccessTest::marshal_proxy_hierarchy_route(char *buf)
 int
 LogAccessTest::marshal_server_host_ip(char *buf)
 {
-  if (buf) {
-    int64_t val = 14;
-    marshal_int(buf, val);
-  }
-  return sizeof(int64_t);
+  ts_ip_endpoint lo;
+  ink_inet_ip4_set(&lo, INADDR_LOOPBACK);
+  return marshal_ip(buf, &lo.sa);
 }
 
 /*-------------------------------------------------------------------------

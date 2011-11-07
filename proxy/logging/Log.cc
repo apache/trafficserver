@@ -346,7 +346,6 @@ Log::init_fields()
   field_symbol_hash = ink_hash_table_create(InkHashTableKeyType_String);
 
   // client -> proxy fields
-  Ptr<LogFieldAliasIP> ip_map = NEW(new LogFieldAliasIP);
   field = NEW(new LogField("client_host_ip", "chi",
                            LogField::IP,
                            &LogAccess::marshal_client_host_ip,
@@ -354,7 +353,6 @@ Log::init_fields()
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "chi", field);
 
-  Ptr<LogFieldAliasIPhex> ip_map_hex = NEW(new LogFieldAliasIPhex);
   field = NEW(new LogField("client_host_ip_hex", "chih",
                            LogField::IP,
                            &LogAccess::marshal_client_host_ip,

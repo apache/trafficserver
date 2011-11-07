@@ -2039,6 +2039,10 @@ LogConfig::read_xml_log_config(int from_memory)
         filter = NEW(new LogFilterString(filter_name, logfield, act, oper, val_str));
         break;
 
+      case LogField::IP:
+        Warning("Internal error: IP filters not yet supported " "cannot create filter %s.", filter_name);
+        continue;
+
       default:
 
         Warning("Internal error: unknown field type %d; " "cannot create filter %s.", field_type, filter_name);
