@@ -1,0 +1,11 @@
+                                                         -*- coding: utf-8 -*-
+
+Changes with Apache Traffic Server header_filter 1.0
+
+  *) Added support for the "add" and "set" operators, e.g.
+
+        [SEND_REQUEST_HDR]
+            Host =www.ogre.com=
+            X-Append-Header +Added by ATS+
+
+  *) This is a basic plugin for doing header_filtering.

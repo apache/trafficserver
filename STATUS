@@ -1,0 +1,21 @@
+Traffic Server Header Filter 1.0 STATUS:                                              -*-text-*-
+Last modified at [$Date: 2010-09-23 10:18:00 -0600 (Thu, 23 Sep 2010) $]
+
+The current version of this file can be found at:
+
+  * https://svn.apache.org/repos/asf/trafficserver/plugins/header_filter/STATUS
+
+
+Release history:
+    1.0.0     : Released June 27th, 2011
+
+
+Contributors looking for a mission:
+
+  * Just do an egrep on "TODO" or "XXX" in the source.
+
+  * Review the bug database at: https://issues.apache.org/jira/browse/TS
+
+      - Download, test and review patches attached to open bugs
+
+  * Open bugs in the bug database.
