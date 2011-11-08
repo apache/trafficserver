@@ -793,24 +793,22 @@ LogAccess::marshal_mem(char *dest, const char *source, int actual_len, int padde
 
 int
 LogAccess::marshal_ip(char* dest, sockaddr const* ip) {
-  LogFieldIp data;
-  int len = sizeof(data);
+  LogFieldIpStorage data;
+  int len = sizeof(data._ip);
   if (ink_inet_is_ip4(ip)) {
     if (dest) {
-      LogFieldIp4* ip4 = static_cast<LogFieldIp4*>(&data);
-      ip4->_family = AF_INET;
-      ip4->_addr = ink_inet_ip4_addr_cast(ip);
+      data._ip4._family = AF_INET;
+      data._ip4._addr = ink_inet_ip4_addr_cast(ip);
     }
-    len = sizeof(LogFieldIp4);
+    len = sizeof(data._ip4);
   } else if (ink_inet_is_ip6(ip)) {
     if (dest) {
-      LogFieldIp6* ip6 = static_cast<LogFieldIp6*>(&data);
-      ip6->_family = AF_INET6;
-      ip6->_addr = ink_inet_ip6_addr_cast(ip);
+      data._ip6._family = AF_INET6;
+      data._ip6._addr = ink_inet_ip6_addr_cast(ip);
     }
-    len = sizeof(LogFieldIp6);
+    len = sizeof(data._ip6);
   } else {
-    data._family = AF_UNSPEC;
+    data._ip._family = AF_UNSPEC;
   }
 
   if (dest) memcpy(dest, &data, len);

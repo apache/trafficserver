@@ -222,5 +222,11 @@ struct LogFieldIp4 : public LogFieldIp {
 struct LogFieldIp6 : public LogFieldIp {
   in6_addr _addr; ///< IPv6 address.
 };
+/// Something big enough to hold any of the IP field types.
+union LogFieldIpStorage {
+  LogFieldIp _ip;
+  LogFieldIp4 _ip4;
+  LogFieldIp6 _ip6;
+};
 
 #endif
