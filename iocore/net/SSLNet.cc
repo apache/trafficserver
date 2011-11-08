@@ -31,6 +31,7 @@
 #include "ink_config.h"
 
 #include "P_Net.h"
+#include "I_Layout.h"
 #if !defined (_IOCORE_WIN32)    // remove when NT openssl lib is upgraded to eng-0.9.6
 #include "openssl/engine.h"
 #include "openssl/dso.h"
@@ -308,12 +309,12 @@ SSLNetProcessor::initSSL(SslConfigParams * param)
     return (-1);
   }
 
-  return (initSSLServerCTX(param, ctx, param->serverCertPath, param->serverKeyPath, true));
+  return (initSSLServerCTX(param, ctx, param->serverCertPath, param->serverCertChainPath, param->serverKeyPath, true));
 }
 
 int
 SSLNetProcessor::initSSLServerCTX(SslConfigParams * param, SSL_CTX * lCtx,
-                                  char *serverCertPtr, char *serverKeyPtr, bool defaultEnabled)
+                                  char *serverCertPtr, char *serverCaCertPtr, char *serverKeyPtr, bool defaultEnabled)
 {
   int session_id_context;
   int server_verify_client;
@@ -361,14 +362,17 @@ SSLNetProcessor::initSSLServerCTX(SslConfigParams * param, SSL_CTX * lCtx,
       }
     }
   } else {
-    const size_t completeServerCertPathSize = strlen(param->getServerCertPathOnly()) + strlen(serverCertPtr) + 1;
-    completeServerCertPath = (char *)ats_malloc(completeServerCertPathSize);
+    completeServerCertPath = Layout::relative_to (param->getServerCertPathOnly(), serverCertPtr);
 
-    ink_strlcpy(completeServerCertPath, (const char *) param->getServerCertPathOnly(), completeServerCertPathSize);
-    ink_strlcat(completeServerCertPath, serverCertPtr, completeServerCertPathSize);
     if (SSL_CTX_use_certificate_file(lCtx, completeServerCertPath, SSL_FILETYPE_PEM) <= 0) {
       logSSLError("Cannot use server certificate file");
       return -2;
+    }
+    if (serverCaCertPtr) {
+      if (SSL_CTX_add_extra_chain_cert_file(lCtx, serverCaCertPtr) <= 0) {
+        logSSLError("Cannot use server certificate chain file");
+        return -2;
+      }
     }
 
     if (serverKeyPtr == NULL)   // assume private key is contained in cert obtained from multicert file.

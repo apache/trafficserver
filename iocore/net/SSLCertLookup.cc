@@ -31,6 +31,7 @@ SSLCertLookup sslCertLookup;
 #define SSL_IP_TAG "dest_ip"
 #define SSL_CERT_TAG "ssl_cert_name"
 #define SSL_PRIVATE_KEY_TAG "ssl_key_name"
+#define SSL_CA_TAG "ssl_ca_name"
 const char *moduleName = "SSLCertLookup";
 
 const matcher_tags sslCertTags = {
@@ -63,6 +64,7 @@ SSLCertLookup::buildTable()
   bool ret = 0;
   char *addr = NULL;
   char *sslCert = NULL;
+  char *sslCa = NULL;
   char *priKey = NULL;
   matcher_line line_info;
   bool alarmAlready = false;
@@ -103,7 +105,7 @@ SSLCertLookup::buildTable()
       } else {
         ink_assert(line_info.type == MATCH_IP);
 
-        errPtr = extractIPAndCert(&line_info, &addr, &sslCert, &priKey);
+        errPtr = extractIPAndCert(&line_info, &addr, &sslCert, &sslCa, &priKey);
 
         if (errPtr != NULL) {
           snprintf(errBuf, 1024, "%s discarding %s entry at line %d : %s",
@@ -111,10 +113,11 @@ SSLCertLookup::buildTable()
           IOCORE_SignalError(errBuf, alarmAlready);
         } else {
           if (addr != NULL && sslCert != NULL) {
-            addInfoToHash(addr, sslCert, priKey);
+            addInfoToHash(addr, sslCert, sslCa, priKey);
             ret = 1;
           }
           ats_free(sslCert);
+          ats_free(sslCa);
           ats_free(priKey);
           ats_free(addr);
           addr = NULL;
@@ -143,7 +146,7 @@ SSLCertLookup::buildTable()
 }
 
 const char *
-SSLCertLookup::extractIPAndCert(matcher_line * line_info, char **addr, char **cert, char **priKey)
+SSLCertLookup::extractIPAndCert(matcher_line * line_info, char **addr, char **cert, char **ca, char **priKey)
 {
 //  ip_addr_t testAddr;
   char *label;
@@ -177,6 +180,15 @@ SSLCertLookup::extractIPAndCert(matcher_line * line_info, char **addr, char **ce
       }
     }
 
+    if (strcasecmp(label, SSL_CA_TAG) == 0) {
+      if (value != NULL) {
+        int buf_len = sizeof(char) * (strlen(value) + 1);
+
+        *ca = (char *)ats_malloc(buf_len);
+        ink_strlcpy(*ca, (const char *) value, buf_len);
+      }
+    }
+
     if (strcasecmp(label, SSL_PRIVATE_KEY_TAG) == 0) {
       if (value != NULL) {
         int buf_len = sizeof(char) * (strlen(value) + 1);
@@ -194,7 +206,7 @@ SSLCertLookup::extractIPAndCert(matcher_line * line_info, char **addr, char **ce
 }
 
 int
-SSLCertLookup::addInfoToHash(char *strAddr, char *cert, char *serverPrivateKey)
+SSLCertLookup::addInfoToHash(char *strAddr, char *cert, char *caCert, char *serverPrivateKey)
 {
 
 #if (OPENSSL_VERSION_NUMBER >= 0x10000000L) // openssl returns a const SSL_METHOD now
@@ -211,7 +223,7 @@ SSLCertLookup::addInfoToHash(char *strAddr, char *cert, char *serverPrivateKey)
 //  if (serverPrivateKey == NULL)
 //      serverPrivateKey = cert;
 
-  ssl_NetProcessor.initSSLServerCTX(param, ctx, cert, serverPrivateKey, false);
+  ssl_NetProcessor.initSSLServerCTX(param, ctx, cert, caCert,  serverPrivateKey, false);
   ink_hash_table_insert(SSLCertLookupHashTable, strAddr, (void *) ctx);
   return (true);
 }
