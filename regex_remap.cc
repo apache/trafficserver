@@ -40,6 +40,8 @@ static char UNUSED rcsId__regex_remap_cc[] = "@(#) $Id$ built on " __DATE__ " " 
 #include <string>
 
 
+static const char* PLUGIN_NAME = "regex_remap";
+
 // This is copied from lib/ts/*.h, only works with gcc 4.x or later (and compatible).
 // TODO: We really ought to expose these data types and atomic functions to the plugin APIs.
 typedef int int32;
@@ -124,13 +126,13 @@ class RemapRegex
     _num_subs(-1), _rex(NULL), _extra(NULL), _order(-1), _simple(false),
     _active_timeout(-1), _no_activity_timeout(-1), _connect_timeout(-1), _dns_timeout(-1)
   {
-    TSDebug("regex_remap", "Calling constructor");
+    TSDebug(PLUGIN_NAME, "Calling constructor");
 
     _status = static_cast<TSHttpStatus>(0);
 
     if (!reg.empty()) {
       if (reg == ".") {
-        TSDebug("regex_remap", "Rule is simple, and fast!");
+        TSDebug(PLUGIN_NAME, "Rule is simple, and fast!");
         _simple = true;
       }
       _rex_string = TSstrdup(reg.c_str());
@@ -189,7 +191,7 @@ class RemapRegex
 
   ~RemapRegex()
   {
-    TSDebug("regex_remap", "Calling destructor");
+    TSDebug(PLUGIN_NAME, "Calling destructor");
     if (_rex_string)
       TSfree(_rex_string);
     if (_subst)
@@ -283,7 +285,7 @@ class RemapRegex
 
         if (ix > -1) {
           if ((ix < 10) && (ix > ccount)) {
-            TSDebug("regex_remap", "Trying to use unavailable substitution, check the regex!");
+            TSDebug(PLUGIN_NAME, "Trying to use unavailable substitution, check the regex!");
             return -1; // No substitutions available other than $0
           }
 
@@ -557,7 +559,7 @@ TSRemapInit(TSRemapInterface* api_info, char *errbuf, int errbuf_size)
   }
 
   setup_memory_allocation();
-  TSDebug("regex_remap", "plugin is succesfully initialized");
+  TSDebug(PLUGIN_NAME, "plugin is succesfully initialized");
   return TS_SUCCESS;
 }
 
@@ -613,7 +615,7 @@ TSRemapNewInstance(int argc, char* argv[], void** ih, char* errbuf, int errbuf_s
         TSError("unable to open %s", (ri->filename).c_str());
         return TS_ERROR;
       }
-      TSDebug("regex_remap", "loading regular expression maps from %s", (ri->filename).c_str());
+      TSDebug(PLUGIN_NAME, "loading regular expression maps from %s", (ri->filename).c_str());
 
       while (!f.eof()) {
         std::string line, regex, subst, options;
@@ -671,7 +673,7 @@ TSRemapNewInstance(int argc, char* argv[], void** ih, char* errbuf, int errbuf_s
           TSError("PCRE failed in %s (line %d) at offset %d: %s\n", (ri->filename).c_str(), lineno, erroffset, error);
           delete(cur);
         } else {
-          TSDebug("regex_remap", "added regex=%s with substitution=%s and options `%s'",
+          TSDebug(PLUGIN_NAME, "added regex=%s with substitution=%s and options `%s'",
                    regex.c_str(), subst.c_str(), options.c_str());
           cur->set_order(++count);
           if (ri->first == NULL)
@@ -743,168 +745,140 @@ TSRemapDeleteInstance(void* ih)
 // This is the main "entry" point for the plugin, called for every request.
 //
 TSRemapStatus
-TSRemapDoRemap(void* ih, TSHttpTxn txnp, TSRemapRequestInfo *rri, UrlComponents *req_url)
+TSRemapDoRemap(void* ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
 {
   if (NULL == ih) {
-    TSDebug("regex_remap", "Falling back to default URL on regex remap without rules");
+    TSDebug(PLUGIN_NAME, "Falling back to default URL on regex remap without rules");
     return TSREMAP_NO_REMAP;
-  } else {
-    RemapInstance* ri = (RemapInstance*)ih;
-    int ovector[OVECCOUNT];
-    int lengths[OVECCOUNT/2 + 1];
-    int dest_len;
-    TSRemapStatus retval = TSREMAP_DID_REMAP;
-    RemapRegex* re = ri->first;
-    char match_buf[req_url->url_len + 32]; // Worst case scenario and padded for /,? and ;
-    int match_len = 0;
-
-    if (ri->method) { // Prepend the URI path or URL with the HTTP method
-      TSMBuffer mBuf;
-      TSMLoc reqHttpHdrLoc;
-      const char *method;
-
-      // Note that Method can not be longer than 16 bytes, or we'll simply truncate it
-      if (TS_SUCCESS == TSHttpTxnClientReqGet(static_cast<TSHttpTxn>(txnp), &mBuf, &reqHttpHdrLoc)) {
-        method = TSHttpHdrMethodGet(mBuf, reqHttpHdrLoc, &match_len);
-        if (method && (match_len > 0)) {
-          if (match_len > 16)
-            match_len = 16;
-          memcpy(match_buf, method, match_len);
-        }
-      }
-    }
-
-    const char *str;
-    int len;
-
-    *(match_buf + match_len) = '/';
-    str = TSUrlPathGet(rri->requestBufp, rri->requestUrl, &len);
-    if (str && len > 0) {
-      memcpy(match_buf + match_len + 1, str, len);
-      match_len += (len + 1);
-    }
-
-    str = TSUrlHttpParamsGet(rri->requestBufp, rri->requestUrl, &len);
-    if (str && len > 0) {
-      *(match_buf + match_len) = ';';
-      memcpy(match_buf + match_len + 1 , str, len);
-      match_len += (len + 1);
-    }
-
-    match_buf[match_len] = '\0'; // NULL terminate the match string
-    TSReleaseAssert(match_len < (req_url->url_len + 32)); // Just in case ...
-
-    // Populate the request url
-    UrlComponents req_url;
-    req_url.populate(rri);
-
-    // Apply the regular expressions, in order. First one wins.
-    while (re) {
-      // Since we check substitutions on parse time, we don't need to reset ovector
-      if (re->is_simple() || (re->match(match_buf, match_len, ovector) != -1)) {
-        int new_len = re->get_lengths(ovector, lengths, rri, &req_url);
-
-        // Set timeouts
-        if (re->active_timeout_option() > (-1)) {
-          TSDebug("regex_remap", "Setting active timeout to %d", re->active_timeout_option());
-          TSHttpTxnActiveTimeoutSet(txnp, re->active_timeout_option());
-        }
-        if (re->no_activity_timeout_option() > (-1)) {
-          TSDebug("regex_remap", "Setting no activity timeout to %d", re->no_activity_timeout_option());
-          TSHttpTxnNoActivityTimeoutSet(txnp, re->no_activity_timeout_option());
-        }
-        if (re->connect_timeout_option() > (-1)) {
-          TSDebug("regex_remap", "Setting connect timeout to %d", re->connect_timeout_option());
-          TSHttpTxnConnectTimeoutSet(txnp, re->connect_timeout_option());
-        }
-        if (re->dns_timeout_option() > (-1)) {
-          TSDebug("regex_remap", "Setting DNS timeout to %d", re->dns_timeout_option());
-          TSHttpTxnDNSTimeoutSet(txnp, re->dns_timeout_option());
-        }
-
-        // Update profiling if requested
-        if (ri->profile) {
-          re->increment();
-          atomic_increment(&(ri->hits), 1);
-        }
-
-        if (new_len > 0) {
-          char dest[new_len+8];
-          struct sockaddr const* addr = TSHttpTxnClientAddrGet(txnp);
-
-          dest_len = re->substitute(dest, match_buf, ovector, lengths, rri, &req_url, addr);
-
-          TSDebug("regex_remap", "New URL is estimated to be %d bytes long, or less\n", new_len);
-          TSDebug("regex_remap", "New URL is %s (length %d)", dest, dest_len);
-          TSDebug("regex_remap", "    matched rule %d [%s]", re->order(), re->regex());
-
-          // Check for a quick response, if the status option is set
-// ToDo: Figure out how we make redirects now from a remap plugin ...
-#if 0
-          if (re->status_option() > 0) {
-            TSHttpTxnSetHttpRetStatus(txnp, re->status_option());
-            if ((re->status_option() == (TSHttpStatus)301) || (re->status_option() == (TSHttpStatus)302)) {
-              if (dest_len > TSREMAP_RRI_MAX_REDIRECT_URL) {
-                TSError("Redirect in target URL too long");
-                TSHttpTxnSetHttpRetStatus(txnp, TS_HTTP_STATUS_REQUEST_URI_TOO_LONG);
-              } else {
-                memcpy(rri->redirect_url, dest, dest_len);
-                rri->redirect_url_size = dest_len;
-              }
-            }
-            return TSREMAP_DID_REMAP;
-          }
-#endif
-
-          if (dest_len > 0) {
-            TSMBuffer bufp = NULL;
-            TSMLoc url_loc = NULL;
-            const char *start = dest;
-
-            if ((bufp = TSMBufferCreate())) {
-              TSHttpTxnSetHttpRetStatus(txnp, (TSHttpStatus)500);
-              TSError("can't create MBuffer");
-              goto error;
-            }
-
-            if (TS_SUCCESS != TSUrlCreate(bufp, &url_loc)) {
-              TSHttpTxnSetHttpRetStatus(txnp, (TSHttpStatus)500);
-              TSError("can't create URL buffer");
-              goto error;
-            }
-
-            if (TS_PARSE_ERROR == TSUrlParse(bufp, url_loc, &start, start + dest_len)) {
-              TSHttpTxnSetHttpRetStatus(txnp, (TSHttpStatus)500);
-              TSError("can't parse substituted URL string");
-              goto error;
-            }
-
-            // TODO: Copy the new URL to request URL
-
-            // Cleanup
-          error:
-            if (url_loc) {
-              TSUrlDestroy(bufp, url_loc);
-              TSHandleMLocRelease(bufp, TS_NULL_MLOC, url_loc);
-            }
-            if (bufp)
-              TSMBufferDestroy(bufp);
-          }
-          break; // We're done
-        }
-      }
-      re = re->next();
-      if (re == NULL) {
-        retval = TSREMAP_NO_REMAP; // No match
-        if (ri->profile)
-          atomic_increment(&(ri->misses), 1);
-      }
-    }
-    return retval;
   }
 
-  // This shouldn't happen, but just in case
-  return TSREMAP_NO_REMAP;
+  // Populate the request url
+  UrlComponents req_url;
+  req_url.populate(rri);
+
+  RemapInstance* ri = (RemapInstance*)ih;
+  int ovector[OVECCOUNT];
+  int lengths[OVECCOUNT/2 + 1];
+  int dest_len;
+  TSRemapStatus retval = TSREMAP_DID_REMAP;
+  RemapRegex* re = ri->first;
+  char match_buf[req_url.url_len + 32]; // Worst case scenario and padded for /,? and ;
+  int match_len = 0;
+
+  if (ri->method) { // Prepend the URI path or URL with the HTTP method
+    TSMBuffer mBuf;
+    TSMLoc reqHttpHdrLoc;
+    const char *method;
+
+    // Note that Method can not be longer than 16 bytes, or we'll simply truncate it
+    if (TS_SUCCESS == TSHttpTxnClientReqGet(static_cast<TSHttpTxn>(txnp), &mBuf, &reqHttpHdrLoc)) {
+      method = TSHttpHdrMethodGet(mBuf, reqHttpHdrLoc, &match_len);
+      if (method && (match_len > 0)) {
+        if (match_len > 16)
+          match_len = 16;
+        memcpy(match_buf, method, match_len);
+      }
+    }
+  }
+
+  *(match_buf + match_len) = '/';
+  if (req_url.path && req_url.path_len > 0) {
+    memcpy(match_buf + match_len + 1, req_url.path, req_url.path_len);
+    match_len += (req_url.path_len + 1);
+  }
+
+  if (ri->matrix_params && req_url.matrix && req_url.matrix_len > 0) {
+    *(match_buf + match_len) = ';';
+    memcpy(match_buf + match_len + 1 , req_url.matrix, req_url.matrix_len);
+    match_len += (req_url.matrix_len + 1);
+  }
+
+  if (ri->query_string  && req_url.query && req_url.query_len > 0) {
+    *(match_buf + match_len) = '?';
+    memcpy(match_buf + match_len + 1 , req_url.query, req_url.query_len);
+    match_len += (req_url.query_len + 1);
+  }
+  match_buf[match_len] = '\0'; // NULL terminate the match string
+  TSDebug(PLUGIN_NAME, "Target match string is `%s'", match_buf);
+
+  // Apply the regular expressions, in order. First one wins.
+  while (re) {
+    // Since we check substitutions on parse time, we don't need to reset ovector
+    if (re->is_simple() || (re->match(match_buf, match_len, ovector) != -1)) {
+      int new_len = re->get_lengths(ovector, lengths, rri, &req_url);
+
+      // Set timeouts
+      if (re->active_timeout_option() > (-1)) {
+        TSDebug(PLUGIN_NAME, "Setting active timeout to %d", re->active_timeout_option());
+        TSHttpTxnActiveTimeoutSet(txnp, re->active_timeout_option());
+      }
+      if (re->no_activity_timeout_option() > (-1)) {
+        TSDebug(PLUGIN_NAME, "Setting no activity timeout to %d", re->no_activity_timeout_option());
+        TSHttpTxnNoActivityTimeoutSet(txnp, re->no_activity_timeout_option());
+      }
+      if (re->connect_timeout_option() > (-1)) {
+        TSDebug(PLUGIN_NAME, "Setting connect timeout to %d", re->connect_timeout_option());
+        TSHttpTxnConnectTimeoutSet(txnp, re->connect_timeout_option());
+      }
+      if (re->dns_timeout_option() > (-1)) {
+        TSDebug(PLUGIN_NAME, "Setting DNS timeout to %d", re->dns_timeout_option());
+        TSHttpTxnDNSTimeoutSet(txnp, re->dns_timeout_option());
+      }
+
+      // Update profiling if requested
+      if (ri->profile) {
+        re->increment();
+        atomic_increment(&(ri->hits), 1);
+      }
+
+      if (new_len > 0) {
+        char dest[new_len+8];
+        struct sockaddr const* addr = TSHttpTxnClientAddrGet(txnp);
+
+        dest_len = re->substitute(dest, match_buf, ovector, lengths, rri, &req_url, addr);
+
+        TSDebug(PLUGIN_NAME, "New URL is estimated to be %d bytes long, or less\n", new_len);
+        TSDebug(PLUGIN_NAME, "New URL is %s (length %d)", dest, dest_len);
+        TSDebug(PLUGIN_NAME, "    matched rule %d [%s]", re->order(), re->regex());
+
+        // Check for a quick response, if the status option is set
+// ToDo: Figure out how we make redirects now from a remap plugin ...
+#if 0
+        if (re->status_option() > 0) {
+          TSHttpTxnSetHttpRetStatus(txnp, re->status_option());
+          if ((re->status_option() == (TSHttpStatus)301) || (re->status_option() == (TSHttpStatus)302)) {
+            if (dest_len > TSREMAP_RRI_MAX_REDIRECT_URL) {
+              TSError("Redirect in target URL too long");
+              TSHttpTxnSetHttpRetStatus(txnp, TS_HTTP_STATUS_REQUEST_URI_TOO_LONG);
+            } else {
+              memcpy(rri->redirect_url, dest, dest_len);
+              rri->redirect_url_size = dest_len;
+            }
+          }
+          return TSREMAP_DID_REMAP;
+        }
+#endif
+
+        if (dest_len > 0) {
+          const char *start = dest;
+
+          // Setup the new URL
+          if (TS_PARSE_ERROR == TSUrlParse(rri->requestBufp, rri->requestUrl, &start, start + dest_len)) {
+            TSHttpTxnSetHttpRetStatus(txnp, (TSHttpStatus)500);
+            TSError("can't parse substituted URL string");
+          }
+        }
+        break; // We're done
+      }
+    }
+    re = re->next();
+    if (re == NULL) {
+      retval = TSREMAP_NO_REMAP; // No match
+      if (ri->profile)
+        atomic_increment(&(ri->misses), 1);
+    }
+  }
+  return retval;
 }
 
 
