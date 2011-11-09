@@ -1326,16 +1326,13 @@ getNumSSLThreads(void)
   TS_ReadConfigInteger(ssl_enabled, "proxy.config.ssl.enabled");
 
   // Set number of ssl threads equal to num of processors if
-  // SSL is enabled so it will scale properly.  If an accelerator card
-  // is present, there will be blocking, so scale threads up. If SSL is not
+  // SSL is enabled so it will scale properly. If SSL is not
   // enabled, leave num of ssl threads one, incase a remap rule
   // requires traffic server to act as an ssl client.
   if (ssl_enabled) {
     int config_num_ssl_threads = 0;
-    int ssl_blocking = 0;
 
     TS_ReadConfigInteger(config_num_ssl_threads, "proxy.config.ssl.number.threads");
-    TS_ReadConfigInteger(ssl_blocking, "proxy.config.ssl.accelerator.type");
 
     if (config_num_ssl_threads != 0) {
       num_of_ssl_threads = config_num_ssl_threads;
@@ -1349,8 +1346,6 @@ getNumSSLThreads(void)
       // Last resort
       if (num_of_ssl_threads <= 0)
         num_of_ssl_threads = config_num_ssl_threads * 2;
-      if (ssl_blocking != 0)
-        num_of_ssl_threads *= 2; // Double when blocking I/O
     }
   }
 

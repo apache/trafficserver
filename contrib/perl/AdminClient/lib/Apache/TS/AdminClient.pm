@@ -675,10 +675,6 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.socks.socks_timeout
  proxy.config.socks.socks_version
  proxy.config.srv_enabled
- proxy.config.ssl.accelerator_required
- proxy.config.ssl.accelerator.type
- proxy.config.ssl.atalla.lib.path
- proxy.config.ssl.broadcom.lib.path
  proxy.config.ssl.CA.cert.filename
  proxy.config.ssl.CA.cert.path
  proxy.config.ssl.client.CA.cert.filename
@@ -689,9 +685,7 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.ssl.client.private_key.filename
  proxy.config.ssl.client.private_key.path
  proxy.config.ssl.client.verify.server
- proxy.config.ssl.cswift.lib.path
  proxy.config.ssl.enabled
- proxy.config.ssl.ncipher.lib.path
  proxy.config.ssl.number.threads
  proxy.config.ssl.server.cert_chain.filename
  proxy.config.ssl.server.cert.filename

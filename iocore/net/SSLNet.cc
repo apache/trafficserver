@@ -246,61 +246,6 @@ SSLNetProcessor::initSSL(SslConfigParams * param)
                         "please check your Traffic Server configurations", accept_port_number);
     return (1);
   }
-  // these are not operating system specific calls and
-  // this ifdef needs to be removed when the openssl-engine
-  // library is built for NT.
-#if !defined (_IOCORE_WIN32)
-
-#ifdef USE_OPENSSL_ENGINES
-  int engineType;
-  char *accelLibPath;
-
-  ENGINE *accleratorEng;
-
-  ENGINE_load_builtin_engines();
-  engineType = param->sslAccelerator;
-
-  if (engineType == SSL_NCIPHER_ACCEL) {
-    accelLibPath = param->ncipherAccelLibPath;
-    accleratorEng = ENGINE_by_id("chil");
-  } else if (engineType == SSL_CSWIFT_ACCEL) {
-    accelLibPath = param->cswiftAccelLibPath;
-    accleratorEng = ENGINE_by_id("cswift");
-  } else if (engineType == SSL_ATALLA_ACCEL) {
-    accelLibPath = param->cswiftAccelLibPath;
-    accleratorEng = ENGINE_by_id("atalla");
-  } else if (engineType == SSL_BROADCOM_ACCEL) {
-    accelLibPath = param->broadcomAccelLibPath;
-    accleratorEng = ENGINE_by_id("ubsec");
-  } else {
-    accelLibPath = NULL;
-    accleratorEng = ENGINE_by_id("dynamic");
-  }
-
-  if (accleratorEng == NULL) {
-    logSSLError("Cannot find SSL hardware accelerator library, SSL will operate without accelerator.");
-    return (-5);
-  }
-
-  if (accelLibPath != NULL) {
-    // Removed, not sure what it does, or how... it's nowhere to be found in OpenSSL /leif.
-    // DSO_set_dl_path (accelLibPath);
-  }
-
-  if (!ENGINE_set_default(accleratorEng, ENGINE_METHOD_ALL)) {
-    logSSLError("Cannot set SSL hardware accelerator card as default, SSL will operate without accelerator.");
-    logSSLError
-      ("Check records.config variable for SSL accelerator hardware library path in the SSL Termination section. ");
-
-    // set software engine as default
-    ENGINE_set_default(ENGINE_by_id("openssl"), ENGINE_METHOD_ALL);
-  }
-
-  ENGINE_free(accleratorEng);
-
-#endif // ! USE_OPENSSL_ENGINES
-
-#endif // !_IOCORE_WIN32
 
   meth = SSLv23_server_method();
   ctx = SSL_CTX_new(meth);

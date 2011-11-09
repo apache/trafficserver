@@ -33,13 +33,6 @@
 
 #include "libts.h"
 
-#define	    SSL_NO_ACCEL	    0
-#define     SSL_NCIPHER_ACCEL	    1
-#define     SSL_CSWIFT_ACCEL	    2
-#define     SSL_ATALLA_ACCEL        3
-#define     SSL_BROADCOM_ACCEL      4
-
-
 
 //
 // Dynamic updates of SSL settings are not implemented yet.
@@ -65,14 +58,6 @@ public:
     SSL_TERM_MODE_CLIENT = 1,
     SSL_TERM_MODE_SERVER = 2,
     SSL_TERM_MODE_BOTH = SSL_TERM_MODE_CLIENT | SSL_TERM_MODE_SERVER
-  };
-
-  enum SSL_ACCELERATOR_REQ
-  {
-    SSL_ACCELERATOR_REQ_NO = 0,
-    SSL_ACCELERATOR_REQ_YES = 1,
-    SSL_ACCELERATOR_REQ_MEAN = 2,
-    SSL_ACCELERATOR_REQ_BOTH = 3
   };
 
   enum SSL_SESSION_CACHE_MODE
@@ -102,15 +87,10 @@ private:
   char *CACertFilename;
   char *CACertPath;
   char *configFilePath;
-  char *ncipherAccelLibPath;
-  char *cswiftAccelLibPath;
-  char *atallaAccelLibPath;
-  char *broadcomAccelLibPath;
   char *cipherSuite;
   int clientCertLevel;
   int verify_depth;
   int ssl_accept_port_number;
-  int sslAccelerator;
   int ssl_session_cache;
   int ssl_session_cache_size;
 
@@ -122,7 +102,6 @@ private:
   int client_verify_depth;
 
   SSL_TERMINATION_MODE termMode;
-  int ssl_accelerator_required;
 
   long ssl_ctx_options;
 
