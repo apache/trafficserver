@@ -1,5 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.1.1
+  *) TS-1018 Remove obsolete OpenSSL acceleration code and configs
+
+  *) TS-1013: Allow ssl_multicert.config to support CA chains per host
+
   *) TS-971 make cache evacuate work as expect.
 
   *) TS-982 Fixed PluginVC set active/passive address. Clarified that
