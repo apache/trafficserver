@@ -516,7 +516,6 @@ CacheVC::evacuateDocDone(int event, Event *e)
             // writer  exists
             DDebug("cache_evac", "overwriting the open directory %X %d %d",
                   (int) doc->first_key.word(0), (int) dir_offset(&cod->first_dir), (int) dir_offset(&dir));
-            ink_assert(dir_pinned(&dir));
             cod->first_dir = dir;
 
           }
@@ -1012,7 +1011,10 @@ Lagain:
       ink_assert(false);
       while ((c = agg.dequeue())) {
         agg_todo_size -= c->agg_len;
-        c->initial_thread->schedule_imm_signal(c, AIO_EVENT_DONE);
+        if (c->initial_thread != NULL)
+          c->initial_thread->schedule_imm_signal(c, AIO_EVENT_DONE);
+        else
+          eventProcessor.schedule_imm_signal(c, ET_CALL, AIO_EVENT_DONE);
       }
       return EVENT_CONT;
     }
@@ -1028,7 +1030,7 @@ Lagain:
   if (evac_range(header->write_pos, end, !header->phase) < 0)
     goto Lwait;
   if (end > skip + len)
-    if (evac_range(start, start + (end - (skip + len)), header->phase))
+    if (evac_range(start, start + (end - (skip + len)), header->phase) < 0)
       goto Lwait;
 
   // if agg.head, then we are near the end of the disk, so
@@ -1071,8 +1073,10 @@ Lwait:
   while ((c = tocall.dequeue())) {
     if (event == EVENT_CALL && c->mutex->thread_holding == mutex->thread_holding)
       ret = EVENT_RETURN;
-    else
+    else if (c->initial_thread != NULL)
       c->initial_thread->schedule_imm_signal(c, AIO_EVENT_DONE);
+    else
+      eventProcessor.schedule_imm_signal(c, ET_CALL, AIO_EVENT_DONE);
   }
   return ret;
 }

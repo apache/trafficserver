@@ -533,7 +533,7 @@ new_CacheVC(Continuation *cont)
   c->vector.data.data = &c->vector.data.fast_data[0];
 #endif
   c->_action = cont;
-  c->initial_thread = t;
+  c->initial_thread = t->tt == DEDICATED ? NULL : t;
   c->mutex = cont->mutex;
   c->start_time = ink_get_hrtime();
   ink_assert(c->trigger == NULL);
