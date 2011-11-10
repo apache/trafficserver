@@ -58,7 +58,7 @@ SslConfigParams::SslConfigParams()
 
   clientCertLevel = client_verify_depth = verify_depth = clientVerify = 0;
 
-  ssl_accept_port_number = -1;
+  ssl_accept_port_number = 443;
   termMode = SSL_TERM_MODE_NONE;
   ssl_ctx_options = 0;
   ssl_session_cache = SSL_SESSION_CACHE_MODE_SERVER;
@@ -159,6 +159,10 @@ SslConfigParams::initialize()
   IOCORE_ReadConfigInteger(ssl_mode, "proxy.config.ssl.enabled");
   ssl_mode &= SSL_TERM_MODE_BOTH;
   termMode = (SSL_TERMINATION_MODE) ssl_mode;
+
+  
+  IOCORE_ReadConfigInt32(ssl_accept_port_number, "proxy.config.ssl.server_port");
+  IOCORE_ReadConfigInt32(clientCertLevel, "proxy.config.ssl.client.certification_level");
 
   IOCORE_ReadConfigStringAlloc(cipherSuite, "proxy.config.ssl.server.cipher_suite");
 
