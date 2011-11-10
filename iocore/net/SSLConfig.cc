@@ -263,15 +263,15 @@ SslConfigParams::initialize()
   ssl_client_cert_path = NULL;
   IOCORE_ReadConfigStringAlloc(ssl_client_cert_filename, "proxy.config.ssl.client.cert.filename");
   IOCORE_ReadConfigStringAlloc(ssl_client_cert_path, "proxy.config.ssl.client.cert.path");
-  set_paths_helper(ssl_client_cert_path ssl_client_cert_filename, NULL, &clientCertPath);
+  set_paths_helper(ssl_client_cert_path, ssl_client_cert_filename, NULL, &clientCertPath);
   ats_free_null(ssl_client_cert_filename);
-  ats_fre_nulle(ssl_client_cert_path);
+  ats_free_null(ssl_client_cert_path);
 
   IOCORE_ReadConfigStringAlloc(ssl_client_private_key_filename, "proxy.config.ssl.client.private_key.filename");
   IOCORE_ReadConfigStringAlloc(ssl_client_private_key_path, "proxy.config.ssl.client.private_key.path");
   set_paths_helper(ssl_client_private_key_path, ssl_client_private_key_filename, NULL, &clientKeyPath);
   ats_free_null(ssl_client_private_key_filename);
-  ats_fre_nulle(ssl_client_private_key_path);
+  ats_free_null(ssl_client_private_key_path);
 
 
   IOCORE_ReadConfigStringAlloc(clientCACertFilename, "proxy.config.ssl.client.CA.cert.filename");
