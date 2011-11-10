@@ -131,9 +131,14 @@ SslConfigParams::cleanup()
   termMode = SSL_TERM_MODE_NONE;
 }
 
-// XXX: Add handling for Windows?
-// If path is *not* absolute, consider it relative to PREFIX
-// if it's empty, just take SYSCONFDIR, otherwise we can take it as-is
+/**  set_paths_helper
+
+ If path is *not* absolute, consider it relative to PREFIX
+ if it's empty, just take SYSCONFDIR, otherwise we can take it as-is
+ if final_path is NULL, it will not be updated.
+
+ XXX: Add handling for Windows?
+ */
 static void
 set_paths_helper(const char *path, const char *filename, char **final_path, char **final_filename)
 {
@@ -184,9 +189,6 @@ SslConfigParams::initialize()
   char *multicert_config_file = NULL;
 
   int ssl_mode = SSL_TERM_MODE_NONE;
-#ifdef _WIN32
-  int i;
-#endif
 
   cleanup();
 
@@ -261,80 +263,21 @@ SslConfigParams::initialize()
   ssl_client_cert_path = NULL;
   IOCORE_ReadConfigStringAlloc(ssl_client_cert_filename, "proxy.config.ssl.client.cert.filename");
   IOCORE_ReadConfigStringAlloc(ssl_client_cert_path, "proxy.config.ssl.client.cert.path");
-
-  if (ssl_client_cert_path == NULL) {
-    ssl_client_cert_path = ats_strdup(Layout::get()->sysconfdir);
-  }
-  if (ssl_client_cert_filename != NULL) {
-    char *abs_path = Layout::get()->relative_to(Layout::get()->sysconfdir, ssl_client_cert_path);
-    clientCertPath = Layout::get()->Layout::relative_to(abs_path, ssl_client_cert_filename);
-
-#ifdef _WIN32
-    i = 0;
-    while (clientCertPath[i] != 0) {
-      if (clientCertPath[i] == '/')
-        clientCertPath[i] = '\\';
-      i++;
-    }
-#endif
-    ats_free(abs_path);
-    ats_free(ssl_client_cert_filename);
-  }
-  ats_free(ssl_client_cert_path);
-
-  ssl_client_cert_filename = NULL;
-  ssl_client_cert_path = NULL;
+  set_paths_helper(ssl_client_cert_path ssl_client_cert_filename, NULL, &clientCertPath);
+  ats_free_null(ssl_client_cert_filename);
+  ats_fre_nulle(ssl_client_cert_path);
 
   IOCORE_ReadConfigStringAlloc(ssl_client_private_key_filename, "proxy.config.ssl.client.private_key.filename");
   IOCORE_ReadConfigStringAlloc(ssl_client_private_key_path, "proxy.config.ssl.client.private_key.path");
-
-  if (ssl_client_private_key_path == NULL) {
-    ssl_client_private_key_path = ats_strdup(Layout::get()->sysconfdir);
-  }
-
-  if (ssl_client_private_key_filename != NULL) {
-    char *abs_path = Layout::get()->relative_to(Layout::get()->sysconfdir, ssl_client_private_key_path);
-    clientCertPath = Layout::get()->Layout::relative_to(abs_path, ssl_client_private_key_filename);
-
-#ifdef _WIN32
-    i = 0;
-    while (clientKeyPath[i] != 0) {
-      if (clientKeyPath[i] == '/')
-        clientKeyPath[i] = '\\';
-      i++;
-    }
-#endif
-    ats_free(abs_path);
-    ats_free(ssl_client_private_key_filename);
-  }
-  ats_free(ssl_client_private_key_path);
-
-  ssl_client_private_key_path = NULL;
+  set_paths_helper(ssl_client_private_key_path, ssl_client_private_key_filename, NULL, &clientKeyPath);
+  ats_free_null(ssl_client_private_key_filename);
+  ats_fre_nulle(ssl_client_private_key_path);
 
 
   IOCORE_ReadConfigStringAlloc(clientCACertFilename, "proxy.config.ssl.client.CA.cert.filename");
-  if (clientCACertFilename && (*clientCACertFilename == 0)) {
-    ats_free(clientCACertFilename);
-    clientCACertFilename = NULL;
-  }
-
   IOCORE_ReadConfigStringAlloc(clientCACertRelativePath, "proxy.config.ssl.client.CA.cert.path");
-
-
-// Notice that we don't put the filename at the
-// end of this path.  Its a quirk of the SSL lib interface.
-  if (clientCACertRelativePath != NULL) {
-    clientCACertPath = Layout::get()->relative_to(Layout::get()->sysconfdir, clientCACertRelativePath);
-#ifdef _WIN32
-    i = 0;
-    while (clientCACertPath[i] != 0) {
-      if (clientCACertPath[i] == '/')
-        clientCACertPath[i] = '\\';
-      i++;
-    }
-#endif
-    ats_free(clientCACertRelativePath);
-  }
+  set_paths_helper(clientCACertRelativePath, clientCACertFilename, &clientCACertPath, &clientCACertFilename);
+  ats_free(clientCACertRelativePath);
 }
 
 
