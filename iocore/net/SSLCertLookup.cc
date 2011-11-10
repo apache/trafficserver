@@ -76,6 +76,7 @@ SSLCertLookup::buildTable()
   // Table should be empty
 //  ink_assert(num_el == 0);
 
+  Debug("ssl", "ssl_multicert.config: %s", configFilePath);
   if (configFilePath)
     file_buf = readIntoBuffer(configFilePath, moduleName, NULL);
 

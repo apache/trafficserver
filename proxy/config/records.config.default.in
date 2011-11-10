@@ -516,12 +516,12 @@ CONFIG proxy.config.ssl.server.cert.path STRING @rel_sysconfdir@
    # For multiple cert systems, if any private key is not contained
    # in the cert file, you must fill in the private key path.
 CONFIG proxy.config.ssl.server.private_key.filename STRING NULL
-CONFIG proxy.config.ssl.server.private_key.path STRING NULL
+CONFIG proxy.config.ssl.server.private_key.path STRING @rel_sysconfdir@
    # The CA file name and path are the
    # certificate authority certificate that
    # client certificates will be verified against.
 CONFIG proxy.config.ssl.CA.cert.filename STRING NULL
-CONFIG proxy.config.ssl.CA.cert.path STRING NULL
+CONFIG proxy.config.ssl.CA.cert.path STRING @rel_sysconfdir@
    ################################
    # client related configuration #
    ################################
@@ -531,12 +531,12 @@ CONFIG proxy.config.ssl.client.cert.path STRING @rel_sysconfdir@
    # Fill in private key file and path only if the client's
    # private key is not contained in the client certificate file.
 CONFIG proxy.config.ssl.client.private_key.filename STRING NULL
-CONFIG proxy.config.ssl.client.private_key.path STRING NULL
+CONFIG proxy.config.ssl.client.private_key.path STRING @rel_sysconfdir@
    # The CA file name and path are the
    # certificate authority certificate that
    # server certificates will be verified against.
 CONFIG proxy.config.ssl.client.CA.cert.filename STRING NULL
-CONFIG proxy.config.ssl.client.CA.cert.path STRING NULL
+CONFIG proxy.config.ssl.client.CA.cert.path STRING @rel_sysconfdir@
 ##############################################################################
 #
 # ICP Configuration. NOTE! ICP is currently broken NOTE!

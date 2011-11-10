@@ -1,5 +1,7 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.1.1
+  *) TS-944: Align all configurations of paths to use the same function
+
   *) TS-1018 Remove obsolete OpenSSL acceleration code and configs
 
   *) TS-1013: Allow ssl_multicert.config to support CA chains per host

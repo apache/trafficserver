@@ -284,25 +284,27 @@ SSLNetProcessor::initSSLServerCTX(SslConfigParams * param, SSL_CTX * lCtx,
 
   if (defaultEnabled) {
     if (SSL_CTX_use_certificate_file(lCtx, param->serverCertPath, SSL_FILETYPE_PEM) <= 0) {
-      logSSLError("Cannot use server certificate file");
+      Error ("SSL ERROR: Cannot use server certificate file: %s", param->serverCertPath);
       return -2;
     }
     if (param->serverKeyPath != NULL) {
       if (SSL_CTX_use_PrivateKey_file(lCtx, param->serverKeyPath, SSL_FILETYPE_PEM) <= 0) {
-        logSSLError("Cannot use server private key file");
+        Error("SSL ERROR: Cannot use server private key file: %s", param->serverKeyPath);
         return -3;
       }
     } else                      // assume key is contained in the cert file.
     {
       if (SSL_CTX_use_PrivateKey_file(lCtx, param->serverCertPath, SSL_FILETYPE_PEM) <= 0) {
-        logSSLError("Cannot use server private key file");
+        Error("SSL ERROR: Cannot use server private key file: %s", param->serverKeyPath);
         return -3;
       }
     }
 
     if (param->serverCertChainPath) {
+      char *completeServerCaCertPath = Layout::relative_to (param->getServerCACertPathOnly(), param->serverCertChainPath);
       if (SSL_CTX_add_extra_chain_cert_file(lCtx, param->serverCertChainPath) <= 0) {
-        logSSLError("Cannot use server certificate chain file");
+        Error ("SSL ERROR: Cannot use server certificate chain file: %s", completeServerCaCertPath);
+        ats_free(completeServerCaCertPath);
         return -2;
       }
     }
@@ -310,12 +312,14 @@ SSLNetProcessor::initSSLServerCTX(SslConfigParams * param, SSL_CTX * lCtx,
     completeServerCertPath = Layout::relative_to (param->getServerCertPathOnly(), serverCertPtr);
 
     if (SSL_CTX_use_certificate_file(lCtx, completeServerCertPath, SSL_FILETYPE_PEM) <= 0) {
-      logSSLError("Cannot use server certificate file");
+      Error ("SSL ERROR: Cannot use server certificate file: %s", completeServerCertPath);
       return -2;
     }
     if (serverCaCertPtr) {
-      if (SSL_CTX_add_extra_chain_cert_file(lCtx, serverCaCertPtr) <= 0) {
-        logSSLError("Cannot use server certificate chain file");
+      char *completeServerCaCertPath = Layout::relative_to (param->getServerCACertPathOnly(), serverCaCertPtr);
+      if (SSL_CTX_add_extra_chain_cert_file(lCtx, completeServerCaCertPath) <= 0) {
+        Error ("SSL ERROR: Cannot use server certificate chain file: %s", completeServerCaCertPath);
+        ats_free(completeServerCaCertPath);
         return -2;
       }
     }
@@ -323,13 +327,14 @@ SSLNetProcessor::initSSLServerCTX(SslConfigParams * param, SSL_CTX * lCtx,
     if (serverKeyPtr == NULL)   // assume private key is contained in cert obtained from multicert file.
     {
       if (SSL_CTX_use_PrivateKey_file(lCtx, completeServerCertPath, SSL_FILETYPE_PEM) <= 0) {
-        logSSLError("Cannot use server private key file");
+        Error("SSL ERROR: Cannot use server private key file: %s", completeServerCertPath);
         return -3;
       }
     } else {
       if (param->getServerKeyPathOnly() != NULL) {
-        if (SSL_CTX_use_PrivateKey_file(lCtx, serverKeyPtr, SSL_FILETYPE_PEM) <= 0) {
-          logSSLError("Cannot use server private key file");
+        char *completeServerKeyPath = Layout::get()->relative_to(param->getServerKeyPathOnly(), serverKeyPtr);
+        if (SSL_CTX_use_PrivateKey_file(lCtx, completeServerKeyPath, SSL_FILETYPE_PEM) <= 0) {
+          Error("SSL ERROR: Cannot use server private key file: %s", completeServerKeyPath);
           return -3;
         }
       } else {
