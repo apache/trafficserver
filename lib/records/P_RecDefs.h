@@ -40,11 +40,11 @@
 // TODO: if/when we switch to a new config system, we should make this run-time dynamic.
 #define REC_MAX_RECORDS                 (2000 + TS_MAX_API_STATS)
 
-#define REC_CONFIG_UPDATE_INTERVAL_SEC  3
-#define REC_REMOTE_SYNC_INTERVAL_SEC    5
+#define REC_CONFIG_UPDATE_INTERVAL_MS  3000
+#define REC_REMOTE_SYNC_INTERVAL_MS    5000
 
-#define REC_RAW_STAT_SYNC_INTERVAL_SEC  5
-#define REC_STAT_UPDATE_INTERVAL_SEC    10
+#define REC_RAW_STAT_SYNC_INTERVAL_MS  5000
+#define REC_STAT_UPDATE_INTERVAL_MS    10000
 
 //-------------------------------------------------------------------------
 // Record Items
