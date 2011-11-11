@@ -35,6 +35,12 @@ int RecProcessInit(RecModeT mode_type, Diags * diags = NULL);
 int RecProcessInitMessage(RecModeT mode_type);
 int RecProcessStart();
 
+//-------------------------------------------------------------------------
+// Setters for manipulating internal sleep intervals
+//-------------------------------------------------------------------------
+void RecProcess_set_raw_stat_sync_interval_ms(int ms);
+void RecProcess_set_config_update_interval_ms(int ms);
+void RecProcess_set_remote_sync_interval_ms(int ms);
 
 //-------------------------------------------------------------------------
 // RawStat Registration

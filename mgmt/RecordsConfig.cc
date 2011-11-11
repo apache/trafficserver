@@ -1122,6 +1122,16 @@ RecordElement RecordsConfig[] = {
   //        ###########
   {RECT_CONFIG, "proxy.config.http.connect_ports", RECD_STRING, "443", RECU_DYNAMIC, RR_NULL, RECC_STR, "^[[:digit:][:space:]]+$", RECA_NULL}
   ,
+  //        ##########################
+  //        # Various update periods #
+  //        ##########################
+  // Periods of update threads
+  {RECT_CONFIG, "proxy.config.config_update_interval_ms", RECD_INT, "3000", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
+  ,
+  {RECT_CONFIG, "proxy.config.raw_stat_sync_interval_ms", RECD_INT, "5000", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
+  ,
+  {RECT_CONFIG, "proxy.config.remote_sync_interval_ms", RECD_INT, "5000", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
+  ,
   //        #########
   //        # Stats #
   //        #########

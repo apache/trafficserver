@@ -62,6 +62,7 @@ extern "C" int plock(int);
 #include "I_Layout.h"
 #include "I_Machine.h"
 #include "RecordsConfig.h"
+#include "I_RecProcess.h"
 #include "Transform.h"
 #include "ProcessManager.h"
 #include "ProxyConfig.h"
@@ -1695,6 +1696,19 @@ main(int argc, char **argv)
 
   // Read proxy name
   TS_ReadConfigString(proxy_name, "proxy.config.proxy_name", 255);
+
+  // Alter the frequecies at which the update threads will trigger
+#define SET_INTERVAL(scope, name, var) do { \
+  RecInt tmpint; \
+  Debug("statsproc", "Looking for %s\n", name); \
+  if (RecGetRecordInt(name, &tmpint) == REC_ERR_OKAY) { \
+    Debug("statsproc", "Found %s\n", name); \
+    scope##_set_##var(tmpint); \
+  } \
+} while(0)
+  SET_INTERVAL(RecProcess, "proxy.config.config_update_interval_ms", config_update_interval_ms);
+  SET_INTERVAL(RecProcess, "proxy.config.raw_stat_sync_interval_ms", raw_stat_sync_interval_ms);
+  SET_INTERVAL(RecProcess, "proxy.config.remote_sync_interval_ms", remote_sync_interval_ms);
 
   // Initialize the stat pages manager
   statPagesManager.init();
