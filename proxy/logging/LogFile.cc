@@ -237,7 +237,7 @@ LogFile::open_file()
 
   if (m_file_format == ASCII_PIPE) {
 #ifdef ASCII_PIPE_FORMAT_SUPPORTED
-    if (mknod(m_name, S_IFIFO | S_IRUSR | S_IWUSR, 0) < 0) {
+    if (mkfifo(m_name, S_IRUSR | S_IWUSR, 0) < 0) {
       if (errno != EEXIST) {
         Error("Could not create named pipe %s for logging: %s", m_name, strerror(errno));
         return LOG_FILE_COULD_NOT_CREATE_PIPE;
