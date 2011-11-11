@@ -45,7 +45,7 @@ enum LogFileFormat
   N_LOGFILE_TYPES
 };
 
-#if defined(linux)
+#if defined(linux) || defined(solaris)
 #define ASCII_PIPE_FORMAT_SUPPORTED
 #endif
 
