@@ -73,58 +73,19 @@ SslConfigParams::~SslConfigParams()
 void
 SslConfigParams::cleanup()
 {
-  if (serverCertPath) {
-    ats_free(serverCertPath);
-    serverCertPath = NULL;
-  }
-  if (serverCertChainPath) {
-    ats_free(serverCertChainPath);
-    serverCertChainPath = NULL;
-  }
-  if (serverKeyPath) {
-    ats_free(serverKeyPath);
-    serverKeyPath = NULL;
-  }
-  if (CACertFilename) {
-    ats_free(CACertFilename);
-    CACertFilename = NULL;
-  }
-  if (CACertPath) {
-    ats_free(CACertPath);
-    CACertPath = NULL;
-  }
-  if (clientCertPath) {
-    ats_free(clientCertPath);
-    clientCertPath = NULL;
-  }
-  if (clientKeyPath) {
-    ats_free(clientKeyPath);
-    clientKeyPath = NULL;
-  }
-  if (clientCACertFilename) {
-    ats_free(clientCACertFilename);
-    clientCACertFilename = NULL;
-  }
-  if (clientCACertPath) {
-    ats_free(clientCACertPath);
-    clientCACertPath = NULL;
-  }
-  if (configFilePath) {
-    ats_free(configFilePath);
-    configFilePath = NULL;
-  }
-  if (serverCertPathOnly) {
-    ats_free(serverCertPathOnly);
-    serverCertPathOnly = NULL;
-  }
-  if (serverKeyPathOnly) {
-    ats_free(serverKeyPathOnly);
-    serverKeyPathOnly = NULL;
-  }
-  if (cipherSuite) {
-    ats_free(cipherSuite);
-    cipherSuite = NULL;
-  }
+  ats_free_null(serverCertPath);
+  ats_free_null(serverCertChainPath);
+  ats_free_null(serverKeyPath);
+  ats_free_null(CACertFilename);
+  ats_free_null(CACertPath);
+  ats_free_null(clientCertPath);
+  ats_free_null(clientKeyPath);
+  ats_free_null(clientCACertFilename);
+  ats_free_null(clientCACertPath);
+  ats_free_null(configFilePath);
+  ats_free_null(serverCertPathOnly);
+  ats_free_null(serverKeyPathOnly);
+  ats_free_null(cipherSuite);
 
   clientCertLevel = client_verify_depth = verify_depth = clientVerify = 0;
   ssl_accept_port_number = -1;
@@ -320,3 +281,4 @@ SslConfig::release(SslConfigParams * params)
   configProcessor.release(id, params);
 #endif
 }
+
