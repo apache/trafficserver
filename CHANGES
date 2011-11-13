@@ -28,6 +28,11 @@ Changes with Apache Traffic Server 3.1.1
 
   *) [TS-989] Logging is now IPv6 compatible.
 
+  NOTE: IP addresses are now encoded as a specific type of binary
+  data, not a mix of unsigned ints and strings. This is a log binary
+  format change and therefore WILL BREAK ACCESS TO LOG DATA FROM
+  PREVIOUS VERSIONS.
+
   *) [TS-1009] Disable starting ICP continuations if ICP is not enabled.
 
   *) [TS-1005] Use traffic_line for reload option with RC script.
