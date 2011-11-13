@@ -119,13 +119,11 @@ public:
 
   /**
     Schedules the continuation on a specific EThread to receive an event
-    at the given timeout.  Requests the EventProcessor to schedule
-    the callback to the continuation 'c' at the time specified in
-    'atimeout_at'. The event is assigned to the specified EThread.
+    as soon as possible.  Instructs the EventProcessor to schedule the
+    callback to the continuation 'c' as soon as possible. The event is
+    assigned to the specified EThread.
 
-    @param c Continuation to be called back at the time specified in
-      'atimeout_at'.
-    @param atimeout_at time value at which to callback.
+    @param c Continuation to be called back as soon as possible.
     @param ethread EThread on which to schedule the event.
     @param callback_event code to be passed back to the continuation's
       handler. See the Remarks section.
