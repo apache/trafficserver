@@ -56,6 +56,22 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
    Jira: https://issues.apache.org/jira/browse/TS-1011
    +1: zwoop
 
+  *) SSL: Allow ssl_multicert.config to support CA chains per host.
+     origin TS-1013, and TS-994 is a depend issue.
+   Trunk patch: http://svn.apache.org/viewvc?view=rev&rev=1199409
+                http://svn.apache.org/viewvc?view=rev&rev=1200202
+                http://svn.apache.org/viewvc?view=rev&rev=1200606
+		http://svn.apache.org/viewvc?view=rev&rev=1200628
+		http://svn.apache.org/viewvc?view=rev&rev=1200694
+   Jira: https://issues.apache.org/jira/browse/TS-1013
+         https://issues.apache.org/jira/browse/TS-994
+   +1: zym
+
+  *) IOCORE: Fix for cross thread closing of VCs.
+   Trunk patch: http://svn.apache.org/viewvc?view=rev&rev=1201397
+   Jira: https://issues.apache.org/jira/browse/TS-857
+   +1: zym
+
 
 RELEASE PROCESS
 
