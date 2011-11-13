@@ -37,11 +37,11 @@ class SSLCertLookup
   SslConfigParams *param;
 
 public:
-    bool multipleCerts;
+  bool multipleCerts;
   void init(SslConfigParams * param);
   SSL_CTX *findInfoInHash(char *strAddr);
-    SSLCertLookup();
-   ~SSLCertLookup();
+  SSLCertLookup();
+  ~SSLCertLookup();
 };
 
 extern SSLCertLookup sslCertLookup;
