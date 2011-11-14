@@ -32,10 +32,8 @@
 
 #include "P_Net.h"
 #include "I_Layout.h"
-#if !defined (_IOCORE_WIN32)    // remove when NT openssl lib is upgraded to eng-0.9.6
 #include "openssl/engine.h"
 #include "openssl/dso.h"
-#endif
 
 void sslLockingCallback(int mode, int type, const char *file, int line);
 unsigned long SSL_pthreads_thread_id();
@@ -94,11 +92,7 @@ SSLNetProcessor::cleanup(void)
     for (int i = 0; i < CRYPTO_num_locks(); i++) {
       sslMutexArray[i]->free();
     }
-#if !defined (_IOCORE_WIN32)
     OPENSSL_free(sslMutexArray);
-#else
-    Free(sslMutexArray);
-#endif
     sslMutexArray = NULL;
   }
 
@@ -114,11 +108,7 @@ void
 SSLNetProcessor::initSSLLocks(void)
 {
 
-#if !defined (_IOCORE_WIN32)
   sslMutexArray = (ProxyMutex **) OPENSSL_malloc(CRYPTO_num_locks() * sizeof(ProxyMutex *));
-#else
-  sslMutexArray = (ProxyMutex **) Malloc(CRYPTO_num_locks() * sizeof(ProxyMutex *));
-#endif
 
   for (int i = 0; i < CRYPTO_num_locks(); i++) {
     sslMutexArray[i] = new_ProxyMutex();
@@ -242,7 +232,7 @@ SSLNetProcessor::initSSL(SslConfigParams * param)
 
   accept_port_number = param->ssl_accept_port_number;
   if ((unsigned int) accept_port_number >= 0xFFFF) {
-    Error("\ncannot listen on port %d.\naccept port cannot be larger that 65535.\n"
+    Error("\ncannot listen on port %d.\naccept port cannot be larger than 65535.\n"
                         "please check your Traffic Server configurations", accept_port_number);
     return (1);
   }
@@ -432,32 +422,32 @@ SSLNetProcessor::initSSLClient(SslConfigParams * param)
     clientKeyPtr = param->clientCertPath;
 
   if (param->clientCertPath != 0) {
-    if (SSL_CTX_use_certificate_file(client_ctx, param->clientCertPath, SSL_FILETYPE_PEM) <= 0) {
-      logSSLError("Cannot use client certificate file");
+    if (SSL_CTX_use_certificate_file(clogSSLErrorlient_ctx, param->clientCertPath, SSL_FILETYPE_PEM) <= 0) {
+      Error ("SSL Error: Cannot use client certificate file: %s", param->clientCertPath);
       return (-2);
     }
 
     if (SSL_CTX_use_PrivateKey_file(client_ctx, clientKeyPtr, SSL_FILETYPE_PEM) <= 0) {
-      logSSLError("Cannot use client private key file");
+      Error ("SSL ERROR: Cannot use client private key file: %s", clientKeyPtr);
       return (-3);
     }
 
     if (!SSL_CTX_check_private_key(client_ctx)) {
-      logSSLError("Client private key does not match the certificate public key");
+      logSSLError("SSL ERROR: Client private key (%s) does not match the certificate public key (%s)", clientKeyPtr, param->clientCertPath);
       return (-4);
     }
   }
 
   if (param->clientVerify) {
     SSL_CTX_set_verify(client_ctx, client_verify_server, NULL);
-                                                                /*???*/ SSL_CTX_set_verify_depth(client_ctx, verify_depth);
-                                                                // ???
+    /*???*/ SSL_CTX_set_verify_depth(client_ctx, verify_depth);
+    // ???
 
     if (param->clientCACertFilename != NULL && param->clientCACertPath != NULL) {
       if ((!SSL_CTX_load_verify_locations(client_ctx, param->clientCACertFilename,
                                           param->clientCACertPath)) ||
           (!SSL_CTX_set_default_verify_paths(client_ctx))) {
-        logSSLError("Client CA Certificate file or CA Certificate path invalid");
+        Error("SSL ERROR: Client CA Certificate file (%s) or CA Certificate path (%s) invalid", param->clientCACertFilename, param->clientCACertPath);
         return (-5);
       }
     }

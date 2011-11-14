@@ -1,6 +1,6 @@
 /** @file
 
-  A brief file description
+  Implementation of an I/O Processor for network I/O for Unix.
 
   @section license License
 
@@ -21,15 +21,6 @@
   limitations under the License.
  */
 
- /****************************************************************************
-
-  SSLUnixNet.h
-
-  This file implements an I/O Processor for network I/O for Unix.
-  Contains additions for handling port pairs for RTSP/RTP.
-
-
- ****************************************************************************/
 #include "ink_config.h"
 
 #include "P_Net.h"
