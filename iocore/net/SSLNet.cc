@@ -426,7 +426,7 @@ SSLNetProcessor::initSSLClient(SslConfigParams * param)
     }
 
     if (!SSL_CTX_check_private_key(client_ctx)) {
-      logSSLError("SSL ERROR: Client private key (%s) does not match the certificate public key (%s)", clientKeyPtr, param->clientCertPath);
+      Error("SSL ERROR: Client private key (%s) does not match the certificate public key (%s)", clientKeyPtr, param->clientCertPath);
       return (-4);
     }
   }
