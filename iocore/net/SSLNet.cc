@@ -1,6 +1,6 @@
 /** @file
 
-  A brief file description
+  Common SSL initialization/cleanup fuctions from SSLNet.h
 
   @section license License
 
@@ -20,13 +20,6 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-
-/****************************************************************************
-
-   SSLNet.cc --
-
-   Description: Common SSL initialization/cleanup fuctions from SSLNet.h
- ****************************************************************************/
 
 #include "ink_config.h"
 
@@ -422,7 +415,7 @@ SSLNetProcessor::initSSLClient(SslConfigParams * param)
     clientKeyPtr = param->clientCertPath;
 
   if (param->clientCertPath != 0) {
-    if (SSL_CTX_use_certificate_file(clogSSLErrorlient_ctx, param->clientCertPath, SSL_FILETYPE_PEM) <= 0) {
+    if (SSL_CTX_use_certificate_file(client_ctx, param->clientCertPath, SSL_FILETYPE_PEM) <= 0) {
       Error ("SSL Error: Cannot use client certificate file: %s", param->clientCertPath);
       return (-2);
     }
