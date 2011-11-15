@@ -211,7 +211,7 @@ main(int argc, const char *argv[])
 #if !defined(freebsd)
       pthread_attr_setstacksize(&attr, 1024 * 1024);
 #endif
-      ink_assert(pthread_create(&tid, &attr, testalist, (void *) ali) == 0);
+      ink_assert(pthread_create(&tid, &attr, testalist, (void *)((intptr_t)ali)) == 0);
     }
     while (al_done != MAX_ALIST_TEST)
       sleep(1);
