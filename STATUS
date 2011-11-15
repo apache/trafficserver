@@ -49,12 +49,16 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
    +1: zwoop, jim
    igalic asks: Does this break ABI or am I just imagining?
    jim asks: how so? Doesn't look like it...
+   igalic: Okay then, +1!
 
   *) SSL: doesn't work on Solaris.
    Trunk patch: http://svn.apache.org/viewvc?view=rev&revision=1196822
                 http://svn.apache.org/viewvc?view=rev&revision=1196922
    Jira: https://issues.apache.org/jira/browse/TS-1011
-   +1: zwoop
+   +1: zwoop, igalic
+   igalic says: n.b.: TS-1018 removes the default of blocking SSL, when
+   acceleration is not enabled (which was never the case) - should we
+   backport that as well?
 
   *) SSL: Allow ssl_multicert.config to support CA chains per host.
      origin TS-1013, and TS-994 is a depend issue.
@@ -63,9 +67,12 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
                 http://svn.apache.org/viewvc?view=rev&rev=1200606
 		http://svn.apache.org/viewvc?view=rev&rev=1200628
 		http://svn.apache.org/viewvc?view=rev&rev=1200694
+   Doesn't apply cleanly: The merged and fixed patch for 3.0.x
+   consisting of all above patches:
+   https://issues.apache.org/jira/secure/attachment/12503748/TS-1013%2B944-3.0.x.patch
    Jira: https://issues.apache.org/jira/browse/TS-1013
          https://issues.apache.org/jira/browse/TS-994
-   +1: zym
+   +1: zym, igalic
 
   *) IOCORE: Fix for cross thread closing of VCs.
    Trunk patch: http://svn.apache.org/viewvc?view=rev&rev=1201397
