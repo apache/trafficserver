@@ -106,3 +106,5 @@ lib/tsconfig/TsConfigGrammar.h
 lib/tsconfig/TsConfigGrammar.hpp
 lib/tsconfig/TsConfigSyntax.c
 lib/tsconfig/test-tsconfig
+
+tools/http_load/http_load
