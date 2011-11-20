@@ -524,8 +524,10 @@ LogFile::write(LogBuffer * lb)
     // don't change between buffers), it's not worth trying to separate
     // out the buffer-dependent data from the buffer-independent data.
     //
-    bytes = buffer_header->byte_count;
-    writeln((char*) buffer_header, bytes, m_fd, m_name);
+    bytes = ::write(m_fd, buffer_header, buffer_header->byte_count);
+    if (static_cast<uint32_t>(bytes) != buffer_header->byte_count) {
+      Warning("An error was encountered writing to %s: [tried %d, wrote %d, '%s']", m_name, buffer_header->byte_count, bytes, strerror(errno));
+    }
   }
   else if (m_file_format == ASCII_LOG || m_file_format == ASCII_PIPE) {
     bytes = write_ascii_logbuffer3(buffer_header);

@@ -1224,9 +1224,10 @@ parse_log_buff(LogBufferHeader * buf_header, bool summary = false)
         // Just skip the IP, we no longer assume it's always the same.
         {
           LogFieldIp* ip = reinterpret_cast<LogFieldIp*>(read_from);
-          if (AF_INET == ip->_family) read_from += sizeof(LogFieldIp4);
-          else if (AF_INET6 == ip->_family) read_from += sizeof(LogFieldIp6);
-          else read_from += sizeof(LogFieldIp);
+          int len = sizeof(LogFieldIp);
+          if (AF_INET == ip->_family) len = sizeof(LogFieldIp4);
+          else if (AF_INET6 == ip->_family) len = sizeof(LogFieldIp6);
+          read_from += INK_ALIGN_DEFAULT(len);
         }
         break;
 
@@ -1640,20 +1641,24 @@ process_file(int in_fd, off_t offset, unsigned max_age)
   char buffer[MAX_LOGBUFFER_SIZE];
   int nread, buffer_bytes;
 
+  Debug("logstats", "Processing file [offset=%d].", offset);
   while (true) {
-    Debug("logcat", "Reading buffer ...");
+    Debug("logstats", "Reading initial header.");
     buffer[0] = '\0';
 
-    unsigned first_read_size = 2 * sizeof(unsigned);
+    unsigned first_read_size = sizeof(uint32_t) + sizeof(uint32_t);
     LogBufferHeader *header = (LogBufferHeader *)&buffer[0];
 
     // Find the next log header, aligning us properly. This is not
-    // particularly optimal, but we shouldn't only have to do this
+    // particularly optimal, but we should only have to do this
     // once, and hopefully we'll be aligned immediately.
     if (offset > 0) {
+      Debug("logstats", "Re-aligning file read.");
       while (true) {
-        if (lseek(in_fd, offset, SEEK_SET) < 0)
+        if (lseek(in_fd, offset, SEEK_SET) < 0) {
+          Debug("logstats", "Internal seek failed (offset=%ul).", offset);
           return 1;
+        }
 
         // read the first 8 bytes of the header, which will give us the
         // cookie and the version number.
@@ -1677,8 +1682,10 @@ process_file(int in_fd, off_t offset, unsigned max_age)
         return 0;
 
       // ensure that this is a valid logbuffer header
-      if (header->cookie != LOG_SEGMENT_COOKIE)
+      if (header->cookie != LOG_SEGMENT_COOKIE) {
+        Debug("logstats", "Invalid segment cookie (expected %d, got %d)", LOG_SEGMENT_COOKIE, header->cookie);
         return 1;
+      }
     }
 
     Debug("logstats", "LogBuffer version %d, current = %d", header->version, LOG_SEGMENT_VERSION);
@@ -1688,25 +1695,38 @@ process_file(int in_fd, off_t offset, unsigned max_age)
     // read the rest of the header
     unsigned second_read_size = sizeof(LogBufferHeader) - first_read_size;
     nread = read(in_fd, &buffer[first_read_size], second_read_size);
-    if (!nread || EOF == nread)
+    if (!nread || EOF == nread) {
+      Debug("logstats", "Second read of header failed (attemped %d bytes at offset %d, got nothing).", second_read_size, first_read_size, nread);
       return 1;
+    }
 
     // read the rest of the buffer
-    if (header->byte_count > sizeof(buffer))
+    if (header->byte_count > sizeof(buffer)) {
+      Debug("logstats", "Header byte count [%d] > expected [%d]", header->byte_count, sizeof(buffer));
       return 1;
+    }
 
-    buffer_bytes = header->byte_count - sizeof(LogBufferHeader) + 1;
-    if (buffer_bytes <= 0 || (unsigned int) buffer_bytes > (sizeof(buffer) - sizeof(LogBufferHeader)))
+    buffer_bytes = header->byte_count - sizeof(LogBufferHeader);
+    if (buffer_bytes <= 0 || (unsigned int) buffer_bytes > (sizeof(buffer) - sizeof(LogBufferHeader))) {
+      Debug("logstats", "Buffer payload [%d] is wrong.", buffer_bytes);
       return 1;
+    }
 
     nread = read(in_fd, &buffer[sizeof(LogBufferHeader)], buffer_bytes);
-    if (!nread || EOF == nread)
+    if (!nread || EOF == nread) {
+      Debug("logstats", "Failed to read buffer payload [%d bytes]", buffer_bytes);
       return 1;
+    }
 
     // Possibly skip too old entries (the entire buffer is skipped)
-    if (header->high_timestamp >= max_age)
-      if (parse_log_buff(header, cl.summary != 0) != 0)
+    if (header->high_timestamp >= max_age) {
+      if (parse_log_buff(header, cl.summary != 0) != 0) {
+        Debug("logstats", "Failed to parse log buffer.");
         return 1;
+      }
+    } else {
+      Debug("logstats", "Skipping old buffer (age=%d, max=%d)", header->high_timestamp, max_age);
+    }
   }
 
   return 0;

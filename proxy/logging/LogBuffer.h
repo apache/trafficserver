@@ -52,10 +52,9 @@ class LogBufferIterator;
 
 struct LogEntryHeader
 {
-//    unsigned timestamp;
-  long timestamp;               // the seconds portion of the timestamp
-  long timestamp_usec;          // the microseconds portion of the timestamp
-  unsigned entry_len;
+  int64_t timestamp;               // the seconds portion of the timestamp
+  int32_t timestamp_usec;          // the microseconds portion of the timestamp
+  uint32_t entry_len;
 };
 
 /*-------------------------------------------------------------------------
@@ -66,29 +65,28 @@ struct LogEntryHeader
 
 struct LogBufferHeader
 {
-
-  unsigned cookie;              // so we can find it on disk
-  unsigned version;             // in case we want to change it later
-  unsigned format_type;         // SQUID_LOG, COMMON_LOG, ...
-  unsigned byte_count;          // acutal # of bytes for the segment
-  unsigned entry_count;         // actual number of entries stored
-  unsigned low_timestamp;       // lowest timestamp value of entries
-  unsigned high_timestamp;      // highest timestamp value of entries
-  unsigned int log_object_flags;        // log object flags
+  uint32_t cookie;              // so we can find it on disk
+  uint32_t version;             // in case we want to change it later
+  uint32_t format_type;         // SQUID_LOG, COMMON_LOG, ...
+  uint32_t byte_count;          // acutal # of bytes for the segment
+  uint32_t entry_count;         // actual number of entries stored
+  uint32_t low_timestamp;       // lowest timestamp value of entries
+  uint32_t high_timestamp;      // highest timestamp value of entries
+  uint32_t log_object_flags;        // log object flags
   uint64_t log_object_signature;  // log object signature
 #if defined(LOG_BUFFER_TRACKING)
-  unsigned int id;
+  uint32_t int id;
 #endif                          // defined(LOG_BUFFER_TRACKING)
 
   // all offsets are computed from the start of the buffer (ie, "this"),
   // and so any valid offset will be at least sizeof(LogBufferHeader).
 
-  unsigned fmt_name_offset;     // offset to format name string
-  unsigned fmt_fieldlist_offset;        // offset to format fieldlist string
-  unsigned fmt_printf_offset;   // offset to format printf string
-  unsigned src_hostname_offset; // offset to source (client) hostname
-  unsigned log_filename_offset; // offset to log filename
-  unsigned data_offset;         // offset to start of data entry
+  uint32_t fmt_name_offset;     // offset to format name string
+  uint32_t fmt_fieldlist_offset;        // offset to format fieldlist string
+  uint32_t fmt_printf_offset;   // offset to format printf string
+  uint32_t src_hostname_offset; // offset to source (client) hostname
+  uint32_t log_filename_offset; // offset to log filename
+  uint32_t data_offset;         // offset to start of data entry
   // section
 
   // some helper functions to return the header strings

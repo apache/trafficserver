@@ -726,17 +726,15 @@ LogAccessHttp::marshal_client_accelerator_id(char *buf)
 
       if (field) {
         str = (char *) field->value_get(&actual_len);
-        padded_len = round_strlen(actual_len + 1);      // +1 for trailing 0
-      } else {
-        str = NULL;
-        actual_len = 0;
-        padded_len = INK_MIN_ALIGN;
+        /* Ugly subtlety here. marshal_mem, despite the name, adds a
+           terminating nul. It does this at the index actual_len and
+           so requires paddedlen > actual_len (why it can't do the
+           padding calculation escapes me - are there instances where
+           that's different?
+        */
+        padded_len = round_strlen(actual_len+1);
       }
     }
-  } else {
-    str = NULL;
-    actual_len = 0;
-    padded_len = INK_MIN_ALIGN;
   }
 
   if (buf) {
