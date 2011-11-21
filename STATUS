@@ -46,7 +46,7 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
      proxy.config.http.forward.proxy_auth_to_parent.
    Trunk patch: http://svn.apache.org/viewvc?view=rev&revision=1154744
    Jira: https://issues.apache.org/jira/browse/TS-906
-   +1: zwoop, jim
+   +1: zwoop, jim, ericb
    igalic asks: Does this break ABI or am I just imagining?
    jim asks: how so? Doesn't look like it...
    igalic: Okay then, +1!
@@ -55,7 +55,7 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
    Trunk patch: http://svn.apache.org/viewvc?view=rev&revision=1196822
                 http://svn.apache.org/viewvc?view=rev&revision=1196922
    Jira: https://issues.apache.org/jira/browse/TS-1011
-   +1: zwoop, igalic
+   +1: zwoop, igalic, ericb
    igalic says: n.b.: TS-1018 removes the default of blocking SSL, when
    acceleration is not enabled (which was never the case) - should we
    backport that as well?
@@ -72,12 +72,12 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
    https://issues.apache.org/jira/secure/attachment/12503748/TS-1013%2B944-3.0.x.patch
    Jira: https://issues.apache.org/jira/browse/TS-1013
          https://issues.apache.org/jira/browse/TS-994
-   +1: zym, igalic
+   +1: zym, igalic, ericb
 
   *) IOCORE: Fix for cross thread closing of VCs.
    Trunk patch: http://svn.apache.org/viewvc?view=rev&rev=1201397
    Jira: https://issues.apache.org/jira/browse/TS-857
-   +1: zym
+   +1: zym, ericb
 
 
 RELEASE PROCESS
