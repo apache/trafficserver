@@ -286,57 +286,49 @@ HttpSessionManager::acquire_session(Continuation *cont, sockaddr const* ip,
   return HSM_RETRY;
 }
 
-
-HSMresult_t
-_release_session(SessionBucket *bucket, HttpServerSession *to_release)
-{
-  int l2_index = SECOND_LEVEL_HASH(&to_release->server_ip.sa);
-
-  ink_assert(l2_index < HSM_LEVEL2_BUCKETS);
-
-  // First insert the session on to our lists
-  bucket->lru_list.enqueue(to_release);
-  bucket->l2_hash[l2_index].push(to_release);
-  to_release->state = HSS_KA_SHARED;
-
-  // Now we need to issue a read on the connection to detect
-  //  if it closes on us.  We will get called back in the
-  //  continuation for this bucket, ensuring we have the lock
-  //  to remove the connection from our lists
-  to_release->do_io_read(bucket, INT64_MAX, to_release->read_buffer);
-
-  // Transfer control of the write side as well
-  to_release->do_io_write(bucket, 0, NULL);
-
-  // we probably don't need the active timeout set, but will leave it for now
-  to_release->get_netvc()->set_inactivity_timeout(to_release->get_netvc()->get_inactivity_timeout());
-  to_release->get_netvc()->set_active_timeout(to_release->get_netvc()->get_active_timeout());
-  Debug("http_ss", "[%" PRId64 "] [release session] " "session placed into shared pool", to_release->con_id);
-
-  return HSM_DONE;
-}
-
-
 HSMresult_t
 HttpSessionManager::release_session(HttpServerSession *to_release)
 {
   EThread *ethread = this_ethread();
   int l1_index = FIRST_LEVEL_HASH(&to_release->server_ip.sa);
+  SessionBucket *bucket;
 
   ink_assert(l1_index < HSM_LEVEL1_BUCKETS);
 
   if (2 == to_release->share_session) {
-    // No need to lock on the "buckets" here, since it's per-EThread already
-    return _release_session(ethread->l1_hash + l1_index, to_release);
+    bucket = ethread->l1_hash + l1_index;
   } else {
-    SessionBucket *bucket = g_l1_hash + l1_index;
+    bucket = g_l1_hash + l1_index;
+  }
 
-    MUTEX_TRY_LOCK(lock, bucket->mutex, ethread);
-    if (lock) {
-      return _release_session(bucket, to_release);
-    } else {
-      Debug("http_ss", "[%" PRId64 "] [release session] could not release session due to lock contention", to_release->con_id);
-    }
+  MUTEX_TRY_LOCK(lock, bucket->mutex, ethread);
+  if (lock) {
+    int l2_index = SECOND_LEVEL_HASH(&to_release->server_ip.sa);
+
+    ink_assert(l2_index < HSM_LEVEL2_BUCKETS);
+
+    // First insert the session on to our lists
+    bucket->lru_list.enqueue(to_release);
+    bucket->l2_hash[l2_index].push(to_release);
+    to_release->state = HSS_KA_SHARED;
+
+    // Now we need to issue a read on the connection to detect
+    //  if it closes on us.  We will get called back in the
+    //  continuation for this bucket, ensuring we have the lock
+    //  to remove the connection from our lists
+    to_release->do_io_read(bucket, INT64_MAX, to_release->read_buffer);
+
+    // Transfer control of the write side as well
+    to_release->do_io_write(bucket, 0, NULL);
+
+    // we probably don't need the active timeout set, but will leave it for now
+    to_release->get_netvc()->set_inactivity_timeout(to_release->get_netvc()->get_inactivity_timeout());
+    to_release->get_netvc()->set_active_timeout(to_release->get_netvc()->get_active_timeout());
+    Debug("http_ss", "[%" PRId64 "] [release session] " "session placed into shared pool", to_release->con_id);
+
+    return HSM_DONE;
+  } else {
+    Debug("http_ss", "[%" PRId64 "] [release session] could not release session due to lock contention", to_release->con_id);
   }
 
   return HSM_RETRY;
