@@ -162,49 +162,49 @@ inline const char *
 hdrtoken_index_to_wks(int wks_idx)
 {
   ink_debug_assert(hdrtoken_is_valid_wks_idx(wks_idx));
-  return (hdrtoken_strs[wks_idx]);
+  return hdrtoken_strs[wks_idx];
 }
 
 inline int
 hdrtoken_index_to_length(int wks_idx)
 {
   ink_debug_assert(hdrtoken_is_valid_wks_idx(wks_idx));
-  return (hdrtoken_str_lengths[wks_idx]);
+  return hdrtoken_str_lengths[wks_idx];
 }
 
 inline HdrTokenType
 hdrtoken_index_to_token_type(int wks_idx)
 {
   ink_debug_assert(hdrtoken_is_valid_wks_idx(wks_idx));
-  return (hdrtoken_str_token_types[wks_idx]);
+  return hdrtoken_str_token_types[wks_idx];
 }
 
 inline int
 hdrtoken_index_to_slotid(int wks_idx)
 {
   ink_debug_assert(hdrtoken_is_valid_wks_idx(wks_idx));
-  return (hdrtoken_str_slotids[wks_idx]);
+  return hdrtoken_str_slotids[wks_idx];
 }
 
 inline uint64_t
 hdrtoken_index_to_mask(int wks_idx)
 {
   ink_debug_assert(hdrtoken_is_valid_wks_idx(wks_idx));
-  return (hdrtoken_str_masks[wks_idx]);
+  return hdrtoken_str_masks[wks_idx];
 }
 
 inline int
 hdrtoken_index_to_flags(int wks_idx)
 {
   ink_debug_assert(hdrtoken_is_valid_wks_idx(wks_idx));
-  return (hdrtoken_str_flags[wks_idx]);
+  return hdrtoken_str_flags[wks_idx];
 }
 
 inline HdrTokenHeapPrefix *
 hdrtoken_index_to_prefix(int wks_idx)
 {
   ink_debug_assert(hdrtoken_is_valid_wks_idx(wks_idx));
-  return (hdrtoken_wks_to_prefix(hdrtoken_index_to_wks(wks_idx)));
+  return hdrtoken_wks_to_prefix(hdrtoken_index_to_wks(wks_idx));
 }
 
 /*-------------------------------------------------------------------------
@@ -214,28 +214,28 @@ inline int
 hdrtoken_wks_to_index(const char *wks)
 {
   ink_debug_assert(hdrtoken_is_wks(wks));
-  return (hdrtoken_wks_to_prefix(wks)->wks_idx);
+  return hdrtoken_wks_to_prefix(wks)->wks_idx;
 }
 
 inline int
 hdrtoken_wks_to_length(const char *wks)
 {
   ink_debug_assert(hdrtoken_is_wks(wks));
-  return (hdrtoken_wks_to_prefix(wks)->wks_length);
+  return hdrtoken_wks_to_prefix(wks)->wks_length;
 }
 
 inline int
 hdrtoken_wks_to_token_type(const char *wks)
 {
   ink_debug_assert(hdrtoken_is_wks(wks));
-  return (hdrtoken_wks_to_prefix(wks)->wks_token_type);
+  return hdrtoken_wks_to_prefix(wks)->wks_token_type;
 }
 
 inline int
 hdrtoken_wks_to_slotid(const char *wks)
 {
   ink_debug_assert(hdrtoken_is_wks(wks));
-  return (hdrtoken_wks_to_prefix(wks)->wks_info.slotid);
+  return hdrtoken_wks_to_prefix(wks)->wks_info.slotid;
 }
 
 inline uint64_t
@@ -243,14 +243,14 @@ hdrtoken_wks_to_mask(const char *wks)
 {
   ink_debug_assert(hdrtoken_is_wks(wks));
   HdrTokenHeapPrefix *prefix = hdrtoken_wks_to_prefix(wks);
-  return (prefix->wks_info.mask);
+  return prefix->wks_info.mask;
 }
 
 inline int
 hdrtoken_wks_to_flags(const char *wks)
 {
   ink_debug_assert(hdrtoken_is_wks(wks));
-  return (hdrtoken_wks_to_prefix(wks)->wks_info.flags);
+  return hdrtoken_wks_to_prefix(wks)->wks_info.flags;
 }
 
 /*-------------------------------------------------------------------------
