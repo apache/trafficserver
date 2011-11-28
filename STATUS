@@ -38,15 +38,6 @@ A list of all bugs open for the next v3.0.2 release can be found at
 
 PATCHES ACCEPTED TO BACKPORT FROM TRUNK:
 
-  *) HTTP: We do not honor / use the configuration option for
-     proxy.config.http.forward.proxy_auth_to_parent.
-   Trunk patch: http://svn.apache.org/viewvc?view=rev&revision=1154744
-   Jira: https://issues.apache.org/jira/browse/TS-906
-   +1: zwoop, jim, ericb
-   igalic asks: Does this break ABI or am I just imagining?
-   jim asks: how so? Doesn't look like it...
-   igalic: Okay then, +1!
-
   *) SSL: doesn't work on Solaris.
    Trunk patch: http://svn.apache.org/viewvc?view=rev&revision=1196822
                 http://svn.apache.org/viewvc?view=rev&revision=1196922
