@@ -98,6 +98,7 @@ CONFIG proxy.config.http.insert_response_via_str INT 0
    #   1 - Add a Server: header
    #   2 - Only add a Server: header if one doesn't exist already
 CONFIG proxy.config.http.response_server_enabled INT 1
+CONFIG proxy.config.http.insert_age_in_response INT 1
 CONFIG proxy.config.http.enable_url_expandomatic INT 0
 CONFIG proxy.config.http.no_dns_just_forward_to_parent INT 0
 CONFIG proxy.config.http.uncacheable_requests_bypass_parent INT 1
