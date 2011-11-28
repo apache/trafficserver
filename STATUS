@@ -47,20 +47,6 @@ PATCHES ACCEPTED TO BACKPORT FROM TRUNK:
    acceleration is not enabled (which was never the case) - should we
    backport that as well?
 
-  *) SSL: Allow ssl_multicert.config to support CA chains per host.
-     origin TS-1013, and TS-994 is a depend issue.
-   Trunk patch: http://svn.apache.org/viewvc?view=rev&rev=1199409
-                http://svn.apache.org/viewvc?view=rev&rev=1200202
-                http://svn.apache.org/viewvc?view=rev&rev=1200606
-		http://svn.apache.org/viewvc?view=rev&rev=1200628
-		http://svn.apache.org/viewvc?view=rev&rev=1200694
-   Doesn't apply cleanly: The merged and fixed patch for 3.0.x
-   consisting of all above patches:
-   https://issues.apache.org/jira/secure/attachment/12503748/TS-1013%2B944-3.0.x.patch
-   Jira: https://issues.apache.org/jira/browse/TS-1013
-         https://issues.apache.org/jira/browse/TS-994
-   +1: zym, igalic, ericb
-
 
 PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   [ New proposals should be added at the end of the list ]

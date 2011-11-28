@@ -65,7 +65,7 @@ public:
   int initSSL(SslConfigParams * param);
   int initSSLClient(SslConfigParams * param);
   int initSSLServerCTX(SslConfigParams * param,
-                       SSL_CTX * ctx, char *serverCertPtr, char *serverKeyPtr, bool defaultEnabled);
+                       SSL_CTX * ctx, char *serverCertPtr, char *serverCaPtr, char *serverKeyPtr, bool defaultEnabled);
 
   SSL_CTX *getSSL_CTX(void) const {return ctx; }
   SSL_CTX *getClientSSL_CTX(void) const { return client_ctx; }

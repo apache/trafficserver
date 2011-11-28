@@ -2,8 +2,11 @@
 # ssl_multicert.config
 # Allows an ssl_cert and private key to be tied to a specific
 # IP address on a multihomed machine. If the key is contained in the
-# certificate file, just do not specify an ssl_key_name. The certificate
-# file path and key path specified in records.config will be used
-# for all certificates and keys specified here. Example:
+# certificate file, just do not specify an ssl_key_name.
+# If the your certificates have differen Certificate Authorities, you
+# can specify this on a per-host basis using ssl_ca_name.
+# The certificate file path, ca path and key path specified in
+# records.config will be used # for all certificates, CAs and keys
+# specified here. Example:
 #
 #dest_ip=209.131.48.79	ssl_cert_name=server.pem  ssl_key_name=serverKey.pem

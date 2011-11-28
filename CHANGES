@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 
 Changes with Apache Traffic Server 3.0.2
+  *) TS-1013: Allow ssl_multicert.config to support CA chains per host
+
   *) [TS-906]: We do not honor / use the configuration option for
    proxy.config.http.forward.proxy_auth_to_parent.
    Author: Conan Wang

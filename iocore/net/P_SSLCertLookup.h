@@ -31,8 +31,8 @@
 class SSLCertLookup
 {
   bool buildTable();
-  const char *extractIPAndCert(matcher_line * line_info, char **addr, char **cert, char **priKey);
-  int addInfoToHash(char *strAddr, char *cert, char *serverPrivateKey);
+  const char *extractIPAndCert(matcher_line * line_info, char **addr, char **cert, char **ca, char **priKey);
+  int addInfoToHash(char *strAddr, char *cert, char *ca, char *serverPrivateKey);
 
   InkHashTable *SSLCertLookupHashTable;
   char config_file_path[PATH_NAME_MAX];
