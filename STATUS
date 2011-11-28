@@ -47,6 +47,7 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
    Trunk patch: http://svn.apache.org/viewvc?view=rev&rev=1201397
    Jira: https://issues.apache.org/jira/browse/TS-857
    +1: zym, ericb
+   -1: amc [I believe this is the base cause of the 3.1.1 instability]
    Note: we have find that something need to be fixed after TS-857, we'd like
      this patch to be merge later and leave some time for us to find out how to
      fix it. we are now testing the fix.
