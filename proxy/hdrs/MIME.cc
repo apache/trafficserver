@@ -572,8 +572,8 @@ mime_hdr_sanity_check(MIMEHdrImpl * mh)
           const char *wks = hdrtoken_index_to_wks(field->m_wks_idx);
           int len = hdrtoken_index_to_length(field->m_wks_idx);
 
-          ink_release_assert(field->m_len_name == len);
-          ink_release_assert(strncasecmp(field->m_ptr_name, wks, field->m_len_name) == 0);
+          if (field->m_len_name != len || strncasecmp(field->m_ptr_name, wks, field->m_len_name) != 0)
+            Warning("Encountered WKS hash collision on '%.*s'", field->m_len_name, field->m_ptr_name);
 
           uint64_t mask = mime_field_presence_mask(field->m_wks_idx);
           masksum |= mask;
