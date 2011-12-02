@@ -667,6 +667,24 @@ read_url_file(char *url_file)
   num_urls = 0;
   cur_url = 0;
 
+  /* The Host: header can either be user provided (via -header), or
+     constructed by the URL host and possibly port (if not port 80) */
+
+  char hdr_buf[2048];
+  int hdr_bytes = 0;
+  hdr_bytes += snprintf(&hdr_buf[hdr_bytes], sizeof(hdr_buf) - hdr_bytes, "User-Agent: %s\r\n", user_agent);
+  if (cookie)
+    hdr_bytes += snprintf(&hdr_buf[hdr_bytes], sizeof(hdr_buf) - hdr_bytes, "Cookie: %s\r\n", cookie);
+  if (do_accept_gzip)
+    hdr_bytes += snprintf(&hdr_buf[hdr_bytes], sizeof(hdr_buf) - hdr_bytes, "Accept-Encoding: gzip\r\n");
+  /* Add Connection: keep-alive header if keep_alive requested, and version != "1.1" */
+  if ((keep_alive > 0) && !is_http_1_1)
+    hdr_bytes += snprintf(&hdr_buf[hdr_bytes], sizeof(hdr_buf) - hdr_bytes, "Connection: keep-alive\r\n");
+  if (extra_headers != NULL) {
+    hdr_bytes += snprintf(&hdr_buf[hdr_bytes], sizeof(hdr_buf) - hdr_bytes, "%s\r\n", extra_headers);
+  }
+  hdr_bytes += snprintf(&hdr_buf[hdr_bytes], sizeof(hdr_buf) - hdr_bytes, "\r\n");
+
   while (fgets(line, sizeof(line), fp) != (char *) 0) {
     char req_buf[2048];
     int req_bytes = 0;
@@ -742,8 +760,6 @@ read_url_file(char *url_file)
     } else
       req_bytes = snprintf(req_buf, sizeof(req_buf), "GET %.500s HTTP/%s\r\n", urls[num_urls].filename, http_version);
 
-    /* The Host: header can either be user provided (via -header), or
-       constructed by the URL host and possibly port (if not port 80) */
     if (extra_headers == NULL || !strstr(extra_headers, "Host:")) {
       if (urls[num_urls].port != 80)
         req_bytes += snprintf(&req_buf[req_bytes], sizeof(req_buf) - req_bytes, "Host: %s:%d\r\n",
@@ -752,23 +768,14 @@ read_url_file(char *url_file)
         req_bytes += snprintf(&req_buf[req_bytes], sizeof(req_buf) - req_bytes, "Host: %s\r\n",
                               urls[num_urls].hostname);
     }
-    if (extra_headers != NULL) {
-      req_bytes += snprintf(&req_buf[req_bytes], sizeof(req_buf) - req_bytes, "%s\r\n", extra_headers);
-    }
     if (unique_id == 1) {
       req_bytes += snprintf(&req_buf[req_bytes], sizeof(req_buf) - req_bytes, "X-ID: ");
       urls[num_urls].unique_id_offset = req_bytes;
       req_bytes += snprintf(&req_buf[req_bytes], sizeof(req_buf) - req_bytes, "%09u\r\n", 0);
     }
-    req_bytes += snprintf(&req_buf[req_bytes], sizeof(req_buf) - req_bytes, "User-Agent: %s\r\n", user_agent);
-    if (cookie)
-      req_bytes += snprintf(&req_buf[req_bytes], sizeof(req_buf) - req_bytes, "Cookie: %s\r\n", cookie);
-    if (do_accept_gzip)
-      req_bytes += snprintf(&req_buf[req_bytes], sizeof(req_buf) - req_bytes, "Accept-Encoding: gzip\r\n");
-    /* Add Connection: keep-alive header if keep_alive requested, and version != "1.1" */
-    if ((keep_alive > 0) && !is_http_1_1)
-      req_bytes += snprintf(&req_buf[req_bytes], sizeof(req_buf) - req_bytes, "Connection: keep-alive\r\n");
-    req_bytes += snprintf(&req_buf[req_bytes], sizeof(req_buf) - req_bytes, "\r\n");
+
+    // add the common hdr here
+    req_bytes += snprintf(&req_buf[req_bytes], sizeof(req_buf) - req_bytes, hdr_buf, 0);
 
     urls[num_urls].buf_bytes = req_bytes;
     urls[num_urls].buf = strdup_check(req_buf);
@@ -781,6 +788,14 @@ read_url_file(char *url_file)
 static void
 lookup_address(int url_num)
 {
+  if(do_proxy && url_num > 0) {
+    urls[url_num].sock_family = urls[url_num-1].sock_family;
+    urls[url_num].sock_type = urls[url_num-1].sock_type;
+    urls[url_num].sock_protocol = urls[url_num-1].sock_protocol;
+    urls[url_num].sa_len = urls[url_num-1].sa_len;
+    urls[url_num].sa = urls[url_num-1].sa;
+    return;
+  }
   int i;
   char *hostname;
   unsigned short port;
