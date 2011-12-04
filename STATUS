@@ -39,6 +39,10 @@ A list of all bugs open for the next v3.0.2 release can be found at
 
 PATCHES ACCEPTED TO BACKPORT FROM TRUNK:
 
+  *) HTTP: Poor hashing on WKS's (well-known-string's)
+   Trunk patch: http://svn.apache.org/viewvc?view=rev&rev=1209291
+   Jira: https://issues.apache.org/jira/browse/TS-1030
+   +1: zwoop, igalic, zym
 
 PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   [ New proposals should be added at the end of the list ]
@@ -52,11 +56,6 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
    Note: we have find that something need to be fixed after TS-857, we'd like
      this patch to be merge later and leave some time for us to find out how to
      fix it. we are now testing the fix.
-
-  *) HTTP: Poor hashing on WKS's (well-known-string's)
-   Trunk patch: http://svn.apache.org/viewvc?view=rev&rev=1209291
-   Jira: https://issues.apache.org/jira/browse/TS-1030
-   +1: zwoop, igalic, zym
 
 RELEASE PROCESS
 
