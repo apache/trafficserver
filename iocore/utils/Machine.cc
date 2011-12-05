@@ -122,6 +122,7 @@ Machine::Machine(char const* the_hostname, sockaddr const* addr)
         else if (ink_inet_is_loopback(ifip)) spot_type = LO;
         else if (ink_inet_is_nonroutable(ifip)) spot_type = NR;
         else if (ink_inet_is_multicast(ifip)) spot_type = MC;
+        else spot_type = GA;
 
         if (spot_type == NA) continue; // Next!
 

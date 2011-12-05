@@ -1,5 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.1.2
+
+  *) [TS-1037] Fix for computing local machine address (was ignoring
+   general addresses).
+
   *) [TS-1030] Improve hashing mechanism on WKS.
 
   *) [TS-1028] Avoid triggering assert when running debug build and enabling
