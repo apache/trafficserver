@@ -65,6 +65,11 @@ lib/ts/ParseRulesCTypeToUpper
 lib/ts/fastlz.h
 lib/ts/fastlz.c
 lib/ts/stamp-h1
+lib/ts/test_Map
+lib/ts/test_Vec
+lib/ts/test_arena
+lib/ts/test_atomic
+lib/ts/test_freelist
 iocore/aio/sample.cfg
 iocore/cache/Notes
 iocore/cache/cache_test.config
