@@ -14,8 +14,6 @@ Changes with Apache Traffic Server 3.1.1
 
   *) [TS-1016] Make the update frequency for stats configurable.
 
-  *) [TS-857] Fixed cross thread corruption in closing Virtual Connections.
-
   *) [TS-944] Align all configurations of paths to use the same function
 
   *) [TS-1018] Remove obsolete OpenSSL acceleration code and configs

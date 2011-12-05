@@ -90,19 +90,6 @@
 
 #define	VC_EVENT_OOB_COMPLETE            (VC_EVENT_EVENTS_START+7)
 
-/** The VC should close itself.
-    This is use to signal the VC to close across threads. This avoids
-    excessive locking while preventing thread content that leads to
-    mangled VCs and crashes.
-
-    This is used only when a VC is ordered closed but the call chain is
-    on the wrong thread. An event of this type is scheduled on the main
-    thread for the VC (as determined by the NetHandler holding the
-    mutex).
-*/
-
-# define VC_EVENT_DO_CLOSE               (VC_EVENT_EVENTS_START+8)
-
 //
 // Event names
 //

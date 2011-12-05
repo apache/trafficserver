@@ -545,7 +545,6 @@ UnixNetVConnection::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader 
 void
 UnixNetVConnection::do_io_close(int alerrno /* = -1 */ )
 {
-  EThread *t = this_ethread();
   disable_read(this);
   disable_write(this);
   read.vio.buffer.clear();
@@ -558,24 +557,15 @@ UnixNetVConnection::do_io_close(int alerrno /* = -1 */ )
   INK_WRITE_MEMORY_BARRIER;
   if (alerrno && alerrno != -1)
     this->lerrno = alerrno;
-
-  /* If the net handler is on a different thread, we don't want to close
-     because we can mess up that other thread. We don't want to lock because
-     that could cause deadlock. Instead we'll schedule the close for the
-     NH thread.
-  */
-  if (nh->mutex->thread_holding != t) {
-    nh->mutex->thread_holding->schedule_imm(this, VC_EVENT_DO_CLOSE);
-    return;
-  }
-
   if (alerrno == -1)
     closed = 1;
   else
     closed = -1;
 
   if (!recursion) {
-    close_UnixNetVConnection(this, t);
+     EThread *t = this_ethread();
+     if (nh->mutex->thread_holding == t)
+       close_UnixNetVConnection(this, t);
   }
 }
 
@@ -969,7 +959,7 @@ UnixNetVConnection::acceptEvent(int event, Event *e)
 int
 UnixNetVConnection::mainEvent(int event, Event *e)
 {
-  ink_debug_assert(event == EVENT_IMMEDIATE || event == EVENT_INTERVAL || event == VC_EVENT_DO_CLOSE);
+  ink_debug_assert(event == EVENT_IMMEDIATE || event == EVENT_INTERVAL);
   ink_debug_assert(thread == this_ethread());
 
   MUTEX_TRY_LOCK(hlock, get_NetHandler(thread)->mutex, e->ethread);
@@ -977,25 +967,14 @@ UnixNetVConnection::mainEvent(int event, Event *e)
   MUTEX_TRY_LOCK(wlock, write.vio.mutex ? (ProxyMutex *) write.vio.mutex :
                  (ProxyMutex *) e->ethread->mutex, e->ethread);
   if (!hlock || !rlock || !wlock) {
-    // Don't have all the locks we need.
-    // Retry later if that's appropriate.
-    if (VC_EVENT_DO_CLOSE == event) {
-      e->schedule_in(NET_RETRY_DELAY, event);
-    } else {
 #ifndef INACTIVITY_TIMEOUT
-      if (e == active_timeout)
+    if (e == active_timeout)
 #endif
       e->schedule_in(NET_RETRY_DELAY);
-    }
     return EVENT_CONT;
   }
   if (e->cancelled)
     return EVENT_DONE;
-
-  if (VC_EVENT_DO_CLOSE == event) {
-    close_UnixNetVConnection(this, thread);
-    return EVENT_DONE;
-  }
 
   int signal_event;
   Event **signal_timeout;
