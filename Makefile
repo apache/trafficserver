@@ -15,7 +15,6 @@
 #  limitations under the License.
 
 TSXS?=tsxs
-CXXFLAGS=-O3 -Wall
 
 all:	header_filter.cc rules.cc
 	$(TSXS) -v -C $? -o header_filter.so
@@ -24,27 +23,4 @@ install:
 	$(TSXS) -i -o header_filter.so
 
 clean:
-	rm -f *.lo *.so *.bz2 *.asc *.md5 *.sha1
-
-
-# Don't touch
-PACKAGE=header_filter
-VERSION=1.0
-distdir = $(PACKAGE)-$(VERSION)
-remove_distdir = \
-  { test ! -d "$(distdir)" \
-    || { find "$(distdir)" -type d ! -perm -200 -exec chmod u+w {} ';' \
-         && rm -fr "$(distdir)"; }; }
-
-asf-distdir:
-	@$(remove_distdir)
-	svn export . $(distdir)
-
-asf-dist: asf-distdir
-	tar chof - $(distdir) | bzip2 -9 -c >$(distdir).tar.bz2
-	@$(remove_distdir)
-
-asf-dist-sign: asf-dist
-	md5sum -b $(distdir).tar.bz2 >$(distdir).tar.bz2.md5
-	sha1sum -b $(distdir).tar.bz2 >$(distdir).tar.bz2.sha1
-	gpg2 --armor --output $(distdir).tar.bz2.asc  --detach-sig $(distdir).tar.bz2
+	rm -f *.lo *.so
