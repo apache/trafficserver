@@ -22,4 +22,4 @@ install:
 	tsxs -i -o stats_over_http.so
 
 clean:
-	rm *.lo *.so
+	rm -f *.lo *.so
