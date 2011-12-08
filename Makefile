@@ -23,4 +23,4 @@ install:
 	$(TSXS) -i -o regex_remap.so
 
 clean:
-	rm -f *.lo *.so *.bz2 *.asc *.md5 *.sha1
+	rm -f *.lo *.so
