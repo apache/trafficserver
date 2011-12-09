@@ -43,6 +43,15 @@ AC_ARG_WITH(pcre, [AC_HELP_STRING([--with-pcre=DIR],[use a specific pcre library
       esac
     fi
   fi
+],
+[
+  AC_CHECK_PROG(PCRE_CONFIG, pcre-config, pcre-config)
+  if test "x$PCRE_CONFIG" != "x"; then
+    enable_pcre=yes
+    pcre_base_dir="`$PCRE_CONFIG --prefix`"
+    pcre_include="`$PCRE_CONFIG --cflags | sed -es/-I//`"
+    pcre_ldflags="`$PCRE_CONFIG --libs | sed -es/-lpcre// -es/-L//`"
+  fi
 ])
 
 if test "x$pcre_base_dir" = "x"; then
@@ -66,6 +75,7 @@ if test "x$pcre_base_dir" = "x"; then
     AC_MSG_RESULT([$pcre_base_dir])
   fi
 else
+  AC_MSG_CHECKING(for pcre headers in $pcre_include)
   if test -d $pcre_include && test -d $pcre_ldflags && ( test -f $pcre_include/pcre.h || test -f $pcre_include/pcre/pcre.h ); then
     AC_MSG_RESULT([ok])
   else

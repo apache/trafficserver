@@ -1,5 +1,7 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.1.2
+  *) [TS-1039] use pcre-config to find libpcre
+   Author: James Peach
 
   *) [TS-1037] Fix for computing local machine address (was ignoring
    general addresses).
