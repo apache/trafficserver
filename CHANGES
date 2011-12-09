@@ -1,5 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.1.2
+  *) [TS-1042] correct debug message in FetchSM
+   Author: James Peach
+
   *) [TS-1039] use pcre-config to find libpcre
    Author: James Peach
 

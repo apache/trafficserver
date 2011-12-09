@@ -43,7 +43,9 @@ public:
   void init(Continuation* cont, TSFetchWakeUpOptions options, TSFetchEvent events, const char* headers, int length, unsigned int ip, int port)
   {
     //_headers.assign(headers);
-    Debug("FetchSM", "[%s] FetchSM initialized for request with headers\n--\n%s\n--", __FUNCTION__, headers);
+    Debug("FetchSM",
+	"[%s] FetchSM initialized for request with headers\n--\n%*.*s\n--",
+	__FUNCTION__, length, length, headers);
     req_finished = 0;
     resp_finished = 0;
     header_done = 0;
