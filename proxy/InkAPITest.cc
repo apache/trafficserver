@@ -2540,7 +2540,7 @@ mytest_handler(TSCont contp, TSEvent event, void *data)
 
       } else {
         *(test->pstatus) = REGRESSION_TEST_FAILED;
-        SDK_RPRINT(test->regtest, "TSHttpTxnReenable", "TestCase1", TC_FAIL, "Txn not reenabled properly");
+        SDK_RPRINT(test->regtest, "TSHttpTxnReenable", "TestCase1", TC_FAIL, "Txn not re-enabled properly");
 
       }
 
@@ -4187,7 +4187,7 @@ REGRESSION_TEST(SDK_API_TSMimeHdrField) (RegressionTest * test, int atype, int *
           SDK_RPRINT(test, "TSMimeHdrFieldsCount", "TestCase1", TC_PASS, "ok");
           test_passed_Mime_Hdr_Fields_Count = true;
         } else {
-          SDK_RPRINT(test, "TSMimeHdrFieldsCount", "TestCase1", TC_FAIL, "Value's Dont match");
+          SDK_RPRINT(test, "TSMimeHdrFieldsCount", "TestCase1", TC_FAIL, "Values don't match");
         }
       }
     }

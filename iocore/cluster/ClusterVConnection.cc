@@ -166,13 +166,13 @@ ClusterVConnectionBase::reenable(VIO * vio)
     read.enabled = 1;
 #ifdef DEBUG
     if (enable_debug_trace && (vio->buffer.mbuf && !vio->buffer.writer()->write_avail()))
-      printf("NetVConnection reenabled for read when full\n");
+      printf("NetVConnection re-enabled for read when full\n");
 #endif
   } else if (vio == &write.vio) {
     write.enabled = 1;
 #ifdef DEBUG
     if (enable_debug_trace && (vio->buffer.mbuf && !vio->buffer.reader()->read_avail()))
-      printf("NetVConnection reenabled for write when empty\n");
+      printf("NetVConnection re-enabled for write when empty\n");
 #endif
   } else {
     ink_assert(!"bad vio");
