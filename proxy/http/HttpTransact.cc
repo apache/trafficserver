@@ -3612,7 +3612,7 @@ HttpTransact::delete_srv_entry(State* s, int max_retries)
 
         /* no hosts DON'T match -- max out retries and return */
         if (still_ok_hosts.empty()) {
-          Debug("dns_srv", "No more SRV hosts to try that dont contain a host we just tried -- giving up");
+          Debug("dns_srv", "No more SRV hosts to try that don't contain a host we just tried -- giving up");
           s->current.attempts = max_retries;
           TRANSACT_RETURN(OS_RR_MARK_DOWN, ReDNSRoundRobin);
         }
@@ -6228,7 +6228,7 @@ HttpTransact::is_response_cacheable(State* s, HTTPHdr* request, HTTPHdr* respons
     // If a ttl is set, allow caching even if response contains
     // Cache-Control headers to prevent caching
     if (s->cache_control.ttl_in_cache > 0) {
-      Debug("http_trans", "[is_response_cacheable] Cache-control header directives in response overriden by ttl in cache.config");
+      Debug("http_trans", "[is_response_cacheable] Cache-control header directives in response overridden by ttl in cache.config");
     } else if (!s->cache_control.ignore_server_no_cache) {
       Debug("http_trans", "[is_response_cacheable] NO by response cache control");
       return false;

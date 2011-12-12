@@ -1645,7 +1645,7 @@ main(int argc, char **argv)
     if (0 != mlockall(MCL_CURRENT | MCL_FUTURE))
       Warning("Unable to mlockall() on startup");
     else
-      Debug("server", "Succesfully called mlockall()");
+      Debug("server", "Successfully called mlockall()");
   }
 #endif
 

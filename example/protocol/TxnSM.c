@@ -677,7 +677,7 @@ state_write_to_cache(TSCont contp, TSEvent event, TSVIO vio)
 
     /* If not all data have been read in, we have to reenable the read_vio */
     if (txn_sm->q_server_vc != NULL) {
-      TSDebug("protocol", "reenable server_read_vio");
+      TSDebug("protocol", "re-enable server_read_vio");
       TSVIOReenable(txn_sm->q_server_read_vio);
       return TS_SUCCESS;
     }
@@ -696,7 +696,7 @@ state_write_to_cache(TSCont contp, TSEvent event, TSVIO vio)
       txn_sm->q_pending_action = TSCacheRead(contp, txn_sm->q_key);
     } else {                    /* not done with writing into cache */
 
-      TSDebug("protocol", "reenable cache_write_vio");
+      TSDebug("protocol", "re-enable cache_write_vio");
       TSVIOReenable(txn_sm->q_cache_write_vio);
     }
     return TS_SUCCESS;
