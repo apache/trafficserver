@@ -64,12 +64,12 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   *) Build: Add possibility to extend tsxs command line for -Iincludes.
    Trunk patch: http://svn.apache.org/viewvc?view=rev&rev=1212075
    Jira: https://issues.apache.org/jira/browse/TS-1046
-   +1: igalic
+   +1: igalic, zwoop
 
   *) Management: traffic_line -r returns "Variable Not Found", even if it's a permission issue
    Trunk patch: http://svn.apache.org/viewvc?view=rev&rev=1181096
    Jira: https://issues.apache.org/jira/browse/TS-830
-   +1: igalic
+   +1: igalic, zwoop
 
 
 RELEASE PROCESS
