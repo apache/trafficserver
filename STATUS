@@ -66,6 +66,11 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
    Jira: https://issues.apache.org/jira/browse/TS-1046
    +1: igalic
 
+  *) Management: traffic_line -r returns "Variable Not Found", even if it's a permission issue
+   Trunk patch: http://svn.apache.org/viewvc?view=rev&rev=1181096
+   Jira: https://issues.apache.org/jira/browse/TS-830
+   +1: igalic
+
 
 RELEASE PROCESS
 
