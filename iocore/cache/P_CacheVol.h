@@ -47,6 +47,7 @@
 #define PIN_SCAN_EVERY                  16      // scan every 1/16 of disk
 #define VOL_HASH_TABLE_SIZE             32707
 #define VOL_HASH_EMPTY                 0xFFFF
+#define VOL_HASH_ALLOC_SIZE             (8 * 1024 * 1024)  // one chance per this unit
 #define LOOKASIDE_SIZE                  256
 #define EVACUATION_BUCKET_SIZE          (2 * EVACUATION_SIZE) // 16MB
 #define RECOVERY_SIZE                   EVACUATION_SIZE // 8MB

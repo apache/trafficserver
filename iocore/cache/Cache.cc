@@ -50,6 +50,7 @@ do { \
 	RecSetRawStatCount(rsb, x, 0); \
 } while (0);
 
+
 // Configuration
 
 int64_t cache_config_ram_cache_size = AUTO_SIZE_RAM_CACHE;
@@ -1533,6 +1534,23 @@ Vol::dir_init_done(int event, void *data)
   }
 }
 
+// explicit pair for random table in build_vol_hash_table
+struct rtable_pair {
+  unsigned int rval;
+  unsigned int vol;
+};
+
+// comparison operator for random table in build_vol_hash_table
+// sorts based on the randomly assigned rval
+static int
+cmprtable(const void *aa, const void *bb) {
+  rtable_pair *a = (rtable_pair*)aa;
+  rtable_pair *b = (rtable_pair*)bb;
+  if (a->rval < b->rval) return -1;
+  if (a->rval > b->rval) return 1;
+  return 0;
+}
+
 void
 build_vol_hash_table(CacheHostRecord *cp)
 {
@@ -1543,12 +1561,11 @@ build_vol_hash_table(CacheHostRecord *cp)
   memset(mapping, 0, num_vols * sizeof(unsigned int));
   memset(p, 0, num_vols * sizeof(Vol *));
   uint64_t total = 0;
-  int i = 0;
-  int used = 0;
   int bad_vols = 0;
   int map = 0;
+  uint64_t used = 0;
   // initialize number of elements per vol
-  for (i = 0; i < num_vols; i++) {
+  for (int i = 0; i < num_vols; i++) {
     if (DISK_BAD(cp->vols[i]->disk)) {
       bad_vols++;
       continue;
@@ -1571,56 +1588,73 @@ build_vol_hash_table(CacheHostRecord *cp)
     return;
   }
 
-
-  unsigned int *forvol = (unsigned int *) alloca(sizeof(unsigned int) * num_vols);
-  unsigned int *rnd = (unsigned int *) alloca(sizeof(unsigned int) * num_vols);
+  unsigned int *forvol = (unsigned int *) ats_malloc(sizeof(unsigned int) * num_vols);
+  unsigned int *gotvol = (unsigned int *) ats_malloc(sizeof(unsigned int) * num_vols);
+  unsigned int *rnd = (unsigned int *) ats_malloc(sizeof(unsigned int) * num_vols);
   unsigned short *ttable = (unsigned short *)ats_malloc(sizeof(unsigned short) * VOL_HASH_TABLE_SIZE);
+  unsigned int *rtable_entries = (unsigned int *) ats_malloc(sizeof(unsigned int) * num_vols);
+  unsigned int rtable_size = 0;
 
-  for (i = 0; i < num_vols; i++) {
+  // estimate allocation
+  for (int i = 0; i < num_vols; i++) {
     forvol[i] = (VOL_HASH_TABLE_SIZE * (p[i]->len >> STORE_BLOCK_SHIFT)) / total;
     used += forvol[i];
+    rtable_entries[i] = p[i]->len / VOL_HASH_ALLOC_SIZE;
+    rtable_size += rtable_entries[i];
+    gotvol[i] = 0;
   }
   // spread around the excess
   int extra = VOL_HASH_TABLE_SIZE - used;
-  for (i = 0; i < extra; i++) {
+  for (int i = 0; i < extra; i++)
     forvol[i % num_vols]++;
-  }
   // seed random number generator
-  for (i = 0; i < num_vols; i++) {
+  for (int i = 0; i < num_vols; i++) {
     uint64_t x = p[i]->hash_id_md5.fold();
     rnd[i] = (unsigned int) x;
   }
   // initialize table to "empty"
-  for (i = 0; i < VOL_HASH_TABLE_SIZE; i++)
+  for (int i = 0; i < VOL_HASH_TABLE_SIZE; i++)
     ttable[i] = VOL_HASH_EMPTY;
-  // give each machine it's fav
-  int left = VOL_HASH_TABLE_SIZE;
-  int d = 0;
-  for (; left; d = (d + 1) % num_vols) {
-    if (!forvol[d])
-      continue;
-    do {
-      i = next_rand(&rnd[d]) % VOL_HASH_TABLE_SIZE;
-    } while (ttable[i] != VOL_HASH_EMPTY);
-    ttable[i] = mapping[d];
-    forvol[d]--;
-    left--;
+  // generate random numbers proportaion to allocation
+  rtable_pair *rtable = (rtable_pair *)ats_malloc(sizeof(rtable_pair) * rtable_size);
+  int rindex = 0;
+  for (int i = 0; i < num_vols; i++)
+    for (int j = 0; j < (int)rtable_entries[i]; j++) {
+      rtable[rindex].rval = next_rand(&rnd[i]);
+      rtable[rindex].vol = i;
+      rindex++;
+    }
+  ink_assert(rindex == (int)rtable_size);
+  // sort (rand #, vol $ pairs)
+  qsort(rtable, rtable_size, sizeof(rtable_pair), cmprtable);
+  unsigned int width = (1LL << 32) / VOL_HASH_TABLE_SIZE;
+  unsigned int pos = width / 2;  // target position to allocate
+  // select vol with closest random number for each bucket
+  int i = 0;  // index moving through the random numbers
+  for (int j = 0; j < VOL_HASH_TABLE_SIZE; j++) {
+    pos = width / 2 + j * width;  // position to select closest to
+    while (pos > rtable[i].rval && i < (int)rtable_size - 1) i++;
+    ttable[j] = rtable[i].vol;
+    gotvol[ttable[j]]++;
   }
-
+  for (int i = 0; i < num_vols; i++) {
+    Debug("cache_init", "build_vol_hash_table %d request %d got %d", i, forvol[i], gotvol[i]);
+  }
   // install new table
-
-  if (cp->vol_hash_table) {
+  if (cp->vol_hash_table)
     new_Freer(cp->vol_hash_table, CACHE_MEM_FREE_TIMEOUT);
-  }
   ats_free(mapping);
   ats_free(p);
+  ats_free(forvol);
+  ats_free(gotvol);
+  ats_free(rnd);
+  ats_free(rtable_entries);
+  ats_free(rtable);
   cp->vol_hash_table = ttable;
 }
 
-
 void
-Cache::vol_initialized(bool result)
-{
+Cache::vol_initialized(bool result) {
   ink_atomic_increment(&total_initialized_vol, 1);
   if (result)
     ink_atomic_increment(&total_good_nvol, 1);
@@ -1629,8 +1663,7 @@ Cache::vol_initialized(bool result)
 }
 
 int
-AIO_Callback_handler::handle_disk_failure(int event, void *data)
-{
+AIO_Callback_handler::handle_disk_failure(int event, void *data) {
   (void) event;
   /* search for the matching file descriptor */
   if (!CacheProcessor::cache_ready)
@@ -1645,7 +1678,6 @@ AIO_Callback_handler::handle_disk_failure(int event, void *data)
       d->num_errors++;
 
       if (!DISK_BAD(d)) {
-
         char message[128];
         snprintf(message, sizeof(message), "Error accessing Disk %s", d->path);
         Warning(message);
@@ -1685,10 +1717,8 @@ AIO_Callback_handler::handle_disk_failure(int event, void *data)
       if (good_disks)
         return EVENT_DONE;
     }
-
     if (!DISK_BAD(d))
       good_disks++;
-
   }
   if (!good_disks) {
     Warning("all disks are bad, cache disabled");
@@ -1717,8 +1747,7 @@ AIO_Callback_handler::handle_disk_failure(int event, void *data)
 }
 
 int
-Cache::open_done()
-{
+Cache::open_done() {
 #ifdef NON_MODULAR
   Action *register_ShowCache(Continuation * c, HTTPHdr * h);
   Action *register_ShowCacheInternal(Continuation *c, HTTPHdr *h);
@@ -1744,8 +1773,7 @@ Cache::open_done()
 }
 
 int
-Cache::open(bool clear, bool fix)
-{
+Cache::open(bool clear, bool fix) {
   NOWARN_UNUSED(fix);
   int i;
   off_t blocks;
@@ -1753,7 +1781,6 @@ Cache::open(bool clear, bool fix)
   total_initialized_vol = 0;
   total_nvol = 0;
   total_good_nvol = 0;
-
 
   IOCORE_EstablishStaticConfigInt32(cache_config_min_average_object_size, "proxy.config.cache.min_average_object_size");
   Debug("cache_init", "Cache::open - proxy.config.cache.min_average_object_size = %d",
@@ -1792,16 +1819,13 @@ Cache::open(bool clear, bool fix)
   return 0;
 }
 
-
 int
-Cache::close()
-{
+Cache::close() {
   return -1;
 }
 
 int
-CacheVC::dead(int event, Event *e)
-{
+CacheVC::dead(int event, Event *e) {
   NOWARN_UNUSED(e);
   NOWARN_UNUSED(event);
   ink_assert(0);
@@ -1828,8 +1852,7 @@ static void unmarshal_helper(Doc *doc, Ptr<IOBufferData> &buf, int &okay) {
 #endif
 
 int
-CacheVC::handleReadDone(int event, Event *e)
-{
+CacheVC::handleReadDone(int event, Event *e) {
   NOWARN_UNUSED(e);
   cancel_trigger();
   ink_debug_assert(this_ethread() == mutex->thread_holding);
