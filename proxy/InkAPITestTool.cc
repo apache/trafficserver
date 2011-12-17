@@ -346,7 +346,7 @@ generate_response(const char *request)
   int test_case, match, http_version;
 
   char *response = (char *) TSmalloc(RESPONSE_MAX_SIZE + 1);
-  char url[1024];
+  char url[1025];
 
   // coverity[secure_coding]
   match = sscanf(request, HTTP_REQUEST_TESTCASE_FORMAT, url, &http_version, &test_case);
