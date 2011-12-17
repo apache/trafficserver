@@ -252,10 +252,10 @@ struct CloseMessage:public ClusterMessageHeader
   inline void SwapBytes()
   {
     if (NeedByteSwap()) {
-      swap32(&channel);
-      swap32((uint32_t *) & status);
-      swap32((uint32_t *) & lerrno);
-      swap32(&sequence_number);
+      ats_swap32(&channel);
+      ats_swap32((uint32_t *) & status);
+      ats_swap32((uint32_t *) & lerrno);
+      ats_swap32(&sequence_number);
     }
   }
   ////////////////////////////////////////////////////////////////////////////
@@ -295,7 +295,7 @@ struct MachineListMessage:public ClusterMessageHeader
   }
   inline void SwapBytes()
   {
-    swap32(&n_ip);
+    ats_swap32(&n_ip);
   }
   ////////////////////////////////////////////////////////////////////////////
 };
@@ -338,9 +338,9 @@ struct SetChanDataMessage:public ClusterMessageHeader
   inline void SwapBytes()
   {
     if (NeedByteSwap()) {
-      swap32(&channel);
-      swap32(&sequence_number);
-      swap32(&data_type);
+      ats_swap32(&channel);
+      ats_swap32(&sequence_number);
+      ats_swap32(&data_type);
     }
   }
   ////////////////////////////////////////////////////////////////////////////
@@ -381,9 +381,9 @@ struct SetChanPinMessage:public ClusterMessageHeader
   inline void SwapBytes()
   {
     if (NeedByteSwap()) {
-      swap32(&channel);
-      swap32(&sequence_number);
-      swap32(&pin_time);
+      ats_swap32(&channel);
+      ats_swap32(&sequence_number);
+      ats_swap32(&pin_time);
     }
   }
   ////////////////////////////////////////////////////////////////////////////
@@ -424,9 +424,9 @@ struct SetChanPriorityMessage:public ClusterMessageHeader
   inline void SwapBytes()
   {
     if (NeedByteSwap()) {
-      swap32(&channel);
-      swap32(&sequence_number);
-      swap32(&disk_priority);
+      ats_swap32(&channel);
+      ats_swap32(&sequence_number);
+      ats_swap32(&disk_priority);
     }
   }
   ////////////////////////////////////////////////////////////////////////////

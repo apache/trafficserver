@@ -107,35 +107,35 @@
 // Miscellaneous byte swap routines
 //////////////////////////////////////////////////////////////
 inline void
-swap16(uint16_t * d)
+ats_swap16(uint16_t * d)
 {
   unsigned char *p = (unsigned char *) d;
   *d = ((p[1] << 8) | p[0]);
 }
 
 inline uint16_t
-swap16(uint16_t d)
+ats_swap16(uint16_t d)
 {
-  swap16(&d);
+  ats_swap16(&d);
   return d;
 }
 
 inline void
-swap32(uint32_t * d)
+ats_swap32(uint32_t * d)
 {
   unsigned char *p = (unsigned char *) d;
   *d = ((p[3] << 24) | (p[2] << 16) | (p[1] << 8) | p[0]);
 }
 
 inline uint32_t
-swap32(uint32_t d)
+ats_swap32(uint32_t d)
 {
-  swap32(&d);
+  ats_swap32(&d);
   return d;
 }
 
 inline void
-swap64(uint64_t * d)
+ats_swap64(uint64_t * d)
 {
   unsigned char *p = (unsigned char *) d;
   *d = (((uint64_t) p[7] << 56) | ((uint64_t) p[6] << 48) |
@@ -144,9 +144,9 @@ swap64(uint64_t * d)
 }
 
 inline uint64_t
-swap64(uint64_t d)
+ats_swap64(uint64_t d)
 {
-  swap64(&d);
+  ats_swap64(&d);
   return d;
 }
 
@@ -308,7 +308,7 @@ struct ClusterVCToken
 
   inline void SwapBytes()
   {
-    swap32(&sequence_number);
+    ats_swap32(&sequence_number);
   }
 };
 
@@ -1018,10 +1018,10 @@ struct ClusterHelloMessage
   void AdjustByteOrder()
   {
     if (!NativeByteOrder()) {
-      swap16(&_major);
-      swap16(&_minor);
-      swap16(&_min_major);
-      swap16(&_min_minor);
+      ats_swap16(&_major);
+      ats_swap16(&_minor);
+      ats_swap16(&_min_major);
+      ats_swap16(&_min_minor);
     }
   }
 };
@@ -1056,7 +1056,7 @@ struct ClusterMessageHeader
   int GetMsgVersion()
   {
     if (NeedByteSwap()) {
-      return swap16(_MsgVersion);
+      return ats_swap16(_MsgVersion);
     } else {
       return _MsgVersion;
     }

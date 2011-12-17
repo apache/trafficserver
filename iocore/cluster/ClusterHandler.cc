@@ -850,8 +850,8 @@ ClusterHandler::process_set_data_msgs()
     char *endp = p + read.msg.control_bytes;
     while (p < endp) {
       if (needByteSwap) {
-        swap32((uint32_t *) p);   // length
-        swap32((uint32_t *) (p + sizeof(int32_t))); // function code
+        ats_swap32((uint32_t *) p);   // length
+        ats_swap32((uint32_t *) (p + sizeof(int32_t))); // function code
       }
       int len = *(int32_t *) p;
       cluster_function_index = *(uint32_t *) (p + sizeof(int32_t));
@@ -867,8 +867,8 @@ ClusterHandler::process_set_data_msgs()
         // Reverse swap since this message will be reprocessed.
 
         if (needByteSwap) {
-          swap32((uint32_t *) p); // length
-          swap32((uint32_t *) (p + sizeof(int32_t)));       // function code
+          ats_swap32((uint32_t *) p); // length
+          ats_swap32((uint32_t *) (p + sizeof(int32_t)));       // function code
         }
         break;                  // End of set_data messages
       }
@@ -884,7 +884,7 @@ ClusterHandler::process_set_data_msgs()
 
     while (ic) {
       if (needByteSwap) {
-        swap32((uint32_t *) ic->data);    // function code
+        ats_swap32((uint32_t *) ic->data);    // function code
       }
       cluster_function_index = *((uint32_t *) ic->data);
 
@@ -897,8 +897,8 @@ ClusterHandler::process_set_data_msgs()
 
         // Reverse swap since this will be processed again for deallocation.
         if (needByteSwap) {
-          swap32((uint32_t *) p); // length
-          swap32((uint32_t *) (p + sizeof(int32_t)));       // function code
+          ats_swap32((uint32_t *) p); // length
+          ats_swap32((uint32_t *) (p + sizeof(int32_t)));       // function code
         }
         // Mark message as processed.
         // Defer dellocation until entire read is complete.
@@ -908,7 +908,7 @@ ClusterHandler::process_set_data_msgs()
       } else {
         // Reverse swap action this message will be reprocessed.
         if (needByteSwap) {
-          swap32((uint32_t *) ic->data);  // function code
+          ats_swap32((uint32_t *) ic->data);  // function code
         }
         break;
       }
@@ -936,8 +936,8 @@ ClusterHandler::process_small_control_msgs()
     // incoming queue for processing by callout threads.
     /////////////////////////////////////////////////////////////////
     if (needByteSwap) {
-      swap32((uint32_t *) p);     // length
-      swap32((uint32_t *) (p + sizeof(int32_t)));   // function code
+      ats_swap32((uint32_t *) p);     // length
+      ats_swap32((uint32_t *) (p + sizeof(int32_t)));   // function code
     }
     int len = *(int32_t *) p;
     p += sizeof(int32_t);
@@ -991,7 +991,7 @@ ClusterHandler::process_large_control_msgs()
 
   while ((ic = incoming_control.dequeue())) {
     if (needByteSwap) {
-      swap32((uint32_t *) ic->data);      // function code
+      ats_swap32((uint32_t *) ic->data);      // function code
     }
     cluster_function_index = *((uint32_t *) ic->data);
     ink_release_assert(cluster_function_index != SET_CHANNEL_DATA_CLUSTER_FUNCTION);

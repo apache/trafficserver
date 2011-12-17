@@ -427,8 +427,8 @@ struct CacheLookupMsg:public ClusterMessageHeader
   {
     if (NeedByteSwap()) {
       ink_release_assert(!"No byte swap for INK_MD5");
-      swap32(&seq_number);
-      swap32(&frag_type);
+      ats_swap32(&seq_number);
+      ats_swap32(&frag_type);
     }
   }
   //////////////////////////////////////////////////////////////////////////
@@ -479,14 +479,14 @@ struct CacheOpMsg_long:public ClusterMessageHeader
   {
     if (NeedByteSwap()) {
       ink_release_assert(!"No byte swap for INK_MD5");
-      swap16(&cfl_flags);
-      swap32(&seq_number);
-      swap32(&nbytes);
-      swap32(&data);
-      swap32((uint32_t *) & channel);
+      ats_swap16(&cfl_flags);
+      ats_swap32(&seq_number);
+      ats_swap32(&nbytes);
+      ats_swap32(&data);
+      ats_swap32((uint32_t *) & channel);
       token.SwapBytes();
-      swap32((uint32_t *) & buffer_size);
-      swap32((uint32_t *) & frag_type);
+      ats_swap32((uint32_t *) & buffer_size);
+      ats_swap32((uint32_t *) & frag_type);
     }
   }
   //////////////////////////////////////////////////////////////////////////
@@ -538,13 +538,13 @@ struct CacheOpMsg_short:public ClusterMessageHeader
   {
     if (NeedByteSwap()) {
       ink_release_assert(!"No byte swap for INK_MD5");
-      swap16(&cfl_flags);
-      swap32(&seq_number);
-      swap32(&nbytes);
-      swap32(&data);
+      ats_swap16(&cfl_flags);
+      ats_swap32(&seq_number);
+      ats_swap32(&nbytes);
+      ats_swap32(&data);
       if (opcode == CACHE_OPEN_READ) {
-        swap32((uint32_t *) & buffer_size);
-        swap32((uint32_t *) & channel);
+        ats_swap32((uint32_t *) & buffer_size);
+        ats_swap32((uint32_t *) & channel);
         token.SwapBytes();
       }
     }
@@ -591,8 +591,8 @@ struct CacheOpMsg_short_2:public ClusterMessageHeader
     if (NeedByteSwap()) {
       ink_release_assert(!"No byte swap for MD5_1");
       ink_release_assert(!"No byte swap for MD5_2");
-      swap16(&cfl_flags);
-      swap32(&seq_number);
+      ats_swap16(&cfl_flags);
+      ats_swap32(&seq_number);
     }
   }
   //////////////////////////////////////////////////////////////////////////
@@ -633,8 +633,8 @@ struct CacheOpReplyMsg:public ClusterMessageHeader
   inline void SwapBytes()
   {
     if (NeedByteSwap()) {
-      swap32(&seq_number);
-      swap32((uint32_t *) & result);
+      ats_swap32(&seq_number);
+      ats_swap32((uint32_t *) & result);
       token.SwapBytes();
     }
   }

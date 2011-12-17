@@ -2030,7 +2030,7 @@ cache_op_result_ClusterFunction(ClusterMachine * from, void *d, int l)
         ink_assert(((len - flen) == sizeof(int32_t)));
         op_result_error = *(int32_t *) msg->moi;
         if (mh->NeedByteSwap())
-          swap32((uint32_t *) & op_result_error);
+          ats_swap32((uint32_t *) & op_result_error);
         op_result_error = -op_result_error;
         break;
       }
