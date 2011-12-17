@@ -130,7 +130,7 @@ LogUtils::timestamp_to_netscape_str(long timestamp)
 #endif
     struct tm res;
     struct tm *tms = ink_localtime_r((const time_t *) &timestamp, &res);
-#if defined(freebsd) || defined(darwin)
+#ifndef NEED_ALTZONE_DEFINED
     long zone = -tms->tm_gmtoff;        // double negative!
 #else
     long zone = (tms->tm_isdst > 0) ? altzone : timezone;
