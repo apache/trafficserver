@@ -134,7 +134,6 @@ int Cmd_ShowNtlmStats(ClientData clientData, Tcl_Interp * interp, int argc, cons
 int Cmd_ShowNetwork(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[]);
 int CmdArgs_None();
 
-int getnetparms(char *ipaddr, char *netmask);
 int getnameserver(char *nameserver, int len);
 int getrouter(char *router, int len);
 

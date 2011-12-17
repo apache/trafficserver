@@ -699,7 +699,6 @@ int IsValidHostname(char *str);
 int IsValidFQHostname(char *str);
 int IsValidDomainname(char *str);
 int IsValidIpAddress(char *str);
-int getnetparms(char *ipaddr, char *netmask);
 #if defined(solaris)
 int getnetmask(char *mask);
 #endif
