@@ -1010,7 +1010,6 @@ TS_FLAG_HEADERS([sys/epoll.h \
                   machine/endian.h \
                   endian.h \
                   sys/sysinfo.h \
-                  sys/sysctl.h \
                   sys/systeminfo.h \
                   netinet/in.h \
                   netinet/in_systm.h \
@@ -1019,7 +1018,6 @@ TS_FLAG_HEADERS([sys/epoll.h \
                   sys/byteorder.h \
                   sys/sockio.h \
 		  sys/prctl.h \
-                  arpa/inet.h \
                   arpa/nameser.h \
                   arpa/nameser_compat.h \
                   execinfo.h \
@@ -1034,7 +1032,6 @@ TS_FLAG_HEADERS([sys/epoll.h \
                   alloca.h \
                   cpio.h \
                   stropts.h \
-                  sys/mount.h \
                   sys/param.h \
                   sys/sysmacros.h \
                   math.h \
@@ -1078,12 +1075,36 @@ AC_SUBST(mathh)
 AC_SUBST(net_ppp_defsh)
 AC_SUBST(ifaddrsh)
 
+TS_FLAG_HEADERS([sys/sysctl.h], [], [],
+                 [[#ifdef HAVE_SYS_PARAM_H
+                    #include <sys/param.h>
+                   #endif
+                 ]])
+
+TS_FLAG_HEADERS([sys/mount.h], [], [],
+                 [[#ifdef HAVE_SYS_PARAM_H
+                    #include <sys/param.h>
+                   #endif
+                 ]])
+
+TS_FLAG_HEADERS([arpa/inet.h], [], [],
+                 [[#ifdef HAVE_SYS_TYPES_H
+                    #include <sys/types.h>
+                   #endif
+                   #ifdef HAVE_NETINET_IN_H
+                    #include <netinet/in.h>
+                   #endif
+                 ]])
+
 TS_FLAG_HEADERS([netinet/ip.h], [], [],
                  [[#ifdef HAVE_SYS_TYPES_H
                     #include <sys/types.h>
                    #endif
                    #ifdef HAVE_NETINET_IN_H
                     #include <netinet/in.h>
+                   #endif
+                   #ifdef HAVE_NETINET_IN_SYSTM_H
+                    #include <netinet/in_systm.h>
                    #endif
                  ]])
 
