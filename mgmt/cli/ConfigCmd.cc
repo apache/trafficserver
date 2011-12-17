@@ -2642,7 +2642,7 @@ ConfigDate(char *datestr)
       return CLI_ERROR;
     }
 
-    mPtr = localtime(&(v.tv_sec));
+    mPtr = localtime(const_cast<const time_t *>(&(v.tv_sec)));
 
     mPtr->tm_mday = dd;
     mPtr->tm_mon = mm - 1;
@@ -2726,7 +2726,7 @@ ConfigTime(char *timestr)
       return CLI_ERROR;
     }
 
-    mPtr = localtime(&(v.tv_sec));
+    mPtr = localtime(const_cast<const time_t *>(&(v.tv_sec)));
 
     mPtr->tm_sec = sec;
     mPtr->tm_min = min;

@@ -648,7 +648,7 @@ Time_GetTime(char *hour, const size_t hourSize, char *minute, const size_t minut
   if (status != 0) {
     return status;
   }
-  my_tm = localtime(&(tv.tv_sec));
+  my_tm = localtime(const_cast<const time_t *>(&(tv.tv_sec)));
 
   snprintf(hour, hourSize, "%d", my_tm->tm_hour);
   snprintf(minute, minuteSize, "%d", my_tm->tm_min);
@@ -688,7 +688,7 @@ Time_GetDate(char *month, const size_t monthSize, char *day, const size_t daySiz
   if (status != 0) {
     return status;
   }
-  my_tm = localtime(&(tv.tv_sec));
+  my_tm = localtime(const_cast<time_t *>(&(tv.tv_sec)));
 
   snprintf(month, monthSize, "%d", my_tm->tm_mon + 1);
   snprintf(day, daySize, "%d", my_tm->tm_mday);
