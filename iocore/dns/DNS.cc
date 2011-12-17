@@ -1438,12 +1438,12 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
       }
       cp += n;
       short int type;
-      GETSHORT(type, cp);
-      cp += NS_INT16SZ;  // GETSHORT(cls, cp);
-      GETLONG(temp_ttl, cp); // NOTE: this is not a "long" but 32-bits (from nameser_compat.h)
+      NS_GET16(type, cp);
+      cp += NS_INT16SZ;  // NS_GET16(cls, cp);
+      NS_GET32(temp_ttl, cp); // NOTE: this is not a "long" but 32-bits (from nameser_compat.h)
       if ((temp_ttl < buf->ttl) || (buf->ttl == 0))
         buf->ttl = temp_ttl;
-      GETSHORT(n, cp);
+      NS_GET16(n, cp);
 
       //
       // Decode cname
