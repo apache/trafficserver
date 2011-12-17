@@ -176,9 +176,12 @@ test_arena_LDFLAGS = @EXTRA_CXX_LDFLAGS@ @LIBTOOL_LINK_FLAGS@
 
 test_List_SOURCES = test_List.cc
 test_Map_SOURCES = test_Map.cc
-test_Map_LDADD = libtsutil.la
+test_Map_LDADD = libtsutil.la @LIBTHREAD@ @LIBTCL@ @LIBICONV@ @LIBEXECINFO@ @LIBPCRE@
+test_Map_LDFLAGS = @EXTRA_CXX_LDFLAGS@ @LIBTOOL_LINK_FLAGS@
+
 test_Vec_SOURCES = test_Vec.cc
-test_Vec_LDADD = libtsutil.la
+test_Vec_LDADD = libtsutil.la @LIBTHREAD@ @LIBTCL@ @LIBICONV@ @LIBEXECINFO@ @LIBPCRE@
+test_Vec_LDFLAGS = @EXTRA_CXX_LDFLAGS@ @LIBTOOL_LINK_FLAGS@
 
 CompileParseRules_SOURCES = CompileParseRules.cc
 
