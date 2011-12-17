@@ -390,7 +390,7 @@ accept_error_seriousness(int res)
     return 1;
   case -EMFILE:
   case -ENOMEM:
-#if !defined(freebsd)
+#if defined(ENOSR) && !defined(freebsd)
   case -ENOSR:
 #endif
     ink_assert(!"throttling misconfigured: set too high");
@@ -404,7 +404,7 @@ accept_error_seriousness(int res)
   case -EINTR:
     ink_assert(!"should be handled at a lower level");
     return 0;
-#if !defined(freebsd)
+#if defined(EPROTO) && !defined(freebsd)
   case -EPROTO:
 #endif
   case -EOPNOTSUPP:

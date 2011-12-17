@@ -442,7 +442,7 @@ transient_error(int error, int wait_ms)
 #ifdef ENOBUFS
   case ENOBUFS:
 #endif
-#if !defined(freebsd) && !defined(darwin)
+#if defined(ENOSR) && !defined(freebsd) && !defined(darwin)
   case ENOSR:
 #endif
     if (wait_ms)
