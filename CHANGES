@@ -1,13 +1,12 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.1.2
-  *) [TS-1047] fix lots of spelling mistakes
-   Author: Arno Töll
+  *) [TS-949] Fix key->vol hash to be consistent when a disk is marked bad.
 
-  *) [TS-1042] correct debug message in FetchSM
-   Author: James Peach
+  *) [TS-1047] fix lots of spelling mistakes Author: Arno Töll
 
-  *) [TS-1039] use pcre-config to find libpcre
-   Author: James Peach
+  *) [TS-1042] correct debug message in FetchSM. Author: James Peach
+
+  *) [TS-1039] use pcre-config to find libpcre. Author: James Peach
 
   *) [TS-1037] Fix for computing local machine address (was ignoring
    general addresses).
