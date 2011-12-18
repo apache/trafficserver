@@ -95,7 +95,8 @@ PollCont::pollEvent(int event, Event *e) {
     if (likely
         (!net_handler->read_ready_list.empty() || !net_handler->write_ready_list.empty() ||
          !net_handler->read_enable_list.empty() || !net_handler->write_enable_list.empty())) {
-      NetDebug("iocore_net_poll", "rrq: %d, wrq: %d, rel: %d, wel: %d", net_handler->read_ready_list.empty(),
+      NetDebug("iocore_net_poll", "rrq: %d, wrq: %d, rel: %d, wel: %d",
+               net_handler->read_ready_list.empty(),
                net_handler->write_ready_list.empty(), net_handler->read_enable_list.empty(),
                net_handler->write_enable_list.empty());
       poll_timeout = 0;         //poll immediately returns -- we have triggered stuff to process right now

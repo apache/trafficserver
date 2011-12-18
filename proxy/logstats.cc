@@ -1641,7 +1641,7 @@ process_file(int in_fd, off_t offset, unsigned max_age)
   char buffer[MAX_LOGBUFFER_SIZE];
   int nread, buffer_bytes;
 
-  Debug("logstats", "Processing file [offset=%d].", offset);
+  Debug("logstats", "Processing file [offset=%lld].", (long long)offset);
   while (true) {
     Debug("logstats", "Reading initial header.");
     buffer[0] = '\0';
@@ -1656,7 +1656,7 @@ process_file(int in_fd, off_t offset, unsigned max_age)
       Debug("logstats", "Re-aligning file read.");
       while (true) {
         if (lseek(in_fd, offset, SEEK_SET) < 0) {
-          Debug("logstats", "Internal seek failed (offset=%ul).", offset);
+          Debug("logstats", "Internal seek failed (offset=%lld).", (long long)offset);
           return 1;
         }
 
@@ -1696,13 +1696,13 @@ process_file(int in_fd, off_t offset, unsigned max_age)
     unsigned second_read_size = sizeof(LogBufferHeader) - first_read_size;
     nread = read(in_fd, &buffer[first_read_size], second_read_size);
     if (!nread || EOF == nread) {
-      Debug("logstats", "Second read of header failed (attemped %d bytes at offset %d, got nothing).", second_read_size, first_read_size, nread);
+      Debug("logstats", "Second read of header failed (attemped %d bytes at offset %d, got nothing).", second_read_size, first_read_size);
       return 1;
     }
 
     // read the rest of the buffer
     if (header->byte_count > sizeof(buffer)) {
-      Debug("logstats", "Header byte count [%d] > expected [%d]", header->byte_count, sizeof(buffer));
+      Debug("logstats", "Header byte count [%d] > expected [%zu]", header->byte_count, sizeof(buffer));
       return 1;
     }
 

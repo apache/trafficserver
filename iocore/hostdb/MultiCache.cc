@@ -406,8 +406,8 @@ MultiCacheBase::mmap_data(bool private_flag, bool zero_fill)
       }
       if (!d->file_pathname) {
         if (zorch_file(path, fds[n_fds], (int64_t) d->blocks * (int64_t) STORE_BLOCK_SIZE, 0)) {
-          Warning("unable to set file size '%s' to %" PRId64 ": %d, %s",
-                  (int64_t) d->blocks * STORE_BLOCK_SIZE, path, errno, strerror(errno));
+          Warning("unable to set file '%s' size to %" PRId64 ": %d, %s",
+                  path, (int64_t) d->blocks * STORE_BLOCK_SIZE, errno, strerror(errno));
           goto Lalloc;
         }
       }
@@ -1142,8 +1142,8 @@ MultiCacheBase::fixup_heap_offsets(int partition, int before_used, UnsunkPtrRegi
   for (int i = 0; i < r->n; i++) {
     UnsunkPtr & p = r->ptrs[i];
     if (p.offset) {
-      Debug("multicache", "fixup p.offset %d offset %d %d part %d",
-            p.offset, *p.poffset, (char *) p.poffset - data, partition);
+      Debug("multicache", "fixup p.offset %d offset %d %lld part %d",
+            p.offset, *p.poffset, (long long)((char *) p.poffset - data), partition);
       if (*p.poffset == -(i + base) - 1) {
         if (halfspace_of(p.offset) != heap_halfspace) {
           ink_assert(0);
@@ -1157,7 +1157,8 @@ MultiCacheBase::fixup_heap_offsets(int partition, int before_used, UnsunkPtrRegi
         }
       } else {
         Debug("multicache",
-              "not found %d i %d base %d *p.poffset = %d, rr = %d\n", (char *) p.poffset - data, i, base, *p.poffset);
+              "not found %lld i %d base %d *p.poffset = %d",
+              (long long)((char *) p.poffset - data), i, base, *p.poffset);
       }
       p.offset = 0;
       p.poffset = (int *) r->next_free;
@@ -1274,7 +1275,7 @@ void
 MultiCacheBase::copy_heap_data(char *src, int s, int *pi, int partition, MultiCacheHeapGC *gc)
 {
   char *dest = (char *) alloc(NULL, s);
-  Debug("multicache", "copy %X to %X", src, dest);
+  Debug("multicache", "copy %p to %p", src, dest);
   if (dest) {
     memcpy(dest, src, s);
     if (*pi < 0) {              // already in the unsunk ptr registry, ok to change there
@@ -1367,7 +1368,8 @@ MultiCacheBase::alloc(int *poffset, int asize)
     UnsunkPtr *up = unsunk[part].alloc(poffset);
     up->offset = offset;
     up->poffset = poffset;
-    Debug("multicache", "alloc unsunk %d at %d part %d offset %d", *poffset, (char *) poffset - data, part, offset);
+    Debug("multicache", "alloc unsunk %d at %lld part %d offset %d",
+        *poffset, (long long)((char *) poffset - data), part, offset);
   }
   return (void *) p;
 }
@@ -1391,7 +1393,7 @@ void *
 MultiCacheBase::ptr(int *poffset, int partition)
 {
   int o = *poffset;
-  Debug("multicache", "ptr %d part %d %d", (char *) poffset - data, partition, o);
+  Debug("multicache", "ptr %lld part %d %d", (long long)((char *) poffset - data), partition, o);
   if (o > 0) {
     if (!valid_offset(o)) {
       ink_assert(!"bad offset");
@@ -1414,7 +1416,7 @@ void
 MultiCacheBase::update(int *poffset, int *old_poffset)
 {
   int o = *poffset;
-  Debug("multicache", "updating %d %d", (char *) poffset - data, o);
+  Debug("multicache", "updating %lld %d", (long long)((char *) poffset - data), o);
   if (o > 0) {
     if (!valid_offset(o)) {
       ink_assert(!"bad poffset");

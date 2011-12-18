@@ -706,11 +706,11 @@ LogFile::write_ascii_logbuffer3(LogBufferHeader * buffer_header, char *alt_forma
       if (m_overspill_bytes) {
         ++m_attempts_to_write_overspill;
         if (m_overspill_report_count && (m_attempts_to_write_overspill % m_overspill_report_count == 0)) {
-          Warning("Have dropped %u records so far because buffer "
+          Warning("Have dropped %zu records so far because buffer "
                   "for %s is full", m_attempts_to_write_overspill, m_name);
         }
       } else if (m_attempts_to_write_overspill) {
-        Warning("Dropped %u records because buffer for %s was full", m_attempts_to_write_overspill, m_name);
+        Warning("Dropped %zu records because buffer for %s was full", m_attempts_to_write_overspill, m_name);
         m_attempts_to_write_overspill = 0;
       }
     }

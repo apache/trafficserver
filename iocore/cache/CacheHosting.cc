@@ -180,7 +180,7 @@ CacheHostMatcher::NewEntry(matcher_line * line_info)
     memset(cur_d, 0, sizeof(CacheHostRecord));
     return;
   }
-  Debug("cache_hosting", "hostname: %s, host record: %xd", match_data, cur_d);
+  Debug("cache_hosting", "hostname: %s, host record: %p", match_data, cur_d);
   // Fill in the matching info
   host_lookup->NewEntry(match_data, (line_info->type == MATCH_DOMAIN) ? true : false, cur_d);
 
@@ -459,7 +459,7 @@ CacheHostRecord::Init(int typ)
   CacheVol *cachep = cp_list.head;
   for (; cachep; cachep = cachep->link.next) {
     if (cachep->scheme == type) {
-      Debug("cache_hosting", "Host Record: %xd, Volume: %d, size: %u", this, cachep->vol_number, cachep->size);
+      Debug("cache_hosting", "Host Record: %p, Volume: %d, size: %u", this, cachep->vol_number, cachep->size);
       cp[num_cachevols] = cachep;
       num_cachevols++;
       num_vols += cachep->num_vols;
@@ -556,8 +556,8 @@ CacheHostRecord::Init(matcher_line * line_info, int typ)
               is_vol_present = 1;
               if ((cachep->scheme == type)) {
                 Debug("cache_hosting",
-                      "Host Record: %xd, Volume: %d, size: %ld",
-                      this, volume_number, cachep->size * STORE_BLOCK_SIZE);
+                      "Host Record: %p, Volume: %d, size: %ld",
+                      this, volume_number, (long)(cachep->size * STORE_BLOCK_SIZE));
                 cp[num_cachevols] = cachep;
                 num_cachevols++;
                 num_vols += cachep->num_vols;
@@ -1144,14 +1144,14 @@ execute_and_verify(RegressionTest * t)
     CacheDisk *d = gdisks[i];
     if (is_debug_tag_set("cache_hosting")) {
 
-      Debug("cache_hosting", "Disk: %d: Vol Blocks: %ld: Free space: %ld",
-            i, d->header->num_diskvol_blks, d->free_space);
+      Debug("cache_hosting", "Disk: %d: Vol Blocks: %u: Free space: %lld",
+            i, d->header->num_diskvol_blks, (long long)(d->free_space));
       for (int j = 0; j < (int) d->header->num_volumes; j++) {
 
-        Debug("cache_hosting", "\tVol: %d Size: %d", d->disk_vols[j]->vol_number, d->disk_vols[j]->size);
+        Debug("cache_hosting", "\tVol: %d Size: %"PRIu64, d->disk_vols[j]->vol_number, d->disk_vols[j]->size);
       }
       for (int j = 0; j < (int) d->header->num_diskvol_blks; j++) {
-        Debug("cache_hosting", "\tBlock No: %d Size: %d Free: %d",
+        Debug("cache_hosting", "\tBlock No: %d Size: %"PRIu64" Free: %u",
               d->header->vol_info[j].number, d->header->vol_info[j].len, d->header->vol_info[j].free);
       }
     }

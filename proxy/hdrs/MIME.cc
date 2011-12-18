@@ -2448,7 +2448,7 @@ mime_hdr_describe(HdrHeapObjImpl *raw, bool recurse)
   MIMEFieldBlockImpl *fblock;
   MIMEHdrImpl *obj = (MIMEHdrImpl *) raw;
 
-  Debug("http", "\n\t[PBITS: 0x%08X%08X, SLACC: 0x%04X%04X%04X%04X, HEADBLK: 0x%X, TAILBLK: 0x%X]\n",
+  Debug("http", "\n\t[PBITS: 0x%08X%08X, SLACC: 0x%04X%04X%04X%04X, HEADBLK: %p, TAILBLK: %p]\n",
         (uint32_t) ((obj->m_presence_bits >> 32) & (TOK_64_CONST(0xFFFFFFFF))),
         (uint32_t) ((obj->m_presence_bits >> 0) & (TOK_64_CONST(0xFFFFFFFF))),
         obj->m_slot_accelerators[0], obj->m_slot_accelerators[1],
@@ -2475,11 +2475,11 @@ mime_field_block_describe(HdrHeapObjImpl *raw, bool recurse)
 
   MIMEFieldBlockImpl *obj = (MIMEFieldBlockImpl *) raw;
 
-  Debug("http", "[FREETOP: %d, NEXTBLK: 0x%X]\n", obj->m_freetop, obj->m_next);
+  Debug("http", "[FREETOP: %d, NEXTBLK: %p]\n", obj->m_freetop, obj->m_next);
 
   for (i = 0; i < obj->m_freetop; i++) {
     MIMEField *f = &(obj->m_field_slots[i]);
-    Debug("http", "\tSLOT #%2d (0x%X), %-8s", i, f, readiness_names[f->m_readiness]);
+    Debug("http", "\tSLOT #%2d (%p), %-8s", i, f, readiness_names[f->m_readiness]);
 
     switch (f->m_readiness) {
     case MIME_FIELD_SLOT_READINESS_EMPTY:
@@ -2491,7 +2491,7 @@ mime_field_block_describe(HdrHeapObjImpl *raw, bool recurse)
             f->m_len_name, (f->m_ptr_name ? f->m_ptr_name : "NULL"), f->m_len_name, f->m_wks_idx);
       Debug("http", "V: \"%.*s\", V_LEN: %d, ",
             f->m_len_value, (f->m_ptr_value ? f->m_ptr_value : "NULL"), f->m_len_value);
-      Debug("http", "NEXTDUP: 0x%X, RAW: %d, RAWLEN: %d, F: %d]",
+      Debug("http", "NEXTDUP: %p, RAW: %d, RAWLEN: %d, F: %d]",
             f->m_next_dup, f->m_n_v_raw_printable,
             f->m_len_name + f->m_len_value + f->m_n_v_raw_printable_pad, f->m_flags);
       break;

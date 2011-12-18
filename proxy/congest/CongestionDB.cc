@@ -402,7 +402,7 @@ CongestionDBCont::get_congest_entry(int event, Event * e)
   NOWARN_UNUSED(e);
 
   if (m_action.cancelled) {
-    Debug("congestion_cont", "action cancelled for 0x%x", this);
+    Debug("congestion_cont", "action cancelled for %p", this);
     Free_CongestionDBCont(this);
     Debug("congestion_control", "cont::get_congest_entry state machine cancelld");
     return EVENT_DONE;
@@ -498,14 +498,14 @@ get_congest_entry(Continuation * cont, HttpRequestData * data, CongestionEntry *
     *ppEntry = theCongestionDB->lookup_entry(key);
     if (*ppEntry != NULL) {
       (*ppEntry)->get();
-      Debug("congestion_control", "get_congest_entry, found entry 0x%x done", (void *) *ppEntry);
+      Debug("congestion_control", "get_congest_entry, found entry %p done", (void *) *ppEntry);
       return ACTION_RESULT_DONE;
     } else {
       // create a new entry and add it to the congestDB
       *ppEntry = new CongestionEntry(data->get_host(), data->get_ip(), p, key);
       (*ppEntry)->get();
       theCongestionDB->insert_entry(key, *ppEntry);
-      Debug("congestion_control", "get_congest_entry, new entry 0x%x done", (void *) *ppEntry);
+      Debug("congestion_control", "get_congest_entry, new entry %p done", (void *) *ppEntry);
       return ACTION_RESULT_DONE;
     }
   } else {

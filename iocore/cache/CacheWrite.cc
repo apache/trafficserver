@@ -417,7 +417,7 @@ CacheVC::evacuateReadHead(int event, Event *e)
       goto Ldone;
     alternate_tmp = vector.get(alternate_index);
     doc_len = alternate_tmp->object_size_get();
-    Debug("cache_evac", "evacuateReadHead http earliest %X first: %X len: %d",
+    Debug("cache_evac", "evacuateReadHead http earliest %X first: %X len: %"PRId64,
           first_key.word(0), earliest_key.word(0), doc_len);
   } else
 #endif
@@ -429,7 +429,7 @@ CacheVC::evacuateReadHead(int event, Event *e)
       goto Ldone;
     doc_len = doc->total_len;
     DDebug("cache_evac",
-          "evacuateReadHead non-http earliest %X first: %X len: %d", first_key.word(0), earliest_key.word(0), doc_len);
+          "evacuateReadHead non-http earliest %X first: %X len: %"PRId64, first_key.word(0), earliest_key.word(0), doc_len);
   }
   if (doc_len == total_len) {
     // the whole document has been evacuated. Insert the directory
@@ -656,7 +656,7 @@ Vol::evacuateDocReadDone(int event, Event *e)
       b->evac_frags.key = doc->key;
       b->evac_frags.earliest_key = doc->key;
       b->earliest_evacuator = doc_evacuator;
-      DDebug("cache_evac", "evacuating earliest %X %X evac: %X offset: %d",
+      DDebug("cache_evac", "evacuating earliest %X %X evac: %p offset: %d",
             (int) b->evac_frags.key.word(0), (int) doc->key.word(0),
             doc_evacuator, (int) dir_offset(&doc_evacuator->overwrite_dir));
       b->f.unused = 67;
@@ -1508,8 +1508,8 @@ CacheVC::openWriteStartDone(int event, Event *e)
      */
     if (!dir_valid(vol, &dir)) {
       DDebug("cache_write",
-            "OpenReadStartDone: Dir not valid: Write Head: %d, Dir: %d",
-            offset_to_vol_offset(vol, vol->header->write_pos), dir_offset(&dir));
+            "OpenReadStartDone: Dir not valid: Write Head: %lld, Dir: %"PRId64,
+            (long long)offset_to_vol_offset(vol, vol->header->write_pos), dir_offset(&dir));
       last_collision = NULL;
       goto Lcollision;
     }

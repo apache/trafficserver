@@ -43,6 +43,14 @@
 
 #define tsapi
 
+#if !defined(TS_PRINTFLIKE)
+#if defined(__GNUC__) || defined(__clang__)
+#define TS_PRINTFLIKE(fmt, arg) __attribute__((format(printf, fmt, arg)))
+#else
+#define TS_PRINTFLIKE(fmt, arg)
+#endif
+#endif
+
 #ifdef __cplusplus
 extern "C"
 {
@@ -1189,7 +1197,7 @@ extern "C"
       @param ... argument for the printf format description.
 
   */
-  tsapi void TSError(const char* fmt, ...);
+  tsapi void TSError(const char* fmt, ...) TS_PRINTFLIKE(1, 2);
 
   /* --------------------------------------------------------------------------
      Assertions */
@@ -2806,7 +2814,7 @@ extern "C"
      tracing api */
 
   tsapi int TSIsDebugTagSet(const char* t);
-  tsapi void TSDebug(const char* tag, const char* format_str, ...);
+  tsapi void TSDebug(const char* tag, const char* format_str, ...) TS_PRINTFLIKE(2, 3);
   extern int diags_on_for_plugins;
 #define TSDEBUG if (diags_on_for_plugins) TSDebug
 
@@ -2909,7 +2917,7 @@ extern "C"
           log write buffer). This error is very unusual.
 
    */
-  tsapi TSReturnCode TSTextLogObjectWrite(TSTextLogObject the_object, char* format, ...);
+  tsapi TSReturnCode TSTextLogObjectWrite(TSTextLogObject the_object, char* format, ...) TS_PRINTFLIKE(2, 3);
 
   /**
       This immediately flushes the contents of the log write buffer for

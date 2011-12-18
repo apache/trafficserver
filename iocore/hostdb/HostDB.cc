@@ -80,7 +80,7 @@ static  Queue <HostDBContinuation > remoteHostDBQueue[MULTI_CACHE_PARTITIONS];
 static inline int
 corrupt_debugging_callout(HostDBInfo * e, RebuildMC & r)
 {
-  Debug("hostdb", "corrupt %d part %d", (char *) &e->app.rr.offset - r.data, r.partition);
+  Debug("hostdb", "corrupt %ld part %d", (char *) &e->app.rr.offset - r.data, r.partition);
   return -1;
 }
 
@@ -1419,7 +1419,7 @@ HostDBContinuation::dnsEvent(int event, HostEnt * e)
     if (rr) {
       int s = HostDBRoundRobin::size(n, is_srv());
       HostDBRoundRobin *rr_data = (HostDBRoundRobin *) hostDB.alloc(&r->app.rr.offset, s);
-      Debug("hostdb", "allocating %d bytes for %d RR at %lX %d", s, n, rr_data, r->app.rr.offset);
+      Debug("hostdb", "allocating %d bytes for %d RR at %p %d", s, n, rr_data, r->app.rr.offset);
       if (rr_data) {
         int i = 0, ii = 0;
         if (is_srv()) {

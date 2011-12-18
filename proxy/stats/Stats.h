@@ -176,9 +176,8 @@ ST_INLINE int64_t
 StatDescriptor::int_value() const
 {
   if (m_magic == NULL_VALUE || m_magic == IN_ERROR) {
-    const char *msg = "Attempt to read invalid plugin statistic";
-    Warning(msg);
-    // ink_debug_assert (! msg);
+    Warning("Attempt to read invalid plugin statistic");
+    // ink_debug_assert (0);
     return 0;
   }
 
@@ -191,9 +190,8 @@ ST_INLINE float
 StatDescriptor::flt_value() const
 {
   if (m_magic == NULL_VALUE || m_magic == IN_ERROR) {
-    const char *msg = "Attempt to read invalid plugin statistic";
-    Warning(msg);
-    // ink_debug_assert (! msg);
+    Warning("Attempt to read invalid plugin statistic");
+    // ink_debug_assert (0);
     return 0.0;
   }
 

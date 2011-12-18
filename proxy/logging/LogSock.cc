@@ -495,7 +495,7 @@ LogSock::write(int cid, void *buf, int bytes)
   //
   // send the message header
   //
-  Debug("log-sock", "   sending header (%d bytes)", sizeof(LogSock::MsgHeader));
+  Debug("log-sock", "   sending header (%zu bytes)", sizeof(LogSock::MsgHeader));
   header.msg_bytes = htonl(bytes);
   ret =::send(ct[cid].sd, (char *) &header, sizeof(LogSock::MsgHeader), 0);
   if (ret != sizeof(LogSock::MsgHeader)) {
@@ -613,7 +613,7 @@ LogSock::check_connections()
   for (int i = 1; i < m_max_connections; i++) {
     if (ct[i].state == LogSock::LS_STATE_INCOMING) {
       if (!is_connected(i, true)) {
-        Debug("log-sock", "Connection %d is no longer connected");
+        Debug("log-sock", "Connection %d is no longer connected", i);
         close(i);
       }
     }

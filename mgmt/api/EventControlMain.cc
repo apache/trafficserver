@@ -407,7 +407,7 @@ event_callback_main(void *arg)
         if (client_entry->events_registered[event->id]) {
           ret = send_event_notification(client_entry->sock_info, event);
           if (ret != TS_ERR_OKAY) {    // send_event_notification failed!
-            Debug("event", "sending even notification to fd [%d] failed.\n", client_entry->sock_info);
+            Debug("event", "sending even notification to fd [%d] failed.\n", client_entry->sock_info.fd);
           }
         }
         // get next client connection, if any

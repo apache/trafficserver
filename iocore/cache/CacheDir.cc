@@ -546,7 +546,7 @@ Lagain:
           continue;
         }
       } else
-        DDebug("dir_probe_tag", "tag mismatch %X %X vs expected %X", e, dir_tag(e), key->word(3));
+        DDebug("dir_probe_tag", "tag mismatch %p %X vs expected %X", e, dir_tag(e), key->word(3));
     Lcont:
       p = e;
       e = next_dir(e, seg);
@@ -776,7 +776,7 @@ dir_lookaside_fixup(CacheKey *key, Vol *d)
   while (b) {
     if (b->evac_frags.key == *key) {
       int res = dir_overwrite(key, d, &b->new_dir, &b->dir, false);
-      DDebug("dir_lookaside", "fixup %X %X offset %d phase %d %d",
+      DDebug("dir_lookaside", "fixup %X %X offset %"PRId64" phase %d %d",
             key->word(0), key->word(1), dir_offset(&b->new_dir), dir_phase(&b->new_dir), res);
       d->ram_cache->fixup(key, 0, dir_offset(&b->dir), 0, dir_offset(&b->new_dir));
       d->lookaside[i].remove(b);
@@ -820,7 +820,7 @@ dir_lookaside_remove(CacheKey *key, Vol *d)
   EvacuationBlock *b = d->lookaside[i].head;
   while (b) {
     if (b->evac_frags.key == *key) {
-      DDebug("dir_lookaside", "remove %X %X offset %d phase %d",
+      DDebug("dir_lookaside", "remove %X %X offset %"PRId64" phase %d",
             key->word(0), key->word(1), dir_offset(&b->new_dir), dir_phase(&b->new_dir));
       d->lookaside[i].remove(b);
       free_EvacuationBlock(b, d->mutex->thread_holding);

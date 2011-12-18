@@ -45,7 +45,7 @@ RemapProcessor::start(int num_threads)
 bool
 RemapProcessor::setup_for_remap(HttpTransact::State *s)
 {
-  Debug("url_rewrite", "setting up for remap: %x", s);
+  Debug("url_rewrite", "setting up for remap: %p", s);
   URL *request_url = NULL;
   bool mapping_found = false;
   HTTPHdr *request_header = &s->hdr_info.client_request;
@@ -301,7 +301,7 @@ RemapProcessor::perform_remap(Continuation *cont, HttpTransact::State *s)
   host_hdr_info *hh_info = &(s->hh_info);
 
   if (!map) {
-    Error("Could not find corresponding url_mapping for this transaction %x", s);
+    Error("Could not find corresponding url_mapping for this transaction %p", s);
     Debug("url_rewrite", "Could not find corresponding url_mapping for this transaction");
     ink_debug_assert(!"this should never happen -- call setup_for_remap first");
     cont->handleEvent(EVENT_REMAP_ERROR, NULL);

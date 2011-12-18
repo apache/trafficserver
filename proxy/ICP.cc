@@ -817,8 +817,8 @@ ICPPeerReadCont::PeerReadStateMachine(PeerReadData * s, Event * e)
 
         if (s->_queryResult == CACHE_EVENT_LOOKUP) {
           // Use the received ICP data buffer for the response message
-          Debug("icp", "Sending ICP_OP_HIT for id=%d, [%s] to [%s]",
-            s->_rICPmsg->h.requestno, data, ink_inet_nptop(&s->_sender, ipb, sizeof(ipb)));
+          Debug("icp", "Sending ICP_OP_HIT for id=%d, [%.*s] to [%s]",
+            s->_rICPmsg->h.requestno, datalen, (const char *)data, ink_inet_nptop(&s->_sender, ipb, sizeof(ipb)));
           ICP_INCREMENT_DYN_STAT(icp_cache_lookup_success_stat);
           status = ICPRequestCont::BuildICPMsg(ICP_OP_HIT,
                                                s->_rICPmsg->h.requestno, 0 /* optflags */ , 0 /* optdata */ ,
@@ -826,8 +826,8 @@ ICPPeerReadCont::PeerReadStateMachine(PeerReadData * s, Event * e)
                                                data, datalen, &s->_mhdr, s->_iov, s->_rICPmsg);
         } else if (s->_queryResult == CACHE_EVENT_LOOKUP_FAILED) {
           // Use the received ICP data buffer for response message
-          Debug("icp", "Sending ICP_OP_MISS for id=%d, [%s] to [%s]",
-            s->_rICPmsg->h.requestno, data, ink_inet_nptop(&s->_sender, ipb, sizeof(ipb)));
+          Debug("icp", "Sending ICP_OP_MISS for id=%d, [%.*s] to [%s]",
+            s->_rICPmsg->h.requestno, datalen, (const char *)data, ink_inet_nptop(&s->_sender, ipb, sizeof(ipb)));
           ICP_INCREMENT_DYN_STAT(icp_cache_lookup_fail_stat);
           status = ICPRequestCont::BuildICPMsg(ICP_OP_MISS,
                                                s->_rICPmsg->h.requestno, 0 /* optflags */ , 0 /* optdata */ ,

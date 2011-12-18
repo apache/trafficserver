@@ -66,7 +66,7 @@ NetProcessor::accept(Continuation* cont,
   AcceptOptions const& opt
 ) {
   Debug("iocore_net_processor",
-        "NetProcessor::accept - port %d,recv_bufsize %d, send_bufsize %d, sockopt 0x%0lX",
+        "NetProcessor::accept - port %d,recv_bufsize %d, send_bufsize %d, sockopt 0x%0x",
     opt.local_port, opt.recv_bufsize, opt.send_bufsize, opt.sockopt_flags);
 
   return ((UnixNetProcessor *) this)->accept_internal(cont, NO_FD, opt);
@@ -78,7 +78,7 @@ NetProcessor::main_accept(Continuation *cont,
   AcceptOptions const& opt
 ) {
   UnixNetProcessor* this_unp = static_cast<UnixNetProcessor*>(this);
-  Debug("iocore_net_processor", "NetProcessor::main_accept - port %d,recv_bufsize %d, send_bufsize %d, sockopt 0x%0lX",
+  Debug("iocore_net_processor", "NetProcessor::main_accept - port %d,recv_bufsize %d, send_bufsize %d, sockopt 0x%0x",
         opt.local_port, opt.recv_bufsize, opt.send_bufsize, opt.sockopt_flags);
   return this_unp->accept_internal(cont, fd, opt);
 }
@@ -123,7 +123,7 @@ UnixNetProcessor::accept_internal(
   if (opt.f_inbound_transparent) {
     Debug(
       "http_tproxy",
-      "Marking accept server %x on port %d as inbound transparent.\n",
+      "Marking accept server %p on port %d as inbound transparent",
       na, opt.local_port
     );
   }

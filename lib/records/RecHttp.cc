@@ -172,7 +172,7 @@ HttpProxyPort::loadConfig(Vec<self>& entries) {
       } else if (-1 != ssl_port) {
 	// -1 is used as the sentinel value in the config record for
 	// "not set by user".
-        Warning("SSL enabled but port value %d is not in the range 1..65535.\n",
+        Warning("SSL enabled but port value %"PRId64" is not in the range 1..65535.\n",
                 ssl_port);
       }
     }
@@ -252,7 +252,7 @@ HttpProxyPort::processOptions(char const* opts) {
     }
   }
   if (bracket_p) {
-    Warning("Invalid port descriptor '%s' - left bracket without closing right bracket.");
+    Warning("Invalid port descriptor '%s' - left bracket without closing right bracket", opts);
     return zret;
   }
 
@@ -348,7 +348,8 @@ HttpProxyPort::processOptions(char const* opts) {
 
   if (af_set_p) {
     if (in_ip_set_p && m_family != m_inbound_ip.family()) {
-      Warning("Invalid port descriptor '%s' - the inbound adddress family [%s] is not the same type as the explict family value [%s].", ink_inet_family_name(m_inbound_ip.family()), ink_inet_family_name(m_family));
+      Warning("Invalid port descriptor '%s' - the inbound adddress family [%s] is not the same type as the explict family value [%s]",
+        opts, ink_inet_family_name(m_inbound_ip.family()), ink_inet_family_name(m_family));
       zret = false;
     }
   } else if (in_ip_set_p) {

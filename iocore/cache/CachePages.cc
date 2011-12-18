@@ -126,7 +126,7 @@ struct ShowCache: public ShowCont {
         if (show_cache_urlstrs[i][0] == '\0')
           continue;
         unescapifyStr(show_cache_urlstrs[i]);
-        Debug("cache_inspector", "URL %d: %s", i + 1, &show_cache_urlstrs[i]);
+        Debug("cache_inspector", "URL %d: %s", i + 1, show_cache_urlstrs[i]);
       }
 
     }

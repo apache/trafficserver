@@ -1167,7 +1167,7 @@ Log::flush_thread_main(void *args)
     // config->increment_space_used(bytes_to_disk);
     // TODO: the bytes_to_disk should be set to Log
 
-    Debug("log-flush","%d buffers flushed this round", buffers_flushed);
+    Debug("log-flush","%zu buffers flushed this round", buffers_flushed);
 
     // Time to work on periodic events??
     //

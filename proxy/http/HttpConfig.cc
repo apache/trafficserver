@@ -1609,9 +1609,9 @@ HttpConfig::reconfigure()
 
 // Redirection debug statements
   Debug("http_init", "proxy.config.http.redirection_enabled = %d", params->redirection_enabled);
-  Debug("http_init", "proxy.config.http.number_of_redirections = %d", params->number_of_redirections);
+  Debug("http_init", "proxy.config.http.number_of_redirections = %"PRId64"", params->number_of_redirections);
 
-  Debug("http_init", "proxy.config.http.post_copy_size = %d", params->post_copy_size);
+  Debug("http_init", "proxy.config.http.post_copy_size = %"PRId64"", params->post_copy_size);
 }
 
 ////////////////////////////////////////////////////////////////

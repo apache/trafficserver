@@ -132,12 +132,12 @@ HttpServerSession::do_io_close(int alerrno)
     if (connection_count->getCount(server_ip) > 0) {
       connection_count->incrementCount(server_ip, -1);
       char addrbuf[INET6_ADDRSTRLEN];
-      Debug("http_ss", "[%" PRId64 "] connection closed, ip: %u, count: %u",
+      Debug("http_ss", "[%" PRId64 "] connection closed, ip: %s, count: %u",
             con_id, 
             ink_inet_ntop(&server_ip.sa, addrbuf, sizeof(addrbuf)), 
             connection_count->getCount(server_ip));
     } else {
-      Error("http_ss", "[%" PRId64 "] number of connections should be greater then zero: %u",
+      Error("[%" PRId64 "] number of connections should be greater then zero: %u",
             con_id, connection_count->getCount(server_ip));
     }
   }

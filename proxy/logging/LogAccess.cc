@@ -1342,7 +1342,7 @@ resolve_logfield_string(LogAccess *context, const char *format_str)
   int field_count = LogFormat::parse_symbol_string(fields_str, &fields, &contains_aggregates);
 
   if (field_count != n_fields) {
-    Error("log-resolve", "format_str contains %d invalid field symbols", n_fields - field_count);
+    Error("format_str contains %d invalid field symbols", n_fields - field_count);
     ats_free(printf_str);
     ats_free(fields_str);
     return NULL;

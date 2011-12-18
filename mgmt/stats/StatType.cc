@@ -783,8 +783,8 @@ StatObject::setTokenValue(StatExprToken * token, bool cluster)
       // only support time function
       token->m_token_value = (StatFloat) (m_current_time - m_last_update);
       if (StatDebug) {
-        Debug(MODULE, "m_current_time(%f) - m_last_update(%f) = %f\n",
-              m_current_time, m_last_update, token->m_token_value);
+        Debug(MODULE, "m_current_time(%lld) - m_last_update(%lld) = %lld\n",
+              (long long)m_current_time, (long long)m_last_update, (long long)token->m_token_value);
       }
       break;
 

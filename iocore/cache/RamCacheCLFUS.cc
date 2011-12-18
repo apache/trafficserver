@@ -523,7 +523,7 @@ int RamCacheCLFUS::put(INK_MD5 *key, IOBufferData *data, uint32_t len, bool copy
       if (bytes + victim->size + size > max_bytes && CACHE_VALUE(victim) > CACHE_VALUE(e)) {
         requeue_victims(this, victims);
         lru[1].enqueue(e);
-        DDebug("ram_cache", "put %X %d %d size %d INC %d HISTORY",
+        DDebug("ram_cache", "put %X %d %d size %d INC %"PRId64" HISTORY",
                key->word(3), auxkey1, auxkey2, e->size, e->hits);
         return 0;
       }

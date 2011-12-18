@@ -1401,8 +1401,8 @@ HttpTransact::PPDNSLookup(State* s)
     s->parent_info.dns_round_robin = s->dns_info.round_robin;
 
     char addrbuf[INET6_ADDRSTRLEN];
-    Debug("http_trans", "[PPDNSLookup] DNS lookup for sm_id[%d] successful IP: %s", s->state_machine->sm_id,
-          ink_inet_ntop(&s->parent_info.addr.sa, addrbuf, sizeof(addrbuf)));
+    Debug("http_trans", "[PPDNSLookup] DNS lookup for sm_id[%"PRId64"] successful IP: %s",
+          s->state_machine->sm_id, ink_inet_ntop(&s->parent_info.addr.sa, addrbuf, sizeof(addrbuf)));
   }
 
   // Since this function can be called serveral times while retrying
@@ -3376,11 +3376,12 @@ HttpTransact::handle_response_from_parent(State* s)
         if ((s->current.attempts - 1) % s->http_config_param->per_parent_connect_attempts != 0) {
           // No we are not done with this parent so retry
           s->next_action = how_to_open_connection(s);
-          Debug("http_trans", "%s Retrying parent for attempt %d, max %d", "[handle_response_from_parent]", s->current.attempts,
-                s->http_config_param->per_parent_connect_attempts);
+          Debug("http_trans", "%s Retrying parent for attempt %d, max %"PRId64,
+                "[handle_response_from_parent]", s->current.attempts, s->http_config_param->per_parent_connect_attempts);
           return;
         } else {
-          Debug("http_trans", "%s per parent attempts exhausted", "[handle_response_from_parent]", s->current.attempts);
+          Debug("http_trans", "%s %d per parent attempts exhausted",
+                "[handle_response_from_parent]", s->current.attempts);
 
           // Only mark the parent down if we failed to connect
           //  to the parent otherwise slow origin servers cause
@@ -3553,8 +3554,8 @@ HttpTransact::delete_srv_entry(State* s, int max_retries)
 
   s->current.attempts++;
 
-  Debug("http_trans", "[delete_srv_entry] attempts now: %d, max: %" PRId64 "", s->current.attempts, max_retries);
-  Debug("dns_srv", "[delete_srv_entry] attempts now: %d, max: %" PRId64 "", s->current.attempts, max_retries);
+  Debug("http_trans", "[delete_srv_entry] attempts now: %d, max: %d", s->current.attempts, max_retries);
+  Debug("dns_srv", "[delete_srv_entry] attempts now: %d, max: %d", s->current.attempts, max_retries);
 
   if (!hostname) {
     TRANSACT_RETURN(OS_RR_MARK_DOWN, ReDNSRoundRobin);
@@ -3629,7 +3630,7 @@ HttpTransact::delete_srv_entry(State* s, int max_retries)
           new_r->round_robin = 1;
           int sz = HostDBRoundRobin::size(n, true);
           HostDBRoundRobin *rr_data = (HostDBRoundRobin *) hostDB.alloc(&new_r->app.rr.offset, sz);
-          Debug("hostdb", "allocating %d bytes for %d RR at %lX %d", sz, n, rr_data, new_r->app.rr.offset);
+          Debug("hostdb", "allocating %d bytes for %d RR at %p %d", sz, n, rr_data, new_r->app.rr.offset);
           int i = 0;
           while ((srv_entry = still_ok_hosts.dequeue())) {
             Debug("dns_srv", "Re-adding %s to HostDB [as a RR] after %s failed", srv_entry->getHost(), s->dns_info.lookup_name);
@@ -3694,7 +3695,7 @@ HttpTransact::delete_server_rr_entry(State* s, int max_retries)
   ink_debug_assert(s->current.server == &s->server_info);
   update_dns_info(&s->dns_info, &s->current, 0, &s->arena);
   s->current.attempts++;
-  Debug("http_trans", "[delete_server_rr_entry] attempts now: %d, max: %" PRId64 "", s->current.attempts, max_retries);
+  Debug("http_trans", "[delete_server_rr_entry] attempts now: %d, max: %d", s->current.attempts, max_retries);
   TRANSACT_RETURN(OS_RR_MARK_DOWN, ReDNSRoundRobin);
 }
 
@@ -5664,7 +5665,8 @@ HttpTransact::initialize_state_variables_from_request(State* s, HTTPHdr* obsolet
     int64_t length = incoming_request->get_content_length();
     s->hdr_info.request_content_length = (length >= 0) ? length : HTTP_UNDEFINED_CL;    // content length less than zero is invalid
 
-    Debug("http_trans", "[init_stat_vars_from_req] set req cont length to %d", s->hdr_info.request_content_length);
+    Debug("http_trans", "[init_stat_vars_from_req] set req cont length to %"PRId64,
+          s->hdr_info.request_content_length);
 
   } else {
     s->hdr_info.request_content_length = 0;
@@ -5898,7 +5900,8 @@ HttpTransact::is_stale_cache_response_returnable(State* s)
                                                                    s->current.now);
   // Negative age is overflow
   if ((current_age < 0) || (current_age > s->txn_conf->cache_max_stale_age)) {
-    Debug("http_trans", "[is_stale_cache_response_returnable] " "document age is too large %d", current_age);
+    Debug("http_trans", "[is_stale_cache_response_returnable] " "document age is too large %lld",
+          (long long)current_age);
     return false;
   }
   // If the stale document requires authorization, we can't return it either.
@@ -6845,8 +6848,8 @@ HttpTransact::handle_content_length_header(State* s, HTTPHdr* header, HTTPHdr* b
       header->field_delete(MIME_FIELD_CONTENT_LENGTH, MIME_LEN_CONTENT_LENGTH);
       s->hdr_info.request_content_length = HTTP_UNDEFINED_CL;
     }
-    Debug("http_trans", "[handle_content_length_header] cont len in hdr is %d, stat var is %d", header->get_content_length(),
-          s->hdr_info.request_content_length);
+    Debug("http_trans", "[handle_content_length_header] cont len in hdr is %"PRId64", stat var is %"PRId64,
+          header->get_content_length(), s->hdr_info.request_content_length);
   }
 
   return;
@@ -7203,8 +7206,8 @@ HttpTransact::calculate_document_freshness_limit(State *s, HTTPHdr *response, ti
       date_set = true;
     } else {
       date_value = s->request_sent_time;
-      Debug("http_match", "calculate_document_freshness_limit --- Expires header = %d  no date, using sent time %d",
-            expires_value, date_value);
+      Debug("http_match", "calculate_document_freshness_limit --- Expires header = %lld  no date, using sent time %lld",
+            (long long)expires_value, (long long)date_value);
     }
     ink_debug_assert(date_value > 0);
 
@@ -7215,12 +7218,12 @@ HttpTransact::calculate_document_freshness_limit(State *s, HTTPHdr *response, ti
     if (expires_set && !cache_sm.is_readwhilewrite_inprogress()) {
       if (expires_value == UNDEFINED_TIME || expires_value <= date_value) {
         expires_value = date_value;
-        Debug("http_match", "calculate_document_freshness_limit --- no expires, using date %d", expires_value);
+        Debug("http_match", "calculate_document_freshness_limit --- no expires, using date %lld", (long long)expires_value);
       }
       freshness_limit = (int) (expires_value - date_value);
 
-      Debug("http_match", "calculate_document_freshness_limit --- Expires: %d, Date: %d, freshness_limit = %d",
-            expires_value, date_value, freshness_limit);
+      Debug("http_match", "calculate_document_freshness_limit --- Expires: %lld, Date: %lld, freshness_limit = %d",
+            (long long)expires_value, (long long)date_value, freshness_limit);
 
       freshness_limit = min(max(0, freshness_limit), NUM_SECONDS_IN_ONE_YEAR);
     } else {
@@ -7228,13 +7231,15 @@ HttpTransact::calculate_document_freshness_limit(State *s, HTTPHdr *response, ti
       if (response->presence(MIME_PRESENCE_LAST_MODIFIED)) {
         last_modified_set = TRUE;
         last_modified_value = response->get_last_modified();
-        Debug("http_match", "calculate_document_freshness_limit --- Last Modified header = %d", last_modified_value);
+        Debug("http_match", "calculate_document_freshness_limit --- Last Modified header = %lld",
+              (long long)last_modified_value);
 
         if (last_modified_value == UNDEFINED_TIME) {
           last_modified_set = FALSE;
         } else if (last_modified_value > date_value) {
           last_modified_value = date_value;
-          Debug("http_match", "calculate_document_freshness_limit --- no last-modified, using sent time %d", last_modified_value);
+          Debug("http_match", "calculate_document_freshness_limit --- no last-modified, using sent time %lld",
+                (long long)last_modified_value);
         }
       }
 
@@ -7245,9 +7250,10 @@ HttpTransact::calculate_document_freshness_limit(State *s, HTTPHdr *response, ti
         ink_time_t time_since_last_modify = date_value - last_modified_value;
         int h_freshness = (int) (time_since_last_modify * f);
         freshness_limit = max(h_freshness, 0);
-        Debug("http_match", "calculate_document_freshness_limit --- heuristic: date=%d, lm=%d,"
-              "time_since_last_modify=%ld, f=%g, freshness_limit = %d",
-              date_value, last_modified_value, time_since_last_modify, f, freshness_limit);
+        Debug("http_match", "calculate_document_freshness_limit --- heuristic: date=%lld, lm=%lld,"
+              "time_since_last_modify=%lld, f=%g, freshness_limit = %d",
+              (long long)date_value, (long long)last_modified_value, (long long)time_since_last_modify,
+              f, freshness_limit);
       } else {
         freshness_limit = s->txn_conf->cache_heuristic_min_lifetime;
         Debug("http_match", "calculate_document_freshness_limit --- heuristic: freshness_limit = %d", freshness_limit);
@@ -7399,7 +7405,9 @@ HttpTransact::what_is_document_freshness(State *s, HTTPHdr* client_request, HTTP
     current_age = NUM_SECONDS_IN_ONE_YEAR;  // TODO: Should we make a new "max age" define?
   else
     current_age = min((time_t)NUM_SECONDS_IN_ONE_YEAR, current_age);
-  Debug("http_match", "[what_is_document_freshness] fresh_limit:  %d  current_age: %d", fresh_limit, current_age);
+
+  Debug("http_match", "[what_is_document_freshness] fresh_limit:  %d  current_age: %lld",
+        fresh_limit, (long long)current_age);
 
   /////////////////////////////////////////////////////////
   // did the admin override the expiration calculations? //
@@ -7498,10 +7506,10 @@ HttpTransact::what_is_document_freshness(State *s, HTTPHdr* client_request, HTTP
   }
 
   if (diags->on()) {
-    DebugOn("http_match", "document_freshness --- current_age = %d", current_age);
+    DebugOn("http_match", "document_freshness --- current_age = %lld", (long long)current_age);
     DebugOn("http_match", "document_freshness --- age_limit   = %d", age_limit);
     DebugOn("http_match", "document_freshness --- fresh_limit = %d", fresh_limit);
-    DebugOn("http_seq", "document_freshness --- current_age = %d", current_age);
+    DebugOn("http_seq", "document_freshness --- current_age = %lld", (long long)current_age);
     DebugOn("http_seq", "document_freshness --- age_limit   = %d", age_limit);
     DebugOn("http_seq", "document_freshness --- fresh_limit = %d", fresh_limit);
   }

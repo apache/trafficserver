@@ -196,8 +196,8 @@ reloadUrlRewrite()
   } else {
     static const char* msg = "failed to reload remap.config, not replacing!";
     delete newTable;
-    Debug("url_rewrite", msg);
-    Warning(msg);
+    Debug("url_rewrite", "%s", msg);
+    Warning("%s", msg);
   }
 }
 

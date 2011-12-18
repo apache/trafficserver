@@ -674,7 +674,7 @@ UDPNetProcessor::UDPBind(Continuation * cont, sockaddr const* addr, int send_buf
   }
   n = NEW(new UnixUDPConnection(fd));
 
-  Debug("udpnet", "UDPNetProcessor::UDPBind: %x fd=%d", n, fd);
+  Debug("udpnet", "UDPNetProcessor::UDPBind: %p fd=%d", n, fd);
   n->setBinding(&myaddr.sa);
   n->bindToThread(cont);
 
@@ -850,7 +850,7 @@ UDPQueue::service(UDPNetHandler * nh)
         continue;
       }
       // insert into our queue.
-      Debug("udp-send", "Adding 0x%x", p);
+      Debug("udp-send", "Adding %p", p);
       addToGuaranteedQ = ((p->conn->pipe_class > 0) && (p->conn->flowRateBps > 10.0));
       pktLen = p->getPktLength();
       if (p->conn->lastPktStartTime == 0) {
@@ -1053,8 +1053,8 @@ sendPackets:
       G_inkPipeInfo.perPipeInfo[i].queue->FreeCancelledPackets(g_udp_periodicCleanupSlots);
     }
     endTime = ink_get_hrtime_internal();
-    Debug("udp-pending-packets", "Did cleanup of %d buckets: %" PRId64 " bytes in %d m.sec",
-          g_udp_periodicCleanupSlots, nbytes - g_udp_bytesPending, ink_hrtime_to_msec(endTime - startTime));
+    Debug("udp-pending-packets", "Did cleanup of %d buckets: %" PRId64 " bytes in %lld m.sec",
+          g_udp_periodicCleanupSlots, nbytes - g_udp_bytesPending, (long long)ink_hrtime_to_msec(endTime - startTime));
     lastCleanupTime = now;
   }
 }
@@ -1072,7 +1072,7 @@ UDPQueue::SendUDPPacket(UDPPacketInternal * p, int32_t pktLen)
     p->conn->lastSentPktStartTime = p->delivery_time;
   }
 
-  Debug("udp-send", "Sending 0x%x", p);
+  Debug("udp-send", "Sending %p", p);
 #if !defined(solaris)
   msg.msg_control = 0;
   msg.msg_controllen = 0;

@@ -44,6 +44,13 @@
 
 #define DIAGS_MAGIC 0x12345678
 
+#if !defined(TS_PRINTFLIKE)
+#if defined(__GNUC__) || defined(__clang__)
+#define TS_PRINTFLIKE(fmt, arg) __attribute__((format(printf, fmt, arg)))
+#else
+#endif
+#endif
+
 class Diags;
 
 // extern int diags_on_for_plugins;
@@ -312,10 +319,12 @@ public:
   {  }
 
   // default: no location printed
-  void inkcoreapi operator() (const char *tag, const char *format_string ...);
+  void inkcoreapi operator() (const char *tag, const char *format_string ...)
+    TS_PRINTFLIKE(3, 4);
 
   // location optionally printed
-  void operator() (const char *tag, int show_loc, const char *format_string ...);
+  void operator() (const char *tag, int show_loc, const char *format_string ...)
+    TS_PRINTFLIKE(4, 5);
 };
 
 // debug closures support debug tags
@@ -331,10 +340,12 @@ public:
   {  }
 
   // default: no location printed
-  void inkcoreapi operator() (const char *format_string ...);
+  void inkcoreapi operator() (const char *format_string ...)
+    TS_PRINTFLIKE(2, 3);
 
   // location optionally printed
   void operator() (int show_loc, const char *format_string ...);
+    TS_PRINTFLIKE(3, 4);
 };
 
 //////////////////////////////////////////////////////////////////////////
@@ -359,13 +370,17 @@ public:
 extern inkcoreapi Diags *diags;
 
 #define	DTA(l)    diags,l,__FILE__,__FUNCTION__,__LINE__
+
+void dummy_debug(const char * tag, const char *fmt ...) TS_PRINTFLIKE(2, 3);
+void dummy_debug(const char * tag, char *fmt ...) TS_PRINTFLIKE(2, 3);
+
 inline void
-dummy_debug(char *dummy_arg ...)
+dummy_debug(const char *, char *dummy_arg ...)
 {
   (void) dummy_arg;
 }
 inline void
-dummy_debug(const char *dummy_arg ...)
+dummy_debug(const char *, const char *dummy_arg ...)
 {
   (void) dummy_arg;
 }

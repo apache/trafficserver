@@ -1489,7 +1489,7 @@ LogConfig::update_space_used()
   //
   if (!logfile_dir) {
     const char *msg = "Logging directory not specified";
-    Error(msg);
+    Error("%s", msg);
     LogUtils::manager_alarm(LogUtils::LOG_ALARM_ERROR, msg);
     m_log_directory_inaccessible = true;
     return;
@@ -2251,7 +2251,7 @@ LogConfig::read_xml_log_config(int from_memory)
             if (numValid < n) {
               Warning("There are invalid protocol values (%s) in"
                       " the Protocol field of XML LogObject.\n"
-                      "Only %u out of %u values will be used.", protocols_str, numValid, n);
+                      "Only %zu out of %zu values will be used.", protocols_str, numValid, n);
             }
 
             LogFilterInt protocol_filter("__xml_protocol__",

@@ -754,7 +754,7 @@ main(int argc, char **argv)
   //   UI record for this machine
   overviewGenerator->addSelfRecord();
   webThrId = ink_thread_create(webIntr_main, NULL);     /* Spin web agent thread */
-  Debug("lm", "Created Web Agent thread (%d)", webThrId);
+  Debug("lm", "Created Web Agent thread (%lld)", (long long)webThrId);
   lmgmt->listenForProxy();
 
   /* Check the permissions on vip_config */

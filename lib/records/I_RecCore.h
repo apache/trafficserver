@@ -234,7 +234,7 @@ int RecSetSyncRequired(char *name, bool lock = true);
 // Signal Alarm/Warning
 //------------------------------------------------------------------------
 #define REC_SignalManager        RecSignalManager
-#define REC_SignalWarning(_n,_d) { Warning(_d); RecSignalManager(_n,_d); }
+#define REC_SignalWarning(_n,_d) { Warning("%s", _d); RecSignalManager(_n,_d); }
 
 
 //------------------------------------------------------------------------

@@ -105,7 +105,7 @@ extern int regression_level;
 {                                                                       \
   if(_already == false) pmgmt->signalManager(MGMT_SIGNAL_CONFIG_ERROR, _buf); \
   _already = true;                                                      \
-  Warning(_buf);                                                        \
+  Warning("%s", _buf);                                                  \
 }                                                                       \
 
 #endif /* _Regression_h */

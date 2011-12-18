@@ -366,7 +366,7 @@ PrefetchTransform::handle_event(int event, void *edata)
 
   if (m_closed) {
     if (m_deletable) {
-      Debug("PrefetchParser", "PrefetchTransform free(): %d", m_output_vio ? m_output_vio->ndone : 0);
+      Debug("PrefetchParser", "PrefetchTransform free(): %"PRId64"", m_output_vio ? m_output_vio->ndone : 0);
       if (m_output_buf) {
         free_MIOBuffer(m_output_buf);
         m_output_buf = 0;
@@ -430,7 +430,7 @@ PrefetchTransform::handle_event(int event, void *edata)
           }
 
           if (towrite > 0) {
-            Debug("PrefetchParser", "handle_event() " "writing %d bytes to output", towrite);
+            Debug("PrefetchParser", "handle_event() " "writing %"PRId64" bytes to output", towrite);
 
             //Debug("PrefetchParser", "Read avail before = %d\n", avail);
 
@@ -1576,7 +1576,7 @@ PrefetchBlaster::bufferObject(int event, void *data)
   case VC_EVENT_READ_READY:
     if (buf->high_water()) {
       //right now we don't handle DEL events on the child
-      Debug("PrefetchBlasterTemp", "The object is bigger than %d bytes " "cancelling the url", buf->water_mark);
+      Debug("PrefetchBlasterTemp", "The object is bigger than %"PRId64" bytes " "cancelling the url", buf->water_mark);
       buf->reset();
       buf->fill(PRELOAD_HEADER_LEN);
       buf->write("DEL ", 4);

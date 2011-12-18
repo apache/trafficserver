@@ -1364,7 +1364,7 @@ HttpSM::state_api_callout(int event, void *data)
           plugin_lock = false;
         }
 
-        Debug("http", "[%" PRId64 "] calling plugin on hook %s at hook 0x%X",
+        Debug("http", "[%" PRId64 "] calling plugin on hook %s at hook %p",
               sm_id, HttpDebugNames::get_api_hook_name(cur_hook_id), cur_hook);
 
         APIHook *hook = cur_hook;
@@ -1617,7 +1617,7 @@ HttpSM::state_http_server_open(int event, void *data)
     // the connection count.
     if (t_state.txn_conf->origin_max_connections > 0 ||
         t_state.http_config_param->origin_min_keep_alive_connections > 0) {
-      Debug("http_ss", "[%" PRId64 "] max number of connections: %u", sm_id, t_state.txn_conf->origin_max_connections);
+      Debug("http_ss", "[%" PRId64 "] max number of connections: %"PRIu64, sm_id, t_state.txn_conf->origin_max_connections);
       session->enable_origin_connection_limiting = true;
     }
     /*UnixNetVConnection * vc = (UnixNetVConnection*)(ua_session->client_vc);
@@ -2695,7 +2695,7 @@ HttpSM::is_http_server_eos_truncation(HttpTunnelProducer * p)
   int64_t cl = t_state.hdr_info.server_response.get_content_length();
 
   if (cl != UNDEFINED_COUNT && cl > server_response_body_bytes) {
-    Debug("http", "[%" PRId64 "] server eos after %d.  Expected %d", sm_id, cl, server_response_body_bytes);
+    Debug("http", "[%" PRId64 "] server eos after %"PRId64".  Expected %"PRId64, sm_id, cl, server_response_body_bytes);
     return true;
   } else {
     return false;
@@ -5146,7 +5146,7 @@ HttpSM::setup_server_send_request()
 
   // the plugin decided to append a message to the request
   if (api_set) {
-    Debug("http", "[%" PRId64 "] appending msg of %d bytes to request %s", sm_id, msg_len, t_state.internal_msg_buffer);
+    Debug("http", "[%" PRId64 "] appending msg of %"PRId64" bytes to request %s", sm_id, msg_len, t_state.internal_msg_buffer);
     hdr_length += server_entry->write_buffer->write(t_state.internal_msg_buffer, msg_len);
     server_request_body_bytes = msg_len;
   }

@@ -701,17 +701,17 @@ ClusterHandler::alloc_channel(ClusterVConnection * vc, int requested)
 
     ink_release_assert(i != 0); // required
     ink_release_assert(channels[i] == (ClusterVConnection *) 1);        // required
-    Debug(CL_TRACE, "alloc_channel local chan=%d VC=0x%x", i, vc);
+    Debug(CL_TRACE, "alloc_channel local chan=%d VC=%p", i, vc);
 
   } else {
     if (!check_channel(i)) {
       return -2;                // Limit exceeded
     }
     if (channels[i]) {
-      Debug(CL_TRACE, "alloc_channel remote inuse chan=%d VC=0x%x", i, vc);
+      Debug(CL_TRACE, "alloc_channel remote inuse chan=%d VC=%p", i, vc);
       return -1;                // channel in use
     } else {
-      Debug(CL_TRACE, "alloc_channel remote chan=%d VC=0x%x", i, vc);
+      Debug(CL_TRACE, "alloc_channel remote chan=%d VC=%p", i, vc);
     }
   }
   channels[i] = vc;
@@ -730,10 +730,10 @@ ClusterHandler::free_channel(ClusterVConnection * vc)
     if (local_channel(i)) {
       channels[i] = (ClusterVConnection *) 1;
       free_local_channels.enqueue(channel_data[i]);
-      Debug(CL_TRACE, "free_channel local chan=%d VC=0x%x", i, vc);
+      Debug(CL_TRACE, "free_channel local chan=%d VC=%p", i, vc);
     } else {
       channels[i] = 0;
-      Debug(CL_TRACE, "free_channel remote chan=%d VC=0x%x", i, vc);
+      Debug(CL_TRACE, "free_channel remote chan=%d VC=%p", i, vc);
     }
   }
   vc->channel = 0;

@@ -438,7 +438,7 @@ CacheContinuation::do_op(Continuation * c, ClusterMachine * mp, void *args,
     memset(data, 0, op_to_sizeof_fixedlen_msg(opcode));
 #endif
   Debug("cache_msg",
-        "do_op opcode=%d seqno=%d Machine=0x%x data=0x%x datalen=%d mio=0x%x",
+        "do_op opcode=%d seqno=%d Machine=%p data=%p datalen=%d mio=%p",
         opcode, (c ? cc->seq_number : CACHE_NO_RESPONSE), mp, data, data_len, b);
 
   switch (opcode) {
@@ -694,14 +694,14 @@ CacheContinuation::setup_local_vc(char *data, int data_len, CacheContinuation * 
       ms->channel = vc->channel;
       ms->token = cc->open_local_token;
       Debug("cache_proto",
-            "0open_local-s (%s) success, seqno=%d chan=%d token=%d,%d VC=0x%x",
+            "0open_local-s (%s) success, seqno=%d chan=%d token=%d,%d VC=%p",
             (read_op ? "R" : "W"), ms->seq_number, vc->channel, ms->token.ip_created, ms->token.sequence_number, vc);
     } else {
       CacheOpMsg_long *ml = (CacheOpMsg_long *) data;
       ml->channel = vc->channel;
       ml->token = cc->open_local_token;
       Debug("cache_proto",
-            "1open_local-l (%s) success, seqno=%d chan=%d token=%d,%d VC=0x%x",
+            "1open_local-l (%s) success, seqno=%d chan=%d token=%d,%d VC=%p",
             (read_op ? "R" : "W"), ml->seq_number, vc->channel, ml->token.ip_created, ml->token.sequence_number, vc);
     }
     cc->freeMsgBuffer();
@@ -889,7 +889,7 @@ CacheContinuation::localVCsetupEvent(int event, ClusterVConnection * vc)
       ms->token = open_local_token;
 
       Debug("cache_proto",
-            "2open_local-s (%s) success, seqno=%d chan=%d token=%d,%d VC=0x%x",
+            "2open_local-s (%s) success, seqno=%d chan=%d token=%d,%d VC=%p",
             (read_op ? "R" : "W"), ms->seq_number, vc->channel, ms->token.ip_created, ms->token.sequence_number, vc);
 
     } else {
@@ -898,7 +898,7 @@ CacheContinuation::localVCsetupEvent(int event, ClusterVConnection * vc)
       ml->token = open_local_token;
 
       Debug("cache_proto",
-            "3open_local-l (%s) success, seqno=%d chan=%d token=%d,%d VC=0x%x",
+            "3open_local-l (%s) success, seqno=%d chan=%d token=%d,%d VC=%p",
             (read_op ? "R" : "W"), ml->seq_number, vc->channel, ml->token.ip_created, ml->token.sequence_number, vc);
     }
     SET_HANDLER((CacheContHandler) & CacheContinuation::remoteOpEvent);
@@ -1110,7 +1110,7 @@ cache_op_ClusterFunction(ClusterMachine * from, void *data, int len)
       CacheOpMsg_short *msg = unmarshal_CacheOpMsg_short(data, mh->NeedByteSwap());
       init_from_short(c, msg, from);
       Debug("cache_msg",
-            "cache_op-s op=%d seqno=%d data=0x%x len=%d machine=0x%x", opcode, c->seq_number, data, len, from);
+            "cache_op-s op=%d seqno=%d data=%p len=%d machine=%p", opcode, c->seq_number, data, len, from);
       //
       // Establish the remote side of the ClusterVConnection
       //
@@ -1166,7 +1166,7 @@ cache_op_ClusterFunction(ClusterMachine * from, void *data, int len)
       CacheOpMsg_long *msg = unmarshal_CacheOpMsg_long(c->getMsgBuffer(), mh->NeedByteSwap());
       init_from_long(c, msg, from);
       Debug("cache_msg",
-            "cache_op-l op=%d seqno=%d data=0x%x len=%d machine=0x%x", opcode, c->seq_number, data, len, from);
+            "cache_op-l op=%d seqno=%d data=%p len=%d machine=%p", opcode, c->seq_number, data, len, from);
 #ifdef CACHE_MSG_TRACE
       log_cache_op_msg(msg->seq_number, len, "cache_op_open_read_long");
 #endif
@@ -1256,7 +1256,7 @@ cache_op_ClusterFunction(ClusterMachine * from, void *data, int len)
       CacheOpMsg_short *msg = unmarshal_CacheOpMsg_short(data, mh->NeedByteSwap());
       init_from_short(c, msg, from);
       Debug("cache_msg",
-            "cache_op-s op=%d seqno=%d data=0x%x len=%d machine=0x%x", opcode, c->seq_number, data, len, from);
+            "cache_op-s op=%d seqno=%d data=%p len=%d machine=%p", opcode, c->seq_number, data, len, from);
 #ifdef CACHE_MSG_TRACE
       log_cache_op_msg(msg->seq_number, len, "cache_op_open_write");
 #endif
@@ -1311,7 +1311,7 @@ cache_op_ClusterFunction(ClusterMachine * from, void *data, int len)
       CacheOpMsg_long *msg = unmarshal_CacheOpMsg_long(c->getMsgBuffer(), mh->NeedByteSwap());
       init_from_long(c, msg, from);
       Debug("cache_msg",
-            "cache_op-l op=%d seqno=%d data=0x%x len=%d machine=0x%x", opcode, c->seq_number, data, len, from);
+            "cache_op-l op=%d seqno=%d data=%p len=%d machine=%p", opcode, c->seq_number, data, len, from);
 #ifdef CACHE_MSG_TRACE
       log_cache_op_msg(msg->seq_number, len, "cache_op_open_write_long");
 #endif
@@ -1382,7 +1382,7 @@ cache_op_ClusterFunction(ClusterMachine * from, void *data, int len)
       CacheOpMsg_short *msg = unmarshal_CacheOpMsg_short(data, mh->NeedByteSwap());
       init_from_short(c, msg, from);
       Debug("cache_msg",
-            "cache_op op=%d seqno=%d data=0x%x len=%d machine=0x%x", opcode, c->seq_number, data, len, from);
+            "cache_op op=%d seqno=%d data=%p len=%d machine=%p", opcode, c->seq_number, data, len, from);
 #ifdef CACHE_MSG_TRACE
       log_cache_op_msg(msg->seq_number, len, "cache_op_remove");
 #endif
@@ -1409,7 +1409,7 @@ cache_op_ClusterFunction(ClusterMachine * from, void *data, int len)
       CacheOpMsg_short_2 *msg = unmarshal_CacheOpMsg_short_2(data, mh->NeedByteSwap());
       init_from_short_2(c, msg, from);
       Debug("cache_msg",
-            "cache_op op=%d seqno=%d data=0x%x len=%d machine=0x%x", opcode, c->seq_number, data, len, from);
+            "cache_op op=%d seqno=%d data=%p len=%d machine=%p", opcode, c->seq_number, data, len, from);
 #ifdef CACHE_MSG_TRACE
       log_cache_op_msg(msg->seq_number, len, "cache_op_link");
 #endif
@@ -1436,7 +1436,7 @@ cache_op_ClusterFunction(ClusterMachine * from, void *data, int len)
       CacheOpMsg_short *msg = unmarshal_CacheOpMsg_short(data, mh->NeedByteSwap());
       init_from_short(c, msg, from);
       Debug("cache_msg",
-            "cache_op op=%d seqno=%d data=0x%x len=%d machine=0x%x", opcode, c->seq_number, data, len, from);
+            "cache_op op=%d seqno=%d data=%p len=%d machine=%p", opcode, c->seq_number, data, len, from);
 #ifdef CACHE_MSG_TRACE
       log_cache_op_msg(msg->seq_number, len, "cache_op_deref");
 #endif
@@ -1650,7 +1650,7 @@ int
 CacheContinuation::replyOpEvent(int event, VConnection * cvc)
 {
   ink_assert(magicno == (int) MagicNo);
-  Debug("cache_proto", "replyOpEvent(this=%x,event=%d,VC=%x)", this, event, cvc);
+  Debug("cache_proto", "replyOpEvent(this=%p,event=%d,VC=%p)", this, event, cvc);
   ink_hrtime now;
   now = ink_get_hrtime();
   CLUSTER_SUM_DYN_STAT(CLUSTER_CACHE_CALLBACK_TIME_STAT, now - start_time);
@@ -1744,7 +1744,7 @@ CacheContinuation::replyOpEvent(int event, VConnection * cvc)
     }
 
   } else {
-    Debug("cache_proto", "cache operation failed result=%d seqno=%d (this=%x)", event, seq_number, this);
+    Debug("cache_proto", "cache operation failed result=%d seqno=%d (this=%p)", event, seq_number, this);
     msg->token.clear();         // Tell sender no conn established
 
     // Reallocate reply message, allowing for marshalled data
@@ -1784,7 +1784,7 @@ CacheContinuation::replyOpEvent(int event, VConnection * cvc)
   if (vers == CacheOpReplyMsg::CACHE_OP_REPLY_MESSAGE_VERSION) {
     if (read_op) {
       // Transmit reply message and object data in same cluster message
-      Debug("cache_proto", "Sending reply/data seqno=%d buflen=%d",
+      Debug("cache_proto", "Sending reply/data seqno=%d buflen=%"PRId64,
             seq_number, readahead_data ? bytes_IOBufferBlockList(readahead_data, 1) : 0);
       clusterProcessor.invoke_remote_data(from,
                                           CACHE_OP_RESULT_CLUSTER_FUNCTION,
@@ -1793,7 +1793,7 @@ CacheContinuation::replyOpEvent(int event, VConnection * cvc)
                                           cluster_vc_channel, &token,
                                           &CacheContinuation::disposeOfDataBuffer, (void *) this, CLUSTER_OPT_STEAL);
     } else {
-      Debug("cache_proto", "Sending reply seqno=%d, (this=%x)", seq_number, this);
+      Debug("cache_proto", "Sending reply seqno=%d, (this=%p)", seq_number, this);
       clusterProcessor.invoke_remote(from, CACHE_OP_RESULT_CLUSTER_FUNCTION,
                                      (void *) msg, (flen + len), CLUSTER_OPT_STEAL);
     }
@@ -1808,7 +1808,7 @@ CacheContinuation::replyOpEvent(int event, VConnection * cvc)
 free_exit:
   results_expected--;
   if (results_expected <= 0) {
-    Debug("cache_proto", "replyOpEvent: freeing this=%x", this, event, cvc);
+    Debug("cache_proto", "replyOpEvent: freeing this=%p", this);
     cacheContAllocator_free(this);
   }
   return EVENT_DONE;

@@ -623,7 +623,7 @@ NullTransform::handle_event(int event, void *edata)
 
   if (m_closed) {
     if (m_deletable) {
-      Debug("transform", "NullTransform destroy: %d [0x%lx]", m_output_vio ? m_output_vio->ndone : 0, (long) this);
+      Debug("transform", "NullTransform destroy: %"PRId64" [%p]", m_output_vio ? m_output_vio->ndone : 0, this);
       delete this;
     }
   } else {
@@ -679,7 +679,7 @@ NullTransform::handle_event(int event, void *edata)
           }
 
           if (towrite > 0) {
-            Debug("transform", "[NullTransform::handle_event] " "writing %d bytes to output", towrite);
+            Debug("transform", "[NullTransform::handle_event] " "writing %"PRId64" bytes to output", towrite);
             m_output_buf->write(m_write_vio.get_reader(), towrite);
 
             m_write_vio.get_reader()->consume(towrite);
@@ -923,7 +923,7 @@ RangeTransform::handle_event(int event, void *edata)
 
   if (m_closed) {
     if (m_deletable) {
-      Debug("transform_range", "RangeTransform destroy: %d", m_output_vio ? m_output_vio->ndone : 0);
+      Debug("transform_range", "RangeTransform destroy: %"PRId64"", m_output_vio ? m_output_vio->ndone : 0);
       delete this;
     }
   } else {
@@ -1035,7 +1035,7 @@ RangeTransform::transform_to_range()
           add_boundary(true);
         }
 
-        Debug("transform_range", "total bytes of Range response body is %d", m_done);
+        Debug("transform_range", "total bytes of Range response body is %"PRId64"", m_done);
         m_output_vio->nbytes = m_done;
         m_output_vio->reenable();
 
@@ -1212,7 +1212,7 @@ RangeTransform::calculate_output_cl()
     m_output_cl += boundary_size + 2;
   }
 
-  Debug("transform_range", "Pre-calculated Content-Length for Range response is %d", m_output_cl);
+  Debug("transform_range", "Pre-calculated Content-Length for Range response is %"PRId64"", m_output_cl);
 }
 
 #endif // TS_NO_TRANSFORM

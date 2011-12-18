@@ -607,7 +607,7 @@ LogBuffer::resolve_custom_entry(LogFieldList * fieldlist,
         }
 
         if (res < 0) {
-          Note(buffer_size_exceeded_msg);
+          Note("%s", buffer_size_exceeded_msg);
           bytes_written = 0;
           break;
         }
@@ -623,7 +623,7 @@ LogBuffer::resolve_custom_entry(LogFieldList * fieldlist,
       if (1 + bytes_written < write_to_len) {
         write_to[bytes_written++] = printf_str[i];
       } else {
-        Note(buffer_size_exceeded_msg);
+        Note("%s", buffer_size_exceeded_msg);
         bytes_written = 0;
         break;
       }

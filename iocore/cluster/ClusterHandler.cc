@@ -769,7 +769,7 @@ bool ClusterHandler::get_read_locks()
       int64_t read_avail = vc->read_block->read_avail();
 
       if (!vc->pending_remote_fill && read_avail) {
-        Debug("cluster_vc_xfer", "Deferred fill ch %d 0x%x %d bytes", vc->channel, vc, read_avail);
+        Debug("cluster_vc_xfer", "Deferred fill ch %d %p %"PRId64" bytes", vc->channel, vc, read_avail);
 
         vc->read.vio.buffer.writer()->append_block(vc->read_block->clone());
         if (complete_channel_read(read_avail, vc)) {
@@ -1319,7 +1319,7 @@ ClusterHandler::update_channels_partial_read()
 
             if (!vc->pending_remote_fill) {
               if ((ProxyMutex *) vc->read_locked) {
-                Debug("cluster_vc_xfer", "Partial read, credit ch %d 0x%x %d bytes", vc->channel, vc, len);
+                Debug("cluster_vc_xfer", "Partial read, credit ch %d %p %d bytes", vc->channel, vc, len);
                 s->vio.buffer.writer()->append_block(vc->read_block->clone());
                 if (complete_channel_read(len, vc)) {
                   vc->read_block->consume(len); // note bytes moved to user
@@ -1331,12 +1331,12 @@ ClusterHandler::update_channels_partial_read()
                 // we will resume the read at this VC.
 
                 if (len == (int) read.msg.descriptor[i].length) {
-                  Debug("cluster_vc_xfer", "Partial read, byte bank move ch %d 0x%x %d bytes", vc->channel, vc, len);
+                  Debug("cluster_vc_xfer", "Partial read, byte bank move ch %d %p %d bytes", vc->channel, vc, len);
                   add_to_byte_bank(vc);
                 }
               }
             } else {
-              Debug("cluster_vc_xfer", "Partial remote fill read, credit ch %d 0x%x %d bytes", vc->channel, vc, len);
+              Debug("cluster_vc_xfer", "Partial remote fill read, credit ch %d %p %d bytes", vc->channel, vc, len);
               complete_channel_read(len, vc);
             }
             read.msg.descriptor[i].length -= len;
@@ -1369,7 +1369,7 @@ bool ClusterHandler::complete_channel_read(int len, ClusterVConnection * vc)
 
   ink_assert((ProxyMutex *) s->vio.mutex == (ProxyMutex *) s->vio._cont->mutex);
 
-  Debug("cluster_vc_xfer", "Complete read, credit ch %d 0x%x %d bytes", vc->channel, vc, len);
+  Debug("cluster_vc_xfer", "Complete read, credit ch %d %p %d bytes", vc->channel, vc, len);
   s->vio.ndone += len;
 
   if (s->vio.ntodo() <= 0) {
@@ -1425,7 +1425,7 @@ ClusterHandler::finish_delayed_reads()
             ClusterVC_remove_read(vc);
           }
           Debug("cluster_vc_xfer",
-                "Delayed read, credit ch %d 0x%x %d bytes", vc->channel, vc, d->get_block()->read_avail());
+                "Delayed read, credit ch %d %p %"PRId64" bytes", vc->channel, vc, d->get_block()->read_avail());
           vc->read.vio.buffer.writer()->append_block(d->get_block());
 
           if (complete_channel_read(d->get_block()->read_avail(), vc)) {
@@ -1474,7 +1474,7 @@ ClusterHandler::update_channels_written(bool bump_unhandled_channels)
           int len = write.msg.descriptor[i].length;
           vc->write_bytes_in_transit -= len;
           ink_release_assert(vc->write_bytes_in_transit >= 0);
-          Debug(CL_PROTO, "(%d) data sent %d %d", write.msg.descriptor[i].channel, len, s->vio.ndone);
+          Debug(CL_PROTO, "(%d) data sent %d %"PRId64, write.msg.descriptor[i].channel, len, s->vio.ndone);
 
           if (vc_ok_write(vc)) {
             vc->last_activity_time = current_time;      // note activity time
@@ -2217,7 +2217,7 @@ retry:
     // Push initial read data into VC
 
     if (ntodo >= bytes_to_move) {
-      Debug("cluster_vc_xfer", "finish initial data push ch %d bytes %d", vc->channel, vc->read_block->read_avail());
+      Debug("cluster_vc_xfer", "finish initial data push ch %d bytes %"PRId64, vc->channel, vc->read_block->read_avail());
 
       s->vio.buffer.writer()->append_block(vc->read_block->clone());
       vc->read_block = 0;
@@ -2225,7 +2225,7 @@ retry:
     } else {
       bytes_to_move = ntodo;
 
-      Debug("cluster_vc_xfer", "initial data push ch %d bytes %d", vc->channel, bytes_to_move);
+      Debug("cluster_vc_xfer", "initial data push ch %d bytes %"PRId64, vc->channel, bytes_to_move);
 
       // Clone a portion of the data
 
@@ -2280,7 +2280,7 @@ retry:
   }
 
   if ((vc->last_local_free == 0) || (nextfree >= vc->last_local_free)) {
-    Debug(CL_PROTO, "(%d) update freespace %d", vc->channel, nextfree);
+    Debug(CL_PROTO, "(%d) update freespace %"PRId64, vc->channel, nextfree);
     cluster_update_priority(this, vc, s, nextfree - vc->last_local_free, nb);
     cluster_reschedule(this, vc, s);
     //
@@ -3098,7 +3098,7 @@ ClusterHandler::do_open_local_requests()
 
       } else {
         // unable to get mutex, insert request back onto global queue.
-        Debug(CL_TRACE, "do_open_local_requests() unable to acquire mutex (cvc=0x%x)", cvc);
+        Debug(CL_TRACE, "do_open_local_requests() unable to acquire mutex (cvc=%p)", cvc);
         pending_request = 1;
         ink_atomiclist_push(&external_incoming_open_local, (void *) cvc);
       }

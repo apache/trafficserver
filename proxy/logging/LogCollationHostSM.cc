@@ -399,7 +399,7 @@ LogCollationHostSM::read_hdr(int event, VIO * vio)
     m_read_bytes_received = 0;
     m_read_buffer = (char *) &m_net_msg_header;
     ink_assert(m_client_vc != NULL);
-    Debug("log-coll", "[%d]host:read_hdr - do_io_read(%d)", m_id, m_read_bytes_wanted);
+    Debug("log-coll", "[%d]host:read_hdr - do_io_read(%"PRId64")", m_id, m_read_bytes_wanted);
     m_client_vio = m_client_vc->do_io_read(this, m_read_bytes_wanted, m_client_buffer);
     ink_assert(m_client_vio != NULL);
     return EVENT_CONT;
@@ -455,7 +455,7 @@ LogCollationHostSM::read_body(int event, VIO * vio)
     m_read_buffer = new char[m_read_bytes_wanted];
     ink_assert(m_read_buffer != NULL);
     ink_assert(m_client_vc != NULL);
-    Debug("log-coll", "[%d]host:read_body - do_io_read(%d)", m_id, m_read_bytes_wanted);
+    Debug("log-coll", "[%d]host:read_body - do_io_read(%"PRId64")", m_id, m_read_bytes_wanted);
     m_client_vio = m_client_vc->do_io_read(this, m_read_bytes_wanted, m_client_buffer);
     ink_assert(m_client_vio != NULL);
     return EVENT_CONT;

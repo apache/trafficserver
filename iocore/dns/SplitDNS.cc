@@ -190,7 +190,7 @@ SplitDNSConfig::print()
   SplitDNS *params = SplitDNSConfig::acquire();
 
   Debug("splitdns_config", "DNS Server Selection Config\n");
-  Debug("splitdns_config", "\tEnabled \n", params->m_SplitDNSlEnable);
+  Debug("splitdns_config", "\tEnabled=%d \n", params->m_SplitDNSlEnable);
 
   params->m_DNSSrvrTable->Print();
   SplitDNSConfig::release(params);
@@ -563,7 +563,7 @@ SplitDNSRecord::UpdateMatch(SplitDNSResult * result, RD * rdata)
     result->m_rec = this;
     result->m_line_number = this->line_num;
 
-    Debug("splitdns_config", "Matched with 0x%x dns node from line %d", this, this->line_num);
+    Debug("splitdns_config", "Matched with %p dns node from line %d", this, this->line_num);
   }
 }
 

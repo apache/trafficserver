@@ -349,7 +349,7 @@ ClusterVConnection::start(EThread * t)
       }
 
     } else {
-      Debug(CL_TRACE, "VC start alloc local chan=%d VC=0x%x", channel, this);
+      Debug(CL_TRACE, "VC start alloc local chan=%d VC=%p", channel, this);
       if (new_connect_read)
         this->pending_remote_fill = 1;
     }
@@ -358,11 +358,11 @@ ClusterVConnection::start(EThread * t)
     // Establish the remote side of the VC connection
     ch = machine->clusterHandler;
     if ((status = ch->alloc_channel(this, channel)) < 0) {
-      Debug(CL_TRACE, "VC start alloc remote failed chan=%d VC=0x%x", channel, this);
+      Debug(CL_TRACE, "VC start alloc remote failed chan=%d VC=%p", channel, this);
       clusterVCAllocator_free(this);
       return status;            // Channel active or no more channels
     } else {
-      Debug(CL_TRACE, "VC start alloc remote chan=%d VC=0x%x", channel, this);
+      Debug(CL_TRACE, "VC start alloc remote chan=%d VC=%p", channel, this);
       if (new_connect_read)
         this->pending_remote_fill = 1;
       this->iov_map = CLUSTER_IOV_NONE; // disable connect timeout

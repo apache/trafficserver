@@ -675,13 +675,13 @@ CacheProcessor::diskInitialized()
       CacheDisk *d = gdisks[i];
       if (is_debug_tag_set("cache_hosting")) {
         int j;
-        Debug("cache_hosting", "Disk: %d: Vol Blocks: %ld: Free space: %ld",
-              i, d->header->num_diskvol_blks, d->free_space);
+        Debug("cache_hosting", "Disk: %d: Vol Blocks: %u: Free space: %lld",
+              i, d->header->num_diskvol_blks, (long long)d->free_space);
         for (j = 0; j < (int) d->header->num_volumes; j++) {
-          Debug("cache_hosting", "\tVol: %d Size: %d", d->disk_vols[j]->vol_number, d->disk_vols[j]->size);
+          Debug("cache_hosting", "\tVol: %d Size: %"PRIu64, d->disk_vols[j]->vol_number, d->disk_vols[j]->size);
         }
         for (j = 0; j < (int) d->header->num_diskvol_blks; j++) {
-          Debug("cache_hosting", "\tBlock No: %d Size: %d Free: %d",
+          Debug("cache_hosting", "\tBlock No: %d Size: %"PRIu64" Free: %u",
                 d->header->vol_info[j].number, d->header->vol_info[j].len, d->header->vol_info[j].free);
         }
       }
@@ -1680,13 +1680,13 @@ AIO_Callback_handler::handle_disk_failure(int event, void *data) {
       if (!DISK_BAD(d)) {
         char message[128];
         snprintf(message, sizeof(message), "Error accessing Disk %s", d->path);
-        Warning(message);
+        Warning("%s", message);
         IOCORE_SignalManager(REC_SIGNAL_CACHE_WARNING, message);
       } else if (!DISK_BAD_SIGNALLED(d)) {
 
         char message[128];
         snprintf(message, sizeof(message), "too many errors accessing disk %s: declaring disk bad", d->path);
-        Warning(message);
+        Warning("%s", message);
         IOCORE_SignalManager(REC_SIGNAL_CACHE_ERROR, message);
         /* subtract the disk space that was being used from  the cache size stat */
         // dir entries stat
@@ -1901,7 +1901,7 @@ CacheVC::handleReadDone(int event, Event *e) {
           checksum += *b;
         ink_assert(checksum == doc->checksum);
         if (checksum != doc->checksum) {
-          Note("cache: checksum error for [%" PRIu64 " %" PRIu64 "] len %d, hlen %d, disk %s, offset %" PRIu64 " size %d",
+          Note("cache: checksum error for [%" PRIu64 " %" PRIu64 "] len %d, hlen %d, disk %s, offset %" PRIu64 " size %zu",
                doc->first_key.b[0], doc->first_key.b[1],
                doc->len, doc->hlen, vol->path, io.aiocb.aio_offset, io.aiocb.aio_nbytes);
           doc->magic = DOC_CORRUPT;
@@ -2298,7 +2298,7 @@ cplist_reconfigure()
         int vols = (free_space / MAX_VOL_SIZE) + 1;
         for (int p = 0; p < vols; p++) {
           off_t b = gdisks[i]->free_space / (vols - p);
-          Debug("cache_hosting", "blocks = %d\n", b);
+          Debug("cache_hosting", "blocks = %lld\n", (long long)b);
           DiskVolBlock *dpb = gdisks[i]->create_volume(0, b, CACHE_HTTP_TYPE);
           ink_assert(dpb && dpb->len == (uint64_t)b);
         }
@@ -2350,7 +2350,7 @@ cplist_reconfigure()
         percent_remaining -= (config_vol->size < 128) ? 0 : config_vol->percent;
       }
       if (config_vol->size < 128) {
-        Warning("the size of volume %d (%d) is less than the minimum required volume size",
+        Warning("the size of volume %d (%d) is less than the minimum required volume size %d",
                 config_vol->number, config_vol->size, 128);
         Warning("volume %d is not created", config_vol->number);
       }
@@ -2497,11 +2497,11 @@ create_volume(int volume_number, off_t size_in_blocks, int scheme, CacheVol *cp)
         char config_file[PATH_NAME_MAX];
         IOCORE_ReadConfigString(config_file, "proxy.config.cache.volume_filename", PATH_NAME_MAX);
         if (cp->size)
-          Warning("not enough space to increase volume: [%d] to size: [%d]",
-                  volume_number, (to_create + cp->size) >> (20 - STORE_BLOCK_SHIFT));
+          Warning("not enough space to increase volume: [%d] to size: [%lld]",
+                  volume_number, (long long)((to_create + cp->size) >> (20 - STORE_BLOCK_SHIFT)));
         else
-          Warning("not enough space to create volume: [%d], size: [%d]",
-                  volume_number, to_create >> (20 - STORE_BLOCK_SHIFT));
+          Warning("not enough space to create volume: [%d], size: [%lld]",
+                  volume_number, (long long)(to_create >> (20 - STORE_BLOCK_SHIFT)));
 
         Note("edit the %s file and restart traffic_server", config_file);
         delete[]sp;

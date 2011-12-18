@@ -115,7 +115,7 @@ LogFilterString::LogFilterString(const char *name, LogField * field,
     }
     if (i < n) {
       Warning("There were invalid values in the definition of filter %s"
-              "only %u out of %u values will be used", name, i, n);
+              "only %zu out of %zu values will be used", name, i, n);
     }
   }
   _setValues(i, val_array);
@@ -379,7 +379,7 @@ LogFilterInt::LogFilterInt(const char *name, LogField * field,
     }
     if (i < n) {
       Warning("There were invalid values in the definition of filter %s"
-              " only %u out of %u values will be used.", name, i, n);
+              " only %zu out of %zu values will be used.", name, i, n);
     }
   } else {
     Warning("No values in the definition of filter %s.", name);

@@ -700,7 +700,9 @@ Span::init(char *filename, int64_t size)
     hw_sector_size = arg;
     is_disk = 1;
     adjusted_sec = hw_sector_size / 512;
-    Debug("cache_init", "Span::init - %s hw_sector_size = %d,is_disk = %d,adjusted_sec = %d", filename, hw_sector_size, is_disk,adjusted_sec);
+    Debug("cache_init",
+      "Span::init - %s hw_sector_size=%"PRId64" is_disk=%d adjusted_sec=%d",
+      filename, hw_sector_size, is_disk,adjusted_sec);
   }
 
   alignment = 0;

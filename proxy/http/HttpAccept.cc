@@ -54,7 +54,7 @@ HttpAccept::mainEvent(int event, void *data)
     netvc->attributes = transport_type;
 
     if (is_debug_tag_set("http_seq"))
-      Debug("http_seq", "[HttpAccept:mainEvent %lx] accepted connection from %s transport type = %d.\n", netvc, ink_inet_nptop(client_ip, ipb, sizeof(ipb)), netvc->attributes);
+      Debug("http_seq", "[HttpAccept:mainEvent %p] accepted connection from %s transport type = %d", netvc, ink_inet_nptop(client_ip, ipb, sizeof(ipb)), netvc->attributes);
 
     HttpClientSession *new_session = THREAD_ALLOC_INIT(httpClientSessionAllocator, netvc->thread);
 

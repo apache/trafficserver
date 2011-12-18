@@ -75,7 +75,7 @@ ssl_read_from_net(NetHandler * nh, UnixNetVConnection * vc, EThread * lthread, i
   for (bytes_read = 0; (b != 0) && (sslErr == SSL_ERROR_NONE); b = b->next) {
     block_write_avail = b->write_avail();
 
-    Debug("ssl", "[SSL_NetVConnection::ssl_read_from_net] b->write_avail()=%d", block_write_avail);
+    Debug("ssl", "[SSL_NetVConnection::ssl_read_from_net] b->write_avail()=%"PRId64, block_write_avail);
 
     int64_t offset = 0;
     // while can be replaced with if - need to test what works faster with openssl
@@ -139,7 +139,7 @@ ssl_read_from_net(NetHandler * nh, UnixNetVConnection * vc, EThread * lthread, i
   }                             // for ( bytes_read = 0; (b != 0); b = b->next)
 
   if (bytes_read > 0) {
-    Debug("ssl", "[SSL_NetVConnection::ssl_read_from_net] bytes_read=%d", bytes_read);
+    Debug("ssl", "[SSL_NetVConnection::ssl_read_from_net] bytes_read=%"PRId64, bytes_read);
     buf.writer()->fill(bytes_read);
     s->vio.ndone += bytes_read;
     vc->netActivity(lthread);
@@ -302,7 +302,8 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
 
 
 int64_t
-SSLNetVConnection::load_buffer_and_write(int64_t towrite, int64_t &wattempted, int64_t &total_wrote, MIOBufferAccessor & buf) {
+SSLNetVConnection::load_buffer_and_write(int64_t towrite, int64_t &wattempted, int64_t &total_wrote, MIOBufferAccessor & buf)
+{
   ProxyMutex *mutex = this_ethread()->mutex;
   int64_t r = 0;
   int64_t l = 0;
@@ -327,8 +328,8 @@ SSLNetVConnection::load_buffer_and_write(int64_t towrite, int64_t &wattempted, i
       break;
     wattempted = l;
     total_wrote += l;
-    Debug("ssl", "SSLNetVConnection::loadBufferAndCallWrite, before do_SSL_write, l = %d, towrite = %d, b = %x", l,
-          towrite, b);
+    Debug("ssl", "SSLNetVConnection::loadBufferAndCallWrite, before do_SSL_write, l=%"PRId64", towrite=%"PRId64", b=%p",
+          l, towrite, b);
     write_calls++;
     r = do_SSL_write(ssl, b->start() + offset, (int)l);
     if (r == l) {
@@ -337,7 +338,7 @@ SSLNetVConnection::load_buffer_and_write(int64_t towrite, int64_t &wattempted, i
     // on to the next block
     offset = 0;
     b = b->next;
-    Debug("ssl", "SSLNetVConnection::loadBufferAndCallWrite,Number of bytes written =%d , total =%d", r, total_wrote);
+    Debug("ssl", "SSLNetVConnection::loadBufferAndCallWrite,Number of bytes written=%"PRId64" , total=%"PRId64"", r, total_wrote);
     NET_DEBUG_COUNT_DYN_STAT(net_calls_to_write_stat, 1);
   } while (r == l && total_wrote < towrite && b);
   if (r > 0) {

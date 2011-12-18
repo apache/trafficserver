@@ -372,8 +372,8 @@ LogField::update_aggregate(int64_t val)
     return;
   }
 
-  Debug("log-agg", "Aggregate field %s updated with val %d, "
-        "new val = %d, cnt = %d", m_symbol, val, m_agg_val, m_agg_cnt);
+  Debug("log-agg", "Aggregate field %s updated with val %"PRId64", "
+        "new val = %"PRId64", cnt = %"PRId64"", m_symbol, val, m_agg_val, m_agg_cnt);
 }
 
 

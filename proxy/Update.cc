@@ -769,8 +769,8 @@ UpdateConfigManager::init()
   UPDATE_CLEAR_DYN_STAT(update_state_machines_stat);
 
   Debug("update",
-        "Update params: enable %d force %d rcnt %d rint %d updates %d "
-        "max_sm %d mem %d",
+        "Update params: enable %"PRId64" force %"PRId64" rcnt %"PRId64" rint %"PRId64" updates %"PRId64" "
+        "max_sm %"PRId64" mem %"PRId64"",
         _CP_actual->_enabled, _CP_actual->_immediate_update,
         _CP_actual->_retry_count, _CP_actual->_retry_interval,
         _CP_actual->_concurrent_updates, _CP_actual->_max_update_state_machines, _CP_actual->_memory_use_in_mb);
@@ -862,7 +862,7 @@ UpdateConfigManager::ProcessUpdate(int event, Event * e)
 
     if (!(*_CP == *p)) {
       _CP = p;
-      Debug("update", "enable %d force %d rcnt %d rint %d updates %d mem %d",
+      Debug("update", "enable %"PRId64" force %"PRId64" rcnt %"PRId64" rint %"PRId64" updates %"PRId64" state machines %"PRId64" mem %"PRId64"",
             p->_enabled, p->_immediate_update, p->_retry_count,
             p->_retry_interval, p->_concurrent_updates, p->_max_update_state_machines, p->_memory_use_in_mb);
     } else {
@@ -872,7 +872,7 @@ UpdateConfigManager::ProcessUpdate(int event, Event * e)
   }
   // Unknown event, ignore it.
 
-  Debug("update", "ProcessUpdate: Unknown event %d 0x%x", event, e);
+  Debug("update", "ProcessUpdate: Unknown event %d %p", event, e);
   return EVENT_DONE;
 }
 

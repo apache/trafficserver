@@ -276,14 +276,14 @@ CacheVC::openReadChooseWriter(int event, Event * e)
     vector.clear(false);
     if (!write_vc) {
       MUTEX_RELEASE(lock);
-      DDebug("cache_read_agg", "%x: key: %X %X writer alternate different: %d", this, first_key.word(1), alternate_index);
+      DDebug("cache_read_agg", "%p: key: %X writer alternate different: %d", this, first_key.word(1), alternate_index);
       od = NULL;
       SET_HANDLER(&CacheVC::openReadStartHead);
       return openReadStartHead(EVENT_IMMEDIATE, 0);
     }
 
     DDebug("cache_read_agg",
-          "%x: key: %X eKey: %d # alts: %d, ndx: %d, # writers: %d writer: %x",
+          "%p: key: %X eKey: %d # alts: %d, ndx: %d, # writers: %d writer: %p",
           this, first_key.word(1), write_vc->earliest_key.word(1),
           vector.count(), alternate_index, od->num_writers, write_vc);
   }
@@ -308,7 +308,7 @@ CacheVC::openReadFromWriter(int event, Event * e)
   }
   cancel_trigger();
   intptr_t err = ECACHE_DOC_BUSY;
-  DDebug("cache_read_agg", "%x: key: %X In openReadFromWriter", this, first_key.word(1));
+  DDebug("cache_read_agg", "%p: key: %X In openReadFromWriter", this, first_key.word(1));
 #ifndef READ_WHILE_WRITER
   return openReadFromWriterFailure(CACHE_EVENT_OPEN_READ_FAILED, (Event *) -err);
 #else
@@ -336,7 +336,7 @@ CacheVC::openReadFromWriter(int event, Event * e)
     if (writer_done()) {
       MUTEX_RELEASE(lock);
       DDebug("cache_read_agg",
-            "%x: key: %X writer %x has left, continuing as normal read", this, first_key.word(1), write_vc);
+            "%p: key: %X writer %p has left, continuing as normal read", this, first_key.word(1), write_vc);
       od = NULL;
       write_vc = NULL;
       SET_HANDLER(&CacheVC::openReadStartHead);
@@ -361,14 +361,14 @@ CacheVC::openReadFromWriter(int event, Event * e)
     if (!cache_config_read_while_writer || frag_type != CACHE_FRAG_TYPE_HTTP)
       return openReadFromWriterFailure(CACHE_EVENT_OPEN_READ_FAILED, (Event *) - err);
     DDebug("cache_read_agg",
-          "%x: key: %X writer: closed:%d, fragment:%d, retry: %d",
+          "%p: key: %X writer: closed:%d, fragment:%d, retry: %d",
           this, first_key.word(1), write_vc->closed, write_vc->fragment, writer_lock_retry);
     VC_SCHED_WRITER_RETRY();
   }
 
   CACHE_TRY_LOCK(writer_lock, write_vc->mutex, mutex->thread_holding);
   if (!writer_lock) {
-    DDebug("cache_read_agg", "%x: key: %X lock miss", this, first_key.word(1));
+    DDebug("cache_read_agg", "%p: key: %X lock miss", this, first_key.word(1));
     VC_SCHED_LOCK_RETRY();
   }
   MUTEX_RELEASE(lock);
@@ -378,7 +378,7 @@ CacheVC::openReadFromWriter(int event, Event * e)
 #ifdef HTTP_CACHE
   if (frag_type == CACHE_FRAG_TYPE_HTTP) {
     DDebug("cache_read_agg",
-          "%x: key: %X http passed stage 1, closed: %d, frag: %d",
+          "%p: key: %X http passed stage 1, closed: %d, frag: %d",
           this, first_key.word(1), write_vc->closed, write_vc->fragment);
     if (!write_vc->alternate.valid())
       return openReadFromWriterFailure(CACHE_EVENT_OPEN_READ_FAILED, (Event *) - err);
@@ -395,7 +395,7 @@ CacheVC::openReadFromWriter(int event, Event * e)
     } else {
       key = write_vc->update_key;
       ink_assert(write_vc->closed);
-      DDebug("cache_read_agg", "%x: key: %X writer header update", this, first_key.word(1));
+      DDebug("cache_read_agg", "%p: key: %X writer header update", this, first_key.word(1));
       // Update case (b) : grab doc_len from the writer's alternate
       doc_len = alternate.object_size_get();
       if (write_vc->update_key == cod->single_doc_key &&
@@ -426,7 +426,7 @@ CacheVC::openReadFromWriter(int event, Event * e)
     }
   } else {
 #endif //HTTP_CACHE
-    DDebug("cache_read_agg", "%x: key: %X non-http passed stage 1", this, first_key.word(1));
+    DDebug("cache_read_agg", "%p: key: %X non-http passed stage 1", this, first_key.word(1));
     key = write_vc->earliest_key;
 #ifdef HTTP_CACHE
   }
@@ -435,7 +435,7 @@ CacheVC::openReadFromWriter(int event, Event * e)
     doc_len = write_vc->vio.nbytes;
     last_collision = NULL;
     DDebug("cache_read_agg",
-          "%x: key: %X closed: %d, fragment: %d, len: %d starting first fragment",
+          "%p: key: %X closed: %d, fragment: %d, len: %d starting first fragment",
           this, first_key.word(1), write_vc->closed, write_vc->fragment, (int)doc_len);
     MUTEX_RELEASE(writer_lock);
     // either a header + body update or a new document
@@ -453,7 +453,7 @@ CacheVC::openReadFromWriter(int event, Event * e)
   doc_len = write_vc->total_len;
   dir_clean(&first_dir);
   dir_clean(&earliest_dir);
-  DDebug("cache_read_agg", "%x key: %X %X: single fragment read", first_key.word(1), key.word(0));
+  DDebug("cache_read_agg", "%p: key: %X %X: single fragment read", this, first_key.word(1), key.word(0));
   MUTEX_RELEASE(writer_lock);
   SET_HANDLER(&CacheVC::openReadFromWriterMain);
   CACHE_INCREMENT_DYN_STAT(cache_read_busy_success_stat);
@@ -581,17 +581,17 @@ CacheVC::openReadReadDone(int event, Event * e)
         last_collision = NULL;
         while (dir_probe(&earliest_key, vol, &dir, &last_collision)) {
           if (dir_offset(&dir) == dir_offset(&earliest_dir)) {
-            DDebug("cache_read_agg", "%x: key: %X ReadRead complete: %d",
+            DDebug("cache_read_agg", "%p: key: %X ReadRead complete: %d",
                   this, first_key.word(1), (int)vio.ndone);
             doc_len = vio.ndone;
             goto Ldone;
           }
         }
-        DDebug("cache_read_agg", "%x: key: %X ReadRead writer aborted: %d",
+        DDebug("cache_read_agg", "%p: key: %X ReadRead writer aborted: %d",
               this, first_key.word(1), (int)vio.ndone);
         goto Lerror;
       }
-      DDebug("cache_read_agg", "%x: key: %X ReadRead retrying: %d", this, first_key.word(1), (int)vio.ndone);
+      DDebug("cache_read_agg", "%p: key: %X ReadRead retrying: %d", this, first_key.word(1), (int)vio.ndone);
       VC_SCHED_WRITER_RETRY(); // wait for writer
     }
     // fall through for truncated documents
@@ -713,17 +713,17 @@ Lread: {
         last_collision = NULL;
         while (dir_probe(&earliest_key, vol, &dir, &last_collision)) {
           if (dir_offset(&dir) == dir_offset(&earliest_dir)) {
-            DDebug("cache_read_agg", "%x: key: %X ReadMain complete: %d",
+            DDebug("cache_read_agg", "%p: key: %X ReadMain complete: %d",
                   this, first_key.word(1), (int)vio.ndone);
             doc_len = vio.ndone;
             goto Leos;
           }
         }
-        DDebug("cache_read_agg", "%X: key: %X ReadMain writer aborted: %d",
+        DDebug("cache_read_agg", "%p: key: %X ReadMain writer aborted: %d",
               this, first_key.word(1), (int)vio.ndone);
         goto Lerror;
       }
-      DDebug("cache_read_agg", "%X: key: %X ReadMain retrying: %d", this, first_key.word(1), (int)vio.ndone);
+      DDebug("cache_read_agg", "%p: key: %X ReadMain retrying: %d", this, first_key.word(1), (int)vio.ndone);
       SET_HANDLER(&CacheVC::openReadMain);
       VC_SCHED_WRITER_RETRY();
     }
@@ -802,7 +802,7 @@ CacheVC::openReadStartEarliest(int event, Event * e)
 #ifdef HIT_EVACUATE
     if (vol->within_hit_evacuate_window(&earliest_dir) &&
         (!cache_config_hit_evacuate_size_limit || doc_len <= (uint64_t)cache_config_hit_evacuate_size_limit)) {
-      DDebug("cache_hit_evac", "dir: %d, write: %d, phase: %d",
+      DDebug("cache_hit_evac", "dir: %"PRId64", write: %"PRId64", phase: %d",
             dir_offset(&earliest_dir), offset_to_vol_offset(vol, vol->header->write_pos), vol->header->phase);
       f.hit_evacuate = 1;
     }
@@ -1063,7 +1063,7 @@ CacheVC::openReadStartHead(int event, Event * e)
 #ifdef HIT_EVACUATE
     if (vol->within_hit_evacuate_window(&dir) &&
         (!cache_config_hit_evacuate_size_limit || doc_len <= (uint64_t)cache_config_hit_evacuate_size_limit)) {
-      DDebug("cache_hit_evac", "dir: %d, write: %d, phase: %d",
+      DDebug("cache_hit_evac", "dir: %"PRId64", write: %"PRId64", phase: %d",
             dir_offset(&dir), offset_to_vol_offset(vol, vol->header->write_pos), vol->header->phase);
       f.hit_evacuate = 1;
     }

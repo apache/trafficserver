@@ -557,7 +557,7 @@ LogObject::log(LogAccess * lad, char *text_entry)
     }
 
     if (time_now < m_format->m_interval_next) {
-      Debug("log-agg", "Time now = %d, next agg = %d; not time "
+      Debug("log-agg", "Time now = %ld, next agg = %ld; not time "
             "for aggregate entry", time_now, m_format->m_interval_next);
       return Log::LOG_OK;
     }
@@ -581,7 +581,7 @@ LogObject::log(LogAccess * lad, char *text_entry)
 
   if (!buffer) {
     Note("Traffic Server is skipping the current log entry for %s because "
-         "its size (%d) exceeds the maximum payload space in a " "log buffer", m_basename, bytes_needed);
+         "its size (%zu) exceeds the maximum payload space in a " "log buffer", m_basename, bytes_needed);
     LOG_INCREMENT_DYN_STAT(log_stat_event_log_access_fail_stat);
     return Log::FAIL;
   }
@@ -597,7 +597,7 @@ LogObject::log(LogAccess * lad, char *text_entry)
     bytes_used = m_format->m_field_list.marshal_agg(&(*buffer)[offset]);
     ink_assert(bytes_needed >= bytes_used);
     m_format->m_interval_next += m_format->m_interval_sec;
-    Debug("log-agg", "Aggregate entry created; next time is %d", m_format->m_interval_next);
+    Debug("log-agg", "Aggregate entry created; next time is %ld", m_format->m_interval_next);
   } else if (lad) {
     bytes_used = m_format->m_field_list.marshal(lad, &(*buffer)[offset]);
     ink_assert(bytes_needed >= bytes_used);

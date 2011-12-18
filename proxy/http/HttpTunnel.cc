@@ -280,7 +280,7 @@ ChunkedHandler::read_chunk()
 
   ink_assert(bytes_left >= 0);
   if (bytes_left == 0) {
-    Debug("http_chunk", "completed read of chunk of %d bytes", cur_chunk_size);
+    Debug("http_chunk", "completed read of chunk of %"PRId64" bytes", cur_chunk_size);
 
     // Check to see if we need to flow control the output
     if (dechunked_buffer &&
@@ -292,7 +292,7 @@ ChunkedHandler::read_chunk()
       state = CHUNK_READ_SIZE_START;
     }
   } else if (bytes_left > 0) {
-    Debug("http_chunk", "read %d bytes of an %d chunk", b, cur_chunk_size);
+    Debug("http_chunk", "read %"PRId64" bytes of an %"PRId64" chunk", b, cur_chunk_size);
   }
 }
 
@@ -768,7 +768,7 @@ HttpTunnel::producer_run(HttpTunnelProducer * p)
     } else if (p->do_dechunking) {
       // bz57413
       Debug("http_tunnel",
-            "[producer_run] do_dechunking p->chunked_handler.chunked_reader->read_avail() = %d",
+            "[producer_run] do_dechunking p->chunked_handler.chunked_reader->read_avail() = %"PRId64"",
             p->chunked_handler.chunked_reader->read_avail());
 
       // initialize a reader to dechunked buffer start before writing to keep ref count
@@ -779,7 +779,7 @@ HttpTunnel::producer_run(HttpTunnelProducer * p)
       if (!transform_consumer) {
         p->chunked_handler.dechunked_buffer->write(p->buffer_start, p->chunked_handler.skip_bytes);
 
-        Debug("http_tunnel", "[producer_run] do_dechunking::Copied header of size %d ", p->chunked_handler.skip_bytes);
+        Debug("http_tunnel", "[producer_run] do_dechunking::Copied header of size %"PRId64"", p->chunked_handler.skip_bytes);
       }
     }
   }
@@ -860,12 +860,12 @@ HttpTunnel::producer_run(HttpTunnelProducer * p)
   // including the maximum configured post data size
   if (p->alive && sm->t_state.method == HTTP_WKSIDX_POST && sm->enable_redirection
       && sm->redirection_tries == 0 && (p->vc_type == HT_HTTP_CLIENT)) {
-    Debug("http_redirect", "[HttpTunnel::producer_run] client post: %d max size: %d",
+    Debug("http_redirect", "[HttpTunnel::producer_run] client post: %"PRId64" max size: %"PRId64"",
           p->buffer_start->read_avail(), HttpConfig::m_master.post_copy_size);
 
     // (note that since we are not dechunking POST, this is the chunked size if chunked)
     if (p->buffer_start->read_avail() > HttpConfig::m_master.post_copy_size) {
-      Debug("http_redirect", "[HttpTunnel::producer_handler] post exceeds buffer limit, buffer_avail=%d limit=%d",
+      Debug("http_redirect", "[HttpTunnel::producer_handler] post exceeds buffer limit, buffer_avail=%"PRId64" limit=%"PRId64"",
             p->buffer_start->read_avail(), HttpConfig::m_master.post_copy_size);
       sm->enable_redirection = false;
     } else {
@@ -891,11 +891,11 @@ HttpTunnel::producer_run(HttpTunnelProducer * p)
     // bz57413
     // If there is no transformation plugin, then we didn't add the header, hence no need to consume it
     Debug("http_tunnel",
-          "[producer_run] do_dechunking p->chunked_handler.chunked_reader->read_avail() = %d",
+          "[producer_run] do_dechunking p->chunked_handler.chunked_reader->read_avail() = %"PRId64"",
           p->chunked_handler.chunked_reader->read_avail());
     if (!transform_consumer && (p->chunked_handler.chunked_reader->read_avail() >= p->chunked_handler.skip_bytes)) {
       p->chunked_handler.chunked_reader->consume(p->chunked_handler.skip_bytes);
-      Debug("http_tunnel", "[producer_run] do_dechunking p->chunked_handler.skip_bytes = %d",
+      Debug("http_tunnel", "[producer_run] do_dechunking p->chunked_handler.skip_bytes = %"PRId64"",
             p->chunked_handler.skip_bytes);
     }
     //if(p->chunked_handler.chunked_reader->read_avail() > 0)
@@ -1072,7 +1072,7 @@ bool HttpTunnel::producer_handler(int event, HttpTunnelProducer * p)
     if ((postbuf->postdata_copy_buffer_start->read_avail() + postbuf->ua_buffer_reader->read_avail())
         > HttpConfig::m_master.post_copy_size) {
       Debug("http_redirect",
-            "[HttpTunnel::producer_handler] post exceeds buffer limit, buffer_avail=%d reader_avail=%d limit=%d",
+            "[HttpTunnel::producer_handler] post exceeds buffer limit, buffer_avail=%"PRId64" reader_avail=%"PRId64" limit=%"PRId64"",
             postbuf->postdata_copy_buffer_start->read_avail(), postbuf->ua_buffer_reader->read_avail(),
             HttpConfig::m_master.post_copy_size);
       deallocate_redirect_postdata_buffers();
@@ -1499,7 +1499,7 @@ void
 HttpTunnel::copy_partial_post_data()
 {
   postbuf->postdata_copy_buffer->write(postbuf->ua_buffer_reader);
-  Debug("http_redirect", "[HttpTunnel::copy_partial_post_data] wrote %d bytes to buffers %d",
+  Debug("http_redirect", "[HttpTunnel::copy_partial_post_data] wrote %"PRId64" bytes to buffers %"PRId64"",
         postbuf->ua_buffer_reader->read_avail(), postbuf->postdata_copy_buffer_start->read_avail());
   postbuf->ua_buffer_reader->consume(postbuf->ua_buffer_reader->read_avail());
 }

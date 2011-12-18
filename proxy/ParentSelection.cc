@@ -306,7 +306,7 @@ ParentConfigParams::findParent(HttpRequestData * rdata, ParentResult * result)
       Debug("parent_select", "Result for %s was %s", host, ParentResultStr[result->r]);
       break;
     case PARENT_SPECIFIED:
-      Debug("parent_select", "sizeof ParentResult = %d", sizeof(ParentResult));
+      Debug("parent_select", "sizeof ParentResult = %zu", sizeof(ParentResult));
       Debug("parent_select", "Result for %s was parent %s:%d", host, result->hostname, result->port);
       break;
     default:
@@ -555,8 +555,8 @@ ParentRecord::FindParent(bool first_call, ParentResult * result, RD * rdata, Par
       parentUp = true;
     } else {
       if ((result->wrap_around) || ((parents[cur_index].failedAt + config->ParentRetryTime) < request_info->xact_start)) {
-        Debug("parent_select", "Parent[%d].failedAt = %u, retry = %u,xact_start = %u but wrap = %d", cur_index,
-              parents[cur_index].failedAt, config->ParentRetryTime, request_info->xact_start, result->wrap_around);
+        Debug("parent_select", "Parent[%d].failedAt = %u, retry = %u,xact_start = %lld but wrap = %d", cur_index,
+              parents[cur_index].failedAt, config->ParentRetryTime, (long long)request_info->xact_start, result->wrap_around);
         // Reuse the parent
         parentUp = true;
         parentRetry = true;
@@ -831,7 +831,7 @@ ParentRecord::UpdateMatch(ParentResult * result, RD * rdata)
     result->rec = this;
     result->line_number = this->line_num;
 
-    Debug("parent_select", "Matched with 0x%x parent node from line %d", this, this->line_num);
+    Debug("parent_select", "Matched with %p parent node from line %d", this, this->line_num);
   }
 }
 

@@ -275,7 +275,7 @@ CongestionControlRecord::UpdateMatch(CongestionControlRule * pRule, RD * rdata)
       }
     }
     pRule->record = this;
-    Debug("congestion_config", "Matched with record 0x%x at line %d", this, line_num);
+    Debug("congestion_config", "Matched with record %p at line %d", this, line_num);
   }
 }
 
@@ -764,7 +764,7 @@ CongestionEntry::failed_at(ink_hrtime t)
     return;
   // long time = ink_hrtime_to_sec(t);
   long time = t;
-  Debug("congestion_control", "failed_at: %d", time);
+  Debug("congestion_control", "failed_at: %ld", time);
   MUTEX_TRY_LOCK(lock, m_hist_lock, this_ethread());
   if (lock) {
     m_history.regist_event(time);
@@ -777,7 +777,7 @@ CongestionEntry::failed_at(ink_hrtime t)
       }
     }
   } else {
-    Debug("congestion_control", "failure info lost due to lock contention(Entry: 0x%x, Time: %d)", (void *) this, time);
+    Debug("congestion_control", "failure info lost due to lock contention(Entry: %p, Time: %ld)", (void *) this, time);
   }
 }
 
