@@ -58,6 +58,9 @@ template<class T> T max(const T a, const T b)
 #define MAP_SHARED_MAP_NORESERVE (MAP_SHARED)
 #elif defined(darwin)
 #define MAP_SHARED_MAP_NORESERVE (MAP_SHARED)
+#elif defined(solaris)
+#define NEED_ALTZONE_DEFINED
+#define MAP_SHARED_MAP_NORESERVE (MAP_SHARED | MAP_NORESERVE)
 #else
 #define MAP_SHARED_MAP_NORESERVE (MAP_SHARED | MAP_NORESERVE)
 #endif
