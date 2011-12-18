@@ -1,5 +1,7 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.1.2
+  *) [TS-992] Portability fixes. Author: Piotr Sikora.
+
   *) [TS-949] Fix key->vol hash to be consistent when a disk is marked bad.
 
   *) [TS-1047] fix lots of spelling mistakes Author: Arno Töll
