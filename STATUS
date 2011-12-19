@@ -54,14 +54,7 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
      this patch to be merge later and leave some time for us to find out how to
      fix it. we are now testing the fix.
 
-  *) CORE: Fix for Machine.cc not generating the best IP in some cases
-   Trunk patch: http://svn.apache.org/viewvc?view=rev&rev=1210553
-   Jira: https://issues.apache.org/jira/browse/TS-1037
-   +1: zwoop
-   -1: igalic: We cannot backport this alone. amc's IPv6 refactoring
-               is prerequisite to this
-
-  *) Build: Add possibility to extend tsxs command line for -Iincludes.
+R  *) Build: Add possibility to extend tsxs command line for -Iincludes.
    Trunk patch: http://svn.apache.org/viewvc?view=rev&rev=1212075
    Jira: https://issues.apache.org/jira/browse/TS-1046
    +1: igalic, zwoop
