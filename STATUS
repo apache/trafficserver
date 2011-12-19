@@ -54,7 +54,7 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
      this patch to be merge later and leave some time for us to find out how to
      fix it. we are now testing the fix.
 
-R  *) Build: Add possibility to extend tsxs command line for -Iincludes.
+  *) Build: Add possibility to extend tsxs command line for -Iincludes.
    Trunk patch: http://svn.apache.org/viewvc?view=rev&rev=1212075
    Jira: https://issues.apache.org/jira/browse/TS-1046
    +1: igalic, zwoop
