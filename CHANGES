@@ -25,6 +25,8 @@ Changes with Apache Traffic Server 3.1.2
 
   *) [TS-1022] Use size specific types for serialized data in binary logs.
 
+  *) [TS-998] Distinguish normal URLs from proxy URLs containing routing info.
+
 Changes with Apache Traffic Server 3.1.1
   *) [TS-1020] Make logging to a named pipe work on Solaris.
 
