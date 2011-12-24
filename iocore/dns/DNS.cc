@@ -150,7 +150,7 @@ make_ipv4_ptr(in_addr_t addr, char *buffer)
       *p++ = ((u[0] / 10) % 10) + '0';
     *p++ = u[0] % 10 + '0';
     *p++ = '.';
-    ink_strlcpy(p, "in-addr.arpa", MAXDNAME - (p - buffer + 1));    
+    ink_strlcpy(p, "in-addr.arpa", MAXDNAME - (p - buffer + 1));
 }
 
 void
@@ -1217,14 +1217,36 @@ dns_result(DNSHandler *h, DNSEntry *e, HostEnt *ent, bool retry) {
       goto Lretry;
     }
   }
-  if (!e->post(h, ent)) {
+
+  if (e->timeout) {
+    e->timeout->cancel(e);
+    e->timeout = NULL;
+  }
+  e->result_ent = ent;
+
+  if (h->mutex->thread_holding == e->submit_thread) {
+    MUTEX_TRY_LOCK(lock, e->action.mutex, h->mutex->thread_holding);
+    if (!lock) {
+      Debug("dns", "failed lock for result %s", e->qname);
+      goto Lretry;
+    }
     for (int i = 0; i < MAX_DNS_RETRIES; i++) {
       if (e->id[i] < 0)
         break;
-      h->release_query_id(e->id[i]);      
+      h->release_query_id(e->id[i]);
     }
-    return;
+    e->postEvent(0, 0);
+  } else {
+    for (int i = 0; i < MAX_DNS_RETRIES; i++) {
+      if (e->id[i] < 0)
+        break;
+      h->release_query_id(e->id[i]);
+    }
+    e->mutex = e->action.mutex;
+    SET_CONTINUATION_HANDLER(e, &DNSEntry::postEvent);
+    e->submit_thread->schedule_imm_signal(e);
   }
+  return;
 Lretry:
   e->result_ent = ent;
   e->retries = 0;
