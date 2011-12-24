@@ -1,5 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.1.2
+  *) [TS-1029] DNS crash if we free the memory into system.
+    Author: weijin
+
   *) [TS-1055] Wrong implementation of TSHttpSsnArgGet().
     Author: Yakov Kopel
 
