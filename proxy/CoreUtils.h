@@ -81,7 +81,7 @@ struct core_stack_state
 };
 #endif  // linux check
 
-#if defined(darwin) || defined(freebsd) || defined(solaris) // FIXME: solaris x86
+#if defined(darwin) || defined(freebsd) || defined(solaris) || defined(openbsd) // FIXME: solaris x86
 #include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>

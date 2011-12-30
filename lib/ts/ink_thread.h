@@ -271,7 +271,7 @@ ink_cond_timedwait(ink_cond * cp, ink_mutex * mp, ink_timestruc * t)
 {
   int err;
   while (EINTR == (err = pthread_cond_timedwait(cp, mp, t)));
-#if defined(freebsd)
+#if defined(freebsd) || defined(openbsd)
   ink_assert((err == 0) || (err == ETIMEDOUT));
 #else
   ink_assert((err == 0) || (err == ETIME) || (err == ETIMEDOUT));

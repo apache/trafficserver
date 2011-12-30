@@ -4900,14 +4900,16 @@ ConfigAlarmNotify(char *string_val)
 int
 find_value(const char *pathname, const char *key, char *value, int value_len, const char *delim, int no)
 {
+  int find = 0;
+
+#if defined(linux) || defined(darwin) || defined(freebsd) || defined(solaris) \
+ || defined(openbsd)
   char buffer[1024];
   char *pos;
   char *open_quot, *close_quot;
   FILE *fp;
-  int find = 0;
   int counter = 0;
 
-#if defined(linux) || defined(darwin) || defined(freebsd) || defined(solaris)
   value[0] = 0;
   // coverity[fs_check_call]
   if (access(pathname, R_OK)) {

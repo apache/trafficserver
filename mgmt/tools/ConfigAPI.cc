@@ -21,7 +21,8 @@
   limitations under the License.
  */
 
-#if defined(linux) || defined(solaris) || defined(freebsd) || defined(darwin)
+#if defined(linux) || defined(solaris) || defined(freebsd) || defined(darwin) \
+ || defined(openbsd)
 
 #include "libts.h"
 #include "I_Layout.h"

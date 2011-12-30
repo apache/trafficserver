@@ -1940,7 +1940,7 @@ main(int argc, char *argv[])
   signal(SIGTTIN, SIG_IGN);
 
   setsid();                     // Important, thanks Vlad. :)
-#if defined(freebsd) && !defined(kfreebsd)
+#if (defined(freebsd) && !defined(kfreebsd)) || defined(openbsd)
   setpgrp(0,0);
 #else
   setpgrp();

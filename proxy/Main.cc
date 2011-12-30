@@ -44,7 +44,7 @@ extern "C" int plock(int);
 #include <sys/filio.h>
 #endif
 #include <syslog.h>
-#if !defined(darwin) && !defined(freebsd) && !defined(solaris)
+#if !defined(darwin) && !defined(freebsd) && !defined(solaris) && !defined(openbsd)
 #include <mcheck.h>
 #endif
 

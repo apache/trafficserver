@@ -38,8 +38,11 @@
 #if !defined (_ink_bool_h_)
 #define _ink_bool_h_
 
+#if defined(openbsd)
 
-#if !defined(linux)
+#include <stdbool.h>
+
+#elif !defined(linux)
 
 #if (defined (__GNUC__) || ! defined(__cplusplus))
 /*
@@ -60,7 +63,7 @@
 #endif
 
 #endif /* #if (defined (__GNUC__) || ! defined(__cplusplus)) */
-#endif // not linux
+#endif /* not openbsd, not linux */
 
 /*
  * TRUE and FALSE not declared in C++

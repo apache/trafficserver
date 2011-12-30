@@ -367,7 +367,7 @@ Store::write_config_data(int fd)
   return 0;
 }
 
-#if defined(freebsd) || defined(darwin)
+#if defined(freebsd) || defined(darwin) || defined(openbsd)
 // TODO: Those are probably already included from the ink_platform.h
 #include <ctype.h>
 #include <sys/types.h>

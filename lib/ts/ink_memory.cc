@@ -100,6 +100,11 @@ ats_memalign(size_t alignment, size_t size)
   if (alignment <= 8)
     return ats_malloc(size);
 
+#if defined(openbsd)
+  if (alignment > PAGE_SIZE)
+      alignment = PAGE_SIZE;
+#endif
+
 #if TS_HAS_JEMALLOC
   int retcode = JEMALLOC_P(posix_memalign)(&ptr, alignment, size);
 #else

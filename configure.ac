@@ -747,6 +747,9 @@ case $host_os in
   solaris*)
     host_os_def=solaris
     ;;
+  openbsd*)
+    host_os_def=openbsd
+    ;;
   *)
     EXTRA_CXX_LDFLAGS="-rdynamic"
     host_os_def=unknown

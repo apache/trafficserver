@@ -132,7 +132,7 @@ int framepointer = 0;
 int program_counter = 0;
 #endif  // linux check
 
-#if defined(darwin) || defined(freebsd) || defined(solaris) // FIXME: solaris x86
+#if defined(darwin) || defined(freebsd) || defined(solaris) || defined(openbsd) // FIXME: solaris x86
 // TODO: Cleanup multiple includes
 #include <stdio.h>
 #include <stdlib.h>
@@ -978,7 +978,7 @@ CoreUtils::process_EThread(EThread * eth_test)
 
     // This is not 64-bit correct. /leif
     printf("----------- EThread @ 0x%p ----------\n", eth_test);
-#if !defined(kfreebsd) && (defined(freebsd) || defined(darwin))
+#if !defined(kfreebsd) && (defined(freebsd) || defined(darwin) || defined(openbsd))
     printf("   thread_id: %p\n", loaded_eth->tid);
 #else
     printf("   thread_id: %i\n", (int) loaded_eth->tid);

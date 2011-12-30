@@ -31,7 +31,7 @@
 #include <pcre.h>
 #endif
 
-#if defined(linux) || defined(freebsd) || defined(darwin)
+#if defined(linux) || defined(freebsd) || defined(darwin) || defined(openbsd)
 
 #include "SysAPI.h"
 #include <unistd.h>
@@ -791,7 +791,7 @@ Net_GetSMTP_Server(char *server)
 }
 
 
-#if defined(linux) || defined(freebsd) || defined(darwin)
+#if defined(linux) || defined(freebsd) || defined(darwin) || defined(openbsd)
 
 int
 Net_GetDefaultRouter(char *router, size_t router_len)

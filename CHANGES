@@ -1,5 +1,7 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.1.2
+  *) [TS-992] Add OpenBSD support. Author: Piotr Sikora
+
   *) [TS-999] Deprecate TSUrlDestroy(), it's a no-op. Just make sure
    to release the marshal buffers as normal.
 

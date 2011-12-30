@@ -1740,7 +1740,8 @@ ICPRequestCont::BuildICPMsg(ICPopcode_t op, unsigned int seqno,
   mhdr->msg_name = (caddr_t) 0;
   mhdr->msg_namelen = 0;
   // TODO: The following is just awkward
-#if !defined(linux) && !defined(freebsd) && !defined(darwin) && !defined(solaris)
+#if !defined(linux) && !defined(freebsd) && !defined(darwin) && !defined(solaris) \
+ && !defined(openbsd)
   mhdr->msg_accrights = (caddr_t) 0;
   mhdr->msg_accrightslen = 0;
 #elif !defined(solaris)

@@ -128,7 +128,7 @@ int cftime_replacement(char *s, int maxsize, const char *format, const time_t * 
 inkcoreapi int ink_gmtime_r(const ink_time_t * clock, struct tm *res);
 ink_time_t convert_tm(const struct tm *tp);
 
-#if defined(freebsd)
+#if defined(freebsd) || defined(openbsd)
 
 inline int
 ink_timezone()
@@ -148,7 +148,7 @@ inline int ink_daylight() {
 }
 */
 
-#else  // non-freebsd for the else
+#else  // non-freebsd, non-openbsd for the else
 
 inline int
 ink_timezone()

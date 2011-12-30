@@ -60,14 +60,6 @@
 
 #define FD_THROTTLE_HEADROOM (128 + 64) // TODO: consolidate with THROTTLE_FD_HEADROOM
 
-// TODO: Use positive instead negative selection
-#if !defined(linux) && !defined(darwin) && !defined(freebsd) && !defined(solaris)
-extern "C"
-{
-  int gethostname(char *name, int namelen);
-}
-#endif
-
 #if defined(freebsd)
 extern "C" int getpwnam_r(const char *name, struct passwd *result, char *buffer, size_t buflen, struct passwd **resptr);
 #endif
