@@ -317,7 +317,7 @@ LogUtils::strip_trailing_newline(char *buf)
   -------------------------------------------------------------------------*/
 
 char *
-LogUtils::escapify_url(Arena * arena, char *url, int len_in, int *len_out)
+LogUtils::escapify_url(Arena *arena, char *url, size_t len_in, int *len_out, char *dst, size_t dst_size, const unsigned char *map)
 {
   // codes_to_escape is a bitmap encoding the codes that should be escaped.
   // These are all the codes defined in section 2.4.3 of RFC 2396
@@ -326,7 +326,7 @@ LogUtils::escapify_url(Arena * arena, char *url, int len_in, int *len_out)
   // historically this is what the traffic_server has done.
   // Note that we leave codes beyond 127 unmodified.
   //
-  static unsigned char codes_to_escape[32] = {
+  static const unsigned char codes_to_escape[32] = {
     0xFF, 0xFF, 0xFF, 0xFF,     // control
     0xB4,                       // space " # %
     0x00, 0x00,                 //
@@ -346,29 +346,37 @@ LogUtils::escapify_url(Arena * arena, char *url, int len_in, int *len_out)
     'D', 'E', 'F'
   };
 
-  if (!url) {
+  if (!url || (dst && dst_size < len_in)) {
     *len_out = 0;
-    return (NULL);
+    return NULL;
   }
+
+  if (!map)
+    map = codes_to_escape;
+
   // Count specials in the url, assuming that there won't be any.
   //
   int count = 0;
   char *p = url;
   char *in_url_end = url + len_in;
+
   while (p < in_url_end) {
     register unsigned char c = *p;
-    if (codes_to_escape[c / 8] & (1 << (7 - c % 8))) {
-      count++;
+    if (map[c / 8] & (1 << (7 - c % 8))) {
+      ++count;
     }
-    p++;
+    ++p;
   }
 
   if (!count) {
     // The common case, no escapes, so just return the source string.
     //
     *len_out = len_in;
+    if (dst)
+      ink_strlcpy(dst, url, len_in);
     return url;
   }
+
   // For each special char found, we'll need an escape string, which is
   // three characters long.  Count this and allocate the string required.
   //
@@ -376,19 +384,30 @@ LogUtils::escapify_url(Arena * arena, char *url, int len_in, int *len_out)
   // for when we calculate out_len !!! in other words,
   // out_len = len_in + 3*count - count
   //
-  int out_len = len_in + 2 * count;
+  size_t out_len = len_in + 2 * count;
+
+  if (dst && out_len > dst_size) {
+    *len_out = 0;
+    return NULL;
+  }
 
   // To play it safe, we null terminate the string we return in case
   // a module that expects null-terminated strings calls escapify_url,
   // so we allocate an extra byte for the EOS
   //
-  char *new_url = (char *) arena->str_alloc(out_len + 1);
+  char *new_url;
+
+  if (dst)
+    new_url = dst;
+  else
+    new_url = (char *) arena->str_alloc(out_len + 1);
 
   char *from = url;
   char *to = new_url;
+
   while (from < in_url_end) {
     register unsigned char c = *from;
-    if (codes_to_escape[c / 8] & (1 << (7 - c % 8))) {
+    if (map[c / 8] & (1 << (7 - c % 8))) {
       *to++ = '%';
       *to++ = hex_digit[c / 16];
       *to++ = hex_digit[c % 16];

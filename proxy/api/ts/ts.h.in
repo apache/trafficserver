@@ -1572,6 +1572,50 @@ extern "C"
    */
   tsapi TSReturnCode TSUrlHttpFragmentSet(TSMBuffer bufp, TSMLoc offset, const char* value, int length);
 
+  /**
+     Perform percent-encoding of the string in the buffer, storing the
+     new string in the destination buffer. The length parameter will be
+     set to the new (encoded) string length, or 0 if the encoding failed.
+
+     @param str the string buffer to encode.
+     @param str_len length of the string buffer.
+     @param dst destination buffer.
+     @param dst_size size of the destination buffer.
+     @param length amount of data written to the destination buffer.
+     @param map optional (can be NULL) map of characters to encode.
+
+  */
+  tsapi TSReturnCode TSStringPercentEncode(const char* str, int str_len, char *dst, size_t dst_size, size_t *length, const unsigned char *map);
+
+  /**
+     Similar to TSStringPercentEncode(), but works on a URL object.
+
+     @param bufp marshal buffer containing the URL.
+     @param offset location of the URL within bufp.
+     @param dst destination buffer.
+     @param dst_size size of the destination buffer.
+     @param length amount of data written to the destination buffer.
+     @param map optional (can be NULL) map of characters to encode.
+
+  */
+  tsapi TSReturnCode TSUrlPercentEncode(TSMBuffer bufp, TSMLoc offset, char *dst, size_t dst_size, size_t *length, const unsigned char *map);
+
+  /**
+     Perform percent-decoding of the string in the buffer, writing
+     to the output buffer. The source and destination can be the same,
+     in which case they overwrite. The decoded string is always 
+     guaranteed to be no longer than the source string.
+
+     @param src the string to decode (and possibly write to).
+     @param src_len length of the input string (or -1).
+     @param dst output buffer (can be the same as src).
+     @param dst_len size of the output buffer.
+
+  */
+  tsapi size_t TSStringPercentDecode(const char *src, size_t src_len, char* dst, size_t dst_size);
+
+
+
   /* --------------------------------------------------------------------------
      MIME headers */
 

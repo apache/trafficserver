@@ -91,7 +91,7 @@ volatile int next_argv_index = 0;
 
 struct _STATE_ARG_TABLE {
   char* name;
-  int name_len;
+  size_t name_len;
   char* description;
 } state_arg_table[HTTP_SSN_TXN_MAX_USER_ARG];
 
@@ -2283,6 +2283,73 @@ TSReturnCode
 TSUrlHttpFragmentSet(TSMBuffer bufp, TSMLoc obj, const char *value, int length)
 {
   return URLPartSet(bufp, obj, value, length, &URL::fragment_set);
+}
+
+// URL percent encoding
+TSReturnCode
+TSStringPercentEncode(const char* str, int str_len, char *dst, size_t dst_size, size_t *length, const unsigned char *map)
+{
+  sdk_assert(sdk_sanity_check_null_ptr((void*)str) == TS_SUCCESS);
+  sdk_assert(sdk_sanity_check_null_ptr((void*)dst) == TS_SUCCESS);
+  sdk_assert(sdk_sanity_check_null_ptr((void*)length) == TS_SUCCESS);
+
+  int new_len; // Unfortunately, a lot of the core uses "int" for length's internally...
+
+  if (str_len < 0)
+    str_len = strlen(str);
+
+  sdk_assert(str_len < static_cast<int>(dst_size));
+
+  // TODO: Perhaps we should make escapify_url() deal with const properly...
+  if (NULL == LogUtils::escapify_url(NULL, const_cast<char*>(str), str_len, &new_len, dst, dst_size, map)) {
+    *length = 0;
+    return TS_ERROR;
+  }
+
+  *length = new_len;
+  return TS_SUCCESS;
+}
+
+size_t
+TSStringPercentDecode(const char *src, size_t src_len, char* dst, size_t dst_size)
+{
+  sdk_assert(sdk_sanity_check_null_ptr((void*)src) == TS_SUCCESS);
+  sdk_assert(sdk_sanity_check_null_ptr((void*)dst) == TS_SUCCESS);
+
+  if (src_len < 0)
+    src_len = strlen(src);
+
+  // return unescapifyStr(str);
+  char *buffer = dst;
+  const char *str =  src;
+  int s = 0; // State, which we don't really use
+
+  unescape_str(buffer, buffer+dst_size, str, str+src_len, s);
+  *buffer = '\0';
+
+  return buffer - dst;
+}
+
+
+
+TSReturnCode
+TSUrlPercentEncode(TSMBuffer bufp, TSMLoc obj, char *dst, size_t dst_size, size_t *length, const unsigned char *map)
+{
+  sdk_assert(sdk_sanity_check_mbuffer(bufp) == TS_SUCCESS);
+  sdk_assert(sdk_sanity_check_url_handle(obj) == TS_SUCCESS);
+  sdk_assert(sdk_sanity_check_null_ptr((void*)length) == TS_SUCCESS);
+
+  char *url;
+  int url_len;
+  TSReturnCode ret;
+  URLImpl *url_impl = (URLImpl *)obj;
+
+  // TODO: at some point, it might be nice to allow this to write to a pre-allocated buffer
+  url = url_string_get(url_impl, NULL, &url_len, NULL);
+  ret = TSStringPercentEncode(url, url_len, dst, dst_size, length, map);
+  ats_free(url);
+
+  return ret;
 }
 
 
@@ -5455,7 +5522,7 @@ TSHttpArgIndexNameLookup(const char* name, int *arg_idx, const char **descriptio
 {
   sdk_assert(sdk_sanity_check_null_ptr(arg_idx) == TS_SUCCESS);
 
-  int len = strlen(name);
+  size_t len = strlen(name);
 
   for (int ix = 0; ix <  next_argv_index; ++ix) {
     if ((len == state_arg_table[ix].name_len) && (0 == strcmp(name, state_arg_table[ix].name))) {

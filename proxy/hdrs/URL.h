@@ -208,6 +208,10 @@ MIMEParseResult url_parse_http_no_path_component_breakdown(HdrHeap *heap, URLImp
 
 char *url_unescapify(Arena *arena, const char *str, int length);
 
+void unescape_str(char *&buf, char *buf_e, const char *&str, const char *str_e, int &state);
+void unescape_str_tolower(char *&buf, char *end, const char *&str, const char *str_e, int &state);
+
+
 inline int
 url_canonicalize_port(int type, int port)
 {

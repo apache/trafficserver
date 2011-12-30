@@ -7598,7 +7598,7 @@ const char *SDK_Overridable_Configs[] = {
 REGRESSION_TEST(SDK_API_OVERRIDABLE_CONFIGS) (RegressionTest * test, int atype, int *pstatus)
 {
   NOWARN_UNUSED(atype);
-  const char* conf;
+  const char *conf;
   TSOverridableConfigKey key;
   TSRecordDataType type;
   HttpSM* s = HttpSM::allocate();
@@ -7606,8 +7606,8 @@ REGRESSION_TEST(SDK_API_OVERRIDABLE_CONFIGS) (RegressionTest * test, int atype, 
   TSHttpTxn txnp = reinterpret_cast<TSHttpTxn>(s);
   TSMgmtInt ival;
   TSMgmtFloat fval;
-  const char* sval;
-  const char* test_string = "The Apache Traffic Server";
+  const char *sval;
+  const char *test_string = "The Apache Traffic Server";
   int tmp_int;
 
   s->init();
@@ -7670,6 +7670,49 @@ REGRESSION_TEST(SDK_API_OVERRIDABLE_CONFIGS) (RegressionTest * test, int atype, 
     SDK_RPRINT(test, "TSHttpTxnConfigIntSet", "TestCase1", TC_PASS, "ok");
     SDK_RPRINT(test, "TSHttpTxnConfigFloatSet", "TestCase1", TC_PASS, "ok");
     SDK_RPRINT(test, "TSHttpTxnConfigStringSet", "TestCase1", TC_PASS, "ok");
+  } else {
+    *pstatus = REGRESSION_TEST_FAILED;
+  }
+
+  return;
+}
+
+////////////////////////////////////////////////
+// SDK_API_PERCENT_ENCODING
+//
+// Unit Test for API: TSStringPercentEncode
+//                    TSUrlPercentEncode
+//                    TSStringPercentDecode
+////////////////////////////////////////////////
+
+REGRESSION_TEST(SDK_API_PERCENT_ENCODING) (RegressionTest * test, int atype, int *pstatus)
+{
+  const char *url = "http://www.example.com/foo?fie= \"#%<>[]\\^`{}~&bar={test}&fum=Apache Traffic Server";
+  const char *url_encoded =
+    "http://www.example.com/foo?fie=%20%22%23%25%3C%3E%5B%5D%5C%5E%60%7B%7D%7E&bar=%7Btest%7D&fum=Apache%20Traffic%20Server";
+  char buf[1024];
+  size_t length;
+  bool success = true;
+
+  if (TS_SUCCESS != TSStringPercentEncode(url, strlen(url), buf, sizeof(buf), &length, NULL)) {
+    SDK_RPRINT(test, "TSStringPercentEncode", "TestCase1", TC_FAIL, "Failed on %s", url);
+    success = false;
+  } else {
+    if (strcmp(buf, url_encoded)) {
+      SDK_RPRINT(test, "TSStringPercentEncode", "TestCase1", TC_FAIL, "Failed on %s != %s", buf, url_encoded);
+      success = false;
+    }
+  }
+
+  length = TSStringPercentDecode(url_encoded, strlen(url_encoded), buf, sizeof(buf));
+  if (length != strlen(url) || strcmp(buf, url)) {
+    SDK_RPRINT(test, "TSStringPercentDecode", "TestCase1", TC_FAIL, "Failed on %s != %s", buf, url);
+    success = false;
+  }
+
+  if (success) {
+    *pstatus = REGRESSION_TEST_PASSED;
+    SDK_RPRINT(test, "TSStringPercentEncode", "TestCase1", TC_PASS, "ok");
   } else {
     *pstatus = REGRESSION_TEST_FAILED;
   }

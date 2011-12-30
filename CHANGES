@@ -1,13 +1,15 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.1.2
-  *) [TS-1065] traffic_cop segment fault when enable TRACE_LOG_COP.
-     Author: Conan Wang.
+  *) [TS-245] Add TSStringPercentEncode(), TSUrlPercentEncode(), and
+   TSStringPercentDecode().
 
-  *) [TS-1029] DNS crash if we free the memory into system.
-    Author: weijin
+  *) [TS-1065] traffic_cop segment fault when enable TRACE_LOG_COP.
+   Author: Conan Wang.
+
+  *) [TS-1029] DNS crash if we free the memory into system. Author: weijin
 
   *) [TS-1055] Wrong implementation of TSHttpSsnArgGet().
-    Author: Yakov Kopel
+   Author: Yakov Kopel
 
   *) [TS-992] Portability fixes. Author: Piotr Sikora.
 

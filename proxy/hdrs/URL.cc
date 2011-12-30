@@ -885,16 +885,15 @@ url_to_string(URLImpl * url, Arena * arena, int *length)
  *                                                                     *
  ***********************************************************************/
 
-static void
+void
 unescape_str(char *&buf, char *buf_e, const char *&str, const char *str_e, int &state)
 {
   int copy_len;
   char *first_pct;
-  extern char *ink_memcpy_until_char(char *dst, char *src, unsigned int n, unsigned char c);
-
   int buf_len = (int) (buf_e - buf);
   int str_len = (int) (str_e - str);
   int min_len = (int) (str_len < buf_len ? str_len : buf_len);
+
   first_pct = ink_memcpy_until_char(buf, (char *) str, min_len, '%');
   copy_len = (int) (first_pct - str);
   str += copy_len;
@@ -956,7 +955,7 @@ unescape_str(char *&buf, char *buf_e, const char *&str, const char *str_e, int &
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-static void
+void
 unescape_str_tolower(char *&buf, char *end, const char *&str, const char *str_e, int &state)
 {
   while (str < str_e && (buf != end)) {
