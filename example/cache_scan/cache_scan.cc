@@ -449,12 +449,10 @@ setup_request(TSCont contp, TSHttpTxn txnp)
             TSCacheKeyDigestFromUrlSet(cstate->key_to_delete, urlLoc) != TS_SUCCESS) {
           TSError("CacheKeyDigestFromUrlSet failed");
           TSfree(cstate);
-          TSUrlDestroy(urlBuf, urlLoc);
           TSHandleMLocRelease(urlBuf, NULL, urlLoc);
           TSCacheKeyDestroy(cstate->key_to_delete);
           goto Ldone;
         }
-        TSUrlDestroy(urlBuf, urlLoc);
         TSHandleMLocRelease(urlBuf, NULL, urlLoc);
       }
     }

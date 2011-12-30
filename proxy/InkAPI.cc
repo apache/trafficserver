@@ -1946,15 +1946,7 @@ TSUrlCreate(TSMBuffer bufp, TSMLoc *locp)
 TSReturnCode
 TSUrlDestroy(TSMBuffer bufp, TSMLoc url_loc)
 {
-  sdk_assert(sdk_sanity_check_mbuffer(bufp) == TS_SUCCESS);
-  sdk_assert(sdk_sanity_check_url_handle(url_loc) == TS_SUCCESS);
-
-  if (isWriteable(bufp)) {
-    // No more objects counts in heap or deallocation so do nothing!
-    // FIX ME - Did this free the MBuffer in Pete's old system?
-    return TS_SUCCESS;
-  }
-  return TS_ERROR;
+  return TS_SUCCESS;
 }
 
 TSReturnCode

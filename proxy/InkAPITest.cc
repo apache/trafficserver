@@ -2631,7 +2631,6 @@ EXCLUSIVE_REGRESSION_TEST(SDK_API_HttpHookAdd) (RegressionTest * test, int atype
 //       SDK_API_TSUrl
 //
 // Unit Test for API: TSUrlCreate
-//                    TSUrlDestroy
 //                    TSUrlSchemeGet
 //                    TSUrlSchemeSet
 //                    TSUrlUserGet
@@ -2776,7 +2775,6 @@ REGRESSION_TEST(SDK_API_TSUrl) (RegressionTest * test, int atype, int *pstatus)
   int tmp_len;
 
   bool test_passed_create = false;
-  bool test_passed_destroy = false;
   bool test_passed_scheme = false;
   bool test_passed_user = false;
   bool test_passed_password = false;
@@ -3057,21 +3055,11 @@ REGRESSION_TEST(SDK_API_TSUrl) (RegressionTest * test, int atype, int *pstatus)
     }
   }
 
-
-  if ((TSUrlDestroy(bufp1, url_loc1) == TS_ERROR) &&
-      (TSUrlDestroy(bufp2, url_loc2) == TS_ERROR) &&
-      (TSUrlDestroy(bufp3, url_loc3) == TS_ERROR)) {
-    SDK_RPRINT(test, "TSUrlCreate", "TestCase1&2", TC_PASS, "ok");
-    SDK_RPRINT(test, "TSUrlDestroy", "TestCase1|2|3", TC_FAIL, "Returns TS_ERROR");
-  } else {
-    SDK_RPRINT(test, "TSUrlCreate", "TestCase1&2", TC_PASS, "ok");
-    SDK_RPRINT(test, "TSUrlDestroy", "TestCase1&2&3", TC_PASS, "ok");
-    TSHandleMLocRelease(bufp1, TS_NULL_MLOC, url_loc1);
-    TSHandleMLocRelease(bufp2, TS_NULL_MLOC, url_loc2);
-    TSHandleMLocRelease(bufp3, TS_NULL_MLOC, url_loc3);
-    test_passed_create = true;
-    test_passed_destroy = true;
-  }
+  SDK_RPRINT(test, "TSUrlCreate", "TestCase1&2", TC_PASS, "ok");
+  TSHandleMLocRelease(bufp1, TS_NULL_MLOC, url_loc1);
+  TSHandleMLocRelease(bufp2, TS_NULL_MLOC, url_loc2);
+  TSHandleMLocRelease(bufp3, TS_NULL_MLOC, url_loc3);
+  test_passed_create = true;
 
 print_results:
   TSfree(url_expected_string);
@@ -3094,7 +3082,6 @@ print_results:
     TSMBufferDestroy(bufp3);
   }
   if ((test_passed_create == false) ||
-      (test_passed_destroy == false) ||
       (test_passed_scheme == false) ||
       (test_passed_user == false) ||
       (test_passed_password == false) ||
@@ -3113,7 +3100,6 @@ print_results:
         /*** Debugging the test itself....
 	(test_passed_create == false)?printf("test_passed_create is false\n"):printf("");
 	(test_passed_destroy == false)?printf("test_passed_destroy is false\n"):printf("");
-	(test_passed_scheme == false)?printf("test_passed_scheme is false\n"):printf("");
 	(test_passed_user == false)?printf("test_passed_user is false\n"):printf("");
 	(test_passed_password == false)?printf("test_passed_password is false\n"):printf("");
 	(test_passed_host == false)?printf("test_passed_host is false\n"):printf("");
@@ -5388,10 +5374,7 @@ REGRESSION_TEST(SDK_API_TSUrlParse) (RegressionTest * test, int atype, int *psta
     *pstatus = REGRESSION_TEST_PASSED;
   }
 
-  TSUrlDestroy(bufp, url_loc);
-
   TSHandleMLocRelease(bufp, TS_NULL_MLOC, url_loc);
-
   TSMBufferDestroy(bufp);
 
   return;

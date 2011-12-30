@@ -1195,7 +1195,9 @@ extern "C"
       @param offset location of the URL to be destroyed.
 
    */
-  tsapi TSReturnCode TSUrlDestroy(TSMBuffer bufp, TSMLoc offset);
+  /** @deprecated There is no reason to destroy the URL, just release
+      the marshal buffers. */
+  tsapi TS_DEPRECATED TSReturnCode TSUrlDestroy(TSMBuffer bufp, TSMLoc offset);
 
   /**
       Copies the URL located at src_url within src_bufp to a URL
