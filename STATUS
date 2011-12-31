@@ -72,7 +72,7 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   *) HttpSM: slow log can not print logs well on 32-bit system.
    Trunk patch: http://svn.apache.org/viewvc?view=rev&rev=1225944
    Jira: https://issues.apache.org/jira/browse/TS-1014
-   +1: zwoop
+   +1: zwoop, igalic
    
 
 
