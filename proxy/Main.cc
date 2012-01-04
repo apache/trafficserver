@@ -54,6 +54,7 @@ extern "C" int plock(int);
 #include "StatSystem.h"
 #include "P_EventSystem.h"
 #include "P_Net.h"
+#include "P_UDPNet.h"
 #include "P_DNS.h"
 #include "P_SplitDNS.h"
 #include "P_Cluster.h"

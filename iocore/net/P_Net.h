@@ -105,7 +105,6 @@ do { \
 #include "P_UnixPollDescriptor.h"
 #include "P_Socks.h"
 #include "P_CompletionUtil.h"
-#include "P_UDPNet.h"
 #include "P_NetVCTest.h"
 #include "P_LibBulkIO.h"
 

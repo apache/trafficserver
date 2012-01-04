@@ -41,6 +41,7 @@
 #include "HttpSM.h"
 #include "HttpConfig.h"
 #include "P_Net.h"
+#include "P_UDPNet.h"
 #include "P_HostDB.h"
 #include "StatSystem.h"
 #include "P_Cache.h"

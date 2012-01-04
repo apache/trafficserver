@@ -30,6 +30,7 @@
  ****************************************************************************/
 
 #include "P_Net.h"
+#include "P_UDPNet.h"
 
 typedef int (UDPNetHandler::*UDPNetContHandler) (int, void *);
 
