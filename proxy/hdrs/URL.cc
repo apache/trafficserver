@@ -1532,7 +1532,7 @@ url_print(URLImpl * url, char *buf_start, int buf_length, int *buf_index_inout, 
 {
 #define TRY(x)  if (!x) return 0
 
-  if (!url->is_normal) {  /* URL is proxyreq containing routing components */
+  if (!url_is_normal) {  /* URL is proxyreq containing routing components */
     if (url->m_ptr_scheme) {
       TRY(mime_mem_print(url->m_ptr_scheme, url->m_len_scheme,
                          buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
