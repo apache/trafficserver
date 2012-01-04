@@ -1060,8 +1060,6 @@ url_parse(HdrHeap * heap, URLImpl * url, const char **start, const char *end, bo
 
   cur = *start;
 
-  url->is_normal = (*cur == '/');
-
 skip_ws:
   if (ParseRules::is_ws(*cur)) {
     GETNEXT(eof);
@@ -1532,36 +1530,34 @@ url_print(URLImpl * url, char *buf_start, int buf_length, int *buf_index_inout, 
 {
 #define TRY(x)  if (!x) return 0
 
-  if (!url_is_normal) {  /* URL is proxyreq containing routing components */
-    if (url->m_ptr_scheme) {
-      TRY(mime_mem_print(url->m_ptr_scheme, url->m_len_scheme,
-                         buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
-      if ((url->m_scheme_wks_idx >= 0) && (hdrtoken_index_to_wks(url->m_scheme_wks_idx) == URL_SCHEME_FILE)) {
-        TRY(mime_mem_print(":", 1, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
-      } else {
-        TRY(mime_mem_print("://", 3, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
-      }
+  if (url->m_ptr_scheme) {
+    TRY(mime_mem_print(url->m_ptr_scheme, url->m_len_scheme,
+                       buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
+    if ((url->m_scheme_wks_idx >= 0) && (hdrtoken_index_to_wks(url->m_scheme_wks_idx) == URL_SCHEME_FILE)) {
+      TRY(mime_mem_print(":", 1, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
+    } else {
+      TRY(mime_mem_print("://", 3, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
     }
+  }
 
-    if (url->m_ptr_user) {
-      TRY(mime_mem_print(url->m_ptr_user, url->m_len_user,
+  if (url->m_ptr_user) {
+    TRY(mime_mem_print(url->m_ptr_user, url->m_len_user,
+                       buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
+    if (url->m_ptr_password) {
+      TRY(mime_mem_print(":", 1, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
+      TRY(mime_mem_print(url->m_ptr_password, url->m_len_password,
                          buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
-      if (url->m_ptr_password) {
-        TRY(mime_mem_print(":", 1, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
-        TRY(mime_mem_print(url->m_ptr_password, url->m_len_password,
-                           buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
-      }
-      TRY(mime_mem_print("@", 1, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
     }
+    TRY(mime_mem_print("@", 1, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
+  }
 
-    if (url->m_ptr_host) {
-      TRY(mime_mem_print(url->m_ptr_host, url->m_len_host,
+  if (url->m_ptr_host) {
+    TRY(mime_mem_print(url->m_ptr_host, url->m_len_host,
+                       buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
+    if (url->m_ptr_port && url->m_port) {
+      TRY(mime_mem_print(":", 1, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
+      TRY(mime_mem_print(url->m_ptr_port, url->m_len_port,
                          buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
-      if (url->m_ptr_port && url->m_port) {
-        TRY(mime_mem_print(":", 1, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
-        TRY(mime_mem_print(url->m_ptr_port, url->m_len_port,
-                           buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
-      }
     }
   }
 

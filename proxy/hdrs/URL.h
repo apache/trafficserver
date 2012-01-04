@@ -83,9 +83,6 @@ struct URLImpl:public HdrHeapObjImpl
 
   // Sanity Check Functions
   void check_strings(HeapCheck *heaps, int num_heaps);
-
-  // Is this a normal or a (forward) proxy request?
-  bool is_normal;
 };
 
 
