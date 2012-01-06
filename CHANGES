@@ -1,5 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.1.2
+  *) [TS-1044] Fix TSVConn{Read,Write}VIOGet in UnixNetVConnection.
+    Author: James Peach.
+
   *) [TS-1040] Teach TSHostLookup to use const. Author: James Peach.
 
   *) [TS-1071] Debug statement in FetchSM broken. Author: Brian Geffon.

@@ -95,6 +95,8 @@ public:
   virtual VIO *do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf);
   virtual VIO *do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *buf, bool owner = false);
 
+  virtual bool get_data(int id, void *data);
+
   virtual Action *send_OOB(Continuation *cont, char *buf, int len);
   virtual void cancel_OOB();
 

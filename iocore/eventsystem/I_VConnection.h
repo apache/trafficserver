@@ -127,6 +127,19 @@ enum ShutdownHowTo_t
   IO_SHUTDOWN_READWRITE
 };
 
+/** Used in VConnection::get_data(). */
+enum TSApiDataType
+{
+  TS_API_DATA_READ_VIO = VCONNECTION_API_DATA_BASE,
+  TS_API_DATA_WRITE_VIO,
+  TS_API_DATA_OUTPUT_VC,
+  TS_API_DATA_CLOSED
+};
+
+extern "C" {
+    typedef struct tsapi_vio* TSVIO;
+}
+
 /**
   Base class for the connection classes that provide IO capabilities.
 

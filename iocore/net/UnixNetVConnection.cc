@@ -498,6 +498,27 @@ write_to_net_io(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
   }
 }
 
+bool
+UnixNetVConnection::get_data(int id, void *data)
+{
+  union {
+    TSVIO * vio;
+    void * data;
+  } ptr;
+
+  ptr.data = data;
+
+  switch (id) {
+  case TS_API_DATA_READ_VIO:
+    *ptr.vio = (TSVIO)&this->read.vio;
+    return true;
+  case TS_API_DATA_WRITE_VIO:
+    *ptr.vio = (TSVIO)&this->write.vio;
+    return true;
+  default:
+    return false;
+  }
+}
 
 VIO *
 UnixNetVConnection::do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf)

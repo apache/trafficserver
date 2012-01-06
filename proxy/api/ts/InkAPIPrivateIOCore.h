@@ -64,14 +64,6 @@ public:
 };
 
 
-enum TSApiDataType
-{
-  TS_API_DATA_READ_VIO = VCONNECTION_API_DATA_BASE,
-  TS_API_DATA_WRITE_VIO,
-  TS_API_DATA_OUTPUT_VC,
-  TS_API_DATA_CLOSED
-};
-
 
 class INKVConnInternal:public INKContInternal
 {

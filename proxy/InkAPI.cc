@@ -6056,8 +6056,11 @@ TSVConnReadVIOGet(TSVConn connp)
   VConnection *vc = (VConnection *)connp;
   TSVIO data;
 
-  vc->get_data(TS_API_DATA_READ_VIO, &data); // Can not fail for this case
-  return data;
+  if (vc->get_data(TS_API_DATA_READ_VIO, &data)) {
+    return data;
+  }
+
+  return NULL;
 }
 
 TSVIO
@@ -6068,8 +6071,11 @@ TSVConnWriteVIOGet(TSVConn connp)
   VConnection *vc = (VConnection *) connp;
   TSVIO data;
 
-  vc->get_data(TS_API_DATA_WRITE_VIO, &data); // Can not fail for this case
-  return data;
+  if (vc->get_data(TS_API_DATA_WRITE_VIO, &data)) {
+    return data;
+  }
+
+  return NULL;
 }
 
 int
