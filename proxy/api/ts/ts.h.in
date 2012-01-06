@@ -3016,6 +3016,10 @@ extern "C"
   tsapi TSReturnCode TSHttpTxnCachedUrlSet(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc obj);
   tsapi TSReturnCode TSHttpTxnPrivateSessionSet(TSHttpTxn txnp, int private_session);
 
+  /* Expose internal Base64 Encoding / Decoding */
+  tsapi size_t TSBase64Decode(const char *input, size_t length, unsigned char *dst, size_t dst_size);
+  tsapi size_t TSBase64Encode(const char *input, size_t length, char *dst, size_t dst_size);
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

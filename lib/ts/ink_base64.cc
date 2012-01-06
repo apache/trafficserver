@@ -38,103 +38,29 @@
 #include "ink_resource.h"
 #include "ink_unused.h"
 
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
 
-#ifdef decode
-# undef decode
-#endif
-#define decode(A) ((unsigned int)codes[(unsigned char)input[A]])
+// TODO: This code is not paritcularly "uniform", we ought to make them
+// more the same coding style (the uuencode one seems good'ish).
 
-// NOTE: ink_base64_decode returns ats_xmalloc'd memory
 
-char *
-ink_base64_decode(const char *input, int input_len, int *output_len)
+size_t
+ats_base64_encode(const unsigned char *inBuffer, size_t inBufferSize, char *outBuffer, size_t outBufSize)
 {
-  char *output;
-  char *obuf;
-  static bool initialized = FALSE;
-  static char codes[256];
-  int cc = 0;
-  int len;
-  int i;
-
-  if (!initialized) {
-    /* Build translation table */
-    for (i = 0; i < 256; i++)
-      codes[i] = 0;
-    for (i = 'A'; i <= 'Z'; i++)
-      codes[i] = cc++;
-    for (i = 'a'; i <= 'z'; i++)
-      codes[i] = cc++;
-    for (i = '0'; i <= '9'; i++)
-      codes[i] = cc++;
-    codes[0 + '+'] = cc++;
-    codes[0 + '/'] = cc++;
-    initialized = TRUE;
-  }
-  // compute ciphertext length
-  for (len = 0; len < input_len && input[len] != '='; len++);
-
-  output = obuf = (char *)ats_malloc((len * 6) / 8 + 4);
-  while (len > 0) {
-    *output++ = decode(0) << 2 | decode(1) >> 4;
-    *output++ = decode(1) << 4 | decode(2) >> 2;
-    *output++ = decode(2) << 6 | decode(3);
-    len -= 4;
-    input += 4;
-  }
-
-  /*
-   * We don't need to worry about leftover bits because
-   * we've allocated a few extra characters and if there
-   * are leftover bits they will be zeros because the extra
-   * inputs will be '='s and '=' decodes to 0.
-   */
-
-  *output = '\0';
-  *output_len = (int) (output - obuf);
-  return obuf;
-}
-
-#undef decode
-
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
-
-// NOTE: ink_base64_encode returns ats_malloc'd memory
-
-char *
-ink_base64_encode(const char *input, int input_len, int *output_len)
-{
-  return ink_base64_encode_unsigned((const unsigned char *) input, input_len, output_len);
-}
-
-char *
-ink_base64_encode_unsigned(const unsigned char *input, int input_len, int *output_len)
-{
-  char *output;
-  char *obuf;
-  static char codes[66] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+  static const char _codes[66] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+  char *obuf = outBuffer;
   char in_tail[4];
-  int len;
 
-  len = input_len;
+  if (outBufSize < ATS_BASE64_ENCODE_DSTLEN(inBufferSize))
+    return 0;
 
-  output = obuf = (char *)ats_malloc((len * 8) / 6 + 4);
-  while (len > 2) {
-    *output++ = codes[(input[0] >> 2) & 077];
+  while (inBufferSize > 2) {
+    *obuf++ = _codes[(inBuffer[0] >> 2) & 077];
+    *obuf++ = _codes[((inBuffer[0] & 03) << 4) | ((inBuffer[1] >> 4) & 017)];
+    *obuf++ = _codes[((inBuffer[1] & 017) << 2) | ((inBuffer[2] >> 6) & 017)];
+    *obuf++ = _codes[inBuffer[2] & 077];
 
-    *output++ = codes[((input[0] & 03) << 4)
-                      | ((input[1] >> 4) & 017)];
-
-    *output++ = codes[((input[1] & 017) << 2)
-                      | ((input[2] >> 6) & 017)];
-
-    *output++ = codes[input[2] & 077];
-
-    len -= 3;
-    input += 3;
+    inBufferSize -= 3;
+    inBuffer += 3;
   }
 
   /*
@@ -145,46 +71,43 @@ ink_base64_encode_unsigned(const unsigned char *input, int input_len, int *outpu
    * If 1 char left, form 2 output chars, and add 2 pad chars to output.
    * If 2 chars left, form 3 output chars, add 1 pad char to output.
    */
-
-  if (len == 0) {
-    *output_len = (int) (output - obuf);
-    *output = '\0';
-    return obuf;
+  if (inBufferSize == 0) {
+    *obuf = '\0';
+    return (obuf - outBuffer);
   } else {
     memset(in_tail, 0, sizeof(in_tail));
-    memcpy(in_tail, input, len);
+    memcpy(in_tail, inBuffer, inBufferSize);
 
-    *(output) = codes[(in_tail[0] >> 2) & 077];
+    *(obuf) = _codes[(in_tail[0] >> 2) & 077];
+    *(obuf + 1) = _codes[((in_tail[0] & 03) << 4) | ((in_tail[1] >> 4) & 017)];
+    *(obuf + 2) = _codes[((in_tail[1] & 017) << 2) | ((in_tail[2] >> 6) & 017)];
+    *(obuf + 3) = _codes[in_tail[2] & 077];
 
-    *(output + 1) = codes[((in_tail[0] & 03) << 4)
-                          | ((in_tail[1] >> 4) & 017)];
+    if (inBufferSize == 1)
+      *(obuf + 2) = '=';
+    *(obuf + 3) = '=';
+    *(obuf + 4) = '\0';
 
-    *(output + 2) = codes[((in_tail[1] & 017) << 2)
-                          | ((in_tail[2] >> 6) & 017)];
-
-    *(output + 3) = codes[in_tail[2] & 077];
-
-    if (len == 1)
-      *(output + 2) = '=';
-
-    *(output + 3) = '=';
-
-    *(output + 4) = '\0';
-
-    *output_len = (int) ((output + 4) - obuf);
-    return obuf;
+    return ((obuf + 4) - outBuffer);
   }
+}
+
+size_t
+ats_base64_encode(const char *inBuffer, size_t inBufferSize, char *outBuffer, size_t outBufSize)
+{
+  return ats_base64_encode((const unsigned char *)inBuffer, inBufferSize, outBuffer, outBufSize);
 }
 
 
 /*-------------------------------------------------------------------------
+  This is a reentrant, and malloc free implemetnation of ats_base64_decode.
   -------------------------------------------------------------------------*/
+#ifdef DECODE
+#undef DECODE
+#endif
 
-// int ink_base64_decode()
-//
-// The above functions require malloc'ing buffer which isn't good for
-//   Traffic Server performance and the the decode routine is not
-//   reentrant.  The following function fixes both those problems
+#define DECODE(x) printableToSixBit[(unsigned char)x]
+#define MAX_PRINT_VAL 63
 
 /* Converts a printable character to it's six bit representation */
 const unsigned char printableToSixBit[256] = {
@@ -201,38 +124,19 @@ const unsigned char printableToSixBit[256] = {
   64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64
 };
 
-
-#ifdef DECODE
-#undef DECODE
-#endif
-
-#define DECODE(x) printableToSixBit[(unsigned char)x]
-#define MAX_PRINT_VAL 63
-
-int
-ink_base64_decode(const char *inBuffer, int outBufSize, unsigned char *outBuffer)
+size_t
+ats_base64_decode(const char *inBuffer, size_t inBufferSize, unsigned char *outBuffer, size_t outBufSize)
 {
-
-  int inBytes = 0;
-  int decodedBytes = 0;
+  size_t decodedBytes = 0;
   unsigned char *outStart = outBuffer;
   int inputBytesDecoded = 0;
 
-  // Figure out much encoded string is really there
-  while (printableToSixBit[(uint8_t)inBuffer[inBytes]] <= MAX_PRINT_VAL) {
-    inBytes++;
-  }
-
   // Make sure there is sufficient space in the output buffer
-  //   if not shorten the number of bytes in
-  if ((((inBytes + 3) / 4) * 3) > outBufSize - 1) {
-    inBytes = ((outBufSize - 1) * 4) / 3;
-  }
+  if (outBufSize < ATS_BASE64_DECODE_DSTLEN(inBufferSize))
+    return 0;
 
-  for (int i = 0; i < inBytes; i += 4) {
-
+  for (size_t i = 0; i < inBufferSize; i += 4) {
     outBuffer[0] = (unsigned char) (DECODE(inBuffer[0]) << 2 | DECODE(inBuffer[1]) >> 4);
-
     outBuffer[1] = (unsigned char) (DECODE(inBuffer[1]) << 4 | DECODE(inBuffer[2]) >> 2);
     outBuffer[2] = (unsigned char) (DECODE(inBuffer[2]) << 6 | DECODE(inBuffer[3]));
 
@@ -244,59 +148,14 @@ ink_base64_decode(const char *inBuffer, int outBufSize, unsigned char *outBuffer
 
   // Check to see if we decoded a multiple of 4 four
   //    bytes
-  if ((inBytes - inputBytesDecoded) & 0x3) {
+  if ((inBufferSize - inputBytesDecoded) & 0x3) {
     if (DECODE(inBuffer[-2]) > MAX_PRINT_VAL) {
       decodedBytes -= 2;
     } else {
       decodedBytes -= 1;
     }
   }
-
   outStart[decodedBytes] = '\0';
 
   return decodedBytes;
-}
-
-
-char six2pr[64] = {
-  'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
-  'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
-  'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
-  'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
-  '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', '/'
-};
-
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
-
-int
-ink_base64_uuencode(const char *bufin, int nbytes, unsigned char *outBuffer)
-{
-
-  int i;
-
-  for (i = 0; i < nbytes; i += 3) {
-    *(outBuffer++) = six2pr[*bufin >> 2];       /* c1 */
-    *(outBuffer++) = six2pr[((*bufin << 4) & 060) | ((bufin[1] >> 4) & 017)];   /*c2 */
-    *(outBuffer++) = six2pr[((bufin[1] << 2) & 074) | ((bufin[2] >> 6) & 03)];  /*c3 */
-    *(outBuffer++) = six2pr[bufin[2] & 077];    /* c4 */
-
-    bufin += 3;
-  }
-
-  /* If nbytes was not a multiple of 3, then we have encoded too
-   * many characters.  Adjust appropriately.
-   */
-  if (i == nbytes + 1) {
-    /* There were only 2 bytes in that last group */
-    outBuffer[-1] = '=';
-  } else if (i == nbytes + 2) {
-    /* There was only 1 byte in that last group */
-    outBuffer[-1] = '=';
-    outBuffer[-2] = '=';
-  }
-
-  *outBuffer = '\0';
-
-  return TRUE;
 }

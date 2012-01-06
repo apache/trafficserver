@@ -23,7 +23,7 @@
 
 #ifndef _ink_base64_h_
 #define _ink_base64_h_
-#include "ink_apidefs.h"
+
 /*
  * Base64 encoding and decoding as according to RFC1521.  Similar to uudecode.
  * See RFC1521 for specificiation.
@@ -36,14 +36,14 @@
  * responsible for freeing the strings.
  *
  */
+// Encodes / Decodes into user supplied buffer.  Returns number of bytes decoded
+size_t ats_base64_encode(const char *inBuffer, size_t inBufferSize, char *outBuffer, size_t outBufSize);
+size_t ats_base64_encode(const unsigned char *inBuffer, size_t inBufferSize, char *outBuffer, size_t outBufSize);
 
-// These functions return ats_malloc'd memory which caller needs to ats_free
-inkcoreapi char *ink_base64_decode(const char *input, int input_len, int *output_len);
-char *ink_base64_encode(const char *input, int input_len, int *output_len);
-char *ink_base64_encode_unsigned(const unsigned char *input, int input_len, int *output_len);
+size_t ats_base64_decode(const char *inBuffer, size_t inBufferSize, unsigned char *outBuffer, size_t outBufSize);
 
-// Decodes into user supplied buffer.  Returns number of bytes decoded
-inkcoreapi int ink_base64_decode(const char *inBuffer, int outBufSize, unsigned char *outBuffer);
-int ink_base64_uuencode(const char *bufin, int nbytes, unsigned char *outBuffer);
+// Little helper functions to calculate minimum required output buffer for encoding/decoding.
+#define ATS_BASE64_ENCODE_DSTLEN(_length) ((_length * 8) / 6 + 4)
+#define ATS_BASE64_DECODE_DSTLEN(_length) (((_length + 3) / 4) * 3)
 
 #endif

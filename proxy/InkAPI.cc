@@ -1681,6 +1681,29 @@ _TSfree(void *ptr)
 
 ////////////////////////////////////////////////////////////////////
 //
+// Encoding utility
+//
+////////////////////////////////////////////////////////////////////
+size_t
+TSBase64Decode(const char *input, size_t length, unsigned char *dst, size_t dst_size)
+{
+  sdk_assert(sdk_sanity_check_null_ptr((void*)input) == TS_SUCCESS);
+  sdk_assert(sdk_sanity_check_null_ptr((void*)dst) == TS_SUCCESS);
+
+  return ats_base64_decode(input, length, dst, dst_size);
+}
+
+size_t
+TSBase64Encode(const char *input, size_t length, char *dst, size_t dst_size)
+{
+  sdk_assert(sdk_sanity_check_null_ptr((void*)input) == TS_SUCCESS);
+  sdk_assert(sdk_sanity_check_null_ptr((void*)dst) == TS_SUCCESS);
+
+  return ats_base64_encode(input, length, dst, dst_size);
+}
+
+////////////////////////////////////////////////////////////////////
+//
 // API utility routines
 //
 ////////////////////////////////////////////////////////////////////
