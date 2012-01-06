@@ -1,5 +1,7 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.1.2
+  *) TS-1071 Debug statement in FetchSM broken. Author: Brian Geffon.
+
   *) [TS-1057] Expose Base64-encoding through APIs.
    Author: Yakov Kopel and leif
 

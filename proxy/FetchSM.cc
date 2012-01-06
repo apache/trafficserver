@@ -93,7 +93,7 @@ FetchSM::get_info_from_buffer(IOBufferReader *the_reader)
     return ;
 
   read_avail = the_reader->read_avail();
-  Debug(DEBUG_TAG, "[%s] total avail " PRId64 , __FUNCTION__, read_avail);
+  Debug(DEBUG_TAG, "[%s] total avail %" PRId64 , __FUNCTION__, read_avail);
   //size_t hdr_size = _headers.size();
   //info = (char *)ats_malloc(sizeof(char) * (read_avail+1) + hdr_size);
   info = (char *)ats_malloc(sizeof(char) * (read_avail+1));
