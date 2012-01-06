@@ -416,7 +416,7 @@ LogUtils::escapify_url(Arena *arena, char *url, size_t len_in, int *len_out, cha
     }
     from++;
   }
-  *to = 0;                      // null terminate string
+  *to = '\0';                      // null terminate string
 
   *len_out = out_len;
   return new_url;

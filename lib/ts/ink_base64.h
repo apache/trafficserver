@@ -37,10 +37,10 @@
  *
  */
 // Encodes / Decodes into user supplied buffer.  Returns number of bytes decoded
-size_t ats_base64_encode(const char *inBuffer, size_t inBufferSize, char *outBuffer, size_t outBufSize);
-size_t ats_base64_encode(const unsigned char *inBuffer, size_t inBufferSize, char *outBuffer, size_t outBufSize);
+bool ats_base64_encode(const char *inBuffer, size_t inBufferSize, char *outBuffer, size_t outBufSize, size_t *length);
+bool ats_base64_encode(const unsigned char *inBuffer, size_t inBufferSize, char *outBuffer, size_t outBufSize, size_t *length);
 
-size_t ats_base64_decode(const char *inBuffer, size_t inBufferSize, unsigned char *outBuffer, size_t outBufSize);
+bool ats_base64_decode(const char *inBuffer, size_t inBufferSize, unsigned char *outBuffer, size_t outBufSize, size_t *length);
 
 // Little helper functions to calculate minimum required output buffer for encoding/decoding.
 #define ATS_BASE64_ENCODE_DSTLEN(_length) ((_length * 8) / 6 + 4)

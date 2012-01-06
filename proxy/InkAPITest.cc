@@ -7661,18 +7661,19 @@ REGRESSION_TEST(SDK_API_OVERRIDABLE_CONFIGS) (RegressionTest * test, int atype, 
 }
 
 ////////////////////////////////////////////////
-// SDK_API_PERCENT_ENCODING
+// SDK_API_ENCODING
 //
 // Unit Test for API: TSStringPercentEncode
 //                    TSUrlPercentEncode
 //                    TSStringPercentDecode
 ////////////////////////////////////////////////
 
-REGRESSION_TEST(SDK_API_PERCENT_ENCODING) (RegressionTest * test, int atype, int *pstatus)
+REGRESSION_TEST(SDK_API_ENCODING) (RegressionTest * test, int atype, int *pstatus)
 {
   const char *url = "http://www.example.com/foo?fie= \"#%<>[]\\^`{}~&bar={test}&fum=Apache Traffic Server";
   const char *url_encoded =
     "http://www.example.com/foo?fie=%20%22%23%25%3C%3E%5B%5D%5C%5E%60%7B%7D%7E&bar=%7Btest%7D&fum=Apache%20Traffic%20Server";
+  const char *url_base64 = "aHR0cDovL3d3dy5leGFtcGxlLmNvbS9mb28/ZmllPSAiIyU8PltdXF5ge31+JmJhcj17dGVzdH0mZnVtPUFwYWNoZSBUcmFmZmljIFNlcnZlcg==";
   char buf[1024];
   size_t length;
   bool success = true;
@@ -7684,21 +7685,50 @@ REGRESSION_TEST(SDK_API_PERCENT_ENCODING) (RegressionTest * test, int atype, int
     if (strcmp(buf, url_encoded)) {
       SDK_RPRINT(test, "TSStringPercentEncode", "TestCase1", TC_FAIL, "Failed on %s != %s", buf, url_encoded);
       success = false;
+    } else {
+      SDK_RPRINT(test, "TSStringPercentEncode", "TestCase1", TC_PASS, "ok");
     }
   }
 
-  length = TSStringPercentDecode(url_encoded, strlen(url_encoded), buf, sizeof(buf));
-  if (length != strlen(url) || strcmp(buf, url)) {
-    SDK_RPRINT(test, "TSStringPercentDecode", "TestCase1", TC_FAIL, "Failed on %s != %s", buf, url);
+  if (TS_SUCCESS != TSStringPercentDecode(url_encoded, strlen(url_encoded), buf, sizeof(buf), &length)) {
+    SDK_RPRINT(test, "TSStringPercentDecode", "TestCase1", TC_FAIL, "Failed on %s", url_encoded);
     success = false;
+  } else {
+    if (length != strlen(url) || strcmp(buf, url)) {
+      SDK_RPRINT(test, "TSStringPercentDecode", "TestCase1", TC_FAIL, "Failed on %s != %s", buf, url);
+      success = false;
+    } else {
+      SDK_RPRINT(test, "TSStringPercentDecode", "TestCase1", TC_PASS, "ok");
+    }
   }
 
-  if (success) {
-    *pstatus = REGRESSION_TEST_PASSED;
-    SDK_RPRINT(test, "TSStringPercentEncode", "TestCase1", TC_PASS, "ok");
+  if (TS_SUCCESS != TSBase64Encode(url, strlen(url), buf, sizeof(buf), &length)) {
+    SDK_RPRINT(test, "TSBase64Encode", "TestCase1", TC_FAIL, "Failed on %s", url);
+    success = false;
   } else {
-    *pstatus = REGRESSION_TEST_FAILED;
+    if (length != strlen(url_base64) || strcmp(buf, url_base64)) {
+      SDK_RPRINT(test, "TSBase64Encode", "TestCase1", TC_FAIL, "Failed on %s != %s", buf, url_base64);
+      success = false;
+    }  else {
+      SDK_RPRINT(test, "TSBase64Encode", "TestCase1", TC_PASS, "ok");
+    }
   }
+
+  if (TS_SUCCESS != TSBase64Decode(url_base64, strlen(url_base64), (unsigned char*)buf, sizeof(buf), &length)) {
+    SDK_RPRINT(test, "TSBase64Decode", "TestCase1", TC_FAIL, "Failed on %s", url_base64);
+    success = false;
+  } else {
+    printf("LENGTH is %d vs %d\n", (int)length, (int)strlen(url));
+    printf("BUF is %s vs %s\n", buf, url);
+    if (length != strlen(url) || strcmp(buf, url)) {
+      SDK_RPRINT(test, "TSBase64Decode", "TestCase1", TC_FAIL, "Failed on %s != %s", buf, url);
+      success = false;
+    } else {
+      SDK_RPRINT(test, "TSBase64Decode", "TestCase1", TC_PASS, "ok");
+    }
+  }
+
+  *pstatus = success ? REGRESSION_TEST_PASSED : REGRESSION_TEST_FAILED;
 
   return;
 }

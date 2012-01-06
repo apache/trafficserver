@@ -1684,22 +1684,22 @@ _TSfree(void *ptr)
 // Encoding utility
 //
 ////////////////////////////////////////////////////////////////////
-size_t
-TSBase64Decode(const char *input, size_t length, unsigned char *dst, size_t dst_size)
+TSReturnCode
+TSBase64Decode(const char *str, size_t str_len, unsigned char *dst, size_t dst_size, size_t *length)
 {
-  sdk_assert(sdk_sanity_check_null_ptr((void*)input) == TS_SUCCESS);
+  sdk_assert(sdk_sanity_check_null_ptr((void*)str) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_null_ptr((void*)dst) == TS_SUCCESS);
 
-  return ats_base64_decode(input, length, dst, dst_size);
+  return ats_base64_decode(str, str_len, dst, dst_size, length) ? TS_SUCCESS : TS_ERROR;
 }
 
-size_t
-TSBase64Encode(const char *input, size_t length, char *dst, size_t dst_size)
+TSReturnCode
+TSBase64Encode(const char *str, size_t str_len, char *dst, size_t dst_size, size_t *length)
 {
-  sdk_assert(sdk_sanity_check_null_ptr((void*)input) == TS_SUCCESS);
+  sdk_assert(sdk_sanity_check_null_ptr((void*)str) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_null_ptr((void*)dst) == TS_SUCCESS);
 
-  return ats_base64_encode(input, length, dst, dst_size);
+  return ats_base64_encode(str, str_len, dst, dst_size, length) ? TS_SUCCESS : TS_ERROR;
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -2307,7 +2307,6 @@ TSStringPercentEncode(const char* str, int str_len, char *dst, size_t dst_size, 
 {
   sdk_assert(sdk_sanity_check_null_ptr((void*)str) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_null_ptr((void*)dst) == TS_SUCCESS);
-  sdk_assert(sdk_sanity_check_null_ptr((void*)length) == TS_SUCCESS);
 
   int new_len; // Unfortunately, a lot of the core uses "int" for length's internally...
 
@@ -2318,42 +2317,45 @@ TSStringPercentEncode(const char* str, int str_len, char *dst, size_t dst_size, 
 
   // TODO: Perhaps we should make escapify_url() deal with const properly...
   if (NULL == LogUtils::escapify_url(NULL, const_cast<char*>(str), str_len, &new_len, dst, dst_size, map)) {
-    *length = 0;
+    if (length)
+      *length = 0;
     return TS_ERROR;
   }
 
-  *length = new_len;
+  if (length)
+    *length = new_len;
+
   return TS_SUCCESS;
 }
 
-size_t
-TSStringPercentDecode(const char *src, size_t src_len, char* dst, size_t dst_size)
+TSReturnCode
+TSStringPercentDecode(const char *str, size_t str_len, char* dst, size_t dst_size, size_t *length)
 {
-  sdk_assert(sdk_sanity_check_null_ptr((void*)src) == TS_SUCCESS);
+  sdk_assert(sdk_sanity_check_null_ptr((void*)str) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_null_ptr((void*)dst) == TS_SUCCESS);
 
-  if (src_len < 0)
-    src_len = strlen(src);
+  if (str_len < 0)
+    str_len = strlen(str);
 
   // return unescapifyStr(str);
   char *buffer = dst;
-  const char *str =  src;
+  const char *src =  str;
   int s = 0; // State, which we don't really use
 
-  unescape_str(buffer, buffer+dst_size, str, str+src_len, s);
+  // TODO: We should check for "failures" here?
+  unescape_str(buffer, buffer+dst_size, src, src+str_len, s);
   *buffer = '\0';
+  if (length)
+    *length = (buffer - dst);
 
-  return buffer - dst;
+  return TS_SUCCESS;
 }
-
-
 
 TSReturnCode
 TSUrlPercentEncode(TSMBuffer bufp, TSMLoc obj, char *dst, size_t dst_size, size_t *length, const unsigned char *map)
 {
   sdk_assert(sdk_sanity_check_mbuffer(bufp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_url_handle(obj) == TS_SUCCESS);
-  sdk_assert(sdk_sanity_check_null_ptr((void*)length) == TS_SUCCESS);
 
   char *url;
   int url_len;

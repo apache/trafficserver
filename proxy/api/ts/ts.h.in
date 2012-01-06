@@ -1587,7 +1587,7 @@ extern "C"
      @param map optional (can be NULL) map of characters to encode.
 
   */
-  tsapi TSReturnCode TSStringPercentEncode(const char* str, int str_len, char *dst, size_t dst_size, size_t *length, const unsigned char *map);
+  tsapi TSReturnCode TSStringPercentEncode(const char *str, int str_len, char *dst, size_t dst_size, size_t *length, const unsigned char *map);
 
   /**
      Similar to TSStringPercentEncode(), but works on a URL object.
@@ -1608,13 +1608,14 @@ extern "C"
      in which case they overwrite. The decoded string is always 
      guaranteed to be no longer than the source string.
 
-     @param src the string to decode (and possibly write to).
-     @param src_len length of the input string (or -1).
+     @param str the string to decode (and possibly write to).
+     @param str_len length of the input string (or -1).
      @param dst output buffer (can be the same as src).
      @param dst_len size of the output buffer.
+     @param length amount of data written to the destination buffer.
 
   */
-  tsapi size_t TSStringPercentDecode(const char *src, size_t src_len, char* dst, size_t dst_size);
+  tsapi TSReturnCode TSStringPercentDecode(const char *str, size_t str_len, char *dst, size_t dst_size, size_t *length);
 
 
 
@@ -3017,8 +3018,8 @@ extern "C"
   tsapi TSReturnCode TSHttpTxnPrivateSessionSet(TSHttpTxn txnp, int private_session);
 
   /* Expose internal Base64 Encoding / Decoding */
-  tsapi size_t TSBase64Decode(const char *input, size_t length, unsigned char *dst, size_t dst_size);
-  tsapi size_t TSBase64Encode(const char *input, size_t length, char *dst, size_t dst_size);
+  tsapi TSReturnCode TSBase64Decode(const char *str, size_t str_len, unsigned char *dst, size_t dst_size, size_t *length);
+  tsapi TSReturnCode TSBase64Encode(const char *str, size_t str_len, char *dst, size_t dst_size, size_t *length);
 
 #ifdef __cplusplus
 }

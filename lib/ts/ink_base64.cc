@@ -38,20 +38,17 @@
 #include "ink_resource.h"
 #include "ink_unused.h"
 
+// TODO: The code here seems a bit klunky, and could probably be improved a bit.
 
-// TODO: This code is not paritcularly "uniform", we ought to make them
-// more the same coding style (the uuencode one seems good'ish).
-
-
-size_t
-ats_base64_encode(const unsigned char *inBuffer, size_t inBufferSize, char *outBuffer, size_t outBufSize)
+bool
+ats_base64_encode(const unsigned char *inBuffer, size_t inBufferSize, char *outBuffer, size_t outBufSize, size_t *length)
 {
   static const char _codes[66] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
   char *obuf = outBuffer;
   char in_tail[4];
 
   if (outBufSize < ATS_BASE64_ENCODE_DSTLEN(inBufferSize))
-    return 0;
+    return false;
 
   while (inBufferSize > 2) {
     *obuf++ = _codes[(inBuffer[0] >> 2) & 077];
@@ -73,7 +70,8 @@ ats_base64_encode(const unsigned char *inBuffer, size_t inBufferSize, char *outB
    */
   if (inBufferSize == 0) {
     *obuf = '\0';
-    return (obuf - outBuffer);
+    if (length)
+      *length = (obuf - outBuffer);
   } else {
     memset(in_tail, 0, sizeof(in_tail));
     memcpy(in_tail, inBuffer, inBufferSize);
@@ -88,14 +86,17 @@ ats_base64_encode(const unsigned char *inBuffer, size_t inBufferSize, char *outB
     *(obuf + 3) = '=';
     *(obuf + 4) = '\0';
 
-    return ((obuf + 4) - outBuffer);
+    if (length)
+      *length = (obuf + 4) - outBuffer;
   }
+
+  return true;
 }
 
-size_t
-ats_base64_encode(const char *inBuffer, size_t inBufferSize, char *outBuffer, size_t outBufSize)
+bool
+ats_base64_encode(const char *inBuffer, size_t inBufferSize, char *outBuffer, size_t outBufSize, size_t *length)
 {
-  return ats_base64_encode((const unsigned char *)inBuffer, inBufferSize, outBuffer, outBufSize);
+  return ats_base64_encode((const unsigned char *)inBuffer, inBufferSize, outBuffer, outBufSize, length);
 }
 
 
@@ -124,23 +125,29 @@ const unsigned char printableToSixBit[256] = {
   64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64
 };
 
-size_t
-ats_base64_decode(const char *inBuffer, size_t inBufferSize, unsigned char *outBuffer, size_t outBufSize)
+bool
+ats_base64_decode(const char *inBuffer, size_t inBufferSize, unsigned char *outBuffer, size_t outBufSize, size_t *length)
 {
+  size_t inBytes = 0;
   size_t decodedBytes = 0;
-  unsigned char *outStart = outBuffer;
+  unsigned char *buf = outBuffer;
   int inputBytesDecoded = 0;
 
   // Make sure there is sufficient space in the output buffer
   if (outBufSize < ATS_BASE64_DECODE_DSTLEN(inBufferSize))
-    return 0;
+    return false;
 
-  for (size_t i = 0; i < inBufferSize; i += 4) {
-    outBuffer[0] = (unsigned char) (DECODE(inBuffer[0]) << 2 | DECODE(inBuffer[1]) >> 4);
-    outBuffer[1] = (unsigned char) (DECODE(inBuffer[1]) << 4 | DECODE(inBuffer[2]) >> 2);
-    outBuffer[2] = (unsigned char) (DECODE(inBuffer[2]) << 6 | DECODE(inBuffer[3]));
+  // Ignore any trailing ='s or other undecodable characters.
+  // TODO: Perhaps that ought to be an error instead?
+  while (printableToSixBit[(uint8_t)inBuffer[inBytes]] <= MAX_PRINT_VAL)
+    ++inBytes;
 
-    outBuffer += 3;
+  for (size_t i = 0; i < inBytes; i += 4) {
+    buf[0] = (unsigned char) (DECODE(inBuffer[0]) << 2 | DECODE(inBuffer[1]) >> 4);
+    buf[1] = (unsigned char) (DECODE(inBuffer[1]) << 4 | DECODE(inBuffer[2]) >> 2);
+    buf[2] = (unsigned char) (DECODE(inBuffer[2]) << 6 | DECODE(inBuffer[3]));
+
+    buf += 3;
     inBuffer += 4;
     decodedBytes += 3;
     inputBytesDecoded += 4;
@@ -148,14 +155,17 @@ ats_base64_decode(const char *inBuffer, size_t inBufferSize, unsigned char *outB
 
   // Check to see if we decoded a multiple of 4 four
   //    bytes
-  if ((inBufferSize - inputBytesDecoded) & 0x3) {
+  if ((inBytes - inputBytesDecoded) & 0x3) {
     if (DECODE(inBuffer[-2]) > MAX_PRINT_VAL) {
       decodedBytes -= 2;
     } else {
       decodedBytes -= 1;
     }
   }
-  outStart[decodedBytes] = '\0';
+  outBuffer[decodedBytes] = '\0';
 
-  return decodedBytes;
+  if (length)
+    *length = decodedBytes;
+
+  return true;
 }
