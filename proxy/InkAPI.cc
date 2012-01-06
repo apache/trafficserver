@@ -6327,7 +6327,7 @@ TSNetAccept(TSCont contp, int port, int domain, int accept_threads)
 
 /* DNS Lookups */
 TSAction
-TSHostLookup(TSCont contp, char *hostname, int namelen)
+TSHostLookup(TSCont contp, const char *hostname, size_t namelen)
 {
   sdk_assert(sdk_sanity_check_continuation(contp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_null_ptr((void*)hostname) == TS_SUCCESS);

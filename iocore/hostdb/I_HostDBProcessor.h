@@ -429,16 +429,16 @@ struct HostDBProcessor: public Processor
   HostDBProcessor()
   { }
 
-  inkcoreapi Action *getbyname_re(Continuation * cont, char *hostname, int len = 0, int port = 0,
+  inkcoreapi Action *getbyname_re(Continuation * cont, const char *hostname, int len = 0, int port = 0,
                                   int flags = HOSTDB_DO_NOT_FORCE_DNS);
 
-  Action *getSRVbyname_imm(Continuation * cont, process_srv_info_pfn process_srv_info, char *hostname, int len = 0,
+  Action *getSRVbyname_imm(Continuation * cont, process_srv_info_pfn process_srv_info, const char *hostname, int len = 0,
                            int port = 0, int flags = HOSTDB_DO_NOT_FORCE_DNS, int timeout = 0);
 
   Action *getbyname_imm(
     Continuation * cont,
     process_hostdb_info_pfn process_hostdb_info,
-    char *hostname,
+    const char *hostname,
     int len = 0,
     int port = 0,
     int flags = HOSTDB_DO_NOT_FORCE_DNS,
@@ -463,7 +463,7 @@ struct HostDBProcessor: public Processor
   Action *failed_connect_on_ip_for_name(
     Continuation * cont,
     sockaddr const* aip,
-    char *hostname, int len = 0
+    const char *hostname, int len = 0
   );
 
   /** Set the application information (fire-and-forget). */
@@ -499,7 +499,7 @@ struct HostDBProcessor: public Processor
   HostDBCache *cache();
   Action *getby(
     Continuation * cont,
-    char *hostname, int len,
+    const char *hostname, int len,
     sockaddr const* ip,
     bool aforce_dns, int timeout = 0
   );
@@ -509,7 +509,7 @@ struct HostDBProcessor: public Processor
       type IPv4.
    */
   void setby(
-    char *hostname, ///< Hostname.
+    const char *hostname, ///< Hostname.
     int len, ///< Length of hostname.
     sockaddr const* aip, ///< Address and/or port.
     HostDBApplicationInfo * app ///< I don't know.

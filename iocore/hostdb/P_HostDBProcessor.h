@@ -350,7 +350,7 @@ struct HostDBContinuation: public Continuation
 
   HostDBInfo *insert(unsigned int attl);
 
-  void init(char *hostname, int len, sockaddr const* ip, INK_MD5 & amd5,
+  void init(const char *hostname, int len, sockaddr const* ip, INK_MD5 & amd5,
             Continuation * cont, void *pDS = 0, bool is_srv = false, int timeout = 0);
   int make_get_message(char *buf, int len);
   int make_put_message(HostDBInfo * r, Continuation * c, char *buf, int len);
@@ -408,7 +408,7 @@ master_hash(INK_MD5 & md5)
 }
 
 inline bool
-is_dotted_form_hostname(char *c)
+is_dotted_form_hostname(const char *c)
 {
   return -1 != (int) ink_inet_addr(c);
 }

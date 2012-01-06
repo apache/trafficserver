@@ -449,7 +449,7 @@ HostDBProcessor::start(int)
 
 void
 HostDBContinuation::init(
-  char *hostname, int len,
+  const char *hostname, int len,
   sockaddr const* aip,
   INK_MD5 & amd5, Continuation * cont, void *pDS, bool is_srv, int timeout
 ) {
@@ -475,7 +475,7 @@ HostDBContinuation::init(
 
 
 void
-make_md5(INK_MD5 & md5, char *hostname, int len, int port, char *pDNSServers, int srv)
+make_md5(INK_MD5 & md5, const char *hostname, int len, int port, char *pDNSServers, int srv)
 {
 #ifdef USE_MMH
   MMH_CTX ctx;
@@ -567,7 +567,7 @@ Ldelete:
 
 
 HostDBInfo *
-probe(ProxyMutex *mutex, INK_MD5 & md5, char *hostname, int len, sockaddr const* ip, void *pDS, bool ignore_timeout,
+probe(ProxyMutex *mutex, INK_MD5 & md5, const char *hostname, int len, sockaddr const* ip, void *pDS, bool ignore_timeout,
       bool is_srv_lookup)
 {
   ink_debug_assert(this_ethread() == hostDB.lock_for_bucket((int) (fold_md5(md5) % hostDB.buckets))->thread_holding);
@@ -663,7 +663,7 @@ HostDBContinuation::insert(unsigned int attl)
 //
 Action *
 HostDBProcessor::getby(Continuation * cont,
-                       char *hostname, int len, sockaddr const* ip, bool aforce_dns, int dns_lookup_timeout)
+                       const char *hostname, int len, sockaddr const* ip, bool aforce_dns, int dns_lookup_timeout)
 {
   INK_MD5 md5;
   char *pServerLine = 0;
@@ -684,7 +684,7 @@ HostDBProcessor::getby(Continuation * cont,
   }
 #ifdef SPLIT_DNS
   if (hostname && SplitDNSConfig::isSplitDNSEnabled()) {
-    char *scan = hostname;
+    const char *scan = hostname;
     for (; *scan != '\0' && (ParseRules::is_digit(*scan) || '.' == *scan); scan++);
     if ('\0' != *scan) {
       void *pSD = (void *) SplitDNSConfig::acquire();
@@ -776,7 +776,7 @@ Lretry:
 // Wrapper from getbyname to getby
 //
 Action *
-HostDBProcessor::getbyname_re(Continuation * cont, char *ahostname, int len, int port, int flags)
+HostDBProcessor::getbyname_re(Continuation * cont, const char *ahostname, int len, int port, int flags)
 {
   bool force_dns = false;
   EThread *thread = this_ethread();
@@ -799,7 +799,7 @@ HostDBProcessor::getbyname_re(Continuation * cont, char *ahostname, int len, int
 /* Support SRV records */
 Action *
 HostDBProcessor::getSRVbyname_imm(Continuation * cont, process_srv_info_pfn process_srv_info,
-                                  char *hostname, int len, int port, int flags, int dns_lookup_timeout)
+                                  const char *hostname, int len, int port, int flags, int dns_lookup_timeout)
 {
   ink_debug_assert(cont->mutex->thread_holding == this_ethread());
   bool force_dns = false;
@@ -873,7 +873,7 @@ HostDBProcessor::getSRVbyname_imm(Continuation * cont, process_srv_info_pfn proc
 //
 Action *
 HostDBProcessor::getbyname_imm(Continuation * cont, process_hostdb_info_pfn process_hostdb_info,
-                               char *hostname, int len, int port, int flags, int dns_lookup_timeout)
+                               const char *hostname, int len, int port, int flags, int dns_lookup_timeout)
 {
   ink_debug_assert(cont->mutex->thread_holding == this_ethread());
   bool force_dns = false;
@@ -905,7 +905,7 @@ HostDBProcessor::getbyname_imm(Continuation * cont, process_hostdb_info_pfn proc
 
 #ifdef SPLIT_DNS
   if (SplitDNSConfig::isSplitDNSEnabled()) {
-    char *scan = hostname;
+    const char *scan = hostname;
     char *pServerLine = 0;
     for (; *scan != '\0' && (ParseRules::is_digit(*scan) || '.' == *scan); scan++);
     if ('\0' != *scan) {
@@ -957,7 +957,7 @@ HostDBProcessor::getbyname_imm(Continuation * cont, process_hostdb_info_pfn proc
 
 
 static void
-do_setby(HostDBInfo * r, HostDBApplicationInfo * app, char *hostname, sockaddr const* ip)
+do_setby(HostDBInfo * r, HostDBApplicationInfo * app, const char *hostname, sockaddr const* ip)
 {
   HostDBRoundRobin *rr = r->rr();
 
@@ -982,7 +982,7 @@ do_setby(HostDBInfo * r, HostDBApplicationInfo * app, char *hostname, sockaddr c
 
 
 void
-HostDBProcessor::setby(char *hostname, int len, sockaddr const* ip, HostDBApplicationInfo * app)
+HostDBProcessor::setby(const char *hostname, int len, sockaddr const* ip, HostDBApplicationInfo * app)
 {
   if (!hostdb_enable)
     return;
@@ -1047,7 +1047,7 @@ HostDBContinuation::setbyEvent(int event, Event * e)
 
 
 static int
-remove_round_robin(HostDBInfo * r, char *hostname, sockaddr const* ip)
+remove_round_robin(HostDBInfo * r, const char *hostname, sockaddr const* ip)
 {
   if (r) {
     if (!r->round_robin)
@@ -1092,7 +1092,7 @@ remove_round_robin(HostDBInfo * r, char *hostname, sockaddr const* ip)
 
 
 Action *
-HostDBProcessor::failed_connect_on_ip_for_name(Continuation * cont, sockaddr const* ip, char *hostname, int len)
+HostDBProcessor::failed_connect_on_ip_for_name(Continuation * cont, sockaddr const* ip, const char *hostname, int len)
 {
   INK_MD5 md5;
   char *pServerLine = 0;

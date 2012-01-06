@@ -2460,7 +2460,7 @@ extern "C"
 
   /* --------------------------------------------------------------------------
      DNS Lookups */
-  tsapi TSAction TSHostLookup(TSCont contp, char* hostname, int namelen);
+  tsapi TSAction TSHostLookup(TSCont contp, const char* hostname, size_t namelen);
   /**  @deprecated Use TSHostLookupResultAddrGet */
   tsapi TS_DEPRECATED unsigned int TSHostLookupResultIPGet(TSHostLookupResult lookup_result);
   tsapi struct sockaddr const* TSHostLookupResultAddrGet(TSHostLookupResult lookup_result);

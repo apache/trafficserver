@@ -59,8 +59,8 @@
                                     HOSTDB_MODULE_MINOR_VERSION, \
                                     PRIVATE_MODULE_HEADER)
 HostDBInfo *probe(ProxyMutex * mutex,
-                  INK_MD5 & md5, char *hostname, int len,
+                  INK_MD5 & md5, const char *hostname, int len,
                   sockaddr const* addr, void *pDS, bool ignore_timeout = false, bool is_srv_lookup = false);
 
-void make_md5(INK_MD5 & md5, char *hostname, int len, int port, char *pDNSServers = 0, int srv = 0);
+void make_md5(INK_MD5 & md5, const char *hostname, int len, int port, char *pDNSServers = 0, int srv = 0);
 #endif
