@@ -72,6 +72,7 @@ test -x $ESED || ESED=sed
 PATH=/usr/sbin:/usr/bin:/sbin:/bin
 DESC="start/stop Traffic Server"
 NAME=trafficserver
+SLEEP_TIME=5
 TS_PREFIX="@prefix@"
 
 TS_ROOT=${TS_ROOT:-$TS_PREFIX}
@@ -347,6 +348,7 @@ case "$1" in
       do_stop
       case "$?" in
           0|1)
+            sleep $SLEEP_TIME
             do_start
             case "$?" in
               0) log_end_msg 0 ;;
@@ -362,6 +364,7 @@ case "$1" in
     else
       # This is the typical process for restart
       sh $0 'stop'
+      sleep $SLEEP_TIME
       sh $0 'start'
     fi
   ;;

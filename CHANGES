@@ -1,5 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.1.2
+  *) [TS-1052] trafficserver restart does not work (needs to let the old
+   process die). Author: Billy Viera
+
   *) [TS-1044] Fix TSVConn{Read,Write}VIOGet in UnixNetVConnection.
     Author: James Peach.
 
