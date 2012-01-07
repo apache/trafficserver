@@ -1,5 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.1.2
+  *) [TS-1074] PluginVC should schedule to the local queue instead of the
+  external queue. Author: Brian Geffon
+
   *) [TS-1032] Assertion when upstream connection is established (with event
    handled by thread A) and immediately disconnected (handled by thread B).
    Author: Uri Shachar.
