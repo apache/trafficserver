@@ -4474,7 +4474,9 @@ HttpSM::mark_server_down_on_client_abort()
       // Check to see if client waited for the threshold
       //  to declare the origin server as down
       ink_hrtime wait = ink_get_hrtime() - milestones.server_first_connect;
-      ink_assert(wait >= 0);
+      if (wait < 0) {
+        wait = 0;
+      }
       if (ink_hrtime_to_sec(wait) > t_state.txn_conf->client_abort_threshold) {
         t_state.current.server->connect_failure = true;
         do_hostdb_update_if_necessary();

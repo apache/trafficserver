@@ -1,5 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.1.2
+  *) [TS-1032] Assertion when upstream connection is established (with event
+   handled by thread A) and immediately disconnected (handled by thread B).
+   Author: Uri Shachar.
+
   *) [TS-1052] trafficserver restart does not work (needs to let the old
    process die). Author: Billy Viera
 
