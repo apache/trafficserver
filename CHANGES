@@ -1,5 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.1.2
+  *) [TS-1048] Add TS API to enable plugins to use traffic server
+   configuration infrastructure. Author: Bianca Cooper.
+
   *) [TS-1074] PluginVC should schedule to the local queue instead of the
   external queue. Author: Brian Geffon
 

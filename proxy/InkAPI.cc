@@ -64,6 +64,9 @@
 #include "I_AIO.h"
 #include "I_Tasks.h"
 
+#include "I_RecDefs.h"
+#include "I_RecCore.h"
+
 
 /****************************************************************
  *  IMPORTANT - READ ME
@@ -7999,6 +8002,31 @@ TSHttpTxnPrivateSessionSet(TSHttpTxn txnp, int private_session)
     return TS_SUCCESS;
   }
   return TS_ERROR;
+}
+
+// APIs to register new Mgmt (records.config) entries.
+TSReturnCode
+TSMgmtStringCreate(TSRecordType rec_type, const char *name, const TSMgmtString data_default,
+                   TSRecordUpdateType update_type, TSRecordCheckType check_type,
+                   const char *check_regex, TSRecordAccessType access_type)
+{
+  if (REC_ERR_OKAY != RecRegisterConfigString((enum RecT)rec_type, name, data_default, (enum RecUpdateT)update_type,
+                                              (enum RecCheckT)check_type, check_regex, (enum RecAccessT)access_type))
+    return TS_ERROR;
+
+  return TS_SUCCESS;
+}
+
+TSReturnCode
+TSMgmtIntCreate(TSRecordType rec_type, const char *name, TSMgmtInt data_default,
+                TSRecordUpdateType update_type, TSRecordCheckType check_type,
+                const char *check_regex, TSRecordAccessType access_type)
+{
+  if (REC_ERR_OKAY != RecRegisterConfigInt((enum RecT)rec_type, name, (RecInt)data_default, (enum RecUpdateT)update_type,
+                                           (enum RecCheckT)check_type, check_regex, (enum RecAccessT)access_type))
+    return TS_ERROR;
+
+  return TS_SUCCESS;
 }
 
 #endif //TS_NO_API

@@ -448,9 +448,9 @@ extern "C"
     AFTER_BODY
   } TSFetchWakeUpOptions;
 
-  /**
-     This type represents a context for data records.
-  */
+  /* librecords types */
+
+  /* The values of this enum must match enum RecT in I_RecDefs.h */
   typedef enum
     {
       TS_RECORDTYPE_NULL = 0,
@@ -463,6 +463,7 @@ extern "C"
       TS_RECORDTYPE_MAX
     } TSRecordType;
 
+  /* The values of this enum must match enum RecDataT in I_RecDefs.h */
   typedef enum
     {
       TS_RECORDDATATYPE_NULL = 0,
@@ -470,6 +471,8 @@ extern "C"
       TS_RECORDDATATYPE_FLOAT,
       TS_RECORDDATATYPE_STRING,
       TS_RECORDDATATYPE_COUNTER,
+      TS_RECORDDATATYPE_STAT_CONST,
+      TS_RECORDDATATYPE_STAT_FX,
       TS_RECORDDATATYPE_MAX
     } TSRecordDataType;
 
@@ -480,6 +483,50 @@ extern "C"
     char* rec_string;
     int64_t rec_counter;
   } TSRecordData;
+
+  /* The values of this enum must match enum RecPersistT in I_RecDefs.h */
+  typedef enum
+    {
+      TS_RECORDP_NULL,
+      TS_RECORDP_PERSISTENT,
+      TS_RECORDP_NON_PERSISTENT
+    } TSRecordPersistType;
+
+  /* The values of this enum must match enum RecUpdateT in I_RecDefs.h */
+  typedef enum
+    {
+      TS_RECORDUPDATE_NULL,
+      TS_RECORDUPDATE_DYNAMIC,
+      TS_RECORDUPDATE_RESTART_TS,
+      TS_RECORDUPDATE_RESTART_TM,
+      TS_RECORDUPDATE_RESTART_TC
+    } TSRecordUpdateType;
+
+  /* The values of this enum must match enum RecCheckT in I_RecDefs.h */
+  typedef enum
+    {
+      TS_RECORDCHECK_NULL,
+      TS_RECORDCHECK_STR,
+      TS_RECORDCHECK_INT,
+      TS_RECORDCHECK_IP
+    } TSRecordCheckType;
+
+  /* The values of this enum must match enum RecModeT in I_RecDefs.h */
+  typedef enum
+    {
+      TS_RECORDMODE_NULL,
+      TS_RECORDMODE_CLIENT,
+      TS_RECORDMODE_SERVER,
+      TS_RECORDMODE_STAND_ALONE
+    } TSRecordModeType;
+
+  /* The values of this enum must match enum RecAccessT in I_RecDefs.h */
+  typedef enum
+    {
+      TS_RECORDACCESS_NULL,
+      TS_RECORDACCESS_NO_ACCESS,
+      TS_RECORDACCESS_READ_ONLY
+    } TSRecordAccessType;
 
   typedef enum
   {
@@ -556,7 +603,7 @@ extern "C"
       TS_THREAD_POOL_DEFAULT = -1,
       TS_THREAD_POOL_NET,
       TS_THREAD_POOL_TASK,
-      /* unlikely you should use these */    
+      /* unlikely you should use these */
       TS_THREAD_POOL_SSL,
       TS_THREAD_POOL_DNS,
       TS_THREAD_POOL_REMAP,
@@ -1605,7 +1652,7 @@ extern "C"
   /**
      Perform percent-decoding of the string in the buffer, writing
      to the output buffer. The source and destination can be the same,
-     in which case they overwrite. The decoded string is always 
+     in which case they overwrite. The decoded string is always
      guaranteed to be no longer than the source string.
 
      @param str the string to decode (and possibly write to).
@@ -2125,7 +2172,7 @@ extern "C"
       after use with @c TSfree.
   */
   tsapi char* TSHttpTxnEffectiveUrlStringGet(TSHttpTxn txnp,
-                                             int* length /**< String length return, may be @c NULL. */ 
+                                             int* length /**< String length return, may be @c NULL. */
                                              );
   tsapi TSReturnCode TSHttpTxnClientRespGet(TSHttpTxn txnp, TSMBuffer* bufp, TSMLoc* offset);
   tsapi TSReturnCode TSHttpTxnServerReqGet(TSHttpTxn txnp, TSMBuffer* bufp, TSMLoc* offset);
@@ -2154,20 +2201,20 @@ extern "C"
    */
   tsapi struct sockaddr const* TSHttpTxnClientAddrGet(TSHttpTxn txnp);
   /** Get the incoming address.
-   
+
       @note The pointer is valid only for the current callback. Clients
       that need to keep the value across callbacks must maintain their
       own storage.
-      
+
       @return Local address of the client connection for transaction @a txnp.
   */
   tsapi struct sockaddr const* TSHttpTxnIncomingAddrGet(TSHttpTxn txnp);
   /** Get the origin server address.
-   * 
+   *
       @note The pointer is valid only for the current callback. Clients
       that need to keep the value across callbacks must maintain their
       own storage.
-      
+
       @return The address of the origin server for transaction @a txnp.
   */
   tsapi struct sockaddr const* TSHttpTxnServerAddrGet(TSHttpTxn txnp);
@@ -2175,7 +2222,7 @@ extern "C"
 
       This must be invoked before the origin server address is looked up.
       If called no lookup is done, the address @a addr is used instead.
-      
+
       @return @c TS_SUCCESS if the origin server address is set, @c TS_ERROR otherwise.
   */
   tsapi TSReturnCode TSHttpTxnServerAddrSet(TSHttpTxn txnp,
@@ -2183,11 +2230,11 @@ extern "C"
                                             );
 
   /** Get the next hop address.
-   * 
+   *
       @note The pointer is valid only for the current callback. Clients
       that need to keep the value across callbacks must maintain their
       own storage.
-      
+
       @return The address of the next hop for transaction @a txnp.
   */
   tsapi struct sockaddr const* TSHttpTxnNextHopAddrGet(TSHttpTxn txnp);
@@ -2368,7 +2415,7 @@ extern "C"
       @param log_port port (in network byte order) that connection will
         be logged as coming from.
       @param vc will be set to point to the new TSVConn on success.
-      
+
    */
   tsapi TSVConn TSHttpConnect(struct sockaddr const* addr);
   tsapi void TSFetchUrl(const char* request,int request_len, struct sockaddr const* addr, TSCont contp, TSFetchWakeUpOptions callback_options,TSFetchEvent event);
@@ -2415,7 +2462,7 @@ extern "C"
   /**
       Returns the IP address of the remote host with which Traffic Server
       is connected through the vconnection vc.
-      
+
       @deprecated Use TSNetVConnRemoteAddrGet
 
       @param vc representing a connection that your plugin has opened
@@ -2425,7 +2472,7 @@ extern "C"
 
    */
   tsapi TS_DEPRECATED unsigned int TSNetVConnRemoteIPGet(TSVConn vc);
-  
+
   tsapi struct sockaddr const* TSNetVConnRemoteAddrGet(TSVConn vc);
 
   /** @deprecated Use TSNetVConnRemoteAddrGet */
@@ -2643,9 +2690,9 @@ extern "C"
    tsapi struct sockaddr const* TSNetVConnLocalAddrGet(TSVConn vc);
 
   /* --------------------------------------------------------------------------
-     Stats based on librecords raw stats (this is prefered API until we rewrite
-     stats). This system has a limitation of up to 1,500 stats max, controlled via
-     proxy.config.stat_api.max_stats_allowed (default is 512).
+     Stats and configs based on librecords raw stats (this is prefered API until we
+     rewrite stats). This system has a limitation of up to 1,500 stats max, controlled
+     via proxy.config.stat_api.max_stats_allowed (default is 512).
 
      This is available as of Apache TS v2.2.*/
   typedef enum
@@ -2661,6 +2708,14 @@ extern "C"
     TS_STAT_SYNC_AVG,
     TS_STAT_SYNC_TIMEAVG
   } TSStatSync;
+
+  /* APIs to create new records.config configurations */
+  tsapi TSReturnCode TSMgmtStringCreate(TSRecordType rec_type, const char *name, const TSMgmtString data_default,
+                                        TSRecordUpdateType update_type, TSRecordCheckType check_type,
+                                        const char *check_regex, TSRecordAccessType access_type);
+  tsapi TSReturnCode TSMgmtIntCreate(TSRecordType rec_type, const char *name, TSMgmtInt data_default,
+                                     TSRecordUpdateType update_type, TSRecordCheckType check_type,
+                                     const char *check_regex, TSRecordAccessType access_type);
 
   /*  Note that only TS_RECORDDATATYPE_INT is supported at this point. */
   tsapi int TSStatCreate(const char* the_name, TSRecordDataType the_type, TSStatPersistence persist, TSStatSync sync);
@@ -2917,7 +2972,7 @@ extern "C"
    */
   tsapi TSReturnCode TSAIOThreadNumSet(int thread_num);
 
-  /** 
+  /**
       Check if transaction was aborted (due client/server errors etc.)
 
       @return 1 if transaction was aborted
@@ -2977,8 +3032,8 @@ extern "C"
   tsapi void TSVConnActiveTimeoutSet(TSVConn connp, TSHRTime timeout);
   tsapi void TSVConnActiveTimeoutCancel(TSVConn connp);
 
-  /* 
-    ability to skip the remap phase of the State Machine 
+  /*
+    ability to skip the remap phase of the State Machine
     this only really makes sense in TS_HTTP_READ_REQUEST_HDR_HOOK
   */
   tsapi void TSSkipRemappingSet(TSHttpTxn txnp, int flag);
@@ -3009,7 +3064,7 @@ extern "C"
   tsapi int TSHttpCurrentIdleClientConnectionsGet(void);
   tsapi int TSHttpCurrentCacheConnectionsGet(void);
   tsapi int TSHttpCurrentServerConnectionsGet(void);
-  
+
   /* =====  Http Transactions =====  */
   tsapi TSReturnCode TSHttpTxnCachedRespModifiableGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *offset);
   tsapi TSReturnCode TSHttpTxnCacheLookupStatusSet(TSHttpTxn txnp, int cachelookup);
