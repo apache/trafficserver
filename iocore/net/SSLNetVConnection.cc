@@ -166,15 +166,17 @@ ssl_read_from_net(NetHandler * nh, UnixNetVConnection * vc, EThread * lthread, i
 
 //changed by YTS Team, yamsat
 void
-SSLNetVConnection::net_read_io(NetHandler * nh, EThread * lthread)
+SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
 {
   int ret;
   int64_t r = 0;
   int64_t bytes = 0;
   NetState *s = &this->read;
-  MIOBufferAccessor & buf = s->vio.buffer;
+  MIOBufferAccessor &buf = s->vio.buffer;
+
   MUTEX_TRY_LOCK_FOR(lock, s->vio.mutex, lthread, s->vio._cont);
   if (!lock) {
+    readReschedule(nh);
     return;
   }
   // If it is not enabled, lower its priority.  This allows
@@ -254,8 +256,10 @@ SSLNetVConnection::net_read_io(NetHandler * nh, EThread * lthread)
   case SSL_READ_WOULD_BLOCK:
     if (lock.m.m_ptr != s->vio.mutex.m_ptr) {
       Debug("ssl", "ssl_read_from_net, mutex switched");
-      if(ret == SSL_READ_WOULD_BLOCK) readReschedule(nh);
-      else writeReschedule(nh);
+      if (ret == SSL_READ_WOULD_BLOCK)
+        readReschedule(nh);
+      else
+        writeReschedule(nh);
       return;
     }
     // reset the tigger and remove from the ready queue
@@ -264,8 +268,10 @@ SSLNetVConnection::net_read_io(NetHandler * nh, EThread * lthread)
     nh->read_ready_list.remove(this);
     Debug("ssl", "read_from_net, read finished - would block");
 #ifdef TS_USE_PORT
-    if(ret == SSL_READ_WOULD_BLOCK) readReschedule(nh);
-    else writeReschedule(nh);
+    if (ret == SSL_READ_WOULD_BLOCK)
+      readReschedule(nh);
+    else
+      writeReschedule(nh);
 #endif
     break;
 
