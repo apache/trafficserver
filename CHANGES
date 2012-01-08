@@ -1,5 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.1.2
+  *) [TS-1056] Lost UA connections can show up as "400 ERR_INVALID_REQ"
+   in logs.
+
   *) [TS-1048] Add TS API to enable plugins to use traffic server
    configuration infrastructure. Author: Bianca Cooper.
 

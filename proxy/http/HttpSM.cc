@@ -669,16 +669,17 @@ HttpSM::state_read_client_request_header(int event, void *data)
   int bytes_used = 0;
   ink_assert(ua_entry->eos == false);
 
-
   switch (event) {
-  case VC_EVENT_EOS:
-    ua_entry->eos = true;
-    // Fall through
   case VC_EVENT_READ_READY:
   case VC_EVENT_READ_COMPLETE:
     // More data to parse
     break;
 
+  case VC_EVENT_EOS:
+    ua_entry->eos = true;
+    if (client_request_hdr_bytes !=0)
+      break;
+    // Fall through
   case VC_EVENT_ERROR:
   case VC_EVENT_INACTIVITY_TIMEOUT:
   case VC_EVENT_ACTIVE_TIMEOUT:
