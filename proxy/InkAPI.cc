@@ -5385,7 +5385,7 @@ TSHttpTxnNextHopPortGet(TSHttpTxn txnp)
 }
 
 TSReturnCode
-TSHttpTxnOutgoingTransparencySet(TSHttpTxn txnp, bool flag)
+TSHttpTxnOutgoingTransparencySet(TSHttpTxn txnp, int flag)
 {
   if (TS_SUCCESS != sdk_sanity_check_txn(txnp)) return TS_ERROR;
 
