@@ -338,7 +338,7 @@ AC_MSG_CHECKING([whether to use POSIX capabilities])
 AC_ARG_ENABLE([posix-cap],
   [AS_HELP_STRING([--disable-posix-cap],[Use user id switching instead of POSIX capabilities])],
   [],
-  [enable_posix_cap="yes"]
+  [enable_posix_cap="auto"]
 )
 AC_MSG_RESULT([$enable_posix_cap])
 
@@ -976,12 +976,17 @@ AC_SUBST(need_union_semun)
 # Check for POSIX capabilities library.
 # If we don't find it, disable checking for header.
 use_posix_cap=0
-AS_IF([test "x$enable_posix_cap" = "xyes"],
+AS_IF([test "x$enable_posix_cap" != "xno"],
   AC_CHECK_LIB([cap],[cap_set_proc],
     [AC_SUBST([LIBCAP], ["-lcap"])
      use_posix_cap=1
-    ],
-    [enable_posix_cap=no]
+    ],[
+      AS_IF([test "x$enable_posix_cap" == "xyes"], [
+        AC_MSG_FAILURE([POSIX capabilities enabled but system library not found.])
+      ],[
+        [enable_posix_cap=no]
+      ])
+    ]
   )
 )
 AC_SUBST(use_posix_cap)
@@ -1134,10 +1139,10 @@ TS_FLAG_HEADERS([google/profiler.h \
                   ], [], [])
 fi
 
-if test "x${enable_posix_cap}" = "xyes"; then
+if test "x${enable_posix_cap}" != "xno"; then
   AC_CHECK_HEADERS([sys/capability.h],
     [],
-    [AC_MSG_FAILURE([POSIX capabilities header not found. Try --disable-posix-cap])],
+    [AC_MSG_FAILURE([Found POSIX capabilities library but not the header sys/capability.h. POSIX capabilities are not a required feature, you can disable then with --disable-posix-cap])],
     []
   )
 fi
