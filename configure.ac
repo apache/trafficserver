@@ -981,12 +981,12 @@ AS_IF([test "x$enable_posix_cap" != "xno"],
     [AC_SUBST([LIBCAP], ["-lcap"])
      use_posix_cap=1
     ],[
-      AS_IF([test "x$enable_posix_cap" == "xyes"], [
-        AC_MSG_FAILURE([POSIX capabilities enabled but system library not found.])
-      ],[
-        [enable_posix_cap=no]
-      ])
-    ]
+     AS_IF([test "x$enable_posix_cap" == "xyes"], [
+      AC_MSG_FAILURE([POSIX capabilities enabled but system library not found.])
+     ],[
+      [enable_posix_cap=no]
+    ])
+   ]
   )
 )
 AC_SUBST(use_posix_cap)
@@ -1183,7 +1183,7 @@ tproxy_usage_disable="
 proxy_usage="$tproxy_usage_enable$tproxy_usage_default$tproxy_usage_numeric$tproxy_usage_disable"
 
 AS_IF([test "x$enable_tproxy" != "xno"], [
-  AS_IF([test "x${enable_posix_cap}" != "xyes"], [
+  AS_IF([test "$use_posix_cap" -eq 0], [
     AS_IF([test "x$enable_tproxy" = xauto], [
       AC_MSG_RESULT([no])
     ],[
