@@ -2162,6 +2162,8 @@ extern "C"
   tsapi TSHttpSsn TSHttpTxnSsnGet(TSHttpTxn txnp);
   tsapi TSReturnCode TSHttpTxnClientReqGet(TSHttpTxn txnp, TSMBuffer* bufp, TSMLoc* offset);
   tsapi TSReturnCode TSHttpTxnPristineUrlGet(TSHttpTxn txnp, TSMBuffer* bufp, TSMLoc* url_loc);
+  /* Get the request headers as sent by the Client */
+  tsapi TSReturnCode TSHttpTxnClientDataGet(TSHttpTxn txnp, const char **bufp, int *len);
   /** Get the effective URL for the transaction.
       The effective URL is the URL taking in to account both the explicit
       URL in the request and the HOST field.

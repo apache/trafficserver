@@ -913,6 +913,11 @@ http_parser_parse_req(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const 
     cur = line_start;
     must_copy_strings = (must_copy_strings || (!line_is_real));
 
+    mime_str_u16_set(heap, line_start, strlen(line_start),
+                     &(hh->u.req.m_url_impl->the_request),
+                     &(hh->u.req.m_url_impl->the_request_len),
+                     must_copy_strings);
+
 #if (ENABLE_PARSER_FAST_PATHS)
     // first try fast path
     if (end - cur >= 16) {

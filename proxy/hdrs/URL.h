@@ -83,6 +83,10 @@ struct URLImpl:public HdrHeapObjImpl
 
   // Sanity Check Functions
   void check_strings(HeapCheck *heaps, int num_heaps);
+
+  // The original (unparsed) request
+  const char *the_request;
+  uint16_t the_request_len;
 };
 
 
