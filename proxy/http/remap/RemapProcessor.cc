@@ -50,7 +50,6 @@ RemapProcessor::setup_for_remap(HttpTransact::State *s)
   bool mapping_found = false;
   HTTPHdr *request_header = &s->hdr_info.client_request;
   char **redirect_url = &s->remap_redirect;
-  char **orig_url = &s->unmapped_request_url;
   const char *request_host;
   int request_host_len;
   int request_port;
@@ -123,17 +122,12 @@ RemapProcessor::setup_for_remap(HttpTransact::State *s)
       mapping_found = rewrite_table->forwardMappingLookup(request_url, 0, "", 0, s->url_map);
     }
 
-    if (mapping_found && orig_url) {
+    if (mapping_found) {
       // Downstream mapping logic (e.g., self::finish_remap())
       // apparently assumes the presence of the target in the URL, so
       // we need to copy it. Perhaps it's because it's simpler to just
       // do the remap on the URL and then fix the field at the end.
       request_header->set_url_target_from_host_field();
-
-      // TODO: This is pretty slow, and only used for logging. Can we by chance avoid
-      // doing this is nothing is known to need it ? Perhaps the log library could
-      // have a table with status of what resources is necessary.
-      *orig_url = request_url->string_get_ref(NULL);
     }
   }
 
@@ -152,7 +146,6 @@ RemapProcessor::finish_remap(HttpTransact::State *s)
   url_mapping *map = NULL;
   HTTPHdr *request_header = &s->hdr_info.client_request;
   URL *request_url = request_header->url_get();
-  char **orig_url = &s->unmapped_request_url;
   char **redirect_url = &s->remap_redirect;
   const int host_buf_len = MAXDNAME + 12 + 1 + 1;
   char host_hdr_buf[host_buf_len], tmp_referer_buf[4096], tmp_redirect_buf[4096], tmp_buf[2048], *c;
@@ -219,7 +212,7 @@ RemapProcessor::finish_remap(HttpTransact::State *s)
               }
               break;
             case 'o':
-              c = *orig_url;
+              c = s->pristine_url.string_get_ref(NULL);
               break;
             };
 

@@ -73,7 +73,7 @@ public:
   UrlRewrite(const char *file_var_in);
   ~UrlRewrite();
   int BuildTable();
-  mapping_type Remap_redirect(HTTPHdr * request_header, URL *redirect_url, char **orig_url);
+  mapping_type Remap_redirect(HTTPHdr * request_header, URL *redirect_url);
   bool ReverseMap(HTTPHdr *response_header);
   void SetReverseFlag(int flag);
   void Print();

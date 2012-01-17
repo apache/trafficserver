@@ -58,10 +58,10 @@ int init_reverse_proxy();
 
 // Both Return true if a remapping was made and false otherwise
 // ebalsa@ Y! -- this happens in the remapProcessor now for the reverse proxy case (not CDN or BlindTunnel)
-bool request_url_remap(HttpTransact::State *s, HTTPHdr *request_header, char **redirect_url, char **orig_url,
+bool request_url_remap(HttpTransact::State *s, HTTPHdr *request_header, char **redirect_url,
                        unsigned int filter_mask = URL_REMAP_FILTER_NONE);
 
-mapping_type request_url_remap_redirect(HTTPHdr *request_header, URL *redirect_url, char **orig_url);
+mapping_type request_url_remap_redirect(HTTPHdr *request_header, URL *redirect_url);
 bool response_url_remap(HTTPHdr *response_header);
 
 // Reload Functions

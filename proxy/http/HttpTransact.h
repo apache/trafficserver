@@ -947,7 +947,6 @@ public:
     // FilterResult             content_control;
     bool backdoor_request;      // internal
     bool cop_test_page;         // internal
-    char *unmapped_request_url; // in
 
     StateMachineAction_t next_action;   // out
     StateMachineAction_t api_next_action;       // out
@@ -1080,7 +1079,6 @@ public:
         cache_lookup_result(CACHE_LOOKUP_NONE),
         backdoor_request(false),
         cop_test_page(false),
-        unmapped_request_url(0),
         next_action(STATE_MACHINE_ACTION_UNDEFINED),
         api_next_action(STATE_MACHINE_ACTION_UNDEFINED),
         transact_return_point(NULL),
@@ -1200,7 +1198,6 @@ public:
       if (internal_msg_buffer) {
         free_internal_msg_buffer(internal_msg_buffer, internal_msg_buffer_fast_allocator_size);
       }
-      //if (unmapped_request_url) ats_free(unmapped_request_url);
       if (internal_msg_buffer_type)
         ats_free(internal_msg_buffer_type);
 

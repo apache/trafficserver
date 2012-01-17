@@ -891,7 +891,7 @@ UrlRewrite::PerformACLFiltering(HttpTransact::State *s, url_mapping *map)
    ought to point to the new, mapped URL when the function exits.
 */
 mapping_type
-UrlRewrite::Remap_redirect(HTTPHdr *request_header, URL *redirect_url, char **orig_url)
+UrlRewrite::Remap_redirect(HTTPHdr *request_header, URL *redirect_url)
 {
   URL *request_url;
   mapping_type mappingType;
@@ -970,7 +970,6 @@ UrlRewrite::Remap_redirect(HTTPHdr *request_header, URL *redirect_url, char **or
 
   if (mappingType != NONE) {
     ink_assert((mappingType == PERMANENT_REDIRECT) || (mappingType == TEMPORARY_REDIRECT));
-    *orig_url = NULL;
 
     // Make a copy of the request url so that we can munge it
     //   for the redirect

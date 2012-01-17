@@ -511,7 +511,7 @@ how_to_open_connection(HttpTransact::State* s)
 
     // TODO yeah, not sure everything here is correct with redirects
     // This probably doesn't work properly, since request_url_remap() is broken.
-    if (request_url_remap(s, &s->hdr_info.server_request, &remap_redirect, &s->unmapped_request_url)) {
+    if (request_url_remap(s, &s->hdr_info.server_request, &remap_redirect)) {
       ink_assert(!remap_redirect);      // should not redirect in this code
       HttpTransact::initialize_state_variables_for_origin_server(s, &s->hdr_info.server_request, true);
       Debug("cdn", "Converting proxy request to server request");
@@ -635,7 +635,7 @@ HttpTransact::HandleBlindTunnel(State* s)
   // TODO: take a look at this
   // This probably doesn't work properly, since request_url_remap() is broken.
   if (url_remap_mode == URL_REMAP_DEFAULT || url_remap_mode == URL_REMAP_ALL) {
-    url_remap_success = request_url_remap(s, &s->hdr_info.client_request, &remap_redirect, &s->unmapped_request_url);
+    url_remap_success = request_url_remap(s, &s->hdr_info.client_request, &remap_redirect);
   }
   // We must have mapping or we will self loop since the this
   //    request was addressed to us to begin with.  Remap directs
@@ -1090,7 +1090,7 @@ HttpTransact::handleIfRedirect(State *s)
   int answer;
   URL redirect_url;
 
-  answer = request_url_remap_redirect(&s->hdr_info.client_request, &redirect_url, &s->unmapped_request_url);
+  answer = request_url_remap_redirect(&s->hdr_info.client_request, &redirect_url);
   if ((answer == PERMANENT_REDIRECT) || (answer == TEMPORARY_REDIRECT)) {
     int remap_redirect_len;
     char *remap_redirect;
