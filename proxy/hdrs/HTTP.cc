@@ -1455,26 +1455,29 @@ HTTPHdr::_fill_target_cache() const
   URL* url = this->url_get();
   m_target_in_url = false;
   m_port_in_header = false;
+  m_host_mime = NULL;
   // Check in the URL first, then the HOST field.
-  if (0 != (m_host = url->host_get(&m_host_length))) {
+  if (0 != url->host_get(&m_host_length)) {
     m_target_in_url = true;
     m_port = url->port_get();
     m_port_in_header = 0 != url->port_get_raw();
-  } else if (0 != (m_host = const_cast<HTTPHdr*>(this)->value_get(MIME_FIELD_HOST, MIME_LEN_HOST, &m_host_length))) {
+    m_host_mime = NULL;
+  } else if (0 != (m_host_mime = const_cast<HTTPHdr*>(this)->field_find(MIME_FIELD_HOST, MIME_LEN_HOST))) {
     // Check for port in the host.
-    char const* colon = static_cast<char const*>(memchr(m_host, ':', m_host_length));
+    char const* colon = static_cast<char const*>(memchr(m_host_mime->m_ptr_value, ':', m_host_mime->m_len_value));
     
     if (colon) {
-      m_host_length = colon - m_host; // Length of just the host in the value.
       m_port = 0;
+      m_host_length = colon - m_host_mime->m_ptr_value; // Length of just the host in the value.
       for ( ++colon ; is_digit(*colon) ; ++colon )
-	m_port = m_port * 10 + *colon - '0';
+        m_port = m_port * 10 + *colon - '0';
       m_port_in_header = 0 != m_port;
+    } else {
+      m_host_length = m_host_mime->m_len_value;
     }
     m_port = url_canonicalize_port(url->m_url_impl->m_url_type, m_port);
-  } else {
-    m_host_length = 0; // reset in case any earlier check corrupted it
   }
+
   m_target_cached = true;
 }
 
@@ -1485,13 +1488,16 @@ HTTPHdr::set_url_target_from_host_field(URL* url) {
   if (!url) {
     // Use local cached URL and don't copy if the target
     // is already there.
-    if (!m_target_in_url && m_host_length) {
-      m_url_cached.host_set(m_host, m_host_length);
+    if (!m_target_in_url && m_host_mime && m_host_length) {
+      m_url_cached.host_set(m_host_mime->m_ptr_value, m_host_length);
       if (m_port_in_header) m_url_cached.port_set(m_port);
       m_target_in_url = true; // it's there now.
     }
   } else {
-    url->host_set(m_host, m_host_length);
+    int host_len = 0;
+    char const *host = NULL;
+    host = host_get(&host_len);
+    url->host_set(host, host_len);
     if (m_port_in_header) url->port_set(m_port);
   }
 }
@@ -1521,9 +1527,9 @@ HTTPHdr::url_string_get(Arena* arena, int* length) {
        2) The values were in a HTTP header field.
     */
 
-    if (!m_target_in_url && m_host_length) {
+    if (!m_target_in_url && m_host_length && m_host_mime) {
       assert(0 == ui->m_ptr_host); // shouldn't be non-zero if not in URL.
-      ui->m_ptr_host = m_host;
+      ui->m_ptr_host = m_host_mime->m_ptr_value;
       ui->m_len_host = m_host_length;
       should_reset_host = true;
     }

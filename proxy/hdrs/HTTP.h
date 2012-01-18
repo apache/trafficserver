@@ -531,8 +531,8 @@ public:
   HTTPHdrImpl *m_http;
   // This is all cached data and so is mutable.
   mutable URL m_url_cached;
+  mutable MIMEField *m_host_mime;
   mutable int m_host_length; ///< Length of hostname.
-  mutable char const* m_host; ///< Hostname.
   mutable int m_port; ///< Target port.
   mutable bool m_target_cached; ///< Whether host name and port are cached.
   mutable bool m_target_in_url; ///< Whether host name and port are in the URL.
@@ -899,8 +899,15 @@ inline char const*
 HTTPHdr::host_get(int* length)
 {
   this->_test_and_fill_target_cache();
-  if (length) *length = m_host_length;
-  return m_host;
+  if (m_target_in_url) {
+    return url_get()->host_get(length);
+  } else if (m_host_mime) {
+    if (length) *length = m_host_length;
+    return m_host_mime->m_ptr_value;
+  }
+
+  if (length) *length = 0;
+  return NULL;
 }
 
 /*-------------------------------------------------------------------------
