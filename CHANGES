@@ -1,5 +1,7 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.1.2
+  *) [TS-1041] Populate sockaddr length. Author: James Peach.
+
   *) [TS-1081] Eliminate an additional copy of the pristine URL string.
 
   *) [TS-1038] SHttpTxnErrorBodySet() can leak memory.

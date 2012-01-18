@@ -505,8 +505,14 @@ inline bool ink_inet_copy(
     case AF_INET6: n = sizeof(sockaddr_in6); break;
     }
   }
-  if (n) memcpy(dst, src, n);
-  else ink_inet_invalidate(dst);
+  if (n) {
+    memcpy(dst, src, n);
+#if HAVE_STRUCT_SOCKADDR_SA_LEN
+    dst->sa_len = n;
+#endif
+  } else {
+    ink_inet_invalidate(dst);
+  }
   return n != 0;
 }
 
@@ -658,6 +664,9 @@ inline sockaddr* ink_inet_ip4_set(
   uint16_t port = 0 ///< port, network order.
 ) {
   memset(dst, 0, sizeof(*dst));
+#if HAVE_STRUCT_SOCKADDR_IN_SIN_LEN
+  dst->sin_len = sizeof(sockaddr_in);
+#endif
   dst->sin_family = AF_INET;
   dst->sin_addr.s_addr = addr;
   dst->sin_port = port;
@@ -696,6 +705,9 @@ inline sockaddr* ink_inet_ip6_set(
   uint16_t port = 0 ///< Port, network order.
 ) {
   memset(dst, 0, sizeof(*dst));
+#if HAVE_STRUCT_SOCKADDR_IN6_SIN6_LEN
+  dst->sin6_len = sizeof(sockaddr_in6);
+#endif
   dst->sin6_family = AF_INET6;
   memcpy(&dst->sin6_addr, &addr, sizeof addr);
   dst->sin6_port = port;

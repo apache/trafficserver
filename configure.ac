@@ -1134,6 +1134,27 @@ TS_FLAG_HEADERS([netinet/ip_icmp.h], [], [],
 AC_SUBST(netinet_iph)
 AC_SUBST(netinet_ip_icmph)
 
+# BSD-derived systems populate the socket length in the structure itself. It's
+# redundant to check all of these, but hey, I need the typing practice.
+AC_CHECK_MEMBER([struct sockaddr.sa_len], [], [], [#include <netinet/in.h>])
+AC_CHECK_MEMBER([struct sockaddr_in.sin_len], [], [], [#include <netinet/in.h>])
+AC_CHECK_MEMBER([struct sockaddr_in6.sin6_len], [], [], [#include <netinet/in.h>])
+
+if test "x${ac_cv_member_sockaddr_sa_len}" = xyes; then
+    AC_DEFINE(HAVE_STRUCT_SOCKADDR_SA_LEN, 1,
+	    [Whether struct sockaddr_in has the sa_len member])
+fi
+
+if test "x${ac_cv_member_sockaddr_in_sin_len}" = xyes ; then
+AC_DEFINE(HAVE_STRUCT_SOCKADDR_IN_SIN_LEN, 1,
+	    [Whether struct sockaddr_in has the sin_len member])
+fi
+
+if test "x${ac_cv_member_sockaddr_in6_sin6_len}" = xyes; then
+    AC_DEFINE(HAVE_STRUCT_SOCKADDR_IN6_SIN6_LEN, 1,
+	    [Whether struct sockaddr_in6 has the sin6_len member])
+fi
+
 if test "x${with_profiler}" = "xyes"; then
 TS_FLAG_HEADERS([google/profiler.h \
                   ], [], [])
