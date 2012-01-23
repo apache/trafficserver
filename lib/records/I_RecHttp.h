@@ -258,14 +258,15 @@ public:
   static Vec<self>& m_global; ///< Global ("default") data.
 };
 
-
 inline bool HttpProxyPort::isSSL() const { return TRANSPORT_SSL == m_type; }
+
 inline InkInetAddr&
 HttpProxyPort::outboundIp(uint16_t family) {
+  static InkInetAddr invalid; // dummy to make compiler happy about return.
   if (AF_INET == family) return m_outbound_ip4;
   else if (AF_INET6 == family) return m_outbound_ip6;
-  else ink_release_assert(!"Invalid family for outbound address on proxy port.");
-  return *static_cast<InkInetAddr*>(0); // bogus, makes compiler happy.
+  ink_release_assert(!"Invalid family for outbound address on proxy port.");
+  return invalid; // never happens but compiler insists.
 }
 
 inline bool

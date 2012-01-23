@@ -32,6 +32,7 @@ extern "C"
 }
 #endif
 
+InkInetAddr const InkInetAddr::INVALID;
 
 struct hostent *
 ink_gethostbyname_r(char *hostname, ink_gethostbyname_r_data * data)

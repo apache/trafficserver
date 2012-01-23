@@ -1069,6 +1069,9 @@ struct InkInetAddr {
     in6_addr  _ip6; ///< IPv6 address storage.
     uint8_t   _byte[INK_IP6_SIZE]; ///< As raw bytes.
   } _addr;
+
+  ///< Pre-constructed invalid instance.
+  static self const INVALID;
 };
 
 inline InkInetAddr&
