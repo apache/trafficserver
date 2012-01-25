@@ -25,7 +25,7 @@
 
 # include "Wccp.h"
 # include "WccpUtil.h"
-# include <tsconfig/TsBuffer.h>
+# include <ts/TsBuffer.h>
 // Needed for template use of byte ordering functions.
 # include <netinet/in.h>
 # include <memory.h>

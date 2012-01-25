@@ -23,7 +23,7 @@
     limitations under the License.
  */
 
-# include <tsconfig/TsBuffer.h>
+# include <ts/TsBuffer.h>
 # include <tsconfig/Errata.h>
 # include <memory.h>
 # include <ink_port.h>

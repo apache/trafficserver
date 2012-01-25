@@ -45,7 +45,7 @@
 #include "HdrUtils.h"
 #include "Vec.h"
 
-#include "tsconfig/TsBuffer.h"
+#include <ts/TsBuffer.h>
 
 /** Used for printing IP address.
     @code
