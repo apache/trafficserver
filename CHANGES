@@ -1,5 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.1.2
+  *) [TS-1073] no_dns_just_forward_to_parent configuration parameter is
+   ignored/not used. Author: Kevin Giles.
+
   *) [TS-996] HTTPHdr::m_host goes stale if HdrHeap::evacuate_from_str_heaps
    is called. Author: B. Wyatt.
 

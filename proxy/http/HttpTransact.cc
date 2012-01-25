@@ -1641,7 +1641,8 @@ HttpTransact::OSDNSLookup(State* s)
   } else if (s->dns_info.lookup_name[0] <= '9' &&
              s->dns_info.lookup_name[0] >= '0' &&
              //(s->state_machine->authAdapter.needs_rev_dns() ||
-             ( host_rule_in_CacheControlTable() || s->parent_params->ParentTable->hostMatch)) {
+             (host_rule_in_CacheControlTable() || s->parent_params->ParentTable->hostMatch) &&
+             !s->http_config_param->no_dns_forward_to_parent) {
     // note, broken logic: ACC fudges the OR stmt to always be true,
     // 'AuthHttpAdapter' should do the rev-dns if needed, not here .
     TRANSACT_RETURN(REVERSE_DNS_LOOKUP, HttpTransact::StartAccessControl);

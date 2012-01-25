@@ -6409,6 +6409,15 @@ HttpSM::set_next_state()
         Debug("dns", "[HttpTransact::HandleRequest] Skipping DNS lookup, provided by plugin");
         call_transact_and_set_next_state(NULL);
         break;
+      } else if (t_state.dns_info.looking_up == HttpTransact::ORIGIN_SERVER &&
+                 t_state.http_config_param->no_dns_forward_to_parent){
+
+        if (t_state.cop_test_page)
+          ink_inet_copy(t_state.host_db_info.ip(), t_state.state_machine->ua_session->get_netvc()->get_local_addr());
+
+        t_state.dns_info.lookup_success = true;
+        call_transact_and_set_next_state(NULL);
+        break;
       }
 
       HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::state_hostdb_lookup);
