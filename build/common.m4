@@ -177,6 +177,7 @@ AC_DEFUN([TS_TRY_COMPILE_NO_WARNING],
  if test "$ac_cv_prog_gcc" = "yes"; then
    CFLAGS="$CFLAGS -Werror"
  fi
+ CFLAGS=$(echo $CFLAGS | sed -e 's/^-w$//' -e 's/^-w //' -e 's/ -w$//' -e 's/ -w / /')
  AC_COMPILE_IFELSE([AC_LANG_SOURCE([
   [#include "confdefs.h"
   ]
