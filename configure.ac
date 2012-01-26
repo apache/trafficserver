@@ -529,16 +529,20 @@ AC_ARG_VAR([PERL], [full path of Perl executable])
 CFLAGS="${REAL_CFLAGS}"
 CXXFLAGS="${REAL_CXXFLAGS}"
 
-AC_MSG_CHECKING([checking whether to auto-set compile optimizing flags])
-has_optimizer_flags=`$as_echo "$CFLAGS $CXXFLAGS" | ${AWK} '/-x?O.?/{print "no"}'`
+# Check for GNU-style -On and for Solaris Studio style -xOn.
+AC_MSG_CHECKING([checking whether to auto-set compiler optimization flags])
+has_optimizer_flags=`echo "$CFLAGS $CXXFLAGS" | ${AWK} '$0 !~ /-x?O.?/{print "no"}'`
 AS_IF([test "x${has_optimizer_flags}" = "xno"],
-	[ optimizing_flags='' ],
+	[
+		optimizing_flags='-O3'
+		AC_MSG_RESULT([yes ${optimizing_flags}])
+	],
 	[
 		has_optimizer_flags='yes'
-		optimizing_flags='-O3'
+		optimizing_flags=''
+		AC_MSG_RESULT([no])
 	]
 )
-AC_MSG_RESULT([${has_optimizer_flags} ${optimizing_flags}])
 
 base_cc=`basename $CC`
 # These are shortcuts used in combination for the compiler options below

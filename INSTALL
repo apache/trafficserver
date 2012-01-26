@@ -1,72 +1,75 @@
-APACHE TRAFFIC SERVER INSTALLATION
+APACHE TRAFFIC SERVER UNIX QUICKSTART
+-------------------------------------
 
- Quick Start - Unix
-  -----------------
+For complete installation documentation, see the on-line documentation at
 
-  For complete installation documentation, see the on-line documentation at
+    http://trafficserver.apache.org/docs
 
-        http://trafficserver.apache.org/docs.html
+BUILD AND INSTALLATION
+----------------------
 
-  Configure & Build:
-    Source (SVN)
-      $ autoreconf -i  # generate the configure script and Makefile.in files
+Configure & Build from source:
+    $ autoreconf -i  # generate the configure script and Makefile.in files
 
-    On Linux, OSX and FreeBSD:
-      $ ./configure [--prefix=PREFIX]
-      $ make
+On Linux, OSX and FreeBSD:
+    $ ./configure [--prefix=PREFIX]
+    $ make
 
-    On OpenSolaris:
-      $ ./configure [--prefix=PREFIX] CC=/usr/bin/gcc-4.3.2 CXX=/usr/bin/g++-4.3.2
-      $ make
+On OpenSolaris:
+    $ ./configure [--prefix=PREFIX]
+    $ gmake
 
-  Next set the cluster interface in 'records.config'
-    On Linux: e.g
-      CONFIG proxy.config.cluster.ethernet_interface STRING eth0
-    On OSX: e.g
-      CONFIG proxy.config.cluster.ethernet_interface STRING en0
-    on FreeBSD: e.g.
-      CONFIG proxy.config.cluster.ethernet_interface STRING em0
-    On OpenSolaris e.g.
-      CONFIG proxy.config.cluster.ethernet_interface STRING e1000g0
-
-  To install:
+To install:
     $ sudo make install
 
-  To start Traffic Server process stack (TC, TM, TS):
-    On Linux:
-      $ sudo PREFIX/bin/trafficserver start
+* Replace PREFIX with the filesystem path under which Traffic Server
+  should be installed.  Default PREFIX is "/usr/local" (without the
+  quotes).
 
-    On FreeBSD, OSX and OpenSolaris:
-      $ sudo PREFIX/bin/traffic_cop
+* If you want to build using different layout see the config.layout
+  file for possible alternatives. You can create your own layout
+  and enable it with ./configure --enable-layout=ID, where ID is
+  the layout name you have created.
 
-  NOTES: * Replace PREFIX with the filesystem path under which
-           Traffic Server should be installed.  Default PREFIX
-           is "/usr/local" (without the quotes).
+* The easiest way to find all of the configuration flags
+  for Traffic Server is to run ./configure --help.
 
-         * If you want to build using different layout see the config.layout
-           file for possible alternatives. You can create your own layout and
-           enable it with ./configure --enable-layout=ID, where ID is the
-           layout name you have created.
+To build the examples in example directory use
+    $ make examples
 
-         * The easiest way to find all of the configuration flags
-           for Traffic Server is to run ./configure --help.
+To installl the examples inside current layout libexecdir use the
+    $ sudo make install-examples
 
-         * To build the examples in example directory use
-           $ make examples
-           To installl the examples inside current layout libexecdir
-           use the
-           $ sudo make install-examples
+By default the build will use the highest level of compiler
+optimization. To alter this, specify your own optimizer flags at
+configuration time:
 
-  Postscript
-  ----------
+    $ ./configure CXXFLAGS=-Os CFLAGS=-Os
 
-  The Apache Traffic Server group cannot field user's installation questions.
-  There are many valuable forums to help you get started.  Please refer your
-  questions to the appropriate forum, such as the Users Mailing List at
+INITIAL CONFIGURATION
 
-      http://cwiki.apache.org/confluence/display/TS/Traffic+Server
+Next set the cluster interface in 'records.config'. The network
+interface name will vary depending on the host operating system.
 
-  Thanks for using the Apache Traffic Server, version 2.1.
+For example:
+    Linux: CONFIG proxy.config.cluster.ethernet_interface STRING eth0
+    OS X: CONFIG proxy.config.cluster.ethernet_interface STRING en0
+    FreeBSD: CONFIG proxy.config.cluster.ethernet_interface STRING em0
+    OpenSolaris: CONFIG proxy.config.cluster.ethernet_interface STRING e1000g0
 
-                                     The Apache Software Foundation
-                                     http://www.apache.org/
+To start the Traffic Server process stack (TC, TM, TS):
+    $ sudo PREFIX/bin/trafficserver start
+
+INSTALLATION HELP
+
+The Apache Traffic Server group cannot field user's installation
+questions.  There are many valuable forums to help you get started.
+Please refer your questions to the appropriate forum, such as the
+Users Mailing List at
+
+    http://cwiki.apache.org/confluence/display/TS/Traffic+Server
+
+Thanks for using the Apache Traffic Server, version 3.
+
+             The Apache Software Foundation
+             http://www.apache.org/
