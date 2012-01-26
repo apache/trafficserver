@@ -77,7 +77,12 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   *) Traffic Cop: segment fault when TRACE_LOG_COP is enabled
    Trunk patch: http://svn.apache.org/viewvc?view=rev&rev=1225724
    Jira: https://issues.apache.org/jira/browse/TS-1065
-   +1: igalic
+   +1: igalic, zwoop
+
+  *) HttpSM: TS can hang on HTTPS POST requests.
+   Trunk patch: http://svn.apache.org/viewvc?view=rev&rev=1228988
+   Jira: https://issues.apache.org/jira/browse/TS-1049
+   +1: zwoop
 
 
 RELEASE PROCESS
