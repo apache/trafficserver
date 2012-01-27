@@ -5761,7 +5761,7 @@ TSHttpTxnClientReqBodyBytesGet(TSHttpTxn txnp)
 }
 
 int
-TSHttpTxnServerReqHdrBytesGet(TSHttpTxn txnp, int *bytes)
+TSHttpTxnServerReqHdrBytesGet(TSHttpTxn txnp)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 

@@ -1,5 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.1.2
+  *) [TS-1066] TSHttpTxnServerReqHdrBytesGet in InkAPI.cc has an extra
+   parameter (int *bytes) from the prototype in <ts/ts.h>.
+   Author: Alistair Stevenson
 
   *) [TS-1088] Added TSHttpTxnOutgoingTransparencySet to API to
    control outbound transparency.
