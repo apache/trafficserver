@@ -87,12 +87,12 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   *) PluginVC should schedule to the local queue instead of the external queue.
    Trunk patch: http://svn.apache.org/viewvc?view=revision&revision=1228526
    Jira: https://issues.apache.org/jira/browse/TS-1074
-   +1: briang
+   +1: briang, zwoop
 
   *) Transformation plugins cause connection close when content length is not known ahead
    Trunk patch: http://svn.apache.org/viewvc?view=revision&revision=1197133
    Jira: https://issues.apache.org/jira/browse/TS-1004
-   +1: briang
+   +1: briang, zwoop
 
   *) HTTP: forward map based on request receive port.
    Trunk patch: http://svn.apache.org/viewvc?view=revision&revision=1159440
