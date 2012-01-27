@@ -122,7 +122,7 @@ HttpProxyPort::loadConfig(Vec<self>& entries) {
   if (-1 == sp) {
     // Default value, ignore.
   } else if (0 < sp && sp < 65536) {
-    char buff[6 + 1 + strlen(attr) + 1];
+    char* buff = static_cast<char*>(alloca(6 + 1 + strlen(attr) + 1));
     sprintf(buff, "%d:%s", sp, attr);
     self::loadValue(entries, buff);
   } else {
