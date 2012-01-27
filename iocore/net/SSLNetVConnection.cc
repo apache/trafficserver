@@ -531,6 +531,20 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
     }
     sslHandShakeComplete = 1;
 
+#if TS_USE_TLS_NPN
+  if (diags->on("ssl")) {
+    const unsigned char * proto = NULL;
+    unsigned len = 0;
+
+    SSL_get0_next_proto_negotiated(ssl, &proto, &len);
+    if (len) {
+      Debug("ssl", "client selected next protocol %.*s", len, proto);
+    } else {
+      Debug("ssl", "client did not select a next protocol");
+    }
+  }
+#endif /* TS_USE_TLS_NPN */
+
     return EVENT_DONE;
 
   case SSL_ERROR_WANT_ACCEPT:

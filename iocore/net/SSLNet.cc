@@ -33,6 +33,35 @@ unsigned long SSL_pthreads_thread_id();
 
 bool SSLNetProcessor::open_ssl_initialized = false;
 
+#if TS_USE_TLS_NPN
+static int
+npn_advertise_protocols(SSL *ssl,
+    const unsigned char **out, unsigned int *outlen, void *arg)
+{
+  static const unsigned char protocols[] =
+    "\x08http/1.0"
+    "\x08http/1.1";
+
+  SSLNetProcessor * sslNetProc = (SSLNetProcessor *)arg;
+
+  // XXX: At some point we need to figure out how to know which protocols to
+  // advertise.
+  (void)sslNetProc;
+
+  // For currently defined protocol strings,
+  // see http://technotes.googlecode.com/git/nextprotoneg.html. The OpenSSL
+  // documentation tells us to return a string in "wire format". The draft NPN
+  // RFC helpfuly refuses to document the wire format. The above link says we
+  // need to send length-prefixed strings, but does not say how many bytes the
+  // length is. Nice.
+  *out = protocols;
+  *outlen = sizeof(protocols) - 1;
+
+  // Successful return tells OpenSSL to advertise.
+  return SSL_TLSEXT_ERR_OK;
+}
+#endif /* TS_USE_TLS_NPN */
+
 
 int
 SSL_CTX_add_extra_chain_cert_file(SSL_CTX * ctx, const char *file)
@@ -121,7 +150,7 @@ SSLNetProcessor::reconfigure(void)
   if (!open_ssl_initialized) {
     open_ssl_initialized = true;
     SSL_load_error_strings();
-    SSLeay_add_ssl_algorithms();
+    SSL_library_init();
     initSSLLocks();
   }
 
@@ -371,6 +400,11 @@ SSLNetProcessor::initSSLServerCTX(SslConfigParams * param, SSL_CTX * lCtx,
       return -6;
     }
   }
+
+#if TS_USE_TLS_NPN
+  SSL_CTX_set_next_protos_advertised_cb(lCtx, npn_advertise_protocols, this);
+#endif /* TS_USE_TLS_NPN */
+
   return 0;
 
 }
