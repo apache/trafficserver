@@ -25,7 +25,7 @@ Changes with Apache Traffic Server 3.1.2
 
   *) [TS-1081] Eliminate an additional copy of the pristine URL string.
 
-  *) [TS-1038] SHttpTxnErrorBodySet() can leak memory.
+  *) [TS-1038] TSHttpTxnErrorBodySet() can leak memory.
    Author: Brian Geffon
 
   *) [TS-1049] TS hangs (dead lock) on HTTPS POST requests.
