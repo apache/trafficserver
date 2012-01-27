@@ -255,7 +255,7 @@ public:
   static char const* const OPT_BLIND_TUNNEL; ///< Blind tunnel.
   static char const* const OPT_COMPRESSED; ///< Compressed.
 
-  static Vec<self> m_global; ///< Global ("default") data.
+  static Vec<self>& m_global; ///< Global ("default") data.
 };
 
 

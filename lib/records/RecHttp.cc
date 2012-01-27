@@ -62,7 +62,15 @@ size_t const OPT_OUTBOUND_IP_PREFIX_LEN = strlen(HttpProxyPort::OPT_OUTBOUND_IP_
 size_t const OPT_INBOUND_IP_PREFIX_LEN = strlen(HttpProxyPort::OPT_INBOUND_IP_PREFIX);
 }
 
-Vec<HttpProxyPort> HttpProxyPort::m_global;
+namespace {
+// Solaris work around. On that OS the compiler will not let me use an
+// instantiated instance of Vec<self> inside the class, even if
+// static. So we have to declare it elsewhere and then import via
+// reference. Might be a problem with Vec<> creating a fixed array
+// rather than allocating on first use (compared to std::vector<>).
+  HttpProxyPort::Group GLOBAL_DATA;
+}
+HttpProxyPort::Group& HttpProxyPort::m_global = GLOBAL_DATA;
 
 HttpProxyPort::HttpProxyPort()
   : m_fd(ts::NO_FD)
