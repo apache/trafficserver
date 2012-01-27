@@ -74,6 +74,7 @@ struct DumpStats: public Continuation
 };
 
 HttpAccept *plugin_http_accept = NULL;
+HttpAccept *plugin_http_transparent_accept = 0;
 
 /////////////////////////////////////////////////////////////////
 //
@@ -104,6 +105,13 @@ init_HttpProxyServer(void)
   if (plugin_http_accept == NULL) {
     plugin_http_accept = NEW(new HttpAccept);
     plugin_http_accept->mutex = new_ProxyMutex();
+  }
+  // Same as plugin_http_accept except outbound transparent.
+  if (! plugin_http_transparent_accept) {
+    HttpAccept::Options ha_opt;
+    ha_opt.setOutboundTransparent(true);
+    plugin_http_transparent_accept = NEW(new HttpAccept(ha_opt));
+    plugin_http_transparent_accept->mutex = new_ProxyMutex();
   }
 #endif
 }

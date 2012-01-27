@@ -2421,6 +2421,23 @@ extern "C"
 
    */
   tsapi TSVConn TSHttpConnect(struct sockaddr const* addr);
+  
+    /* --------------------------------------------------------------------------
+     Initiate Transparent Http Connection */
+  /**
+      Allows the plugin to initiate a transparent http connection. This operates
+      identically to TSHttpConnect except that it is treated as an intercepted
+      transparent connection by the session and transaction state machines.
+
+      @param client_addr the address that the resulting connection will be seen as
+      	coming from
+      @param server_addr the address that the resulting connection will be seen as
+      	attempting to connect to when intercepted
+      @param vc will be set to point to the new TSVConn on success.
+      
+   */
+  tsapi TSVConn TSHttpConnectTransparent(struct sockaddr const* client_addr, struct sockaddr const * server_addr);
+  
   tsapi void TSFetchUrl(const char* request,int request_len, struct sockaddr const* addr, TSCont contp, TSFetchWakeUpOptions callback_options,TSFetchEvent event);
   tsapi void TSFetchPages(TSFetchUrlParams_t* params);
 

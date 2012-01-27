@@ -5988,23 +5988,57 @@ TSHttpAltInfoQualitySet(TSHttpAltInfo infop, float quality)
 }
 
 extern HttpAccept *plugin_http_accept;
+extern HttpAccept *plugin_http_transparent_accept;
 
 TSVConn
 TSHttpConnect(sockaddr const* addr)
 {
   sdk_assert(addr);
 
-  in_addr_t ip = ink_inet_ip4_addr_cast(addr);
-  uint16_t port = ink_inet_get_port(addr);
-
-  sdk_assert(ip);
-  sdk_assert(port);
+  sdk_assert(ink_inet_is_ip(addr));
+  sdk_assert(ink_inet_port_cast(addr));
 
   if (plugin_http_accept) {
     PluginVCCore *new_pvc = PluginVCCore::alloc();
 
-    new_pvc->set_active_addr(ip, port);
+    new_pvc->set_active_addr(addr);
     new_pvc->set_accept_cont(plugin_http_accept);
+
+    PluginVC *return_vc = new_pvc->connect();
+
+    if (return_vc != NULL) {
+      PluginVC* other_side = return_vc->get_other_side();
+
+      if(other_side != NULL) {
+        other_side->set_is_internal_request(true);
+      }
+    }
+
+    return reinterpret_cast<TSVConn>(return_vc);
+  }
+
+  return NULL;
+}
+
+TSVConn
+TSHttpConnectTransparent(sockaddr const* client_addr, sockaddr const* server_addr)
+{
+  sdk_assert(ink_inet_is_ip(client_addr));
+  sdk_assert(ink_inet_is_ip(server_addr));
+  sdk_assert(!ink_inet_is_any(client_addr));
+  sdk_assert(ink_inet_port_cast(client_addr));
+  sdk_assert(!ink_inet_is_any(server_addr));
+  sdk_assert(ink_inet_port_cast(server_addr));
+
+  if (plugin_http_transparent_accept) {
+    PluginVCCore *new_pvc = PluginVCCore::alloc();
+
+    // set active address expects host ordering and the above casts do not
+    // swap when it is required
+    new_pvc->set_active_addr(client_addr);
+    new_pvc->set_passive_addr(server_addr);
+    new_pvc->set_transparent(true, true);
+    new_pvc->set_accept_cont(plugin_http_transparent_accept);
 
     PluginVC *return_vc = new_pvc->connect();
 

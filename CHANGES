@@ -4,6 +4,8 @@ Changes with Apache Traffic Server 3.1.2
    parameter (int *bytes) from the prototype in <ts/ts.h>.
    Author: Alistair Stevenson
 
+  *) [TS-1089] Added TSHttpConnectTransparent.
+
   *) [TS-1088] Added TSHttpTxnOutgoingTransparencySet to API to
    control outbound transparency.
 

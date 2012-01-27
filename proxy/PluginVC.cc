@@ -1151,9 +1151,21 @@ PluginVCCore::set_passive_addr(in_addr_t ip, int port)
 }
 
 void
+PluginVCCore::set_passive_addr(sockaddr const* ip)
+{
+  passive_addr_struct.assign(ip);
+}
+
+void
 PluginVCCore::set_active_addr(in_addr_t ip, int port)
 {
   ink_inet_ip4_set(&active_addr_struct, htonl(ip), htons(port));
+}
+
+void
+PluginVCCore::set_active_addr(sockaddr const* ip)
+{
+  active_addr_struct.assign(ip);
 }
 
 void
@@ -1167,6 +1179,14 @@ PluginVCCore::set_active_data(void *data)
 {
   active_data = data;
 }
+
+void
+PluginVCCore::set_transparent(bool passive_side, bool active_side)
+{
+  passive_vc.set_is_transparent(passive_side);
+  active_vc.set_is_transparent(active_side);
+}
+
 
 /*************************************************************
  *
