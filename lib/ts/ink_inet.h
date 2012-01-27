@@ -35,6 +35,16 @@
 #define INK_GETHOSTBYNAME_R_DATA_SIZE 1024
 #define INK_GETHOSTBYADDR_R_DATA_SIZE 1024
 
+#if ! TS_HAS_IN6_IS_ADDR_UNSPECIFIED
+#if defined(IN6_IS_ADDR_UNSPECIFIED)
+#undef IN6_IS_ADDR_UNSPECIFIED
+#endif
+static inline bool IN6_IS_ADDR_UNSPECIFIED(in6_addr const* addr) {
+  uint32_t const* w = reinterpret_cast<uint32_t const*>(addr);
+  return 0 == w[0] && 0 == w[1] && 0 == w[2] && 0 == w[3];
+}
+#endif
+
 class InkInetAddr; // forward declare.
 
 /** A union to hold the standard IP address structures.
@@ -555,8 +565,8 @@ inline bool ink_inet_is_nonroutable(ts_ip_endpoint const* ip) {
 /// Check for being "any" address.
 /// @return @c true if @a ip is the any / unspecified address.
 inline bool ink_inet_is_any(sockaddr const* ip) {
-  return (ink_inet_is_ip4(ip) && INADDR_ANY == ink_inet_ip4_cast(ip)) ||
-    (ink_inet_is_ip6(ip) && IN6_IS_ADDR_UNSPECIFIED(ink_inet_ip6_cast(ip)))
+  return (ink_inet_is_ip4(ip) && INADDR_ANY == ink_inet_ip4_addr_cast(ip)) ||
+    (ink_inet_is_ip6(ip) && IN6_IS_ADDR_UNSPECIFIED(&ink_inet_ip6_addr_cast(ip)))
     ;
 }
   

@@ -111,4 +111,22 @@ esac
 AC_MSG_RESULT([$default_loopback_iface])
 AC_SUBST([default_loopback_iface])
 ])
+
 dnl
+dnl Check on IN6_IS_ADDR_UNSPECIFIED. We can't just check if it is defined
+dnl because some releases of FreeBSD and Solaris define it incorrectly.
+dnl
+AC_DEFUN([TS_CHECK_MACRO_IN6_IS_ADDR_UNSPECIFIED], [
+AC_CACHE_CHECK([IN6_IS_ADDR_UNSPECIFIED macro works], ac_cv_macro_in6_is_addr_unspecified,
+TS_TRY_COMPILE_NO_WARNING([
+#include <netinet/in.h>
+],[
+  (void) IN6_IS_ADDR_UNSPECIFIED(0);
+], ac_cv_macro_in6_is_addr_unspecified=yes, ac_cv_macro_in6_is_addr_unspecified=no))
+
+has_in6_is_addr_unspecified=1
+if test "x$ac_cv_macro_in6_is_addr_unspecified" = "xno"; then
+  has_in6_is_addr_unspecified=0
+fi
+AC_SUBST(has_in6_is_addr_unspecified)
+])
