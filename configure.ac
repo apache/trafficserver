@@ -814,6 +814,10 @@ if test "x${enable_crypto}" != "xyes"; then
 fi
 
 #
+# Check for NextProtocolNegotiation TLS extension support.
+TS_CHECK_CRYPTO_NEXTPROTONEG
+
+#
 # Check for zlib presence and usability
 TS_CHECK_ZLIB
 

@@ -109,3 +109,23 @@ if test "$enable_openssl" != "no"; then
 fi
 
 ])
+
+AC_DEFUN([TS_CHECK_CRYPTO_NEXTPROTONEG], [
+  AC_ARG_ENABLE([tls-npn],
+  [AS_HELP_STRING([--enable-tls-npn],[enable NextProtocolNegotiation TLS extension support])],
+  [ ],
+  [
+    enable_tls_npn=yes
+    _npn_saved_LIBS=$LIBS
+    TS_ADDTO(LIBS, [$LIBSSL])
+    AC_CHECK_FUNCS(SSL_CTX_set_next_protos_advertised_cb SSL_CTX_set_next_proto_select_cb SSL_select_next_proto SSL_get0_next_proto_negotiated,
+      [], [enable_tls_npn=no]
+    )
+    LIBS=$_npn_saved_LIBS
+  ])
+
+  AC_MSG_CHECKING(whether to enable NextProtocolNegotiation TLS extension support)
+  AC_MSG_RESULT([$enable_tls_npn])
+  TS_ARG_ENABLE_VAR([use], [tls-npn])
+  AC_SUBST(use_tls_npn)
+])
