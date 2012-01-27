@@ -5320,18 +5320,24 @@ TSHttpTxnServerIPGet(TSHttpTxn txnp)
   return ink_inet_ip4_addr_cast(&sm->t_state.server_info.addr.sa);
 }
 
-// This API does currently not use or honor the port specified in the sockaddr.
-// This could change in a future version, but for now, leave it at 0 (or undef).
+// [amc] This might use the port. The code path should do that but it
+// hasn't been tested.
 TSReturnCode
 TSHttpTxnOutgoingAddrSet(TSHttpTxn txnp, const struct sockaddr *addr, socklen_t addrlen)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
   HttpSM *sm = (HttpSM *) txnp;
 
-  sm->t_state.setup_per_txn_configs(); // Make sure the txn_conf struct is setup
-  ink_inet_copy(&sm->t_state.txn_conf->outgoing_ip_to_bind_saddr.sa, addr);
-  ink_inet_port_cast(&sm->t_state.txn_conf->outgoing_ip_to_bind_saddr) = 0;
+  sm->ua_session->outbound_port = ink_inet_get_port(addr);
 
+  if (ink_inet_is_ip4(addr)) {
+    sm->ua_session->outbound_ip4.assign(addr);
+  } else if (ink_inet_is_ip6(addr)) {
+    sm->ua_session->outbound_ip6.assign(addr);
+  } else {
+    sm->ua_session->outbound_ip4.invalidate();
+    sm->ua_session->outbound_ip6.invalidate();
+  }
   return TS_ERROR;
 }
 
@@ -6335,6 +6341,8 @@ TSNetConnect(TSCont contp, sockaddr const* addr)
 TSAction
 TSNetAccept(TSCont contp, int port, int domain, int accept_threads)
 {
+  NetProcessor::AcceptOptions opt;
+
   sdk_assert(sdk_sanity_check_continuation(contp) == TS_SUCCESS);
   sdk_assert(port > 0);
   sdk_assert(accept_threads >= -1);
@@ -6343,11 +6351,14 @@ TSNetAccept(TSCont contp, int port, int domain, int accept_threads)
   // doing an accept at any time?
   FORCE_PLUGIN_MUTEX(contp);
 
-  if (domain < 0)
-    domain = AF_INET;
+  // If it's not IPv6, force to IPv4.
+  opt.ip_family = domain == AF_INET6 ? AF_INET6 : AF_INET;
+  opt.accept_threads = accept_threads;
+  opt.local_port = port;
+  opt.frequent_accept = false;
 
   INKContInternal *i = (INKContInternal *) contp;
-  return (TSAction)netProcessor.accept(i, port, domain, accept_threads);
+  return (TSAction)netProcessor.accept(i, opt);
 }
 
 /* DNS Lookups */

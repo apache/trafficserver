@@ -849,7 +849,7 @@ ClusterHandler::connectClusterEvent(int event, Event * e)
     opt.sockopt_flags = cluster_sockopt_flags;
     opt.etype = ET_CLUSTER;
     opt.addr_binding = NetVCOptions::INTF_ADDR;
-    ink_inet_ip4_set(&opt.local_addr, this_cluster_machine()->ip);
+    opt.local_ip = this_cluster_machine()->ip;
 
     // TODO: Should we check the Action* returned here?
     netProcessor.connect_re(this, machine->ip,

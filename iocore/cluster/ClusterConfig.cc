@@ -106,8 +106,8 @@ ClusterAccept::ClusterAcceptEvent(int event, void *data)
 	opt.recv_bufsize = socket_recv_bufsize;
 	opt.send_bufsize = socket_send_bufsize;
 	opt.etype = ET_CLUSTER;
-	opt.port = cluster_port;
-	opt.domain = AF_INET;
+	opt.local_port = cluster_port;
+	opt.ip_family = AF_INET;
         accept_action = netProcessor.main_accept(this, NO_FD,
                                                  NULL, NULL,
                                                  false, false, opt);

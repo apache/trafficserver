@@ -34,6 +34,7 @@
 
 #include <string.h>
 #include "P_Net.h"
+#include <records/I_RecHttp.h>
 #include <openssl/ssl.h>
 
 int SslConfig::id = 0;
@@ -58,7 +59,6 @@ SslConfigParams::SslConfigParams()
 
   clientCertLevel = client_verify_depth = verify_depth = clientVerify = 0;
 
-  ssl_accept_port_number = 443;
   termMode = SSL_TERM_MODE_NONE;
   ssl_ctx_options = 0;
   ssl_session_cache = SSL_SESSION_CACHE_MODE_SERVER;
@@ -88,7 +88,6 @@ SslConfigParams::cleanup()
   ats_free_null(cipherSuite);
 
   clientCertLevel = client_verify_depth = verify_depth = clientVerify = 0;
-  ssl_accept_port_number = -1;
   termMode = SSL_TERM_MODE_NONE;
 }
 
@@ -149,19 +148,13 @@ SslConfigParams::initialize()
   char *clientCACertRelativePath = NULL;
   char *multicert_config_file = NULL;
 
-  int ssl_mode = SSL_TERM_MODE_NONE;
-
   cleanup();
 
   //+++++++++++++++++++++++++ Server part +++++++++++++++++++++++++++++++++
   verify_depth = 7;
 
-  IOCORE_ReadConfigInteger(ssl_mode, "proxy.config.ssl.enabled");
-  ssl_mode &= SSL_TERM_MODE_BOTH;
-  termMode = (SSL_TERMINATION_MODE) ssl_mode;
-
+  termMode = static_cast<SSL_TERMINATION_MODE>(HttpProxyPort::hasSSL() ? SSL_TERM_MODE_BOTH : 0);
   
-  IOCORE_ReadConfigInt32(ssl_accept_port_number, "proxy.config.ssl.server_port");
   IOCORE_ReadConfigInt32(clientCertLevel, "proxy.config.ssl.client.certification_level");
 
   IOCORE_ReadConfigStringAlloc(cipherSuite, "proxy.config.ssl.server.cipher_suite");

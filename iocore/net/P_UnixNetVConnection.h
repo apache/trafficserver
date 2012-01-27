@@ -45,7 +45,9 @@ TS_INLINE void
 NetVCOptions::reset()
 {
   ip_proto = USE_TCP;
-  memset(&local_addr, 0, sizeof(local_addr));
+  ip_family = AF_INET;
+  local_ip.invalidate();
+  local_port = 0;
   addr_binding = ANY_ADDR;
   f_blocking = false;
   f_blocking_connect = false;
@@ -205,7 +207,7 @@ public:
   EventIO ep;
   NetHandler *nh;
   unsigned int id;
-  int accept_port;
+  // amc - what is this for? Why not use remote_addr or con.addr?
   ts_ip_endpoint server_addr; /// Server address and port.
 
   union

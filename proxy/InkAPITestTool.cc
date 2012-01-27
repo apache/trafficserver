@@ -26,6 +26,7 @@
 
 #include <arpa/inet.h>          /* For htonl */
 #include "P_Net.h"
+#include <records/I_RecHttp.h>
 
 #define SDBG_TAG "SockServer"
 #define CDBG_TAG "SockClient"
@@ -428,13 +429,14 @@ get_request_id(TSHttpTxn txnp)
 static ClientTxn *
 synclient_txn_create(void)
 {
-  TSMgmtInt proxy_port;
-
+  HttpProxyPort* proxy_port;
+  
   ClientTxn *txn = (ClientTxn *) TSmalloc(sizeof(ClientTxn));
-  if (TSMgmtIntGet(PROXY_CONFIG_NAME_HTTP_PORT, &proxy_port) != TS_SUCCESS) {
-    proxy_port = PROXY_HTTP_DEFAULT_PORT;
-  }
-  txn->connect_port = (int) proxy_port;
+  if (0 == (proxy_port = HttpProxyPort::findHttp(AF_INET)))
+    txn->connect_port = PROXY_HTTP_DEFAULT_PORT;
+  else
+    txn->connect_port = proxy_port->m_port;
+
   txn->local_port = (int) 0;
   txn->connect_ip = IP(127, 0, 0, 1);
   txn->status = REQUEST_INPROGRESS;
@@ -447,7 +449,7 @@ synclient_txn_create(void)
   txn->magic = MAGIC_ALIVE;
   txn->connect_action = NULL;
 
-  TSDebug(CDBG_TAG, "Connecting to proxy 127.0.0.1 on port %d", (int) proxy_port);
+  TSDebug(CDBG_TAG, "Connecting to proxy 127.0.0.1 on port %d", txn->connect_port);
   return txn;
 }
 

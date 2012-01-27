@@ -69,12 +69,11 @@ public:
 
   SSL_CTX *getSSL_CTX(void) const {return ctx; }
   SSL_CTX *getClientSSL_CTX(void) const { return client_ctx; }
-  int getAcceptPort() { return accept_port_number; }
 
   static void logSSLError(const char *errStr = "", int critical = 1);
 
   SSLNetProcessor()
-    : verify_depth(0), ctx(NULL), client_ctx(NULL), sslMutexArray(NULL), accept_port_number(-1)
+    : verify_depth(0), ctx(NULL), client_ctx(NULL), sslMutexArray(NULL)
     {  };
   virtual ~SSLNetProcessor();
 
@@ -110,7 +109,6 @@ private:
   SSLNetProcessor(const SSLNetProcessor &);
   SSLNetProcessor & operator =(const SSLNetProcessor &);
 
-  int accept_port_number;
   static bool open_ssl_initialized;
 };
 

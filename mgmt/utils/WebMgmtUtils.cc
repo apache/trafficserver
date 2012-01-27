@@ -1270,9 +1270,8 @@ processSpawn(const char *args[],
 
   } else if (pid == 0) {        // child process
     // close all the listening port in child process
-    for (int i = 0; i < MAX_PROXY_SERVER_PORTS && lmgmt->proxy_server_fd[i] >= 0; i++) {
-      close_socket(lmgmt->proxy_server_fd[i]);
-    }
+    lmgmt->closeProxyPorts();
+
 #if TS_USE_POSIX_CAP
     /* There is no point in saving the current euid in order to
        restore it because at this point the process will either exec

@@ -41,13 +41,17 @@ LogCollationAccept::LogCollationAccept(int port)
     m_port(port),
     m_pending_event(NULL)
 {
-
+  NetProcessor::AcceptOptions opt;
   SET_HANDLER((LogCollationAcceptHandler) & LogCollationAccept::accept_event);
   // work around for iocore problem where _pre_fetch_buffer can get
   // appended to itself if multiple do_io_reads are called requesting
   // small amounts of data.  Most arguments are default except for the
   // last one which we will set to true.
-  m_accept_action = netProcessor.accept(this, m_port, AF_INET, 0, false, INADDR_ANY, NULL, false, NO_FD, ACCEPTEX_POOL_SIZE, true);
+  // [amc] That argument is ignored so I dropped it.
+  opt.local_port = m_port;
+  opt.ip_family = AF_INET;
+  opt.accept_threads = 0;
+  m_accept_action = netProcessor.accept(this, opt);
   ink_assert(NULL != m_accept_action);
 }
 

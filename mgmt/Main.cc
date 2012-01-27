@@ -417,7 +417,8 @@ main(int argc, char **argv)
   int cluster_port = -1, cluster_server_port = -1;
   // TODO: This seems completely incomplete, disabled for now
   //  int dump_config = 0, dump_process = 0, dump_node = 0, dump_cluster = 0, dump_local = 0;
-  int proxy_port = -1, proxy_backdoor = -1;
+  char* proxy_port = 0;
+  int proxy_backdoor = -1;
   char *envVar = NULL, *group_addr = NULL, *tsArgs = NULL;
   bool log_to_syslog = true;
   char userToRunAs[80];
@@ -537,7 +538,7 @@ main(int argc, char **argv)
             }
           } else if (strcmp(argv[i], "-proxyPort") == 0) {
             ++i;
-            proxy_port = atoi(argv[i]);
+            proxy_port = argv[i];
           } else if (strcmp(argv[i], "-proxyBackDoor") == 0) {
             ++i;
             proxy_backdoor = atoi(argv[i]);
@@ -703,9 +704,8 @@ main(int argc, char **argv)
     lmgmt->proxy_options = tsArgs;
     mgmt_log(stderr, "[main] Traffic Server Args: '%s'\n", lmgmt->proxy_options);
   }
-  if (proxy_port != -1) {
-    lmgmt->proxy_server_port[0] = proxy_port;
-    mgmt_log(stderr, "[main] Traffic Server Port: '%d'\n", lmgmt->proxy_server_port[0]);
+  if (proxy_port) {
+    HttpProxyPort::loadValue(lmgmt->m_proxy_ports, proxy_port);
   }
 
   if (proxy_backdoor != -1) {

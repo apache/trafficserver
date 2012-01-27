@@ -41,6 +41,7 @@
 #include "api/ts/remap.h"
 #include "RemapPluginInfo.h"
 #include "UrlMapping.h"
+#include <records/I_RecHttp.h>
 
 #include "congest/Congestion.h"
 
@@ -791,7 +792,7 @@ public:
     uint16_t port; // host order.
     ServerState_t state;
     AbortState_t abort;
-    HttpPortTypes port_attribute;
+    HttpProxyPort::TransportType port_attribute;
 
     /// @c true if the connection is transparent.
     bool is_transparent;
@@ -809,7 +810,7 @@ public:
         port(0),
         state(STATE_UNDEFINED),
         abort(ABORT_UNDEFINED),
-        port_attribute(SERVER_PORT_DEFAULT),
+        port_attribute(HttpProxyPort::TRANSPORT_DEFAULT),
         is_transparent(false)
     {
       memset(&addr, 0, sizeof(addr));

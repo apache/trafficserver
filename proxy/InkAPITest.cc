@@ -2243,10 +2243,16 @@ static int
 checkHttpTxnClientIncomingPortGet(SocketTest * test, void *data)
 {
   uint16_t port;
-  TSMgmtInt port_from_config_file = -1;
+  HttpProxyPort* proxy_port = HttpProxyPort::findHttp(AF_INET);
   TSHttpTxn txnp = (TSHttpTxn) data;
   sockaddr const* ptr = TSHttpTxnIncomingAddrGet(txnp);
 
+  if (0 == proxy_port) {
+    SDK_RPRINT(test->regtest, "TSHttpTxnIncomingPortGet", "TestCase1", TC_FAIL,
+               "TSHttpTxnClientIncomingPortGet failed to find configured HTTP port.");
+    test->test_client_incoming_port_get = false;
+    return TS_EVENT_CONTINUE;
+  }
   if (0 == ptr) {
     SDK_RPRINT(test->regtest, "TSHttpTxnIncomingPortGet", "TestCase1", TC_FAIL,
                "TSHttpTxnClientIncomingPortGet returns 0 pointer");
@@ -2255,18 +2261,14 @@ checkHttpTxnClientIncomingPortGet(SocketTest * test, void *data)
   }
   port = ink_inet_get_port(ptr);
 
-  if (TSMgmtIntGet("proxy.config.http.server_port", &port_from_config_file) != TS_SUCCESS) {
-    port_from_config_file = 8080;
-  }
+  TSDebug(UTDBG_TAG, "TS HTTP port = %x, Txn incoming client port %x", proxy_port->m_port, port);
 
-  TSDebug(UTDBG_TAG, "TS HTTP port = %x, Txn incoming client port %x", (int) port_from_config_file, port);
-
-  if (port == static_cast<uint16_t>(port_from_config_file)) {
+  if (port == proxy_port->m_port) {
     SDK_RPRINT(test->regtest, "TSHttpTxnClientIncomingPortGet", "TestCase1", TC_PASS, "ok");
     test->test_client_incoming_port_get = true;
   } else {
     SDK_RPRINT(test->regtest, "TSHttpTxnClientIncomingPortGet", "TestCase1", TC_FAIL,
-               "Value's Mismatch. From Funtion: %d  Expected value: %d", port, port_from_config_file);
+               "Value's Mismatch. From Funtion: %d  Expected value: %d", port, proxy_port->m_port);
     test->test_client_incoming_port_get = false;
   }
   return TS_EVENT_CONTINUE;
@@ -6371,12 +6373,13 @@ cache_hook_handler(TSCont contp, TSEvent event, void *edata)
       /* If this is the first time, then the response is in cache and we should make */
       /* another request to get cache hit */
       if (data->first_time == true) {
-        data->first_time = false;
+	data->first_time = false;
         /* Kill the origin server */
         synserver_delete(data->os);
+
         /* Send another similar client request */
         synclient_txn_send_request(data->browser2, data->request);
-        TSfree(data->request);
+        ink_assert(REQUEST_INPROGRESS == data->browser2->status);
         TSContSchedule(contp, 25, TS_THREAD_POOL_DEFAULT);
         return 0;
       }
@@ -6396,6 +6399,7 @@ cache_hook_handler(TSCont contp, TSEvent event, void *edata)
       synclient_txn_delete(data->browser2);
 
       data->magic = MAGIC_DEAD;
+      TSfree(data->request);
       TSfree(data);
       TSContDataSet(contp, NULL);
     }

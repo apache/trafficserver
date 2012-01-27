@@ -63,18 +63,19 @@ struct ShowNet: public ShowCont
 
     ink_hrtime now = ink_get_hrtime();
     forl_LL(UnixNetVConnection, vc, nh->open_list) {
-      uint16_t port = ink_inet_get_port(&addr.sa);
+//      uint16_t port = ink_inet_get_port(&addr.sa);
       if (ink_inet_is_ip(&addr) && addr != vc->server_addr)
         continue;
-      if (port && port != ink_inet_get_port(&vc->server_addr.sa) && port != vc->accept_port)
-        continue;
+//      if (port && port != ink_inet_get_port(&vc->server_addr.sa) && port != vc->accept_port)
+//        continue;
       char ipbuf[INET6_ADDRSTRLEN];
       ink_inet_ntop(&vc->server_addr.sa, ipbuf, sizeof(ipbuf));
       char opt_ipbuf[INET6_ADDRSTRLEN];
       char interbuf[80];
-      snprintf(interbuf, sizeof(interbuf), "[%s] %s",
+      snprintf(interbuf, sizeof(interbuf), "[%s] %s:%d",
         vc->options.toString(vc->options.addr_binding),
-        ink_inet_ntop(&vc->options.local_addr.sa, opt_ipbuf, sizeof(opt_ipbuf))
+        vc->options.local_ip.toString(opt_ipbuf, sizeof(opt_ipbuf)),
+        vc->options.local_port
       );
       CHECK_SHOW(show("<tr>"
                       //"<td><a href=\"/connection/%d\">%d</a></td>"
@@ -83,7 +84,7 @@ struct ShowNet: public ShowCont
                       "<td>%d</td>"     // port
                       "<td>%d</td>"     // fd
                       "<td>%s</td>"     // interbuf
-                      "<td>%d</td>"     // accept port
+//                      "<td>%d</td>"     // accept port
                       "<td>%d secs ago</td>"    // start time
                       "<td>%d</td>"     // thread id
                       "<td>%d</td>"     // read enabled
@@ -102,7 +103,7 @@ struct ShowNet: public ShowCont
                       ink_inet_get_port(&vc->server_addr),
                       vc->con.fd,
                       interbuf,
-                      vc->accept_port,
+//                      vc->accept_port,
                       (int) ((now - vc->submit_time) / HRTIME_SECOND),
                       ethread->id,
                       vc->read.enabled,

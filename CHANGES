@@ -1,5 +1,10 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.1.2
+
+  *) [TS-1077] All proxy ports are now configured by
+   proxy.config.http.server_ports. All other port configuration values
+   are deprecated.
+
   *) [TS-1091] CFLAGS=-w` causes configure script to wrongly guess style of
    `gethostbyname_r` on BSD flavors. Author: Marc Abramowitz.
 

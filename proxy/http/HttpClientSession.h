@@ -143,6 +143,14 @@ private:
 public:
   bool backdoor_connect;
   int hooks_set;
+  /// Local address for outbound connection.
+  InkInetAddr outbound_ip4;
+  /// Local address for outbound connection.
+  InkInetAddr outbound_ip6;
+  /// Local port for outbound connection.
+  uint16_t outbound_port;
+  /// Set outbound connection to transparent.
+  bool f_outbound_transparent;
 
   // for DI. An active connection is one that a request has
   // been successfully parsed (PARSE_DONE) and it remains to

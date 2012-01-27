@@ -33,9 +33,10 @@ NetProcessor::AcceptOptions const NetProcessor::DEFAULT_ACCEPT_OPTIONS;
 NetProcessor::AcceptOptions&
 NetProcessor::AcceptOptions::reset()
 {
-  port = 0;
+  local_port = 0;
+  local_ip.invalidate();
   accept_threads = -1;
-  domain = AF_INET;
+  ip_family = AF_INET;
   etype = ET_NET;
   f_callback_on_open = false;
   localhost_only = false;
@@ -43,7 +44,6 @@ NetProcessor::AcceptOptions::reset()
   recv_bufsize = 0;
   send_bufsize = 0;
   sockopt_flags = 0;
-  f_outbound_transparent = false;
   f_inbound_transparent = false;
   return *this;
 }
@@ -63,14 +63,13 @@ net_next_connection_number()
 
 Action *
 NetProcessor::accept(Continuation* cont,
-  sockaddr const* accept_addr,
   AcceptOptions const& opt
 ) {
   Debug("iocore_net_processor",
         "NetProcessor::accept - port %d,recv_bufsize %d, send_bufsize %d, sockopt 0x%0lX",
-    ink_inet_get_port(accept_addr), opt.recv_bufsize, opt.send_bufsize, opt.sockopt_flags);
+    opt.local_port, opt.recv_bufsize, opt.send_bufsize, opt.sockopt_flags);
 
-  return ((UnixNetProcessor *) this)->accept_internal(cont, NO_FD, accept_addr, opt);
+  return ((UnixNetProcessor *) this)->accept_internal(cont, NO_FD, opt);
 }
 
 Action *
@@ -79,37 +78,23 @@ NetProcessor::main_accept(Continuation *cont,
   AcceptOptions const& opt
 ) {
   UnixNetProcessor* this_unp = static_cast<UnixNetProcessor*>(this);
-  ts_ip_endpoint addr;
-
   Debug("iocore_net_processor", "NetProcessor::main_accept - port %d,recv_bufsize %d, send_bufsize %d, sockopt 0x%0lX",
-        opt.port, opt.recv_bufsize, opt.send_bufsize, opt.sockopt_flags);
-  if (opt.localhost_only) {
-    ink_inet_ip4_set(&addr.sa, htonl(INADDR_LOOPBACK), htons(opt.port));
-  } else {
-    if (ink_inet_is_ip(&this_unp->incoming_ip_to_bind_saddr)) {
-      ink_inet_copy(&addr.sa, &this_unp->incoming_ip_to_bind_saddr);
-      ink_inet_port_cast(&addr.sa) = htons(opt.port);
-    } else {
-      ink_inet_ip4_set(&addr, INADDR_ANY, htons(opt.port));
-    }
-  }
-  return this_unp->accept_internal(cont, fd, &addr.sa, opt);
+        opt.local_port, opt.recv_bufsize, opt.send_bufsize, opt.sockopt_flags);
+  return this_unp->accept_internal(cont, fd, opt);
 }
-
-
 
 Action *
 UnixNetProcessor::accept_internal(
   Continuation *cont,
   int fd,
-  sockaddr const* accept_addr,
   AcceptOptions const& opt
 ) {
   EventType et = opt.etype; // setEtype requires non-const ref.
   NetAccept *na = createNetAccept();
   EThread *thread = this_ethread();
   ProxyMutex *mutex = thread->mutex;
-  int accept_threads = opt.accept_threads;
+  int accept_threads = opt.accept_threads; // might be changed.
+  ts_ip_endpoint accept_ip; // local binding address.
 
   // Potentially upgrade to SSL.
   upgradeEtype(et);
@@ -119,19 +104,27 @@ UnixNetProcessor::accept_internal(
     IOCORE_ReadConfigInteger(accept_threads, "proxy.config.accept_threads");
 
   NET_INCREMENT_DYN_STAT(net_accepts_currently_open_stat);
+
+  // We've handled the config stuff at start up, but there are a few cases
+  // we must handle at this point.
+  if (opt.localhost_only)
+    accept_ip.setToLoopback(opt.ip_family);
+  else if (opt.local_ip.isValid())
+    accept_ip.assign(opt.local_ip);
+  else
+    accept_ip.setToAnyAddr(opt.ip_family);
+  ink_debug_assert(0 < opt.local_port && opt.local_port < 65536);
+  accept_ip.port() = htons(opt.local_port);
+
   na->accept_fn = net_accept; // All callers used this.
   na->server.fd = fd;
-  ink_inet_copy(&na->server.accept_addr, accept_addr);
-  na->server.f_outbound_transparent = opt.f_outbound_transparent;
+  ink_inet_copy(&na->server.accept_addr, &accept_ip);
   na->server.f_inbound_transparent = opt.f_inbound_transparent;
-  if (opt.f_outbound_transparent || opt.f_inbound_transparent) {
+  if (opt.f_inbound_transparent) {
     Debug(
       "http_tproxy",
-      "Marking accept server %x on port %d as %s%s%s transparent.\n",
-      na, opt.port,
-      (opt.f_outbound_transparent ? "outbound" : ""),
-      (opt.f_outbound_transparent && opt.f_inbound_transparent ? ", " : ""),
-      (opt.f_inbound_transparent ? "inbound" : "")
+      "Marking accept server %x on port %d as inbound transparent.\n",
+      na, opt.local_port
     );
   }
 
@@ -160,10 +153,10 @@ UnixNetProcessor::accept_internal(
           a = createNetAccept();
           *a = *na;
           a->init_accept_loop();
-          Debug("iocore_net_accept", "Created accept thread #%d for port %d", i, ink_inet_get_port(accept_addr));
+          Debug("iocore_net_accept", "Created accept thread #%d for port %d", i, ink_inet_get_port(&accept_ip));
         }
         // Start the "template" accept thread last.
-        Debug("iocore_net_accept", "Created accept thread #%d for port %d", accept_threads, ink_inet_get_port(accept_addr));
+        Debug("iocore_net_accept", "Created accept thread #%d for port %d", accept_threads, ink_inet_get_port(&accept_ip));
         na->init_accept_loop();
       }
     } else {
@@ -427,10 +420,6 @@ UnixNetProcessor::start(int)
     initialize_thread_for_http_sessions(netthreads[i], i);
 #endif
   }
-
-  if (0 == (incoming_ip_to_bind = IOCORE_ConfigReadString("proxy.local.incoming_ip_to_bind")) ||
-      0 != ink_inet_pton(incoming_ip_to_bind, &incoming_ip_to_bind_saddr))
-    memset(&incoming_ip_to_bind_saddr, 0, sizeof(incoming_ip_to_bind_saddr));
 
   RecData d;
   d.rec_int = 0;

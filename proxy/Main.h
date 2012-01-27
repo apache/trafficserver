@@ -45,9 +45,6 @@
 //
 // Global Configuration
 extern int accept_till_done;
-//extern int ssl_accept_port_number;
-//extern int ssl_enabled;
-extern int http_accept_port_number;
 extern int http_accept_file_descriptor;
 extern int command_flag;
 extern int auto_clear_hostdb_flag;
@@ -87,39 +84,6 @@ maintainance_mode()
 }
 
 void syslog_thr_init();
-
-enum HttpPortTypes
-{
-  SERVER_PORT_DEFAULT = 0,
-  SERVER_PORT_COMPRESSED,
-  SERVER_PORT_BLIND_TUNNEL,
-  SERVER_PORT_SSL
-};
-
-struct HttpEntryPoint {
-  int fd; ///< Pre-opened file descriptor if present.
-  HttpPortTypes type; ///< Type of connection.
-  int port; ///< Port on which to listent.
-  unsigned int domain; ///< Networking domain.
-  /// Set if inbound connects (from client) are/were transparent.
-  bool f_inbound_transparent;
-  /// Set if outbound connections (to origin servers) are transparent.
-  bool f_outbound_transparent;
-
-  HttpEntryPoint()
-    : fd(ts::NO_FD)
-    , type(SERVER_PORT_DEFAULT)
-    , port(-1)
-    , domain(AF_INET)
-    , f_inbound_transparent(false)
-    , f_outbound_transparent(false)
-  { }
-};
-
-/// Ports that are already open (passed via -A from manager).
-extern HttpEntryPoint *http_open_port_array;
-/// Ports to open in this process.
-extern HttpEntryPoint *http_other_port_array;
 
 extern Version version;
 extern AppVersionInfo appVersionInfo;

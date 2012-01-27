@@ -26,6 +26,7 @@
 #include "HttpClientSession.h"
 #include "I_Machine.h"
 
+HttpAccept::Options const HttpAccept::DEFAULT_OPTIONS;
 
 int
 HttpAccept::mainEvent(int event, void *data)
@@ -37,28 +38,34 @@ HttpAccept::mainEvent(int event, void *data)
     ////////////////////////////////////////////////////
     // if client address forbidden, close immediately //
     ////////////////////////////////////////////////////
-    NetVConnection *netvc = (NetVConnection *) data;
-    in_addr_t client_ip = netvc->get_remote_ip();
+    NetVConnection *netvc = static_cast<NetVConnection *>(data);
+    sockaddr const* client_ip = netvc->get_remote_addr();
+    ip_port_text_buffer ipb;
 
     // The backdoor port is now only bound to "localhost", so reason to
     // check for if it's incoming from "localhost" or not.
     if (!backdoor && IpAllow::instance() && (!IpAllow::instance()->match(client_ip))) {
-      char ip_string[32];
-      unsigned char *p = (unsigned char *) &(client_ip);
-
-      snprintf(ip_string, sizeof(ip_string), "%d.%d.%d.%d", p[0], p[1], p[2], p[3]);
-      Warning("connect by disallowed client %s, closing", ip_string);
+      Warning("connect by disallowed client %s, closing", ink_inet_ntop(client_ip, ipb, sizeof(ipb)));
       netvc->do_io_close();
 
       return VC_EVENT_CONT;
     }
 
-    netvc->attributes = attr;
+    netvc->attributes = transport_type;
 
-    Debug("http_seq", "HttpAccept:mainEvent] accepted connection");
+    if (is_debug_tag_set("http_seq"))
+      Debug("http_seq", "[HttpAccept:mainEvent %lx] accepted connection from %s transport type = %d.\n", netvc, ink_inet_nptop(client_ip, ipb, sizeof(ipb)), netvc->attributes);
+
     HttpClientSession *new_session = THREAD_ALLOC_INIT(httpClientSessionAllocator, netvc->thread);
 
+   // copy over session related data.
+    new_session->f_outbound_transparent = f_outbound_transparent;
+    new_session->outbound_ip4 = outbound_ip4;
+    new_session->outbound_ip6 = outbound_ip6;
+    new_session->outbound_port = outbound_port;
+
     new_session->new_connection(netvc, backdoor);
+
     return EVENT_CONT;
   }
 

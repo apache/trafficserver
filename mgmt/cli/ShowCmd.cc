@@ -1215,8 +1215,7 @@ ShowVersion()
 int
 ShowPorts()
 {
-  TSInt http_server = -1;
-  TSString http_other = NULL;
+  TSString http_ports = NULL;
   TSInt cluster = -1;
   TSInt cluster_rs = -1;
   TSInt cluster_mc = -1;
@@ -1226,8 +1225,7 @@ ShowPorts()
 
   // retrieve values
 
-  Cli_RecordGetInt("proxy.config.http.server_port", &http_server);
-  Cli_RecordGetString("proxy.config.http.server_other_ports", &http_other);
+  Cli_RecordGetString("proxy.config.http.server_ports", &http_ports);
   Cli_RecordGetInt("proxy.config.cluster.cluster_port", &cluster);
   Cli_RecordGetInt("proxy.config.cluster.rsport", &cluster_rs);
   Cli_RecordGetInt("proxy.config.cluster.mcport", &cluster_mc);
@@ -1237,8 +1235,7 @@ ShowPorts()
 
   // display results
   Cli_Printf("\n");
-  Cli_Printf("HTTP Server Port ------- %d\n", http_server);
-  Cli_Printf("HTTP Other Ports ------- %s\n", (http_other != NULL) ? http_other : "none");
+  Cli_Printf("HTTP Ports ------------- %s\n", (http_ports != NULL) ? http_ports : "none");
   Cli_Printf("Cluster Port ----------- %d\n", cluster);
   Cli_Printf("Cluster RS Port -------- %d\n", cluster_rs);
   Cli_Printf("Cluster MC Port -------- %d\n", cluster_mc);

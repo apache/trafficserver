@@ -223,13 +223,6 @@ SSLNetProcessor::initSSL(SslConfigParams * param)
   // to do the seeding of the PRNG for us. This is the case for all platforms that
   // has /dev/urandom for example.
 
-  accept_port_number = param->ssl_accept_port_number;
-  if ((unsigned int) accept_port_number >= 0xFFFF) {
-    Error("\ncannot listen on port %d.\naccept port cannot be larger than 65535.\n"
-                        "please check your Traffic Server configurations", accept_port_number);
-    return (1);
-  }
-
   meth = SSLv23_server_method();
   ctx = SSL_CTX_new(meth);
   if (!ctx) {

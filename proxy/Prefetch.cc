@@ -27,6 +27,7 @@
 #include "HdrUtils.h"
 #include "HttpCompat.h"
 #include "I_Layout.h"
+#include <records/I_RecHttp.h>
 #include <ts/IpMapConf.h>
 
 #ifdef PREFETCH
@@ -1499,9 +1500,12 @@ PrefetchBlaster::httpClient(int event, void *data)
   switch (event) {
 
   case EVENT_IMMEDIATE:{
-      netProcessor.connect_re(this, htonl((127 << 24) | 1), prefetch_config.local_http_server_port);
-      break;
-    }
+    ts_ip_endpoint target;
+    target.setToLoopback(AF_INET);
+    target.port() = prefetch_config.local_http_server_port;
+    netProcessor.connect_re(this, &target.sa);
+    break;
+  }
 
   case NET_EVENT_OPEN:{
       serverVC = (VConnection *) data;
@@ -1823,7 +1827,7 @@ PrefetchConfiguration::readConfiguration()
     return 0;
   }
 
-  TS_ReadConfigInteger(local_http_server_port, "proxy.config.http.server_port");
+  local_http_server_port = HttpProxyPort::findHttp(AF_INET)->m_port;
   TS_ReadConfigInteger(stuffer_port, "proxy.config.prefetch.child_port");
   TS_ReadConfigInteger(url_buffer_size, "proxy.config.prefetch.url_buffer_size");
   TS_ReadConfigInteger(url_buffer_timeout, "proxy.config.prefetch.url_buffer_timeout");

@@ -67,7 +67,9 @@ public:
    ~IpAllow();
   int BuildTable();
   void Print();
-  bool match(in_addr_t addr);
+  bool match(in_addr_t addr) const;
+  bool match(ts_ip_endpoint const* ip) const;
+  bool match(sockaddr const* ip) const;
 
   /// @return The global instance.
   static self* instance();
@@ -82,6 +84,7 @@ private:
   const char *action;
   bool _allow_all;
   IpMap _map;
+  // Can't use Vec<> because it requires a default constructor for AclRecord.
   std::vector<AclRecord> _acls;
 
   static self* _instance;
@@ -90,11 +93,29 @@ private:
 inline IpAllow* IpAllow::instance() { return _instance; }
 
 inline bool
-IpAllow::match(in_addr_t addr) {
+IpAllow::match(in_addr_t addr) const {
   bool zret = _allow_all;
   if (!zret) {
     void* raw;
     if (_map.contains(addr, &raw)) {
+      AclRecord* acl = static_cast<AclRecord*>(raw);
+      zret = acl && ACL_OP_ALLOW == acl->_op;
+    }
+  }
+  return zret;
+}
+
+inline bool
+IpAllow::match(ts_ip_endpoint const* ip) const {
+  return this->match(&ip->sa);
+}
+
+inline bool
+IpAllow::match(sockaddr const* ip) const {
+  bool zret = _allow_all;
+  if (!zret) {
+    void* raw;
+    if (_map.contains(ip, &raw)) {
       AclRecord* acl = static_cast<AclRecord*>(raw);
       zret = acl && ACL_OP_ALLOW == acl->_op;
     }

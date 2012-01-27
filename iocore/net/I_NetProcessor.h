@@ -48,17 +48,20 @@ public:
 
     /// Port on which to listen.
     /// 0 => don't care, which is useful if the socket is already bound.
-    int port;
+    int local_port;
+    /// Local address to bind for accept.
+    /// If not set -> any address.
+    InkInetAddr local_ip;
+    /// IP address family.
+    /// @note Ignored if an explicit incoming address is set in the
+    /// the configuration (@c local_ip). If neither is set IPv4 is used.
+    int ip_family;
     /// Should we use accept threads? If so, how many?
     int accept_threads;
-    /// Communication domain (default: AF_INET)
-    /// @note Ignored if an explicit incoming address is set in the
-    /// the configuration (@c incoming_ip_to_bind).
-    int domain;
     /// Event type to generate on accept.
     EventType etype;
     /** If @c true, the continuation is called back with
-	@c NET_EVENT_ACCEPT_SUCCEED,
+	@c NET_EVENT_ACCEPT_SUCCEED
 	or @c NET_EVENT_ACCEPT_FAILED on success and failure resp.
     */
     bool f_callback_on_open;
@@ -79,8 +82,6 @@ public:
     /// Socket options for @c sockopt.
     /// 0 => do not set options.
     uint32_t sockopt_flags;
-    /// Transparency on related connection to origin server.
-    bool f_outbound_transparent;
     /** Transparency on client (user agent) connection.
 	@internal This is irrelevant at a socket level (since inbound
 	transparency must be set up when the listen socket is created)
@@ -114,81 +115,14 @@ public:
     @param cont Continuation to be called back with events this
       continuation is not locked on callbacks and so the handler must
       be re-entrant.
-    @param addr address and/or port to bind.
     @param opt Accept options.
     @return Action, that can be cancelled to cancel the accept. The
       port becomes free immediately.
    */
   inkcoreapi virtual Action * accept(
     Continuation * cont,
-    sockaddr const* addr,
     AcceptOptions const& opt = DEFAULT_ACCEPT_OPTIONS
   );
-
-  /**
-    @deprecated preserve backward compatibility with non-IPv6 iocore
-    
-    @param cont Continuation to be called back with events this
-      continuation is not locked on callbacks and so the handler must
-      be re-entrant.
-    @param port port to bind for accept.
-    @param domain communication domain
-    @param frequent_accept if true, accept is done on all event
-      threads and throttle limit is imposed if false, accept is done
-      just on one thread and no throttling is done.
-    @param accept_ip DEPRECATED.
-    @param accept_ip_str for IPv6 Address
-    @param callback_on_open if true, cont is called back with
-      NET_EVENT_ACCEPT_SUCCEED, or NET_EVENT_ACCEPT_FAILED on success
-      and failure resp.
-    @param accept_pool_size NT specific, better left unspecified.
-    @param accept_only can be used to customize accept, accept a
-      connection only if there is some data to be read. This works
-      only on supported platforms (NT & Win2K currently).
-    @param bound_sockaddr returns the sockaddr for the listen fd.
-    @param bound_sockaddr_size size of the sockaddr returned.
-    @param recv_bufsize used to set recv buffer size for accepted
-      connections (Works only on selected platforms ??).
-    @param send_bufsize used to set send buffer size for accepted
-      connections (Works only on selected platforms ??).
-    @param sockopt_flag can be used to define additional socket option.
-    @param etype Event Thread group to accept on.
-    @return Action, that can be cancelled to cancel the accept. The
-      port becomes free immediately.
-
-  */
-
-  inkcoreapi virtual Action * accept(Continuation * cont, int port, int domain = AF_INET, int accept_threads = -1,
-                                     bool frequent_accept = false,
-                                     // not used
-                                     unsigned int accept_ip = INADDR_ANY, char *accept_ip_str = NULL, bool callback_on_open = false,
-                                     SOCKET listen_socket_in = NO_FD,   // NT only
-                                     int accept_pool_size = ACCEPTEX_POOL_SIZE, // NT only
-                                     bool accept_only = false,
-                                     sockaddr * bound_sockaddr = 0,
-                                     int *bound_sockaddr_size = 0,
-                                     int recv_bufsize = 0,
-                                     int send_bufsize = 0, uint32_t sockopt_flag = 0, EventType etype = ET_NET)
-  {
-    ts_ip_endpoint ip;
-    AcceptOptions opt;
-    
-    if (accept_ip_str != NULL) {
-        ink_inet_pton(accept_ip_str, &ip.sa);
-        ink_inet_port_cast(&ip) = htons(port);
-        opt.domain = ip.sa.sa_family;
-    } else {
-      ink_inet_ip4_set(&ip, accept_ip, htons(port));
-    }
-
-    opt.send_bufsize = send_bufsize;
-    opt.recv_bufsize = recv_bufsize;
-    opt.sockopt_flags = sockopt_flag;
-    opt.accept_threads = accept_threads;
-    opt.etype = etype;
-    opt.frequent_accept = frequent_accept;
-    return accept(cont, &ip.sa, opt);
-  }
 
   /**
     Accepts incoming connections on port. Accept connections on port.

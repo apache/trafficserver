@@ -119,17 +119,9 @@ net_accept(NetAccept * na, void *ep, bool blockable)
 
     vc->submit_time = ink_get_hrtime();
     ink_inet_copy(&vc->server_addr, &vc->con.addr);
-    vc->accept_port = ink_inet_get_port(&na->server.addr);
     vc->mutex = new_ProxyMutex();
     vc->action_ = *na->action_;
     vc->set_is_transparent(na->server.f_inbound_transparent);
-    vc->set_is_other_side_transparent(na->server.f_outbound_transparent);
-    Debug(
-      "http_tproxy",
-      "Marking accepted %sconnection on %x as%s outbound transparent.\n",
-      na->server.f_inbound_transparent ? "inbound transparent " : "",
-      na, na->server.f_outbound_transparent ? "" : " not"
-    );
     vc->closed  = 0;
     SET_CONTINUATION_HANDLER(vc, (NetVConnHandler) & UnixNetVConnection::acceptEvent);
 
@@ -250,13 +242,14 @@ NetAccept::do_listen(bool non_blocking, bool transparent)
 
   if (server.fd != NO_FD) {
     if ((res = server.setup_fd_for_listen(non_blocking, recv_bufsize, send_bufsize, transparent))) {
-      Warning("unable to listen on main accept port %d: errno = %d, %s", port, errno, strerror(errno));
+
+      Warning("unable to listen on main accept port %d: errno = %d, %s", ntohs(server.accept_addr.port()), errno, strerror(errno));
       goto Lretry;
     }
   } else {
   Lretry:
     if ((res = server.listen(non_blocking, recv_bufsize, send_bufsize, transparent)))
-      Warning("unable to listen on port %d: %d %d, %s", port, res, errno, strerror(errno));
+      Warning("unable to listen on port %d: %d %d, %s", ntohs(server.accept_addr.port()), res, errno, strerror(errno));
   }
   if (callback_on_open && !action_->cancelled) {
     if (res)
@@ -322,13 +315,7 @@ NetAccept::do_blocking_accept(EThread * t)
     NET_SUM_GLOBAL_DYN_STAT(net_connections_currently_open_stat, 1);
     vc->submit_time = now;
     ink_inet_copy(&vc->server_addr, &vc->con.addr);
-    vc->accept_port = ink_inet_port_cast(&server.addr);
     vc->set_is_transparent(server.f_inbound_transparent);
-    vc->set_is_other_side_transparent(server.f_outbound_transparent);
-    Debug("http_tproxy", "Marking accepted %sconnection on %x as%s outbound transparent.\n",
-	  server.f_inbound_transparent ? "inbound transparent " : "",
-	  this, server.f_outbound_transparent ? "" : " not"
-	  );
     vc->mutex = new_ProxyMutex();
     vc->action_ = *action_;
     SET_CONTINUATION_HANDLER(vc, (NetVConnHandler) & UnixNetVConnection::acceptEvent);
@@ -469,13 +456,7 @@ NetAccept::acceptFastEvent(int event, void *ep)
 
     vc->submit_time = ink_get_hrtime();
     ink_inet_copy(&vc->server_addr, &vc->con.addr);
-    vc->accept_port = ink_inet_get_port(&server.addr);
     vc->set_is_transparent(server.f_inbound_transparent);
-    vc->set_is_other_side_transparent(server.f_outbound_transparent);
-    Debug("http_tproxy", "Marking fast accepted %sconnection on as%s outbound transparent.\n",
-	  server.f_inbound_transparent ? "transparent " : "",
-	  server.f_outbound_transparent ? "" : " not"
-	  );
     vc->mutex = new_ProxyMutex();
     vc->thread = e->ethread;
 
@@ -541,7 +522,6 @@ NetAccept::acceptLoopEvent(int event, Event * e)
 
 NetAccept::NetAccept()
   : Continuation(NULL),
-    port(0),
     period(0),
     alloc_cache(0),
     ifd(-1), callback_on_open(false), recv_bufsize(0), send_bufsize(0), sockopt_flags(0), etype(0)

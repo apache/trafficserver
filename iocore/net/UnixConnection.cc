@@ -170,7 +170,7 @@ namespace {
       self::some_method (...) {
         /// allocate resource
         cleaner<self> clean_up(this, &self::cleanup);
-	// modify or check the resource
+        // modify or check the resource
         if (fail) return FAILURE; // cleanup() is called
         /// success!
         clean_up.reset(); // cleanup() not called after this
@@ -217,24 +217,29 @@ Connection::open(NetVCOptions const& opt)
   int sock_type = NetVCOptions::USE_UDP == opt.ip_proto
     ? SOCK_DGRAM
     : SOCK_STREAM;
-  int protocol = AF_INET;
+  int family;
 
-  // copy it local so we can (potentially) modify it.
-  // we initialize it first since ink_inet_copy() won't do anything if opt.local_addr is invalid.
-  memset(&local_addr, 0, sizeof(local_addr));
-  ink_inet_copy(&local_addr, &opt.local_addr);
+  // Need to do address calculations first, so we can determine the
+  // address family for socket creation.
+  ink_zero(local_addr);
 
-  if (ink_inet_is_ip6(&opt.local_addr)) {
-    protocol = AF_INET6;
-    if (NetVCOptions::ANY_ADDR == opt.addr_binding)
-      local_addr.sin6.sin6_addr = in6addr_any;
+  if (NetVCOptions::FOREIGN_ADDR == opt.addr_binding ||
+    NetVCOptions::INTF_ADDR == opt.addr_binding
+  ) {
+    // Same for now, transparency for foreign addresses must be handled
+    // *after* the socket is created, and we need to do this calculation
+    // before the socket to get the IP family correct.
+    ink_release_assert(opt.local_ip.isValid());
+    local_addr.assign(opt.local_ip, htons(opt.local_port));
+    family = opt.local_ip.family();
   } else {
-    local_addr.sa.sa_family = AF_INET;   // must be set for ink_inet_ip_size() to succeed
-    if (NetVCOptions::ANY_ADDR == opt.addr_binding)
-      ink_inet_ip4_addr_cast(&local_addr) = INADDR_ANY;
+    // No local address specified, so use family option if possible.
+    family = ink_inet_is_ip(opt.ip_family) ? opt.ip_family : AF_INET;
+    local_addr.setToAnyAddr(family);
+    local_addr.port() = htons(opt.local_port);
   }
 
-  res = socketManager.socket(protocol, sock_type, 0);
+  res = socketManager.socket(family, sock_type, 0);
   if (-1 == res) return -errno;
 
   fd = res;
@@ -244,11 +249,28 @@ Connection::open(NetVCOptions const& opt)
   // Try setting the various socket options, if requested.
 
   if (-1 == safe_setsockopt(fd,
-			    SOL_SOCKET,
-			    SO_REUSEADDR,
-			    reinterpret_cast<char *>(&enable_reuseaddr),
-			    sizeof(enable_reuseaddr)))
+                            SOL_SOCKET,
+                            SO_REUSEADDR,
+                            reinterpret_cast<char *>(&enable_reuseaddr),
+                            sizeof(enable_reuseaddr)))
     return -errno;
+
+  if (NetVCOptions::FOREIGN_ADDR == opt.addr_binding) {
+    static char const * const DEBUG_TEXT = "::open setsockopt() IP_TRANSPARENT";
+#if TS_USE_TPROXY
+    int value = 1;
+    if (-1 == safe_setsockopt(fd, SOL_IP, TS_IP_TRANSPARENT,
+                              reinterpret_cast<char*>(&value), sizeof(value)
+                              )) {
+      Debug("socket", "%s - fail %d:%s", DEBUG_TEXT, errno, strerror(errno));
+      return -errno;
+    } else {
+      Debug("socket", "%s set", DEBUG_TEXT);
+    }
+#else
+    Debug("socket", "%s - requested but TPROXY not configured", DEBUG_TEXT);
+#endif
+  }
 
   if (!opt.f_blocking_connect && -1 == safe_nonblocking(fd))
     return -errno;
@@ -283,25 +305,6 @@ Connection::open(NetVCOptions const& opt)
     }
   }
 
-  if (NetVCOptions::FOREIGN_ADDR == opt.addr_binding
-    && ink_inet_is_ip(&local_addr)
-  ) {
-    static char const * const DEBUG_TEXT = "::open setsockopt() IP_TRANSPARENT";
-#if TS_USE_TPROXY
-    int value = 1;
-    if (-1 == safe_setsockopt(fd, SOL_IP, TS_IP_TRANSPARENT,
-			      reinterpret_cast<char*>(&value), sizeof(value)
-			      )) {
-      Debug("socket", "%s - fail %d:%s", DEBUG_TEXT, errno, strerror(errno));
-      return -errno;
-    } else {
-      Debug("socket", "%s set", DEBUG_TEXT);
-    }
-#else
-    Debug("socket", "%s - requested but TPROXY not configured", DEBUG_TEXT);
-#endif
-  }
-
   if (-1 == socketManager.ink_bind(fd, &local_addr.sa, ink_inet_ip_size(&local_addr.sa)))
     return -errno;
 
@@ -331,7 +334,7 @@ Connection::connect(sockaddr const* target, NetVCOptions const& opt) {
   // and IO blocking differ, by turning it on or off as needed.
   if (-1 == res 
       && (opt.f_blocking_connect
-	  || ! (EINPROGRESS == errno || EWOULDBLOCK == errno))) {
+          || ! (EINPROGRESS == errno || EWOULDBLOCK == errno))) {
     return -errno;
   } else if (opt.f_blocking_connect && !opt.f_blocking) {
     if (-1 == safe_nonblocking(fd)) return -errno;

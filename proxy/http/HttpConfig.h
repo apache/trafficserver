@@ -432,7 +432,6 @@ struct OverridableHttpConfigParams {
        proxy_response_server_string(NULL), proxy_response_server_string_len(0),
        cache_heuristic_lm_factor(0.0), freshness_fuzz_prob(0.0)
   { 
-    ink_zero(outgoing_ip_to_bind_saddr);
   }
 
   // IMPORTANT: All MgmtInt configs should come before any other string / float
@@ -560,11 +559,6 @@ struct OverridableHttpConfigParams {
 
   float cache_heuristic_lm_factor;
   float freshness_fuzz_prob;
-
-  ////////////////////////
-  //  Source IP         //
-  ////////////////////////
-  ts_ip_endpoint outgoing_ip_to_bind_saddr; // This is kinda ugly for now, whatever ...
 };
 
 
@@ -600,10 +594,8 @@ public:
   char *proxy_hostname;
   int proxy_hostname_len;
 
-  char *incoming_ip_to_bind;
-  ts_ip_endpoint incoming_ip_to_bind_saddr;
-
-  char *outgoing_ip_to_bind;
+  InkInetAddr inbound_ip4, inbound_ip6;
+  InkInetAddr outbound_ip4, outbound_ip6;
 
   MgmtInt server_max_connections;
   MgmtInt origin_min_keep_alive_connections; // TODO: This one really ought to be overridable, but difficult right now.
@@ -895,8 +887,6 @@ inline
 HttpConfigParams::HttpConfigParams()
   : proxy_hostname(0),
     proxy_hostname_len(0),
-    incoming_ip_to_bind(0),
-    outgoing_ip_to_bind(0),
     server_max_connections(0),
     origin_min_keep_alive_connections(0),
     parent_proxy_routing_enable(0),
@@ -973,7 +963,6 @@ HttpConfigParams::HttpConfigParams()
     ignore_accept_charset_mismatch(0),
     normalize_ae_gzip(1)
 {
-  ink_zero(incoming_ip_to_bind_saddr);
 }
 
 inline

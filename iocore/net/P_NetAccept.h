@@ -83,8 +83,6 @@ struct NetAcceptAction:public Action, public RefCountObj
 //
 struct NetAccept:public Continuation
 {
-  int port;
-  int domain;
   ink_hrtime period;
   Server server;
   void *alloc_cache;

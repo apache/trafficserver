@@ -182,6 +182,14 @@ const char *ink_inet_ntop(const struct sockaddr *addr, char *dst, size_t size)
   return zret;
 }
 
+char const*
+ink_inet_family_name(int family) {
+  return AF_INET == family ? "IPv4"
+    : AF_INET6 == family ? "IPv6"
+    : "Unspec"
+    ;
+}
+
 uint16_t ink_inet_port(const struct sockaddr *addr)
 {
   uint16_t port = 0;
@@ -210,49 +218,88 @@ char const* ink_inet_nptop(
   return dst;
 }
 
-int ink_inet_pton(char const* text, sockaddr* addr) {
-  int zret = -1;
-  addrinfo hints; // [out]
-  addrinfo *ai; // [in]
-  char* copy; // needed for handling brackets.
+int
+ink_inet_parse(ts::ConstBuffer src, ts::ConstBuffer* addr, ts::ConstBuffer* port) {
+  addr->reset();
+  port->reset();
 
-  if ('[' == *text) {
-    /* Ugly. In a number of places we must use bracket notation
-       to support port numbers. Rather than mucking with that
-       everywhere, we'll tweak it here. Experimentally we can't
-       depend on getaddrinfo to handle it. Note that the text
-       buffer size includes space for the nul, so a bracketed
-       address is at most that size - 1 + 2 -> size+1.
+  // Let's see if we can find out what's in the address string.
+  if (src) {
+    while (src && isspace(*src)) ++src;
+    // Check for brackets.
+    if ('[' == *src) {
+      /* Ugly. In a number of places we must use bracket notation
+         to support port numbers. Rather than mucking with that
+         everywhere, we'll tweak it here. Experimentally we can't
+         depend on getaddrinfo to handle it. Note that the text
+         buffer size includes space for the nul, so a bracketed
+         address is at most that size - 1 + 2 -> size+1.
 
-       It just gets better. In order to bind link local addresses
-       the scope_id must be set to the interface index. That's
-       most easily done by appending a %intf (where "intf" is the
-       name of the interface) to the address. Which makes
-       the address potentially larger than the standard maximum.
-       So we can't depend on that sizing.
-    */
-
-    size_t n = strlen(text);
-    copy = static_cast<char*>(alloca(n-1));
-    if (']' == text[n-1]) {
-      ink_strlcpy(copy, text+1, n-1);
-      text = copy;
+         It just gets better. In order to bind link local addresses
+         the scope_id must be set to the interface index. That's
+         most easily done by appending a %intf (where "intf" is the
+         name of the interface) to the address. Which makes
+         the address potentially larger than the standard maximum.
+         So we can't depend on that sizing.
+      */
+      ++src; // skip bracket.
+      *addr = src.splitOn(']');
+      if (*addr && ':' == *src) { // found the closing bracket and port colon
+        ++src; // skip colon.
+        *port = src;
+      } // else it's a fail for unclosed brackets.
     } else {
-      // Bad format, getaddrinfo isn't going to succeed.
-      return zret;
+      // See if there's exactly 1 colon
+      ts::ConstBuffer tmp = src.after(':');
+      if (tmp && ! tmp.find(':')) { // 1 colon and no others
+        src.clip(tmp.data() - 1); // drop port from address.
+        *port = tmp;
+      } // else 0 or > 1 colon and no brackets means no port.
+      *addr = src;
     }
+    // clip port down to digits.
+    if (*port) {
+      char const* spot = port->data();
+      while (isdigit(*spot)) ++spot;
+      port->clip(spot);
+    }
+  }
+  return *addr ? 0 : -1; // true if we found an address.
+}
+
+int
+ink_inet_pton(char const* text, sockaddr* ip) {
+  int zret = -1;
+  ts::ConstBuffer addr, port;
+  ts::ConstBuffer src(text, strlen(text)+1);
+
+  ink_inet_invalidate(ip);
+  if (0 == ink_inet_parse(src, &addr, &port)) {
+    // Copy if not terminated.
+    if (0 != addr[addr.size()-1]) {
+      char* tmp = static_cast<char*>(alloca(addr.size()+1));
+      memcpy(tmp, addr.data(), addr.size());
+      tmp[addr.size()] = 0;
+      addr.set(tmp, addr.size());
+    }
+    if (addr.find(':')) { // colon -> IPv6
+      in6_addr addr6;
+      if (inet_pton(AF_INET6, addr.data(), &addr6)) {
+        zret = 0;
+        ink_inet_ip6_set(ip, addr6);
+      }
+    } else { // no colon -> must be IPv4
+      in_addr addr4;
+      if (inet_aton(addr.data(), &addr4)) {
+        zret = 0;
+        ink_inet_ip4_set(ip, addr4.s_addr);
+      }
+    }
+    // If we had a successful conversion, set the port.
+    if (ink_inet_is_ip(ip))
+      ink_inet_port_cast(ip) = port ? htons(atoi(port.data())) : 0;
   }
 
-  ink_zero(hints);
-  hints.ai_family = PF_UNSPEC;
-  hints.ai_flags = AI_NUMERICHOST|AI_PASSIVE;
-  if (0 == (zret = getaddrinfo(text, 0, &hints, &ai))) {
-    if (ink_inet_is_ip(ai->ai_addr)) {
-      if (addr) ink_inet_copy(addr, ai->ai_addr);
-      zret = 0;
-    }
-    freeaddrinfo(ai);
-  }
   return zret;
 }
 
@@ -339,5 +386,89 @@ operator == (InkInetAddr const& lhs, sockaddr const* rhs) {
       zret = true;
     }
   } // else different families, not equal.
+  return zret;
+}
+
+int
+ink_inet_getbestaddrinfo(char const* host,
+  ts_ip_endpoint* ip4,
+  ts_ip_endpoint* ip6
+) {
+  int zret = -1;
+  int port = 0; // port value to assign if we find an address.
+  addrinfo ai_hints;
+  addrinfo* ai_result;
+  ts::ConstBuffer addr_text, port_text;
+  ts::ConstBuffer src(host, strlen(host)+1);
+
+  if (ip4) ink_inet_invalidate(ip4);
+  if (ip6) ink_inet_invalidate(ip6);
+
+  if (0 == ink_inet_parse(src, &addr_text, &port_text)) {
+    // Copy if not terminated.
+    if (0 != addr_text[addr_text.size()-1]) {
+      char* tmp = static_cast<char*>(alloca(addr_text.size()+1));
+      memcpy(tmp, addr_text.data(), addr_text.size());
+      tmp[addr_text.size()] = 0;
+      addr_text.set(tmp, addr_text.size());
+    }
+    ink_zero(ai_hints);
+    ai_hints.ai_family = AF_UNSPEC;
+    ai_hints.ai_flags = AI_ADDRCONFIG;
+    zret = getaddrinfo(addr_text.data(), 0, &ai_hints, &ai_result);
+  
+    if (0 == zret) {
+      // Walk the returned addresses and pick the "best".
+      enum {
+        NA, // Not an (IP) Address.
+        LO, // Loopback.
+        MC, // Multicast.
+        NR, // Non-Routable.
+        GA  // Globally unique Address.
+      } spot_type = NA, ip4_type = NA, ip6_type = NA;
+      sockaddr const* ip4_src = 0;
+      sockaddr const* ip6_src = 0;
+
+      for ( addrinfo* ai_spot = ai_result
+          ; ai_spot
+          ; ai_spot = ai_spot->ai_next
+      ) {
+        sockaddr const* ai_ip = ai_spot->ai_addr;
+        if (!ink_inet_is_ip(ai_ip)) spot_type = NA;
+        else if (ink_inet_is_loopback(ai_ip)) spot_type = LO;
+        else if (ink_inet_is_nonroutable(ai_ip)) spot_type = NR;
+        else if (ink_inet_is_multicast(ai_ip)) spot_type = MC;
+        else spot_type = GA;
+        
+        if (spot_type == NA) continue; // Next!
+
+        if (ink_inet_is_ip4(ai_ip)) {
+          if (spot_type > ip4_type) {
+            ip4_src = ai_ip;
+            ip4_type = spot_type;
+          }
+        } else if (ink_inet_is_ip6(ai_ip)) {
+          if (spot_type > ip6_type) {
+            ip6_src = ai_ip;
+            ip6_type = spot_type;
+          }
+        }
+      }
+      if (ip4_type > NA) ink_inet_copy(ip4, ip4_src);
+      if (ip6_type > NA) ink_inet_copy(ip6, ip6_src);
+      freeaddrinfo(ai_result); // free *after* the copy.
+
+    }
+  }
+
+  // We don't really care if the port is null terminated - the parser
+  // would get all the digits so the next character is a non-digit (null or
+  // not) and atoi will do the right thing in either case.
+  if (port_text.size()) port = htons(atoi(port_text.data()));
+  if (ink_inet_is_ip(ip4)) ink_inet_port_cast(ip4) = port;
+  if (ink_inet_is_ip(ip6)) ink_inet_port_cast(ip6) = port;
+
+  if (!ink_inet_is_ip(ip4) && !ink_inet_is_ip(ip6)) zret = -1;
+
   return zret;
 }

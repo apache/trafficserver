@@ -31,6 +31,7 @@
 #include "ICPProcessor.h"
 #include "P_Net.h"
 #include "P_RecUtils.h"
+#include <records/I_RecHttp.h>
 
 #ifndef min
 #define         min(a,b)        ((a) < (b) ? (a) : (b))
@@ -1131,21 +1132,8 @@ HttpConfig::startup()
     c.proxy_hostname[0] = '\0';
   }
 
-  RecGetRecordString_Xmalloc("proxy.local.incoming_ip_to_bind", &(c.incoming_ip_to_bind));
-
-  if (c.incoming_ip_to_bind) {
-    Debug("ip_binding", "incoming_ip_to_bind: %s", c.incoming_ip_to_bind);
-    if (0 != ink_inet_pton(c.incoming_ip_to_bind, &c.incoming_ip_to_bind_saddr.sa))
-      Warning("Invalid address '%s' for 'proxy.local.incoming_ip_to_bind'", c.incoming_ip_to_bind);
-  }
-
-  RecGetRecordString_Xmalloc("proxy.local.outgoing_ip_to_bind", &(c.outgoing_ip_to_bind));
-
-  if (c.outgoing_ip_to_bind) {
-    Debug("ip_binding", "outgoing_ip_to_bind: %s", c.outgoing_ip_to_bind);
-    if (0 != ink_inet_pton(c.outgoing_ip_to_bind, &c.oride.outgoing_ip_to_bind_saddr))
-      Warning("Invalid address '%s' for 'proxy.local.outgoing_ip_to_bind'", c.outgoing_ip_to_bind);
-  }
+  RecHttpLoadIp("proxy.local.incoming_ip_to_bind", c.inbound_ip4, c.inbound_ip6);
+  RecHttpLoadIp("proxy.local.outgoing_ip_to_bind", c.outbound_ip4, c.outbound_ip6);
 
   HttpEstablishStaticConfigLongLong(c.server_max_connections, "proxy.config.http.server_max_connections");
   HttpEstablishStaticConfigLongLong(c.oride.server_tcp_init_cwnd, "proxy.config.http.server_tcp_init_cwnd");
@@ -1414,8 +1402,12 @@ HttpConfig::reconfigure()
 
   params = NEW(new HttpConfigParams);
 
-  params->incoming_ip_to_bind_saddr = m_master.incoming_ip_to_bind_saddr;
-  ink_inet_copy(&params->oride.outgoing_ip_to_bind_saddr, &m_master.oride.outgoing_ip_to_bind_saddr);
+  params->inbound_ip4 = m_master.inbound_ip4;
+  params->inbound_ip6 = m_master.inbound_ip6;
+
+  params->outbound_ip4 = m_master.outbound_ip4;
+  params->outbound_ip6 = m_master.outbound_ip6;
+
   params->proxy_hostname = ats_strdup(m_master.proxy_hostname);
   params->proxy_hostname_len = (params->proxy_hostname) ? strlen(params->proxy_hostname) : 0;
   params->no_dns_forward_to_parent = INT_TO_BOOL(m_master.no_dns_forward_to_parent);

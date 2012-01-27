@@ -57,10 +57,12 @@ CONFIG proxy.config.process_manager.mgmt_port INT 8084
 ##############################################################################
 #
 # In order to only bind a specific IP, use the following config, as in
-# the example below. Note
+# the example below. Note - this can contain two addresses, one for IPv4
+# sockets and one for IPv6 sockets.
 #
 ##############################################################################
 #LOCAL proxy.local.incoming_ip_to_bind STRING 192.168.101.17
+#LOCAL proxy.local.incoming_ip_to_bind STRING 192.168.101.17 fc07:192:168:101::17
 ##############################################################################
 #
 # Alarm Configuration
@@ -77,15 +79,28 @@ CONFIG proxy.config.alarm.abs_path STRING NULL
    ##########
    # basics #
    ##########
-   # The main server_port is listed here, other server ports is a
-   # string of ports, separated by whitespace.  The port attributes
-   # should be set to X(default behavior). For example...
-   # server_other_ports STRING 1234:X 12345:X
-CONFIG proxy.config.http.server_port INT 8080
-CONFIG proxy.config.http.server_port_attr STRING X
-# to enable IPv6 listening on port 8080:
-# CONFIG proxy.config.http.server_other_ports STRING 8080:X6
-CONFIG proxy.config.http.server_other_ports STRING NULL
+   # The server ports are listed here. These are separated by spaces or commas.
+   # Each port is a colon separated list of values, which must include a
+   # port number. Other options are
+   # ipv4 - Use IPv4 (default)
+   # ipv6 - Use IPv6
+   # tr-in - Transparent inbound.
+   # tr-out - Transparent outbound.
+   # tr-full - Fully transparent (inbound and outbound).
+   # ssl - SSL terminated port.
+   # blind - Blind tunnel port.
+   # ip-in=[addr] - Bind inbound IP address (listen for client).
+   # ip-out=[addr] - Bind outbound IP address (connect to origin server).
+   #
+   # note - address types must agree with each other and the ipv4/ipv6
+   # option if specified. IPv6 addresses must be enclosed in brackets.
+   # ip-out can be repeated as long as each address is a different family.
+   # The '=' is optional.
+   #
+   # Example: Port 8080 IPv6 inbound transparent, and port 80 IPv4
+   # "8080:ipv6:tr-in 80"
+CONFIG proxy.config.http.server_ports STRING 8080
+   # Ports on the origin server to which a blind tunnel may connect.
 CONFIG proxy.config.http.connect_ports STRING 443 563
    # The via settings have three values
    #  0 - Do not modify / set this via header
@@ -476,7 +491,9 @@ CONFIG proxy.config.url_remap.pristine_host_hdr INT 1
    # proxy.config.ssl.enabled should be:
    #   0 - none
    #   1 - SSL enabled
-CONFIG proxy.config.ssl.enabled INT 0
+   # Deprecated. SSL is enabled automatically if an SSL port is configured
+   # in config.proxy.http.server_ports.
+#CONFIG proxy.config.ssl.enabled INT 0
    # The number of SSL threads is a multiplier of number of CPUs and
    # proxy.config.exec_thread.autoconfig.scale by default. You can
    # override that here (set it to a non-zero value).
@@ -495,8 +512,9 @@ CONFIG proxy.config.ssl.server.cipher_suite STRING RC4-SHA:AES128-SHA:DES-CBC3-S
 CONFIG proxy.config.ssl.server.honor_cipher_order INT 0
    # Control if SSL should perform content compression or not
 CONFIG proxy.config.ssl.compression INT 1
-   # SSL port (unfortunately, only one at this time)
-CONFIG proxy.config.ssl.server_port INT 443
+   # Deprecated.
+   # SSL ports should now be configured via proxy.config.http.server_ports
+#CONFIG proxy.config.ssl.server_port INT 443
    # Client certification level should be:
    # 0 no client certificates
    # 1 client certificates optional

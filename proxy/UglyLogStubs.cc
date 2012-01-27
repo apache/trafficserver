@@ -157,15 +157,14 @@ NetProcessor::AcceptOptions const NetProcessor::DEFAULT_ACCEPT_OPTIONS;
 NetProcessor::AcceptOptions&
 NetProcessor::AcceptOptions::reset()
 {
-  port = 0;
+  local_port = 0;
   accept_threads = 0;
-  domain = AF_INET;
+  ip_family = AF_INET;
   etype = ET_NET;
   f_callback_on_open = false;
   recv_bufsize = 0;
   send_bufsize = 0;
   sockopt_flags = 0;
-  f_outbound_transparent = false;
   f_inbound_transparent = false;
   return *this;
 }

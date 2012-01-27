@@ -930,7 +930,7 @@ HttpTransact::EndRemapRequest(State* s)
     }
   }
   s->reverse_proxy = true;
-  s->server_info.is_transparent = s->state_machine->ua_session->get_netvc()->get_is_other_side_transparent();
+  s->server_info.is_transparent = s->state_machine->ua_session->f_outbound_transparent;
 
 done:
   /**
@@ -992,7 +992,7 @@ HttpTransact::ModifyRequest(State* s)
 
   s->method = s->hdr_info.client_request.method_get_wksidx();
   if (scheme < 0 && s->method != HTTP_WKSIDX_CONNECT) {
-    if (s->client_info.port_attribute == SERVER_PORT_SSL) {
+    if (s->client_info.port_attribute == HttpProxyPort::TRANSPORT_SSL) {
       url->scheme_set(URL_SCHEME_HTTPS, URL_LEN_HTTPS);
       s->orig_scheme = URL_WKSIDX_HTTPS;
     } else {

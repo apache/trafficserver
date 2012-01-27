@@ -89,6 +89,13 @@ Server::accept(Connection * c)
   if (res < 0)
     return res;
   c->fd = res;
+  if (is_debug_tag_set("iocore_net_server")) {
+    ip_port_text_buffer ipb1, ipb2;
+      Debug("iocore_net_server", "Connection accepted [Server]. %s -> %s\n"
+        , ink_inet_nptop(&c->addr, ipb2, sizeof(ipb2))
+        , ink_inet_nptop(&addr, ipb1, sizeof(ipb1))
+      );
+  }
 
 #ifdef SET_CLOSE_ON_EXEC
   if ((res = safe_fcntl(fd, F_SETFD, 1)) < 0)

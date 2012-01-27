@@ -39,6 +39,7 @@
 #include "BaseManager.h"
 #include "ClusterCom.h"
 #include "VMap.h"
+#include <records/I_RecHttp.h>
 #if TS_HAS_WCCP
 #include <wccp/Wccp.h>
 #endif
@@ -84,6 +85,8 @@ public:
   void processEventQueue();
   bool startProxy();
   void listenForProxy();
+  void bindProxyPort(HttpProxyPort&);
+  void closeProxyPorts();
 
   void mgmtCleanup();
   void mgmtShutdown(int status, bool mainThread = false);
@@ -115,11 +118,10 @@ public:
   volatile bool proxy_launch_outstanding;
   volatile bool mgmt_shutdown_outstanding;
   volatile int proxy_running;
-  volatile int proxy_server_port[MAX_PROXY_SERVER_PORTS];
-  volatile char proxy_server_port_attributes[MAX_PROXY_SERVER_PORTS][MAX_ATTR_LEN];
-  volatile int proxy_server_fd[MAX_PROXY_SERVER_PORTS];
-  in_addr_t proxy_server_incoming_ip_to_bind;
-  char *proxy_server_incoming_ip_to_bind_str;
+  HttpProxyPort::Group m_proxy_ports;
+  // Local inbound addresses to bind, if set.
+  InkInetAddr m_inbound_ip4;
+  InkInetAddr m_inbound_ip6;
 
   int process_server_timeout_secs;
   int process_server_timeout_msecs;

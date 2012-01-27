@@ -198,13 +198,9 @@ protected:
 ///////////////////////////////////////////////////////////////////////
 struct Server: public Connection
 {
-  //
-  // IP address in network byte order
-  //
+  /// Client side (inbound) local IP address.
   ts_ip_endpoint accept_addr;
 
-  /// If set, transparently connect to origin server for requests.
-  bool f_outbound_transparent;
   /// If set, the related incoming connect was transparent.
   bool f_inbound_transparent;
 
@@ -234,9 +230,9 @@ struct Server: public Connection
 
   Server()
     : Connection()
-    , f_outbound_transparent(false)
+    , f_inbound_transparent(false)
   {
-    memset(&accept_addr, 0, sizeof(accept_addr));
+    ink_zero(accept_addr);
   }
 };
 

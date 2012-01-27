@@ -57,9 +57,6 @@ enum NetDataType
     connection logic will look at the address family of @a local_addr
     even if @a addr_binding is @c ANY_ADDR and bind to any address in
     that protocol. If it's not an IP protocol, IPv4 will be used.
-
-    @note Port values are encoded in the address. Use a port value
-    of 0 to indicate "don't care".
 */
 struct NetVCOptions {
   typedef NetVCOptions self; ///< Self reference type.
@@ -70,8 +67,25 @@ struct NetVCOptions {
     USE_UDP ///< UDP protocol.
   };
 
-  /// IP protocol to use on socket.
+  /// IP (TCP or UDP) protocol to use on socket.
   ip_protocol_t ip_proto;
+
+  /** IP address family.
+
+      This is used for inbound connections only if @c local_ip is not
+      set, which is sometimes more convenient for the client. This
+      defaults to @c AF_INET so if the client sets neither this nor @c
+      local_ip then IPv4 is used.
+
+      For outbound connections this is ignored and the family of the
+      remote address used.
+
+      @note This is (inconsistently) called "domain" and "protocol" in
+      other places. "family" is used here because that's what the
+      standard IP data structures use.
+
+  */
+  uint16_t ip_family;
 
   /** The set of ways in which the local address should be bound.
 
@@ -80,24 +94,41 @@ struct NetVCOptions {
 
       @note The difference between @c INTF_ADDR and @c FOREIGN_ADDR is
       whether transparency is enabled on the socket. It is the
-      client's responsibility to set this correctly based on whether the
-      address in @a local_addr is associated with an interface on the
-      local system, or is owned by a foreign system.  A binding style
-      of @c ANY_ADDR causes the value in @a local_addr to be ignored.
+      client's responsibility to set this correctly based on whether
+      the address in @a local_addr is associated with an interface on
+      the local system ( @c INTF_ADDR ) or is owned by a foreign
+      system ( @c FOREIGN_ADDR ).  A binding style of @c ANY_ADDR
+      causes the value in @a local_addr to be ignored.
+
+      The IP address and port are separate because most clients treat
+      these independently. For the same reason @c InkInetAddr is used
+      to be clear that it contains no port data.
 
       @see local_addr
       @see addr_binding
    */
   enum addr_bind_style {
     ANY_ADDR, ///< Bind to any available local address (don't care, default).
-    INTF_ADDR, ///< Bind to the interface address in @a local_addr.
+    INTF_ADDR, ///< Bind to interface address in @a local_addr.
     FOREIGN_ADDR ///< Bind to foreign address in @a local_addr.
   };
 
-  /// Address to use for local side of connection.
-  /// @note Ignored if @a addr_binding is @c ANY_ADDR.
-  /// @see addr_binding
-  ts_ip_endpoint local_addr;
+  /** Local address for the connection.
+
+      For outbound connections this must have the same family as the
+      remote address (which is not stored in this structure). For
+      inbound connections the family of this value overrides @a
+      ip_family if set.
+
+      @note Ignored if @a addr_binding is @c ANY_ADDR.
+      @see addr_binding
+      @see ip_family
+  */
+  InkInetAddr local_ip;
+  /** Local port for connection.
+      Set to 0 for "don't care" (default).
+   */
+  uint16_t local_port;
   /// How to bind the local address.
   /// @note Default is @c ANY_ADDR.
   addr_bind_style addr_binding;
@@ -451,15 +482,6 @@ public:
     is_transparent = state;
   }
 
-  /// Get the current flag state.
-  bool get_is_other_side_transparent() const {
-    return is_other_side_transparent;
-  }
-  /// Set the flag to @a value.
-  void set_is_other_side_transparent(bool value = true) {
-    is_other_side_transparent = value;
-  }
-
   /** Struct for holding a reference to a connection.
       The problem is that connections are accessed across thread boundaries
       and re-used so that a pointer to a VC can become not only stale
@@ -556,11 +578,6 @@ protected:
   bool is_internal_request;
   /// Set if this connection is transparent.
   bool is_transparent;
-  /// Set if the paired connection is (should be) transparent.
-  /// @internal Currently only used on client side connections
-  /// to track whether the origin server connection should
-  /// be transparent.
-  bool is_other_side_transparent;
 };
 
 inline
@@ -572,8 +589,7 @@ NetVConnection::NetVConnection():
   got_local_addr(0),
   got_remote_addr(0),
   is_internal_request(false),
-  is_transparent(false),
-  is_other_side_transparent(false)
+  is_transparent(false)
 {
   ink_zero(local_addr);
   ink_zero(remote_addr);

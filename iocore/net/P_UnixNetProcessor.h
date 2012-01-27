@@ -39,7 +39,6 @@ public:
   virtual Action *accept_internal (
     Continuation * cont,
     int fd,
-    sockaddr const* accept_addr, ///< Address on which to listen.
     AcceptOptions const &opt
   );
 
@@ -78,9 +77,6 @@ public:
   // we probably wont need these members
   int n_netthreads;
   EThread **netthreads;
-
-  char *incoming_ip_to_bind;
-  ts_ip_endpoint incoming_ip_to_bind_saddr;
 };
 
 

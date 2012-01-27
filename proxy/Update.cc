@@ -31,6 +31,7 @@
 #include "HttpDebugNames.h"
 #include "URL.h"
 #include "HdrUtils.h"
+#include <records/I_RecHttp.h>
 //#include "MixtAPIInternal.h"
 
 RecRawStatBlock *update_rsb;
@@ -716,14 +717,10 @@ UpdateConfigManager::~UpdateConfigManager()
 {
 }
 
-static RecInt local_http_server_port = 0;
-
 int
 UpdateConfigManager::init()
 {
   update_rsb = RecAllocateRawStatBlock((int) update_stat_count);
-
-  UpdateEstablishStaticConfigInteger(local_http_server_port, "proxy.config.http.server_port");
 
   _CP_actual = NEW(new UpdateConfigParams);
 
@@ -2566,12 +2563,15 @@ ObjectReloadCont::ObjectReloadEvent(int event, void *d)
   switch (_state) {
   case START:
     {
+      ts_ip_endpoint target;
       // Schedule connect to localhost:<proxy port>
       Debug("update-reload", "Connect start id=%d", _request_id);
       _state = ObjectReloadCont::ATTEMPT_CONNECT;
       MUTEX_TRY_LOCK(lock, this->mutex, this_ethread());
       ink_release_assert(lock);
-      _cur_action = netProcessor.connect_re(this, inet_addr("127.0.0.1"), local_http_server_port);
+      target.setToLoopback(AF_INET);
+      target.port() = htons(HttpProxyPort::findHttp(AF_INET)->m_port);
+      _cur_action = netProcessor.connect_re(this, &target.sa);
       return EVENT_DONE;
     }
   case ATTEMPT_CONNECT:

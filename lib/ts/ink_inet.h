@@ -25,8 +25,12 @@
 #if !defined (_ink_inet_h_)
 #define _ink_inet_h_
 
+#include <netinet/in.h>
+#include <netdb.h>
+#include <ink_memory.h>
 #include <sys/socket.h>
 #include <ts/ink_apidefs.h>
+#include <ts/TsBuffer.h>
 
 #define INK_GETHOSTBYNAME_R_DATA_SIZE 1024
 #define INK_GETHOSTBYADDR_R_DATA_SIZE 1024
@@ -64,8 +68,28 @@ union ts_ip_endpoint {
     uint16_t port = 0 ///< Port (network order).
   );
 
-  /// Access to port.
+  /// Access to port in network order.
   uint16_t& port();
+
+  /// Test if a valid IP address.
+  bool isValid() const;
+  /// Test for IPv4.
+  bool isIp4() const;
+  /// Test for IPv6.
+  bool isIp6() const;
+
+  /// Set to be any address for family @a family.
+  /// @a family must be @c AF_INET or @c AF_INET6.
+  /// @return This object.
+  self& setToAnyAddr(
+    int family ///< Address family.
+  );
+  /// Set to be loopback for family @a family.
+  /// @a family must be @c AF_INET or @c AF_INET6.
+  /// @return This object.
+  self& setToLoopback(
+    int family ///< Address family.
+  );
 };
 
 struct ink_gethostbyname_r_data
@@ -143,6 +167,12 @@ inline void ink_inet_invalidate(ts_ip_endpoint* ip) {
   ip->sa.sa_family = AF_UNSPEC;
 }
 
+/** Get a string name for an IP address family.
+    @return The string name (never @c NULL).
+*/
+char const*
+ink_inet_family_name(int family);
+
 /// Test for IP protocol.
 /// @return @c true if the address is IP, @c false otherwise.
 inline bool ink_inet_is_ip(sockaddr const* addr) {
@@ -153,6 +183,11 @@ inline bool ink_inet_is_ip(sockaddr const* addr) {
 inline bool ink_inet_is_ip(ts_ip_endpoint const* addr) {
   return addr
     && (AF_INET == addr->sa.sa_family || AF_INET6 == addr->sa.sa_family);
+}
+/// Test for IP protocol.
+/// @return @c true if the value is an IP address family, @c false otherwise.
+inline bool ink_inet_is_ip(int family) {
+  return AF_INET == family || AF_INET6 == family;
 }
 /// Test for IPv4 protocol.
 /// @return @c true if the address is IPv4, @c false otherwise.
@@ -183,6 +218,27 @@ inline bool ink_inet_are_compatible(
   sockaddr const* rhs  ///< Address to test.
 ) {
   return lhs->sa_family == rhs->sa_family;
+}
+/// @return @c true if the address families are compatible.
+inline bool ink_inet_are_compatible(
+  ts_ip_endpoint const* lhs, ///< Address to test.
+  ts_ip_endpoint const* rhs  ///< Address to test.
+) {
+  return ink_inet_are_compatible(&lhs->sa, &rhs->sa);
+}
+/// @return @c true if the address families are compatible.
+inline bool ink_inet_are_compatible(
+  int lhs, ///< Address family to test.
+  sockaddr const* rhs  ///< Address to test.
+) {
+  return lhs == rhs->sa_family;
+}
+/// @return @c true if the address families are compatible.
+inline bool ink_inet_are_compatible(
+  sockaddr const* lhs, ///< Address to test.
+  int rhs  ///< Family to test.
+) {
+  return lhs->sa_family == rhs;
 }
 
 // IP address casting.
@@ -443,20 +499,25 @@ inline uint8_t const* ink_inet_addr8_cast(ts_ip_endpoint const* ip) {
   return ink_inet_addr8_cast(&ip->sa);
 }
 
+/// Check for loopback.
 /// @return @c true if this is an IP loopback address, @c false otherwise.
 inline bool ink_inet_is_loopback(sockaddr const* ip) {
   return ip
     && (
-      (AF_INET == ip->sa_family && htonl(INADDR_LOOPBACK) == ink_inet_ip4_addr_cast(ip))
+      (AF_INET == ip->sa_family && 0x7F == ink_inet_addr8_cast(ip)[0])
       ||
       (AF_INET6 == ip->sa_family && IN6_IS_ADDR_LOOPBACK(&ink_inet_ip6_addr_cast(ip)))
     );
 }
 
+/// Check for loopback.
+/// @return @c true if this is an IP loopback address, @c false otherwise.
 inline bool ink_inet_is_loopback(ts_ip_endpoint const* ip) {
   return ink_inet_is_loopback(&ip->sa);
 }
 
+/// Check for multicast.
+/// @return @true if @a ip is multicast.
 inline bool ink_inet_is_multicast(sockaddr const* ip) {
   return ip
     && (
@@ -465,10 +526,14 @@ inline bool ink_inet_is_multicast(sockaddr const* ip) {
       (AF_INET6 == ip->sa_family && IN6_IS_ADDR_MULTICAST(&ink_inet_ip6_addr_cast(ip)))
     );
 }
+/// Check for multicast.
+/// @return @true if @a ip is multicast.
 inline bool ink_inet_is_multicast(ts_ip_endpoint const* ip) {
   return ink_inet_is_multicast(&ip->sa);
 }
 
+/// Check for non-routable address.
+/// @return @c true if @a ip is a non-routable.
 inline bool ink_inet_is_nonroutable(sockaddr const* ip) {
   bool zret = false;
   if (ink_inet_is_ip4(ip)) {
@@ -481,8 +546,18 @@ inline bool ink_inet_is_nonroutable(sockaddr const* ip) {
   return zret;
 }
 
+/// Check for non-routable address.
+/// @return @c true if @a ip is a non-routable.
 inline bool ink_inet_is_nonroutable(ts_ip_endpoint const* ip) {
   return ink_inet_is_nonroutable(&ip->sa);
+}
+
+/// Check for being "any" address.
+/// @return @c true if @a ip is the any / unspecified address.
+inline bool ink_inet_is_any(sockaddr const* ip) {
+  return (ink_inet_is_ip4(ip) && INADDR_ANY == ink_inet_ip4_cast(ip)) ||
+    (ink_inet_is_ip6(ip) && IN6_IS_ADDR_UNSPECIFIED(ink_inet_ip6_cast(ip)))
+    ;
 }
   
 /// @name Address operators
@@ -663,7 +738,7 @@ inline sockaddr* ink_inet_ip4_set(
   in_addr_t addr, ///< address, IPv4 network order.
   uint16_t port = 0 ///< port, network order.
 ) {
-  memset(dst, 0, sizeof(*dst));
+  ink_zero(*dst);
 #if HAVE_STRUCT_SOCKADDR_IN_SIN_LEN
   dst->sin_len = sizeof(sockaddr_in);
 #endif
@@ -704,7 +779,7 @@ inline sockaddr* ink_inet_ip6_set(
   in6_addr const& addr, ///< address in network order.
   uint16_t port = 0 ///< Port, network order.
 ) {
-  memset(dst, 0, sizeof(*dst));
+  ink_zero(*dst);
 #if HAVE_STRUCT_SOCKADDR_IN6_SIN6_LEN
   dst->sin6_len = sizeof(sockaddr_in6);
 #endif
@@ -822,6 +897,38 @@ inline int ink_inet_pton(
   return ink_inet_pton(text, &addr->sa);
 }
 
+/** Get the best address info for @a name.
+
+    @name is passed to @c getaddrinfo which does a host lookup if @a
+    name is not in IP address format. The results are examined for the
+    "best" addresses. This is only significant for the host name case
+    (for IP address data, there is at most one result). The preference is
+    Global > Non-Routable > Multicast > Loopback.
+
+    IPv4 and IPv4 results are handled independently and stored in @a
+    ip4 and @a ip6 respectively. If @a name is known to be a numeric
+    IP address @c ink_inet_pton is a better choice. Use this function
+    if the type of @a name is not known. If you want to look at the
+    addresses and not just get the "best", use @c getaddrinfo
+    directly.
+
+    @a ip4 or @a ip6 can be @c NULL and the result for that family is
+    discarded. It is legal for both to be @c NULL in which case this
+    is just a format check.
+
+    @return 0 if an address was found, non-zero otherwise.
+
+    @see ink_inet_pton
+    @see getaddrinfo
+ */
+
+int
+ink_inet_getbestaddrinfo(
+  char const* name, ///< [in] Address name (IPv4, IPv6, or host name)
+  ts_ip_endpoint* ip4, ///< [out] Storage for IPv4 address.
+  ts_ip_endpoint* ip6 ///< [out] Storage for IPv6 address
+);
+
 /** Generic IP address hash function.
 */    
 uint32_t ink_inet_hash(sockaddr const* addr);
@@ -871,7 +978,7 @@ struct InkInetAddr {
   /// Construct from @c ts_ip_endpoint.
   explicit InkInetAddr(ts_ip_endpoint const* addr) { this->assign(&addr->sa); }
 
-  /// Assign sockaddr storage.
+  /// Assign from sockaddr storage.
   self& assign(sockaddr const* addr) {
     _family = addr->sa_family;
     if (ink_inet_is_ip4(addr)) {
@@ -887,6 +994,10 @@ struct InkInetAddr {
   self& operator = (ts_ip_endpoint const& ip) {
     return this->assign(&ip.sa);
   }
+  /// Assign from IPv4 raw address.
+  self& operator = (
+    in_addr_t ip ///< Network order IPv4 address.
+  );
 
   /** Load from string.
       The address is copied to this object if the conversion is successful,
@@ -921,11 +1032,24 @@ struct InkInetAddr {
     return ! (*this == that);
   }
 
+  /// Test for same address family.
+  /// @c return @c true if @a that is the same address family as @a this.
+  bool isCompatibleWith(self const& that);
+
+  /// Get the address family.
+  /// @return The address family.
+  uint16_t family() const;
+  /// Test for IPv4.
+  bool isIp4() const;
+  /// Test for IPv6.
+  bool isIp6() const;
+
   /// Test for validity.
   bool isValid() const { return _family == AF_INET || _family == AF_INET6; }
   /// Make invalid.
   self& invalidate() { _family = AF_UNSPEC; return *this; }
-  /// Test for multicast
+  /// Test for multicast.
+  /// @return @c true if this is an IP multicast address.
   bool isMulticast() const;
 
   uint16_t _family; ///< Protocol family.
@@ -936,6 +1060,23 @@ struct InkInetAddr {
     uint8_t   _byte[INK_IP6_SIZE]; ///< As raw bytes.
   } _addr;
 };
+
+inline InkInetAddr&
+InkInetAddr::operator = (in_addr_t ip) {
+  _family = AF_INET;
+  _addr._ip4 = ip;
+  return *this;
+}
+
+inline uint16_t InkInetAddr::family() const { return _family; }
+
+inline bool
+InkInetAddr::isCompatibleWith(self const& that) {
+  return this->isValid() && _family == that._family;
+}
+
+inline bool InkInetAddr::isIp4() const { return AF_INET == _family; }
+inline bool InkInetAddr::isIp6() const { return AF_INET6 == _family; }
 
 // Associated operators.
 bool operator == (InkInetAddr const& lhs, sockaddr const* rhs);
@@ -995,6 +1136,30 @@ ts_ip_endpoint::assign(sockaddr const* ip) {
 inline uint16_t&
 ts_ip_endpoint::port() {
   return ink_inet_port_cast(&sa);
+}
+
+inline bool
+ts_ip_endpoint::isValid() const {
+  return ink_inet_is_ip(this);
+}
+
+inline bool ts_ip_endpoint::isIp4() const { return AF_INET == sa.sa_family; }
+inline bool ts_ip_endpoint::isIp6() const { return AF_INET6 == sa.sa_family; }
+
+inline ts_ip_endpoint&
+ts_ip_endpoint::setToAnyAddr(int family) {
+  sa.sa_family = family;
+  if (AF_INET == family) ink_inet_ip4_addr_cast(this) = INADDR_ANY;
+  else if (AF_INET6 == family) ink_inet_ip6_addr_cast(this) = in6addr_any;
+  return *this;
+}
+
+inline ts_ip_endpoint&
+ts_ip_endpoint::setToLoopback(int family) {
+  sa.sa_family = family;
+  if (AF_INET == family) ink_inet_ip4_addr_cast(this) = htonl(INADDR_LOOPBACK);
+  else if (AF_INET6 == family) ink_inet_ip6_addr_cast(this) = in6addr_loopback;
+  return *this;
 }
 
 #endif // _ink_inet.h

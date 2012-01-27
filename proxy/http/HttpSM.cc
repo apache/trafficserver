@@ -603,7 +603,7 @@ HttpSM::attach_client_session(HttpClientSession * client_vc, IOBufferReader * bu
   t_state.client_info.port = netvc->get_local_port();
   t_state.client_info.is_transparent = netvc->get_is_transparent();
   t_state.backdoor_request = client_vc->backdoor_connect;
-  t_state.client_info.port_attribute = (HttpPortTypes) netvc->attributes;
+  t_state.client_info.port_attribute = static_cast<HttpProxyPort::TransportType>(netvc->attributes);
 
   HTTP_INCREMENT_DYN_STAT(http_current_client_transactions_stat);
 
@@ -1485,7 +1485,7 @@ HttpSM::handle_api_return()
 {
   switch (t_state.api_next_action) {
   case HttpTransact::HTTP_API_SM_START:
-    if (t_state.client_info.port_attribute == SERVER_PORT_BLIND_TUNNEL) {
+    if (t_state.client_info.port_attribute == HttpProxyPort::TRANSPORT_BLIND_TUNNEL) {
       setup_blind_tunnel_port();
     } else {
       setup_client_read_request_header();
@@ -4052,6 +4052,7 @@ void
 HttpSM::do_http_server_open(bool raw)
 {
   Debug("http_track", "entered inside do_http_server_open");
+  int ip_family = t_state.current.server->addr.sa.sa_family;
 
   ink_assert(server_entry == NULL);
 
@@ -4072,14 +4073,19 @@ HttpSM::do_http_server_open(bool raw)
                      t_state.txn_conf->sock_send_buffer_size_out,
                      t_state.txn_conf->sock_option_flag_out);
 
-  if (ink_inet_is_ip(&t_state.txn_conf->outgoing_ip_to_bind_saddr)) {
+  opt.local_port = ua_session->outbound_port;
+  opt.ip_family = ip_family;
+
+  InkInetAddr& outbound_ip = AF_INET6 == ip_family ? ua_session->outbound_ip6 : ua_session->outbound_ip4;
+  if (outbound_ip.isValid()) {
     opt.addr_binding = NetVCOptions::INTF_ADDR;
-    ink_inet_copy(&opt.local_addr, &t_state.txn_conf->outgoing_ip_to_bind_saddr);
-  } else if (t_state.server_info.is_transparent) {
+    opt.local_ip = outbound_ip;
+  } else if (ua_session->f_outbound_transparent) {
     opt.addr_binding = NetVCOptions::FOREIGN_ADDR;
-    ink_inet_copy(&opt.local_addr, &t_state.client_info.addr);
+    opt.local_ip = t_state.client_info.addr;
   }
-  ink_inet_port_cast(&t_state.current.server->addr) = htons(t_state.current.server->port);
+
+  t_state.current.server->addr.port() = htons(t_state.current.server->port);
 
   char addrbuf[INET6_ADDRPORTSTRLEN];
   Debug("http", "[%" PRId64 "] open connection to %s: %s",
@@ -4162,6 +4168,7 @@ HttpSM::do_http_server_open(bool raw)
     HttpServerSession *existing_ss = ua_session->get_server_session();
 
     if (existing_ss) {
+      // [amc] Is this OK? Should we compare ports? (not done by ink_inet_cmp)
       if (ink_inet_cmp(&existing_ss->server_ip.sa, &t_state.current.server->addr.sa) == 0) {
         ua_session->attach_server_session(NULL);
         existing_ss->state = HSS_ACTIVE;
@@ -6379,7 +6386,7 @@ HttpSM::set_next_state()
   
   case HttpTransact::DNS_LOOKUP:
     {
-      uint32_t addr;
+      sockaddr const* addr;
 
       if (url_remap_mode == 2 && t_state.first_dns_lookup) {
         Debug("cdn", "Skipping DNS Lookup");
@@ -6391,15 +6398,16 @@ HttpSM::set_next_state()
       } else  if (t_state.http_config_param->use_client_target_addr
         && !t_state.url_remap_success
         && t_state.client_info.is_transparent
-        && 0 != (addr = t_state.state_machine->ua_session->get_netvc()->get_local_ip())
+        && ink_inet_is_ip(addr = t_state.state_machine->ua_session->get_netvc()->get_local_addr())
       ) {
+        ip_text_buffer ipb;
         /* If the connection is client side transparent and the URL
            was not remapped, we can use the client destination IP
            address instead of doing a DNS lookup. This is controlled
            by the 'use_client_target_addr' configuration parameter.
         */
-        Debug("dns", "[HttpTransact::HandleRequest] Skipping DNS lookup for client supplied target %u.%u.%u.%u.\n", PRINT_IP(addr));
-        ink_inet_ip4_set(t_state.host_db_info.ip(), addr);
+        Debug("dns", "[HttpTransact::HandleRequest] Skipping DNS lookup for client supplied target %s.\n", ink_inet_ntop(addr, ipb, sizeof(ipb)));
+        ink_inet_copy(t_state.host_db_info.ip(), addr);
         t_state.dns_info.lookup_success = true;
         call_transact_and_set_next_state(NULL);
         break;

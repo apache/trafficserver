@@ -134,7 +134,7 @@ int num_of_udp_threads = DEFAULT_NUMBER_OF_UDP_THREADS;
 int num_accept_threads  = DEFAULT_NUM_ACCEPT_THREADS;
 int num_task_threads = DEFAULT_NUM_TASK_THREADS;
 int run_test_hook = 0;
-int http_accept_port_number = DEFAULT_HTTP_ACCEPT_PORT_NUMBER;
+char http_accept_port_descriptor[1023] = "";
 int http_accept_file_descriptor = NO_FD;
 int ssl_accept_file_descriptor = NO_FD;
 char accept_fd_list[1024] = "";
@@ -175,12 +175,10 @@ int diags_init = 0;             // used by process manager
 
 char vingid_flag[255] = "";
 
-
 static int accept_mss = 0;
 static int cmd_line_dprintf_level = 0;  // default debug output level fro ink_dprintf function
 
 AppVersionInfo appVersionInfo;  // Build info for this application
-
 
 #if TS_HAS_TESTS
 extern int run_TestHook();
@@ -210,10 +208,8 @@ ArgumentDescription argument_descriptions[] = {
    "PROXY_ACCEPT_THREAD", NULL},
   {"accept_till_done", 'b', "Accept Till Done", "T", &accept_till_done,
    "PROXY_ACCEPT_TILL_DONE", NULL},
-  {"httpport", 'p', "Port Number for HTTP Accept", "I",
-   &http_accept_port_number, "PROXY_HTTP_ACCEPT_PORT", NULL},
-  {"acceptfds", 'A', "File Descriptor List for Accept", "S1023",
-   accept_fd_list, "PROXY_ACCEPT_DESCRIPTOR_LIST", NULL},
+  {"httpport", 'p', "Port descriptor for HTTP Accept", "S1023",
+   http_accept_port_descriptor, "PROXY_HTTP_ACCEPT_PORT", NULL},
   {"cluster_port", 'P', "Cluster Port Number", "I", &cluster_port_number,
    "PROXY_CLUSTER_PORT", NULL},
   {"dprintf_level", 'o', "Debug output level", "I", &cmd_line_dprintf_level,
@@ -846,91 +842,6 @@ check_for_root_uid()
 }
 #endif
 
-// static void print_accept_fd(HttpPortEntry* e)
-//
-static void
-print_accept_fd(HttpEntryPoint * e)
-{
-  if (e) {
-    printf("Accept FDs: ");
-    while (e->fd != NO_FD) {
-      printf("%d:%d ", e->fd, e->type);
-      e++;
-    }
-    printf("\n");
-  }
-}
-
-extern void get_connection_attributes(const char *attr, HttpEntryPoint *result);
-
-// static HttpEntryPoint* parse_accept_fd_list()
-//
-// Parses the list of FD's and types sent in by the manager
-//   with the -A flag
-//
-// If the NTTP Accept fd is in the list, sets global
-//   nttp_accept_fd
-//
-// If the SSL Accept fd is in the list, sets global
-//   ssl_accept_fd
-//
-// If there is no -A arg, returns NULL
-//
-//  Otherwise returns an array of HttpEntryPoint which
-//   is terminated with a HttpEntryPoint with the fd
-//   field set to NO_FD
-//
-static HttpEntryPoint *
-parse_accept_fd_list()
-{
-  HttpEntryPoint *accept_array;
-  int accept_index = 0;
-  int list_entries;
-  int fd = ts::NO_FD;
-  Tokenizer listTok(",");
-
-  if (!accept_fd_list[0]
-    || (list_entries = listTok.Initialize(accept_fd_list, SHARE_TOKS)) <= 0
-  )
-    return 0;
-
-  // Add one because we use NO_FD as an array termination mark later.
-  accept_array = new HttpEntryPoint[list_entries + 1];
-
-  for (int i = 0; i < list_entries; ++i) {
-    HttpEntryPoint* pent = accept_array + accept_index;
-    char const* cur_entry = listTok[i];
-    char* next;
-
-    // Check to see if there is a port attribute
-    char const* attr_str = strchr(cur_entry, ':');
-    if (attr_str != NULL) {
-      attr_str = attr_str + 1;
-    }
-    // Handle the file descriptor
-    fd = strtoul(cur_entry, &next, 10);
-    if (next == cur_entry) {
-      Warning("Failed to parse file descriptor '%s'", cur_entry);
-      continue; // number parsing failure
-    }
-
-    // Handle reading the attribute
-    get_connection_attributes(attr_str, pent);
-    if (SERVER_PORT_SSL == pent->type) {
-      ink_assert(ssl_accept_file_descriptor == NO_FD);
-      ssl_accept_file_descriptor = fd;
-      continue;
-    }
-    accept_array[accept_index++].fd = fd;
-  }
-
-  ink_assert(accept_index < list_entries + 1);
-
-  accept_array[accept_index].fd = NO_FD;
-
-  return accept_array;
-}
-
 static int
 set_core_size(const char *name, RecDataT data_type, RecData data, void *opaque_token)
 {
@@ -1322,10 +1233,8 @@ chdir_root()
 int
 getNumSSLThreads(void)
 {
-  int ssl_enabled = 0;
+  bool ssl_enabled = HttpProxyPort::hasSSL();
   int num_of_ssl_threads = 0;
-
-  TS_ReadConfigInteger(ssl_enabled, "proxy.config.ssl.enabled");
 
   // Set number of ssl threads equal to num of processors if
   // SSL is enabled so it will scale properly. If SSL is not
@@ -1571,9 +1480,7 @@ main(int argc, char **argv)
   admin_user_p = 
     (REC_ERR_OKAY ==
       TS_ReadConfigString(user, "proxy.config.admin.user_id", max_login)
-    )
-    && user[0] != '\0'
-    && 0 != strcmp(user, "#-1")
+    ) && user[0] != '\0' && 0 != strcmp(user, "#-1")
     ;
 
 # if TS_USE_POSIX_CAP
@@ -1613,7 +1520,8 @@ main(int argc, char **argv)
   if (is_debug_tag_set("diags"))
     diags->dump();
 # if TS_USE_POSIX_CAP
-  DebugCapabilities("server"); // Can do this now, logging is up.
+  if (is_debug_tag_set("server"))
+    DebugCapabilities("server"); // Can do this now, logging is up.
 # endif
 
   // Check if we should do mlockall()
@@ -1643,13 +1551,17 @@ main(int argc, char **argv)
   /* Set up the machine with the outbound address if that's set,
      or the inbound address if set, otherwise let it default.
   */
-  sockaddr const* machine_addr = 0;
-  if (ink_inet_is_ip(&HttpConfig::m_master.oride.outgoing_ip_to_bind_saddr)) {
-    machine_addr = &HttpConfig::m_master.oride.outgoing_ip_to_bind_saddr.sa;
-  } else if (ink_inet_is_ip(&HttpConfig::m_master.incoming_ip_to_bind_saddr)) {
-    machine_addr = &HttpConfig::m_master.incoming_ip_to_bind_saddr.sa;
-  }
-  Machine::init(0, machine_addr);
+  ts_ip_endpoint machine_addr;
+  ink_zero(machine_addr);
+  if (HttpConfig::m_master.outbound_ip4.isValid())
+    machine_addr.assign(HttpConfig::m_master.outbound_ip4);
+  else if (HttpConfig::m_master.outbound_ip6.isValid())
+    machine_addr.assign(HttpConfig::m_master.outbound_ip6);
+  else if (HttpConfig::m_master.inbound_ip4.isValid())
+    machine_addr.assign(HttpConfig::m_master.inbound_ip4);
+  else if (HttpConfig::m_master.inbound_ip6.isValid())
+    machine_addr.assign(HttpConfig::m_master.inbound_ip6);
+  Machine::init(0, &machine_addr.sa);
 
   // pmgmt->start() must occur after initialization of Diags but
   // before calling RecProcessInit()
@@ -1677,13 +1589,6 @@ main(int argc, char **argv)
 
   // Init HTTP Accept-Encoding/User-Agent filter
   init_http_aeua_filter();
-
-  // Parse the accept port list from the manager
-  http_open_port_array = parse_accept_fd_list();
-
-  if (is_debug_tag_set("accept_fd"))
-    print_accept_fd(http_open_port_array);
-
 
   // Sanity checks
   //  if (!lock_process) check_for_root_uid();
@@ -1797,6 +1702,11 @@ main(int argc, char **argv)
     clusterProcessor.init();
 #endif
 
+    // Load HTTP port data. getNumSSLThreads depends on this.
+    if (!HttpProxyPort::loadValue(http_accept_port_descriptor))
+      HttpProxyPort::loadConfig();
+    HttpProxyPort::loadDefaultIfEmpty();
+
     cacheProcessor.start();
     udpNet.start(num_of_udp_threads);   // XXX : broken for __WIN32
     sslNetProcessor.start(getNumSSLThreads());
@@ -1865,15 +1775,6 @@ main(int argc, char **argv)
 #endif
 
     init_HttpProxyServer();
-    if (!http_accept_port_number) {
-      TS_ReadConfigInteger(http_accept_port_number, "proxy.config.http.server_port");
-    }
-    if ((unsigned int) http_accept_port_number >= 0xFFFF) {
-      ProcessFatal("\ncannot listen on port %d.\naccept port cannot be larger that 65535.\n"
-                   "please check your Traffic Server configurations", http_accept_port_number);
-      return (1);
-    }
-
     int http_enabled = 1;
     TS_ReadConfigInteger(http_enabled, "proxy.config.http.enabled");
 
@@ -1882,7 +1783,7 @@ main(int argc, char **argv)
       int icp_enabled = 0;
       TS_ReadConfigInteger(icp_enabled, "proxy.config.icp.enabled");
 #endif
-      start_HttpProxyServer(http_accept_file_descriptor, http_accept_port_number, ssl_accept_file_descriptor, num_accept_threads);
+      start_HttpProxyServer(num_accept_threads);
 #ifndef INK_NO_ICP
       if (icp_enabled)
         icpProcessor.start();
