@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.1.2
 
+  *) [TS-1082] Obey existing optimizer CXXFLAGS and CFLAGS at configure time.
+
   *) [TS-1077] All proxy ports are now configured by
    proxy.config.http.server_ports. All other port configuration values
    are deprecated.
