@@ -5384,6 +5384,20 @@ TSHttpTxnNextHopPortGet(TSHttpTxn txnp)
   return port;
 }
 
+TSReturnCode
+TSHttpTxnOutgoingTransparencySet(TSHttpTxn txnp, bool flag)
+{
+  if (TS_SUCCESS != sdk_sanity_check_txn(txnp)) return TS_ERROR;
+
+# if ! TS_USE_TPROXY
+  if (flag) return TS_ERROR; // can't enable if it's not configured.
+# endif
+
+  HttpSM *sm = reinterpret_cast<HttpSM*>(txnp);
+  sm->ua_session->f_outbound_transparent = flag;
+  return TS_SUCCESS;
+}
+
 
 void
 TSHttpTxnErrorBodySet(TSHttpTxn txnp, char *buf, int buflength, char *mimetype)

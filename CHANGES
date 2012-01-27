@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.1.2
 
+  *) [TS-1088] Added TSHttpTxnOutgoingTransparencySet to API to
+   control outbound transparency.
+
   *) [TS-1083] Initial SSL next protocol negotiation support.
 
   *) [TS-1082] Obey existing optimizer CXXFLAGS and CFLAGS at configure time.
