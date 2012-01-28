@@ -102,12 +102,12 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   *) forward map based on request receive port
    Trunk patch: (see TS876.fixed.patch in JIRA)
    Jira: https://issues.apache.org/jira/browse/TS-876
-   +1: briang
+   +1: briang, zwoop
 
   *) 3.0.x ts.h.in has incorrect declaration for TSFetchURL
    Trunk patch: (patch only applies to 3.0.x, see JIRA)
    Jira: https://issues.apache.org/jira/browse/TS-1095
-   +1: briang
+   +1: briang, zwoop
  
 RELEASE PROCESS
 
