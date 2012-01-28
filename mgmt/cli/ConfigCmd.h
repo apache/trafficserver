@@ -764,6 +764,20 @@ int cliCheckIfEnabled(char *command);
 //
 int Cmd_Disable(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[]);
 
+////////////////////////////////////////////////////////////////
+// Cmd_Help
+//
+// This is the callback function for the "help" command. It displays the
+// online help for the requested topic(s).
+//
+// Parameters:
+//    clientData -- information about parsed arguments
+//    interp -- the Tcl interpreter
+//    argc -- number of command arguments
+//    argv -- the command arguments
+//
+int Cmd_Help(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[]);
+
 
 ////////////////////////////////////////////////////////////////
 //

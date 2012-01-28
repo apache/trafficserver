@@ -13,115 +13,153 @@
 .\"  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. .\"
 .\"  See the License for the specific language governing permissions and .\"
 .\"  limitations under the License. .\"
-.TH "traffic_shell"
-.SH NAME
-traffic_shell \- Describes how to use Traffic Shell.
-.SH DESCRIPTION
-This page describes how to use the Traffic Shell command-line interface to 
-monitor and configure Traffic Server and Media-IXT software.
-.SH This page describes the following topics:
-.nf
-About Traffic Shell
-Using the Interactive Method
-Using the File Execution Method
-Exiting Traffic Shell
-Using Traffic Shell Commands
-Traffic Shell Command Shortcuts
-Accessing Man Pages
-.SH ABOUT TRAFFIC SHELL
-Traffic Shell enables you to monitor and configure Traffic Server using a 
-UNIX shell-like command interface. Traffic Shell is one of several 
-interfaces for monitoring and configuring Traffic Server. Using Traffic Shell 
-is an alternative to manually editing Traffic Server's configuration 
-files or using Traffic Server's Traffic Line or Traffic Manager UI.
-.SH Traffic Shell supports two operational methods:
-The Interactive method lets you type individual commands at the 
-traffic_shell prompt.
-.PP
-The File Execution method lets you run a set of Traffic Shell commands.
-.SH USING THE INTERACTIVE METHOD
-You use Traffic Shell interactively by typing individual commands at the 
-traffic_shell prompt. As you enter a command, Traffic Shell processes it 
-and displays the result. You can continue to enter commands until you 
-manually exit Traffic Shell.
-.SH USING THE FILE EXECUTION METHOD
-When you use the File Execution method, you run a set of Traffic Shell 
-commands that you list in a text file. You use a separate command that 
-points to that file to run your entire set of commands.
-.PP
-To start Traffic Shell and execute a file that contains a set of 
-Traffic Shell commands, enter the following command at your UNIX shell prompt:
-traffic_shell -f filename
-.PP
-This starts Traffic Shell and runs all Traffic Shell commands in the 
-named file. It displays the results and leaves your cursor at the 
-traffic_shell prompt. You can now enter individual commands at the 
-traffic_shell prompt, as described in Using the Interactive Method, above.
-.PP
-IMPORTANT: You exit Traffic Shell by typing exit at the traffic_shell 
-prompt. Therefore, if the word exit appears in your file, your cursor 
-returns to the UNIX shell prompt (instead of the traffic_shell prompt) 
-after you run your script. (This does not affect the results of running 
-your script.)
-.SH EXITING TRAFFIC SHELL
-Type exit at the traffic_shell prompt to exit Traffic Shell.
-.SH USING TRAFFIC SHELL COMMANDS
-Once you start Traffic Shell, you use one of two modes:
-.PP
-The Monitor mode allows you to run Show commands, which display system 
-information and Traffic Server statistics. You use Show commands to monitor 
-Traffic Server performance. When you start Traffic Shell, you are 
-automatically in Monitor mode.
-.PP
-To see a list of Show commands, type show at the traffic_shell prompt. 
-To use a Show command, enter the command at the traffic_shell prompt. 
-For example, enter the show:http command as follows:
-traffic_shell> show:http
-.PP
+.Dd January 22, 2012
+.Dt TRAFFIC.ShELL 1
+
+.Sh NAME
+.Nm traffic_shell
+.Nd Traffic Server configuration shell
+
+.Sh SYNOPSIS
+.Nm
+.Op Fl V
+.Op Ar filename
+
+.Sh DESCRIPTION
+.Nm
+is a command-line interface to monitor and configure Apache Traffic Server.
+.Nm
+enables you to monitor and configure Traffic Server using a
+UNIX shell-like command interface.  Using
+.Nm
+is an alternative to manually editing Traffic Server's configuration
+files or using the
+.Xr traffic_line 1
+interface.
+.Pp
+You use
+.Nm
+interactively by typing individual commands at the
+.Li trafficserver>
+prompt. As you enter a command,
+.Nm
+processes it
+and displays the result.
+.Nm
+embeds a Tcl interpreter, so you can use the Tcl language to display status or
+make configuration changes programmatically.
+.Pp
+When invoked with the
+.Ar filename
+argument,
+.Nm
+will read and execute commands from the given file prior to entering interactive
+mode.
+
+.Sh USING TRAFFIC SHELL COMMANDS
+Once you start
+.Nm
+, you use one of two modes:
+.Pp
+The Monitor mode allows you to run Show commands, which display system
+information and Traffic Server statistics. You use Show commands to monitor
+Traffic Server performance. When you start
+.Nm ,
+you are automatically in Monitor mode.
+.Pp
+To see a list of Show commands, type
+.Sq show
+at the prompt. To use a Show command, enter the command at the
+.Li trafficserver>
+prompt.
+.Pp
 The Enable mode allows you to run Config commands, which set Traffic Server
-and network parameters. The Enable mode is password-protected.
-.nf
-To enter Enable mode:
-   1. Type enable at the traffic_shell> prompt.
-   2. Enter your Administrator password.
-.PP
-IMPORTANT: You must enter Traffic Shell's Enable mode to use 
-Traffic Shell's Config commands. You can use both Show and Config commands 
-when you are in Enable mode. It is not necessary to return to Monitor mode 
-to use Show commands. 
-.PP
-Once you enter Enable mode, you can use the Config commands. 
-To see a list of Config commands, type config at the traffic_shell prompt. 
-To use a Config command, enter the command at the traffic_shell prompt. 
-For example, enter the config:icp multicast on command as follows:
-traffic_shell> config:icp multicast on
-.PP
-To return to Monitor mode, in which you cannot use Config commands to 
-set parameters, use the disable command, as follows:
-traffic_shell> disable
-.SH TRAFFIC SHELL COMMAND SHORTCUTS
-Traffic Shell supports the following shortcuts for entering commands.
-.PP
-Command completion
-.PP
-Type the initial characters of a valid command, and then press the tab key. 
-Traffic Shell completes the command.
-.PP
-Command abbreviation
-.PP
-Type the initial characters of a valid command, and then press the Enter key. 
-Traffic Shell displays all commands that begin with the characters that you 
-enter. If only one command begins with those characters, Traffic Shell 
+and network parameters. The Enable mode is password-protected. To enter Enable
+mode use the
+.Sq enable
+command.
+.Pp
+You must enter Enable mode to use Config commands. You can use both
+Show and Config commands when you are in Enable mode. It is not
+necessary to return to Monitor mode to use Show commands.
+.Pp
+Once you enter Enable mode, you can use the Config commands.  To
+see a list of Config commands, type
+.Sq config
+at the
+.Li trafficserver>
+prompt. To use a Config command, enter the command at the prompt.
+.Pp
+To return to Monitor mode, in which you cannot use Config commands to
+set parameters, use the
+.Sp disable
+command.
+.Pp
+Type
+.Sq exit
+at the
+.Li trafficserver>
+prompt to exit
+.Nm .
+
+.Sh TRAFFIC SHELL COMMAND SHORTCUTS
+.Nm
+supports the following shortcuts for entering commands.
+.Bl -bullet
+.It
+Command completion. Type the initial characters of a valid command, and then
+press the tab key. Traffic Shell completes the command.
+.It
+Command abbreviation. Type the initial characters of a valid command, and then
+press the Enter key.
+.Nm
+displays all commands that begin with the characters that you
+enter. If only one command begins with those characters,
+.Nm
 immediately executes that command.
-.PP
-Command history
-.PP
-From the traffic_shell prompt, press the Up and Down arrow keys to scroll 
+.It
+Command history. From the
+.Li trafficserver>
+prompt, press the Up and Down arrow keys to scroll
 through commands that you previously entered.
-.SH ACCESSING MAN PAGES
-Traffic Shell includes manual pages (man pages) that describe each 
-Traffic Shell command. (These man pages are similar to your UNIX man pages.) 
-To access Traffic Shell's man pages, type man, followed by any Traffic Shell 
-command at the traffic_shell prompt. For example, to view a man page for 
-the show:security command, enter the following man page command:
-traffic_shell> man show:security
+.El
+
+.Sh ACCESSING ON-LINE HELP
+.Nm
+includes manual pages that describe each command.  To access
+.Nm
+'s man pages, type
+.Sq help ,
+followed by any
+.Nm
+command at the prompt.
+.Sh OPTIONS
+.Bl -tag -width indent
+.It Fl V
+Print version information and exit.
+.El
+
+.Sh EXAMPLES
+Displaying the on-line help for a command:
+.Bd -ragged -offset 12345678
+trafficserver> help show:security
+.Ed
+.Pp
+Use a monitor command to show a Traffic Server configuration setting:
+.Bd -ragged -offset 12345678
+trafficserver> show:http
+.Ed
+.Pp
+Use a config command to alter a Traffic Server configuration setting:
+.Bd -ragged -offset 12345678
+trafficserver> config:icp multicast on
+.Ed
+.Pp
+Use a Tcl command to show multiple configuration parameters:
+.Bd -ragged -offset 12345678
+trafficserver> foreach i {http proxy socks ssl} {show:$i}
+.Ed
+
+.Sh SEE ALSO
+.Xr traffic_line 1 ,
+.Xr Tcl n .

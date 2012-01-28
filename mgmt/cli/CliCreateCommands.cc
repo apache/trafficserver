@@ -33,6 +33,12 @@
 #include "ShowCmd.h"
 #include "ConfigCmd.h"
 #include "UtilCmds.h"
+#include "CliDisplay.h"
+#include "I_Layout.h"
+#include <stdlib.h>
+#include <string>
+#include <sstream>
+#include <algorithm>
 
 ////////////////////////////////////////////////////////////////
 // Called during Tcl_AppInit, this function creates the CLI commands
@@ -263,5 +269,50 @@ CliCreateCommands()
   createCommand("debug", DebugCmd, DebugCmdArgs, CLI_COMMAND_EXTERNAL,
                 "debug <on|off>", "Turn debugging print statements on/off");
 
+  createCommand("help", Cmd_Help, NULL, CLI_COMMAND_EXTERNAL,
+                "help [topic]", "Display online help");
+
   return CLI_OK;
 }
+
+struct replace_colon
+{
+  char operator() (char c) const {
+    return (c == ':') ? '_' : c;
+  }
+};
+
+int
+Cmd_Help(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[])
+{
+  Cli_Debug("looking for online help in %s\n", Layout::get()->datadir);
+
+  for (int i = 1; i < argc; ++i) {
+    std::ostringstream  cmd;
+    std::string         topic(argv[i]);
+
+    // Replace ':' with '_' so we can find the right on-disk man page.
+    std::transform(topic.begin(), topic.end(), topic.begin(), replace_colon());
+
+    // Check whether we have the man page on disk before we pass any user input
+    // to the shell via system(3).
+    cmd << Layout::get()->datadir << "/trafficshell/" << topic << ".1";
+    if (access(cmd.str().c_str(), R_OK) != 0) {
+      Cli_Debug("missing %s\n", cmd.str().c_str());
+      continue;
+    }
+
+    cmd.clear();
+    cmd.seekp(std::ios_base::beg);
+
+    cmd << "man "
+      << Layout::get()->datadir << "/trafficshell/" << topic << ".1";
+
+    Cli_Debug("%s\n", cmd.str().c_str());
+    system(cmd.str().c_str());
+  }
+
+  return CMD_OK;
+}
+
+// vim: set ts=2 sw=2 et :

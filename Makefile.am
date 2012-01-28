@@ -42,7 +42,7 @@ installcheck-local:
 	$(DESTDIR)$(bindir)/traffic_server -R 1
 
 doxygen:
-	$(MAKE) -C doc doxygen
+	@cd doc && $(MAKE) $(AM_MAKEFLAGS) $@
 
 asf-distdir:
 	@$(am__remove_distdir)
@@ -60,10 +60,13 @@ asf-dist-sign: asf-dist
 	gpg --armor --output $(distdir).tar.bz2.asc  --detach-sig $(distdir).tar.bz2
 
 examples: all
-	@(cd example; $(MAKE))
+	@cd example && $(MAKE) $(AM_MAKEFLAGS)
 
 install-examples: examples
-	@(cd example; $(MAKE) install pkglibdir=$(pkglibexecdir))
+	@cd example && $(MAKE) $(AM_MAKEFLAGS) install pkglibdir=$(pkglibexecdir)
+
+install-data-hook:
+	@cd doc && $(MAKE) $(AM_MAKEFLAGS) install-man
 
 help:
 	@echo 'all              default target for building the package' && \
