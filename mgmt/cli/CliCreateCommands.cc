@@ -283,6 +283,14 @@ struct replace_colon
   }
 };
 
+static int
+xsystem(const char * cmd)
+{
+  // Some versions of glibc declare system(3) with the warn_unused_result
+  // attribute. Pretend to use the return value so it will shut the hell up.
+  return system(cmd);
+}
+
 int
 Cmd_Help(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[])
 {
@@ -310,7 +318,7 @@ Cmd_Help(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[
       << Layout::get()->datadir << "/trafficshell/" << topic << ".1";
 
     Cli_Debug("%s\n", cmd.str().c_str());
-    (void)system(cmd.str().c_str());
+    xsystem(cmd.str().c_str());
   }
 
   return CMD_OK;
