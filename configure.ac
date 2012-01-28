@@ -1019,16 +1019,7 @@ TS_CHECK_TCMALLOC
 
 #
 # Check for libreadline/libedit
-
-AC_CHECK_LIB([edit], [readline], [
-    AC_SUBST([LIBREADLINE], [-ledit])
-    AC_DEFINE([HAVE_LIBREADLINE], [1], [Define if you have libedit])],
-    [], [])
-
-AC_CHECK_LIB([readline], [readline], [
-    AC_SUBST([LIBREADLINE], [-lreadline])
-    AC_DEFINE([HAVE_LIBREADLINE], [1], [Define if you have libreadline])],
-    [], [])
+AX_LIB_READLINE
 
 # -----------------------------------------------------------------------------
 # 5. CHECK FOR HEADER FILES
