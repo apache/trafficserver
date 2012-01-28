@@ -276,6 +276,18 @@ CliCreateCommands()
   return CLI_OK;
 }
 
+#if defined(__SUNPRO_CC)
+
+// Solaris doesn't like to link libstdc++ code. I don't have a system to test. Sorry.
+
+int
+Cmd_Help(ClientData, Tcl_Interp *, int, const char *[])
+{
+  return CMD_OK;
+}
+
+#else
+
 struct replace_colon
 {
   char operator() (char c) const {
@@ -323,5 +335,7 @@ Cmd_Help(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[
 
   return CMD_OK;
 }
+
+#endif  /* __SUNPRO_C */
 
 // vim: set ts=2 sw=2 et :
