@@ -36,6 +36,7 @@
 #include "CliDisplay.h"
 #include "I_Layout.h"
 #include <stdlib.h>
+#include <unistd.h>
 #include <string>
 #include <sstream>
 #include <algorithm>
