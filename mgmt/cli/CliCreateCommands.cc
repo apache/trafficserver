@@ -309,7 +309,7 @@ Cmd_Help(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[
       << Layout::get()->datadir << "/trafficshell/" << topic << ".1";
 
     Cli_Debug("%s\n", cmd.str().c_str());
-    system(cmd.str().c_str());
+    (void)system(cmd.str().c_str());
   }
 
   return CMD_OK;
