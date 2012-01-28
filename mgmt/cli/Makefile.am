@@ -78,7 +78,8 @@ traffic_shell_LDADD = \
   $(top_builddir)/mgmt/tools/libinkconfigapi.a \
   $(top_builddir)/mgmt/utils/libutils_lm.a \
   $(top_builddir)/lib/ts/libtsutil.la \
-  $(LIBTCL) @LIBDL@ -lm @LIBICONV@ @LIBEXPAT@ @LIBSSL@ \
+  $(LIBTCL) $(LIBREADLINE) \
+  @LIBDL@ -lm @LIBICONV@ @LIBEXPAT@ @LIBSSL@ \
   @LIBTHREAD@ @LIBSOCKET@ @LIBNSL@ @LIBRESOLV@ \
   @LIBRT@ @LIBEXECINFO@ @LIBPCRE@
 

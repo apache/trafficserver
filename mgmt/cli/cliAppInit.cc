@@ -53,6 +53,12 @@
 #include "ConfigCmd.h"
 #include "CliCreateCommands.h"
 
+#if HAVE_EDITLINE_READLINE_H
+#include <editline/readline.h>
+#elif HAVE_READLINE_READLINE_H
+#include <readline/readline.h>
+#endif
+
 Tcl_Interp *interp;
 extern Tcl_HashTable CommandHashtable;
 
@@ -124,3 +130,34 @@ Tcl_AppInit(Tcl_Interp * app_interp)
 
   return TCL_OK;
 }
+
+#if HAVE_LIBREADLINE
+
+// TCL main read, eval, print loop. We don't use Tcl_Main because we want to
+// use readline to get line editing and command history.
+void Tcl_ReadlineMain(void)
+{
+  char * line;
+
+  for (;;) {
+    line = readline("trafficserver> ");
+    if (line == NULL) {
+      // Received EOF. Bound this into a TCL exit command just like Tcl_Main
+      // does.
+      Tcl_Eval(interp, "exit;");
+    }
+
+    if (*line) {
+      add_history(line);
+      Tcl_Eval(interp, line);
+    }
+
+    free(line);
+  }
+
+  exit(0);
+}
+
+#endif // HAVE_LIBREADLINE
+
+// vim: set ts=2 sw=2 et :

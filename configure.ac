@@ -1017,6 +1017,18 @@ AC_SUBST(use_hwloc)
 TS_CHECK_JEMALLOC
 TS_CHECK_TCMALLOC
 
+#
+# Check for libreadline/libedit
+
+AC_CHECK_LIB([edit], [readline], [
+    AC_SUBST([LIBREADLINE], [-ledit])
+    AC_DEFINE([HAVE_LIBREADLINE], [1], [Define if you have libedit])],
+    [], [])
+
+AC_CHECK_LIB([readline], [readline], [
+    AC_SUBST([LIBREADLINE], [-lreadline])
+    AC_DEFINE([HAVE_LIBREADLINE], [1], [Define if you have libreadline])],
+    [], [])
 
 # -----------------------------------------------------------------------------
 # 5. CHECK FOR HEADER FILES
@@ -1053,7 +1065,9 @@ TS_FLAG_HEADERS([sys/epoll.h \
                   math.h \
                   stdint.h \
                   net/ppp_defs.h \
-                  ifaddrs.h])
+                  ifaddrs.h\
+		  readline/readline.h \
+		  editline/readline.h ])
 
 AC_SUBST(sys_epollh)
 AC_SUBST(sys_eventh)
@@ -1090,6 +1104,7 @@ AC_SUBST(sys_sysmacrosh)
 AC_SUBST(mathh)
 AC_SUBST(net_ppp_defsh)
 AC_SUBST(ifaddrsh)
+AC_SUBST(readline_readlineh)
 
 TS_FLAG_HEADERS([sys/sysctl.h], [], [],
                  [[#ifdef HAVE_SYS_PARAM_H
