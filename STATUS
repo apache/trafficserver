@@ -108,6 +108,11 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
    Trunk patch: (patch only applies to 3.0.x, see JIRA)
    Jira: https://issues.apache.org/jira/browse/TS-1095
    +1: briang, zwoop
+
+  *) TSHttpTxnErrorBodySet() can still leak memory.
+   Trunk patch: http://svn.apache.org/viewvc?view=revision&revision=1228991
+   Jira: https://issues.apache.org/jira/browse/TS-1038
+   +1: briang
  
 RELEASE PROCESS
 
