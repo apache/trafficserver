@@ -409,6 +409,25 @@ AC_ARG_WITH([max-api-stats],
 AC_SUBST(max_api_stats)
 
 #
+# EventProcessor thread configurations
+#
+
+AC_ARG_WITH([max-event-threads],
+  [AS_HELP_STRING([--with-max-event-threads],[max number of event threads [default=4096]])],
+  [max_event_threads=$withval],
+  [max_event_threads=4096]
+)
+AC_SUBST(max_event_threads)
+
+AC_ARG_WITH([max-threads-per-type],
+  [AS_HELP_STRING([--with-max-threads-per-type],[max number of threads per event type [default=3072]])],
+  [max_threads_per_type=$withval],
+  [max_threads_per_type=3072]
+)
+AC_SUBST(max_threads_per_type)
+
+
+#
 # Installation directories
 # For each var the following is evaluated
 # foo      Standard variable  eg. ${prefix}/foo
@@ -1016,6 +1035,15 @@ AC_SUBST(use_hwloc)
 # Check for tcmalloc and jemalloc
 TS_CHECK_JEMALLOC
 TS_CHECK_TCMALLOC
+
+#
+# Determine ARG_MAX
+# Default to 2048 if we cannot resolve ARG_MAX for some reason
+arg_max="`getconf ARG_MAX`"
+if test "x${arg_max}" = x ; then
+ arg_max=2048
+fi
+AC_SUBST(arg_max)
 
 #
 # Check for libreadline/libedit

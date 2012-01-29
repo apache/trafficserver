@@ -45,7 +45,7 @@
  * used by LocalManager and in Proxy Main. *
  */
 #define MAX_OPTION_SIZE        2048
-#define MAX_PROXY_SERVER_PORTS 48
+#define MAX_PROXY_SERVER_PORTS 2048
 #define MAX_ATTR_LEN           5
 /*******************************************/
 

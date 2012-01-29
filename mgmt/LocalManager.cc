@@ -1001,7 +1001,7 @@ LocalManager::startProxy()
     RecSetRecordInt("proxy.node.restarts.proxy.restart_count", proxy_launch_count);
   } else {
     int res, i = 0, n;
-    char real_proxy_options[2048], *options[32], *last, *tok;
+    char real_proxy_options[TS_ARG_MAX], *options[32], *last, *tok;
     bool open_ports_p = false;
 
     snprintf(real_proxy_options, sizeof(real_proxy_options), "%s", proxy_options);

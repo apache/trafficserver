@@ -110,6 +110,7 @@ EventProcessor::shutdown()
 Event *
 EventProcessor::spawn_thread(Continuation *cont, const char* thr_name, ink_sem *sem)
 {
+  ink_release_assert(n_dthreads < MAX_EVENT_THREADS);
   Event *e = eventAllocator.alloc();
 
   e->init(cont, 0, 0);
