@@ -327,7 +327,7 @@ read_from_net(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
     }
   }
   // If here are is no more room, or nothing to do, disable the connection
-  if (!s->enabled || !buf.writer()->write_avail() || s->vio.ntodo() <= 0) {
+  if (s->vio.ntodo() <= 0 || !s->enabled || !buf.writer()->write_avail()) {
     read_disable(nh, vc);
     return;
   }
