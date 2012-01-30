@@ -2161,7 +2161,6 @@ mime_scanner_append(MIMEScanner *scanner, const char *data, int data_size)
   //////////////////////////////////////////////////////
   // if not enough space, allocate or grow the buffer //
   //////////////////////////////////////////////////////
-
   if (data_size > free_size) {    // need to allocate/grow the buffer
     if (scanner->m_line_size == 0)      // buffer should be at least 128 bytes
       scanner->m_line_size = 128;
@@ -2279,7 +2278,6 @@ mime_scanner_get(MIMEScanner *S,
   if (data_size && S->m_line_length) {
     // If we're already accumulating, continue to do so if we have data.
     mime_scanner_append(S, *raw_input_s, data_size);
-    data_size = 0; // Don't append again.
   }
 
   // adjust out arguments.
