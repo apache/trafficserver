@@ -1,5 +1,7 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.1.2
+  *) [TS-1098] Make RC script support Amazon EC2 Linux AMI.
+
   *) [TS-1035] EventProcessor::spawn_thread doesn't check that there 
    is enough event threads and segfaults. 
 
