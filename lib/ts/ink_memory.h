@@ -64,7 +64,7 @@ extern "C"
 
     Calls @c memset on @a t with a value of zero and a length of @c
     sizeof(t). This can be used on ordinary and array variables. While
-    this can be used on builtin values it's inefficient.
+    this can be used on variables of intrinsic type it's inefficient.
 
     @note Because this uses templates it cannot be used on unnamed or
     locally scoped structures / classes. This is an inherent
