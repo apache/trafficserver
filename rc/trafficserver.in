@@ -42,21 +42,21 @@ TS_PACKAGE_BUGREPORT="@PACKAGE_BUGREPORT@"
 UNAME_S=$(uname -s)
 
 if [ -e /etc/SuSE-release ]; then
-  DISTRIB_ID="suse"
+    DISTRIB_ID="suse"
 elif [ -e /etc/fedora-release ]; then
-  DISTRIB_ID="fedora"
+    DISTRIB_ID="fedora"
 elif [ -e /etc/redhat-release ]; then
-  DISTRIB_ID="redhat" # also exists on Fedora
+    DISTRIB_ID="redhat" # also exists on Fedora
 elif [ -e /etc/lsb-release ]; then
-  DISTRIB_ID="ubuntu"
+    DISTRIB_ID="ubuntu"
 elif [ -e /etc/debian_version ]; then
-  DISTRIB_ID="debian" # also exists on Ubuntu
+    DISTRIB_ID="debian" # also exists on Ubuntu
 elif [ -e /etc/slackware-version ]; then
-  DISTRIB_ID="slackware"
+    DISTRIB_ID="slackware"
 elif [ "$UNAME_S" = "Darwin" ]; then
-  DISTRIB_ID="Darwin"
+    DISTRIB_ID="Darwin"
 elif [ "$UNAME_S" = "FreeBSD" ]; then
-  DISTRIB_ID="FreeBSD"
+    DISTRIB_ID="FreeBSD"
 fi
 
 # /usr/bin/lsb_release -rd # Ubuntu release & description info
@@ -101,24 +101,23 @@ STDOUTLOG=${STDOUTLOG:-$TS_BASE@exp_logdir@/traffic_server.stdout}
 STDERRLOG=${STDERRLOG:-$TS_BASE@exp_logdir@/traffic_server.stderr}
 
 if [ -d /etc/rc.d/init.d ]; then
-  SCRIPTNAME=/etc/rc.d/init.d/$NAME # Fedora
+    SCRIPTNAME=/etc/rc.d/init.d/$NAME # Fedora
 elif [ -d /etc/init.d ]; then
-  SCRIPTNAME=/etc/init.d/$NAME # Ubuntu
+    SCRIPTNAME=/etc/init.d/$NAME # Ubuntu
 elif [ "$DISTRIB_ID" = "Darwin" ]; then
-  SCRIPTNAME=$0 # Darwin
+    SCRIPTNAME=$0 # Darwin
 elif [ "$DISTRIB_ID" = "FreeBSD" ]; then
-  SCRIPTNAME=$0 # FreeBSD 
+    SCRIPTNAME=$0 # FreeBSD 
 else
-  echo "This script needs to be ported to this OS"
-  exit 1
+    echo "This script needs to be ported to this OS"
+    exit 1
 fi
-
 
 # Exit if the package can not be found
 if [ ! -x "$TS_DAEMON" ]; then
-  echo "Error: Can not find $TS_DAEMON using TS_ROOT=$TS_ROOT"
-  echo "       Please set TS_ROOT to point to base installation."
-  exit 0
+    echo "Error: Can not find $TS_DAEMON using TS_ROOT=$TS_ROOT"
+    echo "       Please set TS_ROOT to point to base installation."
+    exit 0
 fi
 
 # Ubuntu: Read configuration variable file if it is present
@@ -152,29 +151,28 @@ test -f /etc/rc.subr && . /etc/rc.subr
 #  because 'daemon' expects $1 to fork itself
 forkdaemon()
 {
-  local i=0
+    local i=0
 
-  # launch in background, i.e. fork
-  # and redirect stdout and stderr to files
-  $* >> $STDOUTLOG 2>> $STDERRLOG &
+    # launch in background, i.e. fork
+    # and redirect stdout and stderr to files
+    $* >> $STDOUTLOG 2>> $STDERRLOG &
 
-  while (( $i < $PIDFILE_CHECK_RETRIES ))
-  do
+    while (( $i < $PIDFILE_CHECK_RETRIES ))
+    do
+        # check for regular file and size greater than 0
+        if [[ -f $TC_PIDFILE ]] && [[ -s $TC_PIDFILE ]]
+        then
+            success
+            return 0
+        fi
 
-    # check for regular file and size greater than 0
-    if [[ -f $TC_PIDFILE ]] && [[ -s $TC_PIDFILE ]]
-    then
-      success
-      return 0
-    fi
+        sleep 1  # zzz for 1 second
+        (( i++ ))
 
-    sleep 1  # zzz for 1 second
-    (( i++ ))
+    done
 
-  done
-
-  failure
-  return 1
+    failure
+    return 1
 }
 
 
@@ -187,16 +185,16 @@ do_start()
   #   0 if daemon has been started
   #   1 if daemon was already running
   #   2 if daemon could not be started
-  start-stop-daemon --start --quiet --pidfile $TC_PIDFILE --exec $TC_DAEMON --test > /dev/null \
-    || return 1
-  start-stop-daemon --start --background --quiet --pidfile $TC_PIDFILE --exec $TC_DAEMON -- \
-    $TC_DAEMON_ARGS \
-    || return 2
+    start-stop-daemon --start --quiet --pidfile $TC_PIDFILE --exec $TC_DAEMON --test > /dev/null \
+        || return 1
+    start-stop-daemon --start --background --quiet --pidfile $TC_PIDFILE --exec $TC_DAEMON -- \
+        $TC_DAEMON_ARGS \
+        || return 2
   # Add code here, if necessary, that waits for the process to be ready
   # to handle requests from services started subsequently which depend
   # on this one.  As a last resort, sleep for some time.
-  sleep 1
-  test -f "$TC_PIDFILE" || return 2
+    sleep 1
+    test -f "$TC_PIDFILE" || return 2
 }
 
 #
@@ -209,227 +207,227 @@ do_stop()
   #   1 if daemon was already stopped
   #   2 if daemon could not be stopped
   #   other if a failure occurred
-  start-stop-daemon --stop --quiet --retry=QUIT/30/KILL/5 --pidfile $TC_PIDFILE --name $TC_NAME
-  RETVAL="$?"
-  test "$RETVAL" != 0 && return 2
+    start-stop-daemon --stop --quiet --retry=QUIT/30/KILL/5 --pidfile $TC_PIDFILE --name $TC_NAME
+    RETVAL="$?"
+    test "$RETVAL" != 0 && return 2
   # Wait for children to finish too if this is a daemon that forks
   # and if the daemon is only ever run from this initscript.
   # If the above conditions are not satisfied then add some other code
   # that waits for the process to drop all resources that could be
   # needed by services started subsequently.  A last resort is to
   # sleep for some time.
-  start-stop-daemon --stop --quiet --oknodo --retry=0/30/KILL/5 --exec $TC_DAEMON
-  test "$?" != 0 && return 2
+    start-stop-daemon --stop --quiet --oknodo --retry=0/30/KILL/5 --exec $TC_DAEMON
+    test "$?" != 0 && return 2
         # Need to stop the TM and TS also
-  start-stop-daemon --stop --quiet --retry=QUIT/30/KILL/5 --pidfile $TM_PIDFILE --name $TM_NAME
-  test "$?" != 0 && return 2
-  start-stop-daemon --stop --quiet --retry=QUIT/30/KILL/5 --pidfile $TS_PIDFILE --name $TS_NAME
-  test "$?" != 0 && return 2
+    start-stop-daemon --stop --quiet --retry=QUIT/30/KILL/5 --pidfile $TM_PIDFILE --name $TM_NAME
+    test "$?" != 0 && return 2
+    start-stop-daemon --stop --quiet --retry=QUIT/30/KILL/5 --pidfile $TS_PIDFILE --name $TS_NAME
+    test "$?" != 0 && return 2
   # Many daemons don't delete their pidfiles when they exit.
-  rm -f $TC_PIDFILE
-  rm -f $TM_PIDFILE
-  rm -f $TS_PIDFILE
-  return "$RETVAL"
+    rm -f $TC_PIDFILE
+    rm -f $TM_PIDFILE
+    rm -f $TS_PIDFILE
+    return "$RETVAL"
 }
 
 # main
 case "$1" in
-  start)
-    if [ "$DISTRIB_ID" = "ubuntu" -o "$DISTRIB_ID" = "debian" ] ; then
-      test "x$VERBOSE" != "xno" && log_daemon_msg "Starting $DESC" "$NAME"
-      retval=0
-      do_start
-      test "$?" -ne 0 -a "$?" -ne 1 && retval=1
-      test "x$VERBOSE" != "xno" && log_daemon_msg "$retval"
-      exit "$retval"
-    elif [ "$DISTRIB_ID" = "fedora" -o "$DISTRIB_ID" = "redhat" ]; then
-      action "Starting ${TS_PACKAGE_NAME}:" forkdaemon $TC_DAEMON $TC_DAEMON_ARGS
-    elif [ "$DISTRIB_ID" = "suse" ]; then
-      echo -n "Starting ${TS_PACKAGE_NAME}"
-      startproc -p $TC_PIDFILE $TC_DAEMON $TC_DAEMON_ARGS
-      rc_status -v
-    elif [ "$DISTRIB_ID" = "Darwin" ]; then
-      echo "Starting ${TS_PACKAGE_NAME}"
-      launchctl list $TC_NAME > /dev/null 2>&1 && exit 0
-      launchctl submit -l $TC_NAME -p $TC_DAEMON -o $STDOUTLOG -e $STDERRLOG -- $TC_DAEMON_ARGS
-    elif [ "$DISTRIB_ID" = "FreeBSD" ]; then
-      echo "Starting ${TS_PACKAGE_NAME}"
-      name="$TC_NAME"
-      command="/usr/sbin/daemon"
-      command_args="$TC_DAEMON $TC_DAEMON_ARGS"
-      pidfile="$TC_PIDFILE"
-      run_rc_command "$1"
-    else
-        echo "This script needs to be ported to this OS"
-        exit 1
-    fi
-  ;;
-  stop)
-    if [ "$DISTRIB_ID" = "ubuntu" -o "$DISTRIB_ID" = "debian" ] ; then
-      test "x$VERBOSE" != "xno" && log_daemon_msg "Stopping $DESC" "$NAME"
-      retval=0
-      do_stop
-      test "$?" -ne 0 -a "$?" -ne 1 && retval=1
-      test "x$VERBOSE" != "xno" && log_daemon_msg "$retval"
-      exit "$retval"
-    elif [ "$DISTRIB_ID" = "fedora" -o "$DISTRIB_ID" = "redhat" ]; then
-      action "Stopping ${TC_NAME}:" killproc -p $TC_PIDFILE $TC_DAEMON
-      action "Stopping ${TM_NAME}:" killproc -p $TM_PIDFILE $TM_DAEMON
-      action "Stopping ${TS_NAME}:" killproc -p $TS_PIDFILE $TS_DAEMON
-    elif [ "$DISTRIB_ID" = "suse" ]; then
-      echo -n "Stopping ${TC_NAME}"
-      killproc -p $TC_PIDFILE $TC_DAEMON
-      rc_status -v
-      echo -n "Stopping ${TM_NAME}"
-      killproc -p $TM_PIDFILE $TM_DAEMON
-      rc_status -v
-      echo -n "Stopping ${TS_NAME}"
-      killproc -p $TS_PIDFILE $TS_DAEMON
-      rc_status -v
-    elif [ "$DISTRIB_ID" = "Darwin" ]; then
-      echo "Stopping ${TS_PACKAGE_NAME}"
-      launchctl list $TC_NAME > /dev/null 2>&1 || exit 0
-      echo "Stopping ${TC_NAME}"
-      launchctl remove ${TC_NAME}
-      rm -f ${TC_PIDFILE}
-      echo "Stopping ${TM_NAME}"
-      kill $(cat $TM_PIDFILE)
-      rm -f ${TM_PIDFILE}
-      echo "Stopping ${TS_NAME}"
-      kill $(cat $TS_PIDFILE)
-      rm -f ${TS_PIDFILE}
-    elif [ "$DISTRIB_ID" = "FreeBSD" ]; then
-      echo "Stopping ${TS_PACKAGE_NAME}"
-      if [ -e "$TC_PIDFILE" ]; then 
-	  kill $(cat $TC_PIDFILE)
-	  rm -f ${TC_PIDFILE}
-      fi
-      if [ -e "$TM_PIDFILE" ]; then 
-	  kill $(cat $TM_PIDFILE)
-	  rm -f ${TM_PIDFILE}
-      fi
-    else
-      echo "This script needs to be ported to this OS"
-      exit 1
-    fi
-  ;;
-  reload|force-reload)
-    if [ "$DISTRIB_ID" = "ubuntu" -o "$DISTRIB_ID" = "debian" ] ; then
-      test "x$VERBOSE" != "xno" && log_daemon_msg "Reloading ${NAME}:"
-      retval=0
-      $TL_NAME -x
-      test "$?" -ne 0 -a "$?" -ne 1 && retval=1
-      test "x$VERBOSE" != "xno" && log_daemon_msg "$retval"
-      exit "$retval"
-    elif [ "$DISTRIB_ID" = "fedora" -o "$DISTRIB_ID" = "redhat" ]; then
-      action "Reloading ${NAME}:" $TL_NAME -x
-    elif [ "$DISTRIB_ID" = "suse" ]; then
-      echo -n "Reloading ${NAME}"
-      $TL_NAME -x
-      rc_status -v
-    elif [ "$DISTRIB_ID" = "Darwin" ]; then
-      echo "Reloading ${NAME}"
-      $TL_NAME -x
-    elif [ "$DISTRIB_ID" = "FreeBSD" ]; then
-      echo "Reloading ${NAME}"
-      $TL_NAME -x
-    else
-        echo "This script needs to be ported to this OS"
-        exit 1
-    fi
-  ;;
-  restart)
-    if [ "$DISTRIB_ID" = "ubuntu" -o "$DISTRIB_ID" = "debian" ] ; then
+    start)
+        if [ "$DISTRIB_ID" = "ubuntu" -o "$DISTRIB_ID" = "debian" ] ; then
+            test "x$VERBOSE" != "xno" && log_daemon_msg "Starting $DESC" "$NAME"
+            retval=0
+            do_start
+            test "$?" -ne 0 -a "$?" -ne 1 && retval=1
+            test "x$VERBOSE" != "xno" && log_daemon_msg "$retval"
+            exit "$retval"
+        elif [ "$DISTRIB_ID" = "fedora" -o "$DISTRIB_ID" = "redhat" ]; then
+            action "Starting ${TS_PACKAGE_NAME}:" forkdaemon $TC_DAEMON $TC_DAEMON_ARGS
+        elif [ "$DISTRIB_ID" = "suse" ]; then
+            echo -n "Starting ${TS_PACKAGE_NAME}"
+            startproc -p $TC_PIDFILE $TC_DAEMON $TC_DAEMON_ARGS
+            rc_status -v
+        elif [ "$DISTRIB_ID" = "Darwin" ]; then
+            echo "Starting ${TS_PACKAGE_NAME}"
+            launchctl list $TC_NAME > /dev/null 2>&1 && exit 0
+            launchctl submit -l $TC_NAME -p $TC_DAEMON -o $STDOUTLOG -e $STDERRLOG -- $TC_DAEMON_ARGS
+        elif [ "$DISTRIB_ID" = "FreeBSD" ]; then
+            echo "Starting ${TS_PACKAGE_NAME}"
+            name="$TC_NAME"
+            command="/usr/sbin/daemon"
+            command_args="$TC_DAEMON $TC_DAEMON_ARGS"
+            pidfile="$TC_PIDFILE"
+            run_rc_command "$1"
+        else
+            echo "This script needs to be ported to this OS"
+            exit 1
+        fi
+        ;;
+    stop)
+        if [ "$DISTRIB_ID" = "ubuntu" -o "$DISTRIB_ID" = "debian" ] ; then
+            test "x$VERBOSE" != "xno" && log_daemon_msg "Stopping $DESC" "$NAME"
+            retval=0
+            do_stop
+            test "$?" -ne 0 -a "$?" -ne 1 && retval=1
+            test "x$VERBOSE" != "xno" && log_daemon_msg "$retval"
+            exit "$retval"
+        elif [ "$DISTRIB_ID" = "fedora" -o "$DISTRIB_ID" = "redhat" ]; then
+            action "Stopping ${TC_NAME}:" killproc -p $TC_PIDFILE $TC_DAEMON
+            action "Stopping ${TM_NAME}:" killproc -p $TM_PIDFILE $TM_DAEMON
+            action "Stopping ${TS_NAME}:" killproc -p $TS_PIDFILE $TS_DAEMON
+        elif [ "$DISTRIB_ID" = "suse" ]; then
+            echo -n "Stopping ${TC_NAME}"
+            killproc -p $TC_PIDFILE $TC_DAEMON
+            rc_status -v
+            echo -n "Stopping ${TM_NAME}"
+            killproc -p $TM_PIDFILE $TM_DAEMON
+            rc_status -v
+            echo -n "Stopping ${TS_NAME}"
+            killproc -p $TS_PIDFILE $TS_DAEMON
+            rc_status -v
+        elif [ "$DISTRIB_ID" = "Darwin" ]; then
+            echo "Stopping ${TS_PACKAGE_NAME}"
+            launchctl list $TC_NAME > /dev/null 2>&1 || exit 0
+            echo "Stopping ${TC_NAME}"
+            launchctl remove ${TC_NAME}
+            rm -f ${TC_PIDFILE}
+            echo "Stopping ${TM_NAME}"
+            kill $(cat $TM_PIDFILE)
+            rm -f ${TM_PIDFILE}
+            echo "Stopping ${TS_NAME}"
+            kill $(cat $TS_PIDFILE)
+            rm -f ${TS_PIDFILE}
+        elif [ "$DISTRIB_ID" = "FreeBSD" ]; then
+            echo "Stopping ${TS_PACKAGE_NAME}"
+            if [ -e "$TC_PIDFILE" ]; then 
+                kill $(cat $TC_PIDFILE)
+                rm -f ${TC_PIDFILE}
+            fi
+            if [ -e "$TM_PIDFILE" ]; then 
+                kill $(cat $TM_PIDFILE)
+                rm -f ${TM_PIDFILE}
+            fi
+        else
+            echo "This script needs to be ported to this OS"
+            exit 1
+        fi
+        ;;
+    reload|force-reload)
+        if [ "$DISTRIB_ID" = "ubuntu" -o "$DISTRIB_ID" = "debian" ] ; then
+            test "x$VERBOSE" != "xno" && log_daemon_msg "Reloading ${NAME}:"
+            retval=0
+            $TL_NAME -x
+            test "$?" -ne 0 -a "$?" -ne 1 && retval=1
+            test "x$VERBOSE" != "xno" && log_daemon_msg "$retval"
+            exit "$retval"
+        elif [ "$DISTRIB_ID" = "fedora" -o "$DISTRIB_ID" = "redhat" ]; then
+            action "Reloading ${NAME}:" $TL_NAME -x
+        elif [ "$DISTRIB_ID" = "suse" ]; then
+            echo -n "Reloading ${NAME}"
+            $TL_NAME -x
+            rc_status -v
+        elif [ "$DISTRIB_ID" = "Darwin" ]; then
+            echo "Reloading ${NAME}"
+            $TL_NAME -x
+        elif [ "$DISTRIB_ID" = "FreeBSD" ]; then
+            echo "Reloading ${NAME}"
+            $TL_NAME -x
+        else
+            echo "This script needs to be ported to this OS"
+            exit 1
+        fi
+        ;;
+    restart)
+        if [ "$DISTRIB_ID" = "ubuntu" -o "$DISTRIB_ID" = "debian" ] ; then
       #
       # If the "reload" option is implemented then remove the
       # 'force-reload' alias
       #
-      log_daemon_msg "Restarting $DESC" "$NAME"
-      do_stop
-      case "$?" in
-          0|1)
-            sleep $SLEEP_TIME
-            do_start
+            log_daemon_msg "Restarting $DESC" "$NAME"
+            do_stop
             case "$?" in
-              0) log_end_msg 0 ;;
-              1) log_end_msg 1 ;; # Old process is still running
-              *) log_end_msg 1 ;; # Failed to start
-            esac
-          ;;
-          *)
+                0|1)
+                    sleep $SLEEP_TIME
+                    do_start
+                    case "$?" in
+                        0) log_end_msg 0 ;;
+                        1) log_end_msg 1 ;; # Old process is still running
+                        *) log_end_msg 1 ;; # Failed to start
+                    esac
+                    ;;
+                *)
             # Failed to stop
-            log_end_msg 1
-          ;;
-      esac
-    else
+                    log_end_msg 1
+                    ;;
+            esac
+        else
       # This is the typical process for restart
-      sh $0 'stop'
-      sleep $SLEEP_TIME
-      sh $0 'start'
-    fi
-  ;;
-  status)
-    if [ "$DISTRIB_ID" = "fedora" -o "$DISTRIB_ID" = "redhat" ]; then
-      status -p $TC_PIDFILE $TC_NAME
-    elif [  "$DISTRIB_ID" = "suse" ]; then
-      echo -n "Checking for service ${DM}: "
-      checkproc -p $TC_PIDFILE $TC_NAME
-      rc_status -v
-    elif [ "$DISTRIB_ID" = "Darwin" ]; then
-      /bin/echo -n "${TS_PACKAGE_NAME} is "
-      launchctl list $TC_NAME > /dev/null 2>&1
-      status=$?
-      [ $status -eq 0 ] || /bin/echo -n "not "
-      echo "running."
-    elif [ "$DISTRIB_ID" = "FreeBSD" ]; then
-	if pgrep $TM_NAME > /dev/null ; then 
-		echo "$TM_NAME running as pid `cat $TM_PIDFILE`" ; else 
-		echo "$TM_NAME not running" 
-	fi
-	if pgrep $TS_NAME > /dev/null ; then 
-		echo "$TS_NAME running as pid `cat $TS_PIDFILE`"; else 
-		echo "$TS_NAME not running" 
-	fi
-	if pgrep $TC_NAME > /dev/null ; then 
-		echo "$TC_NAME running as pid `cat $TC_PIDFILE`"; else 
-		echo "$TC_NAME not running" ; 
-	fi
-      exit $status
-    else
-      echo "This script needs to be ported to this OS"
-      exit 1
-    fi
-  ;;
-  condrestart)
-    if [ "$DISTRIB_ID" = "fedora" -o "$DISTRIB_ID" = "redhat" ]; then
-      if $0 'status'
-      then
-        sh $0 'stop'
-        sh $0 'start'
-      fi
-    else
-      echo "This script needs to be ported to this OS"
-      exit 1
-    fi
-  ;;
-  *)
-    if [ "$DISTRIB_ID" = "ubuntu" -o "$DISTRIB_ID" = "debian" ] ; then
-      echo "Usage: $SCRIPTNAME {start|stop|restart}" >&2
-    elif [ "$DISTRIB_ID" = "fedora" -o "$DISTRIB_ID" = "redhat" ]; then
-      echo "Usage: $0 {start|stop|status|restart|condrestart}"
-    elif [ "$DISTRIB_ID" = "suse" ]; then
-      echo "Usage: $0 {start|stop|restart|status}"
-    elif [ "$DISTRIB_ID" = "Darwin" ]; then
-      echo "Usage: $0 {start|stop|restart|status}"
-   elif [ "$DISTRIB_ID" = "FreeBSD" ]; then
-      echo "Usage: $0 Usage: (start|stop|restart|status)"
-      echo "NB: FreeBSD's ports system installs a rc script in"
-      echo "/usr/local/etc/rc.d/ with native rc.subr(8) features."
-   else
-      echo "This script needs to be ported to this OS"
-      exit 1
-    fi
-    exit 3
-  ;;
+            sh $0 'stop'
+            sleep $SLEEP_TIME
+            sh $0 'start'
+        fi
+        ;;
+    status)
+        if [ "$DISTRIB_ID" = "fedora" -o "$DISTRIB_ID" = "redhat" ]; then
+            status -p $TC_PIDFILE $TC_NAME
+        elif [  "$DISTRIB_ID" = "suse" ]; then
+            echo -n "Checking for service ${DM}: "
+            checkproc -p $TC_PIDFILE $TC_NAME
+            rc_status -v
+        elif [ "$DISTRIB_ID" = "Darwin" ]; then
+            /bin/echo -n "${TS_PACKAGE_NAME} is "
+            launchctl list $TC_NAME > /dev/null 2>&1
+            status=$?
+            [ $status -eq 0 ] || /bin/echo -n "not "
+            echo "running."
+        elif [ "$DISTRIB_ID" = "FreeBSD" ]; then
+            if pgrep $TM_NAME > /dev/null ; then 
+                echo "$TM_NAME running as pid `cat $TM_PIDFILE`" ; else 
+                echo "$TM_NAME not running" 
+            fi
+            if pgrep $TS_NAME > /dev/null ; then 
+                echo "$TS_NAME running as pid `cat $TS_PIDFILE`"; else 
+                echo "$TS_NAME not running" 
+            fi
+            if pgrep $TC_NAME > /dev/null ; then 
+                echo "$TC_NAME running as pid `cat $TC_PIDFILE`"; else 
+                echo "$TC_NAME not running" ; 
+            fi
+            exit $status
+        else
+            echo "This script needs to be ported to this OS"
+            exit 1
+        fi
+        ;;
+    condrestart)
+        if [ "$DISTRIB_ID" = "fedora" -o "$DISTRIB_ID" = "redhat" ]; then
+            if $0 'status'
+            then
+                sh $0 'stop'
+                sh $0 'start'
+            fi
+        else
+            echo "This script needs to be ported to this OS"
+            exit 1
+        fi
+        ;;
+    *)
+        if [ "$DISTRIB_ID" = "ubuntu" -o "$DISTRIB_ID" = "debian" ] ; then
+            echo "Usage: $SCRIPTNAME {start|stop|restart}" >&2
+        elif [ "$DISTRIB_ID" = "fedora" -o "$DISTRIB_ID" = "redhat" ]; then
+            echo "Usage: $0 {start|stop|status|restart|condrestart}"
+        elif [ "$DISTRIB_ID" = "suse" ]; then
+            echo "Usage: $0 {start|stop|restart|status}"
+        elif [ "$DISTRIB_ID" = "Darwin" ]; then
+            echo "Usage: $0 {start|stop|restart|status}"
+        elif [ "$DISTRIB_ID" = "FreeBSD" ]; then
+            echo "Usage: $0 Usage: (start|stop|restart|status)"
+            echo "NB: FreeBSD's ports system installs a rc script in"
+            echo "/usr/local/etc/rc.d/ with native rc.subr(8) features."
+        else
+            echo "This script needs to be ported to this OS"
+            exit 1
+        fi
+        exit 3
+        ;;
 esac
 
