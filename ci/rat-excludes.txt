@@ -12,6 +12,7 @@ iocore/fastio/inkfio/inkfio.conf
 **/*.lo
 **/Makefile
 .gitignore
+.git/
 .indent.pro
 aclocal.m4
 CHANGES
