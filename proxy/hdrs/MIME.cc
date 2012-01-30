@@ -2272,7 +2272,7 @@ mime_scanner_get(MIMEScanner *S,
     } else if (data_size) {
       // Inside a field but more data is expected. Save what we've got.
       mime_scanner_append(S, *raw_input_s, data_size);
-      //      data_size = 0; // Don't append again.
+      data_size = 0; // Don't append again.
     }
   } 
 
