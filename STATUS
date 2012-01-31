@@ -40,6 +40,21 @@ A list of all bugs open for the next v3.0.2 release can be found at
 
 PATCHES ACCEPTED TO BACKPORT FROM TRUNK:
 
+  *) Build: Add possibility to extend tsxs command line for -Iincludes.
+   Trunk patch: http://svn.apache.org/viewvc?view=rev&rev=1212075
+   Jira: https://issues.apache.org/jira/browse/TS-1046
+   +1: igalic, zwoop, zym
+
+  *) Management: traffic_line -r returns "Variable Not Found", even if it's a permission issue
+   Trunk patch: http://svn.apache.org/viewvc?view=rev&rev=1181096
+   Jira: https://issues.apache.org/jira/browse/TS-830
+   +1: igalic, zwoop, zym
+
+  *) HttpSM: slow log can not print logs well on 32-bit system.
+   Trunk patch: http://svn.apache.org/viewvc?view=rev&rev=1225944
+   Jira: https://issues.apache.org/jira/browse/TS-1014
+   +1: zwoop, igalic, zym
+   
 
 PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   [ New proposals should be added at the end of the list ]
@@ -54,26 +69,11 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
      this patch to be merge later and leave some time for us to find out how to
      fix it. we are now testing the fix.
 
-  *) Build: Add possibility to extend tsxs command line for -Iincludes.
-   Trunk patch: http://svn.apache.org/viewvc?view=rev&rev=1212075
-   Jira: https://issues.apache.org/jira/browse/TS-1046
-   +1: igalic, zwoop, zym
-
-  *) Management: traffic_line -r returns "Variable Not Found", even if it's a permission issue
-   Trunk patch: http://svn.apache.org/viewvc?view=rev&rev=1181096
-   Jira: https://issues.apache.org/jira/browse/TS-830
-   +1: igalic, zwoop, zym
-
   *) API: Wrong implementation of TSHttpSsnArgGet().
    Trunk patch: http://svn.apache.org/viewvc?view=rev&rev=1220600
    Jira: https://issues.apache.org/jira/browse/TS-1055
    +1: zwoop
 
-  *) HttpSM: slow log can not print logs well on 32-bit system.
-   Trunk patch: http://svn.apache.org/viewvc?view=rev&rev=1225944
-   Jira: https://issues.apache.org/jira/browse/TS-1014
-   +1: zwoop, igalic, zym
-   
   *) Traffic Cop: segment fault when TRACE_LOG_COP is enabled
    Trunk patch: http://svn.apache.org/viewvc?view=rev&rev=1225724
    Jira: https://issues.apache.org/jira/browse/TS-1065
