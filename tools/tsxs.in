@@ -107,6 +107,7 @@ $0 : a tool to compile, link and install trafficserver plugins.
 	-c [ file1.c [ file2.c [ ... ] ] ]      ## compiles C files
 	-C [ file1.cc [ file2.C [ ... ] ] ]     ## compiles C++ files
 	-o modulename.so                        ## the name of the module
+	-I include                              ## add -Iinclude to the compile
 	-l lib                                  ## add -llib to the link
 
  installing:
@@ -115,6 +116,10 @@ $0 : a tool to compile, link and install trafficserver plugins.
 
 EOF
 		exit
+		;;
+	-I)
+		CPPFLAGS="$CPPFLAGS -I$2"
+		shift 2
 		;;
 	-l)
 		LIBS="$LIBS -l$2"

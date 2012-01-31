@@ -40,11 +40,6 @@ A list of all bugs open for the next v3.0.2 release can be found at
 
 PATCHES ACCEPTED TO BACKPORT FROM TRUNK:
 
-  *) Build: Add possibility to extend tsxs command line for -Iincludes.
-   Trunk patch: http://svn.apache.org/viewvc?view=rev&rev=1212075
-   Jira: https://issues.apache.org/jira/browse/TS-1046
-   +1: igalic, zwoop, zym
-
   *) Management: traffic_line -r returns "Variable Not Found", even if it's a permission issue
    Trunk patch: http://svn.apache.org/viewvc?view=rev&rev=1181096
    Jira: https://issues.apache.org/jira/browse/TS-830

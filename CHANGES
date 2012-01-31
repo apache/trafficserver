@@ -1,5 +1,7 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.0.3
+  *) [TS-1046] Add possibility to extend tsxs command line for -Iincludes.
+
   *) [TS-1047] fix lots of spelling mistakes
    Author: Arno Töll
 
