@@ -44,14 +44,6 @@
 
 #define DIAGS_MAGIC 0x12345678
 
-#if !defined(TS_PRINTFLIKE)
-#if defined(__GNUC__) || defined(__clang__)
-#define TS_PRINTFLIKE(fmt, arg) __attribute__((format(printf, fmt, arg)))
-#else
-#define TS_PRINTFLIKE(fmt, arg)
-#endif
-#endif
-
 class Diags;
 
 // extern int diags_on_for_plugins;

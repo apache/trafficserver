@@ -53,7 +53,7 @@ ats_malloc(size_t size)
     if (unlikely((ptr = malloc(size)) == NULL)) {
 #endif
       xdump();
-      ink_fatal(1, "ats_malloc: couldn't allocate %d bytes", size);
+      ink_fatal(1, "ats_malloc: couldn't allocate %zu bytes", size);
     }
   }
   return ptr;
@@ -69,7 +69,7 @@ ats_calloc(size_t nelem, size_t elsize)
 #endif
   if (unlikely(ptr == NULL)) {
     xdump();
-    ink_fatal(1, "ats_calloc: couldn't allocate %d %d byte elements", nelem, elsize);
+    ink_fatal(1, "ats_calloc: couldn't allocate %zu %zu byte elements", nelem, elsize);
   }
   return ptr;
 }                               /* End ats_calloc */
@@ -84,7 +84,7 @@ ats_realloc(void *ptr, size_t size)
 #endif
   if (unlikely(newptr == NULL)) {
     xdump();
-    ink_fatal(1, "ats_realloc: couldn't reallocate %d bytes", size);
+    ink_fatal(1, "ats_realloc: couldn't reallocate %zu bytes", size);
   }
   return newptr;
 }                               /* End ats_realloc */

@@ -33,15 +33,8 @@ Assertions
 #include "ink_string.h"       /* MAGIC_EDITING_TAG */
 
 int
-_ink_assert(const char *a, const char *f, int l)
+_ink_assert(const char *expression, const char *file, int line)
 {
-  char buf1[256];
-  char buf2[512];
-  ink_strlcpy(buf1, f, sizeof(buf1));
-  snprintf(buf2, sizeof(buf2), "%s:%d: failed assert `", buf1, l);
-  ink_strlcat(buf2, a, sizeof(buf2));
-  ink_strlcat(buf2, "`", sizeof(buf2));
-  ink_fatal(1, buf2);
-
+  ink_fatal(1, "%s:%d: failed assert `%s`", file, line, expression);
   return (0);
 }

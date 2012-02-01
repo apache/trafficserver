@@ -93,7 +93,7 @@ Layout::relative(char *buf, size_t bufsz, const char *file)
   }
   size_t path_len = strlen(path) + 1;
   if (path_len > bufsz) {
-    ink_error("Provided buffer is too small: %d, required %d\n", bufsz, path_len);
+    ink_error("Provided buffer is too small: %zu, required %zu\n", bufsz, path_len);
   }
   else {
     ink_strlcpy(buf, path, bufsz);
@@ -127,7 +127,7 @@ Layout::relative_to(char *buf, size_t bufsz, const char *dir, const char *file)
   }
   size_t path_len = strlen(path) + 1;
   if (path_len > bufsz) {
-    ink_error("Provided buffer is too small: %d, required %d\n", bufsz, path_len);
+    ink_error("Provided buffer is too small: %zu, required %zu\n", bufsz, path_len);
   }
   else {
     ink_strlcpy(buf, path, bufsz);
