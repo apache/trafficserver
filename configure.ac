@@ -867,9 +867,6 @@ case $host_os in
   freebsd*|kfreebsd*)
     TS_ADDTO(CPPFLAGS, [-I/usr/local/include])
     ;;
-  solaris*)
-    TS_ADDTO(CPPFLAGS, [-I/usr/local/include])
-    ;;
 esac
 
 if test "x${TCL_INCLUDE_SPEC}" != "x-I/usr/include"; then
