@@ -1,5 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.0.3
+  *) [TS-1014] slow log can not print logs well on 32-bit system,
+  changed the %d to RPI64. Author: weijin.
+
   *) [TS-830] Better error when there are CLI permission problems, or
    other problems preventing operation. Author: AdunGaos.
 

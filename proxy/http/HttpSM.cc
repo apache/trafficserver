@@ -6175,7 +6175,7 @@ HttpSM::update_stats()
           "url: %s "
           "status: %d "
           "unique id: %s "
-          "bytes: %d "
+          "bytes: %" PRId64 " "
           "fd: %d "
           "client state: %d "
           "server state: %d "
