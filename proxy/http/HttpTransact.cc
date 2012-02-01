@@ -2251,8 +2251,10 @@ HttpTransact::HandleCacheOpenReadHitFreshness(State* s)
   ink_debug_assert(s->request_sent_time <= s->response_received_time);
 
   if (diags->on()) {
-    DebugOn("http_trans", "[HandleCacheOpenReadHitFreshness] request_sent_time      : %ld", s->request_sent_time);
-    DebugOn("http_trans", "[HandleCacheOpenReadHitFreshness] response_received_time : %ld", s->response_received_time);
+    DebugOn("http_trans", "[HandleCacheOpenReadHitFreshness] request_sent_time      : %lld",
+      (long long)s->request_sent_time);
+    DebugOn("http_trans", "[HandleCacheOpenReadHitFreshness] response_received_time : %lld",
+      (long long)s->response_received_time);
   }
   // if the plugin has already decided the freshness, we don't need to
   // do it again
@@ -3123,7 +3125,8 @@ HttpTransact::HandleResponse(State* s)
   ink_debug_assert(s->response_received_time >= s->request_sent_time);
   s->current.now = s->response_received_time;
 
-  Debug("http_trans", "[HandleResponse] response_received_time: %ld", s->response_received_time);
+  Debug("http_trans", "[HandleResponse] response_received_time: %lld",
+      (long long)s->response_received_time);
   if (!s->cop_test_page)
     DUMP_HEADER("http_hdrs", &s->hdr_info.server_response, s->state_machine_id, "Incoming O.S. Response");
 
@@ -7858,7 +7861,7 @@ HttpTransact::build_request(State* s, HTTPHdr* base_request, HTTPHdr* outgoing_r
   ink_debug_assert(s->request_sent_time >= s->response_received_time);
 
 
-  Debug("http_trans", "[build_request] request_sent_time: %ld", s->request_sent_time);
+  Debug("http_trans", "[build_request] request_sent_time: %lld", (long long)s->request_sent_time);
   if (!s->cop_test_page)
     DUMP_HEADER("http_hdrs", outgoing_request, s->state_machine_id, "Proxy's Request");
 
@@ -8364,8 +8367,8 @@ ink_cluster_time(void)
 //      highest_delta = 0L;
 //     }
 
-  Debug("http_trans", "[ink_cluster_time] local: %ld, highest_delta: %d, cluster: %ld", local_time, highest_delta,
-        (local_time + (ink_time_t) highest_delta));
+  Debug("http_trans", "[ink_cluster_time] local: %lld, highest_delta: %d, cluster: %lld",
+    (long long)local_time, highest_delta, (long long)(local_time + (ink_time_t) highest_delta));
 
   ink_debug_assert(highest_delta >= 0);
 
