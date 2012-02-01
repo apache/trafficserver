@@ -1174,7 +1174,7 @@ Log::flush_thread_main(void *args)
     now = time(NULL);
     if (now > last_time) {
       if ((now % PERIODIC_TASKS_INTERVAL) == 0) {
-        Debug("log-flush", "periodic tasks for %ld", now);
+        Debug("log-flush", "periodic tasks for %lld", (long long)now);
         periodic_tasks(now);
       }
       last_time = (now = time(NULL));
