@@ -106,7 +106,7 @@ sync_thr(void *data)
         RecFileClose(h_file);
       }
     }
-    sleep(REC_REMOTE_SYNC_INTERVAL_MS * 1000);
+    usleep(REC_REMOTE_SYNC_INTERVAL_MS * 1000);
   }
   return NULL;
 }
