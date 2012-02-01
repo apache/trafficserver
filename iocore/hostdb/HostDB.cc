@@ -80,7 +80,8 @@ static  Queue <HostDBContinuation > remoteHostDBQueue[MULTI_CACHE_PARTITIONS];
 static inline int
 corrupt_debugging_callout(HostDBInfo * e, RebuildMC & r)
 {
-  Debug("hostdb", "corrupt %ld part %d", (char *) &e->app.rr.offset - r.data, r.partition);
+  Debug("hostdb", "corrupt %ld part %d",
+    (long)((char *) &e->app.rr.offset - r.data), r.partition);
   return -1;
 }
 

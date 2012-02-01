@@ -244,7 +244,7 @@ struct DNSHandler: public Continuation
   {
     if (is_debug_tag_set("dns")) {
       Debug("dns", "failover_now: Considering immediate failover, target time is %" PRId64 "",
-            HRTIME_SECONDS(dns_failover_period));
+            (ink_hrtime)HRTIME_SECONDS(dns_failover_period));
       Debug("dns", "\tdelta time is %" PRId64 "", (ink_get_hrtime() - crossed_failover_number[i]));
     }
     return (crossed_failover_number[i] &&
