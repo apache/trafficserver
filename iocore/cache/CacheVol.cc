@@ -344,9 +344,9 @@ CacheVC::scanObject(int event, Event * e)
     scan_fix_buffer_offset = partial_object_len;
   } else { // Normal case, where we ended on a object boundary.
     io.aiocb.aio_offset += ((char *)doc - buf->data()) + next_object_len;
-    Debug("cache_scan_truss", "next %p:scanObject %lld", this, io.aiocb.aio_offset);
+    Debug("cache_scan_truss", "next %p:scanObject %lld", this, (long long)io.aiocb.aio_offset);
     io.aiocb.aio_offset = next_in_map(vol, scan_vol_map, io.aiocb.aio_offset);
-    Debug("cache_scan_truss", "next_in_map %p:scanObject %lld", this, io.aiocb.aio_offset);
+    Debug("cache_scan_truss", "next_in_map %p:scanObject %lld", this, (long long)io.aiocb.aio_offset);
     io.aiocb.aio_nbytes = SCAN_BUF_SIZE;
     io.aiocb.aio_buf = buf->data();
     scan_fix_buffer_offset = 0;
@@ -364,8 +364,8 @@ Lread:
     io.aiocb.aio_nbytes = vol->skip + vol->len - io.aiocb.aio_offset;
   offset = 0;
   ink_assert(ink_aio_read(&io) >= 0);
-  Debug("cache_scan_truss", "read %p:scanObject %lld %lld", this, 
-    (off_t)io.aiocb.aio_offset, (off_t)io.aiocb.aio_nbytes);
+  Debug("cache_scan_truss", "read %p:scanObject %lld %zu", this,
+    (long long)io.aiocb.aio_offset, io.aiocb.aio_nbytes);
   return EVENT_CONT;
 
 Ldone:
