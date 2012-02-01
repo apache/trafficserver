@@ -41,7 +41,7 @@ DebugCapabilities(char const* tag) {
     Debug(tag,
       "uid=%u, gid=%u, euid=%u, egid=%u"
 #     if TS_USE_POSIX_CAP
-        ", caps %s core=%s thread=0x%x"
+        ", caps %s core=%s thread=0x%llx"
 #     endif
       ,static_cast<unsigned int>(getuid())
       ,static_cast<unsigned int>(getgid())
@@ -50,7 +50,7 @@ DebugCapabilities(char const* tag) {
 #     if TS_USE_POSIX_CAP
         ,caps_text
         ,prctl(PR_GET_DUMPABLE) != 1 ? "disabled" : "enabled"
-        ,pthread_self()
+        ,(unsigned long long)pthread_self()
 #     endif
     );
 
