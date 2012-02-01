@@ -436,17 +436,17 @@ HttpTransactHeaders::calculate_document_age(ink_time_t request_time,
   }
 
   if (diags->on()) {
-    DebugOn("http_age", "[calculate_document_age] age_value:              %ld", age_value);
-    DebugOn("http_age", "[calculate_document_age] date_value:             %ld", date_value);
-    DebugOn("http_age", "[calculate_document_age] response_time:          %ld", response_time);
-    DebugOn("http_age", "[calculate_document_age] now:                    %ld", now);
-    DebugOn("http_age", "[calculate_document_age] now (fixed):            %ld", now_value);
-    DebugOn("http_age", "[calculate_document_age] apparent_age:           %ld", apparent_age);
-    DebugOn("http_age", "[calculate_document_age] corrected_received_age: %ld", corrected_received_age);
-    DebugOn("http_age", "[calculate_document_age] response_delay:         %ld", response_delay);
-    DebugOn("http_age", "[calculate_document_age] corrected_initial_age:  %ld", corrected_initial_age);
-    DebugOn("http_age", "[calculate_document_age] resident_time:          %ld", resident_time);
-    DebugOn("http_age", "[calculate_document_age] current_age:            %ld", current_age);
+    DebugOn("http_age", "[calculate_document_age] age_value:              %lld", (long long)age_value);
+    DebugOn("http_age", "[calculate_document_age] date_value:             %lld", (long long)date_value);
+    DebugOn("http_age", "[calculate_document_age] response_time:          %lld", (long long)response_time);
+    DebugOn("http_age", "[calculate_document_age] now:                    %lld", (long long)now);
+    DebugOn("http_age", "[calculate_document_age] now (fixed):            %lld", (long long)now_value);
+    DebugOn("http_age", "[calculate_document_age] apparent_age:           %lld", (long long)apparent_age);
+    DebugOn("http_age", "[calculate_document_age] corrected_received_age: %lld", (long long)corrected_received_age);
+    DebugOn("http_age", "[calculate_document_age] response_delay:         %lld", (long long)response_delay);
+    DebugOn("http_age", "[calculate_document_age] corrected_initial_age:  %lld", (long long)corrected_initial_age);
+    DebugOn("http_age", "[calculate_document_age] resident_time:          %lld", (long long)resident_time);
+    DebugOn("http_age", "[calculate_document_age] current_age:            %lld", (long long)current_age);
   }
 
   return current_age;
