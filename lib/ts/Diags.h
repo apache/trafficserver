@@ -48,6 +48,7 @@
 #if defined(__GNUC__) || defined(__clang__)
 #define TS_PRINTFLIKE(fmt, arg) __attribute__((format(printf, fmt, arg)))
 #else
+#define TS_PRINTFLIKE(fmt, arg)
 #endif
 #endif
 
