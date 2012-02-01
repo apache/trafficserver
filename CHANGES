@@ -7,8 +7,8 @@ Changes with Apache Traffic Server 3.1.2
 
   *) [TS-1098] Make RC script support Amazon EC2 Linux AMI.
 
-  *) [TS-1035] EventProcessor::spawn_thread doesn't check that there 
-   is enough event threads and segfaults. 
+  *) [TS-1035] EventProcessor::spawn_thread doesn't check that there
+   is enough event threads and segfaults.
 
   *) [TS-1096] readline support for traffic_shell.
 
@@ -135,7 +135,7 @@ Changes with Apache Traffic Server 3.1.1
 
   *) [TS-1012] Eliminate proxy.config.http.append_xforwards_header, which
    is never used.
- 
+
   *) [TS-1004] Transformation plugins cause connection close when content
    length is not known ahead. Author: Otto van der Schaaf.
 
@@ -231,14 +231,14 @@ Changes with Apache Traffic Server 3.1.1
   *) [TS-953] consolidate string copy/concat for examples.
 
   *) [TS-924] More efficient sharing of origin connections.
-    
+
    This also overloads the config for shared connections as follows:
-    
+
        #  0 - Never
        #  1 - Share, with a single global connection pool
        #  2 - Share, with a connection pool per worker thread
        CONFIG proxy.config.http.share_server_sessions INT 1
-    
+
    This option is now per-request (remap or plugin) overridable. This is
    heavily based on William Bardwells and Weijin's work.
 
@@ -442,7 +442,6 @@ Changes with Apache Traffic Server 3.1.0
   *) [TS-815] make sure that a missing yacc/bison|flex/lex is *fatal* when
    building with wccp. Author: Arno Toll.
 
-
 Changes with Apache Traffic Server 3.0.0
   *) [TS-827] TSMimeHdrFieldValueStringInsert() can use freed memory to
   edit headers. Author: William Bardwell.
@@ -461,7 +460,6 @@ Changes with Apache Traffic Server 3.0.0
 
   *) [TS-798] We add broken remap rules when we encounter parse errors of
    remap.config.
-
 
 Changes with Apache Traffic Server 2.1.9
   *) [TS-805] HostDB wastes a lot of storage for round-robin entries,
@@ -505,23 +503,23 @@ Changes with Apache Traffic Server 2.1.9
    remap threads are enabled.
 
   *) [TS-782] Remap processor creates a remap thread even when asked not
-   to. 
+   to.
 
   *) [TS-781] Cleanup of unusual configs, and better defaults making
-   records.config leaner, and a little more useful. 
+   records.config leaner, and a little more useful.
 
   *) [TS-780] Retune the number of SSL threads.
 
   *) [TS-775] Disable cluster autodiscovery via multicast when
    clustering is disabled. This should hopefully fix run-time errors
-   with Ubuntu 11.x. 
+   with Ubuntu 11.x.
 
   *) [TS-776] memchr in glibc has evolved, and is faster than our
    version, replaced.
 
   *) [TS-774] Add a new configure option, --enable-static-libts, which
    avoids the dynamic linking hassles involved with the dynamic nature
-   of libts. This is for devs only. 
+   of libts. This is for devs only.
 
   *) [TS-773] Traffic server has a hard limit of 512 gigabytes per RAW
    disk partition. This fix required changing the disk structure which
@@ -538,7 +536,7 @@ Changes with Apache Traffic Server 2.1.9
 
   *) [TS-562] Make --with-openssl path be honored with an -rpath to
    libtool. This also fixes the same problem with other libraries,
-   e.g. pcre, zlib etc. 
+   e.g. pcre, zlib etc.
 
   *) [TS-765] Make the backdoor port (8084 by default) only listen on
    127.0.0.1 .
@@ -588,7 +586,7 @@ Changes with Apache Traffic Server 2.1.8
   *) [TS-716] Bug where NetVC could be double free'd.
    Fix for DNS crash: bad memory management of HostEnt structures. It is
    not clear that this fixes the bug entirely.  Some of the stack traces
-   are consistent with this bug, but some are not.  
+   are consistent with this bug, but some are not.
 
   *) [TS-743] Support separate configs for keep-alive enabled for _in
    and _out connections.
@@ -722,15 +720,14 @@ Changes with Apache Traffic Server 2.1.7
 
   *) [TS-675] Make redirect and reverse maps work again.
 
-
 Changes with Apache Traffic Server 2.1.6
 
   *) [TS-678] Add a config option for try-lock retry delay.
-    
+
    This adds a configuration option
-    
+
          proxy.config.cache.mutex_retry_delay INT 2
-    
+
    2ms seems to be fairly optimal, with little detrimental effect on CPU
    usage. We'll fine tune this further in the next release.
 
@@ -794,16 +791,15 @@ Changes with Apache Traffic Server 2.1.6
   *) [TS-650] Remove the dead v2 stats code.
 
   *) [TS-649] Dynamic libraries for mgmt APIs.
-    
+
     This makes libts -> libtsutil, and we now support making .so's for
     libtsutil.so and libtsmgmt.so. All binaries are changed to use this,
     except traffic_server which continues to use the libtsutil.a library
     (for performance on e.g. 32-bit platforms).
-    
-    This also renames the public API include file to be
-    
-         #include <ts/mgmtapi.h>
 
+    This also renames the public API include file to be
+
+         #include <ts/mgmtapi.h>
 
   *) [TS-647] Move Layout out of iocore and into lib/ts.
 
@@ -843,10 +839,9 @@ Changes with Apache Traffic Server 2.1.6
 
   *) [TS-618] Removing traces of CCAS/CCASFLAGS.
 
-  *) [TS-627] Fixes for "make check" to succeed (author: Arno Toell). 
+  *) [TS-627] Fixes for "make check" to succeed (author: Arno Toell).
 
   *) [TS-632] Fixes for bad cast and cleanup for Intel CC.
-
 
 Changes with Apache Traffic Server 2.1.5
 
@@ -876,7 +871,7 @@ Changes with Apache Traffic Server 2.1.5
   *) Added support to allow some select (~50 or so) records.config
   configurations to be overridable per transaction. This is done via new SDK
   APIs, as well as a remap plugin provided with the core [TS-599]. The new
-  APIs available are 
+  APIs available are
 
       TSHttpTxnConfigIntSet()
       TSHttpTxnConfigIntGet()
@@ -891,17 +886,17 @@ Changes with Apache Traffic Server 2.1.5
 
   *) Eliminate proxy.config.net.max_poll_delay configs [TS-605].
 
-  *) Old traffic_net configurations are eliminated [TS-601]. 
+  *) Old traffic_net configurations are eliminated [TS-601].
 
   *) Multiple preads: this patch is only active if you call do_io_pread on
   the cache.  This includes a regression test for do_io_pread which is at
   least a smoke test of the new code. [TS-61]
 
   *) Migrate from home-grown regular expression classes to pcre [TS-604]
-  
+
   *) Reduce number of calls to regex matcher for standard requests with
    well-known-strings (WKS). [TS-603]
-  
+
   *) Parse Range: requests a bit better. Prior, a request like like Range:
    bytes=100-200 would return 0-200. Additionally, Range: bytes=100- would
    not parse properly. [TS-596]
@@ -938,7 +933,6 @@ Changes with Apache Traffic Server 2.1.5
      This reduces the amount of memory allocation for plugins, but requires
      that plugins now religiously release the handles that they are expected
      to release (i.e. no automatic gc is done for lazy developers).
-
 
   *) Fixes for getting the altinfo regression check to succeeds [TS-171].
 
@@ -1061,13 +1055,13 @@ Changes with Apache Traffic Server 2.1.5
 
    This is a sad day of defeat.  Not my defeat, but more a collective human
    defeat.
-    
+
    Question: "Chips fabricated today don't have 64bit atomic primitives?"
    Answer: "Be sad."
-    
+
    The ARM box we're working on (armv5tejl) doesn't support any 64bit
    primitives.
-    
+
    This means we need a method of using a global (yes, giant lock of death)
    to protect modifications of arbitrary 64bit integers in process space.
    We could make this less contentious by allocating pagesize/8 mutexs and
@@ -1078,7 +1072,7 @@ Changes with Apache Traffic Server 2.1.5
 
    TS_ARCHITECTURE_LACKS_64BIT_INSTRUCTIONS and turn on the global death
    lock based on that.
-    
+
    This does not change performance on any other platform -- it's compile
    time capital punishment. [TS-533] and [TS-135].
 
@@ -1089,7 +1083,6 @@ Changes with Apache Traffic Server 2.1.5
      ts/ts.h ts/experimental.h ts/remap.h
 
   Various other cleanup related to the APIs was also done [TS-522].
-
 
 Changes with Apache Traffic Server 2.1.4
 
@@ -1163,7 +1156,6 @@ Changes with Apache Traffic Server 2.1.4
 
   *) Cleanup / optimize Via: string generation [TS-460]. Also make the
    default for Via: on responses to be disabled (it can leak info).
-
 
 Changes with Apache Traffic Server 2.1.3
 
@@ -1242,7 +1234,6 @@ Changes with Apache Traffic Server 2.1.3
   *) Duplication of RAM cache hits and miss statistics (reading 2x) (author:
    John Plevyak) [TS-453].
 
-
 Changes with Apache Traffic Server 2.1.2
 
   *) Improvements in resilience against DNS poisoning and forging of
@@ -1315,7 +1306,6 @@ Changes with Apache Traffic Server 2.1.2
 
   *) Solaris 10 port work.
 
-
 Changes with Apache Traffic Server 2.1.1
 
   *) Allow SI decimal multipliers for numeric configuration parameters
@@ -1331,11 +1321,10 @@ Changes with Apache Traffic Server 2.1.1
 
   *) HTTP state machine is now 64-bit "clean", allowing for caching and
    proxying documents larger than 2GB [TS-34].
-  
+
   *) Fix for truncated Content-Type on TS-generated responses [TS-290].
 
   *) Performance improvements on cache for larger(ish) objects.
-
 
 Changes with Apache Traffic Server 2.1.0
 
@@ -1355,7 +1344,6 @@ Changes with Apache Traffic Server 2.1.0
 
   *) The cache is now 64-bit "clean".
 
-
 Changes with Apache Traffic Server 2.0.1
 
   *) Port of CVE-2010-2952 for 2.0.x [TS-425].
@@ -1365,7 +1353,6 @@ Changes with Apache Traffic Server 2.0.1
 
   *) Backport TS-336 to 2.0.x. Problems with make install DESTDIR=...
 
-
 Changes with Apache Traffic Server 2.0.0
 
   *) Change SDK versioning schemes to 2.0 [TS-249).
@@ -1373,7 +1360,6 @@ Changes with Apache Traffic Server 2.0.0
   *) Minor additions to the SDK (see the docs for details).
 
   *) Support regexe_map rules in remap.config [TS-80]
-
 
 Changes with Apache Traffic Server 2.0.0-alpha
 
