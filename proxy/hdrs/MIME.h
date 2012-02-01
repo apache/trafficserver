@@ -55,6 +55,7 @@ enum
 /// Parsing state.
 enum MimeParseState {
   MIME_PARSE_BEFORE, ///< Before a field.
+  MIME_PARSE_FOUND_CR, ///< Before a field, found a CR.
   MIME_PARSE_INSIDE, ///< Inside a field.
   MIME_PARSE_AFTER,  ///< After a field.
 };

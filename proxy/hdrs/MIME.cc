@@ -2196,6 +2196,8 @@ mime_scanner_get(MIMEScanner *S,
 {
   const char *raw_input_c, *lf_ptr;
   MIMEParseResult zret = PARSE_CONT;
+  // Need this for handling dangling CR.
+  static char const RAW_CR = ParseRules::CHAR_CR;
 
   ink_debug_assert((raw_input_s != NULL) && (*raw_input_s != NULL));
   ink_debug_assert(raw_input_e != NULL);
@@ -2206,11 +2208,35 @@ mime_scanner_get(MIMEScanner *S,
     ptrdiff_t runway = raw_input_e - raw_input_c; // remaining input.
     switch (S->m_state) {
     case MIME_PARSE_BEFORE: // waiting to find a field.
-      // If we find leading CR LF then it's the last line of the header.
-      if (ParseRules::is_cr(*raw_input_c) && runway >= 2 && ParseRules::is_lf(raw_input_c[1])) {
-        raw_input_c += 2;
-        zret = PARSE_OK;
+      if (ParseRules::is_cr(*raw_input_c)) {
+        ++raw_input_c;
+        if (runway >= 2 && ParseRules::is_lf(*raw_input_c)) {
+          // optimize a bit - this happens >99% of the time after a CR.
+          ++raw_input_c;
+          zret = PARSE_DONE;
+        } else {
+          S->m_state = MIME_PARSE_FOUND_CR;
+        }
+      } else if (ParseRules::is_lf(*raw_input_c)) {
+	++raw_input_c;
+        zret = PARSE_DONE; // Required by regression test.
       } else {
+        // consume this character in the next state.
+        S->m_state = MIME_PARSE_INSIDE;
+      }
+      break;
+    case MIME_PARSE_FOUND_CR:
+      // Looking for a field and found a CR, which should mean terminating
+      // the header. Note that we've left the CR in the input so we have
+      // to skip over it.
+      if (ParseRules::is_lf(*raw_input_c)) {
+        // Header terminated.
+        ++raw_input_c;
+        zret = PARSE_DONE;
+      } else {
+        // This really should be an error (spec doesn't permit lone CR)
+        // but the regression tests require it.
+        mime_scanner_append(S, &RAW_CR, 1);
         S->m_state = MIME_PARSE_INSIDE;
       }
       break;
