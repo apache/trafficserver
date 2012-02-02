@@ -2320,7 +2320,7 @@ extern "C"
       
    */
   tsapi TSVConn TSHttpConnect(struct sockaddr const* addr);
-  tsapi void TSFetchUrl(const char* request,int request_len, struct sockaddr const* addr, TSCont contp, TSFetchWakeUpOptions callback_options,TSFetchEvent event);
+  tsapi void TSFetchUrl(const char* headers, int request_len, unsigned int ip, int port , TSCont contp, TSFetchWakeUpOptions callback_options,TSFetchEvent events);
   tsapi void TSFetchPages(TSFetchUrlParams_t* params);
 
   /* Check if HTTP State machine is internal or not */
