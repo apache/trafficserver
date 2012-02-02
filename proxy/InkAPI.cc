@@ -5237,6 +5237,11 @@ TSHttpTxnErrorBodySet(TSHttpTxn txnp, char *buf, int buflength, char *mimetype)
   if (s->internal_msg_buffer)
     HttpTransact::free_internal_msg_buffer(s->internal_msg_buffer, s->internal_msg_buffer_fast_allocator_size);
 
+  if (s->internal_msg_buffer_type) {
+    xfree(s->internal_msg_buffer_type);
+    s->internal_msg_buffer_type = NULL;
+  }
+
   s->internal_msg_buffer = buf;
   s->internal_msg_buffer_type = mimetype;
   s->internal_msg_buffer_size = buflength;

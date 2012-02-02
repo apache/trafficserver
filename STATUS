@@ -40,12 +40,6 @@ A list of all bugs open for the next v3.0.2 release can be found at
 
 PATCHES ACCEPTED TO BACKPORT FROM TRUNK:
 
-  *) TSHttpTxnErrorBodySet() can still leak memory.
-   Trunk patch: http://svn.apache.org/viewvc?view=revision&revision=1228991
-   Jira: https://issues.apache.org/jira/browse/TS-1038
-   +1: briang, zwoop
-   igalic says: +1, but, this will not apply, we'll need
-                to change it to xfree() for 3.0.x
 
 PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   [ New proposals should be added at the end of the list ]
