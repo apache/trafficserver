@@ -1,5 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.1.2
+
+  *) [TS-1094] Fixed MIME parser so certain sequences of requests on
+   keep alive conections no longer wedge it.
+
   *) [TS-1084] Add compilt-time format string checking.
 
   *) [TS-1101 traffic_line -x no longer works, at least not in reasonable
