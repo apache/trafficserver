@@ -1,5 +1,7 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.0.3
+  *) [TS-874] make asf-dist work with git repo
+
   *) [TS-1038] SHttpTxnErrorBodySet() can leak memory.
 
   *) [TS-1095] ts.h.in has incorrect declaration for TSFetchURL
