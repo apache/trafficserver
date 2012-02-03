@@ -4,10 +4,10 @@ Changes with Apache Traffic Server 3.1.2
   *) [TS-1094] Fixed MIME parser so certain sequences of requests on
    keep alive conections no longer wedge it.
 
-  *) [TS-1084] Add compilt-time format string checking.
+  *) [TS-1084] Add compile-time format string checking.
 
-  *) [TS-1101 traffic_line -x no longer works, at least not in reasonable
-   time.
+  *) [TS-1101] traffic_line -x no longer works, at least not in
+   reasonable time.
 
   *) [TS-1098] Make RC script support Amazon EC2 Linux AMI.
 
