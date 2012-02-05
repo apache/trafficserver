@@ -489,6 +489,8 @@ SSLNetVConnection::sslStartHandShake(int event, int &err)
         SSL_set_fd(ssl, get_socket());
       } else {
         Debug("ssl", "SSLNetVConnection::sslServerHandShakeEvent, ssl create failed");
+        SSLNetProcessor::logSSLError("SSL_StartHandShake");
+        return EVENT_ERROR;
       }
 
     }
