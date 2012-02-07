@@ -700,9 +700,8 @@ Span::init(char *filename, int64_t size)
     hw_sector_size = arg;
     is_disk = 1;
     adjusted_sec = hw_sector_size / 512;
-    Debug("cache_init",
-      "Span::init - %s hw_sector_size=%"PRId64" is_disk=%d adjusted_sec=%d",
-      filename, hw_sector_size, is_disk,adjusted_sec);
+    Debug("cache_init", "Span::init - %s hw_sector_size=%d is_disk=%d adjusted_sec=%d",
+          filename, hw_sector_size, is_disk,adjusted_sec);
   }
 
   alignment = 0;
@@ -741,11 +740,11 @@ Span::init(char *filename, int64_t size)
 
     if (size > 0 && blocks * hw_sector_size != size) {
       Warning("Warning: you specified a size of %" PRId64 " for %s,\n", size, filename);
-      Warning("but the device size is %" PRId64 ". Using minimum of the two.\n", blocks * hw_sector_size);
-      if (blocks * hw_sector_size < size)
-        size = blocks * hw_sector_size;
+      Warning("but the device size is %" PRId64 ". Using minimum of the two.\n", (int64_t)blocks * (int64_t)hw_sector_size);
+      if ((int64_t)blocks * (int64_t)hw_sector_size < size)
+        size = (int64_t)blocks * (int64_t)hw_sector_size;
     } else {
-      size = blocks * hw_sector_size;
+      size = (int64_t)blocks * (int64_t)hw_sector_size;
     }
 
     /* I don't know why I'm redefining blocks to be something that is quite
