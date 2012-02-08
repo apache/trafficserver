@@ -1,7 +1,5 @@
 /** @file
 
-  Common SSL initialization/cleanup fuctions from SSLNet.h
-
   @section license License
 
   Licensed to the Apache Software Foundation (ASF) under one
@@ -26,7 +24,15 @@
 #include "P_Net.h"
 #include "I_Layout.h"
 #include "openssl/engine.h"
-#include "openssl/dso.h"
+
+//
+// Global Data
+//
+
+SSLNetProcessor ssl_NetProcessor;
+NetProcessor & sslNetProcessor = ssl_NetProcessor;
+
+EventType SSLNetProcessor::ET_SSL;
 
 void sslLockingCallback(int mode, int type, const char *file, int line);
 unsigned long SSL_pthreads_thread_id();
@@ -62,8 +68,7 @@ npn_advertise_protocols(SSL *ssl,
 }
 #endif /* TS_USE_TLS_NPN */
 
-
-int
+static int
 SSL_CTX_add_extra_chain_cert_file(SSL_CTX * ctx, const char *file)
 {
   BIO *in;
@@ -103,7 +108,6 @@ end:
     BIO_free(in);
   return (ret);
 }
-
 
 void
 SSLNetProcessor::cleanup(void)
@@ -203,9 +207,6 @@ SSL_pthreads_thread_id()
   return (unsigned long) (eth->id);
 }
 
-
-
-
 void
 SSLNetProcessor::logSSLError(const char *errStr, int critical)
 {
@@ -272,7 +273,7 @@ SSLNetProcessor::initSSLServerCTX(SslConfigParams * param, SSL_CTX * lCtx,
 
   // disable selected protocols
   SSL_CTX_set_options(lCtx, param->ssl_ctx_options);
-  
+
   switch (param->ssl_session_cache) {
   case SslConfigParams::SSL_SESSION_CACHE_MODE_OFF:
     SSL_CTX_set_session_cache_mode(lCtx, SSL_SESS_CACHE_OFF|SSL_SESS_CACHE_NO_INTERNAL);
@@ -355,14 +356,12 @@ SSLNetProcessor::initSSLServerCTX(SslConfigParams * param, SSL_CTX * lCtx,
     }
     ats_free(completeServerCertPath);
 
-
   }
 
   if (!SSL_CTX_check_private_key(lCtx)) {
     logSSLError("Server private key does not match the certificate public key");
     return -4;
   }
-
 
   if (param->clientCertLevel != 0) {
 
@@ -392,7 +391,6 @@ SSLNetProcessor::initSSLServerCTX(SslConfigParams * param, SSL_CTX * lCtx,
 
     SSL_CTX_set_client_CA_list(lCtx, SSL_load_client_CA_file(param->CACertFilename));
   }
-
 
   if (param->cipherSuite != NULL) {
     if (!SSL_CTX_set_cipher_list(lCtx, param->cipherSuite)) {
@@ -473,4 +471,64 @@ SSLNetProcessor::initSSLClient(SslConfigParams * param)
     }
   }
   return (0);
+}
+
+int
+SSLNetProcessor::start(int number_of_ssl_threads)
+{
+  sslTerminationConfig.startup();
+  int err = reconfigure();
+
+  if (err != 0) {
+    return -1;
+  }
+
+  if (number_of_ssl_threads < 1)
+    return -1;
+
+  SSLNetProcessor::ET_SSL = eventProcessor.spawn_event_threads(number_of_ssl_threads, "ET_SSL");
+  if (err == 0) {
+    err = UnixNetProcessor::start();
+  }
+
+  return err;
+}
+
+NetAccept *
+SSLNetProcessor::createNetAccept()
+{
+  return ((NetAccept *) NEW(new SSLNetAccept));
+}
+
+// Virtual function allows etype to be upgraded to ET_SSL for SSLNetProcessor.  Does
+// nothing for NetProcessor
+void
+SSLNetProcessor::upgradeEtype(EventType & etype)
+{
+  if (etype == ET_NET) {
+    etype = ET_SSL;
+  }
+}
+
+// Functions all THREAD_FREE and THREAD_ALLOC to be performed
+// for both SSL and regular NetVConnection transparent to
+// netProcessor connect functions. Yes it looks goofy to
+// have them in both places, but it saves a bunch of
+// connect code from being duplicated.
+UnixNetVConnection *
+SSLNetProcessor::allocateThread(EThread *t)
+{
+  return ((UnixNetVConnection *) THREAD_ALLOC(sslNetVCAllocator, t));
+}
+
+void
+SSLNetProcessor::freeThread(UnixNetVConnection *vc, EThread *t)
+{
+  ink_assert(!vc->from_accept_thread);
+  THREAD_FREE((SSLNetVConnection *) vc, sslNetVCAllocator, t);
+}
+
+SSLNetProcessor::~SSLNetProcessor()
+{
+  cleanup();
 }

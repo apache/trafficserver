@@ -76,9 +76,9 @@ libinknet_a_SOURCES = \
   Socks.cc \
   SSLCertLookup.cc \
   SSLConfig.cc \
-  SSLNet.cc \
+  SSLNetProcessor.cc \
   SSLNetVConnection.cc \
-  SSLUnixNet.cc \
+  SSLNetAccept.cc \
   UDPIOEvent.cc \
   UnixConnection.cc \
   UnixNetAccept.cc \
