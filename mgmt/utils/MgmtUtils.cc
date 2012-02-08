@@ -325,7 +325,7 @@ mgmt_log(FILE * log, const char *message_format, ...)
 
 #if defined(LOCAL_MANAGER) || defined(PROCESS_MANAGER)
   if (diags_init) {
-    diags->print_va(NULL, DL_Note, "NOTE", NULL, message_format, ap);
+    diags->print_va(NULL, DL_Note, NULL, message_format, ap);
   } else {
 #endif
 
@@ -355,7 +355,7 @@ mgmt_log(const char *message_format, ...)
   va_start(ap, message_format);
 #if defined(LOCAL_MANAGER) || defined(PROCESS_MANAGER)
   if (diags_init) {
-    diags->print_va(NULL, DL_Note, "NOTE", NULL, message_format, ap);
+    diags->print_va(NULL, DL_Note, NULL, message_format, ap);
   } else {
 #endif
 
@@ -392,9 +392,9 @@ mgmt_elog(FILE * log, const char *message_format, ...)
 #if defined(LOCAL_MANAGER) || defined(PROCESS_MANAGER)
   if (diags_init) {
     int lerrno = errno;
-    diags->print_va(NULL, DL_Error, "ERROR", NULL, message_format, ap);
+    diags->print_va(NULL, DL_Error, NULL, message_format, ap);
     snprintf(message, sizeof(message), " (last system error %d: %s)\n", lerrno, strerror(lerrno));
-    diags->print(NULL, DL_Error, "ERROR", NULL, message);
+    diags->print(NULL, DL_Error, NULL, message);
   } else {
 #endif
     if (use_syslog) {
@@ -431,9 +431,9 @@ mgmt_elog(const char *message_format, ...)
 #if defined(LOCAL_MANAGER) || defined(PROCESS_MANAGER)
   if (diags_init) {
     int lerrno = errno;
-    diags->print_va(NULL, DL_Error, "ERROR", NULL, message_format, ap);
+    diags->print_va(NULL, DL_Error, NULL, message_format, ap);
     snprintf(message, sizeof(message), " (last system error %d: %s)\n", lerrno, strerror(lerrno));
-    diags->print(NULL, DL_Error, "ERROR", NULL, message);
+    diags->print(NULL, DL_Error, NULL, message);
   } else {
 #endif
 
@@ -476,9 +476,9 @@ mgmt_fatal(FILE * log, const char *message_format, ...)
 #if defined(LOCAL_MANAGER) || defined(PROCESS_MANAGER)
   if (diags_init) {
     int lerrno = errno;
-    diags->print_va(NULL, DL_Fatal, "FATAL", NULL, message_format, ap);
+    diags->print_va(NULL, DL_Fatal, NULL, message_format, ap);
     snprintf(message, sizeof(message), " (last system error %d: %s)\n", lerrno, strerror(lerrno));
-    diags->print(NULL, DL_Fatal, "FATAL", NULL, message);
+    diags->print(NULL, DL_Fatal, NULL, message);
   } else {
 #endif
 
@@ -523,9 +523,9 @@ mgmt_fatal(const char *message_format, ...)
 #if defined(LOCAL_MANAGER) || defined(PROCESS_MANAGER)
   if (diags_init) {
     int lerrno = errno;
-    diags->print_va(NULL, DL_Fatal, "FATAL", NULL, message_format, ap);
+    diags->print_va(NULL, DL_Fatal, NULL, message_format, ap);
     snprintf(message, sizeof(message), " (last system error %d: %s)\n", lerrno, strerror(lerrno));
-    diags->print(NULL, DL_Fatal, "FATAL", NULL, message);
+    diags->print(NULL, DL_Fatal, NULL, message);
   } else {
 #endif
 

@@ -45,7 +45,7 @@ struct Span
 {
   char *pathname;
   int64_t blocks;
-  int64_t hw_sector_size;
+  int hw_sector_size;
   bool file_pathname;           // the pathname is a file
   bool isRaw;
   int64_t offset;                 // used only if (file == true)
@@ -93,9 +93,10 @@ public:
            int64_t * offset,      // for file, start offset (unsupported)
            char *buf, int buflen);      // where to store the path
 
-Span():pathname(NULL), blocks(0), hw_sector_size(DEFAULT_HW_SECTOR_SIZE), file_pathname(false),
-       isRaw(true), offset(0), alignment(0), disk_id(0), is_mmapable_internal(false) {
-  }
+  Span()
+    : pathname(NULL), blocks(0), hw_sector_size(DEFAULT_HW_SECTOR_SIZE), file_pathname(false),
+      isRaw(true), offset(0), alignment(0), disk_id(0), is_mmapable_internal(false)
+  { }
   ~Span();
 };
 

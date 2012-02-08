@@ -183,19 +183,19 @@ public:
 
   const char *level_name(DiagsLevel dl);
 
-  inkcoreapi void print_va(const char *tag, DiagsLevel dl, const char *prefix,
-                           SrcLoc * loc, const char *format_string, va_list ap);
+  inkcoreapi void print_va(const char *tag, DiagsLevel dl,
+                           SrcLoc *loc, const char *format_string, va_list ap);
 
 
   //////////////////////////////
   // user printing interfaces //
   //////////////////////////////
 
-  void print(const char *tag, DiagsLevel dl, const char *prefix, SrcLoc * loc, const char *format_string, ...)
+  void print(const char *tag, DiagsLevel dl, SrcLoc * loc, const char *format_string, ...)
   {
     va_list ap;
     va_start(ap, format_string);
-    print_va(tag, dl, prefix, loc, format_string, ap);
+    print_va(tag, dl, loc, format_string, ap);
     va_end(ap);
   }
 
@@ -204,20 +204,20 @@ public:
   // on the value of the enable flag, and the state of the debug tags. //
   ///////////////////////////////////////////////////////////////////////
 
-  void log_va(const char *tag, DiagsLevel dl, const char *prefix, SrcLoc * loc, const char *format_string, va_list ap)
+  void log_va(const char *tag, DiagsLevel dl, SrcLoc * loc, const char *format_string, va_list ap)
   {
     if (!on(tag))
       return;
-    print_va(tag, dl, prefix, loc, format_string, ap);
+    print_va(tag, dl, loc, format_string, ap);
   }
 
-  void log(const char *tag, DiagsLevel dl, const char *prefix, SrcLoc * loc, const char *format_string, ...)
-  {
-    va_list ap;
-    va_start(ap, format_string);
-    log_va(tag, dl, prefix, loc, format_string, ap);
-    va_end(ap);
-  }
+  void log(const char *tag, DiagsLevel dl,
+           const char *file, const char *func, const int line,
+           const char *format_string, ...) TS_PRINTFLIKE(7, 8);
+
+  void error(DiagsLevel dl,
+             const char *file, const char *func, const int line,
+             const char *format_string, ...) TS_PRINTFLIKE(6, 7);
 
   void dump(FILE * fp = stdout);
 
@@ -242,105 +242,6 @@ private:
   }
 };
 
-
-//////////////////////////////////////////////////////////////////////////////
-//
-//      class DiagsBaseClosure
-//      class DiagsDClosure
-//      class DiagsEClosure
-//
-//      The following classes are hacks.  Their whole raison d'etre is to
-//      make a macro that substitutes in __LINE__ and __FILE__ location
-//      info in addition to the normal diagnostic logging arguments.  But,
-//      the lame cpp preprocessor doesn't let us represent and substitute
-//      variable numbers of arguments, so we can't do this.
-//
-//      Instead, a DiagsClosure is created at a point in the code (usually
-//      within a macro that adds __LINE__ and __FILE__).  DiagsClosure acts
-//      as a closure, wrapping up this location context, and supporting
-//      an operator() method that takes all the normal diagnostic log args.
-//
-//      If the end, we can just say:
-//
-//              Debug("http", "status = %d", status);
-//
-//      This macro expands into an initialized creation of a DiagsClosure
-//      that saves the location of the Debug macro & debug level, and
-//      in effect invokes itself as a function of the original arguments:
-//
-//              if (diags->on())
-//                (*(new DiagsDClosure(diags,DL_Debug,_FILE_,_FUNC_,_LINE_)))
-//                 ("http", "status = %d", status)
-//
-//      If you know a way to make this directly into a macro structure, and
-//      bypass the DiagsClosure closures, be my guest...
-//
-//      The DiagsDClosure and DiagsEClosure classes differ in that the
-//      DiagsDClosure supports debug tags, and DiagsEClosure does not.
-//
-//////////////////////////////////////////////////////////////////////////////
-
-class DiagsBaseClosure
-{
-public:
-  Diags *diags;
-  DiagsLevel level;
-  SrcLoc src_location;
-
-  DiagsBaseClosure(Diags * d, DiagsLevel l, const char *_file, const char *_func, int _line)
-  {
-    diags = d;
-    level = l;
-    src_location.file = _file;
-    src_location.func = _func;
-    src_location.line = _line;
-    src_location.valid = true;
-  }
-
-   ~DiagsBaseClosure()
-  {  }
-};
-
-
-class DiagsDClosure:public DiagsBaseClosure
-{
-public:
-  DiagsDClosure(Diags * d, DiagsLevel l, const char *file, const char *func, int line):DiagsBaseClosure(d, l, file, func, line)
-  {  }
-
-   ~DiagsDClosure()
-  {  }
-
-  // default: no location printed
-  void inkcoreapi operator() (const char *tag, const char *format_string ...)
-    TS_PRINTFLIKE(3, 4);
-
-  // location optionally printed
-  void operator() (const char *tag, int show_loc, const char *format_string ...)
-    TS_PRINTFLIKE(4, 5);
-};
-
-// debug closures support debug tags
-
-// error closures do not support debug tags
-class DiagsEClosure:public DiagsBaseClosure
-{
-public:
-  DiagsEClosure(Diags * d, DiagsLevel l, const char *file, const char *func, int line):DiagsBaseClosure(d, l, file, func, line)
-  { }
-
-   ~DiagsEClosure()
-  {  }
-
-  // default: no location printed
-  void inkcoreapi operator() (const char *format_string ...)
-    TS_PRINTFLIKE(2, 3);
-
-  // location optionally printed
-  void operator() (int show_loc, const char *format_string ...);
-    TS_PRINTFLIKE(3, 4);
-};
-
 //////////////////////////////////////////////////////////////////////////
 //                                                                      //
 //      Macros                                                          //
@@ -362,53 +263,33 @@ public:
 
 extern inkcoreapi Diags *diags;
 
-#define	DTA(l)    diags,l,__FILE__,__FUNCTION__,__LINE__
-
-void dummy_debug(const char * tag, const char *fmt ...) TS_PRINTFLIKE(2, 3);
-void dummy_debug(const char * tag, char *fmt ...) TS_PRINTFLIKE(2, 3);
-
+#define DTA(l)    l,__FILE__,__FUNCTION__,__LINE__
+void dummy_debug(const char * tag, const char *fmt, ...) TS_PRINTFLIKE(2, 3);
 inline void
-dummy_debug(const char *, char *dummy_arg ...)
+dummy_debug(const char *tag, const char *fmt, ...)
 {
-  (void) dummy_arg;
-}
-inline void
-dummy_debug(const char *, const char *dummy_arg ...)
-{
-  (void) dummy_arg;
+  (void)tag;
+  (void)fmt;
 }
 
-#if TS_USE_DIAGS
-#define Diag      if (diags->on()) DiagsDClosure(DTA(DL_Diag))  /*args */
-#define Debug     if (diags->on()) DiagsDClosure(DTA(DL_Debug)) /*args */
-#define DebugOn   DiagsDClosure(DTA(DL_Debug))  /*args */
-#else
-#define Diag      if (0) dummy_debug
-#define Debug     if (0) dummy_debug
-#define DebugOn   if (0) dummy_debug
-#endif
+#define Diag(tag, fmt, ...)      diags->log(tag, DTA(DL_Diag), fmt, ##__VA_ARGS__)
+#define Debug(tag, fmt, ...)     diags->log(tag, DTA(DL_Debug), fmt, ##__VA_ARGS__)
+#define DebugOn(tag, fmt, ...)     diags->log(tag, DTA(DL_Debug), fmt, ##__VA_ARGS__)
 
-#define	Status    DiagsEClosure(DTA(DL_Status)) /*(args...) */
-#define	Note      DiagsEClosure(DTA(DL_Note))   /*(args...) */
-#define	Warning   DiagsEClosure(DTA(DL_Warning))        /*(args...) */
-#define	Error     DiagsEClosure(DTA(DL_Error))  /*(args...) */
-#define	Fatal     DiagsEClosure(DTA(DL_Fatal))  /*(args...) */
-#define	Alert     DiagsEClosure(DTA(DL_Alert))  /*(args...) */
-#define	Emergency DiagsEClosure(DTA(DL_Emergency))      /*(args...) */
+#define Status(fmt, ...)    diags->error(DTA(DL_Status), fmt, ##__VA_ARGS__)
+#define Note(fmt, ...)      diags->error(DTA(DL_Note), fmt, ##__VA_ARGS__)
+#define Warning(fmt, ...)   diags->error(DTA(DL_Warning), fmt, ##__VA_ARGS__)
+#define Error(fmt, ...)     diags->error(DTA(DL_Error), fmt, ##__VA_ARGS__)
+#define Fatal(fmt, ...)     diags->error(DTA(DL_Fatal), fmt, ##__VA_ARGS__)
+#define Alert(fmt, ...)     diags->error(DTA(DL_Alert), fmt, ##__VA_ARGS__)
+#define Emergency(fmt, ...) diags->error(DTA(DL_Emergency), fmt, ##__VA_ARGS__)
 
-#if TS_USE_DIAGS
 #define is_debug_tag_set(_t)     diags->on(_t,DiagsTagType_Debug)
 #define is_action_tag_set(_t)    diags->on(_t,DiagsTagType_Action)
 #define debug_tag_assert(_t,_a)  (is_debug_tag_set(_t) ? (ink_release_assert(_a), 0) : 0)
 #define action_tag_assert(_t,_a) (is_action_tag_set(_t) ? (ink_release_assert(_a), 0) : 0)
 #define is_diags_on(_t)          diags->on(_t)
-#else
-#define is_debug_tag_set(_t)     0
-#define is_action_tag_set(_t)    0
-#define debug_tag_assert(_t,_a) /**/
-#define action_tag_assert(_t,_a) /**/
-#endif
-#define	stat_debug_assert(_tst) (void)((_tst) || (Warning(#_tst), debug_tag_assert("stat_check",! #_tst), 0))
+
 #else // TS_USE_DIAGS
 
 class Diags
@@ -436,19 +317,23 @@ extern inkcoreapi Diags *diags;
 #define Alert        ink_error
 #define Emergency    ink_fatal_die
 
+void dummy_debug(const char * tag, const char *fmt ...) TS_PRINTFLIKE(2, 3);
 inline void
-dummy_debug(char *dummy_arg ...)
+dummy_debug(const char *tag, const char *fmt, ...)
 {
-  (void) dummy_arg;
+  (void)tag;
+  (void)fmt;
 }
 
-#define Diag      if (0) dummy_debug
-#define Debug     if (0) dummy_debug
-#define DebugOn   if (0) dummy_debug
+#define Diag(tag, fmt, ...)      if (0) dummy_debug(tag, fmt, ##__VA_ARGS__)
+#define Debug(tag, fmt, ...)     if (0) dummy_debug(tag, fmt, ##__VA_ARGS__)
+#define DebugOn(tag, fmt, ...)   if (0) dummy_debug(tag, fmt, ##__VA_ARGS__)
+
 #define is_debug_tag_set(_t)     0
 #define is_action_tag_set(_t)    0
 #define debug_tag_assert(_t,_a) /**/
-#define action_tag_assert(_t,_a)
+#define action_tag_assert(_t,_a) /**/
 #define is_diags_on(_t)          0
+
 #endif // TS_USE_DIAGS
 #endif  /*_Diags_h_*/

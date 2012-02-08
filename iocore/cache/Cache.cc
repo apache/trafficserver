@@ -575,6 +575,7 @@ CacheProcessor::start_internal(int flags)
         gdisks[gndisks] = NEW(new CacheDisk());
         Debug("cache_hosting", "Disk: %d, blocks: %d", gndisks, blocks);
         int sector_size = sd->hw_sector_size;
+
         if (sector_size < cache_config_force_sector_size)
           sector_size = cache_config_force_sector_size;
         if (sd->hw_sector_size <= 0 || sector_size > STORE_BLOCK_SIZE) {
