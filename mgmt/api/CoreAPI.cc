@@ -133,7 +133,7 @@ Diags(TSDiagsT mode, const char *fmt, va_list ap)
   }
 
   if (diags_init) {             // check that diags is initialized
-    diags->print_va("TSMgmtAPI", level, NULL, NULL, fmt, ap);
+    diags->print_va("TSMgmtAPI", level, NULL, fmt, ap);
     va_end(ap);
   }
 }

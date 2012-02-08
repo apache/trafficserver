@@ -230,7 +230,7 @@ RecLog(DiagsLevel dl, const char *format_string, ...)
 
   va_start(ap, format_string);
   if (g_diags) {
-    g_diags->log_va(NULL, dl, NULL, NULL, format_string, ap);
+    g_diags->log_va(NULL, dl, NULL, format_string, ap);
   }
   va_end(ap);
 }
@@ -246,7 +246,7 @@ RecDebug(DiagsLevel dl, const char *format_string, ...)
 
   va_start(ap, format_string);
   if (g_diags) {
-    g_diags->log_va("rec", dl, NULL, NULL, format_string, ap);
+    g_diags->log_va("rec", dl, NULL, format_string, ap);
   }
   va_end(ap);
 }

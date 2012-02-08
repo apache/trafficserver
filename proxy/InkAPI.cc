@@ -386,7 +386,7 @@ TSError(const char *fmt, ...)
 
   if (is_action_tag_set("deft") || is_action_tag_set("sdk_vbos_errors")) {
     va_start(args, fmt);
-    diags->print_va(NULL, DL_Error, NULL, NULL, fmt, args);
+    diags->print_va(NULL, DL_Error, NULL, fmt, args);
     va_end(args);
   }
   va_start(args, fmt);
@@ -6823,7 +6823,7 @@ TSDebug(const char *tag, const char *format_str, ...)
     va_list ap;
 
     va_start(ap, format_str);
-    diags->print_va(tag, DL_Diag, NULL, NULL, format_str, ap);
+    diags->print_va(tag, DL_Diag, NULL, format_str, ap);
     va_end(ap);
   }
 }

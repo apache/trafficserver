@@ -58,7 +58,7 @@ ErrorClass::raise(va_list ap, const char *prefix)
   NOWARN_UNUSED(prefix);
   SrcLoc loc;
   loc.set(filename, function_name, line_number);
-  diags->print_va(NULL, DL_Fatal, NULL, &loc, format_string, ap);
+  diags->print_va(NULL, DL_Fatal, &loc, format_string, ap);
 }
 
 // Request Fatal
