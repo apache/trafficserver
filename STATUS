@@ -88,6 +88,11 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
    Jira: https://issues.apache.org/jira/browse/TS-948
    +1: zym
 
+  *) key->volume hash table is not consistent when a disk is marked as bad or removed due to failure
+   Trunk patch: https://git-wip-us.apache.org/repos/asf?p=trafficserver.git;a=commit;h=b2109cdaf55234621d6c3b2fcb4f15774f0939ab
+   Jira: https://issues.apache.org/jira/browse/TS-949
+   +1: zym
+
 
 STALLED ISSUES
 
