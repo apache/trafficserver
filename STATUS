@@ -40,15 +40,20 @@ A list of all bugs open for the next v3.0.2 release can be found at
 
 PATCHES ACCEPTED TO BACKPORT FROM TRUNK:
 
-
-PATCHES PROPOSED TO BACKPORT FROM TRUNK:
-  [ New proposals should be added at the end of the list ]
-
-
   *) API: Wrong implementation of TSHttpSsnArgGet().
    Trunk patch: http://svn.apache.org/viewvc?view=rev&rev=1220600
    Jira: https://issues.apache.org/jira/browse/TS-1055
    +1: zwoop, igalic, niq
+
+  *) API: TSHttpTxnServerReqHdrBytesGet in InkAPI.cc has an extra param.
+   Trunk patch: http://svn.apache.org/viewvc?view=rev&rev=1236880
+   Jira: https://issues.apache.org/jira/browse/TS-1061
+   +1: zwoop, igalic, niq
+
+
+PATCHES PROPOSED TO BACKPORT FROM TRUNK:
+  [ New proposals should be added at the end of the list ]
+
 
   *) Traffic Cop: segment fault when TRACE_LOG_COP is enabled
    Trunk patch: http://svn.apache.org/viewvc?view=rev&rev=1225724
@@ -72,11 +77,6 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
    Trunk patch: http://svn.apache.org/viewvc?view=revision&revision=1197133
    Jira: https://issues.apache.org/jira/browse/TS-1004
    +1: briang, zwoop
-
-  *) API: TSHttpTxnServerReqHdrBytesGet in InkAPI.cc has an extra param.
-   Trunk patch: http://svn.apache.org/viewvc?view=rev&rev=1236880
-   Jira: https://issues.apache.org/jira/browse/TS-1061
-   +1: zwoop, igalic, niq
 
   *) forward map based on request receive port
    Trunk patch: (see TS876.fixed.patch in JIRA)
