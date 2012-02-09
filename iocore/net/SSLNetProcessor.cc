@@ -242,13 +242,9 @@ SSLNetProcessor::logSSLError(const char *errStr, int critical)
 }
 
 int
-SSLNetProcessor::initSSL(SslConfigParams * param)
+SSLNetProcessor::initSSL(const SslConfigParams * param)
 {
-#if (OPENSSL_VERSION_NUMBER >= 0x10000000L) // openssl returns a const SSL_METHOD now
   const SSL_METHOD *meth = NULL;
-#else
-  SSL_METHOD *meth = NULL;
-#endif
   // Note that we do not call RAND_seed() explicitly here, we depend on OpenSSL
   // to do the seeding of the PRNG for us. This is the case for all platforms that
   // has /dev/urandom for example.
@@ -260,12 +256,13 @@ SSLNetProcessor::initSSL(SslConfigParams * param)
     return (-1);
   }
 
-  return (initSSLServerCTX(param, ctx, param->serverCertPath, param->serverCertChainPath, param->serverKeyPath, true));
+  return initSSLServerCTX(ctx, param, param->serverCertPath, param->serverCertChainPath, param->serverKeyPath, true);
 }
 
 int
-SSLNetProcessor::initSSLServerCTX(SslConfigParams * param, SSL_CTX * lCtx,
-                                  char *serverCertPtr, char *serverCaCertPtr, char *serverKeyPtr, bool defaultEnabled)
+SSLNetProcessor::initSSLServerCTX(SSL_CTX * lCtx, const SslConfigParams * param,
+    const char *serverCertPtr, const char *serverCaCertPtr,
+    const char *serverKeyPtr, bool defaultEnabled)
 {
   int session_id_context;
   int server_verify_client;
@@ -285,7 +282,7 @@ SSLNetProcessor::initSSLServerCTX(SslConfigParams * param, SSL_CTX * lCtx,
   }
 
   //might want to make configurable at some point.
-  verify_depth = param->verify_depth;
+  int verify_depth = param->verify_depth;
   SSL_CTX_set_quiet_shutdown(lCtx, 1);
 
   if (defaultEnabled) {
@@ -408,13 +405,9 @@ SSLNetProcessor::initSSLServerCTX(SslConfigParams * param, SSL_CTX * lCtx,
 }
 
 int
-SSLNetProcessor::initSSLClient(SslConfigParams * param)
+SSLNetProcessor::initSSLClient(const SslConfigParams * param)
 {
-#if (OPENSSL_VERSION_NUMBER >= 0x10000000L) // openssl returns a const SSL_METHOD now
   const SSL_METHOD *meth = NULL;
-#else
-  SSL_METHOD *meth = NULL;
-#endif
   int client_verify_server;
   char *clientKeyPtr = NULL;
 
@@ -428,7 +421,7 @@ SSLNetProcessor::initSSLClient(SslConfigParams * param)
 
   // disable selected protocols
   SSL_CTX_set_options(client_ctx, param->ssl_ctx_options);
-  verify_depth = param->client_verify_depth;
+  int verify_depth = param->client_verify_depth;
   if (!client_ctx) {
     logSSLError("Cannot create new client contex.");
     return (-1);

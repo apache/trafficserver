@@ -62,10 +62,13 @@ public:
 
   void cleanup(void);
   int reconfigure();
-  int initSSL(SslConfigParams * param);
-  int initSSLClient(SslConfigParams * param);
-  int initSSLServerCTX(SslConfigParams * param,
-                       SSL_CTX * ctx, char *serverCertPtr, char *serverCaPtr, char *serverKeyPtr, bool defaultEnabled);
+  int initSSL(const SslConfigParams * param);
+  int initSSLClient(const SslConfigParams * param);
+
+  int initSSLServerCTX(SSL_CTX * ctx,
+    const SslConfigParams * param,
+    const char *serverCertPtr, const char *serverCaPtr,
+    const char *serverKeyPtr, bool defaultEnabled);
 
   SSL_CTX *getSSL_CTX(void) const {return ctx; }
   SSL_CTX *getClientSSL_CTX(void) const { return client_ctx; }
@@ -73,11 +76,10 @@ public:
   static void logSSLError(const char *errStr = "", int critical = 1);
 
   SSLNetProcessor()
-    : verify_depth(0), ctx(NULL), client_ctx(NULL), sslMutexArray(NULL)
+    : ctx(NULL), client_ctx(NULL), sslMutexArray(NULL)
     {  };
   virtual ~SSLNetProcessor();
 
-  int verify_depth;
   SSL_CTX *ctx;
   SSL_CTX *client_ctx;
   ProxyMutex **sslMutexArray;

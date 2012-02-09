@@ -29,17 +29,22 @@
 class SSLCertLookup
 {
   bool buildTable();
-  const char *extractIPAndCert(matcher_line * line_info, char **addr, char **cert, char **ca, char **priKey);
-  int addInfoToHash(char *strAddr, char *cert, char *ca, char *serverPrivateKey);
+  const char *extractIPAndCert(
+    matcher_line * line_info, char **addr, char **cert, char **ca, char **priKey) const;
+  bool addInfoToHash(
+    const char *strAddr, const char *cert, const char *ca, const char *serverPrivateKey) const;
 
   InkHashTable *SSLCertLookupHashTable;
   char config_file_path[PATH_NAME_MAX];
   SslConfigParams *param;
+  bool multipleCerts;
 
 public:
-  bool multipleCerts;
+  bool hasMultipleCerts() const { return multipleCerts; }
+
   void init(SslConfigParams * param);
-  SSL_CTX *findInfoInHash(char *strAddr);
+  SSL_CTX *findInfoInHash(char *strAddr) const;
+
   SSLCertLookup();
   ~SSLCertLookup();
 };

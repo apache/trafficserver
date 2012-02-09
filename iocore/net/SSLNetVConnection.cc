@@ -474,7 +474,7 @@ SSLNetVConnection::sslStartHandShake(int event, int &err)
 
   if (event == SSL_EVENT_SERVER) {
     if (ssl == NULL) {
-      if (sslCertLookup.multipleCerts) {
+      if (sslCertLookup.hasMultipleCerts()) {
         char buff[INET6_ADDRSTRLEN];
         safe_getsockname(get_socket(), &ip.sa, &namelen);
         ink_inet_ntop(&ip.sa, buff, sizeof(buff));
