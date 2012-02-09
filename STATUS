@@ -40,11 +40,6 @@ A list of all bugs open for the next v3.0.2 release can be found at
 
 PATCHES ACCEPTED TO BACKPORT FROM TRUNK:
 
-  *) API: Wrong implementation of TSHttpSsnArgGet().
-   Trunk patch: http://svn.apache.org/viewvc?view=rev&rev=1220600
-   Jira: https://issues.apache.org/jira/browse/TS-1055
-   +1: zwoop, igalic, niq
-
   *) API: TSHttpTxnServerReqHdrBytesGet in InkAPI.cc has an extra param.
    Trunk patch: http://svn.apache.org/viewvc?view=rev&rev=1236880
    Jira: https://issues.apache.org/jira/browse/TS-1061
