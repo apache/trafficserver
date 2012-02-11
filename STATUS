@@ -40,11 +40,6 @@ A list of all bugs open for the next v3.0.2 release can be found at
 
 PATCHES ACCEPTED TO BACKPORT FROM TRUNK:
 
-  *) forward map based on request receive port
-   Trunk patch: (see TS876.fixed.patch in JIRA)
-   Jira: https://issues.apache.org/jira/browse/TS-876
-   +1: briang, zwoop, manjesh
-
 
 PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   [ New proposals should be added at the end of the list ]
