@@ -40,6 +40,21 @@ A list of all bugs open for the next v3.0.2 release can be found at
 
 PATCHES ACCEPTED TO BACKPORT FROM TRUNK:
 
+  *) PluginVC should schedule to the local queue instead of the external queue.
+   Trunk patch: http://svn.apache.org/viewvc?view=revision&revision=1228526
+   Jira: https://issues.apache.org/jira/browse/TS-1074
+   +1: briang, zwoop, manjesh
+
+  *) Transformation plugins cause connection close when content length is not known ahead
+   Trunk patch: http://svn.apache.org/viewvc?view=revision&revision=1197133
+   Jira: https://issues.apache.org/jira/browse/TS-1004
+   +1: briang, zwoop, manjesh
+
+  *) forward map based on request receive port
+   Trunk patch: (see TS876.fixed.patch in JIRA)
+   Jira: https://issues.apache.org/jira/browse/TS-876
+   +1: briang, zwoop, manjesh
+
 
 PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   [ New proposals should be added at the end of the list ]
@@ -57,21 +72,6 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
    niq comments:  This patch combines the bugfix with no-op stylistic
                   changes.  Not a big deal for a simple change, but in
                   general it risks complicating review.
-
-  *) PluginVC should schedule to the local queue instead of the external queue.
-   Trunk patch: http://svn.apache.org/viewvc?view=revision&revision=1228526
-   Jira: https://issues.apache.org/jira/browse/TS-1074
-   +1: briang, zwoop, manjesh
-
-  *) Transformation plugins cause connection close when content length is not known ahead
-   Trunk patch: http://svn.apache.org/viewvc?view=revision&revision=1197133
-   Jira: https://issues.apache.org/jira/browse/TS-1004
-   +1: briang, zwoop, manjesh
-
-  *) forward map based on request receive port
-   Trunk patch: (see TS876.fixed.patch in JIRA)
-   Jira: https://issues.apache.org/jira/browse/TS-876
-   +1: briang, zwoop, manjesh
 
   *) do not reload bad remap.config
    Trunk patch: https://git-wip-us.apache.org/repos/asf?p=trafficserver.git;a=commit;h=31500d106e472a8713c1c3976b161f2dea56ba38
