@@ -789,7 +789,7 @@ PluginVC::setup_event_cb(ink_hrtime in, Event ** e_ptr)
     //   to call us back
     if (in == 0) {
       if(this_ethread()->tt == REGULAR) {
-	 *e_ptr = this_ethread()->schedule_imm(this);
+	 *e_ptr = this_ethread()->schedule_imm_local(this);
       }
       else
       {
@@ -799,7 +799,7 @@ PluginVC::setup_event_cb(ink_hrtime in, Event ** e_ptr)
     else 
     {
       if(this_ethread()->tt == REGULAR) {
-        *e_ptr = this_ethread()->schedule_in(this,in);
+        *e_ptr = this_ethread()->schedule_in_local(this,in);
       }
       else
       {

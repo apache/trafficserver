@@ -3,6 +3,9 @@ Changes with Apache Traffic Server 3.0.3
   *) [TS-1055]: Wrong implementation of TSHttpSsnArgGet().
     Author: Yakov Kopel
 
+  *) [TS-1074] PluginVC should schedule to the local queue instead of the
+  external queue. Author: Brian Geffon
+
   *) [TS-1066] TSHttpTxnServerReqHdrBytesGet in InkAPI.cc has an extra
    parameter (int *bytes) from the prototype in <ts/ts.h>.
    Author: Alistair Stevenson
