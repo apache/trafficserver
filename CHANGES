@@ -1,5 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.0.3
+
+  *) [TS-1004] Transformation plugins cause connection close when content
+   length is not known ahead. Author: Otto van der Schaaf.
+
   *) [TS-1055]: Wrong implementation of TSHttpSsnArgGet().
     Author: Yakov Kopel
 
