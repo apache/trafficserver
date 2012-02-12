@@ -34,6 +34,7 @@
 #include "HttpPages.h"
 #include "HttpTunnel.h"
 #include "Tokenizer.h"
+#include "P_SSLNextProtocolAccept.h"
 
 #ifdef DEBUG
 extern "C"
@@ -76,6 +77,42 @@ struct DumpStats: public Continuation
 HttpAccept *plugin_http_accept = NULL;
 HttpAccept *plugin_http_transparent_accept = 0;
 
+#if !defined(TS_NO_API)
+static SLL<SSLNextProtocolAccept> ssl_plugin_acceptors;
+static ProcessMutex ssl_plugin_mutex;
+
+bool
+ssl_register_protocol(const char * protocol, Continuation * contp)
+{
+  ink_scoped_mutex lock(ssl_plugin_mutex);
+
+  for (SSLNextProtocolAccept * ssl = ssl_plugin_acceptors.head;
+        ssl; ssl = ssl_plugin_acceptors.next(ssl)) {
+    if (!ssl->registerEndpoint(protocol, contp)) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+bool
+ssl_unregister_protocol(const char * protocol, Continuation * contp)
+{
+  ink_scoped_mutex lock(ssl_plugin_mutex);
+
+  for (SSLNextProtocolAccept * ssl = ssl_plugin_acceptors.head;
+        ssl; ssl = ssl_plugin_acceptors.next(ssl)) {
+    // Ignore possible failure because we want to try to unregister
+    // from all SSL ports.
+    ssl->unregisterEndpoint(protocol, contp);
+  }
+
+  return true;
+}
+
+#endif /* !defined(TS_NO_API) */
+
 /////////////////////////////////////////////////////////////////
 //
 //  main()
@@ -113,6 +150,7 @@ init_HttpProxyServer(void)
     plugin_http_transparent_accept = NEW(new HttpAccept(ha_opt));
     plugin_http_transparent_accept->mutex = new_ProxyMutex();
   }
+  ink_mutex_init(&ssl_plugin_mutex, "SSL Acceptor List");
 #endif
 }
 
@@ -170,7 +208,17 @@ start_HttpProxyServer(int accept_threads)
 
     if (HttpProxyPort::TRANSPORT_SSL == p.m_type) {
       if (sslParam->getTerminationMode() & sslParam->SSL_TERM_MODE_CLIENT) {
-        sslNetProcessor.main_accept(NEW(new HttpAccept(ha_opt)), p.m_fd, opt);
+        HttpAccept * http = NEW(new HttpAccept(ha_opt));
+        SSLNextProtocolAccept * ssl = NEW(new SSLNextProtocolAccept(http));
+        ssl->registerEndpoint(TS_NPN_PROTOCOL_HTTP_1_0, http);
+        ssl->registerEndpoint(TS_NPN_PROTOCOL_HTTP_1_1, http);
+
+#ifndef TS_NO_API
+        ink_scoped_mutex lock(ssl_plugin_mutex);
+        ssl_plugin_acceptors.push(ssl);
+#endif
+
+        sslNetProcessor.main_accept(ssl, p.m_fd, opt);
       }
     } else {
       netProcessor.main_accept(NEW(new HttpAccept(ha_opt)), p.m_fd, opt);

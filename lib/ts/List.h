@@ -73,6 +73,7 @@ template <class C> class SLink {
 };
 #define SLINK(_c,_f) class Link##_##_f : public SLink<_c> { public:    \
     static _c *& next_link(_c *c) { return c->_f.next; }                \
+    static const _c * next_link(const _c *c) { return c->_f.next; } \
   }; SLink<_c> _f
 #define SLINKM(_c,_m,_f) class Link##_##_m##_##_f : public SLink<_c> { public: \
     static _c *& next_link(_c *c) { return c->_m._f.next; }             \
@@ -88,6 +89,8 @@ template <class C> struct Link : public SLink<C> {
 #define LINK(_c,_f) class Link##_##_f : public Link<_c> { public:       \
     static _c *& next_link(_c *c) { return c->_f.next; }                \
     static _c *& prev_link(_c *c) { return c->_f.prev; }                \
+    static const _c * next_link(const _c *c) { return c->_f.next; }     \
+    static const _c * prev_link(const _c *c) { return c->_f.prev; }     \
   }; Link<_c> _f
 #define LINKM(_c,_m,_f) class Link##_##_m##_##_f : public Link<_c> { public:  \
     static _c *& next_link(_c *c) { return c->_m._f.next; }             \
@@ -107,11 +110,12 @@ template <class C> struct Link : public SLink<C> {
 template <class C, class L = typename C::Link_link> class SLL {
  public:
   C *head;
-  bool empty() { return head == NULL; }
+  bool empty() const { return head == NULL; }
   void push(C *e);
   C *pop();
   void clear() { head = NULL; }
   C *& next(C *e) { return L::next_link(e); }
+  const C * next(const C *e) const { return L::next_link(e); }
 
   SLL() : head(NULL) {}
   SLL(C *c) : head(c) {}
@@ -141,7 +145,7 @@ SLL<C,L>::pop() {
 //
 template <class C, class L = typename C::Link_link> struct DLL {
   C *head;
-  bool empty() { return head == NULL; }
+  bool empty() const { return head == NULL; }
   void push(C *e);
   C *pop();
   void remove(C *e);
@@ -150,6 +154,8 @@ template <class C, class L = typename C::Link_link> struct DLL {
   void clear() { head = NULL; }
   C *&next(C *e) { return *(C**)&L::next_link(e); }
   C *&prev(C *e) { return *(C**)&L::prev_link(e); }
+  const C *next(const C *e) const { return L::next_link(e); }
+  const C *prev(const C *e) const { return L::prev_link(e); }
 
   DLL() : head(NULL) {}
 };

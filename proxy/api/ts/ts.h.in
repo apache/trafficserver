@@ -970,6 +970,14 @@ extern "C"
   extern tsapi int TS_HTTP_LEN_TRACE;
 
   /* --------------------------------------------------------------------------
+     TLS Next Protocol well-known protocol names. */
+  extern tsapi const char * TS_NPN_PROTOCOL_HTTP_1_0;
+  extern tsapi const char * TS_NPN_PROTOCOL_HTTP_1_1;
+  extern tsapi const char * TS_NPN_PROTOCOL_SPDY_1;
+  extern tsapi const char * TS_NPN_PROTOCOL_SPDY_2;
+  extern tsapi const char * TS_NPN_PROTOCOL_SPDY_3;
+
+  /* --------------------------------------------------------------------------
      MLoc Constants */
   /**
       Use TS_NULL_MLOC as the parent in calls that require a parent
@@ -2532,6 +2540,29 @@ extern "C"
   );
 
   tsapi TSAction TSNetAccept(TSCont contp, int port, int domain, int accept_threads);
+
+  /**
+    Listen on all SSL ports for connections for the specified protocol name.
+
+    TSNetAcceptNamedProtocol registers the specified protocol for all
+    statically configured TLS ports. When a client using the TLS Next Protocol
+    Negotiation extension negotiates the requested protocol, TrafficServer will
+    route the request to the given handler. Note that the protocol is not
+    registered on ports opened by other plugins.
+
+    The event and data provided to the handler are the same as for
+    TSNetAccept(). If a connection is successfully accepted, the event code
+    will be TS_EVENT_NET_ACCEPT and the event data will be a valid TSVConn
+    bound to the accepted connection.
+
+    Neither contp nor protocol are copied. They must remain valid for the
+    lifetime of the plugin.
+
+    TSNetAcceptNamedProtocol fails if the requested protocol cannot be
+    registered on all of the configured TLS ports. If it fails, the protocol
+    will not be registered on any ports (ie.. no partial failure).
+  */
+  tsapi TSReturnCode TSNetAcceptNamedProtocol(TSCont contp, const char * protocol);
 
   /* --------------------------------------------------------------------------
      DNS Lookups */

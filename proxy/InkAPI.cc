@@ -357,6 +357,14 @@ tsapi int TS_HTTP_LEN_PURGE;
 tsapi int TS_HTTP_LEN_PUT;
 tsapi int TS_HTTP_LEN_TRACE;
 
+/* TLS Next Protocol well-known protocol names. */
+
+tsapi const char * TS_NPN_PROTOCOL_HTTP_1_0 = "http/1.0";
+tsapi const char * TS_NPN_PROTOCOL_HTTP_1_1 = "http/1.1";
+tsapi const char * TS_NPN_PROTOCOL_SPDY_1   = "spdy/1";   // obsolete
+tsapi const char * TS_NPN_PROTOCOL_SPDY_2   = "spdy/2";   // shipping
+tsapi const char * TS_NPN_PROTOCOL_SPDY_3   = "spdy/3";   // upcoming
+
 /* MLoc Constants */
 tsapi const TSMLoc TS_NULL_MLOC = (TSMLoc)NULL;
 
@@ -6407,6 +6415,25 @@ TSNetAccept(TSCont contp, int port, int domain, int accept_threads)
 
   INKContInternal *i = (INKContInternal *) contp;
   return (TSAction)netProcessor.accept(i, opt);
+}
+
+/* From proxy/http/HttpProxyServerMain.c: */
+extern bool ssl_register_protocol(const char *, Continuation *);
+extern bool ssl_unregister_protocol(const char *, Continuation *);
+
+TSReturnCode
+TSNetAcceptNamedProtocol(TSCont contp, const char * protocol)
+{
+  sdk_assert(protocol != NULL);
+  sdk_assert(contp != NULL);
+  sdk_assert(sdk_sanity_check_continuation(contp) == TS_SUCCESS);
+
+  if (!ssl_register_protocol(protocol, (INKContInternal *)contp)) {
+    ssl_unregister_protocol(protocol, (INKContInternal *)contp);
+    return TS_ERROR;
+  }
+
+  return TS_SUCCESS;
 }
 
 /* DNS Lookups */

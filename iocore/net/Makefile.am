@@ -79,6 +79,8 @@ libinknet_a_SOURCES = \
   SSLNetProcessor.cc \
   SSLNetVConnection.cc \
   SSLNetAccept.cc \
+  SSLNextProtocolAccept.cc \
+  SSLNextProtocolSet.cc \
   UDPIOEvent.cc \
   UnixConnection.cc \
   UnixNetAccept.cc \

@@ -22,6 +22,7 @@
  */
 #include "ink_config.h"
 #include "P_Net.h"
+#include "P_SSLNextProtocolSet.h"
 
 #define SSL_READ_ERROR_NONE	  0
 #define SSL_READ_ERROR		  1
@@ -34,12 +35,25 @@
 #define SSL_HANDSHAKE_WANT_ACCEPT 8
 #define SSL_HANDSHAKE_WANT_CONNECT 9
 #define SSL_WRITE_WOULD_BLOCK     10
-ClassAllocator<SSLNetVConnection> sslNetVCAllocator("sslNetVCAllocator");
 
+ClassAllocator<SSLNetVConnection> sslNetVCAllocator("sslNetVCAllocator");
 
 //
 // Private
 //
+
+static SSL *
+make_ssl_connection(SSL_CTX * ctx, SSLNetVConnection * netvc)
+{
+  SSL * ssl;
+
+  if (likely(ssl = SSL_new(ctx))) {
+    SSL_set_fd(ssl, netvc->get_socket());
+    SSL_set_app_data(ssl, netvc);
+  }
+
+  return ssl;
+}
 
 static inline int
 do_SSL_write(SSL * ssl, void *buf, int size)
@@ -408,7 +422,13 @@ SSLNetVConnection::SSLNetVConnection():
   write_want_write(0),
   write_want_read(0),
   write_want_ssl(0),
-  write_want_syscal(0), write_want_x509(0), write_error_zero(0), sslHandShakeComplete(false), sslClientConnection(false)
+  write_want_syscal(0),
+  write_want_x509(0),
+  write_error_zero(0),
+  sslHandShakeComplete(false),
+  sslClientConnection(false),
+  npnSet(0),
+  npnEndpoint(0)
 {
   ssl = NULL;
 }
@@ -472,26 +492,25 @@ SSLNetVConnection::free(EThread * t) {
 int
 SSLNetVConnection::sslStartHandShake(int event, int &err)
 {
-  SSL_CTX *ctx = NULL;
   ts_ip_endpoint ip;
   int namelen = sizeof(ip);
 
   if (event == SSL_EVENT_SERVER) {
+    SSL_CTX *ctx = ssl_NetProcessor.ctx;
+
     if (ssl == NULL) {
       if (sslCertLookup.hasMultipleCerts()) {
         char buff[INET6_ADDRSTRLEN];
         safe_getsockname(get_socket(), &ip.sa, &namelen);
         ink_inet_ntop(&ip.sa, buff, sizeof(buff));
         ctx = sslCertLookup.findInfoInHash(buff);
-        if (ctx == NULL)
+        if (ctx == NULL) {
           ctx = ssl_NetProcessor.ctx;
-      } else {
-        ctx = ssl_NetProcessor.ctx;
+        }
       }
-      ssl = SSL_new(ctx);
-      if (ssl != NULL) {
-        SSL_set_fd(ssl, get_socket());
-      } else {
+
+      ssl = make_ssl_connection(ctx, this);
+      if (ssl == NULL) {
         Debug("ssl", "SSLNetVConnection::sslServerHandShakeEvent, ssl create failed");
         SSLNetProcessor::logSSLError("SSL_StartHandShake");
         return EVENT_ERROR;
@@ -501,8 +520,7 @@ SSLNetVConnection::sslStartHandShake(int event, int &err)
     return (sslServerHandShakeEvent(err));
   } else {
     if (ssl == NULL) {
-      ssl = SSL_new(ssl_NetProcessor.client_ctx);
-      SSL_set_fd(ssl, get_socket());
+      ssl = make_ssl_connection(ssl_NetProcessor.client_ctx, this);
     }
     ink_assert(event == SSL_EVENT_CLIENT);
     return (sslClientHandShakeEvent(err));
@@ -548,6 +566,11 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
       Debug("ssl", "client selected next protocol %.*s", len, proto);
     } else {
       Debug("ssl", "client did not select a next protocol");
+    }
+
+    if (len && this->npnSet) {
+      this->npnEndpoint = this->npnSet->findEndpoint(proto, len);
+      this->npnSet = NULL;
     }
   }
 #endif /* TS_USE_TLS_NPN */
@@ -666,4 +689,27 @@ SSLNetVConnection::sslClientHandShakeEvent(int &err)
   }
   return EVENT_CONT;
 
+}
+
+void
+SSLNetVConnection::registerNextProtocolSet(const SSLNextProtocolSet * s)
+{
+  ink_release_assert(this->npnSet == NULL);
+  this->npnSet = s;
+}
+
+int
+SSLNetVConnection::advertise_next_protocol(
+    SSL *ssl, const unsigned char **out, unsigned int *outlen, void *arg)
+{
+  SSLNetVConnection * netvc = (SSLNetVConnection *)SSL_get_app_data(ssl);
+
+  ink_release_assert(netvc != NULL);
+
+  if (netvc->npnSet && netvc->npnSet->advertiseProtocols(out, outlen)) {
+    // Successful return tells OpenSSL to advertise.
+    return SSL_TLSEXT_ERR_OK;
+  }
+
+  return SSL_TLSEXT_ERR_NOACK;
 }

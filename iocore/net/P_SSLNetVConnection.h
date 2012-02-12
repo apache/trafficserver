@@ -40,6 +40,7 @@
 #include <openssl/ssl.h>
 #include <openssl/err.h>
 
+class SSLNextProtocolSet;
 
 //////////////////////////////////////////////////////////////////
 //
@@ -107,22 +108,36 @@ public:
   int sslClientHandShakeEvent(int &err);
   virtual void net_read_io(NetHandler * nh, EThread * lthread);
   virtual int64_t load_buffer_and_write(int64_t towrite, int64_t &wattempted, int64_t &total_wrote, MIOBufferAccessor & buf);
-  virtual ~ SSLNetVConnection() { }
+
+  void registerNextProtocolSet(const SSLNextProtocolSet *);
+
   ////////////////////////////////////////////////////////////
-  // instances of NetVConnection should be allocated        //
+  // Instances of NetVConnection should be allocated        //
   // only from the free list using NetVConnection::alloc(). //
-  // The constructo is public just to avoid compile errors. //
+  // The constructor is public just to avoid compile errors.//
   ////////////////////////////////////////////////////////////
   SSLNetVConnection();
+  virtual ~SSLNetVConnection() { }
+
   SSL *ssl;
   X509 *client_cert;
   X509 *server_cert;
 
+  static int advertise_next_protocol(SSL *ssl,
+    const unsigned char **out, unsigned int *outlen, void *arg);
+
+  Continuation * endpoint() const {
+    return npnEndpoint;
+  }
+
 private:
-  bool sslHandShakeComplete;
-  bool sslClientConnection;
   SSLNetVConnection(const SSLNetVConnection &);
   SSLNetVConnection & operator =(const SSLNetVConnection &);
+
+  bool sslHandShakeComplete;
+  bool sslClientConnection;
+  const SSLNextProtocolSet * npnSet;
+  Continuation * npnEndpoint;
 };
 
 typedef int (SSLNetVConnection::*SSLNetVConnHandler) (int, void *);

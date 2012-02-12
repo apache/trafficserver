@@ -147,7 +147,7 @@ public:
   typedef detail::HttpAcceptOptions Options;
 
   HttpAccept(Options const& opt = DEFAULT_OPTIONS)
-    : Continuation(0)
+    : Continuation(new_ProxyMutex())
     , detail::HttpAcceptOptions(opt) // copy these.
   {
     SET_HANDLER(&HttpAccept::mainEvent);
