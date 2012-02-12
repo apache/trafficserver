@@ -73,6 +73,12 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
    -0: zwoop (I think this breaks compatibility with existing 3.0.x
    caches, and I'm not positive it's a good idea to do so).
 
+  *) invalid setting of proxy.config.cluster.ethernet_interface will prevent traffc_manager from starting
+   Master patch SHA: 519a06b1faeab5b431c47acb0e4934df0b3b5534
+   Trunk patch: http://svn.apache.org/viewvc?view=rev&rev=1137894
+   Jira: https://issues.apache.org/jira/browse/TS-845
+   +1: zym
+
 
 STALLED ISSUES
 
