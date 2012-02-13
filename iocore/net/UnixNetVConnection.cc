@@ -532,7 +532,7 @@ UnixNetVConnection::do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf)
   read.vio.vc_server = (VConnection *) this;
   if (buf) {
     read.vio.buffer.writer_for(buf);
-    if (nbytes && !read.enabled)
+    if (!read.enabled)
       read.vio.reenable();
   } else {
     read.vio.buffer.clear();

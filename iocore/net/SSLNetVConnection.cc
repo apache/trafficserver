@@ -219,10 +219,14 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
       readReschedule(nh);
     return;
   }
+
   // If there is nothing to do, disable connection
   int64_t ntodo = s->vio.ntodo();
   if (ntodo <= 0) {
     read_disable(nh, this);
+    // Don't return early even if there's nothing. We still need
+    // to propagate events for zero-length reads.
+    readSignalDone(VC_EVENT_READ_COMPLETE, nh);
     return;
   }
 
