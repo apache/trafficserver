@@ -33,7 +33,7 @@
 # Version string is in the form of MAJOR.MINOR.MICRO[sufix]
 #
 m4_define([TS_VERSION_S],[3.0.3])
-m4_define([TS_VERSION_N],[3000000])
+m4_define([TS_VERSION_N],[3000003])
 
 AC_INIT([Apache Traffic Server], TS_VERSION_S(), [dev@trafficserver.apache.org], [trafficserver],[http://trafficserver.apache.org])
 AC_PREREQ([2.59])
