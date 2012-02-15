@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.1.2
 
+  *) [TS-1110] logstats incorrectly bucketizes all status codes greater 
+  than 599 as 5xx. Author: Manjesh Nilange
+
   *) [TS-1094] Fixed MIME parser so certain sequences of requests on
    keep alive conections no longer wedge it.
 
