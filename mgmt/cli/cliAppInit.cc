@@ -34,6 +34,7 @@
  */
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 // Not sure if we need to worry about old gcc compilers any more, but ... /leif
 #if (__GNUC__ >= 3)
 #include <iostream>

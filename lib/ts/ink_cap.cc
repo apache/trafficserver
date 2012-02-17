@@ -38,26 +38,24 @@ DebugCapabilities(char const* tag) {
       char* caps_text = cap_to_text(caps, 0);
 #   endif
 
-    Debug(tag,
-      "uid=%u, gid=%u, euid=%u, egid=%u"
 #     if TS_USE_POSIX_CAP
-        ", caps %s core=%s thread=0x%llx"
-#     endif
-      ,static_cast<unsigned int>(getuid())
-      ,static_cast<unsigned int>(getgid())
-      ,static_cast<unsigned int>(geteuid())
-      ,static_cast<unsigned int>(getegid())
-#     if TS_USE_POSIX_CAP
-        ,caps_text
-        ,prctl(PR_GET_DUMPABLE) != 1 ? "disabled" : "enabled"
-        ,(unsigned long long)pthread_self()
-#     endif
-    );
-
-#   if TS_USE_POSIX_CAP
-      cap_free(caps_text);
-      cap_free(caps);
-#   endif
+    Debug(tag, "uid=%u, gid=%u, euid=%u, egid=%u, caps %s core=%s thread=0x%llx",
+	  static_cast<unsigned int>(getuid()),
+	  static_cast<unsigned int>(getgid()),
+	  static_cast<unsigned int>(geteuid()),
+	  static_cast<unsigned int>(getegid()),
+	  caps_text,
+	  prctl(PR_GET_DUMPABLE) != 1 ? "disabled" : "enabled",
+	  (unsigned long long)pthread_self() );
+    cap_free(caps_text);
+    cap_free(caps);
+#else
+    Debug(tag, "uid=%u, gid=%u, euid=%u, egid=%u",
+	  static_cast<unsigned int>(getuid()),
+	  static_cast<unsigned int>(getgid()),
+	  static_cast<unsigned int>(geteuid()),
+	  static_cast<unsigned int>(getegid()) );
+#endif
   }
 }
 

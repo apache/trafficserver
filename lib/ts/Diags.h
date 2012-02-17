@@ -272,17 +272,19 @@ dummy_debug(const char *tag, const char *fmt, ...)
   (void)fmt;
 }
 
-#define Diag(tag, fmt, ...)      diags->log(tag, DTA(DL_Diag), fmt, ##__VA_ARGS__)
-#define Debug(tag, fmt, ...)     diags->log(tag, DTA(DL_Debug), fmt, ##__VA_ARGS__)
-#define DebugOn(tag, fmt, ...)     diags->log(tag, DTA(DL_Debug), fmt, ##__VA_ARGS__)
 
-#define Status(fmt, ...)    diags->error(DTA(DL_Status), fmt, ##__VA_ARGS__)
-#define Note(fmt, ...)      diags->error(DTA(DL_Note), fmt, ##__VA_ARGS__)
-#define Warning(fmt, ...)   diags->error(DTA(DL_Warning), fmt, ##__VA_ARGS__)
-#define Error(fmt, ...)     diags->error(DTA(DL_Error), fmt, ##__VA_ARGS__)
-#define Fatal(fmt, ...)     diags->error(DTA(DL_Fatal), fmt, ##__VA_ARGS__)
-#define Alert(fmt, ...)     diags->error(DTA(DL_Alert), fmt, ##__VA_ARGS__)
-#define Emergency(fmt, ...) diags->error(DTA(DL_Emergency), fmt, ##__VA_ARGS__)
+#define Diag(tag, ...)      diags->log(tag, DTA(DL_Diag), __VA_ARGS__)
+#define Debug(tag, ...)     diags->log(tag, DTA(DL_Debug), __VA_ARGS__)
+#define Debug(tag, ...)     diags->log(tag, DTA(DL_Debug), __VA_ARGS__)
+#define DebugOn(tag, ...)     diags->log(tag, DTA(DL_Debug), __VA_ARGS__)
+
+#define Status(...)    diags->error(DTA(DL_Status), __VA_ARGS__)
+#define Note(...)      diags->error(DTA(DL_Note), __VA_ARGS__)
+#define Warning(...)   diags->error(DTA(DL_Warning), __VA_ARGS__)
+#define Error(...)     diags->error(DTA(DL_Error), __VA_ARGS__)
+#define Fatal(...)     diags->error(DTA(DL_Fatal), __VA_ARGS__)
+#define Alert(...)     diags->error(DTA(DL_Alert), __VA_ARGS__)
+#define Emergency(...) diags->error(DTA(DL_Emergency), __VA_ARGS__)
 
 #define is_debug_tag_set(_t)     diags->on(_t,DiagsTagType_Debug)
 #define is_action_tag_set(_t)    diags->on(_t,DiagsTagType_Action)
