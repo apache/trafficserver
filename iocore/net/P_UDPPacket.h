@@ -34,7 +34,6 @@
 #define __P_UDPPPACKET_H_
 
 #include "I_UDPNet.h"
-#include "P_UDPConnection.h"
 
 //#define PACKETQUEUE_IMPL_AS_PQLIST
 #define PACKETQUEUE_IMPL_AS_RING

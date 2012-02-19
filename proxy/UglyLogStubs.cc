@@ -47,13 +47,6 @@ UDPConnection::Release()
   ink_release_assert(false);
 }
 
-void
-UDPNetProcessor::FreeBandwidth(Continuation * udpConn)
-{
-  NOWARN_UNUSED(udpConn);
-  ink_release_assert(false);
-}
-
 #include "InkAPIInternal.h"
 ConfigUpdateCbTable *global_config_cbs = NULL;
 
