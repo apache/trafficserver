@@ -215,7 +215,12 @@ SSLNetProcessor::logSSLError(const char *errStr, int critical)
 int
 SSLNetProcessor::initSSL(const SslConfigParams * param)
 {
+#if (OPENSSL_VERSION_NUMBER >= 0x10000000L) // openssl returns a const SSL_METHOD
   const SSL_METHOD *meth = NULL;
+#else
+  SSL_METHOD *meth = NULL;
+#endif
+
   // Note that we do not call RAND_seed() explicitly here, we depend on OpenSSL
   // to do the seeding of the PRNG for us. This is the case for all platforms that
   // has /dev/urandom for example.

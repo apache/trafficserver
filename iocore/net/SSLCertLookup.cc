@@ -211,7 +211,12 @@ SSLCertLookup::addInfoToHash(
     const char *strAddr, const char *cert,
     const char *caCert, const char *serverPrivateKey) const
 {
+#if (OPENSSL_VERSION_NUMBER >= 0x10000000L) // openssl returns a const SSL_METHOD
   const SSL_METHOD *meth = NULL;
+#else
+#else
+  SSL_METHOD *meth = NULL;
+#endif
 
   meth = SSLv23_server_method();
   SSL_CTX *ctx = SSL_CTX_new(meth);
