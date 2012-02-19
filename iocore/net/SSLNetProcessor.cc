@@ -25,6 +25,12 @@
 #include "I_Layout.h"
 #include "openssl/engine.h"
 
+#if (OPENSSL_VERSION_NUMBER >= 0x10000000L) // openssl returns a const SSL_METHOD
+typedef const SSL_METHOD * ink_ssl_method_t;
+#else
+typedef SSL_METHOD * ink_ssl_method_t;
+#endif
+
 //
 // Global Data
 //
@@ -215,11 +221,7 @@ SSLNetProcessor::logSSLError(const char *errStr, int critical)
 int
 SSLNetProcessor::initSSL(const SslConfigParams * param)
 {
-#if (OPENSSL_VERSION_NUMBER >= 0x10000000L) // openssl returns a const SSL_METHOD
-  const SSL_METHOD *meth = NULL;
-#else
-  SSL_METHOD *meth = NULL;
-#endif
+  ink_ssl_method_t meth = NULL;
 
   // Note that we do not call RAND_seed() explicitly here, we depend on OpenSSL
   // to do the seeding of the PRNG for us. This is the case for all platforms that
@@ -384,7 +386,7 @@ SSLNetProcessor::initSSLServerCTX(SSL_CTX * lCtx, const SslConfigParams * param,
 int
 SSLNetProcessor::initSSLClient(const SslConfigParams * param)
 {
-  const SSL_METHOD *meth = NULL;
+  ink_ssl_method_t meth = NULL;
   int client_verify_server;
   char *clientKeyPtr = NULL;
 

@@ -26,6 +26,12 @@
 #include "P_SSLCertLookup.h"
 #include "P_UnixNet.h"
 
+#if (OPENSSL_VERSION_NUMBER >= 0x10000000L) // openssl returns a const SSL_METHOD
+typedef const SSL_METHOD * ink_ssl_method_t;
+#else
+typedef SSL_METHOD * ink_ssl_method_t;
+#endif
+
 SSLCertLookup sslCertLookup;
 
 #define SSL_IP_TAG "dest_ip"
@@ -211,11 +217,7 @@ SSLCertLookup::addInfoToHash(
     const char *strAddr, const char *cert,
     const char *caCert, const char *serverPrivateKey) const
 {
-#if (OPENSSL_VERSION_NUMBER >= 0x10000000L) // openssl returns a const SSL_METHOD
-  const SSL_METHOD *meth = NULL;
-#else
-  SSL_METHOD *meth = NULL;
-#endif
+  ink_ssl_method_t meth = NULL;
 
   meth = SSLv23_server_method();
   SSL_CTX *ctx = SSL_CTX_new(meth);
