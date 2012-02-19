@@ -214,7 +214,6 @@ SSLCertLookup::addInfoToHash(
 #if (OPENSSL_VERSION_NUMBER >= 0x10000000L) // openssl returns a const SSL_METHOD
   const SSL_METHOD *meth = NULL;
 #else
-#else
   SSL_METHOD *meth = NULL;
 #endif
 
