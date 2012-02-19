@@ -2337,7 +2337,7 @@ TSStringPercentDecode(const char *str, size_t str_len, char* dst, size_t dst_siz
   sdk_assert(sdk_sanity_check_null_ptr((void*)str) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_null_ptr((void*)dst) == TS_SUCCESS);
 
-  if (str_len < 0)
+  if (0 == str_len)
     str_len = strlen(str);
 
   // return unescapifyStr(str);

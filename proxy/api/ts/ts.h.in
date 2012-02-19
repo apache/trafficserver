@@ -1664,7 +1664,7 @@ extern "C"
      guaranteed to be no longer than the source string.
 
      @param str the string to decode (and possibly write to).
-     @param str_len length of the input string (or -1).
+     @param str_len length of the input string (or 0).
      @param dst output buffer (can be the same as src).
      @param dst_len size of the output buffer.
      @param length amount of data written to the destination buffer.

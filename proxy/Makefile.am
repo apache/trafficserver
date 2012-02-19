@@ -183,11 +183,6 @@ traffic_logcat_LDADD = \
   @LIBEXPAT@ @LIBDEMANGLE@ @LIBMLD@ @LIBEXC@ @LIBICONV@ -lm @LIBPROFILER@ \
   @LIBEXECINFO@
 
-if BUILD_TESTS
-  traffic_logcat_LDADD += RegressionSM.o \
-      TestHook.o
-endif
-
 traffic_logstats_SOURCES = logstats.cc
 traffic_logstats_LDFLAGS = @EXTRA_CXX_LDFLAGS@ @LIBTOOL_LINK_FLAGS@
 traffic_logstats_LDADD = \
@@ -264,8 +259,7 @@ traffic_sac_LDADD = \
   @LIBEXECINFO@
 
 if BUILD_TESTS
-  traffic_sac_LDADD += RegressionSM.o \
-    TestHook.o
+  traffic_sac_LDADD += RegressionSM.o
 endif
 
 libTrafficServerStandalone_a_SOURCES = \
