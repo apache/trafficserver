@@ -900,7 +900,7 @@ typedef Interval<in_addr_t, in_addr_t> Ip4Span;
     for API compliance (which requires @c sockaddr* access).
 */
 class Ip4Node : public IpMap::Node, protected Ip4Span {
-  friend class IpMapBase<Ip4Node>;
+  friend struct IpMapBase<Ip4Node>;
 public:
   typedef Ip4Node self; ///< Self reference type.
 
@@ -1020,7 +1020,7 @@ typedef Interval<sockaddr_in6> Ip6Span;
 /** Node for IPv6 map.
 */
 class Ip6Node : public IpMap::Node, protected Ip6Span {
-  friend class IpMapBase<Ip6Node>;
+  friend struct IpMapBase<Ip6Node>;
 public:
   typedef Ip6Node self; ///< Self reference type.
   /// Override @c ArgType from @c Interval because the convention

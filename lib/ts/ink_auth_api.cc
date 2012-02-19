@@ -27,7 +27,7 @@
 #include "ink_code.h"
 #include "ink_auth_api.h"
 
-static int s_rand_seed = time(NULL) + s_rand_seed;
+static int s_rand_seed = time(NULL); // + s_rand_seed;
 static InkRand
 s_rand_gen(ink_rand_r((unsigned int *) &s_rand_seed) ^ (uintptr_t) &s_rand_seed);
 
