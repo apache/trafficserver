@@ -568,7 +568,7 @@ base_cc=`basename $CC`
 case $host_os in
   linux*)
     case $base_cc in
-      icc)
+    icc)
       # -Wall goes crazy, so turned these specific checks off for now:
       #
       #  111 is "statement is unrecahable"
@@ -590,30 +590,41 @@ case $host_os in
       debug_opt="-ggdb3 $common_opt"
       release_opt="-g $common_opt $optimization_flags -axsse4.2 -fno-strict-aliasing"
       cxx_opt="-Wno-invalid-offsetof"
-	  ;;
+      ;;
     clang)
       debug_opt="-ggdb3 $common_opt -Qunused-arguments"
-      release_opt="-g $common_opt $optimizing_flags -feliminate-unused-debug-symbols -fno-strict-aliasing -Qunused-arguments"
+      release_opt="-g $common_opt $optimizing_flags -fno-strict-aliasing -Qunused-arguments"
       cxx_opt="-Wno-invalid-offsetof -Qunused-arguments"
-	  ;;
+      ;;
     *) # gcc
-    # This is useful for finding odd conversions
-    #    common_opt="-pipe -Wall -Werror -Wconversion -Wno-sign-conversion"
+      # This is useful for finding odd conversions
+      #    common_opt="-pipe -Wall -Werror -Wconversion -Wno-sign-conversion"
       common_opt="-pipe -Wall -Werror"
       debug_opt="-ggdb3 $common_opt"
       release_opt="-g $common_opt $optimizing_flags -feliminate-unused-debug-symbols -fno-strict-aliasing"
       cxx_opt="-Wno-invalid-offsetof"
       ;;
-	esac
+    esac
     ;; # linux*)
   darwin*)
-    common_opt="-pipe -Wall -Werror -Wno-deprecated-declarations"
-    debug_opt="-ggdb3 $common_opt"
-    release_opt="-g $common_opt $optimizing_flags -feliminate-unused-debug-symbols -fno-strict-aliasing"
-    cxx_opt="-Wno-invalid-offsetof"
+    case $base_cc in
+    clang)
+      common_opt="-pipe -Wall -Werror -Wno-deprecated-declarations"
+      debug_opt="-ggdb3 $common_opt"
+      release_opt="-g $common_opt $optimizing_flags -fno-strict-aliasing"
+      cxx_opt="-Wno-invalid-offsetof"
+      ;;
+    *) # gcc
+      common_opt="-pipe -Wall -Werror -Wno-deprecated-declarations"
+      debug_opt="-ggdb3 $common_opt"
+      release_opt="-g $common_opt $optimizing_flags -feliminate-unused-debug-symbols -fno-strict-aliasing"
+      cxx_opt="-Wno-invalid-offsetof"
+      ;;
+    esac
+    # ToDo: This seems semi-kludgy, but useful for MacPort's I think.
     TS_ADDTO(CPPFLAGS, [-I/opt/local/include])
     TS_ADDTO(LDFLAGS, [-L/opt/local/lib])
-    ;;
+    ;; # darwin*)
   freebsd*|kfreebsd*)
     common_opt="-pipe -Wall -Werror"
     debug_opt="-ggdb3 $common_opt"
