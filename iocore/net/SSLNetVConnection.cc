@@ -427,8 +427,8 @@ SSLNetVConnection::SSLNetVConnection():
   write_error_zero(0),
   sslHandShakeComplete(false),
   sslClientConnection(false),
-  npnSet(0),
-  npnEndpoint(0)
+  npnSet(NULL),
+  npnEndpoint(NULL)
 {
   ssl = NULL;
 }
@@ -479,8 +479,9 @@ SSLNetVConnection::free(EThread * t) {
     SSL_free(ssl);
     ssl = NULL;
   }
-  sslHandShakeComplete = 0;
-  sslClientConnection = 0;
+  sslHandShakeComplete = false;
+  sslClientConnection = false;
+  npnSet = NULL;
 
   if (from_accept_thread) {
     sslNetVCAllocator.free(this);  
@@ -557,22 +558,19 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
     sslHandShakeComplete = 1;
 
 #if TS_USE_TLS_NPN
-  if (diags->on("ssl")) {
     const unsigned char * proto = NULL;
     unsigned len = 0;
 
     SSL_get0_next_proto_negotiated(ssl, &proto, &len);
     if (len) {
+      if (this->npnSet) {
+        this->npnEndpoint = this->npnSet->findEndpoint(proto, len);
+        this->npnSet = NULL;
+      }
       Debug("ssl", "client selected next protocol %.*s", len, proto);
     } else {
       Debug("ssl", "client did not select a next protocol");
     }
-
-    if (len && this->npnSet) {
-      this->npnEndpoint = this->npnSet->findEndpoint(proto, len);
-      this->npnSet = NULL;
-    }
-  }
 #endif /* TS_USE_TLS_NPN */
 
     return EVENT_DONE;

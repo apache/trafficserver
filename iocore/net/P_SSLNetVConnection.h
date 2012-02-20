@@ -123,8 +123,7 @@ public:
   X509 *client_cert;
   X509 *server_cert;
 
-  static int advertise_next_protocol(SSL *ssl,
-    const unsigned char **out, unsigned int *outlen, void *arg);
+  static int advertise_next_protocol(SSL *ssl, const unsigned char **out, unsigned int *outlen, void *arg);
 
   Continuation * endpoint() const {
     return npnEndpoint;
@@ -143,48 +142,5 @@ private:
 typedef int (SSLNetVConnection::*SSLNetVConnHandler) (int, void *);
 
 extern ClassAllocator<SSLNetVConnection> sslNetVCAllocator;
-
-//
-// Local functions
-//
-
-
-static inline SSLNetVConnection *
-new_SSLNetVConnection(EThread * thread)
-{
-  NOWARN_UNUSED(thread);
-  NET_SUM_GLOBAL_DYN_STAT(net_connections_currently_open_stat, 1);
-  SSLNetVConnection *vc = sslNetVCAllocator.alloc();
-  vc->connect_calls = 0;
-  vc->write_calls = 0;
-  vc->read_calls = 0;
-  vc->accept_calls = 0;
-  vc->connect_want_write = 0;
-  vc->connect_want_read = 0;
-  vc->connect_want_connect = 0;
-  vc->connect_want_ssl = 0;
-  vc->connect_want_syscal = 0;
-  vc->connect_want_accept = 0;
-  vc->connect_want_x509 = 0;
-  vc->connect_error_zero = 0;
-  vc->read_want_write = 0;
-  vc->read_want_read = 0;
-  vc->read_want_ssl = 0;
-  vc->read_want_syscal = 0;
-  vc->read_want_x509 = 0;
-  vc->read_error_zero = 0;
-  vc->write_want_write = 0;
-  vc->write_want_read = 0;
-  vc->write_want_ssl = 0;
-  vc->write_want_syscal = 0;
-  vc->write_want_x509 = 0;
-  vc->write_error_zero = 0;
-
-  vc->ssl = NULL;
-  vc->setSSLHandShakeComplete(0);
-  vc->id = net_next_connection_number();
-  return vc;
-}
-
 
 #endif /* _SSLNetVConnection_h_ */
