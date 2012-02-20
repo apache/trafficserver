@@ -94,7 +94,6 @@ ssl_read_from_net(NetHandler * nh, UnixNetVConnection * vc, EThread * lthread, i
     int64_t offset = 0;
     // while can be replaced with if - need to test what works faster with openssl
     while (block_write_avail > 0) {
-      sslvc->read_calls++;
       int rres = SSL_read(sslvc->ssl, b->end() + offset, (int)block_write_avail);
 
       Debug("ssl", "[SSL_NetVConnection::ssl_read_from_net] rres=%d", rres);
@@ -348,7 +347,6 @@ SSLNetVConnection::load_buffer_and_write(int64_t towrite, int64_t &wattempted, i
     total_wrote += l;
     Debug("ssl", "SSLNetVConnection::loadBufferAndCallWrite, before do_SSL_write, l=%"PRId64", towrite=%"PRId64", b=%p",
           l, towrite, b);
-    write_calls++;
     r = do_SSL_write(ssl, b->start() + offset, (int)l);
     if (r == l) {
       wattempted = total_wrote;
@@ -401,30 +399,6 @@ SSLNetVConnection::load_buffer_and_write(int64_t towrite, int64_t &wattempted, i
 }
 
 SSLNetVConnection::SSLNetVConnection():
-  connect_calls(0),
-  connect_want_write(0),
-  connect_want_read(0),
-  connect_want_connect(0),
-  connect_want_ssl(0),
-  connect_want_syscal(0),
-  connect_want_accept(0),
-  connect_want_x509(0),
-  connect_error_zero(0),
-  accept_calls(0),
-  read_calls(0),
-  read_want_write(0),
-  read_want_read(0),
-  read_want_ssl(0),
-  read_want_syscal(0),
-  read_want_x509(0),
-  read_error_zero(0),
-  write_calls(0),
-  write_want_write(0),
-  write_want_read(0),
-  write_want_ssl(0),
-  write_want_syscal(0),
-  write_want_x509(0),
-  write_error_zero(0),
   sslHandShakeComplete(false),
   sslClientConnection(false),
   npnSet(NULL),
@@ -449,30 +423,6 @@ SSLNetVConnection::free(EThread * t) {
   options.reset();
   closed = 0;
   ink_assert(con.fd == NO_FD);
-  read_calls = 0;
-  write_calls = 0;
-  connect_calls = 0;
-  accept_calls = 0;
-  connect_want_write = 0;
-  connect_want_read = 0;
-  connect_want_connect = 0;
-  connect_want_ssl = 0;
-  connect_want_syscal = 0;
-  connect_want_accept = 0;
-  connect_want_x509 = 0;
-  connect_error_zero = 0;
-  read_want_write = 0;
-  read_want_read = 0;
-  read_want_ssl = 0;
-  read_want_syscal = 0;
-  read_want_x509 = 0;
-  read_error_zero = 0;
-  write_want_write = 0;
-  write_want_read = 0;
-  write_want_ssl = 0;
-  write_want_syscal = 0;
-  write_want_x509 = 0;
-  write_error_zero = 0;
   if (ssl != NULL) {
     /*if (sslHandShakeComplete)
        SSL_set_shutdown(ssl, SSL_SENT_SHUTDOWN|SSL_RECEIVED_SHUTDOWN); */
@@ -534,10 +484,7 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
 {
   int ret;
 
-  accept_calls++;
-  //printf("calling SSL_accept for fd %d\n",con.fd);
   ret = SSL_accept(ssl);
-
   switch (SSL_get_error(ssl, ret)) {
   case SSL_ERROR_NONE:
     Debug("ssl", "SSLNetVConnection::sslServerHandShakeEvent, handshake completed successfully");
@@ -618,8 +565,6 @@ SSLNetVConnection::sslClientHandShakeEvent(int &err)
 {
   int ret;
 
-  connect_calls++;
-  //printf("calling connect for fd %d\n",con.fd);
   ret = SSL_connect(ssl);
   switch (SSL_get_error(ssl, ret)) {
   case SSL_ERROR_NONE:
@@ -643,33 +588,26 @@ SSLNetVConnection::sslClientHandShakeEvent(int &err)
     return EVENT_DONE;
 
   case SSL_ERROR_WANT_WRITE:
-    connect_want_write++;
     return SSL_HANDSHAKE_WANT_WRITE;
 
   case SSL_ERROR_WANT_READ:
-    connect_want_read++;
     return SSL_HANDSHAKE_WANT_READ;
 
   case SSL_ERROR_WANT_X509_LOOKUP:
-    connect_want_x509++;
     Debug("ssl", "SSLNetVConnection::sslClientHandShakeEvent, would block on read or write");
     break;
 
   case SSL_ERROR_WANT_ACCEPT:
-    connect_want_accept++;
     return SSL_HANDSHAKE_WANT_ACCEPT;
 
   case SSL_ERROR_WANT_CONNECT:
-    connect_want_connect++;
     break;
 
   case SSL_ERROR_ZERO_RETURN:
-    connect_error_zero++;
     Debug("ssl", "SSLNetVConnection::sslClientHandShakeEvent, EOS");
     return EVENT_ERROR;
 
   case SSL_ERROR_SYSCALL:
-    connect_want_syscal++;
     err = errno;
     Debug("ssl", "SSLNetVConnection::sslClientHandShakeEvent, syscall");
     return EVENT_ERROR;
@@ -678,7 +616,6 @@ SSLNetVConnection::sslClientHandShakeEvent(int &err)
 
   case SSL_ERROR_SSL:
   default:
-    connect_want_ssl++;
     err = errno;
     SSLNetProcessor::logSSLError("sslClientHandShakeEvent");
     return EVENT_ERROR;

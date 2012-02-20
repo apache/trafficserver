@@ -56,31 +56,6 @@ class SSLNetVConnection:public UnixNetVConnection
 #endif
 {
 public:
-  int connect_calls;
-  int connect_want_write;
-  int connect_want_read;
-  int connect_want_connect;
-  int connect_want_ssl;
-  int connect_want_syscal;
-  int connect_want_accept;
-  int connect_want_x509;
-  int connect_error_zero;
-  int accept_calls;
-  int read_calls;
-  int read_want_write;
-  int read_want_read;
-  int read_want_ssl;
-  int read_want_syscal;
-  int read_want_x509;
-  int read_error_zero;
-  int write_calls;
-  int write_want_write;
-  int write_want_read;
-  int write_want_ssl;
-  int write_want_syscal;
-  int write_want_x509;
-  int write_error_zero;
-
   virtual int sslStartHandShake(int event, int &err);
   virtual void free(EThread * t);
   virtual void enableRead()
