@@ -1762,14 +1762,6 @@ main(int argc, char **argv)
     // main server logic initiated here //
     //////////////////////////////////////
 
-#ifndef TS_NO_API
-    plugin_init(system_config_directory, false);        // plugin.config
-#else
-    api_init();                 // we still need to initialize some of the data structure other module needs.
-    extern void init_inkapi_stat_system();
-    init_inkapi_stat_system();
-    // i.e. http_global_hooks
-#endif
 #ifndef TS_NO_TRANSFORM
     transformProcessor.start();
 #endif
@@ -1789,6 +1781,15 @@ main(int argc, char **argv)
         icpProcessor.start();
 #endif
     }
+
+#ifndef TS_NO_API
+    plugin_init(system_config_directory, false);        // plugin.config
+#else
+    api_init();                 // we still need to initialize some of the data structure other module needs.
+    extern void init_inkapi_stat_system();
+    init_inkapi_stat_system();
+    // i.e. http_global_hooks
+#endif
 
     // "Task" processor, possibly with its own set of task threads
     tasksProcessor.start(num_task_threads);

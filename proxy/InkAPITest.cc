@@ -762,6 +762,8 @@ REGRESSION_TEST(SDK_API_TSCache) (RegressionTest * test, int atype, int *pstatus
   TSCacheKeyDigestSet(key, key_name, strlen(key_name));
   TSCacheKeyDigestSet(key_cmp, key_name, strlen(key_name));
 
+  // TODO: This comparison makes no sense, since TSCacheKey is an opaque struct
+#if 0
   if (memcmp(key, key_cmp, sizeof(TSCacheKey)) != 0) {
     SDK_RPRINT(test, "TSCacheKeySetDigest", "TestCase1", TC_FAIL, "digest is wrong");
 
@@ -774,6 +776,7 @@ REGRESSION_TEST(SDK_API_TSCache) (RegressionTest * test, int atype, int *pstatus
     SDK_RPRINT(test, "TSCacheKeySetDigest", "TestCase1", TC_PASS, "ok");
     TSCacheKeyDestroy(key_cmp);
   }
+#endif
 
   // prepare caching content
   // string, null-terminated.
@@ -5131,7 +5134,7 @@ REGRESSION_TEST(SDK_API_TSMimeHdrParse) (RegressionTest * test, int atype, int *
           SDK_RPRINT(test, "TSMimeHdrFieldRemove", "TestCase1", TC_FAIL, "Field Not Removed");
         }
 
-        if ((test_passed_mime_hdr_field_remove == true)) {
+        if (test_passed_mime_hdr_field_remove == true) {
           if (TSMimeHdrFieldAppend(bufp2, mime_hdr_loc2, field_loc1) != TS_SUCCESS) {
             SDK_RPRINT(test, "TSMimeHdrFieldRemove", "TestCase1", TC_FAIL,
                        "Unable to readd the field to mime header. Probably destroyed");

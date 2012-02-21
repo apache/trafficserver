@@ -126,4 +126,18 @@ int ink_ProcessMutex_try_acquire(ProcessMutex *);
 void ink_ProcessMutex_print(FILE * out, ProcessMutex *);
 
 
+struct ink_scoped_mutex
+{
+  explicit ink_scoped_mutex(ink_mutex& m) : mtx(m) {
+    ink_mutex_acquire(&mtx);
+  }
+
+  ~ink_scoped_mutex() {
+    ink_mutex_release(&mtx);
+  }
+
+private:
+  ink_mutex& mtx;
+};
+
 #endif /* _ink_mutex_h_ */

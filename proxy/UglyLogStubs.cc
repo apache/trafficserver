@@ -37,12 +37,7 @@
 
 #include "P_Net.h"
 
-int cache_config_mutex_retry_delay = 2;
-
-DNSConnection::Options const DNSConnection::DEFAULT_OPTIONS;
-
 int fds_limit = 8000;
-UDPNetProcessor& udpNet; // = udpNetInternal;
 
 ClassAllocator<UDPPacketInternal> udpPacketAllocator("udpPacketAllocator");
 
@@ -52,26 +47,6 @@ UDPConnection::Release()
   ink_release_assert(false);
 }
 
-void
-UDPNetProcessor::FreeBandwidth(Continuation * udpConn)
-{
-  NOWARN_UNUSED(udpConn);
-  ink_release_assert(false);
-}
-
-NetProcessor& netProcessor; //  = unix_netProcessor;
-
-Action *
-UnixNetProcessor::connect_re_internal(Continuation * cont, sockaddr const* target,  NetVCOptions * opt)
-{
-  NOWARN_UNUSED(cont);
-  NOWARN_UNUSED(target);
-  NOWARN_UNUSED(opt);
-  ink_release_assert(false);
-  return NULL;
-}
-
-
 #include "InkAPIInternal.h"
 ConfigUpdateCbTable *global_config_cbs = NULL;
 
@@ -80,16 +55,6 @@ ConfigUpdateCbTable::invoke(const char *name)
 {
   NOWARN_UNUSED(name);
   ink_release_assert(false);
-}
-
-const char *
-event_int_to_string(int event, int blen, char *buffer)
-{
-  NOWARN_UNUSED(event);
-  NOWARN_UNUSED(blen);
-  NOWARN_UNUSED(buffer);
-  ink_release_assert(false);
-  return NULL;
 }
 
 struct Machine {  static Machine* instance(); };
@@ -108,15 +73,6 @@ LogCollationAccept::LogCollationAccept(int port)
 LogCollationAccept::~LogCollationAccept()
 {
 }
-
-//
-//int
-//LogHost::write(LogBuffer * lb)
-//{
-//  NOWARN_UNUSED(lb);
-//  ink_release_assert(false);
-//  return 0;
-//}
 
 #include "LogCollationClientSM.h"
 LogCollationClientSM::LogCollationClientSM(LogHost * log_host):
@@ -151,6 +107,7 @@ LogCollationClientSM::send(LogBuffer * log_buffer)
 // TODO: The following was necessary only for Solaris, should examine more.
 NetVCOptions const Connection::DEFAULT_OPTIONS;
 NetProcessor::AcceptOptions const NetProcessor::DEFAULT_ACCEPT_OPTIONS;
+DNSConnection::Options const DNSConnection::DEFAULT_OPTIONS;
 
 // TODO: This is even uglier, this actually gets called here when "defined".
 NetProcessor::AcceptOptions&
@@ -168,19 +125,7 @@ NetProcessor::AcceptOptions::reset()
   return *this;
 }
 
-int
-net_accept(NetAccept * na, void *ep, bool blockable)
-{
-  NOWARN_UNUSED(na);
-  NOWARN_UNUSED(ep);
-  NOWARN_UNUSED(blockable);
-  ink_release_assert(false);
-  return 0;
-}
-
-
 // These are for clang / llvm
-
 int
 CacheVC::handleWrite(int event, Event *e)
 {
@@ -189,3 +134,22 @@ CacheVC::handleWrite(int event, Event *e)
   return 0;
   ink_release_assert(false);
 }
+
+
+// For Intel ICC
+int cache_config_mutex_retry_delay = 2;
+
+void
+SplitDNSConfig::reconfigure()
+{
+}
+
+ClassAllocator<CacheRemoveCont> cacheRemoveContAllocator("cacheRemoveCont");
+
+CacheHostTable::CacheHostTable(Cache *c, int typ)
+{
+  NOWARN_UNUSED(c);
+  NOWARN_UNUSED(typ);
+}
+
+CacheHostTable::~CacheHostTable() { }

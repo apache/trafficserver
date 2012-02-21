@@ -1,7 +1,5 @@
 /** @file
 
-  Common SSL initialization/cleanup fuctions from SSLNet.h
-
   @section license License
 
   Licensed to the Apache Software Foundation (ASF) under one
@@ -26,44 +24,28 @@
 #include "P_Net.h"
 #include "I_Layout.h"
 #include "openssl/engine.h"
-#include "openssl/dso.h"
+
+#if (OPENSSL_VERSION_NUMBER >= 0x10000000L) // openssl returns a const SSL_METHOD
+typedef const SSL_METHOD * ink_ssl_method_t;
+#else
+typedef SSL_METHOD * ink_ssl_method_t;
+#endif
+
+//
+// Global Data
+//
+
+SSLNetProcessor ssl_NetProcessor;
+NetProcessor & sslNetProcessor = ssl_NetProcessor;
+
+EventType SSLNetProcessor::ET_SSL;
 
 void sslLockingCallback(int mode, int type, const char *file, int line);
 unsigned long SSL_pthreads_thread_id();
 
 bool SSLNetProcessor::open_ssl_initialized = false;
 
-#if TS_USE_TLS_NPN
 static int
-npn_advertise_protocols(SSL *ssl,
-    const unsigned char **out, unsigned int *outlen, void *arg)
-{
-  static const unsigned char protocols[] =
-    "\x08http/1.0"
-    "\x08http/1.1";
-
-  SSLNetProcessor * sslNetProc = (SSLNetProcessor *)arg;
-
-  // XXX: At some point we need to figure out how to know which protocols to
-  // advertise.
-  (void)sslNetProc;
-
-  // For currently defined protocol strings,
-  // see http://technotes.googlecode.com/git/nextprotoneg.html. The OpenSSL
-  // documentation tells us to return a string in "wire format". The draft NPN
-  // RFC helpfuly refuses to document the wire format. The above link says we
-  // need to send length-prefixed strings, but does not say how many bytes the
-  // length is. Nice.
-  *out = protocols;
-  *outlen = sizeof(protocols) - 1;
-
-  // Successful return tells OpenSSL to advertise.
-  return SSL_TLSEXT_ERR_OK;
-}
-#endif /* TS_USE_TLS_NPN */
-
-
-int
 SSL_CTX_add_extra_chain_cert_file(SSL_CTX * ctx, const char *file)
 {
   BIO *in;
@@ -103,7 +85,6 @@ end:
     BIO_free(in);
   return (ret);
 }
-
 
 void
 SSLNetProcessor::cleanup(void)
@@ -203,9 +184,6 @@ SSL_pthreads_thread_id()
   return (unsigned long) (eth->id);
 }
 
-
-
-
 void
 SSLNetProcessor::logSSLError(const char *errStr, int critical)
 {
@@ -241,13 +219,10 @@ SSLNetProcessor::logSSLError(const char *errStr, int critical)
 }
 
 int
-SSLNetProcessor::initSSL(SslConfigParams * param)
+SSLNetProcessor::initSSL(const SslConfigParams * param)
 {
-#if (OPENSSL_VERSION_NUMBER >= 0x10000000L) // openssl returns a const SSL_METHOD now
-  const SSL_METHOD *meth = NULL;
-#else
-  SSL_METHOD *meth = NULL;
-#endif
+  ink_ssl_method_t meth = NULL;
+
   // Note that we do not call RAND_seed() explicitly here, we depend on OpenSSL
   // to do the seeding of the PRNG for us. This is the case for all platforms that
   // has /dev/urandom for example.
@@ -259,12 +234,13 @@ SSLNetProcessor::initSSL(SslConfigParams * param)
     return (-1);
   }
 
-  return (initSSLServerCTX(param, ctx, param->serverCertPath, param->serverCertChainPath, param->serverKeyPath, true));
+  return initSSLServerCTX(ctx, param, param->serverCertPath, param->serverCertChainPath, param->serverKeyPath, true);
 }
 
 int
-SSLNetProcessor::initSSLServerCTX(SslConfigParams * param, SSL_CTX * lCtx,
-                                  char *serverCertPtr, char *serverCaCertPtr, char *serverKeyPtr, bool defaultEnabled)
+SSLNetProcessor::initSSLServerCTX(SSL_CTX * lCtx, const SslConfigParams * param,
+    const char *serverCertPtr, const char *serverCaCertPtr,
+    const char *serverKeyPtr, bool defaultEnabled)
 {
   int session_id_context;
   int server_verify_client;
@@ -272,7 +248,7 @@ SSLNetProcessor::initSSLServerCTX(SslConfigParams * param, SSL_CTX * lCtx,
 
   // disable selected protocols
   SSL_CTX_set_options(lCtx, param->ssl_ctx_options);
-  
+
   switch (param->ssl_session_cache) {
   case SslConfigParams::SSL_SESSION_CACHE_MODE_OFF:
     SSL_CTX_set_session_cache_mode(lCtx, SSL_SESS_CACHE_OFF|SSL_SESS_CACHE_NO_INTERNAL);
@@ -284,7 +260,7 @@ SSLNetProcessor::initSSLServerCTX(SslConfigParams * param, SSL_CTX * lCtx,
   }
 
   //might want to make configurable at some point.
-  verify_depth = param->verify_depth;
+  int verify_depth = param->verify_depth;
   SSL_CTX_set_quiet_shutdown(lCtx, 1);
 
   if (defaultEnabled) {
@@ -355,14 +331,12 @@ SSLNetProcessor::initSSLServerCTX(SslConfigParams * param, SSL_CTX * lCtx,
     }
     ats_free(completeServerCertPath);
 
-
   }
 
   if (!SSL_CTX_check_private_key(lCtx)) {
     logSSLError("Server private key does not match the certificate public key");
     return -4;
   }
-
 
   if (param->clientCertLevel != 0) {
 
@@ -393,7 +367,6 @@ SSLNetProcessor::initSSLServerCTX(SslConfigParams * param, SSL_CTX * lCtx,
     SSL_CTX_set_client_CA_list(lCtx, SSL_load_client_CA_file(param->CACertFilename));
   }
 
-
   if (param->cipherSuite != NULL) {
     if (!SSL_CTX_set_cipher_list(lCtx, param->cipherSuite)) {
       logSSLError("Invalid Cipher Suite in records.config");
@@ -402,7 +375,8 @@ SSLNetProcessor::initSSLServerCTX(SslConfigParams * param, SSL_CTX * lCtx,
   }
 
 #if TS_USE_TLS_NPN
-  SSL_CTX_set_next_protos_advertised_cb(lCtx, npn_advertise_protocols, this);
+  SSL_CTX_set_next_protos_advertised_cb(lCtx,
+      SSLNetVConnection::advertise_next_protocol, this);
 #endif /* TS_USE_TLS_NPN */
 
   return 0;
@@ -410,13 +384,9 @@ SSLNetProcessor::initSSLServerCTX(SslConfigParams * param, SSL_CTX * lCtx,
 }
 
 int
-SSLNetProcessor::initSSLClient(SslConfigParams * param)
+SSLNetProcessor::initSSLClient(const SslConfigParams * param)
 {
-#if (OPENSSL_VERSION_NUMBER >= 0x10000000L) // openssl returns a const SSL_METHOD now
-  const SSL_METHOD *meth = NULL;
-#else
-  SSL_METHOD *meth = NULL;
-#endif
+  ink_ssl_method_t meth = NULL;
   int client_verify_server;
   char *clientKeyPtr = NULL;
 
@@ -430,7 +400,7 @@ SSLNetProcessor::initSSLClient(SslConfigParams * param)
 
   // disable selected protocols
   SSL_CTX_set_options(client_ctx, param->ssl_ctx_options);
-  verify_depth = param->client_verify_depth;
+  int verify_depth = param->client_verify_depth;
   if (!client_ctx) {
     logSSLError("Cannot create new client contex.");
     return (-1);
@@ -473,4 +443,64 @@ SSLNetProcessor::initSSLClient(SslConfigParams * param)
     }
   }
   return (0);
+}
+
+int
+SSLNetProcessor::start(int number_of_ssl_threads)
+{
+  sslTerminationConfig.startup();
+  int err = reconfigure();
+
+  if (err != 0) {
+    return -1;
+  }
+
+  if (number_of_ssl_threads < 1)
+    return -1;
+
+  SSLNetProcessor::ET_SSL = eventProcessor.spawn_event_threads(number_of_ssl_threads, "ET_SSL");
+  if (err == 0) {
+    err = UnixNetProcessor::start();
+  }
+
+  return err;
+}
+
+NetAccept *
+SSLNetProcessor::createNetAccept()
+{
+  return ((NetAccept *) NEW(new SSLNetAccept));
+}
+
+// Virtual function allows etype to be upgraded to ET_SSL for SSLNetProcessor.  Does
+// nothing for NetProcessor
+void
+SSLNetProcessor::upgradeEtype(EventType & etype)
+{
+  if (etype == ET_NET) {
+    etype = ET_SSL;
+  }
+}
+
+// Functions all THREAD_FREE and THREAD_ALLOC to be performed
+// for both SSL and regular NetVConnection transparent to
+// netProcessor connect functions. Yes it looks goofy to
+// have them in both places, but it saves a bunch of
+// connect code from being duplicated.
+UnixNetVConnection *
+SSLNetProcessor::allocateThread(EThread *t)
+{
+  return ((UnixNetVConnection *) THREAD_ALLOC(sslNetVCAllocator, t));
+}
+
+void
+SSLNetProcessor::freeThread(UnixNetVConnection *vc, EThread *t)
+{
+  ink_assert(!vc->from_accept_thread);
+  THREAD_FREE((SSLNetVConnection *) vc, sslNetVCAllocator, t);
+}
+
+SSLNetProcessor::~SSLNetProcessor()
+{
+  cleanup();
 }

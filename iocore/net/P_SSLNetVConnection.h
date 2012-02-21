@@ -40,6 +40,7 @@
 #include <openssl/ssl.h>
 #include <openssl/err.h>
 
+class SSLNextProtocolSet;
 
 //////////////////////////////////////////////////////////////////
 //
@@ -55,31 +56,6 @@ class SSLNetVConnection:public UnixNetVConnection
 #endif
 {
 public:
-  int connect_calls;
-  int connect_want_write;
-  int connect_want_read;
-  int connect_want_connect;
-  int connect_want_ssl;
-  int connect_want_syscal;
-  int connect_want_accept;
-  int connect_want_x509;
-  int connect_error_zero;
-  int accept_calls;
-  int read_calls;
-  int read_want_write;
-  int read_want_read;
-  int read_want_ssl;
-  int read_want_syscal;
-  int read_want_x509;
-  int read_error_zero;
-  int write_calls;
-  int write_want_write;
-  int write_want_read;
-  int write_want_ssl;
-  int write_want_syscal;
-  int write_want_x509;
-  int write_error_zero;
-
   virtual int sslStartHandShake(int event, int &err);
   virtual void free(EThread * t);
   virtual void enableRead()
@@ -107,69 +83,39 @@ public:
   int sslClientHandShakeEvent(int &err);
   virtual void net_read_io(NetHandler * nh, EThread * lthread);
   virtual int64_t load_buffer_and_write(int64_t towrite, int64_t &wattempted, int64_t &total_wrote, MIOBufferAccessor & buf);
-  virtual ~ SSLNetVConnection() { }
+
+  void registerNextProtocolSet(const SSLNextProtocolSet *);
+
   ////////////////////////////////////////////////////////////
-  // instances of NetVConnection should be allocated        //
+  // Instances of NetVConnection should be allocated        //
   // only from the free list using NetVConnection::alloc(). //
-  // The constructo is public just to avoid compile errors. //
+  // The constructor is public just to avoid compile errors.//
   ////////////////////////////////////////////////////////////
   SSLNetVConnection();
+  virtual ~SSLNetVConnection() { }
+
   SSL *ssl;
   X509 *client_cert;
   X509 *server_cert;
 
+  static int advertise_next_protocol(SSL *ssl, const unsigned char **out, unsigned int *outlen, void *arg);
+
+  Continuation * endpoint() const {
+    return npnEndpoint;
+  }
+
 private:
-  bool sslHandShakeComplete;
-  bool sslClientConnection;
   SSLNetVConnection(const SSLNetVConnection &);
   SSLNetVConnection & operator =(const SSLNetVConnection &);
+
+  bool sslHandShakeComplete;
+  bool sslClientConnection;
+  const SSLNextProtocolSet * npnSet;
+  Continuation * npnEndpoint;
 };
 
 typedef int (SSLNetVConnection::*SSLNetVConnHandler) (int, void *);
 
 extern ClassAllocator<SSLNetVConnection> sslNetVCAllocator;
-
-//
-// Local functions
-//
-
-
-static inline SSLNetVConnection *
-new_SSLNetVConnection(EThread * thread)
-{
-  NOWARN_UNUSED(thread);
-  NET_SUM_GLOBAL_DYN_STAT(net_connections_currently_open_stat, 1);
-  SSLNetVConnection *vc = sslNetVCAllocator.alloc();
-  vc->connect_calls = 0;
-  vc->write_calls = 0;
-  vc->read_calls = 0;
-  vc->accept_calls = 0;
-  vc->connect_want_write = 0;
-  vc->connect_want_read = 0;
-  vc->connect_want_connect = 0;
-  vc->connect_want_ssl = 0;
-  vc->connect_want_syscal = 0;
-  vc->connect_want_accept = 0;
-  vc->connect_want_x509 = 0;
-  vc->connect_error_zero = 0;
-  vc->read_want_write = 0;
-  vc->read_want_read = 0;
-  vc->read_want_ssl = 0;
-  vc->read_want_syscal = 0;
-  vc->read_want_x509 = 0;
-  vc->read_error_zero = 0;
-  vc->write_want_write = 0;
-  vc->write_want_read = 0;
-  vc->write_want_ssl = 0;
-  vc->write_want_syscal = 0;
-  vc->write_want_x509 = 0;
-  vc->write_error_zero = 0;
-
-  vc->ssl = NULL;
-  vc->setSSLHandShakeComplete(0);
-  vc->id = net_next_connection_number();
-  return vc;
-}
-
 
 #endif /* _SSLNetVConnection_h_ */

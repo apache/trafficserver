@@ -506,6 +506,57 @@ template <
   NodeList _list;
 };
 
+// Helper functions
+
+inline int cmp(sockaddr_in6 const& lhs, sockaddr_in6 const& rhs) {
+  return memcmp(lhs.sin6_addr.s6_addr, rhs.sin6_addr.s6_addr, INK_IP6_SIZE);
+}
+
+/// Less than.
+inline bool operator<(sockaddr_in6 const& lhs, sockaddr_in6 const& rhs) {
+  return -1 == ts::detail::cmp(lhs, rhs);
+}
+inline bool operator<(sockaddr_in6 const* lhs, sockaddr_in6 const& rhs) {
+  return -1 == ts::detail::cmp(*lhs, rhs);
+}
+/// Less than.
+inline bool operator<(sockaddr_in6 const& lhs, sockaddr_in6 const* rhs) {
+  return -1 == ts::detail::cmp(lhs, *rhs);
+}
+/// Equality.
+inline bool operator==(sockaddr_in6 const& lhs, sockaddr_in6 const* rhs) {
+  return 0 == ts::detail::cmp(lhs, *rhs);
+}
+/// Equality.
+inline bool operator==(sockaddr_in6 const* lhs, sockaddr_in6 const& rhs) {
+  return 0 == ts::detail::cmp(*lhs, rhs);
+}
+/// Equality.
+inline bool operator==(sockaddr_in6 const& lhs, sockaddr_in6 const& rhs) {
+  return 0 == ts::detail::cmp(lhs, rhs);
+}
+/// Less than or equal.
+inline bool operator<=(sockaddr_in6 const& lhs, sockaddr_in6 const* rhs) {
+  return 1 != ts::detail::cmp(lhs, *rhs);
+}
+/// Less than or equal.
+inline bool operator<=(sockaddr_in6 const& lhs, sockaddr_in6 const& rhs) {
+  return 1 != ts::detail::cmp(lhs, rhs);
+}
+/// Greater than or equal.
+inline bool operator>=(sockaddr_in6 const& lhs, sockaddr_in6 const& rhs) {
+  return -1 != ts::detail::cmp(lhs, rhs);
+}
+/// Greater than or equal.
+inline bool operator>=(sockaddr_in6 const& lhs, sockaddr_in6 const* rhs) {
+  return -1 != ts::detail::cmp(lhs, *rhs);
+}
+/// Greater than.
+inline bool operator>(sockaddr_in6 const& lhs, sockaddr_in6 const* rhs) {
+  return 1 == ts::detail::cmp(lhs, *rhs);
+}
+
+
 template < typename N > N*
 IpMapBase<N>::lowerBound(ArgType target) {
   N* n = _root; // current node to test.
@@ -900,7 +951,7 @@ typedef Interval<in_addr_t, in_addr_t> Ip4Span;
     for API compliance (which requires @c sockaddr* access).
 */
 class Ip4Node : public IpMap::Node, protected Ip4Span {
-  friend class IpMapBase<Ip4Node>;
+  friend struct IpMapBase<Ip4Node>;
 public:
   typedef Ip4Node self; ///< Self reference type.
 
@@ -1020,7 +1071,7 @@ typedef Interval<sockaddr_in6> Ip6Span;
 /** Node for IPv6 map.
 */
 class Ip6Node : public IpMap::Node, protected Ip6Span {
-  friend class IpMapBase<Ip6Node>;
+  friend struct IpMapBase<Ip6Node>;
 public:
   typedef Ip6Node self; ///< Self reference type.
   /// Override @c ArgType from @c Interval because the convention
@@ -1150,56 +1201,6 @@ protected:
   }
   
 };
-
-inline int cmp(sockaddr_in6 const& lhs, sockaddr_in6 const& rhs) {
-  return memcmp(lhs.sin6_addr.s6_addr, rhs.sin6_addr.s6_addr, INK_IP6_SIZE);
-}
-
-// Helper functions
-
-/// Less than.
-inline bool operator<(sockaddr_in6 const& lhs, sockaddr_in6 const& rhs) {
-  return -1 == ts::detail::cmp(lhs, rhs);
-}
-inline bool operator<(sockaddr_in6 const* lhs, sockaddr_in6 const& rhs) {
-  return -1 == ts::detail::cmp(*lhs, rhs);
-}
-/// Less than.
-inline bool operator<(sockaddr_in6 const& lhs, sockaddr_in6 const* rhs) {
-  return -1 == ts::detail::cmp(lhs, *rhs);
-}
-/// Equality.
-inline bool operator==(sockaddr_in6 const& lhs, sockaddr_in6 const* rhs) {
-  return 0 == ts::detail::cmp(lhs, *rhs);
-}
-/// Equality.
-inline bool operator==(sockaddr_in6 const* lhs, sockaddr_in6 const& rhs) {
-  return 0 == ts::detail::cmp(*lhs, rhs);
-}
-/// Equality.
-inline bool operator==(sockaddr_in6 const& lhs, sockaddr_in6 const& rhs) {
-  return 0 == ts::detail::cmp(lhs, rhs);
-}
-/// Less than or equal.
-inline bool operator<=(sockaddr_in6 const& lhs, sockaddr_in6 const* rhs) {
-  return 1 != ts::detail::cmp(lhs, *rhs);
-}
-/// Less than or equal.
-inline bool operator<=(sockaddr_in6 const& lhs, sockaddr_in6 const& rhs) {
-  return 1 != ts::detail::cmp(lhs, rhs);
-}
-/// Greater than or equal.
-inline bool operator>=(sockaddr_in6 const& lhs, sockaddr_in6 const& rhs) {
-  return -1 != ts::detail::cmp(lhs, rhs);
-}
-/// Greater than or equal.
-inline bool operator>=(sockaddr_in6 const& lhs, sockaddr_in6 const* rhs) {
-  return -1 != ts::detail::cmp(lhs, *rhs);
-}
-/// Greater than.
-inline bool operator>(sockaddr_in6 const& lhs, sockaddr_in6 const* rhs) {
-  return 1 == ts::detail::cmp(lhs, *rhs);
-}
 
 // We declare this after the helper operators and inside this namespace
 // so that the template uses these for comparisons.

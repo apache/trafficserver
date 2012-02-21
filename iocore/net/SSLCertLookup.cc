@@ -26,6 +26,12 @@
 #include "P_SSLCertLookup.h"
 #include "P_UnixNet.h"
 
+#if (OPENSSL_VERSION_NUMBER >= 0x10000000L) // openssl returns a const SSL_METHOD
+typedef const SSL_METHOD * ink_ssl_method_t;
+#else
+typedef SSL_METHOD * ink_ssl_method_t;
+#endif
+
 SSLCertLookup sslCertLookup;
 
 #define SSL_IP_TAG "dest_ip"
@@ -147,7 +153,7 @@ SSLCertLookup::buildTable()
 }
 
 const char *
-SSLCertLookup::extractIPAndCert(matcher_line * line_info, char **addr, char **cert, char **ca, char **priKey)
+SSLCertLookup::extractIPAndCert(matcher_line * line_info, char **addr, char **cert, char **ca, char **priKey) const
 {
 //  ip_addr_t testAddr;
   char *label;
@@ -206,31 +212,29 @@ SSLCertLookup::extractIPAndCert(matcher_line * line_info, char **addr, char **ce
     return NULL;
 }
 
-int
-SSLCertLookup::addInfoToHash(char *strAddr, char *cert, char *caCert, char *serverPrivateKey)
+bool
+SSLCertLookup::addInfoToHash(
+    const char *strAddr, const char *cert,
+    const char *caCert, const char *serverPrivateKey) const
 {
+  ink_ssl_method_t meth = NULL;
 
-#if (OPENSSL_VERSION_NUMBER >= 0x10000000L) // openssl returns a const SSL_METHOD now
-  const SSL_METHOD *meth = NULL;
-#else
-  SSL_METHOD *meth = NULL;
-#endif
   meth = SSLv23_server_method();
   SSL_CTX *ctx = SSL_CTX_new(meth);
   if (!ctx) {
-    ssl_NetProcessor.logSSLError("Cannot create new server contex.");
+    SSLNetProcessor::logSSLError("Cannot create new server contex.");
     return (false);
   }
 //  if (serverPrivateKey == NULL)
 //      serverPrivateKey = cert;
 
-  ssl_NetProcessor.initSSLServerCTX(param, ctx, cert, caCert,  serverPrivateKey, false);
+  ssl_NetProcessor.initSSLServerCTX(ctx, param, cert, caCert,  serverPrivateKey, false);
   ink_hash_table_insert(SSLCertLookupHashTable, strAddr, (void *) ctx);
   return (true);
 }
 
 SSL_CTX *
-SSLCertLookup::findInfoInHash(char *strAddr)
+SSLCertLookup::findInfoInHash(char *strAddr) const
 {
 
   InkHashTableValue hash_value;

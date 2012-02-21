@@ -423,7 +423,7 @@ template<class Data, class Result> void HostRegexMatcher<Data, Result>::Match(RD
     r = pcre_exec(this->re_array[i], NULL, url_str, strlen(url_str), 0, 0, NULL, 0);
     if (r != -1) {
       Debug("matcher", "%s Matched %s with regex at line %d",
-            this->matcher_name, url_str, this->data_array[i].line_num);
+            const_cast<char*>(this->matcher_name), url_str, this->data_array[i].line_num);
       this->data_array[i].UpdateMatch(result, rdata);
     } else {
       // An error has occured
@@ -541,7 +541,7 @@ template<class Data, class Result>
 
 template<class Data, class Result> void IpMatcher<Data, Result>::Print()
 {
-  printf("\tIp Matcher with %d elements, %Zu ranges.\n", num_el, ip_map.getCount());
+  printf("\tIp Matcher with %d elements, %zu ranges.\n", num_el, ip_map.getCount());
   for ( IpMap::iterator spot(ip_map.begin()), limit(ip_map.end()) ; spot != limit ; ++spot) {
     char b1[INET6_ADDRSTRLEN], b2[INET6_ADDRSTRLEN];
     printf("\tRange %s - %s ",
