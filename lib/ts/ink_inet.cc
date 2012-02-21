@@ -179,22 +179,6 @@ ats_ip_family_name(int family) {
     ;
 }
 
-uint16_t ink_inet_port(const struct sockaddr *addr)
-{
-  uint16_t port = 0;
-
-  switch (addr->sa_family) {
-  case AF_INET:
-    port = ntohs(((struct sockaddr_in *)addr)->sin_port);
-    break;
-  case AF_INET6:
-    port = ntohs(((struct sockaddr_in6 *)addr)->sin6_port);
-    break;
-  }
-
-  return port;
-}
-
 char const* ats_ip_nptop(
   sockaddr const* addr,
   char* dst, size_t size
@@ -208,7 +192,7 @@ char const* ats_ip_nptop(
 }
 
 int
-ink_inet_parse(ts::ConstBuffer src, ts::ConstBuffer* addr, ts::ConstBuffer* port) {
+ats_ip_parse(ts::ConstBuffer src, ts::ConstBuffer* addr, ts::ConstBuffer* port) {
   addr->reset();
   port->reset();
 
@@ -263,7 +247,7 @@ ats_ip_pton(char const* text, sockaddr* ip) {
   ts::ConstBuffer src(text, strlen(text)+1);
 
   ats_ip_invalidate(ip);
-  if (0 == ink_inet_parse(src, &addr, &port)) {
+  if (0 == ats_ip_parse(src, &addr, &port)) {
     // Copy if not terminated.
     if (0 != addr[addr.size()-1]) {
       char* tmp = static_cast<char*>(alloca(addr.size()+1));
@@ -393,7 +377,7 @@ ats_ip_getbestaddrinfo(char const* host,
   if (ip4) ats_ip_invalidate(ip4);
   if (ip6) ats_ip_invalidate(ip6);
 
-  if (0 == ink_inet_parse(src, &addr_text, &port_text)) {
+  if (0 == ats_ip_parse(src, &addr_text, &port_text)) {
     // Copy if not terminated.
     if (0 != addr_text[addr_text.size()-1]) {
       char* tmp = static_cast<char*>(alloca(addr_text.size()+1));

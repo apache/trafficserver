@@ -149,7 +149,6 @@ struct hostent *ink_gethostbyaddr_r(char *ip, int len, int type, ink_gethostbyad
 inkcoreapi uint32_t ink_inet_addr(const char *s);
 
 const char *ats_ip_ntop(const struct sockaddr *addr, char *dst, size_t size);
-uint16_t ink_inet_port(const struct sockaddr *addr);
 
 // --
 /// Size in bytes of an IPv6 address.
