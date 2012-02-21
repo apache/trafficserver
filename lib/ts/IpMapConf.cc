@@ -68,7 +68,7 @@ read_addr(
   }
 
   dst[k] = '\0';
-  if (0 != ink_inet_pton(dst, addr)) {
+  if (0 != ats_ip_pton(dst, addr)) {
     snprintf(err, ERR_STRING_LEN,
       "IP address '%s' improperly formatted", dst
     );
@@ -106,7 +106,7 @@ Load_IpMap_From_File(IpMap* map, FILE* f, const char *key_str)
 {
   int i, n, line_no;
   int key_len = strlen(key_str);
-  ts_ip_endpoint laddr, raddr;
+  IpEndpoint laddr, raddr;
   char line[MAX_LINE_SIZE];
   char err_buff[ERR_STRING_LEN];
 

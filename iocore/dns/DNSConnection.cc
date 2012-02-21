@@ -85,12 +85,12 @@ DNSConnection::connect(sockaddr const* addr, Options const& opt)
 //                       bool non_blocking_connect, bool use_tcp, bool non_blocking, bool bind_random_port)
 {
   ink_assert(fd == NO_FD);
-  ink_assert(ink_inet_is_ip(addr));
+  ink_assert(ats_is_ip(addr));
 
   int res = 0;
   short Proto;
   uint8_t af = addr->sa_family;
-  ts_ip_endpoint bind_addr;
+  IpEndpoint bind_addr;
   size_t bind_size = 0;
 
   if (opt._use_tcp) {
@@ -109,15 +109,15 @@ DNSConnection::connect(sockaddr const* addr, Options const& opt)
   bind_addr.sa.sa_family = af;
 
   if (AF_INET6 == af) {
-    if (ink_inet_is_ip6(opt._local_ipv6)) {
-      ink_inet_copy(&bind_addr.sa, opt._local_ipv6);
+    if (ats_is_ip6(opt._local_ipv6)) {
+      ats_ip_copy(&bind_addr.sa, opt._local_ipv6);
     } else {
       bind_addr.sin6.sin6_addr = in6addr_any;
     }
     bind_size = sizeof(sockaddr_in6);
   } else if (AF_INET == af) {
-      if (ink_inet_is_ip4(opt._local_ipv4))
-        ink_inet_copy(&bind_addr.sa, opt._local_ipv4);
+      if (ats_is_ip4(opt._local_ipv4))
+        ats_ip_copy(&bind_addr.sa, opt._local_ipv4);
       else
         bind_addr.sin.sin_addr.s_addr = INADDR_ANY;
       bind_size = sizeof(sockaddr_in);
@@ -127,7 +127,7 @@ DNSConnection::connect(sockaddr const* addr, Options const& opt)
 
   if (opt._bind_random_port) {
     int retries = 0;
-    ts_ip_endpoint bind_addr;
+    IpEndpoint bind_addr;
     size_t bind_size = 0;
     memset(&bind_addr, 0, sizeof bind_addr);
     bind_addr.sa.sa_family = af;
@@ -142,8 +142,8 @@ DNSConnection::connect(sockaddr const* addr, Options const& opt)
       ip_port_text_buffer b;
       uint32_t p = generator.random();
       p = static_cast<uint16_t>((p % (LAST_RANDOM_PORT - FIRST_RANDOM_PORT)) + FIRST_RANDOM_PORT);
-      ink_inet_port_cast(&bind_addr.sa) = htons(p); // stuff port in sockaddr.
-      Debug("dns", "random port = %s\n", ink_inet_nptop(&bind_addr.sa, b, sizeof b));
+      ats_ip_port_cast(&bind_addr.sa) = htons(p); // stuff port in sockaddr.
+      Debug("dns", "random port = %s\n", ats_ip_nptop(&bind_addr.sa, b, sizeof b));
       if ((res = socketManager.ink_bind(fd, &bind_addr.sa, bind_size, Proto)) < 0) {
         continue;
       }
@@ -151,11 +151,11 @@ DNSConnection::connect(sockaddr const* addr, Options const& opt)
     }
     Warning("unable to bind random DNS port");
   Lok:;
-  } else if (ink_inet_is_ip(&bind_addr.sa)) {
+  } else if (ats_is_ip(&bind_addr.sa)) {
     ip_text_buffer b;
     res = socketManager.ink_bind(fd, &bind_addr.sa, bind_size, Proto);
     if (res < 0) Warning("Unable to bind local address to %s.",
-      ink_inet_ntop(&bind_addr.sa, b, sizeof b));
+      ats_ip_ntop(&bind_addr.sa, b, sizeof b));
   }
 
   if (opt._non_blocking_connect)
@@ -177,8 +177,8 @@ DNSConnection::connect(sockaddr const* addr, Options const& opt)
     goto Lerror;
 #endif
 
-  ink_inet_copy(&ip.sa, addr);
-  res =::connect(fd, addr, ink_inet_ip_size(addr));
+  ats_ip_copy(&ip.sa, addr);
+  res =::connect(fd, addr, ats_ip_size(addr));
 
   if (!res || ((res < 0) && (errno == EINPROGRESS || errno == EWOULDBLOCK))) {
     if (!opt._non_blocking_connect && opt._non_blocking_io)

@@ -64,11 +64,11 @@ Connection::setup_mc_send(
     goto Lerror;
   }
 
-  if ((res = socketManager.ink_bind(fd, my_addr, ink_inet_ip_size(my_addr), IPPROTO_UDP)) < 0) {
+  if ((res = socketManager.ink_bind(fd, my_addr, ats_ip_size(my_addr), IPPROTO_UDP)) < 0) {
     goto Lerror;
   }
 
-  ink_inet_copy(&addr, mc_addr);
+  ats_ip_copy(&addr, mc_addr);
 
 #ifdef SET_CLOSE_ON_EXEC
   if ((res = safe_fcntl(fd, F_SETFD, 1)) < 0)
@@ -124,19 +124,19 @@ Connection::setup_mc_receive(
   if ((res = safe_setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (char *) &enable_reuseaddr, sizeof(enable_reuseaddr)) < 0))
     goto Lerror;
 
-  ink_inet_copy(&addr, mc_addr);
+  ats_ip_copy(&addr, mc_addr);
 
-  if ((res = socketManager.ink_bind(fd, &addr.sa, ink_inet_ip_size(&addr.sa), IPPROTO_TCP)) < 0)
+  if ((res = socketManager.ink_bind(fd, &addr.sa, ats_ip_size(&addr.sa), IPPROTO_TCP)) < 0)
     goto Lerror;
 
   if (non_blocking)
     if ((res = safe_nonblocking(fd)) < 0)
       goto Lerror;
 
-  if (ink_inet_is_ip4(&addr)) {
+  if (ats_is_ip4(&addr)) {
     struct ip_mreq mc_request;
     // Add ourselves to the MultiCast group
-    mc_request.imr_multiaddr.s_addr = ink_inet_ip4_addr_cast(mc_addr);
+    mc_request.imr_multiaddr.s_addr = ats_ip4_addr_cast(mc_addr);
     mc_request.imr_interface.s_addr = INADDR_ANY;
 
     if ((res = safe_setsockopt(fd, IPPROTO_IP, IP_ADD_MEMBERSHIP, (char *) &mc_request, sizeof(mc_request)) < 0))
@@ -213,7 +213,7 @@ Connection::open(NetVCOptions const& opt)
   ink_assert(fd == NO_FD);
   int enable_reuseaddr = 1; // used for sockopt setting
   int res = 0; // temp result
-  ts_ip_endpoint local_addr;
+  IpEndpoint local_addr;
   int sock_type = NetVCOptions::USE_UDP == opt.ip_proto
     ? SOCK_DGRAM
     : SOCK_STREAM;
@@ -234,7 +234,7 @@ Connection::open(NetVCOptions const& opt)
     family = opt.local_ip.family();
   } else {
     // No local address specified, so use family option if possible.
-    family = ink_inet_is_ip(opt.ip_family) ? opt.ip_family : AF_INET;
+    family = ats_is_ip(opt.ip_family) ? opt.ip_family : AF_INET;
     local_addr.setToAnyAddr(family);
     local_addr.port() = htons(opt.local_port);
   }
@@ -305,7 +305,7 @@ Connection::open(NetVCOptions const& opt)
     }
   }
 
-  if (-1 == socketManager.ink_bind(fd, &local_addr.sa, ink_inet_ip_size(&local_addr.sa)))
+  if (-1 == socketManager.ink_bind(fd, &local_addr.sa, ats_ip_size(&local_addr.sa)))
     return -errno;
 
   cleanup.reset();
@@ -325,7 +325,7 @@ Connection::connect(sockaddr const* target, NetVCOptions const& opt) {
 
   cleaner<Connection> cleanup(this, &Connection::_cleanup); // mark for close until we succeed.
 
-  res = ::connect(fd, target, ink_inet_ip_size(target));
+  res = ::connect(fd, target, ats_ip_size(target));
 
   // It's only really an error if either the connect was blocking
   // or it wasn't blocking and the error was other than EINPROGRESS.

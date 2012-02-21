@@ -45,7 +45,7 @@ HttpAccept::mainEvent(int event, void *data)
     // The backdoor port is now only bound to "localhost", so reason to
     // check for if it's incoming from "localhost" or not.
     if (!backdoor && IpAllow::instance() && (!IpAllow::instance()->match(client_ip))) {
-      Warning("connect by disallowed client %s, closing", ink_inet_ntop(client_ip, ipb, sizeof(ipb)));
+      Warning("connect by disallowed client %s, closing", ats_ip_ntop(client_ip, ipb, sizeof(ipb)));
       netvc->do_io_close();
 
       return VC_EVENT_CONT;
@@ -54,7 +54,7 @@ HttpAccept::mainEvent(int event, void *data)
     netvc->attributes = transport_type;
 
     if (is_debug_tag_set("http_seq"))
-      Debug("http_seq", "[HttpAccept:mainEvent %p] accepted connection from %s transport type = %d", netvc, ink_inet_nptop(client_ip, ipb, sizeof(ipb)), netvc->attributes);
+      Debug("http_seq", "[HttpAccept:mainEvent %p] accepted connection from %s transport type = %d", netvc, ats_ip_nptop(client_ip, ipb, sizeof(ipb)), netvc->attributes);
 
     HttpClientSession *new_session = THREAD_ALLOC_INIT(httpClientSessionAllocator, netvc->thread);
 

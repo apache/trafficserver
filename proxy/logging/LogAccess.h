@@ -278,7 +278,7 @@ public:
   static int unmarshal_http_version(char **buf, char *dest, int len);
   static int unmarshal_http_text(char **buf, char *dest, int len);
   static int unmarshal_http_status(char **buf, char *dest, int len);
-  static int unmarshal_ip(char** buf, ts_ip_endpoint* dest);
+  static int unmarshal_ip(char** buf, IpEndpoint* dest);
   static int unmarshal_ip_to_str(char **buf, char *dest, int len);
   static int unmarshal_ip_to_hex(char** buf, char* dest, int len);
   static int unmarshal_hierarchy(char **buf, char *dest, int len, Ptr<LogFieldAliasMap> map);

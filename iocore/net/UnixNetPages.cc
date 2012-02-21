@@ -34,7 +34,7 @@ typedef int (ShowNet::*ShowNetEventHandler) (int event, Event * data);
 struct ShowNet: public ShowCont
 {
   int ithread;
-  ts_ip_endpoint addr;
+  IpEndpoint addr;
 
   int showMain(int event, Event * e)
   {
@@ -63,13 +63,13 @@ struct ShowNet: public ShowCont
 
     ink_hrtime now = ink_get_hrtime();
     forl_LL(UnixNetVConnection, vc, nh->open_list) {
-//      uint16_t port = ink_inet_get_port(&addr.sa);
-      if (ink_inet_is_ip(&addr) && addr != vc->server_addr)
+//      uint16_t port = ats_ip_port_host_order(&addr.sa);
+      if (ats_is_ip(&addr) && addr != vc->server_addr)
         continue;
-//      if (port && port != ink_inet_get_port(&vc->server_addr.sa) && port != vc->accept_port)
+//      if (port && port != ats_ip_port_host_order(&vc->server_addr.sa) && port != vc->accept_port)
 //        continue;
       char ipbuf[INET6_ADDRSTRLEN];
-      ink_inet_ntop(&vc->server_addr.sa, ipbuf, sizeof(ipbuf));
+      ats_ip_ntop(&vc->server_addr.sa, ipbuf, sizeof(ipbuf));
       char opt_ipbuf[INET6_ADDRSTRLEN];
       char interbuf[80];
       snprintf(interbuf, sizeof(interbuf), "[%s] %s:%d",
@@ -100,7 +100,7 @@ struct ShowNet: public ShowCont
                       "</tr>\n",
                       vc->id,
                       ipbuf,
-                      ink_inet_get_port(&vc->server_addr),
+                      ats_ip_port_host_order(&vc->server_addr),
                       vc->con.fd,
                       interbuf,
 //                      vc->accept_port,
@@ -233,7 +233,7 @@ register_ShowNet(Continuation * c, HTTPHdr * h)
     if (s->sarg)
       gn = (char *)memchr(s->sarg, '=', strlen(s->sarg));
     if (gn)
-      ink_inet_pton(gn + 1, &s->addr);
+      ats_ip_pton(gn + 1, &s->addr);
     SET_CONTINUATION_HANDLER(s, &ShowNet::showConnections);
   } else if (STREQ_PREFIX(path, path_len, "ports")) {
     int query_len;
@@ -243,7 +243,7 @@ register_ShowNet(Continuation * c, HTTPHdr * h)
     if (s->sarg)
       gn = (char *)memchr(s->sarg, '=', strlen(s->sarg));
     if (gn)
-      ink_inet_port_cast(&s->addr.sa) = htons(atoi(gn+1));
+      ats_ip_port_cast(&s->addr.sa) = htons(atoi(gn+1));
     SET_CONTINUATION_HANDLER(s, &ShowNet::showConnections);
   }
   eventProcessor.schedule_imm(s, ET_TASK);

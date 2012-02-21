@@ -208,7 +208,7 @@ public:
   NetHandler *nh;
   unsigned int id;
   // amc - what is this for? Why not use remote_addr or con.addr?
-  ts_ip_endpoint server_addr; /// Server address and port.
+  IpEndpoint server_addr; /// Server address and port.
 
   union
   {
@@ -250,7 +250,7 @@ typedef int (UnixNetVConnection::*NetVConnHandler) (int, void *);
 TS_INLINE void
 UnixNetVConnection::set_remote_addr()
 {
-  ink_inet_copy(&remote_addr, &con.addr);
+  ats_ip_copy(&remote_addr, &con.addr);
 }
 
 TS_INLINE void

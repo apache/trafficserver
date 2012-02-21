@@ -795,16 +795,16 @@ int
 LogAccess::marshal_ip(char* dest, sockaddr const* ip) {
   LogFieldIpStorage data;
   int len = sizeof(data._ip);
-  if (ink_inet_is_ip4(ip)) {
+  if (ats_is_ip4(ip)) {
     if (dest) {
       data._ip4._family = AF_INET;
-      data._ip4._addr = ink_inet_ip4_addr_cast(ip);
+      data._ip4._addr = ats_ip4_addr_cast(ip);
     }
     len = sizeof(data._ip4);
-  } else if (ink_inet_is_ip6(ip)) {
+  } else if (ats_is_ip6(ip)) {
     if (dest) {
       data._ip6._family = AF_INET6;
-      data._ip6._addr = ink_inet_ip6_addr_cast(ip);
+      data._ip6._addr = ats_ip6_addr_cast(ip);
     }
     len = sizeof(data._ip6);
   } else {
@@ -1139,7 +1139,7 @@ LogAccess::unmarshal_http_status(char **buf, char *dest, int len)
   Retrieve an IP address directly.
   -------------------------------------------------------------------------*/
 int
-LogAccess::unmarshal_ip(char **buf, ts_ip_endpoint* dest)
+LogAccess::unmarshal_ip(char **buf, IpEndpoint* dest)
 {
   int len = sizeof(LogFieldIp); // of object processed.
 
@@ -1150,14 +1150,14 @@ LogAccess::unmarshal_ip(char **buf, ts_ip_endpoint* dest)
   LogFieldIp* raw = reinterpret_cast<LogFieldIp*>(*buf);
   if (AF_INET == raw->_family) {
     LogFieldIp4* ip4 = static_cast<LogFieldIp4*>(raw);
-    ink_inet_ip4_set(dest, ip4->_addr);
+    ats_ip4_set(dest, ip4->_addr);
     len = sizeof(*ip4);
   } else if (AF_INET6 == raw->_family) {
     LogFieldIp6* ip6 = static_cast<LogFieldIp6*>(raw);
-    ink_inet_ip6_set(dest, ip6->_addr);
+    ats_ip6_set(dest, ip6->_addr);
     len = sizeof(*ip6);
   } else {
-    ink_inet_invalidate(dest);
+    ats_ip_invalidate(dest);
   }
   len = INK_ALIGN_DEFAULT(len);
   *buf += len;
@@ -1175,10 +1175,10 @@ LogAccess::unmarshal_ip(char **buf, ts_ip_endpoint* dest)
 int
 LogAccess::unmarshal_ip_to_str(char **buf, char *dest, int len)
 {
-  ts_ip_endpoint ip;
+  IpEndpoint ip;
 
   unmarshal_ip(buf, &ip);
-  return ink_inet_ntop(&ip, dest, len) ? ::strlen(dest) : -1;
+  return ats_ip_ntop(&ip, dest, len) ? ::strlen(dest) : -1;
 }
 
 /*-------------------------------------------------------------------------
@@ -1192,9 +1192,9 @@ LogAccess::unmarshal_ip_to_str(char **buf, char *dest, int len)
 int
 LogAccess::unmarshal_ip_to_hex(char **buf, char *dest, int len)
 {
-  ts_ip_endpoint ip;
+  IpEndpoint ip;
   unmarshal_ip(buf, &ip);
-  return ink_inet_to_hex(&ip.sa, dest, len);
+  return ats_ip_to_hex(&ip.sa, dest, len);
 }
 
 /*-------------------------------------------------------------------------

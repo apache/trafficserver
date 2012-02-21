@@ -82,7 +82,7 @@ public:
   inkcoreapi Action *UDPBind(Continuation * c, sockaddr const* addr, int send_bufsize = 0, int recv_bufsize = 0);
 
   // The mess again: the complier won't let me stick UDPConnection here.
-  void UDPClassifyConnection(Continuation * udpConn, InkInetAddr const& addr);
+  void UDPClassifyConnection(Continuation * udpConn, IpAddr const& addr);
 
   // create pairs of UDPConnections in which the first connection is
   // on a even-#'ed port and the second connection is on the next

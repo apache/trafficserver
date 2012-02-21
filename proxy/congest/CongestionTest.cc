@@ -407,7 +407,7 @@ CCCongestionDBTestCont::gen_CongestionEntry(sockaddr const* ip, int congested)
 {
   char hostname[INET6_ADDRSTRLEN];
   uint64_t key;
-  ink_inet_ntop(ip, hostname, sizeof(hostname));
+  ats_ip_ntop(ip, hostname, sizeof(hostname));
   key = make_key(hostname, strlen(hostname), ip, rule->pRecord);
   CongestionEntry *ret = new CongestionEntry(hostname,
                                              ip,
@@ -474,8 +474,8 @@ CCCongestionDBTestCont::mainEvent(int event, Event * e)
     if (i % (dbsize / 25) == 0)
       fprintf(stderr, ".");
 
-    ts_ip_endpoint ip;
-    ink_inet_ip4_set(&ip, i + 255);
+    IpEndpoint ip;
+    ats_ip4_set(&ip, i + 255);
     
     CongestionEntry *tmp = gen_CongestionEntry(&ip.sa);
     db->addRecord(tmp->m_key, tmp);
@@ -494,8 +494,8 @@ CCCongestionDBTestCont::mainEvent(int event, Event * e)
     if (i % (to_add / 25) == 0)
       fprintf(stderr, ".");
 
-    ts_ip_endpoint ip;
-    ink_inet_ip4_set(&ip, i + 255);
+    IpEndpoint ip;
+    ats_ip4_set(&ip, i + 255);
     CongestionEntry *tmp = gen_CongestionEntry(&ip.sa);
     db->addRecord(tmp->m_key, tmp);
   }
@@ -512,8 +512,8 @@ CCCongestionDBTestCont::mainEvent(int event, Event * e)
     if (i % (to_add / 25) == 0)
       fprintf(stderr, ".");
 
-    ts_ip_endpoint ip;
-    ink_inet_ip4_set(&ip, i + 255);
+    IpEndpoint ip;
+    ats_ip4_set(&ip, i + 255);
     
     CongestionEntry *tmp = gen_CongestionEntry(&ip.sa, 1);
     db->addRecord(tmp->m_key, tmp);

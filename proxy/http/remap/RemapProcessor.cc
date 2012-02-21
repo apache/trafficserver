@@ -90,8 +90,8 @@ RemapProcessor::setup_for_remap(HttpTransact::State *s)
 
   if (rewrite_table->num_rules_forward_with_recv_port) {
     Debug("url_rewrite", "[lookup] forward mappings with recv port found; Using recv port %d",
-          ink_inet_get_port(&s->client_info.addr));
-    if (rewrite_table->forwardMappingWithRecvPortLookup(request_url, ink_inet_get_port(&s->client_info.addr),
+          ats_ip_port_host_order(&s->client_info.addr));
+    if (rewrite_table->forwardMappingWithRecvPortLookup(request_url, ats_ip_port_host_order(&s->client_info.addr),
                                                          request_host, request_host_len, s->url_map)) {
       Debug("url_rewrite", "Found forward mapping with recv port");
       mapping_found = true;

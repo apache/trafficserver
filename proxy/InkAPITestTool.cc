@@ -503,8 +503,8 @@ synclient_txn_send_request(ClientTxn * txn, char *request)
   cont = TSContCreate(synclient_txn_main_handler, TSMutexCreate());
   TSContDataSet(cont, txn);
   
-  ink_inet_ip4_set(&addr, txn->connect_ip, htons(txn->connect_port));
-  TSNetConnect(cont, ink_inet_sa_cast(&addr));
+  ats_ip4_set(&addr, txn->connect_ip, htons(txn->connect_port));
+  TSNetConnect(cont, ats_ip_sa_cast(&addr));
   return 1;
 }
 

@@ -5271,7 +5271,7 @@ TSHttpTxnClientIPGet(TSHttpTxn txnp)
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 
   HttpSM *sm = (HttpSM *) txnp;
-  return ink_inet_ip4_addr_cast(&sm->t_state.client_info.addr);
+  return ats_ip4_addr_cast(&sm->t_state.client_info.addr);
 }
 
 sockaddr const*
@@ -5299,7 +5299,7 @@ TSHttpTxnClientIncomingPortGet(TSHttpTxn txnp)
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 
   HttpSM *sm = (HttpSM *) txnp;
-  return ink_inet_get_port(&sm->t_state.client_info.addr);
+  return ats_ip_port_host_order(&sm->t_state.client_info.addr);
 }
 
 sockaddr const*
@@ -5317,7 +5317,7 @@ TSHttpTxnServerIPGet(TSHttpTxn txnp)
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 
   HttpSM *sm = (HttpSM *) txnp;
-  return ink_inet_ip4_addr_cast(&sm->t_state.server_info.addr.sa);
+  return ats_ip4_addr_cast(&sm->t_state.server_info.addr.sa);
 }
 
 // [amc] This might use the port. The code path should do that but it
@@ -5328,11 +5328,11 @@ TSHttpTxnOutgoingAddrSet(TSHttpTxn txnp, const struct sockaddr *addr, socklen_t 
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
   HttpSM *sm = (HttpSM *) txnp;
 
-  sm->ua_session->outbound_port = ink_inet_get_port(addr);
+  sm->ua_session->outbound_port = ats_ip_port_host_order(addr);
 
-  if (ink_inet_is_ip4(addr)) {
+  if (ats_is_ip4(addr)) {
     sm->ua_session->outbound_ip4.assign(addr);
-  } else if (ink_inet_is_ip6(addr)) {
+  } else if (ats_is_ip6(addr)) {
     sm->ua_session->outbound_ip6.assign(addr);
   } else {
     sm->ua_session->outbound_ip4.invalidate();
@@ -5368,7 +5368,7 @@ TSHttpTxnNextHopIPGet(TSHttpTxn txnp)
      */
   if (sm->t_state.current.server == NULL)
     return 0;
-  return ink_inet_ip4_addr_cast(&sm->t_state.current.server->addr.sa);
+  return ats_ip4_addr_cast(&sm->t_state.current.server->addr.sa);
 }
 
 int
@@ -5380,7 +5380,7 @@ TSHttpTxnNextHopPortGet(TSHttpTxn txnp)
   int port = 0;
 
   if (sm && sm->t_state.current.server)
-    port = ink_inet_get_port(&sm->t_state.current.server->addr);
+    port = ats_ip_port_host_order(&sm->t_state.current.server->addr);
   return port;
 }
 
@@ -5995,8 +5995,8 @@ TSHttpConnect(sockaddr const* addr)
 {
   sdk_assert(addr);
 
-  sdk_assert(ink_inet_is_ip(addr));
-  sdk_assert(ink_inet_port_cast(addr));
+  sdk_assert(ats_is_ip(addr));
+  sdk_assert(ats_ip_port_cast(addr));
 
   if (plugin_http_accept) {
     PluginVCCore *new_pvc = PluginVCCore::alloc();
@@ -6023,12 +6023,12 @@ TSHttpConnect(sockaddr const* addr)
 TSVConn
 TSHttpConnectTransparent(sockaddr const* client_addr, sockaddr const* server_addr)
 {
-  sdk_assert(ink_inet_is_ip(client_addr));
-  sdk_assert(ink_inet_is_ip(server_addr));
-  sdk_assert(!ink_inet_is_any(client_addr));
-  sdk_assert(ink_inet_port_cast(client_addr));
-  sdk_assert(!ink_inet_is_any(server_addr));
-  sdk_assert(ink_inet_port_cast(server_addr));
+  sdk_assert(ats_is_ip(client_addr));
+  sdk_assert(ats_is_ip(server_addr));
+  sdk_assert(!ats_is_ip_any(client_addr));
+  sdk_assert(ats_ip_port_cast(client_addr));
+  sdk_assert(!ats_is_ip_any(server_addr));
+  sdk_assert(ats_ip_port_cast(server_addr));
 
   if (plugin_http_transparent_accept) {
     PluginVCCore *new_pvc = PluginVCCore::alloc();
@@ -6377,7 +6377,7 @@ TSAction
 TSNetConnect(TSCont contp, sockaddr const* addr)
 {
   sdk_assert(sdk_sanity_check_continuation(contp) == TS_SUCCESS);
-  sdk_assert(ink_inet_is_ip(addr));
+  sdk_assert(ats_is_ip(addr));
 
   FORCE_PLUGIN_MUTEX(contp);
 
@@ -6435,7 +6435,7 @@ in_addr_t
 TSHostLookupResultIpGet(TSHostLookupResult lookup_result)
 {
   sdk_assert(sdk_sanity_check_hostlookup_structure(lookup_result) == TS_SUCCESS);
-  return ink_inet_ip4_addr_cast(((HostDBInfo *)lookup_result)->ip());
+  return ats_ip4_addr_cast(((HostDBInfo *)lookup_result)->ip());
 }
 
 void
@@ -6446,7 +6446,7 @@ TSOSIpSet(TSHttpTxn txnp, unsigned int ip)
   HttpTransact::State *s = &(sm->t_state);
 
   s->dns_info.lookup_success = true;
-  ink_inet_ip4_set(s->host_db_info.ip(), ip);
+  ats_ip4_set(s->host_db_info.ip(), ip);
 }
 
 /*
@@ -7282,9 +7282,9 @@ TSFetchPages(TSFetchUrlParams_t *params)
 
   while (myparams != NULL) {
     FetchSM *fetch_sm =  FetchSMAllocator.alloc();
-    sockaddr* addr = ink_inet_sa_cast(&myparams->ip);
-    in_addr_t ip = ink_inet_ip4_addr_cast(addr);
-    uint16_t port = ink_inet_get_port(addr);
+    sockaddr* addr = ats_ip_sa_cast(&myparams->ip);
+    in_addr_t ip = ats_ip4_addr_cast(addr);
+    uint16_t port = ats_ip_port_host_order(addr);
 
     fetch_sm->init((Continuation*)myparams->contp, myparams->options,myparams->events, myparams->request, myparams->request_len, ip, port);
     fetch_sm->httpConnect();
@@ -7298,11 +7298,11 @@ TSFetchUrl(const char* headers, int request_len, sockaddr const* ip , TSCont con
   if (callback_options != NO_CALLBACK) {
     sdk_assert(sdk_sanity_check_continuation(contp) == TS_SUCCESS);
   }
-  sdk_assert(ink_inet_is_ip4(ip));
+  sdk_assert(ats_is_ip4(ip));
 
   FetchSM *fetch_sm =  FetchSMAllocator.alloc();
-  in_addr_t addr = ink_inet_ip4_addr_cast(ip);
-  unsigned short port = ink_inet_port_cast(ip);
+  in_addr_t addr = ats_ip4_addr_cast(ip);
+  unsigned short port = ats_ip_port_cast(ip);
 
   fetch_sm->init((Continuation*)contp, callback_options, events, headers, request_len, addr, port);
   fetch_sm->httpConnect();

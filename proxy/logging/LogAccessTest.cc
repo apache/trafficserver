@@ -67,8 +67,8 @@ LogAccessTest::~LogAccessTest()
 int
 LogAccessTest::marshal_client_host_ip(char *buf)
 {
-  ts_ip_endpoint lo;
-  ink_inet_ip4_set(&lo, INADDR_LOOPBACK);
+  IpEndpoint lo;
+  ats_ip4_set(&lo, INADDR_LOOPBACK);
   return marshal_ip(buf, &lo.sa);
 }
 
@@ -316,8 +316,8 @@ LogAccessTest::marshal_proxy_hierarchy_route(char *buf)
 int
 LogAccessTest::marshal_server_host_ip(char *buf)
 {
-  ts_ip_endpoint lo;
-  ink_inet_ip4_set(&lo, INADDR_LOOPBACK);
+  IpEndpoint lo;
+  ats_ip4_set(&lo, INADDR_LOOPBACK);
   return marshal_ip(buf, &lo.sa);
 }
 

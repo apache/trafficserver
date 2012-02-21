@@ -315,7 +315,7 @@ class PeerConfigData
 
 public:
     PeerConfigData();
-    PeerConfigData(int ctype, InkInetAddr const& ip_addr, int proxy_port, int icp_port)
+    PeerConfigData(int ctype, IpAddr const& ip_addr, int proxy_port, int icp_port)
       : _ctype(ctype), _ip_addr(ip_addr),
       _proxy_port(proxy_port), _icp_port(icp_port), _mc_member(0), _mc_ttl(0),
       _my_ip_addr(ip_addr)
@@ -334,7 +334,7 @@ public:
   {
     return _ctype;
   }
-  inline InkInetAddr const& GetIPAddr()
+  inline IpAddr const& GetIPAddr()
   {
     return _my_ip_addr;
   }
@@ -350,7 +350,7 @@ public:
   {
     return _mc_member;
   }
-  inline InkInetAddr const& GetMultiCastIPAddr()
+  inline IpAddr const& GetMultiCastIPAddr()
   {
     return _mc_ip_addr;
   }
@@ -361,7 +361,7 @@ public:
 
   // Static member functions
   static PeerType_t CTypeToPeerType_t(int);
-  static int GetHostIPByName(char *, InkInetAddr&);
+  static int GetHostIPByName(char *, IpAddr&);
 
   enum
   { HOSTNAME_SIZE = 256 };
@@ -378,20 +378,20 @@ private:
   //---------------------------------------------------------
   char _hostname[HOSTNAME_SIZE];
   int _ctype;
-  InkInetAddr _ip_addr;
+  IpAddr _ip_addr;
   int _proxy_port;
   int _icp_port;
   //-------------------
   // MultiCast data
   //-------------------
   int _mc_member;
-  InkInetAddr _mc_ip_addr;
+  IpAddr _mc_ip_addr;
   int _mc_ttl;
 
   //----------------------------------------------
   // Computed data not subject to "==" test
   //----------------------------------------------
-  InkInetAddr _my_ip_addr;
+  IpAddr _my_ip_addr;
 };
 
 //---------------------------------------------------------------
@@ -568,7 +568,7 @@ public:
   // these shouldn't be public
   // this is for delayed I/O
   Ptr<IOBufferBlock> buf;
-  ts_ip_endpoint fromaddr;
+  IpEndpoint fromaddr;
   socklen_t fromaddrlen;
   int notFirstRead;             // priming the reads
   Action *readAction;           // outstanding read
@@ -646,7 +646,7 @@ public:
 private:
   // Class data declarations
   PeerConfigData * _pconfig;    // associated config data
-  ts_ip_endpoint _ip; ///< Cache for GetIP().
+  IpEndpoint _ip; ///< Cache for GetIP().
   Connection _chan;
 };
 
@@ -656,7 +656,7 @@ private:
 class MultiCastPeer:public Peer
 {
 public:
-  MultiCastPeer(InkInetAddr const&, uint16_t, int, ICPProcessor *);
+  MultiCastPeer(IpAddr const&, uint16_t, int, ICPProcessor *);
   ~MultiCastPeer()
   {
   }
@@ -666,7 +666,7 @@ public:
       If @a port is 0 the port is not checked.
   */
   Peer *FindMultiCastChild(
-    InkInetAddr const& ip, ///< IP address.
+    IpAddr const& ip, ///< IP address.
     uint16_t port = 0 ///< Port (host order).
   );
 
@@ -689,10 +689,10 @@ public:
   }
   inline virtual int ExtToIntRecvSockAddr(sockaddr const* in, sockaddr* out)
   {
-    Peer *P = FindMultiCastChild(InkInetAddr(in));
+    Peer *P = FindMultiCastChild(IpAddr(in));
     if (P) {
-      ink_inet_copy(out, in);
-      ink_inet_port_cast(out) = ink_inet_port_cast(P->GetIP());
+      ats_ip_copy(out, in);
+      ats_ip_port_cast(out) = ats_ip_port_cast(P->GetIP());
       return 1;
     } else {
       return 0;
@@ -706,7 +706,7 @@ private:
   //---------------------------
   // Multicast specific data
   //---------------------------
-  ts_ip_endpoint _mc_ip;
+  IpEndpoint _mc_ip;
   int _mc_ttl;
   struct multicast_data
   {
@@ -767,12 +767,12 @@ public:
   } ReconfigState_t;
   ReconfigState_t ReconfigureStateMachine(ReconfigState_t, int, int);
 
-  Peer *FindPeer(InkInetAddr const& ip, uint16_t port = 0);
-  Peer *FindPeer(ts_ip_endpoint const& ip) {
-    return this->FindPeer(InkInetAddr(&ip), ink_inet_get_port(&ip));
+  Peer *FindPeer(IpAddr const& ip, uint16_t port = 0);
+  Peer *FindPeer(IpEndpoint const& ip) {
+    return this->FindPeer(IpAddr(&ip), ats_ip_port_host_order(&ip));
   }
   Peer *FindPeer(sockaddr const* ip) {
-    return this->FindPeer(InkInetAddr(ip), ink_inet_get_port(ip));
+    return this->FindPeer(IpAddr(ip), ats_ip_port_host_order(ip));
   }
 
   inline Peer *GetLocalPeer()
@@ -847,9 +847,9 @@ private:
     _PendingIcpQueries--;
   }
 
-  Peer *GenericFindListPeer(InkInetAddr const&, uint16_t, int, Ptr<Peer> *);
-  Peer *FindSendListPeer(InkInetAddr const&, uint16_t);
-  Peer *FindRecvListPeer(InkInetAddr const&, uint16_t);
+  Peer *GenericFindListPeer(IpAddr const&, uint16_t, int, Ptr<Peer> *);
+  Peer *FindSendListPeer(IpAddr const&, uint16_t);
+  Peer *FindRecvListPeer(IpAddr const&, uint16_t);
   int AddPeer(Peer *);
   int AddPeerToSendList(Peer *);
   int AddPeerToRecvList(Peer *);
@@ -1077,7 +1077,7 @@ public:
       Ptr<IOBufferBlock> _buf;       // the buffer with the ICP message in it
     ICPMsg_t *_rICPmsg;
     int _rICPmsg_len;
-    ts_ip_endpoint _sender; // sender of rICPmsg
+    IpEndpoint _sender; // sender of rICPmsg
     URL _cachelookupURL;
     int _queryResult;
     ICPRequestCont *_ICPReqCont;
@@ -1199,7 +1199,7 @@ private:
   URL *_url;
 
   // Return data
-  ts_ip_endpoint _ret_sockaddr;
+  IpEndpoint _ret_sockaddr;
   ICPreturn_t _ret_status;
   class Action _act;
 

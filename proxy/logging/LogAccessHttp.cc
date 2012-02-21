@@ -662,10 +662,10 @@ LogAccessHttp::marshal_server_host_ip(char *buf)
 {
   sockaddr const* ip = 0;
   ip = &m_http_sm->t_state.server_info.addr.sa;
-  if (! ink_inet_is_ip(ip)) {
+  if (! ats_is_ip(ip)) {
     if (m_http_sm->t_state.current.server) {
       ip = &m_http_sm->t_state.current.server->addr.sa;
-      if (! ink_inet_is_ip(ip)) ip = 0;
+      if (! ats_is_ip(ip)) ip = 0;
     } else {
       ip = 0;
     }

@@ -1551,7 +1551,7 @@ main(int argc, char **argv)
   /* Set up the machine with the outbound address if that's set,
      or the inbound address if set, otherwise let it default.
   */
-  ts_ip_endpoint machine_addr;
+  IpEndpoint machine_addr;
   ink_zero(machine_addr);
   if (HttpConfig::m_master.outbound_ip4.isValid())
     machine_addr.assign(HttpConfig::m_master.outbound_ip4);

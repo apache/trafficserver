@@ -138,12 +138,12 @@ unescapifyStr(char *buffer)
 
 char const*
 ExtractIpRange(char* match_str, in_addr_t* min, in_addr_t* max) {
-  ts_ip_endpoint ip_min, ip_max;
+  IpEndpoint ip_min, ip_max;
   char const* zret = ExtractIpRange(match_str, &ip_min.sa, &ip_max.sa);
   if (0 == zret) { // success
-    if (ink_inet_is_ip4(&ip_min) && ink_inet_is_ip4(&ip_max)) {
-      if (min) *min = ntohl(ink_inet_ip4_addr_cast(&ip_min));
-      if (max) *max = ntohl(ink_inet_ip4_addr_cast(&ip_max));
+    if (ats_is_ip4(&ip_min) && ats_is_ip4(&ip_max)) {
+      if (min) *min = ntohl(ats_ip4_addr_cast(&ip_min));
+      if (max) *max = ntohl(ats_ip4_addr_cast(&ip_max));
     } else {
       zret = "The addresses were not IPv4 addresses.";
     }
@@ -173,7 +173,7 @@ ExtractIpRange(char *match_str, sockaddr* addr1, sockaddr* addr2)
   int mask_bits;
   int mask_val;
   int numToks;
-  ts_ip_endpoint la1, la2;
+  IpEndpoint la1, la2;
 
   // Extract the IP addresses from match data
   numToks = rangeTok.Initialize(match_str, SHARE_TOKS);
@@ -184,7 +184,7 @@ ExtractIpRange(char *match_str, sockaddr* addr1, sockaddr* addr2)
     return "malformed IP range";
   }
 
-  if (0 != ink_inet_pton(rangeTok[0], &la1.sa)) {
+  if (0 != ats_ip_pton(rangeTok[0], &la1.sa)) {
     return "malformed IP address";
   }
 
@@ -192,7 +192,7 @@ ExtractIpRange(char *match_str, sockaddr* addr1, sockaddr* addr2)
   if (numToks == 2) {
 
     if (mask) {
-      if (!ink_inet_is_ip4(&la1)) {
+      if (!ats_is_ip4(&la1)) {
         return "Masks supported only for IPv4";
       }
       // coverity[secure_coding]
@@ -209,26 +209,26 @@ ExtractIpRange(char *match_str, sockaddr* addr1, sockaddr* addr2)
       } else {
         mask_val = htonl(0xffffffff >> mask_bits);
       }
-      in_addr_t a = ink_inet_ip4_addr_cast(&la1);
-      ink_inet_ip4_set(&la2, a | mask_val);
-      ink_inet_ip4_set(&la1, a & (mask_val ^ 0xffffffff));
+      in_addr_t a = ats_ip4_addr_cast(&la1);
+      ats_ip4_set(&la2, a | mask_val);
+      ats_ip4_set(&la1, a & (mask_val ^ 0xffffffff));
 
     } else {
-      if (0 != ink_inet_pton(rangeTok[1], &la2)) {
+      if (0 != ats_ip_pton(rangeTok[1], &la2)) {
         return "malformed ip address at range end";
       }
     }
 
-    if (1 == ink_inet_cmp(&la1.sa, &la2.sa)) {
+    if (1 == ats_ip_addr_cmp(&la1.sa, &la2.sa)) {
       return "range start greater than range end";
     }
 
-    ink_inet_copy(addr2, &la2);
+    ats_ip_copy(addr2, &la2);
   } else {
-    ink_inet_copy(addr2, &la1);
+    ats_ip_copy(addr2, &la1);
   }
 
-  ink_inet_copy(addr1, &la1);
+  ats_ip_copy(addr1, &la1);
   return NULL;
 }
 

@@ -92,8 +92,8 @@ Server::accept(Connection * c)
   if (is_debug_tag_set("iocore_net_server")) {
     ip_port_text_buffer ipb1, ipb2;
       Debug("iocore_net_server", "Connection accepted [Server]. %s -> %s\n"
-        , ink_inet_nptop(&c->addr, ipb2, sizeof(ipb2))
-        , ink_inet_nptop(&addr, ipb1, sizeof(ipb1))
+        , ats_ip_nptop(&c->addr, ipb2, sizeof(ipb2))
+        , ats_ip_nptop(&addr, ipb1, sizeof(ipb1))
       );
   }
 
@@ -268,10 +268,10 @@ Server::listen(bool non_blocking, int recv_bufsize, int send_bufsize, bool trans
   int res = 0;
   int namelen;
 
-  if (!ink_inet_is_ip(&accept_addr)) {
-    ink_inet_ip4_set(&addr, INADDR_ANY,0);
+  if (!ats_is_ip(&accept_addr)) {
+    ats_ip4_set(&addr, INADDR_ANY,0);
   } else {
-    ink_inet_copy(&addr, &accept_addr);
+    ats_ip_copy(&addr, &accept_addr);
   }
 
   res = socketManager.socket(addr.sa.sa_family, SOCK_STREAM, IPPROTO_TCP);
@@ -339,13 +339,13 @@ Server::listen(bool non_blocking, int recv_bufsize, int send_bufsize, bool trans
   }
 #endif
 
-  if (ink_inet_is_ip6(&addr) && (res = safe_setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, SOCKOPT_ON, sizeof(int))) < 0)
+  if (ats_is_ip6(&addr) && (res = safe_setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, SOCKOPT_ON, sizeof(int))) < 0)
     goto Lerror;
 
   if ((res = safe_setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, SOCKOPT_ON, sizeof(int))) < 0)
     goto Lerror;
 
-  if ((res = socketManager.ink_bind(fd, &addr.sa, ink_inet_ip_size(&addr.sa), IPPROTO_TCP)) < 0) {
+  if ((res = socketManager.ink_bind(fd, &addr.sa, ats_ip_size(&addr.sa), IPPROTO_TCP)) < 0) {
     goto Lerror;
   }
 #ifdef SET_TCP_NO_DELAY
@@ -391,6 +391,6 @@ Server::listen(bool non_blocking, int recv_bufsize, int send_bufsize, bool trans
 Lerror:
   if (fd != NO_FD)
     close();
-  Error("Could not bind or listen to port %d (error: %d)", ink_inet_get_port(&addr), res);
+  Error("Could not bind or listen to port %d (error: %d)", ats_ip_port_host_order(&addr), res);
   return res;
 }

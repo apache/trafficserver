@@ -61,7 +61,7 @@ inline char const* ExtractIpRange(
   sockaddr_in6* addr1, ///< [in,out] Returned address in network order.
   sockaddr_in6* addr2 ///< [in,out] Returned address in network order.
 ) {
-  return ExtractIpRange(match_str, ink_inet_sa_cast(addr1), ink_inet_sa_cast(addr2));
+  return ExtractIpRange(match_str, ats_ip_sa_cast(addr1), ats_ip_sa_cast(addr2));
 }
 
 char *tokLine(char *buf, char **last);

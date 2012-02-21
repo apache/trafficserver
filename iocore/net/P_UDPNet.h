@@ -416,7 +416,7 @@ struct InkSinglePipeInfo
   int64_t bwAlloc;
   // this is in Mbps
   double bwUsed;
-  InkInetAddr destIP;
+  IpAddr destIP;
   uint32_t count;
   uint64_t bytesSent;
   uint64_t pktsSent;
@@ -456,8 +456,8 @@ public:
 private:
   Continuation * cont;
   int numPairs;
-  ts_ip_endpoint local_ip; ///< replaces myIP.
-  ts_ip_endpoint remote_ip; ///< replaces destIP.
+  IpEndpoint local_ip; ///< replaces myIP.
+  IpEndpoint remote_ip; ///< replaces destIP.
   int sendbufsize, recvbufsize;
   UnixUDPConnection **udpConns;
   int resultCode;

@@ -547,7 +547,7 @@ PrefetchTransform::parse_data(IOBufferReader *reader)
       continue;
     }
     //Debug("PrefetchParserURLs", "Found embedded URL: %s", url_start);
-    ink_inet_copy(&entry->req_ip, &m_sm->t_state.client_info.addr);
+    ats_ip_copy(&entry->req_ip, &m_sm->t_state.client_info.addr);
 
     PrefetchBlaster *blaster = prefetchBlasterAllocator.alloc();
     blaster->init(entry, &m_sm->t_state.hdr_info.client_request, this);
@@ -583,7 +583,7 @@ PrefetchTransform::hash_add(char *s)
 
 
 #define IS_RECURSIVE_PREFETCH(req_ip) \
-  (prefetch_config.max_recursion > 0 && ink_inet_is_loopback(&req_ip))
+  (prefetch_config.max_recursion > 0 && ats_is_ip_loopback(&req_ip))
 
 static void
 check_n_attach_prefetch_transform(HttpSM *sm, HTTPHdr *resp, bool from_cache)
@@ -591,11 +591,11 @@ check_n_attach_prefetch_transform(HttpSM *sm, HTTPHdr *resp, bool from_cache)
   INKVConnInternal *prefetch_trans;
   ip_text_buffer client_ipb;
 
-  ts_ip_endpoint client_ip = sm->t_state.client_info.addr;
+  IpEndpoint client_ip = sm->t_state.client_info.addr;
 
   // we depend on this to setup @a client_ipb for all subsequent Debug().
   Debug("PrefetchParser", "Checking response for request from %s\n",
-    ink_inet_ntop(&client_ip, client_ipb, sizeof(client_ipb))
+    ats_ip_ntop(&client_ip, client_ipb, sizeof(client_ipb))
   );
 
   unsigned int rec_depth = 0;
@@ -892,10 +892,10 @@ PrefetchUrlBlaster::udpUrlBlaster(int event, void *data)
         setup_udp_header(block->start(), get_udp_seq_no(), 0, true);
         setup_object_header(block->start() + PRELOAD_UDP_HEADER_LEN, block->read_avail() - PRELOAD_UDP_HEADER_LEN, true);
 
-        ts_ip_endpoint saddr;
-        ink_inet_copy(&saddr, &url_head->url_multicast_ip) ||
-          ink_inet_copy(&saddr, &url_head->child_ip);
-        ink_inet_port_cast(&saddr.sa) = htons(prefetch_config.stuffer_port);
+        IpEndpoint saddr;
+        ats_ip_copy(&saddr, &url_head->url_multicast_ip) ||
+          ats_ip_copy(&saddr, &url_head->child_ip);
+        ats_ip_port_cast(&saddr.sa) = htons(prefetch_config.stuffer_port);
 
         udpNet.sendto_re(this, NULL, prefetch_udp_fd, &saddr.sa, sizeof(saddr), block, block->read_avail());
       }
@@ -1000,7 +1000,7 @@ PrefetchBlaster::init(PrefetchUrlEntry *entry, HTTPHdr *req_hdr, PrefetchTransfo
     //this is a recursive prefetch. get child ip address from
     //Client-IP header
     ink_strlcpy(b, ip_str, sizeof(b));
-    ink_inet_pton(b, &entry->child_ip.sa);
+    ats_ip_pton(b, &entry->child_ip.sa);
   } else
     entry->child_ip = entry->req_ip;
 
@@ -1500,7 +1500,7 @@ PrefetchBlaster::httpClient(int event, void *data)
   switch (event) {
 
   case EVENT_IMMEDIATE:{
-    ts_ip_endpoint target;
+    IpEndpoint target;
     target.setToLoopback(AF_INET);
     target.port() = prefetch_config.local_http_server_port;
     netProcessor.connect_re(this, &target.sa);
@@ -1676,13 +1676,13 @@ PrefetchBlaster::blastObject(int event, void *data)
 
       setup_udp_header(io_block->start(), seq_no, n_pkts_sent++, (towrite >= nread_avail));
 
-      ts_ip_endpoint saddr;
-      ink_inet_copy(&saddr.sa,
-        ink_inet_is_ip(&url_ent->data_multicast_ip)
+      IpEndpoint saddr;
+      ats_ip_copy(&saddr.sa,
+        ats_is_ip(&url_ent->data_multicast_ip)
         ? &url_ent->data_multicast_ip.sa
         : &url_ent->child_ip.sa
       );
-      ink_inet_port_cast(&saddr) = htons(prefetch_config.stuffer_port);
+      ats_ip_port_cast(&saddr) = htons(prefetch_config.stuffer_port);
 
       //saddr.sin_addr.s_addr = htonl((209<<24)|(131<<16)|(60<<8)|243);
       //saddr.sin_addr.s_addr = htonl((209<<24)|(131<<16)|(48<<8)|52);
@@ -1740,9 +1740,9 @@ PrefetchBlaster::invokeBlaster()
   if (ret == TS_PREFETCH_CONTINUE) {
 
     if (MULTICAST_BLAST == url_blast.type)
-      ink_inet_copy(&url_ent->url_multicast_ip.sa, &url_blast.ip.sa);
+      ats_ip_copy(&url_ent->url_multicast_ip.sa, &url_blast.ip.sa);
     if (MULTICAST_BLAST == data_blast.type)
-      ink_inet_copy(&url_ent->data_multicast_ip.sa, &data_blast.ip.sa);
+      ats_ip_copy(&url_ent->data_multicast_ip.sa, &data_blast.ip.sa);
 
     if (url_ent->object_buf_status != TS_PREFETCH_OBJ_BUF_NEEDED) {
       if (url_blast.type == TCP_BLAST)
@@ -1795,14 +1795,14 @@ config_read_proto(PrefetchBlastData &blast, const char *str)
     blast.type = TCP_BLAST;
   else {                        // this is a multicast address:
     if (strncasecmp("multicast:", str, 10) == 0) {
-      if (0 != ink_inet_pton(str, &blast.ip.sa)) {
+      if (0 != ats_ip_pton(str, &blast.ip.sa)) {
         Error("PrefetchProcessor: Address specified for multicast does not seem to "
               "be of the form multicast:ip_addr (eg: multicast:224.0.0.1)");
         return 1;
       } else {
         ip_text_buffer ipb;
         blast.type = MULTICAST_BLAST;
-        Debug("Prefetch", "Setting multicast address: %s\n", ink_inet_ntop(&blast.ip.sa, ipb, sizeof(ipb)));
+        Debug("Prefetch", "Setting multicast address: %s\n", ats_ip_ntop(&blast.ip.sa, ipb, sizeof(ipb)));
       }
     } else {
       Error("PrefetchProcessor: The protocol for Prefetch should of the form: " "tcp or udp or multicast:ip_address");
@@ -1961,9 +1961,9 @@ PrefetchConfiguration::readHtmlTags(int fd, html_tag ** ptags, html_tag ** pattr
 
 #define CONN_ARR_SIZE 256
 inline int
-KeepAliveConnTable::ip_hash(ts_ip_endpoint const& ip)
+KeepAliveConnTable::ip_hash(IpEndpoint const& ip)
 {
-  return ink_inet_hash(&ip.sa) & (CONN_ARR_SIZE - 1);
+  return ats_ip_hash(&ip.sa) & (CONN_ARR_SIZE - 1);
 }
 
 inline int
@@ -2005,7 +2005,7 @@ KeepAliveConnTable::free()
 ClassAllocator<KeepAliveLockHandler> prefetchLockHandlerAllocator("prefetchLockHandlerAllocator");
 
 int
-KeepAliveConnTable::append(ts_ip_endpoint const& ip, MIOBuffer *buf, IOBufferReader *reader)
+KeepAliveConnTable::append(IpEndpoint const& ip, MIOBuffer *buf, IOBufferReader *reader)
 {
   int index = ip_hash(ip);
 
@@ -2025,7 +2025,7 @@ KeepAliveConnTable::append(ts_ip_endpoint const& ip, MIOBuffer *buf, IOBufferRea
 
   KeepAliveConn **conn = &arr[index].conn;
 
-  while (*conn && ! ink_inet_eq(&(*conn)->ip, &ip))
+  while (*conn && ! ats_ip_addr_eq(&(*conn)->ip, &ip))
     conn = &(*conn)->next;
 
   if (*conn) {
@@ -2040,7 +2040,7 @@ KeepAliveConnTable::append(ts_ip_endpoint const& ip, MIOBuffer *buf, IOBufferRea
 }
 
 int
-KeepAliveConn::init(ts_ip_endpoint const& xip, MIOBuffer *xbuf, IOBufferReader *xreader)
+KeepAliveConn::init(IpEndpoint const& xip, MIOBuffer *xbuf, IOBufferReader *xreader)
 {
   mutex = g_conn_table->arr[KeepAliveConnTable::ip_hash(xip)].mutex;
 
@@ -2114,7 +2114,7 @@ KeepAliveConn::handleEvent(int event, void *data)
     break;
 
   case NET_EVENT_OPEN_FAILED:
-    Debug("PrefetchKeepAlive", "Connection to child %s failed\n", ink_inet_ntop(&ip.sa, ipb, sizeof(ipb)));
+    Debug("PrefetchKeepAlive", "Connection to child %s failed\n", ats_ip_ntop(&ip.sa, ipb, sizeof(ipb)));
     free();
     break;
 
@@ -2143,7 +2143,7 @@ KeepAliveConn::handleEvent(int event, void *data)
     break;
 
   case VC_EVENT_ERROR:
-    Debug("PrefetchKeepAlive", "got VC_ERROR.. connection problem? " "(ip: %s)", ink_inet_ntop(&ip.sa, ipb, sizeof(ipb)));
+    Debug("PrefetchKeepAlive", "got VC_ERROR.. connection problem? " "(ip: %s)", ats_ip_ntop(&ip.sa, ipb, sizeof(ipb)));
     free();
     break;
 

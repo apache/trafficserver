@@ -65,8 +65,8 @@ public:
   inkcoreapi void append_block(IOBufferBlock * block);
   virtual void UDPPacket_is_abstract() = 0;
 
-  ts_ip_endpoint from;    // what address came from
-  ts_ip_endpoint to;      // what address to send to
+  IpEndpoint from;    // what address came from
+  IpEndpoint to;      // what address to send to
 
   int from_size;
 

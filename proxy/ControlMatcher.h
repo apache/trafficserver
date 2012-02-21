@@ -153,8 +153,8 @@ public:
   char *hostname_str;
   _HttpApiInfo *api_info;
   time_t xact_start;
-  ts_ip_endpoint src_ip;
-  ts_ip_endpoint dest_ip;
+  IpEndpoint src_ip;
+  IpEndpoint dest_ip;
   uint16_t incoming_port;
   char *tag;
 };

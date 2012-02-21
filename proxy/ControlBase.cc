@@ -250,8 +250,8 @@ IPortMod::make(char* value, char const ** error) {
 // ----------
 struct SrcIPMod : public ControlBase::Modifier {
   // Stored in host order because that's how they are compared.
-  ts_ip_endpoint start_addr; ///< Start address in HOST order.
-  ts_ip_endpoint end_addr; ///< End address in HOST order.
+  IpEndpoint start_addr; ///< Start address in HOST order.
+  IpEndpoint end_addr; ///< End address in HOST order.
 
   static char const * const NAME;
 
@@ -270,14 +270,14 @@ void SrcIPMod::print(FILE* f) const {
   ip_text_buffer b1, b2;
   fprintf(f, "%s=%s-%s  "
     ,this->name()
-    , ink_inet_ntop(&start_addr.sa, b1, sizeof(b1))
-    , ink_inet_ntop(&end_addr.sa, b2, sizeof(b2))
+    , ats_ip_ntop(&start_addr.sa, b1, sizeof(b1))
+    , ats_ip_ntop(&end_addr.sa, b2, sizeof(b2))
   );
 }
 bool SrcIPMod::check(HttpRequestData* req) const {
   // Compare in host order
-  return ink_inet_cmp(&start_addr, &req->src_ip) <= 0
-    && ink_inet_cmp(&req->src_ip, &end_addr) <= 0
+  return ats_ip_addr_cmp(&start_addr, &req->src_ip) <= 0
+    && ats_ip_addr_cmp(&req->src_ip, &end_addr) <= 0
     ;
 }
 SrcIPMod*

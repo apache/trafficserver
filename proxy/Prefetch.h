@@ -107,10 +107,10 @@ public:
 
   int object_buf_status;
 
-  ts_ip_endpoint req_ip;     /*ip address where request is coming from */
-  ts_ip_endpoint child_ip;
-  ts_ip_endpoint url_multicast_ip;
-  ts_ip_endpoint data_multicast_ip;
+  IpEndpoint req_ip;     /*ip address where request is coming from */
+  IpEndpoint child_ip;
+  IpEndpoint url_multicast_ip;
+  IpEndpoint data_multicast_ip;
 
   PrefetchUrlEntry *blaster_link;
   PrefetchUrlEntry *hash_link;
@@ -349,13 +349,13 @@ public:
     : Continuation(),  nbytes_added(0)
   { ink_zero(ip); }
 
-  int init(ts_ip_endpoint const& ip, MIOBuffer * buf, IOBufferReader * reader);
+  int init(IpEndpoint const& ip, MIOBuffer * buf, IOBufferReader * reader);
   void free();
 
   int append(IOBufferReader * reader);
   int handleEvent(int event, void *data);
 
-  ts_ip_endpoint ip;
+  IpEndpoint ip;
 
   MIOBuffer *buf;
   IOBufferReader *reader;
@@ -380,8 +380,8 @@ public:
 
   int init();
   void free();
-  static int ip_hash(ts_ip_endpoint const& ip);
-  int append(ts_ip_endpoint const& ip, MIOBuffer * buf, IOBufferReader * reader);
+  static int ip_hash(IpEndpoint const& ip);
+  int append(IpEndpoint const& ip, MIOBuffer * buf, IOBufferReader * reader);
 
   typedef struct
   {
@@ -403,11 +403,11 @@ public:
     ink_zero(ip);
   };
 
-  void init(ts_ip_endpoint const& xip, MIOBuffer * xbuf, IOBufferReader * xreader)
+  void init(IpEndpoint const& xip, MIOBuffer * xbuf, IOBufferReader * xreader)
   {
     mutex = g_conn_table->arr[KeepAliveConnTable::ip_hash(xip)].mutex;
 
-    ink_inet_copy(&ip, &xip);
+    ats_ip_copy(&ip, &xip);
     buf = xbuf;
     reader = xreader;
 
@@ -421,7 +421,7 @@ public:
 
   int handleEvent(int event, void *data);
 
-  ts_ip_endpoint ip;
+  IpEndpoint ip;
   MIOBuffer *buf;
   IOBufferReader *reader;
 };

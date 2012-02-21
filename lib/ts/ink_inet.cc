@@ -32,7 +32,7 @@ extern "C"
 }
 #endif
 
-InkInetAddr const InkInetAddr::INVALID;
+IpAddr const IpAddr::INVALID;
 
 struct hostent *
 ink_gethostbyname_r(char *hostname, ink_gethostbyname_r_data * data)
@@ -86,18 +86,6 @@ ink_gethostbyaddr_r(char *ip, int len, int type, ink_gethostbyaddr_r_data * data
 #endif
 #endif //LINUX
   return r;
-}
-
-unsigned int
-host_to_ip(char *hostname)
-{
-  struct hostent *he;
-
-  he = gethostbyname(hostname);
-  if (he == NULL)
-    return INADDR_ANY;
-
-  return *(unsigned int *) he->h_addr;
 }
 
 uint32_t
@@ -164,16 +152,16 @@ ink_inet_addr(const char *s)
   return htonl((uint32_t) - 1);
 }
 
-const char *ink_inet_ntop(const struct sockaddr *addr, char *dst, size_t size)
+const char *ats_ip_ntop(const struct sockaddr *addr, char *dst, size_t size)
 {
   char const* zret = 0;
 
   switch (addr->sa_family) {
   case AF_INET:
-    zret = inet_ntop(AF_INET, &ink_inet_ip4_addr_cast(addr), dst, size);
+    zret = inet_ntop(AF_INET, &ats_ip4_addr_cast(addr), dst, size);
     break;
   case AF_INET6:
-    zret = inet_ntop(AF_INET6, &ink_inet_ip6_addr_cast(addr), dst, size);
+    zret = inet_ntop(AF_INET6, &ats_ip6_addr_cast(addr), dst, size);
     break;
   default:
     zret = dst;
@@ -184,7 +172,7 @@ const char *ink_inet_ntop(const struct sockaddr *addr, char *dst, size_t size)
 }
 
 char const*
-ink_inet_family_name(int family) {
+ats_ip_family_name(int family) {
   return AF_INET == family ? "IPv4"
     : AF_INET6 == family ? "IPv6"
     : "Unspec"
@@ -207,14 +195,14 @@ uint16_t ink_inet_port(const struct sockaddr *addr)
   return port;
 }
 
-char const* ink_inet_nptop(
+char const* ats_ip_nptop(
   sockaddr const* addr,
   char* dst, size_t size
 ) {
   char buff[INET6_ADDRSTRLEN];
   snprintf(dst, size, "%s:%u",
-    ink_inet_ntop(addr, buff, sizeof(buff)),
-    ink_inet_get_port(addr)
+    ats_ip_ntop(addr, buff, sizeof(buff)),
+    ats_ip_port_host_order(addr)
   );
   return dst;
 }
@@ -269,12 +257,12 @@ ink_inet_parse(ts::ConstBuffer src, ts::ConstBuffer* addr, ts::ConstBuffer* port
 }
 
 int
-ink_inet_pton(char const* text, sockaddr* ip) {
+ats_ip_pton(char const* text, sockaddr* ip) {
   int zret = -1;
   ts::ConstBuffer addr, port;
   ts::ConstBuffer src(text, strlen(text)+1);
 
-  ink_inet_invalidate(ip);
+  ats_ip_invalidate(ip);
   if (0 == ink_inet_parse(src, &addr, &port)) {
     // Copy if not terminated.
     if (0 != addr[addr.size()-1]) {
@@ -287,46 +275,46 @@ ink_inet_pton(char const* text, sockaddr* ip) {
       in6_addr addr6;
       if (inet_pton(AF_INET6, addr.data(), &addr6)) {
         zret = 0;
-        ink_inet_ip6_set(ip, addr6);
+        ats_ip6_set(ip, addr6);
       }
     } else { // no colon -> must be IPv4
       in_addr addr4;
       if (inet_aton(addr.data(), &addr4)) {
         zret = 0;
-        ink_inet_ip4_set(ip, addr4.s_addr);
+        ats_ip4_set(ip, addr4.s_addr);
       }
     }
     // If we had a successful conversion, set the port.
-    if (ink_inet_is_ip(ip))
-      ink_inet_port_cast(ip) = port ? htons(atoi(port.data())) : 0;
+    if (ats_is_ip(ip))
+      ats_ip_port_cast(ip) = port ? htons(atoi(port.data())) : 0;
   }
 
   return zret;
 }
 
-uint32_t ink_inet_hash(sockaddr const* addr) {
+uint32_t ats_ip_hash(sockaddr const* addr) {
   union md5sum {
     unsigned char c[16];
     uint32_t i;
   } zret;
   zret.i = 0;
 
-  if (ink_inet_is_ip4(addr)) {
-    zret.i = ink_inet_ip4_addr_cast(addr);
-  } else if (ink_inet_is_ip6(addr)) {
-    ink_code_md5(const_cast<uint8_t*>(ink_inet_addr8_cast(addr)), INK_IP6_SIZE, zret.c);
+  if (ats_is_ip4(addr)) {
+    zret.i = ats_ip4_addr_cast(addr);
+  } else if (ats_is_ip6(addr)) {
+    ink_code_md5(const_cast<uint8_t*>(ats_ip_addr8_cast(addr)), INK_IP6_SIZE, zret.c);
   }
   return zret.i;
 }
 
 int
-ink_inet_to_hex(sockaddr const* src, char* dst, size_t len) {
+ats_ip_to_hex(sockaddr const* src, char* dst, size_t len) {
   int zret = 0;
   ink_assert(len);
   char const* dst_limit = dst + len - 1; // reserve null space.
-  if (ink_inet_is_ip(src)) {
-    uint8_t const* data = ink_inet_addr8_cast(src);
-    for ( uint8_t const* src_limit = data + ink_inet_addr_size(src)
+  if (ats_is_ip(src)) {
+    uint8_t const* data = ats_ip_addr8_cast(src);
+    for ( uint8_t const* src_limit = data + ats_ip_addr_size(src)
         ; data < src_limit && dst+1 < dst_limit
         ; ++data, zret += 2
     ) {
@@ -341,48 +329,48 @@ ink_inet_to_hex(sockaddr const* src, char* dst, size_t len) {
   return zret;
 }
 
-sockaddr* ink_inet_ip_set(
+sockaddr* ats_ip_set(
   sockaddr* dst,
-  InkInetAddr const& addr,
+  IpAddr const& addr,
   uint16_t port
 ) {
-  if (AF_INET == addr._family) ink_inet_ip4_set(dst, addr._addr._ip4, port);
-  else if (AF_INET6 == addr._family) ink_inet_ip6_set(dst, addr._addr._ip6, port);
-  else ink_inet_invalidate(dst);
+  if (AF_INET == addr._family) ats_ip4_set(dst, addr._addr._ip4, port);
+  else if (AF_INET6 == addr._family) ats_ip6_set(dst, addr._addr._ip6, port);
+  else ats_ip_invalidate(dst);
   return dst;
 }
 
 int
-InkInetAddr::load(char const* text) {
-  ts_ip_endpoint ip;
-  int zret = ink_inet_pton(text, &ip);
+IpAddr::load(char const* text) {
+  IpEndpoint ip;
+  int zret = ats_ip_pton(text, &ip);
   *this = ip;
   return zret;
 }
 
 char*
-InkInetAddr::toString(char* dest, size_t len) const {
-  ts_ip_endpoint ip;
+IpAddr::toString(char* dest, size_t len) const {
+  IpEndpoint ip;
   ip.assign(*this);
-  ink_inet_ntop(&ip, dest, len);
+  ats_ip_ntop(&ip, dest, len);
   return dest;
 }
 
 bool
-InkInetAddr::isMulticast() const {
+IpAddr::isMulticast() const {
   return (AF_INET == _family && 0xe == _addr._byte[0]) ||
     (AF_INET6 == _family && IN6_IS_ADDR_MULTICAST(&_addr._ip6))
     ;
 }
 
 bool
-operator == (InkInetAddr const& lhs, sockaddr const* rhs) {
+operator == (IpAddr const& lhs, sockaddr const* rhs) {
   bool zret = false;
   if (lhs._family == rhs->sa_family) {
     if (AF_INET == lhs._family) {
-      zret = lhs._addr._ip4 == ink_inet_ip4_addr_cast(rhs);
+      zret = lhs._addr._ip4 == ats_ip4_addr_cast(rhs);
     } else if (AF_INET6 == lhs._family) {
-      zret = 0 == memcmp(&lhs._addr._ip6, &ink_inet_ip6_addr_cast(rhs), sizeof(in6_addr));
+      zret = 0 == memcmp(&lhs._addr._ip6, &ats_ip6_addr_cast(rhs), sizeof(in6_addr));
     } else { // map all non-IP to the same thing.
       zret = true;
     }
@@ -391,9 +379,9 @@ operator == (InkInetAddr const& lhs, sockaddr const* rhs) {
 }
 
 int
-ink_inet_getbestaddrinfo(char const* host,
-  ts_ip_endpoint* ip4,
-  ts_ip_endpoint* ip6
+ats_ip_getbestaddrinfo(char const* host,
+  IpEndpoint* ip4,
+  IpEndpoint* ip6
 ) {
   int zret = -1;
   int port = 0; // port value to assign if we find an address.
@@ -402,8 +390,8 @@ ink_inet_getbestaddrinfo(char const* host,
   ts::ConstBuffer addr_text, port_text;
   ts::ConstBuffer src(host, strlen(host)+1);
 
-  if (ip4) ink_inet_invalidate(ip4);
-  if (ip6) ink_inet_invalidate(ip6);
+  if (ip4) ats_ip_invalidate(ip4);
+  if (ip6) ats_ip_invalidate(ip6);
 
   if (0 == ink_inet_parse(src, &addr_text, &port_text)) {
     // Copy if not terminated.
@@ -435,28 +423,28 @@ ink_inet_getbestaddrinfo(char const* host,
           ; ai_spot = ai_spot->ai_next
       ) {
         sockaddr const* ai_ip = ai_spot->ai_addr;
-        if (!ink_inet_is_ip(ai_ip)) spot_type = NA;
-        else if (ink_inet_is_loopback(ai_ip)) spot_type = LO;
-        else if (ink_inet_is_nonroutable(ai_ip)) spot_type = NR;
-        else if (ink_inet_is_multicast(ai_ip)) spot_type = MC;
+        if (!ats_is_ip(ai_ip)) spot_type = NA;
+        else if (ats_is_ip_loopback(ai_ip)) spot_type = LO;
+        else if (ats_is_ip_nonroutable(ai_ip)) spot_type = NR;
+        else if (ats_is_ip_multicast(ai_ip)) spot_type = MC;
         else spot_type = GA;
         
         if (spot_type == NA) continue; // Next!
 
-        if (ink_inet_is_ip4(ai_ip)) {
+        if (ats_is_ip4(ai_ip)) {
           if (spot_type > ip4_type) {
             ip4_src = ai_ip;
             ip4_type = spot_type;
           }
-        } else if (ink_inet_is_ip6(ai_ip)) {
+        } else if (ats_is_ip6(ai_ip)) {
           if (spot_type > ip6_type) {
             ip6_src = ai_ip;
             ip6_type = spot_type;
           }
         }
       }
-      if (ip4_type > NA) ink_inet_copy(ip4, ip4_src);
-      if (ip6_type > NA) ink_inet_copy(ip6, ip6_src);
+      if (ip4_type > NA) ats_ip_copy(ip4, ip4_src);
+      if (ip6_type > NA) ats_ip_copy(ip6, ip6_src);
       freeaddrinfo(ai_result); // free *after* the copy.
 
     }
@@ -466,10 +454,10 @@ ink_inet_getbestaddrinfo(char const* host,
   // would get all the digits so the next character is a non-digit (null or
   // not) and atoi will do the right thing in either case.
   if (port_text.size()) port = htons(atoi(port_text.data()));
-  if (ink_inet_is_ip(ip4)) ink_inet_port_cast(ip4) = port;
-  if (ink_inet_is_ip(ip6)) ink_inet_port_cast(ip6) = port;
+  if (ats_is_ip(ip4)) ats_ip_port_cast(ip4) = port;
+  if (ats_is_ip(ip6)) ats_ip_port_cast(ip6) = port;
 
-  if (!ink_inet_is_ip(ip4) && !ink_inet_is_ip(ip6)) zret = -1;
+  if (!ats_is_ip(ip4) && !ats_is_ip(ip6)) zret = -1;
 
   return zret;
 }

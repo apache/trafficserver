@@ -146,7 +146,7 @@ UDPNetProcessorInternal::udp_read_from_net(UDPNetHandler * nh,
       break;
     }
     // create packet
-    UDPPacket *p = new_incoming_UDPPacket(ink_inet_sa_cast(&fromaddr), buf, r);
+    UDPPacket *p = new_incoming_UDPPacket(ats_ip_sa_cast(&fromaddr), buf, r);
     p->setConnection(uc);
     // XXX: is this expensive?  I] really want to know this information
     p->setArrivalTime(ink_get_hrtime_internal());
@@ -285,7 +285,7 @@ UDPReadContinuation::init_read(int rfd, IOBufferBlock * buf, int len, struct soc
   fd = rfd;
   readbuf = buf;
   readlen = len;
-  fromaddr = ink_inet_ip6_cast(fromaddr_);
+  fromaddr = ats_ip6_cast(fromaddr_);
   fromaddrlen = fromaddrlen_;
   SET_HANDLER(&UDPReadContinuation::readPollEvent);
   period = NET_PERIOD;
@@ -362,7 +362,7 @@ UDPReadContinuation::readPollEvent(int event_, Event * e)
     socklen_t tmp_fromlen = *fromaddrlen;
     int rlen = socketManager.recvfrom(fd, readbuf->end(), readlen,
                                       0,        // default flags
-                                      ink_inet_sa_cast(fromaddr), &tmp_fromlen);
+                                      ats_ip_sa_cast(fromaddr), &tmp_fromlen);
     completionUtil::setThread(event, e->ethread);
     // call back user with their event
     if (rlen > 0) {
@@ -548,7 +548,7 @@ UDPNetProcessor::CreateUDPSocket(
 ) {
   int res = 0, fd = -1;
 
-  ink_assert(ink_inet_are_compatible(remote_addr, local_addr));
+  ink_assert(ats_ip_are_compatible(remote_addr, local_addr));
 
   *resfd = -1;
   if ((res = socketManager.socket(remote_addr->sa_family, SOCK_DGRAM, 0)) < 0)
@@ -556,9 +556,9 @@ UDPNetProcessor::CreateUDPSocket(
   fd = res;
   if ((res = safe_fcntl(fd, F_SETFL, O_NONBLOCK)) < 0)
     goto HardError;
-  if ((res = socketManager.ink_bind(fd, remote_addr, ink_inet_ip_size(remote_addr), IPPROTO_UDP)) < 0) {
+  if ((res = socketManager.ink_bind(fd, remote_addr, ats_ip_size(remote_addr), IPPROTO_UDP)) < 0) {
     char buff[INET6_ADDRPORTSTRLEN];
-    Debug("udpnet", "ink bind failed on %s", ink_inet_nptop(remote_addr, buff, sizeof(buff)));
+    Debug("udpnet", "ink bind failed on %s", ats_ip_nptop(remote_addr, buff, sizeof(buff)));
     goto SoftError;
   }
 
@@ -577,12 +577,12 @@ UDPNetProcessor::CreateUDPSocket(
   *resfd = fd;
   *status = NULL;
   Debug("udpnet", "creating a udp socket port = %d, %d---success",
-    ink_inet_get_port(remote_addr), ink_inet_get_port(local_addr)
+    ats_ip_port_host_order(remote_addr), ats_ip_port_host_order(local_addr)
   );
   return true;
 SoftError:
   Debug("udpnet", "creating a udp socket port = %d---soft failure",
-    ink_inet_get_port(local_addr)
+    ats_ip_port_host_order(local_addr)
   );
   if (fd != -1)
     socketManager.close(fd);
@@ -591,7 +591,7 @@ SoftError:
   return false;
 HardError:
   Debug("udpnet", "creating a udp socket port = %d---hard failure",
-    ink_inet_get_port(local_addr)
+    ats_ip_port_host_order(local_addr)
   );
   if (fd != -1)
     socketManager.close(fd);
@@ -603,7 +603,7 @@ HardError:
 void
 UDPNetProcessor::UDPClassifyConnection(
   Continuation * udpConn,
-  InkInetAddr const& destIP
+  IpAddr const& destIP
 ) {
   int i;
   UDPConnectionInternal *p = static_cast<UDPConnectionInternal *>(udpConn);
@@ -619,7 +619,7 @@ UDPNetProcessor::UDPClassifyConnection(
       p->pipe_class = i;
   // no match; set it to the null class
   if (p->pipe_class == -1) {
-    InkInetAddr null; // default constructed -> invalid value.
+    IpAddr null; // default constructed -> invalid value.
     for (i = 0; i < G_inkPipeInfo.numPipes + 1; ++i)
       if (G_inkPipeInfo.perPipeInfo[i].destIP == null) {
         p->pipe_class = i;
@@ -639,7 +639,7 @@ UDPNetProcessor::UDPBind(Continuation * cont, sockaddr const* addr, int send_buf
   int res = 0;
   int fd = -1;
   UnixUDPConnection *n = NULL;
-  ts_ip_endpoint myaddr;
+  IpEndpoint myaddr;
   int myaddr_len = sizeof(myaddr);
 
   if ((res = socketManager.socket(addr->sa_family, SOCK_DGRAM, 0)) < 0)
@@ -649,7 +649,7 @@ UDPNetProcessor::UDPBind(Continuation * cont, sockaddr const* addr, int send_buf
     goto Lerror;
 
   // If this is a class D address (i.e. multicast address), use REUSEADDR.
-  if (ink_inet_is_multicast(addr)) {
+  if (ats_is_ip_multicast(addr)) {
     int enable_reuseaddr = 1;
 
     if ((res = safe_setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (char *) &enable_reuseaddr, sizeof(enable_reuseaddr)) < 0)) {
@@ -657,7 +657,7 @@ UDPNetProcessor::UDPBind(Continuation * cont, sockaddr const* addr, int send_buf
     }
   }
 
-  if ((res = socketManager.ink_bind(fd, addr, ink_inet_ip_size(addr))) < 0) {
+  if ((res = socketManager.ink_bind(fd, addr, ats_ip_size(addr))) < 0) {
     goto Lerror;
   }
 
@@ -1260,8 +1260,8 @@ UDPWorkContinuation::init(Continuation * c, int num_pairs,
   cont = c;
   action = c;
   numPairs = num_pairs;
-  ink_inet_copy(&local_ip, local_addr);
-  ink_inet_copy(&remote_ip, remote_addr);
+  ats_ip_copy(&local_ip, local_addr);
+  ats_ip_copy(&remote_ip, remote_addr);
   sendbufsize = s_bufsize;
   recvbufsize = r_bufsize;
   udpConns = NULL;
@@ -1276,8 +1276,8 @@ UDPWorkContinuation::StateCreatePortPairs(int event, void *data)
 //  int res = 0;
   int numUdpPorts = 2 * numPairs;
   int fd1 = -1, fd2 = -1;
-  ts_ip_endpoint target;
-  ts_ip_endpoint myaddr1, myaddr2;
+  IpEndpoint target;
+  IpEndpoint myaddr1, myaddr2;
   int portNum, i;
 //  int myaddr_len = sizeof(myaddr1);
   static int lastAllocPort = 10000;
@@ -1297,7 +1297,7 @@ UDPWorkContinuation::StateCreatePortPairs(int event, void *data)
   }
 
   startTime = ink_get_hrtime_internal();
-  ink_inet_copy(&target, &remote_ip);
+  ats_ip_copy(&target, &remote_ip);
 
   udpConns = NEW(new UnixUDPConnection *[numUdpPorts]);
   for (i = 0; i < numUdpPorts; i++)
@@ -1312,13 +1312,13 @@ UDPWorkContinuation::StateCreatePortPairs(int event, void *data)
 
     int myaddr1_len = sizeof(myaddr1);
     int myaddr2_len = sizeof(myaddr2);
-    ink_inet_port_cast(&target) = htons(portNum);
+    ats_ip_port_cast(&target) = htons(portNum);
     if (udpNet.CreateUDPSocket(&fd1, 
         &target.sa, 
         &myaddr1.sa,
         &myaddr1_len,
         &status, sendbufsize, recvbufsize)) {
-      ink_inet_port_cast(&target) = htons(portNum + 1);
+      ats_ip_port_cast(&target) = htons(portNum + 1);
       if (udpNet.CreateUDPSocket(&fd2, 
         &target.sa, 
         &myaddr2.sa,
@@ -1357,7 +1357,7 @@ UDPWorkContinuation::StateCreatePortPairs(int event, void *data)
   }
 
   for (i = 0; i < numUdpPorts; i++) {
-    udpNet.UDPClassifyConnection(udpConns[i], InkInetAddr(target));
+    udpNet.UDPClassifyConnection(udpConns[i], IpAddr(target));
     Debug("udpnet-pipe", "Adding (port = %d) to Pipe class: %d",
           udpConns[i]->getPortNum(), udpConns[i]->pipe_class);
   }

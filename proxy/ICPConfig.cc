@@ -302,7 +302,7 @@ PeerType_t PeerConfigData::CTypeToPeerType_t(int ctype)
 }
 
 int
-PeerConfigData::GetHostIPByName(char *hostname, InkInetAddr& rip)
+PeerConfigData::GetHostIPByName(char *hostname, IpAddr& rip)
 {
   // Short circuit NULL hostname case
   if (0 == hostname || 0 == *hostname)
@@ -319,8 +319,8 @@ PeerConfigData::GetHostIPByName(char *hostname, InkInetAddr& rip)
     for ( addrinfo *spot = ai ; spot ; spot = spot->ai_next) {
       // If current address is valid, and either we don't have one yet
       // or this address is less than our current, set it as current.
-      if (ink_inet_is_ip(spot->ai_addr) &&
-        (!best || -1 == ink_inet_cmp(spot->ai_addr, best))
+      if (ats_is_ip(spot->ai_addr) &&
+        (!best || -1 == ats_ip_addr_cmp(spot->ai_addr, best))
       ) {
         best = spot->ai_addr;
       }
@@ -843,7 +843,7 @@ Peer::LogRecvMsg(ICPMsg_t * m, int valid)
     _state |= PEER_UP;
     _stats.total_received = _stats.total_sent;  // restart timeout count
 
-    Debug("icp", "Peer [%s] now back online", ink_inet_nptop(this->GetIP(), ipb, sizeof(ipb)));
+    Debug("icp", "Peer [%s] now back online", ats_ip_nptop(this->GetIP(), ipb, sizeof(ipb)));
   }
 }
 
@@ -854,7 +854,7 @@ Peer::LogRecvMsg(ICPMsg_t * m, int valid)
 ParentSiblingPeer::ParentSiblingPeer(PeerType_t t, PeerConfigData * p, ICPProcessor * icpPr, bool dynamic_peer)
 :Peer(t, icpPr, dynamic_peer), _pconfig(p)
 {
-  ink_inet_ip_set(&_ip.sa, _pconfig->GetIPAddr(), htons(_pconfig->GetICPPort()));
+  ats_ip_set(&_ip.sa, _pconfig->GetIPAddr(), htons(_pconfig->GetICPPort()));
 }
 
 int
@@ -880,17 +880,17 @@ ParentSiblingPeer::SendMsg_re(Continuation * cont, void *token, struct msghdr * 
 
   if (to) {
     // Send to specified host
-    Peer *p = _ICPpr->FindPeer(InkInetAddr(to), ntohs(ink_inet_port_cast(to)));
+    Peer *p = _ICPpr->FindPeer(IpAddr(to), ntohs(ats_ip_port_cast(to)));
     ink_assert(p);
 
     msg->msg_name = &p->GetSendChan()->addr;
-    msg->msg_namelen = ink_inet_ip_size(&p->GetSendChan()->addr);
+    msg->msg_namelen = ats_ip_size(&p->GetSendChan()->addr);
     Action *a = udpNet.sendmsg_re(cont, token, lp->GetSendFD(), msg);
     return a;
   } else {
     // Send to default host
     msg->msg_name = & _chan.addr;
-    msg->msg_namelen = ink_inet_ip_size(&_chan.addr.sa);
+    msg->msg_namelen = ats_ip_size(&_chan.addr.sa);
     Action *a = udpNet.sendmsg_re(cont, token, lp->GetSendFD(), msg);
     return a;
   }
@@ -928,7 +928,7 @@ ParentSiblingPeer::ExpectedReplies(BitMap * expected_replies_list)
     if (_state & PEER_UP) {
       ip_port_text_buffer ipb;
       _state &= ~PEER_UP;
-      Debug("icp", "Peer [%s] marked offline", ink_inet_nptop(this->GetIP(), ipb, sizeof(ipb)));
+      Debug("icp", "Peer [%s] marked offline", ats_ip_nptop(this->GetIP(), ipb, sizeof(ipb)));
     }
     //
     // We will continue to send messages, but will not wait for a reply
@@ -962,8 +962,8 @@ ParentSiblingPeer::ValidSender(sockaddr* fr)
     // Make sure the sockaddr_in corresponds to this peer
     // Need to update once we have support for comparing address
     // and port in a socakddr.
-    if (ink_inet_eq(this->GetIP(), fr) &&
-      (ink_inet_port_cast(this->GetIP()) == ink_inet_port_cast(fr))
+    if (ats_ip_addr_eq(this->GetIP(), fr) &&
+      (ats_ip_port_cast(this->GetIP()) == ats_ip_port_cast(fr))
     ) {
       return 1;                 // Sender is this peer
     } else {
@@ -987,10 +987,10 @@ ParentSiblingPeer::LogSendMsg(ICPMsg_t * m, sockaddr const* sa)
 int
 ParentSiblingPeer::ExtToIntRecvSockAddr(sockaddr const* in, sockaddr *out)
 {
-  Peer *p = _ICPpr->FindPeer(InkInetAddr(in));
+  Peer *p = _ICPpr->FindPeer(IpAddr(in));
   if (p && (p->GetType() != PEER_LOCAL)) {
     // Map from received (ip, port) to defined (ip, port).
-    ink_inet_copy(out, p->GetIP());
+    ats_ip_copy(out, p->GetIP());
     return 1;
   } else {
     return 0;
@@ -1001,10 +1001,10 @@ ParentSiblingPeer::ExtToIntRecvSockAddr(sockaddr const* in, sockaddr *out)
 // Class MultiCastPeer (derived from Peer) member functions
 //      ICP object describing MultiCast Peers.
 //-----------------------------------------------------------
-MultiCastPeer::MultiCastPeer(InkInetAddr const& addr, uint16_t mc_port, int ttl, ICPProcessor * icpPr)
+MultiCastPeer::MultiCastPeer(IpAddr const& addr, uint16_t mc_port, int ttl, ICPProcessor * icpPr)
 :Peer(PEER_MULTICAST, icpPr), _mc_ttl(ttl)
 {
-  ink_inet_ip_set(&_mc_ip.sa, addr, htons(mc_port));
+  ats_ip_set(&_mc_ip.sa, addr, htons(mc_port));
   memset(&this->_mc, 0, sizeof(this->_mc));
 }
 
@@ -1027,7 +1027,7 @@ MultiCastPeer::SendMsg_re(Continuation * cont, void *token, struct msghdr * msg,
 
   if (to) {
     // Send to MultiCast group member (UniCast)
-    Peer *p = FindMultiCastChild(InkInetAddr(to), ink_inet_get_port(to));
+    Peer *p = FindMultiCastChild(IpAddr(to), ats_ip_port_host_order(to));
     ink_assert(p);
     a = ((ParentSiblingPeer *) p)->SendMsg_re(cont, token, msg, 0);
   } else {
@@ -1085,8 +1085,8 @@ MultiCastPeer::ValidSender(sockaddr* sa)
   //  MultiCast group.
   Peer *P = _next;
   while (P) {
-    if (ink_inet_eq(P->GetIP(), sa) &&
-      (ink_inet_port_cast(P->GetIP()) == ink_inet_port_cast(sa))
+    if (ats_ip_addr_eq(P->GetIP(), sa) &&
+      (ats_ip_port_cast(P->GetIP()) == ats_ip_port_cast(sa))
     ) {
       return 1;
     } else {
@@ -1105,7 +1105,7 @@ MultiCastPeer::LogSendMsg(ICPMsg_t * m, sockaddr const* sa)
     //  target Peer.
     //
     Peer *p;
-    p = FindMultiCastChild(InkInetAddr(sa), ink_inet_get_port(sa));
+    p = FindMultiCastChild(IpAddr(sa), ats_ip_port_host_order(sa));
     if (p)
       ((ParentSiblingPeer *) p)->LogSendMsg(m, sa);
 
@@ -1135,9 +1135,9 @@ MultiCastPeer::AddMultiCastChild(Peer * P)
   // Add (Peer *) to the given MultiCast structure.
   // Make sure child (ip,port) is unique.
   sockaddr const* ip = P->GetIP();
-  if (FindMultiCastChild(InkInetAddr(ip), ink_inet_get_port(ip))) {
+  if (FindMultiCastChild(IpAddr(ip), ats_ip_port_host_order(ip))) {
     ip_text_buffer x;
-    Warning("bad icp.config, multiple multicast child definitions for ip=%s", ink_inet_ntop(ip, x, sizeof(x)));
+    Warning("bad icp.config, multiple multicast child definitions for ip=%s", ats_ip_ntop(ip, x, sizeof(x)));
     return 0;                   // Not added, already exists
   } else {
     P->SetNext(this->_next);
@@ -1148,7 +1148,7 @@ MultiCastPeer::AddMultiCastChild(Peer * P)
 }
 
 Peer *
-MultiCastPeer::FindMultiCastChild(InkInetAddr const& addr, uint16_t port)
+MultiCastPeer::FindMultiCastChild(IpAddr const& addr, uint16_t port)
 {
   // Locate child (Peer *) with the given (ip,port). This is split out
   // rather than using a sockaddr so we can indicate the port is to not
@@ -1157,7 +1157,7 @@ MultiCastPeer::FindMultiCastChild(InkInetAddr const& addr, uint16_t port)
   while (curP) {
     sockaddr const* peer_ip = curP->GetIP();
     if (addr == peer_ip &&
-      (!port || port == ink_inet_get_port(peer_ip))
+      (!port || port == ats_ip_port_host_order(peer_ip))
     ) {
       return curP;
     } else {
@@ -1490,12 +1490,12 @@ ICPProcessor::DumpICPConfig()
     }                           // End of switch
 
     if (*str_type == 'M') {
-      Debug("icp", "[%d]: Type=%s IP=%s", id, str_type, ink_inet_nptop(P->GetIP(), ipb, sizeof(ipb)));
+      Debug("icp", "[%d]: Type=%s IP=%s", id, str_type, ats_ip_nptop(P->GetIP(), ipb, sizeof(ipb)));
     } else {
       ParentSiblingPeer *Pps = static_cast<ParentSiblingPeer *>(P);
       Debug("icp",
             "[%d]: Type=%s IP=%s PPort=%d Host=%s",
-        id, str_type, ink_inet_nptop(P->GetIP(), ipb, sizeof(ipb)),
+        id, str_type, ats_ip_nptop(P->GetIP(), ipb, sizeof(ipb)),
         Pps->GetConfig()->GetProxyPort(), Pps->GetConfig()->GetHostname());
 
       Debug("icp",
