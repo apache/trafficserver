@@ -45,7 +45,7 @@ static inline bool IN6_IS_ADDR_UNSPECIFIED(in6_addr const* addr) {
 }
 #endif
 
-struct InkInetAddr; // forward declare.
+struct IpAddr; // forward declare.
 
 /** A union to hold the standard IP address structures.
     By standard we mean @c sockaddr compliant.

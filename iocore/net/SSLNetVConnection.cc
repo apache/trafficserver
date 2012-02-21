@@ -443,7 +443,7 @@ SSLNetVConnection::free(EThread * t) {
 int
 SSLNetVConnection::sslStartHandShake(int event, int &err)
 {
-  ts_ip_endpoint ip;
+  IpEndpoint ip;
   int namelen = sizeof(ip);
 
   if (event == SSL_EVENT_SERVER) {
@@ -453,7 +453,7 @@ SSLNetVConnection::sslStartHandShake(int event, int &err)
       if (sslCertLookup.hasMultipleCerts()) {
         char buff[INET6_ADDRSTRLEN];
         safe_getsockname(get_socket(), &ip.sa, &namelen);
-        ink_inet_ntop(&ip.sa, buff, sizeof(buff));
+        ats_ip_ntop(&ip.sa, buff, sizeof(buff));
         ctx = sslCertLookup.findInfoInHash(buff);
         if (ctx == NULL) {
           ctx = ssl_NetProcessor.ctx;

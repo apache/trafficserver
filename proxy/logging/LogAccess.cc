@@ -1178,7 +1178,7 @@ LogAccess::unmarshal_ip_to_str(char **buf, char *dest, int len)
   IpEndpoint ip;
 
   unmarshal_ip(buf, &ip);
-  return ink_inet_ntop(&ip, dest, len) ? static_cast<int>(::strlen(dest)) : -1;
+  return ats_ip_ntop(&ip, dest, len) ? static_cast<int>(::strlen(dest)) : -1;
 }
 
 /*-------------------------------------------------------------------------
