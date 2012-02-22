@@ -172,9 +172,6 @@ new_HdrStrHeap(int requested_size)
 
   ink_assert(sh->m_free_size > 0);
 
-#if TS_HAS_PURIFY
-  memset(sh->m_free_start, '#', sh->m_free_size);
-#endif
 
   return sh;
 }

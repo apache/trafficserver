@@ -1852,18 +1852,11 @@ ClusterHandler::add_small_controlmsg_descriptors()
     c->free_data();
     c->mutex = NULL;
     p += c->len;
-#if TS_HAS_PURIFY
-    char *endp = p;
-#endif
     ink_hrtime now = ink_get_hrtime();
     CLUSTER_SUM_DYN_STAT(CLUSTER_CTRL_MSGS_SEND_TIME_STAT, now - c->submit_time);
     LOG_EVENT_TIME(c->submit_time, cluster_send_time_dist, cluster_send_events);
     c->freeall();
     p = (char *) DOUBLE_ALIGN(p);
-#if TS_HAS_PURIFY
-    if (endp < p)
-      memset(endp, 0, (p - endp));
-#endif
   }
   write.msg.control_bytes = p - (char *) &write.msg.descriptor[write.msg.count];
 

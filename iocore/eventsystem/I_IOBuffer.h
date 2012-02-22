@@ -54,10 +54,7 @@ inkcoreapi extern int64_t max_iobuffer_size;
 extern int64_t default_small_iobuffer_size;
 extern int64_t default_large_iobuffer_size; // matched to size of OS buffers
 
-#if !TS_HAS_PURIFY
-// Define this macro to enable buffer usage tracking.
 #define TRACK_BUFFER_USER
-#endif
 
 enum AllocType
 { NO_ALLOC, FAST_ALLOCATED, XMALLOCED, MEMALIGNED,

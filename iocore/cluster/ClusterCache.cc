@@ -433,10 +433,6 @@ CacheContinuation::do_op(Continuation * c, ClusterMachine * mp, void *args,
   // Determine the type of the "Over The Wire" (OTW) message header and
   //   initialize it.
   //
-#if TS_HAS_PURIFY
-  if (data)
-    memset(data, 0, op_to_sizeof_fixedlen_msg(opcode));
-#endif
   Debug("cache_msg",
         "do_op opcode=%d seqno=%d Machine=%p data=%p datalen=%d mio=%p",
         opcode, (c ? cc->seq_number : CACHE_NO_RESPONSE), mp, data, data_len, b);
@@ -464,9 +460,6 @@ CacheContinuation::do_op(Continuation * c, ClusterMachine * mp, void *args,
       if (!data) {
         data_len = op_to_sizeof_fixedlen_msg(opcode);
         data = (char *) ALLOCA_DOUBLE(data_len);
-#if TS_HAS_PURIFY
-        memset(data, 0, data_len);
-#endif
       }
       msg = (char *) data;
       CacheOpMsg_short *m = (CacheOpMsg_short *) msg;
@@ -2511,9 +2504,6 @@ CacheContinuation::do_remote_lookup(Continuation * cont, CacheKey * key,
   ClusterMachine *past_probes[CONFIGURATION_HISTORY_PROBE_DEPTH] = { 0 };
   int mlen = op_to_sizeof_fixedlen_msg(CACHE_LOOKUP_OP) + ((hostname && hostname_len) ? hostname_len : 0);
   CacheLookupMsg *msg = (CacheLookupMsg *) ALLOCA_DOUBLE(mlen);
-#if TS_HAS_PURIFY
-  memset((char *) msg, 0, mlen);
-#endif
   msg->init();
 
 
@@ -2691,11 +2681,7 @@ CacheContinuation::replyLookupEvent(int event, void *d)
   if (vers == CacheOpReplyMsg::CACHE_OP_REPLY_MESSAGE_VERSION) {
     CacheOpReplyMsg *msg;
     int flen = CacheOpReplyMsg::sizeof_fixedlen_msg();
-#if TS_HAS_PURIFY
-    msg = (CacheOpReplyMsg *)ats_malloc(flen);
-#else
     msg = (CacheOpReplyMsg *) ALLOCA_DOUBLE(flen);
-#endif
     msg->init();
     CLUSTER_DECREMENT_DYN_STAT(CLUSTER_CACHE_OUTSTANDING_STAT);
     int len = flen - sizeof(msg->token);
@@ -2707,9 +2693,6 @@ CacheContinuation::replyLookupEvent(int event, void *d)
       log_cache_op_sndmsg(seq_number, event, "cache_result");
 #endif
       clusterProcessor.invoke_remote(from, CACHE_OP_RESULT_CLUSTER_FUNCTION, msg, len);
-#if TS_HAS_PURIFY
-      ats_free(msg);
-#endif
     }
   } else {
     //////////////////////////////////////////////////////////////

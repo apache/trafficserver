@@ -195,19 +195,6 @@ AC_SUBST(has_tests)
 AM_CONDITIONAL([BUILD_TESTS], [test 0 -ne $has_tests])
 
 #
-# Purify
-#
-AC_MSG_CHECKING([whether to enable purify])
-AC_ARG_ENABLE([purify],
-  [AS_HELP_STRING([--enable-purify],[enable support for Purify])],
-  [],
-  [enable_purify=no]
-)
-AC_MSG_RESULT([$enable_purify])
-TS_ARG_ENABLE_VAR([has], [purify])
-AC_SUBST(has_purify)
-
-#
 # libev
 #
 

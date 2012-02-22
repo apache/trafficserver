@@ -81,7 +81,7 @@ thread_freeup(ClassAllocator<C> &a, ProxyAllocator & l)
   ink_assert(!l.allocated);
 }
 
-#if !TS_HAS_PURIFY && !defined(_IOCORE_WIN32) && defined(TS_USE_FREELIST)
+#if !defined(_IOCORE_WIN32) && defined(TS_USE_FREELIST)
 #define THREAD_ALLOC(_a, _t) thread_alloc(::_a, _t->_a)
 #define THREAD_ALLOC_INIT(_a, _t) thread_alloc_init(::_a, _t->_a)
 #define THREAD_FREE_TO(_p, _a, _t, _m) do { \

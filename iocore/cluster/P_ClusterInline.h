@@ -100,9 +100,6 @@ Cluster_read(ClusterMachine * owner_machine, int opcode,
 
       // Perform data Marshal operation
       msg = (char *) ALLOCA_DOUBLE(flen + len);
-#if TS_HAS_PURIFY
-      memset((char *) msg, 0, flen);
-#endif
       data = msg + flen;
 
       cur_len = len;
@@ -136,9 +133,6 @@ Cluster_read(ClusterMachine * owner_machine, int opcode,
           goto err_exit;
 
         msg = (char *) ALLOCA_DOUBLE(flen + len);
-#if TS_HAS_PURIFY
-        memset((char *) msg, 0, flen);
-#endif
         data = msg + flen;
         memcpy(data, hostname, host_len);
 

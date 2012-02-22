@@ -329,12 +329,8 @@ HostDBInfo()
   , reverse_dns(0)
   , md5_low_low(0)
   , md5_low(0), md5_high(0) {
-#if TS_HAS_PURIFY
-    memset(&app, 0, sizeof(app));
-#else
     app.allotment.application1 = 0;
     app.allotment.application2 = 0;
-#endif
     ats_ip_invalidate(ip());
 
     return;

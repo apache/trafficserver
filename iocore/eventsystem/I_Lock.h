@@ -29,7 +29,6 @@
 
 #define MAX_LOCK_TIME	HRTIME_MSECONDS(200)
 #define THREAD_MUTEX_THREAD_HOLDING	(-1024*1024)
-#define HANDLER_NAME(_c) _c?_c->handler_name:(char*)NULL
 
 class EThread;
 typedef EThread *EThreadPtr;
@@ -732,7 +731,6 @@ MutexTryLock _l(__FILE__,__LINE__,(char*)NULL,_m,_t)
 #    define MUTEX_TRY_LOCK_SPIN(_l,_m,_t,_sc) \
 MutexTryLock _l(__FILE__,__LINE__,(char*)NULL,_m,_t,_sc)
 
-#    if TS_HAS_PURIFY
 
 /**
   Attempts to acquire the lock to the ProxyMutex.
@@ -748,12 +746,9 @@ MutexTryLock _l(__FILE__,__LINE__,(char*)NULL,_m,_t,_sc)
   @param _c Continuation whose mutex will be attempted to lock.
 
 */
-#      define MUTEX_TRY_LOCK_FOR(_l,_m,_t,_c) \
-MutexTryLock _l(__FILE__,__LINE__,(char *)NULL,_m,_t)
-#    else // !TS_HAS_PURIFY
-#      define MUTEX_TRY_LOCK_FOR(_l,_m,_t,_c) \
-MutexTryLock _l(__FILE__,__LINE__,HANDLER_NAME(_c),_m,_t)
-#    endif // TS_HAS_PURIFY
+
+#    define MUTEX_TRY_LOCK_FOR(_l,_m,_t,_c) \
+MutexTryLock _l(__FILE__,__LINE__,NULL,_m,_t)
 #  else //DEBUG
 #    define MUTEX_TRY_LOCK(_l,_m,_t) MutexTryLock _l(_m,_t)
 #    define MUTEX_TRY_LOCK_SPIN(_l,_m,_t,_sc) MutexTryLock _l(_m,_t,_sc)
@@ -779,17 +774,10 @@ MutexTryLock _l(__FILE__,__LINE__,HANDLER_NAME(_c),_m,_t)
 #ifdef DEBUG
 #  define MUTEX_TAKE_TRY_LOCK(_m,_t) \
 Mutex_trylock(__FILE__,__LINE__,(char*)NULL,_m,_t)
-#  if TS_HAS_PURIFY
-#    define MUTEX_TAKE_TRY_LOCK_FOR(_m,_t,_c) \
-Mutex_trylock(__FILE__,__LINE__,(char *)NULL,_m,_t)
-#    define MUTEX_TAKE_TRY_LOCK_FOR_SPIN(_m,_t,_c,_sc) \
-Mutex_trylock_spin(__FILE__,__LINE__,(char *)NULL,_m,_t,_sc)
-#  else
-#    define MUTEX_TAKE_TRY_LOCK_FOR(_m,_t,_c) \
+#  define MUTEX_TAKE_TRY_LOCK_FOR(_m,_t,_c) \
 Mutex_trylock(__FILE__,__LINE__,(char*)NULL,_m,_t)
-#    define MUTEX_TAKE_TRY_LOCK_FOR_SPIN(_m,_t,_c,_sc) \
-Mutex_trylock_spin(__FILE__,__LINE__,HANDLER_NAME(_c),_m,_t,_sc)
-#  endif
+#  define MUTEX_TAKE_TRY_LOCK_FOR_SPIN(_m,_t,_c,_sc) \
+Mutex_trylock_spin(__FILE__,__LINE__,NULL,_m,_t,_sc)
 #else
 #  define MUTEX_TAKE_TRY_LOCK(_m,_t) Mutex_trylock(_m,_t)
 #  define MUTEX_TAKE_TRY_LOCK_FOR(_m,_t,_c) Mutex_trylock(_m,_t)
@@ -802,13 +790,8 @@ Mutex_trylock_spin(_m,_t,_sc)
 Mutex_lock(__FILE__,__LINE__,(char*)NULL,_m,_t)
 #  define MUTEX_SET_AND_TAKE_LOCK(_s,_m,_t)\
 _s.set_and_take(__FILE__,__LINE__,(char*)NULL,_m,_t)
-#  if TS_HAS_PURIFY
-#    define MUTEX_TAKE_LOCK_FOR(_m,_t,_c) \
-Mutex_lock(__FILE__,__LINE__,(char *)NULL,_m,_t)
-#  else
-#    define MUTEX_TAKE_LOCK_FOR(_m,_t,_c) \
-Mutex_lock(__FILE__,__LINE__,HANDLER_NAME(_c),_m,_t)
-#  endif // TS_HAS_PURIFY
+#  define MUTEX_TAKE_LOCK_FOR(_m,_t,_c) \
+Mutex_lock(__FILE__,__LINE__,NULL,_m,_t)
 #else
 #  define MUTEX_TAKE_LOCK(_m,_t) Mutex_lock(_m,_t)
 #  define MUTEX_SET_AND_TAKE_LOCK(_s,_m,_t)_s.set_and_take(_m,_t)

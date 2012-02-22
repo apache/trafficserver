@@ -85,9 +85,6 @@ ClusterControl::real_alloc_data(int read_access, bool align_int32_on_non_int64_b
     } else {
       data = ((char *) real_data) + DATA_HDR;
     }
-#if TS_HAS_PURIFY
-    memset((char *) real_data, 0, BUFFER_SIZE_FOR_INDEX(size_index));
-#endif
   } else {
     int size = sizeof(int64_t) * (((len + DATA_HDR + sizeof(int32_t) + sizeof(int64_t) - 1) / sizeof(int64_t)) + 1);
     size_index = -1;
@@ -101,9 +98,6 @@ ClusterControl::real_alloc_data(int read_access, bool align_int32_on_non_int64_b
       data = (char *) DOUBLE_ALIGN(real_data) + DATA_HDR;
     }
     CLUSTER_INCREMENT_DYN_STAT(CLUSTER_ALLOC_DATA_NEWS_STAT);
-#if TS_HAS_PURIFY
-    memset((char *) real_data, 0, size);
-#endif
   }
 
   // IOBufferBlock adjustments
