@@ -40,12 +40,8 @@ typedef struct stats_state_t
   TSVIO write_vio;
 
   TSIOBuffer req_buffer;
-  TSIOBufferReader req_reader;
-
   TSIOBuffer resp_buffer;
   TSIOBufferReader resp_reader;
-
-  TSHttpTxn http_txnp;
 
   int output_bytes;
   int body_written;
@@ -73,23 +69,18 @@ stats_process_accept(TSCont contp, stats_state * my_state)
 {
 
   my_state->req_buffer = TSIOBufferCreate();
-  my_state->req_reader = TSIOBufferReaderAlloc(my_state->req_buffer);
   my_state->resp_buffer = TSIOBufferCreate();
   my_state->resp_reader = TSIOBufferReaderAlloc(my_state->resp_buffer);
-  my_state->read_vio = TSVConnRead(my_state->net_vc, contp, my_state->req_buffer, INT_MAX);
+  my_state->read_vio = TSVConnRead(my_state->net_vc, contp, my_state->req_buffer, INT64_MAX);
 }
 
 static int
 stats_add_data_to_resp_buffer(const char *s, stats_state * my_state)
 {
   int s_len = strlen(s);
-  char *buf = (char *) TSmalloc(s_len);
 
-  memcpy(buf, s, s_len);
-  TSIOBufferWrite(my_state->resp_buffer, buf, s_len);
+  TSIOBufferWrite(my_state->resp_buffer, s, s_len);
 
-  TSfree(buf);
-  buf = NULL;
   return s_len;
 }
 
