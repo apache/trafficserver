@@ -49,15 +49,13 @@ PATCHES ACCEPTED TO BACKPORT FROM TRUNK:
    Jira: https://issues.apache.org/jira/browse/TS-948
    +1: zym, zwoop, igalic
 
-
-PATCHES PROPOSED TO BACKPORT FROM TRUNK:
-  [ New proposals should be added at the end of the list ]
-
-
   *) Traffic Cop: segment fault when TRACE_LOG_COP is enabled
    Trunk patch: http://svn.apache.org/viewvc?view=rev&rev=1225724
    Jira: https://issues.apache.org/jira/browse/TS-1065
-   +1: igalic, zwoop
+   +1: igalic, zwoop, briang
+
+PATCHES PROPOSED TO BACKPORT FROM TRUNK:
+  [ New proposals should be added at the end of the list ]
 
   *) HttpSM: TS can hang on HTTPS POST requests.
    Trunk patch: http://svn.apache.org/viewvc?view=rev&rev=1228988
@@ -78,6 +76,11 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
    Trunk patch: https://git-wip-us.apache.org/repos/asf?p=trafficserver.git;a=commit;h=8421675e42f9c09715ce02557afc258be7fed389
    Jira: https://issues.apache.org/jira/browse/TS-1110
    +1: briang, igalic
+
+  *) Major performance problem with second request on same keep-alive connection
+   Trunk patch: (See JIRA performance.try3.diff)
+   Jira: https://issues.apache.org/jira/browse/TS-880
+   +1: briang
 
 STALLED ISSUES
 
