@@ -41,6 +41,14 @@ A list of all bugs open for the next v3.0.4 release can be found at
 
 PATCHES ACCEPTED TO BACKPORT FROM TRUNK:
 
+  *) do not reload bad remap.config
+   Trunk patch: https://git-wip-us.apache.org/repos/asf?p=trafficserver.git;a=commit;h=31500d106e472a8713c1c3976b161f2dea56ba38
+     https://git-wip-us.apache.org/repos/asf?p=trafficserver.git;a=commit;h=50be413a667ffc10ea32e2d419165584aea008eb
+     https://git-wip-us.apache.org/repos/asf?p=trafficserver.git;a=commit;h=a90a976eff61546340fc1d49d4faffeaa49a3cf2
+     https://git-wip-us.apache.org/repos/asf?p=trafficserver.git;a=commit;h=c2ddca4fac3d5cbacae27cddba87fe07c8651ec0
+   Jira: https://issues.apache.org/jira/browse/TS-948
+   +1: zym, zwoop, igalic
+
 
 PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   [ New proposals should be added at the end of the list ]
@@ -58,14 +66,6 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
    niq comments:  This patch combines the bugfix with no-op stylistic
                   changes.  Not a big deal for a simple change, but in
                   general it risks complicating review.
-
-  *) do not reload bad remap.config
-   Trunk patch: https://git-wip-us.apache.org/repos/asf?p=trafficserver.git;a=commit;h=31500d106e472a8713c1c3976b161f2dea56ba38
-     https://git-wip-us.apache.org/repos/asf?p=trafficserver.git;a=commit;h=50be413a667ffc10ea32e2d419165584aea008eb
-     https://git-wip-us.apache.org/repos/asf?p=trafficserver.git;a=commit;h=a90a976eff61546340fc1d49d4faffeaa49a3cf2
-     https://git-wip-us.apache.org/repos/asf?p=trafficserver.git;a=commit;h=c2ddca4fac3d5cbacae27cddba87fe07c8651ec0
-   Jira: https://issues.apache.org/jira/browse/TS-948
-   +1: zym, zwoop, igalic
 
   *) key->volume hash table is not consistent when a disk is marked as bad or removed due to failure
    Trunk patch: https://git-wip-us.apache.org/repos/asf?p=trafficserver.git;a=commit;h=b2109cdaf55234621d6c3b2fcb4f15774f0939ab
