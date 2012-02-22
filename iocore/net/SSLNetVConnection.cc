@@ -505,18 +505,20 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
     sslHandShakeComplete = 1;
 
 #if TS_USE_TLS_NPN
-    const unsigned char * proto = NULL;
-    unsigned len = 0;
+    {
+      const unsigned char * proto = NULL;
+      unsigned len = 0;
 
-    SSL_get0_next_proto_negotiated(ssl, &proto, &len);
-    if (len) {
-      if (this->npnSet) {
-        this->npnEndpoint = this->npnSet->findEndpoint(proto, len);
-        this->npnSet = NULL;
+      SSL_get0_next_proto_negotiated(ssl, &proto, &len);
+      if (len) {
+        if (this->npnSet) {
+          this->npnEndpoint = this->npnSet->findEndpoint(proto, len);
+          this->npnSet = NULL;
+        }
+        Debug("ssl", "client selected next protocol %.*s", len, proto);
+      } else {
+        Debug("ssl", "client did not select a next protocol");
       }
-      Debug("ssl", "client selected next protocol %.*s", len, proto);
-    } else {
-      Debug("ssl", "client did not select a next protocol");
     }
 #endif /* TS_USE_TLS_NPN */
 
