@@ -65,7 +65,7 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
      https://git-wip-us.apache.org/repos/asf?p=trafficserver.git;a=commit;h=a90a976eff61546340fc1d49d4faffeaa49a3cf2
      https://git-wip-us.apache.org/repos/asf?p=trafficserver.git;a=commit;h=c2ddca4fac3d5cbacae27cddba87fe07c8651ec0
    Jira: https://issues.apache.org/jira/browse/TS-948
-   +1: zym, zwoop
+   +1: zym, zwoop, igalic
 
   *) key->volume hash table is not consistent when a disk is marked as bad or removed due to failure
    Trunk patch: https://git-wip-us.apache.org/repos/asf?p=trafficserver.git;a=commit;h=b2109cdaf55234621d6c3b2fcb4f15774f0939ab
@@ -77,7 +77,7 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   *) logstats incorrectly bucketizes all status codes greater than 599 as 5xx
    Trunk patch: https://git-wip-us.apache.org/repos/asf?p=trafficserver.git;a=commit;h=8421675e42f9c09715ce02557afc258be7fed389
    Jira: https://issues.apache.org/jira/browse/TS-1110
-   +1: briang
+   +1: briang, igalic
 
 STALLED ISSUES
 
