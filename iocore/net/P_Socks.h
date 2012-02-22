@@ -62,7 +62,7 @@ struct socks_conf_struct
 #endif
 
 #ifndef SOCKS_WITH_TS
-  ts_ip_endpoint server_addr;
+  IpEndpoint server_addr;
 #endif
 
     socks_conf_struct():socks_needed(0), server_connect_timeout(0), socks_timeout(100), default_version(5),
@@ -115,9 +115,9 @@ struct SocksEntry:public Continuation
   SocksNetVC *netVConnection;
 
   // Changed from @a ip and @a port.
-  ts_ip_endpoint target_addr; ///< Original target address.
+  IpEndpoint target_addr; ///< Original target address.
   // Changed from @a server_ip, @a server_port.
-  ts_ip_endpoint server_addr; ///< Origin server address.
+  IpEndpoint server_addr; ///< Origin server address.
 
   int nattempts;
 

@@ -780,7 +780,7 @@ public:
     bool connect_failure;
     TransferEncoding_t transfer_encoding;
 
-    ts_ip_endpoint addr;    // replaces 'ip' field
+    IpEndpoint addr;    // replaces 'ip' field
     
     // port to connect to, except for client
     // connection where it is port on proxy

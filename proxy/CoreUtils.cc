@@ -1011,8 +1011,8 @@ CoreUtils::process_NetVC(UnixNetVConnection * nvc_test)
     char addrbuf[INET6_ADDRSTRLEN];
     printf("----------- UnixNetVConnection @ 0x%p ----------\n", nvc_test);
     printf("     ip: %s    port: %d\n",
-        ink_inet_ntop(&loaded_nvc->server_addr.sa, addrbuf, sizeof(addrbuf)), 
-        ink_inet_get_port(&loaded_nvc->server_addr));
+        ats_ip_ntop(&loaded_nvc->server_addr.sa, addrbuf, sizeof(addrbuf)), 
+        ats_ip_port_host_order(&loaded_nvc->server_addr));
     printf("     closed: %d\n\n", loaded_nvc->closed);
     printf("     read state: \n");
     print_netstate(&loaded_nvc->read);

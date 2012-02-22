@@ -219,8 +219,8 @@ private:
   MIOBuffer *a_to_p_buffer;
   IOBufferReader *a_to_p_reader;
 
-  ts_ip_endpoint passive_addr_struct;
-  ts_ip_endpoint active_addr_struct;
+  IpEndpoint passive_addr_struct;
+  IpEndpoint active_addr_struct;
 
   void *passive_data;
   void *active_data;

@@ -111,7 +111,7 @@ ink_res_nclose(ink_res_state statp) {
 }
 
 static void
-ink_res_setservers(ink_res_state statp, ts_ip_endpoint const* set, int cnt) {
+ink_res_setservers(ink_res_state statp, IpEndpoint const* set, int cnt) {
   /* close open servers */
   ink_res_nclose(statp);
 
@@ -123,13 +123,13 @@ ink_res_setservers(ink_res_state statp, ts_ip_endpoint const* set, int cnt) {
      the destination and sourcea are the same.
   */
   int nserv = 0;
-  for ( ts_ip_endpoint const* limit = set + cnt ; nserv < INK_MAXNS && set < limit ; ++set ) {
-    ts_ip_endpoint* dst = &statp->nsaddr_list[nserv];
+  for ( IpEndpoint const* limit = set + cnt ; nserv < INK_MAXNS && set < limit ; ++set ) {
+    IpEndpoint* dst = &statp->nsaddr_list[nserv];
 
     if (dst == set) {
-      if (ink_inet_is_ip(&set->sa))
+      if (ats_is_ip(&set->sa))
         ++nserv;
-    } else if (ink_inet_copy(&dst->sa, &set->sa)) {
+    } else if (ats_ip_copy(&dst->sa, &set->sa)) {
       ++nserv;
     }
   }
@@ -139,10 +139,10 @@ ink_res_setservers(ink_res_state statp, ts_ip_endpoint const* set, int cnt) {
 int
 ink_res_getservers(ink_res_state statp, sockaddr *set, int cnt) {
   int zret = 0; // return count.
-  ts_ip_endpoint const* src = statp->nsaddr_list;
+  IpEndpoint const* src = statp->nsaddr_list;
 
   for (int i = 0; i < statp->nscount && i < cnt; ++i, ++src) {
-    if (ink_inet_copy(set, &src->sa)) {
+    if (ats_ip_copy(set, &src->sa)) {
       ++set;
       ++zret;
     }
@@ -281,7 +281,7 @@ ink_res_randomid(void) {
 int
 ink_res_init(
   ink_res_state statp, ///< State object to update.
-  ts_ip_endpoint const* pHostList, ///< Additional servers.
+  IpEndpoint const* pHostList, ///< Additional servers.
   size_t pHostListSize, ///< # of entries in @a pHostList.
   const char *pDefDomain, ///< Default domain (may be NULL).
   const char *pSearchList, ///< Unknown
@@ -416,10 +416,10 @@ ink_res_init(
     if (pHostListSize > INK_MAXNS) pHostListSize = INK_MAXNS;
     for (
         ; nserv < pHostListSize
-          && ink_inet_is_ip(&pHostList[nserv].sa) 
+          && ats_is_ip(&pHostList[nserv].sa) 
         ; ++nserv
     ) {
-      ink_inet_copy(&statp->nsaddr_list[nserv].sa, &pHostList[nserv].sa);
+      ats_ip_copy(&statp->nsaddr_list[nserv].sa, &pHostList[nserv].sa);
     }
   }
 
@@ -501,7 +501,7 @@ ink_res_init(
           hints.ai_flags = AI_NUMERICHOST;
           sprintf(sbuf, "%d", NAMESERVER_PORT);
           if (getaddrinfo(cp, sbuf, &hints, &ai) == 0) {
-            if (ink_inet_copy(
+            if (ats_ip_copy(
                 &statp->nsaddr_list[nserv].sa,
                 ai->ai_addr
             ))

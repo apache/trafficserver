@@ -281,15 +281,15 @@ client_handler(TSCont contp, TSEvent event, void *data)
     SDK_RPRINT(SDK_NetVConn_test, "TSNetConnect", "TestCase1", TC_PASS, "ok");
 
     sockaddr const* addr = TSNetVConnRemoteAddrGet(static_cast<TSVConn>(data));
-    uint16_t input_server_port = ink_inet_get_port(addr);
+    uint16_t input_server_port = ats_ip_port_host_order(addr);
 
-    if (!ink_inet_is_loopback(addr)) {
+    if (!ats_is_ip_loopback(addr)) {
       ip_text_buffer s, ipb;
-      ts_ip_endpoint loopback;
-      ink_inet_ip4_set(&loopback, htonl(INADDR_LOOPBACK));
+      IpEndpoint loopback;
+      ats_ip4_set(&loopback, htonl(INADDR_LOOPBACK));
       SDK_RPRINT(SDK_NetVConn_test, "TSNetVConnRemoteIPGet", "TestCase1", TC_FAIL, "server ip [%s] is incorrect - expected [%s]",
-        ink_inet_ntop(addr, s, sizeof s),
-        ink_inet_ntop(&loopback.sa, ipb, sizeof ipb)
+        ats_ip_ntop(addr, s, sizeof s),
+        ats_ip_ntop(&loopback.sa, ipb, sizeof ipb)
       );
 
       TSContDestroy(contp);
@@ -333,8 +333,8 @@ REGRESSION_TEST(SDK_API_TSNetVConn) (RegressionTest * test, int atype, int *psta
 
   TSNetAccept(server_cont, server_port, -1, 0);
 
-  ts_ip_endpoint addr;
-  ink_inet_ip4_set(&addr, htonl(INADDR_LOOPBACK), htons(server_port));
+  IpEndpoint addr;
+  ats_ip4_set(&addr, htonl(INADDR_LOOPBACK), htons(server_port));
   TSNetConnect(client_cont, &addr.sa);
 }
 
@@ -2166,7 +2166,7 @@ checkHttpTxnClientIPGet(SocketTest * test, void *data)
   in_addr_t actual_ip = htonl(INADDR_LOOPBACK);     /* 127.0.0.1 is expected because the client is on the same machine */
 
   ptr = TSHttpTxnClientAddrGet(txnp);
-  if (ptr == 0 || INADDR_ANY == (ip = ink_inet_ip4_addr_cast(ptr))) {
+  if (ptr == 0 || INADDR_ANY == (ip = ats_ip4_addr_cast(ptr))) {
     test->test_client_ip_get = false;
     SDK_RPRINT(test->regtest, "TSHttpTxnClientIPGet", "TestCase1", TC_FAIL, "TSHttpTxnClientIPGet returns 0 %s", ptr ? "address" : "pointer");
     return TS_EVENT_CONTINUE;
@@ -2193,7 +2193,7 @@ checkHttpTxnNextHopIPGet(SocketTest * test, void *data)
   in_addr_t nexthopip;
 
   ptr = TSHttpTxnNextHopAddrGet(txnp);
-  if (ptr == 0 || (nexthopip = ink_inet_ip4_addr_cast(ptr)) == 0) {
+  if (ptr == 0 || (nexthopip = ats_ip4_addr_cast(ptr)) == 0) {
     test->test_next_hop_ip_get = false;
     SDK_RPRINT(test->regtest, "TSHttpTxnNextHopIPGet", "TestCase1", TC_FAIL, "TSHttpTxnNextHopIPGet returns 0 %s", ptr ? "address" : "pointer" );
     return TS_EVENT_CONTINUE;
@@ -2222,7 +2222,7 @@ checkHttpTxnServerIPGet(SocketTest * test, void *data)
   in_addr_t actual_ip = htonl(INADDR_LOOPBACK);      /* 127.0.0.1 is expected because the client is on the same machine */
 
   ptr = TSHttpTxnServerAddrGet(txnp);
-  if (0 == ptr || 0 == (ip = ink_inet_ip4_addr_cast(ptr))) {
+  if (0 == ptr || 0 == (ip = ats_ip4_addr_cast(ptr))) {
     test->test_server_ip_get = false;
     SDK_RPRINT(test->regtest, "TSHttpTxnServerIPGet", "TestCase1", TC_FAIL, "TSHttpTxnServerIPGet returns 0 %s", ptr ? "address" : "pointer");
     return TS_EVENT_CONTINUE;
@@ -2262,7 +2262,7 @@ checkHttpTxnClientIncomingPortGet(SocketTest * test, void *data)
     test->test_client_incoming_port_get = false;
     return TS_EVENT_CONTINUE;
   }
-  port = ink_inet_get_port(ptr);
+  port = ats_ip_port_host_order(ptr);
 
   TSDebug(UTDBG_TAG, "TS HTTP port = %x, Txn incoming client port %x", proxy_port->m_port, port);
 
@@ -2296,7 +2296,7 @@ checkHttpTxnClientRemotePortGet(SocketTest * test, void *data)
     return TS_EVENT_CONTINUE;
   }
 
-  port = ink_inet_get_port(ptr);
+  port = ats_ip_port_host_order(ptr);
   TSDebug(UTDBG_TAG, "Browser port = %x, Txn remote port = %x", browser_port, port);
 
   if (port == browser_port) {
@@ -7454,8 +7454,8 @@ EXCLUSIVE_REGRESSION_TEST(SDK_API_TSHttpConnectIntercept) (RegressionTest * test
 
   /* ip and log do not matter as it is used for logging only */
   sockaddr_in addr;
-  ink_inet_ip4_set(&addr, 1, 1);
-  data->vc = TSHttpConnect(ink_inet_sa_cast(&addr));
+  ats_ip4_set(&addr, 1, 1);
+  data->vc = TSHttpConnect(ats_ip_sa_cast(&addr));
   synclient_txn_send_request_to_vc(data->browser, data->request, data->vc);
 
   /* Wait until transaction is done */
@@ -7495,8 +7495,8 @@ EXCLUSIVE_REGRESSION_TEST(SDK_API_TSHttpConnectServerIntercept) (RegressionTest 
 
   /* ip and log do not matter as it is used for logging only */
   sockaddr_in addr;
-  ink_inet_ip4_set(&addr, 2, 2);
-  data->vc = TSHttpConnect(ink_inet_sa_cast(&addr));
+  ats_ip4_set(&addr, 2, 2);
+  data->vc = TSHttpConnect(ats_ip_sa_cast(&addr));
 
   synclient_txn_send_request_to_vc(data->browser, data->request, data->vc);
 

@@ -94,7 +94,7 @@ UnixNetProcessor::accept_internal(
   EThread *thread = this_ethread();
   ProxyMutex *mutex = thread->mutex;
   int accept_threads = opt.accept_threads; // might be changed.
-  ts_ip_endpoint accept_ip; // local binding address.
+  IpEndpoint accept_ip; // local binding address.
 
   // Potentially upgrade to SSL.
   upgradeEtype(et);
@@ -118,7 +118,7 @@ UnixNetProcessor::accept_internal(
 
   na->accept_fn = net_accept; // All callers used this.
   na->server.fd = fd;
-  ink_inet_copy(&na->server.accept_addr, &accept_ip);
+  ats_ip_copy(&na->server.accept_addr, &accept_ip);
   na->server.f_inbound_transparent = opt.f_inbound_transparent;
   if (opt.f_inbound_transparent) {
     Debug(
@@ -153,10 +153,10 @@ UnixNetProcessor::accept_internal(
           a = createNetAccept();
           *a = *na;
           a->init_accept_loop();
-          Debug("iocore_net_accept", "Created accept thread #%d for port %d", i, ink_inet_get_port(&accept_ip));
+          Debug("iocore_net_accept", "Created accept thread #%d for port %d", i, ats_ip_port_host_order(&accept_ip));
         }
         // Start the "template" accept thread last.
-        Debug("iocore_net_accept", "Created accept thread #%d for port %d", accept_threads, ink_inet_get_port(&accept_ip));
+        Debug("iocore_net_accept", "Created accept thread #%d for port %d", accept_threads, ats_ip_port_host_order(&accept_ip));
         na->init_accept_loop();
       }
     } else {
@@ -220,23 +220,23 @@ UnixNetProcessor::connect_re_internal(
   vc->id = net_next_connection_number();
   vc->submit_time = ink_get_hrtime();
   vc->setSSLClientConnection(true);
-  ink_inet_copy(&vc->server_addr, target);
+  ats_ip_copy(&vc->server_addr, target);
   vc->mutex = cont->mutex;
   Action *result = &vc->action_;
 #ifndef INK_NO_SOCKS
   if (using_socks) {
     char buff[INET6_ADDRPORTSTRLEN];
-    Debug("Socks", "Using Socks ip: %s\n", ink_inet_nptop(target, buff, sizeof(buff)));
+    Debug("Socks", "Using Socks ip: %s\n", ats_ip_nptop(target, buff, sizeof(buff)));
     socksEntry = socksAllocator.alloc();
     socksEntry->init(cont->mutex, vc, opt->socks_support, opt->socks_version);        /*XXXX remove last two args */
     socksEntry->action_ = cont;
     cont = socksEntry;
-    if (!ink_inet_is_ip(&socksEntry->server_addr)) {
+    if (!ats_is_ip(&socksEntry->server_addr)) {
       socksEntry->lerrno = ESOCK_NO_SOCK_SERVER_CONN;
       socksEntry->free();
       return ACTION_RESULT_DONE;
     }
-    ink_inet_copy(&vc->server_addr, &socksEntry->server_addr);
+    ats_ip_copy(&vc->server_addr, &socksEntry->server_addr);
     result = &socksEntry->action_;
     vc->action_ = socksEntry;
   } else {

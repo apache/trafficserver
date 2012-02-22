@@ -643,7 +643,7 @@ mgmt_getAddrForIntr(char *intrName, sockaddr* addr, int *mtu)
       } else {
         // Only look at the address if it an internet address
         if (ifr->ifr_ifru.ifru_addr.sa_family == AF_INET) {
-          ink_inet_copy(addr, &ifr->ifr_ifru.ifru_addr);
+          ats_ip_copy(addr, &ifr->ifr_ifru.ifru_addr);
           found = true;
 
           if (mtu)
@@ -747,26 +747,6 @@ mgmt_sortipaddrs(int num, struct in_addr **list)
   }
   return entry;
 }                               /* End mgmt_sortipaddrs */
-
-char *
-mgmt_localhost_ip()
-{
-#if defined(LOCAL_MANAGER)
-  bool found;
-  char *hostname;
-  in_addr ip;
-  int rec_err = RecGetRecordString_Xmalloc("proxy.node.hostname_FQ", &hostname);
-
-  found = (rec_err == REC_ERR_OKAY);
-  if (found && hostname) {
-    ip.s_addr = host_to_ip(hostname);
-    if (ip.s_addr != INADDR_ANY) {
-      return inet_ntoa(ip);
-    }
-  }
-#endif
-  return NULL;
-}
 
 #ifndef _WIN32
 void

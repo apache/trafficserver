@@ -879,10 +879,10 @@ void
 PluginVC::set_local_addr()
 {
   if (vc_type == PLUGIN_VC_ACTIVE) {
-    ink_inet_copy(&local_addr, &core_obj->active_addr_struct);
+    ats_ip_copy(&local_addr, &core_obj->active_addr_struct);
 //    local_addr = core_obj->active_addr_struct;
   } else {
-    ink_inet_copy(&local_addr, &core_obj->passive_addr_struct);
+    ats_ip_copy(&local_addr, &core_obj->passive_addr_struct);
 //    local_addr = core_obj->passive_addr_struct;
   }
 }
@@ -891,9 +891,9 @@ void
 PluginVC::set_remote_addr()
 {
   if (vc_type == PLUGIN_VC_ACTIVE) {
-    ink_inet_copy(&remote_addr, &core_obj->passive_addr_struct);
+    ats_ip_copy(&remote_addr, &core_obj->passive_addr_struct);
   } else {
-    ink_inet_copy(&remote_addr, &core_obj->active_addr_struct);
+    ats_ip_copy(&remote_addr, &core_obj->active_addr_struct);
   }
 }
 
@@ -1147,7 +1147,7 @@ PluginVCCore::kill_no_connect()
 void
 PluginVCCore::set_passive_addr(in_addr_t ip, int port)
 {
-  ink_inet_ip4_set(&passive_addr_struct, htonl(ip), htons(port));
+  ats_ip4_set(&passive_addr_struct, htonl(ip), htons(port));
 }
 
 void
@@ -1159,7 +1159,7 @@ PluginVCCore::set_passive_addr(sockaddr const* ip)
 void
 PluginVCCore::set_active_addr(in_addr_t ip, int port)
 {
-  ink_inet_ip4_set(&active_addr_struct, htonl(ip), htons(port));
+  ats_ip4_set(&active_addr_struct, htonl(ip), htons(port));
 }
 
 void

@@ -81,7 +81,7 @@ struct NetVCOptions;
 struct Connection
 {
   SOCKET fd; ///< Socket for connection.
-  ts_ip_endpoint addr; ///< Associated address.
+  IpEndpoint addr; ///< Associated address.
   bool is_bound; ///< Flag for already bound to a local address.
   bool is_connected; ///< Flag for already connected.
 
@@ -121,7 +121,7 @@ struct Connection
   void setRemote(
     sockaddr const* remote_addr ///< Address and port.
   ) {
-    ink_inet_copy(&addr, remote_addr);
+    ats_ip_copy(&addr, remote_addr);
   }
 
   /**
@@ -131,7 +131,7 @@ struct Connection
     in_addr_t ip,
     int port
   ) {
-	ink_inet_ip4_set(&addr.sin, ip, htons(port));
+	ats_ip4_set(&addr.sin, ip, htons(port));
   }
 
     
@@ -152,12 +152,12 @@ struct Connection
     struct sockaddr_in mc_addr;
     struct sockaddr_in my_addr;
 
-    ink_inet_ip4_set(&mc_addr, mc_ip, htons(mc_port));
-    ink_inet_ip4_set(&my_addr, my_ip, htons(my_port));
+    ats_ip4_set(&mc_addr, mc_ip, htons(mc_port));
+    ats_ip4_set(&my_addr, my_ip, htons(my_port));
 
     return setup_mc_send(
-        ink_inet_sa_cast(&mc_addr), 
-        ink_inet_sa_cast(&my_addr), 
+        ats_ip_sa_cast(&mc_addr), 
+        ats_ip_sa_cast(&my_addr), 
         non_blocking, mc_ttl, mc_loopback, c);
   }                 
 
@@ -173,9 +173,9 @@ struct Connection
                        bool non_blocking = NON_BLOCKING, Connection * sendchan = NULL, Continuation * c = NULL)
   {
     struct sockaddr_in mc_addr;
-    ink_inet_ip4_set(&mc_addr, mc_ip, port);
+    ats_ip4_set(&mc_addr, mc_ip, port);
 
-    return setup_mc_receive(ink_inet_sa_cast(&mc_addr), non_blocking, sendchan, c);
+    return setup_mc_receive(ats_ip_sa_cast(&mc_addr), non_blocking, sendchan, c);
   }
 
 
@@ -199,7 +199,7 @@ protected:
 struct Server: public Connection
 {
   /// Client side (inbound) local IP address.
-  ts_ip_endpoint accept_addr;
+  IpEndpoint accept_addr;
 
   /// If set, the related incoming connect was transparent.
   bool f_inbound_transparent;

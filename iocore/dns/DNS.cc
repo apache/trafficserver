@@ -65,11 +65,11 @@ namespace {
   }
   inline void set_loopback(sockaddr* addr) {
     if (prefer_ipv6_p())
-      ink_inet_ip6_set(addr, in6addr_loopback, htons(DOMAIN_SERVICE_PORT));
+      ats_ip6_set(addr, in6addr_loopback, htons(DOMAIN_SERVICE_PORT));
     else
-      ink_inet_ip4_set(addr, htonl(INADDR_LOOPBACK), htons(DOMAIN_SERVICE_PORT));
+      ats_ip4_set(addr, htonl(INADDR_LOOPBACK), htons(DOMAIN_SERVICE_PORT));
   }
-  inline void set_loopback(ts_ip_endpoint* ip) {
+  inline void set_loopback(IpEndpoint* ip) {
     set_loopback(&ip->sa);
   }
 }
@@ -226,13 +226,13 @@ DNSProcessor::open(sockaddr const* target, int aoptions)
   h->options = aoptions;
   h->mutex = thread->mutex;
   h->m_res = &l_res;
-  ink_inet_copy(&h->local_ipv4.sa, &local_ipv4.sa);
-  ink_inet_copy(&h->local_ipv6.sa, &local_ipv6.sa);
+  ats_ip_copy(&h->local_ipv4.sa, &local_ipv4.sa);
+  ats_ip_copy(&h->local_ipv6.sa, &local_ipv6.sa);
 
   if (target)
-    ink_inet_copy(&h->ip, target);
+    ats_ip_copy(&h->ip, target);
   else
-    ink_inet_invalidate(&h->ip); // marked to use default.
+    ats_ip_invalidate(&h->ip); // marked to use default.
 
   if (!dns_handler_initialized)
     handler = h;
@@ -251,7 +251,7 @@ DNSProcessor::dns_init()
   Debug("dns", "localhost=%s\n", try_server_names[0]);
   Debug("dns", "Round-robin nameservers = %d\n", dns_ns_rr);
 
-  ts_ip_endpoint nameserver[MAX_NAMED];
+  IpEndpoint nameserver[MAX_NAMED];
   size_t nserv = 0;
 
   if (dns_ns_list) {
@@ -287,7 +287,7 @@ DNSProcessor::dns_init()
         }
       }
 
-      if (!err && 0 != ink_inet_pton(ns, &nameserver[nserv].sa)) {
+      if (!err && 0 != ats_ip_pton(ns, &nameserver[nserv].sa)) {
         Debug("dns", "Invalid IP address given for nameserver '%s', discarding", ns);
         Warning("Invalid IP address given for nameserver '%s', discarding", ns);
         err = true;
@@ -296,10 +296,10 @@ DNSProcessor::dns_init()
       if (!err) {
         ip_port_text_buffer buff;
 
-        ink_inet_port_cast(&nameserver[nserv].sa) = htons(prt);
+        ats_ip_port_cast(&nameserver[nserv].sa) = htons(prt);
 
         Debug("dns", "Adding nameserver %s to nameserver list",
-          ink_inet_nptop(&nameserver[nserv].sa, buff, sizeof(buff))
+          ats_ip_nptop(&nameserver[nserv].sa, buff, sizeof(buff))
         );
         ++nserv;
       }
@@ -316,21 +316,21 @@ DNSProcessor::dns_init()
   // Check for local forced bindings.
 
   if (dns_local_ipv6) {
-    if (0 != ink_inet_pton(dns_local_ipv6, &local_ipv6)) {
-      ink_inet_invalidate(&local_ipv6);
+    if (0 != ats_ip_pton(dns_local_ipv6, &local_ipv6)) {
+      ats_ip_invalidate(&local_ipv6);
       Warning("Invalid IP address '%s' for dns.local_ipv6 value, discarding.", dns_local_ipv6);
-    } else if (!ink_inet_is_ip6(&local_ipv6.sa)) {
-      ink_inet_invalidate(&local_ipv6);
+    } else if (!ats_is_ip6(&local_ipv6.sa)) {
+      ats_ip_invalidate(&local_ipv6);
       Warning("IP address '%s' for dns.local_ipv6 value was not IPv6, discarding.", dns_local_ipv6);
     }
   }
 
   if (dns_local_ipv4) {
-    if (0 != ink_inet_pton(dns_local_ipv4, &local_ipv4)) {
-      ink_inet_invalidate(&local_ipv4);
+    if (0 != ats_ip_pton(dns_local_ipv4, &local_ipv4)) {
+      ats_ip_invalidate(&local_ipv4);
       Warning("Invalid IP address '%s' for dns.local_ipv4 value, discarding.", dns_local_ipv4);
-    } else if (!ink_inet_is_ip4(&local_ipv4.sa)) {
-      ink_inet_invalidate(&local_ipv4);
+    } else if (!ats_is_ip4(&local_ipv4.sa)) {
+      ats_ip_invalidate(&local_ipv4);
       Warning("IP address '%s' for dns.local_ipv4 value was not IPv4, discarding.", dns_local_ipv4);
     }
   }
@@ -394,10 +394,10 @@ DNSEntry::init(const char *x, int len, int qtype_arg,
     }
   } else {                    //T_PTR
     sockaddr const* ip = reinterpret_cast<sockaddr const*>(x);
-    if (ink_inet_is_ip6(ip))
-      make_ipv6_ptr(&ink_inet_ip6_addr_cast(ip), qname);
-    else if (ink_inet_is_ip4(ip))
-      make_ipv4_ptr(ink_inet_ip4_addr_cast(ip), qname);
+    if (ats_is_ip6(ip))
+      make_ipv6_ptr(&ats_ip6_addr_cast(ip), qname);
+    else if (ats_is_ip4(ip))
+      make_ipv4_ptr(ats_ip4_addr_cast(ip), qname);
     else
       ink_assert(!"T_PTR query to DNS must be IP address.");
   }
@@ -417,12 +417,12 @@ DNSHandler::open_con(sockaddr const* target, bool failed, int icon)
   PollDescriptor *pd = get_PollDescriptor(dnsProcessor.thread);
 
   if (!icon && target) {
-    ink_inet_copy(&ip, target);
+    ats_ip_copy(&ip, target);
   } else if (!target) {
     target = &ip.sa;
   }
 
-  Debug("dns", "open_con: opening connection %s", ink_inet_nptop(target, ip_text, sizeof ip_text));
+  Debug("dns", "open_con: opening connection %s", ats_ip_nptop(target, ip_text, sizeof ip_text));
 
   if (con[icon].fd != NO_FD) {  // Remove old FD from epoll fd
     con[icon].eio.stop();
@@ -459,10 +459,10 @@ DNSHandler::open_con(sockaddr const* target, bool failed, int icon)
 
 void
 DNSHandler::validate_ip() {
-  if (!ink_inet_is_ip(&ip.sa)) {
+  if (!ats_is_ip(&ip.sa)) {
     // Invalid, switch to default.
     // seems that res_init always sets m_res.nscount to at least 1!
-    if (!m_res->nscount || !ink_inet_copy(&ip.sa, &m_res->nsaddr_list[0].sa)) {
+    if (!m_res->nscount || !ats_ip_copy(&ip.sa, &m_res->nsaddr_list[0].sa)) {
       Warning("bad nameserver config, fallback to %s loopback",
         prefer_ipv6_p() ? "IPv6" : "IPv4"
       );
@@ -500,11 +500,11 @@ DNSHandler::startEvent(int event, Event *e)
       for (int i = 0; i < max_nscount; i++) {
         ip_port_text_buffer buff;
         sockaddr *sa = &m_res->nsaddr_list[i].sa;
-        if (ink_inet_is_ip(sa)) {
+        if (ats_is_ip(sa)) {
           open_con(sa, false, n_con);
           ++n_con;
           Debug("dns_pas", "opened connection to %s, n_con = %d",
-            ink_inet_nptop(sa, buff, sizeof(buff)),
+            ats_ip_nptop(sa, buff, sizeof(buff)),
             n_con
           );
         }
@@ -555,7 +555,7 @@ void
 DNSHandler::recover()
 {
   ip_text_buffer buff;
-  Warning("connection to DNS server %s restored", ink_inet_ntop(&ip.sa, buff, sizeof(buff)));
+  Warning("connection to DNS server %s restored", ats_ip_ntop(&ip.sa, buff, sizeof(buff)));
   name_server = 0;
   switch_named(name_server);
 }
@@ -639,15 +639,15 @@ DNSHandler::failover()
     name_server = (name_server + 1) % max_nscount;
     Debug("dns", "failover: failing over to name_server=%d", name_server);
 
-    ts_ip_endpoint target;
-    ink_inet_copy(&target.sa, &m_res->nsaddr_list[name_server].sa);
+    IpEndpoint target;
+    ats_ip_copy(&target.sa, &m_res->nsaddr_list[name_server].sa);
 
     Warning("failover: connection to DNS server %s lost, move to %s",
-      ink_inet_ntop(old_addr, buff1, sizeof(buff1)),
-      ink_inet_ntop(&target.sa, buff2, sizeof(buff2))
+      ats_ip_ntop(old_addr, buff1, sizeof(buff1)),
+      ats_ip_ntop(&target.sa, buff2, sizeof(buff2))
     );
 
-    if (!ink_inet_is_ip(&target.sa)) set_loopback(&target.sa);
+    if (!ats_is_ip(&target.sa)) set_loopback(&target.sa);
 
     open_con(&target.sa, true, name_server);
     if (n_con <= name_server)
@@ -656,7 +656,7 @@ DNSHandler::failover()
   } else {
     ip_text_buffer buff;
     Warning("failover: connection to DNS server %s lost, retrying",
-      ink_inet_ntop(&ip.sa, buff, sizeof(buff))
+      ats_ip_ntop(&ip.sa, buff, sizeof(buff))
     );
   }
 }
@@ -672,7 +672,7 @@ DNSHandler::rr_failure(int ndx)
     Debug("dns", "rr_failure: Marking nameserver %d as down", ndx);
     ns_down[ndx] = 1;
     Warning("connection to DNS server %s lost, marking as down",
-      ink_inet_ntop(&m_res->nsaddr_list[ndx].sa, buff, sizeof(buff))
+      ats_ip_ntop(&m_res->nsaddr_list[ndx].sa, buff, sizeof(buff))
     );
   }
 
@@ -740,7 +740,7 @@ DNSHandler::recv_dns(int event, Event *e)
 
   while ((dnsc = (DNSConnection *) triggered.dequeue())) {
     while (1) {
-      ts_ip_endpoint from_ip;
+      IpEndpoint from_ip;
       socklen_t from_length = sizeof(from_ip);
 
       if (!hostent_cache)
@@ -761,10 +761,10 @@ DNSHandler::recv_dns(int event, Event *e)
       }
 
       // verify that this response came from the correct server
-      if (!ink_inet_eq(&dnsc->ip.sa, &from_ip.sa)) {
+      if (!ats_ip_addr_eq(&dnsc->ip.sa, &from_ip.sa)) {
         Warning("unexpected DNS response from %s (expected %s)",
-          ink_inet_ntop(&from_ip.sa, ipbuff1, sizeof ipbuff1),
-          ink_inet_ntop(&dnsc->ip.sa, ipbuff2, sizeof ipbuff2)
+          ats_ip_ntop(&from_ip.sa, ipbuff1, sizeof ipbuff1),
+          ats_ip_ntop(&dnsc->ip.sa, ipbuff2, sizeof ipbuff2)
         );
         continue;
       }
@@ -777,7 +777,7 @@ DNSHandler::recv_dns(int event, Event *e)
           received_one(dnsc->num);
           if (ns_down[dnsc->num]) {
             Warning("connection to DNS server %s restored",
-              ink_inet_ntop(&m_res->nsaddr_list[dnsc->num].sa, ipbuff1, sizeof ipbuff1)
+              ats_ip_ntop(&m_res->nsaddr_list[dnsc->num].sa, ipbuff1, sizeof ipbuff1)
             );
             ns_down[dnsc->num] = 0;
           }

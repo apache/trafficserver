@@ -144,9 +144,9 @@ public:
   bool backdoor_connect;
   int hooks_set;
   /// Local address for outbound connection.
-  InkInetAddr outbound_ip4;
+  IpAddr outbound_ip4;
   /// Local address for outbound connection.
-  InkInetAddr outbound_ip6;
+  IpAddr outbound_ip6;
   /// Local port for outbound connection.
   uint16_t outbound_port;
   /// Set outbound connection to transparent.

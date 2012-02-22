@@ -2563,7 +2563,7 @@ ObjectReloadCont::ObjectReloadEvent(int event, void *d)
   switch (_state) {
   case START:
     {
-      ts_ip_endpoint target;
+      IpEndpoint target;
       // Schedule connect to localhost:<proxy port>
       Debug("update-reload", "Connect start id=%d", _request_id);
       _state = ObjectReloadCont::ATTEMPT_CONNECT;

@@ -101,7 +101,7 @@ struct NetVCOptions {
       causes the value in @a local_addr to be ignored.
 
       The IP address and port are separate because most clients treat
-      these independently. For the same reason @c InkInetAddr is used
+      these independently. For the same reason @c IpAddr is used
       to be clear that it contains no port data.
 
       @see local_addr
@@ -124,7 +124,7 @@ struct NetVCOptions {
       @see addr_binding
       @see ip_family
   */
-  InkInetAddr local_ip;
+  IpAddr local_ip;
   /** Local port for connection.
       Set to 0 for "don't care" (default).
    */
@@ -569,8 +569,8 @@ private:
   NetVConnection & operator =(const NetVConnection &);
 
 protected:
-  ts_ip_endpoint local_addr;
-  ts_ip_endpoint remote_addr;
+  IpEndpoint local_addr;
+  IpEndpoint remote_addr;
 
   bool got_local_addr;
   bool got_remote_addr;

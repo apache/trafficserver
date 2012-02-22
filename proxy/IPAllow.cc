@@ -178,10 +178,10 @@ IpAllow::Print() {
 
     s << std::endl << "  Line " << ar->_src_line << ": "
       << (ACL_OP_ALLOW == ar->_op ? "allow " : "deny  ")
-      << ink_inet_ntop(spot->min(), text, sizeof text)
+      << ats_ip_ntop(spot->min(), text, sizeof text)
       ;
-    if (0 != ink_inet_cmp(spot->min(), spot->max())) {
-      s << " - " << ink_inet_ntop(spot->max(), text, sizeof text);
+    if (0 != ats_ip_addr_cmp(spot->min(), spot->max())) {
+      s << " - " << ats_ip_ntop(spot->max(), text, sizeof text);
     }
   }
   Debug("ip-allow", "%s", s.str().c_str());
@@ -196,8 +196,8 @@ IpAllow::BuildTable()
   char errBuf[1024];
   char *file_buf = NULL;
   int line_num = 0;
-  ts_ip_endpoint addr1;
-  ts_ip_endpoint addr2;
+  IpEndpoint addr1;
+  IpEndpoint addr2;
   matcher_line line_info;
   bool alarmAlready = false;
 

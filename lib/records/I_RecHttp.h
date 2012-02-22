@@ -30,8 +30,8 @@
 /// Load default inbound IP addresses from the configuration file.
 void RecHttpLoadIp(
   char const* name,    ///< Name of value in configuration file.
-  InkInetAddr& ip4, ///< [out] IPv4 address.
-  InkInetAddr& ip6  ///< [out] Ipv6 address.
+  IpAddr& ip4, ///< [out] IPv4 address.
+  IpAddr& ip6  ///< [out] Ipv6 address.
 );
 
 /** Description of an proxy port.
@@ -104,11 +104,11 @@ public:
   /// True if outbound connections (to origin servers) are transparent.
   bool m_outbound_transparent_p;
   /// Local address for inbound connections (listen address).
-  InkInetAddr m_inbound_ip;
+  IpAddr m_inbound_ip;
   /// Local address for outbound connections (to origin server).
-  InkInetAddr m_outbound_ip4;
+  IpAddr m_outbound_ip4;
   /// Local address for outbound connections (to origin server).
-  InkInetAddr m_outbound_ip6;
+  IpAddr m_outbound_ip6;
 
   /// Default constructor.
   HttpProxyPort();
@@ -117,7 +117,7 @@ public:
 
       @return The IP address for @a family
   */
-  InkInetAddr& outboundIp(
+  IpAddr& outboundIp(
     uint16_t family ///< IP address family.
   );
 
@@ -260,9 +260,9 @@ public:
 
 inline bool HttpProxyPort::isSSL() const { return TRANSPORT_SSL == m_type; }
 
-inline InkInetAddr&
+inline IpAddr&
 HttpProxyPort::outboundIp(uint16_t family) {
-  static InkInetAddr invalid; // dummy to make compiler happy about return.
+  static IpAddr invalid; // dummy to make compiler happy about return.
   if (AF_INET == family) return m_outbound_ip4;
   else if (AF_INET6 == family) return m_outbound_ip6;
   ink_release_assert(!"Invalid family for outbound address on proxy port.");

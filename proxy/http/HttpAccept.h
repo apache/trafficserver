@@ -58,12 +58,12 @@ namespace detail {
     /// Set the transport type.
     self& setTransportType(int);
     /// Local address to bind for outbound connections.
-    InkInetAddr outbound_ip4;
+    IpAddr outbound_ip4;
     /// Local address to bind for outbound connections.
-    InkInetAddr outbound_ip6;
+    IpAddr outbound_ip6;
     /// Set the outbound IP address.
-    self& setOutboundIp(InkInetAddr& ip);
-    self& setOutboundIp(ts_ip_endpoint* ip);
+    self& setOutboundIp(IpAddr& ip);
+    self& setOutboundIp(IpEndpoint* ip);
     /// Local port for outbound connection.
     uint16_t outbound_port;
     /// Set outbound port.
@@ -93,14 +93,14 @@ namespace detail {
   }
 
   inline HttpAcceptOptions&
-  HttpAcceptOptions::setOutboundIp(InkInetAddr& ip) {
+  HttpAcceptOptions::setOutboundIp(IpAddr& ip) {
     if (ip.isIp4()) outbound_ip4 = ip;
     else if (ip.isIp6()) outbound_ip6 = ip;
     return *this;
   }
 
   inline HttpAcceptOptions&
-  HttpAcceptOptions::setOutboundIp(ts_ip_endpoint* ip) {
+  HttpAcceptOptions::setOutboundIp(IpEndpoint* ip) {
     if (ip->isIp4()) outbound_ip4 = *ip;
     else if (ip->isIp6()) outbound_ip6 = *ip;
     return *this;

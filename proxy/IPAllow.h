@@ -68,7 +68,7 @@ public:
   int BuildTable();
   void Print();
   bool match(in_addr_t addr) const;
-  bool match(ts_ip_endpoint const* ip) const;
+  bool match(IpEndpoint const* ip) const;
   bool match(sockaddr const* ip) const;
 
   /// @return The global instance.
@@ -106,7 +106,7 @@ IpAllow::match(in_addr_t addr) const {
 }
 
 inline bool
-IpAllow::match(ts_ip_endpoint const* ip) const {
+IpAllow::match(IpEndpoint const* ip) const {
   return this->match(&ip->sa);
 }
 

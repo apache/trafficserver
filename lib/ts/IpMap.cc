@@ -961,16 +961,16 @@ public:
     ArgType max, ///< Maximum address (host order).
     void* data ///< Client data.
   ) : Node(data), Ip4Span(min, max) {
-    ink_inet_ip4_set(ink_inet_sa_cast(&_sa._min), htonl(min));
-    ink_inet_ip4_set(ink_inet_sa_cast(&_sa._max), htonl(max));
+    ats_ip4_set(ats_ip_sa_cast(&_sa._min), htonl(min));
+    ats_ip4_set(ats_ip_sa_cast(&_sa._max), htonl(max));
   }
   /// @return The minimum value of the interval.
   virtual sockaddr const* min() {
-    return ink_inet_sa_cast(&_sa._min);
+    return ats_ip_sa_cast(&_sa._min);
   }
   /// @return The maximum value of the interval.
   virtual sockaddr const* max() {
-    return ink_inet_sa_cast(&_sa._max);
+    return ats_ip_sa_cast(&_sa._max);
   }
   /// Set the client data.
   self& setData(
@@ -1094,11 +1094,11 @@ public:
   }
   /// @return The minimum value of the interval.
   virtual sockaddr const* min() {
-    return ink_inet_sa_cast(&_min);
+    return ats_ip_sa_cast(&_min);
   }
   /// @return The maximum value of the interval.
   virtual sockaddr const* max() {
-    return ink_inet_sa_cast(&_max);
+    return ats_ip_sa_cast(&_max);
   }
   /// Set the client data.
   self& setData(
@@ -1114,7 +1114,7 @@ protected:
   self& setMin(
     ArgType min ///< Minimum value (host order).
   ) {
-    ink_inet_copy(ink_inet_sa_cast(&_min), ink_inet_sa_cast(min));
+    ats_ip_copy(ats_ip_sa_cast(&_min), ats_ip_sa_cast(min));
     return *this;
   }
   
@@ -1132,7 +1132,7 @@ protected:
   self& setMax(
     ArgType max ///< Maximum value (host order).
   ) {
-    ink_inet_copy(ink_inet_sa_cast(&_max), ink_inet_sa_cast(max));
+    ats_ip_copy(ats_ip_sa_cast(&_max), ats_ip_sa_cast(max));
     return *this;
   }
   /// Set the maximum value of the interval.
@@ -1232,9 +1232,9 @@ bool
 IpMap::contains(sockaddr const* target, void** ptr) const {
   bool zret = false;
   if (AF_INET == target->sa_family) {
-    zret = _m4 && _m4->contains(ntohl(ink_inet_ip4_addr_cast(target)), ptr);
+    zret = _m4 && _m4->contains(ntohl(ats_ip4_addr_cast(target)), ptr);
   } else if (AF_INET6 == target->sa_family) {
-    zret = _m6 && _m6->contains(ink_inet_ip6_cast(target), ptr);
+    zret = _m6 && _m6->contains(ats_ip6_cast(target), ptr);
   }
   return zret;
 }
@@ -1253,12 +1253,12 @@ IpMap::mark(
   ink_assert(min->sa_family == max->sa_family);
   if (AF_INET == min->sa_family) {
     this->force4()->mark(
-      ntohl(ink_inet_ip4_addr_cast(min)),
-      ntohl(ink_inet_ip4_addr_cast(max)),
+      ntohl(ats_ip4_addr_cast(min)),
+      ntohl(ats_ip4_addr_cast(max)),
       data
     );
   } else if (AF_INET6 == min->sa_family) {
-    this->force6()->mark(ink_inet_ip6_cast(min), ink_inet_ip6_cast(max), data);
+    this->force6()->mark(ats_ip6_cast(min), ats_ip6_cast(max), data);
   }
   return *this;
 }
@@ -1278,11 +1278,11 @@ IpMap::unmark(
   if (AF_INET == min->sa_family) {
     if (_m4)
       _m4->unmark(
-        ntohl(ink_inet_ip4_addr_cast(min)),
-        ntohl(ink_inet_ip4_addr_cast(max))
+        ntohl(ats_ip4_addr_cast(min)),
+        ntohl(ats_ip4_addr_cast(max))
       );
   } else if (AF_INET6 == min->sa_family) {
-    if (_m6) _m6->unmark(ink_inet_ip6_cast(min), ink_inet_ip6_cast(max));
+    if (_m6) _m6->unmark(ats_ip6_cast(min), ats_ip6_cast(max));
   }
   return *this;
 }
@@ -1302,12 +1302,12 @@ IpMap::fill(
   ink_assert(min->sa_family == max->sa_family);
   if (AF_INET == min->sa_family) {
     this->force4()->fill(
-      ntohl(ink_inet_ip4_addr_cast(min)),
-      ntohl(ink_inet_ip4_addr_cast(max)),
+      ntohl(ats_ip4_addr_cast(min)),
+      ntohl(ats_ip4_addr_cast(max)),
       data
     );
   } else if (AF_INET6 == min->sa_family) {
-    this->force6()->fill(ink_inet_ip6_cast(min), ink_inet_ip6_cast(max), data);
+    this->force6()->fill(ats_ip6_cast(min), ats_ip6_cast(max), data);
   }
   return *this;
 }

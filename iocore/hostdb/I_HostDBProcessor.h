@@ -141,7 +141,7 @@ struct HostDBInfo
     } else if (byname) {
       if (reverse_dns)
         goto Lbad;
-      if (!ink_inet_is_ip(ip()))
+      if (!ats_is_ip(ip()))
         goto Lbad;
     } else {
       if (!reverse_dns)
@@ -233,7 +233,7 @@ struct HostDBInfo
   //
 
   union {
-    ts_ip_endpoint ip; ///< IP address / port data.
+    IpEndpoint ip; ///< IP address / port data.
     int hostname_offset; ///< Some hostname thing.
   } data;
 
@@ -260,8 +260,8 @@ struct HostDBInfo
 
   uint64_t md5_high;
 
-  bool failed() { return !ink_inet_is_ip(ip()); }
-  void set_failed() { ink_inet_invalidate(ip());  }
+  bool failed() { return !ats_is_ip(ip()); }
+  void set_failed() { ats_ip_invalidate(ip());  }
 
   void set_deleted() { deleted = 1; }
   bool is_deleted() const { return deleted; }
@@ -294,7 +294,7 @@ struct HostDBInfo
 
   void reset()
   {
-    ink_inet_invalidate(ip());
+    ats_ip_invalidate(ip());
     app.allotment.application1 = 0;
     app.allotment.application2 = 0;
     backed = 0;
@@ -335,7 +335,7 @@ HostDBInfo()
     app.allotment.application1 = 0;
     app.allotment.application2 = 0;
 #endif
-    ink_inet_invalidate(ip());
+    ats_ip_invalidate(ip());
 
     return;
   }
@@ -470,8 +470,8 @@ struct HostDBProcessor: public Processor
   void setbyname_appinfo(char *hostname, int len, int port, HostDBApplicationInfo * app)
   {
     sockaddr_in addr;
-    ink_inet_ip4_set(&addr, INADDR_ANY, port);
-    setby(hostname, len, ink_inet_sa_cast(&addr), app);
+    ats_ip4_set(&addr, INADDR_ANY, port);
+    setby(hostname, len, ats_ip_sa_cast(&addr), app);
   }
 
   void setbyaddr_appinfo(sockaddr const* addr, HostDBApplicationInfo * app) {
@@ -481,8 +481,8 @@ struct HostDBProcessor: public Processor
   void setbyaddr_appinfo(in_addr_t ip, HostDBApplicationInfo * app)
   {
     sockaddr_in addr;
-    ink_inet_ip4_set(&addr, ip);
-    this->setby(0, 0, ink_inet_sa_cast(&addr), app);
+    ats_ip4_set(&addr, ip);
+    this->setby(0, 0, ats_ip_sa_cast(&addr), app);
   }
 
   /** Configuration. */

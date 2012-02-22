@@ -36,7 +36,7 @@ typedef enum
 
 typedef struct {
   PrefetchBlastType type;
-  ts_ip_endpoint ip;
+  IpEndpoint ip;
 } PrefetchBlastData;
 
 typedef struct
@@ -51,7 +51,7 @@ typedef struct
   TSMLoc response_loc;
 
   /*child ip addr in network order */
-  ts_ip_endpoint client_ip;
+  IpEndpoint client_ip;
 
   /*the embedded url parsed by the parser */
   const char *embedded_url;

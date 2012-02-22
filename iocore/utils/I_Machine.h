@@ -52,9 +52,9 @@ struct Machine {
   char *hostname;               // name of the internet host
   int hostname_len;             // size of the string pointed to by hostname
 
-  ts_ip_endpoint ip;      ///< Prefered IP address of the host (network order)
-  ts_ip_endpoint ip4;     ///< IPv4 address if present.
-  ts_ip_endpoint ip6;     ///< IPv6 address if present.
+  IpEndpoint ip;      ///< Prefered IP address of the host (network order)
+  IpEndpoint ip4;     ///< IPv4 address if present.
+  IpEndpoint ip6;     ///< IPv6 address if present.
 
   ip_text_buffer ip_string;              // IP address of the host as a string.
   int ip_string_len;

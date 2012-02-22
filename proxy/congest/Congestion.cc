@@ -474,7 +474,7 @@ make_key(char *hostname, int len, sockaddr const* ip, CongestionControlRecord * 
   if (record->congestion_scheme == PER_HOST && len > 0)
     ink_code_incr_MMH_update(&ctx, hostname, len);
   else
-    ink_code_incr_MMH_update(&ctx, reinterpret_cast<char const*>(ink_inet_addr8_cast(ip)), ink_inet_addr_size(ip));
+    ink_code_incr_MMH_update(&ctx, reinterpret_cast<char const*>(ats_ip_addr8_cast(ip)), ats_ip_addr_size(ip));
   if (record->port != 0) {
     unsigned short p = port;
     p = htons(p);
@@ -490,7 +490,7 @@ make_key(char *hostname, int len, sockaddr const* ip, CongestionControlRecord * 
   if (record->congestion_scheme == PER_HOST && len > 0)
     ink_code_incr_md5_update(&ctx, hostname, len);
   else
-    ink_code_incr_md5_update(&ctx, reinterpret_cast<char const*>(ink_inet_addr8_cast(ip)), ink_inet_addr_size(ip));
+    ink_code_incr_md5_update(&ctx, reinterpret_cast<char const*>(ats_ip_addr8_cast(ip)), ats_ip_addr_size(ip));
   if (record->port != 0) {
     unsigned short p = record->port;
     p = htons(p);
@@ -515,7 +515,7 @@ make_key(char *hostname, int len, sockaddr const* ip, char *prefix, int prelen, 
   if (hostname && len > 0)
     ink_code_incr_MMH_update(&ctx, hostname, len);
   else
-    ink_code_incr_MMH_update(&ctx, reinterpret_cast<char const*>(ink_inet_addr8_cast(ip)), ink_inet_addr_size(ip));
+    ink_code_incr_MMH_update(&ctx, reinterpret_cast<char const*>(ats_ip_addr8_cast(ip)), ats_ip_addr_size(ip));
   if (port != 0) {
     unsigned short p = port;
     p = htons(p);
@@ -531,7 +531,7 @@ make_key(char *hostname, int len, sockaddr const* ip, char *prefix, int prelen, 
   if (hostname && len > 0)
     ink_code_incr_md5_update(&ctx, hostname, len);
   else
-    ink_code_incr_md5_update(&ctx, reinterpret_cast<char const*>(ink_inet_addr8_cast(ip)), ink_inet_addr_size(ip));
+    ink_code_incr_md5_update(&ctx, reinterpret_cast<char const*>(ats_ip_addr8_cast(ip)), ats_ip_addr_size(ip));
   if (port != 0) {
     unsigned short p = port;
     p = htons(p);
@@ -617,7 +617,7 @@ m_M_congested(0), m_last_M_congested(0), m_num_connections(0), m_stat_congested_
 {
   memset(&m_ip, 0, sizeof(m_ip));
   if (ip != NULL) {
-    ink_inet_copy(&m_ip.sa, ip);
+    ats_ip_copy(&m_ip.sa, ip);
   }
   m_hostname = ats_strdup(hostname);
   rule->get();
@@ -714,7 +714,7 @@ CongestionEntry::sprint(char *buf, int buflen, int format)
   len += snprintf(buf + len, buflen - len, "%" PRId64 "|%d|%s|%s",
                       timestamp,
                       pRecord->line_num,
-                      (m_hostname ? m_hostname : " "), (ink_inet_is_ip(&m_ip) ? ink_inet_ntop(&m_ip.sa, addrbuf, sizeof(addrbuf)) : " "));
+                      (m_hostname ? m_hostname : " "), (ats_is_ip(&m_ip) ? ats_ip_ntop(&m_ip.sa, addrbuf, sizeof(addrbuf)) : " "));
 
   len += snprintf(buf + len, buflen - len, "|%s|%s|%c",
                       (pRecord->congestion_scheme == PER_IP ? "per_ip" : "per_host"),

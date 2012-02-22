@@ -61,7 +61,7 @@ Machine::Machine(char const* the_hostname, sockaddr const* addr)
 
   localhost[sizeof(localhost)-1] = 0; // ensure termination.
 
-  if (!ink_inet_is_ip(addr)) {
+  if (!ats_is_ip(addr)) {
     if (!the_hostname) {
       ink_release_assert(!gethostname(localhost, sizeof(localhost)-1));
       the_hostname = localhost;
@@ -118,22 +118,22 @@ Machine::Machine(char const* the_hostname, sockaddr const* addr)
         ifip = &spot->ifr_addr;
 #     endif
 
-        if (!ink_inet_is_ip(ifip)) spot_type = NA;
-        else if (ink_inet_is_loopback(ifip)) spot_type = LO;
-        else if (ink_inet_is_nonroutable(ifip)) spot_type = NR;
-        else if (ink_inet_is_multicast(ifip)) spot_type = MC;
+        if (!ats_is_ip(ifip)) spot_type = NA;
+        else if (ats_is_ip_loopback(ifip)) spot_type = LO;
+        else if (ats_is_ip_nonroutable(ifip)) spot_type = NR;
+        else if (ats_is_ip_multicast(ifip)) spot_type = MC;
         else spot_type = GA;
 
         if (spot_type == NA) continue; // Next!
 
-        if (ink_inet_is_ip4(ifip)) {
+        if (ats_is_ip4(ifip)) {
           if (spot_type > ip4_type) {
-            ink_inet_copy(&ip4, ifip);
+            ats_ip_copy(&ip4, ifip);
             ip4_type = spot_type;
           }
-        } else if (ink_inet_is_ip6(ifip)) {
+        } else if (ats_is_ip6(ifip)) {
           if (spot_type > ip6_type) {
-            ink_inet_copy(&ip6, ifip);
+            ats_ip_copy(&ip6, ifip);
             ip6_type = spot_type;
           }
         }
@@ -145,17 +145,17 @@ Machine::Machine(char const* the_hostname, sockaddr const* addr)
 
       // What about the general address? Prefer IPv4?
       if (ip4_type >= ip6_type)
-        ink_inet_copy(&ip.sa, &ip4.sa);
+        ats_ip_copy(&ip.sa, &ip4.sa);
       else
-        ink_inet_copy(&ip.sa, &ip6.sa);
+        ats_ip_copy(&ip.sa, &ip6.sa);
     }
   } else { // address provided.
-    ink_inet_copy(&ip, addr);
-    if (ink_inet_is_ip4(addr)) ink_inet_copy(&ip4, addr);
-    else if (ink_inet_is_ip6(addr)) ink_inet_copy(&ip6, addr);
+    ats_ip_copy(&ip, addr);
+    if (ats_is_ip4(addr)) ats_ip_copy(&ip4, addr);
+    else if (ats_is_ip6(addr)) ats_ip_copy(&ip6, addr);
 
     status = getnameinfo(
-      addr, ink_inet_ip_size(addr),
+      addr, ats_ip_size(addr),
       localhost, sizeof(localhost) - 1,
       0, 0, // do not request service info
       0 // no flags.
@@ -164,7 +164,7 @@ Machine::Machine(char const* the_hostname, sockaddr const* addr)
     if (0 != status) {
       ip_text_buffer ipbuff;
       Warning("Failed to find hostname for address '%s' - %s"
-        , ink_inet_ntop(addr, ipbuff, sizeof(ipbuff))
+        , ats_ip_ntop(addr, ipbuff, sizeof(ipbuff))
         , gai_strerror(status)
       );
     } else
@@ -173,9 +173,9 @@ Machine::Machine(char const* the_hostname, sockaddr const* addr)
 
   hostname_len = hostname ? strlen(hostname) : 0;
 
-  ink_inet_ntop(&ip.sa, ip_string, sizeof(ip_string));
+  ats_ip_ntop(&ip.sa, ip_string, sizeof(ip_string));
   ip_string_len = strlen(ip_string);
-  ip_hex_string_len = ink_inet_to_hex(&ip.sa, ip_hex_string, sizeof(ip_hex_string));
+  ip_hex_string_len = ats_ip_to_hex(&ip.sa, ip_hex_string, sizeof(ip_hex_string));
 }
 
 Machine::~Machine()

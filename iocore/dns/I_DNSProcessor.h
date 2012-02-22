@@ -98,8 +98,8 @@ struct DNSProcessor: public Processor
   EThread *thread;
   DNSHandler *handler;
   ts_imp_res_state l_res;
-  ts_ip_endpoint local_ipv6;
-  ts_ip_endpoint local_ipv4;
+  IpEndpoint local_ipv6;
+  IpEndpoint local_ipv4;
   Action *getby(const char *x, int len, int type, Continuation *cont, DNSHandler *adnsH = NULL, int timeout = 0);
   void dns_init();
 };
@@ -136,7 +136,7 @@ inline Action *
 DNSProcessor::gethostbyaddr(Continuation *cont, in_addr_t addr, int timeout)
 {
   sockaddr_in ip;
-  ink_inet_ip4_set(&ip, addr);
+  ats_ip4_set(&ip, addr);
   return getby(reinterpret_cast<char const*>(&ip), 0, T_PTR, cont, NULL, timeout);
 }
 

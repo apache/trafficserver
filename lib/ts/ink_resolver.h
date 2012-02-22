@@ -201,7 +201,7 @@ struct ts_imp_res_state {
   u_long  options;                /*%< option flags - see below. */
 #endif
   int     nscount;                /*%< number of name servers */
-  ts_ip_endpoint nsaddr_list[INK_MAXNS];    /*%< address of name server */
+  IpEndpoint nsaddr_list[INK_MAXNS];    /*%< address of name server */
   u_short id;                     /*%< current message id */
   char    *dnsrch[MAXDNSRCH+1];   /*%< components of domain to search */
   char    defdname[256];          /*%< default domain (deprecated) */
@@ -225,7 +225,7 @@ typedef ts_imp_res_state *ink_res_state;
 
 int ink_res_init(
   ink_res_state,
-  ts_ip_endpoint const* pHostList,
+  IpEndpoint const* pHostList,
   size_t pHostListSize,
   const char *pDefDomain = NULL,
   const char *pSearchList = NULL,

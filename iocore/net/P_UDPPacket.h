@@ -218,7 +218,7 @@ new_UDPPacket(struct sockaddr const* to, ink_hrtime when, char *buf, int len)
   p->in_heap = 0;
 #endif
   p->delivery_time = when;
-  ink_inet_copy(&p->to, to);
+  ats_ip_copy(&p->to, to);
 
   if (buf) {
     IOBufferBlock *body = new_IOBufferBlock();
@@ -243,7 +243,7 @@ new_UDPPacket(struct sockaddr const* to, ink_hrtime when, IOBufferBlock * buf, i
   p->in_heap = 0;
 #endif
   p->delivery_time = when;
-  ink_inet_copy(&p->to, to);
+  ats_ip_copy(&p->to, to);
 
   while (buf) {
     body = buf->clone();
@@ -264,7 +264,7 @@ new_UDPPacket(struct sockaddr const* to, ink_hrtime when, Ptr<IOBufferBlock> buf
 #endif
   p->delivery_time = when;
   if (to)
-    ink_inet_copy(&p->to, to);
+    ats_ip_copy(&p->to, to);
   p->chain = buf;
   return p;
 }
@@ -285,7 +285,7 @@ new_incoming_UDPPacket(struct sockaddr * from, char *buf, int len)
   p->in_heap = 0;
 #endif
   p->delivery_time = 0;
-  ink_inet_copy(&p->from, from);
+  ats_ip_copy(&p->from, from);
 
   IOBufferBlock *body = new_IOBufferBlock();
   body->alloc(iobuffer_size_to_index(len));

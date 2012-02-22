@@ -95,22 +95,22 @@ REGRESSION_TEST(IpMap_Test_Sample)(RegressionTest* t, int atype, int* pstatus) {
   void* const deny = reinterpret_cast<void*>(2); 
   void* mark; // for retrieval
 
-  ts_ip_endpoint a1,a2,a3,a4,a5,a6, a7, a8;
-  ts_ip_endpoint target;
-  ts_ip_endpoint t6;
+  IpEndpoint a1,a2,a3,a4,a5,a6, a7, a8;
+  IpEndpoint target;
+  IpEndpoint t6;
 
   *pstatus = REGRESSION_TEST_PASSED;
 
-  ink_inet_pton("10.28.56.0", &a1);
-  ink_inet_pton("10.28.56.255", &a2);
-  ink_inet_pton("0.0.0.0", &a3);
-  ink_inet_pton("255.255.255.255", &a4);
-  ink_inet_pton("::", &a5);
-  ink_inet_pton("ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff", &a6);
-  ink_inet_pton("fe80::221:9bff:fe10:9d90", &a7);
-  ink_inet_pton("fe80::221:9bff:fe10:9d9d", &a8);
-  ink_inet_pton("10.28.56.4", &target);
-  ink_inet_pton("fe80::221:9bff:fe10:9d95", &t6);
+  ats_ip_pton("10.28.56.0", &a1);
+  ats_ip_pton("10.28.56.255", &a2);
+  ats_ip_pton("0.0.0.0", &a3);
+  ats_ip_pton("255.255.255.255", &a4);
+  ats_ip_pton("::", &a5);
+  ats_ip_pton("ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff", &a6);
+  ats_ip_pton("fe80::221:9bff:fe10:9d90", &a7);
+  ats_ip_pton("fe80::221:9bff:fe10:9d9d", &a8);
+  ats_ip_pton("10.28.56.4", &target);
+  ats_ip_pton("fe80::221:9bff:fe10:9d95", &t6);
 
   map.fill(&a1,&a2,deny);
   map.fill(&a3,&a4,allow);

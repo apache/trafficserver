@@ -46,7 +46,7 @@ public:
   int refcount;               // public for assertion
 
   SOCKET fd;
-  ts_ip_endpoint binding;
+  IpEndpoint binding;
   int binding_valid;
   int tobedestroyed;
   int sendGenerationNum;
@@ -116,7 +116,7 @@ TS_INLINE void
 UDPConnection::setBinding(struct sockaddr const* s)
 {
   UDPConnectionInternal *p = (UDPConnectionInternal *) this;
-  ink_inet_copy(&p->binding, s);
+  ats_ip_copy(&p->binding, s);
   p->binding_valid = 1;
 }
 
@@ -124,7 +124,7 @@ TS_INLINE int
 UDPConnection::getBinding(struct sockaddr *s)
 {
   UDPConnectionInternal *p = (UDPConnectionInternal *) this;
-  ink_inet_copy(s, &p->binding);
+  ats_ip_copy(s, &p->binding);
   return p->binding_valid;
 }
 
@@ -168,7 +168,7 @@ UDPConnection::GetSendGenerationNumber()
 TS_INLINE int
 UDPConnection::getPortNum(void)
 {
-  return ink_inet_get_port(&static_cast<UDPConnectionInternal *>(this)->binding);
+  return ats_ip_port_host_order(&static_cast<UDPConnectionInternal *>(this)->binding);
 }
 
 TS_INLINE int64_t

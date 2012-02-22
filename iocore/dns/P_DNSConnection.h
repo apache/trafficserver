@@ -92,7 +92,7 @@ struct DNSConnection {
   };
 
   int fd;
-  ts_ip_endpoint ip;
+  IpEndpoint ip;
   int num;
   LINK(DNSConnection, link);
   EventIO eio;

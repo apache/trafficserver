@@ -114,7 +114,7 @@ public:
   };
 
   // Keys for matching hostnames
-  ts_ip_endpoint server_ip;
+  IpEndpoint server_ip;
   INK_MD5 hostname_hash;
   bool host_hash_computed;
 

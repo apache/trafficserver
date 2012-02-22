@@ -483,7 +483,7 @@ template<class Data, class Result> char *IpMatcher<Data, Result>::NewEntry(match
   const char *errPtr;
   char *errBuf;
   char *match_data;
-  ts_ip_endpoint addr1, addr2;
+  IpEndpoint addr1, addr2;
 
   // Make sure space has been allocated
   ink_assert(num_el >= 0);
@@ -545,8 +545,8 @@ template<class Data, class Result> void IpMatcher<Data, Result>::Print()
   for ( IpMap::iterator spot(ip_map.begin()), limit(ip_map.end()) ; spot != limit ; ++spot) {
     char b1[INET6_ADDRSTRLEN], b2[INET6_ADDRSTRLEN];
     printf("\tRange %s - %s ",
-      ink_inet_ntop(spot->min(), b1, sizeof b1),
-      ink_inet_ntop(spot->max(), b2, sizeof b2)
+      ats_ip_ntop(spot->min(), b1, sizeof b1),
+      ats_ip_ntop(spot->max(), b2, sizeof b2)
     );
     static_cast<Data*>(spot->data())->Print();
   }

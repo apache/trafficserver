@@ -27,7 +27,7 @@
 # include <ts/Tokenizer.h>
 # include <strings.h>
 
-void RecHttpLoadIp(char const* value_name, InkInetAddr& ip4, InkInetAddr& ip6)
+void RecHttpLoadIp(char const* value_name, IpAddr& ip4, IpAddr& ip6)
 {
   char value[1024];
   ip4.invalidate();
@@ -37,15 +37,15 @@ void RecHttpLoadIp(char const* value_name, InkInetAddr& ip4, InkInetAddr& ip6)
     int n_addrs = tokens.Initialize(value);
     for (int i = 0 ; i < n_addrs ; ++i ) {
       char const* host = tokens[i];
-      ts_ip_endpoint tmp4, tmp6;
+      IpEndpoint tmp4, tmp6;
       // For backwards compatibility we need to support the use of host names
       // for the address to bind.
-      if (0 == ink_inet_getbestaddrinfo(host, &tmp4, &tmp6)) {
-        if (ink_inet_is_ip4(&tmp4)) {
+      if (0 == ats_ip_getbestaddrinfo(host, &tmp4, &tmp6)) {
+        if (ats_is_ip4(&tmp4)) {
           if (!ip4.isValid()) ip4 = tmp4;
           else Warning("'%s' specifies more than one IPv4 address, ignoring %s.", value_name, host);
         }
-        if (ink_inet_is_ip6(&tmp6)) {
+        if (ats_is_ip6(&tmp6)) {
           if (!ip6.isValid()) ip6 = tmp6;
           else Warning("'%s' specifies more than one IPv6 address, ignoring %s.", value_name, host);
         }
@@ -114,7 +114,7 @@ bool HttpProxyPort::hasSSL(Group const& ports) {
 }
 
 HttpProxyPort* HttpProxyPort::findHttp(Group const& ports, uint16_t family) {
-  bool check_family_p = ink_inet_is_ip(family);
+  bool check_family_p = ats_is_ip(family);
   self* zret = 0;
   for ( int i = 0 , n = ports.length() ; i < n && !zret ; ++i ) {
     HttpProxyPort& p = ports[i];
@@ -282,17 +282,17 @@ HttpProxyPort::processOptions(char const* opts) {
         zret = true;
       }
     } else if (0 == strncasecmp(OPT_INBOUND_IP_PREFIX, item, OPT_INBOUND_IP_PREFIX_LEN)) {
-      ts_ip_endpoint ip;
+      IpEndpoint ip;
       item += OPT_INBOUND_IP_PREFIX_LEN; // skip prefix
       if ('-' == *item || '=' == *item) ++item; // permit optional '-' or '='
-      if (0 == ink_inet_pton(item, &ip))
+      if (0 == ats_ip_pton(item, &ip))
         m_inbound_ip = ip;
       else
         Warning("Invalid IP address value '%s' in port descriptor '%s'",
           item, opts
         );
     } else if (0 == strncasecmp(OPT_OUTBOUND_IP_PREFIX, item, OPT_OUTBOUND_IP_PREFIX_LEN)) {
-      InkInetAddr ip;
+      IpAddr ip;
       item += OPT_OUTBOUND_IP_PREFIX_LEN; // skip prefix
       if ('-' == *item || '=' == *item) ++item; // permit optional '-' or '='
       if (0 == ip.load(item))
@@ -349,7 +349,7 @@ HttpProxyPort::processOptions(char const* opts) {
   if (af_set_p) {
     if (in_ip_set_p && m_family != m_inbound_ip.family()) {
       Warning("Invalid port descriptor '%s' - the inbound adddress family [%s] is not the same type as the explict family value [%s]",
-        opts, ink_inet_family_name(m_inbound_ip.family()), ink_inet_family_name(m_family));
+        opts, ats_ip_family_name(m_inbound_ip.family()), ats_ip_family_name(m_family));
       zret = false;
     }
   } else if (in_ip_set_p) {

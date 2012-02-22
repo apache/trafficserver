@@ -36,8 +36,8 @@
 #include "HttpSM.h"
 #include "HttpDebugNames.h"
 
-#define FIRST_LEVEL_HASH(x)   ink_inet_hash(x) % HSM_LEVEL1_BUCKETS
-#define SECOND_LEVEL_HASH(x)  ink_inet_hash(x) % HSM_LEVEL2_BUCKETS
+#define FIRST_LEVEL_HASH(x)   ats_ip_hash(x) % HSM_LEVEL1_BUCKETS
+#define SECOND_LEVEL_HASH(x)  ats_ip_hash(x) % HSM_LEVEL2_BUCKETS
 
 // Initialize a thread to handle HTTP session management
 void
@@ -190,8 +190,8 @@ _acquire_session(SessionBucket *bucket, sockaddr const* ip, INK_MD5 &hostname_ha
   //  the 2nd level bucket
   b = bucket->l2_hash[l2_index].head;
   while (b != NULL) {
-    if (ink_inet_eq(&b->server_ip.sa, ip) &&
-      ink_inet_port_cast(ip) == ink_inet_port_cast(&b->server_ip)
+    if (ats_ip_addr_eq(&b->server_ip.sa, ip) &&
+      ats_ip_port_cast(ip) == ats_ip_port_cast(&b->server_ip)
     ) {
       if (hostname_hash == b->hostname_hash) {
         bucket->lru_list.remove(b);
@@ -236,8 +236,8 @@ HttpSessionManager::acquire_session(Continuation *cont, sockaddr const* ip,
   if (to_return != NULL) {
     ua_session->attach_server_session(NULL);
 
-    if (ink_inet_eq(&to_return->server_ip.sa, ip) &&
-      ink_inet_port_cast(&to_return->server_ip) == ink_inet_port_cast(ip)
+    if (ats_ip_addr_eq(&to_return->server_ip.sa, ip) &&
+      ats_ip_port_cast(&to_return->server_ip) == ats_ip_port_cast(ip)
     ) {
       if (!hash_computed) {
         ink_code_MMH((unsigned char *) hostname, strlen(hostname), (unsigned char *) &hostname_hash);

@@ -118,7 +118,7 @@ net_accept(NetAccept * na, void *ep, bool blockable)
     na->alloc_cache = NULL;
 
     vc->submit_time = ink_get_hrtime();
-    ink_inet_copy(&vc->server_addr, &vc->con.addr);
+    ats_ip_copy(&vc->server_addr, &vc->con.addr);
     vc->mutex = new_ProxyMutex();
     vc->action_ = *na->action_;
     vc->set_is_transparent(na->server.f_inbound_transparent);
@@ -314,7 +314,7 @@ NetAccept::do_blocking_accept(EThread * t)
 
     NET_SUM_GLOBAL_DYN_STAT(net_connections_currently_open_stat, 1);
     vc->submit_time = now;
-    ink_inet_copy(&vc->server_addr, &vc->con.addr);
+    ats_ip_copy(&vc->server_addr, &vc->con.addr);
     vc->set_is_transparent(server.f_inbound_transparent);
     vc->mutex = new_ProxyMutex();
     vc->action_ = *action_;
@@ -356,10 +356,10 @@ NetAccept::acceptEvent(int event, void *ep)
         NET_DECREMENT_DYN_STAT(net_accepts_currently_open_stat);
         /* INKqa11179 */
         Warning("Accept on port %d failed with error no %d",
-          ink_inet_get_port(&server.addr), res
+          ats_ip_port_host_order(&server.addr), res
         );
         Warning("Traffic Server may be unable to accept more network" "connections on %d",
-          ink_inet_get_port(&server.addr)
+          ats_ip_port_host_order(&server.addr)
         );
         e->cancel();
         delete this;
@@ -455,7 +455,7 @@ NetAccept::acceptFastEvent(int event, void *ep)
     vc->id = net_next_connection_number();
 
     vc->submit_time = ink_get_hrtime();
-    ink_inet_copy(&vc->server_addr, &vc->con.addr);
+    ats_ip_copy(&vc->server_addr, &vc->con.addr);
     vc->set_is_transparent(server.f_inbound_transparent);
     vc->mutex = new_ProxyMutex();
     vc->thread = e->ethread;

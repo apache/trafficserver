@@ -120,8 +120,8 @@ public:
   volatile int proxy_running;
   HttpProxyPort::Group m_proxy_ports;
   // Local inbound addresses to bind, if set.
-  InkInetAddr m_inbound_ip4;
-  InkInetAddr m_inbound_ip6;
+  IpAddr m_inbound_ip4;
+  IpAddr m_inbound_ip6;
 
   int process_server_timeout_secs;
   int process_server_timeout_msecs;

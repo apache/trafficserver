@@ -102,8 +102,8 @@ acl_filter_rule::print(void)
   for (i = 0; i < src_ip_cnt; i++) {
     ip_text_buffer b1, b2;
     printf("%s - %s"
-      , ink_inet_ntop(&src_ip_array[i].start.sa, b1, sizeof(b1))
-      , ink_inet_ntop(&src_ip_array[i].end.sa, b2, sizeof(b2))
+      , ats_ip_ntop(&src_ip_array[i].start.sa, b1, sizeof(b1))
+      , ats_ip_ntop(&src_ip_array[i].end.sa, b2, sizeof(b2))
     );
   }
   for (i = 0; i < argc; i++) {

@@ -202,7 +202,7 @@ struct CongestionEntry: public RequestData
   // key in the hash table;
   uint64_t m_key;
   // host info
-  ts_ip_endpoint m_ip;
+  IpEndpoint m_ip;
   char *m_hostname;
 
   // Pointer to the congestion.config entry

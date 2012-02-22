@@ -75,7 +75,7 @@ public:
     {
       uint64_t m_key;
       char *m_hostname;
-      ts_ip_endpoint m_ip;
+      IpEndpoint m_ip;
       CongestionControlRecord *m_rule;
       CongestionEntry **m_ppEntry;
     } entry_info;
@@ -515,7 +515,7 @@ get_congest_entry(Continuation * cont, HttpRequestData * data, CongestionEntry *
     Ccont->mutex = cont->mutex;
     Ccont->CDBC_key = key;
     Ccont->CDBC_host = (char *) data->get_host();
-    ink_inet_copy(&Ccont->CDBC_ip.sa, data->get_ip());
+    ats_ip_copy(&Ccont->CDBC_ip.sa, data->get_ip());
     p->get();
     Ccont->CDBC_rule = p;
     Ccont->CDBC_ppE = ppEntry;
@@ -623,7 +623,7 @@ remove_congested_entry(char *buf, MIOBuffer * out_buffer)
     remove_congested_entry(key);
     len = snprintf(msg, MSG_LEN, "host=%s prefix=%s removed\n", p, prefix ? prefix : "(nil)");
   } else if (strncasecmp(buf, "ip=", 3) == 0) {
-    ts_ip_endpoint ip;
+    IpEndpoint ip;
     memset(&ip, 0, sizeof(ip));
     
     char *p = buf + 3;
@@ -634,8 +634,8 @@ remove_congested_entry(char *buf, MIOBuffer * out_buffer)
       prefix++;
       prelen = strlen(prefix);
     }
-    ink_inet_pton(p, &ip);
-    if (!ink_inet_is_ip(&ip)) {
+    ats_ip_pton(p, &ip);
+    if (!ats_is_ip(&ip)) {
       len = snprintf(msg, MSG_LEN, "invalid ip: %s\n", buf);
     } else {
       key = make_key(NULL, 0, &ip.sa, prefix, prelen);

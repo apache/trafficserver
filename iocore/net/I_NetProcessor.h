@@ -51,7 +51,7 @@ public:
     int local_port;
     /// Local address to bind for accept.
     /// If not set -> any address.
-    InkInetAddr local_ip;
+    IpAddr local_ip;
     /// IP address family.
     /// @note Ignored if an explicit incoming address is set in the
     /// the configuration (@c local_ip). If neither is set IPv4 is used.
@@ -233,8 +233,8 @@ public:
   ) {
     struct sockaddr_in addr;
 
-    ink_inet_ip4_set(&addr, ip, htons(port));
-    return connect_re(cont, ink_inet_sa_cast(&addr), options);
+    ats_ip4_set(&addr, ip, htons(port));
+    return connect_re(cont, ats_ip_sa_cast(&addr), options);
   }
 
   /**
@@ -276,8 +276,8 @@ public:
   ) {
     struct sockaddr_in addr;
 
-    ink_inet_ip4_set(&addr, ip, htons(port));
-    return connect_s(cont, ink_inet_sa_cast(&addr), timeout, opts);
+    ats_ip4_set(&addr, ip, htons(port));
+    return connect_s(cont, ats_ip_sa_cast(&addr), timeout, opts);
   }
 
   /**

@@ -511,10 +511,10 @@ ParentRecord::FindParent(bool first_call, ParentResult * result, RD * rdata, Par
         // INKqa12817 - make sure to convert to host byte order
         // Why was it important to do host order here?  And does this have any
         // impact with the transition to IPv6?  The IPv4 functionality is 
-        // preserved for now anyway as ink_inet_hash returns the 32-bit address in
+        // preserved for now anyway as ats_ip_hash returns the 32-bit address in
         // that case.
         if (rdata->get_client_ip() != NULL) {
-            cur_index = ntohl(ink_inet_hash(rdata->get_client_ip())) % num_parents;
+            cur_index = ntohl(ats_ip_hash(rdata->get_client_ip())) % num_parents;
         } else {
             cur_index = 0;
         }
@@ -1056,9 +1056,9 @@ request_to_data(HttpRequestData * req, sockaddr const* srcip, sockaddr const* ds
   HTTPParser parser;
 
   ink_zero(req->src_ip);
-  ink_inet_copy(&req->src_ip.sa, srcip);
+  ats_ip_copy(&req->src_ip.sa, srcip);
   ink_zero(req->dest_ip);
-  ink_inet_copy(&req->dest_ip.sa, dstip);
+  ats_ip_copy(&req->dest_ip.sa, dstip);
 
   req->hdr = NEW(new HTTPHdr);
 
@@ -1146,11 +1146,11 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION) (RegressionTest * t, int intensity_le
     T("dest_host=pluto scheme=HTTP parent=strategy:80\n")       /* L16 */
     REBUILD
     // Test 3
-    ts_ip_endpoint ip;
-    ink_inet_pton(TEST_IP4_ADDR, &ip.sa);
+    IpEndpoint ip;
+    ats_ip_pton(TEST_IP4_ADDR, &ip.sa);
     ST(3) REINIT br(request, "numeric_host", &ip.sa);
   FP RE(verify(result, PARENT_SPECIFIED, "cat", 37) + verify(result, PARENT_SPECIFIED, "dog", 24), 3)
-    ink_inet_pton(TEST_IP6_ADDR, &ip.sa);
+    ats_ip_pton(TEST_IP6_ADDR, &ip.sa);
     ST(4) REINIT br(request, "numeric_host", &ip.sa);
   FP RE(verify(result, PARENT_SPECIFIED, "zwoop", 37) + verify(result, PARENT_SPECIFIED, "jMCg", 24), 4)
     // Test 5
@@ -1309,7 +1309,7 @@ br(HttpRequestData * h, const char *os_hostname, sockaddr const* dest_ip)
   h->xact_start = time(NULL);
   ink_zero(h->src_ip);
   ink_zero(h->dest_ip);
-  ink_inet_copy(&h->dest_ip.sa, dest_ip);
+  ats_ip_copy(&h->dest_ip.sa, dest_ip);
   h->incoming_port = 80;
   h->api_info = new _HttpApiInfo();
 }

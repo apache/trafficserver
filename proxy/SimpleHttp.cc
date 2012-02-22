@@ -657,10 +657,10 @@ SimpleCont::dns_event(int event, void *edata)
       if (r->round_robin) {
         // TODO: IPv6
         sockaddr_in ip4;
-        ink_inet_ip4_set(&ip4, 0);
+        ats_ip4_set(&ip4, 0);
 
         Debug("simple_http", "dns round robin");
-        rr = r->rr()->select_best(ink_inet_sa_cast(&ip4));
+        rr = r->rr()->select_best(ats_ip_sa_cast(&ip4));
       } else {
         rr = r;
       }

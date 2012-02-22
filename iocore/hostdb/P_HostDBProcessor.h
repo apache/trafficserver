@@ -35,14 +35,14 @@ inline unsigned int HOSTDB_CLIENT_IP_HASH(
   sockaddr const* rhs
 ) {
   unsigned int zret = ~static_cast<unsigned int>(0);
-  if (ink_inet_are_compatible(lhs,rhs)) {
-    if (ink_inet_is_ip4(lhs)) {
-      in_addr_t ip1 = ink_inet_ip4_addr_cast(lhs);
-      in_addr_t ip2 = ink_inet_ip4_addr_cast(rhs);
+  if (ats_ip_are_compatible(lhs,rhs)) {
+    if (ats_is_ip4(lhs)) {
+      in_addr_t ip1 = ats_ip4_addr_cast(lhs);
+      in_addr_t ip2 = ats_ip4_addr_cast(rhs);
       zret = (ip1 >> 16) ^ ip1 ^ ip2 ^ (ip2 >> 16);
-    } else if (ink_inet_is_ip6(lhs)) {
-      uint32_t const* ip1 = ink_inet_addr32_cast(lhs);
-      uint32_t const* ip2 = ink_inet_addr32_cast(rhs);
+    } else if (ats_is_ip6(lhs)) {
+      uint32_t const* ip1 = ats_ip_addr32_cast(lhs);
+      uint32_t const* ip2 = ats_ip_addr32_cast(rhs);
       for ( int i = 0 ; i < 4 ; ++i, ++ip1, ++ip2 ) {
         zret ^= (*ip1 >> 16) ^ *ip1 ^ *ip2 ^ (*ip2 >> 16);
       }
@@ -174,7 +174,7 @@ HostDBRoundRobin::find_ip(sockaddr const* ip) {
   }
 
   for (int i = 0; i < good; i++) {
-    if (ink_inet_eq(ip, info[i].ip())) {
+    if (ats_ip_addr_eq(ip, info[i].ip())) {
       return &info[i];
     }
   }
@@ -299,7 +299,7 @@ typedef int (HostDBContinuation::*HostDBContHandler) (int, void *);
 struct HostDBContinuation: public Continuation
 {
   Action action;
-  ts_ip_endpoint ip;
+  IpEndpoint ip;
   unsigned int ttl;
   bool is_srv_lookup;
   int dns_lookup_timeout;

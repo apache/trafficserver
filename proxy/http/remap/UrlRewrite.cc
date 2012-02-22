@@ -847,7 +847,7 @@ UrlRewrite::PerformACLFiltering(HttpTransact::State *s, url_mapping *map)
     i = (method = s->hdr_info.client_request.method_get_wksidx()) - HTTP_WKSIDX_CONNECT;
     if (likely(i >= 0 && i < ACL_FILTER_MAX_METHODS)) {
       bool client_enabled_flag = true;
-      ink_release_assert(ink_inet_is_ip(&s->client_info.addr));
+      ink_release_assert(ats_is_ip(&s->client_info.addr));
       for (acl_filter_rule * rp = map->filter; rp; rp = rp->next) {
         bool match = true;
         if (rp->method_valid) {

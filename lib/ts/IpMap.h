@@ -367,8 +367,8 @@ public:
       @return This object.
   */
   self& mark(
-    ts_ip_endpoint const* min, ///< Minimum address (network order).
-    ts_ip_endpoint const* max, ///< Maximum address (network order).
+    IpEndpoint const* min, ///< Minimum address (network order).
+    IpEndpoint const* max, ///< Maximum address (network order).
     void* data = 0 ///< Client data.
   );
 
@@ -378,7 +378,7 @@ public:
       @return This object.
   */
   self& mark(
-    ts_ip_endpoint const* addr, ///< Address (network order).
+    IpEndpoint const* addr, ///< Address (network order).
     void* data = 0 ///< Client data.
   );
 
@@ -416,8 +416,8 @@ public:
   );
   /// Fill addresses (overload).
   self& fill(
-    ts_ip_endpoint const* min,
-    ts_ip_endpoint const* max,
+    IpEndpoint const* min,
+    IpEndpoint const* max,
     void* data = 0
   );
   /// Fill addresses (overload).
@@ -452,7 +452,7 @@ public:
   ) const;
 
   bool contains(
-    ts_ip_endpoint const* target, ///< Search target (network order).
+    IpEndpoint const* target, ///< Search target (network order).
     void **ptr = 0 ///< Client data return.
   ) const;
 
@@ -496,19 +496,19 @@ inline IpMap& IpMap::mark(in_addr_t addr, void* data) {
   return this->mark(addr, addr, data);
 }
 
-inline IpMap& IpMap::mark(ts_ip_endpoint const* addr, void* data) {
+inline IpMap& IpMap::mark(IpEndpoint const* addr, void* data) {
   return this->mark(&addr->sa, &addr->sa, data);
 }
 
-inline IpMap& IpMap::mark(ts_ip_endpoint const* min, ts_ip_endpoint const* max, void* data) {
+inline IpMap& IpMap::mark(IpEndpoint const* min, IpEndpoint const* max, void* data) {
   return this->mark(&min->sa, &max->sa, data);
 }
 
-inline IpMap& IpMap::fill(ts_ip_endpoint const* min, ts_ip_endpoint const* max, void* data) {
+inline IpMap& IpMap::fill(IpEndpoint const* min, IpEndpoint const* max, void* data) {
   return this->fill(&min->sa, &max->sa, data);
 }
 
-inline bool IpMap::contains(ts_ip_endpoint const* target, void** ptr) const {
+inline bool IpMap::contains(IpEndpoint const* target, void** ptr) const {
   return this->contains(&target->sa, ptr);
 }
 

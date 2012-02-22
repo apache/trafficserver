@@ -327,7 +327,7 @@ void
 LocalManager::initCCom(int port, char *addr, int sport)
 {
   bool found;
-  ts_ip_endpoint cluster_ip;    // ip addr of the cluster interface
+  IpEndpoint cluster_ip;    // ip addr of the cluster interface
   ip_text_buffer clusterAddrStr;         // cluster ip addr as a String
   char *intrName;               // Name of the interface we are to use
   char hostname[1024];          // hostname of this machine
@@ -344,11 +344,11 @@ LocalManager::initCCom(int port, char *addr, int sport)
   found = mgmt_getAddrForIntr(intrName, &cluster_ip.sa);
   if (found == false) {
     mgmt_fatal(stderr, "[LocalManager::initCCom] Unable to find network interface %s.  Exiting...\n", intrName);
-  } else if (!ink_inet_is_ip4(&cluster_ip)) {
+  } else if (!ats_is_ip4(&cluster_ip)) {
     mgmt_fatal(stderr, "[LocalManager::initCCom] Unable to find IPv4 network interface %s.  Exiting...\n", intrName);
   }
 
-  ink_inet_ntop(&cluster_ip, clusterAddrStr, sizeof(clusterAddrStr));
+  ats_ip_ntop(&cluster_ip, clusterAddrStr, sizeof(clusterAddrStr));
   Debug("ccom", "Cluster Interconnect is %s : %s\n", intrName, clusterAddrStr);
 
   // This an awful hack but I could not come up with a better way to
@@ -371,8 +371,8 @@ LocalManager::initCCom(int port, char *addr, int sport)
   ink_strlcat(envBuf, clusterAddrStr, envBuf_size);
   ink_release_assert(putenv(envBuf) == 0);
 
-  ccom = new ClusterCom(ink_inet_ip4_addr_cast(&cluster_ip), hostname, port, addr, sport, pserver_path);
-  virt_map = new VMap(intrName, ink_inet_ip4_addr_cast(&cluster_ip), &lmgmt->ccom->mutex);
+  ccom = new ClusterCom(ats_ip4_addr_cast(&cluster_ip), hostname, port, addr, sport, pserver_path);
+  virt_map = new VMap(intrName, ats_ip4_addr_cast(&cluster_ip), &lmgmt->ccom->mutex);
   virt_map->downAddrs();        // Just to be safe
   ccom->establishChannels();
   ats_free(intrName);
@@ -1209,7 +1209,7 @@ LocalManager::bindProxyPort(HttpProxyPort& port)
 #endif
   }
 
-  ts_ip_endpoint ip;
+  IpEndpoint ip;
   if (port.m_inbound_ip.isValid()) {
     ip.assign(port.m_inbound_ip);
   } else if (AF_INET6 == port.m_family) {
@@ -1223,7 +1223,7 @@ LocalManager::bindProxyPort(HttpProxyPort& port)
     _exit(1);
   }
   ip.port() = htons(port.m_port);
-  if (bind(port.m_fd, &ip.sa, ink_inet_ip_size(&ip)) < 0) {
+  if (bind(port.m_fd, &ip.sa, ats_ip_size(&ip)) < 0) {
     mgmt_elog(stderr, "[bindProxyPort] Unable to bind socket: %d : %s\n", port.m_port, strerror(errno));
     _exit(1);
   }

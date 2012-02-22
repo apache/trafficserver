@@ -162,7 +162,7 @@ TS_INLINE bool SplitDNSConfig::isSplitDNSEnabled()
    -------------------------------------------------------------- */
 struct DNSServer
 {
-  ts_ip_endpoint x_server_ip[MAXNS];
+  IpEndpoint x_server_ip[MAXNS];
   char x_dns_ip_line[MAXDNAME * 2];
 
   char x_def_domain[MAXDNAME];
