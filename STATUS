@@ -74,6 +74,10 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
    -0: zwoop (I think this breaks compatibility with existing 3.0.x
    caches, and I'm not positive it's a good idea to do so).
 
+  *) logstats incorrectly bucketizes all status codes greater than 599 as 5xx
+   Trunk patch: https://git-wip-us.apache.org/repos/asf?p=trafficserver.git;a=commit;h=8421675e42f9c09715ce02557afc258be7fed389
+   Jira: https://issues.apache.org/jira/browse/TS-1110
+   +1: briang
 
 STALLED ISSUES
 
