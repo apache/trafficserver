@@ -142,7 +142,7 @@ RulesEntry::execute(TSMBuffer& reqp, TSMLoc& hdr_loc) const
         nuke = !nuke;
       if (nuke) {
         if (TS_SUCCESS == TSMimeHdrFieldDestroy(reqp, hdr_loc, field))
-          TSDebug(PLUGIN_NAME, "\tDeleting header %.*s", _h_len, _header);
+          TSDebug(PLUGIN_NAME, "\tDeleting header %.*s", static_cast<int>(_h_len), _header);
       }
       TSHandleMLocRelease(reqp, hdr_loc, field);
       field = tmp;
