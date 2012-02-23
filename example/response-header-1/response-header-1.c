@@ -97,7 +97,7 @@ modify_header(TSHttpTxn txnp, TSCont contp)
 
     TSDebug("resphdr", "Processing 200 OK");
     TSMimeHdrFieldCreate(resp_bufp, resp_loc, &new_field_loc); /* Probably should check for errors */
-    TSDebug("resphdr", "Created new resp field with loc %d", new_field_loc);
+    TSDebug("resphdr", "Created new resp field with loc %p", new_field_loc);
 
     /* copy name/values created at init
      * ( "x-num-served-from-cache" ) : ( "0"  )
@@ -110,7 +110,7 @@ modify_header(TSHttpTxn txnp, TSCont contp)
 
     /* Cache-Control: Public */
     TSMimeHdrFieldCreate(resp_bufp, resp_loc, &new_field_loc); /* Probably should check for errors */
-    TSDebug("resphdr", "Created new resp field with loc %d", new_field_loc);
+    TSDebug("resphdr", "Created new resp field with loc %p", new_field_loc);
     TSMimeHdrFieldAppend(resp_bufp, resp_loc, new_field_loc);
     TSMimeHdrFieldNameSet(resp_bufp, resp_loc, new_field_loc,
                            TS_MIME_FIELD_CACHE_CONTROL, TS_MIME_LEN_CACHE_CONTROL);
@@ -121,7 +121,7 @@ modify_header(TSHttpTxn txnp, TSCont contp)
      * mimehdr2_name  = TSstrdup( "x-date-200-recvd" ) : CurrentDateTime
      */
     TSMimeHdrFieldCreate(resp_bufp, resp_loc, &new_field_loc); /* Probably should check for errors */
-    TSDebug("resphdr", "Created new resp field with loc %d", new_field_loc);
+    TSDebug("resphdr", "Created new resp field with loc %p", new_field_loc);
     TSMimeHdrFieldAppend(resp_bufp, resp_loc, new_field_loc);
     TSMimeHdrFieldNameSet(resp_bufp, resp_loc, new_field_loc, mimehdr2_name, strlen(mimehdr2_name));
     recvd_time = time(NULL);
@@ -309,7 +309,7 @@ TSPluginInit(int argc, const char *argv[])
   TSMimeHdrFieldAppend(hdr_bufp, hdr_loc, field_loc);
   TSMimeHdrFieldNameSet(hdr_bufp, hdr_loc, field_loc, mimehdr1_name, strlen(mimehdr1_name));
   TSMimeHdrFieldValueStringInsert(hdr_bufp, hdr_loc, field_loc, -1, mimehdr1_value, strlen(mimehdr1_value));
-  TSDebug("resphdr", "init buffer hdr, field and value locs are %d, %d and %d", hdr_loc, field_loc, value_loc);
+  TSDebug("resphdr", "init buffer hdr, field and value locs are %p, %p and %p", hdr_loc, field_loc, value_loc);
   init_buffer_status = 1;
 
 
@@ -328,6 +328,6 @@ TSPluginInit(int argc, const char *argv[])
     /* bail out here and reenable transaction */
   } else {
     if (field_loc != chk_field_loc)
-      TSError("retrieved buffer field loc is %d when it should be %d", chk_field_loc, field_loc);
+      TSError("retrieved buffer field loc is %p when it should be %p", chk_field_loc, field_loc);
   }
 }

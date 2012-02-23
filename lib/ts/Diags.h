@@ -273,10 +273,8 @@ dummy_debug(const char *tag, const char *fmt, ...)
 }
 
 
-#define Diag(tag, ...)      diags->log(tag, DTA(DL_Diag), __VA_ARGS__)
-#define Debug(tag, ...)     diags->log(tag, DTA(DL_Debug), __VA_ARGS__)
-#define Debug(tag, ...)     diags->log(tag, DTA(DL_Debug), __VA_ARGS__)
-#define DebugOn(tag, ...)     diags->log(tag, DTA(DL_Debug), __VA_ARGS__)
+#define Diag(tag, ...)      if (diags->on()) diags->log(tag, DTA(DL_Diag), __VA_ARGS__)
+#define Debug(tag, ...)     if (diags->on()) diags->log(tag, DTA(DL_Debug), __VA_ARGS__)
 
 #define Status(...)    diags->error(DTA(DL_Status), __VA_ARGS__)
 #define Note(...)      diags->error(DTA(DL_Note), __VA_ARGS__)
@@ -327,9 +325,8 @@ dummy_debug(const char *tag, const char *fmt, ...)
   (void)fmt;
 }
 
-#define Diag(tag, fmt, ...)      if (0) dummy_debug(tag, fmt, ##__VA_ARGS__)
-#define Debug(tag, fmt, ...)     if (0) dummy_debug(tag, fmt, ##__VA_ARGS__)
-#define DebugOn(tag, fmt, ...)   if (0) dummy_debug(tag, fmt, ##__VA_ARGS__)
+#define Diag(tag, fmt, ...)      if (0) dummy_debug(tag, __VA_ARGS__)
+#define Debug(tag, fmt, ...)     if (0) dummy_debug(tag, __VA_ARGS__)
 
 #define is_debug_tag_set(_t)     0
 #define is_action_tag_set(_t)    0

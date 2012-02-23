@@ -2384,10 +2384,8 @@ HttpSM::state_cache_open_read(int event, void *data)
   case CACHE_EVENT_OPEN_READ_FAILED:
     pending_action = NULL;
 
-    if (diags->on()) {
-      DebugOn("http", "[%" PRId64 "] cache_open_read - " "CACHE_EVENT_OPEN_READ_FAILED", sm_id);
-      DebugOn("http", "[state_cache_open_read] open read failed.");
-    }
+    Debug("http", "[%" PRId64 "] cache_open_read - " "CACHE_EVENT_OPEN_READ_FAILED", sm_id);
+    Debug("http", "[state_cache_open_read] open read failed.");
     // Inform HttpTransact somebody else is updating the document
     // HttpCacheSM already waited so transact should go ahead.
     if (data == (void *) -ECACHE_DOC_BUSY)

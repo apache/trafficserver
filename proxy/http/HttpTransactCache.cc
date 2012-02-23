@@ -181,14 +181,12 @@ HttpTransactCache::SelectFromAlternates(CacheHTTPInfoVector * cache_vector,
   }
 
 
-  if (diags->on()) {
-    DebugOn("http_match", "[SelectFromAlternates] # alternates = %d", alt_count);
-    DebugOn("http_seq", "[SelectFromAlternates] %d alternates for this cached doc", alt_count);
-    if (diags->on("http_alts")) {
-      ACQUIRE_PRINT_LOCK()
-        fprintf(stderr, "[alts] There are %d alternates for this request header.\n", alt_count);
-      RELEASE_PRINT_LOCK()
-    }
+  Debug("http_match", "[SelectFromAlternates] # alternates = %d", alt_count);
+  Debug("http_seq", "[SelectFromAlternates] %d alternates for this cached doc", alt_count);
+  if (diags->on("http_alts")) {
+    ACQUIRE_PRINT_LOCK()
+      fprintf(stderr, "[alts] There are %d alternates for this request header.\n", alt_count);
+    RELEASE_PRINT_LOCK()
   }
   // used by ICP to bypass this function
   if (http_config_params == &global_cache_lookup_config)
@@ -262,13 +260,11 @@ HttpTransactCache::SelectFromAlternates(CacheHTTPInfoVector * cache_vector,
       }
     }
   }
-  if (diags->on()) {
-    DebugOn("http_seq", "[SelectFromAlternates] Chosen alternate # %d", best_index);
-    if (diags->on("http_alts")) {
-      ACQUIRE_PRINT_LOCK()
-        fprintf(stderr, "[alts] and the winner is alternate number %d\n", best_index + 1);
-      RELEASE_PRINT_LOCK()
-    }
+  Debug("http_seq", "[SelectFromAlternates] Chosen alternate # %d", best_index);
+  if (diags->on("http_alts")) {
+    ACQUIRE_PRINT_LOCK()
+      fprintf(stderr, "[alts] and the winner is alternate number %d\n", best_index + 1);
+    RELEASE_PRINT_LOCK()
   }
 
   if ((best_index != -1) && (best_Q > unacceptable_Q)) {
@@ -392,26 +388,24 @@ HttpTransactCache::calculate_quality_of_match(CacheLookupHttpConfig * http_confi
   // final quality is minimum Q, or -1, if some match failed //
   Q = ((q[0] < 0) || (q[1] < 0) || (q[2] < 0) || (q[3] < 0)) ? -1.0 : q[0] * q[1] * q[2] * q[3];
 
-  if (diags->on()) {
-    DebugOn("http_match", "    CalcQualityOfMatch: Accept match = %g", q[0]);
-    DebugOn("http_seq", "    CalcQualityOfMatch: Accept match = %g", q[0]);
-    DebugOn("http_alternate", "Content-Type and Accept %f", q[0]);
+  Debug("http_match", "    CalcQualityOfMatch: Accept match = %g", q[0]);
+  Debug("http_seq", "    CalcQualityOfMatch: Accept match = %g", q[0]);
+  Debug("http_alternate", "Content-Type and Accept %f", q[0]);
 
-    DebugOn("http_match", "    CalcQualityOfMatch: AcceptCharset match = %g", q[1]);
-    DebugOn("http_seq", "    CalcQualityOfMatch: AcceptCharset match = %g", q[1]);
-    DebugOn("http_alternate", "Content-Type and Accept-Charset %f", q[1]);
+  Debug("http_match", "    CalcQualityOfMatch: AcceptCharset match = %g", q[1]);
+  Debug("http_seq", "    CalcQualityOfMatch: AcceptCharset match = %g", q[1]);
+  Debug("http_alternate", "Content-Type and Accept-Charset %f", q[1]);
 
-    DebugOn("http_match", "    CalcQualityOfMatch: AcceptEncoding match = %g", q[2]);
-    DebugOn("http_seq", "    CalcQualityOfMatch: AcceptEncoding match = %g", q[2]);
-    DebugOn("http_alternate", "Content-Encoding and Accept-Encoding %f", q[2]);
+  Debug("http_match", "    CalcQualityOfMatch: AcceptEncoding match = %g", q[2]);
+  Debug("http_seq", "    CalcQualityOfMatch: AcceptEncoding match = %g", q[2]);
+  Debug("http_alternate", "Content-Encoding and Accept-Encoding %f", q[2]);
 
-    DebugOn("http_match", "    CalcQualityOfMatch: AcceptLanguage match = %g", q[3]);
-    DebugOn("http_seq", "    CalcQualityOfMatch: AcceptLanguage match = %g", q[3]);
-    DebugOn("http_alternate", "Content-Language and Accept-Language %f", q[3]);
+  Debug("http_match", "    CalcQualityOfMatch: AcceptLanguage match = %g", q[3]);
+  Debug("http_seq", "    CalcQualityOfMatch: AcceptLanguage match = %g", q[3]);
+  Debug("http_alternate", "Content-Language and Accept-Language %f", q[3]);
 
-    DebugOn("http_alternate", "Mult's Quality Factor: %f", Q);
-    DebugOn("http_alternate", "----------End of Alternate----------");
-  }
+  Debug("http_alternate", "Mult's Quality Factor: %f", Q);
+  Debug("http_alternate", "----------End of Alternate----------");
 
   if (Q > 0.0) {
     APIHook *hook;
@@ -455,15 +449,13 @@ HttpTransactCache::calculate_quality_of_match(CacheLookupHttpConfig * http_confi
       Q = -1.0;
     }
 
-    if (diags->on()) {
-      DebugOn("http_match", "    CalcQualityOfMatch: CalcVariability says variability = %d",
-              (variability != VARIABILITY_NONE));
-      DebugOn("http_seq", "    CalcQualityOfMatch: CalcVariability says variability = %d",
-              (variability != VARIABILITY_NONE));
+    Debug("http_match", "    CalcQualityOfMatch: CalcVariability says variability = %d",
+            (variability != VARIABILITY_NONE));
+    Debug("http_seq", "    CalcQualityOfMatch: CalcVariability says variability = %d",
+            (variability != VARIABILITY_NONE));
 
-      DebugOn("http_match", "    CalcQualityOfMatch: Returning final Q = %g", Q);
-      DebugOn("http_seq", "    CalcQualityOfMatch: Returning final Q = %g", Q);
-    }
+    Debug("http_match", "    CalcQualityOfMatch: Returning final Q = %g", Q);
+    Debug("http_seq", "    CalcQualityOfMatch: Returning final Q = %g", Q);
   }
   return (Q);
 }
@@ -1208,8 +1200,8 @@ HttpTransactCache::CalcVariability(CacheLookupHttpConfig * http_config_params,
       HttpCompat::parse_comma_list(&vary_list, (vary_values ? vary_values : ""));
     }
 #ifdef DEBUG
-    if (diags->on("http_match") && vary_list.head) {
-      DebugOn("http_match", "Vary list of %d elements", vary_list.count);
+    if (vary_list.head) {
+      Debug("http_match", "Vary list of %d elements", vary_list.count);
       vary_list.dump(stderr);
     }
 #endif
@@ -1228,9 +1220,9 @@ HttpTransactCache::CalcVariability(CacheLookupHttpConfig * http_config_params,
 
       if (((field->str[0] == '*') && (field->str[1] == NUL))) {
 #ifdef DEBUG
-        if (diags->on("http_match")) {
-          Note("\"Vary: %s\" --- object not served from cache\n", field->str);
-        }
+      if (diags->on("http_match")) {
+        Note("\"Vary: %s\" --- object not served from cache\n", field->str);
+      }
 #endif
         variability = VARIABILITY_ALL;
         break;

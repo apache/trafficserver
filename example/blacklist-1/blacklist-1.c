@@ -214,7 +214,7 @@ read_blacklist(TSCont contp)
     TSfclose(file);
   } else {
     TSError("unable to open %s\n", blacklist_file);
-    TSError("all sites will be allowed\n", blacklist_file);
+    TSError("all sites will be allowed\n");
   }
 
   TSMutexUnlock(sites_mutex);

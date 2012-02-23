@@ -1614,10 +1614,8 @@ HttpTransact::OSDNSLookup(State* s)
   // On the other hand, if the lookup succeeded on a www.<hostname>.com
   // expansion, return a 302 response.
   if (s->dns_info.attempts == max_dns_lookups && s->dns_info.looking_up == ORIGIN_SERVER) {
-    if (diags->on()) {
-      DebugOn("http_trans", "[OSDNSLookup] DNS name resolution on expansion");
-      DebugOn("http_seq", "[OSDNSLookup] DNS name resolution on expansion - returning");
-    }
+    Debug("http_trans", "[OSDNSLookup] DNS name resolution on expansion");
+    Debug("http_seq", "[OSDNSLookup] DNS name resolution on expansion - returning");
     build_redirect_response(s);
     // s->cache_info.action = CACHE_DO_NO_ACTION;
     TRANSACT_RETURN(PROXY_INTERNAL_CACHE_NOOP, NULL);
@@ -1719,10 +1717,8 @@ HttpTransact::HandleFiltering(State* s)
   if (s->method == HTTP_WKSIDX_PUSH && s->http_config_param->push_method_enabled == 0) {
     // config file says this request is not authorized.
     // send back error response to client.
-    if (diags->on()) {
-      DebugOn("http_trans", "[HandleFiltering] access denied.");
-      DebugOn("http_seq", "[HttpTransact::HandleFiltering] Access Denied.");
-    }
+    Debug("http_trans", "[HandleFiltering] access denied.");
+    Debug("http_seq", "[HttpTransact::HandleFiltering] Access Denied.");
 
     SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_NO_FORWARD);
     // adding a comment so that cvs recognizes that I added a space in the text below
@@ -1772,10 +1768,8 @@ HttpTransact::DecideCacheLookup(State* s)
 
   // now decide whether the cache can even be looked up.
   if (s->cache_info.action == CACHE_DO_LOOKUP) {
-    if (diags->on()) {
-      DebugOn("http_trans", "[DecideCacheLookup] Will do cache lookup.");
-      DebugOn("http_seq", "[DecideCacheLookup] Will do cache lookup");
-    }
+    Debug("http_trans", "[DecideCacheLookup] Will do cache lookup.");
+    Debug("http_seq", "[DecideCacheLookup] Will do cache lookup");
     ink_debug_assert(s->current.mode != TUNNELLING_PROXY);
 
     if (s->cache_info.lookup_url == NULL) {
@@ -1825,10 +1819,8 @@ HttpTransact::DecideCacheLookup(State* s)
   } else {
     ink_assert(s->cache_info.action != CACHE_DO_LOOKUP && s->cache_info.action != CACHE_DO_SERVE);
 
-    if (diags->on()) {
-      DebugOn("http_trans", "[DecideCacheLookup] Will NOT do cache lookup.");
-      DebugOn("http_seq", "[DecideCacheLookup] Will NOT do cache lookup");
-    }
+    Debug("http_trans", "[DecideCacheLookup] Will NOT do cache lookup.");
+    Debug("http_seq", "[DecideCacheLookup] Will NOT do cache lookup");
     // If this is a push request, we need send an error because
     //   since what ever was sent is not cachable
     if (s->method == HTTP_WKSIDX_PUSH) {
@@ -2250,12 +2242,10 @@ HttpTransact::HandleCacheOpenReadHitFreshness(State* s)
 
   ink_debug_assert(s->request_sent_time <= s->response_received_time);
 
-  if (diags->on()) {
-    DebugOn("http_trans", "[HandleCacheOpenReadHitFreshness] request_sent_time      : %lld",
-      (long long)s->request_sent_time);
-    DebugOn("http_trans", "[HandleCacheOpenReadHitFreshness] response_received_time : %lld",
-      (long long)s->response_received_time);
-  }
+  Debug("http_trans", "[HandleCacheOpenReadHitFreshness] request_sent_time      : %lld",
+    (long long)s->request_sent_time);
+  Debug("http_trans", "[HandleCacheOpenReadHitFreshness] response_received_time : %lld",
+    (long long)s->response_received_time);
   // if the plugin has already decided the freshness, we don't need to
   // do it again
   if (s->cache_lookup_result == HttpTransact::CACHE_LOOKUP_NONE) {
@@ -2494,13 +2484,11 @@ HttpTransact::HandleCacheOpenReadHit(State* s)
     s->range_setup = RANGE_REVALIDATE;
   }
 
-  if (diags->on()) {
-    DebugOn("http_trans", "CacheOpenRead --- needs_auth          = %d", needs_authenticate);
-    DebugOn("http_trans", "CacheOpenRead --- needs_revalidate    = %d", needs_revalidate);
-    DebugOn("http_trans", "CacheOpenRead --- response_returnable = %d", response_returnable);
-    DebugOn("http_trans", "CacheOpenRead --- needs_cache_auth    = %d", needs_cache_auth);
-    DebugOn("http_trans", "CacheOpenRead --- send_revalidate    = %d", send_revalidate);
-  }
+  Debug("http_trans", "CacheOpenRead --- needs_auth          = %d", needs_authenticate);
+  Debug("http_trans", "CacheOpenRead --- needs_revalidate    = %d", needs_revalidate);
+  Debug("http_trans", "CacheOpenRead --- response_returnable = %d", response_returnable);
+  Debug("http_trans", "CacheOpenRead --- needs_cache_auth    = %d", needs_cache_auth);
+  Debug("http_trans", "CacheOpenRead --- send_revalidate    = %d", send_revalidate);
   if (send_revalidate) {
     Debug("http_trans", "CacheOpenRead --- HIT-STALE");
     s->dns_info.attempts = 0;
@@ -2612,10 +2600,8 @@ HttpTransact::HandleCacheOpenReadHit(State* s)
   //
   ink_debug_assert((send_revalidate == true && server_up == false) || (send_revalidate == false && server_up == true));
 
-  if (diags->on()) {
-    DebugOn("http_trans", "CacheOpenRead --- HIT-FRESH");
-    DebugOn("http_seq", "[HttpTransact::HandleCacheOpenReadHit] " "Serve from cache");
-  }
+  Debug("http_trans", "CacheOpenRead --- HIT-FRESH");
+  Debug("http_seq", "[HttpTransact::HandleCacheOpenReadHit] " "Serve from cache");
 
   if (s->cache_info.is_ram_cache_hit) {
     SET_VIA_STRING(VIA_CACHE_RESULT, VIA_IN_RAM_CACHE_FRESH);
@@ -2879,10 +2865,8 @@ HttpTransact::handle_cache_write_lock(State* s)
 void
 HttpTransact::HandleCacheOpenReadMiss(State* s)
 {
-  if (diags->on()) {
-    DebugOn("http_trans", "[HandleCacheOpenReadMiss] --- MISS");
-    DebugOn("http_seq", "[HttpTransact::HandleCacheOpenReadMiss] " "Miss in cache");
-  }
+  Debug("http_trans", "[HandleCacheOpenReadMiss] --- MISS");
+  Debug("http_seq", "[HttpTransact::HandleCacheOpenReadMiss] " "Miss in cache");
 
   if (delete_all_document_alternates_and_return(s, FALSE)) {
     Debug("http_trans", "[HandleCacheOpenReadMiss] Delete and return");
@@ -3115,10 +3099,8 @@ HttpTransact::OriginServerRawOpen(State* s)
 void
 HttpTransact::HandleResponse(State* s)
 {
-  if (diags->on()) {
-    DebugOn("http_trans", "[HttpTransact::HandleResponse]");
-    DebugOn("http_seq", "[HttpTransact::HandleResponse] Response received");
-  }
+  Debug("http_trans", "[HttpTransact::HandleResponse]");
+  Debug("http_seq", "[HttpTransact::HandleResponse] Response received");
 
   s->source = SOURCE_HTTP_ORIGIN_SERVER;
   s->response_received_time = ink_cluster_time();
@@ -3688,11 +3670,9 @@ HttpTransact::delete_server_rr_entry(State* s, int max_retries)
 {
   char addrbuf[INET6_ADDRSTRLEN];
   
-  if (diags->on()) {
-    DebugOn("http_trans", "[%d] failed to connect to %s", s->current.attempts,
-            ats_ip_ntop(&s->current.server->addr.sa, addrbuf, sizeof(addrbuf)));
-    DebugOn("http_trans", "[delete_server_rr_entry] marking rr entry " "down and finding next one");
-  }
+  Debug("http_trans", "[%d] failed to connect to %s", s->current.attempts,
+        ats_ip_ntop(&s->current.server->addr.sa, addrbuf, sizeof(addrbuf)));
+  Debug("http_trans", "[delete_server_rr_entry] marking rr entry " "down and finding next one");
   ink_debug_assert(s->current.server->connect_failure);
   ink_debug_assert(s->current.request_to == ORIGIN_SERVER);
   ink_debug_assert(s->current.server == &s->server_info);
@@ -3768,10 +3748,8 @@ HttpTransact::handle_server_connection_not_open(State* s)
 {
   bool serve_from_cache = false;
 
-  if (diags->on()) {
-    DebugOn("http_trans", "[handle_server_connection_not_open] (hscno)");
-    DebugOn("http_seq", "[HttpTransact::handle_server_connection_not_open] ");
-  }
+  Debug("http_trans", "[handle_server_connection_not_open] (hscno)");
+  Debug("http_seq", "[HttpTransact::handle_server_connection_not_open] ");
   ink_debug_assert(s->current.state != CONNECTION_ALIVE);
   ink_debug_assert(s->current.server->connect_failure != 0);
 
@@ -3851,10 +3829,8 @@ HttpTransact::handle_server_connection_not_open(State* s)
 void
 HttpTransact::handle_forward_server_connection_open(State* s)
 {
-  if (diags->on()) {
-    DebugOn("http_trans", "[handle_forward_server_connection_open] (hfsco)");
-    DebugOn("http_seq", "[HttpTransact::handle_server_connection_open] ");
-  }
+  Debug("http_trans", "[handle_forward_server_connection_open] (hfsco)");
+  Debug("http_seq", "[HttpTransact::handle_server_connection_open] ");
   ink_release_assert(s->current.state == CONNECTION_ALIVE);
 
   if (s->hdr_info.server_response.version_get() == HTTPVersion(0, 9)) {
@@ -4040,10 +4016,8 @@ HttpTransact::build_response_copy(State* s, HTTPHdr* base_response,HTTPHdr* outg
 void
 HttpTransact::handle_cache_operation_on_forward_server_response(State* s)
 {
-  if (diags->on()) {
-    DebugOn("http_trans", "[handle_cache_operation_on_forward_server_response] (hcoofsr)");
-    DebugOn("http_seq", "[handle_cache_operation_on_forward_server_response]");
-  }
+  Debug("http_trans", "[handle_cache_operation_on_forward_server_response] (hcoofsr)");
+  Debug("http_seq", "[handle_cache_operation_on_forward_server_response]");
 
   HTTPHdr *base_response = NULL;
   HTTPStatus server_response_code = HTTP_STATUS_NONE;
@@ -4052,10 +4026,8 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State* s)
   bool cacheable = false;
 
   cacheable = is_response_cacheable(s, &s->hdr_info.client_request, &s->hdr_info.server_response);
-  if (diags->on()) {
-    if (cacheable) {
-      DebugOn("http_trans", "[hcoofsr] response cacheable");
-    }
+  if (cacheable) {
+    Debug("http_trans", "[hcoofsr] response cacheable");
   }
   // set the correct next action, cache action, response code, and base response
 
@@ -4501,10 +4473,8 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State* s)
 void
 HttpTransact::handle_no_cache_operation_on_forward_server_response(State* s)
 {
-  if (diags->on()) {
-    DebugOn("http_trans", "[handle_no_cache_operation_on_forward_server_response] (hncoofsr)");
-    DebugOn("http_seq", "[handle_no_cache_operation_on_forward_server_response]");
-  }
+  Debug("http_trans", "[handle_no_cache_operation_on_forward_server_response] (hncoofsr)");
+  Debug("http_seq", "[handle_no_cache_operation_on_forward_server_response]");
 
   bool keep_alive = true;
   keep_alive = ((s->current.server->keep_alive == HTTP_KEEPALIVE) || (s->current.server->keep_alive == HTTP_PIPELINE));
@@ -7508,33 +7478,31 @@ HttpTransact::what_is_document_freshness(State *s, HTTPHdr* client_request, HTTP
     Debug("http_match", "[..._document_freshness] revalidate_after set, age limit: %d", age_limit);
   }
 
-  if (diags->on()) {
-    DebugOn("http_match", "document_freshness --- current_age = %lld", (long long)current_age);
-    DebugOn("http_match", "document_freshness --- age_limit   = %d", age_limit);
-    DebugOn("http_match", "document_freshness --- fresh_limit = %d", fresh_limit);
-    DebugOn("http_seq", "document_freshness --- current_age = %lld", (long long)current_age);
-    DebugOn("http_seq", "document_freshness --- age_limit   = %d", age_limit);
-    DebugOn("http_seq", "document_freshness --- fresh_limit = %d", fresh_limit);
-  }
+  Debug("http_match", "document_freshness --- current_age = %lld", (long long)current_age);
+  Debug("http_match", "document_freshness --- age_limit   = %d", age_limit);
+  Debug("http_match", "document_freshness --- fresh_limit = %d", fresh_limit);
+  Debug("http_seq", "document_freshness --- current_age = %lld", (long long)current_age);
+  Debug("http_seq", "document_freshness --- age_limit   = %d", age_limit);
+  Debug("http_seq", "document_freshness --- fresh_limit = %d", fresh_limit);
   ///////////////////////////////////////////
   // now, see if the age is "fresh enough" //
   ///////////////////////////////////////////
 
   if (do_revalidate || current_age > age_limit) { // client-modified limit
-    DebugOn("http_match", "[..._document_freshness] document needs revalidate/too old; "
+    Debug("http_match", "[..._document_freshness] document needs revalidate/too old; "
             "returning FRESHNESS_STALE");
     return (FRESHNESS_STALE);
   } else if (current_age > fresh_limit) {  // original limit
     if (os_specifies_revalidate) {
-      DebugOn("http_match", "[..._document_freshness] document is stale and OS specifies revalidation; "
+      Debug("http_match", "[..._document_freshness] document is stale and OS specifies revalidation; "
               "returning FRESHNESS_STALE");
       return (FRESHNESS_STALE);
     }
-    DebugOn("http_match", "[..._document_freshness] document is stale but no revalidation explicitly required; "
+    Debug("http_match", "[..._document_freshness] document is stale but no revalidation explicitly required; "
             "returning FRESHNESS_WARNING");
     return (FRESHNESS_WARNING);
   } else {
-    DebugOn("http_match", "[..._document_freshness] document is fresh; returning FRESHNESS_FRESH");
+    Debug("http_match", "[..._document_freshness] document is fresh; returning FRESHNESS_FRESH");
     return (FRESHNESS_FRESH);
   }
 }
