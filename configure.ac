@@ -579,9 +579,9 @@ case $host_os in
       cxx_opt="-Wno-invalid-offsetof"
       ;;
     clang)
-      debug_opt="-ggdb3 $common_opt -Qunused-arguments"
-      release_opt="-g $common_opt $optimizing_flags -fno-strict-aliasing -Qunused-arguments"
-      cxx_opt="-Wno-invalid-offsetof -Qunused-arguments"
+      debug_opt="-ggdb3 $common_opt -Werror -Qunused-arguments"
+      release_opt="-g $common_opt $optimizing_flags -fno-strict-aliasing -Werror -Qunused-arguments"
+      cxx_opt="-Wno-invalid-offsetof -Werror -Qunused-arguments"
       ;;
     *) # gcc
       # This is useful for finding odd conversions
