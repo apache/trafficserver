@@ -68,6 +68,11 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
    Trunk patch: (See JIRA performance.try3.diff)
    Jira: https://issues.apache.org/jira/browse/TS-880
    +1: briang
+   
+  *) Range requests that result in cache refresh give 200 status response with full contents
+   Trunk patch: http://svn.apache.org/viewvc?view=revision&revision=1181280
+   Jira: https://issues.apache.org/jira/browse/TS-824
+   +1: briang
 
 STALLED ISSUES
 
