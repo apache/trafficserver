@@ -41,14 +41,6 @@ A list of all bugs open for the next v3.0.4 release can be found at
 
 PATCHES ACCEPTED TO BACKPORT FROM TRUNK:
 
-  *) do not reload bad remap.config
-   Trunk patch: https://git-wip-us.apache.org/repos/asf?p=trafficserver.git;a=commit;h=31500d106e472a8713c1c3976b161f2dea56ba38
-     https://git-wip-us.apache.org/repos/asf?p=trafficserver.git;a=commit;h=50be413a667ffc10ea32e2d419165584aea008eb
-     https://git-wip-us.apache.org/repos/asf?p=trafficserver.git;a=commit;h=a90a976eff61546340fc1d49d4faffeaa49a3cf2
-     https://git-wip-us.apache.org/repos/asf?p=trafficserver.git;a=commit;h=c2ddca4fac3d5cbacae27cddba87fe07c8651ec0
-   Jira: https://issues.apache.org/jira/browse/TS-948
-   +1: zym, zwoop, igalic
-
   *) Traffic Cop: segment fault when TRACE_LOG_COP is enabled
    Trunk patch: http://svn.apache.org/viewvc?view=rev&rev=1225724
    Jira: https://issues.apache.org/jira/browse/TS-1065

@@ -66,7 +66,7 @@ public:
   void *dlh;                    /* "handle" for the dynamic library */
   _tsremap_init *fp_tsremap_init;
   _tsremap_done *fp_tsremap_done;
-  _tsremap_new_instance *fptsremap_new_instance;
+  _tsremap_new_instance *fp_tsremap_new_instance;
   _tsremap_delete_instance *fp_tsremap_delete_instance;
   _tsremap_do_remap *fp_tsremap_do_remap;
   _tsremap_os_response *fp_tsremap_os_response;
