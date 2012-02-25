@@ -161,8 +161,13 @@ cop_log(int priority, const char *format, ...)
       break;
     }
 
-    vfprintf(trace_file, format, args);
+    va_list args_tmp;
+    va_copy(args_tmp, args);
+
+    vfprintf(trace_file, format, args_tmp);
     fflush(trace_file);
+
+    va_end(args_tmp);
   }
 #endif
 
