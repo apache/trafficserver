@@ -273,6 +273,7 @@ static unsigned int unique_id_counter;
 static int unique_id = 0;
 static int socket_pool;
 static int epfd;
+static int max_connect_failures = 0;
 
 static struct timeval start_at;
 static int fetches_started, connects_completed, responses_completed, fetches_completed;
@@ -445,7 +446,13 @@ main(int argc, char **argv)
       cookie = argv[++argn];
     else if (strncmp(argv[argn], "-ignore_bytes", strlen(argv[argn])) == 0)
       ignore_bytes = 1;
-    else if (strncmp(argv[argn], "-header", strlen(argv[argn])) == 0 && argn + 1 < argc) {
+    else if (strncmp(argv[argn], "-max_connect_failures", strlen(argv[argn])) == 0) {
+      max_connect_failures = atoi(argv[++argn]);
+      if (max_connect_failures < 1) {
+        (void) fprintf(stderr, "%s: max_connection failures should be 1 or higher\n", argv0);
+        exit(1);
+      }
+    } else if (strncmp(argv[argn], "-header", strlen(argv[argn])) == 0 && argn + 1 < argc) {
       if (extra_headers) {
         strcat(extra_headers, "\r\n");
         strcat(extra_headers, argv[++argn]);
@@ -628,14 +635,18 @@ static void
 usage(void)
 {
   (void) fprintf(stderr,
-                 "usage:	 %s [-checksum] [-throttle] [-sequential] [-proxy host:port] [-verbose] [-timeout secs] [-sip sip_file] [-agent user_agent] [-cookie http_cookie] [-accept_gzip] [-http_version version_str] [-keep_alive num_reqs_per_conn] [-unique_id] [-ignore_bytes] [ [-header str] ... ]\n",
+                 "usage:	%s [-checksum] [-throttle] [-sequential] [-proxy host:port]\n"
+                 "		[-verbose] [-timeout secs] [-sip sip_file] [-agent user_agent]\n"
+                 "		[-cookie http_cookie] [-accept_gzip] [-http_version version_str]\n"
+                 "		[-keep_alive num_reqs_per_conn] [-unique_id]\n"
+                 "		[-max_connect_failures N] [-ignore_bytes] [ [-header str] ... ]\n",
                  argv0);
 #ifdef USE_SSL
-  (void) fprintf(stderr, "	     [-cipher str]\n");
+  (void) fprintf(stderr, "	[-cipher str]\n");
 #endif /* USE_SSL */
-  (void) fprintf(stderr, "	     -parallel N | -rate N [-jitter]\n");
-  (void) fprintf(stderr, "	     -fetches N | -seconds N\n");
-  (void) fprintf(stderr, "	     url_file\n");
+  (void) fprintf(stderr, "	-parallel N | -rate N [-jitter]\n");
+  (void) fprintf(stderr, "	-fetches N | -seconds N\n");
+  (void) fprintf(stderr, "	url_file\n");
   (void) fprintf(stderr, "One start specifier, either -parallel or -rate, is required.\n");
   (void) fprintf(stderr, "One end specifier, either -fetches or -seconds, is required.\n");
   exit(1);
@@ -1161,6 +1172,7 @@ start_socket(int url_num, int cnum, struct timeval *nowP)
 static void
 handle_connect(int cnum, struct timeval *nowP, int double_check)
 {
+  static int connect_failures = 0;
   int url_num;
   int r;
 #ifdef linux
@@ -1178,6 +1190,8 @@ handle_connect(int cnum, struct timeval *nowP, int double_check)
     int err, errlen;
 
     if (connect(connections[cnum].conn_fd, (struct sockaddr *) &connections[cnum].sa, connections[cnum].sa_len) < 0) {
+      if (max_connect_failures && (++connect_failures > max_connect_failures))
+        exit(0);
       switch (errno) {
       case EISCONN:
         /* Ok! */
