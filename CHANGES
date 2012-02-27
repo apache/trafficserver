@@ -1,0 +1,7 @@
+Changes with regex_remap x.y.z
+
+  *) [TS-1122] Support redirects properly.
+
+  *) Made it compile with current APIs.
+
+  *) Added regex remap plugin from Yahoo!
