@@ -41,6 +41,11 @@ A list of all bugs open for the next v3.0.4 release can be found at
 
 PATCHES ACCEPTED TO BACKPORT FROM TRUNK:
 
+  *) logstats incorrectly bucketizes all status codes greater than 599 as 5xx
+   Trunk patch: https://git-wip-us.apache.org/repos/asf?p=trafficserver.git;a=commit;h=8421675e42f9c09715ce02557afc258be7fed389
+   Jira: https://issues.apache.org/jira/browse/TS-1110
+   +1: briang, igalic, zwoop
+
 PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   [ New proposals should be added at the end of the list ]
 
@@ -58,12 +63,7 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
    +1: zym
    -0: zwoop (I think this breaks compatibility with existing 3.0.x
    caches, and I'm not positive it's a good idea to do so).
-
-  *) logstats incorrectly bucketizes all status codes greater than 599 as 5xx
-   Trunk patch: https://git-wip-us.apache.org/repos/asf?p=trafficserver.git;a=commit;h=8421675e42f9c09715ce02557afc258be7fed389
-   Jira: https://issues.apache.org/jira/browse/TS-1110
-   +1: briang, igalic, zwoop
-
+  
   *) Major performance problem with second request on same keep-alive connection
    Trunk patch: (See JIRA performance.try3.diff)
    Jira: https://issues.apache.org/jira/browse/TS-880
