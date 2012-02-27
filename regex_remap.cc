@@ -670,7 +670,7 @@ TSRemapNewInstance(int argc, char* argv[], void** ih, char* errbuf, int errbuf_s
         }
 
         if (cur->compile(&error, &erroffset) < 0) {
-          TSError("PCRE failed in %s (line %d) at offset %d: %s\n", (ri->filename).c_str(), lineno, erroffset, error);
+          TSError("PCRE failed in %s (line %d) at offset %d: %s", (ri->filename).c_str(), lineno, erroffset, error);
           delete(cur);
         } else {
           TSDebug(PLUGIN_NAME, "added regex=%s with substitution=%s and options `%s'",
@@ -837,40 +837,43 @@ TSRemapDoRemap(void* ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
 
         dest_len = re->substitute(dest, match_buf, ovector, lengths, rri, &req_url, addr);
 
-        TSDebug(PLUGIN_NAME, "New URL is estimated to be %d bytes long, or less\n", new_len);
+        TSDebug(PLUGIN_NAME, "New URL is estimated to be %d bytes long, or less", new_len);
         TSDebug(PLUGIN_NAME, "New URL is %s (length %d)", dest, dest_len);
         TSDebug(PLUGIN_NAME, "    matched rule %d [%s]", re->order(), re->regex());
 
         // Check for a quick response, if the status option is set
-// ToDo: Figure out how we make redirects now from a remap plugin ...
-#if 0
-        if (re->status_option() > 0) {
+        if (re->status_option() > 0 &&
+            re->status_option() != TS_HTTP_STATUS_MOVED_PERMANENTLY &&
+            re->status_option() != TS_HTTP_STATUS_MOVED_TEMPORARILY) {
+          // Don't set the URL / Location for this.
           TSHttpTxnSetHttpRetStatus(txnp, re->status_option());
-          if ((re->status_option() == (TSHttpStatus)301) || (re->status_option() == (TSHttpStatus)302)) {
-            if (dest_len > TSREMAP_RRI_MAX_REDIRECT_URL) {
-              TSError("Redirect in target URL too long");
-              TSHttpTxnSetHttpRetStatus(txnp, TS_HTTP_STATUS_REQUEST_URI_TOO_LONG);
-            } else {
-              memcpy(rri->redirect_url, dest, dest_len);
-              rri->redirect_url_size = dest_len;
-            }
-          }
-          return TSREMAP_DID_REMAP;
+          break;
         }
-#endif
 
+        if (dest_len > 0) {
+          TSDebug(PLUGIN_NAME, "Redirecting URL, status=%d", re->status_option());
+          TSHttpTxnSetHttpRetStatus(txnp, re->status_option());
+          rri->redirect = 1;
+        } else {
+          TSHttpTxnSetHttpRetStatus(txnp, TS_HTTP_STATUS_INTERNAL_SERVER_ERROR);
+          TSError("redirect to zero-length URL");
+        }
+
+        // Now parse the new URL, which can also be the redirect URL
         if (dest_len > 0) {
           const char *start = dest;
 
           // Setup the new URL
           if (TS_PARSE_ERROR == TSUrlParse(rri->requestBufp, rri->requestUrl, &start, start + dest_len)) {
-            TSHttpTxnSetHttpRetStatus(txnp, (TSHttpStatus)500);
+            TSHttpTxnSetHttpRetStatus(txnp, TS_HTTP_STATUS_INTERNAL_SERVER_ERROR);
             TSError("can't parse substituted URL string");
           }
         }
-        break; // We're done
+        break;
       }
     }
+
+    // Try the next regex
     re = re->next();
     if (re == NULL) {
       retval = TSREMAP_NO_REMAP; // No match
@@ -878,6 +881,7 @@ TSRemapDoRemap(void* ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
         atomic_increment(&(ri->misses), 1);
     }
   }
+
   return retval;
 }
 
