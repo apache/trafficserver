@@ -4,6 +4,8 @@ Changes with Apache Traffic Server 3.1.3
 
   *) [TS-1116] Fixes for building the source with clang/lvm.
 
+  *) [TS-1115] Fixes for building the source with Intel CC (icc).
+
   *) [TS-1102] Cleanup of Diagnostics code. Author: Uri Shachar and Leif.
 
   *) [TS-1117] Remove TS_HAS_PURIFY MACRO
@@ -12,9 +14,9 @@ Changes with Apache Traffic Server 3.1.3
 
   *) [TS-995] Name change for IP support (ink_inet.h).
 
-Changes with Apache Traffic Server 3.1.2
-
   *) [TS-841] support TLS NextProtocol negotiation
+
+Changes with Apache Traffic Server 3.1.2
 
   *) [TS-1110] logstats incorrectly bucketizes all status codes greater 
   than 599 as 5xx. Author: Manjesh Nilange
