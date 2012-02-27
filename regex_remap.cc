@@ -842,21 +842,17 @@ TSRemapDoRemap(void* ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
         TSDebug(PLUGIN_NAME, "    matched rule %d [%s]", re->order(), re->regex());
 
         // Check for a quick response, if the status option is set
-        if (re->status_option() > 0 &&
-            re->status_option() != TS_HTTP_STATUS_MOVED_PERMANENTLY &&
-            re->status_option() != TS_HTTP_STATUS_MOVED_TEMPORARILY) {
-          // Don't set the URL / Location for this.
-          TSHttpTxnSetHttpRetStatus(txnp, re->status_option());
-          break;
-        }
+        if (re->status_option() > 0) {
+          if (re->status_option() != TS_HTTP_STATUS_MOVED_PERMANENTLY &&
+              re->status_option() != TS_HTTP_STATUS_MOVED_TEMPORARILY) {
+            // Don't set the URL / Location for this.
+            TSHttpTxnSetHttpRetStatus(txnp, re->status_option());
+            break;
+          }
 
-        if (dest_len > 0) {
           TSDebug(PLUGIN_NAME, "Redirecting URL, status=%d", re->status_option());
           TSHttpTxnSetHttpRetStatus(txnp, re->status_option());
           rri->redirect = 1;
-        } else {
-          TSHttpTxnSetHttpRetStatus(txnp, TS_HTTP_STATUS_INTERNAL_SERVER_ERROR);
-          TSError("redirect to zero-length URL");
         }
 
         // Now parse the new URL, which can also be the redirect URL
