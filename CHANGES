@@ -1,5 +1,10 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.1.3
+   *) [TS-1123] editline/readline conflicts when building on OSX.
+
+  *) [TS-1116] Fixes for building the source with clang/lvm.
+
+  *) [TS-1102] Cleanup of Diagnostics code. Author: Uri Shachar and Leif.
 
   *) [TS-1117] Remove TS_HAS_PURIFY MACRO
 
