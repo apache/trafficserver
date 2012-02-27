@@ -1,5 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.0.4
+
+  *) [TS-1110] logstats incorrectly bucketizes all status codes greater 
+  than 599 as 5xx
   
   *) [TS-1065] Traffic Cop: segment fault when TRACE_LOG_COP is enabled
    Author: Conan Wang

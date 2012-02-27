@@ -325,6 +325,7 @@ struct UrlStats
   const char *url;
   StatsCounter req;
   ElapsedStats time;
+  int64_t c_000; 
   int64_t c_2xx;
   int64_t c_3xx;
   int64_t c_4xx;
@@ -406,13 +407,15 @@ public:
       ++(l->req.count);
       l->req.bytes += bytes;
 
-      if (http_code >= 500)
+      if ((http_code >= 600) || (http_code < 200))
+        ++(l->c_000);
+      else if (http_code >= 500)
         ++(l->c_5xx);
       else if (http_code >= 400)
         ++(l->c_4xx);
       else if (http_code >= 300)
         ++(l->c_3xx);
-      else if (http_code >= 200)
+      else // http_code >= 200
         ++(l->c_2xx);
 
       switch (result) {
@@ -474,13 +477,15 @@ public:
       l->req.bytes = bytes;
       l->req.count = 1;
 
-      if (http_code >= 500)
+      if ((http_code >= 600) || (http_code < 200))
+        l->c_000 = 1;
+      else if (http_code >= 500)
         l->c_5xx = 1;
       else if (http_code >= 400)
         l->c_4xx = 1;
       else if (http_code >= 300)
         l->c_3xx = 1;
-      else if (http_code >= 200)
+      else // http_code >= 200
         l->c_2xx = 1;
 
       switch (result) {
@@ -555,6 +560,7 @@ private:
       "\", \"hits\" : \"" <<  u->hits << 
       "\", \"misses\" : \"" <<  u->misses << 
       "\", \"errors\" : \"" <<  u->errors <<
+      "\", \"000\" : \"" <<  u->c_000 <<
       "\", \"2xx\" : \"" <<  u->c_2xx <<
       "\", \"3xx\" : \"" <<  u->c_3xx <<
       "\", \"4xx\" : \"" <<  u->c_4xx <<
@@ -1081,7 +1087,9 @@ update_codes(OriginStats * stat, int code, int size)
     break;
   }
 
-  if (code >= 500)
+  if ((code >= 600) || (code < 200))
+    update_counter(stat->codes.c_000, size);
+  else if (code >= 500)
     update_counter(stat->codes.c_5xx, size);
   else if (code >= 400)
     update_counter(stat->codes.c_4xx, size);
@@ -1089,8 +1097,6 @@ update_codes(OriginStats * stat, int code, int size)
     update_counter(stat->codes.c_3xx, size);
   else if (code >= 200)
     update_counter(stat->codes.c_2xx, size);
-  else
-    update_counter(stat->codes.c_000, size);
 }
 
 
