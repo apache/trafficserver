@@ -923,7 +923,7 @@ RangeTransform::handle_event(int event, void *edata)
 
   if (m_closed) {
     if (m_deletable) {
-      Debug("transform_range", "RangeTransform destroy: %"PRId64"", m_output_vio ? m_output_vio->ndone : 0);
+      Debug("transform_range", "RangeTransform destroy: %p", this);
       delete this;
     }
   } else {
