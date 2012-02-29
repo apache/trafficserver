@@ -62,7 +62,7 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   *) Major performance problem with second request on same keep-alive connection
    Trunk patch: (See JIRA performance.try3.diff)
    Jira: https://issues.apache.org/jira/browse/TS-880
-   +1: briang, zwoop
+   +1: briang, zwoop, zym
    
   *) Range requests that result in cache refresh give 200 status response with full contents
    Trunk patch: http://svn.apache.org/viewvc?view=revision&revision=1181280
