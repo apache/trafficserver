@@ -74,6 +74,11 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
    Jira: https://issues.apache.org/jira/browse/TS-1111
    +1: zym
 
+  *) stack dump may crash too
+   master SHA: ad6c4ab97ff150727660f66aa64b0fb57fd3d3f7
+   Jira: https://issues.apache.org/jira/browse/TS-1109
+   +1: zym
+
 STALLED ISSUES
 
   *) IOCORE: Fix for cross thread closing of VCs.
