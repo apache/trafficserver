@@ -40,6 +40,16 @@ A list of all bugs open for the next v3.0.4 release can be found at
   http://s.apache.org/ts-3.0.4
 
 PATCHES ACCEPTED TO BACKPORT FROM TRUNK:
+  
+  *) Major performance problem with second request on same keep-alive connection
+   Trunk patch: (See JIRA performance.try3.diff)
+   Jira: https://issues.apache.org/jira/browse/TS-880
+   +1: briang, zwoop, zym
+   
+  *) Range requests that result in cache refresh give 200 status response with full contents
+   Trunk patch: http://svn.apache.org/viewvc?view=revision&revision=1181280
+   Jira: https://issues.apache.org/jira/browse/TS-824
+   +1: briang, zwoop, zym
 
 PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   [ New proposals should be added at the end of the list ]
@@ -58,16 +68,6 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
    +1: zym
    -0: zwoop (I think this breaks compatibility with existing 3.0.x
    caches, and I'm not positive it's a good idea to do so).
-  
-  *) Major performance problem with second request on same keep-alive connection
-   Trunk patch: (See JIRA performance.try3.diff)
-   Jira: https://issues.apache.org/jira/browse/TS-880
-   +1: briang, zwoop, zym
-   
-  *) Range requests that result in cache refresh give 200 status response with full contents
-   Trunk patch: http://svn.apache.org/viewvc?view=revision&revision=1181280
-   Jira: https://issues.apache.org/jira/browse/TS-824
-   +1: briang, zwoop, zym
 
   *) crash in RangeTransform::handle_event
    master SHA: 6c4d2b5005cde3aac142b7419cbf37ea4a21f0e5
