@@ -706,6 +706,8 @@ UnixNetVConnection::reenable(VIO *vio)
           nh->write_enable_list.push(this);
         }
       }
+	  if (nh->trigger_event && nh->trigger_event->ethread->signal_hook)
+		nh->trigger_event->ethread->signal_hook(nh->trigger_event->ethread);
     } else {
       if (vio == &read.vio) {
         ep.modify(EVENTIO_READ);

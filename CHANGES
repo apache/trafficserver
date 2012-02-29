@@ -1,5 +1,7 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.0.4
+  *) [TS-880] Major performance problem with second request on same keep-alive connection
+   Author: 	weijin
 
   *) [TS-1110] logstats incorrectly bucketizes all status codes greater 
   than 599 as 5xx
