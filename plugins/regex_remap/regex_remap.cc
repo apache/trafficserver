@@ -244,7 +244,7 @@ class RemapRegex
     _num_subs = 0;
 
     while (str && *str) {
-      if ((*str == '$')) {
+      if ('$' == *str) {
         int ix = -1;
 
         if (isdigit(*(str+1))) {

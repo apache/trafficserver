@@ -102,7 +102,7 @@ private:
   DISALLOW_COPY_AND_ASSIGN(RulesEntry);
 
   char* _header;
-  size_t _h_len,;
+  size_t _h_len;
   char* _qualifier;
   size_t _q_len;
   QualifierTypes _q_type;
