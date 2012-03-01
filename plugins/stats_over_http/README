@@ -1,0 +1,10 @@
+Compile:
+  tsxs -c stats_over_http.c -o stats_over_http.so
+Install:
+  sudo tsxs -o stats_over_http.so -i
+
+Add to the plugin.conf:
+
+  stats_over_http.so
+
+start traffic server and visit http://IP:port/_stats
