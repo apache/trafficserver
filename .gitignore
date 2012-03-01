@@ -1,9 +1,0 @@
-*.o
-*.a
-*.so
-*.in
-*~
-*.tar.gz
-*.lo
-*.la
-.deps

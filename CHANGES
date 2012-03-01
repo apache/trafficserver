@@ -1,5 +1,0 @@
-                                                         -*- coding: utf-8 -*-
-
-Changes with Apache Traffic Server header_filter 1.0
-
-  *) This is a basic plugin for doing header_filtering.
