@@ -124,3 +124,42 @@ AC_DEFUN([TS_CHECK_CRYPTO_NEXTPROTONEG], [
   TS_ARG_ENABLE_VAR([use], [tls-npn])
   AC_SUBST(use_tls_npn)
 ])
+
+AC_DEFUN([TS_CHECK_CRYPTO_SNI], [
+  _sni_saved_LIBS=$LIBS
+  enable_tls_sni=yes
+
+  TS_ADDTO(LIBS, [$LIBSSL])
+  AC_CHECK_HEADERS(openssl/tls1.h openssl/ssl.h)
+  # We are looking for SSL_CTX_set_tlsext_servername_callback, but it's a
+  # macro, so AC_CHECK_FUNCS is not going to do the business.
+  AC_MSG_CHECKING([for SSL_CTX_set_tlsext_servername_callback])
+  AC_COMPILE_IFELSE(
+  [
+    AC_LANG_PROGRAM([[
+#if HAVE_OPENSSL_SSL_H
+#include <openssl/ssl.h>
+#endif
+#if HAVE_OPENSSL_TLS1_H
+#include <openssl/tls1.h>
+#endif
+      ]],
+      [[SSL_CTX_set_tlsext_servername_callback(NULL, NULL);]])
+  ],
+  [
+    AC_MSG_RESULT([yes])
+  ],
+  [
+    AC_MSG_RESULT([no])
+    enable_tls_sni=no
+  ])
+
+  AC_CHECK_FUNCS(SSL_get_servername, [], [enable_tls_sni=no])
+
+  LIBS=$_sni_saved_LIBS
+
+  AC_MSG_CHECKING(whether to enable ServerNameIndication TLS extension support)
+  AC_MSG_RESULT([$enable_tls_sni])
+  TS_ARG_ENABLE_VAR([use], [tls-sni])
+  AC_SUBST(use_tls_sni)
+])

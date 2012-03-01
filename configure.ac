@@ -845,6 +845,10 @@ fi
 TS_CHECK_CRYPTO_NEXTPROTONEG
 
 #
+# Check for ServerNameIndication TLS extension support.
+TS_CHECK_CRYPTO_SNI
+
+#
 # Check for zlib presence and usability
 TS_CHECK_ZLIB
 

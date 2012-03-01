@@ -114,6 +114,7 @@
 #define TS_USE_HWLOC                   @use_hwloc@
 #define TS_USE_FREELIST                @use_freelist@
 #define TS_USE_TLS_NPN                 @use_tls_npn@
+#define TS_USE_TLS_SNI                 @use_tls_sni@
 
 /* OS API definitions */
 #define GETHOSTBYNAME_R_HOSTENT_DATA   @gethostbyname_r_hostent_data@
