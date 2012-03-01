@@ -1409,6 +1409,9 @@ AC_CONFIG_FILES([cop/Makefile])
 # production plugins
 AC_CONFIG_FILES([plugins/Makefile])
 AC_CONFIG_FILES([plugins/conf_remap/Makefile])
+AC_CONFIG_FILES([plugins/regex_remap/Makefile])
+AC_CONFIG_FILES([plugins/header_filter/Makefile])
+AC_CONFIG_FILES([plugins/stats_over_http/Makefile])
 # various tools
 AC_CONFIG_FILES([tools/Makefile])
 # example plugins

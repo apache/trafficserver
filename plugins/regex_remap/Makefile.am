@@ -14,4 +14,9 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-SUBDIRS = conf_remap regex_remap header_filter stats_over_http
+CXXFLAGS+=-I$(top_srcdir)/proxy/api
+
+pkglibdir = ${pkglibexecdir}
+pkglib_LTLIBRARIES = regex_remap.la
+regex_remap_la_SOURCES = regex_remap.cc
+regex_remap_la_LDFLAGS = -module -avoid-version -shared
