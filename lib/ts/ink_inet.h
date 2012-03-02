@@ -1151,16 +1151,24 @@ inline bool IpEndpoint::isIp6() const { return AF_INET6 == sa.sa_family; }
 inline IpEndpoint&
 IpEndpoint::setToAnyAddr(int family) {
   sa.sa_family = family;
-  if (AF_INET == family) ats_ip4_addr_cast(this) = INADDR_ANY;
-  else if (AF_INET6 == family) ats_ip6_addr_cast(this) = in6addr_any;
+  if (AF_INET == family) {
+    sin.sin_addr.s_addr = INADDR_ANY;
+    ink_zero(sin.sin_zero);
+  } else if (AF_INET6 == family) {
+    sin6.sin6_addr = in6addr_any;
+  }
   return *this;
 }
 
 inline IpEndpoint&
 IpEndpoint::setToLoopback(int family) {
   sa.sa_family = family;
-  if (AF_INET == family) ats_ip4_addr_cast(this) = htonl(INADDR_LOOPBACK);
-  else if (AF_INET6 == family) ats_ip6_addr_cast(this) = in6addr_loopback;
+  if (AF_INET == family) {
+    sin.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+    ink_zero(sin.sin_zero);
+  } else if (AF_INET6 == family) {
+    sin6.sin6_addr = in6addr_loopback;
+  }
   return *this;
 }
 
