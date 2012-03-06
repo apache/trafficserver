@@ -24,6 +24,10 @@
 #include "P_Net.h"
 #include "P_SSLNextProtocolSet.h"
 
+#if HAVE_OPENSSL_TLS1_H
+#include <openssl/tls1.h>
+#endif
+
 #define SSL_READ_ERROR_NONE	  0
 #define SSL_READ_ERROR		  1
 #define SSL_READ_READY		  2
@@ -41,6 +45,33 @@ ClassAllocator<SSLNetVConnection> sslNetVCAllocator("sslNetVCAllocator");
 //
 // Private
 //
+
+#if TS_USE_TLS_SNI
+
+static int
+ssl_servername_callback(SSL * ssl, int * ad, void * arg)
+{
+  SSL_CTX * ctx;
+  SSLCertLookup * lookup = (SSLCertLookup *) arg;
+  const char * servername = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
+
+  Debug("ssl", "ssl=%p ad=%d lookup=%p server=%s", ssl, *ad, lookup, servername);
+
+  ctx = lookup->findInfoInHash((char *)servername);
+  if (ctx == NULL) {
+    return SSL_TLSEXT_ERR_NOACK;
+  }
+
+  Debug("ssl", "found SSL context %p for requested name '%s'", ctx, servername);
+  SSL_set_SSL_CTX(ssl, ctx);
+
+  // We need to return one of the SSL_TLSEXT_ERR constants. If we return an
+  // error, we can fill in *ad with an alert code to propgate to the
+  // client, see SSL_AD_*.
+  return SSL_TLSEXT_ERR_OK;
+}
+
+#endif /* TS_USE_TLS_SNI */
 
 static SSL *
 make_ssl_connection(SSL_CTX * ctx, SSLNetVConnection * netvc)
@@ -458,6 +489,12 @@ SSLNetVConnection::sslStartHandShake(int event, int &err)
         if (ctx == NULL) {
           ctx = ssl_NetProcessor.ctx;
         }
+
+#if TS_USE_TLS_SNI
+        Debug("ssl", "setting SNI callbacks");
+        SSL_CTX_set_tlsext_servername_callback(ctx, ssl_servername_callback);
+        SSL_CTX_set_tlsext_servername_arg(ctx, &sslCertLookup);
+#endif
       }
 
       ssl = make_ssl_connection(ctx, this);

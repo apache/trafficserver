@@ -1,6 +1,6 @@
 /** @file
 
-  A brief file description
+  SSL Context management
 
   @section license License
 
@@ -25,6 +25,13 @@
 
 #include "P_SSLCertLookup.h"
 #include "P_UnixNet.h"
+#include "I_Layout.h"
+
+#include <openssl/bio.h>
+#include <openssl/pem.h>
+#include <openssl/x509.h>
+#include <openssl/asn1.h>
+#include <openssl/ts.h>
 
 #if (OPENSSL_VERSION_NUMBER >= 0x10000000L) // openssl returns a const SSL_METHOD
 typedef const SSL_METHOD * ink_ssl_method_t;
@@ -33,6 +40,9 @@ typedef SSL_METHOD * ink_ssl_method_t;
 #endif
 
 SSLCertLookup sslCertLookup;
+
+static void
+insert_ssl_certificate(InkHashTable *, SSL_CTX *, const char *);
 
 #define SSL_IP_TAG "dest_ip"
 #define SSL_CERT_TAG "ssl_cert_name"
@@ -228,9 +238,21 @@ SSLCertLookup::addInfoToHash(
 //  if (serverPrivateKey == NULL)
 //      serverPrivateKey = cert;
 
-  ssl_NetProcessor.initSSLServerCTX(ctx, param, cert, caCert,  serverPrivateKey, false);
-  ink_hash_table_insert(SSLCertLookupHashTable, strAddr, (void *) ctx);
-  return (true);
+  if (ssl_NetProcessor.initSSLServerCTX(ctx, this->param, cert, caCert, serverPrivateKey, false) == 0) {
+    char * certpath = Layout::relative_to(this->param->getServerCertPathOnly(), cert);
+    ink_hash_table_insert(SSLCertLookupHashTable, strAddr, (void *) ctx);
+
+    // Insert additional mappings. Note that this maps multiple keys to the same value, so when
+    // this code is updated to reconfigure the SSL certificates, it will need some sort of
+    // refcounting or alternate way of avoiding double frees.
+    insert_ssl_certificate(SSLCertLookupHashTable, ctx, certpath);
+
+    ats_free(certpath);
+    return (true);
+  }
+
+  SSL_CTX_free(ctx);
+  return (false);
 }
 
 SSL_CTX *
@@ -247,5 +269,108 @@ SSLCertLookup::findInfoInHash(char *strAddr) const
 
 SSLCertLookup::~SSLCertLookup()
 {
+  // XXX This is completely broken. You can't use ats_free to free
+  // a SSL_CTX *, you have to use SSL_CTX_free(). It doesn't matter
+  // right now because sslCertLookup is a singleton and never destroyed.
   ink_hash_table_destroy_and_xfree_values(SSLCertLookupHashTable);
+}
+
+struct ats_x509_certificate
+{
+  explicit ats_x509_certificate(X509 * x) : x509(x) {}
+  ~ats_x509_certificate() { if (x509) X509_free(x509); }
+
+  X509 * x509;
+
+private:
+  ats_x509_certificate(const ats_x509_certificate&);
+  ats_x509_certificate& operator=(const ats_x509_certificate&);
+};
+
+struct ats_file_bio
+{
+    ats_file_bio(const char * path, const char * mode)
+      : bio(BIO_new_file(path, mode)) {
+    }
+
+    ~ats_file_bio() {
+        (void)BIO_set_close(bio, BIO_CLOSE);
+        BIO_free(bio);
+    }
+
+    operator bool() const {
+        return bio != NULL;
+    }
+
+    BIO * bio;
+
+private:
+    ats_file_bio(const ats_file_bio&);
+    ats_file_bio& operator=(const ats_file_bio&);
+};
+
+static char *
+asn1_strdup(ASN1_STRING * s)
+{
+    // Make sure we have an 8-bit encoding.
+    ink_assert(ASN1_STRING_type(s) == V_ASN1_IA5STRING ||
+      ASN1_STRING_type(s) == V_ASN1_UTF8STRING ||
+      ASN1_STRING_type(s) == V_ASN1_PRINTABLESTRING);
+
+    return ats_strndup((const char *)ASN1_STRING_data(s), ASN1_STRING_length(s));
+}
+
+// Given a certificate and it's corresponding SSL_CTX context, insert hash
+// table aliases for all of the subject and subjectAltNames. Note that we don't
+// deal with wildcards (yet).
+static void
+insert_ssl_certificate(InkHashTable * htable, SSL_CTX * ctx, const char * certfile)
+{
+  GENERAL_NAMES * names = NULL;
+  X509_NAME * subject = NULL;
+
+  ats_file_bio bio(certfile, "r");
+  ats_x509_certificate certificate(PEM_read_bio_X509_AUX(bio.bio, NULL, NULL, NULL));
+
+  // Insert a key for the subject CN.
+  subject = X509_get_subject_name(certificate.x509);
+  if (subject) {
+    int pos = -1;
+    for (;;) {
+      pos = X509_NAME_get_index_by_NID(subject, NID_commonName, pos);
+      if (pos == -1) {
+        break;
+      }
+
+      X509_NAME_ENTRY * e = X509_NAME_get_entry(subject, pos);
+      ASN1_STRING * cn = X509_NAME_ENTRY_get_data(e);
+      char * name = asn1_strdup(cn);
+
+      Debug("ssl", "mapping '%s' to certificate %s", name, certfile);
+      ink_hash_table_insert(htable, name, (void *)ctx);
+      ats_free(name);
+    }
+  }
+
+  // Traverse the subjectAltNames (if any) and insert additional keys for the SSL context.
+  names = (GENERAL_NAMES *)X509_get_ext_d2i(certificate.x509, NID_subject_alt_name, NULL, NULL);
+  if (names) {
+    unsigned count = sk_GENERAL_NAME_num(names);
+    for (unsigned i = 0; i < count; ++i) {
+      GENERAL_NAME * name;
+      char * dns;
+
+      name = sk_GENERAL_NAME_value(names, i);
+      switch (name->type) {
+      case GEN_DNS:
+        dns = asn1_strdup(name->d.dNSName);
+        Debug("ssl", "mapping '%s' to certificate %s", dns, certfile);
+        ink_hash_table_insert(htable, dns, (void *)ctx);
+        ats_free(dns);
+        break;
+      }
+    }
+
+    GENERAL_NAMES_free(names);
+  }
 }

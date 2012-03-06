@@ -348,12 +348,12 @@ SSLNetProcessor::initSSLServerCTX(SSL_CTX * lCtx, const SslConfigParams * param,
       }
     }
 
-    if (param->clientCertLevel == 2)
+    if (param->clientCertLevel == 2) {
       server_verify_client = SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT | SSL_VERIFY_CLIENT_ONCE;
-    else if (param->clientCertLevel == 1)
+    } else if (param->clientCertLevel == 1) {
       server_verify_client = SSL_VERIFY_PEER | SSL_VERIFY_CLIENT_ONCE;
-    else                        // disable client cert support
-    {
+    } else {
+      // disable client cert support
       server_verify_client = SSL_VERIFY_NONE;
       Error("Illegal Client Certification Level in records.config\n");
     }
