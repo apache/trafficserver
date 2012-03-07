@@ -53,6 +53,7 @@
 LogAccessHttp::LogAccessHttp(HttpSM * sm)
 :m_http_sm(sm), m_arena(), m_url(NULL), m_client_request(NULL), m_proxy_response(NULL), m_proxy_request(NULL), m_server_response(NULL), m_client_req_url_str(NULL), m_client_req_url_len(0), m_client_req_url_canon_str(NULL), m_client_req_url_canon_len(0), m_client_req_unmapped_url_canon_str(NULL), m_client_req_unmapped_url_canon_len(-1),      // undetermined
   m_client_req_unmapped_url_path_str(NULL), m_client_req_unmapped_url_path_len(-1),     // undetermined
+  m_client_req_unmapped_url_host_str(NULL), m_client_req_unmapped_url_host_len(-1),
   m_client_req_url_path_str(NULL),
 m_client_req_url_path_len(0), m_proxy_resp_content_type_str(NULL), m_proxy_resp_content_type_len(0)
 {
@@ -199,7 +200,7 @@ LogAccessHttp::validate_unmapped_url_path(void)
   int len;
   char *c;
 
-  if (m_client_req_unmapped_url_path_len < 0) {
+  if (m_client_req_unmapped_url_path_len < 0 && m_client_req_unmapped_url_host_len < 0) {
     // Use unmapped canonical URL as default
     m_client_req_unmapped_url_path_str = m_client_req_unmapped_url_canon_str;
     m_client_req_unmapped_url_path_len = m_client_req_unmapped_url_canon_len;
@@ -209,22 +210,23 @@ LogAccessHttp::validate_unmapped_url_path(void)
       if (c && (len = (int) (c - m_client_req_unmapped_url_path_str)) <= 4) {   // 4 - max schema size
         if (len + 2 <= m_client_req_unmapped_url_canon_len && c[1] == '/' && c[2] == '/') {
           len += 3;             // Skip "://"
-          m_client_req_unmapped_url_path_str = &m_client_req_unmapped_url_canon_str[len];
-          m_client_req_unmapped_url_path_len -= len;
+          m_client_req_unmapped_url_host_str = &m_client_req_unmapped_url_canon_str[len];
+          m_client_req_unmapped_url_host_len = m_client_req_unmapped_url_path_len - len;
           // Attempt to find first '/' in the path
-          if (m_client_req_unmapped_url_path_len > 0 &&
+          if (m_client_req_unmapped_url_host_len > 0 &&
               (c =
-               (char *) memchr((void *) m_client_req_unmapped_url_path_str, '/',
+               (char *) memchr((void *) m_client_req_unmapped_url_host_str, '/',
                                m_client_req_unmapped_url_path_len)) != 0) {
-            len = (int) (c - m_client_req_unmapped_url_path_str) + 1;
-            m_client_req_unmapped_url_path_str = &m_client_req_unmapped_url_path_str[len];
-            m_client_req_unmapped_url_path_len -= len;
+            m_client_req_unmapped_url_host_len = (int) (c - m_client_req_unmapped_url_host_str);
+            m_client_req_unmapped_url_path_str = &m_client_req_unmapped_url_host_str[m_client_req_unmapped_url_host_len];
+            m_client_req_unmapped_url_path_len = m_client_req_unmapped_url_path_len - len - m_client_req_unmapped_url_host_len;
           }
         }
       }
     }
   }
 }
+
 
 /*-------------------------------------------------------------------------
   This is the method, url, and version all rolled into one.  Use the
@@ -335,6 +337,25 @@ LogAccessHttp::marshal_client_req_unmapped_url_path(char *buf)
   len = round_strlen(m_client_req_unmapped_url_path_len + 1);   // +1 for eos
   if (buf) {
     marshal_mem(buf, m_client_req_unmapped_url_path_str, m_client_req_unmapped_url_path_len, len);
+  }
+  return len;
+}
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+int
+LogAccessHttp::marshal_client_req_unmapped_url_host(char *buf)
+{
+
+  validate_unmapped_url();
+
+  validate_unmapped_url_path();
+
+  int len = round_strlen(m_client_req_unmapped_url_host_len + 1);      // +1 for eos
+
+  if (buf) {
+    marshal_mem(buf, m_client_req_unmapped_url_host_str, m_client_req_unmapped_url_host_len, len);
   }
   return len;
 }

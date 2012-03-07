@@ -451,6 +451,13 @@ Log::init_fields()
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "cquup", field);
 
+  field = NEW(new LogField("client_req_unmapped_url_host", "cquuh",
+                           LogField::STRING,
+                           &LogAccess::marshal_client_req_unmapped_url_host,
+                           &LogAccess::unmarshal_str));
+  global_field_list.add(field, false);
+  ink_hash_table_insert(field_symbol_hash, "cquuh", field);
+
   field = NEW(new LogField("client_req_url_scheme", "cqus",
                            LogField::STRING,
                            &LogAccess::marshal_client_req_url_scheme,

@@ -64,6 +64,7 @@ public:
   virtual int marshal_client_req_url_canon(char *);     // STR
   virtual int marshal_client_req_unmapped_url_canon(char *);    // STR
   virtual int marshal_client_req_unmapped_url_path(char *);     // STR
+  virtual int marshal_client_req_unmapped_url_host(char *);     // STR
   virtual int marshal_client_req_url_path(char *);      // STR
   virtual int marshal_client_req_url_scheme(char *);    // STR
   virtual int marshal_client_req_http_version(char *);  // INT
@@ -144,6 +145,8 @@ private:
   int m_client_req_unmapped_url_canon_len;
   char *m_client_req_unmapped_url_path_str;
   int m_client_req_unmapped_url_path_len;
+  char *m_client_req_unmapped_url_host_str;
+  int m_client_req_unmapped_url_host_len;
   char *m_client_req_url_path_str;
   int m_client_req_url_path_len;
   char *m_proxy_resp_content_type_str;

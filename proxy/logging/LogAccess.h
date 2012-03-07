@@ -180,6 +180,7 @@ public:
   inkcoreapi virtual int marshal_client_req_url_canon(char *);  // STR
   inkcoreapi virtual int marshal_client_req_unmapped_url_canon(char *); // STR
   inkcoreapi virtual int marshal_client_req_unmapped_url_path(char *);  // STR
+  inkcoreapi virtual int marshal_client_req_unmapped_url_host(char *);  // STR
   inkcoreapi virtual int marshal_client_req_url_path(char *);   // STR
   inkcoreapi virtual int marshal_client_req_url_scheme(char *); // STR
   inkcoreapi virtual int marshal_client_req_http_version(char *);       // INT

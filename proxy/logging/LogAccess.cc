@@ -150,6 +150,15 @@ LogAccess::marshal_client_req_unmapped_url_path(char *buf)
   -------------------------------------------------------------------------*/
 
 int
+LogAccess::marshal_client_req_unmapped_url_host(char *buf)
+{
+  DEFAULT_STR_FIELD;
+}
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+int
 LogAccess::marshal_client_req_url_path(char *buf)
 {
   DEFAULT_STR_FIELD;
