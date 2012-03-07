@@ -1,5 +1,7 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.1.3
+  *) [TS-701] Remove mgmt/cli/script_configs.sh
+
   *) [TS-1124] Move regex_remap, header_filter and stats_over_http from
    the plugin repo to the main repo.
 
