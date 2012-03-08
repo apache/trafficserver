@@ -24,10 +24,6 @@
 #define UNUSED __attribute__ ((unused))
 static char UNUSED rcsId__regex_remap_cc[] = "@(#) $Id$ built on " __DATE__ " " __TIME__;
 
-#if defined(solaris)
-#define _POSIX_PTHREAD_SEMANTICS
-#endif
-
 #include <sys/types.h>
 #include <stdio.h>
 #include <time.h>
@@ -43,31 +39,16 @@ static char UNUSED rcsId__regex_remap_cc[] = "@(#) $Id$ built on " __DATE__ " " 
 #include <fstream>
 #include <string>
 
+// Get some specific stuff from libts, yes, we can do that now that we build inside the core.
+#include "ink_platform.h"
+#include "ink_atomic.h"
+#include "ink_time.h"
+
 static const char* PLUGIN_NAME = "regex_remap";
 
-// TODO: We really ought to expose these data types and atomic functions to the plugin APIs.
-typedef volatile int32_t vint32;
-typedef vint32 *pvint32;
-
-#if defined(__SUNPRO_CC)
-typedef volatile uint32_t vuint32;
-typedef vuint32 *pvuint32;
-
-static inline int atomic_increment(pvint32 mem, int value)
-{
-  return ((uint32_t)atomic_add_32_nv((pvuint32)mem, (uint32_t)value)) - value;
-}
-#else
-static inline int atomic_increment(pvint32 mem, int value)
-{
-  return __sync_fetch_and_add(mem, value);
-}
-#endif
-
-
-// Constants, changed to define's to make SunStudio happy ....
-#define OVECCOUNT 30 // We support $0 - $9 x2 ints, and this needs to be 1.5x that
-#define MAX_SUBS 32   // No more than 32 substitution variables in the subst string
+// Constants
+static const int OVECCOUNT = 30; // We support $0 - $9 x2 ints, and this needs to be 1.5x that
+static const int MAX_SUBS = 32;   // No more than 32 substitution variables in the subst string
 
 // TODO: This should be "autoconf'ed" or something ...
 #define DEFAULT_PATH "/usr/local/etc/regex_remap/"
@@ -224,7 +205,7 @@ class RemapRegex
   inline void
   increment()
   {
-    atomic_increment(&(_hits), 1);
+    ink_atomic_increment(&(_hits), 1);
   }
 
   // Compile and study the regular expression.
@@ -716,9 +697,9 @@ TSRemapDeleteInstance(void* ih)
 
   if (ri->profile) {
     char now[64];
-    const time_t tim = time(NULL);
+    const ink_time_t tim = time(NULL);
 
-    if (ctime_r(&tim, now))
+    if (ink_ctime_r(&tim, now))
       now[strlen(now) - 1] = '\0';
     else {
       memcpy(now, "unknown time", 12);
@@ -773,8 +754,10 @@ TSRemapDoRemap(void* ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
   int dest_len;
   TSRemapStatus retval = TSREMAP_DID_REMAP;
   RemapRegex* re = ri->first;
-  char match_buf[req_url.url_len + 32]; // Worst case scenario and padded for /,? and ;
   int match_len = 0;
+  char *match_buf;
+
+  match_buf = (char*)alloca(req_url.url_len + 32);
 
   if (ri->method) { // Prepend the URI path or URL with the HTTP method
     TSMBuffer mBuf;
@@ -839,13 +822,14 @@ TSRemapDoRemap(void* ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
       // Update profiling if requested
       if (ri->profile) {
         re->increment();
-        atomic_increment(&(ri->hits), 1);
+        ink_atomic_increment(&(ri->hits), 1);
       }
 
       if (new_len > 0) {
-        char dest[new_len+8];
+        char* dest;
         struct sockaddr const* addr = TSHttpTxnClientAddrGet(txnp);
 
+        dest = (char*)alloca(new_len+8);
         dest_len = re->substitute(dest, match_buf, ovector, lengths, rri, &req_url, addr);
 
         TSDebug(PLUGIN_NAME, "New URL is estimated to be %d bytes long, or less", new_len);
@@ -885,7 +869,7 @@ TSRemapDoRemap(void* ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
     if (re == NULL) {
       retval = TSREMAP_NO_REMAP; // No match
       if (ri->profile)
-        atomic_increment(&(ri->misses), 1);
+        ink_atomic_increment(&(ri->misses), 1);
     }
   }
 
