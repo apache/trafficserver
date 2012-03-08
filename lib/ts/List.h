@@ -219,6 +219,7 @@ template <class C, class L = typename C::Link_link> class Queue : public DLL<C,L
   void append(Queue<C,L> q);
   void append(DLL<C,L> q);
   void clear() { head = NULL; tail = NULL; }
+  bool empty() const { return head == NULL; }
 
   Queue() : tail(NULL) {}
 };

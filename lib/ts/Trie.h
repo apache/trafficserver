@@ -1,6 +1,6 @@
 /** @file
 
-    A brief file description
+    Trie implementation for 8-bit string keys.
 
     @section license License
 
@@ -45,9 +45,11 @@ public:
   bool Insert(const char *key, T *value, int rank, int key_len = -1);
 
   // will return false if not found; else value_ptr will point to found value
-  T* Search(const char *key, int key_len = -1);
+  T* Search(const char *key, int key_len = -1) const;
   void Clear();
   void Print();
+
+  bool Empty() const { return m_value_list.empty(); }
 
   virtual ~Trie() { Clear(); }
 
@@ -62,14 +64,21 @@ private:
     int rank;
 
     void Clear() {
+      value = NULL;
       occupied = false;
       rank = 0;
-      bzero(children, sizeof(Node *) * N_NODE_CHILDREN);
+      ink_zero(children);
     }
 
     void Print(const char *debug_tag) const;
     inline Node* GetChild(char index) const { return children[static_cast<unsigned char>(index)]; }
-    inline void SetChild(char index, Node *child) { children[static_cast<unsigned char>(index)] = child; }
+    inline Node* AllocateChild(char index) {
+      Node * &child = children[static_cast<unsigned char>(index)];
+      ink_debug_assert(child == NULL);
+      child = static_cast<Node*>(ats_malloc(sizeof(Node)));
+      child->Clear();
+      return child;
+    }
 
   private:
     Node *children[N_NODE_CHILDREN];
@@ -114,16 +123,16 @@ Trie<T>::Insert(const char *key, T* value, int rank, int key_len /* = -1 */)
       Debug("Trie::Insert", "Visiting Node...");
       curr_node->Print("Trie::Insert");
     }
+
     if (i == key_len) {
       break;
     }
+
     next_node = curr_node->GetChild(key[i]);
     if (!next_node) {
       while (i < key_len) {
         Debug("Trie::Insert", "Creating child node for char %c (%d)", key[i], key[i]);
-        curr_node->SetChild(key[i], static_cast<Node*>(ats_malloc(sizeof(Node))));
-        curr_node = curr_node->GetChild(key[i]);
-        curr_node->Clear();
+        curr_node = curr_node->AllocateChild(key[i]);
         ++i;
       }
       break;
@@ -147,12 +156,12 @@ Trie<T>::Insert(const char *key, T* value, int rank, int key_len /* = -1 */)
 
 template<typename T>
 T*
-Trie<T>::Search(const char *key, int key_len /* = -1 */)
+Trie<T>::Search(const char *key, int key_len /* = -1 */) const
 {
   _CheckArgs(key, key_len);
 
-  Node *found_node = 0;
-  Node *curr_node = &m_root;
+  const Node *found_node = 0;
+  const Node *curr_node = &m_root;
   int i = 0;
 
   while (curr_node) {
