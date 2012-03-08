@@ -105,7 +105,6 @@ Trie<T>::Insert(const char *key, T* value, int rank, int key_len /* = -1 */)
 {
   _CheckArgs(key, key_len);
 
-  bool retval = false;
   Node *next_node;
   Node *curr_node = &m_root;
   int i = 0;
@@ -135,15 +134,15 @@ Trie<T>::Insert(const char *key, T* value, int rank, int key_len /* = -1 */)
 
   if (curr_node->occupied) {
     Error("Cannot insert duplicate!");
-  } else {
-    curr_node->occupied = true;
-    curr_node->value = value;
-    curr_node->rank = rank;
-    m_value_list.enqueue(curr_node->value);
-    retval = true;
-    Debug("Trie::Insert", "inserted new element!");
+    return false;
   }
-  return retval;
+
+  curr_node->occupied = true;
+  curr_node->value = value;
+  curr_node->rank = rank;
+  m_value_list.enqueue(curr_node->value);
+  Debug("Trie::Insert", "inserted new element!");
+  return true;
 }
 
 template<typename T>

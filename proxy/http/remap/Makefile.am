@@ -47,6 +47,5 @@ libhttp_remap_a_SOURCES = \
   UrlMapping.h \
   UrlRewrite.cc \
   UrlRewrite.h \
-  Trie.h \
   UrlMappingPathIndex.h \
   UrlMappingPathIndex.cc
