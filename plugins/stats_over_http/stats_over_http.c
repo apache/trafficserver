@@ -87,8 +87,8 @@ stats_add_data_to_resp_buffer(const char *s, stats_state * my_state)
 static int
 stats_add_resp_header(stats_state * my_state)
 {
-  char resp[] = "HTTP/1.0 200 Ok\r\n"
-    "Content-Type: text/javascript\r\nCache-Control: no-cache\r\n\r\n";
+  char resp[] = "HTTP/1.0 200 Ok\r\nContent-Type: text/javascript\r\nCache-Control: no-cache\r\n\r\n";
+
   return stats_add_data_to_resp_buffer(resp, my_state);
 }
 
@@ -99,7 +99,7 @@ stats_process_read(TSCont contp, TSEvent event, stats_state * my_state)
   if (event == TS_EVENT_VCONN_READ_READY) {
     my_state->output_bytes = stats_add_resp_header(my_state);
     TSVConnShutdown(my_state->net_vc, 1, 0);
-    my_state->write_vio = TSVConnWrite(my_state->net_vc, contp, my_state->resp_reader, INT_MAX);
+    my_state->write_vio = TSVConnWrite(my_state->net_vc, contp, my_state->resp_reader, INT64_MAX);
   } else if (event == TS_EVENT_ERROR) {
     TSError("stats_process_read: Received TS_EVENT_ERROR\n");
   } else if (event == TS_EVENT_VCONN_EOS) {
@@ -190,6 +190,7 @@ stats_dostuff(TSCont contp, TSEvent event, void *edata)
   }
   return 0;
 }
+
 static int
 stats_origin(TSCont contp, TSEvent event, void *edata)
 {
