@@ -50,6 +50,9 @@ typedef volatile int32_t vint32;
 typedef vint32 *pvint32;
 
 #if defined(__SUNPRO_CC)
+typedef volatile uint32_t vuint32;
+typedef vuint32 *pvuint32;
+
 static inline int atomic_increment(pvint32 mem, int value)
 {
   return ((uint32_t)atomic_add_32_nv((pvuint32)mem, (uint32_t)value)) - value;
@@ -62,9 +65,9 @@ static inline int atomic_increment(pvint32 mem, int value)
 #endif
 
 
-// Constants
-const int OVECCOUNT = 30; // We support $0 - $9 x2 ints, and this needs to be 1.5x that
-const int MAX_SUBS = 32; // No more than 32 substitution variables in the subst string
+// Constants, changed to define's to make SunStudio happy ....
+#define OVECCOUNT 30 // We support $0 - $9 x2 ints, and this needs to be 1.5x that
+#define MAX_SUBS 32   // No more than 32 substitution variables in the subst string
 
 // TODO: This should be "autoconf'ed" or something ...
 #define DEFAULT_PATH "/usr/local/etc/regex_remap/"
