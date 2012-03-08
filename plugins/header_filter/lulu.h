@@ -24,6 +24,8 @@
 #ifndef __LULU_H__
 #define __LULU_H__ 1
 
+#include "ink_atomic.h"
+
 // Define UNUSED properly.
 #if ((__GNUC__ >= 3) || ((__GNUC__ == 2) && (__GNUC_MINOR__ >= 7)))
 #define UNUSED __attribute__ ((unused))
@@ -49,37 +51,6 @@
 // Used for Debug etc.
 static const char* PLUGIN_NAME = "header_filter";
 static const char* PLUGIN_NAME_DBG = "header_filter_dbg";
-
-
-// From the atomic portions of ATS
-typedef int int32;
-typedef unsigned int intu32;
-typedef long long int64;
-typedef unsigned long long intu64;
-
-typedef volatile int32 vint32;
-typedef volatile int64 vint64;
-typedef volatile void *vvoidp;
-typedef vint32 *pvint32;
-typedef vint64 *pvint64;
-typedef vvoidp *pvvoidp;
-
-#if defined(__GNUC__) && (__GNUC__ >= 4) && (__GNUC_MINOR__ >= 1)
-
-/* see http://gcc.gnu.org/onlinedocs/gcc-4.1.2/gcc/Atomic-Builtins.html */
-static inline int32 ink_atomic_swap(pvint32 mem, int32 value) { return __sync_lock_test_and_set(mem, value); }
-static inline int64 ink_atomic_swap64(pvint64 mem, int64 value) { return __sync_lock_test_and_set(mem, value); }
-static inline void *ink_atomic_swap_ptr(vvoidp mem, void *value) { return __sync_lock_test_and_set((void**)mem, value); }
-static inline int ink_atomic_cas(pvint32 mem, int old, int new_value) { return __sync_bool_compare_and_swap(mem, old, new_value); }
-static inline int64 ink_atomic_cas64(pvint64 mem, int64 old, int64 new_value) { return __sync_bool_compare_and_swap(mem, old, new_value); }
-static inline int ink_atomic_cas_ptr(pvvoidp mem, void* old, void* new_value) { return __sync_bool_compare_and_swap(mem, old, new_value); }
-static inline int ink_atomic_increment(pvint32 mem, int value) { return __sync_fetch_and_add(mem, value); }
-static inline int64 ink_atomic_increment64(pvint64 mem, int64 value) { return __sync_fetch_and_add(mem, value); }
-#else
-// TODO: Deal with this case?
-#failure
-#endif
-
 
 // From google styleguide: http://google-styleguide.googlecode.com/svn/trunk/cppguide.xml
 #define DISALLOW_COPY_AND_ASSIGN(TypeName)      \
