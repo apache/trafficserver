@@ -24,6 +24,10 @@
 #define UNUSED __attribute__ ((unused))
 static char UNUSED rcsId__regex_remap_cc[] = "@(#) $Id$ built on " __DATE__ " " __TIME__;
 
+#if defined(solaris)
+#define _POSIX_PTHREAD_SEMANTICS
+#endif
+
 #include <sys/types.h>
 #include <stdio.h>
 #include <time.h>
@@ -39,19 +43,23 @@ static char UNUSED rcsId__regex_remap_cc[] = "@(#) $Id$ built on " __DATE__ " " 
 #include <fstream>
 #include <string>
 
-
 static const char* PLUGIN_NAME = "regex_remap";
 
-// This is copied from lib/ts/*.h, only works with gcc 4.x or later (and compatible).
 // TODO: We really ought to expose these data types and atomic functions to the plugin APIs.
-typedef int int32;
-typedef volatile int32 vint32;
+typedef volatile int32_t vint32;
 typedef vint32 *pvint32;
 
+#if defined(__SUNPRO_CC)
+static inline int atomic_increment(pvint32 mem, int value)
+{
+  return ((uint32_t)atomic_add_32_nv((pvuint32)mem, (uint32_t)value)) - value;
+}
+#else
 static inline int atomic_increment(pvint32 mem, int value)
 {
   return __sync_fetch_and_add(mem, value);
 }
+#endif
 
 
 // Constants
@@ -705,7 +713,7 @@ TSRemapDeleteInstance(void* ih)
 
   if (ri->profile) {
     char now[64];
-    time_t tim = time(NULL);
+    const time_t tim = time(NULL);
 
     if (ctime_r(&tim, now))
       now[strlen(now) - 1] = '\0';
