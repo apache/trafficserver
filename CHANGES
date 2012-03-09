@@ -1,5 +1,7 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.1.4
+  *) [TS-1159] Add compiler hints to debug logging
+
   *) [TS-1143] Fixed edge case problems in IpMap.
 
   *) [TS-1114] Fix to lock vol for CacheVC::write_vector.

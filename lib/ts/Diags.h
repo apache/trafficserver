@@ -36,6 +36,7 @@
 #define __DIAGS_H___
 
 #include <stdarg.h>
+#include "ink_unused.h"
 #include "ink_bool.h"
 #include "ink_error.h"
 #include "ink_mutex.h"
@@ -273,8 +274,8 @@ dummy_debug(const char *tag, const char *fmt, ...)
 }
 
 
-#define Diag(tag, ...)      if (diags->on()) diags->log(tag, DTA(DL_Diag), __VA_ARGS__)
-#define Debug(tag, ...)     if (diags->on()) diags->log(tag, DTA(DL_Debug), __VA_ARGS__)
+#define Diag(tag, ...)      if (unlikely(diags->on())) diags->log(tag, DTA(DL_Diag), __VA_ARGS__)
+#define Debug(tag, ...)     if (unlikely(diags->on())) diags->log(tag, DTA(DL_Debug), __VA_ARGS__)
 
 #define Status(...)    diags->error(DTA(DL_Status), __VA_ARGS__)
 #define Note(...)      diags->error(DTA(DL_Note), __VA_ARGS__)
@@ -284,11 +285,11 @@ dummy_debug(const char *tag, const char *fmt, ...)
 #define Alert(...)     diags->error(DTA(DL_Alert), __VA_ARGS__)
 #define Emergency(...) diags->error(DTA(DL_Emergency), __VA_ARGS__)
 
-#define is_debug_tag_set(_t)     diags->on(_t,DiagsTagType_Debug)
-#define is_action_tag_set(_t)    diags->on(_t,DiagsTagType_Action)
+#define is_debug_tag_set(_t)     unlikely(diags->on(_t,DiagsTagType_Debug))
+#define is_action_tag_set(_t)    unlikely(diags->on(_t,DiagsTagType_Action))
 #define debug_tag_assert(_t,_a)  (is_debug_tag_set(_t) ? (ink_release_assert(_a), 0) : 0)
 #define action_tag_assert(_t,_a) (is_action_tag_set(_t) ? (ink_release_assert(_a), 0) : 0)
-#define is_diags_on(_t)          diags->on(_t)
+#define is_diags_on(_t)          unlikely(diags->on(_t))
 
 #else // TS_USE_DIAGS
 
