@@ -1781,10 +1781,10 @@ UrlRewrite::_mappingLookup(MappingsStore &mappings, URL *request_url,
                            int request_port, const char *request_host, int request_host_len,
                            UrlMappingContainer &mapping_container)
 {
-  char request_host_lower[256];
+  char request_host_lower[TS_MAX_HOST_NAME_LEN];
 
   if (!request_host || !request_url ||
-      (request_host_len < 0) || (request_host_len >= 256)) {
+      (request_host_len < 0) || (request_host_len >= TS_MAX_HOST_NAME_LEN)) {
     Debug("url_rewrite", "Invalid arguments!");
     return false;
   }

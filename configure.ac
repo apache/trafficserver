@@ -396,6 +396,16 @@ AC_ARG_WITH([max-api-stats],
 AC_SUBST(max_api_stats)
 
 #
+# Max host name length that we deal with in URLs.
+#
+AC_ARG_WITH([max-host-name-len],
+  [AS_HELP_STRING([--with-max-host-name-len],[max host name length [default=256]])],
+  [max_host_name_len=$withval],
+  [max_host_name_len=256]
+)
+AC_SUBST(max_host_name_len)
+
+#
 # EventProcessor thread configurations
 #
 
