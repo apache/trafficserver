@@ -31,7 +31,10 @@
 #include <openssl/pem.h>
 #include <openssl/x509.h>
 #include <openssl/asn1.h>
+
+#if HAVE_OPENSSL_TS_H
 #include <openssl/ts.h>
+#endif
 
 #if (OPENSSL_VERSION_NUMBER >= 0x10000000L) // openssl returns a const SSL_METHOD
 typedef const SSL_METHOD * ink_ssl_method_t;
@@ -326,7 +329,6 @@ asn1_strdup(ASN1_STRING * s)
 static void
 insert_ssl_certificate(InkHashTable * htable, SSL_CTX * ctx, const char * certfile)
 {
-  GENERAL_NAMES * names = NULL;
   X509_NAME * subject = NULL;
 
   ats_file_bio bio(certfile, "r");
@@ -352,8 +354,9 @@ insert_ssl_certificate(InkHashTable * htable, SSL_CTX * ctx, const char * certfi
     }
   }
 
+#if HAVE_OPENSSL_TS_H
   // Traverse the subjectAltNames (if any) and insert additional keys for the SSL context.
-  names = (GENERAL_NAMES *)X509_get_ext_d2i(certificate.x509, NID_subject_alt_name, NULL, NULL);
+  GENERAL_NAMES * names = (GENERAL_NAMES *)X509_get_ext_d2i(certificate.x509, NID_subject_alt_name, NULL, NULL);
   if (names) {
     unsigned count = sk_GENERAL_NAME_num(names);
     for (unsigned i = 0; i < count; ++i) {
@@ -373,4 +376,6 @@ insert_ssl_certificate(InkHashTable * htable, SSL_CTX * ctx, const char * certfi
 
     GENERAL_NAMES_free(names);
   }
+#endif // HAVE_OPENSSL_TS_H
+
 }
