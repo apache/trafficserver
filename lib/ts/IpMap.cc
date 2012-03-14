@@ -1007,9 +1007,7 @@ protected:
   self& setMaxMinusOne(
     ArgType max ///< One more than maximum value.
   ) {
-    this->setMax(max);
-    dec(_max);
-    return *this;
+    return this->setMax(max-1);
   }
   /** Set the minimum value to one more than @a min.
       @return This object.
@@ -1017,14 +1015,15 @@ protected:
   self& setMinPlusOne(
     ArgType min ///< One less than minimum value.
   ) {
-    this->setMin(min);
-    inc(_max);
-    return *this;
+    return this->setMin(min+1);
   }
   /** Decremement the maximum value in place.
       @return This object.
   */
-  self& decrementMax() { dec(_max); return *this; }
+  self& decrementMax() {
+    this->setMax(_max-1);
+    return *this;
+  }
 
   /// Increment a metric.
   static void inc(
@@ -1160,7 +1159,7 @@ protected:
     Metric const& min ///< One less than minimum value.
   ) {
     this->setMin(min);
-    inc(_max);
+    inc(_min);
     return *this;
   }
   /** Decremement the maximum value in place.

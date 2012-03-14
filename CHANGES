@@ -1,5 +1,7 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.1.3
+  *) [TS-1138] Fixed off by one range error in IpMap.s
+
   *) [TS-462] Support TLS Server Name Indication (SNI)
 
   *) [TS-1134] TSNetAcceptNamedProtocol should fail if NPN is not supported.

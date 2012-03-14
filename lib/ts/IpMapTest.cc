@@ -87,16 +87,26 @@ REGRESSION_TEST(IpMap_Test_Basic)(RegressionTest* t, int atype, int* pstatus) {
   check(t, pstatus, !map.contains(ip140), "Test 3 - unmark left edge still there.");
   check(t, pstatus, !map.contains(ip150), "Test 3 - unmark middle still there.");
   check(t, pstatus, !map.contains(ip160), "Test 3 - unmark right edge still there.");
+
+  map.clear();
+  map.mark(ip20,ip20, markA);
+  check(t, pstatus, map.contains(ip20), "Map failed on singleton insert");
+  map.mark(ip10, ip200, markB);
+  mark=0;
+  map.contains(ip20, &mark);
+  check(t, pstatus, mark == markB, "Map held singleton against range.");
+
 }
 
-REGRESSION_TEST(IpMap_Test_Sample)(RegressionTest* t, int atype, int* pstatus) {
+REGRESSION_TEST(IpMap_Test_Fill)(RegressionTest* t, int atype, int* pstatus) {
   IpMap map;
+  ip_text_buffer ipb1, ipb2;
   void* const allow = reinterpret_cast<void*>(1);
   void* const deny = reinterpret_cast<void*>(2); 
   void* mark; // for retrieval
 
   IpEndpoint a1,a2,a3,a4,a5,a6, a7, a8;
-  IpEndpoint target;
+  IpEndpoint target, a_loopback;
   IpEndpoint t6;
 
   *pstatus = REGRESSION_TEST_PASSED;
@@ -111,6 +121,7 @@ REGRESSION_TEST(IpMap_Test_Sample)(RegressionTest* t, int atype, int* pstatus) {
   ats_ip_pton("fe80::221:9bff:fe10:9d9d", &a8);
   ats_ip_pton("10.28.56.4", &target);
   ats_ip_pton("fe80::221:9bff:fe10:9d95", &t6);
+  ats_ip_pton("127.0.0.1", &a_loopback);
 
   map.fill(&a1,&a2,deny);
   map.fill(&a3,&a4,allow);
@@ -130,4 +141,17 @@ REGRESSION_TEST(IpMap_Test_Sample)(RegressionTest* t, int atype, int* pstatus) {
   check(t, pstatus, map.contains(&t6,&mark), "IpMap Sample: T6 not found.");
   check(t, pstatus, mark == deny, "IpMap Sample: Bad T6 value. Expected deny, got allow.");
 
+  map.clear();
+  map.fill(&a_loopback, &a_loopback, allow);
+  check(t, pstatus, map.contains(&a_loopback), "Map fill: singleton not marked.");
+  map.fill(&a3, &a4, deny);
+
+  mark=0;
+  check(t, pstatus, map.contains(&a_loopback, &mark), "Map fill: singleton marking lost.");
+  check(t, pstatus, mark == allow, "Map fill: overwrote existing singleton mark.");
+  if (check(t, pstatus, map.begin() != map.end(), "Map fill: map is empty.")) {
+    if (check(t, pstatus, ++(map.begin()) != map.end(), "Map fill: only one range.")) {
+      check(t, pstatus, -1 == ats_ip_addr_cmp(map.begin()->max(), (++map.begin())->min()), "Map fill: ranges not disjoint [%s < %s].", ats_ip_ntop(map.begin()->max(), ipb1, sizeof(ipb1)), ats_ip_ntop((++map.begin())->min(), ipb2, sizeof(ipb2)));
+    }
+  }
 }
