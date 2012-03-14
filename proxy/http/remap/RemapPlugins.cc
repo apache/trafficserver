@@ -114,7 +114,6 @@ RemapPlugins::run_single_remap()
   bool debug_on = false;
   int retcode = 0;              // 0 - no redirect, !=0 - redirected
 
-  requestPath = _request_url->path_get(&requestPathLen);
   debug_on = is_debug_tag_set("url_rewrite");
 
   if (_request_header)
@@ -169,6 +168,7 @@ RemapPlugins::run_single_remap()
     if (to_scheme != map_from->scheme_get(&from_scheme_len))
       _request_url->scheme_set(to_scheme, to_scheme_len);
 
+    requestPath = _request_url->path_get(&requestPathLen);
     // Extra byte is potentially needed for prefix path '/'.
     // Added an extra 3 so that TS wouldn't crash in the field.
     // Allocate a large buffer to avoid problems.
