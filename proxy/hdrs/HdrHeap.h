@@ -251,11 +251,38 @@ public:
   void evacuate_from_str_heaps(HdrStrHeap * new_heap);
   int attach_str_heap(char *h_start, int h_len, RefCountObj * h_ref_obj, int *index);
 
+  /** Struct to prevent garbage collection on heaps.
+      This bumps the reference count to the heaps while the
+      instance of this class exists. When it goes out of scope
+      the references are dropped. This is useful inside a method or
+      block to keep all the heap data around until leaving the scope.
+  */
+  struct ProtectHeaps {
+    /// Construct the protection.
+    ProtectHeaps(HdrHeap* heap)
+      : m_read_write_heap(heap->m_read_write_heap)
+    {
+      for (int i=0; i < HDR_BUF_RONLY_HEAPS; ++i)
+        m_ronly_heap[i] = heap->m_ronly_heap[i].m_ref_count_ptr;
+    }
+
+    /// Drop the protection.
+    ~ProtectHeaps()
+    {
+      // The default destructor takes care of the rw-heap
+      for (int i=0; i < HDR_BUF_RONLY_HEAPS; ++i)
+        m_ronly_heap[i] = NULL;
+    }
+
+    Ptr<HdrStrHeap> m_read_write_heap; ///< Reference to RW heap.
+    /// References to string heaps.
+    Ptr<RefCountObj> m_ronly_heap[HDR_BUF_RONLY_HEAPS];
+  };
+
   // String Heap access
   Ptr<HdrStrHeap> m_read_write_heap;
   StrHeapDesc m_ronly_heap[HDR_BUF_RONLY_HEAPS];
   int m_lost_string_space;
-
 };
 
 inline void
