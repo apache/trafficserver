@@ -3,14 +3,14 @@ Last modified at [$Date$]
 
 The current version of this file can be found at:
 
-  * https://svn.apache.org/repos/asf/incubator/trafficserver/traffic/trunk/STATUS
+  * http://git-wip-us.apache.org/repos/asf?p=trafficserver.git;a=blob;f=STATUS;hb=3.0.x
 
 
 Release history:
     [NOTE that x.{odd}.z versions are strictly Alpha/Beta releases,
           while x.{even}.z versions are Stable/GA releases.]
 
-    3.0.4           : Released on <xyz>, 2012 
+    3.0.4           : Released on March 21, 2012 
     3.0.3           : Released on Februrary 13, 2012
     3.0.2           : Released on December 07th, 2011
     3.0.1           : Released on July 18th, 2011
