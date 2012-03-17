@@ -34,7 +34,7 @@ int main(int argc, char **argv) {
   ssm.put("b", "B");
   ssm.put("c", "C");
   ssm.put("d", "D");
-  form_SSMap(x, ssm) ;
+  form_SSMap(x, ssm) { /* nop */ }
 
   StringChainHash<> h;
   cchar *hi = "hi", *ho = "ho", *hum = "hum", *hhi = "hhi";
