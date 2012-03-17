@@ -338,7 +338,9 @@ HdrHeap::expand_str(const char *old_str, int old_len, int new_len)
 char *
 HdrHeap::duplicate_str(const char *str, int nbytes)
 {
+  ProtectHeaps protect(this); // Don't let the source get de-allocated.
   char *new_str = allocate_str(nbytes);
+
   memcpy(new_str, str, nbytes);
   return (new_str);
 }
