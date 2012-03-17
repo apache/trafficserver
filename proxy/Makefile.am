@@ -34,6 +34,7 @@ endif
 AM_CPPFLAGS = \
   $(iocore_include_dirs) \
   -I$(top_srcdir)/lib/records \
+  -I$(top_srcdir)/lib/ts \
   -I$(srcdir)/http \
   -I$(srcdir)/logging \
   -I$(srcdir)/http/remap  \
@@ -42,6 +43,8 @@ AM_CPPFLAGS = \
   -I$(top_srcdir)/mgmt/preparse \
   -I$(top_srcdir)/mgmt/utils \
   -I$(srcdir)/api/ts \
+  -I$(builddir) \
+  -I$(builddir)/api/ts \
   -I$(top_srcdir)/lib
 
 noinst_HEADERS = \
