@@ -1150,7 +1150,7 @@ inline bool IpEndpoint::isIp6() const { return AF_INET6 == sa.sa_family; }
 
 inline IpEndpoint&
 IpEndpoint::setToAnyAddr(int family) {
-  ink_zero(sa);
+  ink_zero(*this);
   sa.sa_family = family;
   if (AF_INET == family) {
     sin.sin_addr.s_addr = INADDR_ANY;
@@ -1168,7 +1168,7 @@ IpEndpoint::setToAnyAddr(int family) {
 
 inline IpEndpoint&
 IpEndpoint::setToLoopback(int family) {
-  ink_zero(sa);
+  ink_zero(*this);
   sa.sa_family = family;
   if (AF_INET == family) {
     sin.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
