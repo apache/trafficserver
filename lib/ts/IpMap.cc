@@ -588,7 +588,7 @@ IpMapBase<N>::clear() {
 
 template < typename N > IpMapBase<N>&
 IpMapBase<N>::fill(ArgType rmin, ArgType rmax, void* payload) {
-  // Leftmost node of interest with n->_min <= min.
+  // Rightmost node of interest with n->_min <= min.
   N* n = this->lowerBound(rmin);
   N* x = 0; // New node (if any).
   // Need copies because we will modify these.
@@ -598,9 +598,15 @@ IpMapBase<N>::fill(ArgType rmin, ArgType rmax, void* payload) {
   // Handle cases involving a node of interest to the left of the
   // range.
   if (n) {
-    Metric min_1 = min;
-    N::dec(min_1);
-    if (n->_max < min_1) { // no overlap, move on to next node.
+    Metric min_1;
+    /* Tricky bit here when min is zero and we can't decrement it. If
+       it's strictly greater than the node min then it's not zero and
+       we can check against a decremented value. Moreover, if the node
+       min isn't less than the range min the node max isn't less
+       than range min - 1.
+    */
+    if (n->_min < min && (min_1 = min, N::dec(min_1), n->_max < min_1)) {
+      // no overlap, move on to next node.
       n = next(n);
     } else if (n->_max >= max) { // incoming range is covered, just discard.
       return *this;
@@ -665,7 +671,11 @@ IpMapBase<N>::fill(ArgType rmin, ArgType rmax, void* payload) {
           n = next(n);
         }
       } else {
-        if (min < n->_min) { // Need a span before n.
+        if (max < n->_min) { // entirely before next span.
+          this->insertBefore(n, new N(min, max, payload));
+          return *this; // done
+        } else if (min < n->_min) {
+          // overlap on the right, so make a span to take up the slack.
           N* y = new N(min, n->_min, payload);
           y->decrementMax();
           this->insertBefore(n, y);
@@ -965,11 +975,11 @@ public:
     ats_ip4_set(ats_ip_sa_cast(&_sa._max), htonl(max));
   }
   /// @return The minimum value of the interval.
-  virtual sockaddr const* min() {
+  virtual sockaddr const* min() const {
     return ats_ip_sa_cast(&_sa._min);
   }
   /// @return The maximum value of the interval.
-  virtual sockaddr const* max() {
+  virtual sockaddr const* max() const {
     return ats_ip_sa_cast(&_sa._max);
   }
   /// Set the client data.
@@ -1092,11 +1102,11 @@ public:
   ) : Node(data), Ip6Span(min, max) {
   }
   /// @return The minimum value of the interval.
-  virtual sockaddr const* min() {
+  virtual sockaddr const* min() const {
     return ats_ip_sa_cast(&_min);
   }
   /// @return The maximum value of the interval.
-  virtual sockaddr const* max() {
+  virtual sockaddr const* max() const {
     return ats_ip_sa_cast(&_max);
   }
   /// Set the client data.

@@ -280,9 +280,9 @@ public:
       return *this;
     }
     /// @return Minimum value of the interval.
-    virtual sockaddr const* min() = 0;
+    virtual sockaddr const* min() const = 0;
     /// @return Maximum value of the interval.
-    virtual sockaddr const* max() = 0;
+    virtual sockaddr const* max() const = 0;
   protected:
     void* _data; ///< Client data.
   };
@@ -477,7 +477,7 @@ public:
 
   /// Print all spans.
   /// @return This map.
-  self& print();
+  //  self& print();
 
 protected:
   /// Force the IPv4 map to exist.

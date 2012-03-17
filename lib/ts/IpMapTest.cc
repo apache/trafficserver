@@ -38,7 +38,22 @@ inline bool check(RegressionTest* t, int* pstatus, bool test, char const* fmt, .
   return test;
 }
 
-REGRESSION_TEST(IpMap_Test_Basic)(RegressionTest* t, int atype, int* pstatus) {
+
+void
+IpMapTestPrint(IpMap& map) {
+  printf("IpMap Dump\n");
+  for ( IpMap::iterator spot(map.begin()), limit(map.end())
+      ; spot != limit
+      ; ++spot
+  ) {
+    ip_text_buffer ipb1, ipb2;
+
+    printf("%s - %s : %p\n", ats_ip_ntop(spot->min(), ipb1, sizeof ipb1), ats_ip_ntop(spot->max(), ipb2, sizeof(ipb2)), spot->data());
+  }
+  printf("\n");
+}
+
+REGRESSION_TEST(IpMap_Basic)(RegressionTest* t, int atype, int* pstatus) {
   IpMap map;
   void* const markA = reinterpret_cast<void*>(1);
   void* const markB = reinterpret_cast<void*>(2);
@@ -98,23 +113,29 @@ REGRESSION_TEST(IpMap_Test_Basic)(RegressionTest* t, int atype, int* pstatus) {
 
 }
 
-REGRESSION_TEST(IpMap_Test_Fill)(RegressionTest* t, int atype, int* pstatus) {
+REGRESSION_TEST(IpMap_Fill)(RegressionTest* t, int atype, int* pstatus) {
   IpMap map;
   ip_text_buffer ipb1, ipb2;
-  void* const allow = reinterpret_cast<void*>(1);
-  void* const deny = reinterpret_cast<void*>(2); 
+  void* const allow = reinterpret_cast<void*>(0);
+  void* const deny = reinterpret_cast<void*>(~0); 
+  void* const markA = reinterpret_cast<void*>(1);
+  void* const markB = reinterpret_cast<void*>(2);
+//  void* const markC = reinterpret_cast<void*>(3);
   void* mark; // for retrieval
 
-  IpEndpoint a1,a2,a3,a4,a5,a6, a7, a8;
-  IpEndpoint target, a_loopback;
+  IpEndpoint a0,a_10_28_56_0,a_10_28_56_255,a3,a4,a5,a6, a7,a8;
+  IpEndpoint target, a_max, a_loopback, a_loopback2;
   IpEndpoint t6;
+  IpEndpoint a_63_128_1_12;
 
   *pstatus = REGRESSION_TEST_PASSED;
 
-  ats_ip_pton("10.28.56.0", &a1);
-  ats_ip_pton("10.28.56.255", &a2);
-  ats_ip_pton("0.0.0.0", &a3);
-  ats_ip_pton("255.255.255.255", &a4);
+  ats_ip_pton("0.0.0.0", &a0);
+  ats_ip_pton("255.255.255.255", &a_max);
+  ats_ip_pton("10.28.56.0", &a_10_28_56_0);
+  ats_ip_pton("10.28.56.255", &a_10_28_56_255);
+  ats_ip_pton("192.168.1.0", &a3);
+  ats_ip_pton("192.168.1.255", &a4);
   ats_ip_pton("::", &a5);
   ats_ip_pton("ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff", &a6);
   ats_ip_pton("fe80::221:9bff:fe10:9d90", &a7);
@@ -122,9 +143,11 @@ REGRESSION_TEST(IpMap_Test_Fill)(RegressionTest* t, int atype, int* pstatus) {
   ats_ip_pton("10.28.56.4", &target);
   ats_ip_pton("fe80::221:9bff:fe10:9d95", &t6);
   ats_ip_pton("127.0.0.1", &a_loopback);
+  ats_ip_pton("127.0.0.255", &a_loopback2);
+  ats_ip_pton("63.128.1.12", &a_63_128_1_12);
 
-  map.fill(&a1,&a2,deny);
-  map.fill(&a3,&a4,allow);
+  map.fill(&a_10_28_56_0,&a_10_28_56_255,deny);
+  map.fill(&a0,&a_max,allow);
   map.fill(&a5,&a6,allow);
   map.fill(&a7,&a8,deny);
 
@@ -134,24 +157,35 @@ REGRESSION_TEST(IpMap_Test_Fill)(RegressionTest* t, int atype, int* pstatus) {
   check(t, pstatus, mark == allow, "IpMap Sample: Bad T6 value. Expected allow, got deny.");
 
   map.clear();
-  map.fill(&a1,&a2,deny);
+  map.fill(&a_10_28_56_0,&a_10_28_56_255,deny);
   map.fill(&a7,&a8,deny);
-  map.fill(&a3,&a4,allow);
+  map.fill(&a0,&a_max,allow);
   map.fill(&a5,&a6,allow);
   check(t, pstatus, map.contains(&t6,&mark), "IpMap Sample: T6 not found.");
   check(t, pstatus, mark == deny, "IpMap Sample: Bad T6 value. Expected deny, got allow.");
 
   map.clear();
   map.fill(&a_loopback, &a_loopback, allow);
-  check(t, pstatus, map.contains(&a_loopback), "Map fill: singleton not marked.");
-  map.fill(&a3, &a4, deny);
+  check(t, pstatus, map.contains(&a_loopback), "IpMap fill: singleton not marked.");
+  map.fill(&a0, &a_max, deny);
 
   mark=0;
-  check(t, pstatus, map.contains(&a_loopback, &mark), "Map fill: singleton marking lost.");
-  check(t, pstatus, mark == allow, "Map fill: overwrote existing singleton mark.");
-  if (check(t, pstatus, map.begin() != map.end(), "Map fill: map is empty.")) {
-    if (check(t, pstatus, ++(map.begin()) != map.end(), "Map fill: only one range.")) {
-      check(t, pstatus, -1 == ats_ip_addr_cmp(map.begin()->max(), (++map.begin())->min()), "Map fill: ranges not disjoint [%s < %s].", ats_ip_ntop(map.begin()->max(), ipb1, sizeof(ipb1)), ats_ip_ntop((++map.begin())->min(), ipb2, sizeof(ipb2)));
+  check(t, pstatus, map.contains(&a_loopback, &mark), "IpMap fill: singleton marking lost.");
+  check(t, pstatus, mark == allow, "IpMap fill: overwrote existing singleton mark.");
+  if (check(t, pstatus, map.begin() != map.end(), "IpMap fill: map is empty.")) {
+    if (check(t, pstatus, ++(map.begin()) != map.end(), "IpMap fill: only one range.")) {
+      check(t, pstatus, -1 == ats_ip_addr_cmp(map.begin()->max(), (++map.begin())->min()), "IpMap fill: ranges not disjoint [%s < %s].", ats_ip_ntop(map.begin()->max(), ipb1, sizeof(ipb1)), ats_ip_ntop((++map.begin())->min(), ipb2, sizeof(ipb2)));
     }
   }
+
+  map.clear();
+  map.fill(&a_loopback, &a_loopback2, markA);
+  map.fill(&a_10_28_56_0, &a_10_28_56_255, markB);
+  check(t, pstatus, !map.contains(&a_63_128_1_12, &mark), "IpMap fill[2]: over extended range.");
+  map.fill(&a0, &a_max, deny);
+  check(t, pstatus, map.getCount() == 5, "IpMap[2]: Fill failed.");
+  if (check(t, pstatus, map.contains(&a_63_128_1_12, &mark), "IpMap fill[2]: missing mark")) {
+    check(t, pstatus, mark == deny, "IpMap fill[2]: missing range");
+  }
+//  IpMapTestPrint(map);
 }

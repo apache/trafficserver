@@ -256,8 +256,8 @@ inline sockaddr const* ats_ip_sa_cast(sockaddr_storage const* a) {
 inline sockaddr* ats_ip_sa_cast(sockaddr_in* a) {
   return static_cast<sockaddr*>(static_cast<void*>(a));
 }
-inline sockaddr_storage const* ats_ip_sa_cast(sockaddr_in const* a) {
-  return static_cast<sockaddr_storage const*>(static_cast<void const*>(a));
+inline sockaddr const* ats_ip_sa_cast(sockaddr_in const* a) {
+  return static_cast<sockaddr const*>(static_cast<void const*>(a));
 }
 
 inline sockaddr* ats_ip_sa_cast(sockaddr_in6* a) {
