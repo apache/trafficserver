@@ -47,6 +47,7 @@
 #include "StatPages.h"
 #include "HttpClientSession.h"
 #include "I_Machine.h"
+#include "IPAllow.h"
 
 static const char *URL_MSG = "Unable to process requested URL.\n";
 
@@ -847,9 +848,7 @@ HttpTransact::EndRemapRequest(State* s)
   /////////////////////////////////////////////////////
   // Quick HTTP filtering (primary key: http method) //
   /////////////////////////////////////////////////////
-  if (s->http_config_param->quick_filter_mask) {
-    process_quick_http_filter(s, method);
-  }
+  process_quick_http_filter(s, method);
   /////////////////////////////////////////////////////////////////////////
   // We must close this connection if client_connection_enabled == false //
   /////////////////////////////////////////////////////////////////////////
@@ -6537,67 +6536,14 @@ HttpTransact::service_transaction_in_proxy_only_mode(State* s)
 void
 HttpTransact::process_quick_http_filter(State* s, int method)
 {
-  int quick_filter_mask;
-
-  // TODO: This code is really a bastard solution, leftovers from a totally
-  // different internal implementation. We ought to either rewrite this
-  // completely, or just remove it.
-
-  // Please refer to mgmt/RecordsConfig.cc file,
-  // "proxy.config.http.quick_filter.mask" variable for
-  // detailed information about quick_filter_mask layout.
-
   // connection already disabled by previous ACL filtering, don't modify it.
   if (!s->client_connection_enabled) {
     return;
   }
 
-  // Exempt for "localhost", avoid denying for localhost.
-  if (ats_is_ip_loopback(&s->client_info.addr)) {
-    return;
-  }
-
-  // See if there are any methods for the quick filter to apply to.
-  if (((quick_filter_mask = s->http_config_param->quick_filter_mask) & 0x0FFF) != 0) {
-    int method_mask = (method - HTTP_WKSIDX_CONNECT);   // fastest way to do it
-
-    if (likely(method_mask >= 0 && method_mask < HTTP_WKSIDX_METHODS_CNT)) {
-      method_mask = 1 << method_mask;
-    } else {                      // impossible case, but we have to check it
-      if (method == HTTP_WKSIDX_GET)
-        method_mask = 0x0004;
-      else if (method == HTTP_WKSIDX_HEAD)
-        method_mask = 0x0008;
-      else if (method == HTTP_WKSIDX_POST)
-        method_mask = 0x0040;
-      else if (method == HTTP_WKSIDX_DELETE)
-        method_mask = 0x0002;
-      else if (method == HTTP_WKSIDX_OPTIONS)
-        method_mask = 0x0020;
-      else if (method == HTTP_WKSIDX_PURGE)
-        method_mask = 0x0080;
-      else if (method == HTTP_WKSIDX_PUT)
-        method_mask = 0x0100;
-      else if (method == HTTP_WKSIDX_TRACE)
-        method_mask = 0x0200;
-      else if (method == HTTP_WKSIDX_PUSH)
-        method_mask = 0x0400;
-      else if (method == HTTP_WKSIDX_CONNECT)
-        method_mask = 0x0001;
-      else if (method == HTTP_WKSIDX_ICP_QUERY)
-        method_mask = 0x0010;
-      else
-        method_mask = 0x0000;
-    }
-    if ((quick_filter_mask & method_mask) == 0) {
-      return;              // enable request processing because method does not match
-    }
-  }
-
-  if ((quick_filter_mask & 0x80000000) == 0)
+  if (!IpAllow::CheckMask(s->state_machine->ua_session->acl_method_mask, method)) {
     s->client_connection_enabled = false;
-  else
-    s->client_connection_enabled = true;
+  }
 }
 
 

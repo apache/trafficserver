@@ -511,32 +511,6 @@ RecordElement RecordsConfig[] = {
   ,
   {RECT_CONFIG, "proxy.config.http.accept_encoding_filter.filename", RECD_STRING, "ae_ua.config", RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
-
-  //       ########################
-  //       # HTTP Quick filtering #
-  //       ########################
-  //       This is dedicated and very specific 'HTTP method' filter.
-  //       Note: If method does not match, filtering will be skipped.
-  //       bits 15-0 - HTTP method mask
-  //            0x0000 - Any possible HTTP method (or you can use 0xFFFF)
-  //            0x0001 - CONNECT
-  //            0x0002 - DELETE
-  //            0x0004 - GET
-  //            0x0008 - HEAD
-  //            0x0010 - ICP_QUERY
-  //            0x0020 - OPTIONS
-  //            0x0040 - POST
-  //            0x0080 - PURGE
-  //            0x0100 - PUT
-  //            0x0200 - TRACE
-  //            0x0400 - PUSH
-  //       bits 18-16 - reserved
-  //       bits 30-17 - reserved
-  //       bit 31 - Action (allow=1, deny=0)
-  //       Note: if 'proxy.config.http.quick_filter.mask' is equal 0, there is no 'quick http filtering' at all
-  {RECT_CONFIG, "proxy.config.http.quick_filter.mask", RECD_INT, "0x482", RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
-  ,
-
   //        ##############################
   //        # parent proxy configuration #
   //        ##############################

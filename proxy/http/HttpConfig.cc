@@ -1316,9 +1316,6 @@ HttpConfig::startup()
   // HTTP Accept_Encoding filtering (depends on User-Agent)
   HttpEstablishStaticConfigByte(c.accept_encoding_filter_enabled, "proxy.config.http.accept_encoding_filter_enabled");
 
-  // HTTP Quick filter
-  HttpEstablishStaticConfigLongLong(c.quick_filter_mask, "proxy.config.http.quick_filter.mask");
-
   // Negative caching
   HttpEstablishStaticConfigLongLong(c.oride.down_server_timeout, "proxy.config.http.down_server.cache_time");
   HttpEstablishStaticConfigLongLong(c.oride.client_abort_threshold, "proxy.config.http.down_server.abort_threshold");
@@ -1577,8 +1574,6 @@ HttpConfig::reconfigure()
   params->referer_format_redirect = INT_TO_BOOL(m_master.referer_format_redirect);
 
   params->accept_encoding_filter_enabled = INT_TO_BOOL(m_master.accept_encoding_filter_enabled);
-
-  params->quick_filter_mask = m_master.quick_filter_mask;
 
   params->oride.down_server_timeout = m_master.oride.down_server_timeout;
   params->oride.client_abort_threshold = m_master.oride.client_abort_threshold;

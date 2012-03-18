@@ -713,11 +713,6 @@ public:
   ////////////////////////////////////////////////////////
   MgmtByte accept_encoding_filter_enabled;
 
-  //////////////////////////
-  // HTTP Quick filtering //
-  //////////////////////////
-  MgmtInt quick_filter_mask;
-
   //////////////////
   // Transparency //
   //////////////////
@@ -939,7 +934,6 @@ HttpConfigParams::HttpConfigParams()
     referer_filter_enabled(0),
     referer_format_redirect(0),
     accept_encoding_filter_enabled(0),
-    quick_filter_mask(0),
     client_transparency_enabled(0),
     server_transparency_enabled(0),
     reverse_proxy_enabled(0),

@@ -151,6 +151,8 @@ public:
   uint16_t outbound_port;
   /// Set outbound connection to transparent.
   bool f_outbound_transparent;
+  /// acl method mask - cache IpAllow::match() call
+  uint32_t acl_method_mask;
 
   // for DI. An active connection is one that a request has
   // been successfully parsed (PARSE_DONE) and it remains to

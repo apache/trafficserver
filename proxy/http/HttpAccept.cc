@@ -40,11 +40,12 @@ HttpAccept::mainEvent(int event, void *data)
     ////////////////////////////////////////////////////
     NetVConnection *netvc = static_cast<NetVConnection *>(data);
     sockaddr const* client_ip = netvc->get_remote_addr();
+    uint32_t acl_method_mask = 0;
     ip_port_text_buffer ipb;
 
     // The backdoor port is now only bound to "localhost", so reason to
     // check for if it's incoming from "localhost" or not.
-    if (!backdoor && IpAllow::instance() && (!IpAllow::instance()->match(client_ip))) {
+    if (!backdoor && IpAllow::instance() && ((acl_method_mask = IpAllow::instance()->match(client_ip)) == 0)) {
       Warning("connect by disallowed client %s, closing", ats_ip_ntop(client_ip, ipb, sizeof(ipb)));
       netvc->do_io_close();
 
@@ -63,6 +64,7 @@ HttpAccept::mainEvent(int event, void *data)
     new_session->outbound_ip4 = outbound_ip4;
     new_session->outbound_ip6 = outbound_ip6;
     new_session->outbound_port = outbound_port;
+    new_session->acl_method_mask = acl_method_mask;
 
     new_session->new_connection(netvc, backdoor);
 
