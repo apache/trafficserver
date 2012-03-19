@@ -710,8 +710,10 @@ template < typename N > IpMapBase<N>&
 IpMapBase<N>::mark(ArgType min, ArgType max, void* payload) {
   N* n = this->lowerBound(min); // current node.
   N* x = 0; // New node, gets set if we re-use an existing one.
+  N* y = 0; // Temporary for removing and advancing.
 
-  // Several places it is handy to have max+1.
+  // Several places it is handy to have max+1. Must be careful
+  // about wrapping.
   Metric max_plus = N::deref(max);
   N::inc(max_plus);
 
@@ -731,11 +733,13 @@ IpMapBase<N>::mark(ArgType min, ArgType max, void* payload) {
       allocation by re-using an existing node as often as possible.
   */
   if (n) {
+    // Watch for wrap.
     Metric min_1 = N::deref(min);
     N::dec(min_1);
     if (n->_min == min) {
       // Could be another span further left which is adjacent.
-      // Coalesce if the data is the same.
+      // Coalesce if the data is the same. min_1 is OK because
+      // if there is a previous range, min is not zero.
       N* p = prev(n);
       if (p && p->_data == payload && p->_max == min_1) {
         x = p;
@@ -755,6 +759,7 @@ IpMapBase<N>::mark(ArgType min, ArgType max, void* payload) {
         return *this;
       }
     } else if (n->_data == payload && n->_max >= min_1) {
+      // min_1 is safe here because n->_min < min so min is not zero.
       x = n;
       // If the existing span covers the requested span, we're done.
       if (x->_max >= max) return *this;
@@ -772,6 +777,7 @@ IpMapBase<N>::mark(ArgType min, ArgType max, void* payload) {
     } else {
       // Existing span covers new span but with a different payload.
       // We split it, put the new span in between and we're done.
+      // max_plus is valid because n->_max > max.
       N* r;
       x = new N(min, max, payload);
       r = new N(max_plus, n->_max, n->_data);
@@ -786,9 +792,9 @@ IpMapBase<N>::mark(ArgType min, ArgType max, void* payload) {
       if (n) this->insertBefore(n, x);
       else this->append(x); // note that since n == 0 we'll just return.
     }
-  } else if (0 != (n = this->getHead()) &&
-    n->_data == payload &&
-    n->_min <= max_plus
+  } else if (0 != (n = this->getHead()) && // at least one node in tree.
+             n->_data == payload && // payload matches
+             (n->_max <= max || n->_min <= max_plus) // overlap or adj.
   ) {
     // Same payload with overlap, re-use.
     x = n;
@@ -803,26 +809,19 @@ IpMapBase<N>::mark(ArgType min, ArgType max, void* payload) {
   // At this point, @a x has the node for this span and all existing spans of
   // interest start at or past this span.
   while (n) {
-    if (n->_data == payload) {
-      if (n->_max <= max_plus) { // completely covered, drop span, continue
-        N* r = next(n);
-        this->remove(n);
-        n = r;
-      } else if (n->_min <= max_plus) {// skew overlap on the right.
-        x->setMax(n->_max);
-        this->remove(n);
-        break;
-      } else { // no overlap, done
-        break;
-      }
-    } else if (n->_max <= max) { // covered, discard and continue.
-      N* r = next(n);
-      this->remove(n);
-      n = r;
-    } else if (n->_min <= max) { // skew overlap, clip and done.
-      n->setMin(max_plus);
+    if (n->_max <= max) { // completely covered, drop span, continue
+      y = n;
+      n = next(n);
+      this->remove(y);
+    } else if (max_plus < n->_min) { // no overlap, done.
       break;
-    } else { // no overlap, done.
+    } else if (n->_data == payload) { // skew overlap same payload
+      x->setMax(n->_max);
+      y = n;
+      n = next(n);
+      this->remove(y);
+    } else if (n->_min <= max) { // skew overlap different payload
+      n->setMin(max_plus);
       break;
     }
   }
