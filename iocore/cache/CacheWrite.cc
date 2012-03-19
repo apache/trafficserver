@@ -1543,35 +1543,32 @@ CacheVC::openWriteStartDone(int event, Event *e)
       first_buf = buf;
       goto Lsuccess;
     }
-  }
 
 Lcollision:
-  {
-    int if_writers = ((uintptr_t) info == CACHE_ALLOW_MULTIPLE_WRITES);
-    CACHE_TRY_LOCK(lock, vol->mutex, mutex->thread_holding);
-    if (!lock)
-      VC_LOCK_RETRY_EVENT();
-    if (!od) {
-      if ((err = vol->open_write(
-             this, if_writers, cache_config_http_max_alts > 1 ? cache_config_http_max_alts : 0)) > 0)
-        goto Lfailure;
-      if (od->has_multiple_writers()) {
-        MUTEX_RELEASE(lock);
-        SET_HANDLER(&CacheVC::openWriteMain);
-        return callcont(CACHE_EVENT_OPEN_WRITE);
+    {
+      int if_writers = ((uintptr_t) info == CACHE_ALLOW_MULTIPLE_WRITES);
+      if (!od) {
+        if ((err = vol->open_write(
+                this, if_writers, cache_config_http_max_alts > 1 ? cache_config_http_max_alts : 0)) > 0)
+          goto Lfailure;
+        if (od->has_multiple_writers()) {
+          MUTEX_RELEASE(lock);
+          SET_HANDLER(&CacheVC::openWriteMain);
+          return callcont(CACHE_EVENT_OPEN_WRITE);
+        }
       }
-    }
-    // check for collision
-    if (dir_probe(&first_key, vol, &dir, &last_collision)) {
-      od->reading_vec = 1;
-      int ret = do_read_call(&first_key);
-      if (ret == EVENT_RETURN)
-        goto Lcallreturn;
-      return ret;
-    }
-    if (f.update) {
-      // fail update because vector has been GC'd
-      goto Lfailure;
+      // check for collision
+      if (dir_probe(&first_key, vol, &dir, &last_collision)) {
+        od->reading_vec = 1;
+        int ret = do_read_call(&first_key);
+        if (ret == EVENT_RETURN)
+          goto Lcallreturn;
+        return ret;
+      }
+      if (f.update) {
+        // fail update because vector has been GC'd
+        goto Lfailure;
+      }
     }
   }
 Lsuccess:
