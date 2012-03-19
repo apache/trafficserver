@@ -611,13 +611,13 @@ case $host_os in
     case $base_cc in
     clang)
       common_opt="-pipe -Wall -Werror -Wno-deprecated-declarations"
-      debug_opt="-ggdb3 $common_opt"
+      debug_opt="$common_opt"
       release_opt="-g $common_opt $optimizing_flags -fno-strict-aliasing"
       cxx_opt="-Wno-invalid-offsetof"
       ;;
     *) # gcc
       common_opt="-pipe -Wall -Werror -Wno-deprecated-declarations"
-      debug_opt="-ggdb3 $common_opt"
+      debug_opt="$common_opt"
       release_opt="-g $common_opt $optimizing_flags -feliminate-unused-debug-symbols -fno-strict-aliasing"
       cxx_opt="-Wno-invalid-offsetof"
       ;;
