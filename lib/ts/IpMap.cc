@@ -837,18 +837,15 @@ IpMapBase<N>::unmark(ArgType min, ArgType max) {
   // Need to handle special case where first span starts to the left.
   if (n && n->_min < min) {
     if (n->_max >= min) { // some overlap
-      Metric min_1 = N::deref(min);
-      N::dec(min_1);
       if (n->_max > max) {
         // request span is covered by existing span - split existing span.
-        Metric max_plus = N::deref(max);
-        N::inc(max_plus);
-        x = new N(max_plus, n->_max, n->_data);
-        n->setMax(min_1);
+        x = new N(max, N::argue(n->_max), n->_data);
+        x->incrementMin();
+        n->setMaxMinusOne(N::deref(min));
         this->insertAfter(n, x);
         return *this; // done.
       } else {
-        n->setMax(min_1); // just clip overloap.
+        n->setMaxMinusOne(N::deref(min)); // just clip overlap.
       }
     } // else disjoint so just skip it.
     n = next(n);
@@ -861,9 +858,7 @@ IpMapBase<N>::unmark(ArgType min, ArgType max) {
       this->remove(x);
     } else {
       if (x->_min <= max) { // clip overlap
-        Metric max_plus = N::deref(max);
-        N::inc(max_plus);
-        x->setMin(max_plus);
+        x->setMinPlusOne(N::deref(max));
       }
       break;
     }
@@ -1043,6 +1038,13 @@ protected:
     this->setMax(_max-1);
     return *this;
   }
+  /** Increment the minimum value in place.
+      @return This object.
+  */
+  self& incrementMin() {
+    this->setMin(_min+1);
+    return *this;
+  }
 
   /// Increment a metric.
   static void inc(
@@ -1185,6 +1187,10 @@ protected:
       @return This object.
   */
   self& decrementMax() { dec(_max); return *this; }
+  /** Increment the mininimum value in place.
+      @return This object.
+  */
+  self& incrementMin() { inc(_min); return *this; }
   
   /// Increment a metric.
   static void inc(
@@ -1216,6 +1222,13 @@ protected:
     ArgType addr ///< Argument to dereference.
   ) {
     return *addr;
+  }
+  
+  /// @return The argument type for the @a metric.
+  static ArgType argue(
+    Metric const& metric
+  ) {
+    return &metric;
   }
   
 };
