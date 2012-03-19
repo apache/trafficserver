@@ -393,6 +393,11 @@ public:
     sockaddr const* min, ///< Minimum value.
     sockaddr const* max  ///< Maximum value.
   );
+  /// Unmark addresses (overload).
+  self& unmark(
+    IpEndpoint const* min,
+    IpEndpoint const* max
+  );
   /// Unmark overload.
   self& unmark(
     in_addr_t min, ///< Minimum of range to unmark.
@@ -502,6 +507,10 @@ inline IpMap& IpMap::mark(IpEndpoint const* addr, void* data) {
 
 inline IpMap& IpMap::mark(IpEndpoint const* min, IpEndpoint const* max, void* data) {
   return this->mark(&min->sa, &max->sa, data);
+}
+
+inline IpMap& IpMap::unmark(IpEndpoint const* min, IpEndpoint const* max) {
+  return this->unmark(&min->sa, &max->sa);
 }
 
 inline IpMap& IpMap::fill(IpEndpoint const* min, IpEndpoint const* max, void* data) {
