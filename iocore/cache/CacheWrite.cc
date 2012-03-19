@@ -1487,56 +1487,62 @@ CacheVC::openWriteStartDone(int event, Event *e)
       return EVENT_CONT;
     set_io_not_in_progress();
   }
-  if (_action.cancelled && (!od || !od->has_multiple_writers()))
-    goto Lcancel;
+  {
+    CACHE_TRY_LOCK(lock, vol->mutex, mutex->thread_holding);
+    if (!lock)
+      VC_LOCK_RETRY_EVENT();
 
-  if (event == AIO_EVENT_DONE) {        // vector read done
-    Doc *doc = (Doc *) buf->data();
-    if (!io.ok()) {
-      err = ECACHE_READ_FAIL;
-      goto Lfailure;
-    }
+    if (_action.cancelled && (!od || !od->has_multiple_writers()))
+      goto Lcancel;
 
-    /* INKqa07123.
-       A directory entry which is nolonger valid may have been overwritten.
-       We need to start afresh from the beginning by setting last_collision
-       to NULL.
-     */
-    if (!dir_valid(vol, &dir)) {
-      DDebug("cache_write",
+    if (event == AIO_EVENT_DONE) {        // vector read done
+      Doc *doc = (Doc *) buf->data();
+      if (!io.ok()) {
+        err = ECACHE_READ_FAIL;
+        goto Lfailure;
+      }
+
+      /* INKqa07123.
+         A directory entry which is nolonger valid may have been overwritten.
+         We need to start afresh from the beginning by setting last_collision
+         to NULL.
+         */
+      if (!dir_valid(vol, &dir)) {
+        DDebug("cache_write",
             "OpenReadStartDone: Dir not valid: Write Head: %d, Dir: %d",
             offset_to_vol_offset(vol, vol->header->write_pos), dir_offset(&dir));
-      last_collision = NULL;
-      goto Lcollision;
-    }
-    if (!(doc->first_key == first_key))
-      goto Lcollision;
-    if (doc->magic != DOC_MAGIC) {
-      err = ECACHE_BAD_META_DATA;
-      goto Lfailure;
-    }
-    if (!doc->hlen) {
-      err = ECACHE_BAD_META_DATA;
-      goto Lfailure;
-    }
-    ink_assert((((uintptr_t) &doc->hdr()[0]) & HDR_PTR_ALIGNMENT_MASK) == 0);
+        last_collision = NULL;
+        goto Lcollision;
+      }
+      if (!(doc->first_key == first_key))
+        goto Lcollision;
+      if (doc->magic != DOC_MAGIC) {
+        err = ECACHE_BAD_META_DATA;
+        goto Lfailure;
+      }
+      if (!doc->hlen) {
+        err = ECACHE_BAD_META_DATA;
+        goto Lfailure;
+      }
+      ink_assert((((uintptr_t) &doc->hdr()[0]) & HDR_PTR_ALIGNMENT_MASK) == 0);
 
-    if (write_vector->get_handles(doc->hdr(), doc->hlen, buf) != doc->hlen) {
-      err = ECACHE_BAD_META_DATA;
-      goto Lfailure;
+      if (write_vector->get_handles(doc->hdr(), doc->hlen, buf) != doc->hlen) {
+        err = ECACHE_BAD_META_DATA;
+        goto Lfailure;
+      }
+      ink_debug_assert(write_vector->count() > 0);
+      od->first_dir = dir;
+      first_dir = dir;
+      if (doc->single_fragment()) {
+        // fragment is tied to the vector
+        od->move_resident_alt = 1;
+        od->single_doc_key = doc->key;
+        dir_assign(&od->single_doc_dir, &dir);
+        dir_set_tag(&od->single_doc_dir, od->single_doc_key.word(2));
+      }
+      first_buf = buf;
+      goto Lsuccess;
     }
-    ink_debug_assert(write_vector->count() > 0);
-    od->first_dir = dir;
-    first_dir = dir;
-    if (doc->single_fragment()) {
-      // fragment is tied to the vector
-      od->move_resident_alt = 1;
-      od->single_doc_key = doc->key;
-      dir_assign(&od->single_doc_dir, &dir);
-      dir_set_tag(&od->single_doc_dir, od->single_doc_key.word(2));
-    }
-    first_buf = buf;
-    goto Lsuccess;
   }
 
 Lcollision:
