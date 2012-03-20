@@ -39,6 +39,56 @@
 
 namespace ts { namespace detail {
 
+// Helper functions
+
+inline int cmp(sockaddr_in6 const& lhs, sockaddr_in6 const& rhs) {
+  return memcmp(lhs.sin6_addr.s6_addr, rhs.sin6_addr.s6_addr, INK_IP6_SIZE);
+}
+
+/// Less than.
+inline bool operator<(sockaddr_in6 const& lhs, sockaddr_in6 const& rhs) {
+  return ts::detail::cmp(lhs, rhs) < 0;
+}
+inline bool operator<(sockaddr_in6 const* lhs, sockaddr_in6 const& rhs) {
+  return ts::detail::cmp(*lhs, rhs) < 0;
+}
+/// Less than.
+inline bool operator<(sockaddr_in6 const& lhs, sockaddr_in6 const* rhs) {
+  return ts::detail::cmp(lhs, *rhs) < 0;
+}
+/// Equality.
+inline bool operator==(sockaddr_in6 const& lhs, sockaddr_in6 const* rhs) {
+  return ts::detail::cmp(lhs, *rhs) == 0;
+}
+/// Equality.
+inline bool operator==(sockaddr_in6 const* lhs, sockaddr_in6 const& rhs) {
+  return ts::detail::cmp(*lhs, rhs) == 0;
+}
+/// Equality.
+inline bool operator==(sockaddr_in6 const& lhs, sockaddr_in6 const& rhs) {
+  return ts::detail::cmp(lhs, rhs) == 0;
+}
+/// Less than or equal.
+inline bool operator<=(sockaddr_in6 const& lhs, sockaddr_in6 const* rhs) {
+  return ts::detail::cmp(lhs, *rhs) <= 0;
+}
+/// Less than or equal.
+inline bool operator<=(sockaddr_in6 const& lhs, sockaddr_in6 const& rhs) {
+  return ts::detail::cmp(lhs, rhs) <= 0;
+}
+/// Greater than or equal.
+inline bool operator>=(sockaddr_in6 const& lhs, sockaddr_in6 const& rhs) {
+  return ts::detail::cmp(lhs, rhs) >= 0;
+}
+/// Greater than or equal.
+inline bool operator>=(sockaddr_in6 const& lhs, sockaddr_in6 const* rhs) {
+  return ts::detail::cmp(lhs, *rhs) >= 0;
+}
+/// Greater than.
+inline bool operator>(sockaddr_in6 const& lhs, sockaddr_in6 const* rhs) {
+  return ts::detail::cmp(lhs, *rhs) > 0;
+}
+
 /// Equality.
 /// @note If @a n is @c NULL it is treated as having the color @c BLACK.
 /// @return @c true if @a c and the color of @a n are the same.
@@ -505,56 +555,6 @@ template <
   /// Iteration depends on this list being maintained.
   NodeList _list;
 };
-
-// Helper functions
-
-inline int cmp(sockaddr_in6 const& lhs, sockaddr_in6 const& rhs) {
-  return memcmp(lhs.sin6_addr.s6_addr, rhs.sin6_addr.s6_addr, INK_IP6_SIZE);
-}
-
-/// Less than.
-inline bool operator<(sockaddr_in6 const& lhs, sockaddr_in6 const& rhs) {
-  return ts::detail::cmp(lhs, rhs) < 0;
-}
-inline bool operator<(sockaddr_in6 const* lhs, sockaddr_in6 const& rhs) {
-  return ts::detail::cmp(*lhs, rhs) < 0;
-}
-/// Less than.
-inline bool operator<(sockaddr_in6 const& lhs, sockaddr_in6 const* rhs) {
-  return ts::detail::cmp(lhs, *rhs) < 0;
-}
-/// Equality.
-inline bool operator==(sockaddr_in6 const& lhs, sockaddr_in6 const* rhs) {
-  return ts::detail::cmp(lhs, *rhs) == 0;
-}
-/// Equality.
-inline bool operator==(sockaddr_in6 const* lhs, sockaddr_in6 const& rhs) {
-  return ts::detail::cmp(*lhs, rhs) == 0;
-}
-/// Equality.
-inline bool operator==(sockaddr_in6 const& lhs, sockaddr_in6 const& rhs) {
-  return ts::detail::cmp(lhs, rhs) == 0;
-}
-/// Less than or equal.
-inline bool operator<=(sockaddr_in6 const& lhs, sockaddr_in6 const* rhs) {
-  return ts::detail::cmp(lhs, *rhs) <= 0;
-}
-/// Less than or equal.
-inline bool operator<=(sockaddr_in6 const& lhs, sockaddr_in6 const& rhs) {
-  return ts::detail::cmp(lhs, rhs) <= 0;
-}
-/// Greater than or equal.
-inline bool operator>=(sockaddr_in6 const& lhs, sockaddr_in6 const& rhs) {
-  return ts::detail::cmp(lhs, rhs) >= 0;
-}
-/// Greater than or equal.
-inline bool operator>=(sockaddr_in6 const& lhs, sockaddr_in6 const* rhs) {
-  return ts::detail::cmp(lhs, *rhs) >= 0;
-}
-/// Greater than.
-inline bool operator>(sockaddr_in6 const& lhs, sockaddr_in6 const* rhs) {
-  return ts::detail::cmp(lhs, *rhs) > 0;
-}
 
 template < typename N > N*
 IpMapBase<N>::lowerBound(ArgType target) {
