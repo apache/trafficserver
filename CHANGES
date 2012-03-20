@@ -1,6 +1,19 @@
                                                          -*- coding: utf-8 -*-
-Changes with Apache Traffic Server 3.1.3
+Changes with Apache Traffic Server 3.1.4
   *) [TS-1143] Fixed edge case problems in IpMap.
+
+  *) [TS-1114] Fix to lock vol for CacheVC::write_vector.
+
+  *) [TS-857] Possibly related race in UnixNetVConnection::mainEvent
+              on inactivity timeout.
+
+  *) [TS-1149] Pretty up automake output.
+
+
+Changes with Apache Traffic Server 3.1.3
+  *) [TS-1145] Additional clang build fixes. Author: Darrin Jewell.
+
+  *) [TS-1144] Fix out of tree builds. Author: Darrin Jewell.
 
   *) [TS-1138] Fixed off by one range error in IpMap.
 

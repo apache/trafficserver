@@ -22,6 +22,7 @@ SUFFIXES = .java .class .jar .my .def .stb .html
 AM_CPPFLAGS = \
   $(iocore_include_dirs) \
   -I$(top_srcdir)/lib \
+  -I$(top_srcdir)/lib/ts \
   -I$(top_srcdir)/mgmt/api/include \
   -I$(top_srcdir)/mgmt/tools
 

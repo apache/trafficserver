@@ -14,7 +14,8 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-CXXFLAGS+=-I$(top_srcdir)/proxy/api
+AM_CXXFLAGS = -I$(top_builddir)/proxy/api \
+  -I$(top_srcdir)/proxy/api
 
 pkglibdir = ${pkglibexecdir}
 pkglib_LTLIBRARIES = conf_remap.la

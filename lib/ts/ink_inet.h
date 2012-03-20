@@ -1150,24 +1150,36 @@ inline bool IpEndpoint::isIp6() const { return AF_INET6 == sa.sa_family; }
 
 inline IpEndpoint&
 IpEndpoint::setToAnyAddr(int family) {
+  ink_zero(*this);
   sa.sa_family = family;
   if (AF_INET == family) {
     sin.sin_addr.s_addr = INADDR_ANY;
-    ink_zero(sin.sin_zero);
+#if HAVE_STRUCT_SOCKADDR_IN_SIN_LEN
+    sin.sin_len = sizeof(sockaddr_in);
+#endif
   } else if (AF_INET6 == family) {
     sin6.sin6_addr = in6addr_any;
+#if HAVE_STRUCT_SOCKADDR_IN6_SIN6_LEN
+    sin6.sin6_len = sizeof(sockaddr_in6);
+#endif
   }
   return *this;
 }
 
 inline IpEndpoint&
 IpEndpoint::setToLoopback(int family) {
+  ink_zero(*this);
   sa.sa_family = family;
   if (AF_INET == family) {
     sin.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
-    ink_zero(sin.sin_zero);
+#if HAVE_STRUCT_SOCKADDR_IN_SIN_LEN
+    sin.sin_len = sizeof(sockaddr_in);
+#endif
   } else if (AF_INET6 == family) {
     sin6.sin6_addr = in6addr_loopback;
+#if HAVE_STRUCT_SOCKADDR_IN6_SIN6_LEN
+    sin6.sin6_len = sizeof(sockaddr_in6);
+#endif
   }
   return *this;
 }

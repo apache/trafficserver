@@ -24,6 +24,7 @@ DIST_SUBDIRS = $(SUBDIRS)
 AM_CPPFLAGS = $(ink_with_modules_local) \
   $(iocore_include_dirs) \
   -I$(top_srcdir)/lib/records \
+  -I$(top_srcdir)/lib/ts \
   -I$(top_srcdir)/proxy \
   -I$(top_srcdir)/proxy/hdrs \
   -I$(top_srcdir)/mgmt \
@@ -50,9 +51,12 @@ libmgmt_p_a_CPPFLAGS = \
   -I$(top_srcdir)/mgmt/preparse \
   -I$(top_srcdir)/mgmt/utils \
   -I$(top_srcdir)/mgmt/web2 \
+  -I$(top_builddir)/proxy \
+  -I$(top_builddir)/proxy/api/ts \
   -I$(top_srcdir)/proxy \
   -I$(top_srcdir)/proxy/hdrs \
   -I$(top_srcdir)/lib/records \
+  -I$(top_srcdir)/lib/ts \
   -I$(top_srcdir)/lib
 libmgmt_p_a_SOURCES = \
   BaseManager.cc \

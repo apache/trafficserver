@@ -75,10 +75,12 @@ m4/ltsugar.m4
 m4/ltversion.m4
 m4/lt~obsolete.m4
 
+!rc/*.*.in
 rc/trafficserver
 rc/update_records
 rc/trafficserver.xml
 rc/trafficserver.conf
+rc/trafficserver.service
 
 proxy/api/include/ts
 proxy/api/ts/ts.h

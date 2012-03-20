@@ -155,7 +155,7 @@ libtsutil_la_SOURCES = \
   Version.cc
 
 # Special hacks to generate the parser rules
-ParseRules.cc: ParseRulesCType
+$(srcdir)/ParseRules.cc: ParseRulesCType
 
 ParseRulesCType: CompileParseRules
 	./CompileParseRules

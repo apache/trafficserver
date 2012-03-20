@@ -34,10 +34,22 @@
 #include <unistd.h>
 #endif
 
-
 #include "P_Net.h"
 
 int fds_limit = 8000;
+
+class FakeUDPNetProcessor : public UDPNetProcessor {
+  virtual int start(int num) {
+    NOWARN_UNUSED(num);
+    ink_release_assert(false);
+    return 0;
+  };
+  virtual void UDPNetProcessor_is_abstract() {
+    ink_release_assert(false);
+  };
+} fakeUDPNet;
+
+UDPNetProcessor& udpNet = fakeUDPNet;
 
 ClassAllocator<UDPPacketInternal> udpPacketAllocator("udpPacketAllocator");
 
@@ -103,6 +115,12 @@ LogCollationClientSM::send(LogBuffer * log_buffer)
   return 0;
 }
 
+NetAccept *
+UnixNetProcessor::createNetAccept()
+{
+  ink_release_assert(false);
+  return NULL;
+}
 
 // TODO: The following was necessary only for Solaris, should examine more.
 NetVCOptions const Connection::DEFAULT_OPTIONS;
@@ -135,6 +153,61 @@ CacheVC::handleWrite(int event, Event *e)
   ink_release_assert(false);
 }
 
+UnixNetProcessor unix_netProcessor;
+NetProcessor& netProcessor = unix_netProcessor;
+
+int
+UnixNetProcessor::start(int num)
+{
+  NOWARN_UNUSED(num);
+  ink_release_assert(false);
+  return 0;
+}
+
+Action *
+NetProcessor::accept(Continuation* cont, AcceptOptions const& opt)
+{
+  NOWARN_UNUSED(cont);
+  NOWARN_UNUSED(opt);
+  ink_release_assert(false);
+  return NULL;
+}
+
+Action *
+NetProcessor::main_accept(Continuation *cont, SOCKET fd, AcceptOptions const& opt)
+{
+  NOWARN_UNUSED(cont);
+  NOWARN_UNUSED(fd);
+  NOWARN_UNUSED(opt);
+  ink_release_assert(false);
+  return NULL;
+}
+
+Action *
+UnixNetProcessor::accept_internal(Continuation *cont, int fd, AcceptOptions const& opt)
+{
+  NOWARN_UNUSED(cont);
+  NOWARN_UNUSED(fd);
+  NOWARN_UNUSED(opt);
+  ink_release_assert(false);
+  return NULL;
+}
+
+UnixNetVConnection *
+UnixNetProcessor::allocateThread(EThread * t)
+{
+  NOWARN_UNUSED(t);
+  ink_release_assert(false);
+  return NULL;
+}
+
+void
+UnixNetProcessor::freeThread(UnixNetVConnection * vc, EThread * t)
+{
+  NOWARN_UNUSED(t);
+  NOWARN_UNUSED(vc);
+  ink_release_assert(false);
+}
 
 // For Intel ICC
 int cache_config_mutex_retry_delay = 2;
