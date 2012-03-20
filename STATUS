@@ -69,6 +69,17 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
    Jira: https://issues.apache.org/jira/browse/TS-1109
    +1: zym
 
+  *) crash from access to CacheVC::write_vector without vol lock.
+   master SHA: f51778f70df68271b5073a1c5fbb8cd384784999
+   Jira: https://issues.apache.org/jira/browse/TS-1114
+   +1: jplevyak
+
+  *) race condition UnixNetVConnection::mainEvent() when handling
+     an inactivity timeout
+   master SHA: b1f2e984379d6dc11cb70136ba33d46527a317d3
+   Jira: https://issues.apache.org/jira/browse/TS-857
+   +1: jplevyak
+
 STALLED ISSUES
 
   *) IOCORE: Fix for cross thread closing of VCs.
