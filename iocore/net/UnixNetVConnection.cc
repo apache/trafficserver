@@ -966,9 +966,7 @@ UnixNetVConnection::mainEvent(int event, Event *e)
   MUTEX_TRY_LOCK(rlock, read.vio.mutex ? (ProxyMutex *) read.vio.mutex : (ProxyMutex *) e->ethread->mutex, e->ethread);
   MUTEX_TRY_LOCK(wlock, write.vio.mutex ? (ProxyMutex *) write.vio.mutex :
                  (ProxyMutex *) e->ethread->mutex, e->ethread);
-  if (!hlock || !rlock || !wlock ||
-      (read.vio.mutex.m_ptr && rlock.m.m_ptr != read.vio.mutex.m_ptr) ||
-      (write.vio.mutex.m_ptr && wlock.m.m_ptr != write.vio.mutex.m_ptr)) {
+  if (!hlock || !rlock || !wlock) {
 #ifndef INACTIVITY_TIMEOUT
     if (e == active_timeout)
 #endif
