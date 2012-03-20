@@ -514,48 +514,47 @@ inline int cmp(sockaddr_in6 const& lhs, sockaddr_in6 const& rhs) {
 
 /// Less than.
 inline bool operator<(sockaddr_in6 const& lhs, sockaddr_in6 const& rhs) {
-  return -1 == ts::detail::cmp(lhs, rhs);
+  return ts::detail::cmp(lhs, rhs) < 0;
 }
 inline bool operator<(sockaddr_in6 const* lhs, sockaddr_in6 const& rhs) {
-  return -1 == ts::detail::cmp(*lhs, rhs);
+  return ts::detail::cmp(*lhs, rhs) < 0;
 }
 /// Less than.
 inline bool operator<(sockaddr_in6 const& lhs, sockaddr_in6 const* rhs) {
-  return -1 == ts::detail::cmp(lhs, *rhs);
+  return ts::detail::cmp(lhs, *rhs) < 0;
 }
 /// Equality.
 inline bool operator==(sockaddr_in6 const& lhs, sockaddr_in6 const* rhs) {
-  return 0 == ts::detail::cmp(lhs, *rhs);
+  return ts::detail::cmp(lhs, *rhs) == 0;
 }
 /// Equality.
 inline bool operator==(sockaddr_in6 const* lhs, sockaddr_in6 const& rhs) {
-  return 0 == ts::detail::cmp(*lhs, rhs);
+  return ts::detail::cmp(*lhs, rhs) == 0;
 }
 /// Equality.
 inline bool operator==(sockaddr_in6 const& lhs, sockaddr_in6 const& rhs) {
-  return 0 == ts::detail::cmp(lhs, rhs);
+  return ts::detail::cmp(lhs, rhs) == 0;
 }
 /// Less than or equal.
 inline bool operator<=(sockaddr_in6 const& lhs, sockaddr_in6 const* rhs) {
-  return 1 != ts::detail::cmp(lhs, *rhs);
+  return ts::detail::cmp(lhs, *rhs) <= 0;
 }
 /// Less than or equal.
 inline bool operator<=(sockaddr_in6 const& lhs, sockaddr_in6 const& rhs) {
-  return 1 != ts::detail::cmp(lhs, rhs);
+  return ts::detail::cmp(lhs, rhs) <= 0;
 }
 /// Greater than or equal.
 inline bool operator>=(sockaddr_in6 const& lhs, sockaddr_in6 const& rhs) {
-  return -1 != ts::detail::cmp(lhs, rhs);
+  return ts::detail::cmp(lhs, rhs) >= 0;
 }
 /// Greater than or equal.
 inline bool operator>=(sockaddr_in6 const& lhs, sockaddr_in6 const* rhs) {
-  return -1 != ts::detail::cmp(lhs, *rhs);
+  return ts::detail::cmp(lhs, *rhs) >= 0;
 }
 /// Greater than.
 inline bool operator>(sockaddr_in6 const& lhs, sockaddr_in6 const* rhs) {
-  return 1 == ts::detail::cmp(lhs, *rhs);
+  return ts::detail::cmp(lhs, *rhs) > 0;
 }
-
 
 template < typename N > N*
 IpMapBase<N>::lowerBound(ArgType target) {
@@ -598,25 +597,21 @@ IpMapBase<N>::fill(ArgType rmin, ArgType rmax, void* payload) {
   // Handle cases involving a node of interest to the left of the
   // range.
   if (n) {
-    Metric min_1;
-    /* Tricky bit here when min is zero and we can't decrement it. If
-       it's strictly greater than the node min then it's not zero and
-       we can check against a decremented value. Moreover, if the node
-       min isn't less than the range min the node max isn't less
-       than range min - 1.
-    */
-    if (n->_min < min && (min_1 = min, N::dec(min_1), n->_max < min_1)) {
-      // no overlap, move on to next node.
-      n = next(n);
-    } else if (n->_max >= max) { // incoming range is covered, just discard.
-      return *this;
-    } else if (n->_data != payload) { // different payload, clip range on left.
-      min = n->_max;
-      N::inc(min);
-      n = next(n);
-    } else { // skew overlap with same payload, use node and continue.
-      x = n;
-      n = next(n);
+    if (n->_min < min) {
+      Metric min_1 = min;
+      N::dec(min_1);  // dec is OK because min isn't zero.
+      if (n->_max < min_1) { // no overlap or adj.
+        n = next(n);
+      } else if (n->_max >= max) { // incoming range is covered, just discard.
+        return *this;
+      } else if (n->_data != payload) { // different payload, clip range on left.
+        min = n->_max;
+        N::inc(min);
+        n = next(n);
+      } else { // skew overlap with same payload, use node and continue.
+        x = n;
+        n = next(n);
+      }
     }
   } else {
     n = this->getHead();
@@ -655,7 +650,7 @@ IpMapBase<N>::fill(ArgType rmin, ArgType rmax, void* payload) {
       } else { // not carrying a span.
         if (n->_max <= max) { // next range is covered - use it.
           x = n;
-          n->setMin(min);
+          x->setMin(min);
           n = next(n);
         } else if (n->_min <= max_plus1) {
           n->setMin(min);
@@ -677,23 +672,25 @@ IpMapBase<N>::fill(ArgType rmin, ArgType rmax, void* payload) {
           x->setMaxMinusOne(n->_min);
           x = 0;
           min = n->_max;
+          N::inc(min); // OK because n->_max maximal => next is null.
+          n = next(n);
+        }
+      } else { // no carry node.
+        if (max < n->_min) { // entirely before next span.
+          this->insertBefore(n, new N(min, max, payload));
+          return *this;
+        } else {
+          if (min < n->_min) { // leading section, need node.
+            N* y = new N(min, n->_min, payload);
+            y->decrementMax();
+            this->insertBefore(n, y);
+          }
+          if (max <= n->_max) // nothing past node
+            return *this;
+          min = n->_max;
           N::inc(min);
           n = next(n);
         }
-      } else {
-        if (max < n->_min) { // entirely before next span.
-          this->insertBefore(n, new N(min, max, payload));
-          return *this; // done
-        } else if (min < n->_min) {
-          // overlap on the right, so make a span to take up the slack.
-          N* y = new N(min, n->_min, payload);
-          y->decrementMax();
-          this->insertBefore(n, y);
-        }
-        if (max <= n->_max) return *this;
-        min = n->_max;
-        N::inc(min);
-        n = next(n);
       }
     }
   }
@@ -815,7 +812,7 @@ IpMapBase<N>::mark(ArgType min, ArgType max, void* payload) {
       this->remove(y);
     } else if (max_plus < n->_min) { // no overlap, done.
       break;
-    } else if (n->_data == payload) { // skew overlap same payload
+    } else if (n->_data == payload) { // skew overlap or adj., same payload
       x->setMax(n->_max);
       y = n;
       n = next(n);

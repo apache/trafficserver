@@ -151,7 +151,6 @@ REGRESSION_TEST(IpMap_Unmark)(RegressionTest* t, int atype, int* pstatus) {
   tb.check(!map.contains(&a_0), "IpMap Unmark: Range unmark zero address not removed.");
   tb.check(!map.contains(&a_0_0_0_16), "IpMap Unmark: Range unmark zero bounded range max not removed.");
   tb.check(map.contains(&a_0_0_0_17), "IpMap Unmark: Range unmark zero bounded range max+1 removed.");
-  IpMapTestPrint(map);
 }
 
 REGRESSION_TEST(IpMap_Fill)(RegressionTest* t, int atype, int* pstatus) {
@@ -162,7 +161,7 @@ REGRESSION_TEST(IpMap_Fill)(RegressionTest* t, int atype, int* pstatus) {
   void* const deny = reinterpret_cast<void*>(~0); 
   void* const markA = reinterpret_cast<void*>(1);
   void* const markB = reinterpret_cast<void*>(2);
-//  void* const markC = reinterpret_cast<void*>(3);
+  void* const markC = reinterpret_cast<void*>(3);
   void* mark; // for retrieval
 
   IpEndpoint a0,a_10_28_56_0,a_10_28_56_255,a3,a4;
@@ -170,7 +169,7 @@ REGRESSION_TEST(IpMap_Fill)(RegressionTest* t, int atype, int* pstatus) {
   IpEndpoint a_10_28_55_255, a_10_28_57_0;
   IpEndpoint a_63_128_1_12;
   IpEndpoint a_0000_0000, a_0000_0001, a_ffff_ffff;
-  IpEndpoint a_fe80_9d89, a_fe80_9d90, a_fe80_9d95, a_fe80_9d9d, a_fe80_9d9e;
+  IpEndpoint a_fe80_9d8f, a_fe80_9d90, a_fe80_9d95, a_fe80_9d9d, a_fe80_9d9e;
 
   *pstatus = REGRESSION_TEST_PASSED;
 
@@ -189,7 +188,7 @@ REGRESSION_TEST(IpMap_Fill)(RegressionTest* t, int atype, int* pstatus) {
   ats_ip_pton("::", &a_0000_0000);
   ats_ip_pton("::1", &a_0000_0001);
   ats_ip_pton("ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff", &a_ffff_ffff);
-  ats_ip_pton("fe80::221:9bff:fe10:9d89", &a_fe80_9d89);
+  ats_ip_pton("fe80::221:9bff:fe10:9d8f", &a_fe80_9d8f);
   ats_ip_pton("fe80::221:9bff:fe10:9d90", &a_fe80_9d90);
   ats_ip_pton("fe80::221:9bff:fe10:9d95", &a_fe80_9d95);
   ats_ip_pton("fe80::221:9bff:fe10:9d9d", &a_fe80_9d9d);
@@ -239,8 +238,8 @@ REGRESSION_TEST(IpMap_Fill)(RegressionTest* t, int atype, int* pstatus) {
            "IpMap Fill[v6]: Max address has bad mark.");
   tb.check(map.contains(&a_fe80_9d90, &mark) && mark == markA,
            "IpMap Fill[v6]: 9d90 address has bad mark.");
-  tb.check(map.contains(&a_fe80_9d89, &mark) && mark == markB,
-           "IpMap Fill[v6]: 9d89 address has bad mark.");
+  tb.check(map.contains(&a_fe80_9d8f, &mark) && mark == markB,
+           "IpMap Fill[v6]: 9d8f address has bad mark.");
   tb.check(map.contains(&a_fe80_9d9d, &mark) && mark == markA,
            "IpMap Fill[v6]: 9d9d address has bad mark.");
   tb.check(map.contains(&a_fe80_9d9e, &mark) && mark == markB,
@@ -248,5 +247,30 @@ REGRESSION_TEST(IpMap_Fill)(RegressionTest* t, int atype, int* pstatus) {
   tb.check(map.contains(&a_0000_0001, &mark) && mark == markA,
            "IpMap Fill[v6]: ::1 has bad mark.");
   
-  IpMapTestPrint(map);
+  tb.check(map.getCount() == 10, "IpMap Fill[pre-refill]: Bad range count.");
+  // These should be ignored by the map as it is completely covered for IPv6.
+  map.fill(&a_fe80_9d90, &a_fe80_9d9d, markA);
+  map.fill(&a_0000_0001, &a_0000_0001, markC);
+  map.fill(&a_0000_0000, &a_ffff_ffff, markB);
+  tb.check(map.getCount() == 10, "IpMap Fill[post-refill]: Bad range count.");
+
+  map.clear();
+  map.fill(&a_fe80_9d90, &a_fe80_9d9d, markA);
+  map.fill(&a_0000_0001, &a_0000_0001, markC);
+  map.fill(&a_0000_0000, &a_ffff_ffff, markB);
+  tb.check(map.contains(&a_0000_0000, &mark) && mark == markB,
+           "IpMap Fill[v6-2]: Zero address has bad mark.");
+  tb.check(map.contains(&a_ffff_ffff, &mark) && mark == markB,
+           "IpMap Fill[v6-2]: Max address has bad mark.");
+  tb.check(map.contains(&a_fe80_9d90, &mark) && mark == markA,
+           "IpMap Fill[v6-2]: 9d90 address has bad mark.");
+  tb.check(map.contains(&a_fe80_9d8f, &mark) && mark == markB,
+           "IpMap Fill[v6-2]: 9d8f address has bad mark.");
+  tb.check(map.contains(&a_fe80_9d9d, &mark) && mark == markA,
+           "IpMap Fill[v6-2]: 9d9d address has bad mark.");
+  tb.check(map.contains(&a_fe80_9d9e, &mark) && mark == markB,
+           "IpMap Fill[v6-2]: 9d9b address has bad mark.");
+  tb.check(map.contains(&a_0000_0001, &mark) && mark == markC,
+           "IpMap Fill[v6-2]: ::1 has bad mark.");
+ 
 }
