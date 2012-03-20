@@ -241,7 +241,6 @@ REGRESSION_TEST(IpMap_Fill)(RegressionTest* t, int atype, int* pstatus) {
   tb.check(!map.contains(&a_63_128_1_12, &mark), "IpMap fill[3]: invalid mark between ranges.");
   tb.check(map.contains(&a_10_0_0_19, &mark) && mark == allow, "IpMap fill[3]: invalid mark in lower range.");
   map.fill(&a0, &a_max, deny);
-  IpMapTestPrint(map);
   if (!tb.check(map.getCount() == 5, "IpMap[3]: Wrong number of ranges."))
     IpMapTestPrint(map);
   if (tb.check(map.contains(&a_63_128_1_12, &mark), "IpMap fill[3]: Missing mark between ranges")) {
