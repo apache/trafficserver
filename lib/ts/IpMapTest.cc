@@ -165,6 +165,7 @@ REGRESSION_TEST(IpMap_Fill)(RegressionTest* t, int atype, int* pstatus) {
   void* mark; // for retrieval
 
   IpEndpoint a0,a_10_28_56_0,a_10_28_56_255,a3,a4;
+  IpEndpoint a_9_255_255_255, a_10_0_0_0, a_10_0_0_19, a_10_0_0_255, a_10_0_1_0;
   IpEndpoint a_10_28_56_4, a_max, a_loopback, a_loopback2;
   IpEndpoint a_10_28_55_255, a_10_28_57_0;
   IpEndpoint a_63_128_1_12;
@@ -175,6 +176,12 @@ REGRESSION_TEST(IpMap_Fill)(RegressionTest* t, int atype, int* pstatus) {
 
   ats_ip_pton("0.0.0.0", &a0);
   ats_ip_pton("255.255.255.255", &a_max);
+
+  ats_ip_pton("9.255.255.255", &a_9_255_255_255);
+  ats_ip_pton("10.0.0.0", &a_10_0_0_0);
+  ats_ip_pton("10.0.0.19", &a_10_0_0_19);
+  ats_ip_pton("10.0.0.255", &a_10_0_0_255);
+  ats_ip_pton("10.0.1.0", &a_10_0_1_0);
 
   ats_ip_pton("10.28.55.255", &a_10_28_55_255);
   ats_ip_pton("10.28.56.0", &a_10_28_56_0);
@@ -194,7 +201,7 @@ REGRESSION_TEST(IpMap_Fill)(RegressionTest* t, int atype, int* pstatus) {
   ats_ip_pton("fe80::221:9bff:fe10:9d9d", &a_fe80_9d9d);
   ats_ip_pton("fe80::221:9bff:fe10:9d9e", &a_fe80_9d9e);
 
-  ats_ip_pton("127.0.0.1", &a_loopback);
+  ats_ip_pton("127.0.0.0", &a_loopback);
   ats_ip_pton("127.0.0.255", &a_loopback2);
   ats_ip_pton("63.128.1.12", &a_63_128_1_12);
 
@@ -222,10 +229,23 @@ REGRESSION_TEST(IpMap_Fill)(RegressionTest* t, int atype, int* pstatus) {
   map.fill(&a_loopback, &a_loopback2, markA);
   map.fill(&a_10_28_56_0, &a_10_28_56_255, markB);
   tb.check(!map.contains(&a_63_128_1_12, &mark), "IpMap fill[2]: over extended range.");
-  map.fill(&a0, &a_max, deny);
+  map.fill(&a0, &a_max, markC);
   tb.check(map.getCount() == 5, "IpMap[2]: Fill failed.");
-  if (tb.check(map.contains(&a_63_128_1_12, &mark), "IpMap fill[2]: missing mark")) {
-    tb.check(mark == deny, "IpMap fill[2]: missing range");
+  if (tb.check(map.contains(&a_63_128_1_12, &mark), "IpMap fill[2]: Collapsed range.")) {
+    tb.check(mark == markC, "IpMap fill[2]: invalid mark for range gap.");
+  }
+
+  map.clear();
+  map.fill(&a_10_0_0_0, &a_10_0_0_255, allow);
+  map.fill(&a_loopback, &a_loopback2, allow);
+  tb.check(!map.contains(&a_63_128_1_12, &mark), "IpMap fill[3]: invalid mark between ranges.");
+  tb.check(map.contains(&a_10_0_0_19, &mark) && mark == allow, "IpMap fill[3]: invalid mark in lower range.");
+  map.fill(&a0, &a_max, deny);
+  IpMapTestPrint(map);
+  if (!tb.check(map.getCount() == 5, "IpMap[3]: Wrong number of ranges."))
+    IpMapTestPrint(map);
+  if (tb.check(map.contains(&a_63_128_1_12, &mark), "IpMap fill[3]: Missing mark between ranges")) {
+    tb.check(mark == deny, "IpMap fill[3]: gap range invalidly marked");
   }
 
   map.fill(&a_fe80_9d90, &a_fe80_9d9d, markA);
