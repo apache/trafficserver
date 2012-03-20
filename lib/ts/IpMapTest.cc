@@ -21,23 +21,8 @@
     limitations under the License.
 */
 
-# include "IpMap.h"
-# include "Regression.h"
-
-inline bool check(RegressionTest* t, int* pstatus, bool test, char const* fmt, ...) {
-  if (!test) {
-    static size_t const N = 1<<16;
-    char buffer[N]; // just stack, go big.
-    va_list ap;
-    va_start(ap, fmt);
-    vsnprintf(buffer, N, fmt, ap);
-    va_end(ap);
-    rprintf(t, "%s\n", buffer);
-    *pstatus = REGRESSION_TEST_FAILED;
-  }
-  return test;
-}
-
+#include <ts/IpMap.h>
+#include <ts/TestBox.h>
 
 void
 IpMapTestPrint(IpMap& map) {
@@ -54,6 +39,8 @@ IpMapTestPrint(IpMap& map) {
 }
 
 REGRESSION_TEST(IpMap_Basic)(RegressionTest* t, int atype, int* pstatus) {
+  TestBox tb(t, pstatus);
+
   IpMap map;
   void* const markA = reinterpret_cast<void*>(1);
   void* const markB = reinterpret_cast<void*>(2);
@@ -73,52 +60,53 @@ REGRESSION_TEST(IpMap_Basic)(RegressionTest* t, int atype, int* pstatus) {
 
   map.mark(ip10,ip20,markA);
   map.mark(ip5, ip9, markA);
-  check(t, pstatus, map.getCount() == 1, "Coalesce failed");
-  check(t, pstatus, map.contains(ip9), "Range max not found.");
-  check(t, pstatus, map.contains(ip10, &mark), "Span min not found.");
-  check(t, pstatus, mark == markA, "Mark not preserved.");
+  tb.check(map.getCount() == 1, "Coalesce failed");
+  tb.check(map.contains(ip9), "Range max not found.");
+  tb.check(map.contains(ip10, &mark), "Span min not found.");
+  tb.check(mark == markA, "Mark not preserved.");
 
   map.fill(ip15, ip100, markB);
-  check(t, pstatus, map.getCount() == 2, "Fill failed.");
-  check(t, pstatus, map.contains(ip50, &mark), "Fill interior missing.");
-  check(t, pstatus, mark == markB, "Fill mark not preserved.");
-  check(t, pstatus, !map.contains(ip200), "Span min not found.");
-  check(t, pstatus, map.contains(ip15, &mark), "Old span interior not found.");
-  check(t, pstatus, mark == markA, "Fill overwrote mark.");
+  tb.check(map.getCount() == 2, "Fill failed.");
+  tb.check(map.contains(ip50, &mark), "Fill interior missing.");
+  tb.check(mark == markB, "Fill mark not preserved.");
+  tb.check(!map.contains(ip200), "Span min not found.");
+  tb.check(map.contains(ip15, &mark), "Old span interior not found.");
+  tb.check(mark == markA, "Fill overwrote mark.");
 
   map.clear();
-  check(t, pstatus, map.getCount() == 0, "Clear failed.");
+  tb.check(map.getCount() == 0, "Clear failed.");
 
   map.mark(ip20, ip50, markA);
   map.mark(ip100, ip150, markB);
   map.fill(ip10, ip200, markC);
-  check(t, pstatus, map.getCount() == 5, "Test 3 failed [expected 5, got %d].", map.getCount());
-  check(t, pstatus, map.contains(ip15, &mark), "Test 3 - left span missing.");
-  check(t, pstatus, map.contains(ip60, &mark), "Test 3 - middle span missing.");
-  check(t, pstatus, mark == markC, "Test 3 - fill mark wrong.");
-  check(t, pstatus, map.contains(ip160), "Test 3 - right span missing.");
-  check(t, pstatus, map.contains(ip120, &mark), "Test 3 - right mark span missing.");
-  check(t, pstatus, mark == markB, "Test 3 - wrong data on right mark span.");
+  tb.check(map.getCount() == 5, "Test 3 failed [expected 5, got %d].", map.getCount());
+  tb.check(map.contains(ip15, &mark), "Test 3 - left span missing.");
+  tb.check(map.contains(ip60, &mark), "Test 3 - middle span missing.");
+  tb.check(mark == markC, "Test 3 - fill mark wrong.");
+  tb.check(map.contains(ip160), "Test 3 - right span missing.");
+  tb.check(map.contains(ip120, &mark), "Test 3 - right mark span missing.");
+  tb.check(mark == markB, "Test 3 - wrong data on right mark span.");
   map.unmark(ip140, ip160);
-  check(t, pstatus, map.getCount() == 5, "Test 3 unmark failed [expected 5, got %d].", map.getCount());
-  check(t, pstatus, !map.contains(ip140), "Test 3 - unmark left edge still there.");
-  check(t, pstatus, !map.contains(ip150), "Test 3 - unmark middle still there.");
-  check(t, pstatus, !map.contains(ip160), "Test 3 - unmark right edge still there.");
+  tb.check(map.getCount() == 5, "Test 3 unmark failed [expected 5, got %d].", map.getCount());
+  tb.check(!map.contains(ip140), "Test 3 - unmark left edge still there.");
+  tb.check(!map.contains(ip150), "Test 3 - unmark middle still there.");
+  tb.check(!map.contains(ip160), "Test 3 - unmark right edge still there.");
 
   map.clear();
   map.mark(ip20,ip20, markA);
-  check(t, pstatus, map.contains(ip20), "Map failed on singleton insert");
+  tb.check(map.contains(ip20), "Map failed on singleton insert");
   map.mark(ip10, ip200, markB);
   mark=0;
   map.contains(ip20, &mark);
-  check(t, pstatus, mark == markB, "Map held singleton against range.");
+  tb.check(mark == markB, "Map held singleton against range.");
   map.mark(ip100, ip120, markA);
   map.mark(ip150, ip160, markB);
   map.mark(ip0, ipmax, markC);
-  check(t, pstatus, map.getCount() == 1, "IpMap: Full range fill left extra ranges.");
+  tb.check(map.getCount() == 1, "IpMap: Full range fill left extra ranges.");
 }
 
 REGRESSION_TEST(IpMap_Unmark)(RegressionTest* t, int atype, int* pstatus) {
+  TestBox tb(t, pstatus);
   IpMap map;
 //  ip_text_buffer ipb1, ipb2;
   void* const markA = reinterpret_cast<void*>(1);
@@ -150,23 +138,24 @@ REGRESSION_TEST(IpMap_Unmark)(RegressionTest* t, int atype, int* pstatus) {
   *pstatus = REGRESSION_TEST_PASSED;
 
   map.mark(&a_0, &a_max, markA);
-  check(t, pstatus, map.getCount() == 1, "IpMap Unmark: Full range not single.");
+  tb.check(map.getCount() == 1, "IpMap Unmark: Full range not single.");
   map.unmark(&a_10_28_56_0, &a_10_28_56_255);
-  check(t, pstatus, map.getCount() == 2, "IpMap Unmark: Range unmark failed.");
+  tb.check(map.getCount() == 2, "IpMap Unmark: Range unmark failed.");
   // Generic range check.
-  check(t, pstatus, !map.contains(&a_10_28_56_0), "IpMap Unmark: Range unmark min address not removed.");
-  check(t, pstatus, !map.contains(&a_10_28_56_255), "IpMap Unmark: Range unmark max address not removed.");
-  check(t, pstatus, map.contains(&a_10_28_55_255), "IpMap Unmark: Range unmark min-1 address removed.");
-  check(t, pstatus, map.contains(&a_10_28_57_0), "IpMap Unmark: Range unmark max+1 address removed.");
+  tb.check(!map.contains(&a_10_28_56_0), "IpMap Unmark: Range unmark min address not removed.");
+  tb.check(!map.contains(&a_10_28_56_255), "IpMap Unmark: Range unmark max address not removed.");
+  tb.check(map.contains(&a_10_28_55_255), "IpMap Unmark: Range unmark min-1 address removed.");
+  tb.check(map.contains(&a_10_28_57_0), "IpMap Unmark: Range unmark max+1 address removed.");
   // Test min bounded range.
   map.unmark(&a_0, &a_0_0_0_16);
-  check(t, pstatus, !map.contains(&a_0), "IpMap Unmark: Range unmark zero address not removed.");
-  check(t, pstatus, !map.contains(&a_0_0_0_16), "IpMap Unmark: Range unmark zero bounded range max not removed.");
-  check(t, pstatus, map.contains(&a_0_0_0_17), "IpMap Unmark: Range unmark zero bounded range max+1 removed.");
+  tb.check(!map.contains(&a_0), "IpMap Unmark: Range unmark zero address not removed.");
+  tb.check(!map.contains(&a_0_0_0_16), "IpMap Unmark: Range unmark zero bounded range max not removed.");
+  tb.check(map.contains(&a_0_0_0_17), "IpMap Unmark: Range unmark zero bounded range max+1 removed.");
   IpMapTestPrint(map);
 }
 
 REGRESSION_TEST(IpMap_Fill)(RegressionTest* t, int atype, int* pstatus) {
+  TestBox tb(t, pstatus);
   IpMap map;
   ip_text_buffer ipb1, ipb2;
   void* const allow = reinterpret_cast<void*>(0);
@@ -213,36 +202,51 @@ REGRESSION_TEST(IpMap_Fill)(RegressionTest* t, int atype, int* pstatus) {
   map.fill(&a_10_28_56_0,&a_10_28_56_255,deny);
   map.fill(&a0,&a_max,allow);
 
-  check(t, pstatus, map.contains(&a_10_28_56_4,&mark), "IpMap Fill: Target not found.");
-  check(t, pstatus, mark == deny, "IpMap Fill: Expected deny, got allow at %s.", ats_ip_ntop(&a_10_28_56_4, ipb1, sizeof(ipb1)));
+  tb.check(map.contains(&a_10_28_56_4,&mark), "IpMap Fill: Target not found.");
+  tb.check(mark == deny, "IpMap Fill: Expected deny, got allow at %s.", ats_ip_ntop(&a_10_28_56_4, ipb1, sizeof(ipb1)));
 
   map.clear();
   map.fill(&a_loopback, &a_loopback, allow);
-  check(t, pstatus, map.contains(&a_loopback), "IpMap fill: singleton not marked.");
+  tb.check(map.contains(&a_loopback), "IpMap fill: singleton not marked.");
   map.fill(&a0, &a_max, deny);
 
   mark=0;
-  check(t, pstatus, map.contains(&a_loopback, &mark), "IpMap fill: singleton marking lost.");
-  check(t, pstatus, mark == allow, "IpMap fill: overwrote existing singleton mark.");
-  if (check(t, pstatus, map.begin() != map.end(), "IpMap fill: map is empty.")) {
-    if (check(t, pstatus, ++(map.begin()) != map.end(), "IpMap fill: only one range.")) {
-      check(t, pstatus, -1 == ats_ip_addr_cmp(map.begin()->max(), (++map.begin())->min()), "IpMap fill: ranges not disjoint [%s < %s].", ats_ip_ntop(map.begin()->max(), ipb1, sizeof(ipb1)), ats_ip_ntop((++map.begin())->min(), ipb2, sizeof(ipb2)));
+  tb.check(map.contains(&a_loopback, &mark), "IpMap fill: singleton marking lost.");
+  tb.check(mark == allow, "IpMap fill: overwrote existing singleton mark.");
+  if (tb.check(map.begin() != map.end(), "IpMap fill: map is empty.")) {
+    if (tb.check(++(map.begin()) != map.end(), "IpMap fill: only one range.")) {
+      tb.check(-1 == ats_ip_addr_cmp(map.begin()->max(), (++map.begin())->min()), "IpMap fill: ranges not disjoint [%s < %s].", ats_ip_ntop(map.begin()->max(), ipb1, sizeof(ipb1)), ats_ip_ntop((++map.begin())->min(), ipb2, sizeof(ipb2)));
     }
   }
 
   map.clear();
   map.fill(&a_loopback, &a_loopback2, markA);
   map.fill(&a_10_28_56_0, &a_10_28_56_255, markB);
-  check(t, pstatus, !map.contains(&a_63_128_1_12, &mark), "IpMap fill[2]: over extended range.");
+  tb.check(!map.contains(&a_63_128_1_12, &mark), "IpMap fill[2]: over extended range.");
   map.fill(&a0, &a_max, deny);
-  check(t, pstatus, map.getCount() == 5, "IpMap[2]: Fill failed.");
-  if (check(t, pstatus, map.contains(&a_63_128_1_12, &mark), "IpMap fill[2]: missing mark")) {
-    check(t, pstatus, mark == deny, "IpMap fill[2]: missing range");
+  tb.check(map.getCount() == 5, "IpMap[2]: Fill failed.");
+  if (tb.check(map.contains(&a_63_128_1_12, &mark), "IpMap fill[2]: missing mark")) {
+    tb.check(mark == deny, "IpMap fill[2]: missing range");
   }
 
   map.fill(&a_fe80_9d90, &a_fe80_9d9d, markA);
   map.fill(&a_0000_0001, &a_0000_0001, markA);
   map.fill(&a_0000_0000, &a_ffff_ffff, markB);
+
+  tb.check(map.contains(&a_0000_0000, &mark) && mark == markB,
+           "IpMap Fill[v6]: Zero address has bad mark.");
+  tb.check(map.contains(&a_ffff_ffff, &mark) && mark == markB,
+           "IpMap Fill[v6]: Max address has bad mark.");
+  tb.check(map.contains(&a_fe80_9d90, &mark) && mark == markA,
+           "IpMap Fill[v6]: 9d90 address has bad mark.");
+  tb.check(map.contains(&a_fe80_9d89, &mark) && mark == markB,
+           "IpMap Fill[v6]: 9d89 address has bad mark.");
+  tb.check(map.contains(&a_fe80_9d9d, &mark) && mark == markA,
+           "IpMap Fill[v6]: 9d9d address has bad mark.");
+  tb.check(map.contains(&a_fe80_9d9e, &mark) && mark == markB,
+           "IpMap Fill[v6]: 9d9b address has bad mark.");
+  tb.check(map.contains(&a_0000_0001, &mark) && mark == markA,
+           "IpMap Fill[v6]: ::1 has bad mark.");
   
   IpMapTestPrint(map);
 }
