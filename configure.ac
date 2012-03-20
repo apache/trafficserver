@@ -32,8 +32,8 @@
 # Version number is calculated as MAJOR * 1000000 + MINOR * 1000 + MICRO
 # Version string is in the form of MAJOR.MINOR.MICRO[sufix]
 #
-m4_define([TS_VERSION_S],[3.1.3-unstable])
-m4_define([TS_VERSION_N],[3001003])
+m4_define([TS_VERSION_S],[3.1.4-unstable])
+m4_define([TS_VERSION_N],[3001004])
 
 AC_INIT([Apache Traffic Server], TS_VERSION_S(), [dev@trafficserver.apache.org], [trafficserver],[http://trafficserver.apache.org])
 AC_PREREQ([2.59])
@@ -42,6 +42,10 @@ AC_CONFIG_SRCDIR([proxy/Main.cc])
 AC_CONFIG_MACRO_DIR([build])
 AM_INIT_AUTOMAKE([-Wall -Werror foreign no-installinfo no-installman 1.9.2])
 AM_CONFIG_HEADER([lib/ts/ink_autoconf.h])
+
+# Configure with --disable-silent-rules to get verbose output. For more info, see
+# http://www.gnu.org/software/automake/manual/html_node/Automake-silent_002drules-Option.html
+AM_SILENT_RULES([yes])
 
 # Not sure this is needed, and seems to break with some versions of automake
 #LT_INIT([dlopen])
@@ -607,13 +611,13 @@ case $host_os in
     case $base_cc in
     clang)
       common_opt="-pipe -Wall -Werror -Wno-deprecated-declarations"
-      debug_opt="-ggdb3 $common_opt"
+      debug_opt="$common_opt"
       release_opt="-g $common_opt $optimizing_flags -fno-strict-aliasing"
       cxx_opt="-Wno-invalid-offsetof"
       ;;
     *) # gcc
       common_opt="-pipe -Wall -Werror -Wno-deprecated-declarations"
-      debug_opt="-ggdb3 $common_opt"
+      debug_opt="$common_opt"
       release_opt="-g $common_opt $optimizing_flags -feliminate-unused-debug-symbols -fno-strict-aliasing"
       cxx_opt="-Wno-invalid-offsetof"
       ;;
@@ -1380,6 +1384,7 @@ AC_CONFIG_FILES([rc/Makefile])
 AC_CONFIG_FILES([rc/trafficserver])
 AC_CONFIG_FILES([rc/trafficserver.xml])
 AC_CONFIG_FILES([rc/trafficserver.conf])
+AC_CONFIG_FILES([rc/trafficserver.service])
 AC_CONFIG_FILES([iocore/aio/Makefile])
 AC_CONFIG_FILES([iocore/cache/Makefile])
 AC_CONFIG_FILES([iocore/cluster/Makefile])
