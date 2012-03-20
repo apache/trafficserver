@@ -77,7 +77,7 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   *) race condition UnixNetVConnection::mainEvent() when handling
      an inactivity timeout
    master SHA: b1f2e984379d6dc11cb70136ba33d46527a317d3
-   Jira: https://issues.apache.org/jira/browse/TS-857
+   Jira: https://issues.apache.org/jira/browse/TS-1158
    +1: jplevyak
 
 STALLED ISSUES
