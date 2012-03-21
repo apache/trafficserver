@@ -272,7 +272,7 @@ IpAllow::BuildTable()
           // Search for "action=ip_allow method=PURGE method=GET ..." or "action=ip_deny method=PURGE method=GET ...".
           char *label, *val;
           uint32_t acl_method_mask = 0;
-          AclOp op;
+          AclOp op = ACL_OP_DENY; // "shut up", I explained to the compiler.
           bool op_found = false, method_found = false;
           for (int i = 0; i < MATCHER_MAX_TOKENS; i++) {
             label = line_info.line[0][i];
