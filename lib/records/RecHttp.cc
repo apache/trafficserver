@@ -135,7 +135,7 @@ HttpProxyPort::loadConfig(Vec<self>& entries) {
 
   // Do current style port configuration first.
   text = REC_readString(PORTS_CONFIG_NAME, &found_p);
-  if (found_p) self::loadValue(entries, text);
+  if (found_p && text) self::loadValue(entries, text);
   ats_free(text);
 
   // Check old style single port.
