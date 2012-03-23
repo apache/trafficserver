@@ -45,7 +45,9 @@ HttpAccept::mainEvent(int event, void *data)
 
     // The backdoor port is now only bound to "localhost", so reason to
     // check for if it's incoming from "localhost" or not.
-    if (!backdoor && IpAllow::instance() && ((acl_method_mask = IpAllow::instance()->match(client_ip)) == 0)) {
+    if (backdoor) {
+      acl_method_mask = IpAllow::AllMethodMask();
+    } else if (IpAllow::instance() && ((acl_method_mask = IpAllow::instance()->match(client_ip)) == 0)) {
       Warning("connect by disallowed client %s, closing", ats_ip_ntop(client_ip, ipb, sizeof(ipb)));
       netvc->do_io_close();
 

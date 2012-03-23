@@ -52,7 +52,7 @@ IpAllow* IpAllow::_instance = NULL;
 // Mask for all methods.
 // This can't be computed properly at process start, so it's delayed
 // until the instance is initialized.
-uint32_t ALL_METHOD_MASK;
+uint32_t IpAllow::ALL_METHOD_MASK;
 
 static Ptr<ProxyMutex> ip_reconfig_mutex;
 

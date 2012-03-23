@@ -80,6 +80,10 @@ public:
   static self* instance();
 
   static bool CheckMask(uint32_t, int);
+  /// @return A mask that permits all methods.
+  static uint32_t AllMethodMask() {
+    return ALL_METHOD_MASK;
+  }
 private:
 
   static void InitInstance();
@@ -92,6 +96,7 @@ private:
   const char *action;
   IpMap _map;
   Vec<AclRecord> _acls;
+  static uint32_t ALL_METHOD_MASK;
 
   static self* _instance;
 };
