@@ -147,8 +147,7 @@ RemapProcessor::finish_remap(HttpTransact::State *s)
   HTTPHdr *request_header = &s->hdr_info.client_request;
   URL *request_url = request_header->url_get();
   char **redirect_url = &s->remap_redirect;
-  const int host_buf_len = MAXDNAME + 12 + 1 + 1;
-  char host_hdr_buf[host_buf_len], tmp_referer_buf[4096], tmp_redirect_buf[4096], tmp_buf[2048], *c;
+  char host_hdr_buf[TS_MAX_HOST_NAME_LEN], tmp_referer_buf[4096], tmp_redirect_buf[4096], tmp_buf[2048], *c;
   const char *remapped_host;
   int remapped_host_len, remapped_port, tmp;
   int from_len;
@@ -265,21 +264,22 @@ RemapProcessor::finish_remap(HttpTransact::State *s)
     // Create the new host header field being careful that our
     //   temporary buffer has adequate length
     //
-    if (host_buf_len > remapped_host_len) {
+    if (TS_MAX_HOST_NAME_LEN > remapped_host_len) {
       tmp = remapped_host_len;
       memcpy(host_hdr_buf, remapped_host, remapped_host_len);
       if (remapped_port) {
-        tmp += snprintf(host_hdr_buf + remapped_host_len, host_buf_len - remapped_host_len - 1, ":%d", remapped_port);
+        tmp += snprintf(host_hdr_buf + remapped_host_len, TS_MAX_HOST_NAME_LEN - remapped_host_len - 1,
+                        ":%d", remapped_port);
     }
     } else {
-      tmp = host_buf_len;
+      tmp = TS_MAX_HOST_NAME_LEN;
     }
 
     // It is possible that the hostname is too long.  If it is punt,
     //   and remove the host header.  If it is too long the HostDB
     //   won't be able to resolve it and the request will not go
     //   through
-    if (tmp >= host_buf_len) {
+    if (tmp >= TS_MAX_HOST_NAME_LEN) {
       request_header->field_delete(MIME_FIELD_HOST, MIME_LEN_HOST);
       Debug("url_rewrite", "Host: Header too long after rewrite");
     } else {
