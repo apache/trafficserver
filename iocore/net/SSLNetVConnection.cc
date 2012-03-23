@@ -494,7 +494,7 @@ SSLNetVConnection::sslStartHandShake(int event, int &err)
         Debug("ssl", "setting SNI callbacks");
         SSL_CTX_set_tlsext_servername_callback(ctx, ssl_servername_callback);
         SSL_CTX_set_tlsext_servername_arg(ctx, &sslCertLookup);
-#endif
+#endif /* TS_USE_TLS_SNI */
       }
 
       ssl = make_ssl_connection(ctx, this);

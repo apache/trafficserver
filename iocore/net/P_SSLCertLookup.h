@@ -26,6 +26,8 @@
 #include "libts.h"
 #include "P_SSLNetProcessor.h"
 
+class SSLContextStorage;
+
 class SSLCertLookup
 {
   bool buildTable();
@@ -34,16 +36,17 @@ class SSLCertLookup
   bool addInfoToHash(
     const char *strAddr, const char *cert, const char *ca, const char *serverPrivateKey) const;
 
-  InkHashTable *SSLCertLookupHashTable;
   char config_file_path[PATH_NAME_MAX];
   SslConfigParams *param;
   bool multipleCerts;
+
+  SSLContextStorage * ssl_storage;
 
 public:
   bool hasMultipleCerts() const { return multipleCerts; }
 
   void init(SslConfigParams * param);
-  SSL_CTX *findInfoInHash(char *strAddr) const;
+  SSL_CTX *findInfoInHash(const char * address) const;
 
   SSLCertLookup();
   ~SSLCertLookup();
