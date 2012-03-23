@@ -607,10 +607,10 @@ CacheProcessor::start_internal(int flags)
 void
 CacheProcessor::diskInitialized()
 {
-  ink_atomic_increment(&initialize_disk, 1);
+  int n_init = ink_atomic_increment(&initialize_disk, 1);
   int bad_disks = 0;
   int res = 0;
-  if (initialize_disk == gndisks) {
+  if (n_init == gndisks - 1) {
 
     int i;
     for (i = 0; i < gndisks; i++) {
