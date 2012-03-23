@@ -56,8 +56,8 @@ public:
   int compile(const char **patterns, int npatterns, REFlags flags = (REFlags) 0);
   dfa_pattern * build(const char *pattern, REFlags flags = (REFlags) 0);
   
-  int match(const char *str);
-  int match(const char *str, int length);
+  int match(const char *str) const;
+  int match(const char *str, int length) const;
 
 private:
   dfa_pattern * _my_patterns;

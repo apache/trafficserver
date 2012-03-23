@@ -76,6 +76,7 @@ DFA::build(const char *pattern, REFlags flags)
 }
 
 int DFA::compile(const char *pattern, REFlags flags) {
+  ink_assert(_my_patterns == NULL);
   _my_patterns = build(pattern,flags);
   if (_my_patterns) 
     return 0;
@@ -120,13 +121,13 @@ DFA::compile(const char **patterns, int npatterns, REFlags flags)
 }
 
 int
-DFA::match(const char *str)
+DFA::match(const char *str) const
 {
   return match(str,strlen(str));
 }
 
 int
-DFA::match(const char *str, int length)
+DFA::match(const char *str, int length) const
 {
   int rc;
   int ovector[30];
