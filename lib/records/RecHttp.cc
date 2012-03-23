@@ -135,7 +135,7 @@ HttpProxyPort::loadConfig(Vec<self>& entries) {
 
   // Do current style port configuration first.
   text = REC_readString(PORTS_CONFIG_NAME, &found_p);
-  if (found_p && text) self::loadValue(entries, text);
+  if (found_p) self::loadValue(entries, text);
   ats_free(text);
 
   // Check old style single port.
@@ -145,9 +145,15 @@ HttpProxyPort::loadConfig(Vec<self>& entries) {
   if (-1 == sp) {
     // Default value, ignore.
   } else if (0 < sp && sp < 65536) {
-    char* buff = static_cast<char*>(alloca(6 + 1 + strlen(attr) + 1));
-    sprintf(buff, "%d:%s", sp, attr);
-    self::loadValue(entries, buff);
+    if (attr) {
+      char* buff = static_cast<char*>(alloca(6 + 1 + strlen(attr) + 1));
+      sprintf(buff, "%d:%s", sp, attr);
+      self::loadValue(entries, buff);
+    } else {
+      HttpProxyPort pd;
+      pd.m_port = sp;
+      entries.push_back(pd);
+    }
   } else {
     Warning("Invalid port value %d is not in the range 1..65535 for '%s'.", sp, PORT_CONFIG_NAME);
   }
