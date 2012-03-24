@@ -785,8 +785,8 @@ CoreUtils::load_http_hdr(HTTPHdr * core_hdr, HTTPHdr * live_hdr)
   swizzle_heap->m_ronly_heap[0].m_heap_start = (char *)(intptr_t)swizzle_heap->m_size;   // offset
   swizzle_heap->m_ronly_heap[0].m_ref_count_ptr.m_ptr = NULL;
 
-  swizzle_heap->m_ronly_heap[1].m_heap_start = NULL;
-  swizzle_heap->m_ronly_heap[2].m_heap_start = NULL;
+  for (int i = 1; i < HDR_BUF_RONLY_HEAPS; i++)
+    swizzle_heap->m_ronly_heap[i].m_heap_start = NULL;
 
   // Next order of business is to copy over string heaps
   //   As we are copying over the string heaps, build

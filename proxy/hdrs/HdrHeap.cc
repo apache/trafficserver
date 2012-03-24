@@ -103,16 +103,11 @@ HdrHeap::init()
   //  garbage it is pointing to
   m_read_write_heap.m_ptr = NULL;
 
-  m_ronly_heap[0].m_heap_start = NULL;
-  m_ronly_heap[0].m_ref_count_ptr.m_ptr = NULL;
-  m_ronly_heap[0].m_locked = false;
-  m_ronly_heap[1].m_heap_start = NULL;
-  m_ronly_heap[1].m_ref_count_ptr.m_ptr = NULL;
-  m_ronly_heap[1].m_locked = false;
-  m_ronly_heap[2].m_heap_start = NULL;
-  m_ronly_heap[2].m_ref_count_ptr.m_ptr = NULL;
-  m_ronly_heap[2].m_locked = false;
-
+  for (int i = 0; i < HDR_BUF_RONLY_HEAPS; i++) {
+    m_ronly_heap[i].m_heap_start = NULL;
+    m_ronly_heap[i].m_ref_count_ptr.m_ptr = NULL;
+    m_ronly_heap[i].m_locked = false;
+  }
   m_lost_string_space = 0;
 
   ink_assert(m_free_size > 0);
@@ -184,9 +179,8 @@ HdrHeap::destroy()
   }
 
   m_read_write_heap = NULL;
-  m_ronly_heap[0].m_ref_count_ptr = NULL;
-  m_ronly_heap[1].m_ref_count_ptr = NULL;
-  m_ronly_heap[2].m_ref_count_ptr = NULL;
+  for (int i = 0; i < HDR_BUF_RONLY_HEAPS; i++)
+    m_ronly_heap[i].m_ref_count_ptr = NULL;
 
   if (m_size == HDR_HEAP_DEFAULT_SIZE) {
     hdrHeapAllocator.free_void(this);
@@ -676,8 +670,8 @@ HdrHeap::marshal(char *buf, int len)
   marshal_hdr->m_ronly_heap[0].m_heap_start = (char *)(intptr_t)marshal_hdr->m_size;     // offset
   marshal_hdr->m_ronly_heap[0].m_ref_count_ptr.m_ptr = NULL;
 
-  marshal_hdr->m_ronly_heap[1].m_heap_start = NULL;
-  marshal_hdr->m_ronly_heap[2].m_heap_start = NULL;
+  for (int i = 1; i < HDR_BUF_RONLY_HEAPS; i++)
+    marshal_hdr->m_ronly_heap[i].m_heap_start = NULL;
 
   // Next order of business is to copy over string heaps
   //   As we are copying over the string heaps, build
