@@ -1,5 +1,7 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.1.4
+  *) [TS-1162] UnixNetVConnection assertion when accepting a TLS connection
+
   *) [TS-1135] support wildcard certificates for ServerNameIndication (SNI)
 
   *) [TS-1140] Combine IP Allow and QuickFilter.
