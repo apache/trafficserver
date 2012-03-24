@@ -24,7 +24,6 @@
 #ifndef _URL_REWRITE_H_
 #define _URL_REWRITE_H_
 
-#include "StringHash.h"
 #include "UrlMapping.h"
 #include "HttpTransact.h"
 

@@ -43,7 +43,6 @@
 #include "RemapProcessor.h"
 #include "UrlRewrite.h"
 #include "UrlMapping.h"
-#include "StringHash.h"
 #include "ink_unused.h"      /* MAGIC_EDITING_TAG */
 
 /** Time till we free the old stuff after a reconfiguration. */

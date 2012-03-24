@@ -167,7 +167,6 @@ new_HdrStrHeap(int requested_size)
 
   ink_assert(sh->m_free_size > 0);
 
-
   return sh;
 }
 

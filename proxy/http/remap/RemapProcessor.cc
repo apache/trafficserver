@@ -201,11 +201,9 @@ RemapProcessor::finish_remap(HttpTransact::State *s)
               break;
             case 'f':
             case 't':
-              remapped_host =
-                (rc->type == 'f') ? map->fromURL.string_get_buf(tmp_buf, (int) sizeof(tmp_buf),
-                                                                &from_len) : ((s->url_map).getToURL())->string_get_buf(tmp_buf, (int)
-                                                                                                       sizeof(tmp_buf),
-                                                                                                       &from_len);
+              remapped_host = (rc->type == 'f') ?
+                map->fromURL.string_get_buf(tmp_buf, (int) sizeof(tmp_buf), &from_len) :
+                ((s->url_map).getToURL())->string_get_buf(tmp_buf, (int)sizeof(tmp_buf), &from_len);
               if (remapped_host && from_len > 0) {
                 c = &tmp_buf[0];
               }
@@ -227,8 +225,8 @@ RemapProcessor::finish_remap(HttpTransact::State *s)
       }
 
       if (*redirect_url == NULL) {
-        *redirect_url =
-          ats_strdup(map->filter_redirect_url ? map->filter_redirect_url : rewrite_table->http_default_redirect_url);
+        *redirect_url = ats_strdup(map->filter_redirect_url ? map->filter_redirect_url :
+                                   rewrite_table->http_default_redirect_url);
       }
 
       return false;
@@ -243,17 +241,13 @@ RemapProcessor::finish_remap(HttpTransact::State *s)
   const char *host_hdr = request_header->value_get(MIME_FIELD_HOST, MIME_LEN_HOST, &host_len);
 
   if (request_url && host_hdr != NULL && s->txn_conf->maintain_pristine_host_hdr == 0) {
-    remapped_host = request_url->host_get(&remapped_host_len);
-    remapped_port = request_url->port_get_raw();
-
     // Debug code to print out old host header.  This was easier before
     //  the header conversion.  Now we have to copy to gain null
     //  termination for the Debug() call
     if (is_debug_tag_set("url_rewrite")) {
       int old_host_hdr_len;
-      char *old_host_hdr = (char *) request_header->value_get(MIME_FIELD_HOST,
-                                                              MIME_LEN_HOST,
-                                                              &old_host_hdr_len);
+      char *old_host_hdr = (char *) request_header->value_get(MIME_FIELD_HOST, MIME_LEN_HOST, &old_host_hdr_len);
+
       if (old_host_hdr) {
         old_host_hdr = ats_strndup(old_host_hdr, old_host_hdr_len);
         Debug("url_rewrite", "Host: Header before rewrite %.*s", old_host_hdr_len, old_host_hdr);
@@ -264,6 +258,9 @@ RemapProcessor::finish_remap(HttpTransact::State *s)
     // Create the new host header field being careful that our
     //   temporary buffer has adequate length
     //
+    remapped_host = request_url->host_get(&remapped_host_len);
+    remapped_port = request_url->port_get_raw();
+
     if (TS_MAX_HOST_NAME_LEN > remapped_host_len) {
       tmp = remapped_host_len;
       memcpy(host_hdr_buf, remapped_host, remapped_host_len);

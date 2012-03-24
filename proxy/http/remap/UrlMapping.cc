@@ -21,6 +21,7 @@
   limitations under the License.
  */
 
+#include "ink_port.h"
 #include "UrlMapping.h"
 
 /**
@@ -121,7 +122,7 @@ url_mapping::~url_mapping()
 void
 url_mapping::Print()
 {
-  char from_url_buf[32768], to_url_buf[32768];
+  char from_url_buf[131072], to_url_buf[131072];
 
   fromURL.string_get_buf(from_url_buf, (int) sizeof(from_url_buf));
   toUrl.string_get_buf(to_url_buf, (int) sizeof(to_url_buf));
@@ -178,13 +179,13 @@ redirect_tag_str::parse_format_redirect_url(char *url)
 /**
  *
 **/
-referer_info::referer_info(char *_ref, bool *error_flag, char *errmsgbuf, int errmsgbuf_size):
-next(0),
-referer(0),
-referer_size(0),
-any(false),
-negative(false),
-regx_valid(false)
+referer_info::referer_info(char *_ref, bool *error_flag, char *errmsgbuf, int errmsgbuf_size)
+  : next(0),
+    referer(0),
+    referer_size(0),
+    any(false),
+    negative(false),
+    regx_valid(false)
 {
   const char *error;
   int erroffset;

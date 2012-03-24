@@ -151,7 +151,6 @@ RemapPlugins::run_single_remap()
     int toPathLen;
     int toHostLen;
 
-    map_from->path_get(&fromPathLen);
     toHost = map_to->host_get(&toHostLen);
     toPath = map_to->path_get(&toPathLen);
 
@@ -168,6 +167,7 @@ RemapPlugins::run_single_remap()
     if (to_scheme != map_from->scheme_get(&from_scheme_len))
       _request_url->scheme_set(to_scheme, to_scheme_len);
 
+    map_from->path_get(&fromPathLen);
     requestPath = _request_url->path_get(&requestPathLen);
     // Extra byte is potentially needed for prefix path '/'.
     // Added an extra 3 so that TS wouldn't crash in the field.
@@ -235,7 +235,7 @@ RemapPlugins::run_single_remap()
     _request_url->path_set(newPath, newPathLen);
 
     // TODO: This is horribly wrong and broken, when can this trigger??? Check
-    // above, we already return on _s->remap_redirect ... 
+    // above, we already return on _s->remap_redirect ... XXX.
     if (map->homePageRedirect && fromPathLen == requestPathLen && _s->remap_redirect) {
       URL redirect_url;
 
