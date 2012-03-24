@@ -21,6 +21,7 @@
   limitations under the License.
  */
 
+#include "ink_port.h"
 #include "libts.h"
 #include <assert.h>
 #include <stdio.h>
@@ -2312,7 +2313,6 @@ _mime_parser_init(MIMEParser *parser)
   parser->m_field_flags = 0;
   parser->m_value = -1;
 }
-
 //////////////////////////////////////////////////////
 // init     first time structure setup              //
 // clear    resets an already-initialized structure //
@@ -2410,6 +2410,10 @@ mime_parser_parse(MIMEParser *parser, HdrHeap *heap, MIMEHdrImpl *mh, const char
 
     field_name_length = (int) (field_name_last - field_name_first + 1);
     field_value_length = (int) (field_value_last - field_value_first + 1);
+
+    // Make sure the name or value is not longer than 64K
+    if (field_name_length >= UINT16_MAX || field_value_length >= UINT16_MAX)
+      return PARSE_ERROR;
 
     int total_line_length = (int) (field_line_last - field_line_first + 1);
 
@@ -2667,8 +2671,9 @@ mime_field_print(MIMEField *field, char *buf_start, int buf_length, int *buf_ind
 }
 
 const char *
-mime_str_u16_set(HdrHeap *heap, const char *s_str, uint16_t s_len, const char **d_str, uint16_t *d_len, bool must_copy)
+mime_str_u16_set(HdrHeap *heap, const char *s_str, int s_len, const char **d_str, uint16_t *d_len, bool must_copy)
 {
+  ink_assert(s_len >= 0 && s_len < UINT16_MAX);
   // INKqa08287 - keep track of free string space.
   //  INVARIENT: passed in result pointers must be to
   //    either NULL or be valid ptr for a string already

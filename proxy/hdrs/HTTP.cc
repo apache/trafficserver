@@ -21,6 +21,7 @@
   limitations under the License.
  */
 
+#include "ink_port.h"
 #include "libts.h"
 #include <assert.h>
 #include <stdio.h>
@@ -900,6 +901,10 @@ http_parser_parse_req(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const 
   start:
     hh->m_polarity = HTTP_TYPE_REQUEST;
 
+    // Make sure the line is not longer than 64K
+    if (scanner->m_line_length >= UINT16_MAX)
+      return PARSE_ERROR;
+
     err = mime_scanner_get(scanner, start, real_end, &line_start, &end, &line_is_real, eof, MIME_SCANNER_TYPE_LINE);
     if (err < 0)
       return err;
@@ -911,6 +916,9 @@ http_parser_parse_req(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const 
       return err;
 
     cur = line_start;
+    ink_assert((end - cur) >= 0);
+    ink_assert((end - cur) < UINT16_MAX);
+
     must_copy_strings = (must_copy_strings || (!line_is_real));
 
 #if ENABLE_SAVE_ORIGINAL_REQUEST
@@ -1116,6 +1124,10 @@ http_parser_parse_resp(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const
 
     hh->m_polarity = HTTP_TYPE_RESPONSE;
 
+    // Make sure the line is not longer than 64K
+    if (scanner->m_line_length >= UINT16_MAX)
+      return PARSE_ERROR;
+
     err = mime_scanner_get(scanner, start, real_end, &line_start, &end, &line_is_real, eof, MIME_SCANNER_TYPE_LINE);
     if (err < 0)
       return err;
@@ -1123,6 +1135,9 @@ http_parser_parse_resp(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const
       return err;
 
     cur = line_start;
+    ink_assert((end - cur) >= 0);
+    ink_assert((end - cur) < UINT16_MAX);
+
     must_copy_strings = (must_copy_strings || (!line_is_real));
 
 #if (ENABLE_PARSER_FAST_PATHS)
