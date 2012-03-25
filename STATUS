@@ -80,6 +80,11 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
    Jira: https://issues.apache.org/jira/browse/TS-1158
    +1: jplevyak
 
+  *) race condition UnixNetVConnection::do_io_close()
+   master SHA: 2731f6bfabfb983af3ddb8a48cde537d7503f283
+   Jira: https://issues.apache.org/jira/browse/TS-857
+   +1: jplevyak
+
 STALLED ISSUES
 
   *) IOCORE: Fix for cross thread closing of VCs.
