@@ -30,8 +30,6 @@
 #include "Trie.h"
 #include "ts/TestBox.h"
 
-#include <algorithm>
-
 #include <openssl/bio.h>
 #include <openssl/pem.h>
 #include <openssl/x509.h>
@@ -437,14 +435,15 @@ reverse_dns_name(const char * hostname, char (&reversed)[TS_MAX_HOST_NAME_LEN+1]
 
   while (*part) {
     ssize_t len = strcspn(part, ".");
+    ssize_t remain = ptr - reversed;
 
     // We are going to put the '.' separator back for all components except the first.
     if (*ptr == '\0') {
-      if (std::distance(reversed, ptr) < len) {
+      if (remain < len) {
         return NULL;
       }
     } else {
-      if (std::distance(reversed, ptr) < len + 1) {
+      if (remain < (len + 1)) {
         return NULL;
       }
       *(--ptr) = '.';
