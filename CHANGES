@@ -1,5 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.0.4
+  *) [TS-1154] quick_filter on HEAD does not work
+   Author: weijin
+
   *) [TS-824] Range requests that result in cache refresh give 200 status
    response with full contents. Review and suggestions for improvements
    by Charlie Gero.
