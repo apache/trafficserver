@@ -958,19 +958,14 @@ setup_socks_servers(ParentRecord * rec_arr, int len)
     int n_parents = rec_arr[j].num_parents;
 
     for (int i = 0; i < n_parents; i++) {
-      uint32_t bad_ip = (uint32_t) - 1;
-      uint8_t *ip;
-
-      ink_gethostbyname_r_data data;
-      struct hostent *ent = ink_gethostbyname_r(pr[i].hostname, &data);
-
-      if (ent) {
-        ip = (uint8_t *) ent->h_addr_list[0];
+      IpEndpoint ip4, ip6;
+      if (0 == ats_ip_getbestaddrinfo(pr[i].hostname, &ip4, &ip6)) {
+        IpEndpoint* ip = ats_is_ip6(&ip6) ? &ip6 : &ip4;
+        ats_ip_ntop(ip, pr[i].hostname, MAXDNAME+1);
       } else {
         Warning("Could not resolve socks server name \"%s\". " "Please correct it", pr[i].hostname);
-        ip = (uint8_t *) & bad_ip;
+        snprintf(pr[i].hostname, MAXDNAME+1, "255.255.255.255");
       }
-      snprintf(pr[i].hostname, MAXDNAME + 1, "%hhu.%hhu.%hhu.%hhu", ip[0], ip[1], ip[2], ip[3]);
     }
   }
 
