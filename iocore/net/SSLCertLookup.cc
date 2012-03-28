@@ -436,7 +436,7 @@ reverse_dns_name(const char * hostname, char (&reversed)[TS_MAX_HOST_NAME_LEN+1]
   *(--ptr) = '\0'; // NUL-terminate
 
   while (*part) {
-    size_t len = strcspn(part, ".");
+    ssize_t len = strcspn(part, ".");
 
     // We are going to put the '.' separator back for all components except the first.
     if (*ptr == '\0') {
