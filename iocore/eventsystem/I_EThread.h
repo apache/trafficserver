@@ -55,11 +55,6 @@ enum ThreadType {
   DEDICATED
 };
 
-enum teThreadType {
-  keAsyncThread = 0,
-  keBoundThread,
-  keSpawnThread
-};
 
 /**
   Event System specific type of thread.
