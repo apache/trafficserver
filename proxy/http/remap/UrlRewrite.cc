@@ -1376,32 +1376,26 @@ UrlRewrite::BuildTable()
     // and gives a new remap rule with the IPv4 addr.
     if ((maptype == FORWARD_MAP || maptype == FORWARD_MAP_REFERER || maptype == FORWARD_MAP_WITH_RECV_PORT) &&
         fromScheme == URL_SCHEME_TUNNEL && (fromHost_lower[0]<'0' || fromHost_lower[0]> '9')) {
-      ink_gethostbyname_r_data d;
-      struct hostent *h;
-      h = ink_gethostbyname_r(fromHost_lower, &d);
-      // We only handle IPv4 addresses which are 4-byte long.
-      if ((h != NULL) && (h->h_length == 4)) {
-        char ipv4_name[128];
-        url_mapping *u_mapping;
-        for (int i = 0; h->h_addr_list[i] != NULL; i++) {
-          ipv4_name[0] = '\0';
-          int ip_len = snprintf(ipv4_name, sizeof(ipv4_name), "%hhu.%hhu.%hhu.%hhu",
-                                (unsigned char) h->h_addr_list[i][0],
-                                (unsigned char) h->h_addr_list[i][1],
-                                (unsigned char) h->h_addr_list[i][2],
-                                (unsigned char) h->h_addr_list[i][3]);
-          if (ip_len > 0 && ip_len < (int) sizeof(ipv4_name)) {       // Create a new url mapping with the IPv4 address.
+      addrinfo* ai_records; // returned records.
+      ip_text_buffer ipb; // buffer for address string conversion.
+      if (0 == getaddrinfo(fromHost_lower, 0, 0, &ai_records)) {
+        for ( addrinfo* ai_spot = ai_records ; ai_spot ; ai_spot = ai_spot->ai_next) {
+          if (ats_is_ip(ai_spot->ai_addr) &&
+              !ats_is_ip_any(ai_spot->ai_addr)) {
+            url_mapping *u_mapping;
+
+            ats_ip_ntop(ai_spot->ai_addr, ipb, sizeof ipb);
             u_mapping = NEW(new url_mapping);
             u_mapping->fromURL.create(NULL);
             u_mapping->fromURL.copy(&new_mapping->fromURL);
-            u_mapping->fromURL.host_set(ipv4_name, strlen(ipv4_name));
+            u_mapping->fromURL.host_set(ipb, strlen(ipb));
             u_mapping->toUrl.create(NULL);
             u_mapping->toUrl.copy(&new_mapping->toUrl);
             if (bti.paramv[3] != NULL)
               u_mapping->tag = ats_strdup(&(bti.paramv[3][0]));
             bool insert_result = (maptype != FORWARD_MAP_WITH_RECV_PORT) ? 
-              TableInsert(forward_mappings.hash_lookup, u_mapping, ipv4_name) :
-              TableInsert(forward_mappings_with_recv_port.hash_lookup, u_mapping, ipv4_name);
+              TableInsert(forward_mappings.hash_lookup, u_mapping, ipb) :
+              TableInsert(forward_mappings_with_recv_port.hash_lookup, u_mapping, ipb);
             if (!insert_result) {
               errStr = "Unable to add mapping rule to lookup table";
               goto MAP_ERROR;
@@ -1410,6 +1404,7 @@ UrlRewrite::BuildTable()
             SetHomePageRedirectFlag(u_mapping, u_mapping->toUrl);
           }
         }
+        freeaddrinfo(ai_records);
       }
     }
 

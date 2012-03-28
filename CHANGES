@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.1.4
 
+  *) [TS-1168] Change UrlRewrite::BuildTable to be IPv6 compliant.
+
   *) [TS-1167] Updates parent socks server setup to be IPv6 compliant.
 
   *) [TS-1166] Remove proxy/Stuffer.[cc,h] because they were unused.
