@@ -63,10 +63,6 @@ SSLNextProtocolAccept::mainEvent(int event, void * edata)
   Debug("ssl",
       "[SSLNextProtocolAccept:mainEvent] event %d netvc %p", event, netvc);
 
-  if (!netvc) {
-    return EVENT_DONE;
-  }
-
   MUTEX_LOCK(lock, this->mutex, this_ethread());
 
   switch (event) {
