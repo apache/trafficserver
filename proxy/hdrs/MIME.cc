@@ -1763,7 +1763,8 @@ mime_field_value_str_from_strlist(HdrHeap *heap, int *new_str_len_return, StrLis
   Str *cell;
   char *new_value, *dest;
   int i, new_value_len;
-  HdrHeap::ProtectHeaps protect(heap);
+  // This works, because all strings are from the same heap when it is "split" into the list.
+  HdrHeap::HeapGuard guard(heap, list->head->str);
 
   new_value_len = 0;
 

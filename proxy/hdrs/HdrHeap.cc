@@ -36,9 +36,6 @@
 #include "MIME.h"
 #include "HTTP.h"
 
-#define HDR_MAX_ALLOC_SIZE (HDR_HEAP_DEFAULT_SIZE - sizeof(HdrHeap))
-#define HDR_HEAP_HDR_SIZE ROUND(sizeof(HdrHeap), HDR_PTR_SIZE)
-#define STR_HEAP_HDR_SIZE sizeof(HdrStrHeap)
 #define MAX_LOST_STR_SPACE 1024
 
 Allocator hdrHeapAllocator("hdrHeap", HDR_HEAP_DEFAULT_SIZE);
@@ -303,19 +300,8 @@ FAILED:
 char *
 HdrHeap::expand_str(const char *old_str, int old_len, int new_len)
 {
-  char *rw_ptr = (char *) m_read_write_heap.m_ptr;
-
-  if (rw_ptr) {
-    // First check to see the old string is in this read-write string
-    // heap
-    if (old_str >= rw_ptr + STR_HEAP_HDR_SIZE && old_str < rw_ptr + m_read_write_heap->m_heap_size) {
-      // We're in the heap.  Try to grow the string
-      char *r = m_read_write_heap->expand((char *) old_str, old_len, new_len);
-      if (r) {
-        return r;
-      }
-    }
-  }
+  if (m_read_write_heap && m_read_write_heap->contains(old_str))
+    return m_read_write_heap->expand((char *)old_str, old_len, new_len);
 
   return NULL;
 }
@@ -328,7 +314,7 @@ HdrHeap::expand_str(const char *old_str, int old_len, int new_len)
 char *
 HdrHeap::duplicate_str(const char *str, int nbytes)
 {
-  ProtectHeaps protect(this); // Don't let the source get de-allocated.
+  HeapGuard guard(this, str); // Don't let the source get de-allocated.
   char *new_str = allocate_str(nbytes);
 
   memcpy(new_str, str, nbytes);

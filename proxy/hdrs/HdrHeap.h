@@ -58,6 +58,10 @@
 #define HDR_HEAP_DEFAULT_SIZE   2048
 #define HDR_STR_HEAP_DEFAULT_SIZE   2048
 
+#define HDR_MAX_ALLOC_SIZE (HDR_HEAP_DEFAULT_SIZE - sizeof(HdrHeap))
+#define HDR_HEAP_HDR_SIZE ROUND(sizeof(HdrHeap), HDR_PTR_SIZE)
+#define STR_HEAP_HDR_SIZE sizeof(HdrStrHeap)
+
 enum
 {
   HDR_HEAP_OBJ_EMPTY = 0,
@@ -143,6 +147,11 @@ struct StrHeapDesc
   char *m_heap_start;
   int32_t m_heap_len;
   bool m_locked;
+
+  bool contains(const char *str) const
+  {
+    return (str >= m_heap_start && str < (m_heap_start + m_heap_len));
+  }
 };
 
 
@@ -161,6 +170,11 @@ public:
   uint32_t m_heap_size;
   char *m_free_start;
   uint32_t m_free_size;
+
+  bool contains(const char *str) const
+  {
+    return (str >= ((const char*)this + STR_HEAP_HDR_SIZE) && str < ((const char*)this + m_heap_size));
+  }
 };
 
 class CoreUtils;
@@ -252,31 +266,32 @@ public:
   int attach_str_heap(char *h_start, int h_len, RefCountObj * h_ref_obj, int *index);
 
   /** Struct to prevent garbage collection on heaps.
-      This bumps the reference count to the heaps while the
-      instance of this class exists. When it goes out of scope
-      the references are dropped. This is useful inside a method or
-      block to keep all the heap data around until leaving the scope.
+      This bumps the reference count to the heap containing the pointer
+      while the instance of this class exists. When it goes out of scope
+      the reference is dropped. This is useful inside a method or block
+      to keep the required heap data around until leaving the scope.
   */
-  struct ProtectHeaps {
+  struct HeapGuard {
     /// Construct the protection.
-    ProtectHeaps(HdrHeap* heap)
-      : m_read_write_heap(heap->m_read_write_heap)
+    HeapGuard(HdrHeap* heap, const char *str)
     {
-      for (int i=0; i < HDR_BUF_RONLY_HEAPS; ++i)
-        m_ronly_heap[i] = heap->m_ronly_heap[i].m_ref_count_ptr;
+      if (heap->m_read_write_heap && heap->m_read_write_heap->contains(str)) {
+        m_ptr = heap->m_read_write_heap;
+      } else {
+        for (int i=0; i < HDR_BUF_RONLY_HEAPS; ++i) {
+          if (heap->m_ronly_heap[i].contains(str)) {
+            m_ptr = heap->m_ronly_heap[i].m_ref_count_ptr;
+            break;
+          }
+        }
+      }
     }
 
-    /// Drop the protection.
-    ~ProtectHeaps()
-    {
-      // The default destructor takes care of the rw-heap
-      for (int i=0; i < HDR_BUF_RONLY_HEAPS; ++i)
-        m_ronly_heap[i] = NULL;
-    }
+    // There's no need to have a destructor here, the default dtor will take care of
+    // releaseing the (potentially) locked heap.
 
-    Ptr<HdrStrHeap> m_read_write_heap; ///< Reference to RW heap.
-    /// References to string heaps.
-    Ptr<RefCountObj> m_ronly_heap[HDR_BUF_RONLY_HEAPS];
+    /// The heap we protect (if any)
+    Ptr<RefCountObj> m_ptr;
   };
 
   // String Heap access

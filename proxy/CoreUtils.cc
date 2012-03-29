@@ -151,7 +151,6 @@ FILE *fp;
 memTable default_memTable = { 0, 0, 0 };
 DynArray<struct memTable>arrayMem(&default_memTable, 0);
 
-const int HDR_HEAP_HDR_SIZE = ROUND(sizeof(HdrHeap), HDR_PTR_SIZE);
 HTTPHdrImpl *global_http;
 HttpSM *last_seen_http_sm = NULL;
 
