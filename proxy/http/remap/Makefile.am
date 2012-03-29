@@ -41,8 +41,6 @@ libhttp_remap_a_SOURCES = \
   RemapPlugins.h \
   RemapProcessor.cc \
   RemapProcessor.h \
-  StringHash.cc \
-  StringHash.h \
   UrlMapping.cc \
   UrlMapping.h \
   UrlRewrite.cc \
