@@ -101,7 +101,7 @@ struct ShowCache: public ShowCont {
       }
       // initialize url array
       show_cache_urlstrs = NEW(new char[nstrings + 1][500]);
-      memset(show_cache_urlstrs, '\0', (nstrings + 1) * 500 * sizeof (char *));
+      memset(show_cache_urlstrs, '\0', (nstrings + 1) * 500 * sizeof (char));
 
       char *q, *t;
       p = strstr(unescapedQuery, "url=");

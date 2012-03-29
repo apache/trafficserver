@@ -1,5 +1,6 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.1.4
+  *) [TS-1171] http_ui cache lookup, double free.
 
   *) [TS-1168] Change UrlRewrite::BuildTable to be IPv6 compliant.
 
