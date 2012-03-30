@@ -37,12 +37,6 @@
 #define EVENTIO_UDP_CONNECTION  4
 #define EVENTIO_ASYNC_SIGNAL    5
 
-#if TS_USE_LIBEV
-#define EVENTIO_READ EV_READ
-#define EVENTIO_WRITE EV_WRITE
-#define EVENTIO_ERROR EV_ERROR
-#endif
-
 #if TS_USE_EPOLL
 #ifdef USE_EDGE_TRIGGER_EPOLL
 #define USE_EDGE_TRIGGER 1
@@ -75,31 +69,6 @@
 #define EVENTIO_ERROR (POLLERR|POLLPRI|POLLHUP)
 #endif
 
-#if TS_USE_LIBEV
-#define EV_MINPRI 0
-#define EV_MAXPRI 0
-#include "ev.h"
-typedef void (*eio_cb_t)(struct ev_loop*, struct ev_io*, int);
-// expose libev internals
-#define NUMPRI (EV_MAXPRI - EV_MINPRI + 1)
-typedef void ANFD;
-typedef struct {
-  ev_watcher *w;
-  int events;
-} ANPENDING;
-typedef void ANHE;
-typedef ev_watcher *W;
-struct ev_loop
-{
-  ev_tstamp ev_rt_now;
-#define ev_rt_now ((loop)->ev_rt_now)
-#define VAR(name,decl) decl;
-#include "ev_vars.h"
-#undef VAR
-};
-extern "C" void fd_change(struct ev_loop *, int fd, int flags);
-#endif /* USE_LIBEV */
-
 struct PollDescriptor;
 typedef PollDescriptor *EventLoop;
 
@@ -109,13 +78,7 @@ struct DNSConnection;
 struct NetAccept;
 struct EventIO
 {
-#if TS_USE_LIBEV
-  ev_io eio;
-#define evio_get_port(e) ((e)->eio.fd)
-#else
   int fd;
-#define evio_get_port(e) ((e)->fd)
-#endif
 #if TS_USE_KQUEUE || TS_USE_EPOLL && !defined(USE_EDGE_TRIGGER) || TS_USE_PORT
   int events;
 #endif
@@ -142,9 +105,6 @@ struct EventIO
   int stop();
   int close();
   EventIO() {
-#if !TS_USE_LIBEV
-    fd = 0;
-#endif
     type = 0;
     data.c = 0;
   }
@@ -498,45 +458,6 @@ TS_INLINE int EventIO::close() {
   return -1;
 }
 
-#if TS_USE_LIBEV
-
-TS_INLINE int EventIO::start(EventLoop l, int afd, Continuation *c, int e) {
-  event_loop = l;
-  data.c = c;
-  ev_init(&eio, (eio_cb_t)this);
-  ev_io_set(&eio, afd, e);
-  ev_io_start(l->eio, &eio);
-  return 0;
-}
-
-TS_INLINE int EventIO::modify(int e) {
-  ink_assert(event_loop);
-  int ee = eio.events;
-  if (e < 0)
-    ee &= ~(-e);
-  else
-    ee |= e;
-  if (ee != eio.events) {
-    eio.events = ee;
-    fd_change(event_loop->eio, eio.fd, 0);
-  }
-  return 0;
-}
-
-TS_INLINE int EventIO::refresh(int e) {
-  return 0;
-}
-
-TS_INLINE int EventIO::stop() {
-  if (event_loop) {
-    ev_io_stop(event_loop->eio, &eio);
-    event_loop = 0;
-  }
-  return 0;
-}
-
-#else /* !TS_USE_LIBEV */
-
 TS_INLINE int EventIO::start(EventLoop l, int afd, Continuation *c, int e) {
   data.c = c;
   fd = afd;
@@ -700,7 +621,5 @@ TS_INLINE int EventIO::stop() {
   }
   return 0;
 }
-
-#endif /* !TS_USE_LIBEV */
 
 #endif

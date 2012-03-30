@@ -105,14 +105,7 @@ PollCont::pollEvent(int event, Event *e) {
     }
   }
   // wait for fd's to tigger, or don't wait if timeout is 0
-#if TS_USE_LIBEV
-  struct ev_loop *eio = pollDescriptor->eio;
-  double pt = (double)poll_timeout/1000.0;
-  fd_reify(eio);
-  eio->backend_poll(eio, pt);
-  pollDescriptor->result = eio->pendingcnt[0];
-  NetDebug("iocore_net_poll", "[PollCont::pollEvent] backend_poll(%d,%f), result=%d", eio->backend_fd,pt,pollDescriptor->result);
-#elif TS_USE_EPOLL
+#if TS_USE_EPOLL
   pollDescriptor->result = epoll_wait(pollDescriptor->epoll_fd,
                                       pollDescriptor->ePoll_Triggered_Events, POLL_DESCRIPTOR_SIZE, poll_timeout);
   NetDebug("iocore_net_poll", "[PollCont::pollEvent] epoll_fd: %d, timeout: %d, results: %d", pollDescriptor->epoll_fd, poll_timeout,
@@ -194,12 +187,7 @@ initialize_thread_for_net(EThread *thread, int thread_index)
   get_NetHandler(thread)->mutex = new_ProxyMutex();
   PollCont *pc = get_PollCont(thread);
   PollDescriptor *pd = pc->pollDescriptor;
-#if TS_USE_LIBEV
-  if (!thread_index)
-    pd->eio = ev_default_loop(LIBEV_BACKEND_LIST);
-  else
-    pd->eio = ev_loop_new(LIBEV_BACKEND_LIST);
-#endif
+
   thread->schedule_imm(get_NetHandler(thread));
 
 #ifndef INACTIVITY_TIMEOUT
@@ -291,14 +279,7 @@ NetHandler::mainNetEvent(int event, Event *e)
 
   PollDescriptor *pd = get_PollDescriptor(trigger_event->ethread);
   UnixNetVConnection *vc = NULL;
-#if TS_USE_LIBEV
-  struct ev_loop *eio = pd->eio;
-  double pt = (double)poll_timeout/1000.0;
-  fd_reify(eio);
-  eio->backend_poll(eio, pt);
-  pd->result = eio->pendingcnt[0];
-  NetDebug("iocore_net_main_poll", "[NetHandler::mainNetEvent] backend_poll(%d,%f), result=%d", eio->backend_fd,pt,pd->result);
-#elif TS_USE_EPOLL
+#if TS_USE_EPOLL
   pd->result = epoll_wait(pd->epoll_fd, pd->ePoll_Triggered_Events, POLL_DESCRIPTOR_SIZE, poll_timeout);
   NetDebug("iocore_net_main_poll", "[NetHandler::mainNetEvent] epoll_wait(%d,%d), result=%d", pd->epoll_fd,poll_timeout,pd->result);
 #elif TS_USE_KQUEUE

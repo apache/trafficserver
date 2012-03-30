@@ -1,5 +1,7 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.1.4
+  *) [TS-981] Remove the support for libev (for now at least).
+
   *) [TS-1172] Remove remap/StringHash.{cc,h}, they are not used.
 
   *) [TS-1171] http_ui cache lookup, double free.

@@ -199,18 +199,6 @@ AC_SUBST(has_tests)
 AM_CONDITIONAL([BUILD_TESTS], [test 0 -ne $has_tests])
 
 #
-# libev
-#
-
-AC_MSG_CHECKING([whether to use libev even if not required])
-AC_ARG_ENABLE([libev],
-  [AS_HELP_STRING([--enable-libev],[use libev even if not required])],
-  [],
-  [enable_libev=no]
-)
-AC_MSG_RESULT([$enable_libev])
-
-#
 # Micro
 #
 AC_MSG_CHECKING([whether to enable micro-TS])
@@ -830,12 +818,6 @@ AC_CHECK_LIB([rt],[clock_gettime],[AC_SUBST([LIBRT],["-lrt"])])
 AC_CHECK_LIB([posix4],[clock_gettime],[AC_SUBST([LIBRT],["-lposix4"])])
 AC_CHECK_LIB([iconv],[iconv_open],[AC_SUBST([LIBICONV],["-liconv"])])
 AC_CHECK_LIB([iconv],[libiconv_open],[AC_SUBST([LIBICONV],["-liconv"])])
-# TODO: We have --enable-libev but here we add it unconditionally
-#       making resulting binaries always linked to libev if present.
-#       Use a proper --with-libev and fail on --enable-libev and -lev
-#       is missing. Allow --with-libev=builtin? living in ./srclib/ev ?
-#
-AC_CHECK_LIB([ev],[ev_sleep],[AC_SUBST([LIBEV],["-lev"])])
 
 #
 # Check for SSL presence and usability
@@ -941,14 +923,10 @@ fi
 AC_SUBST(execinfoh)
 AC_SUBST(has_backtrace)
 
-use_libev=0
 use_epoll=0
 use_kqueue=0
 use_port=0
-if test "x$enable_libev" = "xyes"; then
-  use_libev=1
-  have_good_poller=1
-elif test "$ac_cv_func_epoll_ctl" = "yes"; then
+if test "$ac_cv_func_epoll_ctl" = "yes"; then
   use_epoll=1
   have_good_poller=1
   AC_MSG_NOTICE([Using epoll event interface])
@@ -963,7 +941,6 @@ elif test "$ac_cv_func_port_create" = "yes"; then
 else
   AC_MSG_FAILURE([No suitable polling interface found])
 fi
-AC_SUBST(use_libev)
 AC_SUBST(use_epoll)
 AC_SUBST(use_kqueue)
 AC_SUBST(use_port)
@@ -1328,10 +1305,6 @@ iocore_include_dirs="-I\$(top_srcdir)/iocore/eventsystem \
 -I\$(top_srcdir)/iocore/cluster \
 -I\$(top_srcdir)/iocore/utils \
 -I\$(top_srcdir)/iocore/dns"
-
-if test "x$enable_libev" = "xyes"; then
-   iocore_include_dirs="${iocore_include_dirs} -I\$(top_srcdir)/libev"
-fi
 
 # Testing Framework suffix generation hack
 TFW_PACKAGE_SUFFIX=$os_type

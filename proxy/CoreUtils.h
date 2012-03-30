@@ -61,9 +61,6 @@ struct core_stack_state
 #include <math.h>
 #include <assert.h>
 #include <elf.h>
-#if TS_USE_LIBEV
-#undef EV_NONE
-#endif
 #include "DynArray.h"
 
 #define SP_REGNUM 15            /* Contains address of top of stack USP */

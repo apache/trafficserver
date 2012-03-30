@@ -25,7 +25,6 @@ plugins to build large scale web applications.
   |-- emacs-style ........ emacs style definition
   |-- README ............. intro, links, build info
   |-- README-EC2 ......... info on EC2 support
-  |-- README.libev ....... instructions to build with 'libev'
   |-- REVIEWERS .......... (incomplete) list of areas with committer interest
   |-- LICENSE ............ full license text
   |-- NOTICE ............. copyright notices

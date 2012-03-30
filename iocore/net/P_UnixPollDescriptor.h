@@ -32,9 +32,6 @@
 
 #include "libts.h"
 
-#if TS_USE_LIBEV
-#include "ev.h"
-#endif
 #if TS_USE_KQUEUE
 #include <sys/event.h>
 #define INK_EVP_IN    0x001
@@ -51,9 +48,6 @@ typedef struct pollfd Pollfd;
 struct PollDescriptor
 {
   int result;                   // result of poll
-#if TS_USE_LIBEV
-  struct ev_loop *eio;
-#endif
 #if TS_USE_EPOLL
   int epoll_fd;
   int nfds;                     // actual number
@@ -65,16 +59,6 @@ struct PollDescriptor
 #endif
 #if TS_USE_PORT
   int port_fd;
-#endif
-
-#if TS_USE_LIBEV
-#define get_ev_port(a) ((a)->eio->backend_fd)
-#define get_ev_events(a,x) (a->eio->pendings[0] + a->eio->pendingcnt[0] - 1)->events
-#define get_ev_data(a,x) ((EventIO*)(a->eio->pendings[0] + a->eio->pendingcnt[0] - 1)->w->cb)
-#define ev_next_event(a,x) do {					       \
-    (a->eio->pendings[0] + a->eio->pendingcnt[0] - 1)->w->pending = 0; \
-    a->eio->pendingcnt[0]--;                               \
-  } while (0)
 #endif
 
 #if TS_USE_EPOLL
@@ -130,10 +114,6 @@ struct PollDescriptor
   PollDescriptor *init()
   {
     result = 0;
-#if TS_USE_LIBEV
-    eio = 0;
-    // eio = ev_loop_new(0); moved to initialize_thread_for_xx --- all this junk should go away
-#endif
 #if TS_USE_EPOLL
     nfds = 0;
     epoll_fd = epoll_create(POLL_DESCRIPTOR_SIZE);
