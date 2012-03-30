@@ -86,7 +86,7 @@ sub new {
     $self->{_socket_path} = $args{socket_path} || _find_socket();
     $self->{_socket} = undef;
     croak
-"Unable to locate socket, please pass socket_pass with the management api socket location to Apache::TS::AdminClient"
+"Unable to locate socket, please pass socket_path with the management api socket location to Apache::TS::AdminClient"
       if ( !$self->{_socket_path} );
     if (   ( !-r $self->{_socket_path} )
         or ( !-w $self->{_socket_path} )
