@@ -1,5 +1,7 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.1.4
+  *) [TS-1036] Improve some squid log compatiblity. Suggestions from mnot.
+
   *) [TS-1092] Remove specific SSL termination mode, we either terminate, or
     we do not.
 
