@@ -207,19 +207,16 @@ start_HttpProxyServer(int accept_threads)
       ha_opt.outbound_ip6 = HttpConfig::m_master.outbound_ip6;
 
     if (HttpProxyPort::TRANSPORT_SSL == p.m_type) {
-      if (HttpProxyPort::hasSSL()) {
-        HttpAccept * http = NEW(new HttpAccept(ha_opt));
-        SSLNextProtocolAccept * ssl = NEW(new SSLNextProtocolAccept(http));
-        ssl->registerEndpoint(TS_NPN_PROTOCOL_HTTP_1_0, http);
-        ssl->registerEndpoint(TS_NPN_PROTOCOL_HTTP_1_1, http);
+      HttpAccept * http = NEW(new HttpAccept(ha_opt));
+      SSLNextProtocolAccept * ssl = NEW(new SSLNextProtocolAccept(http));
+      ssl->registerEndpoint(TS_NPN_PROTOCOL_HTTP_1_0, http);
+      ssl->registerEndpoint(TS_NPN_PROTOCOL_HTTP_1_1, http);
 
 #ifndef TS_NO_API
-        ink_scoped_mutex lock(ssl_plugin_mutex);
-        ssl_plugin_acceptors.push(ssl);
+      ink_scoped_mutex lock(ssl_plugin_mutex);
+      ssl_plugin_acceptors.push(ssl);
 #endif
-
-        sslNetProcessor.main_accept(ssl, p.m_fd, opt);
-      }
+      sslNetProcessor.main_accept(ssl, p.m_fd, opt);
     } else {
       netProcessor.main_accept(NEW(new HttpAccept(ha_opt)), p.m_fd, opt);
     }
