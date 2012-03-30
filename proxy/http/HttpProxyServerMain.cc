@@ -206,7 +206,7 @@ start_HttpProxyServer(int accept_threads)
     else if (HttpConfig::m_master.outbound_ip6.isValid())
       ha_opt.outbound_ip6 = HttpConfig::m_master.outbound_ip6;
 
-    if (HttpProxyPort::TRANSPORT_SSL == p.m_type) {
+    if (p.isSSL()) {
       HttpAccept * http = NEW(new HttpAccept(ha_opt));
       SSLNextProtocolAccept * ssl = NEW(new SSLNextProtocolAccept(http));
       ssl->registerEndpoint(TS_NPN_PROTOCOL_HTTP_1_0, http);
