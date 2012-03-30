@@ -18,12 +18,12 @@
 
 lib_LTLIBRARIES = libtsconfig.la
 noinst_PROGRAMS = test-tsconfig
+libtsconfig_la_LDFLAGS = -no-undefined -version-info @TS_LIBTOOL_VERSION@
 
 AM_YFLAGS = -d -p tsconfig
 
 AM_CPPFLAGS = \
   -I$(top_srcdir)/lib
-
 
 BUILT_SOURCES = \
   TsConfigGrammar.c TsConfigGrammar.h TsConfigGrammar.hpp \
@@ -47,7 +47,7 @@ libtsconfig_la_SOURCES = \
 
 test_tsconfig_SOURCES = test-tsconfig.cc
 
-test_tsconfig_LDADD = libtsconfig.la
+test_tsconfig_LDADD = libtsconfig.la ../ts/libtsutil.la
 
 # Strip to just the enum in the ts::config namespace so we can use
 # it more easily in C++.
