@@ -1233,14 +1233,13 @@ chdir_root()
 int
 getNumSSLThreads(void)
 {
-  bool ssl_enabled = HttpProxyPort::hasSSL();
   int num_of_ssl_threads = 0;
 
   // Set number of ssl threads equal to num of processors if
   // SSL is enabled so it will scale properly. If SSL is not
   // enabled, leave num of ssl threads one, incase a remap rule
   // requires traffic server to act as an ssl client.
-  if (ssl_enabled) {
+  if (HttpProxyPort::hasSSL()) {
     int config_num_ssl_threads = 0;
 
     TS_ReadConfigInteger(config_num_ssl_threads, "proxy.config.ssl.number.threads");

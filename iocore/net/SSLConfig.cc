@@ -38,7 +38,6 @@
 #include <openssl/ssl.h>
 
 int SslConfig::id = 0;
-bool SslConfig::serverSSLTermination = 0;
 
 SslConfig sslTerminationConfig;
 
@@ -59,7 +58,6 @@ SslConfigParams::SslConfigParams()
 
   clientCertLevel = client_verify_depth = verify_depth = clientVerify = 0;
 
-  termMode = SSL_TERM_MODE_NONE;
   ssl_ctx_options = 0;
   ssl_session_cache = SSL_SESSION_CACHE_MODE_SERVER;
   ssl_session_cache_size = 1024*20;
@@ -88,7 +86,6 @@ SslConfigParams::cleanup()
   ats_free_null(cipherSuite);
 
   clientCertLevel = client_verify_depth = verify_depth = clientVerify = 0;
-  termMode = SSL_TERM_MODE_NONE;
 }
 
 /**  set_paths_helper
@@ -153,10 +150,7 @@ SslConfigParams::initialize()
   //+++++++++++++++++++++++++ Server part +++++++++++++++++++++++++++++++++
   verify_depth = 7;
 
-  termMode = static_cast<SSL_TERMINATION_MODE>(HttpProxyPort::hasSSL() ? SSL_TERM_MODE_BOTH : 0);
-  
   IOCORE_ReadConfigInt32(clientCertLevel, "proxy.config.ssl.client.certification_level");
-
   IOCORE_ReadConfigStringAlloc(cipherSuite, "proxy.config.ssl.server.cipher_suite");
 
   int options;
@@ -253,7 +247,6 @@ SslConfig::reconfigure()
 #else
   ssl_config_params = params;
 #endif
-  serverSSLTermination = (params->termMode & SslConfigParams::SSL_TERM_MODE_SERVER) != 0;
 }
 
 SslConfigParams *

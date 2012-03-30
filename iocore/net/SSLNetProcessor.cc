@@ -23,7 +23,9 @@
 
 #include "P_Net.h"
 #include "I_Layout.h"
-#include "openssl/engine.h"
+#include "I_RecHttp.h"
+
+#include <openssl/engine.h>
 
 #if (OPENSSL_VERSION_NUMBER >= 0x10000000L) // openssl returns a const SSL_METHOD
 typedef const SSL_METHOD * ink_ssl_method_t;
@@ -123,8 +125,7 @@ SSLNetProcessor::initSSLLocks(void)
 int
 SSLNetProcessor::reconfigure(void)
 {
-  int ssl_mode = SslConfigParams::SSL_TERM_MODE_NONE, err = 0;
-  int sslServerEnabled = 0;
+  int err = 0;
 
   cleanup();
 
@@ -138,17 +139,13 @@ SSLNetProcessor::reconfigure(void)
   SslConfigParams *param = sslTerminationConfig.acquire();
   ink_assert(param);
 
-  ssl_mode = param->getTerminationMode();
-  sslServerEnabled = ssl_mode & SslConfigParams::SSL_TERM_MODE_CLIENT;
-
-  if (sslServerEnabled) {
+  if (HttpProxyPort::hasSSL()) {
     // Only init server stuff if SSL is enabled in the config file
     err = initSSL(param);
     if (err == 0) {
       sslCertLookup.init(param);
     } else {
       logSSLError("Can't initialize the SSL library, disabling SSL termination!");
-      sslTerminationConfig.clearTermEnabled();
     }
   }
   // Enable client regardless of config file setttings as remap file

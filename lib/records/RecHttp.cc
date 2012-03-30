@@ -195,8 +195,7 @@ HttpProxyPort::loadDefaultIfEmpty(Group& ports) {
     self::loadValue(ports, DEFAULT_VALUE);
 
   // Check to see if we need to force an SSL port.
-  if (REC_ERR_OKAY == RecGetRecordInt(SSL_ENABLED_CONFIG_NAME, &ssl_enabled) &&
-      ssl_enabled) {
+  if (REC_ERR_OKAY == RecGetRecordInt(SSL_ENABLED_CONFIG_NAME, &ssl_enabled) && ssl_enabled) {
     // SSL is explicitly enabled, so force an SSL port if there isn't one.
     if (!self::hasSSL(ports)) {
       HttpProxyPort port;

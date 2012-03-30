@@ -1,5 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.1.4
+  *) [TS-1092] Remove specific SSL termination mode, we either terminate, or
+    we do not.
+
   *) [TS-1173] Improve the comments in remap.config.
 
   *) [TS-981] Remove the support for libev (for now at least).

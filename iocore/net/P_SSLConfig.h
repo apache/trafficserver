@@ -52,21 +52,12 @@ struct SslConfigParams
 #endif
 {
 public:
-  enum SSL_TERMINATION_MODE
-  {
-    SSL_TERM_MODE_NONE = 0,
-    SSL_TERM_MODE_CLIENT = 1,
-    SSL_TERM_MODE_SERVER = 2,
-    SSL_TERM_MODE_BOTH = SSL_TERM_MODE_CLIENT | SSL_TERM_MODE_SERVER
-  };
-
   enum SSL_SESSION_CACHE_MODE
   {
     SSL_SESSION_CACHE_MODE_OFF = 0,
     SSL_SESSION_CACHE_MODE_SERVER = 1
   };
 
-  SSL_TERMINATION_MODE getTerminationMode(void) const { return termMode; }
   char *getConfigFilePath(void) const { return configFilePath; }
   char *getServerCertPathOnly(void) const { return serverCertPathOnly; }
   char *getServerCACertPathOnly(void) const { return CACertPath; }
@@ -100,8 +91,6 @@ private:
   int clientVerify;
   int client_verify_depth;
 
-  SSL_TERMINATION_MODE termMode;
-
   long ssl_ctx_options;
 
   friend struct SSLNetProcessor;
@@ -121,16 +110,8 @@ public:
   static SslConfigParams *acquire();
   static void release(SslConfigParams * params);
 
-  static bool serverTerminationEnabled(void) { return serverSSLTermination; }
-
 private:
-  static void clearTermEnabled()
-  {
-    serverSSLTermination = 0;
-  }
-
   static int id;
-  static bool serverSSLTermination;
 #ifndef USE_CONFIG_PROCESSOR
   static SslConfigParams *ssl_config_params;
 #endif
