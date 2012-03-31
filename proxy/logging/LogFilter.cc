@@ -317,7 +317,7 @@ LogFilterInt::_setValues(size_t n, int64_t *value)
 
 // TODO: ival should be int64_t
 int
-LogFilterInt::_convertStringToInt(char *value, unsigned *ival, LogFieldAliasMap * map)
+LogFilterInt::_convertStringToInt(char *value, int64_t *ival, LogFieldAliasMap * map)
 {
   size_t i, l = strlen(value);
   for (i = 0; i < l && ParseRules::is_digit(value[i]); i++);
@@ -370,7 +370,7 @@ LogFilterInt::LogFilterInt(const char *name, LogField * field,
     val_array = NEW(new int64_t[n]);
     char *t;
     while (t = tok.getNext(), t != NULL) {
-      unsigned ival;
+      int64_t ival;
       if (!_convertStringToInt(t, &ival, field->map())) {
         // conversion was successful, add entry to array
         //

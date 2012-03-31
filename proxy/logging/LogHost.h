@@ -54,10 +54,10 @@ public:
   void disconnect();
   int write(LogBuffer * lb);
 
-  char *name() const { return (char *) ((m_name) ? m_name : "UNKNOWN"); }
-  unsigned port() const { return m_port; }
-  unsigned ip() const { return m_ip; }
-  char *ipstr() const { return m_ipstr; }
+  char const* name() const { return m_name ? m_name : "UNKNOWN"; }
+  IpAddr const& ip_addr() const { return m_ip; }
+  in_port_t port() const { return m_port; }
+  char const* ipstr() const { return m_ipstr; }
 
   void display(FILE * fd = stdout);
 
@@ -75,10 +75,10 @@ private:
 private:
   char *m_object_filename;
   uint64_t m_object_signature;
-  unsigned m_ip;
-  char *m_ipstr;
+  IpAddr m_ip; // IP address, network order.
+  in_port_t m_port; // IP port, host order.
+  ip_text_buffer m_ipstr;
   char *m_name;
-  int m_port;
   LogSock *m_sock;
   int m_sock_fd;
   bool m_connected;

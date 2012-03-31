@@ -76,10 +76,9 @@ public:
   bool pending_message_on(int cid, int timeout_msec = 0);
   bool pending_connect(int timeout_msec = 0);
 
-  int listen(int accept_port);
+  int listen(int accept_port, int family = AF_INET);
   int accept();
-  int connect(unsigned ip, int port);
-  int connect(char *host, int port);
+  int connect(sockaddr const* ip);
 
   void close(int cid);          // this connection
   void close();                 // all connections

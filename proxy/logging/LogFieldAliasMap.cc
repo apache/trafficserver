@@ -46,11 +46,16 @@ LogFieldAliasTable::init(size_t numPairs, ...)
   va_start(ap, numPairs);
   char *name;
 
-  m_min = m_max = va_arg(ap, IntType);
+  /* A note on the varargs -
+     Although IntType is used internally the compiler doesn't know that
+     at the call site of this method. Because the numeric values aren't
+     explicitly cast, they will come through as "int" sized values.
+  */
+  m_min = m_max = va_arg(ap, int);
   name = va_arg(ap, char *);    // ignore next arg. for now
 
   for (n = 1; n < numPairs; n++) {
-    IntType val = va_arg(ap, IntType);
+    IntType val = va_arg(ap, int);
     if (val < m_min) {
       m_min = val;
     } else if (val > m_max) {
@@ -66,7 +71,7 @@ LogFieldAliasTable::init(size_t numPairs, ...)
   m_table = new LogFieldAliasTableEntry[m_entries];
 
   for (n = 0; n < numPairs; n++) {
-    IntType val = va_arg(ap, IntType);
+    IntType val = va_arg(ap, int);
     size_t i = val - m_min;
     name = va_arg(ap, char *);
 

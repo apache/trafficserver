@@ -711,7 +711,7 @@ HostDBProcessor::getby(Continuation * cont,
     // INK_MD5 the ip, pad on both sizes with 0's
     // so that it does not intersect the string space
     //
-    uint8_t buff[INK_IP6_SIZE+4];
+    uint8_t buff[TS_IP6_SIZE+4];
     memset(buff, 0, sizeof(buff));
     if (ats_is_ip4(ip))
       memcpy(buff+2, &ats_ip4_addr_cast(ip), sizeof(in_addr_t));
@@ -1001,7 +1001,7 @@ HostDBProcessor::setby(const char *hostname, int len, sockaddr const* ip, HostDB
     // INK_MD5 the ip, pad on both sizes with 0's
     // so that it does not intersect the string space
     //
-    uint8_t buff[INK_IP6_SIZE+4];
+    uint8_t buff[TS_IP6_SIZE+4];
     memset(buff, 0, sizeof(buff));
     if (ats_is_ip4(ip))
       memcpy(buff+2, &ats_ip4_addr_cast(ip), sizeof(in_addr_t));

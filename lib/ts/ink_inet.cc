@@ -193,6 +193,10 @@ char const* ats_ip_nptop(
 
 int
 ats_ip_parse(ts::ConstBuffer src, ts::ConstBuffer* addr, ts::ConstBuffer* port) {
+  // In case the incoming arguments are null.
+  ts::ConstBuffer localAddr, localPort;
+  if (!addr) addr = &localAddr;
+  if (!port) port = &localPort;
   addr->reset();
   port->reset();
 
@@ -276,7 +280,8 @@ ats_ip_pton(char const* text, sockaddr* ip) {
   return zret;
 }
 
-uint32_t ats_ip_hash(sockaddr const* addr) {
+uint32_t
+ats_ip_hash(sockaddr const* addr) {
   union md5sum {
     unsigned char c[16];
     uint32_t i;
@@ -286,7 +291,7 @@ uint32_t ats_ip_hash(sockaddr const* addr) {
   if (ats_is_ip4(addr)) {
     zret.i = ats_ip4_addr_cast(addr);
   } else if (ats_is_ip6(addr)) {
-    ink_code_md5(const_cast<uint8_t*>(ats_ip_addr8_cast(addr)), INK_IP6_SIZE, zret.c);
+    ink_code_md5(const_cast<uint8_t*>(ats_ip_addr8_cast(addr)), TS_IP6_SIZE, zret.c);
   }
   return zret.i;
 }
@@ -444,4 +449,23 @@ ats_ip_getbestaddrinfo(char const* host,
   if (!ats_is_ip(ip4) && !ats_is_ip(ip6)) zret = -1;
 
   return zret;
+}
+
+int
+ats_ip_check_characters(ts::ConstBuffer text) {
+  bool found_colon = false;
+  bool found_hex = false;
+  for ( char const *p = text.data(), *limit = p + text.size()
+      ; p < limit
+      ; ++p
+  )
+    if (':' == *p) found_colon = true;
+    else if ('.' == *p || isdigit(*p)) /* empty */;
+    else if (isxdigit(*p)) found_hex = true;
+    else return AF_UNSPEC;
+
+  return found_hex && !found_colon ? AF_UNSPEC
+    : found_colon ? AF_INET6
+    : AF_INET
+    ;
 }

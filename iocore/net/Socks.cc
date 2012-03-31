@@ -268,9 +268,9 @@ SocksEntry::mainEvent(int event, void *data)
           p[n_bytes++] = 4;       //IPv6 addr
           memcpy(p + n_bytes,
             &server_addr.sin6.sin6_addr,
-            INK_IP6_SIZE
+            TS_IP6_SIZE
           );
-          n_bytes += INK_IP6_SIZE;
+          n_bytes += TS_IP6_SIZE;
         } else {
           Debug("Socks", "SOCKS supports only IP addresses.");
         }

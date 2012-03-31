@@ -40,8 +40,8 @@
 #undef IN6_IS_ADDR_UNSPECIFIED
 #endif
 static inline bool IN6_IS_ADDR_UNSPECIFIED(in6_addr const* addr) {
-  uint32_t const* w = reinterpret_cast<uint32_t const*>(addr);
-  return 0 == w[0] && 0 == w[1] && 0 == w[2] && 0 == w[3];
+  uint64_t const* w = reinterpret_cast<uint64_t const*>(addr);
+  return 0 == w[0] && 0 == w[1];
 }
 #endif
 
@@ -75,13 +75,10 @@ union IpEndpoint {
   /// Construct from an @a addr and @a port.
   self& assign(
     IpAddr const& addr, ///< Address and address family.
-    uint16_t port = 0 ///< Port (network order).
+    in_port_t port = 0 ///< Port (network order).
   );
 
-  /// Access to port in network order.
-  uint16_t& port();
-
-  /// Test if a valid IP address.
+  /// Test for valid IP address.
   bool isValid() const;
   /// Test for IPv4.
   bool isIp4() const;
@@ -100,6 +97,12 @@ union IpEndpoint {
   self& setToLoopback(
     int family ///< Address family.
   );
+
+
+  /// Port in network order.
+  in_port_t& port();
+  /// Port in network order.
+  in_port_t port() const;
 };
 
 struct ink_gethostbyname_r_data
@@ -140,19 +143,48 @@ struct hostent *ink_gethostbyname_r(char *hostname, ink_gethostbyname_r_data * d
 */
 struct hostent *ink_gethostbyaddr_r(char *ip, int len, int type, ink_gethostbyaddr_r_data * data);
 
+/** Parse a string for pieces of an IP address.
+
+    This doesn't parse the actual IP address, but picks it out from @a
+    src. It is intended to deal with the brackets that can optionally
+    surround an IP address (usually IPv6) which in turn are used to
+    differentiate between an address and an attached port. E.g.
+    @code
+      [FE80:9312::192:168:1:1]:80
+    @endcode
+    @a addr or @a port can be @c NULL in which case that value isn't returned.
+
+    @return 0 if an address was found, non-zero otherwise.
+*/
+int
+ats_ip_parse(
+             ts::ConstBuffer src, ///< [in] String to search.
+             ts::ConstBuffer* addr, ///< [out] Range containing IP address.
+             ts::ConstBuffer* port ///< [out] Range containing port.
+);
+
+/**  Check to see if a buffer contains only IP address characters.
+     @return
+    - AF_UNSPEC - not a numeric address.
+    - AF_INET - only digits and dots.
+    - AF_INET6 - colons found.
+*/
+int
+ats_ip_check_characters(ts::ConstBuffer text);
+
 /**
   Wrapper for inet_addr().
 
   @param s IP address in the Internet standard dot notation.
 
 */
-inkcoreapi uint32_t ink_inet_addr(const char *s);
+inkcoreapi uint32_t ats_inet_addr(const char *s);
 
 const char *ats_ip_ntop(const struct sockaddr *addr, char *dst, size_t size);
 
 // --
 /// Size in bytes of an IPv6 address.
-static size_t const INK_IP6_SIZE = sizeof(in6_addr);
+static size_t const TS_IP6_SIZE = sizeof(in6_addr);
 
 /// Reset an address to invalid.
 /// @note Useful for marking a member as not yet set.
@@ -357,8 +389,8 @@ inline size_t ats_ip_addr_size(
     @internal This is primarily for internal use but it might be handy for
     clients so it is exposed.
 */
-inline uint16_t& ats_ip_port_cast(sockaddr* sa) {
-  static uint16_t dummy = 0;
+inline in_port_t& ats_ip_port_cast(sockaddr* sa) {
+  static in_port_t dummy = 0;
   return ats_is_ip4(sa)
     ? ats_ip4_cast(sa)->sin_port
     : ats_is_ip6(sa)
@@ -366,13 +398,13 @@ inline uint16_t& ats_ip_port_cast(sockaddr* sa) {
       : (dummy = 0)
     ;
 }
-inline uint16_t const& ats_ip_port_cast(sockaddr const* sa) {
+inline in_port_t const& ats_ip_port_cast(sockaddr const* sa) {
   return ats_ip_port_cast(const_cast<sockaddr*>(sa));
 }
-inline uint16_t const& ats_ip_port_cast(IpEndpoint const* ip) {
+inline in_port_t const& ats_ip_port_cast(IpEndpoint const* ip) {
   return ats_ip_port_cast(const_cast<sockaddr*>(&ip->sa));
 }
-inline uint16_t& ats_ip_port_cast(IpEndpoint* ip) {
+inline in_port_t& ats_ip_port_cast(IpEndpoint* ip) {
   return ats_ip_port_cast(&ip->sa);
 }
 
@@ -702,7 +734,7 @@ inline bool operator != (IpEndpoint const& lhs, IpEndpoint const& rhs) {
 /// Get IP TCP/UDP port.
 /// @return The port in host order for an IPv4 or IPv6 address,
 /// or zero if neither.
-inline uint16_t ats_ip_port_host_order(
+inline in_port_t ats_ip_port_host_order(
   sockaddr const* addr ///< Address with port.
 ) {
   // We can discard the const because this function returns
@@ -713,7 +745,7 @@ inline uint16_t ats_ip_port_host_order(
 /// Get IP TCP/UDP port.
 /// @return The port in host order for an IPv4 or IPv6 address,
 /// or zero if neither.
-inline uint16_t ats_ip_port_host_order(
+inline in_port_t ats_ip_port_host_order(
   IpEndpoint const* ip ///< Address with port.
 ) {
   // We can discard the const because this function returns
@@ -735,7 +767,7 @@ inline in_addr_t ats_ip4_addr_host_order(
 inline sockaddr* ats_ip4_set(
   sockaddr_in* dst, ///< Destination storage.
   in_addr_t addr, ///< address, IPv4 network order.
-  uint16_t port = 0 ///< port, network order.
+  in_port_t port = 0 ///< port, network order.
 ) {
   ink_zero(*dst);
 #if HAVE_STRUCT_SOCKADDR_IN_SIN_LEN
@@ -753,7 +785,7 @@ inline sockaddr* ats_ip4_set(
 inline sockaddr* ats_ip4_set(
   IpEndpoint* dst, ///< Destination storage.
   in_addr_t ip4, ///< address, IPv4 network order.
-  uint16_t port = 0 ///< port, network order.
+  in_port_t port = 0 ///< port, network order.
 ) {
   return ats_ip4_set(&dst->sin, ip4, port);
 }
@@ -766,7 +798,7 @@ inline sockaddr* ats_ip4_set(
 inline sockaddr* ats_ip4_set(
   sockaddr* dst, ///< Destination storage.
   in_addr_t ip4, ///< address, IPv4 network order.
-  uint16_t port = 0 ///< port, network order.
+  in_port_t port = 0 ///< port, network order.
 ) {
   return ats_ip4_set(ats_ip4_cast(dst), ip4, port);
 }
@@ -776,10 +808,10 @@ inline sockaddr* ats_ip4_set(
 inline sockaddr* ats_ip6_set(
   sockaddr_in6* dst, ///< Destination storage.
   in6_addr const& addr, ///< address in network order.
-  uint16_t port = 0 ///< Port, network order.
+  in_port_t port = 0 ///< Port, network order.
 ) {
   ink_zero(*dst);
-#if HAVE_STRUCT_SOCKADDR_IN6_SIN6_LEN
+#if HAVE_STRUCT_SOCKADDR_IN_SIN_LEN
   dst->sin6_len = sizeof(sockaddr_in6);
 #endif
   dst->sin6_family = AF_INET6;
@@ -793,7 +825,7 @@ inline sockaddr* ats_ip6_set(
 inline sockaddr* ats_ip6_set(
   sockaddr* dst, ///< Destination storage.
   in6_addr const& addr, ///< address in network order.
-  uint16_t port = 0 ///< Port, network order.
+  in_port_t port = 0 ///< Port, network order.
 ) {
   return ats_ip6_set(ats_ip6_cast(dst), addr, port);
 }
@@ -803,7 +835,7 @@ inline sockaddr* ats_ip6_set(
 inline sockaddr* ats_ip6_set(
   IpEndpoint* dst, ///< Destination storage.
   in6_addr const& addr, ///< address in network order.
-  uint16_t port = 0 ///< Port, network order.
+  in_port_t port = 0 ///< Port, network order.
 ) {
   return ats_ip6_set(&dst->sin6, addr, port);
 }
@@ -859,8 +891,14 @@ inline char const* ats_ip_nptop(
 /** Convert @a text to an IP address and write it to @a addr.
 
     @a text is expected to be an explicit address, not a hostname.  No
-    hostname resolution is done.
+    hostname resolution is done. The call must provide an @a ip large
+    enough to hold the address value.
 
+    This attempts to recognize and process a port value if
+    present. The port in @a ip is set appropriately, or to zero if no
+    port was found or it was malformed.
+
+    @note The return values are logically reversed from @c inet_pton.
     @note This uses @c getaddrinfo internally and so involves memory
     allocation.
 
@@ -977,7 +1015,7 @@ struct IpAddr {
   /// Construct from @c IpEndpoint.
   explicit IpAddr(IpEndpoint const* addr) { this->assign(&addr->sa); }
 
-  /// Assign from sockaddr storage.
+  /// Assign sockaddr storage.
   self& assign(sockaddr const* addr) {
     _family = addr->sa_family;
     if (ats_is_ip4(addr)) {
@@ -1015,14 +1053,14 @@ struct IpAddr {
   ) const;
 
   /// Equality.
-  bool operator==(self const& that) {
+  bool operator==(self const& that) const {
     return _family == AF_INET
       ? (that._family == AF_INET && _addr._ip4 == that._addr._ip4)
       : _family == AF_INET6
         ? (that._family == AF_INET6
-          && 0 == memcmp(&_addr._ip6, &that._addr._ip6, INK_IP6_SIZE)
+          && 0 == memcmp(&_addr._ip6, &that._addr._ip6, TS_IP6_SIZE)
           )
-        : (_family = AF_UNSPEC && that._family == AF_UNSPEC)
+        : (_family == AF_UNSPEC && that._family == AF_UNSPEC)
     ;
   }
 
@@ -1047,8 +1085,7 @@ struct IpAddr {
   bool isValid() const { return _family == AF_INET || _family == AF_INET6; }
   /// Make invalid.
   self& invalidate() { _family = AF_UNSPEC; return *this; }
-  /// Test for multicast.
-  /// @return @c true if this is an IP multicast address.
+  /// Test for multicast
   bool isMulticast() const;
 
   uint16_t _family; ///< Protocol family.
@@ -1056,7 +1093,7 @@ struct IpAddr {
   union {
     in_addr_t _ip4; ///< IPv4 address storage.
     in6_addr  _ip6; ///< IPv6 address storage.
-    uint8_t   _byte[INK_IP6_SIZE]; ///< As raw bytes.
+    uint8_t   _byte[TS_IP6_SIZE]; ///< As raw bytes.
   } _addr;
 
   ///< Pre-constructed invalid instance.
@@ -1109,7 +1146,7 @@ inline bool operator != (IpEndpoint const& lhs, IpAddr const& rhs) {
 sockaddr* ats_ip_set(
   sockaddr* dst, ///< Destination storage.
   IpAddr const& addr, ///< source address.
-  uint16_t port = 0 ///< port, network order.
+  in_port_t port = 0 ///< port, network order.
 );
 
 /** Convert @a text to an IP address and write it to @a addr.
@@ -1124,7 +1161,7 @@ inline int ats_ip_pton(
 }
 
 inline IpEndpoint&
-IpEndpoint::assign(IpAddr const& addr, uint16_t port) {
+IpEndpoint::assign(IpAddr const& addr, in_port_t port) {
   ats_ip_set(&sa, addr, port); 
   return *this;
 }
@@ -1135,8 +1172,13 @@ IpEndpoint::assign(sockaddr const* ip) {
   return *this;
 }
 
-inline uint16_t&
+inline in_port_t&
 IpEndpoint::port() {
+  return ats_ip_port_cast(&sa);
+}
+
+inline in_port_t
+IpEndpoint::port() const {
   return ats_ip_port_cast(&sa);
 }
 

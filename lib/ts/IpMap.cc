@@ -42,7 +42,7 @@ namespace ts { namespace detail {
 // Helper functions
 
 inline int cmp(sockaddr_in6 const& lhs, sockaddr_in6 const& rhs) {
-  return memcmp(lhs.sin6_addr.s6_addr, rhs.sin6_addr.s6_addr, INK_IP6_SIZE);
+  return memcmp(lhs.sin6_addr.s6_addr, rhs.sin6_addr.s6_addr, TS_IP6_SIZE);
 }
 
 /// Less than.
@@ -1194,7 +1194,7 @@ protected:
     Metric& m ///< Incremented in place.
   ) {
     uint8_t* addr = m.sin6_addr.s6_addr;
-    uint8_t* b = addr + INK_IP6_SIZE;
+    uint8_t* b = addr + TS_IP6_SIZE;
     // Ripple carry. Walk up the address incrementing until we don't
     // have a carry.
     do {
@@ -1207,7 +1207,7 @@ protected:
     Metric& m ///< Decremented in place.
   ) {
     uint8_t* addr = m.sin6_addr.s6_addr;
-    uint8_t* b = addr + INK_IP6_SIZE;
+    uint8_t* b = addr + TS_IP6_SIZE;
     // Ripple borrow. Walk up the address decrementing until we don't
     // have a borrow.
     do {

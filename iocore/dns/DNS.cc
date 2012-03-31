@@ -161,7 +161,7 @@ make_ipv6_ptr(in6_addr const* addr, char *buffer)
     uint8_t const* src = addr->s6_addr;
     int i;
 
-    for (i = INK_IP6_SIZE-1 ; i >= 0; --i) {
+    for (i = TS_IP6_SIZE-1 ; i >= 0; --i) {
         *p++ = hex_digit[src[i] & 0x0f];
         *p++ = '.';
         *p++ = hex_digit[src[i] >> 4];

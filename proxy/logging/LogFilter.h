@@ -178,7 +178,7 @@ private:
   int64_t *m_value;            // the array of values
 
   void _setValues(size_t n, int64_t *value);
-  int _convertStringToInt(char *val, unsigned *ival, LogFieldAliasMap * map);
+  int _convertStringToInt(char *val, int64_t *ival, LogFieldAliasMap * map);
 
   // -- member functions that are not allowed --
   LogFilterInt();

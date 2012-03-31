@@ -75,10 +75,14 @@ any memory the map may have allocated.
 class LogFieldAliasMap:public RefCountObj
 {
 public:
+
   // the logging system assumes log entries of type sINT are
-  // unsigned integers (int64_t type) so we define IntType to be unsigned
-  // TODO/XXX: B0rken, need to fix this to int64_t
-  typedef unsigned int IntType;
+  // unsigned (signed?) integers (int64_t type) so we define IntType
+  // to be unsigned (signed?)
+  // The problem using the correct type is that the init method is
+  // vararg. To make that work, we must use the "generic" int.
+
+  typedef int64_t IntType;
   enum
   { ALL_OK = 0, INVALID_INT, INVALID_STRING, BUFFER_TOO_SMALL };
 
@@ -112,9 +116,9 @@ struct LogFieldAliasTableEntry
 class LogFieldAliasTable:public LogFieldAliasMap
 {
 private:
-  size_t m_min;                 // minimum numeric value
-  size_t m_max;                 // maximum numeric value
-  size_t m_entries;             // number of entries in table
+  IntType m_min;                 // minimum numeric value
+  IntType  m_max;                 // maximum numeric value
+  IntType m_entries;             // number of entries in table
   LogFieldAliasTableEntry *m_table;     // array of table entries
 
 public:
@@ -132,7 +136,7 @@ public:
   {
     int retVal = INVALID_STRING;
 
-    for (size_t i = 0; i < m_entries; i++)
+    for (IntType i = 0; i < m_entries; i++)
     {
       bool found;
       if (m_table[i].valid)
@@ -183,65 +187,6 @@ public:
       *numCharsPtr = numChars;
     }
     return retVal;
-  }
-};
-
-
-/*****************************************************************************
-The LogFieldAliasIP class implements a LogFieldAliasMap that converts IP
-addresses from their integer value to the "dot" notation and back.
- *****************************************************************************/
-
-class LogFieldAliasIP:public LogFieldAliasMap
-{
-public:
-  int asInt(char *str, IntType * ip, bool case_sensitive = 0) const
-  {
-    NOWARN_UNUSED(case_sensitive);
-    unsigned a, b, c, d;
-    // coverity[secure_coding]
-    if (sscanf(str, "%u.%u.%u.%u", &a, &b, &c, &d) == 4) {
-      *ip = d | (c << 8) | (b << 16) | (a << 24);
-      return ALL_OK;
-    } else
-    {
-      return INVALID_STRING;
-    }
-  }
-
-  int asString(IntType ip, char *buf, size_t bufLen, size_t * numCharsPtr = 0) const
-  {
-    return (LogUtils::ip_to_str(ip, buf, bufLen, numCharsPtr) ? BUFFER_TOO_SMALL : ALL_OK);
-  };
-};
-
-/*****************************************************************************
-
-The LogFieldAliasIPhex class implements a LogFieldAliasMap that converts IP
-addresses from their integer value to the "hex" notation and back.
-
- *****************************************************************************/
-
-class LogFieldAliasIPhex:public LogFieldAliasMap
-{
-public:
-  int asInt(char *str, IntType * ip, bool case_sensitive = 0) const
-  {
-    NOWARN_UNUSED(case_sensitive);
-    unsigned a, b, c, d;
-    // coverity[secure_coding]
-    if (sscanf(str, "%2x%2x%2x%2x", &a, &b, &c, &d) == 4) {
-      *ip = d | (c << 8) | (b << 16) | (a << 24);
-      return ALL_OK;
-    } else
-    {
-      return INVALID_STRING;
-    }
-  }
-
-  int asString(IntType ip, char *buf, size_t bufLen, size_t * numCharsPtr = 0) const
-  {
-    return (LogUtils::timestamp_to_hex_str(ip, buf, bufLen, numCharsPtr) ? BUFFER_TOO_SMALL : ALL_OK);
   }
 };
 

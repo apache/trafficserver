@@ -1,5 +1,7 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.1.4
+  *) [TS-1017] Update logging to be IPv6 compliant, including collation.
+
   *) [TS-1080] If we run out of Log Buffer slots, we assert.
 
   *) [TS-1176] Eliminates the need for a delayed "delete" of log buffers.

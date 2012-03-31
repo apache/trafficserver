@@ -56,10 +56,8 @@
 LogHost::LogHost(char *object_filename, uint64_t object_signature)
   : m_object_filename(ats_strdup(object_filename))
   , m_object_signature(object_signature)
-  , m_ip(0)
-  , m_ipstr(NULL)
-  , m_name(NULL)
   , m_port(0)
+  , m_name(NULL)
   , m_sock(NULL)
   , m_sock_fd(-1)
   , m_connected(false)
@@ -68,15 +66,16 @@ LogHost::LogHost(char *object_filename, uint64_t object_signature)
   , m_log_collation_client_sm(NULL)
 #endif
 {
+  ink_zero(m_ip);
+  ink_zero(m_ipstr);
 }
 
 LogHost::LogHost(const LogHost & rhs)
   : m_object_filename(ats_strdup(rhs.m_object_filename))
   , m_object_signature(rhs.m_object_signature)
   , m_ip(rhs.m_ip)
-  , m_ipstr(ats_strdup(rhs.m_ipstr))
+  , m_port(0)
   , m_name(ats_strdup(rhs.m_name))
-  , m_port(rhs.m_port)
   , m_sock(NULL)
   , m_sock_fd(-1)
   , m_connected(false)
@@ -85,6 +84,7 @@ LogHost::LogHost(const LogHost & rhs)
   , m_log_collation_client_sm(NULL)
 #endif
 {
+  memcpy(m_ipstr, rhs.m_ipstr, sizeof(m_ipstr));
   create_orphan_LogFile_object();
 }
 
@@ -112,16 +112,17 @@ LogHost::set_name_port(char *hostname, unsigned int pt)
 
   clear();                      // remove all previous state for this LogHost
 
-  m_ip = 0;                     // make sure ip is 0 for iocore
 #if !defined(IOCORE_LOG_COLLATION)
-  m_ip = LogUtils::ip_from_host(hostname);
-  m_ipstr = (char *)ats_malloc(32);
-  LogUtils::ip_to_str(m_ip, m_ipstr, 32);
+  IpEndpoint ip4, ip6;
+  m_ip.invalidate();
+  if (0 == ats_ip_getbestaddrinfo(hostname, &ip4, &ip6))
+    m_ip.assign(ip4.isIp4() ? &ip4 : &ip6)
+  m_ip.toString(m_ipstr, sizeof m_ipstr);
 #endif
   m_name = ats_strdup(hostname);
   m_port = pt;
 
-  Debug("log-host", "LogHost established as %s:%u", name(), port());
+  Debug("log-host", "LogHost established as %s:%u", this->name(), this->port());
 
   create_orphan_LogFile_object();
   return 0;
@@ -137,12 +138,13 @@ LogHost::set_ipstr_port(char *ipstr, unsigned int pt)
 
   clear();                      // remove all previous state for this LogHost
 
-  m_ip = htonl(LogUtils::str_to_ip(ipstr));
-  m_ipstr = ats_strdup(ipstr);
-  m_name = ats_strdup(ipstr);
+  if (0 != m_ip.load(ipstr))
+    Note("Log host failed to parse IP address %s", ipstr);
   m_port = pt;
+  ink_strlcpy(m_ipstr, ipstr, sizeof(m_ipstr));
+  m_name = ats_strdup(ipstr);
 
-  Debug("log-host", "LogHost established as %s:%u", name(), port());
+  Debug("log-host", "LogHost established as %s:%u", name(), pt);
 
   create_orphan_LogFile_object();
   return 0;
@@ -154,16 +156,17 @@ LogHost::set_name_or_ipstr(char *name_or_ip)
   int retVal = 1;
 
   if (name_or_ip && name_or_ip[0] != 0) {
-    SimpleTokenizer tok(name_or_ip, ':');
-    char *n = tok.getNext();
-    if (n) {
-      char *p = tok.getNext();
-      unsigned int port = (p ? (unsigned int) atoi(p) : Log::config->collation_port);
-
-      if (LogUtils::valid_ipstr_format(n)) {
-        retVal = set_ipstr_port(n, port);
+    ts::ConstBuffer addr, port;
+    if (ats_ip_parse(ts::ConstBuffer(name_or_ip, strlen(name_or_ip)), &addr, &port)) {
+      uint16_t p = port ? atoi(port.data()) : Log::config->collation_port;
+      char* n = const_cast<char*>(addr.data());
+      // Force termination. We know we can do this because the address
+      // string is followed by either a nul or a colon.
+      n[addr.size()] = 0;
+      if (AF_UNSPEC == ats_ip_check_characters(addr)) {
+        retVal = set_name_port(n, p);
       } else {
-        retVal = set_name_port(n, port);
+        retVal = set_ipstr_port(n, p);
       }
     }
   }
@@ -182,7 +185,7 @@ bool LogHost::connected(bool ping)
 
 bool LogHost::connect()
 {
-  if (!m_ip) {
+  if (! m_ip.isValid()) {
     Note("Cannot connect to LogHost; host IP has not been established");
     return false;
   }
@@ -191,7 +194,13 @@ bool LogHost::connect()
     return true;
   }
 
-  Debug("log-host", "Connecting to LogHost %s:%u", name(), port());
+  IpEndpoint target;
+  ip_port_text_buffer ipb;
+  target.assign(m_ip, htons(m_port));
+
+  if (is_debug_tag_set("log-host")) {
+    Debug("log-host", "Connecting to LogHost %s", ats_ip_nptop(&target, ipb, sizeof ipb));
+  }
 
   disconnect();                 // make sure connection members are initialized
 
@@ -199,15 +208,15 @@ bool LogHost::connect()
     m_sock = NEW(new LogSock());
     ink_assert(m_sock != NULL);
   }
-  m_sock_fd = m_sock->connect(m_ip, m_port);
+  m_sock_fd = m_sock->connect(&target.sa);
   if (m_sock_fd < 0) {
-    Note("Connection to LogHost %s:%u failed", name(), port());
+    Note("Connection to LogHost %s failed", ats_ip_nptop(&target, ipb, sizeof ipb));
     return false;
   }
   m_connected = true;
 
   if (!authenticated()) {
-    Note("Authentication to LogHost %s:%u failed", name(), port());
+    Note("Authentication to LogHost %s failed", ats_ip_nptop(&target, ipb, sizeof ipb));
     disconnect();
     return false;
   }
@@ -376,14 +385,13 @@ LogHost::clear()
   disconnect();
 
   ats_free(m_name);
-  ats_free(m_ipstr);
   delete m_sock;
   delete m_orphan_file;
 
-  m_ip = 0;
-  m_ipstr = NULL;
-  m_name = NULL;
+  ink_zero(m_ip);
   m_port = 0;
+  ink_zero(m_ipstr);
+  m_name = NULL;
   m_sock = NULL;
   m_sock_fd = -1;
   m_connected = false;
@@ -481,15 +489,12 @@ bool LogHostList::operator==(LogHostList & rhs)
   LogHost *
     host;
   for (host = first(); host; host = next(host)) {
-    LogHost *
-      rhs_host;
+    LogHost* rhs_host;
     for (rhs_host = rhs.first(); rhs_host; rhs_host = next(host)) {
-      if ((host->port() == rhs_host->port() &&
-           (host->ip() && rhs_host->ip() &&
-            (host->ip() == rhs_host->ip()))) ||
-          (host->name() && rhs_host->name() &&
-           (strcmp(host->name(), rhs_host->name()) == 0)) ||
-          (host->ipstr() && rhs_host->ipstr() && (strcmp(host->ipstr(), rhs_host->ipstr()) == 0))) {
+      if ((host->port() == rhs_host->port() && host->ip_addr().isValid() && host->ip_addr() == rhs_host->ip_addr()) ||
+        (host->name() && rhs_host->name() && (strcmp(host->name(), rhs_host->name()) == 0)) ||
+        (*(host->ipstr()) && *(rhs_host->ipstr()) && (strcmp(host->ipstr(), rhs_host->ipstr()) == 0))
+      ) {
         break;
       }
     }

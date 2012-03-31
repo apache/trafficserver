@@ -29,7 +29,6 @@
 #include "LogSock.h"
 #include "LogUtils.h"
 
-static const int LS_DOMAIN = AF_INET;
 static const int LS_SOCKTYPE = SOCK_STREAM;
 static const int LS_PROTOCOL = 0;
 
@@ -84,22 +83,31 @@ LogSock::~LogSock()
   @Return zero if all goes well, -1 otherwise.
 */
 int
-LogSock::listen(int accept_port)
+LogSock::listen(int accept_port, int family)
 {
-  struct sockaddr_in bind_addr;
-  int size = sizeof(struct sockaddr_in);
+  IpEndpoint bind_addr;
+  int size = sizeof(bind_addr);
   char this_host[MAXDNAME];
   int ret;
   SOCKET accept_sd;
 
   Debug("log-sock", "Listening ...");
 
+  // Set up local address for bind.
+  bind_addr.setToAnyAddr(family);
+  if (!bind_addr.isValid()) {
+    Warning("Could not set up socket - invalid address family %d", family);
+    return -1;
+  }
+  bind_addr.port() = htons(accept_port);
+  size = ats_ip_size(&bind_addr.sa);
+
   //
   // create the socket for accepting new connections
   //
-  accept_sd =::socket(LS_DOMAIN, LS_SOCKTYPE, LS_PROTOCOL);
+  accept_sd =::socket(family, LS_SOCKTYPE, LS_PROTOCOL);
   if (accept_sd < 0) {
-    Warning("Could not create a socket: %s", strerror(errno));
+    Warning("Could not create a socket for family %d: %s", family, strerror(errno));
     return -1;
   }
   //
@@ -123,13 +131,9 @@ LogSock::listen(int accept_port)
     Warning("Could not set option REUSEADDR on socket (%d): %s", ret, strerror(errno));
     return -1;
   }
-  //
-  // bind the new socket to a local port
-  //
-  bind_addr.sin_family = LS_DOMAIN;
-  bind_addr.sin_addr.s_addr = INADDR_ANY;
-  bind_addr.sin_port = htons(accept_port);      // 0 means "find me a port"
-  if ((ret = safe_bind(accept_sd, (sockaddr *) & bind_addr, size)) < 0) {
+
+  // Bind to local address.
+  if ((ret = safe_bind(accept_sd, &bind_addr.sa, size)) < 0) {
     Warning("Could not bind port: %s", strerror(errno));
     return -1;
   }
@@ -150,9 +154,9 @@ LogSock::listen(int accept_port)
   // connection table correctly.
   //
   if (accept_port == 0) {
-    ret = safe_getsockname(accept_sd, (sockaddr *) & bind_addr, &size);
+    ret = safe_getsockname(accept_sd, &bind_addr.sa, &size);
     if (ret == 0) {
-      accept_port = ntohs(bind_addr.sin_port);
+      accept_port = ntohs(bind_addr.port());
     }
   }
   //
@@ -189,8 +193,9 @@ int
 LogSock::accept()
 {
   int cid, connect_sd;
-  struct sockaddr_in connect_addr;
-  unsigned int size = sizeof(struct sockaddr_in);
+  IpEndpoint connect_addr;
+  socklen_t size = sizeof(connect_addr);
+  in_port_t connect_port;
 
   if (!m_accept_connections || ct[0].sd < 0) {
     return LogSock::LS_ERROR_NO_CONNECTION;
@@ -203,16 +208,15 @@ LogSock::accept()
 
   Debug("log-sock", "waiting to accept a new connection");
 
-  connect_sd =::accept(ct[0].sd, (sockaddr *) & connect_addr,
-                       (socklen_t *) & size
-    );
+  connect_sd =::accept(ct[0].sd, &connect_addr.sa, &size);
   if (connect_sd < 0) {
     return LogSock::LS_ERROR_ACCEPT;
   }
+  connect_port = ntohs(connect_addr.port());
 
-  init_cid(cid, NULL, connect_addr.sin_port, connect_sd, LogSock::LS_STATE_INCOMING);
+  init_cid(cid, NULL, connect_port, connect_sd, LogSock::LS_STATE_INCOMING);
 
-  Debug("log-sock", "new connection accepted, cid = %d, port = %d", cid, connect_addr.sin_port);
+  Debug("log-sock", "new connection accepted, cid = %d, port = %d", cid, connect_port);
 
   return cid;
 }
@@ -224,32 +228,19 @@ LogSock::accept()
   information into the connection and poll tables.
 */  
 int
-LogSock::connect(char *host, int port)
-{
-  unsigned ip = 0;
-  ip = LogUtils::ip_from_host(host);
-  if (!ip) {
-    return LogSock::LS_ERROR_NO_SUCH_HOST;
-  }
-  return connect(ip, port);
-}
-
-int
-LogSock::connect(unsigned host_ip, int port)
+LogSock::connect(sockaddr const* ip)
 {
   int cid, connect_sd, ret;
-  struct sockaddr_in connect_addr;
-  memset(&connect_addr, 0, sizeof(connect_addr));
-  int size = sizeof(struct sockaddr_in);
+  uint16_t port;
 
-  if (host_ip == 0 || port < 0) {
+  if (!ats_is_ip(ip)) {
     Note("Invalid host IP or port number for connection");
     return LogSock::LS_ERROR_NO_SUCH_HOST;
   }
+  port = ntohs(ats_ip_port_cast(ip));
 
-  char ipstr[32];
-  LogUtils::ip_to_str(host_ip, ipstr, sizeof(ipstr));
-  Debug("log-sock", "connecting to [%s:%d]", ipstr, port);
+  ip_port_text_buffer ipstr;
+  Debug("log-sock", "connecting to [%s:%d]", ats_ip_nptop(ip, ipstr, sizeof(ipstr)), port);
 
   // get an index into the connection table
   cid = new_cid();
@@ -258,7 +249,7 @@ LogSock::connect(unsigned host_ip, int port)
     return LogSock::LS_ERROR_CONNECT_TABLE_FULL;
   }
   // initialize a new socket descriptor
-  connect_sd =::socket(LS_DOMAIN, LS_SOCKTYPE, LS_PROTOCOL);
+  connect_sd =::socket(ip->sa_family, LS_SOCKTYPE, LS_PROTOCOL);
   if (connect_sd < 0) {
     Note("Error initializing socket for connection: %d", connect_sd);
     return LogSock::LS_ERROR_SOCKET;
@@ -273,13 +264,9 @@ LogSock::connect(unsigned host_ip, int port)
     Note("Could not set option SO_KEEPALIVE on socket (%d): %s", ret, strerror(errno));
     return -1;
   }
-  // prepare to connect
-  connect_addr.sin_family = LS_DOMAIN;
-  connect_addr.sin_port = htons(port);
-  connect_addr.sin_addr.s_addr = host_ip;
 
   // attempt to connect
-  if (::connect(connect_sd, (sockaddr *) & connect_addr, size) != 0) {
+  if (::connect(connect_sd, ip, ats_ip_size(ip)) != 0) {
     ::close(connect_sd);
     Note("Failure to connect");
     return LogSock::LS_ERROR_CONNECT;

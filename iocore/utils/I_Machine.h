@@ -59,7 +59,7 @@ struct Machine {
   ip_text_buffer ip_string;              // IP address of the host as a string.
   int ip_string_len;
 
-  char ip_hex_string[INK_IP6_SIZE*2 + 1]; ///< IP address as hex string
+  char ip_hex_string[TS_IP6_SIZE*2 + 1]; ///< IP address as hex string
   int ip_hex_string_len;
 
   ~Machine();
