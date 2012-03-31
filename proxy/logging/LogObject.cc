@@ -39,16 +39,6 @@
 #include "Log.h"
 #include "LogObject.h"
 
-
-LogBufferManager::~LogBufferManager()
-{
-  for (int i = 0; i < DELAY_DELETE_SIZE; i++) {
-    delete _delay_delete_array[i];
-    _delay_delete_array[i] = 0;
-  }
-}
-
-
 size_t
 LogBufferManager::flush_buffers(LogBufferSink *sink)
 {
@@ -65,26 +55,16 @@ LogBufferManager::flush_buffers(LogBufferSink *sink)
 
   if (nfb) {
     int i;
-    int btd = nfb > DELAY_DELETE_SIZE ? nfb - DELAY_DELETE_SIZE : 0;
 
     for (i=0 ;i < nfb; ++i) {
       LogBuffer *flush_buffer = _flush_array[ofa][i];
+
       flush_buffer->update_header_data();
-
       sink->write(flush_buffer);
-
-      if (i < btd) {
-        delete flush_buffer;
-      } else {
-        delete _delay_delete_array[_head];
-        _delay_delete_array[_head] = flush_buffer;
-        ++_head;
-        _head = _head % DELAY_DELETE_SIZE;
-      }
+      delete flush_buffer;
     }
 
-    Debug("log-logbuffer", "flushed %d buffers from array %d",
-          nfb, ofa);
+    Debug("log-logbuffer", "flushed %d buffers from array %d", nfb, ofa);
   }
 
   return nfb;
@@ -445,22 +425,8 @@ LogObject::_checkout_write(size_t * write_offset, size_t bytes_needed)
 
     case LogBuffer::LB_FULL_ACTIVE_WRITERS:
     case LogBuffer::LB_FULL_NO_WRITERS:
-      if (result_code == LogBuffer::LB_FULL_NO_WRITERS) {
-        // there are no writers, move the buffer to the flush list
-        //
-        Debug("log-logbuffer",
-              "adding buffer %d to flush list after checkout",
-              buffer->get_id());
-
-        m_buffer_manager.add_to_flush_queue(buffer);
-
-        ink_cond_signal (&Log::flush_cond);
-      }
-
       // no more room in current buffer, create a new one
-      //
-      new_buffer =
-          NEW (new LogBuffer(this, Log::config->log_buffer_size));
+      new_buffer = NEW (new LogBuffer(this, Log::config->log_buffer_size));
 
       // swap the new buffer for the old one (only this thread
       // should be doing this, so there should be no problem)
@@ -468,6 +434,12 @@ LogObject::_checkout_write(size_t * write_offset, size_t bytes_needed)
       INK_WRITE_MEMORY_BARRIER;
       ink_atomic_swap_ptr((void *)&m_log_buffer, new_buffer);
 
+      if (result_code == LogBuffer::LB_FULL_NO_WRITERS) {
+        // there are no writers, move the old buffer to the flush list
+        Debug("log-logbuffer", "adding buffer %d to flush list after checkout", buffer->get_id());
+        m_buffer_manager.add_to_flush_queue(buffer);
+        ink_cond_signal(&Log::flush_cond);
+      }
       // fallover to retry
 
     case LogBuffer::LB_RETRY:

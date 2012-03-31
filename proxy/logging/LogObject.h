@@ -53,8 +53,7 @@
 #define BINARY_LOG_OBJECT_FILENAME_EXTENSION ".blog"
 #define ASCII_PIPE_OBJECT_FILENAME_EXTENSION ".pipe"
 
-#define FLUSH_ARRAY_SIZE (1024*4)
-#define DELAY_DELETE_SIZE (1024)        /* vl: original was 16 */
+#define FLUSH_ARRAY_SIZE (512*4)
 
 #define LOG_OBJECT_ARRAY_DELTA 8
 
@@ -72,34 +71,29 @@ private:
   int _flush_array_lock;
 
   LogBuffer *_flush_array[2][FLUSH_ARRAY_SIZE];
-  LogBuffer *_delay_delete_array[DELAY_DELETE_SIZE];
 
   int _num_flush_buffers[2];          // number of buffers in queue
   int _open_flush_array;              // index of queue accepting buffers
-  int _head;                          // index of next buffer to be deleted
 
 public:
  LogBufferManager()
-   : _flush_array_lock(0), _open_flush_array(0), _head(0)
+   : _flush_array_lock(0), _open_flush_array(0)
   {
     ink_zero(_num_flush_buffers);
-    ink_zero(_delay_delete_array);
   }
-
-  ~LogBufferManager();
 
   void add_to_flush_queue(LogBuffer * buffer)
   {
     while (!ink_atomic_cas(&_flush_array_lock, 0, 1));
 
-    ink_release_assert(_num_flush_buffers[_open_flush_array] < FLUSH_ARRAY_SIZE);
+    if (_num_flush_buffers[_open_flush_array] < FLUSH_ARRAY_SIZE) {
+      int idx = _num_flush_buffers[_open_flush_array]++;
 
-    int idx = _num_flush_buffers[_open_flush_array]++;
-    _flush_array[_open_flush_array][idx] = buffer;
-
-    // Warning("Dropping log buffer, can't keep up");
-    // Debug("log-logbuffer", "Dropping buffer %d", buffer->get_id());
-    // delete buffer;
+      _flush_array[_open_flush_array][idx] = buffer;
+    } else {
+      Warning("Dropping log buffer, can't keep up");
+      delete buffer;
+    }
     _flush_array_lock = 0;
   }
 

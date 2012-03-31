@@ -1,5 +1,11 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.1.4
+  *) [TS-1080] If we run out of Log Buffer slots, we assert.
+
+  *) [TS-1176] Eliminates the need for a delayed "delete" of log buffers.
+   This was a serious race condition, which was previously sold by delaying
+   deletes via a ring buffer.
+
   *) [TS-1036] Improve some squid log compatiblity. Suggestions from mnot.
 
   *) [TS-1092] Remove specific SSL termination mode, we either terminate, or
