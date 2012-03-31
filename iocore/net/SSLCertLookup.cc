@@ -284,7 +284,7 @@ SSLCertLookup::addInfoToHash(
 //  if (serverPrivateKey == NULL)
 //      serverPrivateKey = cert;
 
-  if (ssl_NetProcessor.initSSLServerCTX(ctx, this->param, cert, caCert, serverPrivateKey, false) == 0) {
+  if (ssl_NetProcessor.initSSLServerCTX(ctx, this->param, cert, caCert, serverPrivateKey) == 0) {
     char * certpath = Layout::relative_to(this->param->getServerCertPathOnly(), cert);
 
     // Index this certificate by the specified IP(v6) address;
