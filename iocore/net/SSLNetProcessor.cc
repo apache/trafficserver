@@ -141,13 +141,9 @@ SSLNetProcessor::reconfigure(void)
 
   if (HttpProxyPort::hasSSL()) {
     // Only init server stuff if SSL is enabled in the config file
-    err = initSSL(param);
-    if (err == 0) {
-      sslCertLookup.init(param);
-    } else {
-      logSSLError("Can't initialize the SSL library, disabling SSL termination!");
-    }
+    sslCertLookup.init(param);
   }
+
   // Enable client regardless of config file setttings as remap file
   // can cause HTTP layer to connect using SSL. But only if SSL
   // initialization hasn't failed already.
@@ -213,25 +209,6 @@ SSLNetProcessor::logSSLError(const char *errStr, int critical)
       Error("SSL::%lu:%s:%s:%d:%s", es, ERR_error_string(l, buf), file, line, (flags & ERR_TXT_STRING) ? data : "");
     }
   }
-}
-
-int
-SSLNetProcessor::initSSL(const SslConfigParams * param)
-{
-  ink_ssl_method_t meth = NULL;
-
-  // Note that we do not call RAND_seed() explicitly here, we depend on OpenSSL
-  // to do the seeding of the PRNG for us. This is the case for all platforms that
-  // has /dev/urandom for example.
-
-  meth = SSLv23_server_method();
-  ctx = SSL_CTX_new(meth);
-  if (!ctx) {
-    logSSLError("Cannot create new server contex.");
-    return (-1);
-  }
-
-  return initSSLServerCTX(ctx, param, param->serverCertPath, param->serverCertChainPath, param->serverKeyPath, true);
 }
 
 int

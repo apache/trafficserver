@@ -62,7 +62,6 @@ public:
 
   void cleanup(void);
   int reconfigure();
-  int initSSL(const SslConfigParams * param);
   int initSSLClient(const SslConfigParams * param);
 
   int initSSLServerCTX(SSL_CTX * ctx,
