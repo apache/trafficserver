@@ -53,7 +53,7 @@
 #define BINARY_LOG_OBJECT_FILENAME_EXTENSION ".blog"
 #define ASCII_PIPE_OBJECT_FILENAME_EXTENSION ".pipe"
 
-#define FLUSH_ARRAY_SIZE (512*4)
+#define FLUSH_ARRAY_SIZE (1024*4)
 #define DELAY_DELETE_SIZE (1024)        /* vl: original was 16 */
 
 #define LOG_OBJECT_ARRAY_DELTA 8
@@ -82,9 +82,8 @@ public:
  LogBufferManager()
    : _flush_array_lock(0), _open_flush_array(0), _head(0)
   {
-    _num_flush_buffers[0] = 0;
-    _num_flush_buffers[1] = 0;
-    for (int i=0; i<DELAY_DELETE_SIZE; ++i) _delay_delete_array[i] = 0;
+    ink_zero(_num_flush_buffers);
+    ink_zero(_delay_delete_array);
   }
 
   ~LogBufferManager();
@@ -93,11 +92,14 @@ public:
   {
     while (!ink_atomic_cas(&_flush_array_lock, 0, 1));
 
-    ink_release_assert(_num_flush_buffers[_open_flush_array] <
-                       FLUSH_ARRAY_SIZE);
+    ink_release_assert(_num_flush_buffers[_open_flush_array] < FLUSH_ARRAY_SIZE);
+
     int idx = _num_flush_buffers[_open_flush_array]++;
     _flush_array[_open_flush_array][idx] = buffer;
 
+    // Warning("Dropping log buffer, can't keep up");
+    // Debug("log-logbuffer", "Dropping buffer %d", buffer->get_id());
+    // delete buffer;
     _flush_array_lock = 0;
   }
 
@@ -131,19 +133,13 @@ public:
   void set_filter_list(const LogFilterList & list, bool copy = true);
   void add_loghost(LogHost * host, bool copy = true);
 
-  void set_remote_flag()
-  {
-    m_flags |= REMOTE_DATA;
-  };
+  void set_remote_flag() { m_flags |= REMOTE_DATA; };
 
   int log(LogAccess * lad, char *text_entry = NULL);
 
   int roll_files(long time_now = 0);
 
-  void add_to_flush_queue(LogBuffer * buffer)
-  {
-    m_buffer_manager.add_to_flush_queue(buffer);
-  }
+  void add_to_flush_queue(LogBuffer * buffer) { m_buffer_manager.add_to_flush_queue(buffer); }
 
   size_t flush_buffers()
   {
@@ -163,37 +159,17 @@ public:
   void displayAsXML(FILE * fd = stdout, bool extended = false);
   static uint64_t compute_signature(LogFormat * format, char *filename, unsigned int flags);
 
-  char *get_original_filename() const
-  {
-    return m_filename;
-  }
-
-  char *get_full_filename() const
-  {
-    return (m_alt_filename ? m_alt_filename : m_filename);
-  }
-
-  char *get_base_filename() const
-  {
-    return m_basename;
-  }
+  char *get_original_filename() const { return m_filename; }
+  char *get_full_filename() const { return (m_alt_filename ? m_alt_filename : m_filename); }
+  char *get_base_filename() const { return m_basename; }
 
   off_t get_file_size_bytes();
 
-  uint64_t get_signature() const
-  {
-    return m_signature;
-  }
+  uint64_t get_signature() const { return m_signature; }
 
-  int get_rolling_interval() const
-  {
-    return m_rolling_interval_sec;
-  }
+  int get_rolling_interval() const { return m_rolling_interval_sec; }
 
-  void set_log_file_header(const char *header)
-  {
-    m_logFile->change_header(header);
-  }
+  void set_log_file_header(const char *header) { m_logFile->change_header(header); }
 
   void set_rolling_enabled(int rolling_enabled)
   {
@@ -215,45 +191,20 @@ public:
     m_rolling_size_mb = rolling_size_mb;
   }
 
-  bool is_collation_client()
-  {
-    return (m_logFile ? false : true);
-  }
+  bool is_collation_client() const { return (m_logFile ? false : true); }
+  bool receives_remote_data() const { return m_flags & REMOTE_DATA ? true : false; }
+  bool writes_to_pipe() const { return m_flags & WRITES_TO_PIPE ? true : false; }
+  bool writes_to_disk() { return (m_logFile && !(m_flags & WRITES_TO_PIPE) ? true : false); }
 
-  bool receives_remote_data()
-  {
-    return m_flags & REMOTE_DATA ? true : false;
-  }
-
-  bool writes_to_pipe()
-  {
-    return m_flags & WRITES_TO_PIPE ? true : false;
-  }
-
-  bool writes_to_disk()
-  {
-    return (m_logFile && !(m_flags & WRITES_TO_PIPE) ? true : false);
-  }
-
-  unsigned int get_flags() const
-  {
-    return m_flags;
-  }
+  unsigned int get_flags() const { return m_flags; }
 
   void rename(char *new_name);
 
-  bool has_alternate_name()
-  {
-    return (m_alt_filename ? true : false);
-  }
+  bool has_alternate_name() const { return (m_alt_filename ? true : false); }
 
-  const char *get_format_string()
-  {
-    return (m_format ? m_format->format_string() : "<none>");
-  }
+  const char *get_format_string() { return (m_format ? m_format->format_string() : "<none>"); }
 
-  void force_new_buffer()
-  {
+  void force_new_buffer() {
     _checkout_write(NULL, 0);
   }
 
@@ -356,7 +307,6 @@ private:
 class LogObjectManager
 {
 public:
-
   // error status
   //
   enum
@@ -409,12 +359,12 @@ public:
     for (unsigned int i = 0; i < _maxObjects; i++) {
       delete _objects[i];
     }
-    delete[]_objects;
+    delete[] _objects;
 
     for (unsigned int i = 0; i < _maxAPIobjects; i++) {
       delete _APIobjects[i];
     }
-    delete[]_APIobjects;
+    delete[] _APIobjects;
 
     delete _APImutex;
   }
@@ -436,10 +386,7 @@ public:
 
   LogObject *get_object_with_signature(uint64_t signature);
   void check_buffer_expiration(long time_now);
-  size_t get_num_objects()
-  {
-    return _numObjects;
-  }
+  size_t get_num_objects() const { return _numObjects; }
 
   int roll_files(long time_now);
 
@@ -451,9 +398,7 @@ public:
   void open_local_pipes();
   void transfer_objects(LogObjectManager & mgr);
 
-  bool has_api_objects() const  {
-    return (_numAPIobjects > 0);
-  }
+  bool has_api_objects() const  { return (_numAPIobjects > 0); }
 
   size_t get_num_collation_clients();
 };
@@ -461,9 +406,8 @@ public:
 inline int LogObjectManager::roll_files(long time_now)
 {
     int num_rolled = 0;
-    for (size_t i=0; i < _numObjects; i++)
-    {
-        num_rolled += _objects[i]->roll_files(time_now);
+    for (size_t i=0; i < _numObjects; i++) {
+      num_rolled += _objects[i]->roll_files(time_now);
     }
     return num_rolled;
 };

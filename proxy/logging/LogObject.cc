@@ -80,8 +80,8 @@ LogBufferManager::flush_buffers(LogBufferSink *sink)
         _delay_delete_array[_head] = flush_buffer;
         ++_head;
         _head = _head % DELAY_DELETE_SIZE;
-       }
-     }
+      }
+    }
 
     Debug("log-logbuffer", "flushed %d buffers from array %d",
           nfb, ofa);

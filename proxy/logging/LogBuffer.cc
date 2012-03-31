@@ -126,8 +126,6 @@ LogBufferHeader::log_filename()
   Initialize a LogBuffer object, which is just an AbstractBuffer object
   with the addition of a pointer for keeping track of the LogObject object
   that is allocating this buffer.
-  Note: You don't need to 'zero' any memebers in the class instance since iObject
-  zero it inside 'operator new', Save CPU resources! :)
   -------------------------------------------------------------------------*/
 
 LogBuffer::LogBuffer(LogObject * owner, size_t size, size_t buf_align, size_t write_align):
@@ -142,8 +140,7 @@ LogBuffer::LogBuffer(LogObject * owner, size_t size, size_t buf_align, size_t wr
   // create the buffer
   //
   m_unaligned_buffer = NEW (new char [size + buf_align]);
-  m_buffer = (char *)align_pointer_forward(m_unaligned_buffer,
-                                           buf_align);
+  m_buffer = (char *)align_pointer_forward(m_unaligned_buffer, buf_align);
 
   // add the header
   hdr_size = _add_buffer_header();
@@ -179,7 +176,7 @@ LogBuffer::LogBuffer(LogObject * owner, LogBufferHeader * header):
   //
   m_id = (uint32_t) ink_atomic_increment((pvint32) & M_ID, 1);
 
-  Debug("log-logbuffer","[%p] Created buffer %u for %s at address %p",
+  Debug("log-logbuffer","[%p] Created repurposed buffer %u for %s at address %p",
         this_ethread(), m_id, m_owner->get_base_filename(), m_buffer);
 }
 
@@ -192,7 +189,7 @@ LogBuffer::~LogBuffer()
   }
 
   Debug("log-logbuffer", "[%p] Deleted buffer %u at address %p",
-        this_ethread(), m_id, m_unaligned_buffer?m_unaligned_buffer:m_buffer);
+        this_ethread(), m_id, m_unaligned_buffer ? m_unaligned_buffer : m_buffer);
   m_buffer = 0;
   m_unaligned_buffer = 0;
 }
@@ -284,11 +281,10 @@ LogBuffer::LB_ResultCode LogBuffer::checkout_write(size_t * write_offset, size_t
     //ink_release_assert(mutex->thread_holding == this_ethread());
     //SUM_DYN_STAT(log_stat_bytes_buffered_stat, actual_write_size);
 
-    LogEntryHeader *
-      entry_header = (LogEntryHeader *) & m_buffer[offset];
+    LogEntryHeader *entry_header = (LogEntryHeader *) & m_buffer[offset];
     //entry_header->timestamp = LogUtils::timestamp();
-    struct timeval
-      tp;
+    struct timeval tp;
+
     ink_gethrtimeofday(&tp, 0);
     entry_header->timestamp = tp.tv_sec;
     entry_header->timestamp_usec = tp.tv_usec;
