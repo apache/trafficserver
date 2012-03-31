@@ -47,7 +47,7 @@ SslConfigParams *SslConfig::ssl_config_params;
 
 SslConfigParams::SslConfigParams()
 {
-  serverCertPath = serverCertPathOnly =
+  serverCertPathOnly =
     serverCertChainPath =
     serverKeyPath = configFilePath =
     CACertFilename = CACertPath =
@@ -71,7 +71,6 @@ SslConfigParams::~SslConfigParams()
 void
 SslConfigParams::cleanup()
 {
-  ats_free_null(serverCertPath);
   ats_free_null(serverCertChainPath);
   ats_free_null(serverKeyPath);
   ats_free_null(CACertFilename);
@@ -108,10 +107,9 @@ set_paths_helper(const char *path, const char *filename, char **final_path, char
       *final_path = ats_strdup(path);
     }
   }
-  if (filename) {
-    *final_filename = ats_strdup(Layout::get()->relative_to(path, filename));
-  } else {
-    *final_filename = NULL;
+
+  if (final_filename) {
+    *final_filename = filename ? ats_strdup(Layout::get()->relative_to(path, filename)) : NULL;
   }
 
 #ifdef _WIN32
@@ -133,7 +131,6 @@ set_paths_helper(const char *path, const char *filename, char **final_path, char
 void
 SslConfigParams::initialize()
 {
-  char serverCertFilename[PATH_NAME_MAX] = "";
   char serverCertRelativePath[PATH_NAME_MAX] = "";
   char *ssl_server_private_key_filename = NULL;
   char *ssl_server_private_key_path = NULL;
@@ -174,9 +171,8 @@ SslConfigParams::initialize()
     ssl_ctx_options |= SSL_OP_NO_COMPRESSION;
 #endif
 
-  IOCORE_ReadConfigString(serverCertFilename, "proxy.config.ssl.server.cert.filename", PATH_NAME_MAX);
   IOCORE_ReadConfigString(serverCertRelativePath, "proxy.config.ssl.server.cert.path", PATH_NAME_MAX);
-  set_paths_helper(serverCertRelativePath, serverCertFilename, &serverCertPathOnly, &serverCertPath);
+  set_paths_helper(serverCertRelativePath, NULL, &serverCertPathOnly, NULL);
 
   char *cert_chain = NULL;
   IOCORE_ReadConfigStringAlloc(cert_chain, "proxy.config.ssl.server.cert_chain.filename");

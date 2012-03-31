@@ -498,15 +498,11 @@ CONFIG proxy.config.ssl.compression INT 1
    # 1 client certificates optional
    # 2 client certificates required
 CONFIG proxy.config.ssl.client.certification_level INT 0
-   # Server cert filename is the name of the cert file
-   # for a single cert system and the default cert name
-   # for a multiple cert system.
-CONFIG proxy.config.ssl.server.cert.filename STRING server.pem
    # Server cert chain filename is the name of the cert chain file
    # for a single cert system.
 CONFIG proxy.config.ssl.server.cert_chain.filename STRING NULL
-   # This is the path that will be used for both single and
-   # multi cert systems.
+   # This is the path that SSL certificates files are relative to. Certificate
+   # names specified in ssl_multicert.config will be located relative to this path.
 CONFIG proxy.config.ssl.server.cert.path STRING @rel_sysconfdir@
    # Fill in private key file and path only if the server's
    # private key is not contained in the server certificate file.

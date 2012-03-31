@@ -70,7 +70,6 @@ private:
   void initialize();
   void cleanup();
 
-  char *serverCertPath;
   char *serverCertPathOnly;
   char *serverCertChainPath;
   char *serverKeyPath;
