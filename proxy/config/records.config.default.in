@@ -504,11 +504,9 @@ CONFIG proxy.config.ssl.server.cert_chain.filename STRING NULL
    # This is the path that SSL certificates files are relative to. Certificate
    # names specified in ssl_multicert.config will be located relative to this path.
 CONFIG proxy.config.ssl.server.cert.path STRING @rel_sysconfdir@
-   # Fill in private key file and path only if the server's
-   # private key is not contained in the server certificate file.
-   # For multiple cert systems, if any private key is not contained
-   # in the cert file, you must fill in the private key path.
-CONFIG proxy.config.ssl.server.private_key.filename STRING NULL
+   # If any private key is not contained in the certificate file, you must
+   # fill in the private key path. Private key names specified in
+   # ssl_multicert.config will be located relative to this path.
 CONFIG proxy.config.ssl.server.private_key.path STRING @rel_sysconfdir@
    # The CA file name and path are the
    # certificate authority certificate that

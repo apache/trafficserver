@@ -72,7 +72,6 @@ private:
 
   char *serverCertPathOnly;
   char *serverCertChainPath;
-  char *serverKeyPath;
   char *serverKeyPathOnly;
   char *CACertFilename;
   char *CACertPath;
