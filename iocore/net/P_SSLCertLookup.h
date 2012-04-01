@@ -48,6 +48,9 @@ public:
   void init(SslConfigParams * param);
   SSL_CTX *findInfoInHash(const char * address) const;
 
+  // Return the last-resort default TLS context if there is no name or address match.
+  SSL_CTX *defaultContext() const { return NULL; }
+
   SSLCertLookup();
   ~SSLCertLookup();
 };

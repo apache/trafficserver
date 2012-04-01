@@ -69,17 +69,13 @@ public:
     const char *serverCertPtr, const char *serverCaPtr,
     const char *serverKeyPtr);
 
-  SSL_CTX *getSSL_CTX(void) const {return ctx; }
   SSL_CTX *getClientSSL_CTX(void) const { return client_ctx; }
 
   static void logSSLError(const char *errStr = "", int critical = 1);
 
-  SSLNetProcessor()
-    : ctx(NULL), client_ctx(NULL), sslMutexArray(NULL)
-    {  };
+  SSLNetProcessor();
   virtual ~SSLNetProcessor();
 
-  SSL_CTX *ctx;
   SSL_CTX *client_ctx;
   ProxyMutex **sslMutexArray;
 

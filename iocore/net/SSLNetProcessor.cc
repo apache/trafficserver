@@ -101,9 +101,6 @@ SSLNetProcessor::cleanup(void)
     sslMutexArray = NULL;
   }
 
-  if (ctx)
-    SSL_CTX_free(ctx);
-  ctx = NULL;
   if (client_ctx)
     SSL_CTX_free(client_ctx);
   client_ctx = NULL;
@@ -442,6 +439,11 @@ SSLNetProcessor::freeThread(UnixNetVConnection *vc, EThread *t)
 {
   ink_assert(!vc->from_accept_thread);
   THREAD_FREE((SSLNetVConnection *) vc, sslNetVCAllocator, t);
+}
+
+SSLNetProcessor::SSLNetProcessor()
+  : client_ctx(NULL), sslMutexArray(NULL)
+{
 }
 
 SSLNetProcessor::~SSLNetProcessor()

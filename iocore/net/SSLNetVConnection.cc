@@ -475,37 +475,35 @@ int
 SSLNetVConnection::sslStartHandShake(int event, int &err)
 {
   IpEndpoint ip;
-  int namelen = sizeof(ip);
 
   if (event == SSL_EVENT_SERVER) {
-    SSL_CTX *ctx = ssl_NetProcessor.ctx;
+    if (this->ssl == NULL) {
+      SSL_CTX * ctx;
+      int namelen = sizeof(ip);
+      char buff[INET6_ADDRSTRLEN];
 
-    if (ssl == NULL) {
-      if (sslCertLookup.hasMultipleCerts()) {
-        char buff[INET6_ADDRSTRLEN];
-        safe_getsockname(get_socket(), &ip.sa, &namelen);
-        ats_ip_ntop(&ip.sa, buff, sizeof(buff));
-        ctx = sslCertLookup.findInfoInHash(buff);
-        if (ctx == NULL) {
-          ctx = ssl_NetProcessor.ctx;
-        }
-
-#if TS_USE_TLS_SNI
-        Debug("ssl", "setting SNI callbacks");
-        SSL_CTX_set_tlsext_servername_callback(ctx, ssl_servername_callback);
-        SSL_CTX_set_tlsext_servername_arg(ctx, &sslCertLookup);
-#endif /* TS_USE_TLS_SNI */
+      safe_getsockname(get_socket(), &ip.sa, &namelen);
+      ats_ip_ntop(&ip.sa, buff, sizeof(buff));
+      ctx = sslCertLookup.findInfoInHash(buff);
+      if (ctx == NULL) {
+        ctx = sslCertLookup.defaultContext();
       }
 
-      ssl = make_ssl_connection(ctx, this);
-      if (ssl == NULL) {
+#if TS_USE_TLS_SNI
+      Debug("ssl", "setting SNI callbacks with initial ctx %p", ctx);
+      SSL_CTX_set_tlsext_servername_callback(ctx, ssl_servername_callback);
+      SSL_CTX_set_tlsext_servername_arg(ctx, &sslCertLookup);
+#endif /* TS_USE_TLS_SNI */
+
+      this->ssl = make_ssl_connection(ctx, this);
+      if (this->ssl == NULL) {
         Debug("ssl", "SSLNetVConnection::sslServerHandShakeEvent, ssl create failed");
         SSLNetProcessor::logSSLError("SSL_StartHandShake");
         return EVENT_ERROR;
       }
-
     }
-    return (sslServerHandShakeEvent(err));
+
+    return sslServerHandShakeEvent(err);
   } else {
     if (ssl == NULL) {
       ssl = make_ssl_connection(ssl_NetProcessor.client_ctx, this);
