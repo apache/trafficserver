@@ -294,13 +294,14 @@ LogHost::write (LogBuffer *lb)
 
   int bytes_to_send, bytes_sent;
   bytes_to_send = buffer_header->byte_count;
-  lb->convert_to_network_order ();
+  // lb->convert_to_network_order();
   bytes_sent = m_sock->write (m_sock_fd, buffer_header, bytes_to_send);
   if (bytes_to_send != bytes_sent) {
     Note("Bad write to LogHost %s; bad send count %d/%d",
         name(), bytes_sent, bytes_to_send);
     disconnect();
-    lb->convert_to_host_order ();
+    // TODO: We currently don't try to make the log buffers handle little vs big endian. TS-1156.
+    // lb->convert_to_host_order ();
     return orphan_write (lb);
   }
 

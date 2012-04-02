@@ -236,7 +236,7 @@ LogCollationClientSM::client_auth(int event, VIO * vio)
 
       NetMsgHeader nmh;
       int bytes_to_send = (int) strlen(Log::config->collation_secret);
-      nmh.htonl_size = htonl(bytes_to_send);
+      nmh.msg_bytes = bytes_to_send;
 
       // memory copies, I know...  but it happens rarely!!!  ^_^
       ink_assert(m_auth_buffer != NULL);
@@ -652,8 +652,9 @@ LogCollationClientSM::client_send(int event, VIO * vio)
       ink_assert(log_buffer_header != NULL);
       NetMsgHeader nmh;
       int bytes_to_send = log_buffer_header->byte_count;
-      nmh.htonl_size = htonl(bytes_to_send);
-      m_buffer_in_iocore->convert_to_network_order();
+      nmh.msg_bytes = bytes_to_send;
+      // TODO: We currently don't try to make the log buffers handle little vs big endian. TS-1156.
+      //m_buffer_in_iocore->convert_to_network_order();
 
       // copy into m_send_buffer
       ink_assert(m_send_buffer != NULL);
@@ -730,7 +731,8 @@ LogCollationClientSM::flush_to_orphan()
   // if in middle of a write, flush buffer_in_iocore to orphan
   if (m_buffer_in_iocore != NULL) {
     Debug("log-coll", "[%d]client::flush_to_orphan - m_buffer_in_iocore to oprhan", m_id);
-    m_buffer_in_iocore->convert_to_host_order();
+    // TODO: We currently don't try to make the log buffers handle little vs big endian. TS-1156.
+    // m_buffer_in_iocore->convert_to_host_order();
     m_log_host->orphan_write_and_delete(m_buffer_in_iocore);
     m_buffer_in_iocore = NULL;
   }

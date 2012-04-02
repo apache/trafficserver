@@ -302,7 +302,8 @@ LogCollationHostSM::host_recv(int event, void *data)
       log_buffer_header = (LogBufferHeader *) m_read_buffer;
 
       // convert the buffer we just received to host order
-      LogBuffer::convert_to_host_order(log_buffer_header);
+      // TODO: We currently don't try to make the log buffers handle little vs big endian. TS-1156.
+      // LogBuffer::convert_to_host_order(log_buffer_header);
 
       version = log_buffer_header->version;
       if (version != LOG_SEGMENT_VERSION) {
@@ -449,7 +450,7 @@ LogCollationHostSM::read_body(int event, VIO * vio)
     Debug("log-coll", "[%d]host:read_body - SWITCH", m_id);
     m_read_state = LOG_COLL_READ_BODY;
 
-    m_read_bytes_wanted = ntohl(m_net_msg_header.htonl_size);
+    m_read_bytes_wanted = m_net_msg_header.msg_bytes;
     ink_assert(m_read_bytes_wanted > 0);
     m_read_bytes_received = 0;
     m_read_buffer = new char[m_read_bytes_wanted];

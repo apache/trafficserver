@@ -863,7 +863,7 @@ LogAccess::unmarshal_int(char **buf)
   ink_assert(*buf != NULL);
   int64_t val;
 
-  // TODO: this used to do nthol, do we need to worrry?
+  // TODO: this used to do nthol, do we need to worrry? TS-1156.
   val = *((int64_t *)(*buf));
   *buf += INK_MIN_ALIGN;
   return val;

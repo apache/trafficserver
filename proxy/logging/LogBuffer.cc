@@ -513,9 +513,6 @@ LogBuffer::resolve_custom_entry(LogFieldList * fieldlist,
           char *sym = field->symbol();
 
           if (strcmp(sym, "cqts") == 0) {
-            // unmarshal_int_to_str expects data in
-            // network order
-            timestamp = htonl(timestamp);
             char *ptr = (char *) &timestamp;
             res = LogAccess::unmarshal_int_to_str(&ptr, to, write_to_len - bytes_written);
             if (buffer_version > 1) {
@@ -526,9 +523,6 @@ LogBuffer::resolve_custom_entry(LogFieldList * fieldlist,
             non_aggregate_timestamp = true;
 
           } else if (strcmp(sym, "cqth") == 0) {
-            // unmarshal_int_to_str_hex expects data in
-            // network order
-            timestamp = htonl(timestamp);
             char *ptr = (char *) &timestamp;
             res = LogAccess::unmarshal_int_to_str_hex(&ptr, to, write_to_len - bytes_written);
             if (buffer_version > 1) {
@@ -744,129 +738,6 @@ LogBuffer::to_ascii(LogEntryHeader * entry, LogFormatType type,
 }
 
 /*-------------------------------------------------------------------------
-  LogBuffer::convert_to_network_order
-
-  This routine will convert all of the integer fields in the buffer header
-  and the entry headers to network byte order.  This is necessary for the
-  buffer to be able to move from a machine with one byte order to a
-  collation host with a different byte order.  On the other end, we'll
-  convert back to host order.
-  -------------------------------------------------------------------------*/
-
-void
-LogBuffer::convert_to_network_order()
-{
-  convert_to_network_order(m_header);
-}
-
-void
-LogBuffer::convert_to_network_order(LogBufferHeader * header)
-{
-  Debug("log-sock", "Converting buffer to network byte order");
-  ink_assert(header != NULL);
-  //
-  // First, change each of the entry headers.  Order is important,
-  // because if we convert the header fields first, the iterator will
-  // be screwed up.
-  //
-  LogBufferIterator iter(header);
-  LogEntryHeader *entry_header;
-  while ((entry_header = iter.next())) {
-    entry_header->timestamp = htonl(entry_header->timestamp);
-    entry_header->timestamp_usec = htonl(entry_header->timestamp_usec);
-    entry_header->entry_len = htonl(entry_header->entry_len);
-  }
-
-  header->cookie = htonl(header->cookie);
-  header->version = htonl(header->version);
-  header->format_type = htonl(header->format_type);
-  header->byte_count = htonl(header->byte_count);
-  header->entry_count = htonl(header->entry_count);
-  header->low_timestamp = htonl(header->low_timestamp);
-  header->high_timestamp = htonl(header->high_timestamp);
-  header->log_object_flags = htonl(header->log_object_flags);
-  header->fmt_name_offset = htonl(header->fmt_name_offset);
-  header->fmt_fieldlist_offset = htonl(header->fmt_fieldlist_offset);
-  header->fmt_printf_offset = htonl(header->fmt_printf_offset);
-  header->src_hostname_offset = htonl(header->src_hostname_offset);
-  header->log_filename_offset = htonl(header->log_filename_offset);
-  header->data_offset = htonl(header->data_offset);
-#if defined(LOG_BUFFER_TRACKING)
-  header->id = htonl(header->id);
-#endif // defined(LOG_BUFFER_TRACKING)
-
-  // signature 64 bits long, convert each 32 bit part separately
-  //
-  uint32_t sig[2];
-  sig[0] = htonl((uint32_t) header->log_object_signature);
-  sig[1] = htonl((uint32_t) (header->log_object_signature >> 32));
-  header->log_object_signature = ((uint64_t) sig[1] << 32) | sig[0];
-}
-
-/*-------------------------------------------------------------------------
-  LogBuffer::convert_to_host_order
-
-  This routine will convert all of the integer fields in the buffer header
-  and the entry headers to host byte order.
-
-  Broken out into a static function so that we can call it on data
-  that we've received over the network but haven't associated with
-  a LogBuffer just yet.
-  -------------------------------------------------------------------------*/
-
-void
-LogBuffer::convert_to_host_order()
-{
-  convert_to_host_order(m_header);
-}
-
-
-// TODO: This is probably broken with the migration to 64-bit log ints.
-void
-LogBuffer::convert_to_host_order(LogBufferHeader * header)
-{
-  Debug("log-sock", "Converting buffer to host byte order");
-  ink_assert(header != NULL);
-
-  header->cookie = ntohl(header->cookie);
-  header->version = ntohl(header->version);
-  header->format_type = ntohl(header->format_type);
-  header->byte_count = ntohl(header->byte_count);
-  header->entry_count = ntohl(header->entry_count);
-  header->low_timestamp = ntohl(header->low_timestamp);
-  header->high_timestamp = ntohl(header->high_timestamp);
-  header->log_object_flags = ntohl(header->log_object_flags);
-  header->fmt_name_offset = ntohl(header->fmt_name_offset);
-  header->fmt_fieldlist_offset = ntohl(header->fmt_fieldlist_offset);
-  header->fmt_printf_offset = ntohl(header->fmt_printf_offset);
-  header->src_hostname_offset = ntohl(header->src_hostname_offset);
-  header->log_filename_offset = ntohl(header->log_filename_offset);
-  header->data_offset = ntohl(header->data_offset);
-#if defined(LOG_BUFFER_TRACKING)
-  header->id = ntohl(header->id);
-#endif // defined(LOG_BUFFER_TRACKING)
-
-  // signature 64 bits long, convert each 32 bit part separately
-  //
-  uint32_t sig[2];
-  sig[0] = ntohl((uint32_t) header->log_object_signature);
-  sig[1] = ntohl((uint32_t) (header->log_object_signature >> 32));
-  header->log_object_signature = ((uint64_t) sig[1] << 32) | sig[0];
-
-  //
-  // Next, convert the entry headers
-  //
-  LogBufferIterator iter(header, true);
-  LogEntryHeader *entry_header;
-
-  while ((entry_header = iter.next())) {
-    entry_header->timestamp = ntohl(entry_header->timestamp);
-    entry_header->timestamp_usec = ntohl(entry_header->timestamp_usec);
-    entry_header->entry_len = ntohl(entry_header->entry_len);
-  }
-}
-
-/*-------------------------------------------------------------------------
   LogBufferList
 
   The operations on this list need to be atomic because the buffers are
@@ -954,7 +825,7 @@ LogBufferIterator::next()
   if (entry) {
     if (m_iter_entry_count < m_buffer_entry_count &&
         m_iter_entry_count < (unsigned) Log::config->max_entries_per_buffer) {
-      m_next += m_in_network_order ? ntohl(entry->entry_len) : entry->entry_len;
+      m_next += entry->entry_len;
       ++m_iter_entry_count;
       ret_val = entry;
     }

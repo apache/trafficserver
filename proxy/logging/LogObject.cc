@@ -523,7 +523,7 @@ LogObject::log(LogAccess * lad, char *text_entry)
     for (f = fl->first(); f; f = fl->next(f)) {
 
       // convert to host order to do computations
-      val = (f->is_time_field())? time_now : ntohl(*((int64_t *) data_ptr));
+      val = (f->is_time_field())? time_now : *((int64_t *) data_ptr);
       f->update_aggregate(val);
       data_ptr += INK_MIN_ALIGN;
     }

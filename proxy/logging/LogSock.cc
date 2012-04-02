@@ -483,7 +483,7 @@ LogSock::write(int cid, void *buf, int bytes)
   // send the message header
   //
   Debug("log-sock", "   sending header (%zu bytes)", sizeof(LogSock::MsgHeader));
-  header.msg_bytes = htonl(bytes);
+  header.msg_bytes = bytes;
   ret =::send(ct[cid].sd, (char *) &header, sizeof(LogSock::MsgHeader), 0);
   if (ret != sizeof(LogSock::MsgHeader)) {
     return LogSock::LS_ERROR_WRITE;
@@ -715,7 +715,6 @@ LogSock::read_header(int sd, LogSock::MsgHeader * header)
     return -1;
   }
 
-  header->msg_bytes = ntohl(header->msg_bytes);
   return bytes;
 }
 

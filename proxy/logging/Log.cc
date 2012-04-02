@@ -1281,10 +1281,9 @@ Log::collate_thread_main(void *args)
         continue;
       }
 
-      unsigned version = ntohl(header->version);
-      if (version != LOG_SEGMENT_VERSION) {
-        Note("Invalid LogBuffer received; invalid version - "
-             "buffer = %u, current = %u", version, LOG_SEGMENT_VERSION);
+      if (header->version != LOG_SEGMENT_VERSION) {
+        Note("Invalid LogBuffer received; invalid version - buffer = %u, current = %u",
+             header->version, LOG_SEGMENT_VERSION);
         delete[]header;
         continue;
       }
@@ -1302,14 +1301,6 @@ Log::collate_thread_main(void *args)
       Debug("log-sock", "Using format '%s'", format->name());
 
       delete[]header;
-
-      // vl: absolutely useless code because 'global_buffer_full_list' is not used anywhere
-//          buffer = NEW (new LogBuffer (obj, header));
-//          buffer->convert_to_host_order();
-//          Log::global_buffer_full_list.add (buffer);
-//          ink_mutex_acquire (&flush_mutex);
-//          ink_cond_signal (&Log::flush_cond);
-//          ink_mutex_release (&flush_mutex);
     }
 
     Debug("log", "no longer collation host, deleting LogSock");

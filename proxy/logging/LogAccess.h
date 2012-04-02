@@ -339,7 +339,7 @@ LogAccess::strlen(char const* str)
 inline void
 LogAccess::marshal_int(char *dest, int64_t source)
 {
-  // TODO: This used to do htonl on the source
+  // TODO: This used to do htonl on the source. TS-1156
   *((int64_t *)dest) = source;
 }
 

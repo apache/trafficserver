@@ -182,8 +182,7 @@ public:
 
   // this should only be called when buffer is ready to be flushed
   void update_header_data();
-  void convert_to_network_order();
-  void convert_to_host_order();
+
   uint32_t get_id()
   {
     return m_id;
@@ -208,8 +207,6 @@ public:
                                   int write_to_len, long timestamp, long timestamp_us,
                                   unsigned buffer_version, LogFieldList * alt_fieldlist = NULL,
                                   char *alt_printf_str = NULL);
-  static void convert_to_network_order(LogBufferHeader * header);
-  static void convert_to_host_order(LogBufferHeader * header);
 
 private:
   char *m_unaligned_buffer;     // the unaligned buffer
