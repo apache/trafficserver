@@ -34,13 +34,14 @@ class SSLCertLookup
   const char *extractIPAndCert(
     matcher_line * line_info, char **addr, char **cert, char **ca, char **priKey) const;
   bool addInfoToHash(
-    const char *strAddr, const char *cert, const char *ca, const char *serverPrivateKey) const;
+    const char *strAddr, const char *cert, const char *ca, const char *serverPrivateKey);
 
   char config_file_path[PATH_NAME_MAX];
   SslConfigParams *param;
   bool multipleCerts;
 
   SSLContextStorage * ssl_storage;
+  SSL_CTX * ssl_default;
 
 public:
   bool hasMultipleCerts() const { return multipleCerts; }
@@ -49,7 +50,7 @@ public:
   SSL_CTX *findInfoInHash(const char * address) const;
 
   // Return the last-resort default TLS context if there is no name or address match.
-  SSL_CTX *defaultContext() const { return NULL; }
+  SSL_CTX *defaultContext() const { return ssl_default; }
 
   SSLCertLookup();
   ~SSLCertLookup();

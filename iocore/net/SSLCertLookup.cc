@@ -80,18 +80,19 @@ SSLCertLookup sslCertLookup;
 static void
 insert_ssl_certificate(SSLContextStorage *, SSL_CTX *, const char *);
 
-#define SSL_IP_TAG "dest_ip"
-#define SSL_CERT_TAG "ssl_cert_name"
-#define SSL_PRIVATE_KEY_TAG "ssl_key_name"
-#define SSL_CA_TAG "ssl_ca_name"
-const char *moduleName = "SSLCertLookup";
+#define SSL_IP_TAG            "dest_ip"
+#define SSL_CERT_TAG          "ssl_cert_name"
+#define SSL_PRIVATE_KEY_TAG   "ssl_key_name"
+#define SSL_CA_TAG            "ssl_ca_name"
 
-const matcher_tags sslCertTags = {
-  NULL, NULL, SSL_IP_TAG, NULL, NULL, false
+static const char *moduleName = "SSLCertLookup";
+
+static const matcher_tags sslCertTags = {
+  NULL, NULL, NULL, NULL, NULL, false
 };
 
 SSLCertLookup::SSLCertLookup()
-  : param(NULL), multipleCerts(false), ssl_storage(NEW(new SSLContextStorage()))
+  : param(NULL), multipleCerts(false), ssl_storage(NEW(new SSLContextStorage())), ssl_default(NULL)
 {
   *config_file_path = '\0';
 }
@@ -166,8 +167,6 @@ SSLCertLookup::buildTable()
                      moduleName, configFilePath, line_num, errPtr);
         IOCORE_SignalError(errBuf, alarmAlready);
       } else {
-        ink_assert(line_info.type == MATCH_IP);
-
         errPtr = extractIPAndCert(&line_info, &addr, &sslCert, &sslCa, &priKey);
 
         if (errPtr != NULL) {
@@ -175,7 +174,7 @@ SSLCertLookup::buildTable()
                        moduleName, configFilePath, line_num, errPtr);
           IOCORE_SignalError(errBuf, alarmAlready);
         } else {
-          if (addr != NULL && sslCert != NULL) {
+          if (sslCert != NULL) {
             addInfoToHash(addr, sslCert, sslCa, priKey);
             ret = 1;
           }
@@ -271,7 +270,7 @@ SSLCertLookup::extractIPAndCert(matcher_line * line_info, char **addr, char **ce
 bool
 SSLCertLookup::addInfoToHash(
     const char *strAddr, const char *cert,
-    const char *caCert, const char *serverPrivateKey) const
+    const char *caCert, const char *serverPrivateKey)
 {
   ink_ssl_method_t meth = NULL;
 
@@ -281,14 +280,18 @@ SSLCertLookup::addInfoToHash(
     SSLNetProcessor::logSSLError("Cannot create new server contex.");
     return (false);
   }
-//  if (serverPrivateKey == NULL)
-//      serverPrivateKey = cert;
 
   if (ssl_NetProcessor.initSSLServerCTX(ctx, this->param, cert, caCert, serverPrivateKey) == 0) {
     char * certpath = Layout::relative_to(this->param->getServerCertPathOnly(), cert);
 
-    // Index this certificate by the specified IP(v6) address;
-    this->ssl_storage->insert(ctx, strAddr);
+    // Index this certificate by the specified IP(v6) address. If the address is "*", make it the default context.
+    if (strAddr) {
+      if (strcmp(strAddr, "*") == 0) {
+        this->ssl_default = ctx;
+      } else {
+        this->ssl_storage->insert(ctx, strAddr);
+      }
+    }
 
     // Insert additional mappings. Note that this maps multiple keys to the same value, so when
     // this code is updated to reconfigure the SSL certificates, it will need some sort of

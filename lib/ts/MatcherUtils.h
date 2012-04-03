@@ -95,9 +95,18 @@ struct matcher_tags
   const char *match_ip;
   const char *match_regex;
   const char *match_host_regex;
-  bool dest_error_msg;          // wether to use src or destination in any
-  //   errog messages
+  bool dest_error_msg;          // whether to use src or destination in any error messages
+
+  bool empty() const {
+    return this->match_host == NULL &&
+      this->match_domain == NULL &&
+      this->match_ip == NULL &&
+      this->match_regex == NULL &&
+      this->match_host_regex == NULL;
+  }
+
 };
+
 extern const matcher_tags http_dest_tags;
 extern const matcher_tags ip_allow_tags;
 extern const matcher_tags socks_server_tags;

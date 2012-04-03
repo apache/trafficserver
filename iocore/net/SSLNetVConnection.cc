@@ -51,13 +51,20 @@ ClassAllocator<SSLNetVConnection> sslNetVCAllocator("sslNetVCAllocator");
 static int
 ssl_servername_callback(SSL * ssl, int * ad, void * arg)
 {
-  SSL_CTX * ctx;
+  SSL_CTX *       ctx = NULL;
   SSLCertLookup * lookup = (SSLCertLookup *) arg;
-  const char * servername = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
+  const char *    servername = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
 
   Debug("ssl", "ssl=%p ad=%d lookup=%p server=%s", ssl, *ad, lookup, servername);
 
-  ctx = lookup->findInfoInHash((char *)servername);
+  if (likely(servername)) {
+    ctx = lookup->findInfoInHash((char *)servername);
+  }
+
+  if (ctx == NULL) {
+    ctx = lookup->defaultContext();
+  }
+
   if (ctx == NULL) {
     return SSL_TLSEXT_ERR_NOACK;
   }

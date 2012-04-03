@@ -585,7 +585,7 @@ parseConfigLine(char *line, matcher_line *p_line, const matcher_tags * tags)
     return "Malformed entry";
   }
 
-  if (p_line->type == MATCH_NONE) {
+  if (!tags->empty() && p_line->type == MATCH_NONE) {
     if (tags->dest_error_msg == false) {
       return "No source specifier";
     } else {
