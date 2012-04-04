@@ -121,7 +121,6 @@ static ink_hrtime manager_flap_retry_start_time = 0;    // first time we attempt
 
 static const int kill_timeout = 1 * 60; //  1 min
 
-
 static int child_pid = 0;
 static int child_status = 0;
 static int sem_id = 11452;
@@ -197,7 +196,7 @@ static void
 sig_child(int signum)
 {
   NOWARN_UNUSED(signum);
-  int pid = 0;
+  pid_t pid = 0;
   int status = 0;
 
 #ifdef TRACE_LOG_COP
@@ -1091,7 +1090,7 @@ read_manager_string(const char *variable, char *value, size_t val_len)
     return -1;
   }
 
-  ink_strlcpy(value, p, val_len);
+  ink_strlcpy(value, p, e - p + 1);
 
   return 0;
 }
@@ -1682,7 +1681,8 @@ check(void *arg)
         cop_log(COP_WARNING, "child terminated due to signal %d: %s\n", sig, strsignal(sig));
       }
 
-      child_pid = child_status = 0;
+      child_pid = 0;
+      child_status = 0;
     }
 
     // Re-read the config file information

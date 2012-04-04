@@ -1,5 +1,7 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.1.4
+  *) [TS-1178] cop will kill manager & server, even cop it self, in cluster.
+
   *) [TS-1156] Fix timestamp log fields, and stop supporting network byte
    order in various log buffers. See TS-1182 for future enhancements.
 
