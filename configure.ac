@@ -1235,6 +1235,7 @@ tproxy_usage_disable="
     --disable-tproxy Disable feature, no validation."
 proxy_usage="$tproxy_usage_enable$tproxy_usage_default$tproxy_usage_numeric$tproxy_usage_disable"
 
+AC_MSG_CHECKING([whether to enable transparent proxy])
 AS_IF([test "x$enable_tproxy" != "xno"], [
   AS_IF([test "$use_posix_cap" -eq 0], [
     AS_IF([test "x$enable_tproxy" = xauto], [
