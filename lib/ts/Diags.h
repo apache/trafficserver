@@ -191,11 +191,17 @@ public:
   // user printing interfaces //
   //////////////////////////////
 
-  void print(const char *tag, DiagsLevel dl, SrcLoc * loc, const char *format_string, ...)
+  void print(const char *tag, DiagsLevel dl, const char *file, const char *func,
+             const int line, const char *format_string, ...) TS_PRINTFLIKE(7, 8)
   {
     va_list ap;
     va_start(ap, format_string);
-    print_va(tag, dl, loc, format_string, ap);
+    if (show_location) {
+      SrcLoc lp(file, func, line);
+      print_va(tag, dl, &lp, format_string, ap);
+    } else {
+      print_va(tag, dl, NULL, format_string, ap);
+    }
     va_end(ap);
   }
 
@@ -283,6 +289,10 @@ dummy_debug(const char *tag, const char *fmt, ...)
 #ifdef TS_USE_DIAGS
 #define Diag(tag, ...)      if (unlikely(diags->on())) diags->log(tag, DTA(DL_Diag), __VA_ARGS__)
 #define Debug(tag, ...)     if (unlikely(diags->on())) diags->log(tag, DTA(DL_Debug), __VA_ARGS__)
+#define DiagSpecific(flag, tag, ...)  if (unlikely(diags->on())) flag ? diags->print(tag, DTA(DL_Diag), __VA_ARGS__) : \
+                                                                   diags->log(tag, DTA(DL_Diag), __VA_ARGS__)
+#define DebugSpecific(flag, tag, ...)  if (unlikely(diags->on())) flag ? diags->print(tag, DTA(DL_Debug), __VA_ARGS__) : \
+                                                                    diags->log(tag, DTA(DL_Debug), __VA_ARGS__)
 
 #define is_debug_tag_set(_t)     unlikely(diags->on(_t,DiagsTagType_Debug))
 #define is_action_tag_set(_t)    unlikely(diags->on(_t,DiagsTagType_Action))
@@ -294,6 +304,9 @@ dummy_debug(const char *tag, const char *fmt, ...)
 
 #define Diag(tag, fmt, ...)      if (0) dummy_debug(tag, __VA_ARGS__)
 #define Debug(tag, fmt, ...)     if (0) dummy_debug(tag, __VA_ARGS__)
+#define DiagSpecific(flag, tag, ...)  if (0 && tag) dummy_debug(tag, __VA_ARGS__);
+#define DebugSpecific(flag, tag, ...)  if (0 && tag) dummy_debug(tag, __VA_ARGS__);
+
 
 #define is_debug_tag_set(_t)     0
 #define is_action_tag_set(_t)    0

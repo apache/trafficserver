@@ -394,7 +394,7 @@ mgmt_elog(FILE * log, const char *message_format, ...)
     int lerrno = errno;
     diags->print_va(NULL, DL_Error, NULL, message_format, ap);
     snprintf(message, sizeof(message), " (last system error %d: %s)\n", lerrno, strerror(lerrno));
-    diags->print(NULL, DL_Error, NULL, message);
+    diags->print(NULL, DTA(DL_Error), message);
   } else {
 #endif
     if (use_syslog) {
@@ -433,7 +433,7 @@ mgmt_elog(const char *message_format, ...)
     int lerrno = errno;
     diags->print_va(NULL, DL_Error, NULL, message_format, ap);
     snprintf(message, sizeof(message), " (last system error %d: %s)\n", lerrno, strerror(lerrno));
-    diags->print(NULL, DL_Error, NULL, message);
+    diags->print(NULL, DTA(DL_Error), message);
   } else {
 #endif
 
@@ -478,7 +478,7 @@ mgmt_fatal(FILE * log, const char *message_format, ...)
     int lerrno = errno;
     diags->print_va(NULL, DL_Fatal, NULL, message_format, ap);
     snprintf(message, sizeof(message), " (last system error %d: %s)\n", lerrno, strerror(lerrno));
-    diags->print(NULL, DL_Fatal, NULL, message);
+    diags->print(NULL, DTA(DL_Fatal), message);
   } else {
 #endif
 
@@ -525,7 +525,7 @@ mgmt_fatal(const char *message_format, ...)
     int lerrno = errno;
     diags->print_va(NULL, DL_Fatal, NULL, message_format, ap);
     snprintf(message, sizeof(message), " (last system error %d: %s)\n", lerrno, strerror(lerrno));
-    diags->print(NULL, DL_Fatal, NULL, message);
+    diags->print(NULL, DTA(DL_Fatal), message);
   } else {
 #endif
 

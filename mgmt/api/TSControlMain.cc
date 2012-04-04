@@ -984,7 +984,7 @@ handle_diags(struct SocketInfo sock_info, char *req)
   }
 
   if (diags_init) {
-    diags->print("TSMgmtAPI", level, NULL, NULL, diag_msg);
+    diags->print("TSMgmtAPI", DTA(level), diag_msg);
     ats_free(diag_msg);
     return;
   }

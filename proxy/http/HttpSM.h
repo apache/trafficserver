@@ -270,6 +270,7 @@ public:
   int redirection_tries;        //To monitor number of redirections
   int64_t transfered_bytes;         //Added to calculate POST data
   bool post_failed;             //Added to identify post failure
+  bool debug_on;              //Transaction specific debug flag
 
   // Tunneling request to plugin
   HttpPluginTunnel_t plugin_tunnel_type;

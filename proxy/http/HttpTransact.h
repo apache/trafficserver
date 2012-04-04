@@ -83,7 +83,7 @@
 #define TRANSACT_RETURN(n, r)  \
 s->next_action = n; \
 s->transact_return_point = r; \
-Debug("http_trans", "Next action %s; %s", #n, #r); \
+DebugSpecific((s->state_machine && s->state_machine->debug_on), "http_trans", "Next action %s; %s", #n, #r); \
 return; \
 
 #define SET_UNPREPARE_CACHE_ACTION(C) \

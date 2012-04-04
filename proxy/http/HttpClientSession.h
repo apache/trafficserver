@@ -159,6 +159,8 @@ public:
   // be active until the transaction goes through or the client
   // aborts.
   bool m_active;
+  // Session specific debug flag
+  bool debug_on;
 };
 
 inline APIHook *

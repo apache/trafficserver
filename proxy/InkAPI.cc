@@ -5750,6 +5750,32 @@ TSHttpTxnServerStateGet(TSHttpTxn txnp)
   return (TSServerState)s->current.state;
 }
 
+void
+TSHttpTxnDebugSet(TSHttpTxn txnp, int on)
+{
+    sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+    ((HttpSM *)txnp)->debug_on = on;
+}
+
+int
+TSHttpTxnDebugGet(TSHttpTxn txnp)
+{
+    sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+    return ((HttpSM *)txnp)->debug_on;
+}
+void
+TSHttpSsnDebugSet(TSHttpSsn ssnp, int on)
+{
+    sdk_assert(sdk_sanity_check_http_ssn(ssnp) == TS_SUCCESS);
+    ((HttpClientSession *)ssnp)->debug_on = on;
+}
+int
+TSHttpSsnDebugGet(TSHttpSsn ssnp)
+{
+    sdk_assert(sdk_sanity_check_http_ssn(ssnp) == TS_SUCCESS);
+    return ((HttpClientSession *)ssnp)->debug_on;
+}
+
 int
 TSHttpTxnClientReqHdrBytesGet(TSHttpTxn txnp)
 {
@@ -6849,6 +6875,19 @@ int
 TSIsDebugTagSet(const char *t)
 {
   return (diags->on(t, DiagsTagType_Debug)) ? 1 : 0;
+}
+
+void
+TSDebugSpecific(int debug_flag, const char *tag, const char *format_str, ...)
+{
+  if (diags->on(tag, DiagsTagType_Debug) ||
+      (debug_flag  && diags->on())) {
+
+      va_list ap;
+      va_start(ap, format_str);
+      diags->print_va(tag, DL_Diag, NULL, format_str, ap);
+      va_end(ap);
+  }
 }
 
 // Plugins would use TSDebug just as the TS internal uses Debug
