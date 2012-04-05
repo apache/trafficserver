@@ -40,6 +40,17 @@
 #include <openssl/ssl.h>
 #include <openssl/err.h>
 
+// These are included here beacuse older OpenSSL libraries don't have them.
+// Don't copy these defines, or use their values directly, they are merely
+// here to avoid compiler errors.
+#ifndef SSL_TLSEXT_ERR_OK
+#define SSL_TLSEXT_ERR_OK 0
+#endif
+
+#ifndef SSL_TLSEXT_ERR_NOACK
+#define SSL_TLSEXT_ERR_NOACK 3
+#endif
+
 class SSLNextProtocolSet;
 
 //////////////////////////////////////////////////////////////////

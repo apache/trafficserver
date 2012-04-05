@@ -1,5 +1,7 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.1.4
+  *) [TS-1189] Build problem with older versions of OpenSSL.
+
   *) [TS-1178] cop will kill manager & server, even cop it self, in cluster.
 
   *) [TS-1156] Fix timestamp log fields, and stop supporting network byte
@@ -16,7 +18,7 @@ Changes with Apache Traffic Server 3.1.4
   *) [TS-1036] Improve some squid log compatiblity. Suggestions from mnot.
 
   *) [TS-1092] Remove specific SSL termination mode, we either terminate, or
-    we do not.
+   we do not.
 
   *) [TS-1173] Improve the comments in remap.config.
 
@@ -45,7 +47,7 @@ Changes with Apache Traffic Server 3.1.4
   *) [TS-1114] Fix to lock vol for CacheVC::write_vector.
 
   *) [TS-857] Possibly related race in UnixNetVConnection::mainEvent
-              on inactivity timeout.
+   on inactivity timeout.
 
   *) [TS-1149] Pretty up automake output.
 
