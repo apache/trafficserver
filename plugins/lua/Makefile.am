@@ -14,4 +14,20 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-SUBDIRS = conf_remap regex_remap header_filter stats_over_http lua
+pkglibdir = ${pkglibexecdir}
+
+if BUILD_LUA_SUPPORT
+
+AM_CXXFLAGS = \
+  ${LUA_CFLAGS} \
+  -I$(top_builddir)/proxy/api \
+  -I$(top_srcdir)/proxy/api
+
+
+pkglib_LTLIBRARIES = lua.la
+
+lua_la_LIBADD = ${LUA_LIBS}
+lua_la_SOURCES = lua.cc lapi.cc lutil.cc
+lua_la_LDFLAGS = -module -avoid-version -shared
+
+endif

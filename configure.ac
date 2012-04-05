@@ -1063,6 +1063,15 @@ AC_SUBST(arg_max)
 # Check for libreadline/libedit
 AX_LIB_READLINE
 
+#
+# Check for Lua, at least version 5.1, sets LUA_CFLAGS and LUA_LIBS.
+CHECK_LUA(
+  [ enable_lua_support="yes" ],
+  [ enable_lua_support="no" ]
+)
+
+AM_CONDITIONAL([BUILD_LUA_SUPPORT], [ test "x${enable_lua_support}" = "xyes" ])
+
 # -----------------------------------------------------------------------------
 # 5. CHECK FOR HEADER FILES
 
@@ -1459,6 +1468,7 @@ AC_CONFIG_FILES([plugins/conf_remap/Makefile])
 AC_CONFIG_FILES([plugins/regex_remap/Makefile])
 AC_CONFIG_FILES([plugins/header_filter/Makefile])
 AC_CONFIG_FILES([plugins/stats_over_http/Makefile])
+AC_CONFIG_FILES([plugins/lua/Makefile])
 # various tools
 AC_CONFIG_FILES([tools/Makefile])
 # example plugins
