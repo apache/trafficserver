@@ -2357,41 +2357,41 @@ extern "C"
   tsapi void TSHttpTxnNoActivityTimeoutSet(TSHttpTxn txnp, int timeout);
 
   tsapi TSServerState TSHttpTxnServerStateGet(TSHttpTxn txnp);
-  
+
   /* --------------------------------------------------------------------------
      Transaction specific debugging control  */
-     
+
   /**
          Set the transaction specific debugging flag for this transaction.
          When turned on, internal debug messeges related to this transaction
          will be written even if the debug tag isn't on.
-             
+
       @param txnp transaction to change.
       @param on set to 1 to turn on, 0 to turn off.
   */
   tsapi void TSHttpTxnDebugSet(TSHttpTxn txnp, int on);
   /**
          Returns the transaction specific debugging flag for this transaction.
-             
+
       @param txnp transaction to check.
-      @return 1 if enabled, 0 otherwise. 
-  */ 
+      @return 1 if enabled, 0 otherwise.
+  */
   tsapi int TSHttpTxnDebugGet(TSHttpTxn txnp);
   /**
          Set the session specific debugging flag for this client session.
          When turned on, internal debug messeges related to this session and all transactions
          in the session will be written even if the debug tag isn't on.
-             
+
       @param ssnp Client session to change.
       @param on set to 1 to turn on, 0 to turn off.
   */
   tsapi void TSHttpSsnDebugSet(TSHttpSsn ssnp, int on);
   /**
          Returns the transaction specific debugging flag for this client session.
-             
+
       @param txnp Client session to check.
-      @return 1 if enabled, 0 otherwise. 
-  */ 
+      @return 1 if enabled, 0 otherwise.
+  */
   tsapi int TSHttpSsnDebugGet(TSHttpSsn ssnp, int *on);
 
   /* --------------------------------------------------------------------------
@@ -2473,7 +2473,7 @@ extern "C"
 
    */
   tsapi TSVConn TSHttpConnect(struct sockaddr const* addr);
-  
+
     /* --------------------------------------------------------------------------
      Initiate Transparent Http Connection */
   /**
@@ -2486,10 +2486,10 @@ extern "C"
       @param server_addr the address that the resulting connection will be seen as
       	attempting to connect to when intercepted
       @param vc will be set to point to the new TSVConn on success.
-      
+
    */
   tsapi TSVConn TSHttpConnectTransparent(struct sockaddr const* client_addr, struct sockaddr const * server_addr);
-  
+
   tsapi void TSFetchUrl(const char* request,int request_len, struct sockaddr const* addr, TSCont contp, TSFetchWakeUpOptions callback_options,TSFetchEvent event);
   tsapi void TSFetchPages(TSFetchUrlParams_t* params);
 
@@ -2883,12 +2883,12 @@ extern "C"
   tsapi int TSIsDebugTagSet(const char* t);
   tsapi void TSDebug(const char* tag, const char* format_str, ...) TS_PRINTFLIKE(2, 3);
   /**
-      Output a debug line even if the debug tag is turned off, as long as 
-      debugging is enabled. Could be used as follows: 
+      Output a debug line even if the debug tag is turned off, as long as
+      debugging is enabled. Could be used as follows:
       @code
       TSDebugSpecifc(TSHttpTxnDebugGet(txn), "plugin_tag" , "Hello World from transaction %p", txn);
       @endcode
-      will be printed if the plugin_tag is enabled or the transaction specific 
+      will be printed if the plugin_tag is enabled or the transaction specific
       debugging is turned on for txn.
 
       @param debug_flag boolean flag.

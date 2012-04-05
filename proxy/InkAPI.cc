@@ -5753,27 +5753,27 @@ TSHttpTxnServerStateGet(TSHttpTxn txnp)
 void
 TSHttpTxnDebugSet(TSHttpTxn txnp, int on)
 {
-    sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
-    ((HttpSM *)txnp)->debug_on = on;
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+  ((HttpSM *)txnp)->debug_on = on;
 }
 
 int
 TSHttpTxnDebugGet(TSHttpTxn txnp)
 {
-    sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
-    return ((HttpSM *)txnp)->debug_on;
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+  return ((HttpSM *)txnp)->debug_on;
 }
 void
 TSHttpSsnDebugSet(TSHttpSsn ssnp, int on)
 {
-    sdk_assert(sdk_sanity_check_http_ssn(ssnp) == TS_SUCCESS);
-    ((HttpClientSession *)ssnp)->debug_on = on;
+  sdk_assert(sdk_sanity_check_http_ssn(ssnp) == TS_SUCCESS);
+  ((HttpClientSession *)ssnp)->debug_on = on;
 }
 int
 TSHttpSsnDebugGet(TSHttpSsn ssnp)
 {
-    sdk_assert(sdk_sanity_check_http_ssn(ssnp) == TS_SUCCESS);
-    return ((HttpClientSession *)ssnp)->debug_on;
+  sdk_assert(sdk_sanity_check_http_ssn(ssnp) == TS_SUCCESS);
+  return ((HttpClientSession *)ssnp)->debug_on;
 }
 
 int
@@ -6880,13 +6880,12 @@ TSIsDebugTagSet(const char *t)
 void
 TSDebugSpecific(int debug_flag, const char *tag, const char *format_str, ...)
 {
-  if (diags->on(tag, DiagsTagType_Debug) ||
-      (debug_flag  && diags->on())) {
+  if (diags->on(tag, DiagsTagType_Debug) || (debug_flag  && diags->on())) {
+    va_list ap;
 
-      va_list ap;
-      va_start(ap, format_str);
-      diags->print_va(tag, DL_Diag, NULL, format_str, ap);
-      va_end(ap);
+    va_start(ap, format_str);
+    diags->print_va(tag, DL_Diag, NULL, format_str, ap);
+    va_end(ap);
   }
 }
 

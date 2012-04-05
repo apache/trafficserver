@@ -880,8 +880,8 @@ HttpTransact::EndRemapRequest(State* s)
     // check for: (1) reverse proxy is on, and no URL host //
     /////////////////////////////////////////////////////////
     if (s->http_config_param->reverse_proxy_enabled
-	&& !s->client_info.is_transparent
-	&& !incoming_request->is_target_in_url()) {
+        && !s->client_info.is_transparent
+        && !incoming_request->is_target_in_url()) {
       /////////////////////////////////////////////////////////
       // the url mapping failed, reverse proxy was enabled,
       // and the request contains no host:
@@ -1780,12 +1780,12 @@ HttpTransact::DecideCacheLookup(State* s)
         s->cache_info.lookup_url_storage.create(NULL);
         s->cache_info.lookup_url_storage.copy(incoming_request->url_get());
         s->cache_info.lookup_url = &s->cache_info.lookup_url_storage;
-	// if the target isn't in the URL, put it in the copy for
-	// cache lookup.
-	incoming_request->set_url_target_from_host_field(s->cache_info.lookup_url);
+        // if the target isn't in the URL, put it in the copy for
+        // cache lookup.
+        incoming_request->set_url_target_from_host_field(s->cache_info.lookup_url);
       } else {
-	// make sure the target is in the URL.
-	incoming_request->set_url_target_from_host_field();
+        // make sure the target is in the URL.
+        incoming_request->set_url_target_from_host_field();
         s->cache_info.lookup_url = incoming_request->url_get();
       }
 
