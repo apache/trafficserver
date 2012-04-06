@@ -1134,7 +1134,7 @@ REGRESSION_TEST(SDK_API_TSThread) (RegressionTest * test, int atype, int *pstatu
   }
 
   // TSThreadCreate
-  TSThread created_thread = TSThreadCreate(thread_create_handler, (void *) curr_tid);
+  TSThread created_thread = TSThreadCreate(thread_create_handler, (void *)(intptr_t)curr_tid);
   if (created_thread == NULL) {
     thread_err_count++;
     SDK_RPRINT(test, "TSThreadCreate", "TestCase1", TC_FAIL, "can't create thread");
@@ -1195,7 +1195,7 @@ REGRESSION_TEST(SDK_API_TSThreadInit) (RegressionTest * test, int atype, int *ps
 
   int ret;
   errno = 0;
-  ret = pthread_create(&new_tid, NULL, pthread_start_func, (void *) curr_tid);
+  ret = pthread_create(&new_tid, NULL, pthread_start_func, (void *)(intptr_t)curr_tid);
   if (ret != 0) {
     thread_init_err_count++;
     SDK_RPRINT(test, "TSThreadInit", "TestCase1", TC_FAIL, "can't create pthread");
