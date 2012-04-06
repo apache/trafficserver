@@ -1,5 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.1.4
+  *) [TS-1190] Change defaults for proxy.config.http.share_server_sessions to
+   have a session pool per net-thread. This is best performance for most
+   common use cases.
+
   *) [TS-1189] Build problem with older versions of OpenSSL.
 
   *) [TS-1178] cop will kill manager & server, even cop it self, in cluster.
