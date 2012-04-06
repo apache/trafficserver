@@ -80,7 +80,6 @@ typedef enum
 
 #define DiagsLevel_IsTerminal(_l) (((_l) >= DL_Fatal) && ((_l) < DL_Undefined))
 
-#ifdef TS_USE_DIAGS
 // Cleanup Function Prototype - Called before ink_fatal to
 //   cleanup process state
 typedef void (*DiagsCleanupFunc) ();
@@ -273,10 +272,6 @@ dummy_debug(const char *tag, const char *fmt, ...)
   (void)fmt;
 }
 
-
-#define Diag(tag, ...)      if (unlikely(diags->on())) diags->log(tag, DTA(DL_Diag), __VA_ARGS__)
-#define Debug(tag, ...)     if (unlikely(diags->on())) diags->log(tag, DTA(DL_Debug), __VA_ARGS__)
-
 #define Status(...)    diags->error(DTA(DL_Status), __VA_ARGS__)
 #define Note(...)      diags->error(DTA(DL_Note), __VA_ARGS__)
 #define Warning(...)   diags->error(DTA(DL_Warning), __VA_ARGS__)
@@ -285,6 +280,10 @@ dummy_debug(const char *tag, const char *fmt, ...)
 #define Alert(...)     diags->error(DTA(DL_Alert), __VA_ARGS__)
 #define Emergency(...) diags->error(DTA(DL_Emergency), __VA_ARGS__)
 
+#ifdef TS_USE_DIAGS
+#define Diag(tag, ...)      if (unlikely(diags->on())) diags->log(tag, DTA(DL_Diag), __VA_ARGS__)
+#define Debug(tag, ...)     if (unlikely(diags->on())) diags->log(tag, DTA(DL_Debug), __VA_ARGS__)
+
 #define is_debug_tag_set(_t)     unlikely(diags->on(_t,DiagsTagType_Debug))
 #define is_action_tag_set(_t)    unlikely(diags->on(_t,DiagsTagType_Action))
 #define debug_tag_assert(_t,_a)  (is_debug_tag_set(_t) ? (ink_release_assert(_a), 0) : 0)
@@ -292,39 +291,6 @@ dummy_debug(const char *tag, const char *fmt, ...)
 #define is_diags_on(_t)          unlikely(diags->on(_t))
 
 #else // TS_USE_DIAGS
-
-class Diags
-{
-public:
-  Diags(char *base_debug_tags, char *base_action_tags, FILE * diags_log_fp = NULL) {
-  }
-
-  bool on(DiagsTagType mode = DiagsTagType_Debug) {
-    return false;
-  }
-
-  bool on(const char *tag, DiagsTagType mode = DiagsTagType_Debug) {
-    return false;
-  }
-};
-
-extern inkcoreapi Diags *diags;
-
-#define Warning      ink_warning
-#define Note         ink_notice
-#define Status       ink_notice
-#define Fatal        ink_fatal_die
-#define Error        ink_error
-#define Alert        ink_error
-#define Emergency    ink_fatal_die
-
-void dummy_debug(const char * tag, const char *fmt ...) TS_PRINTFLIKE(2, 3);
-inline void
-dummy_debug(const char *tag, const char *fmt, ...)
-{
-  (void)tag;
-  (void)fmt;
-}
 
 #define Diag(tag, fmt, ...)      if (0) dummy_debug(tag, __VA_ARGS__)
 #define Debug(tag, fmt, ...)     if (0) dummy_debug(tag, __VA_ARGS__)

@@ -1,7 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.1.4
+  *) [TS-1121] Make --disable-diags at least disable Debug etc.
+
   *) [TS-1191] Change defaults for proxy.config.dns.search_default_domains to
-  not use the search domains in resolv.conf.
+   not use the search domains in resolv.conf.
 
   *) [TS-1190] Change defaults for proxy.config.http.share_server_sessions to
    have a session pool per net-thread. This is best performance for most
