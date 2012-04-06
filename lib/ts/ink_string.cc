@@ -336,7 +336,7 @@ ink_utf8_to_latin1(const char *in, int inlen, char *out, int *outlen)
 
   inbytesleft = inlen;
   outbytesleft = *outlen;
-#if !defined(kfreebsd) && (defined(freebsd) || defined(solaris))
+#if !defined(kfreebsd) && defined(freebsd)
   if (iconv(ic, &in, &inbytesleft, &out, &outbytesleft) == (size_t) - 1)
 #else
   if (iconv(ic, (char **) &in, &inbytesleft, &out, &outbytesleft) == (size_t) - 1)
