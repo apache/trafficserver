@@ -359,7 +359,7 @@ CONFIG proxy.config.cache.mutex_retry_delay INT 2
 # DNS
 #
 ##############################################################################
-CONFIG proxy.config.dns.search_default_domains INT 1
+CONFIG proxy.config.dns.search_default_domains INT 0
 CONFIG proxy.config.dns.splitDNS.enabled INT 0
 CONFIG proxy.config.dns.max_dns_in_flight INT 2048
    # Additional URL expansions for http DNS lookup
