@@ -688,7 +688,6 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.ssl.enabled
  proxy.config.ssl.number.threads
  proxy.config.ssl.server.cert_chain.filename
- proxy.config.ssl.server.cert.filename
  proxy.config.ssl.server.cert.path
  proxy.config.ssl.server.cipher_suite
  proxy.config.ssl.server.honor_cipher_order
@@ -698,7 +697,6 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.ssl.compression
  proxy.config.ssl.server.multicert.filename
  proxy.config.ssl.server_port
- proxy.config.ssl.server.private_key.filename
  proxy.config.ssl.server.private_key.path
  proxy.config.stack_dump_enabled
  proxy.config.start_script
