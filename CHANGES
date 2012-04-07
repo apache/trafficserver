@@ -1,5 +1,7 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.1.4
+  *) [TS-1147] deprecate records.config SSL configuration
+
   *) [TS-1121] Make --disable-diags at least disable Debug etc.
 
   *) [TS-1191] Change defaults for proxy.config.dns.search_default_domains to
