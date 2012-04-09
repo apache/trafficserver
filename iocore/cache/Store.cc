@@ -612,7 +612,7 @@ Span::init(char *filename, int64_t size)
     break;
 
   default:
-    Warning("unknown file type '%s': %d", filename, s.st_mode);
+    Warning("unknown file type '%s': %" PRId64 "", filename, (int64_t)(s.st_mode));
     err = "unknown file type";
     goto Lfail;
   }

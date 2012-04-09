@@ -585,7 +585,7 @@ Alarms::execAlarmBin(const char *desc)
       // or -1 if there is some problem; returns 0 if child status
       // is not available
       if (waitpid(pid, &status, WNOHANG) != 0) {
-        Debug("alarm", "[Alarms::execAlarmBin] child pid %d has status", pid);
+        Debug("alarm", "[Alarms::execAlarmBin] child pid %" PRId64 " has status", (int64_t)pid);
         script_done = true;
         break;
       }
@@ -593,7 +593,7 @@ Alarms::execAlarmBin(const char *desc)
     }
     // need to kill the child script process if it's not complete
     if (!script_done) {
-      Debug("alarm", "[Alarms::execAlarmBin] kill child pid %d", pid);
+      Debug("alarm", "[Alarms::execAlarmBin] kill child pid %" PRId64 "", (int64_t)pid);
       kill(pid, SIGKILL);
       waitpid(pid, &status, 0); // to reap the thread
     }
