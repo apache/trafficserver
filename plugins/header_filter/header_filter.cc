@@ -21,8 +21,10 @@
 // 
 // Main entry points for the plugin hooks etc.
 //
-#include <ts/ts.h>
-#include <ts/remap.h>
+#include "ts/ts.h"
+#include "ts/remap.h"
+#include "ink_config.h"
+
 #include <stdio.h>
 
 #include "rules.h"

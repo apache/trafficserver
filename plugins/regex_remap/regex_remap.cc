@@ -24,16 +24,23 @@
 #define UNUSED __attribute__ ((unused))
 static char UNUSED rcsId__regex_remap_cc[] = "@(#) $Id$ built on " __DATE__ " " __TIME__;
 
+#include "ts/ts.h"
+#include "ts/remap.h"
+#include "ink_config.h"
+
 #include <sys/types.h>
 #include <stdio.h>
 #include <time.h>
 #include <string.h>
+
+#ifdef HAVE_PCRE_PCRE_H
+#include <pcre/pcre.h>
+#else
 #include <pcre.h>
+#endif
+
 #include <ctype.h>
 #include <unistd.h>
-
-#include <ts/ts.h>
-#include <ts/remap.h>
 
 #include <iostream>
 #include <fstream>

@@ -24,10 +24,18 @@
 #ifndef __RULES_H__
 #define __RULES_H__ 1
 
+#include "ts/ts.h"
+#include "ink_config.h"
+
 #include <string>
 #include <string.h>
-#include <ts/ts.h>
+
+#ifdef HAVE_PCRE_PCRE_H
+#include <pcre/pcre.h>
+#else
 #include <pcre.h>
+#endif
+
 #include "lulu.h"
 
 namespace HeaderFilter {
