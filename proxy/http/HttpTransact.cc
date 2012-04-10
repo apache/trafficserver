@@ -2243,10 +2243,10 @@ HttpTransact::HandleCacheOpenReadHitFreshness(State* s)
 
   ink_debug_assert(s->request_sent_time <= s->response_received_time);
 
-  DebugTxn("http_trans", "[HandleCacheOpenReadHitFreshness] request_sent_time      : %lld",
-    (long long)s->request_sent_time);
-  DebugTxn("http_trans", "[HandleCacheOpenReadHitFreshness] response_received_time : %lld",
-    (long long)s->response_received_time);
+  DebugTxn("http_trans", "[HandleCacheOpenReadHitFreshness] request_sent_time      : %" PRId64,
+           (int64_t)s->request_sent_time);
+  DebugTxn("http_trans", "[HandleCacheOpenReadHitFreshness] response_received_time : %" PRId64,
+           (int64_t)s->response_received_time);
   // if the plugin has already decided the freshness, we don't need to
   // do it again
   if (s->cache_lookup_result == HttpTransact::CACHE_LOOKUP_NONE) {
@@ -3108,8 +3108,7 @@ HttpTransact::HandleResponse(State* s)
   ink_debug_assert(s->response_received_time >= s->request_sent_time);
   s->current.now = s->response_received_time;
 
-  DebugTxn("http_trans", "[HandleResponse] response_received_time: %lld",
-      (long long)s->response_received_time);
+  DebugTxn("http_trans", "[HandleResponse] response_received_time: %" PRId64, (int64_t)s->response_received_time);
   if (!s->cop_test_page)
     DUMP_HEADER("http_hdrs", &s->hdr_info.server_response, s->state_machine_id, "Incoming O.S. Response");
 
@@ -5874,8 +5873,8 @@ HttpTransact::is_stale_cache_response_returnable(State* s)
                                                                    s->current.now);
   // Negative age is overflow
   if ((current_age < 0) || (current_age > s->txn_conf->cache_max_stale_age)) {
-    DebugTxn("http_trans", "[is_stale_cache_response_returnable] " "document age is too large %lld",
-          (long long)current_age);
+    DebugTxn("http_trans", "[is_stale_cache_response_returnable] " "document age is too large %" PRId64,
+             (int64_t)current_age);
     return false;
   }
   // If the stale document requires authorization, we can't return it either.
@@ -7131,8 +7130,9 @@ HttpTransact::calculate_document_freshness_limit(State *s, HTTPHdr *response, ti
       date_set = true;
     } else {
       date_value = s->request_sent_time;
-      DebugTxn("http_match", "calculate_document_freshness_limit --- Expires header = %lld  no date, using sent time %lld",
-            (long long)expires_value, (long long)date_value);
+      DebugTxn("http_match",
+               "calculate_document_freshness_limit --- Expires header = %" PRId64 " no date, using sent time %" PRId64,
+               (int64_t)expires_value, (int64_t)date_value);
     }
     ink_debug_assert(date_value > 0);
 
@@ -7143,12 +7143,14 @@ HttpTransact::calculate_document_freshness_limit(State *s, HTTPHdr *response, ti
     if (expires_set && !cache_sm.is_readwhilewrite_inprogress()) {
       if (expires_value == UNDEFINED_TIME || expires_value <= date_value) {
         expires_value = date_value;
-        DebugTxn("http_match", "calculate_document_freshness_limit --- no expires, using date %lld", (long long)expires_value);
+        DebugTxn("http_match", "calculate_document_freshness_limit --- no expires, using date %" PRId64,
+                 (int64_t)expires_value);
       }
       freshness_limit = (int) (expires_value - date_value);
 
-      DebugTxn("http_match", "calculate_document_freshness_limit --- Expires: %lld, Date: %lld, freshness_limit = %d",
-            (long long)expires_value, (long long)date_value, freshness_limit);
+      DebugTxn("http_match",
+               "calculate_document_freshness_limit --- Expires: %" PRId64 ", Date: %" PRId64 ", freshness_limit = %d",
+               (int64_t)expires_value, (int64_t)date_value, freshness_limit);
 
       freshness_limit = min(max(0, freshness_limit), NUM_SECONDS_IN_ONE_YEAR);
     } else {
@@ -7156,15 +7158,15 @@ HttpTransact::calculate_document_freshness_limit(State *s, HTTPHdr *response, ti
       if (response->presence(MIME_PRESENCE_LAST_MODIFIED)) {
         last_modified_set = TRUE;
         last_modified_value = response->get_last_modified();
-        DebugTxn("http_match", "calculate_document_freshness_limit --- Last Modified header = %lld",
-              (long long)last_modified_value);
+        DebugTxn("http_match", "calculate_document_freshness_limit --- Last Modified header = %" PRId64,
+                 (int64_t)last_modified_value);
 
         if (last_modified_value == UNDEFINED_TIME) {
           last_modified_set = FALSE;
         } else if (last_modified_value > date_value) {
           last_modified_value = date_value;
-          DebugTxn("http_match", "calculate_document_freshness_limit --- no last-modified, using sent time %lld",
-                (long long)last_modified_value);
+          DebugTxn("http_match", "calculate_document_freshness_limit --- no last-modified, using sent time %" PRId64,
+                   (int64_t)last_modified_value);
         }
       }
 
@@ -7175,9 +7177,9 @@ HttpTransact::calculate_document_freshness_limit(State *s, HTTPHdr *response, ti
         ink_time_t time_since_last_modify = date_value - last_modified_value;
         int h_freshness = (int) (time_since_last_modify * f);
         freshness_limit = max(h_freshness, 0);
-        DebugTxn("http_match", "calculate_document_freshness_limit --- heuristic: date=%lld, lm=%lld,"
-              "time_since_last_modify=%lld, f=%g, freshness_limit = %d",
-              (long long)date_value, (long long)last_modified_value, (long long)time_since_last_modify,
+        DebugTxn("http_match", "calculate_document_freshness_limit --- heuristic: date=%" PRId64 ", lm=%" PRId64
+                 ", time_since_last_modify=%"  PRId64 ", f=%g, freshness_limit = %d",
+                 (int64_t)date_value, (int64_t)last_modified_value, (int64_t)time_since_last_modify,
               f, freshness_limit);
       } else {
         freshness_limit = s->txn_conf->cache_heuristic_min_lifetime;
@@ -7331,8 +7333,8 @@ HttpTransact::what_is_document_freshness(State *s, HTTPHdr* client_request, HTTP
   else
     current_age = min((time_t)NUM_SECONDS_IN_ONE_YEAR, current_age);
 
-  DebugTxn("http_match", "[what_is_document_freshness] fresh_limit:  %d  current_age: %lld",
-        fresh_limit, (long long)current_age);
+  DebugTxn("http_match", "[what_is_document_freshness] fresh_limit:  %d  current_age: %" PRId64,
+           fresh_limit, (int64_t)current_age);
 
   /////////////////////////////////////////////////////////
   // did the admin override the expiration calculations? //
@@ -7430,10 +7432,10 @@ HttpTransact::what_is_document_freshness(State *s, HTTPHdr* client_request, HTTP
     DebugTxn("http_match", "[..._document_freshness] revalidate_after set, age limit: %d", age_limit);
   }
 
-  DebugTxn("http_match", "document_freshness --- current_age = %lld", (long long)current_age);
+  DebugTxn("http_match", "document_freshness --- current_age = %" PRId64, (int64_t)current_age);
   DebugTxn("http_match", "document_freshness --- age_limit   = %d", age_limit);
   DebugTxn("http_match", "document_freshness --- fresh_limit = %d", fresh_limit);
-  DebugTxn("http_seq", "document_freshness --- current_age = %lld", (long long)current_age);
+  DebugTxn("http_seq", "document_freshness --- current_age = %" PRId64, (int64_t)current_age);
   DebugTxn("http_seq", "document_freshness --- age_limit   = %d", age_limit);
   DebugTxn("http_seq", "document_freshness --- fresh_limit = %d", fresh_limit);
   ///////////////////////////////////////////
@@ -7781,7 +7783,7 @@ HttpTransact::build_request(State* s, HTTPHdr* base_request, HTTPHdr* outgoing_r
   ink_debug_assert(s->request_sent_time >= s->response_received_time);
 
 
-  DebugTxn("http_trans", "[build_request] request_sent_time: %lld", (long long)s->request_sent_time);
+  DebugTxn("http_trans", "[build_request] request_sent_time: %" PRId64, (int64_t)s->request_sent_time);
   if (!s->cop_test_page)
     DUMP_HEADER("http_hdrs", outgoing_request, s->state_machine_id, "Proxy's Request");
 
@@ -8287,8 +8289,8 @@ ink_cluster_time(void)
 //      highest_delta = 0L;
 //     }
 
-  Debug("http_trans", "[ink_cluster_time] local: %lld, highest_delta: %d, cluster: %lld",
-    (long long)local_time, highest_delta, (long long)(local_time + (ink_time_t) highest_delta));
+  Debug("http_trans", "[ink_cluster_time] local: %" PRId64 ", highest_delta: %d, cluster: %" PRId64,
+        (int64_t)local_time, highest_delta, (int64_t)(local_time + (ink_time_t) highest_delta));
 
   ink_debug_assert(highest_delta >= 0);
 
