@@ -404,7 +404,7 @@ CongestionDBCont::get_congest_entry(int event, Event * e)
   if (m_action.cancelled) {
     Debug("congestion_cont", "action cancelled for %p", this);
     Free_CongestionDBCont(this);
-    Debug("congestion_control", "cont::get_congest_entry state machine cancelld");
+    Debug("congestion_control", "cont::get_congest_entry state machine canceled");
     return EVENT_DONE;
   }
   ProxyMutex *bucket_mutex = theCongestionDB->lock_for_key(CDBC_key);

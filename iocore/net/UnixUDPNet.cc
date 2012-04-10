@@ -1048,8 +1048,8 @@ sendPackets:
       G_inkPipeInfo.perPipeInfo[i].queue->FreeCancelledPackets(g_udp_periodicCleanupSlots);
     }
     endTime = ink_get_hrtime_internal();
-    Debug("udp-pending-packets", "Did cleanup of %d buckets: %" PRId64 " bytes in %lld m.sec",
-          g_udp_periodicCleanupSlots, nbytes - g_udp_bytesPending, (long long)ink_hrtime_to_msec(endTime - startTime));
+    Debug("udp-pending-packets", "Did cleanup of %d buckets: %" PRId64 " bytes in %" PRId64 " m.sec",
+          g_udp_periodicCleanupSlots, nbytes - g_udp_bytesPending, (int64_t)ink_hrtime_to_msec(endTime - startTime));
     lastCleanupTime = now;
   }
 }

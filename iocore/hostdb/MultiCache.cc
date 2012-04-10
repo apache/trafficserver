@@ -1142,8 +1142,8 @@ MultiCacheBase::fixup_heap_offsets(int partition, int before_used, UnsunkPtrRegi
   for (int i = 0; i < r->n; i++) {
     UnsunkPtr & p = r->ptrs[i];
     if (p.offset) {
-      Debug("multicache", "fixup p.offset %d offset %d %lld part %d",
-            p.offset, *p.poffset, (long long)((char *) p.poffset - data), partition);
+      Debug("multicache", "fixup p.offset %d offset %d %" PRId64 " part %d",
+            p.offset, *p.poffset, (int64_t)((char *) p.poffset - data), partition);
       if (*p.poffset == -(i + base) - 1) {
         if (halfspace_of(p.offset) != heap_halfspace) {
           ink_assert(0);
@@ -1157,8 +1157,8 @@ MultiCacheBase::fixup_heap_offsets(int partition, int before_used, UnsunkPtrRegi
         }
       } else {
         Debug("multicache",
-              "not found %lld i %d base %d *p.poffset = %d",
-              (long long)((char *) p.poffset - data), i, base, *p.poffset);
+              "not found %" PRId64 " i %d base %d *p.poffset = %d",
+              (int64_t)((char *) p.poffset - data), i, base, *p.poffset);
       }
       p.offset = 0;
       p.poffset = (int *) r->next_free;
@@ -1368,8 +1368,8 @@ MultiCacheBase::alloc(int *poffset, int asize)
     UnsunkPtr *up = unsunk[part].alloc(poffset);
     up->offset = offset;
     up->poffset = poffset;
-    Debug("multicache", "alloc unsunk %d at %lld part %d offset %d",
-        *poffset, (long long)((char *) poffset - data), part, offset);
+    Debug("multicache", "alloc unsunk %d at %" PRId64 " part %d offset %d",
+          *poffset, (int64_t)((char *) poffset - data), part, offset);
   }
   return (void *) p;
 }
@@ -1393,7 +1393,7 @@ void *
 MultiCacheBase::ptr(int *poffset, int partition)
 {
   int o = *poffset;
-  Debug("multicache", "ptr %lld part %d %d", (long long)((char *) poffset - data), partition, o);
+  Debug("multicache", "ptr %" PRId64 " part %d %d", (int64_t)((char *) poffset - data), partition, o);
   if (o > 0) {
     if (!valid_offset(o)) {
       ink_assert(!"bad offset");
@@ -1416,7 +1416,7 @@ void
 MultiCacheBase::update(int *poffset, int *old_poffset)
 {
   int o = *poffset;
-  Debug("multicache", "updating %lld %d", (long long)((char *) poffset - data), o);
+  Debug("multicache", "updating %" PRId64 " %d", (int64_t)((char *) poffset - data), o);
   if (o > 0) {
     if (!valid_offset(o)) {
       ink_assert(!"bad poffset");

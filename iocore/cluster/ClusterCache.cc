@@ -1694,7 +1694,7 @@ CacheContinuation::replyOpEvent(int event, VConnection * cvc)
     if (read_op && !open_read_now_open_write) {
       ink_release_assert(write_cluster_vc->pending_remote_fill);
       ink_assert(have_all_data || (readahead_vio == &((CacheVC *) cache_vc)->vio));
-      Debug("cache_proto", "connect_local success seqno=%d alldata=%d", seq_number, (have_all_data ? 1 : 0));
+      Debug("cache_proto", "connect_local success seqno=%d have_all_data=%d", seq_number, (have_all_data ? 1 : 0));
 
       if (have_all_data) {
         msg->token.clear();     // Tell sender no conn established

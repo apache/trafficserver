@@ -676,8 +676,8 @@ CacheProcessor::diskInitialized()
       CacheDisk *d = gdisks[i];
       if (is_debug_tag_set("cache_hosting")) {
         int j;
-        Debug("cache_hosting", "Disk: %d: Vol Blocks: %u: Free space: %lld",
-              i, d->header->num_diskvol_blks, (long long)d->free_space);
+        Debug("cache_hosting", "Disk: %d: Vol Blocks: %u: Free space: %" PRIu64,
+              i, d->header->num_diskvol_blks, d->free_space);
         for (j = 0; j < (int) d->header->num_volumes; j++) {
           Debug("cache_hosting", "\tVol: %d Size: %"PRIu64, d->disk_vols[j]->vol_number, d->disk_vols[j]->size);
         }
@@ -2299,7 +2299,7 @@ cplist_reconfigure()
         int vols = (free_space / MAX_VOL_SIZE) + 1;
         for (int p = 0; p < vols; p++) {
           off_t b = gdisks[i]->free_space / (vols - p);
-          Debug("cache_hosting", "blocks = %lld\n", (long long)b);
+          Debug("cache_hosting", "blocks = %" PRId64, (int64_t)b);
           DiskVolBlock *dpb = gdisks[i]->create_volume(0, b, CACHE_HTTP_TYPE);
           ink_assert(dpb && dpb->len == (uint64_t)b);
         }
@@ -2498,11 +2498,11 @@ create_volume(int volume_number, off_t size_in_blocks, int scheme, CacheVol *cp)
         char config_file[PATH_NAME_MAX];
         IOCORE_ReadConfigString(config_file, "proxy.config.cache.volume_filename", PATH_NAME_MAX);
         if (cp->size)
-          Warning("not enough space to increase volume: [%d] to size: [%lld]",
-                  volume_number, (long long)((to_create + cp->size) >> (20 - STORE_BLOCK_SHIFT)));
+          Warning("not enough space to increase volume: [%d] to size: [%" PRId64 "]",
+                  volume_number, (int64_t)((to_create + cp->size) >> (20 - STORE_BLOCK_SHIFT)));
         else
-          Warning("not enough space to create volume: [%d], size: [%lld]",
-                  volume_number, (long long)(to_create >> (20 - STORE_BLOCK_SHIFT)));
+          Warning("not enough space to create volume: [%d], size: [%" PRId64 "]",
+                  volume_number, (int64_t)(to_create >> (20 - STORE_BLOCK_SHIFT)));
 
         Note("edit the %s file and restart traffic_server", config_file);
         delete[]sp;

@@ -1647,7 +1647,7 @@ process_file(int in_fd, off_t offset, unsigned max_age)
   char buffer[MAX_LOGBUFFER_SIZE];
   int nread, buffer_bytes;
 
-  Debug("logstats", "Processing file [offset=%lld].", (long long)offset);
+  Debug("logstats", "Processing file [offset=%" PRId64 "].", (int64_t)offset);
   while (true) {
     Debug("logstats", "Reading initial header.");
     buffer[0] = '\0';
@@ -1662,7 +1662,7 @@ process_file(int in_fd, off_t offset, unsigned max_age)
       Debug("logstats", "Re-aligning file read.");
       while (true) {
         if (lseek(in_fd, offset, SEEK_SET) < 0) {
-          Debug("logstats", "Internal seek failed (offset=%lld).", (long long)offset);
+          Debug("logstats", "Internal seek failed (offset=%"  PRId64 ").", (int64_t)offset);
           return 1;
         }
 

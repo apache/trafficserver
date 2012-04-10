@@ -805,9 +805,6 @@ LogBufferList::get()
   if (lb != NULL) {
     m_size--;
     ink_assert(m_size >= 0);
-//      hrtime_t t = gethrtime();
-//      printf("%lld removed buffer %p from queue %p, size = %d\n", t, lb,
-//           this, m_size);
   }
   ink_mutex_release(&m_mutex);
   return lb;

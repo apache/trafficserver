@@ -435,17 +435,17 @@ HttpTransactHeaders::calculate_document_age(ink_time_t request_time,
     current_age = corrected_initial_age + resident_time;
   }
 
-  Debug("http_age", "[calculate_document_age] age_value:              %lld", (long long)age_value);
-  Debug("http_age", "[calculate_document_age] date_value:             %lld", (long long)date_value);
-  Debug("http_age", "[calculate_document_age] response_time:          %lld", (long long)response_time);
-  Debug("http_age", "[calculate_document_age] now:                    %lld", (long long)now);
-  Debug("http_age", "[calculate_document_age] now (fixed):            %lld", (long long)now_value);
-  Debug("http_age", "[calculate_document_age] apparent_age:           %lld", (long long)apparent_age);
-  Debug("http_age", "[calculate_document_age] corrected_received_age: %lld", (long long)corrected_received_age);
-  Debug("http_age", "[calculate_document_age] response_delay:         %lld", (long long)response_delay);
-  Debug("http_age", "[calculate_document_age] corrected_initial_age:  %lld", (long long)corrected_initial_age);
-  Debug("http_age", "[calculate_document_age] resident_time:          %lld", (long long)resident_time);
-  Debug("http_age", "[calculate_document_age] current_age:            %lld", (long long)current_age);
+  Debug("http_age", "[calculate_document_age] age_value:              %" PRId64, (int64_t)age_value);
+  Debug("http_age", "[calculate_document_age] date_value:             %" PRId64, (int64_t)date_value);
+  Debug("http_age", "[calculate_document_age] response_time:          %" PRId64, (int64_t)response_time);
+  Debug("http_age", "[calculate_document_age] now:                    %" PRId64, (int64_t)now);
+  Debug("http_age", "[calculate_document_age] now (fixed):            %" PRId64, (int64_t)now_value);
+  Debug("http_age", "[calculate_document_age] apparent_age:           %" PRId64, (int64_t)apparent_age);
+  Debug("http_age", "[calculate_document_age] corrected_received_age: %" PRId64, (int64_t)corrected_received_age);
+  Debug("http_age", "[calculate_document_age] response_delay:         %" PRId64, (int64_t)response_delay);
+  Debug("http_age", "[calculate_document_age] corrected_initial_age:  %" PRId64, (int64_t)corrected_initial_age);
+  Debug("http_age", "[calculate_document_age] resident_time:          %" PRId64, (int64_t)resident_time);
+  Debug("http_age", "[calculate_document_age] current_age:            %" PRId64, (int64_t)current_age);
 
   return current_age;
 }

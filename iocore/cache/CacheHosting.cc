@@ -1144,8 +1144,8 @@ execute_and_verify(RegressionTest * t)
     CacheDisk *d = gdisks[i];
     if (is_debug_tag_set("cache_hosting")) {
 
-      Debug("cache_hosting", "Disk: %d: Vol Blocks: %u: Free space: %lld",
-            i, d->header->num_diskvol_blks, (long long)(d->free_space));
+      Debug("cache_hosting", "Disk: %d: Vol Blocks: %u: Free space: %" PRIu64,
+            i, d->header->num_diskvol_blks, d->free_space);
       for (int j = 0; j < (int) d->header->num_volumes; j++) {
 
         Debug("cache_hosting", "\tVol: %d Size: %"PRIu64, d->disk_vols[j]->vol_number, d->disk_vols[j]->size);

@@ -1513,8 +1513,8 @@ CacheVC::openWriteStartDone(int event, Event *e)
        */
       if (!dir_valid(vol, &dir)) {
         DDebug("cache_write",
-              "OpenReadStartDone: Dir not valid: Write Head: %lld, Dir: %"PRId64,
-              (long long)offset_to_vol_offset(vol, vol->header->write_pos), dir_offset(&dir));
+               "OpenReadStartDone: Dir not valid: Write Head: %" PRId64 ", Dir: %"PRId64,
+               (int64_t)offset_to_vol_offset(vol, vol->header->write_pos), dir_offset(&dir));
         last_collision = NULL;
         goto Lcollision;
       }

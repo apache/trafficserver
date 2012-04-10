@@ -555,8 +555,8 @@ ParentRecord::FindParent(bool first_call, ParentResult * result, RD * rdata, Par
       parentUp = true;
     } else {
       if ((result->wrap_around) || ((parents[cur_index].failedAt + config->ParentRetryTime) < request_info->xact_start)) {
-        Debug("parent_select", "Parent[%d].failedAt = %u, retry = %u,xact_start = %lld but wrap = %d", cur_index,
-              parents[cur_index].failedAt, config->ParentRetryTime, (long long)request_info->xact_start, result->wrap_around);
+        Debug("parent_select", "Parent[%d].failedAt = %u, retry = %u,xact_start = %" PRId64 " but wrap = %d", cur_index,
+              parents[cur_index].failedAt, config->ParentRetryTime, (int64_t)request_info->xact_start, result->wrap_around);
         // Reuse the parent
         parentUp = true;
         parentRetry = true;
