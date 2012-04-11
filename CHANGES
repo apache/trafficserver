@@ -1,5 +1,7 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.1.4
+  *) [TS-1198] ssl crash when certificates are missing
+
   *) [TS-1164] a race condition in cache init
 
   *) [TS-1079] Add an API function to turn debugging on for specific
@@ -8,7 +10,7 @@ Changes with Apache Traffic Server 3.1.4
 
   *) [TS-1194 Change conversions to build with gcc-4.6 on OmniOS/Solaris.
    Also cleanup a couple of plugins to use our "core" build environment.
-	
+
   *) [TS-1192] Remove gethostbyname usage in test code
 
   *) [TS-1147] deprecate records.config SSL configuration
