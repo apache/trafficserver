@@ -72,25 +72,25 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   *) crash from access to CacheVC::write_vector without vol lock.
    master SHA: f51778f70df68271b5073a1c5fbb8cd384784999
    Jira: https://issues.apache.org/jira/browse/TS-1114
-   +1: jplevyak, zym
+   +1: jplevyak, zym, zwoop
 
   *) race condition UnixNetVConnection::mainEvent() when handling
      an inactivity timeout
    master SHA: b1f2e984379d6dc11cb70136ba33d46527a317d3
    Jira: https://issues.apache.org/jira/browse/TS-1158
-   +1: jplevyak, zym
+   +1: jplevyak, zym, zwoop
 
   *) race condition UnixNetVConnection::do_io_close()
    master SHA: 2731f6bfabfb983af3ddb8a48cde537d7503f283
    Jira: https://issues.apache.org/jira/browse/TS-857
-   +1: jplevyak, zym
+   +1: jplevyak, zym, zwoop
 
   *) build fails on GCC 4.7 and clang
    master SHA: fe1da80b94d368343174ada8b137a0c4ae1c387e
               fe1da80b94d368343174ada8b137a0c4ae1c387e
    Jira: https://issues.apache.org/jira/browse/TS-1185
          https://issues.apache.org/jira/browse/TS-1116
-   +1: igalic
+   +1: igalic, zwoop
 
 
 STALLED ISSUES
