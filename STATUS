@@ -43,7 +43,7 @@ PATCHES ACCEPTED TO BACKPORT FROM TRUNK:
 
   *) build fails on GCC 4.7 and clang
    master SHA: fe1da80b94d368343174ada8b137a0c4ae1c387e
-              fe1da80b94d368343174ada8b137a0c4ae1c387e
+               fe1da80b94d368343174ada8b137a0c4ae1c387e
    Jira: https://issues.apache.org/jira/browse/TS-1185
          https://issues.apache.org/jira/browse/TS-1116
    +1: igalic, zwoop, briang
@@ -78,15 +78,6 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
 
 STALLED ISSUES
 
-  *) IOCORE: Fix for cross thread closing of VCs.
-   Trunk patch: http://svn.apache.org/viewvc?view=rev&rev=1201397
-   Jira: https://issues.apache.org/jira/browse/TS-857
-   +1: zym, ericb
-   -1: amc, zwoop [I believe this is the base cause of the 3.1.1 instability]
-   Note: we have find that something need to be fixed after TS-857, we'd like
-     this patch to be merge later and leave some time for us to find out how to
-     fix it. we are now testing the fix.
- 
 RELEASE PROCESS
 
 The Traffic Server release process is documented at
