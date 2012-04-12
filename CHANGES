@@ -1,5 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.0.5
+  *) [TS-1158] race condition UnixNetVConnection::mainEvent() when handling
+     an inactivity timeout
+
   *) [TS-1114] crash from access to CacheVC::write_vector without vol lock.
 
 Changes with Apache Traffic Server 3.0.4

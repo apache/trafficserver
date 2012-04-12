@@ -41,12 +41,6 @@ A list of all bugs open for the next v3.0.4 release can be found at
 
 PATCHES ACCEPTED TO BACKPORT FROM TRUNK:
 
-  *) race condition UnixNetVConnection::mainEvent() when handling
-     an inactivity timeout
-   master SHA: b1f2e984379d6dc11cb70136ba33d46527a317d3
-   Jira: https://issues.apache.org/jira/browse/TS-1158
-   +1: jplevyak, zym, zwoop
-
   *) race condition UnixNetVConnection::do_io_close()
    master SHA: 2731f6bfabfb983af3ddb8a48cde537d7503f283
    Jira: https://issues.apache.org/jira/browse/TS-857
