@@ -1,4 +1,7 @@
                                                          -*- coding: utf-8 -*-
+Changes with Apache Traffic Server 3.0.5
+  *) [TS-1114] crash from access to CacheVC::write_vector without vol lock.
+
 Changes with Apache Traffic Server 3.0.4
   *) [TS-1154] quick_filter on HEAD does not work
    Author: weijin

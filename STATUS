@@ -41,11 +41,6 @@ A list of all bugs open for the next v3.0.4 release can be found at
 
 PATCHES ACCEPTED TO BACKPORT FROM TRUNK:
 
-  *) crash from access to CacheVC::write_vector without vol lock.
-   master SHA: f51778f70df68271b5073a1c5fbb8cd384784999
-   Jira: https://issues.apache.org/jira/browse/TS-1114
-   +1: jplevyak, zym, zwoop
-
   *) race condition UnixNetVConnection::mainEvent() when handling
      an inactivity timeout
    master SHA: b1f2e984379d6dc11cb70136ba33d46527a317d3
