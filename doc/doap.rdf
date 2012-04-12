@@ -38,14 +38,14 @@
     <release>
       <Version>
         <name>trafficserver</name>
-        <created>2011-03-21</created>
-        <revision>2.1.7</revision>
+        <created>2012-03-21</created>
+        <revision>3.0.4</revision>
       </Version>
     </release>
     <repository>
       <SVNRepository>
-        <location rdf:resource="http://svn.apache.org/repos/asf/trafficserver/traffic/"/>
-        <browse rdf:resource="http://svn.apache.org/viewvc/trafficserver/traffic/trunk/"/>
+        <location rdf:resource="https://git-wip-us.apache.org/repos/asf/trafficserver.git"/>
+        <browse rdf:resource="https://git-wip-us.apache.org/repos/asf?p=trafficserver.git;a=summary"/>
       </SVNRepository>
     </repository>
     <maintainer>
