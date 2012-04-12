@@ -554,6 +554,9 @@ UnixNetVConnection::do_io_close(int alerrno /* = -1 */ )
   write.vio.nbytes = 0;
   write.vio.op = VIO::NONE;
 
+  EThread *t = this_ethread();
+  bool close_inline = !recursion && nh->mutex->thread_holding == t;
+
   INK_WRITE_MEMORY_BARRIER;
   if (alerrno && alerrno != -1)
     this->lerrno = alerrno;
@@ -562,11 +565,8 @@ UnixNetVConnection::do_io_close(int alerrno /* = -1 */ )
   else
     closed = -1;
 
-  if (!recursion) {
-     EThread *t = this_ethread();
-     if (nh->mutex->thread_holding == t)
-       close_UnixNetVConnection(this, t);
-  }
+  if (close_inline)
+    close_UnixNetVConnection(this, t);
 }
 
 void

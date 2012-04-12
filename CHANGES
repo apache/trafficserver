@@ -1,5 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.0.5
+  
+  *) [TS-857] race condition UnixNetVConnection::do_io_close()
+
   *) [TS-1158] race condition UnixNetVConnection::mainEvent() when handling
      an inactivity timeout
 
