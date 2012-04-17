@@ -182,6 +182,7 @@
     mandir:        ${prefix}/share/man
     sysconfdir:    /etc+
     datadir:       /var/cache+
+    docdir:        ${prefix}/share/doc+
     installbuilddir: ${prefix}/share/trafficserver/build
     includedir:    ${prefix}/include
     localstatedir: /var/run

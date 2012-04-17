@@ -96,7 +96,7 @@ TS_CONFIG_NICE([config.nice])
 AC_PREFIX_DEFAULT([/usr/local/trafficserver])
 
 # Get the layout here, so we can pass the required variables to Trafficserver
-TS_ENABLE_LAYOUT(TrafficServer, [cachedir])
+TS_ENABLE_LAYOUT(TrafficServer, [cachedir docdir])
 
 # Reparse the configure arguments so we can override the layout.
 TS_PARSE_ARGUMENTS
@@ -438,6 +438,7 @@ TS_SUBST_LAYOUT_PATH([localstatedir])
 TS_SUBST_LAYOUT_PATH([runtimedir])
 TS_SUBST_LAYOUT_PATH([logdir])
 TS_SUBST_LAYOUT_PATH([cachedir])
+TS_SUBST_LAYOUT_PATH([docdir])
 
 TS_SUBST([pkgbindir])
 TS_SUBST([pkgsbindir])
@@ -449,6 +450,7 @@ TS_SUBST([pkglocalstatedir])
 TS_SUBST([pkgruntimedir])
 TS_SUBST([pkglogdir])
 TS_SUBST([pkgcachedir])
+TS_SUBST([pkgdocdir])
 
 
 # -----------------------------------------------------------------------------

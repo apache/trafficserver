@@ -14,7 +14,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-trafficshelldir = $(pkgdatadir)/trafficshell
+trafficshelldir = $(pkgdocdir)/trafficshell
 
 dist_trafficshell_DATA = \
   man/config_alarms.1 \
