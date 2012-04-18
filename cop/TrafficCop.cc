@@ -48,7 +48,6 @@ union semun
 
 #define OPTIONS_MAX     32
 #define OPTIONS_LEN_MAX 1024
-#define MAX_PROXY_PORTS 48
 
 #ifndef WAIT_ANY
 #define WAIT_ANY (pid_t) -1
