@@ -87,9 +87,9 @@ RecordElement RecordsConfig[] = {
   ,
   {RECT_CONFIG, "proxy.config.cop.core_signal", RECD_INT, "0", RECU_NULL, RR_REQUIRED, RECC_NULL, NULL, RECA_NULL}
   ,                             // needed by traffic_cop
-  {RECT_CONFIG, "proxy.config.cop.linux_min_swapfree_kb", RECD_INT, "10240", RECU_NULL, RR_REQUIRED, RECC_NULL, NULL, RECA_NULL}
+  {RECT_CONFIG, "proxy.config.cop.linux_min_swapfree_kb", RECD_INT, "0", RECU_NULL, RR_REQUIRED, RECC_NULL, NULL, RECA_NULL}
   ,                             // needed by traffic_cop
-  {RECT_CONFIG, "proxy.config.cop.linux_min_memfree_kb", RECD_INT, "10240", RECU_NULL, RR_REQUIRED, RECC_NULL, NULL, RECA_NULL}
+  {RECT_CONFIG, "proxy.config.cop.linux_min_memfree_kb", RECD_INT, "0", RECU_NULL, RR_REQUIRED, RECC_NULL, NULL, RECA_NULL}
   ,                             // needed by traffic_cop
   //# 0 = disable (seconds)
   {RECT_CONFIG, "proxy.config.dump_mem_info_frequency", RECD_INT, "0", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}

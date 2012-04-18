@@ -66,11 +66,8 @@ static char cop_lockfile[PATH_NAME_MAX];
 static char manager_lockfile[PATH_NAME_MAX];
 static char server_lockfile[PATH_NAME_MAX];
 
-#if defined(linux)
-static bool check_memory_required = false;
-#endif
-static int check_memory_min_swapfree_kb = 10240;
-static int check_memory_min_memfree_kb = 10240;
+static int check_memory_min_swapfree_kb = 0;
+static int check_memory_min_memfree_kb = 0;
 
 static int syslog_facility = LOG_DAEMON;
 static char syslog_fac_str[PATH_NAME_MAX] = "LOG_DAEMON";
@@ -1567,11 +1564,15 @@ check_programs()
 static void
 check_memory()
 {
+  // TODO: We need to take care of other systems, ie bsd, solaris.
+  //    And we should try to summarize whether the swapping is really
+  //    putting the server under memory pressure. Or should we check
+  //    the process memory usage of the server & manager?
 #ifdef TRACE_LOG_COP
   cop_log(COP_DEBUG, "Entering check_memory()\n");
 #endif
 #if defined(linux)
-  if (check_memory_required) {
+  if (check_memory_min_swapfree_kb > 0 || check_memory_min_memfree_kb > 0) {
     FILE *fp;
     char buf[LINE_MAX];
     long long memfree, swapfree, swapsize;
@@ -1586,7 +1587,7 @@ check_memory()
           swapsize = strtoll(buf + sizeof "SwapTotal:" - 1, 0, 10);
       }
       fclose(fp);
-      // simple heuristic for linux 2.2.x
+      // simple heuristic for linux
       //    swapsize swapfree memfree
       // 1:    >0      low     high    (bad)
       // 2:    >0      high    low     (okay)
@@ -1896,16 +1897,6 @@ init()
   init_config_file();
   init_lockfiles();
   check_lockfile();
-
-#if defined(linux)
-  struct utsname buf;
-  if (uname(&buf) >= 0) {
-    if (strncmp(buf.release, "2.2.", 4) == 0) {
-      cop_log(COP_WARNING, "Linux 2.2.x kernel detected; enabling low memory fault protection");
-      check_memory_required = true;
-    }
-  }
-#endif
 
 #ifdef TRACE_LOG_COP
   cop_log(COP_DEBUG, "Leaving init()\n");
