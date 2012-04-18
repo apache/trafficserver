@@ -41,13 +41,6 @@ A list of all bugs open for the next v3.0.4 release can be found at
 
 PATCHES ACCEPTED TO BACKPORT FROM TRUNK:
 
-  *) build fails on GCC 4.7 and clang
-   master SHA: fe1da80b94d368343174ada8b137a0c4ae1c387e
-               fe1da80b94d368343174ada8b137a0c4ae1c387e
-   Jira: https://issues.apache.org/jira/browse/TS-1185
-         https://issues.apache.org/jira/browse/TS-1116
-   +1: igalic, zwoop, briang
-
 PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   [ New proposals should be added at the end of the list ]
 
@@ -75,6 +68,15 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
    master SHA: ad6c4ab97ff150727660f66aa64b0fb57fd3d3f7
    Jira: https://issues.apache.org/jira/browse/TS-1109
    +1: zym
+
+  *) build fails on GCC 4.7 and clang
+   master SHA: fe1da80b94d368343174ada8b137a0c4ae1c387e
+               fe1da80b94d368343174ada8b137a0c4ae1c387e
+   Jira: https://issues.apache.org/jira/browse/TS-1185
+         https://issues.apache.org/jira/browse/TS-1116
+   +1: igalic, zwoop
+   -0: briang (duplicate SHAs it's not entirely clear from
+        the jira what's being proposed for backport)
 
   *) Make RC script support Amazon EC2 Linux AMI
    master SHA: 620d3cc783c330da00cdbe11eb72eddd1e7aff30
