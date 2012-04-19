@@ -1082,7 +1082,16 @@ LocalManager::listenForProxy()
     if (ts::NO_FD == p.m_fd) {
       this->bindProxyPort(p);
     }
-    if ((listen(p.m_fd, 1024)) < 0) {
+
+    // read backlong configuration value and overwrite the default value if found
+    int backlog = 1024;
+    bool found;
+    RecInt config_backlog = REC_readInteger("proxy.config.net.listen_backlog", &found);
+    if (found) {
+      backlog = config_backlog;
+    }
+
+    if ((listen(p.m_fd, backlog)) < 0) {
       mgmt_fatal(stderr, "[LocalManager::listenForProxy] Unable to listen on socket: %d\n", p.m_port);
     }
     mgmt_log(stderr, "[LocalManager::listenForProxy] Listening on port: %d\n", p.m_port);
