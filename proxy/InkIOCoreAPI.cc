@@ -536,18 +536,6 @@ TSIOBufferStart(TSIOBuffer bufp)
   return (TSIOBufferBlock)blk;
 }
 
-void
-TSIOBufferAppend(TSIOBuffer bufp, TSIOBufferBlock blockp)
-{
-  sdk_assert(sdk_sanity_check_iocore_structure(bufp) == TS_SUCCESS);
-  sdk_assert(sdk_sanity_check_iocore_structure(blockp) == TS_SUCCESS);
-
-  MIOBuffer *b = (MIOBuffer *)bufp;
-  IOBufferBlock *blk = (IOBufferBlock *)blockp;
-
-  b->append_block(blk);
-}
-
 int64_t
 TSIOBufferCopy(TSIOBuffer bufp, TSIOBufferReader readerp, int64_t length, int64_t offset)
 {
@@ -588,43 +576,6 @@ TSIOBufferProduce(TSIOBuffer bufp, int64_t nbytes)
 
   MIOBuffer *b = (MIOBuffer *)bufp;
   b->fill(nbytes);
-}
-
-TSIOBufferData
-TSIOBufferDataCreate(void *data, int64_t size, TSIOBufferDataFlags flags)
-{
-  sdk_assert(sdk_sanity_check_null_ptr((void*)data) == TS_SUCCESS);
-  sdk_assert(size > 0);
-
-  // simply return error_ptr
-  //ink_assert (size > 0);
-
-  switch (flags) {
-  case TS_DATA_ALLOCATE:
-    ink_assert(data == NULL);
-    return (TSIOBufferData)new_IOBufferData(iobuffer_size_to_index(size));
-
-  case TS_DATA_MALLOCED:
-    ink_assert(data != NULL);
-    return (TSIOBufferData)new_xmalloc_IOBufferData(data, size);
-
-  case TS_DATA_CONSTANT:
-    ink_assert(data != NULL);
-    return (TSIOBufferData)new_constant_IOBufferData(data, size);
-  }
-
-  sdk_assert(!"Invalid flag");
-  return NULL;
-}
-
-TSIOBufferBlock
-TSIOBufferBlockCreate(TSIOBufferData datap, int64_t size, int64_t offset)
-{
-  sdk_assert(sdk_sanity_check_iocore_structure(datap) == TS_SUCCESS);
-  sdk_assert((size >= 0) && (offset > 0));
-
-  IOBufferData *d = (IOBufferData *)datap;
-  return (TSIOBufferBlock)new_IOBufferBlock(d, size, offset);
 }
 
 // dev API, not exposed

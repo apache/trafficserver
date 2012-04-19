@@ -5273,15 +5273,6 @@ TSHttpTxnClientAddrGet(TSHttpTxn txnp)
   return TSHttpSsnClientAddrGet(ssnp);
 }
 
-unsigned int
-TSHttpTxnClientIPGet(TSHttpTxn txnp)
-{
-  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
-
-  HttpSM *sm = (HttpSM *) txnp;
-  return ats_ip4_addr_cast(&sm->t_state.client_info.addr);
-}
-
 sockaddr const*
 TSHttpSsnIncomingAddrGet(TSHttpSsn ssnp) {
   HttpClientSession *cs = reinterpret_cast<HttpClientSession *>(ssnp);
@@ -5301,15 +5292,6 @@ TSHttpTxnIncomingAddrGet(TSHttpTxn txnp) {
   return TSHttpSsnIncomingAddrGet(ssnp);
 }
 
-int
-TSHttpTxnClientIncomingPortGet(TSHttpTxn txnp)
-{
-  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
-
-  HttpSM *sm = (HttpSM *) txnp;
-  return sm->t_state.client_info.port;
-}
-
 sockaddr const*
 TSHttpTxnServerAddrGet(TSHttpTxn txnp)
 {
@@ -5317,15 +5299,6 @@ TSHttpTxnServerAddrGet(TSHttpTxn txnp)
 
   HttpSM *sm = reinterpret_cast<HttpSM *>(txnp);
   return &sm->t_state.server_info.addr.sa;
-}
-
-unsigned int
-TSHttpTxnServerIPGet(TSHttpTxn txnp)
-{
-  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
-
-  HttpSM *sm = (HttpSM *) txnp;
-  return ats_ip4_addr_cast(&sm->t_state.server_info.addr.sa);
 }
 
 // [amc] This might use the port. The code path should do that but it
@@ -5363,33 +5336,6 @@ TSHttpTxnNextHopAddrGet(TSHttpTxn txnp)
     return NULL;
 
   return &sm->t_state.current.server->addr.sa;
-}
-
-in_addr_t
-TSHttpTxnNextHopIPGet(TSHttpTxn txnp)
-{
-  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
-
-  HttpSM *sm = (HttpSM *) txnp;
-    /**
-     * Return zero if the server structure is not yet constructed.
-     */
-  if (sm->t_state.current.server == NULL)
-    return 0;
-  return ats_ip4_addr_cast(&sm->t_state.current.server->addr.sa);
-}
-
-int
-TSHttpTxnNextHopPortGet(TSHttpTxn txnp)
-{
-  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
-
-  HttpSM *sm = (HttpSM *) txnp;
-  int port = 0;
-
-  if (sm && sm->t_state.current.server)
-    port = ats_ip_port_host_order(&sm->t_state.current.server->addr);
-  return port;
 }
 
 TSReturnCode
@@ -5539,13 +5485,6 @@ TSHttpTxnReenable(TSHttpTxn txnp, TSEvent event)
       sm->state_api_callback((int) event, 0);
     }
   }
-}
-
-// This is deprecated, and shouldn't be used, use the register function instead.
-int
-TSHttpTxnMaxArgCntGet(void)
-{
-  return HTTP_SSN_TXN_MAX_USER_ARG;
 }
 
 TSReturnCode
@@ -6387,26 +6326,6 @@ TSNetVConnRemoteAddrGet(TSVConn connp) {
   return vc->get_remote_addr();
 }
 
-
-// TODO: IPv6 ...
-unsigned int
-TSNetVConnRemoteIPGet(TSVConn connp)
-{
-  sdk_assert(sdk_sanity_check_iocore_structure(connp) == TS_SUCCESS);
-
-  NetVConnection* vc = reinterpret_cast<NetVConnection*>(connp);
-  return vc->get_remote_ip();
-}
-
-int
-TSNetVConnRemotePortGet(TSVConn connp)
-{
-  sdk_assert(sdk_sanity_check_iocore_structure(connp) == TS_SUCCESS);
-
-  NetVConnection* vc = reinterpret_cast<NetVConnection*>(connp);
-  return vc->get_remote_port();
-}
-
 TSAction
 TSNetConnect(TSCont contp, sockaddr const* addr)
 {
@@ -6492,24 +6411,6 @@ TSHostLookupResultAddrGet(TSHostLookupResult lookup_result)
   sdk_assert(sdk_sanity_check_hostlookup_structure(lookup_result) == TS_SUCCESS);
   HostDBInfo* di = reinterpret_cast<HostDBInfo*>(lookup_result);
   return di->ip();
-}
-
-in_addr_t
-TSHostLookupResultIpGet(TSHostLookupResult lookup_result)
-{
-  sdk_assert(sdk_sanity_check_hostlookup_structure(lookup_result) == TS_SUCCESS);
-  return ats_ip4_addr_cast(((HostDBInfo *)lookup_result)->ip());
-}
-
-void
-TSOSIpSet(TSHttpTxn txnp, unsigned int ip)
-{
-  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
-  HttpSM *sm = (HttpSM *) txnp;
-  HttpTransact::State *s = &(sm->t_state);
-
-  s->dns_info.lookup_success = true;
-  ats_ip4_set(s->host_db_info.ip(), ip);
 }
 
 /*
@@ -7045,29 +6946,6 @@ TSHttpTxnClientFdGet(TSHttpTxn txnp, int *fdp)
 
   TSHttpSsn ssnp = TSHttpTxnSsnGet(txnp);
   return TSHttpSsnClientFdGet(ssnp, fdp);
-}
-
-TSReturnCode
-TSHttpTxnClientRemotePortGet(TSHttpTxn txnp, int *portp)
-{
-  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
-  sdk_assert(sdk_sanity_check_null_ptr((void*)portp) == TS_SUCCESS);
-
-  TSHttpSsn ssnp = TSHttpTxnSsnGet(txnp);
-  HttpClientSession *cs = (HttpClientSession *) ssnp;
-
-  if (cs == NULL)
-    return TS_ERROR;
-
-  NetVConnection *vc = cs->get_netvc();
-  if (vc == NULL)
-    return TS_ERROR;
-
-  // Note: SDK spec specifies this API should return port in network byte order
-  // iocore returns it in host byte order. So we do the conversion.
-  *portp = htons(vc->get_remote_port());
-
-  return TS_SUCCESS;
 }
 
 /* Matcher Utils */

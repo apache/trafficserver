@@ -2267,19 +2267,6 @@ extern "C"
   tsapi TSReturnCode TSHttpSsnClientFdGet(TSHttpSsn ssnp, int* fdp);
   /* TS-1008 END */
 
-  /** @deprecated Use TSHttpTxnClientAddrGet */
-  tsapi TS_DEPRECATED unsigned int TSHttpTxnClientIPGet(TSHttpTxn txnp);
-  /** @deprecated Use TSHttpTxnClientAddrGet */
-  tsapi TS_DEPRECATED TSReturnCode TSHttpTxnClientRemotePortGet(TSHttpTxn txnp, int* portp);
-  /** @deprecated Use TSHttpTxnIncomingAddrGet */
-  tsapi TS_DEPRECATED int TSHttpTxnClientIncomingPortGet(TSHttpTxn txnp);
-  /** @deprecated Use TSHttpTxnServerAddrGet */
-  tsapi TS_DEPRECATED unsigned int TSHttpTxnServerIPGet(TSHttpTxn txnp);
-  /** @deprecated Use TSHttpTxnNextHopAddrGet */
-  tsapi TS_DEPRECATED unsigned int TSHttpTxnNextHopIPGet(TSHttpTxn txnp);
-  /** @deprecated Use TSHttpTxnNextHopAddrGet */
-  tsapi TS_DEPRECATED int TSHttpTxnNextHopPortGet(TSHttpTxn txnp);
-
   tsapi void TSHttpTxnErrorBodySet(TSHttpTxn txnp, char* buf, int buflength, char* mimetype);
 
   /**
@@ -2343,9 +2330,6 @@ extern "C"
   tsapi TSReturnCode TSHttpArgIndexReserve(const char* name, const char* description, int* arg_idx);
   tsapi TSReturnCode TSHttpArgIndexNameLookup(const char* name, int* arg_idx, const char** description);
   tsapi TSReturnCode TSHttpArgIndexLookup(int arg_idx, const char** name, const char** description);
-
-  /** @deprecated */
-  tsapi TS_DEPRECATED int TSHttpTxnMaxArgCntGet(void);
 
   tsapi int TSHttpTxnGetMaxHttpRetBodySize(void);
   tsapi void TSHttpTxnSetHttpRetBody(TSHttpTxn txnp, const char* body_msg, int plain_msg);
@@ -2531,24 +2515,8 @@ extern "C"
 
   /* --------------------------------------------------------------------------
      Net VConnections */
-  /**
-      Returns the IP address of the remote host with which Traffic Server
-      is connected through the vconnection vc.
-
-      @deprecated Use TSNetVConnRemoteAddrGet
-
-      @param vc representing a connection that your plugin has opened
-        between Traffic Server and a (remote) host.
-      @param ip will be set to the IP address of the remote host in
-        network byte order. Note: this value is 32-bit, for IPv4.
-
-   */
-  tsapi TS_DEPRECATED unsigned int TSNetVConnRemoteIPGet(TSVConn vc);
 
   tsapi struct sockaddr const* TSNetVConnRemoteAddrGet(TSVConn vc);
-
-  /** @deprecated Use TSNetVConnRemoteAddrGet */
-  tsapi TS_DEPRECATED int TSNetVConnRemotePortGet(TSVConn vc);
 
   /**
       Opens a network connection to the host specified by ip on the port
@@ -2603,11 +2571,7 @@ extern "C"
   /* --------------------------------------------------------------------------
      DNS Lookups */
   tsapi TSAction TSHostLookup(TSCont contp, const char* hostname, size_t namelen);
-  /**  @deprecated Use TSHostLookupResultAddrGet */
-  tsapi TS_DEPRECATED unsigned int TSHostLookupResultIPGet(TSHostLookupResult lookup_result);
   tsapi struct sockaddr const* TSHostLookupResultAddrGet(TSHostLookupResult lookup_result);
-  /** @deprecated Use TSHttpTxnServerAddrSet */
-  tsapi TS_DEPRECATED void TSOSIpSet(TSHttpTxn txnp, unsigned int ip);
   /* TODO: Eventually, we might want something like this as well, but it requires
      support for building the HostDBInfo struct:
      tsapi void TSHostLookupResultSet(TSHttpTxn txnp, TSHostLookupResult result);
@@ -3117,11 +3081,6 @@ extern "C"
 
   */
   tsapi TSVConn TSVConnCreate(TSEventFunc event_funcp, TSMutex mutexp);
-
-  tsapi TS_DEPRECATED void TSIOBufferAppend(TSIOBuffer bufp, TSIOBufferBlock blockp);
-  tsapi TS_DEPRECATED TSIOBufferData TSIOBufferDataCreate(void* data, int size, TSIOBufferDataFlags flags);
-  tsapi TS_DEPRECATED TSIOBufferBlock TSIOBufferBlockCreate(TSIOBufferData datap, int size, int offset);
-
 
   /* api functions to access stats */
   /* ClientResp APIs exist as well and are exposed in PrivateFrozen  */
