@@ -71,7 +71,7 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
 
   *) build fails on GCC 4.7 and clang
    master SHA: fe1da80b94d368343174ada8b137a0c4ae1c387e
-               fe1da80b94d368343174ada8b137a0c4ae1c387e
+               56c29c0a1dd950eba82039f3f4dcb950a1fdff6b
    Jira: https://issues.apache.org/jira/browse/TS-1185
          https://issues.apache.org/jira/browse/TS-1116
    +1: igalic, zwoop
