@@ -180,15 +180,15 @@ extern RecRawStatBlock *cache_rsb;
 	RecIncrRawStat(vol->cache_vol->vol_rsb, mutex->thread_holding, (int) (x), -1);
 
 #define CACHE_VOL_SUM_DYN_STAT(x,y) \
-        RecIncrRawStat(vol->cache_vol->vol_rsb, mutex->thread_holding, (int) (x), (int) y);
+        RecIncrRawStat(vol->cache_vol->vol_rsb, mutex->thread_holding, (int) (x), (int64_t) y);
 
 #define CACHE_SUM_DYN_STAT(x, y) \
-	RecIncrRawStat(cache_rsb, mutex->thread_holding, (int) (x), (int) (y)); \
-	RecIncrRawStat(vol->cache_vol->vol_rsb, mutex->thread_holding, (int) (x), (int) (y));
+	RecIncrRawStat(cache_rsb, mutex->thread_holding, (int) (x), (int64_t) (y)); \
+	RecIncrRawStat(vol->cache_vol->vol_rsb, mutex->thread_holding, (int) (x), (int64_t) (y));
 
 #define CACHE_SUM_DYN_STAT_THREAD(x, y) \
-	RecIncrRawStat(cache_rsb, this_ethread(), (int) (x), (int) (y)); \
-	RecIncrRawStat(vol->cache_vol->vol_rsb, this_ethread(), (int) (x), (int) (y));
+	RecIncrRawStat(cache_rsb, this_ethread(), (int) (x), (int64_t) (y)); \
+	RecIncrRawStat(vol->cache_vol->vol_rsb, this_ethread(), (int) (x), (int64_t) (y));
 
 #define GLOBAL_CACHE_SUM_GLOBAL_DYN_STAT(x, y) \
 	RecIncrGlobalRawStatSum(cache_rsb,(x),(y))
