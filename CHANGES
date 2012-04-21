@@ -1,8 +1,13 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.1.4
-  *) [TS-1198] ssl crash when certificates are missing
+  *) [TS-1211] Read backlog config value to set the listen backlog.
 
-  *) [TS-1164] a race condition in cache init
+  *) [TS-1202] Install traffic_shell man/doc pages in a more appropriate
+   location. Author: Igor Brezac.
+
+  *) [TS-1198] ssl crash when certificates are missing.
+
+  *) [TS-1164] a race condition in cache init.
 
   *) [TS-1079] Add an API function to turn debugging on for specific
    transactions/sessions. This also adds a new Debug() functionality in
