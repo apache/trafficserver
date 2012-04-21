@@ -5307,7 +5307,7 @@ TSHttpTxnClientIncomingPortGet(TSHttpTxn txnp)
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 
   HttpSM *sm = (HttpSM *) txnp;
-  return ats_ip_port_host_order(&sm->t_state.client_info.addr);
+  return sm->t_state.client_info.port;
 }
 
 sockaddr const*
