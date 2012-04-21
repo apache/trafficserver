@@ -8302,7 +8302,7 @@ ink_cluster_time(void)
       if (ink_atomic_cas((int32_t *) & global_time, *((int32_t *) & old), *((int32_t *) & local_time)))
         break;
     } else if (sizeof(ink_time_t) == 8) {
-      if ((ink_atomic_cas64((int64_t *) & global_time), *((int64_t *) & old), *((int64_t *) & local_time)))
+      if (ink_atomic_cas64((int64_t *) & global_time, *((int64_t *) & old), *((int64_t *) & local_time)))
         break;
     }
     old = global_time;
