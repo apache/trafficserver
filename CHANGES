@@ -1,5 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.1.4
+  *) [TS-1137] Wrong returned value of incoming port address. This
+   API is deprecated, so I also fixed the regression tests accordingly.
+   Authors: Yakov Kopel and Leif.
+
   *) [TS-1211] Read backlog config value to set the listen backlog.
 
   *) [TS-1202] Install traffic_shell man/doc pages in a more appropriate

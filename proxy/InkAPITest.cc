@@ -2123,8 +2123,8 @@ REGRESSION_TEST(SDK_API_TSContSchedule) (RegressionTest * test, int atype, int *
 //                    TSHttpTxnReenable
 //                    TSHttpTxnClientIPGet
 //                    TSHttpTxnServerIPGet
-//                    TSHttpTxnClientIncomingPortGet
-//                    TSHttpTxnClientRemotePortGet
+//                    TSHttpTxnIncomingAddrGet
+//                    TSHttpTxnClientAddrGet
 //                    TSHttpTxnClientReqGet
 //                    TSHttpTxnClientRespGet
 //                    TSHttpTxnServerReqGet
@@ -2241,9 +2241,9 @@ checkHttpTxnServerIPGet(SocketTest * test, void *data)
 
 }
 
-//This func is called by us from mytest_handler to test TSHttpTxnClientIncomingPortGet
+//This func is called by us from mytest_handler to test TSHttpTxnIncomingAddrGet
 static int
-checkHttpTxnClientIncomingPortGet(SocketTest * test, void *data)
+checkHttpTxnIncomingAddrGet(SocketTest * test, void *data)
 {
   uint16_t port;
   HttpProxyPort* proxy_port = HttpProxyPort::findHttp(AF_INET);
@@ -2252,13 +2252,13 @@ checkHttpTxnClientIncomingPortGet(SocketTest * test, void *data)
 
   if (0 == proxy_port) {
     SDK_RPRINT(test->regtest, "TSHttpTxnIncomingPortGet", "TestCase1", TC_FAIL,
-               "TSHttpTxnClientIncomingPortGet failed to find configured HTTP port.");
+               "TSHttpTxnIncomingAddrGet failed to find configured HTTP port.");
     test->test_client_incoming_port_get = false;
     return TS_EVENT_CONTINUE;
   }
   if (0 == ptr) {
     SDK_RPRINT(test->regtest, "TSHttpTxnIncomingPortGet", "TestCase1", TC_FAIL,
-               "TSHttpTxnClientIncomingPortGet returns 0 pointer");
+               "TSHttpTxnIncomingAddrGet returns 0 pointer");
     test->test_client_incoming_port_get = false;
     return TS_EVENT_CONTINUE;
   }
@@ -2267,19 +2267,19 @@ checkHttpTxnClientIncomingPortGet(SocketTest * test, void *data)
   TSDebug(UTDBG_TAG, "TS HTTP port = %x, Txn incoming client port %x", proxy_port->m_port, port);
 
   if (port == proxy_port->m_port) {
-    SDK_RPRINT(test->regtest, "TSHttpTxnClientIncomingPortGet", "TestCase1", TC_PASS, "ok");
+    SDK_RPRINT(test->regtest, "TSHttpTxnIncomingAddrGet", "TestCase1", TC_PASS, "ok");
     test->test_client_incoming_port_get = true;
   } else {
-    SDK_RPRINT(test->regtest, "TSHttpTxnClientIncomingPortGet", "TestCase1", TC_FAIL,
-               "Value's Mismatch. From Funtion: %d  Expected value: %d", port, proxy_port->m_port);
+    SDK_RPRINT(test->regtest, "TSHttpTxnIncomingAddrGet", "TestCase1", TC_FAIL,
+               "Value's Mismatch. From Function: %d  Expected value: %d", port, proxy_port->m_port);
     test->test_client_incoming_port_get = false;
   }
   return TS_EVENT_CONTINUE;
 }
 
-//This func is called by us from mytest_handler to test TSHttpTxnClientRemotePortGet
+//This func is called by us from mytest_handler to test TSHttpTxnClientAddrGet
 static int
-checkHttpTxnClientRemotePortGet(SocketTest * test, void *data)
+checkHttpTxnClientAddrGet(SocketTest *test, void *data)
 {
 
   uint16_t port;
@@ -2461,8 +2461,8 @@ mytest_handler(TSCont contp, TSEvent event, void *data)
       test->hook_mask |= 8;
     }
 
-    checkHttpTxnClientIncomingPortGet(test, data);
-    checkHttpTxnClientRemotePortGet(test, data);
+    checkHttpTxnIncomingAddrGet(test, data);
+    checkHttpTxnClientAddrGet(test, data);
 
     checkHttpTxnClientIPGet(test, data);
     checkHttpTxnServerIPGet(test, data);
