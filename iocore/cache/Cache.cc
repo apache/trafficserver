@@ -1656,10 +1656,9 @@ build_vol_hash_table(CacheHostRecord *cp)
 
 void
 Cache::vol_initialized(bool result) {
-  ink_atomic_increment(&total_initialized_vol, 1);
   if (result)
     ink_atomic_increment(&total_good_nvol, 1);
-  if (total_nvol == total_initialized_vol)
+  if (total_nvol == ink_atomic_increment(&total_initialized_vol, 1) + 1)
     open_done();
 }
 

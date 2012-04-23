@@ -1,5 +1,7 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.1.4
+  *) [TS-1214] another race condition in cache init.
+
   *) [TS-1130] Wrong CAS operation on ink_time_t on 64 bit system.
 
   *) [TS-1127] Wrong returned value of incoming port address. This
