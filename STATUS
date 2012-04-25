@@ -62,12 +62,12 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   *) crash in RangeTransform::handle_event
    master SHA: 6c4d2b5005cde3aac142b7419cbf37ea4a21f0e5
    Jira: https://issues.apache.org/jira/browse/TS-1111
-   +1: zym
+   +1: zym, zwoop
 
   *) stack dump may crash too
    master SHA: ad6c4ab97ff150727660f66aa64b0fb57fd3d3f7
    Jira: https://issues.apache.org/jira/browse/TS-1109
-   +1: zym
+   +1: zym, zwoop
 
   *) build fails on GCC 4.7 and clang
    master SHA: fe1da80b94d368343174ada8b137a0c4ae1c387e
@@ -81,7 +81,7 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   *) Make RC script support Amazon EC2 Linux AMI
    master SHA: 620d3cc783c330da00cdbe11eb72eddd1e7aff30
    Jira: https://issues.apache.org/jira/browse/TS-1098
-   +1: briang
+   +1: briang,zwoop
 
 STALLED ISSUES
 
