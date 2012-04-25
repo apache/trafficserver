@@ -1,5 +1,7 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.1.4
+  *) [TS-1205] double free when RecDataSet in cluster mode
+
   *) [TS-1220] stats: cleanup and fix the wrong values.
 
   *) [TS-1212] can not limit ram cache, also fix the stats.
