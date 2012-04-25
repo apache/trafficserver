@@ -1,5 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.1.4
+  *) [TS-1226] Make header_filter support e.g. '=' characters in header
+   values.
+
   *) [TS-1150] Some performance improvements around the heap guard.
 
   *) [TS-1216] Remove the initializer for some gcc`s limits.

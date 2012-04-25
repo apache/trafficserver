@@ -268,7 +268,7 @@ Rules::parse_file(const char* filename)
                 break;
               }
                 
-              pos2 = line.find_first_of(trailer, pos1+1);
+              pos2 = line.find_last_of(trailer);
               if (pos2 != std::string::npos) {
                 qualifier = line.substr(pos1+1, pos2-pos1-1);
                 if (line[pos2+1] == 'i')
