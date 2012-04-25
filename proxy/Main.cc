@@ -134,7 +134,7 @@ int num_of_udp_threads = DEFAULT_NUMBER_OF_UDP_THREADS;
 int num_accept_threads  = DEFAULT_NUM_ACCEPT_THREADS;
 int num_task_threads = DEFAULT_NUM_TASK_THREADS;
 int run_test_hook = 0;
-char http_accept_port_descriptor[TS_ARG_MAX + 1] = "";
+char http_accept_port_descriptor[TS_ARG_MAX + 1];
 #define TS_ARG_MAX_STR_FMT "S" TS_ARG_MAX_STR
 int http_accept_file_descriptor = NO_FD;
 int ssl_accept_file_descriptor = NO_FD;
