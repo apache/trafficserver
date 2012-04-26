@@ -749,12 +749,15 @@ inline static DNSEntry *
 get_dns(DNSHandler *h, uint16_t id)
 {
   for (DNSEntry *e = h->entries.head; e; e = (DNSEntry *) e->link.next) {
-    if (e->once_written_flag)
-      for (int j = 0; j < MAX_DNS_RETRIES; j++)
-        if (e->id[j] == id)
+    if (e->once_written_flag) {
+      for (int j = 0; j < MAX_DNS_RETRIES; j++) {
+        if (e->id[j] == id) {
           return e;
-        else if (e->id[j] < 0)
+        } else if (e->id[j] < 0) {
           goto Lnext;
+        }
+      }
+    }
   Lnext:;
   }
   return NULL;

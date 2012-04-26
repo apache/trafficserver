@@ -344,7 +344,7 @@ CoreUtils::get_base_frame(intptr_t threadId, core_stack_state * coress)
   intptr_t off2 = abs(vadd - framep);
   intptr_t size = arrayMem[index - 1].fsize;
 
-  memset(coress, 0, sizeof(coress));
+  memset(coress, 0, sizeof(*coress));
 
   // seek to the framep offset
   if (fseek(fp, off + off2, SEEK_SET) != -1) {
@@ -456,7 +456,7 @@ CoreUtils::get_base_frame(intptr_t framep, core_stack_state *coress)
   intptr_t size = arrayMem[index - 1].fsize;
   intptr_t i = 0;
 
-  memset(coress, 0, sizeof(coress));
+  memset(coress, 0, sizeof(*coress));
   D(printf("stkbase=%p\n", (void*)(vadd + size)));
   // seek to the framep offset
   if (fseek(fp, off + off2, SEEK_SET) != -1) {
