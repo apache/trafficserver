@@ -456,11 +456,6 @@ ClusterVConnection::set_type(int options)
 bool ClusterVConnection::get_data(int id, void *data)
 {
   switch (id) {
-  case CACHE_DATA_SIZE:
-    {
-      *((int64_t *) data) = get_object_size();
-      return true;
-    }
   case CACHE_DATA_HTTP_INFO:
     {
       ink_release_assert(!"ClusterVConnection::get_data CACHE_DATA_HTTP_INFO not supported");

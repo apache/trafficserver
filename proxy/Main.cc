@@ -75,23 +75,16 @@ extern "C" int plock(int);
 #include "CacheControl.h"
 #include "IPAllow.h"
 #include "ParentSelection.h"
-//#include "simple/Simple.h"
-
 #include "MgmtUtils.h"
 #include "StatPages.h"
 #include "HTTP.h"
 #include "Plugin.h"
 #include "DiagsConfig.h"
-
 #include "CoreUtils.h"
-
 #include "Update.h"
 #include "congest/Congestion.h"
-
 #include "RemapProcessor.h"
-
 #include "XmlUtils.h"
-
 #include "I_Tasks.h"
 
 #include <ts/ink_cap.h>
@@ -182,9 +175,6 @@ AppVersionInfo appVersionInfo;  // Build info for this application
 
 #if TS_HAS_TESTS
 extern int run_TestHook();
-// TODO: Maybe review and "fix" this test at some point?
-//
-//extern void run_SimpleHttp();
 #endif
 void deinitSubAgent();
 

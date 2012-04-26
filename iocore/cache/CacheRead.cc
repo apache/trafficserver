@@ -624,7 +624,7 @@ CacheVC::openReadMain(int event, Event * e)
   int64_t bytes = doc->len - doc_pos;
   IOBufferBlock *b = NULL;
   if (seek_to) { // handle do_io_pread
-    if (seek_to >= (int)doc_len) {
+    if (seek_to >= (int64_t)doc_len) {
       vio.ndone = doc_len;
       return calluser(VC_EVENT_EOS);
     }
@@ -687,7 +687,7 @@ CacheVC::openReadMain(int event, Event * e)
     return EVENT_CONT;
   }
 Lread: {
-    if ((uint32_t)vio.ndone >= doc_len)
+    if (vio.ndone >= (int64_t)doc_len)
       // reached the end of the document and the user still wants more
       return calluser(VC_EVENT_EOS);
     last_collision = 0;

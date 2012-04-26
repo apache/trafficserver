@@ -345,9 +345,6 @@ bool
 CacheVC::get_data(int i, void *data)
 {
   switch (i) {
-  case CACHE_DATA_SIZE:
-    *((int *) data) = doc_len;
-    return true;
 #ifdef HTTP_CACHE
   case CACHE_DATA_HTTP_INFO:
     *((CacheHTTPInfo **) data) = &alternate;
