@@ -194,7 +194,7 @@ sub get_stat {
 
     if ( $resp[0] == TS_ERR_OKAY ) {
         if ( $resp[2] < TS_REC_FLOAT ) {
-            @resp = unpack( "slsl", $res );
+            @resp = unpack( "slsq", $res );
             return undef unless ( scalar(@resp) == 4 );
             return int( $resp[3] );
         }

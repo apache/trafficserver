@@ -1,5 +1,7 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.1.4
+  *) [TS-1186] Fixed Perl stats API to work with 64-bit stat values
+
   *) [TS-1227] header_filter "set" operator doesn't work if the header
    doesn't already exist.
 
