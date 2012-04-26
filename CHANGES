@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.1.4
+
   *) [TS-1210] remove 3.0.x deprecated APIs
+
+  *) [TS-1225] Remove 32 bit doc_len instances.
 
   *) [TS-1226] Make header_filter support e.g. '=' characters in header
    values.
