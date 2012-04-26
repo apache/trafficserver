@@ -67,85 +67,89 @@ RulesEntry::execute(TSMBuffer& reqp, TSMLoc& hdr_loc) const
     TSMLoc field = TSMimeHdrFieldFind(reqp, hdr_loc, _header, _h_len);
     bool first_set = true;
 
-    while (field) {
-      TSMLoc tmp;
-      int val_len = 0;
-      const char* val = NULL;
-      bool nuke = false;
+    if (!field && _q_type == QUAL_SET) {
+      add_header(reqp, hdr_loc, _header, _h_len, _qualifier, _q_len);
+    } else {
+      while (field) {
+        TSMLoc tmp;
+        int val_len = 0;
+        const char* val = NULL;
+        bool nuke = false;
       
-      if (_q_type != QUAL_NONE)
-        val = TSMimeHdrFieldValueStringGet(reqp, hdr_loc, field, 0, &val_len);
+        if (_q_type != QUAL_NONE)
+          val = TSMimeHdrFieldValueStringGet(reqp, hdr_loc, field, 0, &val_len);
 
-      switch (_q_type) {
-      case QUAL_NONE:
-        nuke = true;
-        break;
-      case QUAL_REGEX:
-        if (val_len > 0) {
-          nuke = pcre_exec(_rex,            // the compiled pattern
-                           _extra,          // Extra data from study (maybe)
-                           val,                // the subject string
-                           val_len,            // the length of the subject
-                           0,                  // start at offset 0 in the subject
-                           0,                  // default options
-                           NULL,               // no output vector for substring information
-                           0) >= 0;
-        }
-        break;
-
-      case QUAL_STRING:
-        if (static_cast<size_t>(val_len) == _q_len) {
-          if (_options & PCRE_CASELESS) {
-            nuke = !strncasecmp(_qualifier, val, val_len);
-          } else {
-            nuke = !memcmp(_qualifier, val, val_len);
-          }
-        }
-        break;
-
-      case QUAL_PREFIX:
-        if (static_cast<size_t>(val_len) >= _q_len) {
-          if (_options & PCRE_CASELESS) {
-            nuke = !strncasecmp(_qualifier, val, _q_len);
-          } else {
-            nuke = !memcmp(_qualifier, val, _q_len);
-          }
-        }
-        break;
-
-      case QUAL_POSTFIX: 
-        if (static_cast<size_t>(val_len) >= _q_len) {
-          if (_options & PCRE_CASELESS) {
-            nuke = !strncasecmp(_qualifier, val + val_len - _q_len, _q_len);
-          } else {
-            nuke = !memcmp(_qualifier, val + val_len - _q_len, _q_len);
-          }
-        }
-        break;
-      case QUAL_SET:
-        if (first_set) {
-          nuke = false;
-          first_set = false;
-          if (TS_SUCCESS == TSMimeHdrFieldValueStringSet(reqp, hdr_loc, field, -1, _qualifier, _q_len))
-            TSDebug(PLUGIN_NAME, "\tSet header:  %s: %s", _header, _qualifier);
-        } else {
-          // Nuke all other "duplicates" of this header
+        switch (_q_type) {
+        case QUAL_NONE:
           nuke = true;
-        }
-        
-      default:
-        break;
-      }
+          break;
+        case QUAL_REGEX:
+          if (val_len > 0) {
+            nuke = pcre_exec(_rex,            // the compiled pattern
+                             _extra,          // Extra data from study (maybe)
+                             val,                // the subject string
+                             val_len,            // the length of the subject
+                             0,                  // start at offset 0 in the subject
+                             0,                  // default options
+                             NULL,               // no output vector for substring information
+                             0) >= 0;
+          }
+          break;
 
-      tmp = TSMimeHdrFieldNextDup(reqp, hdr_loc, field);
-      if (_inverse)
-        nuke = !nuke;
-      if (nuke) {
-        if (TS_SUCCESS == TSMimeHdrFieldDestroy(reqp, hdr_loc, field))
-          TSDebug(PLUGIN_NAME, "\tDeleting header %.*s", static_cast<int>(_h_len), _header);
+        case QUAL_STRING:
+          if (static_cast<size_t>(val_len) == _q_len) {
+            if (_options & PCRE_CASELESS) {
+              nuke = !strncasecmp(_qualifier, val, val_len);
+            } else {
+              nuke = !memcmp(_qualifier, val, val_len);
+            }
+          }
+          break;
+
+        case QUAL_PREFIX:
+          if (static_cast<size_t>(val_len) >= _q_len) {
+            if (_options & PCRE_CASELESS) {
+              nuke = !strncasecmp(_qualifier, val, _q_len);
+            } else {
+              nuke = !memcmp(_qualifier, val, _q_len);
+            }
+          }
+          break;
+
+        case QUAL_POSTFIX: 
+          if (static_cast<size_t>(val_len) >= _q_len) {
+            if (_options & PCRE_CASELESS) {
+              nuke = !strncasecmp(_qualifier, val + val_len - _q_len, _q_len);
+            } else {
+              nuke = !memcmp(_qualifier, val + val_len - _q_len, _q_len);
+            }
+          }
+          break;
+        case QUAL_SET:
+          if (first_set) {
+            nuke = false;
+            first_set = false;
+            if (TS_SUCCESS == TSMimeHdrFieldValueStringSet(reqp, hdr_loc, field, -1, _qualifier, _q_len))
+              TSDebug(PLUGIN_NAME, "\tSet header:  %s: %s", _header, _qualifier);
+          } else {
+            // Nuke all other "duplicates" of this header
+            nuke = true;
+          }
+        
+        default:
+          break;
+        }
+
+        tmp = TSMimeHdrFieldNextDup(reqp, hdr_loc, field);
+        if (_inverse)
+          nuke = !nuke;
+        if (nuke) {
+          if (TS_SUCCESS == TSMimeHdrFieldDestroy(reqp, hdr_loc, field))
+            TSDebug(PLUGIN_NAME, "\tDeleting header %.*s", static_cast<int>(_h_len), _header);
+        }
+        TSHandleMLocRelease(reqp, hdr_loc, field);
+        field = tmp;
       }
-      TSHandleMLocRelease(reqp, hdr_loc, field);
-      field = tmp;
     }
   }
 }

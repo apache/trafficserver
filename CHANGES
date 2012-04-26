@@ -1,5 +1,7 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.1.4
+  *) [TS-1227] header_filter "set" operator doesn't work if the header
+   doesn't already exist.
 
   *) [TS-1210] remove 3.0.x deprecated APIs
 
