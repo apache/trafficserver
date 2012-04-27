@@ -1,0 +1,4 @@
+Top type program for Apache Traffic Server that displays common
+statistical information about the server.  Requires the server to be
+running the stats_over_http plugin.
+
