@@ -630,6 +630,10 @@ register_stat_callbacks()
                      RECD_COUNTER, RECP_NULL, (int) http_cache_hit_fresh_stat, RecRawStatSyncCount);
 
   RecRegisterRawStat(http_rsb, RECT_PROCESS,
+                     "proxy.process.http.cache_hit_mem_fresh",
+                     RECD_COUNTER, RECP_NULL, (int) http_cache_hit_mem_fresh_stat, RecRawStatSyncCount);
+
+  RecRegisterRawStat(http_rsb, RECT_PROCESS,
                      "proxy.process.http.cache_hit_revalidated",
                      RECD_COUNTER, RECP_NULL, (int) http_cache_hit_reval_stat, RecRawStatSyncCount);
 

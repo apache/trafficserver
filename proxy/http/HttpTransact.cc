@@ -8403,8 +8403,9 @@ HttpTransact::client_result_stat(State* s, ink_hrtime total_time, ink_hrtime req
     client_transaction_result = CLIENT_TRANSACTION_RESULT_ERROR_CONNECT_FAIL;
     break;
 
-  case SQUID_LOG_TCP_HIT:
   case SQUID_LOG_TCP_MEM_HIT:
+    HTTP_INCREMENT_TRANS_STAT(http_cache_hit_mem_fresh_stat);
+  case SQUID_LOG_TCP_HIT:
     // It's possible to have two stat's instead of one, if needed.
     HTTP_INCREMENT_TRANS_STAT(http_cache_hit_fresh_stat);
     client_transaction_result = CLIENT_TRANSACTION_RESULT_HIT_FRESH;

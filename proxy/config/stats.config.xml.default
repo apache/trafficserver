@@ -392,6 +392,16 @@
     <statistics
 	minimum="0"
         interval="10">
+        <destination>proxy.node.http.cache_hit_mem_fresh_avg_10s</destination>
+        <expression>
+            #proxy.process.http.cache_hit_mem_fresh
+        </expression>
+    </statistics>
+
+
+    <statistics
+	minimum="0"
+        interval="10">
         <destination>proxy.node.http.cache_hit_revalidated_avg_10s</destination>
         <expression>
             #proxy.process.http.cache_hit_revalidated
@@ -496,6 +506,17 @@
     <statistics
 	minimum="0"
         interval="10">
+        <destination>proxy.node.cache_total_hits_mem_avg_10s</destination>
+        <destination scope="cluster">proxy.cluster.cache_total_hits_mem_avg_10s</destination>
+        <expression>
+            proxy.node.http.cache_hit_mem_fresh_avg_10s
+        </expression>
+    </statistics>
+
+
+    <statistics
+	minimum="0"
+        interval="10">
         <destination>proxy.node.cache_total_misses_avg_10s</destination>
         <destination scope="cluster">proxy.cluster.cache_total_misses_avg_10s</destination>
         <expression>
@@ -527,11 +548,39 @@
 
     <statistics
 	minimum="0"
+	maximum="1"
+        interval="10">
+        <destination>proxy.node.cache_hit_mem_ratio_avg_10s</destination>
+        <destination scope="cluster" operation="re-calculate">proxy.cluster.cache_hit_mem_ratio_avg_10s</destination>
+        <expression>
+            proxy.node.cache_total_hits_mem_avg_10s   /
+            (
+            proxy.node.cache_total_hits_avg_10s   +
+            proxy.node.cache_total_misses_avg_10s
+            )
+        </expression>
+    </statistics>
+
+
+    <statistics
+	minimum="0"
 	maximum="100"
         interval="10">
         <destination>proxy.node.cache_hit_ratio_avg_10s_int_pct</destination>
         <expression>
 	    proxy.node.cache_hit_ratio_avg_10s *
+            $PCT_TO_INTPCT_SCALE
+        </expression>
+    </statistics>
+
+
+    <statistics
+	minimum="0"
+	maximum="100"
+        interval="10">
+        <destination>proxy.node.cache_hit_mem_ratio_avg_10s_int_pct</destination>
+        <expression>
+	    proxy.node.cache_hit_mem_ratio_avg_10s *
             $PCT_TO_INTPCT_SCALE
         </expression>
     </statistics>
@@ -546,6 +595,16 @@
             proxy.process.http.cache_hit_revalidated  +
             proxy.process.http.cache_hit_ims          +
             proxy.process.http.cache_hit_stale_served
+        </expression>
+    </statistics>
+
+
+    <statistics
+	minimum="0">
+        <destination>proxy.node.cache_total_hits_mem</destination>
+        <destination scope="cluster">proxy.cluster.cache_total_hits_mem</destination>
+        <expression>
+            proxy.process.http.cache_hit_mem_fresh
         </expression>
     </statistics>
 
@@ -579,6 +638,20 @@
         </expression>
     </statistics>
 
+
+    <statistics
+	minimum="0"
+	maximum="100">
+        <destination>proxy.node.cache_hit_mem_ratio</destination>
+        <destination scope="cluster" operation="re-calculate">proxy.cluster.cache_hit_mem_ratio</destination>
+        <expression>
+            proxy.node.cache_total_hits_mem   /
+            (
+            proxy.node.cache_total_hits   +
+            proxy.node.cache_total_misses
+            )
+        </expression>
+    </statistics>
 
 	<!-- ########################################################################### -->
     <!-- StatAggregation::Ag_cachePercent() -->
@@ -1610,6 +1683,17 @@
         <destination scope="cluster">proxy.cluster.cache_hit_ratio_int_pct</destination>
         <expression>
             proxy.node.cache_hit_ratio *
+            $PCT_TO_INTPCT_SCALE
+        </expression>
+    </statistics>
+
+
+    <statistics
+	minimum="0">
+        <destination>proxy.node.cache_hit_mem_ratio_int_pct</destination>
+        <destination scope="cluster">proxy.cluster.cache_hit_mem_ratio_int_pct</destination>
+        <expression>
+            proxy.node.cache_hit_mem_ratio *
             $PCT_TO_INTPCT_SCALE
         </expression>
     </statistics>

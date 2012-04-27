@@ -909,14 +909,18 @@ overviewPage::agCacheHitRate()
   static ink_hrtime last_set_time = 0;
   const ink_hrtime window = 10 * HRTIME_SECOND; // update every 10 seconds
   static StatTwoIntSamples cluster_hit_count = { "proxy.node.cache_total_hits", 0, 0, 0, 0 };
+  static StatTwoIntSamples cluster_hit_mem_count = { "proxy.node.cache_total_hits_mem", 0, 0, 0, 0 };
   static StatTwoIntSamples cluster_miss_count = { "proxy.node.cache_total_misses", 0, 0, 0, 0 };
   static const char *cluster_hit_count_name = "proxy.cluster.cache_total_hits_avg_10s";
+  static const char *cluster_hit_mem_count_name = "proxy.cluster.cache_total_hits_mem_avg_10s";
   static const char *cluster_miss_count_name = "proxy.cluster.cache_total_misses_avg_10s";
 
   MgmtIntCounter totalHits = 0;
+  MgmtIntCounter totalMemHits = 0;
   MgmtIntCounter totalMisses = 0;
   MgmtIntCounter totalAccess = 0;
   MgmtFloat hitRate = 0.00;
+  MgmtFloat hitMemRate = 0.00;
 
   // get current time and delta to work with
   ink_hrtime current_time = ink_get_hrtime();
@@ -959,6 +963,7 @@ overviewPage::agCacheHitRate()
     ////////////////////////////////////////////////
     if ((current_time - last_set_time) > window) {
       RecInt num_hits = 0;
+      RecInt num_hits_mem = 0;
       RecInt num_misses = 0;
       RecInt diff = 0;
       RecInt total = 0;
@@ -967,6 +972,10 @@ overviewPage::agCacheHitRate()
       varSetInt(cluster_hit_count_name, diff);
       num_hits = diff;
 
+      diff = cluster_hit_mem_count.diff_value();
+      varSetInt(cluster_hit_mem_count_name, diff);
+      num_hits_mem = diff;
+
       diff = cluster_miss_count.diff_value();
       varSetInt(cluster_miss_count_name, diff);
       num_misses = diff;
@@ -974,8 +983,10 @@ overviewPage::agCacheHitRate()
       total = num_hits + num_misses;
       if (total == 0)
         hitRate = 0.00;
-      else
+      else {
         hitRate = (MgmtFloat) ((double) num_hits / (double) total);
+        hitMemRate = (MgmtFloat) ((double) num_hits_mem / (double) total);
+      }
 
       // Check if more than one cluster node
       MgmtInt num_nodes;
@@ -983,9 +994,11 @@ overviewPage::agCacheHitRate()
       if (1 == num_nodes) {
         // Only one node , so grab local value
         varFloatFromName("proxy.node.cache_hit_ratio_avg_10s", &hitRate);
+        varFloatFromName("proxy.node.cache_hit_mem_ratio_avg_10s", &hitMemRate);
       }
       // new stat
       varSetFloat("proxy.cluster.cache_hit_ratio_avg_10s", hitRate);
+      varSetFloat("proxy.cluster.cache_hit_mem_ratio_avg_10s", hitMemRate);
     }
     /////////////////////////////////////////////////
     // done with a cycle, update the last_set_time //
@@ -994,15 +1007,19 @@ overviewPage::agCacheHitRate()
   }
   // Deal with Lifetime stats
   clusterSumInt("proxy.node.cache_total_hits", &totalHits);
+  clusterSumInt("proxy.node.cache_total_hits_mem", &totalMemHits);
   clusterSumInt("proxy.node.cache_total_misses", &totalMisses);
   totalAccess = totalHits + totalMisses;
 
   if (totalAccess != 0) {
     hitRate = (MgmtFloat) ((double) totalHits / (double) totalAccess);
+    hitMemRate = (MgmtFloat) ((double) totalMemHits / (double) totalAccess);
   }
   // new stats
   ink_assert(varSetFloat("proxy.cluster.cache_hit_ratio", hitRate));
+  ink_assert(varSetFloat("proxy.cluster.cache_hit_mem_ratio", hitMemRate));
   ink_assert(varSetInt("proxy.cluster.cache_total_hits", totalHits));
+  ink_assert(varSetInt("proxy.cluster.cache_total_hits_mem", totalMemHits));
   ink_assert(varSetInt("proxy.cluster.cache_total_misses", totalMisses));
 }
 

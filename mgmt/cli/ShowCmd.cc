@@ -2044,6 +2044,7 @@ ShowProxyStats()
 {
 
   TSFloat cache_hit_ratio = -1.0;
+  TSFloat cache_hit_mem_ratio = -1.0;
   TSFloat bandwidth_hit_ratio = -1.0;
   TSFloat percent_free = -1.0;
   TSInt current_server_connection = -1;
@@ -2055,6 +2056,7 @@ ShowProxyStats()
 
   //get value
   Cli_RecordGetFloat("proxy.node.cache_hit_ratio", &cache_hit_ratio);
+  Cli_RecordGetFloat("proxy.node.cache_hit_mem_ratio", &cache_hit_mem_ratio);
   Cli_RecordGetFloat("proxy.node.bandwidth_hit_ratio", &bandwidth_hit_ratio);
   Cli_RecordGetFloat("proxy.node.cache.percent_free", &percent_free);
   Cli_RecordGetInt("proxy.node.current_server_connections", &current_server_connection);
@@ -2068,6 +2070,7 @@ ShowProxyStats()
   Cli_Printf("\n");
 
   Cli_Printf("Document Hit Rate -------- %f %%\t *\n", 100 * cache_hit_ratio);
+  Cli_Printf("Ram cache Hit Rate ------- %f %%\t *\n", 100 * cache_hit_mem_ratio);
   Cli_Printf("Bandwidth Saving --------- %f %%\t *\n", 100 * bandwidth_hit_ratio);
   Cli_Printf("Cache Percent Free ------- %f %%\n", 100 * percent_free);
   Cli_Printf("Open Server Connections -- %d\n", current_server_connection);

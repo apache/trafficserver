@@ -1476,6 +1476,12 @@ RecordElement RecordsConfig[] = {
   ,
   {RECT_NODE, "proxy.node.cache_hit_ratio_avg_10s_int_pct", RECD_INT, "0", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
+  {RECT_NODE, "proxy.node.cache_hit_mem_ratio", RECD_FLOAT, "0", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
+  ,
+  {RECT_NODE, "proxy.node.cache_hit_mem_ratio_int_pct", RECD_INT, "0", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
+  ,
+  {RECT_NODE, "proxy.node.cache_hit_mem_ratio_avg_10s_int_pct", RECD_INT, "0", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
+  ,
   {RECT_NODE, "proxy.node.bandwidth_hit_ratio_avg_10s_int_pct", RECD_INT, "0", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
 
@@ -1486,6 +1492,8 @@ RecordElement RecordsConfig[] = {
   {RECT_NODE, "proxy.node.bandwidth_hit_ratio_avg_10s", RECD_FLOAT, "0.0", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
   {RECT_NODE, "proxy.node.http.cache_hit_fresh_avg_10s", RECD_FLOAT, "0.0", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
+  ,
+  {RECT_NODE, "proxy.node.http.cache_hit_mem_fresh_avg_10s", RECD_FLOAT, "0.0", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
   {RECT_NODE, "proxy.node.http.cache_hit_revalidated_avg_10s", RECD_FLOAT, "0.0", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
@@ -1507,9 +1515,13 @@ RecordElement RecordsConfig[] = {
   ,
   {RECT_NODE, "proxy.node.cache_total_hits_avg_10s", RECD_FLOAT, "0.0", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
+  {RECT_NODE, "proxy.node.cache_total_hits_mem_avg_10s", RECD_FLOAT, "0.0", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
+  ,
   {RECT_NODE, "proxy.node.cache_total_misses_avg_10s", RECD_FLOAT, "0.0", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
   {RECT_NODE, "proxy.node.cache_hit_ratio_avg_10s", RECD_FLOAT, "0.0", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
+  ,
+  {RECT_NODE, "proxy.node.cache_hit_mem_ratio_avg_10s", RECD_FLOAT, "0.0", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
   {RECT_NODE, "proxy.node.hostdb.total_lookups_avg_10s", RECD_FLOAT, "0.0", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
@@ -1685,6 +1697,8 @@ RecordElement RecordsConfig[] = {
   ,
   {RECT_NODE, "proxy.node.cache_total_hits", RECD_INT, "0", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
+  {RECT_NODE, "proxy.node.cache_total_hits_mem", RECD_INT, "0", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
+  ,
   {RECT_NODE, "proxy.node.cache_total_misses", RECD_INT, "0", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
   {RECT_NODE, "proxy.node.current_cache_connections", RECD_INT, "0", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
@@ -1786,6 +1800,10 @@ RecordElement RecordsConfig[] = {
   ,
   {RECT_CLUSTER, "proxy.cluster.cache_hit_ratio_int_pct", RECD_INT, "0", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
+  {RECT_CLUSTER, "proxy.cluster.cache_hit_mem_ratio", RECD_FLOAT, "0", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
+  ,
+  {RECT_CLUSTER, "proxy.cluster.cache_hit_mem_ratio_int_pct", RECD_INT, "0", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
+  ,
   {RECT_CLUSTER, "proxy.cluster.cache_total_hits", RECD_INT, "0", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
   {RECT_CLUSTER, "proxy.cluster.cache_total_misses", RECD_INT, "0", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
@@ -1794,9 +1812,13 @@ RecordElement RecordsConfig[] = {
   ,
   {RECT_CLUSTER, "proxy.cluster.cache_total_hits_avg_10s", RECD_FLOAT, "0.0", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
+  {RECT_CLUSTER, "proxy.cluster.cache_total_hits_mem_avg_10s", RECD_FLOAT, "0.0", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
+  ,
   {RECT_CLUSTER, "proxy.cluster.cache_total_misses_avg_10s", RECD_FLOAT, "0.0", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
   {RECT_CLUSTER, "proxy.cluster.cache_hit_ratio_avg_10s", RECD_FLOAT, "0.0", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
+  ,
+  {RECT_CLUSTER, "proxy.cluster.cache_hit_mem_ratio_avg_10s", RECD_FLOAT, "0.0", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
   //# DNS
   {RECT_CLUSTER, "proxy.cluster.dns.lookups_per_second", RECD_FLOAT, "0", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
