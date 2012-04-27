@@ -1,5 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.1.4
+  *) [TS-1209] Allow for background fill even when a transform plugin is
+   the producer. Author: Robert Logue.
+
   *) [TS-1229] clean up RecordsCofing.cc, remove unused entries.
 
   *) [TS-1142] record ram hit in stats.
