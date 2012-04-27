@@ -1,5 +1,7 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.1.4
+  *) [TS-1208] enable check_memory() in traffic_cop for Linux
+
   *) [TS-1217] cop cleanup, remove unused variables & defines
 
   *) [TS-1209] Allow for background fill even when a transform plugin is
