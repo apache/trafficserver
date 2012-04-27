@@ -1,5 +1,7 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.1.4
+  *) [TS-1229] clean up RecordsCofing.cc, remove unused entries.
+
   *) [TS-1142] record ram hit in stats.
 
   *) [TS-1213] update will crash at HttpTransact::process_quick_http_filter.

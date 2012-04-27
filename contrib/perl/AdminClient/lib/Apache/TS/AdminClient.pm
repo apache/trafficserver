@@ -285,9 +285,7 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.body_factory.response_suppression_mode
  proxy.config.body_factory.template_sets_dir
  proxy.config.cache.agg_write_backlog
- proxy.config.cache.aio_sleep_time
  proxy.config.cache.alt_rewrite_max_size
- proxy.config.cache.check_disk_idle
  proxy.config.cache.control.filename
  proxy.config.cache.dir.sync_frequency
  proxy.config.cache.enable_checksum
@@ -297,7 +295,6 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.cache.hosting_filename
  proxy.config.cache.ip_allow.filename
  proxy.config.cache.limits.http.max_alts
- proxy.config.cache.max_agg_delay
  proxy.config.cache.max_disk_errors
  proxy.config.cache.max_doc_size
  proxy.config.cache.min_average_object_size
@@ -609,11 +606,7 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.manager_name
  proxy.config.net.accept_throttle
  proxy.config.net.connections_throttle
- proxy.config.net.enable_ink_disk_io
- proxy.config.net.ink_aio_write_threads
- proxy.config.net.ink_disk_io_watermark
  proxy.config.net.listen_backlog
- proxy.config.net.max_kqueue_len
  proxy.config.net_snapshot_filename
  proxy.config.net.sock_mss_in
  proxy.config.net.sock_option_flag_in
