@@ -931,7 +931,7 @@ HttpTransact::EndRemapRequest(State* s)
     }
   }
   s->reverse_proxy = true;
-  s->server_info.is_transparent = s->state_machine->ua_session->f_outbound_transparent;
+  s->server_info.is_transparent = s->state_machine->ua_session ? s->state_machine->ua_session->f_outbound_transparent : false;
 
 done:
   /**
@@ -6542,7 +6542,7 @@ HttpTransact::process_quick_http_filter(State* s, int method)
     return;
   }
 
-  if (!IpAllow::CheckMask(s->state_machine->ua_session->acl_method_mask, method)) {
+  if (s->state_machine->ua_session && (!IpAllow::CheckMask(s->state_machine->ua_session->acl_method_mask, method))) {
     if (is_debug_tag_set("ip-allow")) {
       ip_text_buffer ipb;
       Debug("ip-allow", "Quick filter denial on %s:%s with mask %x", ats_ip_ntop(&s->client_info.addr.sa, ipb, sizeof(ipb)), hdrtoken_index_to_wks(method), s->state_machine->ua_session->acl_method_mask);
