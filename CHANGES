@@ -1,5 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.1.4
+  *) [TS-1230] added a paramter to the configure script to allow overriding
+   the calculated ARG_MAX value
+
   *) [TS-1208] enable check_memory() in traffic_cop for Linux
 
   *) [TS-1217] cop cleanup, remove unused variables & defines
