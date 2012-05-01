@@ -700,7 +700,7 @@ Span::init(char *filename, int64_t size)
     hw_sector_size = arg;
     is_disk = 1;
     adjusted_sec = hw_sector_size / 512;
-    Debug("cache_init", "Span::init - %s hw_sector_size=%d is_disk=%d adjusted_sec=%d",
+    Debug("cache_init", "Span::init - %s hw_sector_size=%d is_disk=%d adjusted_sec=%" PRId64,
           filename, hw_sector_size, is_disk,adjusted_sec);
   }
 
@@ -760,7 +760,7 @@ Span::init(char *filename, int64_t size)
      * code for other arches seems to.  Revisit this, perhaps. */
     blocks = size / STORE_BLOCK_SIZE;
     
-    Debug("cache_init", "Span::init physical sectors %u total size %" PRId64 " geometry size %" PRId64 " store blocks %" PRId64 "", 
+    Debug("cache_init", "Span::init physical sectors %" PRId64 " total size %" PRId64 " geometry size %" PRId64 " store blocks %" PRId64 "",
           physsectors, hw_sector_size * physsectors, size, blocks);
 
     pathname = ats_strdup(filename);
