@@ -653,7 +653,7 @@ Span::init(char *filename, int64_t size)
 {
   int devnum = 0, fd, arg = 0;
   int ret = 0, is_disk = 0;
-  unsigned int heads, sectors, cylinders, adjusted_sec;
+  u_int64_t heads, sectors, cylinders, adjusted_sec;
 
   /* Fetch file type */
   struct stat stat_buf;
@@ -713,14 +713,22 @@ Span::init(char *filename, int64_t size)
 #endif
 
   if (is_disk) {
-    uint32_t physsectors = 0;
+    u_int32_t ioctl_sectors = 0;
+    u_int64_t ioctl_bytes = 0;
+    u_int64_t physsectors = 0;
 
     /* Disks cannot be mmapped */
     is_mmapable_internal = false;
 
-    if (!ioctl(fd, BLKGETSIZE, &physsectors)) {
+    if (!ioctl(fd, BLKGETSIZE64, &ioctl_bytes)) {
       heads = 1;
       cylinders = 1;
+      physsectors = ioctl_bytes / hw_sector_size;
+      sectors = physsectors;
+    } else if (!ioctl(fd, BLKGETSIZE, &ioctl_sectors)) {
+      heads = 1;
+      cylinders = 1;
+      physsectors = ioctl_sectors;
       sectors = physsectors / adjusted_sec;
     } else {
       struct hd_geometry geometry;
@@ -753,7 +761,7 @@ Span::init(char *filename, int64_t size)
     blocks = size / STORE_BLOCK_SIZE;
     
     Debug("cache_init", "Span::init physical sectors %u total size %" PRId64 " geometry size %" PRId64 " store blocks %" PRId64 "", 
-          physsectors, hw_sector_size * (int64_t)physsectors, size, blocks);
+          physsectors, hw_sector_size * physsectors, size, blocks);
 
     pathname = ats_strdup(filename);
     file_pathname = 1;
