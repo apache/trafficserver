@@ -124,9 +124,11 @@ void RamCacheCLFUS::resize_hashtable() {
   bucket = new_bucket;
   nbuckets = anbuckets;
   ats_free(seen);
-  int size = bucket_sizes[ibuckets] * sizeof(uint16_t);
-  seen = (uint16_t*)ats_malloc(size);
-  memset(seen, 0, size);
+  if (cache_config_ram_cache_use_seen_filter) {
+    int size = bucket_sizes[ibuckets] * sizeof(uint16_t);
+    seen = (uint16_t*)ats_malloc(size);
+    memset(seen, 0, size);
+  }
 }
 
 void RamCacheCLFUS::init(int64_t abytes, Vol *avol) {
@@ -486,7 +488,7 @@ int RamCacheCLFUS::put(INK_MD5 *key, IOBufferData *data, uint32_t len, bool copy
   if (!lru[1].head) // initial fill
     if (bytes + size <= max_bytes)
       goto Linsert;
-  if (!e) {
+  if (!e && cache_config_ram_cache_use_seen_filter) {
     uint32_t s = key->word(3) % bucket_sizes[ibuckets];
     uint16_t k = key->word(3) >> 16;
     uint16_t kk = seen[s];

@@ -321,6 +321,12 @@ CONFIG proxy.config.cache.ram_cache_cutoff INT 4194304
    #  0 : Clocked Least Frequently Used by Size (CLFUS) w/optional compression
    #  1 : LRU w/o optional compression - trivially simple
 CONFIG proxy.config.cache.ram_cache.algorithm INT 0
+   # Filter inserts into the RAM cache to ensure that they have been seen at
+   # least once.  For LRU, this provides scan resistance. Note that CLFUS
+   # already requires that a document have history before it is inserted, so
+   # for CLFUS, setting this option means that a document must be seen three
+   # times before it is added to the RAM cache.
+CONFIG proxy.config.cache.ram_cache.use_seen_filter INT 0
    # Compress the content of the ram cache:
    #  0 : no compression
    #  1 : fastlz (extremely fast, relatively low compression)
