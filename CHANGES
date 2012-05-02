@@ -1,5 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.1.4
+  *) [TS-1241] Memory leaks when using TSHttpSchedule().
+   Author: Aidan McGurn
+
   *) [TS-1163] Support for raw disks larger than 2TB on Linux
 
   *) [TS-1230] added a paramter to the configure script to allow overriding
