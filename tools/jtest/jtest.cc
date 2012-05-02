@@ -1,3 +1,25 @@
+/** @file
+
+  A brief file description
+
+  @section license License
+
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+ */
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -16,9 +38,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <assert.h>
-#if !defined(_WIN32)
 #include <poll.h>
-#endif
 #if !defined(IRIX) && !defined(_WIN32)
 #include <netinet/tcp.h>
 #endif
@@ -97,7 +117,7 @@ extern "C" int gethostname(char *name, int namelen);
 #define VERSION_NUM "$Revision: 1.94 $"
 #if defined(BUILD_PERSON) && defined(BUILD_MACHINE)
 #define VERSION ("JTest Version %s - " __DATE__ " " __TIME__ \
-		 " (" BUILD_PERSON "@" BUILD_MACHINE ")\n" )
+                 " (" BUILD_PERSON "@" BUILD_MACHINE ")\n" )
 #else
 #define VERSION ("JTest Version %s - " __DATE__ " " __TIME__ "\n")
 #endif
@@ -134,7 +154,7 @@ static int write_request(int sock);
 static int make_client (unsigned int addr, int port);
 static void make_bfc_client (unsigned int addr, int port);
 static int make_url_client(char * url,char * base_url = 0, bool seen = false,
-			   bool unthrottled = false);
+                           bool unthrottled = false);
 static int write_ftp_response(int sock);
 static void interval_report();
 static void undefer_url(bool unthrottled = false);
@@ -220,7 +240,7 @@ FILE * urls_fp = NULL;
 char urlsdump_file[256] = "";
 FILE * urlsdump_fp = NULL;
 int drand_seed = 0;
-int docsize = 0;
+int docsize = -1;
 int url_hash_entries = 100000;
 char url_hash_filename[256] = "";
 int bandwidth_test = 0;
@@ -245,17 +265,16 @@ int server_content_type = 0;
 int request_extension = 0;
 int no_cache = 0;
 double evo_rate = 0.0;
-int evo_delta = 100;
-char evo_str[16];
-
+double zipf = 0.0;
+int zipf_bucket_size = 1;
 
 struct ArgumentDescription {
-  const char * name;
+  char * name;
   char   key;
-  const char *description;
-  const char *type;
+  char * description;
+  char * type;
   void * location;
-  const char *env;
+  char * env;
   ArgumentFunction * pfn;       
 };
 
@@ -287,13 +306,13 @@ ArgumentDescription argument_descriptions[] = {
    "JTEST_KEEPALIVE",NULL},
   {"keepalive_cons",'K',"# Keep-Alive Connections (0:unlimit)","I",
    &keepalive_cons, "JTEST_KEEPALIVE_CONNECTIONS",NULL },
-  {"docsize", 'L', "Document Size (0:varied)","I", &docsize, 
+  {"docsize", 'L', "Document Size (-1:varied)","I", &docsize, 
    "JTEST_DOCSIZE",NULL},
   {"skeepalive",'j',"Server Keep-Alive (0:unlimit)","I",&server_keepalive,
    "JTEST_SERVER_KEEPALIVE",NULL},
   {"show_urls", 'x', "Show URLs before they are accessed","F", &show_before, 
    "JTEST_SHOW_URLS",NULL},
-  {"show_headers", 'X', "Show Headers","F", &show_headers, 	
+  {"show_headers", 'X', "Show Headers","F", &show_headers,      
    "JTEST_SHOW_HEADERS",NULL},
   {"ftp",'f',"FTP Requests","F",&ftp, "JTEST_FTP",NULL},
   {"ftp_mdtm_err_rate", ' ', "FTP MDTM 550 Error Rate", "D",
@@ -364,6 +383,10 @@ ArgumentDescription argument_descriptions[] = {
   {"request_extension",'4',"Request Extn (1\".html\" 2\".jpeg\" 3\"/\")","I",
    &request_extension,"JTEST_REQUEST_EXTENSION",NULL},
   {"no_cache",'5',"Send Server no-cache","I",&no_cache,"JTEST_NO_CACHE",NULL},
+  {"zipf_bucket",'7',"Bucket size (of 1M buckets) for Zipf","I",
+   &zipf_bucket_size,"JTEST_ZIPF_BUCKET_SIZE",NULL},
+  {"zipf",'8',"Use a Zipf distribution with this alpha (say 1.2)","D",
+   &zipf,"JTEST_ZIPF",NULL},
   {"evo_rate",'9',"Evolving Hotset Rate (evolutions/hour)","D",
    &evo_rate,"JTEST_EVOLVING_HOTSET_RATE",NULL},
   {"debug",'d',"Debug Flag","F",&debug,"JTEST_DEBUG",NULL},
@@ -463,406 +486,71 @@ void FD::close() {
   ftp_data_fd = 0;
 }
 
-#ifdef _WIN32
-/*---------------------------------------------------------------------------*\
-  $Id: poll.h,v 1.1 1997/06/21 17:05:39 bmc Exp bmc $
-
-  NAME
-
-	poll - select(2)-based poll() emulation function for BSD systems.
-
-  SYNOPSIS
-	#include "poll.h"
-
-	struct pollfd
-	{
-	    int     fd;
-	    short   events;
-	    short   revents;
-	}
-
-	int poll (struct pollfd *pArray, unsigned long n_fds, int timeout)
-
-  DESCRIPTION
-
-	This file, and the accompanying "poll.c", implement the System V
-	poll(2) system call for BSD systems (which typically do not provide
-	poll()).  Poll() provides a method for multiplexing input and output
-	on multiple open file descriptors; in traditional BSD systems, that
-	capability is provided by select().  While the semantics of select()
-	differ from those of poll(), poll() can be readily emulated in terms
-	of select() -- which is how this function is implemented.
-
-  AUTHOR
-	Brian M. Clapper
-	bmc@WillsCreek.COM
-
-  REFERENCES
-	Stevens, W. Richard. Unix Network Programming.  Prentice-Hall, 1990.
-
-  This software is copyright (c) 1994-1997 by Brian M. Clapper
-  <bmc@WillsCreek.COM>.  See the LICENSE file accompanying the source
-  distribution for details.
-\*---------------------------------------------------------------------------*/
-
-#ifndef _POLL_EMUL_H_
-#define _POLL_EMUL_H_
-
-#define POLLIN		0x01
-#define POLLPRI		0x02
-#define POLLOUT		0x04
-#define POLLERR		0x08
-#define POLLHUP		0x10
-#define POLLNVAL	0x20
-
-struct pollfd
-{
-    int     fd;
-    short   events;
-    short   revents;
-};
-
-#if __STDC__ > 0
-extern int poll (struct pollfd *pArray, unsigned long n_fds, int timeout);
-#else
-extern int poll();
-#endif;
-
-#endif /* _POLL_EMUL_H_ */
-
-
-/*---------------------------------------------------------------------------*\
-  $Id: poll.c,v 1.1 1997/06/21 17:05:34 bmc Exp bmc $
-
-  NAME
-
-	poll - select(2)-based poll() emulation function for BSD systems.
-
-  SYNOPSIS
-	#include "poll.h"
-
-	struct pollfd
-	{
-	    int     fd;
-	    short   events;
-	    short   revents;
-	}
-
-	int poll (struct pollfd *pArray, unsigned long n_fds, int timeout)
-
-  DESCRIPTION
-
-	This file, and the accompanying "poll.h", implement the System V
-	poll(2) system call for BSD systems (which typically do not provide
-	poll()).  Poll() provides a method for multiplexing input and output
-	on multiple open file descriptors; in traditional BSD systems, that
-	capability is provided by select().  While the semantics of select()
-	differ from those of poll(), poll() can be readily emulated in terms
-	of select() -- which is how this function is implemented.
-
-  AUTHOR
-	Brian M. Clapper
-	bmc@WillsCreek.COM
-
-  REFERENCES
-	Stevens, W. Richard. Unix Network Programming.  Prentice-Hall, 1990.
-
-  This software is copyright (c) 1994-1997 by Brian M. Clapper
-  <bmc@WillsCreek.COM>.  See the LICENSE file accompanying the source
-  distribution for details.
-\*---------------------------------------------------------------------------*/
-
-
-/*---------------------------------------------------------------------------*\
-				 Includes
-\*---------------------------------------------------------------------------*/
-
-#include <unistd.h>			     /* standard Unix definitions */
-#include <sys/types.h>                       /* system types */
-#include <sys/time.h>                        /* time definitions */
-#include <assert.h>                          /* assertion macros */
-#include "poll.h"                            /* this package */
-
-/*---------------------------------------------------------------------------*\
-				  Macros
-\*---------------------------------------------------------------------------*/
-
-#define MAX(a,b)	((a) > (b) ? (a) : (b))
-
-
-/*---------------------------------------------------------------------------*\
-			     Private Functions
-\*---------------------------------------------------------------------------*/
-
-static int map_poll_spec
-#if __STDC__ > 0
-			 (struct pollfd *pArray,
-			  unsigned long  n_fds,
-			  fd_set        *pReadSet,
-			  fd_set        *pWriteSet,
-			  fd_set        *pExceptSet)
-#else
-			 (pArray, n_fds, pReadSet, pWriteSet, pExceptSet)
-			  struct pollfd *pArray;
-			  unsigned long  n_fds;
-			  fd_set        *pReadSet;
-			  fd_set        *pWriteSet;
-			  fd_set        *pExceptSet;
-#endif
-{
-    register unsigned long  i;                   /* loop control */
-    register struct	    pollfd *pCur;        /* current array element */
-    register int	    max_fd = 0;          /* return value */
-
-    /*
-       Map the poll() structures into the file descriptor sets required
-       by select().
-    */
-    for (i = 0, pCur = pArray; i < n_fds; i++, pCur++)
-    {
-	if (pCur->events & POLLIN)
-	{
-	    /* "Input Ready" notification desired. */
-	    FD_SET (pCur->fd, pReadSet);
-	}
-
-	if (pCur->events & POLLOUT)
-	{
-	    /* "Output Possible" notification desired. */
-	    FD_SET (pCur->fd, pWriteSet);
-	}
-
-	if (pCur->events & POLLPRI)
-	{
-	    /*
-	       "Exception Occurred" notification desired.  (Exceptions
-	       include out of band data.
-	    */
-	    FD_SET (pCur->fd, pExceptSet);
-	}
-
-	max_fd = MAX (max_fd, pCur->fd);
-    }
-
-    return max_fd;
-}
-
-static struct timeval *map_timeout
-#if __STDC__ > 0
-			(int poll_timeout, struct timeval *pSelTimeout)
-#else
-			(poll_timeout, pSelTimeout)
-			 int             poll_timeout;
-			 struct timeval *pSelTimeout;
-#endif
-{
-    struct timeval *pResult;
-
-    /*
-      The following logic maps the poll() timeout value into a select()
-      timeout.  The possible values of the poll() timeout value, and their
-      meanings, are:
-
-      VALUE	MEANING
-
-      -1	wait indefinitely (until signal occurs)
-       0	return immediately, don't block
-      >0	wait specified number of milliseconds
-
-       select() uses a "struct timeval", which specifies the timeout in
-       seconds and microseconds, so the milliseconds value has to be mapped
-       accordingly.
-    */
-    assert (pSelTimeout != (struct timeval *) NULL);
-    switch (poll_timeout)
-    {
-	case -1:
-	    /*
-	       A NULL timeout structure tells select() to wait indefinitely.
-	    */
-	    pResult = (struct timeval *) NULL;
-	    break;
-
-	case 0:
-	    /*
-	       "Return immediately" (test) is specified by all zeros in
-	       a timeval structure.
-	    */
-	    pSelTimeout->tv_sec  = 0;
-	    pSelTimeout->tv_usec = 0;
-	    pResult = pSelTimeout;
-	    break;
-
-	default:
-	    /* Wait the specified number of milliseconds. */
-	    pSelTimeout->tv_sec  = poll_timeout / 1000; /* get seconds */
-	    poll_timeout        %= 1000;                /* remove seconds */
-	    pSelTimeout->tv_usec = poll_timeout * 1000; /* get microseconds */
-	    pResult = pSelTimeout;
-	    break;
-    }
-
-
-    return pResult;
-}
-
-static void map_select_results
-#if __STDC__ > 0
-			 (struct pollfd *pArray,
-			  unsigned long  n_fds,
-			  fd_set        *pReadSet,
-			  fd_set        *pWriteSet,
-			  fd_set        *pExceptSet)
-#else
-			 (pArray, n_fds, pReadSet, pWriteSet, pExceptSet)
-			  struct pollfd *pArray;
-			  unsigned long  n_fds;
-			  fd_set        *pReadSet;
-			  fd_set        *pWriteSet;
-			  fd_set        *pExceptSet;
-#endif
-{
-    register unsigned long  i;                   /* loop control */
-    register struct	    pollfd *pCur;        /* current array element */
-
-    for (i = 0, pCur = pArray; i < n_fds; i++, pCur++)
-    {
-	/* Exception events take priority over input events. */
-
-	pCur->revents = 0;
-	if (FD_ISSET (pCur->fd, pExceptSet))
-	    pCur->revents |= POLLPRI;
-
-	else if (FD_ISSET (pCur->fd, pReadSet))
-	    pCur->revents |= POLLIN;
-
-	if (FD_ISSET (pCur->fd, pWriteSet))
-	    pCur->revents |= POLLOUT;
-    }
-
-    return;
-}
-
-/*---------------------------------------------------------------------------*\
-			     Public Functions
-\*---------------------------------------------------------------------------*/
-
-int poll
-
-#if __STDC__ > 0
-	(struct pollfd *pArray, unsigned long n_fds, int timeout)
-#else
-	(pArray, n_fds, timeout)
-	 struct	       pollfd *pArray;
-	 unsigned long n_fds;
-	 int	       timeout;
-#endif
-
-{
-    fd_set  read_descs;                          /* input file descs */
-    fd_set  write_descs;                         /* output file descs */
-    fd_set  except_descs;                        /* exception descs */
-    struct  timeval stime;                       /* select() timeout value */
-    int	    ready_descriptors;                   /* function result */
-    int	    max_fd;                              /* maximum fd value */
-    struct  timeval *pTimeout;                   /* actually passed */
-
-    FD_ZERO (&read_descs);
-    FD_ZERO (&write_descs);
-    FD_ZERO (&except_descs);
-
-    assert (pArray != (struct pollfd *) NULL);
-
-    /* Map the poll() file descriptor list in the select() data structures. */
-
-    max_fd = map_poll_spec (pArray, n_fds,
-			    &read_descs, &write_descs, &except_descs);
-
-    /* Map the poll() timeout value in the select() timeout structure. */
-
-    pTimeout = map_timeout (timeout, &stime);
-
-    /* Make the select() call. */
-
-    ready_descriptors = select (max_fd + 1, &read_descs, &write_descs,
-				&except_descs, pTimeout);
-
-    if (ready_descriptors >= 0)
-    {
-	map_select_results (pArray, n_fds,
-			    &read_descs, &write_descs, &except_descs);
-    }
-
-    return ready_descriptors;
-}
-
-#endif
-
 // Library functions from libts
 
 const char * SPACES = "                                                                               ";
 int ink_code_md5(unsigned char *input, int input_length,
-		 unsigned char *sixteen_byte_hash_pointer);
+                 unsigned char *sixteen_byte_hash_pointer);
 
 class           ParseRules
 {
-	public:
-	ParseRules();
-	enum {
-		CHAR_SP = 32,
-		CHAR_HT = 9,
-		CHAR_LF = 10,
-		CHAR_VT = 11,
-		CHAR_NP = 12,
-		CHAR_CR = 13
-	};
-	static int      is_char(char c);
-	static int      is_upalpha(char c);
-	static int      is_loalpha(char c);
-	static int      is_alpha(char c);
-	static int      is_digit(char c);
-	static int      is_ctl(char c);
-	static int      is_hex(char c);
-	static int      is_ws(char c);
-	static int      is_cr(char c);
-	static int      is_lf(char c);
-	static int      is_spcr(char c);
-	static int      is_splf(char c);
-	static int      is_wslfcr(char c);
-	static int      is_tspecials(char c);
-	static int      is_token(char c);
-	static int      is_extra(char c);
-	static int      is_safe(char c);
-	static int      is_unsafe(char c);
-	static int      is_national(char c);
-	static int      is_reserved(char c);
-	static int      is_unreserved(char c);
-	static int      is_punct(char c);
-	static int      is_end_of_url(char c);
-	static int      is_eow(char c);
-	static int      is_wildmat(char c);
-	static int      is_sep(char c);
-	static int      is_empty(char c);
-	static int      is_alnum(char c);
-	static int      is_space(char c);
-	static int      is_control(char c);
-	static int      is_mime_sep(char c);
-	static int      is_http_field_name(char c);
-	static int      is_http_field_value(char c);
-	static int      is_escape(const char *seq);
-	static int      is_uchar(const char *seq);
-	static int      is_pchar(const char *seq);
-	static int      strncasecmp_eow(const char *s1, const char *s2, int n);
-	static const char *strcasestr(const char *s1, const char *s2);
-	static int      strlen_eow(const char *s);
-	static const char *strstr_eow(const char *s1, const char *s2);
-	static char     ink_toupper(char c);
-	static char     ink_tolower(char c);
-	static const char *memchr(const char *s, char c, int max_length);
-	static const char *strchr(const char *s, char c);
-	                private:
-	                ParseRules(const ParseRules &);
-	                ParseRules & operator = (const ParseRules &);
+        public:
+        ParseRules();
+        enum {
+                CHAR_SP = 32,
+                CHAR_HT = 9,
+                CHAR_LF = 10,
+                CHAR_VT = 11,
+                CHAR_NP = 12,
+                CHAR_CR = 13
+        };
+        static int      is_char(char c);
+        static int      is_upalpha(char c);
+        static int      is_loalpha(char c);
+        static int      is_alpha(char c);
+        static int      is_digit(char c);
+        static int      is_ctl(char c);
+        static int      is_hex(char c);
+        static int      is_ws(char c);
+        static int      is_cr(char c);
+        static int      is_lf(char c);
+        static int      is_spcr(char c);
+        static int      is_splf(char c);
+        static int      is_wslfcr(char c);
+        static int      is_tspecials(char c);
+        static int      is_token(char c);
+        static int      is_extra(char c);
+        static int      is_safe(char c);
+        static int      is_unsafe(char c);
+        static int      is_national(char c);
+        static int      is_reserved(char c);
+        static int      is_unreserved(char c);
+        static int      is_punct(char c);
+        static int      is_end_of_url(char c);
+        static int      is_eow(char c);
+        static int      is_wildmat(char c);
+        static int      is_sep(char c);
+        static int      is_empty(char c);
+        static int      is_alnum(char c);
+        static int      is_space(char c);
+        static int      is_control(char c);
+        static int      is_mime_sep(char c);
+        static int      is_http_field_name(char c);
+        static int      is_http_field_value(char c);
+        static int      is_escape(const char *seq);
+        static int      is_uchar(const char *seq);
+        static int      is_pchar(const char *seq);
+        static int      strncasecmp_eow(const char *s1, const char *s2, int n);
+        static const char *strcasestr(const char *s1, const char *s2);
+        static int      strlen_eow(const char *s);
+        static const char *strstr_eow(const char *s1, const char *s2);
+        static char     ink_toupper(char c);
+        static char     ink_tolower(char c);
+        static const char *memchr(const char *s, char c, int max_length);
+        static const char *strchr(const char *s, char c);
+                        private:
+                        ParseRules(const ParseRules &);
+                        ParseRules & operator = (const ParseRules &);
 };
 
 extern const unsigned int parseRulesCType[];
@@ -1009,7 +697,7 @@ inline const char *ParseRules::strstr_eow(const char *s1, const char *s2) {
   for (i1 = 0; !is_eow(s1[i1]); i1++)
     if (ink_tolower(s1[i1]) == ink_tolower(s2[0]))
       if (strncasecmp_eow(&s1[i1], &s2[0], s2_len))
-	return (&s1[i1]);
+        return (&s1[i1]);
   return (0);
 }
 inline const char *ParseRules::
@@ -1019,7 +707,7 @@ strcasestr(const char *s1, const char *s2) {
   for (i1 = 0; s1[i1] != '\0'; i1++)
     if (ink_tolower(s1[i1]) == ink_tolower(s2[0]))
       if (strncasecmp_eow(&s1[i1], &s2[0], s2_len))
-	return (&s1[i1]);
+        return (&s1[i1]);
   return (0);
 }
 inline const char *ParseRules::memchr(const char *s, char c, int max_length) {
@@ -1087,9 +775,9 @@ ink_atoll(const char *str) {
 #define HRTIME_MSECOND  (1000*HRTIME_USECOND)
 #define HRTIME_USECOND  (1000*HRTIME_NSECOND)
 #if !defined (_WIN32)
-#define HRTIME_NSECOND	(1LL)
+#define HRTIME_NSECOND  (1LL)
 #else
-#define HRTIME_NSECOND	(1i64)
+#define HRTIME_NSECOND  (1i64)
 #endif
 
 #define MAX_FILE_ARGUMENTS 100
@@ -1111,15 +799,15 @@ static char * argument_types_descriptions[] = {
 };
 
 void show_argument_configuration(ArgumentDescription * argument_descriptions,
-				 int n_argument_descriptions);
+                                 int n_argument_descriptions);
 
 void usage(ArgumentDescription * argument_descriptions,
-	   int n_argument_descriptions,
-	   char * arg_unused);
+           int n_argument_descriptions,
+           char * arg_unused);
 
 void process_args(ArgumentDescription * argument_descriptions,
-		  int n_argument_descriptions,
-		  char **argv);
+                  int n_argument_descriptions,
+                  char **argv);
 
 #ifdef RELEASE
 #define ink_assert(EX) (void)(EX)
@@ -1205,10 +893,10 @@ static void ink_web_decompose_url(
   int *real_relative_url, int *real_leading_slash);
 
 static void ink_web_canonicalize_url(char *base_url, char *emb_url, 
-				     char *dest_url, int max_dest_url_len);
+                                     char *dest_url, int max_dest_url_len);
 
 static void ink_web_decompose_url_into_structure(char *url, 
-						 InkWebURLComponents *c);
+                                                 InkWebURLComponents *c);
 
 static void remove_last_seg(char *src, char *dest)
 { 
@@ -1226,18 +914,18 @@ static inline void remove_multiple_slash(char *src, char *dest)
   for (ptr = src; *ptr;) {
       *(dest++) = *ptr;
       if (*ptr == '/')  {
-	while ((*ptr== '/') && *ptr) {
-	  ptr++;
-	}
+        while ((*ptr== '/') && *ptr) {
+          ptr++;
+        }
       } else {
-	ptr++;
+        ptr++;
       }
     }
   *dest = '\0';
 }
 
 static inline void append_string(char *dest, char *src, int *offset_ptr, 
-				 int max_len)
+                                 int max_len)
 {
   int num = strlen(src);
   if (*offset_ptr + num > max_len)
@@ -1257,14 +945,14 @@ void show_version() {
 }
 
 void jtest_usage(ArgumentDescription * argument_descriptions, 
-		 int n_argument_descriptions, char * arg) 
+                 int n_argument_descriptions, char * arg) 
 {
   show_version();
   usage(argument_descriptions, n_argument_descriptions, arg);
 }
 
 static void panic(char * s) {
-  fprintf(stderr, s);
+  fputs(s, stderr);
   exit(1);
 }
 
@@ -1282,14 +970,19 @@ int max_limit_fd() {
 
   struct rlimit rl;
   if (getrlimit(RLIMIT_NOFILE,&rl) >= 0) {
+#ifdef OPEN_MAX
+    // Darwin
+    rl.rlim_cur = min(OPEN_MAX, rl.rlim_max);
+#else
     rl.rlim_cur = rl.rlim_max;
+#endif
     if (setrlimit(RLIMIT_NOFILE,&rl) >= 0) {
       if (getrlimit(RLIMIT_NOFILE,&rl) >= 0) {
-	return rl.rlim_cur;
+        return rl.rlim_cur;
       }
     }
   }
-  panic("couldn't set RLIMIT_NOFILE\n");
+  panic_perror("couldn't set RLIMIT_NOFILE\n");
   return -1;
 }
 
@@ -1387,11 +1080,11 @@ static int send_response (int sock) {
     case 2: content_type = "image/jpeg"; break;
     default:
       content_type = 
-	(char*)((compd_suite || alternates) ? "image/jpeg" : "text/html");
+        (char*)((compd_suite || alternates) ? "image/jpeg" : "text/html");
       if (only_server && strstr(fd[sock].req_header, "Cookie:"))
-	content_type = "image/jpeg";
+        content_type = "image/jpeg";
     }
-    if (!ftp && embed_url) {
+    if (!ftp && embed_url && fd[sock].response_length > 16) {
       get_path_from_req(fd[sock].req_header, &url_start, &url_end);
       *url_end = 0;
       url_len = url_end - url_start;
@@ -1399,34 +1092,35 @@ static int send_response (int sock) {
     int print_len = 0;
     if (!ftp) {
       if (fd[sock].ims) {
-	print_len = sprintf(
-	  header,"HTTP/1.0 304 Not-Modified\r\n"
-	  "Content-Type: %s\r\n"
-	  "Last-Modified: Mon, 05 Oct 1998 01:00:00 GMT\r\n"
-	  "%s"
-	  "\r\n",
-	  content_type,
-	  fd[sock].keepalive>0?"Connection: Keep-Alive\r\n":"");
-	url_len = 0;
+        print_len = sprintf(
+          header,"HTTP/1.0 304 Not-Modified\r\n"
+          "Content-Type: %s\r\n"
+          "Last-Modified: Mon, 05 Oct 2010 01:00:00 GMT\r\n"
+          "%s"
+          "\r\n",
+          content_type,
+          fd[sock].keepalive>0?"Connection: Keep-Alive\r\n":"");
+        url_len = 0;
       } else
-	print_len = sprintf(
-	  header,"HTTP/1.0 200 OK\r\n"
-	  "Content-Type: %s\r\n"
-	  "Last-Modified: Mon, 05 Oct 1998 01:00:00 GMT\r\n"
-	  "%s"
-	  "Content-Length: %d\r\n"
-	  "%s"
-	  "\r\n%s",
-	  content_type,
-	  fd[sock].keepalive>0?"Connection: Keep-Alive\r\n":"",
-	  fd[sock].response_length,
-	  no_cache?"Pragma: no-cache\r\nCache-Control: no-cache\r\n":"",
-	  url_start ? url_start : "");
+        print_len = sprintf(
+          header,"HTTP/1.0 200 OK\r\n"
+          "Content-Type: %s\r\n"
+          "Cache-Control: max-age=630720000\r\n"
+          "Last-Modified: Mon, 05 Oct 2010 01:00:00 GMT\r\n"
+          "%s"
+          "Content-Length: %d\r\n"
+          "%s"
+          "\r\n%s",
+          content_type,
+          fd[sock].keepalive>0?"Connection: Keep-Alive\r\n":"",
+          fd[sock].response_length,
+          no_cache?"Pragma: no-cache\r\nCache-Control: no-cache\r\n":"",
+          url_start ? url_start : "");
     } else
       url_len = print_len = 
-	sprintf(header, "ftp://%s:%d/%12.10f/%d", 
-		local_host, server_port,
-		fd[sock].doc, fd[sock].length);
+        sprintf(header, "ftp://%s:%d/%12.10f/%d", 
+                local_host, server_port,
+                fd[sock].doc, fd[sock].length);
     if (show_headers) printf("Response to Proxy: {\n%s}\n", header);
     int len = print_len - fd[sock].req_pos;
     ink_assert(len>0);
@@ -1502,9 +1196,9 @@ char * strncasestr (char *s, char * find, int len) {
     char * x = (char*)memchr(s,*find,e - s);
     if (!x) { 
       if (ParseRules::is_upalpha(*find))
-	x = (char*)memchr(s,ParseRules::ink_tolower(*find),e - s);
+        x = (char*)memchr(s,ParseRules::ink_tolower(*find),e - s);
       else
-	x = (char*)memchr(s,ParseRules::ink_toupper(*find),e - s);
+        x = (char*)memchr(s,ParseRules::ink_toupper(*find),e - s);
       if (!x) break;
     }
     if (!strncasecmp(find, x, findlen)) return x;
@@ -1537,13 +1231,13 @@ static int check_alt(char * r, int length) {
     char * e = (char*)memchr(s, '\n', l);
     if (!e) e = (char*)memchr(s, '\r', l);
     if (!(s = strncasestr(s, "jtest", e - s))) 
-      return NULL;
+      return 0;
     s = (char*)memchr(s, '-', l);
     if (!s)
-      return NULL;
+      return 0;
     s = (char*)memchr(s + 1, '-', l);
     if (!s)
-      return NULL;
+      return 0;
     return ink_atoi(s + 1);
   }
   return 0;
@@ -1594,7 +1288,7 @@ static int read_request(int sock) {
 
   do {
     err = read (sock, &fd[sock].req_header[fd[sock].req_pos], 
-		maxleft);
+                maxleft);
   } while ((err < 0) && (errno == EINTR));
   
   if (err < 0) {
@@ -1613,79 +1307,79 @@ static int read_request(int sock) {
     fd[sock].req_header[fd[sock].req_pos] = 0;
     char *buffer = fd[sock].req_header;
     for (i = fd[sock].req_pos - err; 
-	 i < fd[sock].req_pos; i++) 
+         i < fd[sock].req_pos; i++) 
     {
       switch (fd[sock].state) {
-	case 0:
-	  if (buffer[i] == '\r')
-	    fd[sock].state = 1;
-	  else if (buffer[i] == '\n')
-	    fd[sock].state = 2;
-	  break;
-	case 1:
-	  if (buffer[i] == '\n')
-	    fd[sock].state = 2;
-	  else
-	    fd[sock].state = 0;
-	  break;
-	case 2:
-	  if (buffer[i] == '\r')
-	    fd[sock].state = 3;
-	  else if (buffer[i] == '\n') {
-	    fd[sock].state = 3;
-	    goto L3;
-	  } else
-	    fd[sock].state = 0;
-	  break;
+        case 0:
+          if (buffer[i] == '\r')
+            fd[sock].state = 1;
+          else if (buffer[i] == '\n')
+            fd[sock].state = 2;
+          break;
+        case 1:
+          if (buffer[i] == '\n')
+            fd[sock].state = 2;
+          else
+            fd[sock].state = 0;
+          break;
+        case 2:
+          if (buffer[i] == '\r')
+            fd[sock].state = 3;
+          else if (buffer[i] == '\n') {
+            fd[sock].state = 3;
+            goto L3;
+          } else
+            fd[sock].state = 0;
+          break;
       L3:
-	case 3:
-	  if (buffer[i] == '\n') {
-	    if (show_headers)
-	      printf("Request from Proxy: {\n%s}\n",buffer);
-	    char host[80];
-	    int port, length;
-	    float r;
-	    if (sscanf(buffer,"GET http://%[^:]:%d/%f/%d",
-		       host,&port,&r,&length) == 4) {
-	    } else if (sscanf(buffer,"GET /%f/%d",&r,&length) == 2) {
-	    } else {
-	      if (verbose) printf("misscan: %s\n",buffer);
-	      fd[sock].close();
-	      return 0;
-	    }
-	    if (verbose) 
-	      printf("read_request %d got request %d\n", sock, length);
-	    char * ims = strncasestr(buffer,"If-Modified-Since:", i);
-	    if (drand48() > ims_rate) ims = NULL;
-	    fd[sock].ims = ims?1:0;
-	    if (!ims) {
-	      fd[sock].response_length = fd[sock].length = length;
-	      fd[sock].nalternate = check_alt(fd[sock].req_header, 
-					      strlen(fd[sock].req_header));
-	      fd[sock].response = response_buffer + length % 256 +
-		fd[sock].nalternate;
-	    } else {
-	      fd[sock].nalternate = 0;
-	      if (verbose)
-		printf("sending IMS 304: Not-Modified\n");
-	      fd[sock].response = NULL;
-	      fd[sock].response_length = fd[sock].length = 0;
-	    }
-	    fd[sock].req_pos = 0;
-	    if (!check_keepalive(fd[sock].req_header, 
-				 strlen(fd[sock].req_header)))
-	      fd[sock].keepalive = 0;
-	    else 
-	      fd[sock].keepalive--;
-	    if (fd[sock].length && drand48() < server_abort_rate) {
-	      fd[sock].length = (int)(drand48() * (fd[sock].length -1));
-	      fd[sock].keepalive = 0;
-	    }
-	    poll_set(sock,NULL,send_response);
-	    return 0;
-	  } else
-	    fd[sock].state = 0;
-	  break;
+        case 3:
+          if (buffer[i] == '\n') {
+            if (show_headers)
+              printf("Request from Proxy: {\n%s}\n",buffer);
+            char host[80];
+            int port, length;
+            float r;
+            if (sscanf(buffer,"GET http://%[^:]:%d/%f/%d",
+                       host,&port,&r,&length) == 4) {
+            } else if (sscanf(buffer,"GET /%f/%d",&r,&length) == 2) {
+            } else {
+              if (verbose) printf("misscan: %s\n",buffer);
+              fd[sock].close();
+              return 0;
+            }
+            if (verbose) 
+              printf("read_request %d got request %d\n", sock, length);
+            char * ims = strncasestr(buffer,"If-Modified-Since:", i);
+            if (drand48() > ims_rate) ims = NULL;
+            fd[sock].ims = ims?1:0;
+            if (!ims) {
+              fd[sock].response_length = fd[sock].length = length;
+              fd[sock].nalternate = check_alt(fd[sock].req_header, 
+                                              strlen(fd[sock].req_header));
+              fd[sock].response = response_buffer + length % 256 +
+                fd[sock].nalternate;
+            } else {
+              fd[sock].nalternate = 0;
+              if (verbose)
+                printf("sending IMS 304: Not-Modified\n");
+              fd[sock].response = NULL;
+              fd[sock].response_length = fd[sock].length = 0;
+            }
+            fd[sock].req_pos = 0;
+            if (!check_keepalive(fd[sock].req_header, 
+                                 strlen(fd[sock].req_header)))
+              fd[sock].keepalive = 0;
+            else 
+              fd[sock].keepalive--;
+            if (fd[sock].length && drand48() < server_abort_rate) {
+              fd[sock].length = (int)(drand48() * (fd[sock].length -1));
+              fd[sock].keepalive = 0;
+            }
+            poll_set(sock,NULL,send_response);
+            return 0;
+          } else
+            fd[sock].state = 0;
+          break;
       }
     }
   }
@@ -1704,12 +1398,12 @@ static int send_compd_response(int sock) {
     compd_header.len = htonl((fd[sock].length * 2) / 3);
     do {
       err = write(sock, (char*)&compd_header + fd[sock].req_pos, 
-		  sizeof(compd_header) - fd[sock].req_pos);
+                  sizeof(compd_header) - fd[sock].req_pos);
     } while ((err == -1) && (errno == EINTR));
     if (err <= 0) {
       if (!err) {
-	if (verbose_errors) printf("write %d closed early\n", sock);
-	goto Lerror;
+        if (verbose_errors) printf("write %d closed early\n", sock);
+        goto Lerror;
       }
       if (errno == EAGAIN || errno == ENOTCONN) return 0;
       perror("write");
@@ -1765,7 +1459,7 @@ static int read_compd_request(int sock) {
     int maxleft = HEADER_SIZE - fd[sock].req_pos - 1;
     do {
       err = read (sock, &fd[sock].req_header[fd[sock].req_pos], 
-		  maxleft);
+                  maxleft);
     } while ((err < 0) && (errno == EINTR));
   
     if (err < 0) {
@@ -1781,7 +1475,7 @@ static int read_compd_request(int sock) {
       new_tbytes += err;
       fd[sock].req_pos += err;
       if (fd[sock].req_pos < 4)
-	return 0;
+        return 0;
       fd[sock].length = ntohl(*(unsigned int*)fd[sock].req_header);
     }
   }
@@ -1799,16 +1493,16 @@ static int read_compd_request(int sock) {
     if (err < 0) {
       if (errno == EAGAIN || errno == ENOTCONN) return 0;
       if (errno == ECONNRESET) {
-	if (verbose || verbose_errors)
-	  perror ("read");
-	errors++;
-	return -1;
+        if (verbose || verbose_errors)
+          perror ("read");
+        errors++;
+        return -1;
       }
       panic_perror("read");
     }
     if (!err) {
       if (verbose || verbose_errors)
-	perror ("read");
+        perror ("read");
       errors++;
       return -1;
     }
@@ -1838,7 +1532,7 @@ static int read_ftp_request(int sock) {
 
   do {
     err = read (sock, &fd[sock].req_header[fd[sock].req_pos], 
-		maxleft);
+                maxleft);
   } while ((err < 0) && (errno == EINTR));
   
   if (err < 0) {
@@ -1859,143 +1553,143 @@ static int read_ftp_request(int sock) {
     if (verbose) printf("buffer [%s]\n", buffer);
 #define STREQ(_x,_s) (!strncasecmp(_x,_s,sizeof(_s)-1))
     if (STREQ(buffer,"USER")) {
-	res = 331; goto Lhere;
+        res = 331; goto Lhere;
     } else if (STREQ(buffer,"PASS")) {
-	res = 230; goto Lhere;
+        res = 230; goto Lhere;
     } else if (STREQ(buffer,"CWD")) {
       // TS used to send "CWD 1.2110000000..."
       // TS now sends "CWD /1.2110000000^M\n", so skip 5 instead of 4
       fd[sock].doc = (buffer[4]=='/') ? atof(buffer + 5) : atof(buffer + 4);
       res = 250; goto Lhere;
     } else if (STREQ(buffer,"TYPE")) {
-	res = 200;
+        res = 200;
     Lhere:
-	n = (char*)memchr(buffer,'\n',fd[sock].req_pos);
-	if (!n) return 0;
-	make_response(sock,res);
-	return 0;
+        n = (char*)memchr(buffer,'\n',fd[sock].req_pos);
+        if (!n) return 0;
+        make_response(sock,res);
+        return 0;
     } else if (STREQ(buffer,"SIZE")) {
-	fd[sock].length = 
-	  sprintf(fd[sock].req_header, "213 %d\r\n", atoi(buffer + 5));
-	make_long_response(sock);
-	return 0;
+        fd[sock].length = 
+          sprintf(fd[sock].req_header, "213 %d\r\n", atoi(buffer + 5));
+        make_long_response(sock);
+        return 0;
     } else if (STREQ(buffer,"MDTM")) {
       double err_rand = 1.0;
       if (ftp_mdtm_err_rate != 0.0) err_rand = drand48();
       if (err_rand < ftp_mdtm_err_rate) {
-	fd[sock].length =
-	  sprintf (fd[sock].req_header, "550 mdtm file not found\r\n");
+        fd[sock].length =
+          sprintf (fd[sock].req_header, "550 mdtm file not found\r\n");
       } else {
-	if (ftp_mdtm_rate == 0) {
-	  fd[sock].length =
-	    sprintf (fd[sock].req_header, "213 19900615100045\r\n");
-	} else {
-	  time_t mdtm_now;
-	  time(&mdtm_now);
-	  if (mdtm_now-ftp_mdtm_last_update > ftp_mdtm_rate) {
-	    struct tm *mdtm_tm;
-	    ftp_mdtm_last_update = mdtm_now;
-	    mdtm_tm = localtime(&ftp_mdtm_last_update);
-	    sprintf(ftp_mdtm_str, "213 %.4d%.2d%.2d%.2d%.2d%.2d",
-		    mdtm_tm->tm_year + 1900,
-		    mdtm_tm->tm_mon + 1,
-		    mdtm_tm->tm_mday,
-		    mdtm_tm->tm_hour,
-		    mdtm_tm->tm_min,
-		    mdtm_tm->tm_sec);
-	  }
-	  fd[sock].length =
-	    sprintf (fd[sock].req_header, "%s\r\n", ftp_mdtm_str);
-	}
+        if (ftp_mdtm_rate == 0) {
+          fd[sock].length =
+            sprintf (fd[sock].req_header, "213 19900615100045\r\n");
+        } else {
+          time_t mdtm_now;
+          time(&mdtm_now);
+          if (mdtm_now-ftp_mdtm_last_update > ftp_mdtm_rate) {
+            struct tm *mdtm_tm;
+            ftp_mdtm_last_update = mdtm_now;
+            mdtm_tm = localtime(&ftp_mdtm_last_update);
+            sprintf(ftp_mdtm_str, "213 %.4d%.2d%.2d%.2d%.2d%.2d",
+                    mdtm_tm->tm_year + 1900,
+                    mdtm_tm->tm_mon + 1,
+                    mdtm_tm->tm_mday,
+                    mdtm_tm->tm_hour,
+                    mdtm_tm->tm_min,
+                    mdtm_tm->tm_sec);
+          }
+          fd[sock].length =
+            sprintf (fd[sock].req_header, "%s\r\n", ftp_mdtm_str);
+        }
       }
       make_long_response(sock);
       return 0;
     } else if (STREQ(buffer,"PASV")) {
-	n = (char*)memchr(buffer,'\n',fd[sock].req_pos);
-	if (!n) return 0;
-	if ((fd[sock].ftp_data_fd = open_server(0, accept_ftp_data)) < 0)
-	  panic("could not open ftp data PASV accept port\n");
-	fd[fd[sock].ftp_data_fd].ftp_data_fd = sock;
-	if (verbose) printf("ftp PASV %d <-> %d\n", sock,fd[sock].ftp_data_fd);
+        n = (char*)memchr(buffer,'\n',fd[sock].req_pos);
+        if (!n) return 0;
+        if ((fd[sock].ftp_data_fd = open_server(0, accept_ftp_data)) < 0)
+          panic("could not open ftp data PASV accept port\n");
+        fd[fd[sock].ftp_data_fd].ftp_data_fd = sock;
+        if (verbose) printf("ftp PASV %d <-> %d\n", sock,fd[sock].ftp_data_fd);
         unsigned short p = fd[fd[sock].ftp_data_fd].name.sin_port;
-	fd[sock].length = 
-	  sprintf(fd[sock].req_header, "227 (%u,%u,%u,%u,%u,%u)\r\n",
-		  ((unsigned char*)&local_addr)[0],
-		  ((unsigned char*)&local_addr)[1],
-		  ((unsigned char*)&local_addr)[2],
-		  ((unsigned char*)&local_addr)[3],
-		  ((unsigned char*)&p)[0],
-		  ((unsigned char*)&p)[1]);
-	if (verbose) printf(fd[sock].req_header);
-	make_long_response(sock);
-	fd[sock].ftp_mode = FTP_PASV;
-	return 0;
+        fd[sock].length = 
+          sprintf(fd[sock].req_header, "227 (%u,%u,%u,%u,%u,%u)\r\n",
+                  ((unsigned char*)&local_addr)[0],
+                  ((unsigned char*)&local_addr)[1],
+                  ((unsigned char*)&local_addr)[2],
+                  ((unsigned char*)&local_addr)[3],
+                  ((unsigned char*)&p)[0],
+                  ((unsigned char*)&p)[1]);
+        if (verbose) puts(fd[sock].req_header);
+        make_long_response(sock);
+        fd[sock].ftp_mode = FTP_PASV;
+        return 0;
     } else if (STREQ(buffer,"PORT")) {
         // watch out for an endian problems !!!
-	char *start, *stop;
-	for (start = buffer; !ParseRules::is_digit(*start); start++);
-	for (stop = start; *stop != ','; stop++);
-	for (i = 0; i < 4; i++) {
-	  ((unsigned char*)&(fd[sock].ftp_peer_addr))[i] =
-	    strtol(start, &stop, 10);
-	  for (start = ++stop; *stop != ','; stop++);
-	}
-	((unsigned char*)&(fd[sock].ftp_peer_port))[0] =
-	  strtol(start, &stop, 10);
-	start = ++stop;
-	((unsigned char*)&(fd[sock].ftp_peer_port))[1] =
-	  strtol(start, NULL, 10);
-	fd[sock].length = 
-	  sprintf(fd[sock].req_header, "200 Okay\r\n");
-	if (verbose) printf(fd[sock].req_header);
-	make_long_response(sock);
-	fd[sock].ftp_mode = FTP_PORT;
-	return 0;
+        char *start, *stop;
+        for (start = buffer; !ParseRules::is_digit(*start); start++);
+        for (stop = start; *stop != ','; stop++);
+        for (i = 0; i < 4; i++) {
+          ((unsigned char*)&(fd[sock].ftp_peer_addr))[i] =
+            strtol(start, &stop, 10);
+          for (start = ++stop; *stop != ','; stop++);
+        }
+        ((unsigned char*)&(fd[sock].ftp_peer_port))[0] =
+          strtol(start, &stop, 10);
+        start = ++stop;
+        ((unsigned char*)&(fd[sock].ftp_peer_port))[1] =
+          strtol(start, NULL, 10);
+        fd[sock].length = 
+          sprintf(fd[sock].req_header, "200 Okay\r\n");
+        if (verbose) puts(fd[sock].req_header);
+        make_long_response(sock);
+        fd[sock].ftp_mode = FTP_PORT;
+        return 0;
     } else if (STREQ(buffer,"RETR")) {
-      	if (fd[sock].ftp_mode == FTP_NULL) {
-	  // default to PORT ftp
-	  struct sockaddr_in ftp_peer;
-	  int ftp_peer_addr_len = sizeof(ftp_peer);
-	  if (getpeername(sock, (struct sockaddr*)&ftp_peer,
+        if (fd[sock].ftp_mode == FTP_NULL) {
+          // default to PORT ftp
+          struct sockaddr_in ftp_peer;
+          int ftp_peer_addr_len = sizeof(ftp_peer);
+          if (getpeername(sock, (struct sockaddr*)&ftp_peer,
 #if 0
-			  &ftp_peer_addr_len
+                          &ftp_peer_addr_len
 #else
-			  (socklen_t*)ftp_peer_addr_len
+                          (socklen_t*)&ftp_peer_addr_len
 #endif
-	    ) < 0) {
-	    perror("getsockname");
-	    exit(EXIT_FAILURE);
-	  }
-	  fd[sock].ftp_peer_addr = ftp_peer.sin_addr.s_addr;
-	  fd[sock].ftp_peer_port = ftp_peer.sin_port;
-	  fd[sock].ftp_mode = FTP_PORT;
-	}
-	if (fd[sock].ftp_mode == FTP_PORT) {
-	  if ((fd[sock].ftp_data_fd =
-	       make_client(fd[sock].ftp_peer_addr,fd[sock].ftp_peer_port)) < 0)
-	    panic("could not open ftp PORT data connection to client\n");
-	  fd[fd[sock].ftp_data_fd].ftp_data_fd = sock;
-	  fd[fd[sock].ftp_data_fd].state = STATE_FTP_DATA_READY;
-	  if (verbose)
-	    printf("ftp PORT %d <-> %d\n", sock, fd[sock].ftp_data_fd);
-	}
-	n = (char*)memchr(buffer,'\n',fd[sock].req_pos);
-	if (!n) return 0;
-	if (send_ftp_data(sock, buffer+5, n)<0) {
-	  errors++;
-	  *n = 0;
-	  if (verbose)
-	    printf("badly formed ftp request: %s\n", buffer);
-	  return 1;
-	}
-	fd[sock].response = fd[sock].req_header;
-	fd[sock].length = sprintf( fd[sock].req_header, "150 %d bytes\r\n", 
-				   fd[fd[sock].ftp_data_fd].length);
-	fd[sock].req_pos = 0;
-	fd[sock].response_length = strlen(fd[sock].req_header);
-	poll_set(sock, NULL, write_ftp_response);
-	buffer = n+1;
-	return 0;
+            ) < 0) {
+            perror("getsockname");
+            exit(EXIT_FAILURE);
+          }
+          fd[sock].ftp_peer_addr = ftp_peer.sin_addr.s_addr;
+          fd[sock].ftp_peer_port = ftp_peer.sin_port;
+          fd[sock].ftp_mode = FTP_PORT;
+        }
+        if (fd[sock].ftp_mode == FTP_PORT) {
+          if ((fd[sock].ftp_data_fd =
+               make_client(fd[sock].ftp_peer_addr,fd[sock].ftp_peer_port)) < 0)
+            panic("could not open ftp PORT data connection to client\n");
+          fd[fd[sock].ftp_data_fd].ftp_data_fd = sock;
+          fd[fd[sock].ftp_data_fd].state = STATE_FTP_DATA_READY;
+          if (verbose)
+            printf("ftp PORT %d <-> %d\n", sock, fd[sock].ftp_data_fd);
+        }
+        n = (char*)memchr(buffer,'\n',fd[sock].req_pos);
+        if (!n) return 0;
+        if (send_ftp_data(sock, buffer+5, n)<0) {
+          errors++;
+          *n = 0;
+          if (verbose)
+            printf("badly formed ftp request: %s\n", buffer);
+          return 1;
+        }
+        fd[sock].response = fd[sock].req_header;
+        fd[sock].length = sprintf( fd[sock].req_header, "150 %d bytes\r\n", 
+                                   fd[fd[sock].ftp_data_fd].length);
+        fd[sock].req_pos = 0;
+        fd[sock].response_length = strlen(fd[sock].req_header);
+        poll_set(sock, NULL, write_ftp_response);
+        buffer = n+1;
+        return 0;
     } else {
       if (verbose || verbose_errors) printf("ftp junk : %s\n", buffer);
       fd[sock].req_pos = 0;
@@ -2011,9 +1705,9 @@ static int accept_sock(int sock) {
   do {
     new_fd = accept(sock, (struct sockaddr *) &clientname,
 #if 0
-		    &size
+                    &size
 #else
-		    (socklen_t*)&size
+                    (socklen_t*)&size
 #endif
       );
     if (new_fd < 0) {
@@ -2028,21 +1722,21 @@ static int accept_sock(int sock) {
     panic_perror("fcntl");
 
 #if 0
-#ifdef BUFSIZE				//  make default
+#ifdef BUFSIZE                          //  make default
   int bufsize = BUFSIZE;
   if (setsockopt(new_fd,SOL_SOCKET,SO_SNDBUF,
-		 (const char *)&bufsize,sizeof(bufsize)) < 0) {
+                 (const char *)&bufsize,sizeof(bufsize)) < 0) {
     perror("setsockopt");
   }
   if (setsockopt(new_fd,SOL_SOCKET,SO_SNDBUF,
-		 (const char *)&bufsize,sizeof(bufsize)) < 0) {
+                 (const char *)&bufsize,sizeof(bufsize)) < 0) {
     perror("setsockopt");
   }
 #endif
 #endif
   int enable =1;
   if (setsockopt(new_fd,IPPROTO_TCP,TCP_NODELAY,
-		 (const char *)&enable,sizeof(enable)) < 0) {
+                 (const char *)&enable,sizeof(enable)) < 0) {
     perror("setsockopt");
   }
 #ifdef PRINT_LOCAL_PORT
@@ -2124,7 +1818,7 @@ static int open_server(unsigned short int port, accept_fn_t accept_fn) {
   name.sin_port = htons (port);
   name.sin_addr.s_addr = htonl (INADDR_ANY);
   if (setsockopt (sock, SOL_SOCKET, SO_REUSEADDR, (char *) &one,
-		  sizeof (one)) < 0) {
+                  sizeof (one)) < 0) {
     perror((char*)"setsockopt");
     exit( EXIT_FAILURE);
   }
@@ -2138,9 +1832,9 @@ static int open_server(unsigned short int port, accept_fn_t accept_fn) {
   int addrlen = sizeof(name);
   if ((err = getsockname(sock, (struct sockaddr *) &name, 
 #if 0
-			 &addrlen
+                         &addrlen
 #else
-			 (socklen_t*)&addrlen
+                         (socklen_t*)&addrlen
 #endif
     )) < 0) {
     perror("getsockname");
@@ -2152,7 +1846,7 @@ static int open_server(unsigned short int port, accept_fn_t accept_fn) {
   lngr.l_onoff = 0;
   lngr.l_linger = 0;
   if (setsockopt (sock, SOL_SOCKET, SO_LINGER, (char*) &lngr, 
-  		  sizeof (struct linger)) < 0) {
+                  sizeof (struct linger)) < 0) {
     perror ("setsockopt");
     exit (EXIT_FAILURE);
   }
@@ -2192,30 +1886,30 @@ int poll_loop() {
       pfd[ip].events = 0;
       pfd[ip].revents = 0;
       if (fd[i].read_cb)
-	pfd[ip].events |= POLLIN;
+        pfd[ip].events |= POLLIN;
       if (fd[i].write_cb)
-	pfd[ip].events |= POLLOUT;
+        pfd[ip].events |= POLLOUT;
       ip++;
     }
     if (ip >= POLL_GROUP_SIZE || i == last_fd) {
       int n = poll(pfd,ip,POLL_TIMEOUT);
       if (n > 0) {
-	for (int j = 0; j < ip ; j++) {
-	  if (pfd[j].revents & (POLLIN|POLLERR|POLLHUP|POLLNVAL)) {
-	    if (verbose) printf("poll read %d %X\n",pfd[j].fd,pfd[j].revents);
-	    if (fd[pfd[j].fd].read_cb && fd[pfd[j].fd].read_cb(pfd[j].fd)) {
-	      fd[pfd[j].fd].close();
-	      continue;
-	    }
-	  }
-	  if (pfd[j].revents & (POLLOUT|POLLERR|POLLHUP|POLLNVAL)) {
-	    if (verbose) printf("poll write %d %X\n",pfd[j].fd,pfd[j].revents);
-	    if (fd[pfd[j].fd].write_cb && fd[pfd[j].fd].write_cb(pfd[j].fd)) {
-	      fd[pfd[j].fd].close();
-	      continue;
-	    }
-	  }
-	}
+        for (int j = 0; j < ip ; j++) {
+          if (pfd[j].revents & (POLLIN|POLLERR|POLLHUP|POLLNVAL)) {
+            if (verbose) printf("poll read %d %X\n",pfd[j].fd,pfd[j].revents);
+            if (fd[pfd[j].fd].read_cb && fd[pfd[j].fd].read_cb(pfd[j].fd)) {
+              fd[pfd[j].fd].close();
+              continue;
+            }
+          }
+          if (pfd[j].revents & (POLLOUT|POLLERR|POLLHUP|POLLNVAL)) {
+            if (verbose) printf("poll write %d %X\n",pfd[j].fd,pfd[j].revents);
+            if (fd[pfd[j].fd].write_cb && fd[pfd[j].fd].write_cb(pfd[j].fd)) {
+              fd[pfd[j].fd].close();
+              continue;
+            }
+          }
+        }
       }
       ip = 0;
     }
@@ -2225,7 +1919,7 @@ int poll_loop() {
 
 int gen_bfc_dist(double f = 10.0) {
 
-  if (docsize) return docsize;
+  if (docsize >= 0) return docsize;
 
   double rand = 0.0;
   double rand2 = 0.0;
@@ -2299,7 +1993,7 @@ static void put_ka(int sock) {
     if (!ka_cache_head[i] || fd[ka_cache_head[i]].ip == fd[sock].ip) 
       goto Lpush;
   i = n_ka_cache++;
-Lpush:	
+Lpush:  
   if (ka_cache_tail[i])
     fd[ka_cache_tail[i]].next = sock;
   else
@@ -2313,8 +2007,8 @@ static int get_ka(unsigned int ip) {
       int res = ka_cache_head[i];
       ka_cache_head[i] = fd[ka_cache_head[i]].next;
       if (res == ka_cache_tail[i]) {
-	ink_assert(!ka_cache_head[i]);
-	ka_cache_tail[i] = 0;
+        ink_assert(!ka_cache_head[i]);
+        ka_cache_tail[i] = 0;
       }
       return res;
     }
@@ -2387,13 +2081,13 @@ char * find_href_end (char *start, int len)
   if (!start) return NULL;
 
   while (*end && len > 0) {
-      if (*end == '\"') break;	/* " */
-      if (*end == '\'') break;		       
-      if (*end == '>')	break;
-      if (*end == ' ')	break;
-      if (*end == '\t')	break;
-      if (*end == '\n')	break;
-      if (*end == '<')	break;
+      if (*end == '\"') break;  /* " */
+      if (*end == '\'') break;                 
+      if (*end == '>')  break;
+      if (*end == ' ')  break;
+      if (*end == '\t') break;
+      if (*end == '\n') break;
+      if (*end == '<')  break;
       if(*end & 0x80) break; /* hi order bit! */
       len--;
       end++;
@@ -2457,8 +2151,8 @@ int compose_url(char * new_url, char * base, char *input) {
   char curl[512];
   int xsche,xhost,xport,xpath,xfrag,xquer,xpar,rel,slash;
   ink_web_decompose_url(base,sche,host,port,path,frag,quer,para,
-			&xsche,&xhost,&xport,&xpath,&xfrag,&xquer,
-			&xpar,&rel,&slash);
+                        &xsche,&xhost,&xport,&xpath,&xfrag,&xquer,
+                        &xpar,&rel,&slash);
   strcpy(curl, "http://");
   strcat(curl,host);
   if (xport) {
@@ -2473,7 +2167,7 @@ int compose_url(char * new_url, char * base, char *input) {
 } // compose_urls
 
 void compose_all_urls( char * tag, char * buf, char * start, char * end, 
-		       int buflen, char * base_url)
+                       int buflen, char * base_url)
 {
   char old;
   while ((start = find_href_start(tag, end, buflen - (end - buf)))) {
@@ -2508,41 +2202,41 @@ void extract_urls(char * buf, int buflen, char * base_url) {
     if (end) {
       char * rover = strncasestr(start, "href", end - start);
       if (rover) {
-	rover += 4;
-	while (rover < end && 
-	       (ParseRules::is_ws(*rover) || *rover == '=' || *rover == '\'' 
-		|| *rover == '\"'))    /* " */
-	  rover++;
-	start = rover;
-	while (rover < end && 
-	       !(ParseRules::is_ws(*rover) || *rover == '\'' 
-		 || *rover == '\"'))
-	  rover++;
-	old = *rover;
-	*rover = 0;
-	compose_url(base_url,old_base,start);
-	// fixup unqualified hostnames (e.g. http://internal/foo)
-	char * he = strchr(base_url + 8, '/'); 
-	if (!memchr(base_url,'.',he-base_url)) {
-	  char t[512]; strcpy(t,base_url);
-	  char * old_he = strchr(old_base + 8, '.');
-	  if (old_he) {
-	    char * old_hee = strchr(old_he, '/');
-	    if (old_hee) {
-	      memcpy(base_url,t,(he-base_url));
-	      memcpy(base_url + (he-base_url), old_he, (old_hee-old_he));
-	      memcpy(base_url + (he-base_url) + (old_hee-old_he),
-		     t+(he-base_url), strlen(t+(he-base_url)));
-	      base_url[(he-base_url) + (old_hee-old_he) +
-		      strlen(t+(he-base_url))] = 0;
-	    }}}}}}
+        rover += 4;
+        while (rover < end && 
+               (ParseRules::is_ws(*rover) || *rover == '=' || *rover == '\'' 
+                || *rover == '\"'))    /* " */
+          rover++;
+        start = rover;
+        while (rover < end && 
+               !(ParseRules::is_ws(*rover) || *rover == '\'' 
+                 || *rover == '\"'))
+          rover++;
+        old = *rover;
+        *rover = 0;
+        compose_url(base_url,old_base,start);
+        // fixup unqualified hostnames (e.g. http://internal/foo)
+        char * he = strchr(base_url + 8, '/'); 
+        if (!memchr(base_url,'.',he-base_url)) {
+          char t[512]; strcpy(t,base_url);
+          char * old_he = strchr(old_base + 8, '.');
+          if (old_he) {
+            char * old_hee = strchr(old_he, '/');
+            if (old_hee) {
+              memcpy(base_url,t,(he-base_url));
+              memcpy(base_url + (he-base_url), old_he, (old_hee-old_he));
+              memcpy(base_url + (he-base_url) + (old_hee-old_he),
+                     t+(he-base_url), strlen(t+(he-base_url)));
+              base_url[(he-base_url) + (old_hee-old_he) +
+                      strlen(t+(he-base_url))] = 0;
+            }}}}}}
 
   end = buf;
   if (follow)
     compose_all_urls("href", buf, start, end, buflen, base_url);
   if (fullpage) {
     char *tags[] = { "src", "image", "object", "archive", "background", 
-		     // "location", "code" 
+                     // "location", "code" 
     };
     for (int i = 0 ; i < sizeof(tags)/sizeof(tags[0]) ; i++)
       compose_all_urls(tags[i], buf, start, end, buflen, base_url);
@@ -2558,14 +2252,14 @@ void follow_links(int sock) {
       extract_urls(r,l,fd[sock].base_url);
     if (l < MAX_BUFSIZE) {
       while (n) {
-	n = (char*)memchr(p,'\n',l - (p - r));
-	if (!n) n = (char*)memchr(p,'\r',l - (p - r));
-	if (n) p = n + 1;
+        n = (char*)memchr(p,'\n',l - (p - r));
+        if (!n) n = (char*)memchr(p,'\r',l - (p - r));
+        if (n) p = n + 1;
       }
       int done = p - r, remaining = l - done;
       if (done) {
-	memmove(r, p, remaining);
-	fd[sock].response_remaining = remaining;
+        memmove(r, p, remaining);
+        fd[sock].response_remaining = remaining;
       }
     } else  // bail
       fd[sock].response_length = 0;
@@ -2581,22 +2275,22 @@ static int verify_content(int sock, char * buf, int done) {
   if (left > 0) {
     if (embed_url && !fd[sock].jg_compressed) {
       if (l == left && left > 64) {
-      	char *url_end = NULL, *url_start = NULL;
-	get_path_from_req(fd[sock].base_url,&url_start,&url_end);
-	if (url_end - url_start < done) {
-	  if (memcmp(url_start,buf,url_end - url_start)) 
-	    return 0;
-	}
+        char *url_end = NULL, *url_start = NULL;
+        get_path_from_req(fd[sock].base_url,&url_start,&url_end);
+        if (url_end - url_start < done) {
+          if (memcmp(url_start,buf,url_end - url_start)) 
+            return 0;
+        }
       }
       // skip past the URL which is embedded in the document
       // to confound the fingerprinting code
       if (l - left < 64) {
-	int skip = 64 - (l - left);
-	left -= skip;
-	done -= skip;
-	buf += skip;
-	if (done < 0)
-	  done = 0;
+        int skip = 64 - (l - left);
+        left -= skip;
+        done -= skip;
+        buf += skip;
+        if (done < 0)
+          done = 0;
       }
     }
     if (!check_content)
@@ -2607,6 +2301,35 @@ static int verify_content(int sock, char * buf, int done) {
       return 0;
   }
   return 1;
+}
+
+#define ZIPF_SIZE (1<<20)
+static double *zipf_table = NULL;
+void build_zipf() {
+  zipf_table = (double*)malloc(ZIPF_SIZE * sizeof(double));
+  for (int i = 0; i < ZIPF_SIZE; i++)
+    zipf_table[i] = 1.0 / pow(i+2, zipf);
+  for (int i = 1; i < ZIPF_SIZE; i++)
+    zipf_table[i] = zipf_table[i-1] + zipf_table[i];
+  double x = zipf_table[ZIPF_SIZE-1];
+  for (int i = 0; i < ZIPF_SIZE; i++)
+    zipf_table[i] = zipf_table[i] / x;
+}
+
+int get_zipf(double v) {
+  int l = 0, r = ZIPF_SIZE-1, m;
+  do {
+    m = (r + l) / 2;
+    if (v < zipf_table[m])
+      r = m - 1;
+    else
+      l = m + 1;
+  } while (l < r);
+  if (zipf_bucket_size == 1)
+    return m;
+  double x = zipf_table[m], y = zipf_table[m+1];
+  m += (v - x) / (y - x);
+  return m;
 }
 
 static int read_response_error(int sock) {
@@ -2634,40 +2357,40 @@ static int read_response(int sock) {
     do {
       int l = HEADER_SIZE - fd[sock].req_pos - 1;
       if (l <= 0) { 
-	if (verbose || verbose_errors) 
-	  printf("header too long '%s'", fd[sock].req_header);
-	return read_response_error(sock);
+        if (verbose || verbose_errors) 
+          printf("header too long '%s'", fd[sock].req_header);
+        return read_response_error(sock);
       }
       err = read(sock, fd[sock].req_header + fd[sock].req_pos, 
-		 HEADER_SIZE - fd[sock].req_pos - 1);
+                 HEADER_SIZE - fd[sock].req_pos - 1);
     } while ((err == -1) && (errno == EINTR));
     if (err <= 0) {
       if (!err) {
-	if (verbose_errors) 
-	  printf("read_response %d closed during header for '%s' after %d%s\n",
-		 sock, fd[sock].base_url, fd[sock].req_pos,
-		 (keepalive && (fd[sock].keepalive != keepalive) 
-		  && !fd[sock].req_pos) ? " -- keepalive timeout" : "");
-	return read_response_error(sock);
+        if (verbose_errors) 
+          printf("read_response %d closed during header for '%s' after %d%s\n",
+                 sock, fd[sock].base_url, fd[sock].req_pos,
+                 (keepalive && (fd[sock].keepalive != keepalive) 
+                  && !fd[sock].req_pos) ? " -- keepalive timeout" : "");
+        return read_response_error(sock);
       }
       if (errno == EAGAIN || errno == ENOTCONN) return 0;
       if (errno == ECONNRESET) {
-	if (!fd[sock].req_pos && keepalive > 0 && 
-	    fd[sock].keepalive != keepalive) {
-	  fd[sock].close();
-	  if (!urls_mode)
-	    make_bfc_client(proxy_addr, proxy_port);
-	  return 0;
-	}
-	if (verbose || verbose_errors)
-	  perror ("read");
-	goto Ldone;
+        if (!fd[sock].req_pos && keepalive > 0 && 
+            fd[sock].keepalive != keepalive) {
+          fd[sock].close();
+          if (!urls_mode)
+            make_bfc_client(proxy_addr, proxy_port);
+          return 0;
+        }
+        if (verbose || verbose_errors)
+          perror ("read");
+        goto Ldone;
       }
       panic_perror("read");
     }
     if (verbose) 
       printf("read %d header %d [%s]\n", 
-	     sock, err, fd[sock].req_header);
+             sock, err, fd[sock].req_header);
     b1_ops++;
 
     strcpy(fd[sock].response_header, fd[sock].req_header);
@@ -2685,51 +2408,47 @@ static int read_response(int sock) {
     while ((p = strchr(p,'\n'))) {
       if (verbose) printf("read header end? [%s]\n", p);
       if (p[1] == '\n' || (p[1] == '\r' && p[2] == '\n')) {
-	int off = 1 + (p[1] == '\r' ? 2 : 1);
-	p += off;
-	strncpy(fd[sock].response_header, fd[sock].req_header, p - fd[sock].req_header);
-	fd[sock].response_header[p - fd[sock].req_header] = '\0';
-	int lbody =  fd[sock].req_pos - (p - fd[sock].req_header);
-	cl = strncasestr(fd[sock].req_header,"Content-Length:", 
-			 p - fd[sock].req_header);
-	if (cl) {
-	  cli = atoi(cl + 16);
-	  if (!cli && verbose_errors)
-	    fprintf(stderr, "bad Content-Length '%s': %d\n", cl, cli);
-	  else {
-	    int expected_length = fd[sock].response_length;
-	    if (compd_suite) {
-	      if (strstr(fd[sock].req_header, "x-jg")) {
-		fd[sock].jg_compressed = 1;
-		expected_length = (fd[sock].response_length * 2) / 3;
-	      }
-	    } 
-	    if (fd[sock].response_length && verbose_errors &&
-		expected_length != cli && !nocheck_length) 
-	      fprintf(stderr, "bad Content-Length expected %d got %d orig %d",
-		      expected_length, cli, fd[sock].response_length);
-	    fd[sock].response_length = fd[sock].length = cli;
-	  }
-	}
-	if (fd[sock].req_header[9] == '2') {
-	  if (!verify_content(sock,p,lbody)) {
-	    if (verbose || verbose_errors)
-	      printf("content verification error '%s'\n", fd[sock].base_url);
-	    return read_response_error(sock);
-	  }
-	}
-	total_proxy_response_body_bytes += lbody;
-	total_proxy_response_header_bytes += p - fd[sock].req_header;
-	fd[sock].length -= lbody;
-	fd[sock].req_pos = -1;
-	if (fd[sock].length && drand48() < client_abort_rate) {
-	  fd[sock].client_abort = 1;
-	  fd[sock].length = (int)(drand48() * (fd[sock].length -1)); 
-	  fd[sock].keepalive = 0;
-	  fd[sock].drop_after_CL = 1;
-	}
-	if (verbose) printf("read %d header done\n", sock);
-	break;
+        int off = 1 + (p[1] == '\r' ? 2 : 1);
+        p += off;
+        strncpy(fd[sock].response_header, fd[sock].req_header, p - fd[sock].req_header);
+        fd[sock].response_header[p - fd[sock].req_header] = '\0';
+        int lbody =  fd[sock].req_pos - (p - fd[sock].req_header);
+        cl = strncasestr(fd[sock].req_header,"Content-Length:", 
+                         p - fd[sock].req_header);
+        if (cl) {
+          cli = atoi(cl + 16);
+            int expected_length = fd[sock].response_length;
+            if (compd_suite) {
+              if (strstr(fd[sock].req_header, "x-jg")) {
+                fd[sock].jg_compressed = 1;
+                expected_length = (fd[sock].response_length * 2) / 3;
+              }
+            } 
+            if (fd[sock].response_length && verbose_errors &&
+                expected_length != cli && !nocheck_length) 
+              fprintf(stderr, "bad Content-Length expected %d got %d orig %d",
+                      expected_length, cli, fd[sock].response_length);
+            fd[sock].response_length = fd[sock].length = cli;
+        }
+        if (fd[sock].req_header[9] == '2') {
+          if (!verify_content(sock,p,lbody)) {
+            if (verbose || verbose_errors)
+              printf("content verification error '%s'\n", fd[sock].base_url);
+            return read_response_error(sock);
+          }
+        }
+        total_proxy_response_body_bytes += lbody;
+        total_proxy_response_header_bytes += p - fd[sock].req_header;
+        fd[sock].length -= lbody;
+        fd[sock].req_pos = -1;
+        if (fd[sock].length && drand48() < client_abort_rate) {
+          fd[sock].client_abort = 1;
+          fd[sock].length = (int)(drand48() * (fd[sock].length -1)); 
+          fd[sock].keepalive = 0;
+          fd[sock].drop_after_CL = 1;
+        }
+        if (verbose) printf("read %d header done\n", sock);
+        break;
       }
       p++;
     }
@@ -2738,37 +2457,37 @@ static int read_response(int sock) {
     if (show_headers) {
       printf("Response From Proxy: {\n");
       for (char * c = fd[sock].req_header; c < p ; c++)
-	putc(*c,stdout);
+        putc(*c,stdout);
       printf("}\n");
     }
     if (obey_redirects && urls_mode && 
-	fd[sock].req_header[9] == '3' &&
-	fd[sock].req_header[10] == '0' &&
-	(fd[sock].req_header[11] == '1' || fd[sock].req_header[11] == '2')) 
+        fd[sock].req_header[9] == '3' &&
+        fd[sock].req_header[10] == '0' &&
+        (fd[sock].req_header[11] == '1' || fd[sock].req_header[11] == '2')) 
     {
       char * redirect = strstr(fd[sock].req_header,"http://");
       char * e = redirect?(char*)memchr(redirect,'\n',hlen):0;
       if (!redirect || !e)
-	fprintf(stderr, "bad redirect '%s'",fd[sock].req_header);
+        fprintf(stderr, "bad redirect '%s'",fd[sock].req_header);
       else {
-	if (e[-1]=='\r') e--;
-	*e = 0;
-	make_url_client(redirect);
+        if (e[-1]=='\r') e--;
+        *e = 0;
+        make_url_client(redirect);
       }
       fd[sock].close();
       return 0;
     }
     if (fd[sock].req_header[9] != '2') {
       if (verbose_errors) {
-	char * e = (char*)memchr(fd[sock].req_header, '\r', hlen);
-	if (e) *e = 0;
-	else {
-	  char * e = (char*)memchr(fd[sock].req_header, '\n', hlen);
-	  if (e) *e = 0;
-	  else *p = 0;
-	}
-	printf("error response %d: '%s':'%s'\n", sock, 
-	       fd[sock].base_url, fd[sock].req_header);
+        char * e = (char*)memchr(fd[sock].req_header, '\r', hlen);
+        if (e) *e = 0;
+        else {
+          char * e = (char*)memchr(fd[sock].req_header, '\n', hlen);
+          if (e) *e = 0;
+          else *p = 0;
+        }
+        printf("error response %d: '%s':'%s'\n", sock, 
+               fd[sock].base_url, fd[sock].req_header);
       }
       return read_response_error(sock);
     }
@@ -2778,11 +2497,11 @@ static int read_response(int sock) {
     if (urls_mode) {
       fd[sock].response_remaining = total_read - length;
       if (fd[sock].response_remaining) 
-	memcpy(fd[sock].response,p,fd[sock].response_remaining);
+        memcpy(fd[sock].response,p,fd[sock].response_remaining);
       if (check_content && !cl) {
-	if (verbose || verbose_errors)
-	  printf("missiing Content-Length '%s'\n", fd[sock].base_url);
-	return read_response_error(sock);
+        if (verbose || verbose_errors)
+          printf("missiing Content-Length '%s'\n", fd[sock].base_url);
+        return read_response_error(sock);
       }
     } else
       fd[sock].response = 0;      
@@ -2802,29 +2521,29 @@ static int read_response(int sock) {
     int toread = cbuffersize;
     if (urls_mode) {
       if (fd[sock].response_remaining + cbuffersize < MAX_BUFSIZE)
-	r = fd[sock].response + fd[sock].response_remaining;
+        r = fd[sock].response + fd[sock].response_remaining;
       else {
-	toread = MAX_BUFSIZE - fd[sock].response_remaining;
-	if (!toread) {
-	  if (verbose_errors || verbose)
-	    fprintf(stderr,"line exceeds buffer, unable to follow links\n");
-	  toread = cbuffersize;
-	  r = fd[sock].response;
-	  fd[sock].response_remaining = 0;
-	} else
-	  r = fd[sock].response + fd[sock].response_remaining;
+        toread = MAX_BUFSIZE - fd[sock].response_remaining;
+        if (!toread) {
+          if (verbose_errors || verbose)
+            fprintf(stderr,"line exceeds buffer, unable to follow links\n");
+          toread = cbuffersize;
+          r = fd[sock].response;
+          fd[sock].response_remaining = 0;
+        } else
+          r = fd[sock].response + fd[sock].response_remaining;
       }
     } else
       r = buf;
     if (fast(sock,client_speed,fd[sock].bytes)) return 0;
     if (fd[sock].bytes > abort_retry_bytes && 
-	(((now - fd[sock].start + 1)/HRTIME_SECOND) > abort_retry_secs) && 
-	!faster_than(sock,abort_retry_speed,fd[sock].bytes)) 
+        (((now - fd[sock].start + 1)/HRTIME_SECOND) > abort_retry_secs) && 
+        !faster_than(sock,abort_retry_speed,fd[sock].bytes)) 
     {
       fd[sock].client_abort = 1;
       fd[sock].keepalive = 0;
       if (!urls_mode && !client_rate)
-	make_bfc_client(proxy_addr, proxy_port);
+        make_bfc_client(proxy_addr, proxy_port);
       goto Ldone;
     }
     do {
@@ -2833,9 +2552,9 @@ static int read_response(int sock) {
     if (err < 0) {
       if (errno == EAGAIN || errno == ENOTCONN) return 0;
       if (errno == ECONNRESET) {
-	if (verbose || verbose_errors)
-	  perror ("read");
-	goto Ldone;
+        if (verbose || verbose_errors)
+          perror ("read");
+        goto Ldone;
       }
       panic_perror("read");
     }
@@ -2843,7 +2562,7 @@ static int read_response(int sock) {
       goto Ldone;
     if (!verify_content(sock,buf,err)) {
       if (verbose || verbose_errors)
-	printf("content verification error '%s'\n", fd[sock].base_url);
+        printf("content verification error '%s'\n", fd[sock].base_url);
       return read_response_error(sock);
     }
     total_proxy_response_body_bytes += err;
@@ -2857,7 +2576,7 @@ static int read_response(int sock) {
     fd[sock].active = ink_get_hrtime();
     if (verbose) 
       printf("read %d got %d togo %d %d %d\n", sock, err, fd[sock].length,
-	     fd[sock].keepalive, fd[sock].drop_after_CL);
+             fd[sock].keepalive, fd[sock].drop_after_CL);
   }
   
   if (fd[sock].length <= 0 && 
@@ -2874,10 +2593,10 @@ Ldone:
   {
     if (verbose || verbose_errors) 
       printf("bad length %d wanted %d after %d ms: '%s'\n", 
-	     fd[sock].response_length - fd[sock].length,
-	     fd[sock].response_length,
-	     (int)((ink_get_hrtime() - fd[sock].active)/HRTIME_MSECOND),
-	     fd[sock].base_url);
+             fd[sock].response_length - fd[sock].length,
+             fd[sock].response_length,
+             (int)((ink_get_hrtime() - fd[sock].active)/HRTIME_MSECOND),
+             fd[sock].base_url);
     return read_response_error(sock);
   }
   if (verbose) printf("read %d done\n", sock);
@@ -2905,7 +2624,7 @@ static int write_request(int sock) {
   
   do {
     err = write(sock, fd[sock].req_header + fd[sock].req_pos, 
-		fd[sock].length - fd[sock].req_pos);
+                fd[sock].length - fd[sock].req_pos);
   } while ((err == -1) && (errno == EINTR));
   if (err <= 0) {
     if (!err) {
@@ -2949,7 +2668,7 @@ static int write_ftp_response(int sock) {
   
   do {
     err = write(sock, fd[sock].req_header + fd[sock].req_pos, 
-		fd[sock].length - fd[sock].req_pos);
+                fd[sock].length - fd[sock].req_pos);
   } while ((err == -1) && (errno == EINTR));
   
   if (err <= 0) {
@@ -2993,15 +2712,15 @@ static int make_client (unsigned int addr, int port) {
 #if 0
   int bufsize = cbuffersize;
   if (setsockopt(sock,SOL_SOCKET,SO_RCVBUF,
-		 (const char *)&bufsize,sizeof(bufsize)) < 0)
+                 (const char *)&bufsize,sizeof(bufsize)) < 0)
     panic_perror("setsockopt");
   if (setsockopt(sock,SOL_SOCKET,SO_SNDBUF,
-		 (const char *)&bufsize,sizeof(bufsize)) < 0)
+                 (const char *)&bufsize,sizeof(bufsize)) < 0)
     panic_perror("setsockopt");
 #endif
   int enable =1;
   if (setsockopt(sock,IPPROTO_TCP,TCP_NODELAY,
-		 (const char *)&enable,sizeof(enable)) < 0)
+                 (const char *)&enable,sizeof(enable)) < 0)
     panic_perror("setsockopt");
 
   /* Tell the socket not to linger on exit */
@@ -3009,7 +2728,7 @@ static int make_client (unsigned int addr, int port) {
   lngr.l_linger = 0;
   if (!ftp) {  // this causes problems for PORT ftp -- ewong
     if (setsockopt (sock, SOL_SOCKET, SO_LINGER, (char*) &lngr, 
-		    sizeof (struct linger)) < 0) {
+                    sizeof (struct linger)) < 0) {
       perror ("setsockopt");
       exit (EXIT_FAILURE);
     }
@@ -3022,9 +2741,9 @@ static int make_client (unsigned int addr, int port) {
   name.sin_addr.s_addr = addr;
   
   if (verbose) printf("connecting to %u.%u.%u.%u:%d\n",
-		      ((unsigned char*)&addr)[0], ((unsigned char*)&addr)[1], 
-		      ((unsigned char*)&addr)[2], ((unsigned char*)&addr)[3],
-		      port);
+                      ((unsigned char*)&addr)[0], ((unsigned char*)&addr)[1], 
+                      ((unsigned char*)&addr)[2], ((unsigned char*)&addr)[3],
+                      port);
   
   while (connect (sock, (struct sockaddr *) &name, sizeof (name)) < 0) {
     if (errno == EINTR) continue;
@@ -3061,11 +2780,22 @@ static void make_bfc_client (unsigned int addr, int port) {
     panic("unable to open client connection\n");
   double h = drand48();
   double dr = drand48();
-  if (h < hitrate) {
-    dr = 1.0 + (floor(dr * hotset) / hotset);
-    fd[sock].response_length = gen_bfc_dist(dr - 1.0);
-  } else
-    fd[sock].response_length = gen_bfc_dist(dr);
+  if (zipf == 0.0) {
+    if (h < hitrate) {
+      dr = 1.0 + (floor(dr * hotset) / hotset);
+      fd[sock].response_length = gen_bfc_dist(dr - 1.0);
+    } else
+      fd[sock].response_length = gen_bfc_dist(dr);
+  } else {
+    unsigned long long int doc = get_zipf(dr);
+    // Some large randomish number.
+    unsigned long long int doc_len_int = doc * 0x14A4D0FB0E93E3A7LL;
+    unsigned long int x = doc_len_int;
+    double y = (double)x;
+    y /= 0x100000000LL;  // deterministic random number between 0 and 1.0
+    fd[sock].response_length = gen_bfc_dist(y);
+    dr = doc;
+  }
   if (verbose) printf("gen_bfc_dist %d\n", fd[sock].response_length);
   char eheaders[16384];
   *eheaders = 0;
@@ -3080,7 +2810,7 @@ static void make_bfc_client (unsigned int addr, int port) {
       eh += sprintf(eh, "Accept: image/gif, image/x-xbitmap, image/jpeg, image/pjpeg, image/png, */*\r\n");
     while (--nheaders>0)
       eh += sprintf(eh, "Extra-Header%d: a lot of junk for header %d\r\n",
-		    nheaders, nheaders);
+                    nheaders, nheaders);
   }
   char cookie[256];
   *cookie = 0;
@@ -3098,69 +2828,63 @@ static void make_bfc_client (unsigned int addr, int port) {
     default:
       extension = (char*)(compd_suite ? ".jpeg" : "");
   }
+  char evo_str[20];
   evo_str[0] = '\0';
   if (evo_rate != 0.0) {
-    double evo_time = ((double)(now-start_time)/(double)(HRTIME_HOUR));
-    double evo_base_d =  evo_time * (double)evo_rate * (double)evo_delta;
-    while (evo_base_d > (double)UINT_MAX)
-      evo_base_d -= (double)UINT_MAX;
-    // this should overflow at the limit, but that's okay...
-    unsigned int evo_base = (unsigned int)evo_base_d +
-      (unsigned int)((double)evo_delta*drand48());
-    sprintf(evo_str, ".%u", evo_base);
-    //printf("time %f, evo-str: %s\n", evo_time, evo_str);
+    double evo_index = dr + (((double)now)/HRTIME_HOUR) * evo_rate;
+    sprintf(evo_str, ".%u", ((unsigned int)evo_index));
   }
   if (0 == hostrequest) {
     sprintf(fd[sock].req_header, 
-	    ftp ? 
-	    "GET ftp://%s:%d/%12.10f/%d%s%s HTTP/1.0\r\n"
-	    "%s"
-	    "%s"
-	    "%s"
-	    "%s"
-	    "\r\n" 
-	    :
-	    "GET http://%s:%d/%12.10f/%d%s%s HTTP/1.0\r\n"
-	    "%s"
-	    "%s"
-	    "%s"
-	    "%s"
-	    "\r\n"
-	    ,
-	    local_host, server_port, dr,
-	    fd[sock].response_length, evo_str, extension,
-	    fd[sock].keepalive?"Proxy-Connection: Keep-Alive\r\n":"",
-	    reload_rate > drand48() ? "Pragma: no-cache\r\n":"",
-	    eheaders, cookie
+            ftp ? 
+            "GET ftp://%s:%d/%12.10f/%d%s%s HTTP/1.0\r\n"
+            "%s"
+            "%s"
+            "%s"
+            "%s"
+            "\r\n" 
+            :
+            "GET http://%s:%d/%12.10f/%d%s%s HTTP/1.0\r\n"
+            "%s"
+            "%s"
+            "%s"
+            "%s"
+            "\r\n"
+            ,
+            local_host, server_port, dr,
+            fd[sock].response_length, evo_str, extension,
+            fd[sock].keepalive?"Proxy-Connection: Keep-Alive\r\n":"",
+            reload_rate > drand48() ? "Pragma: no-cache\r\n":"",
+            eheaders, cookie
       );
   } else if (1 == hostrequest) {
     sprintf(fd[sock].req_header, 
-	    "GET /%12.10f/%d%s%s HTTP/1.0\r\n"
-	    "Host: %s:%d\r\n"
-	    "%s"
-	    "%s"
-	    "%s"
-	    "%s"
-	    "\r\n",
-	    dr, fd[sock].response_length, evo_str, extension,
-	    local_host, server_port,
-	    fd[sock].keepalive?"Connection: Keep-Alive\r\n":"",
-	    reload_rate > drand48() ? "Pragma: no-cache\r\n":"",
-	    eheaders, cookie);
+            "GET /%12.10f/%d%s%s HTTP/1.0\r\n"
+            "Host: %s:%d\r\n"
+            "%s"
+            "%s"
+            "%s"
+            "%s"
+            "\r\n",
+            dr, fd[sock].response_length, evo_str, extension,
+            local_host, server_port,
+            fd[sock].keepalive?"Connection: Keep-Alive\r\n":"",
+            reload_rate > drand48() ? "Pragma: no-cache\r\n":"",
+            eheaders, cookie);
   } else if (2 == hostrequest) {
     /* Send a non-proxy client request i.e. for Transparency testing */
     sprintf(fd[sock].req_header, 
-	    "GET /%12.10f/%d%s%s HTTP/1.0\r\n"
-	    "%s"
-	    "%s"
-	    "%s"
-	    "%s"
-	    "\r\n",
-	    dr, fd[sock].response_length, evo_str, extension,
-	    fd[sock].keepalive?"Connection: Keep-Alive\r\n":"",
-	    reload_rate > drand48() ? "Pragma: no-cache\r\n":"",
-	    eheaders, 
-	    cookie);
+            "GET /%12.10f/%d%s%s HTTP/1.0\r\n"
+            "%s"
+            "%s"
+            "%s"
+            "%s"
+            "\r\n",
+            dr, fd[sock].response_length, evo_str, extension,
+            fd[sock].keepalive?"Connection: Keep-Alive\r\n":"",
+            reload_rate > drand48() ? "Pragma: no-cache\r\n":"",
+            eheaders, 
+            cookie);
   }
   if (verbose) printf("request %d [%s]\n", sock, fd[sock].req_header);
   fd[sock].length = strlen(fd[sock].req_header); 
@@ -3201,26 +2925,26 @@ void interval_report() {
   float t = (float)(now - start_time);
   int per = current_clients ? running_cbytes / current_clients : 0;
   printf("%4d %4d %6.1f %5d %5d %7d/%-6d  %4d %4d %4d  %7d %6.1f %4d\n", 
-	 current_clients, // clients, n_ka_cache,
-	 running_clients,
-	 running_ops, running_b1latency, running_latency,
-	 running_cbytes, per,
-	 running_servers, 
-	 running_servers,
-	 running_sops, running_tbytes, 
-	 t/((float)HRTIME_SECOND),
-	 errors);
+         current_clients, // clients, n_ka_cache,
+         running_clients,
+         running_ops, running_b1latency, running_latency,
+         running_cbytes, per,
+         running_servers, 
+         running_servers,
+         running_sops, running_tbytes, 
+         t/((float)HRTIME_SECOND),
+         errors);
   if (is_done()) {
     printf("Total Client Request Bytes:\t\t%d\n", total_client_request_bytes);
     printf("Total Server Response Header Bytes:\t%d\n", 
-	   total_server_response_header_bytes);
+           total_server_response_header_bytes);
     printf("Total Server Response Body Bytes:\t%d\n", 
-	   total_server_response_body_bytes);
+           total_server_response_body_bytes);
     printf("Total Proxy Request Bytes:\t\t%d\n", total_proxy_request_bytes);
     printf("Total Proxy Response Header Bytes:\t%d\n", 
-	   total_proxy_response_header_bytes);
+           total_proxy_response_header_bytes);
     printf("Total Proxy Response Body Bytes:\t%d\n", 
-	   total_proxy_response_body_bytes);
+           total_proxy_response_body_bytes);
   }
 }
 
@@ -3281,17 +3005,17 @@ struct UrlHashTable {
   void set(inku64 i) {
     BEGIN_HASH_LOOP {
       if (!ENTRY_TAG(e)) {
-	SET_ENTRY_TAG(e,tag);
-	return;
+        SET_ENTRY_TAG(e,tag);
+        return;
       }
     } END_HASH_LOOP;
 
-    fprintf(stderr, "url hash table overflow: %X, %X\n", base-bytes, tag);
+    fprintf(stderr, "url hash table overflow: %X, %X\n", (int)(base-bytes), tag);
 
     BEGIN_OVERFLOW_HASH_LOOP {
       if (!ENTRY_TAG(e)) {
-	SET_ENTRY_TAG(e,tag);
-	return;
+        SET_ENTRY_TAG(e,tag);
+        return;
       }
     } END_HASH_LOOP;
 
@@ -3301,27 +3025,27 @@ struct UrlHashTable {
   void clear(inku64 i) {
     BEGIN_HASH_LOOP {
       if (ENTRY_TAG(e) == tag) {
-	if (e != last)
-	  SET_ENTRY_TAG(e,ENTRY_TAG(last));
-	SET_ENTRY_TAG(last,0);
-	return;
+        if (e != last)
+          SET_ENTRY_TAG(e,ENTRY_TAG(last));
+        SET_ENTRY_TAG(last,0);
+        return;
       }
     } END_HASH_LOOP;
 
     fprintf(stderr, "url hash table entry to clear not found: %X, %X\n", 
-	    base-bytes, tag);
+            (int)(base-bytes), tag);
   }
 
   int is_set(inku64 i) {
     BEGIN_HASH_LOOP {
       if (ENTRY_TAG(e) == tag)
-	return 1;
+        return 1;
     } END_HASH_LOOP;
 
     if (ENTRY_TAG((last))) {
       BEGIN_OVERFLOW_HASH_LOOP {
-	if (ENTRY_TAG(e) == tag)
-	  return 1;
+        if (ENTRY_TAG(e) == tag)
+          return 1;
       } END_HASH_LOOP;
     }
     return 0;
@@ -3364,7 +3088,7 @@ UrlHashTable::UrlHashTable() {
     if (len != URL_HASH_BYTES) {
       fprintf(stderr, 
               "FATAL: hash file length (%lu) != URL_HASH_BYTES (%lu)\n",
-              len, URL_HASH_BYTES);
+              len, (unsigned long)URL_HASH_BYTES);
       exit(1);
     }
     numbytes = len;
@@ -3375,11 +3099,11 @@ UrlHashTable::UrlHashTable() {
     bytes = (unsigned char *)
       mmap(NULL,numbytes,PROT_READ|PROT_WRITE,
 #if defined(__alpha) || defined(mips)
-	   MAP_SHARED,
+           MAP_SHARED,
 #else
-	   MAP_SHARED|MAP_NORESERVE,
+           MAP_SHARED|MAP_NORESERVE,
 #endif
-	   fd, 0);
+           fd, 0);
     if (bytes == (unsigned char*)MAP_FAILED || !bytes)
       panic("unable to map URL Hash file\n");
   } else {
@@ -3422,7 +3146,7 @@ int seen_it(char * url) {
 }
 
 static int make_url_client(char * url,char * base_url, bool seen,
-			   bool unthrottled) 
+                           bool unthrottled) 
 {
   int iport = 80;
   unsigned int ip = 0;
@@ -3442,8 +3166,8 @@ static int make_url_client(char * url,char * base_url, bool seen,
   if (!seen && seen_it(curl))
     return -1;
   ink_web_decompose_url(curl,sche,host,port,path,frag,quer,para,
-			&xsche,&xhost,&xport,&xpath,&xfrag,&xquer,
-			&xpar,&rel,&slash);
+                        &xsche,&xhost,&xport,&xpath,&xfrag,&xquer,
+                        &xpar,&rel,&slash);
   if (follow_same) {
     if (!xhost || strcasecmp(host,current_host)) {
       if (verbose) printf("skipping %s\n",curl);
@@ -3466,7 +3190,7 @@ static int make_url_client(char * url,char * base_url, bool seen,
     ip = get_addr(host);
     if ((int)ip == -1) { 
       if (verbose || verbose_errors)
-	fprintf(stderr, "bad host '%s'\n", host); 
+        fprintf(stderr, "bad host '%s'\n", host); 
       return -1;
     }
   }
@@ -3497,29 +3221,29 @@ static int make_url_client(char * url,char * base_url, bool seen,
       eh += sprintf(eh, "Accept: image/gif, image/x-xbitmap, image/jpeg, image/pjpeg, image/png, */*\r\n");
     while (--nheaders>0)
       eh += sprintf(eh, "Extra-Header%d: a lot of junk for header %d\r\n",
-		    nheaders, nheaders);
+                    nheaders, nheaders);
   }
   if (proxy_port)
     sprintf(fd[sock].req_header, "GET %s HTTP/1.0\r\n"
-	    "%s"
-	    "%s"
-	    "Accept: */*\r\n"
-	    "%s"
-	    "\r\n", 
-	    curl,
-	    reload_rate > drand48() ? "Pragma: no-cache\r\n":"",
-	    fd[sock].keepalive?"Proxy-Connection: Keep-Alive\r\n":"",eheaders);
+            "%s"
+            "%s"
+            "Accept: */*\r\n"
+            "%s"
+            "\r\n", 
+            curl,
+            reload_rate > drand48() ? "Pragma: no-cache\r\n":"",
+            fd[sock].keepalive?"Proxy-Connection: Keep-Alive\r\n":"",eheaders);
   else 
     sprintf(fd[sock].req_header, "GET /%s%s%s%s%s HTTP/1.0\r\n"
-	    "Host: %s\r\n"
-	    "%s"
-	    "%s"
-	    "Accept: */*\r\n"
+            "Host: %s\r\n"
             "%s"
-	    "\r\n", 
-	    path,xquer?"?":"",quer,xpar?";":"",para,host,
-	    reload_rate > drand48() ? "Pragma: no-cache\r\n":"",
-	    fd[sock].keepalive?"Connection: Keep-Alive\r\n":"",eheaders);
+            "%s"
+            "Accept: */*\r\n"
+            "%s"
+            "\r\n", 
+            path,xquer?"?":"",quer,xpar?";":"",para,host,
+            reload_rate > drand48() ? "Pragma: no-cache\r\n":"",
+            fd[sock].keepalive?"Connection: Keep-Alive\r\n":"",eheaders);
 
   if (verbose) printf("curl = '%s'\n",curl);
   if (show_before) printf("%s\n", curl);
@@ -3565,9 +3289,11 @@ int main(int argc, char *argv[]) {
     srand48((long)time(NULL));
   else
     srand48((long)drand_seed);
+  if (zipf != 0.0)
+    build_zipf();
   int max_fds = max_limit_fd();
   if (verbose) printf ("maximum of %d connections\n",max_fds);
-  signal(SIGPIPE,SIG_IGN);	
+  signal(SIGPIPE,SIG_IGN);      
   start_time = now = ink_get_hrtime();
   
   urls_mode = n_file_arguments || *urls_file;
@@ -3588,27 +3314,27 @@ int main(int argc, char *argv[]) {
       open_server(compd_port, accept_compd);
     } else {
       if (!server_port)
-	server_port = proxy_port + 1000;
+        server_port = proxy_port + 1000;
       build_response();
       if (!only_clients) {
-	for (int retry = 0 ; retry < 20 ; retry++) {
-	  server_fd = open_server(server_port + retry, accept_read);
-	  if (server_fd < 0) {
-	    if (server_fd == -EADDRINUSE) { 
-	      printf("here\n");
-	      continue;
-	    }
-	    panic_perror("open_server");
-	  }
-	  break;
-	}
+        for (int retry = 0 ; retry < 20 ; retry++) {
+          server_fd = open_server(server_port + retry, accept_read);
+          if (server_fd < 0) {
+            if (server_fd == -EADDRINUSE) { 
+              printf("here\n");
+              continue;
+            }
+            panic_perror("open_server");
+          }
+          break;
+        }
       }
       bandwidth_test_to_go = bandwidth_test;
       if (!only_server) {
-	if (proxy_port) {
-	  for (int i = 0 ; i < nclients ; i++)
-	    make_bfc_client(proxy_addr, proxy_port);
-	}
+        if (proxy_port) {
+          for (int i = 0 ; i < nclients ; i++)
+            make_bfc_client(proxy_addr, proxy_port);
+        }
       }
     }
   } else {
@@ -3622,27 +3348,27 @@ int main(int argc, char *argv[]) {
     if (*urlsdump_file) {
       urlsdump_fp = fopen(urlsdump_file,"w");
       if (!urlsdump_fp)
-	panic_perror("fopen urlsdump file");
+        panic_perror("fopen urlsdump file");
     }
     if (*urls_file) {
       FILE * fp = fopen(urls_file,"r");
       if (!fp)
-	panic_perror("fopen urls file");
+        panic_perror("fopen urls file");
       if (get_defered_urls(fp))
-	fclose(fp);
+        fclose(fp);
       else
-	urls_fp = fp;
+        urls_fp = fp;
     }
     int i;
     for (i = 0; i < n_file_arguments; i++) {
       char sche[8],host[512],port[10],path[512],frag[512],quer[512],para[512];
       int xsche,xhost,xport,xpath,xfrag,xquer,xpar,rel,slash;
       ink_web_decompose_url(file_arguments[i],sche,host,port,
-			    path,frag,quer,para,
-			    &xsche,&xhost,&xport,&xpath,&xfrag,&xquer,
-			    &xpar,&rel,&slash);
+                            path,frag,quer,para,
+                            &xsche,&xhost,&xport,&xpath,&xfrag,&xquer,
+                            &xpar,&rel,&slash);
       if (xhost) {
-	strcpy(current_host,host);
+        strcpy(current_host,host);
       }
     }
     for (i = 0; i < n_file_arguments ; i++)
@@ -3657,8 +3383,8 @@ int main(int argc, char *argv[]) {
     int t2 = now / HRTIME_SECOND;
     if (urls_fp && n_defered_urls < MAX_DEFERED_URLS - DEFERED_URLS_BLOCK - 2){
       if (get_defered_urls(urls_fp)) {
-	fclose(urls_fp);
-	urls_fp = NULL;
+        fclose(urls_fp);
+        urls_fp = NULL;
       }
     }
     if ((!urls_mode || client_rate) && interval && t + interval <= t2) {
@@ -3667,15 +3393,15 @@ int main(int argc, char *argv[]) {
     }
     if (t2 != tclient) {
       for (int i = 0; i < client_rate * (t2 - tclient) ; i++)
-	if (!urls_mode)
-	  make_bfc_client(proxy_addr, proxy_port);
-	else
-	  undefer_url(true);
+        if (!urls_mode)
+          make_bfc_client(proxy_addr, proxy_port);
+        else
+          undefer_url(true);
       tclient = t2;
     }
     if (test_time)
       if (t2 - start > test_time)
-	done();
+        done();
     if (is_done())
       done();
   }
@@ -3710,13 +3436,13 @@ int main(int argc, char *argv[]) {
   *---------------------------------------------------------------------------*/
 
 void ink_web_decompose_url(char *src_url,
-			   char *sche, char *host, char *port, char *path,
-			   char *frag, char *quer, char *para,
-			   int *real_sche_exists, int *real_host_exists,
-			   int *real_port_exists, int *real_path_exists, 
-			   int *real_frag_exists, int *real_quer_exists,
-			   int *real_para_exists,
-			   int *real_relative_url, int *real_leading_slash)
+                           char *sche, char *host, char *port, char *path,
+                           char *frag, char *quer, char *para,
+                           int *real_sche_exists, int *real_host_exists,
+                           int *real_port_exists, int *real_path_exists, 
+                           int *real_frag_exists, int *real_quer_exists,
+                           int *real_para_exists,
+                           int *real_relative_url, int *real_leading_slash)
   /*
       * Input: src_url
       * Outputs: every other argument
@@ -3797,8 +3523,8 @@ void ink_web_decompose_url(char *src_url,
       sche_exists = 1;
       fail = 1;
     } else if ((!ParseRules::is_alpha(*ptr) &&
-		(*ptr != '+') && (*ptr != '.') && (*ptr != '-')) ||
-	       (ptr == end)) {
+                (*ptr != '+') && (*ptr != '.') && (*ptr != '-')) ||
+               (ptr == end)) {
       sche_exists = 0;
       fail = 1;
     } else {
@@ -3814,14 +3540,14 @@ void ink_web_decompose_url(char *src_url,
   while ((ptr < end-1) && !fail) {
     if (*(ptr+0) == '/') {
       if (*(ptr+1) == '/') {
-	host1 = ptr+2;
-	ptr += 2; /* skip "//" */
-	host_exists = 1;
-	fail = 1;
+        host1 = ptr+2;
+        ptr += 2; /* skip "//" */
+        host_exists = 1;
+        fail = 1;
       } else {
-	/* this is the start of a path, not a host */
-	host_exists = 0;
-	fail = 1;
+        /* this is the start of a path, not a host */
+        host_exists = 0;
+        fail = 1;
       }
     } else {
       ptr++;
@@ -3832,10 +3558,10 @@ void ink_web_decompose_url(char *src_url,
   if (host_exists == 1) {
     while ((ptr < end) && (host2 == NULL)) {
       if (*ptr == '/') {
-	/* "/" marks the start of the path */
-	host2 = ptr; /* just so we quit out of the loop */
+        /* "/" marks the start of the path */
+        host2 = ptr; /* just so we quit out of the loop */
       } else {
-	ptr++;
+        ptr++;
       }
     }
     if (host2 == NULL)
@@ -3845,21 +3571,21 @@ void ink_web_decompose_url(char *src_url,
       temp = host2-1;
       /* remove trailing dots from host */
       while ((temp > host1) && (*temp == '.')) {
-	temp--;
-	host2--;
+        temp--;
+        host2--;
       }
       
       /* find start & end of port */
       ptr2 = host1;
       temp = host2;
       while (ptr2 < temp) {
-	if (*ptr2 == ':') {
-	  port1 = ptr2+1;
-	  port2 = temp;
-	  host2 = ptr2;
-	  port_exists = 1;
-	}
-	ptr2++;
+        if (*ptr2 == ':') {
+          port1 = ptr2+1;
+          port2 = temp;
+          host2 = ptr2;
+          port_exists = 1;
+        }
+        ptr2++;
       }
     }
   }
@@ -3929,8 +3655,8 @@ void ink_web_decompose_url(char *src_url,
       /* make scheme lowercase */
       char * p = sche;
       while (*p) {
-	*p = ParseRules::ink_tolower(*p);
-	p++;
+        *p = ParseRules::ink_tolower(*p);
+        p++;
       }
     } else {
       *sche = 0;
@@ -3947,8 +3673,8 @@ void ink_web_decompose_url(char *src_url,
       /* make hostname lowercase */
       char * p = host;
       while (*p) {
-	*p = ParseRules::ink_tolower(*p);
-	p++;
+        *p = ParseRules::ink_tolower(*p);
+        p++;
       }
     } else {
       *host = 0;
@@ -4080,7 +3806,7 @@ void ink_web_dump_url_components(FILE *fp, InkWebURLComponents *c)
   *---------------------------------------------------------------------------*/
 
 void ink_web_canonicalize_url(char *base_url, char *emb_url, char *dest_url,
-			      int max_dest_url_len)
+                              int max_dest_url_len)
 {
   int doff;
   InkWebURLComponents base,emb;
@@ -4127,9 +3853,9 @@ void ink_web_canonicalize_url(char *base_url, char *emb_url, char *dest_url,
     use_base_frag = 1;
   }
   else if (emb.sche_exists &&
-	   ((strcasecmp(emb.sche,"telnet") == 0) ||
-	    (strcasecmp(emb.sche,"mailto") == 0) ||
-	    (strcasecmp(emb.sche,"news") == 0)))
+           ((strcasecmp(emb.sche,"telnet") == 0) ||
+            (strcasecmp(emb.sche,"mailto") == 0) ||
+            (strcasecmp(emb.sche,"news") == 0)))
   {
     char * p = emb_url, * q = dest_url;
     while (*p)
@@ -4137,7 +3863,7 @@ void ink_web_canonicalize_url(char *base_url, char *emb_url, char *dest_url,
     return;
   }
   else if (emb.sche_exists &&
-	   !(((strcasecmp(emb.sche,"http") == 0) && !emb.host_exists)))
+           !(((strcasecmp(emb.sche,"http") == 0) && !emb.host_exists)))
     
   {
     /* 2b: not good enough, because things like 'http:overview.html' */
@@ -4162,65 +3888,65 @@ void ink_web_canonicalize_url(char *base_url, char *emb_url, char *dest_url,
     else
     {
       use_base_host = 1;
-	  
+          
       /* step 4 - if emb_path preceeded by slash, skip to 7 */
-	  
+          
       if (emb.leading_slash != 1)
       {
-	/* step 5 */
-	      
-	if (!emb.path_exists)
-	{
-	  use_base_path = 1;
-		  
-	  if (emb.para_exists)
-	  {
-	    /* 5a - if emb_para non-empty, skip to 7 */
-		      
-	    use_base_para = 0;
-	  }
-	  else
-	  {
-	    /* otherwise use base_para */
-		      
-	    use_base_para = 1;
-		      
-	    if (emb.quer_exists)
-	    {
-	      /* 5b - if emb_quer non-empty, skip to 7 */
-			  
-	      use_base_quer = 0;
-	    }
-	    else
-	    {
-	      /* otherwise use base query */
-			  
-	      use_base_quer = 1;
-	    }
-	  }
-	}
-	else
-	{
-	  use_base_path = 0;
-		  
-	  /* step 6 */
-	  /* create combined path */
-	  /* remove last segment of base_path */
-		  
-	  remove_last_seg(base.path, temp);
-	  remove_multiple_slash(temp, temp2);
-		  
-	  /* append emb_path */
-		  
-	  sprintf(temp2,"%s%s",temp2,emb.path);
+        /* step 5 */
+              
+        if (!emb.path_exists)
+        {
+          use_base_path = 1;
+                  
+          if (emb.para_exists)
+          {
+            /* 5a - if emb_para non-empty, skip to 7 */
+                      
+            use_base_para = 0;
+          }
+          else
+          {
+            /* otherwise use base_para */
+                      
+            use_base_para = 1;
+                      
+            if (emb.quer_exists)
+            {
+              /* 5b - if emb_quer non-empty, skip to 7 */
+                          
+              use_base_quer = 0;
+            }
+            else
+            {
+              /* otherwise use base query */
+                          
+              use_base_quer = 1;
+            }
+          }
+        }
+        else
+        {
+          use_base_path = 0;
+                  
+          /* step 6 */
+          /* create combined path */
+          /* remove last segment of base_path */
+                  
+          remove_last_seg(base.path, temp);
+          remove_multiple_slash(temp, temp2);
+                  
+          /* append emb_path */
+                  
+          sprintf(temp2,"%s%s",temp2,emb.path);
 
-	  /* remove "." and ".." */
-		  
-	  ink_web_remove_dots(temp2,emb.path,
-			      &leading_slash,MAX_URL_LEN);
-	  emb.path_exists = 1;
-	  emb.leading_slash = base.leading_slash;
-	} /* 5 */
+          /* remove "." and ".." */
+                  
+          ink_web_remove_dots(temp2,emb.path,
+                              &leading_slash,MAX_URL_LEN);
+          emb.path_exists = 1;
+          emb.leading_slash = base.leading_slash;
+        } /* 5 */
       } /* 4 */
     } /* 3 */
   }
@@ -4254,8 +3980,8 @@ void ink_web_canonicalize_url(char *base_url, char *emb_url, char *dest_url,
       append_string(dest_url, base.host, &doff, MAX_URL_LEN);
       if ((base.port_exists) && (strcmp(base.port,"80") != 0))
       {
-	append_string(dest_url, ":", &doff, MAX_URL_LEN);
-	append_string(dest_url, base.port, &doff, MAX_URL_LEN);
+        append_string(dest_url, ":", &doff, MAX_URL_LEN);
+        append_string(dest_url, base.port, &doff, MAX_URL_LEN);
       }
       host_last = 1;
     }
@@ -4268,8 +3994,8 @@ void ink_web_canonicalize_url(char *base_url, char *emb_url, char *dest_url,
       append_string(dest_url, emb.host, &doff, MAX_URL_LEN);
       if ((emb.port_exists) && (strcmp(emb.port,"80") != 0))
       {
-	append_string(dest_url, ":", &doff, MAX_URL_LEN);
-	append_string(dest_url, emb.port, &doff, MAX_URL_LEN);
+        append_string(dest_url, ":", &doff, MAX_URL_LEN);
+        append_string(dest_url, emb.port, &doff, MAX_URL_LEN);
       }
       host_last = 1;
     }
@@ -4280,7 +4006,7 @@ void ink_web_canonicalize_url(char *base_url, char *emb_url, char *dest_url,
     if (base.path_exists)
     {
       if (base.leading_slash)
-	append_string(dest_url, "/", &doff, MAX_URL_LEN);
+        append_string(dest_url, "/", &doff, MAX_URL_LEN);
 
       ink_web_unescapify_string(temp, base.path, MAX_URL_LEN);
       ink_web_escapify_string(base.path, temp, max_dest_url_len);
@@ -4293,7 +4019,7 @@ void ink_web_canonicalize_url(char *base_url, char *emb_url, char *dest_url,
     if (emb.path_exists)
     {
       if (emb.leading_slash)
-	append_string(dest_url, "/", &doff, MAX_URL_LEN);
+        append_string(dest_url, "/", &doff, MAX_URL_LEN);
       ink_web_unescapify_string(temp, emb.path, MAX_URL_LEN);
       ink_web_escapify_string(emb.path, temp, max_dest_url_len);
       append_string(dest_url, emb.path, &doff, MAX_URL_LEN);
@@ -4303,7 +4029,7 @@ void ink_web_canonicalize_url(char *base_url, char *emb_url, char *dest_url,
   
   if (use_base_para)
   {
-    if (base.para_exists)	{
+    if (base.para_exists)       {
       append_string(dest_url, ";", &doff, MAX_URL_LEN);
       append_string(dest_url, base.para, &doff, MAX_URL_LEN);
       host_last = 0;
@@ -4373,13 +4099,13 @@ void ink_web_canonicalize_url(char *base_url, char *emb_url, char *dest_url,
 void ink_web_decompose_url_into_structure(char *url, InkWebURLComponents *c)
 {
   ink_web_decompose_url(url,
-			c->sche, c->host, c->port,
-			c->path, c->frag, c->quer, c->para,
-			&(c->sche_exists), &(c->host_exists),
-			&(c->port_exists), &(c->path_exists),
-			&(c->frag_exists), &(c->quer_exists),
-			&(c->para_exists), &(c->rel_url),
-			&(c->leading_slash));
+                        c->sche, c->host, c->port,
+                        c->path, c->frag, c->quer, c->para,
+                        &(c->sche_exists), &(c->host_exists),
+                        &(c->port_exists), &(c->path_exists),
+                        &(c->frag_exists), &(c->quer_exists),
+                        &(c->para_exists), &(c->rel_url),
+                        &(c->leading_slash));
 
   c->is_path_name = 1;
   if (c->sche_exists &&
@@ -4436,7 +4162,7 @@ void ink_web_decompose_url_into_structure(char *url, InkWebURLComponents *c)
 #define STATIC_PATH_LEVELS 256
 
 int ink_web_remove_dots(char *src, char *dest, int *leadingslash,
-			int max_dest_len)
+                        int max_dest_len)
 {
   char *ptr, *end;
   int free_flag = 0;
@@ -4488,7 +4214,7 @@ int ink_web_remove_dots(char *src, char *dest, int *leadingslash,
     if (*ptr == '/') {
       /* include leading '/' in first segment */
       if (ptr == src)
-	*leadingslash = 1;
+        *leadingslash = 1;
       segstart = 1;
     } else if (segstart == 1) {
       seg[scount++] = ptr;
@@ -4507,14 +4233,14 @@ int ink_web_remove_dots(char *src, char *dest, int *leadingslash,
     ptr = seg[i];
     if (*ptr == '.') {
       if ((ptr == end-1) || (*(ptr+1) == '/')) {
-	/* it's a "." */
-	type[i] = DOT;
+        /* it's a "." */
+        type[i] = DOT;
       } else if (((ptr == end-2) && (*(ptr+1) == '.')) ||
-		 ((ptr < end-2) && (*(ptr+1) == '.') && (*(ptr+2) == '/'))) {
-	/* it's a ".." */
-	type[i] = DOTDOT;
+                 ((ptr < end-2) && (*(ptr+1) == '.') && (*(ptr+2) == '/'))) {
+        /* it's a ".." */
+        type[i] = DOTDOT;
       } else {
-	type[i] = NORMAL;
+        type[i] = NORMAL;
       }
     } else {
       /* it's not a special segment */
@@ -4530,18 +4256,18 @@ int ink_web_remove_dots(char *src, char *dest, int *leadingslash,
       temp = i-1;
       zapflag = 0;
       while ((temp >= 0) && (zapflag == 0)) {
-	if (type[temp] == NORMAL) {
-	  /* found a NORMAL one, ZAP this pair */
-	  type[temp] = ZAP;
-	  type[i] = ZAP;
-	  zapflag = 1;
-	} else {
-	  temp--;
-	}
+        if (type[temp] == NORMAL) {
+          /* found a NORMAL one, ZAP this pair */
+          type[temp] = ZAP;
+          type[i] = ZAP;
+          zapflag = 1;
+        } else {
+          temp--;
+        }
       }
       if (zapflag == 0) {
-	type[i] = ERROR;
-	error = 1;
+        type[i] = ERROR;
+        error = 1;
       }
     }
   }
@@ -4556,14 +4282,14 @@ int ink_web_remove_dots(char *src, char *dest, int *leadingslash,
   for(i=0;i<scount;i++) {
     if ((type[i] == NORMAL) || (type[i] == ERROR)) {
       if (i==scount-1) {
-	num = (int)(end-seg[i]);
+        num = (int)(end-seg[i]);
       } else {
-	num = (int)(seg[i+1]-seg[i]);
+        num = (int)(seg[i+1]-seg[i]);
       }
       
       /* truncate if nec. */
       if (doff+num > max_dest_len) {
-	num = max_dest_len-doff;
+        num = max_dest_len-doff;
       }
       
       strncpy(dest+doff,seg[i],num+1);
@@ -4614,68 +4340,68 @@ int ink_web_unescapify_string(char *dest_in, char *src_in, int max_dest_len)
     if (*src == '%') {
       /* found start of an escape sequence, unescape it */
       if ((*(src+1) != 0) && (*(src+2) != 0)) {
-	c1 = strchr(hexdigits,*(src+1));
-	c2 = strchr(hexdigits,*(src+2));
-	if ((c1 == NULL) || (c2 == NULL)) {
-	  ink_warning("got escape sequence but no hex digits in:%s", src_in);
-	  if (dcount+1 < max_dest_len) {
-	    *(dest++) = *src;
-	    dcount++;
-	  } else {
-	    ink_warning("ink_web_unescapify_string had to truncate:%s",src_in);
-	    quit = 1;
-	  }
-	} else {
-	  /* check if hex digits lowercase */
-	  dig1 = (int)(c1-hexdigits);
-	  dig2 = (int)(c2-hexdigits);
-	  if (dig1 > 15) dig1 -= 6;
-	  if (dig2 > 15) dig2 -= 6;
-	  /* this is the ascii char */
-	  num = 16*dig1+dig2;
+        c1 = strchr(hexdigits,*(src+1));
+        c2 = strchr(hexdigits,*(src+2));
+        if ((c1 == NULL) || (c2 == NULL)) {
+          ink_warning("got escape sequence but no hex digits in:%s", src_in);
+          if (dcount+1 < max_dest_len) {
+            *(dest++) = *src;
+            dcount++;
+          } else {
+            ink_warning("ink_web_unescapify_string had to truncate:%s",src_in);
+            quit = 1;
+          }
+        } else {
+          /* check if hex digits lowercase */
+          dig1 = (int)(c1-hexdigits);
+          dig2 = (int)(c2-hexdigits);
+          if (dig1 > 15) dig1 -= 6;
+          if (dig2 > 15) dig2 -= 6;
+          /* this is the ascii char */
+          num = 16*dig1+dig2;
 
-	  if (!strchr(dontunescapify,num)) {
-	    /* unescapify the escape sequence you found */
-	    if (dcount+1 < max_dest_len) {
-	      *(dest++) = num;
-	      dcount++;
-	      src += 2;
-	    } else {
-	      ink_warning("ink_web_escapify_string had to truncate:%s",src_in);
-	      quit = 1;
-	    }
-	  } else {
-	    /* don't unescapify these, just pass the escape sequence */
-	    if (dcount+3 < max_dest_len) {
-	      *(dest++) = '%';
-	      *(dest++) = hexdigits[dig1];
-	      *(dest++) = hexdigits[dig2];
-	      dcount += 3;
-	      src += 2;
-	    } else {
-	      ink_warning("ink_web_unescapify_string had to truncate:%s",
-			  src_in);
-	      quit = 1;
-	    }
-	  }
-	}
+          if (!strchr(dontunescapify,num)) {
+            /* unescapify the escape sequence you found */
+            if (dcount+1 < max_dest_len) {
+              *(dest++) = num;
+              dcount++;
+              src += 2;
+            } else {
+              ink_warning("ink_web_escapify_string had to truncate:%s",src_in);
+              quit = 1;
+            }
+          } else {
+            /* don't unescapify these, just pass the escape sequence */
+            if (dcount+3 < max_dest_len) {
+              *(dest++) = '%';
+              *(dest++) = hexdigits[dig1];
+              *(dest++) = hexdigits[dig2];
+              dcount += 3;
+              src += 2;
+            } else {
+              ink_warning("ink_web_unescapify_string had to truncate:%s",
+                          src_in);
+              quit = 1;
+            }
+          }
+        }
       } else {
-	ink_warning("got escape sequence but no hex digits (too near end of string) in:%s", src_in);
-	if (dcount+1 < max_dest_len) {
-	  *dest++ = *src;
-	  dcount++;
-	} else {
-	  ink_warning("ink_web_unescapify_string had to truncate:%s",src_in);
-	  quit = 1;
-	}
+        ink_warning("got escape sequence but no hex digits (too near end of string) in:%s", src_in);
+        if (dcount+1 < max_dest_len) {
+          *dest++ = *src;
+          dcount++;
+        } else {
+          ink_warning("ink_web_unescapify_string had to truncate:%s",src_in);
+          quit = 1;
+        }
       }
     } else {
       if (dcount+1 < max_dest_len) {
-	*dest++ = *src;
-	dcount++;
+        *dest++ = *src;
+        dcount++;
       } else {
-	ink_warning("ink_web_unescapify_string had to truncate:%s",src_in);
-	quit = 1;
+        ink_warning("ink_web_unescapify_string had to truncate:%s",src_in);
+        quit = 1;
       }
     }
     src++;
@@ -4722,28 +4448,28 @@ int ink_web_escapify_string(char *dest_in, char *src_in, int max_dest_len) {
 
   while ((*src != 0) && (dcount < max_dest_len) && (quit == 0)) {
     if ((char*)memchr(dontescapify,*src,INT_MAX) ||
-	ParseRules::is_alpha(*src) ||
-	ParseRules::is_digit(*src)) {
+        ParseRules::is_alpha(*src) ||
+        ParseRules::is_digit(*src)) {
       /* this is regular character, don't escapify it */
       if (dcount+1 < max_dest_len) {
-	*dest++ = *src;
-	dcount++;
+        *dest++ = *src;
+        dcount++;
       } else {
-	ink_warning("ink_web_escapify_string (1) had to truncate:'%s'",src_in);
-	quit = 1;
+        ink_warning("ink_web_escapify_string (1) had to truncate:'%s'",src_in);
+        quit = 1;
       }
     } else {
       d1 = *src/16;
       d2 = *src%16;
       if (dcount+3 < max_dest_len) {
-	*dest++ = '%'; 
-	*dest++ = hexdigits[d1];
-	*dest++ = hexdigits[d2];
-	/*	fprintf(stderr,"%d %d  %c %c\n",d1,d2,hexdigits[d1],hexdigits[d2]);*/
-	dcount += 3;
+        *dest++ = '%'; 
+        *dest++ = hexdigits[d1];
+        *dest++ = hexdigits[d2];
+        /*      fprintf(stderr,"%d %d  %c %c\n",d1,d2,hexdigits[d1],hexdigits[d2]);*/
+        dcount += 3;
       } else {
-	ink_warning("ink_web_escapify_string (2) had to truncate:'%s'",src_in);
-	quit = 1;
+        ink_warning("ink_web_escapify_string (2) had to truncate:'%s'",src_in);
+        quit = 1;
       }
     }
     src++;
@@ -4826,9 +4552,9 @@ int _ink_assert(const char * a, const char * f, int l) {
 
 
 static void process_arg(ArgumentDescription * argument_descriptions,
-			int n_argument_descriptions,
-			int i, 
-			char ***argv)
+                        int n_argument_descriptions,
+                        int i, 
+                        char ***argv)
 {
   char * arg = NULL;
   if (argument_descriptions[i].type) {
@@ -4843,16 +4569,16 @@ static void process_arg(ArgumentDescription * argument_descriptions,
       if (!arg) usage(argument_descriptions, n_argument_descriptions, NULL);
       switch (type) {
         case 'I': 
-	  *(int *)argument_descriptions[i].location = atoi(arg);
-	  break;
+          *(int *)argument_descriptions[i].location = atoi(arg);
+          break;
         case 'D': 
-	  *(double *)argument_descriptions[i].location = atof(arg);
+          *(double *)argument_descriptions[i].location = atof(arg);
           break;
         case 'L':
           *(ink64 *)argument_descriptions[i].location = ink_atoll(arg);
           break;
         case 'S': strncpy((char *)argument_descriptions[i].location,arg,
-			  atoi(argument_descriptions[i].type+1));
+                          atoi(argument_descriptions[i].type+1));
           break;
         default:
           ink_fatal(1,(char *)"bad argument description");
@@ -4863,13 +4589,13 @@ static void process_arg(ArgumentDescription * argument_descriptions,
   }
   if (argument_descriptions[i].pfn) 
     argument_descriptions[i].pfn(argument_descriptions, 
-				 n_argument_descriptions,
-				 arg);
+                                 n_argument_descriptions,
+                                 arg);
 }
 
 
 void show_argument_configuration(ArgumentDescription * argument_descriptions,
-				 int n_argument_descriptions) 
+                                 int n_argument_descriptions) 
 {
   int i = 0;
   printf("Argument Configuration\n"); 
@@ -4909,8 +4635,8 @@ void show_argument_configuration(ArgumentDescription * argument_descriptions,
 }
 
 void process_args(ArgumentDescription * argument_descriptions,
-		  int n_argument_descriptions,
-		  char **argv) 
+                  int n_argument_descriptions,
+                  char **argv) 
 {
   int i = 0;
   //
@@ -4925,18 +4651,18 @@ void process_args(ArgumentDescription * argument_descriptions,
       case 'f':
       case 'F':
       case 'I':
-	*(int *)argument_descriptions[i].location = atoi(env);
-	break;
+        *(int *)argument_descriptions[i].location = atoi(env);
+        break;
       case 'D':
-	*(double *)argument_descriptions[i].location = atof(env);
-	break;
+        *(double *)argument_descriptions[i].location = atof(env);
+        break;
       case 'L':
-	*(ink64 *)argument_descriptions[i].location = ink_atoll(env);
-	break;
+        *(ink64 *)argument_descriptions[i].location = ink_atoll(env);
+        break;
       case 'S':
-	strncpy((char *)argument_descriptions[i].location,env,
-		atoi(argument_descriptions[i].type+1));
-	break;
+        strncpy((char *)argument_descriptions[i].location,env,
+                atoi(argument_descriptions[i].type+1));
+        break;
       }
     }
 
@@ -4954,17 +4680,17 @@ void process_args(ArgumentDescription * argument_descriptions,
             break;
           }
           if (i>=n_argument_descriptions) 
-	    usage(argument_descriptions,n_argument_descriptions,NULL);
+            usage(argument_descriptions,n_argument_descriptions,NULL);
       } else {
         while ( *++(*argv) ) 
           for (i=0;i<n_argument_descriptions;i++) 
             if (argument_descriptions[i].key==**argv) { 
               process_arg(argument_descriptions,n_argument_descriptions,
-			  i,&argv);
+                          i,&argv);
               break;
             }
             if (i>=n_argument_descriptions) 
-	      usage(argument_descriptions,n_argument_descriptions,NULL);
+              usage(argument_descriptions,n_argument_descriptions,NULL);
       }
     } else {
       if (n_file_arguments>MAX_FILE_ARGUMENTS) ink_fatal(1,(char *)"too many files");
@@ -4975,18 +4701,18 @@ void process_args(ArgumentDescription * argument_descriptions,
 }
 
 void usage(ArgumentDescription * argument_descriptions,
-	   int n_argument_descriptions,
-	   char * dummy) 
+           int n_argument_descriptions,
+           char * dummy) 
 {
   (void)argument_descriptions; (void)n_argument_descriptions; (void)dummy;
   fprintf(stderr,"Usage: %s [--SWITCH [ARG]]\n",program_name);
   fprintf(stderr,"  switch__________________type__default___description\n");
   for (int i=0;i<n_argument_descriptions;i++) {
     fprintf(stderr,"  -%c, --%s%s%s",
-	    argument_descriptions[i].key,
-	    argument_descriptions[i].name,
-	    (strlen(argument_descriptions[i].name) + 61 < 81) ?
-	     &SPACES[strlen(argument_descriptions[i].name)+61] : "",
+            argument_descriptions[i].key,
+            argument_descriptions[i].name,
+            (strlen(argument_descriptions[i].name) + 61 < 81) ?
+             &SPACES[strlen(argument_descriptions[i].name)+61] : "",
             argument_types_descriptions[
               argument_descriptions[i].type ?
                 strchr(argument_types_keys,
@@ -4997,40 +4723,40 @@ void usage(ArgumentDescription * argument_descriptions,
     switch(argument_descriptions[i].type?argument_descriptions[i].type[0]:0) {
       case 0: fprintf(stderr, "          "); break;
       case 'L':
-	fprintf(stderr, 
+        fprintf(stderr, 
 #ifdef __alpha
-		" %-9ld", 
+                " %-9ld", 
 #elif defined(FreeBSD)
-		" %-9qd", 
+                " %-9qd", 
 #else
-		" %-9lld",
+                " %-9lld",
 #endif
-		*(ink64*)argument_descriptions[i].location);
-	break;
+                *(ink64*)argument_descriptions[i].location);
+        break;
       case 'S':
-	if (*(char*)argument_descriptions[i].location) {
-	  if (strlen((char*)argument_descriptions[i].location) < 10)
-	    fprintf(stderr, " %-9s", 
-		    (char*)argument_descriptions[i].location);
-	  else {
-	    ((char*)argument_descriptions[i].location)[7] = 0;
-	    fprintf(stderr, " %-7s..", 
-		    (char*)argument_descriptions[i].location);
-	  }
-	} else
-	  fprintf(stderr, " (null)   ");
-	break;
+        if (*(char*)argument_descriptions[i].location) {
+          if (strlen((char*)argument_descriptions[i].location) < 10)
+            fprintf(stderr, " %-9s", 
+                    (char*)argument_descriptions[i].location);
+          else {
+            ((char*)argument_descriptions[i].location)[7] = 0;
+            fprintf(stderr, " %-7s..", 
+                    (char*)argument_descriptions[i].location);
+          }
+        } else
+          fprintf(stderr, " (null)   ");
+        break;
       case 'D':
-	fprintf(stderr, " %-9.3f",
-		*(double*)argument_descriptions[i].location);
-	break;
+        fprintf(stderr, " %-9.3f",
+                *(double*)argument_descriptions[i].location);
+        break;
       case 'I':
-	fprintf(stderr, " %-9d", *(int *)argument_descriptions[i].location);
-	break;
+        fprintf(stderr, " %-9d", *(int *)argument_descriptions[i].location);
+        break;
       case 'T': case 'f': case 'F': 
-	fprintf(stderr, " %-9s",
-		*(int *)argument_descriptions[i].location?"true ":"false");
-	break;
+        fprintf(stderr, " %-9s",
+                *(int *)argument_descriptions[i].location?"true ":"false");
+        break;
     }
     fprintf(stderr," %s\n",argument_descriptions[i].description);
   }
@@ -5038,778 +4764,778 @@ void usage(ArgumentDescription * argument_descriptions,
 }
 
 const unsigned int parseRulesCType[256] = {
-	0xD1210821,
-	0xD0010821,
-	0xD0010821,
-	0xD0010821,
-	0xD0010821,
-	0xD0010821,
-	0xD0010821,
-	0xD0010821,
-	0xD0010821,
-	0xBB130861,
-	0x5B390821,
-	0xD8010821,
-	0xD8010821,
-	0x5B350821,
-	0xD0010821,
-	0xD0010821,
-	0xD0010821,
-	0xD0010821,
-	0xD0010821,
-	0xD0010821,
-	0xD0010821,
-	0xD0010821,
-	0xD0010821,
-	0xD0010821,
-	0xD0010821,
-	0xD0010821,
-	0xD0010821,
-	0xD0010821,
-	0xD0010821,
-	0xD0010821,
-	0xD0010821,
-	0xD0010821,
-	0xAB1F0841,
-	0xC140C301,
-	0x20028801,
-	0xC2408801,
-	0xC0404501,
-	0xC0408801,
-	0xC040A101,
-	0xC040C301,
-	0xA002C301,
-	0xA002C301,
-	0xC0C0C301,
-	0xC040C501,
-	0x2102C301,
-	0xC040C501,
-	0xC040C501,
-	0xA002A001,
-	0xC4404191,
-	0xC4404191,
-	0xC4404191,
-	0xC4404191,
-	0xC4404191,
-	0xC4404191,
-	0xC4404191,
-	0xC4404191,
-	0xC4404191,
-	0xC4404191,
-	0x8102A101,
-	0xA002A001,
-	0xA0028801,
-	0xC002A101,
-	0xA0028801,
-	0xA082A001,
-	0xE002A101,
-	0xC440418B,
-	0xC440418B,
-	0xC440418B,
-	0xC440418B,
-	0xC440418B,
-	0xC440418B,
-	0xC440410B,
-	0xC440410B,
-	0xC440410B,
-	0xC440410B,
-	0xC440410B,
-	0xC440410B,
-	0xC440410B,
-	0xC440410B,
-	0xC440410B,
-	0xC440410B,
-	0xC440410B,
-	0xC440410B,
-	0xC440410B,
-	0xC440410B,
-	0xC440410B,
-	0xC440410B,
-	0xC440410B,
-	0xC440410B,
-	0xC440410B,
-	0xC440410B,
-	0xA082D101,
-	0xA082D101,
-	0xA002D101,
-	0xC040D101,
-	0xC040C501,
-	0xC040D101,
-	0xC440418D,
-	0xC440418D,
-	0xC440418D,
-	0xC440418D,
-	0xC440418D,
-	0xC440418D,
-	0xC440410D,
-	0xC440410D,
-	0xC440410D,
-	0xC440410D,
-	0xC440410D,
-	0xC440410D,
-	0xC440410D,
-	0xC440410D,
-	0xC440410D,
-	0xC440410D,
-	0xC440410D,
-	0xC440410D,
-	0xC440410D,
-	0xC440410D,
-	0xC440410D,
-	0xC440410D,
-	0xC440410D,
-	0xC440410D,
-	0xC440410D,
-	0xC440410D,
-	0xA002D101,
-	0xC040D101,
-	0xA002D101,
-	0xC040D101,
-	0xD0010821,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000,
-	0xC0000000
+        0xD1210821,
+        0xD0010821,
+        0xD0010821,
+        0xD0010821,
+        0xD0010821,
+        0xD0010821,
+        0xD0010821,
+        0xD0010821,
+        0xD0010821,
+        0xBB130861,
+        0x5B390821,
+        0xD8010821,
+        0xD8010821,
+        0x5B350821,
+        0xD0010821,
+        0xD0010821,
+        0xD0010821,
+        0xD0010821,
+        0xD0010821,
+        0xD0010821,
+        0xD0010821,
+        0xD0010821,
+        0xD0010821,
+        0xD0010821,
+        0xD0010821,
+        0xD0010821,
+        0xD0010821,
+        0xD0010821,
+        0xD0010821,
+        0xD0010821,
+        0xD0010821,
+        0xD0010821,
+        0xAB1F0841,
+        0xC140C301,
+        0x20028801,
+        0xC2408801,
+        0xC0404501,
+        0xC0408801,
+        0xC040A101,
+        0xC040C301,
+        0xA002C301,
+        0xA002C301,
+        0xC0C0C301,
+        0xC040C501,
+        0x2102C301,
+        0xC040C501,
+        0xC040C501,
+        0xA002A001,
+        0xC4404191,
+        0xC4404191,
+        0xC4404191,
+        0xC4404191,
+        0xC4404191,
+        0xC4404191,
+        0xC4404191,
+        0xC4404191,
+        0xC4404191,
+        0xC4404191,
+        0x8102A101,
+        0xA002A001,
+        0xA0028801,
+        0xC002A101,
+        0xA0028801,
+        0xA082A001,
+        0xE002A101,
+        0xC440418B,
+        0xC440418B,
+        0xC440418B,
+        0xC440418B,
+        0xC440418B,
+        0xC440418B,
+        0xC440410B,
+        0xC440410B,
+        0xC440410B,
+        0xC440410B,
+        0xC440410B,
+        0xC440410B,
+        0xC440410B,
+        0xC440410B,
+        0xC440410B,
+        0xC440410B,
+        0xC440410B,
+        0xC440410B,
+        0xC440410B,
+        0xC440410B,
+        0xC440410B,
+        0xC440410B,
+        0xC440410B,
+        0xC440410B,
+        0xC440410B,
+        0xC440410B,
+        0xA082D101,
+        0xA082D101,
+        0xA002D101,
+        0xC040D101,
+        0xC040C501,
+        0xC040D101,
+        0xC440418D,
+        0xC440418D,
+        0xC440418D,
+        0xC440418D,
+        0xC440418D,
+        0xC440418D,
+        0xC440410D,
+        0xC440410D,
+        0xC440410D,
+        0xC440410D,
+        0xC440410D,
+        0xC440410D,
+        0xC440410D,
+        0xC440410D,
+        0xC440410D,
+        0xC440410D,
+        0xC440410D,
+        0xC440410D,
+        0xC440410D,
+        0xC440410D,
+        0xC440410D,
+        0xC440410D,
+        0xC440410D,
+        0xC440410D,
+        0xC440410D,
+        0xC440410D,
+        0xA002D101,
+        0xC040D101,
+        0xA002D101,
+        0xC040D101,
+        0xD0010821,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000,
+        0xC0000000
 };
 const char      parseRulesCTypeToUpper[256] = {
-	0,
-	1,
-	2,
-	3,
-	4,
-	5,
-	6,
-	7,
-	8,
-	9,
-	10,
-	11,
-	12,
-	13,
-	14,
-	15,
-	16,
-	17,
-	18,
-	19,
-	20,
-	21,
-	22,
-	23,
-	24,
-	25,
-	26,
-	27,
-	28,
-	29,
-	30,
-	31,
-	32,
-	33,
-	34,
-	35,
-	36,
-	37,
-	38,
-	39,
-	40,
-	41,
-	42,
-	43,
-	44,
-	45,
-	46,
-	47,
-	48,
-	49,
-	50,
-	51,
-	52,
-	53,
-	54,
-	55,
-	56,
-	57,
-	58,
-	59,
-	60,
-	61,
-	62,
-	63,
-	64,
-	65,
-	66,
-	67,
-	68,
-	69,
-	70,
-	71,
-	72,
-	73,
-	74,
-	75,
-	76,
-	77,
-	78,
-	79,
-	80,
-	81,
-	82,
-	83,
-	84,
-	85,
-	86,
-	87,
-	88,
-	89,
-	90,
-	91,
-	92,
-	93,
-	94,
-	95,
-	96,
-	65,
-	66,
-	67,
-	68,
-	69,
-	70,
-	71,
-	72,
-	73,
-	74,
-	75,
-	76,
-	77,
-	78,
-	79,
-	80,
-	81,
-	82,
-	83,
-	84,
-	85,
-	86,
-	87,
-	88,
-	89,
-	90,
-	123,
-	124,
-	125,
-	126,
-	127,
-	-128,
-	-127,
-	-126,
-	-125,
-	-124,
-	-123,
-	-122,
-	-121,
-	-120,
-	-119,
-	-118,
-	-117,
-	-116,
-	-115,
-	-114,
-	-113,
-	-112,
-	-111,
-	-110,
-	-109,
-	-108,
-	-107,
-	-106,
-	-105,
-	-104,
-	-103,
-	-102,
-	-101,
-	-100,
-	-99,
-	-98,
-	-97,
-	-96,
-	-95,
-	-94,
-	-93,
-	-92,
-	-91,
-	-90,
-	-89,
-	-88,
-	-87,
-	-86,
-	-85,
-	-84,
-	-83,
-	-82,
-	-81,
-	-80,
-	-79,
-	-78,
-	-77,
-	-76,
-	-75,
-	-74,
-	-73,
-	-72,
-	-71,
-	-70,
-	-69,
-	-68,
-	-67,
-	-66,
-	-65,
-	-64,
-	-63,
-	-62,
-	-61,
-	-60,
-	-59,
-	-58,
-	-57,
-	-56,
-	-55,
-	-54,
-	-53,
-	-52,
-	-51,
-	-50,
-	-49,
-	-48,
-	-47,
-	-46,
-	-45,
-	-44,
-	-43,
-	-42,
-	-41,
-	-40,
-	-39,
-	-38,
-	-37,
-	-36,
-	-35,
-	-34,
-	-33,
-	-32,
-	-31,
-	-30,
-	-29,
-	-28,
-	-27,
-	-26,
-	-25,
-	-24,
-	-23,
-	-22,
-	-21,
-	-20,
-	-19,
-	-18,
-	-17,
-	-16,
-	-15,
-	-14,
-	-13,
-	-12,
-	-11,
-	-10,
-	-9,
-	-8,
-	-7,
-	-6,
-	-5,
-	-4,
-	-3,
-	-2,
-	-1
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        58,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        71,
+        72,
+        73,
+        74,
+        75,
+        76,
+        77,
+        78,
+        79,
+        80,
+        81,
+        82,
+        83,
+        84,
+        85,
+        86,
+        87,
+        88,
+        89,
+        90,
+        91,
+        92,
+        93,
+        94,
+        95,
+        96,
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        71,
+        72,
+        73,
+        74,
+        75,
+        76,
+        77,
+        78,
+        79,
+        80,
+        81,
+        82,
+        83,
+        84,
+        85,
+        86,
+        87,
+        88,
+        89,
+        90,
+        123,
+        124,
+        125,
+        126,
+        127,
+        -128,
+        -127,
+        -126,
+        -125,
+        -124,
+        -123,
+        -122,
+        -121,
+        -120,
+        -119,
+        -118,
+        -117,
+        -116,
+        -115,
+        -114,
+        -113,
+        -112,
+        -111,
+        -110,
+        -109,
+        -108,
+        -107,
+        -106,
+        -105,
+        -104,
+        -103,
+        -102,
+        -101,
+        -100,
+        -99,
+        -98,
+        -97,
+        -96,
+        -95,
+        -94,
+        -93,
+        -92,
+        -91,
+        -90,
+        -89,
+        -88,
+        -87,
+        -86,
+        -85,
+        -84,
+        -83,
+        -82,
+        -81,
+        -80,
+        -79,
+        -78,
+        -77,
+        -76,
+        -75,
+        -74,
+        -73,
+        -72,
+        -71,
+        -70,
+        -69,
+        -68,
+        -67,
+        -66,
+        -65,
+        -64,
+        -63,
+        -62,
+        -61,
+        -60,
+        -59,
+        -58,
+        -57,
+        -56,
+        -55,
+        -54,
+        -53,
+        -52,
+        -51,
+        -50,
+        -49,
+        -48,
+        -47,
+        -46,
+        -45,
+        -44,
+        -43,
+        -42,
+        -41,
+        -40,
+        -39,
+        -38,
+        -37,
+        -36,
+        -35,
+        -34,
+        -33,
+        -32,
+        -31,
+        -30,
+        -29,
+        -28,
+        -27,
+        -26,
+        -25,
+        -24,
+        -23,
+        -22,
+        -21,
+        -20,
+        -19,
+        -18,
+        -17,
+        -16,
+        -15,
+        -14,
+        -13,
+        -12,
+        -11,
+        -10,
+        -9,
+        -8,
+        -7,
+        -6,
+        -5,
+        -4,
+        -3,
+        -2,
+        -1
 };
 const char      parseRulesCTypeToLower[256] = {
-	0,
-	1,
-	2,
-	3,
-	4,
-	5,
-	6,
-	7,
-	8,
-	9,
-	10,
-	11,
-	12,
-	13,
-	14,
-	15,
-	16,
-	17,
-	18,
-	19,
-	20,
-	21,
-	22,
-	23,
-	24,
-	25,
-	26,
-	27,
-	28,
-	29,
-	30,
-	31,
-	32,
-	33,
-	34,
-	35,
-	36,
-	37,
-	38,
-	39,
-	40,
-	41,
-	42,
-	43,
-	44,
-	45,
-	46,
-	47,
-	48,
-	49,
-	50,
-	51,
-	52,
-	53,
-	54,
-	55,
-	56,
-	57,
-	58,
-	59,
-	60,
-	61,
-	62,
-	63,
-	64,
-	97,
-	98,
-	99,
-	100,
-	101,
-	102,
-	103,
-	104,
-	105,
-	106,
-	107,
-	108,
-	109,
-	110,
-	111,
-	112,
-	113,
-	114,
-	115,
-	116,
-	117,
-	118,
-	119,
-	120,
-	121,
-	122,
-	91,
-	92,
-	93,
-	94,
-	95,
-	96,
-	97,
-	98,
-	99,
-	100,
-	101,
-	102,
-	103,
-	104,
-	105,
-	106,
-	107,
-	108,
-	109,
-	110,
-	111,
-	112,
-	113,
-	114,
-	115,
-	116,
-	117,
-	118,
-	119,
-	120,
-	121,
-	122,
-	123,
-	124,
-	125,
-	126,
-	127,
-	-128,
-	-127,
-	-126,
-	-125,
-	-124,
-	-123,
-	-122,
-	-121,
-	-120,
-	-119,
-	-118,
-	-117,
-	-116,
-	-115,
-	-114,
-	-113,
-	-112,
-	-111,
-	-110,
-	-109,
-	-108,
-	-107,
-	-106,
-	-105,
-	-104,
-	-103,
-	-102,
-	-101,
-	-100,
-	-99,
-	-98,
-	-97,
-	-96,
-	-95,
-	-94,
-	-93,
-	-92,
-	-91,
-	-90,
-	-89,
-	-88,
-	-87,
-	-86,
-	-85,
-	-84,
-	-83,
-	-82,
-	-81,
-	-80,
-	-79,
-	-78,
-	-77,
-	-76,
-	-75,
-	-74,
-	-73,
-	-72,
-	-71,
-	-70,
-	-69,
-	-68,
-	-67,
-	-66,
-	-65,
-	-64,
-	-63,
-	-62,
-	-61,
-	-60,
-	-59,
-	-58,
-	-57,
-	-56,
-	-55,
-	-54,
-	-53,
-	-52,
-	-51,
-	-50,
-	-49,
-	-48,
-	-47,
-	-46,
-	-45,
-	-44,
-	-43,
-	-42,
-	-41,
-	-40,
-	-39,
-	-38,
-	-37,
-	-36,
-	-35,
-	-34,
-	-33,
-	-32,
-	-31,
-	-30,
-	-29,
-	-28,
-	-27,
-	-26,
-	-25,
-	-24,
-	-23,
-	-22,
-	-21,
-	-20,
-	-19,
-	-18,
-	-17,
-	-16,
-	-15,
-	-14,
-	-13,
-	-12,
-	-11,
-	-10,
-	-9,
-	-8,
-	-7,
-	-6,
-	-5,
-	-4,
-	-3,
-	-2,
-	-1
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        58,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        97,
+        98,
+        99,
+        100,
+        101,
+        102,
+        103,
+        104,
+        105,
+        106,
+        107,
+        108,
+        109,
+        110,
+        111,
+        112,
+        113,
+        114,
+        115,
+        116,
+        117,
+        118,
+        119,
+        120,
+        121,
+        122,
+        91,
+        92,
+        93,
+        94,
+        95,
+        96,
+        97,
+        98,
+        99,
+        100,
+        101,
+        102,
+        103,
+        104,
+        105,
+        106,
+        107,
+        108,
+        109,
+        110,
+        111,
+        112,
+        113,
+        114,
+        115,
+        116,
+        117,
+        118,
+        119,
+        120,
+        121,
+        122,
+        123,
+        124,
+        125,
+        126,
+        127,
+        -128,
+        -127,
+        -126,
+        -125,
+        -124,
+        -123,
+        -122,
+        -121,
+        -120,
+        -119,
+        -118,
+        -117,
+        -116,
+        -115,
+        -114,
+        -113,
+        -112,
+        -111,
+        -110,
+        -109,
+        -108,
+        -107,
+        -106,
+        -105,
+        -104,
+        -103,
+        -102,
+        -101,
+        -100,
+        -99,
+        -98,
+        -97,
+        -96,
+        -95,
+        -94,
+        -93,
+        -92,
+        -91,
+        -90,
+        -89,
+        -88,
+        -87,
+        -86,
+        -85,
+        -84,
+        -83,
+        -82,
+        -81,
+        -80,
+        -79,
+        -78,
+        -77,
+        -76,
+        -75,
+        -74,
+        -73,
+        -72,
+        -71,
+        -70,
+        -69,
+        -68,
+        -67,
+        -66,
+        -65,
+        -64,
+        -63,
+        -62,
+        -61,
+        -60,
+        -59,
+        -58,
+        -57,
+        -56,
+        -55,
+        -54,
+        -53,
+        -52,
+        -51,
+        -50,
+        -49,
+        -48,
+        -47,
+        -46,
+        -45,
+        -44,
+        -43,
+        -42,
+        -41,
+        -40,
+        -39,
+        -38,
+        -37,
+        -36,
+        -35,
+        -34,
+        -33,
+        -32,
+        -31,
+        -30,
+        -29,
+        -28,
+        -27,
+        -26,
+        -25,
+        -24,
+        -23,
+        -22,
+        -21,
+        -20,
+        -19,
+        -18,
+        -17,
+        -16,
+        -15,
+        -14,
+        -13,
+        -12,
+        -11,
+        -10,
+        -9,
+        -8,
+        -7,
+        -6,
+        -5,
+        -4,
+        -3,
+        -2,
+        -1
 };
 
 #define UINT4 unsigned int
@@ -5891,8 +5617,7 @@ static unsigned char PADDING[64] = {
 /* MD5 initialization. Begins an MD5 operation, writing a new context.
  */
 
-static void MD5Init (MD5_CTX *context)
-{
+static void MD5Init (MD5_CTX *context) {
   context->count[0] = context->count[1] = 0;
 
   /* Load magic initialization constants.
@@ -5910,8 +5635,7 @@ typedef unsigned char *POINTER;
      operation, processing another message block, and updating the
      context.
  */
-static void MD5Update (MD5_CTX *context, unsigned char * input, unsigned int inputLen)
-{
+static void MD5Update (MD5_CTX *context, unsigned char * input, unsigned int inputLen) {
   unsigned int i, index, partLen;
 
   /* Compute number of bytes mod 64 */
@@ -5949,8 +5673,7 @@ static void MD5Update (MD5_CTX *context, unsigned char * input, unsigned int inp
 /* MD5 finalization. Ends an MD5 message-digest operation, writing the
      the message digest and zeroizing the context.
  */
-static void MD5Final (unsigned char digest[16], MD5_CTX *context)
-{
+static void MD5Final (unsigned char digest[16], MD5_CTX *context) {
   unsigned char bits[8];
   unsigned int index, padLen;
 
@@ -5976,8 +5699,7 @@ static void MD5Final (unsigned char digest[16], MD5_CTX *context)
 
 /* MD5 basic transformation. Transforms state based on block.
  */
-static void MD5Transform (UINT4 state[4], unsigned char block[64])
-{
+static void MD5Transform (UINT4 state[4], unsigned char block[64]) {
   UINT4 a, b, c, d, x[16];
   unsigned int i, j;
 
@@ -6080,8 +5802,7 @@ static void MD5Transform (UINT4 state[4], unsigned char block[64])
 /* Encodes input (UINT4) into output (unsigned char). Assumes len is
      a multiple of 4.
  */
-static void Encode (unsigned char *output, UINT4*input, unsigned int len)
-{
+static void Encode (unsigned char *output, UINT4*input, unsigned int len) {
   unsigned int i, j;
 
   for (i = 0, j = 0; j < len; i++, j += 4) {
@@ -6093,14 +5814,13 @@ static void Encode (unsigned char *output, UINT4*input, unsigned int len)
 }
 
 int ink_code_md5(unsigned char *input,
-		 int input_length,
-		 unsigned char *sixteen_byte_hash_pointer)
-{
-	MD5_CTX context;
+                 int input_length,
+                 unsigned char *sixteen_byte_hash_pointer) {
+  MD5_CTX context;
 
-	MD5Init(&context);
-	MD5Update(&context, input, input_length);
-	MD5Final(sixteen_byte_hash_pointer, &context);
+  MD5Init(&context);
+  MD5Update(&context, input, input_length);
+  MD5Final(sixteen_byte_hash_pointer, &context);
 
-	return(0);
+  return(0);
 } /* End ink_code_md5 */
