@@ -4372,6 +4372,11 @@ TSHttpSchedule(TSCont contp, TSHttpTxn txnp, ink_hrtime timeout)
 
   FORCE_PLUGIN_MUTEX(contp);
 
+  INKContInternal *i = (INKContInternal *) contp;
+
+  if (ink_atomic_increment((int *) &i->m_event_count, 1) < 0)
+    ink_assert (!"not reached");
+
   TSAction action;
   Continuation *cont  = (Continuation*)contp;
   HttpSM *sm = (HttpSM*)txnp;
