@@ -10,6 +10,7 @@ Release history:
     [NOTE that x.{odd}.z versions are strictly Alpha/Beta releases,
           while x.{even}.z versions are Stable/GA releases.]
 
+    3.0.5           : Released on xxx, 2012 
     3.0.4           : Released on March 21, 2012 
     3.0.3           : Released on Februrary 13, 2012
     3.0.2           : Released on December 07th, 2011
@@ -35,9 +36,9 @@ CURRENT RELEASE NOTES:
 
 RELEASE SHOWSTOPPERS:
 
-A list of all bugs open for the next v3.0.4 release can be found at
+A list of all bugs open for the next v3.0.5 release can be found at
 
-  http://s.apache.org/ts-3.0.4
+  http://s.apache.org/ts-3.0.5
 
 PATCHES ACCEPTED TO BACKPORT FROM TRUNK:
 
@@ -47,10 +48,11 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   *) HttpSM: TS can hang on HTTPS POST requests.
    Trunk patch: http://svn.apache.org/viewvc?view=rev&rev=1228988
    Jira: https://issues.apache.org/jira/browse/TS-1049
-   +1: zwoop, niq
+   +1: zwoop, niq, igalic
    niq comments:  This patch combines the bugfix with no-op stylistic
                   changes.  Not a big deal for a simple change, but in
                   general it risks complicating review.
+   igalic agrees niq.
 
   *) key->volume hash table is not consistent when a disk is marked as bad or removed due to failure
    Trunk patch: https://git-wip-us.apache.org/repos/asf?p=trafficserver.git;a=commit;h=b2109cdaf55234621d6c3b2fcb4f15774f0939ab
@@ -62,17 +64,17 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   *) crash in RangeTransform::handle_event
    master SHA: 6c4d2b5005cde3aac142b7419cbf37ea4a21f0e5
    Jira: https://issues.apache.org/jira/browse/TS-1111
-   +1: zym, zwoop
+   +1: zym, zwoop, igalic
 
   *) stack dump may crash too
    master SHA: ad6c4ab97ff150727660f66aa64b0fb57fd3d3f7
    Jira: https://issues.apache.org/jira/browse/TS-1109
-   +1: zym, zwoop
+   +1: zym, zwoop, igalic
 
   *) Make RC script support Amazon EC2 Linux AMI
    master SHA: 620d3cc783c330da00cdbe11eb72eddd1e7aff30
    Jira: https://issues.apache.org/jira/browse/TS-1098
-   +1: briang,zwoop
+   +1: briang,zwoop, igalic
 
 STALLED ISSUES
 
