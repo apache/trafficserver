@@ -42,9 +42,6 @@ A list of all bugs open for the next v3.0.5 release can be found at
 
 PATCHES ACCEPTED TO BACKPORT FROM TRUNK:
 
-PATCHES PROPOSED TO BACKPORT FROM TRUNK:
-  [ New proposals should be added at the end of the list ]
-
   *) HttpSM: TS can hang on HTTPS POST requests.
    Trunk patch: http://svn.apache.org/viewvc?view=rev&rev=1228988
    Jira: https://issues.apache.org/jira/browse/TS-1049
@@ -53,13 +50,6 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
                   changes.  Not a big deal for a simple change, but in
                   general it risks complicating review.
    igalic agrees niq.
-
-  *) key->volume hash table is not consistent when a disk is marked as bad or removed due to failure
-   Trunk patch: https://git-wip-us.apache.org/repos/asf?p=trafficserver.git;a=commit;h=b2109cdaf55234621d6c3b2fcb4f15774f0939ab
-   Jira: https://issues.apache.org/jira/browse/TS-949
-   +1: zym
-   -0: zwoop (I think this breaks compatibility with existing 3.0.x
-   caches, and I'm not positive it's a good idea to do so).
 
   *) crash in RangeTransform::handle_event
    master SHA: 6c4d2b5005cde3aac142b7419cbf37ea4a21f0e5
@@ -76,7 +66,18 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
    Jira: https://issues.apache.org/jira/browse/TS-1098
    +1: briang,zwoop, igalic
 
+PATCHES PROPOSED TO BACKPORT FROM TRUNK:
+  [ New proposals should be added at the end of the list ]
+
+
 STALLED ISSUES
+
+  *) key->volume hash table is not consistent when a disk is marked as bad or removed due to failure
+   Trunk patch: https://git-wip-us.apache.org/repos/asf?p=trafficserver.git;a=commit;h=b2109cdaf55234621d6c3b2fcb4f15774f0939ab
+   Jira: https://issues.apache.org/jira/browse/TS-949
+   +1: zym
+   -0: zwoop (I think this breaks compatibility with existing 3.0.x
+   caches, and I'm not positive it's a good idea to do so).
 
 RELEASE PROCESS
 
