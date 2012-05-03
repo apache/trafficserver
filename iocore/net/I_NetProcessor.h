@@ -82,6 +82,9 @@ public:
     /// Socket options for @c sockopt.
     /// 0 => do not set options.
     uint32_t sockopt_flags;
+    uint32_t packet_mark;
+    uint32_t packet_tos;
+
     /** Transparency on client (user agent) connection.
 	@internal This is irrelevant at a socket level (since inbound
 	transparency must be set up when the listen socket is created)

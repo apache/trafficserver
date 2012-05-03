@@ -4224,7 +4224,9 @@ HttpSM::do_http_server_open(bool raw)
   opt.f_blocking_connect = false;
   opt.set_sock_param(t_state.txn_conf->sock_recv_buffer_size_out,
                      t_state.txn_conf->sock_send_buffer_size_out,
-                     t_state.txn_conf->sock_option_flag_out);
+                     t_state.txn_conf->sock_option_flag_out,
+                     t_state.txn_conf->sock_packet_mark_out,
+                     t_state.txn_conf->sock_packet_tos_out);
 
   opt.ip_family = ip_family;
 
@@ -4596,6 +4598,23 @@ HttpSM::handle_post_failure()
 void
 HttpSM::handle_http_server_open()
 {
+  // [bwyatt] applying per-transaction OS netVC options here
+  //          IFF they differ from the netVC's current options.
+  //          This should keep this from being redundant on a
+  //          server session's first transaction.
+  if (NULL != server_session) {
+    NetVConnection *vc = server_session->get_netvc();
+    if (vc != NULL &&
+        (vc->options.sockopt_flags != t_state.txn_conf->sock_option_flag_out ||
+         vc->options.packet_mark != t_state.txn_conf->sock_packet_mark_out ||
+         vc->options.packet_tos != t_state.txn_conf->sock_packet_tos_out )) {
+      vc->options.sockopt_flags = t_state.txn_conf->sock_option_flag_out;
+      vc->options.packet_mark = t_state.txn_conf->sock_packet_mark_out;
+      vc->options.packet_tos = t_state.txn_conf->sock_packet_tos_out;
+      vc->apply_options();
+    }
+  }
+
   if (t_state.pCongestionEntry != NULL) {
     if (t_state.congestion_connection_opened == 0) {
       t_state.congestion_connection_opened = 1;

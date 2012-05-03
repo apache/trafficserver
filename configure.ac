@@ -1305,6 +1305,47 @@ AS_IF([test "x$enable_tproxy" != "xno"], [
 AC_SUBST(use_tproxy)
 AC_SUBST(ip_transparent)
 
+AC_MSG_CHECKING([for SO_MARK])
+AC_LANG_PUSH(C)
+AC_COMPILE_IFELSE(AC_LANG_PROGRAM([[
+	#include <sys/socket.h>
+	]],[[
+	if( SO_MARK > 0) return 0;
+	else return 1;
+	]]), [so_mark_found='yes'], [so_mark_found='no'])
+AC_LANG_POP()
+
+if test "x${so_mark_found}" = "xyes"; then
+  has_so_mark=1
+  AC_MSG_RESULT([found])
+else
+  has_so_mark=0
+  AC_MSG_RESULT([not found])
+fi
+AC_SUBST(has_so_mark)
+
+AC_MSG_CHECKING([for IP_TOS])
+AC_LANG_PUSH(C)
+AC_COMPILE_IFELSE(AC_LANG_PROGRAM([[
+	#include <sys/socket.h>
+	#include <netinet/in.h>
+	#include <netinet/ip.h>
+	]],[[
+	if( IP_TOS > 0) return 0;
+	else return 1;
+	]]), [ip_tos_found='yes'], [ip_tos_found='no'])
+AC_LANG_POP()
+
+if test "x${ip_tos_found}" = "xyes"; then
+  has_ip_tos=1
+  AC_MSG_RESULT([found])
+else
+  has_ip_tos=0
+  AC_MSG_RESULT([not found])
+fi
+AC_SUBST(has_ip_tos)
+
+
 TS_CHECK_LOOPBACK_IFACE
 TS_CHECK_GETHOSTBYNAME_R_STYLE
 TS_CHECK_MACRO_IN6_IS_ADDR_UNSPECIFIED

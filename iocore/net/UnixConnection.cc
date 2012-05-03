@@ -214,7 +214,7 @@ Connection::open(NetVCOptions const& opt)
   int enable_reuseaddr = 1; // used for sockopt setting
   int res = 0; // temp result
   IpEndpoint local_addr;
-  int sock_type = NetVCOptions::USE_UDP == opt.ip_proto
+  sock_type = NetVCOptions::USE_UDP == opt.ip_proto
     ? SOCK_DGRAM
     : SOCK_STREAM;
   int family;
@@ -294,16 +294,8 @@ Connection::open(NetVCOptions const& opt)
     }
   }
 
-  if (SOCK_STREAM == sock_type) {
-    if (opt.sockopt_flags & NetVCOptions::SOCK_OPT_NO_DELAY) {
-      safe_setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, SOCKOPT_ON, sizeof(int));
-      Debug("socket", "::open: setsockopt() TCP_NODELAY on socket");
-    }
-    if (opt.sockopt_flags & NetVCOptions::SOCK_OPT_KEEP_ALIVE) {
-      safe_setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, SOCKOPT_ON, sizeof(int));
-      Debug("socket", "::open: setsockopt() SO_KEEPALIVE on socket");
-    }
-  }
+  // apply dynamic options
+  apply_options(opt);
 
   if (-1 == socketManager.ink_bind(fd, &local_addr.sa, ats_ip_size(&local_addr.sa)))
     return -errno;
@@ -351,4 +343,32 @@ void
 Connection::_cleanup()
 {
   this->close();
+}
+
+void
+Connection::apply_options(NetVCOptions const& opt)
+{
+  // Set options which can be changed after a connection is established
+  // ignore other changes
+  if (SOCK_STREAM == sock_type) {
+    if (opt.sockopt_flags & NetVCOptions::SOCK_OPT_NO_DELAY) {
+      safe_setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, SOCKOPT_ON, sizeof(int));
+      Debug("socket", "::open: setsockopt() TCP_NODELAY on socket");
+    }
+    if (opt.sockopt_flags & NetVCOptions::SOCK_OPT_KEEP_ALIVE) {
+      safe_setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, SOCKOPT_ON, sizeof(int));
+      Debug("socket", "::open: setsockopt() SO_KEEPALIVE on socket");
+    }
+  }
+
+#if TS_HAS_SO_MARK
+  uint32_t mark = opt.packet_mark;
+  safe_setsockopt(fd, SOL_SOCKET, SO_MARK, reinterpret_cast<char *>(&mark), sizeof(uint32_t));
+#endif
+
+#if TS_HAS_IP_TOS
+  uint32_t tos = opt.packet_tos;
+  safe_setsockopt(fd, IPPROTO_IP, IP_TOS, reinterpret_cast<char *>(&tos), sizeof(uint32_t));
+#endif
+
 }

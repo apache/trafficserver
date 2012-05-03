@@ -61,15 +61,21 @@ NetVCOptions::reset()
 #endif
   socket_send_bufsize = 0;
   sockopt_flags = 0;
+  packet_mark = 0;
+  packet_tos = 0;
+
   etype = ET_NET;
 }
 
 TS_INLINE void
-NetVCOptions::set_sock_param(int _recv_bufsize, int _send_bufsize, unsigned long _opt_flags)
+NetVCOptions::set_sock_param(int _recv_bufsize, int _send_bufsize, unsigned long _opt_flags,
+                             unsigned long _packet_mark, unsigned long _packet_tos)
 {
   socket_recv_bufsize = _recv_bufsize;
   socket_send_bufsize = _send_bufsize;
   sockopt_flags = _opt_flags;
+  packet_mark = _packet_mark;
+  packet_tos = _packet_tos;
 }
 
 struct OOB_callback:public Continuation
@@ -240,6 +246,7 @@ public:
   virtual void set_local_addr();
   virtual void set_remote_addr();
   virtual int set_tcp_init_cwnd(int init_cwnd);
+  virtual void apply_options();
 };
 
 extern ClassAllocator<UnixNetVConnection> netVCAllocator;

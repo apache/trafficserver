@@ -44,6 +44,8 @@ NetProcessor::AcceptOptions::reset()
   recv_bufsize = 0;
   send_bufsize = 0;
   sockopt_flags = 0;
+  packet_mark = 0;
+  packet_tos = 0;
   f_inbound_transparent = false;
   return *this;
 }
@@ -141,6 +143,8 @@ UnixNetProcessor::accept_internal(
   na->recv_bufsize = opt.recv_bufsize;
   na->send_bufsize = opt.send_bufsize;
   na->sockopt_flags = opt.sockopt_flags;
+  na->packet_mark = opt.packet_mark;
+  na->packet_tos = opt.packet_tos;
   na->etype = opt.etype;
   if (na->callback_on_open)
     na->mutex = cont->mutex;

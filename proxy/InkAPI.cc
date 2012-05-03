@@ -38,6 +38,7 @@
 #include "MIME.h"
 #include "HTTP.h"
 #include "HttpClientSession.h"
+#include "HttpServerSession.h"
 #include "HttpSM.h"
 #include "HttpConfig.h"
 #include "P_Net.h"
@@ -5357,6 +5358,89 @@ TSHttpTxnOutgoingTransparencySet(TSHttpTxn txnp, int flag)
   return TS_SUCCESS;
 }
 
+TSReturnCode
+TSHttpTxnClientPacketMarkSet(TSHttpTxn txnp, int mark)
+{
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+  HttpSM *sm = (HttpSM *) txnp;
+  if (NULL == sm->ua_session) {
+    return TS_ERROR;
+  }
+
+  NetVConnection *vc = sm->ua_session->get_netvc();
+  if (NULL == vc) {
+    return TS_ERROR;
+  }
+
+  vc->options.packet_mark = (uint32_t)mark;
+  vc->apply_options();
+  return TS_SUCCESS;
+}
+
+TSReturnCode
+TSHttpTxnServerPacketMarkSet(TSHttpTxn txnp, int mark)
+{
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+  HttpSM *sm = (HttpSM *) txnp;
+
+  // change the mark on an active server session
+  if (NULL != sm->ua_session) {
+    HttpServerSession *ssn = sm->ua_session->get_server_session();
+    if (NULL != ssn) {
+      NetVConnection *vc = ssn->get_netvc();
+      if (vc != NULL) {
+        vc->options.packet_mark = (uint32_t)mark;
+        vc->apply_options();
+      }
+    }
+  }
+
+  // update the transactions mark config for future connections
+  TSHttpTxnConfigIntSet(txnp, TS_CONFIG_NET_SOCK_PACKET_MARK_OUT, mark);
+  return TS_SUCCESS;
+}
+
+TSReturnCode
+TSHttpTxnClientPacketTosSet(TSHttpTxn txnp, int tos)
+{
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+  HttpSM *sm = (HttpSM *) txnp;
+  if (NULL == sm->ua_session) {
+    return TS_ERROR;
+  }
+
+  NetVConnection *vc = sm->ua_session->get_netvc();
+  if (NULL == vc) {
+    return TS_ERROR;
+  }
+
+  vc->options.packet_tos = (uint32_t)tos;
+  vc->apply_options();
+  return TS_SUCCESS;
+}
+
+TSReturnCode
+TSHttpTxnServerPacketTosSet(TSHttpTxn txnp, int tos)
+{
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+  HttpSM *sm = (HttpSM *) txnp;
+
+  // change the tos on an active server session
+  if (NULL != sm->ua_session) {
+    HttpServerSession *ssn = sm->ua_session->get_server_session();
+    if (NULL != ssn) {
+      NetVConnection *vc = ssn->get_netvc();
+      if (vc != NULL) {
+        vc->options.packet_tos = (uint32_t)tos;
+        vc->apply_options();
+      }
+    }
+  }
+
+  // update the transactions mark config for future connections
+  TSHttpTxnConfigIntSet(txnp, TS_CONFIG_NET_SOCK_PACKET_TOS_OUT, tos);
+  return TS_SUCCESS;
+}
 
 void
 TSHttpTxnErrorBodySet(TSHttpTxn txnp, char *buf, int buflength, char *mimetype)
@@ -7430,6 +7514,12 @@ _conf_to_memberp(TSOverridableConfigKey conf, HttpSM* sm, OverridableDataType *t
   case TS_CONFIG_NET_SOCK_OPTION_FLAG_OUT:
     ret = &sm->t_state.txn_conf->sock_option_flag_out;
     break;
+  case TS_CONFIG_NET_SOCK_PACKET_MARK_OUT:
+    ret = &sm->t_state.txn_conf->sock_packet_mark_out;
+    break;
+  case TS_CONFIG_NET_SOCK_PACKET_TOS_OUT:
+      ret = &sm->t_state.txn_conf->sock_packet_tos_out;
+      break;
   case TS_CONFIG_HTTP_FORWARD_PROXY_AUTH_TO_PARENT:
     ret = &sm->t_state.txn_conf->fwd_proxy_auth_to_parent;
     break;
@@ -7774,6 +7864,10 @@ TSHttpTxnConfigFind(const char* name, int length, TSOverridableConfigKey *conf, 
         cnf = TS_CONFIG_HTTP_KEEP_ALIVE_POST_OUT;
       else if (!strncmp(name, "proxy.config.net.sock_option_flag_out", length))
         cnf = TS_CONFIG_NET_SOCK_OPTION_FLAG_OUT;
+      else if (!strncmp(name, "proxy.config.net.sock_packet_mark_out", length))
+        cnf = TS_CONFIG_NET_SOCK_PACKET_MARK_OUT;
+      else if (!strncmp(name, "proxy.config.net.sock_packet_tos_out", length))
+        cnf = TS_CONFIG_NET_SOCK_PACKET_TOS_OUT;
       break;
     }
     break;

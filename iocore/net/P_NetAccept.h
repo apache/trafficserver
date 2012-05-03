@@ -94,6 +94,8 @@ struct NetAccept:public Continuation
   int recv_bufsize;
   int send_bufsize;
   uint32_t sockopt_flags;
+  uint32_t packet_mark;
+  uint32_t packet_tos;
   EventType etype;
   UnixNetVConnection *epoll_vc; // only storage for epoll events
   EventIO ep;
