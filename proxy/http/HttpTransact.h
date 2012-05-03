@@ -1025,6 +1025,7 @@ public:
     bool api_server_request_body_set;
     bool api_req_cacheable;
     bool api_resp_cacheable;
+    bool api_server_addr_set;
     UpdateCachedObject_t api_update_cached_object;
     LockUrl_t api_lock_url;
     StateMachineAction_t saved_update_next_action;
@@ -1128,6 +1129,7 @@ public:
         api_server_request_body_set(false),
         api_req_cacheable(false),
         api_resp_cacheable(false),
+        api_server_addr_set(false),
         api_update_cached_object(UPDATE_CACHED_OBJECT_NONE),
         api_lock_url(LOCK_URL_FIRST),
         saved_update_next_action(STATE_MACHINE_ACTION_UNDEFINED),

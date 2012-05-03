@@ -5307,6 +5307,21 @@ TSHttpTxnServerAddrGet(TSHttpTxn txnp)
   return &sm->t_state.server_info.addr.sa;
 }
 
+TSReturnCode
+TSHttpTxnServerAddrSet(TSHttpTxn txnp, struct sockaddr const* addr)
+{
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+
+  HttpSM *sm = reinterpret_cast<HttpSM *>(txnp);
+  if (ats_ip_copy(&sm->t_state.server_info.addr.sa, addr)) {
+    sm->t_state.api_server_addr_set = true;
+    return TS_SUCCESS;
+  } else {
+    return TS_ERROR;
+  }
+}
+
+
 // [amc] This might use the port. The code path should do that but it
 // hasn't been tested.
 TSReturnCode

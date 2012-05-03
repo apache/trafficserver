@@ -4114,11 +4114,15 @@ HttpSM::do_http_server_open(bool raw)
              t_state.req_flavor == HttpTransact::REQ_FLAVOR_REVPROXY);
 
   ink_assert(pending_action == NULL);
-  ink_assert(t_state.current.server->port > 0);
 
   HSMresult_t shared_result;
 
-  t_state.current.server->addr.port() = htons(t_state.current.server->port);
+  if (false == t_state.api_server_addr_set) {
+    ink_assert(t_state.current.server->port > 0);
+    t_state.current.server->addr.port() = htons(t_state.current.server->port);
+  } else {
+    ink_assert(ats_ip_port_cast(&t_state.current.server->addr) != 0);
+  }
 
   char addrbuf[INET6_ADDRPORTSTRLEN];
   DebugSM("http", "[%" PRId64 "] open connection to %s: %s",
@@ -6460,7 +6464,18 @@ HttpSM::set_next_state()
     {
       sockaddr const* addr;
 
-      if (url_remap_mode == 2 && t_state.first_dns_lookup) {
+      if (t_state.api_server_addr_set) {
+        /* If the API has set the server address before the OS DNS lookup
+         * then we can skip the lookup
+         */
+        ip_text_buffer ipb;
+        DebugSM("dns", "[HttpTransact::HandleRequest] Skipping DNS lookup for API supplied target %s.\n", ats_ip_ntop(&t_state.server_info.addr, ipb, sizeof(ipb)));
+        // this seems wasteful as we will just copy it right back
+        ats_ip_copy(t_state.host_db_info.ip(), &t_state.server_info.addr);
+        t_state.dns_info.lookup_success = true;
+        call_transact_and_set_next_state(NULL);
+        break;
+      } else if (url_remap_mode == 2 && t_state.first_dns_lookup) {
         DebugSM("cdn", "Skipping DNS Lookup");
         // skip the DNS lookup
         t_state.first_dns_lookup = false;
