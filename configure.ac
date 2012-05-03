@@ -492,6 +492,11 @@ ifdef([AC_PROG_SED],
       [AC_PROG_SED],
       [AC_CHECK_PROG(SED, sed, sed)])
 
+dnl Same with AM_PROG_AR, but it doesn't seem to be needed in older versions.
+ifdef([AM_PROG_AR],
+      [AM_PROG_AR])
+
+
 AC_PROG_CPP
 AC_PROG_CXXCPP
 AM_PROG_AS

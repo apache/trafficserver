@@ -14,7 +14,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-CXXFLAGS+=-I$(top_srcdir)/proxy/api
+AM_CPPFLAGS = -I$(top_srcdir)/proxy/api
 
 pkglibdir = ${pkglibexecdir}
 pkglib_LTLIBRARIES = header_filter.la
