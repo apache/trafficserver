@@ -7533,8 +7533,6 @@ const char *SDK_Overridable_Configs[] = {
   "proxy.config.net.sock_recv_buffer_size_out",
   "proxy.config.net.sock_send_buffer_size_out",
   "proxy.config.net.sock_option_flag_out",
-  "proxy.config.net.sock_packet_mark_out",
-  "proxy.config.net.sock_packet_tos_out",
   "proxy.config.http.forward.proxy_auth_to_parent",
   "proxy.config.http.anonymize_remove_from",
   "proxy.config.http.anonymize_remove_referer",
@@ -7578,11 +7576,11 @@ const char *SDK_Overridable_Configs[] = {
   "proxy.config.http.cache.fuzz.time",
   "proxy.config.http.cache.fuzz.min_time",
   "proxy.config.http.doc_in_cache_skip_dns",
-
-  // These are "special", since they are not MgmtInt's
   "proxy.config.http.response_server_str",
   "proxy.config.http.cache.heuristic_lm_factor",
   "proxy.config.http.cache.fuzz.probability",
+  "proxy.config.net.sock_packet_mark_out",
+  "proxy.config.net.sock_packet_tos_out",
 
   NULL
 };
