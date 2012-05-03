@@ -1,5 +1,7 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.1.4
+  *) [TS-1238] RAM cache hit rate unexpectedly low with CLFUS.
+
   *) [TS-1242] Make it build with some more recent automake versions.
 
   *) [TS-1241] Memory leaks when using TSHttpSchedule().

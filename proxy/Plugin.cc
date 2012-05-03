@@ -56,13 +56,6 @@ typedef void (*init_func_t) (int argc, char *argv[]);
 typedef void (*init_func_w_handle_t) (void *handle, int argc, char *argv[]);
 typedef int (*lic_req_func_t) (void);
 
-tsapi int
-load_in_export_symbols(int j)
-{
-  int i = eight_bit_table[j];
-  return i;
-}
-
 // Plugin registration vars
 //
 //    plugin_reg_list has an entry for each plugin
