@@ -7860,6 +7860,11 @@ TSHttpTxnConfigFind(const char* name, int length, TSOverridableConfigKey *conf, 
       cnf = TS_CONFIG_HTTP_CHUNKING_ENABLED;
     break;
 
+  case 36:
+    if (!strncmp(name, "proxy.config.net.sock_packet_tos_out", length))
+      cnf = TS_CONFIG_NET_SOCK_PACKET_TOS_OUT;
+    break;
+
   case 37:
     switch (name[length-1]) {
     case 'e':
@@ -7881,8 +7886,6 @@ TSHttpTxnConfigFind(const char* name, int length, TSOverridableConfigKey *conf, 
         cnf = TS_CONFIG_NET_SOCK_OPTION_FLAG_OUT;
       else if (!strncmp(name, "proxy.config.net.sock_packet_mark_out", length))
         cnf = TS_CONFIG_NET_SOCK_PACKET_MARK_OUT;
-      else if (!strncmp(name, "proxy.config.net.sock_packet_tos_out", length))
-        cnf = TS_CONFIG_NET_SOCK_PACKET_TOS_OUT;
       break;
     }
     break;
