@@ -473,6 +473,8 @@ public:
   int64_t server_response_body_bytes;
   int client_response_hdr_bytes;
   int64_t client_response_body_bytes;
+  int cache_response_hdr_bytes;
+  int64_t cache_response_body_bytes;
   int pushed_response_hdr_bytes;
   int64_t pushed_response_body_bytes;
   TransactionMilestones milestones;

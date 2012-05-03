@@ -789,6 +789,30 @@ Log::init_fields()
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "sshv", field);
 
+  field = NEW(new LogField("cached_resp_status_code", "csssc",
+                           LogField::sINT,
+                           &LogAccess::marshal_cache_resp_status_code, &LogAccess::unmarshal_http_status));
+  global_field_list.add(field, false);
+  ink_hash_table_insert(field_symbol_hash, "csssc", field);
+
+  field = NEW(new LogField("cached_resp_content_len", "csscl",
+                           LogField::sINT,
+                           &LogAccess::marshal_cache_resp_content_len, &LogAccess::unmarshal_int_to_str));
+  global_field_list.add(field, false);
+  ink_hash_table_insert(field_symbol_hash, "csscl", field);
+
+  field = NEW(new LogField("cached_resp_header_len", "csshl",
+                           LogField::sINT,
+                           &LogAccess::marshal_cache_resp_header_len, &LogAccess::unmarshal_int_to_str));
+  global_field_list.add(field, false);
+  ink_hash_table_insert(field_symbol_hash, "csshl", field);
+
+  field = NEW(new LogField("cached_resp_http_version", "csshv",
+                           LogField::dINT,
+                           &LogAccess::marshal_cache_resp_http_version, &LogAccess::unmarshal_http_version));
+  global_field_list.add(field, false);
+  ink_hash_table_insert(field_symbol_hash, "csshv", field);
+
   field = NEW(new LogField("client_retry_after_time", "crat",
                            LogField::sINT,
                            &LogAccess::marshal_client_retry_after_time, &LogAccess::unmarshal_int_to_str));

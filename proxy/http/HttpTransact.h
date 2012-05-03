@@ -856,8 +856,8 @@ public:
     HTTPHdr server_request;
     HTTPHdr server_response;
     HTTPHdr transform_response;
-    HTTPHdr transform_cached_request;
-    int64_t request_content_length;
+    HTTPHdr cache_response;
+   int64_t request_content_length;
     int64_t response_content_length;
     int64_t transform_request_cl;
     int64_t transform_response_cl;
@@ -873,7 +873,7 @@ public:
         server_request(),
         server_response(),
         transform_response(),
-        transform_cached_request(),
+        cache_response(),
         request_content_length(HTTP_UNDEFINED_CL),
         response_content_length(HTTP_UNDEFINED_CL),
         transform_request_cl(HTTP_UNDEFINED_CL),
@@ -923,6 +923,7 @@ public:
     // ConnectionAttributes     router_info;
 
     Source_t source;
+    Source_t pre_transform_source;
     HttpRequestFlavor_t req_flavor;
 
     CurrentInfo current;
@@ -1068,6 +1069,7 @@ public:
         updated_server_version(HostDBApplicationInfo::HTTP_VERSION_UNDEFINED), is_revalidation_necessary(false),
         request_will_not_selfloop(false),       //YTS Team, yamsat
         source(SOURCE_NONE),
+        pre_transform_source(SOURCE_NONE),
         req_flavor(REQ_FLAVOR_FWDPROXY),
         pending_work(NULL),
         cdn_saved_next_action(STATE_MACHINE_ACTION_UNDEFINED),
@@ -1208,7 +1210,7 @@ public:
       hdr_info.server_request.destroy();
       hdr_info.server_response.destroy();
       hdr_info.transform_response.destroy();
-      hdr_info.transform_cached_request.destroy();
+      hdr_info.cache_response.destroy();
       cache_info.lookup_url_storage.destroy();
       cache_info.original_url.destroy();
       cache_info.store_url.destroy();
