@@ -405,6 +405,7 @@ struct OverridableHttpConfigParams {
        keep_alive_enabled_in(0), keep_alive_enabled_out(0), keep_alive_post_out(0),
        server_tcp_init_cwnd(0), share_server_sessions(0),
        sock_recv_buffer_size_out(0), sock_send_buffer_size_out(0), sock_option_flag_out(0),
+       sock_packet_mark_out(0), sock_packet_tos_out(0),
        fwd_proxy_auth_to_parent(0), 
        anonymize_remove_from(0), anonymize_remove_referer(0), anonymize_remove_user_agent(0),
        anonymize_remove_cookie(0), anonymize_remove_client_ip(0), anonymize_insert_client_ip(1),
@@ -463,6 +464,8 @@ struct OverridableHttpConfigParams {
   MgmtInt sock_recv_buffer_size_out;
   MgmtInt sock_send_buffer_size_out;
   MgmtInt sock_option_flag_out;
+  MgmtInt sock_packet_mark_out;
+  MgmtInt sock_packet_tos_out;
 
   MgmtByte fwd_proxy_auth_to_parent;
 

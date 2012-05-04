@@ -104,6 +104,14 @@ public:
   virtual int marshal_server_resp_http_version(char *); // INT
 
   //
+  // cache -> client fields
+  //
+  virtual int marshal_cache_resp_status_code(char *);  // INT
+  virtual int marshal_cache_resp_content_len(char *);  // INT
+  virtual int marshal_cache_resp_header_len(char *);   // INT
+  virtual int marshal_cache_resp_http_version(char *); // INT
+
+  //
   // congestion control client_retry_after_time
   //
   virtual int marshal_client_retry_after_time(char *);  // INT
@@ -136,6 +144,7 @@ private:
   HTTPHdr *m_proxy_response;
   HTTPHdr *m_proxy_request;
   HTTPHdr *m_server_response;
+  HTTPHdr *m_cache_response;
 
   char *m_client_req_url_str;
   int m_client_req_url_len;

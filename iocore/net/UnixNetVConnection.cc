@@ -1155,3 +1155,9 @@ UnixNetVConnection::free(EThread *t)
     THREAD_FREE(this, netVCAllocator, t);
   }
 }
+
+void
+UnixNetVConnection::apply_options()
+{
+  con.apply_options(options);
+}

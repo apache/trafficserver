@@ -461,6 +461,49 @@ LogAccess::marshal_server_resp_http_version(char *buf)
   return (2 * INK_MIN_ALIGN);
 }
 
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+int
+LogAccess::marshal_cache_resp_status_code(char *buf)
+{
+  DEFAULT_INT_FIELD;
+}
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+int
+LogAccess::marshal_cache_resp_content_len(char *buf)
+{
+  DEFAULT_INT_FIELD;
+}
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+int
+LogAccess::marshal_cache_resp_header_len(char *buf)
+{
+  DEFAULT_INT_FIELD;
+}
+
+/*-------------------------------------------------------------------------
+  This case is special because it really stores 2 ints.
+  -------------------------------------------------------------------------*/
+
+int
+LogAccess::marshal_cache_resp_http_version(char *buf)
+{
+  if (buf) {
+    int64_t major = 0;
+    int64_t minor = 0;
+    marshal_int(buf, major);
+    marshal_int((buf + INK_MIN_ALIGN), minor);
+  }
+  return (2 * INK_MIN_ALIGN);
+}
+
 int
 LogAccess::marshal_cache_write_code(char *buf)
 {

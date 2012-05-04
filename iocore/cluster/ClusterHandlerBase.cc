@@ -31,6 +31,9 @@
 extern int cluster_receive_buffer_size;
 extern int cluster_send_buffer_size;
 extern uint32_t cluster_sockopt_flags;
+extern uint32_t cluster_packet_mark;
+extern uint32_t cluster_packet_tos;
+
 
 ///////////////////////////////////////////////////////////////
 // Incoming message continuation for periodic callout threads
@@ -841,6 +844,8 @@ ClusterHandler::connectClusterEvent(int event, Event * e)
     opt.socket_send_bufsize = cluster_send_buffer_size;
     opt.socket_recv_bufsize = cluster_receive_buffer_size;
     opt.sockopt_flags = cluster_sockopt_flags;
+    opt.packet_mark = cluster_packet_mark;
+    opt.packet_tos = cluster_packet_tos;
     opt.etype = ET_CLUSTER;
     opt.addr_binding = NetVCOptions::INTF_ADDR;
     opt.local_ip = this_cluster_machine()->ip;

@@ -326,6 +326,7 @@ HttpSM::HttpSM()
     server_request_hdr_bytes(0), server_request_body_bytes(0),
     server_response_hdr_bytes(0), server_response_body_bytes(0),
     client_response_hdr_bytes(0), client_response_body_bytes(0),
+    cache_response_hdr_bytes(0), cache_response_body_bytes(0),
     pushed_response_hdr_bytes(0), pushed_response_body_bytes(0),
     hooks_set(0), cur_hook_id(TS_HTTP_LAST_HOOK), cur_hook(NULL),
     cur_hooks(0), callout_state(HTTP_API_NO_CALLOUT), terminate_sm(false), kill_this_async_done(false)
@@ -2710,7 +2711,6 @@ HttpSM::tunnel_handler_server(int event, HttpTunnelProducer * p)
 {
   STATE_ENTER(&HttpSM::tunnel_handler_server, event);
 
-  server_response_body_bytes += p->bytes_read;
   milestones.server_close = ink_get_hrtime();
 
   bool close_connection = false;
@@ -3022,6 +3022,29 @@ HttpSM::tunnel_handler_ua(int event, HttpTunnelConsumer * c)
   client_response_body_bytes = c->bytes_written - client_response_hdr_bytes;
   if (client_response_body_bytes < 0)
     client_response_body_bytes = 0;
+
+  // attribute the size written to the client from various sources
+  // NOTE: responses that go through a range transform are attributed
+  // to their original sources
+  // all other transforms attribute the total number of input bytes
+  // to a source in HttpSM::tunnel_handler_transform_write
+  //
+  HttpTransact::Source_t original_source = t_state.source;
+  if (HttpTransact::SOURCE_TRANSFORM == original_source &&
+      t_state.range_setup == HttpTransact::RANGE_TRANSFORM) {
+    original_source = t_state.pre_transform_source;
+  }
+
+  switch (original_source) {
+  case HttpTransact::SOURCE_HTTP_ORIGIN_SERVER:
+    server_response_body_bytes = client_response_body_bytes;
+    break;
+  case HttpTransact::SOURCE_CACHE:
+    cache_response_body_bytes = client_response_body_bytes;
+    break;
+  default:
+    break;
+  }
 
   ink_assert(ua_entry->vc == c->vc);
   if (close_connection) {
@@ -3544,6 +3567,28 @@ HttpSM::tunnel_handler_transform_write(int event, HttpTunnelConsumer * c)
     break;
   default:
     ink_release_assert(0);
+  }
+
+  // attribute the size written to the transform from various sources
+  // NOTE: the range transform is excluded from this accounting and
+  // is instead handled in HttpSM::tunnel_handler_ua
+  //
+  // the reasoning is that the range transform is internal functionality
+  // in support of HTTP 1.1 compliance, therefore part of "normal" operation
+  // all other transforms are plugin driven and the difference between
+  // source data and final data should represent the transformation delta
+  //
+  if (t_state.range_setup != HttpTransact::RANGE_TRANSFORM) {
+    switch (t_state.pre_transform_source) {
+    case HttpTransact::SOURCE_HTTP_ORIGIN_SERVER:
+      server_response_body_bytes = client_response_body_bytes;
+      break;
+    case HttpTransact::SOURCE_CACHE:
+      cache_response_body_bytes = client_response_body_bytes;
+      break;
+    default:
+      break;
+    }
   }
 
   return 0;
@@ -4069,11 +4114,15 @@ HttpSM::do_http_server_open(bool raw)
              t_state.req_flavor == HttpTransact::REQ_FLAVOR_REVPROXY);
 
   ink_assert(pending_action == NULL);
-  ink_assert(t_state.current.server->port > 0);
 
   HSMresult_t shared_result;
 
-  t_state.current.server->addr.port() = htons(t_state.current.server->port);
+  if (false == t_state.api_server_addr_set) {
+    ink_assert(t_state.current.server->port > 0);
+    t_state.current.server->addr.port() = htons(t_state.current.server->port);
+  } else {
+    ink_assert(ats_ip_port_cast(&t_state.current.server->addr) != 0);
+  }
 
   char addrbuf[INET6_ADDRPORTSTRLEN];
   DebugSM("http", "[%" PRId64 "] open connection to %s: %s",
@@ -4224,7 +4273,9 @@ HttpSM::do_http_server_open(bool raw)
   opt.f_blocking_connect = false;
   opt.set_sock_param(t_state.txn_conf->sock_recv_buffer_size_out,
                      t_state.txn_conf->sock_send_buffer_size_out,
-                     t_state.txn_conf->sock_option_flag_out);
+                     t_state.txn_conf->sock_option_flag_out,
+                     t_state.txn_conf->sock_packet_mark_out,
+                     t_state.txn_conf->sock_packet_tos_out);
 
   opt.ip_family = ip_family;
 
@@ -4596,6 +4647,23 @@ HttpSM::handle_post_failure()
 void
 HttpSM::handle_http_server_open()
 {
+  // [bwyatt] applying per-transaction OS netVC options here
+  //          IFF they differ from the netVC's current options.
+  //          This should keep this from being redundant on a
+  //          server session's first transaction.
+  if (NULL != server_session) {
+    NetVConnection *vc = server_session->get_netvc();
+    if (vc != NULL &&
+        (vc->options.sockopt_flags != t_state.txn_conf->sock_option_flag_out ||
+         vc->options.packet_mark != t_state.txn_conf->sock_packet_mark_out ||
+         vc->options.packet_tos != t_state.txn_conf->sock_packet_tos_out )) {
+      vc->options.sockopt_flags = t_state.txn_conf->sock_option_flag_out;
+      vc->options.packet_mark = t_state.txn_conf->sock_packet_mark_out;
+      vc->options.packet_tos = t_state.txn_conf->sock_packet_tos_out;
+      vc->apply_options();
+    }
+  }
+
   if (t_state.pCongestionEntry != NULL) {
     if (t_state.congestion_connection_opened == 0) {
       t_state.congestion_connection_opened = 1;
@@ -5271,6 +5339,8 @@ HttpSM::setup_cache_read_transfer()
   // Now dump the header into the buffer
   ink_assert(t_state.hdr_info.client_response.status_get() != HTTP_STATUS_NOT_MODIFIED);
   client_response_hdr_bytes = hdr_size = write_response_header_into_buffer(&t_state.hdr_info.client_response, buf);
+  cache_response_hdr_bytes = client_response_hdr_bytes;
+
 
   HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::tunnel_handler);
 
@@ -5301,6 +5371,9 @@ HttpSM::setup_cache_transfer_to_transform()
   ink_assert(transform_info.vc != NULL);
   ink_assert(transform_info.entry->vc == transform_info.vc);
 
+  // grab this here
+  cache_response_hdr_bytes = t_state.hdr_info.cache_response.length_get();
+
   doc_size = t_state.cache_info.object_read->object_size_get();
   alloc_index = buffer_size_to_index(doc_size);
   MIOBuffer *buf = new_MIOBuffer(alloc_index);
@@ -5320,12 +5393,6 @@ HttpSM::setup_cache_transfer_to_transform()
                       cache_sm.cache_read_vc, &HttpSM::tunnel_handler_transform_write, HT_TRANSFORM, "transform write");
   transform_info.entry->in_tunnel = true;
   cache_sm.cache_read_vc = NULL;
-
-  // We need to copy to header cached request header since the
-  //   cache read may finish before we do an open write to
-  //   write the transformed copy to the cache
-  t_state.hdr_info.transform_cached_request.create(HTTP_TYPE_REQUEST);
-  t_state.hdr_info.transform_cached_request.copy(t_state.cache_info.object_read->request_get());
 
   return p;
 }
@@ -5555,7 +5622,7 @@ HttpSM::server_transfer_init(MIOBuffer * buf, int hdr_size)
   // Next order of business if copy the remaining data from the
   //  header buffer into new buffer.
 
-  server_response_body_bytes =
+  int64_t server_response_pre_read_bytes =
 #ifdef WRITE_AND_TRANSFER
     /* relinquish the space in server_buffer and let
        the tunnel use the trailing space
@@ -5564,13 +5631,13 @@ HttpSM::server_transfer_init(MIOBuffer * buf, int hdr_size)
 #else
     buf->write(server_buffer_reader, to_copy);
 #endif
-  server_buffer_reader->consume(server_response_body_bytes);
+  server_buffer_reader->consume(server_response_pre_read_bytes);
 
   //  If we know the length & copied the entire body
   //   of the document out of the header buffer make
   //   sure the server isn't screwing us by having sent too
   //   much.  If it did, we want to close the server connection
-  if (server_response_body_bytes == to_copy && server_buffer_reader->read_avail() > 0) {
+  if (server_response_pre_read_bytes == to_copy && server_buffer_reader->read_avail() > 0) {
     t_state.current.server->keep_alive = HTTP_NO_KEEPALIVE;
   }
 #ifdef LAZY_BUF_ALLOC
@@ -6397,7 +6464,18 @@ HttpSM::set_next_state()
     {
       sockaddr const* addr;
 
-      if (url_remap_mode == 2 && t_state.first_dns_lookup) {
+      if (t_state.api_server_addr_set) {
+        /* If the API has set the server address before the OS DNS lookup
+         * then we can skip the lookup
+         */
+        ip_text_buffer ipb;
+        DebugSM("dns", "[HttpTransact::HandleRequest] Skipping DNS lookup for API supplied target %s.\n", ats_ip_ntop(&t_state.server_info.addr, ipb, sizeof(ipb)));
+        // this seems wasteful as we will just copy it right back
+        ats_ip_copy(t_state.host_db_info.ip(), &t_state.server_info.addr);
+        t_state.dns_info.lookup_success = true;
+        call_transact_and_set_next_state(NULL);
+        break;
+      } else if (url_remap_mode == 2 && t_state.first_dns_lookup) {
         DebugSM("cdn", "Skipping DNS Lookup");
         // skip the DNS lookup
         t_state.first_dns_lookup = false;
@@ -6541,11 +6619,17 @@ HttpSM::set_next_state()
       if (transform_info.vc) {
         ink_assert(t_state.hdr_info.client_response.valid() == 0);
         ink_assert((t_state.hdr_info.transform_response.valid()? true : false) == true);
+        t_state.hdr_info.cache_response.create(HTTP_TYPE_RESPONSE);
+        t_state.hdr_info.cache_response.copy(&t_state.hdr_info.transform_response);
+
         HttpTunnelProducer *p = setup_cache_transfer_to_transform();
         perform_cache_write_action();
         tunnel.tunnel_run(p);
       } else {
         ink_assert((t_state.hdr_info.client_response.valid()? true : false) == true);
+        t_state.hdr_info.cache_response.create(HTTP_TYPE_RESPONSE);
+        t_state.hdr_info.cache_response.copy(&t_state.hdr_info.client_response);
+
         perform_cache_write_action();
         t_state.api_next_action = HttpTransact::HTTP_API_SEND_REPONSE_HDR;
         if (hooks_set) {

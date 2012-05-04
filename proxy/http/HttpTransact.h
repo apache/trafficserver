@@ -856,8 +856,8 @@ public:
     HTTPHdr server_request;
     HTTPHdr server_response;
     HTTPHdr transform_response;
-    HTTPHdr transform_cached_request;
-    int64_t request_content_length;
+    HTTPHdr cache_response;
+   int64_t request_content_length;
     int64_t response_content_length;
     int64_t transform_request_cl;
     int64_t transform_response_cl;
@@ -873,7 +873,7 @@ public:
         server_request(),
         server_response(),
         transform_response(),
-        transform_cached_request(),
+        cache_response(),
         request_content_length(HTTP_UNDEFINED_CL),
         response_content_length(HTTP_UNDEFINED_CL),
         transform_request_cl(HTTP_UNDEFINED_CL),
@@ -923,6 +923,7 @@ public:
     // ConnectionAttributes     router_info;
 
     Source_t source;
+    Source_t pre_transform_source;
     HttpRequestFlavor_t req_flavor;
 
     CurrentInfo current;
@@ -1024,6 +1025,7 @@ public:
     bool api_server_request_body_set;
     bool api_req_cacheable;
     bool api_resp_cacheable;
+    bool api_server_addr_set;
     UpdateCachedObject_t api_update_cached_object;
     LockUrl_t api_lock_url;
     StateMachineAction_t saved_update_next_action;
@@ -1068,6 +1070,7 @@ public:
         updated_server_version(HostDBApplicationInfo::HTTP_VERSION_UNDEFINED), is_revalidation_necessary(false),
         request_will_not_selfloop(false),       //YTS Team, yamsat
         source(SOURCE_NONE),
+        pre_transform_source(SOURCE_NONE),
         req_flavor(REQ_FLAVOR_FWDPROXY),
         pending_work(NULL),
         cdn_saved_next_action(STATE_MACHINE_ACTION_UNDEFINED),
@@ -1126,6 +1129,7 @@ public:
         api_server_request_body_set(false),
         api_req_cacheable(false),
         api_resp_cacheable(false),
+        api_server_addr_set(false),
         api_update_cached_object(UPDATE_CACHED_OBJECT_NONE),
         api_lock_url(LOCK_URL_FIRST),
         saved_update_next_action(STATE_MACHINE_ACTION_UNDEFINED),
@@ -1208,7 +1212,7 @@ public:
       hdr_info.server_request.destroy();
       hdr_info.server_response.destroy();
       hdr_info.transform_response.destroy();
-      hdr_info.transform_cached_request.destroy();
+      hdr_info.cache_response.destroy();
       cache_info.lookup_url_storage.destroy();
       cache_info.original_url.destroy();
       cache_info.store_url.destroy();

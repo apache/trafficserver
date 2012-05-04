@@ -158,12 +158,16 @@ struct NetVCOptions {
   /// Value for keep alive for @c sockopt_flags.
   static uint32_t const SOCK_OPT_KEEP_ALIVE = 2;
 
+  uint32_t packet_mark;
+  uint32_t packet_tos;
+
   EventType etype;
 
   /// Reset all values to defaults.
   void reset();
 
-  void set_sock_param(int _recv_bufsize, int _send_bufsize, unsigned long _opt_flags);
+  void set_sock_param(int _recv_bufsize, int _send_bufsize, unsigned long _opt_flags,
+                      unsigned long _packet_mark = 0, unsigned long _packet_tos = 0);
 
   NetVCOptions() {
     reset();
@@ -422,6 +426,9 @@ public:
 
   /** Structure holding user options. */
   NetVCOptions options;
+
+  /** Attempt to push any changed options down */
+  virtual void apply_options() = 0;
 
   //
   // Private

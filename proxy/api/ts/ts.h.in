@@ -539,8 +539,6 @@ extern "C"
   typedef enum
   {
     TS_CONFIG_NULL = -1,
-    /* The order of these enum's must match the order of
-       struct OverridableHttpConfigParams in HttpConfig.h. */
     TS_CONFIG_URL_REMAP_PRISTINE_HOST_HDR,
     TS_CONFIG_HTTP_CHUNKING_ENABLED,
     TS_CONFIG_HTTP_NEGATIVE_CACHING_ENABLED,
@@ -596,11 +594,11 @@ extern "C"
     TS_CONFIG_HTTP_CACHE_FUZZ_TIME,
     TS_CONFIG_HTTP_CACHE_FUZZ_MIN_TIME,
     TS_CONFIG_HTTP_DOC_IN_CACHE_SKIP_DNS,
-
-    /* Strings and floats must come after all the integer configs */
     TS_CONFIG_HTTP_RESPONSE_SERVER_STR,
     TS_CONFIG_HTTP_CACHE_HEURISTIC_LM_FACTOR,
     TS_CONFIG_HTTP_CACHE_FUZZ_PROBABILITY,
+    TS_CONFIG_NET_SOCK_PACKET_MARK_OUT,
+    TS_CONFIG_NET_SOCK_PACKET_TOS_OUT,
     TS_CONFIG_LAST_ENTRY
   } TSOverridableConfigKey;
 
@@ -2266,6 +2264,51 @@ extern "C"
   tsapi struct sockaddr const* TSHttpSsnIncomingAddrGet(TSHttpSsn ssnp);
   tsapi TSReturnCode TSHttpSsnClientFdGet(TSHttpSsn ssnp, int* fdp);
   /* TS-1008 END */
+
+  /** Change packet firewall mark for the client side connection
+   *
+      @note The change takes effect immediately
+      
+      @return TS_SUCCESS if the client connection was modified
+  */
+  tsapi TSReturnCode TSHttpTxnClientPacketMarkSet(TSHttpTxn txnp, int mark);
+  
+  /** Change packet firewall mark for the server side connection
+   *
+      @note The change takes effect immediately, if no OS connection has been
+      made, then this sets the mark that will be used IF an OS connection
+      is established
+      
+      @return TS_SUCCESS if the (future?) server connection was modified
+  */
+  tsapi TSReturnCode TSHttpTxnServerPacketMarkSet(TSHttpTxn txnp, int mark);
+  
+  /** Change packet TOS for the client side connection
+   *
+      @note The change takes effect immediately
+      
+      @note TOS is deprecated and replaced by DSCP, this is still used to
+      set DSCP however the first 2 bits of this value will be ignored as
+      they now belong to the ECN field.
+      
+      @return TS_SUCCESS if the client connection was modified
+  */
+  tsapi TSReturnCode TSHttpTxnClientPacketTosSet(TSHttpTxn txnp, int tos);
+  
+  /** Change packet TOS for the server side connection
+   *
+      @note The change takes effect immediately, if no OS connection has been
+      made, then this sets the mark that will be used IF an OS connection
+      is established
+      
+      @note TOS is deprecated and replaced by DSCP, this is still used to
+      set DSCP however the first 2 bits of this value will be ignored as
+      they now belong to the ECN field.
+      
+      @return TS_SUCCESS if the (future?) server connection was modified
+  */
+  tsapi TSReturnCode TSHttpTxnServerPacketTosSet(TSHttpTxn txnp, int tos);
+
 
   tsapi void TSHttpTxnErrorBodySet(TSHttpTxn txnp, char* buf, int buflength, char* mimetype);
 

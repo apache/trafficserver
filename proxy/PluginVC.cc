@@ -903,6 +903,12 @@ PluginVC::set_tcp_init_cwnd(int init_cwnd)
   return -1;
 }
 
+void
+PluginVC::apply_options()
+{
+  // do nothing
+}
+
 bool
 PluginVC::get_data(int id, void *data)
 {

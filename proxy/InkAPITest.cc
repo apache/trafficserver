@@ -7576,11 +7576,11 @@ const char *SDK_Overridable_Configs[] = {
   "proxy.config.http.cache.fuzz.time",
   "proxy.config.http.cache.fuzz.min_time",
   "proxy.config.http.doc_in_cache_skip_dns",
-
-  // These are "special", since they are not MgmtInt's
   "proxy.config.http.response_server_str",
   "proxy.config.http.cache.heuristic_lm_factor",
   "proxy.config.http.cache.fuzz.probability",
+  "proxy.config.net.sock_packet_mark_out",
+  "proxy.config.net.sock_packet_tos_out",
 
   NULL
 };

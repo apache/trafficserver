@@ -423,6 +423,17 @@ NetAccept::acceptFastEvent(int event, void *ep)
         safe_setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, SOCKOPT_ON, sizeof(int));
         Debug("socket", "::acceptFastEvent: setsockopt() SO_KEEPALIVE on socket");
       }
+#if TS_HAS_SO_MARK
+      if (packet_mark != 0) {
+        safe_setsockopt(fd, SOL_SOCKET, SO_MARK, reinterpret_cast<char *>(&packet_mark), sizeof(uint32_t));
+      }
+#endif
+
+#if TS_HAS_IP_TOS
+      if (packet_tos != 0) {
+        safe_setsockopt(fd, IPPROTO_IP, IP_TOS, reinterpret_cast<char *>(&packet_tos), sizeof(uint32_t));
+      }
+#endif
       do {
         res = safe_nonblocking(fd);
       } while (res < 0 && (errno == EAGAIN || errno == EINTR));
@@ -524,7 +535,14 @@ NetAccept::NetAccept()
   : Continuation(NULL),
     period(0),
     alloc_cache(0),
-    ifd(-1), callback_on_open(false), recv_bufsize(0), send_bufsize(0), sockopt_flags(0), etype(0)
+    ifd(-1),
+    callback_on_open(false),
+    recv_bufsize(0),
+    send_bufsize(0),
+    sockopt_flags(0),
+    packet_mark(0),
+    packet_tos(0),
+    etype(0)
 { }
 
 

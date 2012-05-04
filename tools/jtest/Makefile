@@ -1,8 +1,7 @@
 all: jtest
 
 jtest: jtest.cc
-	$(CXX) $^ -o $@ -Wall -Werror -Wextra -Wconversion
+	$(CXX) $^ -o $@ -Wno-write-strings
 
 clean:
 	rm -f jtest
-

@@ -68,6 +68,7 @@ Connection::Connection()
   : fd(NO_FD)
   , is_bound(false)
   , is_connected(false)
+  , sock_type(0)
 {
   memset(&addr, 0, sizeof(addr));
 }

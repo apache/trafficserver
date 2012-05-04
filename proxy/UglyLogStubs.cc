@@ -139,6 +139,8 @@ NetProcessor::AcceptOptions::reset()
   recv_bufsize = 0;
   send_bufsize = 0;
   sockopt_flags = 0;
+  packet_mark = 0;
+  packet_tos = 0;
   f_inbound_transparent = false;
   return *this;
 }

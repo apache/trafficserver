@@ -383,6 +383,8 @@ int CacheClusterMonitorIntervalSecs = 1;
 int cluster_send_buffer_size = 0;
 int cluster_receive_buffer_size = 0;
 unsigned long cluster_sockopt_flags = 0;
+unsigned long cluster_packet_mark = 0;
+unsigned long cluster_packet_tos = 0;
 
 int RPC_only_CacheCluster = 0;
 #endif
@@ -680,6 +682,8 @@ ClusterProcessor::init()
   IOCORE_ReadConfigInteger(cluster_receive_buffer_size, "proxy.config.cluster.receive_buffer_size");
   IOCORE_ReadConfigInteger(cluster_send_buffer_size, "proxy.config.cluster.send_buffer_size");
   IOCORE_ReadConfigInteger(cluster_sockopt_flags, "proxy.config.cluster.sock_option_flag");
+  IOCORE_ReadConfigInteger(cluster_packet_mark, "proxy.config.cluster.sock_packet_mark");
+  IOCORE_ReadConfigInteger(cluster_packet_tos, "proxy.config.cluster.sock_packet_tos");
   IOCORE_EstablishStaticConfigInt32(RPC_only_CacheCluster, "proxy.config.cluster.rpc_cache_cluster");
 
   int cluster_type = 0;

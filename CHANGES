@@ -1,5 +1,20 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.1.4
+  *) [TS-1245] proxy.config.http.connect_ports may be '*'
+
+  *) [TS-1239] TSHttpTxnServerAddrSet implementation
+
+  *) [TS-1237] custom log field/filtering improvements
+
+  *) [TS-1090] SO_MARK and IP_TOS support for linux
+
+  *) [TS-1238] RAM cache hit rate unexpectedly low with CLFUS.
+
+  *) [TS-1242] Make it build with some more recent automake versions.
+
+  *) [TS-1241] Memory leaks when using TSHttpSchedule().
+   Author: Aidan McGurn
+
   *) [TS-1163] Support for raw disks larger than 2TB on Linux
 
   *) [TS-1230] added a paramter to the configure script to allow overriding

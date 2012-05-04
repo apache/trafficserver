@@ -832,11 +832,19 @@ RecordElement RecordsConfig[] = {
   ,
   {RECT_CONFIG, "proxy.config.net.sock_option_flag_in", RECD_INT, "0x0", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
+  {RECT_CONFIG, "proxy.config.net.sock_packet_mark_in", RECD_INT, "0x0", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
+  ,
+  {RECT_CONFIG, "proxy.config.net.sock_packet_tos_in", RECD_INT, "0x0", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
+  ,
   {RECT_CONFIG, "proxy.config.net.sock_recv_buffer_size_out", RECD_INT, "0", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.net.sock_send_buffer_size_out", RECD_INT, "0", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.net.sock_option_flag_out", RECD_INT, "0x0", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
+  ,
+  {RECT_CONFIG, "proxy.config.net.sock_packet_mark_out", RECD_INT, "0x0", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
+  ,
+  {RECT_CONFIG, "proxy.config.net.sock_packet_tos_out", RECD_INT, "0x0", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.net.sock_mss_in", RECD_INT, "0", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
@@ -863,6 +871,10 @@ RecordElement RecordsConfig[] = {
   {RECT_CONFIG, "proxy.config.cluster.receive_buffer_size", RECD_INT, "10485760", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.cluster.sock_option_flag", RECD_INT, "0x0", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
+  ,
+  {RECT_CONFIG, "proxy.config.cluster.sock_packet_mark", RECD_INT, "0x0", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
+  ,
+  {RECT_CONFIG, "proxy.config.cluster.sock_packet_tos", RECD_INT, "0x0", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.cluster.rpc_cache_cluster", RECD_INT, "0", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
@@ -1082,7 +1094,7 @@ RecordElement RecordsConfig[] = {
   //        ###########
   //        # CONNECT #
   //        ###########
-  {RECT_CONFIG, "proxy.config.http.connect_ports", RECD_STRING, "443", RECU_DYNAMIC, RR_NULL, RECC_STR, "^[[:digit:][:space:]]+$", RECA_NULL}
+  {RECT_CONFIG, "proxy.config.http.connect_ports", RECD_STRING, "443 563", RECU_DYNAMIC, RR_NULL, RECC_STR, "^[[:digit:][:space:]*]+$", RECA_NULL}
   ,
   //        ##########################
   //        # Various update periods #

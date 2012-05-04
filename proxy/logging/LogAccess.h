@@ -225,6 +225,15 @@ public:
   inkcoreapi virtual int marshal_server_resp_http_version(char *);      // INT
 
   //
+  // cache -> client fields
+  //
+  inkcoreapi virtual int marshal_cache_resp_status_code(char *);  // INT
+  inkcoreapi virtual int marshal_cache_resp_content_len(char *);  // INT
+  inkcoreapi virtual int marshal_cache_resp_header_len(char *);   // INT
+  inkcoreapi virtual int marshal_cache_resp_http_version(char *); // INT
+
+
+  //
   // congestion control -- client_retry_after_time
   //
   inkcoreapi virtual int marshal_client_retry_after_time(char *);       // INT
