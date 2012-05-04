@@ -178,13 +178,16 @@ int main(int argc, char **argv)
       usage(argv);
     }
   }
-    
-  if (optind >= argc) {
-    fprintf(stderr, "Error: missing hostname on command line\n");
-    usage(argv);
-  }
 
-  string host = argv[optind];
+  string host = "";
+  if (optind >= argc) {
+    if (TS_ERR_OKAY != TSInit(NULL, static_cast<TSInitOptionT>(TS_MGMT_OPT_NO_EVENTS | TS_MGMT_OPT_NO_SOCK_TESTS))) {
+      fprintf(stderr, "Error: missing hostname on command line or error connecting to the local manager\n");
+      usage(argv);
+    }
+  } else {
+    host = argv[optind];
+  }
   Stats stats(host);
 
   //cout << response;
@@ -267,7 +270,6 @@ int main(int argc, char **argv)
     response1.push_back("3xx");
     response1.push_back("4xx");
     response1.push_back("5xx");
-    //response1.push_back("response_abort");
     response1.push_back("conn_fail");
     response1.push_back("other_err");
     response1.push_back("abort");
@@ -324,9 +326,8 @@ int main(int argc, char **argv)
     makeTable(62, 17, server2, stats);
 
 
-  curs_set(0);
+    curs_set(0);
     refresh();
-//    sleep(5);
     timeout(sleep_time);
   loop:
     int x = getch();

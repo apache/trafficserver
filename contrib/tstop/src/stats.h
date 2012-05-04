@@ -1,6 +1,12 @@
 #include <curl/curl.h>
 #include <map>
 #include <string>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+//#include <ts/ts.h>
+#include <inttypes.h>
+#include <ts/mgmtapi.h>
 
 using namespace std;
 
@@ -134,37 +140,66 @@ public:
   }
 
   void getStats() {
-    CURL *curl;
-    CURLcode res;
 
-    if (_old_stats != NULL) {
-      delete _old_stats;
-      _old_stats = NULL;
-    }
-    _old_stats = _stats;
-    _stats = new map<string, string>;
+    if (_host == "") {
+      int64_t value;
+      if (_old_stats != NULL) {
+        delete _old_stats;
+        _old_stats = NULL;
+      }
+      _old_stats = _stats;
+      _stats = new map<string, string>;
 
-    curl = curl_easy_init();
-    if (curl) {
-      string url = "http://" + _host + "/_stats";
-      curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
-      curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_data);
-      curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, curl_error);
+      for (map<string, LookupItem>::const_iterator lookup_it = lookup_table.begin();
+           lookup_it != lookup_table.end(); ++lookup_it) {
+        const LookupItem &item = lookup_it->second;
 
-      // update time
-      _old_time = _now;
-      gettimeofday(&_time, NULL);
-      _now = _time.tv_sec + (double)_time.tv_usec / 1000000;
-      _time_diff = _now - _old_time;
+        if (item.type == 1 || item.type == 2 || item.type == 5 || item.type == 8) {
+          assert(TSRecordGetInt(item.name, &value) == TS_ERR_OKAY);
+          cerr << "name" << item.name << " value: " << value << endl;
+          string key = item.name;
+          char buffer[32];
+          sprintf(buffer, "%lld", value);
+          string foo = buffer;
+          (*_stats)[key] = foo;
+        }
+      }
+    } else {
+      CURL *curl;
+      CURLcode res;
 
-      res = curl_easy_perform(curl);
-      cout << curl_error << endl;
-      assert(res == 0);
-      /* always cleanup */ 
-      curl_easy_cleanup(curl);
+      curl = curl_easy_init();
+      if (curl) {
+        string url = "http://" + _host + "/_stats";
+        curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_data);
+        curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, curl_error);
 
-      // parse
-      parseResponse(response);
+        // update time
+        gettimeofday(&_time, NULL);
+        double now = _time.tv_sec + (double)_time.tv_usec / 1000000;
+
+        res = curl_easy_perform(curl);
+
+        // only if success update stats and time information
+        if (res == 0) {
+          if (_old_stats != NULL) {
+            delete _old_stats;
+            _old_stats = NULL;
+          }
+          _old_stats = _stats;
+          _stats = new map<string, string>;
+
+          // parse
+          parseResponse(response);
+          _old_time = _now;
+          _now = now;
+          _time_diff = _now - _old_time;
+        }
+
+        /* always cleanup */ 
+        curl_easy_cleanup(curl);
+      }
     }
   }
 
