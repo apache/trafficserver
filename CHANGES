@@ -1,5 +1,7 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.1.4
+  *) [TS-1245] proxy.config.http.connect_ports may be '*'
+
   *) [TS-1239] TSHttpTxnServerAddrSet implementation
 
   *) [TS-1237] custom log field/filtering improvements
