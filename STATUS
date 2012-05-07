@@ -42,15 +42,6 @@ A list of all bugs open for the next v3.0.5 release can be found at
 
 PATCHES ACCEPTED TO BACKPORT FROM TRUNK:
 
-  *) HttpSM: TS can hang on HTTPS POST requests.
-   Trunk patch: http://svn.apache.org/viewvc?view=rev&rev=1228988
-   Jira: https://issues.apache.org/jira/browse/TS-1049
-   +1: zwoop, niq, igalic
-   niq comments:  This patch combines the bugfix with no-op stylistic
-                  changes.  Not a big deal for a simple change, but in
-                  general it risks complicating review.
-   igalic agrees niq.
-
 PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   [ New proposals should be added at the end of the list ]
 

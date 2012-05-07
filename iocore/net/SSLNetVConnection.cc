@@ -175,6 +175,7 @@ SSLNetVConnection::net_read_io(NetHandler * nh, EThread * lthread)
   MIOBufferAccessor & buf = s->vio.buffer;
   MUTEX_TRY_LOCK_FOR(lock, s->vio.mutex, lthread, s->vio._cont);
   if (!lock) {
+    readReschedule(nh);
     return;
   }
   // If it is not enabled, lower its priority.  This allows
