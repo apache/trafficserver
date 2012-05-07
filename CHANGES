@@ -1,5 +1,7 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.0.5
+  *) [TS-1098] make rc script support Amazon EC2 linux AMI
+
   *) [TS-1185] fix build issues with clang
 
   *) [TS-1116] fix build issues with gcc 4.7 

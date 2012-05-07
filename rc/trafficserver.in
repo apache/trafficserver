@@ -59,6 +59,18 @@ elif [ "$UNAME_S" = "FreeBSD" ]; then
   DISTRIB_ID="FreeBSD"
 fi
 
+# We might want to move over to use /etc/system-release for more distros?
+# I know at least Fedora supports it as well.
+if [ "" = "$DISTRIB_ID" -a -e /etc/system-release ]; then
+    case $(cat /etc/system-release) in
+       *Amazon*)
+           DISTRIB_ID="redhat" # Amazon AMI is mostly like RHEL
+           ;;
+       *)
+           ;;
+    esac
+fi
+
 # /usr/bin/lsb_release -rd # Ubuntu release & description info
 
 HEAD=/usr/bin/head
