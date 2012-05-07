@@ -9,8 +9,9 @@ The current version of this file can be found at:
 Release history:
     [NOTE that x.{odd}.z versions are strictly Alpha/Beta releases,
           while x.{even}.z versions are Stable/GA releases.]
-
-    3.0.5           : Released on xxx, 2012 
+    
+    3.0.6           : Released on xxx, 2012 
+    3.0.5           : Released on May 11, 2012 
     3.0.4           : Released on March 21, 2012 
     3.0.3           : Released on Februrary 13, 2012
     3.0.2           : Released on December 07th, 2011
@@ -36,9 +37,9 @@ CURRENT RELEASE NOTES:
 
 RELEASE SHOWSTOPPERS:
 
-A list of all bugs open for the next v3.0.5 release can be found at
+A list of all bugs open for the next v3.0.6 release can be found at
 
-  http://s.apache.org/ts-3.0.5
+  http://s.apache.org/ts-3.0.6
 
 PATCHES ACCEPTED TO BACKPORT FROM TRUNK:
 
