@@ -150,6 +150,9 @@ public:
       _old_stats = _stats;
       _stats = new map<string, string>;
 
+      gettimeofday(&_time, NULL);
+      double now = _time.tv_sec + (double)_time.tv_usec / 1000000;
+
       for (map<string, LookupItem>::const_iterator lookup_it = lookup_table.begin();
            lookup_it != lookup_table.end(); ++lookup_it) {
         const LookupItem &item = lookup_it->second;
@@ -162,8 +165,13 @@ public:
           sprintf(buffer, "%lld", value);
           string foo = buffer;
           (*_stats)[key] = foo;
+
+
         }
       }
+      _old_time = _now;
+      _now = now;
+      _time_diff = _now - _old_time;
     } else {
       CURL *curl;
       CURLcode res;
