@@ -475,7 +475,7 @@ void http_hdr_url_set(HdrHeap *heap, HTTPHdrImpl *hh, URLImpl *url);
 void http_hdr_status_set(HTTPHdrImpl *hh, HTTPStatus status);
 const char *http_hdr_reason_get(HTTPHdrImpl *hh, int *length);
 void http_hdr_reason_set(HdrHeap *heap, HTTPHdrImpl *hh, const char *value, int length, bool must_copy);
-const char *http_hdr_reason_lookup(HTTPStatus status);
+const char *http_hdr_reason_lookup(unsigned status);
 
 void http_parser_init(HTTPParser *parser);
 void http_parser_clear(HTTPParser *parser);

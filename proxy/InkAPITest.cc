@@ -3392,7 +3392,7 @@ REGRESSION_TEST(SDK_API_TSHttpHdr) (RegressionTest * test, int atype, int *pstat
     test_passed_Http_Hdr_Reason_Lookup = true;
   }
 
-  if (strcmp("Ok", TSHttpHdrReasonLookup(TS_HTTP_STATUS_OK)) != 0) {
+  if (strcmp("OK", TSHttpHdrReasonLookup(TS_HTTP_STATUS_OK)) != 0) {
     SDK_RPRINT(test, "TSHttpHdrReasonLookup", "TestCase2", TC_FAIL,
                "TSHttpHdrReasonLookup returns Value's mismatch");
     if (test_passed_Http_Hdr_Reason_Lookup == true) {
