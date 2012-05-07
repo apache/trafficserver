@@ -1,5 +1,7 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.1.4
+  *) [TS-1252] Fixed include issues when using mgmtapi.h
+
   *) [TS-1248] update HTTP status codes and strings
 
   *) [TS-1245] proxy.config.http.connect_ports may be '*'
