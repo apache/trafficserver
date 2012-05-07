@@ -56,11 +56,6 @@ PATCHES ACCEPTED TO BACKPORT FROM TRUNK:
    Jira: https://issues.apache.org/jira/browse/TS-1111
    +1: zym, zwoop, igalic
 
-  *) stack dump may crash too
-   master SHA: ad6c4ab97ff150727660f66aa64b0fb57fd3d3f7
-   Jira: https://issues.apache.org/jira/browse/TS-1109
-   +1: zym, zwoop, igalic
-
 PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   [ New proposals should be added at the end of the list ]
 
