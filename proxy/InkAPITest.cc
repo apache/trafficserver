@@ -254,10 +254,10 @@ REGRESSION_TEST(SDK_API_TSConfig) (RegressionTest * test, int atype, int *pstatu
 //                    TSNetAccept
 //                    TSNetConnect
 //////////////////////////////////////////////
-#define IP(a,b,c,d) htonl((a) << 24 | (b) << 16 | (c) << 8 | (d))
-const unsigned short server_port = 12345;
-RegressionTest *SDK_NetVConn_test;
-int *SDK_NetVConn_pstatus;
+
+static unsigned short   SDK_NetVConn_port;
+static RegressionTest * SDK_NetVConn_test;
+static int *            SDK_NetVConn_pstatus;
 
 int
 server_handler(TSCont contp, TSEvent event, void *data)
@@ -305,8 +305,8 @@ client_handler(TSCont contp, TSEvent event, void *data)
     } else
       SDK_RPRINT(SDK_NetVConn_test, "TSNetVConnRemoteIPGet", "TestCase1", TC_PASS, "ok");
 
-    if (input_server_port != server_port) {
-      SDK_RPRINT(SDK_NetVConn_test, "TSNetVConnRemotePortGet", "TestCase1", TC_FAIL, "server port [%d] is incorrect -- expected [%d]", input_server_port, server_port);
+    if (input_server_port != SDK_NetVConn_port) {
+      SDK_RPRINT(SDK_NetVConn_test, "TSNetVConnRemotePortGet", "TestCase1", TC_FAIL, "server port [%d] is incorrect -- expected [%d]", input_server_port, SDK_NetVConn_port);
 
       TSContDestroy(contp);
       // Fix me: how to deal with server side cont?
@@ -328,8 +328,10 @@ REGRESSION_TEST(SDK_API_TSNetVConn) (RegressionTest * test, int atype, int *psta
 {
   NOWARN_UNUSED(atype);
   *pstatus = REGRESSION_TEST_INPROGRESS;
+
   SDK_NetVConn_test = test;
   SDK_NetVConn_pstatus = pstatus;
+  SDK_NetVConn_port = 12345;
 
   TSMutex server_mutex = TSMutexCreate();
   TSMutex client_mutex = TSMutexCreate();
@@ -337,10 +339,50 @@ REGRESSION_TEST(SDK_API_TSNetVConn) (RegressionTest * test, int atype, int *psta
   TSCont server_cont = TSContCreate(server_handler, server_mutex);
   TSCont client_cont = TSContCreate(client_handler, client_mutex);
 
-  TSNetAccept(server_cont, server_port, -1, 0);
+  TSNetAccept(server_cont, SDK_NetVConn_port, -1, 0);
 
   IpEndpoint addr;
-  ats_ip4_set(&addr, htonl(INADDR_LOOPBACK), htons(server_port));
+  ats_ip4_set(&addr, htonl(INADDR_LOOPBACK), htons(SDK_NetVConn_port));
+  TSNetConnect(client_cont, &addr.sa);
+}
+
+REGRESSION_TEST(SDK_API_TSPortDescriptor) (RegressionTest * test, int atype, int *pstatus)
+{
+  NOWARN_UNUSED(atype);
+  TSPortDescriptor port;
+  char desc[64];
+
+  *pstatus = REGRESSION_TEST_INPROGRESS;
+  SDK_NetVConn_test = test;
+  SDK_NetVConn_pstatus = pstatus;
+  SDK_NetVConn_port = 54321;
+
+  TSMutex server_mutex = TSMutexCreate();
+  TSMutex client_mutex = TSMutexCreate();
+
+  TSCont server_cont = TSContCreate(server_handler, server_mutex);
+  TSCont client_cont = TSContCreate(client_handler, client_mutex);
+
+  port = TSPortDescriptorParse(NULL);
+  if (port) {
+    SDK_RPRINT(test, "TSPortDescriptorParse", "NULL port descriptor", TC_FAIL,
+        "TSPortDescriptorParse(NULL) returned %s", port);
+    *pstatus = REGRESSION_TEST_FAILED;
+    return;
+  }
+
+  snprintf(desc, sizeof(desc), "%u", SDK_NetVConn_port);
+  port = TSPortDescriptorParse(desc);
+
+  if (TSPortDescriptorAccept(port, server_cont) == TS_ERROR) {
+    SDK_RPRINT(test, "TSPortDescriptorParse", "Basic port descriptor", TC_FAIL,
+        "TSPortDescriptorParse(%s) returned TS_ERROR", desc);
+    *pstatus = REGRESSION_TEST_FAILED;
+    return;
+  }
+
+  IpEndpoint addr;
+  ats_ip4_set(&addr, htonl(INADDR_LOOPBACK), htons(SDK_NetVConn_port));
   TSNetConnect(client_cont, &addr.sa);
 }
 

@@ -154,6 +154,61 @@ init_HttpProxyServer(void)
 #endif
 }
 
+bool
+start_HttpProxyPort(const HttpProxyPort& port, unsigned nthreads)
+{
+  NetProcessor::AcceptOptions net;
+  HttpAccept::Options         http;
+  SslConfig::scoped_config    sslParam;
+
+  net.accept_threads = nthreads;
+
+  net.f_inbound_transparent = port.m_inbound_transparent_p;
+  net.ip_family = port.m_family;
+  net.local_port = port.m_port;
+
+  http.f_outbound_transparent = port.m_outbound_transparent_p;
+  http.transport_type = port.m_type;
+
+  if (port.m_inbound_ip.isValid()) {
+    net.local_ip = port.m_inbound_ip;
+  } else if (AF_INET6 == port.m_family && HttpConfig::m_master.inbound_ip6.isIp6()) {
+    net.local_ip = HttpConfig::m_master.inbound_ip6;
+  } else if (AF_INET == port.m_family && HttpConfig::m_master.inbound_ip4.isIp4()) {
+    net.local_ip = HttpConfig::m_master.inbound_ip4;
+  }
+
+  if (port.m_outbound_ip4.isValid()) {
+    http.outbound_ip4 = port.m_outbound_ip4;
+  } else if (HttpConfig::m_master.outbound_ip4.isValid()) {
+    http.outbound_ip4 = HttpConfig::m_master.outbound_ip4;
+  }
+
+  if (port.m_outbound_ip6.isValid()) {
+    http.outbound_ip6 = port.m_outbound_ip6;
+  } else if (HttpConfig::m_master.outbound_ip6.isValid()) {
+    http.outbound_ip6 = HttpConfig::m_master.outbound_ip6;
+  }
+
+  if (port.isSSL()) {
+    HttpAccept * accept = NEW(new HttpAccept(http));
+    SSLNextProtocolAccept * ssl = NEW(new SSLNextProtocolAccept(accept));
+    ssl->registerEndpoint(TS_NPN_PROTOCOL_HTTP_1_0, accept);
+    ssl->registerEndpoint(TS_NPN_PROTOCOL_HTTP_1_1, accept);
+
+#ifndef TS_NO_API
+    ink_scoped_mutex lock(ssl_plugin_mutex);
+    ssl_plugin_acceptors.push(ssl);
+#endif
+
+    return sslNetProcessor.main_accept(ssl, port.m_fd, net) != NULL;
+  } else {
+    return netProcessor.main_accept(NEW(new HttpAccept(http)), port.m_fd, net) != NULL;
+  }
+
+  // XXX although we make a good pretence here, I don't believe that NetProcessor::main_accept() ever actually returns
+  // NULL. It would be useful to be able to detect errors and spew them here though.
+}
 
 void
 start_HttpProxyServer(int accept_threads)
@@ -178,53 +233,10 @@ start_HttpProxyServer(int accept_threads)
   REC_ReadConfigInteger(opt.send_bufsize, "proxy.config.net.sock_send_buffer_size_in");
   REC_ReadConfigInteger(opt.packet_mark, "proxy.config.net.sock_packet_mark_in");
   REC_ReadConfigInteger(opt.packet_tos, "proxy.config.net.sock_packet_tos_in");
-  SslConfigParams *sslParam = sslTerminationConfig.acquire();
   
   for ( int i = 0 , n = HttpProxyPort::global().length() ; i < n ; ++i ) {
-    HttpProxyPort& p = HttpProxyPort::global()[i];
-    HttpAccept::Options ha_opt;
-
-    opt.f_inbound_transparent = p.m_inbound_transparent_p;
-    opt.ip_family = p.m_family;
-    opt.local_port = p.m_port;
-
-    ha_opt.f_outbound_transparent = p.m_outbound_transparent_p;
-    ha_opt.transport_type = p.m_type;
-
-    if (p.m_inbound_ip.isValid())
-      opt.local_ip = p.m_inbound_ip;
-    else if (AF_INET6 == p.m_family && HttpConfig::m_master.inbound_ip6.isIp6())
-      opt.local_ip = HttpConfig::m_master.inbound_ip6;
-    else if (AF_INET == p.m_family && HttpConfig::m_master.inbound_ip4.isIp4())
-      opt.local_ip = HttpConfig::m_master.inbound_ip4;
-
-    if (p.m_outbound_ip4.isValid())
-      ha_opt.outbound_ip4 = p.m_outbound_ip4;
-    else if (HttpConfig::m_master.outbound_ip4.isValid())
-      ha_opt.outbound_ip4 = HttpConfig::m_master.outbound_ip4;
-
-    if (p.m_outbound_ip6.isValid())
-      ha_opt.outbound_ip6 = p.m_outbound_ip6;
-    else if (HttpConfig::m_master.outbound_ip6.isValid())
-      ha_opt.outbound_ip6 = HttpConfig::m_master.outbound_ip6;
-
-    if (p.isSSL()) {
-      HttpAccept * http = NEW(new HttpAccept(ha_opt));
-      SSLNextProtocolAccept * ssl = NEW(new SSLNextProtocolAccept(http));
-      ssl->registerEndpoint(TS_NPN_PROTOCOL_HTTP_1_0, http);
-      ssl->registerEndpoint(TS_NPN_PROTOCOL_HTTP_1_1, http);
-
-#ifndef TS_NO_API
-      ink_scoped_mutex lock(ssl_plugin_mutex);
-      ssl_plugin_acceptors.push(ssl);
-#endif
-      sslNetProcessor.main_accept(ssl, p.m_fd, opt);
-    } else {
-      netProcessor.main_accept(NEW(new HttpAccept(ha_opt)), p.m_fd, opt);
-    }
+    start_HttpProxyPort(HttpProxyPort::global()[i], accept_threads);
   }
-
-  sslTerminationConfig.release(sslParam);
 
 #ifdef DEBUG
   if (diags->on("http_dump")) {

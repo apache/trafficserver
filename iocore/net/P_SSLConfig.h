@@ -108,6 +108,15 @@ public:
   static SslConfigParams *acquire();
   static void release(SslConfigParams * params);
 
+  struct scoped_config {
+    scoped_config() : p(SslConfig::acquire()) {}
+    ~scoped_config() { SslConfig::release(p); }
+    operator const SslConfigParams * () const { return p; }
+
+    private:
+      SslConfigParams * p;
+  };
+
 private:
   static int id;
 #ifndef USE_CONFIG_PROCESSOR

@@ -687,6 +687,7 @@ extern "C"
   typedef struct tsapi_cachehttpinfo* TSCacheHttpInfo;
   typedef struct tsapi_cachetxn* TSCacheTxn;
 
+  typedef struct tsapi_port* TSPortDescriptor;
   typedef struct tsapi_vio* TSVIO;
   typedef struct tsapi_thread* TSThread;
   typedef struct tsapi_mutex* TSMutex;
@@ -2657,6 +2658,20 @@ extern "C"
     will not be registered on any ports (ie.. no partial failure).
   */
   tsapi TSReturnCode TSNetAcceptNamedProtocol(TSCont contp, const char * protocol);
+
+  /**
+    Create a new port from the string specification used by the
+    proxy.config.http.server_ports configuration value.
+   */
+  tsapi TSPortDescriptor TSPortDescriptorParse(const char * descriptor);
+
+  /**
+     Start listening on the given port descriptor. If a connection is
+     successfully accepted, the TS_EVENT_NET_ACCEPT is delivered to the
+     continuation. The event data will be a valid TSVConn bound to the accepted
+     connection.
+   */
+  tsapi TSReturnCode TSPortDescriptorAccept(TSPortDescriptor, TSCont);
 
   /* --------------------------------------------------------------------------
      DNS Lookups */

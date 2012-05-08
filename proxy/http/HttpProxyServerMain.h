@@ -21,6 +21,8 @@
   limitations under the License.
  */
 
+struct HttpProxyPort;
+
 void init_HttpProxyServer(void);
 
 /** Start the proxy server. 
@@ -29,3 +31,5 @@ void init_HttpProxyServer(void);
 void start_HttpProxyServer(int accept_threads = 0);
 
 void start_HttpProxyServerBackDoor(int port, int accept_threads = 0);
+
+bool start_HttpProxyPort(const HttpProxyPort& port, unsigned nthreads);

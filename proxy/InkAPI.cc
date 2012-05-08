@@ -67,6 +67,7 @@
 
 #include "I_RecDefs.h"
 #include "I_RecCore.h"
+#include "HttpProxyServerMain.h"
 
 
 /****************************************************************
@@ -8250,6 +8251,27 @@ TSMgmtIntCreate(TSRecordType rec_type, const char *name, TSMgmtInt data_default,
     return TS_ERROR;
 
   return TS_SUCCESS;
+}
+
+// Parse a port descriptor for the proxy.config.http.server_ports descriptor format.
+TSPortDescriptor
+TSPortDescriptorParse(const char * descriptor)
+{
+  HttpProxyPort * port = NEW(new HttpProxyPort());
+
+  if (descriptor && port->processOptions(descriptor)) {
+    return (TSPortDescriptor)port;
+  }
+
+  delete port;
+  return NULL;
+}
+
+TSReturnCode
+TSPortDescriptorAccept(TSPortDescriptor descp, TSCont contp)
+{
+  HttpProxyPort * port = (HttpProxyPort *)descp;
+  return start_HttpProxyPort(*port, 0 /* nthreads */) ? TS_SUCCESS : TS_ERROR;
 }
 
 #endif //TS_NO_API

@@ -1,5 +1,7 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.3.0
+  *) [TS-961] Add TSPortDescriptor API to support accepting connections with inbound transparency.
+
   *) [TS-1332] Silence spurious error when adding SSL certificates with alternate names
 
   *) [TS-1087] TSHttpTxnOutgoingAddrSet forward declaration does not match implementation
