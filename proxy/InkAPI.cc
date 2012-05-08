@@ -7478,6 +7478,7 @@ TSSkipRemappingSet(TSHttpTxn txnp, int flag)
 void*
 _conf_to_memberp(TSOverridableConfigKey conf, HttpSM* sm, OverridableDataType *typep)
 {
+  // The default is "Byte", make sure to override that for those configs which are "Int".
   OverridableDataType typ = OVERRIDABLE_TYPE_BYTE;
   void* ret = NULL;
 
