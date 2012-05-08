@@ -7594,7 +7594,7 @@ REGRESSION_TEST(SDK_API_OVERRIDABLE_CONFIGS) (RegressionTest * test, int atype, 
   HttpSM* s = HttpSM::allocate();
   bool success = true;
   TSHttpTxn txnp = reinterpret_cast<TSHttpTxn>(s);
-  TSMgmtInt ival;
+  TSMgmtInt ival = 0;
   TSMgmtFloat fval;
   const char *sval;
   const char *test_string = "The Apache Traffic Server";
@@ -7612,7 +7612,7 @@ REGRESSION_TEST(SDK_API_OVERRIDABLE_CONFIGS) (RegressionTest * test, int atype, 
         continue;
       }
     } else {
-      SDK_RPRINT(test, "TSHttpTxnConfigFind", "TestCase1", TC_FAIL, "Called returned unexpected TS_ERROR");
+      SDK_RPRINT(test, "TSHttpTxnConfigFind", "TestCase1", TC_FAIL, "Call returned unexpected TS_ERROR");
       success = false;
       continue;
     }
@@ -7725,8 +7725,6 @@ REGRESSION_TEST(SDK_API_ENCODING) (RegressionTest * test, int atype, int *pstatu
     SDK_RPRINT(test, "TSBase64Decode", "TestCase1", TC_FAIL, "Failed on %s", url_base64);
     success = false;
   } else {
-    printf("LENGTH is %d vs %d\n", (int)length, (int)strlen(url));
-    printf("BUF is %s vs %s\n", buf, url);
     if (length != strlen(url) || strcmp(buf, url)) {
       SDK_RPRINT(test, "TSBase64Decode", "TestCase1", TC_FAIL, "Failed on %s != %s", buf, url);
       success = false;

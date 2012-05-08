@@ -1400,7 +1400,6 @@ void
 HttpConfig::reconfigure()
 {
 #define INT_TO_BOOL(i) ((i) ? 1 : 0);
-#define INT_TO_BYTE(i) (MgmtByte)(i);
 
   HttpConfigParams *params;
 
@@ -1542,7 +1541,7 @@ HttpConfig::reconfigure()
   params->oride.cache_ignore_client_cc_max_age = INT_TO_BOOL(m_master.oride.cache_ignore_client_cc_max_age);
   params->oride.cache_ims_on_client_no_cache = INT_TO_BOOL(m_master.oride.cache_ims_on_client_no_cache);
   params->oride.cache_ignore_server_no_cache = INT_TO_BOOL(m_master.oride.cache_ignore_server_no_cache);
-  params->oride.cache_responses_to_cookies = INT_TO_BYTE(m_master.oride.cache_responses_to_cookies);
+  params->oride.cache_responses_to_cookies = m_master.oride.cache_responses_to_cookies;
   params->oride.cache_ignore_auth = INT_TO_BOOL(m_master.oride.cache_ignore_auth);
   params->oride.cache_urls_that_look_dynamic = INT_TO_BOOL(m_master.oride.cache_urls_that_look_dynamic);
   params->cache_enable_default_vary_headers = INT_TO_BOOL(m_master.cache_enable_default_vary_headers);
@@ -1552,10 +1551,10 @@ HttpConfig::reconfigure()
   params->ignore_accept_encoding_mismatch = INT_TO_BOOL(m_master.ignore_accept_encoding_mismatch);
   params->ignore_accept_charset_mismatch = INT_TO_BOOL(m_master.ignore_accept_charset_mismatch);
 
-  params->oride.cache_when_to_revalidate = INT_TO_BYTE(m_master.oride.cache_when_to_revalidate);
-  params->cache_when_to_add_no_cache_to_msie_requests = INT_TO_BYTE(m_master.cache_when_to_add_no_cache_to_msie_requests);
+  params->oride.cache_when_to_revalidate = m_master.oride.cache_when_to_revalidate;
+  params->cache_when_to_add_no_cache_to_msie_requests = m_master.cache_when_to_add_no_cache_to_msie_requests;
 
-  params->oride.cache_required_headers = INT_TO_BYTE(m_master.oride.cache_required_headers);
+  params->oride.cache_required_headers = m_master.oride.cache_required_headers;
   params->cache_range_lookup = INT_TO_BOOL(m_master.cache_range_lookup);
 
   params->connect_ports_string = ats_strdup(m_master.connect_ports_string);
@@ -1571,7 +1570,7 @@ HttpConfig::reconfigure()
   params->slow_log_threshold = m_master.slow_log_threshold;
   params->record_cop_page = INT_TO_BOOL(m_master.record_cop_page);
   params->record_tcp_mem_hit = INT_TO_BOOL(m_master.record_tcp_mem_hit);
-  params->oride.send_http11_requests = INT_TO_BYTE(m_master.oride.send_http11_requests);
+  params->oride.send_http11_requests = m_master.oride.send_http11_requests;
   params->oride.doc_in_cache_skip_dns = INT_TO_BOOL(m_master.oride.doc_in_cache_skip_dns);
   params->default_buffer_size_index = m_master.default_buffer_size_index;
   params->default_buffer_water_mark = m_master.default_buffer_water_mark;

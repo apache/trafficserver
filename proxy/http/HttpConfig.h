@@ -403,14 +403,14 @@ struct OverridableHttpConfigParams {
     :  maintain_pristine_host_hdr(0), chunking_enabled(0),
        negative_caching_enabled(0), negative_caching_lifetime(0), cache_when_to_revalidate(0),
        keep_alive_enabled_in(0), keep_alive_enabled_out(0), keep_alive_post_out(0),
-       server_tcp_init_cwnd(0), share_server_sessions(0),
+       share_server_sessions(0),
        sock_recv_buffer_size_out(0), sock_send_buffer_size_out(0), sock_option_flag_out(0),
-       sock_packet_mark_out(0), sock_packet_tos_out(0),
-       fwd_proxy_auth_to_parent(0), 
+       sock_packet_mark_out(0), sock_packet_tos_out(0), fwd_proxy_auth_to_parent(0),
        anonymize_remove_from(0), anonymize_remove_referer(0), anonymize_remove_user_agent(0),
        anonymize_remove_cookie(0), anonymize_remove_client_ip(0), anonymize_insert_client_ip(1),
        proxy_response_server_enabled(0),
-       insert_squid_x_forwarded_for(0), send_http11_requests(3), // SEND_HTTP11_IF_REQUEST_11_AND_HOSTDB
+       insert_squid_x_forwarded_for(0), server_tcp_init_cwnd(0),
+       send_http11_requests(3), // SEND_HTTP11_IF_REQUEST_11_AND_HOSTDB
        cache_http(0), cache_ignore_client_no_cache(0), cache_ignore_client_cc_max_age(1),
        cache_ims_on_client_no_cache(0), cache_ignore_server_no_cache(0), cache_responses_to_cookies(0),
        cache_ignore_auth(0), cache_urls_that_look_dynamic(0), cache_required_headers(0), // CACHE_REQUIRED_HEADERS_NONE
@@ -433,10 +433,9 @@ struct OverridableHttpConfigParams {
        // Strings / floats must come last
        proxy_response_server_string(NULL), proxy_response_server_string_len(0),
        cache_heuristic_lm_factor(0.0), freshness_fuzz_prob(0.0)
-  { 
-  }
+  { }
 
-  // IMPORTANT: All MgmtInt configs should come before any other string / float
+  // IMPORTANT: All MgmtInt/Byte configs should come before any other string / float
   // configs!!!
 
   // The first three configs used to be @-parameters in remap.config
@@ -454,7 +453,6 @@ struct OverridableHttpConfigParams {
   MgmtByte keep_alive_enabled_in;
   MgmtByte keep_alive_enabled_out;
   MgmtByte keep_alive_post_out;  // share server sessions for post
-  MgmtInt server_tcp_init_cwnd;
 
   MgmtByte share_server_sessions;
 
@@ -485,6 +483,11 @@ struct OverridableHttpConfigParams {
   // X-Forwarded-For //
   /////////////////////
   MgmtByte insert_squid_x_forwarded_for;
+
+  ///////////////////////////////
+  // Initial congestion window //
+  ///////////////////////////////
+  MgmtInt server_tcp_init_cwnd;
 
   //////////////////////
   //  Version Hell    //
