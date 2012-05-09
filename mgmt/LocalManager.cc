@@ -1196,6 +1196,18 @@ LocalManager::bindProxyPort(HttpProxyPort& port)
     mgmt_elog(stderr, "[bindProxyPort] Unable to create socket : %s\n", strerror(errno));
     _exit(1);
   }
+
+  if (port.m_type == HttpProxyPort::TRANSPORT_DEFAULT) {
+    int should_filter_int = 0;
+    bool found;
+    should_filter_int = REC_readInteger("proxy.config.net.defer_accept", &found);
+    if (found && should_filter_int > 0) {
+#if defined(SOL_FILTER) && defined(FIL_ATTACH)
+      (void)setsockopt(port.m_fd, SOL_FILTER, FIL_ATTACH, "httpfilt", 9);
+#endif
+    }
+  }
+
   if (port.m_family == AF_INET6) {
     if (setsockopt(port.m_fd, IPPROTO_IPV6, IPV6_V6ONLY, SOCKOPT_ON, sizeof(int)) < 0) {
       mgmt_elog(stderr, "[bindProxyPort] Unable to set socket options: %d : %s\n", port.m_port, strerror(errno));
