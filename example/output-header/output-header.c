@@ -37,11 +37,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#if !defined (_WIN32)
 #include <unistd.h>
-#else
-#include <windows.h>
-#endif
 
 #include <ts/ts.h>
 

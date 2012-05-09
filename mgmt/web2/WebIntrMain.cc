@@ -128,7 +128,7 @@ checkWebContext(WebContext * wctx, const char *desc)
   }
 
   defaultFile.copyFrom(wctx->docRoot, strlen(wctx->docRoot));
-  defaultFile.copyFrom("/", 1); // TODO: Win32 support here ?
+  defaultFile.copyFrom("/", 1);
   defaultFile.copyFrom(wctx->defaultFile, strlen(wctx->defaultFile));
 
   if (stat(defaultFile.bufPtr(), &fInfo) < 0) {

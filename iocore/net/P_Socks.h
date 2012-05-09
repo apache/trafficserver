@@ -97,13 +97,8 @@ int socks5BasicAuthHandler(int event, unsigned char *p, void (**)(void));
 int socks5PasswdAuthHandler(int event, unsigned char *p, void (**)(void));
 int socks5ServerAuthHandler(int event, unsigned char *p, void (**)(void));
 
-#if defined(_IOCORE_WIN32)
-class NTNetVConnection;
-typedef NTNetVConnection SocksNetVC;
-#else
 class UnixNetVConnection;
 typedef UnixNetVConnection SocksNetVC;
-#endif
 
 struct SocksEntry:public Continuation
 {

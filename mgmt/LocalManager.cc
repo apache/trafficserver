@@ -382,8 +382,7 @@ LocalManager::initCCom(int port, char *addr, int sport)
 
 /*
  * initMgmtProcessServer()
- * - On UNIX, this function sets up the server socket that proxy processes connect to.
- * - On WIN32, named pipes are used instead.
+ *   sets up the server socket that proxy processes connect to.
  */
 void
 LocalManager::initMgmtProcessServer()
@@ -1132,7 +1131,6 @@ elevateFileAccess(bool state)
 //
 //    - Returns true on success
 //      and false on failure
-//    - no-op on WIN32
 bool
 removeRootPriv(uid_t euid)
 {
@@ -1149,7 +1147,6 @@ removeRootPriv(uid_t euid)
 //
 //    - Returns true on success
 //      and false on failure
-//    - no-op on WIN32
 bool
 restoreRootPriv(uid_t *old_euid)
 {

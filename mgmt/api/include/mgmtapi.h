@@ -39,21 +39,10 @@
  * System Specific Items
  ***************************************************************************/
 
-#if defined (_WIN32) && defined (_TS_EXPORT)
-#define tsapi __declspec( dllexport )
-#elif defined (_WIN32)
-#define tsapi __declspec( dllimport )
-#else
 #define tsapi
-#endif
 
-#if defined (_WIN32)
-#define inkexp __declspec( dllexport )
-#define inkimp __declspec( dllimport )
-#else
 #define inkexp
 #define inkimp
-#endif
 
 #if !defined(linux)
 #if defined (__SUNPRO_CC) || (defined (__GNUC__) || ! defined(__cplusplus))

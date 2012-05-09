@@ -1,5 +1,7 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.1.4
+  *) [TS-672] cleanup Win32 references.
+
   *) [TS-1181] Make the overridable configs work with "byte" configs.
 
   *) [TS-1252] Fixed include issues when using mgmtapi.h.

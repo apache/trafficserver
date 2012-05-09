@@ -1565,9 +1565,6 @@ HdrTest::test_regex()
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
-#if defined (_WIN32)
-#pragma warning (once:4305)
-#endif
 
 int
 HdrTest::test_accept_language_match()
@@ -2219,6 +2216,3 @@ HdrTest::failures_to_status(const char *testname, int nfail)
   return ((nfail > 0) ? 0 : 1);
 }
 
-#if defined (_WIN32)
-#pragma warning (default:4305)
-#endif

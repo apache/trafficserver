@@ -46,10 +46,6 @@
 #include "BaseManager.h"
 #include "HdrUtils.h"
 
-#if defined (_WIN32)
-extern long glShutdownInProgress;
-#endif
-
 extern CacheLookupHttpConfig global_cache_lookup_config;
 HTTPHdr gclient_request;
 
@@ -577,7 +573,7 @@ ICPPeerReadCont::PeerReadStateMachine(PeerReadData * s, Event * e)
           return EVENT_DONE;
         }
       }
-#if !defined(_WIN32) && !defined(__GNUC__)
+#if !defined(__GNUC__)
     _end_case_read_active:     // fix DEC warnings
 #endif
       ink_release_assert(0);    // Should never happen
@@ -629,7 +625,7 @@ ICPPeerReadCont::PeerReadStateMachine(PeerReadData * s, Event * e)
           return EVENT_DONE;
         }
       }
-#if !defined(_WIN32) && !defined(__GNUC__)
+#if !defined(__GNUC__)
     _end_case_read_data:       // fix DEC warnings
 #endif
       ink_release_assert(0);    // Should never happen
@@ -658,7 +654,7 @@ ICPPeerReadCont::PeerReadStateMachine(PeerReadData * s, Event * e)
           break;
         }
       }
-#if !defined(_WIN32) && !defined(__GNUC__)
+#if !defined(__GNUC__)
     _end_case_read_data_done:  // fix DEC warnings
 #endif
       ink_release_assert(0);    // Should never happen
@@ -804,7 +800,7 @@ ICPPeerReadCont::PeerReadStateMachine(PeerReadData * s, Event * e)
           break;                // move to next_state
         }
       }
-#if !defined(_WIN32) && !defined(__GNUC__)
+#if !defined(__GNUC__)
     _end_case_process_data_read:       // fix DEC warnings
 #endif
       ink_release_assert(0);    // Should never happen
@@ -853,7 +849,7 @@ ICPPeerReadCont::PeerReadStateMachine(PeerReadData * s, Event * e)
           break;
         }
       }
-#if !defined(_WIN32) && !defined(__GNUC__)
+#if !defined(__GNUC__)
     _end_case_awaiting_cache_lookup_response:  // fix DEC warnings
 #endif
       ink_release_assert(0);    // Should never happen
@@ -891,7 +887,7 @@ ICPPeerReadCont::PeerReadStateMachine(PeerReadData * s, Event * e)
           return EVENT_DONE;
         }
       }
-#if !defined(_WIN32) && !defined(__GNUC__)
+#if !defined(__GNUC__)
     _end_case_send_reply:      // fix DEC warnings
 #endif
       ink_release_assert(0);    // Should never happen
@@ -922,7 +918,7 @@ ICPPeerReadCont::PeerReadStateMachine(PeerReadData * s, Event * e)
           break;                // move to next_state
         }
       }
-#if !defined(_WIN32) && !defined(__GNUC__)
+#if !defined(__GNUC__)
     _end_case_write_done:      // fix DEC warnings
 #endif
       ink_release_assert(0);    // Should never happen
@@ -951,7 +947,7 @@ ICPPeerReadCont::PeerReadStateMachine(PeerReadData * s, Event * e)
         RECORD_ICP_STATE_CHANGE(s, 0, READ_NOT_ACTIVE);
         break;                  // move to next_state
       }
-#if !defined(_WIN32) && !defined(__GNUC__)
+#if !defined(__GNUC__)
     _end_case_get_icp_request: // fix DEC warnings
 #endif
       ink_release_assert(0);    // Should never happen
@@ -1007,7 +1003,7 @@ ICPPeerReadCont::PeerReadStateMachine(PeerReadData * s, Event * e)
         s->_next_state = READ_NOT_ACTIVE;
         break;                  // move to next_state
       }
-#if !defined(_WIN32) && !defined(__GNUC__)
+#if !defined(__GNUC__)
     _end_case_get_icp_request_mutex:   // fix DEC warnings
 #endif
       ink_release_assert(0);    // Should never happen
@@ -1036,7 +1032,7 @@ ICPPeerReadCont::PeerReadStateMachine(PeerReadData * s, Event * e)
           break;                // restart
         }
       }
-#if !defined(_WIN32) && !defined(__GNUC__)
+#if !defined(__GNUC__)
     _end_case_read_not_active: // fix DEC warnings
 #endif
       ink_release_assert(0);    // Should never happen
@@ -1183,7 +1179,7 @@ ICPRequestCont::ICPRequestEvent(int event, Event * e)
         break;
       }
     }
-#if !defined(_WIN32) && !defined(__GNUC__)
+#if !defined(__GNUC__)
   _end_case:                   // fix DEC warnings
 #endif
     ink_release_assert(0);      // should never happen
@@ -1274,7 +1270,7 @@ ICPRequestCont::ICPStateMachine(int event, void *d)
           break;                // move to next_state
         }
       }
-#if !defined(_WIN32) && !defined(__GNUC__)
+#if !defined(__GNUC__)
     _end_case_icp_start:       // fix DEC warnings
 #endif
       ink_release_assert(0);    // should never happen
@@ -1295,7 +1291,7 @@ ICPRequestCont::ICPStateMachine(int event, void *d)
         _next_state = ICP_DONE;
         return EVENT_DONE;
       }
-#if !defined(_WIN32) && !defined(__GNUC__)
+#if !defined(__GNUC__)
     _end_case_icp_off_terminate:       // fix DEC warnings
 #endif
       ink_release_assert(0);    // should never happen
@@ -1372,7 +1368,7 @@ ICPRequestCont::ICPStateMachine(int event, void *d)
         _next_state = ICP_AWAITING_RESPONSE;
         return EVENT_DONE;
       }
-#if !defined(_WIN32) && !defined(__GNUC__)
+#if !defined(__GNUC__)
     _end_case_icp_queue_request:       // fix DEC warnings
 #endif
       ink_release_assert(0);    // should never happen
@@ -1404,7 +1400,7 @@ ICPRequestCont::ICPStateMachine(int event, void *d)
           return EVENT_DONE;
         }
       }
-#if !defined(_WIN32) && !defined(__GNUC__)
+#if !defined(__GNUC__)
     _end_case_icp_awaiting_response:   // fix DEC warnings
 #endif
       ink_release_assert(0);    // should never happen
@@ -1419,7 +1415,7 @@ ICPRequestCont::ICPStateMachine(int event, void *d)
         _next_state = ICP_POST_COMPLETION;
         break;                  // move to next_state
       }
-#if !defined(_WIN32) && !defined(__GNUC__)
+#if !defined(__GNUC__)
     _end_case_icp_dequeue_request:     // fix DEC warnings
 #endif
       ink_release_assert(0);    // should never happen
@@ -1441,7 +1437,7 @@ ICPRequestCont::ICPStateMachine(int event, void *d)
         _next_state = ICP_WAIT_SEND_COMPLETE;
         break;                  // move to next_state
       }
-#if !defined(_WIN32) && !defined(__GNUC__)
+#if !defined(__GNUC__)
     _end_case_icp_post_completion:     // fix DEC warnings
 #endif
       ink_release_assert(0);    // should never happen
@@ -1457,7 +1453,7 @@ ICPRequestCont::ICPStateMachine(int event, void *d)
         }
       }
       break;
-#if !defined(_WIN32) && !defined(__GNUC__)
+#if !defined(__GNUC__)
     _end_case_icp_wait_send_complete:  // fix DEC warnings
 #endif
       ink_release_assert(0);    // should never happen
@@ -1475,7 +1471,7 @@ ICPRequestCont::ICPStateMachine(int event, void *d)
         _next_state = ICP_DONE;
         return EVENT_DONE;
       }
-#if !defined(_WIN32) && !defined(__GNUC__)
+#if !defined(__GNUC__)
     _end_case_icp_request_not_active:  // fix DEC warnings
 #endif
       ink_release_assert(0);    // should never happen
@@ -1871,10 +1867,6 @@ ICPProcessor::ICPProcessor()
 
 ICPProcessor::~ICPProcessor()
 {
-#if defined (_WIN32)
-  if (0 < glShutdownInProgress)
-    return;
-#endif
   if (_ICPPeriodic) {
     MUTEX_TAKE_LOCK(_ICPPeriodic->mutex, this_ethread());
     _PeriodicEvent->cancel();
@@ -2376,7 +2368,7 @@ ICPProcessor::ReconfigState_t
     }                           // End of switch
 
   }                             // End of while
-#if !defined(_WIN32) && !defined(__GNUC__)
+#if !defined(__GNUC__)
 _exit_while:                   // fix DEC warnings
 #endif
   return RC_DONE;

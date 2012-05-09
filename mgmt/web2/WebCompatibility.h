@@ -43,17 +43,8 @@
 // types/defines
 //-------------------------------------------------------------------------
 
-#if defined(_WIN32)
-
-#define WEB_HANDLE_INVALID INVALID_HANDLE_VALUE
-typedef HANDLE WebHandle;
-
-#else
-
 #define WEB_HANDLE_INVALID -1
 typedef int WebHandle;
-
-#endif
 
 //-------------------------------------------------------------------------
 // WebGetHostname

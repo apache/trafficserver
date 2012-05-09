@@ -927,14 +927,8 @@ CoreUtils::dump_history(HttpSM * hsm)
 
     fileline = (fileline != NULL) ? fileline : ats_strdup("UNKNOWN");
 
-#if defined(_WIN32)
-    // Visual C++ preprocessor is unable to stringify __LINE__
-    //   so we have to waste a ton a memory and store it
-    //   as an integer
-    printf("%d   %d   %s:%d", e, r, fileline, hsm->history[i].line);
-#else
     printf("%d   %d   %s", e, r, fileline);
-#endif
+
     char buffer[32];
     const char *msg = event_int_to_string(e, sizeof(buffer), buffer);
     printf("   event string: \"%s\"\n", msg);

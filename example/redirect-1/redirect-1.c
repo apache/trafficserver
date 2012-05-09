@@ -36,21 +36,13 @@
 #include <stdio.h>
 #include <string.h>
 
-#if !defined (_WIN32)
 #  include <unistd.h>
 #  include <netinet/in.h>
 #  include <arpa/inet.h>
-#else
-#  include <windows.h>
-#endif
 
 #include <ts/ts.h>
 
-#if !defined (_WIN32)
 static in_addr_t ip_deny;
-#else
-static unsigned int ip_deny;
-#endif
 
 /*
  * uncoupled statistics variables:
@@ -94,11 +86,7 @@ handle_client_lookup(TSHttpTxn txnp, TSCont contp)
   TSMLoc hdr_loc, url_loc;
   int host_length;
 
-#if !defined (_WIN32)
   in_addr_t clientip = 0;
-#else
-  unsigned int clientip;
-#endif
 
   const char *host;
 

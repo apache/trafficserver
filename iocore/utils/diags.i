@@ -79,7 +79,7 @@ reconfigure_diags()
   ////////////////////////////////////
   // change the diags config values //
   ////////////////////////////////////
-#if !defined (_WIN32) && !defined(__GNUC__) && !defined(hpux)
+#if !defined(__GNUC__) && !defined(hpux)
   diags->config = c;
 #else
   memcpy(((void *) &diags->config), ((void *) &c), sizeof(DiagsConfigState));

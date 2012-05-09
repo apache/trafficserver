@@ -65,8 +65,6 @@
  */
 
 
-#if !defined (_WIN32)
-
 #include "ink_platform.h"
 
 #include <sys/types.h>
@@ -562,5 +560,3 @@ ink_res_init(
   statp->options |= INK_RES_INIT;
   return (statp->res_h_errno);
 }
-
-#endif

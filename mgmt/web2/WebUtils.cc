@@ -40,15 +40,12 @@
 
 #include "openssl/ssl.h"
 
-#ifndef _WIN32
-
 /* Ugly hack - define HEAP_H and STACK_H to prevent stuff
  *   from the template library from being included which
  *   SUNPRO CC does not not like.
  */
 #define HEAP_H
 #define STACK_H
-#endif // !_WIN32
 
 ssize_t
 socket_write(SocketInfo socketD, const char *buf, size_t nbyte)
@@ -97,15 +94,9 @@ sigfdrdln(SocketInfo socketD, char *s, int len)
 
   do {
 
-#ifndef _WIN32
     do {
       result = socket_read(socketD, &c, 1);
     } while (result < 0 && errno == EAGAIN);
-#else
-    do {
-      result = socket_read(socketD, &c, 1);
-    } while (result == SOCKET_ERROR && WSAGetLastError() == WSAEWOULDBLOCK);
-#endif
 
     // If we are out of bytes or there is an
     //   error, we are done

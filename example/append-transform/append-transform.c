@@ -268,11 +268,7 @@ transformable(TSHttpTxn txnp)
     }
 
     value = TSMimeHdrFieldValueStringGet(bufp, hdr_loc, field_loc, 0, &val_length);
-#ifndef _WIN32
     if (value && (strncasecmp(value, "text/html", sizeof("text/html") - 1) == 0)) {
-#else
-    if (value && (strnicmp(value, "text/html", sizeof("text/html") - 1) == 0)) {
-#endif
       ASSERT_SUCCESS(TSHandleMLocRelease(bufp, hdr_loc, field_loc));
       ASSERT_SUCCESS(TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc));
 
