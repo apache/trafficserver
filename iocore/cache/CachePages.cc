@@ -29,9 +29,15 @@
 #include "I_Tasks.h"
 
 struct ShowCache: public ShowCont {
+  enum scan_type {
+    scan_type_lookup,
+    scan_type_delete,
+    scan_type_invalidate
+  };
+
   int vol_index;
   int seg_index;
-  int scan_flag;
+  scan_type scan_flag;
   int urlstrs_index;
   int linecount;
   char (*show_cache_urlstrs)[500];
@@ -60,34 +66,39 @@ struct ShowCache: public ShowCont {
   int handleCacheScanCallback(int event, Event *e);
 
   ShowCache(Continuation *c, HTTPHdr *h): 
-    ShowCont(c, h), vol_index(0), seg_index(0), scan_flag(0),
+    ShowCont(c, h), vol_index(0), seg_index(0), scan_flag(scan_type_lookup),
     cache_vc(0), buffer(0), buffer_reader(0), content_length(0), cvio(0)
   {
     urlstrs_index = 0;
     linecount = 0;
     int query_len;
     char query[4096];
-    char unescapedQuery[4096];
+    char unescapedQuery[sizeof(query)];
     show_cache_urlstrs = NULL;
     URL *u = h->url_get();
 
     // process the query string
-    if (u->query_get(&query_len)) {
-      ink_strlcpy(query, u->query_get(&query_len), query_len);
-      ink_strlcpy(unescapedQuery, query, query_len);
+    if (u->query_get(&query_len) && query_len < sizeof(query)) {
+      strncpy(query, u->query_get(&query_len), query_len);
+      strncpy(unescapedQuery, u->query_get(&query_len), query_len);
+
+      query[query_len] = unescapedQuery[query_len] = '\0';
 
       query_len = unescapifyStr(query);
 
-      Debug("cache_inspector", "query params: %s [unescaped]", unescapedQuery);
-      Debug("cache_inspector", "query params: %s [escaped]", query);
-      // remove 'C-m' s
-      int l, m;
-      for (l = 0, m = 0; l < query_len; l++)
-        if (query[l] != '\015')
-            query[m++] = query[l];
-        query[m] = '\0';
+      Debug("cache_inspector", "query params: '%s' len %d [unescaped]", unescapedQuery, query_len);
+      Debug("cache_inspector", "query params: '%s' len %d [escaped]", query, query_len);
 
-      int nstrings = 1;
+      // remove 'C-m' s
+      unsigned l, m;
+      for (l = 0, m = 0; l < query_len; l++) {
+        if (query[l] != '\015') {
+            query[m++] = query[l];
+        }
+      }
+      query[m] = '\0';
+
+      unsigned nstrings = 1;
       char *p = strstr(query, "url=");
       // count the no of urls
       if (p) {
@@ -112,7 +123,7 @@ struct ShowCache: public ShowCont {
           t = (char *) unescapedQuery + strlen(unescapedQuery);
         for (int s = 0; p < t; s++) {
           show_cache_urlstrs[s][0] = '\0';
-          q = strstr(p, "%0D%0A");      // we used this in the JS to separate urls
+          q = strstr(p, "%0D%0A" /* \r\n */);      // we used this in the JS to separate urls
           if (!q)
             q = t;
           ink_strlcpy(show_cache_urlstrs[s], p, sizeof(show_cache_urlstrs[s]));
@@ -123,10 +134,12 @@ struct ShowCache: public ShowCont {
       Debug("cache_inspector", "there were %d url(s) passed in", nstrings == 1 ? 1 : nstrings - 1);
 
       for (int i = 0; i < nstrings; i++) {
-        if (show_cache_urlstrs[i][0] == '\0')
+        if (show_cache_urlstrs[i][0] == '\0') {
           continue;
+        }
+        Debug("cache_inspector", "URL %d: '%s'", i + 1, show_cache_urlstrs[i]);
         unescapifyStr(show_cache_urlstrs[i]);
-        Debug("cache_inspector", "URL %d: %s", i + 1, show_cache_urlstrs[i]);
+        Debug("cache_inspector", "URL %d: '%s'", i + 1, show_cache_urlstrs[i]);
       }
 
     }
@@ -142,18 +155,13 @@ struct ShowCache: public ShowCont {
 
 };
 
-extern ShowCache *theshowcache;
-
-// Stat Pages
-ShowCache *theshowcache = NULL;
-
 #define STREQ_PREFIX(_x,_s) (!strncasecmp(_x,_s,sizeof(_s)-1))
 #define STREQ_LEN_PREFIX(_x,_l,_s) (path_len < sizeof(_s) && !strncasecmp(_x,_s,sizeof(_s)-1))
 
 
 Action *
 register_ShowCache(Continuation *c, HTTPHdr *h) {
-  theshowcache = NEW(new ShowCache(c, h));
+  ShowCache * theshowcache = NEW(new ShowCache(c, h));
   URL *u = h->url_get();
   int path_len;
   const char *path = u->path_get(&path_len);
@@ -183,10 +191,12 @@ register_ShowCache(Continuation *c, HTTPHdr *h) {
     SET_CONTINUATION_HANDLER(theshowcache, &ShowCache::invalidate_regex);
   }
 
-  if (theshowcache->mutex->thread_holding)
+  if (theshowcache->mutex->thread_holding) {
     CONT_SCHED_LOCK_RETRY(theshowcache);
-  else
+  } else {
     eventProcessor.schedule_imm(theshowcache, ET_TASK);
+  }
+
   return &theshowcache->action;
 }
 
@@ -504,7 +514,7 @@ ShowCache::lookup_regex(int event, Event *e)
   CHECK_SHOW(show("<FORM NAME=\"f\" ACTION=\"./delete_url\" METHOD=GET> \n"
                   "<INPUT TYPE=HIDDEN NAME=\"url\">\n" "<B><TABLE border=1>\n"));
 
-  scan_flag = 0;                //lookup
+  scan_flag = scan_type_lookup;                //lookup
   SET_HANDLER(&ShowCache::handleCacheScanCallback);
   cacheProcessor.scan(this);
   return EVENT_DONE;
@@ -515,7 +525,7 @@ ShowCache::delete_regex(int event, Event *e)
 {
   CHECK_SHOW(begin("Regex Delete"));
   CHECK_SHOW(show("<B><TABLE border=1>\n"));
-  scan_flag = 1;                // delete
+  scan_flag = scan_type_delete;                // delete
   SET_HANDLER(&ShowCache::handleCacheScanCallback);
   cacheProcessor.scan(this);
   return EVENT_DONE;
@@ -528,7 +538,7 @@ ShowCache::invalidate_regex(int event, Event *e)
 {
   CHECK_SHOW(begin("Regex Invalidate"));
   CHECK_SHOW(show("<B><TABLE border=1>\n"));
-  scan_flag = 2;                // invalidate
+  scan_flag = scan_type_invalidate;                // invalidate
   SET_HANDLER(&ShowCache::handleCacheScanCallback);
   cacheProcessor.scan(this);
   return EVENT_DONE;
@@ -557,14 +567,15 @@ ShowCache::handleCacheScanCallback(int event, Event *e)
 
       memcpy(m, mm, ml);
       m[ml] = 0;
-      Debug("cache_scan", "scan url '%s' '%s'\n", m, xx);
 
       int res = CACHE_SCAN_RESULT_CONTINUE;
 
-      for (int s = 0; show_cache_urlstrs[s][0] != '\0'; s++) {
+      for (unsigned s = 0; show_cache_urlstrs[s][0] != '\0'; s++) {
         const char* error;
         int erroffset;
         pcre* preq =  pcre_compile(show_cache_urlstrs[s], 0, &error, &erroffset, NULL);
+
+        Debug("cache_inspector", "matching url '%s' '%s' with regex '%s'\n", m, xx, show_cache_urlstrs[s]);
 
         if (preq) {
           int r = pcre_exec(preq, NULL, xx, ib, 0, 0, NULL, 0);
@@ -577,17 +588,20 @@ ShowCache::handleCacheScanCallback(int event, Event *e)
             } else {
               CHECK_SHOW(show("<TR>"));
             }
-            if (scan_flag == 0) {
+
+            switch (scan_flag) {
+            case scan_type_lookup:
               /*Y! Bug: 2249781: using onClick() because i need encodeURIComponent() and YTS doesn't have something like that */
               CHECK_SHOW(show("<TD><INPUT TYPE=CHECKBOX NAME=\"%s\" "
                               "onClick=\"addToUrlList(this)\"></TD>"
                               "<TD><A onClick='window.location.href=\"./lookup_url?url=\"+ encodeURIComponent(\"%s\");' HREF=\"#\">"
                               "<B>%s</B></A></br></TD></TR>\n", xx, xx, xx));
-            }
-            if (scan_flag == 1) {
+              break;
+            case scan_type_delete:
               CHECK_SHOW(show("<TD><B>%s</B></TD>" "<TD><font color=red>deleted</font></TD></TR>\n", xx));
               res = CACHE_SCAN_RESULT_DELETE;
-            } else if (scan_flag == 2) {
+              break;
+            case scan_type_invalidate:
               HTTPInfo new_info;
               res = CACHE_SCAN_RESULT_UPDATE;
               new_info.copy(alt);
@@ -595,10 +609,12 @@ ShowCache::handleCacheScanCallback(int event, Event *e)
               CHECK_SHOW(show("<TD><B>%s</B></TD>" "<TD><font color=red>Invalidate</font></TD>" "</TR>\n", xx));
               cache_vc->set_http_info(&new_info);
             }
+
             break;
           }
         } else {
           // TODO: Regex didn't compile, show errors ?
+          Debug("cache_inspector", "regex '%s' didn't compile", show_cache_urlstrs[s]);
         }
       }
       return res;
@@ -611,7 +627,7 @@ ShowCache::handleCacheScanCallback(int event, Event *e)
                         "onClick=\"setUrls(window.document.f)\"></P>" "</FORM>\n"));
       }
     CHECK_SHOW(show("<H3>Done</H3>\n"));
-    Debug("cache_scan", "scan done");
+    Debug("cache_inspector", "scan done");
     complete(event, e);
     return EVENT_DONE;
   case CACHE_EVENT_SCAN_FAILED:
