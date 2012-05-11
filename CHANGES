@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.1.4
-  *) [TS-1075] workarounds for linux auto-port issues in transparent deployments.
+  *) [TS-1236] HTTP Accept filters do not work on Illumos.
+
+  *) [TS-1075] Workarounds for linux auto-port issues in transparent
+   deployments.
 
   *) [TS-672] cleanup Win32 references.
 
