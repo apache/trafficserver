@@ -616,6 +616,7 @@ public:
   MgmtByte uncacheable_requests_bypass_parent;
   MgmtByte no_origin_server_dns;
   MgmtByte use_client_target_addr;
+  MgmtByte use_client_source_port;
 
   char *proxy_request_via_string;
   int proxy_request_via_string_len;
@@ -899,6 +900,7 @@ HttpConfigParams::HttpConfigParams()
     uncacheable_requests_bypass_parent(1),
     no_origin_server_dns(0),
     use_client_target_addr(0),
+    use_client_source_port(0),
     proxy_request_via_string(0),
     proxy_request_via_string_len(0),
     proxy_response_via_string(0),

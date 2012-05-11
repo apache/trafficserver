@@ -1154,6 +1154,7 @@ HttpConfig::startup()
 
   HttpEstablishStaticConfigByte(c.no_origin_server_dns, "proxy.config.http.no_origin_server_dns");
   HttpEstablishStaticConfigByte(c.use_client_target_addr, "proxy.config.http.use_client_target_addr");
+  HttpEstablishStaticConfigByte(c.use_client_source_port, "proxy.config.http.use_client_source_port");
   HttpEstablishStaticConfigByte(c.oride.maintain_pristine_host_hdr, "proxy.config.url_remap.pristine_host_hdr");
 
   HttpEstablishStaticConfigByte(c.enable_url_expandomatic, "proxy.config.http.enable_url_expandomatic");
@@ -1417,6 +1418,7 @@ HttpConfig::reconfigure()
   params->uncacheable_requests_bypass_parent = INT_TO_BOOL(m_master.uncacheable_requests_bypass_parent);
   params->no_origin_server_dns = INT_TO_BOOL(m_master.no_origin_server_dns);
   params->use_client_target_addr = INT_TO_BOOL(m_master.use_client_target_addr);
+  params->use_client_source_port = INT_TO_BOOL(m_master.use_client_source_port);
   params->oride.maintain_pristine_host_hdr = INT_TO_BOOL(m_master.oride.maintain_pristine_host_hdr);
 
   params->disable_ssl_parenting = INT_TO_BOOL(m_master.disable_ssl_parenting);

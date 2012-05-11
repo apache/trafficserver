@@ -4282,6 +4282,17 @@ HttpSM::do_http_server_open(bool raw)
     } else if (ua_session->f_outbound_transparent) {
       opt.addr_binding = NetVCOptions::FOREIGN_ADDR;
       opt.local_ip = t_state.client_info.addr;
+
+      /* If the connection is server side transparent, we can bind to the
+         port that the client chose instead of randomly assigning one at
+         the proxy.  This is controlled by the 'use_client_source_port'
+         configuration parameter.
+      */
+
+      NetVConnection *client_vc = ua_session->get_netvc();
+      if (t_state.http_config_param->use_client_source_port && NULL != client_vc) {
+        opt.local_port = client_vc->get_remote_port();
+      }
     }
   }
 

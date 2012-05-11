@@ -91,6 +91,11 @@ static int rs_port = 8088;
 static MgmtClusterType cluster_type = NO_CLUSTER;
 static int http_backdoor_port = 8084;
 
+#if defined(linux)
+// TS-1075 : auto-port ::connect DoS on high traffic linux systems
+static int source_port = 0;
+#endif
+
 static int manager_failures = 0;
 static int server_failures = 0;
 static int server_not_found = 0;
@@ -124,6 +129,7 @@ static int sem_id = 11452;
 AppVersionInfo appVersionInfo;
 static InkHashTable *configTable = NULL;
 
+static char const localhost[] = "127.0.0.1";
 
 static void
 cop_log(int priority, const char *format, ...)
@@ -688,6 +694,11 @@ read_config()
   read_config_int("proxy.config.cluster.rsport", &rs_port, true);
   read_config_int("proxy.config.lm.sem_id", &sem_id, true);
 
+#if defined(linux)
+  // TS-1075 : auto-port ::connect DoS on high traffic linux systems
+  read_config_int("proxy.config.cop.source_port", &source_port, true);
+#endif
+
   read_config_int("proxy.local.cluster.type", &tmp_int);
   cluster_type = static_cast<MgmtClusterType>(tmp_int);
 
@@ -851,7 +862,7 @@ poll_write(int fd, int timeout)
 }
 
 static int
-open_socket(int port, const char *ip = NULL, char *ip_to_bind = NULL)
+open_socket(int port, const char *ip = NULL, char const *ip_to_bind = NULL)
 {
 
   int sock = 0;
@@ -865,8 +876,16 @@ open_socket(int port, const char *ip = NULL, char *ip_to_bind = NULL)
   cop_log(COP_DEBUG, "Entering open_socket(%d, %s, %s)\n", port, ip, ip_to_bind);
 #endif
   if (!ip) {
-    ip = "127.0.0.1";
+    ip = localhost;
   }
+
+#if defined(linux)
+  // TS-1075 : auto-port ::connect DoS on high traffic linux systems
+  // unbound connections are "unsafe" in high connection count environments
+  if (!ip_to_bind) {
+    ip = localhost;
+  }
+#endif
 
   snprintf(port_str, sizeof(port_str), "%d", port);
   memset(&hints, 0, sizeof(hints));
@@ -900,6 +919,24 @@ open_socket(int port, const char *ip = NULL, char *ip_to_bind = NULL)
       freeaddrinfo(result_to_bind);
       goto error;
     }
+
+#if defined(linux)
+    // TS-1075 : auto-port ::connect DoS on high traffic linux systems
+    // Bash the port on ::bind so that we always use the same port
+    if (0 != source_port) {
+      if (result_to_bind->ai_addr->sa_family == AF_INET) {
+        ((sockaddr_in *)result_to_bind->ai_addr)->sin_port = htons(source_port);
+      } else {
+        ((sockaddr_in6 *)result_to_bind->ai_addr)->sin6_port = htons(source_port);
+      }
+
+      // also set REUSEADDR so that previous cop connections in the TIME_WAIT state
+      // do not interfere
+      if (safe_setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, SOCKOPT_ON, sizeof(int)) < 0) {
+        cop_log (COP_WARNING, "(test) unable to set REUSEADDR socket option [%d '%s']\n", errno, strerror (errno));
+      }
+    }
+#endif
 
     if (safe_bind(sock, result_to_bind->ai_addr, result_to_bind->ai_addrlen) < 0) {
       cop_log (COP_WARNING, "(test) unable to bind socket [%d '%s']\n", errno, strerror (errno));
@@ -947,7 +984,7 @@ getaddrinfo_error:
 
 static int
 test_port(int port, const char *request, char *buffer, int bufsize,
-          int64_t test_timeout, char *ip = NULL, char *ip_to_bind = NULL)
+          int64_t test_timeout, char const *ip = NULL, char const *ip_to_bind = NULL)
 {
   int64_t start_time, timeout;
   int sock;
@@ -1200,7 +1237,7 @@ test_mgmt_cli_port()
 
 
 static int
-test_http_port(int port, char *request, int timeout, char *ip = NULL, char *ip_to_bind = NULL)
+test_http_port(int port, char *request, int timeout, char const *ip = NULL, char const *ip_to_bind = NULL)
 {
   char buffer[4096];
   char *p;
@@ -1261,7 +1298,6 @@ static int
 test_server_http_port()
 {
   char request[1024] = {'\0'};
-  static char localhost[] = "127.0.0.1";
 
   // Generate a request for a the 'synthetic.txt' document the manager
   // servers up on the autoconf port.
