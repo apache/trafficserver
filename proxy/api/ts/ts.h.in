@@ -2870,38 +2870,38 @@ extern "C"
   /* --------------------------------------------------------------------------
      uncoupled stats */
   /** @deprecated */
-  tsapi INKStat INKStatCreate(const char* the_name, INKStatTypes the_type);
+  tsapi TS_DEPRECATED INKStat INKStatCreate(const char* the_name, INKStatTypes the_type);
   /** @deprecated */
-  tsapi void INKStatIntAddTo(INKStat the_stat, int64_t amount);
+  tsapi TS_DEPRECATED void INKStatIntAddTo(INKStat the_stat, int64_t amount);
   /** @deprecated */
-  tsapi void INKStatFloatAddTo(INKStat the_stat, float amount);
+  tsapi TS_DEPRECATED void INKStatFloatAddTo(INKStat the_stat, float amount);
   /** @deprecated */
-  tsapi void INKStatDecrement(INKStat the_stat);
+  tsapi TS_DEPRECATED void INKStatDecrement(INKStat the_stat);
   /** @deprecated */
-  tsapi void INKStatIncrement(INKStat the_stat);
+  tsapi TS_DEPRECATED void INKStatIncrement(INKStat the_stat);
   /** @deprecated */
-  tsapi int64_t INKStatIntGet(INKStat the_stat);
+  tsapi TS_DEPRECATED int64_t INKStatIntGet(INKStat the_stat);
   /** @deprecated */
-  tsapi float INKStatFloatGet(INKStat the_stat);
+  tsapi TS_DEPRECATED float INKStatFloatGet(INKStat the_stat);
   /** @deprecated */
-  tsapi void INKStatIntSet(INKStat the_stat, int64_t value);
+  tsapi TS_DEPRECATED void INKStatIntSet(INKStat the_stat, int64_t value);
   /** @deprecated */
-  tsapi void INKStatFloatSet(INKStat the_stat, float value);
+  tsapi TS_DEPRECATED void INKStatFloatSet(INKStat the_stat, float value);
 
   /* --------------------------------------------------------------------------
      coupled stats */
   /** @deprecated */
-  tsapi INKCoupledStat INKStatCoupledGlobalCategoryCreate(const char* the_name);
+  tsapi TS_DEPRECATED INKCoupledStat INKStatCoupledGlobalCategoryCreate(const char* the_name);
   /** @deprecated */
-  tsapi INKCoupledStat INKStatCoupledLocalCopyCreate(const char* the_name, INKCoupledStat global_copy);
+  tsapi TS_DEPRECATED INKCoupledStat INKStatCoupledLocalCopyCreate(const char* the_name, INKCoupledStat global_copy);
   /** @deprecated */
-  tsapi void INKStatCoupledLocalCopyDestroy(INKCoupledStat local_copy);
+  tsapi TS_DEPRECATED void INKStatCoupledLocalCopyDestroy(INKCoupledStat local_copy);
   /** @deprecated */
-  tsapi INKStat INKStatCoupledGlobalAdd(INKCoupledStat global_copy, const char* the_name, INKStatTypes the_type);
+  tsapi TS_DEPRECATED INKStat INKStatCoupledGlobalAdd(INKCoupledStat global_copy, const char* the_name, INKStatTypes the_type);
   /** @deprecated */
-  tsapi INKStat INKStatCoupledLocalAdd(INKCoupledStat local_copy, const char* the_name, INKStatTypes the_type);
+  tsapi TS_DEPRECATED INKStat INKStatCoupledLocalAdd(INKCoupledStat local_copy, const char* the_name, INKStatTypes the_type);
   /** @deprecated */
-  tsapi void INKStatsCoupledUpdate(INKCoupledStat local_copy);
+  tsapi TS_DEPRECATED void INKStatsCoupledUpdate(INKCoupledStat local_copy);
 
   /* --------------------------------------------------------------------------
      tracing api */
