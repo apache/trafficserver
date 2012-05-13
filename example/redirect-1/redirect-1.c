@@ -27,8 +27,7 @@
  *
  *
  *	Usage:
- * 	(NT): Redirect.dll block_ip url_redirect
- * 	(Solaris): redirect-1.so block_ip url_redirect
+ * 	  redirect-1.so block_ip url_redirect
  *
  *
  */

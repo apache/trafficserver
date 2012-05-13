@@ -80,7 +80,6 @@ enum ThreadType {
 
   There are eight schedulling functions provided by EThread and
   they are a wrapper around their counterparts in EventProcessor.
-  Those with the 'local' suffix <b>they do the same on NT??????</b>
 
   @see EventProcessor
   @see Event

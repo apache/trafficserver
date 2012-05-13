@@ -29,8 +29,7 @@
  *
  *
  *    Usage:
- *     (NT): AppendTransform.dll <filename>
- *     (Solaris): append-transform.so <filename>
+ *      append-transform.so <filename>
  *
  *              <filename> is the name of the file containing the
  *              text to be appended

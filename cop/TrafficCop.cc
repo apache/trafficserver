@@ -363,7 +363,6 @@ process_syslog_config(void)
 // Paranoia: wrap the process termination call within alarms
 //           so that when the killing call doesn't return we
 //           will still wake up
-// FIX THIS: We don't know what to do on NT yet.
 static void
 safe_kill(const char *lockfile_name, const char *pname, bool group)
 {

@@ -6,8 +6,7 @@ Enter the text of the header to be added into the plugin.config file; for
 example,
 enter the following line in plugin.config
 
-	On NT:	AddHeader.dll "name1: value1" "name2: value2"
-	On Solaris: add-header.so "name1: value1" "name2: value2"
+	add-header.so "name1: value1" "name2: value2"
 
 The TSPluginInit function does the following:
 

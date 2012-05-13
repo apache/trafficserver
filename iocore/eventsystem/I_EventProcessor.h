@@ -108,7 +108,7 @@ public:
 
     @param cont continuation that the spawn thread will call back
       immediately.
-    @param sem Unix: Event semaphore assigned to the thread. NT: Not used.
+    @param sem Event semaphore assigned to the thread.
     @return event object representing the start of the thread.
 
   */

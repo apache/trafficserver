@@ -26,8 +26,7 @@
  *
  *
  *	Usage:
- * 	(NT): psi.dll
- *	(Solaris): psi.so
+ *	  psi.so
  *
  *  Proxy Side Include plugin (PSI)
  *

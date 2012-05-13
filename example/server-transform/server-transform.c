@@ -27,8 +27,7 @@
  *
  *
  *	Usage:
- *	(NT): ServerTransform.dll
- *	(Solaris): server-transform.so
+ *	  server-transform.so
  *
  *
  */

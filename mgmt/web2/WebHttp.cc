@@ -200,7 +200,7 @@ handle_default(WebHttpContext * whc, const char *file)
     // don't serve file types that we don't know about; helps to lock
     // down the webserver.  for example, when serving files out the
     // etc/trafficserver/plugins directory, we don't want to allow the users to
-    // access the .so/.dll plugin files.
+    // access the .so plugin files.
     response_hdr->setStatus(STATUS_NOT_FOUND);
     WebHttpSetErrorResponse(whc, STATUS_NOT_FOUND);
     return WEB_HTTP_ERR_REQUEST_ERROR;

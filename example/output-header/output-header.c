@@ -28,10 +28,7 @@
  *
  * The plugin simply prints all the incoming request headers
  *
- *
- *
- *   Note: tested on Solaris only.  Probably doesn't compile
- *    on NT.
+ *   Note: tested on Solaris only.
  */
 
 #include <stdio.h>
