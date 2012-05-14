@@ -968,7 +968,7 @@ test_port(int port, const char *request, char *buffer, int bufsize,
   idx = 0;
   for (;;) {
     if (idx >= bufsize) {
-      cop_log(COP_WARNING, "(test) response is too large [%ld]\n", idx);
+      cop_log(COP_WARNING, "(test) response is too large [%" PRId64 "]\n", idx);
       goto error;
     }
 
