@@ -50,7 +50,7 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
    Jira: https://issues.apache.org/jira/browse/TS-1116
    Trunk Patch: 
 	http://git-wip-us.apache.org/repos/asf?p=trafficserver.git;a=commit;h=19f3673812d38704d9387dbbffc4c82b4c275f37
-   +1: briang
+   +1: briang, igalic
 
 STALLED ISSUES
 
