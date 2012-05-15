@@ -46,6 +46,11 @@ PATCHES ACCEPTED TO BACKPORT FROM TRUNK:
 PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   [ New proposals should be added at the end of the list ]
 
+  *) Fix build issues with clang
+   Jira: https://issues.apache.org/jira/browse/TS-1116
+   Trunk Patch: 
+	http://git-wip-us.apache.org/repos/asf?p=trafficserver.git;a=commit;h=19f3673812d38704d9387dbbffc4c82b4c275f37
+   +1: briang
 
 STALLED ISSUES
 
