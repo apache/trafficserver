@@ -890,12 +890,7 @@ UpdateConfigManager::BuildUpdateList()
     return (UpdateConfigList *) NULL;
   }
 
-#ifdef _WIN32
-  // O_BINARY to avoid translation of CR-LF
-  int fd = open(ConfigFilePath, O_RDONLY | O_BINARY);
-#else
   int fd = open(ConfigFilePath, O_RDONLY);
-#endif
   if (fd < 0) {
     Warning("read update.config, open failed");
     SignalWarning(MGMT_SIGNAL_CONFIG_ERROR, "read update.config, open failed");

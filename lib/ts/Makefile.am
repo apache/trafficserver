@@ -71,8 +71,6 @@ libtsutil_la_SOURCES = \
   ink_inet.cc \
   ink_inet.h \
   ink_inout.h \
-  ink_isolatin_table.cc \
-  ink_isolatin_table.h \
   ink_killall.cc \
   ink_killall.h \
   ink_llqueue.h \

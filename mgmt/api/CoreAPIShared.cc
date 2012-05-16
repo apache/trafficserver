@@ -28,10 +28,8 @@
 
 // Forward declarations, used to be in the CoreAPIShared.h include file but
 // that doesn't make any sense since these are both statically declared. /leif
-#ifndef _WIN32
 static int poll_write(int fd, int timeout);
 static int poll_read(int fd, int timeout);
-#endif
 
 /* parseHTTPResponse
  * - parse the response buffer into header and body and calculate
@@ -82,20 +80,6 @@ END:
 TSError
 readHTTPResponse(int sock, char *buffer, int bufsize, uint64_t timeout)
 {
-#ifdef _WIN32
-  TimedIOStatus ret;
-  unsigned long bytesRead = 0L;
-
-  ret = TimedRead(sock, buffer, bufsize, &bytesRead, timeout);
-
-  if (ret != ERR_NONE) {
-    //      printf("(test) TimedRead failed: %d\n", ret);
-    goto error;
-  } else {
-    close_socket(sock);
-    return TS_ERR_OKAY;
-  }
-#else
   int64_t err, idx;
 
   idx = 0;
@@ -132,7 +116,6 @@ readHTTPResponse(int sock, char *buffer, int bufsize, uint64_t timeout)
       idx += err;
     }
   }
-#endif
 
 error:                         /* "Houston, we have a problem!" (Apollo 13) */
   if (sock >= 0) {
@@ -159,18 +142,6 @@ sendHTTPRequest(int sock, char *req, uint64_t timeout)
   snprintf(request, BUFSIZ, "GET %s HTTP/1.0\r\n\r\n", req);
   length = strlen(request);
 
-#ifdef _WIN32
-  TimedIOStatus ret;
-  unsigned long bytesWritten = 0L;
-
-  // Write the request to the server.
-  ret = TimedWrite(sock, request, length, &bytesWritten, timeout);
-
-  if (ret != ERR_NONE || bytesWritten != length) {
-    //      print("(test) TimedWrite failed: %d\n", ret);
-    goto error;
-  }
-#else
   int err = poll_write(sock, timeout);
   if (err < 0) {
     //      printf("(test) poll write failed [%d '%s']\n", errno, strerror (errno));
@@ -193,7 +164,6 @@ sendHTTPRequest(int sock, char *req, uint64_t timeout)
     requestPtr += err;
     length -= err;
   }
-#endif
 
   /* everything went well */
   return TS_ERR_OKAY;
@@ -212,9 +182,6 @@ int
 connectDirect(const char *host, int port, uint64_t timeout)
 {
   NOWARN_UNUSED(timeout);
-#ifdef _WIN32
-  TimedIOStatus ret;
-#endif
   int sock;
 
   // Create a socket
@@ -226,18 +193,7 @@ connectDirect(const char *host, int port, uint64_t timeout)
     //        printf("(test) unable to create socket [%d '%s']\n", errno, strerror(errno));
     goto error;
   }
-#ifdef _WIN32
-  struct hostent *pHostent;
-  pHostent = gethostbyname(host);
-  if (!pHostent) {
-    return -1;
-  }
-  ret = TimedConnect(sock, pHostent->h_addr, port, (int) timeout);
-  if (ret != ERR_NONE) {
-    //        printf("(test) TimedConnect failed: %d\n", ret);
-    goto error;
-  }
-#else
+
   struct sockaddr_in name;
   memset((void *) &name, 0, sizeof(sockaddr_in));
 
@@ -272,7 +228,6 @@ connectDirect(const char *host, int port, uint64_t timeout)
     //        printf("(test) unable to connect to server [%d '%s'] at port %d\n", errno, strerror (errno), port);
     goto error;
   }
-#endif
   return sock;
 
 error:
@@ -283,7 +238,6 @@ error:
 }                               /* connectDirect */
 
 /* COPIED direclty form TrafficCop.cc */
-#ifndef _WIN32
 static int
 poll_read(int fd, int timeout)
 {
@@ -326,8 +280,6 @@ poll_write(int fd, int timeout)
 
   return err;
 }
-
-#endif // !_WIN32
 
 /***************************************************************************
  * socket_read_timeout

@@ -25,11 +25,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#if !defined (_WIN32)
 #include <unistd.h>
-#else
-#include <windows.h>
-#endif
 
 #include <ts/ts.h>
 
@@ -76,34 +72,10 @@ authorized(char *user, char *password)
 {
   /*
    * This routine checks the validity of the user name and
-   * password. Sample NT code is provided for illustration.
-   * For UNIX systems, enter your own authorization code
+   * password. UNIX systems, enter your own authorization code
    * here.
    */
 
-#if !defined (_WIN32)
-
-#else
-  // LogonUser() will work only if the account is set with
-  // SE_TCB_NAME privilege. If SE_TCB_NAME is missing,
-  // Traffic server will attempt to  add this privilege to
-  // the running account, but may fail depending on the access
-  // levels provided to the said account. In such a case, an
-  // NT systems administrator will have to set the privilege
-  // "Act as part of the operating system" from the NT user manager.
-  //
-  int nErr = 0;
-  HANDLE hToken = 0;
-  BOOL bRet = LogonUser(user, NULL, password, LOGON32_LOGON_NETWORK,
-                        LOGON32_PROVIDER_DEFAULT, &hToken);
-
-  if (FALSE == bRet) {
-    nErr = GetLastError();
-    return 0;
-  }
-
-  CloseHandle(hToken);
-#endif
   return 1;
 }
 
@@ -296,20 +268,4 @@ TSPluginInit(int argc, const char *argv[])
 
   TSHttpHookAdd(TS_HTTP_OS_DNS_HOOK, TSContCreate(auth_plugin, NULL));
 }
-
-
-#if defined (_WIN32)
-BOOL APIENTRY
-DllMain(HANDLE hModule, DWORD ul_reason_for_call, LPVOID lpReserved)
-{
-  switch (ul_reason_for_call) {
-  case DLL_PROCESS_ATTACH:
-  case DLL_THREAD_ATTACH:
-  case DLL_THREAD_DETACH:
-  case DLL_PROCESS_DETACH:
-    break;
-  }
-  return TRUE;
-}
-#endif
 

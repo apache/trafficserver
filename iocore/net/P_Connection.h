@@ -84,6 +84,7 @@ struct Connection
   IpEndpoint addr; ///< Associated address.
   bool is_bound; ///< Flag for already bound to a local address.
   bool is_connected; ///< Flag for already connected.
+  int sock_type;
 
   /** Create and initialize the socket for this connection.
 
@@ -180,6 +181,8 @@ struct Connection
 
 
   int close();                  // 0 on success, -errno on failure
+
+  void apply_options(NetVCOptions const& opt);
 
   virtual ~ Connection();
   Connection();

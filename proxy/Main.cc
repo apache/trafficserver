@@ -1697,7 +1697,7 @@ main(int argc, char **argv)
     HttpProxyPort::loadDefaultIfEmpty();
 
     cacheProcessor.start();
-    udpNet.start(num_of_udp_threads);   // XXX : broken for __WIN32
+    udpNet.start(num_of_udp_threads);
     sslNetProcessor.start(getNumSSLThreads());
 
 #ifndef INK_NO_LOG

@@ -43,10 +43,12 @@ const char *container_names[] = {
   "psh",
   "pqh",
   "ssh",
+  "cssh",
   "ecqh",
   "epsh",
   "epqh",
   "essh",
+  "ecssh",
   "icfg",
   "scfg",
   "record",
@@ -122,10 +124,12 @@ LogField::LogField(const char *field, Container container)
   case PSH:
   case PQH:
   case SSH:
+  case CSSH:
   case ECQH:
   case EPSH:
   case EPQH:
   case ESSH:
+  case ECSSH:
   case SCFG:
     m_unmarshal_func = &(LogAccess::unmarshal_str);
     break;
@@ -182,12 +186,14 @@ LogField::marshal_len(LogAccess *lad)
   case PSH:
   case PQH:
   case SSH:
+  case CSSH:
     return lad->marshal_http_header_field(m_container, m_name, NULL);
 
   case ECQH:
   case EPSH:
   case EPQH:
   case ESSH:
+  case ECSSH:
     return lad->marshal_http_header_field_escapify(m_container, m_name, NULL);
 
   case ICFG:
@@ -221,12 +227,14 @@ LogField::marshal(LogAccess *lad, char *buf)
   case PSH:
   case PQH:
   case SSH:
+  case CSSH:
     return lad->marshal_http_header_field(m_container, m_name, buf);
 
   case ECQH:
   case EPSH:
   case EPQH:
   case ESSH:
+  case ECSSH:
     return lad->marshal_http_header_field_escapify(m_container, m_name, buf);
 
   case ICFG:

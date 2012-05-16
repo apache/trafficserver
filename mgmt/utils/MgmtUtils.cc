@@ -38,9 +38,6 @@
 
 extern int diags_init;
 
-#if defined (_WIN32)
-#define syslog(_X, _Y, _Z)
-#endif
 static int use_syslog = 0;
 
 /* mgmt_use_syslog()
@@ -135,8 +132,6 @@ mgmt_writeline(int soc, const char *data, int nbytes)
   return (nleft);               /* Paranoia */
 }                               /* End mgmt_writeline */
 
-#if !defined(_WIN32)
-
 /*
  * mgmt_read_pipe()
  * - Reads from a pipe
@@ -221,85 +216,12 @@ mgmt_write_pipe(int fd, char *buf, int bytes_to_write)
   return bytes_written;
 }
 
-#else
 
-/*
- * mgmt_read_pipe()
- * - Reads from a message type named pipe.
- * - Blocking.
- *
- * Returns: num bytes read
- *          -1  error
- */
-int
-mgmt_read_pipe(HANDLE hpipe, char *buf, int maxlen)
-{
-  DWORD bytesRead = 0;
-  OVERLAPPED ov;
-
-  ov.Internal = ov.InternalHigh = ov.Offset = ov.OffsetHigh = 0;
-  ov.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
-  if (ReadFile(hpipe, (LPVOID) buf, maxlen, NULL, &ov) == 0) {
-    if (GetLastError() != ERROR_IO_PENDING) {
-      CloseHandle(ov.hEvent);
-      return -1;
-    }
-  }
-  if (WaitForSingleObject(ov.hEvent, INFINITE) == WAIT_FAILED) {
-    CloseHandle(ov.hEvent);
-    return -1;
-  }
-  if (GetOverlappedResult(hpipe, &ov, &bytesRead, FALSE) == 0) {
-    CloseHandle(ov.hEvent);
-    return -1;
-  }
-
-  CloseHandle(ov.hEvent);
-  buf[bytesRead] = 0;
-  return bytesRead;
-}
-
-/*
- * mgmt_write_pipe()
- * - Writes to a message type named pipe.
- * - Blocking.
- *
- * Returns: num bytes not written
- *          -1  error
- */
-int
-mgmt_write_pipe(HANDLE hpipe, char *data, int nbytes)
-{
-  DWORD bytesWritten = 0;
-  OVERLAPPED ov;
-
-  ov.Internal = ov.InternalHigh = ov.Offset = ov.OffsetHigh = 0;
-  ov.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
-  if (WriteFile(hpipe, (LPCVOID) data, nbytes, NULL, &ov) == 0) {
-    if (GetLastError() != ERROR_IO_PENDING) {
-      CloseHandle(ov.hEvent);
-      return -1;
-    }
-  }
-  if (WaitForSingleObject(ov.hEvent, INFINITE) == WAIT_FAILED) {
-    CloseHandle(ov.hEvent);
-    return -1;
-  }
-  if (GetOverlappedResult(hpipe, &ov, &bytesWritten, FALSE) == 0) {
-    CloseHandle(ov.hEvent);
-    return -1;
-  }
-
-  CloseHandle(ov.hEvent);
-  return (nbytes - bytesWritten);
-}
-
-#endif // !_WIN32
 
 void
 mgmt_blockAllSigs()
 {
-#if !defined(linux) && !defined(_WIN32)
+#if !defined(linux)
   // Start by blocking all signals
   sigset_t allSigs;             // Set of all signals
   sigfillset(&allSigs);
@@ -400,10 +322,8 @@ mgmt_elog(FILE * log, const char *message_format, ...)
     if (use_syslog) {
       snprintf(extended_format, sizeof(extended_format), "ERROR ==> %s", message_format);
       vsprintf(message, extended_format, ap);
-#if !defined (_WIN32)
       syslog(LOG_ERR, "%s", message);
       syslog(LOG_ERR, " (last system error %d: %s)", errno, strerror(errno));
-#endif
     } else {
       snprintf(extended_format, sizeof(extended_format), "[E. Mgmt] ERROR ==> %s", message_format);
       vsprintf(message, extended_format, ap);
@@ -440,9 +360,7 @@ mgmt_elog(const char *message_format, ...)
       snprintf(extended_format, sizeof(extended_format), "ERROR ==> %s", message_format);
       vsprintf(message, extended_format, ap);
       syslog(LOG_ERR, "%s", message);
-#if !defined (_WIN32)
       syslog(LOG_ERR, " (last system error %d: %s)", errno, strerror(errno));
-#endif
     } else {
       snprintf(extended_format, sizeof(extended_format), "Manager ERROR: %s", message_format);
       vsprintf(message, extended_format, ap);
@@ -494,9 +412,7 @@ mgmt_fatal(FILE * log, const char *message_format, ...)
     perror("[E. Mgmt] ");
 
     if (use_syslog) {
-#if !defined (_WIN32)
       syslog(LOG_ERR, " (last system error %d: %s)", errno, strerror(errno));
-#endif
     }
 #if defined(LOCAL_MANAGER) || defined(PROCESS_MANAGER)
   }
@@ -540,9 +456,7 @@ mgmt_fatal(const char *message_format, ...)
     perror("[E. Mgmt] ");
 
     if (use_syslog) {
-#if !defined (_WIN32)
       syslog(LOG_ERR, " (last system error %d: %s)", errno, strerror(errno));
-#endif
     }
 #if defined(LOCAL_MANAGER) || defined(PROCESS_MANAGER)
   }
@@ -564,7 +478,6 @@ mgmt_cleanup()
 #endif
 }
 
-#if !defined(_WIN32)
 static inline int
 get_interface_mtu(int sock_fd, struct ifreq *ifr)
 {
@@ -578,7 +491,6 @@ get_interface_mtu(int sock_fd, struct ifreq *ifr)
     return ifr->ifr_mtu;
 #endif
 }
-#endif
 
 bool
 mgmt_getAddrForIntr(char *intrName, sockaddr* addr, int *mtu)
@@ -588,7 +500,6 @@ mgmt_getAddrForIntr(char *intrName, sockaddr* addr, int *mtu)
   if (intrName == NULL) {
     return false;
   }
-#if !defined(_WIN32)
 
   int fakeSocket;               // a temporary socket to pass to ioctl
   struct ifconf ifc;            // ifconf information
@@ -661,64 +572,6 @@ mgmt_getAddrForIntr(char *intrName, sockaddr* addr, int *mtu)
   ats_free(ifbuf);
   close(fakeSocket);
 
-#else /* _WIN32 */
-  // There is no notion of network interface names on NT.
-  // So we use a winnt_intr.config file to give each of
-  // the interface a name.
-
-  char intr_file[PATH_NAME_MAX + 1];
-  FILE *fp = NULL;
-
-#ifdef LOCAL_MANAGER
-  snprintf(intr_file, sizeof(intr_file), "%s\\config\\%s", ts_base_dir, "winnt_intr.config");
-#else
-  snprintf(intr_file, sizeof(intr_file), "%s\\config\\%s", system_base_install, "winnt_intr.config");
-#endif
-
-  if ((fp = fopen(intr_file, "r")) == NULL) {
-    mgmt_log(stderr, "[getAddrForIntr] Unable to open %s\n", intr_file);
-  } else {
-    char buffer[1024];
-    char *p = NULL;
-
-    while (!feof(fp)) {
-
-      if (!fgets(buffer, 1024, fp)) {
-        break;
-      }
-      // replace newline with null termination
-      p = strchr(buffer, '\n');
-      if (p) {
-        *p = '\0';
-      }
-      // skip beginning line spaces
-      p = buffer;
-      while (*p != '\0' && isspace(*p)) {
-        p++;
-      }
-
-      // skip blank or comment lines
-      if (*p == '#' || *p == '\0') {
-        continue;
-      }
-
-      if (p = strstr(p, intrName)) {
-        p = p + strlen(intrName) + 1;
-        in_addr_t cluster_ip = inet_addr(p);
-
-        if (cluster_ip != INADDR_NONE) {
-          addr->s_addr = cluster_ip;
-          found = true;
-          break;
-        }
-      }
-
-    }
-    fclose(fp);
-  }
-
-#endif // !_WIN32
-
   return found;
 }                               /* End mgmt_getAddrForIntr */
 
@@ -745,7 +598,6 @@ mgmt_sortipaddrs(int num, struct in_addr **list)
   return entry;
 }                               /* End mgmt_sortipaddrs */
 
-#ifndef _WIN32
 void
 mgmt_sleep_sec(int seconds)
 {
@@ -757,16 +609,3 @@ mgmt_sleep_msec(int msec)
 {
   usleep(msec * 1000);
 }
-#else
-void
-mgmt_sleep_sec(int seconds)
-{
-  Sleep(1000 * seconds);
-}
-
-void
-mgmt_sleep_msec(int msec)
-{
-  Sleep(msec);
-}
-#endif

@@ -155,13 +155,11 @@ drainIncomingChannel(void *arg)
         mgmt_elog(stderr, "[drainIncomingChannel] error accepting " "reliable connection\n");
         continue;
       }
-#ifndef _WIN32                  /* no need to set close-on-exec on NT */
       if (fcntl(req_fd, F_SETFD, 1) < 0) {
         mgmt_elog(stderr, "[drainIncomingChannel] Unable to set close " "on exec flag\n");
         close(req_fd);
         continue;
       }
-#endif
 
       // In no cluster mode, the rsport should not be listening.
       ink_release_assert(lmgmt->ccom->cluster_type != NO_CLUSTER);
@@ -1575,11 +1573,9 @@ ClusterCom::establishChannels()
       if ((reliable_server_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
         mgmt_fatal("[ClusterCom::establishChannels] Unable to create socket\n");
       }
-#ifndef _WIN32                  /* no need to set close-on-exec on NT */
       if (fcntl(reliable_server_fd, F_SETFD, 1) < 0) {
         mgmt_fatal("[ClusterCom::establishChannels] Unable to set close-on-exec.\n");
       }
-#endif
 
       if (setsockopt(reliable_server_fd, SOL_SOCKET, SO_REUSEADDR, (char *) &one, sizeof(int)) < 0) {
         mgmt_fatal("[ClusterCom::establishChannels] Unable to set socket options.\n");
@@ -1613,7 +1609,6 @@ ClusterCom::establishChannels()
 void
 ClusterCom::establishBroadcastChannel(void)
 {
-#ifndef _WIN32
   if ((broadcast_fd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
     mgmt_fatal("[ClusterCom::establishBroadcastChannel] Unable to open socket.\n");
   }
@@ -1621,23 +1616,6 @@ ClusterCom::establishBroadcastChannel(void)
   if (fcntl(broadcast_fd, F_SETFD, 1) < 0) {
     mgmt_fatal("[ClusterCom::establishBroadcastChannel] Unable to set close-on-exec.\n");
   }
-#else
-  if ((broadcast_fd = WSASocket(AF_INET, SOCK_DGRAM, 0, NULL, 0,
-                                WSA_FLAG_MULTIPOINT_C_LEAF | WSA_FLAG_MULTIPOINT_D_LEAF)) == INVALID_SOCKET) {
-    mgmt_fatal("[ClusterCom::establishBroadcastChannel] Unable to open socket.\n");
-  }
-  // To fix INKqa04541, we need to explicitly bind the
-  // multicast socket to the cluster interface.
-  struct sockaddr_in cluster_intr_addr;
-  memset(&cluster_intr_addr, 0, sizeof(cluster_intr_addr));
-  cluster_intr_addr.sin_family = AF_INET;
-  cluster_intr_addr.sin_addr.s_addr = our_ip;
-  cluster_intr_addr.sin_port = htons(mc_port);
-
-  if (bind(broadcast_fd, (struct sockaddr *) &cluster_intr_addr, sizeof(cluster_intr_addr)) < 0) {
-    mgmt_fatal("[ClusterCom::establishBroadcastChannel] Unable to bind to socket, port %d\n", mc_port);
-  }
-#endif // !_WIN32
 
   int one = 1;
   if (setsockopt(broadcast_fd, SOL_SOCKET, SO_REUSEADDR, (const char *) &one, sizeof(one)) < 0) {
@@ -1649,7 +1627,6 @@ ClusterCom::establishBroadcastChannel(void)
   broadcast_addr.sin_addr.s_addr = inet_addr(mc_group);
   broadcast_addr.sin_port = htons(mc_port);
 
-#ifndef _WIN32
   u_char ttl = mc_ttl, loop = 0;
 
   /* Set ttl(max forwards), 1 should be default(same subnetwork). */
@@ -1661,32 +1638,6 @@ ClusterCom::establishBroadcastChannel(void)
   if (setsockopt(broadcast_fd, IPPROTO_IP, IP_MULTICAST_LOOP, (const char *) &loop, sizeof(loop)) < 0) {
     mgmt_fatal("[ClusterCom::establishBroadcastChannel] Unable to disable loopback\n");
   }
-#else
-  DWORD ttl = mc_ttl;
-  BOOL loop = FALSE;
-
-  if (WSAJoinLeaf(broadcast_fd, (struct sockaddr *) &broadcast_addr,
-                  sizeof(struct sockaddr_in), NULL, NULL, NULL, NULL, JL_SENDER_ONLY) == INVALID_SOCKET) {
-    mgmt_fatal("[ClusterCom::establishBroadcastChannel] Unable to join group\n");
-  }
-
-  DWORD retcount = 0;
-  /* Set ttl(max forwards), 1 should be default(same subnetwork). */
-  if (WSAIoctl(broadcast_fd, SIO_MULTICAST_SCOPE, (LPVOID) & ttl, sizeof(ttl), NULL, 0, &retcount, NULL, NULL) != 0) {
-    mgmt_fatal("[ClusterCom::establishBroadcastChannel] Unable to setsocketopt, ttl\n");
-  }
-// FIX THIS: elam 02/03/1999
-//   Loopback disable is currently not working on NT.
-//   We need to filter when we recv.
-//
-//  retcount = 0;
-//  /* Disable broadcast loopback, that is broadcasting to self */
-//  if (WSAIoctl(broadcast_fd, SIO_MULTIPOINT_LOOPBACK, (LPVOID) &loop, sizeof(loop),
-//             NULL, 0, &retcount, NULL, NULL) != 0) {
-//    mgmt_fatal(
-//      "[ClusterCom::establishBroadcastChannel] Unable to disable loopback\n");
-//  }
-#endif
 
   return;
 }                               /* End ClusterCom::establishBroadcastChannel */
@@ -1701,7 +1652,6 @@ ClusterCom::establishBroadcastChannel(void)
 int
 ClusterCom::establishReceiveChannel(int fatal_on_error)
 {
-#ifndef _WIN32
   if ((receive_fd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
     if (!fatal_on_error) {
       Debug("ccom", "establishReceiveChannel: Unable to open socket");
@@ -1719,18 +1669,6 @@ ClusterCom::establishReceiveChannel(int fatal_on_error)
     }
     mgmt_fatal("[ClusterCom::establishReceiveChannel] Unable to set close-on-exec.\n");
   }
-#else
-  if ((receive_fd = WSASocket(AF_INET, SOCK_DGRAM, 0, NULL, 0,
-                              WSA_FLAG_MULTIPOINT_C_LEAF | WSA_FLAG_MULTIPOINT_D_LEAF)) == INVALID_SOCKET) {
-    if (!fatal_on_error) {
-      close(receive_fd);
-      receive_fd = -1;
-      Debug("ccom", "establishReceiveChannel: Unable to open socket");
-      return 1;
-    }
-    mgmt_fatal("[ClusterCom::establishReceiveChannel] Unable to open socket.\n");
-  }
-#endif // !_WIN32
 
   int one = 1;
   if (setsockopt(receive_fd, SOL_SOCKET, SO_REUSEADDR, (char *) &one, sizeof(int)) < 0) {
@@ -1745,12 +1683,7 @@ ClusterCom::establishReceiveChannel(int fatal_on_error)
 
   memset(&receive_addr, 0, sizeof(receive_addr));
   receive_addr.sin_family = AF_INET;
-#ifndef _WIN32
   receive_addr.sin_addr.s_addr = htonl(INADDR_ANY);
-#else
-  // Fix INKqa04541, see above.
-  receive_addr.sin_addr.s_addr = our_ip;
-#endif
   receive_addr.sin_port = htons(mc_port);
 
   if (bind(receive_fd, (struct sockaddr *) &receive_addr, sizeof(receive_addr)) < 0) {
@@ -1762,7 +1695,6 @@ ClusterCom::establishReceiveChannel(int fatal_on_error)
     }
     mgmt_fatal("[ClusterCom::establishReceiveChannel] Unable to bind to socket, port %d\n", mc_port);
   }
-#ifndef _WIN32
   /* Add ourselves to the group */
   struct ip_mreq mc_request;
   mc_request.imr_multiaddr.s_addr = inet_addr(mc_group);
@@ -1777,23 +1709,6 @@ ClusterCom::establishReceiveChannel(int fatal_on_error)
     }
     mgmt_fatal("[ClusterCom::establishReceiveChannel] Can't add ourselves to multicast group %s\n", mc_group);
   }
-#else
-  struct sockaddr_in mc_sa;
-  memset(&mc_sa, 0, sizeof(mc_sa));
-  mc_sa.sin_family = AF_INET;
-  mc_sa.sin_addr.s_addr = inet_addr(mc_group);
-  mc_sa.sin_port = htons(mc_port);
-  if (WSAJoinLeaf(receive_fd, (struct sockaddr *) &mc_sa,
-                  sizeof(mc_sa), NULL, NULL, NULL, NULL, JL_RECEIVER_ONLY) == INVALID_SOCKET) {
-    if (!fatal_on_error) {
-      close(receive_fd);
-      receive_fd = -1;
-      Debug("ccom", "establishReceiveChannel: Can't add ourselves to multicast group %s", mc_group);
-      return 1;
-    }
-    mgmt_fatal("[ClusterCom::establishReceiveChannel] Can't add ourselves to multicast group %s\n", mc_group);
-  }
-#endif
 
   return 0;
 }                               /* End ClusterCom::establishReceiveChannel */
@@ -1922,13 +1837,11 @@ ClusterCom::rl_sendReliableMessage(unsigned long addr, const char *buf, int len)
     mgmt_elog("[ClusterCom::rl_sendReliableMessage] Unable to create socket\n");
     return false;
   }
-#ifndef _WIN32                  /* no need to set close-on-exec on NT */
   if (fcntl(fd, F_SETFD, 1) < 0) {
     mgmt_log("[ClusterCom::rl_sendReliableMessage] Unable to set close-on-exec.\n");
     close(fd);
     return false;
   }
-#endif
 
   if (connect(fd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) {
     mgmt_elog("[ClusterCom::rl_sendReliableMessage] Unable to connect to peer\n");
@@ -1984,7 +1897,6 @@ ClusterCom::sendReliableMessage(unsigned long addr, char *buf, int len, char *re
     }
     return false;
   }
-#ifndef _WIN32                  /* no need to set close-on-exec on NT */
   if (fcntl(fd, F_SETFD, 1) < 0) {
     mgmt_elog("[ClusterCom::sendReliableMessage] Unable to set close-on-exec.\n");
     if (take_lock) {
@@ -1993,7 +1905,6 @@ ClusterCom::sendReliableMessage(unsigned long addr, char *buf, int len, char *re
     close(fd);
     return false;
   }
-#endif
 
   if (connect(fd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) {
     mgmt_elog("[ClusterCom::sendReliableMessage] Unable to connect to peer\n");
@@ -2064,14 +1975,12 @@ ClusterCom::sendReliableMessageReadTillClose(unsigned long addr, char *buf, int 
     ink_mutex_release(&mutex);
     return false;
   }
-#ifndef _WIN32                  /* no need to set close-on-exec on NT */
   if (fcntl(fd, F_SETFD, 1) < 0) {
     mgmt_elog("[ClusterCom::sendReliableMessageReadTillClose] Unable to set close-on-exec.\n");
     ink_mutex_release(&mutex);
     close(fd);
     return false;
   }
-#endif
 
   if (connect(fd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) {
     mgmt_elog("[ClusterCom::sendReliableMessageReadTillClose] Unable to connect\n");
@@ -2455,7 +2364,6 @@ checkBackDoor(int req_fd, char *message)
              (lmgmt->mgmt_shutdown_outstanding ? "true" : "false"));
     mgmt_writeline(req_fd, reply, strlen(reply));
 
-#if !defined(_WIN32)
     // XXX: Again multiple code caused by misssing PID_T_FMT
 // TODO: Was #if defined(solaris) && (!defined(_FILE_OFFSET_BITS) || _FILE_OFFSET_BITS != 64)
 #if defined(solaris)
@@ -2466,11 +2374,6 @@ checkBackDoor(int req_fd, char *message)
              lmgmt->watched_process_fd, lmgmt->watched_process_pid);
 #endif
     mgmt_writeline(req_fd, reply, strlen(reply));
-#else // We don't have unix domain sockets on NT
-    snprintf(reply, sizeof(reply), "\tprocess_server_hpipe: %d  watched_process_pid: %ld\n",
-             lmgmt->process_server_hpipe, lmgmt->watched_process_pid);
-    mgmt_writeline(req_fd, reply, strlen(reply));
-#endif
 
     ink_strlcpy(reply, "---------------------------\n", sizeof(reply));
     mgmt_writeline(req_fd, reply, strlen(reply));

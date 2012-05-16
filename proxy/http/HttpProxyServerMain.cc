@@ -176,6 +176,8 @@ start_HttpProxyServer(int accept_threads)
   opt.accept_threads = accept_threads;
   REC_ReadConfigInteger(opt.recv_bufsize, "proxy.config.net.sock_recv_buffer_size_in");
   REC_ReadConfigInteger(opt.send_bufsize, "proxy.config.net.sock_send_buffer_size_in");
+  REC_ReadConfigInteger(opt.packet_mark, "proxy.config.net.sock_packet_mark_in");
+  REC_ReadConfigInteger(opt.packet_tos, "proxy.config.net.sock_packet_tos_in");
   SslConfigParams *sslParam = sslTerminationConfig.acquire();
   
   for ( int i = 0 , n = HttpProxyPort::global().length() ; i < n ; ++i ) {

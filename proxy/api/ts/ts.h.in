@@ -145,6 +145,9 @@ extern "C"
     TS_HTTP_STATUS_NO_CONTENT = 204,
     TS_HTTP_STATUS_RESET_CONTENT = 205,
     TS_HTTP_STATUS_PARTIAL_CONTENT = 206,
+    TS_HTTP_STATUS_MULTI_STATUS = 207,
+    TS_HTTP_STATUS_ALREADY_REPORTED = 208,
+    TS_HTTP_STATUS_IM_USED = 211,
 
     TS_HTTP_STATUS_MULTIPLE_CHOICES = 300,
     TS_HTTP_STATUS_MOVED_PERMANENTLY = 301,
@@ -153,6 +156,7 @@ extern "C"
     TS_HTTP_STATUS_NOT_MODIFIED = 304,
     TS_HTTP_STATUS_USE_PROXY = 305,
     TS_HTTP_STATUS_TEMPORARY_REDIRECT = 307,
+    TS_HTTP_STATUS_PERMANENT_REDIRECT = 308,
 
     TS_HTTP_STATUS_BAD_REQUEST = 400,
     TS_HTTP_STATUS_UNAUTHORIZED = 401,
@@ -170,13 +174,28 @@ extern "C"
     TS_HTTP_STATUS_REQUEST_ENTITY_TOO_LARGE = 413,
     TS_HTTP_STATUS_REQUEST_URI_TOO_LONG = 414,
     TS_HTTP_STATUS_UNSUPPORTED_MEDIA_TYPE = 415,
+    TS_HTTP_STATUS_REQUESTED_RANGE_NOT_SATISFIABLE = 416,
+    TS_HTTP_STATUS_EXPECTATION_FAILED = 417,
+    TS_HTTP_STATUS_UNPROCESSABLE_ENTITY = 422,
+    TS_HTTP_STATUS_LOCKED = 423,
+    TS_HTTP_STATUS_FAILED_DEPENDENCY = 424,
+    TS_HTTP_STATUS_UPGRADE_REQUIRED = 426,
+    TS_HTTP_STATUS_PRECONDITION_REQUIRED = 428,
+    TS_HTTP_STATUS_TOO_MANY_REQUESTS = 429,
+    TS_HTTP_STATUS_REQUEST_HEADER_FIELDS_TOO_LARGE = 431,
 
     TS_HTTP_STATUS_INTERNAL_SERVER_ERROR = 500,
     TS_HTTP_STATUS_NOT_IMPLEMENTED = 501,
     TS_HTTP_STATUS_BAD_GATEWAY = 502,
     TS_HTTP_STATUS_SERVICE_UNAVAILABLE = 503,
     TS_HTTP_STATUS_GATEWAY_TIMEOUT = 504,
-    TS_HTTP_STATUS_HTTPVER_NOT_SUPPORTED = 505
+    TS_HTTP_STATUS_HTTPVER_NOT_SUPPORTED = 505,
+    TS_HTTP_STATUS_VARIANT_ALSO_NEGOTIATES = 506,
+    TS_HTTP_STATUS_INSUFFICIENT_STORAGE = 507,
+    TS_HTTP_STATUS_LOOP_DETECTED = 508,
+    TS_HTTP_STATUS_NOT_EXTENDED = 510,
+    TS_HTTP_STATUS_NETWORK_AUTHENTICATION_REQUIRED = 511
+
   } TSHttpStatus;
 
   /**
@@ -539,8 +558,6 @@ extern "C"
   typedef enum
   {
     TS_CONFIG_NULL = -1,
-    /* The order of these enum's must match the order of
-       struct OverridableHttpConfigParams in HttpConfig.h. */
     TS_CONFIG_URL_REMAP_PRISTINE_HOST_HDR,
     TS_CONFIG_HTTP_CHUNKING_ENABLED,
     TS_CONFIG_HTTP_NEGATIVE_CACHING_ENABLED,
@@ -596,11 +613,11 @@ extern "C"
     TS_CONFIG_HTTP_CACHE_FUZZ_TIME,
     TS_CONFIG_HTTP_CACHE_FUZZ_MIN_TIME,
     TS_CONFIG_HTTP_DOC_IN_CACHE_SKIP_DNS,
-
-    /* Strings and floats must come after all the integer configs */
     TS_CONFIG_HTTP_RESPONSE_SERVER_STR,
     TS_CONFIG_HTTP_CACHE_HEURISTIC_LM_FACTOR,
     TS_CONFIG_HTTP_CACHE_FUZZ_PROBABILITY,
+    TS_CONFIG_NET_SOCK_PACKET_MARK_OUT,
+    TS_CONFIG_NET_SOCK_PACKET_TOS_OUT,
     TS_CONFIG_LAST_ENTRY
   } TSOverridableConfigKey;
 
@@ -2266,6 +2283,51 @@ extern "C"
   tsapi struct sockaddr const* TSHttpSsnIncomingAddrGet(TSHttpSsn ssnp);
   tsapi TSReturnCode TSHttpSsnClientFdGet(TSHttpSsn ssnp, int* fdp);
   /* TS-1008 END */
+
+  /** Change packet firewall mark for the client side connection
+   *
+      @note The change takes effect immediately
+      
+      @return TS_SUCCESS if the client connection was modified
+  */
+  tsapi TSReturnCode TSHttpTxnClientPacketMarkSet(TSHttpTxn txnp, int mark);
+  
+  /** Change packet firewall mark for the server side connection
+   *
+      @note The change takes effect immediately, if no OS connection has been
+      made, then this sets the mark that will be used IF an OS connection
+      is established
+      
+      @return TS_SUCCESS if the (future?) server connection was modified
+  */
+  tsapi TSReturnCode TSHttpTxnServerPacketMarkSet(TSHttpTxn txnp, int mark);
+  
+  /** Change packet TOS for the client side connection
+   *
+      @note The change takes effect immediately
+      
+      @note TOS is deprecated and replaced by DSCP, this is still used to
+      set DSCP however the first 2 bits of this value will be ignored as
+      they now belong to the ECN field.
+      
+      @return TS_SUCCESS if the client connection was modified
+  */
+  tsapi TSReturnCode TSHttpTxnClientPacketTosSet(TSHttpTxn txnp, int tos);
+  
+  /** Change packet TOS for the server side connection
+   *
+      @note The change takes effect immediately, if no OS connection has been
+      made, then this sets the mark that will be used IF an OS connection
+      is established
+      
+      @note TOS is deprecated and replaced by DSCP, this is still used to
+      set DSCP however the first 2 bits of this value will be ignored as
+      they now belong to the ECN field.
+      
+      @return TS_SUCCESS if the (future?) server connection was modified
+  */
+  tsapi TSReturnCode TSHttpTxnServerPacketTosSet(TSHttpTxn txnp, int tos);
+
 
   tsapi void TSHttpTxnErrorBodySet(TSHttpTxn txnp, char* buf, int buflength, char* mimetype);
 

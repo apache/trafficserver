@@ -51,7 +51,7 @@
   -------------------------------------------------------------------------*/
 
 LogAccessHttp::LogAccessHttp(HttpSM * sm)
-:m_http_sm(sm), m_arena(), m_url(NULL), m_client_request(NULL), m_proxy_response(NULL), m_proxy_request(NULL), m_server_response(NULL), m_client_req_url_str(NULL), m_client_req_url_len(0), m_client_req_url_canon_str(NULL), m_client_req_url_canon_len(0), m_client_req_unmapped_url_canon_str(NULL), m_client_req_unmapped_url_canon_len(-1),      // undetermined
+:m_http_sm(sm), m_arena(), m_url(NULL), m_client_request(NULL), m_proxy_response(NULL), m_proxy_request(NULL), m_server_response(NULL), m_cache_response(NULL), m_client_req_url_str(NULL), m_client_req_url_len(0), m_client_req_url_canon_str(NULL), m_client_req_url_canon_len(0), m_client_req_unmapped_url_canon_str(NULL), m_client_req_unmapped_url_canon_len(-1),      // undetermined
   m_client_req_unmapped_url_path_str(NULL), m_client_req_unmapped_url_path_len(-1),     // undetermined
   m_client_req_unmapped_url_host_str(NULL), m_client_req_unmapped_url_host_len(-1),
   m_client_req_url_path_str(NULL),
@@ -124,6 +124,9 @@ LogAccessHttp::init()
   }
   if (hdr->server_response.valid()) {
     m_server_response = &(hdr->server_response);
+  }
+  if (hdr->cache_response.valid()) {
+    m_cache_response = &(hdr->cache_response);
   }
 }
 
@@ -830,6 +833,73 @@ LogAccessHttp::marshal_server_resp_http_version(char *buf)
   return (2 * INK_MIN_ALIGN);
 }
 
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+int
+LogAccessHttp::marshal_cache_resp_status_code(char *buf)
+{
+  if (buf) {
+    HTTPStatus status;
+    if (m_cache_response) {
+      status = m_cache_response->status_get();
+    } else {
+      status = HTTP_STATUS_NONE;
+    }
+    marshal_int(buf, (int64_t) status);
+  }
+  return INK_MIN_ALIGN;
+}
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+int
+LogAccessHttp::marshal_cache_resp_content_len(char *buf)
+{
+  if (buf) {
+    int64_t val = 0;
+    if (m_cache_response) {
+      val = m_http_sm->cache_response_body_bytes;
+    }
+    marshal_int(buf, val);
+  }
+  return INK_MIN_ALIGN;
+}
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+int
+LogAccessHttp::marshal_cache_resp_header_len(char *buf)
+{
+  if (buf) {
+    int64_t val = 0;
+    if (m_cache_response) {
+      val = m_http_sm->cache_response_hdr_bytes;
+    }
+    marshal_int(buf, val);
+  }
+  return INK_MIN_ALIGN;
+}
+
+int
+LogAccessHttp::marshal_cache_resp_http_version(char *buf)
+{
+  if (buf) {
+    int64_t major = 0;
+    int64_t minor = 0;
+    if (m_cache_response) {
+      major = HTTP_MAJOR(m_cache_response->version_get().m_version);
+      minor = HTTP_MINOR(m_cache_response->version_get().m_version);
+    }
+    marshal_int(buf, major);
+    marshal_int((buf + INK_MIN_ALIGN), minor);
+  }
+  return (2 * INK_MIN_ALIGN);
+}
+
+
 int
 LogAccessHttp::marshal_client_retry_after_time(char *buf)
 {
@@ -958,6 +1028,10 @@ LogAccessHttp::marshal_http_header_field(LogField::Container container, char *fi
     header = m_server_response;
     break;
 
+  case LogField::CSSH:
+    header = m_cache_response;
+    break;
+
   default:
     header = NULL;
     break;
@@ -1053,6 +1127,10 @@ LogAccessHttp::marshal_http_header_field_escapify(LogField::Container container,
 
   case LogField::ESSH:
     header = m_server_response;
+    break;
+
+  case LogField::ECSSH:
+    header = m_cache_response;
     break;
 
   default:

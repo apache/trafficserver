@@ -22,9 +22,7 @@
  */
 
 #include "P_Net.h"
-#ifndef _WIN32
 #include <netdb.h>
-#endif
 
 Diags *diags;
 #define DIAGS_LOG_FILE "diags.log"
@@ -83,7 +81,7 @@ reconfigure_diags()
   ////////////////////////////////////
   // change the diags config values //
   ////////////////////////////////////
-#if !defined (_WIN32) && !defined(__GNUC__) && !defined(hpux)
+#if !defined(__GNUC__) && !defined(hpux)
   diags->config = c;
 #else
   memcpy(((void *) &diags->config), ((void *) &c), sizeof(DiagsConfigState));
@@ -150,9 +148,7 @@ main()
   /*
    * ignore broken pipe
    */
-#ifndef _WIN32
   signal(SIGPIPE, SIG_IGN);
-#endif
 
   /*
    * start processors

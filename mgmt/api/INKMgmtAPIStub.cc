@@ -31,8 +31,6 @@
 
 #include "mgmtapi.h"
 
-#ifndef _WIN32
-
 /***************************************************************************
  * API Helper Functions for Data Carrier Structures
  ***************************************************************************/
@@ -805,4 +803,3 @@ INKIsValid(INKCfgEle * ele)
   return true;
 }
 
-#endif

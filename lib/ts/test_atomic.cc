@@ -22,25 +22,6 @@
  */
 
 
-
-////////////////////////////////////////////////////////////////////////////
-// NT Build Notes:
-//   1) Enable the following #include.
-//      Visual C++ does not allow this under #ifdef
-// #include "stdafx.h"
-//
-//   2) Create a new project within the existing TS project
-//      which is a "WIN32 Console Application"
-//      with the "Simple Application" option.
-//   3) Replace C/C++ Preprocessor definitions with traffic_server
-//      definitions.
-//   4) Replace C/C++ Additional includes with traffic server
-//      definitions.  Prepend "..\proxy" to directories in proxy.
-//      Add "..\proxy".
-//   5) Replace C/C++ project option "/MLd" with "/MTd"
-//   6) Add libts as dependency.
-////////////////////////////////////////////////////////////////////////////
-
 #include <unistd.h>
 #include <stdlib.h>
 #include <time.h>

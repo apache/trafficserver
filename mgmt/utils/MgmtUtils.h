@@ -45,13 +45,8 @@ void mgmt_blockAllSigs();
 int mgmt_readline(int fd, char *buf, int maxlen);
 int mgmt_writeline(int fd, const char *data, int nbytes);
 
-#if !defined(_WIN32)
 int mgmt_read_pipe(int fd, char *buf, int bytes_to_read);
 int mgmt_write_pipe(int fd, char *buf, int bytes_to_write);
-#else
-int mgmt_read_pipe(HANDLE hpipe, char *buf, int maxlen);
-int mgmt_write_pipe(HANDLE hpipe, char *data, int nbytes);
-#endif
 
 void mgmt_use_syslog();
 void mgmt_cleanup();

@@ -428,34 +428,6 @@ mutex->thread_holding->global_dyn_stats[X].sum += (S)
 global_dyn_stats[X].count = 0; \
 global_dyn_stats[X].sum = 0
 
-#ifdef _WIN32
-
-#define READ_GLOBAL_DYN_STAT(X,C,S) do { \
-  ink_unprot_global_stat_t _s = global_dyn_stats[X]; \
-  for (int _e = 0; _e < eventProcessor.get_thread_count() ; _e++) { \
-    _s.count += eventProcessor._all_ethreads[_e]->global_dyn_stats[X].count; \
-    _s.sum += eventProcessor._all_ethreads[_e]->global_dyn_stats[X].sum; \
-  } \
-  C = _s.count; \
-  S = _s.sum; \
-} while (0)
-
-#define READ_GLOBAL_DYN_COUNT(X,C) do { \
-  ink_statval_t _s = global_dyn_stats[X].count; \
-  for (int _e = 0; _e < eventProcessor.get_thread_count() ; _e++) \
-    _s += eventProcessor._all_ethreads[_e]->global_dyn_stats[X].count; \
-  C = _s; \
-} while (0)
-
-#define READ_GLOBAL_DYN_SUM(X,S) do { \
-  ink_statval_t _s = global_dyn_stats[X].sum; \
-  for (int _e = 0; _e < eventProcessor.get_thread_count() ; _e++) \
-    _s += eventProcessor._all_ethreads[_e]->global_dyn_stats[X].sum; \
-  S = _s; \
-} while (0)
-
-#else
-
 #define READ_GLOBAL_DYN_STAT(X,C,S) do { \
   ink_unprot_global_stat_t _s = global_dyn_stats[X]; \
   for (int _e = 0; _e < eventProcessor.n_ethreads ; _e++) { \
@@ -479,8 +451,6 @@ global_dyn_stats[X].sum = 0
     _s += eventProcessor.all_ethreads[_e]->global_dyn_stats[X].sum; \
   S = _s; \
 } while (0)
-
-#endif
 
 #define READ_GLOBAL_HTTP_TRANS_STAT(X,C,S) \
 { \

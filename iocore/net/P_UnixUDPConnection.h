@@ -31,8 +31,6 @@
 #ifndef __UNIXUDPCONNECTION_H_
 #define __UNIXUDPCONNECTION_H_
 
-#ifndef _IOCORE_WIN32
-
 #include "P_UDPConnection.h"
 #include "P_UDPPacket.h"
 
@@ -119,5 +117,4 @@ new_UDPConnection(int fd)
   return (fd >= 0) ? NEW(new UnixUDPConnection(fd)) : 0;
 }
 
-#endif //_IOCORE_WIN32
 #endif //__UNIXUDPCONNECTION_H_

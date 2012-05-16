@@ -27,8 +27,7 @@
  *
  *
  *	Usage:
- *	(NT): ServerTransform.dll
- *	(Solaris): server-transform.so
+ *	  server-transform.so
  *
  *
  */
@@ -55,11 +54,7 @@
 #include <string.h>
 #include <stdio.h>
 
-#if !defined (_WIN32)
 #  include <netinet/in.h>
-#else
-#  include <windows.h>
-#endif
 
 #include <ts/ts.h>
 
@@ -105,11 +100,7 @@ static int transform_read_event(TSCont contp, TransformData * data, TSEvent even
 static int transform_bypass_event(TSCont contp, TransformData * data, TSEvent event, void *edata);
 static int transform_handler(TSCont contp, TSEvent event, void *edata);
 
-#if !defined (_WIN32)
 static in_addr_t server_ip;
-#else
-static unsigned int server_ip;
-#endif
 
 static int server_port;
 

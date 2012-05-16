@@ -27,8 +27,7 @@
  *
  *
  *    Usage:
- *    (NT): BNullTransform.dll
- *    (Solaris): bnull-transform.so
+ *      bnull-transform.so
  *
  *
  */

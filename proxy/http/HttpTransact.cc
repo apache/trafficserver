@@ -4653,7 +4653,7 @@ HttpTransact::handle_transform_ready(State* s)
 {
   ink_assert(s->hdr_info.transform_response.valid() == true);
 
-  Source_t orig_source = s->source;
+  s->pre_transform_source = s->source;
   s->source = SOURCE_TRANSFORM;
 
   if (!s->cop_test_page)
@@ -4664,7 +4664,7 @@ HttpTransact::handle_transform_ready(State* s)
   if (s->cache_info.action != CACHE_DO_NO_ACTION &&
       s->cache_info.action != CACHE_DO_DELETE && s->api_info.cache_transformed && !s->range_setup) {
     HTTPHdr *transform_store_request = 0;
-    switch (orig_source) {
+    switch (s->pre_transform_source) {
     case SOURCE_CACHE:
       // If we are transforming from the cache, treat
       //  the transform as if it were virtual server

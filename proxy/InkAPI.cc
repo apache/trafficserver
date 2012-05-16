@@ -38,6 +38,7 @@
 #include "MIME.h"
 #include "HTTP.h"
 #include "HttpClientSession.h"
+#include "HttpServerSession.h"
 #include "HttpSM.h"
 #include "HttpConfig.h"
 #include "P_Net.h"
@@ -4372,6 +4373,11 @@ TSHttpSchedule(TSCont contp, TSHttpTxn txnp, ink_hrtime timeout)
 
   FORCE_PLUGIN_MUTEX(contp);
 
+  INKContInternal *i = (INKContInternal *) contp;
+
+  if (ink_atomic_increment((int *) &i->m_event_count, 1) < 0)
+    ink_assert (!"not reached");
+
   TSAction action;
   Continuation *cont  = (Continuation*)contp;
   HttpSM *sm = (HttpSM*)txnp;
@@ -5301,6 +5307,21 @@ TSHttpTxnServerAddrGet(TSHttpTxn txnp)
   return &sm->t_state.server_info.addr.sa;
 }
 
+TSReturnCode
+TSHttpTxnServerAddrSet(TSHttpTxn txnp, struct sockaddr const* addr)
+{
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+
+  HttpSM *sm = reinterpret_cast<HttpSM *>(txnp);
+  if (ats_ip_copy(&sm->t_state.server_info.addr.sa, addr)) {
+    sm->t_state.api_server_addr_set = true;
+    return TS_SUCCESS;
+  } else {
+    return TS_ERROR;
+  }
+}
+
+
 // [amc] This might use the port. The code path should do that but it
 // hasn't been tested.
 TSReturnCode
@@ -5352,6 +5373,89 @@ TSHttpTxnOutgoingTransparencySet(TSHttpTxn txnp, int flag)
   return TS_SUCCESS;
 }
 
+TSReturnCode
+TSHttpTxnClientPacketMarkSet(TSHttpTxn txnp, int mark)
+{
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+  HttpSM *sm = (HttpSM *) txnp;
+  if (NULL == sm->ua_session) {
+    return TS_ERROR;
+  }
+
+  NetVConnection *vc = sm->ua_session->get_netvc();
+  if (NULL == vc) {
+    return TS_ERROR;
+  }
+
+  vc->options.packet_mark = (uint32_t)mark;
+  vc->apply_options();
+  return TS_SUCCESS;
+}
+
+TSReturnCode
+TSHttpTxnServerPacketMarkSet(TSHttpTxn txnp, int mark)
+{
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+  HttpSM *sm = (HttpSM *) txnp;
+
+  // change the mark on an active server session
+  if (NULL != sm->ua_session) {
+    HttpServerSession *ssn = sm->ua_session->get_server_session();
+    if (NULL != ssn) {
+      NetVConnection *vc = ssn->get_netvc();
+      if (vc != NULL) {
+        vc->options.packet_mark = (uint32_t)mark;
+        vc->apply_options();
+      }
+    }
+  }
+
+  // update the transactions mark config for future connections
+  TSHttpTxnConfigIntSet(txnp, TS_CONFIG_NET_SOCK_PACKET_MARK_OUT, mark);
+  return TS_SUCCESS;
+}
+
+TSReturnCode
+TSHttpTxnClientPacketTosSet(TSHttpTxn txnp, int tos)
+{
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+  HttpSM *sm = (HttpSM *) txnp;
+  if (NULL == sm->ua_session) {
+    return TS_ERROR;
+  }
+
+  NetVConnection *vc = sm->ua_session->get_netvc();
+  if (NULL == vc) {
+    return TS_ERROR;
+  }
+
+  vc->options.packet_tos = (uint32_t)tos;
+  vc->apply_options();
+  return TS_SUCCESS;
+}
+
+TSReturnCode
+TSHttpTxnServerPacketTosSet(TSHttpTxn txnp, int tos)
+{
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+  HttpSM *sm = (HttpSM *) txnp;
+
+  // change the tos on an active server session
+  if (NULL != sm->ua_session) {
+    HttpServerSession *ssn = sm->ua_session->get_server_session();
+    if (NULL != ssn) {
+      NetVConnection *vc = ssn->get_netvc();
+      if (vc != NULL) {
+        vc->options.packet_tos = (uint32_t)tos;
+        vc->apply_options();
+      }
+    }
+  }
+
+  // update the transactions mark config for future connections
+  TSHttpTxnConfigIntSet(txnp, TS_CONFIG_NET_SOCK_PACKET_TOS_OUT, tos);
+  return TS_SUCCESS;
+}
 
 void
 TSHttpTxnErrorBodySet(TSHttpTxn txnp, char *buf, int buflength, char *mimetype)
@@ -7371,21 +7475,11 @@ TSSkipRemappingSet(TSHttpTxn txnp, int flag)
 }
 
 // Little helper function to find the struct member
-
-typedef enum
-  {
-    OVERRIDABLE_TYPE_NULL = 0,
-    OVERRIDABLE_TYPE_INT,
-    OVERRIDABLE_TYPE_FLOAT,
-    OVERRIDABLE_TYPE_STRING,
-    OVERRIDABLE_TYPE_BYTE
-  } OverridableDataType;
-
 void*
 _conf_to_memberp(TSOverridableConfigKey conf, HttpSM* sm, OverridableDataType *typep)
 {
-  // *((MgmtInt*)(&(sm->t_state.txn_conf) + conf*sizeof(MgmtInt))) = value;
-  OverridableDataType typ = OVERRIDABLE_TYPE_INT;
+  // The default is "Byte", make sure to override that for those configs which are "Int".
+  OverridableDataType typ = OVERRIDABLE_TYPE_BYTE;
   void* ret = NULL;
 
   switch (conf) {
@@ -7399,6 +7493,7 @@ _conf_to_memberp(TSOverridableConfigKey conf, HttpSM* sm, OverridableDataType *t
     ret = &sm->t_state.txn_conf->negative_caching_enabled;
     break;
   case TS_CONFIG_HTTP_NEGATIVE_CACHING_LIFETIME:
+    typ = OVERRIDABLE_TYPE_INT;
     ret = &sm->t_state.txn_conf->negative_caching_lifetime;
     break;
   case TS_CONFIG_HTTP_CACHE_WHEN_TO_REVALIDATE:
@@ -7417,13 +7512,24 @@ _conf_to_memberp(TSOverridableConfigKey conf, HttpSM* sm, OverridableDataType *t
     ret = &sm->t_state.txn_conf->share_server_sessions;
     break;
   case TS_CONFIG_NET_SOCK_RECV_BUFFER_SIZE_OUT:
+    typ = OVERRIDABLE_TYPE_INT;
     ret = &sm->t_state.txn_conf->sock_recv_buffer_size_out;
     break;
   case TS_CONFIG_NET_SOCK_SEND_BUFFER_SIZE_OUT:
+    typ = OVERRIDABLE_TYPE_INT;
     ret = &sm->t_state.txn_conf->sock_send_buffer_size_out;
     break;
   case TS_CONFIG_NET_SOCK_OPTION_FLAG_OUT:
+    typ = OVERRIDABLE_TYPE_INT;
     ret = &sm->t_state.txn_conf->sock_option_flag_out;
+    break;
+  case TS_CONFIG_NET_SOCK_PACKET_MARK_OUT:
+    typ = OVERRIDABLE_TYPE_INT;
+    ret = &sm->t_state.txn_conf->sock_packet_mark_out;
+    break;
+  case TS_CONFIG_NET_SOCK_PACKET_TOS_OUT:
+    typ = OVERRIDABLE_TYPE_INT;
+    ret = &sm->t_state.txn_conf->sock_packet_tos_out;
     break;
   case TS_CONFIG_HTTP_FORWARD_PROXY_AUTH_TO_PARENT:
     ret = &sm->t_state.txn_conf->fwd_proxy_auth_to_parent;
@@ -7453,6 +7559,7 @@ _conf_to_memberp(TSOverridableConfigKey conf, HttpSM* sm, OverridableDataType *t
     ret = &sm->t_state.txn_conf->insert_squid_x_forwarded_for;
     break;
   case TS_CONFIG_HTTP_SERVER_TCP_INIT_CWND:
+    typ = OVERRIDABLE_TYPE_INT;
     ret = &sm->t_state.txn_conf->server_tcp_init_cwnd;
     break;
   case TS_CONFIG_HTTP_SEND_HTTP11_REQUESTS:
@@ -7492,63 +7599,83 @@ _conf_to_memberp(TSOverridableConfigKey conf, HttpSM* sm, OverridableDataType *t
     ret = &sm->t_state.txn_conf->insert_response_via_string;
     break;
   case TS_CONFIG_HTTP_CACHE_HEURISTIC_MIN_LIFETIME:
+    typ = OVERRIDABLE_TYPE_INT;
     ret = &sm->t_state.txn_conf->cache_heuristic_min_lifetime;
     break;
   case TS_CONFIG_HTTP_CACHE_HEURISTIC_MAX_LIFETIME:
+    typ = OVERRIDABLE_TYPE_INT;
     ret = &sm->t_state.txn_conf->cache_heuristic_max_lifetime;
     break;
   case TS_CONFIG_HTTP_CACHE_GUARANTEED_MIN_LIFETIME:
+    typ = OVERRIDABLE_TYPE_INT;
     ret = &sm->t_state.txn_conf->cache_guaranteed_min_lifetime;
     break;
   case TS_CONFIG_HTTP_CACHE_GUARANTEED_MAX_LIFETIME:
+    typ = OVERRIDABLE_TYPE_INT;
     ret = &sm->t_state.txn_conf->cache_guaranteed_max_lifetime;
     break;
   case TS_CONFIG_HTTP_CACHE_MAX_STALE_AGE:
+    typ = OVERRIDABLE_TYPE_INT;
     ret = &sm->t_state.txn_conf->cache_max_stale_age;
     break;
   case TS_CONFIG_HTTP_KEEP_ALIVE_NO_ACTIVITY_TIMEOUT_IN:
+    typ = OVERRIDABLE_TYPE_INT;
     ret = &sm->t_state.txn_conf->keep_alive_no_activity_timeout_in;
     break;
   case TS_CONFIG_HTTP_KEEP_ALIVE_NO_ACTIVITY_TIMEOUT_OUT:
+    typ = OVERRIDABLE_TYPE_INT;
     ret = &sm->t_state.txn_conf->keep_alive_no_activity_timeout_out;
     break;
   case TS_CONFIG_HTTP_TRANSACTION_NO_ACTIVITY_TIMEOUT_IN:
+    typ = OVERRIDABLE_TYPE_INT;
     ret = &sm->t_state.txn_conf->transaction_no_activity_timeout_in;
     break;
   case TS_CONFIG_HTTP_TRANSACTION_NO_ACTIVITY_TIMEOUT_OUT:
+    typ = OVERRIDABLE_TYPE_INT;
     ret = &sm->t_state.txn_conf->transaction_no_activity_timeout_out;
     break;
   case TS_CONFIG_HTTP_TRANSACTION_ACTIVE_TIMEOUT_OUT:
+    typ = OVERRIDABLE_TYPE_INT;
     ret = &sm->t_state.txn_conf->transaction_active_timeout_out;
     break;
   case TS_CONFIG_HTTP_ORIGIN_MAX_CONNECTIONS:
+    typ = OVERRIDABLE_TYPE_INT;
     ret = &sm->t_state.txn_conf->origin_max_connections;
     break;
   case TS_CONFIG_HTTP_CONNECT_ATTEMPTS_MAX_RETRIES:
+    typ = OVERRIDABLE_TYPE_INT;
     ret = &sm->t_state.txn_conf->connect_attempts_max_retries;
     break;
   case TS_CONFIG_HTTP_CONNECT_ATTEMPTS_MAX_RETRIES_DEAD_SERVER:
+    typ = OVERRIDABLE_TYPE_INT;
     ret = &sm->t_state.txn_conf->connect_attempts_max_retries_dead_server;
     break;
   case TS_CONFIG_HTTP_CONNECT_ATTEMPTS_RR_RETRIES:
+    typ = OVERRIDABLE_TYPE_INT;
     ret = &sm->t_state.txn_conf->connect_attempts_rr_retries;
     break;
   case TS_CONFIG_HTTP_CONNECT_ATTEMPTS_TIMEOUT:
+    typ = OVERRIDABLE_TYPE_INT;
     ret = &sm->t_state.txn_conf->connect_attempts_timeout;
     break;
   case TS_CONFIG_HTTP_POST_CONNECT_ATTEMPTS_TIMEOUT:
+    typ = OVERRIDABLE_TYPE_INT;
     ret = &sm->t_state.txn_conf->post_connect_attempts_timeout;
     break;
   case TS_CONFIG_HTTP_DOWN_SERVER_CACHE_TIME:
+    typ = OVERRIDABLE_TYPE_INT;
     ret = &sm->t_state.txn_conf->down_server_timeout;
     break;
   case TS_CONFIG_HTTP_DOWN_SERVER_ABORT_THRESHOLD:
+    typ = OVERRIDABLE_TYPE_INT;
     ret = &sm->t_state.txn_conf->client_abort_threshold;
     break;
   case TS_CONFIG_HTTP_CACHE_FUZZ_TIME:
+    typ = OVERRIDABLE_TYPE_INT;
     ret = &sm->t_state.txn_conf->freshness_fuzz_time;
     break;
   case TS_CONFIG_HTTP_CACHE_FUZZ_MIN_TIME:
+    typ = OVERRIDABLE_TYPE_INT;
     ret = &sm->t_state.txn_conf->freshness_fuzz_min_time;
     break;
   case TS_CONFIG_HTTP_DOC_IN_CACHE_SKIP_DNS:
@@ -7563,7 +7690,7 @@ _conf_to_memberp(TSOverridableConfigKey conf, HttpSM* sm, OverridableDataType *t
     typ = OVERRIDABLE_TYPE_FLOAT;
     ret = &sm->t_state.txn_conf->freshness_fuzz_prob;
     break;
-    // These are "special", since they still need more attention, so fall through.
+
   case TS_CONFIG_HTTP_RESPONSE_SERVER_STR:
     typ = OVERRIDABLE_TYPE_STRING;
     ret = &sm->t_state.txn_conf->proxy_response_server_string;
@@ -7590,21 +7717,27 @@ TSHttpTxnConfigIntSet(TSHttpTxn txnp, TSOverridableConfigKey conf, TSMgmtInt val
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 
   HttpSM *s = reinterpret_cast<HttpSM*>(txnp);
+  OverridableDataType type;
 
   s->t_state.setup_per_txn_configs();
 
-  OverridableDataType type;
-  TSMgmtInt *dest = static_cast<TSMgmtInt*>(_conf_to_memberp(conf, s, &type));
+  void *dest = _conf_to_memberp(conf, s, &type);
 
-  if (type != OVERRIDABLE_TYPE_INT)
+  if (!dest)
     return TS_ERROR;
 
-  if (dest) {
-    *dest = value;
-    return TS_SUCCESS;
+  switch (type) {
+  case OVERRIDABLE_TYPE_INT:
+    *(static_cast<TSMgmtInt*>(dest)) = value;
+    break;
+  case OVERRIDABLE_TYPE_BYTE:
+    *(static_cast<TSMgmtByte*>(dest)) = static_cast<TSMgmtByte>(value);
+    break;
+  default:
+    return TS_ERROR;
   }
 
-  return TS_ERROR;
+  return TS_SUCCESS;
 }
 
 TSReturnCode
@@ -7614,17 +7747,23 @@ TSHttpTxnConfigIntGet(TSHttpTxn txnp, TSOverridableConfigKey conf, TSMgmtInt *va
   sdk_assert(sdk_sanity_check_null_ptr((void*)value) == TS_SUCCESS);
 
   OverridableDataType type;
-  TSMgmtInt* dest = static_cast<TSMgmtInt*>(_conf_to_memberp(conf, (HttpSM*)txnp, &type));
+  void* src = _conf_to_memberp(conf, (HttpSM*)txnp, &type);
 
-  if (type != OVERRIDABLE_TYPE_INT)
+  if (!src)
     return TS_ERROR;
 
-  if (dest) {
-    *value = *dest;
-    return TS_SUCCESS;
+  switch (type) {
+  case OVERRIDABLE_TYPE_INT:
+    *value = *(static_cast<TSMgmtInt*>(src));
+    break;
+  case OVERRIDABLE_TYPE_BYTE:
+    *value = *(static_cast<TSMgmtByte*>(src));
+    break;
+  default:
+    return TS_ERROR;
   }
 
-  return TS_ERROR;
+  return TS_SUCCESS;
 }
 
 TSReturnCode
@@ -7750,6 +7889,11 @@ TSHttpTxnConfigFind(const char* name, int length, TSOverridableConfigKey *conf, 
       cnf = TS_CONFIG_HTTP_CHUNKING_ENABLED;
     break;
 
+  case 36:
+    if (!strncmp(name, "proxy.config.net.sock_packet_tos_out", length))
+      cnf = TS_CONFIG_NET_SOCK_PACKET_TOS_OUT;
+    break;
+
   case 37:
     switch (name[length-1]) {
     case 'e':
@@ -7769,6 +7913,8 @@ TSHttpTxnConfigFind(const char* name, int length, TSOverridableConfigKey *conf, 
         cnf = TS_CONFIG_HTTP_KEEP_ALIVE_POST_OUT;
       else if (!strncmp(name, "proxy.config.net.sock_option_flag_out", length))
         cnf = TS_CONFIG_NET_SOCK_OPTION_FLAG_OUT;
+      else if (!strncmp(name, "proxy.config.net.sock_packet_mark_out", length))
+        cnf = TS_CONFIG_NET_SOCK_PACKET_MARK_OUT;
       break;
     }
     break;

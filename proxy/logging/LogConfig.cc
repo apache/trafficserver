@@ -1998,6 +1998,30 @@ LogConfig::read_xml_log_config(int from_memory)
       }
 
       LogField *logfield = Log::global_field_list.find_by_symbol(field_str);
+      if (!logfield) {
+        // check for container fields
+        if (*field_str == '{') {
+          Note("%s appears to be a container field", field_str);
+          char *fname_end = strchr(field_str, '}');
+          if (NULL != fname_end) {
+            char *fname = field_str + 1;
+            *fname_end = 0;          // changes '}' to '\0'
+            char *cname = fname_end + 1;     // start of container symbol
+            Note("Found Container Field: Name = %s, symbol = %s", fname, cname);
+            LogField::Container container = LogField::valid_container_name(cname);
+            if (container == LogField::NO_CONTAINER) {
+              Warning("%s is not a valid container; " "cannot create filter %s.", cname, filter_name);
+              continue;
+            } else {
+              logfield = new LogField(fname, container);
+              ink_assert(logfield != NULL);
+            }
+          } else {
+            Warning("Invalid container field specification: no trailing " "'}' in %s" "cannot create filter %s.", field_str, filter_name);
+            continue;
+          }
+        }
+      }
 
       if (!logfield) {
         Warning("%s is not a valid field; " "cannot create filter %s.", field_str, filter_name);

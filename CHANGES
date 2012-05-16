@@ -1,13 +1,41 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.1.4
-  *) [TS-1163] Support for raw disks larger than 2TB on Linux
+  *) [TS-1236] HTTP Accept filters do not work on Illumos.
+
+  *) [TS-1075] Workarounds for linux auto-port issues in transparent
+   deployments.
+
+  *) [TS-672] cleanup Win32 references.
+
+  *) [TS-1181] Make the overridable configs work with "byte" configs.
+
+  *) [TS-1252] Fixed include issues when using mgmtapi.h.
+
+  *) [TS-1248] update HTTP status codes and strings.
+
+  *) [TS-1245] proxy.config.http.connect_ports may be '*'.
+
+  *) [TS-1239] TSHttpTxnServerAddrSet implementation.
+
+  *) [TS-1237] custom log field/filtering improvements.
+
+  *) [TS-1090] SO_MARK and IP_TOS support for Linux.
+
+  *) [TS-1238] RAM cache hit rate unexpectedly low with CLFUS.
+
+  *) [TS-1242] Make it build with some more recent automake versions.
+
+  *) [TS-1241] Memory leaks when using TSHttpSchedule().
+   Author: Aidan McGurn.
+
+  *) [TS-1163] Support for raw disks larger than 2TB on Linux.
 
   *) [TS-1230] added a paramter to the configure script to allow overriding
-   the calculated ARG_MAX value
+   the calculated ARG_MAX value.
 
-  *) [TS-1208] enable check_memory() in traffic_cop for Linux
+  *) [TS-1208] enable check_memory() in traffic_cop for Linux.
 
-  *) [TS-1217] cop cleanup, remove unused variables & defines
+  *) [TS-1217] cop cleanup, remove unused variables & defines.
 
   *) [TS-1209] Allow for background fill even when a transform plugin is
    the producer. Author: Robert Logue.
@@ -34,7 +62,7 @@ Changes with Apache Traffic Server 3.1.4
 
   *) [TS-1216] Remove the initializer for some gcc`s limits.
 
-  *) [TS-1205] double free when RecDataSet in cluster mode
+  *) [TS-1205] double free when RecDataSet in cluster mode.
 
   *) [TS-1220] stats: cleanup and fix the wrong values.
 

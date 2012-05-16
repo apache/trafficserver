@@ -492,6 +492,11 @@ ifdef([AC_PROG_SED],
       [AC_PROG_SED],
       [AC_CHECK_PROG(SED, sed, sed)])
 
+dnl Same with AM_PROG_AR, but it doesn't seem to be needed in older versions.
+ifdef([AM_PROG_AR],
+      [AM_PROG_AR])
+
+
 AC_PROG_CPP
 AC_PROG_CXXCPP
 AM_PROG_AS
@@ -1299,6 +1304,36 @@ AS_IF([test "x$enable_tproxy" != "xno"], [
 
 AC_SUBST(use_tproxy)
 AC_SUBST(ip_transparent)
+
+AC_MSG_CHECKING([for SO_MARK])
+AC_TRY_COMPILE([
+#include <sys/socket.h>
+], [
+if( SO_MARK > 0) return 0;
+else return 1;
+], [has_so_mark=1]
+msg=yes, [
+has_so_mark=0
+msg=no ] )
+
+AC_MSG_RESULT([$msg])
+AC_SUBST(has_so_mark)
+
+AC_MSG_CHECKING([for IP_TOS])
+AC_TRY_COMPILE([
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netinet/ip.h>
+],[
+if( IP_TOS > 0) return 0;
+else return 1;
+], [has_ip_tos=1]
+msg=yes, [
+has_ip_tos=0
+msg=no ] )
+
+AC_MSG_RESULT([$msg])
+AC_SUBST(has_ip_tos)
 
 TS_CHECK_LOOPBACK_IFACE
 TS_CHECK_GETHOSTBYNAME_R_STYLE

@@ -44,10 +44,8 @@
 #include <wccp/Wccp.h>
 #endif
 
-#if !defined(WIN32)
 #define ink_get_hrtime ink_get_hrtime_internal
 #define ink_get_based_hrtime ink_get_based_hrtime_internal
-#endif
 
 class LocalManager: public BaseManager
 {
@@ -135,18 +133,9 @@ public:
   char *proxy_options;
   char *env_prep;
 
-#ifndef _WIN32
   int process_server_sockfd;
   volatile int watched_process_fd;
   volatile pid_t proxy_launch_pid;
-#else
-  bool process_server_connected;
-  int proxy_valid_server_ports;
-  HANDLE process_server_hpipe;
-  HANDLE process_connect_hevent;
-  HANDLE proxy_launch_hproc;
-  HANDLE proxy_IOCPort;
-#endif
 
   int mgmt_sync_key;
 

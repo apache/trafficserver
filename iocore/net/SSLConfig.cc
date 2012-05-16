@@ -111,22 +111,8 @@ set_paths_helper(const char *path, const char *filename, char **final_path, char
     *final_filename = filename ? ats_strdup(Layout::get()->relative_to(path, filename)) : NULL;
   }
 
-#ifdef _WIN32
-  i = 0;
-  while (final_path[i] != 0) {
-    if (final_path[i] == '/')
-      final_path[i] = '\\';
-    i++;
-  }
-
-  i = 0;
-  while (final_filename[i] != 0) {
-    if (final_filename[i] == '/')
-      final_filename[i] = '\\';
-    i++;
-  }
-#endif
 }
+
 void
 SslConfigParams::initialize()
 {

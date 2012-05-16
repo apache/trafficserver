@@ -60,11 +60,7 @@ class SSLNextProtocolSet;
 //  A VConnection for a network socket.
 //
 //////////////////////////////////////////////////////////////////
-#ifdef _IOCORE_WIN32_WINNT
-class SSLNetVConnection:public NTNetVConnection
-#else
 class SSLNetVConnection:public UnixNetVConnection
-#endif
 {
 public:
   virtual int sslStartHandShake(int event, int &err);

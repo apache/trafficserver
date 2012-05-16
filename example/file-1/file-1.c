@@ -26,8 +26,7 @@
  *
  *
  *	Usage:
- *	(NT): File.dll <filename1> <filename2> ...
- *	(Solaris): file-1.so <filename1> <filename2> ...
+ *	  file-1.so <filename1> <filename2> ...
  *
  *              <filenamei> is the name of the ith file to
  *              be read.

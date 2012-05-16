@@ -24,10 +24,6 @@
 #ifndef _UNIX_COMPLETION_UTIL_H_
 #define _UNIX_COMPLETION_UTIL_H_
 
-#ifdef _IOCORE_WIN32_WINNT
-#error "Some kind of problem with your include path"
-#endif
-
 // platform specific wrappers for dealing with I/O completion events
 // passed into and back from the I/O core.
 #include "P_UDPIOEvent.h"
