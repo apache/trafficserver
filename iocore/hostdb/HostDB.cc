@@ -317,24 +317,7 @@ HostDBCache::start(int flags)
   IOCORE_ReadConfigInt32(hostdb_enable, "proxy.config.hostdb");
   IOCORE_ReadConfigString(hostdb_filename, "proxy.config.hostdb.filename", PATH_NAME_MAX);
   IOCORE_ReadConfigInt32(hostdb_size, "proxy.config.hostdb.size");
-
-#if defined (_IOCORE_WIN32)
-  // since the config directory is always based of TSBase, we make sure
-  // all the internal paths correctly get set.
-  char szPath[PATH_NAME_MAX + 1];
-  IOCORE_ReadConfigString(szPath, "proxy.config.hostdb.storage_path", PATH_NAME_MAX);
-  int i = 0;
-  while (szPath[i] != 0) {
-    if (szPath[i] == '/')
-      szPath[i] = '\\';
-    i++;
-  }
-  ink_strlcpy(storage_path, system_root_dir, sizeof(storage_path));
-  ink_strlcat(storage_path, "\\", sizeof(storage_path));
-  ink_strlcat(storage_path, szPath, sizeof(storage_path));
-#else
   IOCORE_ReadConfigString(storage_path, "proxy.config.hostdb.storage_path", PATH_NAME_MAX);
-#endif
   IOCORE_ReadConfigInt32(storage_size, "proxy.config.hostdb.storage_size");
 
   if (storage_path[0] != '/') {

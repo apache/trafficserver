@@ -47,20 +47,11 @@ struct UDPNetHandler;
 struct UDPNetProcessorInternal : public UDPNetProcessor
 {
   virtual int start(int n_udp_threads);
-#if defined (_IOCORE_WIN32)
-  SOCKET create_dgram_socket_internal();
-#else
   void udp_read_from_net(UDPNetHandler * nh, UDPConnection * uc, PollDescriptor * pd, EThread * thread);
   int udp_callback(UDPNetHandler * nh, UDPConnection * uc, EThread * thread);
-#endif
 
-#if defined (_IOCORE_WIN32)
-  EThread *ethread;
-  UDPNetHandler *udpNetHandler;
-#else
   off_t pollCont_offset;
   off_t udpNetHandler_offset;
-#endif
 
 public:
   virtual void UDPNetProcessor_is_abstract() {  }
@@ -316,8 +307,6 @@ private:
 };
 #endif
 
-#if !defined (_IOCORE_WIN32)
-
 void initialize_thread_for_udp_net(EThread * thread);
 
 struct UDPNetHandler: public Continuation
@@ -344,39 +333,6 @@ public:
 
   UDPNetHandler();
 };
-#endif
-
-#if defined(_IOCORE_WIN32)
-void initialize_thread_for_udp_net(EThread * thread);
-
-class UDPQueue;
-
-class UDPNetHandler:Continuation
-{
-public:
-  // to be polled for read
-  Queue(UnixUDPConnection, polling_link) udp_polling;
-  // to be called back with data
-  Queue(UnixUDPConnection, callback_link) udp_callbacks;
-  // outgoing packets
-  InkAtomicList udpAtomicQueue;
-  UDPQueue udpOutQueue;
-  // to hold the newly created descriptors before scheduling them on
-  // the servicing buckets.
-  // atomically added to by a thread creating a new connection with
-  // UDPBind
-  InkAtomicList udpNewConnections;
-  Event *trigger_event;
-  ink_hrtime nextCheck;
-  ink_hrtime lastCheck;
-
-  int startNetEvent(int event, Event * data);
-  int mainNetEvent(int event, Event * data);
-
-  UDPNetHandler();
-  virtual ~ UDPNetHandler();
-};
-#endif
 
 struct PollCont;
 static inline PollCont *

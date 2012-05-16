@@ -50,11 +50,7 @@ public:
   ProcessManager(bool rlm, char *mpath);
    ~ProcessManager()
   {
-#ifndef _WIN32
       close_socket(local_manager_sockfd);
-#else
-      CloseHandle(local_manager_hpipe);
-#endif
     while (!queue_is_empty(mgmt_signal_queue))
     {
       char *sig = (char *) dequeue(mgmt_signal_queue);
@@ -71,11 +67,7 @@ public:
   void stop()
   {
     mgmt_log(stderr, "[ProcessManager::stop] Bringing down connection\n");
-#ifndef _WIN32
     close_socket(local_manager_sockfd);
-#else
-    CloseHandle(local_manager_hpipe);
-#endif
   }
 
   inkcoreapi void signalManager(int msg_id, const char *data_str);
@@ -98,11 +90,7 @@ public:
 
   pid_t pid;
 
-#ifndef _WIN32
   int local_manager_sockfd;
-#else
-  HANDLE local_manager_hpipe;
-#endif
 
 private:
 

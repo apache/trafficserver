@@ -558,8 +558,6 @@ Alarms::execAlarmBin(const char *desc)
   if (!found)
     alarm_email_to_addr = 0;
 
-#ifndef _WIN32
-
   int status;
   pid_t pid;
 
@@ -607,49 +605,7 @@ Alarms::execAlarmBin(const char *desc)
     _exit(res);
   }
 
-#else
 
-  bool is_exe = true;
-  char *fileExt = NULL;
-
-  if ((fileExt = strchr(alarm_bin, '.')) != NULL) {
-    if (ink_strcasecmp(fileExt, ".CMD") == 0 || ink_strcasecmp(fileExt, ".BAT") == 0) {
-      is_exe = false;
-    }
-  }
-
-  if (is_exe) {
-    ink_filepath_make(cmd_line, alarm_bin_path, alarm_bin);
-  } else {
-    sprintf(cmd_line, "CMD.EXE /C \"%s\\%s\"", alarm_bin_path, alarm_bin);
-  }
-
-  SetEnvironmentVariable("TRAFFIC_SERVER_ALARM_MSG", desc);
-  SetEnvironmentVariable("ADMIN_EMAIL", alarm_email_to_addr);
-
-  STARTUPINFO suInfo;
-  PROCESS_INFORMATION procInfo;
-  ZeroMemory((PVOID) & suInfo, sizeof(suInfo));
-
-  // hide the new console window from the user
-  suInfo.cb = sizeof(STARTUPINFO);
-  suInfo.dwFlags = STARTF_USESHOWWINDOW;
-  suInfo.wShowWindow = SW_HIDE;
-
-  if (CreateProcess(NULL, cmd_line, NULL,       // FIX THIS: process security attributes
-                    NULL,       // FIX THIS: thread security attributes
-                    FALSE,      // no need to make handles inheritable
-                    0,          // FIX THIS: specify a priority
-                    NULL,       // FIX THIS: specify environment variables
-                    ts_base_dir,        // make script run from TSBase
-                    &suInfo, &procInfo) == FALSE) {
-    mgmt_elog(stderr, "[Alarm::execAlarmBin] CreateProcess error: %s\n", ink_last_err());
-  } else {
-    CloseHandle(procInfo.hThread);
-    CloseHandle(procInfo.hProcess);
-  }
-
-#endif // !_WIN32
 
   // free memory
   ats_free(alarm_email_from_name);

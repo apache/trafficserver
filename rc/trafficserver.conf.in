@@ -31,4 +31,4 @@ stop on runlevel [06]
 expect fork
 respawn
 
-exec @exp_bindir@/bin/traffic_cop &
+exec @exp_bindir@/traffic_cop &

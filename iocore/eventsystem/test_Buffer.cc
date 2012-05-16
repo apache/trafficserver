@@ -83,7 +83,7 @@ reconfigure_diags()
   ////////////////////////////////////
   // change the diags config values //
   ////////////////////////////////////
-#if !defined (_IOCORE_WIN32) && !defined(__GNUC__) && !defined(hpux)
+#if !defined(__GNUC__) && !defined(hpux)
   diags->config = c;
 #else
   memcpy(((void *) &diags->config), ((void *) &c), sizeof(DiagsConfigState));
@@ -151,10 +151,6 @@ main()
   }
 
   exit(0);
-#ifndef _IOCORE_WIN32_WINNT
   this_thread()->execute();
-#else
-  Sleep(INFINITE);
-#endif
   return 0;
 }

@@ -130,23 +130,11 @@ DebugBufferPrint(const char *tag, char *buff, int blen, const char *message = NU
 #if defined (_DEBUG)
   if (is_debug_tag_set(tag)) {
     if (message != NULL)
-#if defined (_IOCORE_WIN32)
-      _RPT1(_CRT_WARN, "%s\n", message);
-#else
       fprintf(stdout, "%s\n", message);
-#endif
     for (int ii = 0; ii < blen; ii++) {
-#if defined (_IOCORE_WIN32)
-      _RPT1(_CRT_WARN, "%c", buff[ii]);
-#else
       putc(buff[ii], stdout);
-#endif
     }
-#if defined (_IOCORE_WIN32)
-    _RPT1(_CRT_WARN, "%c", '\n');
-#else
     putc('\n', stdout);
-#endif
   }
 #endif
 }

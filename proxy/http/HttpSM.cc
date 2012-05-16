@@ -275,15 +275,8 @@ HttpVCTable::cleanup_all()
 #define __REMEMBER(x)  #x
 #define _REMEMBER(x)   __REMEMBER(x)
 
-#if defined(_WIN32)
-// Proper macro expansion is beyond Visual C++
-#define RECORD_FILE_LINE() \
-history[pos].fileline = __FILE__; \
-history[pos].line = __LINE__;
-#else
 #define RECORD_FILE_LINE() \
 history[pos].fileline = __FILE__ ":" _REMEMBER (__LINE__);
-#endif
 
 #define REMEMBER(e,r) \
 { if (REMEMBER_EVENT_FILTER(e)) { \
@@ -4289,6 +4282,17 @@ HttpSM::do_http_server_open(bool raw)
     } else if (ua_session->f_outbound_transparent) {
       opt.addr_binding = NetVCOptions::FOREIGN_ADDR;
       opt.local_ip = t_state.client_info.addr;
+
+      /* If the connection is server side transparent, we can bind to the
+         port that the client chose instead of randomly assigning one at
+         the proxy.  This is controlled by the 'use_client_source_port'
+         configuration parameter.
+      */
+
+      NetVConnection *client_vc = ua_session->get_netvc();
+      if (t_state.http_config_param->use_client_source_port && NULL != client_vc) {
+        opt.local_port = client_vc->get_remote_port();
+      }
     }
   }
 
@@ -6318,14 +6322,7 @@ HttpSM::dump_state_on_assert()
   for (int i = 0; i < hist_size; i++) {
     int r = history[i].reentrancy;
     int e = history[i].event;
-#if defined(_WIN32)
-    // Visual C++ preprocessor is unable to stringify __LINE__
-    //   so we have to waste a ton a memory and store it
-    //   as an integer
-    Error("%d   %d   %s:%d", e, r, history[i].fileline, history[i].line);
-#else
     Error("%d   %d   %s", e, r, history[i].fileline);
-#endif
   }
 
   // Dump the via string

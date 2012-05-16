@@ -382,8 +382,7 @@ LocalManager::initCCom(int port, char *addr, int sport)
 
 /*
  * initMgmtProcessServer()
- * - On UNIX, this function sets up the server socket that proxy processes connect to.
- * - On WIN32, named pipes are used instead.
+ *   sets up the server socket that proxy processes connect to.
  */
 void
 LocalManager::initMgmtProcessServer()
@@ -1132,7 +1131,6 @@ elevateFileAccess(bool state)
 //
 //    - Returns true on success
 //      and false on failure
-//    - no-op on WIN32
 bool
 removeRootPriv(uid_t euid)
 {
@@ -1149,7 +1147,6 @@ removeRootPriv(uid_t euid)
 //
 //    - Returns true on success
 //      and false on failure
-//    - no-op on WIN32
 bool
 restoreRootPriv(uid_t *old_euid)
 {
@@ -1196,6 +1193,18 @@ LocalManager::bindProxyPort(HttpProxyPort& port)
     mgmt_elog(stderr, "[bindProxyPort] Unable to create socket : %s\n", strerror(errno));
     _exit(1);
   }
+
+  if (port.m_type == HttpProxyPort::TRANSPORT_DEFAULT) {
+    int should_filter_int = 0;
+    bool found;
+    should_filter_int = REC_readInteger("proxy.config.net.defer_accept", &found);
+    if (found && should_filter_int > 0) {
+#if defined(SOL_FILTER) && defined(FIL_ATTACH)
+      (void)setsockopt(port.m_fd, SOL_FILTER, FIL_ATTACH, "httpfilt", 9);
+#endif
+    }
+  }
+
   if (port.m_family == AF_INET6) {
     if (setsockopt(port.m_fd, IPPROTO_IPV6, IPV6_V6ONLY, SOCKOPT_ON, sizeof(int)) < 0) {
       mgmt_elog(stderr, "[bindProxyPort] Unable to set socket options: %d : %s\n", port.m_port, strerror(errno));

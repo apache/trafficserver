@@ -979,11 +979,7 @@ RuleList::parse(char *fileBuf, const char *filename)
 void
 RuleList::parse(char *fileBuf, TSFileNameT filetype)
 {
-#ifdef _WIN32
-  Tokenizer lineTok("\r\n");
-#else
   Tokenizer lineTok("\n");
-#endif
   tok_iter_state lineTok_state;
   const char *line;
 

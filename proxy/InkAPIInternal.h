@@ -38,6 +38,16 @@
 #include "I_Tasks.h"
 
 
+typedef enum
+  {
+    OVERRIDABLE_TYPE_NULL = 0,
+    OVERRIDABLE_TYPE_INT,
+    OVERRIDABLE_TYPE_FLOAT,
+    OVERRIDABLE_TYPE_STRING,
+    OVERRIDABLE_TYPE_BYTE
+  } OverridableDataType;
+typedef int8_t TSMgmtByte; // Not for external use
+
 /* ****** Cache Structure ********* */
 
 // For memory corruption detection
@@ -105,8 +115,6 @@ struct INKConfigImpl:public ConfigInfo
     m_destroy_func(mdata);
   }
 };
-
-
 
 struct HttpAltInfo
 {

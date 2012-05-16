@@ -30,17 +30,8 @@
 // types/defines
 //-------------------------------------------------------------------------
 
-#if defined(_WIN32)
-
-#define REC_HANDLE_INVALID INVALID_HANDLE_VALUE
-typedef HANDLE RecHandle;
-
-#else
-
 #define REC_HANDLE_INVALID -1
 typedef int RecHandle;
-
-#endif
 
 //-------------------------------------------------------------------------
 // RecFile

@@ -177,7 +177,6 @@ check_lockfile()
 void
 initSignalHandlers()
 {
-#ifndef _WIN32
   struct sigaction sigHandler, sigChldHandler, sigAlrmHandler;
   sigset_t sigsToBlock;
 
@@ -255,7 +254,6 @@ initSignalHandlers()
   sigChldHandler.sa_flags = SA_RESTART;
   sigemptyset(&sigChldHandler.sa_mask);
   sigaction(SIGCHLD, &sigChldHandler, NULL);
-#endif /* !_WIN32 */
 }
 
 #if defined(linux)
@@ -837,7 +835,6 @@ main(int argc, char **argv)
     if (lmgmt->proxy_launch_outstanding && !lmgmt->processRunning() && just_started >= 120) {
       just_started = 0;
       lmgmt->proxy_launch_outstanding = false;
-#ifndef _WIN32
       if (lmgmt->proxy_launch_pid != -1) {
         int res;
         kill(lmgmt->proxy_launch_pid, 9);
@@ -851,11 +848,6 @@ main(int argc, char **argv)
 #endif /* NEED_PSIGNAL */
         }
       }
-#else
-      if (lmgmt->proxy_launch_hproc != INVALID_HANDLE_VALUE) {
-        TerminateProcess(lmgmt->proxy_launch_hproc, 1);
-      }
-#endif /* !_WIN32 */
       mgmt_log(stderr, "[main] Proxy launch failed, retrying...\n");
     }
 
@@ -872,7 +864,6 @@ main(int argc, char **argv)
 }                               /* End main */
 
 
-#ifndef _WIN32
 #if !defined(linux) && !defined(freebsd) && !defined(darwin)
 void
 SignalAlrmHandler(int sig, siginfo_t * t, void *c)
@@ -1008,8 +999,6 @@ SigHupHandler(int sig, ...)
   Debug("lm", "[SigHupHandler] hup caught\n");
   sigHupNotifier = 1;
 }                               /* End SigHupHandler */
-#endif /* !_WIN32 */
-
 
 void
 printUsage()

@@ -126,8 +126,4 @@ enum aio_stat_enum
 };
 extern RecRawStatBlock *aio_rsb;
 
-#ifdef _WIN32
-extern NTIOCompletionPort aio_completion_port;
-#endif
-
 #endif

@@ -30,16 +30,12 @@
  ****************************************************************************/
 
 #include "ink_unused.h"    /* MAGIC_EDITING_TAG */
-#if !defined (_WIN32)
 #include <ctype.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <stdio.h>
-#else
-#include "ink_platform.h"
-#endif
 #include "ink_assert.h"
 #include "IPRange.h"
 

@@ -1,11 +1,9 @@
 # Comments start with a '#' and continue to the end of the line
 # Blank lines are ignored
 #
-# On UNIX
 # test-plugin.so arg1 arg2 arg3
 #
-# On WIN NT/2000
-# test-plugin.dll arg1 arg2 arg3
+# Example:
 #inktomi/iwx/iwx.so
 #inktomi/abuse/abuse.so etc/trafficserver/abuse.config
 #inktomi/icx/icx.so etc/trafficserver/icx.config

@@ -533,11 +533,9 @@ CacheProcessor::start_internal(int flags)
     int opts = O_RDWR;
     ink_strlcpy(path, sd->pathname, sizeof(path));
     if (!sd->file_pathname) {
-#if !defined(_WIN32)
       if (config_volumes.num_http_volumes && config_volumes.num_stream_volumes) {
         Warning("It is suggested that you use raw disks if streaming and http are in the same cache");
       }
-#endif
       ink_strlcat(path, "/cache.db", sizeof(path));
       opts |= O_CREAT;
     }
@@ -552,21 +550,10 @@ CacheProcessor::start_internal(int flags)
     int fd = open(path, opts, 0644);
     int blocks = sd->blocks;
     if (fd > 0) {
-#if defined (_WIN32)
-      aio_completion_port.register_handle((void *) fd, 0);
-#endif
       if (!sd->file_pathname) {
         if (ftruncate(fd, ((uint64_t) blocks) * STORE_BLOCK_SIZE) < 0) {
           Warning("unable to truncate cache file '%s' to %d blocks", path, blocks);
           diskok = 0;
-#if defined(_WIN32)
-          /* We can do a specific check for FAT32 systems on NT,
-           * to print a specific warning */
-          if ((((uint64_t) blocks) * STORE_BLOCK_SIZE) > (1 << 32)) {
-            Warning("If you are using a FAT32 file system, please ensure that cachesize"
-                    "specified in storage.config, does not exceed 4GB!. ");
-          }
-#endif
         }
       }
       if (diskok) {

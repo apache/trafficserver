@@ -1242,7 +1242,6 @@ processSpawn(const char *args[],
   NOWARN_UNUSED(run_as_root);
   int status = 0;
 
-#ifndef _WIN32
   char buffer[1024];
   int nbytes;
   int stdinPipe[2];
@@ -1391,7 +1390,7 @@ processSpawn(const char *args[],
     removeRootPriv(saved_euid);
   }
 #endif
-#endif // _WIN32
+
   return status;
 }
 
@@ -1405,20 +1404,15 @@ processSpawn(const char *args[],
 int
 getFilesInDirectory(char *managedDir, ExpandingArray * fileList)
 {
-#ifndef _WIN32
   struct dirent *dirEntry;
   DIR *dir;
-#else
-  char *searchPattern;
-  WIN32_FIND_DATA W32FD;
-#endif
+
   char *fileName;
   char *filePath;
   struct stat fileInfo;
   //  struct stat records_config_fileInfo;
   fileEntry *fileListEntry;
 
-#ifndef _WIN32
   if ((dir = opendir(managedDir)) == NULL) {
     mgmt_log(stderr, "[getFilesInDirectory] Unable to open %s directory: %s\n", managedDir, strerror(errno));
     return -1;
@@ -1452,37 +1446,6 @@ getFilesInDirectory(char *managedDir, ExpandingArray * fileList)
   }
 
   closedir(dir);
-#else
-  // Append '\*' as a wildcard for FindFirstFile()
-  searchPattern = newPathString(managedDir, "*");
-  HANDLE hDInfo = FindFirstFile(searchPattern, &W32FD);
-
-  if (INVALID_HANDLE_VALUE == hDInfo) {
-    mgmt_log(stderr, "[getFilesInDirectory] FindFirstFile failed for %s: %s\n", searchPattern, ink_last_err());
-    delete[]searchPattern;
-    return -1;
-  }
-  delete[]searchPattern;
-
-  while (FindNextFile(hDInfo, &W32FD)) {
-    fileName = W32FD.cFileName;
-    filePath = newPathString(managedDir, fileName);
-    if (stat(filePath, &fileInfo) < 0) {
-      mgmt_log(stderr, "[getFilesInDirectory] Stat of a %s failed: %s\n", fileName, strerror(errno));
-    } else {
-      // Ignore ., .., and any dot files
-      if (fileName && *fileName != '.') {
-        fileListEntry = (fileEntry *)ats_malloc(sizeof(fileEntry));
-        fileListEntry->c_time = fileInfo.st_ctime;
-        ink_strlcpy(fileListEntry->name, fileName, sizeof(fileListEntry->name));
-        fileList->addEntry(fileListEntry);
-      }
-    }
-    delete[]filePath;
-  }
-
-  FindClose(hDInfo);
-#endif
 
   fileList->sortWithFunction(fileEntryCmpFunc);
   return 1;

@@ -11,12 +11,3 @@
 #     209.1.33.10 hme0 10
 #     209.1.33.11 hme0 11
 #
-# Windows
-#   Format:
-#     <virtual IP address> <pseudo interface>
-#
-#     note: <pseudo interface> is defined in "winnt_intr.config"
-#
-#   Example:
-#     209.1.33.10 intr0
-#     209.1.33.11 intr0

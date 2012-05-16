@@ -27,8 +27,7 @@
  *
  *
  *	Usage:
- * 	(NT): NullTransform.dll
- *	(Solaris): null-transform.so
+ *	  null-transform.so
  *
  *
  */

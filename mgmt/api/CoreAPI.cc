@@ -560,9 +560,6 @@ ReadFile(TSFileNameT file, char **text, int *size, int *version)
   *version = ver;
 
   // don't need to allocate memory b/c "getVersion" allocates memory
-#ifdef _WIN32                   // BZ48741
-  convertHtmlToUnix(old_file_content->bufPtr());
-#endif
   old_file_lines = old_file_content->bufPtr();
   old_file_len = strlen(old_file_lines);
 

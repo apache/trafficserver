@@ -26,8 +26,7 @@
  *
  *
  *   Usage:
- *   (NT): AddHeader.dll "name1: value1" "name2: value2" ...
- *   (Solaris): add-header.so "name1: value1" "name2: value2" ...
+ *     add-header.so "name1: value1" "name2: value2" ...
  *
  *          namei and valuei are the name and value of the
  *          ith MIME header to be added to the client request

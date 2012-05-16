@@ -98,13 +98,8 @@ MultiFile::addTableEntries(ExpandingArray * fileList, textBuffer * output)
 MFresult
 MultiFile::WalkFiles(ExpandingArray * fileList)
 {
-#ifndef _WIN32
   struct dirent *dirEntry;
   DIR *dir;
-#else
-  char *searchPattern;
-  WIN32_FIND_DATA W32FD;
-#endif
   char *fileName;
   char *filePath;
   char *records_config_filePath = NULL;
@@ -112,7 +107,6 @@ MultiFile::WalkFiles(ExpandingArray * fileList)
   struct stat records_config_fileInfo;
   fileEntry *fileListEntry;
 
-#ifndef _WIN32
   if ((dir = opendir(managedDir)) == NULL) {
     mgmt_log(stderr, "[MultiFile::WalkFiles] Unable to open %s directory: %s: %s\n",
              dirDescript, managedDir, strerror(errno));
@@ -150,37 +144,6 @@ MultiFile::WalkFiles(ExpandingArray * fileList)
 
   ats_free(dirEntry);
   closedir(dir);
-#else
-  // Append '\*' as a wildcard for FindFirstFile()
-  searchPattern = newPathString(managedDir, "*");
-  HANDLE hDInfo = FindFirstFile(searchPattern, &W32FD);
-
-  if (INVALID_HANDLE_VALUE == hDInfo) {
-    mgmt_log(stderr, "[MultiFile::WalkFiles] FindFirstFile failed for %s: %s\n", searchPattern, ink_last_err());
-    delete[]searchPattern;
-    return MF_NO_DIR;
-  }
-  delete[]searchPattern;
-
-  while (FindNextFile(hDInfo, &W32FD)) {
-    fileName = W32FD.cFileName;
-    filePath = newPathString(managedDir, fileName);
-    if (stat(filePath, &fileInfo) < 0) {
-      mgmt_log(stderr, "[MultiFile::WalkFiles] Stat of a %s failed %s: %s\n", dirDescript, fileName, strerror(errno));
-    } else {
-      // Ignore ., .., and any dot files
-      if (*fileName != '.' && isManaged(fileName)) {
-        fileListEntry = (fileEntry *)ats_malloc(sizeof(fileEntry));
-        fileListEntry->c_time = fileInfo.st_ctime;
-        ink_strlcpy(fileListEntry->name, fileName, sizeof(fileListEntry->name));
-        fileList->addEntry(fileListEntry);
-      }
-    }
-    delete[]filePath;
-  }
-
-  FindClose(hDInfo);
-#endif
 
   fileList->sortWithFunction(fileEntryCmpFunc);
   delete[]records_config_filePath;

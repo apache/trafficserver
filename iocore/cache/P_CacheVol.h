@@ -256,11 +256,7 @@ struct Vol: public Continuation
       evacuate_size(0), disk(NULL), last_sync_serial(0), last_write_serial(0), recover_wrapped(false),
       dir_sync_waiting(0), dir_sync_in_progress(0), writing_end_marker(0) {
     open_dir.mutex = mutex;
-#if defined(_WIN32)
-    agg_buffer = (char *)ats_malloc(AGG_SIZE);
-#else
     agg_buffer = (char *)ats_memalign(sysconf(_SC_PAGESIZE), AGG_SIZE);
-#endif
     memset(agg_buffer, 0, AGG_SIZE);
     SET_HANDLER(&Vol::aggWrite);
   }

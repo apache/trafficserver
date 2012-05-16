@@ -95,11 +95,9 @@ TSReturnCode sdk_sanity_check_null_ptr(void *ptr);
 ////////////////////////////////////////////////////////////////////
 struct INKThreadInternal:public EThread
 {
-#if !defined (_WIN32)
   INKThreadInternal()
     : EThread(DEDICATED, -1)
   {  }
-#endif
 
   TSThreadFunc func;
   void *data;
@@ -129,9 +127,7 @@ TSThreadCreate(TSThreadFunc func, void *data)
 
   thread = NEW(new INKThreadInternal);
 
-#if !defined (_WIN32)
   ink_assert(thread->event_types == 0);
-#endif
 
   thread->func = func;
   thread->data = data;

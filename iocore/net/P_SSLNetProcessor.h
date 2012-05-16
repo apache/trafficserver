@@ -50,11 +50,7 @@ struct NetAccept;
 //
 //////////////////////////////////////////////////////////////////
 struct SSLNetProcessor:public
-#ifndef _IOCORE_WIN32_WINNT
   UnixNetProcessor
-#else
-  NTNetProcessor
-#endif
 {
 public:
 
@@ -84,7 +80,6 @@ public:
   //
   // Private
   //
-#if !defined (_IOCORE_WIN32_WINNT)
 
   // Virtual function allows etype
   // to be upgraded to ET_SSL for SSLNetProcessor.
@@ -96,12 +91,6 @@ public:
   virtual UnixNetVConnection *allocateThread(EThread * t);
   virtual void freeThread(UnixNetVConnection * vc, EThread * t);
   virtual NetAccept *createNetAccept();
-#else // #if defined (_IOCORE_WIN32)
-
-public:
-  virtual NTNetVConnection * newNetVConnection(void);
-  virtual NTNetVConnection *newClientNetVConnection(void);
-#endif // #if defined (_IOCORE_WIN32)
 
 private:
   void initSSLLocks(void);
