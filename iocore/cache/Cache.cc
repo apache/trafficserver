@@ -57,6 +57,7 @@ int64_t cache_config_ram_cache_size = AUTO_SIZE_RAM_CACHE;
 int cache_config_ram_cache_algorithm = 0;
 int cache_config_ram_cache_compress = 0;
 int cache_config_ram_cache_compress_percent = 90;
+int cache_config_ram_cache_use_seen_filter = 0;
 int cache_config_http_max_alts = 3;
 int cache_config_dir_sync_frequency = 60;
 int cache_config_permit_pinning = 0;
@@ -1987,15 +1988,16 @@ CacheVC::handleRead(int event, Event *e)
   return EVENT_CONT;
 
 LramHit: {
+    f.doc_from_ram_cache = true;
     io.aio_result = io.aiocb.aio_nbytes;
     Doc *doc = (Doc*)buf->data();
     if (cache_config_ram_cache_compress && doc->ftype == CACHE_FRAG_TYPE_HTTP && doc->hlen) {
       SET_HANDLER(&CacheVC::handleReadDone);
-      f.doc_from_ram_cache = true;
       return EVENT_RETURN;
     }
   }
 LmemHit:
+  f.doc_from_ram_cache = true;
   io.aio_result = io.aiocb.aio_nbytes;
   POP_HANDLER;
   return EVENT_RETURN; // allow the caller to release the volume lock
@@ -2639,6 +2641,7 @@ ink_cache_init(ModuleVersion v)
   IOCORE_EstablishStaticConfigInt32(cache_config_ram_cache_algorithm, "proxy.config.cache.ram_cache.algorithm");
   IOCORE_EstablishStaticConfigInt32(cache_config_ram_cache_compress, "proxy.config.cache.ram_cache.compress");
   IOCORE_EstablishStaticConfigInt32(cache_config_ram_cache_compress_percent, "proxy.config.cache.ram_cache.compress_percent");
+  IOCORE_EstablishStaticConfigInt32(cache_config_ram_cache_use_seen_filter, "proxy.config.cache.ram_cache.use_seen_filter");
 
   IOCORE_EstablishStaticConfigInt32(cache_config_http_max_alts, "proxy.config.cache.limits.http.max_alts");
   Debug("cache_init", "proxy.config.cache.limits.http.max_alts = %d", cache_config_http_max_alts);
