@@ -25,13 +25,21 @@
 #define __TRANSFORM_H__
 
 #include "P_EventSystem.h"
-
 #include "HTTP.h"
 #include "InkAPIInternal.h"
 
-
 #define TRANSFORM_READ_READY   (TRANSFORM_EVENTS_START + 0)
 
+typedef struct _RangeRecord
+{
+  _RangeRecord() :
+  _start(-1), _end(-1), _done_byte(-1)
+  { }
+
+  int64_t _start;
+  int64_t _end;
+  int64_t _done_byte;
+} RangeRecord;
 
 class TransformProcessor
 {
@@ -41,10 +49,8 @@ public:
 public:
   VConnection * open(Continuation * cont, APIHook * hooks);
   INKVConnInternal *null_transform(ProxyMutex * mutex);
-  INKVConnInternal *range_transform(ProxyMutex * mutex, MIMEField * range_field, HTTPInfo * cache_obj,
-                                    HTTPHdr * transform_resp, bool & b);
+  INKVConnInternal *range_transform(ProxyMutex * mutex, RangeRecord * ranges, bool, int, HTTPHdr *, const char * content_type, int content_type_len, int64_t content_length);
 };
-
 
 #ifdef TS_HAS_TESTS
 class TransformTest
@@ -54,6 +60,27 @@ public:
 };
 #endif
 
+///////////////////////////////////////////////////////////////////
+/// RangeTransform implementation
+/// handling Range requests from clients
+///////////////////////////////////////////////////////////////////
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+inline static int
+num_chars_for_int(int64_t i)
+{
+  int k = 1;
+
+  if (i < 0)
+    return 0;
+
+  while ((i /= 10) != 0)
+    ++k;
+
+  return k;
+}
 
 extern TransformProcessor transformProcessor;
 

@@ -651,13 +651,12 @@ public:
 
   enum RangeSetup_t
   {
-    RANGE_NONE,
-    RANGE_TRANSFORM,
+    RANGE_NONE = 0,
+    RANGE_REQUESTED,
     RANGE_NOT_SATISFIABLE,
     RANGE_NOT_HANDLED,
-    RANGE_REVALIDATE
   };
-
+  
   enum CacheAuth_t
   {
     CACHE_AUTH_NONE = 0,
@@ -982,9 +981,6 @@ public:
     StatBlock first_stats;
     StatBlock *current_stats;
 
-    // for Range: to avoid write transfomed Range response into cache
-    RangeSetup_t range_setup;
-
     // for negative caching
     bool negative_caching;
 
@@ -1052,7 +1048,16 @@ public:
     URL pristine_url;  // pristine url is the url before remap
     
     bool api_skip_all_remapping;
-
+    
+    // Http Range: related variables
+    RangeSetup_t range_setup;
+    bool unsatisfiable_range;
+    bool not_handle_range;
+    int64_t num_range_fields;
+    int64_t range_output_cl;
+    int64_t current_range;
+    RangeRecord *ranges;
+    
     OverridableHttpConfigParams *txn_conf;
     OverridableHttpConfigParams my_txn_conf; // Storage for plugins, to avoid malloc
     
@@ -1103,7 +1108,6 @@ public:
         state_machine_id(0),
         first_stats(),
         current_stats(NULL),
-        range_setup(RANGE_NONE),
         negative_caching(false),
         www_auth_content(CACHE_AUTH_NONE),
         client_connection_enabled(true),
@@ -1144,6 +1148,13 @@ public:
         reverse_proxy(false), url_remap_success(false), remap_redirect(NULL), filter_mask(0), already_downgraded(false),
         pristine_url(),
         api_skip_all_remapping(false),
+        range_setup(RANGE_NONE),
+        unsatisfiable_range(false),
+        not_handle_range(false),
+        num_range_fields(0),
+        range_output_cl(0),
+        current_range(-1),
+        ranges(NULL),
         txn_conf(NULL)
     {
       int i;
@@ -1232,6 +1243,10 @@ public:
       url_map.clear();
       arena.reset();
       pristine_url.clear();
+
+      delete[] ranges; ranges = NULL;
+      range_setup = RANGE_NONE;
+      unsatisfiable_range = true;
       return;
     }
 
@@ -1366,6 +1381,7 @@ public:
 
   static void build_response_copy(State* s, HTTPHdr* base_response, HTTPHdr* outgoing_response, HTTPVersion outgoing_version);
   static void handle_content_length_header(State* s, HTTPHdr* header, HTTPHdr* base);
+  static void change_response_header_because_of_range_request(State* s, HTTPHdr* header);
 
   static void handle_request_keep_alive_headers(State *s, HTTPVersion ver, HTTPHdr *heads);
   static void handle_response_keep_alive_headers(State *s, HTTPVersion ver, HTTPHdr *heads);

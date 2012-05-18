@@ -1874,6 +1874,18 @@ CacheVC::handleReadDone(int event, Event *e) {
     }
 #endif
     Doc *doc = (Doc *) buf->data();
+
+    if (is_debug_tag_set("cache_read")) {
+      char xt[33];
+      Debug("cache_read"
+            , "Read fragment %s Length %d/%d/%"PRId64"[pre=%d] vc=%s doc=%s %d frags"
+            , doc->key.toHexStr(xt), doc->data_len(), doc->len, doc->total_len, doc->prefix_len()
+            , f.single_fragment ? "single" : "multi"
+            , doc->single_fragment() ? "single" : "multi"
+            , doc->nfrags()
+        );
+    }
+
     // put into ram cache?
     if (io.ok() &&
         ((doc->first_key == *read_key) || (doc->key == *read_key) || STORE_COLLISION) && doc->magic == DOC_MAGIC) {

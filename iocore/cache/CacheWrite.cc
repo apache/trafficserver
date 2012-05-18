@@ -179,10 +179,24 @@ CacheVC::handleWrite(int event, Event *e)
 
   // plain write case
   ink_assert(!trigger);
-  if (f.use_first_key && fragment) {
-    frag_len = (fragment-1) * sizeof(Frag);
-  } else
-    frag_len = 0;
+  frag_len = 0;
+  if (f.use_first_key) { // Writing the header fragment.
+    if (fragment) { // Multi-fragment from cache fill.
+      frag_len = (fragment-1) * sizeof(Frag);
+    } else if (first_buf) {
+      Doc* old_header = reinterpret_cast<Doc*>(first_buf->data());
+      if (!frag && old_header->flen && !f.single_fragment) {
+        // There's a fragment table we need to preserve.
+        frag_len = old_header->flen;
+        if (is_debug_tag_set("cache_update")) {
+          char x[33];
+          Debug("cache_update", "Preserving fragment table (%d in %d bytes) for %s",
+                old_header->nfrags(), frag_len, first_key.toHexStr(x));
+        }
+      }
+    }
+  }
+
   set_agg_write_in_progress();
   POP_HANDLER;
   agg_len = vol->round_to_approx_size(write_len + header_len + frag_len + sizeofDoc);
@@ -784,8 +798,13 @@ agg_copy(char *p, CacheVC *vc)
       doc->key = vc->key;
       dir_set_head(&vc->dir, !vc->fragment);
     }
-    if (doc->flen)
-      memcpy(doc->frags(), &vc->frag[0], doc->flen);
+    if (doc->flen) {
+      // There's a fragment table to write.
+      // If this was a cache fill, the frag table is internal.
+      // If it's a header update (e.g. 304 NOT MODIFIED return on
+      // stale object) then the frag table is in the first_buf.
+      memcpy(doc->frags(), vc->get_frag_table(), doc->flen);
+    }
 
 #ifdef HTTP_CACHE
     if (vc->f.rewrite_resident_alt) {
@@ -1507,7 +1526,7 @@ CacheVC::openWriteStartDone(int event, Event *e)
       }
 
       /* INKqa07123.
-         A directory entry which is nolonger valid may have been overwritten.
+         A directory entry which is no longer valid may have been overwritten.
          We need to start afresh from the beginning by setting last_collision
          to NULL.
        */

@@ -50,6 +50,8 @@
 #include "IPAllow.h"
 
 static const char *URL_MSG = "Unable to process requested URL.\n";
+static char range_type[] = "multipart/byteranges; boundary=RANGE_SEPARATOR";
+#define RANGE_NUMBERS_LENGTH 60
 
 #define HTTP_INCREMENT_TRANS_STAT(X) update_stat(s, X, 1);
 #define HTTP_SUM_TRANS_STAT(X,S) update_stat(s, X, (ink_statval_t) S);
@@ -2447,7 +2449,8 @@ HttpTransact::HandleCacheOpenReadHit(State* s)
   }
 
   ink_assert(s->cache_lookup_result == CACHE_LOOKUP_HIT_FRESH ||
-             s->cache_lookup_result == CACHE_LOOKUP_HIT_WARNING || s->cache_lookup_result == CACHE_LOOKUP_HIT_STALE);
+             s->cache_lookup_result == CACHE_LOOKUP_HIT_WARNING ||
+             s->cache_lookup_result == CACHE_LOOKUP_HIT_STALE);
   if (s->cache_lookup_result == CACHE_LOOKUP_HIT_STALE &&
       s->api_update_cached_object != HttpTransact::UPDATE_CACHED_OBJECT_CONTINUE) {
     needs_revalidate = true;
@@ -2480,9 +2483,6 @@ HttpTransact::HandleCacheOpenReadHit(State* s)
     SET_VIA_STRING(VIA_DETAIL_CACHE_LOOKUP, VIA_DETAIL_MISS_EXPIRED);
     s->www_auth_content = send_revalidate ? CACHE_AUTH_STALE : CACHE_AUTH_FRESH;
     send_revalidate = true;
-  }
-  if (send_revalidate && s->hdr_info.client_request.presence(MIME_PRESENCE_RANGE)) {
-    s->range_setup = RANGE_REVALIDATE;
   }
 
   DebugTxn("http_trans", "CacheOpenRead --- needs_auth          = %d", needs_authenticate);
@@ -2564,9 +2564,29 @@ HttpTransact::HandleCacheOpenReadHit(State* s)
           return;
         }
       }
+
       build_request(s, &s->hdr_info.client_request, &s->hdr_info.server_request, s->current.server->http_version);
 
-      issue_revalidate(s);
+      /* We can't handle revalidate requests with ranges. If it comes
+         back unmodified that's fine but if not the OS will either
+         provide the entire object which is difficult to handle and
+         potentially very inefficient, or we'll get back just the
+         range and we can't cache that anyway. So just forward the
+         request.
+
+         Note: We're here only if the cache is stale so we don't want
+         to serve it.
+      */
+      if (s->hdr_info.client_request.presence(MIME_PRESENCE_RANGE)) {
+        Debug("http_trans", "[CacheOpenReadHit] Forwarding range request for stale cache object.");
+        s->cache_info.action = CACHE_DO_NO_ACTION;
+        s->cache_info.object_read = NULL;
+      } else {
+        // If it's not a range tweak the request to be a revalidate.
+        // Note this doesn't actually issue the request, it simply
+        // adjusts the headers for later.
+        issue_revalidate(s);
+      }
 
       // this can not be anything but a simple origin server connection.
       // in other words, we would not have looked up the cache for a
@@ -2706,16 +2726,16 @@ HttpTransact::build_response_from_cache(State* s, HTTPWarningCode warning_code)
       // only if the cached response is a 200 OK
       if (client_response_code == HTTP_STATUS_OK && client_request->presence(MIME_PRESENCE_RANGE)) {
         s->state_machine->do_range_setup_if_necessary();
-        if (s->range_setup == RANGE_NOT_SATISFIABLE && s->http_config_param->reverse_proxy_enabled) {
+        if (s->range_setup == RANGE_NOT_SATISFIABLE) {
           build_error_response(s, HTTP_STATUS_RANGE_NOT_SATISFIABLE, "Requested Range Not Satisfiable","","");
           s->cache_info.action = CACHE_DO_NO_ACTION;
           s->next_action = PROXY_INTERNAL_CACHE_NOOP;
           break;
-        } else if (s->range_setup == RANGE_NOT_SATISFIABLE || s->range_setup == RANGE_NOT_HANDLED) {
-          // we switch to tunneing for Range requests either
-          // 1. we need to revalidate or
-          // 2. out-of-order Range requests
-          DebugTxn("http_seq", "[HttpTransact::HandleCacheOpenReadHit] Out-oforder Range request - tunneling");
+        } else if (s->range_setup == RANGE_NOT_HANDLED) {
+          // we switch to tunneling for Range requests if it is out of order.
+          // In that case we fetch the entire source so it's OK to switch
+          // this late.
+          DebugTxn("http_seq", "[HttpTransact::HandleCacheOpenReadHit] Out-of-order Range request - tunneling");
           s->cache_info.action = CACHE_DO_NO_ACTION;
           if (s->force_dns) {
             HandleCacheOpenReadMiss(s); // DNS is already completed no need of doing DNS
@@ -4528,6 +4548,11 @@ HttpTransact::handle_no_cache_operation_on_forward_server_response(State* s)
       s->next_action = how_to_open_connection(s);
     }
     return;
+  case HTTP_STATUS_PARTIAL_CONTENT:
+    // If we get this back we should be just passing it through.
+    ink_debug_assert(s->cache_info.action == CACHE_DO_NO_ACTION);
+    s->next_action = SERVER_READ;
+    break;
   default:
     DebugTxn("http_trans", "[hncoofsr] server sent back something other than 100,304,200");
     /* Default behavior is to pass-through response to the client */
@@ -6085,7 +6110,7 @@ HttpTransact::is_response_cacheable(State* s, HTTPHdr* request, HTTPHdr* respons
   int req_method = request->method_get_wksidx();
   if (!(HttpTransactHeaders::is_method_cacheable(req_method)) && s->api_req_cacheable == false) {
     DebugTxn("http_trans", "[is_response_cacheable] " "only GET, and some HEAD and POST are cachable");
-    return (false);
+    return false;
   }
   // DebugTxn("http_trans", "[is_response_cacheable] method is cacheable");
   // If the request was not looked up in the cache, the response
@@ -6097,7 +6122,7 @@ HttpTransact::is_response_cacheable(State* s, HTTPHdr* request, HTTPHdr* respons
   }
   // already has a fresh copy in the cache
   if (s->range_setup == RANGE_NOT_HANDLED)
-    return (false);
+    return false;
 
   // Check whether the response is cachable based on its cookie
   // If there are cookies in response but a ttl is set, allow caching
@@ -6121,7 +6146,7 @@ HttpTransact::is_response_cacheable(State* s, HTTPHdr* request, HTTPHdr* respons
   }
   // DebugTxn("http_trans", "[is_response_cacheable] server permits storing");
 
-  // does config explicitly forbit storing?
+  // does config explicitly forbid storing?
   // ttl overides other config parameters
   if ((!s->cache_info.directives.does_config_permit_storing &&
        !s->cache_control.ignore_server_no_cache &&
@@ -6132,7 +6157,7 @@ HttpTransact::is_response_cacheable(State* s, HTTPHdr* request, HTTPHdr* respons
   }
   // DebugTxn("http_trans", "[is_response_cacheable] config permits storing");
 
-  // does client explicitly forbit storing?
+  // does client explicitly forbid storing?
   if (!s->cache_info.directives.does_client_permit_storing && !s->cache_control.ignore_client_no_cache) {
     DebugTxn("http_trans", "[is_response_cacheable] client does not permit storing, "
           "and cache control does not say to ignore client no-cache");
@@ -6687,13 +6712,21 @@ HttpTransact::handle_content_length_header(State* s, HTTPHdr* header, HTTPHdr* b
 
         switch (s->source) {
         case SOURCE_CACHE:
+          
+          // if we are doing a single Range: request, calculate the new
+          // C-L: header
+          if (s->range_setup == HttpTransact::RANGE_REQUESTED && s->num_range_fields == 1) {
+            Debug("http_trans", "Partial content requested, re-calculating content-length");
+            change_response_header_because_of_range_request(s,header);
+            s->hdr_info.trust_response_cl = true;
+          }
           ////////////////////////////////////////////////
           //  Make sure that the cache's object size    //
           //   agrees with the Content-Length           //
           //   Otherwise, set the state's machine view  //
           //   of c-l to undefined to turn off K-A      //
           ////////////////////////////////////////////////
-          if ((int64_t) s->cache_info.object_read->object_size_get() == cl) {
+          else if ((int64_t) s->cache_info.object_read->object_size_get() == cl) {
             s->hdr_info.trust_response_cl = true;
           } else {
             DebugTxn("http_trans", "Content Length header and cache object size mismatch." "Disabling keep-alive");
@@ -6719,6 +6752,7 @@ HttpTransact::handle_content_length_header(State* s, HTTPHdr* header, HTTPHdr* b
         header->field_delete(MIME_FIELD_CONTENT_LENGTH, MIME_LEN_CONTENT_LENGTH);
         s->hdr_info.trust_response_cl = false;
       }
+      Debug("http_trans", "[handle_content_length_header] RESPONSE cont len in hdr is %"PRId64, header->get_content_length());
     } else {
       // No content length header
       if (s->source == SOURCE_CACHE) {
@@ -6732,7 +6766,15 @@ HttpTransact::handle_content_length_header(State* s, HTTPHdr* header, HTTPHdr* b
           header->field_delete(MIME_FIELD_CONTENT_LENGTH, MIME_LEN_CONTENT_LENGTH);
           s->hdr_info.trust_response_cl = false;
           s->hdr_info.request_content_length = HTTP_UNDEFINED_CL;
-        } else {
+        } 
+        else if (s->range_setup == HttpTransact::RANGE_REQUESTED && s->num_range_fields == 1) {
+          // if we are doing a single Range: request, calculate the new
+          // C-L: header
+          Debug("http_trans", "Partial content requested, re-calculating content-length");
+          change_response_header_because_of_range_request(s,header);
+          s->hdr_info.trust_response_cl = true;
+        }
+        else {
           header->set_content_length(cl);
           s->hdr_info.trust_response_cl = true;
         }
@@ -8850,5 +8892,41 @@ HttpTransact::delete_warning_value(HTTPHdr* to_warn, HTTPWarningCode warning_cod
 
       val_code = iter.get_next_int(&valid);
     }
+  }
+}
+
+void
+HttpTransact::change_response_header_because_of_range_request(State *s, HTTPHdr * header)
+{
+  MIMEField *field;
+  char *reason_phrase;
+
+  ink_assert(header->field_find(MIME_FIELD_CONTENT_RANGE, MIME_LEN_CONTENT_RANGE) == NULL);
+
+  header->status_set(HTTP_STATUS_PARTIAL_CONTENT);
+  reason_phrase = (char *) (http_hdr_reason_lookup(HTTP_STATUS_PARTIAL_CONTENT));
+  header->reason_set(reason_phrase, strlen(reason_phrase));
+
+  // set the right Content-Type for multiple entry Range
+  if (s->num_range_fields > 1) {
+    field = header->field_find(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE);
+
+    if (field != NULL)
+      header->field_delete(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE);
+
+    field = header->field_create(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE);
+    field->value_append(header->m_heap, header->m_mime, range_type, sizeof(range_type) - 1);
+
+    header->field_attach(field);
+    header->set_content_length(s->range_output_cl);
+  }
+  else {
+    char numbers[RANGE_NUMBERS_LENGTH];
+
+    field = header->field_create(MIME_FIELD_CONTENT_RANGE, MIME_LEN_CONTENT_RANGE);
+    snprintf(numbers, sizeof(numbers), "bytes %"PRId64"-%"PRId64"/%"PRId64, s->ranges[0]._start, s->ranges[0]._end, s->cache_info.object_read->object_size_get());
+    field->value_append(header->m_heap, header->m_mime, numbers, strlen(numbers));
+    header->field_attach(field);
+    header->set_content_length(s->range_output_cl);
   }
 }
