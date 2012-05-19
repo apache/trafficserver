@@ -622,10 +622,20 @@ case $host_os in
     TS_ADDTO(LDFLAGS, [-L/opt/local/lib])
     ;; # darwin*)
   freebsd*|kfreebsd*)
-    common_opt="-pipe -Wall -Werror"
-    debug_opt="-ggdb3 $common_opt"
-    release_opt="-g $common_opt $optimizing_flags -feliminate-unused-debug-symbols -fno-strict-aliasing"
-    cxx_opt="-Wno-invalid-offsetof"
+    case $base_cc in
+    clang)
+      common_opt="-pipe -Wall -Werror -Qunused-arguments"
+      debug_opt="-ggdb3 $common_opt"
+      release_opt="-g $common_opt $optimizing_flags -feliminate-unused-debug-symbols -fno-strict-aliasing"
+      cxx_opt="-Wno-invalid-offsetof -Qunused-arguments"
+      ;;
+    *) # gcc
+      common_opt="-pipe -Wall -Werror"
+      debug_opt="-ggdb3 $common_opt"
+      release_opt="-g $common_opt $optimizing_flags -feliminate-unused-debug-symbols -fno-strict-aliasing"
+      cxx_opt="-Wno-invalid-offsetof"
+      ;;
+    esac
     TS_ADDTO(LDFLAGS, [-L/usr/local/lib])
     ;;
   solaris*)
