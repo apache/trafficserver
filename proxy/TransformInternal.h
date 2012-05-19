@@ -115,10 +115,10 @@ public:
 class RangeTransform:public INKVConnInternal
 {
 public:
-  RangeTransform(ProxyMutex * mutex, MIMEField * range_field, HTTPInfo * cache_obj, HTTPHdr * transform_resp);
+  RangeTransform(ProxyMutex * mutex, RangeRecord * ranges, bool, int, HTTPHdr *transform_resp, const char * content_type, int content_type_len, int64_t content_length);
   ~RangeTransform();
 
-  void parse_range_and_compare();
+  // void parse_range_and_compare();
   int handle_event(int event, void *edata);
 
   void transform_to_range();
@@ -126,35 +126,18 @@ public:
   void add_sub_header(int index);
   void change_response_header();
   void calculate_output_cl();
-  bool is_this_range_not_handled()
-  {
-    return m_not_handle_range;
-  }
-  bool is_range_unsatisfiable()
-  {
-    return m_unsatisfiable_range;
-  }
-
-  typedef struct _RangeRecord
-  {
-  _RangeRecord() :
-    _start(-1), _end(-1), _done_byte(-1)
-    { }
-
-    int64_t _start;
-    int64_t _end;
-    int64_t _done_byte;
-  } RangeRecord;
 
 public:
   MIOBuffer * m_output_buf;
   IOBufferReader *m_output_reader;
-  MIMEField *m_range_field;
+  
+  
+  // MIMEField *m_range_field;
   HTTPHdr *m_transform_resp;
   VIO *m_output_vio;
   bool m_unsatisfiable_range;
-  bool m_not_handle_range;
-  int64_t m_content_length;
+  // bool m_not_handle_range;
+  int64_t m_range_content_length;
   int m_num_chars_for_cl;
   int m_num_range_fields;
   int m_current_range;
@@ -163,6 +146,7 @@ public:
   RangeRecord *m_ranges;
   int64_t m_output_cl;
   int64_t m_done;
+  
 };
 
 #define PREFETCH

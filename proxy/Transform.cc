@@ -115,17 +115,9 @@ TransformProcessor::null_transform(ProxyMutex *mutex)
   -------------------------------------------------------------------------*/
 
 INKVConnInternal *
-TransformProcessor::range_transform(ProxyMutex *mut, MIMEField *range_field, HTTPInfo *cache_obj, HTTPHdr *transform_resp, bool & b)
+TransformProcessor::range_transform(ProxyMutex *mut, RangeRecord *ranges, bool unsatisfiable, int num_fields, HTTPHdr *transform_resp, const char * content_type, int content_type_len, int64_t content_length)
 {
-  RangeTransform *range_transform = NEW(new RangeTransform(mut, range_field, cache_obj, transform_resp));
-
-  b = range_transform->is_range_unsatisfiable();
-
-  if (b || range_transform->is_this_range_not_handled()) {
-    delete range_transform;
-    return NULL;
-  }
-
+  RangeTransform *range_transform = NEW(new RangeTransform(mut, ranges, unsatisfiable, num_fields, transform_resp, content_type, content_type_len, content_length));
   return range_transform;
 }
 
@@ -735,56 +727,24 @@ TransformTest::run()
 
 
 
-///////////////////////////////////////////////////////////////////
-/// RangeTransform implementation
-/// handling Range requests from clients
-///////////////////////////////////////////////////////////////////
-
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-inline static int
-num_chars_for_int(int64_t i)
-{
-  int k = 1;
-
-  if (i < 0)
-    return 0;
-
-  while ((i /= 10) != 0)
-    ++k;
-
-  return k;
-}
-
-
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
-
-RangeTransform::RangeTransform(ProxyMutex *mut, MIMEField *range_field, HTTPInfo *cache_obj, HTTPHdr *transform_resp)
+RangeTransform::RangeTransform(ProxyMutex *mut, RangeRecord *ranges,bool unsatisfiable, int num_fields, HTTPHdr * transform_resp, const char * content_type, int content_type_len, int64_t content_length)
   : INKVConnInternal(NULL, reinterpret_cast<TSMutex>(mut)),
-    m_output_buf(NULL),
-    m_output_reader(NULL),
-    m_range_field(range_field),
-    m_transform_resp(transform_resp),
-    m_output_vio(NULL),
-    m_unsatisfiable_range(true),
-    m_not_handle_range(false),
-    m_num_range_fields(0),
-    m_current_range(0), m_content_type(NULL), m_content_type_len(0), m_ranges(NULL), m_output_cl(0), m_done(0)
+  m_output_buf(NULL),
+  m_output_reader(NULL),
+  m_transform_resp(transform_resp),
+  m_output_vio(NULL),
+  m_unsatisfiable_range(unsatisfiable),
+  m_range_content_length(0),
+  m_num_range_fields(num_fields),
+  m_current_range(0), m_content_type(content_type), m_content_type_len(content_type_len), m_ranges(ranges), m_output_cl(content_length), m_done(0)
 {
   SET_HANDLER(&RangeTransform::handle_event);
 
-  m_content_type = cache_obj->
-    response_get()->value_get(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE, &m_content_type_len);
-
-  m_content_length = cache_obj->object_size_get();
-  m_num_chars_for_cl = num_chars_for_int(m_content_length);
-
-  parse_range_and_compare();
-  calculate_output_cl();
-
-  Debug("transform_range", "RangeTransform creation finishes");
+  m_num_chars_for_cl = num_chars_for_int(m_range_content_length);
+  Debug("http_trans", "RangeTransform creation finishes");
 }
 
 
@@ -793,123 +753,8 @@ RangeTransform::RangeTransform(ProxyMutex *mut, MIMEField *range_field, HTTPInfo
 
 RangeTransform::~RangeTransform()
 {
-  if (m_ranges)
-    delete[]m_ranges;
   if (m_output_buf)
     free_MIOBuffer(m_output_buf);
-}
-
-
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
-
-void
-RangeTransform::parse_range_and_compare()
-{
-  // note: unsatisfiable_range is initialized to true in constructor
-  int prev_good_range, i;
-  const char *value;
-  int value_len;
-  HdrCsvIter csv;
-  const char *s, *e;
-
-  if (m_content_length <= 0)
-    return;
-
-  ink_assert(m_range_field != NULL);
-
-  m_num_range_fields = 0;
-  value = csv.get_first(m_range_field, &value_len);
-
-  while (value) {
-    m_num_range_fields++;
-    value = csv.get_next(&value_len);
-  }
-
-  if (m_num_range_fields <= 0)
-    return;
-
-  m_ranges = NEW(new RangeRecord[m_num_range_fields]);
-
-  value = csv.get_first(m_range_field, &value_len);
-
-  i = 0;
-  prev_good_range = -1;
-  // Currently HTTP/1.1 only defines bytes Range
-  if (ptr_len_ncmp(value, value_len, "bytes=", 6) == 0) {
-    while (value) {
-      // If delimiter '-' is missing
-      if (!(e = (const char *) memchr(value, '-', value_len))) {
-        m_unsatisfiable_range = true;
-        return;
-      }
-      
-      if ( memcmp(value,"bytes=",6) == 0 ) {
-        s = value + 6;
-      }
-      else {
-        s = value;
-      }
-      
-      m_ranges[i]._start = ((s==e)?-1:mime_parse_int64(s, e));
-
-      e++;
-      s = e;
-      e = value + value_len;
-      if ( e && *(e-1) == '-') { //open-ended Range: bytes=10-\r\n\r\n should be supported
-        m_ranges[i]._end = -1;
-      }
-      else {
-        m_ranges[i]._end = mime_parse_int64(s, e);
-      }
-
-      // check and change if necessary whether this is a right entry
-      // the last _end bytes are required
-      if (m_ranges[i]._start == -1 && m_ranges[i]._end > 0) {
-        if (m_ranges[i]._end > m_content_length)
-          m_ranges[i]._end = m_content_length;
-
-        m_ranges[i]._start = m_content_length - m_ranges[i]._end;
-        m_ranges[i]._end = m_content_length - 1;
-      }
-      // open start
-      else if (m_ranges[i]._start >= 0 && m_ranges[i]._end == -1) {
-        if (m_ranges[i]._start >= m_content_length)
-          m_ranges[i]._start = -1;
-        else
-          m_ranges[i]._end = m_content_length - 1;
-      }
-      // "normal" Range - could be wrong if _end<_start
-      else if (m_ranges[i]._start >= 0 && m_ranges[i]._end >= 0) {
-        if (m_ranges[i]._start > m_ranges[i]._end || m_ranges[i]._start >= m_content_length)
-          m_ranges[i]._start = m_ranges[i]._end = -1;
-        else if (m_ranges[i]._end >= m_content_length)
-          m_ranges[i]._end = m_content_length - 1;
-      }
-
-      else
-        m_ranges[i]._start = m_ranges[i]._end = -1;
-
-      // this is a good Range entry
-      if (m_ranges[i]._start != -1) {
-        if (m_unsatisfiable_range) {
-          m_unsatisfiable_range = false;
-          // initialize m_current_range to the first good Range
-          m_current_range = i;
-        }
-        // currently we don't handle out-of-order Range entry
-        else if (prev_good_range >= 0 && m_ranges[i]._start <= m_ranges[prev_good_range]._end) {
-          m_not_handle_range = true;
-          break;
-        }
-
-        prev_good_range = i;
-      }
-
-      value = csv.get_next(&value_len);
-      i++;
-    }
-  }
 }
 
 
@@ -923,7 +768,7 @@ RangeTransform::handle_event(int event, void *edata)
 
   if (m_closed) {
     if (m_deletable) {
-      Debug("transform_range", "RangeTransform destroy: %p", this);
+      Debug("http_trans", "RangeTransform destroy: %p ndone=%"PRId64, this, m_output_vio ? m_output_vio->ndone : 0);
       delete this;
     }
   } else {
@@ -1035,7 +880,7 @@ RangeTransform::transform_to_range()
           add_boundary(true);
         }
 
-        Debug("transform_range", "total bytes of Range response body is %"PRId64"", m_done);
+        Debug("http_trans", "total bytes of Range response body is %"PRId64, m_done);
         m_output_vio->nbytes = m_done;
         m_output_vio->reenable();
 
@@ -1093,8 +938,6 @@ static char bound[] = "RANGE_SEPARATOR";
 static char range_type[] = "multipart/byteranges; boundary=RANGE_SEPARATOR";
 static char cont_type[] = "Content-type: ";
 static char cont_range[] = "Content-range: bytes ";
-static int sub_header_size = sizeof(cont_type) - 1 + 2 + sizeof(cont_range) - 1 + 4;
-static int boundary_size = 2 + sizeof(bound) - 1 + 2;
 
 void
 RangeTransform::add_boundary(bool end)
@@ -1127,7 +970,7 @@ RangeTransform::add_sub_header(int index)
   m_done += m_output_buf->write("\r\n", 2);
   m_done += m_output_buf->write(cont_range, sizeof(cont_range) - 1);
 
-  snprintf(numbers, sizeof(numbers), "%" PRId64 "d-%" PRId64 "d/%" PRId64 "d", m_ranges[index]._start, m_ranges[index]._end, m_content_length);
+  snprintf(numbers, sizeof(numbers), "%" PRId64 "d-%" PRId64 "d/%" PRId64 "d", m_ranges[index]._start, m_ranges[index]._end, m_output_cl);
   len = strlen(numbers);
   if (len < RANGE_NUMBERS_LENGTH)
     m_done += m_output_buf->write(numbers, len);
@@ -1148,8 +991,9 @@ RangeTransform::change_response_header()
   MIMEField *field;
   char *reason_phrase;
   HTTPStatus status_code;
-
-  ink_assert(m_transform_resp->field_find(MIME_FIELD_CONTENT_RANGE, MIME_LEN_CONTENT_RANGE) == NULL);
+  
+  ink_release_assert(m_transform_resp);
+  ink_release_assert(m_transform_resp->field_find(MIME_FIELD_CONTENT_RANGE, MIME_LEN_CONTENT_RANGE) == NULL);
 
   status_code = HTTP_STATUS_PARTIAL_CONTENT;
   m_transform_resp->status_set(status_code);
@@ -1157,62 +1001,19 @@ RangeTransform::change_response_header()
   m_transform_resp->reason_set(reason_phrase, strlen(reason_phrase));
 
   // set the right Content-Type for multiple entry Range
-  if (m_num_range_fields > 1) {
-    field = m_transform_resp->field_find(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE);
+  field = m_transform_resp->field_find(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE);
 
-    if (field != NULL)
-      m_transform_resp->field_delete(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE);
+  if (field != NULL)
+    m_transform_resp->field_delete(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE);
 
 
-    field = m_transform_resp->field_create(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE);
-    field->value_append(m_transform_resp->m_heap, m_transform_resp->m_mime, range_type, sizeof(range_type) - 1);
+  field = m_transform_resp->field_create(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE);
+  field->value_append(m_transform_resp->m_heap, m_transform_resp->m_mime, range_type, sizeof(range_type) - 1);
 
-    m_transform_resp->field_attach(field);
-  }
+  m_transform_resp->field_attach(field);
 
-  else {
-    char numbers[RANGE_NUMBERS_LENGTH];
-
-    field = m_transform_resp->field_create(MIME_FIELD_CONTENT_RANGE, MIME_LEN_CONTENT_RANGE);
-    snprintf(numbers, sizeof(numbers), "bytes %" PRId64 "-%" PRId64 "/%" PRId64 "", m_ranges[0]._start, m_ranges[0]._end, m_content_length);
-    field->value_append(m_transform_resp->m_heap, m_transform_resp->m_mime, numbers, strlen(numbers));
-    m_transform_resp->field_attach(field);
-  }
 }
 
 #undef RANGE_NUMBERS_LENGTH
-
-
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
-
-void
-RangeTransform::calculate_output_cl()
-{
-  int i;
-
-  if (m_unsatisfiable_range)
-    return;
-
-  if (m_num_range_fields == 1)
-    m_output_cl = m_ranges[0]._end - m_ranges[0]._start + 1;
-
-  else {
-    for (i = 0; i < m_num_range_fields; i++) {
-      if (m_ranges[i]._start >= 0) {
-        m_output_cl += boundary_size;
-        m_output_cl += sub_header_size + m_content_type_len;
-        m_output_cl += num_chars_for_int(m_ranges[i]._start)
-          + num_chars_for_int(m_ranges[i]._end) + m_num_chars_for_cl + 2;
-        m_output_cl += m_ranges[i]._end - m_ranges[i]._start + 1;
-        m_output_cl += 2;
-      }
-    }
-
-    m_output_cl += boundary_size + 2;
-  }
-
-  Debug("transform_range", "Pre-calculated Content-Length for Range response is %"PRId64"", m_output_cl);
-}
 
 #endif // TS_NO_TRANSFORM

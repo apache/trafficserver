@@ -624,43 +624,81 @@ CacheVC::openReadMain(int event, Event * e)
   int64_t bytes = doc->len - doc_pos;
   IOBufferBlock *b = NULL;
   if (seek_to) { // handle do_io_pread
-    if (seek_to >= (int64_t)doc_len) {
+    if (seek_to >= doc_len) {
       vio.ndone = doc_len;
       return calluser(VC_EVENT_EOS);
     }
     Doc *first_doc = (Doc*)first_buf->data();
-    Frag *first_frag = first_doc->frags();
-    if (!f.single_fragment) {
-      // find the target fragment
-      int i = 0;
-      for (; i < (int)first_doc->nfrags(); i++)
-        if (seek_to < (int64_t)first_frag[i].offset) break;
-      if (i >= (int)first_doc->nfrags()) {
-        Warning("bad fragment header");
-        return calluser(VC_EVENT_ERROR);
-      }
-      // fragment is the current fragment
-      // key is the next key (fragment + 1)
-      if (i != fragment) {
-        i--; // read will increment the key and fragment
-        while (i > fragment) {
-          next_CacheKey(&key, &key);
-          fragment++;
+    Frag *frags = first_doc->frags();
+    if (is_debug_tag_set("cache_seek")) {
+      char b[33], c[33];
+      Debug("cache_seek", "Seek @ %"PRId64" in %s from #%d @ %"PRId64"/%d:%s",
+            seek_to, first_key.toHexStr(b), fragment, doc_pos, doc->len, doc->key.toHexStr(c));
+    }
+    /* Because single fragment objects can migrate to hang off an alt vector
+       they can appear to the VC as multi-fragment when they are not really.
+       The essential difference is the existence of a fragment table. All
+       fragments past the header fragment have the same value for this check
+       and it's consistent with the existence of a frag table in first_doc.
+       f.single_fragment is not (it can be false when this check is true).
+    */
+    if (!doc->single_fragment()) {
+      int target = 0;
+      uint64_t next_off = frags[target].offset;
+      int lfi = static_cast<int>(first_doc->nfrags()) - 1;
+      ink_debug_assert(lfi >= 0); // because it's not a single frag doc.
+
+      /* Note: frag[i].offset is the offset of the first byte past the
+         i'th fragment. So frag[0].offset is the offset of the first
+         byte of fragment 1. In addition the # of fragments is one
+         more than the fragment table length, the start of the last
+         fragment being the last offset in the table.
+      */
+      if (fragment == 0 ||
+          seek_to < frags[fragment-1].offset ||
+          (fragment <= lfi && frags[fragment].offset <= seek_to)
+        ) {
+        // search from frag 0 on to find the proper frag
+        while (seek_to >= next_off && target < lfi) {
+          next_off = frags[++target].offset;
         }
-        while (i < fragment) {
+        if (target == lfi && seek_to >= next_off) ++target;
+      } else { // shortcut if we are in the fragment already
+        target = fragment;
+      }
+      if (target != fragment) {
+        // Lread will read the next fragment always, so if that
+        // is the one we want, we don't need to do anything
+        int cfi = fragment;
+        --target;
+        while (target > fragment) {
+          next_CacheKey(&key, &key);
+          ++fragment;
+        }
+        while (target < fragment) {
           prev_CacheKey(&key, &key);
-          fragment--;
+          --fragment;
+        }
+
+        if (is_debug_tag_set("cache_seek")) {
+          char target_key_str[33];
+          key.toHexStr(target_key_str);
+          Debug("cache_seek", "Seek #%d @ %"PRId64" -> #%d @ %"PRId64":%s", cfi, doc_pos, target, seek_to, target_key_str);
         }
         goto Lread;
       }
     }
-    if (fragment)
-      doc_pos = doc->prefix_len() + seek_to - (int64_t)first_frag[fragment-1].offset;
-    else
-      doc_pos = doc->prefix_len() + seek_to; 
+    doc_pos = doc->prefix_len() + seek_to;
+    if (fragment) doc_pos -= static_cast<int64_t>(frags[fragment-1].offset);
     vio.ndone = 0;
     seek_to = 0;
     ntodo = vio.ntodo();
+    bytes = doc->len - doc_pos;
+    if (is_debug_tag_set("cache_seek")) {
+      char target_key_str[33];
+      key.toHexStr(target_key_str);
+      Debug("cache_seek", "Read # %d @ %"PRId64"/%d for %"PRId64, fragment, doc_pos, doc->len, bytes);
+    }
   }
   if (ntodo <= 0)
     return EVENT_CONT;
@@ -1054,6 +1092,14 @@ CacheVC::openReadStartHead(int event, Event * e)
       f.single_fragment = doc->single_fragment();
       doc_pos = doc->prefix_len();
       doc_len = doc->total_len;
+    }
+
+    if (is_debug_tag_set("cache_read")) { // amc debug
+      char xt[33],yt[33];
+      Debug("cache_rad", "CacheReadStartHead - read %s target %s - %s %d of %"PRId64" bytes, %d fragments",
+            doc->key.toHexStr(xt), key.toHexStr(yt),
+            f.single_fragment ? "single" : "multi",
+            doc->len, doc->total_len, doc->nfrags());
     }
     // the first fragment might have been gc'ed. Make sure the first
     // fragment is there before returning CACHE_EVENT_OPEN_READ

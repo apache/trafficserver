@@ -41,6 +41,7 @@
 #include "InkAPIInternal.h"
 #include "StatSystem.h"
 #include "HttpClientSession.h"
+#include "HdrUtils.h"
 //#include "AuthHttpAdapter.h"
 
 /* Enable LAZY_BUF_ALLOC to delay allocation of buffers until they
@@ -218,7 +219,11 @@ public:
   // setup Range transfomration if so.
   // return true when the Range is unsatisfiable
   void do_range_setup_if_necessary();
-
+  
+  void do_range_parse(MIMEField *range_field);
+  void calculate_output_cl(int64_t, int64_t);
+  void parse_range_and_compare(MIMEField*, int64_t);
+  
   // Called by transact to prevent reset problems
   //  failed PUSH requests
   void set_ua_half_close_flag();
