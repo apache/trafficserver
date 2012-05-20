@@ -1168,6 +1168,11 @@ start_socket(int url_num, int cnum, struct timeval *nowP)
   }
 }
 
+static int
+cert_verify_callback(int ok, X509_STORE_CTX *ctx)
+{
+  return 1;
+}
 
 static void
 handle_connect(int cnum, struct timeval *nowP, int double_check)
@@ -1220,6 +1225,9 @@ handle_connect(int cnum, struct timeval *nowP, int double_check)
       SSL_load_error_strings();
       SSLeay_add_ssl_algorithms();
       ssl_ctx = SSL_CTX_new(SSLv23_client_method());
+      /* For some reason this does not seem to work, but indications are that it should...
+         Maybe something with how we create connections? TODO: Fix it... */
+      SSL_CTX_set_verify(ssl_ctx, SSL_VERIFY_NONE, cert_verify_callback);
       if (cipher != (char *) 0) {
         if (!SSL_CTX_set_cipher_list(ssl_ctx, cipher)) {
           (void) fprintf(stderr, "%s: cannot set cipher list\n", argv0);
@@ -1229,6 +1237,7 @@ handle_connect(int cnum, struct timeval *nowP, int double_check)
         }
       }
     }
+
     if (!RAND_status()) {
       unsigned char bytes[1024];
       int i;
