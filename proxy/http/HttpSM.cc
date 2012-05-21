@@ -3889,9 +3889,11 @@ void
 HttpSM::parse_range_and_compare(MIMEField *field, int64_t content_length)
 {
   // note: unsatisfiable_range is initialized to true in constructor
-  int prev_good_range, i;
+  int prev_good_range = -1;
   const char *value;
   int value_len;
+  int n_values;
+  int nr = 0; // number of valid ranges, also index to range array.
   HdrCsvIter csv;
   const char *s, *e;
 
@@ -3900,26 +3902,26 @@ HttpSM::parse_range_and_compare(MIMEField *field, int64_t content_length)
 
   ink_assert(field != NULL);
 
-  t_state.num_range_fields = 0;
+  n_values = 0;
   value = csv.get_first(field, &value_len);
-
   while (value) {
-    t_state.num_range_fields++;
+    ++n_values;
     value = csv.get_next(&value_len);
   }
 
-  if (t_state.num_range_fields <= 0)
+  if (n_values <= 0)
     return;
-
-  t_state.ranges = NEW(new RangeRecord[t_state.num_range_fields]);
 
   value = csv.get_first(field, &value_len);
 
-  i = 0;
-  prev_good_range = -1;
   // Currently HTTP/1.1 only defines bytes Range
   if (ptr_len_ncmp(value, value_len, "bytes=", 6) == 0) {
+    t_state.ranges = NEW(new RangeRecord[n_values]);
+    value += 6; // skip leading 'bytes='
+    value_len -= 6;
+
     while (value) {
+      bool valid = true; // found valid range.
       // If delimiter '-' is missing
       if (!(e = (const char *) memchr(value, '-', value_len))) {
         t_state.range_setup = HttpTransact::RANGE_NOT_SATISFIABLE;
@@ -3927,70 +3929,84 @@ HttpSM::parse_range_and_compare(MIMEField *field, int64_t content_length)
         return;
       }
 
-      if ( memcmp(value,"bytes=",6) == 0 ) {
-        s = value + 6;
-      }
-      else {
-        s = value;
-      }
-      t_state.ranges[i]._start = ((s==e)?-1:mime_parse_int64(s, e));
+      /* [amc] We should do a much better job of checking the values
+         from mime_parse_int64 to detect invalid range values (e.g.
+         non-numeric). Those need to be handled differently than
+         missing values. My reading of the spec is that ATS should go to
+         RANGE_NONE in such a case.
+      */
+      s = value;
+      t_state.ranges[nr]._start = ((s==e)?-1:mime_parse_int64(s, e));
 
-      e++;
+      ++e;
       s = e;
       e = value + value_len;
       if ( e && *(e-1) == '-') { //open-ended Range: bytes=10-\r\n\r\n should be supported
-        t_state.ranges[i]._end = -1;
+        t_state.ranges[nr]._end = -1;
       }
       else {
-        t_state.ranges[i]._end = mime_parse_int64(s, e);
+        t_state.ranges[nr]._end = mime_parse_int64(s, e);
       }
 
       // check and change if necessary whether this is a right entry
-      // the last _end bytes are required
-      if (t_state.ranges[i]._start == -1 && t_state.ranges[i]._end > 0) {
-        if (t_state.ranges[i]._end > content_length)
-          t_state.ranges[i]._end = content_length;
-
-        t_state.ranges[i]._start = content_length - t_state.ranges[i]._end;
-        t_state.ranges[i]._end = content_length - 1;
-      }
+      if (t_state.ranges[nr]._start >= content_length) {
+          valid = false;
+      } 
       // open start
-      else if (t_state.ranges[i]._start >= 0 && t_state.ranges[i]._end == -1) {
-        if (t_state.ranges[i]._start >= content_length)
-          t_state.ranges[i]._start = -1;
-        else
-          t_state.ranges[i]._end = content_length - 1;
+      else if (t_state.ranges[nr]._start == -1 && t_state.ranges[nr]._end > 0) {
+        if (t_state.ranges[nr]._end > content_length)
+          t_state.ranges[nr]._end = content_length;
+
+        t_state.ranges[nr]._start = content_length - t_state.ranges[nr]._end;
+        t_state.ranges[nr]._end = content_length - 1;
+      }
+      // open end
+      else if (t_state.ranges[nr]._start >= 0 && t_state.ranges[nr]._end == -1) {
+          t_state.ranges[nr]._end = content_length - 1;
       }
       // "normal" Range - could be wrong if _end<_start
-      else if (t_state.ranges[i]._start >= 0 && t_state.ranges[i]._end >= 0) {
-        if (t_state.ranges[i]._start > t_state.ranges[i]._end || t_state.ranges[i]._start >= content_length)
-          t_state.ranges[i]._start = t_state.ranges[i]._end = -1;
-        else if (t_state.ranges[i]._end >= content_length)
-          t_state.ranges[i]._end = content_length - 1;
+      else if (t_state.ranges[nr]._start >= 0 && t_state.ranges[nr]._end >= 0) {
+        if (t_state.ranges[nr]._start > t_state.ranges[nr]._end)
+          // [amc] My reading of the spec is that this should cause a change
+          // to RANGE_NONE because it is syntatically invalid.
+          valid = false;
+        else if (t_state.ranges[nr]._end >= content_length)
+          t_state.ranges[nr]._end = content_length - 1;
+      }
+      // Syntactically invalid range, fail.
+      else {
+        // [amc] My reading of the spec is that this should cause a change
+        // to RANGE_NONE because it is syntatically invalid.
+        t_state.range_setup = HttpTransact::RANGE_NOT_SATISFIABLE;
+        t_state.num_range_fields = -1;
+        return;
       }
 
-      else
-        t_state.ranges[i]._start = t_state.ranges[i]._end = -1;
-
       // this is a good Range entry
-      if (t_state.ranges[i]._start != -1) {
+      if (valid) {
         if (t_state.unsatisfiable_range) {
           t_state.unsatisfiable_range = false;
           // initialize t_state.current_range to the first good Range
-          t_state.current_range = i;
+          t_state.current_range = nr;
         }
         // currently we don't handle out-of-order Range entry
-        else if (prev_good_range >= 0 && t_state.ranges[i]._start <= t_state.ranges[prev_good_range]._end) {
+        else if (prev_good_range >= 0 && t_state.ranges[nr]._start <= t_state.ranges[prev_good_range]._end) {
           t_state.not_handle_range = true;
           break;
         }
 
-        prev_good_range = i;
+        prev_good_range = nr;
+        ++nr;
       }
-
       value = csv.get_next(&value_len);
-      i++;
     }
+  }
+  // Fail if we didn't find any valid ranges.
+  if (nr < 1) {
+    t_state.range_setup = HttpTransact::RANGE_NOT_SATISFIABLE;
+    t_state.num_range_fields = -1;
+  } else {
+    t_state.num_range_fields = nr;
   }
 }
 
