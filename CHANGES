@@ -1,7 +1,7 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.1.4
   *) [TS-475] Accelerated single range requests.
-     Based on initial work by jumby, with help from bwyatt.
+     Based on initial work by ericb, with help from bwyatt.
 
   *) [TS-1236] HTTP Accept filters do not work on Illumos.
 
