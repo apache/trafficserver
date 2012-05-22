@@ -407,6 +407,8 @@ HttpTransactCache::calculate_quality_of_match(CacheLookupHttpConfig * http_confi
   Debug("http_alternate", "Mult's Quality Factor: %f", Q);
   Debug("http_alternate", "----------End of Alternate----------");
 
+  int force_alt = 0;
+
   if (Q > 0.0) {
     APIHook *hook;
     HttpAltInfo info;
@@ -426,6 +428,8 @@ HttpTransactCache::calculate_quality_of_match(CacheLookupHttpConfig * http_confi
         if (info.m_qvalue < 0.0) {
           info.m_qvalue = 0.0;
         } else if (info.m_qvalue > 1.0) {
+          if (info.m_qvalue == FLT_MAX)
+            force_alt = 1;
           info.m_qvalue = 1.0;
         }
         qvalue *= info.m_qvalue;
@@ -440,7 +444,7 @@ HttpTransactCache::calculate_quality_of_match(CacheLookupHttpConfig * http_confi
     }
   }
 
-  if (Q >= 0.0) {                 // make sense to check 'variability' only if Q >= 0.0
+  if (Q >= 0.0 && !force_alt ) {                 // make sense to check 'variability' only if Q >= 0.0
     // set quality to -1, if cached copy would vary for this request //
     Variability_t variability = CalcVariability(http_config_param, client_request,
                                                 obj_client_request, obj_origin_server_response);
