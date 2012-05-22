@@ -765,6 +765,8 @@ REGRESSION_TEST(SDK_API_TSCache) (RegressionTest * test, int atype, int *pstatus
   TSCacheKeyDigestSet(key, key_name, strlen(key_name));
   TSCacheKeyDigestSet(key_cmp, key_name, strlen(key_name));
 
+  // TODO: This comparison makes no sense, since TSCacheKey is an opaque struct
+#if 0
   if (memcmp(key, key_cmp, sizeof(TSCacheKey)) != 0) {
     SDK_RPRINT(test, "TSCacheKeySetDigest", "TestCase1", TC_FAIL, "digest is wrong");
 
@@ -777,6 +779,7 @@ REGRESSION_TEST(SDK_API_TSCache) (RegressionTest * test, int atype, int *pstatus
     SDK_RPRINT(test, "TSCacheKeySetDigest", "TestCase1", TC_PASS, "ok");
     TSCacheKeyDestroy(key_cmp);
   }
+#endif
 
   // prepare caching content
   // string, null-terminated.

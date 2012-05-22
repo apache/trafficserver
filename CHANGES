@@ -1,5 +1,7 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.0.5
+  *) [TS-1116] Fix build issues with clang + gcc4.7
+
   *) [TS-1049] TS dead locks on HTTPS POST requires.  
 	Author: Wilson Ho
 
@@ -11,8 +13,6 @@ Changes with Apache Traffic Server 3.0.5
 
   *) [TS-1185] fix build issues with clang
 
-  *) [TS-1116] fix build issues with gcc 4.7 
- 
   *) [TS-857] race condition UnixNetVConnection::do_io_close()
 
   *) [TS-1158] race condition UnixNetVConnection::mainEvent() when handling

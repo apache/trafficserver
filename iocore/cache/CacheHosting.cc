@@ -512,7 +512,7 @@ CacheHostRecord::Init(matcher_line * line_info, int typ)
 
       /* first find out the number of volumes */
       while (*s) {
-        if ((*s == ',')) {
+        if (*s == ',') {
           num_cachevols++;
           s++;
           if (!(*s)) {
@@ -554,7 +554,7 @@ CacheHostRecord::Init(matcher_line * line_info, int typ)
           for (; cachep; cachep = cachep->link.next) {
             if (cachep->vol_number == volume_number) {
               is_vol_present = 1;
-              if ((cachep->scheme == type)) {
+              if (cachep->scheme == type) {
                 Debug("cache_hosting",
                       "Host Record: %xd, Volume: %d, size: %ld",
                       this, volume_number, cachep->size * STORE_BLOCK_SIZE);

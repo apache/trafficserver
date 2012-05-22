@@ -267,7 +267,7 @@ template<class C> inline C * ClassAllocator<C>::alloc()
     for (unsigned int i = 0; i < RND16(sizeof(C)) / sizeof(int64_t); i++)
       ((int64_t *) ptr)[i] = ((int64_t *) &this->proto.typeObject)[i];
   } else
-    memcpy(ptr, &this->proto.typeObject, sizeof(C));
+    memcpy(ptr, (void *)&this->proto.typeObject, sizeof(C));
   return (C *) ptr;
 }
 
@@ -283,7 +283,7 @@ template<class C> inline C * SparceClassAllocator<C>::alloc()
       for (unsigned int i = 0; i < RND16(sizeof(C)) / sizeof(int64_t); i++)
         ((int64_t *) ptr)[i] = ((int64_t *) &this->proto.typeObject)[i];
     } else
-      memcpy(ptr, &this->proto.typeObject, sizeof(C));
+      memcpy(ptr, (void *)&this->proto.typeObject, sizeof(C));
   } else
     (*instantiate) ((C *) &this->proto.typeObject, (C *) ptr);
   return (C *) ptr;

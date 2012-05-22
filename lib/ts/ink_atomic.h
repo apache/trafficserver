@@ -113,7 +113,7 @@ static inline int ink_atomic_cas(pvint32 mem, int old, int new_value) { return _
 static inline int ink_atomic_cas_ptr(pvvoidp mem, void* old, void* new_value) { return __sync_bool_compare_and_swap(mem, old, new_value); }
 
 static inline int ink_atomic_increment(pvint32 mem, int value) { return __sync_fetch_and_add(mem, value); }
-static inline void *ink_atomic_increment_ptr(pvvoidp mem, intptr_t value) { return __sync_fetch_and_add((void**)mem, value); }
+static inline void *ink_atomic_increment_ptr(pvvoidp mem, intptr_t value) { return __sync_fetch_and_add((void**)mem, (void*)value); }
 
 // Special hacks for ARM 32-bit
 #if defined(__arm__) && (SIZEOF_VOIDP == 4)
