@@ -83,7 +83,7 @@ struct ClusterControl: public Continuation
 
 struct OutgoingControl: public ClusterControl
 {
-  ClusterMachine *m;
+  ClusterHandler *ch;
   ink_hrtime submit_time;
 
   static OutgoingControl *alloc();
@@ -430,6 +430,9 @@ struct ClusterHandler:public ClusterHandlerBase
   char *hostname;
   ClusterMachine *machine;
   int ifd;
+  int id;
+  bool dead;
+  bool downing;
 
   int32_t active;                 // handler currently running
   bool on_stolen_thread;

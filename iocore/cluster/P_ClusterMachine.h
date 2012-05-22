@@ -66,12 +66,17 @@ struct ClusterMachine: public Server
   //
   unsigned int ip;
   int cluster_port;
+  int num_connections;
+  int now_connections;
+  int free_connections;
+  int64_t rr_count;
 
-    Link<ClusterMachine> link;
+  Link<ClusterMachine> link;
 
   // default for localhost
-    ClusterMachine(char *hostname = NULL, unsigned int ip = 0, int acluster_port = 0);
-   ~ClusterMachine();
+  ClusterMachine(char *hostname = NULL, unsigned int ip = 0, int acluster_port = 0);
+  ~ClusterMachine();
+  ClusterHandler *pop_ClusterHandler(int no_rr = 0);
 
   // Cluster message protocol version
   uint16_t msg_proto_major;
@@ -79,7 +84,7 @@ struct ClusterMachine: public Server
 
   // Private data for ClusterProcessor
   //
-  ClusterHandler *clusterHandler;
+  ClusterHandler **clusterHandlers;
 };
 
 struct MachineListElement

@@ -68,9 +68,13 @@ dead(false),
 hostname(ahostname),
 ip(aip),
 cluster_port(aport),
+num_connections(0),
+now_connections(0),
+free_connections(0),
+rr_count(0),
 msg_proto_major(0),
 msg_proto_minor(0),
-clusterHandler(0)
+clusterHandlers(0)
 {
   EThread *thread = this_ethread();
   ProxyMutex *mutex = thread->mutex;
@@ -141,11 +145,23 @@ clusterHandler(0)
     hostname_len = strlen(hostname);
   else
     hostname_len = 0;
+
+  IOCORE_ReadConfigInteger(num_connections, "proxy.config.cluster.num_of_cluster_connections");
+  clusterHandlers = (ClusterHandler **)ats_calloc(num_connections, sizeof(ClusterHandler *));
+}
+
+ClusterHandler *ClusterMachine::pop_ClusterHandler(int no_rr)
+{
+  int64_t now = rr_count;
+  if (no_rr == 0)
+    ink_atomic_increment64(&rr_count, 1);
+  return this->clusterHandlers[now % this->num_connections];
 }
 
 ClusterMachine::~ClusterMachine()
 {
   ats_free(hostname);
+  ats_free(clusterHandlers);
 }
 
 #ifndef INK_NO_CLUSTER

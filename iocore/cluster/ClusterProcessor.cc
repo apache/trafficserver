@@ -52,7 +52,7 @@ ClusterProcessor::~ClusterProcessor()
 }
 
 int
-ClusterProcessor::internal_invoke_remote(ClusterMachine * m, int cluster_fn,
+ClusterProcessor::internal_invoke_remote(ClusterHandler *ch, int cluster_fn,
                                          void *data, int len, int options, void *cmsg)
 {
   EThread *thread = this_ethread();
@@ -67,7 +67,6 @@ ClusterProcessor::internal_invoke_remote(ClusterMachine * m, int cluster_fn,
   bool malloced = (cluster_fn == CLUSTER_FUNCTION_MALLOCED);
   OutgoingControl *c;
 
-  ClusterHandler *ch = m->clusterHandler;
   if (!ch || (!malloced && !((unsigned int) cluster_fn < (uint32_t) SIZE_clusterFunction))) {
     // Invalid message or node is down, free message data
     if (malloced) {
@@ -94,7 +93,6 @@ ClusterProcessor::internal_invoke_remote(ClusterMachine * m, int cluster_fn,
     c = OutgoingControl::alloc();
   }
   CLUSTER_INCREMENT_DYN_STAT(CLUSTER_CTRL_MSGS_SENT_STAT);
-  c->m = m;
   c->submit_time = ink_get_hrtime();
 
   if (malloced) {
@@ -152,13 +150,13 @@ ClusterProcessor::internal_invoke_remote(ClusterMachine * m, int cluster_fn,
 }
 
 int
-ClusterProcessor::invoke_remote(ClusterMachine * m, int cluster_fn, void *data, int len, int options)
+ClusterProcessor::invoke_remote(ClusterHandler *ch, int cluster_fn, void *data, int len, int options)
 {
-  return internal_invoke_remote(m, cluster_fn, data, len, options, (void *) NULL);
+  return internal_invoke_remote(ch, cluster_fn, data, len, options, (void *) NULL);
 }
 
 int
-ClusterProcessor::invoke_remote_data(ClusterMachine * m, int cluster_fn,
+ClusterProcessor::invoke_remote_data(ClusterHandler *ch, int cluster_fn,
                                      void *data, int data_len,
                                      IOBufferBlock * buf,
                                      int dest_channel, ClusterVCToken * token,
@@ -166,7 +164,7 @@ ClusterProcessor::invoke_remote_data(ClusterMachine * m, int cluster_fn,
 {
   if (!buf) {
     // No buffer data, translate this into a invoke_remote() request
-    return internal_invoke_remote(m, cluster_fn, data, data_len, options, (void *) NULL);
+    return internal_invoke_remote(ch, cluster_fn, data, data_len, options, (void *) NULL);
   }
   ink_assert(data);
   ink_assert(data_len);
@@ -197,7 +195,7 @@ ClusterProcessor::invoke_remote_data(ClusterMachine * m, int cluster_fn,
   *(int32_t *) chdr->data = -1;   // always -1 for compound message
   memcpy(chdr->data + sizeof(int32_t), (char *) &mh, sizeof(mh));
 
-  return internal_invoke_remote(m, cluster_fn, data, data_len, options, (void *) chdr);
+  return internal_invoke_remote(ch, cluster_fn, data, data_len, options, (void *) chdr);
 }
 
 void
@@ -239,7 +237,7 @@ ClusterProcessor::open_local(Continuation * cont, ClusterMachine * m, ClusterVCT
   bool immediate = ((options & CLUSTER_OPT_IMMEDIATE) ? true : false);
   bool allow_immediate = ((options & CLUSTER_OPT_ALLOW_IMMEDIATE) ? true : false);
 
-  ClusterHandler *ch = m->clusterHandler;
+  ClusterHandler *ch = ((CacheContinuation *)cont)->ch;
   if (!ch)
     return NULL;
   EThread *t = ch->thread;
@@ -252,8 +250,9 @@ ClusterProcessor::open_local(Continuation * cont, ClusterMachine * m, ClusterVCT
   vc->new_connect_read = (options & CLUSTER_OPT_CONN_READ ? 1 : 0);
   vc->start_time = ink_get_hrtime();
   vc->last_activity_time = vc->start_time;
-  vc->machine = m;
+  vc->ch = ch;
   vc->token.alloc();
+  vc->token.ch_id = ch->id;
   token = vc->token;
 #ifdef CLUSTER_THREAD_STEALING
   CLUSTER_INCREMENT_DYN_STAT(CLUSTER_CONNECTIONS_OPENNED_STAT);
@@ -306,7 +305,9 @@ ClusterProcessor::connect_local(Continuation * cont, ClusterVCToken * token, int
 #endif
   if (!m)
     return NULL;
-  ClusterHandler *ch = m->clusterHandler;
+  if (token->ch_id >= (uint32_t)m->num_connections)
+    return NULL;
+  ClusterHandler *ch = m->clusterHandlers[token->ch_id];
   if (!ch)
     return NULL;
   EThread *t = ch->thread;
@@ -319,7 +320,7 @@ ClusterProcessor::connect_local(Continuation * cont, ClusterVCToken * token, int
   vc->new_connect_read = (options & CLUSTER_OPT_CONN_READ ? 1 : 0);
   vc->start_time = ink_get_hrtime();
   vc->last_activity_time = vc->start_time;
-  vc->machine = m;
+  vc->ch = ch;
   vc->token = *token;
   vc->channel = channel;
 #ifdef CLUSTER_THREAD_STEALING
@@ -354,11 +355,7 @@ ClusterProcessor::connect_local(Continuation * cont, ClusterVCToken * token, int
 
 bool ClusterProcessor::disable_remote_cluster_ops(ClusterMachine * m)
 {
-  if (!m)
-    return false;
-
-  ClusterHandler *
-    ch = m->clusterHandler;
+  ClusterHandler *ch = m->pop_ClusterHandler(1);
   if (ch) {
     return ch->disable_remote_cluster_ops;
   } else {
@@ -753,7 +750,7 @@ ClusterProcessor::start()
 }
 
 void
-ClusterProcessor::connect(char *hostname)
+ClusterProcessor::connect(char *hostname, int16_t id)
 {
   //
   // Construct a cluster link to the given machine
@@ -762,11 +759,12 @@ ClusterProcessor::connect(char *hostname)
   SET_CONTINUATION_HANDLER(ch, (ClusterContHandler) & ClusterHandler::connectClusterEvent);
   ch->hostname = ats_strdup(hostname);
   ch->connector = true;
+  ch->id = id;
   eventProcessor.schedule_imm(ch, ET_CLUSTER);
 }
 
 void
-ClusterProcessor::connect(unsigned int ip, int port, bool delay)
+ClusterProcessor::connect(unsigned int ip, int port, int16_t id, bool delay)
 {
   //
   // Construct a cluster link to the given machine
@@ -776,6 +774,7 @@ ClusterProcessor::connect(unsigned int ip, int port, bool delay)
   ch->ip = ip;
   ch->port = port;
   ch->connector = true;
+  ch->id = id;
   if (delay)
     eventProcessor.schedule_in(ch, CLUSTER_MEMBER_DELAY, ET_CLUSTER);
   else
@@ -814,7 +813,7 @@ ClusterProcessor::send_machine_list(ClusterMachine * m)
     //////////////////////////////////////////////////////////////
     ink_release_assert(!"send_machine_list() bad msg version");
   }
-  invoke_remote(m, MACHINE_LIST_CLUSTER_FUNCTION, data, len);
+  invoke_remote(m->pop_ClusterHandler(), MACHINE_LIST_CLUSTER_FUNCTION, data, len);
 }
 
 void

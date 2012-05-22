@@ -141,6 +141,9 @@ ClusterHandler::ClusterHandler()
     hostname(NULL),
     machine(NULL),
     ifd(-1),
+    id(-1),
+    dead(true),
+    downing(false),
     active(false),
     on_stolen_thread(false),
     n_channels(0),
@@ -226,12 +229,19 @@ ClusterHandler::ClusterHandler()
 
 ClusterHandler::~ClusterHandler()
 {
+  bool free_m = false;
   if (net_vc) {
     net_vc->do_io(VIO::CLOSE);
     net_vc = 0;
   }
-  if (machine)
-    free_ClusterMachine(machine);
+  if (machine) {
+    MUTEX_TAKE_LOCK(the_cluster_config_mutex, this_ethread());
+    if (++machine->free_connections >= machine->num_connections)
+      free_m = true;
+    MUTEX_UNTAKE_LOCK(the_cluster_config_mutex, this_ethread());
+    if (free_m)
+      free_ClusterMachine(machine);
+  }
   machine = NULL;
   ats_free(hostname);
   hostname = NULL;
@@ -302,10 +312,10 @@ ClusterHandler::close_ClusterVConnection(ClusterVConnection * vc)
   ink_assert(!vc->write_list_bytes);
   ink_assert(!vc->write_bytes_in_transit);
 
-  if (((!vc->remote_closed && !vc->have_all_data) || (vc->remote_closed == FORCE_CLOSE_ON_OPEN_CHANNEL)) && vc->machine) {
+  if (((!vc->remote_closed && !vc->have_all_data) || (vc->remote_closed == FORCE_CLOSE_ON_OPEN_CHANNEL)) && vc->ch) {
 
     CloseMessage msg;
-    int vers = CloseMessage::protoToVersion(vc->machine->msg_proto_major);
+    int vers = CloseMessage::protoToVersion(vc->ch->machine->msg_proto_major);
     void *data;
     int len;
 
@@ -323,7 +333,7 @@ ClusterHandler::close_ClusterVConnection(ClusterVConnection * vc)
       //////////////////////////////////////////////////////////////
       ink_release_assert(!"close_ClusterVConnection() bad msg version");
     }
-    clusterProcessor.invoke_remote(vc->machine, CLOSE_CHANNEL_CLUSTER_FUNCTION, data, len);
+    clusterProcessor.invoke_remote(vc->ch, CLOSE_CHANNEL_CLUSTER_FUNCTION, data, len);
   }
   ink_hrtime now = ink_get_hrtime();
   CLUSTER_DECREMENT_DYN_STAT(CLUSTER_CONNECTIONS_OPEN_STAT);
@@ -858,7 +868,7 @@ ClusterHandler::process_set_data_msgs()
 
       if ((cluster_function_index < (uint32_t) SIZE_clusterFunction)
           && (cluster_function_index == SET_CHANNEL_DATA_CLUSTER_FUNCTION)) {
-        clusterFunction[SET_CHANNEL_DATA_CLUSTER_FUNCTION].pfn(machine, p + (2 * sizeof(uint32_t)), len - sizeof(uint32_t));
+        clusterFunction[SET_CHANNEL_DATA_CLUSTER_FUNCTION].pfn(this, p + (2 * sizeof(uint32_t)), len - sizeof(uint32_t));
         // Mark message as processed.
         *((uint32_t *) (p + sizeof(uint32_t))) = ~*((uint32_t *) (p + sizeof(uint32_t)));
         p += (2 * sizeof(uint32_t)) + (len - sizeof(uint32_t));
@@ -892,7 +902,7 @@ ClusterHandler::process_set_data_msgs()
           && (cluster_function_index == SET_CHANNEL_DATA_CLUSTER_FUNCTION)) {
 
         char *p = ic->data;
-        clusterFunction[SET_CHANNEL_DATA_CLUSTER_FUNCTION].pfn(machine,
+        clusterFunction[SET_CHANNEL_DATA_CLUSTER_FUNCTION].pfn(this,
                                                                (void *) (p + sizeof(int32_t)), ic->len - sizeof(int32_t));
 
         // Reverse swap since this will be processed again for deallocation.
@@ -953,7 +963,7 @@ ClusterHandler::process_small_control_msgs()
       // Cluster function, can only be processed in ET_CLUSTER thread
       //////////////////////////////////////////////////////////////////////
       p += sizeof(uint32_t);
-      clusterFunction[cluster_function_index].pfn(machine, p, len - sizeof(int32_t));
+      clusterFunction[cluster_function_index].pfn(this, p, len - sizeof(int32_t));
       p += (len - sizeof(int32_t));
 
     } else {
@@ -1011,7 +1021,7 @@ ClusterHandler::process_large_control_msgs()
 
     } else if (clusterFunction[cluster_function_index].ClusterFunc) {
       // Cluster message, process in ET_CLUSTER thread
-      clusterFunction[cluster_function_index].pfn(machine, (void *) (ic->data + sizeof(int32_t)),
+      clusterFunction[cluster_function_index].pfn(this, (void *) (ic->data + sizeof(int32_t)),
                                                   ic->len - sizeof(int32_t));
 
       // Deallocate memory
@@ -1201,7 +1211,7 @@ ClusterHandler::process_incoming_callouts(ProxyMutex * m)
           // Invoke processing function
           ////////////////////////////////
           ink_assert(!clusterFunction[cluster_function_index].ClusterFunc);
-          clusterFunction[cluster_function_index].pfn(machine, p, len - sizeof(int32_t));
+          clusterFunction[cluster_function_index].pfn(this, p, len - sizeof(int32_t));
           now = ink_get_hrtime();
           CLUSTER_SUM_DYN_STAT(CLUSTER_CTRL_MSGS_RECV_TIME_STAT, now - ic->recognized_time);
         } else {
@@ -1222,7 +1232,7 @@ ClusterHandler::process_incoming_callouts(ProxyMutex * m)
           // Invoke processing function
           ////////////////////////////////
           ink_assert(!clusterFunction[cluster_function_index].ClusterFunc);
-          clusterFunction[cluster_function_index].pfn(machine, (void *) (ic->data + sizeof(int32_t)),
+          clusterFunction[cluster_function_index].pfn(this, (void *) (ic->data + sizeof(int32_t)),
                                                       ic->len - sizeof(int32_t));
           now = ink_get_hrtime();
           CLUSTER_SUM_DYN_STAT(CLUSTER_CTRL_MSGS_RECV_TIME_STAT, now - ic->recognized_time);
@@ -1732,7 +1742,7 @@ ClusterHandler::build_controlmsg_descriptors()
       control_msgs_built++;
 
       if (clusterFunction[*(int32_t *) c->data].post_pfn) {
-        clusterFunction[*(int32_t *) c->data].post_pfn(machine, c->data + sizeof(int32_t), c->len);
+        clusterFunction[*(int32_t *) c->data].post_pfn(this, c->data + sizeof(int32_t), c->len);
       }
       continue;
     }
@@ -1829,7 +1839,7 @@ ClusterHandler::build_controlmsg_descriptors()
       control_msgs_built++;
 
       if (clusterFunction[*(int32_t *) c->data].post_pfn) {
-        clusterFunction[*(int32_t *) c->data].post_pfn(machine, c->data + sizeof(int32_t), c->len);
+        clusterFunction[*(int32_t *) c->data].post_pfn(this, c->data + sizeof(int32_t), c->len);
       }
     }
   }
@@ -2466,6 +2476,12 @@ ClusterHandler::mainClusterEvent(int event, Event * e)
   while (io_activity) {
     io_activity = 0;
     only_write_control_msgs = 0;
+
+    if (downing) {
+      machine_down();
+      break;
+    }
+
     //////////////////////////
     // Read Processing
     //////////////////////////
@@ -2502,7 +2518,7 @@ ClusterHandler::mainClusterEvent(int event, Event * e)
   }
 
 #ifdef CLUSTER_IMMEDIATE_NETIO
-  if (!machine->dead && ((event == EVENT_POLL) || (event == EVENT_INTERVAL))) {
+  if (!dead && ((event == EVENT_POLL) || (event == EVENT_INTERVAL))) {
     if (res >= 0) {
       build_poll(true);
     }
@@ -2518,7 +2534,7 @@ ClusterHandler::process_read(ink_hrtime now)
 #ifdef CLUSTER_STATS
   _process_read_calls++;
 #endif
-  if (machine->dead) {
+  if (dead) {
     // Node is down
     return 0;
   }
@@ -3011,7 +3027,7 @@ ClusterHandler::process_write(ink_hrtime now, bool only_write_control_msgs)
         //
         // periodic activities
         //
-        if (!on_stolen_thread && !cur_vcs && !machine->dead) {
+        if (!on_stolen_thread && !cur_vcs && !dead) {
           //
           // check if this machine is supposed to be in the cluster
           //

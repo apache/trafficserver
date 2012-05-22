@@ -163,7 +163,7 @@ NetAccept::allocateGlobal()
 // or ET_NET).
 EventType NetAccept::getEtype()
 {
-  return (ET_NET);
+  return etype;
 }
 
 

@@ -57,7 +57,8 @@ HttpCacheAction::cancel(Continuation * c)
   ink_assert(this->cancelled == 0);
 
   this->cancelled = 1;
-  sm->pending_action->cancel();
+  if (sm->pending_action)
+    sm->pending_action->cancel();
 }
 
 HttpCacheSM::HttpCacheSM():

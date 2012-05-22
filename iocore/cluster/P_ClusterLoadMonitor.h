@@ -70,10 +70,10 @@ public:
     }
   };
 
-  static void cluster_load_ping_rethandler(ClusterMachine *, void *, int);
+  static void cluster_load_ping_rethandler(ClusterHandler *, void *, int);
 
 public:
-  ClusterLoadMonitor(ClusterMachine * m);
+  ClusterLoadMonitor(ClusterHandler * ch);
   void init();
   ~ClusterLoadMonitor();
   void cancel_monitor();
@@ -101,7 +101,7 @@ private:
   int cluster_load_exceed_duration;
 
   // Class specific data
-  ClusterMachine *machine;
+  ClusterHandler *ch;
   int *ping_response_buckets;
   ink_hrtime *ping_response_history_buf;
   int ping_history_buf_head;

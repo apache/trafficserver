@@ -1577,7 +1577,7 @@ bool HostDBContinuation::do_get_response(Event * e)
 
   // Send the message
   //
-  clusterProcessor.invoke_remote(m, GET_HOSTINFO_CLUSTER_FUNCTION, (char *) &msg, len);
+  clusterProcessor.invoke_remote(m->pop_ClusterHandler(), GET_HOSTINFO_CLUSTER_FUNCTION, (char *) &msg, len);
 
   return true;
 }
@@ -1650,7 +1650,7 @@ HostDBContinuation::do_put_response(ClusterMachine * m, HostDBInfo * r, Continua
   HostDB_put_message msg;
   int len = make_put_message(r, c, (char *) &msg, sizeof(HostDB_put_message));
 
-  clusterProcessor.invoke_remote(m, PUT_HOSTINFO_CLUSTER_FUNCTION, (char *) &msg, len);
+  clusterProcessor.invoke_remote(m->pop_ClusterHandler(), PUT_HOSTINFO_CLUSTER_FUNCTION, (char *) &msg, len);
 
 }
 #endif // NON_MODULAR
@@ -1935,7 +1935,7 @@ HostDBContinuation::failed_cluster_request(Event * e)
 
 
 void
-get_hostinfo_ClusterFunction(ClusterMachine * from, void *data, int len)
+get_hostinfo_ClusterFunction(ClusterHandler *ch, void *data, int len)
 {
   NOWARN_UNUSED(len);
   void *pDS = 0;
@@ -1956,7 +1956,7 @@ get_hostinfo_ClusterFunction(ClusterMachine * from, void *data, int len)
 
   HostDBContinuation *c = hostDBContAllocator.alloc();
   SET_CONTINUATION_HANDLER(c, (HostDBContHandler) & HostDBContinuation::probeEvent);
-  c->from = from;
+  c->from = ch->machine;
   c->from_cont = msg->cont;
 
   /* -----------------------------------------
@@ -1975,7 +1975,7 @@ get_hostinfo_ClusterFunction(ClusterMachine * from, void *data, int len)
 
 
 void
-put_hostinfo_ClusterFunction(ClusterMachine * from, void *data, int len)
+put_hostinfo_ClusterFunction(ClusterHandler *ch, void *data, int len)
 {
   NOWARN_UNUSED(len);
   HostDB_put_message *msg = (HostDB_put_message *) data;
@@ -1988,7 +1988,7 @@ put_hostinfo_ClusterFunction(ClusterMachine * from, void *data, int len)
   c->missing = msg->missing;
   c->round_robin = msg->round_robin;
   c->ttl = msg->ttl;
-  c->from = from;
+  c->from = ch->machine;
   dnsProcessor.thread->schedule_imm(c);
 }
 #endif // NON_MODULAR

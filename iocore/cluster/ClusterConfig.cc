@@ -162,15 +162,20 @@ make_cluster_connections(MachineList * l, MachineList * old)
   // Connect to all new machines.
   //
   uint32_t ip = this_cluster_machine()->ip;
+  int num_connections = this_cluster_machine()->num_connections;
 
   if (l) {
-    for (int i = 0; i < l->n; i++)
+    for (int i = 0; i < l->n; i++) {
 #ifdef LOCAL_CLUSTER_TEST_MODE
-      if (ip < l->machine[i].ip || (ip == l->machine[i].ip && (cluster_port < l->machine[i].port)))
+      if (ip < l->machine[i].ip || (ip == l->machine[i].ip && (cluster_port < l->machine[i].port))) {
 #else
-      if (ip < l->machine[i].ip)
+      if (ip < l->machine[i].ip) {
 #endif
-        clusterProcessor.connect(l->machine[i].ip, l->machine[i].port);
+        for (int j = 0; j < num_connections; j++) {
+          clusterProcessor.connect(l->machine[i].ip, l->machine[i].port, j);
+        }
+      }
+    }
   }
 }
 
@@ -470,7 +475,7 @@ cluster_machine_at_depth(unsigned int hash, int *pprobe_depth, ClusterMachine **
       continue;
     }
 
-    return m;
+    return (m != this_cluster_machine()) ? m : NULL;
   }
   return NULL;
 }

@@ -34,27 +34,26 @@
 /////////////////////////////////////////////////////////////////////////
 
 void
-ping_ClusterFunction(ClusterMachine * from, void *data, int len)
+ping_ClusterFunction(ClusterHandler *ch, void *data, int len)
 {
   //
   // Just return the data back
   //
-  clusterProcessor.invoke_remote(from, PING_REPLY_CLUSTER_FUNCTION, data, len);
+  clusterProcessor.invoke_remote(ch, PING_REPLY_CLUSTER_FUNCTION, data, len);
 }
 
 void
-ping_reply_ClusterFunction(ClusterMachine * from, void *data, int len)
+ping_reply_ClusterFunction(ClusterHandler *ch, void *data, int len)
 {
   //
   // Pass back the data.
   //
-  (void) from;
   PingMessage *msg = (PingMessage *) data;
-  msg->fn(from, msg->data, (len - msg->sizeof_fixedlen_msg()));
+  msg->fn(ch, msg->data, (len - msg->sizeof_fixedlen_msg()));
 }
 
 void
-machine_list_ClusterFunction(ClusterMachine * from, void *data, int len)
+machine_list_ClusterFunction(ClusterHandler * from, void *data, int len)
 {
   (void) from;
   ClusterMessageHeader *mh = (ClusterMessageHeader *) data;
@@ -82,14 +81,19 @@ machine_list_ClusterFunction(ClusterMachine * from, void *data, int len)
         goto Lfound;
     }
     // not found, must be a new machine
-    clusterProcessor.connect(m->ip[i]);
+    {
+      int num_connections = this_cluster_machine()->num_connections;
+      for (int k = 0; k < num_connections; k++) {
+        clusterProcessor.connect(m->ip[i], k);
+      }
+    }
   Lfound:
     ;
   }
 }
 
 void
-close_channel_ClusterFunction(ClusterMachine * from, void *data, int len)
+close_channel_ClusterFunction(ClusterHandler *ch, void *data, int len)
 {
   ClusterMessageHeader *mh = (ClusterMessageHeader *) data;
   CloseMessage *m = (CloseMessage *) data;
@@ -106,7 +110,6 @@ close_channel_ClusterFunction(ClusterMachine * from, void *data, int len)
   // Close the remote side of a VC connection (remote node is originator)
   //
   ink_assert(len >= (int) sizeof(CloseMessage));
-  ClusterHandler *ch = from->clusterHandler;
   if (!ch || !ch->channels)
     return;
   ClusterVConnection *vc = ch->channels[m->channel];
@@ -117,13 +120,13 @@ close_channel_ClusterFunction(ClusterMachine * from, void *data, int len)
 }
 
 void
-test_ClusterFunction(ClusterMachine * m, void *data, int len)
+test_ClusterFunction(ClusterHandler *ch, void *data, int len)
 {
   //
   // Note: Only for testing.
   //
   if (ptest_ClusterFunction)
-    ptest_ClusterFunction(m, data, len);
+    ptest_ClusterFunction(ch, data, len);
 }
 
 CacheVC *
@@ -157,7 +160,7 @@ ChannelToCacheWriteVC(ClusterHandler * ch, int channel, uint32_t channel_seqno, 
 }
 
 void
-set_channel_data_ClusterFunction(ClusterMachine * from, void *tdata, int tlen)
+set_channel_data_ClusterFunction(ClusterHandler *ch, void *tdata, int tlen)
 {
   EThread *thread = this_ethread();
   ProxyMutex *mutex = thread->mutex;
@@ -189,7 +192,6 @@ set_channel_data_ClusterFunction(ClusterMachine * from, void *tdata, int tlen)
 
   ClusterVConnection *cvc;
   CacheVC *cache_vc;
-  ClusterHandler *ch = from->clusterHandler;
 
   if (ch) {
     cache_vc = ChannelToCacheWriteVC(ch, m->channel, m->sequence_number, &cvc);
@@ -228,7 +230,7 @@ set_channel_data_ClusterFunction(ClusterMachine * from, void *tdata, int tlen)
 }
 
 void
-post_setchan_send_ClusterFunction(ClusterMachine * to, void *data, int len)
+post_setchan_send_ClusterFunction(ClusterHandler *ch, void *data, int len)
 {
   NOWARN_UNUSED(len);
   EThread *thread = this_ethread();
@@ -240,7 +242,6 @@ post_setchan_send_ClusterFunction(ClusterMachine * to, void *data, int len)
   // initial open_write data after (n_set_data_msgs == 0).
 
   SetChanDataMessage *m = (SetChanDataMessage *) data;
-  ClusterHandler *ch = to->clusterHandler;
   ClusterVConnection *cvc;
 
   if (ch) {
@@ -256,7 +257,7 @@ post_setchan_send_ClusterFunction(ClusterMachine * to, void *data, int len)
 }
 
 void
-set_channel_pin_ClusterFunction(ClusterMachine * from, void *data, int len)
+set_channel_pin_ClusterFunction(ClusterHandler *ch, void *data, int len)
 {
   NOWARN_UNUSED(len);
   // This isn't used. /leif
@@ -279,9 +280,8 @@ set_channel_pin_ClusterFunction(ClusterMachine * from, void *data, int len)
 
   ClusterVConnection *cvc = NULL;       // Just to make GCC happy
   CacheVC *cache_vc;
-  ClusterHandler *ch;
 
-  if ((ch = from->clusterHandler) != 0) {
+  if (ch != 0) {
     cache_vc = ChannelToCacheWriteVC(ch, m->channel, m->sequence_number, &cvc);
     if (cache_vc) {
       cache_vc->set_pin_in_cache(m->pin_time);
@@ -292,7 +292,7 @@ set_channel_pin_ClusterFunction(ClusterMachine * from, void *data, int len)
 }
 
 void
-post_setchan_pin_ClusterFunction(ClusterMachine * to, void *data, int len)
+post_setchan_pin_ClusterFunction(ClusterHandler *ch, void *data, int len)
 {
   NOWARN_UNUSED(len);
   EThread *thread = this_ethread();
@@ -304,7 +304,6 @@ post_setchan_pin_ClusterFunction(ClusterMachine * to, void *data, int len)
   // initial open_write data after (n_set_data_msgs == 0).
 
   SetChanPinMessage *m = (SetChanPinMessage *) data;
-  ClusterHandler *ch = to->clusterHandler;
   ClusterVConnection *cvc;
 
   if (ch) {
@@ -320,7 +319,7 @@ post_setchan_pin_ClusterFunction(ClusterMachine * to, void *data, int len)
 }
 
 void
-set_channel_priority_ClusterFunction(ClusterMachine * from, void *data, int len)
+set_channel_priority_ClusterFunction(ClusterHandler *ch, void *data, int len)
 {
   NOWARN_UNUSED(len);
   // This isn't used.
@@ -342,9 +341,8 @@ set_channel_priority_ClusterFunction(ClusterMachine * from, void *data, int len)
 
   ClusterVConnection *cvc = NULL;       // Just to make GCC happy
   CacheVC *cache_vc;
-  ClusterHandler *ch;
 
-  if ((ch = from->clusterHandler) != 0) {
+  if (ch != 0) {
     cache_vc = ChannelToCacheWriteVC(ch, m->channel, m->sequence_number, &cvc);
     if (cache_vc) {
       cache_vc->set_disk_io_priority(m->disk_priority);
@@ -355,7 +353,7 @@ set_channel_priority_ClusterFunction(ClusterMachine * from, void *data, int len)
 }
 
 void
-post_setchan_priority_ClusterFunction(ClusterMachine * to, void *data, int len)
+post_setchan_priority_ClusterFunction(ClusterHandler *ch, void *data, int len)
 {
   NOWARN_UNUSED(len);
   EThread *thread = this_ethread();
@@ -368,7 +366,6 @@ post_setchan_priority_ClusterFunction(ClusterMachine * to, void *data, int len)
   // initial open_write data after (n_set_data_msgs == 0).
 
   SetChanPriorityMessage *m = (SetChanPriorityMessage *) data;
-  ClusterHandler *ch = to->clusterHandler;
   ClusterVConnection *cvc;
 
   if (ch) {

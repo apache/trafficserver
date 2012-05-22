@@ -49,12 +49,12 @@ int
 int
   ClusterLoadMonitor::cf_cluster_load_exceed_duration;
 
-ClusterLoadMonitor::ClusterLoadMonitor(ClusterMachine * m)
-:Continuation(0), machine(m), ping_history_buf_head(0),
+ClusterLoadMonitor::ClusterLoadMonitor(ClusterHandler * ch)
+:Continuation(0), ch(ch), ping_history_buf_head(0),
 periodic_action(0), cluster_overloaded(0), cancel_periodic(0),
 cluster_load_msg_sequence_number(0), cluster_load_msg_start_sequence_number(0)
 {
-  mutex = this->machine->clusterHandler->mutex;
+  mutex = this->ch->mutex;
   SET_HANDLER(&ClusterLoadMonitor::cluster_load_periodic);
 
   ping_message_send_msec_interval = cf_ping_message_send_msec_interval ? cf_ping_message_send_msec_interval : 100;
@@ -220,20 +220,20 @@ ClusterLoadMonitor::compute_cluster_load()
   }
   Debug("cluster_monitor",
         "[%u.%u.%u.%u] overload=%d, clear=%d, exceed=%d, latency=%d",
-        DOT_SEPARATED(this->machine->ip), cluster_overloaded, threshold_clear, threshold_exceeded, n_bucket);
+        DOT_SEPARATED(this->ch->machine->ip), cluster_overloaded, threshold_clear, threshold_exceeded, n_bucket);
 }
 
 void
 ClusterLoadMonitor::note_ping_response_time(ink_hrtime response_time, int sequence_number)
 {
 #ifdef CLUSTER_TOMCAT
-  ProxyMutex *mutex = this->machine->clusterHandler->mutex;     // hack for stats
+  ProxyMutex *mutex = this->ch->mutex;     // hack for stats
 #endif
 
   CLUSTER_SUM_DYN_STAT(CLUSTER_PING_TIME_STAT, response_time);
   int bucket = (int)
     (response_time / HRTIME_MSECONDS(msecs_per_ping_response_bucket));
-  Debug("cluster_monitor_ping", "[%u.%u.%u.%u] ping: %d %d", DOT_SEPARATED(this->machine->ip), bucket, sequence_number);
+  Debug("cluster_monitor_ping", "[%u.%u.%u.%u] ping: %d %d", DOT_SEPARATED(this->ch->machine->ip), bucket, sequence_number);
 
   if (bucket >= num_ping_response_buckets)
     bucket = num_ping_response_buckets - 1;
@@ -255,12 +255,11 @@ ClusterLoadMonitor::recv_cluster_load_msg(cluster_load_ping_msg * m)
 }
 
 void
-ClusterLoadMonitor::cluster_load_ping_rethandler(ClusterMachine * from, void *data, int len)
+ClusterLoadMonitor::cluster_load_ping_rethandler(ClusterHandler *ch, void *data, int len)
 {
   // Global cluster load ping message return handler which
   // dispatches the result to the class specific handler.
 
-  ClusterHandler *ch = from->clusterHandler;
   if (ch) {
     if (len == sizeof(struct cluster_load_ping_msg)) {
       struct cluster_load_ping_msg m;
@@ -283,7 +282,7 @@ ClusterLoadMonitor::send_cluster_load_msg(ink_hrtime current_time)
 
   m.sequence_number = cluster_load_msg_sequence_number++;
   m.send_time = current_time;
-  cluster_ping(machine, cluster_load_ping_rethandler, (void *) &m, sizeof(m));
+  cluster_ping(ch, cluster_load_ping_rethandler, (void *) &m, sizeof(m));
 }
 
 int

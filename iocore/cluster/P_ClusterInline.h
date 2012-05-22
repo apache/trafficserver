@@ -30,6 +30,7 @@
 #define __P_CLUSTERINLINE_H__
 #include "P_ClusterCacheInternal.h"
 #include "P_CacheInternal.h"
+#include "P_ClusterHandler.h"
 
 inline Action *
 Cluster_lookup(Continuation * cont, CacheKey * key, CacheFragType frag_type, char *hostname, int host_len)
@@ -37,7 +38,7 @@ Cluster_lookup(Continuation * cont, CacheKey * key, CacheFragType frag_type, cha
   // Try to send remote, if not possible, handle locally
   Action *retAct;
   ClusterMachine *m = cluster_machine_at_depth(cache_hash(*key));
-  if (!clusterProcessor.disable_remote_cluster_ops(m)) {
+  if (m && !clusterProcessor.disable_remote_cluster_ops(m)) {
     CacheContinuation *cc = CacheContinuation::cacheContAllocator_alloc();
     cc->action = cont;
     cc->mutex = cont->mutex;

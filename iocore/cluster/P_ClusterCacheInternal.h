@@ -104,6 +104,7 @@ struct CacheContinuation:public Continuation
   ClusterMachine *past_probes[CONFIGURATION_HISTORY_PROBE_DEPTH];
   ink_hrtime start_time;
   ClusterMachine *from;
+  ClusterHandler *ch;
   VConnection *cache_vc;
   bool cache_read;
   int result;                   // return event code

@@ -487,9 +487,9 @@ TSDeleteClusterRPCFunction(TSClusterRPCHandle_t * rpch)
  *  Cluster calls us here for each RPC API function.
  */
 void
-default_api_ClusterFunction(ClusterMachine * m, void *data, int len)
+default_api_ClusterFunction(ClusterHandler *ch, void *data, int len)
 {
-  Debug("cluster_api", "default_api_ClusterFunction: [%u.%u.%u.%u] data %p len %d", DOT_SEPARATED(m->ip), data, len);
+  Debug("cluster_api", "default_api_ClusterFunction: [%u.%u.%u.%u] data %p len %d", DOT_SEPARATED(ch->machine->ip), data, len);
 
   TSClusterRPCMsg_t *msg = (TSClusterRPCMsg_t *) data;
   RPCHandle_t *rpch = (RPCHandle_t *) & msg->m_handle;
@@ -501,7 +501,7 @@ default_api_ClusterFunction(ClusterMachine * m, void *data, int len)
 
   if (cluster_function < API_END_CLUSTER_FUNCTION && RPC_Functions[cluster_function]) {
     int msg_data_len = len - SIZEOF_RPC_MSG_LESS_DATA;
-    TSNodeHandle_t nh = IP_TO_NODE_HANDLE(m->ip);
+    TSNodeHandle_t nh = IP_TO_NODE_HANDLE(ch->machine->ip);
     (*RPC_Functions[cluster_function]) (&nh, msg, msg_data_len);
   } else {
     clusterProcessor.free_remote_data((char *) data, len);
@@ -572,7 +572,7 @@ TSSendClusterRPC(TSNodeHandle_t * nh, TSClusterRPCMsg_t * msg)
     int len = c->len - sizeof(OutgoingControl *);
     ink_release_assert((size_t) len >= sizeof(TSClusterRPCMsg_t));
 
-    clusterProcessor.invoke_remote(m, rpch->u.internal.cluster_function,
+    clusterProcessor.invoke_remote(m->pop_ClusterHandler(), rpch->u.internal.cluster_function,
                                    msg, len, (CLUSTER_OPT_STEAL | CLUSTER_OPT_DATA_IS_OCONTROL));
     Debug("cluster_api", "TSSendClusterRPC: msg %p dlen %d [%u.%u.%u.%u] sent", msg, len, DOT_SEPARATED(ipaddr.s_addr));
   } else {

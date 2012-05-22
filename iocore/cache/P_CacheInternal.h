@@ -1165,10 +1165,10 @@ CacheProcessor::open_write(Continuation *cont, CacheKey *key, CacheFragType frag
 {
   (void) expected_size;
 #ifdef CLUSTER_CACHE
-  ClusterMachine *m = cluster_machine_at_depth(cache_hash(*key));
-
-  if (m && (cache_clustering_enabled > 0)) {
-    return Cluster_write(cont, expected_size, (MIOBuffer *) 0, m,
+  if (cache_clustering_enabled > 0) {
+    ClusterMachine *m = cluster_machine_at_depth(cache_hash(*key));
+    if (m)
+      return Cluster_write(cont, expected_size, (MIOBuffer *) 0, m,
                          key, frag_type, options, pin_in_cache,
                          CACHE_OPEN_WRITE, key, (CacheURL *) 0,
                          (CacheHTTPHdr *) 0, (CacheHTTPInfo *) 0, hostname, host_len);
@@ -1278,10 +1278,9 @@ CacheProcessor::open_read_internal(int opcode,
     url_md5 = *key;
   }
   ClusterMachine *m = cluster_machine_at_depth(cache_hash(url_md5));
-  ClusterMachine *owner_machine = m ? m : this_cluster_machine();
 
-  if (owner_machine != this_cluster_machine()) {
-    return Cluster_read(owner_machine, opcode, cont, buf, url,
+  if (m) {
+    return Cluster_read(m, opcode, cont, buf, url,
                         request, params, key, pin_in_cache, frag_type, hostname, host_len);
   } else {
     if ((opcode == CACHE_OPEN_READ_LONG)

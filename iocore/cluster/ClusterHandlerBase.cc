@@ -182,7 +182,7 @@ OutgoingControl::alloc()
 }
 
 OutgoingControl::OutgoingControl()
-:m(NULL), submit_time(0)
+:ch(NULL), submit_time(0)
 {
 }
 
@@ -195,7 +195,6 @@ OutgoingControl::startEvent(int event, Event * e)
   //
   (void) event;
   (void) e;
-  ClusterHandler *ch = m->clusterHandler;
   // verify that the machine has not gone down
   if (!ch || !ch->thread)
     return EVENT_DONE;
@@ -741,7 +740,7 @@ ClusterHandler::machine_down()
 {
   char textbuf[sizeof("255.255.255.255:65535")];
 
-  if (machine->dead) {
+  if (dead) {
     return EVENT_DONE;
   }
   //
@@ -754,7 +753,7 @@ ClusterHandler::machine_down()
 #ifdef LOCAL_CLUSTER_TEST_MODE
   Note("machine down %u.%u.%u.%u:%d", DOT_SEPARATED(ip), port);
 #else
-  Note("machine down %u.%u.%u.%u", DOT_SEPARATED(ip));
+  Note("machine down %u.%u.%u.%u:%d", DOT_SEPARATED(ip), id);
 #endif
 #ifdef NON_MODULAR
   machine_offline_APIcallout(ip);
@@ -771,7 +770,8 @@ ClusterHandler::machine_down()
 
   MUTEX_TAKE_LOCK(the_cluster_config_mutex, this_ethread());
   ClusterConfiguration *c = this_cluster()->current_configuration();
-  if (c->find(ip, port)) {
+  machine->clusterHandlers[id] = NULL;
+  if ((--machine->now_connections == 0) && c->find(ip, port)) {
     ClusterConfiguration *cc = configuration_remove_machine(c, machine);
     CLUSTER_DECREMENT_DYN_STAT(CLUSTER_NODES_STAT);
     this_cluster()->configurations.push(cc);
@@ -780,7 +780,7 @@ ClusterHandler::machine_down()
   MachineList *cc = the_cluster_config();
   if (cc && cc->find(ip, port) && connector) {
     Debug(CL_NOTE, "cluster connect retry for %hhu.%hhu.%hhu.%hhu", DOT_SEPARATED(ip));
-    clusterProcessor.connect(ip, port);
+    clusterProcessor.connect(ip, port, id);
   }
   return zombify();             // defer deletion of *this
 }
@@ -793,8 +793,7 @@ ClusterHandler::zombify(Event * e)
   // Node associated with *this is declared down, setup the event to cleanup
   // and defer deletion of *this
   //
-  machine->clusterHandler = NULL;
-  machine->dead = true;
+  dead = true;
   if (cluster_periodic_event) {
     cluster_periodic_event->cancel(this);
     cluster_periodic_event = NULL;
@@ -910,6 +909,8 @@ ClusterHandler::startClusterEvent(int event, Event * e)
         nodeClusteringVersion._port = cluster_port;
 #endif
         cluster_connect_state = ClusterHandler::CLCON_SEND_MSG_COMPLETE;
+        if (connector)
+          nodeClusteringVersion._id = id;
         build_data_vector((char *) &nodeClusteringVersion, sizeof(nodeClusteringVersion), false);
         if (!write.doIO()) {
           // i/o not initiated, delay and retry
@@ -1019,29 +1020,57 @@ ClusterHandler::startClusterEvent(int event, Event * e)
           break;                // goto next state
         }
 
-        // include this node into the cluster configuration
-        MUTEX_TAKE_LOCK(the_cluster_config_mutex, this_ethread());
-        MachineList *cc = the_cluster_config();
 #ifdef LOCAL_CLUSTER_TEST_MODE
         port = clusteringVersion._port & 0xffff;
 #endif
+        if (!connector)
+          id = clusteringVersion._id & 0xffff;
+
+        // include this node into the cluster configuration
+        MUTEX_TAKE_LOCK(the_cluster_config_mutex, this_ethread());
+        MachineList *cc = the_cluster_config();
         if (cc && cc->find(ip, port)) {
           ClusterConfiguration *c = this_cluster()->current_configuration();
-          if (!c->find(ip, port)) {
+          ClusterMachine *m = c->find(ip, port);
+          
+          if (!m) { // this first connection
             ClusterConfiguration *cconf = configuration_add_machine(c, machine);
             CLUSTER_INCREMENT_DYN_STAT(CLUSTER_NODES_STAT);
             this_cluster()->configurations.push(cconf);
           } else {
-            // duplicate cluster connect, ignore
-            failed = -2;
-            Debug(CL_NOTE, "duplicate cluster connect %u.%u.%u.%u", DOT_SEPARATED(ip));
+            if (m->num_connections > machine->num_connections) {
+              // close old needlessness connection if new num_connections < old num_connections
+              for (int i = machine->num_connections; i < m->num_connections; i++) {
+                if (m->clusterHandlers[i])
+                  m->clusterHandlers[i]->downing = true;
+              }
+              m->num_connections = machine->num_connections;
+              m->free_connections -= (m->num_connections - machine->num_connections);
+              // delete_this
+              failed = -2;
+              MUTEX_UNTAKE_LOCK(the_cluster_config_mutex, this_ethread());
+              goto failed;
+            } else {
+              m->num_connections = machine->num_connections;
+              // close new connection if old connections is exist
+              if (id >= m->num_connections || m->clusterHandlers[id]) {
+                failed = -2;
+                MUTEX_UNTAKE_LOCK(the_cluster_config_mutex, this_ethread());
+                goto failed;
+              }
+              machine = m;
+            }
           }
+          machine->now_connections++;
+          machine->clusterHandlers[id] = this;
+          machine->dead = false;
+          dead = false;
         } else {
           Debug(CL_NOTE, "cluster connect aborted, machine %u.%u.%u.%u:%d not in cluster", DOT_SEPARATED(ip), port);
           failed = -1;
         }
         MUTEX_UNTAKE_LOCK(the_cluster_config_mutex, this_ethread());
-
+failed:
         if (failed) {
           if (failed == -1) {
             if (++configLookupFails <= CONFIG_LOOKUP_RETRIES) {
@@ -1054,7 +1083,6 @@ ClusterHandler::startClusterEvent(int event, Event * e)
         }
 
         this->needByteSwap = !clusteringVersion.NativeByteOrder();
-        machine->clusterHandler = this;
         machine->msg_proto_major = proto_major;
         machine->msg_proto_minor = proto_minor;
 #ifdef NON_MODULAR
@@ -1067,8 +1095,8 @@ ClusterHandler::startClusterEvent(int event, Event * e)
         Note("machine up %hhu.%hhu.%hhu.%hhu:%d, protocol version=%d.%d",
              DOT_SEPARATED(ip), port, clusteringVersion._major, clusteringVersion._minor);
 #else
-        Note("machine up %hhu.%hhu.%hhu.%hhu, protocol version=%d.%d",
-             DOT_SEPARATED(ip), clusteringVersion._major, clusteringVersion._minor);
+        Note("machine up %hhu.%hhu.%hhu.%hhu:%d, protocol version=%d.%d",
+             DOT_SEPARATED(ip), id, clusteringVersion._major, clusteringVersion._minor);
 #endif
         thread = e->ethread;
         read_vcs = NEW((new Queue<ClusterVConnectionBase, ClusterVConnectionBase::Link_read_link>[CLUSTER_BUCKETS]));
@@ -1103,7 +1131,7 @@ ClusterHandler::startClusterEvent(int event, Event * e)
         // Start cluster interconnect load monitoring
 
         if (!clm) {
-          clm = new ClusterLoadMonitor(machine);
+          clm = new ClusterLoadMonitor(this);
           clm->init();
         }
         return EVENT_DONE;
@@ -1114,10 +1142,8 @@ ClusterHandler::startClusterEvent(int event, Event * e)
       {
         if (connector) {
           Debug(CL_NOTE, "cluster connect retry for %u.%u.%u.%u", DOT_SEPARATED(ip));
-          ClusterConfiguration *cc = this_cluster()->current_configuration();
           // check for duplicate cluster connect
-          if (!cc->find(ip))
-            clusterProcessor.connect(ip, port, true);
+          clusterProcessor.connect(ip, port, id, true);
         }
         cluster_connect_state = ClusterHandler::CLCON_DELETE_CONNECT;
         break;                  // goto next state
@@ -1243,7 +1269,7 @@ ClusterHandler::protoZombieEvent(int event, Event * e)
       vc = channels[i];
       if (VALID_CHANNEL(vc)) {
         if (vc->closed) {
-          vc->machine = 0;
+          vc->ch = 0;
           vc->write_list = 0;
           vc->write_list_tail = 0;
           vc->write_list_bytes = 0;

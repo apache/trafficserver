@@ -186,7 +186,7 @@ ClusterVConnectionBase::reenable_re(VIO * vio)
 }
 
 ClusterVConnection::ClusterVConnection(int is_new_connect_read)
-  :  machine(NULL),
+  :  ch(NULL),
      new_connect_read(is_new_connect_read),
      remote_free(0),
      last_local_free(0),
@@ -306,7 +306,6 @@ ClusterVConnection::start(EThread * t)
   ///////////////////////////////////////////////////////////////////////////
 
   int status;
-  ClusterHandler *ch = NULL;
   if (!channel) {
 #ifdef CLUSTER_TOMCAT
     Ptr<ProxyMutex> m = action_.mutex;
@@ -323,7 +322,6 @@ ClusterVConnection::start(EThread * t)
       t->schedule_in(this, CLUSTER_CONNECT_RETRY);
       return EVENT_DONE;
     }
-    ch = machine->clusterHandler;
     if (!ch) {
       if (action_.continuation) {
         action_.continuation->handleEvent(CLUSTER_EVENT_OPEN_FAILED, (void *) -ECLUSTER_NO_MACHINE);
@@ -356,7 +354,6 @@ ClusterVConnection::start(EThread * t)
 
   } else {
     // Establish the remote side of the VC connection
-    ch = machine->clusterHandler;
     if ((status = ch->alloc_channel(this, channel)) < 0) {
       Debug(CL_TRACE, "VC start alloc remote failed chan=%d VC=%p", channel, this);
       clusterVCAllocator_free(this);
@@ -504,7 +501,7 @@ ClusterVConnection::set_http_info(CacheHTTPInfo * d)
   //   already done
   ink_release_assert(this->read.vio.op == VIO::NONE);   // should always be true
 
-  int vers = SetChanDataMessage::protoToVersion(machine->msg_proto_major);
+  int vers = SetChanDataMessage::protoToVersion(ch->machine->msg_proto_major);
   if (vers == SetChanDataMessage::SET_CHANNEL_DATA_MESSAGE_VERSION) {
     flen = SetChanDataMessage::sizeof_fixedlen_msg();
   } else {
@@ -537,7 +534,7 @@ ClusterVConnection::set_http_info(CacheHTTPInfo * d)
   // note pending set_data() msgs on VC.
   ink_atomic_increment(&n_set_data_msgs, 1);
 
-  clusterProcessor.invoke_remote(machine, SET_CHANNEL_DATA_CLUSTER_FUNCTION, data, flen + len);
+  clusterProcessor.invoke_remote(ch, SET_CHANNEL_DATA_CLUSTER_FUNCTION, data, flen + len);
 }
 
 bool ClusterVConnection::set_pin_in_cache(time_t t)
@@ -554,7 +551,7 @@ bool ClusterVConnection::set_pin_in_cache(time_t t)
   ink_release_assert(this->read.vio.op == VIO::NONE);   // should always be true
   time_pin = t;
 
-  int vers = SetChanPinMessage::protoToVersion(machine->msg_proto_major);
+  int vers = SetChanPinMessage::protoToVersion(ch->machine->msg_proto_major);
 
   if (vers == SetChanPinMessage::SET_CHANNEL_PIN_MESSAGE_VERSION) {
     SetChanPinMessage::sizeof_fixedlen_msg();
@@ -571,7 +568,7 @@ bool ClusterVConnection::set_pin_in_cache(time_t t)
   // note pending set_data() msgs on VC.
   ink_atomic_increment(&n_set_data_msgs, 1);
 
-  clusterProcessor.invoke_remote(machine, SET_CHANNEL_PIN_CLUSTER_FUNCTION, (char *) &msg, sizeof(msg));
+  clusterProcessor.invoke_remote(ch, SET_CHANNEL_PIN_CLUSTER_FUNCTION, (char *) &msg, sizeof(msg));
   return true;
 }
 
@@ -594,7 +591,7 @@ bool ClusterVConnection::set_disk_io_priority(int priority)
   ink_release_assert(this->read.vio.op == VIO::NONE);   // should always be true
   disk_io_priority = priority;
 
-  int vers = SetChanPriorityMessage::protoToVersion(machine->msg_proto_major);
+  int vers = SetChanPriorityMessage::protoToVersion(ch->machine->msg_proto_major);
 
   if (vers == SetChanPriorityMessage::SET_CHANNEL_PRIORITY_MESSAGE_VERSION) {
     SetChanPriorityMessage::sizeof_fixedlen_msg();
@@ -611,7 +608,7 @@ bool ClusterVConnection::set_disk_io_priority(int priority)
   // note pending set_data() msgs on VC.
   ink_atomic_increment(&n_set_data_msgs, 1);
 
-  clusterProcessor.invoke_remote(machine, SET_CHANNEL_PRIORITY_CLUSTER_FUNCTION, (char *) &msg, sizeof(msg));
+  clusterProcessor.invoke_remote(ch, SET_CHANNEL_PRIORITY_CLUSTER_FUNCTION, (char *) &msg, sizeof(msg));
   return true;
 }
 
