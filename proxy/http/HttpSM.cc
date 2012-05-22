@@ -88,12 +88,11 @@ static uint32_t val[MAX_SCATTER_LEN];
 static uint16_t to[MAX_SCATTER_LEN];
 static int scat_count = 0;
 
-static char bound[] = "RANGE_SEPARATOR";
-//
-static char cont_type[] = "Content-type: ";
-static char cont_range[] = "Content-range: bytes ";
-static int sub_header_size = sizeof(cont_type) - 1 + 2 + sizeof(cont_range) - 1 + 4;
-static int boundary_size = 2 + sizeof(bound) - 1 + 2;
+static const char bound[] = "RANGE_SEPARATOR";
+static char const cont_type[] = "Content-type: ";
+static char const cont_range[] = "Content-range: bytes ";
+static const int sub_header_size = sizeof(cont_type) - 1 + 2 + sizeof(cont_range) - 1 + 4;
+static const int boundary_size = 2 + sizeof(bound) - 1 + 2;
 
 /**
  * Takes two milestones and returns the difference.
