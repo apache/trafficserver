@@ -22,8 +22,23 @@
 #include "lapi.h"
 #include "lutil.h"
 
-// Return the type name string for the given index.
-#define LTYPEOF(L, index) lua_typename(L, lua_type(L, index))
+template <typename LuaType, typename Param1> LuaType *
+push_userdata_object(lua_State * lua, Param1 p1)
+{
+  LuaType * ltype;
+  ltype = LuaType::alloc(lua, p1);
+  TSReleaseAssert(lua_isuserdata(lua, -1) == 1);
+  return ltype;
+}
+
+template <typename LuaType, typename Param1, typename Param2> LuaType *
+push_userdata_object(lua_State * lua, Param1 p1, Param2 p2)
+{
+  LuaType * ltype;
+  ltype = LuaType::alloc(lua, p1, p2);
+  TSReleaseAssert(lua_isuserdata(lua, -1) == 1);
+  return ltype;
+}
 
 struct LuaRemapHeaders
 {
@@ -37,11 +52,51 @@ struct LuaRemapHeaders
   static LuaRemapHeaders * alloc(lua_State * lua) {
     LuaRemapHeaders * hdrs;
 
-    hdrs = (LuaRemapHeaders *)lua_newuserdata(lua, sizeof(LuaRemapHeaders));
+    hdrs = LuaNewUserData<LuaRemapHeaders>(lua);
     luaL_getmetatable(lua, "ts.meta.rri.headers");
     lua_setmetatable(lua, -2);
 
     return hdrs;
+  }
+};
+
+struct LuaHttpTransaction
+{
+  TSHttpTxn txn;
+
+  static LuaHttpTransaction * get(lua_State * lua, int index) {
+    return (LuaHttpTransaction *)luaL_checkudata(lua, index, "ts.meta.http.txn");
+  }
+
+  static LuaHttpTransaction * alloc(lua_State * lua, TSHttpTxn ptr) {
+    LuaHttpTransaction * txn;
+
+    txn = LuaNewUserData<LuaHttpTransaction>(lua);
+    txn->txn = ptr;
+    luaL_getmetatable(lua, "ts.meta.http.txn");
+    lua_setmetatable(lua, -2);
+
+    return txn;
+  }
+};
+
+struct LuaHttpSession
+{
+  TSHttpSsn ssn;
+
+  static LuaHttpSession * get(lua_State * lua, int index) {
+    return (LuaHttpSession *)luaL_checkudata(lua, index, "ts.meta.http.ssn");
+  }
+
+  static LuaHttpSession * alloc(lua_State * lua, TSHttpSsn ptr) {
+    LuaHttpSession * ssn;
+
+    ssn = LuaNewUserData<LuaHttpSession>(lua);
+    ssn->ssn = ptr;
+    luaL_getmetatable(lua, "ts.meta.http.ssn");
+    lua_setmetatable(lua, -2);
+
+    return ssn;
   }
 };
 
@@ -52,11 +107,11 @@ LuaRemapRequest::get(lua_State * lua, int index)
 }
 
 LuaRemapRequest *
-LuaRemapRequest::alloc(lua_State * lua)
+LuaRemapRequest::alloc(lua_State * lua, TSRemapRequestInfo * rri, TSHttpTxn txn)
 {
   LuaRemapRequest * rq;
 
-  rq = (LuaRemapRequest *)lua_newuserdata(lua, sizeof(LuaRemapRequest));
+  rq = new(lua_newuserdata(lua, sizeof(LuaRemapRequest))) LuaRemapRequest(rri, txn);
   luaL_getmetatable(lua, "ts.meta.rri");
   lua_setmetatable(lua, -2);
 
@@ -391,19 +446,76 @@ static const luaL_Reg HEADERS[] =
   { NULL, NULL }
 };
 
-LuaRemapRequest *
-LuaPushRemapRequestInfo(lua_State * lua, TSHttpTxn txn, TSRemapRequestInfo * rri)
+static int
+LuaHttpTxnAbort(lua_State * lua)
 {
-  LuaRemapRequest * rq;
+  LuaHttpTransaction * txn;
 
-  rq = LuaRemapRequest::alloc(lua);
-  rq->rri = rri;
-  rq->txn = txn;
-  rq->status = TSREMAP_NO_REMAP;
+  txn = LuaHttpTransaction::get(lua, 1);
+  TSHttpTxnReenable(txn->txn, TS_EVENT_HTTP_ERROR);
 
-  TSReleaseAssert(lua_isuserdata(lua, -1) == 1);
-  return rq;
+  return 1;
 }
+
+static int
+LuaHttpTxnContinue(lua_State * lua)
+{
+  LuaHttpTransaction * txn;
+
+  txn = LuaHttpTransaction::get(lua, 1);
+  TSHttpTxnReenable(txn->txn, TS_EVENT_HTTP_CONTINUE);
+
+  return 1;
+}
+
+static const luaL_Reg HTTPTXN[] =
+{
+  { "abort", LuaHttpTxnAbort },
+  { "continue", LuaHttpTxnContinue },
+  { NULL, NULL }
+};
+
+static int
+LuaHttpSsnAbort(lua_State * lua)
+{
+  LuaHttpSession * ssn;
+
+  ssn = LuaHttpSession::get(lua, 1);
+  TSHttpSsnReenable(ssn->ssn, TS_EVENT_HTTP_ERROR);
+
+  return 1;
+}
+
+static int
+LuaHttpSsnContinue(lua_State * lua)
+{
+  LuaHttpSession * ssn;
+
+  ssn = LuaHttpSession::get(lua, 1);
+  TSHttpSsnReenable(ssn->ssn, TS_EVENT_HTTP_CONTINUE);
+
+  return 1;
+}
+
+static int
+LuaHttpSsnRegister(lua_State * lua)
+{
+  LuaHttpSession * ssn;
+  int hookid;
+
+  ssn = LuaHttpSession::get(lua, 1);
+  hookid = luaL_checkint(lua, 2);
+
+  return 1;
+}
+
+static const luaL_Reg HTTPSSN[] =
+{
+  { "register", LuaHttpSsnRegister },
+  { "abort", LuaHttpSsnAbort },
+  { "continue", LuaHttpSsnContinue },
+  { NULL, NULL }
+};
 
 static int
 TSLuaDebug(lua_State * lua)
@@ -421,10 +533,28 @@ static const luaL_Reg LUAEXPORTS[] =
   { NULL, NULL}
 };
 
+LuaRemapRequest *
+LuaPushRemapRequestInfo(lua_State * lua, TSHttpTxn txn, TSRemapRequestInfo * rri)
+{
+  return push_userdata_object<LuaRemapRequest>(lua, rri, txn);
+}
+
+LuaHttpTransaction *
+LuaPushHttpTransaction(lua_State * lua, TSHttpTxn txn)
+{
+  return push_userdata_object<LuaHttpTransaction>(lua, txn);
+}
+
+LuaHttpSession *
+LuaPushHttpSession(lua_State * lua, TSHttpSsn ssn)
+{
+  return push_userdata_object<LuaHttpSession>(lua, ssn);
+}
+
 int
 LuaApiInit(lua_State * lua)
 {
-  TSDebug("lua", "initializing Lua API");
+  TSDebug("lua", "initializing TS API");
 
   lua_newtable(lua);
 
@@ -432,23 +562,10 @@ LuaApiInit(lua_State * lua)
   luaL_register(lua, NULL, LUAEXPORTS);
 
   // Push constants into the "ts" module.
-  lua_pushstring(lua, TSTrafficServerVersionGet());
-  lua_setfield(lua, -2, "VERSION");
-
-  lua_pushinteger(lua, TSTrafficServerVersionGetMajor());
-  lua_setfield(lua, -2, "MAJOR_VERSION");
-
-  lua_pushinteger(lua, TSTrafficServerVersionGetMinor());
-  lua_setfield(lua, -2, "MINOR_VERSION");
-
-  lua_pushinteger(lua, TSTrafficServerVersionGetPatch());
-  lua_setfield(lua, -2, "PATCH_VERSION");
-
-  lua_pushinteger(lua, TSREMAP_DID_REMAP_STOP);
-  lua_setfield(lua, -2, "REMAP_COMPLETE");
-
-  lua_pushinteger(lua, TSREMAP_DID_REMAP);
-  lua_setfield(lua, -2, "REMAP_CONTINUE");
+  LuaSetConstantField(lua, "VERSION", TSTrafficServerVersionGet());
+  LuaSetConstantField(lua, "MAJOR_VERSION", TSTrafficServerVersionGetMajor());
+  LuaSetConstantField(lua, "MINOR_VERSION", TSTrafficServerVersionGetMinor());
+  LuaSetConstantField(lua, "PATCH_VERSION", TSTrafficServerVersionGetPatch());
 
   // Register TSRemapRequestInfo metatable.
   LuaPushMetatable(lua, "ts.meta.rri", RRI);
@@ -457,6 +574,16 @@ LuaApiInit(lua_State * lua)
 
   // Register the remap headers metatable.
   LuaPushMetatable(lua, "ts.meta.rri.headers", HEADERS);
+  // Pop the metatable.
+  lua_pop(lua, 1);
+
+  // Register TSHttpTxn metatable.
+  LuaPushMetatable(lua, "ts.meta.http.txn", HTTPTXN);
+  // Pop the metatable.
+  lua_pop(lua, 1);
+
+  // Register TSHttpSsn metatable.
+  LuaPushMetatable(lua, "ts.meta.http.ssn", HTTPSSN);
   // Pop the metatable.
   lua_pop(lua, 1);
 

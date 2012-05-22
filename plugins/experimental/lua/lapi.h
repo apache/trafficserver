@@ -19,11 +19,10 @@
 #ifndef LUA_LAPI_H_
 #define LUA_LAPI_H_
 
-extern "C" {
-#include <lua.h>
-#include <lualib.h>
-#include <lauxlib.h>
-}
+#include <lua.hpp>
+
+struct LuaHttpTransaction;
+struct LuaHttpSession;
 
 struct LuaRemapRequest
 {
@@ -31,12 +30,20 @@ struct LuaRemapRequest
   TSHttpTxn             txn;
   TSRemapStatus         status;
 
+  LuaRemapRequest(TSRemapRequestInfo * r, TSHttpTxn t) : rri(r), txn(t), status(TSREMAP_NO_REMAP) {}
+  LuaRemapRequest() : rri(NULL), txn(NULL), status(TSREMAP_NO_REMAP) {}
+  ~LuaRemapRequest() {}
+
   static LuaRemapRequest * get(lua_State * lua, int index);
-  static LuaRemapRequest * alloc(lua_State * lua);
+  static LuaRemapRequest * alloc(lua_State *, TSRemapRequestInfo *, TSHttpTxn);
 };
 
 // Initialize the 'ts' module.
 int LuaApiInit(lua_State * lua);
+// Initialize the 'ts.config' module.
+int LuaConfigApiInit(lua_State * lua);
+// Initialize the 'ts.hook' module.
+int LuaHookApiInit(lua_State * lua);
 
 // Push a copy of the given URL.
 bool LuaPushUrl(lua_State * lua, TSMBuffer buffer, TSMLoc url);
@@ -44,5 +51,13 @@ bool LuaPushUrl(lua_State * lua, TSMBuffer buffer, TSMLoc url);
 // Push a wrapper object for the given TSRemapRequestInfo.
 LuaRemapRequest *
 LuaPushRemapRequestInfo(lua_State * lua, TSHttpTxn txn, TSRemapRequestInfo * rri);
+
+// Push a TSHttpTxn userdata object.
+LuaHttpTransaction *
+LuaPushHttpTransaction(lua_State * lua, TSHttpTxn txn);
+
+// Push a TSHttpSsn userdata object.
+LuaHttpSession *
+LuaPushHttpSession(lua_State * lua, TSHttpSsn ssn);
 
 #endif // LUA_LAPI_H_

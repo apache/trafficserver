@@ -20,51 +20,8 @@
 #include <ts/remap.h>
 #include <unistd.h>
 #include <string.h>
-#include <pthread.h>
-#include <string>
-#include <vector>
 #include "lapi.h"
 #include "lutil.h"
-
-static pthread_key_t LuaStateKey;
-
-struct LuaPluginState
-{
-  typedef std::vector<std::string> pathlist;
-
-  LuaPluginState(unsigned argc, const char ** argv) {
-    for (unsigned i = 0; i < argc; ++i) {
-      paths.push_back(argv[i]);
-    }
-  }
-
-  pathlist paths;
-};
-
-static TSReturnCode
-LuaPluginInit(lua_State * lua)
-{
-  TSReturnCode status = TS_ERROR;
-
-  lua_getglobal(lua, "init");
-  if (lua_isnil(lua, -1)) {
-    // No "init" callback.
-    return TS_SUCCESS;
-  }
-
-  if (lua_pcall(lua, 0, 1, 0) != 0) {
-    TSDebug("lua", "init failed: %s", lua_tostring(lua, -1));
-    lua_pop(lua, 1);
-  }
-
-  // Return type is bool; check it and pop it.
-  if (lua_isboolean(lua, 1) && lua_toboolean(lua, 1)) {
-    status = TS_SUCCESS;
-  }
-
-  lua_pop(lua, 1);
-  return status;
-}
 
 static TSReturnCode
 LuaPluginRelease(lua_State * lua)
@@ -111,53 +68,6 @@ LuaPluginRemap(lua_State * lua, TSHttpTxn txn, TSRemapRequestInfo * rri)
   return rq->status;
 }
 
-static lua_State *
-LuaPluginNewState(void)
-{
-  lua_State * lua;
-
-  lua = lua_newstate(LuaAllocate, NULL);
-  if (lua == NULL) {
-    return NULL;
-  }
-
-  LuaLoadLibraries(lua);
-  LuaRegisterLibrary(lua, "ts", LuaApiInit);
-
-  return lua;
-}
-
-static lua_State *
-LuaPluginNewState(LuaPluginState * remap)
-{
-  lua_State * lua;
-
-  lua = LuaPluginNewState();
-  if (lua == NULL) {
-    return NULL;
-  }
-
-  for (LuaPluginState::pathlist::const_iterator p = remap->paths.begin(); p < remap->paths.end(); ++p) {
-    if (access(p->c_str(), F_OK) != 0) {
-      continue;
-    }
-
-    if (luaL_dofile(lua, p->c_str()) != 0) {
-      // If the load failed, it should have pushed an error message.
-      TSDebug("lua", "failed to load Lua file %s: %s", p->c_str(), lua_tostring(lua, -1));
-      lua_close(lua);
-      return NULL;
-    }
-  }
-
-  if (LuaPluginInit(lua) == TS_SUCCESS) {
-    return lua;
-  } else {
-    lua_close(lua);
-    return NULL;
-  }
-}
-
 void
 TSRemapDeleteInstance(void * ih)
 {
@@ -173,7 +83,6 @@ TSReturnCode
 TSRemapInit(TSRemapInterface * api_info, char * errbuf, int errbuf_size)
 {
   TSDebug("lua", "loading lua plugin");
-  TSReleaseAssert(pthread_key_create(&LuaStateKey, TSRemapDeleteInstance) == 0);
   return TS_SUCCESS;
 }
 
@@ -186,12 +95,13 @@ TSRemapNewInstance(int argc, char * argv[], void ** ih, char * errbuf, int errsz
   // Copy the plugin arguments so that we can use them to allocate a per-thread Lua state. It would be cleaner
   // to clone a Lua state, but there's no built-in way to do that, and to implement that ourselves would require
   // locking the template state (we need to manipulate the stack to copy values out).
-  remap = new LuaPluginState((unsigned)argc, (const char **)argv);
+  remap = tsnew<LuaPluginState>();
+  remap->init((unsigned)argc, (const char **)argv);
 
   // Test whether we can successfully load the Lua program.
   lua = LuaPluginNewState(remap);
   if (!lua) {
-    delete remap;
+    tsdelete(remap);
     return TS_ERROR;
   }
 
@@ -202,17 +112,20 @@ TSRemapNewInstance(int argc, char * argv[], void ** ih, char * errbuf, int errsz
 TSRemapStatus
 TSRemapDoRemap(void * ih, TSHttpTxn txn, TSRemapRequestInfo * rri)
 {
-  lua_State * lua;
+  LuaThreadInstance * lthread;
 
   // Find or clone the per-thread Lua state.
-  lua = (lua_State *)pthread_getspecific(LuaStateKey);
-  if (!lua) {
-    LuaPluginState * remap = (LuaPluginState *)ih;
+  lthread = LuaGetThreadInstance();
+  if (!lthread) {
+    LuaPluginState * lps;
+
+    lps = (LuaPluginState *)ih;
+    lthread = tsnew<LuaThreadInstance>();
 
     TSDebug("lua", "allocating new Lua state on thread 0x%llx", (unsigned long long)pthread_self());
-    lua = LuaPluginNewState(remap);
-    pthread_setspecific(LuaStateKey, lua);
+    lthread->lua = LuaPluginNewState(lps);
+    LuaSetThreadInstance(lthread);
   }
 
-  return LuaPluginRemap(lua, txn, rri);
+  return LuaPluginRemap(lthread->lua, txn, rri);
 }

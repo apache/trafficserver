@@ -17,14 +17,27 @@
 */
 
 #include <ts/ts.h>
+#include <ts/remap.h>
+#include "lapi.h"
+#include "lutil.h"
+#include <pthread.h>
 
-extern "C" {
-#include <lua.h>
-#include <lualib.h>
-#include <lauxlib.h>
+static thread_local_pointer<LuaThreadInstance> LuaThread;
+LuaPluginState * LuaPlugin;
+
+LuaThreadInstance::LuaThreadInstance()
+  : lua(NULL)
+{
+  for (unsigned i = 0; i < arraysz(this->hooks); ++i) {
+    this->hooks[i] = LUA_NOREF;
+  }
 }
 
-void *
+LuaThreadInstance::~LuaThreadInstance()
+{
+}
+
+static void *
 LuaAllocate(void * ud, void * ptr, size_t osize, size_t nsize)
 {
   TSReleaseAssert(ud == NULL);
@@ -35,6 +48,60 @@ LuaAllocate(void * ud, void * ptr, size_t osize, size_t nsize)
   }
 
   return TSrealloc(ptr, nsize);
+}
+
+lua_State *
+LuaPluginNewState(void)
+{
+  lua_State * lua;
+
+  lua = lua_newstate(LuaAllocate, NULL);
+  if (lua == NULL) {
+    return NULL;
+  }
+
+  LuaLoadLibraries(lua);
+  LuaRegisterLibrary(lua, "ts", LuaApiInit);
+  LuaRegisterLibrary(lua, "ts.config", LuaConfigApiInit);
+  LuaRegisterLibrary(lua, "ts.hook", LuaHookApiInit);
+
+  return lua;
+}
+
+lua_State *
+LuaPluginNewState(LuaPluginState * plugin)
+{
+  lua_State * lua;
+
+  lua = LuaPluginNewState();
+  if (lua == NULL) {
+    return NULL;
+  }
+
+  if (!LuaPluginLoad(lua, plugin)) {
+    lua_close(lua);
+    return NULL;
+  }
+
+  return lua;
+}
+
+bool
+LuaPluginLoad(lua_State * lua, LuaPluginState * plugin)
+{
+  for (LuaPluginState::pathlist::const_iterator p = plugin->paths.begin(); p < plugin->paths.end(); ++p) {
+    if (access(p->c_str(), F_OK) != 0) {
+      continue;
+    }
+
+    if (luaL_dofile(lua, p->c_str()) != 0) {
+      // If the load failed, it should have pushed an error message.
+      TSError("failed to load Lua file %s: %s", p->c_str(), lua_tostring(lua, -1));
+      return false;
+    }
+  }
+
+  return true;
 }
 
 void
@@ -76,5 +143,31 @@ LuaLoadLibraries(lua_State * lua)
     REGISTER_LIBRARY(debug);
 
 #undef REGISTER_LIBRARY
+}
+
+void
+LuaSetConstantField(lua_State * lua, const char * name, int value)
+{
+  lua_pushinteger(lua, value);
+  lua_setfield(lua, -2, name);
+}
+
+void
+LuaSetConstantField(lua_State * lua, const char * name, const char * value)
+{
+  lua_pushstring(lua, value);
+  lua_setfield(lua, -2, name);
+}
+
+LuaThreadInstance *
+LuaGetThreadInstance()
+{
+  return LuaThread.get();
+}
+
+void
+LuaSetThreadInstance(LuaThreadInstance * lthread)
+{
+  LuaThread.set(lthread);
 }
 

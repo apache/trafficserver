@@ -23,11 +23,10 @@ AM_CXXFLAGS = \
   -I$(top_builddir)/proxy/api \
   -I$(top_srcdir)/proxy/api
 
-
 pkglib_LTLIBRARIES = lua.la
 
 lua_la_LIBADD = ${LUA_LIBS}
-lua_la_SOURCES = lua.cc lapi.cc lutil.cc
+lua_la_SOURCES = remap.cc plugin.cc lapi.cc lutil.cc lconfig.cc hook.cc
 lua_la_LDFLAGS = -module -avoid-version -shared
 
 endif

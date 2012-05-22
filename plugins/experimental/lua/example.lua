@@ -55,9 +55,3 @@ function remap(request)
   end
 
 end
-
--- Optional module initialization hook.
-function init()
-    TS.debug("example", string.format('init called by Traffic Server %s', TS.VERSION));
-    return true
-end
