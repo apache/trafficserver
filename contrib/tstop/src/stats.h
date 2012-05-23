@@ -159,16 +159,14 @@ public:
 
         if (item.type == 1 || item.type == 2 || item.type == 5 || item.type == 8) {
           assert(TSRecordGetInt(item.name, &value) == TS_ERR_OKAY);
-          cerr << "name" << item.name << " value: " << value << endl;
+          //cerr << "name" << item.name << " value: " << value << endl;
           string key = item.name;
           char buffer[32];
           sprintf(buffer, "%lld", value);
           string foo = buffer;
           (*_stats)[key] = foo;
-
-
         }
-      }
+      } 
       _old_time = _now;
       _now = now;
       _time_diff = _now - _old_time;
@@ -187,6 +185,8 @@ public:
         gettimeofday(&_time, NULL);
         double now = _time.tv_sec + (double)_time.tv_usec / 1000000;
 
+        response.clear();
+        response.reserve(32768); // should hopefully be smaller then 32KB
         res = curl_easy_perform(curl);
 
         // only if success update stats and time information
@@ -332,6 +332,15 @@ public:
       //cout << "key " << key << " " << "value " << value << endl;
       pos = end + sizeof(constant::end) - 1;
       //cout << "pos: " << pos << endl;
+    }
+  }
+
+  ~Stats() {
+    if (_stats != NULL) {
+      delete _stats;
+    }
+    if (_old_stats != NULL) {
+      delete _old_stats;
     }
   }
 
