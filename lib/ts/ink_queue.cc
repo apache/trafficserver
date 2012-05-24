@@ -50,12 +50,6 @@
 #include "ink_resource.h"
 
 
-#ifdef __x86_64__
-#define INK_QUEUE_LD64(dst,src) *((uint64_t*)&(dst)) = *((uint64_t*)&(src))
-#else
-#define INK_QUEUE_LD64(dst,src) (ink_queue_load_64((void *)&(dst), (void *)&(src)))
-#endif
-
 typedef struct _ink_freelist_list
 {
   InkFreeList *fl;
@@ -91,15 +85,6 @@ inkcoreapi volatile int64_t freelist_allocated_mem = 0;
 
 #define fl_memadd(_x_) \
    ink_atomic_increment64(&freelist_allocated_mem, (int64_t) (_x_));
-
-//static void ink_queue_load_64(void *dst, void *src)
-//{
-//    int32_t src_version =  (*(head_p *) src).s.version;
-//    void *src_pointer = (*(head_p *) src).s.pointer;
-//
-//    (*(head_p *) dst).s.version = src_version;
-//    (*(head_p *) dst).s.pointer = src_pointer;
-//}
 
 
 void

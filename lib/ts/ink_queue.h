@@ -65,6 +65,12 @@ extern "C"
 
   void ink_queue_load_64(void *dst, void *src);
 
+#ifdef __x86_64__
+#define INK_QUEUE_LD64(dst,src) *((uint64_t*)&(dst)) = *((uint64_t*)&(src))
+#else
+#define INK_QUEUE_LD64(dst,src) (ink_queue_load_64((void *)&(dst), (void *)&(src)))
+#endif
+
 /*
  * Generic Free List Manager
  */

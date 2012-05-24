@@ -130,17 +130,11 @@ union LB_State
 /*-------------------------------------------------------------------------
   LogBuffer
   -------------------------------------------------------------------------*/
-#define CLASS_SIGN_LOGBUFFER 0xFACE5370 /* LogBuffer class signature */
-
 class LogBuffer
 {
 public:
-  unsigned long sign;           /* class signature (must be CLASS_SIGN_LOGBUFFER) */
-  LogBuffer *next_flush;        /* next in flush list */
-  LogBuffer *next_list;         /* next in list */
-
-  enum LB_ResultCode
-  {
+  SLINK(LogBuffer, write_link);
+  enum LB_ResultCode {
     LB_OK = 0,
     LB_FULL_NO_WRITERS,
     LB_FULL_ACTIVE_WRITERS,
@@ -199,14 +193,16 @@ public:
 
   // static functions
   static size_t max_entry_bytes();
-  static int to_ascii(LogEntryHeader * entry, LogFormatType type,
-                      char *buf, int max_len, char *symbol_str, char *printf_str,
-                      unsigned buffer_version, char *alt_format = NULL);
-  static int resolve_custom_entry(LogFieldList * fieldlist,
-                                  char *printf_str, char *read_from, char *write_to,
-                                  int write_to_len, long timestamp, long timestamp_us,
-                                  unsigned buffer_version, LogFieldList * alt_fieldlist = NULL,
-                                  char *alt_printf_str = NULL);
+  static int to_ascii(
+      LogEntryHeader * entry, LogFormatType type,
+      char *buf, int max_len, char *symbol_str, char *printf_str,
+      unsigned buffer_version, char *alt_format = NULL);
+  static int resolve_custom_entry(
+      LogFieldList * fieldlist,
+      char *printf_str, char *read_from, char *write_to,
+      int write_to_len, long timestamp, long timestamp_us,
+      unsigned buffer_version, LogFieldList * alt_fieldlist = NULL,
+      char *alt_printf_str = NULL);
 
 private:
   char *m_unaligned_buffer;     // the unaligned buffer
@@ -223,7 +219,10 @@ private:
   LogObject *m_owner;           // the LogObject that owns this buf.
   LogBufferHeader *m_header;
 
-  uint32_t m_id;                  // unique buffer id (for debugging)
+  uint32_t m_id;                // unique buffer id (for debugging)
+public:
+  volatile int m_references;    // oustanding checkout_write references.
+private:
 
   // private functions
   size_t _add_buffer_header();
@@ -270,8 +269,7 @@ public:
   This class will iterate over the entries in a LogBuffer.
   -------------------------------------------------------------------------*/
 
-class LogBufferIterator
-{
+class LogBufferIterator {
 public:
   LogBufferIterator(LogBufferHeader * header, bool in_network_order = false);
   ~LogBufferIterator();
@@ -300,10 +298,10 @@ private:
 
 inline
 LogBufferIterator::LogBufferIterator(LogBufferHeader * header, bool in_network_order)
-                  : m_in_network_order(in_network_order),
-                  m_next(0),
-                  m_iter_entry_count(0),
-                  m_buffer_entry_count(0)
+: m_in_network_order(in_network_order),
+  m_next(0),
+  m_iter_entry_count(0),
+  m_buffer_entry_count(0)
 {
   ink_debug_assert(header);
 

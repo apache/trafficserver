@@ -40,34 +40,32 @@
 #include "LogObject.h"
 
 size_t
-LogBufferManager::flush_buffers(LogBufferSink *sink)
-{
-  while (!ink_atomic_cas(&_flush_array_lock, 0, 1));
-
-  int ofa = _open_flush_array;
-  int nfb = _num_flush_buffers[ofa];
-  if (nfb) {
-    _open_flush_array = !_open_flush_array;        // switch to other array
-    _num_flush_buffers[_open_flush_array] = 0;     // clear count
-  }
-
-  _flush_array_lock = 0;
-
-  if (nfb) {
-    int i;
-
-    for (i=0 ;i < nfb; ++i) {
-      LogBuffer *flush_buffer = _flush_array[ofa][i];
-
-      flush_buffer->update_header_data();
-      sink->write(flush_buffer);
-      delete flush_buffer;
+LogBufferManager::flush_buffers(LogBufferSink *sink) {
+  SList(LogBuffer, write_link) q(write_list.popall()), new_q;
+  LogBuffer *b = NULL;
+  while ((b = q.pop())) {
+    if (b->m_references) {  // Still has outstanding references.
+      write_list.push(b);
+    } else if (_num_flush_buffers > FLUSH_ARRAY_SIZE) {
+      delete b;
+      ink_atomic_increment(&_num_flush_buffers, -1);
+      Warning("Dropping log buffer, can't keep up.");
+    } else {
+      new_q.push(b);
     }
-
-    Debug("log-logbuffer", "flushed %d buffers from array %d", nfb, ofa);
   }
 
-  return nfb;
+  int flushed = 0;
+  while ((b = new_q.pop())) {
+    b->update_header_data();
+    sink->write(b);
+    delete b;
+    ink_atomic_increment(&_num_flush_buffers, -1);
+    flushed++;
+  }
+
+  Debug("log-logbuffer", "flushed %d buffers", flushed);
+  return flushed;
 }
 
 /*-------------------------------------------------------------------------
@@ -85,8 +83,7 @@ LogObject::LogObject(LogFormat *format, const char *log_dir,
       m_rolling_offset_hr (rolling_offset_hr),
       m_rolling_size_mb (rolling_size_mb),
       m_last_roll_time(0),
-      m_ref_count (0),
-      m_log_buffer (NULL)
+      m_ref_count (0)
 {
     ink_debug_assert (format != NULL);
     m_format = new LogFormat(*format);
@@ -120,8 +117,9 @@ LogObject::LogObject(LogFormat *format, const char *log_dir,
                                  Log::config->overspill_report_count));
 #endif // TS_MICRO
 
-    m_log_buffer = NEW (new LogBuffer (this, Log::config->log_buffer_size));
-    ink_debug_assert (m_log_buffer != NULL);
+    LogBuffer *b = NEW (new LogBuffer (this, Log::config->log_buffer_size));
+    ink_debug_assert(b);
+    SET_FREELIST_POINTER_VERSION(m_log_buffer, b, 0);
 
     _setup_rolling(rolling_enabled, rolling_interval_sec, rolling_offset_hr, rolling_size_mb);
 
@@ -137,8 +135,7 @@ LogObject::LogObject(LogObject& rhs)
     m_signature(rhs.m_signature),
     m_rolling_interval_sec(rhs.m_rolling_interval_sec),
     m_last_roll_time(rhs.m_last_roll_time),
-    m_ref_count(0),
-    m_log_buffer(NULL)
+    m_ref_count(0)
 {
     m_format = new LogFormat(*(rhs.m_format));
 
@@ -166,8 +163,9 @@ LogObject::LogObject(LogObject& rhs)
 
     // copy gets a fresh log buffer
     //
-    m_log_buffer = NEW (new LogBuffer (this, Log::config->log_buffer_size));
-    ink_debug_assert (m_log_buffer != NULL);
+    LogBuffer *b = NEW (new LogBuffer (this, Log::config->log_buffer_size));
+    ink_debug_assert(b);
+    SET_FREELIST_POINTER_VERSION(m_log_buffer, b, 0);
 
     Debug("log-config", "exiting LogObject copy constructor, "
           "filename=%s this=%p", m_filename, this);
@@ -194,7 +192,7 @@ LogObject::~LogObject()
   ats_free(m_filename);
   ats_free(m_alt_filename);
   delete m_format;
-  delete m_log_buffer;
+  delete (LogBuffer*)FREELIST_POINTER(m_log_buffer);
 }
 
 //-----------------------------------------------------------------------------
@@ -405,16 +403,26 @@ LogObject::displayAsXML(FILE * fd, bool extended)
 
 
 LogBuffer *
-LogObject::_checkout_write(size_t * write_offset, size_t bytes_needed)
-{
+LogObject::_checkout_write(size_t * write_offset, size_t bytes_needed) {
   LogBuffer::LB_ResultCode result_code;
   LogBuffer *buffer;
   LogBuffer *new_buffer;
   bool retry = true;
 
   do {
-    buffer = m_log_buffer;
+    // To avoid a race condition, we keep a count of held references in
+    // the pointer itself and add this to m_outstanding_references.
+    head_p h;
+    int result = 0;
+    do {
+      INK_QUEUE_LD64(h, m_log_buffer);
+      head_p new_h;
+      SET_FREELIST_POINTER_VERSION(new_h, FREELIST_POINTER(h), FREELIST_VERSION(h) + 1);
+      result = ink_atomic_cas64((int64_t*)&m_log_buffer.data, h.data, new_h.data);
+    } while (!result);
+    buffer = (LogBuffer*)FREELIST_POINTER(h);
     result_code = buffer->checkout_write(write_offset, bytes_needed);
+    bool decremented = false;
 
     switch (result_code) {
     case LogBuffer::LB_OK:
@@ -428,11 +436,17 @@ LogObject::_checkout_write(size_t * write_offset, size_t bytes_needed)
       // no more room in current buffer, create a new one
       new_buffer = NEW (new LogBuffer(this, Log::config->log_buffer_size));
 
-      // swap the new buffer for the old one (only this thread
-      // should be doing this, so there should be no problem)
-      //
+      // swap the new buffer for the old one
       INK_WRITE_MEMORY_BARRIER;
-      ink_atomic_swap_ptr((void *)&m_log_buffer, new_buffer);
+      head_p old_h;
+      do {
+        INK_QUEUE_LD64(old_h, m_log_buffer);
+        head_p tmp_h;
+        SET_FREELIST_POINTER_VERSION(tmp_h, new_buffer, 0);
+        result = ink_atomic_cas64((int64_t*)&m_log_buffer.data, old_h.data, tmp_h.data);
+      } while (!result);
+      if (FREELIST_POINTER(old_h) == FREELIST_POINTER(h))
+        ink_atomic_increment(&buffer->m_references, FREELIST_VERSION(old_h) - 1);
 
       if (result_code == LogBuffer::LB_FULL_NO_WRITERS) {
         // there are no writers, move the old buffer to the flush list
@@ -440,7 +454,8 @@ LogObject::_checkout_write(size_t * write_offset, size_t bytes_needed)
         m_buffer_manager.add_to_flush_queue(buffer);
         ink_cond_signal(&Log::flush_cond);
       }
-      // fallover to retry
+      decremented = true;
+      break;
 
     case LogBuffer::LB_RETRY:
       // no more room, but another thread should be taking care of
@@ -460,7 +475,19 @@ LogObject::_checkout_write(size_t * write_offset, size_t bytes_needed)
     default:
       ink_debug_assert(false);
     }
-
+    if (!decremented) {
+      head_p old_h;
+      do {
+        INK_QUEUE_LD64(old_h, m_log_buffer);
+        if (FREELIST_POINTER(old_h) != FREELIST_POINTER(h))
+          break;
+        head_p tmp_h;
+        SET_FREELIST_POINTER_VERSION(tmp_h, FREELIST_POINTER(h), FREELIST_VERSION(old_h) - 1);
+        result = ink_atomic_cas64((int64_t*)&m_log_buffer.data, old_h.data, tmp_h.data);
+      } while (!result);
+      if (FREELIST_POINTER(old_h) != FREELIST_POINTER(h))
+        ink_atomic_increment(&buffer->m_references, -1);
+    }
   } while (retry && write_offset);      // if write_offset is null, we do
   // not retry because we really do
   // not want to write to the buffer
@@ -750,7 +777,7 @@ LogObject::_roll_files(long last_roll_time, long time_now)
 void
 LogObject::check_buffer_expiration(long time_now)
 {
-  LogBuffer *b = m_log_buffer;
+  LogBuffer *b = (LogBuffer*)FREELIST_POINTER(m_log_buffer);
   if (b && time_now > b->expiration_time()) {
     force_new_buffer();
   }

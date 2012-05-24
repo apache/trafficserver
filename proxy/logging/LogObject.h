@@ -67,39 +67,20 @@ Debug("log-api-mutex", _f)
 
 class LogBufferManager
 {
-private:
-  int _flush_array_lock;
+  private:
+    ASLL(LogBuffer, write_link) write_list;
+    int _num_flush_buffers;
 
-  LogBuffer *_flush_array[2][FLUSH_ARRAY_SIZE];
+  public:
+    LogBufferManager() : _num_flush_buffers(0) { }
 
-  int _num_flush_buffers[2];          // number of buffers in queue
-  int _open_flush_array;              // index of queue accepting buffers
-
-public:
- LogBufferManager()
-   : _flush_array_lock(0), _open_flush_array(0)
-  {
-    ink_zero(_num_flush_buffers);
-  }
-
-  void add_to_flush_queue(LogBuffer * buffer)
-  {
-    while (!ink_atomic_cas(&_flush_array_lock, 0, 1));
-
-    if (_num_flush_buffers[_open_flush_array] < FLUSH_ARRAY_SIZE) {
-      int idx = _num_flush_buffers[_open_flush_array]++;
-
-      _flush_array[_open_flush_array][idx] = buffer;
-    } else {
-      Warning("Dropping log buffer, can't keep up");
-      delete buffer;
+    void add_to_flush_queue(LogBuffer *buffer) {
+    write_list.push(buffer);
+    ink_atomic_increment(&_num_flush_buffers, 1);
     }
-    _flush_array_lock = 0;
-  }
 
-  size_t flush_buffers(LogBufferSink *sink);
+    size_t flush_buffers(LogBufferSink *sink);
 };
-
 
 class LogObject
 {
@@ -235,7 +216,7 @@ private:
 
   int m_ref_count;
 
-  LogBuffer *volatile m_log_buffer;     // current work buffer
+  volatile head_p m_log_buffer;     // current work buffer
   LogBufferManager m_buffer_manager;
 
   void generate_filenames(const char *log_dir, const char *basename, LogFileFormat file_format);
