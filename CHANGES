@@ -1,5 +1,7 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.1.4
+  *) [TS-1269] Building outside source tree fails on plugins.
+
   *) [TS-1222] single tcp connection will limit the cluster throughput.
 
   *) [TS-475] Accelerated single range requests.

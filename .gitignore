@@ -111,3 +111,7 @@ lib/tsconfig/test-tsconfig
 
 tools/http_load/http_load
 tools/jtest/jtest
+
+BUILDS
+DEBUG
+RELEASE
