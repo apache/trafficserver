@@ -1,5 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.1.4
+  *) [TS-1274] Transformation plugins can send content-length with 
+   non-identity transfer encoding.
+   Author: Otto van der Schaff
+
   *) [TS-1272] workaround for - FATAL: HttpSM.cc:890: failed assert `0`
 
   *) [TS-1240] Fix race in log buffer queuing code.
