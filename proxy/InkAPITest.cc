@@ -21,6 +21,11 @@
   limitations under the License.
  */
 
+// Turn off -Wdeprecated so that we can still test our own deprecated APIs.
+#ifdef __GNUC__
+#pragma GCC diagnostic ignored "-Wdeprecated"
+#endif
+
 #include "ink_config.h"
 #include <sys/types.h>
 
