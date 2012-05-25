@@ -6993,6 +6993,14 @@ HttpTransact::handle_response_keep_alive_headers(State* s, HTTPVersion ver, HTTP
       s->client_info.receive_chunked_response = false;
     }
 
+    //make sure no content length header is send when transfer encoding is chunked
+    if ( s->client_info.receive_chunked_response ) {
+      s->hdr_info.trust_response_cl = false;
+
+      // And delete the header if it's already been added...
+      heads->field_delete(MIME_FIELD_CONTENT_LENGTH, MIME_LEN_CONTENT_LENGTH);
+    }
+
     // If we cannot trust the content length, we will close the connection
     // unless we are going to use chunked encoding or the client issued
     // a PUSH request
