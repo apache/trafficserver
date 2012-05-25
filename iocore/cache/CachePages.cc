@@ -78,7 +78,7 @@ struct ShowCache: public ShowCont {
     URL *u = h->url_get();
 
     // process the query string
-    if (u->query_get(&query_len) && query_len < sizeof(query)) {
+    if (u->query_get(&query_len) && query_len < (int)sizeof(query)) {
       strncpy(query, u->query_get(&query_len), query_len);
       strncpy(unescapedQuery, u->query_get(&query_len), query_len);
 
@@ -91,7 +91,7 @@ struct ShowCache: public ShowCont {
 
       // remove 'C-m' s
       unsigned l, m;
-      for (l = 0, m = 0; l < query_len; l++) {
+      for (l = 0, m = 0; l < (unsigned)query_len; l++) {
         if (query[l] != '\015') {
             query[m++] = query[l];
         }
@@ -133,7 +133,7 @@ struct ShowCache: public ShowCont {
 
       Debug("cache_inspector", "there were %d url(s) passed in", nstrings == 1 ? 1 : nstrings - 1);
 
-      for (int i = 0; i < nstrings; i++) {
+      for (unsigned i = 0; i < nstrings; i++) {
         if (show_cache_urlstrs[i][0] == '\0') {
           continue;
         }
