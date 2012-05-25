@@ -886,6 +886,8 @@ HttpSM::state_watch_for_client_abort(int event, void *data)
       terminate_sm = true;
       break;
     }
+  case VC_EVENT_READ_COMPLETE:
+    // XXX Work around for TS-1233.
   case VC_EVENT_READ_READY:
     //  Ignore.  Could be a pipelined request.  We'll get to  it
     //    when we finish the current transaction
