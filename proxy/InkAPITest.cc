@@ -24,6 +24,7 @@
 // Turn off -Wdeprecated so that we can still test our own deprecated APIs.
 #ifdef __GNUC__
 #pragma GCC diagnostic ignored "-Wdeprecated"
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #endif
 
 #include "ink_config.h"
