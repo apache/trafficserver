@@ -423,7 +423,7 @@ load_security (
   int src_line;
   ts::ConstBuffer text;
 
-  zret.result().set(0,0);
+  zret.result().set(0);
 
   src_line = setting.getSourceLine();
   if (ts::config::GroupValue == setting.getType()) {

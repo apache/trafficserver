@@ -3239,7 +3239,7 @@ detail::Assignment::getMask() const {
   return *m_mask_assign;
 }
 
-inline MsgBuffer::MsgBuffer() : super(0,0), _count(0) { }
+inline MsgBuffer::MsgBuffer() : super(0), _count(0) { }
 inline MsgBuffer::MsgBuffer(super const& that) : super(that), _count(0) { }
 inline MsgBuffer::MsgBuffer(void* p, size_t n)
   : super(static_cast<char*>(p),n)
