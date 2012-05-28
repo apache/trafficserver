@@ -351,7 +351,7 @@ void TextMod::print(FILE* f) const {
   fprintf(f, "%s=%*s  ", this->name(), static_cast<int>(text.size()), text.data());
 }
 
-TextMod::TextMod() : text(0,0) {}
+TextMod::TextMod() : text(0) {}
 TextMod::~TextMod() {
   free(text.data());
 }

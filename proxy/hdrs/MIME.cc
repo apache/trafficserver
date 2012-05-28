@@ -2102,6 +2102,62 @@ mime_field_value_append(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, const 
     mh->recompute_cooked_stuff(field);
 }
 
+MIMEField* MIMEHdr::get_host_port_values(
+  char const** host_ptr, ///< Pointer to host.
+  int* host_len, ///< Length of host.
+  char const** port_ptr, ///< Pointer to port.
+  int* port_len
+  )
+{
+  MIMEField* field = this->field_find(MIME_FIELD_HOST, MIME_LEN_HOST);
+  if (host_ptr)
+    *host_ptr = 0;
+  if (host_len)
+    *host_len = 0;
+  if (port_ptr)
+    *port_ptr = 0;
+  if (port_len)
+    port_len = 0;
+
+  if (field) {
+    ts::ConstBuffer b(field->m_ptr_value, field->m_len_value);
+    ts::ConstBuffer host(0), port(0);
+
+    if (b) {
+      char const* x;
+
+      if ('[' == *b) {
+        x = static_cast<char const*>(memchr(b._ptr, ']', b._size));
+        if (x && b.contains(x+1) && ':' == x[1]) {
+          host = b.splitOn(x+1);
+          port = b;
+        } else {
+          host = b;
+        }
+      } else {
+        x = static_cast<char const*>(memrchr(b._ptr, ':', b._size));
+        if (x) {
+          host = b.splitOn(x);
+          port = b;
+        } else {
+          host = b;
+        }
+      }
+      
+      if (host) {
+        if (host_ptr) *host_ptr = host._ptr;
+        if (host_len) *host_len = static_cast<int>(host._size);
+      }
+      if (port) {
+        if (port_ptr) *port_ptr = port._ptr;
+        if (port_len) *port_len = static_cast<int>(port._size);
+      }
+    } else {
+      field = 0; // no value in field, signal fail.
+    }
+  }
+  return field;
+}
 
 /***********************************************************************
  *                                                                     *

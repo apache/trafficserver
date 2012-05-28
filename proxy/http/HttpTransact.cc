@@ -1797,18 +1797,15 @@ HttpTransact::DecideCacheLookup(State* s)
       // We could a) have 6000 alts (barf, puke, vomit) or b) use the original
       // host header in the url before doing all cache actions (lookups, writes, etc.)
       if (s->txn_conf->maintain_pristine_host_hdr) {
+        char const* host_hdr;
+        char const* port_hdr;
+        int host_len, port_len;
         // So, the host header will have the original host header.
-        int host_len;
-        const char *host_hdr = incoming_request->value_get(MIME_FIELD_HOST, MIME_LEN_HOST, &host_len);
-
-        if (host_hdr) {
-          char *tmp;
+        if (incoming_request->get_host_port_values(&host_hdr, &host_len, &port_hdr, &port_len)) {
           int port = 0;
-          tmp = (char *) memchr(host_hdr, ':', host_len);
-          if (tmp) {
-            s->cache_info.lookup_url->host_set(host_hdr, (tmp - host_hdr));
-
-            port = ink_atoi(tmp + 1, host_len - (tmp + 1 - host_hdr));
+          if (port_hdr) {
+            s->cache_info.lookup_url->host_set(host_hdr, host_len);
+            port = ink_atoi(port_hdr, port_len);
           } else {
             s->cache_info.lookup_url->host_set(host_hdr, host_len);
           }

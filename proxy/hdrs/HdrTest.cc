@@ -388,10 +388,32 @@ HdrTest::test_url()
     "http://foo:bar@some.place:80",
     "http://foo:bar@some.place:80/",
 
+    // Some address stuff
+    "http://172.16.28.101",
+    "http://172.16.28.101:8080",
+    "http://[::]",
+    "http://[::1]",
+    "http://[fc01:172:16:28::101]",
+    "http://[fc01:172:16:28::101]:80",
+    "http://[fc01:172:16:28:BAAD:BEEF:DEAD:101]",
+    "http://[fc01:172:16:28:BAAD:BEEF:DEAD:101]:8080",
+    "http://172.16.28.101/some/path",
+    "http://172.16.28.101:8080/some/path",
+    "http://[::1]/some/path",
+    "http://[fc01:172:16:28::101]/some/path",
+    "http://[fc01:172:16:28::101]:80/some/path",
+    "http://[fc01:172:16:28:BAAD:BEEF:DEAD:101]/some/path",
+    "http://[fc01:172:16:28:BAAD:BEEF:DEAD:101]:8080/some/path",
+    "http://172.16.28.101/",
+    "http://[fc01:172:16:28:BAAD:BEEF:DEAD:101]:8080/",
+
+
     "foo:bar@some.place",
     "foo:bar@some.place/",
     "http://foo:bar@some.place",
     "http://foo:bar@some.place/",
+    "http://foo:bar@[::1]:8080/",
+    "http://foo@[::1]",
 
     "mms://sm02.tsqa.example.com/0102rally.asf",
     "pnm://foo:bar@some.place:80/path;params?query#fragment",
@@ -400,6 +422,19 @@ HdrTest::test_url()
     "/finance/external/cbsm/*http://cbs.marketwatch.com/archive/19990713/news/current/net.htx?source=blq/yhoo&dist=yhoo"
   };
   static int nstrs = sizeof(strs) / sizeof(strs[0]);
+
+  static char const* bad[] = {
+    "http://[1:2:3:4:5:6:7:8:9]",
+    "http://1:2:3:4:5:6:7:8:A:B",
+    "http://bob.com[::1]",
+    "http://[::1].com"
+    "http://foo:bar:baz@bob.com/",
+    "http://foo:bar:baz@[::1]:8080/",
+    "http://]",
+    "http://:",
+    "http:/"
+  };
+  static int nbad = sizeof(bad) / sizeof(bad[0]);
 
   int err, failed;
   URL url;
@@ -455,6 +490,33 @@ HdrTest::test_url()
 
     url.destroy();
   }
+
+  for (i = 0 ; i < nbad ; ++i) {
+    char const* x = bad[i];
+    url.create(NULL);
+    err = url.parse(x, strlen(x));
+    url.destroy();
+    if (err == PARSE_DONE) {
+      failed = 1;
+      printf("Successfully parsed invalid url '%s'", x);
+      break;
+    }
+  }
+
+#if 0
+  if (!failed) {
+    Note("URL performance test start");
+    for (int j = 0 ; j < 100000 ; ++j) {
+      for (i = 0 ; i < nstrs ; ++i) {
+        char const* x = strs[i];
+        url.create(NULL);
+        err = url.parse(x, strlen(x));
+        url.destroy();
+      }
+    }
+    Note("URL performance test end");
+  }
+#endif
 
   return (failures_to_status("test_url", failed));
 }

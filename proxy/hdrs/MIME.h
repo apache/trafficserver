@@ -933,6 +933,17 @@ public:
   int32_t get_cooked_cc_min_fresh();
   bool get_cooked_pragma_no_cache();
 
+  /** Get the value of the host field.
+      This parses the host field for brackets and port value.
+      @return The mime HOST field if it has a value, @c NULL otherwise.
+  */
+  MIMEField* get_host_port_values(
+			    char const** host_ptr, ///< [out] Pointer to host.
+			    int* host_len, ///< [out] Length of host.
+			    char const** port_ptr, ///< [out] Pointer to port.
+			    int* port_len ///< [out] Length of port.
+			    );
+
   void set_cooked_cc_need_revalidate_once();
   void unset_cooked_cc_need_revalidate_once();
 

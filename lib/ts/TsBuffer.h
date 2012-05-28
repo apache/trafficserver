@@ -40,6 +40,10 @@ namespace ts {
   struct ConstBuffer;
   /** A chunk of writable memory.
       A convenience class because we pass this kind of pair frequently.
+
+      @note The default construct leaves the object
+      uninitialized. This is for performance reasons. To construct an
+      empty @c Buffer use @c Buffer(0).
    */
   struct Buffer {
     typedef Buffer self; ///< Self reference type.
@@ -52,11 +56,23 @@ namespace ts {
     /// Elements are in uninitialized state.
     Buffer();
 
-    /// Construct from pointer and size.
+    /** Construct from pointer and size.
+	@note Due to ambiguity issues do not call this with
+	two arguments if the first argument is 0.
+     */
     Buffer(
       char* ptr, ///< Pointer to buffer.
-      size_t n ///< Size of buffer.
+      size_t n = 0 ///< Size of buffer.
     );
+    /** Construct from two pointers.
+	@note This presumes a half open range, (start, end]
+	@note Due to ambiguity issues do not invoke this with
+	@a start == 0.
+    */
+    Buffer(
+	   char* start, ///< First valid character.
+	   char* end ///< First invalid character.
+	   );
 
     /** Equality.
         @return @c true if @a that refers to the same memory as @a this,
@@ -106,7 +122,7 @@ namespace ts {
     /// @return @c this object.
     self& set(
       char* ptr, ///< Buffer address.
-      size_t n ///< Buffer size.
+      size_t n = 0 ///< Buffer size.
     );
     /// Reset to empty.
     self& reset();
@@ -114,6 +130,10 @@ namespace ts {
 
   /** A chunk of read only memory.
       A convenience class because we pass this kind of pair frequently.
+
+      @note The default construct leaves the object
+      uninitialized. This is for performance reasons. To construct an
+      empty @c Buffer use @c Buffer(0).
    */
   struct ConstBuffer {
     typedef ConstBuffer self; ///< Self reference type.
@@ -126,11 +146,23 @@ namespace ts {
     /// Elements are in uninitialized state.
     ConstBuffer();
 
-    /// Construct from pointer and size.
+    /** Construct from pointer and size.
+	@note Due to ambiguity issues do not call this with
+	two arguments if the first argument is 0.
+     */
     ConstBuffer(
       char const * ptr, ///< Pointer to buffer.
-      size_t n ///< Size of buffer.
+      size_t n = 0///< Size of buffer.
     );
+    /** Construct from two pointers.
+	@note This presumes a half open range (start, end]
+	@note Due to ambiguity issues do not invoke this with
+	@a start == 0.
+    */
+    ConstBuffer(
+	   char const* start, ///< First valid character.
+	   char const* end ///< First invalid character.
+	   );
     /// Construct from writable buffer.
     ConstBuffer(
         Buffer const& buffer ///< Buffer to copy.
@@ -167,6 +199,10 @@ namespace ts {
         @return @a this object.
     */
     self& operator++();
+    /** Discard the first @a n characters.
+	@return @a this object.
+    */
+    self& operator += (size_t n);
 
     /// Check for empty buffer.
     /// @return @c true if the buffer has a zero pointer @b or size.
@@ -192,8 +228,15 @@ namespace ts {
     /// @return @c this object.
     self& set(
       char const * ptr, ///< Buffer address.
-      size_t n ///< Buffer size.
+      size_t n = 0 ///< Buffer size.
     );
+    /** Set from 2 pointers.
+	@note This presumes a half open range (start, end]
+    */
+    self& set(
+	   char const* start, ///< First valid character.
+	   char const* end ///< First invalid character.
+	   );
     /// Reset to empty.
     self& reset();
 
@@ -213,10 +256,10 @@ namespace ts {
         This is convenient when tokenizing and @a p points at the token
         separator.
 
-        @note If @a *p is not a character in the buffer then @a this
-        is not changed and an empty buffer is returned. This means the
-        caller can simply pass the result of @c find and check for an
-        empty buffer returned to detect no more separators.
+        @note If @a *p is in the buffer then @a this is not changed
+        and an empty buffer is returned. This means the caller can
+        simply pass the result of @c find and check for an empty
+        buffer returned to detect no more separators.
 
         @return A buffer containing data up to but not including @a p.
     */
@@ -265,6 +308,7 @@ namespace ts {
   inline Buffer::Buffer() { }
   inline Buffer::Buffer(char* ptr, size_t n) : _ptr(ptr), _size(n) { }
   inline Buffer& Buffer::set(char* ptr, size_t n) { _ptr = ptr; _size = n; return *this; }
+  inline Buffer::Buffer(char* start, char* end) : _ptr(start), _size(end - start) { }
   inline Buffer& Buffer::reset() { _ptr = 0; _size = 0 ; return *this; }
   inline bool Buffer::operator != (self const& that) const { return ! (*this == that); }
   inline bool Buffer::operator != (ConstBuffer const& that) const { return ! (*this == that); }
@@ -278,7 +322,8 @@ namespace ts {
   inline Buffer::operator pseudo_bool() const { return _ptr && _size ? &self::operator! : 0; }
   inline char Buffer::operator * () const { return *_ptr; }
   inline Buffer& Buffer::operator++ () {
-    if (_ptr && _size) { ++_ptr; --_size; }
+    ++_ptr;
+    --_size;
     return *this;
   }
   inline char * Buffer::data() const { return _ptr; }
@@ -286,8 +331,16 @@ namespace ts {
 
   inline ConstBuffer::ConstBuffer() { }
   inline ConstBuffer::ConstBuffer(char const* ptr, size_t n) : _ptr(ptr), _size(n) { }
+  inline ConstBuffer::ConstBuffer(char const* start, char const* end) : _ptr(start), _size(end - start) { }
   inline ConstBuffer::ConstBuffer(Buffer const& that) : _ptr(that._ptr), _size(that._size) { }
   inline ConstBuffer& ConstBuffer::set(char const* ptr, size_t n) { _ptr = ptr; _size = n; return *this; }
+
+  inline ConstBuffer& ConstBuffer::set(char const* start, char const* end) {
+    _ptr = start;
+    _size = end - start;
+    return *this;
+  }
+
   inline ConstBuffer& ConstBuffer::reset() { _ptr = 0; _size = 0 ; return *this; }
   inline bool ConstBuffer::operator != (self const& that) const { return ! (*this == that); }
   inline bool ConstBuffer::operator != (Buffer const& that) const { return ! (*this == that); }
@@ -302,7 +355,13 @@ namespace ts {
   inline ConstBuffer::operator pseudo_bool() const { return _ptr && _size ? &self::operator! : 0; }
   inline char ConstBuffer::operator * () const { return *_ptr; }
   inline ConstBuffer& ConstBuffer::operator++ () {
-    if (_ptr && _size) { ++_ptr; --_size; }
+    ++_ptr;
+    --_size;
+    return *this;
+  }
+  inline ConstBuffer& ConstBuffer::operator += (size_t n) {
+    _ptr += n;
+    _size -= n;
     return *this;
   }
   inline char const * ConstBuffer::data() const { return _ptr; }
@@ -313,7 +372,7 @@ namespace ts {
   }
 
   inline ConstBuffer ConstBuffer::splitOn(char const* p) {
-    self zret(0,0); // default to empty return.
+    self zret(0); // default to empty return.
     if (this->contains(p)) {
       size_t n = p - _ptr;
       zret.set(_ptr, n);
@@ -332,7 +391,7 @@ namespace ts {
   }
 
   inline ConstBuffer ConstBuffer::after(char const* p) const {
-    return this->contains(p) ? self(p + 1, (_size-(p-_ptr))-1) : self(0,0);
+    return this->contains(p) ? self(p + 1, (_size-(p-_ptr))-1) : self(0);
   }
   inline ConstBuffer ConstBuffer::after(char c) const {
     return this->after(this->find(c));
