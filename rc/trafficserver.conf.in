@@ -31,4 +31,12 @@ stop on runlevel [06]
 expect fork
 respawn
 
-exec @exp_bindir@/traffic_cop &
+pre-start script
+	if [ ! -d @exp_runtimedir@ ]
+	then
+		mkdir -p @exp_runtimedir@
+		chown @pkgsysuser@:@pkgsysgroup@ @exp_runtimedir@
+	fi
+end script
+
+exec @exp_bindir@/traffic_cop
