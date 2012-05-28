@@ -153,6 +153,11 @@ test -f /lib/lsb/init-functions && . /lib/lsb/init-functions
 # with native OS rc.subr(8) features.
 test -f /etc/rc.subr && . /etc/rc.subr
 
+if [ ! -d @exp_runtimedir@ ]
+then
+	mkdir -p @exp_runtimedir@
+	chown @pkgsysuser@:@pkgsysgroup@ @exp_runtimedir@
+fi
 
 #
 # Fedora:
@@ -442,4 +447,3 @@ case "$1" in
         exit 3
         ;;
 esac
-
