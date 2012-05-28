@@ -1213,206 +1213,49 @@ eof:
   @endverbatim
 
 */
-MIMEParseResult
-url_parse_internet(HdrHeap * heap, URLImpl * url, const char **start, const char *end, bool copy_strings)
-{
-  const char *cur;
-  const char *user_start = NULL;
-  const char *user_end = NULL;
-  const char *pass_start = NULL;
-  const char *pass_end = NULL;
-  const char *host_start = NULL;
-  const char *host_end = NULL;
-  const char *port_start = NULL;
-  const char *port_end = NULL;
-  const unsigned char user_offset = 0x3d;
-  const unsigned char user_mask = ((((unsigned char) ':') + user_offset) &
-                                   (((unsigned char) '@') + user_offset) & (((unsigned char) '/') + user_offset));
-  const unsigned char pass_offset = 0x10;
-  const unsigned char pass_mask = ((((unsigned char) '@') + pass_offset) & (((unsigned char) '/') + pass_offset));
-
-  cur = *start;
-
-  // fast case starts with "://"
-  if ((end - cur > 3) && (((cur[0] ^ ':') | (cur[1] ^ '/') | (cur[2] ^ '/')) == 0)) {
-    cur += 3;
-    goto parse_user1;
-  }
-  if (*cur != ':') {
-    goto parse_user1;
-  }
-  GETNEXT(eof);
-  if (*cur != '/') {
-    goto parse_user1;
-  }
-  GETNEXT(eof);
-  if (*cur != '/') {
-    goto parse_user1;
-  }
-  GETNEXT(eof);
-
-parse_user1:
-  user_start = cur;
-parse_user2:
-  if (((((unsigned char) *cur) + user_offset) & user_mask) == user_mask) {
-    if (*cur == ':') {
-      user_end = cur;
-      GETNEXT(done);
-      goto parse_pass1;
-    }
-    if (*cur == '@') {
-      user_end = cur;
-      GETNEXT(done);
-      goto parse_host1;
-    }
-    if (*cur == '/') {
-      host_start = user_start;
-      host_end = cur;
-      user_start = NULL;
-
-      GETNEXT(done);
-      goto done;
-    }
-  } else {
-    ink_debug_assert((*cur != ':') && (*cur != '@') && (*cur != '/'));
-  }
-  GETNEXT(done);
-  goto parse_user2;
-
-parse_pass1:
-  pass_start = cur;
-parse_pass2:
-  if (((((unsigned char) *cur) + pass_offset) & pass_mask) == pass_mask) {
-    if (*cur == '/') {
-      host_start = user_start;
-      host_end = user_end;
-      user_start = NULL;
-      user_end = NULL;
-
-      port_start = pass_start;
-      port_end = cur;
-      pass_start = NULL;
-
-      GETNEXT(done);
-      goto done;
-    }
-    if (*cur == '@') {
-      pass_end = cur;
-      GETNEXT(done);
-      goto parse_host1;
-    }
-  } else {
-    ink_debug_assert((*cur != '/') && (*cur != '@'));
-  }
-
-  GETNEXT(done);
-  goto parse_pass2;
-
-parse_host1:
-  host_start = cur;
-parse_host2:
-  if (*cur == ':') {
-    host_end = cur;
-    GETNEXT(done);
-    goto parse_port1;
-  }
-  if (*cur == '/') {
-    host_end = cur;
-    GETNEXT(done);
-    goto done;
-  }
-  GETNEXT(done);
-  goto parse_host2;
-
-parse_port1:
-  port_start = cur;
-parse_port2:
-  if (*cur == '/') {
-    port_end = cur;
-    GETNEXT(done);
-    goto done;
-  }
-  GETNEXT(done);
-  goto parse_port2;
-
-done:
-  if (!host_start) {
-    host_start = user_start;
-    host_end = user_end;
-    user_start = NULL;
-    user_end = NULL;
-
-    port_start = pass_start;
-    port_end = pass_end;
-    pass_start = NULL;
-    pass_end = NULL;
-  }
-
-  if (user_start) {
-    if (!user_end)
-      user_end = cur;
-    url_user_set(heap, url, user_start, user_end - user_start, copy_strings);
-  }
-  if (pass_start) {
-    if (!pass_end)
-      pass_end = cur;
-    url_password_set(heap, url, pass_start, pass_end - pass_start, copy_strings);
-  }
-  if (host_start) {
-    if (!host_end)
-      host_end = cur;
-    url_host_set(heap, url, host_start, host_end - host_start, copy_strings);
-  }
-  if (port_start) {
-    if (!port_end)
-      port_end = cur;
-    url_port_set(heap, url, port_start, port_end - port_start, copy_strings);
-  }
-
-  *start = cur;
-  return PARSE_DONE;
-
-eof:
-  return PARSE_ERROR;
-}
 
 MIMEParseResult
-amc_url_parse_internet(HdrHeap* heap, URLImpl* url,
+url_parse_internet(HdrHeap* heap, URLImpl* url,
                        char const ** start, char const *end,
                        bool copy_strings_p)
 {
-  ts::ConstBuffer cur(*start, end);
-  char const* point; // last point of interest.
+  char const* cur = *start;
+  char const* base; // Base for host/port field.
   char const* bracket = 0; // marker for open bracket, if any.
   ts::ConstBuffer user(0), passw(0), host(0), port(0);
   static size_t const MAX_COLON = 8; // max # of valid colons.
   size_t n_colon = 0;
-  char const* last_colon; // pointer to last colon seen.
+  char const* last_colon = 0; // pointer to last colon seen.
 
   // Do a quick check for "://"
-  if (cur._size > 3 &&
+  if (end - cur > 3 &&
       (((':' ^ *cur) | ('/' ^ cur[1]) | ('/' ^ cur[2])) == 0)) {
     cur += 3;
-  } else if (':' == *cur && ((++cur)._size == 0 ||
-                             ('/' == *cur && ((++cur)._size == 0 ||
-                                              ('/' == *cur && (++cur)._size == 0))))) {
+  } else if (':' == *cur && (++cur >= end ||
+                             ('/' == *cur && (++cur >= end ||
+                                              ('/' == *cur && ++cur >= end))))) {
     return PARSE_ERROR;
   }
+  base = cur;
   // skipped leading stuff, start real parsing.
-  point = cur._ptr;
-  while (cur._size) {
+  while (cur < end) {
     // Note: Each case is responsible for incrementing @a cur if
     // appropriate!
-    char c = *cur;
-    switch (c) {
+    switch (*cur) {
     case ']' : // address close
       if (0 == bracket || n_colon >= MAX_COLON)
         return PARSE_ERROR;
-      host.set(bracket+1, cur._ptr);
       ++cur;
-      // This must constitute the entire host so the next character must be
-      // missing (EOS), slash, or colon.
-      if (cur._size == 0 || '/' == *cur) { // done which is OK
+      /* We keep the brackets because there are too many other places
+         that depend on them and it's too painful to keep track if
+         they should be used. I thought about being clever with
+         stripping brackets from non-IPv6 content but that gets ugly
+         as well. Just not worth it.
+       */
+      host.set(bracket, cur);
+      // Spec requires This constitute the entire host so the next
+      // character must be missing (EOS), slash, or colon.
+      if (cur >= end || '/' == *cur) { // done which is OK
         last_colon = 0;
         break;
       } else if (':' != *cur) { // otherwise it must be a colon
@@ -1426,31 +1269,31 @@ amc_url_parse_internet(HdrHeap* heap, URLImpl* url,
     case ':' : // track colons, fail if too many.
       if (++n_colon > MAX_COLON)
         return PARSE_ERROR;
-      last_colon = cur._ptr;
+      last_colon = cur;
       ++cur;
       break;
     case '@' : // user/password marker.
       if (user || n_colon > 1)
         return PARSE_ERROR; // we already got one, or too many colons.
       if (n_colon) {
-        user.set(point, last_colon);
-        passw.set(last_colon+1, cur._ptr);
+        user.set(base, last_colon);
+        passw.set(last_colon+1, cur);
         n_colon= 0;
         last_colon = 0;
       } else {
-        user.set(point, cur._ptr);
+        user.set(base, cur);
       }
       ++cur;
-      point = cur._ptr; // interesting stuff is past '@'
+      base = cur;
       break;
     case '[' : // address open
-      if (bracket || point != cur._ptr) // must be first char in field
+      if (bracket || base != cur) // must be first char in field
         return PARSE_ERROR;
-      bracket = cur._ptr; // location and flag.
+      bracket = cur; // location and flag.
       ++cur;
       break;
     case '/' : // we're done with this phase.
-      cur._size = 0; // cause loop exit
+      end = cur; // cause loop exit
       break;
     default:
       ++cur;
@@ -1469,9 +1312,9 @@ amc_url_parse_internet(HdrHeap* heap, URLImpl* url,
   // @a host not set means no brackets to mark explicit host.
   if (!host) {
     if (1 == n_colon || MAX_COLON == n_colon) { // presume port.
-      host.set(point, last_colon);
+      host.set(base, last_colon);
     } else { // it's all host.
-      host.set(point, cur._ptr);
+      host.set(base, cur);
       last_colon = 0; // prevent port setting.
     }
   }
@@ -1480,13 +1323,13 @@ amc_url_parse_internet(HdrHeap* heap, URLImpl* url,
   
   if (last_colon) {
     ink_debug_assert(n_colon);
-    port.set(last_colon+1, cur._ptr);
+    port.set(last_colon+1, cur);
     if (!port._size)
       return PARSE_ERROR; // colon w/o port value.
     url_port_set(heap, url, port._ptr, port._size, copy_strings_p);
   }
-  if ('/' == *cur) ++cur._ptr;
-  *start = cur._ptr;
+  if ('/' == *cur) ++cur; // must do this after filling in host/port.
+  *start = cur;
   return PARSE_DONE;
 }
 /*-------------------------------------------------------------------------
@@ -1509,7 +1352,7 @@ url_parse_http(HdrHeap * heap, URLImpl * url, const char **start, const char *en
   const char *fragment_end = NULL;
   char mask;
 
-  err = amc_url_parse_internet(heap, url, start, end, copy_strings);
+  err = url_parse_internet(heap, url, start, end, copy_strings);
   if (err < 0)
     return err;
 
@@ -1668,7 +1511,7 @@ url_print(URLImpl * url, char *buf_start, int buf_length, int *buf_index_inout, 
     // Force brackets for IPv6. Note colon must occur in first 5 characters.
     // But it can be less (e.g. "::1").
     int n = url->m_len_host;
-    bool bracket_p = (0 != memchr(url->m_ptr_host, ':', n > 5 ? 5 : n));
+    bool bracket_p = '[' != *url->m_ptr_host && (0 != memchr(url->m_ptr_host, ':', n > 5 ? 5 : n));
     if (bracket_p)
       TRY(mime_mem_print("[", 1, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
     TRY(mime_mem_print(url->m_ptr_host, url->m_len_host,

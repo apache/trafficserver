@@ -407,6 +407,7 @@ HdrTest::test_url()
     "http://172.16.28.101/",
     "http://[fc01:172:16:28:BAAD:BEEF:DEAD:101]:8080/",
 
+
     "foo:bar@some.place",
     "foo:bar@some.place/",
     "http://foo:bar@some.place",
@@ -423,12 +424,17 @@ HdrTest::test_url()
   static int nstrs = sizeof(strs) / sizeof(strs[0]);
 
   static char const* bad[] = {
+/*
     "http://[1:2:3:4:5:6:7:8:9]",
     "http://1:2:3:4:5:6:7:8:A:B",
     "http://bob.com[::1]",
     "http://[::1].com"
     "http://foo:bar:baz@bob.com/",
     "http://foo:bar:baz@[::1]:8080/",
+    "http://]",
+    "http://:",
+*/
+    "http:/"
   };
   static int nbad = sizeof(bad) / sizeof(bad[0]);
 
@@ -498,6 +504,21 @@ HdrTest::test_url()
       break;
     }
   }
+
+#if 0
+  if (!failed) {
+    Note("URL performance test start");
+    for (int j = 0 ; j < 100000 ; ++j) {
+      for (i = 0 ; i < nstrs ; ++i) {
+        char const* x = strs[i];
+        url.create(NULL);
+        err = url.parse(x, strlen(x));
+        url.destroy();
+      }
+    }
+    Note("URL performance test end");
+  }
+#endif
 
   return (failures_to_status("test_url", failed));
 }

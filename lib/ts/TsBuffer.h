@@ -40,6 +40,10 @@ namespace ts {
   struct ConstBuffer;
   /** A chunk of writable memory.
       A convenience class because we pass this kind of pair frequently.
+
+      @note The default construct leaves the object
+      uninitialized. This is for performance reasons. To construct an
+      empty @c Buffer use @c Buffer(0).
    */
   struct Buffer {
     typedef Buffer self; ///< Self reference type.
@@ -52,13 +56,18 @@ namespace ts {
     /// Elements are in uninitialized state.
     Buffer();
 
-    /// Construct from pointer and size.
+    /** Construct from pointer and size.
+	@note Due to ambiguity issues do not call this with
+	two arguments if the first argument is 0.
+     */
     Buffer(
       char* ptr, ///< Pointer to buffer.
       size_t n = 0 ///< Size of buffer.
     );
     /** Construct from two pointers.
 	@note This presumes a half open range, (start, end]
+	@note Due to ambiguity issues do not invoke this with
+	@a start == 0.
     */
     Buffer(
 	   char* start, ///< First valid character.
@@ -121,6 +130,10 @@ namespace ts {
 
   /** A chunk of read only memory.
       A convenience class because we pass this kind of pair frequently.
+
+      @note The default construct leaves the object
+      uninitialized. This is for performance reasons. To construct an
+      empty @c Buffer use @c Buffer(0).
    */
   struct ConstBuffer {
     typedef ConstBuffer self; ///< Self reference type.
@@ -133,13 +146,18 @@ namespace ts {
     /// Elements are in uninitialized state.
     ConstBuffer();
 
-    /// Construct from pointer and size.
+    /** Construct from pointer and size.
+	@note Due to ambiguity issues do not call this with
+	two arguments if the first argument is 0.
+     */
     ConstBuffer(
       char const * ptr, ///< Pointer to buffer.
       size_t n = 0///< Size of buffer.
     );
     /** Construct from two pointers.
 	@note This presumes a half open range (start, end]
+	@note Due to ambiguity issues do not invoke this with
+	@a start == 0.
     */
     ConstBuffer(
 	   char const* start, ///< First valid character.
@@ -238,10 +256,10 @@ namespace ts {
         This is convenient when tokenizing and @a p points at the token
         separator.
 
-        @note If @a *p is not a character in the buffer then @a this
-        is not changed and an empty buffer is returned. This means the
-        caller can simply pass the result of @c find and check for an
-        empty buffer returned to detect no more separators.
+        @note If @a *p is in the buffer then @a this is not changed
+        and an empty buffer is returned. This means the caller can
+        simply pass the result of @c find and check for an empty
+        buffer returned to detect no more separators.
 
         @return A buffer containing data up to but not including @a p.
     */

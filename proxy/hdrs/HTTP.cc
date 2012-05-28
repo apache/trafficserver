@@ -1462,6 +1462,8 @@ void
 HTTPHdr::_fill_target_cache() const
 {
   URL* url = this->url_get();
+  char const* port_ptr;
+
   m_target_in_url = false;
   m_port_in_header = false;
   m_host_mime = NULL;
@@ -1471,18 +1473,12 @@ HTTPHdr::_fill_target_cache() const
     m_port = url->port_get();
     m_port_in_header = 0 != url->port_get_raw();
     m_host_mime = NULL;
-  } else if (0 != (m_host_mime = const_cast<HTTPHdr*>(this)->field_find(MIME_FIELD_HOST, MIME_LEN_HOST))) {
-    // Check for port in the host.
-    char const* colon = static_cast<char const*>(memchr(m_host_mime->m_ptr_value, ':', m_host_mime->m_len_value));
-    
-    if (colon) {
+  } else if (0 != (m_host_mime = const_cast<HTTPHdr*>(this)->get_host_port_values(0, &m_host_length, &port_ptr, 0))) {
+    if (port_ptr) {
       m_port = 0;
-      m_host_length = colon - m_host_mime->m_ptr_value; // Length of just the host in the value.
-      for ( ++colon ; is_digit(*colon) ; ++colon )
-        m_port = m_port * 10 + *colon - '0';
-      m_port_in_header = 0 != m_port;
-    } else {
-      m_host_length = m_host_mime->m_len_value;
+      for ( ; is_digit(*port_ptr) ; ++port_ptr )
+        m_port = m_port * 10 + *port_ptr - '0';
+      m_port_in_header = (0 != m_port);
     }
     m_port = url_canonicalize_port(url->m_url_impl->m_url_type, m_port);
   }
