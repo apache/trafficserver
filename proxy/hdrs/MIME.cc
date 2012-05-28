@@ -2117,7 +2117,7 @@ MIMEField* MIMEHdr::get_host_port_values(
   if (port_ptr)
     *port_ptr = 0;
   if (port_len)
-    port_len = 0;
+    *port_len = 0;
 
   if (field) {
     ts::ConstBuffer b(field->m_ptr_value, field->m_len_value);
