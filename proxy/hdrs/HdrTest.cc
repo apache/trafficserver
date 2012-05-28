@@ -424,7 +424,6 @@ HdrTest::test_url()
   static int nstrs = sizeof(strs) / sizeof(strs[0]);
 
   static char const* bad[] = {
-/*
     "http://[1:2:3:4:5:6:7:8:9]",
     "http://1:2:3:4:5:6:7:8:A:B",
     "http://bob.com[::1]",
@@ -433,7 +432,6 @@ HdrTest::test_url()
     "http://foo:bar:baz@[::1]:8080/",
     "http://]",
     "http://:",
-*/
     "http:/"
   };
   static int nbad = sizeof(bad) / sizeof(bad[0]);
