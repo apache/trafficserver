@@ -10,12 +10,16 @@ Release history:
     [NOTE that x.{odd}.z versions are strictly Alpha/Beta releases,
           while x.{even}.z versions are Stable/GA releases.]
 
-    3.1.3           : Released on March 21th, 2012
-    3.1.2           : Released on February 8th, 2012
+    3.1.4           : Released on May 31, 2012
+    3.1.3           : Released on March 21, 2012
+    3.1.2           : Released on February 08, 2012
     3.1.1           : Released on November 18, 2011
     3.1.0           : Released on August 25, 2011
 
-    3.0.2           : Released on December 07th, 2011
+    3.0.5           : Released on May 11, 2012
+    3.0.4           : Released on March 21, 2012
+    3.0.3           : Released on Februrary 13, 201
+    3.0.2           : Released on December 07, 2011
     3.0.1           : Released on July 19, 2011
     3.0.0           : Released on June 14, 2011
     2.0.1           : Released on August 31, 2010
@@ -37,7 +41,7 @@ RELEASE SHOWSTOPPERS:
 
 A list of all bugs open for the next development release can be found at
 
-  http://s.apache.org/ts-3.1.3
+  http://s.apache.org/ts-3.3.0
 
 
 RELEASE PROCESS
