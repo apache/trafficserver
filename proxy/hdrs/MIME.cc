@@ -2135,7 +2135,7 @@ MIMEField* MIMEHdr::get_host_port_values(
           host = b;
         }
       } else {
-        x = static_cast<char const*>(memrchr(b._ptr, ':', b._size));
+        x = static_cast<char const*>(memchr(b._ptr, ':', b._size));
         if (x) {
           host = b.splitOn(x);
           port = b;
