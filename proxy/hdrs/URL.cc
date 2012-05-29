@@ -1443,32 +1443,36 @@ MIMEParseResult
 url_parse_http_no_path_component_breakdown(HdrHeap * heap,
                                            URLImpl * url, const char **start, const char *end, bool copy_strings)
 {
-  MIMEParseResult err;
-  const char *cur;
-  const char *path_start = NULL;
-  const char *path_end = NULL;
+  const char *cur = *start;
+  char const* host_end;
 
-  err = url_parse_internet(heap, url, start, end, copy_strings);
-  if (err < 0)
-    return err;
-
-  cur = *start;
-  if (*start == end)
-    goto done;
-
-  path_start = cur;
-parse_path2:
-  GETNEXT(done);
-  goto parse_path2;
-
-done:
-  if (path_start) {
-    if (!path_end)
-      path_end = cur;
-    url_path_set(heap, url, path_start, path_end - path_start, copy_strings);
+  // Do a quick check for "://" - our only format check.
+  if (end - cur > 3 &&
+      (((':' ^ *cur) | ('/' ^ cur[1]) | ('/' ^ cur[2])) == 0)) {
+    cur += 3;
+  } else if (':' == *cur && (++cur >= end ||
+                             ('/' == *cur && (++cur >= end ||
+                                              ('/' == *cur && ++cur >= end))))) {
+    return PARSE_ERROR;
   }
 
-  *start = cur;
+  // Grab everything until EOS or slash.
+  char const* base = cur;
+  cur = static_cast<char const*>(memchr(cur, '/', end - cur));
+  if (cur) {
+    host_end = cur;
+    ++cur;
+  } else {
+    host_end = end;
+  }
+  if (base != host_end)
+    url_host_set(heap, url, base, host_end - base, copy_strings);
+  cur = host_end;
+
+  // path is anything that's left.
+  if (cur < end)
+    url_path_set(heap, url, cur, end - cur, copy_strings);
+  *start = end;
   return PARSE_DONE;
 }
 
