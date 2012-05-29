@@ -1,5 +1,7 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.1.4
+  *) [TS-1279] Fix build system for gcc < 4.3.
+
   *) [TS-1277] Fixed issue with IPv6 URLs and remap configuration.
 
   *) [TS-1195] Support the use of raw IPv6 address in URLs and Host fields.

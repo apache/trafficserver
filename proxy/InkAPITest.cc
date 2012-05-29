@@ -22,7 +22,7 @@
  */
 
 // Turn off -Wdeprecated so that we can still test our own deprecated APIs.
-#ifdef __GNUC__
+#if defined(__GNUC__) && (__GNUC__ >= 4) && (__GNUC_MINOR__ >= 3)
 #pragma GCC diagnostic ignored "-Wdeprecated"
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #endif
@@ -1845,7 +1845,9 @@ REGRESSION_TEST(SDK_API_TSIOBufferBlockNext) (RegressionTest * test, int atype, 
 
 
 /* Stats */
-
+/* Kinda hacky, but these are deprecated, and will die soon'ish */
+/* ToDo: This should be removed when we release ATS v4.x. */
+#if defined(__GNUC__) && (__GNUC__ >= 4) && (__GNUC_MINOR__ >= 3)
 //////////////////////////////////////////////
 //       SDK_API_INKStat
 //
@@ -2101,6 +2103,7 @@ REGRESSION_TEST(SDK_API_INKStatCoupled) (RegressionTest * test, int atype, int *
     *pstatus = REGRESSION_TEST_FAILED;
   }
 }
+#endif /* gcc >= 4.3 */
 
 
 REGRESSION_TEST(SDK_API_TSContSchedule) (RegressionTest * test, int atype, int *pstatus)
