@@ -1437,8 +1437,8 @@ HttpConfig::reconfigure()
   params->parent_proxy_routing_enable = INT_TO_BOOL(m_master.parent_proxy_routing_enable);
   params->enable_url_expandomatic = INT_TO_BOOL(m_master.enable_url_expandomatic);
 
-  params->oride.insert_request_via_string = INT_TO_BOOL(m_master.oride.insert_request_via_string);
-  params->oride.insert_response_via_string = INT_TO_BOOL(m_master.oride.insert_response_via_string);
+  params->oride.insert_request_via_string = m_master.oride.insert_request_via_string;
+  params->oride.insert_response_via_string = m_master.oride.insert_response_via_string;
   params->proxy_request_via_string = ats_strdup(m_master.proxy_request_via_string);
   params->proxy_request_via_string_len = (params->proxy_request_via_string) ? strlen(params->proxy_request_via_string) : 0;
   params->proxy_response_via_string = ats_strdup(m_master.proxy_response_via_string);

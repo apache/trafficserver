@@ -1081,17 +1081,19 @@ HttpTransactHeaders::insert_via_header_in_request(HttpTransact::State *s, HTTPHd
   memcpy(via_string, s->http_config_param->proxy_request_via_string, s->http_config_param->proxy_request_via_string_len);
   via_string += s->http_config_param->proxy_request_via_string_len;
 
-  *via_string++ = ' ';
-  *via_string++ = '[';
+  if (s->txn_conf->insert_request_via_string > 1) {
+    *via_string++ = ' ';
+    *via_string++ = '[';
 
-  // incoming_via can be max MAX_VIA_INDICES+1 long (i.e. around 25 or so)
-  if (s->txn_conf->insert_request_via_string < 2) {
-    via_string += nstrcpy(via_string, incoming_via);
-  } else {
-    memcpy(via_string, incoming_via + VIA_CLIENT, VIA_SERVER - VIA_CLIENT);
-    via_string += VIA_SERVER - VIA_CLIENT;
+    // incoming_via can be max MAX_VIA_INDICES+1 long (i.e. around 25 or so)
+    if (s->txn_conf->insert_request_via_string > 2) { // Highest verbosity
+      via_string += nstrcpy(via_string, incoming_via);
+    } else {
+      memcpy(via_string, incoming_via + VIA_CLIENT, VIA_SERVER - VIA_CLIENT);
+      via_string += VIA_SERVER - VIA_CLIENT;
+    }
+    *via_string++ = ']';
   }
-  *via_string++ = ']';
 
   *via_string++ = ')';
   *via_string = 0;
@@ -1140,17 +1142,19 @@ HttpTransactHeaders::insert_via_header_in_response(HttpTransact::State *s, HTTPH
   memcpy(via_string, s->http_config_param->proxy_response_via_string, s->http_config_param->proxy_response_via_string_len);
   via_string += s->http_config_param->proxy_response_via_string_len;
 
-  *via_string++ = ' ';
-  *via_string++ = '[';
+  if (s->txn_conf->insert_response_via_string > 1) {
+    *via_string++ = ' ';
+    *via_string++ = '[';
 
-  // incoming_via can be max MAX_VIA_INDICES+1 long (i.e. around 25 or so)
-  if (s->txn_conf->insert_request_via_string < 2) {
-    via_string += nstrcpy(via_string, incoming_via);
-  } else {
-    memcpy(via_string, incoming_via + VIA_CACHE, VIA_PROXY - VIA_CACHE);
-    via_string += VIA_PROXY - VIA_CACHE;
+    // incoming_via can be max MAX_VIA_INDICES+1 long (i.e. around 25 or so)
+    if (s->txn_conf->insert_response_via_string > 2) { // Highest verbosity
+      via_string += nstrcpy(via_string, incoming_via);
+    } else {
+      memcpy(via_string, incoming_via + VIA_CACHE, VIA_PROXY - VIA_CACHE);
+      via_string += VIA_PROXY - VIA_CACHE;
+    }
+    *via_string++ = ']';
   }
-  *via_string++ = ']';
 
   *via_string++ = ')';
   *via_string = 0;
