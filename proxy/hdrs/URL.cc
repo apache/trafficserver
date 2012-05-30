@@ -1465,12 +1465,36 @@ url_parse_http_no_path_component_breakdown(HdrHeap * heap,
   } else {
     host_end = cur = end;
   }
-  if (base != host_end)
+
+  // Did we find something for the host?
+  if (base != host_end) {
+    char const* port = 0;
+    int port_len = 0;
+
+    // Check for port. Search from the end stopping on the first non-digit
+    // or more than 5 digits and a delimiter.
+    port = host_end - 1;
+    char const* port_limit = host_end - 6;
+    if (port_limit < base) port_limit = base; // don't go past start.
+    while (port >= port_limit && isdigit(*port))
+      --port;
+    // A port if we're still in the host area and we found a ':' as
+    // the immediately preceeding character.
+    if (port >= base && ':' == *port) {
+      port_len = host_end - port - 1; // must compute this first.
+      host_end = port; // then point at colon.
+      ++port; // drop colon from port.
+      url_port_set(heap, url, port, port_len, copy_strings);
+    }
+    // Now we can set the host.
     url_host_set(heap, url, base, host_end - base, copy_strings);
+  }
 
   // path is anything that's left.
-  if (cur < end)
+  if (cur < end) {
     url_path_set(heap, url, cur, end - cur, copy_strings);
+    cur = end;
+  }
   *start = cur;
   return PARSE_DONE;
 }
