@@ -102,10 +102,11 @@ CONFIG proxy.config.alarm.abs_path STRING NULL
 CONFIG proxy.config.http.server_ports STRING 8080
    # Ports on the origin server to which a blind tunnel may connect.
 CONFIG proxy.config.http.connect_ports STRING 443 563
-   # The via settings have three values
+   # The via settings have four values
    #  0 - Do not modify / set this via header
    #  1 - Update the via, with normal verbosity
    #  2 - Update the via, with higher verbosity
+   #  3 - Update the via, with highest verbosity
 CONFIG proxy.config.http.insert_request_via_str INT 1
 CONFIG proxy.config.http.insert_response_via_str INT 0
    # Insert a Server: header, this has three values
