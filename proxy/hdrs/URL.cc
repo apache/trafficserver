@@ -1463,16 +1463,15 @@ url_parse_http_no_path_component_breakdown(HdrHeap * heap,
     host_end = cur;
     ++cur;
   } else {
-    host_end = end;
+    host_end = cur = end;
   }
   if (base != host_end)
     url_host_set(heap, url, base, host_end - base, copy_strings);
-  cur = host_end;
 
   // path is anything that's left.
   if (cur < end)
     url_path_set(heap, url, cur, end - cur, copy_strings);
-  *start = end;
+  *start = cur;
   return PARSE_DONE;
 }
 
