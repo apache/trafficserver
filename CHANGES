@@ -1,9 +1,7 @@
                                                          -*- coding: utf-8 -*-
-Changes with Apache Traffic Server 3.1.5 (or 3.3.0 EDIT)
+Changes with Apache Traffic Server 3.1.4
   *) [TS-1282] Verbosity settings for Via headers is broken.
 
-
-Changes with Apache Traffic Server 3.1.4
   *) [TS-1279] Fix build system for gcc < 4.3.
 
   *) [TS-1277] Fixed issue with IPv6 URLs and remap configuration.
