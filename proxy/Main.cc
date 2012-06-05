@@ -1109,40 +1109,6 @@ init_http_header()
   http_init();
 }
 
-// TODO: we should move this function out of the Main.cc
-static void
-init_http_aeua_filter(void)
-{
-  char buf[2048], _cname[1024], *cname;
-  int i, j;
-
-  cname = &_cname[0];
-  memset(buf, 0, sizeof(buf));
-  memset(_cname, 0, sizeof(_cname));
-
-  TS_ReadConfigString(_cname, "proxy.config.http.accept_encoding_filter.filename", (int) sizeof(_cname));
-
-  if (_cname[0] && (j = strlen(_cname)) > 0) {
-    while (j && (*cname == '/' || *cname == '\\')) {
-      ++cname;
-      --j;
-    }
-    ink_strlcpy(buf, system_config_directory, sizeof(buf));
-    if ((i = strlen(buf)) >= 0) {
-      if (!i || (buf[i - 1] != '/' && buf[i - 1] != '\\' && i < (int) sizeof(buf))) {
-        ink_strlcat(buf, "/", sizeof(buf));
-        ++i;
-      }
-    }
-    if ((i + j + 1) < (int) sizeof(buf))
-      ink_strlcat(buf, cname, sizeof(buf));
-  }
-
-  i = HttpConfig::init_aeua_filter(buf[0] ? buf : NULL);
-
-  Debug("http_aeua", "[init_http_aeua_filter] - Total loaded %d REGEXP for Accept-Enconding/User-Agent filtering", i);
-}
-
 struct AutoStopCont: public Continuation
 {
   int mainEvent(int event, Event * e)
@@ -1575,9 +1541,6 @@ main(int argc, char **argv)
 
 
   init_http_header();
-
-  // Init HTTP Accept-Encoding/User-Agent filter
-  init_http_aeua_filter();
 
   // Sanity checks
   //  if (!lock_process) check_for_root_uid();

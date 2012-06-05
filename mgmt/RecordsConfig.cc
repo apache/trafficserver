@@ -506,13 +506,6 @@ RecordElement RecordsConfig[] = {
   {RECT_CONFIG, "proxy.config.http.referer_default_redirect", RECD_STRING, "http://www.apache.org", RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
 
-  //       ##########################################################
-  //       # HTTP Accept-Encoding filtering (depends on User-Agent) #
-  //       ##########################################################
-  {RECT_CONFIG, "proxy.config.http.accept_encoding_filter_enabled", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.http.accept_encoding_filter.filename", RECD_STRING, "ae_ua.config", RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
-  ,
   //        ##############################
   //        # parent proxy configuration #
   //        ##############################
