@@ -1692,13 +1692,13 @@ AIO_Callback_handler::handle_disk_failure(int event, void *data) {
           if (d->fd == gvol[p]->fd) {
             total_dir_delete += gvol[p]->buckets * gvol[p]->segments * DIR_DEPTH;
             used_dir_delete += dir_entries_used(gvol[p]);
-            total_bytes_delete = gvol[p]->len - vol_dirlen(gvol[p]);
+            total_bytes_delete += gvol[p]->len - vol_dirlen(gvol[p]);
           }
         }
 
         RecIncrGlobalRawStat(cache_rsb, cache_bytes_total_stat, -total_bytes_delete);
-        RecIncrGlobalRawStat(cache_rsb, cache_bytes_total_stat, -total_dir_delete);
-        RecIncrGlobalRawStat(cache_rsb, cache_bytes_total_stat, -cache_direntries_used_stat);
+        RecIncrGlobalRawStat(cache_rsb, cache_direntries_total_stat, -total_dir_delete);
+        RecIncrGlobalRawStat(cache_rsb, cache_direntries_used_stat, -used_dir_delete);
 
         if (theCache) {
           rebuild_host_table(theCache);
