@@ -11,6 +11,7 @@ iocore/fastio/inkfio/inkfio.conf
 **/*.lai
 **/*.lo
 **/Makefile
+.vimrc
 .gitignore
 .git/
 .indent.pro
@@ -95,4 +96,5 @@ proxy/traffic_logstats
 proxy/traffic_sac
 lib/tsconfig/test-1.tsconfig
 rc/solaris.txt
+rc/trafficserver.service
 tools/http_load/
