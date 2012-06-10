@@ -1,4 +1,14 @@
                                                          -*- coding: utf-8 -*-
+Changes with Apache Traffic Server 3.3.0
+  *) [TS-1297] Do not link all binaries and plugins with libz and liblzma.
+
+  *) [TS-1296] Do not link all binaries and plugins with libreadline.
+
+
+Changes with Apache Traffic Server 3.2.0
+  *) [TS-1286] Cleanup some code around freelists and allocators.
+
+
 Changes with Apache Traffic Server 3.1.4
   *) [TS-1281] make check fail on RHEL 5.x.
 
