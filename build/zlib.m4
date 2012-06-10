@@ -89,7 +89,7 @@ if test "$enable_zlib" != "no"; then
     TS_FLAG_HEADERS(zlib.h, [zlib_have_headers=1])
   fi
   if test "$zlib_have_headers" != "0"; then
-    TS_ADDTO(LIBS, [-lz])
+    AC_SUBST(LIBZ, [-lz])
   else
     enable_zlib=no
     CPPFLAGS=$saved_cppflags

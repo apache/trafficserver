@@ -89,7 +89,7 @@ if test "$enable_lzma" != "no"; then
     TS_FLAG_HEADERS(lzma.h, [lzma_have_headers=1])
   fi
   if test "$lzma_have_headers" != "0"; then
-    TS_ADDTO(LIBS, [-llzma])
+    AC_SUBST(LIBLZMA, [-llzma])
   else
     enable_lzma=no
     CPPFLAGS=$saved_cppflags
