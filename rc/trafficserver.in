@@ -143,6 +143,9 @@ fi
 # Ubuntu: Read configuration variable file if it is present
 test -r /etc/default/$NAME && . /etc/default/$NAME
 
+# RHEL/Fedora: Read configuration variable file if it is present
+test -r /etc/sysconfig/$NAME && . /etc/sysconfig/$NAME
+
 # Ubuntu: Load the VERBOSE setting and other rcS variables
 test -f /etc/default/rcS && . /etc/default/rcS
 
