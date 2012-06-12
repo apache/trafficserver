@@ -283,15 +283,30 @@ test_xml_parser_SOURCES = test_xml_parser.cc InkXml.cc DiagsConfig.cc
 versiondir = $(pkgsysconfdir)
 
 install-data-local:
-	$(INSTALL) -d -o $(pkgsysuser) -g $(pkgsysgroup) $(DESTDIR)$(pkglocalstatedir) $(DESTDIR)$(pkglogdir) $(DESTDIR)$(pkgruntimedir) $(DESTDIR)$(pkgsysconfdir) $(DESTDIR)$(pkgsysconfdir)/internal $(DESTDIR)$(pkgdatadir) $(DESTDIR)$(pkgcachedir)
+	if [ `id -un` != "root" ]; then \
+		$(INSTALL) -d $(DESTDIR)$(pkglocalstatedir) $(DESTDIR)$(pkglogdir) $(DESTDIR)$(pkgruntimedir) \
+				$(DESTDIR)$(pkgsysconfdir) $(DESTDIR)$(pkgsysconfdir)/internal $(DESTDIR)$(pkgdatadir) \
+				$(DESTDIR)$(pkgcachedir); \
+	else \
+		 $(INSTALL) -d -o $(pkgsysuser) -g $(pkgsysgroup) $(DESTDIR)$(pkglocalstatedir) $(DESTDIR)$(pkglogdir) \
+				$(DESTDIR)$(pkgruntimedir) $(DESTDIR)$(pkgsysconfdir) \
+				$(DESTDIR)$(pkgsysconfdir)/internal $(DESTDIR)$(pkgdatadir) $(DESTDIR)$(pkgcachedir); \
+	fi
 
 install-data-hook:
-	-chown -R $(pkgsysuser):$(pkgsysgroup) $(DESTDIR)$(pkgsysconfdir) $(DESTDIR)$(pkgdatadir)
+	if [ `id -un` == "root" ]; then \
+		chown -R $(pkgsysuser):$(pkgsysgroup) $(DESTDIR)$(pkgsysconfdir) $(DESTDIR)$(pkgdatadir);\
+	fi
 	-echo "<TS_VERSION> $(PACKAGE_VERSION)" > $(DESTDIR)$(pkgsysconfdir)/trafficserver-release
 
 install-exec-local:
-	$(INSTALL) -d -o $(pkgsysuser) -g $(pkgsysgroup) $(DESTDIR)$(pkglibexecdir)
+	if [ `id -un` != "root" ]; then \
+		$(INSTALL) -d $(DESTDIR)$(pkglibexecdir); \
+	else \
+		$(INSTALL) -d -o $(pkgsysuser) -g $(pkgsysgroup) $(DESTDIR)$(pkglibexecdir); fi
 
 install-exec-hook:
-	-chown -R $(pkgsysuser):$(pkgsysgroup) $(DESTDIR)$(pkglibexecdir)
+	if [ `id -un` == "root" ]; then \
+		chown -R $(pkgsysuser):$(pkgsysgroup) $(DESTDIR)$(pkglibexecdir); \
+	fi
 
