@@ -2,7 +2,7 @@
 Changes with Apache Traffic Server 3.2.1
   *) [TS-1358] Don't link libreadline with all binaries and plugins.
 
-  *) [TS-1295] Don't assume root privileges during make install.
+  *) [TS-1359] Don't assume root privileges during make install.
    Author: Jan-Frode Myklebust
 
   *) [TS-1357] Don't link libz / liblmza with all binaries and plugins.
