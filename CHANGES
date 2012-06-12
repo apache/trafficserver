@@ -1,5 +1,11 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.3.0
+  *) [TS-1294] initscript mentions using /etc/sysconfig/trafficserver, but
+   doesn't use it. Author: Jan-Frode Myklebust
+
+  *) [TS-1293] initscript should provide chkconfig header.
+   Author: Jan-Frode Myklebust
+
   *) [TS-1297] Do not link all binaries and plugins with libz and liblzma.
 
   *) [TS-1296] Do not link all binaries and plugins with libreadline.
