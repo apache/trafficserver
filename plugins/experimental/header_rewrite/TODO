@@ -1,0 +1,29 @@
+* Add a new base class for extracting values (extractor)
+* Implement extractors for various values
+* Make the statement base class virtual inherited
+* In conditions / values, we can get the value by using the << or >> operator
+* Mark which conditions and operators work in what hooks
+* Better debugging on conditions.
+* Add descriptions to conditions and operators.
+* Support configurable timeouts
+* Support "super-conditions", or nested conditions (if (A) if (b) else if (c) )
+
+
+Conditions to add
+
+%{REQUEST-HEADER:<hdr>}
+%{RESPONSE-HEADER:<hdr>}
+
+%{CLIENT-URL}
+%{CLIENT-URL:HOST}
+%{CLIENT-URL:PORT}
+%{CLIENT-URL:PATH}
+%{CLIENT-URL:QUERY}
+%{CLIENT-URL:PARAMS}
+
+%{SERVER-URL}
+%{SERVER-URL:HOST}
+%{SERVER-URL:PORT}
+%{SERVER-URL:PATH}
+%{SERVER-URL:QUERY}
+%{SERVER-URL:PARAMS}

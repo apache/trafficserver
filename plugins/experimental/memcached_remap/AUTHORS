@@ -1,0 +1,7 @@
+Author: opensource@navyaprabha.com
+
+memcached_remap plugin
+
+========= CREDITS ===============
+Eric Balsa <ericb@apache.org>
+Original concept via mysql_remap plugin

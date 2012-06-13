@@ -1,0 +1,22 @@
+
+# Configuration file format:
+#
+# url_pattern   cache_key_replacement
+#
+# The url_pattern is a regular expression (pcre). The replacement can contain
+# $1, $2 and so on, which will be replaced with the appropriate matching group
+# from the pattern.
+
+# Make files from s1.example.com, s2.example.com and s3.example.com all
+# be cached with the same key.
+# Adding a unique suffix (TSINTERNAL in this example) to the cache key
+# guarantees that it won't clash with a real URL should s.example.com exist.
+http://s[123].example.com/(.*)  http://s.example.com.TSINTERNAL/$1
+
+# Cache based on only some parts of a query string (e.g. ignore session
+# information). This plucks out the id and format query string variables and
+# only considers those when making the cache key.
+http://www.example.com/video\?.*?\&?(id=[0-9a-f]*).*?\&(format=[a-z]*) http://video-srv.example.com.ATSINTERNAL/$1&$2
+
+# Completely ignore a query string for a specific page
+http://www.example.com/some/page.html(?:\?|$) http://www.example.com/some/page.html

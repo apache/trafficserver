@@ -1,0 +1,74 @@
+Apache Traffic Server MySQL-based remap plugin
+==============================================
+
+== Description ==
+  This is a basic plugin for doing dynamic "remaps" from a database. It essentially rewrites the incoming request's Host header / origin server connection
+to one retrieved from a database.
+
+The generic proxying setup is the following: 
+
+UA ----> Traffic Server ----> Origin Server
+
+Without the plugin a request like:
+
+GET /path/to/something HTTP/1.1
+Host: original.host.com
+
+Ends up requesting http://original.host.com/path/to/something
+
+With this plugin enabled, you can easily change that to anywhere you desire. Imagine the many possibilities....
+
+I have benchmarked this at about 9200 requests/sec (1.7k object) on a junky imac with mysql, ab & trafficserver local. Real performance
+is likely substantially higher up to your mysql's max queries / second. 
+
+== Build ==
+  A simple
+
+% make install
+
+should do it, assuming that you have the tsxs script in your search path. 
+This script is installed with your installation of Apache Traffic Server. 
+
+NOTE: you may need to open the Makefile and adjust the paths to MySQL client includes & libraries
+
+== Configuration ==
+Import the default schema to a database you create:
+
+mysql -u root -p -e "CREATE DATABASE mysql_remap;"   # create a new database
+mysql -u root -p mysql_remap < schema/import.sql     # import the provided schema
+
+insert some interesting values in mysql_remap.hostname & mysql_remap.map
+
+Traffic Server plugin configuration is done inside a global configuration file: /path/to/etc/trafficserver/plugin.config:
+
+  mysql_remap.so /path/to/sample.ini
+
+The INI file should contain the following values:
+
+[mysql_remap]
+mysql_host     = localhost   #default
+mysql_port     = 3306        #default
+mysql_username = root
+mysql_password = 
+mysql_database = mysql_remap #default
+
+To debug errors, start trafficserver manually using:
+
+/path/to/traffic_server -T "mysql_remap"
+
+And resolve any errors or warnings displayed.
+
+== Credits ==
+  * Eric Balsa
+  * ericb@apache.org / eric@ericbalsa.com
+  * http://www.ericbalsa.com
+
+== TODO == 
+  * some stupid bug in the ini parsing requiring a blank trailing \n
+  * make db backend pluggable
+  * handle mysql connections a bit more intelligently
+  * define a fallback host for missing remaps (instead of blindly issuing a 404)
+  * handle rewriting paths
+  * handle regexp in paths & hosts
+  * verify scheme switching
+  * ... many more ideas ...

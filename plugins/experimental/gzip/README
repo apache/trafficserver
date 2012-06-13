@@ -1,0 +1,14 @@
+What this plugin does
+=====================
+
+in spite of its name, it compresses responses to the raw deflate format.
+it also normalizes the accept-encoding header from user agent requests 
+to either deflate or nothing. it compresses responses from origins only,
+though it can be modified easily to also compress contents from cache.
+
+Major issues
+============
+- there is an issue with *some* origins that send connection:close. 
+  the plugin will not execute in that situation as a temporary fix.
+- the workings of this plugin support our use case, but probably is not 
+  on size fits all. it shouldnt be too hard to adjust it to your own needs though.

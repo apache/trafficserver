@@ -1,0 +1,22 @@
+@plugin=geoip_acl.so @pparam=country @pparam=deny @pparam=US @pparam=SE
+
+-- or --
+
+@plugin=geoip_acl.so @pparam=country @pparam=regex::/tmp/foo.conf @pparam=html::/tmp/foo.html
+
+foo.conf:
+
+.*\.exe		deny	SE
+[a-z]/foo	allow	US UK SE
+.		deny	SE
+
+
+-- or --
+
+@plugin=geoip_acl.so @pparam=country @pparam=deny @pparam=SE @pparam=regex::/tmp/foo.conf
+
+foo.conf:
+
+.*\.exe		deny	SE
+[a-z]/foo	allow	US UK SE
+.		deny	SE

@@ -1,0 +1,25 @@
+This plugin allows you to change the key that is used for caching a request.
+It is designed so that multiple requests that have different URLs but the same
+content (for example, site mirrors) need be cached only once.
+
+Installation:
+
+    make
+    sudo make install
+
+If you don't have the traffic server binaries in your path, then you will need
+to specify the path to tsxs manually:
+
+    make TSXS=/opt/ts/bin/tsxs
+    sudo make TSXS=/opt/ts/bin/tsxs install
+
+Configuration:
+
+    Create a cacheurl.config file in the plugin directory with the url
+    patterns to match. See the cacheurl.config.example file for what to put in
+    this file.
+
+    Add the plugin to your plugins.conf file: cacheurl.so
+
+Start traffic server. Any rewritten URLs will be written to cacheurl.log in
+the log directory by default.

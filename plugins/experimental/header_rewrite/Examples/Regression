@@ -1,0 +1,15 @@
+cond %{STATUS} =201
+set-status 999
+set-status-reason "YDoDed again ..."
+
+cond %{READ_REQUEST_HDR_HOOK}
+rm-header Set-Cookie
+rm-header WWW-Authenticate
+rm-header Connection
+add-header Connection "close"
+
+cond %{RANDOM:10} =4
+set-status 789
+
+cond %{ACCESS:/tmp/foobar} [NOT]
+set-status 666

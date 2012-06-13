@@ -1,0 +1,25 @@
+This plugin implements the HIPES system.
+
+Plugin configuration
+--------------------
+
+   server:<host>	Name of the server to send this request to
+   urlp:<name>		Name of the query parameter for the service URL [url]
+   path:<path>		Path to use for the service URL [/]
+   ssl			Use SSL when connecting to the service [no]
+   service		Service server, host[:port]  [no default]
+   server		Name of HIPES server, host[:port]   [hipes.yimg.com]
+   active_timeout	The active connection timeout in ms [no default]
+   no_activity_timeout	The no activity timeout in ms [no default]
+   connect_timeout	The connect timeout in ms [no default]
+   dns_timeout		The DNS timeout [no default]
+
+
+The timeout options override the server defaults (from records.config),
+and only apply to the connection to the specific "service" host.
+
+RELEASES
+--------
+
+Version 1.0 (??/??/10)
+  - First release.

@@ -1,0 +1,76 @@
+ESI plugin
+--------------------
+
+This plugin implements the ESI specification.
+
+Version 1.3.0
+-------------
+- Upgrading to yts_esi_lib-1.3.0 and using yts_http_fetcher_impl-1.0.0
+
+Version 1.2.0
+-------------
+- Using INKVConnClose instead of INKVConnShutdown to avoid memory
+  leak
+- Upgrading to yts_esi_lib-1.2.0
+
+Version 1.1.1
+-------------
+- Suppressing non-200 status handling error message
+- Upgrading to yts_esi_lib-1.1.1
+
+Version 1.1.0
+-------------
+- Suppressing non-200 status handling error message
+- Upgrading to yts_esi_lib-1.1.0
+
+Version 1.0.1
+-------------
+- Added symlink from conf/yts/plugins for backward compatibility
+
+Version 1.0.0
+-------------
+- Upgrading to yts_esi_lib-0.0.6
+
+Version 0.0.6
+-------------
+- Removing X-Esi header from outbound client response
+
+Version 0.0.5_1
+---------------
+- Requiring correct version of yts_esi_lib (0.0.5)
+
+Version 0.0.5
+-------------
+- Using intercept solution to POST-back and cache serialized
+  form of document
+- Added basic stats
+
+Version 0.0.4_2
+---------------
+- Using yts_esi_lib-0.0.4
+
+Version 0.0.4_1
+---------------
+- Added conf/yts_plugin_esi directory and handlers.cfg
+
+Version 0.0.4
+-------------
+- Upgrading to yts_esi_lib{,_dev}-0.0.3
+- Special include handlers can now add 'footer' data
+- Dealing with gzip'ed data from OS and gzip'ing output if requested
+
+Version 0.0.3
+-------------
+- Conforming to API changes becase of ticket 3515300
+- Partial fix to bug 3503119 (ESI plugin should return error code
+  (4xx or 5xx) if it can not fetch include src url)
+
+
+Version 0.0.2 
+-------------
+- Upgraded to new fetch API, support for special includes
+
+Version 0.0.1
+-------------
+- Prototype implementation
+

@@ -1,0 +1,19 @@
+# The default hook is INK_HTTP_READ_RESPONSE_HDR_HOOK, so need to specify that
+# Remove any cookie/authentication headers from the origin server response
+rm-header Set-Cookie
+rm-header WWW-Authenticate
+
+# This technically violates RFC 2616, but allows us to calculate proper age / freshness
+# in YTS, even when the origin (*caugh* wikimedia) shows odd Date and Age responses.
+rm-header Date
+rm-header Age
+
+# If the origin responds with an HTTP status in the 400 range, normalize to a 404
+cond %{STATUS} >399 [AND]
+cond %{STATUS} <499
+set-status 404
+
+# Don't send these headers to the Origin server
+cond %{SEND_REQUEST_HDR_HOOK}
+rm-header Cache-Control
+rm-header Pragma

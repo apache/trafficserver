@@ -2,8 +2,11 @@ Apache Traffic Server
 Copyright 2010 The Apache Software Foundation
 
 This product includes software developed at
-The Apache Software Foundation (http://www.apache.org/).
-Network Geographics (http://network-geographics.com)
+  - The Apache Software Foundation (http://www.apache.org/).
+  - Yahoo! Inc
+  - Network Geographics (http://network-geographics.com)
+  - OmniTI
+
 ~~~
 
 Codebase originally donated by Yahoo:
@@ -20,3 +23,8 @@ You may obtain a copy of the License at
 
 lib/wccp and lib/tsconfig developed by Network Geographics.
 Copyright (C) 2010 Network Geographics, Inc.
+
+~~
+
+Cacheurl Plugin developed by OmniTI on behalf of Google.
+Copyright (C) 2011 Google Inc.
