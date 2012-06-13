@@ -46,6 +46,10 @@ PATCHES ACCEPTED TO BACKPORT FROM TRUNK:
 PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   [ New proposals should be added at the end of the list ]
 
+  *) Don't assume root privileges during make install
+   Trunk patch: https://git-wip-us.apache.org/repos/asf?p=trafficserver.git;a=commit;h=a862e283734c86d46a57624f9a05f09cfbbee175
+   Jira: https://issues.apache.org/jira/browse/TS-1295
+
 STALLED ISSUES
 
   *) key->volume hash table is not consistent when a disk is marked as bad or removed due to failure
