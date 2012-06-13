@@ -51,6 +51,11 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
    Trunk patch: 726cf61c203d5a90d7feeab5637a04cd803343da
    Jira: https://issues.apache.org/jira/browse/TS-1297
    +1: zwoop
+ 
+  *) Don't assume root privileges during make install
+   Trunk patch: https://git-wip-us.apache.org/repos/asf?p=trafficserver.git;a=commit;h=a862e283734c86d46a57624f9a05f09cfbbee175
+   Jira: https://issues.apache.org/jira/browse/TS-1295
+
 
 
 RELEASE PROCESS
