@@ -138,12 +138,6 @@ extern "C"
 #define TS_HRTIME_USECONDS(_x) HRTIME_USECONDS(_x)
 #define TS_HRTIME_NSECONDS(_x) HRTIME_NSECONDS(_x)
 
-  /****************************************************************************
-   *  Get time when Http TXN started / ended
-   ****************************************************************************/
-  tsapi TSReturnCode TSHttpTxnStartTimeGet(TSHttpTxn txnp, TSHRTime *start_time);
-  tsapi TSReturnCode TSHttpTxnEndTimeGet(TSHttpTxn txnp, TSHRTime *end_time);
-
   tsapi TSReturnCode TSHttpTxnCachedRespTimeGet(TSHttpTxn txnp, time_t *resp_time);
 
   /* ===== Cache ===== */

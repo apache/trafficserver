@@ -194,7 +194,7 @@ public:
     ink_assert(nPackets >= 0);
     return nPackets;
   };
-  void invariant();
+
   bool IsCancelledPacket(UDPPacketInternal * p)
   {
     // discard packets that'll never get sent...

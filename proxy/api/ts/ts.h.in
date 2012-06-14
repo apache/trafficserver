@@ -638,6 +638,34 @@ extern "C"
 
   typedef int64_t TSHRTime;
 
+  /* The TSMilestonesType is an enum defining all the various milestones ("timers") that
+     we track for a request. */
+  typedef enum
+    {
+      TS_MILESTONE_NULL = -1,
+      TS_MILESTONE_UA_BEGIN,
+      TS_MILESTONE_UA_READ_HEADER_DONE,
+      TS_MILESTONE_UA_BEGIN_WRITE,
+      TS_MILESTONE_UA_CLOSE,
+      TS_MILESTONE_SERVER_FIRST_CONNECT,
+      TS_MILESTONE_SERVER_CONNECT,
+      TS_MILESTONE_SERVER_CONNECT_END,
+      TS_MILESTONE_SERVER_BEGIN_WRITE,
+      TS_MILESTONE_SERVER_FIRST_READ,
+      TS_MILESTONE_SERVER_READ_HEADER_DONE,
+      TS_MILESTONE_SERVER_CLOSE,
+      TS_MILESTONE_CACHE_OPEN_READ_BEGIN,
+      TS_MILESTONE_CACHE_OPEN_READ_END,
+      TS_MILESTONE_CACHE_OPEN_WRITE_BEGIN,
+      TS_MILESTONE_CACHE_OPEN_WRITE_END,
+      TS_MILESTONE_DNS_LOOKUP_BEGIN,
+      TS_MILESTONE_DNS_LOOKUP_END,
+      TS_MILESTONE_SM_START,
+      TS_MILESTONE_SM_FINISH,
+      TS_MILESTONE_LAST_ENTRY
+    } TSMilestonesType;
+
+
   /* These typedefs are used with the corresponding TSMgmt*Get functions
      for storing the values retrieved by those functions. For example,
      TSMgmtCounterGet() retrieves an TSMgmtCounter. */
@@ -3206,6 +3234,23 @@ extern "C"
   /* Expose internal Base64 Encoding / Decoding */
   tsapi TSReturnCode TSBase64Decode(const char *str, size_t str_len, unsigned char *dst, size_t dst_size, size_t *length);
   tsapi TSReturnCode TSBase64Encode(const char *str, size_t str_len, char *dst, size_t dst_size, size_t *length);
+
+  /* Get milestone timers, useful for measuring where we are spending time in the transaction processing */
+  /**
+     Return the particular milestone timer for the transaction. If 0 is returned, it means
+     the transaction has not yet reached that milestone. Asking for an "unknown" milestone is
+     an error.
+
+     @param txnp the transaction pointer
+     @param milestone the requested milstone timer
+     was created.
+     @param time a pointer to a TSHRTime where we will store the timer
+
+     @return @c TS_SUCCESS if the milestone is supported, TS_ERROR otherwise
+
+  */
+  tsapi TSReturnCode TSHttpTxnMilestoneGet(TSHttpTxn txnp, TSMilestonesType milestone, TSHRTime *time);
+
 
 #ifdef __cplusplus
 }

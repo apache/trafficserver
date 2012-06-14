@@ -1055,7 +1055,7 @@ HttpSM::state_raw_http_server_open(int event, void *data)
 {
   STATE_ENTER(&HttpSM::state_raw_http_server_open, event);
   ink_assert(server_entry == NULL);
-  // milestones.server_connect_end = ink_get_hrtime();
+  milestones.server_connect_end = ink_get_hrtime();
   NetVConnection *netvc = NULL;
 
   pending_action = NULL;
@@ -1606,7 +1606,7 @@ HttpSM::state_http_server_open(int event, void *data)
   // TODO decide whether to uncomment after finish testing redirect
   // ink_assert(server_entry == NULL);
   pending_action = NULL;
-  // milestones.server_connect_end = ink_get_hrtime();
+  milestones.server_connect_end = ink_get_hrtime();
   HttpServerSession *session;
 
   switch (event) {
@@ -2274,8 +2274,8 @@ HttpSM::state_icp_lookup(int event, void *data)
 int
 HttpSM::state_cache_open_write(int event, void *data)
 {
-STATE_ENTER(&HttpSM:state_cache_open_write, event);
-  // milestones.cache_open_write_end = ink_get_hrtime();
+  STATE_ENTER(&HttpSM:state_cache_open_write, event);
+  milestones.cache_open_write_end = ink_get_hrtime();
   pending_action = NULL;
 
   switch (event) {
@@ -4200,6 +4200,7 @@ HttpSM::do_cache_prepare_write()
 {
   // statistically no need to retry when we are trying to lock
   // LOCK_URL_SECOND url because the server's behavior is unlikely to change
+  milestones.cache_open_write_begin = ink_get_hrtime();
   bool retry = (t_state.api_lock_url == HttpTransact::LOCK_URL_FIRST);
   do_cache_prepare_action(&cache_sm, t_state.cache_info.object_read, retry);
 }
@@ -5451,7 +5452,7 @@ HttpSM::setup_server_send_request()
   /*if (server_session->www_auth_content && t_state.www_auth_content == HttpTransact::CACHE_AUTH_NONE) {
     t_state.www_auth_content = HttpTransact::CACHE_AUTH_TRUE;
   }*/
-  // milestones.server_begin_write = ink_get_hrtime();
+  milestones.server_begin_write = ink_get_hrtime();
   server_entry->write_vio = server_entry->vc->do_io_write(this, hdr_length, buf_start);
 }
 
@@ -6143,8 +6144,7 @@ HttpSM::setup_blind_tunnel(bool send_response_hdr)
   IOBufferReader *r_from = from_ua_buf->alloc_reader();
   IOBufferReader *r_to = to_ua_buf->alloc_reader();
 
-  // milestones.server_begin_write = ink_get_hrtime();
-
+  milestones.server_begin_write = ink_get_hrtime();
   if (send_response_hdr) {
     client_response_hdr_bytes = write_response_header_into_buffer(&t_state.hdr_info.client_response, to_ua_buf);
   } else {

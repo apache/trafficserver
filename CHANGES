@@ -1,5 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.3.0
+  *) [TS-1301] Add a new API, TSHttpTxnMilestoneGet(), which can be used
+   to retrieve the various internal milestone timers from a plugin.
+
   *) [TS-1295] Don't assume root privileges during make install.
    Author: Jan-Frode Myklebust
 

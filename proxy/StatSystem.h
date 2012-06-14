@@ -49,6 +49,14 @@
 class TransactionMilestones
 {
 public:
+  TransactionMilestones()
+    : ua_begin(0), ua_read_header_done(0), ua_begin_write(0), ua_close(0), server_first_connect(0), server_connect(0),
+      server_connect_end(0), server_begin_write(0), server_first_read(0), server_read_header_done(0), server_close(0),
+      cache_open_read_begin(0), cache_open_read_end(0), cache_open_write_begin(0), cache_open_write_end(0),
+      dns_lookup_begin(0), dns_lookup_end(0), sm_start(0), sm_finish(0)
+      { }
+
+
   ////////////////////////////////////////////////////////
   // user agent:                                        //
   // user_agent_begin represents the time this          //
@@ -67,25 +75,16 @@ public:
   ////////////////////////////////////////////////////////
   ink_hrtime server_first_connect;
   ink_hrtime server_connect;
-  // ink_hrtime  server_connect_end;
-  // ink_hrtime  server_begin_write;            //  http only
+  ink_hrtime server_connect_end;
+  ink_hrtime server_begin_write;            //  http only
   ink_hrtime server_first_read; //  http only
   ink_hrtime server_read_header_done;   //  http only
   ink_hrtime server_close;
 
-  /////////////////////////////////////////////
-  // cache:                                  //
-  // all or some variables may not be set in //
-  // certain conditions                      //
-  /////////////////////////////////////////////
   ink_hrtime cache_open_read_begin;
   ink_hrtime cache_open_read_end;
-  // ink_hrtime  cache_read_begin;
-  // ink_hrtime  cache_read_end;
-  // ink_hrtime  cache_open_write_begin;
-  // ink_hrtime  cache_open_write_end;
-  // ink_hrtime  cache_write_begin;
-  // ink_hrtime  cache_write_end;
+  ink_hrtime cache_open_write_begin;
+  ink_hrtime cache_open_write_end;
 
   ink_hrtime dns_lookup_begin;
   ink_hrtime dns_lookup_end;
@@ -96,35 +95,12 @@ public:
   ink_hrtime sm_start;
   ink_hrtime sm_finish;
 
-    TransactionMilestones();
-#ifdef DEBUG
-  bool invariant();
-#endif
+  // TODO: Should we instrument these at some point?
+  // ink_hrtime  cache_read_begin;
+  // ink_hrtime  cache_read_end;
+  // ink_hrtime  cache_write_begin;
+  // ink_hrtime  cache_write_end;
 };
-
-typedef enum
-{
-  NO_HTTP_TRANSACTION_MILESTONES = 0,
-  client_accept_time,           // u_a_accept - u_a_begin
-  client_header_read_time,      // u_a_read_header_done - u_a_begin_read
-  client_response_write_time,   // u_a_close - u_a_begin_write
-  //
-  cache_lookup_time,            // cache_lookup_end - cache_lookup_begin
-  cache_update_time,            // cache_update_end - cache_update_begin
-  cache_open_read_time,         // cache_open_read_end - cache_open_read_begin
-  cache_read_time,              // cache_read_end - cache_read_begin
-  cache_open_write_time,        // cache_open_write_end - cache_open_write_begin
-  cache_write_time,             // cache_write_end - cache_write_begin
-  //
-  server_open_time,             // o_s_open_end - o_s_open_begin
-  server_response_time,         // o_s_begin_read - o_s_begin_write
-  server_read_time,             // o_s_read_header_done - o_s_begin_read
-  //
-  TOTAL_HTTP_TRANSACTION_MILESTONES
-} HttpTransactionMilestone_t;
-
-extern ink_hrtime GlobalHttpMilestones[TOTAL_HTTP_TRANSACTION_MILESTONES];
-extern ink_hrtime TenSecondHttpMilestones[TOTAL_HTTP_TRANSACTION_MILESTONES];
 
 
 // Modularization Project: Build w/o thread-local-dyn-stats

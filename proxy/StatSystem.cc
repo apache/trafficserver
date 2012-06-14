@@ -800,26 +800,3 @@ http_trans_stats_time_useconds_cb(void *data, void *res)
   *(float *) res = r;
   return res;
 }
-
-//////////////////////////////////////////////////////////////////////////////
-//
-//  TransactionMilestones::TransactionMilestones()
-//
-//////////////////////////////////////////////////////////////////////////////
-TransactionMilestones::TransactionMilestones()
-:
-ua_begin(0), ua_read_header_done(0), ua_begin_write(0), ua_close(0), server_first_connect(0), server_connect(0),
-  // server_connect_end(0),
-  // server_begin_write(0),
-  server_first_read(0), server_read_header_done(0), server_close(0), cache_open_read_begin(0), cache_open_read_end(0),
-  // cache_read_begin(0),
-  // cache_read_end(0),
-  // cache_open_write_begin(0),
-  // cache_open_write_end(0),
-  // cache_write_begin(0),
-  // cache_write_end(0),
-  dns_lookup_begin(0), dns_lookup_end(0), sm_start(0),  // init
-  sm_finish(0)                  // kill_this
-{
-  return;
-}
