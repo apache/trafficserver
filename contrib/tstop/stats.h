@@ -322,10 +322,11 @@ public:
     if (type == 5) {
       double denominator;
       getStat("client_req", denominator);
-      value = value / denominator * 100;
+      if (denominator == 0)
+        value = 0;
+      else
+        value = value / denominator * 100;
     }
-
-
   }
 
   bool toggleAbsolute() {
