@@ -181,13 +181,20 @@ public:
         const LookupItem &item = lookup_it->second;
 
         if (item.type == 1 || item.type == 2 || item.type == 5 || item.type == 8) {
-          assert(TSRecordGetInt(item.name, &value) == TS_ERR_OKAY);
-          //cerr << "name" << item.name << " value: " << value << endl;
-          string key = item.name;
-          char buffer[32];
-          sprintf(buffer, "%lld", value);
-          string foo = buffer;
-          (*_stats)[key] = foo;
+          if (strcmp(item.pretty, "Version") == 0) {
+            // special case for Version informaion
+            TSString strValue = NULL;
+            assert(TSRecordGetString(item.name, &strValue) == TS_ERR_OKAY);
+            string key = item.name;
+            (*_stats)[key] = strValue;
+          } else {
+            assert(TSRecordGetInt(item.name, &value) == TS_ERR_OKAY);
+            string key = item.name;
+            char buffer[32];
+            sprintf(buffer, "%lld", value);
+            string foo = buffer;
+            (*_stats)[key] = foo;
+          }
         }
       } 
       _old_time = _now;

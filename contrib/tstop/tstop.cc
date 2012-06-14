@@ -212,8 +212,12 @@ int main(int argc, char **argv)
   }
   Stats stats(host);
 
-  //cout << response;
-  //return 1;
+  if (host == "") {
+    char hostname[25];
+    hostname[sizeof(hostname) - 1] = '\0';
+    gethostname(hostname, sizeof(hostname) - 1);
+    host = hostname;
+  }
 
   initscr();
   curs_set(0);
@@ -247,7 +251,7 @@ int main(int argc, char **argv)
     mvprintw(0, 40, "       CLIENT REQUEST & RESPONSE        ");
     mvprintw(16, 0, "             CLIENT                    ");
     mvprintw(16, 40, "           ORIGIN SERVER                ");
-    mvprintw(23, 0, "%s - %.12s - %.12s      (q)uit (h)elp (%c)bsolute            ", timeBuf, version.c_str(), host.c_str(), absolute ? 'A' : 'a');
+    mvprintw(23, 0, "%8.8s - %-10.10s - %-24.24s      (q)uit (h)elp (%c)bsolute  ", timeBuf, version.c_str(), host.c_str(), absolute ? 'A' : 'a');
     attroff(COLOR_PAIR(colorPair::border));
     attroff(A_BOLD);
 
