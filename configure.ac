@@ -415,6 +415,18 @@ AC_ARG_WITH([max-threads-per-type],
 )
 AC_SUBST(max_threads_per_type)
 
+#
+# Experimental plugins
+#
+
+AC_MSG_CHECKING([whether to enable experimental plugins])
+AC_ARG_ENABLE([experimental-plugins],
+  [AS_HELP_STRING([--enable-experimental-plugins],[build experimental plugins])],
+  [],
+  [enable_experimental_plugins=no]
+)
+AC_MSG_RESULT([$enable_experimental_plugins])
+AM_CONDITIONAL([BUILD_EXPERIMENTAL_PLUGINS], [ test "x${enable_experimental_plugins}" = "xyes" ])
 
 #
 # Installation directories
@@ -1468,7 +1480,7 @@ AC_CONFIG_FILES([plugins/conf_remap/Makefile])
 AC_CONFIG_FILES([plugins/regex_remap/Makefile])
 AC_CONFIG_FILES([plugins/header_filter/Makefile])
 AC_CONFIG_FILES([plugins/stats_over_http/Makefile])
-AC_CONFIG_FILES([plugins/lua/Makefile])
+AC_CONFIG_FILES([plugins/experimental/lua/Makefile])
 # various tools
 AC_CONFIG_FILES([tools/Makefile])
 # example plugins
