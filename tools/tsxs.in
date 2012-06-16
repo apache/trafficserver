@@ -22,8 +22,8 @@ exec_prefix="@exec_prefix@"
 INSTALLDIR=`eval echo "@libexecdir@"`
 INCLUDEDIR=`eval echo "@includedir@"`
 CPPFLAGS="$CPPFLAGS -I$INCLUDEDIR"
-CFLAGS="@CFLAGS@"
-CXXFLAGS="@CXXFLAGS@"
+CFLAGS="$CFLAGS @CFLAGS@"
+CXXFLAGS="$CXXFLAGS @CXXFLAGS@"
 BUILD=
 DEBUGECHO=
 
