@@ -47,7 +47,7 @@ libtsconfig_la_SOURCES = \
 
 test_tsconfig_SOURCES = test-tsconfig.cc
 
-test_tsconfig_LDADD = libtsconfig.la ../ts/libtsutil.la
+test_tsconfig_LDADD = libtsconfig.la ../ts/libtsutil.la @LIBEXECINFO@
 
 # Strip to just the enum in the ts::config namespace so we can use
 # it more easily in C++.
