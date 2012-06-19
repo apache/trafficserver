@@ -1,5 +1,7 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.3.0
+  *) [TS-1306] Fix WCCP build problems on FreeBSD.
+
   *) [TS-1303] Added '=6' as special case for HTTP port configuration for
      backwards compatibility.
 
