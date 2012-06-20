@@ -2086,6 +2086,7 @@ CacheVC::removeEvent(int event, Event *e)
       f.remove_aborted_writers = 1;
     }
   Lread:
+    SET_HANDLER(&CacheVC::removeEvent);
     if (!buf)
       goto Lcollision;
     if (!dir_valid(vol, &dir)) {
