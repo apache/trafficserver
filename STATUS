@@ -41,16 +41,6 @@ A list of all bugs open for the next development release can be found at
 
 PATCHES ACCEPTED TO BACKPORT FROM TRUNK:
 
-  *) Fix collation in custom logging.
-   Trunk patch: 448179c127582a590c3ed95a75ffc40f4e377b75
-   Jira: https://issues.apache.org/jira/browse/TS-1514
-   +1: igalic, zwoop, zym
-
-   Wrong Jira? --jpeach  I wonder if this is similar/related
-   to TS-1289 ? --zwoop
-   The Jira is TS-1299, my typo. --zym
-   Now cloned as TS-1514
-
   *) SSL-crashed every now and then with 3.2.0 + SNI-fixes
   Trunk: d6d07d8c43c084d5683b45c1efe9ed2bf9ef8635
   3.2.x Patch: https://issues.apache.org/jira/secure/attachment/12546611/TS-1484-3.2.x.patch

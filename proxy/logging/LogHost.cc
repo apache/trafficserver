@@ -157,7 +157,7 @@ LogHost::set_name_or_ipstr(char *name_or_ip)
 
   if (name_or_ip && name_or_ip[0] != 0) {
     ts::ConstBuffer addr, port;
-    if (ats_ip_parse(ts::ConstBuffer(name_or_ip, strlen(name_or_ip)), &addr, &port)) {
+    if (ats_ip_parse(ts::ConstBuffer(name_or_ip, strlen(name_or_ip)), &addr, &port)==0) {
       uint16_t p = port ? atoi(port.data()) : Log::config->collation_port;
       char* n = const_cast<char*>(addr.data());
       // Force termination. We know we can do this because the address

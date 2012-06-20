@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.2.3
 
+  *) [TS-1514] Fix collation in custom logging.
+   Author: bettydramit
+
   *) [TS-1498] Fix header_filter plugin for ARM.
 
   *) [TS-1497] stats codes mess up when disk fail
