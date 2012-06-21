@@ -1,5 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.3.0
+  *) [TS-1289] stats codes mess up when disk fail
+
+  *) [TS-959] remove ae_ua filter
+
   *) [TS-1310] Fix a endless loop in CacheVC::removeEvent.
    Author: weijin & Hua Cai
 
