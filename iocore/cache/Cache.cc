@@ -504,6 +504,8 @@ CacheProcessor::start(int)
   return start_internal(0);
 }
 
+static const int DEFAULT_CACHE_OPTIONS = (O_RDWR | _O_ATTRIB_OVERLAPPED);
+
 int
 CacheProcessor::start_internal(int flags)
 {
@@ -530,7 +532,8 @@ CacheProcessor::start_internal(int flags)
   for (i = 0; i < theCacheStore.n_disks; i++) {
     sd = theCacheStore.disk[i];
     char path[PATH_NAME_MAX];
-    int opts = O_RDWR;
+    int opts = DEFAULT_CACHE_OPTIONS;
+
     ink_strlcpy(path, sd->pathname, sizeof(path));
     if (!sd->file_pathname) {
       if (config_volumes.num_http_volumes && config_volumes.num_stream_volumes) {
@@ -539,7 +542,7 @@ CacheProcessor::start_internal(int flags)
       ink_strlcat(path, "/cache.db", sizeof(path));
       opts |= O_CREAT;
     }
-    opts |= _O_ATTRIB_OVERLAPPED;
+
 #ifdef O_DIRECT
     opts |= O_DIRECT;
 #endif
@@ -549,6 +552,10 @@ CacheProcessor::start_internal(int flags)
 
     int fd = open(path, opts, 0644);
     int blocks = sd->blocks;
+
+    if (fd < 0 && (opts & O_CREAT))  // Try without O_DIRECT if this is a file on filesystem, e.g. tmpfs.
+      fd = open(path, DEFAULT_CACHE_OPTIONS | O_CREAT, 0644);
+
     if (fd > 0) {
       if (!sd->file_pathname) {
         if (ftruncate(fd, ((uint64_t) blocks) * STORE_BLOCK_SIZE) < 0) {
