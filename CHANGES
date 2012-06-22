@@ -1,5 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.3.0
+  *) [TS-1312] Allow to open cache disk without O_DIRECT, for e.g. tmpfs
+   "disk" cache.
+
   *) [TS-1289] stats codes mess up when disk fail
 
   *) [TS-959] remove ae_ua filter
