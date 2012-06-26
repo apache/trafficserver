@@ -85,7 +85,7 @@ maintainance_mode()
 
 void syslog_thr_init();
 
-extern Version version;
+extern const Version version;
 extern AppVersionInfo appVersionInfo;
 
 #define TS_ReadConfigInteger            REC_ReadConfigInteger

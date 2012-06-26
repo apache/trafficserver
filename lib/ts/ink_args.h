@@ -34,7 +34,7 @@ Process arguments
 
 struct ArgumentDescription;
 
-typedef void ArgumentFunction(ArgumentDescription * argument_descriptions, int n_argument_descriptions, const char *arg);
+typedef void ArgumentFunction(const ArgumentDescription * argument_descriptions, unsigned n_argument_descriptions, const char *arg);
 
 struct ArgumentDescription
 {
@@ -59,19 +59,19 @@ struct ArgumentDescription
 
 /* Global Data
 */
-extern char *file_arguments[];  // exported by process_args()
-extern int n_file_arguments;    // exported by process_args()
-extern char *program_name;      // exported by process_args()
+extern const char *file_arguments[];  // exported by process_args()
+extern unsigned n_file_arguments;    // exported by process_args()
+extern const char *program_name;      // exported by process_args()
 
 /* Print out arguments and values
 */
-void show_argument_configuration(ArgumentDescription * argument_descriptions, int n_argument_descriptions);
+void show_argument_configuration(const ArgumentDescription * argument_descriptions, unsigned n_argument_descriptions);
 
-void usage(ArgumentDescription * argument_descriptions, int n_argument_descriptions, const char *arg_unused);
+void usage(const ArgumentDescription * argument_descriptions, unsigned n_argument_descriptions, const char *arg_unused);
 
 /* Process all arguments
 */
-void process_args(ArgumentDescription * argument_descriptions,
-                  int n_argument_descriptions, char **argv, const char *usage_string = 0);
+void process_args(const ArgumentDescription * argument_descriptions,
+                  unsigned n_argument_descriptions, char **argv, const char *usage_string = 0);
 
 #endif /*_INK_ARGS_H*/

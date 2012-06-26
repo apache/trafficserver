@@ -33,16 +33,16 @@ Process arguments
 //  Global variables
 //
 
-char *file_arguments[MAX_FILE_ARGUMENTS] = { 0 };
-char *program_name = (char *) "Traffic Server";
-int n_file_arguments = 0;
+const char *file_arguments[MAX_FILE_ARGUMENTS] = { 0 };
+const char *program_name = (char *) "Traffic Server";
+unsigned n_file_arguments = 0;
 
 //
 //  Local variables
 //
 
-static char *argument_types_keys = (char *) "ISDfFTL";
-static char *argument_types_descriptions[] = {
+static const char *argument_types_keys = (char *) "ISDfFTL";
+static const char *argument_types_descriptions[] = {
   (char *) "int  ",
   (char *) "str  ",
   (char *) "dbl  ",
@@ -58,8 +58,8 @@ static char *argument_types_descriptions[] = {
 //
 
 static void
-process_arg(ArgumentDescription * argument_descriptions,
-            int n_argument_descriptions, int i, char ***argv, const char *usage_string)
+process_arg(const ArgumentDescription * argument_descriptions,
+            unsigned n_argument_descriptions, int i, char ***argv, const char *usage_string)
 {
   char *arg = NULL;
   if (argument_descriptions[i].type) {
@@ -98,7 +98,7 @@ process_arg(ArgumentDescription * argument_descriptions,
 
 
 void
-show_argument_configuration(ArgumentDescription * argument_descriptions, int n_argument_descriptions)
+show_argument_configuration(const ArgumentDescription * argument_descriptions, unsigned n_argument_descriptions)
 {
   int i = 0;
   printf("Argument Configuration\n");
@@ -133,9 +133,9 @@ show_argument_configuration(ArgumentDescription * argument_descriptions, int n_a
 }
 
 void
-process_args(ArgumentDescription * argument_descriptions, int n_argument_descriptions, char **argv, const char *usage_string)
+process_args(const ArgumentDescription * argument_descriptions, unsigned n_argument_descriptions, char **argv, const char *usage_string)
 {
-  int i = 0;
+  unsigned i = 0;
   //
   // Grab Environment Variables
   //
@@ -197,7 +197,7 @@ process_args(ArgumentDescription * argument_descriptions, int n_argument_descrip
 }
 
 void
-usage(ArgumentDescription * argument_descriptions, int n_argument_descriptions, const char *usage_string)
+usage(const ArgumentDescription * argument_descriptions, unsigned n_argument_descriptions, const char *usage_string)
 {
   (void) argument_descriptions;
   (void) n_argument_descriptions;
