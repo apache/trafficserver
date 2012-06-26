@@ -178,14 +178,14 @@ extern int run_TestHook();
 #endif
 void deinitSubAgent();
 
-Version version = {
+const Version version = {
   {CACHE_DB_MAJOR_VERSION, CACHE_DB_MINOR_VERSION},     // cacheDB
   {CACHE_DIR_MAJOR_VERSION, CACHE_DIR_MINOR_VERSION},   // cacheDir
   {CLUSTER_MAJOR_VERSION, CLUSTER_MINOR_VERSION},       // current clustering
   {MIN_CLUSTER_MAJOR_VERSION, MIN_CLUSTER_MINOR_VERSION},       // min clustering
 };
 
-ArgumentDescription argument_descriptions[] = {
+static const ArgumentDescription argument_descriptions[] = {
   {"lock_memory", 'l', "Lock process in memory (must be root)",
    "I", &lock_process, "PROXY_LOCK_PROCESS", NULL},
   {"net_threads", 'n', "Number of Net Threads", "I", &num_of_net_threads,
@@ -262,7 +262,7 @@ ArgumentDescription argument_descriptions[] = {
    NULL, NULL},
   {"help", 'h', "HELP!", NULL, NULL, NULL, usage},
 };
-int n_argument_descriptions = SIZE(argument_descriptions);
+static const unsigned n_argument_descriptions = SIZE(argument_descriptions);
 
 //
 // Initialize operating system related information/services
