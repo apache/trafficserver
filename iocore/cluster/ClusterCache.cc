@@ -1210,6 +1210,7 @@ cache_op_ClusterFunction(ClusterHandler * ch, void *data, int len)
       res = c->ic_request.unmarshal((char *) p, moi_len, NULL);
       ink_assert(res > 0);
       ink_assert(c->ic_request.valid());
+      c->request_purge = c->ic_request.method_get_wksidx() == HTTP_WKSIDX_PURGE || c->ic_request.method_get_wksidx() == HTTP_WKSIDX_DELETE;
       moi_len -= res;
       p += res;
       ink_assert(moi_len > 0);
@@ -1597,7 +1598,7 @@ CacheContinuation::setupReadWriteVC(int event, VConnection * vc)
     }
   case CACHE_EVENT_OPEN_READ_FAILED:
     {
-      if (frag_type == CACHE_FRAG_TYPE_HTTP) {
+      if (frag_type == CACHE_FRAG_TYPE_HTTP && !request_purge) {
         // HTTP open read failed, attempt open write now to avoid an additional
         //  message round trip
 
