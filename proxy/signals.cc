@@ -47,7 +47,6 @@ typedef void (*SigActionFunc_t) (int sig);
 #endif
 
 int exited_children = 0;
-extern int stack_trace_flag;
 
 static volatile int sigusr1_received = 0;
 extern int fastmemtotal;
