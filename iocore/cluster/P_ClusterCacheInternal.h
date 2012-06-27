@@ -116,6 +116,7 @@ struct CacheContinuation:public Continuation
   int nbytes;
   unsigned int target_ip;
   int request_opcode;
+  bool request_purge;
   bool local_lookup_only;
   bool no_reply_message;
   bool request_timeout;         // timeout occurred before
@@ -288,6 +289,7 @@ CacheContinuation():
     nbytes(0),
     target_ip(0),
     request_opcode(0),
+    request_purge(false),
     local_lookup_only(0),
     no_reply_message(0),
     request_timeout(0),
