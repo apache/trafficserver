@@ -74,7 +74,7 @@ public:
     lookup_table.insert(make_pair("write_active", LookupItem("Writes Active", "proxy.process.cache.write.active", 1)));
     lookup_table.insert(make_pair("update_active", LookupItem("Update Active", "proxy.process.cache.update.active", 1)));
     lookup_table.insert(make_pair("entries", LookupItem("Entries", "proxy.process.cache.direntries.used", 1)));
-    lookup_table.insert(make_pair("avg_size", LookupItem("Avg Size", "disk_total", "entries", 3)));
+    lookup_table.insert(make_pair("avg_size", LookupItem("Avg Size", "disk_used", "entries", 3)));
 
     lookup_table.insert(make_pair("client_req", LookupItem("Requests", "proxy.process.http.incoming_requests", 2)));
     lookup_table.insert(make_pair("client_conn", LookupItem("New Conn", "proxy.process.http.total_client_connections", 2)));
@@ -120,7 +120,7 @@ public:
     lookup_table.insert(make_pair("cold_time", LookupItem("Cold (ms)", "proxy.process.http.transaction_totaltime.miss_cold", "cold", 8)));
     lookup_table.insert(make_pair("changed_time", LookupItem("Chang (ms)", "proxy.process.http.transaction_totaltime.miss_changed", "changed", 8)));
     lookup_table.insert(make_pair("not_time", LookupItem("Not (ms)", "proxy.process.http.transaction_totaltime.miss_not_cacheable", "not", 8)));
-    lookup_table.insert(make_pair("no_time", LookupItem("No (no)", "proxy.process.http.transaction_totaltime.miss_client_no_cache", "no", 8)));
+    lookup_table.insert(make_pair("no_time", LookupItem("No (ms)", "proxy.process.http.transaction_totaltime.miss_client_no_cache", "no", 8)));
 
     lookup_table.insert(make_pair("get", LookupItem("GET", "proxy.process.http.get_requests", 5)));
     lookup_table.insert(make_pair("head", LookupItem("HEAD", "proxy.process.http.head_requests", 5)));
