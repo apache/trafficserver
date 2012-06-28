@@ -778,7 +778,8 @@ dir_lookaside_fixup(CacheKey *key, Vol *d)
       int res = dir_overwrite(key, d, &b->new_dir, &b->dir, false);
       DDebug("dir_lookaside", "fixup %X %X offset %"PRId64" phase %d %d",
             key->word(0), key->word(1), dir_offset(&b->new_dir), dir_phase(&b->new_dir), res);
-      d->ram_cache->fixup(key, 0, dir_offset(&b->dir), 0, dir_offset(&b->new_dir));
+      int64_t o = dir_offset(&b->dir), n = dir_offset(&b->new_dir);
+      d->ram_cache->fixup(key, (uint32_t)(o >> 32), (uint32_t)o, (uint32_t)(n >> 32), (uint32_t)n);
       d->lookaside[i].remove(b);
       free_EvacuationBlock(b, d->mutex->thread_holding);
       return res;

@@ -1971,7 +1971,8 @@ CacheVC::handleRead(int event, Event *e)
 
   // check ram cache
   ink_debug_assert(vol->mutex->thread_holding == this_ethread());
-  if (vol->ram_cache->get(read_key, &buf, 0, dir_offset(&dir)))
+  int64_t o = dir_offset(&dir);
+  if (vol->ram_cache->get(read_key, &buf, (uint32_t)(o >> 32), (uint32_t)o));
     goto LramHit;
 
   // check if it was read in the last open_read call

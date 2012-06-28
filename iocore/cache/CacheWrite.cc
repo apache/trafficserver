@@ -534,7 +534,8 @@ CacheVC::evacuateDocDone(int event, Event *e)
 
           }
           if (dir_overwrite(&doc->first_key, vol, &dir, &overwrite_dir)) {
-            vol->ram_cache->fixup(&doc->first_key, 0, dir_offset(&overwrite_dir), 0, dir_offset(&dir));
+            int64_t o = dir_offset(&overwrite_dir), n = dir_offset(&dir);
+            vol->ram_cache->fixup(&doc->first_key, (uint32_t)(o >> 32), (uint32_t)o, (uint32_t)(n >> 32), (uint32_t)n);
           }
         } else {
           DDebug("cache_evac", "evacuating earliest: %X %d", (int) doc->key.word(0), (int) dir_offset(&overwrite_dir));
@@ -715,7 +716,7 @@ Vol::evac_range(off_t low, off_t high, int evac_phase)
   for (int i = si; i <= ei; i++) {
     EvacuationBlock *b = evacuate[i].head;
     EvacuationBlock *first = 0;
-    int first_offset = INT_MAX;
+    int64_t first_offset = INT64_MAX;
     for (; b; b = b->link.next) {
       int64_t offset = dir_offset(&b->dir);
       int phase = dir_phase(&b->dir);
