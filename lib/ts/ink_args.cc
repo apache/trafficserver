@@ -83,7 +83,12 @@ process_arg(const ArgumentDescription * argument_descriptions,
         *(int64_t *) argument_descriptions[i].location = ink_atoi64(arg);
         break;
       case 'S':
-        ink_strlcpy((char *) argument_descriptions[i].location, arg, atoi(argument_descriptions[i].type + 1));
+        if (argument_descriptions[i].type[1] == '*') {
+          char ** out = (char **)argument_descriptions[i].location;
+          *out = ats_strdup(arg);
+        } else {
+          ink_strlcpy((char *) argument_descriptions[i].location, arg, atoi(argument_descriptions[i].type + 1));
+        }
         break;
       default:
         ink_fatal(1, (char *) "bad argument description");

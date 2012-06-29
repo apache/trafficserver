@@ -49,6 +49,7 @@ struct ArgumentDescription
      "f" = set flag to FALSE (default is TRUE)
      "T" = toggle
      "S80" = read string, 80 chars max
+     "S*" = read unbounded string, allocating
    */
   const char *description;
   const char *type;
