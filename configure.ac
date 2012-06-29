@@ -1044,22 +1044,6 @@ TS_CHECK_JEMALLOC
 TS_CHECK_TCMALLOC
 
 #
-# Determine ARG_MAX
-# Default to 2048 if we cannot resolve ARG_MAX for some reason
-AC_ARG_WITH([arg_max],
-  [AS_HELP_STRING([--with-arg-max=[ARG_MAX]],[override the computed maxmium argument length])],
-  [
-  arg_max="$withval"
-  ],[
-  arg_max="`getconf ARG_MAX`"
-  if test "x${arg_max}" = x ; then
-    arg_max=2048
-  fi
-  ]
-)
-AC_SUBST(arg_max)
-
-#
 # Check for libreadline/libedit
 AX_LIB_READLINE
 
