@@ -999,43 +999,49 @@ LocalManager::startProxy()
     RecSetRecordInt("proxy.node.restarts.proxy.start_time", proxy_started_at);
     RecSetRecordInt("proxy.node.restarts.proxy.restart_count", proxy_launch_count);
   } else {
-    int res, i = 0, n;
-    char real_proxy_options[TS_ARG_MAX], *options[32], *last, *tok;
+    int res, i = 0;
+    char *options[32], *last, *tok;
     bool open_ports_p = false;
 
-    snprintf(real_proxy_options, sizeof(real_proxy_options), "%s", proxy_options);
-    n = strlen(real_proxy_options);
+    Vec<char> real_proxy_options;
+
+    real_proxy_options.append(proxy_options, strlen(proxy_options));
 
     // Check if we need to pass down port/fd information to
     // traffic_server by seeing if there are any open ports.
-    for ( int i = 0, limit = m_proxy_ports.length()
-            ; !open_ports_p && i < limit
-            ; ++i
-    )
-      if (ts::NO_FD != m_proxy_ports[i].m_fd) open_ports_p = true;
+    for ( int i = 0, limit = m_proxy_ports.length() ; !open_ports_p && i < limit ; ++i) {
+      if (ts::NO_FD != m_proxy_ports[i].m_fd) {
+        open_ports_p = true;
+      }
+    }
 
     if (open_ports_p) {
+      char portbuf[128];
       bool need_comma_p = false;
-      snprintf(&real_proxy_options[n], sizeof(real_proxy_options) - n, " --httpport ");
-      n = strlen(real_proxy_options);
+      real_proxy_options.append(" --httpport ", strlen(" --httpport "));
       for ( int i = 0, limit = m_proxy_ports.length() ; i < limit ; ++i ) {
         HttpProxyPort& p = m_proxy_ports[i];
         if (ts::NO_FD != p.m_fd) {
-          if (need_comma_p) real_proxy_options[n++] = ',';
+          if (need_comma_p) {
+            real_proxy_options.append(',');
+          }
           need_comma_p = true;
-          p.print(real_proxy_options+n, sizeof(real_proxy_options)-n);
-          n = strlen(real_proxy_options);
+          p.print(portbuf, sizeof(portbuf));
+          real_proxy_options.append((const char *)portbuf, strlen(portbuf));
         }
       }
     }
 
+    // NUL-terminate for the benefit of strtok and printf.
+    real_proxy_options.append('\0');
+
     Debug("lm", "[LocalManager::startProxy] Launching %s with options '%s'\n",
-          absolute_proxy_binary, real_proxy_options);
+          absolute_proxy_binary, &real_proxy_options[0]);
 
     ink_zero(options);
     options[0] = absolute_proxy_binary;
     i = 1;
-    tok = ink_strtok_r(real_proxy_options, " ", &last);
+    tok = ink_strtok_r(&real_proxy_options[0], " ", &last);
     options[i++] = tok;
     while (i < 32 && (tok = ink_strtok_r(NULL, " ", &last))) {
       Debug("lm", "opt %d = '%s'\n", i, tok);
