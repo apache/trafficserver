@@ -129,8 +129,7 @@ static int num_of_udp_threads = DEFAULT_NUMBER_OF_UDP_THREADS;
 static int num_accept_threads  = DEFAULT_NUM_ACCEPT_THREADS;
 static int num_task_threads = DEFAULT_NUM_TASK_THREADS;
 static int run_test_hook = 0;
-static char http_accept_port_descriptor[TS_ARG_MAX + 1];
-#define TS_ARG_MAX_STR_FMT "S" TS_ARG_MAX_STR
+static char * http_accept_port_descriptor;
 int http_accept_file_descriptor = NO_FD;
 static char core_file[255] = "";
 static bool enable_core_file_p = false; // Enable core file dump?
@@ -196,8 +195,8 @@ static const ArgumentDescription argument_descriptions[] = {
    "PROXY_ACCEPT_THREAD", NULL},
   {"accept_till_done", 'b', "Accept Till Done", "T", &accept_till_done,
    "PROXY_ACCEPT_TILL_DONE", NULL},
-  {"httpport", 'p', "Port descriptor for HTTP Accept", TS_ARG_MAX_STR_FMT,
-   http_accept_port_descriptor, "PROXY_HTTP_ACCEPT_PORT", NULL},
+  {"httpport", 'p', "Port descriptor for HTTP Accept", "S*",
+   &http_accept_port_descriptor, "PROXY_HTTP_ACCEPT_PORT", NULL},
   {"cluster_port", 'P', "Cluster Port Number", "I", &cluster_port_number,
    "PROXY_CLUSTER_PORT", NULL},
   {"dprintf_level", 'o', "Debug output level", "I", &cmd_line_dprintf_level,
