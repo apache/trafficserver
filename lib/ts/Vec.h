@@ -93,6 +93,7 @@ class Vec {
   void copy(const Vec<C,A,S> &v);
   void fill(int n);
   void append(const Vec<C> &v);
+  template <typename CountType> void append(const C * src, CountType count);
   void prepend(const Vec<C> &v);
   void remove_index(int index);
   void remove(C a) { int i = index(a); if (i>=0) remove_index(i); }
@@ -347,6 +348,16 @@ Vec<C,A,S>::append(const Vec<C> &vv)  {
   for (C *c = vv.v; c < vv.v + vv.n; c++)
     if (*c != 0)
       add(*c);
+}
+
+template <class C, class A, int S>
+template <typename CountType>
+inline void
+Vec<C,A,S>::append(const C * src, CountType count)  {
+  reserve(length() + count);
+  for (CountType c = 0; c < count; ++c) {
+    add(src[c]);
+  }
 }
 
 template <class C, class A, int S> inline void
