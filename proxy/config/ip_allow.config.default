@@ -12,6 +12,7 @@
 # POST, PURGE, PUT, TRACE, PUSH
 #
 # Rules are applied in the order listed starting from the top.
+# That means you generally want to append your rules after the ones listed here.
 #
 # Allow anything on localhost (this is the default configuration based on the
 # depricated CONFIG proxy.config.http.quick_filter.mask INT 0x482)
