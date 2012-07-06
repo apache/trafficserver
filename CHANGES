@@ -1,5 +1,7 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.3.0
+  *) [TS-1087] TSHttpTxnOutgoingAddrSet forward declaration does not match implementation
+
   *) [TS-1319] Large cache (> 16TB) not working
   Author: Van Doorn, Jan R <Jan_VanDoorn@cable.comcast.com>
 
