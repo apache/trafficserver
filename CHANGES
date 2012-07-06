@@ -1,5 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.3.0
+  *) [TS-1319] Large cache (> 16TB) not working
+  Author: Van Doorn, Jan R <Jan_VanDoorn@cable.comcast.com>
+
   *) Fix a bug that ram cache and evcuation can not work
     well in disks larger than 2TB. Author: weijin
 

@@ -459,7 +459,7 @@ CacheHostRecord::Init(int typ)
   CacheVol *cachep = cp_list.head;
   for (; cachep; cachep = cachep->link.next) {
     if (cachep->scheme == type) {
-      Debug("cache_hosting", "Host Record: %p, Volume: %d, size: %u", this, cachep->vol_number, cachep->size);
+      Debug("cache_hosting", "Host Record: %p, Volume: %d, size: %"PRIu64, this, cachep->vol_number, cachep->size);
       cp[num_cachevols] = cachep;
       num_cachevols++;
       num_vols += cachep->num_vols;
