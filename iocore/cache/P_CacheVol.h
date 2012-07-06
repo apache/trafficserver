@@ -279,7 +279,7 @@ struct CacheVol
 {
   int vol_number;
   int scheme;
-  int size;
+  off_t size;
   int num_vols;
   Vol **vols;
   DiskVol **disk_vols;

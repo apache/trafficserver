@@ -2241,7 +2241,7 @@ cplist_update()
     ConfigVol *config_vol = config_volumes.cp_queue.head;
     for (; config_vol; config_vol = config_vol->link.next) {
       if (config_vol->number == cp->vol_number) {
-        int size_in_blocks = config_vol->size << (20 - STORE_BLOCK_SHIFT);
+        off_t size_in_blocks = config_vol->size << (20 - STORE_BLOCK_SHIFT);
         if ((cp->size <= size_in_blocks) && (cp->scheme == config_vol->scheme)) {
           config_vol->cachep = cp;
         } else {
