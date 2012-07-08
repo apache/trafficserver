@@ -501,7 +501,7 @@ SSLContextStorage::insert(SSL_CTX * ctx, const char * name)
     }
 
     Debug("indexed wildcard certificate for '%s' as '%s'", name, reversed);
-    this->wildcards.Insert(reversed, new SslEntry(ctx), 0 /* rank */, -1 /* keylen */);
+    return this->wildcards.Insert(reversed, new SslEntry(ctx), 0 /* rank */, -1 /* keylen */);
   } else {
     ink_hash_table_insert(this->hostnames, name, (void *)ctx);
   }
