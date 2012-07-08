@@ -142,7 +142,7 @@ Trie<T>::Insert(const char *key, T* value, int rank, int key_len /* = -1 */)
   }
 
   if (curr_node->occupied) {
-    Error("Cannot insert duplicate!");
+    Debug("Trie::Insert", "Cannot insert duplicate!");
     return false;
   }
 
