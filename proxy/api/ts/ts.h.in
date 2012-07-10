@@ -266,16 +266,6 @@ extern "C"
   } TSHttpHookID;
   #define TS_HTTP_READ_REQUEST_PRE_REMAP_HOOK TS_HTTP_PRE_REMAP_HOOK  /* backwards compat */
 
-  typedef enum
-  {
-    TS_CACHE_PLUGIN_HOOK,
-    TS_CACHE_LOOKUP_HOOK,
-    TS_CACHE_READ_HOOK,
-    TS_CACHE_WRITE_HOOK,
-    TS_CACHE_DELETE_HOOK,
-    TS_CACHE_LAST_HOOK
-  } TSCacheHookID;
-
   /**
       TSEvents are sent to continuations when they are called back.
       The TSEvent provides the continuation's handler function with
@@ -2209,10 +2199,6 @@ extern "C"
   /* --------------------------------------------------------------------------
      HTTP hooks */
   tsapi void TSHttpHookAdd(TSHttpHookID id, TSCont contp);
-
-  /* --------------------------------------------------------------------------
-     Cache hook */
-  tsapi TSReturnCode TSCacheHookAdd(TSCacheHookID id, TSCont contp);
 
   /* --------------------------------------------------------------------------
      HTTP sessions */
