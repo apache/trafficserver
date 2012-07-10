@@ -289,7 +289,7 @@ main(int argc, char *argv[])
     int bin_ext_len = strlen(BINARY_LOG_OBJECT_FILENAME_EXTENSION);
     int ascii_ext_len = strlen(ASCII_LOG_OBJECT_FILENAME_EXTENSION);
 
-    for (int i = 0; i < n_file_arguments; ++i) {
+    for (unsigned i = 0; i < n_file_arguments; ++i) {
       int in_fd = open(file_arguments[i], O_RDONLY);
       if (in_fd < 0) {
         fprintf(stderr, "Error opening input file %s: ", file_arguments[i]);
