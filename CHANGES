@@ -1,5 +1,7 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.3.0
+  *) [TS-1341] Remove remnants of TSCacheHookAdd() API.
+
   *) [TS-1328] TSMgmtIntCreate and TSMgmtStringCreate validation.
    Author: Yakov Kopel.
 
