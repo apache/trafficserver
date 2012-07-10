@@ -737,7 +737,7 @@ static int
 cmd_index(char *p)
 {
   p += strspn(p, " \t");
-  for (int c = 0; c < SIZE(commands); c++) {
+  for (unsigned c = 0; c < SIZE(commands); c++) {
     const char *l = commands[c].n;
     while (l) {
       const char *s = strchr(l, '/');
@@ -755,16 +755,15 @@ cmd_index(char *p)
 static int
 cmd_help(char *cmd)
 {
-  int i;
-
   (void) cmd;
   printf("HELP\n\n");
   cmd = skip(cmd, true);
   if (!cmd) {
-    for (i = 0; i < SIZE(commands); i++) {
+    for (unsigned i = 0; i < SIZE(commands); i++) {
       printf("%15s  %s\n", commands[i].n, commands[i].d);
     }
   } else {
+    int i;
     if ((i = cmd_index(cmd)) < 0) {
       printf("\nno help found for: %s\n", cmd);
       return CMD_FAILED;
