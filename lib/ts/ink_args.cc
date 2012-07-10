@@ -105,9 +105,8 @@ process_arg(const ArgumentDescription * argument_descriptions,
 void
 show_argument_configuration(const ArgumentDescription * argument_descriptions, unsigned n_argument_descriptions)
 {
-  int i = 0;
   printf("Argument Configuration\n");
-  for (i = 0; i < n_argument_descriptions; i++) {
+  for (unsigned i = 0; i < n_argument_descriptions; i++) {
     if (argument_descriptions[i].type) {
       printf("  %-34s ", argument_descriptions[i].description);
       switch (argument_descriptions[i].type[0]) {
@@ -212,7 +211,7 @@ usage(const ArgumentDescription * argument_descriptions, unsigned n_argument_des
   else
     fprintf(stderr, "Usage: %s [--SWITCH [ARG]]\n", program_name);
   fprintf(stderr, "  switch__________________type__default___description\n");
-  for (int i = 0; i < n_argument_descriptions; i++) {
+  for (unsigned i = 0; i < n_argument_descriptions; i++) {
     if (!argument_descriptions[i].description)
       continue;
     fprintf(stderr, "  -%c, --%-17s %s",
