@@ -1195,8 +1195,8 @@ HttpConfig::startup()
   HttpEstablishStaticConfigLongLong(c.oride.transaction_active_timeout_out, "proxy.config.http.transaction_active_timeout_out");
   HttpEstablishStaticConfigLongLong(c.accept_no_activity_timeout, "proxy.config.http.accept_no_activity_timeout");
 
-  HttpEstablishStaticConfigLongLong(c.background_fill_active_timeout, "proxy.config.http.background_fill_active_timeout");
-  HttpEstablishStaticConfigFloat(c.background_fill_threshold, "proxy.config.http.background_fill_completed_threshold");
+  HttpEstablishStaticConfigLongLong(c.oride.background_fill_active_timeout, "proxy.config.http.background_fill_active_timeout");
+  HttpEstablishStaticConfigFloat(c.oride.background_fill_threshold, "proxy.config.http.background_fill_completed_threshold");
 
   HttpEstablishStaticConfigLongLong(c.oride.connect_attempts_max_retries, "proxy.config.http.connect_attempts_max_retries");
   HttpEstablishStaticConfigLongLong(c.oride.connect_attempts_max_retries_dead_server,
@@ -1468,8 +1468,8 @@ HttpConfig::reconfigure()
   params->transaction_active_timeout_in = m_master.transaction_active_timeout_in;
   params->oride.transaction_active_timeout_out = m_master.oride.transaction_active_timeout_out;
   params->accept_no_activity_timeout = m_master.accept_no_activity_timeout;
-  params->background_fill_active_timeout = m_master.background_fill_active_timeout;
-  params->background_fill_threshold = m_master.background_fill_threshold;
+  params->oride.background_fill_active_timeout = m_master.oride.background_fill_active_timeout;
+  params->oride.background_fill_threshold = m_master.oride.background_fill_threshold;
 
   params->oride.connect_attempts_max_retries = m_master.oride.connect_attempts_max_retries;
   params->oride.connect_attempts_max_retries_dead_server = m_master.oride.connect_attempts_max_retries_dead_server;

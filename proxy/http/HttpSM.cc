@@ -2918,7 +2918,7 @@ HttpSM::is_bg_fill_necessary(HttpTunnelConsumer * c)
     // If threshold is 0.0 or negative then do background
     //   fill regardless of the content length.  Since this
     //   is floating point just make sure the number is near zero
-    if (t_state.http_config_param->background_fill_threshold <= 0.001) {
+    if (t_state.txn_conf->background_fill_threshold <= 0.001) {
       return true;
     }
 
@@ -2931,7 +2931,7 @@ HttpSM::is_bg_fill_necessary(HttpTunnelConsumer * c)
       // If we got a good content lenght.  Check to make sure that we haven't already
       //  done more the content length since that would indicate the content-legth
       //  is bogus.  If we've done more than the threshold, continue the background fill
-      if (pDone <= 1.0 && pDone > t_state.http_config_param->background_fill_threshold) {
+      if (pDone <= 1.0 && pDone > t_state.txn_conf->background_fill_threshold) {
         return true;
       } else {
         DebugSM("http", "[%" PRId64 "] no background.  Only %%%f done", sm_id, pDone);
@@ -2976,7 +2976,7 @@ HttpSM::tunnel_handler_ua(int event, HttpTunnelConsumer * c)
       ink_assert(server_entry->vc == c->producer->vc);
       ink_assert(server_session == c->producer->vc);
       server_session->get_netvc()->
-        set_active_timeout(HRTIME_SECONDS(t_state.http_config_param->background_fill_active_timeout));
+        set_active_timeout(HRTIME_SECONDS(t_state.txn_conf->background_fill_active_timeout));
     } else {
       // No bakground fill
       p = c->producer;

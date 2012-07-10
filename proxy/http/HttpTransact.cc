@@ -7219,7 +7219,7 @@ HttpTransact::calculate_document_freshness_limit(State *s, HTTPHdr *response, ti
 
       *heuristic = true;
       if (date_set && last_modified_set) {
-        float f = s->txn_conf->cache_heuristic_lm_factor;
+        MgmtFloat f = s->txn_conf->cache_heuristic_lm_factor;
         ink_debug_assert((f >= 0.0) && (f <= 1.0));
         ink_time_t time_since_last_modify = date_value - last_modified_value;
         int h_freshness = (int) (time_since_last_modify * f);

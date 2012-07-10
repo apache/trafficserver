@@ -429,10 +429,12 @@ struct OverridableHttpConfigParams {
        down_server_timeout(0), client_abort_threshold(0),
        freshness_fuzz_time(0), freshness_fuzz_min_time(0),
        max_cache_open_read_retries(0), cache_open_read_retry_time(0),
+       background_fill_active_timeout(0),
 
        // Strings / floats must come last
        proxy_response_server_string(NULL), proxy_response_server_string_len(0),
-       cache_heuristic_lm_factor(0.0), freshness_fuzz_prob(0.0)
+       cache_heuristic_lm_factor(0.0), freshness_fuzz_prob(0.0),
+       background_fill_threshold(0.5)
   { }
 
   // A few rules here:
@@ -557,6 +559,8 @@ struct OverridableHttpConfigParams {
   MgmtInt max_cache_open_read_retries;
   MgmtInt cache_open_read_retry_time;   // time is in mseconds
 
+  MgmtInt background_fill_active_timeout;
+
   // IMPORTANT: Here comes all strings / floats configs.
 
   ///////////////////////////////////////////////////////////////////
@@ -565,8 +569,9 @@ struct OverridableHttpConfigParams {
   char *proxy_response_server_string; // This does not get free'd by us!
   size_t proxy_response_server_string_len; // Updated when server_string is set.
 
-  float cache_heuristic_lm_factor;
-  float freshness_fuzz_prob;
+  MgmtFloat cache_heuristic_lm_factor;
+  MgmtFloat freshness_fuzz_prob;
+  MgmtFloat background_fill_threshold;
 };
 
 
@@ -646,8 +651,6 @@ public:
   MgmtInt user_agent_pipeline;
   MgmtInt transaction_active_timeout_in;
   MgmtInt accept_no_activity_timeout;
-  MgmtInt background_fill_active_timeout;
-  MgmtFloat background_fill_threshold;
 
   ////////////////////////////////////
   // origin server connect attempts //
@@ -917,8 +920,6 @@ HttpConfigParams::HttpConfigParams()
     user_agent_pipeline(0),
     transaction_active_timeout_in(0),
     accept_no_activity_timeout(0),
-    background_fill_active_timeout(0),
-    background_fill_threshold(0.0),
     parent_connect_attempts(0),
     per_parent_connect_attempts(0),
     parent_connect_timeout(0),

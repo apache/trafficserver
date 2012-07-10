@@ -1,12 +1,18 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.3.0
-  *) [TS-1338] SSL not handling some events properly
+  *) [TS-1338] SSL not handling some events properly.
 
-  *) [TS-961] Add TSPortDescriptor API to support accepting connections with inbound transparency.
+  *) [TS-1258] Need the ability to allow a user to alter the background fill
+   config values on a per transaction basis. Author: Robert Logue.
 
-  *) [TS-1332] Silence spurious error when adding SSL certificates with alternate names
+  *) [TS-961] Add TSPortDescriptor API to support accepting connections with
+   inbound transparency.
 
-  *) [TS-1087] TSHttpTxnOutgoingAddrSet forward declaration does not match implementation
+  *) [TS-1332] Silence spurious error when adding SSL certificates with
+   alternate names.
+
+  *) [TS-1087] TSHttpTxnOutgoingAddrSet forward declaration does not match
+   implementation.
 
   *) [TS-1319] Large cache (> 16TB) not working
   Author: Van Doorn, Jan R <Jan_VanDoorn@cable.comcast.com>

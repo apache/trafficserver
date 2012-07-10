@@ -1183,7 +1183,8 @@ INKVConnInternal::get_data(int id, void *data)
   }
 }
 
-bool INKVConnInternal::set_data(int id, void *data)
+bool
+INKVConnInternal::set_data(int id, void *data)
 {
   switch (id) {
   case TS_API_DATA_OUTPUT_VC:
@@ -7731,6 +7732,9 @@ _conf_to_memberp(TSOverridableConfigKey conf, HttpSM* sm, OverridableDataType *t
   case TS_CONFIG_HTTP_DOC_IN_CACHE_SKIP_DNS:
     ret = &sm->t_state.txn_conf->doc_in_cache_skip_dns;
     break;
+  case TS_CONFIG_HTTP_BACKGROUND_FILL_ACTIVE_TIMEOUT:
+    ret = &sm->t_state.txn_conf->background_fill_active_timeout;
+    break;
 
   case TS_CONFIG_HTTP_CACHE_HEURISTIC_LM_FACTOR:
     typ = OVERRIDABLE_TYPE_FLOAT;
@@ -7739,6 +7743,10 @@ _conf_to_memberp(TSOverridableConfigKey conf, HttpSM* sm, OverridableDataType *t
   case TS_CONFIG_HTTP_CACHE_FUZZ_PROBABILITY:
     typ = OVERRIDABLE_TYPE_FLOAT;
     ret = &sm->t_state.txn_conf->freshness_fuzz_prob;
+    break;
+  case TS_CONFIG_HTTP_BACKGROUND_FILL_COMPLETED_THRESHOLD:
+    typ = OVERRIDABLE_TYPE_FLOAT;
+    ret = &sm->t_state.txn_conf->background_fill_threshold;
     break;
 
   case TS_CONFIG_HTTP_RESPONSE_SERVER_STR:
@@ -8164,8 +8172,16 @@ TSHttpTxnConfigFind(const char* name, int length, TSOverridableConfigKey *conf, 
         cnf = TS_CONFIG_HTTP_CACHE_IGNORE_CLIENT_CC_MAX_AGE;
       break;
     case 't':
-      if (!strncmp(name, "proxy.config.http.transaction_active_timeout_out", length))
-        cnf = TS_CONFIG_HTTP_TRANSACTION_ACTIVE_TIMEOUT_OUT;
+      switch (name[length-4]) {
+        case '_':
+        if (!strncmp(name, "proxy.config.http.transaction_active_timeout_out", length))
+          cnf = TS_CONFIG_HTTP_TRANSACTION_ACTIVE_TIMEOUT_OUT;
+        break;
+        case 'e':
+        if (!strncmp(name, "proxy.config.http.background_fill_active_timeout", length))
+          cnf = TS_CONFIG_HTTP_BACKGROUND_FILL_ACTIVE_TIMEOUT;
+        break;
+      }
       break;
     }
     break;
@@ -8198,8 +8214,16 @@ TSHttpTxnConfigFind(const char* name, int length, TSOverridableConfigKey *conf, 
     break;
 
   case 53:
-    if (!strncmp(name, "proxy.config.http.transaction_no_activity_timeout_out", length))
-      cnf = TS_CONFIG_HTTP_TRANSACTION_NO_ACTIVITY_TIMEOUT_OUT;
+    switch (name[length-1]) {
+      case 't':
+      if (!strncmp(name, "proxy.config.http.transaction_no_activity_timeout_out", length))
+        cnf = TS_CONFIG_HTTP_TRANSACTION_NO_ACTIVITY_TIMEOUT_OUT;
+      break;
+      case 'd':
+      if (!strncmp(name, "proxy.config.http.background_fill_completed_threshold", length))
+        cnf = TS_CONFIG_HTTP_BACKGROUND_FILL_COMPLETED_THRESHOLD;
+      break;
+    }
     break;
 
   case 58:
@@ -8272,6 +8296,15 @@ TSPortDescriptorAccept(TSPortDescriptor descp, TSCont contp)
 {
   HttpProxyPort * port = (HttpProxyPort *)descp;
   return start_HttpProxyPort(*port, 0 /* nthreads */) ? TS_SUCCESS : TS_ERROR;
+}
+
+int
+TSHttpTxnBackgroundFillStarted(TSHttpTxn txnp)
+{
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+  HttpSM *s = (HttpSM*) txnp;
+
+  return (s->background_fill == BACKGROUND_FILL_STARTED);
 }
 
 #endif //TS_NO_API

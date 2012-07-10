@@ -7627,9 +7627,11 @@ const char *SDK_Overridable_Configs[] = {
   "proxy.config.http.cache.fuzz.time",
   "proxy.config.http.cache.fuzz.min_time",
   "proxy.config.http.doc_in_cache_skip_dns",
+  "proxy.config.http.background_fill_active_timeout",
   "proxy.config.http.response_server_str",
   "proxy.config.http.cache.heuristic_lm_factor",
   "proxy.config.http.cache.fuzz.probability",
+  "proxy.config.http.background_fill_completed_threshold",
   "proxy.config.net.sock_packet_mark_out",
   "proxy.config.net.sock_packet_tos_out",
 
@@ -7656,6 +7658,7 @@ REGRESSION_TEST(SDK_API_OVERRIDABLE_CONFIGS) (RegressionTest * test, int atype, 
   *pstatus = REGRESSION_TEST_INPROGRESS;
   for (int i=TS_CONFIG_NULL + 1; i < TS_CONFIG_LAST_ENTRY; ++i) {
     conf = SDK_Overridable_Configs[i];
+
     if (TS_SUCCESS == TSHttpTxnConfigFind(conf, -1, &key, &type)) {
       if (key != i) {
         SDK_RPRINT(test, "TSHttpTxnConfigFind", "TestCase1", TC_FAIL, "Failed on %s, expected %d, got %d", conf, i, key);
@@ -7663,7 +7666,7 @@ REGRESSION_TEST(SDK_API_OVERRIDABLE_CONFIGS) (RegressionTest * test, int atype, 
         continue;
       }
     } else {
-      SDK_RPRINT(test, "TSHttpTxnConfigFind", "TestCase1", TC_FAIL, "Call returned unexpected TS_ERROR");
+      SDK_RPRINT(test, "TSHttpTxnConfigFind", "TestCase1", TC_FAIL, "Call returned unexpected TS_ERROR for %s",conf);
       success = false;
       continue;
     }
