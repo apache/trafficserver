@@ -30,7 +30,7 @@
 static void test_append()
 {
   static const char value[] = "this is a string";
-  static const size_t len = sizeof(value) - 1;
+  static const int len = (int)sizeof(value) - 1;
 
   Vec<char> str;
 
