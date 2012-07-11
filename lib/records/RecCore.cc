@@ -978,7 +978,6 @@ RecGetRecordPrefix_Xmalloc(char *prefix, char **buf, int *buf_len)
 
       if(bytes_written <= 0 || bytes_written > bytes_avail) {
         error = 1;
-        break;
       } else
         total_bytes_written += bytes_written;
 
