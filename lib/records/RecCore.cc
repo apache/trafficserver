@@ -939,7 +939,7 @@ int
 RecGetRecordPrefix_Xmalloc(char *prefix, char **buf, int *buf_len)
 {
   int num_records = g_num_records;
-  int result_size = num_records * 128;  /* estimate buffer size */
+  int result_size = num_records * 256;  /* estimate buffer size */
   int num_matched = 0;
   char *result = NULL;
 
@@ -947,32 +947,47 @@ RecGetRecordPrefix_Xmalloc(char *prefix, char **buf, int *buf_len)
   memset(result, 0, result_size * sizeof(char));
 
   int i;
-  for (i = 0; i < num_records; i++) {
+  int total_bytes_written = 0;
+  int error = 0;
+  for (i = 0; !error && i < num_records; i++) {
+    int bytes_written = 0;
+    int bytes_avail = result_size - total_bytes_written;
     RecRecord *r = &(g_records[i]);
     if (strncmp(prefix, r->name, strlen(prefix)) == 0) {
       rec_mutex_acquire(&(r->lock));
       switch (r->data_type) {
       case RECD_INT:
         num_matched++;
-        sprintf(&result[strlen(result)], "%s=%" PRId64 "\r\n", r->name, r->data.rec_int);
+        bytes_written = snprintf(result + total_bytes_written, bytes_avail, "%s=%" PRId64 "\r\n", r->name, r->data.rec_int);
         break;
       case RECD_FLOAT:
         num_matched++;
-        sprintf(&result[strlen(result)], "%s=%f\r\n", r->name, r->data.rec_float);
+        bytes_written = snprintf(result + total_bytes_written, bytes_avail, "%s=%f\r\n", r->name, r->data.rec_float);
         break;
       case RECD_STRING:
         num_matched++;
-        sprintf(&result[strlen(result)], "%s=%s\r\n", r->name, r->data.rec_string ? r->data.rec_string : "NULL");
+        bytes_written = snprintf(result + total_bytes_written, bytes_avail, "%s=%s\r\n", r->name, r->data.rec_string ? r->data.rec_string : "NULL");
         break;
       case RECD_COUNTER:
         num_matched++;
-        sprintf(&result[strlen(result)], "%s=%" PRId64 "\r\n", r->name, r->data.rec_int);
+        bytes_written = snprintf(result + total_bytes_written, bytes_avail, "%s=%" PRId64 "\r\n", r->name, r->data.rec_int);
         break;
       default:
         break;
       }
+
+      if(bytes_written <= 0 || bytes_written > bytes_avail) {
+        error = 1;
+        break;
+      } else
+        total_bytes_written += bytes_written;
+
       rec_mutex_release(&(r->lock));
     }
+  }
+
+  if(error || total_bytes_written == result_size) {
+    RecLog(DL_Error, "Stat system was unable to fully generate stat list, size exceeded limit of %d", result_size);
   }
 
   *buf = result;
