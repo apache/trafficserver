@@ -57,21 +57,21 @@ static void test_basic()
   Vec<void *> v, vv, vvv;
   int tt = 99 * 50, t = 0;
 
-  for (int i = 0; i < 100; i++)
+  for (size_t i = 0; i < 100; i++)
     v.add((void*)(intptr_t)i);
-  for (int i = 0; i < 100; i++)
+  for (size_t i = 0; i < 100; i++)
     t += (int)(intptr_t)v.v[i];
   ink_assert(t == tt);
 
   t = 0;
-  for (int i = 1; i < 100; i++)
+  for (size_t i = 1; i < 100; i++)
     vv.set_add((void*)(intptr_t)i);
-  for (int i = 1; i < 100; i++)
+  for (size_t i = 1; i < 100; i++)
     vvv.set_add((void*)(intptr_t)i);
-  for (int i = 1; i < 100; i++)
+  for (size_t i = 1; i < 100; i++)
     vvv.set_add((void*)(intptr_t)(i * 1000));
   vv.set_union(vvv);
-  for (int i = 0; i < vv.n; i++)
+  for (size_t i = 0; i < vv.n; i++)
     if (vv.v[i])
       t += (int)(intptr_t)vv.v[i];
   ink_assert(t == tt + 1000 * tt);
@@ -79,12 +79,12 @@ static void test_basic()
   v.clear();
   v.reserve(1000);
   t = 0;
-  for (int i = 0; i < 1000; i++)
+  for (size_t i = 0; i < 1000; i++)
     v.add((void*)(intptr_t)i);
-  for (int i = 0; i < 1000; i++)
+  for (size_t i = 0; i < 1000; i++)
     t += (int)(intptr_t)v.v[i];
   ink_assert(t == 999 * 500);
-  printf("%d %d\n", v.n, v.i);
+  printf("%zu %zu\n", v.n, v.i);
 
   Intervals in;
   in.insert(1);

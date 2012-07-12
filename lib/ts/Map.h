@@ -75,7 +75,7 @@ template <class K, class C, class A = DefaultAlloc> class Map : public Vec<MapEl
   void get_keys_set(Vec<K> &keys);
   void get_values(Vec<C> &values);
   void map_union(Map<K,C> &m);
-  int some_disjunction(Map<K,C> &m);
+  bool some_disjunction(Map<K,C> &m) const;
 };
 
 template <class C> class HashFns {
@@ -106,8 +106,8 @@ template <class K, class AHashFns, class C, class A = DefaultAlloc> class HashMa
 };
 
 #define form_Map(_c, _p, _v) if ((_v).n) for (_c *qq__##_p = (_c*)0, *_p = &(_v).v[0]; \
-             ((intptr_t)(qq__##_p) < (_v).n) && ((_p = &(_v).v[(intptr_t)qq__##_p]) || 1); \
-             qq__##_p = (_c*)(((intptr_t)qq__##_p) + 1)) \
+             ((uintptr_t)(qq__##_p) < (_v).n) && ((_p = &(_v).v[(uintptr_t)qq__##_p]) || 1); \
+             qq__##_p = (_c*)(((uintptr_t)qq__##_p) + 1)) \
           if ((_p)->key)
 
 
@@ -302,15 +302,19 @@ Map<K,C,A>::map_union(Map<K,C> &m) {
       put(m.v[i].key, m.v[i].value);
 }
 
-template <class K, class C, class A> inline int
-Map<K,C,A>::some_disjunction(Map<K,C> &m) {
-  for (int i = 0; i < m.n; i++)
-    if (m.v[i].key && get(m.v[i].key) != m.v[i].value)
-      return 1;
-  for (int i = 0; i < n; i++)
-    if (v[i].key && m.get(v[i].key) != v[i].value)
-      return 1;
-  return 0;
+template <class K, class C, class A> inline bool
+Map<K,C,A>::some_disjunction(Map<K,C> &m) const {
+  for (size_t i = 0; i < m.n; i++) {
+    if (m.v[i].key && get(m.v[i].key) != m.v[i].value) {
+      return true;
+    }
+  }
+  for (size_t i = 0; i < n; i++) {
+    if (v[i].key && m.get(v[i].key) != v[i].value) {
+      return true;
+    }
+  }
+  return false;
 }
 
 template <class K, class C, class A> inline void
@@ -397,7 +401,7 @@ HashMap<K,AHashFns,C,A>::get_internal(K akey) {
   }
   uintptr_t h = AHashFns::hash(akey);
   h = h % n;
-  for (int k = h, j = 0; j < i + 3;j++) {
+  for (size_t k = h, j = 0; j < i + 3;j++) {
     if (!v[k].key)
       return 0;
     else if (AHashFns::equal(akey, v[k].key))
@@ -433,7 +437,7 @@ HashMap<K,AHashFns,C,A>::put(K akey, C avalue) {
     if (n > MAP_INTEGRAL_SIZE) {
       uintptr_t h = AHashFns::hash(akey);
       h = h % n;
-      for (int k = h, j = 0; j < i + 3; j++) {
+      for (size_t k = h, j = 0; j < i + 3; j++) {
         if (!v[k].key) {
           v[k].key = akey;
           v[k].value = avalue;
@@ -446,7 +450,7 @@ HashMap<K,AHashFns,C,A>::put(K akey, C avalue) {
   }
   HashMap<K,AHashFns,C,A> vv(*this);
   Map<K,C,A>::set_expand();
-  for (int i = 0; i < vv.n; i++)
+  for (size_t i = 0; i < vv.n; i++)
     if (vv.v[i].key)
       put(vv.v[i].key, vv.v[i].value);
   return put(akey, avalue);
@@ -659,7 +663,7 @@ ChainHashMap<K, AHashFns, C, A>::del(K akey) {
 
 template <class K, class AHashFns, class C, class A> void
 ChainHashMap<K, AHashFns, C, A>::get_keys(Vec<K> &keys) {
-  for (int i = 0; i < n; i++) {
+  for (size_t i = 0; i < n; i++) {
     List<MapElem<K,C> > *l = &v[i].value;
     if (l->head) 
       for (ConsCell<MapElem<K,C>,A> *p  = l->head; p; p = p->cdr)
@@ -669,7 +673,7 @@ ChainHashMap<K, AHashFns, C, A>::get_keys(Vec<K> &keys) {
 
 template <class K, class AHashFns, class C, class A> void
 ChainHashMap<K, AHashFns, C, A>::get_values(Vec<C> &values) {
-  for (int i = 0; i < n; i++) {
+  for (size_t i = 0; i < n; i++) {
     List<MapElem<K,C>,A> *l = &v[i].value;
     if (l->head) 
       for (ConsCell<MapElem<K,C>,A> *p  = l->head; p; p = p->cdr)

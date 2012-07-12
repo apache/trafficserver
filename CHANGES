@@ -1,5 +1,7 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.3.0
+  *) [TS-1345] fix signed/unsigned compilation issues in Vec
+
   *) [TS-1343] Stat system doesn't check buffer sizes
 
   *) [TS-1342] Lua plugin initial hook support

@@ -36,6 +36,16 @@ int main(int argc, char **argv) {
   ssm.put("d", "D");
   form_SSMap(x, ssm) { /* nop */ }
 
+/*
+  if ((ssm).n)
+    for (SSMapElem *qq__x = (SSMapElem*)0, *x = &(ssm).v[0];
+             ((intptr_t)(qq__x) < (ssm).n) && ((x = &(ssm).v[(intptr_t)qq__x]) || 1);
+             qq__x = (SSMapElem*)(((intptr_t)qq__x) + 1))
+          if ((x)->key) {
+            // nop
+          }
+          */
+
   StringChainHash<> h;
   cchar *hi = "hi", *ho = "ho", *hum = "hum", *hhi = "hhi";
   hhi++;
