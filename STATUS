@@ -41,11 +41,6 @@ A list of all bugs open for the next development release can be found at
 
 PATCHES ACCEPTED TO BACKPORT FROM TRUNK:
 
-  *) Fix signed/unsigned compilation issues in Vec, especially
-   make check.
-   Trunk: 8ab44edd
-   Jira: https://issues.apache.org/jira/browse/TS-1524
-   +1: igalic, zwoop, jpeach
 
 PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   [ New proposals should be added at the end of the list ]

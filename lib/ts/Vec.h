@@ -44,8 +44,8 @@
 template <class C, class A = DefaultAlloc, int S = VEC_INTEGRAL_SHIFT_DEFAULT>  // S must be a power of 2
 class Vec {
  public:
-  int           n;
-  int           i;      // size index for sets, reserve for vectors
+  size_t        n;
+  size_t        i;      // size index for sets, reserve for vectors
   C             *v;
   C             e[VEC_INTEGRAL_SIZE];
   
@@ -56,10 +56,10 @@ class Vec {
 
   C &operator[](int i) const { return v[i]; }
 
-  C get(int i);
+  C get(size_t i);
   void add(C a);  
   void push_back(C a) { add(a); } // std::vector name
-  int add_exclusive(C a);
+  bool add_exclusive(C a);
   C& add();
   C pop();
   void reset();
@@ -71,7 +71,7 @@ class Vec {
   C *set_add(C a);
   void set_remove(C a); // expensive, use BlockHash for cheaper remove
   C *set_add_internal(C a);
-  int set_union(Vec<C,A,S> &v);
+  bool set_union(Vec<C,A,S> &v);
   int set_intersection(Vec<C,A,S> &v);
   int some_intersection(Vec<C,A,S> &v);
   int some_disjunction(Vec<C,A,S> &v);
@@ -79,30 +79,30 @@ class Vec {
   void set_intersection(Vec<C,A,S> &v, Vec<C,A,S> &result);
   void set_disjunction(Vec<C,A,S> &v, Vec<C,A,S> &result);
   void set_difference(Vec<C,A,S> &v, Vec<C,A,S> &result);
-  int set_count();
-  int count();
+  size_t set_count() const;
+  size_t count() const;
   C *in(C a);
   C *set_in(C a);
   C first_in_set();
   C *set_in_internal(C a);
   void set_expand();
-  int index(C a);
+  ssize_t index(C a) const;
   void set_to_vec();
   void vec_to_set();
   void move(Vec<C,A,S> &v);
   void copy(const Vec<C,A,S> &v);
-  void fill(int n);
+  void fill(size_t n);
   void append(const Vec<C> &v);
   template <typename CountType> void append(const C * src, CountType count);
   void prepend(const Vec<C> &v);
   void remove_index(int index);
   void remove(C a) { int i = index(a); if (i>=0) remove_index(i); }
-  C& insert(int index);
-  void insert(int index, Vec<C> &vv);
-  void insert(int index, C a);
+  C& insert(size_t index);
+  void insert(size_t index, Vec<C> &vv);
+  void insert(size_t index, C a);
   void push(C a) { insert(0, a); }
   void reverse();
-  void reserve(int n);
+  void reserve(size_t n);
   C* end() const { return v + n; }
   C &first() const { return v[0]; }
   C &last() const { return v[n-1]; }
@@ -143,7 +143,7 @@ template <class C, class A = DefaultAlloc, int S = VEC_INTEGRAL_SHIFT_DEFAULT> c
 class Intervals : public Vec<int> {
  public:
   void insert(int n);
-  int in(int n);
+  bool in(int n) const;
 };
 
 // UnionFind supports fast unify and finding of
@@ -183,11 +183,11 @@ Vec<C,A,S>::Vec(C c) {
 }
 
 template <class C, class A, int S> inline C
-Vec<C,A,S>::get(int i) {
+Vec<C,A,S>::get(size_t i) {
   if (i < n && i >= 0)
     return v[i];
   else
-    return 0;
+    return C();
 }
 
 template <class C, class A, int S> inline void 
@@ -240,8 +240,9 @@ Vec<C,A,S>::set_add(C a) {
   if (n == SET_LINEAR_SIZE) {
     Vec<C,A,S> vv(*this);
     clear();
-    for (C *c = vv.v; c < vv.v + vv.n; c++)
+    for (C *c = vv.v; c < vv.v + vv.n; c++) {
       set_add_internal(*c);
+    }
   }
   return set_add_internal(a);
 }
@@ -255,8 +256,8 @@ Vec<C,A,S>::set_remove(C a) {
       set_add(a);
 }
 
-template <class C, class A, int S> inline int
-Vec<C,A,S>::count() {
+template <class C, class A, int S> inline size_t
+Vec<C,A,S>::count() const {
   int x = 0;
   for (C *c = v; c < v + n; c++)
     if (*c)
@@ -272,13 +273,13 @@ Vec<C,A,S>::in(C a) {
   return NULL;
 }
 
-template <class C, class A, int S> inline int
+template <class C, class A, int S> inline bool
 Vec<C,A,S>::add_exclusive(C a) {
   if (!in(a)) {
     add(a);
-    return 1;
+    return true;
   } else 
-    return 0;
+    return false;
 }
 
 template <class C, class A, int S> inline C *
@@ -296,11 +297,13 @@ Vec<C,A,S>::first_in_set() {
   return 0;
 }
 
-template <class C, class A, int S> inline int
-Vec<C,A,S>::index(C a) {
-  for (C *c = v; c < v + n; c++)
-    if (*c == a)
+template <class C, class A, int S> inline ssize_t
+Vec<C,A,S>::index(C a) const {
+  for (C *c = v; c < v + n; c++) {
+    if (*c == a) {
       return c - v;
+    }
+  }
   return -1;
 }
 
@@ -338,8 +341,8 @@ Vec<C,A,S>::copy(const Vec<C,A,S> &vv)  {
 }
 
 template <class C, class A, int S> inline void 
-Vec<C,A,S>::fill(int nn)  {
-  for (int i = n; i < nn; i++)
+Vec<C,A,S>::fill(size_t nn)  {
+  for (size_t i = n; i < nn; i++)
     add() = 0;
 }
 
@@ -385,7 +388,7 @@ Vec<C,A,S>::add_internal() {
 
 template <class C, class A, int S> C *
 Vec<C,A,S>::set_add_internal(C c) {
-  int j, k;
+  size_t j, k;
   if (n) {
     uintptr_t h = (uintptr_t)c;
     h = h % n;
@@ -393,22 +396,24 @@ Vec<C,A,S>::set_add_internal(C c) {
       if (!v[k]) {
         v[k] = c;
         return &v[k];
-      } else if (v[k] == c)
+      } else if (v[k] == c) {
         return 0;
+      }
       k = (k + open_hash_primes[j]) % n;
     }
   }
   Vec<C,A,S> vv;
   vv.move_internal(*this);
   set_expand();
-  if (vv.v)
+  if (vv.v) {
     set_union(vv);
+  }
   return set_add(c);
 }
 
 template <class C, class A, int S> C *
 Vec<C,A,S>::set_in_internal(C c) {
-  int j, k;
+  size_t j, k;
   if (n) {
     uintptr_t h = (uintptr_t)c;
     h = h % n;
@@ -423,12 +428,14 @@ Vec<C,A,S>::set_in_internal(C c) {
   return 0;
 }
 
-template <class C, class A, int S> int
+template <class C, class A, int S> bool
 Vec<C,A,S>::set_union(Vec<C,A,S> &vv) {
-  int changed = 0;
-  for (int i = 0; i < vv.n; i++)
-    if (vv.v[i])
+  bool changed = false;
+  for (size_t i = 0; i < vv.n; i++) {
+    if (vv.v[i]) {
       changed = set_add(vv.v[i]) || changed;
+    }
+  }
   return changed;
 } 
 
@@ -506,12 +513,14 @@ Vec<C,A,S>::some_difference(Vec<C,A,S> &vv) {
   return 0;
 } 
 
-template <class C, class A, int S> int
-Vec<C,A,S>::set_count() {
-  int x = 0;
-  for (int i = 0; i < n; i++)
-    if (v[i])
+template <class C, class A, int S> size_t
+Vec<C,A,S>::set_count() const {
+  size_t x = 0;
+  for (size_t i = 0; i < n; i++) {
+    if (v[i]) {
       x++;
+    }
+  }
   return x;
 } 
 
@@ -554,14 +563,14 @@ Vec<C,A,S>::remove_index(int index) {
 }
 
 template <class C, class A, int S> void
-Vec<C,A,S>::insert(int index, C a) {
+Vec<C,A,S>::insert(size_t index, C a) {
   add();
   memmove(&v[index+1], &v[index], (n - index - 1) * sizeof(C));
   v[index] = a;
 }
 
 template <class C, class A, int S> void
-Vec<C,A,S>::insert(int index, Vec<C> &vv) {
+Vec<C,A,S>::insert(size_t index, Vec<C> &vv) {
   fill(n + vv.n);
   memmove(&v[index+vv.n], &v[index], (n - index - 1) * sizeof(C));
   for (int x = 0; x < vv.n; x++)
@@ -569,7 +578,7 @@ Vec<C,A,S>::insert(int index, Vec<C> &vv) {
 }
 
 template <class C, class A, int S>  C &
-Vec<C,A,S>::insert(int index) {
+Vec<C,A,S>::insert(size_t index) {
   add();
   memmove(&v[index+1], &v[index], (n - index - 1) * sizeof(C));
   memset(&v[index], 0, sizeof(C));
@@ -612,10 +621,10 @@ Vec<C,A,S>::set_expand() {
 }
 
 template <class C, class A, int S> inline void 
-Vec<C,A,S>::reserve(int x) {
+Vec<C,A,S>::reserve(size_t x) {
   if (x <= n)
     return;
-  int xx = 1 << VEC_INITIAL_SHIFT;
+  unsigned xx = 1 << VEC_INITIAL_SHIFT;
   while (xx < x) xx *= 2;
   i = xx;
   void *vv = (void*)v;
@@ -640,11 +649,12 @@ Vec<C,A,S>::addx() {
     memset(&v[n], 0, (VEC_INITIAL_SIZE - n) * sizeof(C));
   } else {
     if ((n & (n-1)) == 0) {
-      int nl = n * 2;
-      if (nl <= i)
+      size_t nl = n * 2;
+      if (nl <= i) {
         return;
-      else
+      } else {
         i = 0;
+      }
       void *vv = (void*)v;
       v = (C*)A::alloc(nl * sizeof(C));
       memcpy(v, vv, n * sizeof(C));
@@ -682,9 +692,11 @@ Vec<C,A,S>::free_and_clear() {
 
 template <class C, class A, int S> inline void
 Vec<C,A,S>::delete_and_clear() {
-  for (int x = 0; x < n; x++)
-    if (v[x])
+  for (size_t x = 0; x < n; x++) {
+    if (v[x]) {
       delete v[x];
+    }
+  }
   clear();
 }
 

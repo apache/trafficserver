@@ -70,7 +70,7 @@ uintptr_t open_hash_primes[256] = {
 
 // binary search over intervals
 static int
-i_find(Intervals *i, int x) {
+i_find(const Intervals *i, int x) {
   ink_assert(i->n);
   int l = 0, h = i->n;
  Lrecurse:
@@ -93,13 +93,13 @@ i_find(Intervals *i, int x) {
   return (l + 1);
 }
 
-int 
-Intervals::in(int x) {
+bool
+Intervals::in(int x) const {
   if (!n)
-    return 0;
+    return false;
   if (i_find(this, x) > 0)
-    return 1;
-  return 0;
+    return true;
+  return false;
 }
 
 // insert into interval with merge
@@ -121,7 +121,7 @@ Intervals::insert(int x) {
       goto Lmerge;
     }
     l += 2;
-    if (l < n) {
+    if (l < (int)n) {
       if (x == v[l] - 1) {
         v[l]--;
         goto Lmerge;
@@ -156,7 +156,7 @@ Intervals::insert(int x) {
       goto Ldomerge;
     }
   }
-  if (l < n - 2) {
+  if (l < (int)(n - 2)) {
     if (v[l + 2] - v[l + 1] < 2)
       goto Ldomerge;
   }
@@ -169,9 +169,9 @@ Intervals::insert(int x) {
 
 void
 UnionFind::size(int s) {
-  int nn = n;
+  size_t nn = n;
   fill(s);
-  for (int i = nn; i < n; i++)
+  for (size_t i = nn; i < n; i++)
     v[i] = -1;
 }
 
