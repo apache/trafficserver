@@ -22,7 +22,7 @@ noinst_LIBRARIES = libTrafficServerStandalone.a
 bin_PROGRAMS =
 noinst_PROGRAMS =
 else
-SUBDIRS = congest http logging config stats
+SUBDIRS = congest http logging config
 noinst_LIBRARIES =
 bin_PROGRAMS = \
   traffic_server \
@@ -145,7 +145,6 @@ traffic_server_LDADD = \
   congest/libCongestionControl.a \
   logging/liblogging.a \
   logging/liblogcollation.a \
-  stats/libstats.a \
   hdrs/libhdrs.a  \
   $(top_builddir)/mgmt/preparse/libpreparse.a \
   $(top_builddir)/mgmt/utils/libutils_p.a \
@@ -241,7 +240,6 @@ traffic_sac_LDADD = \
   congest/libCongestionControl.a \
   logging/liblogging.a \
   logging/liblogcollation.a \
-  stats/libstats.a \
   hdrs/libhdrs.a \
   $(top_builddir)/mgmt/preparse/libpreparse.a \
   $(top_builddir)/mgmt/utils/libutils_p.a \

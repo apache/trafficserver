@@ -1731,8 +1731,6 @@ main(int argc, char **argv)
     plugin_init(system_config_directory, false);        // plugin.config
 #else
     api_init();                 // we still need to initialize some of the data structure other module needs.
-    extern void init_inkapi_stat_system();
-    init_inkapi_stat_system();
     // i.e. http_global_hooks
 #endif
 

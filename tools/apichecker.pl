@@ -30,26 +30,6 @@ require 5.006;
 #
 # tsapi const struct sockaddr_storage *INKHttpTxnClientSockAddrGet(TSHttpTxn txnp);
 my %INK_EXCLUDES = (
-  "INKSTAT_TYPE_INT64" => 1,
-  "INKSTAT_TYPE_FLOAT" => 1,
-  "INKStatTypes" => 1,
-  "INKStat" => 1,
-  "INKCoupledStat" => 1,
-  "INKStatCreate" => 1,
-  "INKStatIntAddTo" => 1,
-  "INKStatFloatAddTo" => 1,
-  "INKStatDecrement" => 1,
-  "INKStatIncrement" => 1,
-  "INKStatIntGet" => 1,
-  "INKStatFloatGet" => 1,
-  "INKStatIntSet" => 1,
-  "INKStatFloatSet" => 1,
-  "INKStatCoupledGlobalCategoryCreate" => 1,
-  "INKStatCoupledLocalCopyCreate" => 1,
-  "INKStatCoupledLocalCopyDestroy" => 1,
-  "INKStatCoupledGlobalAdd" => 1,
-  "INKStatCoupledLocalAdd" => 1,
-  "INKStatsCoupledUpdate" => 1,
 );
 
 sub ink2ts {
