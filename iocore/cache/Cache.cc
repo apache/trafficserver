@@ -2357,11 +2357,11 @@ cplist_reconfigure()
         percent_remaining -= (config_vol->size < 128) ? 0 : config_vol->percent;
       }
       if (config_vol->size < 128) {
-        Warning("the size of volume %d (%d) is less than the minimum required volume size %d",
-                config_vol->number, config_vol->size, 128);
+        Warning("the size of volume %d (%"PRId64") is less than the minimum required volume size %d",
+                config_vol->number, (int64_t)config_vol->size, 128);
         Warning("volume %d is not created", config_vol->number);
       }
-      Debug("cache_hosting", "Volume: %d Size: %d", config_vol->number, config_vol->size);
+      Debug("cache_hosting", "Volume: %d Size: %"PRId64, config_vol->number, (int64_t)config_vol->size);
     }
     cplist_update();
     /* go through volume config and grow and create volumes */
