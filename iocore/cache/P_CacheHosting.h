@@ -162,7 +162,7 @@ struct ConfigVol
 {
   int number;
   int scheme;
-  int size;
+  off_t size;
   bool in_percent;
   int percent;
   CacheVol *cachep;
