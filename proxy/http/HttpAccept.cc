@@ -43,12 +43,12 @@ HttpAccept::mainEvent(int event, void *data)
     uint32_t acl_method_mask = 0;
     ip_port_text_buffer ipb;
 
-    // The backdoor port is now only bound to "localhost", so reason to
-    // check for if it's incoming from "localhost" or not.
+    // The backdoor port is now only bound to "localhost", so no
+    // reason to check for if it's incoming from "localhost" or not.
     if (backdoor) {
       acl_method_mask = IpAllow::AllMethodMask();
     } else if (IpAllow::instance() && ((acl_method_mask = IpAllow::instance()->match(client_ip)) == 0)) {
-      Warning("connect by disallowed client %s, closing", ats_ip_ntop(client_ip, ipb, sizeof(ipb)));
+      Warning("client '%s' prohibited by ip-allow policy", ats_ip_ntop(client_ip, ipb, sizeof(ipb)));
       netvc->do_io_close();
 
       return VC_EVENT_CONT;

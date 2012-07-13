@@ -135,7 +135,7 @@ void
 IpAllow::ReloadInstance() {
   self *new_table;
 
-  Debug("ip_allow", "ip_allow.config updated, reloading");
+  Debug("ip-allow", "ip_allow.config updated, reloading");
 
   // Schedule the current table for deallocation in the future
   eventProcessor.schedule_in(NEW(new IPAllow_FreerContinuation(_instance)), IP_ALLOW_TIMEOUT, ET_CACHE);
