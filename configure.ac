@@ -1453,7 +1453,6 @@ AC_CONFIG_FILES([mgmt/stats/Makefile])
 AC_CONFIG_FILES([mgmt/tools/Makefile])
 AC_CONFIG_FILES([mgmt/utils/Makefile])
 AC_CONFIG_FILES([mgmt/web2/Makefile])
-AC_CONFIG_FILES([proxy/stats/Makefile])
 AC_CONFIG_FILES([lib/wccp/Makefile])
 AC_CONFIG_FILES([proxy/api/ts/Makefile])
 # Traffic Cop
