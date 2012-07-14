@@ -506,6 +506,12 @@ LuaHttpSsnRegister(lua_State * lua)
   ssn = LuaHttpSession::get(lua, 1);
   hookid = luaL_checkint(lua, 2);
 
+  // XXX: need to actually register the hooks here ...
+
+  // Prevent unused variable warnings.
+  (void)ssn;
+  (void)hookid;
+
   return 1;
 }
 

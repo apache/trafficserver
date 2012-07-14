@@ -187,7 +187,7 @@ LuaHookApiInit(lua_State * lua)
       continue;
     }
 
-    TSAssert(i == HttpHookDemuxTable[i].hookid);
+    TSAssert((int)i == HttpHookDemuxTable[i].hookid);
     LuaSetConstantField(lua, HttpHookDemuxTable[i].name, HttpHookDemuxTable[i].hookid);
   }
 

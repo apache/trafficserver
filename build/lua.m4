@@ -130,10 +130,6 @@ if test -z "${LUA_LIBS}"; then
     fi,
     $2)
 else
-  AC_MSG_NOTICE([using '${LUA_LIBS}' for Lua Library])
-  AC_ARG_ENABLE(luajit,
-    AC_HELP_STRING(--enable-luajit,Enable LuaJit Support),
-    TS_ADDTO(CPPFLAGS, ["-DTS_ENABLE_LUAJIT"]))
   ifelse([$1], , , $1) 
 fi 
 ])

@@ -1060,13 +1060,47 @@ TS_CHECK_TCMALLOC
 AX_LIB_READLINE
 
 #
-# Check for Lua, at least version 5.1, sets LUA_CFLAGS and LUA_LIBS.
-CHECK_LUA(
-  [ enable_lua_support="yes" ],
-  [ enable_lua_support="no" ]
-)
+# Check for Lua, at least version 5.1, sets LUA_CFLAGS and LUA_LIBS. We support both standard
+# Lua and LuaJIT, preferring LuaJIT if the user did not indicate a preference.
+AC_ARG_ENABLE([luajit], [
+  AS_HELP_STRING([--enable-luajit], [enable LuaJIT support @<:@default=check@:>@])
+], [
+  enable_luajit="${enableval}"
+], [
+  enable_luajit=check
+])
 
-AM_CONDITIONAL([BUILD_LUA_SUPPORT], [ test "x${enable_lua_support}" = "xyes" ])
+PKG_CHECK_MODULES([luajit], [luajit], [have_luajit=yes], [have_luajit=no])
+CHECK_LUA([have_lua=yes], [have_lua=no])
+
+AS_IF([ test "x$enable_luajit" = "xno" ], [
+  # LuaJIT disabled, just check for the regular Lua support.
+  enable_lua_support="${have_lua}"
+], [test "x$enable_luajit" = "xyes"], [
+  # LuaJIT required. Fail if it's not available.
+  AS_IF([ test "x${have_luajit}" = "xyes" ], [
+    LUA_CFLAGS="${luajit_CFLAGS}"
+    LUA_LIBS="${luajit_LIBS}"
+    enable_lua_support=LuaJIT
+  ], [
+    AC_MSG_ERROR([LuaJIT package not available])
+  ])
+], [
+  # No user preference, prefer LuaJIT over standard Lua.
+  AS_IF([ test "x${have_luajit}" = "xyes" ], [
+    LUA_CFLAGS="${luajit_CFLAGS}"
+    LUA_LIBS="${luajit_LIBS}"
+    enable_lua_support=LuaJIT
+  ], [
+    enable_lua_support="${have_lua}"
+  ])
+])
+
+AC_SUBST(LUA_CFLAGS)
+AC_SUBST(LUA_LIBS)
+AC_MSG_CHECKING([whether to enable Lua support])
+AM_CONDITIONAL([BUILD_LUA_SUPPORT], [ test "x${enable_lua_support}" != "xno" ])
+AC_MSG_RESULT([$enable_lua_support])
 
 # -----------------------------------------------------------------------------
 # 5. CHECK FOR HEADER FILES
