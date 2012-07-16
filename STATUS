@@ -36,7 +36,7 @@ RELEASE SHOWSTOPPERS:
 
 A list of all bugs open for the next development release can be found at
 
-  http://s.apache.org/ts-3.3.0
+  http://s.apache.org/ts-3.2.1
 
 
 PATCHES PROPOSED TO BACKPORT FROM TRUNK:
@@ -65,7 +65,41 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   *) Fix collation in custom logging.
    Trunk patch: 448179c127582a590c3ed95a75ffc40f4e377b75
    Jira: https://issues.apache.org/jira/browse/TS-1229
+   +1: igalic
 
+  *) Fix a endless loop in CacheVC::removeEvent.
+   Trunk: 425a9ee8df3dbfa1554eccaaf601c933ad18c201
+   Jira: https://issues.apache.org/jira/browse/TS-1310
+
+  *) Allow to open cache disk without O_DIRECT, for e.g.
+   tmpfs "disk" cache.
+   Trunk: 653ea0ccc2f14235dee37ec1530bda0bbf09e3bf
+   Jira: https://issues.apache.org/jira/browse/TS-1312
+
+  *) fix signed/unsigned compilation issues in Vec
+   Trunk: 8ab44edd4e9c27c48f9c1482b837a6adcd9ed541
+   Jira: https://issues.apache.org/jira/browse/TS-1345
+
+  *) SSL not handling some events properly.
+   Trunk: 4ab21b9f7b933f0cd58173158ffaf6dbbaf64e51
+   Jira: https://issues.apache.org/jira/browse/TS-1338
+
+  *) Silence spurious error when adding SSL certificates with
+    alternate names.
+   Trunk: b512fef66fd3f2118517eb5ac6b3a879cfa2caaa
+   Jira: https://issues.apache.org/jira/browse/TS-1332
+
+  *) Fix cache sizes > 16TB
+   Trunk: 7c6b590b35ce483c8ae94640c50a6a3fb0d0e690
+   Jira: https://issues.apache.org/jira/browse/TS-1319
+
+  *) stats codes mess up when disk fail
+   Trunk: bf70a5e0613b278c386608ce6f1902eb5b014d05
+   Jira: https://issues.apache.org/jira/browse/TS-1289
+
+  *) Improve response times for for Cluster purge & miss
+   Trunk: f0a98cdc7b950e1ecefde94694de5dfd800248aa
+   Jira: https://issues.apache.org/jira/browse/TS-1321
 
 
 RELEASE PROCESS
