@@ -62,6 +62,10 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
    Jira: https://issues.apache.org/jira/browse/TS-1306
    +1: zwoop
 
+  *) Fix collation in custom logging.
+   Trunk patch: 448179c127582a590c3ed95a75ffc40f4e377b75
+   Jira: https://issues.apache.org/jira/browse/TS-1229
+
 
 
 RELEASE PROCESS
