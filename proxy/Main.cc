@@ -128,7 +128,9 @@ extern int num_of_cluster_threads;
 static int num_of_udp_threads = DEFAULT_NUMBER_OF_UDP_THREADS;
 static int num_accept_threads  = DEFAULT_NUM_ACCEPT_THREADS;
 static int num_task_threads = DEFAULT_NUM_TASK_THREADS;
+#if TS_HAS_TESTS
 static int run_test_hook = 0;
+#endif
 static char * http_accept_port_descriptor;
 int http_accept_file_descriptor = NO_FD;
 static char core_file[255] = "";
