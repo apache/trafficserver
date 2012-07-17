@@ -1358,9 +1358,6 @@ MIMEHdr::get_age()
   if (age < 0) // We should ignore negative Age: values
     return 0;
 
-  if ((4 == sizeof(time_t)) && (age > INT_MAX)) // Overflow
-    return -1;
-
   return age;
 }
 
@@ -1529,11 +1526,7 @@ MIMEHdr::set_age(time_t value)
   if (value < 0)
     value_set_uint(MIME_FIELD_AGE, MIME_LEN_AGE, (uint32_t)INT_MAX + 1);
   else {
-    if (sizeof(time_t) > 4) {
-      value_set_int64(MIME_FIELD_AGE, MIME_LEN_AGE, value);
-    } else {
-      value_set_uint(MIME_FIELD_AGE, MIME_LEN_AGE, value);
-    }
+    value_set_uint(MIME_FIELD_AGE, MIME_LEN_AGE, value);
   }
 }
 
@@ -1597,7 +1590,7 @@ MIMEHdr::set_last_modified(time_t value)
 inline void
 MIMEHdr::set_max_forwards(int32_t value)
 {
-  value_set_int(MIME_FIELD_MAX_FORWARDS, MIME_LEN_MAX_FORWARDS, value);
+  value_set_int64(MIME_FIELD_MAX_FORWARDS, MIME_LEN_MAX_FORWARDS, value);
 }
 
 /*-------------------------------------------------------------------------
