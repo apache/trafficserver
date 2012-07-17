@@ -76,7 +76,7 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
    tmpfs "disk" cache.
    Trunk: 653ea0ccc2f14235dee37ec1530bda0bbf09e3bf
    Jira: https://issues.apache.org/jira/browse/TS-1312
-   +1: zwoop
+   +1: zwoop, bcall
 
   *) fix signed/unsigned compilation issues in Vec
    Trunk: 8ab44edd4e9c27c48f9c1482b837a6adcd9ed541
