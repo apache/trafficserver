@@ -65,16 +65,18 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   *) Fix collation in custom logging.
    Trunk patch: 448179c127582a590c3ed95a75ffc40f4e377b75
    Jira: https://issues.apache.org/jira/browse/TS-1229
-   +1: igalic
+   +1: igalic, zwoop
 
   *) Fix a endless loop in CacheVC::removeEvent.
    Trunk: 425a9ee8df3dbfa1554eccaaf601c933ad18c201
    Jira: https://issues.apache.org/jira/browse/TS-1310
+   +1: zwoop
 
   *) Allow to open cache disk without O_DIRECT, for e.g.
    tmpfs "disk" cache.
    Trunk: 653ea0ccc2f14235dee37ec1530bda0bbf09e3bf
    Jira: https://issues.apache.org/jira/browse/TS-1312
+   +1: zwoop
 
   *) fix signed/unsigned compilation issues in Vec
    Trunk: 8ab44edd4e9c27c48f9c1482b837a6adcd9ed541
@@ -83,6 +85,7 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   *) SSL not handling some events properly.
    Trunk: 4ab21b9f7b933f0cd58173158ffaf6dbbaf64e51
    Jira: https://issues.apache.org/jira/browse/TS-1338
+   +1: zwoop
 
   *) Silence spurious error when adding SSL certificates with
     alternate names.
