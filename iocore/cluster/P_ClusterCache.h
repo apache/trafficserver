@@ -581,6 +581,7 @@ struct ClusterVConnection: public ClusterVConnectionBase
   virtual bool get_data(int id, void *data);    // backward compatibility
   virtual void get_http_info(CacheHTTPInfo **);
   virtual int64_t get_object_size();
+  virtual bool is_pread_capable();
 
   // For VC(s) established via the HTTP version of OPEN_WRITE, additional
   //  data for the VC is passed in a second message.  This additional

@@ -481,6 +481,12 @@ ClusterVConnection::get_object_size()
   return alternate.object_size_get();
 }
 
+bool
+ClusterVConnection::is_pread_capable()
+{
+  return false;
+}
+
 void
 ClusterVConnection::set_http_info(CacheHTTPInfo * d)
 {

@@ -2286,7 +2286,7 @@ HttpSM::state_cache_open_write(int event, void *data)
     t_state.cache_info.write_lock_state = HttpTransact::CACHE_WL_SUCCESS;
     break;
 
-  case CACHE_EVENT_OPEN_WRITE_FAILED:
+  case CACHE_EVENT_OPEN_WRITE_FAILED: 
     // Failed on the write lock and retrying the vector
     //  for reading
     t_state.cache_info.write_lock_state = HttpTransact::CACHE_WL_FAIL;
@@ -4086,11 +4086,11 @@ HttpSM::do_range_setup_if_necessary()
     do_range_parse(field);
     
     if (t_state.range_setup == HttpTransact::RANGE_REQUESTED && 
-        t_state.num_range_fields > 1 &&
+        (t_state.num_range_fields > 1 || !cache_sm.cache_read_vc->is_pread_capable()) &&
         api_hooks.get(TS_HTTP_RESPONSE_TRANSFORM_HOOK) == NULL
        ) 
     {
-          Debug("http_trans", "Handling multiple Range: requests");
+          Debug("http_trans", "Unable to accelerate range request, fallback to transform");
           content_type = t_state.cache_info.object_read->response_get()->value_get(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE, &field_content_type_len);
           //create a Range: transform processor for requests of type Range: bytes=1-2,4-5,10-100 (eg. multiple ranges)
           range_trans = transformProcessor.range_transform(mutex, 
