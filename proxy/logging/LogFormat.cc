@@ -52,27 +52,21 @@
 
 // class variables
 //
-bool
-  LogFormat::m_tagging_on = false;
+bool LogFormat::m_tagging_on = false;
 
 // predefined formats
 //
-const char *const
-  LogFormat::squid_format =
-  "%<cqtq> %<ttms> %<chi> %<crc>/%<pssc> %<psql> %<cqhm> %<cquc> " "%<caun> %<phr>/%<pqsn> %<psct> %<xid>";
+const char *const LogFormat::squid_format =
+  "%<cqtq> %<ttms> %<chi> %<crc>/%<pssc> %<psql> %<cqhm> %<cquc> %<caun> %<phr>/%<pqsn> %<psct> %<xid>";
 
-const char *const
-  LogFormat::common_format = "%<chi> - %<caun> [%<cqtn>] \"%<cqtx>\" %<pssc> %<pscl>";
+const char *const LogFormat::common_format = "%<chi> - %<caun> [%<cqtn>] \"%<cqtx>\" %<pssc> %<pscl>";
 
-const char *const
-  LogFormat::extended_format =
+const char *const LogFormat::extended_format =
   "%<chi> - %<caun> [%<cqtn>] \"%<cqtx>\" %<pssc> %<pscl> "
-  "%<sssc> %<sscl> %<cqbl> %<pqbl> %<cqhl> %<pshl> %<pqhl> " "%<sshl> %<tts>";
+  "%<sssc> %<sscl> %<cqbl> %<pqbl> %<cqhl> %<pshl> %<pqhl> %<sshl> %<tts>";
 
-const char *const
-  LogFormat::extended2_format =
-  "%<chi> - %<caun> [%<cqtn>] \"%<cqtx>\" %<pssc> %<pscl> "
-  "%<sssc> %<sscl> %<cqbl> %<pqbl> %<cqhl> %<pshl> %<pqhl> " "%<sshl> %<tts> %<phr> %<cfsc> %<pfsc> %<crc>";
+const char *const LogFormat::extended2_format = "%<chi> - %<caun> [%<cqtn>] \"%<cqtx>\" %<pssc> %<pscl> "
+  "%<sssc> %<sscl> %<cqbl> %<pqbl> %<cqhl> %<pshl> %<pqhl> %<sshl> %<tts> %<phr> %<cfsc> %<pfsc> %<crc>";
 
 /*-------------------------------------------------------------------------
   LogFormat::setup
