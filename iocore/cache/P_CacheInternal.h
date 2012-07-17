@@ -356,6 +356,7 @@ struct CacheVC: public CacheVConnection
   virtual void set_http_info(CacheHTTPInfo *info);
   virtual void get_http_info(CacheHTTPInfo ** info);
 #endif
+  virtual bool is_pread_capable();
   virtual bool set_pin_in_cache(time_t time_pin);
   virtual time_t get_pin_in_cache();
   virtual bool set_disk_io_priority(int priority);
@@ -753,6 +754,12 @@ CacheVC::get_frag_table() {
   else if (first_buf)
     return reinterpret_cast<Doc*>(first_buf->data())->frags();
   return 0;
+}
+
+TS_INLINE bool
+CacheVC::is_pread_capable() {
+  ink_debug_assert(od);
+  return od->vector.count() <= 1;
 }
 
 TS_INLINE int
