@@ -45,56 +45,61 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   *) Don't link libreadline with all binaries and plugins.
    Trunk patch: 50c624f20a3ff09e5c62dc2b426c27fee3fd244c
    Jira: https://issues.apache.org/jira/browse/TS-1296
-   +1: zwoop, bcall
+   +1: zwoop, bcall, jpeach
 
   *) Don't link libz / liblmza with all binaries and plugins.
    Trunk patch: 726cf61c203d5a90d7feeab5637a04cd803343da
    Jira: https://issues.apache.org/jira/browse/TS-1297
-   +1: zwoop, bcall
- 
+   +1: zwoop, bcall, jpeach
+
   *) Don't assume root privileges during make install
    Trunk patch: https://git-wip-us.apache.org/repos/asf?p=trafficserver.git;a=commit;h=a862e283734c86d46a57624f9a05f09cfbbee175
    Jira: https://issues.apache.org/jira/browse/TS-1295
-   +1: zwoop
+   +1: zwoop, jpeach
 
   *) Fix WCCP build issues on FBSD.
    Trunk patch: a423c3fb44f56145060d35c3092a71577e6f5c74
    Jira: https://issues.apache.org/jira/browse/TS-1306
-   +1: zwoop
+   +1: zwoop, jpeach
 
   *) Fix collation in custom logging.
    Trunk patch: 448179c127582a590c3ed95a75ffc40f4e377b75
    Jira: https://issues.apache.org/jira/browse/TS-1229
    +1: igalic, zwoop
 
+   Wrong Jira? --jpeach
+
   *) Fix a endless loop in CacheVC::removeEvent.
    Trunk: 425a9ee8df3dbfa1554eccaaf601c933ad18c201
    Jira: https://issues.apache.org/jira/browse/TS-1310
-   +1: zwoop
+   +1: zwoop, jpeach
 
   *) Allow to open cache disk without O_DIRECT, for e.g.
    tmpfs "disk" cache.
    Trunk: 653ea0ccc2f14235dee37ec1530bda0bbf09e3bf
    Jira: https://issues.apache.org/jira/browse/TS-1312
-   +1: zwoop, bcall
+   +1: zwoop, bcall, jpeach
 
   *) fix signed/unsigned compilation issues in Vec
    Trunk: 8ab44edd4e9c27c48f9c1482b837a6adcd9ed541
    Jira: https://issues.apache.org/jira/browse/TS-1345
+   +1: jpeach
 
   *) SSL not handling some events properly.
    Trunk: 4ab21b9f7b933f0cd58173158ffaf6dbbaf64e51
    Jira: https://issues.apache.org/jira/browse/TS-1338
-   +1: zwoop, bcall
+   +1: zwoop, bcall, jpeach
 
   *) Silence spurious error when adding SSL certificates with
     alternate names.
    Trunk: b512fef66fd3f2118517eb5ac6b3a879cfa2caaa
    Jira: https://issues.apache.org/jira/browse/TS-1332
+   +1: jpeach
 
   *) Fix cache sizes > 16TB
    Trunk: 7c6b590b35ce483c8ae94640c50a6a3fb0d0e690
    Jira: https://issues.apache.org/jira/browse/TS-1319
+   +1: jpeach
 
   *) stats codes mess up when disk fail
    Trunk: bf70a5e0613b278c386608ce6f1902eb5b014d05
