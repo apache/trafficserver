@@ -1,5 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.3.0
+  *) [TS-1331] Wrong regex for ip in records config. Authors:
+   Yakov Kopel and Uri Shachar.
+
   *) [TS-1348] Remove the active timeout when releasing or 
   binding server_session.
 
