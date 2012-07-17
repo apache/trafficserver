@@ -7,6 +7,8 @@ Changes with Apache Traffic Server 3.2.1
 
   *) [TS-1357] Don't link libz / liblmza with all binaries and plugins.
 
+  *) [TS-1360] Fix WCCP build issues on FBSD.
+
 
 Changes with Apache Traffic Server 3.2.0
   *) [TS-1286] Cleanup some code around freelists and allocators.
