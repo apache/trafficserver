@@ -25,6 +25,23 @@
 #ifndef _ink_align_h_
 #define _ink_align_h_
 
+# include "ink_time.h"
+
+union Alias32 {
+  uint8_t byte[4];
+  int32_t i32;
+  uint32_t u32;
+};
+
+union Alias64 {
+  uint8_t byte[8];
+  int32_t i32[2];
+  uint32_t u32[2];
+  int64_t i64;
+  uint64_t u64;
+  ink_time_t i_time;
+};
+
 /**
  * Alignment macros
  */
