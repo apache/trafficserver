@@ -577,6 +577,7 @@ HttpClientSession::attach_server_session(HttpServerSession * ssession, bool tran
     if (transaction_done) {
       ssession->get_netvc()->
         set_inactivity_timeout(HRTIME_SECONDS(current_reader->t_state.txn_conf->keep_alive_no_activity_timeout_out));
+      ssession->get_netvc()->cancel_active_timeout();
     } else {
       // we are serving from the cache - this could take a while.
       ssession->get_netvc()->cancel_inactivity_timeout();
@@ -628,6 +629,7 @@ HttpClientSession::release(IOBufferReader * r)
     ka_vio = this->do_io_read(this, INT64_MAX, read_buffer);
     ink_assert(slave_ka_vio != ka_vio);
     client_vc->set_inactivity_timeout(HRTIME_SECONDS(ka_in));
+    client_vc->cancel_active_timeout();
   }
 }
 
