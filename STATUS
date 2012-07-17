@@ -82,11 +82,6 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
 PATCHES ACCEPTED TO BACKPORT FROM TRUNK:
   [ New patches should be added at the end of the list ]
 
-  *) Don't link libreadline with all binaries and plugins.
-   Trunk patch: 50c624f20a3ff09e5c62dc2b426c27fee3fd244c
-   Jira: https://issues.apache.org/jira/browse/TS-1296
-   +1: zwoop, bcall, jpeach, amc
-
   *) Don't link libz / liblmza with all binaries and plugins.
    Trunk patch: 726cf61c203d5a90d7feeab5637a04cd803343da
    Jira: https://issues.apache.org/jira/browse/TS-1297

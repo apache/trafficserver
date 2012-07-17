@@ -2,6 +2,8 @@
 Changes with Apache Traffic Server 3.2.0
   *) [TS-1286] Cleanup some code around freelists and allocators.
 
+  *) [TS-1358] Don't link libreadline with all binaries and plugins.
+
 
 Changes with Apache Traffic Server 3.1.4
   *) [TS-1281] make check fail on RHEL 5.x.
