@@ -45,12 +45,12 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   *) Don't link libreadline with all binaries and plugins.
    Trunk patch: 50c624f20a3ff09e5c62dc2b426c27fee3fd244c
    Jira: https://issues.apache.org/jira/browse/TS-1296
-   +1: zwoop
+   +1: zwoop, bcall
 
   *) Don't link libz / liblmza with all binaries and plugins.
    Trunk patch: 726cf61c203d5a90d7feeab5637a04cd803343da
    Jira: https://issues.apache.org/jira/browse/TS-1297
-   +1: zwoop
+   +1: zwoop, bcall
  
   *) Don't assume root privileges during make install
    Trunk patch: https://git-wip-us.apache.org/repos/asf?p=trafficserver.git;a=commit;h=a862e283734c86d46a57624f9a05f09cfbbee175
@@ -85,7 +85,7 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   *) SSL not handling some events properly.
    Trunk: 4ab21b9f7b933f0cd58173158ffaf6dbbaf64e51
    Jira: https://issues.apache.org/jira/browse/TS-1338
-   +1: zwoop
+   +1: zwoop, bcall
 
   *) Silence spurious error when adding SSL certificates with
     alternate names.
