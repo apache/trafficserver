@@ -528,8 +528,8 @@ BISON_POINT=1
 AC_CHECK_PROG([YACC],[bison],[bison])
 AS_IF([test -n "$YACC"],
       [ bison_version_check=`$YACC --version 2>&1 | \
-        sed -n '/bison/s/^[[^0-9]]*\([[0-9][0-9]]*[[.]][[0-9][0-9]]*\([[.]][[0-9][0-9]]*\)\?\).*$/\1/p' | \
-        awk "{ if (\\$1 > $BISON_MAJOR || (\\$1 == $BISON_MAJOR && (\\$2 > $BISON_MINOR || (\\$2 == $BISON_MINOR && (NR == 2 || \\$3 >= $BISON_POINT))))) print \"yes\"; else printf(\"version %d.%d.%d\",\\$1,\\$2,\\$3); }" FS=. \
+        $SED -n '/flex/s/[^0-9]*\([0-9.]*\).*/\1/p' | \
+        $AWK "{ if (\\$1 > $BISON_MAJOR || (\\$1 == $BISON_MAJOR && (\\$2 > $BISON_MINOR || (\\$2 == $BISON_MINOR && (NR == 2 || \\$3 >= $BISON_POINT))))) print \"yes\"; else printf(\"version %d.%d.%d\",\\$1,\\$2,\\$3); }" FS=. \
         `
         AS_IF([test "x$bison_version_check" != "xyes"],
           [YACC='']
@@ -544,8 +544,8 @@ FLEX_POINT=33
 AC_CHECK_PROG([LEX],[flex],[flex])
 AS_IF([test -n "$LEX"],
       [ flex_version_check=`$LEX --version 2>&1 | \
-        sed -n '/flex/s/^[[^0-9]]*\([[0-9][0-9]]*[[.]][[0-9][0-9]]*\([[.]][[0-9][0-9]]*\)\?\).*$/\1/p' | \
-        awk "{ if (\\$1 > $FLEX_MAJOR || (\\$1 == $FLEX_MAJOR && (\\$2 > $FLEX_MINOR || (\\$2 == $FLEX_MINOR && (NR == 2 || \\$3 >= $FLEX_POINT))))) print \"yes\"; else printf(\"version %d.%d.%d\",\\$1,\\$2,\\$3); }" FS=. \
+        $SED -n '/flex/s/[^0-9]*\([0-9.]*\).*/\1/p' | \
+        $AWK "{ if (\\$1 > $FLEX_MAJOR || (\\$1 == $FLEX_MAJOR && (\\$2 > $FLEX_MINOR || (\\$2 == $FLEX_MINOR && (NR == 2 || \\$3 >= $FLEX_POINT))))) print \"yes\"; else printf(\"version %d.%d.%d\",\\$1,\\$2,\\$3); }" FS=. \
         `
         AS_IF([test "x$flex_version_check" != "xyes"],
           [LEX='']
