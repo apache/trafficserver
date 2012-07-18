@@ -73,11 +73,6 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
    Trunk: f0a98cdc7b950e1ecefde94694de5dfd800248aa
    Jira: https://issues.apache.org/jira/browse/TS-1321
 
-  *) Prevent range acceleration for cluster and objects with
-     more than one alternate.
-   Trunk: b300e76dfba553ec7912831a78084e1bce2d38cf
-   Jira: https://issues.apache.org/jira/browser/TS-1339
-   +1: amc, zwoop, bcall
 
 PATCHES ACCEPTED TO BACKPORT FROM TRUNK:
   [ New patches should be added at the end of the list ]

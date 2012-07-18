@@ -17,6 +17,9 @@ Changes with Apache Traffic Server 3.2.1
 
   *) [TS-1360] Fix WCCP build issues on FBSD.
 
+  *) [TS-1367] Prevent range acceleration for cluster and objects with
+     more than one alternate.
+
 
 Changes with Apache Traffic Server 3.2.0
   *) [TS-1286] Cleanup some code around freelists and allocators.
