@@ -21,6 +21,7 @@
 #include <string.h>
 #include "lapi.h"
 #include "lutil.h"
+#include "hook.h"
 
 template <typename LuaType, typename Param1> LuaType *
 push_userdata_object(lua_State * lua, Param1 p1)
@@ -64,6 +65,8 @@ struct LuaHttpTransaction
 {
   TSHttpTxn txn;
 
+  LuaHttpTransaction() : txn(NULL) {}
+
   static LuaHttpTransaction * get(lua_State * lua, int index) {
     return (LuaHttpTransaction *)luaL_checkudata(lua, index, "ts.meta.http.txn");
   }
@@ -82,7 +85,9 @@ struct LuaHttpTransaction
 
 struct LuaHttpSession
 {
-  TSHttpSsn ssn;
+  TSHttpSsn ssn;      // session pointer
+
+  LuaHttpSession() : ssn(NULL) {}
 
   static LuaHttpSession * get(lua_State * lua, int index) {
     return (LuaHttpSession *)luaL_checkudata(lua, index, "ts.meta.http.ssn");
@@ -214,7 +219,7 @@ LuaRemapRedirect(lua_State * lua)
   rq = LuaRemapRequest::get(lua, 1);
   luaL_checktype(lua, 2, LUA_TTABLE);
 
-  TSDebug("lua", "redirecting request %p", rq->rri);
+  LuaLogDebug("redirecting request %p", rq->rri);
 
   lua_pushvalue(lua, 2);
   LuaPopUrl(lua, rq->rri->requestBufp, rq->rri->requestUrl);
@@ -237,7 +242,7 @@ LuaRemapRewrite(lua_State * lua)
   rq = LuaRemapRequest::get(lua, 1);
   luaL_checktype(lua, 2, LUA_TTABLE);
 
-  TSDebug("lua", "rewriting request %p", rq->rri);
+  LuaLogDebug("rewriting request %p", rq->rri);
 
   lua_pushvalue(lua, 2);
   LuaPopUrl(lua, rq->rri->requestBufp, rq->rri->requestUrl);
@@ -264,7 +269,7 @@ LuaRemapReject(lua_State * lua)
     body = luaL_checkstring(lua, 3);
   }
 
-  TSDebug("lua", "rejecting request %p with status %d", rq->rri, status);
+  LuaLogDebug("rejecting request %p with status %d", rq->rri, status);
 
   TSHttpTxnSetHttpRetStatus(rq->txn, (TSHttpStatus)status);
   if (body && *body) {
@@ -305,7 +310,7 @@ LuaRemapIndex(lua_State * lua)
   rq = LuaRemapRequest::get(lua, 1);
   index = luaL_checkstring(lua, 2);
 
-  TSDebug("lua", "%s[%s]", __func__, index);
+  LuaLogDebug("%s[%s]", __func__, index);
 
   // Get the userdata's metatable and look up the index in it.
   lua_getmetatable(lua, 1);
@@ -374,7 +379,7 @@ LuaRemapHeaderIndex(lua_State * lua)
   hdrs = LuaRemapHeaders::get(lua, 1);;
   index = luaL_checkstring(lua, 2);
 
-  TSDebug("lua", "%s[%s]", __func__, index);
+  LuaLogDebug("%s[%s]", __func__, index);
 
   field = TSMimeHdrFieldFind(hdrs->buffer, hdrs->headers, index, -1);
   if (field == TS_NULL_MLOC) {
@@ -399,7 +404,7 @@ LuaRemapHeaderNewIndex(lua_State * lua)
   hdrs = LuaRemapHeaders::get(lua, 1);
   index = luaL_checkstring(lua, 2);
 
-  TSDebug("lua", "%s[%s] = (%s)", __func__, index, LTYPEOF(lua, 3));
+  LuaLogDebug("%s[%s] = (%s)", __func__, index, ltypeof(lua, 3));
   field = TSMimeHdrFieldFind(hdrs->buffer, hdrs->headers, index, -1);
 
   // Setting a key to nil means to delete it.
@@ -468,10 +473,32 @@ LuaHttpTxnContinue(lua_State * lua)
   return 1;
 }
 
+static int
+LuaHttpTxnRegister(lua_State * lua)
+{
+  LuaHttpTransaction * txn;
+  int tableref;
+
+  txn = LuaHttpTransaction::get(lua, 1);
+  luaL_checktype(lua, 2, LUA_TTABLE);
+
+  // Keep a reference to the hooks table in ssn->hooks.
+  tableref = luaL_ref(lua, LUA_REGISTRYINDEX);
+
+  // On the other side of the denux, we need the hook, and the table.
+  if (LuaRegisterHttpHooks(lua, txn->txn, LuaHttpTxnHookAdd, tableref)) {
+    LuaSetArgReference(txn->txn, tableref);
+    return 1;
+  }
+
+  return 0;
+}
+
 static const luaL_Reg HTTPTXN[] =
 {
   { "abort", LuaHttpTxnAbort },
   { "continue", LuaHttpTxnContinue },
+  { "register", LuaHttpTxnRegister },
   { NULL, NULL }
 };
 
@@ -501,18 +528,21 @@ static int
 LuaHttpSsnRegister(lua_State * lua)
 {
   LuaHttpSession * ssn;
-  int hookid;
+  int tableref;
 
   ssn = LuaHttpSession::get(lua, 1);
-  hookid = luaL_checkint(lua, 2);
+  luaL_checktype(lua, 2, LUA_TTABLE);
 
-  // XXX: need to actually register the hooks here ...
+  // Keep a reference to the hooks table in ssn->hooks.
+  tableref = luaL_ref(lua, LUA_REGISTRYINDEX);
 
-  // Prevent unused variable warnings.
-  (void)ssn;
-  (void)hookid;
+  // On the other side of the denux, we need the hook, and the table.
+  if (LuaRegisterHttpHooks(lua, ssn->ssn, LuaHttpSsnHookAdd, tableref)) {
+    LuaSetArgReference(ssn->ssn, tableref);
+    return 1;
+  }
 
-  return 1;
+  return 0;
 }
 
 static const luaL_Reg HTTPSSN[] =
@@ -560,7 +590,7 @@ LuaPushHttpSession(lua_State * lua, TSHttpSsn ssn)
 int
 LuaApiInit(lua_State * lua)
 {
-  TSDebug("lua", "initializing TS API");
+  LuaLogDebug("initializing TS API");
 
   lua_newtable(lua);
 

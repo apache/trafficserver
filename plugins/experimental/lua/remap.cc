@@ -33,7 +33,7 @@ LuaPluginRelease(lua_State * lua)
   }
 
   if (lua_pcall(lua, 0, 0, 0) != 0) {
-    TSDebug("lua", "release failed: %s", lua_tostring(lua, -1));
+    LuaLogDebug("release failed: %s", lua_tostring(lua, -1));
     lua_pop(lua, 1);
   }
 
@@ -52,14 +52,14 @@ LuaPluginRemap(lua_State * lua, TSHttpTxn txn, TSRemapRequestInfo * rri)
     return TSREMAP_NO_REMAP;
   }
 
-  TSDebug("lua", "handling request %p on thread 0x%llx", rri, (unsigned long long)pthread_self());
+  LuaLogDebug("handling request %p on thread 0x%llx", rri, (unsigned long long)pthread_self());
 
   // XXX We can also cache the RemapRequestInfo in the Lua state. We we just need to reset
   // the rri pointer and status.
   rq = LuaPushRemapRequestInfo(lua, txn, rri);
 
   if (lua_pcall(lua, 1, 0, 0) != 0) {
-    TSDebug("lua", "remap failed: %s", lua_tostring(lua, -1));
+    LuaLogDebug("remap failed: %s", lua_tostring(lua, -1));
     lua_pop(lua, 1);
     return TSREMAP_ERROR;
   }
@@ -82,7 +82,7 @@ TSRemapDeleteInstance(void * ih)
 TSReturnCode
 TSRemapInit(TSRemapInterface * api_info, char * errbuf, int errbuf_size)
 {
-  TSDebug("lua", "loading lua plugin");
+  LuaLogDebug("loading lua plugin");
   return TS_SUCCESS;
 }
 
@@ -122,7 +122,7 @@ TSRemapDoRemap(void * ih, TSHttpTxn txn, TSRemapRequestInfo * rri)
     lps = (LuaPluginState *)ih;
     lthread = tsnew<LuaThreadInstance>();
 
-    TSDebug("lua", "allocating new Lua state on thread 0x%llx", (unsigned long long)pthread_self());
+    LuaLogDebug("allocating new Lua state on thread 0x%llx", (unsigned long long)pthread_self());
     lthread->lua = LuaPluginNewState(lps);
     LuaSetThreadInstance(lthread);
   }

@@ -31,6 +31,32 @@ struct LuaThreadInstance;
 
 extern LuaPluginState * LuaPlugin;
 
+// Global argument index for TSHttpSsnArgGet and TSHttpTxnArgGet.
+extern int LuaHttpArgIndex;
+
+#define unlikely(x) __builtin_expect(!!(x), 0)
+#define likely(x)   __builtin_expect(!!(x), 1)
+
+#define LuaLogDebug(fmt, ...) do { \
+    if (unlikely(TSIsDebugTagSet("lua"))) { \
+        TSDebug("lua", "%s: "fmt, __func__, ##__VA_ARGS__); \
+    } \
+} while (0)
+
+// In DEBUG mode, log errors to the debug channel. This is handy for making Lua runtime
+// errors show up on stdout along with the rest of the debug loggin.
+#if DEBUG
+#define LuaLogError(fmt, ...) LuaLogDebug(fmt, ##__VA_ARGS__)
+#else
+#define LuaLogError(fmt, ...) TSError(fmt, ##__VA_ARGS__)
+#endif
+
+// Return the type name string for the given index.
+static inline const char *
+ltypeof(lua_State * lua, int index) {
+  return lua_typename(lua, lua_type(lua, index));
+}
+
 template <typename T> T * tsnew() {
   void * ptr = TSmalloc(sizeof(T));
   return new(ptr) T();
@@ -48,9 +74,6 @@ template <typename T> T * LuaNewUserData(lua_State * lua) {
   void * ptr = lua_newuserdata(lua, sizeof(T));
   return new(ptr) T();
 }
-
-// Return the type name string for the given index.
-#define LTYPEOF(L, index) lua_typename(L, lua_type(L, index))
 
 void LuaPushMetatable(lua_State * lua, const char * name, const luaL_Reg * exports);
 void LuaLoadLibraries(lua_State * lua);
@@ -94,7 +117,7 @@ struct LuaThreadInstance
 };
 
 template <typename T, unsigned N> unsigned
-arraysz(const T (&)[N]) {
+countof(const T (&)[N]) {
   return N;
 }
 

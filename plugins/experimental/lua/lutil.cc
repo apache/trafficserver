@@ -24,12 +24,14 @@
 #include <unistd.h>
 
 static thread_local_pointer<LuaThreadInstance> LuaThread;
+
 LuaPluginState * LuaPlugin;
+int LuaHttpArgIndex;
 
 LuaThreadInstance::LuaThreadInstance()
   : lua(NULL)
 {
-  for (unsigned i = 0; i < arraysz(this->hooks); ++i) {
+  for (unsigned i = 0; i < countof(this->hooks); ++i) {
     this->hooks[i] = LUA_NOREF;
   }
 }
@@ -104,7 +106,7 @@ LuaPluginLoad(lua_State * lua, LuaPluginState * plugin)
 
     if (luaL_dofile(lua, p->c_str()) != 0) {
       // If the load failed, it should have pushed an error message.
-      TSError("failed to load Lua file %s: %s", p->c_str(), lua_tostring(lua, -1));
+      LuaLogError("failed to load Lua file %s: %s", p->c_str(), lua_tostring(lua, -1));
       return false;
     }
   }
