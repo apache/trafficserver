@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.3.0
 
+  *) [TS-1351] raw disk cache disabled when system start
+
   *) [TS-1452] gzip build failure with Apple/clang-421.0.57
 
   *) [TS-1339] Move fragment offset table from First Doc to Alt header so
