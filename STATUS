@@ -82,11 +82,6 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
 PATCHES ACCEPTED TO BACKPORT FROM TRUNK:
   [ New patches should be added at the end of the list ]
 
-  *) Fix a endless loop in CacheVC::removeEvent.
-   Trunk: 425a9ee8df3dbfa1554eccaaf601c933ad18c201
-   Jira: https://issues.apache.org/jira/browse/TS-1310
-   +1: zwoop, jpeach, amc
-
   *) Allow to open cache disk without O_DIRECT, for e.g.
    tmpfs "disk" cache.
    Trunk: 653ea0ccc2f14235dee37ec1530bda0bbf09e3bf
