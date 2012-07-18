@@ -520,26 +520,47 @@ AC_CHECK_PROG(RM, rm, rm)
 AC_CHECK_PROG(ASCPP, cpp, cpp)
 AC_CHECK_TOOL(AR, ar, ar)
 AC_ISC_POSIX
+# Do bison check by hand because we must do a version check.
+# Use YACC because it makes autotools shut up.
+BISON_MAJOR=2
+BISON_MINOR=4
+BISON_POINT=3
+AC_CHECK_PROG([YACC],[bison],[bison])
+AS_IF([test -n "$YACC"],
+      [ bison_version_check=`$YACC --version 2>&1 | \
+        sed -n '/bison/s/^.*\([[0-9][0-9]]*\)[[.]]\([[0-9][0-9]]*\)[[.]]\([[0-9][0-9]]*\).*$/\1 \2 \3/p' | \
+        awk "{ if (\\$1 > $BISON_MAJOR || (\\$1 == $BISON_MAJOR && (\\$2 > $BISON_MINOR || (\\$2 == $BISON_MINOR && \\$3 >= $BISON_POINT)))) print \"yes\"; else print \"no\"; }" \
+        `
+        AS_IF([test "x$bison_version_check" != "xyes"],
+          [YACC='']
+        )
+      ],
+      [YACC='']
+)
+# Check lex/flex by hand because we need flex of a sufficient version.
+FLEX_MAJOR=2
+FLEX_MINOR=5
+FLEX_POINT=35
+AC_CHECK_PROG([LEX],[flex],[flex])
+AS_IF([test -n "$LEX"],
+      [ flex_version_check=`$LEX --version 2>&1 | \
+        sed -n '/flex/s/^.*\([[0-9][0-9]]*\)[[.]]\([[0-9][0-9]]*\)[[.]]\([[0-9][0-9]]*\).*$/\1 \2 \3/p' | \
+        awk "{ if (\\$1 > $FLEX_MAJOR || (\\$1 == $FLEX_MAJOR && (\\$2 > $FLEX_MINOR || (\\$2 == $FLEX_MINOR && \\$3 >= $FLEX_POINT)))) print \"yes\"; else print \"no\"; }" \
+        `
+        AS_IF([test "x$flex_version_check" != "xyes"],
+          [LEX='']
+        )
+      ],
+      [LEX='']
+)
 AS_IF([test "x$enable_wccp" = "xyes"],
   [
-
-    # If flex is found, set output variable LEX to ‘flex’ 
-    # Otherwise set LEX to ‘lex’ 
-    # If neither variant is available, set LEX to ‘:’;
-    AC_PROG_LEX
-    AS_IF([test "x$LEX" = "x:"  ],
-       AC_MSG_ERROR([Need flex when enabling WCCP])
+    AS_IF([test -z "$LEX"  ],
+       AC_MSG_ERROR([Need flex version $FLEX_MAJOR.$FLEX_MINOR.$FLEX_POINT or better when enabling WCCP])
     )
 
-    # If bison is found, set output variable YACC to ‘bison -y’. 
-    # Otherwise, if byacc is found, set YACC to ‘byacc’. 
-    # Otherwise set YACC to ‘yacc’. 
-    AC_PROG_YACC
-    AS_IF([test "x$YACC" = "xyacc" ],
-	AC_CHECK_PROG([YACCBIN],[yacc],[yacc],[])
-	AS_IF([test "x$YACCBIN" = "x"],
-		AC_MSG_ERROR([Need at YACC when enabling WCCP])
-	)
+    AS_IF([test -z "$YACC" ],
+        AC_MSG_ERROR([Need bison version $BISON_MAJOR.$BISON_MINOR.$BISON_POINT or better to enable WCCP])
     )
 
   ]
