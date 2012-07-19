@@ -53,12 +53,15 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
    Trunk: 8ab44edd4e9c27c48f9c1482b837a6adcd9ed541
    Jira: https://issues.apache.org/jira/browse/TS-1345
    +1: jpeach
+   igalic says: I don't see the benefit of backporting this
+        Are there any actual compilers we currently support
+        complaining about this?
 
   *) Silence spurious error when adding SSL certificates with
     alternate names.
    Trunk: b512fef66fd3f2118517eb5ac6b3a879cfa2caaa
    Jira: https://issues.apache.org/jira/browse/TS-1332
-   +1: jpeach
+   +1: jpeach, igalic
 
   *) Fix cache sizes > 16TB
    Trunk: 7c6b590b35ce483c8ae94640c50a6a3fb0d0e690
