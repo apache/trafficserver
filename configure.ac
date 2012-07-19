@@ -541,7 +541,9 @@ AS_IF([test -n "$YACC"],
 FLEX_MAJOR=2
 FLEX_MINOR=5
 FLEX_POINT=33
-AC_CHECK_PROG([LEX],[flex],[flex])
+dnl ylwrap requires the lexer executable to be an absolute path or in the srcdir.
+dnl but we need various other LEX values.
+AC_PROG_LEX
 AS_IF([test -n "$LEX"],
       [ flex_version_check=`$LEX --version 2>&1 | \
         $SED -n '/flex/s/^[[^0-9]]*\([[0-9]][[0-9.]]*\)[[^0-9]]*$/\1/p' | \
