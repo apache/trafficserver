@@ -1,7 +1,8 @@
                                                          -*- coding: utf-8 -*-
-<<<<<<< HEAD
 Changes with Apache Traffic Server 3.2.1
   *) [TS-1358] Don't link libreadline with all binaries and plugins.
+
+  *) [TS-1374] Cert path not working using intermdiate certificate
 
   *) [TS-1373] Silence spurious error when adding SSL certificates with alternate names
 
