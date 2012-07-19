@@ -42,11 +42,6 @@ A list of all bugs open for the next development release can be found at
 PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   [ New proposals should be added at the end of the list ]
 
-  *) Cert path not working using intermdiate certificate
-   Trunk patch: 4ed023427a90c0d2bfa9c0c9dab26304f9aaf9fb
-   Jira: https://issues.apache.org/jira/browse/TS-1363
-   +1: jpeach
-
   *) Fix collation in custom logging.
    Trunk patch: 448179c127582a590c3ed95a75ffc40f4e377b75
    Jira: https://issues.apache.org/jira/browse/TS-1229
@@ -77,6 +72,12 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   *) Improve response times for for Cluster purge & miss
    Trunk: f0a98cdc7b950e1ecefde94694de5dfd800248aa
    Jira: https://issues.apache.org/jira/browse/TS-1321
+
+  *) Cert path not working using intermdiate certificate
+   Trunk patch: 4ed023427a90c0d2bfa9c0c9dab26304f9aaf9fb
+   Jira: https://issues.apache.org/jira/browse/TS-1363
+   +1: jpeach, igalic
+
 
 
 PATCHES ACCEPTED TO BACKPORT FROM TRUNK:
