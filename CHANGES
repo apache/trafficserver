@@ -1,5 +1,7 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.3.0
+  *) [TS-1363] Cert path not working using intermdiate certificate
+
   *) [TS-895] Added version checks for bison and flex.
 
   *) [TS-1331] Wrong regex for ip in records config. Authors:
