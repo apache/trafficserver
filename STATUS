@@ -61,12 +61,12 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
     alternate names.
    Trunk: b512fef66fd3f2118517eb5ac6b3a879cfa2caaa
    Jira: https://issues.apache.org/jira/browse/TS-1332
-   +1: jpeach, igalic
+   +1: jpeach, zwoop, igalic
 
   *) Fix cache sizes > 16TB
    Trunk: 7c6b590b35ce483c8ae94640c50a6a3fb0d0e690
    Jira: https://issues.apache.org/jira/browse/TS-1319
-   +1: jpeach
+   +1: jpeach, zwoop
 
   *) stats codes mess up when disk fail
    Trunk: 99cbf8acb97b191631882bfcfaf06d512347fdd4
@@ -79,7 +79,7 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   *) Cert path not working using intermdiate certificate
    Trunk patch: 4ed023427a90c0d2bfa9c0c9dab26304f9aaf9fb
    Jira: https://issues.apache.org/jira/browse/TS-1363
-   +1: jpeach, igalic
+   +1: jpeach, igalic, zwoop
 
 
 
