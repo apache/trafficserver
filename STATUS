@@ -66,7 +66,7 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
    +1: jpeach
 
   *) stats codes mess up when disk fail
-   Trunk: bf70a5e0613b278c386608ce6f1902eb5b014d05
+   Trunk: 99cbf8acb97b191631882bfcfaf06d512347fdd4
    Jira: https://issues.apache.org/jira/browse/TS-1289
 
   *) Improve response times for for Cluster purge & miss
