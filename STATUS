@@ -78,12 +78,12 @@ PATCHES ACCEPTED TO BACKPORT FROM TRUNK:
   *) Silence spurious error when adding SSL certificates with
     alternate names.
    Trunk: b512fef66fd3f2118517eb5ac6b3a879cfa2caaa
-   Jira: https://issues.apache.org/jira/browse/TS-1332
+   Jira: https://issues.apache.org/jira/browse/TS-1373
    +1: jpeach, zwoop, igalic
 
   *) Cert path not working using intermdiate certificate
    Trunk patch: 4ed023427a90c0d2bfa9c0c9dab26304f9aaf9fb
-   Jira: https://issues.apache.org/jira/browse/TS-1363
+   Jira: https://issues.apache.org/jira/browse/TS-1374
    +1: jpeach, igalic, zwoop
 
 
