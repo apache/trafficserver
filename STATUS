@@ -57,12 +57,6 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
         Are there any actual compilers we currently support
         complaining about this?
 
-  *) Silence spurious error when adding SSL certificates with
-    alternate names.
-   Trunk: b512fef66fd3f2118517eb5ac6b3a879cfa2caaa
-   Jira: https://issues.apache.org/jira/browse/TS-1332
-   +1: jpeach, zwoop, igalic
-
   *) Fix cache sizes > 16TB
    Trunk: 7c6b590b35ce483c8ae94640c50a6a3fb0d0e690
    Jira: https://issues.apache.org/jira/browse/TS-1319
@@ -76,15 +70,21 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
    Trunk: f0a98cdc7b950e1ecefde94694de5dfd800248aa
    Jira: https://issues.apache.org/jira/browse/TS-1321
 
-  *) Cert path not working using intermdiate certificate
-   Trunk patch: 4ed023427a90c0d2bfa9c0c9dab26304f9aaf9fb
-   Jira: https://issues.apache.org/jira/browse/TS-1363
-   +1: jpeach, igalic, zwoop
-
 
 
 PATCHES ACCEPTED TO BACKPORT FROM TRUNK:
   [ New patches should be added at the end of the list ]
+
+  *) Silence spurious error when adding SSL certificates with
+    alternate names.
+   Trunk: b512fef66fd3f2118517eb5ac6b3a879cfa2caaa
+   Jira: https://issues.apache.org/jira/browse/TS-1332
+   +1: jpeach, zwoop, igalic
+
+  *) Cert path not working using intermdiate certificate
+   Trunk patch: 4ed023427a90c0d2bfa9c0c9dab26304f9aaf9fb
+   Jira: https://issues.apache.org/jira/browse/TS-1363
+   +1: jpeach, igalic, zwoop
 
 
 RELEASE PROCESS
