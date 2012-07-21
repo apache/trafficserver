@@ -260,7 +260,9 @@ CacheVC::do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *abuf)
   vio.ndone = 0;
   vio.nbytes = nbytes;
   vio.vc_server = this;
+#ifdef DEBUG
   ink_assert(c->mutex->thread_holding);
+#endif
   if (!trigger && !recursive)
     trigger = c->mutex->thread_holding->schedule_imm_local(this);
   return &vio;
@@ -277,7 +279,9 @@ CacheVC::do_io_pread(Continuation *c, int64_t nbytes, MIOBuffer *abuf, int64_t o
   vio.nbytes = nbytes;
   vio.vc_server = this;
   seek_to = offset;
+#ifdef DEBUG
   ink_assert(c->mutex->thread_holding);
+#endif
   if (!trigger && !recursive)
     trigger = c->mutex->thread_holding->schedule_imm_local(this);
   return &vio;
@@ -293,7 +297,9 @@ CacheVC::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *abuf, bool
   vio.ndone = 0;
   vio.nbytes = nbytes;
   vio.vc_server = this;
+#ifdef DEBUG
   ink_assert(c->mutex->thread_holding);
+#endif
   if (!trigger && !recursive)
     trigger = c->mutex->thread_holding->schedule_imm_local(this);
   return &vio;
@@ -315,7 +321,9 @@ CacheVC::reenable(VIO *avio)
 {
   DDebug("cache_reenable", "reenable %p", this);
   (void) avio;
+#ifdef DEBUG
   ink_assert(avio->mutex->thread_holding);
+#endif
   if (!trigger) {
 #ifndef USELESS_REENABLES
     if (vio.op == VIO::READ) {
@@ -333,7 +341,9 @@ CacheVC::reenable_re(VIO *avio)
 {
   DDebug("cache_reenable", "reenable_re %p", this);
   (void) avio;
+#ifdef DEBUG
   ink_assert(avio->mutex->thread_holding);
+#endif
   if (!trigger) {
     if (!is_io_in_progress() && !recursive) {
       handleEvent(EVENT_NONE, (void *) 0);
