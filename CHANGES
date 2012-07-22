@@ -1,5 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.3.0
+  *) [TS-1340] Improve IPv6 port example in records.comfig
+    Author: Jan-Frode Myklebust
+
   *) [TS-1363] Cert path not working using intermdiate certificate
 
   *) [TS-895] Added version checks for bison and flex.
