@@ -1,5 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.3.0
+  *) [TS-1370] Restore original stale-wile-revalidate code for posterity
+    Author: Phil Sorber
+
   *) [TS-1340] Improve IPv6 port example in records.comfig
     Author: Jan-Frode Myklebust
 
