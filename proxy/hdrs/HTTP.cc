@@ -445,6 +445,9 @@ http_hdr_print(HdrHeap *heap, HTTPHdrImpl *hdr, char *buf, int bufsize, int *buf
       if (hdr->u.req.m_url_impl) {
         TRY(url_print(hdr->u.req.m_url_impl, buf, bufsize, bufindex, dumpoffset));
         if (bufsize - *bufindex >= 1) {
+          if (hdr->u.req.m_method_wks_idx == HTTP_WKSIDX_CONNECT) {
+              *bufindex -= 1; // remove trailing slash for CONNECT request
+          }
           p = buf + *bufindex;
           *p++ = ' ';
           *bufindex += 1;

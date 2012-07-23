@@ -274,6 +274,16 @@ SSLNetProcessor::initSSLServerCTX(SSL_CTX * lCtx, const SslConfigParams * param,
   }
   ats_free(completeServerCertPath);
 
+  if (param->serverCertChainPath) {
+    char *completeServerCaCertPath = Layout::relative_to(param->getServerCACertPathOnly(), param->serverCertChainPath);
+    if (SSL_CTX_add_extra_chain_cert_file(lCtx, param->serverCertChainPath) <= 0) {
+      Error ("SSL ERROR: Cannot use server certificate chain file: %s", completeServerCaCertPath);
+      ats_free(completeServerCaCertPath);
+      return -2;
+    }
+    ats_free(completeServerCaCertPath);
+  }
+
   if (!SSL_CTX_check_private_key(lCtx)) {
     logSSLError("Server private key does not match the certificate public key");
     return -4;

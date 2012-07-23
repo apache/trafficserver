@@ -758,8 +758,7 @@ CacheVC::get_frag_table() {
 
 TS_INLINE bool
 CacheVC::is_pread_capable() {
-  ink_debug_assert(od);
-  return od->vector.count() <= 1;
+  return vector.count() <= 1;
 }
 
 TS_INLINE int

@@ -538,12 +538,12 @@ AC_ISC_POSIX
 # Use YACC because it makes autotools shut up.
 BISON_MAJOR=2
 BISON_MINOR=4
-BISON_POINT=3
+BISON_POINT=1
 AC_CHECK_PROG([YACC],[bison],[bison])
 AS_IF([test -n "$YACC"],
       [ bison_version_check=`$YACC --version 2>&1 | \
-        sed -n '/bison/s/^.*\([[0-9][0-9]]*\)[[.]]\([[0-9][0-9]]*\)[[.]]\([[0-9][0-9]]*\).*$/\1 \2 \3/p' | \
-        awk "{ if (\\$1 > $BISON_MAJOR || (\\$1 == $BISON_MAJOR && (\\$2 > $BISON_MINOR || (\\$2 == $BISON_MINOR && \\$3 >= $BISON_POINT)))) print \"yes\"; else print \"no\"; }" \
+        $SED -n '/bison/s/^[[^0-9]]*\([[0-9]][[0-9.]]*\)[[^0-9]]*$/\1/p' | \
+        $AWK "{ if (\\$1 > $BISON_MAJOR || (\\$1 == $BISON_MAJOR && (\\$2 > $BISON_MINOR || (\\$2 == $BISON_MINOR && (NR == 2 || \\$3 >= $BISON_POINT))))) print \"yes\"; else printf(\"version %d.%d.%d\",\\$1,\\$2,\\$3); }" FS=. \
         `
         AS_IF([test "x$bison_version_check" != "xyes"],
           [YACC='']
@@ -554,12 +554,14 @@ AS_IF([test -n "$YACC"],
 # Check lex/flex by hand because we need flex of a sufficient version.
 FLEX_MAJOR=2
 FLEX_MINOR=5
-FLEX_POINT=35
-AC_CHECK_PROG([LEX],[flex],[flex])
+FLEX_POINT=33
+dnl ylwrap requires the lexer executable to be an absolute path or in the srcdir.
+dnl but we need various other LEX values.
+AC_PROG_LEX
 AS_IF([test -n "$LEX"],
       [ flex_version_check=`$LEX --version 2>&1 | \
-        sed -n '/flex/s/^.*\([[0-9][0-9]]*\)[[.]]\([[0-9][0-9]]*\)[[.]]\([[0-9][0-9]]*\).*$/\1 \2 \3/p' | \
-        awk "{ if (\\$1 > $FLEX_MAJOR || (\\$1 == $FLEX_MAJOR && (\\$2 > $FLEX_MINOR || (\\$2 == $FLEX_MINOR && \\$3 >= $FLEX_POINT)))) print \"yes\"; else print \"no\"; }" \
+        $SED -n '/flex/s/^[[^0-9]]*\([[0-9]][[0-9.]]*\)[[^0-9]]*$/\1/p' | \
+        $AWK "{ if (\\$1 > $FLEX_MAJOR || (\\$1 == $FLEX_MAJOR && (\\$2 > $FLEX_MINOR || (\\$2 == $FLEX_MINOR && (NR == 2 || \\$3 >= $FLEX_POINT))))) print \"yes\"; else printf(\"version %d.%d.%d\",\\$1,\\$2,\\$3); }" FS=. \
         `
         AS_IF([test "x$flex_version_check" != "xyes"],
           [LEX='']
@@ -567,14 +569,15 @@ AS_IF([test -n "$LEX"],
       ],
       [LEX='']
 )
+
 AS_IF([test "x$enable_wccp" = "xyes"],
   [
     AS_IF([test -z "$LEX"  ],
-       AC_MSG_ERROR([Need flex version $FLEX_MAJOR.$FLEX_MINOR.$FLEX_POINT or better when enabling WCCP])
+       AC_MSG_ERROR([Need flex version $FLEX_MAJOR.$FLEX_MINOR.$FLEX_POINT or better to enable WCCP (found $flex_version_check)])
     )
 
     AS_IF([test -z "$YACC" ],
-        AC_MSG_ERROR([Need bison version $BISON_MAJOR.$BISON_MINOR.$BISON_POINT or better to enable WCCP])
+        AC_MSG_ERROR([Need bison version $BISON_MAJOR.$BISON_MINOR.$BISON_POINT or better to enable WCCP (found $bison_version_check)])
     )
 
   ]

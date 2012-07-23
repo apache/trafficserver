@@ -400,8 +400,7 @@ Mutex_trylock(
 #endif //DEBUG
       return false;
     }
-    m->thread_holding = t;
-    ink_assert(m->thread_holding);
+    ink_assert(m->thread_holding = t);
 #ifdef DEBUG
     m->file = afile;
     m->line = aline;

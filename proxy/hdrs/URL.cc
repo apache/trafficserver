@@ -1050,152 +1050,57 @@ url_unescapify(Arena * arena, const char *str, int length)
 }
 
 MIMEParseResult
-url_parse(HdrHeap * heap, URLImpl * url, const char **start, const char *end, bool copy_strings)
+url_parse_scheme(HdrHeap * heap, URLImpl * url, const char **start, const char *end, bool copy_strings_p)
 {
-  const char *cur;
+  const char *cur = *start;
   const char *scheme_wks;
   const char *scheme_start = NULL;
   const char *scheme_end = NULL;
   int scheme_wks_idx;
 
-  cur = *start;
-
-skip_ws:
-  if (ParseRules::is_ws(*cur)) {
-    GETNEXT(eof);
-    goto skip_ws;
-  }
-  /////////////////////////////////
-  // fast case starts with http: //
-  /////////////////////////////////
-
-  if ((end - cur >= 5) && (((cur[0] ^ 'h') | (cur[1] ^ 't') | (cur[2] ^ 't') | (cur[3] ^ 'p') | (cur[4] ^ ':')) == 0)) {
-    scheme_start = cur;
-    cur += 4;                   // point to colon
-    scheme_end = cur;
-    scheme_wks_idx = URL_WKSIDX_HTTP;
-    scheme_wks = URL_SCHEME_HTTP;
-  } else {
-    scheme_start = cur;
-
-  parse_scheme2:
-    if (*cur != ':') {
-      GETNEXT(done);
-      goto parse_scheme2;
+  while(' ' == *cur && ++cur < end)
+    ;
+  if (cur < end) {
+    scheme_start = scheme_end = cur;
+    // special case 'http:' for performance
+    if ((end - cur >= 5) && (((cur[0] ^ 'h') | (cur[1] ^ 't') | (cur[2] ^ 't') | (cur[3] ^ 'p') | (cur[4] ^ ':')) == 0)) {
+      scheme_end = cur + 4;                   // point to colon
+      url_scheme_set(heap, url, scheme_start, URL_WKSIDX_HTTP, 4, copy_strings_p);
+    } else { // some other scheme, try to parse it.
+      while (':' != *cur && ++cur < end)
+        ;
+      if (cur < end) { // found a colon
+        scheme_wks_idx = hdrtoken_tokenize(scheme_start, cur - scheme_start, &scheme_wks);
+    
+        /*  Distinguish between a scheme only and a username by looking past the colon. If it is missing
+            or it's a slash, presume scheme. Otherwise it's a username with a password.
+        */
+        if ((scheme_wks_idx > 0 && hdrtoken_wks_to_token_type(scheme_wks) == HDRTOKEN_TYPE_SCHEME) || // known scheme
+           (cur >= end-1 || cur[1] == '/')) // no more data or slash past colon
+        {
+          scheme_end = cur;
+          url_scheme_set(heap, url, scheme_start, scheme_wks_idx, scheme_end - scheme_start, copy_strings_p);
+        }
+      }
     }
-    scheme_end = cur;
-    scheme_wks_idx = hdrtoken_tokenize(scheme_start, scheme_end - scheme_start, &scheme_wks);
-
-    // FIX: need to improve parser to support unknown schemes --- this code is
-    //      a hack --- if no well-known scheme is found, the parser assumes
-    //      the scheme has been omitted, and the colon is really the colon
-    //      from "username:password" or "host:port", so it calls the scheme
-    //      "http" and continues parsing there.
-    //
-    //      If URLs can really arrive without a scheme:// prefix, then it's
-    //      difficult to disambiguate non-well-known schemes from missing
-    //      schemes.  I'm not sure how such malformed URLs could arrive at
-    //      the proxy --- perhaps (a) some web browsers request files with
-    //      no leading slash, or (b) some web browsers with explicit proxy
-    //      set may omit schemes if the user types in "www.apache.org", etc?
-
-    // if we parsed a scheme which is well known as a scheme, use it as the
-    // scheme, otherwise we'll assume the scheme is missing and treat as HTTP.
-
-    if ((scheme_wks_idx < 0) || (hdrtoken_wks_to_token_type(scheme_wks) != HDRTOKEN_TYPE_SCHEME))
-      goto done;
+    *start = scheme_end;
+    return PARSE_CONT;
   }
-
-  ///////////////////////////////////////////
-  // we get here if we have a legal scheme //
-  ///////////////////////////////////////////
-
-  url_scheme_set(heap, url, scheme_start, scheme_wks_idx, scheme_end - scheme_start, copy_strings);
-
-  *start = scheme_end;
-  return url_parse_http(heap, url, start, end, copy_strings);
-
-done:
-  *start = scheme_start;
-  return url_parse_http(heap, url, start, end, copy_strings);
-
-eof:
-  return PARSE_ERROR;
+  return PARSE_ERROR; // no non-whitespace found
 }
 
 MIMEParseResult
-url_parse_no_path_component_breakdown(HdrHeap * heap,
-                                      URLImpl * url, const char **start, const char *end, bool copy_strings)
+url_parse(HdrHeap * heap, URLImpl * url, const char **start, const char *end, bool copy_strings_p)
 {
-  const char *cur;
-  const char *scheme_wks;
-  const char *scheme_start = NULL;
-  const char *scheme_end = NULL;
-  int scheme_wks_idx;
+  MIMEParseResult zret = url_parse_scheme(heap, url, start, end, copy_strings_p);
+  return PARSE_CONT == zret ? url_parse_http(heap, url, start, end, copy_strings_p) : zret;
+}
 
-  cur = *start;
-
-skip_ws:
-  if (ParseRules::is_ws(*cur)) {
-    GETNEXT(eof);
-    goto skip_ws;
-  }
-  /////////////////////////////////
-  // fast case starts with http: //
-  /////////////////////////////////
-
-  if ((end - cur >= 5) && (((cur[0] ^ 'h') | (cur[1] ^ 't') | (cur[2] ^ 't') | (cur[3] ^ 'p') | (cur[4] ^ ':')) == 0)) {
-    scheme_start = cur;
-    cur += 4;                   // point to colon
-    scheme_end = cur;
-    scheme_wks_idx = URL_WKSIDX_HTTP;
-    scheme_wks = URL_SCHEME_HTTP;
-  } else {
-    scheme_start = cur;
-
-  parse_scheme2:
-    if (*cur != ':') {
-      GETNEXT(done);
-      goto parse_scheme2;
-    }
-    scheme_end = cur;
-    scheme_wks_idx = hdrtoken_tokenize(scheme_start, scheme_end - scheme_start, &scheme_wks);
-
-    // FIX: need to improve parser to support unknown schemes --- this code is
-    //      a hack --- if no well-known scheme is found, the parser assumes
-    //      the scheme has been omitted, and the colon is really the colon
-    //      from "username:password" or "host:port", so it calls the scheme
-    //      "http" and continues parsing there.
-    //
-    //      If URLs can really arrive without a scheme:// prefix, then it's
-    //      difficult to disambiguate non-well-known schemes from missing
-    //      schemes.  I'm not sure how such malformed URLs could arrive at
-    //      the proxy --- perhaps (a) some web browsers request files with
-    //      no leading slash, or (b) some web browsers with explicit proxy
-    //      set may omit schemes if the user types in "www.apache.org", etc?
-
-    // if we parsed a scheme which is well known as a scheme, use it as the
-    // scheme, otherwise we'll assume the scheme is missing and treat as HTTP.
-
-    if ((scheme_wks_idx < 0) || (hdrtoken_wks_to_token_type(scheme_wks) != HDRTOKEN_TYPE_SCHEME))
-      goto done;
-  }
-
-  ///////////////////////////////////////////
-  // we get here if we have a legal scheme //
-  ///////////////////////////////////////////
-
-  url_scheme_set(heap, url, scheme_start, scheme_wks_idx, scheme_end - scheme_start, copy_strings);
-
-  *start = scheme_end;
-  return url_parse_http_no_path_component_breakdown(heap, url, start, end, copy_strings);
-
-done:
-  *start = scheme_start;
-  return url_parse_http_no_path_component_breakdown(heap, url, start, end, copy_strings);
-
-eof:
-  return PARSE_ERROR;
+MIMEParseResult
+url_parse_no_path_component_breakdown(HdrHeap * heap, URLImpl * url, const char **start, const char *end, bool copy_strings_p)
+{
+  MIMEParseResult zret = url_parse_scheme(heap, url, start, end, copy_strings_p);
+  return PARSE_CONT == zret ? url_parse_http_no_path_component_breakdown(heap, url, start, end, copy_strings_p) : zret;
 }
 
 /**
@@ -1516,11 +1421,12 @@ url_print(URLImpl * url, char *buf_start, int buf_length, int *buf_index_inout, 
   if (url->m_ptr_scheme) {
     TRY(mime_mem_print(url->m_ptr_scheme, url->m_len_scheme,
                        buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
-    if ((url->m_scheme_wks_idx >= 0) && (hdrtoken_index_to_wks(url->m_scheme_wks_idx) == URL_SCHEME_FILE)) {
-      TRY(mime_mem_print(":", 1, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
-    } else {
+    // [amc] Why is "file:" special cased to be wrong?
+//    if ((url->m_scheme_wks_idx >= 0) && (hdrtoken_index_to_wks(url->m_scheme_wks_idx) == URL_SCHEME_FILE)) {
+//      TRY(mime_mem_print(":", 1, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
+//    } else {
       TRY(mime_mem_print("://", 3, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
-    }
+//    }
   }
 
   if (url->m_ptr_user) {

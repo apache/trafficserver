@@ -1,5 +1,18 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.3.0
+  *) [TS-1315] Fix URL parsing to handle non-HTTP schemes correctly.
+
+  *) [TS-1322] CONNECT to parent proxy has URL with a trailing slash
+    Author: Yakov Kopel
+
+  *) [TS-1370] Restore original stale-wile-revalidate code for posterity
+    Author: Phil Sorber
+
+  *) [TS-1340] Improve IPv6 port example in records.comfig
+    Author: Jan-Frode Myklebust
+
+  *) [TS-1363] Cert path not working using intermdiate certificate
+
   *) [TS-895] Added version checks for bison and flex.
 
   *) [TS-1331] Wrong regex for ip in records config. Authors:

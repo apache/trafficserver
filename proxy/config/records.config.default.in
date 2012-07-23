@@ -97,8 +97,12 @@ CONFIG proxy.config.alarm.abs_path STRING NULL
    # ip-out can be repeated as long as each address is a different family.
    # The '=' is optional.
    #
-   # Example: Port 8080 IPv6 inbound transparent, and port 80 IPv4
+   # Example 1: Port 8080 IPv6 inbound transparent, and port 80 IPv4
    # "8080:ipv6:tr-in 80"
+   #
+   # Example 2: Listen on standard http and https ports for IPv4 and IPv6:
+   # "80:ipv4 80:ipv6 443:ipv4:ssl 443:ipv6:ssl"
+   #
 CONFIG proxy.config.http.server_ports STRING 8080
    # Ports on the origin server to which a blind tunnel may connect.
 CONFIG proxy.config.http.connect_ports STRING 443 563

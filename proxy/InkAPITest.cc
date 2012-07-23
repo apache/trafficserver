@@ -5119,7 +5119,26 @@ REGRESSION_TEST(SDK_API_TSMimeHdrParse) (RegressionTest * test, int atype, int *
 REGRESSION_TEST(SDK_API_TSUrlParse) (RegressionTest * test, int atype, int *pstatus)
 {
   NOWARN_UNUSED(atype);
-  const char *url = "http://abc:def@www.example.com:3426/homepage.cgi;ab?abc=def#abc";
+  static char const * const urls[] = {
+      "file:///test.dat;ab?abc=def#abc",
+      "http://www.example.com",
+      "http://abc:def@www.example.com",
+      "http://www.example.com:3426",
+      "http://abc:def@www.example.com:3426",
+      "http://www.example.com/homepage.cgi",
+      "http://www.example.com/homepage.cgi;ab?abc=def#abc",
+      "http://abc:def@www.example.com:3426/homepage.cgi;ab?abc=def#abc",
+      "https://abc:def@www.example.com:3426/homepage.cgi;ab?abc=def#abc",
+      "ftp://abc:def@www.example.com:3426/homepage.cgi;ab?abc=def#abc",
+      "file:///c:/test.dat;ab?abc=def#abc", // Note: file://c: is malformed URL because no host is present.
+      "file:///test.dat;ab?abc=def#abc",
+      "foo://bar.com/baz/"
+  };
+
+  static int const num_urls = sizeof(urls) / sizeof(urls[0]);
+  bool test_passed[num_urls] = {false};
+
+
   const char *start;
   const char *end;
   char *temp;
@@ -5128,47 +5147,57 @@ REGRESSION_TEST(SDK_API_TSUrlParse) (RegressionTest * test, int atype, int *psta
 
   TSMBuffer bufp;
   TSMLoc url_loc = (TSMLoc)NULL;
-  bool test_passed_parse_url = false;
   int length;
 
   *pstatus = REGRESSION_TEST_INPROGRESS;
 
 
-  bufp = TSMBufferCreate();
-  if (TSUrlCreate(bufp, &url_loc) != TS_SUCCESS) {
-    SDK_RPRINT(test, "TSUrlParse", "TestCase1", TC_FAIL, "Cannot create Url for parsing the url");
-    if (TSMBufferDestroy(bufp) == TS_ERROR) {
-      SDK_RPRINT(test, "TSUrlParse", "TestCase1", TC_FAIL, "Error in Destroying MBuffer");
-    }
-  } else {
-    start = url;
-    end = url + strlen(url) + 1;
-    if ((retval = TSUrlParse(bufp, url_loc, &start, end)) == TS_PARSE_ERROR) {
-      SDK_RPRINT(test, "TSUrlParse", "TestCase1", TC_FAIL, "TSUrlParse returns TS_PARSE_ERROR");
-    } else {
-      if (retval == TS_PARSE_DONE) {
-        temp = TSUrlStringGet(bufp, url_loc, &length);
-        if (strncmp(url, temp, length) == 0) {
-          SDK_RPRINT(test, "TSUrlParse", "TestCase1", TC_PASS, "ok");
-          test_passed_parse_url = true;
-        } else {
-          SDK_RPRINT(test, "TSUrlParse", "TestCase1", TC_FAIL, "Value's Mismatch");
-        }
-        TSfree(temp);
-      } else {
-        SDK_RPRINT(test, "TSHttpHdrParseReq", "TestCase1", TC_FAIL, "Parsing Error");
+  int idx;
+  for (idx = 0; idx < num_urls; idx++) {
+    char const *url = urls[idx];
+
+    bufp = TSMBufferCreate();
+    if (TSUrlCreate(bufp, &url_loc) != TS_SUCCESS) {
+      SDK_RPRINT(test, "TSUrlParse", url, TC_FAIL, "Cannot create Url for parsing the url");
+      if (TSMBufferDestroy(bufp) == TS_ERROR) {
+        SDK_RPRINT(test, "TSUrlParse", url, TC_FAIL, "Error in Destroying MBuffer");
       }
+    } else {
+      start = url;
+      end = url + strlen(url) + 1;
+      if ((retval = TSUrlParse(bufp, url_loc, &start, end)) == TS_PARSE_ERROR) {
+        SDK_RPRINT(test, "TSUrlParse", url, TC_FAIL, "TSUrlParse returns TS_PARSE_ERROR");
+      } else {
+        if (retval == TS_PARSE_DONE) {
+          temp = TSUrlStringGet(bufp, url_loc, &length);
+          if (strncmp(url, temp, length) == 0) {
+            SDK_RPRINT(test, "TSUrlParse", url, TC_PASS, "ok");
+            test_passed[idx] = true;
+          } else {
+            SDK_RPRINT(test, "TSUrlParse", url, TC_FAIL, "Value's Mismatch");
+          }
+          TSfree(temp);
+        } else {
+          SDK_RPRINT(test, "TSUrlParse", url, TC_FAIL, "Parsing Error");
+        }
+      }
+    }
+
+    TSHandleMLocRelease(bufp, TS_NULL_MLOC, url_loc);
+    TSMBufferDestroy(bufp);
+  }
+
+  for (idx = 0; idx < num_urls; idx++) {
+    if (test_passed[idx] != true) {
+      *pstatus = REGRESSION_TEST_FAILED;
+      break;
     }
   }
 
-  if (test_passed_parse_url != true) {
-    *pstatus = REGRESSION_TEST_FAILED;
-  } else {
+  if (idx >= num_urls) {
     *pstatus = REGRESSION_TEST_PASSED;
   }
 
-  TSHandleMLocRelease(bufp, TS_NULL_MLOC, url_loc);
-  TSMBufferDestroy(bufp);
 
   return;
 }
