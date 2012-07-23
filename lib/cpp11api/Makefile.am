@@ -1,4 +1,4 @@
-# lib Makefile.am
+# Makefile.am for C++11 API
 #
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
@@ -16,13 +16,13 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-SUBDIRS = ts records
+AM_CPPFLAGS = -I$(top_srcdir)/proxy/api/ts -std=c++11
+  
+lib_LTLIBRARIES = libatscpp11api.la
 
-# TsConfig is only built for WCCP until the bugs are worked out.
-if BUILD_WCCP
-SUBDIRS += tsconfig wccp
-endif
-
-if BUILD_CPP11API
-SUBDIRS += cpp11api
-endif
+libatscpp11api_la_SOURCES = \
+  cpp11api.cc
+  
+includedir=$(prefix)/include/ts
+include_HEADERS = \
+  ts-cpp11.h

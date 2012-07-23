@@ -288,6 +288,20 @@ TS_ARG_ENABLE_VAR([has],[wccp])
 AC_SUBST(has_wccp)
 AM_CONDITIONAL([BUILD_WCCP], [test 0 -ne $has_wccp])
 
+#
+# CPP 11 API
+#
+AC_MSG_CHECKING([whether to enable c++11 api])
+AC_ARG_WITH([cpp11api],
+  [AS_HELP_STRING([--with-cpp11api],[enable support for cpp11api [default=no]])],
+  [cpp11api=$withval],
+  [cpp11api=no]
+)
+AC_MSG_RESULT([$cpp11api])
+AM_CONDITIONAL([BUILD_CPP11API], [test "$cpp11api" = yes])
+
+
+
 # Google profiler
 AC_MSG_CHECKING([whether to enable profiler])
 AC_ARG_WITH([profiler],
@@ -1485,6 +1499,7 @@ AC_CONFIG_FILES([iocore/utils/Makefile])
 AC_CONFIG_FILES([lib/Makefile])
 AC_CONFIG_FILES([lib/ts/Makefile])
 AC_CONFIG_FILES([lib/records/Makefile])
+AC_CONFIG_FILES([lib/cpp11api/Makefile])
 AC_CONFIG_FILES([lib/tsconfig/Makefile])
 AC_CONFIG_FILES([Makefile])
 AC_CONFIG_FILES([proxy/config/body_factory/default/Makefile])
