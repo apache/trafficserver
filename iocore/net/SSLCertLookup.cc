@@ -52,7 +52,7 @@ class SSLContextStorage
   {
     explicit SslEntry(SSL_CTX * c) : ctx(c) {}
 
-    void Print() const { printf("%p/%p", this, ctx); }
+    void Print() const { Debug("ssl", "SslEntry=%p SSL_CTX=%p", this, ctx); }
 
     SSL_CTX * ctx;
     LINK(SslEntry, link);
@@ -500,7 +500,7 @@ SSLContextStorage::insert(SSL_CTX * ctx, const char * name)
       return false;
     }
 
-    Debug("indexed wildcard certificate for '%s' as '%s'", name, reversed);
+    Debug("ssl", "indexed wildcard certificate for '%s' as '%s' with SSL_CTX %p", name, reversed, ctx);
     return this->wildcards.Insert(reversed, new SslEntry(ctx), 0 /* rank */, -1 /* keylen */);
   } else {
     ink_hash_table_insert(this->hostnames, name, (void *)ctx);
@@ -529,7 +529,8 @@ SSLContextStorage::lookup(const char * name) const
       return NULL;
     }
 
-    entry = this->wildcards.Search(reversed);
+    Debug("ssl", "attempting wildcard match for %s", reversed);
+    entry = this->wildcards.Search(reversed, strlen(reversed) + 1);
     if (entry) {
       return entry->ctx;
     }
@@ -548,6 +549,7 @@ REGRESSION_TEST(SslHostLookup)(RegressionTest* t, int atype, int * pstatus)
 
   SSL_CTX * wild = SSL_CTX_new(methods);
   SSL_CTX * notwild = SSL_CTX_new(methods);
+  SSL_CTX * b_notwild = SSL_CTX_new(methods);
   SSL_CTX * foo = SSL_CTX_new(methods);
 
   *pstatus = REGRESSION_TEST_PASSED;
@@ -555,6 +557,7 @@ REGRESSION_TEST(SslHostLookup)(RegressionTest* t, int atype, int * pstatus)
   tb.check(storage.insert(foo, "www.foo.com"), "insert host context");
   tb.check(storage.insert(wild, "*.wild.com"), "insert wildcard context");
   tb.check(storage.insert(notwild, "*.notwild.com"), "insert wildcard context");
+  tb.check(storage.insert(b_notwild, "*.b.notwild.com"), "insert wildcard context");
 
   // Basic wildcard cases.
   tb.check(storage.lookup("a.wild.com") == wild, "wildcard lookup for a.wild.com");
@@ -564,6 +567,7 @@ REGRESSION_TEST(SslHostLookup)(RegressionTest* t, int atype, int * pstatus)
   // Varify that wildcard does longest match.
   tb.check(storage.lookup("a.notwild.com") == notwild, "wildcard lookup for a.notwild.com");
   tb.check(storage.lookup("notwild.com") == notwild, "wildcard lookup for notwild.com");
+  tb.check(storage.lookup("c.b.notwild.com") == b_notwild, "wildcard lookup for c.b.notwild.com");
 
   // Basic hostname cases.
   tb.check(storage.lookup("www.foo.com") == foo, "host lookup for www.foo.com");

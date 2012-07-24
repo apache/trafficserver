@@ -1,5 +1,7 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.3.0
+  *) [TS-1380] SSL wildcard lookup doesn't find the longest match
+
   *) [TS-1315] Fix URL parsing to handle non-HTTP schemes correctly.
 
   *) [TS-1322] CONNECT to parent proxy has URL with a trailing slash
