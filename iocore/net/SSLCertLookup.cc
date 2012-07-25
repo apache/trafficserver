@@ -530,7 +530,7 @@ SSLContextStorage::lookup(const char * name) const
     }
 
     Debug("ssl", "attempting wildcard match for %s", reversed);
-    entry = this->wildcards.Search(reversed, strlen(reversed) + 1);
+    entry = this->wildcards.Search(reversed);
     if (entry) {
       return entry->ctx;
     }
