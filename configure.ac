@@ -546,10 +546,16 @@ AS_IF([test -n "$YACC"],
         $AWK "{ if (\\$1 > $BISON_MAJOR || (\\$1 == $BISON_MAJOR && (\\$2 > $BISON_MINOR || (\\$2 == $BISON_MINOR && (NR == 2 || \\$3 >= $BISON_POINT))))) print \"yes\"; else printf(\"version %d.%d.%d\",\\$1,\\$2,\\$3); }" FS=. \
         `
         AS_IF([test "x$bison_version_check" != "xyes"],
-          [YACC='']
+          [ YACC=''
+	    AS_IF([test -z "$bison_version_check"],
+	      [bison_version_check='no version data']
+	    )
+	  ]
         )
       ],
-      [YACC='']
+      [ YACC=''
+        bison_version_check="nothing"
+      ]
 )
 # Check lex/flex by hand because we need flex of a sufficient version.
 FLEX_MAJOR=2
@@ -564,10 +570,16 @@ AS_IF([test -n "$LEX"],
         $AWK "{ if (\\$1 > $FLEX_MAJOR || (\\$1 == $FLEX_MAJOR && (\\$2 > $FLEX_MINOR || (\\$2 == $FLEX_MINOR && (NR == 2 || \\$3 >= $FLEX_POINT))))) print \"yes\"; else printf(\"version %d.%d.%d\",\\$1,\\$2,\\$3); }" FS=. \
         `
         AS_IF([test "x$flex_version_check" != "xyes"],
-          [LEX='']
+          [ LEX=''
+	    AS_IF([test -z "$flex_version_check"],
+	      [flex_version_check='no version data']
+	    )
+	  ]
         )
       ],
-      [LEX='']
+      [ LEX=''
+        flex_version_check="nothing"
+      ]
 )
 
 AS_IF([test "x$enable_wccp" = "xyes"],
