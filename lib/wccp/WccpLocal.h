@@ -1563,12 +1563,6 @@ public:
   Bucket const& bucket(
     int idx ///< Index of target bucket.
   ) const;
-  /** Compare a set of buckets.
-      @return @c true if the buckets are the same, @c false otherwise.
-  */
-  bool compare(
-    Bucket const buckets[N_BUCKETS] ///< Buckets to compare.
-  ) const;
   //@}
 
   /// Fill out the component from an @c Assignment.
@@ -3450,10 +3444,6 @@ CompWithHeader<T>::checkHeader(MsgBuffer const& buffer, CompType ect) {
 
 inline AssignInfoComp::Bucket& AssignInfoComp::bucket(int idx) { return m_buckets[idx]; }
 inline AssignInfoComp::Bucket const& AssignInfoComp::bucket(int idx) const{ return m_buckets[idx]; }
-inline bool AssignInfoComp::compare(Bucket const buckets[N_BUCKETS]) const {
-  return 0 == memcmp(buckets, m_buckets, sizeof(m_buckets));
-}
-
 inline RouterViewComp::RouterViewComp()
   : m_cache_count(0) {
   memset(m_cache_ids, 0, sizeof(m_cache_ids));
