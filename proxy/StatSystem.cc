@@ -522,7 +522,7 @@ initialize_all_global_stats()
 
   // TODO: HMMMM, wtf does this do? The following is that this 
   // function does:
-  // ink_atomic_swap_ptr(&this->f_update_lock, (void *) func)
+  // ink_atomic_swap(&this->f_update_lock, (void *) func)
   //
   // pmgmt->record_data->registerUpdateLockFunc(tmp_stats_lock_function);
 
@@ -577,7 +577,7 @@ dyn_stats_count_cb(void *data, void *res)
   READ_DYN_STAT((long) data, count, sum);
   NOWARN_UNUSED(sum);
   //*(ink_statval_t *)res = count;
-  ink_atomic_swap64((ink_statval_t *) res, count);
+  ink_atomic_swap((ink_statval_t *) res, count);
   return res;
 }
 
@@ -588,7 +588,7 @@ dyn_stats_sum_cb(void *data, void *res)
   READ_DYN_STAT((long) data, count, sum);
   NOWARN_UNUSED(count);
   //*(ink_statval_t *)res = sum;
-  ink_atomic_swap64((ink_statval_t *) res, sum);
+  ink_atomic_swap((ink_statval_t *) res, sum);
   return res;
 }
 
@@ -702,7 +702,7 @@ http_trans_stats_count_cb(void *data, void *res)
   READ_HTTP_TRANS_STAT((long) data, count, sum);
   NOWARN_UNUSED(sum);
   //*(ink_statval_t *)res = count;
-  ink_atomic_swap64((ink_statval_t *) res, count);
+  ink_atomic_swap((ink_statval_t *) res, count);
   return res;
 }
 
@@ -713,7 +713,7 @@ http_trans_stats_sum_cb(void *data, void *res)
   READ_HTTP_TRANS_STAT((long) data, count, sum);
   NOWARN_UNUSED(count);
   //*(ink_statval_t *)res = sum;
-  ink_atomic_swap64((ink_statval_t *) res, sum);
+  ink_atomic_swap((ink_statval_t *) res, sum);
   return res;
 }
 

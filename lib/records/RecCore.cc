@@ -97,7 +97,7 @@ link_int(const char *name, RecDataT data_type, RecData data, void *cookie)
   REC_NOWARN_UNUSED(name);
   REC_NOWARN_UNUSED(data_type);
   RecInt *rec_int = (RecInt *) cookie;
-  ink_atomic_swap64(rec_int, data.rec_int);
+  ink_atomic_swap(rec_int, data.rec_int);
   return REC_ERR_OKAY;
 }
 
@@ -134,7 +134,7 @@ link_counter(const char *name, RecDataT data_type, RecData data, void *cookie)
   REC_NOWARN_UNUSED(name);
   REC_NOWARN_UNUSED(data_type);
   RecCounter *rec_counter = (RecCounter *) cookie;
-  ink_atomic_swap64(rec_counter, data.rec_counter);
+  ink_atomic_swap(rec_counter, data.rec_counter);
   return REC_ERR_OKAY;
 }
 
@@ -148,7 +148,7 @@ link_byte(const char *name, RecDataT data_type, RecData data, void *cookie)
   RecByte *rec_byte = (RecByte *) cookie;
   RecByte byte = static_cast<RecByte>(data.rec_int);
 
-  ink_atomic_swap8(rec_byte, byte);
+  ink_atomic_swap(rec_byte, byte);
   return REC_ERR_OKAY;
 }
 
@@ -188,7 +188,7 @@ RecCoreInit(RecModeT mode_type, Diags *_diags)
   }
 
   // set our diags
-  ink_atomic_swap_ptr(&g_diags, _diags);
+  ink_atomic_swap(&g_diags, _diags);
 
   g_records_tree = new RecTree(NULL);
   g_num_records = 0;
@@ -251,7 +251,7 @@ RecSetDiags(Diags * _diags)
 {
   // Warning! It's very dangerous to change diags on the fly!  This
   // function only exists so that we can boot-strap TM on startup.
-  ink_atomic_swap_ptr(&g_diags, _diags);
+  ink_atomic_swap(&g_diags, _diags);
   return REC_ERR_OKAY;
 }
 

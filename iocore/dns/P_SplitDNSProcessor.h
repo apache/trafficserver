@@ -108,8 +108,8 @@ public:
   void release(unsigned int id, SplitDNSConfigInfo * data);
 
 public:
-  volatile SplitDNSConfigInfo *infos[MAX_CONFIGS];
-  volatile int ninfos;
+  SplitDNSConfigInfo *infos[MAX_CONFIGS];
+  int ninfos;
 };
 
 

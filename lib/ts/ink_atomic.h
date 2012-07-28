@@ -50,12 +50,14 @@ typedef volatile int8_t vint8;
 typedef volatile int16_t vint16;
 typedef volatile int32_t vint32;
 typedef volatile int64_t vint64;
+typedef volatile long vlong;
 typedef volatile void *vvoidp;
 
 typedef vint8 *pvint8;
 typedef vint16 *pvint16;
 typedef vint32 *pvint32;
 typedef vint64 *pvint64;
+typedef vlong *pvlong;
 typedef vvoidp *pvvoidp;
 
 // Sun/Solaris and the SunPRO compiler
@@ -76,51 +78,58 @@ typedef vuint64_s *pvuint64_s;
 
 #include <atomic.h>
 
-static inline int8_t ink_atomic_swap8(pvint8 mem, int8_t value) { return (int8_t)atomic_swap_8((pvuint8)mem, (uint8_t)value); }
-static inline int16_t ink_atomic_swap16(pvint16 mem, int16_t value) { return (int16_t)atomic_swap_16((pvuint16)mem, (uint16_t)value); }
-static inline int32_t ink_atomic_swap32(pvint32 mem, int32_t value) { return (int32_t)atomic_swap_32((pvuint32)mem, (uint32_t)value); }
-
+static inline int8_t  ink_atomic_swap(pvint8 mem, int8_t value) { return (int8_t)atomic_swap_8((pvuint8)mem, (uint8_t)value); }
+static inline int16_t ink_atomic_swap(pvint16 mem, int16_t value) { return (int16_t)atomic_swap_16((pvuint16)mem, (uint16_t)value); }
 static inline int32_t ink_atomic_swap(pvint32 mem, int32_t value) { return (int32_t)atomic_swap_32((pvuint32)mem, (uint32_t)value); }
-static inline int64_t ink_atomic_swap64(pvint64 mem, int64_t value) { return (int64_t)atomic_swap_64((pvuint64_s)mem, (uint64_s)value); }
-static inline void *ink_atomic_swap_ptr(vvoidp mem, void *value) { return atomic_swap_ptr((vvoidp)mem, value); }
+static inline int64_t ink_atomic_swap(pvint64 mem, int64_t value) { return (int64_t)atomic_swap_64((pvuint64_s)mem, (uint64_s)value); }
+static inline void *  ink_atomic_swap(vvoidp mem, void *value) { return atomic_swap_ptr((vvoidp)mem, value); }
 
 static inline int ink_atomic_cas(pvint32 mem, int old, int new_value) { return atomic_cas_32((pvuint32)mem, (uint32_t)old, (uint32_t)new_value) == old; }
-static inline int ink_atomic_cas64(pvint64 mem, int64_t old, int64_t new_value) { return atomic_cas_64((pvuint64_s)mem, (uint64_s)old, (uint64_s)new_value) == old; }
-static inline int ink_atomic_cas_ptr(pvvoidp mem, void* old, void* new_value) { return atomic_cas_ptr((vvoidp)mem, old, new_value) == old; }
-static inline int ink_atomic_increment(pvint32 mem, int value) { return ((uint32_t)atomic_add_32_nv((pvuint32)mem, (uint32_t)value)) - value; }
-static inline int64_t ink_atomic_increment64(pvint64 mem, int64_t value) { return ((uint64_s)atomic_add_64_nv((pvuint64_s)mem, (uint64_s)value)) - value; }
-static inline void *ink_atomic_increment_ptr(pvvoidp mem, intptr_t value) { return (void*)(((char*)atomic_add_ptr_nv((vvoidp)mem, (ssize_t)value)) - value); }
+static inline int ink_atomic_cas(pvint64 mem, int64_t old, int64_t new_value) { return atomic_cas_64((pvuint64_s)mem, (uint64_s)old, (uint64_s)new_value) == old; }
+static inline int ink_atomic_cas(pvvoidp mem, void* old, void* new_value) { return atomic_cas_ptr((vvoidp)mem, old, new_value) == old; }
+
+static inline int     ink_atomic_increment(pvint32 mem, int value) { return ((uint32_t)atomic_add_32_nv((pvuint32)mem, (uint32_t)value)) - value; }
+static inline int64_t ink_atomic_increment(pvint64 mem, int64_t value) { return ((uint64_s)atomic_add_64_nv((pvuint64_s)mem, (uint64_s)value)) - value; }
+static inline void *  ink_atomic_increment(pvvoidp mem, intptr_t value) { return (void*)(((char*)atomic_add_ptr_nv((vvoidp)mem, (ssize_t)value)) - value); }
 
 /* not used for Intel Processors or Sparc which are mostly sequentally consistent */
 #define INK_WRITE_MEMORY_BARRIER
 #define INK_MEMORY_BARRIER
 
-#else /* ! defined(__SUNPRO_CC) */
-
 /* GCC compiler >= 4.1 */
-#if defined(__GNUC__) && (__GNUC__ >= 4) && (__GNUC_MINOR__ >= 1)
+#elif defined(__GNUC__) && (__GNUC__ >= 4) && (__GNUC_MINOR__ >= 1)
 
 /* see http://gcc.gnu.org/onlinedocs/gcc-4.1.2/gcc/Atomic-Builtins.html */
 
-static inline int8_t ink_atomic_swap8(pvint8 mem, int8_t value) { return __sync_lock_test_and_set(mem, value); }
-static inline int16_t ink_atomic_swap16(pvint16 mem, int16_t value) { return __sync_lock_test_and_set(mem, value); }
-static inline int32_t ink_atomic_swap32(pvint32 mem, int32_t value) { return __sync_lock_test_and_set(mem, value); }
+// ink_atomic_swap(ptr, value)
+// Writes @value into @ptr, returning the previous value.
+template <typename T> static inline T
+ink_atomic_swap(volatile T * mem, T value) {
+  return __sync_lock_test_and_set(mem, value);
+}
 
-static inline int32_t ink_atomic_swap(pvint32 mem, int32_t value) { return __sync_lock_test_and_set(mem, value); }
-static inline void *ink_atomic_swap_ptr(vvoidp mem, void *value) { return __sync_lock_test_and_set((void**)mem, value); }
+// ink_atomic_cas(mem, prev, next)
+// Atomically store the value @next into the pointer @mem, but only if the current value at @mem is @prev.
+// Returns true if @next was successfully stored.
+template <typename T> static inline bool
+ink_atomic_cas(volatile T * mem, T prev, T next) {
+  return __sync_bool_compare_and_swap(mem, prev, next);
+}
 
-static inline int ink_atomic_cas(pvint32 mem, int old, int new_value) { return __sync_bool_compare_and_swap(mem, old, new_value); }
-static inline int ink_atomic_cas_ptr(pvvoidp mem, void* old, void* new_value) { return __sync_bool_compare_and_swap(mem, old, new_value); }
-
-static inline int ink_atomic_increment(pvint32 mem, int value) { return __sync_fetch_and_add(mem, value); }
-static inline void *ink_atomic_increment_ptr(pvvoidp mem, intptr_t value) { return __sync_fetch_and_add((void**)mem, (void*)value); }
+// ink_atomic_increment(ptr, count)
+// Increment @ptr by @count, returning the previous value.
+template <typename Type, typename Amount> static inline Type
+ink_atomic_increment(volatile Type * mem, Amount count) {
+  return __sync_fetch_and_add(mem, (Type)count);
+}
 
 // Special hacks for ARM 32-bit
 #if defined(__arm__) && (SIZEOF_VOIDP == 4)
 extern ProcessMutex __global_death;
 
+template<>
 static inline int64_t
-ink_atomic_swap64(pvint64 mem, int64_t value) {
+ink_atomic_swap<int64_t>(pvint64 mem, int64_t value) {
   int64_t old;
   ink_mutex_acquire(&__global_death);
   old = *mem;
@@ -128,8 +137,10 @@ ink_atomic_swap64(pvint64 mem, int64_t value) {
   ink_mutex_release(&__global_death);
   return old;
 }
+
+template<>
 static inline int64_t
-ink_atomic_cas64(pvint64 mem, int64_t old, int64_t new_value) {
+ink_atomic_cas<int64_t>(pvint64 mem, int64_t old, int64_t new_value) {
   int64_t curr;
   ink_mutex_acquire(&__global_death);
   curr = *mem;
@@ -138,8 +149,10 @@ ink_atomic_cas64(pvint64 mem, int64_t old, int64_t new_value) {
   if(old == curr) return 1;
   return 0;
 }
+
+template<>
 static inline int64_t
-ink_atomic_increment64(pvint64 mem, int64_t value) {
+ink_atomic_increment<int64_t>(pvint64 mem, int64_t value) {
   int64_t curr;
   ink_mutex_acquire(&__global_death);
   curr = *mem;
@@ -148,10 +161,6 @@ ink_atomic_increment64(pvint64 mem, int64_t value) {
   return curr + value;
 }
 
-#else /* Intel 64-bit operations */
-static inline int64_t ink_atomic_swap64(pvint64 mem, int64_t value) { return __sync_lock_test_and_set(mem, value); }
-static inline int64_t ink_atomic_cas64(pvint64 mem, int64_t old, int64_t new_value) { return __sync_bool_compare_and_swap(mem, old, new_value); }
-static inline int64_t ink_atomic_increment64(pvint64 mem, int64_t value) { return __sync_fetch_and_add(mem, value); }
 #endif
 
 /* not used for Intel Processors which have sequential(esque) consistency */
@@ -161,7 +170,5 @@ static inline int64_t ink_atomic_increment64(pvint64 mem, int64_t value) { retur
 #else /* not gcc > v4.1.2 */
 #error Need a compiler / libc that supports atomic operations, e.g. gcc v4.1.2 or later
 #endif 
-
-#endif /* SunPRO CC */
 
 #endif                          /* _ink_atomic_h_ */

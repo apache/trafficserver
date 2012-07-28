@@ -389,8 +389,8 @@ mutex->thread_holding->global_dyn_stats[X].count ++; \
 mutex->thread_holding->global_dyn_stats[X].sum += (S)
 
 #define ADD_TO_GLOBAL_GLOBAL_DYN_SUM(X,S) \
-ink_atomic_increment64(&global_dyn_stats[X].count,(ink_statval_t)1); \
-ink_atomic_increment64(&global_dyn_stats[X].sum,S)
+ink_atomic_increment(&global_dyn_stats[X].count,(ink_statval_t)1); \
+ink_atomic_increment(&global_dyn_stats[X].sum,S)
 /*
  * global_dyn_stats[X].count ++; \
  * global_dyn_stats[X].sum += (S)
@@ -450,18 +450,18 @@ global_dyn_stats[X].sum = S
 #else
 
 #define ADD_TO_GLOBAL_DYN_COUNT(X,C) \
-ink_atomic_increment64(&global_dyn_stats[X].count,C)
+ink_atomic_increment(&global_dyn_stats[X].count,C)
 
 #define ADD_TO_GLOBAL_DYN_SUM(X,S) \
-ink_atomic_increment64(&global_dyn_stats[X].count,(ink_statval_t)1); \
-ink_atomic_increment64(&global_dyn_stats[X].sum,S)
+ink_atomic_increment(&global_dyn_stats[X].count,(ink_statval_t)1); \
+ink_atomic_increment(&global_dyn_stats[X].sum,S)
 
 #define ADD_TO_GLOBAL_GLOBAL_DYN_SUM(X,S) \
-ink_atomic_increment64(&global_dyn_stats[X].count,(ink_statval_t)1); \
-ink_atomic_increment64(&global_dyn_stats[X].sum,S)
+ink_atomic_increment(&global_dyn_stats[X].count,(ink_statval_t)1); \
+ink_atomic_increment(&global_dyn_stats[X].sum,S)
 
 #define ADD_TO_GLOBAL_DYN_FSUM(X,S) \
-ink_atomic_increment64(&global_dyn_stats[X].count,(ink_statval_t)1); \
+ink_atomic_increment(&global_dyn_stats[X].count,(ink_statval_t)1); \
 (*(double *)&global_dyn_stats[X].sum) += S
 
 #define CLEAR_GLOBAL_DYN_STAT(X) \

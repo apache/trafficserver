@@ -174,7 +174,7 @@ private:
 inline bool
 AbstractBuffer::switch_state(VolatileState & old_vs, VolatileState & new_vs)
 {
-  if (ink_atomic_cas64((int64_t *) & vs.ival, old_vs.ival, new_vs.ival)) {
+  if (ink_atomic_cas((int64_t *) & vs.ival, old_vs.ival, new_vs.ival)) {
     return true;
   }
 

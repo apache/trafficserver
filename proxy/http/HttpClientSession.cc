@@ -195,7 +195,7 @@ HttpClientSession::new_connection(NetVConnection * new_vc, bool backdoor)
   this->backdoor_connect = backdoor;
 
   // Unique client session identifier.
-  con_id = ink_atomic_increment64((int64_t *) (&next_cs_id), 1);
+  con_id = ink_atomic_increment((int64_t *) (&next_cs_id), 1);
 
   HTTP_INCREMENT_DYN_STAT(http_current_client_connections_stat);
   conn_decrease = true;

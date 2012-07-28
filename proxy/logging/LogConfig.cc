@@ -760,7 +760,7 @@ LogConfig::init(LogConfig * prev_config)
         new_elog = 0;
       }
     }
-    ink_atomic_swap_ptr((void *) &Log::error_log, new_elog);
+    ink_atomic_swap(&Log::error_log, new_elog);
     if (old_elog) {
       old_elog->force_new_buffer();
       Log::add_to_inactive(old_elog);

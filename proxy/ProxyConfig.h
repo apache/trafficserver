@@ -74,8 +74,8 @@ public:
   void release(unsigned int id, ConfigInfo * data);
 
 public:
-  volatile ConfigInfo *infos[MAX_CONFIGS];
-  volatile int ninfos;
+  ConfigInfo *infos[MAX_CONFIGS];
+  int ninfos;
 };
 
 

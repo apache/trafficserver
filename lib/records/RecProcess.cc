@@ -122,12 +122,12 @@ raw_stat_sync_to_global(RecRawStatBlock *rsb, int id)
   //rsb, id, delta.sum, total.sum, rsb->global[id]->last_sum, rsb->global[id]->sum);
 
   // increment the global values by the delta
-  ink_atomic_increment64(&(rsb->global[id]->sum), delta.sum);
-  ink_atomic_increment64(&(rsb->global[id]->count), delta.count);
+  ink_atomic_increment(&(rsb->global[id]->sum), delta.sum);
+  ink_atomic_increment(&(rsb->global[id]->count), delta.count);
 
   // set the new totals as the last values seen
-  ink_atomic_swap64(&(rsb->global[id]->last_sum), total.sum);
-  ink_atomic_swap64(&(rsb->global[id]->last_count), total.count);
+  ink_atomic_swap(&(rsb->global[id]->last_sum), total.sum);
+  ink_atomic_swap(&(rsb->global[id]->last_count), total.count);
 
   ink_mutex_release(&(rsb->mutex));
 
@@ -146,15 +146,15 @@ raw_stat_clear_sum(RecRawStatBlock *rsb, int id)
   // the globals need to be reset too
   // lock so the setting of the globals and last values are atomic
   ink_mutex_acquire(&(rsb->mutex));
-  ink_atomic_swap64(&(rsb->global[id]->sum), 0);
-  ink_atomic_swap64(&(rsb->global[id]->last_sum), 0);
+  ink_atomic_swap(&(rsb->global[id]->sum), (int64_t)0);
+  ink_atomic_swap(&(rsb->global[id]->last_sum), (int64_t)0);
   ink_mutex_release(&(rsb->mutex));
 
   // reset the local stats
   RecRawStat *tlp;
   for (int i = 0; i < eventProcessor.n_ethreads; i++) {
     tlp = ((RecRawStat *) ((char *) (eventProcessor.all_ethreads[i]) + rsb->ethr_stat_offset)) + id;
-    ink_atomic_swap64(&(tlp->sum), 0);
+    ink_atomic_swap(&(tlp->sum), (int64_t)0);
   }
   return REC_ERR_OKAY;
 }
@@ -171,15 +171,15 @@ raw_stat_clear_count(RecRawStatBlock *rsb, int id)
   // the globals need to be reset too
   // lock so the setting of the globals and last values are atomic
   ink_mutex_acquire(&(rsb->mutex));
-  ink_atomic_swap64(&(rsb->global[id]->count), 0);
-  ink_atomic_swap64(&(rsb->global[id]->last_count), 0);
+  ink_atomic_swap(&(rsb->global[id]->count), (int64_t)0);
+  ink_atomic_swap(&(rsb->global[id]->last_count), (int64_t)0);
   ink_mutex_release(&(rsb->mutex));
 
   // reset the local stats
   RecRawStat *tlp;
   for (int i = 0; i < eventProcessor.n_ethreads; i++) {
     tlp = ((RecRawStat *) ((char *) (eventProcessor.all_ethreads[i]) + rsb->ethr_stat_offset)) + id;
-    ink_atomic_swap64(&(tlp->count), 0);
+    ink_atomic_swap(&(tlp->count), (int64_t)0);
   }
   return REC_ERR_OKAY;
 }
@@ -606,7 +606,7 @@ int
 RecSetRawStatSum(RecRawStatBlock *rsb, int id, int64_t data)
 {
   raw_stat_clear_sum(rsb, id);
-  ink_atomic_swap64(&(rsb->global[id]->sum), data);
+  ink_atomic_swap(&(rsb->global[id]->sum), data);
   return REC_ERR_OKAY;
 }
 
@@ -614,7 +614,7 @@ int
 RecSetRawStatCount(RecRawStatBlock *rsb, int id, int64_t data)
 {
   raw_stat_clear_count(rsb, id);
-  ink_atomic_swap64(&(rsb->global[id]->count), data);
+  ink_atomic_swap(&(rsb->global[id]->count), data);
   return REC_ERR_OKAY;
 }
 
@@ -658,22 +658,22 @@ RecGetRawStatCount(RecRawStatBlock *rsb, int id, int64_t *data)
 int
 RecIncrGlobalRawStat(RecRawStatBlock *rsb, int id, int64_t incr)
 {
-  ink_atomic_increment64(&(rsb->global[id]->sum), incr);
-  ink_atomic_increment64(&(rsb->global[id]->count), 1);
+  ink_atomic_increment(&(rsb->global[id]->sum), incr);
+  ink_atomic_increment(&(rsb->global[id]->count), 1);
   return REC_ERR_OKAY;
 }
 
 int
 RecIncrGlobalRawStatSum(RecRawStatBlock *rsb, int id, int64_t incr)
 {
-  ink_atomic_increment64(&(rsb->global[id]->sum), incr);
+  ink_atomic_increment(&(rsb->global[id]->sum), incr);
   return REC_ERR_OKAY;
 }
 
 int
 RecIncrGlobalRawStatCount(RecRawStatBlock *rsb, int id, int64_t incr)
 {
-  ink_atomic_increment64(&(rsb->global[id]->count), incr);
+  ink_atomic_increment(&(rsb->global[id]->count), incr);
   return REC_ERR_OKAY;
 }
 
@@ -684,14 +684,14 @@ RecIncrGlobalRawStatCount(RecRawStatBlock *rsb, int id, int64_t incr)
 int
 RecSetGlobalRawStatSum(RecRawStatBlock *rsb, int id, int64_t data)
 {
-  ink_atomic_swap64(&(rsb->global[id]->sum), data);
+  ink_atomic_swap(&(rsb->global[id]->sum), data);
   return REC_ERR_OKAY;
 }
 
 int
 RecSetGlobalRawStatCount(RecRawStatBlock *rsb, int id, int64_t data)
 {
-  ink_atomic_swap64(&(rsb->global[id]->count), data);
+  ink_atomic_swap(&(rsb->global[id]->count), data);
   return REC_ERR_OKAY;
 }
 

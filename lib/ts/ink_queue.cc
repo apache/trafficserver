@@ -84,7 +84,7 @@ static ink_freelist_list *freelists = NULL;
 inkcoreapi volatile int64_t freelist_allocated_mem = 0;
 
 #define fl_memadd(_x_) \
-   ink_atomic_increment64(&freelist_allocated_mem, (int64_t) (_x_));
+   ink_atomic_increment(&freelist_allocated_mem, (int64_t) (_x_));
 
 
 void
@@ -172,7 +172,7 @@ ink_freelist_new(InkFreeList * f)
       SET_FREELIST_POINTER_VERSION(item, newp, 0);
 
       ink_atomic_increment((int *) &f->allocated, f->chunk_size);
-      ink_atomic_increment64(&fastalloc_mem_total, (int64_t) f->chunk_size * f->type_size);
+      ink_atomic_increment(&fastalloc_mem_total, (int64_t) f->chunk_size * f->type_size);
 
       /* free each of the new elements */
       for (i = 0; i < f->chunk_size; i++) {
@@ -193,12 +193,12 @@ ink_freelist_new(InkFreeList * f)
 
       }
       ink_atomic_increment((int *) &f->count, f->chunk_size);
-      ink_atomic_increment64(&fastalloc_mem_in_use, (int64_t) f->chunk_size * f->type_size);
+      ink_atomic_increment(&fastalloc_mem_in_use, (int64_t) f->chunk_size * f->type_size);
 
     } else {
       SET_FREELIST_POINTER_VERSION(next, *ADDRESS_OF_NEXT(TO_PTR(FREELIST_POINTER(item)), f->offset),
                                    FREELIST_VERSION(item) + 1);
-      result = ink_atomic_cas64((int64_t *) & f->head.data, item.data, next.data);
+      result = ink_atomic_cas((int64_t *) & f->head.data, item.data, next.data);
 
 #ifdef SANITY
       if (result) {
@@ -217,7 +217,7 @@ ink_freelist_new(InkFreeList * f)
   ink_assert(!((uintptr_t)TO_PTR(FREELIST_POINTER(item))&(((uintptr_t)f->alignment)-1)));
 
   ink_atomic_increment((int *) &f->count, 1);
-  ink_atomic_increment64(&fastalloc_mem_in_use, (int64_t) f->type_size);
+  ink_atomic_increment(&fastalloc_mem_in_use, (int64_t) f->type_size);
 
   return TO_PTR(FREELIST_POINTER(item));
 #else // ! TS_USE_FREELIST
@@ -267,12 +267,12 @@ ink_freelist_free(InkFreeList * f, void *item)
     *adr_of_next = FREELIST_POINTER(h);
     SET_FREELIST_POINTER_VERSION(item_pair, FROM_PTR(item), FREELIST_VERSION(h));
     INK_MEMORY_BARRIER;
-    result = ink_atomic_cas64((int64_t *) & f->head, h.data, item_pair.data);
+    result = ink_atomic_cas((int64_t *) & f->head, h.data, item_pair.data);
   }
   while (result == 0);
 
   ink_atomic_increment((int *) &f->count, -1);
-  ink_atomic_increment64(&fastalloc_mem_in_use, -(int64_t) f->type_size);
+  ink_atomic_increment(&fastalloc_mem_in_use, -(int64_t) f->type_size);
 #else
   if (f->alignment)
     ats_memalign_free(item);
@@ -378,7 +378,7 @@ ink_atomiclist_pop(InkAtomicList * l)
     SET_FREELIST_POINTER_VERSION(next, *ADDRESS_OF_NEXT(TO_PTR(FREELIST_POINTER(item)), l->offset),
                                  FREELIST_VERSION(item) + 1);
 #if !defined(INK_USE_MUTEX_FOR_ATOMICLISTS)
-    result = ink_atomic_cas64((int64_t *) & l->head.data, item.data, next.data);
+    result = ink_atomic_cas((int64_t *) & l->head.data, item.data, next.data);
 #else
     l->head.data = next.data;
     result = 1;
@@ -410,7 +410,7 @@ ink_atomiclist_popall(InkAtomicList * l)
       return NULL;
     SET_FREELIST_POINTER_VERSION(next, FROM_PTR(NULL), FREELIST_VERSION(item) + 1);
 #if !defined(INK_USE_MUTEX_FOR_ATOMICLISTS)
-    result = ink_atomic_cas64((int64_t *) & l->head.data, item.data, next.data);
+    result = ink_atomic_cas((int64_t *) & l->head.data, item.data, next.data);
 #else
     l->head.data = next.data;
     result = 1;
@@ -453,7 +453,7 @@ ink_atomiclist_push(InkAtomicList * l, void *item)
     SET_FREELIST_POINTER_VERSION(item_pair, FROM_PTR(item), FREELIST_VERSION(head));
     INK_MEMORY_BARRIER;
 #if !defined(INK_USE_MUTEX_FOR_ATOMICLISTS)
-    result = ink_atomic_cas64((int64_t *) & l->head, head.data, item_pair.data);
+    result = ink_atomic_cas((int64_t *) & l->head, head.data, item_pair.data);
 #else
     l->head.data = item_pair.data;
     result = 1;
@@ -487,7 +487,7 @@ ink_atomiclist_remove(InkAtomicList * l, void *item)
     head_p next;
     SET_FREELIST_POINTER_VERSION(next, item_next, FREELIST_VERSION(head) + 1);
 #if !defined(INK_USE_MUTEX_FOR_ATOMICLISTS)
-    result = ink_atomic_cas64((int64_t *) & l->head.data, head.data, next.data);
+    result = ink_atomic_cas((int64_t *) & l->head.data, head.data, next.data);
 #else
     l->head.data = next.data;
     result = 1;

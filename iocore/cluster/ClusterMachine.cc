@@ -154,7 +154,7 @@ ClusterHandler *ClusterMachine::pop_ClusterHandler(int no_rr)
 {
   int64_t now = rr_count;
   if (no_rr == 0)
-    ink_atomic_increment64(&rr_count, 1);
+    ink_atomic_increment(&rr_count, 1);
   return this->clusterHandlers[now % this->num_connections];
 }
 

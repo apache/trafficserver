@@ -143,7 +143,7 @@ IpAllow::ReloadInstance() {
   new_table = NEW(new self("proxy.config.cache.ip_allow.filename", "IpAllow", "ip_allow"));
   new_table->BuildTable();
 
-  ink_atomic_swap_ptr(_instance, new_table);
+  ink_atomic_swap(&_instance, new_table);
 }
 
 //

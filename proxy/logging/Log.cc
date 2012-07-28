@@ -124,7 +124,7 @@ Log::change_configuration()
 
   // Swap in the new config object
   //
-  ink_atomic_swap_ptr((void *) &Log::config, new_config);
+  ink_atomic_swap(&Log::config, new_config);
 
   // Force new buffers for inactive objects
   //

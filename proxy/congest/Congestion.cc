@@ -433,7 +433,7 @@ reloadCongestionControl()
   newTable->Print();
 #endif
   new_Deleter(CongestionMatcher, t);
-  ink_atomic_swap_ptr(&CongestionMatcher, newTable);
+  ink_atomic_swap(&CongestionMatcher, newTable);
   if (congestionControlEnabled) {
     revalidateCongestionDB();
   }

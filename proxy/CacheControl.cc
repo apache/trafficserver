@@ -175,7 +175,7 @@ reloadCacheControl()
   Debug("cache_control", "cache.config updated, reloading");
   eventProcessor.schedule_in(NEW(new CC_FreerContinuation(CacheControlTable)), CACHE_CONTROL_TIMEOUT, ET_CACHE);
   newTable = NEW(new CC_table("proxy.config.cache.control.filename", modulePrefix, &http_dest_tags));
-  ink_atomic_swap_ptr(&CacheControlTable, newTable);
+  ink_atomic_swap(&CacheControlTable, newTable);
 }
 
 void

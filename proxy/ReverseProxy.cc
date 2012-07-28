@@ -191,7 +191,7 @@ reloadUrlRewrite()
   if (newTable->is_valid()) {
     eventProcessor.schedule_in(new UR_FreerContinuation(rewrite_table), URL_REWRITE_TIMEOUT, ET_TASK);
     Debug("url_rewrite", "remap.config done reloading!");
-    ink_atomic_swap_ptr(&rewrite_table, newTable);
+    ink_atomic_swap(&rewrite_table, newTable);
   } else {
     static const char* msg = "failed to reload remap.config, not replacing!";
     delete newTable;

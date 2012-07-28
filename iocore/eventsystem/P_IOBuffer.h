@@ -150,10 +150,10 @@ iobuffer_mem_inc(const char *_loc, int64_t _size_index)
   Resource *res = res_lookup(_loc);
   ink_debug_assert(strcmp(_loc, res->path) == 0);
 #ifdef DEBUG  
-  int64_t r = ink_atomic_increment64(&res->value, index_to_buffer_size(_size_index));
+  int64_t r = ink_atomic_increment(&res->value, index_to_buffer_size(_size_index));
   ink_debug_assert(r >= 0);
 #else
-  ink_atomic_increment64(&res->value, index_to_buffer_size(_size_index));
+  ink_atomic_increment(&res->value, index_to_buffer_size(_size_index));
 #endif
 }
 
@@ -170,10 +170,10 @@ iobuffer_mem_dec(const char *_loc, int64_t _size_index)
   Resource *res = res_lookup(_loc);
   ink_debug_assert(strcmp(_loc, res->path) == 0);
 #ifdef DEBUG  
-  int64_t r = ink_atomic_increment64(&res->value, -index_to_buffer_size(_size_index));
+  int64_t r = ink_atomic_increment(&res->value, -index_to_buffer_size(_size_index));
   ink_debug_assert(r >= index_to_buffer_size(_size_index));
 #else
-  ink_atomic_increment64(&res->value, -index_to_buffer_size(_size_index));
+  ink_atomic_increment(&res->value, -index_to_buffer_size(_size_index));
 #endif
 }
 #endif

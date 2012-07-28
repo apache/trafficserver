@@ -635,8 +635,8 @@ SplitDNSConfigProcessor::set(unsigned int id, SplitDNSConfigInfo * info)
   idx = id - 1;
 
   do {
-    old_info = (SplitDNSConfigInfo *) infos[idx];
-  } while (!ink_atomic_cas_ptr((pvvoidp) & infos[idx], old_info, info));
+    old_info = infos[idx];
+  } while (!ink_atomic_cas( &infos[idx], old_info, info));
 
   if (old_info) {
     eventProcessor.schedule_in(NEW(new SplitDNSConfigInfoReleaser(id, old_info)), HRTIME_SECONDS(60));

@@ -71,14 +71,14 @@ typedef vvoidp *pvvoidp;
 
 /* see http://gcc.gnu.org/onlinedocs/gcc-4.1.2/gcc/Atomic-Builtins.html */
 static inline int32 ink_atomic_swap(pvint32 mem, int32 value) { return __sync_lock_test_and_set(mem, value); }
-static inline int64 ink_atomic_swap64(pvint64 mem, int64 value) { return __sync_lock_test_and_set(mem, value); }
-static inline void *ink_atomic_swap_ptr(vvoidp mem, void *value) { return __sync_lock_test_and_set((void**)mem, value); }
+static inline int64 ink_atomic_swap(pvint64 mem, int64 value) { return __sync_lock_test_and_set(mem, value); }
+static inline void *ink_atomic_swap(vvoidp mem, void *value) { return __sync_lock_test_and_set((void**)mem, value); }
 static inline int ink_atomic_cas(pvint32 mem, int old, int new_value) { return __sync_bool_compare_and_swap(mem, old, new_value); }
-static inline int64 ink_atomic_cas64(pvint64 mem, int64 old, int64 new_value) { return __sync_bool_compare_and_swap(mem, old, new_value); }
-static inline int ink_atomic_cas_ptr(pvvoidp mem, void* old, void* new_value) { return __sync_bool_compare_and_swap(mem, old, new_value); }
+static inline int64 ink_atomic_cas(pvint64 mem, int64 old, int64 new_value) { return __sync_bool_compare_and_swap(mem, old, new_value); }
+static inline int ink_atomic_cas(pvvoidp mem, void* old, void* new_value) { return __sync_bool_compare_and_swap(mem, old, new_value); }
 static inline int ink_atomic_increment(pvint32 mem, int value) { return __sync_fetch_and_add(mem, value); }
-static inline int64 ink_atomic_increment64(pvint64 mem, int64 value) { return __sync_fetch_and_add(mem, value); }
-static inline void *ink_atomic_increment_ptr(pvvoidp mem, intptr_t value) { return __sync_fetch_and_add((void**)mem, value); }
+static inline int64 ink_atomic_increment(pvint64 mem, int64 value) { return __sync_fetch_and_add(mem, value); }
+static inline void *ink_atomic_increment(pvvoidp mem, intptr_t value) { return __sync_fetch_and_add((void**)mem, value); }
 #else
 // TODO: Deal with this case?
 #failure

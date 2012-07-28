@@ -149,7 +149,7 @@ ConfigProcessor::set(unsigned int id, ConfigInfo * info)
 
   do {
     old_info = (ConfigInfo *) infos[idx];
-  } while (!ink_atomic_cas_ptr((pvvoidp) & infos[idx], old_info, info));
+  } while (!ink_atomic_cas( & infos[idx], old_info, info));
 
   if (old_info) {
     eventProcessor.schedule_in(NEW(new ConfigInfoReleaser(id, old_info)), HRTIME_SECONDS(60));

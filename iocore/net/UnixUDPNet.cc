@@ -701,7 +701,7 @@ UDPNetProcessor::AllocBandwidth(Continuation * udpConn, double desiredMbps)
   }
   udpIntConn->flowRateBps = (desiredMbps * 1024.0 * 1024.0) / 8.0;
   udpIntConn->allocedbps = desiredbps;
-  ink_atomic_increment64(&G_inkPipeInfo.perPipeInfo[udpIntConn->pipe_class].bwAlloc, desiredbps);
+  ink_atomic_increment(&G_inkPipeInfo.perPipeInfo[udpIntConn->pipe_class].bwAlloc, desiredbps);
   Debug("udpnet-admit", "Admitting flow with %lf Mbps (a=%" PRId64 ", lim=%" PRId64 ")",
         desiredMbps,
         G_inkPipeInfo.perPipeInfo[udpIntConn->pipe_class].bwAlloc,
@@ -729,7 +729,7 @@ UDPNetProcessor::ChangeBandwidth(Continuation * udpConn, double desiredMbps)
   }
   udpIntConn->flowRateBps = (desiredMbps * 1024.0 * 1024.0) / 8.0;
   udpIntConn->allocedbps = desiredbps;
-  ink_atomic_increment64(&G_inkPipeInfo.perPipeInfo[udpIntConn->pipe_class].bwAlloc, desiredbps - oldbps);
+  ink_atomic_increment(&G_inkPipeInfo.perPipeInfo[udpIntConn->pipe_class].bwAlloc, desiredbps - oldbps);
   Debug("udpnet-admit", "Changing flow's b/w from %lf Mbps to %lf Mbps (a=%" PRId64 ", lim=%" PRId64 ")",
         (double) oldbps / (1024.0 * 1024.0),
         desiredMbps,
@@ -753,7 +753,7 @@ UDPNetProcessor::FreeBandwidth(Continuation * udpConn)
   if (bps <= 0)
     return;
 
-  ink_atomic_increment64(&G_inkPipeInfo.perPipeInfo[udpIntConn->pipe_class].bwAlloc, -bps);
+  ink_atomic_increment(&G_inkPipeInfo.perPipeInfo[udpIntConn->pipe_class].bwAlloc, -bps);
 
   Debug("udpnet-free", "Releasing %lf Kbps", bps / 1024.0);
 
