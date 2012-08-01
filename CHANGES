@@ -1,5 +1,6 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.3.0
+
   *) [TS-1385] generic atomic operations API
 
   *) [TS-1380] SSL wildcard lookup doesn't find the longest match
@@ -102,10 +103,12 @@ Changes with Apache Traffic Server 3.3.0
 
 
 Changes with Apache Traffic Server 3.2.0
+
   *) [TS-1286] Cleanup some code around freelists and allocators.
 
 
 Changes with Apache Traffic Server 3.1.4
+
   *) [TS-1281] make check fail on RHEL 5.x.
 
   *) [TS-1282] Verbosity settings for Via headers is broken.
@@ -295,6 +298,7 @@ Changes with Apache Traffic Server 3.1.4
 
 
 Changes with Apache Traffic Server 3.1.3
+
   *) [TS-1145] Additional clang build fixes. Author: Darrin Jewell.
 
   *) [TS-1144] Fix out of tree builds. Author: Darrin Jewell.
@@ -461,6 +465,7 @@ Changes with Apache Traffic Server 3.1.2
   *) [TS-1022] Use size specific types for serialized data in binary logs.
 
 Changes with Apache Traffic Server 3.1.1
+
   *) [TS-1020] Make logging to a named pipe work on Solaris.
 
   *) [TS-1016] Make the update frequency for stats configurable.
@@ -610,6 +615,7 @@ Changes with Apache Traffic Server 3.1.1
   *) [TS-1008] Add API to get TCP connection from SSN.
 
 Changes with Apache Traffic Server 3.1.0
+
   *) Make sure --enable-purify works again
 
   *) [TS-888] Fix SSL by enabling the right direction on successful setup.
@@ -786,6 +792,7 @@ Changes with Apache Traffic Server 3.1.0
    building with wccp. Author: Arno Toll.
 
 Changes with Apache Traffic Server 3.0.0
+
   *) [TS-827] TSMimeHdrFieldValueStringInsert() can use freed memory to
   edit headers. Author: William Bardwell.
 
@@ -805,6 +812,7 @@ Changes with Apache Traffic Server 3.0.0
    remap.config.
 
 Changes with Apache Traffic Server 2.1.9
+
   *) [TS-805] HostDB wastes a lot of storage for round-robin entries,
    and the calculations of size are off.
 
@@ -900,6 +908,7 @@ Changes with Apache Traffic Server 2.1.9
    Author: Arno Toell
 
 Changes with Apache Traffic Server 2.1.8
+
   *) [TS-750] TS does not fail-over if one origin server for a 2 address
    hostname. Author: William Bardwell.
 
@@ -1008,6 +1017,7 @@ Changes with Apache Traffic Server 2.1.8
    concept of "tags" for MIXT media. Cleanup remaining MIXT junk.
 
 Changes with Apache Traffic Server 2.1.7
+
   *) [TS-711] Don't schedule remap.config reloads on a network threads.
    We now schedule this task on an ET_TASK thread, which avoids blocking
    a net-thread for several seconds (when reloading very large remaps).
