@@ -1,5 +1,6 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.0.5
+
   *) [TS-1116] Fix build issues with clang + gcc4.7
 
   *) [TS-1049] TS dead locks on HTTPS POST requires.  
@@ -21,6 +22,7 @@ Changes with Apache Traffic Server 3.0.5
   *) [TS-1114] crash from access to CacheVC::write_vector without vol lock.
 
 Changes with Apache Traffic Server 3.0.4
+
   *) [TS-1154] quick_filter on HEAD does not work
    Author: weijin
 
@@ -77,6 +79,7 @@ Changes with Apache Traffic Server 3.0.3
    Author: Arno Töll
 
 Changes with Apache Traffic Server 3.0.2
+
   *) [TS-1030] Improve hashing mechanism on WKS.
 
   *) [TS-1011]: SSL doesn't work on Solaris.
@@ -121,6 +124,7 @@ Changes with Apache Traffic Server 3.0.2
   *) [TS-859] ATS requesting to origin instead to the parent server
 
 Changes with Apache Traffic Server 3.0.1
+
   *) [TS-842] remove uninstall target from build system
 
   *) [TS-868] build fails with --as-needed. Author: Ilya Barygin.
@@ -151,6 +155,7 @@ Changes with Apache Traffic Server 3.0.1
 
 
 Changes with Apache Traffic Server 3.0.0
+
   *) [TS-827] TSMimeHdrFieldValueStringInsert() can use freed memory to
   edit headers. Author: William Bardwell.
 
@@ -171,6 +176,7 @@ Changes with Apache Traffic Server 3.0.0
 
 
 Changes with Apache Traffic Server 2.1.9
+
   *) [TS-805] HostDB wastes a lot of storage for round-robin entries,
    and the calculations of size are off.
 
@@ -266,6 +272,7 @@ Changes with Apache Traffic Server 2.1.9
    Author: Arno Toell
 
 Changes with Apache Traffic Server 2.1.8
+
   *) [TS-750] TS does not fail-over if one origin server for a 2 address
    hostname. Author: William Bardwell.
 
@@ -374,6 +381,7 @@ Changes with Apache Traffic Server 2.1.8
    concept of "tags" for MIXT media. Cleanup remaining MIXT junk.
 
 Changes with Apache Traffic Server 2.1.7
+
   *) [TS-711] Don't schedule remap.config reloads on a network threads.
    We now schedule this task on an ET_TASK thread, which avoids blocking
    a net-thread for several seconds (when reloading very large remaps).
