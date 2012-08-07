@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.3.0
 
+  *) [TS-1392] Fix SNI certificate fallback path
+
   *) [TS-1385] generic atomic operations API
 
   *) [TS-1380] SSL wildcard lookup doesn't find the longest match

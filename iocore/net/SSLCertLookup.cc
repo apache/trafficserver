@@ -113,13 +113,6 @@ SSLCertLookup::init(SslConfigParams * p)
 {
   param = p;
   multipleCerts = buildTable();
-
-  // If there wasn't a default SSL context, make a default one. We need this to bootstrap
-  // the SNI process and also to avoid crashing (which is generaly frowned upon).
-  if (!this->ssl_default) {
-    // XXX this leaks, but we're a singleton, so ....
-    this->ssl_default = SSL_CTX_new(SSLv23_server_method());
-  }
 }
 
 bool
