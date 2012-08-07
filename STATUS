@@ -41,11 +41,6 @@ A list of all bugs open for the next development release can be found at
 
 PATCHES ACCEPTED TO BACKPORT FROM TRUNK:
 
-  *) Fix SNI certificate fallback path
-   Trunk: 9c3bebd88eecf6aee1ce346b67460b8e1787752d
-   Jira: https://issues.apache.jira/browse/TS-1471
-   +1: jpeach, igalic, zwoop
-
   *) Fix build on amd64 Debian/Ubuntu
    Trunk: b21ccf7 c00f951 02506c0 fa61f83 7fc244e 0d85fe4 44052e9
    Jira: https://issues.apache.jira/browse/TS-1430

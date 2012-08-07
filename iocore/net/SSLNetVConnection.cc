@@ -46,6 +46,8 @@ ClassAllocator<SSLNetVConnection> sslNetVCAllocator("sslNetVCAllocator");
 // Private
 //
 
+static SSL_CTX * ssl_default = SSL_CTX_new(SSLv23_server_method());
+
 #if TS_USE_TLS_SNI
 
 static int
@@ -65,12 +67,18 @@ ssl_servername_callback(SSL * ssl, int * ad, void * arg)
     ctx = lookup->defaultContext();
   }
 
+  if (ctx != NULL) {
+    SSL_set_SSL_CTX(ssl, ctx);
+  }
+
+  // At this point, we might have updated ctx based on the SNI lookup, or we might still have the
+  // original SSL context that we set when we accepted the connection.
+  ctx = SSL_get_SSL_CTX(ssl);
+  Debug("ssl", "found SSL context %p for requested name '%s'", ctx, servername);
+
   if (ctx == NULL) {
     return SSL_TLSEXT_ERR_NOACK;
   }
-
-  Debug("ssl", "found SSL context %p for requested name '%s'", ctx, servername);
-  SSL_set_SSL_CTX(ssl, ctx);
 
   // We need to return one of the SSL_TLSEXT_ERR constants. If we return an
   // error, we can fill in *ad with an alert code to propgate to the
@@ -494,6 +502,9 @@ SSLNetVConnection::sslStartHandShake(int event, int &err)
       ctx = sslCertLookup.findInfoInHash(buff);
       if (ctx == NULL) {
         ctx = sslCertLookup.defaultContext();
+      }
+      if (ctx == NULL) {
+        ctx = ssl_default;
       }
 
 #if TS_USE_TLS_SNI
