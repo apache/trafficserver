@@ -7337,7 +7337,7 @@ EXCLUSIVE_REGRESSION_TEST(SDK_API_TSHttpConnectServerIntercept) (RegressionTest 
 ////////////////////////////////////////////////
 
 // The order of these should be the same as TSOverridableConfigKey
-const char *SDK_Overridable_Configs[] = {
+const char *SDK_Overridable_Configs[TS_CONFIG_LAST_ENTRY] = {
   "proxy.config.url_remap.pristine_host_hdr",
   "proxy.config.http.chunking_enabled",
   "proxy.config.http.negative_caching_enabled",
@@ -7401,8 +7401,6 @@ const char *SDK_Overridable_Configs[] = {
   "proxy.config.net.sock_packet_mark_out",
   "proxy.config.net.sock_packet_tos_out",
   "proxy.config.http.insert_age_in_response",
-
-  NULL
 };
 
 REGRESSION_TEST(SDK_API_OVERRIDABLE_CONFIGS) (RegressionTest * test, int atype, int *pstatus)
