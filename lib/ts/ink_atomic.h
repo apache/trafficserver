@@ -128,7 +128,7 @@ ink_atomic_increment(volatile Type * mem, Amount count) {
 extern ProcessMutex __global_death;
 
 template<>
-static inline int64_t
+inline int64_t
 ink_atomic_swap<int64_t>(pvint64 mem, int64_t value) {
   int64_t old;
   ink_mutex_acquire(&__global_death);
@@ -139,7 +139,7 @@ ink_atomic_swap<int64_t>(pvint64 mem, int64_t value) {
 }
 
 template<>
-static inline int64_t
+inline bool
 ink_atomic_cas<int64_t>(pvint64 mem, int64_t old, int64_t new_value) {
   int64_t curr;
   ink_mutex_acquire(&__global_death);
@@ -151,7 +151,7 @@ ink_atomic_cas<int64_t>(pvint64 mem, int64_t old, int64_t new_value) {
 }
 
 template<>
-static inline int64_t
+inline int64_t
 ink_atomic_increment<int64_t>(pvint64 mem, int64_t value) {
   int64_t curr;
   ink_mutex_acquire(&__global_death);
