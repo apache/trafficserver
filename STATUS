@@ -52,7 +52,7 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   *) Fix cache sizes > 16TB
    Trunk: 7c6b590b35ce483c8ae94640c50a6a3fb0d0e690
    Jira: https://issues.apache.org/jira/browse/TS-1319
-   +1: jpeach, zwoop
+   +1: jpeach, zwoop, igalic
 
   *) stats codes mess up when disk fail
    Trunk: 99cbf8acb97b191631882bfcfaf06d512347fdd4
@@ -65,7 +65,7 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   *) Fix SNI certificate fallback path
    Trunk: 9c3bebd88eecf6aee1ce346b67460b8e1787752d
    Jira: https://issues.apache.jira/browse/TS-1392
-   +1: jpeach
+   +1: jpeach, igalic
 
 PATCHES ACCEPTED TO BACKPORT FROM TRUNK:
   [ New patches should be added at the end of the list ]
