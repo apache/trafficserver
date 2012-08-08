@@ -23,7 +23,8 @@ libtsconfig_la_LDFLAGS = -no-undefined -version-info @TS_LIBTOOL_VERSION@
 AM_YFLAGS = --yacc -d -p tsconfig
 
 AM_CPPFLAGS = \
-  -I$(top_srcdir)/lib
+  -I$(top_srcdir)/lib \
+  -I$(top_srcdir)/lib/ts
 
 BUILT_SOURCES = \
   TsConfigGrammar.c TsConfigGrammar.h TsConfigGrammar.hpp \
@@ -52,4 +53,4 @@ test_tsconfig_LDADD = libtsconfig.la ../ts/libtsutil.la @LIBEXECINFO@
 # Strip to just the enum in the ts::config namespace so we can use
 # it more easily in C++.
 TsConfigGrammar.hpp: TsConfigGrammar.h BisonHeaderToC++.sed
-	$(SED) -f $(srcdir)/BisonHeaderToC++.sed $(srcdir)/TsConfigGrammar.h > $@
+	$(SED) -f $(srcdir)/BisonHeaderToC++.sed $(builddir)/TsConfigGrammar.h > $@
