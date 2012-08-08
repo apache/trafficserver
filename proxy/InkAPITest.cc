@@ -7400,6 +7400,7 @@ const char *SDK_Overridable_Configs[] = {
   "proxy.config.http.background_fill_completed_threshold",
   "proxy.config.net.sock_packet_mark_out",
   "proxy.config.net.sock_packet_tos_out",
+  "proxy.config.http.insert_age_in_response",
 
   NULL
 };

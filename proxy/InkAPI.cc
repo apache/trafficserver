@@ -7561,6 +7561,10 @@ _conf_to_memberp(TSOverridableConfigKey conf, HttpSM* sm, OverridableDataType *t
   case TS_CONFIG_HTTP_BACKGROUND_FILL_ACTIVE_TIMEOUT:
     ret = &sm->t_state.txn_conf->background_fill_active_timeout;
     break;
+  case TS_CONFIG_HTTP_INSERT_AGE_IN_RESPONSE:
+    typ = OVERRIDABLE_TYPE_INT;
+    ret = &sm->t_state.txn_conf->insert_age_in_response;
+    break;
 
   case TS_CONFIG_HTTP_CACHE_HEURISTIC_LM_FACTOR:
     typ = OVERRIDABLE_TYPE_FLOAT;
@@ -7840,6 +7844,8 @@ TSHttpTxnConfigFind(const char* name, int length, TSOverridableConfigKey *conf, 
     case 'e':
       if (!strncmp(name, "proxy.config.http.down_server.cache_time", length))
         cnf = TS_CONFIG_HTTP_DOWN_SERVER_CACHE_TIME;
+      else if (!strncmp(name, "proxy.config.http.insert_age_in_response", length))
+        cnf = TS_CONFIG_HTTP_INSERT_AGE_IN_RESPONSE;
       break;
     case 'r':
       if (!strncmp(name, "proxy.config.url_remap.pristine_host_hdr", length))

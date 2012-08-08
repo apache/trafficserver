@@ -7871,7 +7871,7 @@ HttpTransact::build_response(State* s, HTTPHdr* base_response, HTTPHdr* outgoing
       HttpTransactHeaders::copy_header_fields(base_response, outgoing_response, s->txn_conf->fwd_proxy_auth_to_parent);
       HttpTransactHeaders::process_connection_headers(base_response, outgoing_response);
 
-      if (s->http_config_param->insert_age_in_response)
+      if (s->txn_conf->insert_age_in_response)
         HttpTransactHeaders::insert_time_and_age_headers_in_response(s->request_sent_time, s->response_received_time,
                                                                      s->current.now, base_response, outgoing_response);
 

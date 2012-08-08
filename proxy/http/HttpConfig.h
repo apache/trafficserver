@@ -404,6 +404,7 @@ struct OverridableHttpConfigParams {
        negative_caching_enabled(0), cache_when_to_revalidate(0),
        keep_alive_enabled_in(0), keep_alive_enabled_out(0), keep_alive_post_out(0),
        share_server_sessions(0), fwd_proxy_auth_to_parent(0),
+       insert_age_in_response(1),
        anonymize_remove_from(0), anonymize_remove_referer(0), anonymize_remove_user_agent(0),
        anonymize_remove_cookie(0), anonymize_remove_client_ip(0), anonymize_insert_client_ip(1),
        proxy_response_server_enabled(0), insert_squid_x_forwarded_for(0),
@@ -458,6 +459,8 @@ struct OverridableHttpConfigParams {
 
   MgmtByte share_server_sessions;
   MgmtByte fwd_proxy_auth_to_parent;
+
+  MgmtByte insert_age_in_response;
 
   ///////////////////////////////////////////////////////////////////
   // Privacy: fields which are removed from the user agent request //
@@ -673,7 +676,6 @@ public:
   /////////////////////
   // Benchmark hacks //
   /////////////////////
-  MgmtByte insert_age_in_response;
   MgmtByte avoid_content_spoofing;
   MgmtByte enable_http_stats;
 
@@ -926,7 +928,6 @@ HttpConfigParams::HttpConfigParams()
     anonymize_other_header_list(NULL),
     global_user_agent_header(NULL),
     global_user_agent_header_size(0),
-    insert_age_in_response(1),
     avoid_content_spoofing(1),
     enable_http_stats(1),
     icp_enabled(0),
