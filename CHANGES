@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.3.0
 
+  *) [TS-1387] Allow proxy.config.http.insert_age_in_response to be overridden
+    Author: Phil Sorber
+
   *) [TS-1392] Fix SNI certificate fallback path
 
   *) [TS-1385] generic atomic operations API
