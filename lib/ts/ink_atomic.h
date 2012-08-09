@@ -123,14 +123,14 @@ ink_atomic_increment(volatile Type * mem, Amount count) {
   return __sync_fetch_and_add(mem, (Type)count);
 }
 
-// Special hacks for ARM 32-bit that don't have 8-byte atomic operations. The usual symptom of this is the linker
-// failing to find __sync_bool_compare_and_swap_8 and friends.
+// Special hacks for ARM 32-bit
 #if defined(__arm__) && (SIZEOF_VOIDP == 4)
 extern ProcessMutex __global_death;
 
-template <typename T> static inline T
-ink_atomic_death_swap(volatile T * mem, T value) {
-  T old;
+template<>
+inline int64_t
+ink_atomic_swap<int64_t>(pvint64 mem, int64_t value) {
+  int64_t old;
   ink_mutex_acquire(&__global_death);
   old = *mem;
   *mem = value;
@@ -138,61 +138,27 @@ ink_atomic_death_swap(volatile T * mem, T value) {
   return old;
 }
 
-template <typename T> static inline bool
-ink_atomic_death_cas(volatile T * mem, T old, T new_value) {
-  T curr;
+template<>
+inline bool
+ink_atomic_cas<int64_t>(pvint64 mem, int64_t old, int64_t new_value) {
+  int64_t curr;
   ink_mutex_acquire(&__global_death);
   curr = *mem;
-  if (old == curr) *mem = new_value;
+  if(old == curr) *mem = new_value;
   ink_mutex_release(&__global_death);
-  if (old == curr) return true;
-  return false;
+  if(old == curr) return 1;
+  return 0;
 }
 
-template<typename T> static inline
-ink_atomic_death_increment(volatile T * mem, T value) {
-  T curr;
+template<>
+inline int64_t
+ink_atomic_increment<int64_t>(pvint64 mem, int64_t value) {
+  int64_t curr;
   ink_mutex_acquire(&__global_death);
   curr = *mem;
   *mem = curr + value;
   ink_mutex_release(&__global_death);
   return curr + value;
-}
-
-template<>
-inline int64_t
-ink_atomic_swap<int64_t>(volatile int64_t * mem, int64_t value) {
-  return ink_atomic_death_swap(mem, value);
-}
-
-template<>
-inline uint64_t
-ink_atomic_swap<uint64_t>(volatile uint64_t * mem, uint64_t value) {
-  return ink_atomic_death_swap(mem, value);
-}
-
-template<>
-inline bool
-ink_atomic_cas<int64_t>(volatile int64_t * mem, int64_t old, int64_t new_value) {
-  return ink_atomic_death_cas(mem, old, new_value);
-}
-
-template<>
-inline bool
-ink_atomic_cas<uint64_t>(volatile uint64_t * mem, uint64_t old, uint64_t new_value) {
-  return ink_atomic_death_cas(mem, old, new_value);
-}
-
-template<>
-inline int64_t
-ink_atomic_increment(volatile int64_t * mem, int64_t value) {
-  return ink_atomic_death_increment(mem, value);
-}
-
-template<>
-inline uint64_t
-ink_atomic_increment(volatile uint64_t * mem, uint64_t value) {
-  return ink_atomic_death_increment(mem, value);
 }
 
 #endif
