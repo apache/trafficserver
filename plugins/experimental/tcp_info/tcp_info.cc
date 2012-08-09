@@ -54,22 +54,21 @@ load_config() {
   config.log_level = 1;
   config.log_file = NULL;
   
-  // get the configuration file name
+  // get the install directory
   const char* install_dir = TSInstallDirGet();
-  char *root = getenv("ROOT");
-  if (root != NULL && strcmp(install_dir, "ROOT") == 0) {
+
+  // figure out the config file and open it
+  snprintf(config_file, sizeof(config_file), "%s/%s/%s", install_dir, "etc", "tcp_info.config");
+  FILE *file = fopen(config_file, "r");
+  if (file == NULL) {
     snprintf(config_file, sizeof(config_file), "%s/%s/%s", install_dir, "conf", "tcp_info.config");
-  } else {
-    snprintf(config_file, sizeof(config_file), "%s/%s/%s", install_dir, "etc", "tcp_info.config");
+    file = fopen(config_file, "r");
   }
   TSDebug("tcp_info", "config file name: %s", config_file);
-
-  // open the config file
-  FILE *file = fopen(config_file, "r");
   assert(file != NULL);
-  char line[256];
 
   // read and parse the lines
+  char line[256];
   while (fgets(line, sizeof(line), file) != NULL) {
     char *pos = strchr(line, '=');
     *pos = '\0';
