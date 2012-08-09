@@ -101,14 +101,14 @@ struct LogBufferHeader
 
 union LB_State
 {
-  LB_State():ival(0)
-  {
-  };
+  LB_State()
+    : ival(0)
+  { }
 
   LB_State(volatile LB_State & vs)
   {
     ival = vs.ival;
-  };
+  }
 
   LB_State & operator =(volatile LB_State & vs)
   {
@@ -116,7 +116,7 @@ union LB_State
     return *this;
   }
 
-  uint64_t ival;
+  int64_t ival;
   struct
   {
     uint16_t offset;              // buffer should be <= 64KB

@@ -161,6 +161,12 @@ ink_atomic_increment<int64_t>(pvint64 mem, int64_t value) {
   return curr + value;
 }
 
+template<>
+inline int64_t
+ink_atomic_increment<int64_t>(pvint64 mem, int value) {
+  return ink_atomic_increment(mem, static_cast<int64_t>(value));
+}
+
 #endif
 
 /* not used for Intel Processors which have sequential(esque) consistency */
