@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-/* stats.c:  expose traffic server stats over http
+/* tcp_info.cc:  logs the tcp_info data struture to a file
  */
 
 #include <stdio.h>
@@ -40,19 +40,21 @@
 #include <arpa/inet.h>
 
 struct Config {
-  int percentage;
+  int sample;
   const char* log_file;
   int log_fd;
   int log_level;
+  int hook;
 };
 static Config config;
 
 static void
 load_config() {
   char config_file[PATH_MAX];
-  config.percentage = 100;
+  config.sample = 1000;
   config.log_level = 1;
   config.log_file = NULL;
+  config.hook = 1;
   
   // get the install directory
   const char* install_dir = TSInstallDirGet();
@@ -83,19 +85,22 @@ load_config() {
     if (value != NULL) {
       TSDebug("tcp_info", "config key: %s", line);
       TSDebug("tcp_info", "config value: %s", value);
-      if (strcmp(line, "percentage") == 0) {
-        config.percentage = atoi(value);
+      if (strcmp(line, "sample") == 0) {
+        config.sample = atoi(value);
       } else if (strcmp(line, "log_file") == 0) {
         config.log_file = strdup(value);
       } else if (strcmp(line, "log_level") == 0) {
         config.log_level = atoi(value);
+      } else if (strcmp(line, "hook") == 0) {
+        config.hook = atoi(value);
       }
     }
   }
 
-  TSDebug("tcp_info", "percentage: %d", config.percentage);
+  TSDebug("tcp_info", "sample: %d", config.sample);
   TSDebug("tcp_info", "log filename: %s", config.log_file);
   TSDebug("tcp_info", "log_level: %d", config.log_level);
+  TSDebug("tcp_info", "hook: %d", config.hook);
 
   config.log_fd = open(config.log_file, O_APPEND | O_CREAT | O_RDWR, 0666);
   assert(config.log_fd > 0);
@@ -139,7 +144,6 @@ log_tcp_info(const char* client_ip, const char* server_ip, struct tcp_info &info
   }
 
   ssize_t wrote = write(config.log_fd, buffer, bytes);
-  sync();
   assert(wrote == bytes);
   TSDebug("tcp_info", "wrote: %d bytes to file: %s", bytes, config.log_file);
   TSDebug("tcp_info", "logging: %s", buffer);
@@ -156,8 +160,10 @@ tcp_info_hook(TSCont contp, TSEvent event, void *edata)
   int tcp_info_len = sizeof(tcp_info);
   int fd;
 
-  if (TSHttpSsnClientFdGet(ssnp, &fd) != TS_SUCCESS)
+  if (TSHttpSsnClientFdGet(ssnp, &fd) != TS_SUCCESS) {
+    TSDebug("tcp_info", "error getting the client socket fd");
     goto done;
+  }
 
   // get the tcp info structure
   if (getsockopt(fd, IPPROTO_TCP, TCP_INFO, (void *)&tcp_info, (socklen_t *)&tcp_info_len) == 0) {
@@ -165,12 +171,12 @@ tcp_info_hook(TSCont contp, TSEvent event, void *edata)
     if (tcp_info_len == sizeof(tcp_info)) {
       // no need to run rand if we are always going log (100%)
       int random = 0;
-      if (config.percentage < 100) {
-        random = rand() % 100;
-        TSDebug("tcp_info", "random: %d, config.percentage: %d", random, config.percentage);
+      if (config.sample < 1000) {
+        random = rand() % 1000;
+        TSDebug("tcp_info", "random: %d, config.sample: %d", random, config.sample);
       }
 
-      if (random < config.percentage) {
+      if (random < config.sample) {
         TSDebug("tcp_info", "got the tcp_info struture and now logging");
 
         // get the client address
@@ -183,14 +189,17 @@ tcp_info_hook(TSCont contp, TSEvent event, void *edata)
         char client_str[INET_ADDRSTRLEN];
         char server_str[INET_ADDRSTRLEN];
 
-
         // convert ip to string
         inet_ntop(client_addr->sa_family, &(client_in_addr->sin_addr), client_str, INET_ADDRSTRLEN);
         inet_ntop(server_addr->sa_family, &(server_in_addr->sin_addr), server_str, INET_ADDRSTRLEN);
 
         log_tcp_info(client_str, server_str, tcp_info);
       }
+    } else {
+      TSDebug("tcp_info", "tcp_info length is the wrong size");
     }
+  } else {
+    TSDebug("tcp_info", "error calling getsockopt()");
   }
 
 done:
@@ -228,7 +237,7 @@ TSPluginInit(int argc, const char *argv[])
 {
   TSPluginRegistrationInfo info;
 
-  info.plugin_name = (char*)"stats";
+  info.plugin_name = (char*)"tcp_info";
   info.vendor_name = (char*)"Apache Software Foundation";
   info.support_email = (char*)"dev@trafficserver.apache.org";
 
@@ -240,10 +249,18 @@ TSPluginInit(int argc, const char *argv[])
     return;
   }
 
+  // load the configuration file
   load_config();
 
-  /* Create a continuation with a mutex as there is a shared global structure
-     containing the headers to add */
-  TSHttpHookAdd(TS_HTTP_SSN_START_HOOK, TSContCreate(tcp_info_hook, NULL));
+  // add a hook to the state machine
+  // TODO: need another hook before the socket is closed, keeping it in for now because it will be easier to change if or when another hook is added to ATS
+  if (config.hook == 2) {
+    TSHttpHookAdd(TS_HTTP_SSN_CLOSE_HOOK, TSContCreate(tcp_info_hook, NULL));
+    TSDebug("tcp_info", "added hook to the close of the TCP connection");
+  } else {
+    TSHttpHookAdd(TS_HTTP_SSN_START_HOOK, TSContCreate(tcp_info_hook, NULL));
+    TSDebug("tcp_info", "added hook to the start of the TCP connection");
+  }
+
   TSDebug("tcp_info", "tcp info module registered");
 }
