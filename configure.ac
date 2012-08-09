@@ -1552,6 +1552,7 @@ AC_CONFIG_FILES([plugins/regex_remap/Makefile])
 AC_CONFIG_FILES([plugins/header_filter/Makefile])
 AC_CONFIG_FILES([plugins/stats_over_http/Makefile])
 AC_CONFIG_FILES([plugins/experimental/lua/Makefile])
+AC_CONFIG_FILES([plugins/experimental/tcp_info/Makefile])
 # various tools
 AC_CONFIG_FILES([tools/Makefile])
 # example plugins
