@@ -1631,7 +1631,7 @@ parse_event_notification(int fd, TSEvent * event)
   OpType msg_type;
   int16_t type_op;
   int32_t msg_len;
-  char *event_name = NUL, *desc = NULL;
+  char *event_name = NULL, *desc = NULL;
 
   if (!event)
     return TS_ERR_PARAMS;

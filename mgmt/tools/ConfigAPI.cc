@@ -604,7 +604,7 @@ Config_SaveVersion(char *file)
   len = sizeof("Version") + 1;
   parentAttributes3[1] = new char[len];
   snprintf(parentAttributes3[1], len, "%s", "Version");
-  parentAttributes3[2] = '\0';
+  parentAttributes3[2] = NULL;
   child2->setAttributes(parentAttributes3);
   child2->setNodeName("CONFIG_TYPE");
 
@@ -857,7 +857,7 @@ Config_SaveNetConfig(char *file)
   len = sizeof("Version") + 1;
   parentAttributes3[1] = new char[len];
   snprintf(parentAttributes3[1], len, "%s", "Version");
-  parentAttributes3[2] = '\0';
+  parentAttributes3[2] = NULL;
   child2->setAttributes(parentAttributes3);
   child2->setNodeName("CONFIG_TYPE");
 
@@ -882,7 +882,7 @@ Config_SaveNetConfig(char *file)
   len = sizeof("NW Settings") + 1;
   parentAttributes[1] = new char[len];
   snprintf(parentAttributes[1], len, "%s", "NW Settings");
-  parentAttributes[2] = '\0';
+  parentAttributes[2] = NULL;
   child->setAttributes(parentAttributes);
   child->setNodeName("CONFIG_TYPE");
 
@@ -919,7 +919,7 @@ Config_SaveNetConfig(char *file)
       attributes[0] = new char[len];
       snprintf(attributes[0], len, "%s", "InterfaceName");
       attributes[1] = Int;
-      attributes[2] = '\0';
+      attributes[2] = NULL;
       PerNICDefaultGateway->setAttributes(attributes);
       child->AppendChild(PerNICDefaultGateway);
     }
@@ -937,7 +937,7 @@ Config_SaveNetConfig(char *file)
       attributes[0] = new char[len];
       snprintf(attributes[0], len, "%s", "InterfaceName");
       attributes[1] = Int;
-      attributes[2] = '\0';
+      attributes[2] = NULL;
       InterfaceIPAddress->setAttributes(attributes);
       child->AppendChild(InterfaceIPAddress);
     }
@@ -955,7 +955,7 @@ Config_SaveNetConfig(char *file)
       attributes[0] = new char[len];
       snprintf(attributes[0], len, "%s", "InterfaceName");
       attributes[1] = Int;
-      attributes[2] = '\0';
+      attributes[2] = NULL;
       InterfaceNetmask->setAttributes(attributes);
       child->AppendChild(InterfaceNetmask);
     }
@@ -985,7 +985,7 @@ Config_SaveNetConfig(char *file)
        sprintf(attributes[0], "%s", "DomainControllerOrder");
        attributes[1] = new char[sizeof(int)+1];;
        sprintf(attributes[1], "%d", index+1);
-       attributes[2] = '\0';
+       attributes[2] = NULL;
        DNSSearch->setAttributes(attributes);
        child->AppendChild(DNSSearch);
      }
@@ -1010,7 +1010,7 @@ Config_SaveNetConfig(char *file)
       len = sizeof(int) + 1;
       attributes[1] = new char[len];;
       snprintf(attributes[1], len, "%d", index + 1);
-      attributes[2] = '\0';
+      attributes[2] = NULL;
       DNSServer->setAttributes(attributes);
       child->AppendChild(DNSServer);
     }
@@ -1034,7 +1034,7 @@ Config_SaveNetConfig(char *file)
   len = sizeof("OS Settings") + 1;
   parentAttributes1[1] = new char[len];
   snprintf(parentAttributes1[1], len, "%s", "OS Settings");
-  parentAttributes1[2] = '\0';
+  parentAttributes1[2] = NULL;
   child1->setAttributes(parentAttributes1);
   child1->setNodeName("CONFIG_TYPE");
 
