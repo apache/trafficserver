@@ -1,0 +1,41 @@
+In /home/y/conf/yts/plugin.config, you can add 
+  1) custom_redirect.so
+  or
+  2) custom_redirect.so wretch-redirect-url
+  or
+  3) custom_redirect.so 507
+
+Case 1) means using the default header (x-redirect-url) to specify a URL to redirect to;
+Case 2) user specifies their specific header name (to replace the default one) to specify a URL to redirect to;
+Case 3) user sepcifies the specific return code, if return code matches, then plugin will force to redirect to the 
+URL specified in standard "Location" header.
+
+For simplicity, we recommend to use case 1)
+
+Version 1.0.0 (8/9/2012, bcall)
+ - Ported to ATS
+
+Version 0.5.1 (12/07/10, vmamidi)
+ - fixing the bug with redirect
+
+Version 0.4 (12/06/10, vmamidi)
+  - enabling the redirect only for GETs
+
+Version 0.3 (11/19/09, wenjing)
+  - Remove verbose log
+
+Version 0.2 (11/09/09, wenjing)
+  - Add more instruction
+
+This is a plugin for YTS (Yahoo Traffic Server) that allows OS (Origin Server)
+to do either of the following two things: 
+
+  1) specify a particular response header (default: x-redirect-url) with a URL 
+     that forces YTS redirect to that URL;
+
+  2) specify a particular return error code (such as 507) with a standard Location
+     header which forces YTS to redirect to that location URL.
+
+Version 0.1 (09/17/09, wenjing)
+  - Initial version.
+ 
