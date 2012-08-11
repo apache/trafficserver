@@ -503,9 +503,6 @@ REAL_CXXFLAGS="${CXXFLAGS}"
 AC_PROG_CC
 AC_PROG_CXX
 
-# For automake >= 1.12
-m4_ifdef([AM_PROG_AR], [AM_PROG_AR])
-
 # Check for ccache (if explicitly enabled)
 if test "x$enable_ccache" = "xyes"; then
     AC_CHECK_PROG([CCACHE],[ccache],[ccache],[])
