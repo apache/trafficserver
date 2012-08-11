@@ -1441,6 +1441,13 @@ TS_CHECK_LOOPBACK_IFACE
 TS_CHECK_GETHOSTBYNAME_R_STYLE
 TS_CHECK_MACRO_IN6_IS_ADDR_UNSPECIFIED
 
+AC_CHECK_TYPE([struct tcp_info],
+  [enable_tcpinfo_plugin=yes],
+  [enable_tcpinfo_plugin=no],
+  [[#include <netinet/tcp.h>]]
+)
+AM_CONDITIONAL([BUILD_TCPINFO_PLUGIN], [ test "x${enable_tcpinfo_plugin}" != "xno" ])
+
 #
 # use modular IOCORE
 #
