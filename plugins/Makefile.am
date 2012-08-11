@@ -17,5 +17,5 @@
 SUBDIRS = conf_remap regex_remap header_filter stats_over_http
 
 if BUILD_EXPERIMENTAL_PLUGINS
-SUBDIRS += experimental/tcp_info experimental/lua
+SUBDIRS += experimental/lua experimental/tcp_info experimental/custom_redirect
 endif
