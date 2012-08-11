@@ -14,8 +14,11 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-SUBDIRS = conf_remap regex_remap header_filter stats_over_http
+AM_CPPFLAGS = -I$(top_builddir)/proxy/api -I$(top_srcdir)/proxy/api \
+              -I$(top_srcdir)/lib/ts -I$(top_builddir)/lib/ts
 
-if BUILD_EXPERIMENTAL_PLUGINS
-SUBDIRS += experimental/lua experimental/tcp_info experimental/custom_redirect experimental/header_rewrite
-endif
+pkglibdir = ${pkglibexecdir}
+pkglib_LTLIBRARIES = header_rewrite.la
+header_rewrite_la_SOURCES = header_rewrite.cc
+header_rewrite_la_LDFLAGS = -module -avoid-version -shared
+
