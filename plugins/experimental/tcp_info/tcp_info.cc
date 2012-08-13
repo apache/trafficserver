@@ -107,7 +107,7 @@ load_config() {
 }
 
 static void
-log_tcp_info(const char* client_ip, const char* server_ip, struct tcp_info &info) {
+log_tcp_info(const char* event_name, const char* client_ip, const char* server_ip, struct tcp_info &info) {
   char buffer[256];
 
   // get the current time
@@ -116,7 +116,8 @@ log_tcp_info(const char* client_ip, const char* server_ip, struct tcp_info &info
 
   int bytes = 0;
   if (config.log_level == 2) {
-    bytes = snprintf(buffer, sizeof(buffer), "%u %u %s %s %u %u %u %u %u %u %u %u %u %u %u %u\n",
+    bytes = snprintf(buffer, sizeof(buffer), "%s %u %u %s %s %u %u %u %u %u %u %u %u %u %u %u %u\n",
+                     event_name,
                      (uint32_t)now.tv_sec,
                      (uint32_t)now.tv_usec,
                      client_ip,
@@ -135,7 +136,8 @@ log_tcp_info(const char* client_ip, const char* server_ip, struct tcp_info &info
                      info.tcpi_fackets
       );
   } else {
-    bytes = snprintf(buffer, sizeof(buffer), "%u %s %s %u\n",
+    bytes = snprintf(buffer, sizeof(buffer), "%s %u %s %s %u\n",
+                     event_name,
                      (uint32_t)now.tv_sec,
                      client_ip,
                      server_ip,
@@ -153,8 +155,33 @@ log_tcp_info(const char* client_ip, const char* server_ip, struct tcp_info &info
 static int
 tcp_info_hook(TSCont contp, TSEvent event, void *edata)
 {
-  TSDebug("tcp_info", "tcp_info_hook called");
-  TSHttpSsn ssnp = (TSHttpSsn) edata;
+  TSHttpSsn ssnp = NULL;
+  TSHttpTxn txnp = NULL;
+
+  const char *event_name;
+  switch (event) {
+  case TS_EVENT_HTTP_SSN_START:
+    ssnp = (TSHttpSsn)edata;
+    event_name = "ssn_start";
+    break;
+  case TS_EVENT_HTTP_TXN_START:
+    txnp = (TSHttpTxn)edata;
+    ssnp = TSHttpTxnSsnGet(txnp);
+    event_name = "txn_start";
+    break;
+  case TS_EVENT_HTTP_SEND_RESPONSE_HDR:
+    txnp = (TSHttpTxn)edata;
+    ssnp = TSHttpTxnSsnGet(txnp);
+    event_name = "send_resp_hdr";
+    break;
+  case TS_EVENT_HTTP_SSN_CLOSE:
+    ssnp = (TSHttpSsn)edata;
+    event_name = "ssn_close";
+  default:
+    return 0;
+  }
+
+  TSDebug("tcp_info", "tcp_info_hook called, event: %s", event_name);
 
   struct tcp_info tcp_info;
   int tcp_info_len = sizeof(tcp_info);
@@ -192,8 +219,9 @@ tcp_info_hook(TSCont contp, TSEvent event, void *edata)
         // convert ip to string
         inet_ntop(client_addr->sa_family, &(client_in_addr->sin_addr), client_str, INET_ADDRSTRLEN);
         inet_ntop(server_addr->sa_family, &(server_in_addr->sin_addr), server_str, INET_ADDRSTRLEN);
-
-        log_tcp_info(client_str, server_str, tcp_info);
+        
+        
+        log_tcp_info(event_name, client_str, server_str, tcp_info);
       }
     } else {
       TSDebug("tcp_info", "tcp_info length is the wrong size");
@@ -203,7 +231,11 @@ tcp_info_hook(TSCont contp, TSEvent event, void *edata)
   }
 
 done:
-  TSHttpSsnReenable(ssnp, TS_EVENT_HTTP_CONTINUE);
+  if (txnp != NULL) {
+    TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
+  } else if (ssnp != NULL) {
+    TSHttpSsnReenable(ssnp, TS_EVENT_HTTP_CONTINUE);
+  }
   return 0;
 }
 
@@ -254,12 +286,21 @@ TSPluginInit(int argc, const char *argv[])
 
   // add a hook to the state machine
   // TODO: need another hook before the socket is closed, keeping it in for now because it will be easier to change if or when another hook is added to ATS
-  if (config.hook == 2) {
-    TSHttpHookAdd(TS_HTTP_SSN_CLOSE_HOOK, TSContCreate(tcp_info_hook, NULL));
-    TSDebug("tcp_info", "added hook to the close of the TCP connection");
-  } else {
+  if ((config.hook & 1) != 0) {
     TSHttpHookAdd(TS_HTTP_SSN_START_HOOK, TSContCreate(tcp_info_hook, NULL));
     TSDebug("tcp_info", "added hook to the start of the TCP connection");
+  }
+  if ((config.hook & 2) != 0) {
+    TSHttpHookAdd(TS_HTTP_TXN_START_HOOK, TSContCreate(tcp_info_hook, NULL));
+    TSDebug("tcp_info", "added hook to the close of the transaction");
+  }
+  if ((config.hook & 4) != 0) {
+    TSHttpHookAdd(TS_HTTP_SEND_RESPONSE_HDR_HOOK, TSContCreate(tcp_info_hook, NULL));
+    TSDebug("tcp_info", "added hook to the sending of the headers");
+  }
+  if ((config.hook & 8) != 0) {
+    TSHttpHookAdd(TS_HTTP_SSN_CLOSE_HOOK, TSContCreate(tcp_info_hook, NULL));
+    TSDebug("tcp_info", "added hook to the close of the TCP connection");
   }
 
   TSDebug("tcp_info", "tcp info module registered");
