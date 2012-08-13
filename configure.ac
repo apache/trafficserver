@@ -503,9 +503,6 @@ REAL_CXXFLAGS="${CXXFLAGS}"
 AC_PROG_CC
 AC_PROG_CXX
 
-# For automake >= 1.12
-m4_ifdef([AM_PROG_AR], [AM_PROG_AR])
-
 # Check for ccache (if explicitly enabled)
 if test "x$enable_ccache" = "xyes"; then
     AC_CHECK_PROG([CCACHE],[ccache],[ccache],[])
@@ -1440,6 +1437,13 @@ AC_SUBST(has_ip_tos)
 TS_CHECK_LOOPBACK_IFACE
 TS_CHECK_GETHOSTBYNAME_R_STYLE
 TS_CHECK_MACRO_IN6_IS_ADDR_UNSPECIFIED
+
+AC_CHECK_TYPE([struct tcp_info],
+  [enable_tcpinfo_plugin=yes],
+  [enable_tcpinfo_plugin=no],
+  [[#include <netinet/tcp.h>]]
+)
+AM_CONDITIONAL([BUILD_TCPINFO_PLUGIN], [ test "x${enable_tcpinfo_plugin}" != "xno" ])
 
 #
 # use modular IOCORE

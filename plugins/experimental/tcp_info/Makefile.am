@@ -14,11 +14,16 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+pkglibdir = ${pkglibexecdir}
+
 AM_CPPFLAGS = -I$(top_builddir)/proxy/api -I$(top_srcdir)/proxy/api \
               -I$(top_srcdir)/lib/ts -I$(top_builddir)/lib/ts
 
-pkglibdir = ${pkglibexecdir}
+if BUILD_TCPINFO_PLUGIN
+
 pkglib_LTLIBRARIES = tcp_info.la
 tcp_info_la_SOURCES = tcp_info.cc
 tcp_info_la_LDFLAGS = -module -avoid-version -shared
+
+endif
 
