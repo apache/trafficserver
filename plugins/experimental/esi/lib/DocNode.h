@@ -32,7 +32,7 @@
 
 namespace EsiLib {
 
-struct DocNode;
+class DocNode;
 
 class DocNodeList : public std::list<DocNode> {
 

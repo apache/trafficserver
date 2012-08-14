@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.3.0
 
+  *) [TS-1406] add ESI to experimental plugins build
+
   *) [TS-1387] Allow proxy.config.http.insert_age_in_response to be overridden
     Author: Phil Sorber
 

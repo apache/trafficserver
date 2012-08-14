@@ -23,6 +23,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <inttypes.h>
 #include <limits.h>
 #include <string.h>
 #include <string>
@@ -190,8 +191,8 @@ ContData::init()
     output_buffer = TSIOBufferCreate();
     output_reader = TSIOBufferReaderAlloc(output_buffer);
     
-    // we don't know how much data we are going to write, so INT_MAX
-    output_vio = TSVConnWrite(output_conn, contp, output_reader, INT_MAX);
+    // we don't know how much data we are going to write, so INT64_MAX
+    output_vio = TSVConnWrite(output_conn, contp, output_reader, INT64_MAX);
     
     string fetcher_tag, vars_tag, expr_tag, parser_tag, proc_tag;
     if (!data_fetcher) {
@@ -307,7 +308,7 @@ ContData::getServerState() {
   got_server_state = true;
   TSMBuffer bufp;
   TSMLoc hdr_loc;
-  if (!TSHttpTxnServerRespGet(txnp, &bufp, &hdr_loc)) {
+  if (TSHttpTxnServerRespGet(txnp, &bufp, &hdr_loc) != TS_SUCCESS) {
     TSDebug(DEBUG_TAG, "[%s] Could not get server response; Assuming cache object", __FUNCTION__);
 //FIXME In theory it should be DATA_TYPE_PACKED_ESI but that doesn't work. Forcing to RAW_ESI for now.
     input_type = DATA_TYPE_RAW_ESI;
@@ -419,7 +420,7 @@ ContData::~ContData()
 
 static void
 cacheNodeList(ContData *cont_data) {
-  if (TSHttpTxnAborted(cont_data->txnp)) {
+  if (TSHttpTxnAborted(cont_data->txnp) == TS_SUCCESS) {
     TSDebug(cont_data->debug_tag.c_str(), "[%s] Not caching node list as txn has been aborted", __FUNCTION__);
     return;
   }
@@ -490,7 +491,7 @@ transformData(TSCont contp)
   if (!process_input_complete && (cont_data->curr_state == ContData::READING_ESI_DOC)) {
     // Determine how much data we have left to read.
     toread = TSVIONTodoGet(cont_data->input_vio);
-    TSDebug((cont_data->debug_tag).c_str(), "[%s] upstream VC has %ld bytes available to read",
+    TSDebug((cont_data->debug_tag).c_str(), "[%s] upstream VC has %"PRId64" bytes available to read",
              __FUNCTION__, toread);
     
     if (toread > 0) {
@@ -516,7 +517,7 @@ transformData(TSCont contp)
             cont_data->packed_node_list.append(data, data_len);
           }
           TSDebug((cont_data->debug_tag).c_str(),
-                   "[%s] Added chunk of %lu bytes starting with [%.10s] to parse list",
+                   "[%s] Added chunk of %"PRId64" bytes starting with [%.10s] to parse list",
                    __FUNCTION__, data_len, (data_len ? data : "(null)"));
           consumed += data_len;
           
@@ -529,7 +530,7 @@ transformData(TSCont contp)
 */
         }
       }
-      TSDebug((cont_data->debug_tag).c_str(), "[%s] Consumed %ld bytes from upstream VC",
+      TSDebug((cont_data->debug_tag).c_str(), "[%s] Consumed %"PRId64" bytes from upstream VC",
                __FUNCTION__, consumed);
       
       TSIOBufferReaderConsume(cont_data->input_reader, consumed);
@@ -1058,7 +1059,7 @@ isCacheObjTransformable(TSHttpTxn txnp) {
 
 static bool
 isInterceptRequest(TSHttpTxn txnp) {
-  if (!TSHttpIsInternalRequest(txnp)) {
+  if (TSHttpIsInternalRequest(txnp) != TS_SUCCESS) {
     TSDebug(DEBUG_TAG, "[%s] Skipping external request", __FUNCTION__);
     return false;
   }

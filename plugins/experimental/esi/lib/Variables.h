@@ -26,7 +26,6 @@
 #define _ESI_VARIABLES_H
 
 #include <list>
-#include <boost/noncopyable.hpp>
 
 #include <cstring>
 #include "ComponentBase.h"
@@ -35,7 +34,7 @@
 
 namespace EsiLib {
 
-class Variables : private ComponentBase, boost::noncopyable {
+class Variables : private ComponentBase {
 
 public:
 
@@ -88,6 +87,9 @@ public:
   virtual ~Variables() { _releaseCookieJar(); };
 
 private:
+
+  Variables(const Variables&); // non-copyable
+  Variables& operator=(const Variables&); // non-copyable
 
   static const std::string EMPTY_STRING;
   static const std::string TRUE_STRING;
