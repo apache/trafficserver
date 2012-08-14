@@ -121,7 +121,7 @@ IpAllow::InitInstance() {
   // Should not have been initialized before
   ink_assert(_instance == NULL);
 
-  ALL_METHOD_MASK = ~(~0 << HTTP_WKSIDX_METHODS_CNT);
+  ALL_METHOD_MASK = ~0;
 
   ip_reconfig_mutex = new_ProxyMutex();
 
