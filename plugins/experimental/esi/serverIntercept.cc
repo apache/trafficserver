@@ -25,6 +25,7 @@
 
 #include <string>
 #include <limits.h>
+#include <inttypes.h>
 #include <strings.h>
 #include <stdio.h>
 
@@ -168,7 +169,7 @@ handleRead(ContData *cont_data, bool &read_complete) {
           cont_data->req_hdr_parsed = true;
         }
       } else {
-        TSDebug(DEBUG_TAG, "[%s] Appending %ld bytes to body", __FUNCTION__, data_len);
+        TSDebug(DEBUG_TAG, "[%s] Appending %"PRId64" bytes to body", __FUNCTION__, data_len);
         cont_data->body.append(data, data_len);
       }
       consumed += data_len;

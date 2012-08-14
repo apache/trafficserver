@@ -14,13 +14,30 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-SUBDIRS = conf_remap regex_remap header_filter stats_over_http
+pkglibdir = ${pkglibexecdir}
 
-if BUILD_EXPERIMENTAL_PLUGINS
-SUBDIRS += \
- experimental/lua \
- experimental/esi \
- experimental/tcp_info \
- experimental/custom_redirect \
- experimental/header_rewrite
-endif
+AM_CXXFLAGS = \
+  -I$(srcdir)/lib \
+  -I$(srcdir)/fetcher \
+  -I$(top_builddir)/proxy/api \
+  -I$(top_srcdir)/proxy/api
+
+pkglib_LTLIBRARIES = esi.la
+
+esi_la_SOURCES =  \
+	fetcher/HttpDataFetcherImpl.cc \
+	lib/DocNode.cc \
+	lib/EsiParser.cc \
+	lib/EsiProcessor.cc \
+	lib/Expression.cc \
+	lib/FailureInfo.cc \
+	lib/HandlerManager.cc \
+	lib/Stats.cc \
+	lib/Utils.cc \
+	lib/Variables.cc \
+	lib/gzip.cc \
+	plugin.cc \
+	serverIntercept.cc
+
+esi_la_LDFLAGS = -module -avoid-version -shared
+
