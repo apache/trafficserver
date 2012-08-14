@@ -191,8 +191,8 @@ ContData::init()
     output_buffer = TSIOBufferCreate();
     output_reader = TSIOBufferReaderAlloc(output_buffer);
     
-    // we don't know how much data we are going to write, so INT_MAX
-    output_vio = TSVConnWrite(output_conn, contp, output_reader, INT_MAX);
+    // we don't know how much data we are going to write, so INT64_MAX
+    output_vio = TSVConnWrite(output_conn, contp, output_reader, INT64_MAX);
     
     string fetcher_tag, vars_tag, expr_tag, parser_tag, proc_tag;
     if (!data_fetcher) {
@@ -308,7 +308,7 @@ ContData::getServerState() {
   got_server_state = true;
   TSMBuffer bufp;
   TSMLoc hdr_loc;
-  if (!TSHttpTxnServerRespGet(txnp, &bufp, &hdr_loc)) {
+  if (TSHttpTxnServerRespGet(txnp, &bufp, &hdr_loc) != TS_SUCCESS) {
     TSDebug(DEBUG_TAG, "[%s] Could not get server response; Assuming cache object", __FUNCTION__);
 //FIXME In theory it should be DATA_TYPE_PACKED_ESI but that doesn't work. Forcing to RAW_ESI for now.
     input_type = DATA_TYPE_RAW_ESI;
@@ -420,7 +420,7 @@ ContData::~ContData()
 
 static void
 cacheNodeList(ContData *cont_data) {
-  if (TSHttpTxnAborted(cont_data->txnp)) {
+  if (TSHttpTxnAborted(cont_data->txnp) == TS_SUCCESS) {
     TSDebug(cont_data->debug_tag.c_str(), "[%s] Not caching node list as txn has been aborted", __FUNCTION__);
     return;
   }
@@ -1059,7 +1059,7 @@ isCacheObjTransformable(TSHttpTxn txnp) {
 
 static bool
 isInterceptRequest(TSHttpTxn txnp) {
-  if (!TSHttpIsInternalRequest(txnp)) {
+  if (TSHttpIsInternalRequest(txnp) != TS_SUCCESS) {
     TSDebug(DEBUG_TAG, "[%s] Skipping external request", __FUNCTION__);
     return false;
   }
