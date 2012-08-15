@@ -90,7 +90,7 @@ spawn_thread_internal(void *a)
   return NULL;
 }
 
-void
+ink_thread
 Thread::start(const char* name, ThreadFunction f, void *a, size_t stacksize)
 {
   thread_data_internal *p = (thread_data_internal *)ats_malloc(sizeof(thread_data_internal));
@@ -103,5 +103,7 @@ Thread::start(const char* name, ThreadFunction f, void *a, size_t stacksize)
   p->me = this;
   memset(p->name, 0, MAX_THREAD_NAME_LENGTH);
   ink_strlcpy(p->name, name, MAX_THREAD_NAME_LENGTH);
-  this->tid = ink_thread_create(spawn_thread_internal, (void *) p, 0, stacksize);
+  tid = ink_thread_create(spawn_thread_internal, (void *) p, 0, stacksize);
+
+  return tid;
 }
