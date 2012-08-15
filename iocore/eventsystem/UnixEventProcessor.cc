@@ -22,8 +22,9 @@
  */
 
 #include "P_EventSystem.h"      /* MAGIC_EDITING_TAG */
-
-
+#include <sched.h>
+#include <hwloc.h>
+#include "ink_defs.h"
 
 EventType
 EventProcessor::spawn_event_threads(int n_threads, const char* et_name)
@@ -93,11 +94,33 @@ EventProcessor::start(int n_event_threads)
     t->set_event_type((EventType) ET_CALL);
   }
   n_threads_for_type[ET_CALL] = n_event_threads;
+
+#if TS_USE_HWLOC
+  int affinity = 0;
+  REC_ReadConfigInteger(affinity, "proxy.config.exec_thread.affinity");
+  cpu_set_t cpuset;
+  const hwloc_topology_t *topology = ink_get_topology();
+  int cu = hwloc_get_nbobjs_by_type(*topology, HWLOC_OBJ_CORE);
+  int pu = hwloc_get_nbobjs_by_type(*topology, HWLOC_OBJ_PU);
+  int num_cpus = cu;
+  Debug("iocore_thread", "cu: %d pu: %d affinity: %d", cu, pu, affinity);
+#endif
+
   for (i = first_thread; i < n_ethreads; i++) {
     snprintf(thr_name, MAX_THREAD_NAME_LENGTH, "[ET_NET %d]", i);
-    all_ethreads[i]->start(thr_name);
-  }
+    ink_thread tid = all_ethreads[i]->start(thr_name);
+    (void)tid;
 
+#if TS_USE_HWLOC
+    if (affinity == 1) {
+      CPU_ZERO(&cpuset);
+      int cpu = (i - 1) % num_cpus;
+      CPU_SET(cpu, &cpuset);
+      Debug("iocore_thread", "setaffinity tid: %lu, net thread: %d, cpu: %d", tid, i, cpu);
+      assert(pthread_setaffinity_np(tid, sizeof(cpu_set_t), &cpuset) == 0);
+    }
+#endif
+  }
   Debug("iocore_thread", "Created event thread group id %d with %d threads", ET_CALL, n_event_threads);
   return 0;
 }
