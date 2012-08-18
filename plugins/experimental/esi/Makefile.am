@@ -19,13 +19,16 @@ pkglibdir = ${pkglibexecdir}
 AM_CXXFLAGS = \
   -I$(srcdir)/lib \
   -I$(srcdir)/fetcher \
+  -I$(srcdir)/test \
   -I$(top_builddir)/proxy/api \
   -I$(top_srcdir)/proxy/api
 
 pkglib_LTLIBRARIES = esi.la
+lib_LTLIBRARIES = libesi.la
 
-esi_la_SOURCES =  \
-	fetcher/HttpDataFetcherImpl.cc \
+check_PROGRAMS = docnode_test parser_test processor_test utils_test vars_test
+
+libesi_la_SOURCES = \
 	lib/DocNode.cc \
 	lib/EsiParser.cc \
 	lib/EsiProcessor.cc \
@@ -35,9 +38,28 @@ esi_la_SOURCES =  \
 	lib/Stats.cc \
 	lib/Utils.cc \
 	lib/Variables.cc \
-	lib/gzip.cc \
+	lib/gzip.cc
+
+esi_la_SOURCES =  \
+	fetcher/HttpDataFetcherImpl.cc \
 	plugin.cc \
 	serverIntercept.cc
 
+esi_la_LIBADD = libesi.la
 esi_la_LDFLAGS = -module -avoid-version -shared
 
+docnode_test_SOURCES = test/docnode_test.cc test/print_funcs.cc
+docnode_test_LDADD = libesi.la
+parser_test_SOURCES = test/parser_test.cc test/print_funcs.cc
+parser_test_LDADD = libesi.la
+processor_test_SOURCES = test/processor_test.cc test/HandlerMap.cc test/StubIncludeHandler.cc test/print_funcs.cc
+processor_test_LDADD = libesi.la
+utils_test_SOURCES = test/utils_test.cc test/print_funcs.cc
+utils_test_LDADD = libesi.la
+vars_test_SOURCES = test/vars_test.cc test/print_funcs.cc
+vars_test_LDADD = libesi.la
+
+TESTS = $(check_PROGRAMS)
+
+test:: $(TESTS)
+	for f in $(TESTS) ; do $$f ; done

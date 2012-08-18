@@ -142,8 +142,11 @@ void checkNodeList2(const DocNodeList &node_list) {
   check_node_attr(list_iter3->attr_list.front(), "src", "bar3");
 }
 
+pthread_key_t threadKey;
+
 int main() 
 {
+  pthread_key_create(&threadKey, NULL);
   Utils::init(&Debug, &Error);
   
   {

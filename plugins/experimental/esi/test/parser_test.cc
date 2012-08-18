@@ -44,8 +44,11 @@ void check_node_attr(const Attribute &attr, const char *name, const char *value)
   assert(strncmp(attr.value, value, value_len) == 0);
 }
 
+pthread_key_t threadKey;
+
 int main() 
 {
+  pthread_key_create(&threadKey, NULL);
   Utils::init(&Debug, &Error);
   
   {

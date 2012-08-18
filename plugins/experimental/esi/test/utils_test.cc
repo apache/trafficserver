@@ -46,8 +46,11 @@ void checkAttributes(const char *check_id, const AttributeList &attr_list, const
   assert(iter == attr_list.end());
 }
 
+pthread_key_t threadKey;
+
 int main() 
 {
+  pthread_key_create(&threadKey, NULL);
   Utils::init(&Debug, &Error);
 
   AttributeList attr_list;
