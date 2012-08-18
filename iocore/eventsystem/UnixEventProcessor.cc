@@ -23,7 +23,9 @@
 
 #include "P_EventSystem.h"      /* MAGIC_EDITING_TAG */
 #include <sched.h>
+#if TS_USE_HWLOC
 #include <hwloc.h>
+#endif
 #include "ink_defs.h"
 
 EventType
