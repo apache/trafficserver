@@ -1012,6 +1012,7 @@ isTxnTransformable(TSHttpTxn txnp, bool is_cache_txn) {
     goto lReturn; // found internal header; no other detection required
   }
 
+  // allow response with specific status code to be transformable
   resp_status = TSHttpHdrStatusGet(bufp, hdr_loc);
   if (static_cast<int>(resp_status) == static_cast<int>(TS_ERROR)) {
     TSError("[%s] Error while getting http status", __FUNCTION__);

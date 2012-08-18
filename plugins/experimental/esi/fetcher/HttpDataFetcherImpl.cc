@@ -23,6 +23,7 @@
 
 #include "HttpDataFetcherImpl.h"
 #include "Utils.h"
+#include "gzip.h"
 
 #include <arpa/inet.h>
 
@@ -183,6 +184,23 @@ HttpDataFetcherImpl::handleFetchEvent(TSEvent event, void *edata) {
            list_iter != req_data.callback_objects.end(); ++list_iter) {
         (*list_iter)->processData(req_str.data(), req_str.size(), req_data.body, req_data.body_len);
       }
+
+      if (_checkHeaderValue(req_data.bufp, req_data.hdr_loc,
+                       TS_MIME_FIELD_CONTENT_ENCODING,
+                       TS_MIME_LEN_CONTENT_ENCODING,
+                       TS_HTTP_VALUE_GZIP, TS_HTTP_LEN_GZIP, false)) {
+        BufferList buf_list;
+        req_data.raw_response = "";
+        if (gunzip(req_data.body, req_data.body_len, buf_list)) {
+          for (BufferList::iterator iter = buf_list.begin(); iter != buf_list.end(); ++iter) {
+            req_data.raw_response.append(iter->data(),iter->size());
+          }
+          req_data.body_len = req_data.raw_response.size();
+          req_data.body = req_data.raw_response.data();
+        } else {
+          TSError("[%s] Error while gunzipping data", __FUNCTION__);
+        }
+      }
     } else {
       TSDebug(_debug_tag.c_str(), "[%s] Received non-OK status %d for request [%s]",
                __FUNCTION__, resp_status, req_str.data());
@@ -198,6 +216,44 @@ HttpDataFetcherImpl::handleFetchEvent(TSEvent event, void *edata) {
   }
 
   return true;
+}
+
+bool
+HttpDataFetcherImpl::_checkHeaderValue(TSMBuffer bufp, TSMLoc hdr_loc, const char *name, int name_len,
+                 const char *exp_value, int exp_value_len, bool prefix) const {
+  TSMLoc field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, name, name_len);
+  if (!field_loc) {
+    return false;
+  }
+  bool retval = false;
+  if (exp_value && exp_value_len) {
+    const char *value;
+    int value_len;
+    int n_values = TSMimeHdrFieldValuesCount(bufp, hdr_loc, field_loc);
+    for (int i = 0; i < n_values; ++i) {
+      value = TSMimeHdrFieldValueStringGet(bufp, hdr_loc, field_loc, i, &value_len);
+      if ( NULL != value || value_len ) {
+        if (prefix) {
+          if ((value_len >= exp_value_len) &&
+              (strncasecmp(value, exp_value, exp_value_len) == 0)) {
+            retval = true;
+          }
+        } else if (Utils::areEqual(value, value_len, exp_value, exp_value_len)) {
+          retval = true;
+        }
+      } else {
+        TSDebug(_debug_tag.c_str(), "[%s] Error while getting value # %d of header [%.*s]", __FUNCTION__,
+                 i, name_len, name);
+      }
+      if (retval) {
+        break;
+      }
+    }
+  } else { // only presence required
+    retval = true;
+  }
+  TSHandleMLocRelease(bufp, hdr_loc, field_loc);
+  return retval;
 }
 
 bool
@@ -219,6 +275,7 @@ HttpDataFetcherImpl::getData(const string &url, ResponseData &resp_data) const {
     resp_data.clear();
     return false;
   }
+
   resp_data.set(req_data.body, req_data.body_len, req_data.bufp, req_data.hdr_loc);
   TSDebug(_debug_tag.c_str(), "[%s] Found data for URL [%s] of size %d starting with [%.5s]",
            __FUNCTION__, url.data(), req_data.body_len, req_data.body);
@@ -257,9 +314,15 @@ HttpDataFetcherImpl::getRequestStatus(const string &url) const {
 void
 HttpDataFetcherImpl::useHeader(const HttpHeader &header) {
   if (Utils::areEqual(header.name, header.name_len,
-                      TS_MIME_FIELD_ACCEPT_ENCODING, TS_MIME_LEN_ACCEPT_ENCODING)) {
+                      TS_MIME_FIELD_CONTENT_LENGTH, TS_MIME_LEN_CONTENT_LENGTH)) {
     return;
   }
+
+  if (Utils::areEqual(header.name, header.name_len,
+                      TS_MIME_FIELD_RANGE, TS_MIME_LEN_RANGE)) {
+    return;
+  }
+
   string name(header.name, header.name_len);
   string value(header.value, header.value_len);
   std::pair<StringHash::iterator, bool> result = _headers.insert(StringHash::value_type(name, value));

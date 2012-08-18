@@ -96,6 +96,7 @@ private:
   // used to track a request that was made
   struct RequestData {
     std::string response;
+    std::string raw_response;
     const char *body;
     int body_len;
     CallbackObjectList callback_objects;
@@ -122,6 +123,8 @@ private:
   }
 
   bool _isFetchEvent(TSEvent event, int &base_event_id) const;
+  bool _checkHeaderValue(TSMBuffer bufp, TSMLoc hdr_loc, const char *name, int name_len, const char *exp_value, int exp_value_len, bool prefix) const;
+
 
   EsiLib::StringHash _headers;
   std::string _headers_str;
