@@ -168,6 +168,10 @@ traffic_server_LDADD = \
   @LIBZ@ @LIBLZMA@ \
   @LIBMLD@ @LIBEXC@ -lm @LIBPROFILER@ @LIBEXECINFO@
 
+if BUILD_LUA_SUPPORT
+traffic_server_LDFLAGS += @LUA_LUAJIT_LDFLAGS@
+endif
+
 traffic_logcat_SOURCES = logcat.cc
 traffic_logcat_LDFLAGS = @EXTRA_CXX_LDFLAGS@ @LIBTOOL_LINK_FLAGS@
 traffic_logcat_LDADD = \
