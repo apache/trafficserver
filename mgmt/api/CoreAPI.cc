@@ -381,7 +381,7 @@ determine_action_need(const char *rec_name)
 {
   RecUpdateT update_t;
 
-  if (REC_ERR_OKAY == RecGetRecordUpdateType(rec_name, &update_t))
+  if (REC_ERR_OKAY != RecGetRecordUpdateType(rec_name, &update_t))
     return TS_ACTION_UNDEFINED;
 
   switch (update_t) {
@@ -394,7 +394,7 @@ determine_action_need(const char *rec_name)
   case RECU_RESTART_TS:          // requires TS restart
     return TS_ACTION_RESTART;
 
-  case RECU_RESTART_TM:          // requirs TM/TS restart
+  case RECU_RESTART_TM:          // requires TM/TS restart
     return TS_ACTION_RESTART;
 
   case RECU_RESTART_TC:          // requires TC/TM/TS restart
