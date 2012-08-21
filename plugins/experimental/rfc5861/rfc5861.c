@@ -12,18 +12,6 @@
 
 #include <ts/experimental.h>
 
-#ifdef TS_VERSION_NUMBER
-    #if ((TS_VERSION_NUMBER >= 3000000) && (TS_VERSION_NUMBER < 3001000))
-        #define TS_API_30X
-    #elif ((TS_VERSION_NUMBER >= 3001000) && (TS_VERSION_NUMBER < 3003000))
-        #define TS_API_32X
-    #else
-        #error Cannot determine API version!
-    #endif
-#else
-    #error TS_VERSION_NUMBER not defined!
-#endif
-
 #define LOG_PREFIX "rfc5861"
 
 //#define ENABLE_SAVE_ORIGINAL_REQUEST
@@ -674,11 +662,10 @@ rfc5861_plugin(TSCont cont, TSEvent event, void *edata)
     return 0;
 }
 
-static int
+static bool
 check_ts_version()
 {
     const char *ts_version = TSTrafficServerVersionGet();
-    int result = 0;
 
     if (ts_version)
     {
@@ -688,22 +675,17 @@ check_ts_version()
 
         if (sscanf(ts_version, "%d.%d.%d", &major_ts_version, &minor_ts_version, &patch_ts_version) != 3)
         {
-            return 0;
+            return false;
         }
 
-#ifdef TS_API_32X
-        /* We need Traffic Server 3.2.x */
-        if ((major_ts_version == 3) && (minor_ts_version >= 1) && (minor_ts_version <= 2))
-#elif defined TS_API_30X
         /* We need Traffic Server 3.0.x */
         if ((major_ts_version >= 3) && (minor_ts_version == 0))
-#endif
         {
-            result = 1;
+            return true;
         }
     }
 
-    return result;
+    return false;
 }
 
 void
@@ -728,11 +710,7 @@ TSPluginInit (int argc, const char *argv[])
 
     if (!check_ts_version())
     {
-#ifdef TS_API_32X
-        TSError("Plugin requires Traffic Server 3.2\n");
-#elif defined TS_API_30X
         TSError("Plugin requires Traffic Server 3.0\n");
-#endif
         return;
     }
 
