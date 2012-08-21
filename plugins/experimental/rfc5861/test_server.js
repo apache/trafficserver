@@ -1,3 +1,5 @@
+#! /usr/bin/env node
+
 var http = require('http');
 var url  = require('url');
 
