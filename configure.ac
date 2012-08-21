@@ -1558,6 +1558,7 @@ AC_CONFIG_FILES([plugins/stats_over_http/Makefile])
 # experimental plugins
 AC_CONFIG_FILES([plugins/experimental/esi/Makefile])
 AC_CONFIG_FILES([plugins/experimental/lua/Makefile])
+AC_CONFIG_FILES([plugins/experimental/rfc5861/Makefile])
 AC_CONFIG_FILES([plugins/experimental/tcp_info/Makefile])
 AC_CONFIG_FILES([plugins/experimental/custom_redirect/Makefile])
 AC_CONFIG_FILES([plugins/experimental/header_rewrite/Makefile])

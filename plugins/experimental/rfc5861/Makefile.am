@@ -14,14 +14,9 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-SUBDIRS = conf_remap regex_remap header_filter stats_over_http
+AM_CPPFLAGS = -I$(top_builddir)/proxy/api -I$(top_srcdir)/proxy/api
 
-if BUILD_EXPERIMENTAL_PLUGINS
-SUBDIRS += \
- experimental/lua \
- experimental/esi \
- experimental/rfc5861 \
- experimental/tcp_info \
- experimental/custom_redirect \
- experimental/header_rewrite
-endif
+pkglibdir = ${pkglibexecdir}
+pkglib_LTLIBRARIES = rfc5861.la
+rfc5861_la_SOURCES = rfc5861.c
+rfc5861_la_LDFLAGS = -module -avoid-version -shared

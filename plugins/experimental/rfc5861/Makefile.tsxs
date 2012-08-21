@@ -1,0 +1,10 @@
+TSXS?=tsxs
+
+all:	rfc5861.c
+	$(TSXS) -v -c $? -o rfc5861.so
+
+install:
+	$(TSXS) -i -o rfc5861.so
+
+clean:
+	rm -f *.lo *.so

@@ -1,0 +1,14 @@
+Quick install:
+
+Make sure devel packages for traffic-server are installed.
+Make sure that 'tsxs' is in your path.
+
+	make -f Makefile.tsxs
+	make -f Makefile.tsxs install
+
+Add 'rfc5861.so' to plugin.config.
+
+Restart traffic-server.
+
+test_server.js is a test server written in JavaScript and
+meant to be run under node.js.
