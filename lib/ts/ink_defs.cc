@@ -48,6 +48,13 @@ int on = 1;
 static hwloc_topology_t gTopology;
 static bool hwloc_setup = false;
 
+// Get the topology
+const hwloc_topology_t*
+ink_get_topology()
+{
+  return &gTopology;
+}
+
 // Little helper to initialize the hwloc topology, once.
 void static inline
 setup_hwloc()
