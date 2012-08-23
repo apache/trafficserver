@@ -1,5 +1,7 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.3.0
+  *) Removed the (experiemental) TSHttpTxnClientDataGet() API. See
+   TS-998 for more details.
 
   *) [TS-1408] Plugin to implement the stale-while-revalidate and
     stale-if-error features of RFC5861

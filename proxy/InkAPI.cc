@@ -4552,20 +4552,6 @@ TSHttpTxnClientKeepaliveSet(TSHttpTxn txnp, int set)
 
   s->hdr_info.trust_response_cl = (set != 0) ? true : false;
 }
-TSReturnCode
-TSHttpTxnClientDataGet(TSHttpTxn txnp, const char **bufp, int *len)
-{
-  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
-  
-  HttpSM *sm = (HttpSM *) txnp;
-  HTTPHdr *hptr = &(sm->t_state.hdr_info.client_request);
-  if (hptr->valid()) {
-    *bufp = hptr->m_url_cached.m_url_impl->the_request;
-    *len = hptr->m_url_cached.m_url_impl->the_request_len;
-    return TS_SUCCESS;
-  }
-  return TS_ERROR;
-}
 
 TSReturnCode
 TSHttpTxnClientReqGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *obj)
