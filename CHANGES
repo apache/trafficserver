@@ -1,5 +1,7 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.3.0
+  *) [TS-1379] Better error message when mgmt socket is not available.
+
   *) [TS-1389] Replace TSHttpTxnServerRespNoStore() with
    TSHttpTxnServerRespNoStoreSet(), and move it to ts/ts.h. Author: Phil
    Sorber.
