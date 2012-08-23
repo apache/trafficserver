@@ -182,7 +182,6 @@ extern "C"
   tsapi TSReturnCode TSHttpTxnSecondUrlTryLock(TSHttpTxn txnp);
   tsapi TSReturnCode TSHttpTxnRedirectRequest(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc url_loc);
   tsapi TSReturnCode TSHttpTxnCacheLookupSkip(TSHttpTxn txnp);
-  tsapi TSReturnCode TSHttpTxnServerRespNoStore(TSHttpTxn txnp);
   tsapi TSReturnCode TSHttpTxnServerRespIgnore(TSHttpTxn txnp);
   tsapi TSReturnCode TSHttpTxnShutDown(TSHttpTxn txnp, TSEvent event);
 

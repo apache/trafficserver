@@ -634,7 +634,7 @@ rfc5861_plugin(TSCont cont, TSEvent event, void *edata)
             {
                 TSDebug(LOG_PREFIX, "Set non-cachable");
                 //TSHttpTxnRespCacheableSet(txn, 0);
-                TSHttpTxnServerRespNoStore(txn);
+                TSHttpTxnServerRespNoStoreSet(txn,1);
             }
             TSHandleMLocRelease(buf, TS_NULL_MLOC, loc);
             TSHttpTxnReenable(txn, TS_EVENT_HTTP_CONTINUE);

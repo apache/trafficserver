@@ -2233,6 +2233,22 @@ extern "C"
   tsapi TSReturnCode TSHttpTxnCachedRespGet(TSHttpTxn txnp, TSMBuffer* bufp, TSMLoc* offset);
   tsapi void TSHttpTxnRespCacheableSet(TSHttpTxn txnp, int flag);
   tsapi void TSHttpTxnReqCacheableSet(TSHttpTxn txnp, int flag);
+
+  /** Set flag indicating whether or not to cache the server response for
+      given TSHttpTxn
+
+      @note This should be done in the HTTP_READ_RESPONSE_HDR_HOOK or earlier.
+
+      @note If TSHttpTxnRespCacheableSet() is not working the way you expect,
+      this may be the function you should use instead.
+
+      @param txnp The transaction whose server response you do not want to store.
+      @param flag Set 0 to allow storing and 1 to disable storing.
+
+      @return TS_SUCCESS.
+  */
+  tsapi TSReturnCode TSHttpTxnServerRespNoStoreSet(TSHttpTxn txnp, int flag);
+
   tsapi TSReturnCode TSFetchPageRespGet (TSHttpTxn txnp, TSMBuffer* bufp, TSMLoc* offset);
   tsapi char* TSFetchRespGet(TSHttpTxn txnp, int* length);
   tsapi TSReturnCode TSHttpTxnCacheLookupStatusGet(TSHttpTxn txnp, int* lookup_status);
