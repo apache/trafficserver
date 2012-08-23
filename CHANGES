@@ -1,5 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.3.0
+  *) [TS-1389] Replace TSHttpTxnServerRespNoStore() with
+   TSHttpTxnServerRespNoStoreSet(), and move it to ts/ts.h. Author: Phil
+   Sorber.
+
   *) Removed the (experiemental) TSHttpTxnClientDataGet() API. See
    TS-998 for more details.
 
