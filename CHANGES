@@ -1,5 +1,7 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.3.0
+  *) [TS-1415] return 400 if the length of request hostname is zero.
+
   *) [TS-1379] Better error message when mgmt socket is not available.
 
   *) [TS-1389] Replace TSHttpTxnServerRespNoStore() with
