@@ -1745,7 +1745,7 @@ void
 HttpTransact::DecideCacheLookup(State* s)
 {
   // Check if a client request is lookupable.
-  if (s->redirect_info.redirect_in_process) {
+  if (s->redirect_info.redirect_in_process || s->cop_test_page) {
     // for redirect, we want to skip cache lookup and write into
     // the cache directly with the URL before the redirect
     s->cache_info.action = CACHE_DO_NO_ACTION;
