@@ -67,6 +67,10 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
    Jira: https://issues.apache.jira/browse/TS-1392
    +1: jpeach, igalic
 
+  *) Fix build on amd64 Debian/Ubuntu
+   Trunk: b21ccf7 c00f951 02506c0 fa61f83 7fc244e 0d85fe4 44052e9
+   Jira: https://issues.apache.jira/browse/TS-1314
+
 PATCHES ACCEPTED TO BACKPORT FROM TRUNK:
   [ New patches should be added at the end of the list ]
 
