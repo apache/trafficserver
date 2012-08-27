@@ -126,9 +126,9 @@ diags_log_fp(_diags_log_fp), show_location(0)
   diags_on_for_plugins = config.enabled[DiagsTagType_Debug];
 
   for (i = 0; i < DiagsLevel_Count; i++) {
-    config.outputs[i].to_stdout = true;
+    config.outputs[i].to_stdout = false;
     config.outputs[i].to_stderr = false;
-    config.outputs[i].to_syslog = true;
+    config.outputs[i].to_syslog = false;
     config.outputs[i].to_diagslog = true;
   }
 

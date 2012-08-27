@@ -1,5 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.3.0
+  *) [TS-1421] Modify the default log configs to avoid logging to stdout
+   or stderr. This helps with TS-306 (but is not a solution for lack of
+   log rotation on traffic.out).
 
   *) [TS-1415] return 400 if the length of request hostname is zero.
 
