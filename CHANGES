@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.3.0
 
+  *) [TS-1426] protection from NULL deref when using 
+   TSHttpTxnOutgoingTransparencySet after a user agent has disconnected
+
   *) [TS-1425] clean up the lingering read before deallocating its buffers
    when an origin server terminates the connection during a POST request
 

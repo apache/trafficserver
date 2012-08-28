@@ -5355,6 +5355,10 @@ TSHttpTxnOutgoingTransparencySet(TSHttpTxn txnp, int flag)
 # endif
 
   HttpSM *sm = reinterpret_cast<HttpSM*>(txnp);
+  if (NULL == sm || NULL == sm->ua_session) {
+    return TS_ERROR;
+  }
+
   sm->ua_session->f_outbound_transparent = flag;
   return TS_SUCCESS;
 }
