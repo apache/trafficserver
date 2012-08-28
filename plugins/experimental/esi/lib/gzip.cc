@@ -192,7 +192,7 @@ EsiLib::gunzip(const char *data, int data_len, BufferList &buf_list) {
     return false;
   }
   int32_t orig_size;
-  uLong orig_crc;
+  uint32_t orig_crc;
   extract(data + data_len, orig_crc);
   extract(data + data_len + 4, orig_size);
   if ((crc != orig_crc) || (unzipped_data_size != orig_size)) {

@@ -20,10 +20,13 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
+#define __STDC_FORMAT_MACROS
+#define __STDC_LIMIT_MACROS
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <inttypes.h>
+#include <stdint.h>
 #include <limits.h>
 #include <string.h>
 #include <string>
@@ -418,6 +421,7 @@ ContData::~ContData()
   }
 }
 
+#ifdef ESI_PACKED_NODE_SUPPORT
 static void
 cacheNodeList(ContData *cont_data) {
   if (TSHttpTxnAborted(cont_data->txnp) == TS_SUCCESS) {
@@ -453,6 +457,7 @@ cacheNodeList(ContData *cont_data) {
   TSFetchUrl(post_request.data(), post_request.size(), cont_data->client_addr,
                   cont_data->contp, NO_CALLBACK, event_ids);
 }
+#endif
 
 static int
 transformData(TSCont contp)
@@ -568,7 +573,9 @@ transformData(TSCont contp)
       }
       if (cont_data->esi_proc->completeParse()) {
         if (cont_data->os_response_cacheable) {
+#ifdef ESI_PACKED_NODE_SUPPORT
           cacheNodeList(cont_data);
+#endif
         }
       }
     }
@@ -828,8 +835,12 @@ modifyResponseHeader(TSCont contp, TSEvent event, void *edata) {
           destroy_header = true;
         } else if (Utils::areEqual(name, name_len, TS_MIME_FIELD_AGE, TS_MIME_LEN_AGE)) {
           destroy_header = true;
+#ifdef ESI_PACKED_NODE_SUPPORT
         } else if (!mod_data->cache_txn &&
                    Utils::areEqual(name, name_len, MIME_FIELD_XESI, MIME_FIELD_XESI_LEN)) {
+#else
+        } else if (Utils::areEqual(name, name_len, MIME_FIELD_XESI, MIME_FIELD_XESI_LEN)) {
+#endif
           destroy_header = true;
         } else if ((name_len > HEADER_MASK_PREFIX_SIZE) &&
                    (strncmp(name, HEADER_MASK_PREFIX, HEADER_MASK_PREFIX_SIZE) == 0)) {
@@ -842,13 +853,17 @@ modifyResponseHeader(TSCont contp, TSEvent event, void *edata) {
               TSDebug(DEBUG_TAG, "[%s] Error while getting value #%d of header [%.*s]",
                        __FUNCTION__, j, name_len, name);
             } else {
+#ifdef ESI_PACKED_NODE_SUPPORT
               if (mod_data->cache_txn) { 
+#endif
                 bool response_cacheable, is_cache_header;
                 is_cache_header = checkForCacheHeader(name, name_len, value, value_len, response_cacheable);
                 if (is_cache_header && response_cacheable) {
                   destroy_header = true;
                 }
+#ifdef ESI_PACKED_NODE_SUPPORT
               } 
+#endif
             } // if got valid value for header
           } // end for
         }
@@ -867,10 +882,13 @@ modifyResponseHeader(TSCont contp, TSEvent event, void *edata) {
       addMimeHeaderField(bufp, hdr_loc, TS_MIME_FIELD_CONTENT_ENCODING, TS_MIME_LEN_CONTENT_ENCODING,
                          TS_HTTP_VALUE_GZIP, TS_HTTP_LEN_GZIP);
     }
+
+#ifdef ESI_PACKED_NODE_SUPPORT
     if (mod_data->cache_txn) {
       addMimeHeaderField(bufp, hdr_loc, TS_MIME_FIELD_VARY, TS_MIME_LEN_VARY, TS_MIME_FIELD_ACCEPT_ENCODING,
                          TS_MIME_LEN_ACCEPT_ENCODING);
     }
+#endif
     TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
     TSDebug(DEBUG_TAG, "[%s] Inspected client-bound headers", __FUNCTION__);
     retval = 1;
@@ -923,6 +941,7 @@ checkHeaderValue(TSMBuffer bufp, TSMLoc hdr_loc, const char *name, int name_len,
   return retval;
 }
 
+#ifdef ESI_PACKED_NODE_SUPPORT
 static void
 maskOsCacheHeaders(TSHttpTxn txnp) {
   TSMBuffer bufp;
@@ -981,6 +1000,7 @@ maskOsCacheHeaders(TSHttpTxn txnp) {
   } // end header iteration
   TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
 }
+#endif
 
 static bool
 isTxnTransformable(TSHttpTxn txnp, bool is_cache_txn) {
@@ -1156,7 +1176,11 @@ addTransform(TSHttpTxn txnp, bool processing_os_response) {
   }
 
   TSHttpTxnTransformedRespCache(txnp, 0);
+#ifdef ESI_PACKED_NODE_SUPPORT
   TSHttpTxnUntransformedRespCache(txnp, 0);
+#else
+  TSHttpTxnUntransformedRespCache(txnp, 1);
+#endif
 
   TSDebug(DEBUG_TAG, "[%s] Added transformation (0x%p)", __FUNCTION__, contp);
   return true;
@@ -1216,7 +1240,9 @@ globalHookHandler(TSCont contp, TSEvent event, void *edata) {
           // we'll 'mask' OS cache headers so that traffic server will
           // not try to cache this. We cannot outright delete them
           // because we need them in our POST request; hence the 'masking'
+#ifdef ESI_PACKED_NODE_SUPPORT
           maskOsCacheHeaders(txnp);
+#endif
         }
       } else {
         TSDebug(DEBUG_TAG, "[%s] handling cache lookup complete event...", __FUNCTION__);

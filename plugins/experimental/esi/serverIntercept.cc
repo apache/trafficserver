@@ -21,6 +21,8 @@
   limitations under the License.
  */
 
+#define __STDC_FORMAT_MACROS
+
 #include "serverIntercept.h"
 
 #include <string>
