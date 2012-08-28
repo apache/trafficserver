@@ -4823,6 +4823,12 @@ HttpSM::handle_post_failure()
 
   // First order of business is to clean up from
   //  the tunnel
+  // note: since the tunnel is providing the buffer for a lingering
+  // client read (for abort watching purposes), we need to stop
+  // the read
+  if (false == t_state.redirect_info.redirect_in_process) {
+    ua_entry->read_vio = ua_session->do_io_read(this, 0, NULL);
+  }
   ua_entry->in_tunnel = false;
   server_entry->in_tunnel = false;
   tunnel.deallocate_buffers();

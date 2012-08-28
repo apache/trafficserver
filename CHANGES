@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.3.0
 
+  *) [TS-1425] clean up the lingering read before deallocating its buffers
+   when an origin server terminates the connection during a POST request
+
   *) [TS-1249] Disable ESI packed nodes by default.
    Author: Shu Kit Chan <chanshukit@gmail.com>
 
