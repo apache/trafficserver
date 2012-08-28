@@ -97,7 +97,8 @@ magic(PLUGIN_VC_MAGIC_ALIVE), vc_type(PLUGIN_VC_UNKNOWN), core_obj(NULL),
 other_side(NULL), read_state(), write_state(),
 need_read_process(false), need_write_process(false),
 closed(false), sm_lock_retry_event(NULL), core_lock_retry_event(NULL),
-deletable(false), reentrancy_count(0), active_timeout(0), inactive_timeout(0), active_event(NULL), inactive_event(NULL)
+deletable(false), reentrancy_count(0), active_timeout(0), active_event(NULL),
+inactive_timeout(0), inactive_timeout_at(0), inactive_event(NULL)
 {
   SET_HANDLER(&PluginVC::main_handler);
 }
@@ -183,7 +184,10 @@ PluginVC::main_handler(int event, void *data)
   if (call_event == active_event) {
     process_timeout(call_event, VC_EVENT_ACTIVE_TIMEOUT, &active_event);
   } else if (call_event == inactive_event) {
-    process_timeout(call_event, VC_EVENT_INACTIVITY_TIMEOUT, &inactive_event);
+    if (inactive_timeout_at && inactive_timeout_at < ink_get_hrtime()) {
+      process_timeout(call_event, VC_EVENT_INACTIVITY_TIMEOUT, &inactive_event);
+      call_event->cancel();
+    }
   } else {
     if (call_event == sm_lock_retry_event) {
       sm_lock_retry_event = NULL;
@@ -710,6 +714,7 @@ PluginVC::process_close()
   if (inactive_event) {
     inactive_event->cancel();
     inactive_event = NULL;
+    inactive_timeout_at = 0;
   }
   // If the other side of the PluginVC is not closed
   //  we need to force it process both living sides
@@ -765,9 +770,10 @@ PluginVC::process_timeout(Event * e, int event_to_send, Event ** our_eptr)
 void
 PluginVC::update_inactive_time()
 {
-  if (inactive_event) {
-    inactive_event->cancel();
-    inactive_event = eventProcessor.schedule_in(this, inactive_timeout);
+  if (inactive_event && inactive_timeout) {
+    //inactive_event->cancel();
+    //inactive_event = eventProcessor.schedule_in(this, inactive_timeout);
+    inactive_timeout_at = ink_get_hrtime() + inactive_timeout;
   }
 }
 
@@ -831,17 +837,17 @@ void
 PluginVC::set_inactivity_timeout(ink_hrtime timeout_in)
 {
   inactive_timeout = timeout_in;
-
-  // FIX - Do we need to handle the case where the timeout is set
-  //   but no io has been done?
-  if (inactive_event) {
-    ink_assert(!inactive_event->cancelled);
-    inactive_event->cancel();
-    inactive_event = NULL;
-  }
-
-  if (inactive_timeout > 0) {
-    inactive_event = eventProcessor.schedule_in(this, inactive_timeout);
+  if (inactive_timeout != 0) {
+    inactive_timeout_at = ink_get_hrtime() + inactive_timeout;
+    if (inactive_event == NULL) {
+      inactive_event = eventProcessor.schedule_every(this, HRTIME_SECONDS(1));
+    }
+  } else {
+    inactive_timeout_at = 0;
+    if (inactive_event) {
+      inactive_event->cancel();
+      inactive_event = NULL;
+    }
   }
 }
 
