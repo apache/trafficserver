@@ -1,6 +1,6 @@
 /** @file
 
-  Transforms content using gzip
+  Transforms content using gzip or deflate
 
   @section license License
 
@@ -21,18 +21,6 @@
   limitations under the License.
  */
 
-
-// WHAT THIS PLUGIN DOES:
-// in spite of its name, it compresses responses to the raw deflate format.
-// it also normalizes the accept-encoding header from user agent requests 
-// to either deflate or nothing. it compresses responses from origins only,
-// though it can be modified easily to also compress contents from cache.
-//
-// MAJOR ISSUES:
-// - there is an issue with *some* origins that send connection:close. 
-//   the plugin will not execute in that situation as a temporary fix.
-// - the workings of this plugin support our use case, but probably is not 
-//   on size fits all. it shouldnt be too hard to adjust it to your own needs though.
 #include <limits.h>
 #include <stdio.h>
 #include <errno.h>
@@ -48,7 +36,30 @@
 #define DICT_PATH_MAX 512
 #define DICT_ENTRY_MAX 2048
 
+#define COMPRESSION_TYPE_DEFLATE 1
+#define COMPRESSION_TYPE_GZIP 2
+
+#define MOD_GZIP_ZLIB_CFACTOR    9
+#define MOD_GZIP_ZLIB_BSIZE      8096
+
+/* ZLIB's deflate() compression algorithm uses the same */
+/* 0-9 based scale that GZIP does where '1' is 'Best speed' */
+/* and '9' is 'Best compression'. Testing has proved level '6' */
+/* to be about the best level to use in an HTTP Server. */
+
+
+//os: FIXME: look into autoscaling the compression level based on connection speed
+//a gprs device might benefit from a higher compression ratio, whereas a desktop w. high bandwith
+//might be served better with little or no compression at all
+#define MOD_GZIP_DEFLATE_DEFAULT_COMPRESSION_LEVEL 6
+#define CACHE_TRANSFORMED_RESPONSES 0
+#define REMOVE_SERVER_REQUEST_ENCODING 1
+
 const char* PLUGIN_NAME = "gzip";
+
+int arg_idx_hooked;
+int hook_set = 1;
+char * hidden_header_name;
 
 typedef struct
 {
@@ -60,6 +71,7 @@ typedef struct
   z_stream zstrm;
   uLong crc; //os: unused, we are using raw deflate
   int state;
+  int compression_type;
 } GzipData;
 
 
@@ -99,7 +111,6 @@ load_dictionary(char *dict, uLong *adler)
 static voidpf
 gzip_alloc(voidpf opaque, uInt items, uInt size)
 {
-  TSDebug(PLUGIN_NAME, "gzip_alloc()");
   return (voidpf) TSmalloc(items * size);
 }
 
@@ -107,13 +118,12 @@ gzip_alloc(voidpf opaque, uInt items, uInt size)
 static void
 gzip_free(voidpf opaque, voidpf address)
 {
-  TSDebug(PLUGIN_NAME, "gzip_free() start");
   TSfree(address);
 }
 
 
 static GzipData *
-gzip_data_alloc()
+gzip_data_alloc(int compression_type)
 {
   GzipData *data;
   int err;
@@ -126,8 +136,8 @@ gzip_data_alloc()
   data->output_reader = NULL;
   data->output_length = 0;
   data->state = 0;
-  data->crc = crc32(0L, Z_NULL, 0);
-
+  data->compression_type = compression_type;
+  data->crc = crc32(0L, Z_NULL, 0); //os: not used?
   data->zstrm.next_in = Z_NULL;
   data->zstrm.avail_in = 0;
   data->zstrm.total_in = 0;
@@ -139,29 +149,22 @@ gzip_data_alloc()
   data->zstrm.opaque = (voidpf) 0;
   data->zstrm.data_type = Z_ASCII;
 
-#define MOD_GZIP_ZLIB_WINDOWSIZE -15
-#define MOD_GZIP_ZLIB_CFACTOR    9
-#define MOD_GZIP_ZLIB_BSIZE      8096
+  int window_size = -15;//deflate
+  if (compression_type == COMPRESSION_TYPE_GZIP) 
+    window_size = 15 + 16;//gzip
 
-/* ZLIB's deflate() compression algorithm uses the same */
-/* 0-9 based scale that GZIP does where '1' is 'Best speed' */
-/* and '9' is 'Best compression'. Testing has proved level '6' */
-/* to be about the best level to use in an HTTP Server. */
+  TSDebug("gzip","initializing window size %d", window_size);
 
-
-//os: FIXME: look into autoscaling the compression level based on connection speed
-//a gprs device might benefit from a higher compression ratio, whereas a desktop w. high bandwith
-//might be served better with little or no compression at all
-#define MOD_GZIP_DEFLATE_DEFAULT_COMPRESSION_LEVEL 6
   err = deflateInit2(
         &data->zstrm, 
         MOD_GZIP_DEFLATE_DEFAULT_COMPRESSION_LEVEL,
         Z_DEFLATED,
-        MOD_GZIP_ZLIB_WINDOWSIZE,
+        window_size,
         MOD_GZIP_ZLIB_CFACTOR,
         Z_DEFAULT_STRATEGY);
 
   if (err != Z_OK) {
+    TSDebug("gzip", "deflate init error %d", err);
     TSError("gzip-transform: ERROR: deflateInit (%d)!", err);
     exit(1);
   }
@@ -173,7 +176,6 @@ gzip_data_alloc()
       TSError("gzip-transform: ERROR: deflateSetDictionary (%d)!", err);
     }
   }
-  TSDebug(PLUGIN_NAME, "gzip_data_alloc() end");
 
   return data;
 }
@@ -184,7 +186,6 @@ gzip_data_destroy(GzipData *data)
 {
   int err;
 
-  TSDebug(PLUGIN_NAME,"gzip-transform: gzip_data_destroy() starts");  
   if (data) {
     err = deflateEnd(&data->zstrm);
 
@@ -199,8 +200,6 @@ gzip_data_destroy(GzipData *data)
       TSIOBufferDestroy(data->output_buffer);
     TSfree(data);
   }
-  
-  TSDebug(PLUGIN_NAME,"gzip-transform: gzip_data_destroy() ends");  
 }
 
 
@@ -216,8 +215,7 @@ gzip_transform_init(TSCont contp, GzipData *data)
 
   data->state = 1;
 
-  /* Mark the output data as having deflate content encoding */
-  
+  /* Mark the output data as having deflate content encoding */  
   TSHttpTxnTransformRespGet(data->txn, &bufp, &hdr_loc);
 
 
@@ -228,7 +226,13 @@ gzip_transform_init(TSCont contp, GzipData *data)
   //Probably should check for errors 
   TSMimeHdrFieldCreate(bufp, hdr_loc, &ce_loc); 
   TSMimeHdrFieldNameSet(bufp, hdr_loc, ce_loc, "Content-Encoding", -1);
-  TSMimeHdrFieldValueStringInsert(bufp, hdr_loc, ce_loc, -1, "deflate", -1);
+
+  if (data->compression_type == COMPRESSION_TYPE_DEFLATE) {
+    TSMimeHdrFieldValueStringInsert(bufp, hdr_loc, ce_loc, -1, "deflate", -1);
+  } else if (data->compression_type == COMPRESSION_TYPE_GZIP) {
+    TSMimeHdrFieldValueStringInsert(bufp, hdr_loc, ce_loc, -1, "gzip", -1);
+  } 
+
   TSMimeHdrFieldAppend(bufp, hdr_loc, ce_loc);
   TSHandleMLocRelease(bufp, hdr_loc, ce_loc);
 
@@ -245,9 +249,23 @@ gzip_transform_init(TSCont contp, GzipData *data)
 
   //os: since we alter the entity body, update the etag to something different as well  
   ce_loc = TSMimeHdrFieldFind(bufp, hdr_loc, TS_MIME_FIELD_ETAG, TS_MIME_LEN_ETAG);
-  if (ce_loc){
-    TSMimeHdrFieldValueAppend(bufp, hdr_loc, ce_loc, 0, "-df", 3);
-    TSHandleMLocRelease(bufp, hdr_loc, ce_loc);
+
+  if (ce_loc) {
+    int changetag = 1;
+    int strl;
+    const char * strv = TSMimeHdrFieldValueStringGet(bufp,hdr_loc,ce_loc,-1,&strl);
+    //do not alter weak etags.
+    //FIXME: consider just making the etag weak for compressed content
+    if (strl>=2) {
+      if ( ( strv[0] == 'w' || strv[0] == 'W') && strv[1] == '/'  ) {
+        changetag=0;
+      }
+      if (changetag) {
+	TSMimeHdrFieldValueAppend(bufp,hdr_loc,ce_loc,0,"-df",3);
+      }
+
+      TSHandleMLocRelease(bufp, hdr_loc, ce_loc);
+    }
   }
 
   TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
@@ -270,10 +288,7 @@ gzip_transform_one(GzipData *data, TSIOBufferReader input_reader, int amount)
   int64_t ilength, olength;
   int err;
 
-  TSDebug(PLUGIN_NAME, "gzip_transform_one");
-
   while (amount > 0) {
-    TSDebug(PLUGIN_NAME, "gzip_transform_one->loop, amount: %d", amount);
     blkp = TSIOBufferReaderStart(input_reader);
 
     /* TSIOBufferReaderStart may return an error pointer */
@@ -283,7 +298,6 @@ gzip_transform_one(GzipData *data, TSIOBufferReader input_reader, int amount)
        return;
     }
 
-    TSDebug(PLUGIN_NAME, "gzip_transform_one->TSIOBufferReaderStart finished");
     ibuf = TSIOBufferBlockReadStart(blkp, input_reader, &ilength);
     
     /* TSIOBufferReaderStart may return an error pointer */
@@ -293,8 +307,6 @@ gzip_transform_one(GzipData *data, TSIOBufferReader input_reader, int amount)
        return;
     }
     
-    TSDebug(PLUGIN_NAME, "gzip_transform_one->TSIOBufferBlockReadStart ilength: %" PRId64, ilength);
-    
     if (ilength > amount) {
       ilength = amount;
     }
@@ -303,7 +315,6 @@ gzip_transform_one(GzipData *data, TSIOBufferReader input_reader, int amount)
     data->zstrm.avail_in = ilength;
 
     while (data->zstrm.avail_in > 0) {
-      TSDebug(PLUGIN_NAME, "gzip_transform_one->Tdata->zstrm.avail_in: %d", data->zstrm.avail_in);
       blkp = TSIOBufferStart(data->output_buffer);
 
       obuf = TSIOBufferBlockWriteStart(blkp, &olength);
@@ -322,24 +333,19 @@ gzip_transform_one(GzipData *data, TSIOBufferReader input_reader, int amount)
         data->output_length += (olength - data->zstrm.avail_out);
       }
       
-      TSDebug(PLUGIN_NAME,"deflate() call values olength: %" PRId64 " , ilength: %" PRId64 ", data->output_length: %d",
-              olength, ilength, data->output_length );
-         
       if (data->zstrm.avail_out > 0) {
         if (data->zstrm.avail_in != 0) {
           TSError("gzip-transform: ERROR: avail_in is (%d): should be 0", data->zstrm.avail_in);
         }
       }
     }
-    TSDebug(PLUGIN_NAME, "gzip_transform_one pre compute crc");
+
     /* compute CRC for error checking at client */
     data->crc = crc32(data->crc, (unsigned char *) ibuf, ilength);
 
-    TSDebug(PLUGIN_NAME, "gzip_transform_one pre consume %" PRId64 " from reader", ilength);
     TSIOBufferReaderConsume(input_reader, ilength);
     amount -= ilength;
   }
-  TSDebug(PLUGIN_NAME, "gzip_transform_one survived");
 }
 
 
@@ -384,44 +390,20 @@ gzip_transform_finish(GzipData *data)
       TSError("gzip-transform: ERROR: output lengths don't match (%d, %ld)", data->output_length,
                data->zstrm.total_out);
     }
-
-    /* compute/append crc to end of stream */
-
-    /*
-       blkp = TSIOBufferStart (data->output_buffer);
-       char crcbuf[8];
-       char* buf=crcbuf;
-       uLong tmp = data->crc;
-       buf[0] = tmp & 0xff; tmp >>= 8;
-       buf[1] = tmp & 0xff; tmp >>= 8;
-       buf[2] = tmp & 0xff; tmp >>= 8;
-       buf[3] = tmp & 0xff;
-
-       tmp = data->zstrm.total_in;
-       buf[4] = tmp & 0xff; tmp >>= 8;
-       buf[5] = tmp & 0xff; tmp >>= 8;
-       buf[6] = tmp & 0xff; tmp >>= 8;
-       buf[7] = tmp & 0xff;
-
-       char*p = buf;
-       int length;
-       length = 8;
-
-       while (length > 0) {
-       obuf = TSIOBufferBlockWriteStart (blkp, &olength);
-       if (olength > length) {
-       olength = length;
-       }
-
-       memcpy (obuf, p, olength);
-       p += olength;
-       length -= olength;
-
-       TSIOBufferProduce (data->output_buffer, olength);
-       }
-
-       data->output_length += 8;*/
-     
+    if (data->compression_type == COMPRESSION_TYPE_GZIP) { 
+      char*p = (char *)&(data->zstrm.adler);
+      int length = 8;
+      while (length > 0) {
+	obuf = TSIOBufferBlockWriteStart (blkp, &olength);
+	if (olength > length) 
+	  olength = length;
+	memcpy (obuf, p, olength);
+	p += olength;
+	length -= olength;
+	TSIOBufferProduce (data->output_buffer, olength);
+      }
+      data->output_length += 8;
+    }
   }
 }
 
@@ -431,187 +413,98 @@ gzip_transform_do(TSCont contp)
 {
   TSVIO write_vio;
   GzipData *data;
-  int towrite;
-  int avail;
-  int length;
+  int64_t towrite;
+  int64_t avail;
+  int64_t length;
   
-  TSDebug(PLUGIN_NAME, "gzip_transform_do");
-
-   /* Get our data structure for this operation. The private data
-     structure contains the output vio and output buffer. If the
-     private data structure pointer is NULL, then we'll create it
-     and initialize its internals. */
   data = TSContDataGet(contp);
   if (data->state == 0) {
-    TSDebug(PLUGIN_NAME, "gzip_transform_do: data->state == 0, get_transform_init");
     gzip_transform_init(contp, data);
-  } else {
-    TSDebug(PLUGIN_NAME, "gzip_transform_do: data->state == %d, NO get_transform_init", data->state);
   }
-  
-  /* Get the write vio for the write operation that was performed on
-     ourself. This vio contains the buffer that we are to read from
-     as well as the continuation we are to call when the buffer is
-     empty. */
+
   write_vio = TSVConnWriteVIOGet(contp);
 
   length = data->output_length;
-  TSDebug(PLUGIN_NAME, "gzip_transform_do: first length: %d", length);
-  /* We also check to see if the write vio's buffer is non-NULL. A
-     NULL buffer indicates that the write operation has been
-     shutdown and that the continuation does not want us to send any
-     more WRITE_READY or WRITE_COMPLETE events. For this simplistic
-     transformation that means we're done. In a more complex
-     transformation we might have to finish writing the transformed
-     data to our output connection. */
+
   if (!TSVIOBufferGet(write_vio)) {
-    TSDebug(PLUGIN_NAME, "gzip_transform_do->!TSVIOBufferGet(write_vio)...");
     gzip_transform_finish(data);
 
     TSVIONBytesSet(data->output_vio, data->output_length);
     TSDebug(PLUGIN_NAME, "Compressed size %d (bytes)", data->output_length);
 
     if (data->output_length > length) {
-      TSDebug(PLUGIN_NAME, "gzip_transform_do->!reeanble data->output_vio");
       TSVIOReenable(data->output_vio);
     }
     return;
   }
 
-  /* Determine how much data we have left to read. For this gzip
-     transform plugin this is also the amount of data we have left
-     to write to the output connection. */
   towrite = TSVIONTodoGet(write_vio);
-  TSDebug(PLUGIN_NAME, "gzip_transform_do: towrite: %d", towrite);
+
   if (towrite > 0) {
-    /* The amount of data left to read needs to be truncated by
-       the amount of data actually in the read buffer. */
     avail = TSIOBufferReaderAvail(TSVIOReaderGet(write_vio));
-    TSDebug(PLUGIN_NAME, "gzip_transform_do: avail: %d", avail);    
+
     if (towrite > avail) {
       towrite = avail;
     }
 
     if (towrite > 0) {
-      TSDebug(PLUGIN_NAME, "gzip_transform_do: call gzip_transform_one");    
       gzip_transform_one(data, TSVIOReaderGet(write_vio), towrite);
-      TSDebug(PLUGIN_NAME, "gzip_transform_do-> gzip_transform_one finished");
-      /* Modify the write vio to reflect how much data we've
-         completed. */
       TSVIONDoneSet(write_vio, TSVIONDoneGet(write_vio) + towrite);
-      TSDebug(PLUGIN_NAME, "gzip_transform_do-> TSVIONDoneSet finished");
     }
   }
 
-  TSDebug(PLUGIN_NAME,"TSVIONTodoGet(write_vio) -> %" PRId64, TSVIONTodoGet(write_vio) );
-
-  /* Now we check the write vio to see if there is data left to
-     read. */
   if (TSVIONTodoGet(write_vio) > 0) {
-    TSDebug(PLUGIN_NAME, "gzip_transform_do-> towrite: %d", towrite);
+
     if (towrite > 0) {
-      /* If we output some data then we reenable the output
-         connection by reenabling the output vio. This will wakeup
-         the output connection and allow it to consume data from the
-         output buffer. */
-         
-      TSDebug(PLUGIN_NAME, "gzip_transform_do: data->output_length > length? %d > %d",
-              data->output_length, length);
       if (data->output_length > length) {
-        TSDebug(PLUGIN_NAME, "gzip_transform_do-> vio renable");
         TSVIOReenable(data->output_vio);
-        //return;
-      }
-      
-      /* Call back the write vio continuation to let it know that we
-         are ready for more data. */
-      TSDebug(PLUGIN_NAME, "gzip_transform_do: TSContCall - TS_EVENT_VCONN_WRITE_READY");    
+      }      
       TSContCall(TSVIOContGet(write_vio), TS_EVENT_VCONN_WRITE_READY, write_vio);
     }
   } else {
-    TSDebug(PLUGIN_NAME, "gzip_transform_do-> towrite <= 0");
-    /* If there is no data left to read, then we modify the output
-       vio to reflect how much data the output connection should
-       expect. This allows the output connection to know when it
-       is done reading. We then reenable the output connection so
-       that it can consume the data we just gave it. */
-       
-    TSDebug(PLUGIN_NAME, "gzip_transform_do-> pre gzip_transform_finish");
     gzip_transform_finish(data);
-    TSDebug(PLUGIN_NAME, "gzip_transform_do-> post gzip_transform_finish");
     TSVIONBytesSet(data->output_vio, data->output_length);
-    TSDebug(PLUGIN_NAME, "gzip_transform_do-> post TSVIONBytesSet");
     TSDebug(PLUGIN_NAME, "gzip_transform_do-> Compressed size %d (bytes)", data->output_length);
 
     if (data->output_length > length) {
-      TSDebug(PLUGIN_NAME, "gzip_transform_do-> call TSVIOReenable");
       TSVIOReenable(data->output_vio);
     }
 
-    /* Call back the write vio continuation to let it know that we
-       have completed the write operation. */
-    TSDebug(PLUGIN_NAME, "gzip_transform_do: TSContCall - TS_EVENT_VCONN_WRITE_COMPLETE");    
     TSContCall(TSVIOContGet(write_vio), TS_EVENT_VCONN_WRITE_COMPLETE, write_vio);
   }
-  TSDebug(PLUGIN_NAME, "gzip_transform_do-> survived");
 }
 
 
 static int
 gzip_transform(TSCont contp, TSEvent event, void *edata)
 {
-  TSDebug(PLUGIN_NAME, "gzip_transform event %d", event);
-  /* Check to see if the transformation has been closed by a call to
-     TSVConnClose. */
   if (TSVConnClosedGet(contp)) {
-    TSDebug(PLUGIN_NAME,"gzip_transform -> transformation has been closed");
-    //.TSHttpTxnRespCacheableSet((TSHttpTxn)edata,0);
     gzip_data_destroy(TSContDataGet(contp));
     TSContDestroy(contp);
     return 0;
   } else {
-      TSDebug(PLUGIN_NAME, "gzip_transform: switch on event");
     switch (event) {
     case TS_EVENT_ERROR:
       {
         TSDebug(PLUGIN_NAME, "gzip_transform: TS_EVENT_ERROR starts");
-        TSVIO write_vio;
-
-        /* Get the write vio for the write operation that was
-           performed on ourself. This vio contains the continuation of
-           our parent transformation. */
-        write_vio = TSVConnWriteVIOGet(contp);
-
-        /* Call back the write vio continuation to let it know that we
-           have completed the write operation. */
+        TSVIO write_vio = TSVConnWriteVIOGet(contp);
         TSContCall(TSVIOContGet(write_vio), TS_EVENT_ERROR, write_vio);
       }
       break;
 
     case TS_EVENT_VCONN_WRITE_COMPLETE:
-      TSDebug(PLUGIN_NAME, "gzip_transform: TS_EVENT_VCONN_WRITE_COMPLETE starts");
-      /* When our output connection says that it has finished
-         reading all the data we've written to it then we should
-         shutdown the write portion of its connection to
-         indicate that we don't want to hear about it anymore. */
       TSVConnShutdown(TSTransformOutputVConnGet(contp), 0, 1);
       break;
 
     case TS_EVENT_VCONN_WRITE_READY:
-       TSDebug(PLUGIN_NAME, "gzip_transform: TS_EVENT_VCONN_WRITE_READY starts");
-       /* If we get a WRITE_READY we'll attempt to transform more data. */
        gzip_transform_do(contp);    
        break;
 
     case TS_EVENT_IMMEDIATE:
-        TSDebug(PLUGIN_NAME, "gzip_transform: TS_EVENT_IMMEDIATE received. how about spitting out an error?");
         gzip_transform_do(contp);    
         break;
 
     default:
-      TSDebug(PLUGIN_NAME, "gzip_transform: default starts %d", event);
-      /* If we get any other type of event (sent, perhaps, because we were reenabled) then
-         we'll attempt to transform more data. */     
       gzip_transform_do(contp);    
       break;
     }
@@ -655,7 +548,6 @@ gzip_transformable(TSHttpTxn txnp, int server)
         }
     }
 
-    TSDebug(PLUGIN_NAME,"Got status %d", resp_status);
     if (TS_HTTP_STATUS_OK == resp_status) {
       if (TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc) != TS_SUCCESS) {
         TSError("Unable to release handle to server request");
@@ -669,7 +561,6 @@ gzip_transformable(TSHttpTxn txnp, int server)
     }
   }
 
-//  TSDebug(PLUGIN_NAME, "gzip_transformable");
   /* Server response header */
   TSMBuffer bufp;
   TSMLoc hdr_loc;
@@ -687,7 +578,7 @@ gzip_transformable(TSHttpTxn txnp, int server)
   TSHttpTxnClientReqGet(txnp, &cbuf, &chdr);
 
   /* check if client accepts "deflate" */
-  cfield = TSMimeHdrFieldFind(cbuf, chdr, TS_MIME_FIELD_ACCEPT_ENCODING, -1);
+  cfield = TSMimeHdrFieldFind(cbuf, chdr, TS_MIME_FIELD_ACCEPT_ENCODING, TS_MIME_LEN_ACCEPT_ENCODING);
 
   if (TS_NULL_MLOC != cfield) {
     nvalues = TSMimeHdrFieldValuesCount(cbuf, chdr, cfield);
@@ -696,9 +587,12 @@ gzip_transformable(TSHttpTxn txnp, int server)
     deflate_flag = 0;
     i = 0;
     while (nvalues > 0) {
-      if (value && (strncasecmp(value, "deflate", sizeof("deflate") - 1) == 0)) {
+      if (value && (strncasecmp(value, "deflate", strlen("deflate")) == 0)) {
         deflate_flag = 1;
         break;
+      } else if (value && (strncasecmp(value, "gzip", strlen("gzip")) == 0)){
+	deflate_flag = 1;
+	break;
       }
       ++i;
 
@@ -773,6 +667,24 @@ gzip_transformable(TSHttpTxn txnp, int server)
 static void
 gzip_transform_add(TSHttpTxn txnp, int server)
 {
+  int * tmp  = (int *)TSHttpTxnArgGet(txnp, arg_idx_hooked);
+
+  if ( CACHE_TRANSFORMED_RESPONSES ) { 
+    TSHttpTxnUntransformedRespCache(txnp, 1);
+    TSHttpTxnTransformedRespCache(txnp, 0);
+  } else { 
+    TSHttpTxnTransformedRespCache(txnp, 0);
+    TSHttpTxnUntransformedRespCache(txnp, 1);
+  }
+
+  if ( tmp ) {
+    TSDebug("gzip", "hook already set, bail");
+    return;
+  } else {
+    TSHttpTxnArgSet(txnp, arg_idx_hooked, &hook_set);
+    TSDebug("gzip", "adding compression transform");
+  }
+
   TSVConn connp;
   GzipData *data;
 
@@ -780,7 +692,26 @@ gzip_transform_add(TSHttpTxn txnp, int server)
   connp = TSTransformCreate(gzip_transform, txnp);
   
   TSDebug(PLUGIN_NAME,"zip_transform_add -> gzip_data_alloc()");
-  data = gzip_data_alloc();
+
+
+  /* Client request header */
+  TSMBuffer cbuf;
+  TSMLoc chdr;
+  TSMLoc cfield;
+  int len;
+  int gzip=0;
+
+  TSHttpTxnClientReqGet(txnp, &cbuf, &chdr);
+  cfield = TSMimeHdrFieldFind(cbuf, chdr, TS_MIME_FIELD_ACCEPT_ENCODING, TS_MIME_LEN_ACCEPT_ENCODING);
+  TSMimeHdrFieldValueStringGet(cbuf, chdr, cfield, 0, &len);
+
+  if (len == 4) gzip=1;
+  TSHandleMLocRelease(cbuf, chdr, cfield);  
+  TSHandleMLocRelease(cbuf, TS_NULL_MLOC, chdr);
+
+
+
+  data = gzip_data_alloc(gzip ? COMPRESSION_TYPE_GZIP : COMPRESSION_TYPE_DEFLATE);
   data->txn = txnp;
   
   TSDebug(PLUGIN_NAME,"zip_transform_add -> TSContDataSet()");
@@ -793,17 +724,16 @@ gzip_transform_add(TSHttpTxn txnp, int server)
 static void 
 normalize_accept_encoding(TSHttpTxn txnp, TSMBuffer reqp, TSMLoc hdr_loc)
 {
-//  const char *header = "Accept-Encoding";
-//  int header_len = strlen(header);
   TSMLoc field = TSMimeHdrFieldFind(reqp, hdr_loc, TS_MIME_FIELD_ACCEPT_ENCODING, TS_MIME_LEN_ACCEPT_ENCODING);
   int deflate = 0;
+  int gzip = 0;
     
   //remove the accept encoding field(s), 
   //while finding out if deflate is supported.    
   while (field) {
     TSMLoc tmp;
       
-    if (!deflate) {
+    if (!deflate && !gzip) {
       int value_count = TSMimeHdrFieldValuesCount(reqp, hdr_loc, field);
 
       while (value_count > 0) {
@@ -813,33 +743,87 @@ normalize_accept_encoding(TSHttpTxn txnp, TSMBuffer reqp, TSMLoc hdr_loc)
         --value_count;
         val = TSMimeHdrFieldValueStringGet(reqp, hdr_loc, field, value_count, &val_len);
 
-        //FIXME
-        //OS: these aren't always NULL terminated.
-        if (val_len >=  7) //valgrind complains on the strstrs
-          deflate = strstr(val, "deflate") != NULL;
-
-        if (deflate)
-          break;
+	if (val_len == strlen("gzip"))
+	  gzip = !strncmp(val, "gzip", val_len);
+        else if (val_len ==  strlen("deflate"))
+          deflate = !strncmp(val, "deflate", val_len);
       }
     }
-      
+
     tmp = TSMimeHdrFieldNextDup(reqp, hdr_loc, field);
     TSMimeHdrFieldDestroy(reqp, hdr_loc, field); //catch retval?
     TSHandleMLocRelease(reqp, hdr_loc, field);
     field = tmp;
   }
    
-  //if deflate is supported,
   //append a new accept-encoding field in the header
-  if (deflate){
+  if (deflate || gzip){
     TSMimeHdrFieldCreate(reqp, hdr_loc, &field);
     TSMimeHdrFieldNameSet(reqp, hdr_loc, field, TS_MIME_FIELD_ACCEPT_ENCODING, TS_MIME_LEN_ACCEPT_ENCODING);
-    TSMimeHdrFieldValueStringInsert(reqp, hdr_loc, field, -1, "deflate", strlen("deflate"));
+
+    if (gzip) {
+      TSMimeHdrFieldValueStringInsert(reqp, hdr_loc, field, -1, "gzip", strlen("gzip"));
+      TSDebug("gzip","normalized accept encoding to gzip");
+    }
+    else if (deflate) {
+      TSMimeHdrFieldValueStringInsert(reqp, hdr_loc, field, -1, "deflate", strlen("deflate"));
+      TSDebug("gzip","normalized accept encoding to deflate");
+    }
+
     TSMimeHdrFieldAppend(reqp, hdr_loc, field);
     TSHandleMLocRelease(reqp, hdr_loc, field);
+  } 
+}
+
+static int
+cache_transformable(TSHttpTxn txnp) {
+  int obj_status;
+  if (TSHttpTxnCacheLookupStatusGet(txnp, &obj_status) == TS_ERROR) {
+    TSError("[%s] Couldn't get cache status of object", __FUNCTION__);
+    TSDebug("gzip_lu","[%s] Couldn't get cache status of object", __FUNCTION__);
+    return 0;
+  }
+  if ((obj_status == TS_CACHE_LOOKUP_HIT_FRESH) /*|| (obj_status == TS_CACHE_LOOKUP_HIT_STALE)*/) {
+    TSDebug("gzip_lu", "[%s] doc found in cache, will add transformation", __FUNCTION__);
+    return 1;
+  }
+  TSDebug("gzip_lu", "[%s] cache object's status is %d; not transformable",
+          __FUNCTION__, obj_status);
+  return 0;
+}
+
+static void
+kill_request_accept_encoding(TSHttpTxn txnp, TSMBuffer reqp, TSMLoc hdr_loc)
+{
+  TSMLoc field = TSMimeHdrFieldFind(reqp, hdr_loc, TS_MIME_FIELD_ACCEPT_ENCODING
+                                    , TS_MIME_LEN_ACCEPT_ENCODING);
+
+  while (field) {
+    TSMLoc tmp;
+    tmp = TSMimeHdrFieldNextDup(reqp, hdr_loc, field);
+
+
+    TSMimeHdrFieldNameSet(reqp, hdr_loc, field, hidden_header_name, -1);
+    TSHandleMLocRelease(reqp, hdr_loc, field);
+    field = tmp;
   }
 }
 
+
+static void
+restore_request_accept_encoding(TSHttpTxn txnp, TSMBuffer reqp, TSMLoc hdr_loc)
+{
+  TSMLoc field = TSMimeHdrFieldFind(reqp, hdr_loc, hidden_header_name, -1);
+
+  while (field) {
+    TSMLoc tmp;
+    tmp = TSMimeHdrFieldNextDup(reqp, hdr_loc, field);
+
+    TSMimeHdrFieldNameSet(reqp, hdr_loc, field, TS_MIME_FIELD_ACCEPT_ENCODING, TS_MIME_LEN_ACCEPT_ENCODING);
+    TSHandleMLocRelease(reqp, hdr_loc, field);
+    field = tmp;
+  }
+}
 
 static int
 transform_plugin(TSCont contp, TSEvent event, void *edata)
@@ -847,8 +831,6 @@ transform_plugin(TSCont contp, TSEvent event, void *edata)
   TSHttpTxn txnp = (TSHttpTxn) edata;
   int reason;
   
-  TSDebug(PLUGIN_NAME, "@ transform_plugin()");
-
   switch (event) {
   case TS_EVENT_HTTP_READ_REQUEST_HDR:
     {
@@ -862,7 +844,20 @@ transform_plugin(TSCont contp, TSEvent event, void *edata)
     }
     break;
 
-  case TS_EVENT_HTTP_READ_RESPONSE_HDR:
+  case TS_EVENT_HTTP_READ_RESPONSE_HDR: {
+    //os: boy oh boy. the accept encoding header needs to be restored
+    //otherwise alt selection will fail. hopefully a better solution exists
+    //then this header shuffle
+    TSMBuffer req_buf;
+    TSMLoc req_loc;
+    
+    if ( TSHttpTxnServerReqGet(txnp, &req_buf, &req_loc) == TS_SUCCESS ){
+      if (REMOVE_SERVER_REQUEST_ENCODING) { 
+	restore_request_accept_encoding(txnp, req_buf, req_loc);
+      }
+      TSHandleMLocRelease(req_buf, TS_NULL_MLOC, req_loc);
+    }
+
     reason = gzip_transformable(txnp, 1);
     if (reason >= 0) {
       TSDebug(PLUGIN_NAME, "server content transformable");
@@ -872,15 +867,31 @@ transform_plugin(TSCont contp, TSEvent event, void *edata)
     }
 
     TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
-    break;
+  }  break;
 
-  case TS_EVENT_HTTP_READ_CACHE_HDR:
-    reason = gzip_transformable(txnp, 0);
-    if (reason >= 0) {
-      TSDebug(PLUGIN_NAME, "cached content transformable");
-      gzip_transform_add(txnp, 1);
-    } else {
-      TSDebug(PLUGIN_NAME, "cached data:  forwarding unchanged (%d)", reason);
+  case TS_EVENT_HTTP_SEND_REQUEST_HDR: {
+    if (REMOVE_SERVER_REQUEST_ENCODING) { 
+      TSMBuffer req_buf;
+      TSMLoc req_loc;
+      if ( TSHttpTxnServerReqGet(txnp, &req_buf, &req_loc) == TS_SUCCESS ){
+	kill_request_accept_encoding(txnp, req_buf, req_loc);
+	TSHandleMLocRelease(req_buf, TS_NULL_MLOC, req_loc);
+      }
+    }
+
+    TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
+  }  break;
+
+  case TS_EVENT_HTTP_CACHE_LOOKUP_COMPLETE:
+    reason = cache_transformable(txnp);
+    if (reason) {
+      reason = gzip_transformable(txnp, 0);
+      if (reason >= 0) {
+        TSDebug("gzip-transform", "cached content transformable");
+        gzip_transform_add(txnp, 0);
+      } else {
+        TSDebug("gzip-transform", "cached data:  forwarding unchanged (%d)", reason);
+      }
     }
     TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
     break;
@@ -906,7 +917,34 @@ TSPluginInit(int argc, const char *argv[])
 
   TSDebug(PLUGIN_NAME, "gzip plugin loads");
 
+
+  TSDebug("gzip-transform", "gzip plugin loads");
+
+  if (TSHttpArgIndexReserve("gzip", "for remembering if the hook was set", &arg_idx_hooked) != TS_SUCCESS) {
+    TSError("failed to reserve an argument index");
+    exit(-1);
+  }
+
+  const char* var_name = "proxy.config.proxy_name";
+  TSMgmtString result;
+
+  if ( TSMgmtStringGet( var_name, &result) != TS_SUCCESS ) {
+    TSDebug("gzip", "failed to get server name");
+    exit(-1);
+  } else {
+    TSDebug("gzip", "got server name: %s", result);
+
+    int hidden_header_name_len = strlen("x-accept-encoding-") + strlen(result);
+    hidden_header_name = (char *)TSmalloc( hidden_header_name_len + 1 );
+    result[hidden_header_name_len] = 0;
+    sprintf( hidden_header_name, "x-accept-encoding-%s", result);
+    TSDebug("gzip", "hidden header name: %s / %ld", hidden_header_name, strlen(hidden_header_name));
+  }
+
+
+
   TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, TSContCreate(transform_plugin, NULL));
   TSHttpHookAdd(TS_HTTP_READ_RESPONSE_HDR_HOOK, TSContCreate(transform_plugin, NULL));
-  //TSHttpHookAdd(TS_HTTP_READ_CACHE_HDR_HOOK, TSContCreate(transform_plugin, NULL));
+  TSHttpHookAdd(TS_HTTP_SEND_REQUEST_HDR_HOOK, TSContCreate(transform_plugin, NULL));
+  TSHttpHookAdd(TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK, TSContCreate(transform_plugin, NULL));
 }
