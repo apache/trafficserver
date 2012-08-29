@@ -377,6 +377,7 @@ Changes with Apache Traffic Server 3.1.3
 
   *) [TS-841] support TLS NextProtocol negotiation
 
+
 Changes with Apache Traffic Server 3.1.2
 
   *) [TS-1110] logstats incorrectly bucketizes all status codes greater 
@@ -501,6 +502,7 @@ Changes with Apache Traffic Server 3.1.2
   *) [TS-1021] Remove extra newline from binary logs.
 
   *) [TS-1022] Use size specific types for serialized data in binary logs.
+
 
 Changes with Apache Traffic Server 3.1.1
 
@@ -651,6 +653,7 @@ Changes with Apache Traffic Server 3.1.1
   *) [TS-930] Fixed TSNetConnect to use network order for port.
 
   *) [TS-1008] Add API to get TCP connection from SSN.
+
 
 Changes with Apache Traffic Server 3.1.0
 
@@ -829,6 +832,7 @@ Changes with Apache Traffic Server 3.1.0
   *) [TS-815] make sure that a missing yacc/bison|flex/lex is *fatal* when
    building with wccp. Author: Arno Toll.
 
+
 Changes with Apache Traffic Server 3.0.0
 
   *) [TS-827] TSMimeHdrFieldValueStringInsert() can use freed memory to
@@ -848,6 +852,7 @@ Changes with Apache Traffic Server 3.0.0
 
   *) [TS-798] We add broken remap rules when we encounter parse errors of
    remap.config.
+
 
 Changes with Apache Traffic Server 2.1.9
 
@@ -944,6 +949,7 @@ Changes with Apache Traffic Server 2.1.9
 
   *) [TS-759] Makefile in proxy/config handles $DESTDIR incorrectly.
    Author: Arno Toell
+
 
 Changes with Apache Traffic Server 2.1.8
 
@@ -1054,6 +1060,7 @@ Changes with Apache Traffic Server 2.1.8
   *) [TS-545] parent.config (and perhaps other configs) have an unused
    concept of "tags" for MIXT media. Cleanup remaining MIXT junk.
 
+
 Changes with Apache Traffic Server 2.1.7
 
   *) [TS-711] Don't schedule remap.config reloads on a network threads.
@@ -1110,6 +1117,7 @@ Changes with Apache Traffic Server 2.1.7
   *) [TS-684] config.layout for gentoo linux, may also be used on Fedora
 
   *) [TS-675] Make redirect and reverse maps work again.
+
 
 Changes with Apache Traffic Server 2.1.6
 
@@ -1233,6 +1241,7 @@ Changes with Apache Traffic Server 2.1.6
   *) [TS-627] Fixes for "make check" to succeed (author: Arno Toell).
 
   *) [TS-632] Fixes for bad cast and cleanup for Intel CC.
+
 
 Changes with Apache Traffic Server 2.1.5
 
@@ -1475,6 +1484,7 @@ Changes with Apache Traffic Server 2.1.5
 
   Various other cleanup related to the APIs was also done [TS-522].
 
+
 Changes with Apache Traffic Server 2.1.4
 
   *) Fixes to clustering, that caused an assert to trigger after the stats
@@ -1547,6 +1557,7 @@ Changes with Apache Traffic Server 2.1.4
 
   *) Cleanup / optimize Via: string generation [TS-460]. Also make the
    default for Via: on responses to be disabled (it can leak info).
+
 
 Changes with Apache Traffic Server 2.1.3
 
@@ -1625,6 +1636,7 @@ Changes with Apache Traffic Server 2.1.3
   *) Duplication of RAM cache hits and miss statistics (reading 2x) (author:
    John Plevyak) [TS-453].
 
+
 Changes with Apache Traffic Server 2.1.2
 
   *) Improvements in resilience against DNS poisoning and forging of
@@ -1697,6 +1709,7 @@ Changes with Apache Traffic Server 2.1.2
 
   *) Solaris 10 port work.
 
+
 Changes with Apache Traffic Server 2.1.1
 
   *) Allow SI decimal multipliers for numeric configuration parameters
@@ -1717,6 +1730,7 @@ Changes with Apache Traffic Server 2.1.1
 
   *) Performance improvements on cache for larger(ish) objects.
 
+
 Changes with Apache Traffic Server 2.1.0
 
   *) Support for many more platforms, including FreeBSD, MacOSX and Solaris.
@@ -1735,6 +1749,7 @@ Changes with Apache Traffic Server 2.1.0
 
   *) The cache is now 64-bit "clean".
 
+
 Changes with Apache Traffic Server 2.0.1
 
   *) Port of CVE-2010-2952 for 2.0.x [TS-425].
@@ -1744,6 +1759,7 @@ Changes with Apache Traffic Server 2.0.1
 
   *) Backport TS-336 to 2.0.x. Problems with make install DESTDIR=...
 
+
 Changes with Apache Traffic Server 2.0.0
 
   *) Change SDK versioning schemes to 2.0 [TS-249).
@@ -1751,6 +1767,7 @@ Changes with Apache Traffic Server 2.0.0
   *) Minor additions to the SDK (see the docs for details).
 
   *) Support regexe_map rules in remap.config [TS-80]
+
 
 Changes with Apache Traffic Server 2.0.0-alpha
 
