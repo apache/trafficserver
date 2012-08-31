@@ -57,6 +57,7 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   *) stats codes mess up when disk fail
    Trunk: 99cbf8acb97b191631882bfcfaf06d512347fdd4
    Jira: https://issues.apache.org/jira/browse/TS-1289
+   +1: igalic
 
   *) Improve response times for for Cluster purge & miss
    Trunk: f0a98cdc7b950e1ecefde94694de5dfd800248aa
