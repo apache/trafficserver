@@ -6983,7 +6983,9 @@ HttpTransact::handle_response_keep_alive_headers(State* s, HTTPVersion ver, HTTP
           // length (e.g. no Content-Length and Connection:close in HTTP/1.1 responses)
           s->hdr_info.trust_response_cl == false)) ||
          // handle serve from cache (read-while-write) case
-         (s->source == SOURCE_CACHE && s->hdr_info.trust_response_cl == false))) {
+         (s->source == SOURCE_CACHE && s->hdr_info.trust_response_cl == false) ||
+	  //any transform will potentially alter the content length. try chunking if possible
+	  (s->source == SOURCE_TRANSFORM && s->hdr_info.trust_response_cl == false ))) {
       s->client_info.receive_chunked_response = true;
       heads->value_append(MIME_FIELD_TRANSFER_ENCODING, MIME_LEN_TRANSFER_ENCODING, HTTP_VALUE_CHUNKED, HTTP_LEN_CHUNKED, true);
     } else {
