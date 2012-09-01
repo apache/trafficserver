@@ -1,7 +1,31 @@
+/** @file
+
+  Transforms content using gzip or deflate
+
+  @section license License
+
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+ */
+
 #include "misc.h"
 #include <string.h>
 #include <ts/ts.h>
 #include "debug_macros.h"
+
 
 voidpf
 gzip_alloc(voidpf opaque, uInt items, uInt size)
@@ -69,7 +93,7 @@ normalize_accept_encoding(TSHttpTxn txnp, TSMBuffer reqp, TSMLoc hdr_loc)
 }
 
 void
-hide_accept_encoding(TSHttpTxn txnp, TSMBuffer reqp, TSMLoc hdr_loc)
+hide_accept_encoding(TSHttpTxn txnp, TSMBuffer reqp, TSMLoc hdr_loc, const char * hidden_header_name)
 {
   TSMLoc field = TSMimeHdrFieldFind(reqp, hdr_loc, TS_MIME_FIELD_ACCEPT_ENCODING, TS_MIME_LEN_ACCEPT_ENCODING);
   while (field) {
@@ -82,7 +106,7 @@ hide_accept_encoding(TSHttpTxn txnp, TSMBuffer reqp, TSMLoc hdr_loc)
 }
 
 void
-restore_accept_encoding(TSHttpTxn txnp, TSMBuffer reqp, TSMLoc hdr_loc)
+restore_accept_encoding(TSHttpTxn txnp, TSMBuffer reqp, TSMLoc hdr_loc, const char * hidden_header_name)
 {
   TSMLoc field = TSMimeHdrFieldFind(reqp, hdr_loc, hidden_header_name, -1);
 
@@ -95,9 +119,10 @@ restore_accept_encoding(TSHttpTxn txnp, TSMBuffer reqp, TSMLoc hdr_loc)
   }
 }
 
-void
+const char *
 init_hidden_header_name()
 {
+  char * hidden_header_name;
   const char *var_name = "proxy.config.proxy_name";
   TSMgmtString result;
 
@@ -109,6 +134,7 @@ init_hidden_header_name()
     hidden_header_name[hidden_header_name_len] = 0;
     sprintf(hidden_header_name, "x-accept-encoding-%s", result);
   }
+  return hidden_header_name;
 }
 
 int
@@ -131,9 +157,9 @@ register_plugin()
 {
   TSPluginRegistrationInfo info;
 
-  info.plugin_name = "gzip";
-  info.vendor_name = "Apache";
-  info.support_email = "dev@trafficserver.apache.org";
+  info.plugin_name = (char*)"gzip";
+  info.vendor_name = (char*)"Apache";
+  info.support_email = (char*)"dev@trafficserver.apache.org";
 
   if (TSPluginRegister(TS_SDK_VERSION_3_0, &info) != TS_SUCCESS) {
     return 0;
