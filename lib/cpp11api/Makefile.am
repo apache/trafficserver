@@ -25,4 +25,4 @@ libatscpp11api_la_SOURCES = \
   
 includedir=$(prefix)/include/ts
 include_HEADERS = \
-  ts-cpp11.h
+  ts-cpp11.h ts-cpp11-headers.h
