@@ -73,18 +73,24 @@ TSHttpHookID TSHookIDFromHookType(HookType hook) {
   case ats::api::HookType::HOOK_POST_REMAP:
     return TS_HTTP_POST_REMAP_HOOK;
     break;
-  case ats::api::HookType::HOOK_READ_REQUEST_HEADER:
+  case ats::api::HookType::HOOK_READ_REQUEST_HEADERS:
     return TS_HTTP_READ_REQUEST_HDR_HOOK;
     break;
-  case ats::api::HookType::HOOK_READ_RESPONSE_HEADER:
+  case ats::api::HookType::HOOK_READ_RESPONSE_HEADERS:
     return TS_HTTP_READ_RESPONSE_HDR_HOOK;
     break;
-  case ats::api::HookType::HOOK_SEND_RESPONSE_HEADER:
+  case ats::api::HookType::HOOK_SEND_RESPONSE_HEADERS:
     return TS_HTTP_SEND_RESPONSE_HDR_HOOK;
+    break;
+  case ats::api::HookType::HOOK_TRANSACTION_START:
+    return TS_HTTP_TXN_START_HOOK;
+    break;
+  case ats::api::HookType::HOOK_TRANSACTION_END:
+    return TS_HTTP_TXN_CLOSE_HOOK;
     break;
   }
 
-  return TS_HTTP_READ_REQUEST_HDR_HOOK;
+  return NULL;
 }
 
 void inline ReenableBasedOnNextState(TSHttpTxn txnp, NextState ns) {
@@ -509,6 +515,10 @@ static int TransactionContinuationHandler(TSCont contp, TSEvent event,
 
   ReenableBasedOnNextState(txnp, ns);
   return 0;
+}
+
+void* ats::api::GetTransactionIdentifier(Transaction &t) {
+  return reinterpret_cast<void *>(t.ts_http_txn_);
 }
 
 void ats::api::CreateTransactionHook(Transaction &txn, HookType hook,

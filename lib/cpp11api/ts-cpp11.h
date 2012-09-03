@@ -36,9 +36,11 @@ typedef std::vector<std::string> StringVector;
 enum class HookType {
   HOOK_PRE_REMAP = 100,
   HOOK_POST_REMAP,
-  HOOK_READ_RESPONSE_HEADER,
-  HOOK_READ_REQUEST_HEADER,
-  HOOK_SEND_RESPONSE_HEADER
+  HOOK_READ_RESPONSE_HEADERS,
+  HOOK_READ_REQUEST_HEADERS,
+  HOOK_SEND_RESPONSE_HEADERS,
+  HOOK_TRANSACTION_START,
+  HOOK_TRANSACTION_END
 };
 
 enum class NextState {
@@ -83,9 +85,16 @@ std::string GetRequestMethod(Transaction &t);
 void SetRequestMethod(Transaction &t, const std::string &);
 int GetServerResponseStatusCode(Transaction &t);
 bool IsInternalRequest(Transaction &);
+void* GetTransactionIdentifier(Transaction &);
 
-}
-}
+
+/* headers */
+namespace headers {
+// header code coming very soon
+} /* headers */
+
+} /* api */
+} /* ats */
 
 /*
  * Every plugin must have a simple entry point
