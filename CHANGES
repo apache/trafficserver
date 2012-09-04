@@ -1,7 +1,10 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.3.0
 
-  *) [TS-1436] Added Yahoo directory layout for installation
+  *) [TS-1436] Added Yahoo directory layout for installation.
+
+  *) [TS-1418] Add automake file to Metalink plugin. Author: Jack Bates.
+   Also reorganize the plugins/experimental Makefile.am stuff slightly.
 
   *) [TS-1414] gzip plugin enhancements
 
