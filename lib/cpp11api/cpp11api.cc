@@ -487,6 +487,10 @@ void ats::api::SetRequestMethod(Transaction &t, const std::string &method) {
   TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
 }
 
+void ats::api::ReenableTransaction(Transaction &t, NextState ns) {
+  ReenableBasedOnNextState(t.ts_http_txn_, ns);
+}
+
 static int TransactionContinuationHandler(TSCont contp, TSEvent event,
     void *edata) {
   TSHttpTxn txnp = static_cast<TSHttpTxn>(edata);

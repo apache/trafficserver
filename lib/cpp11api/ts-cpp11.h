@@ -87,7 +87,7 @@ void SetRequestMethod(Transaction &t, const std::string &);
 int GetServerResponseStatusCode(Transaction &t);
 bool IsInternalRequest(Transaction &);
 void* GetTransactionIdentifier(Transaction &);
-
+void ReenableTransaction(Transaction &, NextState);
 
 /* headers */
 // TODO: Switch these out to deal with shared_ptrs to a HeaderVector
