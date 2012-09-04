@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.3.0
 
+  *) [TS-1437] Make the Lua plugin compile on RedHat based distros.
+
   *) [TS-1436] Added Yahoo directory layout for installation.
 
   *) [TS-1418] Add automake file to Metalink plugin. Author: Jack Bates.

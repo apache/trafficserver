@@ -21,6 +21,7 @@
 #include "lapi.h"
 #include "lutil.h"
 #include <pthread.h>
+#include <unistd.h>
 
 static thread_local_pointer<LuaThreadInstance> LuaThread;
 LuaPluginState * LuaPlugin;
