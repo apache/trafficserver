@@ -24,7 +24,6 @@
 
 using namespace ats::api;
 
-namespace {
 TSHttpHookID TSHookIDFromHookType(HookType hook);
 
 class HookContinuationData {
@@ -39,7 +38,6 @@ public:
   TSHttpTxn ts_http_txn_ = NULL;
   TSCont ts_contp_ = NULL;
 };
-}
 
 extern "C" void TSPluginInit(int argc, const char *argv[]) {
 
@@ -64,7 +62,6 @@ extern "C" void TSPluginInit(int argc, const char *argv[]) {
   PluginRegister(arguments);
 }
 
-namespace {
 TSHttpHookID TSHookIDFromHookType(HookType hook) {
   switch (hook) {
   case ats::api::HookType::HOOK_PRE_REMAP:
@@ -90,7 +87,7 @@ TSHttpHookID TSHookIDFromHookType(HookType hook) {
     break;
   }
 
-  return NULL;
+  return TS_HTTP_PRE_REMAP_HOOK;
 }
 
 void inline ReenableBasedOnNextState(TSHttpTxn txnp, NextState ns) {
@@ -117,7 +114,6 @@ std::string printable_sockaddr_ip(sockaddr const * s_sockaddr) {
 
   return std::string(res);
 }
-} /* end anonymous namespace */
 
 std::string ats::api::GetPristineRequestUrl(Transaction &t) {
   TSMBuffer bufp;
@@ -521,7 +517,7 @@ void* ats::api::GetTransactionIdentifier(Transaction &t) {
   return reinterpret_cast<void *>(t.ts_http_txn_);
 }
 
-void ats::api::CreateTransactionHook(Transaction &txn, HookType hook,
+void ats::api::CreateTransactionHook(Transaction &txn,HookType hook,
     GlobalHookCallback callback) {
   TSHttpHookID ts_hook_id = TSHookIDFromHookType(hook);
   TSCont contp = TSContCreate(TransactionContinuationHandler, NULL);
