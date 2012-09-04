@@ -20,7 +20,9 @@
 
 #include <arpa/inet.h>
 #include <ts.h>
+#include <algorithm>
 #include "ts-cpp11.h"
+#include "ts-cpp11-headers.h"
 
 using namespace ats::api;
 
@@ -546,4 +548,330 @@ void ats::api::CreateGlobalHook(HookType hook, GlobalHookCallback callback) {
 
   TSContDataSet(contp, static_cast<void*>(data));
   TSHttpHookAdd(ts_hook_id, contp);
+}
+
+/*
+ * Header code
+ */
+
+void SetHeader(TSMBuffer bufp, TSMLoc hdr_loc, const std::string &name,
+    const std::vector<std::string> &values) {
+
+  TSMLoc field_loc;
+
+  field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, name.c_str(), name.length());
+
+  // if the field already existed, let's just blow it away.
+  if (field_loc) {
+    TSMimeHdrFieldDestroy(bufp, hdr_loc, field_loc);
+    TSHandleMLocRelease(bufp, hdr_loc, field_loc);
+  }
+
+  // Now it definitely doesn't exist, so add it.
+  TSMimeHdrFieldCreate(bufp, hdr_loc, &field_loc);
+  TSMimeHdrFieldNameSet(bufp, hdr_loc, field_loc, name.c_str(), name.length());
+
+  for (unsigned int i = 0; i < values.size(); ++i) {
+    TSMimeHdrFieldValueStringInsert(bufp, hdr_loc, field_loc, 0, values[i].c_str(),
+        values[i].length());
+    TSMimeHdrFieldAppend(bufp, hdr_loc, field_loc);
+  }
+
+  TSHandleMLocRelease(bufp, hdr_loc, field_loc);
+}
+
+void AppendHeader(TSMBuffer bufp, TSMLoc hdr_loc, const std::string &name,
+    const std::vector<std::string> &values) {
+
+  TSMLoc field_loc;
+
+  TSMimeHdrFieldCreate(bufp, hdr_loc, &field_loc);
+  TSMimeHdrFieldNameSet(bufp, hdr_loc, field_loc, name.c_str(), name.length());
+
+  for (unsigned int i = 0; i < values.size(); ++i) {
+    TSMimeHdrFieldValueStringInsert(bufp, hdr_loc, field_loc, 0, values[i].c_str(),
+        values[i].length());
+    TSMimeHdrFieldAppend(bufp, hdr_loc, field_loc);
+  }
+
+  TSHandleMLocRelease(bufp, hdr_loc, field_loc);
+}
+
+void DeleteHeader(TSMBuffer bufp, TSMLoc hdr_loc, const std::string &name) {
+  TSMLoc field_loc;
+
+  field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, name.c_str(), name.length());
+
+  if (field_loc) {
+    TSMimeHdrFieldDestroy(bufp, hdr_loc, field_loc);
+    TSHandleMLocRelease(bufp, hdr_loc, field_loc);
+  }
+}
+
+/*
+ * Obviously this should be optimized to either fill in a passed vector
+ * or just returned a shared_ptr to the build vector, this is an exercise
+ * left to the reader.
+ */
+ats::api::headers::HeaderVector GetHeaders(TSMBuffer bufp, TSMLoc hdr_loc) {
+
+  TSMLoc field_loc;
+
+  ats::api::headers::HeaderVector hv;
+
+  field_loc = TSMimeHdrFieldGet(bufp, hdr_loc, 0);
+  while (field_loc) {
+    /* copy the header to a more friedly data structure */
+    int name_length;
+    const char *fieldName = TSMimeHdrFieldNameGet(bufp, hdr_loc, field_loc, &name_length);
+
+    ats::api::headers::Header hdr;
+    hdr.assignName(fieldName, name_length);
+
+    /* now we have to walk all the values and add them */
+    int numValues = TSMimeHdrFieldValuesCount(bufp, hdr_loc, field_loc);
+    for (int indx = 0; indx < numValues; ++indx) {
+      int val_length;
+      const char *value = TSMimeHdrFieldValueStringGet(bufp, hdr_loc, field_loc, indx, &val_length);
+      hdr.addNewValue(value, val_length);
+    }
+
+    hv.push_back(hdr);
+
+    /* Get the next field and release the current one */
+    TSMLoc next_field_loc = TSMimeHdrFieldNext(bufp, hdr_loc, field_loc);
+    TSHandleMLocRelease(bufp, hdr_loc, field_loc);
+    field_loc = next_field_loc;
+  }
+
+  return hv;
+}
+
+/*
+ * TODO: All of these can be improved by caching and then invalidating the
+ * header cache when a delete, append, or set occurs.
+ */
+
+void ats::api::headers::DeleteClientRequestHeader(Transaction &t, const std::string &name) {
+  TSMBuffer bufp;
+  TSMLoc hdr_loc;
+
+  if (TSHttpTxnClientReqGet(t.ts_http_txn_, &bufp, &hdr_loc) != TS_SUCCESS)
+    return;
+
+  DeleteHeader(bufp, hdr_loc, name);
+  TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
+}
+
+void ats::api::headers::DeleteClientResponseHeader(Transaction &t, const std::string &name) {
+  TSMBuffer bufp;
+  TSMLoc hdr_loc;
+
+  if (TSHttpTxnClientRespGet(t.ts_http_txn_, &bufp, &hdr_loc) != TS_SUCCESS)
+    return;
+
+  DeleteHeader(bufp, hdr_loc, name);
+  TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
+}
+
+void ats::api::headers::DeleteServerResponseHeader(Transaction &t, const std::string &name) {
+  TSMBuffer bufp;
+  TSMLoc hdr_loc;
+
+  if (TSHttpTxnServerRespGet(t.ts_http_txn_, &bufp, &hdr_loc) != TS_SUCCESS)
+    return;
+
+  DeleteHeader(bufp, hdr_loc, name);
+  TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
+}
+
+void ats::api::headers::SetClientRequestHeader(Transaction &t, const std::string &name,
+    const std::vector<std::string> &vals) {
+  TSMBuffer bufp;
+  TSMLoc hdr_loc;
+
+  if (TSHttpTxnClientReqGet(t.ts_http_txn_, &bufp, &hdr_loc) != TS_SUCCESS)
+    return;
+
+  SetHeader(bufp, hdr_loc, name, vals);
+  TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
+}
+
+void ats::api::headers::SetClientRequestHeader(Transaction &t, const std::string &name, const std::string &val) {
+
+  std::vector<std::string> vals;
+  vals.push_back(val);
+  SetClientRequestHeader(t, name, vals);
+}
+
+void ats::api::headers::SetClientResponseHeader(Transaction &t, const std::string &name,
+    const std::vector<std::string> &vals) {
+  TSMBuffer bufp;
+  TSMLoc hdr_loc;
+
+  if (TSHttpTxnClientRespGet(t.ts_http_txn_, &bufp, &hdr_loc) != TS_SUCCESS)
+    return;
+
+  SetHeader(bufp, hdr_loc, name, vals);
+  TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
+}
+
+void ats::api::headers::SetClientResponseHeader(Transaction &t, const std::string &name, const std::string &val) {
+
+  std::vector<std::string> vals;
+  vals.push_back(val);
+  SetClientResponseHeader(t, name, vals);
+}
+
+void ats::api::headers::SetServerResponseHeader(Transaction &t, const std::string &name,
+    const std::vector<std::string> &vals) {
+  TSMBuffer bufp;
+  TSMLoc hdr_loc;
+
+  if (TSHttpTxnServerRespGet(t.ts_http_txn_, &bufp, &hdr_loc) != TS_SUCCESS)
+    return;
+
+  SetHeader(bufp, hdr_loc, name, vals);
+  TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
+}
+
+void ats::api::headers::SetServerResponseHeader(Transaction &t, const std::string &name, const std::string &val) {
+
+  std::vector<std::string> vals;
+  vals.push_back(val);
+  SetServerResponseHeader(t, name, vals);
+}
+
+void ats::api::headers::AppendServerResponseHeader(Transaction &t, const std::string &name,
+    const std::vector<std::string> &vals) {
+  TSMBuffer bufp;
+  TSMLoc hdr_loc;
+
+  if (TSHttpTxnServerRespGet(t.ts_http_txn_, &bufp, &hdr_loc) != TS_SUCCESS)
+    return;
+
+  AppendHeader(bufp, hdr_loc, name, vals);
+  TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
+}
+
+void ats::api::headers::AppendServerResponseHeader(Transaction &t, const std::string &name,
+    const std::string &val) {
+
+  std::vector<std::string> vals;
+  vals.push_back(val);
+  AppendServerResponseHeader(t, name, vals);
+}
+
+void ats::api::headers::AppendClientRequestHeader(Transaction &t, const std::string &name,
+    const std::vector<std::string> &vals) {
+
+  TSMBuffer bufp;
+  TSMLoc hdr_loc;
+
+  if (TSHttpTxnClientReqGet(t.ts_http_txn_, &bufp, &hdr_loc) != TS_SUCCESS)
+    return;
+
+  AppendHeader(bufp, hdr_loc, name, vals);
+  TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
+}
+
+void ats::api::headers::AppendClientRequestHeader(Transaction &t, const std::string &name,
+    const std::string &val) {
+
+  std::vector<std::string> vals;
+  vals.push_back(val);
+  AppendClientRequestHeader(t, name, vals);
+}
+
+void ats::api::headers::AppendClientResponseHeader(Transaction &t, const std::string &name,
+    const std::vector<std::string> &vals) {
+
+  TSMBuffer bufp;
+  TSMLoc hdr_loc;
+
+  if (TSHttpTxnClientRespGet(t.ts_http_txn_, &bufp, &hdr_loc) != TS_SUCCESS)
+    return;
+
+  AppendHeader(bufp, hdr_loc, name, vals);
+  TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
+}
+
+void ats::api::headers::AppendClientResponseHeader(Transaction &t, const std::string &name,
+    const std::string &val) {
+
+  std::vector<std::string> vals;
+  vals.push_back(val);
+  AppendClientResponseHeader(t, name, vals);
+}
+
+ats::api::headers::HeaderVector ats::api::headers::GetClientRequestHeaders(Transaction &t) {
+  TSMBuffer bufp;
+  TSMLoc hdr_loc;
+
+  HeaderVector hv;
+
+  if (TSHttpTxnClientReqGet(t.ts_http_txn_, &bufp, &hdr_loc) != TS_SUCCESS)
+    return hv;
+
+  hv = GetHeaders(bufp, hdr_loc);
+  TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
+
+  return hv;
+}
+
+ats::api::headers::HeaderVector ats::api::headers::GetClientResponseHeaders(Transaction &t) {
+  TSMBuffer bufp;
+  TSMLoc hdr_loc;
+
+  HeaderVector hv;
+
+  if (TSHttpTxnClientRespGet(t.ts_http_txn_, &bufp, &hdr_loc) != TS_SUCCESS)
+    return hv;
+
+  hv = GetHeaders(bufp, hdr_loc);
+  TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
+
+  return hv;
+}
+
+ats::api::headers::HeaderVector ats::api::headers::GetServerResponseHeaders(Transaction &t) {
+  TSMBuffer bufp;
+  TSMLoc hdr_loc;
+
+  HeaderVector hv;
+
+  if (TSHttpTxnServerRespGet(t.ts_http_txn_, &bufp, &hdr_loc) != TS_SUCCESS)
+    return hv;
+
+  hv = GetHeaders(bufp, hdr_loc);
+  TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
+
+  return hv;
+}
+
+inline ats::api::headers::Header GetHeader(Transaction &t, const std::string& hdr_name,
+   const ats::api::headers::HeaderVector &hdrs) {
+
+  ats::api::headers::Header hdr;
+
+  ats::api::headers::HeaderVector::const_iterator ii = std::find_if(hdrs.begin(), hdrs.end(),
+      ats::api::headers::HeaderName(hdr_name));
+
+  if (ii != hdrs.end()) {
+    hdr = *ii;
+  }
+
+  return hdr;
+}
+
+ats::api::headers::Header ats::api::headers::GetClientRequestHeader(Transaction &t, const std::string& hdr_name) {
+  return GetHeader(t, hdr_name, GetClientRequestHeaders(t));
+}
+
+ats::api::headers::Header ats::api::headers::GetClientResponseHeader(Transaction &t, const std::string& hdr_name) {
+  return GetHeader(t, hdr_name, GetClientResponseHeaders(t));
+}
+
+ats::api::headers::Header ats::api::headers::GetServerResponseHeader(Transaction &t, const std::string& hdr_name) {
+  return GetHeader(t, hdr_name, GetServerResponseHeaders(t));
 }

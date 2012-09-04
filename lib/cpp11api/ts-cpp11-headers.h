@@ -30,7 +30,7 @@ namespace api {
 namespace headers {
 
 class Header;
-typedef std::vector<Header> HeaderVector;
+typedef typename std::vector<Header> HeaderVector;
 
 class Header {
 private:
@@ -66,19 +66,19 @@ public:
     field_values_.push_back(value);
   }
 
-  int getNumValues() {
+  int getNumValues() const {
     return field_values_.size();
   }
 
-  std::string getValue(int valueindx) {
+  std::string getValue(int valueindx) const{
     return field_values_[valueindx];
   }
 
-  std::string getName() {
+  std::string getName() const {
     return name_;
   }
 
-  std::string getJoinedValues() {
+  std::string getJoinedValues() const {
     std::string ret;
 
     for (std::vector<std::string>::size_type i = 0; i < field_values_.size();
@@ -90,11 +90,28 @@ public:
     return ret;
   }
 
-  std::vector<std::string> getValues() {
+  std::vector<std::string> getValues() const {
     return field_values_;
   }
 };
 
+
+
+/*
+ *  predicates
+ */
+class HeaderName: public std::unary_function<Header, bool> { // could probably be replaced with mem_ptr_fun()..
+private:
+  std::string name_;
+public:
+  HeaderName(std::string name) :
+      name_(name) {
+  }
+
+  bool operator()(const Header &field) const {
+    return (field.getName() == name_);
+  }
+};
 
 }
 }

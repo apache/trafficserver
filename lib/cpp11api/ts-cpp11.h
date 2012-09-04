@@ -28,6 +28,7 @@
 #include <functional>
 #include <string>
 #include <vector>
+#include "ts-cpp11-headers.h"
 
 namespace ats {
 namespace api {
@@ -89,8 +90,29 @@ void* GetTransactionIdentifier(Transaction &);
 
 
 /* headers */
+// TODO: Switch these out to deal with shared_ptrs to a HeaderVector
 namespace headers {
-// header code coming very soon
+HeaderVector GetClientRequestHeaders(Transaction &);
+HeaderVector GetClientResponseHeaders(Transaction &);
+HeaderVector GetServerResponseHeaders(Transaction &);
+Header GetClientRequestHeader(Transaction &, const std::string &);
+Header GetClientResponseHeader(Transaction &, const std::string &);
+Header GetServerResponseHeader(Transaction &, const std::string &);
+void DeleteClientRequestHeader(Transaction &, const std::string &);
+void DeleteClientResponseHeader(Transaction &, const std::string &);
+void DeleteServerResponseHeader(Transaction &, const std::string &);
+void SetClientRequestHeader(Transaction &, const std::string &, const std::vector<std::string> &);
+void SetClientResponseHeader(Transaction &, const std::string &, const std::vector<std::string> &);
+void SetServerResponseHeader(Transaction &, const std::string &, const std::vector<std::string> &);
+void SetClientRequestHeader(Transaction &, const std::string &, const std::string &);
+void SetClientResponseHeader(Transaction &, const std::string &, const std::string &);
+void SetServerResponseHeader(Transaction &, const std::string &, const std::string &);
+void AppendClientRequestHeader(Transaction &, const std::string &, const std::vector<std::string> &);
+void AppendClientResponseHeader(Transaction &, const std::string &, const std::vector<std::string> &);
+void AppendServerResponseHeader(Transaction &, const std::string &, const std::vector<std::string> &);
+void AppendClientRequestHeader(Transaction &, const std::string &, const std::string &);
+void AppendClientResponseHeader(Transaction &, const std::string &, const std::string &);
+void AppendServerResponseHeader(Transaction &, const std::string &, const std::string &);
 } /* headers */
 
 } /* api */
