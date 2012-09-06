@@ -7960,10 +7960,8 @@ HttpTransact::build_response(State* s, HTTPHdr* base_response, HTTPHdr* outgoing
   HttpTransactHeaders::convert_response(outgoing_version, outgoing_response);
 
   // process reverse mappings on the location header
-  HTTPStatus outgoing_status = outgoing_response->status_get();
-
-  if ((outgoing_status != 200) && (((outgoing_status >= 300) && (outgoing_status < 400)) || (outgoing_status == 201)))
-    response_url_remap(outgoing_response);
+  // TS-1364: do this regardless of response code
+  response_url_remap(outgoing_response);
 
   if (s->http_config_param->enable_http_stats) {
     if (s->hdr_info.server_response.valid() && s->http_config_param->wuts_enabled) {

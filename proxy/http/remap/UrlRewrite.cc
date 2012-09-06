@@ -790,6 +790,7 @@ UrlRewrite::_doRemap(UrlMappingContainer &mapping_container, URL *request_url)
 
 
 /** Used to do the backwards lookups. */
+#define N_URL_HEADERS 4
 bool
 UrlRewrite::ReverseMap(HTTPHdr *response_header)
 {
@@ -801,34 +802,46 @@ UrlRewrite::ReverseMap(HTTPHdr *response_header)
   int host_len;
   char *new_loc_hdr;
   int new_loc_length;
+  int i;
+  const struct {
+    const char *const field;
+    const int len;
+  } url_headers[N_URL_HEADERS] = {
+    { MIME_FIELD_LOCATION, MIME_LEN_LOCATION } ,
+    { MIME_FIELD_CONTENT_LOCATION, MIME_LEN_CONTENT_LOCATION } ,
+    { "URI", 3 } ,
+    { "Destination", 11 }
+  };
 
   if (unlikely(num_rules_reverse == 0)) {
     ink_assert(reverse_mappings.empty());
     return false;
   }
 
-  location_hdr = response_header->value_get(MIME_FIELD_LOCATION, MIME_LEN_LOCATION, &loc_length);
+  for (i = 0; i < N_URL_HEADERS; ++i) {
+    location_hdr = response_header->value_get(url_headers[i].field, url_headers[i].len, &loc_length);
 
-  if (location_hdr == NULL) {
-    Debug("url_rewrite", "Reverse Remap called with empty location header");
-    return false;
+    if (location_hdr == NULL) {
+      continue;
+    }
+
+    location_url.create(NULL);
+    location_url.parse(location_hdr, loc_length);
+
+    host = location_url.host_get(&host_len);
+
+    UrlMappingContainer reverse_mapping(response_header->m_heap);
+
+    if (reverseMappingLookup(&location_url, location_url.port_get(), host, host_len, reverse_mapping)) {
+      if (i == 0)
+        remap_found = true;
+      _doRemap(reverse_mapping, &location_url);
+      new_loc_hdr = location_url.string_get_ref(&new_loc_length);
+      response_header->value_set(url_headers[i].field, url_headers[i].len, new_loc_hdr, new_loc_length);
+    }
+
+    location_url.destroy();
   }
-
-  location_url.create(NULL);
-  location_url.parse(location_hdr, loc_length);
-
-  host = location_url.host_get(&host_len);
-
-  UrlMappingContainer reverse_mapping(response_header->m_heap);
-
-  if (reverseMappingLookup(&location_url, location_url.port_get(), host, host_len, reverse_mapping)) {
-    remap_found = true;
-    _doRemap(reverse_mapping, &location_url);
-    new_loc_hdr = location_url.string_get_ref(&new_loc_length);
-    response_header->value_set(MIME_FIELD_LOCATION, MIME_LEN_LOCATION, new_loc_hdr, new_loc_length);
-  }
-
-  location_url.destroy();
   return remap_found;
 }
 
