@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.3.0
 
+  *) [TS-1364] Rewrite reverse-proxy URL headers in all cases, not just
+     a basic Redirect target.
+
   *) [TS-1440] Lua transaction and session hook support
 
   *) [TS-1266] RAM cache stats are wrong with CLFUS.
