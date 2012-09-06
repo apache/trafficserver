@@ -1,6 +1,17 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.3.0
 
+  *) [TS-1440] Lua transaction and session hook support
+
+  *) [TS-1266] RAM cache stats are wrong with CLFUS.
+
+  *) [TS-1437] Make the Lua plugin compile on RedHat based distros.
+
+  *) [TS-1436] Added Yahoo directory layout for installation.
+
+  *) [TS-1418] Add automake file to Metalink plugin. Author: Jack Bates.
+   Also reorganize the plugins/experimental Makefile.am stuff slightly.
+
   *) [TS-1414] gzip plugin enhancements
 
   *) [TS-1427] PluginVCs now use a method similar to actual socket VCs

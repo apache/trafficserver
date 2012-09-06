@@ -74,7 +74,7 @@ static const luaL_Reg LUAEXPORTS[] =
 int
 LuaConfigApiInit(lua_State * lua)
 {
-  TSDebug("lua", "initializing TS Config API");
+  LuaLogDebug("initializing TS Config API");
 
   lua_newtable(lua);
 

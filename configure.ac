@@ -1150,7 +1150,21 @@ AC_SUBST(LUA_CFLAGS)
 AC_SUBST(LUA_LIBS)
 AC_MSG_CHECKING([whether to enable Lua support])
 AM_CONDITIONAL([BUILD_LUA_SUPPORT], [ test "x${enable_lua_support}" != "xno" ])
+AM_CONDITIONAL([BUILD_HAVE_LUAJIT], [ test "x${have_luajit}" = "xyes" ])
 AC_MSG_RESULT([$enable_lua_support])
+
+# On Darwin LuaJIT requires magic link options, otherwise it will crash in luaL_openlibs() at startup. See
+# http://luajit.org/install.html.
+case $host_os in
+  darwin*)
+    if test "x${have_luajit}" = "xyes"; then
+      LUA_LUAJIT_LDFLAGS="-Wl,-pagezero_size,10000 -Wl,-image_base,100000000"
+    fi
+    ;;
+esac
+
+AC_SUBST(LUA_LUAJIT_LDFLAGS)
+
 
 # -----------------------------------------------------------------------------
 # 5. CHECK FOR HEADER FILES
@@ -1556,12 +1570,14 @@ AC_CONFIG_FILES([plugins/regex_remap/Makefile])
 AC_CONFIG_FILES([plugins/header_filter/Makefile])
 AC_CONFIG_FILES([plugins/stats_over_http/Makefile])
 # experimental plugins
+AC_CONFIG_FILES([plugins/experimental/Makefile])
 AC_CONFIG_FILES([plugins/experimental/esi/Makefile])
 AC_CONFIG_FILES([plugins/experimental/lua/Makefile])
 AC_CONFIG_FILES([plugins/experimental/rfc5861/Makefile])
 AC_CONFIG_FILES([plugins/experimental/tcp_info/Makefile])
 AC_CONFIG_FILES([plugins/experimental/custom_redirect/Makefile])
 AC_CONFIG_FILES([plugins/experimental/header_rewrite/Makefile])
+AC_CONFIG_FILES([plugins/experimental/metalink/Makefile])
 # various tools
 AC_CONFIG_FILES([tools/Makefile])
 # example plugins

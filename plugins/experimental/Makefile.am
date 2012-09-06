@@ -14,4 +14,13 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-SUBDIRS = conf_remap regex_remap header_filter stats_over_http experimental
+if BUILD_EXPERIMENTAL_PLUGINS
+SUBDIRS = \
+ lua \
+ esi \
+ rfc5861 \
+ tcp_info \
+ custom_redirect \
+ header_rewrite \
+ metalink
+endif

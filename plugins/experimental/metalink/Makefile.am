@@ -14,4 +14,9 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-SUBDIRS = conf_remap regex_remap header_filter stats_over_http experimental
+AM_CPPFLAGS = -I$(top_builddir)/proxy/api -I$(top_srcdir)/proxy/api
+pkglibdir = ${pkglibexecdir}
+
+pkglib_LTLIBRARIES = metalink.la
+metalink_la_SOURCES = metalink.cc
+metalink_la_LDFLAGS = -avoid-version -module -shared

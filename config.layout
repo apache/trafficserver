@@ -72,7 +72,6 @@
 #   GNU standards conforming path layout.
 #   See FSF's GNU project `make-stds' document for details.
 <Layout GNU>
-    prefix:        /usr/local
     exec_prefix:   ${prefix}
     bindir:        ${exec_prefix}/bin
     sbindir:       ${exec_prefix}/sbin
@@ -238,4 +237,22 @@
     runtimedir:    /var/run+
     logdir:        /var/log+
     cachedir:      ${localstatedir}/cache
+</Layout>
+
+<Layout Yahoo>
+    exec_prefix:   ${prefix}
+    bindir:        ${exec_prefix}/bin64
+    sbindir:       ${exec_prefix}/sbin
+    libdir:        ${exec_prefix}/lib
+    libexecdir:    ${exec_prefix}/libexec64+
+    infodir:       ${prefix}/info
+    mandir:        ${prefix}/man
+    sysconfdir:    ${prefix}/conf+
+    datadir:       ${prefix}/share+
+    installbuilddir: ${libdir}/trafficserver/build
+    includedir:    ${prefix}/include+
+    localstatedir: ${prefix}/var+
+    runtimedir:    ${prefix}/var/run+
+    logdir:        ${prefix}/logs+
+    cachedir:      ${datadir}
 </Layout>

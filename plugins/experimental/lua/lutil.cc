@@ -21,14 +21,17 @@
 #include "lapi.h"
 #include "lutil.h"
 #include <pthread.h>
+#include <unistd.h>
 
 static thread_local_pointer<LuaThreadInstance> LuaThread;
+
 LuaPluginState * LuaPlugin;
+int LuaHttpArgIndex;
 
 LuaThreadInstance::LuaThreadInstance()
   : lua(NULL)
 {
-  for (unsigned i = 0; i < arraysz(this->hooks); ++i) {
+  for (unsigned i = 0; i < countof(this->hooks); ++i) {
     this->hooks[i] = LUA_NOREF;
   }
 }
@@ -37,6 +40,7 @@ LuaThreadInstance::~LuaThreadInstance()
 {
 }
 
+#if !defined(LUAJIT_VERSION)
 static void *
 LuaAllocate(void * ud, void * ptr, size_t osize, size_t nsize)
 {
@@ -49,13 +53,19 @@ LuaAllocate(void * ud, void * ptr, size_t osize, size_t nsize)
 
   return TSrealloc(ptr, nsize);
 }
+#endif
 
 lua_State *
 LuaPluginNewState(void)
 {
   lua_State * lua;
 
+  // lua_newstate() is a stub in LuaJIT 64-bit.
+#if defined(LUAJIT_VERSION)
+  lua = luaL_newstate();
+#else
   lua = lua_newstate(LuaAllocate, NULL);
+#endif
   if (lua == NULL) {
     return NULL;
   }
@@ -96,7 +106,7 @@ LuaPluginLoad(lua_State * lua, LuaPluginState * plugin)
 
     if (luaL_dofile(lua, p->c_str()) != 0) {
       // If the load failed, it should have pushed an error message.
-      TSError("failed to load Lua file %s: %s", p->c_str(), lua_tostring(lua, -1));
+      LuaLogError("failed to load Lua file %s: %s", p->c_str(), lua_tostring(lua, -1));
       return false;
     }
   }
@@ -141,6 +151,8 @@ LuaLoadLibraries(lua_State * lua)
     REGISTER_LIBRARY(string);
     REGISTER_LIBRARY(math);
     REGISTER_LIBRARY(debug);
+
+    // XXX LuaJIT recommends calling luaL_openlibs() here. No explanation of why.
 
 #undef REGISTER_LIBRARY
 }

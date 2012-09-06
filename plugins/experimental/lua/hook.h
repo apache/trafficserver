@@ -19,4 +19,15 @@
 #ifndef LUA_HOOK_H_
 #define LUA_HOOK_H_
 
+// Pointer to LuaHttpSsnHookAdd() or LuaHttpTxnsnHookAdd().
+typedef void (*LuaHookAddFunction)(void *, TSHttpHookID);
+
+void LuaHttpSsnHookAdd(void *, TSHttpHookID);
+void LuaHttpTxnHookAdd(void *, TSHttpHookID);
+
+// Set a LuaHookReference as the argument on the corresponding object. T can be either TSHttpSsn or TSHttpTxn.
+template <typename T> void LuaSetArgReference(T ptr, int ref);
+
+bool LuaRegisterHttpHooks(lua_State *, void *, LuaHookAddFunction, int);
+
 #endif // LUA_HOOK_H_

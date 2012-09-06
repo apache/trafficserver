@@ -31,11 +31,15 @@ TSPluginInit(int argc, const char * argv[])
   info.support_email = (char *)"dev@trafficserver.apache.org";
 
   if (TSPluginRegister(TS_SDK_VERSION_3_0, &info) != TS_SUCCESS) {
-      TSError("Plugin registration failed");
+      LuaLogError("Plugin registration failed");
   }
 
   TSAssert(LuaPlugin == NULL);
 
+  // Allocate a TSHttpTxn argument index for handling per-transaction hooks.
+  TSReleaseAssert(TSHttpArgIndexReserve(info.plugin_name, info.plugin_name, &LuaHttpArgIndex) == TS_SUCCESS);
+
+  // Create the initial global Lua state.
   LuaPlugin = tsnew<LuaPluginState>();
   LuaPlugin->init((unsigned)argc, (const char **)argv);
 
