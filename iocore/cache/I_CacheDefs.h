@@ -33,7 +33,7 @@
 #define CACHE_ALT_INDEX_DEFAULT     -1
 #define CACHE_ALT_REMOVED           -2
 
-#define CACHE_DB_MAJOR_VERSION      21
+#define CACHE_DB_MAJOR_VERSION      22
 #define CACHE_DB_MINOR_VERSION      0
 
 #define CACHE_DIR_MAJOR_VERSION     18

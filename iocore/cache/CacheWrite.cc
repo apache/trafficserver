@@ -74,7 +74,7 @@ CacheVC::updateVector(int event, Event *e)
     if (f.update) {
       // all Update cases. Need to get the alternate index.
       alternate_index = get_alternate_index(write_vector, update_key);
-      Debug("cache_update", "updating alternate index %d", alternate_index);
+      Debug("cache_update", "updating alternate index %d frags %d", alternate_index, alternate_index >=0 ? write_vector->get(alternate_index)->get_frag_offset_count() : -1);
       // if its an alternate delete
       if (!vec) {
         ink_assert(!total_len);
@@ -99,8 +99,15 @@ CacheVC::updateVector(int event, Event *e)
         od->move_resident_alt = 0;
       write_vector->remove(0, true);
     }
-    if (vec)
+    if (vec) {
+      /* preserve fragment offset data from old info. This method is
+         called iff the update is a header only update so the fragment
+         data should remain valid.
+      */
+      if (alternate_index >= 0)
+        alternate.copy_frag_offsets_from(write_vector->get(alternate_index));
       alternate_index = write_vector->insert(&alternate, alternate_index);
+    }
 
     if (od->move_resident_alt && first_buf._ptr() && !od->has_multiple_writers()) {
       Doc *doc = (Doc *) first_buf->data();
@@ -180,22 +187,6 @@ CacheVC::handleWrite(int event, Event *e)
   // plain write case
   ink_assert(!trigger);
   frag_len = 0;
-  if (f.use_first_key) { // Writing the header fragment.
-    if (fragment) { // Multi-fragment from cache fill.
-      frag_len = (fragment-1) * sizeof(Frag);
-    } else if (first_buf) {
-      Doc* old_header = reinterpret_cast<Doc*>(first_buf->data());
-      if (!frag && old_header->flen && !f.single_fragment) {
-        // There's a fragment table we need to preserve.
-        frag_len = old_header->flen;
-        if (is_debug_tag_set("cache_update")) {
-          char x[33];
-          Debug("cache_update", "Preserving fragment table (%d in %d bytes) for %s",
-                old_header->nfrags(), frag_len, first_key.toHexStr(x));
-        }
-      }
-    }
-  }
 
   set_agg_write_in_progress();
   POP_HANDLER;
@@ -773,7 +764,7 @@ agg_copy(char *p, CacheVC *vc)
     doc->len = len;
     doc->hlen = vc->header_len;
     doc->ftype = vc->frag_type;
-    doc->flen = vc->frag_len;
+    doc->_flen = 0;
     doc->total_len = vc->total_len;
     doc->first_key = vc->first_key;
     doc->sync_serial = vol->header->sync_serial;
@@ -790,21 +781,12 @@ agg_copy(char *p, CacheVC *vc)
     if (vc->f.use_first_key) {
       if (doc->data_len())
         doc->key = vc->earliest_key;
-      else {
-        // the vector is being written by itself
+      else // the vector is being written by itself
         prev_CacheKey(&doc->key, &vc->earliest_key);
-      }
       dir_set_head(&vc->dir, true);
     } else {
       doc->key = vc->key;
       dir_set_head(&vc->dir, !vc->fragment);
-    }
-    if (doc->flen) {
-      // There's a fragment table to write.
-      // If this was a cache fill, the frag table is internal.
-      // If it's a header update (e.g. 304 NOT MODIFIED return on
-      // stale object) then the frag table is in the first_buf.
-      memcpy(doc->frags(), vc->get_frag_table(), doc->flen);
     }
 
 #ifdef HTTP_CACHE
@@ -1251,18 +1233,7 @@ CacheVC::openWriteCloseDataDone(int event, Event *e)
       ink_assert(key == earliest_key);
       earliest_dir = dir;
     } else {
-      if (!frag)
-        frag = &integral_frags[0];
-      else {
-        if (fragment-1 >= INTEGRAL_FRAGS && IS_POWER_2((uint32)(fragment-1))) {
-          Frag *t = frag;
-          frag = (Frag*)ats_malloc(sizeof(Frag) * (fragment-1)*2);
-          memcpy(frag, t, sizeof(Frag) * (fragment-1));
-          if (t != integral_frags)
-            ats_free(t);
-        }
-      }
-      frag[fragment-1].offset = write_pos;
+      alternate.push_frag_offset(write_pos);
     }
     fragment++;
     write_pos += write_len;
@@ -1353,20 +1324,9 @@ CacheVC::openWriteWriteDone(int event, Event *e)
       ink_assert(key == earliest_key);
       earliest_dir = dir;
     } else {
-      if (!frag)
-        frag = &integral_frags[0];
-      else {
-        if (fragment-1 >= INTEGRAL_FRAGS && IS_POWER_2((uint32_t)(fragment-1))) {
-          Frag *t = frag;
-          frag = (Frag*)ats_malloc(sizeof(Frag) * (fragment-1)*2);
-          memcpy(frag, t, sizeof(Frag) * (fragment-1));
-          if (t != integral_frags)
-            ats_free(t);
-        }
-      }
-      frag[fragment-1].offset = write_pos;
+      alternate.push_frag_offset(write_pos);
     }
-    fragment++;
+    ++fragment;
     write_pos += write_len;
     dir_insert(&key, vol, &dir);
     DDebug("cache_insert", "WriteDone: %X, %X, %d", key.word(0), first_key.word(0), write_len);

@@ -1250,13 +1250,14 @@ struct HTTPCacheAlt
 {
   HTTPCacheAlt();
   void copy(HTTPCacheAlt *to_copy);
+  void copy_frag_offsets_from(HTTPCacheAlt* src);
   void destroy();
 
   uint32_t m_magic;
 
   // Writeable is set to true is we reside
   //  in a buffer owned by this structure.
-  // INVARIENT: if own the buffer this HttpCacheAlt
+  // INVARIANT: if own the buffer this HttpCacheAlt
   //   we also own the buffers for the request &
   //   response headers
   int32_t m_writeable;
@@ -1274,6 +1275,22 @@ struct HTTPCacheAlt
   time_t m_request_sent_time;
   time_t m_response_received_time;
 
+  /// # of fragment offsets in this alternate.
+  /// @note This is one less than the number of fragments.
+  int m_frag_offset_count;
+  /// Type of offset for a fragment.
+  typedef uint64_t FragOffset;
+  /// Table of fragment offsets.
+  /// @note The offsets are forward looking so that frag[0] is the
+  /// first byte past the end of fragment 0 which is also the first
+  /// byte of fragment 1. For this reason there is no fragment offset
+  /// for the last fragment.
+  FragOffset *m_frag_offsets;
+  /// # of fragment offsets built in to object.
+  static int const N_INTEGRAL_FRAG_OFFSETS = 4;
+  /// Integral fragment offset table.
+  FragOffset m_integral_frag_offsets[N_INTEGRAL_FRAG_OFFSETS];
+
   // With clustering, our alt may be in cluster
   //  incoming channel buffer, when we are
   //  destroyed we decrement the refcount
@@ -1287,6 +1304,8 @@ struct HTTPCacheAlt
 class HTTPInfo
 {
 public:
+  typedef HTTPCacheAlt::FragOffset FragOffset; ///< Import type.
+
   HTTPCacheAlt *m_alt;
 
   HTTPInfo()
@@ -1299,13 +1318,14 @@ public:
   }
 
   void clear() { m_alt = NULL; }
-  bool valid() const { return (m_alt != NULL); }
+  bool valid() const { return m_alt != NULL; }
 
   void create();
   void destroy();
 
   void copy(HTTPInfo *to_copy);
   void copy_shallow(HTTPInfo *info) { m_alt = info->m_alt; }
+  void copy_frag_offsets_from(HTTPInfo* src);
   HTTPInfo & operator =(const HTTPInfo & m);
 
   inkcoreapi int marshal_length();
@@ -1344,6 +1364,15 @@ public:
 
   void request_sent_time_set(time_t t) { m_alt->m_request_sent_time = t; }
   void response_received_time_set(time_t t) { m_alt->m_response_received_time = t; }
+
+  /// Get the fragment table.
+  FragOffset* get_frag_table();
+  /// Get the # of fragment offsets
+  /// @note This is the size of the fragment offset table, and one less
+  /// than the actual # of fragments.
+  int get_frag_offset_count();
+  /// Add an @a offset to the end of the fragment offset table.
+  void push_frag_offset(FragOffset offset);
 
   // Sanity check functions
   static bool check_marshalled(char *buf, int len);
@@ -1436,6 +1465,17 @@ HTTPInfo::object_size_set(int64_t size)
   int32_t* pi = reinterpret_cast<int32_t*>(&size);
   m_alt->m_object_size[0] = pi[0];
   m_alt->m_object_size[1] = pi[1];
+}
+
+inline HTTPInfo::FragOffset*
+HTTPInfo::get_frag_table()
+{
+  return m_alt ? m_alt->m_frag_offsets : 0;
+}
+
+inline int
+HTTPInfo::get_frag_offset_count() {
+  return m_alt ? m_alt->m_frag_offset_count : 0;
 }
 
 
