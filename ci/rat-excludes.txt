@@ -11,8 +11,10 @@ iocore/fastio/inkfio/inkfio.conf
 **/*.lai
 **/*.lo
 **/Makefile
+**/TODO
 .vimrc
 .gitignore
+**/.gitignore
 .git/
 .indent.pro
 aclocal.m4
