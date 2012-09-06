@@ -651,19 +651,20 @@ transform_plugin(TSCont contp, TSEvent event, void *edata)
     //os: the accept encoding header needs to be restored..
     //otherwise the next request won't get a cache hit on this
     HostConfiguration * hc = (HostConfiguration*)TSHttpTxnArgGet(txnp, arg_idx_host_configuration);
-
-    if (hc->remove_accept_encoding()) {
-      TSMBuffer req_buf;
-      TSMLoc req_loc;
-      if (TSHttpTxnServerReqGet(txnp, &req_buf, &req_loc) == TS_SUCCESS) {
-	restore_accept_encoding(txnp, req_buf, req_loc, global_hidden_header_name);
-	TSHandleMLocRelease(req_buf, TS_NULL_MLOC, req_loc);
+    if (hc != NULL) { 
+      if (hc->remove_accept_encoding()) {
+	TSMBuffer req_buf;
+	TSMLoc req_loc;
+	if (TSHttpTxnServerReqGet(txnp, &req_buf, &req_loc) == TS_SUCCESS) {
+	  restore_accept_encoding(txnp, req_buf, req_loc, global_hidden_header_name);
+	  TSHandleMLocRelease(req_buf, TS_NULL_MLOC, req_loc);
+	}
       }
-    }
 
-    int allowed = !TSHttpTxnArgGet(txnp, arg_idx_url_disallowed);
-    if ( allowed && gzip_transformable(txnp, 1, hc)) {
-      gzip_transform_add(txnp, 1, hc);
+      int allowed = !TSHttpTxnArgGet(txnp, arg_idx_url_disallowed);
+      if ( allowed && gzip_transformable(txnp, 1, hc)) {
+	gzip_transform_add(txnp, 1, hc);
+      }
     }
     TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
   }
@@ -671,16 +672,16 @@ transform_plugin(TSCont contp, TSEvent event, void *edata)
 
   case TS_EVENT_HTTP_SEND_REQUEST_HDR:{
     HostConfiguration * hc = (HostConfiguration*)TSHttpTxnArgGet(txnp, arg_idx_host_configuration);
-
-    if (hc->remove_accept_encoding()) {
-      TSMBuffer req_buf;
-      TSMLoc req_loc;
-      if (TSHttpTxnServerReqGet(txnp, &req_buf, &req_loc) == TS_SUCCESS) {
-	hide_accept_encoding(txnp, req_buf, req_loc, global_hidden_header_name);
-	TSHandleMLocRelease(req_buf, TS_NULL_MLOC, req_loc);
+    if (hc!=NULL) {
+      if (hc->remove_accept_encoding()) {
+	TSMBuffer req_buf;
+	TSMLoc req_loc;
+	if (TSHttpTxnServerReqGet(txnp, &req_buf, &req_loc) == TS_SUCCESS) {
+	  hide_accept_encoding(txnp, req_buf, req_loc, global_hidden_header_name);
+	  TSHandleMLocRelease(req_buf, TS_NULL_MLOC, req_loc);
+	}
       }
     }
-
     TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
   }
     break;
@@ -688,8 +689,10 @@ transform_plugin(TSCont contp, TSEvent event, void *edata)
   case TS_EVENT_HTTP_CACHE_LOOKUP_COMPLETE: {
     int allowed = !TSHttpTxnArgGet(txnp, arg_idx_url_disallowed);
     HostConfiguration * hc = (HostConfiguration*)TSHttpTxnArgGet(txnp, arg_idx_host_configuration);
-    if (allowed && cache_transformable(txnp) && gzip_transformable(txnp, 0, hc)) {
-      gzip_transform_add(txnp, 0, hc);
+    if ( hc != NULL ) { 
+      if (allowed && cache_transformable(txnp) && gzip_transformable(txnp, 0, hc)) {
+	gzip_transform_add(txnp, 0, hc);
+      }
     }
     TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
   }
