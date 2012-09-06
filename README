@@ -167,8 +167,8 @@ the installation with
    # As root do the following when using Ubuntu
    mkdir -p /mnt          #EC2 Storage Mount, where storage is located
    cd /mnt
-   svn checkout ...       # get the source code from ASF Subversion repo
-   cd traffic             # enter the checkout dir
+   git clone ...          # get the source code from ASF Git repo
+   cd trafficserver       # enter the checkout dir
    autoreconf -i --force  # generate the configure script and Makefile.in files
    ./configure
    make
@@ -176,8 +176,8 @@ the installation with
    # As root do the following when using Fedora Core 8 kernel
    mkdir -p /mnt          #EC2 Storage Mount, where storage is located
    cd /mnt
-   svn checkout ...       # get the source code from ASF Subversion repo
-   cd traffic             # enter the checkout dir
+   git clone ...          # get the source code from ASF Git repo
+   cd trafficserver       # enter the checkout dir
    autoreconf -i --force  # generate the configure script and Makefile.in files
    ./configure --disable-eventfd
    make
