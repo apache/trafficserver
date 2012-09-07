@@ -585,6 +585,7 @@ rfc5861_plugin(TSCont cont, TSEvent event, void *edata)
                         TSDebug(LOG_PREFIX, "Looks like we can return fresh info and validate in the background");
                         // lookup async
 
+                        TSHttpTxnConfigIntSet(txn, TS_CONFIG_HTTP_INSERT_AGE_IN_RESPONSE, 1);
                         // Set warning header
                         TSHttpTxnHookAdd(txn, TS_HTTP_SEND_RESPONSE_HDR_HOOK, cont);
 
@@ -605,6 +606,7 @@ rfc5861_plugin(TSCont cont, TSEvent event, void *edata)
                     else if ((now - chi->date) < (chi->max_age + chi->stale_on_error))
                     {
                         TSDebug(LOG_PREFIX, "Looks like we can return fresh data on 500 error");
+                        TSHttpTxnConfigIntSet(txn, TS_CONFIG_HTTP_INSERT_AGE_IN_RESPONSE, 1);
                         //lookup sync
                         state->async_req = false;
                         state->txn = txn;
