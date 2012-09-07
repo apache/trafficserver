@@ -1787,8 +1787,8 @@ HTTPInfo::marshal(char *buf, int len)
   // If we have external fragment offsets, copy the initial ones
   // into the integral data.
   if (frag_len) {
-    memcpy(m_alt->m_integral_frag_offsets, m_alt->m_frag_offsets, sizeof(HTTPCacheAlt::m_integral_frag_offsets));
-    frag_len -= sizeof(HTTPCacheAlt::m_integral_frag_offsets);
+    memcpy(m_alt->m_integral_frag_offsets, m_alt->m_frag_offsets, sizeof(this->m_integral_frag_offsets));
+    frag_len -= sizeof(this->m_integral_frag_offsets);
     // frag_len should never be non-zero at this point, as the offsets
     // should be external only if too big for the internal table.
   }
