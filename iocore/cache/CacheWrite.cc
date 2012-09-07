@@ -996,7 +996,8 @@ Lagain:
   // calculate length of aggregated write
   for (c = (CacheVC *) agg.head; c;) {
     int writelen = c->agg_len;
-    ink_assert(writelen < AGG_SIZE);
+    // [amc] this is checked multiple places, on here was it strictly less.
+    ink_assert(writelen <= AGG_SIZE);
     if (agg_buf_pos + writelen > AGG_SIZE ||
         header->write_pos + agg_buf_pos + writelen > (skip + len))
       break;
