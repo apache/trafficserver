@@ -1,5 +1,7 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.3.0
+  *) [TS-1339] Move fragment offset table from First Doc to Alt header so
+     that fragment offsets are stored per alternate.
 
   *) [TS-1416] Do not do cache lookup if cop_test_page is true to stop
      artificial increase of cache misses.
