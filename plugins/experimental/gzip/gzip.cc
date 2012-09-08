@@ -634,13 +634,13 @@ transform_plugin(TSCont contp, TSEvent event, void *edata)
 	//we could clone the hosting configuration here, to make it deletable on reload?
 	TSHttpTxnArgSet(txnp, arg_idx_host_configuration, (void *) hc);
 
-	if (!hc->IsUrlAllowed(url, url_len)) {
+	if (!hc->enabled() || !hc->IsUrlAllowed(url, url_len)) {
 	  //FIXME: no double negatives
 	  TSHttpTxnArgSet(txnp, arg_idx_url_disallowed, (void *) &GZIP_ONE);
-	  info("url [%.*s] not compressible", url_len, url);
+	  info("url [%.*s] not allowed", url_len, url);
+	} else {
+	  normalize_accept_encoding(txnp, req_buf, req_loc);	
 	}
-	
-        normalize_accept_encoding(txnp, req_buf, req_loc);	
         TSHandleMLocRelease(req_buf, TS_NULL_MLOC, req_loc);
       }
       TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);

@@ -34,10 +34,13 @@ namespace Gzip  {
   public: //todo -> only configuration should be able to construct hostconfig
     explicit HostConfiguration(std::string host)  
       : host_(host)
+      , enabled_(true)
       , cache_(true)
       , remove_accept_encoding_(false)
     {}
 
+    bool enabled() { return enabled_; }
+    void set_enabled(bool x) { enabled_ = x; } 
     bool cache() { return cache_; }
     void set_cache(bool x) { cache_ = x; } 
     bool remove_accept_encoding() { return remove_accept_encoding_; }
@@ -50,6 +53,7 @@ namespace Gzip  {
 
   private:
     std::string host_;
+    bool enabled_;
     bool cache_;
     bool remove_accept_encoding_;
     std::vector<std::string> compressible_content_types_;

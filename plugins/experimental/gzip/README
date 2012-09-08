@@ -27,6 +27,8 @@ a sample configuration (sample.gzip.config):
 ######################################################################
 #flags and options are:
 #
+# enable-gzip: default true, set true/false to enable/disable plugin for specific host
+#
 # remove-accept-encoding: this sets if the plugin should hide the accept encoding from origin servers
 # - to ease the load on the origins
 # - for when the proxy parses responses, and the resulting compression/decompression
@@ -40,6 +42,7 @@ a sample configuration (sample.gzip.config):
 ######################################################################
 
 #first, we configure the default/global plugin behaviour
+enable-gzip true
 remove-accept-encoding true
 cache false
 
@@ -52,6 +55,7 @@ disallow */bla*
 #override the global configuration for a host. 
 #www.foo.nl does NOT inherit anything
 [www.foo.nl]
+enable-gzip true
 remove-accept-encoding true
 compressible-content-type text/*
 

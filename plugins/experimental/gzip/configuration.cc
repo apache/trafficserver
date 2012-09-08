@@ -81,6 +81,7 @@ namespace Gzip {
     kParseStart,
     kParseCompressibleContentType,
     kParseRemoveAcceptEncoding,
+    kParseEnable,
     kParseCache,
     kParseDisallow,
   };
@@ -202,6 +203,8 @@ namespace Gzip {
 	    state = kParseCompressibleContentType;
 	  } else if (token == "remove-accept-encoding" ) {
 	    state = kParseRemoveAcceptEncoding;
+	  } else if (token == "enabled" ) {
+	    state = kParseEnable;
 	  } else if (token == "cache" ) {
 	    state = kParseCache;
 	  } else if (token == "disallow" ) {
@@ -217,6 +220,10 @@ namespace Gzip {
 	  break;
 	case kParseRemoveAcceptEncoding:
 	  current_host_configuration->set_remove_accept_encoding(token == "true");
+	  state = kParseStart;
+	  break;
+	case kParseEnable:
+	  current_host_configuration->set_enabled(token == "true");
 	  state = kParseStart;
 	  break;
 	case kParseCache:
