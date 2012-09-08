@@ -287,22 +287,6 @@ gzip_transform_finish(GzipData * data)
             data->zstrm.total_out);
     }
 
-    if (data->compression_type == COMPRESSION_TYPE_GZIP) {
-      info("append gzip adler");
-      char *p = (char *) &(data->zstrm.adler);
-      int length = 8;
-      while (length > 0) {
-        downstream_buffer = TSIOBufferBlockWriteStart(downstream_blkp, &downstream_length);
-        if (downstream_length > length)
-          downstream_length = length;
-        memcpy(downstream_buffer, p, downstream_length);
-        p += downstream_length;
-        length -= downstream_length;
-        TSIOBufferProduce(data->downstream_buffer, downstream_length);
-      }
-      data->downstream_length += 8;
-    }
-
     gzip_log_ratio(data->zstrm.total_in, data->downstream_length);
   }
 }
