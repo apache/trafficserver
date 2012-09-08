@@ -42,7 +42,7 @@ a sample configuration (sample.gzip.config):
 ######################################################################
 
 #first, we configure the default/global plugin behaviour
-enable-gzip true
+enabled true
 remove-accept-encoding true
 cache false
 
@@ -55,7 +55,7 @@ disallow */bla*
 #override the global configuration for a host. 
 #www.foo.nl does NOT inherit anything
 [www.foo.nl]
-enable-gzip true
+enabled true
 remove-accept-encoding true
 compressible-content-type text/*
 
