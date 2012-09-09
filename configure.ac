@@ -1578,6 +1578,7 @@ AC_CONFIG_FILES([plugins/experimental/tcp_info/Makefile])
 AC_CONFIG_FILES([plugins/experimental/custom_redirect/Makefile])
 AC_CONFIG_FILES([plugins/experimental/header_rewrite/Makefile])
 AC_CONFIG_FILES([plugins/experimental/metalink/Makefile])
+AC_CONFIG_FILES([plugins/experimental/gzip/Makefile])
 # various tools
 AC_CONFIG_FILES([tools/Makefile])
 # example plugins
