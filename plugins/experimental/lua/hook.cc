@@ -510,8 +510,8 @@ LuaHookApiInit(lua_State * lua)
     HttpHookDemuxTable.txn[i] = TSContCreate(LuaDemuxTxnHook, NULL);
     HttpHookDemuxTable.ssn[i] = TSContCreate(LuaDemuxSsnHook, NULL);
     // And keep track of which hook each continuation was allocated for.
-    TSContDataSet(HttpHookDemuxTable.txn[i], (void *)i);
-    TSContDataSet(HttpHookDemuxTable.ssn[i], (void *)i);
+    TSContDataSet(HttpHookDemuxTable.txn[i], (void *)(uintptr_t)i);
+    TSContDataSet(HttpHookDemuxTable.ssn[i], (void *)(uintptr_t)i);
 
     // Note that we allocate the global continuation table lazily so that we know when to add the hook.
   }
