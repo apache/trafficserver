@@ -2211,7 +2211,20 @@ extern "C"
      HTTP transactions */
   tsapi void TSHttpTxnHookAdd(TSHttpTxn txnp, TSHttpHookID id, TSCont contp);
   tsapi TSHttpSsn TSHttpTxnSsnGet(TSHttpTxn txnp);
+
+  /* Gets the client request header for a specified HTTP transaction. */
   tsapi TSReturnCode TSHttpTxnClientReqGet(TSHttpTxn txnp, TSMBuffer* bufp, TSMLoc* offset);
+  /* Gets the client response header for a specified HTTP transaction. */
+  tsapi TSReturnCode TSHttpTxnClientRespGet(TSHttpTxn txnp, TSMBuffer* bufp, TSMLoc* offset);
+  /* Gets the server request header from a specified HTTP transaction. */
+  tsapi TSReturnCode TSHttpTxnServerReqGet(TSHttpTxn txnp, TSMBuffer* bufp, TSMLoc* offset);
+  /* Gets the server response header from a specified HTTP transaction. */
+  tsapi TSReturnCode TSHttpTxnServerRespGet(TSHttpTxn txnp, TSMBuffer* bufp, TSMLoc* offset);
+  /* Gets the cached request header for a specified HTTP transaction. */
+  tsapi TSReturnCode TSHttpTxnCachedReqGet(TSHttpTxn txnp, TSMBuffer* bufp, TSMLoc* offset);
+  /* Gets the cached response header for a specified HTTP transaction. */
+  tsapi TSReturnCode TSHttpTxnCachedRespGet(TSHttpTxn txnp, TSMBuffer* bufp, TSMLoc* offset);
+
   tsapi TSReturnCode TSHttpTxnPristineUrlGet(TSHttpTxn txnp, TSMBuffer* bufp, TSMLoc* url_loc);
 
   /** Get the effective URL for the transaction.
@@ -2226,11 +2239,7 @@ extern "C"
   tsapi char* TSHttpTxnEffectiveUrlStringGet(TSHttpTxn txnp,
                                              int* length /**< String length return, may be @c NULL. */
                                              );
-  tsapi TSReturnCode TSHttpTxnClientRespGet(TSHttpTxn txnp, TSMBuffer* bufp, TSMLoc* offset);
-  tsapi TSReturnCode TSHttpTxnServerReqGet(TSHttpTxn txnp, TSMBuffer* bufp, TSMLoc* offset);
-  tsapi TSReturnCode TSHttpTxnServerRespGet(TSHttpTxn txnp, TSMBuffer* bufp, TSMLoc* offset);
-  tsapi TSReturnCode TSHttpTxnCachedReqGet(TSHttpTxn txnp, TSMBuffer* bufp, TSMLoc* offset);
-  tsapi TSReturnCode TSHttpTxnCachedRespGet(TSHttpTxn txnp, TSMBuffer* bufp, TSMLoc* offset);
+
   tsapi void TSHttpTxnRespCacheableSet(TSHttpTxn txnp, int flag);
   tsapi void TSHttpTxnReqCacheableSet(TSHttpTxn txnp, int flag);
 
