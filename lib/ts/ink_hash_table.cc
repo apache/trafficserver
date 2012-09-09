@@ -366,7 +366,7 @@ ink_hash_table_entry_key(InkHashTable * ht_ptr, InkHashTableEntry * entry_ptr)
 {
   char *tcl_key;
 
-  tcl_key = Tcl_GetHashKey((Tcl_HashTable *) ht_ptr, (Tcl_HashEntry *) entry_ptr);
+  tcl_key = (char*) Tcl_GetHashKey((Tcl_HashTable *) ht_ptr, (Tcl_HashEntry *) entry_ptr);
   return ((InkHashTableKey) tcl_key);
 }                               /* End ink_hash_table_entry_key */
 
