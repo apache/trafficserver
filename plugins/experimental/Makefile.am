@@ -22,5 +22,6 @@ SUBDIRS = \
  tcp_info \
  custom_redirect \
  header_rewrite \
- metalink
+ metalink \
+ gzip
 endif
