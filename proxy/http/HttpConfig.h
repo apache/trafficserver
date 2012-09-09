@@ -431,6 +431,7 @@ struct OverridableHttpConfigParams {
        freshness_fuzz_time(0), freshness_fuzz_min_time(0),
        max_cache_open_read_retries(0), cache_open_read_retry_time(0),
        background_fill_active_timeout(0),
+       http_chunking_size(0),
 
        // Strings / floats must come last
        proxy_response_server_string(NULL), proxy_response_server_string_len(0),
@@ -564,6 +565,8 @@ struct OverridableHttpConfigParams {
   MgmtInt cache_open_read_retry_time;   // time is in mseconds
 
   MgmtInt background_fill_active_timeout;
+
+  MgmtInt http_chunking_size; // Maximum chunk size for chunked output.
 
   // IMPORTANT: Here comes all strings / floats configs.
 

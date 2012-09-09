@@ -1,5 +1,7 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.3.1
+  *) [TS-1457] Change chunking output to avoid massive memory use by transforms.
+
   *) [TS-1469] Manager uses hardcoded FD limit causing restarts
       forever on traffic_server. Reported By: Thomas Jackson
 

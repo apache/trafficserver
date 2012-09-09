@@ -620,7 +620,8 @@ extern "C"
     TS_CONFIG_NET_SOCK_PACKET_MARK_OUT,
     TS_CONFIG_NET_SOCK_PACKET_TOS_OUT,
     TS_CONFIG_HTTP_INSERT_AGE_IN_RESPONSE,
-    TS_CONFIG_LAST_ENTRY
+    TS_CONFIG_LAST_ENTRY,
+    TS_CONFIG_HTTP_CHUNKING_SIZE
   } TSOverridableConfigKey;
 
   /* The TASK pool of threads is the primary method of off-loading continuations from the

@@ -41,9 +41,11 @@
 static const int max_chunked_ahead_bytes = 1 << 15;
 static const int max_chunked_ahead_blocks = 128;
 static const int min_block_transfer_bytes = 256;
-static const int max_chunk_size = 4096;
-static char max_chunk_buf[10];
-static int max_chunk_buf_len;
+static char const * const CHUNK_HEADER_FMT = "%"PRIx64"\r\n";
+// This should be as small as possible because it will only hold the
+// header and trailer per chunk - the chunk body will be a reference to
+// a block in the input stream.
+static int const CHUNK_IOBUFFER_SIZE_INDEX = MIN_IOBUFFER_SIZE;
 
 static void
 chunked_reenable(HttpTunnelProducer * p, HttpTunnel * tunnel)
@@ -122,17 +124,11 @@ add_chunked_reenable(HttpTunnelProducer * p, HttpTunnel * tunnel)
   }
 }
 
-// global initialization once
-void
-init_max_chunk_buf()
-{
-  max_chunk_buf_len = snprintf(max_chunk_buf, sizeof(max_chunk_buf), "%x\r\n", max_chunk_size);
-}
-
 ChunkedHandler::ChunkedHandler()
   : chunked_reader(NULL), dechunked_buffer(NULL), dechunked_size(0), dechunked_reader(NULL), chunked_buffer(NULL),
     chunked_size(0), truncation(false), skip_bytes(0), state(CHUNK_READ_CHUNK), cur_chunk_size(0),
-    bytes_left(0), last_server_event(VC_EVENT_NONE), running_sum(0), num_digits(0)
+    bytes_left(0), last_server_event(VC_EVENT_NONE), running_sum(0), num_digits(0),
+    max_chunk_size(DEFAULT_MAX_CHUNK_SIZE), max_chunk_header_len(0)
 {
 }
 
@@ -148,17 +144,25 @@ ChunkedHandler::init(IOBufferReader * buffer_in, HttpTunnelProducer * p)
   if (p->do_chunking) {
     dechunked_reader = buffer_in->mbuf->clone_reader(buffer_in);
     dechunked_reader->mbuf->water_mark = min_block_transfer_bytes;
-    chunked_buffer = new_MIOBuffer(MAX_IOBUFFER_SIZE);
+    chunked_buffer = new_MIOBuffer(CHUNK_IOBUFFER_SIZE_INDEX);
     chunked_size = 0;
   } else {
     ink_assert(p->do_dechunking || p->do_chunked_passthru);
     chunked_reader = buffer_in->mbuf->clone_reader(buffer_in);
 
     if (p->do_dechunking) {
-      dechunked_buffer = new_MIOBuffer(MAX_IOBUFFER_SIZE);
+      // This is the min_block_transfer_bytes value.
+      dechunked_buffer = new_MIOBuffer(BUFFER_SIZE_INDEX_256);
       dechunked_size = 0;
     }
   }
+}
+
+void
+ChunkedHandler::set_max_chunk_size(int64_t size)
+{
+  max_chunk_size = size ? size : DEFAULT_MAX_CHUNK_SIZE;
+  max_chunk_header_len = snprintf(max_chunk_header, sizeof(max_chunk_header), CHUNK_HEADER_FMT, max_chunk_size);
 }
 
 void
@@ -371,6 +375,9 @@ bool ChunkedHandler::generate_chunked_content()
 {
   char tmp[16];
   bool server_done = false;
+  int64_t r_avail;
+
+  ink_debug_assert(max_chunk_header_len);
 
   switch (last_server_event) {
   case VC_EVENT_EOS:
@@ -380,9 +387,8 @@ bool ChunkedHandler::generate_chunked_content()
     break;
   }
 
-  while (dechunked_reader->read_avail() > 0 && state != CHUNK_WRITE_DONE) {
-    // TODO: Should this be 64-bit?
-    int write_val = MIN(max_chunk_size, dechunked_reader->read_avail());
+  while ((r_avail = dechunked_reader->read_avail()) > 0 && state != CHUNK_WRITE_DONE) {
+    int64_t write_val = MIN(max_chunk_size, r_avail);
 
     // If the server is still alive, check to see if too much data is
     //    pilling up on the client's buffer.  If the server is done, ignore
@@ -396,16 +402,16 @@ bool ChunkedHandler::generate_chunked_content()
       return false;
     } else {
       state = CHUNK_WRITE_CHUNK;
-      Debug("http_chunk", "creating a chunk of size %d bytes", write_val);
+      Debug("http_chunk", "creating a chunk of size %"PRId64" bytes", write_val);
 
       // Output the chunk size.
       if (write_val != max_chunk_size) {
-        int len = snprintf(tmp, sizeof(tmp), "%x\r\n", write_val);
+        int len = snprintf(tmp, sizeof(tmp), CHUNK_HEADER_FMT, write_val);
         chunked_buffer->write(tmp, len);
         chunked_size += len;
       } else {
-        chunked_buffer->write(max_chunk_buf, max_chunk_buf_len);
-        chunked_size += max_chunk_buf_len;
+        chunked_buffer->write(max_chunk_header, max_chunk_header_len);
+        chunked_size += max_chunk_header_len;
       }
 
       // Output the chunk itself.
@@ -552,6 +558,7 @@ HttpTunnel::deallocate_buffers()
       producers[i].chunked_handler.chunked_buffer = NULL;
       num++;
     }
+    producers[i].chunked_handler.max_chunk_header_len = 0;
   }
   return num;
 }
@@ -573,6 +580,12 @@ HttpTunnel::set_producer_chunking_action(HttpTunnelProducer * p, int64_t skip_by
   default:
     break;
   };
+}
+
+void
+HttpTunnel::set_producer_chunking_size(HttpTunnelProducer* p, int64_t size)
+{
+  p->chunked_handler.set_max_chunk_size(size);
 }
 
 // HttpTunnelProducer* HttpTunnel::add_producer

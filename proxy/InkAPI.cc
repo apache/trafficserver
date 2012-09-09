@@ -7575,6 +7575,10 @@ _conf_to_memberp(TSOverridableConfigKey conf, HttpSM* sm, OverridableDataType *t
     typ = OVERRIDABLE_TYPE_STRING;
     ret = &sm->t_state.txn_conf->proxy_response_server_string;
     break;
+  case TS_CONFIG_HTTP_CHUNKING_SIZE:
+    typ = OVERRIDABLE_TYPE_INT;
+    ret = &sm->t_state.txn_conf->http_chunking_size;
+    break;
 
     // This helps avoiding compiler warnings, yet detect unhandled enum members.
   case TS_CONFIG_NULL:
@@ -7757,6 +7761,10 @@ TSHttpTxnConfigFind(const char* name, int length, TSOverridableConfigKey *conf, 
   case 28:
     if (!strncmp(name, "proxy.config.http.cache.http", length))
       cnf = TS_CONFIG_HTTP_CACHE_HTTP;
+    break;
+  case 31:
+    if (!strncmp(name, "proxy.config.http.chunking.size", length))
+      cnf = TS_CONFIG_HTTP_CHUNKING_SIZE;
     break;
 
   case 33:

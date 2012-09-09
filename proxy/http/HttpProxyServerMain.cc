@@ -131,8 +131,6 @@ init_HttpProxyServer(void)
   ink_mutex_init(&debug_cs_list_mutex, "HttpCS Debug List");
   // DI's request to disable/reenable ICP on the fly
   icp_dynamic_enabled = 1;
-  // INKqa11918
-  init_max_chunk_buf();
 
 #ifndef TS_NO_API
   // Used to give plugins the ability to create http requests

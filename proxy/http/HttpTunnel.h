@@ -102,6 +102,8 @@ struct ChunkedHandler
     CHUNK_FLOW_CONTROL
   };
 
+  static int const DEFAULT_MAX_CHUNK_SIZE = 4096;
+
   IOBufferReader *chunked_reader;
   MIOBuffer *dechunked_buffer;
   int64_t dechunked_size;
@@ -122,9 +124,24 @@ struct ChunkedHandler
   int running_sum;
   int num_digits;
 
+  /// @name Output data.
+  //@{
+  /// The maximum chunk size.
+  /// This is the preferred size as well, used whenever possible.
+  int64_t max_chunk_size;
+  /// Caching members to avoid using printf on every chunk.
+  /// It holds the header for a maximal sized chunk which will cover
+  /// almost all output chunks.
+  char max_chunk_header[16];
+  int max_chunk_header_len;
+  //@}
   ChunkedHandler();
 
   void init(IOBufferReader * buffer_in, HttpTunnelProducer * p);
+
+  /// Set the max chunk @a size.
+  /// If @a size is zero it is set to @c DEFAULT_MAX_CHUNK_SIZE.
+  void set_max_chunk_size(int64_t size);
 
   // Returns true if complete, false otherwise
   bool process_chunked_content();
@@ -234,6 +251,8 @@ public:
                                    HttpProducerHandler sm_handler, HttpTunnelType_t vc_type, const char *name);
 
   void set_producer_chunking_action(HttpTunnelProducer * p, int64_t skip_bytes, TunnelChunkingAction_t action);
+  /// Set the maximum (preferred) chunk @a size of chunked output for @a producer.
+  void set_producer_chunking_size(HttpTunnelProducer* producer, int64_t size);
 
   HttpTunnelConsumer *add_consumer(VConnection * vc,
                                    VConnection * producer,
@@ -285,8 +304,6 @@ private:
 public:
   PostDataBuffers * postbuf;
 };
-
-extern void init_max_chunk_buf();
 
 // void HttpTunnel::abort_cache_write_finish_others
 //

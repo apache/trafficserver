@@ -5574,6 +5574,7 @@ HttpSM::setup_cache_read_transfer()
   // w/o providing a Content-Length header
   if ( t_state.client_info.receive_chunked_response ) {
     tunnel.set_producer_chunking_action(p, client_response_hdr_bytes, TCA_CHUNK_CONTENT);
+    tunnel.set_producer_chunking_size(p, t_state.txn_conf->http_chunking_size);
   }
   ua_entry->in_tunnel = true;
   cache_sm.cache_read_vc = NULL;
@@ -5942,6 +5943,7 @@ HttpSM::setup_transfer_from_transform()
 
   if ( t_state.client_info.receive_chunked_response ) {
     tunnel.set_producer_chunking_action(p, client_response_hdr_bytes, TCA_CHUNK_CONTENT);
+    tunnel.set_producer_chunking_size(p, t_state.txn_conf->http_chunking_size);
   }
 
   return p;
@@ -6006,6 +6008,7 @@ HttpSM::setup_server_transfer_to_cache_only()
                                               "http server");
 
   tunnel.set_producer_chunking_action(p, 0, action);
+  tunnel.set_producer_chunking_size(p, t_state.txn_conf->http_chunking_size);
 
   setup_cache_write_transfer(&cache_sm, server_entry->vc, &t_state.cache_info.object_store, 0, "cache write");
 
@@ -6094,6 +6097,7 @@ HttpSM::setup_server_transfer()
      }
    */
   tunnel.set_producer_chunking_action(p, client_response_hdr_bytes, action);
+  tunnel.set_producer_chunking_size(p, t_state.txn_conf->http_chunking_size);
 }
 
 void
