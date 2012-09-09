@@ -184,8 +184,8 @@ transform_connect(TSCont contp, TransformData * data)
       temp = TSIOBufferCreate();
       tempReader = TSIOBufferReaderAlloc(temp);
 
-      TSIOBufferWrite(temp, (const char *) &data->content_length, sizeof(int));
-      TSIOBufferCopy(temp, data->input_reader, data->content_length, 0);
+      TSIOBufferWrite(temp, (const char *) &content_length, sizeof(int));
+      TSIOBufferCopy(temp, data->input_reader, content_length, 0);
 
       TSIOBufferReaderFree(data->input_reader);
       TSIOBufferDestroy(data->input_buf);
@@ -203,6 +203,7 @@ transform_connect(TSCont contp, TransformData * data)
   ip_addr.sin_family = AF_INET;
   ip_addr.sin_addr.s_addr = server_ip; /* Should be in network byte order */
   ip_addr.sin_port = server_port;
+  TSDebug("strans", "net connect..");
   action = TSNetConnect(contp, (struct sockaddr const*)&ip_addr);
 
   if (!TSActionDone(action)) {
@@ -374,10 +375,13 @@ transform_connect_event(TSCont contp, TransformData * data, TSEvent event, void 
 {
   switch (event) {
   case TS_EVENT_NET_CONNECT:
+    TSDebug("strans", "connected");
+
     data->pending_action = NULL;
     data->server_vc = (TSVConn) edata;
     return transform_write(contp, data);
   case TS_EVENT_NET_CONNECT_FAILED:
+    TSDebug("strans", "connect failed");
     data->pending_action = NULL;
     return transform_bypass(contp, data);
   default:
@@ -396,6 +400,11 @@ transform_write_event(TSCont contp, TransformData * data, TSEvent event, void *e
     break;
   case TS_EVENT_VCONN_WRITE_COMPLETE:
     return transform_read_status(contp, data);
+  case TS_EVENT_ERROR:
+    return transform_bypass(contp, data);
+  case TS_EVENT_IMMEDIATE:
+    TSVIOReenable(data->server_vio);
+    break;
   default:
     /* An error occurred while writing to the server. Close down
        the connection to the server and bypass. */
@@ -434,7 +443,7 @@ transform_read_status_event(TSCont contp, TransformData * data, TSEvent event, v
           buf_ptr = (char *) buf_ptr + read_ndone;
         }
       }
-      data->content_length = ntohl(data->content_length);
+      //data->content_length = ntohl(data->content_length);
       return transform_read(contp, data);
     }
     return transform_bypass(contp, data);
@@ -512,6 +521,7 @@ transform_handler(TSCont contp, TSEvent event, void *edata)
   /* Check to see if the transformation has been closed by a call to
      TSVConnClose. */
   if (TSVConnClosedGet(contp)) {
+    TSDebug("strans", "transformation closed");
     transform_destroy(contp);
     return 0;
   } else {
@@ -523,6 +533,9 @@ transform_handler(TSCont contp, TSEvent event, void *edata)
       TSError("Didn't get Continuation's Data. Ignoring Event..");
       return 0;
     }
+    TSDebug("strans", "transform handler event [%d], data->state = [%d]",
+	    event, data->state);
+
     do {
       switch (data->state) {
       case STATE_BUFFER:
