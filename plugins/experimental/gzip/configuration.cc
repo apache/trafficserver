@@ -41,11 +41,11 @@ namespace Gzip {
   }
 
   void rtrim_if(string& s, int (* fp) (int)) {
-    for (size_t i = s.size() - 1; i >= 0; i--) { 
+    for (ssize_t i = (ssize_t)s.size() - 1; i >= 0; i--) {
       if (fp(s[i])) { 
-	s.erase(i,1);
+        s.erase(i,1);
       } else  {
-	break;
+	      break;
       }
     }
   }
