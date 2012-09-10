@@ -174,9 +174,8 @@ gzip_transform_init(TSCont contp, GzipData * data)
       if (changetag) {
         TSMimeHdrFieldValueAppend(bufp, hdr_loc, ce_loc, 0, "-df", 3);
       }
-
-      TSHandleMLocRelease(bufp, hdr_loc, ce_loc);
     }
+    TSHandleMLocRelease(bufp, hdr_loc, ce_loc);
   }
 
   TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
