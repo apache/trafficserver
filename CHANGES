@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.3.1
 
+  *) [TS-1454] crash when ic_hostname is null in cluster mode
+
   *) [TS-1270] add force local cache control in clustering mode
 
   *) [TS-1386] thread hang in cluster type=1, which will trigger the

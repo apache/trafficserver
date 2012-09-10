@@ -1606,7 +1606,7 @@ CacheContinuation::setupReadWriteVC(int event, VConnection * vc)
 
         Cache *call_cache = caches[frag_type];
         Action *a = call_cache->open_write(this, &key, 0, pin_in_cache,
-                                           NULL, frag_type, ic_hostname->data(),
+                                           NULL, frag_type, ic_hostname ? ic_hostname->data() : NULL,
                                            ic_hostname_len);
         if (a != ACTION_RESULT_DONE) {
           cache_action = a;
