@@ -1,5 +1,5 @@
                                                          -*- coding: utf-8 -*-
-Changes with Apache Traffic Server 3.3.0
+Changes with Apache Traffic Server 3.3.1
 
   *) [TS-1270] add force local cache control in clustering mode
 
@@ -31,6 +31,9 @@ Changes with Apache Traffic Server 3.3.0
    Also reorganize the plugins/experimental Makefile.am stuff slightly.
 
   *) [TS-1414] gzip plugin enhancements
+
+
+Changes with Apache Traffic Server 3.3.0
 
   *) [TS-1427] PluginVCs now use a method similar to actual socket VCs
    for firing inactivity timeout events
