@@ -1458,6 +1458,9 @@ Cmd_ConfigCache(ClientData clientData, Tcl_Interp * interp, int argc, const char
     case CMD_CONFIG_CACHE_HTTP:
       return (Cli_RecordOnOff_Action((argc == 3), "proxy.config.http.cache.http", argtable->arg_string));
 
+    case CMD_CONFIG_CACHE_CLUSTER_BYPASS:
+      return (Cli_RecordOnOff_Action((argc == 3),
+                                     "proxy.config.http.cache.cluster_cache_local", argtable->arg_string));
     case CMD_CONFIG_CACHE_IGNORE_BYPASS:
       return (Cli_RecordOnOff_Action((argc == 3),
                                      "proxy.config.http.cache.ignore_client_no_cache", argtable->arg_string));

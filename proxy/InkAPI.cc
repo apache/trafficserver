@@ -6606,7 +6606,7 @@ TSCacheRead(TSCont contp, TSCacheKey key)
   CacheInfo *info = (CacheInfo *) key;
   Continuation *i = (INKContInternal *) contp;
 
-  return (TSAction)cacheProcessor.open_read(i, &info->cache_key, info->frag_type, info->hostname, info->len);
+  return (TSAction)cacheProcessor.open_read(i, &info->cache_key, true, info->frag_type, info->hostname, info->len);
 }
 
 TSAction
@@ -6620,7 +6620,7 @@ TSCacheWrite(TSCont contp, TSCacheKey key)
   CacheInfo *info = (CacheInfo *) key;
   Continuation *i = (INKContInternal *) contp;
 
-  return (TSAction)cacheProcessor.open_write(i, &info->cache_key, info->frag_type, 0, false, info->pin_in_cache,
+  return (TSAction)cacheProcessor.open_write(i, &info->cache_key, true, info->frag_type, 0, false, info->pin_in_cache,
                                              info->hostname, info->len);
 }
 
@@ -6635,7 +6635,7 @@ TSCacheRemove(TSCont contp, TSCacheKey key)
   CacheInfo *info = (CacheInfo *) key;
   INKContInternal *i = (INKContInternal *) contp;
 
-  return (TSAction)cacheProcessor.remove(i, &info->cache_key, info->frag_type, true, false, info->hostname, info->len);
+  return (TSAction)cacheProcessor.remove(i, &info->cache_key, true, info->frag_type, true, false, info->hostname, info->len);
 }
 
 TSAction
@@ -7435,6 +7435,9 @@ _conf_to_memberp(TSOverridableConfigKey conf, HttpSM* sm, OverridableDataType *t
   case TS_CONFIG_HTTP_CACHE_HTTP:
     ret = &sm->t_state.txn_conf->cache_http;
     break;
+  case TS_CONFIG_HTTP_CACHE_CLUSTER_CACHE_LOCAL:
+    ret = &sm->t_state.txn_conf->cache_cluster_cache_local;
+    break;
   case TS_CONFIG_HTTP_CACHE_IGNORE_CLIENT_NO_CACHE:
     ret = &sm->t_state.txn_conf->cache_ignore_client_no_cache;
     break;
@@ -7946,6 +7949,8 @@ TSHttpTxnConfigFind(const char* name, int length, TSOverridableConfigKey *conf, 
   case 46:
     switch (name[length-1]) {
     case 'e':
+      if (!strncmp(name, "proxy.config.http.cache.cluster_cache_local", length))
+        cnf = TS_CONFIG_HTTP_CACHE_CLUSTER_CACHE_LOCAL;
       if (!strncmp(name, "proxy.config.http.cache.ignore_client_no_cache", length))
         cnf = TS_CONFIG_HTTP_CACHE_IGNORE_CLIENT_NO_CACHE;
       else if (!strncmp(name, "proxy.config.http.cache.ims_on_client_no_cache", length))

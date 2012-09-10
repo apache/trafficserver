@@ -1394,7 +1394,7 @@ PrefetchBlaster::handleEvent(int event, void *data)
 
       //if (cache_lookup_necessary) do:
       initCacheLookupConfig();
-      cacheProcessor.open_read(this, request->url_get(), request, &cache_lookup_config, 0);
+      cacheProcessor.open_read(this, request->url_get(), false, request, &cache_lookup_config, 0);
 
       break;
     }

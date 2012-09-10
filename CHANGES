@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.3.0
 
+  *) [TS-1270] add force local cache control in clustering mode
+
   *) [TS-1386] thread hang in cluster type=1, which will trigger the
      throttling
 

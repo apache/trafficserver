@@ -415,6 +415,7 @@ cache			Cache Configuration
 
   ts> show:cache
   HTTP Caching ------------------- on    (proxy.config.http.cache.http)
+  Ignore User Requests To Bypass Cluster --- off  (proxy.config.http.cache.cluster_cache_local)
   Ignore User Requests To Bypass Cache --- off  (proxy.config.http.cache.ignore_client_no_cache)
   Maximum HTTP Object Size --- NONE        (proxy.config.cache.max_doc_size)
 
@@ -1063,6 +1064,17 @@ cache			Cache Configuration
     ts#
 
     ts# config:cache http
+    on
+    ts#
+
+  syntax: config:cache cluster-bypass <on | off>
+  args:   <on | off> turn cluster-bypass on/off.
+  
+    ts# config:cache cluster-bypass on   (proxy.config.http.cache.cluster_cache_local)
+    +OK
+    ts#
+
+    ts# config:cache cluster-bypass
     on
     ts#
 

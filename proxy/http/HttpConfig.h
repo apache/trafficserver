@@ -409,7 +409,7 @@ struct OverridableHttpConfigParams {
        anonymize_remove_cookie(0), anonymize_remove_client_ip(0), anonymize_insert_client_ip(1),
        proxy_response_server_enabled(0), insert_squid_x_forwarded_for(0),
        send_http11_requests(3), // SEND_HTTP11_IF_REQUEST_11_AND_HOSTDB
-       cache_http(0), cache_ignore_client_no_cache(0), cache_ignore_client_cc_max_age(1),
+       cache_http(0), cache_cluster_cache_local(0), cache_ignore_client_no_cache(0), cache_ignore_client_cc_max_age(1),
        cache_ims_on_client_no_cache(0), cache_ignore_server_no_cache(0), cache_responses_to_cookies(0),
        cache_ignore_auth(0), cache_urls_that_look_dynamic(0), cache_required_headers(0), // CACHE_REQUIRED_HEADERS_NONE
        insert_request_via_string(0), insert_response_via_string(0), doc_in_cache_skip_dns(1),
@@ -488,6 +488,7 @@ struct OverridableHttpConfigParams {
   // cache control //
   ///////////////////
   MgmtByte cache_http;
+  MgmtByte cache_cluster_cache_local;
   MgmtByte cache_ignore_client_no_cache;
   MgmtByte cache_ignore_client_cc_max_age;
   MgmtByte cache_ims_on_client_no_cache;

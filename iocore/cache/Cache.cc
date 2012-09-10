@@ -2794,11 +2794,11 @@ ink_cache_init(ModuleVersion v)
 #ifdef NON_MODULAR
 //----------------------------------------------------------------------------
 Action *
-CacheProcessor::open_read(Continuation *cont, URL *url, CacheHTTPHdr *request,
+CacheProcessor::open_read(Continuation *cont, URL *url, bool cluster_cache_local, CacheHTTPHdr *request,
                           CacheLookupHttpConfig *params, time_t pin_in_cache, CacheFragType type)
 {
 #ifdef CLUSTER_CACHE
-  if (cache_clustering_enabled > 0) {
+  if (cache_clustering_enabled > 0 && !cluster_cache_local) {
     return open_read_internal(CACHE_OPEN_READ_LONG, cont, (MIOBuffer *) 0,
                               url, request, params, (CacheKey *) 0, pin_in_cache, type, (char *) 0, 0);
   }
@@ -2809,11 +2809,11 @@ CacheProcessor::open_read(Continuation *cont, URL *url, CacheHTTPHdr *request,
 
 //----------------------------------------------------------------------------
 Action *
-CacheProcessor::open_write(Continuation *cont, int expected_size, URL *url,
+CacheProcessor::open_write(Continuation *cont, int expected_size, URL *url, bool cluster_cache_local,
                            CacheHTTPHdr *request, CacheHTTPInfo *old_info, time_t pin_in_cache, CacheFragType type)
 {
 #ifdef CLUSTER_CACHE
-  if (cache_clustering_enabled > 0) {
+  if (cache_clustering_enabled > 0 && !cluster_cache_local) {
     INK_MD5 url_md5;
     Cache::generate_key(&url_md5, url, request);
     ClusterMachine *m = cluster_machine_at_depth(cache_hash(url_md5));
@@ -2836,7 +2836,7 @@ CacheProcessor::open_write(Continuation *cont, int expected_size, URL *url,
 // Note: this should not be called from from the cluster processor, or bad
 // recursion could occur. This is merely a convenience wrapper.
 Action *
-CacheProcessor::remove(Continuation *cont, URL *url, CacheFragType frag_type)
+CacheProcessor::remove(Continuation *cont, URL *url, bool cluster_cache_local, CacheFragType frag_type)
 {
   INK_MD5 md5;
   int len = 0;
@@ -2847,9 +2847,9 @@ CacheProcessor::remove(Continuation *cont, URL *url, CacheFragType frag_type)
 
   Debug("cache_remove", "[CacheProcessor::remove] Issuing cache delete for %s", url->string_get_ref());
 #ifdef CLUSTER_CACHE
-  if (cache_clustering_enabled > 0) {
+  if (cache_clustering_enabled > 0 && !cluster_cache_local) {
     // Remove from cluster
-    return remove(cont, &md5, frag_type, true, false, const_cast<char *>(hostname), len);
+    return remove(cont, &md5, cluster_cache_local, frag_type, true, false, const_cast<char *>(hostname), len);
   }
 #endif
 

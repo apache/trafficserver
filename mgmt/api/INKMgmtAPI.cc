@@ -880,6 +880,7 @@ TSCacheEleCreate(TSRuleTypeT type)
 
   if (type != TS_CACHE_NEVER &&
       type != TS_CACHE_IGNORE_NO_CACHE &&
+      type != TS_CACHE_CLUSTER_CACHE_LOCAL &&
       type != TS_CACHE_IGNORE_CLIENT_NO_CACHE &&
       type != TS_CACHE_IGNORE_SERVER_NO_CACHE &&
       type != TS_CACHE_PIN_IN_CACHE &&

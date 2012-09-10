@@ -212,7 +212,7 @@ struct TestProxy:Continuation
     SET_HANDLER(cacheCheckEvent);
     url_struct = new URL((const char *) url_str, sizeof(url_str), true);
     hostdbinfo = info;
-    cacheProcessor.lookup(this, url_struct);
+    cacheProcessor.lookup(this, url_struct, false);
     // SET_HANDLER(connectEvent);
     // netProcessor.connect(this,info->ip,port,host);
     return EVENT_DONE;
@@ -225,12 +225,12 @@ struct TestProxy:Continuation
         cout << "Removing object from the cache\n";
         SET_HANDLER(NULL);
         amode = 0;
-        cacheProcessor.remove(&(((CacheObjInfoVector *) data)->data[0]));
+        cacheProcessor.remove(&(((CacheObjInfoVector *) data)->data[0]), false);
         return done();
       } else {
         cout << "Serving the object from cache\n";
         SET_HANDLER(cacheReadEvent);
-        cacheProcessor.open_read(this, &(((CacheObjInfoVector *) data)->data[0]));
+        cacheProcessor.open_read(this, &(((CacheObjInfoVector *) data)->data[0]), false);
         return EVENT_CONT;
       }
     } else if (event == CACHE_EVENT_LOOKUP_FAILED) {
@@ -240,7 +240,7 @@ struct TestProxy:Continuation
       request_header = new HttpHeader;
       request_header->m_url = *url_struct;
       objinfo->request = *request_header;
-      cacheProcessor.open_write(this, objinfo, CACHE_UNKNOWN_SIZE);
+      cacheProcessor.open_write(this, objinfo, false, CACHE_UNKNOWN_SIZE);
       return EVENT_DONE;
     } else {
       printf("TestProxy cacheCheckEvent error %d\n", event);

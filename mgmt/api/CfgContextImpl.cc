@@ -152,6 +152,9 @@ CacheObj::formatEleToRule()
   case TS_CACHE_IGNORE_NO_CACHE:
     ink_strlcat(buf, "action=ignore-no-cache ", sizeof(buf));
     break;
+  case TS_CACHE_CLUSTER_CACHE_LOCAL:
+    ink_strlcat(buf, "action=cluster-cache-local ", sizeof(buf));
+    break;
   case TS_CACHE_IGNORE_CLIENT_NO_CACHE:
     ink_strlcat(buf, "action=ignore-client-no-cache ", sizeof(buf));
     break;
@@ -213,6 +216,7 @@ bool CacheObj::isValid()
   switch (m_ele->cfg_ele.type) {
   case TS_CACHE_NEVER:
   case TS_CACHE_IGNORE_NO_CACHE:
+  case TS_CACHE_CLUSTER_CACHE_LOCAL:
   case TS_CACHE_IGNORE_CLIENT_NO_CACHE:
   case TS_CACHE_IGNORE_SERVER_NO_CACHE:
   case TS_CACHE_AUTH_CONTENT:

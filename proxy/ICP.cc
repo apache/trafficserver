@@ -490,10 +490,10 @@ ICPPeerReadCont::ICPPeerQueryCont(int event, Event * e)
       // Note: _cache_lookup_local is ignored in this case, since
       //       cache clustering is not used with stale lookup.
       //////////////////////////////////////////////////////////////
-      a = cacheProcessor.open_read(this, &_state->_cachelookupURL,
+      a = cacheProcessor.open_read(this, &_state->_cachelookupURL, false,
                                    &gclient_request, &global_cache_lookup_config, (time_t) 0);
     } else {
-      a = cacheProcessor.lookup(this, &_state->_cachelookupURL, _state->_cache_lookup_local);
+      a = cacheProcessor.lookup(this, &_state->_cachelookupURL, false, _state->_cache_lookup_local);
     }
     if (!a) {
       a = ACTION_IO_ERROR;

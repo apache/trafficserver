@@ -1919,6 +1919,7 @@ create_ele_obj_from_rule_node(Rule * rule)
   switch (rule_type) {
   case TS_CACHE_NEVER:        /* all cache rules use same constructor */
   case TS_CACHE_IGNORE_NO_CACHE:
+  case TS_CACHE_CLUSTER_CACHE_LOCAL:
   case TS_CACHE_IGNORE_CLIENT_NO_CACHE:
   case TS_CACHE_IGNORE_SERVER_NO_CACHE:
   case TS_CACHE_PIN_IN_CACHE:
@@ -2006,6 +2007,7 @@ create_ele_obj_from_ele(TSCfgEle * ele)
   switch (ele->type) {
   case TS_CACHE_NEVER:        /* cache.config */
   case TS_CACHE_IGNORE_NO_CACHE:      // fall-through
+  case TS_CACHE_CLUSTER_CACHE_LOCAL:
   case TS_CACHE_IGNORE_CLIENT_NO_CACHE:       // fall-through
   case TS_CACHE_IGNORE_SERVER_NO_CACHE:       // fall-through
   case TS_CACHE_PIN_IN_CACHE: // fall-through
@@ -2112,6 +2114,8 @@ get_rule_type(TokenList * token_list, TSFileNameT file)
           return TS_CACHE_NEVER;
         } else if (strcmp(tok->value, "ignore-no-cache") == 0) {
           return TS_CACHE_IGNORE_NO_CACHE;
+        } else if (strcmp(tok->value, "cluster-cache-local") == 0) {
+          return TS_CACHE_CLUSTER_CACHE_LOCAL;
         } else if (strcmp(tok->value, "ignore-client-no-cache") == 0) {
           return TS_CACHE_IGNORE_CLIENT_NO_CACHE;
         } else if (strcmp(tok->value, "ignore-server-no-cache") == 0) {

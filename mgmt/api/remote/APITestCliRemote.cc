@@ -400,6 +400,9 @@ print_cache_ele(TSCacheEle * ele)
   case TS_CACHE_IGNORE_NO_CACHE:
     snprintf(buf + buf_pos, sizeof(buf) - buf_pos, "action=ignore-no-cache");
     break;
+  case TS_CACHE_CLUSTER_CACHE_LOCAL:
+    snprintf(buf + buf_pos, sizeof(buf) - buf_pos, "action=cluster-cache-local");
+    break;
   case TS_CACHE_IGNORE_CLIENT_NO_CACHE:
     snprintf(buf + buf_pos, sizeof(buf) - buf_pos, "action=ignore-server-no-cache");
     break;
