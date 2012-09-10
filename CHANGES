@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.3.0
 
+  *) [TS-1386] thread hang in cluster type=1, which will trigger the
+     throttling
+
   *) [TS-1351] raw disk cache disabled when system start
 
   *) [TS-1452] gzip build failure with Apple/clang-421.0.57

@@ -771,6 +771,7 @@ bool ClusterHandler::get_read_locks()
       // Since we now have the mutex, really see if reads are allowed.
 
       if (!vc_ok_read(vc)) {
+        MUTEX_UNTAKE_LOCK(vc->read.vio.mutex, thread);
         vc->read_locked = NULL;
         continue;
       }
