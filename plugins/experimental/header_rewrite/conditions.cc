@@ -173,7 +173,8 @@ ConditionHeader::append_value(std::string& s, const Resources& res)
 
   if (bufp && hdr_loc) {
     field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, _qualifier.c_str(), _qualifier.size());
-    if (field_loc) {
+    TSDebug(PLUGIN_NAME, "Getting Header: %s, field_loc: %p", _qualifier.c_str(), field_loc);
+    if (field_loc != NULL) {
       value = TSMimeHdrFieldValueStringGet(res.bufp, res.hdr_loc, field_loc, 0, &len);
       TSDebug(PLUGIN_NAME, "Appending HEADER(%s) to evaluation value -> %.*s", _qualifier.c_str(), len, value);
       s.append(value, len);

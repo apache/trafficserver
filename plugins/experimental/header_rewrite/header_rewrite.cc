@@ -76,6 +76,7 @@ parse_config(const std::string fname, TSHttpHookID default_hook)
 
     getline(f, line);
     ++lineno; // ToDo: we should probably use this for error messages ...
+    TSDebug(PLUGIN_NAME, "Reading line: %d: %s", lineno, line.c_str());
 
     boost::trim(line);
     if (line.empty() || (line[0] == '#'))
@@ -206,8 +207,10 @@ TSPluginInit(int argc, const char *argv[])
     TSError("header_rewrite: plugin registration failed.\n"); 
   }
 
+  TSDebug(PLUGIN_NAME, "number of arguments: %d", argc);
   if (argc != 2) {
     TSError("usage: %s <config-file>\n", argv[0] );
+    assert(argc == 2);
   }
 
   // Initialize the globals
@@ -326,6 +329,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
 
   }
 
+  TSDebug(PLUGIN_NAME, "returing with status: %d", rval);
   return rval;
 }
 

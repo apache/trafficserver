@@ -139,7 +139,7 @@ public:
   explicit ConditionHeader(bool client = false)
     : _client(client)
   {
-    TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionHeader");
+    TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionHeader, client %d", client);
   };
 
   void initialize(Parser& p);
