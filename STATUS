@@ -44,7 +44,7 @@ A list of all bugs open for the next v3.0.6 release can be found at
 PATCHES ACCEPTED TO BACKPORT FROM TRUNK:
   *) Don't assume root privileges during make install
    Trunk patch: https://git-wip-us.apache.org/repos/asf?p=trafficserver.git;a=commit;h=a862e283734c86d46a57624f9a05f09cfbbee175
-   Jira: https://issues.apache.org/jira/browse/TS-1295
+   Jira: https://issues.apache.org/jira/browse/TS-1460
    +1: zwoop, igalic, humbedooh
 
 STALLED ISSUES
@@ -53,7 +53,7 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   [ New proposals should be added at the end of the list ]
 
   *) Backport regex_remapa
-   Trunk patch: (see TS-1459.patch in Jira)
+   patch: https://issues.apache.org/jira/secure/attachment/12544604/TS-1459.patch
    Jira: https://issues.apache.org/jira/browse/TS-1459
    +1: briang
 
