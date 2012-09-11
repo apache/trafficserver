@@ -612,7 +612,7 @@ transform_plugin(TSCont contp, TSEvent event, void *edata)
       TSMLoc req_loc;
       if (TSHttpTxnClientReqGet(txnp, &req_buf, &req_loc) == TS_SUCCESS) {
 	int url_len;
-	const char * url = TSHttpTxnEffectiveUrlStringGet(txnp, &url_len);
+	char * url = TSHttpTxnEffectiveUrlStringGet(txnp, &url_len);
 	HostConfiguration * hc = find_host_configuration(txnp, req_buf, req_loc);
 	//we could clone the hosting configuration here, to make it deletable on reload?
 	TSHttpTxnArgSet(txnp, arg_idx_host_configuration, (void *) hc);
@@ -624,6 +624,7 @@ transform_plugin(TSCont contp, TSEvent event, void *edata)
 	} else {
 	  normalize_accept_encoding(txnp, req_buf, req_loc);	
 	}
+	TSfree(url);
         TSHandleMLocRelease(req_buf, TS_NULL_MLOC, req_loc);
       }
       TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
