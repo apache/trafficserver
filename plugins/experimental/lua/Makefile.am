@@ -18,7 +18,11 @@ pkglibdir = ${pkglibexecdir}
 
 if BUILD_LUA_SUPPORT
 
-AM_CXXFLAGS = \
+# We have to use the per-target CPPFLAGS here to make sure that the Lua include
+# path comes first. If we have LuaJIT (/opt/local/include/luajit-2.0) and Lua
+# (/opt/local/include) headers, then we need to make sure that we don't end up
+# building with the Lua headers but linking LuaJIT.
+lua_la_CPPFLAGS = \
   ${LUA_CFLAGS} \
   -I$(top_builddir)/proxy/api \
   -I$(top_srcdir)/proxy/api
