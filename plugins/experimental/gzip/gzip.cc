@@ -266,7 +266,7 @@ gzip_transform_finish(GzipData * data)
 
       err = deflate(&data->zstrm, Z_FINISH);
 
-      if (downstream_length > data->zstrm.avail_out) {
+      if (downstream_length > (int64_t) data->zstrm.avail_out) {
         TSIOBufferProduce(data->downstream_buffer, downstream_length - data->zstrm.avail_out);
         data->downstream_length += (downstream_length - data->zstrm.avail_out);
       }
@@ -281,7 +281,7 @@ gzip_transform_finish(GzipData * data)
       break;
     }
 
-    if (data->downstream_length != (data->zstrm.total_out)) {
+    if (data->downstream_length != (int64_t) (data->zstrm.total_out)) {
       error("gzip-transform: ERROR: output lengths don't match (%d, %ld)", data->downstream_length,
             data->zstrm.total_out);
     }
@@ -549,7 +549,7 @@ gzip_transform_add(TSHttpTxn txnp, int server, HostConfiguration * hc)
   TSMimeHdrFieldValueStringGet(cbuf, chdr, cfield, 0, &len);
 
   //we normalized to either deflate or gzip. only gzip has length 4
-  if (len == strlen("gzip"))
+  if (len == (int) strlen("gzip"))
     gzip = 1;
 
   TSHandleMLocRelease(cbuf, chdr, cfield);
