@@ -55,7 +55,7 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   *) Backport regex_remapa
    patch: https://issues.apache.org/jira/secure/attachment/12544604/TS-1459.patch
    Jira: https://issues.apache.org/jira/browse/TS-1459
-   +1: briang
+   +1: briang, igalic
 
 STALLED ISSUES
 
