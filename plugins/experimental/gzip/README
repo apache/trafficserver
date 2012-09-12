@@ -4,10 +4,15 @@ What this plugin does:
 this plugin gzips or deflates or deflates responses, whichever is applicable
 it can compress origin respones as well as cached responses
 
-usage:
+installation:
 make && sudo make install
 
-add a line to plugin.config:
+if no makefile is present, you can compile it using
+    tsxs -C *.cc -o gzip.so
+and then install it using 
+    tsxs -i -o gzip.so
+
+after installation, add a line to plugin.config:
 gzip.so
 
 in this case, the plugin will use a default behaviour:
