@@ -74,10 +74,6 @@ extern int Time_GetNTP_Status(char *status, size_t status_len);
 extern int Time_SetNTP_Off(void);
 extern int Net_GetSMTP_Server(char *server);
 extern int Net_SetSMTP_Server(char *server);
-extern int Sys_User_Root(int *old_euid);
-extern int Sys_User_Inktomi(int euid);
-extern int Sys_Grp_Root(int *old_egid);
-extern int Sys_Grp_Inktomi(int egid);
 extern int Net_DisableInterface(char *interface);
 
 #endif // _SYS_API_H
