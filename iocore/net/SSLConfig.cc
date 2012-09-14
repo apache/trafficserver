@@ -149,11 +149,16 @@ SslConfigParams::initialize()
   if (!options)
     ssl_ctx_options |= SSL_OP_CIPHER_SERVER_PREFERENCE;
 #endif
-#ifdef SSL_OP_NO_COMPRESSION
+
   IOCORE_ReadConfigInteger(options, "proxy.config.ssl.compression");
-  if (!options)
+  if (!options) {
+#ifdef SSL_OP_NO_COMPRESSION
+    /* OpenSSL >= 1.0 only */
     ssl_ctx_options |= SSL_OP_NO_COMPRESSION;
+#elif OPENSSL_VERSION_NUMBER >= 0x00908000L
+    sk_SSL_COMP_zero(SSL_COMP_get_compression_methods());
 #endif
+  }
 
   IOCORE_ReadConfigString(serverCertRelativePath, "proxy.config.ssl.server.cert.path", PATH_NAME_MAX);
   set_paths_helper(serverCertRelativePath, NULL, &serverCertPathOnly, NULL);
