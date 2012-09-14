@@ -89,6 +89,11 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
    Jira: https://issues.apache.org/jira/browse/TS-1266
    +1: zwoop
 
+  *) disable ssl compression by default
+   Trunk: 05da7a90ab16f7bc4c6a3e5c7f4880ef80e9b316
+   Jira: https://issues.apache.org/jira/browse/TS-1466
+   +1: bcall
+
 
 PATCHES ACCEPTED TO BACKPORT FROM TRUNK:
   [ New patches should be added at the end of the list ]
