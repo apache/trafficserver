@@ -1,7 +1,7 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.3.1
   *) [TS-1469] Manager uses hardcoded FD limit causing restarts
-      forever on traffic_server.
+      forever on traffic_server. Reported By: Thomas Jackson
 
   *) [TS-1466] disable ssl compression by default
 
