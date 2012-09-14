@@ -490,7 +490,7 @@ webIntr_main(void *x)
     }
 
     // TODO: Should we check return value?
-    mgmt_select(32, &selectFDs, (fd_set *) NULL, (fd_set *) NULL, NULL);
+    mgmt_select(FD_SETSIZE, &selectFDs, (fd_set *) NULL, (fd_set *) NULL, NULL);
 
     if (autoconfFD >= 0 && FD_ISSET(autoconfFD, &selectFDs)) {
       acceptFD = autoconfFD;
