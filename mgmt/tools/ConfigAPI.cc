@@ -776,14 +776,12 @@ Config_RestoreNetConfig(char *file)
     }
 
     // Get Admin GUI encrypted password.
-    TSActionNeedT action_need, top_action_req = TS_ACTION_UNDEFINED;
+    TSActionNeedT action_need = TS_ACTION_UNDEFINED;
     char *mail_address = netXml.getXmlTagValue("MailAddress");
     if (mail_address != NULL) {
       if (MgmtRecordSet("proxy.config.alarm_email", mail_address, &action_need) != TS_ERR_OKAY) {
         DPRINTF(("Config_FloppyNetRestore: failed to set new mail_address %s!\n", mail_address));
       } else {
-        if (action_need < top_action_req)       // a more "severe" action is needed...
-          top_action_req = action_need;
         DPRINTF(("Config_FloppyNetRestore: set new mail_address %s!\n", mail_address));
       }
       ats_free(mail_address);
