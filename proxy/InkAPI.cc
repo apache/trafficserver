@@ -403,11 +403,10 @@ TSError(const char *fmt, ...)
 }
 
 // Assert in debug AND optim
-int
+void
 _TSReleaseAssert(const char *text, const char *file, int line)
 {
   _ink_assert(text, file, line);
-  return 0;
 }
 
 // Assert only in debug
@@ -430,7 +429,7 @@ _TSAssert(const char *text, const char *file, int line)
 #define sdk_assert(EX) (void)(EX)
 #else
 #define sdk_assert(EX)                                          \
-  (void)((EX) || (_TSReleaseAssert(#EX, __FILE__, __LINE__)))
+  ( (void)((EX) ? (void)0 : _TSReleaseAssert(#EX, __FILE__, __LINE__)) )
 #endif
 
 

@@ -51,6 +51,14 @@
 #endif
 #endif
 
+#if !defined(TS_NORETURN)
+#if defined(__GNUC__) || defined(__clang__)
+#define TS_NORETURN __attribute__((noreturn))
+#else
+#define TS_NORETURN
+#endif
+#endif
+
 #ifdef __cplusplus
 extern "C"
 {
@@ -1249,11 +1257,11 @@ extern "C"
 
   /* --------------------------------------------------------------------------
      Assertions */
-  tsapi int _TSReleaseAssert(const char* txt, const char* f, int l);
+  tsapi void _TSReleaseAssert(const char* txt, const char* f, int l) TS_NORETURN;
   tsapi int _TSAssert(const char* txt, const char* f, int l);
 
 #define TSReleaseAssert(EX) \
-            (void)((EX) || (_TSReleaseAssert(#EX, __FILE__, __LINE__)))
+            ( (void)((EX) ? (void)0 : _TSReleaseAssert(#EX, __FILE__, __LINE__)) )
 
 #define TSAssert(EX) \
             (void)((EX) || (_TSAssert(#EX, __FILE__, __LINE__)))

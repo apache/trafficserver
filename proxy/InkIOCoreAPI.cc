@@ -44,7 +44,7 @@
 #define sdk_assert(EX) (void)(EX)
 #else
 #define sdk_assert(EX)                                          \
-  (void)((EX) || (_TSReleaseAssert(#EX, __FILE__, __LINE__)))
+  ( (void)((EX) ? (void)0 : _TSReleaseAssert(#EX, __FILE__, __LINE__)) )
 #endif
 
 
