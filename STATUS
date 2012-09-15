@@ -87,12 +87,12 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   *) Fix RAM cache stats for CLFUS.
    Trunk: 20443732b36e8a794a5878737d5a9a18452321e7
    Jira: https://issues.apache.org/jira/browse/TS-1266
-   +1: zwoop, jpeach
+   +1: zwoop, jpeach, igalic
 
   *) disable ssl compression by default
    Trunk: 05da7a90ab16f7bc4c6a3e5c7f4880ef80e9b316
    Jira: https://issues.apache.org/jira/browse/TS-1466
-   +1: bcall, jpeach
+   +1: bcall, jpeach, igalic
 
 
 PATCHES ACCEPTED TO BACKPORT FROM TRUNK:
