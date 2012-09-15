@@ -7948,8 +7948,6 @@ TSHttpTxnConfigFind(const char* name, int length, TSOverridableConfigKey *conf, 
   case 46:
     switch (name[length-1]) {
     case 'e':
-      if (!strncmp(name, "proxy.config.http.cache.cluster_cache_local", length))
-        cnf = TS_CONFIG_HTTP_CACHE_CLUSTER_CACHE_LOCAL;
       if (!strncmp(name, "proxy.config.http.cache.ignore_client_no_cache", length))
         cnf = TS_CONFIG_HTTP_CACHE_IGNORE_CLIENT_NO_CACHE;
       else if (!strncmp(name, "proxy.config.http.cache.ims_on_client_no_cache", length))
@@ -7960,6 +7958,10 @@ TSHttpTxnConfigFind(const char* name, int length, TSOverridableConfigKey *conf, 
         cnf = TS_CONFIG_HTTP_CACHE_HEURISTIC_MIN_LIFETIME;
       else if (!strncmp(name, "proxy.config.http.cache.heuristic_max_lifetime", length))
         cnf = TS_CONFIG_HTTP_CACHE_HEURISTIC_MAX_LIFETIME;
+      break;
+    case 'l':
+      if (!strncmp(name, "proxy.config.http.cache.cluster_cache_local", length))
+        cnf = TS_CONFIG_HTTP_CACHE_CLUSTER_CACHE_LOCAL;
       break;
     case 'r':
       if (!strncmp(name, "proxy.config.http.insert_squid_x_forwarded_for", length))
