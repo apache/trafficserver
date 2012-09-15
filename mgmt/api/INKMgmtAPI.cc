@@ -2436,8 +2436,8 @@ closeAllFds()
   //           to root
   if (getuid() != 0) {          // if not super user, need to upgrade to root
     //printf("before upgrade:current uid%d, euid %d\n", getuid(), geteuid()); fflush(stdout);
-    seteuid(0);
-    setreuid(0, 0);
+    if(seteuid(0) != 0 || setreuid(0, 0) != 0)
+      perror("[closeAllFds] unable to restore root privilege.");
     //printf("after upgrade:current uid %d, euid %d\n", getuid(), geteuid()); fflush(stdout);
   }
 

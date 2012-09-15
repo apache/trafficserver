@@ -807,7 +807,8 @@ Config_RestoreNetConfig(char *file)
     ats_free(TagValue);
   }
 
-  setreuid(old_euid, old_euid); //happens only for floppy config
+  if(setreuid(old_euid, old_euid) != 0)
+    perror("Config_RestoreNetConfig set old uid failed: "); //happens only for floppy config
   return 0;
 }
 
