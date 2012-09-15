@@ -42,17 +42,17 @@ PATCHES ACCEPTED TO BACKPORT FROM TRUNK:
 
   *) Fix cache sizes > 16TB
    Trunk: 7c6b590b35ce483c8ae94640c50a6a3fb0d0e690
-   Jira: https://issues.apache.org/jira/browse/TS-1319
+   Jira: https://issues.apache.org/jira/browse/TS-1470
    +1: jpeach, zwoop, igalic
 
   *) Fix SNI certificate fallback path
    Trunk: 9c3bebd88eecf6aee1ce346b67460b8e1787752d
-   Jira: https://issues.apache.jira/browse/TS-1392
+   Jira: https://issues.apache.jira/browse/TS-1471
    +1: jpeach, igalic, zwoop
 
   *) Fix build on amd64 Debian/Ubuntu
    Trunk: b21ccf7 c00f951 02506c0 fa61f83 7fc244e 0d85fe4 44052e9
-   Jira: https://issues.apache.jira/browse/TS-1314
+   Jira: https://issues.apache.jira/browse/TS-1430
    igalic says: After adding the following patches to the list
     c43eb72de958148080fb8395e397b78efb74ce8e
 	4a3d8087cfe5e5b773d388a30782e46c4e167745
@@ -63,12 +63,12 @@ PATCHES ACCEPTED TO BACKPORT FROM TRUNK:
 
   *) Fix RAM cache stats for CLFUS.
    Trunk: 20443732b36e8a794a5878737d5a9a18452321e7
-   Jira: https://issues.apache.org/jira/browse/TS-1266
+   Jira: https://issues.apache.org/jira/browse/TS-1472
    +1: zwoop, jpeach, igalic
 
   *) disable ssl compression by default
    Trunk: 05da7a90ab16f7bc4c6a3e5c7f4880ef80e9b316
-   Jira: https://issues.apache.org/jira/browse/TS-1466
+   Jira: https://issues.apache.org/jira/browse/TS-1474
    +1: bcall, jpeach, igalic
 
 
