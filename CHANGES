@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.2.3
 
+  *) [TS-1498] Fix header_filter plugin for ARM.
+
   *) [TS-1497] stats codes mess up when disk fail
 
   *) [TS-1436] Added Yahoo directory layout

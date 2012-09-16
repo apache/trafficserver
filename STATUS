@@ -41,11 +41,6 @@ A list of all bugs open for the next development release can be found at
 
 PATCHES ACCEPTED TO BACKPORT FROM TRUNK:
 
-  *) Fix header_filter plugin build for ARM
-   Trunk :a7baf7c8f1bb9206e17b9ac925e21e5beab08f56
-   Jira: https://issues.apache.org/jira/browse/TS-1498
-   +1: zwoop, jpeach, igalic
-
 
 PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   [ New proposals should be added at the end of the list ]
