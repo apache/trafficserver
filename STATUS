@@ -59,7 +59,7 @@ PATCHES ACCEPTED TO BACKPORT FROM TRUNK:
 	35f9ff2eec09277ff0e4e656c01ee1f1cbbd01db
 	2568c6f868a79cf5f25d4f5bb2d29ed43491efe6
    it compiles fine.
-   +1: igalic, jpeach
+   +1: igalic, jpeach, zwoop
 
   *) Fix RAM cache stats for CLFUS.
    Trunk: 20443732b36e8a794a5878737d5a9a18452321e7
@@ -69,7 +69,7 @@ PATCHES ACCEPTED TO BACKPORT FROM TRUNK:
   *) disable ssl compression by default
    Trunk: 05da7a90ab16f7bc4c6a3e5c7f4880ef80e9b316
    Jira: https://issues.apache.org/jira/browse/TS-1474
-   +1: bcall, jpeach, igalic
+   +1: bcall, jpeach, igalic, zwoop
 
 
 PATCHES PROPOSED TO BACKPORT FROM TRUNK:
@@ -80,12 +80,13 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
    Jira: https://issues.apache.org/jira/browse/TS-1229
    +1: igalic, zwoop
 
-   Wrong Jira? --jpeach
+   Wrong Jira? --jpeach  I wonder if this is similar/related
+   to TS-1289 ? --zwoop
 
   *) stats codes mess up when disk fail
    Trunk: 99cbf8acb97b191631882bfcfaf06d512347fdd4
    Jira: https://issues.apache.org/jira/browse/TS-1289
-   +1: igalic
+   +1: igalic, zwoop
 
   *) Improve response times for for Cluster purge & miss
    Trunk: f0a98cdc7b950e1ecefde94694de5dfd800248aa
@@ -94,7 +95,7 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   *) Added Yahoo directory layout
   Trunk: adb7e16a435819149af928903337230062e070df
   Jira: https://issues.apache.org/jira/browse/TS-1436
-  +1: bcall, jpeach
+  +1: bcall, jpeach, zwoop
 
 
 
