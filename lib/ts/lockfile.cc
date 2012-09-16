@@ -208,7 +208,7 @@ lockfile_kill_internal(pid_t init_pid, int init_sig, pid_t pid, const char *pnam
 
 #if defined(linux)
 
-  pid_t *pidv;
+  pid_t *pidv = NULL;
   int pidvcnt;
 
   // Need to grab pname's pid vector before we issue any kill signals.
