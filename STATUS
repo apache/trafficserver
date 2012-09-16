@@ -48,10 +48,15 @@ PATCHES ACCEPTED TO BACKPORT FROM TRUNK:
    Jira: https://issues.apache.org/jira/browse/TS-1460
    +1: zwoop, igalic, humbedooh
 
-  *) Backport regex_remapa
+  *) Backport regex_remap
    patch: https://issues.apache.org/jira/secure/attachment/12544604/TS-1459.patch
    Jira: https://issues.apache.org/jira/browse/TS-1459
-   +1: briang, igalic, jpeach
+   +1: briang, igalic, jpeach,zwoop
+
+  *) Disable gzip compression by default
+   Commit: 05da7a90ab16f7bc4c6a3e5c7f4880ef80e9b316
+   Jira: https://issues.apache.org/jira/browse/TS-1466
+   +1: zwoop
 
 PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   [ New proposals should be added at the end of the list ]
