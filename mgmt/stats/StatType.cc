@@ -963,7 +963,6 @@ StatObjectList::Eval()
       // non-time statistics
       object->m_current_time = ink_get_hrtime_internal();
 
-      result = ERROR_VALUE;
       if (object->m_node_dest) {
         result = object->NodeStatEval(false);
         object->m_node_dest->statVarSet(result);
@@ -972,7 +971,6 @@ StatObjectList::Eval()
         }
       }
 
-      result = ERROR_VALUE;
       if (object->m_cluster_dest) {
         result = object->ClusterStatEval();
         object->m_cluster_dest->statVarSet(result);
@@ -1016,7 +1014,6 @@ StatObjectList::Eval()
             Debug(MODULE, "\tEVAL: Simple time-condition.\n");
           }
 
-          result = ERROR_VALUE;
           if (object->m_node_dest) {
             result = object->NodeStatEval(false);
             object->m_node_dest->statVarSet(result);
@@ -1025,7 +1022,6 @@ StatObjectList::Eval()
             }
           }
 
-          result = ERROR_VALUE;
           if (object->m_cluster_dest) {
             result = object->ClusterStatEval();
             object->m_cluster_dest->statVarSet(result);
@@ -1055,7 +1051,6 @@ StatObjectList::Eval()
           }
 
           if (delta > threshold) {
-            result = ERROR_VALUE;
             if (object->m_node_dest) {
               result = object->NodeStatEval(false);
               object->m_node_dest->statVarSet(result);
@@ -1064,7 +1059,6 @@ StatObjectList::Eval()
               }
             }
 
-            result = ERROR_VALUE;
             if (object->m_cluster_dest) {
               result = object->ClusterStatEval();
               object->m_cluster_dest->statVarSet(result);
