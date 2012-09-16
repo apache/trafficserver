@@ -337,7 +337,8 @@ StateMachine::fill()
   int n;
   int hdr_bytes_left, body_bytes_left, copy_size;
 
-  // TODO: I don't know if this call to obuf->write_avail() is necessary...
+  // TODO(zwoop): I don't know if this call to obuf->write_avail() is necessary...
+  // XXX(igalic): it certainly is not side-effect free.
   n = obuf->write_avail();        // used to grow blocks
   n = obuf->block_write_avail();
   ptr = obuf->end();
