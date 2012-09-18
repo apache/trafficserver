@@ -658,8 +658,6 @@ case $host_os in
       release_opt="-g $common_opt $optimizing_flags -feliminate-unused-debug-symbols -fno-strict-aliasing"
       cxx_opt="-Wno-invalid-offsetof"
     fi
-    TS_ADDTO(LDFLAGS, [-L/lib])
-    TS_ADDTO(LDFLAGS, [-L/usr/local/lib])
     ;;
   *)
     common_opt="-pipe -Wall -Werror"
