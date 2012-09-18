@@ -1169,6 +1169,10 @@ AC_SUBST(LUA_LUAJIT_LDFLAGS)
 
 TS_FLAG_HEADERS([sys/epoll.h \
                   sys/event.h \
+                  sys/param.h \
+                  sys/pset.h \
+                  sched.h \
+                  pthread_np.h \
                   machine/endian.h \
                   endian.h \
                   sys/sysinfo.h \
@@ -1179,7 +1183,7 @@ TS_FLAG_HEADERS([sys/epoll.h \
                   sys/ioctl.h \
                   sys/byteorder.h \
                   sys/sockio.h \
-		  sys/prctl.h \
+                  sys/prctl.h \
                   arpa/nameser.h \
                   arpa/nameser_compat.h \
                   execinfo.h \
@@ -1207,6 +1211,11 @@ AC_SUBST(sys_epollh)
 AC_SUBST(sys_eventh)
 AC_SUBST(machine_endianh)
 AC_SUBST(endianh)
+AC_SUBST(pthread_nph)
+AC_SUBST(sys_paramh)
+AC_SUBST(sys_cpuseth)
+AC_SUBST(sys_pseth)
+AC_SUBST(schedh)
 AC_SUBST(netinet_inh)
 AC_SUBST(netinet_in_systmh)
 AC_SUBST(netinet_tcph)
@@ -1241,6 +1250,12 @@ AC_SUBST(ifaddrsh)
 AC_SUBST(readline_readlineh)
 
 TS_FLAG_HEADERS([sys/sysctl.h], [], [],
+                 [[#ifdef HAVE_SYS_PARAM_H
+                    #include <sys/param.h>
+                   #endif
+                 ]])
+
+TS_FLAG_HEADERS([sys/cpuset.h], [], [],
                  [[#ifdef HAVE_SYS_PARAM_H
                     #include <sys/param.h>
                    #endif

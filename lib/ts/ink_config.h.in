@@ -50,6 +50,11 @@
 #define TS_HAVE_NETINET_IN_H           @netinet_inh@
 #define TS_HAVE_NETINET_IN_SYSTM_H     @netinet_in_systmh@
 #define TS_HAVE_NETINET_TCP_H          @netinet_tcph@
+#define TS_HAVE_PTHREAD_NP_H           @pthread_nph@
+#define TS_HAVE_SYS_PARAM_H            @sys_paramh@
+#define TS_HAVE_SYS_CPUSET_H           @sys_cpuseth@
+#define TS_HAVE_SYS_PSET_H             @sys_pseth@
+#define TS_HAVE_SCHED_H                @schedh@
 #define TS_HAVE_SYS_IOCTL_H            @sys_ioctlh@
 #define TS_HAVE_SYS_BYTEORDER_H        @sys_byteorderh@
 #define TS_HAVE_SYS_SOCKIO_H           @sys_sockioh@
