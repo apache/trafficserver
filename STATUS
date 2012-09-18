@@ -56,10 +56,15 @@ PATCHES ACCEPTED TO BACKPORT FROM TRUNK:
   *) Disable gzip compression by default
    Commit: 05da7a90ab16f7bc4c6a3e5c7f4880ef80e9b316
    Jira: https://issues.apache.org/jira/browse/TS-1466
-   +1: zwoop
+   +1: zwoop, briang
 
 PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   [ New proposals should be added at the end of the list ]
+
+  *) Traffic Manager can cause endless restarts of server.
+   Patch: https://issues.apache.org/jira/secure/attachment/12545589/WebIntrMain.patch
+   Jira: https://issues.apache.org/jira/browse/TS-1483
+   +1: briang
 
 
 STALLED ISSUES
