@@ -1214,6 +1214,7 @@ Log::flush_thread_main(void *args)
     // check the queue and find there is nothing to do, then wait
     // again.
     //
+    ink_mutex_try_acquire(&flush_mutex); // acquire if not already acquired, so ink_cond_wait doesn't fail us
     ink_cond_wait (&flush_cond, &flush_mutex);
   }
   /* NOTREACHED */
