@@ -42,16 +42,10 @@ A list of all bugs open for the next v3.0.6 release can be found at
   http://s.apache.org/ts-3.0.6
 
 PATCHES ACCEPTED TO BACKPORT FROM TRUNK:
-
   *) Don't assume root privileges during make install
    Trunk patch: https://git-wip-us.apache.org/repos/asf?p=trafficserver.git;a=commit;h=a862e283734c86d46a57624f9a05f09cfbbee175
    Jira: https://issues.apache.org/jira/browse/TS-1460
    +1: zwoop, igalic, humbedooh
-
-  *) Backport regex_remap
-   patch: https://issues.apache.org/jira/secure/attachment/12544604/TS-1459.patch
-   Jira: https://issues.apache.org/jira/browse/TS-1459
-   +1: briang, igalic, jpeach,zwoop
 
   *) Disable gzip compression by default
    Commit: 05da7a90ab16f7bc4c6a3e5c7f4880ef80e9b316

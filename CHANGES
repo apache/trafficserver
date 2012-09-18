@@ -1,4 +1,7 @@
                                                          -*- coding: utf-8 -*-
+Changes with Apache Traffic Server 3.0.6
+  *) [TS-1459] Backport regex_remap
+
 Changes with Apache Traffic Server 3.0.5
 
   *) [TS-1116] Fix build issues with clang + gcc4.7
