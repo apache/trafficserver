@@ -25,6 +25,12 @@
 #include <sched.h>
 #if TS_USE_HWLOC
 #include <hwloc.h>
+// TODO: (humbedooh): Make this build on Solaris with hwloc.
+#if defined(freebsd) || defined(solaris)
+#include <sys/cpuset.h>
+#define cpu_set_t cpuset_t
+#include <pthread_np.h>
+#endif
 #endif
 #include "ink_defs.h"
 
@@ -118,7 +124,7 @@ EventProcessor::start(int n_event_threads)
       CPU_ZERO(&cpuset);
       int cpu = (i - 1) % num_cpus;
       CPU_SET(cpu, &cpuset);
-      Debug("iocore_thread", "setaffinity tid: %lu, net thread: %d, cpu: %d", tid, i, cpu);
+      Debug("iocore_thread", "setaffinity tid: %p, net thread: %d, cpu: %d", tid, i, cpu);
       assert(pthread_setaffinity_np(tid, sizeof(cpu_set_t), &cpuset) == 0);
     }
 #endif
