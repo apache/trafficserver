@@ -46,6 +46,8 @@ plugins to build large scale web applications.
     expat-devel
     pcre
     libcap-devel
+    hwloc-devel (optional)
+    liblua-devel (optional)
 
   Fedora 8 EC2 (Kernel: 2.6.21.7-2.ec2.v1.2.fc8xen):
     FC8 on EC2 requires unique configure declarations, please see that section
@@ -65,7 +67,6 @@ plugins to build large scale web applications.
     openssl-devel
     tcl-devel
     expat-devel
-    db4-devel
     pcre
 
   Ubuntu 8.* ,9.*, 10.*, 11.*:
@@ -79,6 +80,8 @@ plugins to build large scale web applications.
     libexpat-dev 
     libpcre3-dev
     libcap-dev
+    libhwloc-dev (optional)
+    liblua5.1-dev (optional)
 
   Ubuntu EC2 9.10:
     NOTE: Alternately you may use the install scripts in 'contrib' which 
@@ -96,9 +99,12 @@ plugins to build large scale web applications.
     expat
     libexpat-dev
     libpcre3-dev
+    libhwloc-dev (optional)
+    liblua-dev (optional)
 
-  FreeBSD 7.2,8.0:
-    GCC 4.2.1 compiler suite
+  FreeBSD 7.2,8.0,9.0:
+    GCC 4.2.1 compiler suite or clang
+    gmake
     autoconf 
     automake
     libtool
@@ -106,6 +112,8 @@ plugins to build large scale web applications.
     expat
     openssl
     pcre
+    hwloc (optional)
+    lua (optional)
 
   OpenSolaris osol0906:
     GCC 4.3.2 compiler suite (dev collection)
@@ -181,6 +189,13 @@ the installation with
    autoreconf -i --force  # generate the configure script and Makefile.in files
    ./configure --disable-eventfd
    make
+
+4c. Instructions for building on FreeBSD
+
+   The only difference is how to run configure and make:
+
+   MAKE=gmake ./configure # make sure that gmake is the make we use
+   gmake
 
 
 5. INSTALLATION
