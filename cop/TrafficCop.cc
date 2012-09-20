@@ -27,7 +27,7 @@
 #include "mgmtapi.h"
 #include "ClusterCom.h"
 
-#if defined(linux)
+#if defined(linux) || defined (solaris)
 #include "sys/utsname.h"
 #include "ink_killall.h"
 #include <sys/types.h>
