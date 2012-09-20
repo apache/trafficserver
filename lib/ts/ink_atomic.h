@@ -78,19 +78,56 @@ typedef vuint64_s *pvuint64_s;
 
 #include <atomic.h>
 
+/* see http://docs.oracle.com/cd/E19082-01/819-2243/6n4i098m6/index.html */
+
+// ink_atomic_swap(ptr, value)
+// Writes @value into @ptr, returning the previous value.
+template <typename T> inline T *
+ink_atomic_swap(volatile T * mem, T value) {
+  return (T *)atomic_swap_ptr((volatile void *)mem, value);
+}
+
+// ink_atomic_cas(mem, prev, next)
+// Atomically store the value @next into the pointer @mem, but only if the current value at @mem is @prev.
+// Returns true if @next was successfully stored.
+template <typename T> inline bool
+ink_atomic_cas(volatile T * mem, T prev, T next) {
+  return prev == (T)atomic_cas_ptr((volatile void *)mem, (void *)prev, (void *)next);
+}
+
+template <> inline bool
+ink_atomic_cas<uint8_t>(volatile uint8_t * mem, uint8_t prev, uint8_t next) {
+  return prev == atomic_cas_8((volatile uint8_t *)mem, prev, next);
+}
+
+
+// ink_atomic_increment(ptr, count)
+// Increment @ptr by @count, returning the previous value.
+template <typename Type, typename Amount> inline Type
+ink_atomic_increment(volatile Type * mem, Amount count);
+
+template <> inline uint8_t
+ink_atomic_increment<uint8_t, int>(volatile uint8_t * mem, int count) {
+  return atomic_add_8_nv(mem, (int8_t)count) - count;
+}
+
 static inline int8_t  ink_atomic_swap(pvint8 mem, int8_t value) { return (int8_t)atomic_swap_8((pvuint8)mem, (uint8_t)value); }
 static inline int16_t ink_atomic_swap(pvint16 mem, int16_t value) { return (int16_t)atomic_swap_16((pvuint16)mem, (uint16_t)value); }
 static inline int32_t ink_atomic_swap(pvint32 mem, int32_t value) { return (int32_t)atomic_swap_32((pvuint32)mem, (uint32_t)value); }
 static inline int64_t ink_atomic_swap(pvint64 mem, int64_t value) { return (int64_t)atomic_swap_64((pvuint64_s)mem, (uint64_s)value); }
 static inline void *  ink_atomic_swap(vvoidp mem, void *value) { return atomic_swap_ptr((vvoidp)mem, value); }
 
-static inline int ink_atomic_cas(pvint32 mem, int old, int new_value) { return atomic_cas_32((pvuint32)mem, (uint32_t)old, (uint32_t)new_value) == old; }
-static inline int ink_atomic_cas(pvint64 mem, int64_t old, int64_t new_value) { return atomic_cas_64((pvuint64_s)mem, (uint64_s)old, (uint64_s)new_value) == old; }
-static inline int ink_atomic_cas(pvvoidp mem, void* old, void* new_value) { return atomic_cas_ptr((vvoidp)mem, old, new_value) == old; }
+static inline bool ink_atomic_cas(pvint32 mem, int old, int new_value) { return atomic_cas_32((pvuint32)mem, (uint32_t)old, (uint32_t)new_value) == old; }
+static inline bool ink_atomic_cas(pvint64 mem, int64_t old, int64_t new_value) { return atomic_cas_64((pvuint64_s)mem, (uint64_s)old, (uint64_s)new_value) == old; }
+static inline bool ink_atomic_cas(pvvoidp mem, void* old, void* new_value) { return atomic_cas_ptr((vvoidp)mem, old, new_value) == old; }
 
 static inline int     ink_atomic_increment(pvint32 mem, int value) { return ((uint32_t)atomic_add_32_nv((pvuint32)mem, (uint32_t)value)) - value; }
+static inline int     ink_atomic_increment(pvint32 mem, unsigned value) { return ((uint32_t)atomic_add_32_nv((pvuint32)mem, (uint32_t)value)) - value; }
+static inline int     ink_atomic_increment(pvint32 mem, long value) { return ((uint32_t)atomic_add_32_nv((pvuint32)mem, (uint32_t)value)) - value; }
 static inline int64_t ink_atomic_increment(pvint64 mem, int64_t value) { return ((uint64_s)atomic_add_64_nv((pvuint64_s)mem, (uint64_s)value)) - value; }
+static inline int64_t ink_atomic_increment(pvint64 mem, int value) { return ((uint64_s)atomic_add_64_nv((pvuint64_s)mem, (uint64_s)value)) - value; }
 static inline void *  ink_atomic_increment(pvvoidp mem, intptr_t value) { return (void*)(((char*)atomic_add_ptr_nv((vvoidp)mem, (ssize_t)value)) - value); }
+static inline void *  ink_atomic_increment(pvvoidp mem, void* value) { return (void*)(((char*)atomic_add_ptr_nv((vvoidp)mem, (ssize_t)value)) - (ssize_t)value); }
 
 /* not used for Intel Processors or Sparc which are mostly sequentally consistent */
 #define INK_WRITE_MEMORY_BARRIER
@@ -167,11 +204,12 @@ ink_atomic_increment<int64_t>(pvint64 mem, int value) {
   return ink_atomic_increment(mem, static_cast<int64_t>(value));
 }
 
-#endif
+#endif /* Special hacks for ARM 32-bit */
 
 /* not used for Intel Processors which have sequential(esque) consistency */
 #define INK_WRITE_MEMORY_BARRIER
 #define INK_MEMORY_BARRIER
+
 
 #else /* not gcc > v4.1.2 */
 #error Need a compiler / libc that supports atomic operations, e.g. gcc v4.1.2 or later
