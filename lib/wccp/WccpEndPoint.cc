@@ -24,6 +24,7 @@
 # include "WccpMeta.h"
 # include <errno.h>
 # include "ink_string.h"
+# include "ink_defs.h"
 // ------------------------------------------------------
 namespace wccp {
 
