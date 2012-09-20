@@ -65,11 +65,6 @@ typedef void (*VVP_PFN) (void *);
 typedef void (*VV_PFN) (void);
 typedef void (*VI_PFN) (int);
 
-/* Compiler Hints
- */
-#define	NOWARN_UNUSED(x)	(void)(x)
-#define	NOWARN_UNUSED_RETURN(x)	if (x) {}
-
 /* Variables
 */
 extern int debug_level;

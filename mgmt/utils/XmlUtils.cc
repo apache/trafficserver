@@ -29,7 +29,7 @@
 #include <sys/stat.h>
 
 #include "XmlUtils.h"
-#include "ink_defs.h"
+#include "ink_error.h"
 
 /****************************************************************************
  *

@@ -80,7 +80,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "ink_defs.h"
+#include "ink_error.h"
 #include "ink_resolver.h"
 
 #define SPRINTF(x) (sprintf x)

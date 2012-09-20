@@ -27,6 +27,7 @@
 #include <string.h>
 #include "ink_args.h"
 #include "ink_file.h"
+#include "ink_error.h"
 #include "I_Layout.h"
 #include "I_Version.h"
 #include "CliMgmtUtils.h"

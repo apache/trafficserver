@@ -32,7 +32,7 @@
 #include "createArgument.h"
 #include "CliMgmtUtils.h"
 #include "CliDisplay.h"
-#include "ink_defs.h"
+#include "ink_error.h"
 #include <unistd.h>
 #include <stdlib.h>
 #include <sys/types.h>

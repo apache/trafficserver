@@ -24,7 +24,7 @@
 #include <tcl.h>
 #include "hashtable.h"
 #include "definitions.h"
-#include "ink_defs.h"
+#include "ink_error.h"
 #include <string.h>
 
 // processArgForCommand
