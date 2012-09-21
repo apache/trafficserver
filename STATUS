@@ -41,11 +41,6 @@ A list of all bugs open for the next development release can be found at
 
 PATCHES ACCEPTED TO BACKPORT FROM TRUNK:
 
-  *) Fix cache sizes > 16TB
-   Trunk: 7c6b590b35ce483c8ae94640c50a6a3fb0d0e690
-   Jira: https://issues.apache.org/jira/browse/TS-1470
-   +1: jpeach, zwoop, igalic
-
   *) Fix SNI certificate fallback path
    Trunk: 9c3bebd88eecf6aee1ce346b67460b8e1787752d
    Jira: https://issues.apache.jira/browse/TS-1471
