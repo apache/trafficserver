@@ -41,11 +41,6 @@ A list of all bugs open for the next development release can be found at
 
 PATCHES ACCEPTED TO BACKPORT FROM TRUNK:
 
-  *) disable ssl compression by default
-   Trunk: 05da7a90ab16f7bc4c6a3e5c7f4880ef80e9b316
-   Jira: https://issues.apache.org/jira/browse/TS-1474
-   +1: bcall, jpeach, igalic, zwoop
-
   *) Added Yahoo directory layout
   Trunk: adb7e16a435819149af928903337230062e070df
   Jira: https://issues.apache.org/jira/browse/TS-1436
