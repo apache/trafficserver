@@ -41,17 +41,6 @@ A list of all bugs open for the next development release can be found at
 
 PATCHES ACCEPTED TO BACKPORT FROM TRUNK:
 
-  *) Fix build on amd64 Debian/Ubuntu
-   Trunk: b21ccf7 c00f951 02506c0 fa61f83 7fc244e 0d85fe4 44052e9
-   Jira: https://issues.apache.jira/browse/TS-1430
-   igalic says: After adding the following patches to the list
-    c43eb72de958148080fb8395e397b78efb74ce8e
-	4a3d8087cfe5e5b773d388a30782e46c4e167745
-	35f9ff2eec09277ff0e4e656c01ee1f1cbbd01db
-	2568c6f868a79cf5f25d4f5bb2d29ed43491efe6
-   it compiles fine.
-   +1: igalic, jpeach, zwoop
-
   *) Fix RAM cache stats for CLFUS.
    Trunk: 20443732b36e8a794a5878737d5a9a18452321e7
    Jira: https://issues.apache.org/jira/browse/TS-1472
