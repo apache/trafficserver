@@ -10,6 +10,7 @@ Release history:
     [NOTE that x.{odd}.z versions are strictly Alpha/Beta releases,
           while x.{even}.z versions are Stable/GA releases.]
 
+    3.2.3           : Released on XXX XX, 2012
     3.2.0           : Released on June 19, 2012
     3.0.5           : Released on June 6, 2012
     3.0.4           : Released on March 21, 2012
@@ -36,7 +37,7 @@ RELEASE SHOWSTOPPERS:
 
 A list of all bugs open for the next development release can be found at
 
-  http://s.apache.org/ts-3.2.1
+  http://s.apache.org/ts-3.2.3
 
 PATCHES ACCEPTED TO BACKPORT FROM TRUNK:
 
@@ -71,6 +72,11 @@ PATCHES ACCEPTED TO BACKPORT FROM TRUNK:
    Jira: https://issues.apache.org/jira/browse/TS-1474
    +1: bcall, jpeach, igalic, zwoop
 
+  *) Added Yahoo directory layout
+  Trunk: adb7e16a435819149af928903337230062e070df
+  Jira: https://issues.apache.org/jira/browse/TS-1436
+  +1: bcall, jpeach, zwoop
+
 
 PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   [ New proposals should be added at the end of the list ]
@@ -91,11 +97,6 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   *) Improve response times for for Cluster purge & miss
    Trunk: f0a98cdc7b950e1ecefde94694de5dfd800248aa
    Jira: https://issues.apache.org/jira/browse/TS-1321
-
-  *) Added Yahoo directory layout
-  Trunk: adb7e16a435819149af928903337230062e070df
-  Jira: https://issues.apache.org/jira/browse/TS-1436
-  +1: bcall, jpeach, zwoop
 
 
 
