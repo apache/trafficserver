@@ -61,6 +61,12 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   *) Improve response times for for Cluster purge & miss
    Trunk: f0a98cdc7b950e1ecefde94694de5dfd800248aa
    Jira: https://issues.apache.org/jira/browse/TS-1321
+   +1: zwoop (seems ok, but not tested myself)
+
+  *) Fix header_filter plugin build for ARM
+   Trunk :a7baf7c8f1bb9206e17b9ac925e21e5beab08f56
+   Jira: https://issues.apache.org/jira/browse/TS-1473
+   +1: zwoop
 
 
 
