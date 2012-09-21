@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.2.2
 
+  *) [TS-1436] Added Yahoo directory layout
+
   *) [TS-1474] disable ssl compression by default
 
   *) [TS-1472] Fix RAM cache stats for CLFUS.

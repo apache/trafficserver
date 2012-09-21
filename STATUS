@@ -41,11 +41,6 @@ A list of all bugs open for the next development release can be found at
 
 PATCHES ACCEPTED TO BACKPORT FROM TRUNK:
 
-  *) Added Yahoo directory layout
-  Trunk: adb7e16a435819149af928903337230062e070df
-  Jira: https://issues.apache.org/jira/browse/TS-1436
-  +1: bcall, jpeach, zwoop
-
 
 PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   [ New proposals should be added at the end of the list ]
