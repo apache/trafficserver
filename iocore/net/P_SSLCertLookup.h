@@ -36,12 +36,12 @@ class SSLCertLookup
   bool addInfoToHash(
     const char *strAddr, const char *cert, const char *ca, const char *serverPrivateKey);
 
-  char config_file_path[PATH_NAME_MAX];
-  SslConfigParams *param;
-  bool multipleCerts;
+  char              config_file_path[PATH_NAME_MAX];
+  SslConfigParams * param;
+  bool              multipleCerts;
 
   SSLContextStorage * ssl_storage;
-  SSL_CTX * ssl_default;
+  SSL_CTX *           ssl_default;
 
 public:
   bool hasMultipleCerts() const { return multipleCerts; }

@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.3.1
 
+  *) [TS-1484] Fix SNI crashes where there is no default certificate
+
   *) [TS-1473] Fix header_filter plugin for ARM.
 
   *) [TS-1457] Change chunking output to avoid massive memory use by transforms.

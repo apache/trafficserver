@@ -45,6 +45,64 @@ typedef const SSL_METHOD * ink_ssl_method_t;
 typedef SSL_METHOD * ink_ssl_method_t;
 #endif
 
+#if TS_USE_TLS_SNI
+
+static int
+ssl_servername_callback(SSL * ssl, int * ad, void * arg)
+{
+  SSL_CTX *       ctx = NULL;
+  SSLCertLookup * lookup = (SSLCertLookup *) arg;
+  const char *    servername = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
+
+  Debug("ssl", "ssl=%p ad=%d lookup=%p server=%s", ssl, *ad, lookup, servername);
+
+  if (likely(servername)) {
+    ctx = lookup->findInfoInHash((char *)servername);
+  }
+
+  if (ctx == NULL) {
+    ctx = lookup->defaultContext();
+  }
+
+  if (ctx != NULL) {
+    SSL_set_SSL_CTX(ssl, ctx);
+  }
+
+  // At this point, we might have updated ctx based on the SNI lookup, or we might still have the
+  // original SSL context that we set when we accepted the connection.
+  ctx = SSL_get_SSL_CTX(ssl);
+  Debug("ssl", "found SSL context %p for requested name '%s'", ctx, servername);
+
+  if (ctx == NULL) {
+    return SSL_TLSEXT_ERR_NOACK;
+  }
+
+  // We need to return one of the SSL_TLSEXT_ERR constants. If we return an
+  // error, we can fill in *ad with an alert code to propgate to the
+  // client, see SSL_AD_*.
+  return SSL_TLSEXT_ERR_OK;
+}
+
+#endif /* TS_USE_TLS_SNI */
+
+static SSL_CTX *
+make_ssl_context(void * arg)
+{
+  SSL_CTX *         ctx = NULL;
+  ink_ssl_method_t  meth = NULL;
+
+  meth = SSLv23_server_method();
+  ctx = SSL_CTX_new(meth);
+
+#if TS_USE_TLS_SNI
+  Debug("ssl", "setting SNI callbacks with for ctx %p", ctx);
+  SSL_CTX_set_tlsext_servername_callback(ctx, ssl_servername_callback);
+  SSL_CTX_set_tlsext_servername_arg(ctx, arg);
+#endif /* TS_USE_TLS_SNI */
+
+  return ctx;
+}
+
 class SSLContextStorage
 {
 
@@ -112,7 +170,14 @@ void
 SSLCertLookup::init(SslConfigParams * p)
 {
   param = p;
-  multipleCerts = buildTable();
+
+  this->multipleCerts = buildTable();
+
+  // We *must* have a default context even if it can't possibly work. The default context is used to bootstrap the SSL
+  // handshake so that we can subsequently do the SNI lookup to switch to the real context.
+  if (this->ssl_default == NULL) {
+    this->ssl_default = make_ssl_context(this);
+  }
 }
 
 bool
@@ -192,17 +257,6 @@ SSLCertLookup::buildTable()
     line = tokLine(NULL, &tok_state);
   }                             //  while(line != NULL)
 
-/*  if(num_el == 0)
-  {
-    Warning("%s No entries in %s. Using default server cert for all connections",
-	    moduleName, configFilePath);
-  }
-
-  if(is_debug_tag_set("ssl"))
-  {
-    Print();
-  }
-*/
   ats_free(file_buf);
   return ret;
 }
@@ -272,10 +326,9 @@ SSLCertLookup::addInfoToHash(
     const char *strAddr, const char *cert,
     const char *caCert, const char *serverPrivateKey)
 {
-  ink_ssl_method_t meth = NULL;
+  SSL_CTX * ctx;
 
-  meth = SSLv23_server_method();
-  SSL_CTX *ctx = SSL_CTX_new(meth);
+  ctx = make_ssl_context(this);
   if (!ctx) {
     SSLNetProcessor::logSSLError("Cannot create new server contex.");
     return (false);
@@ -538,12 +591,11 @@ REGRESSION_TEST(SslHostLookup)(RegressionTest* t, int atype, int * pstatus)
 {
   TestBox           tb(t, pstatus);
   SSLContextStorage storage;
-  ink_ssl_method_t  methods = SSLv23_server_method();
 
-  SSL_CTX * wild = SSL_CTX_new(methods);
-  SSL_CTX * notwild = SSL_CTX_new(methods);
-  SSL_CTX * b_notwild = SSL_CTX_new(methods);
-  SSL_CTX * foo = SSL_CTX_new(methods);
+  SSL_CTX * wild = make_ssl_context(NULL);
+  SSL_CTX * notwild = make_ssl_context(NULL);
+  SSL_CTX * b_notwild = make_ssl_context(NULL);
+  SSL_CTX * foo = make_ssl_context(NULL);
 
   *pstatus = REGRESSION_TEST_PASSED;
 
