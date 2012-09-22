@@ -72,6 +72,7 @@
 #   GNU standards conforming path layout.
 #   See FSF's GNU project `make-stds' document for details.
 <Layout GNU>
+    prefix:        /usr/local
     exec_prefix:   ${prefix}
     bindir:        ${exec_prefix}/bin
     sbindir:       ${exec_prefix}/sbin
