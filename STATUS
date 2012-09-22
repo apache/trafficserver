@@ -56,7 +56,7 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   *) stats codes mess up when disk fail
    Trunk: 99cbf8acb97b191631882bfcfaf06d512347fdd4
    Jira: https://issues.apache.org/jira/browse/TS-1289
-   +1: igalic, zwoop
+   +1: igalic, zwoop, jpeach
 
   *) Improve response times for for Cluster purge & miss
    Trunk: f0a98cdc7b950e1ecefde94694de5dfd800248aa
@@ -66,7 +66,12 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   *) Fix header_filter plugin build for ARM
    Trunk :a7baf7c8f1bb9206e17b9ac925e21e5beab08f56
    Jira: https://issues.apache.org/jira/browse/TS-1473
-   +1: zwoop
+   +1: zwoop, jpeach
+
+  *) SSL-crashed every now and then with 3.2.0 + SNI-fixes
+  Trunk: d6d07d8c43c084d5683b45c1efe9ed2bf9ef8635
+  Jira: https://issues.apache.org/jira/browse/TS-1484
+  +1: jpeach
 
 
 
