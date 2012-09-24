@@ -66,7 +66,7 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   *) Fix header_filter plugin build for ARM
    Trunk :a7baf7c8f1bb9206e17b9ac925e21e5beab08f56
    Jira: https://issues.apache.org/jira/browse/TS-1473
-   +1: zwoop, jpeach
+   +1: zwoop, jpeach, igalic
 
   *) SSL-crashed every now and then with 3.2.0 + SNI-fixes
   Trunk: d6d07d8c43c084d5683b45c1efe9ed2bf9ef8635
