@@ -186,7 +186,9 @@ EThread::execute() {
         // already been dequeued
         cur_time = ink_get_based_hrtime_internal();
         while ((e = EventQueueExternal.dequeue_local())) {
-          if (!e->timeout_at) { // IMMEDIATE
+          if (e->cancelled)
+             free_event(e);
+          else if (!e->timeout_at) { // IMMEDIATE
             ink_assert(e->period == 0);
             process_event(e, e->callback_event);
           } else if (e->timeout_at > 0) // INTERVAL
