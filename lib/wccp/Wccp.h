@@ -46,10 +46,10 @@ class RouterImpl;
 namespace detail {
   /// Cache implementation details.
   namespace cache {
-    class GroupData;
+    struct GroupData;
   }
   namespace router {
-    class GroupData;
+    struct GroupData;
   }
 }
 

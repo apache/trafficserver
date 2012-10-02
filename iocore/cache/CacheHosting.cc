@@ -37,12 +37,10 @@ bool alarmAlready = false;
  *   Begin class HostMatcher
  *************************************************************/
 
-CacheHostMatcher::CacheHostMatcher(const char *name, const char *filename, int typ):
+CacheHostMatcher::CacheHostMatcher(const char * name, int typ):
 data_array(NULL),
 array_len(-1),
 num_el(-1),
-matcher_name(name),
-file_name(filename),
 type(typ)
 {
   host_lookup = NEW(new HostLookup(name));
@@ -359,7 +357,7 @@ CacheHostTable::BuildTableFromString(char *file_buf)
   }
 
   if (hostDomain > 0) {
-    hostMatch = NEW(new CacheHostMatcher(matcher_name, config_file_path, type));
+    hostMatch = NEW(new CacheHostMatcher(matcher_name, type));
     hostMatch->AllocateSpace(hostDomain);
   }
   // Traverse the list and build the records table

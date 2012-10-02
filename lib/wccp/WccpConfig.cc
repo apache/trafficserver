@@ -111,6 +111,7 @@ std::ostream& operator << ( std::ostream& out, ValueNamePrinter const& v ) {
   return out;
 }
 
+#if 0 /* silence -Wunused-function */
 ts::Errata::Message File_Syntax_Error(int line, char const* text) {
   std::ostringstream out;
   out << "Service configuration error. Line "
@@ -127,6 +128,7 @@ ts::Errata::Message File_Read_Error(char const* text) {
     ;
   return ts::Errata::Message(2, LVL_FATAL, out.str());
 }
+#endif
 
 ts::Errata::Message Unable_To_Create_Service_Group(int line) {
   std::ostringstream out;
@@ -227,6 +229,7 @@ ts::Errata::Message Svc_Prop_Ignored(char const* name, int line) {
   return ts::Errata::Message(11, LVL_INFO, out.str());
 }
 
+#if 0 /* silence -Wunused-function */
 ts::Errata::Message Svc_Flags_No_Hash_Set(int line) {
   std::ostringstream out;
   out << "Service flags have no hash set at line " << line
@@ -241,6 +244,7 @@ ts::Errata::Message Svc_Flags_Ignored(int line) {
     ;
   return ts::Errata::Message(13, LVL_INFO, out.str());
 }
+#endif
 
 ts::Errata::Message Svc_Ports_Too_Many(int line, int n) {
   std::ostringstream out;

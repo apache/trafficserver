@@ -469,7 +469,6 @@ private:
   int *p_cluster_port;
   int socket_send_bufsize;
   int socket_recv_bufsize;
-  unsigned long socket_opt_flags;
   int current_cluster_port;
   Action *accept_action;
   Event *periodic_event;

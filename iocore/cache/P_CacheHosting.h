@@ -77,7 +77,7 @@ struct CacheHostResult
 class CacheHostMatcher
 {
 public:
-  CacheHostMatcher(const char *name, const char *filename, int typ);
+  CacheHostMatcher(const char * name, int typ);
   ~CacheHostMatcher();
 
   void Match(char *rdata, int rlen, CacheHostResult *result);
@@ -94,9 +94,7 @@ private:
   HostLookup *host_lookup;      // Data structure to do the lookups
   CacheHostRecord *data_array;  // array of all data items
   int array_len;                // the length of the arrays
-  int num_el;                   // the numbe of itmems in the tree
-  const char *matcher_name;     // Used for Debug/Warning/Error messages
-  const char *file_name;        // Used for Debug/Warning/Error messages
+  int num_el;                   // the number of itmems in the tree
   int type;
 };
 

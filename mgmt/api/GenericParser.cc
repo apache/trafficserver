@@ -139,7 +139,7 @@ TokenList::Print()
 
 Rule::Rule()
   : tokenList(NULL),
-    m_filetype(TS_FNAME_UNDEFINED), m_filename(NULL), m_ruleStr(NULL), m_comment(NULL), m_errorHint(NULL), m_lineNum(0)
+    m_filetype(TS_FNAME_UNDEFINED), m_filename(NULL), m_ruleStr(NULL), m_comment(NULL), m_errorHint(NULL)
 {
 }
 

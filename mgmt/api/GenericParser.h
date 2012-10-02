@@ -190,7 +190,6 @@ private:
   char *m_ruleStr;
   char *m_comment;
   char *m_errorHint;
-  unsigned m_lineNum;
 
   TokenList *cacheParse(char *rule, unsigned short minNumToken = MIN_CONFIG_TOKEN, unsigned short maxNumToken = MAX_CONFIG_TOKEN);
   TokenList *congestionParse(char *rule, unsigned short minNumToken = MIN_CONFIG_TOKEN, unsigned short maxNumToken = MAX_CONFIG_TOKEN);

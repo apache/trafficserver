@@ -36,7 +36,6 @@ ClusterAccept::ClusterAccept(int *port, int send_bufsize, int recv_bufsize)
     p_cluster_port(port),
     socket_send_bufsize(send_bufsize),
     socket_recv_bufsize(recv_bufsize),
-    socket_opt_flags(0),
     current_cluster_port(-1),
     accept_action(0),
     periodic_event(0)

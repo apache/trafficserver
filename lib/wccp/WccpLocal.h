@@ -37,7 +37,7 @@ namespace wccp {
 namespace detail {
   class Assignment;
   namespace cache {
-    class RouterData;
+    struct RouterData;
   }
 }
 
