@@ -3043,7 +3043,7 @@ extern "C"
           log write buffer). This error is very unusual.
 
    */
-  tsapi TSReturnCode TSTextLogObjectWrite(TSTextLogObject the_object, char* format, ...) TS_PRINTFLIKE(2, 3);
+  tsapi TSReturnCode TSTextLogObjectWrite(TSTextLogObject the_object, const char* format, ...) TS_PRINTFLIKE(2, 3);
 
   /**
       This immediately flushes the contents of the log write buffer for

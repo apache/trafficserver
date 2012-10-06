@@ -6813,7 +6813,7 @@ TSTextLogObjectCreate(const char *filename, int mode, TSTextLogObject *new_objec
 }
 
 TSReturnCode
-TSTextLogObjectWrite(TSTextLogObject the_object, char *format, ...)
+TSTextLogObjectWrite(TSTextLogObject the_object, const char *format, ...)
 {
   sdk_assert(sdk_sanity_check_iocore_structure(the_object) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_null_ptr((void*)format) == TS_SUCCESS);
