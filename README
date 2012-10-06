@@ -148,7 +148,7 @@ follow the instructions:
 
    tar xf trafficserver-2.1.8-unstable.tar.bz2
    cd trafficserver-2.1.8-unstable
-  ./configure            # configure the build environment to create Makfiles
+  ./configure            # configure the build environment to create Makefiles
   make                   # execute the compile
 
 This will build with a destination prefix of /usr/local. You can finish
@@ -164,7 +164,7 @@ the installation with
   git clone ...          # get the source code from ASF Git repo
   cd trafficserver       # enter the checkout dir
   autoreconf -i          # generate the configure script and Makefile.in files
-  ./configure            # configure the build environment to create Makfiles
+  ./configure            # configure the build environment to create Makefiles
   make                   # execute the compile
 
 4b. Instructions for building on EC2
