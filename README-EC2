@@ -71,7 +71,7 @@ Author: Jason Giedymin
 3.1 Additional Update Functionality
   The EC2 images provided contain additional scripts to maintain freshness 
   of the install scripts.  At one time the scripts provided 'auto-heal' 
-  functionality but that has beeen removed.  Running /ats/install_update.sh 
+  functionality but that has been removed.  Running /ats/install_update.sh 
   will keep the ATS installation up to date.
 
 3.2 User customized settings
