@@ -45,7 +45,7 @@
   /ericb
 */
 
-const char *_hdrtoken_strs[] = {
+static const char *_hdrtoken_strs[] = {
   // MIME Field names
   "Accept-Charset",
   "Accept-Encoding",
@@ -183,7 +183,7 @@ const char *_hdrtoken_strs[] = {
   "TE",
 };
 
-HdrTokenTypeBinding _hdrtoken_strs_type_initializers[] = {
+static HdrTokenTypeBinding _hdrtoken_strs_type_initializers[] = {
   {"file", HDRTOKEN_TYPE_SCHEME},
   {"ftp", HDRTOKEN_TYPE_SCHEME},
   {"gopher", HDRTOKEN_TYPE_SCHEME},
@@ -233,7 +233,7 @@ HdrTokenTypeBinding _hdrtoken_strs_type_initializers[] = {
 };
 
 
-HdrTokenFieldInfo _hdrtoken_strs_field_initializers[] = {
+static HdrTokenFieldInfo _hdrtoken_strs_field_initializers[] = {
   {"Accept", MIME_SLOTID_ACCEPT, MIME_PRESENCE_ACCEPT, (HTIF_COMMAS | HTIF_MULTVALS)},
   {"Accept-Charset", MIME_SLOTID_ACCEPT_CHARSET, MIME_PRESENCE_ACCEPT_CHARSET, (HTIF_COMMAS | HTIF_MULTVALS)},
   {"Accept-Encoding", MIME_SLOTID_ACCEPT_ENCODING, MIME_PRESENCE_ACCEPT_ENCODING, (HTIF_COMMAS | HTIF_MULTVALS)},
@@ -371,7 +371,7 @@ hdrtoken_hash(const unsigned char *string, unsigned int length)
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-const char *_hdrtoken_commonly_tokenized_strs[] = {
+static const char *_hdrtoken_commonly_tokenized_strs[] = {
   // MIME Field names
   "Accept-Charset",
   "Accept-Encoding",
