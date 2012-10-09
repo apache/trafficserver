@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.2.3
 
+  *) [TS-1484] SSL-crashed every now and then with 3.2.0 + SNI-fixes
+
   *) [TS-1514] Fix collation in custom logging.
    Author: bettydramit
 
