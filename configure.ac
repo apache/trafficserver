@@ -621,6 +621,8 @@ AS_IF([test "x${has_optimizer_flags}" = "xno"],
 	]
 )
 
+AM_CONDITIONAL([BUILD_HAVE_LIBCXX], [ false ])
+
 base_cc=`basename $CC`
 # These are shortcuts used in combination for the compiler options below
 case $host_os in
