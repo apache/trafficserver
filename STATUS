@@ -62,7 +62,7 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   Trunk: d6d07d8c43c084d5683b45c1efe9ed2bf9ef8635
   3.2.x Patch: https://issues.apache.org/jira/secure/attachment/12546611/TS-1484-3.2.x.patch
   Jira: https://issues.apache.org/jira/browse/TS-1484
-  +1: jpeach, igalic
+  +1: jpeach, igalic, zwoop
 
 
 RELEASE PROCESS
