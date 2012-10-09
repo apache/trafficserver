@@ -671,6 +671,8 @@ case $host_os in
       debug_opt="$common_opt"
       release_opt="-g $common_opt $optimizing_flags -fno-strict-aliasing"
       cxx_opt="-Wno-invalid-offsetof"
+      # clang on Darwin needs to use libc++ for any C++11 code.
+      AM_CONDITIONAL([BUILD_HAVE_LIBCXX], [ true ])
       ;;
     *) # gcc
       common_opt="-pipe -Wall -Werror -Wno-deprecated-declarations"
@@ -1592,6 +1594,7 @@ AC_CONFIG_FILES([plugins/experimental/custom_redirect/Makefile])
 AC_CONFIG_FILES([plugins/experimental/header_rewrite/Makefile])
 AC_CONFIG_FILES([plugins/experimental/metalink/Makefile])
 AC_CONFIG_FILES([plugins/experimental/gzip/Makefile])
+AC_CONFIG_FILES([plugins/experimental/spdy/Makefile])
 # various tools
 AC_CONFIG_FILES([tools/Makefile])
 # example plugins

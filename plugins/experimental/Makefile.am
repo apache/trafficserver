@@ -23,5 +23,6 @@ SUBDIRS = \
  custom_redirect \
  header_rewrite \
  metalink \
- gzip
+ gzip \
+ spdy
 endif
