@@ -21,6 +21,7 @@ check_PROGRAMS = zstream_test
 
 AM_CXXFLAGS = \
   -I$(srcdir)/lib \
+  -I$(top_builddir)/proxy/api \
   -std=c++11
 
 if BUILD_HAVE_LIBCXX
