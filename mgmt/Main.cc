@@ -1120,6 +1120,8 @@ fileUpdated(char *fname)
     mgmt_log(stderr, "[fileUpdated] stats.config.xml file has been modified\n");
   } else if (strcmp(fname, "congestion.config") == 0) {
     lmgmt->signalFileChange("proxy.config.http.congestion_control.filename");
+  } else if (strcmp(fname, "prefetch.config") == 0) {
+    lmgmt->signalFileChange("proxy.config.prefetch.config_file");
   } else {
     mgmt_elog(stderr, "[fileUpdated] Unknown config file updated '%s'\n", fname);
 

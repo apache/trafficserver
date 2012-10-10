@@ -66,6 +66,13 @@ struct PrefetchConfiguration
   TSPrefetchHook embedded_url_hook;
   TSPrefetchHook embedded_obj_hook;
 
+  PrefetchConfiguration() :
+    prefetch_enabled(0), html_tags_table(0), html_attrs_table(0),
+        local_http_server_port(0), stuffer_port(0), url_buffer_size(0),
+        url_buffer_timeout(0), keepalive_timeout(0), push_cached_objects(0),
+        max_object_size(0), max_recursion(0), redirection(0),
+        pre_parse_hook(0), embedded_url_hook(0), embedded_obj_hook(0) {
+  }
   int readConfiguration();
   void readHtmlTags(int fd, html_tag ** ptags, html_tag ** pattrs);
 };
@@ -435,6 +442,7 @@ public:
 #define TS_ConfigReadInteger            REC_ConfigReadInteger
 #define TS_ConfigReadString             REC_ConfigReadString
 
+#define PREFETCH_CONFIG_UPDATE_TIMEOUT  (HRTIME_SECOND*60)
 
 #endif // PREFETCH
 

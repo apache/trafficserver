@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.3.1
 
+  *) [TS-1003] make Prefetch config file reloadable
+
   *) [TS-1462] SPDY proxy plugin
 
   *) [TS-1488] Check the event`s cancel flag before put it into the PriorityEventQueue.

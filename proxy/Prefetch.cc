@@ -82,6 +82,22 @@ static int32_t udp_seq_no;
 PrefetchBlastData const UDP_BLAST_DATA = { UDP_BLAST };
 PrefetchBlastData const TCP_BLAST_DATA = { TCP_BLAST };
 
+#define PrefetchEstablishStaticConfigStringAlloc(_ix,_n) \
+  REC_EstablishStaticConfigStringAlloc(_ix,_n); \
+  REC_RegisterConfigUpdateFunc(_n, prefetch_config_cb, NULL)
+
+#define PrefetchEstablishStaticConfigLongLong(_ix,_n) \
+  REC_EstablishStaticConfigInteger(_ix,_n); \
+  REC_RegisterConfigUpdateFunc(_n, prefetch_config_cb, NULL)
+
+#define PrefetchEstablishStaticConfigFloat(_ix,_n) \
+  REC_EstablishStaticConfigFloat(_ix,_n); \
+  REC_RegisterConfigUpdateFunc(_n, prefetch_config_cb, NULL)
+
+#define PrefetchEstablishStaticConfigByte(_ix,_n) \
+  REC_EstablishStaticConfigByte(_ix,_n); \
+  REC_RegisterConfigUpdateFunc(_n, prefetch_config_cb, NULL)
+
 static inline uint32_t
 get_udp_seq_no()
 {
@@ -277,7 +293,7 @@ normalize_url(char *url, int *len)
   return 0;
 }
 
-static PrefetchConfiguration prefetch_config;
+static PrefetchConfiguration *prefetch_config;
 ClassAllocator<PrefetchUrlEntry> prefetchUrlEntryAllocator("prefetchUrlEntryAllocator");
 
 #define HTTP_STATUS_MOVED_PERMANENTLY 	301
@@ -286,12 +302,84 @@ ClassAllocator<PrefetchUrlEntry> prefetchUrlEntryAllocator("prefetchUrlEntryAllo
 #define HTTP_STATUS_TEMPORARY_REDIRECT 	307
 
 
-#define IS_STATUS_REDIRECT(status) (prefetch_config.redirection > 0 &&\
+#define IS_STATUS_REDIRECT(status) (prefetch_config->redirection > 0 &&\
 				       (((status) == HTTP_STATUS_MOVED_PERMANENTLY) ||\
                                         ((status) == HTTP_STATUS_MOVED_TEMPORARILY) ||\
                                         ((status) == HTTP_STATUS_SEE_OTHER) ||\
                                         (((status) == HTTP_STATUS_TEMPORARY_REDIRECT))))
 
+struct PrefetchConfigCont;
+typedef int (PrefetchConfigCont::*PrefetchConfigContHandler) (int, void *);
+class PrefetchConfigCont:public Continuation
+{
+public:
+  PrefetchConfigCont(ProxyMutex * m)
+  : Continuation(m)
+{
+  SET_HANDLER((PrefetchConfigContHandler) & PrefetchConfigCont::conf_update_handler);
+}
+  int conf_update_handler(int event, void *edata);
+};
+
+static Ptr<ProxyMutex> prefetch_reconfig_mutex = NULL;
+
+/** Used to free old PrefetchConfiguration data. */
+struct PrefetchConfigFreerCont;
+typedef int (PrefetchConfigFreerCont::*PrefetchConfigFreerContHandler) (int, void *);
+
+struct PrefetchConfigFreerCont: public Continuation
+{
+  PrefetchConfiguration *p;
+  int freeEvent(int event, Event * e)
+  {
+    NOWARN_UNUSED(event);
+    NOWARN_UNUSED(e);
+    Debug("Prefetch", "Deleting old Prefetch config after change");
+    delete p;
+    delete this;
+    return EVENT_DONE;
+  }
+  PrefetchConfigFreerCont(PrefetchConfiguration * ap):Continuation(new_ProxyMutex()), p(ap)
+  {
+    SET_HANDLER((PrefetchConfigFreerContHandler) & PrefetchConfigFreerCont::freeEvent);
+  }
+};
+
+int
+PrefetchConfigCont::conf_update_handler(int event, void *edata)
+{
+  NOWARN_UNUSED(event);
+  NOWARN_UNUSED(edata);
+  Debug("Prefetch", "Handling Prefetch config change");
+
+  PrefetchConfiguration *new_prefetch_config = NEW(new PrefetchConfiguration);
+  if (new_prefetch_config->readConfiguration() == 0) {
+    // switch the prefetch_config
+    eventProcessor.schedule_in(new PrefetchConfigFreerCont(prefetch_config), PREFETCH_CONFIG_UPDATE_TIMEOUT, ET_TASK);
+    ink_atomic_swap(&prefetch_config, new_prefetch_config);
+  } else {
+    // new config construct error, we should not use the new config
+    Debug("Prefetch", "New config in ERROR, keeping the old config");
+    eventProcessor.schedule_in(new PrefetchConfigFreerCont(new_prefetch_config), PREFETCH_CONFIG_UPDATE_TIMEOUT, ET_TASK);
+  }
+
+  delete this;
+  return EVENT_DONE;
+}
+
+static int
+prefetch_config_cb(const char *name, RecDataT data_type, RecData data, void *cookie)
+{
+  NOWARN_UNUSED(name);
+  NOWARN_UNUSED(data_type);
+  NOWARN_UNUSED(data);
+  NOWARN_UNUSED(cookie);
+
+  INK_MEMORY_BARRIER;
+
+  eventProcessor.schedule_in(NEW(new PrefetchConfigCont(prefetch_reconfig_mutex)), HRTIME_SECONDS(1), ET_TASK);
+  return 0;
+}
 
 PrefetchTransform::PrefetchTransform(HttpSM *sm, HTTPHdr *resp)
   : INKVConnInternal(NULL, reinterpret_cast<TSMutex>((ProxyMutex*)sm->mutex)),
@@ -302,7 +390,7 @@ PrefetchTransform::PrefetchTransform(HttpSM *sm, HTTPHdr *resp)
   HTTPHdr *request = &sm->t_state.hdr_info.client_request;
   url = request->url_get()->string_get(NULL, NULL);
 
-  html_parser.Init(url, prefetch_config.html_tags_table, prefetch_config.html_attrs_table);
+  html_parser.Init(url, prefetch_config->html_tags_table, prefetch_config->html_attrs_table);
 
   SET_HANDLER(&PrefetchTransform::handle_event);
 
@@ -311,9 +399,9 @@ PrefetchTransform::PrefetchTransform(HttpSM *sm, HTTPHdr *resp)
   memset(&hash_table[0], 0, HASH_TABLE_LENGTH * sizeof(hash_table[0]));
 
   udp_url_list = blasterUrlListAllocator.alloc();
-  udp_url_list->init(UDP_BLAST_DATA, prefetch_config.url_buffer_timeout, prefetch_config.url_buffer_size);
+  udp_url_list->init(UDP_BLAST_DATA, prefetch_config->url_buffer_timeout, prefetch_config->url_buffer_size);
   tcp_url_list = blasterUrlListAllocator.alloc();
-  tcp_url_list->init(TCP_BLAST_DATA, prefetch_config.url_buffer_timeout, prefetch_config.url_buffer_size);
+  tcp_url_list->init(TCP_BLAST_DATA, prefetch_config->url_buffer_timeout, prefetch_config->url_buffer_size);
 
   //extract domain
   host_start = request->url_get()->host_get(&host_len);
@@ -583,7 +671,7 @@ PrefetchTransform::hash_add(char *s)
 
 
 #define IS_RECURSIVE_PREFETCH(req_ip) \
-  (prefetch_config.max_recursion > 0 && ats_is_ip_loopback(&req_ip))
+  (prefetch_config->max_recursion > 0 && ats_is_ip_loopback(&req_ip))
 
 static void
 check_n_attach_prefetch_transform(HttpSM *sm, HTTPHdr *resp, bool from_cache)
@@ -607,18 +695,18 @@ check_n_attach_prefetch_transform(HttpSM *sm, HTTPHdr *resp, bool from_cache)
 
     Debug("PrefetchTemp", "recursion: %d", rec_depth);
 
-    if (rec_depth > prefetch_config.max_recursion) {
+    if (rec_depth > prefetch_config->max_recursion) {
       Debug("PrefetchParserRecursion", "Recursive parsing is not done "
-            "since recursion depth(%d) is greater than max allowed (%d)", rec_depth, prefetch_config.max_recursion);
+            "since recursion depth(%d) is greater than max allowed (%d)", rec_depth, prefetch_config->max_recursion);
       return;
     }
-  } else if (!prefetch_config.ip_map.contains(&client_ip)) {
+  } else if (!prefetch_config->ip_map.contains(&client_ip)) {
     Debug("PrefetchParser", "client (%s) does not match any of the "
       "prefetch_children mentioned in configuration\n", client_ipb);
     return;
   }
 
-  if (prefetch_config.max_recursion > 0) {
+  if (prefetch_config->max_recursion > 0) {
     request->value_set_int(PREFETCH_FIELD_RECURSION, PREFETCH_FIELD_LEN_RECURSION, rec_depth);
   }
 
@@ -643,7 +731,7 @@ check_n_attach_prefetch_transform(HttpSM *sm, HTTPHdr *resp, bool from_cache)
 
   Debug("PrefetchParserCT", "Content type is text/html\n");
 
-  if (prefetch_config.pre_parse_hook) {
+  if (prefetch_config->pre_parse_hook) {
     TSPrefetchInfo info;
 
     HTTPHdr *req = &sm->t_state.hdr_info.client_request;
@@ -662,7 +750,7 @@ check_n_attach_prefetch_transform(HttpSM *sm, HTTPHdr *resp, bool from_cache)
     info.object_buf_reader = 0;
     info.object_buf_status = TS_PREFETCH_OBJ_BUF_NOT_NEEDED;
 
-    int ret = (prefetch_config.pre_parse_hook) (TS_PREFETCH_PRE_PARSE_HOOK, &info);
+    int ret = (prefetch_config->pre_parse_hook) (TS_PREFETCH_PRE_PARSE_HOOK, &info);
     if (ret == TS_PREFETCH_DISCONTINUE)
       return;
   }
@@ -729,9 +817,27 @@ PrefetchPlugin(TSCont contp, TSEvent event, void *edata)
 void
 PrefetchProcessor::start()
 {
-  prefetch_config.readConfiguration();
+  // we need to create the config and register all config callbacks
+  // first.
+  prefetch_reconfig_mutex = new_ProxyMutex();
+  prefetch_config = NEW(new PrefetchConfiguration);
+  RecRegisterConfigUpdateCb("proxy.config.prefetch.prefetch_enabled", prefetch_config_cb, NULL);
+  RecRegisterConfigUpdateCb("proxy.config.http.server_port", prefetch_config_cb, NULL);
+  RecRegisterConfigUpdateCb("proxy.config.prefetch.child_port", prefetch_config_cb, NULL);
+  RecRegisterConfigUpdateCb("proxy.config.prefetch.url_buffer_size", prefetch_config_cb, NULL);
+  RecRegisterConfigUpdateCb("proxy.config.prefetch.url_buffer_timeout", prefetch_config_cb, NULL);
+  RecRegisterConfigUpdateCb("proxy.config.prefetch.keepalive_timeout", prefetch_config_cb, NULL);
+  RecRegisterConfigUpdateCb("proxy.config.prefetch.push_cached_objects", prefetch_config_cb, NULL);
+  RecRegisterConfigUpdateCb("proxy.config.prefetch.max_object_size", prefetch_config_cb, NULL);
+  RecRegisterConfigUpdateCb("proxy.config.prefetch.max_recursion", prefetch_config_cb, NULL);
+  RecRegisterConfigUpdateCb("proxy.config.prefetch.redirection", prefetch_config_cb, NULL);
+  RecRegisterConfigUpdateCb("proxy.config.prefetch.default_url_proto", prefetch_config_cb, NULL);
+  RecRegisterConfigUpdateCb("proxy.config.prefetch.default_url_proto", prefetch_config_cb, NULL);
+  RecRegisterConfigUpdateCb("proxy.config.prefetch.config_file", prefetch_config_cb, NULL);
 
-  if (prefetch_config.prefetch_enabled) {
+  prefetch_config->readConfiguration();
+
+  if (prefetch_config->prefetch_enabled) {
 
     PREFETCH_FIELD_RECURSION = "@InkPrefetch";
     PREFETCH_FIELD_LEN_RECURSION = strlen(PREFETCH_FIELD_RECURSION);
@@ -895,7 +1001,7 @@ PrefetchUrlBlaster::udpUrlBlaster(int event, void *data)
         IpEndpoint saddr;
         ats_ip_copy(&saddr, &url_head->url_multicast_ip) ||
           ats_ip_copy(&saddr, &url_head->child_ip);
-        ats_ip_port_cast(&saddr.sa) = htons(prefetch_config.stuffer_port);
+        ats_ip_port_cast(&saddr.sa) = htons(prefetch_config->stuffer_port);
 
         udpNet.sendto_re(this, NULL, prefetch_udp_fd, &saddr.sa, sizeof(saddr), block, block->read_avail());
       }
@@ -1502,7 +1608,7 @@ PrefetchBlaster::httpClient(int event, void *data)
   case EVENT_IMMEDIATE:{
     IpEndpoint target;
     target.setToLoopback(AF_INET);
-    target.port() = prefetch_config.local_http_server_port;
+    target.port() = prefetch_config->local_http_server_port;
     netProcessor.connect_re(this, &target.sa);
     break;
   }
@@ -1559,7 +1665,7 @@ PrefetchBlaster::bufferObject(int event, void *data)
   case EVENT_INTERVAL:
   case EVENT_IMMEDIATE:{
       buf->reset();
-      buf->water_mark = prefetch_config.max_object_size;
+      buf->water_mark = prefetch_config->max_object_size;
       buf->fill(PRELOAD_HEADER_LEN);
 
       int64_t ntoread = INT64_MAX;
@@ -1616,7 +1722,7 @@ PrefetchBlaster::blastObject(int event, void *data)
     setup_object_header(reader->start(), reader->read_avail(), obj_cancelled);
 
     if (url_ent->object_buf_status != TS_PREFETCH_OBJ_BUF_NOT_NEEDED &&
-        prefetch_config.embedded_obj_hook && !obj_cancelled) {
+        prefetch_config->embedded_obj_hook && !obj_cancelled) {
       TSPrefetchInfo info;
       memset(&info, 0, sizeof(info));
 
@@ -1628,7 +1734,7 @@ PrefetchBlaster::blastObject(int event, void *data)
 
       ((MIOBuffer *) info.object_buf)->write(reader);
 
-      prefetch_config.embedded_obj_hook(TS_PREFETCH_EMBEDDED_OBJECT_HOOK, &info);
+      prefetch_config->embedded_obj_hook(TS_PREFETCH_EMBEDDED_OBJECT_HOOK, &info);
     }
 
     if (url_ent->object_buf_status == TS_PREFETCH_OBJ_BUF_NEEDED) {
@@ -1682,7 +1788,7 @@ PrefetchBlaster::blastObject(int event, void *data)
         ? &url_ent->data_multicast_ip.sa
         : &url_ent->child_ip.sa
       );
-      ats_ip_port_cast(&saddr) = htons(prefetch_config.stuffer_port);
+      ats_ip_port_cast(&saddr) = htons(prefetch_config->stuffer_port);
 
       //saddr.sin_addr.s_addr = htonl((209<<24)|(131<<16)|(60<<8)|243);
       //saddr.sin_addr.s_addr = htonl((209<<24)|(131<<16)|(48<<8)|52);
@@ -1703,13 +1809,13 @@ PrefetchBlaster::blastObject(int event, void *data)
 int
 PrefetchBlaster::invokeBlaster()
 {
-  int ret = (cache_http_info && !prefetch_config.push_cached_objects)
+  int ret = (cache_http_info && !prefetch_config->push_cached_objects)
     ? TS_PREFETCH_DISCONTINUE : TS_PREFETCH_CONTINUE;
 
-  PrefetchBlastData url_blast = prefetch_config.default_url_blast;
-  data_blast = prefetch_config.default_data_blast;
+  PrefetchBlastData url_blast = prefetch_config->default_url_blast;
+  data_blast = prefetch_config->default_data_blast;
 
-  if (prefetch_config.embedded_url_hook) {
+  if (prefetch_config->embedded_url_hook) {
 
     TSPrefetchInfo info;
 
@@ -1728,7 +1834,7 @@ PrefetchBlaster::invokeBlaster()
     info.url_blast = url_blast;
     info.url_response_blast = data_blast;
 
-    ret = (*prefetch_config.embedded_url_hook)
+    ret = (*prefetch_config->embedded_url_hook)
       (TS_PREFETCH_EMBEDDED_URL_HOOK, &info);
 
     url_blast = info.url_blast;
@@ -1752,7 +1858,7 @@ PrefetchBlaster::invokeBlaster()
     }
     //if recursion is enabled, go through local host even for cached
     //objects
-    if (prefetch_config.max_recursion > 0 && serverVC) {
+    if (prefetch_config->max_recursion > 0 && serverVC) {
       serverVC->do_io_close();
       serverVC = NULL;
       cache_http_info = 0;
@@ -2105,7 +2211,7 @@ KeepAliveConn::handleEvent(int event, void *data)
 
     childVC = (NetVConnection *) data;
 
-    childVC->set_inactivity_timeout(HRTIME_SECONDS(prefetch_config.keepalive_timeout));
+    childVC->set_inactivity_timeout(HRTIME_SECONDS(prefetch_config->keepalive_timeout));
 
     vio = childVC->do_io_write(this, INT64_MAX, reader);
 
@@ -2125,10 +2231,10 @@ KeepAliveConn::handleEvent(int event, void *data)
 
   case VC_EVENT_INACTIVITY_TIMEOUT:
     //Debug("PrefetchTemp", "%d sec timeout expired for %d.%d.%d.%d",
-    //prefetch_config.keepalive_timeout, IPSTRARGS(ip));
+    //prefetch_config->keepalive_timeout, IPSTRARGS(ip));
 
     if (reader->read_avail())
-      childVC->set_inactivity_timeout(HRTIME_SECONDS(prefetch_config.keepalive_timeout));
+      childVC->set_inactivity_timeout(HRTIME_SECONDS(prefetch_config->keepalive_timeout));
     else
       free();
     break;
@@ -2181,15 +2287,15 @@ TSPrefetchHookSet(int hook_no, TSPrefetchHook hook)
   switch (hook_no) {
 
   case TS_PREFETCH_PRE_PARSE_HOOK:
-    prefetch_config.pre_parse_hook = hook;
+    prefetch_config->pre_parse_hook = hook;
     return 0;
 
   case TS_PREFETCH_EMBEDDED_URL_HOOK:
-    prefetch_config.embedded_url_hook = hook;
+    prefetch_config->embedded_url_hook = hook;
     return 0;
 
   case TS_PREFETCH_EMBEDDED_OBJECT_HOOK:
-    prefetch_config.embedded_obj_hook = hook;
+    prefetch_config->embedded_obj_hook = hook;
     return 0;
 
   default:
