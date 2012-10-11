@@ -310,7 +310,7 @@ ClassAllocator<PrefetchUrlEntry> prefetchUrlEntryAllocator("prefetchUrlEntryAllo
 
 struct PrefetchConfigCont;
 typedef int (PrefetchConfigCont::*PrefetchConfigContHandler) (int, void *);
-class PrefetchConfigCont:public Continuation
+struct PrefetchConfigCont:public Continuation
 {
 public:
   PrefetchConfigCont(ProxyMutex * m)
