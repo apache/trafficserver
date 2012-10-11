@@ -14,11 +14,18 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-AM_CPPFLAGS = -I$(top_builddir)/proxy/api -I$(top_srcdir)/proxy/api \
+pkglibdir = ${pkglibexecdir}
+
+if BUILD_HAVE_BOOST
+
+AM_CPPFLAGS = $(BOOST_CPPFLAGS) \
+	      -I$(top_builddir)/proxy/api -I$(top_srcdir)/proxy/api \
               -I$(top_srcdir)/lib/ts -I$(top_builddir)/lib/ts
 
-pkglibdir = ${pkglibexecdir}
+AM_LDFLAGS = $(BOOST_LDFLAGS)
+
 pkglib_LTLIBRARIES = header_rewrite.la
 header_rewrite_la_SOURCES = condition.cc conditions.cc factory.cc header_rewrite.cc matcher.cc operator.cc operators.cc parser.cc regex_helper.cc resources.cc ruleset.cc statement.cc
 header_rewrite_la_LDFLAGS = -module -avoid-version -shared
 
+endif

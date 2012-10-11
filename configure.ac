@@ -901,6 +901,13 @@ AC_CHECK_LIB([iconv],[iconv_open],[AC_SUBST([LIBICONV],["-liconv"])])
 AC_CHECK_LIB([iconv],[libiconv_open],[AC_SUBST([LIBICONV],["-liconv"])])
 
 #
+# The header_rewrite module depends on boost.
+AX_BOOST_BASE([1.50],
+  [ AM_CONDITIONAL([BUILD_HAVE_BOOST], [true]) ],
+  [ AM_CONDITIONAL([BUILD_HAVE_BOOST], [false]) ]
+)
+
+#
 # Check for SSL presence and usability
 TS_CHECK_CRYPTO
 if test "x${enable_crypto}" != "xyes"; then
