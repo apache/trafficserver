@@ -1,0 +1,76 @@
+#! /usr/bin/env bash
+
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+#
+# Basic regression test script.
+#
+# Verify that the source tree builds and that out of tree builds work. We don't use root for any of this because
+# it should not be required (that would be a bug). Then run the automake regression tests and the traffic_server
+# regression tests.
+#
+
+set -e # exit on error
+
+TMPDIR=${TMPDIR:-/tmp}
+BUILDID="org.apache.trafficserver.$$"
+
+SRCROOT=${SRCROOT:-$(cd $(dirname $0)/.. && pwd)} # where the source lives
+OBJROOT=${OBJROOT:-"$TMPDIR/$BUILDID/obj"} # where we are building
+DSTROOT=${DSTROOT:-"$TMPDIR/$BUILDID/dst"} # where we are installing
+
+mkdir -p $SRCROOT
+mkdir -p $OBJROOT
+mkdir -p $DSTROOT
+
+case $(uname) in
+  Darwin) CC=${CC:-clang}; CXX=${CXX:-clang++} ;;
+  *) CC=${CC:-cc}; CXX=${CXX:-c++} ;;
+esac
+
+autogen() {
+  [[ -x "$SRCROOT/configure" ]] || ( cd $SRCROOT && autoreconf -fi )
+}
+
+configure() {
+  [[ -r "$SRCROOT/Makefile" ]] && ( cd $SRCROOT && make distclean)
+
+  (
+    cd $OBJROOT
+    $SRCROOT/configure \
+      --prefix=$DSTROOT \
+      --enable-wccp \
+      --enable-experimental-plugins \
+      CC=$CC \
+      CXX=$CXX
+  )
+}
+
+build() {
+  ( cd $OBJROOT && make -j )
+  ( cd $OBJROOT && make install )
+}
+
+regress() {
+  ( cd $OBJROOT && make check )
+  $DSTROOT/bin/traffic_server -R 1
+}
+
+autogen
+configure
+build
+regress
