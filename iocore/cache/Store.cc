@@ -447,7 +447,6 @@ Span::init(char *an, int64_t size)
 
   case S_IFBLK:{
   case S_IFCHR:
-#ifdef HAVE_RAW_DISK_SUPPORT // FIXME: darwin, freebsd
       struct disklabel dl;
       struct diskslices ds;
       if (ioctl(fd, DIOCGDINFO, &dl) < 0) {
@@ -499,12 +498,6 @@ Span::init(char *an, int64_t size)
           size = fsize;
         break;
       }
-#else /* !HAVE_RAW_DISK_SUPPORT */
-    Warning("Currently Raw Disks are not supported" );
-    err = "Currently Raw Disks are not supported";
-    goto Lfail;
-    break;
-#endif /* !HAVE_RAW_DISK_SUPPORT */
     }
   case S_IFDIR:
   case S_IFREG:
