@@ -231,7 +231,6 @@ spdy_stream_io(TSCont contp, TSEvent ev, void * edata)
         if (ev == TS_EVENT_VCONN_EOS || ev == TS_EVENT_VCONN_READ_COMPLETE) {
             stream->http_state = spdy_io_stream::http_closed;
             spdy_send_data_frame(stream, spdy::FLAG_FIN, nullptr, 0);
-            TSVConnClose(stream->vconn);
         }
 
         // Kick the IO control block write VIO to make it send the
@@ -329,7 +328,7 @@ spdy_io_stream::close()
 
     if (this->vconn) {
         TSVConnClose(this->vconn);
-        this->action = nullptr;
+        this->vconn = nullptr;
     }
 
     this->http_state = http_closed;
