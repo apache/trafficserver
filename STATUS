@@ -48,7 +48,7 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   *) Improve response times for for Cluster purge & miss
    Trunk: f0a98cdc7b950e1ecefde94694de5dfd800248aa
    Jira: https://issues.apache.org/jira/browse/TS-1321
-   +1: zwoop (seems ok, but not tested myself), zym
+   +1: zwoop (seems ok, but not tested myself), zym, jpeach
 
   *) Fix abnormally high CPU usage on FreeBSD/OpenBSD while idle.
    Trunk: 8665bbb1e5f34e6de5d709b0314a8fcb1eefec8d
@@ -56,10 +56,10 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
    +1: humbedooh, igalic, zwoop
 
   *) Fix signed/unsigned compilation issues in Vec, especially
-   make check. 
+   make check.
    Trunk: 8ab44edd
    Jira: https://issues.apache.org/jira/browse/TS-1345
-   +1: igalic, zwoop
+   +1: igalic, zwoop, jpeach
 
 
 RELEASE PROCESS
