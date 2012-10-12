@@ -53,13 +53,13 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   *) Fix abnormally high CPU usage on FreeBSD/OpenBSD while idle.
    Trunk: 8665bbb1e5f34e6de5d709b0314a8fcb1eefec8d
    Jira: https://issues.apache.org/jira/browse/TS-993 (in part)
-   +1: humbedooh, igalic
+   +1: humbedooh, igalic, zwoop
 
   *) Fix signed/unsigned compilation issues in Vec, especially
    make check. 
    Trunk: 8ab44edd
    Jira: https://issues.apache.org/jira/browse/TS-1345
-   +1: igalic
+   +1: igalic, zwoop
 
 
 RELEASE PROCESS
