@@ -374,8 +374,8 @@ Store::write_config_data(int fd)
 #include <sys/param.h>
 #include <sys/mount.h>
 #if defined(freebsd)
+#include <sys/disk.h>
 #include <sys/disklabel.h>
-//#include <sys/diskslice.h>
 #elif defined(darwin)
 #include <sys/disk.h>
 #include <sys/statvfs.h>
@@ -447,57 +447,13 @@ Span::init(char *an, int64_t size)
 
   case S_IFBLK:{
   case S_IFCHR:
-      struct disklabel dl;
-      struct diskslices ds;
-      if (ioctl(fd, DIOCGDINFO, &dl) < 0) {
-      lvolError:
-        Warning("unable to get label information for '%s': %s", n, strerror(errno));
+      if (ioctl(fd, DIOCGMEDIASIZE, &size) < 0) {
+        Warning("unable to get disk information for '%s': %s", n, strerror(errno));
         err = "unable to get label information";
         goto Lfail;
       }
-      {
-        char *s1 = n, *s2;
-        int slice = -1, part = -1;
-        if ((s2 = strrchr(s1, '/')))
-          s1 = s2 + 1;
-        else
-          goto lvolError;
-        for (s2 = s1; *s2 && !ParseRules::is_digit(*s2); s2++);
-        if (!*s2 || s2 == s1)
-          goto lvolError;
-        while (ParseRules::is_digit(*++s2));
-        s1 = s2;
-        if (*s2 == 's') {
-          slice = ink_atoi(s2 + 1);
-          if (slice<1 || slice> MAX_SLICES - BASE_SLICE)
-            goto lvolError;
-          slice = BASE_SLICE + slice - 1;
-          while (ParseRules::is_digit(*++s2));
-        }
-        if (*s2 >= 'a' && *s2 <= 'a' + MAXPARTITIONS - 1) {
-          if (slice == -1)
-            slice = COMPATIBILITY_SLICE;
-          part = *s2++ - 'a';
-        }
-        if (slice >= 0) {
-          if (ioctl(fd, DIOCGSLICEINFO, &ds) < 0)
-            goto lvolError;
-          if (slice >= (int) ds.dss_nslices || !ds.dss_slices[slice].ds_size)
-            goto lvolError;
-          fsize = (int64_t) ds.dss_slices[slice].ds_size * dl.d_secsize;
-        } else {
-          if (part < 0)
-            goto lvolError;
-          // This is odd, the dl struct isn't defined anywhere ...
-          fsize = (int64_t) dl.d_partitions[part].p_size * dl.d_secsize;
-        }
-        devnum = s.st_rdev;
-        if (size <= 0)
-          size = fsize;
-        if (size > fsize)
-          size = fsize;
-        break;
-      }
+      devnum = s.st_rdev;
+      break;
     }
   case S_IFDIR:
   case S_IFREG:
