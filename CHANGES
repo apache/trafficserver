@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.3.1
 
+  *) [TS-1516] use_client_addr breaks parent proxy configuration
+     Author: Uri Shachar.
+
   *) [TS-1518] detect header_rewrite plugin boost dependency
 
   *) [TS-1003] make Prefetch config file reloadable

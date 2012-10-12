@@ -6697,15 +6697,16 @@ HttpSM::set_next_state()
         break;
       } else  if (t_state.http_config_param->use_client_target_addr
         && !t_state.url_remap_success
+        && t_state.parent_result.r != PARENT_SPECIFIED
         && t_state.client_info.is_transparent
         && ats_is_ip(addr = t_state.state_machine->ua_session->get_netvc()->get_local_addr())
       ) {
         ip_text_buffer ipb;
-        /* If the connection is client side transparent and the URL
-           was not remapped, we can use the client destination IP
-           address instead of doing a DNS lookup. This is controlled
-           by the 'use_client_target_addr' configuration parameter.
-        */
+        /* If the connection is client side transparent and the URL was not
+         * remapped/directed to parent proxy, we can use the client destination
+         * IP address instead of doing a DNS lookup. This is controlled by the
+         * 'use_client_target_addr' configuration parameter.
+         */
         DebugSM("dns", "[HttpTransact::HandleRequest] Skipping DNS lookup for client supplied target %s.\n", ats_ip_ntop(addr, ipb, sizeof(ipb)));
         ats_ip_copy(t_state.host_db_info.ip(), addr);
         t_state.dns_info.lookup_success = true;
