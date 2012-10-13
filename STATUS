@@ -41,10 +41,6 @@ A list of all bugs open for the next development release can be found at
 
 PATCHES ACCEPTED TO BACKPORT FROM TRUNK:
 
-
-PATCHES PROPOSED TO BACKPORT FROM TRUNK:
-  [ New proposals should be added at the end of the list ]
-
   *) Improve response times for for Cluster purge & miss
    Trunk: f0a98cdc7b950e1ecefde94694de5dfd800248aa
    Jira: https://issues.apache.org/jira/browse/TS-1321
@@ -60,6 +56,10 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
    Trunk: 8ab44edd
    Jira: https://issues.apache.org/jira/browse/TS-1345
    +1: igalic, zwoop, jpeach
+
+PATCHES PROPOSED TO BACKPORT FROM TRUNK:
+  [ New proposals should be added at the end of the list ]
+
 
 
 RELEASE PROCESS
