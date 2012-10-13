@@ -389,9 +389,6 @@ Span::init(char *an, int64_t size)
   const char *err = NULL;
   int ret = 0;
 
-  //
-  // All file types on Solaris can be mmaped
-  //
   is_mmapable_internal = true;
 
   // handle symlinks
@@ -452,6 +449,11 @@ Span::init(char *an, int64_t size)
         err = "unable to get label information";
         goto Lfail;
       }
+      if (ioctl(fd, DIOCGSECTORSIZE, &hw_sector_size) < 0) {
+        Warning("unable to get disk information for '%s': %s", n, strerror(errno));
+        err = "unable to get label information";
+        goto Lfail;
+      }
       devnum = s.st_rdev;
       break;
     }
@@ -471,21 +473,20 @@ Span::init(char *an, int64_t size)
     break;
   }
 
-  // estimate the disk SOLARIS specific
-  if ((devnum >> 16) == 0x80)
-    disk_id = (devnum >> 3) & 0x3F;
-  else {
-    disk_id = devnum;
-  }
+  disk_id = devnum;
 
   pathname = ats_strdup(an);
-  blocks = size / STORE_BLOCK_SIZE;
+  blocks = size / hw_sector_size;
   file_pathname = !((s.st_mode & S_IFMT) == S_IFDIR);
 
+  // This is so FreeBSD admins don't worry about our malicious code creating boot sector viruses:
   if (((s.st_mode & S_IFMT) == S_IFBLK) || ((s.st_mode & S_IFMT) == S_IFCHR)) {
     blocks--;
     offset = 1;
   }
+
+  Debug("cache_init", "Span::init - %s hw_sector_size = %d  size = %" PRId64 ", blocks = %" PRId64 ", disk_id = %d, file_pathname = %d", pathname, hw_sector_size, size, blocks, disk_id, file_pathname);
+
 Lfail:
   socketManager.close(fd);
   return err;
