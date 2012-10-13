@@ -26,9 +26,9 @@ Changes with Apache Traffic Server 3.2.3
   *) [TS-1430] Remove TS_ARG_MAX usage so that platforms with
   unlimited ARG_MAX can build correctly.
 
-  *) [TS-1392] Fix SNI certificate fallback path
+  *) [TS-1471] Fix SNI certificate fallback path
 
-  *)  Fix cache sizes > 16TB
+  *) [TS-1470] Fix cache sizes > 16TB
    Author: Jan Van Doorn <Jan_VanDoorn@cable.comcast.com>
 
 Changes with Apache Traffic Server 3.2.1
