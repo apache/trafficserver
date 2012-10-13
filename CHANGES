@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.2.3
 
+  *) [TS-1523] High CPU on *BSD
+
   *) [TS-1522] improve RT on Cluster purge missing objects
    Author: Bin Chen
 
