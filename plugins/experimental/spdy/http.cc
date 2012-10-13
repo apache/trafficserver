@@ -41,7 +41,7 @@ populate_http_headers(
     snprintf(status, sizeof(status),
             "%u %s", (unsigned)code, TSHttpHdrReasonLookup(code));
     snprintf(httpvers, sizeof(httpvers),
-            "HTTP/%2u.%2u", TS_HTTP_MAJOR(vers), TS_HTTP_MINOR(vers));
+            "HTTP/%u.%u", TS_HTTP_MAJOR(vers), TS_HTTP_MINOR(vers));
 
     if (version == spdy::PROTOCOL_VERSION_2) {
         kvblock["status"] = status;
