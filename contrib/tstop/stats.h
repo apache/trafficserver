@@ -76,6 +76,9 @@ public:
     lookup_table.insert(make_pair("entries", LookupItem("Entries", "proxy.process.cache.direntries.used", 1)));
     lookup_table.insert(make_pair("avg_size", LookupItem("Avg Size", "disk_used", "entries", 3)));
 
+    lookup_table.insert(make_pair("dns_time", LookupItem("DNS Time", "proxy.node.dns.lookup_avg_time_ms", 2)));
+    lookup_table.insert(make_pair("dns_hits", LookupItem("DNS hits", "proxy.node.hostdb.total_hits", 2)));
+    lookup_table.insert(make_pair("dns_lookups", LookupItem("DNS lookups", "proxy.node.hostdb.total_lookups", 2)));
     lookup_table.insert(make_pair("client_req", LookupItem("Requests", "proxy.process.http.incoming_requests", 2)));
     lookup_table.insert(make_pair("client_conn", LookupItem("New Conn", "proxy.process.http.total_client_connections", 2)));
     lookup_table.insert(make_pair("client_req_conn", LookupItem("Req/Conn", "client_req", "client_conn", 3)));
@@ -106,6 +109,7 @@ public:
     lookup_table.insert(make_pair("other_err", LookupItem("Other Err", "proxy.process.http.transaction_counts.errors.other", 2)));
     // percentage
     lookup_table.insert(make_pair("ram_ratio", LookupItem("Ram Hit", "ram_hit", "ram_hit_miss", 4)));
+    lookup_table.insert(make_pair("dns_ratio", LookupItem("DNS Hit", "dns_hits", "dns_lookups", 4)));
 
     // percetage of requests
     lookup_table.insert(make_pair("fresh", LookupItem("Fresh", "proxy.process.http.transaction_counts.hit_fresh", 5)));

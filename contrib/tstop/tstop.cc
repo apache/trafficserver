@@ -269,6 +269,8 @@ int main(int argc, char **argv)
     cache1.push_back("update_active");
     cache1.push_back("entries");
     cache1.push_back("avg_size");
+    cache1.push_back("dns_lookups");
+    cache1.push_back("dns_hits");
     makeTable(0, 1, cache1, stats);
 
 
@@ -286,6 +288,8 @@ int main(int argc, char **argv)
     cache2.push_back("changed_time");
     cache2.push_back("not_time");
     cache2.push_back("no_time");
+    cache2.push_back("dns_ratio");
+    cache2.push_back("dns_time");
     makeTable(21, 1, cache2, stats);
 
     list<string> response1;
