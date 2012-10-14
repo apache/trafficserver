@@ -1,7 +1,7 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.2.3
 
-  *) [TS-1524] fix signed/unsigned compilation issues in Vec
+  *) [TS-1536] SNI support breaks IP-based lookup
 
   *) [TS-1523] High CPU on *BSD
 
