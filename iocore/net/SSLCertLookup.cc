@@ -56,20 +56,17 @@ ssl_servername_callback(SSL * ssl, int * ad, void * arg)
 
   Debug("ssl", "ssl=%p ad=%d lookup=%p server=%s", ssl, *ad, lookup, servername);
 
+  // The incoming SSL_CTX is either the one mapped from the inbound IP address or the default one. If we don't find a
+  // name-based match at this point, we *do not* want to mess with the context because we've already made a best effort
+  // to find the best match.
   if (likely(servername)) {
     ctx = lookup->findInfoInHash((char *)servername);
-  }
-
-  if (ctx == NULL) {
-    ctx = lookup->defaultContext();
   }
 
   if (ctx != NULL) {
     SSL_set_SSL_CTX(ssl, ctx);
   }
 
-  // At this point, we might have updated ctx based on the SNI lookup, or we might still have the
-  // original SSL context that we set when we accepted the connection.
   ctx = SSL_get_SSL_CTX(ssl);
   Debug("ssl", "found SSL context %p for requested name '%s'", ctx, servername);
 
@@ -549,6 +546,7 @@ SSLContextStorage::insert(SSL_CTX * ctx, const char * name)
     Debug("ssl", "indexed wildcard certificate for '%s' as '%s' with SSL_CTX %p", name, reversed, ctx);
     return this->wildcards.Insert(reversed, new SslEntry(ctx), 0 /* rank */, -1 /* keylen */);
   } else {
+    Debug("ssl", "indexed '%s' with SSL_CTX %p", name, ctx);
     ink_hash_table_insert(this->hostnames, name, (void *)ctx);
   }
 

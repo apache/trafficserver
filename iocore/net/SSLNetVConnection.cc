@@ -454,6 +454,7 @@ SSLNetVConnection::sslStartHandShake(int event, int &err)
       safe_getsockname(get_socket(), &ip.sa, &namelen);
       ats_ip_ntop(&ip.sa, buff, sizeof(buff));
       ctx = sslCertLookup.findInfoInHash(buff);
+      Debug("ssl", "IP context is %p, default context %p", ctx, sslCertLookup.defaultContext());
       if (ctx == NULL) {
         ctx = sslCertLookup.defaultContext();
       }
