@@ -49,6 +49,7 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
     Trunk: f17c34
     Jira: https://issues.apache.org/jira/browse/TS-1526
     +1: jpeach
+	igalic says: This revision doesn't appear to exist
 
 RELEASE PROCESS
 
