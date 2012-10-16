@@ -176,18 +176,16 @@ handleRead(ContData *cont_data, bool &read_complete) {
       }
       consumed += data_len;
       block = TSIOBufferBlockNext(block);
-      if (!block) {
-        TSError("[%s] Error while getting block from ioreader", __FUNCTION__);
-        return false;
-      }
     }
   }
-  TSDebug(DEBUG_TAG, "[%s] Consumed %d bytes from input vio", __FUNCTION__, consumed);
   
   TSIOBufferReaderConsume(cont_data->input.reader, consumed);
+
+  TSDebug(DEBUG_TAG, "[%s] Consumed %d bytes from input vio, avail: %d", __FUNCTION__, consumed, avail);
   
   // Modify the input VIO to reflect how much data we've completed.
   TSVIONDoneSet(cont_data->input.vio, TSVIONDoneGet(cont_data->input.vio) + consumed);
+
   if (static_cast<int>(cont_data->body.size()) == cont_data->req_content_len) {
     TSDebug(DEBUG_TAG, "[%s] Completely read body of size %d", __FUNCTION__, cont_data->req_content_len);
     read_complete = true;

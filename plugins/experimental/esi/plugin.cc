@@ -62,10 +62,14 @@ static HandlerManager *gHandlerManager;
 #define MIME_FIELD_XESI "X-Esi"
 #define MIME_FIELD_XESI_LEN 5
 
+#define FETCH_EVENT_ID_SUCCESS  30001
+#define FETCH_EVENT_ID_FAILURE  30002 
+#define FETCH_EVENT_ID_TIMEOUT  30003 
+
 enum DataType { DATA_TYPE_RAW_ESI = 0, DATA_TYPE_GZIPPED_ESI = 1, DATA_TYPE_PACKED_ESI = 2 };
 static const char *DATA_TYPE_NAMES_[] = { "RAW_ESI",
-                                          "GZIPPED_ESI",
-                                          "PACKED_ESI" };
+    "GZIPPED_ESI",
+    "PACKED_ESI" };
 
 static const char *HEADER_MASK_PREFIX = "Mask-";
 static const int HEADER_MASK_PREFIX_SIZE = 5;
@@ -90,20 +94,29 @@ struct ContData
   DocNodeList node_list;
   string packed_node_list;
   char *request_url;
-  bool os_response_cacheable;
-  list<string> post_headers;
   TSHttpTxn txnp;
   bool gzip_output;
   string gzipped_data;
   sockaddr const* client_addr;
   bool got_server_state;
+
+#ifdef ESI_PACKED_NODE_SUPPORT
+  list<string> post_headers;
+  bool os_response_cacheable;
+  bool need_update_cache;
+  bool update_cache_done;
+#endif
   
   ContData(TSCont contptr, TSHttpTxn tx)
     : curr_state(READING_ESI_DOC), input_vio(NULL), output_vio(NULL), output_buffer(NULL), output_reader(NULL),
       esi_vars(NULL), data_fetcher(NULL), esi_proc(NULL), initialized(false),
       xform_closed(false), contp(contptr), input_type(DATA_TYPE_RAW_ESI),
-      packed_node_list(""), request_url(NULL), os_response_cacheable(true), txnp(tx), gzip_output(false),
-      gzipped_data(""), got_server_state(false) {
+      packed_node_list(""), request_url(NULL), txnp(tx), gzip_output(false),
+      gzipped_data(""), got_server_state(false)
+#ifdef ESI_PACKED_NODE_SUPPORT
+      , os_response_cacheable(true), need_update_cache(false), update_cache_done(false)
+#endif
+  {
     client_addr = TSHttpTxnClientAddrGet(txnp);
   }
   
@@ -197,7 +210,7 @@ ContData::init()
     // we don't know how much data we are going to write, so INT64_MAX
     output_vio = TSVConnWrite(output_conn, contp, output_reader, INT64_MAX);
     
-    string fetcher_tag, vars_tag, expr_tag, parser_tag, proc_tag;
+    string fetcher_tag, vars_tag, expr_tag, proc_tag;
     if (!data_fetcher) {
       data_fetcher = new HttpDataFetcherImpl(contp, client_addr,
                                              createDebugTag(FETCHER_DEBUG_TAG, contp, fetcher_tag));
@@ -246,26 +259,25 @@ ContData::getClientState() {
                                            createDebugTag(FETCHER_DEBUG_TAG, contp, fetcher_tag));
   }
   if (req_bufp && req_hdr_loc) {
+    TSMBuffer bufp;
     TSMLoc url_loc;
-    if(TSHttpHdrUrlGet(req_bufp, req_hdr_loc, &url_loc) != TS_SUCCESS) {
+    if(TSHttpTxnPristineUrlGet(txnp, &bufp, &url_loc) != TS_SUCCESS) {
         TSError("[%s] Error while retrieving hdr url", __FUNCTION__);
-/*FIXME Does this leak?*/
         return;
     }
     if (url_loc) {
       if (request_url) {
         TSfree(request_url);
       }
-//FIXME TSUrlStringGet says it can accept a null length but it lies.
       int length;
-      request_url = TSUrlStringGet(req_bufp, url_loc, &length);
+      request_url = TSUrlStringGet(bufp, url_loc, &length);
       TSDebug(DEBUG_TAG, "[%s] Got request URL [%s]", __FUNCTION__, request_url ? request_url : "(null)");
       int query_len;
-      const char *query = TSUrlHttpQueryGet(req_bufp, url_loc, &query_len);
+      const char *query = TSUrlHttpQueryGet(bufp, url_loc, &query_len);
       if (query) {
         esi_vars->populate(query, query_len);
       }
-      TSHandleMLocRelease(req_bufp, req_hdr_loc, url_loc);
+      TSHandleMLocRelease(bufp, req_hdr_loc, url_loc);
     }
     TSMLoc field_loc = TSMimeHdrFieldGet(req_bufp, req_hdr_loc, 0);
     while (field_loc) {
@@ -313,8 +325,12 @@ ContData::getServerState() {
   TSMLoc hdr_loc;
   if (TSHttpTxnServerRespGet(txnp, &bufp, &hdr_loc) != TS_SUCCESS) {
     TSDebug(DEBUG_TAG, "[%s] Could not get server response; Assuming cache object", __FUNCTION__);
-//FIXME In theory it should be DATA_TYPE_PACKED_ESI but that doesn't work. Forcing to RAW_ESI for now.
+#ifdef ESI_PACKED_NODE_SUPPORT
+    input_type = DATA_TYPE_PACKED_ESI;
+#else
+    //FIXME In theory it should be DATA_TYPE_PACKED_ESI but that doesn't work. Forcing to RAW_ESI for now.
     input_type = DATA_TYPE_RAW_ESI;
+#endif
     return;
   }
   if (checkHeaderValue(bufp, hdr_loc, TS_MIME_FIELD_CONTENT_ENCODING,
@@ -323,6 +339,8 @@ ContData::getServerState() {
   } else {
     input_type = DATA_TYPE_RAW_ESI;
   }
+
+#ifdef ESI_PACKED_NODE_SUPPORT
   int n_mime_headers = TSMimeHdrFieldsCount(bufp, hdr_loc);
   TSMLoc field_loc;
   const char *name, *act_name, *value;
@@ -383,6 +401,7 @@ ContData::getServerState() {
             }
           } // end if got value string
         } // end value iteration
+
         if (static_cast<int>(header.size()) > (act_name_len + 2 /* for ': ' */ )) {
           header += "\r\n";
           post_headers.push_back(header);
@@ -395,6 +414,8 @@ ContData::getServerState() {
       break;
     }
   } // end header iteration
+#endif
+
   TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
 }
 
@@ -445,7 +466,7 @@ cacheNodeList(ContData *cont_data) {
   post_request.append(TS_HTTP_VALUE_GZIP, TS_HTTP_LEN_GZIP);
   post_request.append("\r\n");
 
-  string body;
+  string body("");
   cont_data->esi_proc->packNodeList(body, false);
   char buf[64];
   snprintf(buf, 64, "%s: %ld\r\n\r\n", TS_MIME_FIELD_CONTENT_LENGTH, body.size());
@@ -454,8 +475,12 @@ cacheNodeList(ContData *cont_data) {
   post_request.append(body);
   
   TSFetchEvent event_ids;
+  event_ids.success_event_id = FETCH_EVENT_ID_SUCCESS;
+  event_ids.failure_event_id = FETCH_EVENT_ID_FAILURE;
+  event_ids.timeout_event_id = FETCH_EVENT_ID_TIMEOUT;
+
   TSFetchUrl(post_request.data(), post_request.size(), cont_data->client_addr,
-                  cont_data->contp, NO_CALLBACK, event_ids);
+                  cont_data->contp, AFTER_BODY, event_ids);
 }
 #endif
 
@@ -527,12 +552,6 @@ transformData(TSCont contp)
           consumed += data_len;
           
           block = TSIOBufferBlockNext(block);
-/*FIXME this chunk of code looks to be in error. Commenting out.
-          if (!block) {
-            TSError("[%s] Error while getting block from ioreader", __FUNCTION__);
-            return 0;
-          }
-*/
         }
       }
       TSDebug((cont_data->debug_tag).c_str(), "[%s] Consumed %"PRId64" bytes from upstream VC",
@@ -572,11 +591,12 @@ transformData(TSCont contp)
         }
       }
       if (cont_data->esi_proc->completeParse()) {
-        if (cont_data->os_response_cacheable) {
 #ifdef ESI_PACKED_NODE_SUPPORT
+        if (cont_data->os_response_cacheable) {
+          cont_data->need_update_cache = true;
           cacheNodeList(cont_data);
-#endif
         }
+#endif
       }
     }
     cont_data->curr_state = ContData::FETCHING_DATA;
@@ -670,6 +690,15 @@ transformHandler(TSCont contp, TSEvent event, void *edata)
 
   is_fetch_event = cont_data->data_fetcher->isFetchEvent(event);
 
+#ifdef ESI_PACKED_NODE_SUPPORT
+  if (cont_data->need_update_cache && (event == FETCH_EVENT_ID_SUCCESS || 
+              event == FETCH_EVENT_ID_FAILURE || event == FETCH_EVENT_ID_TIMEOUT))
+  {
+      TSDebug(cont_debug_tag, "[%s] need_update_cache: %d, recv update cache event id: %d", __FUNCTION__, cont_data->need_update_cache, event);
+      cont_data->update_cache_done = true;
+  }
+#endif
+
   if (cont_data->xform_closed) {
     TSDebug(cont_debug_tag, "[%s] Transformation closed. Post-processing...", __FUNCTION__);
     if (cont_data->curr_state == ContData::PROCESSING_COMPLETE) {
@@ -693,11 +722,11 @@ transformHandler(TSCont contp, TSEvent event, void *edata)
           TSDebug(cont_debug_tag, "[%s] Going to process received data",
                    __FUNCTION__);
         } else {
-          TSDebug(cont_debug_tag, "[%s] Ignoring event %d; Will wait for pending data",
-                   __FUNCTION__, event);
           // transformation is over, but data hasn't been fetched; 
           // let's wait for data to be fetched - we will be called
           // by Fetch API and go through this loop again
+          TSDebug(cont_debug_tag, "[%s] Ignoring event %d; Will wait for pending data",
+                   __FUNCTION__, event);
           process_event = false;
         }
       }
@@ -753,6 +782,11 @@ transformHandler(TSCont contp, TSEvent event, void *edata)
   }
 
   shutdown = (cont_data->xform_closed && (cont_data->curr_state == ContData::PROCESSING_COMPLETE));
+#ifdef ESI_PACKED_NODE_SUPPORT
+  if (cont_data->need_update_cache && shutdown) {
+      shutdown = cont_data->update_cache_done;
+  }
+#endif
 
   if (shutdown) {
     if (process_event && is_fetch_event) {
@@ -773,7 +807,6 @@ lShutdown:
   delete cont_data;
   TSContDestroy(contp);
   return 1;
-  
 }
 
 struct RespHdrModData {
@@ -956,8 +989,8 @@ maskOsCacheHeaders(TSHttpTxn txnp) {
   int name_len, value_len, n_field_values;
   bool os_response_cacheable, is_cache_header, mask_header;
   string masked_name;
+  os_response_cacheable = true;
   for (int i = 0; i < n_mime_headers; ++i) {
-    os_response_cacheable = true;
     field_loc = TSMimeHdrFieldGet(bufp, hdr_loc, i);
     if (!field_loc) {
       TSDebug(DEBUG_TAG, "[%s] Error while obtaining header field #%d", __FUNCTION__, i);
@@ -1201,9 +1234,6 @@ globalHookHandler(TSCont contp, TSEvent event, void *edata) {
   TSHttpTxn txnp = (TSHttpTxn) edata;
   bool intercept_req = isInterceptRequest(txnp);
 
-  
- 
-  
   switch (event) {
   case TS_EVENT_HTTP_READ_REQUEST_HDR:
     TSDebug(DEBUG_TAG, "[%s] handling read request header event...", __FUNCTION__);

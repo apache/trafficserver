@@ -16,8 +16,10 @@
 
 pkglibdir = ${pkglibexecdir}
 
+
 AM_CXXFLAGS = \
   -I$(srcdir)/lib \
+  -DESI_PACKED_NODE_SUPPORT \
   -I$(srcdir)/fetcher \
   -I$(srcdir)/test \
   -I$(top_builddir)/proxy/api \

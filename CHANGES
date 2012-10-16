@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.3.1
   
+  *) [TS-1534] implement the interim cache for ESI parser result
+
   *) [TS-1501] vc`s inactivity_timeout event should be schedule in vc`s thread
 
   *) [TS-1503] make Event::schedule simple and efficient
