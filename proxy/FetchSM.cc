@@ -188,6 +188,7 @@ FetchSM::process_fetch_write(int event)
     req_finished = true;
     break;
   case TS_EVENT_VCONN_WRITE_READY:
+    break; //just ignore this event 
   case TS_EVENT_ERROR:
     //InvokePlugin( TS_EVENT_ERROR, NULL);
       InvokePlugin( callback_events.failure_event_id, NULL);
