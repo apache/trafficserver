@@ -46,12 +46,9 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   [ New proposals should be added at the end of the list ]
 
   *) SNI support breaks IP-based lookup
-    Trunk: f17c34
+    Trunk: a9874cb413dccf2157ac9ce0ea0d6d3b7584a32f
     Jira: https://issues.apache.org/jira/browse/TS-1526
-    +1: jpeach
-	igalic says: This revision doesn't appear to exist
-	if it's a9874cb413dccf2157ac9ce0ea0d6d3b7584a32f
-	I'm +1 for it.
+    +1: jpeach, igalic
 
 RELEASE PROCESS
 
