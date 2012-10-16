@@ -26,7 +26,6 @@
 #define _ESI_STATS_H
 
 #include "Utils.h"
-#include <ts/ts.h>
 
 namespace EsiLib {
 

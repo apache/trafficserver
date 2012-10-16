@@ -270,58 +270,72 @@ Variables::getValue(const string &name) const {
   return EMPTY_STRING;
 }
 
+void Variables::_parseSubCookies() {
+  StringHash & cookies = _dict_data[HTTP_COOKIE];
+  for (StringHash::const_iterator it_cookie=cookies.begin(); it_cookie != cookies.end(); ++it_cookie) {
+      const std::string & name = it_cookie->first;
+      const std::string & value = it_cookie->second;
+      if (strchr(value.c_str(), '=') == NULL) {
+          continue;
+      }
+
+      StringHash & subcookies = _sub_cookies[name];
+      AttributeList attr_list;
+      Utils::parseAttributes(value.c_str(), value.length(), attr_list, "&");
+      for (AttributeList::iterator iter = attr_list.begin(); iter != attr_list.end(); ++iter) {
+          _debugLog(_debug_tag.c_str(), "[%s] Inserting query string variable [%.*s] with value [%.*s]",
+                  __FUNCTION__, iter->name_len, iter->name, iter->value_len, iter->value);
+          _insert(subcookies, string(iter->name, iter->name_len),
+                  string(iter->value, iter->value_len));
+      }
+  }
+}
+
 const string &
 Variables::_getSubCookieValue(const string &cookie_str, size_t cookie_part_divider) const {
   if (!_cookie_jar_created) {
-    if (_cookie_str.size()) {
-      Variables &non_const_self = const_cast<Variables &>(*this); // same reasoning as in getValue()
-      // TODO - code was here
-      non_const_self._cookie_jar_created = true;
-    } else {
+    if (_cookie_str.size() == 0) {
       _debugLog(_debug_tag.c_str(), "[%s] Cookie string empty; nothing to construct jar from", __FUNCTION__);
-    }
-  }
-  if (_cookie_jar_created) {
-    // we need to do this as we are going to manipulate the 'divider'
-    // character, and we don't need to create a copy of the string for
-    // that; hence this shortcut
-    string &non_const_cookie_str = const_cast<string &>(cookie_str);
-    
-    non_const_cookie_str[cookie_part_divider] = '\0'; // make sure cookie name is NULL terminated
-    const char *cookie_name = non_const_cookie_str.data(); /* above NULL will take effect */
-    const char *part_name = 
-      non_const_cookie_str.c_str() /* NULL terminate the part */ + cookie_part_divider + 1;
-    bool user_name = (part_name[0] == 'u') && (part_name[1] == '\0');
-    if (user_name) {
-      part_name = "l";
-    }
-    // TODO - code was here
-    const char *sub_cookie_value = NULL;
-    non_const_cookie_str[cookie_part_divider] = ';'; // restore before returning
-    if (!sub_cookie_value) {
-      _debugLog(_debug_tag.c_str(), "[%s] Could not find value for part [%s] of cookie [%.*s]", __FUNCTION__,
-                part_name, cookie_part_divider, cookie_name);
       return EMPTY_STRING;
-    } else {
-      // we need to do this as have to return a string reference
-      string &retval = const_cast<Variables &>(*this)._cached_sub_cookie_value;
-
-      if (user_name) {
-        char unscrambled_login[256];
-        // TODO - code was here
-        _debugLog(_debug_tag.c_str(), "[%s] Unscrambled login name to [%s]", __FUNCTION__, unscrambled_login);
-        retval.assign(unscrambled_login);
-      } else {
-        _debugLog(_debug_tag.c_str(), "[%s] Got value [%s] for cookie name [%.*s] and part [%s]",
-                  __FUNCTION__, sub_cookie_value, cookie_part_divider, cookie_name, part_name);
-        retval.assign(sub_cookie_value);
-      }
-      return retval;
     }
-  } else {
-    _errorLog("[%s] Cookie jar not available; Returning empty string", __FUNCTION__);
-    return EMPTY_STRING;
+
+    Variables &non_const_self = const_cast<Variables &>(*this); // same reasoning as in getValue()
+    non_const_self._parseSubCookies();
+    non_const_self._cookie_jar_created = true;
   }
+
+  // we need to do this as we are going to manipulate the 'divider'
+  // character, and we don't need to create a copy of the string for
+  // that; hence this shortcut
+  string &non_const_cookie_str = const_cast<string &>(cookie_str);
+    
+  non_const_cookie_str[cookie_part_divider] = '\0'; // make sure cookie name is NULL terminated
+  const char *cookie_name = non_const_cookie_str.data(); /* above NULL will take effect */
+  const char *part_name = non_const_cookie_str.c_str() + cookie_part_divider + 1;
+
+  StringKeyHash<StringHash>::const_iterator it_cookie = _sub_cookies.find(cookie_name);
+  if (it_cookie == _sub_cookies.end()) {
+      _debugLog(_debug_tag.c_str(), "[%s] Could not find value for cookie [%s]", 
+              __FUNCTION__, cookie_name);
+      return EMPTY_STRING;
+  }
+
+  non_const_cookie_str[cookie_part_divider] = ';'; // restore before returning
+
+  StringHash::const_iterator it_part = it_cookie->second.find(part_name);
+  if (it_part == it_cookie->second.end()) {
+      _debugLog(_debug_tag.c_str(), "[%s] Could not find value for part [%s] of cookie [%.*s]", __FUNCTION__,
+              part_name, cookie_part_divider, cookie_name);
+      return EMPTY_STRING;
+  }
+
+  _debugLog(_debug_tag.c_str(), "[%s] Got value [%s] for cookie name [%.*s] and part [%s]",
+          __FUNCTION__, it_part->second.c_str(), cookie_part_divider, cookie_name, part_name);
+
+  // we need to do this as have to return a string reference
+  string &retval = const_cast<Variables &>(*this)._cached_sub_cookie_value;
+  retval.assign(it_part->second);
+  return retval;
 }
 
 void
@@ -353,11 +367,13 @@ Variables::_parseCookieString(const char *str, int str_len) {
 
 void
 Variables::_parseUserAgentString(const char *str, int str_len) {
+  /*
   string user_agent_str(str, str_len); // need NULL-terminated version
   // TODO - code was here
   char version_buf[64];
   // TODO - code was here
   _insert(_dict_data[HTTP_USER_AGENT], VERSION_STRING, version_buf);
+  */
 }
 
 void

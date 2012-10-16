@@ -517,7 +517,7 @@ EsiProcessor::_preprocess(DocNodeList &node_list, int &n_prescanned_nodes) {
           threadData=new FailureData();  
           if(pthread_setspecific(threadKey,threadData))
           {
-              TSError("[%s] Unable to set the key", __FUNCTION__);
+              _errorLog("[%s] Unable to set the key", __FUNCTION__);
               abort();
           }
           _debugLog("plugin_esi_failureInfo", "[%s] Data is set for this thread [threadData]%p [threadID]%u [%.*s]", __FUNCTION__,threadData,pthread_self(),expanded_url.size(),expanded_url.data());

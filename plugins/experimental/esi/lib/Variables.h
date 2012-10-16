@@ -138,12 +138,15 @@ private:
 
   void _parseHeader(const char *name, int name_len, const char *value, int value_len);
   void _parseQueryString(const char *query_string, int query_string_len);
-  
-  // TODO - code was here
+ 
+  StringKeyHash<StringHash> _sub_cookies;
   bool _cookie_jar_created;
+
+  void _parseSubCookies();
 
   inline void _releaseCookieJar() {
     if (_cookie_jar_created) {
+      _sub_cookies.clear();
       _cookie_jar_created = false;
     }
   }

@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.3.1
 
+  *) [TS-1532] make esi plugin support cookie sub keys
+
   *) [TS-1526] SNI support breaks IP-based lookup
 
   *) [TS-1513] SPDY plugin crashes on connection close

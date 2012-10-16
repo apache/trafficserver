@@ -323,6 +323,12 @@ HttpDataFetcherImpl::useHeader(const HttpHeader &header) {
     return;
   }
 
+  // should not support keep-alive for async requests
+  if (Utils::areEqual(header.name, header.name_len,
+              TS_MIME_FIELD_CONNECTION, TS_MIME_LEN_CONNECTION)) {
+      return;
+  }
+
   string name(header.name, header.name_len);
   string value(header.value, header.value_len);
   std::pair<StringHash::iterator, bool> result = _headers.insert(StringHash::value_type(name, value));
