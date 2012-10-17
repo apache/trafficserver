@@ -164,7 +164,7 @@ debug_http_header(
         TSIOBufferBlock blk;
 
         TSHttpHdrPrint(buffer, header, iobuf.buffer);
-        blk = TSIOBufferStart(iobuf.buffer);
+        blk = TSIOBufferReaderStart(iobuf.reader);
         avail = TSIOBufferBlockReadAvail(blk, iobuf.reader);
         ptr = (const char *)TSIOBufferBlockReadStart(blk, iobuf.reader, &nbytes);
 

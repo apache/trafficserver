@@ -178,13 +178,12 @@ dispatch_spdy_control_frame(
 
 static size_t
 count_bytes_available(
-        TSIOBuffer          buffer,
-        TSIOBufferReader    reader)
+        TSIOBufferReader reader)
 {
     TSIOBufferBlock block;
     size_t count = 0;
 
-    block = TSIOBufferStart(buffer);
+    block = TSIOBufferReaderStart(reader);
     while (block) {
         const char * ptr;
         int64_t nbytes;
@@ -225,7 +224,7 @@ next_frame:
         // entering. Unfortunately this does happen :(
         debug_plugin("short read %" PRId64 " bytes, expected at least %u, real count %zu",
                 nbytes, spdy::message_header::size,
-                count_bytes_available(io->input.buffer, io->input.reader));
+                count_bytes_available(io->input.reader));
         return;
     }
 
