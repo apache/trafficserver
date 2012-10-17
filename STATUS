@@ -48,7 +48,7 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   *) SNI support breaks IP-based lookup
     Trunk: a9874cb413dccf2157ac9ce0ea0d6d3b7584a32f
     Jira: https://issues.apache.org/jira/browse/TS-1526
-    +1: jpeach, igalic
+    +1: jpeach, igalic, oschaaf
 
 RELEASE PROCESS
 
