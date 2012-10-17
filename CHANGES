@@ -1,5 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.3.1
+  
+  *) [TS-1503] make Event::schedule simple and efficient
+     Author: KuoTai
 
   *) [TS-1532] make esi plugin support cookie sub keys
 
