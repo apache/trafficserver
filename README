@@ -12,7 +12,7 @@ plugins to build large scale web applications.
   |-- example/ ........... example plugins
   |-- install/ ........... installation programs and scripts
   |-- iocore/ ............ IO core
-  |-- lib/ ............... 
+  |-- lib/ ...............
       |-- ts/ ............ Base / core library
       |-- tsconfig/....... New config parser and library (experimental)
       |-- records/ ....... library for config files
@@ -31,13 +31,18 @@ plugins to build large scale web applications.
   |-- configure.ac ....... autoconf configuration
   `-- Makefile.am ........ top level automake configuration
 
-
 2. REQUIREMENTS
-    This section outlines different OS distributions
+
+  This section outlines build requirements for different OS
+  distributions. This may be out of date compared to the on-line
+  requirements at
+
+  <https://cwiki.apache.org/confluence/display/TS/Building>.
 
   Fedora 11,12, 13, 14, 15:
     autoconf
     automake
+    pkgconfig
     libtool
     gcc-c++
     glibc-devel
@@ -45,22 +50,24 @@ plugins to build large scale web applications.
     tcl-devel
     expat-devel
     pcre
+    pcre-devel
     libcap-devel
     hwloc-devel (optional)
     liblua-devel (optional)
 
   Fedora 8 EC2 (Kernel: 2.6.21.7-2.ec2.v1.2.fc8xen):
     FC8 on EC2 requires unique configure declarations, please see that section
-    below. 
+    below.
 
-    NOTE: Alternately you may use the install scripts in 'contrib' which 
-          automate this or use the pre-built public Fedora Core 8 EC2 AMI 
-          with ATS installed. Both of which are HIGHLY RECOMMENDED. 
+    NOTE: Alternately you may use the install scripts in 'contrib' which
+          automate this or use the pre-built public Fedora Core 8 EC2 AMI
+          with ATS installed. Both of which are HIGHLY RECOMMENDED.
           See 'README-EC2' for further details.
 
     Install these packages:
     autoconf
     automake
+    pkgconfig
     libtool
     gcc-c++
     glibc-devel
@@ -70,28 +77,30 @@ plugins to build large scale web applications.
     pcre
 
   Ubuntu 8.* ,9.*, 10.*, 11.*:
-    autoconf 
+    autoconf
     automake
-    libtool 
-    g++ 
-    libssl-dev 
-    tcl-dev 
-    expat 
-    libexpat-dev 
+    pkg-config
+    libtool
+    g++
+    libssl-dev
+    tcl-dev
+    expat
+    libexpat-dev
     libpcre3-dev
     libcap-dev
     libhwloc-dev (optional)
     liblua5.1-dev (optional)
 
   Ubuntu EC2 9.10:
-    NOTE: Alternately you may use the install scripts in 'contrib' which 
-          automate this or use the pre-built public Ubuntu EC2 AMI with 
+    NOTE: Alternately you may use the install scripts in 'contrib' which
+          automate this or use the pre-built public Ubuntu EC2 AMI with
           ATS installed. Both of which are HIGHLY RECOMMENDED.
           See 'README-EC2' for further details.
 
     Install these packages:
     autoconf
     automake
+    pkg-config
     libtool
     g++
     libssl-dev
@@ -105,8 +114,9 @@ plugins to build large scale web applications.
   FreeBSD 7.2,8.0,9.0:
     GCC 4.2.1 compiler suite or clang
     gmake
-    autoconf 
+    autoconf
     automake
+    pkgconfig
     libtool
     tcl
     expat
@@ -117,8 +127,9 @@ plugins to build large scale web applications.
 
   OpenSolaris osol0906:
     GCC 4.3.2 compiler suite (dev collection)
-    autoconf 
+    autoconf
     automake
+    pkgconfig
     libtool
     tcl
     expat
@@ -127,14 +138,14 @@ plugins to build large scale web applications.
 
   OSX 10.5:
     GCC 4.2.4 compiler suite (ports collection)
-    autoconf 
+    autoconf
     automake
+    pkgconfig
     libtool
     tcl
     expat
     openssl
     pcre
-
 
 3. Building from distribution
 
@@ -156,7 +167,6 @@ the installation with
 
   sudo make install
 
-
 4. BUILDING FROM GIT REPO
 
   mkdir -p ~/dev         # make yourself a development dir
@@ -168,8 +178,8 @@ the installation with
   make                   # execute the compile
 
 4b. Instructions for building on EC2
-    NOTE: Alternately you may use the scripts under 'contrib' which will 
-          automate the install for trafficserver under EC2 which is 
+    NOTE: Alternately you may use the scripts under 'contrib' which will
+          automate the install for trafficserver under EC2 which is
           HIGHLY RECOMMENDED. See 'README-EC2' for further details.
 
    # As root do the following when using Ubuntu
@@ -197,7 +207,6 @@ the installation with
    MAKE=gmake ./configure # make sure that gmake is the make we use
    gmake
 
-
 5. INSTALLATION
 
   DEFAULT DIR                        CONTENTS
@@ -206,7 +215,6 @@ the installation with
   /usr/local/etc/trafficserver       configuration files
   /usr/local/bin                     executable binaries
   /usr/local/libexec/trafficserver   plugins
-
 
 6. CRYPTO NOTICE
 
@@ -234,7 +242,6 @@ the installation with
 
     The functionality of OpenSSL <http://www.openssl.org/> is
     utilized in parts of the software.
-
 
 7. ADDITIONAL INFO
 
