@@ -798,12 +798,16 @@ UnixNetVConnection::UnixNetVConnection()
 void
 UnixNetVConnection::set_enabled(VIO *vio)
 {
-  ink_debug_assert(vio->mutex->thread_holding == this_ethread());
+  ink_debug_assert(vio->mutex->thread_holding == this_ethread() && thread);
   ink_assert(!closed);
   STATE_FROM_VIO(vio)->enabled = 1;
 #ifdef INACTIVITY_TIMEOUT
-  if (!inactivity_timeout && inactivity_timeout_in)
-    inactivity_timeout = vio->mutex->thread_holding->schedule_in_local(this, inactivity_timeout_in);
+  if (!inactivity_timeout && inactivity_timeout_in) {
+    if (vio->mutex->thread_holding == thread)
+      inactivity_timeout = thread->schedule_in_local(this, inactivity_timeout_in);
+    else
+      inactivity_timeout = thread->schedule_in(this, inactivity_timeout_in);
+  }
 #else
   if (!next_inactivity_timeout_at && inactivity_timeout_in)
     next_inactivity_timeout_at = ink_get_hrtime() + inactivity_timeout_in;
