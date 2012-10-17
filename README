@@ -116,7 +116,7 @@ plugins to build large scale web applications.
     gmake
     autoconf
     automake
-    pkgconfig
+    pkgconf
     libtool
     tcl
     expat
