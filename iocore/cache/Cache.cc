@@ -1074,8 +1074,8 @@ Vol::init(char *s, off_t blocks, off_t dir_skip, bool clear)
   evacuate = (DLL<EvacuationBlock> *)ats_malloc(evac_len);
   memset(evacuate, 0, evac_len);
 
-  Debug("cache_init", "allocating %zu directory bytes for a %zu byte volume (%lf%%)",
-    vol_dirlen(this), this->len, (double)vol_dirlen(this) / (double)this->len * 100.0);
+  Debug("cache_init", "allocating %zu directory bytes for a %lld byte volume (%lf%%)",
+    vol_dirlen(this), (long long)this->len, (double)vol_dirlen(this) / (double)this->len * 100.0);
   raw_dir = (char *)ats_memalign(sysconf(_SC_PAGESIZE), vol_dirlen(this));
   dir = (Dir *) (raw_dir + vol_headerlen(this));
   header = (VolHeaderFooter *) raw_dir;
