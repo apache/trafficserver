@@ -585,7 +585,9 @@ rfc5861_plugin(TSCont cont, TSEvent event, void *edata)
                         TSDebug(LOG_PREFIX, "Looks like we can return fresh info and validate in the background");
                         // lookup async
 
+#if (TS_VERSION_NUMBER >= 3003000)
                         TSHttpTxnConfigIntSet(txn, TS_CONFIG_HTTP_INSERT_AGE_IN_RESPONSE, 1);
+#endif
                         // Set warning header
                         TSHttpTxnHookAdd(txn, TS_HTTP_SEND_RESPONSE_HDR_HOOK, cont);
 
@@ -606,7 +608,9 @@ rfc5861_plugin(TSCont cont, TSEvent event, void *edata)
                     else if ((now - chi->date) < (chi->max_age + chi->stale_on_error))
                     {
                         TSDebug(LOG_PREFIX, "Looks like we can return fresh data on 500 error");
+#if (TS_VERSION_NUMBER >= 3003000)
                         TSHttpTxnConfigIntSet(txn, TS_CONFIG_HTTP_INSERT_AGE_IN_RESPONSE, 1);
+#endif
                         //lookup sync
                         state->async_req = false;
                         state->txn = txn;
@@ -658,8 +662,11 @@ rfc5861_plugin(TSCont cont, TSEvent event, void *edata)
             if ((http_status == 500) || ((http_status >= 502) && (http_status <= 504))) // 500, 502, 503, or 504
             {
                 TSDebug(LOG_PREFIX, "Set non-cachable");
-                //TSHttpTxnRespCacheableSet(txn, 0);
+#if (TS_VERSION_NUMBER >= 3003000)
                 TSHttpTxnServerRespNoStoreSet(txn,1);
+#else
+                TSHttpTxnServerRespNoStore(txn);
+#endif
             }
             TSHandleMLocRelease(buf, TS_NULL_MLOC, loc);
             TSHttpTxnReenable(txn, TS_EVENT_HTTP_CONTINUE);
@@ -696,15 +703,14 @@ check_ts_version()
     {
         int major_ts_version = 0;
         int minor_ts_version = 0;
-        int patch_ts_version = 0;
+        int micro_ts_version = 0;
 
-        if (sscanf(ts_version, "%d.%d.%d", &major_ts_version, &minor_ts_version, &patch_ts_version) != 3)
+        if (sscanf(ts_version, "%d.%d.%d", &major_ts_version, &minor_ts_version, &micro_ts_version) != 3)
         {
             return false;
         }
 
-        /* We need Traffic Server 3.0.x */
-        if ((major_ts_version >= 3) && (minor_ts_version == 0))
+        if ((TS_VERSION_MAJOR == major_ts_version) && (TS_VERSION_MINOR == minor_ts_version) && (TS_VERSION_MICRO == micro_ts_version))
         {
             return true;
         }
@@ -735,7 +741,7 @@ TSPluginInit (int argc, const char *argv[])
 
     if (!check_ts_version())
     {
-        TSError("Plugin requires Traffic Server 3.0\n");
+        TSError("Plugin requires Traffic Server %d.%d.%d\n", TS_VERSION_MAJOR, TS_VERSION_MINOR, TS_VERSION_MICRO);
         return;
     }
 
