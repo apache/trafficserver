@@ -113,20 +113,20 @@ ats_memalign(size_t alignment, size_t size)
 
   if (unlikely(retcode)) {
     if (retcode == EINVAL) {
-      ink_fatal(1, "ats_memalign: couldn't allocate %d bytes at alignment %d - invalid alignment parameter",
-                (int)size, (int)alignment);
+      ink_fatal(1, "ats_memalign: couldn't allocate %zu bytes at alignment %zu - invalid alignment parameter",
+                size, alignment);
     } else if (retcode == ENOMEM) {
-      ink_fatal(1, "ats_memalign: couldn't allocate %d bytes at alignment %d - insufficient memory",
-                (int)size, (int)alignment);
+      ink_fatal(1, "ats_memalign: couldn't allocate %zu bytes at alignment %zu - insufficient memory",
+                size, alignment);
     } else {
-      ink_fatal(1, "ats_memalign: couldn't allocate %d bytes at alignment %d - unknown error %d",
-                (int)size, (int)alignment, retcode);
+      ink_fatal(1, "ats_memalign: couldn't allocate %zu bytes at alignment %zu - unknown error %d",
+                size, alignment, retcode);
     }
   }
 #else
   ptr = memalign(alignment, size);
   if (unlikely(ptr == NULL)) {
-    ink_fatal(1, "ats_memalign: couldn't allocate %d bytes at alignment %d", (int) size, (int) alignment);
+    ink_fatal(1, "ats_memalign: couldn't allocate %zu bytes at alignment %zu",  size,  alignment);
   }
 #endif
   return ptr;
