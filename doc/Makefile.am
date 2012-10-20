@@ -79,6 +79,12 @@ dist_trafficshell_DATA = \
 man1_MANS = \
   man/traffic_shell.1
 
+man3_MANS = \
+  sdk/TSAPI.3 \
+  sdk/TSDebug.3 \
+  sdk/TSMalloc.3 \
+  sdk/TSTrafficServerVersionGet.3
+
 EXTRA_DIST = \
   Doxyfile.in \
   $(dist_trafficshell_DATA)

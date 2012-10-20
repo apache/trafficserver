@@ -1,0 +1,153 @@
+.\"  Licensed to the Apache Software Foundation (ASF) under one .\"
+.\"  or more contributor license agreements.  See the NOTICE file .\"
+.\"  distributed with this work for additional information .\"
+.\"  regarding copyright ownership.  The ASF licenses this file .\"
+.\"  to you under the Apache License, Version 2.0 (the .\"
+.\"  "License"); you may not use this file except in compliance .\"
+.\"  with the License.  You may obtain a copy of the License at .\"
+.\" .\"
+.\"      http://www.apache.org/licenses/LICENSE-2.0 .\"
+.\" .\"
+.\"  Unless required by applicable law or agreed to in writing, software .\"
+.\"  distributed under the License is distributed on an "AS IS" BASIS, .\"
+.\"  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. .\"
+.\"  See the License for the specific language governing permissions and .\"
+.\"  limitations under the License. .\"
+.Dd October 19, 2012
+.Dt TSMalloc 3ts TSAPI
+.Sh NAME
+
+.Nm TSMalloc,
+.Nm TSrealloc,
+.Nm TSstrdup,
+.Nm TSstrndup,
+.Nm TSstrlcpy,
+.Nm TSstrlcat,
+.Nm TSfree
+.Nd TrafficServer memory allocation APIs
+.Sh LIBRARY
+Apache Traffic Server plugin API
+.Sh SYNOPSIS
+.In ts/ts.h
+
+.Ft "void *"
+.Fo TSmalloc
+.Fa "size_t size"
+.Fa "const char * path"
+.Fc
+
+.Ft "void *"
+.Fo TSrealloc
+.Fa "void * ptr"
+.Fa "size_t size"
+.Fa "const char * path"
+.Fc
+
+.Ft "char *"
+.Fo TSstrdup
+.Fa "const char * str"
+.Fa "int64_t length"
+.Fa "const char * path"
+.Fc
+
+.Ft size_t
+.Fo TSstrlcpy
+.Fa "char * dst"
+.Fa "const char * src"
+.Fa "size_t size"
+.Fc
+
+.Ft size_t
+.Fo TSstrlcat
+.Fa "char * dst"
+.Fa "const char * src"
+.Fa "size_t size"
+.Fc
+
+.Ft void
+.Fo TSfree
+.Fa "void * ptr"
+.Fc
+
+.Sh DESCRIPTION
+Traffic Server provides a number of routines for allocating and freeing
+memory. These routines correspond to similar routines in the C
+library. For example, 
+.Fn TSrealloc
+behaves like the C library routine
+.Fn realloc
+\. There are two reasons to use the routines provided by
+Traffic Server. The first is portability. The Traffic Server API routines
+behave the same on all of Traffic Server’s supported platforms. For
+example,
+.Fn realloc
+does not accept an argument of NULL on some
+platforms. The second reason is that the Traffic Server routines
+actually track the memory allocations by file and line number. This
+tracking is very efficient, is always turned on, and is useful for
+tracking down memory leaks.
+
+.Fn TSMalloc
+returns a pointer to
+.Fa size
+bytes of memory allocated from the heap. Traffic Server uses 
+.Fn TSMalloc
+internally for memory allocations.
+Always use 
+.Fn TSFree
+to release memory allocated by 
+.Fn TSMalloc ; do not
+use
+.Fn free .
+
+.Fn TSstrdup
+returns a pointer to a new string that is a duplicate of the string
+pointed to by
+.Fa str .
+The memory for the new string is allocated using
+.Fn TSMalloc
+and should be freed by a call to
+.Fn TSfree .
+
+.Fn TSstrndup
+returns a pointer to a new string that is a duplicate of the string
+pointed to by
+.Fa str
+and
+.Fa length
+bytes long. The new string will be
+NULL-terminated. This API is very useful for transforming non NULL-terminated string values returned by APIs such as
+.Fn TSMimeHdrFieldStringValueGet
+into NULL-terminated string values. The memory for the new string is allocated using
+.Fn TSmalloc and
+should be freed by a call to
+.Fn TSfree .
+
+.Fn TSstrlcpy
+copies up to
+.Fa size
+- 1 characters from the NULL-terminated string
+.Fa src
+to
+.Fa dst ,
+NULL-terminating the result.
+
+.Fn TSstrlcat
+appends the NULL-terminated string src to the end of dst. It will append at most
+.Fa size
+- strlen(dst) - 1 bytes, NULL-terminating the result.
+
+.Fn TSFree
+releases the memory allocated by
+.Fn Tsmalloc
+or
+.Fn TSrealloc .
+If
+.Fa ptr
+is NULL,
+.Fn TSfree
+does no operation.
+
+.Sh SEE ALSO
+.Xr tsapi 3ts
+.\" vim: set ts=4 sw=4 et :
