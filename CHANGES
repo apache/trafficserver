@@ -5,6 +5,10 @@ Changes with Apache Traffic Server 3.3.1
 
   *) [TS-1512] get volume & hosting work with cluster
 
+  *) [TS-1542] Fix so that rfc5861 plugin will compile against older versions of TS
+
+  *) [TS-1446] Make sure age header is enabled in rfc5861 plugin
+
   *) [TS-1539] Update build package list in README
 
   *) [TS-1535] FetchSM process_fetch_write should ignore event TS_EVENT_VCONN_WRITE_READY
