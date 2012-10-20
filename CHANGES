@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.3.1
 
+  *) [TS-1543] Enable non-debug logging for rfc5861 plugin
+
   *) [TS-1512] get volume & hosting work with cluster
 
   *) [TS-1539] Update build package list in README

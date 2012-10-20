@@ -28,7 +28,7 @@
 #include <stdbool.h>
 #include <search.h>
 #include <ts/ts.h>
-
+#include <getopt.h>
 //#include <sys/socket.h>
 //#include <netinet/in.h>
 #include <arpa/inet.h>
@@ -46,6 +46,13 @@ static const char HTTP_VALUE_STALE_WARNING[] = "110 Response is stale";
 void *troot = NULL;
 TSMutex troot_mutex;
 int txn_slot;
+
+struct
+{
+    TSTextLogObject object;
+    bool all, stale_if_error, stale_while_revalidate;
+    char* filename;
+} log_info = {NULL,false,false,false,"rfc5861"};
 
 typedef struct
 {
@@ -80,6 +87,7 @@ typedef struct
     TSVConn vconn;
     RequestInfo *req_info;
     ResponseInfo *resp_info;
+    time_t txn_start;
 } StateInfo;
 
 static ResponseInfo*
@@ -383,6 +391,12 @@ consume_resource(TSCont cont, TSEvent event, void *edata)
                 if ((state->resp_info->status == 500) || ((state->resp_info->status >= 502) && (state->resp_info->status <= 504)) || lookup_count > 2)
                 {
                     TSDebug(LOG_PREFIX, "Sending stale data as fresh");
+                    if (log_info.object && (log_info.all || log_info.stale_if_error))
+                    {
+                        CachedHeaderInfo *chi = get_cached_header_info(state->txn);
+                        TSTextLogObjectWrite(log_info.object, "stale-if-error: %d - %d < %d + %d %s", (int) state->txn_start, (int) chi->date, (int) chi->max_age, (int) chi->stale_on_error, state->req_info->effective_url);
+                        TSfree(chi);
+                    }
                     TSHttpTxnHookAdd(state->txn, TS_HTTP_SEND_RESPONSE_HDR_HOOK, state->main_cont);
                     TSHttpTxnCacheLookupStatusSet(state->txn, TS_CACHE_LOOKUP_HIT_FRESH);
                 }
@@ -528,14 +542,11 @@ rfc5861_plugin(TSCont cont, TSEvent event, void *edata)
     TSHttpTxn txn = (TSHttpTxn) edata;
     int status, lookup_count;
     CachedHeaderInfo *chi;
-    time_t now;
     TSCont fetch_cont;
     StateInfo *state;
     TSMBuffer buf;
     TSMLoc loc,warn_loc;
     TSHttpStatus http_status;
-
-    time(&now);
 
     TSDebug(LOG_PREFIX, "Entering rfc5861_plugin");
     switch (event)
@@ -548,6 +559,7 @@ rfc5861_plugin(TSCont cont, TSEvent event, void *edata)
             {
                 TSDebug(LOG_PREFIX, "External Request");
                 state = TSmalloc(sizeof(StateInfo));
+                time(&state->txn_start);
                 state->req_info = create_request_info(txn);
                 TSDebug(LOG_PREFIX, "state after TSmalloc: %p", state);
                 TSHttpTxnArgSet(txn, txn_slot, (void *) state);
@@ -580,9 +592,11 @@ rfc5861_plugin(TSCont cont, TSEvent event, void *edata)
                     // Get headers
                     chi = get_cached_header_info(txn);
 
-                    if ((now - chi->date) < (chi->max_age + chi->stale_while_revalidate))
+                    if ((state->txn_start - chi->date) < (chi->max_age + chi->stale_while_revalidate))
                     {
                         TSDebug(LOG_PREFIX, "Looks like we can return fresh info and validate in the background");
+                        if (log_info.object && (log_info.all || log_info.stale_while_revalidate))
+                            TSTextLogObjectWrite(log_info.object, "stale-while-revalidate: %d - %d < %d + %d %s", (int) state->txn_start, (int) chi->date, (int) chi->max_age, (int) chi->stale_while_revalidate, state->req_info->effective_url);
                         // lookup async
 
 #if (TS_VERSION_NUMBER >= 3003000)
@@ -605,7 +619,7 @@ rfc5861_plugin(TSCont cont, TSEvent event, void *edata)
                         TSDebug(LOG_PREFIX, "TSHttpTxnReenable()");
                         TSHttpTxnReenable(txn, TS_EVENT_HTTP_CONTINUE);
                     }
-                    else if ((now - chi->date) < (chi->max_age + chi->stale_on_error))
+                    else if ((state->txn_start - chi->date) < (chi->max_age + chi->stale_on_error))
                     {
                         TSDebug(LOG_PREFIX, "Looks like we can return fresh data on 500 error");
 #if (TS_VERSION_NUMBER >= 3003000)
@@ -621,7 +635,7 @@ rfc5861_plugin(TSCont cont, TSEvent event, void *edata)
                     }
                     else
                     {
-                        TSDebug(LOG_PREFIX, "No love? now: %d date: %d max-age: %d swr: %d soe: %d", (int) now, (int) chi->date, (int) chi->max_age, (int) chi->stale_while_revalidate, (int) chi->stale_on_error);
+                        TSDebug(LOG_PREFIX, "No love? now: %d date: %d max-age: %d swr: %d soe: %d", (int) state->txn_start, (int) chi->date, (int) chi->max_age, (int) chi->stale_while_revalidate, (int) chi->stale_on_error);
                         if (lookup_count == 1)
                         {
                             free_request_info(state->req_info);
@@ -743,6 +757,42 @@ TSPluginInit (int argc, const char *argv[])
     {
         TSError("Plugin requires Traffic Server %d.%d.%d\n", TS_VERSION_MAJOR, TS_VERSION_MINOR, TS_VERSION_MICRO);
         return;
+    }
+
+    if (argc > 1)
+    {
+        int c;
+        static const struct option longopts[] = {
+                { "log-all", no_argument, NULL, 'a' },
+                { "log-stale-while-revalidate", no_argument, NULL, 'r' },
+                { "log-stale-if-error", no_argument, NULL, 'e' },
+                { "log-filename", required_argument, NULL, 'f' },
+                { NULL, 0, NULL, 0 }
+            };
+
+        while ((c = getopt_long(argc, (char * const*) argv, "aref:", longopts, NULL)) != -1)
+        {
+            switch (c)
+            {
+                case 'a':
+                    log_info.all = true;
+                    break;
+                case 'r':
+                    log_info.stale_while_revalidate = true;
+                    break;
+                case 'e':
+                    log_info.stale_if_error = true;
+                    break;
+                case 'f':
+                    log_info.filename = strdup(optarg);
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        if (log_info.all || log_info.stale_while_revalidate || log_info.stale_if_error)
+            TSTextLogObjectCreate(log_info.filename, TS_LOG_MODE_ADD_TIMESTAMP, &log_info.object);
     }
 
     // proxy.config.http.insert_age_in_response
