@@ -117,9 +117,12 @@ ssl_read_from_net(NetHandler * nh, UnixNetVConnection * vc, EThread * lthread, i
         Debug("ssl", "[SSL_NetVConnection::ssl_read_from_net] SSL_ERROR_WOULD_BLOCK(write)");
         break;
       case SSL_ERROR_WANT_READ:
-      case SSL_ERROR_WANT_X509_LOOKUP:
         event = SSL_READ_WOULD_BLOCK;
         Debug("ssl", "[SSL_NetVConnection::ssl_read_from_net] SSL_ERROR_WOULD_BLOCK(read)");
+        break;
+      case SSL_ERROR_WANT_X509_LOOKUP:
+        event = SSL_READ_WOULD_BLOCK;
+        Debug("ssl", "[SSL_NetVConnection::ssl_read_from_net] SSL_ERROR_WOULD_BLOCK(read/x509 lookup)");
         break;
       case SSL_ERROR_SYSCALL:
         if (rres != 0) {
