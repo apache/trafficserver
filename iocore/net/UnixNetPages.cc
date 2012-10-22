@@ -62,7 +62,12 @@ struct ShowNet: public ShowCont
     }
 
     ink_hrtime now = ink_get_hrtime();
-    forl_LL(UnixNetVConnection, vc, nh->open_list) {
+    DList(UnixNetVConnection, show_link) show_list;
+    forl_LL(UnixNetVConnection, vc, nh->open_list)
+      show_list.push(vc);
+    while (UnixNetVConnection *vc = show_list.pop()) {
+      if (vc->closed)
+        continue;
 //      uint16_t port = ats_ip_port_host_order(&addr.sa);
       if (ats_is_ip(&addr) && addr != vc->server_addr)
         continue;
@@ -168,8 +173,13 @@ struct ShowNet: public ShowCont
     CHECK_SHOW(show("<H3>Thread: %d</H3>\n", ithread));
     CHECK_SHOW(show("<table border=1>\n"));
     int connections = 0;
+    DList(UnixNetVConnection, show_link) show_list;
     forl_LL(UnixNetVConnection, vc, nh->open_list)
-      connections++;
+      show_list.push(vc);
+    while (UnixNetVConnection *vc = show_list.pop()) {
+      if (!vc->closed)
+        connections++;
+    }
     CHECK_SHOW(show("<tr><td>%s</td><td>%d</td></tr>\n", "Connections", connections));
     //CHECK_SHOW(show("<tr><td>%s</td><td>%d</td></tr>\n", "Last Poll Size", pollDescriptor->nfds));
     CHECK_SHOW(show("<tr><td>%s</td><td>%d</td></tr>\n", "Last Poll Ready", pollDescriptor->result));
