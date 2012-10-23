@@ -3,6 +3,33 @@ ESI plugin
 
 This plugin implements the ESI specification.
 
+Supportted ESI tags:
+    esi:include
+    esi:remove
+    esi:comment
+    esi:vars
+    esi:choose
+    esi:when
+    esi:otherwise
+    esi:try
+    esi:attempt
+    esi:except
+
+extended ESI tags:
+    esi:special-include
+
+Supported variables:
+    $(HTTP_HOST)
+    $(HTTP_REFERER)
+    $(HTTP_ACCEPT_LANGUAGE{name})
+    $(HTTP_COOKIE{name}) or $(HTTP_COOKIE{name;subkey})
+    $(QUERY_STRING{name})
+
+  Note: the name is the key name such as "username", "id" etc.
+        cookie support sub-name or sub-key, the format is: name;subkey, such as "l;u", "l;t" etc.
+           fg. such cookie string: l=u=test&t=1350952328, the value of $(HTTP_COOKIE{"l;u"}) is test
+           and the value of $(HTTP_COOKIE{"l;t"}) is 1350952328
+
 Version 1.3.0
 -------------
 - Upgrading to yts_esi_lib-1.3.0 and using yts_http_fetcher_impl-1.0.0
