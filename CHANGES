@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.3.1
 
+  *) [TS-1223] fix the crash in http_ui show network connections
+
   *) [TS-1543] Enable non-debug logging for rfc5861 plugin
 
   *) [TS-1512] get volume & hosting work with cluster

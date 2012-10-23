@@ -50,7 +50,7 @@ struct ShowCont: public Continuation
     int l = ebuf - buf;
     va_start(aap, s);
     va_copy(va_scratch, aap);
-    int done = vsnprintf(buf, l, s, aap);
+    int done = vsnprintf(buf, l, s, va_scratch);
     va_end(va_scratch);
     if (done > l - 256)
     {
