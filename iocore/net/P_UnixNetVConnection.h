@@ -196,7 +196,6 @@ public:
   NetState read;
   NetState write;
 
-  LINK(UnixNetVConnection, show_link);
   LINK(UnixNetVConnection, cop_link);
   LINKM(UnixNetVConnection, read, ready_link)
   SLINKM(UnixNetVConnection, read, enable_link)
