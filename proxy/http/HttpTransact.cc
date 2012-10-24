@@ -35,7 +35,6 @@
 #include "ParseRules.h"
 #include "HTTP.h"
 #include "HdrUtils.h"
-#include "HttpMessageBody.h"
 #include "MimeTable.h"
 #include "logging/Log.h"
 #include "logging/LogUtils.h"
@@ -7863,7 +7862,7 @@ HttpTransact::build_response(State* s, HTTPHdr* base_response, HTTPHdr* outgoing
                              HTTPStatus status_code, const char *reason_phrase)
 {
   if (reason_phrase == NULL) {
-    reason_phrase = HttpMessageBody::StatusCodeName(status_code);
+    reason_phrase = http_hdr_reason_lookup(status_code);
   }
 
   if (base_response == NULL) {
@@ -8099,7 +8098,7 @@ HttpTransact::build_error_response(State *s, HTTPStatus status_code, const char 
   }
 
   va_start(ap, format);
-  reason_phrase = (reason_phrase_or_null ? reason_phrase_or_null : (char *) (HttpMessageBody::StatusCodeName(status_code)));
+  reason_phrase = (reason_phrase_or_null ? reason_phrase_or_null : (char *) (http_hdr_reason_lookup(status_code)));
   if (unlikely(!reason_phrase))
     reason_phrase = "Unknown HTTP Status";
 
@@ -8224,7 +8223,7 @@ HttpTransact::build_redirect_response(State* s)
   char body_language[256], body_type[256];
 
   HTTPStatus status_code = HTTP_STATUS_MOVED_TEMPORARILY;
-  char *reason_phrase = (char *) (HttpMessageBody::StatusCodeName(status_code));
+  char *reason_phrase = (char *) (http_hdr_reason_lookup(status_code));
 
   build_response(s, &s->hdr_info.client_response, s->client_info.http_version, status_code, reason_phrase);
 

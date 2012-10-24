@@ -27,7 +27,6 @@
 #include "HTTP.h"
 #include "HdrUtils.h"
 #include "HttpCompat.h"
-#include "HttpMessageBody.h"
 
 #include "I_Machine.h"
 
@@ -879,7 +878,7 @@ HttpTransactHeaders::convert_wuts_code_to_normal_reason(HTTPHdr *hdr)
   if (!phrase || (length == 0 || (phrase[0] != '!')))
     return;
 
-  phrase = (const char *) HttpMessageBody::StatusCodeName(hdr->status_get());
+  phrase = (const char *) http_hdr_reason_lookup(hdr->status_get());
   hdr->reason_set(phrase, strlen(phrase));
 }
 

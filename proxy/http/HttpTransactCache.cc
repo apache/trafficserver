@@ -29,7 +29,6 @@
 #include "time.h"
 #include "HTTP.h"
 #include "HttpCompat.h"
-#include "HttpMessageBody.h"
 #include "Error.h"
 #include "InkErrno.h"
 

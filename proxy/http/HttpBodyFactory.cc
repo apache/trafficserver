@@ -34,7 +34,6 @@
 #include <dirent.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include "HttpMessageBody.h"
 #include "URL.h"
 #include <logging/Log.h>
 #include <logging/LogAccess.h>
@@ -160,8 +159,8 @@ HttpBodyFactory::fabricate_with_old_api(const char *type, HttpTransact::State * 
     buffer = (char *)ats_free_null(buffer);
   }
   /////////////////////////////////////////////////////////////////////
-  // handle return of instantiated template or internal default, and //
-  // generate the content language and content type return values    //
+  // handle return of instantiated template and generate the content //
+  // language and content type return values                         //
   /////////////////////////////////////////////////////////////////////
 
   if (buffer) {                  // got an instantiated template
@@ -180,17 +179,10 @@ HttpBodyFactory::fabricate_with_old_api(const char *type, HttpTransact::State * 
                    set, type, set, "default", url, lang_ptr, charset_ptr);
       }
     }
-  } else {                       // no template, using old style body
-    buffer = HttpMessageBody::MakeErrorBodyVA(max_buffer_length, resulting_buffer_length,
-                                              context->http_config_param, status_code, reason_or_null, format, ap);
+  } else {                       // no template
     if (enable_logging) {
-      if (enable_customizations) {       // we wanted a template
-        Log::error(("BODY_FACTORY: customization enabled "
-                    "but can't find templates '%s' or '%s', using hardcoded default body for url '%s'"),
+        Log::error(("BODY_FACTORY: can't find templates '%s' or '%s' for url `%s'"),
                    type, "default", url);
-      } else {                   // we wanted an old-style body
-        Log::error(("BODY_FACTORY: using hardcoded default '%s' body for url '%s'"), type, url);
-      }
     }
   }
   unlock();

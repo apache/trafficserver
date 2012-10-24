@@ -51,8 +51,6 @@ libhttp_a_SOURCES = \
   HttpConnectionCount.h \
   HttpDebugNames.cc \
   HttpDebugNames.h \
-  HttpMessageBody.cc \
-  HttpMessageBody.h \
   HttpPages.cc \
   HttpPages.h \
   HttpProxyServerMain.cc \

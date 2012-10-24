@@ -65,7 +65,6 @@
 #include "P_Net.h"
 #include "MimeTable.h"
 #include "TransformInternal.h"
-#include "HttpMessageBody.h"
 #include "HdrUtils.h"
 #include "Log.h"
 
@@ -997,7 +996,7 @@ RangeTransform::change_response_header()
 
   status_code = HTTP_STATUS_PARTIAL_CONTENT;
   m_transform_resp->status_set(status_code);
-  reason_phrase = (char *) (HttpMessageBody::StatusCodeName(status_code));
+  reason_phrase = (char *) (http_hdr_reason_lookup(status_code));
   m_transform_resp->reason_set(reason_phrase, strlen(reason_phrase));
 
   // set the right Content-Type for multiple entry Range
