@@ -39,17 +39,14 @@
 //
 /////////////////////////////////////////////////////////////
 //
-// struct SslConfigParams
+// struct SSLConfigParams
 //
 // configuration parameters as they apear in the global
 // configuration file.
 /////////////////////////////////////////////////////////////
 
 
-struct SslConfigParams
-#ifdef USE_CONFIG_PROCESSOR
-: public ConfigInfo
-#endif
+struct SSLConfigParams : public ConfigInfo
 {
 public:
   enum SSL_SESSION_CACHE_MODE
@@ -63,8 +60,8 @@ public:
   char *getServerCACertPathOnly(void) const { return CACertPath; }
   char *getServerKeyPathOnly(void) const { return serverKeyPathOnly; }
 
-  SslConfigParams();
-  virtual ~SslConfigParams();
+  SSLConfigParams();
+  virtual ~SSLConfigParams();
 
 private:
   void initialize();
@@ -92,40 +89,35 @@ private:
   long ssl_ctx_options;
 
   friend struct SSLNetProcessor;
-  friend class SslConfig;
+  friend class SSLConfig;
 };
 
 /////////////////////////////////////////////////////////////
 //
-// class SslConfig
+// class SSLConfig
 //
 /////////////////////////////////////////////////////////////
-class SslConfig
+class SSLConfig
 {
 public:
   static void startup();
   static void reconfigure();
-  static SslConfigParams *acquire();
-  static void release(SslConfigParams * params);
+  static SSLConfigParams * acquire();
+  static void release(SSLConfigParams * params);
 
   struct scoped_config {
-    scoped_config() : p(SslConfig::acquire()) {}
-    ~scoped_config() { SslConfig::release(p); }
-    operator const SslConfigParams * () const { return p; }
+    scoped_config() : p(SSLConfig::acquire()) {}
+    ~scoped_config() { SSLConfig::release(p); }
+    operator const SSLConfigParams * () const { return p; }
 
     private:
-      SslConfigParams * p;
+      SSLConfigParams * p;
   };
 
 private:
   static int id;
-#ifndef USE_CONFIG_PROCESSOR
-  static SslConfigParams *ssl_config_params;
-#endif
   friend struct SSLNetProcessor;
 };
-
-extern SslConfig sslTerminationConfig;
 
 #include "Diags.h"
 

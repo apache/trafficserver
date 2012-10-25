@@ -22,7 +22,7 @@
  */
 
 /*************************** -*- Mod: C++ -*- ******************************
-  SslConfig.cc
+  SSLConfig.cc
    Created On      : 07/20/2000
 
    Description:
@@ -34,18 +34,13 @@
 
 #include <string.h>
 #include "P_Net.h"
+#include "P_SSLConfig.h"
 #include <records/I_RecHttp.h>
 #include <openssl/ssl.h>
 
-int SslConfig::id = 0;
+int SSLConfig::id = 0;
 
-SslConfig sslTerminationConfig;
-
-#ifndef USE_CONFIG_PROCESSOR
-SslConfigParams *SslConfig::ssl_config_params;
-#endif
-
-SslConfigParams::SslConfigParams()
+SSLConfigParams::SSLConfigParams()
 {
   serverCertPathOnly =
     serverCertChainPath =
@@ -63,13 +58,13 @@ SslConfigParams::SslConfigParams()
   ssl_session_cache_size = 1024*20;
 }
 
-SslConfigParams::~SslConfigParams()
+SSLConfigParams::~SSLConfigParams()
 {
   cleanup();
 }
 
 void
-SslConfigParams::cleanup()
+SSLConfigParams::cleanup()
 {
   ats_free_null(serverCertChainPath);
   ats_free_null(CACertFilename);
@@ -114,7 +109,7 @@ set_paths_helper(const char *path, const char *filename, char **final_path, char
 }
 
 void
-SslConfigParams::initialize()
+SSLConfigParams::initialize()
 {
   char serverCertRelativePath[PATH_NAME_MAX] = "";
   char *ssl_server_private_key_path = NULL;
@@ -212,41 +207,29 @@ SslConfigParams::initialize()
 
 
 void
-SslConfig::startup()
+SSLConfig::startup()
 {
   reconfigure();
 }
 
-
 void
-SslConfig::reconfigure()
+SSLConfig::reconfigure()
 {
-  SslConfigParams *params;
-  params = NEW(new SslConfigParams);
+  SSLConfigParams *params;
+  params = NEW(new SSLConfigParams);
   params->initialize();         // re-read configuration
-#ifdef USE_CONFIG_PROCESSOR
   id = configProcessor.set(id, params);
-#else
-  ssl_config_params = params;
-#endif
 }
 
-SslConfigParams *
-SslConfig::acquire()
+SSLConfigParams *
+SSLConfig::acquire()
 {
-#ifndef USE_CONFIG_PROCESSOR
-  return ssl_config_params;
-#else
-  return ((SslConfigParams *) configProcessor.get(id));
-#endif
+  return ((SSLConfigParams *) configProcessor.get(id));
 }
 
 void
-SslConfig::release(SslConfigParams * params)
+SSLConfig::release(SSLConfigParams * params)
 {
-  (void) params;
-#ifdef USE_CONFIG_PROCESSOR
   configProcessor.release(id, params);
-#endif
 }
 

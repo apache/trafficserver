@@ -260,7 +260,7 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
   if (bytes > 0) {
     if (ret == SSL_READ_WOULD_BLOCK) {
       if (readSignalAndUpdate(VC_EVENT_READ_READY) != EVENT_CONT) {
-        Debug("ssl", "ssl_read_from_net, readSignal !=EVENT_CONT");
+        Debug("ssl", "ssl_read_from_net, readSignal != EVENT_CONT");
         return;
       }
     }

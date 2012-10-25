@@ -157,7 +157,6 @@ start_HttpProxyPort(const HttpProxyPort& port, unsigned nthreads)
 {
   NetProcessor::AcceptOptions net;
   HttpAccept::Options         http;
-  SslConfig::scoped_config    sslParam;
 
   net.accept_threads = nthreads;
 

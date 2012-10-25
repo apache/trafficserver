@@ -30,14 +30,14 @@ class SSLContextStorage;
 
 class SSLCertLookup
 {
-  bool buildTable();
+  bool buildTable(const SSLConfigParams * param);
   const char *extractIPAndCert(
     matcher_line * line_info, char **addr, char **cert, char **ca, char **priKey) const;
   bool addInfoToHash(
+    const SSLConfigParams * param,
     const char *strAddr, const char *cert, const char *ca, const char *serverPrivateKey);
 
   char              config_file_path[PATH_NAME_MAX];
-  SslConfigParams * param;
   bool              multipleCerts;
 
   SSLContextStorage * ssl_storage;
@@ -46,7 +46,7 @@ class SSLCertLookup
 public:
   bool hasMultipleCerts() const { return multipleCerts; }
 
-  void init(SslConfigParams * param);
+  void init(const SSLConfigParams * param);
   SSL_CTX *findInfoInHash(const char * address) const;
 
   // Return the last-resort default TLS context if there is no name or address match.

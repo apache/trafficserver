@@ -133,7 +133,8 @@ SSLNetProcessor::reconfigure(void)
     initSSLLocks();
   }
 
-  SslConfigParams *param = sslTerminationConfig.acquire();
+  SSLConfig::scoped_config param;
+
   ink_assert(param);
 
   if (HttpProxyPort::hasSSL()) {
@@ -150,7 +151,6 @@ SSLNetProcessor::reconfigure(void)
       logSSLError("Can't initialize the SSL client, HTTPS in remap rules will not function");
   }
 
-  sslTerminationConfig.release(param);
   return (err);
 }
 
@@ -209,7 +209,7 @@ SSLNetProcessor::logSSLError(const char *errStr, int critical)
 }
 
 int
-SSLNetProcessor::initSSLServerCTX(SSL_CTX * lCtx, const SslConfigParams * param,
+SSLNetProcessor::initSSLServerCTX(SSL_CTX * lCtx, const SSLConfigParams * param,
     const char *serverCertPtr, const char *serverCaCertPtr,
     const char *serverKeyPtr)
 {
@@ -221,10 +221,10 @@ SSLNetProcessor::initSSLServerCTX(SSL_CTX * lCtx, const SslConfigParams * param,
   SSL_CTX_set_options(lCtx, param->ssl_ctx_options);
 
   switch (param->ssl_session_cache) {
-  case SslConfigParams::SSL_SESSION_CACHE_MODE_OFF:
+  case SSLConfigParams::SSL_SESSION_CACHE_MODE_OFF:
     SSL_CTX_set_session_cache_mode(lCtx, SSL_SESS_CACHE_OFF|SSL_SESS_CACHE_NO_INTERNAL);
     break;
-  case SslConfigParams::SSL_SESSION_CACHE_MODE_SERVER:
+  case SSLConfigParams::SSL_SESSION_CACHE_MODE_SERVER:
     SSL_CTX_set_session_cache_mode(lCtx, SSL_SESS_CACHE_SERVER);
     SSL_CTX_sess_set_cache_size(lCtx, param->ssl_session_cache_size);
     break;
@@ -335,7 +335,7 @@ SSLNetProcessor::initSSLServerCTX(SSL_CTX * lCtx, const SslConfigParams * param,
 }
 
 int
-SSLNetProcessor::initSSLClient(const SslConfigParams * param)
+SSLNetProcessor::initSSLClient(const SSLConfigParams * param)
 {
   ink_ssl_method_t meth = NULL;
   int client_verify_server;
@@ -399,7 +399,7 @@ SSLNetProcessor::initSSLClient(const SslConfigParams * param)
 int
 SSLNetProcessor::start(int number_of_ssl_threads)
 {
-  sslTerminationConfig.startup();
+  SSLConfig::startup();
   int err = reconfigure();
 
   if (err != 0) {

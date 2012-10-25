@@ -103,17 +103,17 @@ make_ssl_context(void * arg)
 class SSLContextStorage
 {
 
-  struct SslEntry
+  struct SSLEntry
   {
-    explicit SslEntry(SSL_CTX * c) : ctx(c) {}
+    explicit SSLEntry(SSL_CTX * c) : ctx(c) {}
 
-    void Print() const { Debug("ssl", "SslEntry=%p SSL_CTX=%p", this, ctx); }
+    void Print() const { Debug("ssl", "SSLEntry=%p SSL_CTX=%p", this, ctx); }
 
     SSL_CTX * ctx;
-    LINK(SslEntry, link);
+    LINK(SSLEntry, link);
   };
 
-  Trie<SslEntry>  wildcards;
+  Trie<SSLEntry>  wildcards;
   InkHashTable *  hostnames;
 
 public:
@@ -147,7 +147,7 @@ static const matcher_tags sslCertTags = {
 };
 
 SSLCertLookup::SSLCertLookup()
-  : param(NULL), multipleCerts(false), ssl_storage(NEW(new SSLContextStorage())), ssl_default(NULL)
+  : multipleCerts(false), ssl_storage(NEW(new SSLContextStorage())), ssl_default(NULL)
 {
   *config_file_path = '\0';
 }
@@ -164,11 +164,9 @@ SSLCertLookup::findInfoInHash(const char * address) const
 }
 
 void
-SSLCertLookup::init(SslConfigParams * p)
+SSLCertLookup::init(const SSLConfigParams * param)
 {
-  param = p;
-
-  this->multipleCerts = buildTable();
+  this->multipleCerts = buildTable(param);
 
   // We *must* have a default context even if it can't possibly work. The default context is used to bootstrap the SSL
   // handshake so that we can subsequently do the SNI lookup to switch to the real context.
@@ -178,7 +176,7 @@ SSLCertLookup::init(SslConfigParams * p)
 }
 
 bool
-SSLCertLookup::buildTable()
+SSLCertLookup::buildTable(const SSLConfigParams * param)
 {
   char *tok_state = NULL;
   char *line = NULL;
@@ -195,8 +193,7 @@ SSLCertLookup::buildTable()
   bool alarmAlready = false;
   char *configFilePath = NULL;
 
-  if (param != NULL)
-    configFilePath = param->getConfigFilePath();
+  configFilePath = param->getConfigFilePath();
 
   // Table should be empty
 //  ink_assert(num_el == 0);
@@ -237,7 +234,7 @@ SSLCertLookup::buildTable()
           IOCORE_SignalError(errBuf, alarmAlready);
         } else {
           if (sslCert != NULL) {
-            addInfoToHash(addr, sslCert, sslCa, priKey);
+            addInfoToHash(param, addr, sslCert, sslCa, priKey);
             ret = 1;
           }
           ats_free(sslCert);
@@ -320,6 +317,7 @@ SSLCertLookup::extractIPAndCert(matcher_line * line_info, char **addr, char **ce
 
 bool
 SSLCertLookup::addInfoToHash(
+    const SSLConfigParams * param,
     const char *strAddr, const char *cert,
     const char *caCert, const char *serverPrivateKey)
 {
@@ -331,8 +329,8 @@ SSLCertLookup::addInfoToHash(
     return (false);
   }
 
-  if (ssl_NetProcessor.initSSLServerCTX(ctx, this->param, cert, caCert, serverPrivateKey) == 0) {
-    char * certpath = Layout::relative_to(this->param->getServerCertPathOnly(), cert);
+  if (ssl_NetProcessor.initSSLServerCTX(ctx, param, cert, caCert, serverPrivateKey) == 0) {
+    char * certpath = Layout::relative_to(param->getServerCertPathOnly(), cert);
 
     // Index this certificate by the specified IP(v6) address. If the address is "*", make it the default context.
     if (strAddr) {
@@ -544,7 +542,7 @@ SSLContextStorage::insert(SSL_CTX * ctx, const char * name)
     }
 
     Debug("ssl", "indexed wildcard certificate for '%s' as '%s' with SSL_CTX %p", name, reversed, ctx);
-    return this->wildcards.Insert(reversed, new SslEntry(ctx), 0 /* rank */, -1 /* keylen */);
+    return this->wildcards.Insert(reversed, new SSLEntry(ctx), 0 /* rank */, -1 /* keylen */);
   } else {
     Debug("ssl", "indexed '%s' with SSL_CTX %p", name, ctx);
     ink_hash_table_insert(this->hostnames, name, (void *)ctx);
@@ -565,7 +563,7 @@ SSLContextStorage::lookup(const char * name) const
   if (!this->wildcards.Empty()) {
     char namebuf[TS_MAX_HOST_NAME_LEN + 1];
     char * reversed;
-    SslEntry * entry;
+    SSLEntry * entry;
 
     reversed = reverse_dns_name(name, namebuf);
     if (!reversed) {
@@ -585,7 +583,7 @@ SSLContextStorage::lookup(const char * name) const
 
 #if TS_HAS_TESTS
 
-REGRESSION_TEST(SslHostLookup)(RegressionTest* t, int atype, int * pstatus)
+REGRESSION_TEST(SSLHostLookup)(RegressionTest* t, int atype, int * pstatus)
 {
   TestBox           tb(t, pstatus);
   SSLContextStorage storage;
