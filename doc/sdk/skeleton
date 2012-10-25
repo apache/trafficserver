@@ -1,0 +1,135 @@
+#! /usr/bin/env perl
+
+#  Licensed to the Apache Software Foundation (ASF) under one 
+#  or more contributor license agreements.  See the NOTICE file 
+#  distributed with this work for additional information 
+#  regarding copyright ownership.  The ASF licenses this file 
+#  to you under the Apache License, Version 2.0 (the 
+#  "License"); you may not use this file except in compliance 
+#  with the License.  You may obtain a copy of the License at 
+# 
+#      http://www.apache.org/licenses/LICENSE-2.0 
+# 
+#  Unless required by applicable law or agreed to in writing, software 
+#  distributed under the License is distributed on an "AS IS" BASIS, 
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+#  See the License for the specific language governing permissions and 
+
+# usage: skeleton [--header=PATH ...] API ...
+# Using declarations from the given headers, generate a skeleton man page
+# for the named APIs.
+
+use 5.012;
+use warnings;
+use autodie;
+use Getopt::Long;
+use Data::dumper qw/Dumper/;
+
+sub slurp
+{
+  my $path = shift;
+  open(my $fh, "<", $path);
+  return do { local $/; <$fh> }
+}
+
+sub datestamp
+{
+  use POSIX qw/strftime/;
+
+  return strftime "%B %d, %Y", localtime;
+}
+
+# Extract the function declarations from an ATS header file.
+sub parse
+{
+  my $decls = [];
+
+  foreach my $header (@_) {
+    my $defs = slurp($header);
+
+    while ($defs =~ m/
+        tsapi\s+        # Start with 'tsapi'
+        ([^;\(]+)       # Capture the followinf return value
+        \s+(\w+)\s*     # Capture the word before the opening parenthesis
+        \(([^\)]+)\)    # Capture the arguments
+        .*\;/xg) {
+      chomp $1; chomp $2; chomp $3;
+      my $d ={ return => $1, name => $2, args => $3 };
+      $d->{args} =~ s/\n//g;
+      push @$decls, $d;
+    }
+  }
+
+  return $decls;
+}
+
+# Return a mandoc declaration for the given API name.
+sub define
+{
+  my $decls = shift;
+  my $name = shift;
+
+  foreach my $d (@$decls) {
+    if ($d->{name} eq $name) {
+      my @args;
+      my $mdoc;
+      @args = split(/,\s+/, $d->{args}); # split args at comma boundaries
+      @args = map { "\"$_\"" } @args; # quote each arg list element
+      $mdoc =
+          ".Ft \"" . $d->{return} . "\"\n" .
+          ".Fo " . $name . "\n" .
+          ".Fa " . join("\n.Fa ", @args) . "\n" .
+          ".Fc";
+      $mdoc =~ s/^\s+(.*)\s+$/$1/;
+      return $mdoc;
+    }
+  }
+}
+
+my @headers = ();
+my $options = GetOptions(
+  "header=s" => \@headers
+);
+
+my $decls = parse(@headers);
+#say define($decls, @ARGV);
+
+print <<EOF;
+.\\"  Licensed to the Apache Software Foundation (ASF) under one .\\"
+.\\"  or more contributor license agreements.  See the NOTICE file .\\"
+.\\"  distributed with this work for additional information .\\"
+.\\"  regarding copyright ownership.  The ASF licenses this file .\\"
+.\\"  to you under the Apache License, Version 2.0 (the .\\"
+.\\"  "License"); you may not use this file except in compliance .\\"
+.\\"  with the License.  You may obtain a copy of the License at .\\"
+.\\" .\\"
+.\\"      http://www.apache.org/licenses/LICENSE-2.0 .\\"
+.\\" .\\"
+.\\"  Unless required by applicable law or agreed to in writing, software .\\"
+.\\"  distributed under the License is distributed on an "AS IS" BASIS, .\\"
+.\\"  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. .\\"
+.\\"  See the License for the specific language governing permissions and .\\"
+.Dd @{[ datestamp() ]}
+.Dt @{[ $ARGV[0] ]} 3ts TSAPI
+.Sh NAME
+.Nm @{[ join(",\n.Nm ", @ARGV) ]}
+.Nd XXX Api short description
+.Sh LIBRARY
+Apache Traffic Server plugin API
+.Sh SYNOPSIS
+.In ts/ts.h
+EOF
+
+print @{[ map { define($decls, $_) . "\n" } @ARGV ]};
+
+print <<EOF;
+.Sh DESCRIPTION
+.Sh RETURN VALUES
+.Sh EXAMPLES
+.nf
+#include <ts/ts.h>
+.fi
+.Sh SEE ALSO
+.Xr TSAPI 3ts
+EOF
+# vim: set ts=2 sw=2 et :
