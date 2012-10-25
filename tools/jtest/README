@@ -1,0 +1,78 @@
+jtest is a performance stress tool for high performance proxy server
+Apache Traffic Server.
+
+jtest works at both UA and OS side when benchmarking the proxy, sure 
+you can run client or server only.
+
+
+Here is a step-by-step guide for benchmark Apache Traffic Server with jtest:
+On localhost:
+1, setup the remap rules in Apache Traffic Server:
+  add the following line into remap.config:
+    map http://localhost:9080/ http://127.0.0.1:9080/
+2, run jtest:
+  jtest
+  which is equal to "jtest -s 9080 -S localhost -p 8080 -P localhost",
+  will setup 100 connections (-c), push a hit ratio at 40% (-z), run as
+  fast as possible.
+
+The output of jtest:
+ con  new    ops 1byte   lat   bytes/per     svrs  new  ops    total   time  err
+ 100  468 2329.6    39    39 36323315/363233   617  617  617  46131904 136980.9    0
+ 100  471 2361.5    39    40 35993941/359939   619  619  619  45466393 136981.9    0
+ 100  465 2327.0    40    41 35385495/353854   607  607  607  45095273 136982.9    0
+  con: number of the con-current connections
+  new: the number of created connections
+  ops: the request handled per second
+  lat: response time
+
+On separate hosts:
+1, determine the roles:
+  we take 'ts.cn' as the domain we are benchmarking, and 192.168.0.1 as
+  the server which is running Apache Traffic Server, 192.168.0.2 as the
+  host we run jtest.
+2, setup the remap rules in Apache Traffic Server:
+  in our case, we should add the following lines into remap.config:
+    map http://ts.cn:9080/ http://192.168.0.2:9080/
+3, we run jtest from 192.168.0.2:
+  jtest -S ts.cn -P 192.168.0.1
+
+If you have many hosts running jtest:
+1, setup the remap rules in Apache Traffic Server:
+  in our case, we should add the following lines into remap.config:
+    map http://ts.cn:9080/ http://192.168.0.2:9080/
+    map http://ts.cn:9081/ http://192.168.0.2:9081/
+    map http://ts.cn:9082/ http://192.168.0.3:9082/
+    map http://ts.cn:9083/ http://192.168.0.3:9083/
+    map http://ts.cn:9084/ http://192.168.0.4:9084/
+2, run test:
+  on 192.168.0.2:
+    jtest -S ts.cn -s 9080 -P 192.168.0.1
+    jtest -S ts.cn -s 9081 -P 192.168.0.1
+  on 192.168.0.3:
+    jtest -S ts.cn -s 9082 -P 192.168.0.1
+    jtest -S ts.cn -s 9083 -P 192.168.0.1
+  on 192.168.0.4:
+    jtest -S ts.cn -s 9084 -P 192.168.0.1
+
+
+Some common used options:
+-c, --clients           int   100       Clients
+  compare to the -c in ab
+  by default, jtest will make 100 connections.
+
+-k, --keepalive         int   4         Keep-Alive Length
+-K, --keepalive_cons    int   4         # Keep-Alive Connections (0:unlimit)
+  compare to -k in ab
+  how many Keep-Alive connections and how many requests for each Keep-Alive
+  connections
+
+-z, --hitrate           dbl   0.400     Hit Rate
+  by default, the hit ratio is 40%
+
+-u, --urls              str   (null)    URLs from File
+  you can provide your own URLs, if you do not use jtest on the OS side.
+
+-y, --only_clients      on    false     Only Clients
+-Y, --only_server       on    false     Only Server
+  in-case of you do not use both the server and client
