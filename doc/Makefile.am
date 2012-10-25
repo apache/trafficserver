@@ -83,6 +83,7 @@ man3_MANS = \
   sdk/TSAPI.3 \
   sdk/TSDebug.3 \
   sdk/TSMalloc.3 \
+  sdk/TSPluginInit.3 \
   sdk/TSTrafficServerVersionGet.3
 
 EXTRA_DIST = \
