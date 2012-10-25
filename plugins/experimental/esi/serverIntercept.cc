@@ -40,7 +40,7 @@ using std::string;
 
 #define DEBUG_TAG "plugin_esi_intercept"
 
-struct ContData {
+struct SContData {
   TSVConn net_vc;
   TSCont contp;
 
@@ -71,7 +71,7 @@ struct ContData {
   bool req_hdr_parsed;
   bool initialized;
 
-  ContData(TSCont cont) 
+  SContData(TSCont cont) 
     : net_vc(0), contp(cont), input(), output(), body(""), req_content_len(0), req_hdr_bufp(0), req_hdr_loc(0),
       req_hdr_parsed(false), initialized(false) {
     http_parser = TSHttpParserCreate();
@@ -81,7 +81,7 @@ struct ContData {
 
   void setupWrite();
 
-  ~ContData() {
+  ~SContData() {
     TSDebug(DEBUG_TAG, "[%s] Destroying continuation data", __FUNCTION__);
     TSHttpParserDestroy(http_parser); 
     if (req_hdr_loc) {
@@ -94,10 +94,10 @@ struct ContData {
 };
 
 bool
-ContData::init(TSVConn vconn)
+SContData::init(TSVConn vconn)
 {
   if (initialized) {
-    TSError("[%s] ContData already initialized!", __FUNCTION__);
+    TSError("[%s] SContData already initialized!", __FUNCTION__);
     return false;
   }
   
@@ -112,12 +112,12 @@ ContData::init(TSVConn vconn)
   TSHttpHdrTypeSet(req_hdr_bufp, req_hdr_loc, TS_HTTP_TYPE_REQUEST);
 
   initialized = true;
-  TSDebug(DEBUG_TAG, "[%s] ContData initialized!", __FUNCTION__);
+  TSDebug(DEBUG_TAG, "[%s] SContData initialized!", __FUNCTION__);
   return true;
 }
 
 void
-ContData::setupWrite() {
+SContData::setupWrite() {
   TSAssert(output.buffer == 0);
   output.buffer = TSIOBufferCreate();
   output.reader = TSIOBufferReaderAlloc(output.buffer);
@@ -125,13 +125,15 @@ ContData::setupWrite() {
 }
 
 static bool
-handleRead(ContData *cont_data, bool &read_complete) {
+handleRead(SContData *cont_data, bool &read_complete) {
   int avail = TSIOBufferReaderAvail(cont_data->input.reader);
   if (avail == TS_ERROR) {
     TSError("[%s] Error while getting number of bytes available", __FUNCTION__);
     return false;
   }
   
+          TSDebug(DEBUG_TAG, "[%s] Parsed header, avail: %d", __FUNCTION__, avail);
+
   int consumed = 0;
   if (avail > 0) {
     int64_t data_len;
@@ -199,8 +201,8 @@ handleRead(ContData *cont_data, bool &read_complete) {
 }
 
 static bool
-processRequest(ContData *cont_data) {
-  string reply_header("HTTP/1.0 200 OK\r\n");
+processRequest(SContData *cont_data) {
+  string reply_header("HTTP/1.1 200 OK\r\n");
   
   TSMLoc field_loc = TSMimeHdrFieldGet(cont_data->req_hdr_bufp, cont_data->req_hdr_loc, 0);
   while (field_loc) {
@@ -238,7 +240,7 @@ processRequest(ContData *cont_data) {
             reply_header.append(value, value_len);
           }
         }
-        reply_header += "\r\n";
+        reply_header.append("\r\n");
       }
     }
     next_field_loc = TSMimeHdrFieldNext(cont_data->req_hdr_bufp, cont_data->req_hdr_loc, field_loc);
@@ -255,6 +257,8 @@ processRequest(ContData *cont_data) {
   char buf[64];
   snprintf(buf, 64, "%s: %d\r\n\r\n", TS_MIME_FIELD_CONTENT_LENGTH, body_size);
   reply_header.append(buf);
+
+  //TSError("[%s] reply header: \n%s", __FUNCTION__, reply_header.data());
 
   cont_data->setupWrite();
   if (TSIOBufferWrite(cont_data->output.buffer, reply_header.data(), reply_header.size()) == TS_ERROR) {
@@ -275,7 +279,9 @@ processRequest(ContData *cont_data) {
 
 static int
 serverIntercept(TSCont contp, TSEvent event, void *edata) {
-  ContData *cont_data = static_cast<ContData *>(TSContDataGet(contp));
+    TSDebug(DEBUG_TAG, "[%s] Received event: %d", __FUNCTION__, (int)event);
+
+  SContData *cont_data = static_cast<SContData *>(TSContDataGet(contp));
   bool read_complete = false;
   bool shutdown = false;
   switch (event) {
@@ -309,7 +315,7 @@ serverIntercept(TSCont contp, TSEvent event, void *edata) {
     break;
   case TS_EVENT_ERROR:
     // todo: do some error handling here
-    TSError("[%s] Received error event; going to shutdown", __FUNCTION__);
+    TSError("[%s] Received error event; going to shutdown, event: %d", __FUNCTION__, event);
     shutdown = true;
     break;
   default:
@@ -326,7 +332,9 @@ serverIntercept(TSCont contp, TSEvent event, void *edata) {
 
   if (shutdown) {
     TSDebug(DEBUG_TAG, "[%s] Completed request processing. Shutting down...", __FUNCTION__);
-    TSVConnClose(cont_data->net_vc);
+    if (cont_data->net_vc) {
+      TSVConnClose(cont_data->net_vc);
+    }
     delete cont_data;
     TSContDestroy(contp);
   }
@@ -341,7 +349,7 @@ setupServerIntercept(TSHttpTxn txnp) {
     TSError("[%s] Could not create intercept request", __FUNCTION__);
     return false;
   }
-  ContData *cont_data = new ContData(contp);
+  SContData *cont_data = new SContData(contp);
   TSContDataSet(contp, cont_data);
   TSHttpTxnServerIntercept(contp, txnp);
   TSHttpTxnReqCacheableSet(txnp, 1);

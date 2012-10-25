@@ -45,40 +45,15 @@ inline void HttpDataFetcherImpl::_release(RequestData &req_data) {
 
 HttpDataFetcherImpl::HttpDataFetcherImpl(TSCont contp,sockaddr const* client_addr,
                                          const char *debug_tag)
-  : _contp(contp), _debug_tag(debug_tag), _n_pending_requests(0), _curr_event_id_base(FETCH_EVENT_ID_BASE),
+  : _contp(contp), _n_pending_requests(0), _curr_event_id_base(FETCH_EVENT_ID_BASE),
     _headers_str(""),_client_addr(client_addr) {
   _http_parser = TSHttpParserCreate();
+  snprintf(_debug_tag, sizeof(_debug_tag), "%s", debug_tag);
 }
 
 HttpDataFetcherImpl::~HttpDataFetcherImpl() { 
   clear(); 
   TSHttpParserDestroy(_http_parser); 
-}
-
-inline void
-HttpDataFetcherImpl::_buildHeadersString() {
-  TSDebug(_debug_tag.c_str(), "[%s] Building header string...", __FUNCTION__);
-  _headers_str.clear();
-  for (StringHash::const_iterator iter = _headers.begin(); iter != _headers.end(); ++iter) {
-    _headers_str.append(iter->first);
-    _headers_str.append(": ");
-    _headers_str.append(iter->second);
-    _headers_str += "\r\n";
-  }
-}
-
-void
-HttpDataFetcherImpl::_createRequest(std::string &http_req, const string &url) {
-  http_req.assign("GET ");
-  http_req.append(url);
-  http_req.append(" HTTP/1.0\r\n");
-  if (_headers.size()) {
-    if (!_headers_str.size()) {
-      _buildHeadersString();
-    }
-    http_req.append(_headers_str);
-  }
-  http_req.append("\r\n");
 }
 
 bool
@@ -90,13 +65,28 @@ HttpDataFetcherImpl::addFetchRequest(const string &url, FetchedDataProcessor *ca
     ((insert_result.first)->second).callback_objects.push_back(callback_obj);
   }
   if (!insert_result.second) {
-    TSDebug(_debug_tag.c_str(), "[%s] Fetch request for url [%s] already added", __FUNCTION__,
+    TSDebug(_debug_tag, "[%s] Fetch request for url [%s] already added", __FUNCTION__,
              url.data());
     return true;
   }
-  
-  string http_req;
-  _createRequest(http_req, url);
+
+  char buff[1024]; 
+  char *http_req;
+  int length;
+
+  length = sizeof("GET ") - 1 + url.length() + sizeof(" HTTP/1.0\r\n") - 1 + _headers_str.length() + sizeof("\r\n") - 1;
+  if (length < (int)sizeof(buff)) {
+    http_req = buff;
+  }else {
+    http_req = (char *)malloc(length + 1);
+    if (http_req == NULL) {
+      TSError("[%s] malloc %d bytes fail", __FUNCTION__, length + 1);
+      return false;
+    }
+  }
+
+  sprintf(http_req, "GET %s HTTP/1.0\r\n"
+      "%s\r\n", url.c_str(), _headers_str.c_str());
 
   TSFetchEvent event_ids;
   event_ids.success_event_id = _curr_event_id_base;
@@ -104,17 +94,13 @@ HttpDataFetcherImpl::addFetchRequest(const string &url, FetchedDataProcessor *ca
   event_ids.timeout_event_id = _curr_event_id_base + 2;
   _curr_event_id_base += 3;
 
-//FIXME. This looks to be a regression.
-TSFetchUrl(http_req.data(), http_req.size(), _client_addr, _contp, AFTER_BODY,
+  TSFetchUrl(http_req, length, _client_addr, _contp, AFTER_BODY,
                   event_ids);
-/*  if (TSFetchUrl(http_req.data(), http_req.size(), _client_addr, _contp, AFTER_BODY,
-                  event_ids) == TS_ERROR) {
-    TSError("Failed to add fetch request for URL [%.*s]", url.size(), url.data());
-    return false;
+  if (http_req != buff) {
+    free(http_req);
   }
-*/
   
-  TSDebug(_debug_tag.c_str(), "[%s] Successfully added fetch request for URL [%s]",
+  TSDebug(_debug_tag, "[%s] Successfully added fetch request for URL [%s]",
            __FUNCTION__, url.data());
   _page_entry_lookup.push_back(insert_result.first);
   ++_n_pending_requests;
@@ -125,7 +111,7 @@ bool
 HttpDataFetcherImpl::_isFetchEvent(TSEvent event, int &base_event_id) const {
   base_event_id = _getBaseEventId(event);
   if ((base_event_id < 0) || (base_event_id >= static_cast<int>(_page_entry_lookup.size()))) {
-    TSDebug(_debug_tag.c_str(), "[%s] Event id %d not within fetch event id range [%d, %ld)",
+    TSDebug(_debug_tag, "[%s] Event id %d not within fetch event id range [%d, %ld)",
              __FUNCTION__, event, FETCH_EVENT_ID_BASE, FETCH_EVENT_ID_BASE + (_page_entry_lookup.size() * 3));
     return false;
   }
@@ -177,7 +163,7 @@ HttpDataFetcherImpl::handleFetchEvent(TSEvent event, void *edata) {
       valid_data_received = true;
       req_data.body_len = endptr - startptr;
       req_data.body = startptr;
-      TSDebug(_debug_tag.c_str(),
+      TSDebug(_debug_tag,
                "[%s] Inserted page data of size %d starting with [%.6s] for request [%s]", __FUNCTION__,
                req_data.body_len, (req_data.body_len ? req_data.body : "(null)"), req_str.c_str());
       for (CallbackObjectList::iterator list_iter = req_data.callback_objects.begin();
@@ -202,11 +188,11 @@ HttpDataFetcherImpl::handleFetchEvent(TSEvent event, void *edata) {
         }
       }
     } else {
-      TSDebug(_debug_tag.c_str(), "[%s] Received non-OK status %d for request [%s]",
+      TSDebug(_debug_tag, "[%s] Received non-OK status %d for request [%s]",
                __FUNCTION__, resp_status, req_str.data());
     } 
   } else {
-    TSDebug(_debug_tag.c_str(), "[%s] Could not parse response for request [%s]",
+    TSDebug(_debug_tag, "[%s] Could not parse response for request [%s]",
              __FUNCTION__, req_str.data());
   }
 
@@ -242,7 +228,7 @@ HttpDataFetcherImpl::_checkHeaderValue(TSMBuffer bufp, TSMLoc hdr_loc, const cha
           retval = true;
         }
       } else {
-        TSDebug(_debug_tag.c_str(), "[%s] Error while getting value # %d of header [%.*s]", __FUNCTION__,
+        TSDebug(_debug_tag, "[%s] Error while getting value # %d of header [%.*s]", __FUNCTION__,
                  i, name_len, name);
       }
       if (retval) {
@@ -277,7 +263,7 @@ HttpDataFetcherImpl::getData(const string &url, ResponseData &resp_data) const {
   }
 
   resp_data.set(req_data.body, req_data.body_len, req_data.bufp, req_data.hdr_loc);
-  TSDebug(_debug_tag.c_str(), "[%s] Found data for URL [%s] of size %d starting with [%.5s]",
+  TSDebug(_debug_tag, "[%s] Found data for URL [%s] of size %d starting with [%.5s]",
            __FUNCTION__, url.data(), req_data.body_len, req_data.body);
   return true;
 }
@@ -291,7 +277,6 @@ HttpDataFetcherImpl::clear() {
   _pages.clear();
   _page_entry_lookup.clear();
   _headers_str.clear();
-  _headers.clear();
   _curr_event_id_base = FETCH_EVENT_ID_BASE;
 }
 
@@ -329,15 +314,10 @@ HttpDataFetcherImpl::useHeader(const HttpHeader &header) {
       return;
   }
 
-  string name(header.name, header.name_len);
-  string value(header.value, header.value_len);
-  std::pair<StringHash::iterator, bool> result = _headers.insert(StringHash::value_type(name, value));
-  if (!result.second) {
-    result.first->second = value;
-  }
-  if (_headers_str.size()) { // rebuild
-    _buildHeadersString();
-  }
+  _headers_str.append(header.name, header.name_len);
+  _headers_str.append(": ");
+  _headers_str.append(header.value, header.value_len);
+  _headers_str.append("\r\n");
 }
 
 void

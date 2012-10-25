@@ -50,7 +50,7 @@ void FailureInfo::registerSuccFail(bool isSuccess)
                 }
             }
             _avgOverWindow+=avg/_windowsPassed;
-            _debugLog(_debug_tag.c_str(),"[%s] current average over window is %lf",__FUNCTION__,_avgOverWindow);
+            _debugLog(_debug_tag,"[%s] current average over window is %lf",__FUNCTION__,_avgOverWindow);
         }
     
         gettimeofday(&_start,NULL);
@@ -95,15 +95,15 @@ bool FailureInfo::isAttemptReq()
         if(static_cast<int>(prob))
             prob=_avgOverWindow;
         
-        _debugLog(_debug_tag.c_str(),"[%s] Calculated probability is %lf",__FUNCTION__,prob);
+        _debugLog(_debug_tag,"[%s] Calculated probability is %lf",__FUNCTION__,prob);
         int decision=rand()%100;
 
         if(decision<prob*100) {
-            _debugLog(_debug_tag.c_str(),"[%s] fetch request will not be added for an attempt request",__FUNCTION__);
+            _debugLog(_debug_tag,"[%s] fetch request will not be added for an attempt request",__FUNCTION__);
             return (_requestMade=false);
         }
     }
         
-    _debugLog(_debug_tag.c_str(),"[%s] fetch request will be added for an attempt request",__FUNCTION__);
+    _debugLog(_debug_tag,"[%s] fetch request will be added for an attempt request",__FUNCTION__);
     return true;
 }

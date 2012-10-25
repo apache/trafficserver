@@ -47,9 +47,10 @@ public:
     {
         _totalSlots=TOTAL_DURATION/WINDOW_SIZE;
         _windowMarker=0;
-        for(size_t i=0;i<_totalSlots;i++)
+        for(size_t i=0;i<_totalSlots;i++) {
             _statistics.push_back(make_pair(0,0));
-        _debugLog(_debug_tag.c_str(),"FailureInfo Ctor:inserting URL object into the statistics map [FailureInfo object]%p",this);
+        }
+        _debugLog(_debug_tag,"FailureInfo Ctor:inserting URL object into the statistics map [FailureInfo object]%p",this);
     };
 
     ~FailureInfo(){}

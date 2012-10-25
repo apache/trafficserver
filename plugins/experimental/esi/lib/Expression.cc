@@ -70,7 +70,7 @@ Expression::expand(const char *expr, int expr_len /* = -1 */) {
   int var_start_index = -1, var_size;
   Utils::trimWhiteSpace(expr, expr_len);
   if (!expr_len) {
-    _debugLog(_debug_tag.c_str(), "[%s] Returning empty string for empty expression", __FUNCTION__);
+    _debugLog(_debug_tag, "[%s] Returning empty string for empty expression", __FUNCTION__);
     goto lFail;
   }
   if (!_stripQuotes(expr, expr_len)) {
@@ -81,7 +81,7 @@ Expression::expand(const char *expr, int expr_len /* = -1 */) {
   for (int i = 0; i < expr_len; ++i) {
     if ((expr[i] == '$') && ((expr_len - i) >= 3) && (expr[i + 1] == '(')) {
       if (var_start_index != -1) {
-        _debugLog(_debug_tag.c_str(), "[%s] Cannot have nested variables in expression [%.*s]",
+        _debugLog(_debug_tag, "[%s] Cannot have nested variables in expression [%.*s]",
                   __FUNCTION__, expr_len, expr);
         goto lFail;
       }
@@ -92,12 +92,12 @@ Expression::expand(const char *expr, int expr_len /* = -1 */) {
       var_size = i - var_start_index;
       if (var_size) {
         const string &var_value = _variables.getValue(expr + var_start_index, var_size);
-        _debugLog(_debug_tag.c_str(), "[%s] Got value [%.*s] for variable [%.*s]",
+        _debugLog(_debug_tag, "[%s] Got value [%.*s] for variable [%.*s]",
                   __FUNCTION__, var_value.size(), var_value.data(), var_size, expr + var_start_index);
         last_variable_expanded = (var_value.size() > 0);
         _value += var_value;
       } else {
-        _debugLog(_debug_tag.c_str(), "[%s] Parsing out empty variable", __FUNCTION__);
+        _debugLog(_debug_tag, "[%s] Parsing out empty variable", __FUNCTION__);
       }
       if (expr[i] == '|') {
         int default_value_start = ++i;
@@ -108,7 +108,7 @@ Expression::expand(const char *expr, int expr_len /* = -1 */) {
           ++i;
         }
         if (i == expr_len) {
-          _debugLog(_debug_tag.c_str(), "[%s] Expression [%.*s] has unterminated variable (with default value)",
+          _debugLog(_debug_tag, "[%s] Expression [%.*s] has unterminated variable (with default value)",
                     __FUNCTION__, expr_len, expr);
           goto lFail;
         }
@@ -118,7 +118,7 @@ Expression::expand(const char *expr, int expr_len /* = -1 */) {
           goto lFail;
         }
         if (!last_variable_expanded) {
-          _debugLog(_debug_tag.c_str(), "[%s] Using default value [%.*s] as variable expanded to empty string",
+          _debugLog(_debug_tag, "[%s] Using default value [%.*s] as variable expanded to empty string",
                     __FUNCTION__, default_value_len, default_value);
           _value.append(default_value, default_value_len);
         }
@@ -129,11 +129,11 @@ Expression::expand(const char *expr, int expr_len /* = -1 */) {
     }
   }
   if (var_start_index != -1) {
-    _debugLog(_debug_tag.c_str(), "[%s] Returning empty string for expression with unterminated variable [%.*s]",
+    _debugLog(_debug_tag, "[%s] Returning empty string for expression with unterminated variable [%.*s]",
               __FUNCTION__, expr_len - var_start_index, expr + var_start_index);
     goto lFail;
   }
-  _debugLog(_debug_tag.c_str(), "[%s] Returning final expanded expression [%.*s]",
+  _debugLog(_debug_tag, "[%s] Returning final expanded expression [%.*s]",
             __FUNCTION__, _value.size(), _value.data());
   return _value;
 
@@ -159,7 +159,7 @@ Expression::_findOperator(const char *expr, int expr_len, Operator &op) const {
 inline bool
 Expression::_evalSimpleExpr(const char *expr, int expr_len) {
   const string &lhs = expand(expr, expr_len);
-  _debugLog(_debug_tag.c_str(), "[%s] simple expression [%.*s] evaluated to [%.*s]",
+  _debugLog(_debug_tag, "[%s] simple expression [%.*s] evaluated to [%.*s]",
             __FUNCTION__, expr_len, expr, lhs.size(), lhs.data());
   double val;
   return _convert(lhs, val) ? val : !lhs.empty();
@@ -170,7 +170,7 @@ bool
 Expression::evaluate(const char *expr, int expr_len /* = -1 */) {
   Utils::trimWhiteSpace(expr, expr_len);
   if (!expr_len) {
-    _debugLog(_debug_tag.c_str(), "[%s] Returning false for empty expression", __FUNCTION__);
+    _debugLog(_debug_tag, "[%s] Returning false for empty expression", __FUNCTION__);
     return false;
   }
   Operator op = OP_EQ; // stupid initialized checking, make gcc happy
@@ -186,12 +186,12 @@ Expression::evaluate(const char *expr, int expr_len /* = -1 */) {
     subexpr = expr;
     subexpr_len = sep;
     lhs = expand(subexpr, subexpr_len);
-    _debugLog(_debug_tag.c_str(), "[%s] LHS [%.*s] expanded to [%.*s]",
+    _debugLog(_debug_tag, "[%s] LHS [%.*s] expanded to [%.*s]",
               __FUNCTION__, subexpr_len, subexpr, lhs.size(), lhs.data());
     subexpr = expr + sep + OPERATOR_STRINGS[op].str_len;
     subexpr_len = expr_len - subexpr_len - OPERATOR_STRINGS[op].str_len;
     rhs = expand(subexpr, subexpr_len);
-    _debugLog(_debug_tag.c_str(), "[%s] RHS [%.*s] expanded to [%.*s]",
+    _debugLog(_debug_tag, "[%s] RHS [%.*s] expanded to [%.*s]",
               __FUNCTION__, subexpr_len, subexpr, rhs.size(), rhs.data());
     double lhs_numerical = 0;
     double rhs_numerical = 0;
@@ -213,7 +213,7 @@ Expression::evaluate(const char *expr, int expr_len /* = -1 */) {
     default:
       if (lhs.empty() || rhs.empty()) {
         // one of the sides expanded to nothing; invalid comparison
-        _debugLog(_debug_tag.c_str(), "[%s] LHS/RHS empty. Cannot evaluate comparisons", __FUNCTION__);
+        _debugLog(_debug_tag, "[%s] LHS/RHS empty. Cannot evaluate comparisons", __FUNCTION__);
         retval = false;
       } else {
         switch (op) {
@@ -230,7 +230,7 @@ Expression::evaluate(const char *expr, int expr_len /* = -1 */) {
           retval = are_numerical ? (lhs_numerical >= rhs_numerical) : (lhs >= rhs);
           break;
         default:
-          _debugLog(_debug_tag.c_str(), "[%s] Unknown operator in expression [%.*s]; returning false",
+          _debugLog(_debug_tag, "[%s] Unknown operator in expression [%.*s]; returning false",
                     __FUNCTION__, expr_len, expr);
         }
       }
@@ -242,15 +242,15 @@ Expression::evaluate(const char *expr, int expr_len /* = -1 */) {
       subexpr_len = expr_len - 1;
       retval = !_evalSimpleExpr(expr + 1, expr_len - 1);
     } else {
-      _debugLog(_debug_tag.c_str(), "[%s] Unary negation not preceding literal in expression [%.*s]; assuming true",
+      _debugLog(_debug_tag, "[%s] Unary negation not preceding literal in expression [%.*s]; assuming true",
                 __FUNCTION__, expr_len, expr);
       retval = true;
     }
   } else {
-    _debugLog(_debug_tag.c_str(), "[%s] Unknown operator in expression [%.*s]; returning false",
+    _debugLog(_debug_tag, "[%s] Unknown operator in expression [%.*s]; returning false",
               __FUNCTION__, expr_len, expr);
   }
-  _debugLog(_debug_tag.c_str(), "[%s] Returning [%s] for expression [%.*s]",
+  _debugLog(_debug_tag, "[%s] Returning [%s] for expression [%.*s]",
             __FUNCTION__, (retval ? "true" : "false"), expr_len, expr);
   return retval;
 }

@@ -89,7 +89,7 @@ public:
 private:
   
   TSCont _contp;
-  std::string _debug_tag;
+  char _debug_tag[64];
 
   typedef std::list<FetchedDataProcessor *> CallbackObjectList;
  
@@ -126,11 +126,8 @@ private:
   bool _checkHeaderValue(TSMBuffer bufp, TSMLoc hdr_loc, const char *name, int name_len, const char *exp_value, int exp_value_len, bool prefix) const;
 
 
-  EsiLib::StringHash _headers;
   std::string _headers_str;
   
-  inline void _buildHeadersString();
-  void _createRequest(std::string &http_req, const std::string &url);
   inline void _release(RequestData &req_data);
 
   sockaddr const* _client_addr;

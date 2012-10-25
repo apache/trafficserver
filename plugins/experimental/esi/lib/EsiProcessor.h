@@ -42,6 +42,7 @@ class EsiProcessor : private EsiLib::ComponentBase
 {
 
 public:
+  enum UsePackedNodeResult { PROCESS_IN_PROGRESS, UNPACK_FAILURE, PROCESS_SUCCESS, PROCESS_FAILURE };
 
   EsiProcessor(const char *debug_tag, const char *parser_debug_tag, const char *expression_debug_tag,
                EsiLib::ComponentBase::Debug debug_func, EsiLib::ComponentBase::Error error_func,
@@ -87,10 +88,10 @@ public:
   /** Unpacks previously parsed and packed ESI node list from given
    * buffer and preps for process(); Unpacked document will point to
    * data in argument (i.e., caller space) */
-  bool usePackedNodeList(const char *data, int data_len);
+  UsePackedNodeResult usePackedNodeList(const char *data, int data_len);
 
   /** convenient alternative to method above */
-  bool usePackedNodeList(const std::string &data) {
+  inline UsePackedNodeResult usePackedNodeList(const std::string &data) {
     return usePackedNodeList(data.data(), data.size());
   }
 
