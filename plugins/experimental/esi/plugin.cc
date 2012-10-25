@@ -96,6 +96,7 @@ struct ContData
   bool xform_closed;
   bool intercept_header;
   bool cache_txn;
+  bool head_only;
 
 #ifdef ESI_PACKED_NODE_SUPPORT
   bool os_response_cacheable;
@@ -110,7 +111,7 @@ struct ContData
       input_type(DATA_TYPE_RAW_ESI), packed_node_list(""),
       gzipped_data(""), gzip_output(false),
       initialized(false), xform_closed(false),
-      intercept_header(false), cache_txn(false)
+      intercept_header(false), cache_txn(false), head_only(false)
 #ifdef ESI_PACKED_NODE_SUPPORT
       , os_response_cacheable(true)
 #endif
@@ -415,13 +416,13 @@ ContData::getServerState() {
   if (cache_txn) {
     if (intercept_header) {
       input_type = DATA_TYPE_PACKED_ESI;
-    } else {
+      return;
+    } else if (TSHttpTxnCachedRespGet(txnp, &bufp, &hdr_loc) != TS_SUCCESS) {
+      TSError("[%s] Could not get server response; set input type to RAW_ESI", __FUNCTION__);
       input_type = DATA_TYPE_RAW_ESI;
+      return;
     }
-    return;
-  }
-
-  if (TSHttpTxnServerRespGet(txnp, &bufp, &hdr_loc) != TS_SUCCESS) {
+  } else if (TSHttpTxnServerRespGet(txnp, &bufp, &hdr_loc) != TS_SUCCESS) {
     TSError("[%s] Could not get server response; set input type to RAW_ESI", __FUNCTION__);
     input_type = DATA_TYPE_RAW_ESI;
     return;
@@ -435,7 +436,9 @@ ContData::getServerState() {
   }
 
 #ifdef ESI_PACKED_NODE_SUPPORT
-  fillPostHeader(bufp, hdr_loc);
+  if (!cache_txn && !head_only) {
+    fillPostHeader(bufp, hdr_loc);
+  }
 #endif
 
   TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
@@ -693,7 +696,7 @@ transformData(TSCont contp)
       }
       if (cont_data->esi_proc->completeParse()) {
 #ifdef ESI_PACKED_NODE_SUPPORT
-        if (cont_data->os_response_cacheable && !cont_data->cache_txn) {
+        if (cont_data->os_response_cacheable && !cont_data->cache_txn && !cont_data->head_only) {
           cacheNodeList(cont_data);
         }
 #endif
@@ -901,6 +904,7 @@ lShutdown:
 struct RespHdrModData {
   bool cache_txn;
   bool gzip_encoding;
+  bool head_only;
 };
 
 static void
@@ -961,7 +965,12 @@ modifyResponseHeader(TSCont contp, TSEvent event, void *edata) {
         } else if (Utils::areEqual(name, name_len, MIME_FIELD_XESI, MIME_FIELD_XESI_LEN)) {
           destroy_header = true;
         } else if ((name_len > HEADER_MASK_PREFIX_SIZE) &&
-                   (strncmp(name, HEADER_MASK_PREFIX, HEADER_MASK_PREFIX_SIZE) == 0)) {
+                   (strncmp(name, HEADER_MASK_PREFIX, HEADER_MASK_PREFIX_SIZE) == 0))
+        {
+          destroy_header = true;
+        } else if (mod_data->head_only && Utils::areEqual(name, name_len, 
+              TS_MIME_FIELD_CONTENT_LENGTH, TS_MIME_LEN_CONTENT_LENGTH))
+        {
           destroy_header = true;
         } else {
           int n_field_values = TSMimeHdrFieldValuesCount(bufp, hdr_loc, field_loc);
@@ -1121,7 +1130,7 @@ maskOsCacheHeaders(TSHttpTxn txnp) {
 #endif
 
 static bool
-isTxnTransformable(TSHttpTxn txnp, bool is_cache_txn, bool * intercept_header) {
+isTxnTransformable(TSHttpTxn txnp, bool is_cache_txn, bool * intercept_header, bool * head_only) {
   //  We are only interested in transforming "200 OK" responses with a
   //  Content-Type: text/ header and with X-Esi header
 
@@ -1130,6 +1139,32 @@ isTxnTransformable(TSHttpTxn txnp, bool is_cache_txn, bool * intercept_header) {
   TSHttpStatus resp_status;
   TSReturnCode header_obtained;
   bool retval = false;
+
+  if (TSHttpTxnClientReqGet(txnp, &bufp, &hdr_loc) != TS_SUCCESS) {
+    TSError("[%s] Couldn't get txn header", __FUNCTION__);
+    return false;
+  }
+
+  int method_len;
+  const char *method;
+  method = TSHttpHdrMethodGet(bufp, hdr_loc, &method_len);
+  if (method == NULL) {
+    TSError("[%s] Couldn't get method", __FUNCTION__);
+    TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
+    return false;
+  }
+
+  if (method_len >= TS_HTTP_LEN_HEAD && memcmp(method, TS_HTTP_METHOD_HEAD, TS_HTTP_LEN_HEAD) == 0) {
+    *head_only = true;
+  }
+  else if (!(((method_len >= TS_HTTP_LEN_POST && memcmp(method, TS_HTTP_METHOD_POST, TS_HTTP_LEN_POST) == 0)) ||
+        ((method_len >= TS_HTTP_LEN_GET && memcmp(method, TS_HTTP_METHOD_GET, TS_HTTP_LEN_GET) == 0))))
+  {
+    TSDebug(DEBUG_TAG, "[%s] method %.*s will be ignored", __FUNCTION__, method_len, method);
+    TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
+    return false;
+  }
+  TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
 
   header_obtained = is_cache_txn ? TSHttpTxnCachedRespGet(txnp, &bufp, &hdr_loc) :
     TSHttpTxnServerRespGet(txnp, &bufp, &hdr_loc);
@@ -1180,7 +1215,7 @@ isTxnTransformable(TSHttpTxn txnp, bool is_cache_txn, bool * intercept_header) {
 }
 
 static bool
-isCacheObjTransformable(TSHttpTxn txnp, bool * intercept_header) {
+isCacheObjTransformable(TSHttpTxn txnp, bool * intercept_header, bool * head_only) {
   int obj_status;
   if (TSHttpTxnCacheLookupStatusGet(txnp, &obj_status) == TS_ERROR) {
     TSError("[%s] Couldn't get cache status of object", __FUNCTION__);
@@ -1195,7 +1230,7 @@ isCacheObjTransformable(TSHttpTxn txnp, bool * intercept_header) {
     */
 
     TSDebug(DEBUG_TAG, "[%s] doc found in cache, will add transformation", __FUNCTION__);
-    return isTxnTransformable(txnp, true, intercept_header);
+    return isTxnTransformable(txnp, true, intercept_header, head_only);
   }
   TSDebug(DEBUG_TAG, "[%s] cache object's status is %d; not transformable",
            __FUNCTION__, obj_status);
@@ -1259,7 +1294,7 @@ checkForCacheHeader(const char *name, int name_len, const char *value, int value
 }
 
 static bool
-addSendResponseHeaderHook(TSHttpTxn txnp, bool cache_txn, bool gzip_encoding) {
+addSendResponseHeaderHook(TSHttpTxn txnp, const ContData * src_cont_data) {
   TSCont contp = TSContCreate(modifyResponseHeader, NULL);
   if (!contp) {
     TSError("[%s] Could not create continuation", __FUNCTION__);
@@ -1267,14 +1302,15 @@ addSendResponseHeaderHook(TSHttpTxn txnp, bool cache_txn, bool gzip_encoding) {
   }
   TSHttpTxnHookAdd(txnp, TS_HTTP_SEND_RESPONSE_HDR_HOOK, contp);
   RespHdrModData *cont_data = new RespHdrModData();
-  cont_data->cache_txn = cache_txn;
-  cont_data->gzip_encoding = gzip_encoding;
+  cont_data->cache_txn = src_cont_data->cache_txn;
+  cont_data->head_only = src_cont_data->head_only;
+  cont_data->gzip_encoding = src_cont_data->gzip_output;
   TSContDataSet(contp, cont_data);
   return true;
 }
 
 static bool
-addTransform(TSHttpTxn txnp, const bool processing_os_response, const bool intercept_header) {
+addTransform(TSHttpTxn txnp, const bool processing_os_response, const bool intercept_header, const bool head_only) {
   TSCont contp = 0;
   ContData *cont_data = 0;
 
@@ -1289,6 +1325,7 @@ addTransform(TSHttpTxn txnp, const bool processing_os_response, const bool inter
 
   cont_data->cache_txn = !processing_os_response;
   cont_data->intercept_header = intercept_header;
+  cont_data->head_only = head_only;
   cont_data->getClientState();
   cont_data->getServerState();
 
@@ -1306,7 +1343,7 @@ addTransform(TSHttpTxn txnp, const bool processing_os_response, const bool inter
 
   TSHttpTxnHookAdd(txnp, TS_HTTP_RESPONSE_TRANSFORM_HOOK, contp);
 
-  if (!addSendResponseHeaderHook(txnp, cont_data->cache_txn, cont_data->gzip_output)) {
+  if (!addSendResponseHeaderHook(txnp, cont_data)) {
     TSError("[%s] Couldn't add send response header hook", __FUNCTION__);
     goto lFail;
   }
@@ -1336,6 +1373,7 @@ static int
 globalHookHandler(TSCont contp, TSEvent event, void *edata) {
   TSHttpTxn txnp = (TSHttpTxn) edata;
   bool intercept_header = false;
+  bool head_only = false;
   bool intercept_req = isInterceptRequest(txnp);
 
   switch (event) {
@@ -1358,15 +1396,15 @@ globalHookHandler(TSCont contp, TSEvent event, void *edata) {
       if (event == TS_EVENT_HTTP_READ_RESPONSE_HDR) {
         bool mask_cache_headers = false;
         TSDebug(DEBUG_TAG, "[%s] handling read response header event...", __FUNCTION__);
-        if (isCacheObjTransformable(txnp, &intercept_header)) {
+        if (isCacheObjTransformable(txnp, &intercept_header, &head_only)) {
           // transformable cache object will definitely have a
           // transformation already as cache_lookup_complete would
           // have been processed before this
           TSDebug(DEBUG_TAG, "[%s] xform should already have been added on cache lookup. Not adding now",
                    __FUNCTION__);
           mask_cache_headers = true;
-        } else if (isTxnTransformable(txnp, false, &intercept_header)) {
-          addTransform(txnp, true, intercept_header);
+        } else if (isTxnTransformable(txnp, false, &intercept_header, &head_only)) {
+          addTransform(txnp, true, intercept_header, head_only);
           Stats::increment(Stats::N_OS_DOCS);
           mask_cache_headers = true;
         }
@@ -1380,11 +1418,11 @@ globalHookHandler(TSCont contp, TSEvent event, void *edata) {
         }
       } else {
         TSDebug(DEBUG_TAG, "[%s] handling cache lookup complete event...", __FUNCTION__);
-        if (isCacheObjTransformable(txnp, &intercept_header)) {
+        if (isCacheObjTransformable(txnp, &intercept_header, &head_only)) {
           // we make the assumption above that a transformable cache
           // object would already have a tranformation. We should revisit
           // that assumption in case we change the statement below
-          addTransform(txnp, false, intercept_header);
+          addTransform(txnp, false, intercept_header, head_only);
           Stats::increment(Stats::N_CACHE_DOCS);
         }
       }
