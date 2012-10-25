@@ -34,12 +34,8 @@
 
 #include "libts.h"
 #include "P_Net.h"
-#include <openssl/ssl.h>
-#include <openssl/err.h>
-#include <openssl/e_os2.h>
-
-
 #include "P_SSLConfig.h"
+#include <openssl/ssl.h>
 
 class UnixNetVConnection;
 struct NetAccept;
@@ -49,31 +45,20 @@ struct NetAccept;
 //  class SSLNetProcessor
 //
 //////////////////////////////////////////////////////////////////
-struct SSLNetProcessor:public
-  UnixNetProcessor
+struct SSLNetProcessor : public UnixNetProcessor
 {
 public:
 
   virtual int start(int no_of_ssl_threads);
 
   void cleanup(void);
-  int reconfigure();
-  int initSSLClient(const SSLConfigParams * param);
-
-  int initSSLServerCTX(SSL_CTX * ctx,
-    const SSLConfigParams * param,
-    const char *serverCertPtr, const char *serverCaPtr,
-    const char *serverKeyPtr);
 
   SSL_CTX *getClientSSL_CTX(void) const { return client_ctx; }
-
-  static void logSSLError(const char *errStr = "", int critical = 1);
 
   SSLNetProcessor();
   virtual ~SSLNetProcessor();
 
   SSL_CTX *client_ctx;
-  ProxyMutex **sslMutexArray;
 
   static EventType ET_SSL;
 
@@ -93,15 +78,10 @@ public:
   virtual NetAccept *createNetAccept();
 
 private:
-  void initSSLLocks(void);
   SSLNetProcessor(const SSLNetProcessor &);
   SSLNetProcessor & operator =(const SSLNetProcessor &);
-
-  static bool open_ssl_initialized;
 };
 
-
-extern inkcoreapi SSLNetProcessor ssl_NetProcessor;
-
+extern SSLNetProcessor ssl_NetProcessor;
 
 #endif

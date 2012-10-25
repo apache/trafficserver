@@ -24,89 +24,55 @@
 #include "ink_config.h"
 
 #include "P_SSLCertLookup.h"
-#include "P_UnixNet.h"
+#include "P_SSLUtils.h"
+#include "P_SSLConfig.h"
+#include "I_EventSystem.h"
 #include "I_Layout.h"
 #include "Regex.h"
 #include "Trie.h"
 #include "ts/TestBox.h"
 
-#include <openssl/bio.h>
-#include <openssl/pem.h>
-#include <openssl/x509.h>
-#include <openssl/asn1.h>
-
-#if HAVE_OPENSSL_TS_H
-#include <openssl/ts.h>
-#endif
-
-#if (OPENSSL_VERSION_NUMBER >= 0x10000000L) // openssl returns a const SSL_METHOD
-typedef const SSL_METHOD * ink_ssl_method_t;
-#else
-typedef SSL_METHOD * ink_ssl_method_t;
-#endif
-
-static Ptr<ProxyMutex> ssl_reconfig_mutex = NULL;
-int SSLCertLookup::id = 0;
-int sslCertFile_CB(const char *name, RecDataT data_type, RecData data, void *cookie);
-
-#if TS_USE_TLS_SNI
-
-static int
-ssl_servername_callback(SSL * ssl, int * ad, void * arg)
+struct SSLAddressLookupKey
 {
-  SSL_CTX *       ctx = NULL;
-  SSLCertLookup * lookup = (SSLCertLookup *) arg;
-  const char *    servername = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
+  explicit
+  SSLAddressLookupKey(const IpEndpoint& ip)
+  {
+    static const char hextab[16] = {
+      '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'
+    };
 
-  Debug("ssl", "ssl=%p ad=%d lookup=%p server=%s", ssl, *ad, lookup, servername);
+    int nbytes;
+    uint16_t port = ntohs(ip.port());
 
-  // The incoming SSL_CTX is either the one mapped from the inbound IP address or the default one. If we don't find a
-  // name-based match at this point, we *do not* want to mess with the context because we've already made a best effort
-  // to find the best match.
-  if (likely(servername)) {
-    ctx = lookup->findInfoInHash((char *)servername);
+    // For IP addresses, the cache key is the hex address with the port concatenated. This makes the lookup
+    // insensitive to address formatting and also allow the longest match semantic to product different matches
+    // if there is a certificate on the port.
+    nbytes = ats_ip_to_hex(&ip.sa, key, sizeof(key));
+    if (port) {
+      key[nbytes++] = '.';
+      key[nbytes++] = hextab[ (port >> 12) & 0x000F ];
+      key[nbytes++] = hextab[ (port >>  8) & 0x000F ];
+      key[nbytes++] = hextab[ (port >>  4) & 0x000F ];
+      key[nbytes++] = hextab[ (port      ) & 0x000F ];
+    }
+    key[nbytes++] = NULL;
   }
 
-  if (ctx != NULL) {
-    SSL_set_SSL_CTX(ssl, ctx);
-  }
+  const char * get() const { return key; }
 
-  ctx = SSL_get_SSL_CTX(ssl);
-  Debug("ssl", "found SSL context %p for requested name '%s'", ctx, servername);
+private:
+  char key[(TS_IP6_SIZE * 2) /* hex addr */ + 1 /* dot */ + 4 /* port */ + 1 /* NULL */];
+};
 
-  if (ctx == NULL) {
-    return SSL_TLSEXT_ERR_NOACK;
-  }
-
-  // We need to return one of the SSL_TLSEXT_ERR constants. If we return an
-  // error, we can fill in *ad with an alert code to propgate to the
-  // client, see SSL_AD_*.
-  return SSL_TLSEXT_ERR_OK;
-}
-
-#endif /* TS_USE_TLS_SNI */
-
-static SSL_CTX *
-make_ssl_context(void * arg)
+struct SSLContextStorage
 {
-  SSL_CTX *         ctx = NULL;
-  ink_ssl_method_t  meth = NULL;
+  SSLContextStorage();
+  ~SSLContextStorage();
 
-  meth = SSLv23_server_method();
-  ctx = SSL_CTX_new(meth);
+  bool insert(SSL_CTX * ctx, const char * name);
+  SSL_CTX * lookup(const char * name) const;
 
-#if TS_USE_TLS_SNI
-  Debug("ssl", "setting SNI callbacks with for ctx %p", ctx);
-  SSL_CTX_set_tlsext_servername_callback(ctx, ssl_servername_callback);
-  SSL_CTX_set_tlsext_servername_arg(ctx, arg);
-#endif /* TS_USE_TLS_SNI */
-
-  return ctx;
-}
-
-class SSLContextStorage
-{
-
+private:
   struct SSLEntry
   {
     explicit SSLEntry(SSL_CTX * c) : ctx(c) {}
@@ -119,27 +85,7 @@ class SSLContextStorage
 
   Trie<SSLEntry>  wildcards;
   InkHashTable *  hostnames;
-
-public:
-  SSLContextStorage();
-  ~SSLContextStorage();
-
-  bool insert(SSL_CTX * ctx, const char * name);
-  SSL_CTX * lookup(const char * name) const;
-};
-
-static void
-insert_ssl_certificate(SSLContextStorage *, SSL_CTX *, const char *);
-
-#define SSL_IP_TAG            "dest_ip"
-#define SSL_CERT_TAG          "ssl_cert_name"
-#define SSL_PRIVATE_KEY_TAG   "ssl_key_name"
-#define SSL_CA_TAG            "ssl_ca_name"
-
-static const char *moduleName = "SSLCertLookup";
-
-static const matcher_tags sslCertTags = {
-  NULL, NULL, NULL, NULL, NULL, false
+  Vec<SSL_CTX *>  references;
 };
 
 SSLCertLookup::SSLCertLookup()
@@ -158,266 +104,25 @@ SSLCertLookup::findInfoInHash(const char * address) const
   return this->ssl_storage->lookup(address);
 }
 
-void
-SSLCertLookup::startup()
+SSL_CTX *
+SSLCertLookup::findInfoInHash(const IpEndpoint& address) const
 {
-  ssl_reconfig_mutex = new_ProxyMutex();
-  reconfigure();
-
-  REC_RegisterConfigUpdateFunc("proxy.config.ssl.server.multicert.filename", sslCertFile_CB, NULL);
-  REC_RegisterConfigUpdateFunc("proxy.config.ssl.server.cert.path", sslCertFile_CB, NULL);
-  REC_RegisterConfigUpdateFunc("proxy.config.ssl.server.private_key.path", sslCertFile_CB, NULL);
-  REC_RegisterConfigUpdateFunc("proxy.config.ssl.server.cert_chain.filename", sslCertFile_CB, NULL);
-}
-
-void
-SSLCertLookup::reconfigure()
-{
-  SSLConfig::startup();
-  SSLConfig::scoped_config param;
-
-  SSLCertLookup *lookup = NEW(new SSLCertLookup());
-  lookup->buildTable(param);
-  lookup->checkDefaultContext();
-
-  id = configProcessor.set(id, lookup);
-}
-
-SSLCertLookup *
-SSLCertLookup::acquire()
-{ 
-  return (SSLCertLookup *)configProcessor.get(id);
-}
-
-void
-SSLCertLookup::release(SSLCertLookup *sslCertTable)
-{ 
-  configProcessor.release(id, sslCertTable);
+  SSLAddressLookupKey key(address);
+  return this->ssl_storage->lookup(key.get());
 }
 
 bool
-SSLCertLookup::buildTable(const SSLConfigParams * param)
+SSLCertLookup::insert(SSL_CTX * ctx, const char * name)
 {
-  char *tok_state = NULL;
-  char *line = NULL;
-  const char *errPtr = NULL;
-  char errBuf[1024];
-  char *file_buf = NULL;
-  int line_num = 0;
-  bool ret = 0;
-  char *addr = NULL;
-  char *sslCert = NULL;
-  char *sslCa = NULL;
-  char *priKey = NULL;
-  matcher_line line_info;
-  bool alarmAlready = false;
-  char *configFilePath = NULL;
-
-  configFilePath = param->getConfigFilePath();
-
-  // Table should be empty
-//  ink_assert(num_el == 0);
-
-  Debug("ssl", "ssl_multicert.config: %s", configFilePath);
-  if (configFilePath)
-    file_buf = readIntoBuffer(configFilePath, moduleName, NULL);
-
-  if (file_buf == NULL) {
-    Warning("%s Failed to read %s. Using default server cert for all connections", moduleName, configFilePath);
-    return ret;
-  }
-
-  line = tokLine(file_buf, &tok_state);
-  while (line != NULL) {
-
-    line_num++;
-
-    // skip all blank spaces at beginning of line
-    while (*line && isspace(*line)) {
-      line++;
-    }
-
-    if (*line != '\0' && *line != '#') {
-
-      errPtr = parseConfigLine(line, &line_info, &sslCertTags);
-
-      if (errPtr != NULL) {
-        snprintf(errBuf, 1024, "%s discarding %s entry at line %d : %s",
-                     moduleName, configFilePath, line_num, errPtr);
-        IOCORE_SignalError(errBuf, alarmAlready);
-      } else {
-        errPtr = extractIPAndCert(&line_info, &addr, &sslCert, &sslCa, &priKey);
-
-        if (errPtr != NULL) {
-          snprintf(errBuf, 1024, "%s discarding %s entry at line %d : %s",
-                       moduleName, configFilePath, line_num, errPtr);
-          IOCORE_SignalError(errBuf, alarmAlready);
-        } else {
-          if (sslCert != NULL) {
-            addInfoToHash(param, addr, sslCert, sslCa, priKey);
-            ret = 1;
-          }
-          ats_free(sslCert);
-          ats_free(sslCa);
-          ats_free(priKey);
-          ats_free(addr);
-          addr = NULL;
-          sslCert = NULL;
-          sslCa = NULL;
-          priKey = NULL;
-        }
-      }                         // else
-    }                           // if(*line != '\0' && *line != '#')
-
-    line = tokLine(NULL, &tok_state);
-  }                             //  while(line != NULL)
-
-  ats_free(file_buf);
-  return ret;
-}
-
-void
-SSLCertLookup::checkDefaultContext()
-{
-  // We *must* have a default context even if it can't possibly work. The default context is used to bootstrap the SSL
-  // handshake so that we can subsequently do the SNI lookup to switch to the real context.
-  if (this->ssl_default == NULL) {
-    this->ssl_default = make_ssl_context(this);
-  }
-}
-
-const char *
-SSLCertLookup::extractIPAndCert(matcher_line * line_info, char **addr, char **cert, char **ca, char **priKey) const
-{
-//  ip_addr_t testAddr;
-  char *label;
-  char *value;
-
-  for (int i = 0; i < MATCHER_MAX_TOKENS; i++) {
-
-    label = line_info->line[0][i];
-    value = line_info->line[1][i];
-
-    if (label == NULL) {
-      continue;
-    }
-
-    if (strcasecmp(label, SSL_IP_TAG) == 0) {
-      if (value != NULL) {
-        int buf_len = sizeof(char) * (strlen(value) + 1);
-
-        *addr = (char *)ats_malloc(buf_len);
-        ink_strlcpy(*addr, (const char *) value, buf_len);
-//              testAddr = inet_addr (addr);
-      }
-    }
-
-    if (strcasecmp(label, SSL_CERT_TAG) == 0) {
-      if (value != NULL) {
-        int buf_len = sizeof(char) * (strlen(value) + 1);
-
-        *cert = (char *)ats_malloc(buf_len);
-        ink_strlcpy(*cert, (const char *) value, buf_len);
-      }
-    }
-
-    if (strcasecmp(label, SSL_CA_TAG) == 0) {
-      if (value != NULL) {
-        int buf_len = sizeof(char) * (strlen(value) + 1);
-
-        *ca = (char *)ats_malloc(buf_len);
-        ink_strlcpy(*ca, (const char *) value, buf_len);
-      }
-    }
-
-    if (strcasecmp(label, SSL_PRIVATE_KEY_TAG) == 0) {
-      if (value != NULL) {
-        int buf_len = sizeof(char) * (strlen(value) + 1);
-
-        *priKey = (char *)ats_malloc(buf_len);
-        ink_strlcpy(*priKey, (const char *) value, buf_len);
-      }
-    }
-  }
-
-  if ( /*testAddr == INADDR_NONE || */ addr != NULL && cert == NULL)
-    return "Bad address or certificate.";
-  else
-    return NULL;
+  return this->ssl_storage->insert(ctx, name);
 }
 
 bool
-SSLCertLookup::addInfoToHash(
-    const SSLConfigParams * param,
-    const char *strAddr, const char *cert,
-    const char *caCert, const char *serverPrivateKey)
+SSLCertLookup::insert(SSL_CTX * ctx, const IpEndpoint& address)
 {
-  SSL_CTX * ctx;
-
-  ctx = make_ssl_context(this);
-  if (!ctx) {
-    SSLNetProcessor::logSSLError("Cannot create new server contex.");
-    return (false);
-  }
-
-  if (ssl_NetProcessor.initSSLServerCTX(ctx, param, cert, caCert, serverPrivateKey) == 0) {
-    char * certpath = Layout::relative_to(param->getServerCertPathOnly(), cert);
-
-    // Index this certificate by the specified IP(v6) address. If the address is "*", make it the default context.
-    if (strAddr) {
-      if (strcmp(strAddr, "*") == 0) {
-        this->ssl_default = ctx;
-      } else {
-        this->ssl_storage->insert(ctx, strAddr);
-      }
-    }
-
-    // Insert additional mappings. Note that this maps multiple keys to the same value, so when
-    // this code is updated to reconfigure the SSL certificates, it will need some sort of
-    // refcounting or alternate way of avoiding double frees.
-    insert_ssl_certificate(this->ssl_storage, ctx, certpath);
-
-    ats_free(certpath);
-    return (true);
-  }
-
-  SSL_CTX_free(ctx);
-  return (false);
+  SSLAddressLookupKey key(address);
+  return this->ssl_storage->insert(ctx, key.get());
 }
-
-struct ats_x509_certificate
-{
-  explicit ats_x509_certificate(X509 * x) : x509(x) {}
-  ~ats_x509_certificate() { if (x509) X509_free(x509); }
-
-  X509 * x509;
-
-private:
-  ats_x509_certificate(const ats_x509_certificate&);
-  ats_x509_certificate& operator=(const ats_x509_certificate&);
-};
-
-struct ats_file_bio
-{
-    ats_file_bio(const char * path, const char * mode)
-      : bio(BIO_new_file(path, mode)) {
-    }
-
-    ~ats_file_bio() {
-        (void)BIO_set_close(bio, BIO_CLOSE);
-        BIO_free(bio);
-    }
-
-    operator bool() const {
-        return bio != NULL;
-    }
-
-    BIO * bio;
-
-private:
-    ats_file_bio(const ats_file_bio&);
-    ats_file_bio& operator=(const ats_file_bio&);
-};
 
 struct ats_wildcard_matcher
 {
@@ -437,77 +142,6 @@ struct ats_wildcard_matcher
 private:
   DFA regex;
 };
-
-static char *
-asn1_strdup(ASN1_STRING * s)
-{
-    // Make sure we have an 8-bit encoding.
-    ink_assert(ASN1_STRING_type(s) == V_ASN1_IA5STRING ||
-      ASN1_STRING_type(s) == V_ASN1_UTF8STRING ||
-      ASN1_STRING_type(s) == V_ASN1_PRINTABLESTRING);
-
-    return ats_strndup((const char *)ASN1_STRING_data(s), ASN1_STRING_length(s));
-}
-
-// Given a certificate and it's corresponding SSL_CTX context, insert hash
-// table aliases for all of the subject and subjectAltNames. Note that we don't
-// deal with wildcards (yet).
-static void
-insert_ssl_certificate(SSLContextStorage * storage, SSL_CTX * ctx, const char * certfile)
-{
-  X509_NAME * subject = NULL;
-  ats_wildcard_matcher wildcard;
-
-  ats_file_bio bio(certfile, "r");
-  ats_x509_certificate certificate(PEM_read_bio_X509_AUX(bio.bio, NULL, NULL, NULL));
-
-  // Insert a key for the subject CN.
-  subject = X509_get_subject_name(certificate.x509);
-  if (subject) {
-    int pos = -1;
-    for (;;) {
-      pos = X509_NAME_get_index_by_NID(subject, NID_commonName, pos);
-      if (pos == -1) {
-        break;
-      }
-
-      X509_NAME_ENTRY * e = X509_NAME_get_entry(subject, pos);
-      ASN1_STRING * cn = X509_NAME_ENTRY_get_data(e);
-      char * name = asn1_strdup(cn);
-
-      Debug("ssl", "mapping '%s' to certificate %s", name, certfile);
-      storage->insert(ctx, name);
-      ats_free(name);
-    }
-  }
-
-#if HAVE_OPENSSL_TS_H
-  // Traverse the subjectAltNames (if any) and insert additional keys for the SSL context.
-  GENERAL_NAMES * names = (GENERAL_NAMES *)X509_get_ext_d2i(certificate.x509, NID_subject_alt_name, NULL, NULL);
-  if (names) {
-    unsigned count = sk_GENERAL_NAME_num(names);
-    for (unsigned i = 0; i < count; ++i) {
-      GENERAL_NAME * name;
-      char * dns;
-
-      name = sk_GENERAL_NAME_value(names, i);
-      switch (name->type) {
-      case GEN_DNS:
-        dns = asn1_strdup(name->d.dNSName);
-        if (!storage->lookup(dns)) {
-          Debug("ssl", "mapping '%s' to certificate %s", dns, certfile);
-          storage->insert(ctx, dns);
-        }
-        ats_free(dns);
-        break;
-      }
-    }
-
-    GENERAL_NAMES_free(names);
-  }
-#endif // HAVE_OPENSSL_TS_H
-
-}
 
 static char *
 reverse_dns_name(const char * hostname, char (&reversed)[TS_MAX_HOST_NAME_LEN+1])
@@ -554,33 +188,10 @@ SSLContextStorage::SSLContextStorage()
 
 SSLContextStorage::~SSLContextStorage()
 {
-  InkHashTableEntry *e;
-  InkHashTableIteratorState state;
-  InkHashTable *ht_ptr, *uniqueCtx;
-
-  uniqueCtx = ink_hash_table_create(InkHashTableKeyType_String);
-
-  // SSL_CTX_free decrease SSL_CTX internal reference count
-  // could NOT assign NULL to *value since this ctx might be used by some other live SSL instances
-
-  // Traverse hash table to find unique SSL context pointers first
-  ht_ptr = this->hostnames;
-  for (e = ink_hash_table_iterator_first(ht_ptr, &state); e != NULL; e = ink_hash_table_iterator_next(ht_ptr, &state)) {
-    InkHashTableValue value = ink_hash_table_entry_value(ht_ptr, e);
-    char ptr[32];
-    snprintf(ptr, 31, "%p", value);
-    ink_hash_table_insert(uniqueCtx, ptr, (void *)value);
+  for (unsigned i = 0; i < this->references.count(); ++i) {
+    SSL_CTX_free(this->references[i]);
   }
 
-  // release these unique SSL contexts
-  ht_ptr = uniqueCtx;
-  for (e = ink_hash_table_iterator_first(ht_ptr, &state); e != NULL; e = ink_hash_table_iterator_next(ht_ptr, &state)) {
-    InkHashTableValue value = ink_hash_table_entry_value(ht_ptr, e);
-    if (value != NULL && *(InkHashTableValue *)value) {
-      SSL_CTX_free((SSL_CTX *)value);
-    }
-  }
-  ink_hash_table_destroy(uniqueCtx);
   ink_hash_table_destroy(this->hostnames);
 }
 
@@ -588,12 +199,14 @@ bool
 SSLContextStorage::insert(SSL_CTX * ctx, const char * name)
 {
   ats_wildcard_matcher wildcard;
+  bool inserted = true;
 
   if (wildcard.match(name)) {
     // We turn wildcards into the reverse DNS form, then insert them into the trie
     // so that we can do a longest match lookup.
     char namebuf[TS_MAX_HOST_NAME_LEN + 1];
     char * reversed;
+    xptr<SSLEntry> entry;
 
     reversed = reverse_dns_name(name + 2, namebuf);
     if (!reversed) {
@@ -602,13 +215,26 @@ SSLContextStorage::insert(SSL_CTX * ctx, const char * name)
     }
 
     Debug("ssl", "indexed wildcard certificate for '%s' as '%s' with SSL_CTX %p", name, reversed, ctx);
-    return this->wildcards.Insert(reversed, new SSLEntry(ctx), 0 /* rank */, -1 /* keylen */);
+    entry = new SSLEntry(ctx);
+    inserted = this->wildcards.Insert(reversed, entry, 0 /* rank */, -1 /* keylen */);
+    if (inserted) {
+      entry.release();
+    }
   } else {
     Debug("ssl", "indexed '%s' with SSL_CTX %p", name, ctx);
     ink_hash_table_insert(this->hostnames, name, (void *)ctx);
   }
 
-  return true;
+  // Keep a unique reference to the SSL_CTX, so that we can free it later. Since we index by name, multiple
+  // certificates can be indexed for the same name. If this happens, we will overwrite the previous pointer
+  // and leak a context. So if we insert a certificate, keep an ownership reference to it.
+  if (inserted) {
+    if (this->references.in(ctx) == NULL) {
+      this->references.push_back(ctx);
+    }
+  }
+
+  return inserted;
 }
 
 SSL_CTX *
@@ -641,72 +267,37 @@ SSLContextStorage::lookup(const char * name) const
   return NULL;
 }
 
-// struct SSLCert_UpdateContinuation
-//
-//   Used to read the ssl_multicert.config file after the manager signals
-//      a change
-//
-struct SSLCert_UpdateContinuation;
-typedef int (SSLCert_UpdateContinuation::*SSLCert_UpdContHandler) (int, void *);
-struct SSLCert_UpdateContinuation: public Continuation
-{
-  int file_update_handler(int etype, void *data)
-  {
-    NOWARN_UNUSED(etype);
-    NOWARN_UNUSED(data);
-    SSLCertLookup::reconfigure();
-    delete this;
-    return EVENT_DONE;
-  }
-  SSLCert_UpdateContinuation(ProxyMutex * m):Continuation(m)
-  {
-    SET_HANDLER((SSLCert_UpdContHandler) & SSLCert_UpdateContinuation::file_update_handler);
-  }
-};
-
-int
-sslCertFile_CB(const char *name, RecDataT data_type, RecData data, void *cookie)
-{
-  NOWARN_UNUSED(name);
-  NOWARN_UNUSED(data_type);
-  NOWARN_UNUSED(data);
-  NOWARN_UNUSED(cookie);
-  eventProcessor.schedule_imm(NEW(new SSLCert_UpdateContinuation(ssl_reconfig_mutex)), ET_CACHE);
-  return 0;
-}
-
 #if TS_HAS_TESTS
 
-REGRESSION_TEST(SSLHostLookup)(RegressionTest* t, int atype, int * pstatus)
+REGRESSION_TEST(SSLWildcardMatch)(RegressionTest * t, int atype, int * pstatus)
 {
-  TestBox           tb(t, pstatus);
-  SSLContextStorage storage;
+  TestBox box(t, pstatus);
+  ats_wildcard_matcher wildcard;
 
-  SSL_CTX * wild = make_ssl_context(NULL);
-  SSL_CTX * notwild = make_ssl_context(NULL);
-  SSL_CTX * b_notwild = make_ssl_context(NULL);
-  SSL_CTX * foo = make_ssl_context(NULL);
+  box = REGRESSION_TEST_PASSED;
 
-  *pstatus = REGRESSION_TEST_PASSED;
+  box.check(wildcard.match("foo.com") == false, "foo.com is not a wildcard");
+  box.check(wildcard.match("*.foo.com") == true, "*.foo.com not a wildcard");
+  box.check(wildcard.match("bar*.foo.com") == false, "bar*.foo.com not a wildcard");
+  box.check(wildcard.match("*") == false, "* is not a wildcard");
+  box.check(wildcard.match("") == false, "'' is not a wildcard");
+}
 
-  tb.check(storage.insert(foo, "www.foo.com"), "insert host context");
-  tb.check(storage.insert(wild, "*.wild.com"), "insert wildcard context");
-  tb.check(storage.insert(notwild, "*.notwild.com"), "insert wildcard context");
-  tb.check(storage.insert(b_notwild, "*.b.notwild.com"), "insert wildcard context");
+REGRESSION_TEST(SSLReverseHostname)(RegressionTest * t, int atype, int * pstatus)
+{
+  TestBox box(t, pstatus);
 
-  // Basic wildcard cases.
-  tb.check(storage.lookup("a.wild.com") == wild, "wildcard lookup for a.wild.com");
-  tb.check(storage.lookup("b.wild.com") == wild, "wildcard lookup for b.wild.com");
-  tb.check(storage.lookup("wild.com") == wild, "wildcard lookup for wild.com");
+  char reversed[TS_MAX_HOST_NAME_LEN + 1];
 
-  // Varify that wildcard does longest match.
-  tb.check(storage.lookup("a.notwild.com") == notwild, "wildcard lookup for a.notwild.com");
-  tb.check(storage.lookup("notwild.com") == notwild, "wildcard lookup for notwild.com");
-  tb.check(storage.lookup("c.b.notwild.com") == b_notwild, "wildcard lookup for c.b.notwild.com");
+#define _R(name) reverse_dns_name(name, reversed)
 
-  // Basic hostname cases.
-  tb.check(storage.lookup("www.foo.com") == foo, "host lookup for www.foo.com");
-  tb.check(storage.lookup("www.bar.com") == NULL, "host lookup for www.bar.com");
+  box = REGRESSION_TEST_PASSED;
+
+  box.check(strcmp(_R("foo.com"), "com.foo") == 0, "reversed foo.com");
+  box.check(strcmp(_R("bar.foo.com"), "com.foo.bar") == 0, "reversed bar.foo.com");
+  box.check(strcmp(_R("foo"), "foo") == 0, "reversed foo");
+
+#undef _R
 }
 
 #endif // TS_HAS_TESTS

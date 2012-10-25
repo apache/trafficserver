@@ -34,7 +34,7 @@
 
 #include "ParseRules.h"
 // Look in MatcherUtils.cc for comments on function usage
-char *readIntoBuffer(char *file_path, const char *module_name, int *read_size_ptr);
+char *readIntoBuffer(const char *file_path, const char *module_name, int *read_size_ptr);
 
 int unescapifyStr(char *buffer);
 

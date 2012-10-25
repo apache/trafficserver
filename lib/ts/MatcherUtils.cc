@@ -41,7 +41,7 @@
 //  CALLEE is responsibled for deallocating the buffer via free()
 //
 char *
-readIntoBuffer(char *file_path, const char *module_name, int *read_size_ptr)
+readIntoBuffer(const char *file_path, const char *module_name, int *read_size_ptr)
 {
 
   int fd;

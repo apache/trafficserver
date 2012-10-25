@@ -36,8 +36,19 @@ endif
 
 
 DEFS += @IOCORE_MODULARIZED_DEFS@
+TESTS = $(check_PROGRAMS)
 
+check_PROGRAMS = test_certlookup
 noinst_LIBRARIES = libinknet.a
+
+test_certlookup_SOURCES = \
+  test_certlookup.cc \
+  SSLCertLookup.cc
+
+test_certlookup_LDADD = \
+  $(top_builddir)/lib/ts/libtsutil.la \
+  $(top_builddir)/iocore/eventsystem/libinkevent.a \
+  @LIBSSL@
 
 libinknet_a_SOURCES = \
   Connection.cc \
@@ -83,6 +94,7 @@ libinknet_a_SOURCES = \
   SSLNetAccept.cc \
   SSLNextProtocolAccept.cc \
   SSLNextProtocolSet.cc \
+  SSLUtils.cc \
   UDPIOEvent.cc \
   UnixConnection.cc \
   UnixNetAccept.cc \

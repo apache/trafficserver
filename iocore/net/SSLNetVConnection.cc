@@ -23,6 +23,7 @@
 #include "ink_config.h"
 #include "P_Net.h"
 #include "P_SSLNextProtocolSet.h"
+#include "P_SSLUtils.h"
 
 #define SSL_READ_ERROR_NONE	  0
 #define SSL_READ_ERROR		  1
@@ -102,7 +103,10 @@ ssl_read_from_net(NetHandler * nh, UnixNetVConnection * vc, EThread * lthread, i
       switch (sslErr) {
       case SSL_ERROR_NONE:
 
-        DebugBufferPrint("ssl_buff", b->end() + offset, rres, "SSL Read");
+#if DEBUG
+        SSLDebugBufferPrint("ssl_buff", b->end() + offset, rres, "SSL Read");
+#endif
+
         ink_debug_assert(rres);
 
         bytes_read += rres;
@@ -394,7 +398,7 @@ SSLNetVConnection::load_buffer_and_write(int64_t towrite, int64_t &wattempted, i
     default:
       r = -errno;
       Debug("ssl", "SSL_write-SSL_ERROR_SSL");
-      SSLNetProcessor::logSSLError("SSL_write");
+      SSLError("SSL_write");
       break;
     }
     return (r);
@@ -452,30 +456,30 @@ SSLNetVConnection::sslStartHandShake(int event, int &err)
     if (this->ssl == NULL) {
       SSL_CTX * ctx;
       int namelen = sizeof(ip);
-      char buff[INET6_ADDRSTRLEN];
+      SSLCertificateConfig::scoped_config lookup;
 
       safe_getsockname(get_socket(), &ip.sa, &namelen);
-      ats_ip_ntop(&ip.sa, buff, sizeof(buff));
-      SSLCertLookup *lookup = SSLCertLookup::acquire();
-      ctx = lookup->findInfoInHash(buff);
+
+      ip.port() = 0; // XXX certificate lookup can't check the port yet; TS-1500
+      ctx = lookup->findInfoInHash(ip);
       Debug("ssl", "IP context is %p, default context %p", ctx, lookup->defaultContext());
       if (ctx == NULL) {
         ctx = lookup->defaultContext();
       }
 
       this->ssl = make_ssl_connection(ctx, this);
-      SSLCertLookup::release(lookup);
       if (this->ssl == NULL) {
         Debug("ssl", "SSLNetVConnection::sslServerHandShakeEvent, ssl create failed");
-        SSLNetProcessor::logSSLError("SSL_StartHandShake");
+        SSLError("SSL_StartHandShake");
         return EVENT_ERROR;
       }
     }
 
     return sslServerHandShakeEvent(err);
   } else {
-    if (ssl == NULL) {
-      ssl = make_ssl_connection(ssl_NetProcessor.client_ctx, this);
+    ink_assert(event == SSL_EVENT_CLIENT);
+    if (this->ssl == NULL) {
+      this->ssl = make_ssl_connection(ssl_NetProcessor.client_ctx, this);
     }
     ink_assert(event == SSL_EVENT_CLIENT);
     return (sslClientHandShakeEvent(err));
@@ -558,7 +562,7 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
   default:
     err = errno;
     Debug("ssl", "SSLNetVConnection::sslServerHandShakeEvent, error");
-    SSLNetProcessor::logSSLError("SSL_ServerHandShake");
+    SSLError("SSL_ServerHandShake");
     return EVENT_ERROR;
     break;
   }
@@ -623,7 +627,7 @@ SSLNetVConnection::sslClientHandShakeEvent(int &err)
   case SSL_ERROR_SSL:
   default:
     err = errno;
-    SSLNetProcessor::logSSLError("sslClientHandShakeEvent");
+    SSLError("sslClientHandShakeEvent");
     return EVENT_ERROR;
     break;
 
