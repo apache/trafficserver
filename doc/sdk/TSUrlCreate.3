@@ -1,0 +1,409 @@
+.\"  Licensed to the Apache Software Foundation (ASF) under one .\"
+.\"  or more contributor license agreements.  See the NOTICE file .\"
+.\"  distributed with this work for additional information .\"
+.\"  regarding copyright ownership.  The ASF licenses this file .\"
+.\"  to you under the Apache License, Version 2.0 (the .\"
+.\"  "License"); you may not use this file except in compliance .\"
+.\"  with the License.  You may obtain a copy of the License at .\"
+.\" .\"
+.\"      http://www.apache.org/licenses/LICENSE-2.0 .\"
+.\" .\"
+.\"  Unless required by applicable law or agreed to in writing, software .\"
+.\"  distributed under the License is distributed on an "AS IS" BASIS, .\"
+.\"  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. .\"
+.\"  See the License for the specific language governing permissions and .\"
+.Dd October 25, 2012
+.Dt TSUrlCreate 3ts TSAPI
+.Sh NAME
+.Nm TSUrlCreate,
+.Nm TSUrlClone,
+.Nm TSUrlCopy,
+.Nm TSUrlPrint,
+.Nm TSUrlParse,
+.Nm TSUrlLengthGet,
+.Nm TSUrlStringGet,
+.Nm TSUrlSchemeGet,
+.Nm TSUrlSchemeSet,
+.Nm TSUrlUserGet,
+.Nm TSUrlUserSet,
+.Nm TSUrlPasswordGet,
+.Nm TSUrlPasswordSet,
+.Nm TSUrlHostGet,
+.Nm TSUrlHostSet,
+.Nm TSUrlPortGet,
+.Nm TSUrlPortSet,
+.Nm TSUrlPathGet,
+.Nm TSUrlPathSet,
+.Nm TSUrlHttpParamsGet,
+.Nm TSUrlHttpParamsSet,
+.Nm TSUrlHttpQueryGet,
+.Nm TSUrlHttpQuerySet,
+.Nm TSUrlHttpFragmentGet,
+.Nm TSUrlHttpFragmentSet,
+.Nm TSStringPercentEncode,
+.Nm TSUrlPercentEncode,
+.Nm TSStringPercentDecode
+.Nd Traffic Server URL manipulation API
+.Sh LIBRARY
+Apache Traffic Server plugin API
+.Sh SYNOPSIS
+.In ts/ts.h
+.Ft "TSReturnCode"
+.Fo TSUrlCreate
+.Fa "TSMBuffer bufp"
+.Fa "TSMLoc* locp"
+.Fc
+.Ft "TSReturnCode"
+.Fo TSUrlClone
+.Fa "TSMBuffer dest_bufp"
+.Fa "TSMBuffer src_bufp"
+.Fa "TSMLoc src_url"
+.Fa "TSMLoc* locp"
+.Fc
+.Ft "TSReturnCode"
+.Fo TSUrlCopy
+.Fa "TSMBuffer dest_bufp"
+.Fa "TSMLoc dest_url"
+.Fa "TSMBuffer src_bufp"
+.Fa "TSMLoc src_url"
+.Fc
+.Ft "void"
+.Fo TSUrlPrint
+.Fa "TSMBuffer bufp"
+.Fa "TSMLoc offset"
+.Fa "TSIOBuffer iobufp"
+.Fc
+.Ft "TSParseResult"
+.Fo TSUrlParse
+.Fa "TSMBuffer bufp"
+.Fa "TSMLoc offset"
+.Fa "const char** start"
+.Fa "const char* end"
+.Fc
+.Ft "int"
+.Fo TSUrlLengthGet
+.Fa "TSMBuffer bufp"
+.Fa "TSMLoc offset"
+.Fc
+.Ft "char*"
+.Fo TSUrlStringGet
+.Fa "TSMBuffer bufp"
+.Fa "TSMLoc offset"
+.Fa "int* length"
+.Fc
+.Ft "const char*"
+.Fo TSUrlSchemeGet
+.Fa "TSMBuffer bufp"
+.Fa "TSMLoc offset"
+.Fa "int *length"
+.Fc
+.Ft "TSReturnCode"
+.Fo TSUrlSchemeSet
+.Fa "TSMBuffer bufp"
+.Fa "TSMLoc offset"
+.Fa "const char* value"
+.Fa "int length"
+.Fc
+.Ft "const char*"
+.Fo TSUrlUserGet
+.Fa "TSMBuffer bufp"
+.Fa "TSMLoc offset"
+.Fa "int* length"
+.Fc
+.Ft "TSReturnCode"
+.Fo TSUrlUserSet
+.Fa "TSMBuffer bufp"
+.Fa "TSMLoc offset"
+.Fa "const char* value"
+.Fa "int length"
+.Fc
+.Ft "const char*"
+.Fo TSUrlPasswordGet
+.Fa "TSMBuffer bufp"
+.Fa "TSMLoc offset"
+.Fa "int* length"
+.Fc
+.Ft "TSReturnCode"
+.Fo TSUrlPasswordSet
+.Fa "TSMBuffer bufp"
+.Fa "TSMLoc offset"
+.Fa "const char* value"
+.Fa "int length"
+.Fc
+.Ft "const char*"
+.Fo TSUrlHostGet
+.Fa "TSMBuffer bufp"
+.Fa "TSMLoc offset"
+.Fa "int* length"
+.Fc
+.Ft "TSReturnCode"
+.Fo TSUrlHostSet
+.Fa "TSMBuffer bufp"
+.Fa "TSMLoc offset"
+.Fa "const char* value"
+.Fa "int length"
+.Fc
+.Ft "int"
+.Fo TSUrlPortGet
+.Fa "TSMBuffer bufp"
+.Fa "TSMLoc offset"
+.Fc
+.Ft "TSReturnCode"
+.Fo TSUrlPortSet
+.Fa "TSMBuffer bufp"
+.Fa "TSMLoc offset"
+.Fa "int port"
+.Fc
+.Ft "const char*"
+.Fo TSUrlPathGet
+.Fa "TSMBuffer bufp"
+.Fa "TSMLoc offset"
+.Fa "int* length"
+.Fc
+.Ft "TSReturnCode"
+.Fo TSUrlPathSet
+.Fa "TSMBuffer bufp"
+.Fa "TSMLoc offset"
+.Fa "const char* value"
+.Fa "int length"
+.Fc
+.Ft "const char*"
+.Fo TSUrlHttpParamsGet
+.Fa "TSMBuffer bufp"
+.Fa "TSMLoc offset"
+.Fa "int* length"
+.Fc
+.Ft "TSReturnCode"
+.Fo TSUrlHttpParamsSet
+.Fa "TSMBuffer bufp"
+.Fa "TSMLoc offset"
+.Fa "const char* value"
+.Fa "int length"
+.Fc
+.Ft "const char*"
+.Fo TSUrlHttpQueryGet
+.Fa "TSMBuffer bufp"
+.Fa "TSMLoc offset"
+.Fa "int* length"
+.Fc
+.Ft "TSReturnCode"
+.Fo TSUrlHttpQuerySet
+.Fa "TSMBuffer bufp"
+.Fa "TSMLoc offset"
+.Fa "const char* value"
+.Fa "int length"
+.Fc
+.Ft "const char*"
+.Fo TSUrlHttpFragmentGet
+.Fa "TSMBuffer bufp"
+.Fa "TSMLoc offset"
+.Fa "int* length"
+.Fc
+.Ft "TSReturnCode"
+.Fo TSUrlHttpFragmentSet
+.Fa "TSMBuffer bufp"
+.Fa "TSMLoc offset"
+.Fa "const char* value"
+.Fa "int length"
+.Fc
+.Ft "TSReturnCode"
+.Fo TSStringPercentEncode
+.Fa "const char *str"
+.Fa "int str_len"
+.Fa "char *dst"
+.Fa "size_t dst_size"
+.Fa "size_t *length"
+.Fa "const unsigned char *map"
+.Fc
+.Ft "TSReturnCode"
+.Fo TSUrlPercentEncode
+.Fa "TSMBuffer bufp"
+.Fa "TSMLoc offset"
+.Fa "char *dst"
+.Fa "size_t dst_size"
+.Fa "size_t *length"
+.Fa "const unsigned char *map"
+.Fc
+.Ft "TSReturnCode"
+.Fo TSStringPercentDecode
+.Fa "const char *str"
+.Fa "size_t str_len"
+.Fa "char *dst"
+.Fa "size_t dst_size"
+.Fa "size_t *length"
+.Fc
+
+.Sh DESCRIPTION
+The URL data structure is a parsed version of a standard internet
+URL. The Traffic Server URL API provides access to URL data
+stored in marshal buffers. The URL functions can create, copy,
+retrieve or delete entire URLs, and retrieve or modify parts of
+URLs, such as their port or scheme information.
+
+.Fn TSURLCreate
+creates a new URL within the marshal buffer
+.Fa bufp. Release the resulting handle with a call to
+.Fa TSHandleMLocRelease .
+
+.Pp
+.Fn TSUrlClone
+copies the contents of the URL at location
+.Fa src_url
+within the marshal buffer
+.Fa src_bufp
+to a location within the marshal buffer
+.Fa dest_bufp .
+Release the returned handle with a call to
+.Fn TSHandleMLocRelease .
+
+.Pp
+.Fn TSUrlCopy,
+copies the contents of the URL at location
+.Fa src_url
+within the marshal buffer
+.Fa src_bufp
+to the location
+.Fa dest_url
+within the marshal buffer
+.Fa dest_bufp .
+.Fn TSUrlCopy
+works correctly even if
+.Fa src_bufp
+and
+.Fa dest_bufp
+point to different marshal buffers. It is important
+for the destination URL (its marshal buffer and TSMLoc) to have
+been created before copying into it.
+
+.Pp
+.Fn TSUrlPrint
+formats a URL stored in an TSMBuffer to an TSIOBuffer.
+
+.Pp
+.Fn TSUrlParse
+parses a URL. The
+.Fa start
+pointer is both an input and an output
+parameter and marks the start of the URL to be parsed. After a
+successful parse, the
+.Fa start
+pointer equals the
+.Fa end
+pointer. The
+.Fa end
+pointer must be one byte after the last character you want to
+parse. The URL parsing routine assumes that everything between start
+and end is part of the URL. It is up to higher level parsing routines,
+such as
+.Fn TSHttpHdrParseReq ,
+to determine the actual end of the URL.
+
+.Pp
+.Fn TSUrlLengthGet
+calculates the length of the URL located at
+.Fa offset
+within the marshal buffer
+.Fa bufp
+if it were returned as a string. This length will be the same as the length returned by
+.Fn TSUrlStringGet .
+
+.Fn TSUrlStringGet
+constructs a string representation of the URL located at
+.Fa offset
+within the marshal buffer
+.Fn bufp .
+.Fn TSUrlStringGet
+stores the length of the allocated string in the parameter
+.Fa length .
+This is the same length that
+.Fn TSUrlLengthGet
+returns. The returned string is allocated by a call to
+.Fn TSmalloc
+and must be freed by a call to
+.Fn TSfree .
+If length is NULL then no attempt is made to de-reference it.
+
+
+.Pp
+.Fn TSUrlSchemeGet ,
+.Fn TSUrlUserGet ,
+.Fn TSUrlPasswordGet ,
+.Fn TSUrlHostGet ,
+.Fn TSUrlHttpParamsGet ,
+.Fn TSUrlHttpQueryGet
+and
+.Fn TSUrlHttpFragmentGet
+each retrieve an internal pointer to the specified portion of the
+URL from the marshall buffer
+.Fa bufp .
+The length of the returned string is placed in
+.Fa length
+and a pointer to the URL portion is returned. The returned string
+is not guaranteed to be NUL-terminated.
+
+.Pp
+.Fn TSUrlSchemeSet ,
+.Fn TSUrlUserSet ,
+.Fn TSUrlPasswordSet ,
+.Fn TSUrlHostSet ,
+.Fn TSUrlHttpParamsSet ,
+.Fn TSUrlHttpQuerySet
+and
+.Fn TSUrlHttpFragmentSet
+each set the specified portion of the URL located at 
+.Fa offset
+within the marshal buffer
+.Fa bufp
+to the string value. If
+.Fa length
+is -1 then these functions assume that value is NUL-terminated.
+Otherwise, the length of the string
+.Fa value
+is taken to be
+.Fa length .
+These functions copy the string to within
+.Fa bufp ,
+so it can be subsequently modified or deleted.
+
+.Pp
+.Fn TSUrlPortGet
+retrieves the port number portion of the URL located at
+.Fa offset
+within the marshal buffer
+.Fa bufp ,
+It returns 0 if there is no port number.
+
+.Pp
+.Fn TSUrlPortSet
+sets the port number portion of the URL located at
+.Fa offset within the marshal buffer
+.Fa bufp
+to the value
+.Fa port .
+
+.Pp
+.Fn TSStringPercentEncode
+performs percent-encoding of the string
+.Fa str ,
+storing the new string in the
+.Fa dst
+buffer. The
+.Fa length
+parameter will be
+set to the new (encoded) string length, or 0 if the encoding failed.
+.Fa TSUrlPercentEncode
+is similar but operates on a URL object. If the optional
+.Fa map
+parameter is provided, it should be a map of characters to encode.
+.Pp
+.Fn TSStringPercentDecode
+perform percent-decoding of the string in the buffer, writing
+to the
+.Fa dst
+buffer. The source and destination can be the same,
+in which case they overwrite. The decoded string is always
+guaranteed to be no longer than the source string.
+
+.fi
+.Sh SEE ALSO
+.Xr TSAPI 3ts

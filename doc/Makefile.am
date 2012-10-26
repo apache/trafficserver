@@ -85,7 +85,8 @@ man3_MANS = \
   sdk/TSMBufferCreate.3 \
   sdk/TSMalloc.3 \
   sdk/TSPluginInit.3 \
-  sdk/TSTrafficServerVersionGet.3
+  sdk/TSTrafficServerVersionGet.3 \
+  sdk/TSUrlCreate.3
 
 EXTRA_DIST = \
   Doxyfile.in \
