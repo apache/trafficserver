@@ -75,8 +75,8 @@ memory. These routines correspond to similar routines in the C
 library. For example, 
 .Fn TSrealloc
 behaves like the C library routine
-.Fn realloc
-\. There are two reasons to use the routines provided by
+.Fn realloc .
+There are two reasons to use the routines provided by
 Traffic Server. The first is portability. The Traffic Server API routines
 behave the same on all of Traffic Server’s supported platforms. For
 example,
@@ -87,16 +87,16 @@ actually track the memory allocations by file and line number. This
 tracking is very efficient, is always turned on, and is useful for
 tracking down memory leaks.
 
-.Fn TSMalloc
+.Fn TSmalloc
 returns a pointer to
 .Fa size
 bytes of memory allocated from the heap. Traffic Server uses 
-.Fn TSMalloc
+.Fn TSmalloc
 internally for memory allocations.
 Always use 
-.Fn TSFree
+.Fn TSfree
 to release memory allocated by 
-.Fn TSMalloc ; do not
+.Fn TSmalloc ; do not
 use
 .Fn free .
 
@@ -137,7 +137,7 @@ appends the NULL-terminated string src to the end of dst. It will append at most
 .Fa size
 - strlen(dst) - 1 bytes, NULL-terminating the result.
 
-.Fn TSFree
+.Fn TSfree
 releases the memory allocated by
 .Fn Tsmalloc
 or
