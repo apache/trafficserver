@@ -1,0 +1,110 @@
+.\"  Licensed to the Apache Software Foundation (ASF) under one .\"
+.\"  or more contributor license agreements.  See the NOTICE file .\"
+.\"  distributed with this work for additional information .\"
+.\"  regarding copyright ownership.  The ASF licenses this file .\"
+.\"  to you under the Apache License, Version 2.0 (the .\"
+.\"  "License"); you may not use this file except in compliance .\"
+.\"  with the License.  You may obtain a copy of the License at .\"
+.\" .\"
+.\"      http://www.apache.org/licenses/LICENSE-2.0 .\"
+.\" .\"
+.\"  Unless required by applicable law or agreed to in writing, software .\"
+.\"  distributed under the License is distributed on an "AS IS" BASIS, .\"
+.\"  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. .\"
+.\"  See the License for the specific language governing permissions and .\"
+.Dd October 25, 2012
+.Dt TSMBufferCreate 3ts TSAPI
+.Sh NAME
+.Nm TSMBufferCreate,
+.Nm TSMBufferDestroy,
+.Nm TSHandleMLocRelease
+.Nd Traffic Server marshall buffers
+.Sh LIBRARY
+Apache Traffic Server plugin API
+.Sh SYNOPSIS
+.In ts/ts.h
+.Ft "TSMBuffer"
+.Fo TSMBufferCreate
+.Fa "void"
+.Fc
+.Ft "TSReturnCode"
+.Fo TSMBufferDestroy
+.Fa "TSMBuffer bufp"
+.Fc
+.Ft "TSReturnCode"
+.Fo TSHandleMLocRelease
+.Fa "TSMBuffer bufp"
+.Fa "TSMLoc parent"
+.Fa "TSMLoc mloc"
+.Fc
+.Sh DESCRIPTION
+The marshal buffer or TSMBuffer is a heap data structure that
+stores parsed URLs, MIME headers and HTTP headers. You can allocate
+new objects out of marshal buffers, and change the values within
+the marshal buffer. Whenever you manipulate an object, you require
+the handle to the object (TSMLoc) and the marshal buffer containing
+the object (TSMBuffer).
+.Pp
+Any marshal buffer fetched by
+.Fn TSHttpTxn*Get
+will be used by other parts of the system. Be careful not to destroy these shared, transaction marshal buffers.
+
+.Fn TSMBufferCreate
+creates a new marshal buffer and initializes the reference count.
+.Fn TSMBufferDestroy
+Ignores the reference count and destroys the marshal buffer
+.Fa bufp .
+The internal data buffer associated with the marshal buffer is also
+destroyed if the marshal buffer allocated it.
+
+.Fn TSHandleMLocRelease
+Releases the TSMLoc
+.Fa mloc
+created from the TSMLoc
+.Fa parent .
+If a TSMLoc is obtained from a transaction, it does not have a parent
+TSMLoc. Use the the constant
+.Fa TS_NULL_MLOC
+as its parent.
+
+.Sh RETURN VALUES
+.Fn TSMBufferDestroy
+and 
+.Fn TSHandleMLocRelease 
+return
+.Fa TS_SUCCESS
+on success, or
+.Fa TS_ERROR
+on failure.
+.Fn TSMBufferCreate
+returns the new TSMBuffer.
+
+.Sh EXAMPLES
+.nf
+#include <ts/ts.h>
+
+static void
+copyResponseMimeHdr (TSCont pCont, TSHttpTxn pTxn)
+{
+  TSMBuffer respHdrBuf, tmpBuf;
+  TSMLoc respHttpHdrLoc, tmpMimeHdrLoc;
+
+  if (!TSHttpTxnClientRespGet(pTxn, &respHdrBuf, &respHttpHdrLoc)) {
+    TSError("couldn't retrieve client response header\n");
+    TSHandleMLocRelease(respHdrBuf, TS_NULL_MLOC, respHttpHdrLoc);
+    goto done;
+  }
+
+  tmpBuf = TSMBufferCreate();
+  tmpMimeHdrLoc = TSMimeHdrCreate(tmpBuf);
+  TSMimeHdrCopy(tmpBuf, tmpMimeHdrLoc, respHdrBuf, respHttpHdrLoc);
+  TSHandleMLocRelease(tmpBuf, TS_NULL_MLOC, tmpMimeHdrLoc);
+  TSHandleMLocRelease(respHdrBuf, TS_NULL_MLOC, respHttpHdrLoc);
+  TSMBufferDestroy(tmpBuf);
+
+done:
+  TSHttpTxnReenable(pTxn, TS_EVENT_HTTP_CONTINUE);
+}
+.fi
+.Sh SEE ALSO
+.Xr TSAPI 3ts
