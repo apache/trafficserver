@@ -55,9 +55,13 @@
 #ifdef __alpha
 #define ink64 long
 #define inku64 unsigned long
+#define inkPRI64 "ld"
+#define inkPRIu64 "lu"
 #else
 #define ink64 long long
 #define inku64 unsigned long long
+#define inkPRI64 "lld"
+#define inkPRIu64 "llu"
 #endif
 
 #if !defined (sparc) && !defined (_WIN32)
@@ -201,8 +205,8 @@ float total_ops = 0;
 int running_sops = 0, new_sops = 0, total_sops = 0;
 int running_latency = 0, latency = 0;
 int lat_ops = 0, b1_ops = 0, running_b1latency = 0, b1latency = 0;
-int running_cbytes = 0, new_cbytes = 0, total_cbytes = 0;
-int running_tbytes = 0, new_tbytes = 0, total_tbytes = 0;
+inku64 running_cbytes = 0, new_cbytes = 0, total_cbytes = 0;
+inku64 running_tbytes = 0, new_tbytes = 0, total_tbytes = 0;
 int average_over = 5;
 double hitrate = 0.4;
 int hotset = 1000;
@@ -241,16 +245,16 @@ char urlsdump_file[256] = "";
 FILE * urlsdump_fp = NULL;
 int drand_seed = 0;
 int docsize = -1;
-int url_hash_entries = 100000;
+int url_hash_entries = 1000000;
 char url_hash_filename[256] = "";
 int bandwidth_test = 0;
 int bandwidth_test_to_go = 0;
-int total_client_request_bytes = 0;
-int total_proxy_request_bytes = 0;
-int total_server_response_body_bytes = 0;
-int total_server_response_header_bytes = 0;
-int total_proxy_response_body_bytes = 0;
-int total_proxy_response_header_bytes = 0;
+inku64 total_client_request_bytes = 0;
+inku64 total_proxy_request_bytes = 0;
+inku64 total_server_response_body_bytes = 0;
+inku64 total_server_response_header_bytes = 0;
+inku64 total_proxy_response_body_bytes = 0;
+inku64 total_proxy_response_header_bytes = 0;
 ink_hrtime now = 0, start_time = 0;
 ArgumentFunction jtest_usage;
 int extra_headers = 0;
@@ -2913,7 +2917,7 @@ void interval_report() {
   now = ink_get_hrtime();
   if (!(here++ % 20))
     printf(
- " con  new    ops 1byte   lat   bytes/per     svrs  new  ops    total   time  err\n");
+ " con  new     ops 1byte   lat      bytes/per        svrs  new  ops      total   time  err\n");
   RUNNING(clients);
   RUNNING_AVG(running_latency,latency,lat_ops); lat_ops = 0;
   RUNNING_AVG(running_b1latency,b1latency,b1_ops); b1_ops = 0;
@@ -2923,8 +2927,8 @@ void interval_report() {
   RUNNING(sops);
   RUNNING(tbytes);
   float t = (float)(now - start_time);
-  int per = current_clients ? running_cbytes / current_clients : 0;
-  printf("%4d %4d %6.1f %5d %5d %7d/%-6d  %4d %4d %4d  %7d %6.1f %4d\n", 
+  inku64 per = current_clients ? running_cbytes / current_clients : 0;
+  printf("%4d %4d %7.1f %5d %5d %10"inkPRIu64"/%-9"inkPRIu64"  %4d %4d %4d  %9"inkPRIu64" %6.1f %4d\n",
          current_clients, // clients, n_ka_cache,
          running_clients,
          running_ops, running_b1latency, running_latency,
@@ -2935,15 +2939,15 @@ void interval_report() {
          t/((float)HRTIME_SECOND),
          errors);
   if (is_done()) {
-    printf("Total Client Request Bytes:\t\t%d\n", total_client_request_bytes);
-    printf("Total Server Response Header Bytes:\t%d\n", 
+    printf("Total Client Request Bytes:\t\t%"inkPRIu64"\n", total_client_request_bytes);
+    printf("Total Server Response Header Bytes:\t%"inkPRIu64"\n",
            total_server_response_header_bytes);
-    printf("Total Server Response Body Bytes:\t%d\n", 
+    printf("Total Server Response Body Bytes:\t%"inkPRIu64"\n",
            total_server_response_body_bytes);
-    printf("Total Proxy Request Bytes:\t\t%d\n", total_proxy_request_bytes);
-    printf("Total Proxy Response Header Bytes:\t%d\n", 
+    printf("Total Proxy Request Bytes:\t\t%"inkPRIu64"\n", total_proxy_request_bytes);
+    printf("Total Proxy Response Header Bytes:\t%"inkPRIu64"\n",
            total_proxy_response_header_bytes);
-    printf("Total Proxy Response Body Bytes:\t%d\n", 
+    printf("Total Proxy Response Body Bytes:\t%"inkPRIu64"\n",
            total_proxy_response_body_bytes);
   }
 }
