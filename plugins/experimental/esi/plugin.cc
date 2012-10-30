@@ -383,7 +383,7 @@ ContData::fillPostHeader(TSMBuffer bufp, TSMLoc hdr_loc) {
         } // end value iteration
 
         if (static_cast<int>(header.size()) > (name_len + 2 /* for ': ' */ )) {
-          header += "\r\n";
+          header.append("\r\n");
           post_headers.push_back(header);
         }
       } // end if processable header
@@ -530,7 +530,7 @@ cacheNodeList(ContData *cont_data) {
   }
   string post_request("");
   post_request.append(TS_HTTP_METHOD_POST);
-  post_request += ' ';
+  post_request.append(" ");
   post_request.append(cont_data->request_url);
   post_request.append(" HTTP/1.0\r\n");
   post_request.append(SERVER_INTERCEPT_HEADER);
@@ -1375,7 +1375,7 @@ lFail:
     delete cont_data;
   }
   return false;
-} 
+}
 
 pthread_key_t threadKey;
 static int
@@ -1398,7 +1398,7 @@ globalHookHandler(TSCont contp, TSEvent event, void *edata) {
       TSDebug(DEBUG_TAG, "[%s] Not setting up intercept", __FUNCTION__);
     }
     break;
-    
+
   case TS_EVENT_HTTP_READ_RESPONSE_HDR:
   case TS_EVENT_HTTP_CACHE_LOOKUP_COMPLETE:
     if (!intercept_req) {
