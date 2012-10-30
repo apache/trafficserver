@@ -29,7 +29,6 @@
 
 #if defined(linux) || defined (solaris)
 #include "sys/utsname.h"
-#include "ink_killall.h"
 #include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/sem.h>
