@@ -205,53 +205,20 @@ static void
 lockfile_kill_internal(pid_t init_pid, int init_sig, pid_t pid, const char *pname, int sig)
 {
   int err;
-
-#if defined(linux)
-
-  pid_t *pidv;
-  int pidvcnt;
-
-  // Need to grab pname's pid vector before we issue any kill signals.
-  // Specifically, this prevents the race-condition in which
-  // traffic_manager spawns a new traffic_server while we still think
-  // we're killall'ing the old traffic_server.
-  if (pname) {
-    ink_killall_get_pidv_xmalloc(pname, &pidv, &pidvcnt);
-  }
+  int status;
 
   if (init_sig > 0) {
     kill(init_pid, init_sig);
-    // sleep for a bit and give time for the first signal to be
-    // delivered
-    sleep(1);
-  }
-
-  do {
-    if ((err = kill(pid, sig)) == 0) {
-      sleep(1);
-    }
-    if (pname && (pidvcnt > 0)) {
-      ink_killall_kill_pidv(pidv, pidvcnt, sig);
-      sleep(1);
-    }
-  } while ((err == 0) || ((err < 0) && (errno == EINTR)));
-
-  ats_free(pidv);
-
-#else
-
-  if (init_sig > 0) {
-    kill(init_pid, init_sig);
-    // sleep for a bit and give time for the first signal to be
-    // delivered
-    sleep(1);
+    // Wait for children to exit
+    do {
+      err = waitpid(-1, &status, WNOHANG);
+      if (err == -1) break;
+    } while(!WIFEXITED(status) && !WIFSIGNALED(status));
   }
 
   do {
     err = kill(pid, sig);
   } while ((err == 0) || ((err < 0) && (errno == EINTR)));
-
-#endif  // linux check
 
 }
 
@@ -294,14 +261,12 @@ Lockfile::KillGroup(int sig, int initial_sig, const char *pname)
 
     if ((pid < 0) || (pid == getpid()))
       pid = holding_pid;
-    else
-      pid = -pid;
 
     if (pid != 0) {
-      // We kill the holding_pid instead of the process_group
-      // initially since there is no point trying to get core files
-      // from a group since the core file of one overwrites the core
-      // file of another one
+      // This way, we kill the process_group:
+      pid = -pid;
+      // In order to get core files from each process, please
+      // set your core_pattern appropriately.
       lockfile_kill_internal(holding_pid, initial_sig, pid, pname, sig);
     }
   }
