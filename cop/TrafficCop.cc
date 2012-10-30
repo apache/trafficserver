@@ -1687,13 +1687,14 @@ init_signals()
   struct sigaction action;
 
   cop_log_trace("Entering init_signals()\n");
-  // Handle the SIGTERM signal: We simply do the same as
-  // in sig_child..
+  // Handle the SIGTERM and SIGINT signal:
+  // We kill the process group and wait() for all children
   action.sa_handler = sig_term;
   sigemptyset(&action.sa_mask);
   action.sa_flags = 0;
 
   sigaction(SIGTERM, &action, NULL);
+  sigaction(SIGINT, &action, NULL);
 
   // Handle the SIGCHLD signal. We simply reap all children that
   // die (which should only be spawned traffic_manager's).
