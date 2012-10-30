@@ -21,8 +21,12 @@
   limitations under the License.
  */
 
-#ifndef H_REMAPAPI_H
-#define H_REMAPAPI_H
+#ifndef __TS_REMAP_H__
+#define __TS_REMAP_H__
+
+#ifndef tsapi
+#define tsapi
+#endif
 
 #ifdef __cplusplus
 extern "C"
@@ -91,7 +95,7 @@ extern "C"
      Return: TS_SUCCESS
              TS_ERROR - error, errbuf can include error message from plugin
   */
-  TSReturnCode TSRemapInit(TSRemapInterface* api_info, char* errbuf, int errbuf_size);
+  tsapi TSReturnCode TSRemapInit(TSRemapInterface* api_info, char* errbuf, int errbuf_size);
 
 
   /* Remap new request
@@ -102,12 +106,12 @@ extern "C"
              TSREMAP_NO_REMAP_STOP - No remapping was done, and stop plugin chain evaluation
              TSREMAP_DID_REMAP_STOP -  Remapping was done, but stop plugin chain evaluation
   */
-  TSRemapStatus TSRemapDoRemap(void* ih, TSHttpTxn rh, TSRemapRequestInfo* rri);
+  tsapi TSRemapStatus TSRemapDoRemap(void* ih, TSHttpTxn rh, TSRemapRequestInfo* rri);
 
 
   /* Plugin shutdown, called when plugin is unloaded.
      Optional function. */
-  void TSRemapDone(void);
+  tsapi void TSRemapDone(void);
 
 
   /* Plugin new instance. Create new plugin processing entry for unique remap record.
@@ -116,8 +120,8 @@ extern "C"
      Return: TS_SUCESS
              TS_ERROR - instance creation error
   */
-  TSReturnCode TSRemapNewInstance(int argc, char* argv[], void** ih, char* errbuf, int errbuf_size);
-  void TSRemapDeleteInstance(void*);
+  tsapi TSReturnCode TSRemapNewInstance(int argc, char* argv[], void** ih, char* errbuf, int errbuf_size);
+  tsapi void TSRemapDeleteInstance(void*);
 
 
   /* Check response code from Origin Server
@@ -125,9 +129,9 @@ extern "C"
      Remap API plugin can use InkAPI function calls inside TSRemapDoRemap()
      Return: none
   */
-  void TSRemapOSResponse(void* ih, TSHttpTxn rh, int os_response_type);
+  tsapi void TSRemapOSResponse(void* ih, TSHttpTxn rh, int os_response_type);
 
 #ifdef __cplusplus
 }
 #endif                          /* __cplusplus */
-#endif                          /* #ifndef H_REMAPAPI_H */
+#endif                          /* #ifndef __TS_REMAP_H__ */
