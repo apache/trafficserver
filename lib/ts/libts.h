@@ -60,7 +60,6 @@
 #include "ink_hash_table.h"
 #include "ink_hrtime.h"
 #include "ink_inout.h"
-#include "ink_killall.h"
 #include "ink_llqueue.h"
 #include "ink_lockfile.h"
 #include "ink_memory.h"
