@@ -2866,7 +2866,7 @@ void interval_report() {
   now = ink_get_hrtime();
   if (!(here++ % 20))
     printf(
- " con  new     ops 1byte   lat      bytes/per        svrs  new  ops      total   time  err\n");
+ " con  new     ops   1B  lat      bytes/per     svrs  new  ops      total   time  err\n");
   RUNNING(clients);
   RUNNING_AVG(running_latency,latency,lat_ops); lat_ops = 0;
   RUNNING_AVG(running_b1latency,b1latency,b1_ops); b1_ops = 0;
@@ -2877,7 +2877,7 @@ void interval_report() {
   RUNNING(tbytes);
   float t = (float)(now - start_time);
   inku64 per = current_clients ? running_cbytes / current_clients : 0;
-  printf("%4d %4d %7.1f %5d %5d %10"inkPRIu64"/%-9"inkPRIu64"  %4d %4d %4d  %9"inkPRIu64" %6.1f %4d\n",
+  printf("%4d %4d %7.1f %4d %4d %10"inkPRIu64"/%-6"inkPRIu64"  %4d %4d %4d  %9"inkPRIu64" %6.1f %4d\n",
          current_clients, // clients, n_ka_cache,
          running_clients,
          running_ops, running_b1latency, running_latency,
