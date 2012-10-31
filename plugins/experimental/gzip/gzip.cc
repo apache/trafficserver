@@ -738,10 +738,11 @@ TSPluginInit(int argc, const char *argv[])
   TSMgmtUpdateRegister(management_contp, TAG);
   read_configuration(management_contp);
 
-  TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, TSContCreate(transform_plugin, NULL));
-  TSHttpHookAdd(TS_HTTP_READ_RESPONSE_HDR_HOOK, TSContCreate(transform_plugin, NULL));
-  TSHttpHookAdd(TS_HTTP_SEND_REQUEST_HDR_HOOK, TSContCreate(transform_plugin, NULL));
-  TSHttpHookAdd(TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK, TSContCreate(transform_plugin, NULL));
+  TSCont transform_contp = TSContCreate(transform_plugin, NULL);
+  TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, transform_contp);
+  TSHttpHookAdd(TS_HTTP_READ_RESPONSE_HDR_HOOK, transform_contp);
+  TSHttpHookAdd(TS_HTTP_SEND_REQUEST_HDR_HOOK, transform_contp);
+  TSHttpHookAdd(TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK, transform_contp);
 
   info("loaded");
 }
