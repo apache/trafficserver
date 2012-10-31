@@ -32,22 +32,22 @@
 namespace Gzip  { 
   class HostConfiguration {
   public: //todo -> only configuration should be able to construct hostconfig
-    explicit HostConfiguration(std::string host)  
+    explicit HostConfiguration(const std::string & host)
       : host_(host)
       , enabled_(true)
       , cache_(true)
       , remove_accept_encoding_(false)
     {}
 
-    bool enabled() { return enabled_; }
-    void set_enabled(bool x) { enabled_ = x; } 
-    bool cache() { return cache_; }
-    void set_cache(bool x) { cache_ = x; } 
-    bool remove_accept_encoding() { return remove_accept_encoding_; }
-    void set_remove_accept_encoding(bool x) { remove_accept_encoding_ = x; } 
-    std::string host() { return host_; }
-    void add_disallow(std::string disallow);
-    void add_compressible_content_type(std::string content_type);
+    inline bool enabled() { return enabled_; }
+    inline void set_enabled(bool x) { enabled_ = x; } 
+    inline bool cache() { return cache_; }
+    inline void set_cache(bool x) { cache_ = x; } 
+    inline bool remove_accept_encoding() { return remove_accept_encoding_; }
+    inline void set_remove_accept_encoding(bool x) { remove_accept_encoding_ = x; } 
+    inline std::string host() { return host_; }
+    void add_disallow(const std::string & disallow);
+    void add_compressible_content_type(const std::string & content_type);
     bool IsUrlAllowed(const char * url, int url_len);
     bool ContentTypeIsCompressible(const char * content_type, int content_type_length);
 
@@ -66,7 +66,9 @@ namespace Gzip  {
   public:
     static Configuration * Parse(const char * path);
     HostConfiguration * Find(const char * host, int host_length); 
-    HostConfiguration * GlobalConfiguration();
+    inline HostConfiguration * GlobalConfiguration() {
+      return host_configurations_[0];
+    }
 
   private:
     explicit Configuration()  {}

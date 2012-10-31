@@ -142,20 +142,20 @@ gzip_transform_init(TSCont contp, GzipData * data)
 
   //FIXME: Probably should check for errors 
   TSMimeHdrFieldCreate(bufp, hdr_loc, &ce_loc);
-  TSMimeHdrFieldNameSet(bufp, hdr_loc, ce_loc, "Content-Encoding", -1);
+  TSMimeHdrFieldNameSet(bufp, hdr_loc, ce_loc, "Content-Encoding", sizeof("Content-Encoding") - 1);
 
   if (data->compression_type == COMPRESSION_TYPE_DEFLATE) {
-    TSMimeHdrFieldValueStringInsert(bufp, hdr_loc, ce_loc, -1, "deflate", -1);
+    TSMimeHdrFieldValueStringInsert(bufp, hdr_loc, ce_loc, -1, "deflate", sizeof("deflate") - 1);
   } else if (data->compression_type == COMPRESSION_TYPE_GZIP) {
-    TSMimeHdrFieldValueStringInsert(bufp, hdr_loc, ce_loc, -1, "gzip", -1);
+    TSMimeHdrFieldValueStringInsert(bufp, hdr_loc, ce_loc, -1, "gzip", sizeof("gzip") - 1);
   }
 
   TSMimeHdrFieldAppend(bufp, hdr_loc, ce_loc);
   TSHandleMLocRelease(bufp, hdr_loc, ce_loc);
 
   TSMimeHdrFieldCreate(bufp, hdr_loc, &ce_loc);
-  TSMimeHdrFieldNameSet(bufp, hdr_loc, ce_loc, "Vary", -1);
-  TSMimeHdrFieldValueStringInsert(bufp, hdr_loc, ce_loc, -1, "Accept-Encoding", -1);
+  TSMimeHdrFieldNameSet(bufp, hdr_loc, ce_loc, "Vary", sizeof("Vary") - 1);
+  TSMimeHdrFieldValueStringInsert(bufp, hdr_loc, ce_loc, -1, "Accept-Encoding", sizeof("Accept-Encoding") - 1);
   TSMimeHdrFieldAppend(bufp, hdr_loc, ce_loc);
   TSHandleMLocRelease(bufp, hdr_loc, ce_loc);
 
@@ -390,7 +390,7 @@ gzip_transform(TSCont contp, TSEvent event, void *edata)
 
 
 static int
-gzip_transformable(TSHttpTxn txnp, int server, HostConfiguration * host_configuration)
+gzip_transformable(TSHttpTxn txnp, int server, HostConfiguration * host_configuration, int *compress_type)
 {
   /* Server response header */
   TSMBuffer bufp;
@@ -413,57 +413,53 @@ gzip_transformable(TSHttpTxn txnp, int server, HostConfiguration * host_configur
     TSHttpTxnCachedRespGet(txnp, &bufp, &hdr_loc);
   }
   resp_status = TSHttpHdrStatusGet(bufp, hdr_loc);
+  TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
 
   //conservatively pick some statusses to compress
   if (!(resp_status == 200 || resp_status == 404 || resp_status == 500)) {
     info("http response status [%d] is not compressible", resp_status);
-    TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
     return 0;
   }
 
-  TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
   TSHttpTxnClientReqGet(txnp, &cbuf, &chdr);
 
   //the only compressible method is currently GET.
   int method_length;
   const char *method = TSHttpHdrMethodGet(cbuf, chdr, &method_length);
-  if (method != TS_HTTP_METHOD_GET) {
+  if (!(method_length == TS_HTTP_LEN_GET && memcmp(method, TS_HTTP_METHOD_GET, TS_HTTP_LEN_GET) == 0)) {
     debug("method is not GET, not compressible");
     TSHandleMLocRelease(cbuf, TS_NULL_MLOC, chdr);
     return 0;
   }
 
   cfield = TSMimeHdrFieldFind(cbuf, chdr, TS_MIME_FIELD_ACCEPT_ENCODING, TS_MIME_LEN_ACCEPT_ENCODING);
-
   if (cfield != TS_NULL_MLOC) {
-    nvalues = TSMimeHdrFieldValuesCount(cbuf, chdr, cfield);
-
-    value = TSMimeHdrFieldValueStringGet(cbuf, chdr, cfield, 0, &len);
     compression_acceptable = 0;
-    i = 0;
-    while (nvalues > 0) {
-      if (value && (strncasecmp(value, "deflate", strlen("deflate")) == 0)) {
+    nvalues = TSMimeHdrFieldValuesCount(cbuf, chdr, cfield);
+    for (i=0; i<nvalues; i++) {
+      value = TSMimeHdrFieldValueStringGet(cbuf, chdr, cfield, i, &len);
+      if (!value) {
+        continue;
+      }
+
+      if (strncasecmp(value, "deflate", sizeof("deflate") - 1) == 0) {
         compression_acceptable = 1;
+        *compress_type = COMPRESSION_TYPE_DEFLATE;
         break;
-      } else if (value && (strncasecmp(value, "gzip", strlen("gzip")) == 0)) {
+      } else if (strncasecmp(value, "gzip", sizeof("gzip") - 1) == 0) {
         compression_acceptable = 1;
+        *compress_type = COMPRESSION_TYPE_GZIP;
         break;
       }
-      ++i;
-
-      value = TSMimeHdrFieldValueStringGet(cbuf, chdr, cfield, i, &len);
-      --nvalues;
-    }
-
-    if (!compression_acceptable) {
-      info("no acceptable encoding found in request header, not compressible");
-      TSHandleMLocRelease(cbuf, chdr, cfield);
-      TSHandleMLocRelease(cbuf, TS_NULL_MLOC, chdr);
-      return 0;
     }
 
     TSHandleMLocRelease(cbuf, chdr, cfield);
     TSHandleMLocRelease(cbuf, TS_NULL_MLOC, chdr);
+
+    if (!compression_acceptable) {
+      info("no acceptable encoding found in request header, not compressible");
+      return 0;
+    }
   } else {
     info("no acceptable encoding found in request header, not compressible");
     TSHandleMLocRelease(cbuf, chdr, cfield);
@@ -487,8 +483,6 @@ gzip_transformable(TSHttpTxn txnp, int server, HostConfiguration * host_configur
     return 0;
   }
 
-  TSHandleMLocRelease(bufp, hdr_loc, field_loc);
-
   /* We only want to do gzip compression on documents that have a
      content type of "text/" or "application/x-javascript". */
   field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, TS_MIME_FIELD_CONTENT_TYPE, -1);
@@ -507,12 +501,11 @@ gzip_transformable(TSHttpTxn txnp, int server, HostConfiguration * host_configur
   TSHandleMLocRelease(bufp, hdr_loc, field_loc);
   TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
   return rv;
-
 }
 
 
 static void
-gzip_transform_add(TSHttpTxn txnp, int server, HostConfiguration * hc)
+gzip_transform_add(TSHttpTxn txnp, int server, HostConfiguration * hc, int compress_type)
 {
   int *tmp = (int *) TSHttpTxnArgGet(txnp, arg_idx_hooked);
   if (tmp) {
@@ -536,26 +529,7 @@ gzip_transform_add(TSHttpTxn txnp, int server, HostConfiguration * hc)
   GzipData *data;
 
   connp = TSTransformCreate(gzip_transform, txnp);
-
-  /* Client request header */
-  TSMBuffer cbuf;
-  TSMLoc chdr;
-  TSMLoc cfield;
-  int len;
-  int gzip = 0;
-
-  TSHttpTxnClientReqGet(txnp, &cbuf, &chdr);
-  cfield = TSMimeHdrFieldFind(cbuf, chdr, TS_MIME_FIELD_ACCEPT_ENCODING, TS_MIME_LEN_ACCEPT_ENCODING);
-  TSMimeHdrFieldValueStringGet(cbuf, chdr, cfield, 0, &len);
-
-  //we normalized to either deflate or gzip. only gzip has length 4
-  if (len == (int) strlen("gzip"))
-    gzip = 1;
-
-  TSHandleMLocRelease(cbuf, chdr, cfield);
-  TSHandleMLocRelease(cbuf, TS_NULL_MLOC, chdr);
-
-  data = gzip_data_alloc(gzip ? COMPRESSION_TYPE_GZIP : COMPRESSION_TYPE_DEFLATE);
+  data = gzip_data_alloc(compress_type);
   data->txn = txnp;
 
   TSContDataSet(connp, data);
@@ -605,85 +579,90 @@ static int
 transform_plugin(TSCont contp, TSEvent event, void *edata)
 {
   TSHttpTxn txnp = (TSHttpTxn) edata;
+  int compress_type = COMPRESSION_TYPE_DEFLATE;
 
   switch (event) {
-  case TS_EVENT_HTTP_READ_REQUEST_HDR:{
-      TSMBuffer req_buf;
-      TSMLoc req_loc;
-      if (TSHttpTxnClientReqGet(txnp, &req_buf, &req_loc) == TS_SUCCESS) {
-	int url_len;
-	char * url = TSHttpTxnEffectiveUrlStringGet(txnp, &url_len);
-	HostConfiguration * hc = find_host_configuration(txnp, req_buf, req_loc);
-	//we could clone the hosting configuration here, to make it deletable on reload?
-	TSHttpTxnArgSet(txnp, arg_idx_host_configuration, (void *) hc);
+    case TS_EVENT_HTTP_READ_REQUEST_HDR:
+      {
+        TSMBuffer req_buf;
+        TSMLoc req_loc;
+        if (TSHttpTxnClientReqGet(txnp, &req_buf, &req_loc) == TS_SUCCESS) {
+          int url_len;
+          char * url = TSHttpTxnEffectiveUrlStringGet(txnp, &url_len);
+          HostConfiguration * hc = find_host_configuration(txnp, req_buf, req_loc);
+          //we could clone the hosting configuration here, to make it deletable on reload?
+          TSHttpTxnArgSet(txnp, arg_idx_host_configuration, (void *) hc);
 
-	if (!hc->enabled() || !hc->IsUrlAllowed(url, url_len)) {
-	  //FIXME: no double negatives
-	  TSHttpTxnArgSet(txnp, arg_idx_url_disallowed, (void *) &GZIP_ONE);
-	  info("url [%.*s] not allowed", url_len, url);
-	} else {
-	  normalize_accept_encoding(txnp, req_buf, req_loc);	
-	}
-	TSfree(url);
-        TSHandleMLocRelease(req_buf, TS_NULL_MLOC, req_loc);
+          if (!hc->enabled() || !hc->IsUrlAllowed(url, url_len)) {
+            //FIXME: no double negatives
+            TSHttpTxnArgSet(txnp, arg_idx_url_disallowed, (void *) &GZIP_ONE);
+            info("url [%.*s] not allowed", url_len, url);
+          } else {
+            normalize_accept_encoding(txnp, req_buf, req_loc);	
+          }
+          TSfree(url);
+          TSHandleMLocRelease(req_buf, TS_NULL_MLOC, req_loc);
+        }
+        TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
       }
-      TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
-  }
-    break;
+      break;
 
-  case TS_EVENT_HTTP_READ_RESPONSE_HDR:{
-    //os: the accept encoding header needs to be restored..
-    //otherwise the next request won't get a cache hit on this
-    HostConfiguration * hc = (HostConfiguration*)TSHttpTxnArgGet(txnp, arg_idx_host_configuration);
-    if (hc != NULL) { 
-      if (hc->remove_accept_encoding()) {
-	TSMBuffer req_buf;
-	TSMLoc req_loc;
-	if (TSHttpTxnServerReqGet(txnp, &req_buf, &req_loc) == TS_SUCCESS) {
-	  restore_accept_encoding(txnp, req_buf, req_loc, global_hidden_header_name);
-	  TSHandleMLocRelease(req_buf, TS_NULL_MLOC, req_loc);
-	}
+    case TS_EVENT_HTTP_READ_RESPONSE_HDR:
+      {
+        //os: the accept encoding header needs to be restored..
+        //otherwise the next request won't get a cache hit on this
+        HostConfiguration * hc = (HostConfiguration*)TSHttpTxnArgGet(txnp, arg_idx_host_configuration);
+        if (hc != NULL) { 
+          if (hc->remove_accept_encoding()) {
+            TSMBuffer req_buf;
+            TSMLoc req_loc;
+            if (TSHttpTxnServerReqGet(txnp, &req_buf, &req_loc) == TS_SUCCESS) {
+              restore_accept_encoding(txnp, req_buf, req_loc, global_hidden_header_name);
+              TSHandleMLocRelease(req_buf, TS_NULL_MLOC, req_loc);
+            }
+          }
+
+          int allowed = !TSHttpTxnArgGet(txnp, arg_idx_url_disallowed);
+          if ( allowed && gzip_transformable(txnp, 1, hc, &compress_type)) {
+            gzip_transform_add(txnp, 1, hc, compress_type);
+          }
+        }
+        TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
       }
+      break;
 
-      int allowed = !TSHttpTxnArgGet(txnp, arg_idx_url_disallowed);
-      if ( allowed && gzip_transformable(txnp, 1, hc)) {
-	gzip_transform_add(txnp, 1, hc);
+    case TS_EVENT_HTTP_SEND_REQUEST_HDR:
+      {
+        HostConfiguration * hc = (HostConfiguration*)TSHttpTxnArgGet(txnp, arg_idx_host_configuration);
+        if (hc!=NULL) {
+          if (hc->remove_accept_encoding()) {
+            TSMBuffer req_buf;
+            TSMLoc req_loc;
+            if (TSHttpTxnServerReqGet(txnp, &req_buf, &req_loc) == TS_SUCCESS) {
+              hide_accept_encoding(txnp, req_buf, req_loc, global_hidden_header_name);
+              TSHandleMLocRelease(req_buf, TS_NULL_MLOC, req_loc);
+            }
+          }
+        }
+        TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
       }
-    }
-    TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
-  }
-    break;
+      break;
 
-  case TS_EVENT_HTTP_SEND_REQUEST_HDR:{
-    HostConfiguration * hc = (HostConfiguration*)TSHttpTxnArgGet(txnp, arg_idx_host_configuration);
-    if (hc!=NULL) {
-      if (hc->remove_accept_encoding()) {
-	TSMBuffer req_buf;
-	TSMLoc req_loc;
-	if (TSHttpTxnServerReqGet(txnp, &req_buf, &req_loc) == TS_SUCCESS) {
-	  hide_accept_encoding(txnp, req_buf, req_loc, global_hidden_header_name);
-	  TSHandleMLocRelease(req_buf, TS_NULL_MLOC, req_loc);
-	}
+    case TS_EVENT_HTTP_CACHE_LOOKUP_COMPLETE:
+      {
+        int allowed = !TSHttpTxnArgGet(txnp, arg_idx_url_disallowed);
+        HostConfiguration * hc = (HostConfiguration*)TSHttpTxnArgGet(txnp, arg_idx_host_configuration);
+        if ( hc != NULL ) { 
+          if (allowed && cache_transformable(txnp) && gzip_transformable(txnp, 0, hc, &compress_type)) {
+            gzip_transform_add(txnp, 0, hc, compress_type);
+          }
+        }
+        TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
       }
-    }
-    TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
-  }
-    break;
+      break;
 
-  case TS_EVENT_HTTP_CACHE_LOOKUP_COMPLETE: {
-    int allowed = !TSHttpTxnArgGet(txnp, arg_idx_url_disallowed);
-    HostConfiguration * hc = (HostConfiguration*)TSHttpTxnArgGet(txnp, arg_idx_host_configuration);
-    if ( hc != NULL ) { 
-      if (allowed && cache_transformable(txnp) && gzip_transformable(txnp, 0, hc)) {
-	gzip_transform_add(txnp, 0, hc);
-      }
-    }
-    TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
-  }
-    break;
-
-  default:
-    fatal("gzip transform unknown event");
+    default:
+      fatal("gzip transform unknown event");
   }
 
   return 0;
@@ -694,7 +673,6 @@ static void
 read_configuration(TSCont contp) {
   const char * path = (const char *)TSContDataGet(contp);
   Configuration * newconfig = Configuration::Parse(path);
-
 
   Configuration * oldconfig =__sync_lock_test_and_set(&config, newconfig);
   debug("config swapped,old config %p", oldconfig);

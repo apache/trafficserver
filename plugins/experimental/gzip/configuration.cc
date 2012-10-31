@@ -90,16 +90,12 @@ namespace Gzip {
     host_configurations_.push_back(hc);
   }
 
-  void HostConfiguration::add_disallow(std::string disallow) { 
+  void HostConfiguration::add_disallow(const std::string & disallow) { 
     disallows_.push_back(disallow);
   }
 
-  void HostConfiguration::add_compressible_content_type(std::string content_type) {
+  void HostConfiguration::add_compressible_content_type(const std::string & content_type) {
     compressible_content_types_.push_back(content_type);
-  }
-
-  HostConfiguration * Configuration::GlobalConfiguration() { 
-    return host_configurations_[0];
   }
 
   HostConfiguration * Configuration::Find(const char * host, int host_length) { 
