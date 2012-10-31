@@ -45,15 +45,14 @@
 #include <limits.h>
 #include <sys/mman.h>
 
-#define ink64 long long
-#define inku64 unsigned long long
-#define inkPRI64 "lld"
-#define inkPRIu64 "llu"
+#define __STDC_FORMAT_MACROS
+#include <inttypes.h>
 
-#  include <time.h>
-#  include <sys/time.h>
-#  include <stdlib.h>
-   typedef ink64 ink_hrtime;
+#include <time.h>
+#include <sys/time.h>
+#include <stdlib.h>
+
+typedef int64_t ink_hrtime;
 
 #define bool int
 #define false 0
@@ -181,8 +180,8 @@ float total_ops = 0;
 int running_sops = 0, new_sops = 0, total_sops = 0;
 int running_latency = 0, latency = 0;
 int lat_ops = 0, b1_ops = 0, running_b1latency = 0, b1latency = 0;
-inku64 running_cbytes = 0, new_cbytes = 0, total_cbytes = 0;
-inku64 running_tbytes = 0, new_tbytes = 0, total_tbytes = 0;
+uint64_t running_cbytes = 0, new_cbytes = 0, total_cbytes = 0;
+uint64_t running_tbytes = 0, new_tbytes = 0, total_tbytes = 0;
 int average_over = 5;
 double hitrate = 0.4;
 int hotset = 1000;
@@ -225,12 +224,12 @@ int url_hash_entries = 1000000;
 char url_hash_filename[256] = "";
 int bandwidth_test = 0;
 int bandwidth_test_to_go = 0;
-inku64 total_client_request_bytes = 0;
-inku64 total_proxy_request_bytes = 0;
-inku64 total_server_response_body_bytes = 0;
-inku64 total_server_response_header_bytes = 0;
-inku64 total_proxy_response_body_bytes = 0;
-inku64 total_proxy_response_header_bytes = 0;
+uint64_t total_client_request_bytes = 0;
+uint64_t total_proxy_request_bytes = 0;
+uint64_t total_server_response_body_bytes = 0;
+uint64_t total_server_response_header_bytes = 0;
+uint64_t total_proxy_response_body_bytes = 0;
+uint64_t total_proxy_response_header_bytes = 0;
 ink_hrtime now = 0, start_time = 0;
 ArgumentFunction jtest_usage;
 int extra_headers = 0;
@@ -727,9 +726,9 @@ ink_atoui(const char *str) {
     num = (num * 10) + (*str++ - '0');
   return num;
 }
-inline ink64 
+inline int64_t
 ink_atoll(const char *str) {
-  ink64 num = 0;
+  int64_t num = 0;
   int negative = 0;
   while (*str && ParseRules::is_wslfcr(*str))
     str += 1;
@@ -980,7 +979,7 @@ static void poll_init_set(int sock, poll_cb read_cb, poll_cb write_cb = NULL) {
 
 static int fast(int sock, int speed, int d) {
   if (!speed) return 0;
-  ink64 t = now - fd[sock].start + 1;
+  int64_t t = now - fd[sock].start + 1;
   int target = (int)(((t / HRTIME_MSECOND) * speed) / 1000);
   int delta = d - target;
   if (delta > 0) {
@@ -994,7 +993,7 @@ static int fast(int sock, int speed, int d) {
 
 static int faster_than(int sock, int speed, int d) {
   if (!speed) return 1;
-  ink64 t = now - fd[sock].start + 1;
+  int64_t t = now - fd[sock].start + 1;
   int target = (int)(((t / HRTIME_MSECOND) * speed) / 1000);
   int delta = d - target;
   if (delta > 0)
@@ -2876,8 +2875,8 @@ void interval_report() {
   RUNNING(sops);
   RUNNING(tbytes);
   float t = (float)(now - start_time);
-  inku64 per = current_clients ? running_cbytes / current_clients : 0;
-  printf("%4d %4d %7.1f %4d %4d %10"inkPRIu64"/%-6"inkPRIu64"  %4d %4d %4d  %9"inkPRIu64" %6.1f %4d\n",
+  uint64_t per = current_clients ? running_cbytes / current_clients : 0;
+  printf("%4d %4d %7.1f %4d %4d %10"PRIu64"/%-6"PRIu64"  %4d %4d %4d  %9"PRIu64" %6.1f %4d\n",
          current_clients, // clients, n_ka_cache,
          running_clients,
          running_ops, running_b1latency, running_latency,
@@ -2888,15 +2887,15 @@ void interval_report() {
          t/((float)HRTIME_SECOND),
          errors);
   if (is_done()) {
-    printf("Total Client Request Bytes:\t\t%"inkPRIu64"\n", total_client_request_bytes);
-    printf("Total Server Response Header Bytes:\t%"inkPRIu64"\n",
+    printf("Total Client Request Bytes:\t\t%"PRIu64"\n", total_client_request_bytes);
+    printf("Total Server Response Header Bytes:\t%"PRIu64"\n",
            total_server_response_header_bytes);
-    printf("Total Server Response Body Bytes:\t%"inkPRIu64"\n",
+    printf("Total Server Response Body Bytes:\t%"PRIu64"\n",
            total_server_response_body_bytes);
-    printf("Total Proxy Request Bytes:\t\t%"inkPRIu64"\n", total_proxy_request_bytes);
-    printf("Total Proxy Response Header Bytes:\t%"inkPRIu64"\n",
+    printf("Total Proxy Request Bytes:\t\t%"PRIu64"\n", total_proxy_request_bytes);
+    printf("Total Proxy Response Header Bytes:\t%"PRIu64"\n",
            total_proxy_response_header_bytes);
-    printf("Total Proxy Response Body Bytes:\t%"inkPRIu64"\n",
+    printf("Total Proxy Response Body Bytes:\t%"PRIu64"\n",
            total_proxy_response_body_bytes);
   }
 }
@@ -2955,7 +2954,7 @@ struct UrlHashTable {
 
   void alloc(unsigned int want);
 
-  void set(inku64 i) {
+  void set(uint64_t i) {
     BEGIN_HASH_LOOP {
       if (!ENTRY_TAG(e)) {
         SET_ENTRY_TAG(e,tag);
@@ -2975,7 +2974,7 @@ struct UrlHashTable {
     ink_fatal(1, "overview entries overflow");
   }
 
-  void clear(inku64 i) {
+  void clear(uint64_t i) {
     BEGIN_HASH_LOOP {
       if (ENTRY_TAG(e) == tag) {
         if (e != last)
@@ -2989,7 +2988,7 @@ struct UrlHashTable {
             (int)(base-bytes), tag);
   }
 
-  int is_set(inku64 i) {
+  int is_set(uint64_t i) {
     BEGIN_HASH_LOOP {
       if (ENTRY_TAG(e) == tag)
         return 1;
@@ -3075,7 +3074,7 @@ int seen_it(char * url) {
     return 0;
   union {
     unsigned char md5[16];
-    inku64 i[2];
+    uint64_t i[2];
   } u;
   int l = 0;
   char * para = strrchr(url, '#');
@@ -3084,7 +3083,7 @@ int seen_it(char * url) {
   else
     l = strlen(url);
   ink_code_md5((unsigned char*)url,l,u.md5);
-  inku64 x = u.i[0] + u.i[1];
+  uint64_t x = u.i[0] + u.i[1];
   if (uniq_urls->is_set(x)) {
     if (verbose) printf("YES: seen it '%s'\n", url);
     return 1;
@@ -4524,7 +4523,7 @@ static void process_arg(ArgumentDescription * argument_descriptions,
           *(double *)argument_descriptions[i].location = atof(arg);
           break;
         case 'L':
-          *(ink64 *)argument_descriptions[i].location = ink_atoll(arg);
+          *(int64_t *)argument_descriptions[i].location = ink_atoll(arg);
           break;
         case 'S': strncpy((char *)argument_descriptions[i].location,arg,
                           atoi(argument_descriptions[i].type+1));
@@ -4566,9 +4565,9 @@ void show_argument_configuration(ArgumentDescription * argument_descriptions,
         break;
       case 'L':
 #if defined(FreeBSD)
-        printf("%qd",*(ink64*)argument_descriptions[i].location);
+        printf("%"PRId64"",*(int64_t*)argument_descriptions[i].location);
 #else
-        printf("%lld",*(ink64*)argument_descriptions[i].location);
+        printf("%"PRId64"",*(int64_t*)argument_descriptions[i].location);
 #endif
         break;
       case 'S':
@@ -4604,7 +4603,7 @@ void process_args(ArgumentDescription * argument_descriptions,
         *(double *)argument_descriptions[i].location = atof(env);
         break;
       case 'L':
-        *(ink64 *)argument_descriptions[i].location = ink_atoll(env);
+        *(int64_t *)argument_descriptions[i].location = ink_atoll(env);
         break;
       case 'S':
         strncpy((char *)argument_descriptions[i].location,env,
@@ -4672,11 +4671,11 @@ void usage(ArgumentDescription * argument_descriptions,
       case 'L':
         fprintf(stderr, 
 #if defined(FreeBSD)
-                " %-9qd", 
+                " %-9"PRId64"",
 #else
-                " %-9lld",
+                " %-9"PRId64"",
 #endif
-                *(ink64*)argument_descriptions[i].location);
+                *(int64_t*)argument_descriptions[i].location);
         break;
       case 'S':
         if (*(char*)argument_descriptions[i].location) {
