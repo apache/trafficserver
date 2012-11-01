@@ -243,6 +243,7 @@ SSLCertLookup::buildTable(const SSLConfigParams * param)
           ats_free(addr);
           addr = NULL;
           sslCert = NULL;
+          sslCa = NULL;
           priKey = NULL;
         }
       }                         // else
