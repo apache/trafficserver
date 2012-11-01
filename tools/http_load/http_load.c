@@ -1168,11 +1168,13 @@ start_socket(int url_num, int cnum, struct timeval *nowP)
   }
 }
 
+#ifdef USE_SSL
 static int
 cert_verify_callback(int ok, X509_STORE_CTX *ctx)
 {
   return 1;
 }
+#endif
 
 static void
 handle_connect(int cnum, struct timeval *nowP, int double_check)
