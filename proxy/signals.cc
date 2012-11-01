@@ -304,6 +304,7 @@ check_signals()
   check_signal(SIGQUIT, (SigActionFunc_t) signal_handler);
   check_signal(SIGHUP, (SigActionFunc_t) interrupt_handler);
   check_signal(SIGTERM, (SigActionFunc_t) signal_handler);
+  check_signal(SIGINT, (SigActionFunc_t) signal_handler);
   check_signal(SIGUSR1, (SigActionFunc_t) signal_handler);
 }
 
@@ -335,6 +336,7 @@ init_signals(bool do_stackdump)
   set_signal(SIGPIPE, (SigActionFunc_t) SIG_IGN);
   set_signal(SIGQUIT, (SigActionFunc_t) signal_handler);
   set_signal(SIGTERM, (SigActionFunc_t) signal_handler);
+  set_signal(SIGINT, (SigActionFunc_t) signal_handler);
   set_signal(SIGHUP, (SigActionFunc_t) interrupt_handler);
   set_signal(SIGILL, (SigActionFunc_t) signal_handler);
   if(do_stackdump) {
