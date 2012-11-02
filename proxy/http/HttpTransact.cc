@@ -1264,7 +1264,7 @@ HttpTransact::HandleRequest(State* s)
     TRANSACT_RETURN(DNS_LOOKUP, OSDNSLookup);   // After handling the request, DNS is done.
   } else {
     // After the requested is properly handled No need of requesting the DNS directly check the ACLs
-    // if the request is Authorised
+    // if the request is authorized
     StartAccessControl(s);
   }
 }
@@ -1274,7 +1274,7 @@ HttpTransact::setup_plugin_request_intercept(State* s)
 {
   ink_debug_assert(s->state_machine->plugin_tunnel != NULL);
 
-  // Plugin is incerpting the request which means
+  // Plugin is intercepting the request which means
   //  that we don't do dns, cache read or cache write
   //
   // We just want to write the request straight to the plugin
