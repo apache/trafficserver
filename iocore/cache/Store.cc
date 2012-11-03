@@ -444,6 +444,8 @@ Span::init(char *an, int64_t size)
 
   case S_IFBLK:{
   case S_IFCHR:
+    // These IOCTLs are standard across the BSD family; Darwin has a different set though.
+#if defined(DIOCGMEDIASIZE) && defined(DIOCGSECTORSIZE)
       if (ioctl(fd, DIOCGMEDIASIZE, &size) < 0) {
         Warning("unable to get disk information for '%s': %s", n, strerror(errno));
         err = "unable to get label information";
@@ -456,6 +458,11 @@ Span::init(char *an, int64_t size)
       }
       devnum = s.st_rdev;
       break;
+#else
+      Warning("unable to get disk information for '%s': %s", n, strerror(errno));
+      err = "no raw disk support on this platform";
+      goto Lfail;
+#endif
     }
   case S_IFDIR:
   case S_IFREG:
