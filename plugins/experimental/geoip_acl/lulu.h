@@ -46,6 +46,10 @@
 #define mb()  __asm__ __volatile__ ( "mfence" : : : "memory")
 #define rmb() __asm__ __volatile__ ( "lfence" : : : "memory")
 #define wmb() __asm__ __volatile__ ( "" : : : "memory")
+#elif defined(__arm__)
+#define mb()  __asm__ __volatile__ ( "dmb" : : : "memory")
+#define rmb() __asm__ __volatile__ ( "dmb" : : : "memory")
+#define wmb() __asm__ __volatile__ ( "" : : : "memory")
 #else
 #error "Define barriers"
 #endif

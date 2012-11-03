@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.3.1
 
+  *) [TS-1560] plugins need memory barriers for ARM
+
   *) [TS-1558] use_client_addr breaks control over upstream HTTP protocol version
 
   *) [TS-207] Add raw disk support for FreeBSD
