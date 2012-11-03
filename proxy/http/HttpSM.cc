@@ -6709,6 +6709,16 @@ HttpSM::set_next_state()
          */
         DebugSM("dns", "[HttpTransact::HandleRequest] Skipping DNS lookup for client supplied target %s.\n", ats_ip_ntop(addr, ipb, sizeof(ipb)));
         ats_ip_copy(t_state.host_db_info.ip(), addr);
+        /* Since we won't know the server HTTP version (no hostdb lookup), we assume it matches the
+         * client request version. Seems to be the most correct thing to do in the transparent use-case.
+         */
+        if (t_state.hdr_info.client_request.version_get() == HTTPVersion(0, 9))
+          t_state.host_db_info.app.http_data.http_version =  HostDBApplicationInfo::HTTP_VERSION_09;
+        else if (t_state.hdr_info.client_request.version_get() == HTTPVersion(1, 0))
+          t_state.host_db_info.app.http_data.http_version =  HostDBApplicationInfo::HTTP_VERSION_10;
+        else
+          t_state.host_db_info.app.http_data.http_version =  HostDBApplicationInfo::HTTP_VERSION_11;
+
         t_state.dns_info.lookup_success = true;
         call_transact_and_set_next_state(NULL);
         break;

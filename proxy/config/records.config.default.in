@@ -129,8 +129,9 @@ CONFIG proxy.config.http.chunking_enabled INT 1
    #   0 - Never
    #   1 - Always
    #   2 - if the server has returned http1.1 before
-   #   3 - if the client request is 1.1 & the server
-   #         has returned 1.1 before
+   #   3 - if the client request is 1.1 & the server has returned 1.1 before
+   # If use_client_addr is set to 1, options 2 and 3 cause the proxy to use
+   # the client HTTP version for upstream requests.
 CONFIG proxy.config.http.send_http11_requests INT 1
    # Share server connections
    #  0 - Never
