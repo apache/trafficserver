@@ -77,7 +77,6 @@ struct ContData
   STATE curr_state;
   TSVIO input_vio;
   TSIOBufferReader input_reader;
-  TSVIO output_vio;
   TSIOBuffer output_buffer;
   TSIOBufferReader output_reader;
   Variables *esi_vars;
@@ -104,7 +103,7 @@ struct ContData
 #endif
   
   ContData(TSCont contptr, TSHttpTxn tx)
-    : curr_state(READING_ESI_DOC), input_vio(NULL), output_vio(NULL), 
+    : curr_state(READING_ESI_DOC), input_vio(NULL), 
       output_buffer(NULL), output_reader(NULL),
       esi_vars(NULL), data_fetcher(NULL), esi_proc(NULL),
       contp(contptr), txnp(tx), request_url(NULL), 
@@ -202,18 +201,8 @@ ContData::init()
     }
     input_reader = TSVIOReaderGet(input_vio);
     
-    // Get downstream VIO
-    TSVConn output_conn;
-    output_conn = TSTransformOutputVConnGet(contp);
-    if (!output_conn) {
-      TSError("[%s] Error while getting transform VC", __FUNCTION__);
-      goto lReturn;
-    }
     output_buffer = TSIOBufferCreate();
     output_reader = TSIOBufferReaderAlloc(output_buffer);
-    
-    // we don't know how much data we are going to write, so INT64_MAX
-    output_vio = TSVConnWrite(output_conn, contp, output_reader, INT64_MAX);
     
     string fetcher_tag, vars_tag, expr_tag, proc_tag;
     if (!data_fetcher) {
@@ -749,15 +738,26 @@ transformData(TSCont contp)
           }
         }
 
-        if (TSIOBufferWrite(TSVIOBufferGet(cont_data->output_vio), out_data, out_data_len) == TS_ERROR) {
+        // Get downstream VIO
+        TSVConn output_conn;
+        output_conn = TSTransformOutputVConnGet(contp);
+        if (!output_conn) {
+          TSError("[%s] Error while getting transform VC", __FUNCTION__);
+          return 0;
+        }
+
+        TSVIO output_vio;
+        output_vio = TSVConnWrite(output_conn, contp, cont_data->output_reader, out_data_len);
+    
+        if (TSIOBufferWrite(TSVIOBufferGet(output_vio), out_data, out_data_len) == TS_ERROR) {
           TSError("[%s] Error while writing bytes to downstream VC", __FUNCTION__);
           return 0;
         }
         
-        TSVIONBytesSet(cont_data->output_vio, out_data_len);
+        TSVIONBytesSet(output_vio, out_data_len);
         
         // Reenable the output connection so it can read the data we've produced.
-        TSVIOReenable(cont_data->output_vio);
+        TSVIOReenable(output_vio);
       }
     } else {
       TSDebug(cont_data->debug_tag, "[%s] Data not available yet; cannot process document",
@@ -948,6 +948,7 @@ modifyResponseHeader(TSCont contp, TSEvent event, void *edata) {
     TSMLoc field_loc;
     const char *name, *value;
     int name_len, value_len;
+    bool have_content_length = false;
     for (int i = 0; i < n_mime_headers; ++i) {
       field_loc = TSMimeHdrFieldGet(bufp, hdr_loc, i);
       if (!field_loc) {
@@ -968,10 +969,14 @@ modifyResponseHeader(TSCont contp, TSEvent event, void *edata) {
                    (strncmp(name, HEADER_MASK_PREFIX, HEADER_MASK_PREFIX_SIZE) == 0))
         {
           destroy_header = true;
-        } else if (mod_data->head_only && Utils::areEqual(name, name_len, 
+        } else if (Utils::areEqual(name, name_len, 
               TS_MIME_FIELD_CONTENT_LENGTH, TS_MIME_LEN_CONTENT_LENGTH))
         {
-          destroy_header = true;
+          have_content_length = true;
+          if (mod_data->head_only) {
+            destroy_header = true;
+            TSError("[%s] remove Content-Length", __FUNCTION__);
+          }
         } else {
           int n_field_values = TSMimeHdrFieldValuesCount(bufp, hdr_loc, field_loc);
           for (int j = 0; j < n_field_values; ++j) {
@@ -1008,6 +1013,10 @@ modifyResponseHeader(TSCont contp, TSEvent event, void *edata) {
                           TS_HTTP_VALUE_GZIP, TS_HTTP_LEN_GZIP)) {
       addMimeHeaderField(bufp, hdr_loc, TS_MIME_FIELD_CONTENT_ENCODING, TS_MIME_LEN_CONTENT_ENCODING,
                          TS_HTTP_VALUE_GZIP, TS_HTTP_LEN_GZIP);
+    }
+
+    if (!have_content_length) {
+      TSError("[%s] no Content-Length!", __FUNCTION__);
     }
 
 #ifdef ESI_PACKED_NODE_SUPPORT
