@@ -721,6 +721,13 @@ GENERATE_HTMLHELP      = NO
 # can add a path in front of the file if the result should not be 
 # written to the html output directory.
 
+HTML_TIMESTAMP         = NO
+
+# If the HTML_TIMESTAMP tag is set to YES then the footer of each
+# generated HTML page will contain the date and time when the page
+# was generated. Setting this to NO can help when comparing the
+# output of multiple runs.
+
 CHM_FILE               = 
 
 # If the GENERATE_HTMLHELP tag is set to YES, the HHC_LOCATION tag can 
