@@ -347,7 +347,7 @@ LogUtils::escapify_url(Arena *arena, char *url, size_t len_in, int *len_out, cha
     //
     *len_out = len_in;
     if (dst)
-      ink_strlcpy(dst, url, len_in);
+      ink_strlcpy(dst, url, dst_size);
     return url;
   }
 
