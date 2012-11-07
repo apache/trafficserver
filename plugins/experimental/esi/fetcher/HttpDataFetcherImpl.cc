@@ -166,10 +166,6 @@ HttpDataFetcherImpl::handleFetchEvent(TSEvent event, void *edata) {
       TSDebug(_debug_tag,
                "[%s] Inserted page data of size %d starting with [%.6s] for request [%s]", __FUNCTION__,
                req_data.body_len, (req_data.body_len ? req_data.body : "(null)"), req_str.c_str());
-      for (CallbackObjectList::iterator list_iter = req_data.callback_objects.begin();
-           list_iter != req_data.callback_objects.end(); ++list_iter) {
-        (*list_iter)->processData(req_str.data(), req_str.size(), req_data.body, req_data.body_len);
-      }
 
       if (_checkHeaderValue(req_data.bufp, req_data.hdr_loc,
                        TS_MIME_FIELD_CONTENT_ENCODING,
@@ -187,6 +183,12 @@ HttpDataFetcherImpl::handleFetchEvent(TSEvent event, void *edata) {
           TSError("[%s] Error while gunzipping data", __FUNCTION__);
         }
       }
+
+      for (CallbackObjectList::iterator list_iter = req_data.callback_objects.begin();
+           list_iter != req_data.callback_objects.end(); ++list_iter) {
+        (*list_iter)->processData(req_str.data(), req_str.size(), req_data.body, req_data.body_len);
+      }
+
     } else {
       TSDebug(_debug_tag, "[%s] Received non-OK status %d for request [%s]",
                __FUNCTION__, resp_status, req_str.data());
@@ -298,11 +300,13 @@ HttpDataFetcherImpl::getRequestStatus(const string &url) const {
 
 void
 HttpDataFetcherImpl::useHeader(const HttpHeader &header) {
+  // request data body would not be passed to async request and so we should not pass on the content length
   if (Utils::areEqual(header.name, header.name_len,
                       TS_MIME_FIELD_CONTENT_LENGTH, TS_MIME_LEN_CONTENT_LENGTH)) {
     return;
   }
 
+  // should not support partial request for async request
   if (Utils::areEqual(header.name, header.name_len,
                       TS_MIME_FIELD_RANGE, TS_MIME_LEN_RANGE)) {
     return;

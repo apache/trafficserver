@@ -33,6 +33,7 @@
 #include <list>
 #include <arpa/inet.h>
 #include <pthread.h>
+#include <getopt.h>
 #include "ts/ts.h"
 #include "ts/experimental.h"
 
@@ -50,6 +51,11 @@ using std::list;
 using namespace EsiLib;
 using namespace Stats;
 
+struct OptionInfo
+{
+  bool packed_node_support, private_response;
+} option_info = {false, false};
+
 static HandlerManager *gHandlerManager;
 
 #define DEBUG_TAG "plugin_esi"
@@ -62,6 +68,9 @@ static HandlerManager *gHandlerManager;
 
 #define MIME_FIELD_XESI "X-Esi"
 #define MIME_FIELD_XESI_LEN 5
+
+static const char HTTP_VALUE_PRIVATE_EXPIRES[] = "-1";
+static const char HTTP_VALUE_PRIVATE_CC[] = "max-age=0, private";
 
 enum DataType { DATA_TYPE_RAW_ESI = 0, DATA_TYPE_GZIPPED_ESI = 1, DATA_TYPE_PACKED_ESI = 2 };
 static const char *DATA_TYPE_NAMES_[] = { "RAW_ESI",
@@ -97,10 +106,8 @@ struct ContData
   bool cache_txn;
   bool head_only;
 
-#ifdef ESI_PACKED_NODE_SUPPORT
   bool os_response_cacheable;
   list<string> post_headers;
-#endif
   
   ContData(TSCont contptr, TSHttpTxn tx)
     : curr_state(READING_ESI_DOC), input_vio(NULL), 
@@ -111,9 +118,7 @@ struct ContData
       gzipped_data(""), gzip_output(false),
       initialized(false), xform_closed(false),
       intercept_header(false), cache_txn(false), head_only(false)
-#ifdef ESI_PACKED_NODE_SUPPORT
       , os_response_cacheable(true)
-#endif
   {
     client_addr = TSHttpTxnClientAddrGet(txnp);
     *debug_tag = '\0';
@@ -326,7 +331,6 @@ ContData::getClientState() {
   TSHandleMLocRelease(req_bufp, TS_NULL_MLOC, req_hdr_loc);
 }
 
-#ifdef ESI_PACKED_NODE_SUPPORT
 void
 ContData::fillPostHeader(TSMBuffer bufp, TSMLoc hdr_loc) {
   int n_mime_headers = TSMimeHdrFieldsCount(bufp, hdr_loc);
@@ -395,7 +399,6 @@ ContData::fillPostHeader(TSMBuffer bufp, TSMLoc hdr_loc) {
     }
   } // end header iteration
 }
-#endif
 
 void
 ContData::getServerState() {
@@ -424,11 +427,9 @@ ContData::getServerState() {
     input_type = DATA_TYPE_RAW_ESI;
   }
 
-#ifdef ESI_PACKED_NODE_SUPPORT
-  if (!cache_txn && !head_only) {
+  if ( option_info.packed_node_support && !cache_txn && !head_only) {
     fillPostHeader(bufp, hdr_loc);
   }
-#endif
 
   TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
 }
@@ -521,7 +522,6 @@ static bool removeCacheKey(TSHttpTxn txnp) {
   return result;
 }
 
-#ifdef ESI_PACKED_NODE_SUPPORT
 static void
 cacheNodeList(ContData *cont_data) {
   if (TSHttpTxnAborted(cont_data->txnp) == TS_SUCCESS) {
@@ -567,7 +567,6 @@ cacheNodeList(ContData *cont_data) {
   TSFetchUrl(post_request.data(), post_request.size(), cont_data->client_addr,
                   cont_data->contp, NO_CALLBACK, event_ids);
 }
-#endif
 
 static int
 transformData(TSCont contp)
@@ -684,11 +683,9 @@ transformData(TSCont contp)
         }
       }
       if (cont_data->esi_proc->completeParse()) {
-#ifdef ESI_PACKED_NODE_SUPPORT
-        if (cont_data->os_response_cacheable && !cont_data->cache_txn && !cont_data->head_only) {
+        if ( option_info.packed_node_support && cont_data->os_response_cacheable && !cont_data->cache_txn && !cont_data->head_only) {
           cacheNodeList(cont_data);
         }
-#endif
       }
     }
 
@@ -967,11 +964,11 @@ modifyResponseHeader(TSCont contp, TSEvent event, void *edata) {
           destroy_header = true;
         } else if ((name_len > HEADER_MASK_PREFIX_SIZE) &&
                    (strncmp(name, HEADER_MASK_PREFIX, HEADER_MASK_PREFIX_SIZE) == 0))
-        {
+         {
           destroy_header = true;
-        } else if (Utils::areEqual(name, name_len, 
-              TS_MIME_FIELD_CONTENT_LENGTH, TS_MIME_LEN_CONTENT_LENGTH))
-        {
+        } else if (option_info.private_response && (Utils::areEqual(name, name_len, TS_MIME_FIELD_CACHE_CONTROL, TS_MIME_LEN_CACHE_CONTROL) || Utils::areEqual(name, name_len, TS_MIME_FIELD_EXPIRES, TS_MIME_LEN_EXPIRES))) {
+          destroy_header = true;
+        } else if (Utils::areEqual(name, name_len, TS_MIME_FIELD_CONTENT_LENGTH, TS_MIME_LEN_CONTENT_LENGTH)) {
           have_content_length = true;
           if (mod_data->head_only) {
             destroy_header = true;
@@ -985,17 +982,13 @@ modifyResponseHeader(TSCont contp, TSEvent event, void *edata) {
               TSDebug(DEBUG_TAG, "[%s] Error while getting value #%d of header [%.*s]",
                        __FUNCTION__, j, name_len, name);
             } else {
-#ifdef ESI_PACKED_NODE_SUPPORT
-              if (mod_data->cache_txn) { 
-#endif
+              if (!option_info.packed_node_support || mod_data->cache_txn) { 
                 bool response_cacheable, is_cache_header;
                 is_cache_header = checkForCacheHeader(name, name_len, value, value_len, response_cacheable);
                 if (is_cache_header && response_cacheable) {
                   destroy_header = true;
                 }
-#ifdef ESI_PACKED_NODE_SUPPORT
               } 
-#endif
             } // if got valid value for header
           } // end for
         }
@@ -1019,12 +1012,16 @@ modifyResponseHeader(TSCont contp, TSEvent event, void *edata) {
       TSError("[%s] no Content-Length!", __FUNCTION__);
     }
 
-#ifdef ESI_PACKED_NODE_SUPPORT
-    if (mod_data->cache_txn) {
+    if (option_info.packed_node_support && mod_data->cache_txn) {
       addMimeHeaderField(bufp, hdr_loc, TS_MIME_FIELD_VARY, TS_MIME_LEN_VARY, TS_MIME_FIELD_ACCEPT_ENCODING,
                          TS_MIME_LEN_ACCEPT_ENCODING);
     }
-#endif
+
+    if(option_info.private_response) {
+      addMimeHeaderField(bufp, hdr_loc, TS_MIME_FIELD_EXPIRES, TS_MIME_LEN_EXPIRES, HTTP_VALUE_PRIVATE_EXPIRES, strlen(HTTP_VALUE_PRIVATE_EXPIRES));
+      addMimeHeaderField(bufp, hdr_loc, TS_MIME_FIELD_CACHE_CONTROL, TS_MIME_LEN_CACHE_CONTROL, HTTP_VALUE_PRIVATE_CC, strlen(HTTP_VALUE_PRIVATE_CC));
+    }
+
     TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
     TSDebug(DEBUG_TAG, "[%s] Inspected client-bound headers", __FUNCTION__);
     retval = 1;
@@ -1077,7 +1074,6 @@ checkHeaderValue(TSMBuffer bufp, TSMLoc hdr_loc, const char *name, int name_len,
   return retval;
 }
 
-#ifdef ESI_PACKED_NODE_SUPPORT
 static void
 maskOsCacheHeaders(TSHttpTxn txnp) {
   TSMBuffer bufp;
@@ -1136,7 +1132,6 @@ maskOsCacheHeaders(TSHttpTxn txnp) {
   } // end header iteration
   TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
 }
-#endif
 
 static bool
 isTxnTransformable(TSHttpTxn txnp, bool is_cache_txn, bool * intercept_header, bool * head_only) {
@@ -1290,6 +1285,8 @@ checkForCacheHeader(const char *name, int name_len, const char *value, int value
   if (Utils::areEqual(name, name_len, TS_MIME_FIELD_EXPIRES, TS_MIME_LEN_EXPIRES)) {
     if ((value_len == 1) && (*value == '0')) {
       cacheable = false;
+    }else if (Utils::areEqual(value, value_len, "-1",2)) {
+      cacheable = false;
     }
     return true;
   }
@@ -1339,15 +1336,15 @@ addTransform(TSHttpTxn txnp, const bool processing_os_response, const bool inter
   cont_data->getServerState();
 
   if (cont_data->cache_txn) {
-#ifdef ESI_PACKED_NODE_SUPPORT
+    if(option_info.packed_node_support) {
       if (cont_data->input_type != DATA_TYPE_PACKED_ESI) {
         removeCacheKey(txnp);
       }
-#else
+    } else {
       if (cont_data->input_type == DATA_TYPE_PACKED_ESI) {
         removeCacheKey(txnp);
       }
-#endif
+    }
   }
 
   TSHttpTxnHookAdd(txnp, TS_HTTP_RESPONSE_TRANSFORM_HOOK, contp);
@@ -1358,11 +1355,11 @@ addTransform(TSHttpTxn txnp, const bool processing_os_response, const bool inter
   }
 
   TSHttpTxnTransformedRespCache(txnp, 0);
-#ifdef ESI_PACKED_NODE_SUPPORT
-  TSHttpTxnUntransformedRespCache(txnp, 0);
-#else
-  TSHttpTxnUntransformedRespCache(txnp, 1);
-#endif
+  if(option_info.packed_node_support) {
+    TSHttpTxnUntransformedRespCache(txnp, 0);
+  } else {
+    TSHttpTxnUntransformedRespCache(txnp, 1);
+  }
 
   TSDebug(DEBUG_TAG, "[%s] Added transformation (0x%p)", __FUNCTION__, contp);
   return true;
@@ -1417,13 +1414,11 @@ globalHookHandler(TSCont contp, TSEvent event, void *edata) {
           Stats::increment(Stats::N_OS_DOCS);
           mask_cache_headers = true;
         }
-        if (mask_cache_headers) {
+        if (option_info.packed_node_support && mask_cache_headers) {
           // we'll 'mask' OS cache headers so that traffic server will
           // not try to cache this. We cannot outright delete them
           // because we need them in our POST request; hence the 'masking'
-#ifdef ESI_PACKED_NODE_SUPPORT
           maskOsCacheHeaders(txnp);
-#endif
         }
       } else {
         TSDebug(DEBUG_TAG, "[%s] handling cache lookup complete event...", __FUNCTION__);
@@ -1472,10 +1467,40 @@ TSPluginInit(int argc, const char *argv[]) {
   
   gHandlerManager = new HandlerManager(HANDLER_MGR_DEBUG_TAG, &TSDebug, &TSError);
 
-  if ((argc > 1) && (strcmp(argv[1], "-") != 0)) {
+  //if ((argc > 1) && (strcmp(argv[1], "-") != 0)) {
+  //  Utils::KeyValueMap handler_conf;
+  //  loadHandlerConf(argv[1], handler_conf);
+  //  gHandlerManager->loadObjects(handler_conf);
+  //}
+  if (argc > 1)
+  {
+    int c;
     Utils::KeyValueMap handler_conf;
-    loadHandlerConf(argv[1], handler_conf);
-    gHandlerManager->loadObjects(handler_conf);
+    static const struct option longopts[] = {
+      { "packed-node-support", no_argument, NULL, 'n' },
+      { "private-response", no_argument, NULL, 'p' },
+      { "handler-filename", required_argument, NULL, 'f' },
+      { NULL, 0, NULL, 0 }
+    };
+
+    while ((c = getopt_long(argc, (char * const*) argv, "npf:", longopts, NULL)) != -1)
+    {
+      switch (c)
+      {
+        case 'n':
+          option_info.packed_node_support = true;
+          break;
+        case 'p':
+          option_info.private_response = true;
+          break;
+        case 'f': 
+          loadHandlerConf(optarg, handler_conf);
+          gHandlerManager->loadObjects(handler_conf);
+          break;
+        default:
+          break;
+      }
+    }
   }
 
   if(pthread_key_create(&threadKey,NULL)){

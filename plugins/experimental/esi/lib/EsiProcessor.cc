@@ -229,6 +229,7 @@ EsiProcessor::process(const char *&data, int &data_len) {
           attemptUrls.push_back(_expression.expand(raw_url));
         if (!_getIncludeData(*node_iter)) {
           attempt_succeeded = false;
+          _errorLog("[%s] attempt section errored; due to url [%s]", __FUNCTION__, raw_url.c_str());
           break;
         }
       }
