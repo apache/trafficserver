@@ -384,6 +384,9 @@ inline int LogObjectManager::roll_files(long time_now)
     for (size_t i=0; i < _numObjects; i++) {
       num_rolled += _objects[i]->roll_files(time_now);
     }
+    for (size_t i=0; i < _numAPIobjects; i++) {
+      num_rolled += _APIobjects[i]->roll_files(time_now);
+    }
     return num_rolled;
 };
 

@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.3.1
 
+  *) [TS-1564] fix the rolling of Logs created via the API in plugins
+
   *) [TS-1565] TSStringPercentEncode returns one character short in no-op case
     (no encoding needed). Author: Thach Tran <tranngocthachs at gmail dot com>.
 
