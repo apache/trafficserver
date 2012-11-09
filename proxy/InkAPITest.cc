@@ -7501,6 +7501,7 @@ REGRESSION_TEST(SDK_API_ENCODING) (RegressionTest * test, int atype, int *pstatu
   const char *url_encoded =
     "http://www.example.com/foo?fie=%20%22%23%25%3C%3E%5B%5D%5C%5E%60%7B%7D%7E&bar=%7Btest%7D&fum=Apache%20Traffic%20Server";
   const char *url_base64 = "aHR0cDovL3d3dy5leGFtcGxlLmNvbS9mb28/ZmllPSAiIyU8PltdXF5ge31+JmJhcj17dGVzdH0mZnVtPUFwYWNoZSBUcmFmZmljIFNlcnZlcg==";
+  const char *url2 = "http://www.example.com/"; // No Percent encoding necessary
   char buf[1024];
   size_t length;
   bool success = true;
@@ -7517,12 +7518,36 @@ REGRESSION_TEST(SDK_API_ENCODING) (RegressionTest * test, int atype, int *pstatu
     }
   }
 
+  if (TS_SUCCESS != TSStringPercentEncode(url2, strlen(url2), buf, sizeof(buf), &length, NULL)) {
+    SDK_RPRINT(test, "TSStringPercentEncode", "TestCase2", TC_FAIL, "Failed on %s", url2);
+    success = false;
+  } else {
+    if (strcmp(buf, url2)) {
+      SDK_RPRINT(test, "TSStringPercentEncode", "TestCase2", TC_FAIL, "Failed on %s != %s", buf, url2);
+      success = false;
+    } else {
+      SDK_RPRINT(test, "TSStringPercentEncode", "TestCase2", TC_PASS, "ok");
+    }
+  }
+
   if (TS_SUCCESS != TSStringPercentDecode(url_encoded, strlen(url_encoded), buf, sizeof(buf), &length)) {
     SDK_RPRINT(test, "TSStringPercentDecode", "TestCase1", TC_FAIL, "Failed on %s", url_encoded);
     success = false;
   } else {
     if (length != strlen(url) || strcmp(buf, url)) {
       SDK_RPRINT(test, "TSStringPercentDecode", "TestCase1", TC_FAIL, "Failed on %s != %s", buf, url);
+      success = false;
+    } else {
+      SDK_RPRINT(test, "TSStringPercentDecode", "TestCase1", TC_PASS, "ok");
+    }
+  }
+
+  if (TS_SUCCESS != TSStringPercentDecode(url2, strlen(url2), buf, sizeof(buf), &length)) {
+    SDK_RPRINT(test, "TSStringPercentDecode", "TestCase2", TC_FAIL, "Failed on %s", url2);
+    success = false;
+  } else {
+    if (length != strlen(url2) || strcmp(buf, url2)) {
+      SDK_RPRINT(test, "TSStringPercentDecode", "TestCase1", TC_FAIL, "Failed on %s != %s", buf, url2);
       success = false;
     } else {
       SDK_RPRINT(test, "TSStringPercentDecode", "TestCase1", TC_PASS, "ok");
