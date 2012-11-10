@@ -52,6 +52,7 @@ plugins to build large scale web applications.
     pcre
     pcre-devel
     libcap-devel
+	flex (optional)
     hwloc-devel (optional)
     liblua-devel (optional)
 
@@ -88,6 +89,7 @@ plugins to build large scale web applications.
     libexpat-dev
     libpcre3-dev
     libcap-dev
+	flex (optional)
     libhwloc-dev (optional)
     liblua5.1-dev (optional)
 
@@ -108,6 +110,7 @@ plugins to build large scale web applications.
     expat
     libexpat-dev
     libpcre3-dev
+	flex (optional)
     libhwloc-dev (optional)
     liblua-dev (optional)
 
@@ -122,6 +125,7 @@ plugins to build large scale web applications.
     expat
     openssl
     pcre
+	flex (optional)
     hwloc (optional)
     lua (optional)
 
