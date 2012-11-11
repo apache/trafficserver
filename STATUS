@@ -44,6 +44,11 @@ PATCHES ACCEPTED TO BACKPORT FROM TRUNK:
 PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   [ New proposals should be added at the end of the list ]
 
+  Range acceleration fix: Disable range acceleration by changing
+  is_pread_capable to always return false. Put the current code in an
+  #if 0 so it can be enabled for those willing to risk it. This issue
+  is fixed on 3.3.X but the patch is much too large to backport.
+
 
 RELEASE PROCESS
 
