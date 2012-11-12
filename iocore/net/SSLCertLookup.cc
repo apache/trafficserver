@@ -45,6 +45,12 @@ typedef const SSL_METHOD * ink_ssl_method_t;
 typedef SSL_METHOD * ink_ssl_method_t;
 #endif
 
+#define SSL_MULTICERT_TIMEOUT   HRTIME_SECOND * 5
+SSLCertConfigProcessor sslCertConfigProcessor;
+static Ptr<ProxyMutex> ssl_reconfig_mutex = NULL;
+int SSLCertLookup::id = 0;
+int sslCertFile_CB(const char *name, RecDataT data_type, RecData data, void *cookie);
+
 #if TS_USE_TLS_SNI
 
 static int
@@ -122,15 +128,7 @@ public:
 
   bool insert(SSL_CTX * ctx, const char * name);
   SSL_CTX * lookup(const char * name) const;
-
-  // XXX although we take "ownership" of the SSL_CTX, we never actually free them when we are
-  // done. Currently, this doesn't matter because altering the set of SSL certificates requires
-  // a restart. When this changes, we will need to keep track of the SSL_CTX pointers exactly
-  // once and call SSL_CTX_free() on them.
-
 };
-
-SSLCertLookup sslCertLookup;
 
 static void
 insert_ssl_certificate(SSLContextStorage *, SSL_CTX *, const char *);
@@ -147,7 +145,7 @@ static const matcher_tags sslCertTags = {
 };
 
 SSLCertLookup::SSLCertLookup()
-  : multipleCerts(false), ssl_storage(NEW(new SSLContextStorage())), ssl_default(NULL)
+  : ssl_storage(NEW(new SSLContextStorage())), ssl_default(NULL)
 {
   *config_file_path = '\0';
 }
@@ -164,15 +162,40 @@ SSLCertLookup::findInfoInHash(const char * address) const
 }
 
 void
-SSLCertLookup::init(const SSLConfigParams * param)
+SSLCertLookup::startup()
 {
-  this->multipleCerts = buildTable(param);
+  ssl_reconfig_mutex = new_ProxyMutex();
+  reconfigure();
 
-  // We *must* have a default context even if it can't possibly work. The default context is used to bootstrap the SSL
-  // handshake so that we can subsequently do the SNI lookup to switch to the real context.
-  if (this->ssl_default == NULL) {
-    this->ssl_default = make_ssl_context(this);
-  }
+  REC_RegisterConfigUpdateFunc("proxy.config.ssl.server.multicert.filename", sslCertFile_CB, NULL);
+  REC_RegisterConfigUpdateFunc("proxy.config.ssl.server.cert.path", sslCertFile_CB, NULL);
+  REC_RegisterConfigUpdateFunc("proxy.config.ssl.server.private_key.path", sslCertFile_CB, NULL);
+  REC_RegisterConfigUpdateFunc("proxy.config.ssl.server.cert_chain.filename", sslCertFile_CB, NULL);
+}
+
+void
+SSLCertLookup::reconfigure()
+{
+  SSLConfig::startup();
+  SSLConfig::scoped_config param;
+
+  SSLCertLookup *lookup = NEW(new SSLCertLookup());
+  lookup->buildTable(param);
+  lookup->checkDefaultContext();
+
+  id = sslCertConfigProcessor.set(id, lookup);
+}
+
+SSLCertLookup *
+SSLCertLookup::acquire()
+{ 
+  return ((SSLCertLookup *) sslCertConfigProcessor.get(id));
+}
+
+void
+SSLCertLookup::release(SSLCertLookup *sslCertTable)
+{ 
+  sslCertConfigProcessor.release(id, sslCertTable);
 }
 
 bool
@@ -254,6 +277,16 @@ SSLCertLookup::buildTable(const SSLConfigParams * param)
 
   ats_free(file_buf);
   return ret;
+}
+
+void
+SSLCertLookup::checkDefaultContext()
+{
+  // We *must* have a default context even if it can't possibly work. The default context is used to bootstrap the SSL
+  // handshake so that we can subsequently do the SNI lookup to switch to the real context.
+  if (this->ssl_default == NULL) {
+    this->ssl_default = make_ssl_context(this);
+  }
 }
 
 const char *
@@ -464,8 +497,10 @@ insert_ssl_certificate(SSLContextStorage * storage, SSL_CTX * ctx, const char * 
       switch (name->type) {
       case GEN_DNS:
         dns = asn1_strdup(name->d.dNSName);
-        Debug("ssl", "mapping '%s' to certificate %s", dns, certfile);
-        storage->insert(ctx, dns);
+        if (!storage->lookup(dns)) {
+          Debug("ssl", "mapping '%s' to certificate %s", dns, certfile);
+          storage->insert(ctx, dns);
+        }
         ats_free(dns);
         break;
       }
@@ -522,6 +557,33 @@ SSLContextStorage::SSLContextStorage()
 
 SSLContextStorage::~SSLContextStorage()
 {
+  InkHashTableEntry *e;
+  InkHashTableIteratorState state;
+  InkHashTable *ht_ptr, *uniqueCtx;
+
+  uniqueCtx = ink_hash_table_create(InkHashTableKeyType_String);
+
+  // SSL_CTX_free decrease SSL_CTX internal reference count
+  // could NOT assign NULL to *value since this ctx might be used by some other live SSL instances
+
+  // Traverse hash table to find unique SSL context pointers first
+  ht_ptr = this->hostnames;
+  for (e = ink_hash_table_iterator_first(ht_ptr, &state); e != NULL; e = ink_hash_table_iterator_next(ht_ptr, &state)) {
+    InkHashTableValue value = ink_hash_table_entry_value(ht_ptr, e);
+    char ptr[32];
+    snprintf(ptr, 31, "%p", value);
+    ink_hash_table_insert(uniqueCtx, ptr, (void *)value);
+  }
+
+  // release these unique SSL contexts
+  ht_ptr = uniqueCtx;
+  for (e = ink_hash_table_iterator_first(ht_ptr, &state); e != NULL; e = ink_hash_table_iterator_next(ht_ptr, &state)) {
+    InkHashTableValue value = ink_hash_table_entry_value(ht_ptr, e);
+    if (value != NULL && *(InkHashTableValue *)value) {
+      SSL_CTX_free((SSL_CTX *)value);
+    }
+  }
+  ink_hash_table_destroy(uniqueCtx);
   ink_hash_table_destroy(this->hostnames);
 }
 
@@ -582,6 +644,148 @@ SSLContextStorage::lookup(const char * name) const
   return NULL;
 }
 
+class SSLCertConfigInfoReleaser:public Continuation
+{
+public:
+  SSLCertConfigInfoReleaser(unsigned int id, SSLCertConfigInfo * info)
+    : Continuation(new_ProxyMutex()), m_id(id), m_info(info)
+  {
+    SET_HANDLER(&SSLCertConfigInfoReleaser::handle_event);
+  }
+  
+  int handle_event(int event, void *edata)
+  {
+    NOWARN_UNUSED(event);
+    NOWARN_UNUSED(edata);
+    sslCertConfigProcessor.release(m_id, m_info);
+    delete this;
+    return 0;
+  }
+
+public:
+  unsigned int m_id;
+  SSLCertConfigInfo *m_info;
+};
+
+SSLCertConfigProcessor::SSLCertConfigProcessor()
+  : ninfos(0)
+{
+  for (int i = 0; i < MAX_CONFIGS; i++) {
+    infos[i] = NULL;
+  }
+}
+
+unsigned int
+SSLCertConfigProcessor::set(unsigned int id, SSLCertConfigInfo * info)
+{
+  SSLCertConfigInfo *old_info;
+  int idx;
+
+  if (id == 0) {
+    id = ink_atomic_increment((int *) &ninfos, 1) + 1;
+    ink_assert(id != 0);
+    ink_assert(id <= MAX_CONFIGS);
+  }
+
+  info->m_refcount = 1;
+
+  if (id > MAX_CONFIGS) {
+    // invalid index
+    Error("[SSLCertConfigProcessor::set] invalid index");
+    return 0;
+  }
+
+  idx = id - 1;
+
+  do {
+    old_info = infos[idx];
+  } while (!ink_atomic_cas( &infos[idx], old_info, info));
+
+  if (old_info) {
+    eventProcessor.schedule_in(NEW(new SSLCertConfigInfoReleaser(id, old_info)), SSL_MULTICERT_TIMEOUT, ET_CACHE);
+  }
+
+  return id;
+}
+
+SSLCertConfigInfo *
+SSLCertConfigProcessor::get(unsigned int id)
+{
+  SSLCertConfigInfo *info;
+  int idx;
+
+  ink_assert(id != 0);
+  ink_assert(id <= MAX_CONFIGS);
+
+  if (id == 0 || id > MAX_CONFIGS) {
+    // return NULL, because we of an invalid index
+    return NULL;
+  }
+
+  idx = id - 1;
+  info = (SSLCertConfigInfo *) infos[idx];
+  if (ink_atomic_increment((int *) &info->m_refcount, 1) < 0) {
+    ink_assert(!"not reached");
+  }
+
+  return info;
+}
+
+void
+SSLCertConfigProcessor::release(unsigned int id, SSLCertConfigInfo * info)
+{
+  int val;
+  int idx;
+
+  ink_assert(id != 0);
+  ink_assert(id <= MAX_CONFIGS);
+
+  if (id == 0 || id > MAX_CONFIGS) {
+    // nothing to delete since we have an invalid index
+    return;
+  }
+
+  idx = id - 1;
+  val = ink_atomic_increment((int *) &info->m_refcount, -1);
+  if ((infos[idx] != info) && (val == 1)) {
+    delete info;
+  }
+}
+
+// struct SSLCert_UpdateContinuation
+//
+//   Used to read the ssl_multicert.config file after the manager signals
+//      a change
+//
+struct SSLCert_UpdateContinuation;
+typedef int (SSLCert_UpdateContinuation::*SSLCert_UpdContHandler) (int, void *);
+struct SSLCert_UpdateContinuation: public Continuation
+{
+  int file_update_handler(int etype, void *data)
+  {
+    NOWARN_UNUSED(etype);
+    NOWARN_UNUSED(data);
+    SSLCertLookup::reconfigure();
+    delete this;
+    return EVENT_DONE;
+  }
+  SSLCert_UpdateContinuation(ProxyMutex * m):Continuation(m)
+  {
+    SET_HANDLER((SSLCert_UpdContHandler) & SSLCert_UpdateContinuation::file_update_handler);
+  }
+};
+
+int
+sslCertFile_CB(const char *name, RecDataT data_type, RecData data, void *cookie)
+{
+  NOWARN_UNUSED(name);
+  NOWARN_UNUSED(data_type);
+  NOWARN_UNUSED(data);
+  NOWARN_UNUSED(cookie);
+  eventProcessor.schedule_imm(NEW(new SSLCert_UpdateContinuation(ssl_reconfig_mutex)), ET_CACHE);
+  return 0;
+}
+
 #if TS_HAS_TESTS
 
 REGRESSION_TEST(SSLHostLookup)(RegressionTest* t, int atype, int * pstatus)
@@ -614,11 +818,6 @@ REGRESSION_TEST(SSLHostLookup)(RegressionTest* t, int atype, int * pstatus)
   // Basic hostname cases.
   tb.check(storage.lookup("www.foo.com") == foo, "host lookup for www.foo.com");
   tb.check(storage.lookup("www.bar.com") == NULL, "host lookup for www.bar.com");
-
-  // XXX Stop free'ing these once SSLContextStorage does it.
-  SSL_CTX_free(wild);
-  SSL_CTX_free(notwild);
-  SSL_CTX_free(foo);
 }
 
 #endif // TS_HAS_TESTS

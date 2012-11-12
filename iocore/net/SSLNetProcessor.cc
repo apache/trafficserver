@@ -133,19 +133,17 @@ SSLNetProcessor::reconfigure(void)
     initSSLLocks();
   }
 
-  SSLConfig::scoped_config param;
-
-  ink_assert(param);
-
   if (HttpProxyPort::hasSSL()) {
     // Only init server stuff if SSL is enabled in the config file
-    sslCertLookup.init(param);
+    SSLCertLookup::startup();
   }
 
   // Enable client regardless of config file setttings as remap file
   // can cause HTTP layer to connect using SSL. But only if SSL
   // initialization hasn't failed already.
   if (err == 0) {
+    SSLConfig::scoped_config param;
+    ink_assert(param);
     err = initSSLClient(param);
     if (err != 0)
       logSSLError("Can't initialize the SSL client, HTTPS in remap rules will not function");

@@ -456,13 +456,15 @@ SSLNetVConnection::sslStartHandShake(int event, int &err)
 
       safe_getsockname(get_socket(), &ip.sa, &namelen);
       ats_ip_ntop(&ip.sa, buff, sizeof(buff));
-      ctx = sslCertLookup.findInfoInHash(buff);
-      Debug("ssl", "IP context is %p, default context %p", ctx, sslCertLookup.defaultContext());
+      SSLCertLookup *lookup = SSLCertLookup::acquire();
+      ctx = lookup->findInfoInHash(buff);
+      Debug("ssl", "IP context is %p, default context %p", ctx, lookup->defaultContext());
       if (ctx == NULL) {
-        ctx = sslCertLookup.defaultContext();
+        ctx = lookup->defaultContext();
       }
 
       this->ssl = make_ssl_connection(ctx, this);
+      SSLCertLookup::release(lookup);
       if (this->ssl == NULL) {
         Debug("ssl", "SSLNetVConnection::sslServerHandShakeEvent, ssl create failed");
         SSLNetProcessor::logSSLError("SSL_StartHandShake");
