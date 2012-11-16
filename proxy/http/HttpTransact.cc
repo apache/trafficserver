@@ -8622,10 +8622,8 @@ HttpTransact::client_result_stat(State* s, ink_hrtime total_time, ink_hrtime req
     break;
   default:
     HTTP_SUM_TRANS_STAT(http_ua_msecs_counts_other_unclassified_stat, total_msec);
-    if (is_debug_tag_set("http")) {
-      ink_release_assert(!"unclassified statistic");
-    }
-    //debug_tag_assert("http",!"unclassified statistic");
+    // This can happen if a plugin manually sets the status code after an error.
+    DebugTxn("http", "Unclassified statistic");
     break;
   }
 }

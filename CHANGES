@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.3.1
 
+  *) [TS-1572] Plugin response status change can trigger ATS assertion
+     Author: Uri Shachar
+
   *) [TS-1433] to make read from writer work
 
   *) [TS-1564] fix the rolling of Logs created via the API in plugins
