@@ -64,6 +64,8 @@ libmgmt_p_a_SOURCES = \
   MgmtDefs.h \
   ProcessManager.cc \
   ProcessManager.h \
+  ProxyConfig.cc \
+  ProxyConfig.h \
   RecordsConfig.cc \
   RecordsConfig.h
 

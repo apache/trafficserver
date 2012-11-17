@@ -71,8 +71,6 @@ traffic_server_SOURCES = \
   AbstractBuffer.h \
   CacheControl.cc \
   CacheControl.h \
-  ProxyConfig.cc \
-  ProxyConfig.h \
   ControlBase.cc \
   ControlBase.h \
   ControlMatcher.cc \
@@ -222,7 +220,6 @@ traffic_sac_LDADD = \
   CacheControl.o \
   StatSystem.o \
   ReverseProxy.o \
-  ProxyConfig.o \
   signals.o \
   Error.o \
   EventName.o \
@@ -271,7 +268,6 @@ endif
 libTrafficServerStandalone_a_SOURCES = \
   signals.cc \
   Error.cc \
-  ProxyConfig.cc \
   EventName.cc \
   DiagsConfig.cc \
   StatPages.cc \
