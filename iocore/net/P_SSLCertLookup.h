@@ -25,33 +25,11 @@
 #define _ssl_Cert_Lookup_h_
 #include "libts.h"
 #include "P_SSLNetProcessor.h"
-
-struct SSLCertConfigInfo
-{
-  volatile int m_refcount;
- 
-  virtual ~SSLCertConfigInfo()
-  { }
-};
-
-
-class SSLCertConfigProcessor
-{
-public:
-  SSLCertConfigProcessor();
-
-  unsigned int set(unsigned int id, SSLCertConfigInfo * info);
-  SSLCertConfigInfo *get(unsigned int id);
-  void release(unsigned int id, SSLCertConfigInfo * data);
-
-public:
-  SSLCertConfigInfo *infos[MAX_CONFIGS];
-  int ninfos;
-};
+#include "ProxyConfig.h"
 
 class SSLContextStorage;
 
-class SSLCertLookup : public SSLCertConfigInfo
+class SSLCertLookup : public ConfigInfo
 {
   const char *extractIPAndCert(
     matcher_line * line_info, char **addr, char **cert, char **ca, char **priKey) const;
@@ -59,7 +37,6 @@ class SSLCertLookup : public SSLCertConfigInfo
     const SSLConfigParams * param,
     const char *strAddr, const char *cert, const char *ca, const char *serverPrivateKey);
 
-  char                config_file_path[PATH_NAME_MAX];
 
   SSLContextStorage * ssl_storage;
   SSL_CTX *           ssl_default;
@@ -83,7 +60,5 @@ public:
   static SSLCertLookup * acquire();
   static void release(SSLCertLookup *p);
 };
-
-extern SSLCertLookup sslCertLookup;
 
 #endif

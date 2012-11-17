@@ -45,8 +45,6 @@ typedef const SSL_METHOD * ink_ssl_method_t;
 typedef SSL_METHOD * ink_ssl_method_t;
 #endif
 
-#define SSL_MULTICERT_TIMEOUT   HRTIME_SECOND * 5
-SSLCertConfigProcessor sslCertConfigProcessor;
 static Ptr<ProxyMutex> ssl_reconfig_mutex = NULL;
 int SSLCertLookup::id = 0;
 int sslCertFile_CB(const char *name, RecDataT data_type, RecData data, void *cookie);
@@ -147,7 +145,6 @@ static const matcher_tags sslCertTags = {
 SSLCertLookup::SSLCertLookup()
   : ssl_storage(NEW(new SSLContextStorage())), ssl_default(NULL)
 {
-  *config_file_path = '\0';
 }
 
 SSLCertLookup::~SSLCertLookup()
@@ -183,19 +180,19 @@ SSLCertLookup::reconfigure()
   lookup->buildTable(param);
   lookup->checkDefaultContext();
 
-  id = sslCertConfigProcessor.set(id, lookup);
+  id = configProcessor.set(id, lookup);
 }
 
 SSLCertLookup *
 SSLCertLookup::acquire()
 { 
-  return ((SSLCertLookup *) sslCertConfigProcessor.get(id));
+  return (SSLCertLookup *)configProcessor.get(id);
 }
 
 void
 SSLCertLookup::release(SSLCertLookup *sslCertTable)
 { 
-  sslCertConfigProcessor.release(id, sslCertTable);
+  configProcessor.release(id, sslCertTable);
 }
 
 bool
@@ -642,114 +639,6 @@ SSLContextStorage::lookup(const char * name) const
   }
 
   return NULL;
-}
-
-class SSLCertConfigInfoReleaser:public Continuation
-{
-public:
-  SSLCertConfigInfoReleaser(unsigned int id, SSLCertConfigInfo * info)
-    : Continuation(new_ProxyMutex()), m_id(id), m_info(info)
-  {
-    SET_HANDLER(&SSLCertConfigInfoReleaser::handle_event);
-  }
-  
-  int handle_event(int event, void *edata)
-  {
-    NOWARN_UNUSED(event);
-    NOWARN_UNUSED(edata);
-    sslCertConfigProcessor.release(m_id, m_info);
-    delete this;
-    return 0;
-  }
-
-public:
-  unsigned int m_id;
-  SSLCertConfigInfo *m_info;
-};
-
-SSLCertConfigProcessor::SSLCertConfigProcessor()
-  : ninfos(0)
-{
-  for (int i = 0; i < MAX_CONFIGS; i++) {
-    infos[i] = NULL;
-  }
-}
-
-unsigned int
-SSLCertConfigProcessor::set(unsigned int id, SSLCertConfigInfo * info)
-{
-  SSLCertConfigInfo *old_info;
-  int idx;
-
-  if (id == 0) {
-    id = ink_atomic_increment((int *) &ninfos, 1) + 1;
-    ink_assert(id != 0);
-    ink_assert(id <= MAX_CONFIGS);
-  }
-
-  info->m_refcount = 1;
-
-  if (id > MAX_CONFIGS) {
-    // invalid index
-    Error("[SSLCertConfigProcessor::set] invalid index");
-    return 0;
-  }
-
-  idx = id - 1;
-
-  do {
-    old_info = infos[idx];
-  } while (!ink_atomic_cas( &infos[idx], old_info, info));
-
-  if (old_info) {
-    eventProcessor.schedule_in(NEW(new SSLCertConfigInfoReleaser(id, old_info)), SSL_MULTICERT_TIMEOUT, ET_CACHE);
-  }
-
-  return id;
-}
-
-SSLCertConfigInfo *
-SSLCertConfigProcessor::get(unsigned int id)
-{
-  SSLCertConfigInfo *info;
-  int idx;
-
-  ink_assert(id != 0);
-  ink_assert(id <= MAX_CONFIGS);
-
-  if (id == 0 || id > MAX_CONFIGS) {
-    // return NULL, because we of an invalid index
-    return NULL;
-  }
-
-  idx = id - 1;
-  info = (SSLCertConfigInfo *) infos[idx];
-  if (ink_atomic_increment((int *) &info->m_refcount, 1) < 0) {
-    ink_assert(!"not reached");
-  }
-
-  return info;
-}
-
-void
-SSLCertConfigProcessor::release(unsigned int id, SSLCertConfigInfo * info)
-{
-  int val;
-  int idx;
-
-  ink_assert(id != 0);
-  ink_assert(id <= MAX_CONFIGS);
-
-  if (id == 0 || id > MAX_CONFIGS) {
-    // nothing to delete since we have an invalid index
-    return;
-  }
-
-  idx = id - 1;
-  val = ink_atomic_increment((int *) &info->m_refcount, -1);
-  if ((infos[idx] != info) && (val == 1)) {
-    delete info;
-  }
 }
 
 // struct SSLCert_UpdateContinuation

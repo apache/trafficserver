@@ -25,6 +25,7 @@
 #include "IPAllow.h"
 #include "HttpClientSession.h"
 #include "I_Machine.h"
+#include "Error.h"
 
 HttpAccept::Options const HttpAccept::DEFAULT_OPTIONS;
 

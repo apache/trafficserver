@@ -33,7 +33,6 @@
 
 #include "libts.h"
 #include "ProcessManager.h"
-#include "Error.h"
 
 void *config_int_cb(void *data, void *value);
 void *config_long_long_cb(void *data, void *value);
@@ -58,7 +57,7 @@ struct ConfigInfo
 {
   volatile int m_refcount;
 
-    virtual ~ ConfigInfo()
+  virtual ~ ConfigInfo()
   {
   }
 };
