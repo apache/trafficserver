@@ -10,6 +10,7 @@ Changes with Apache Traffic Server 3.3.1
   *) [TS-1433] to make read from writer work
 
   *) [TS-1564] fix the rolling of Logs created via the API in plugins
+     Author: Craig Forbes <cforbes at qualys dot com>
 
   *) [TS-1565] TSStringPercentEncode returns one character short in no-op case
     (no encoding needed). Author: Thach Tran <tranngocthachs at gmail dot com>.
