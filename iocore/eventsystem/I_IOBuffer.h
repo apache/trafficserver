@@ -61,14 +61,22 @@ enum AllocType
   DEFAULT_ALLOC, CONSTANT
 };
 #ifndef TS_MICRO
+#if TS_USE_RECLAIMABLE_FREELIST
+#define DEFAULT_BUFFER_NUMBER        64
+#else
 #define DEFAULT_BUFFER_NUMBER        128
+#endif
 #define DEFAULT_HUGE_BUFFER_NUMBER   32
 #define MAX_MIOBUFFER_READERS        5
 #define DEFAULT_BUFFER_ALIGNMENT     8192       // should be disk/page size
 #define DEFAULT_BUFFER_BASE_SIZE     128
 #else
 #define DEFAULT_BUFFER_NUMBER        4
+#if TS_USE_RECLAIMABLE_FREELIST
+#define DEFAULT_HUGE_BUFFER_NUMBER   4
+#else
 #define DEFAULT_HUGE_BUFFER_NUMBER   32
+#endif
 #define MAX_MIOBUFFER_READERS        3
 #define DEFAULT_BUFFER_BASE_SIZE     128
 #define DEFAULT_BUFFER_ALIGNMENT     8  // should be disk/page size

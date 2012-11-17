@@ -58,19 +58,19 @@ public:
   void *
   alloc_void()
   {
-    return ink_freelist_new(&this->fl);
+    return ink_freelist_new(this->fl);
   }
 
   /** Deallocate a block of memory allocated by the Allocator. */
   void
   free_void(void *ptr)
   {
-    ink_freelist_free(&this->fl, ptr);
+    ink_freelist_free(this->fl, ptr);
   }
 
   Allocator()
   {
-    memset(&fl, 0, sizeof fl);
+    fl = NULL;
   }
 
   /**
@@ -81,20 +81,22 @@ public:
     @param chunk_size number of units to be allocated if free pool is empty.
     @param alignment of objects must be a power of 2.
   */
-  Allocator(const char *name, unsigned int element_size, unsigned int chunk_size = 128, unsigned int alignment = 8)
+  Allocator(const char *name, unsigned int element_size,
+            unsigned int chunk_size = 128, unsigned int alignment = 8)
   {
-    ink_freelist_init(&fl, name, element_size, chunk_size, 0, alignment);
+    ink_freelist_init(&fl, name, element_size, chunk_size, alignment);
   }
 
   /** Re-initialize the parameters of the allocator. */
   void
-  re_init(const char *name, unsigned int element_size, unsigned int chunk_size, unsigned int alignment)
+  re_init(const char *name, unsigned int element_size,
+          unsigned int chunk_size, unsigned int alignment)
   {
-    ink_freelist_init(&this->fl, name, element_size, chunk_size, 0, alignment);
+    ink_freelist_init(&this->fl, name, element_size, chunk_size, alignment);
   }
 
 protected:
-  InkFreeList fl;
+  InkFreeList *fl;
 };
 
 /**
@@ -112,7 +114,7 @@ public:
   C*
   alloc()
   {
-    void *ptr = ink_freelist_new(&this->fl);
+    void *ptr = ink_freelist_new(this->fl);
 
     memcpy(ptr, (void *)&this->proto.typeObject, sizeof(C));
     return (C *) ptr;
@@ -126,7 +128,7 @@ public:
   void
   free(C * ptr)
   {
-    ink_freelist_free(&this->fl, ptr);
+    ink_freelist_free(this->fl, ptr);
   }
 
   /**
@@ -158,9 +160,10 @@ public:
     @param chunk_size number of units to be allocated if free pool is empty.
     @param alignment of objects must be a power of 2.
   */
-  ClassAllocator(const char *name, unsigned int chunk_size = 128, unsigned int alignment = 16)
+  ClassAllocator(const char *name, unsigned int chunk_size = 128,
+                 unsigned int alignment = 16)
   {
-    ink_freelist_init(&this->fl, name, RND16(sizeof(C)), chunk_size, 0, RND16(alignment));
+    ink_freelist_init(&this->fl, name, sizeof(C), chunk_size, RND16(alignment));
   }
 
   struct
@@ -187,7 +190,7 @@ public:
   C*
   alloc()
   {
-    void *ptr = ink_freelist_new(&this->fl);
+    void *ptr = ink_freelist_new(this->fl);
 
     if (!_instantiate) {
       memcpy(ptr, (void *)&this->proto.typeObject, sizeof(C));
@@ -206,7 +209,8 @@ public:
     @param instantiate_func
 
   */
-  SparceClassAllocator(const char *name, unsigned int chunk_size = 128, unsigned int alignment = 16,
+  SparceClassAllocator(const char *name, unsigned int chunk_size = 128,
+                       unsigned int alignment = 16,
                        void (*instantiate_func) (C * proto, C * instance) = NULL)
     : ClassAllocator<C>(name, chunk_size, alignment)
   {

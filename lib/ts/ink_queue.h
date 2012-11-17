@@ -124,27 +124,42 @@ extern "C"
 
   typedef void *void_p;
 
-  typedef struct
+#if TS_USE_RECLAIMABLE_FREELIST
+  extern float cfg_reclaim_factor;
+  extern int64_t cfg_max_overage;
+  extern int64_t cfg_enable_reclaim;
+  extern int64_t cfg_debug_filter;
+#else
+  struct _InkFreeList
   {
     volatile head_p head;
     const char *name;
     uint32_t type_size, chunk_size, count, allocated, offset, alignment;
     uint32_t allocated_base, count_base;
-  } InkFreeList, *PInkFreeList;
+  };
 
   inkcoreapi extern volatile int64_t fastalloc_mem_in_use;
   inkcoreapi extern volatile int64_t fastalloc_mem_total;
   inkcoreapi extern volatile int64_t freelist_allocated_mem;
+#endif
 
-/*
- * alignment must be a power of 2
- */
+  typedef struct _InkFreeList InkFreeList, *PInkFreeList;
+  typedef struct _ink_freelist_list
+  {
+    InkFreeList *fl;
+    struct _ink_freelist_list *next;
+  } ink_freelist_list;
+  extern ink_freelist_list *freelists;
+
+  /*
+   * alignment must be a power of 2
+   */
   InkFreeList *ink_freelist_create(const char *name, uint32_t type_size,
-                                   uint32_t chunk_size, uint32_t offset_to_next, uint32_t alignment);
+                                   uint32_t chunk_size, uint32_t alignment);
 
-  inkcoreapi void ink_freelist_init(InkFreeList * fl, const char *name,
+  inkcoreapi void ink_freelist_init(InkFreeList **fl, const char *name,
                                     uint32_t type_size, uint32_t chunk_size,
-                                    uint32_t offset_to_next, uint32_t alignment);
+                                    uint32_t alignment);
   inkcoreapi void *ink_freelist_new(InkFreeList * f);
   inkcoreapi void ink_freelist_free(InkFreeList * f, void *item);
   void ink_freelists_dump(FILE * f);
