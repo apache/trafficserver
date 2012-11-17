@@ -43,11 +43,11 @@ case $(uname) in
 esac
 
 autogen() {
-  [[ -x "$SRCROOT/configure" ]] || ( cd $SRCROOT && autoreconf -fi )
+  [[ -e "$SRCROOT/configure" ]] || ( cd $SRCROOT && autoreconf -fi )
 }
 
 configure() {
-  [[ -r "$SRCROOT/Makefile" ]] && ( cd $SRCROOT && make distclean)
+  [[ -e "$SRCROOT/Makefile" ]] && ( cd $SRCROOT && make distclean)
 
   (
     cd $OBJROOT
