@@ -36,8 +36,6 @@
 #include "MatcherUtils.h"
 #include "HostLookup.h"
 
-SplitDNSConfigProcessor SplitDNSconfigProcessor;
-
 
 /* --------------------------------------------------------------
    this file is built using "ParentSelection.cc as a template.
@@ -79,6 +77,7 @@ static const char *SDNSResultStr[] = {
 
 int SplitDNSConfig::m_id = 0;
 int SplitDNSConfig::gsplit_dns_enabled = 0;
+int splitDNSFile_CB(const char *name, RecDataT data_type, RecData data, void *cookie);
 Ptr<ProxyMutex> SplitDNSConfig::dnsHandler_mutex = 0;
 
 
@@ -115,7 +114,7 @@ SplitDNS::~SplitDNS()
 SplitDNS *
 SplitDNSConfig::acquire()
 {
-  return (SplitDNS *) SplitDNSconfigProcessor.get(SplitDNSConfig::m_id);
+  return (SplitDNS *) configProcessor.get(SplitDNSConfig::m_id);
 }
 
 
@@ -125,7 +124,7 @@ SplitDNSConfig::acquire()
 void
 SplitDNSConfig::release(SplitDNS * params)
 {
-  SplitDNSconfigProcessor.release(SplitDNSConfig::m_id, params);
+  configProcessor.release(SplitDNSConfig::m_id, params);
 }
 
 /* --------------------------------------------------------------
@@ -139,6 +138,7 @@ SplitDNSConfig::startup()
 
   //startup just check gsplit_dns_enabled
   IOCORE_ReadConfigInt32(gsplit_dns_enabled, "proxy.config.dns.splitDNS.enabled");
+  REC_RegisterConfigUpdateFunc("proxy.config.dns.splitdns.filename", splitDNSFile_CB, NULL);
 }
 
 
@@ -173,7 +173,7 @@ SplitDNSConfig::reconfigure()
     params->m_bEnableFastPath = true;
   }
 
-  m_id = SplitDNSconfigProcessor.set(m_id, params);
+  m_id = configProcessor.set(m_id, params);
 
   if (is_debug_tag_set("splitdns_config")) {
     SplitDNSConfig::print();
@@ -581,114 +581,6 @@ SplitDNSRecord::Print()
 }
 
 
-class SplitDNSConfigInfoReleaser:public Continuation
-{
-public:
-  SplitDNSConfigInfoReleaser(unsigned int id, SplitDNSConfigInfo * info)
-    : Continuation(new_ProxyMutex()), m_id(id), m_info(info)
-  {
-    SET_HANDLER(&SplitDNSConfigInfoReleaser::handle_event);
-  }
-
-  int handle_event(int event, void *edata)
-  {
-    NOWARN_UNUSED(event);
-    NOWARN_UNUSED(edata);
-    SplitDNSconfigProcessor.release(m_id, m_info);
-    delete this;
-    return 0;
-  }
-
-public:
-  unsigned int m_id;
-  SplitDNSConfigInfo *m_info;
-};
-
-SplitDNSConfigProcessor::SplitDNSConfigProcessor()
-  : ninfos(0)
-{
-  for (int i = 0; i < MAX_CONFIGS; i++) {
-    infos[i] = NULL;
-  }
-}
-
-unsigned int
-SplitDNSConfigProcessor::set(unsigned int id, SplitDNSConfigInfo * info)
-{
-  SplitDNSConfigInfo *old_info;
-  int idx;
-
-  if (id == 0) {
-    id = ink_atomic_increment((int *) &ninfos, 1) + 1;
-    ink_assert(id != 0);
-    ink_assert(id <= MAX_CONFIGS);
-  }
-
-  info->m_refcount = 1;
-
-  if (id > MAX_CONFIGS) {
-    // invalid index
-    Error("[SplitDNSConfigProcessor::set] invalid index");
-    return 0;
-  }
-
-  idx = id - 1;
-
-  do {
-    old_info = infos[idx];
-  } while (!ink_atomic_cas( &infos[idx], old_info, info));
-
-  if (old_info) {
-    eventProcessor.schedule_in(NEW(new SplitDNSConfigInfoReleaser(id, old_info)), HRTIME_SECONDS(60));
-  }
-
-  return id;
-}
-
-SplitDNSConfigInfo *
-SplitDNSConfigProcessor::get(unsigned int id)
-{
-  SplitDNSConfigInfo *info;
-  int idx;
-
-  ink_assert(id != 0);
-  ink_assert(id <= MAX_CONFIGS);
-
-  if (id == 0 || id > MAX_CONFIGS) {
-    // return NULL, because we of an invalid index
-    return NULL;
-  }
-
-  idx = id - 1;
-  info = (SplitDNSConfigInfo *) infos[idx];
-  if (ink_atomic_increment((int *) &info->m_refcount, 1) < 0) {
-    ink_assert(!"not reached");
-  }
-
-  return info;
-}
-
-void
-SplitDNSConfigProcessor::release(unsigned int id, SplitDNSConfigInfo * info)
-{
-  int val;
-  int idx;
-
-  ink_assert(id != 0);
-  ink_assert(id <= MAX_CONFIGS);
-
-  if (id == 0 || id > MAX_CONFIGS) {
-    // nothing to delete since we have an invalid index
-    return;
-  }
-
-  idx = id - 1;
-  val = ink_atomic_increment((int *) &info->m_refcount, -1);
-  if ((infos[idx] != info) && (val == 1)) {
-    delete info;
-  }
-}
-
 void
 ink_split_dns_init(ModuleVersion v)
 {
@@ -699,6 +591,18 @@ ink_split_dns_init(ModuleVersion v)
     return;
 
   init_called = 1;
+}
+
+
+int
+splitDNSFile_CB(const char *name, RecDataT data_type, RecData data, void *cookie)
+{
+  NOWARN_UNUSED(name);
+  NOWARN_UNUSED(data_type);
+  NOWARN_UNUSED(data);
+  NOWARN_UNUSED(cookie);
+  eventProcessor.schedule_imm(NEW(new SDNS_UpdateContinuation(reconfig_mutex)), ET_CACHE);
+  return 0;
 }
 
 #endif // SPLIT_DNS

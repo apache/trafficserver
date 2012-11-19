@@ -38,6 +38,7 @@
 #include "ControlBase.h"
 #include "ControlMatcher.h"
 */
+#include "ProxyConfig.h"
 
 /* ---------------------------
    forward declarations ...
@@ -89,36 +90,10 @@ struct SplitDNSResult
 };
 
 
-struct SplitDNSConfigInfo
-{
-  volatile int m_refcount;
-
-  virtual ~SplitDNSConfigInfo()
-  { }
-};
-
-
-class SplitDNSConfigProcessor
-{
-public:
-  SplitDNSConfigProcessor();
-
-  unsigned int set(unsigned int id, SplitDNSConfigInfo * info);
-  SplitDNSConfigInfo *get(unsigned int id);
-  void release(unsigned int id, SplitDNSConfigInfo * data);
-
-public:
-  SplitDNSConfigInfo *infos[MAX_CONFIGS];
-  int ninfos;
-};
-
-
-extern SplitDNSConfigProcessor SplitDNSconfigProcessor;
-
 /* --------------------------------------------------------------
    **                struct SplitDNS
    -------------------------------------------------------------- */
-struct SplitDNS:public SplitDNSConfigInfo
+struct SplitDNS:public ConfigInfo
 {
   SplitDNS();
   ~SplitDNS();

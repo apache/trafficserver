@@ -1102,7 +1102,7 @@ fileUpdated(char *fname)
     lmgmt->signalFileChange("proxy.config.log.xml_config_file");
 
   } else if (strcmp(fname, "splitdns.config") == 0) {
-    mgmt_log(stderr, "[fileUpdated] splitdns.config file has been modified\n");
+    lmgmt->signalFileChange("proxy.config.dns.splitdns.filename");
 
   } else if (strcmp(fname, "plugin.config") == 0) {
     mgmt_log(stderr, "[fileUpdated] plugin.config file has been modified\n");

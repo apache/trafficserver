@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.3.1
 
+  *) [TS-1576] reload splitdns.config at runtime
+     Author: Ethan Lai <yzlai@yahoo.com>
+
   *) [TS-1551] reload ssl_multicert.config at runtime
      Author: Ethan Lai <yzlai@yahoo.com>
 
