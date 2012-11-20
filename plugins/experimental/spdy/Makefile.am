@@ -15,17 +15,20 @@
 #  limitations under the License.
 
 pkglibdir = ${pkglibexecdir}
+
+if BUILD_HAVE_CXX_11
+
 pkglib_LTLIBRARIES = spdy.la
 lib_LTLIBRARIES = libspdy.la
 check_PROGRAMS = zstream_test
 
-AM_CXXFLAGS = \
+AM_CPPFLAGS = \
   -I$(srcdir)/lib \
   -I$(top_builddir)/proxy/api \
-  -std=c++11
+  -D__STDC_FORMAT_MACROS=1
 
 if BUILD_HAVE_LIBCXX
-AM_CXXFLAGS += -stdlib=libc++
+AM_CXXFLAGS = -stdlib=libc++
 endif
 
 spdy_la_SOURCES =  \
@@ -51,3 +54,5 @@ TESTS = $(check_PROGRAMS)
 
 test:: $(TESTS)
 	for f in $(TESTS) ; do $$f ; done
+
+endif # BUILD_HAVE_CXX_11

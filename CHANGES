@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.3.1
 
+  *) [TS-1553] Detect and build C++11 dependencies
+
   *) [TS-1576] reload splitdns.config at runtime
      Author: Ethan Lai <yzlai@yahoo.com>
 

@@ -318,8 +318,6 @@ spdy_accept_io(TSCont contp, TSEvent ev, void * edata)
     TSVConn             vconn = (TSVConn)edata;;
     spdy_io_control *   io = nullptr;
 
-    TSVIO read_vio, write_vio;
-
     switch (ev) {
     case TS_EVENT_NET_ACCEPT:
         io = retain(new spdy_io_control(vconn));
@@ -328,8 +326,8 @@ spdy_accept_io(TSCont contp, TSEvent ev, void * edata)
         // XXX is contp leaked here?
         contp = TSContCreate(spdy_vconn_io, TSMutexCreate());
         TSContDataSet(contp, io);
-        read_vio = TSVConnRead(vconn, contp, io->input.buffer, std::numeric_limits<int64_t>::max());
-        write_vio = TSVConnWrite(vconn, contp, io->output.reader, std::numeric_limits<int64_t>::max());
+        TSVConnRead(vconn, contp, io->input.buffer, std::numeric_limits<int64_t>::max());
+        TSVConnWrite(vconn, contp, io->output.reader, std::numeric_limits<int64_t>::max());
         debug_protocol("accepted new SPDY session %p", io);
         break;
     default:

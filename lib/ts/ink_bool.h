@@ -38,16 +38,14 @@
 #if !defined (_ink_bool_h_)
 #define _ink_bool_h_
 
-#if defined(openbsd)
+#if !defined(__cplusplus)
+
+#if HAVE_STDBOOL_H
 
 #include <stdbool.h>
 
-#elif !defined(linux)
+#else /* HAVE_STDBOOL_H */
 
-#if (defined (__GNUC__) || ! defined(__cplusplus))
-/*
- * bool, true, and false already declared in C++
- */
 #if !defined (bool)
 #if !defined(freebsd) && !defined(solaris)
 #define bool int
@@ -62,8 +60,9 @@
 #define false 0
 #endif
 
-#endif /* #if (defined (__GNUC__) || ! defined(__cplusplus)) */
-#endif /* not openbsd, not linux */
+#endif /* HAVE_STDBOOL_H */
+
+#endif /* !defined(__cplusplus) */
 
 /*
  * TRUE and FALSE not declared in C++

@@ -30,6 +30,7 @@ stringof<struct sockaddr>(const sockaddr& sa)
         const in6_addr * in6;
     } ptr;
 
+    ptr.in = nullptr;
     switch (sa.sa_family) {
     case AF_INET:
         ptr.in = &((const sockaddr_in *)(&sa))->sin_addr;

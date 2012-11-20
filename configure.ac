@@ -288,20 +288,6 @@ TS_ARG_ENABLE_VAR([has],[wccp])
 AC_SUBST(has_wccp)
 AM_CONDITIONAL([BUILD_WCCP], [test 0 -ne $has_wccp])
 
-#
-# CPP 11 API
-#
-AC_MSG_CHECKING([whether to enable c++11 api])
-AC_ARG_WITH([cpp11api],
-  [AS_HELP_STRING([--with-cpp11api],[enable support for cpp11api [default=no]])],
-  [cpp11api=$withval],
-  [cpp11api=no]
-)
-AC_MSG_RESULT([$cpp11api])
-AM_CONDITIONAL([BUILD_CPP11API], [test "$cpp11api" = yes])
-
-
-
 # Google profiler
 AC_MSG_CHECKING([whether to enable profiler])
 AC_ARG_WITH([profiler],
@@ -493,15 +479,29 @@ TS_SUBST([pkgdocdir])
 
 # AC_PROG can sometimes mangle CFLAGS etc.
 # in particular, on Linux they insert -g -O2, here we preserve any user CFLAGS
-
-#CC=gcc
-#CXX=g++
-
-REAL_CFLAGS="${CFLAGS}"
-REAL_CXXFLAGS="${CXXFLAGS}"
+_ts_saved_CFLAGS="${CFLAGS}"
+_ts_saved_CXXFLAGS="${CXXFLAGS}"
 
 AC_PROG_CC
 AC_PROG_CXX
+
+CFLAGS="${_ts_saved_CFLAGS}"
+CXXFLAGS="${_ts_saved_CXXFLAGS}"
+
+# AX_CXX_COMPILE_STDCXX_11 requires the current language to be C++.
+AC_LANG_PUSH([C++])
+
+AX_CXX_COMPILE_STDCXX_11( [noext], [enable_cxx_11_support=yes], [
+  enable_cxx_11_support=no
+  AC_MSG_NOTICE([disabling features that depend on C++11 support])
+])
+
+AM_CONDITIONAL([BUILD_HAVE_CXX_11], [ test "x${enable_cxx_11_support}" = "xyes" ])
+if test "x${enable_cxx_11_support}" = "xyes" ; then
+  AC_DEFINE(HAVE_CXX_11, 1, [Whether the compiler support C++11])
+fi
+
+AC_LANG_POP()
 
 # Check for ccache (if explicitly enabled)
 if test "x$enable_ccache" = "xyes"; then
@@ -602,9 +602,6 @@ AS_IF([test "x$PERL" = "xnot found"],
 )
 AC_ARG_VAR([DOXYGEN], [full path of Doxygen executable])
 AC_ARG_VAR([PERL], [full path of Perl executable])
-
-CFLAGS="${REAL_CFLAGS}"
-CXXFLAGS="${REAL_CXXFLAGS}"
 
 # Check for GNU-style -On and for Solaris Studio style -xOn.
 AC_MSG_CHECKING([checking whether to auto-set compiler optimization flags])
@@ -882,6 +879,18 @@ fi
 #         associated with our not wanting to use GNU for _everything_.
 # Note:  This macro may set certain parameters when run.
 #
+
+#
+# CPP 11 API
+#
+AC_MSG_CHECKING([whether to enable c++11 api])
+AC_ARG_WITH([cpp11api],
+  [AS_HELP_STRING([--with-cpp11api],[enable support for cpp11api [default=auto]])],
+  [cpp11api=$withval],
+  [cpp11api=$enable_cxx_11_support]
+)
+AC_MSG_RESULT([$cpp11api])
+AM_CONDITIONAL([BUILD_CPP11API], [test "$cpp11api" = yes])
 
 
 # -----------------------------------------------------------------------------
@@ -1213,6 +1222,7 @@ TS_FLAG_HEADERS([sys/epoll.h \
                   sys/sysmacros.h \
                   math.h \
                   stdint.h \
+                  stdbool.h \
                   net/ppp_defs.h \
                   ifaddrs.h\
 		  readline/readline.h \

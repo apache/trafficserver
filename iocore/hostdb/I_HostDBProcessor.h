@@ -445,7 +445,7 @@ struct HostDBProcessor: public Processor
   /** Lookup Hostinfo by addr */
   Action *getbyaddr_re(Continuation * cont, sockaddr const* aip)
   {
-    return getby(cont, NULL, 0, 0, aip, false);
+    return getby(cont, NULL, 0, aip, false);
   }
 
 
