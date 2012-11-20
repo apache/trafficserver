@@ -50,7 +50,7 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   is fixed on 3.3.X but the patch is much too large to backport.
   Jira: https://issues.apache.org/jira/browse/TS-1575
   Patch: https://issues.apache.org/jira/secure/attachment/12553896/0001-Fix-for-Range-bug-on-3.2.x.patch
-  +1: igalic, amc
+  +1: igalic, amc, zwoop
 
   Fix ARM build failures by adding ARM barrier intrinsics which actually do
   something. This fixes build failues on the ARM port after promoting the
@@ -61,7 +61,7 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   problem.
   Jira: https://issues.apache.org/jira/browse/TS-1560
   Patch: 23feb5106ffda71712b0f94a8b3242ecd51a4d9a
-  +1: igalic
+  +1: igalic, zwoop
   igalic says: arno, you proposed this, maybe you want to +1 it too?
 
   fix wccp's out of tree build
