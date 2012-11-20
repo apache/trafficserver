@@ -61,6 +61,8 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   problem.
   Jira: https://issues.apache.org/jira/browse/TS-1560
   Patch: 23feb5106ffda71712b0f94a8b3242ecd51a4d9a
+  +1: igalic
+  igalic says: arno, you proposed this, maybe you want to +1 it too?
 
 RELEASE PROCESS
 
