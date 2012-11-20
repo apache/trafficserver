@@ -24,6 +24,8 @@ Changes with Apache Traffic Server 3.3.1
      (no encoding needed). Author: Thach Tran <tranngocthachs at gmail dot com>.
 
   *) [TS-1561] Plugin esi - Enhancements on ESI plugin
+     Author: Kit Chan <chanshukit at gmail dot com>
+             Yu Qing <zhuangyuan at taobao dot com>
 
   *) [TS-1560] plugins need memory barriers for ARM
 
