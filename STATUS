@@ -66,7 +66,8 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
 
   fix wccp's out of tree build
   Jira: https://issues.apache.org/jira/browse/TS-1368
-  Patch: 72dcbdc58024abc6f67a592853e488d7f9eebd83
+  Patch: 682c4e3938b8aee288facdcfd0750571edcb20b0
+         72dcbdc58024abc6f67a592853e488d7f9eebd83
   +1: igalic
 
 RELEASE PROCESS
