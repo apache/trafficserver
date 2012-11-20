@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.3.1
 
+  *) [TS-1491] Browser always prompts for authentication (NTLM).
+     Author: Yakov Kopel.
+
   *) [TS-1553] Detect and build C++11 dependencies
 
   *) [TS-1576] reload splitdns.config at runtime
@@ -18,7 +21,7 @@ Changes with Apache Traffic Server 3.3.1
      Author: Craig Forbes <cforbes at qualys dot com>
 
   *) [TS-1565] TSStringPercentEncode returns one character short in no-op case
-    (no encoding needed). Author: Thach Tran <tranngocthachs at gmail dot com>.
+     (no encoding needed). Author: Thach Tran <tranngocthachs at gmail dot com>.
 
   *) [TS-1561] Plugin esi - Enhancements on ESI plugin
 
@@ -122,7 +125,7 @@ Changes with Apache Traffic Server 3.3.1
   *) [TS-1436] Added Yahoo directory layout for installation.
 
   *) [TS-1418] Add automake file to Metalink plugin. Author: Jack Bates.
-   Also reorganize the plugins/experimental Makefile.am stuff slightly.
+     Also reorganize the plugins/experimental Makefile.am stuff slightly.
 
   *) [TS-1414] gzip plugin enhancements
 
