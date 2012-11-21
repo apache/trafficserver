@@ -41,9 +41,6 @@ A list of all bugs open for the next development release can be found at
 
 PATCHES ACCEPTED TO BACKPORT FROM TRUNK:
 
-PATCHES PROPOSED TO BACKPORT FROM TRUNK:
-  [ New proposals should be added at the end of the list ]
-
   Range acceleration fix: Disable range acceleration by changing
   is_pread_capable to always return false. Put the current code in an
   #if 0 so it can be enabled for those willing to risk it. This issue
@@ -51,6 +48,9 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   Jira: https://issues.apache.org/jira/browse/TS-1575
   Patch: https://issues.apache.org/jira/secure/attachment/12553896/0001-Fix-for-Range-bug-on-3.2.x.patch
   +1: igalic, amc, zwoop
+
+PATCHES PROPOSED TO BACKPORT FROM TRUNK:
+  [ New proposals should be added at the end of the list ]
 
   Fix ARM build failures by adding ARM barrier intrinsics which actually do
   something. This fixes build failues on the ARM port after promoting the
