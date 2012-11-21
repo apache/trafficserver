@@ -55,6 +55,12 @@
 #include <ext/hash_map>
 #include <ext/hash_set>
 #undef _BACKWARD_BACKWARD_WARNING_H
+#  if (__GNUC__ <= 4 && __GNUC_MINOR__ < 7)
+    // hash was added to namespace std in gcc 4.7 so we use std:: for
+    // forward compatibility and import hash to std for backwards
+    // compatibility.
+     namespace std { using __gnu_cxx::hash; }
+#  endif
 #else
 #include <hash_map>
 #include <hash_set>
@@ -346,8 +352,8 @@ struct eqstr
   }
 };
 
-typedef hash_map <const char *, OriginStats *, hash <const char *>, eqstr> OriginStorage;
-typedef hash_set <const char *, hash <const char *>, eqstr> OriginSet;
+typedef hash_map <const char *, OriginStats *, std::hash <const char *>, eqstr> OriginStorage;
+typedef hash_set <const char *, std::hash <const char *>, eqstr> OriginSet;
 
 
 // LRU class for the URL data
@@ -356,7 +362,7 @@ void  update_elapsed(ElapsedStats &stat, const int elapsed, const StatsCounter &
 class UrlLru
 {
   typedef list<UrlStats> LruStack;
-  typedef hash_map<const char *, LruStack::iterator, hash <const char *>, eqstr> LruHash;
+  typedef hash_map<const char *, LruStack::iterator, std::hash <const char *>, eqstr> LruHash;
 
 public:
   UrlLru(int size=1000000, int show_urls=0)
