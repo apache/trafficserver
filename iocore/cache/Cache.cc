@@ -688,10 +688,10 @@ CacheProcessor::diskInitialized()
         Debug("cache_hosting", "Disk: %d: Vol Blocks: %u: Free space: %" PRIu64,
               i, d->header->num_diskvol_blks, d->free_space);
         for (j = 0; j < (int) d->header->num_volumes; j++) {
-          Debug("cache_hosting", "\tVol: %d Size: %"PRIu64, d->disk_vols[j]->vol_number, d->disk_vols[j]->size);
+          Debug("cache_hosting", "\tVol: %d Size: %" PRIu64, d->disk_vols[j]->vol_number, d->disk_vols[j]->size);
         }
         for (j = 0; j < (int) d->header->num_diskvol_blks; j++) {
-          Debug("cache_hosting", "\tBlock No: %d Size: %"PRIu64" Free: %u",
+          Debug("cache_hosting", "\tBlock No: %d Size: %" PRIu64" Free: %u",
                 d->header->vol_info[j].number, d->header->vol_info[j].len, d->header->vol_info[j].free);
         }
       }
@@ -1910,7 +1910,7 @@ CacheVC::handleReadDone(int event, Event *e) {
     if (is_debug_tag_set("cache_read")) {
       char xt[33];
       Debug("cache_read"
-            , "Read complete on fragment %s. Length: data payload=%d this fragment=%d total doc=%"PRId64" prefix=%d"
+            , "Read complete on fragment %s. Length: data payload=%d this fragment=%d total doc=%" PRId64" prefix=%d"
             , doc->key.toHexStr(xt), doc->data_len(), doc->len, doc->total_len, doc->prefix_len()
         );
     }
@@ -2380,11 +2380,11 @@ cplist_reconfigure()
         percent_remaining -= (config_vol->size < 128) ? 0 : config_vol->percent;
       }
       if (config_vol->size < 128) {
-        Warning("the size of volume %d (%"PRId64") is less than the minimum required volume size %d",
+        Warning("the size of volume %d (%" PRId64") is less than the minimum required volume size %d",
                 config_vol->number, (int64_t)config_vol->size, 128);
         Warning("volume %d is not created", config_vol->number);
       }
-      Debug("cache_hosting", "Volume: %d Size: %"PRId64, config_vol->number, (int64_t)config_vol->size);
+      Debug("cache_hosting", "Volume: %d Size: %" PRId64, config_vol->number, (int64_t)config_vol->size);
     }
     cplist_update();
     /* go through volume config and grow and create volumes */

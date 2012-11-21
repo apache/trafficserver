@@ -132,7 +132,7 @@ FetchSM::process_fetch_read(int event)
   switch (event) {
   case TS_EVENT_VCONN_READ_READY:
     bytes = resp_reader->read_avail();
-    Debug(DEBUG_TAG, "[%s] number of bytes in read ready %"PRId64"", __FUNCTION__, bytes);
+    Debug(DEBUG_TAG, "[%s] number of bytes in read ready %" PRId64"", __FUNCTION__, bytes);
     while (total_bytes_copied < bytes) {
        int64_t actual_bytes_copied;
        actual_bytes_copied = response_buffer->write(resp_reader, bytes, 0);
@@ -157,11 +157,11 @@ FetchSM::process_fetch_read(int event)
     bytes = response_reader->read_avail();
 
     get_info_from_buffer(response_reader);
-    Debug(DEBUG_TAG, "[%s] number of bytes %"PRId64"", __FUNCTION__, bytes);
+    Debug(DEBUG_TAG, "[%s] number of bytes %" PRId64"", __FUNCTION__, bytes);
     if(client_response!=NULL)
       client_response[bytes] = '\0';
       //client_response[bytes + _headers.size()] = '\0';
-    Debug(DEBUG_TAG, "[%s] Completed data fetch of size %"PRId64", notifying caller", __FUNCTION__, bytes);
+    Debug(DEBUG_TAG, "[%s] Completed data fetch of size %" PRId64", notifying caller", __FUNCTION__, bytes);
     //InvokePlugin( TS_EVENT_INTERNAL_60200, (void *) client_response);
    client_bytes = bytes;
     //InvokePlugin( TS_EVENT_INTERNAL_60200, (void *) this);

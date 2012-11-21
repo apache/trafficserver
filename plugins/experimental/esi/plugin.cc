@@ -621,7 +621,7 @@ transformData(TSCont contp)
   if (!process_input_complete && (cont_data->curr_state == ContData::READING_ESI_DOC)) {
     // Determine how much data we have left to read.
     toread = TSVIONTodoGet(cont_data->input_vio);
-    TSDebug(cont_data->debug_tag, "[%s] upstream VC has %"PRId64" bytes available to read",
+    TSDebug(cont_data->debug_tag, "[%s] upstream VC has %" PRId64" bytes available to read",
              __FUNCTION__, toread);
 
     if (toread > 0) {
@@ -647,14 +647,14 @@ transformData(TSCont contp)
             cont_data->packed_node_list.append(data, data_len);
           }
           TSDebug(cont_data->debug_tag,
-                   "[%s] Added chunk of %"PRId64" bytes starting with [%.10s] to parse list",
+                   "[%s] Added chunk of %" PRId64" bytes starting with [%.10s] to parse list",
                    __FUNCTION__, data_len, (data_len ? data : "(null)"));
           consumed += data_len;
 
           block = TSIOBufferBlockNext(block);
         }
       }
-      TSDebug(cont_data->debug_tag, "[%s] Consumed %"PRId64" bytes from upstream VC",
+      TSDebug(cont_data->debug_tag, "[%s] Consumed %" PRId64" bytes from upstream VC",
                __FUNCTION__, consumed);
 
       TSIOBufferReaderConsume(cont_data->input_reader, consumed);

@@ -457,7 +457,7 @@ CacheHostRecord::Init(int typ)
   CacheVol *cachep = cp_list.head;
   for (; cachep; cachep = cachep->link.next) {
     if (cachep->scheme == type) {
-      Debug("cache_hosting", "Host Record: %p, Volume: %d, size: %"PRId64, this, cachep->vol_number, (int64_t)cachep->size);
+      Debug("cache_hosting", "Host Record: %p, Volume: %d, size: %" PRId64, this, cachep->vol_number, (int64_t)cachep->size);
       cp[num_cachevols] = cachep;
       num_cachevols++;
       num_vols += cachep->num_vols;
@@ -1146,10 +1146,10 @@ execute_and_verify(RegressionTest * t)
             i, d->header->num_diskvol_blks, d->free_space);
       for (int j = 0; j < (int) d->header->num_volumes; j++) {
 
-        Debug("cache_hosting", "\tVol: %d Size: %"PRIu64, d->disk_vols[j]->vol_number, d->disk_vols[j]->size);
+        Debug("cache_hosting", "\tVol: %d Size: %" PRIu64, d->disk_vols[j]->vol_number, d->disk_vols[j]->size);
       }
       for (int j = 0; j < (int) d->header->num_diskvol_blks; j++) {
-        Debug("cache_hosting", "\tBlock No: %d Size: %"PRIu64" Free: %u",
+        Debug("cache_hosting", "\tBlock No: %d Size: %" PRIu64" Free: %u",
               d->header->vol_info[j].number, d->header->vol_info[j].len, d->header->vol_info[j].free);
       }
     }

@@ -1781,7 +1781,7 @@ CacheContinuation::replyOpEvent(int event, VConnection * cvc)
   if (vers == CacheOpReplyMsg::CACHE_OP_REPLY_MESSAGE_VERSION) {
     if (read_op) {
       // Transmit reply message and object data in same cluster message
-      Debug("cache_proto", "Sending reply/data seqno=%d buflen=%"PRId64,
+      Debug("cache_proto", "Sending reply/data seqno=%d buflen=%" PRId64,
             seq_number, readahead_data ? bytes_IOBufferBlockList(readahead_data, 1) : 0);
       clusterProcessor.invoke_remote_data(ch,
                                           CACHE_OP_RESULT_CLUSTER_FUNCTION,

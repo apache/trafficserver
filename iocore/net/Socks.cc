@@ -403,7 +403,7 @@ SocksEntry::mainEvent(int event, void *data)
       bool success;
       if (version == SOCKS5_VERSION) {
         success = (p[0] == SOCKS5_VERSION && p[1] == SOCKS5_REQ_GRANTED);
-        Debug("Socks", "received reply of length %"PRId64" addr type %d", ((VIO *) data)->ndone, (int) p[3]);
+        Debug("Socks", "received reply of length %" PRId64" addr type %d", ((VIO *) data)->ndone, (int) p[3]);
       } else
         success = (p[0] == 0 && p[1] == SOCKS4_REQ_GRANTED);
 

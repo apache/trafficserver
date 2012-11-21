@@ -776,7 +776,7 @@ dir_lookaside_fixup(CacheKey *key, Vol *d)
   while (b) {
     if (b->evac_frags.key == *key) {
       int res = dir_overwrite(key, d, &b->new_dir, &b->dir, false);
-      DDebug("dir_lookaside", "fixup %X %X offset %"PRId64" phase %d %d",
+      DDebug("dir_lookaside", "fixup %X %X offset %" PRId64" phase %d %d",
             key->word(0), key->word(1), dir_offset(&b->new_dir), dir_phase(&b->new_dir), res);
       int64_t o = dir_offset(&b->dir), n = dir_offset(&b->new_dir);
       d->ram_cache->fixup(key, (uint32_t)(o >> 32), (uint32_t)o, (uint32_t)(n >> 32), (uint32_t)n);
@@ -821,7 +821,7 @@ dir_lookaside_remove(CacheKey *key, Vol *d)
   EvacuationBlock *b = d->lookaside[i].head;
   while (b) {
     if (b->evac_frags.key == *key) {
-      DDebug("dir_lookaside", "remove %X %X offset %"PRId64" phase %d",
+      DDebug("dir_lookaside", "remove %X %X offset %" PRId64" phase %d",
             key->word(0), key->word(1), dir_offset(&b->new_dir), dir_phase(&b->new_dir));
       d->lookaside[i].remove(b);
       free_EvacuationBlock(b, d->mutex->thread_holding);

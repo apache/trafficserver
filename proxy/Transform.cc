@@ -614,7 +614,7 @@ NullTransform::handle_event(int event, void *edata)
 
   if (m_closed) {
     if (m_deletable) {
-      Debug("transform", "NullTransform destroy: %"PRId64" [%p]", m_output_vio ? m_output_vio->ndone : 0, this);
+      Debug("transform", "NullTransform destroy: %" PRId64" [%p]", m_output_vio ? m_output_vio->ndone : 0, this);
       delete this;
     }
   } else {
@@ -670,7 +670,7 @@ NullTransform::handle_event(int event, void *edata)
           }
 
           if (towrite > 0) {
-            Debug("transform", "[NullTransform::handle_event] " "writing %"PRId64" bytes to output", towrite);
+            Debug("transform", "[NullTransform::handle_event] " "writing %" PRId64" bytes to output", towrite);
             m_output_buf->write(m_write_vio.get_reader(), towrite);
 
             m_write_vio.get_reader()->consume(towrite);
@@ -767,7 +767,7 @@ RangeTransform::handle_event(int event, void *edata)
 
   if (m_closed) {
     if (m_deletable) {
-      Debug("http_trans", "RangeTransform destroy: %p ndone=%"PRId64, this, m_output_vio ? m_output_vio->ndone : 0);
+      Debug("http_trans", "RangeTransform destroy: %p ndone=%" PRId64, this, m_output_vio ? m_output_vio->ndone : 0);
       delete this;
     }
   } else {
@@ -879,7 +879,7 @@ RangeTransform::transform_to_range()
           add_boundary(true);
         }
 
-        Debug("http_trans", "total bytes of Range response body is %"PRId64, m_done);
+        Debug("http_trans", "total bytes of Range response body is %" PRId64, m_done);
         m_output_vio->nbytes = m_done;
         m_output_vio->reenable();
 

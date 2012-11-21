@@ -244,7 +244,7 @@ PluginVC::do_io_read(Continuation * c, int64_t nbytes, MIOBuffer * buf)
   read_state.vio.vc_server = (VConnection *) this;
   read_state.vio.op = VIO::READ;
 
-  Debug("pvc", "[%u] %s: do_io_read for %"PRId64" bytes", PVC_ID, PVC_TYPE, nbytes);
+  Debug("pvc", "[%u] %s: do_io_read for %" PRId64" bytes", PVC_ID, PVC_TYPE, nbytes);
 
   // Since reentrant callbacks are not allowed on from do_io
   //   functions schedule ourselves get on a different stack
@@ -277,7 +277,7 @@ PluginVC::do_io_write(Continuation * c, int64_t nbytes, IOBufferReader * abuffer
   write_state.vio.vc_server = (VConnection *) this;
   write_state.vio.op = VIO::WRITE;
 
-  Debug("pvc", "[%u] %s: do_io_write for %"PRId64" bytes", PVC_ID, PVC_TYPE, nbytes);
+  Debug("pvc", "[%u] %s: do_io_write for %" PRId64" bytes", PVC_ID, PVC_TYPE, nbytes);
 
   // Since reentrant callbacks are not allowed on from do_io
   //   functions schedule ourselves get on a different stack
@@ -508,7 +508,7 @@ PluginVC::process_write_side(bool other_side_call)
   int64_t bytes_avail = reader->read_avail();
   int64_t act_on = MIN(bytes_avail, ntodo);
 
-  Debug("pvc", "[%u] %s: process_write_side; act_on %"PRId64"", PVC_ID, PVC_TYPE, act_on);
+  Debug("pvc", "[%u] %s: process_write_side; act_on %" PRId64"", PVC_ID, PVC_TYPE, act_on);
 
   if (other_side->closed || other_side->read_state.shutdown) {
     write_state.vio._cont->handleEvent(VC_EVENT_ERROR, &write_state.vio);
@@ -544,7 +544,7 @@ PluginVC::process_write_side(bool other_side_call)
 
   write_state.vio.ndone += added;
 
-  Debug("pvc", "[%u] %s: process_write_side; added %"PRId64"", PVC_ID, PVC_TYPE, added);
+  Debug("pvc", "[%u] %s: process_write_side; added %" PRId64"", PVC_ID, PVC_TYPE, added);
 
   if (write_state.vio.ntodo() == 0) {
     write_state.vio._cont->handleEvent(VC_EVENT_WRITE_COMPLETE, &write_state.vio);
@@ -623,7 +623,7 @@ PluginVC::process_read_side(bool other_side_call)
   int64_t bytes_avail = core_reader->read_avail();
   int64_t act_on = MIN(bytes_avail, ntodo);
 
-  Debug("pvc", "[%u] %s: process_read_side; act_on %"PRId64"", PVC_ID, PVC_TYPE, act_on);
+  Debug("pvc", "[%u] %s: process_read_side; act_on %" PRId64"", PVC_ID, PVC_TYPE, act_on);
 
   if (act_on <= 0) {
     if (other_side->closed || other_side->write_state.shutdown) {
@@ -656,7 +656,7 @@ PluginVC::process_read_side(bool other_side_call)
 
   read_state.vio.ndone += added;
 
-  Debug("pvc", "[%u] %s: process_read_side; added %"PRId64"", PVC_ID, PVC_TYPE, added);
+  Debug("pvc", "[%u] %s: process_read_side; added %" PRId64"", PVC_ID, PVC_TYPE, added);
 
   if (read_state.vio.ntodo() == 0) {
     read_state.vio._cont->handleEvent(VC_EVENT_READ_COMPLETE, &read_state.vio);

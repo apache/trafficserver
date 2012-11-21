@@ -152,7 +152,7 @@ HttpClientSession::new_transaction()
   /////////////////////////
   // set up timeouts     //
   /////////////////////////
-  DebugSsn("http_cs", "[%" PRId64 "] using accept inactivity timeout [%"PRId64" seconds]",
+  DebugSsn("http_cs", "[%" PRId64 "] using accept inactivity timeout [%" PRId64" seconds]",
         con_id, HttpConfig::m_master.accept_no_activity_timeout);
   client_vc->set_inactivity_timeout(HRTIME_SECONDS(HttpConfig::m_master.accept_no_activity_timeout));
 

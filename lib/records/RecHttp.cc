@@ -178,7 +178,7 @@ HttpProxyPort::loadConfig(Vec<self>& entries) {
       } else if (-1 != ssl_port) {
 	// -1 is used as the sentinel value in the config record for
 	// "not set by user".
-        Warning("SSL enabled but port value %"PRId64" is not in the range 1..65535.\n",
+        Warning("SSL enabled but port value %" PRId64" is not in the range 1..65535.\n",
                 ssl_port);
       }
     }

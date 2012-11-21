@@ -362,7 +362,7 @@ take_rusage_snap()
       rusage_snap_time = ink_get_hrtime();
     break;
   }
-  Debug("rusage", "took rusage snap %"PRId64"", rusage_snap_time);
+  Debug("rusage", "took rusage snap %" PRId64"", rusage_snap_time);
 }
 
 struct SnapCont;

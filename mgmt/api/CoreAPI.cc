@@ -325,7 +325,7 @@ MgmtRecordGet(const char *rec_name, TSRecordEle * rec_ele)
       return TS_ERR_FAIL;
     rec_ele->counter_val = (TSCounter) counter_val;
 
-    Debug("RecOp", "[MgmtRecordGet] Get Counter Var %s = %"PRId64"\n", rec_ele->rec_name, rec_ele->counter_val);
+    Debug("RecOp", "[MgmtRecordGet] Get Counter Var %s = %" PRId64"\n", rec_ele->rec_name, rec_ele->counter_val);
     break;
 
   case RECD_INT:
@@ -334,7 +334,7 @@ MgmtRecordGet(const char *rec_name, TSRecordEle * rec_ele)
       return TS_ERR_FAIL;
     rec_ele->int_val = (TSInt) int_val;
 
-    Debug("RecOp", "[MgmtRecordGet] Get Int Var %s = %"PRId64"\n", rec_ele->rec_name, rec_ele->int_val);
+    Debug("RecOp", "[MgmtRecordGet] Get Int Var %s = %" PRId64"\n", rec_ele->rec_name, rec_ele->int_val);
     break;
 
   case RECD_FLOAT:

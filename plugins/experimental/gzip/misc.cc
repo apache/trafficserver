@@ -203,8 +203,8 @@ void
 gzip_log_ratio(int64_t in, int64_t out)
 {
   if (in) {
-    info("Compressed size %"PRId64" (bytes), Original size %"PRId64", ratio: %f", out, in, ((float) (in - out) / in));
+    info("Compressed size %" PRId64" (bytes), Original size %" PRId64", ratio: %f", out, in, ((float) (in - out) / in));
   } else {
-    debug("Compressed size %"PRId64" (bytes), Original size %"PRId64", ratio: %f", out, in, 0.0F);
+    debug("Compressed size %" PRId64" (bytes), Original size %" PRId64", ratio: %f", out, in, 0.0F);
   }
 }

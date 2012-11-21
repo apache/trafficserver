@@ -515,7 +515,7 @@ cache_handler(TSCont contp, TSEvent event, void *data)
 
     cache_vconn->read_vconnp = (TSVConn) data;
     content_length = TSVConnCacheObjectSizeGet(cache_vconn->read_vconnp);
-    Debug(UTDBG_TAG "_cache_read", "In cache open read [Content-Length: %"PRId64"]", content_length);
+    Debug(UTDBG_TAG "_cache_read", "In cache open read [Content-Length: %" PRId64"]", content_length);
     if (content_length != OBJECT_SIZE) {
       SDK_RPRINT(SDK_Cache_test, "TSVConnCacheObjectSizeGet", "TestCase1", TC_FAIL, "cached data size is incorrect");
 
@@ -566,7 +566,7 @@ cache_handler(TSCont contp, TSEvent event, void *data)
     nbytes = TSVIONBytesGet(cache_vconn->write_vio);
     ndone = TSVIONDoneGet(cache_vconn->write_vio);
     ntodo = TSVIONTodoGet(cache_vconn->write_vio);
-    Debug(UTDBG_TAG "_cache_write", "Nbytes=%"PRId64" Ndone=%"PRId64" Ntodo=%"PRId64"", nbytes, ndone, ntodo);
+    Debug(UTDBG_TAG "_cache_write", "Nbytes=%" PRId64" Ndone=%" PRId64" Ntodo=%" PRId64"", nbytes, ndone, ntodo);
 
     if (ndone == (OBJECT_SIZE / 2)) {
       TSVIONBytesSet(cache_vconn->write_vio, (OBJECT_SIZE - 100));
@@ -669,7 +669,7 @@ cache_handler(TSCont contp, TSEvent event, void *data)
     nbytes = TSVIONBytesGet(cache_vconn->write_vio);
     ndone = TSVIONDoneGet(cache_vconn->write_vio);
     ntodo = TSVIONTodoGet(cache_vconn->write_vio);
-    Debug(UTDBG_TAG "_cache_write", "Nbytes=%"PRId64" Ndone=%"PRId64" Ntodo=%"PRId64"", nbytes, ndone, ntodo);
+    Debug(UTDBG_TAG "_cache_write", "Nbytes=%" PRId64" Ndone=%" PRId64" Ntodo=%" PRId64"", nbytes, ndone, ntodo);
 
     TSVIOReenable(cache_vconn->write_vio);
     return 1;
@@ -687,7 +687,7 @@ cache_handler(TSCont contp, TSEvent event, void *data)
     nbytes = TSVIONBytesGet(cache_vconn->read_vio);
     ntodo = TSVIONTodoGet(cache_vconn->read_vio);
     ndone = TSVIONDoneGet(cache_vconn->read_vio);
-    Debug(UTDBG_TAG "_cache_read", "Nbytes=%"PRId64" Ndone=%"PRId64" Ntodo=%"PRId64"", nbytes, ndone, ntodo);
+    Debug(UTDBG_TAG "_cache_read", "Nbytes=%" PRId64" Ndone=%" PRId64" Ntodo=%" PRId64"", nbytes, ndone, ntodo);
 
     if (nbytes != (ndone + ntodo)) {
       SDK_RPRINT(SDK_Cache_test, "TSVIONBytesGet", "TestCase1", TC_FAIL, "read_vio corrupted");
@@ -734,7 +734,7 @@ cache_handler(TSCont contp, TSEvent event, void *data)
     nbytes = TSVIONBytesGet(cache_vconn->read_vio);
     ntodo = TSVIONTodoGet(cache_vconn->read_vio);
     ndone = TSVIONDoneGet(cache_vconn->read_vio);
-    Debug(UTDBG_TAG "_cache_read", "Nbytes=%"PRId64" Ndone=%"PRId64" Ntodo=%"PRId64"", nbytes, ndone, ntodo);
+    Debug(UTDBG_TAG "_cache_read", "Nbytes=%" PRId64" Ndone=%" PRId64" Ntodo=%" PRId64"", nbytes, ndone, ntodo);
 
     if (nbytes != (ndone + ntodo)) {
       SDK_RPRINT(SDK_Cache_test, "TSVIONBytesGet", "TestCase1", TC_FAIL, "read_vio corrupted");
@@ -753,7 +753,7 @@ cache_handler(TSCont contp, TSEvent event, void *data)
     // Fix for bug INKqa12276: Must consume data from iobuffer
     nbytes = TSIOBufferReaderAvail(cache_vconn->out_readerp);
     TSIOBufferReaderConsume(cache_vconn->out_readerp, nbytes);
-    TSDebug(UTDBG_TAG "_cache_read", "Consuming %"PRId64" bytes from cache read VC", nbytes);
+    TSDebug(UTDBG_TAG "_cache_read", "Consuming %" PRId64" bytes from cache read VC", nbytes);
 
     TSVIOReenable(cache_vconn->read_vio);
     Debug(UTDBG_TAG "_cache_read", "finishing up [j]");

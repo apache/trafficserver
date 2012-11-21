@@ -1403,7 +1403,7 @@ HttpTransact::PPDNSLookup(State* s)
     s->parent_info.dns_round_robin = s->dns_info.round_robin;
 
     char addrbuf[INET6_ADDRSTRLEN];
-    DebugTxn("http_trans", "[PPDNSLookup] DNS lookup for sm_id[%"PRId64"] successful IP: %s",
+    DebugTxn("http_trans", "[PPDNSLookup] DNS lookup for sm_id[%" PRId64"] successful IP: %s",
           s->state_machine->sm_id, ats_ip_ntop(&s->parent_info.addr.sa, addrbuf, sizeof(addrbuf)));
   }
 
@@ -3377,7 +3377,7 @@ HttpTransact::handle_response_from_parent(State* s)
         if ((s->current.attempts - 1) % s->http_config_param->per_parent_connect_attempts != 0) {
           // No we are not done with this parent so retry
           s->next_action = how_to_open_connection(s);
-          DebugTxn("http_trans", "%s Retrying parent for attempt %d, max %"PRId64,
+          DebugTxn("http_trans", "%s Retrying parent for attempt %d, max %" PRId64,
                 "[handle_response_from_parent]", s->current.attempts, s->http_config_param->per_parent_connect_attempts);
           return;
         } else {
@@ -5659,7 +5659,7 @@ HttpTransact::initialize_state_variables_from_request(State* s, HTTPHdr* obsolet
     int64_t length = incoming_request->get_content_length();
     s->hdr_info.request_content_length = (length >= 0) ? length : HTTP_UNDEFINED_CL;    // content length less than zero is invalid
 
-    DebugTxn("http_trans", "[init_stat_vars_from_req] set req cont length to %"PRId64,
+    DebugTxn("http_trans", "[init_stat_vars_from_req] set req cont length to %" PRId64,
           s->hdr_info.request_content_length);
 
   } else {
@@ -6748,7 +6748,7 @@ HttpTransact::handle_content_length_header(State* s, HTTPHdr* header, HTTPHdr* b
         header->field_delete(MIME_FIELD_CONTENT_LENGTH, MIME_LEN_CONTENT_LENGTH);
         s->hdr_info.trust_response_cl = false;
       }
-      Debug("http_trans", "[handle_content_length_header] RESPONSE cont len in hdr is %"PRId64, header->get_content_length());
+      Debug("http_trans", "[handle_content_length_header] RESPONSE cont len in hdr is %" PRId64, header->get_content_length());
     } else {
       // No content length header
       if (s->source == SOURCE_CACHE) {
@@ -6810,7 +6810,7 @@ HttpTransact::handle_content_length_header(State* s, HTTPHdr* header, HTTPHdr* b
       header->field_delete(MIME_FIELD_CONTENT_LENGTH, MIME_LEN_CONTENT_LENGTH);
       s->hdr_info.request_content_length = HTTP_UNDEFINED_CL;
     }
-    DebugTxn("http_trans", "[handle_content_length_header] cont len in hdr is %"PRId64", stat var is %"PRId64,
+    DebugTxn("http_trans", "[handle_content_length_header] cont len in hdr is %" PRId64", stat var is %" PRId64,
           header->get_content_length(), s->hdr_info.request_content_length);
   }
 
@@ -8921,7 +8921,7 @@ HttpTransact::change_response_header_because_of_range_request(State *s, HTTPHdr 
     char numbers[RANGE_NUMBERS_LENGTH];
 
     field = header->field_create(MIME_FIELD_CONTENT_RANGE, MIME_LEN_CONTENT_RANGE);
-    snprintf(numbers, sizeof(numbers), "bytes %"PRId64"-%"PRId64"/%"PRId64, s->ranges[0]._start, s->ranges[0]._end, s->cache_info.object_read->object_size_get());
+    snprintf(numbers, sizeof(numbers), "bytes %" PRId64"-%" PRId64"/%" PRId64, s->ranges[0]._start, s->ranges[0]._end, s->cache_info.object_read->object_size_get());
     field->value_append(header->m_heap, header->m_mime, numbers, strlen(numbers));
     header->field_attach(field);
     header->set_content_length(s->range_output_cl);

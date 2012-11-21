@@ -2876,7 +2876,7 @@ void interval_report() {
   RUNNING(tbytes);
   float t = (float)(now - start_time);
   uint64_t per = current_clients ? running_cbytes / current_clients : 0;
-  printf("%4d %4d %7.1f %4d %4d %10"PRIu64"/%-6"PRIu64"  %4d %4d %4d  %9"PRIu64" %6.1f %4d\n",
+  printf("%4d %4d %7.1f %4d %4d %10" PRIu64"/%-6" PRIu64"  %4d %4d %4d  %9" PRIu64" %6.1f %4d\n",
          current_clients, // clients, n_ka_cache,
          running_clients,
          running_ops, running_b1latency, running_latency,
@@ -2887,15 +2887,15 @@ void interval_report() {
          t/((float)HRTIME_SECOND),
          errors);
   if (is_done()) {
-    printf("Total Client Request Bytes:\t\t%"PRIu64"\n", total_client_request_bytes);
-    printf("Total Server Response Header Bytes:\t%"PRIu64"\n",
+    printf("Total Client Request Bytes:\t\t%" PRIu64"\n", total_client_request_bytes);
+    printf("Total Server Response Header Bytes:\t%" PRIu64"\n",
            total_server_response_header_bytes);
-    printf("Total Server Response Body Bytes:\t%"PRIu64"\n",
+    printf("Total Server Response Body Bytes:\t%" PRIu64"\n",
            total_server_response_body_bytes);
-    printf("Total Proxy Request Bytes:\t\t%"PRIu64"\n", total_proxy_request_bytes);
-    printf("Total Proxy Response Header Bytes:\t%"PRIu64"\n",
+    printf("Total Proxy Request Bytes:\t\t%" PRIu64"\n", total_proxy_request_bytes);
+    printf("Total Proxy Response Header Bytes:\t%" PRIu64"\n",
            total_proxy_response_header_bytes);
-    printf("Total Proxy Response Body Bytes:\t%"PRIu64"\n",
+    printf("Total Proxy Response Body Bytes:\t%" PRIu64"\n",
            total_proxy_response_body_bytes);
   }
 }
@@ -4565,9 +4565,9 @@ void show_argument_configuration(ArgumentDescription * argument_descriptions,
         break;
       case 'L':
 #if defined(FreeBSD)
-        printf("%"PRId64"",*(int64_t*)argument_descriptions[i].location);
+        printf("%" PRId64"",*(int64_t*)argument_descriptions[i].location);
 #else
-        printf("%"PRId64"",*(int64_t*)argument_descriptions[i].location);
+        printf("%" PRId64"",*(int64_t*)argument_descriptions[i].location);
 #endif
         break;
       case 'S':
@@ -4671,9 +4671,9 @@ void usage(ArgumentDescription * argument_descriptions,
       case 'L':
         fprintf(stderr, 
 #if defined(FreeBSD)
-                " %-9"PRId64"",
+                " %-9" PRId64"",
 #else
-                " %-9"PRId64"",
+                " %-9" PRId64"",
 #endif
                 *(int64_t*)argument_descriptions[i].location);
         break;

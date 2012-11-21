@@ -558,7 +558,7 @@ probe(ProxyMutex *mutex, INK_MD5 & md5, const char *hostname, int len, sockaddr 
   if (hostdb_enable) {
     uint64_t folded_md5 = fold_md5(md5);
     HostDBInfo *r = hostDB.lookup_block(folded_md5, hostDB.levels);
-    Debug("hostdb", "probe %s %"PRIx64" %d [ignore_timeout = %d]", hostname, folded_md5, !!r, ignore_timeout);
+    Debug("hostdb", "probe %s %" PRIx64" %d [ignore_timeout = %d]", hostname, folded_md5, !!r, ignore_timeout);
     if (r && md5[1] == r->md5_high) {
 
       // Check for timeout (fail probe)
@@ -636,7 +636,7 @@ HostDBContinuation::insert(unsigned int attl)
     attl = HOST_DB_MAX_TTL;
   r->ip_timeout_interval = attl;
   r->ip_timestamp = hostdb_current_interval;
-  Debug("hostdb", "inserting for: %s: (md5: %"PRIx64") now: %u timeout: %u ttl: %u", name, folded_md5, r->ip_timestamp,
+  Debug("hostdb", "inserting for: %s: (md5: %" PRIx64") now: %u timeout: %u ttl: %u", name, folded_md5, r->ip_timestamp,
         r->ip_timeout_interval, attl);
   return r;
 }

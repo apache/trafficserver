@@ -288,17 +288,17 @@ HttpBodyFactory::reconfigure()
   rec_err = RecGetRecordInt("proxy.config.body_factory.enable_customizations", &e);
   enable_customizations = ((rec_err == REC_ERR_OKAY) ? e : 0);
   all_found = all_found && (rec_err == REC_ERR_OKAY);
-  Debug("body_factory", "enable_customizations = %d (found = %"PRId64")", enable_customizations, e);
+  Debug("body_factory", "enable_customizations = %d (found = %" PRId64")", enable_customizations, e);
 
   rec_err = RecGetRecordInt("proxy.config.body_factory.enable_logging", &e);
   enable_logging = ((rec_err == REC_ERR_OKAY) ? (e ? true : false) : false);
   all_found = all_found && (rec_err == REC_ERR_OKAY);
-  Debug("body_factory", "enable_logging = %d (found = %"PRId64")", enable_logging, e);
+  Debug("body_factory", "enable_logging = %d (found = %" PRId64")", enable_logging, e);
 
   rec_err = RecGetRecordInt("proxy.config.body_factory.response_suppression_mode", &e);
   response_suppression_mode = ((rec_err == REC_ERR_OKAY) ? e : 0);
   all_found = all_found && (rec_err == REC_ERR_OKAY);
-  Debug("body_factory", "response_suppression_mode = %d (found = %"PRId64")", response_suppression_mode, e);
+  Debug("body_factory", "response_suppression_mode = %d (found = %" PRId64")", response_suppression_mode, e);
 
   rec_err = RecGetRecordString_Xmalloc("proxy.config.body_factory.template_sets_dir", &s);
   all_found = all_found && (rec_err == REC_ERR_OKAY);
@@ -316,7 +316,7 @@ HttpBodyFactory::reconfigure()
     }
   }
 
-  Debug("body_factory", "directory_of_template_sets = '%s' (found = %"PRId64")", directory_of_template_sets, e);
+  Debug("body_factory", "directory_of_template_sets = '%s' (found = %" PRId64")", directory_of_template_sets, e);
 
   if (!all_found) {
     Warning("config changed, but can't fetch all proxy.config.body_factory values");
@@ -496,7 +496,7 @@ HttpBodyFactory::find_template(const char *set, const char *type, HttpBodySet **
         return (NULL);
       *body_set_return = body_set;
 
-      Debug("body_factory", "find_template(%s,%s) -> (file %s, length %"PRId64", lang '%s', charset '%s')",
+      Debug("body_factory", "find_template(%s,%s) -> (file %s, length %" PRId64", lang '%s', charset '%s')",
             set, type, t->template_pathname, t->byte_count, body_set->content_language, body_set->content_charset);
 
       return (t);
@@ -892,7 +892,7 @@ HttpBodySet::get_template_by_name(const char *name)
     HttpBodyTemplate *t = (HttpBodyTemplate *) v;
     if ((t == NULL) || (!t->is_sane()))
       return (NULL);
-    Debug("body_factory", "    get_template_by_name(%s) -> (file %s, length %"PRId64")",
+    Debug("body_factory", "    get_template_by_name(%s) -> (file %s, length %" PRId64")",
           name, t->template_pathname, t->byte_count);
     return (t);
   }
@@ -984,13 +984,13 @@ HttpBodyTemplate::load_from_file(char *dir, char *file)
   ///////////////////////////
 
   if (bytes_read != new_byte_count) {
-    Warning("reading template file '%s', got %"PRId64" bytes instead of %"PRId64" (%s)",
+    Warning("reading template file '%s', got %" PRId64" bytes instead of %" PRId64" (%s)",
             path, bytes_read, new_byte_count, (strerror(errno) ? strerror(errno) : "unknown error"));
     ats_free(new_template_buffer);
     return (0);
   }
 
-  Debug("body_factory", "    read %"PRId64" bytes from '%s'", new_byte_count, path);
+  Debug("body_factory", "    read %" PRId64" bytes from '%s'", new_byte_count, path);
 
   /////////////////////////////////
   // actually commit the changes //
@@ -1020,7 +1020,7 @@ HttpBodyTemplate::build_instantiated_buffer(HttpTransact::State * context, int64
   *buflen_return = ((buffer == NULL) ? 0 : strlen(buffer));
   Debug("body_factory_instantiation", "    after instantiation: [%s]", buffer);
 
-  Debug("body_factory", "  returning %"PRId64" byte instantiated buffer", *buflen_return);
+  Debug("body_factory", "  returning %" PRId64" byte instantiated buffer", *buflen_return);
 #endif
   return (buffer);
 }
