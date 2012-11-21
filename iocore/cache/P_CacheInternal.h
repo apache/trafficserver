@@ -758,8 +758,13 @@ CacheVC::get_frag_table() {
 
 TS_INLINE bool
 CacheVC::is_pread_capable() {
+/* "fix" for Range related crashers: */
+#if defined(RANGES_DONT_WORK_VERY_WELL_ON_3_2_X)
   ink_debug_assert(od);
   return od->vector.count() <= 1;
+#else
+  return false;
+#endif
 }
 
 TS_INLINE int
