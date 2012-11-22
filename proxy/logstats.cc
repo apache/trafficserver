@@ -55,7 +55,7 @@
 #include <ext/hash_map>
 #include <ext/hash_set>
 #undef _BACKWARD_BACKWARD_WARNING_H
-#  if (__GNUC__ <= 4 && __GNUC_MINOR__ < 7)
+#  if (__GNUC__ <= 4 && __GNUC_MINOR__ < 7)  && !defined(__clang__)
     // hash was added to namespace std in gcc 4.7 so we use std:: for
     // forward compatibility and import hash to std for backwards
     // compatibility.
