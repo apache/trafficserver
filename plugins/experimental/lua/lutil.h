@@ -39,7 +39,7 @@ extern int LuaHttpArgIndex;
 
 #define LuaLogDebug(fmt, ...) do { \
     if (unlikely(TSIsDebugTagSet("lua"))) { \
-        TSDebug("lua", "%s: "fmt, __func__, ##__VA_ARGS__); \
+        TSDebug("lua", "%s: " fmt, __func__, ##__VA_ARGS__); \
     } \
 } while (0)
 
