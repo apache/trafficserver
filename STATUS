@@ -41,9 +41,6 @@ A list of all bugs open for the next development release can be found at
 
 PATCHES ACCEPTED TO BACKPORT FROM TRUNK:
 
-PATCHES PROPOSED TO BACKPORT FROM TRUNK:
-  [ New proposals should be added at the end of the list ]
-
   Fix ARM build failures by adding ARM barrier intrinsics which actually do
   something. This fixes build failues on the ARM port after promoting the
   header filter module to main. The patch denoted below originally was
@@ -51,15 +48,18 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   A no-op fix was proposed to be backported and committed as TS-1498. However,
   later TS-1560 was committed to trunk as an improved version of the same
   problem.
-  Jira: https://issues.apache.org/jira/browse/TS-1560
+  Jira: https://issues.apache.org/jira/browse/TS-1585
   Patch: 23feb5106ffda71712b0f94a8b3242ecd51a4d9a
   +1: igalic, zwoop, arno
+
+PATCHES PROPOSED TO BACKPORT FROM TRUNK:
+  [ New proposals should be added at the end of the list ]
 
   fix wccp's out of tree build
   Jira: https://issues.apache.org/jira/browse/TS-1368
   Patch: 682c4e3938b8aee288facdcfd0750571edcb20b0
          72dcbdc58024abc6f67a592853e488d7f9eebd83
-  +1: igalic
+  igalic says: This still needs some more patches I haven't identified.
 
 RELEASE PROCESS
 
