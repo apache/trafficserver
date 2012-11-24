@@ -31,26 +31,26 @@ namespace Gzip {
   using namespace std;
 
   void ltrim_if(string& s, int (* fp) (int)) {
-    for (size_t i = 0; i < s.size();) { 
-      if (fp(s[i])) { 
-	s.erase(i,1);
+    for (size_t i = 0; i < s.size();) {
+      if (fp(s[i])) {
+        s.erase(i,1);
       } else  {
-	break;
+        break;
       }
     }
   }
 
   void rtrim_if(string& s, int (* fp) (int)) {
     for (ssize_t i = (ssize_t)s.size() - 1; i >= 0; i--) {
-      if (fp(s[i])) { 
+      if (fp(s[i])) {
         s.erase(i,1);
       } else  {
-	      break;
+        break;
       }
     }
   }
 
-  void trim_if(string& s, int (* fp) (int)) { 
+  void trim_if(string& s, int (* fp) (int)) {
     ltrim_if(s, fp);
     rtrim_if(s, fp);
   }
@@ -58,26 +58,26 @@ namespace Gzip {
   vector<string> tokenize(const string &s, int (* fp) (int)) {
     vector<string> r;
     string tmp;
-    
+
     for (size_t i = 0; i < s.size(); i++) {
-      if ( fp(s[i]) ) {	
-	if ( tmp.size()  ) { 
-	  r.push_back(tmp);
-	  tmp = "";
-	}
+      if ( fp(s[i]) ) {
+        if ( tmp.size()  ) {
+          r.push_back(tmp);
+          tmp = "";
+        }
       } else {
-	tmp += s[i];
+          tmp += s[i];
       }
     }
 
-    if ( tmp.size()  ) { 
+    if ( tmp.size()  ) {
       r.push_back(tmp);
     }
 
     return r;
   }
 
-  enum ParserState { 
+  enum ParserState {
     kParseStart,
     kParseCompressibleContentType,
     kParseRemoveAcceptEncoding,
@@ -90,7 +90,7 @@ namespace Gzip {
     host_configurations_.push_back(hc);
   }
 
-  void HostConfiguration::add_disallow(const std::string & disallow) { 
+  void HostConfiguration::add_disallow(const std::string & disallow) {
     disallows_.push_back(disallow);
   }
 
@@ -98,63 +98,63 @@ namespace Gzip {
     compressible_content_types_.push_back(content_type);
   }
 
-  HostConfiguration * Configuration::Find(const char * host, int host_length) { 
+  HostConfiguration * Configuration::Find(const char * host, int host_length) {
     HostConfiguration * host_configuration = host_configurations_[0];
 
     std::string shost(host, host_length);
 
-    for (size_t i = 1; i < host_configurations_.size(); i++ ) { 
-      if (host_configurations_[i]->host() == shost){ 
-	host_configuration = host_configurations_[i];
-	break;
+    for (size_t i = 1; i < host_configurations_.size(); i++ ) {
+      if (host_configurations_[i]->host() == shost){
+        host_configuration = host_configurations_[i];
+        break;
       }
     }
 
     return host_configuration;
   }
-  
-  bool HostConfiguration::IsUrlAllowed(const char * url, int url_len) { 
+
+  bool HostConfiguration::IsUrlAllowed(const char * url, int url_len) {
     string surl(url, url_len);
 
-    for (size_t i = 0; i < disallows_.size(); i++) { 
-      if ( fnmatch (disallows_[i].c_str(), surl.c_str(), 0) == 0 ) { 
-	info("url [%s] disabled for compression, matched on pattern [%s]"
-	      , surl.c_str(), disallows_[i].c_str());
-	return false;
+    for (size_t i = 0; i < disallows_.size(); i++) {
+      if ( fnmatch (disallows_[i].c_str(), surl.c_str(), 0) == 0 ) {
+        info("url [%s] disabled for compression, matched on pattern [%s]",
+            surl.c_str(), disallows_[i].c_str());
+        return false;
       }
     }
 
     return true;
   }
+
   bool HostConfiguration::ContentTypeIsCompressible(const char * content_type, int content_type_length) {
    string scontent_type(content_type, content_type_length);
 
-    for (size_t i = 0; i < compressible_content_types_.size(); i++) { 
-      if ( fnmatch (compressible_content_types_[i].c_str(), scontent_type.c_str(), 0) == 0 ) { 
-	info("compressible content type [%s], matched on pattern [%s]"
-	      , scontent_type.c_str(), compressible_content_types_[i].c_str());
-	return true;
+    for (size_t i = 0; i < compressible_content_types_.size(); i++) {
+      if ( fnmatch (compressible_content_types_[i].c_str(), scontent_type.c_str(), 0) == 0 ) {
+        info("compressible content type [%s], matched on pattern [%s]",
+            scontent_type.c_str(), compressible_content_types_[i].c_str());
+        return true;
       }
     }
 
     return false;
   }
 
-
   Configuration * Configuration::Parse(const char * path ) {
     string pathstring(path);
-    trim_if(pathstring, isspace); 
+    trim_if(pathstring, isspace);
 
-    Configuration * c = new Configuration();   
+    Configuration * c = new Configuration();
     HostConfiguration * current_host_configuration = new HostConfiguration("");
     c->AddHostConfiguration(current_host_configuration);
 
-    if (pathstring.size() == 0)  { 
+    if (pathstring.size() == 0)  {
       return c;
     }
 
     path = pathstring.c_str();
-    info("Parseing file \"%s\"", path);    
+    info("Parsing file \"%s\"", path);
     std::ifstream f;
 
     size_t lineno = 0;
@@ -170,71 +170,75 @@ namespace Gzip {
 
     while (!f.eof()) {
       std::string line;
-      getline(f, line);     
+      getline(f, line);
       ++lineno;
 
       trim_if(line, isspace);
-      if (line.size() == 0) 
-	continue;
+      if (line.size() == 0) {
+        continue;
+      }
 
       vector<string> v = tokenize( line, isspace );
 
       for(size_t i = 0; i < v.size(); i++ ) {
-	string token = v[i];
-	trim_if(token, isspace);
+        string token = v[i];
+        trim_if(token, isspace);
 
-	//should not happen
-	if (!token.size()) continue;
+        //should not happen
+        if (!token.size()) continue;
 
-	//once a comment is encountered, we are done processing the line
-	if (token[0] == '#') break;      
-      	
-	switch(state) { 
-	case kParseStart: 
-	  if ( (token[0] == '[') && (token[token.size()-1] == ']')){
-	    std::string current_host = token.substr(1,token.size()-2);
-	    current_host_configuration = new HostConfiguration(current_host);
-	    c->AddHostConfiguration(current_host_configuration);
-	  } else if (token == "compressible-content-type" ) {
-	    state = kParseCompressibleContentType;
-	  } else if (token == "remove-accept-encoding" ) {
-	    state = kParseRemoveAcceptEncoding;
-	  } else if (token == "enabled" ) {
-	    state = kParseEnable;
-	  } else if (token == "cache" ) {
-	    state = kParseCache;
-	  } else if (token == "disallow" ) {
-	    state = kParseDisallow;
-	  } 
-	  else { 
-	    warning("failed to interpret \"%s\" at line %ld", token.c_str(), lineno);
-	  }
-	  break;
-	case kParseCompressibleContentType:
-	  current_host_configuration->add_compressible_content_type(token);
-	  state = kParseStart;
-	  break;
-	case kParseRemoveAcceptEncoding:
-	  current_host_configuration->set_remove_accept_encoding(token == "true");
-	  state = kParseStart;
-	  break;
-	case kParseEnable:
-	  current_host_configuration->set_enabled(token == "true");
-	  state = kParseStart;
-	  break;
-	case kParseCache:
-	  current_host_configuration->set_cache(token == "true");
-	  state = kParseStart;
-	  break;
-	case kParseDisallow:
-	  current_host_configuration->add_disallow(token);
-	  state = kParseStart;
-	  break;
-	}
+        //once a comment is encountered, we are done processing the line
+        if (token[0] == '#') break;
+
+        switch(state) {
+        case kParseStart:
+          if ( (token[0] == '[') && (token[token.size()-1] == ']')){
+            std::string current_host = token.substr(1,token.size()-2);
+            current_host_configuration = new HostConfiguration(current_host);
+            c->AddHostConfiguration(current_host_configuration);
+          } else if (token == "compressible-content-type" ) {
+            state = kParseCompressibleContentType;
+          } else if (token == "remove-accept-encoding" ) {
+            state = kParseRemoveAcceptEncoding;
+          } else if (token == "enabled" ) {
+            state = kParseEnable;
+          } else if (token == "cache" ) {
+            state = kParseCache;
+          } else if (token == "disallow" ) {
+            state = kParseDisallow;
+          }
+          else {
+            warning("failed to interpret \"%s\" at line %ld", token.c_str(), lineno);
+          }
+          break;
+        case kParseCompressibleContentType:
+          current_host_configuration->add_compressible_content_type(token);
+          state = kParseStart;
+          break;
+        case kParseRemoveAcceptEncoding:
+          current_host_configuration->set_remove_accept_encoding(token == "true");
+          state = kParseStart;
+          break;
+        case kParseEnable:
+          current_host_configuration->set_enabled(token == "true");
+          state = kParseStart;
+          break;
+        case kParseCache:
+          current_host_configuration->set_cache(token == "true");
+          state = kParseStart;
+          break;
+        case kParseDisallow:
+          current_host_configuration->add_disallow(token);
+          state = kParseStart;
+          break;
+        }
       }
     }
-    if (state != kParseStart)
+
+    if (state != kParseStart) {
       warning("the parser state indicates that data was expected when it reached the end of the file (%d)", state);
+    }
+
     return c;
   } //Configuration::Parse
 } //namespace
