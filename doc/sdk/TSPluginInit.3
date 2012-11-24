@@ -17,7 +17,6 @@
 .Sh NAME
 .Nm TSPluginInit,
 .Nm TSPluginRegister,
-.Nm TSPluginDirGet,
 .Nd Traffic Server plugin loading and registration
 .Sh LIBRARY
 Apache Traffic Server plugin API
@@ -32,10 +31,6 @@ Apache Traffic Server plugin API
 .Fo TSPluginRegister
 .Fa "TSSDKVersion sdk_version"
 .Fa "TSPluginRegistrationInfo* plugin_info"
-.Fc
-.Ft "const char *"
-.Fo TSPluginDirGet
-.Fa void
 .Fc
 .Sh DESCRIPTION
 
@@ -62,20 +57,11 @@ registers the appropriate SDK version for your plugin. Use this function to
 make sure that the version of Traffic Server on which your plugin is running
 supports the plugin.
 
-.Fn TSPluginDirGet
-gets  the plugin directory relative to the Traffic Server install
-directory. This path (relative to the Traffic Server install
-directory) is stored in the records.config variable
-proxy.config.plugin.plugin_dir.
-
 .Sh RETURN VALUES
 .Fn TSPluginRegister
 returns
 .Fa TS_ERROR
 if the plugin registration failed.
-
-.Fn TSPluginDirGet
-returns a constant NUL-terminated string.
 
 .Sh EXAMPLES
 .nf
@@ -96,4 +82,5 @@ TSPluginInit (int argc, const char *argv[])
 }
 .fi
 .Sh SEE ALSO
-.Xr TSAPI 3ts
+.Xr TSAPI 3ts ,
+.Xr TSInstallDirGet 3ts

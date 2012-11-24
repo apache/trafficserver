@@ -1,0 +1,60 @@
+.\"  Licensed to the Apache Software Foundation (ASF) under one .\"
+.\"  or more contributor license agreements.  See the NOTICE file .\"
+.\"  distributed with this work for additional information .\"
+.\"  regarding copyright ownership.  The ASF licenses this file .\"
+.\"  to you under the Apache License, Version 2.0 (the .\"
+.\"  "License"); you may not use this file except in compliance .\"
+.\"  with the License.  You may obtain a copy of the License at .\"
+.\" .\"
+.\"      http://www.apache.org/licenses/LICENSE-2.0 .\"
+.\" .\"
+.\"  Unless required by applicable law or agreed to in writing, software .\"
+.\"  distributed under the License is distributed on an "AS IS" BASIS, .\"
+.\"  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. .\"
+.\"  See the License for the specific language governing permissions and .\"
+.Dd November 23, 2012
+.Dt TSInstallDirGet 3ts TSAPI
+.Sh NAME
+.Nm TSInstallDirGet,
+.Nm TSConfigDirGet,
+.Nm TSPluginDirGet
+.Nd Return Traffic Server installation directories
+.Sh LIBRARY
+Apache Traffic Server plugin API
+.Sh SYNOPSIS
+.In ts/ts.h
+.Ft "const char*"
+.Fo TSInstallDirGet
+.Fa "void"
+.Fc
+.Ft "const char*"
+.Fo TSConfigDirGet
+.Fa "void"
+.Fc
+.Ft "const char*"
+.Fo TSPluginDirGet
+.Fa "void"
+.Fc
+.Sh DESCRIPTION
+.Fn TSInstallDirGet
+returns the path to the root of the Traffic Server installation.
+.Fn TSConfigDirGet
+and
+.Fn TSPluginDirGet
+return the configuration directory and the plugin installation directory path
+respectively. These paths are both relative to the installation directory.
+.Sh RETURN VALUES
+These functions all return a NUL-terminated string that must not be modified or
+freed.
+.Sh EXAMPLES
+To load a file that is located in the Traffic Server configuration directory:
+.Pp
+.nf
+#include <ts/ts.h>
+#include <stdio.h>
+
+char * path;
+asprintf(&path, "%s/%s/example.conf", TSInstallDirGet(), TSConfigDirGet());
+.fi
+.Sh SEE ALSO
+.Xr TSAPI 3ts
