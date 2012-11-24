@@ -143,13 +143,22 @@ namespace Gzip {
 
   Configuration * Configuration::Parse(const char * path ) {
     string pathstring(path);
+
+    // If we have a path and it's not an absolute path, make it relative to the
+    // configuration directory.
+    if (!pathstring.empty() && pathstring[0] != '/') {
+      pathstring.assign(TSConfigDirGet());
+      pathstring.append("/");
+      pathstring.append(path);
+    }
+
     trim_if(pathstring, isspace);
 
     Configuration * c = new Configuration();
     HostConfiguration * current_host_configuration = new HostConfiguration("");
     c->AddHostConfiguration(current_host_configuration);
 
-    if (pathstring.size() == 0)  {
+    if (pathstring.empty())  {
       return c;
     }
 
