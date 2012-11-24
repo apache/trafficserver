@@ -1126,7 +1126,7 @@ ClusterCom::handleMultiCastFilePacket(char *last, char *ip)
         snprintf(message, sizeof(message), "file: %s %d", file, ver);
 
         /* Send request, read response, write new file. */
-        if (!(sendReliableMessageReadTillClose(inet_addr(ip), message, strlen(message), reply))) {
+        if (!(sendReliableMessageReadTillClose(inet_addr(ip), message, strlen(message), reply)) || (reply->spaceUsed() <= 0)) {
           delete reply;
           return;
         }
