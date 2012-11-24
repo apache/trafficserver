@@ -41,8 +41,8 @@ returns the path to the root of the Traffic Server installation.
 .Fn TSConfigDirGet
 and
 .Fn TSPluginDirGet
-return the configuration directory and the plugin installation directory path
-respectively. These paths are both relative to the installation directory.
+return the complete, absolute path to the configuration directory
+and the plugin installation directory respectively.
 .Sh RETURN VALUES
 These functions all return a NUL-terminated string that must not be modified or
 freed.
@@ -54,7 +54,7 @@ To load a file that is located in the Traffic Server configuration directory:
 #include <stdio.h>
 
 char * path;
-asprintf(&path, "%s/%s/example.conf", TSInstallDirGet(), TSConfigDirGet());
+asprintf(&path, "%s/example.conf", TSConfigDirGet());
 .fi
 .Sh SEE ALSO
 .Xr TSAPI 3ts
