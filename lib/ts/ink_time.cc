@@ -683,7 +683,7 @@ cftime_replacement(char *s, int maxsize, const char *format, const time_t * cloc
 {
   struct tm tm;
 
-  ink_assert(localtime_r(clock, &tm) != (int) NULL);    /* ADK_122100 */
+  ink_assert(ink_localtime_r(clock, &tm) != NULL);
 
   return strftime(s, maxsize, format, &tm);
 }
