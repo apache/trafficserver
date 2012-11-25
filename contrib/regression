@@ -33,6 +33,10 @@ SRCROOT=${SRCROOT:-$(cd $(dirname $0)/.. && pwd)} # where the source lives
 OBJROOT=${OBJROOT:-"$TMPDIR/$BUILDID/obj"} # where we are building
 DSTROOT=${DSTROOT:-"$TMPDIR/$BUILDID/dst"} # where we are installing
 
+# Force low make parallelization so that the build can complete in a VM with
+# only a small amount of memory.
+NPROCS=${NPROCS:-2}
+
 mkdir -p $SRCROOT
 mkdir -p $OBJROOT
 mkdir -p $DSTROOT
@@ -61,7 +65,7 @@ configure() {
 }
 
 build() {
-  ( cd $OBJROOT && make -j )
+  ( cd $OBJROOT && make -j $NPROCS )
   ( cd $OBJROOT && make install )
 }
 
