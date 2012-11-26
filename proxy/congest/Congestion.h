@@ -211,7 +211,7 @@ struct CongestionEntry: public RequestData
 
   // State -- connection failures
   FailHistory m_history;
-  ProxyMutexPtr m_hist_lock;
+  Ptr<ProxyMutex> m_hist_lock;
   ink_hrtime m_last_congested;
   volatile int m_congested;     //0 | 1
   int m_stat_congested_conn_failures;

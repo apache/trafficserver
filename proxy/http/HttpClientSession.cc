@@ -239,7 +239,7 @@ HttpClientSession::new_connection(NetVConnection * new_vc, bool backdoor)
   // when we return from do_api_callout, the ClientSession may
   // have already been deallocated.
   EThread *ethis = this_ethread();
-  ProxyMutexPtr lmutex = this->mutex;
+  Ptr<ProxyMutex> lmutex = this->mutex;
   MUTEX_TAKE_LOCK(lmutex, ethis);
   do_api_callout(TS_HTTP_SSN_START_HOOK);
   MUTEX_UNTAKE_LOCK(lmutex, ethis);

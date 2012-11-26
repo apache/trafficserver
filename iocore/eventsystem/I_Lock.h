@@ -157,226 +157,6 @@ public:
 // The ClassAlocator for ProxyMutexes
 extern inkcoreapi ClassAllocator<ProxyMutex> mutexAllocator;
 
-/**
-  Smart pointer to a ProxyMutex object.
-
-  Given that the ProxyMutex object incorporates reference counting
-  functionality, the ProxyMutexPtr provides a "smart pointer"
-  interface for using references of the ProxyMutex class. Internally,
-  it takes care of updating the object's reference count and to
-  free it once that value drops to zero.
-
-*/
-class ProxyMutexPtr
-{
-public:
-  /**
-    Constructor of the ProxyMutexPtr class. You can provide a pointer
-    to a ProxyMutex object or set it at a later time with the
-    assignment operator.
-
-  */
-  ProxyMutexPtr(ProxyMutex * ptr = 0)
-    : m_ptr(ptr)
-  {
-    if (m_ptr)
-      REF_COUNT_OBJ_REFCOUNT_INC(m_ptr);
-  }
-
-  /**
-    Copy constructor.
-
-    Constructs a ProxyMutexPtr object from a constant reference to
-    other. If the object to initialize from has a reference to a
-    valid ProxyMutex object its reference count is incremented.
-
-    @param src Constant ref to the ProxyMutexPtr to initialize from.
-
-  */
-  ProxyMutexPtr(const ProxyMutexPtr & src)
-    : m_ptr(src.m_ptr)
-  {
-    if (m_ptr)
-      REF_COUNT_OBJ_REFCOUNT_INC(m_ptr);
-  }
-
-  /**
-    The destructor of a ProxyMutexPtr. It will free the ProxyMutex
-    object pointed at by this instance only if this is the last
-    reference to the object (reference count equal to zero).
-
-  */
-  ~ProxyMutexPtr()
-  {
-    if (m_ptr && !m_ptr->refcount_dec())
-      m_ptr->free();
-  }
-
-  /**
-    Assignment operator using a ProxyMutex object.
-
-    Sets the ProxyMutex object to which this ProxyMutexPtr must
-    point at. Since the reference to the ProxyMutex is replaced,
-    the reference count for the previous object (if any) is decremented
-    and the object is freed if it drops to zero.
-
-    @param p The reference to the ProxyMutex object.
-
-  */
-  ProxyMutexPtr & operator =(ProxyMutex * p)
-  {
-    ProxyMutex *temp_ptr = m_ptr;
-    if (m_ptr == p)
-      return (*this);
-    m_ptr = p;
-    if (m_ptr)
-      m_ptr->refcount_inc();
-    if (temp_ptr && REF_COUNT_OBJ_REFCOUNT_DEC(((RefCountObj *) temp_ptr)) == 0)
-      ((RefCountObj *) temp_ptr)->free();
-    return (*this);
-  }
-
-  /**
-    Assignment operator using another ProxyMutexPtr object.
-
-    Sets the ProxyMutex object to which this ProxyMutexPtr must
-    point at to that of the 'src'. Since the reference to the
-    ProxyMutex is replaced, the reference count for the previous
-    object (if any) is decremented and the object is freed if it
-    drops to zero.
-
-    @param src The ProxyMutexPtr to get the ProxyMutex reference from.
-
-  */
-  ProxyMutexPtr & operator =(const ProxyMutexPtr & src)
-  {
-    return (operator =(src.m_ptr));
-  }
-
-  /**
-    Disassociates this object's reference to the ProxyMutex object
-
-    This method verifies that the ProxyMutexPtr object no longer
-    references a ProxyMutex object. If it does, the ProxyMutex's
-    reference count is decremented and the object is freed if it
-    drops to zero.
-
-  */
-  void clear()
-  {
-    if (m_ptr) {
-      if (!((RefCountObj *) m_ptr)->refcount_dec())
-        ((RefCountObj *) m_ptr)->free();
-      m_ptr = NULL;
-    }
-  }
-
-  // TODO eval if cast op needs to be removed
-  // The casting operators do not fair well together with comparison
-  // operators in many cases, gcc-3.4.x isn't too happy about it. It'd
-  // probably be safer to get rid of them entirely.
-  /**
-    Cast operator.
-
-    When the cast (ProxyMutex*) is applied to a ProxyMutexPtr object,
-    a pointer to the managed ProxyMutex object is returned.
-
-  */
-  operator  ProxyMutex *() const
-  {
-    return m_ptr;
-  }
-
-  /**
-    Pointer member selection operator.
-
-    When applied to a ProxyMutexPtr object, it is applied to the
-    underlying ProxyMutex object. Make sure this ProxyMutexPtr
-    object has a valid reference to a ProxyMutex before using it.
-
-  */
-  ProxyMutex *operator ->() const
-  {
-    return m_ptr;
-  }
-
-  /**
-    Dereference operator.
-
-    Provides access to the ProxyMutex object pointed at by this
-    ProxyMutexPtr.
-
-  */
-  ProxyMutex & operator *() const
-  {
-    return (*m_ptr);
-  }
-
-  /**
-    Equality operator.
-
-    Returns true if the two pointers are equivalent (the rhs and
-    the one stored inside the lhs ProxyMutexPtr object), otherwise
-    false.
-
-  */
-  int operator ==(const ProxyMutex * p) const
-  {
-    return (m_ptr == p);
-  }
-
-  /**
-    Equality operator.
-
-    Returns true if the pointers managed by the rhs and lhs
-    ProxyMutexPtr objects are equivalent.
-
-  */
-  int operator ==(const ProxyMutexPtr & p) const
-  {
-    return (m_ptr == p.m_ptr);
-  }
-
-  /**
-    Inequality operator.
-
-    Returns true if the two pointers are not equivalent (the rhs
-    and the one stored inside the lhs ProxyMutexPtr object), otherwise
-    false.
-
-  */
-  int operator !=(const ProxyMutex * p) const
-  {
-    return (m_ptr != p);
-  }
-
-  /**
-    Inequality operator.
-
-    Returns true if the pointers managed by the rhs and lhs
-    ProxyMutexPtr objects are not equivalent.
-
-  */
-  int operator !=(const ProxyMutexPtr & p) const
-  {
-    return (m_ptr != p.m_ptr);
-  }
-
-  RefCountObj *_ptr()
-  {
-    return (RefCountObj *) m_ptr;
-  }
-
-  /**
-    Pointer to the specified ProxyMutex.
-
-    This is the pointer that stores the specified ProxyMutex. Do
-    not set or modify its value directly.
-
-  */
-  ProxyMutex *m_ptr;
-};
-
 inline bool
 Mutex_trylock(
 #ifdef DEBUG
@@ -535,8 +315,9 @@ Mutex_unlock(ProxyMutex * m, EThread * t)
 
 struct MutexLock
 {
-  ProxyMutexPtr m;
-    MutexLock():m(NULL)
+  Ptr<ProxyMutex> m;
+
+  MutexLock():m(NULL)
   {
   };
 
@@ -588,10 +369,10 @@ struct MutexLock
 
 struct MutexTryLock
 {
-  ProxyMutexPtr m;
+  Ptr<ProxyMutex> m;
   volatile bool lock_acquired;
 
-    MutexTryLock(
+  MutexTryLock(
 #ifdef DEBUG
                   const char *afile, int aline, const char *ahandler,
 #endif                          //DEBUG

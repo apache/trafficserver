@@ -118,7 +118,7 @@ public:
     directly.
 
   */
-  ProxyMutexPtr mutex;
+  Ptr<ProxyMutex> mutex;
 
   /**
     Link to other continuations.

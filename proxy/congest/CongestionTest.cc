@@ -167,7 +167,7 @@ EXCLUSIVE_REGRESSION_TEST(Congestion_HashTable) (RegressionTest * t, int atype, 
 //-------------------------------------------------------------
 // Test the FailHistory implementation
 //-------------------------------------------------------------
-/* regesiter events into the FailHistory and the number of events
+/* register events into the FailHistory and the number of events
  * should be correct
  */
 struct CCFailHistoryTestCont: public Continuation
@@ -191,7 +191,7 @@ struct CCFailHistoryTestCont: public Continuation
   {
   }
 
-  CCFailHistoryTestCont(ProxyMutexPtr _mutex, RegressionTest * _test)
+  CCFailHistoryTestCont(Ptr<ProxyMutex> _mutex, RegressionTest * _test)
   : Continuation(_mutex),
     test_mode(SIMPLE_TEST),
     final_status(REGRESSION_TEST_PASSED), complete(false), test(_test), failEvents(NULL), pending_action(NULL)
@@ -386,7 +386,7 @@ struct CCCongestionDBTestCont: public Continuation
   CongestionEntry *gen_CongestionEntry(sockaddr const* ip, int congested = 0);
 
 
-    CCCongestionDBTestCont(ProxyMutexPtr _mutex, RegressionTest * _test):Continuation(_mutex),
+    CCCongestionDBTestCont(Ptr<ProxyMutex> _mutex, RegressionTest * _test):Continuation(_mutex),
     final_status(REGRESSION_TEST_PASSED), complete(false), test(_test), rule(NULL), db(NULL), dbsize(1024)
   {
     SET_HANDLER(&CCCongestionDBTestCont::mainEvent);

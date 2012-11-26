@@ -393,7 +393,7 @@ public:
   typedef struct
   {
     KeepAliveConn *conn;
-    ProxyMutexPtr mutex;
+    Ptr<ProxyMutex> mutex;
   } conn_elem;
 
   conn_elem *arr;

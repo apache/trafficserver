@@ -935,7 +935,7 @@ parentSelection_CB(const char *name, RecDataT data_type, RecData data, void *coo
 //
 
 int SocksServerConfig::m_id = 0;
-static ProxyMutexPtr socks_server_reconfig_mutex = NULL;
+static Ptr<ProxyMutex> socks_server_reconfig_mutex = NULL;
 void
 SocksServerConfig::startup()
 {

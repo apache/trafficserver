@@ -396,7 +396,7 @@ public:
 
 private:
   IMTHashTable<key_t, data_t> *hashTables[MT_HASHTABLE_PARTITIONS];
-  ProxyMutexPtr locks[MT_HASHTABLE_PARTITIONS];
+  Ptr<ProxyMutex> locks[MT_HASHTABLE_PARTITIONS];
   // MT_ListEntry chain_heads[MT_HASHTABLE_PARTITIONS];
   // int last_GC_time[MT_HASHTABLE_PARTITIONS];
   // int32_t cur_items;
