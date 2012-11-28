@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.3.1
 
+  *) [TS-1506] %<cquuh> log symbol will crash TS when requesting a SSL url.
+     Author: Conan Wang.
+
   *) [TS-1594] ProxyMutexPtr and Ptr<ProxyMutex> are identical
 
   *) [TS-1591] gzip plugin should load relative config file
