@@ -210,7 +210,7 @@ LogAccessHttp::validate_unmapped_url_path(void)
 
     if (m_client_req_unmapped_url_path_len >= 6) {      // xxx:// - minimum schema size
       c = (char *) memchr((void *) m_client_req_unmapped_url_path_str, ':', m_client_req_unmapped_url_path_len - 1);
-      if (c && (len = (int) (c - m_client_req_unmapped_url_path_str)) <= 4) {   // 4 - max schema size
+      if (c && (len = (int) (c - m_client_req_unmapped_url_path_str)) <= 5) {   // 5 - max schema size
         if (len + 2 <= m_client_req_unmapped_url_canon_len && c[1] == '/' && c[2] == '/') {
           len += 3;             // Skip "://"
           m_client_req_unmapped_url_host_str = &m_client_req_unmapped_url_canon_str[len];
