@@ -30,8 +30,9 @@ Changes with Apache Traffic Server 3.3.1
   *) [TS-1564] fix the rolling of Logs created via the API in plugins
      Author: Craig Forbes <cforbes at qualys dot com>
 
-  *) [TS-1565] TSStringPercentEncode returns one character short in no-op case
-     (no encoding needed). Author: Thach Tran <tranngocthachs at gmail dot com>.
+  *) [TS-1565] TSStringPercentEncode returns one character short in no-op
+   case (no encoding needed). Author: Thach Tran <tranngocthachs at gmail
+   dot com>.
 
   *) [TS-1561] Plugin esi - Enhancements on ESI plugin
      Author: Kit Chan <chanshukit at gmail dot com>
@@ -39,11 +40,13 @@ Changes with Apache Traffic Server 3.3.1
 
   *) [TS-1560] plugins need memory barriers for ARM
 
-  *) [TS-1558] use_client_addr breaks control over upstream HTTP protocol version
+  *) [TS-1558] use_client_addr breaks control over upstream HTTP protocol
+   version.
 
   *) [TS-207] Add raw disk support for FreeBSD
 
-  *) [TS-1494] sslCa should be set NULL after parseConfigLine in SSLCertLookup.cc
+  *) [TS-1494] sslCa should be set NULL after parseConfigLine in
+   SSLCertLookup.cc.
 
   *) [TS-1382] make jtest 64bit nice
 
@@ -60,17 +63,20 @@ Changes with Apache Traffic Server 3.3.1
 
   *) [TS-1512] get volume & hosting work with cluster
 
-  *) [TS-1542] Fix so that rfc5861 plugin will compile against older versions of TS
+  *) [TS-1542] Fix so that rfc5861 plugin will compile against older
+   versions of TS.
 
   *) [TS-1446] Make sure age header is enabled in rfc5861 plugin
 
   *) [TS-1539] Update build package list in README
 
-  *) [TS-1535] FetchSM process_fetch_write should ignore event TS_EVENT_VCONN_WRITE_READY
+  *) [TS-1535] FetchSM process_fetch_write should ignore event
+   TS_EVENT_VCONN_WRITE_READY.
 
   *) [TS-1534] implement the interim cache for ESI parser result
 
-  *) [TS-1501] vc`s inactivity_timeout event should be schedule in vc`s thread
+  *) [TS-1501] vc`s inactivity_timeout event should be schedule in vc`s
+   thread.
 
   *) [TS-1503] make Event::schedule simple and efficient
      Author: KuoTai
@@ -90,17 +96,18 @@ Changes with Apache Traffic Server 3.3.1
 
   *) [TS-1462] SPDY proxy plugin
 
-  *) [TS-1488] Check the event`s cancel flag before put it into the PriorityEventQueue.
-     Author: KuoTai.
+  *) [TS-1488] Check the event`s cancel flag before put it into the
+   PriorityEventQueue. Author: Chen Bin (kuotai).
 
   *) [TS-1484] Fix SNI crashes where there is no default certificate
 
   *) [TS-1473] Fix header_filter plugin for ARM.
 
-  *) [TS-1457] Change chunking output to avoid massive memory use by transforms.
+  *) [TS-1457] Change chunking output to avoid massive memory use by
+   transforms.
 
-  *) [TS-1469] Manager uses hardcoded FD limit causing restarts
-      forever on traffic_server. Reported By: Thomas Jackson
+  *) [TS-1469] Manager uses hardcoded FD limit causing restarts forever on
+   traffic_server. Reported By: Thomas Jackson
 
   *) [TS-1466] disable ssl compression by default
 
@@ -137,7 +144,7 @@ Changes with Apache Traffic Server 3.3.1
   *) [TS-1436] Added Yahoo directory layout for installation.
 
   *) [TS-1418] Add automake file to Metalink plugin. Author: Jack Bates.
-     Also reorganize the plugins/experimental Makefile.am stuff slightly.
+   Also reorganize the plugins/experimental Makefile.am stuff slightly.
 
   *) [TS-1414] gzip plugin enhancements
 
@@ -177,8 +184,8 @@ Changes with Apache Traffic Server 3.3.0
 
   *) [TS-1406] add ESI to experimental plugins build
 
-  *) [TS-1387] Allow proxy.config.http.insert_age_in_response to be overridden
-    Author: Phil Sorber
+  *) [TS-1387] Allow proxy.config.http.insert_age_in_response to be
+   overridden. Author: Phil Sorber
 
   *) [TS-1392] Fix SNI certificate fallback path
 
