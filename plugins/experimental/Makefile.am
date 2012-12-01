@@ -24,5 +24,6 @@ SUBDIRS = \
  header_rewrite \
  metalink \
  gzip \
- spdy
+ spdy \
+ channel_stats
 endif

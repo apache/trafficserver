@@ -1614,6 +1614,7 @@ AC_CONFIG_FILES([plugins/experimental/header_rewrite/Makefile])
 AC_CONFIG_FILES([plugins/experimental/metalink/Makefile])
 AC_CONFIG_FILES([plugins/experimental/gzip/Makefile])
 AC_CONFIG_FILES([plugins/experimental/spdy/Makefile])
+AC_CONFIG_FILES([plugins/experimental/channel_stats/Makefile])
 # various tools
 AC_CONFIG_FILES([tools/Makefile])
 # example plugins
