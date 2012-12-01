@@ -2,6 +2,7 @@
 Changes with Apache Traffic Server 3.3.1
 
   *) [TS-1596] Added channel_stats plugin to experimental.
+     Author: Conan Wang.
 
   *) [TS-1607] decouple SSL certificate lookup
 
