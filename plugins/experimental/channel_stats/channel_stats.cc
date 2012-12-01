@@ -150,7 +150,7 @@ static int
 get_query_param(const char *query, const char *param,
                 char *result, int max_length)
 {
-  char *pos = 0;
+  const char *pos = 0;
 
   pos = strstr(query, param); // try to find in querystring of url
   if (pos != query) {
@@ -191,7 +191,7 @@ get_query_param(const char *query, const char *param,
 static int
 has_query_param(const char *query, const char *param, int has_no_value)
 {
-  char *pos = 0;
+  const char *pos = 0;
 
   pos = strstr(query, param); // try to find in querystring of url
   if (pos != query) {
