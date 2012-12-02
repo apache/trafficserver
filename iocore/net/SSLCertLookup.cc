@@ -55,7 +55,7 @@ struct SSLAddressLookupKey
       key[nbytes++] = hextab[ (port >>  4) & 0x000F ];
       key[nbytes++] = hextab[ (port      ) & 0x000F ];
     }
-    key[nbytes++] = NULL;
+    key[nbytes++] = 0;
   }
 
   const char * get() const { return key; }
