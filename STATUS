@@ -65,8 +65,8 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   Jira https://issues.apache.org/jira/browse/TS-1368
   Patch: 1b9fa981cde26ae475ab300015863813ded31a9d
          26849e983a1d59918a9260f59b3f896b0f550d0c
-         690ccc26082c75a93053bb7643c848b34cfca100 
-  +1: igalic
+         690ccc26082c75a93053bb7643c848b34cfca100
+  +1: igalic, jpeach
 
 RELEASE PROCESS
 
