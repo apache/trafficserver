@@ -24,6 +24,10 @@
 #include "ink_platform.h"
 #include "ink_lockfile.h"
 
+#if defined(linux)
+#include "ink_killall.h"
+#endif
+
 #define LOCKFILE_BUF_LEN 16     // 16 bytes should be enought for a pid
 
 int
@@ -191,7 +195,10 @@ Lockfile::Close(void)
 // killed): Unfortunately, it's possible on Linux that the main PID of
 // the process has been successfully killed (and is waiting to be
 // reaped while in a defunct state), while some of the other threads
-// of the process just don't want to go away.
+// of the process just don't want to go away.  Integrate ink_killall
+// into Kill() and KillAll() just to make sure we really kill
+// everything and so that we don't spin hard while trying to kill a
+// defunct process.
 //-------------------------------------------------------------------------
 
 static void
