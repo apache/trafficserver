@@ -43,7 +43,7 @@ union semun
 #endif  // linux check
 
 // For debugging, turn this on.
-// #define TRACE_LOG_COP 1
+#define TRACE_LOG_COP 1
 
 #define OPTIONS_MAX     32
 #define OPTIONS_LEN_MAX 1024
@@ -242,6 +242,10 @@ sig_term(int signum)
 {
   pid_t pid = 0;
   int status = 0;
+  int err;
+  pid_t holding_pid;
+
+  //killsig = SIGTERM;
 
   cop_log_trace("Entering sig_term(%d)\n", signum);
 
