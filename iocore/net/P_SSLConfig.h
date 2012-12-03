@@ -33,22 +33,6 @@
 
 #include "ProxyConfig.h"
 
-namespace ssl { namespace detail {
-
-template <typename ClassType, typename ConfigType>
-struct scoped_config {
-  scoped_config() : ptr(ClassType::acquire()) {}
-  ~scoped_config() { ClassType::release(ptr); }
-
-  operator const ConfigType * () const { return ptr; }
-  const ConfigType * operator->() const { return ptr; }
-
-private:
-  ConfigType * ptr;
-};
-
-}}
-
 struct SSLCertLookup;
 
 /////////////////////////////////////////////////////////////
@@ -108,7 +92,7 @@ struct SSLConfig
   static SSLConfigParams * acquire();
   static void release(SSLConfigParams * params);
 
-  typedef ssl::detail::scoped_config<SSLConfig, SSLConfigParams> scoped_config;
+  typedef ConfigProcessor::scoped_config<SSLConfig, SSLConfigParams> scoped_config;
 
 private:
   static int configid;
@@ -121,7 +105,7 @@ struct SSLCertificateConfig
   static SSLCertLookup * acquire();
   static void release(SSLCertLookup * params);
 
-  typedef ssl::detail::scoped_config<SSLCertificateConfig, SSLCertLookup> scoped_config;
+  typedef ConfigProcessor::scoped_config<SSLCertificateConfig, SSLCertLookup> scoped_config;
 
 private:
   static int configid;
