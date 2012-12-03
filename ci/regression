@@ -41,10 +41,28 @@ mkdir -p $SRCROOT
 mkdir -p $OBJROOT
 mkdir -p $DSTROOT
 
-case $(uname) in
-  Darwin) CC=${CC:-clang}; CXX=${CXX:-clang++} ;;
-  *) CC=${CC:-cc}; CXX=${CXX:-c++} ;;
-esac
+prog() {
+  case $1 in
+    cc)
+      case $(uname) in
+        Darwin) echo clang ;;
+        *) echo cc ;;
+      esac
+      ;;
+    cxx)
+      case $(uname) in
+        Darwin) echo clang++ ;;
+        *) echo c++ ;;
+      esac
+      ;;
+    make)
+      case $(uname) in
+        FreeBSD) echo gmake ;;
+        *) echo make ;;
+      esac
+      ;;
+  esac
+}
 
 autogen() {
   [[ -e "$SRCROOT/configure" ]] || ( cd $SRCROOT && autoreconf -fi )
@@ -65,14 +83,19 @@ configure() {
 }
 
 build() {
-  ( cd $OBJROOT && make -j $NPROCS )
-  ( cd $OBJROOT && make install )
+  ( cd $OBJROOT && $MAKE -j $NPROCS )
+  ( cd $OBJROOT && $MAKE install )
 }
 
 regress() {
-  ( cd $OBJROOT && make check )
+  ( cd $OBJROOT && $MAKE check )
   $DSTROOT/bin/traffic_server -R 1
 }
+
+CC=${CC:-$(prog cc)}
+CXX=${CXX:-$(prog cxx)}
+MAKE=${MAKE:-$(prog make)}
+export CC CXX MAKE
 
 autogen
 configure
