@@ -37,7 +37,7 @@ bool alarmAlready = false;
  *   Begin class HostMatcher
  *************************************************************/
 
-CacheHostMatcher::CacheHostMatcher(const char * name, int typ):
+CacheHostMatcher::CacheHostMatcher(const char * name, CacheType typ):
 data_array(NULL),
 array_len(-1),
 num_el(-1),
@@ -190,7 +190,7 @@ CacheHostMatcher::NewEntry(matcher_line * line_info)
  *   End class HostMatcher
  *************************************************************/
 
-CacheHostTable::CacheHostTable(Cache * c, int typ)
+CacheHostTable::CacheHostTable(Cache * c, CacheType typ)
 {
 
 
@@ -440,7 +440,7 @@ CacheHostTable::BuildTable()
 }
 
 int
-CacheHostRecord::Init(int typ)
+CacheHostRecord::Init(CacheType typ)
 {
 
   int i, j;
@@ -483,7 +483,7 @@ CacheHostRecord::Init(int typ)
 }
 
 int
-CacheHostRecord::Init(matcher_line * line_info, int typ)
+CacheHostRecord::Init(matcher_line * line_info, CacheType typ)
 {
   int i, j;
   extern Queue<CacheVol> cp_list;
@@ -684,7 +684,7 @@ ConfigVolumes::BuildListFromString(char *config_file_path, char *file_buf)
   int state = 0;                //changed by YTS Team, yamsat for bug id 59632
   int manager_alarmed = false;
   int volume_number = 0;
-  int scheme = CACHE_NONE_TYPE;
+  CacheType scheme = CACHE_NONE_TYPE;
   int size = 0;
   int in_percent = 0;
   const char *matcher_name = "[CacheVolition]";
@@ -1033,7 +1033,7 @@ create_config(RegressionTest * t, int num)
 
         off_t random_size = (gen->random() % modu) + 1;
         /* convert to 128 megs multiple */
-        int scheme = (random_size % 2) ? CACHE_HTTP_TYPE : CACHE_RTSP_TYPE;
+        CacheType scheme = (random_size % 2) ? CACHE_HTTP_TYPE : CACHE_RTSP_TYPE;
         random_size = ROUND_TO_VOL_SIZE(random_size);
         off_t blocks = random_size / STORE_BLOCK_SIZE;
         ink_assert(blocks <= (int) total_space);

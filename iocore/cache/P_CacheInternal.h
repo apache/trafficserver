@@ -956,7 +956,7 @@ struct Cache
   int64_t cache_size;             //in store block size
   CacheHostTable *hosttable;
   volatile int total_initialized_vol;
-  int scheme;
+  CacheType scheme;
 
   int open(bool reconfigure, bool fix);
   int close();

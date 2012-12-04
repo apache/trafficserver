@@ -221,7 +221,7 @@ SplitDNSConfig::reconfigure()
 
 ClassAllocator<CacheRemoveCont> cacheRemoveContAllocator("cacheRemoveCont");
 
-CacheHostTable::CacheHostTable(Cache *c, int typ)
+CacheHostTable::CacheHostTable(Cache *c, CacheType typ)
 {
   NOWARN_UNUSED(c);
   NOWARN_UNUSED(typ);
