@@ -369,9 +369,6 @@ CongestionControlDefaultSchemeChanged(const char *name, RecDataT data_type, RecD
 //-----------------------------------------------
 extern void init_CongestionRegressionTest();
 
-#define CC_EstablishStaticConfigInteger(v, n) REC_EstablishStaticConfigInt32(v, n)
-#define CC_EstablishStaticConfigStringAlloc(v, n) REC_EstablishStaticConfigStringAlloc(v, n)
-
 void
 initCongestionControl()
 {
@@ -386,20 +383,20 @@ initCongestionControl()
   reconfig_mutex = new_ProxyMutex();
 
 // register config variables
-  CC_EstablishStaticConfigInteger(congestionControlEnabled, "proxy.config.http.congestion_control.enabled");
-  CC_EstablishStaticConfigInteger(DEFAULT_max_connection_failures, "proxy.config.http.congestion_control.default.max_connection_failures");
-  CC_EstablishStaticConfigInteger(DEFAULT_fail_window, "proxy.config.http.congestion_control.default.fail_window");
-  CC_EstablishStaticConfigInteger(DEFAULT_proxy_retry_interval, "proxy.config.http.congestion_control.default.proxy_retry_interval");
-  CC_EstablishStaticConfigInteger(DEFAULT_client_wait_interval, "proxy.config.http.congestion_control.default.client_wait_interval");
-  CC_EstablishStaticConfigInteger(DEFAULT_wait_interval_alpha, "proxy.config.http.congestion_control.default.wait_interval_alpha");
-  CC_EstablishStaticConfigInteger(DEFAULT_live_os_conn_timeout, "proxy.config.http.congestion_control.default.live_os_conn_timeout");
-  CC_EstablishStaticConfigInteger(DEFAULT_live_os_conn_retries, "proxy.config.http.congestion_control.default.live_os_conn_retries");
-  CC_EstablishStaticConfigInteger(DEFAULT_dead_os_conn_timeout, "proxy.config.http.congestion_control.default.dead_os_conn_timeout");
-  CC_EstablishStaticConfigInteger(DEFAULT_dead_os_conn_retries, "proxy.config.http.congestion_control.default.dead_os_conn_retries");
-  CC_EstablishStaticConfigInteger(DEFAULT_max_connection, "proxy.config.http.congestion_control.default.max_connection");
-  CC_EstablishStaticConfigStringAlloc(DEFAULT_congestion_scheme_str, "proxy.config.http.congestion_control.default.congestion_scheme");
-  CC_EstablishStaticConfigStringAlloc(DEFAULT_error_page, "proxy.config.http.congestion_control.default.error_page");
-  CC_EstablishStaticConfigInteger(congestionControlLocalTime, "proxy.config.http.congestion_control.localtime");
+  REC_EstablishStaticConfigInt32(congestionControlEnabled, "proxy.config.http.congestion_control.enabled");
+  REC_EstablishStaticConfigInt32(DEFAULT_max_connection_failures, "proxy.config.http.congestion_control.default.max_connection_failures");
+  REC_EstablishStaticConfigInt32(DEFAULT_fail_window, "proxy.config.http.congestion_control.default.fail_window");
+  REC_EstablishStaticConfigInt32(DEFAULT_proxy_retry_interval, "proxy.config.http.congestion_control.default.proxy_retry_interval");
+  REC_EstablishStaticConfigInt32(DEFAULT_client_wait_interval, "proxy.config.http.congestion_control.default.client_wait_interval");
+  REC_EstablishStaticConfigInt32(DEFAULT_wait_interval_alpha, "proxy.config.http.congestion_control.default.wait_interval_alpha");
+  REC_EstablishStaticConfigInt32(DEFAULT_live_os_conn_timeout, "proxy.config.http.congestion_control.default.live_os_conn_timeout");
+  REC_EstablishStaticConfigInt32(DEFAULT_live_os_conn_retries, "proxy.config.http.congestion_control.default.live_os_conn_retries");
+  REC_EstablishStaticConfigInt32(DEFAULT_dead_os_conn_timeout, "proxy.config.http.congestion_control.default.dead_os_conn_timeout");
+  REC_EstablishStaticConfigInt32(DEFAULT_dead_os_conn_retries, "proxy.config.http.congestion_control.default.dead_os_conn_retries");
+  REC_EstablishStaticConfigInt32(DEFAULT_max_connection, "proxy.config.http.congestion_control.default.max_connection");
+  REC_EstablishStaticConfigStringAlloc(DEFAULT_congestion_scheme_str, "proxy.config.http.congestion_control.default.congestion_scheme");
+  REC_EstablishStaticConfigStringAlloc(DEFAULT_error_page, "proxy.config.http.congestion_control.default.error_page");
+  REC_EstablishStaticConfigInt32(congestionControlLocalTime, "proxy.config.http.congestion_control.localtime");
   {
     RecData recdata;
     recdata.rec_int = 0;
