@@ -72,8 +72,10 @@ int DEFAULT_congestion_scheme = PER_IP;
 #define CONG_RULE_ULIMITED_max_connection_failures -1
 #define CONG_RULE_ULIMITED_mac_connection -1
 
+typedef ControlMatcher<CongestionControlRecord, CongestionControlRule> CongestionMatcherTable;
+
+static CongestionMatcherTable *CongestionMatcher = NULL;
 static Ptr<ProxyMutex> reconfig_mutex;
-CongestionMatcherTable *CongestionMatcher = NULL;
 int congestionControlEnabled = 0;
 int congestionControlLocalTime = 0;
 

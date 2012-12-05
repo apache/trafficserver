@@ -464,20 +464,9 @@ uint64_t make_key(char *hostname, int len, sockaddr const* ip, char *prefix, int
 //----------------------------------------------------
 extern Action *get_congest_entry(Continuation * cont, HttpRequestData * data, CongestionEntry ** ppEntry);
 extern Action *get_congest_list(Continuation * cont, MIOBuffer * buffer, int format);
+
 extern void remove_congested_entry(uint64_t key);
-
 extern void remove_all_congested_entry(void);
-
 extern void remove_congested_entry(char *buf, MIOBuffer * out_buffer);
-
-typedef ControlMatcher<CongestionControlRecord, CongestionControlRule> CongestionMatcherTable;
-extern CongestionMatcherTable *CongestionMatcher;
-
-inline bool
-host_rule_in_CongestMatcher()
-{
-  return (congestionControlEnabled && CongestionMatcher &&
-          (CongestionMatcher->hostMatch || CongestionMatcher->hrMatch));
-}
 
 #endif /* CONGESTTION_H_ */
