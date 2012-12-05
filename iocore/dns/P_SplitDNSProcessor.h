@@ -45,7 +45,6 @@
    --------------------------- */
 void ink_split_dns_init(ModuleVersion version);
 
-#define MAX_CONFIGS  100
 struct RequestData;
 typedef RequestData RD;
 
