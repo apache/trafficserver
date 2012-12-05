@@ -32,6 +32,7 @@
 #include "CongestionDB.h"
 #include "Congestion.h"
 #include "ControlMatcher.h"
+#include "ProxyConfig.h"
 
 RecRawStatBlock *congest_rsb;
 
@@ -48,7 +49,6 @@ static const matcher_tags congest_dest_tags = {
   true
 };
 
-#define CONGESTION_CONTROL_CONFIG_TIMEOUT 120
 /* default congestion control values */
 
 char *DEFAULT_error_page = NULL;
@@ -72,10 +72,23 @@ int DEFAULT_congestion_scheme = PER_IP;
 #define CONG_RULE_ULIMITED_max_connection_failures -1
 #define CONG_RULE_ULIMITED_mac_connection -1
 
-typedef ControlMatcher<CongestionControlRecord, CongestionControlRule> CongestionMatcherTable;
+struct CongestionMatcherTable :
+  public ControlMatcher<CongestionControlRecord, CongestionControlRule>,
+  public ConfigInfo
+{
+  CongestionMatcherTable(const char * file_var, const char * name, const matcher_tags * tags)
+    : ControlMatcher(file_var, name, tags) {
+  }
+
+  static void reconfigure();
+
+  static int configid;
+};
+
+int CongestionMatcherTable::configid = 0;
 
 static CongestionMatcherTable *CongestionMatcher = NULL;
-static Ptr<ProxyMutex> reconfig_mutex;
+static ConfigUpdateHandler<CongestionMatcherTable> * CongestionControlUpdate;
 int congestionControlEnabled = 0;
 int congestionControlLocalTime = 0;
 
@@ -307,22 +320,6 @@ CongestionControlRecord::Print()
 #undef PrintSTR
 }
 
-struct CongestionControl_UpdateContinuation: public Continuation
-{
-  int congestion_update_handler(int etype, void *data)
-  {
-    NOWARN_UNUSED(etype);
-    NOWARN_UNUSED(data);
-    reloadCongestionControl();
-    delete this;
-      return EVENT_DONE;
-  }
-  CongestionControl_UpdateContinuation(ProxyMutex * m):Continuation(m)
-  {
-    SET_HANDLER(&CongestionControl_UpdateContinuation::congestion_update_handler);
-  }
-};
-
 extern void initCongestionDB();
 
 // place holder for congestion control enable config
@@ -336,17 +333,6 @@ CongestionControlEnabledChanged(const char *name, RecDataT data_type, RecData da
   if (congestionControlEnabled == 1 || congestionControlEnabled == 2) {
     revalidateCongestionDB();
   }
-  return 0;
-}
-
-static int
-CongestionControlFile_CB(const char *name, RecDataT data_type, RecData data, void *cookie)
-{
-  NOWARN_UNUSED(name);
-  NOWARN_UNUSED(data_type);
-  NOWARN_UNUSED(data);
-  NOWARN_UNUSED(cookie);
-  eventProcessor.schedule_imm(new CongestionControl_UpdateContinuation(reconfig_mutex), ET_NET);
   return 0;
 }
 
@@ -381,8 +367,8 @@ initCongestionControl()
   ink_assert(CongestionMatcher == NULL);
 // register the stats variables
   register_congest_stats();
-// you must grab this mutex before reconfig the congestion control matcher table
-  reconfig_mutex = new_ProxyMutex();
+
+  CongestionControlUpdate = NEW(new ConfigUpdateHandler<CongestionMatcherTable>());
 
 // register config variables
   REC_EstablishStaticConfigInt32(congestionControlEnabled, "proxy.config.http.congestion_control.enabled");
@@ -405,34 +391,29 @@ initCongestionControl()
     CongestionControlDefaultSchemeChanged(NULL, RECD_NULL, recdata, NULL);
   }
 
-  CongestionMatcher = NEW(new CongestionMatcherTable("proxy.config.http.congestion_control.filename", congestPrefix, &congest_dest_tags));
-#ifdef DEBUG_CONGESTION_MACTHER
-  CongestionMatcher->Print();
-#endif
-
   if (congestionControlEnabled) {
-    Debug("congestion_config", "congestion control enabled");
-    initCongestionDB();
+    CongestionMatcherTable::reconfigure();
   } else {
     Debug("congestion_config", "congestion control disabled");
   }
+
   RecRegisterConfigUpdateCb("proxy.config.http.congestion_control.default.congestion_scheme", &CongestionControlDefaultSchemeChanged, NULL);
   RecRegisterConfigUpdateCb("proxy.config.http.congestion_control.enabled", &CongestionControlEnabledChanged, NULL);
-  RecRegisterConfigUpdateCb("proxy.config.http.congestion_control.filename", &CongestionControlFile_CB, NULL);
+
+  CongestionControlUpdate->attach("proxy.config.http.congestion_control.filename");
 }
 
 void
-reloadCongestionControl()
+CongestionMatcherTable::reconfigure()
 {
-  CongestionMatcherTable *newTable;
-  Debug("congestion_config", "congestion control config changed, reloading");
-  ink_hrtime t = CONGESTION_CONTROL_CONFIG_TIMEOUT;
-  newTable = NEW(new CongestionMatcherTable("proxy.config.http.congestion_control.filename", congestPrefix, &congest_dest_tags));
-#ifdef DEBUG_CONGESTION_MACTHER
-  newTable->Print();
+  Note("congestion control config changed, reloading");
+  CongestionMatcher = NEW(new CongestionMatcherTable("proxy.config.http.congestion_control.filename", congestPrefix, &congest_dest_tags));
+
+#ifdef DEBUG_CONGESTION_MATCHER
+  CongestionMatcher->Print();
 #endif
-  new_Deleter(CongestionMatcher, t);
-  ink_atomic_swap(&CongestionMatcher, newTable);
+
+  configid = configProcessor.set(configid, CongestionMatcher);
   if (congestionControlEnabled) {
     revalidateCongestionDB();
   }

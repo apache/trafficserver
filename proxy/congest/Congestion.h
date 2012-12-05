@@ -450,7 +450,6 @@ extern int congestionControlLocalTime;
 
 void initCongestionControl();
 CongestionControlRecord *CongestionControlled(RD * rdata);
-void reloadCongestionControl();
 
 uint64_t make_key(char *hostname, int len, sockaddr const* ip, CongestionControlRecord * record);
 uint64_t make_key(char *hostname, sockaddr const* ip, CongestionControlRecord * record);
