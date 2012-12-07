@@ -871,7 +871,7 @@ HttpBodySet::init(char *set, char *dir)
       this->content_language = ats_strdup(set);
   }
   if (!this->content_charset)
-    this->content_charset = ats_strdup("iso-8859-1");
+    this->content_charset = ats_strdup("utf-8");
 
   close(fd);
   return (lines_added);

@@ -620,7 +620,7 @@ HttpTransactCache::calculate_quality_of_accept_charset_match(MIMEField * accept_
   char c_charset[128];
   char *a_charset;
   int a_charset_len;
-  const char *default_charset = "iso-8859-1";
+  const char *default_charset = "utf-8";
   bool wildcard_present = FALSE;
   float wildcard_q = 1.0;
 
