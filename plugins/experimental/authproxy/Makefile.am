@@ -14,17 +14,13 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-if BUILD_EXPERIMENTAL_PLUGINS
-SUBDIRS = \
- lua \
- esi \
- rfc5861 \
- tcp_info \
- custom_redirect \
- header_rewrite \
- metalink \
- gzip \
- spdy \
- channel_stats \
- authproxy
-endif
+pkglibdir = ${pkglibexecdir}
+
+AM_CPPFLAGS = \
+  -I$(top_builddir)/proxy/api \
+  -I$(top_srcdir)/proxy/api
+
+pkglib_LTLIBRARIES = authproxy.la
+authproxy_la_SOURCES = authproxy.cc utils.cc utils.h
+authproxy_la_LDFLAGS = -module -avoid-version -shared
+

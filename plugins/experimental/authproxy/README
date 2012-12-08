@@ -1,0 +1,50 @@
+# AuthProxy - an authorization proxy plugin
+
+There are many ways of authorizing an HTTP request. Often, this
+requires making IPC calls to some internal infrastructure. AuthProxy
+is a plugin that takes care of the Traffic Server end of authorizing
+a request and delegated the authorization decision to an external
+HTTP service.
+
+This plugin can be used as both a global plugin and a remap plugin.
+
+# Plugin Options
+
+## --auth-transform=redirect|head
+
+This option specifies how to route the incoming request to the
+authorization service.
+
+If the value is "head", then the incoming request is transformed
+to a HEAD request and is sent to the same destination. If the
+response is 200 OK, the incoming request is allowed to proceed.
+
+If the value is "redirect" then the incoming request is sent to the
+authorization service designated but the --auth-host and --auth-port
+parameters. If the response is 200 OK, the incoming request is
+allowed to proceed.
+
+When the authorization service responds with a status other than
+200 OK, that response is returned to the client as the response to
+the incoming request. This allows mechanisms such as HTTP basic
+authentication to work correctly. Note that the body of the
+authorization service response is not returned to the client. This
+is a contributor opportunity, patches are welcome!
+
+## --auth-host=HOST
+
+The name or address of the authorization host. This is only used
+by the "redirect" transform.
+
+## --auth-port=PORT
+
+The IP port of the authorization host. This is only used by the
+"redirect" transform.
+
+## --force-cacheability
+
+If this options is set, the plugin will allow Traffic Server to
+cache the result of authorized requests. In the normal case, requests
+with authorization headers are nor cacheable, but this flag allows
+that by setting the proxy.config.http.cache.ignore_authentication=1
+option on the request.
