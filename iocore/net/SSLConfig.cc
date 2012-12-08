@@ -110,7 +110,7 @@ set_paths_helper(const char *path, const char *filename, char **final_path, char
   }
 
   if (final_filename) {
-    *final_filename = filename ? ats_strdup(Layout::get()->relative_to(path, filename)) : NULL;
+    *final_filename = filename ? Layout::get()->relative_to(path, filename) : NULL;
   }
 
 }
@@ -167,7 +167,7 @@ SSLConfigParams::initialize()
 
   char *cert_chain = NULL;
   IOCORE_ReadConfigStringAlloc(cert_chain, "proxy.config.ssl.server.cert_chain.filename");
-  set_paths_helper(serverCertRelativePath, cert_chain, &serverCertPathOnly, &serverCertChainPath);
+  set_paths_helper(serverCertRelativePath, cert_chain, NULL, &serverCertChainPath);
   ats_free(cert_chain);
 
   IOCORE_ReadConfigStringAlloc(multicert_config_file, "proxy.config.ssl.server.multicert.filename");
@@ -259,6 +259,8 @@ SSLCertificateConfig::reconfigure()
 
   if (SSLParseCertificateConfiguration(params, lookup)) {
     configid = configProcessor.set(configid, lookup);
+  } else {
+    delete lookup;
   }
 }
 

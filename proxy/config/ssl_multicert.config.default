@@ -22,6 +22,11 @@
 #   '*', the certificate will be used as the default fallback if no
 #   other match can be made.
 #
+#   The address specified here can contain a port specifier, in which
+#   case the corresponding certificate will only match for connections
+#   accepted on the specified port. IPv6 addresses must be enclosed by
+#   square brackets if they have a port, eg, [::1]:80.
+#
 # ssl_key_name=FILENAME
 #   The name of the file containg the private key for this certificate.
 #   If the key is contained in the certificate file, this field can be
@@ -39,4 +44,5 @@
 #   ssl_cert_name=foo.pem
 #   dest_ip=*	ssl_cert_name=bar.pem ssl_key_name=barKey.pem
 #   dest_ip=209.131.48.79	ssl_cert_name=server.pem ssl_key_name=serverKey.pem
+#   dest_ip=10.0.0.1:99 ssl_cert_name=port99.pem
 

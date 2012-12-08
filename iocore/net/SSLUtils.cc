@@ -22,10 +22,7 @@
 #include "ink_config.h"
 #include "libts.h"
 #include "I_Layout.h"
-#include "P_EventSystem.h"
-#include "P_SSLUtils.h"
-#include "P_SSLConfig.h"
-#include "P_SSLCertLookup.h"
+#include "P_Net.h"
 
 #include <openssl/err.h>
 #include <openssl/bio.h>
@@ -123,9 +120,10 @@ end:
 static int
 ssl_servername_callback(SSL * ssl, int * ad, void * arg)
 {
-  SSL_CTX *       ctx = NULL;
-  SSLCertLookup * lookup = (SSLCertLookup *) arg;
-  const char *    servername = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
+  SSL_CTX *           ctx = NULL;
+  SSLCertLookup *     lookup = (SSLCertLookup *) arg;
+  const char *        servername = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
+  SSLNetVConnection * netvc = (SSLNetVConnection *)SSL_get_app_data(ssl);
 
   Debug("ssl", "ssl=%p ad=%d lookup=%p server=%s", ssl, *ad, lookup, servername);
 
@@ -134,6 +132,15 @@ ssl_servername_callback(SSL * ssl, int * ad, void * arg)
   // already made a best effort to find the best match.
   if (likely(servername)) {
     ctx = lookup->findInfoInHash((char *)servername);
+  }
+
+  // If there's no match on the server name, try to match on the peer address.
+  if (ctx == NULL) {
+    IpEndpoint ip;
+    int namelen = sizeof(ip);
+
+    safe_getsockname(netvc->get_socket(), &ip.sa, &namelen);
+    ctx = lookup->findInfoInHash(ip);
   }
 
   if (ctx != NULL) {
