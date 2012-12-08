@@ -358,7 +358,7 @@ HttpProxyPort::processOptions(char const* opts) {
 
   if (af_set_p) {
     if (in_ip_set_p && m_family != m_inbound_ip.family()) {
-      Warning("Invalid port descriptor '%s' - the inbound adddress family [%s] is not the same type as the explict family value [%s]",
+      Warning("Invalid port descriptor '%s' - the inbound adddress family [%s] is not the same type as the explicit family value [%s]",
         opts, ats_ip_family_name(m_inbound_ip.family()), ats_ip_family_name(m_family));
       zret = false;
     }

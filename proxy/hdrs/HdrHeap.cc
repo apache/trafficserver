@@ -892,7 +892,7 @@ HdrHeap::unmarshal(int buf_length, int obj_type, HdrHeapObjImpl ** found_obj, Re
   //   by reference into other header heap therefore we need
   //   to the set the refcount ptr for the strings.  We don't
   //   actually increase the refcount here since for the header
-  //   the lifetime is explict but copies will increase
+  //   the lifetime is explicit but copies will increase
   //   the refcount
   if (block_ref) {
     m_ronly_heap[0].m_ref_count_ptr.m_ptr = block_ref;

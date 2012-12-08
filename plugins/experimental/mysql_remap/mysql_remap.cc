@@ -243,7 +243,7 @@ TSPluginInit(int argc, const char *argv[]) {
 
   TSContDataSet (cont, (void *)data);
   
-  TSDebug(PLUGIN_NAME, "plugin is succesfully initialized [plugin mode]");
+  TSDebug(PLUGIN_NAME, "plugin is successfully initialized [plugin mode]");
   iniparser_freedict(ini);
   return;
 }

@@ -176,7 +176,7 @@ TSRemapInit(TSREMAP_INTERFACE *api_info, char *errbuf, int errbuf_size)
     return TS_ERROR;
   }
 
-  INKDebug("hipes", "plugin is succesfully initialized");
+  INKDebug("hipes", "plugin is successfully initialized");
   return TS_SUCCESS;
 }
 

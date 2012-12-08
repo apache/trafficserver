@@ -285,7 +285,7 @@ reconnect()
  * purpose: attempts to reconnect to TM (eg. when TM restarts) for the
  *          specified number of times
  * input:  num_attempts - number of reconnection attempts to try before quit
- * output: TS_ERR_OKAY - if succesfully reconnected within num_attempts
+ * output: TS_ERR_OKAY - if successfully reconnected within num_attempts
  *         TS_ERR_xx - the reason the reconnection failed
  * notes:
  ***************************************************************************/

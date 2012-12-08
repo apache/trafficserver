@@ -283,7 +283,7 @@ free_configuration(ClusterConfiguration * c, ClusterConfiguration * prev)
   // are used in different threads, so reference counts are
   // relatively difficult and expensive.  The solution I have
   // chosen is to simply delete the object after some (very long)
-  // time after it has ceased to be accessable.
+  // time after it has ceased to be accessible.
   //
   eventProcessor.schedule_in(NEW(new ConfigurationContinuation(c, prev)), CLUSTER_CONFIGURATION_TIMEOUT, ET_CALL);
 }

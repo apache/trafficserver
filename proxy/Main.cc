@@ -405,7 +405,7 @@ initialize_process_manager()
     ink_strlcpy(management_directory, Layout::get()->sysconfdir, sizeof(management_directory));
     if (access(management_directory, R_OK) == -1) {
       fprintf(stderr,"unable to access() management path '%s': %d, %s\n", management_directory, errno, strerror(errno));
-      fprintf(stderr,"please set management path via command line '-d <managment directory>'\n");
+      fprintf(stderr,"please set management path via command line '-d <management directory>'\n");
       _exit(1);
     }
   }

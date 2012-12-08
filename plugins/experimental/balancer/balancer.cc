@@ -208,7 +208,7 @@ tsremap_init(TSREMAP_INTERFACE *api_info, char *errbuf, int errbuf_size)
     return -3;
   }
 
-  TSDebug("balancer", "plugin is succesfully initialized");
+  TSDebug("balancer", "plugin is successfully initialized");
   return 0;
 }
 

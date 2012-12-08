@@ -1362,7 +1362,7 @@ REGRESSION_TEST(SDK_API_TSContCreate) (RegressionTest * test, int atype, int *ps
   TSMutex mutexp = TSMutexCreate();
   TSCont contp = TSContCreate(cont_handler, mutexp);
 
-  if (TS_SUCCESS == TSMutexLockTry(mutexp)) { // Mutex is grabbed succesfully
+  if (TS_SUCCESS == TSMutexLockTry(mutexp)) { // Mutex is grabbed successfully
     TSContCall(contp, (TSEvent) 0, NULL);
     TSMutexUnlock(mutexp);
   } else {                       //mutex has problems

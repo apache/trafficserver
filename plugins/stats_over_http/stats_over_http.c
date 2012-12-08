@@ -137,7 +137,7 @@ json_out_stat(TSRecordType rec_type, void *edata, int registered,
   case TS_RECORDDATATYPE_STRING:
     APPEND_STAT(name, "%s", datum->rec_string); break;
   default:
-    TSDebug("istats", "unkown type for %s: %d", name, data_type);
+    TSDebug("istats", "unknown type for %s: %d", name, data_type);
     break;
   }
 }

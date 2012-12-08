@@ -342,7 +342,7 @@ webIntr_main(void *x)
 #endif
   char pacFailMsg[] = "Auto-Configuration Service Failed to Initialize";
   //  char gphFailMsg[] = "Dynamic Graph Service Failed to Initialize";
-  char mgmtapiFailMsg[] = "Traffic server managment API service Interface Failed to Initialize.";
+  char mgmtapiFailMsg[] = "Traffic server management API service Interface Failed to Initialize.";
 
   RecInt tempInt;
   bool found;
@@ -444,14 +444,14 @@ webIntr_main(void *x)
   // INKqa12562: MgmtAPI sockets should be created with 775 permission
   mode_t oldmask = umask(S_IWOTH);
   if ((mgmtapiFD = newUNIXsocket(api_sock_path)) < 0) {
-    mgmt_log(stderr, "[WebIntrMain] Unable to set up socket for handling managment API calls. API socket path = %s\n",
+    mgmt_log(stderr, "[WebIntrMain] Unable to set up socket for handling management API calls. API socket path = %s\n",
              api_sock_path);
     lmgmt->alarm_keeper->signalAlarm(MGMT_ALARM_WEB_ERROR, mgmtapiFailMsg);
   }
 
   if ((eventapiFD = newUNIXsocket(event_sock_path)) < 0) {
     mgmt_log(stderr,
-             "[WebIntrMain] Unable to set up so for handling managment API event calls. Event Socket path: %s\n",
+             "[WebIntrMain] Unable to set up so for handling management API event calls. Event Socket path: %s\n",
              event_sock_path);
   }
   umask(oldmask);

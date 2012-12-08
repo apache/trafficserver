@@ -79,7 +79,7 @@ chunked_reenable(HttpTunnelProducer * p, HttpTunnel * tunnel)
       // Also, make sure the tunnel has not been deallocated on
       //  the call to tunnel->main_handler
       if (r == EVENT_CONT && p->alive && p->chunked_handler.state != ChunkedHandler::CHUNK_FLOW_CONTROL) {
-        // INKqa05737 - since we explictly disabled the vc by setting
+        // INKqa05737 - since we explicitly disabled the vc by setting
         //  nbytes = ndone when going into flow control, we need
         //  set nbytes up again here
         p->read_vio->nbytes = INT64_MAX;

@@ -1296,7 +1296,7 @@ struct HTTPCacheAlt
   //  destroyed we decrement the refcount
   //  on that buffer so that it gets destroyed
   // We don't want to use a ref count ptr (Ptr<>)
-  //  since our ownership model requires explict
+  //  since our ownership model requires explicit
   //  destroys and ref count pointers defeat this
   RefCountObj *m_ext_buffer;
 };

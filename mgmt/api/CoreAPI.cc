@@ -889,7 +889,7 @@ SnapshotGetMlt(LLQ * snapshots)
  * (type PROCESS, NODE, CLUSTER), sets them back to their default value
  * If one stat fails to be set correctly, then continues onto next one,
  * but will return TS_ERR_FAIL. Only returns TS_ERR_OKAY if all
- * stats are set back to defaults succesfully.
+ * stats are set back to defaults successfully.
  */
 TSError
 StatsReset(bool cluster)

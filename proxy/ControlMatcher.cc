@@ -825,8 +825,8 @@ template<class Data, class Result> int ControlMatcher<Data, Result>::BuildTable(
 /****************************************************************
  *    TEMPLATE INSTANTIATIONS GO HERE
  *
- *  We have to explictly instantiate the templates so that
- *   evertything works on with dec ccx, sun CC, and g++
+ *  We have to explicitly instantiate the templates so that
+ *   everything works on with dec ccx, sun CC, and g++
  *
  *  Details on the different comipilers:
  *

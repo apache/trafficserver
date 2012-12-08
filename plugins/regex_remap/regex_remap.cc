@@ -558,7 +558,7 @@ TSRemapInit(TSRemapInterface* api_info, char *errbuf, int errbuf_size)
   }
 
   setup_memory_allocation();
-  TSDebug(PLUGIN_NAME, "plugin is succesfully initialized");
+  TSDebug(PLUGIN_NAME, "plugin is successfully initialized");
   return TS_SUCCESS;
 }
 

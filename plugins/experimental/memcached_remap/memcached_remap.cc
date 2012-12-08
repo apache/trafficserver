@@ -239,6 +239,6 @@ void TSPluginInit(int argc, const char *argv[])
     TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, cont);
 
     TSDebug(PLUGIN_NAME,
-            "plugin is succesfully initialized [plugin mode]");
+            "plugin is successfully initialized [plugin mode]");
     return;
 }

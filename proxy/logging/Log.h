@@ -264,7 +264,7 @@
   @verbatim
   int Log::access (LogAccess *entry);
 
-  The return value is Log::OK if all log objects succesfully logged the
+  The return value is Log::OK if all log objects successfully logged the
   entry. Otherwise, it has the following bits set to indicate what happened
 
   ret_val & Log::SKIP      - at least one object filtered the entry

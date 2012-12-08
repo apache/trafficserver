@@ -52,7 +52,7 @@ TSRemapInit(TSRemapInterface* api_info, char *errbuf, int errbuf_size)
   gGI = GeoIP_new(GEOIP_MMAP_CACHE);
 #endif
 
-  TSDebug(PLUGIN_NAME, "remap plugin is succesfully initialized");
+  TSDebug(PLUGIN_NAME, "remap plugin is successfully initialized");
   return TS_SUCCESS;                     /* success */
 }
 

@@ -1609,7 +1609,7 @@ TSRemapInit(TSRemapInterface* api_info, char *errbuf, int errbuf_size)
     return TS_ERROR;
   }
 
-  TSDebug(DEBUG_TAG, "esi remap plugin is succesfully initialized");
+  TSDebug(DEBUG_TAG, "esi remap plugin is successfully initialized");
   return TS_SUCCESS;
 }
 

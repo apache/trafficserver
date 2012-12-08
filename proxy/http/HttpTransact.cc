@@ -8826,7 +8826,7 @@ void
 HttpTransact::add_new_stat_block(State* s)
 {
   // We keep the block around till the end of transaction
-  //    We don't need explictly deallocate it later since
+  //    We don't need explicitly deallocate it later since
   //    when the transaction is over, the arena will be destroyed
   ink_assert(s->current_stats->next_insert == StatBlockEntries);
   StatBlock *new_block = (StatBlock *) s->arena.alloc(sizeof(StatBlock));

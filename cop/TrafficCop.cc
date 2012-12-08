@@ -742,7 +742,7 @@ spawn_manager()
     snprintf(old_log_file, sizeof(old_log_file), "%s.old", log_file);
     // coverity[toctou]
     rename(log_file, old_log_file);
-    cop_log(COP_WARNING, "rename %s to %s as it is not accessable.\n", log_file, old_log_file);
+    cop_log(COP_WARNING, "rename %s to %s as it is not accessible.\n", log_file, old_log_file);
   }
   // coverity[toctou]
   if ((log_fd = open(log_file, O_WRONLY | O_APPEND | O_CREAT, 0640)) < 0) {
