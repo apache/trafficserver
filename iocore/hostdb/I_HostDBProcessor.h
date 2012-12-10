@@ -371,21 +371,17 @@ struct HostDBRoundRobin
     }
   }
 
+  /** Find the index of @a addr in member @a info.
+      @return The index if found, -1 if not found.
+  */
+  int index_of(sockaddr const* addr);
   HostDBInfo *find_ip(sockaddr const* addr);
-  HostDBInfo *select_best(sockaddr const* client_ip, HostDBInfo * r = NULL);
+  /** Select the next entry after @a addr.
+      @note If @a addr isn't an address in the round robin nothing is updated.
+      @return The selected entry or @c NULL if @a addr wasn't present.
+   */
+  HostDBInfo* select_next(sockaddr const* addr);
   HostDBInfo *select_best_http(sockaddr const* client_ip, ink_time_t now, int32_t fail_window);
-
-  HostDBInfo *increment_round_robin()
-  {
-    bool bad = (n <= 0 || n > HOST_DB_MAX_ROUND_ROBIN_INFO || good <= 0 || good > HOST_DB_MAX_ROUND_ROBIN_INFO);
-
-    if (bad) {
-      ink_assert(!"bad round robin size");
-      return NULL;
-    }
-    current++;
-    return NULL;
-  }
 
   HostDBRoundRobin()
     : n(0), good(0), current(0), timed_rr_ctime(0)
@@ -404,6 +400,7 @@ typedef void (Continuation::*process_srv_info_pfn) (HostDBInfo * r);
 /** The Host Databse access interface. */
 struct HostDBProcessor: public Processor
 {
+  friend struct HostDBSyncer;
   // Public Interface
 
   // Lookup Hostinfo by name
@@ -422,33 +419,47 @@ struct HostDBProcessor: public Processor
     HOSTDB_DO_NOT_ROUND_ROBIN = 4
   };
 
+  /// Optional parameters for getby...
+  struct Options {
+    typedef Options self; ///< Self reference type.
+    int port; ///< Target service port (default 0 -> don't care)
+    int flags; ///< Processing flags (default HOSTDB_DO_NOT_FORCE_DNS)
+    int timeout; ///< Timeout value (default 0 -> default timeout)
+    HostResStyle host_res_style; ///< How to query host (default HOST_RES_IPV4)
+
+    Options() : port(0), flags(HOSTDB_DO_NOT_FORCE_DNS), timeout(0), host_res_style(HOST_RES_IPV4)
+    { }
+
+    /// Set the flags.
+    self& setFlags(int f) { flags = f; return *this; }
+  };
+
+  /// Default options.
+  static Options const DEFAULT_OPTIONS;
+
   HostDBProcessor()
   { }
 
-  inkcoreapi Action *getbyname_re(Continuation * cont, const char *hostname, int len = 0, int port = 0,
-                                  int flags = HOSTDB_DO_NOT_FORCE_DNS);
+  inkcoreapi Action *getbyname_re(Continuation * cont, const char *hostname, int len, Options const& opt = DEFAULT_OPTIONS);
 
-  Action *getSRVbyname_imm(Continuation * cont, process_srv_info_pfn process_srv_info, const char *hostname, int len = 0,
-                           int port = 0, int flags = HOSTDB_DO_NOT_FORCE_DNS, int timeout = 0);
+  Action *getSRVbyname_imm(Continuation * cont, process_srv_info_pfn process_srv_info, const char *hostname, int len, Options const& opt = DEFAULT_OPTIONS);
 
   Action *getbyname_imm(
     Continuation * cont,
     process_hostdb_info_pfn process_hostdb_info,
     const char *hostname,
-    int len = 0,
-    int port = 0,
-    int flags = HOSTDB_DO_NOT_FORCE_DNS,
-    int timeout = 0
+    int len,
+    Options const& opt = DEFAULT_OPTIONS
   );
 
 
   /** Lookup Hostinfo by addr */
   Action *getbyaddr_re(Continuation * cont, sockaddr const* aip)
   {
-    return getby(cont, NULL, 0, aip, false);
+    return getby(cont, NULL, 0, aip, false, HOST_RES_NONE, 0);
   }
 
-
+#if 0
   /**
     If you were unable to connect to an IP address associated with a
     particular hostname, call this function and that IP address will
@@ -461,6 +472,7 @@ struct HostDBProcessor: public Processor
     sockaddr const* aip,
     const char *hostname, int len = 0
   );
+#endif
 
   /** Set the application information (fire-and-forget). */
   void setbyname_appinfo(char *hostname, int len, int port, HostDBApplicationInfo * app)
@@ -493,12 +505,14 @@ struct HostDBProcessor: public Processor
 
   // Private
   HostDBCache *cache();
+private:
   Action *getby(
     Continuation * cont,
     const char *hostname, int len,
     sockaddr const* ip,
-    bool aforce_dns, int timeout = 0
+    bool aforce_dns, HostResStyle host_res_style, int timeout
   );
+public:
   /** Set something.
       @a aip can carry address and / or port information. If setting just
       by a port value, the address should be set to INADDR_ANY which is of

@@ -151,6 +151,8 @@ public:
   uint16_t outbound_port;
   /// Set outbound connection to transparent.
   bool f_outbound_transparent;
+  /// DNS resolution preferences.
+  HostResStyle host_res_style;
   /// acl method mask - cache IpAllow::match() call
   uint32_t acl_method_mask;
 

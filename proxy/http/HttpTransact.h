@@ -834,6 +834,25 @@ public:
   typedef struct _DNSLookupInfo
   {
     int attempts;
+    /** Origin server address source selection.
+
+	If config says to use CTA (client target addr) state is
+	OS_ADDR_TRY_CLIENT, otherwise it remains the default. If the
+	connect fails then we switch to a USE. We go to USE_HOSTDB if
+	(1) the HostDB lookup is successful and (2) some address other
+	than the CTA is available to try. Otherwise we keep retrying
+	on the CTA (USE_CLIENT) up to the max retry value.  In essence
+	we try to treat the CTA as if it were another RR value in the
+	HostDB record.
+     */ 
+    enum {
+      OS_ADDR_TRY_DEFAULT, ///< Initial state, use what config says.
+      OS_ADDR_TRY_HOSTDB, ///< Try HostDB data.
+      OS_ADDR_TRY_CLIENT, ///< Try client target addr.
+      OS_ADDR_USE_HOSTDB, ///< Force use of HostDB target address.
+      OS_ADDR_USE_CLIENT ///< Use client target addr, no fallback.
+    } os_addr_style;
+
     bool lookup_success;
     char *lookup_name;
     char srv_hostname[MAXDNAME];
@@ -841,7 +860,7 @@ public:
     bool round_robin;
 
     _DNSLookupInfo()
-      : attempts(0),
+    : attempts(0), os_addr_style(OS_ADDR_TRY_DEFAULT),
         lookup_success(false), lookup_name(NULL), looking_up(UNDEFINED_LOOKUP), round_robin(false)
     {
       memset(&srv_hostname, 0, sizeof(srv_hostname));

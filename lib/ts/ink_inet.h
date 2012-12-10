@@ -1016,17 +1016,10 @@ struct IpAddr {
   explicit IpAddr(IpEndpoint const* addr) { this->assign(&addr->sa); }
 
   /// Assign sockaddr storage.
-  self& assign(sockaddr const* addr) {
-    _family = addr->sa_family;
-    if (ats_is_ip4(addr)) {
-      _addr._ip4 = ats_ip4_addr_cast(addr);
-    } else if (ats_is_ip6(addr)) {
-      _addr._ip6 = ats_ip6_addr_cast(addr);
-    } else {
-      _family = AF_UNSPEC;
-    }
-    return *this;
-  }
+  self& assign(
+	       sockaddr const* addr ///< May be @c NULL
+	       );
+
   /// Assign from end point.
   self& operator = (IpEndpoint const& ip) {
     return this->assign(&ip.sa);
@@ -1034,6 +1027,10 @@ struct IpAddr {
   /// Assign from IPv4 raw address.
   self& operator = (
     in_addr_t ip ///< Network order IPv4 address.
+  );
+  /// Assign from IPv6 raw address.
+  self& operator = (
+    in6_addr const& ip
   );
 
   /** Load from string.
@@ -1107,6 +1104,13 @@ IpAddr::operator = (in_addr_t ip) {
   return *this;
 }
 
+inline IpAddr&
+IpAddr::operator = (in6_addr const& ip) {
+  _family = AF_INET6;
+  _addr._ip6 = ip;
+  return *this;
+}
+
 inline uint16_t IpAddr::family() const { return _family; }
 
 inline bool
@@ -1116,6 +1120,23 @@ IpAddr::isCompatibleWith(self const& that) {
 
 inline bool IpAddr::isIp4() const { return AF_INET == _family; }
 inline bool IpAddr::isIp6() const { return AF_INET6 == _family; }
+  /// Assign sockaddr storage.
+inline IpAddr&
+IpAddr::assign(sockaddr const* addr) {
+  if (addr) {
+    _family = addr->sa_family;
+    if (ats_is_ip4(addr)) {
+      _addr._ip4 = ats_ip4_addr_cast(addr);
+    } else if (ats_is_ip6(addr)) {
+      _addr._ip6 = ats_ip6_addr_cast(addr);
+    } else {
+      _family = AF_UNSPEC;
+    }
+  } else {
+    _family = AF_UNSPEC;
+  }
+  return *this;
+}
 
 // Associated operators.
 bool operator == (IpAddr const& lhs, sockaddr const* rhs);

@@ -608,6 +608,7 @@ main(int argc, char **argv)
 #if TS_HAS_WCCP
   Init_Errata_Logging();
 #endif
+  ts_host_res_global_init();
   lmgmt = new LocalManager(mgmt_path, proxy_on);
   RecLocalInitMessage();
   lmgmt->initAlarm();

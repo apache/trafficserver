@@ -1,6 +1,11 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.3.1
 
+  *) [TS-1307] [TS-1422] Changed HostDB handling of IPv4 and
+   IPv6. Address resolution preferences can be configured globally and
+   per HTTP proxy port. Transparent connections can now fail over even
+   if use_client_target_addr is set.
+
   *) [TS-1616] authorization proxy plugin
 
   *) [TS-1615] Some spelling errors in source code

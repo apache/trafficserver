@@ -1971,22 +1971,16 @@ lookup:
 
   HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::state_hostdb_lookup);
 
+  HostDBProcessor::Options opt;
   if (t_state.api_txn_dns_timeout_value != -1) {
+    opt.timeout = t_state.api_txn_dns_timeout_value;
     DebugSM("http_timeout", "beginning DNS lookup. allowing %d mseconds for DNS", t_state.api_txn_dns_timeout_value);
   }
+  opt.flags = (t_state.cache_info.directives.does_client_permit_dns_storing) ? HostDBProcessor::HOSTDB_DO_NOT_FORCE_DNS : HostDBProcessor::HOSTDB_FORCE_DNS_RELOAD;
+  opt.port = server_port;
+  opt.host_res_style = ua_session->host_res_style;
 
-  Action *dns_lookup_action_handle = hostDBProcessor.getbyname_imm(this,
-                                                                   (process_hostdb_info_pfn) & HttpSM::
-                                                                   process_hostdb_info,
-                                                                   &new_host[0], 0,
-                                                                   server_port,
-                                                                   ((t_state.cache_info.directives.
-                                                                     does_client_permit_dns_storing) ? HostDBProcessor::
-                                                                    HOSTDB_DO_NOT_FORCE_DNS : HostDBProcessor::
-                                                                    HOSTDB_FORCE_DNS_RELOAD),
-                                                                   (t_state.api_txn_dns_timeout_value != -1) ? t_state.
-                                                                   api_txn_dns_timeout_value : 0);
-
+  Action *dns_lookup_action_handle = hostDBProcessor.getbyname_imm(this, (process_hostdb_info_pfn) & HttpSM::process_hostdb_info, &new_host[0], 0, opt);
 
   if (dns_lookup_action_handle != ACTION_RESULT_DONE) {
     ink_assert(!pending_action);
@@ -2001,7 +1995,7 @@ lookup:
 void
 HttpSM::process_hostdb_info(HostDBInfo * r)
 {
-  if (r) {
+  if (r && !r->failed()) {
     HostDBInfo *rr = NULL;
     t_state.dns_info.lookup_success = true;
 
@@ -3758,9 +3752,11 @@ HttpSM::do_hostdb_lookup()
     DebugSM("dns_srv", "Beginning lookup of SRV records for origin %s", d);
     HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::state_srv_lookup);
 
+    HostDBProcessor::Options opt;
+    if (t_state.api_txn_dns_timeout_value != -1)
+      opt.timeout = t_state.api_txn_dns_timeout_value;
     Action *srv_lookup_action_handle =
-      hostDBProcessor.getSRVbyname_imm(this, (process_srv_info_pfn) & HttpSM::process_srv_info, d,
-                                       (t_state.api_txn_dns_timeout_value != -1) ? t_state.api_txn_dns_timeout_value : 0);
+      hostDBProcessor.getSRVbyname_imm(this, (process_srv_info_pfn) & HttpSM::process_srv_info, d, 0, opt);
 
     if (srv_lookup_action_handle != ACTION_RESULT_DONE) {
       ink_assert(!pending_action);
@@ -3780,18 +3776,16 @@ HttpSM::do_hostdb_lookup()
             t_state.api_txn_dns_timeout_value);
     }
 
-    Action *dns_lookup_action_handle = hostDBProcessor.getbyname_imm(this,
-                                                                     (process_hostdb_info_pfn) & HttpSM::
-                                                                     process_hostdb_info,
-                                                                     t_state.dns_info.lookup_name, 0,
-                                                                     server_port,
-                                                                     ((t_state.cache_info.directives.
-                                                                       does_client_permit_dns_storing) ?
-                                                                      HostDBProcessor::
-                                                                      HOSTDB_DO_NOT_FORCE_DNS : HostDBProcessor::
-                                                                      HOSTDB_FORCE_DNS_RELOAD),
-                                                                     (t_state.api_txn_dns_timeout_value != -1) ? t_state.
-                                                                     api_txn_dns_timeout_value : 0);
+    HostDBProcessor::Options opt;
+    opt.port = server_port;
+    opt.flags = (t_state.cache_info.directives.does_client_permit_dns_storing)
+      ? HostDBProcessor::HOSTDB_DO_NOT_FORCE_DNS
+      : HostDBProcessor::HOSTDB_FORCE_DNS_RELOAD
+    ;
+    opt.timeout = (t_state.api_txn_dns_timeout_value != -1) ? t_state.api_txn_dns_timeout_value : 0;
+    opt.host_res_style = ua_session->host_res_style;
+
+    Action *dns_lookup_action_handle = hostDBProcessor.getbyname_imm(this, (process_hostdb_info_pfn) & HttpSM::process_hostdb_info, t_state.dns_info.lookup_name, 0, opt);
 
     if (dns_lookup_action_handle != ACTION_RESULT_DONE) {
       ink_assert(!pending_action);
@@ -4302,8 +4296,8 @@ HttpSM::do_cache_prepare_action(HttpCacheSM * c_sm, CacheHTTPInfo * object_read_
 void
 HttpSM::do_http_server_open(bool raw)
 {
-  DebugSM("http_track", "entered inside do_http_server_open");
   int ip_family = t_state.current.server->addr.sa.sa_family;
+  DebugSM("http_track", "entered inside do_http_server_open ][%s]", ats_ip_family_name(ip_family));
 
   ink_assert(server_entry == NULL);
 
@@ -4407,7 +4401,7 @@ HttpSM::do_http_server_open(bool raw)
 
     if (existing_ss) {
       // [amc] Is this OK? Should we compare ports? (not done by ats_ip_addr_cmp)
-      if (ats_ip_addr_cmp(&existing_ss->server_ip.sa, &t_state.current.server->addr.sa) == 0) {
+      if (ats_ip_addr_eq(&existing_ss->server_ip.sa, &t_state.current.server->addr.sa)) {
         ua_session->attach_server_session(NULL);
         existing_ss->state = HSS_ACTIVE;
         this->attach_server_session(existing_ss);
@@ -6691,15 +6685,19 @@ HttpSM::set_next_state()
         && !t_state.url_remap_success
         && t_state.parent_result.r != PARENT_SPECIFIED
         && t_state.client_info.is_transparent
+        && t_state.dns_info.os_addr_style == HttpTransact::DNSLookupInfo::OS_ADDR_TRY_DEFAULT
         && ats_is_ip(addr = t_state.state_machine->ua_session->get_netvc()->get_local_addr())
       ) {
-        ip_text_buffer ipb;
-        /* If the connection is client side transparent and the URL was not
-         * remapped/directed to parent proxy, we can use the client destination
-         * IP address instead of doing a DNS lookup. This is controlled by the
-         * 'use_client_target_addr' configuration parameter.
+        /* If the connection is client side transparent and the URL
+         * was not remapped/directed to parent proxy, we can use the
+         * client destination IP address instead of doing a DNS
+         * lookup. This is controlled by the 'use_client_target_addr'
+         * configuration parameter.
          */
-        DebugSM("dns", "[HttpTransact::HandleRequest] Skipping DNS lookup for client supplied target %s.\n", ats_ip_ntop(addr, ipb, sizeof(ipb)));
+        if (is_debug_tag_set("dns")) {
+          ip_text_buffer ipb;
+          DebugSM("dns", "[HttpTransact::HandleRequest] Skipping DNS lookup for client supplied target %s.\n", ats_ip_ntop(addr, ipb, sizeof(ipb)));
+        }
         ats_ip_copy(t_state.host_db_info.ip(), addr);
         /* Since we won't know the server HTTP version (no hostdb lookup), we assume it matches the
          * client request version. Seems to be the most correct thing to do in the transparent use-case.
@@ -6712,6 +6710,9 @@ HttpSM::set_next_state()
           t_state.host_db_info.app.http_data.http_version =  HostDBApplicationInfo::HTTP_VERSION_11;
 
         t_state.dns_info.lookup_success = true;
+        // cache this result so we don't have to unreliably duplicate the
+        // logic later if the connect fails.
+        t_state.dns_info.os_addr_style = HttpTransact::DNSLookupInfo::OS_ADDR_TRY_CLIENT;
         call_transact_and_set_next_state(NULL);
         break;
       } else if (t_state.parent_result.r == PARENT_UNDEFINED && t_state.dns_info.lookup_success) {

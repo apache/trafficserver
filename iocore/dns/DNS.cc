@@ -57,20 +57,12 @@ char *dns_local_ipv4 = NULL;
 int dns_thread = 0;
 int dns_prefer_ipv6 = 0;
 namespace {
-  inline bool prefer_ipv6_p() { return 0 != dns_prefer_ipv6; }
-  inline int preferred_query_type() { return prefer_ipv6_p() ? T_AAAA : T_A; }
   // Currently only used for A and AAAA.
   inline char const* QtypeName(int qtype) {
     return T_AAAA == qtype ? "AAAA" : T_A == qtype ? "A" : "*";
   }
-  inline void set_loopback(sockaddr* addr) {
-    if (prefer_ipv6_p())
-      ats_ip6_set(addr, in6addr_loopback, htons(DOMAIN_SERVICE_PORT));
-    else
-      ats_ip4_set(addr, htonl(INADDR_LOOPBACK), htons(DOMAIN_SERVICE_PORT));
-  }
-  inline void set_loopback(IpEndpoint* ip) {
-    set_loopback(&ip->sa);
+  inline bool is_addr_query(int qtype) {
+    return qtype == T_A || qtype == T_AAAA;
   }
 }
 
@@ -114,10 +106,6 @@ ink_get16(const uint8_t *src) {
 
 void HostEnt::free() {
   dnsBufAllocator.free(this);
-}
-
-inline bool is_addr_type_reply(int qtype) {
-  return qtype == T_A || qtype == T_AAAA;
 }
 
 void
@@ -193,7 +181,6 @@ DNSProcessor::start(int) {
   IOCORE_ReadConfigStringAlloc(dns_local_ipv6, "proxy.config.dns.local_ipv6");
   IOCORE_ReadConfigStringAlloc(dns_resolv_conf, "proxy.config.dns.resolv_conf");
   IOCORE_EstablishStaticConfigInt32(dns_thread, "proxy.config.dns.dedicated_thread");
-  IOCORE_EstablishStaticConfigInt32(dns_prefer_ipv6, "proxy.config.dns.prefer_ipv6");
 
   if (dns_thread > 0) {
     ET_DNS = eventProcessor.spawn_event_threads(1, "ET_DNS"); // TODO: Hmmm, should we just get a single thread some other way?
@@ -353,23 +340,34 @@ ink_dn_expand(const u_char *msg, const u_char *eom, const u_char *comp_dn, u_cha
 DNSProcessor::DNSProcessor()
   : thread(NULL), handler(NULL)
 {
-  memset(&l_res, 0, sizeof(l_res));
-  memset(&local_ipv6, 0, sizeof local_ipv6);
-  memset(&local_ipv4, 0, sizeof local_ipv4);
+  ink_zero(l_res);
+  ink_zero(local_ipv6);
+  ink_zero(local_ipv4);
 }
 
 void
-DNSEntry::init(const char *x, int len, int qtype_arg,
-               Continuation *acont, DNSHandler *adnsH, int dns_lookup_timeout)
+DNSEntry::init(const char *x, int len, int qtype_arg, Continuation* acont,
+               DNSProcessor::Options const& opt)
 {
   qtype = qtype_arg;
+  host_res_style = opt.host_res_style;
+  if (is_addr_query(qtype)) {
+      // adjust things based on family preference.
+      if (HOST_RES_IPV4 == host_res_style ||
+          HOST_RES_IPV4_ONLY == host_res_style) {
+          qtype = T_A;
+      } else if (HOST_RES_IPV6 == host_res_style ||
+                 HOST_RES_IPV6_ONLY == host_res_style) {
+          qtype = T_AAAA;
+      }
+  }
   submit_time = ink_get_hrtime();
   action = acont;
   submit_thread = acont->mutex->thread_holding;
 
 #ifdef SPLIT_DNS
   if (SplitDNSConfig::gsplit_dns_enabled) {
-    dnsH = adnsH ? adnsH : dnsProcessor.handler;
+    dnsH = opt.handler ? opt.handler : dnsProcessor.handler;
   } else {
     dnsH = dnsProcessor.handler;
   }
@@ -378,11 +376,11 @@ DNSEntry::init(const char *x, int len, int qtype_arg,
   dnsH = dnsProcessor.handler;
 #endif // SPLIT_DNS
 
-  dnsH->txn_lookup_timeout = dns_lookup_timeout;
+  dnsH->txn_lookup_timeout = opt.timeout;
 
   mutex = dnsH->mutex;
 
-  if (is_addr_type_reply(qtype) || qtype == T_SRV) {
+  if (is_addr_query(qtype) || qtype == T_SRV) {
     if (len) {
       len = len > (MAXDNAME - 1) ? (MAXDNAME - 1) : len;
       memcpy(qname, x, len);
@@ -393,11 +391,11 @@ DNSEntry::init(const char *x, int len, int qtype_arg,
       qname_len = strlen(qname);
     }
   } else {                    //T_PTR
-    sockaddr const* ip = reinterpret_cast<sockaddr const*>(x);
-    if (ats_is_ip6(ip))
-      make_ipv6_ptr(&ats_ip6_addr_cast(ip), qname);
-    else if (ats_is_ip4(ip))
-      make_ipv4_ptr(ats_ip4_addr_cast(ip), qname);
+    IpAddr const* ip = reinterpret_cast<IpAddr const*>(x);
+    if (ip->isIp6())
+      make_ipv6_ptr(&ip->_addr._ip6, qname);
+    else if (ip->isIp4())
+      make_ipv4_ptr(ip->_addr._ip4, qname);
     else
       ink_assert(!"T_PTR query to DNS must be IP address.");
   }
@@ -459,14 +457,12 @@ DNSHandler::open_con(sockaddr const* target, bool failed, int icon)
 
 void
 DNSHandler::validate_ip() {
-  if (!ats_is_ip(&ip.sa)) {
+  if (!ip.isValid()) {
     // Invalid, switch to default.
     // seems that res_init always sets m_res.nscount to at least 1!
     if (!m_res->nscount || !ats_ip_copy(&ip.sa, &m_res->nsaddr_list[0].sa)) {
-      Warning("bad nameserver config, fallback to %s loopback",
-        prefer_ipv6_p() ? "IPv6" : "IPv4"
-      );
-      set_loopback(&ip);
+      Warning("bad nameserver config, fallback to loopback");
+      ip.setToLoopback(AF_INET);
     }
   }
 }
@@ -572,7 +568,7 @@ DNSHandler::retry_named(int ndx, ink_hrtime t, bool reopen)
 
   char buffer[MAX_DNS_PACKET_LEN];
   Debug("dns", "trying to resolve '%s' from DNS connection, ndx %d", try_server_names[try_servers], ndx);
-  int r = _ink_res_mkquery(m_res, try_server_names[try_servers], preferred_query_type(), buffer);
+  int r = _ink_res_mkquery(m_res, try_server_names[try_servers], T_A, buffer);
   try_servers = (try_servers + 1) % SIZE(try_server_names);
   ink_assert(r >= 0);
   if (r >= 0) {                 // looking for a bounce
@@ -595,7 +591,7 @@ DNSHandler::try_primary_named(bool reopen)
 
     last_primary_retry = t;
     Debug("dns", "trying to resolve '%s' from primary DNS connection", try_server_names[try_servers]);
-    int r = _ink_res_mkquery(m_res, try_server_names[try_servers], preferred_query_type(), buffer);
+    int r = _ink_res_mkquery(m_res, try_server_names[try_servers], T_A, buffer);
     // if try_server_names[] is not full, round-robin within the
     // filled entries.
     if (local_num_entries < DEFAULT_NUM_TRY_SERVER)
@@ -647,7 +643,7 @@ DNSHandler::failover()
       ats_ip_ntop(&target.sa, buff2, sizeof(buff2))
     );
 
-    if (!ats_is_ip(&target.sa)) set_loopback(&target.sa);
+    if (!target.isValid()) target.setToLoopback(AF_INET);
 
     open_con(&target.sa, true, name_server);
     if (n_con <= name_server)
@@ -876,7 +872,7 @@ get_entry(DNSHandler *h, char *qname, int qtype)
 {
   for (DNSEntry *e = h->entries.head; e; e = (DNSEntry *) e->link.next) {
     if (e->qtype == qtype) {
-      if (is_addr_type_reply(qtype)) {
+      if (is_addr_query(qtype)) {
         if (!strcmp(qname, e->qname))
           return e;
       } else if (0 == memcmp(qname, e->qname, e->qname_len))
@@ -1091,14 +1087,15 @@ DNSEntry::mainEvent(int event, Event *e)
 }
 
 Action *
-DNSProcessor::getby(const char *x, int len, int type, Continuation *cont, DNSHandler *adnsH, int timeout) {
-  Debug("dns", "received query %s type = %d, timeout = %d", x, type, timeout);
+DNSProcessor::getby(const char *x, int len, int type, Continuation *cont, Options const& opt)
+{
+  Debug("dns", "received query %s type = %d, timeout = %d", x, type, opt.timeout);
   if (type == T_SRV) {
-    Debug("dns_srv", "DNSProcessor::getby attempting an SRV lookup for %s, timeout = %d", x, timeout);
+    Debug("dns_srv", "DNSProcessor::getby attempting an SRV lookup for %s, timeout = %d", x, opt.timeout);
   }
   DNSEntry *e = dnsEntryAllocator.alloc();
   e->retries = dns_retries;
-  e->init(x, len, type, cont, adnsH, timeout);
+  e->init(x, len, type, cont, opt);
   MUTEX_TRY_LOCK(lock, e->mutex, this_ethread());
   if (!lock)
     thread->schedule_imm(e);
@@ -1124,18 +1121,6 @@ dns_result(DNSHandler *h, DNSEntry *e, HostEnt *ent, bool retry) {
       DNS_INCREMENT_DYN_STAT(dns_retries_stat);
 
       --(e->retries);
-      write_dns(h);
-      return;
-    } else if (prefer_ipv6_p() && e->qtype == T_AAAA) {
-      Debug("dns", "Trying A after AAAA failure for %s", e->qname);
-      e->retries = dns_retries;
-      e->qtype = T_A;
-      write_dns(h);
-      return;
-    } else if (!prefer_ipv6_p() && e->qtype == T_A) {
-      Debug("dns", "Trying AAAA after A failure for %s", e->qname);
-      e->retries = dns_retries;
-      e->qtype = T_AAAA;
       write_dns(h);
       return;
     } else if (e->domains && *e->domains) {
@@ -1196,15 +1181,20 @@ dns_result(DNSHandler *h, DNSEntry *e, HostEnt *ent, bool retry) {
   }
   h->entries.remove(e);
 
-  if (is_addr_type_reply(e->qtype)) {
-    ip_text_buffer buff;
-    char const* ptr = "<none>";
-    if (ent) ptr = inet_ntop(e->qtype == T_AAAA ? AF_INET6 : AF_INET, ent->ent.h_addr_list[0], buff, sizeof(buff));
-    Debug("dns", "%s result for %s = %s retry %d",
-      ent ? "SUCCESS" : "FAIL", e->qname, ptr, retry);
-  } else {
-    Debug("dns", "%s result for %s = %s retry %d",
-          ent ? "SUCCESS" : "FAIL", e->qname, (ent != NULL ? ent->ent.h_name : "<not found>"), retry);
+  if (is_debug_tag_set("dns")) {
+    if (is_addr_query(e->qtype)) {
+      ip_text_buffer buff;
+      char const* ptr = "<none>";
+      char const* result = "FAIL";
+      if (ent) {
+        result = "SUCCESS";
+        ptr = inet_ntop(e->qtype == T_AAAA ? AF_INET6 : AF_INET, ent->ent.h_addr_list[0], buff, sizeof(buff));
+      }
+      Debug("dns", "%s result for %s = %s retry %d", result, e->qname, ptr, retry);
+    } else {
+      Debug("dns", "%s result for %s = %s af=%d retry %d",
+            ent ? "SUCCESS" : "FAIL", e->qname, (ent != NULL ? ent->ent.h_name : "<not found>"), ent->ent.h_addrtype, retry);
+    }
   }
 
   if (ent) {
@@ -1398,7 +1388,7 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
     }
 
     cp += n + QFIXEDSZ;
-    if (is_addr_type_reply(e->qtype)) {
+    if (is_addr_query(e->qtype)) {
       if (-1 == rname_len)
         n = strlen((char *)bp) + 1;
       else
@@ -1473,7 +1463,7 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
       //
       // Decode cname
       //
-      if (is_addr_type_reply(e->qtype) && type == T_CNAME) {
+      if (is_addr_query(e->qtype) && type == T_CNAME) {
         if (ap >= &buf->host_aliases[DNS_MAX_ALIASES - 1])
           continue;
         n = ink_dn_expand((u_char *) h, eom, cp, tbuf, sizeof(tbuf));
@@ -1551,7 +1541,7 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
 
         buf->srv_hosts.insert(s);
         ++num_srv;
-      } else if (is_addr_type_reply(type)) {
+      } else if (is_addr_query(type)) {
         if (answer) {
           if (n != buf->ent.h_length) {
             cp += n;
@@ -1700,7 +1690,7 @@ struct DNSRegressionContinuation: public Continuation
       }
     }
     if (i < hosts) {
-      dnsProcessor.gethostbyname(this, hostnames[i]);
+        dnsProcessor.gethostbyname(this, hostnames[i], DNSProcessor::Options().setHostResStyle(HOST_RES_IPV4_ONLY));
       ++i;
       return EVENT_CONT;
     } else {

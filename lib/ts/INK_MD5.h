@@ -131,16 +131,16 @@ struct INK_MD5
     return buf;
   }
 
-  uint64_t fold()
+  uint64_t fold() const
   {
     return (b[0] ^ b[1]);
   }
 
-  uint64_t operator[] (int i)
+  uint64_t operator[] (int i) const
   {
     return b[i];
   }
-  bool operator==(INK_MD5 & md5)
+  bool operator==(INK_MD5 const& md5)
   {
     return b[0] == md5.b[0] && b[1] == md5.b[1];
   }

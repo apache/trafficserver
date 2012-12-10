@@ -1551,37 +1551,44 @@ HttpTransact::OSDNSLookup(State* s)
     case EXPANSION_NOT_ALLOWED:
     case EXPANSION_FAILED:
     case DNS_ATTEMPTS_EXHAUSTED:
-      if (host_name_expansion == EXPANSION_NOT_ALLOWED) {
-        // config file doesn't allow automatic expansion of host names
-        HTTP_RELEASE_ASSERT(!(s->http_config_param->enable_url_expandomatic));
-        DebugTxn("http_seq", "[HttpTransact::OSDNSLookup] DNS Lookup unsuccessful");
-      } else if (host_name_expansion == EXPANSION_FAILED) {
-        // not able to expand the hostname. dns lookup failed
-        DebugTxn("http_seq", "[HttpTransact::OSDNSLookup] DNS Lookup unsuccessful");
-      } else if (host_name_expansion == DNS_ATTEMPTS_EXHAUSTED) {
-        // retry attempts exhausted --- can't find dns entry for this host name
-        HTTP_RELEASE_ASSERT(s->dns_info.attempts >= max_dns_lookups);
-        DebugTxn("http_seq", "[HttpTransact::OSDNSLookup] DNS Lookup unsuccessful");
+      if (DNSLookupInfo::OS_ADDR_TRY_HOSTDB == s->dns_info.os_addr_style) {
+        // No HostDB data, just keep on with the CTA.
+        s->dns_info.lookup_success = true;
+        s->dns_info.os_addr_style = DNSLookupInfo::OS_ADDR_USE_CLIENT;
+        DebugTxn("http_seq", "[HttpTransact::OSDNSLookup] DNS lookup unsuccessful reverting to force client target address use");
+      } else {
+        if (host_name_expansion == EXPANSION_NOT_ALLOWED) {
+          // config file doesn't allow automatic expansion of host names
+          HTTP_RELEASE_ASSERT(!(s->http_config_param->enable_url_expandomatic));
+          DebugTxn("http_seq", "[HttpTransact::OSDNSLookup] DNS Lookup unsuccessful");
+        } else if (host_name_expansion == EXPANSION_FAILED) {
+          // not able to expand the hostname. dns lookup failed
+          DebugTxn("http_seq", "[HttpTransact::OSDNSLookup] DNS Lookup unsuccessful");
+        } else if (host_name_expansion == DNS_ATTEMPTS_EXHAUSTED) {
+          // retry attempts exhausted --- can't find dns entry for this host name
+          HTTP_RELEASE_ASSERT(s->dns_info.attempts >= max_dns_lookups);
+          DebugTxn("http_seq", "[HttpTransact::OSDNSLookup] DNS Lookup unsuccessful");
+        }
+        // output the DNS failure error message
+        SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_NO_FORWARD);
+        build_error_response(s, HTTP_STATUS_BAD_GATEWAY, "Cannot find server.", "connect#dns_failed",
+                             // The following is all one long string
+                             //("Unable to locate the server named \"<em>%s</em>\" --- "
+                             //"the server does not have a DNS entry.  Perhaps there is "
+                             //"a misspelling in the server name, or the server no "
+                             //"longer exists.  Double-check the name and try again."),
+                             ("<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 3.2 Final//EN\">"
+                              "<HTML><HEAD><TITLE>Unknown Host</TITLE></HEAD><BODY BGCOLOR=\"white\" FGCOLOR=\"black\">"
+                              "<H1>Unknown Host</H1><HR>"
+                              "<FONT FACE=\"Helvetica,Arial\"><B>"
+                              "Description: Unable to locate the server named \"<EM>%s (%d)</EM>\" --- "
+                              "the server does not have a DNS entry.  Perhaps there is a misspelling "
+                              "in the server name, or the server no longer exists.  Double-check the "
+                              "name and try again.</B></FONT><HR></BODY></HTML>")
+                             , s->server_info.name, host_name_expansion);
+        // s->cache_info.action = CACHE_DO_NO_ACTION;
+        TRANSACT_RETURN(PROXY_SEND_ERROR_CACHE_NOOP, NULL);
       }
-      // output the DNS failure error message
-      SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_NO_FORWARD);
-      build_error_response(s, HTTP_STATUS_BAD_GATEWAY, "Cannot find server.", "connect#dns_failed",
-                           // The following is all one long string
-                           //("Unable to locate the server named \"<em>%s</em>\" --- "
-                           //"the server does not have a DNS entry.  Perhaps there is "
-                           //"a misspelling in the server name, or the server no "
-                           //"longer exists.  Double-check the name and try again."),
-                          ("<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 3.2 Final//EN\">"
-                          "<HTML><HEAD><TITLE>Unknown Host</TITLE></HEAD><BODY BGCOLOR=\"white\" FGCOLOR=\"black\">"
-                          "<H1>Unknown Host</H1><HR>"
-                          "<FONT FACE=\"Helvetica,Arial\"><B>"
-                          "Description: Unable to locate the server named \"<EM>%s (%d)</EM>\" --- "
-                          "the server does not have a DNS entry.  Perhaps there is a misspelling "
-                          "in the server name, or the server no longer exists.  Double-check the "
-                          "name and try again.</B></FONT><HR></BODY></HTML>")
-                           , s->server_info.name, host_name_expansion);
-      // s->cache_info.action = CACHE_DO_NO_ACTION;
-      TRANSACT_RETURN(PROXY_SEND_ERROR_CACHE_NOOP, NULL);
       break;
     default:
       ink_debug_assert(!("try_to_expand_hostname returned an unsupported code"));
@@ -1592,6 +1599,27 @@ HttpTransact::OSDNSLookup(State* s)
   // ok, so the dns lookup succeeded
   ink_debug_assert(s->dns_info.lookup_success);
   DebugTxn("http_seq", "[HttpTransact::OSDNSLookup] DNS Lookup successful");
+
+  if (DNSLookupInfo::OS_ADDR_TRY_HOSTDB == s->dns_info.os_addr_style) {
+    // We've backed off from a client supplied address and found some
+    // HostDB addresses. We use those if they're different from the CTA.
+    // In all cases we now commit to client or HostDB for our source.
+    if (s->dns_info.round_robin) {
+      HostDBInfo* cta = s->host_db_info.rr()->select_next(&s->current.server->addr.sa);
+      if (cta) {
+        // found another addr, lock in host DB.
+        s->host_db_info = *cta;
+        s->dns_info.os_addr_style = DNSLookupInfo::OS_ADDR_USE_HOSTDB;
+      } else {
+        // nothing else there, continue with CTA.
+        s->dns_info.os_addr_style = DNSLookupInfo::OS_ADDR_USE_CLIENT;
+      }
+    } else if (ats_ip_addr_eq(s->host_db_info.ip(), &s->server_info.addr.sa)) {
+      s->dns_info.os_addr_style = DNSLookupInfo::OS_ADDR_USE_CLIENT;
+    } else {
+      s->dns_info.os_addr_style = DNSLookupInfo::OS_ADDR_USE_HOSTDB;
+    }
+  }
 
   // Check to see if can fullfill expect requests based on the cached
   // update some state variables with hostdb information that has
@@ -1615,7 +1643,8 @@ HttpTransact::OSDNSLookup(State* s)
   // hostname expansion, forward the request to the expanded hostname.
   // On the other hand, if the lookup succeeded on a www.<hostname>.com
   // expansion, return a 302 response.
-  if (s->dns_info.attempts == max_dns_lookups && s->dns_info.looking_up == ORIGIN_SERVER) {
+  // [amc] Also don't redirect if we backed off using HostDB instead of CTA.
+  if (s->dns_info.attempts == max_dns_lookups && s->dns_info.looking_up == ORIGIN_SERVER && DNSLookupInfo::OS_ADDR_USE_CLIENT != s->dns_info.os_addr_style) {
     DebugTxn("http_trans", "[OSDNSLookup] DNS name resolution on expansion");
     DebugTxn("http_seq", "[OSDNSLookup] DNS name resolution on expansion - returning");
     build_redirect_response(s);
@@ -1638,6 +1667,11 @@ HttpTransact::OSDNSLookup(State* s)
     HttpTransactHeaders::convert_request(s->current.server->http_version, &s->hdr_info.server_request);
     DebugTxn("cdn", "outgoing version -- (post conversion) %d", s->hdr_info.server_request.m_http->m_version);
     TRANSACT_RETURN(s->cdn_saved_next_action, NULL);
+  } else if (DNSLookupInfo::OS_ADDR_USE_CLIENT == s->dns_info.os_addr_style ||
+             DNSLookupInfo::OS_ADDR_USE_HOSTDB == s->dns_info.os_addr_style) {
+    // we've come back after already trying the server to get a better address
+    // and finished with all backtracking - return to trying the server.
+    TRANSACT_RETURN(how_to_open_connection(s), HttpTransact::HandleResponse);
   } else if (s->dns_info.lookup_name[0] <= '9' &&
              s->dns_info.lookup_name[0] >= '0' &&
              //(s->state_machine->authAdapter.needs_rev_dns() ||
@@ -3475,11 +3509,11 @@ HttpTransact::handle_response_from_server(State* s)
     s->current.server->connect_failure = 1;
     handle_server_connection_not_open(s);
     break;
-  case STATE_UNDEFINED:
-    /* fall through */
   case OPEN_RAW_ERROR:
     /* fall through */
   case CONNECTION_ERROR:
+    /* fall through */
+  case STATE_UNDEFINED:
     /* fall through */
   case INACTIVE_TIMEOUT:
     /* fall through */
@@ -3504,7 +3538,19 @@ HttpTransact::handle_response_from_server(State* s)
 
       bool use_srv_records = HttpConfig::m_master.srv_enabled;
 
-      if (use_srv_records) {
+      if (DNSLookupInfo::OS_ADDR_TRY_CLIENT == s->dns_info.os_addr_style) {
+        // attempt was based on client supplied server address. Try again
+        // using HostDB.
+        // Allow DNS attempt
+        s->dns_info.lookup_success = false;
+        // See if we can get data from HostDB for this.
+        s->dns_info.os_addr_style = DNSLookupInfo::OS_ADDR_TRY_HOSTDB;
+        // Force host resolution to have the same family as the client.
+        // Because this is a transparent connection, we can't switch address
+        // families - that is locked in by the client source address.
+        s->state_machine->ua_session->host_res_style = ats_host_res_match(&s->current.server->addr.sa);
+        TRANSACT_RETURN(HttpTransact::DNS_LOOKUP, OSDNSLookup);
+      } else if (use_srv_records) {
         delete_srv_entry(s, max_connect_retries);
         return;
       } else if (s->server_info.dns_round_robin &&
@@ -3542,40 +3588,33 @@ void
 HttpTransact::delete_srv_entry(State* s, int max_retries)
 {
   /* we are using SRV lookups and this host failed -- lets remove it from the HostDB */
-  INK_MD5 md5;
+  HostDBMD5 md5;
   EThread *thread = this_ethread();
   //ProxyMutex *mutex = thread->mutex;
-  void *pDS = 0;
+  md5.host_name = s->dns_info.srv_hostname;
+  if (!md5.host_name) {
+    TRANSACT_RETURN(OS_RR_MARK_DOWN, ReDNSRoundRobin);
+  }
+  md5.host_len = strlen(md5.host_name);
+  md5.db_mark = HOSTDB_MARK_SRV;
+  md5.refresh();
 
-  int len;
-  int port;
-  ProxyMutex *bucket_mutex = hostDB.lock_for_bucket((int) (fold_md5(md5) % hostDB.buckets));
-
-  char *hostname = s->dns_info.srv_hostname;    /* of the form: _http._tcp.host.foo.bar.com */
+  ProxyMutex *bucket_mutex = hostDB.lock_for_bucket((int) (fold_md5(md5.hash) % hostDB.buckets));
 
   s->current.attempts++;
 
   DebugTxn("http_trans", "[delete_srv_entry] attempts now: %d, max: %d", s->current.attempts, max_retries);
   DebugTxn("dns_srv", "[delete_srv_entry] attempts now: %d, max: %d", s->current.attempts, max_retries);
 
-  if (!hostname) {
-    TRANSACT_RETURN(OS_RR_MARK_DOWN, ReDNSRoundRobin);
-  }
-
-  len = strlen(hostname);
-  port = 0;
-
-  make_md5(md5, hostname, len, port, 0, 1);
-
   MUTEX_TRY_LOCK(lock, bucket_mutex, thread);
   if (lock) {
-    IpEndpoint ip;
-    HostDBInfo *r = probe(bucket_mutex, md5, hostname, len, ats_ip4_set(&ip.sa, INADDR_ANY, htons(port)), pDS, false, true);
+//    IpEndpoint ip;
+    HostDBInfo *r = probe(bucket_mutex, md5, false);
     if (r) {
       if (r->is_srv) {
-        DebugTxn("dns_srv", "Marking SRV records for %s [Origin: %s] as bad", hostname, s->dns_info.lookup_name);
+        DebugTxn("dns_srv", "Marking SRV records for %s [Origin: %s] as bad", md5.host_name, s->dns_info.lookup_name);
 
-        uint64_t folded_md5 = fold_md5(md5);
+        uint64_t folded_md5 = fold_md5(md5.hash);
 
         HostDBInfo *new_r = NULL;
 
@@ -3586,7 +3625,7 @@ HttpTransact::delete_srv_entry(State* s, int max_retries)
         hostDB.delete_block(r); //delete the original HostDB
 
         new_r = hostDB.insert_block(folded_md5, NULL, 0);       //create new entry
-        new_r->md5_high = md5[1];
+        new_r->md5_high = md5.hash[1];
 
         SortableQueue<SRV> *q = srv_hosts.getHosts();        //get the Queue of SRV entries
         SRV *srv_entry = NULL;
@@ -3658,7 +3697,7 @@ HttpTransact::delete_srv_entry(State* s, int max_retries)
         }
 
       } else {
-        DebugTxn("dns_srv", "Trying to delete a bad SRV for %s and something was wonky", hostname);
+        DebugTxn("dns_srv", "Trying to delete a bad SRV for %s and something was wonky", md5.host_name);
       }
     } else {
       DebugTxn("dns_srv", "No SRV data to remove. Ruh Roh Shaggy. Maxing out connection attempts...");

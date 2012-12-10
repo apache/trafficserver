@@ -501,3 +501,38 @@ ns_name_ntop(const u_char *src, char *dst, size_t dstsiz)
 	*dn++ = '\0';
 	return (dn - dst);
 }
+
+HostResStyle
+ats_host_res_from(int family, HostResPreferenceOrder order)
+{
+  bool v4 = false, v6 = false;
+  HostResPreference client = AF_INET6 == family ? HOST_RES_PREFER_IPV6 : HOST_RES_PREFER_IPV4;
+
+  for ( int i = 0 ; i < N_HOST_RES_PREFERENCE_ORDER ; ++i ) {
+    HostResPreference p = order[i];
+    if (HOST_RES_PREFER_CLIENT == p) p = client; // CLIENT -> actual value
+    if (HOST_RES_PREFER_IPV4 == p) {
+      if (v6) return HOST_RES_IPV6;
+      else v4 = true;
+    } else if (HOST_RES_PREFER_IPV6 == p) {
+      if (v4) return HOST_RES_IPV4;
+      else v6 = true;
+    } else {
+      break;
+    }
+  }
+  if (v4) return HOST_RES_IPV4_ONLY;
+  else if (v6) return HOST_RES_IPV6_ONLY;
+  return HOST_RES_NONE;
+}
+
+HostResStyle
+ats_host_res_match(sockaddr const* addr)
+{
+  HostResStyle zret = HOST_RES_NONE;
+  if (ats_is_ip6(addr))
+    zret = HOST_RES_IPV6_ONLY;
+  else if (ats_is_ip4(addr))
+    zret = HOST_RES_IPV4_ONLY;
+  return zret;
+}

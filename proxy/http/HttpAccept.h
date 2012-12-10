@@ -61,8 +61,9 @@ namespace detail {
     IpAddr outbound_ip4;
     /// Local address to bind for outbound connections.
     IpAddr outbound_ip6;
-    /// Set the outbound IP address.
+    /// Set the outbound IP address to @a ip.
     self& setOutboundIp(IpAddr& ip);
+    /// Set the outbound IP address to @a ip.
     self& setOutboundIp(IpEndpoint* ip);
     /// Local port for outbound connection.
     uint16_t outbound_port;
@@ -76,6 +77,10 @@ namespace detail {
     bool backdoor;
     /// Set backdoor accept.
     self& setBackdoor(bool);
+    /// Host address resolution preference order.
+    HostResPreferenceOrder host_res_preference;
+    /// Set the host query preference.
+    self& setHostResPreference(HostResPreferenceOrder const);
   };
 
   inline HttpAcceptOptions::HttpAcceptOptions()
@@ -84,6 +89,7 @@ namespace detail {
     , f_outbound_transparent(false)
     , backdoor(false)
   {
+    memcpy(host_res_preference, host_res_default_preference_order, sizeof(host_res_preference));
   }
 
   inline HttpAcceptOptions&
@@ -121,6 +127,12 @@ namespace detail {
   inline HttpAcceptOptions&
   HttpAcceptOptions::setBackdoor(bool flag) {
     backdoor = flag;
+    return *this;
+  }
+
+  inline HttpAcceptOptions&
+  HttpAcceptOptions::setHostResPreference(HostResPreferenceOrder const order) {
+    memcpy(host_res_preference, order, sizeof(host_res_preference));
     return *this;
   }
 }

@@ -302,7 +302,7 @@ LogCollationClientSM::client_dns(int event, HostDBInfo * hostdb_info)
     if (m_log_host->m_name == 0) {
       return client_done(LOG_COLL_EVENT_SWITCH, NULL);
     }
-    hostDBProcessor.getbyname_re(this, m_log_host->m_name, 0, HostDBProcessor::HOSTDB_FORCE_DNS_RELOAD);
+    hostDBProcessor.getbyname_re(this, m_log_host->m_name, 0, HostDBProcessor::Options().setFlags(HostDBProcessor::HOSTDB_FORCE_DNS_RELOAD));
     return EVENT_CONT;
 
   case EVENT_HOST_DB_LOOKUP:

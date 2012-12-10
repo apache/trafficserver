@@ -87,10 +87,27 @@
 #include "ink_string.h"
 #include "ink_resolver.h"
 #include "ink_inet.h"
+#include "Tokenizer.h"
 
 #if !defined(isascii)           /* XXX - could be a function */
 # define isascii(c) (!(c & 0200))
 #endif
+
+HostResPreferenceOrder const HOST_RES_DEFAULT_PREFERENCE_ORDER = {
+  HOST_RES_PREFER_IPV4,
+  HOST_RES_PREFER_IPV6,
+  HOST_RES_PREFER_NONE
+};
+
+HostResPreferenceOrder host_res_default_preference_order;
+
+char const* const HOST_RES_PREFERENCE_STRING[N_HOST_RES_PREFERENCE] = {
+    "only", "client", "ipv4", "ipv6"
+};
+
+char const* const HOST_RES_STYLE_STRING[] = {
+  "invalid", "IPv4", "IPv4 only", "IPv6", "IPv6 only"
+};
 
 /*%
  * This routine is for closing the socket if a virtual circuit is used and
@@ -559,4 +576,71 @@ ink_res_init(
     ink_res_setoptions(statp, cp, "env");
   statp->options |= INK_RES_INIT;
   return (statp->res_h_errno);
+}
+
+void
+parse_host_res_preferences(char const* value, HostResPreferenceOrder order) {
+  Tokenizer tokens(";/|");
+  // preference from the config string.
+  int np = 0; // index in to @a m_host_res_preference
+  bool found[N_HOST_RES_PREFERENCE];  // redundancy check array
+  int n; // # of tokens
+  int i; // index
+
+  n = tokens.Initialize(value);
+
+  for ( i = 0 ; i < N_HOST_RES_PREFERENCE ; ++i )
+    found[i] = false;
+
+  for ( i = 0 ; i < n && np < N_HOST_RES_PREFERENCE_ORDER ; ++i ) {
+    char const* elt = tokens[i];
+    // special case none/only because that terminates the sequence.
+    if (0 == strcasecmp(elt, HOST_RES_PREFERENCE_STRING[HOST_RES_PREFER_NONE])) {
+      found[HOST_RES_PREFER_NONE] = true;
+      order[np] = HOST_RES_PREFER_NONE;
+      break;
+    } else {
+      // scan the other types
+      HostResPreference ep = HOST_RES_PREFER_NONE;
+      for ( int ip = HOST_RES_PREFER_NONE + 1 ; ip < N_HOST_RES_PREFERENCE ; ++ip ) {
+        if (0 == strcasecmp(elt, HOST_RES_PREFERENCE_STRING[ip])) {
+          ep = static_cast<HostResPreference>(ip);
+          break;
+        }
+      }
+      if (HOST_RES_PREFER_NONE != ep && !found[ep]) { // ignore duplicates
+        found[ep] = true;
+        order[np++] = ep;
+      }
+    }
+  }
+
+  if (!found[HOST_RES_PREFER_NONE]) {
+    // If 'only' wasn't explicit, fill in the rest by default.
+    if (!found[HOST_RES_PREFER_IPV4])
+      order[np++] = HOST_RES_PREFER_IPV4;
+    if (!found[HOST_RES_PREFER_IPV6])
+      order[np++] = HOST_RES_PREFER_IPV6;
+    if (np < N_HOST_RES_PREFERENCE)
+      order[np++] = HOST_RES_PREFER_NONE;
+  }
+}      
+
+int
+ts_host_res_order_to_string(HostResPreferenceOrder const& order, char* out, int size)
+{
+  int zret = 0;
+  bool first = true;
+  for ( int i = 0 ; i < N_HOST_RES_PREFERENCE_ORDER ; ++i ) {
+    /* Note we use a semi-colon here because this must be compatible
+     * with the -httpport command line option which uses comma to
+     * separate port descriptors so we cannot use that to separate
+     * resolution key words.
+     */
+    zret += snprintf(out+zret, size-zret, "%s%s", !first ? ";" : "", HOST_RES_PREFERENCE_STRING[order[i]]);
+    if (HOST_RES_PREFER_NONE == order[i])
+      break;
+    first = false;
+  }
+  return zret;
 }

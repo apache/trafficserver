@@ -77,12 +77,14 @@ char const* const HttpProxyPort::OPT_TRANSPARENT_FULL = "tr-full";
 char const* const HttpProxyPort::OPT_SSL = "ssl";
 char const* const HttpProxyPort::OPT_BLIND_TUNNEL = "blind";
 char const* const HttpProxyPort::OPT_COMPRESSED = "compressed";
+char const* const HttpProxyPort::OPT_HOST_RES = "ip-resolve";
 
 // File local constants.
 namespace {
-size_t const OPT_FD_PREFIX_LEN = strlen(HttpProxyPort::OPT_FD_PREFIX);
-size_t const OPT_OUTBOUND_IP_PREFIX_LEN = strlen(HttpProxyPort::OPT_OUTBOUND_IP_PREFIX);
-size_t const OPT_INBOUND_IP_PREFIX_LEN = strlen(HttpProxyPort::OPT_INBOUND_IP_PREFIX);
+  size_t const OPT_FD_PREFIX_LEN = strlen(HttpProxyPort::OPT_FD_PREFIX);
+  size_t const OPT_OUTBOUND_IP_PREFIX_LEN = strlen(HttpProxyPort::OPT_OUTBOUND_IP_PREFIX);
+  size_t const OPT_INBOUND_IP_PREFIX_LEN = strlen(HttpProxyPort::OPT_INBOUND_IP_PREFIX);
+  size_t const OPT_HOST_RES_PREFIX_LEN = strlen(HttpProxyPort::OPT_HOST_RES);
 }
 
 namespace {
@@ -103,6 +105,7 @@ HttpProxyPort::HttpProxyPort()
   , m_inbound_transparent_p(false)
   , m_outbound_transparent_p(false)
 {
+  memcpy(m_host_res_preference, host_res_default_preference_order, sizeof(m_host_res_preference));
 }
 
 bool HttpProxyPort::hasSSL(Group const& ports) {
@@ -232,6 +235,7 @@ bool
 HttpProxyPort::processOptions(char const* opts) {
   bool zret = false; // no port found yet.
   bool af_set_p = false; // AF explicitly specified.
+  bool host_res_set_p = false; // Host resolution order set explicitly.
   bool bracket_p = false; // inside brackets during parse.
   Vec<char*> values; // Pointers to single option values.
 
@@ -342,13 +346,19 @@ HttpProxyPort::processOptions(char const* opts) {
       Warning("Transparency requested [%s] in port descriptor '%s' but TPROXY was not configured.", item, opts);
 # endif
     } else if (0 == strcasecmp(OPT_TRANSPARENT_FULL, item)||
-      0 == strcasecmp("=", item)) {
+               0 == strcasecmp("=", item)) {
 # if TS_USE_TPROXY
       m_inbound_transparent_p = true;
       m_outbound_transparent_p = true;
 # else
       Warning("Transparency requested [%s] in port descriptor '%s' but TPROXY was not configured.", item, opts);
 # endif
+    } else if (0 == strncasecmp(OPT_HOST_RES, item, OPT_HOST_RES_PREFIX_LEN)) {
+      item += OPT_HOST_RES_PREFIX_LEN; // skip prefix
+      if ('-' == *item || '=' == *item) // permit optional '-' or '='
+        ++item;
+      this->processFamilyPreferences(item);
+      host_res_set_p = true;
     } else {
       Warning("Invalid option '%s' in port configuration '%s'", item, opts);
     }
@@ -366,7 +376,28 @@ HttpProxyPort::processOptions(char const* opts) {
     m_family = m_inbound_ip.family(); // set according to address.
   }
 
+  // If the port is outbound transparent only CLIENT host resolution is possible.
+  if (m_outbound_transparent_p) {
+    if (host_res_set_p &&
+        (m_host_res_preference[0] != HOST_RES_PREFER_CLIENT ||
+         m_host_res_preference[1] != HOST_RES_PREFER_NONE
+    )) {
+      Warning("Outbound transparent ports require the IP address resolution ordering '%s,%s'. "
+              "This is set automatically and does not need to be set explicitly."
+              , HOST_RES_PREFERENCE_STRING[HOST_RES_PREFER_CLIENT]
+              , HOST_RES_PREFERENCE_STRING[HOST_RES_PREFER_NONE]
+        );
+    }
+    m_host_res_preference[0] = HOST_RES_PREFER_CLIENT;
+    m_host_res_preference[1] = HOST_RES_PREFER_NONE;
+  }
+
   return zret;
+}
+
+void
+HttpProxyPort::processFamilyPreferences(char const* value) {
+  parse_host_res_preferences(value, m_host_res_preference);
 }
 
 int
@@ -437,5 +468,30 @@ HttpProxyPort::print(char* out, size_t n) {
   else if (m_outbound_transparent_p)
     zret += snprintf(out+zret, n-zret, ":%s", OPT_TRANSPARENT_OUTBOUND);
 
+  /* Don't print the IP resolution preferences if the port is outbound
+   * transparent (which means the preference order is forced) or if
+   * the order is the same as the default.
+   */
+  if (!m_outbound_transparent_p &&
+      0 != memcmp(m_host_res_preference, host_res_default_preference_order, sizeof(m_host_res_preference))) {
+    zret += snprintf(out+zret, n-zret, ":%s=", OPT_HOST_RES);
+    zret += ts_host_res_order_to_string(m_host_res_preference, out+zret, n-zret);
+  }
+
   return min(zret,n);
+}
+
+void
+ts_host_res_global_init()
+{
+  // Global configuration values.
+  memcpy(host_res_default_preference_order,
+         HOST_RES_DEFAULT_PREFERENCE_ORDER,
+         sizeof(host_res_default_preference_order));
+
+  char* ip_resolve = REC_ConfigReadString("proxy.config.hostdb.ip_resolve");
+  if (ip_resolve) {
+    parse_host_res_preferences(ip_resolve, host_res_default_preference_order);
+  }
+  ats_free(ip_resolve);
 }

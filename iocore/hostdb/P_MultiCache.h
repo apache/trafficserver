@@ -447,9 +447,9 @@ template<class C> struct MultiCache: public MultiCacheBase
 };
 
 inline uint64_t
-fold_md5(INK_MD5 & md5)
+fold_md5(INK_MD5 const& md5)
 {
-  return (md5.fold());
+  return md5.fold();
 }
 
 template<class C> inline int MultiCache<C>::level_of_block(C * b)
