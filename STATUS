@@ -68,6 +68,9 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
          690ccc26082c75a93053bb7643c848b34cfca100
   +1: igalic, jpeach
 
+  TS-1580: Mutex leak fix.
+  +1: amc
+
 RELEASE PROCESS
 
 The Traffic Server release process is documented at
