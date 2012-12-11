@@ -1,0 +1,150 @@
+.\"  Licensed to the Apache Software Foundation (ASF) under one .\"
+.\"  or more contributor license agreements.  See the NOTICE file .\"
+.\"  distributed with this work for additional information .\"
+.\"  regarding copyright ownership.  The ASF licenses this file .\"
+.\"  to you under the Apache License, Version 2.0 (the .\"
+.\"  "License"); you may not use this file except in compliance .\"
+.\"  with the License.  You may obtain a copy of the License at .\"
+.\" .\"
+.\"      http://www.apache.org/licenses/LICENSE-2.0 .\"
+.\" .\"
+.\"  Unless required by applicable law or agreed to in writing, software .\"
+.\"  distributed under the License is distributed on an "AS IS" BASIS, .\"
+.\"  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. .\"
+.\"  See the License for the specific language governing permissions and .\"
+.Dd December 11, 2012
+.Dt TSHttpHookAdd 3ts TSAPI
+.Sh NAME
+.Nm TSHttpHookAdd,
+.Nm TSHttpSsnHookAdd,
+.Nm TSHttpTxnHookAdd
+.Nd intercept Traffic Server events
+.Sh LIBRARY
+Apache Traffic Server plugin API
+.Sh SYNOPSIS
+.In ts/ts.h
+.Ft "void"
+.Fo TSHttpHookAdd
+.Fa "TSHttpHookID id"
+.Fa "TSCont contp"
+.Fc
+.Ft "void"
+.Fo TSHttpSsnHookAdd
+.Fa "TSHttpSsn ssnp"
+.Fa "TSHttpHookID id"
+.Fa "TSCont contp"
+.Fc
+.Ft "void"
+.Fo TSHttpTxnHookAdd
+.Fa "TSHttpTxn txnp"
+.Fa "TSHttpHookID id"
+.Fa "TSCont contp"
+.Fc
+.Sh DESCRIPTION
+.Pp
+Hooks are points in Traffic Server transaction processing where plugins
+can step in and do some work. Registering a plugin function for
+callback amounts to adding the function to a hook. You can register
+your plugin to be called back for every single transaction, or for
+specific transactions only.
+.Pp
+HTTP transaction hooks are set on a global basis using the function
+.Fn TSHttpHookAdd .
+This means that the continuation specified as the parameter to
+.Fn TSHttpHookAdd
+is called for every transaction.
+.Fn TSHttpHookAdd
+is typically called from
+.Fn TSPluginInit
+or
+.Fn TSRemapInit .
+.Pp
+A session consists of a single client connection to Traffic Server.
+A session can consist of several transactions in succession. The
+session starts when the client connection opens, and ends when the
+connection closes.
+.Fn TSHttpSsnHookAdd
+adds
+.Fa contp
+to the end of the list of HTTP transaction hooks specified by
+.Fa id .
+This means that
+.Fa contp
+is called back for every transaction within the session, at the
+point specified by the hook ID. Since
+.Fa contp
+is added to a session, it is not possible to call
+.Fn TSHttpSsnHookAdd
+from the plugin initialization routine; the plugin needs a handle
+to an HTTP session.
+
+.Pp
+A transaction consists of a single HTTP request from a client and
+the response that Traffic Server sends to that client. A transaction
+begins when Traffic Server receives a request, and ends when Traffic
+Server sends the response.
+.Fn TSHttpTxnHookAdd
+adds
+.Fa contp
+to the end of the list of HTTP transaction hooks specified by
+.Fa id .
+Since
+.Fa contp
+is added to a transaction, it is not possible to call
+.Fn TSHttpTxnHookAdd
+from the plugin initialization routine but only when the plugin has
+a handle to an HTTP transaction.
+
+.Sh RETURN VALUES
+None. Adding hooks is always successful.
+.Sh EXAMPLES
+.nf
+#include <ts/ts.h>
+
+static void
+txn_handler (TSHttpTxn txnp, TSCont contp)
+{
+    //handle transaction
+}
+
+static void
+handle_session (TSHttpSsn ssnp, TSCont contp)
+{
+    TSHttpSsnHookAdd (ssnp, TS_HTTP_TXN_START_HOOK, contp);
+}
+
+static int
+ssn_handler (TSCont contp, TSEvent event, void *edata)
+{
+    TSHttpSsn ssnp;
+    TSHttpTxn txnp;
+
+    switch (event){
+    case TS_EVENT_HTTP_SSN_START:
+       ssnp = (TSHttpSsn) edata;
+       handle_session (ssnp, contp);
+       TSHttpSsnReenable (ssnp, TS_EVENT_HTTP_CONTINUE);
+       return 0;
+    case TS_EVENT_HTTP_TXN_START:
+       txnp = (TSHttpTxn) edata;
+       txn_handler (txnp, contp);
+       TSHttpTxnReenable (txnp, TS_EVENT_HTTP_CONTINUE);
+       return 0;
+    default:
+         break;
+    }
+
+    return 0;
+}
+
+void
+TSPluginInit (int argc, const char *argv[])
+{
+    TSCont contp;
+    contp = TSContCreate (ssn_handler, NULL);
+    TSHttpHookAdd (TS_HTTP_SSN_START_HOOK, contp);
+}
+.fi
+.Sh SEE ALSO
+.Xr TSAPI 3ts ,
+.Xr TSContCreate 3ts

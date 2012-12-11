@@ -80,6 +80,7 @@ man1_MANS = \
   man/traffic_shell.1
 
 man3_MANS = \
+  sdk/TSHttpHookAdd.3 \
   sdk/TSAPI.3 \
   sdk/TSDebug.3 \
   sdk/TSInstallDirGet.3 \
