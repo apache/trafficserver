@@ -8,6 +8,12 @@ HTTP service.
 
 This plugin can be used as both a global plugin and a remap plugin.
 
+Note that modern Traffic Server releases optimize latency by skipping
+the DNS lookup state if a document is found in the cache. This will
+have the effect of serving the document without consulting the
+authproxy plugin. you can disable this behavior by setting
+proxy.config.http.doc_in_cache_skip_dns to 0 on records.config.
+
 # Plugin Options
 
 ## --auth-transform=redirect|head
