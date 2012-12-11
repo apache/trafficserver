@@ -68,9 +68,12 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
          690ccc26082c75a93053bb7643c848b34cfca100
   +1: igalic, jpeach
 
-  TS-1580: Mutex leak fix.
-  +1: amc, zym, jpeach
+  Mutex leak fix
+  Patch: db0cfd44222e5e280db5b832496691ec7722e28e
+  Jira: https://issues.apache.org/jira/browse/TS-15-80
+  +1: amc, zym, jpeach, igalic
     this patch have been in our own tree for weeks --zym
+	why didn't you propose it yourself then! --igalic
 
 RELEASE PROCESS
 
