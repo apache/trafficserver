@@ -14,18 +14,9 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-if BUILD_EXPERIMENTAL_PLUGINS
-SUBDIRS = \
- lua \
- esi \
- rfc5861 \
- tcp_info \
- custom_redirect \
- header_rewrite \
- metalink \
- gzip \
- spdy \
- channel_stats \
- authproxy \
- cacheurl
-endif
+AM_CPPFLAGS = -I$(top_builddir)/proxy/api -I$(top_srcdir)/proxy/api
+pkglibdir = ${pkglibexecdir}
+
+pkglib_LTLIBRARIES = cacheurl.la
+cacheurl_la_SOURCES = cacheurl.c
+cacheurl_la_LDFLAGS = -avoid-version -module -shared

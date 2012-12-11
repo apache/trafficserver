@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.3.1
 
+  *) [TS-1617] Build cacheurl when experimental plugins are enabled
+    Author: Aron Xu.
+
   *) [TS-1307] [TS-1422] Changed HostDB handling of IPv4 and
    IPv6. Address resolution preferences can be configured globally and
    per HTTP proxy port. Transparent connections can now fail over even
