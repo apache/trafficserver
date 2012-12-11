@@ -52,6 +52,13 @@ PATCHES ACCEPTED TO BACKPORT FROM TRUNK:
   Patch: 23feb5106ffda71712b0f94a8b3242ecd51a4d9a
   +1: igalic, zwoop, arno
 
+  Mutex leak fix
+  Patch: db0cfd44222e5e280db5b832496691ec7722e28e
+  Jira: https://issues.apache.org/jira/browse/TS-15-80
+  +1: amc, zym, jpeach, igalic
+    this patch have been in our own tree for weeks --zym
+	why didn't you propose it yourself then! --igalic
+
 PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   [ New proposals should be added at the end of the list ]
 
@@ -67,13 +74,6 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
          26849e983a1d59918a9260f59b3f896b0f550d0c
          690ccc26082c75a93053bb7643c848b34cfca100
   +1: igalic, jpeach
-
-  Mutex leak fix
-  Patch: db0cfd44222e5e280db5b832496691ec7722e28e
-  Jira: https://issues.apache.org/jira/browse/TS-15-80
-  +1: amc, zym, jpeach, igalic
-    this patch have been in our own tree for weeks --zym
-	why didn't you propose it yourself then! --igalic
 
 RELEASE PROCESS
 
