@@ -69,7 +69,8 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   +1: igalic, jpeach
 
   TS-1580: Mutex leak fix.
-  +1: amc
+  +1: amc, zym
+    this patch have been in our own tree for weeks --zym
 
 RELEASE PROCESS
 
