@@ -239,33 +239,10 @@ SSLConfig::release(SSLConfigParams * params)
   configProcessor.release(configid, params);
 }
 
-// struct SSLCertificateUpdate
-//
-//   Used to read the ssl_multicert.config file after the manager signals
-//      a change
-//
-struct SSLCertificateUpdate : public Continuation
-{
-  int file_update_handler(int /* etype */, void * /* data */) {
-    SSLCertificateConfig::reconfigure();
-    delete this;
-    return EVENT_DONE;
-  }
-
-  SSLCertificateUpdate(ProxyMutex * m) : Continuation(m) {
-    SET_HANDLER(&SSLCertificateUpdate::file_update_handler);
-  }
-};
-
 static int
-sslCertFile_CB(const char * name, RecDataT data_type, RecData data, void * cookie)
+sslCertFile_CB(const char * /* name */, RecDataT /* data_type */, RecData /* data */, void * /* cookie */)
 {
-  NOWARN_UNUSED(name);
-  NOWARN_UNUSED(data_type);
-  NOWARN_UNUSED(data);
-  NOWARN_UNUSED(cookie);
-  eventProcessor.schedule_imm(NEW(new SSLCertificateUpdate(ssl_certificate_mutex)), ET_CALL);
-  return 0;
+  return ConfigScheduleUpdate<SSLCertificateConfig>(ssl_certificate_mutex);
 }
 
 void
