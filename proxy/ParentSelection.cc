@@ -850,31 +850,6 @@ ParentRecord::Print()
   printf(" rr=%s direct=%s\n", ParentRRStr[round_robin], (go_direct == true) ? "true" : "false");
 }
 
-
-// struct PA_UpdateContinuation
-//
-//   Used to handle parent.conf or default parent updates after the
-//      manager signals a change
-//
-struct PA_UpdateContinuation: public Continuation
-{
-  int handle_event(int event, void *data)
-  {
-    NOWARN_UNUSED(event);
-    NOWARN_UNUSED(data);
-    ParentConfig::reconfigure();
-    delete this;
-      return EVENT_DONE;
-
-  }
-
-  PA_UpdateContinuation(ProxyMutex * m):Continuation(m)
-  {
-    SET_HANDLER(&PA_UpdateContinuation::handle_event);
-  }
-};
-
-
 // ParentRecord* createDefaultParent(char* val)
 //
 //  Atttemtps to allocate and init new ParentRecord
@@ -921,8 +896,7 @@ parentSelection_CB(const char *name, RecDataT data_type, RecData data, void *coo
   case PARENT_ENABLE_CB:
   case PARENT_THRESHOLD_CB:
   case PARENT_DNS_ONLY_CB:
-    eventProcessor.schedule_imm(NEW(new PA_UpdateContinuation(reconfig_mutex)), ET_CACHE);
-    break;
+    return ConfigScheduleUpdate<ParentConfig>(reconfig_mutex);
   default:
     ink_assert(0);
   }
