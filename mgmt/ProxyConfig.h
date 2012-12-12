@@ -33,6 +33,9 @@
 
 #include "libts.h"
 #include "ProcessManager.h"
+#include "I_EventSystem.h"
+
+class ProxyMutex;
 
 void *config_int_cb(void *data, void *value);
 void *config_long_long_cb(void *data, void *value);
@@ -88,6 +91,28 @@ public:
   int ninfos;
 };
 
+// A Continuation wrapper that calls the static reconfigure() method of the given class.
+template <typename UpdateClass>
+struct ConfigUpdateContinuation : public Continuation
+{
+
+  int update(int /* etype */, void * /* data */) {
+    UpdateClass::reconfigure();
+    delete this;
+    return EVENT_DONE;
+  }
+
+  ConfigUpdateContinuation(ProxyMutex * m) : Continuation(m) {
+    SET_HANDLER(&ConfigUpdateContinuation::update);
+  }
+
+};
+
+template <typename UpdateClass> int
+ConfigScheduleUpdate(ProxyMutex * mutex) {
+  eventProcessor.schedule_imm(NEW(new ConfigUpdateContinuation<UpdateClass>(mutex)), ET_CALL);
+  return 0;
+}
 
 extern ConfigProcessor configProcessor;
 
