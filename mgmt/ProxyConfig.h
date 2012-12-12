@@ -114,6 +114,30 @@ ConfigScheduleUpdate(ProxyMutex * mutex) {
   return 0;
 }
 
+template <typename UpdateClass>
+struct ConfigUpdateHandler
+{
+  ConfigUpdateHandler() : mutex(new_ProxyMutex()) {
+  }
+
+  ~ConfigUpdateHandler() {
+    mutex->free();
+  }
+
+  int attach(const char * name) {
+    return REC_RegisterConfigUpdateFunc(name, ConfigUpdateHandler::update, this);
+  }
+
+private:
+
+  static int update(const char * name, RecDataT data_type, RecData data, void * cookie) {
+    ConfigUpdateHandler * self = static_cast<ConfigUpdateHandler *>(cookie);
+    return ConfigScheduleUpdate<UpdateClass>(self->mutex);
+  }
+
+  ProxyMutex * mutex;
+};
+
 extern ConfigProcessor configProcessor;
 
 #endif

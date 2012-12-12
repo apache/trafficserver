@@ -42,7 +42,7 @@
 int SSLConfig::configid = 0;
 int SSLCertificateConfig::configid = 0;
 
-static Ptr<ProxyMutex> ssl_certificate_mutex = NULL;
+static ConfigUpdateHandler<SSLCertificateConfig> * sslCertUpdate;
 
 SSLConfigParams::SSLConfigParams()
 {
@@ -239,22 +239,16 @@ SSLConfig::release(SSLConfigParams * params)
   configProcessor.release(configid, params);
 }
 
-static int
-sslCertFile_CB(const char * /* name */, RecDataT /* data_type */, RecData /* data */, void * /* cookie */)
-{
-  return ConfigScheduleUpdate<SSLCertificateConfig>(ssl_certificate_mutex);
-}
-
 void
 SSLCertificateConfig::startup()
 {
-  reconfigure();
+  sslCertUpdate = NEW(new ConfigUpdateHandler<SSLCertificateConfig>());
+  sslCertUpdate->attach("proxy.config.ssl.server.multicert.filename");
+  sslCertUpdate->attach("proxy.config.ssl.server.cert.path");
+  sslCertUpdate->attach("proxy.config.ssl.server.private_key.path");
+  sslCertUpdate->attach("proxy.config.ssl.server.cert_chain.filename");
 
-  ssl_certificate_mutex = new_ProxyMutex();
-  REC_RegisterConfigUpdateFunc("proxy.config.ssl.server.multicert.filename", sslCertFile_CB, NULL);
-  REC_RegisterConfigUpdateFunc("proxy.config.ssl.server.cert.path", sslCertFile_CB, NULL);
-  REC_RegisterConfigUpdateFunc("proxy.config.ssl.server.private_key.path", sslCertFile_CB, NULL);
-  REC_RegisterConfigUpdateFunc("proxy.config.ssl.server.cert_chain.filename", sslCertFile_CB, NULL);
+  reconfigure();
 }
 
 void
