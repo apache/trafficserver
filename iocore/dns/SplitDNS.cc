@@ -45,7 +45,8 @@
    globals
    -------------------------------------------------------------- */
 static const char modulePrefix[] = "[SplitDNS]";
-static Ptr<ProxyMutex> reconfig_mutex = NULL;
+
+static ConfigUpdateHandler<SplitDNSConfig> * splitDNSUpdate;
 
 static ClassAllocator<DNSRequestData> DNSReqAllocator("DNSRequestDataAllocator");
 
@@ -127,18 +128,19 @@ SplitDNSConfig::release(SplitDNS * params)
   configProcessor.release(SplitDNSConfig::m_id, params);
 }
 
+
 /* --------------------------------------------------------------
    SplitDNSConfig::startup()
    -------------------------------------------------------------- */
 void
 SplitDNSConfig::startup()
 {
-  reconfig_mutex = new_ProxyMutex();
   dnsHandler_mutex = new_ProxyMutex();
 
   //startup just check gsplit_dns_enabled
   IOCORE_ReadConfigInt32(gsplit_dns_enabled, "proxy.config.dns.splitDNS.enabled");
-  REC_RegisterConfigUpdateFunc("proxy.config.dns.splitdns.filename", splitDNSFile_CB, NULL);
+  splitDNSUpdate = NEW(new ConfigUpdateHandler<SplitDNSConfig>());
+  splitDNSUpdate->attach("proxy.config.cache.splitdns.filename");
 }
 
 
@@ -591,18 +593,6 @@ ink_split_dns_init(ModuleVersion v)
     return;
 
   init_called = 1;
-}
-
-
-int
-splitDNSFile_CB(const char *name, RecDataT data_type, RecData data, void *cookie)
-{
-  NOWARN_UNUSED(name);
-  NOWARN_UNUSED(data_type);
-  NOWARN_UNUSED(data);
-  NOWARN_UNUSED(cookie);
-  eventProcessor.schedule_imm(NEW(new SDNS_UpdateContinuation(reconfig_mutex)), ET_CACHE);
-  return 0;
 }
 
 #endif // SPLIT_DNS

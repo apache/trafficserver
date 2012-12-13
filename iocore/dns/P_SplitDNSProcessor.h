@@ -267,44 +267,6 @@ TS_INLINE SplitDNSRecord::~SplitDNSRecord()
 { }
 
 
-/* --------------------------------------------------------------
-   struct SDNS_UpdateContinuation
-   Used to handle parent.conf or default parent updates after the
-   manager signals a change
-   -------------------------------------------------------------- */
-struct SDNS_UpdateContinuation: public Continuation
-{
-  int handle_event(int event, void *data);
-  SDNS_UpdateContinuation(ProxyMutex * m);
-
-};
-
-
-/* --------------------------------------------------------------
-   SDNS_UpdateContinuation::SDNS_UpdateContinuation()
-   -------------------------------------------------------------- */
-TS_INLINE SDNS_UpdateContinuation::SDNS_UpdateContinuation(ProxyMutex * m)
-: Continuation(m)
-{
-  SET_HANDLER(&SDNS_UpdateContinuation::handle_event);
-}
-
-
-/* --------------------------------------------------------------
-   SDNS_UpdateContinuation::handle_event()
-   -------------------------------------------------------------- */
-TS_INLINE int
-SDNS_UpdateContinuation::handle_event(int event, void *data)
-{
-  NOWARN_UNUSED(event);
-  NOWARN_UNUSED(data);
-
-  SplitDNSConfig::reconfigure();
-  delete this;
-
-  return EVENT_DONE;
-}
-
 /* ------------------
    Helper Functions
    ------------------ */
