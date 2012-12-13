@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.3.1
 
+  *) [TS-1621] Adopt ConfigUpdateHandler pattern
+     Author: Ethan Lai <yzlai@yahoo.com>
+
   *) [TS-1619] simplify ConfigurationProcessor reconfiguration pattern
 
   *) [TS-1617] Build cacheurl when experimental plugins are enabled
