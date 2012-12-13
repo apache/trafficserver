@@ -74,11 +74,12 @@ public:
 
   IpAllow(const char *config_var, const char *name, const char *action_val);
    ~IpAllow();
-  int BuildTable();
   void Print();
   uint32_t match(IpEndpoint const* ip) const;
   uint32_t match(sockaddr const* ip) const;
 
+  static void startup();
+  static void reconfigure();
   /// @return The global instance.
   static IpAllow * acquire();
   static void release(IpAllow * params);
@@ -92,9 +93,11 @@ public:
   typedef ConfigProcessor::scoped_config<IpAllow, IpAllow> scoped_config;
 
 private:
-  static void InitInstance();
-  static void ReloadInstance();
   static uint32_t MethodIdxToMask(int);
+  static uint32_t ALL_METHOD_MASK;
+  static int configid;
+
+  int BuildTable();
 
   const char *config_file_var;
   char config_file_path[PATH_NAME_MAX];
@@ -102,9 +105,6 @@ private:
   const char *action;
   IpMap _map;
   Vec<AclRecord> _acls;
-  static uint32_t ALL_METHOD_MASK;
-
-  static int configid;
 };
 
 inline uint32_t IpAllow::MethodIdxToMask(int idx) { return 1 << (idx - HTTP_WKSIDX_CONNECT); }

@@ -51,55 +51,27 @@ uint32_t IpAllow::ALL_METHOD_MASK;
 
 int IpAllow::configid = 0;
 
-static Ptr<ProxyMutex> ip_reconfig_mutex;
-
-// struct IpAllowUpdate
-//
-//   Used to read the ip_allow.conf file after the manager signals
-//      a change
-//
-struct IpAllowUpdate: public Continuation
-{
-  int update(int /* etype */, void * /* data */) {
-    IpAllow::ReloadInstance();
-    delete this;
-    return EVENT_DONE;
-  }
-
-  IpAllowUpdate(ProxyMutex * m):Continuation(m) {
-    SET_HANDLER(&IpAllowUpdate::update);
-  }
-};
-
-int
-ipAllowFile_CB(const char *name, RecDataT data_type, RecData data, void *cookie)
-{
-  NOWARN_UNUSED(name);
-  NOWARN_UNUSED(data_type);
-  NOWARN_UNUSED(data);
-  NOWARN_UNUSED(cookie);
-  eventProcessor.schedule_imm(NEW(new IpAllowUpdate(ip_reconfig_mutex)), ET_CACHE);
-  return 0;
-}
+static ConfigUpdateHandler<IpAllow> * ipAllowUpdate;
 
 //
 //   Begin API functions
 //
 void
-IpAllow::InitInstance()
+IpAllow::startup()
 {
   // Should not have been initialized before
   ink_assert(IpAllow::configid == 0);
 
   ALL_METHOD_MASK = ~0;
 
-  ip_reconfig_mutex = new_ProxyMutex();
-  REC_RegisterConfigUpdateFunc("proxy.config.cache.ip_allow.filename", ipAllowFile_CB, NULL);
-  ReloadInstance();
+  ipAllowUpdate = NEW(new ConfigUpdateHandler<IpAllow>());
+  ipAllowUpdate->attach("proxy.config.cache.ip_allow.filename");
+
+  reconfigure();
 }
 
 void
-IpAllow::ReloadInstance()
+IpAllow::reconfigure()
 {
   self *new_table;
 

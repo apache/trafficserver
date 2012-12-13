@@ -1627,7 +1627,7 @@ main(int argc, char **argv)
     initCacheControl();
 #endif
     initCongestionControl();
-    IpAllow::InitInstance();
+    IpAllow::startup();
     ParentConfig::startup();
 #ifdef SPLIT_DNS
     SplitDNSConfig::startup();
