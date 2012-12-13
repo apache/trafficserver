@@ -77,7 +77,7 @@ struct CongestionMatcherTable :
   public ConfigInfo
 {
   CongestionMatcherTable(const char * file_var, const char * name, const matcher_tags * tags)
-    : ControlMatcher(file_var, name, tags) {
+    : ControlMatcher<CongestionControlRecord, CongestionControlRule>(file_var, name, tags) {
   }
 
   static void reconfigure();
