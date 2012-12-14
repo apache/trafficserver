@@ -47,11 +47,7 @@ ats_malloc(size_t size)
   // Useful for tracing bad mallocs
   // ink_stack_trace_dump();
   if (likely(size > 0)) {
-#if TS_HAS_JEMALLOC
-    if (unlikely((ptr = JEMALLOC_P(malloc)(size)) == NULL)) {
-#else
     if (unlikely((ptr = malloc(size)) == NULL)) {
-#endif
       xdump();
       ink_fatal(1, "ats_malloc: couldn't allocate %zu bytes", size);
     }
@@ -62,11 +58,7 @@ ats_malloc(size_t size)
 void *
 ats_calloc(size_t nelem, size_t elsize)
 {
-#if TS_HAS_JEMALLOC
-  void *ptr = JEMALLOC_P(calloc)(nelem, elsize);
-#else
   void *ptr = calloc(nelem, elsize);
-#endif
   if (unlikely(ptr == NULL)) {
     xdump();
     ink_fatal(1, "ats_calloc: couldn't allocate %zu %zu byte elements", nelem, elsize);
@@ -77,11 +69,7 @@ ats_calloc(size_t nelem, size_t elsize)
 void *
 ats_realloc(void *ptr, size_t size)
 {
-#if TS_HAS_JEMALLOC
-  void *newptr = JEMALLOC_P(realloc)(ptr, size);
-#else
   void *newptr = realloc(ptr, size);
-#endif
   if (unlikely(newptr == NULL)) {
     xdump();
     ink_fatal(1, "ats_realloc: couldn't reallocate %zu bytes", size);
@@ -105,11 +93,7 @@ ats_memalign(size_t alignment, size_t size)
       alignment = PAGE_SIZE;
 #endif
 
-#if TS_HAS_JEMALLOC
-  int retcode = JEMALLOC_P(posix_memalign)(&ptr, alignment, size);
-#else
   int retcode = posix_memalign(&ptr, alignment, size);
-#endif
 
   if (unlikely(retcode)) {
     if (retcode == EINVAL) {
@@ -136,22 +120,14 @@ void
 ats_free(void *ptr)
 {
   if (likely(ptr != NULL))
-#if TS_HAS_JEMALLOC
-    JEMALLOC_P(free)(ptr);
-#else
     free(ptr);
-#endif
 }                               /* End ats_free */
 
 void*
 ats_free_null(void *ptr)
 {
   if (likely(ptr != NULL))
-#if TS_HAS_JEMALLOC
-    JEMALLOC_P(free)(ptr);
-#else
     free(ptr);
-#endif
   return NULL;
 }                               /* End ats_free_null */
 
@@ -159,11 +135,7 @@ void
 ats_memalign_free(void *ptr)
 {
   if (likely(ptr))
-#if TS_HAS_JEMALLOC
-    JEMALLOC_P(free)(ptr);
-#else
     free(ptr);
-#endif
 }
 
 // This effectively makes mallopt() a no-op (currently) when tcmalloc
