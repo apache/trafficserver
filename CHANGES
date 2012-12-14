@@ -1,7 +1,10 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.2.5
 
-  *) [TS-1909] Remove iconv as dependency
+
+  *) [TS-1903] Remove JEMALLOC_P use, it seems to have been deprecated.
+
+  *) [TS-1902] Remove iconv as dependency.
 
   *) [TS-1900] Detect and link libhwloc on Ubuntu.
 
