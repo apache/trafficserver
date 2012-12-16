@@ -183,6 +183,8 @@ void
 SSLInitializeLibrary()
 {
   if (!open_ssl_initialized) {
+    CRYPTO_set_mem_functions(ats_malloc, ats_realloc, ats_free);
+
     SSL_load_error_strings();
     SSL_library_init();
 
