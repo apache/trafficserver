@@ -1965,7 +1965,7 @@ HttpSM::process_srv_info(HostDBInfo * r)
   DebugSM("dns_srv", "ending process_srv_info SRV stuff; moving on to lookup origin host");
 
 lookup:
-  DebugSM("http_seq", "[HttpStateMachineGet::process_srv_info] Doing DNS Lookup based on SRV %s", new_host);
+  DebugSM("http_seq", "[HttpSM::process_srv_info] Doing DNS Lookup based on SRV %s", new_host);
 
   int server_port = t_state.current.server ? t_state.current.server->port : t_state.server_info.port;
 
@@ -3765,7 +3765,7 @@ HttpSM::do_hostdb_lookup()
     }
     return;
   } else {                      /* we arent using SRV stuff... */
-    DebugSM("http_seq", "[HttpStateMachineGet::do_hostdb_lookup] Doing DNS Lookup");
+    DebugSM("http_seq", "[HttpSM::do_hostdb_lookup] Doing DNS Lookup");
 
     // If there is not a current server, we must be looking up the origin
     //  server at the beginning of the transaction
@@ -4290,7 +4290,7 @@ HttpSM::do_cache_prepare_action(HttpCacheSM * c_sm, CacheHTTPInfo * object_read_
 
 //////////////////////////////////////////////////////////////////////////
 //
-//  HttpStateMachineGet::do_http_server_open()
+//  HttpSM::do_http_server_open()
 //
 //////////////////////////////////////////////////////////////////////////
 void
@@ -6329,7 +6329,7 @@ HttpSM::update_stats()
   //////////////
   // Log Data //
   //////////////
-  DebugSM("http_seq", "[HttpStateMachineGet::update_stats] Logging transaction");
+  DebugSM("http_seq", "[HttpSM::update_stats] Logging transaction");
   if (Log::transaction_logging_enabled() && t_state.api_info.logging_enabled) {
     LogAccessHttp accessor(this);
 
@@ -6570,7 +6570,7 @@ HttpSM::dump_state_hdr(HTTPHdr *h, const char *s)
  *****************************************************************************/
 //////////////////////////////////////////////////////////////////////////
 //
-//      HttpStateMachineGet::call_transact_and_set_next_state(f)
+//      HttpSM::call_transact_and_set_next_state(f)
 //
 //      This routine takes an HttpTransact function <f>, calls the function
 //      to perform some actions on the current HttpTransact::State, and
@@ -6609,7 +6609,7 @@ HttpSM::call_transact_and_set_next_state(TransactEntryFunc_t f)
 
 //////////////////////////////////////////////////////////////////////////////
 //
-//  HttpStateMachineGet::set_next_state()
+//  HttpSM::set_next_state()
 //
 //  call_transact_and_set_next_state() was broken into two parts, one
 //  which calls the HttpTransact method and the second which sets the
