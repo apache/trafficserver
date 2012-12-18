@@ -65,6 +65,7 @@ HttpAccept::mainEvent(int event, void *data)
 
    // copy over session related data.
     new_session->f_outbound_transparent = f_outbound_transparent;
+    new_session->f_transparent_passthrough = f_transparent_passthrough;
     new_session->outbound_ip4 = outbound_ip4;
     new_session->outbound_ip6 = outbound_ip6;
     new_session->outbound_port = outbound_port;

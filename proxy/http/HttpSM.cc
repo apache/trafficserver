@@ -316,6 +316,7 @@ HttpSM::HttpSM()
     plugin_tunnel(NULL), reentrancy_count(0),
     history_pos(0), tunnel(), ua_entry(NULL),
     ua_session(NULL), background_fill(BACKGROUND_FILL_NONE),
+    ua_raw_buffer_reader(NULL),
     server_entry(NULL), server_session(NULL), shared_session_retries(0),
     server_buffer_reader(NULL),
     transform_info(), post_transform_info(), second_cache_sm(NULL),
@@ -621,6 +622,11 @@ HttpSM::attach_client_session(HttpClientSession * client_vc, IOBufferReader * bu
   t_state.hdr_info.client_request.create(HTTP_TYPE_REQUEST);
   http_parser_init(&http_parser);
 
+  // Prepare raw reader which will live until we are sure this is HTTP indeed
+  if (is_transparent_passthrough_allowed()) {
+      ua_raw_buffer_reader = buffer_reader->clone();
+  }
+
   // We first need to run the transaction start hook.  Since
   //  this hook maybe asyncronous, we need to disable IO on
   //  client but set the continuation to be the state machine
@@ -724,8 +730,28 @@ HttpSM::state_read_client_request_header(int event, void *data)
     DebugSM("http", "client header bytes were over max header size; treating as a bad request");
     state = PARSE_ERROR;
   }
+
+  if (event == VC_EVENT_READ_READY &&
+      state == PARSE_ERROR &&
+      is_transparent_passthrough_allowed()) {
+
+      ink_assert(ua_raw_buffer_reader != NULL);
+      DebugSM("http", "[%" PRId64 "] first request on connection failed parsing, switching to passthrough.", sm_id);
+
+      t_state.transparent_passthrough = true;
+      http_parser_clear(&http_parser);
+
+      /* establish blind tunnel */
+      setup_blind_tunnel_port();
+      return 0;
+  }
+
   // Check to see if we are done parsing the header
   if (state != PARSE_CONT || ua_entry->eos) {
+    if (ua_raw_buffer_reader != NULL) {
+        ua_raw_buffer_reader->dealloc();
+        ua_raw_buffer_reader = NULL;
+    }
     http_parser_clear(&http_parser);
     ua_entry->vc_handler = &HttpSM::state_watch_for_client_abort;
     milestones.ua_read_header_done = ink_get_hrtime();
@@ -6147,9 +6173,16 @@ HttpSM::setup_blind_tunnel(bool send_response_hdr)
     client_response_hdr_bytes = 0;
   }
 
+  client_request_body_bytes = 0;
+  if (ua_raw_buffer_reader != NULL) {
+    client_request_body_bytes += from_ua_buf->write(ua_raw_buffer_reader, client_request_hdr_bytes);
+    ua_raw_buffer_reader->dealloc();
+    ua_raw_buffer_reader = NULL;
+  }
+
   // Next order of business if copy the remaining data from the
   //  header buffer into new buffer
-  client_request_body_bytes = from_ua_buf->write(ua_buffer_reader);
+  client_request_body_bytes += from_ua_buf->write(ua_buffer_reader);
 
   HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::tunnel_handler);
 

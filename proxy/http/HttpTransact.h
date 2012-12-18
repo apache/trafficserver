@@ -1079,6 +1079,8 @@ public:
     
     OverridableHttpConfigParams *txn_conf;
     OverridableHttpConfigParams my_txn_conf; // Storage for plugins, to avoid malloc
+
+    bool transparent_passthrough;
     
     // Methods
     void
@@ -1174,7 +1176,8 @@ public:
         range_output_cl(0),
         current_range(-1),
         ranges(NULL),
-        txn_conf(NULL)
+        txn_conf(NULL),
+        transparent_passthrough(false)
     {
       int i;
       char *via_ptr = via_string;

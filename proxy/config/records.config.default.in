@@ -87,6 +87,7 @@ CONFIG proxy.config.alarm.abs_path STRING NULL
    # tr-in - Transparent inbound.
    # tr-out - Transparent outbound.
    # tr-full - Fully transparent (inbound and outbound).
+   # tr-pass - Transprently Pass-through non-HTTP traffic (in conjuction with tr-in).
    # ssl - SSL terminated port.
    # blind - Blind tunnel port.
    # ip-in=[addr] - Bind inbound IP address (listen for client).

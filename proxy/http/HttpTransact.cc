@@ -615,9 +615,7 @@ HttpTransact::HandleBlindTunnel(State* s)
 
   char *new_host = inet_ntoa(dest_addr);
   s->hdr_info.client_request.url_get()->host_set(new_host, strlen(new_host));
-  // get_local_port() returns a port number in network order
-  // so it needs to be converted to host order (eg, in i386 machine)
-  s->hdr_info.client_request.url_get()->port_set(ntohs(s->state_machine->ua_session->get_netvc()->get_local_port()));
+  s->hdr_info.client_request.url_get()->port_set(s->state_machine->ua_session->get_netvc()->get_local_port());
 
   // Intialize the state vars necessary to sending error responses
   bootstrap_state_variables_from_request(s, &s->hdr_info.client_request);
@@ -636,9 +634,11 @@ HttpTransact::HandleBlindTunnel(State* s)
   bool url_remap_success = false;
   char *remap_redirect = NULL;
 
-  // TODO: take a look at this
-  // This probably doesn't work properly, since request_url_remap() is broken.
-  if (url_remap_mode == URL_REMAP_DEFAULT || url_remap_mode == URL_REMAP_ALL) {
+  if (s->transparent_passthrough) {
+    url_remap_success = true;
+  } else if (url_remap_mode == URL_REMAP_DEFAULT || url_remap_mode == URL_REMAP_ALL) {
+    // TODO: take a look at this
+    // This probably doesn't work properly, since request_url_remap() is broken.  
     url_remap_success = request_url_remap(s, &s->hdr_info.client_request, &remap_redirect);
   }
   // We must have mapping or we will self loop since the this
@@ -5298,7 +5298,7 @@ HttpTransact::RequestError_t HttpTransact::check_request_validity(State* s, HTTP
     if (!HttpTransactHeaders::is_this_method_supported(scheme, method)) {
       return METHOD_NOT_SUPPORTED;
     }
-    if ((method == HTTP_WKSIDX_CONNECT) && (!is_port_in_range(incoming_hdr->url_get()->port_get(), s->http_config_param->connect_ports))) {
+    if ((method == HTTP_WKSIDX_CONNECT) && !s->transparent_passthrough && (!is_port_in_range(incoming_hdr->url_get()->port_get(), s->http_config_param->connect_ports))) {
       return BAD_CONNECT_PORT;
     }
 

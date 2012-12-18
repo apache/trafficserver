@@ -105,6 +105,8 @@ public:
   bool m_inbound_transparent_p;
   /// True if outbound connections (to origin servers) are transparent.
   bool m_outbound_transparent_p;
+  // True if transparent pass-through is enabled on this port.
+  bool m_transparent_passthrough;
   /// Local address for inbound connections (listen address).
   IpAddr m_inbound_ip;
   /// Local address for outbound connections (to origin server).
@@ -259,6 +261,7 @@ public:
   static char const* const OPT_TRANSPARENT_INBOUND; ///< Inbound transparent.
   static char const* const OPT_TRANSPARENT_OUTBOUND; ///< Outbound transparent.
   static char const* const OPT_TRANSPARENT_FULL; ///< Full transparency.
+  static char const* const OPT_TRANSPARENT_PASSTHROUGH; ///< Pass-through non-HTTP.
   static char const* const OPT_SSL; ///< SSL (experimental)
   static char const* const OPT_BLIND_TUNNEL; ///< Blind tunnel.
   static char const* const OPT_COMPRESSED; ///< Compressed.

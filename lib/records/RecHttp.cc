@@ -74,6 +74,7 @@ char const* const HttpProxyPort::OPT_IPV4 = "ipv4";
 char const* const HttpProxyPort::OPT_TRANSPARENT_INBOUND = "tr-in";
 char const* const HttpProxyPort::OPT_TRANSPARENT_OUTBOUND = "tr-out";
 char const* const HttpProxyPort::OPT_TRANSPARENT_FULL = "tr-full";
+char const* const HttpProxyPort::OPT_TRANSPARENT_PASSTHROUGH = "tr-pass";
 char const* const HttpProxyPort::OPT_SSL = "ssl";
 char const* const HttpProxyPort::OPT_BLIND_TUNNEL = "blind";
 char const* const HttpProxyPort::OPT_COMPRESSED = "compressed";
@@ -104,6 +105,7 @@ HttpProxyPort::HttpProxyPort()
   , m_family(AF_INET)
   , m_inbound_transparent_p(false)
   , m_outbound_transparent_p(false)
+  , m_transparent_passthrough(false)
 {
   memcpy(m_host_res_preference, host_res_default_preference_order, sizeof(m_host_res_preference));
 }
@@ -353,6 +355,12 @@ HttpProxyPort::processOptions(char const* opts) {
 # else
       Warning("Transparency requested [%s] in port descriptor '%s' but TPROXY was not configured.", item, opts);
 # endif
+    } else if (0 == strcasecmp(OPT_TRANSPARENT_PASSTHROUGH, item)) {
+# if TS_USE_TPROXY
+      m_transparent_passthrough = true;
+# else
+      Warning("Transparent pass-through requested [%s] in port descriptor '%s' but TPROXY was not configured.", item opts);
+# endif
     } else if (0 == strncasecmp(OPT_HOST_RES, item, OPT_HOST_RES_PREFIX_LEN)) {
       item += OPT_HOST_RES_PREFIX_LEN; // skip prefix
       if ('-' == *item || '=' == *item) // permit optional '-' or '='
@@ -390,6 +398,12 @@ HttpProxyPort::processOptions(char const* opts) {
     }
     m_host_res_preference[0] = HOST_RES_PREFER_CLIENT;
     m_host_res_preference[1] = HOST_RES_PREFER_NONE;
+  }
+
+  // Transparent pass-through requires tr-in
+  if (m_transparent_passthrough && !m_inbound_transparent_p) {
+    Warning("Port descriptor '%s' has transparent pass-through enabled without inbound transparency, this will be ignored.", opts);
+    m_transparent_passthrough = false;
   }
 
   return zret;
@@ -467,6 +481,9 @@ HttpProxyPort::print(char* out, size_t n) {
     zret += snprintf(out+zret, n-zret, ":%s", OPT_TRANSPARENT_INBOUND);
   else if (m_outbound_transparent_p)
     zret += snprintf(out+zret, n-zret, ":%s", OPT_TRANSPARENT_OUTBOUND);
+
+  if (m_transparent_passthrough)
+    zret += snprintf(out+zret, n-zret, ":%s", OPT_TRANSPARENT_PASSTHROUGH);
 
   /* Don't print the IP resolution preferences if the port is outbound
    * transparent (which means the preference order is forced) or if

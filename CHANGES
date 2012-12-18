@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.3.1
 
+  *) [TS-1423] Added option to do transparent passthrough on
+   connections that are not valid HTTP.
+
   *) [TS-1599] set OpenSSL allocator with CRYPTO_set_mem_functions
 
   *) [TS-1624] Remove JEMALLOC_P use, it seems to have been deprecated.

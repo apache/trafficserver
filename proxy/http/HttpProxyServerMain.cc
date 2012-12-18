@@ -167,6 +167,7 @@ start_HttpProxyPort(const HttpProxyPort& port, unsigned nthreads)
   http.f_outbound_transparent = port.m_outbound_transparent_p;
   http.transport_type = port.m_type;
   http.setHostResPreference(port.m_host_res_preference);
+  http.setTransparentPassthrough(port.m_transparent_passthrough);
 
   if (port.m_inbound_ip.isValid()) {
     net.local_ip = port.m_inbound_ip;
