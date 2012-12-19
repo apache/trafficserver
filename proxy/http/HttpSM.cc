@@ -718,7 +718,7 @@ HttpSM::state_read_client_request_header(int event, void *data)
   // tokenize header //
   /////////////////////
 
-  int state = t_state.hdr_info.client_request.parse_req(&http_parser,
+  MIMEParseResult state = t_state.hdr_info.client_request.parse_req(&http_parser,
                                                         ua_buffer_reader,
                                                         &bytes_used,
                                                         ua_entry->eos);
@@ -4336,8 +4336,6 @@ HttpSM::do_http_server_open(bool raw)
 
   ink_assert(pending_action == NULL);
 
-  HSMresult_t shared_result;
-
   if (false == t_state.api_server_addr_set) {
     ink_assert(t_state.current.server->port > 0);
     t_state.current.server->addr.port() = htons(t_state.current.server->port);
@@ -4396,12 +4394,13 @@ HttpSM::do_http_server_open(bool raw)
   if (raw == false && t_state.txn_conf->share_server_sessions &&
       (t_state.txn_conf->keep_alive_post_out == 1 || t_state.hdr_info.request_content_length == 0) &&
        !is_private() && ua_session != NULL) {
+    HSMresult_t shared_result;
     shared_result = httpSessionManager.acquire_session(this,    // state machine
                                                        &t_state.current.server->addr.sa,    // ip + port
                                                        t_state.current.server->name,    // hostname
                                                        ua_session,      // has ptr to bound ua sessions
                                                        this     // sm
-      );
+    );
 
     switch (shared_result) {
     case HSM_DONE:
