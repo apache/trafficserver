@@ -494,11 +494,28 @@ LuaHttpTxnRegister(lua_State * lua)
   return 0;
 }
 
+static int
+LuaHttpTxnCacheLookupStatus(lua_State * lua)
+{
+  LuaHttpTransaction * txn;
+  int status;
+
+  txn = LuaHttpTransaction::get(lua, 1);
+  if (TSHttpTxnCacheLookupStatusGet(txn->txn, &status) == TS_SUCCESS) {
+    lua_pushinteger(lua, status);
+  } else {
+    lua_pushinteger(lua, -1);
+  }
+
+  return 1;
+}
+
 static const luaL_Reg HTTPTXN[] =
 {
   { "abort", LuaHttpTxnAbort },
   { "continue", LuaHttpTxnContinue },
   { "register", LuaHttpTxnRegister },
+  { "cachestatus", LuaHttpTxnCacheLookupStatus },
   { NULL, NULL }
 };
 
@@ -602,6 +619,11 @@ LuaApiInit(lua_State * lua)
   LuaSetConstantField(lua, "MAJOR_VERSION", TSTrafficServerVersionGetMajor());
   LuaSetConstantField(lua, "MINOR_VERSION", TSTrafficServerVersionGetMinor());
   LuaSetConstantField(lua, "PATCH_VERSION", TSTrafficServerVersionGetPatch());
+
+  LuaSetConstantField(lua, "CACHE_LOOKUP_MISS", TS_CACHE_LOOKUP_MISS);
+  LuaSetConstantField(lua, "CACHE_LOOKUP_HIT_STALE", TS_CACHE_LOOKUP_HIT_STALE);
+  LuaSetConstantField(lua, "CACHE_LOOKUP_HIT_FRESH", TS_CACHE_LOOKUP_HIT_FRESH);
+  LuaSetConstantField(lua, "CACHE_LOOKUP_SKIPPED", TS_CACHE_LOOKUP_SKIPPED);
 
   // Register TSRemapRequestInfo metatable.
   LuaPushMetatable(lua, "ts.meta.rri", RRI);

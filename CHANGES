@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.3.1
 
+  *) [TS-1630] Add Lua API for TSHttpTxnCacheLookupStatusGet
+
   *) [TS-1423] Added option to do transparent passthrough on
    connections that are not valid HTTP.
 
