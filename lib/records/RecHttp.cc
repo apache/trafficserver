@@ -359,7 +359,7 @@ HttpProxyPort::processOptions(char const* opts) {
 # if TS_USE_TPROXY
       m_transparent_passthrough = true;
 # else
-      Warning("Transparent pass-through requested [%s] in port descriptor '%s' but TPROXY was not configured.", item opts);
+      Warning("Transparent pass-through requested [%s] in port descriptor '%s' but TPROXY was not configured.", item, opts);
 # endif
     } else if (0 == strncasecmp(OPT_HOST_RES, item, OPT_HOST_RES_PREFIX_LEN)) {
       item += OPT_HOST_RES_PREFIX_LEN; // skip prefix
