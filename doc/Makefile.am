@@ -80,13 +80,14 @@ man1_MANS = \
   man/traffic_shell.1
 
 man3_MANS = \
-  sdk/TSHttpHookAdd.3 \
   sdk/TSAPI.3 \
   sdk/TSDebug.3 \
+  sdk/TSHttpHookAdd.3 \
   sdk/TSInstallDirGet.3 \
   sdk/TSMBufferCreate.3 \
   sdk/TSMalloc.3 \
   sdk/TSPluginInit.3 \
+  sdk/TSRemap.3 \
   sdk/TSRemapInit.3 \
   sdk/TSTrafficServerVersionGet.3 \
   sdk/TSUrlCreate.3
