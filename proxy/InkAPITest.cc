@@ -5132,7 +5132,8 @@ REGRESSION_TEST(SDK_API_TSUrlParse) (RegressionTest * test, int atype, int *psta
       "ftp://abc:def@www.example.com:3426/homepage.cgi;ab?abc=def#abc",
       "file:///c:/test.dat;ab?abc=def#abc", // Note: file://c: is malformed URL because no host is present.
       "file:///test.dat;ab?abc=def#abc",
-      "foo://bar.com/baz/"
+      "foo://bar.com/baz/",
+      "http://a.b.com/xx.jpg?newpath=http://b.c.com" // https://issues.apache.org/jira/browse/TS-1635
   };
 
   static int const num_urls = sizeof(urls) / sizeof(urls[0]);
