@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.3.1
 
+
+  *) [TS-1640] SSL certificate reconfiguration only works once
+
   *) [TS-1246] trafficserver script error message (in ubuntu)
 
   *) [TS-1630] Add Lua API for TSHttpTxnCacheLookupStatusGet

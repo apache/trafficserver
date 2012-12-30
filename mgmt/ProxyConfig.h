@@ -132,10 +132,11 @@ private:
 
   static int update(const char * name, RecDataT data_type, RecData data, void * cookie) {
     ConfigUpdateHandler * self = static_cast<ConfigUpdateHandler *>(cookie);
+    Debug("config", "%s(%s)", __PRETTY_FUNCTION__, name);
     return ConfigScheduleUpdate<UpdateClass>(self->mutex);
   }
 
-  ProxyMutex * mutex;
+  Ptr<ProxyMutex> mutex;
 };
 
 extern ConfigProcessor configProcessor;
