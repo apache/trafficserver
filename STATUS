@@ -54,7 +54,7 @@ PATCHES ACCEPTED TO BACKPORT FROM TRUNK:
 
   Mutex leak fix
   Patch: db0cfd44222e5e280db5b832496691ec7722e28e
-  Jira: https://issues.apache.org/jira/browse/TS-15-80
+  Jira: https://issues.apache.org/jira/browse/TS-1580
   +1: amc, zym, jpeach, igalic
     this patch have been in our own tree for weeks --zym
 	why didn't you propose it yourself then! --igalic
