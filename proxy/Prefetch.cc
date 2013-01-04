@@ -296,12 +296,6 @@ normalize_url(char *url, int *len)
 static PrefetchConfiguration *prefetch_config;
 ClassAllocator<PrefetchUrlEntry> prefetchUrlEntryAllocator("prefetchUrlEntryAllocator");
 
-#define HTTP_STATUS_MOVED_PERMANENTLY 	301
-#define HTTP_STATUS_MOVED_TEMPORARILY 	302
-#define HTTP_STATUS_SEE_OTHER         	303
-#define HTTP_STATUS_TEMPORARY_REDIRECT 	307
-
-
 #define IS_STATUS_REDIRECT(status) (prefetch_config->redirection > 0 &&\
 				       (((status) == HTTP_STATUS_MOVED_PERMANENTLY) ||\
                                         ((status) == HTTP_STATUS_MOVED_TEMPORARILY) ||\

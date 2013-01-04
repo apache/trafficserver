@@ -1100,7 +1100,7 @@ HttpTransact::handleIfRedirect(State *s)
     remap_redirect = redirect_url.string_get_ref(&remap_redirect_len);
     if (answer == TEMPORARY_REDIRECT) {
       if ((s->client_info).http_version.m_version == HTTP_VERSION(1, 1)) {
-        build_error_response(s, (HTTPStatus) 307,
+        build_error_response(s, HTTP_STATUS_TEMPORARY_REDIRECT,
                              /* which is HTTP/1.1 for HTTP_STATUS_MOVED_TEMPORARILY */
                              "Redirect", "redirect#moved_temporarily",
                              "%s <a href=\"%s\">%s</a>. %s",
@@ -6461,7 +6461,7 @@ HttpTransact::is_request_valid(State* s, HTTPHdr* incoming_request)
     {
       DebugTxn("http_trans", "[is_request_valid] post request without content length");
       SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_NO_FORWARD);
-      build_error_response(s, HTTP_STATUS_BAD_REQUEST, "request#no_content_length", "Content Length Required",
+      build_error_response(s, HTTP_STATUS_BAD_REQUEST, "Content Length Required", "request#no_content_length",
                            const_cast < char *>(URL_MSG));
       return FALSE;
     }

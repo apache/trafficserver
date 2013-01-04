@@ -2,6 +2,8 @@
 Changes with Apache Traffic Server 3.3.1
 
 
+  *) [TS-1643] Post requests with no Content-Length header sends default error response
+
   *) [TS-1640] SSL certificate reconfiguration only works once
 
   *) [TS-1246] trafficserver script error message (in ubuntu)
