@@ -170,18 +170,5 @@ HttpServerSession::release()
     return;
   }
 
-  HSMresult_t r = httpSessionManager.release_session(this);
-  
-
-  if (r == HSM_RETRY) {
-    // Session could not be put in the session manager
-    //  due to lock contention
-    // FIX:  should retry instead of closing
-    this->do_io_close();
-  } else {
-    // The session was successfully put into the session
-    //    manager and it will manage it
-    // (Note: should never get HSM_NOT_FOUND here)
-    ink_assert(r == HSM_DONE);
-  }
+  httpSessionManager.release_session(this);
 }
