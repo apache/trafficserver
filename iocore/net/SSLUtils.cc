@@ -449,6 +449,10 @@ struct ats_x509_certificate
   explicit ats_x509_certificate(X509 * x) : x509(x) {}
   ~ats_x509_certificate() { if (x509) X509_free(x509); }
 
+  operator bool() const {
+      return x509 != NULL;
+  }
+
   X509 * x509;
 
 private:
@@ -554,7 +558,7 @@ ssl_store_ssl_context(
   xptr<char>  certpath;
 
   ctx = ssl_context_enable_sni(SSLInitServerContext(params, cert, ca, key), lookup);
-  if (!cert) {
+  if (!ctx) {
     SSLError("failed to create new SSL server context");
     return;
   }
