@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.3.1
 
+
+  *) [TS-1538] SSL accept performance regression
+
   *) [TS-977] RecCore usage cleanup
 
   *) [TS-1574] [TS-1577] when read_from_writer, we should not do range acceleration.

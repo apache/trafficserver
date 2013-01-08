@@ -56,6 +56,8 @@ private:
   MIOBuffer * buffer; // XXX do we really need this?
   Continuation * endpoint;
   SSLNextProtocolSet protoset;
+
+friend struct SSLNextProtocolTrampoline;
 };
 
 #endif /* P_SSLNextProtocolAccept_H_ */

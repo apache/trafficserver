@@ -170,7 +170,7 @@ public:
   typedef detail::HttpAcceptOptions Options;
 
   HttpAccept(Options const& opt = DEFAULT_OPTIONS)
-    : Continuation(new_ProxyMutex())
+    : Continuation(NULL)
     , detail::HttpAcceptOptions(opt) // copy these.
   {
     SET_HANDLER(&HttpAccept::mainEvent);
