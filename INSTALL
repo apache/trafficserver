@@ -22,6 +22,9 @@ On OpenSolaris:
 To install:
     $ sudo make install
 
+* Building on FreeBSD required GNU make. This is the preferred make
+  on all platforms.
+
 * Replace PREFIX with the filesystem path under which Traffic Server
   should be installed.  Default PREFIX is "/usr/local" (without the
   quotes).
