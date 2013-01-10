@@ -652,16 +652,16 @@ ClusterProcessor::init()
   // Used to call CLUSTER_INCREMENT_DYN_STAT here; switch to SUM_GLOBAL_DYN_STAT
   CLUSTER_SUM_GLOBAL_DYN_STAT(CLUSTER_NODES_STAT, 1);   // one node in cluster, ME
 
-  IOCORE_ReadConfigInteger(ClusterLoadMonitor::cf_monitor_enabled, "proxy.config.cluster.load_monitor_enabled");
-  IOCORE_ReadConfigInteger(ClusterLoadMonitor::cf_ping_message_send_msec_interval, "proxy.config.cluster.ping_send_interval_msecs");
-  IOCORE_ReadConfigInteger(ClusterLoadMonitor::cf_num_ping_response_buckets, "proxy.config.cluster.ping_response_buckets");
-  IOCORE_ReadConfigInteger(ClusterLoadMonitor::cf_msecs_per_ping_response_bucket, "proxy.config.cluster.msecs_per_ping_response_bucket");
-  IOCORE_ReadConfigInteger(ClusterLoadMonitor::cf_ping_latency_threshold_msecs, "proxy.config.cluster.ping_latency_threshold_msecs");
-  IOCORE_ReadConfigInteger(ClusterLoadMonitor::cf_cluster_load_compute_msec_interval, "proxy.config.cluster.load_compute_interval_msecs");
-  IOCORE_ReadConfigInteger(ClusterLoadMonitor::cf_cluster_periodic_msec_interval, "proxy.config.cluster.periodic_timer_interval_msecs");
-  IOCORE_ReadConfigInteger(ClusterLoadMonitor::cf_ping_history_buf_length, "proxy.config.cluster.ping_history_buf_length");
-  IOCORE_ReadConfigInteger(ClusterLoadMonitor::cf_cluster_load_clear_duration, "proxy.config.cluster.cluster_load_clear_duration");
-  IOCORE_ReadConfigInteger(ClusterLoadMonitor::cf_cluster_load_exceed_duration, "proxy.config.cluster.cluster_load_exceed_duration");
+  REC_ReadConfigInteger(ClusterLoadMonitor::cf_monitor_enabled, "proxy.config.cluster.load_monitor_enabled");
+  REC_ReadConfigInteger(ClusterLoadMonitor::cf_ping_message_send_msec_interval, "proxy.config.cluster.ping_send_interval_msecs");
+  REC_ReadConfigInteger(ClusterLoadMonitor::cf_num_ping_response_buckets, "proxy.config.cluster.ping_response_buckets");
+  REC_ReadConfigInteger(ClusterLoadMonitor::cf_msecs_per_ping_response_bucket, "proxy.config.cluster.msecs_per_ping_response_bucket");
+  REC_ReadConfigInteger(ClusterLoadMonitor::cf_ping_latency_threshold_msecs, "proxy.config.cluster.ping_latency_threshold_msecs");
+  REC_ReadConfigInteger(ClusterLoadMonitor::cf_cluster_load_compute_msec_interval, "proxy.config.cluster.load_compute_interval_msecs");
+  REC_ReadConfigInteger(ClusterLoadMonitor::cf_cluster_periodic_msec_interval, "proxy.config.cluster.periodic_timer_interval_msecs");
+  REC_ReadConfigInteger(ClusterLoadMonitor::cf_ping_history_buf_length, "proxy.config.cluster.ping_history_buf_length");
+  REC_ReadConfigInteger(ClusterLoadMonitor::cf_cluster_load_clear_duration, "proxy.config.cluster.cluster_load_clear_duration");
+  REC_ReadConfigInteger(ClusterLoadMonitor::cf_cluster_load_exceed_duration, "proxy.config.cluster.cluster_load_exceed_duration");
 
   //
   // Configuration callbacks
@@ -669,22 +669,22 @@ ClusterProcessor::init()
   if (cluster_port_number != DEFAULT_CLUSTER_PORT_NUMBER)
     cluster_port = cluster_port_number;
   else {
-    IOCORE_ReadConfigInteger(cluster_port, "proxy.config.cluster.cluster_port");
+    REC_ReadConfigInteger(cluster_port, "proxy.config.cluster.cluster_port");
   }
   if (num_of_cluster_threads == DEFAULT_NUMBER_OF_CLUSTER_THREADS)
-    IOCORE_ReadConfigInteger(num_of_cluster_threads, "proxy.config.cluster.threads");
+    REC_ReadConfigInteger(num_of_cluster_threads, "proxy.config.cluster.threads");
 
-  IOCORE_EstablishStaticConfigInt32(CacheClusterMonitorEnabled, "proxy.config.cluster.enable_monitor");
-  IOCORE_EstablishStaticConfigInt32(CacheClusterMonitorIntervalSecs, "proxy.config.cluster.monitor_interval_secs");
-  IOCORE_ReadConfigInteger(cluster_receive_buffer_size, "proxy.config.cluster.receive_buffer_size");
-  IOCORE_ReadConfigInteger(cluster_send_buffer_size, "proxy.config.cluster.send_buffer_size");
-  IOCORE_ReadConfigInteger(cluster_sockopt_flags, "proxy.config.cluster.sock_option_flag");
-  IOCORE_ReadConfigInteger(cluster_packet_mark, "proxy.config.cluster.sock_packet_mark");
-  IOCORE_ReadConfigInteger(cluster_packet_tos, "proxy.config.cluster.sock_packet_tos");
-  IOCORE_EstablishStaticConfigInt32(RPC_only_CacheCluster, "proxy.config.cluster.rpc_cache_cluster");
+  REC_EstablishStaticConfigInt32(CacheClusterMonitorEnabled, "proxy.config.cluster.enable_monitor");
+  REC_EstablishStaticConfigInt32(CacheClusterMonitorIntervalSecs, "proxy.config.cluster.monitor_interval_secs");
+  REC_ReadConfigInteger(cluster_receive_buffer_size, "proxy.config.cluster.receive_buffer_size");
+  REC_ReadConfigInteger(cluster_send_buffer_size, "proxy.config.cluster.send_buffer_size");
+  REC_ReadConfigInteger(cluster_sockopt_flags, "proxy.config.cluster.sock_option_flag");
+  REC_ReadConfigInteger(cluster_packet_mark, "proxy.config.cluster.sock_packet_mark");
+  REC_ReadConfigInteger(cluster_packet_tos, "proxy.config.cluster.sock_packet_tos");
+  REC_EstablishStaticConfigInt32(RPC_only_CacheCluster, "proxy.config.cluster.rpc_cache_cluster");
 
   int cluster_type = 0;
-  IOCORE_ReadConfigInteger(cluster_type, "proxy.local.cluster.type");
+  REC_ReadConfigInteger(cluster_type, "proxy.local.cluster.type");
 
   create_this_cluster_machine();
 #ifdef NON_MODULAR
@@ -735,11 +735,11 @@ ClusterProcessor::start()
     for (int i = 0; i < eventProcessor.n_threads_for_type[ET_CLUSTER]; i++) {
       initialize_thread_for_net(eventProcessor.eventthread[ET_CLUSTER][i], i);
     }
-    IOCORE_RegisterConfigUpdateFunc("proxy.config.cluster.cluster_configuration", machine_config_change, (void *) CLUSTER_CONFIG);
+    REC_RegisterConfigUpdateFunc("proxy.config.cluster.cluster_configuration", machine_config_change, (void *) CLUSTER_CONFIG);
     do_machine_config_change((void *) CLUSTER_CONFIG, "proxy.config.cluster.cluster_configuration");
     // TODO: Remove this?
 #ifdef USE_SEPARATE_MACHINE_CONFIG
-    IOCORE_RegisterConfigUpdateFunc("proxy.config.cluster.machine_configuration", machine_config_change, (void *) MACHINE_CONFIG);
+    REC_RegisterConfigUpdateFunc("proxy.config.cluster.machine_configuration", machine_config_change, (void *) MACHINE_CONFIG);
     do_machine_config_change((void *) MACHINE_CONFIG, "proxy.config.cluster.machine_configuration");
 #endif
 

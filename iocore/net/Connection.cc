@@ -48,7 +48,7 @@ get_listen_backlog(void)
 {
   int listen_backlog = 1024;
 
-  IOCORE_ReadConfigInteger(listen_backlog, "proxy.config.net.listen_backlog");
+  REC_ReadConfigInteger(listen_backlog, "proxy.config.net.listen_backlog");
   return listen_backlog;
 }
 

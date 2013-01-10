@@ -465,18 +465,18 @@ loadSocksConfiguration(socks_conf_struct * socks_conf_stuff)
   int socks_config_fd = -1;
   char config_pathname[PATH_NAME_MAX + 1];
   char *socks_config_file = NULL;
-#ifdef SOCKS_WITH_TS 
+#ifdef SOCKS_WITH_TS
   char *tmp;
 #endif
 
   socks_conf_stuff->accept_enabled = 0; //initialize it INKqa08593
-  socks_conf_stuff->socks_needed = IOCORE_ConfigReadInteger("proxy.config.socks.socks_needed");
+  socks_conf_stuff->socks_needed = REC_ConfigReadInteger("proxy.config.socks.socks_needed");
   if (!socks_conf_stuff->socks_needed) {
     Debug("Socks", "Socks Turned Off");
     return;
   }
 
-  socks_conf_stuff->default_version = IOCORE_ConfigReadInteger("proxy.config.socks.socks_version");
+  socks_conf_stuff->default_version = REC_ConfigReadInteger("proxy.config.socks.socks_version");
   Debug("Socks", "Socks Version %d", socks_conf_stuff->default_version);
 
   if (socks_conf_stuff->default_version != 4 && socks_conf_stuff->default_version != 5) {
@@ -484,18 +484,18 @@ loadSocksConfiguration(socks_conf_struct * socks_conf_stuff)
     goto error;
   }
 
-  socks_conf_stuff->server_connect_timeout = IOCORE_ConfigReadInteger("proxy.config.socks.server_connect_timeout");
-  socks_conf_stuff->socks_timeout = IOCORE_ConfigReadInteger("proxy.config.socks.socks_timeout");
+  socks_conf_stuff->server_connect_timeout = REC_ConfigReadInteger("proxy.config.socks.server_connect_timeout");
+  socks_conf_stuff->socks_timeout = REC_ConfigReadInteger("proxy.config.socks.socks_timeout");
   Debug("Socks", "server connect timeout: %d socks respnonse timeout %d",
         socks_conf_stuff->server_connect_timeout, socks_conf_stuff->socks_timeout);
 
   socks_conf_stuff->per_server_connection_attempts =
-    IOCORE_ConfigReadInteger("proxy.config.socks.per_server_connection_attempts");
-  socks_conf_stuff->connection_attempts = IOCORE_ConfigReadInteger("proxy.config.socks.connection_attempts");
+    REC_ConfigReadInteger("proxy.config.socks.per_server_connection_attempts");
+  socks_conf_stuff->connection_attempts = REC_ConfigReadInteger("proxy.config.socks.connection_attempts");
 
-  socks_conf_stuff->accept_enabled = IOCORE_ConfigReadInteger("proxy.config.socks.accept_enabled");
-  socks_conf_stuff->accept_port = IOCORE_ConfigReadInteger("proxy.config.socks.accept_port");
-  socks_conf_stuff->http_port = IOCORE_ConfigReadInteger("proxy.config.socks.http_port");
+  socks_conf_stuff->accept_enabled = REC_ConfigReadInteger("proxy.config.socks.accept_enabled");
+  socks_conf_stuff->accept_port = REC_ConfigReadInteger("proxy.config.socks.accept_port");
+  socks_conf_stuff->http_port = REC_ConfigReadInteger("proxy.config.socks.http_port");
   Debug("SocksProxy", "Read SocksProxy info: accept_enabled = %d "
         "accept_port = %d http_port = %d", socks_conf_stuff->accept_enabled,
         socks_conf_stuff->accept_port, socks_conf_stuff->http_port);
@@ -504,7 +504,7 @@ loadSocksConfiguration(socks_conf_struct * socks_conf_stuff)
   SocksServerConfig::startup();
 #endif
 
-  socks_config_file = IOCORE_ConfigReadString("proxy.config.socks.socks_config_file");
+  socks_config_file = REC_ConfigReadString("proxy.config.socks.socks_config_file");
 
   if (!socks_config_file) {
     Error("SOCKS Config: could not read config file name. SOCKS Turned off");

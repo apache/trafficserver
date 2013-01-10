@@ -146,7 +146,7 @@ clusterHandlers(0)
   else
     hostname_len = 0;
 
-  IOCORE_ReadConfigInteger(num_connections, "proxy.config.cluster.num_of_cluster_connections");
+  REC_ReadConfigInteger(num_connections, "proxy.config.cluster.num_of_cluster_connections");
   clusterHandlers = (ClusterHandler **)ats_calloc(num_connections, sizeof(ClusterHandler *));
 }
 

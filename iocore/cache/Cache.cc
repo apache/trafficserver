@@ -176,7 +176,7 @@ cache_bytes_used(int volume)
     start = volume - 1;
     end = volume;
   }
-  
+
   for (int i = start; i < end; i++) {
     if (!DISK_BAD(gvol[i]->disk)) {
       if (!gvol[i]->header->cycle)
@@ -214,7 +214,7 @@ validate_rww(int new_value)
   if (new_value) {
     float http_bg_fill;
 
-    IOCORE_ReadConfigFloat(http_bg_fill, "proxy.config.http.background_fill_completed_threshold");
+    REC_ReadConfigFloat(http_bg_fill, "proxy.config.http.background_fill_completed_threshold");
     if (http_bg_fill > 0.0) {
       Note("to enable reading while writing a document, %s should be 0.0: read while writing disabled",
            "proxy.config.http.background_fill_completed_threshold");
@@ -877,7 +877,7 @@ CacheProcessor::cacheInitialized()
       switch (cache_config_ram_cache_compress) {
         default:
           Fatal("unknown RAM cache compression type: %d", cache_config_ram_cache_compress);
-        case CACHE_COMPRESSION_NONE: 
+        case CACHE_COMPRESSION_NONE:
         case CACHE_COMPRESSION_FASTLZ:
           break;
         case CACHE_COMPRESSION_LIBZ:
@@ -1693,13 +1693,13 @@ AIO_Callback_handler::handle_disk_failure(int event, void *data) {
         char message[128];
         snprintf(message, sizeof(message), "Error accessing Disk %s", d->path);
         Warning("%s", message);
-        IOCORE_SignalManager(REC_SIGNAL_CACHE_WARNING, message);
+        REC_SignalManager(REC_SIGNAL_CACHE_WARNING, message);
       } else if (!DISK_BAD_SIGNALLED(d)) {
 
         char message[128];
         snprintf(message, sizeof(message), "too many errors accessing disk %s: declaring disk bad", d->path);
         Warning("%s", message);
-        IOCORE_SignalManager(REC_SIGNAL_CACHE_ERROR, message);
+        REC_SignalManager(REC_SIGNAL_CACHE_ERROR, message);
         /* subtract the disk space that was being used from  the cache size stat */
         // dir entries stat
         int p;
@@ -1794,7 +1794,7 @@ Cache::open(bool clear, bool fix) {
   total_nvol = 0;
   total_good_nvol = 0;
 
-  IOCORE_EstablishStaticConfigInt32(cache_config_min_average_object_size, "proxy.config.cache.min_average_object_size");
+  REC_EstablishStaticConfigInt32(cache_config_min_average_object_size, "proxy.config.cache.min_average_object_size");
   Debug("cache_init", "Cache::open - proxy.config.cache.min_average_object_size = %d",
         (int)cache_config_min_average_object_size);
 
@@ -2525,7 +2525,7 @@ create_volume(int volume_number, off_t size_in_blocks, int scheme, CacheVol *cp)
       full_disks += 1;
       if (full_disks == gndisks) {
         char config_file[PATH_NAME_MAX];
-        IOCORE_ReadConfigString(config_file, "proxy.config.cache.volume_filename", PATH_NAME_MAX);
+        REC_ReadConfigString(config_file, "proxy.config.cache.volume_filename", PATH_NAME_MAX);
         if (cp->size)
           Warning("not enough space to increase volume: [%d] to size: [%" PRId64 "]",
                   volume_number, (int64_t)((to_create + cp->size) >> (20 - STORE_BLOCK_SHIFT)));
@@ -2677,44 +2677,44 @@ ink_cache_init(ModuleVersion v)
 
   cache_rsb = RecAllocateRawStatBlock((int) cache_stat_count);
 
-  IOCORE_EstablishStaticConfigInteger(cache_config_ram_cache_size, "proxy.config.cache.ram_cache.size");
+  REC_EstablishStaticConfigInteger(cache_config_ram_cache_size, "proxy.config.cache.ram_cache.size");
   Debug("cache_init", "proxy.config.cache.ram_cache.size = %" PRId64 " = %" PRId64 "Mb",
         cache_config_ram_cache_size, cache_config_ram_cache_size / (1024 * 1024));
 
-  IOCORE_EstablishStaticConfigInt32(cache_config_ram_cache_algorithm, "proxy.config.cache.ram_cache.algorithm");
-  IOCORE_EstablishStaticConfigInt32(cache_config_ram_cache_compress, "proxy.config.cache.ram_cache.compress");
-  IOCORE_EstablishStaticConfigInt32(cache_config_ram_cache_compress_percent, "proxy.config.cache.ram_cache.compress_percent");
-  IOCORE_EstablishStaticConfigInt32(cache_config_ram_cache_use_seen_filter, "proxy.config.cache.ram_cache.use_seen_filter");
+  REC_EstablishStaticConfigInt32(cache_config_ram_cache_algorithm, "proxy.config.cache.ram_cache.algorithm");
+  REC_EstablishStaticConfigInt32(cache_config_ram_cache_compress, "proxy.config.cache.ram_cache.compress");
+  REC_EstablishStaticConfigInt32(cache_config_ram_cache_compress_percent, "proxy.config.cache.ram_cache.compress_percent");
+  REC_EstablishStaticConfigInt32(cache_config_ram_cache_use_seen_filter, "proxy.config.cache.ram_cache.use_seen_filter");
 
-  IOCORE_EstablishStaticConfigInt32(cache_config_http_max_alts, "proxy.config.cache.limits.http.max_alts");
+  REC_EstablishStaticConfigInt32(cache_config_http_max_alts, "proxy.config.cache.limits.http.max_alts");
   Debug("cache_init", "proxy.config.cache.limits.http.max_alts = %d", cache_config_http_max_alts);
 
-  IOCORE_EstablishStaticConfigInteger(cache_config_ram_cache_cutoff, "proxy.config.cache.ram_cache_cutoff");
+  REC_EstablishStaticConfigInteger(cache_config_ram_cache_cutoff, "proxy.config.cache.ram_cache_cutoff");
   Debug("cache_init", "cache_config_ram_cache_cutoff = %" PRId64 " = %" PRId64 "Mb",
         cache_config_ram_cache_cutoff, cache_config_ram_cache_cutoff / (1024 * 1024));
 
-  IOCORE_EstablishStaticConfigInt32(cache_config_permit_pinning, "proxy.config.cache.permit.pinning");
+  REC_EstablishStaticConfigInt32(cache_config_permit_pinning, "proxy.config.cache.permit.pinning");
   Debug("cache_init", "proxy.config.cache.permit.pinning = %d", cache_config_permit_pinning);
 
-  IOCORE_EstablishStaticConfigInt32(cache_config_dir_sync_frequency, "proxy.config.cache.dir.sync_frequency");
+  REC_EstablishStaticConfigInt32(cache_config_dir_sync_frequency, "proxy.config.cache.dir.sync_frequency");
   Debug("cache_init", "proxy.config.cache.dir.sync_frequency = %d", cache_config_dir_sync_frequency);
 
-  IOCORE_EstablishStaticConfigInt32(cache_config_vary_on_user_agent, "proxy.config.cache.vary_on_user_agent");
+  REC_EstablishStaticConfigInt32(cache_config_vary_on_user_agent, "proxy.config.cache.vary_on_user_agent");
   Debug("cache_init", "proxy.config.cache.vary_on_user_agent = %d", cache_config_vary_on_user_agent);
 
-  IOCORE_EstablishStaticConfigInt32(cache_config_select_alternate, "proxy.config.cache.select_alternate");
+  REC_EstablishStaticConfigInt32(cache_config_select_alternate, "proxy.config.cache.select_alternate");
   Debug("cache_init", "proxy.config.cache.select_alternate = %d", cache_config_select_alternate);
 
-  IOCORE_EstablishStaticConfigInt32(cache_config_max_doc_size, "proxy.config.cache.max_doc_size");
+  REC_EstablishStaticConfigInt32(cache_config_max_doc_size, "proxy.config.cache.max_doc_size");
   Debug("cache_init", "proxy.config.cache.max_doc_size = %d = %dMb",
         cache_config_max_doc_size, cache_config_max_doc_size / (1024 * 1024));
 
-  IOCORE_EstablishStaticConfigInt32(cache_config_mutex_retry_delay, "proxy.config.cache.mutex_retry_delay");
+  REC_EstablishStaticConfigInt32(cache_config_mutex_retry_delay, "proxy.config.cache.mutex_retry_delay");
   Debug("cache_init", "proxy.config.cache.mutex_retry_delay = %dms", cache_config_mutex_retry_delay);
 
   // This is just here to make sure IOCORE "standalone" works, it's usually configured in RecordsConfig.cc
-  IOCORE_RegisterConfigString(RECT_CONFIG, "proxy.config.config_dir", TS_BUILD_SYSCONFDIR, RECU_DYNAMIC, RECC_NULL, NULL);
-  IOCORE_ReadConfigString(cache_system_config_directory, "proxy.config.config_dir", PATH_NAME_MAX);
+  RecRegisterConfigString(RECT_CONFIG, "proxy.config.config_dir", TS_BUILD_SYSCONFDIR, RECU_DYNAMIC, RECC_NULL, NULL);
+  REC_ReadConfigString(cache_system_config_directory, "proxy.config.config_dir", PATH_NAME_MAX);
   if (cache_system_config_directory[0] != '/') {
     // Not an absolute path so use system one
     Layout::get()->relative(cache_system_config_directory, sizeof(cache_system_config_directory), cache_system_config_directory);
@@ -2733,15 +2733,15 @@ ink_cache_init(ModuleVersion v)
   }
   // TODO: These are left here, since they are only registered if HIT_EVACUATE is enabled.
 #ifdef HIT_EVACUATE
-  IOCORE_EstablishStaticConfigInt32(cache_config_hit_evacuate_percent, "proxy.config.cache.hit_evacuate_percent");
+  REC_EstablishStaticConfigInt32(cache_config_hit_evacuate_percent, "proxy.config.cache.hit_evacuate_percent");
   Debug("cache_init", "proxy.config.cache.hit_evacuate_percent = %d", cache_config_hit_evacuate_percent);
 
-  IOCORE_EstablishStaticConfigInt32(cache_config_hit_evacuate_size_limit, "proxy.config.cache.hit_evacuate_size_limit");
+  REC_EstablishStaticConfigInt32(cache_config_hit_evacuate_size_limit, "proxy.config.cache.hit_evacuate_size_limit");
   Debug("cache_init", "proxy.config.cache.hit_evacuate_size_limit = %d", cache_config_hit_evacuate_size_limit);
 #endif
 
-  IOCORE_EstablishStaticConfigInt32(cache_config_force_sector_size, "proxy.config.cache.force_sector_size");
-  IOCORE_EstablishStaticConfigInt32(cache_config_target_fragment_size, "proxy.config.cache.target_fragment_size");
+  REC_EstablishStaticConfigInt32(cache_config_force_sector_size, "proxy.config.cache.force_sector_size");
+  REC_EstablishStaticConfigInt32(cache_config_target_fragment_size, "proxy.config.cache.target_fragment_size");
 
   if (cache_config_target_fragment_size == 0)
     cache_config_target_fragment_size = DEFAULT_TARGET_FRAGMENT_SIZE;
@@ -2751,25 +2751,25 @@ ink_cache_init(ModuleVersion v)
 
   //  # 0 - MD5 hash
   //  # 1 - MMH hash
-  IOCORE_EstablishStaticConfigInt32(url_hash_method, "proxy.config.cache.url_hash_method");
+  REC_EstablishStaticConfigInt32(url_hash_method, "proxy.config.cache.url_hash_method");
   Debug("cache_init", "proxy.config.cache.url_hash_method = %d", url_hash_method);
 #endif
 
-  IOCORE_EstablishStaticConfigInt32(cache_config_max_disk_errors, "proxy.config.cache.max_disk_errors");
+  REC_EstablishStaticConfigInt32(cache_config_max_disk_errors, "proxy.config.cache.max_disk_errors");
   Debug("cache_init", "proxy.config.cache.max_disk_errors = %d", cache_config_max_disk_errors);
 
-  IOCORE_EstablishStaticConfigInt32(cache_config_agg_write_backlog, "proxy.config.cache.agg_write_backlog");
+  REC_EstablishStaticConfigInt32(cache_config_agg_write_backlog, "proxy.config.cache.agg_write_backlog");
   Debug("cache_init", "proxy.config.cache.agg_write_backlog = %d", cache_config_agg_write_backlog);
 
-  IOCORE_EstablishStaticConfigInt32(cache_config_enable_checksum, "proxy.config.cache.enable_checksum");
+  REC_EstablishStaticConfigInt32(cache_config_enable_checksum, "proxy.config.cache.enable_checksum");
   Debug("cache_init", "proxy.config.cache.enable_checksum = %d", cache_config_enable_checksum);
 
-  IOCORE_EstablishStaticConfigInt32(cache_config_alt_rewrite_max_size, "proxy.config.cache.alt_rewrite_max_size");
+  REC_EstablishStaticConfigInt32(cache_config_alt_rewrite_max_size, "proxy.config.cache.alt_rewrite_max_size");
   Debug("cache_init", "proxy.config.cache.alt_rewrite_max_size = %d", cache_config_alt_rewrite_max_size);
 
-  IOCORE_EstablishStaticConfigInt32(cache_config_read_while_writer, "proxy.config.cache.enable_read_while_writer");
+  REC_EstablishStaticConfigInt32(cache_config_read_while_writer, "proxy.config.cache.enable_read_while_writer");
   cache_config_read_while_writer = validate_rww(cache_config_read_while_writer);
-  IOCORE_RegisterConfigUpdateFunc("proxy.config.cache.enable_read_while_writer", update_cache_config, NULL);
+  REC_RegisterConfigUpdateFunc("proxy.config.cache.enable_read_while_writer", update_cache_config, NULL);
   Debug("cache_init", "proxy.config.cache.enable_read_while_writer = %d", cache_config_read_while_writer);
 
   register_cache_stats(cache_rsb, "proxy.process.cache");
@@ -2784,7 +2784,7 @@ ink_cache_init(ModuleVersion v)
   if (theCacheStore.n_disks == 0) {
     char p[PATH_NAME_MAX + 1];
     snprintf(p, sizeof(p), "%s/", cache_system_config_directory);
-    IOCORE_ReadConfigString(p + strlen(p), "proxy.config.cache.storage_filename", PATH_NAME_MAX - strlen(p) - 1);
+    REC_ReadConfigString(p + strlen(p), "proxy.config.cache.storage_filename", PATH_NAME_MAX - strlen(p) - 1);
     if (p[strlen(p) - 1] == '/' || p[strlen(p) - 1] == '\\') {
       ink_strlcat(p, "storage.config", sizeof(p));
     }

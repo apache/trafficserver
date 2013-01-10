@@ -683,14 +683,14 @@ SSLParseCertificateConfiguration(
       if (errPtr != NULL) {
         snprintf(errBuf, sizeof(errBuf), "%s: discarding %s entry at line %d: %s",
                      __func__, params->configFilePath, line_num, errPtr);
-        IOCORE_SignalError(errBuf, alarmAlready);
+        REC_SignalError(errBuf, alarmAlready);
       } else {
         if (ssl_extract_certificate(&line_info, addr, cert, ca, key)) {
           ssl_store_ssl_context(params, lookup, addr, cert, ca, key);
         } else {
           snprintf(errBuf, sizeof(errBuf), "%s: discarding invalid %s entry at line %u",
                        __func__, params->configFilePath, line_num);
-          IOCORE_SignalError(errBuf, alarmAlready);
+          REC_SignalError(errBuf, alarmAlready);
         }
       }
 

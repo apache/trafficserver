@@ -222,7 +222,7 @@ void
 do_machine_config_change(void *d, const char *s)
 {
   char cluster_config_filename[PATH_NAME_MAX] = "";
-  IOCORE_ReadConfigString(cluster_config_filename, s, sizeof(cluster_config_filename) - 1);
+  REC_ReadConfigString(cluster_config_filename, s, sizeof(cluster_config_filename) - 1);
   RecData data;
   data.rec_string = cluster_config_filename;
   machine_config_change(s, RECD_STRING, data, d);

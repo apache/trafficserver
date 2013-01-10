@@ -801,7 +801,7 @@ Lfail:
         snprintf(msg, PATH_NAME_MAX + 1024, "%s: [%s] %s: reinitializing database", err, config_filename,
                      serr ? serr : "");
       }
-      IOCORE_SignalWarning(REC_SIGNAL_CONFIG_ERROR, msg);
+      REC_SignalWarning(REC_SIGNAL_CONFIG_ERROR, msg);
     }
   }
   ret = -1;

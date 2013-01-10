@@ -231,10 +231,16 @@ int RecSetSyncRequired(char *name, bool lock = true);
 
 
 //------------------------------------------------------------------------
-// Signal Alarm/Warning
+// Signal Alarm/Warning/Error
 //------------------------------------------------------------------------
 #define REC_SignalManager        RecSignalManager
 #define REC_SignalWarning(_n,_d) { Warning("%s", _d); RecSignalManager(_n,_d); }
+#define REC_SignalError(_buf, _already)  {                                \
+  if(_already == false)                                                   \
+	REC_SignalManager(REC_SIGNAL_CONFIG_ERROR, _buf);                 \
+  _already = true;                                                        \
+  Warning("%s", _buf);                                                    \
+}
 
 
 //------------------------------------------------------------------------

@@ -261,7 +261,7 @@ Store::read_config(int fd)
     //      initialize_store().
     //
     // ink_strlcpy(p, cache_system_config_directory, sizeof(p));
-    IOCORE_ReadConfigString(storage_file, "proxy.config.cache.storage_filename", PATH_NAME_MAX);
+    REC_ReadConfigString(storage_file, "proxy.config.cache.storage_filename", PATH_NAME_MAX);
     Layout::relative_to(storage_path, PATH_NAME_MAX, Layout::get()->sysconfdir, storage_file);
     Debug("cache_init", "Store::read_config, fd = -1, \"%s\"", storage_path);
 
@@ -312,7 +312,7 @@ Store::read_config(int fd)
     if ((err = ns->init(pp, size))) {
       char buf[4096];
       snprintf(buf, sizeof(buf), "could not initialize storage \"%s\" [%s]", pp, err);
-      IOCORE_SignalWarning(REC_SIGNAL_SYSTEM_ERROR, buf);
+      REC_SignalWarning(REC_SIGNAL_SYSTEM_ERROR, buf);
       Debug("cache_init", "Store::read_config - %s", buf);
       delete ns;
       ats_free(pp);
@@ -716,7 +716,7 @@ Span::init(char *filename, int64_t size)
      * possibly something other than the actual number of blocks, but the
      * code for other arches seems to.  Revisit this, perhaps. */
     blocks = size / STORE_BLOCK_SIZE;
-    
+
     Debug("cache_init", "Span::init physical sectors %" PRId64 " total size %" PRId64 " geometry size %" PRId64 " store blocks %" PRId64 "",
           physsectors, hw_sector_size * physsectors, size, blocks);
 

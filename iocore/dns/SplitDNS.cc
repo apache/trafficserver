@@ -138,7 +138,7 @@ SplitDNSConfig::startup()
   dnsHandler_mutex = new_ProxyMutex();
 
   //startup just check gsplit_dns_enabled
-  IOCORE_ReadConfigInt32(gsplit_dns_enabled, "proxy.config.dns.splitDNS.enabled");
+  REC_ReadConfigInt32(gsplit_dns_enabled, "proxy.config.dns.splitDNS.enabled");
   splitDNSUpdate = NEW(new ConfigUpdateHandler<SplitDNSConfig>());
   splitDNSUpdate->attach("proxy.config.cache.splitdns.filename");
 }

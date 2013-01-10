@@ -91,7 +91,7 @@ is_addr_valid(
   uint8_t af, ///< Address family (format of data)
   void* ptr ///< Raw address data (not a sockaddr variant!)
 ) {
-  return 
+  return
     (AF_INET == af && INADDR_ANY != *(reinterpret_cast<in_addr_t*>(ptr)))
     || (AF_INET6 == af && !IN6_IS_ADDR_UNSPECIFIED(reinterpret_cast<in6_addr*>(ptr)))
     ;
@@ -188,7 +188,7 @@ HostDBMD5::HostDBMD5()
   : host_name(0), host_len(0), port(0),
     dns_server(0), db_mark(HOSTDB_MARK_GENERIC)
 {
-} 
+}
 
 HostDBCache::HostDBCache()
 {
@@ -338,7 +338,7 @@ HostDBSyncer::HostDBSyncer():
 Continuation(new_ProxyMutex()), frequency(0), start_time(0)
 {
   SET_HANDLER(&HostDBSyncer::sync_event);
-  IOCORE_EstablishStaticConfigInt32(hostdb_sync_frequency, "proxy.config.cache.hostdb.sync_frequency");
+  REC_EstablishStaticConfigInt32(hostdb_sync_frequency, "proxy.config.cache.hostdb.sync_frequency");
 }
 
 
@@ -375,11 +375,11 @@ HostDBCache::start(int flags)
   // Read configuration
   // Command line overrides manager configuration.
   //
-  IOCORE_ReadConfigInt32(hostdb_enable, "proxy.config.hostdb");
-  IOCORE_ReadConfigString(hostdb_filename, "proxy.config.hostdb.filename", PATH_NAME_MAX);
-  IOCORE_ReadConfigInt32(hostdb_size, "proxy.config.hostdb.size");
-  IOCORE_ReadConfigString(storage_path, "proxy.config.hostdb.storage_path", PATH_NAME_MAX);
-  IOCORE_ReadConfigInt32(storage_size, "proxy.config.hostdb.storage_size");
+  REC_ReadConfigInt32(hostdb_enable, "proxy.config.hostdb");
+  REC_ReadConfigString(hostdb_filename, "proxy.config.hostdb.filename", PATH_NAME_MAX);
+  REC_ReadConfigInt32(hostdb_size, "proxy.config.hostdb.size");
+  REC_ReadConfigString(storage_path, "proxy.config.hostdb.storage_path", PATH_NAME_MAX);
+  REC_ReadConfigInt32(storage_size, "proxy.config.hostdb.storage_size");
 
   if (storage_path[0] != '/') {
     Layout::relative_to(storage_path, PATH_NAME_MAX,
@@ -458,19 +458,19 @@ HostDBProcessor::start(int)
   //
   // Register configuration callback, and establish configuation links
   //
-  IOCORE_EstablishStaticConfigInt32(hostdb_ttl_mode, "proxy.config.hostdb.ttl_mode");
-  IOCORE_EstablishStaticConfigInt32(hostdb_disable_reverse_lookup, "proxy.config.cache.hostdb.disable_reverse_lookup");
-  IOCORE_EstablishStaticConfigInt32(hostdb_re_dns_on_reload, "proxy.config.hostdb.re_dns_on_reload");
-  IOCORE_EstablishStaticConfigInt32(hostdb_migrate_on_demand, "proxy.config.hostdb.migrate_on_demand");
-  IOCORE_EstablishStaticConfigInt32(hostdb_strict_round_robin, "proxy.config.hostdb.strict_round_robin");
-  IOCORE_EstablishStaticConfigInt32(hostdb_timed_round_robin, "proxy.config.hostdb.timed_round_robin");
-  IOCORE_EstablishStaticConfigInt32(hostdb_cluster, "proxy.config.hostdb.cluster");
-  IOCORE_EstablishStaticConfigInt32(hostdb_cluster_round_robin, "proxy.config.hostdb.cluster.round_robin");
-  IOCORE_EstablishStaticConfigInt32(hostdb_lookup_timeout, "proxy.config.hostdb.lookup_timeout");
-  IOCORE_EstablishStaticConfigInt32U(hostdb_ip_timeout_interval, "proxy.config.hostdb.timeout");
-  IOCORE_EstablishStaticConfigInt32U(hostdb_ip_stale_interval, "proxy.config.hostdb.verify_after");
-  IOCORE_EstablishStaticConfigInt32U(hostdb_ip_fail_timeout_interval, "proxy.config.hostdb.fail.timeout");
-  IOCORE_EstablishStaticConfigInt32U(hostdb_serve_stale_but_revalidate, "proxy.config.hostdb.serve_stale_for");
+  REC_EstablishStaticConfigInt32(hostdb_ttl_mode, "proxy.config.hostdb.ttl_mode");
+  REC_EstablishStaticConfigInt32(hostdb_disable_reverse_lookup, "proxy.config.cache.hostdb.disable_reverse_lookup");
+  REC_EstablishStaticConfigInt32(hostdb_re_dns_on_reload, "proxy.config.hostdb.re_dns_on_reload");
+  REC_EstablishStaticConfigInt32(hostdb_migrate_on_demand, "proxy.config.hostdb.migrate_on_demand");
+  REC_EstablishStaticConfigInt32(hostdb_strict_round_robin, "proxy.config.hostdb.strict_round_robin");
+  REC_EstablishStaticConfigInt32(hostdb_timed_round_robin, "proxy.config.hostdb.timed_round_robin");
+  REC_EstablishStaticConfigInt32(hostdb_cluster, "proxy.config.hostdb.cluster");
+  REC_EstablishStaticConfigInt32(hostdb_cluster_round_robin, "proxy.config.hostdb.cluster.round_robin");
+  REC_EstablishStaticConfigInt32(hostdb_lookup_timeout, "proxy.config.hostdb.lookup_timeout");
+  REC_EstablishStaticConfigInt32U(hostdb_ip_timeout_interval, "proxy.config.hostdb.timeout");
+  REC_EstablishStaticConfigInt32U(hostdb_ip_stale_interval, "proxy.config.hostdb.verify_after");
+  REC_EstablishStaticConfigInt32U(hostdb_ip_fail_timeout_interval, "proxy.config.hostdb.fail.timeout");
+  REC_EstablishStaticConfigInt32U(hostdb_serve_stale_but_revalidate, "proxy.config.hostdb.serve_stale_for");
 
   //
   // Set up hostdb_current_interval
@@ -811,7 +811,7 @@ HostDBProcessor::getby(Continuation * cont,
           if (!loop) {
             // No retry -> final result. Return it.
             Debug("hostdb", "immediate answer for %s",
-                  hostname ? hostname 
+                  hostname ? hostname
                   : ats_is_ip(ip) ? ats_ip_ntop(ip, ipb, sizeof ipb)
                   : "<null>"
               );
@@ -825,7 +825,7 @@ HostDBProcessor::getby(Continuation * cont,
     } while (loop);
   }
   Debug("hostdb", "delaying force %d answer for %s", aforce_dns,
-    hostname ? hostname 
+    hostname ? hostname
     : ats_is_ip(ip) ? ats_ip_ntop(ip, ipb, sizeof ipb)
     : "<null>"
   );

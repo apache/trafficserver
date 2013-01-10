@@ -168,19 +168,19 @@ DNSProcessor::start(int) {
   //
   // Read configuration
   //
-  IOCORE_EstablishStaticConfigInt32(dns_retries, "proxy.config.dns.retries");
-  IOCORE_EstablishStaticConfigInt32(dns_timeout, "proxy.config.dns.lookup_timeout");
-  IOCORE_EstablishStaticConfigInt32(dns_search, "proxy.config.dns.search_default_domains");
-  IOCORE_EstablishStaticConfigInt32(dns_failover_number, "proxy.config.dns.failover_number");
-  IOCORE_EstablishStaticConfigInt32(dns_failover_period, "proxy.config.dns.failover_period");
-  IOCORE_EstablishStaticConfigInt32(dns_max_dns_in_flight, "proxy.config.dns.max_dns_in_flight");
-  IOCORE_EstablishStaticConfigInt32(dns_validate_qname, "proxy.config.dns.validate_query_name");
-  IOCORE_EstablishStaticConfigInt32(dns_ns_rr, "proxy.config.dns.round_robin_nameservers");
-  IOCORE_ReadConfigStringAlloc(dns_ns_list, "proxy.config.dns.nameservers");
-  IOCORE_ReadConfigStringAlloc(dns_local_ipv4, "proxy.config.dns.local_ipv4");
-  IOCORE_ReadConfigStringAlloc(dns_local_ipv6, "proxy.config.dns.local_ipv6");
-  IOCORE_ReadConfigStringAlloc(dns_resolv_conf, "proxy.config.dns.resolv_conf");
-  IOCORE_EstablishStaticConfigInt32(dns_thread, "proxy.config.dns.dedicated_thread");
+  REC_EstablishStaticConfigInt32(dns_retries, "proxy.config.dns.retries");
+  REC_EstablishStaticConfigInt32(dns_timeout, "proxy.config.dns.lookup_timeout");
+  REC_EstablishStaticConfigInt32(dns_search, "proxy.config.dns.search_default_domains");
+  REC_EstablishStaticConfigInt32(dns_failover_number, "proxy.config.dns.failover_number");
+  REC_EstablishStaticConfigInt32(dns_failover_period, "proxy.config.dns.failover_period");
+  REC_EstablishStaticConfigInt32(dns_max_dns_in_flight, "proxy.config.dns.max_dns_in_flight");
+  REC_EstablishStaticConfigInt32(dns_validate_qname, "proxy.config.dns.validate_query_name");
+  REC_EstablishStaticConfigInt32(dns_ns_rr, "proxy.config.dns.round_robin_nameservers");
+  REC_ReadConfigStringAlloc(dns_ns_list, "proxy.config.dns.nameservers");
+  REC_ReadConfigStringAlloc(dns_local_ipv4, "proxy.config.dns.local_ipv4");
+  REC_ReadConfigStringAlloc(dns_local_ipv6, "proxy.config.dns.local_ipv6");
+  REC_ReadConfigStringAlloc(dns_resolv_conf, "proxy.config.dns.resolv_conf");
+  REC_EstablishStaticConfigInt32(dns_thread, "proxy.config.dns.dedicated_thread");
 
   if (dns_thread > 0) {
     ET_DNS = eventProcessor.spawn_event_threads(1, "ET_DNS"); // TODO: Hmmm, should we just get a single thread some other way?
@@ -1413,7 +1413,7 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
     // Once it's full, a new entry get inputted into try_server_names round-
     // robin style every 50 success dns response.
 
-    // TODO: Why do we do strlen(e->qname) ? That should be available in 
+    // TODO: Why do we do strlen(e->qname) ? That should be available in
     // e->qname_len, no ?
     if (local_num_entries >= DEFAULT_NUM_TRY_SERVER) {
       if ((attempt_num_entries % 50) == 0) {

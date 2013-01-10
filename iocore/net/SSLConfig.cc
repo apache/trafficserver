@@ -133,26 +133,26 @@ SSLConfigParams::initialize()
   //+++++++++++++++++++++++++ Server part +++++++++++++++++++++++++++++++++
   verify_depth = 7;
 
-  IOCORE_ReadConfigInt32(clientCertLevel, "proxy.config.ssl.client.certification_level");
-  IOCORE_ReadConfigStringAlloc(cipherSuite, "proxy.config.ssl.server.cipher_suite");
+  REC_ReadConfigInt32(clientCertLevel, "proxy.config.ssl.client.certification_level");
+  REC_ReadConfigStringAlloc(cipherSuite, "proxy.config.ssl.server.cipher_suite");
 
   int options;
-  IOCORE_ReadConfigInteger(options, "proxy.config.ssl.SSLv2");
+  REC_ReadConfigInteger(options, "proxy.config.ssl.SSLv2");
   if (!options)
     ssl_ctx_options |= SSL_OP_NO_SSLv2;
-  IOCORE_ReadConfigInteger(options, "proxy.config.ssl.SSLv3");
+  REC_ReadConfigInteger(options, "proxy.config.ssl.SSLv3");
   if (!options)
     ssl_ctx_options |= SSL_OP_NO_SSLv3;
-  IOCORE_ReadConfigInteger(options, "proxy.config.ssl.TLSv1");
+  REC_ReadConfigInteger(options, "proxy.config.ssl.TLSv1");
   if (!options)
     ssl_ctx_options |= SSL_OP_NO_TLSv1;
 #ifdef SSL_OP_CIPHER_SERVER_PREFERENCE
-  IOCORE_ReadConfigInteger(options, "proxy.config.ssl.server.honor_cipher_order");
+  REC_ReadConfigInteger(options, "proxy.config.ssl.server.honor_cipher_order");
   if (!options)
     ssl_ctx_options |= SSL_OP_CIPHER_SERVER_PREFERENCE;
 #endif
 
-  IOCORE_ReadConfigInteger(options, "proxy.config.ssl.compression");
+  REC_ReadConfigInteger(options, "proxy.config.ssl.compression");
   if (!options) {
 #ifdef SSL_OP_NO_COMPRESSION
     /* OpenSSL >= 1.0 only */
@@ -162,52 +162,52 @@ SSLConfigParams::initialize()
 #endif
   }
 
-  IOCORE_ReadConfigString(serverCertRelativePath, "proxy.config.ssl.server.cert.path", PATH_NAME_MAX);
+  REC_ReadConfigString(serverCertRelativePath, "proxy.config.ssl.server.cert.path", PATH_NAME_MAX);
   set_paths_helper(serverCertRelativePath, NULL, &serverCertPathOnly, NULL);
 
   char *cert_chain = NULL;
-  IOCORE_ReadConfigStringAlloc(cert_chain, "proxy.config.ssl.server.cert_chain.filename");
+  REC_ReadConfigStringAlloc(cert_chain, "proxy.config.ssl.server.cert_chain.filename");
   set_paths_helper(serverCertRelativePath, cert_chain, NULL, &serverCertChainPath);
   ats_free(cert_chain);
 
-  IOCORE_ReadConfigStringAlloc(multicert_config_file, "proxy.config.ssl.server.multicert.filename");
+  REC_ReadConfigStringAlloc(multicert_config_file, "proxy.config.ssl.server.multicert.filename");
   set_paths_helper(Layout::get()->sysconfdir, multicert_config_file, NULL, &configFilePath);
   ats_free(multicert_config_file);
 
-  IOCORE_ReadConfigStringAlloc(ssl_server_private_key_path, "proxy.config.ssl.server.private_key.path");
+  REC_ReadConfigStringAlloc(ssl_server_private_key_path, "proxy.config.ssl.server.private_key.path");
   set_paths_helper(ssl_server_private_key_path, NULL, &serverKeyPathOnly, NULL);
   ats_free(ssl_server_private_key_path);
 
-  IOCORE_ReadConfigStringAlloc(serverCACertFilename, "proxy.config.ssl.CA.cert.filename");
-  IOCORE_ReadConfigStringAlloc(CACertRelativePath, "proxy.config.ssl.CA.cert.path");
+  REC_ReadConfigStringAlloc(serverCACertFilename, "proxy.config.ssl.CA.cert.filename");
+  REC_ReadConfigStringAlloc(CACertRelativePath, "proxy.config.ssl.CA.cert.path");
   set_paths_helper(CACertRelativePath, serverCACertFilename, &serverCACertPath, &serverCACertFilename);
   ats_free(CACertRelativePath);
 
   // SSL session cache configurations
-  IOCORE_ReadConfigInteger(ssl_session_cache, "proxy.config.ssl.session_cache");
-  IOCORE_ReadConfigInteger(ssl_session_cache_size, "proxy.config.ssl.session_cache.size");
+  REC_ReadConfigInteger(ssl_session_cache, "proxy.config.ssl.session_cache");
+  REC_ReadConfigInteger(ssl_session_cache_size, "proxy.config.ssl.session_cache.size");
 
   // ++++++++++++++++++++++++ Client part ++++++++++++++++++++
   client_verify_depth = 7;
-  IOCORE_ReadConfigInt32(clientVerify, "proxy.config.ssl.client.verify.server");
+  REC_ReadConfigInt32(clientVerify, "proxy.config.ssl.client.verify.server");
 
   ssl_client_cert_filename = NULL;
   ssl_client_cert_path = NULL;
-  IOCORE_ReadConfigStringAlloc(ssl_client_cert_filename, "proxy.config.ssl.client.cert.filename");
-  IOCORE_ReadConfigStringAlloc(ssl_client_cert_path, "proxy.config.ssl.client.cert.path");
+  REC_ReadConfigStringAlloc(ssl_client_cert_filename, "proxy.config.ssl.client.cert.filename");
+  REC_ReadConfigStringAlloc(ssl_client_cert_path, "proxy.config.ssl.client.cert.path");
   set_paths_helper(ssl_client_cert_path, ssl_client_cert_filename, NULL, &clientCertPath);
   ats_free_null(ssl_client_cert_filename);
   ats_free_null(ssl_client_cert_path);
 
-  IOCORE_ReadConfigStringAlloc(ssl_client_private_key_filename, "proxy.config.ssl.client.private_key.filename");
-  IOCORE_ReadConfigStringAlloc(ssl_client_private_key_path, "proxy.config.ssl.client.private_key.path");
+  REC_ReadConfigStringAlloc(ssl_client_private_key_filename, "proxy.config.ssl.client.private_key.filename");
+  REC_ReadConfigStringAlloc(ssl_client_private_key_path, "proxy.config.ssl.client.private_key.path");
   set_paths_helper(ssl_client_private_key_path, ssl_client_private_key_filename, NULL, &clientKeyPath);
   ats_free_null(ssl_client_private_key_filename);
   ats_free_null(ssl_client_private_key_path);
 
 
-  IOCORE_ReadConfigStringAlloc(clientCACertFilename, "proxy.config.ssl.client.CA.cert.filename");
-  IOCORE_ReadConfigStringAlloc(clientCACertRelativePath, "proxy.config.ssl.client.CA.cert.path");
+  REC_ReadConfigStringAlloc(clientCACertFilename, "proxy.config.ssl.client.CA.cert.filename");
+  REC_ReadConfigStringAlloc(clientCACertRelativePath, "proxy.config.ssl.client.CA.cert.path");
   set_paths_helper(clientCACertRelativePath, clientCACertFilename, &clientCACertPath, &clientCACertFilename);
   ats_free(clientCACertRelativePath);
 }

@@ -103,7 +103,7 @@ UnixNetProcessor::accept_internal(
 
   // Fill in accept thread from configuration if necessary.
   if (opt.accept_threads < 0)
-    IOCORE_ReadConfigInteger(accept_threads, "proxy.config.accept_threads");
+    REC_ReadConfigInteger(accept_threads, "proxy.config.accept_threads");
 
   NET_INCREMENT_DYN_STAT(net_accepts_currently_open_stat);
 
@@ -132,7 +132,7 @@ UnixNetProcessor::accept_internal(
 
   int should_filter_int = 0;
   na->server.http_accept_filter = false;
-  IOCORE_ReadConfigInteger(should_filter_int, "proxy.config.net.defer_accept");
+  REC_ReadConfigInteger(should_filter_int, "proxy.config.net.defer_accept");
   if (should_filter_int > 0 && opt.etype == ET_NET)
     na->server.http_accept_filter = true;
 
@@ -178,7 +178,7 @@ UnixNetProcessor::accept_internal(
 #endif
 #ifdef TCP_INIT_CWND
  int tcp_init_cwnd = 0;
- IOCORE_ReadConfigInteger(tcp_init_cwnd, "proxy.config.http.server_tcp_init_cwnd");
+ REC_ReadConfigInteger(tcp_init_cwnd, "proxy.config.http.server_tcp_init_cwnd");
  if(tcp_init_cwnd > 0) {
     Debug("net", "Setting initial congestion window to %d", tcp_init_cwnd);
     if(setsockopt(na->server.fd, IPPROTO_TCP, TCP_INIT_CWND, &tcp_init_cwnd, sizeof(int)) != 0) {

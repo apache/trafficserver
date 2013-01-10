@@ -117,7 +117,7 @@ public:
 
   void register_config_callback(CacheHostTable ** p)
   {
-    IOCORE_RegisterConfigUpdateFunc("proxy.config.cache.hosting_filename", CacheHostTable::config_callback, (void *) p);
+    REC_RegisterConfigUpdateFunc("proxy.config.cache.hosting_filename", CacheHostTable::config_callback, (void *) p);
   }
 
   CacheType type;
