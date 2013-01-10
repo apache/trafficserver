@@ -30,7 +30,7 @@
 // Initialization
 //-------------------------------------------------------------------------
 
-int RecMessageInit(RecModeT mode);
+int RecMessageInit();
 
 //-------------------------------------------------------------------------
 // Message Operations

@@ -27,14 +27,31 @@
 #include "P_RecLocal.h"
 #include "P_RecMessage.h"
 #include "P_RecUtils.h"
+#include "P_RecCompatibility.h"
 
 static bool g_initialized = false;
 static bool g_message_initialized = false;
-static RecModeT g_mode_type = RECM_NULL;
 
-#define REC_LOCAL
-#include "P_RecCore.i"
-#undef  REC_LOCAL
+//-------------------------------------------------------------------------
+// i_am_the_record_owner, only used for libreclocal.a
+//-------------------------------------------------------------------------
+bool
+i_am_the_record_owner(RecT rec_type)
+{
+  switch (rec_type) {
+  case RECT_CONFIG:
+  case RECT_NODE:
+  case RECT_CLUSTER:
+  case RECT_LOCAL:
+    return true;
+  case RECT_PROCESS:
+  case RECT_PLUGIN:
+    return false;
+  default:
+    ink_debug_assert(!"Unexpected RecT type");
+    return false;
+  }
+}
 
 //-------------------------------------------------------------------------
 //
@@ -122,7 +139,7 @@ config_update_thr(void *data)
 {
   REC_NOWARN_UNUSED(data);
   while (true) {
-    RecExecConfigUpdateCbs();
+    RecExecConfigUpdateCbs(REC_LOCAL_UPDATE_REQUIRED);
     usleep(REC_CONFIG_UPDATE_INTERVAL_MS * 1000);
   }
   return NULL;
@@ -170,7 +187,7 @@ RecLocalInitMessage()
     return REC_ERR_OKAY;
   }
 
-  if (RecMessageInit(RECM_SERVER) == REC_ERR_FAIL) {
+  if (RecMessageInit() == REC_ERR_FAIL) {
     return REC_ERR_FAIL;
   }
 

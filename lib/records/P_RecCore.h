@@ -40,6 +40,7 @@ extern InkHashTable *g_records_ht;
 extern ink_rwlock g_records_rwlock;
 extern int g_num_records;
 extern int g_num_update[];
+extern RecModeT g_mode_type;
 extern RecTree *g_records_tree;
 
 // records.config items
@@ -92,7 +93,12 @@ int RecSyncConfigToTB(textBuffer * tb);
 // Misc
 //-------------------------------------------------------------------------
 
-int RecExecConfigUpdateCbs();
+bool i_am_the_record_owner(RecT rec_type);
+int send_push_message();
+int send_pull_message(RecMessageT msg_type);
+int send_register_message(RecRecord * record);
+int recv_message_cb(RecMessage * msg, RecMessageT msg_type, void *cookie);
+int RecExecConfigUpdateCbs(unsigned int update_required_type);
 int RecExecStatUpdateFuncs();
 int RecExecRawStatUpdateFuncs();
 

@@ -42,7 +42,7 @@ libreclocal_a_SOURCES = \
   I_RecSignals.h \
   P_RecCompatibility.h \
   P_RecCore.h \
-  P_RecCore.i \
+  P_RecCore.cc \
   P_RecDefs.h \
   P_RecLocal.h \
   P_RecMessage.h \
@@ -68,7 +68,7 @@ librecprocess_a_SOURCES = \
   I_RecSignals.h \
   P_RecCompatibility.h \
   P_RecCore.h \
-  P_RecCore.i \
+  P_RecCore.cc \
   P_RecDefs.h \
   P_RecMessage.h \
   P_RecProcess.h \

@@ -27,71 +27,10 @@
 
 #include "P_RecCompatibility.h"
 #include "P_RecUtils.h"
+#include "P_RecMessage.h"
+#include "P_RecCore.h"
 
-
-//-------------------------------------------------------------------------
-// i_am_the_record_owner
-//-------------------------------------------------------------------------
-static bool
-i_am_the_record_owner(RecT rec_type)
-{
-#if defined (REC_LOCAL)
-
-  switch (rec_type) {
-  case RECT_CONFIG:
-  case RECT_NODE:
-  case RECT_CLUSTER:
-  case RECT_LOCAL:
-    return true;
-  case RECT_PROCESS:
-  case RECT_PLUGIN:
-    return false;
-  default:
-    ink_debug_assert(!"Unexpected RecT type");
-    return false;
-  }
-
-#elif defined (REC_PROCESS)
-
-  // g_mode_type is defined in either RecLocal.cc or RecProcess.cc.
-  // We can access it since we're inlined by on of these two files.
-  if (g_mode_type == RECM_CLIENT) {
-    switch (rec_type) {
-    case RECT_PROCESS:
-    case RECT_PLUGIN:
-      return true;
-    case RECT_CONFIG:
-    case RECT_NODE:
-    case RECT_CLUSTER:
-    case RECT_LOCAL:
-      return false;
-    default:
-      ink_debug_assert(!"Unexpected RecT type");
-      return false;
-    }
-  } else if (g_mode_type == RECM_STAND_ALONE) {
-    switch (rec_type) {
-    case RECT_CONFIG:
-    case RECT_PROCESS:
-    case RECT_NODE:
-    case RECT_CLUSTER:
-    case RECT_LOCAL:
-    case RECT_PLUGIN:
-      return true;
-    default:
-      ink_debug_assert(!"Unexpected RecT type");
-      return false;
-    }
-  }
-#else
-
-#error "Required #define not specificed; expected REC_LOCAL or REC_PROCESS"
-
-#endif
-
-  return false;
-}
-
+RecModeT g_mode_type = RECM_NULL;
 
 //-------------------------------------------------------------------------
 // send_set_message
@@ -116,7 +55,7 @@ send_set_message(RecRecord * record)
 //-------------------------------------------------------------------------
 // send_register_message
 //-------------------------------------------------------------------------
-static int
+int
 send_register_message(RecRecord * record)
 {
   RecMessage *m;
@@ -136,7 +75,7 @@ send_register_message(RecRecord * record)
 //-------------------------------------------------------------------------
 // send_push_message
 //-------------------------------------------------------------------------
-static int
+int
 send_push_message()
 {
   RecRecord *r;
@@ -171,7 +110,7 @@ send_push_message()
 //-------------------------------------------------------------------------
 // send_pull_message
 //-------------------------------------------------------------------------
-static int
+int
 send_pull_message(RecMessageT msg_type)
 {
   RecRecord *r;
@@ -222,7 +161,7 @@ send_pull_message(RecMessageT msg_type)
 //-------------------------------------------------------------------------
 // recv_message_cb
 //-------------------------------------------------------------------------
-static int
+int
 recv_message_cb(RecMessage * msg, RecMessageT msg_type, void *cookie)
 {
   REC_NOWARN_UNUSED(cookie);
@@ -588,8 +527,12 @@ RecSyncStatsFile()
   int i, num_records;
   bool sync_to_disk;
 
-  // g_mode_type is defined in either RecLocal.cc or RecProcess.cc.
-  // We can access it since we're inlined by on of these two files.
+  /*
+   * g_mode_type should be initialized by
+   * RecLocalInit() or RecProcessInit() earlier.
+   */
+  ink_assert(g_mode_type != RECM_NULL);
+
   if (g_mode_type == RECM_SERVER || g_mode_type == RECM_STAND_ALONE) {
     m = RecMessageAlloc(RECG_NULL);
     num_records = g_num_records;
@@ -788,8 +731,12 @@ RecSyncConfigToTB(textBuffer * tb)
 {
   int err = REC_ERR_FAIL;
 
-  // g_mode_type is defined in either RecLocal.cc or RecProcess.cc.
-  // We can access it since we're inlined by on of these two files.
+  /*
+   * g_mode_type should be initialized by
+   * RecLocalInit() or RecProcessInit() earlier.
+   */
+  ink_assert(g_mode_type != RECM_NULL);
+
   if (g_mode_type == RECM_SERVER || g_mode_type == RECM_STAND_ALONE) {
     RecRecord *r;
     int i, num_records;
@@ -909,19 +856,10 @@ RecSyncConfigToTB(textBuffer * tb)
 // RecExecConifgUpdateCbs
 //-------------------------------------------------------------------------
 int
-RecExecConfigUpdateCbs()
+RecExecConfigUpdateCbs(unsigned int update_required_type)
 {
   RecRecord *r;
   int i, num_records;
-  unsigned int update_required_type;
-
-#if defined (REC_LOCAL)
-  update_required_type = REC_LOCAL_UPDATE_REQUIRED;
-#elif defined (REC_PROCESS)
-  update_required_type = REC_PROCESS_UPDATE_REQUIRED;
-#else
-#error "Required #define not specificed; expected REC_LOCAL or REC_PROCESS"
-#endif
 
   num_records = g_num_records;
   for (i = 0; i < num_records; i++) {

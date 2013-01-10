@@ -31,7 +31,6 @@
 static bool g_message_initialized = false;
 static RecMessageRecvCb g_recv_cb = NULL;
 static void *g_recv_cookie = NULL;
-static RecModeT g_mode_type;
 
 //-------------------------------------------------------------------------
 //
@@ -130,7 +129,7 @@ recv_cb_thr(void *data)
 //-------------------------------------------------------------------------
 
 int
-RecMessageInit(RecModeT mode_type)
+RecMessageInit()
 {
 
   RecHandle h_pipe;
@@ -139,7 +138,11 @@ RecMessageInit(RecModeT mode_type)
     return REC_ERR_OKAY;
   }
 
-  g_mode_type = mode_type;
+  /*
+   * g_mode_type should be initialized by
+   * RecLocalInit() or RecProcessInit() earlier.
+   */
+  ink_assert(g_mode_type != RECM_NULL);
 
   g_send_llq = create_queue();
   g_recv_llq = create_queue();
@@ -215,12 +218,18 @@ RecMessageSend(RecMessage * msg)
 //-------------------------------------------------------------------------
 
 int
-RecMessageInit(RecModeT mode_type)
+RecMessageInit()
 {
   if (g_message_initialized) {
     return REC_ERR_OKAY;
   }
-  g_mode_type = mode_type;
+
+  /*
+   * g_mode_type should be initialized by
+   * RecLocalInit() or RecProcessInit() earlier.
+   */
+  ink_assert(g_mode_type != RECM_NULL);
+
 #if defined (LOCAL_MANAGER)
   lmgmt->registerMgmtCallback(MGMT_SIGNAL_LIBRECORDS, RecMessageRecvThis, NULL);
 #elif defined(PROCESS_MANAGER)

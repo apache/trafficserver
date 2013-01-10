@@ -28,6 +28,7 @@
 #include "P_RecProcess.h"
 #include "P_RecMessage.h"
 #include "P_RecUtils.h"
+#include "P_RecCompatibility.h"
 
 #include "mgmtapi.h"
 
@@ -36,14 +37,47 @@ static bool g_message_initialized = false;
 static bool g_started = false;
 static ink_cond g_force_req_cond;
 static ink_mutex g_force_req_mutex;
-static RecModeT g_mode_type = RECM_NULL;
 static int g_rec_raw_stat_sync_interval_ms = REC_RAW_STAT_SYNC_INTERVAL_MS;
 static int g_rec_config_update_interval_ms = REC_CONFIG_UPDATE_INTERVAL_MS;
 static int g_rec_remote_sync_interval_ms = REC_REMOTE_SYNC_INTERVAL_MS;
 
-#define REC_PROCESS
-#include "P_RecCore.i"
-#undef  REC_PROCESS
+//-------------------------------------------------------------------------
+// i_am_the_record_owner, only used for librecprocess.a
+//-------------------------------------------------------------------------
+bool
+i_am_the_record_owner(RecT rec_type)
+{
+  if (g_mode_type == RECM_CLIENT) {
+    switch (rec_type) {
+    case RECT_PROCESS:
+    case RECT_PLUGIN:
+      return true;
+    case RECT_CONFIG:
+    case RECT_NODE:
+    case RECT_CLUSTER:
+    case RECT_LOCAL:
+      return false;
+    default:
+      ink_debug_assert(!"Unexpected RecT type");
+      return false;
+    }
+  } else if (g_mode_type == RECM_STAND_ALONE) {
+    switch (rec_type) {
+    case RECT_CONFIG:
+    case RECT_PROCESS:
+    case RECT_NODE:
+    case RECT_CLUSTER:
+    case RECT_LOCAL:
+    case RECT_PLUGIN:
+      return true;
+    default:
+      ink_debug_assert(!"Unexpected RecT type");
+      return false;
+    }
+  }
+
+  return false;
+}
 
 //-------------------------------------------------------------------------
 // Simple setters for the intervals to decouple this from the proxy
@@ -245,7 +279,7 @@ struct config_update_cont: public Continuation
     REC_NOWARN_UNUSED(event);
     REC_NOWARN_UNUSED(e);
     while (true) {
-      RecExecConfigUpdateCbs();
+      RecExecConfigUpdateCbs(REC_PROCESS_UPDATE_REQUIRED);
       Debug("statsproc", "config_update_cont() processed");
       usleep(g_rec_config_update_interval_ms * 1000);
     }
@@ -349,7 +383,7 @@ RecProcessInitMessage(RecModeT mode_type)
     return REC_ERR_OKAY;
   }
 
-  if (RecMessageInit(mode_type) == REC_ERR_FAIL) {
+  if (RecMessageInit() == REC_ERR_FAIL) {
     return REC_ERR_FAIL;
   }
 
