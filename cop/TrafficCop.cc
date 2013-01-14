@@ -243,8 +243,6 @@ sig_term(int signum)
 {
   pid_t pid = 0;
   int status = 0;
-  int err;
-  pid_t holding_pid;
 
   //killsig = SIGTERM;
 
