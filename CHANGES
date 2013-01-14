@@ -1,7 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.2.3
 
-  [TS-1575] Ranges broken, "fix" by dsiabling
+  *) [TS-1585] plugins need memory barriers for ARM
+
+  *) [TS-1575] Ranges broken, "fix" by dsiabling
  
   *) [TS-1536] SNI support breaks IP-based lookup
 
