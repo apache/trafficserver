@@ -54,13 +54,13 @@ PATCHES ACCEPTED TO BACKPORT FROM TRUNK:
 
   Mutex leak fix
   Patch: db0cfd44222e5e280db5b832496691ec7722e28e
-  Jira: https://issues.apache.org/jira/browse/TS-1580
+  Jira: https://issues.apache.org/jira/browse/TS-1652
   +1: amc, zym, jpeach, igalic
     this patch have been in our own tree for weeks --zym
 	why didn't you propose it yourself then! --igalic
 	
   raw disk cache disabled when system start
-  Jira: https://issues.apache.org/jira/browse/TS-1351
+  Jira: https://issues.apache.org/jira/browse/TS-1651
   Patch: 41754c7e5a23f3785384afd0eea5f50486e407d9
   +1: zym, igalic, jpeach, humbedooh
     This is a patch fix for the init groups, without the fix, you
@@ -82,6 +82,11 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
          26849e983a1d59918a9260f59b3f896b0f550d0c
          690ccc26082c75a93053bb7643c848b34cfca100
   +1: igalic, jpeach
+
+  enable_read_while_writer not working
+  Jira: https://issues.apache.org/jira/browse/TS-1433
+  Patch: ca1a9136f1f78c599de1b3e49641e383b12117fe
+  +1: igalic
 
 
 RELEASE PROCESS
