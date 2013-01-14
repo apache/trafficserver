@@ -1,5 +1,7 @@
                                                          -*- coding: utf-8 -*-
-Changes with Apache Traffic Server 3.2.3
+Changes with Apache Traffic Server 3.3.1
+
+  *) [TS-1652] Mutex leak plugged.
 
   *) [TS-1585] plugins need memory barriers for ARM
 

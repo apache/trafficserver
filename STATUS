@@ -41,13 +41,6 @@ A list of all bugs open for the next development release can be found at
 
 PATCHES ACCEPTED TO BACKPORT FROM TRUNK:
 
-  Mutex leak fix
-  Patch: db0cfd44222e5e280db5b832496691ec7722e28e
-  Jira: https://issues.apache.org/jira/browse/TS-1652
-  +1: amc, zym, jpeach, igalic
-    this patch have been in our own tree for weeks --zym
-	why didn't you propose it yourself then! --igalic
-	
   raw disk cache disabled when system start
   Jira: https://issues.apache.org/jira/browse/TS-1651
   Patch: 41754c7e5a23f3785384afd0eea5f50486e407d9
