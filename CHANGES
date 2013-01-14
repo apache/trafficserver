@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.3.1
 
+  *) [TS-1609] Traffic Cop doesn't wait() for its children
+
   *) [TS-1601] HttpServerSession::release don't close ServerSession if ServerSessionPool locking contention
 
   *) [TS-1643] Post requests with no Content-Length header sends default error response
