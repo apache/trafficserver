@@ -33,6 +33,7 @@
 #include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/sem.h>
+#include <grp.h>
 
 union semun
 {
@@ -1830,6 +1831,23 @@ main(int argc, char *argv[])
   signal(SIGTSTP, SIG_IGN);
   signal(SIGTTOU, SIG_IGN);
   signal(SIGTTIN, SIG_IGN);
+
+  // setup supplementary groups if it is not set. any way, worth a try.
+  if (0 == getgroups(0, NULL)) {
+    uid_t uid = getuid();
+    gid_t gid = getgid();
+
+    const int bufSize = 1024;
+    char buf[bufSize];
+
+    struct passwd passwdInfo;
+    struct passwd *ppasswd = NULL;
+    int res;
+    res = getpwuid_r(uid, &passwdInfo, buf, bufSize, &ppasswd);
+    if (!res && ppasswd) {
+        initgroups(ppasswd->pw_name,gid);
+    }
+  }
 
   setsid();                     // Important, thanks Vlad. :)
 #if (defined(freebsd) && !defined(kfreebsd)) || defined(openbsd)

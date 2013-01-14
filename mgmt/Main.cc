@@ -57,6 +57,7 @@
 #if TS_USE_POSIX_CAP
 #include <sys/capability.h>
 #endif
+#include <grp.h>
 
 #define FD_THROTTLE_HEADROOM (128 + 64) // TODO: consolidate with THROTTLE_FD_HEADROOM
 
@@ -1234,6 +1235,11 @@ runAsUser(char *userName)
     if (uid != result->pw_uid && euid != result->pw_uid) {
       mgmt_elog(stderr, "[runAsUser] Fatal Error: Failed to switch to user %s\n", userName);
       _exit(1);
+    }
+
+    // setup supplementary groups if it is not set.
+    if (0 == getgroups(0, NULL)) {
+      initgroups(&userName[0],result->pw_gid);
     }
 
 #if TS_USE_POSIX_CAP
