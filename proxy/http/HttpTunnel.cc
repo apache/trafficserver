@@ -798,7 +798,8 @@ HttpTunnel::producer_run(HttpTunnelProducer * p)
   }
 
   int64_t read_start_pos = 0;
-  if (p->vc_type == HT_CACHE_READ && sm->t_state.range_setup == HttpTransact::RANGE_REQUESTED && sm->t_state.num_range_fields == 1) {
+  if (p->vc_type == HT_CACHE_READ && sm->t_state.range_setup == HttpTransact::RANGE_NOT_TRANSFORM_REQUESTED) {
+    ink_debug_assert(sm->t_state.num_range_fields == 1); // we current just support only one range entry
     read_start_pos = sm->t_state.ranges[0]._start;
     producer_n = (sm->t_state.ranges[0]._end - sm->t_state.ranges[0]._start)+1;
     consumer_n = (producer_n + sm->client_response_hdr_bytes);

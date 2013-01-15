@@ -655,6 +655,7 @@ public:
     RANGE_REQUESTED,
     RANGE_NOT_SATISFIABLE,
     RANGE_NOT_HANDLED,
+    RANGE_NOT_TRANSFORM_REQUESTED
   };
   
   enum CacheAuth_t
@@ -1070,11 +1071,8 @@ public:
     
     // Http Range: related variables
     RangeSetup_t range_setup;
-    bool unsatisfiable_range;
-    bool not_handle_range;
     int64_t num_range_fields;
     int64_t range_output_cl;
-    int64_t current_range;
     RangeRecord *ranges;
     
     OverridableHttpConfigParams *txn_conf;
@@ -1170,11 +1168,8 @@ public:
         pristine_url(),
         api_skip_all_remapping(false),
         range_setup(RANGE_NONE),
-        unsatisfiable_range(false),
-        not_handle_range(false),
         num_range_fields(0),
         range_output_cl(0),
-        current_range(-1),
         ranges(NULL),
         txn_conf(NULL),
         transparent_passthrough(false)
@@ -1266,9 +1261,9 @@ public:
       arena.reset();
       pristine_url.clear();
 
-      delete[] ranges; ranges = NULL;
+      delete[] ranges;
+      ranges = NULL;
       range_setup = RANGE_NONE;
-      unsatisfiable_range = true;
       return;
     }
 

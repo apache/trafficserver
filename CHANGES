@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.3.1
 
+  *) [TS-1574] [TS-1577] when read_from_writer, we should not do range acceleration.
+   Range request can invalidate cached copy if the server reponse is 304.
+
   *) [TS-1609] Traffic Cop doesn't wait() for its children
 
   *) [TS-1601] HttpServerSession::release don't close ServerSession if ServerSessionPool locking contention

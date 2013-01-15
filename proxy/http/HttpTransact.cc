@@ -2597,26 +2597,7 @@ HttpTransact::HandleCacheOpenReadHit(State* s)
 
       build_request(s, &s->hdr_info.client_request, &s->hdr_info.server_request, s->current.server->http_version);
 
-      /* We can't handle revalidate requests with ranges. If it comes
-         back unmodified that's fine but if not the OS will either
-         provide the entire object which is difficult to handle and
-         potentially very inefficient, or we'll get back just the
-         range and we can't cache that anyway. So just forward the
-         request.
-
-         Note: We're here only if the cache is stale so we don't want
-         to serve it.
-      */
-      if (s->hdr_info.client_request.presence(MIME_PRESENCE_RANGE)) {
-        Debug("http_trans", "[CacheOpenReadHit] Forwarding range request for stale cache object.");
-        s->cache_info.action = CACHE_DO_NO_ACTION;
-        s->cache_info.object_read = NULL;
-      } else {
-        // If it's not a range tweak the request to be a revalidate.
-        // Note this doesn't actually issue the request, it simply
-        // adjusts the headers for later.
-        issue_revalidate(s);
-      }
+      issue_revalidate(s);
 
       // this can not be anything but a simple origin server connection.
       // in other words, we would not have looked up the cache for a
@@ -6243,8 +6224,8 @@ HttpTransact::is_response_cacheable(State* s, HTTPHdr* request, HTTPHdr* respons
     }
   }
   // do not cache partial content - Range response
-  if (response_code == HTTP_STATUS_PARTIAL_CONTENT) {
-    DebugTxn("http_trans", "[is_response_cacheable] " "Partial content response - don't cache");
+  if (response_code == HTTP_STATUS_PARTIAL_CONTENT || response_code == HTTP_STATUS_RANGE_NOT_SATISFIABLE) {
+    DebugTxn("http_trans", "[is_response_cacheable] " "response code %d - don't cache", response_code);
     return false;
   }
 
@@ -6746,11 +6727,16 @@ HttpTransact::handle_content_length_header(State* s, HTTPHdr* header, HTTPHdr* b
         ink_debug_assert(header->get_content_length() == cl);
 
         switch (s->source) {
+        case SOURCE_HTTP_ORIGIN_SERVER:
+          // We made our decision about whether to trust the
+          //   response content length in init_state_vars_from_response()
+          if (s->range_setup != HttpTransact::RANGE_NOT_TRANSFORM_REQUESTED)
+            break;
         case SOURCE_CACHE:
           
           // if we are doing a single Range: request, calculate the new
           // C-L: header
-          if (s->range_setup == HttpTransact::RANGE_REQUESTED && s->num_range_fields == 1) {
+          if (s->range_setup == HttpTransact::RANGE_NOT_TRANSFORM_REQUESTED) {
             Debug("http_trans", "Partial content requested, re-calculating content-length");
             change_response_header_because_of_range_request(s,header);
             s->hdr_info.trust_response_cl = true;
@@ -6767,10 +6753,6 @@ HttpTransact::handle_content_length_header(State* s, HTTPHdr* header, HTTPHdr* b
             DebugTxn("http_trans", "Content Length header and cache object size mismatch." "Disabling keep-alive");
             s->hdr_info.trust_response_cl = false;
           }
-          break;
-        case SOURCE_HTTP_ORIGIN_SERVER:
-          // We made our decision about whether to trust the
-          //   response content length in init_state_vars_from_response()
           break;
         case SOURCE_TRANSFORM:
           if (s->hdr_info.transform_response_cl == HTTP_UNDEFINED_CL) {
@@ -6801,8 +6783,9 @@ HttpTransact::handle_content_length_header(State* s, HTTPHdr* header, HTTPHdr* b
           header->field_delete(MIME_FIELD_CONTENT_LENGTH, MIME_LEN_CONTENT_LENGTH);
           s->hdr_info.trust_response_cl = false;
           s->hdr_info.request_content_length = HTTP_UNDEFINED_CL;
+          ink_assert(s->range_setup == RANGE_NONE);
         } 
-        else if (s->range_setup == HttpTransact::RANGE_REQUESTED && s->num_range_fields == 1) {
+        else if (s->range_setup == RANGE_NOT_TRANSFORM_REQUESTED) {
           // if we are doing a single Range: request, calculate the new
           // C-L: header
           Debug("http_trans", "Partial content requested, re-calculating content-length");
@@ -6826,7 +6809,7 @@ HttpTransact::handle_content_length_header(State* s, HTTPHdr* header, HTTPHdr* b
           s->hdr_info.trust_response_cl = false;
         }
         header->field_delete(MIME_FIELD_CONTENT_LENGTH, MIME_LEN_CONTENT_LENGTH);
-
+        ink_assert(s->range_setup != RANGE_NOT_TRANSFORM_REQUESTED);
       }
     }
   } else if (header->type_get() == HTTP_TYPE_REQUEST) {
@@ -8955,13 +8938,12 @@ HttpTransact::change_response_header_because_of_range_request(State *s, HTTPHdr 
 
     header->field_attach(field);
     header->set_content_length(s->range_output_cl);
-  }
-  else {
+  } else {
     char numbers[RANGE_NUMBERS_LENGTH];
-
+    header->field_delete(MIME_FIELD_CONTENT_RANGE, MIME_LEN_CONTENT_RANGE);
     field = header->field_create(MIME_FIELD_CONTENT_RANGE, MIME_LEN_CONTENT_RANGE);
     snprintf(numbers, sizeof(numbers), "bytes %" PRId64"-%" PRId64"/%" PRId64, s->ranges[0]._start, s->ranges[0]._end, s->cache_info.object_read->object_size_get());
-    field->value_append(header->m_heap, header->m_mime, numbers, strlen(numbers));
+    field->value_set(header->m_heap, header->m_mime, numbers, strlen(numbers));
     header->field_attach(field);
     header->set_content_length(s->range_output_cl);
   }

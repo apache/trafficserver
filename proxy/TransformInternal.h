@@ -115,7 +115,7 @@ public:
 class RangeTransform:public INKVConnInternal
 {
 public:
-  RangeTransform(ProxyMutex * mutex, RangeRecord * ranges, bool, int, HTTPHdr *transform_resp, const char * content_type, int content_type_len, int64_t content_length);
+  RangeTransform(ProxyMutex * mutex, RangeRecord * ranges, int num_fields, HTTPHdr *transform_resp, const char * content_type, int content_type_len, int64_t content_length);
   ~RangeTransform();
 
   // void parse_range_and_compare();
@@ -135,8 +135,6 @@ public:
   // MIMEField *m_range_field;
   HTTPHdr *m_transform_resp;
   VIO *m_output_vio;
-  bool m_unsatisfiable_range;
-  // bool m_not_handle_range;
   int64_t m_range_content_length;
   int m_num_chars_for_cl;
   int m_num_range_fields;

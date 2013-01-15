@@ -1847,7 +1847,7 @@ CacheVC::dead(int event, Event *e) {
 bool
 CacheVC::is_pread_capable()
 {
-  return alternate.get_frag_offset_count() > 0;
+  return !f.read_from_writer_called;
 }
 
 #define STORE_COLLISION 1

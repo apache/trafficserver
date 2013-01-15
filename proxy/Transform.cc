@@ -114,9 +114,9 @@ TransformProcessor::null_transform(ProxyMutex *mutex)
   -------------------------------------------------------------------------*/
 
 INKVConnInternal *
-TransformProcessor::range_transform(ProxyMutex *mut, RangeRecord *ranges, bool unsatisfiable, int num_fields, HTTPHdr *transform_resp, const char * content_type, int content_type_len, int64_t content_length)
+TransformProcessor::range_transform(ProxyMutex *mut, RangeRecord *ranges, int num_fields, HTTPHdr *transform_resp, const char * content_type, int content_type_len, int64_t content_length)
 {
-  RangeTransform *range_transform = NEW(new RangeTransform(mut, ranges, unsatisfiable, num_fields, transform_resp, content_type, content_type_len, content_length));
+  RangeTransform *range_transform = NEW(new RangeTransform(mut, ranges, num_fields, transform_resp, content_type, content_type_len, content_length));
   return range_transform;
 }
 
@@ -729,13 +729,12 @@ TransformTest::run()
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-RangeTransform::RangeTransform(ProxyMutex *mut, RangeRecord *ranges,bool unsatisfiable, int num_fields, HTTPHdr * transform_resp, const char * content_type, int content_type_len, int64_t content_length)
+RangeTransform::RangeTransform(ProxyMutex *mut, RangeRecord *ranges, int num_fields, HTTPHdr * transform_resp, const char * content_type, int content_type_len, int64_t content_length)
   : INKVConnInternal(NULL, reinterpret_cast<TSMutex>(mut)),
   m_output_buf(NULL),
   m_output_reader(NULL),
   m_transform_resp(transform_resp),
   m_output_vio(NULL),
-  m_unsatisfiable_range(unsatisfiable),
   m_range_content_length(0),
   m_num_range_fields(num_fields),
   m_current_range(0), m_content_type(content_type), m_content_type_len(content_type_len), m_ranges(ranges), m_output_cl(content_length), m_done(0)
@@ -969,7 +968,7 @@ RangeTransform::add_sub_header(int index)
   m_done += m_output_buf->write("\r\n", 2);
   m_done += m_output_buf->write(cont_range, sizeof(cont_range) - 1);
 
-  snprintf(numbers, sizeof(numbers), "%" PRId64 "d-%" PRId64 "d/%" PRId64 "d", m_ranges[index]._start, m_ranges[index]._end, m_output_cl);
+  snprintf(numbers, sizeof(numbers), "%" PRId64 "-%" PRId64 "/%" PRId64 "", m_ranges[index]._start, m_ranges[index]._end, m_output_cl);
   len = strlen(numbers);
   if (len < RANGE_NUMBERS_LENGTH)
     m_done += m_output_buf->write(numbers, len);
@@ -992,25 +991,32 @@ RangeTransform::change_response_header()
   HTTPStatus status_code;
   
   ink_release_assert(m_transform_resp);
-  ink_release_assert(m_transform_resp->field_find(MIME_FIELD_CONTENT_RANGE, MIME_LEN_CONTENT_RANGE) == NULL);
 
   status_code = HTTP_STATUS_PARTIAL_CONTENT;
   m_transform_resp->status_set(status_code);
   reason_phrase = (char *) (http_hdr_reason_lookup(status_code));
   m_transform_resp->reason_set(reason_phrase, strlen(reason_phrase));
 
-  // set the right Content-Type for multiple entry Range
-  field = m_transform_resp->field_find(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE);
+  if (m_num_range_fields > 1) {
+    // set the right Content-Type for multiple entry Range
+    field = m_transform_resp->field_find(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE);
 
-  if (field != NULL)
-    m_transform_resp->field_delete(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE);
+    if (field != NULL)
+      m_transform_resp->field_delete(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE);
 
 
-  field = m_transform_resp->field_create(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE);
-  field->value_append(m_transform_resp->m_heap, m_transform_resp->m_mime, range_type, sizeof(range_type) - 1);
+    field = m_transform_resp->field_create(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE);
+    field->value_append(m_transform_resp->m_heap, m_transform_resp->m_mime, range_type, sizeof(range_type) - 1);
 
-  m_transform_resp->field_attach(field);
-
+    m_transform_resp->field_attach(field);
+  } else {
+    char numbers[RANGE_NUMBERS_LENGTH];
+    m_transform_resp->field_delete(MIME_FIELD_CONTENT_RANGE, MIME_LEN_CONTENT_RANGE);
+    field = m_transform_resp->field_create(MIME_FIELD_CONTENT_RANGE, MIME_LEN_CONTENT_RANGE);
+    snprintf(numbers, sizeof(numbers), "bytes %" PRId64"-%" PRId64"/%" PRId64, m_ranges[0]._start, m_ranges[0]._end, m_output_cl);
+    field->value_set(m_transform_resp->m_heap, m_transform_resp->m_mime, numbers, strlen(numbers));
+    m_transform_resp->field_attach(field);
+  }
 }
 
 #undef RANGE_NUMBERS_LENGTH
