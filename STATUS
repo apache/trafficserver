@@ -41,11 +41,6 @@ A list of all bugs open for the next development release can be found at
 
 PATCHES ACCEPTED TO BACKPORT FROM TRUNK:
 
-  enable_read_while_writer not working
-  Jira: https://issues.apache.org/jira/browse/TS-1656
-  Patch: ca1a9136f1f78c599de1b3e49641e383b12117fe
-  +1: igalic, zym, oschaaf
-
   Traffic Cop doesn't wait() for its children
   Jira: https://issues.apache.org/jira/browse/TS-1657
   Patch: f29b2c71287ba8e440656969198c22039eb7aff8
