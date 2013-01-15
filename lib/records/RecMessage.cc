@@ -249,6 +249,9 @@ RecMessageSend(RecMessage * msg)
 {
   int msg_size;
 
+  if (!g_message_initialized)
+    return REC_ERR_OKAY;
+
   // Make a copy of the record, but truncate it to the size actually used
   if (g_mode_type == RECM_CLIENT || g_mode_type == RECM_SERVER) {
     msg->o_end = msg->o_write;
