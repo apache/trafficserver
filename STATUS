@@ -61,7 +61,7 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   enable_read_while_writer not working
   Jira: https://issues.apache.org/jira/browse/TS-1433
   Patch: ca1a9136f1f78c599de1b3e49641e383b12117fe
-  +1: igalic
+  +1: igalic, zym
 
   Traffic Cop doesn't wait() for its children
   Jira: https://issues.apache.org/jira/browse/TS-1609
