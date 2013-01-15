@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.3.1
 
+  *) [TS-977] RecCore usage cleanup
+
   *) [TS-1574] [TS-1577] when read_from_writer, we should not do range acceleration.
    Range request can invalidate cached copy if the server reponse is 304.
 
