@@ -41,14 +41,6 @@ A list of all bugs open for the next development release can be found at
 
 PATCHES ACCEPTED TO BACKPORT FROM TRUNK:
 
-  Traffic Cop doesn't wait() for its children
-  Jira: https://issues.apache.org/jira/browse/TS-1657
-  Patch: f29b2c71287ba8e440656969198c22039eb7aff8
-         f0aaa22098afcc4960a761c67180c5366bf5a5b2
-         6424a9c1c4b0b09c97a005240e1e5a206d2e918f
-         02d5a927ff27f4189c9dffe1f175e2ee1210ccf4
-  +1: igalic, zwoop, oschaaf
-
 PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   [ New proposals should be added at the end of the list ]
 
