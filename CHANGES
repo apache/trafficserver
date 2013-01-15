@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.2.4
 
+  *) [TS-1655] RAW disk support for FreeBSD
+
   *) [TS-1651] raw disk cache disabled when system start
 
   *) [TS-1652] Mutex leak plugged.
