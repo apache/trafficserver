@@ -178,29 +178,20 @@ CacheVC::openReadChooseWriter(int event, Event * e)
   intptr_t err = ECACHE_DOC_BUSY;
   CacheVC *w = NULL;
 
-  CACHE_TRY_LOCK(lock, vol->mutex, mutex->thread_holding);
-  if (!lock)
-    VC_SCHED_LOCK_RETRY();
-  od = vol->open_read(&first_key); // recheck in case the lock failed
-  if (!od) {
-    MUTEX_RELEASE(lock);
-    write_vc = NULL;
-    SET_HANDLER(&CacheVC::openReadStartHead);
-    return openReadStartHead(event, e);
-  }
+  ink_debug_assert(vol->mutex->thread_holding == mutex->thread_holding && write_vc == NULL);
+
+  if (!od)
+    return EVENT_RETURN;
+
   if (frag_type != CACHE_FRAG_TYPE_HTTP) {
     ink_assert(od->num_writers == 1);
     w = od->writers.head;
     if (w->start_time > start_time || w->closed < 0) {
-      MUTEX_RELEASE(lock);
       od = NULL;
-      SET_HANDLER(&CacheVC::openReadStartHead);
-      return openReadStartHead(EVENT_IMMEDIATE, 0);
+      return EVENT_RETURN;
     }
-    if (!w->closed) {
-      MUTEX_RELEASE(lock);
-      return openReadFromWriterFailure(CACHE_EVENT_OPEN_READ_FAILED, (Event *) -err);
-    }
+    if (!w->closed)
+      return -err;
     write_vc = w;
   }
 #ifdef HTTP_CACHE
@@ -215,16 +206,16 @@ CacheVC::openReadChooseWriter(int event, Event * e)
       if (w->start_time > start_time || w->closed < 0)
         continue;
       if (!w->closed && !cache_config_read_while_writer) {
-        MUTEX_RELEASE(lock);
-        return openReadFromWriterFailure(CACHE_EVENT_OPEN_READ_FAILED, (Event *) - err);
+        return -err;
       }
       if (w->alternate_index != CACHE_ALT_INDEX_DEFAULT)
         continue;
 
       if (!w->closed && !w->alternate.valid()) {
         od = NULL;
+        ink_debug_assert(!write_vc);
         vector.clear(false);
-        VC_SCHED_LOCK_RETRY();
+        return EVENT_CONT;
       }
       // construct the vector from the writers.
       int alt_ndx = CACHE_ALT_INDEX_DEFAULT;
@@ -245,24 +236,19 @@ CacheVC::openReadChooseWriter(int event, Event * e)
 
     if (!vector.count()) {
       if (od->reading_vec) {
-        MUTEX_RELEASE(lock);
        // the writer(s) are reading the vector, so there is probably
         // an old vector. Since this reader came before any of the
         // current writers, we should return the old data
         od = NULL;
-        SET_HANDLER(&CacheVC::openReadStartHead);
-        return openReadStartHead(EVENT_IMMEDIATE, 0);
-      } else {
-        MUTEX_RELEASE(lock);
-        return openReadFromWriterFailure(CACHE_EVENT_OPEN_READ_FAILED, (Event *) - ECACHE_NO_DOC);
+        return EVENT_RETURN;
       }
+      return -ECACHE_NO_DOC;
     }
 #ifdef FIXME_NONMODULAR
     if (cache_config_select_alternate) {
       alternate_index = HttpTransactCache::SelectFromAlternates(&vector, &request, params);
       if (alternate_index < 0)
-        MUTEX_RELEASE(lock);
-        return openReadFromWriterFailure(CACHE_EVENT_OPEN_READ_FAILED, (Event *) - ECACHE_ALT_MISS);
+        return -ECACHE_ALT_MISS;
     } else
 #endif
       alternate_index = 0;
@@ -275,11 +261,9 @@ CacheVC::openReadChooseWriter(int event, Event * e)
     }
     vector.clear(false);
     if (!write_vc) {
-      MUTEX_RELEASE(lock);
       DDebug("cache_read_agg", "%p: key: %X writer alternate different: %d", this, first_key.word(1), alternate_index);
       od = NULL;
-      SET_HANDLER(&CacheVC::openReadStartHead);
-      return openReadStartHead(EVENT_IMMEDIATE, 0);
+      return EVENT_RETURN;
     }
 
     DDebug("cache_read_agg",
@@ -288,7 +272,7 @@ CacheVC::openReadChooseWriter(int event, Event * e)
           vector.count(), alternate_index, od->num_writers, write_vc);
   }
 #endif //HTTP_CACHE
-  return EVENT_CONT;
+  return EVENT_NONE;
 }
 
 int
@@ -328,10 +312,20 @@ CacheVC::openReadFromWriter(int event, Event * e)
   } else
     ink_debug_assert(od == vol->open_read(&first_key));
   if (!write_vc) {
-    MUTEX_RELEASE(lock);
     int ret = openReadChooseWriter(event, e);
-    if (ret == EVENT_DONE || !write_vc)
-      return ret;
+    if (ret < 0) {
+      MUTEX_RELEASE(lock);
+      SET_HANDLER(&CacheVC::openReadFromWriterFailure);
+      return openReadFromWriterFailure(CACHE_EVENT_OPEN_READ_FAILED, reinterpret_cast<Event *> (ret));
+    } else if (ret == EVENT_RETURN) {
+      MUTEX_RELEASE(lock);
+      SET_HANDLER(&CacheVC::openReadStartHead);
+      return openReadStartHead(event, e);
+    } else if (ret == EVENT_CONT) {
+      ink_debug_assert(!write_vc);
+      VC_SCHED_WRITER_RETRY();
+    } else
+      ink_assert(write_vc);
   } else {
     if (writer_done()) {
       MUTEX_RELEASE(lock);
@@ -358,8 +352,10 @@ CacheVC::openReadFromWriter(int event, Event * e)
   // allow reading from unclosed writer for http requests only.
   ink_assert(frag_type == CACHE_FRAG_TYPE_HTTP || write_vc->closed);
   if (!write_vc->closed && !write_vc->fragment) {
-    if (!cache_config_read_while_writer || frag_type != CACHE_FRAG_TYPE_HTTP)
+    if (!cache_config_read_while_writer || frag_type != CACHE_FRAG_TYPE_HTTP) {
+      MUTEX_RELEASE(lock);
       return openReadFromWriterFailure(CACHE_EVENT_OPEN_READ_FAILED, (Event *) - err);
+    }
     DDebug("cache_read_agg",
           "%p: key: %X writer: closed:%d, fragment:%d, retry: %d",
           this, first_key.word(1), write_vc->closed, write_vc->fragment, writer_lock_retry);
