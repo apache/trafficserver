@@ -50,6 +50,11 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
          72dcbdc58024abc6f67a592853e488d7f9eebd83
   igalic says: This still needs some more patches I haven't identified.
 
+  Fix SSL accept performance regression
+  Jira: https://issues.apache.org/jira/browse/TS-1538
+  Patch: ccc4b37b91f25c2e985f195b77369ce20e2e8e81
+  +1: jpeach
+
 RELEASE PROCESS
 
 The Traffic Server release process is documented at
