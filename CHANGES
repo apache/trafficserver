@@ -1,11 +1,11 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.2.4
 
-  *) [TS-1657] to make read from writer work
+  *) [TS-1657] Traffic Cop doesn't wait() for its children
 
   *) [TS-1656] to make read from writer work
 
-  *) [TS-1655] RAW disk support for FreeBSD
+  *) [TS-1658] RAW disk support for FreeBSD
 
   *) [TS-1651] raw disk cache disabled when system start
 
