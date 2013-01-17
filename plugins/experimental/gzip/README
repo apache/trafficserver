@@ -53,6 +53,9 @@ cache false
 
 compressible-content-type text/*
 compressible-content-type *javascript*
+#disabling is possible too
+compressible-content-type !text/javascript
+
 disallow /notthis/*.js
 disallow /notthat*
 disallow */bla*

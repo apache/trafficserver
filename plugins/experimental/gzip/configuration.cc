@@ -128,17 +128,23 @@ namespace Gzip {
   }
 
   bool HostConfiguration::ContentTypeIsCompressible(const char * content_type, int content_type_length) {
-   string scontent_type(content_type, content_type_length);
-
+    string scontent_type(content_type, content_type_length);
+    bool is_match = false;
+    
     for (size_t i = 0; i < compressible_content_types_.size(); i++) {
-      if ( fnmatch (compressible_content_types_[i].c_str(), scontent_type.c_str(), 0) == 0 ) {
+      const char* match_string = compressible_content_types_[i].c_str();
+      bool exclude = match_string[0] == '!';
+      if (exclude) {
+        match_string++;//skip '!'
+      }
+      if ( fnmatch (match_string, scontent_type.c_str(), 0) == 0 ) {
         info("compressible content type [%s], matched on pattern [%s]",
             scontent_type.c_str(), compressible_content_types_[i].c_str());
-        return true;
+        is_match = !exclude;
       }
     }
 
-    return false;
+    return is_match;
   }
 
   Configuration * Configuration::Parse(const char * path ) {
