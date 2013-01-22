@@ -120,44 +120,81 @@ gzip_data_destroy(GzipData * data)
   TSfree(data);
 }
 
-
-//FIXME: ensure the headers are set/appended correctly
-//FIXME: some things are potentially compressible. those responses
-//FIXME: the etag alteration isn't proper. it should modify the value inside quotes
-//       specify a very header..
-static void
-gzip_transform_init(TSCont contp, GzipData * data)
+static TSReturnCode
+gzip_content_encoding_header(TSMBuffer bufp, TSMLoc hdr_loc, const int compression_type)
 {
-  //update the vary, content-encoding, and etag response headers
-  //prepare the downstream for transforming
+  TSReturnCode ret;
+  TSMLoc ce_loc;
 
-  TSVConn downstream_conn;
-  TSMBuffer bufp;
-  TSMLoc hdr_loc;
-  TSMLoc ce_loc;                /* for the content encoding mime field */
+  // Delete Content-Encoding if present???
 
-  data->state = transform_state_output;
-
-  TSHttpTxnTransformRespGet(data->txn, &bufp, &hdr_loc);
-
-  //FIXME: Probably should check for errors 
-  TSMimeHdrFieldCreate(bufp, hdr_loc, &ce_loc);
-  TSMimeHdrFieldNameSet(bufp, hdr_loc, ce_loc, "Content-Encoding", sizeof("Content-Encoding") - 1);
-
-  if (data->compression_type == COMPRESSION_TYPE_DEFLATE) {
-    TSMimeHdrFieldValueStringInsert(bufp, hdr_loc, ce_loc, -1, "deflate", sizeof("deflate") - 1);
-  } else if (data->compression_type == COMPRESSION_TYPE_GZIP) {
-    TSMimeHdrFieldValueStringInsert(bufp, hdr_loc, ce_loc, -1, "gzip", sizeof("gzip") - 1);
+  if ((ret = TSMimeHdrFieldCreateNamed(bufp, hdr_loc, "Content-Encoding", sizeof("Content-Encoding") - 1, &ce_loc)) == TS_SUCCESS) {
+    if (compression_type == COMPRESSION_TYPE_DEFLATE) {
+      ret = TSMimeHdrFieldValueStringInsert(bufp, hdr_loc, ce_loc, -1, "deflate", sizeof("deflate") - 1);
+    } else if (compression_type == COMPRESSION_TYPE_GZIP) {
+      ret = TSMimeHdrFieldValueStringInsert(bufp, hdr_loc, ce_loc, -1, "gzip", sizeof("gzip") - 1);
+    }
+    if (ret == TS_SUCCESS) {
+      ret = TSMimeHdrFieldAppend(bufp, hdr_loc, ce_loc);
+    }
+    TSHandleMLocRelease(bufp, hdr_loc, ce_loc);
   }
 
-  TSMimeHdrFieldAppend(bufp, hdr_loc, ce_loc);
-  TSHandleMLocRelease(bufp, hdr_loc, ce_loc);
+  if (ret != TS_SUCCESS) {
+    error("cannot add the Content-Encoding header");
+  }
 
-  TSMimeHdrFieldCreate(bufp, hdr_loc, &ce_loc);
-  TSMimeHdrFieldNameSet(bufp, hdr_loc, ce_loc, "Vary", sizeof("Vary") - 1);
-  TSMimeHdrFieldValueStringInsert(bufp, hdr_loc, ce_loc, -1, "Accept-Encoding", sizeof("Accept-Encoding") - 1);
-  TSMimeHdrFieldAppend(bufp, hdr_loc, ce_loc);
-  TSHandleMLocRelease(bufp, hdr_loc, ce_loc);
+  return ret;
+}
+
+static TSReturnCode
+gzip_vary_header(TSMBuffer bufp, TSMLoc hdr_loc)
+{
+  TSReturnCode ret;
+  TSMLoc ce_loc;
+
+  ce_loc = TSMimeHdrFieldFind(bufp, hdr_loc, "Vary", sizeof("Vary") - 1);
+  if (ce_loc) {
+    int idx, count, len; 
+    const char *value;
+
+    count = TSMimeHdrFieldValuesCount(bufp, hdr_loc, ce_loc);
+    for(idx=0; idx<count; idx++) {
+      value = TSMimeHdrFieldValueStringGet(bufp, hdr_loc, ce_loc, idx, &len);
+      if (len &&
+          strncasecmp("Accept-Encoding", value, len) == 0) {
+        // Bail, Vary: Accept-Encoding already sent from origin
+        TSHandleMLocRelease(bufp, hdr_loc, ce_loc);
+        return TS_SUCCESS;
+      }
+    }
+
+    ret = TSMimeHdrFieldValueStringInsert(bufp, hdr_loc, ce_loc, -1, "Accept-Encoding", sizeof("Accept-Encoding") - 1);
+    TSHandleMLocRelease(bufp, hdr_loc, ce_loc);
+  } else {
+    if ((ret = TSMimeHdrFieldCreateNamed(bufp, hdr_loc, "Vary", sizeof("Vary") - 1, &ce_loc)) == TS_SUCCESS) {
+      if ((ret = TSMimeHdrFieldValueStringInsert(bufp, hdr_loc, ce_loc, -1, "Accept-Encoding", sizeof("Accept-Encoding") - 1)) == TS_SUCCESS) {
+        ret = TSMimeHdrFieldAppend(bufp, hdr_loc, ce_loc);
+      }
+
+      TSHandleMLocRelease(bufp, hdr_loc, ce_loc);
+    }
+  }
+
+  if (ret != TS_SUCCESS) {
+    error("cannot add/update the Vary header");
+  }
+
+  return ret;
+}
+
+//FIXME: the etag alteration isn't proper. it should modify the value inside quotes
+//       specify a very header..
+static TSReturnCode
+gzip_etag_header(TSMBuffer bufp, TSMLoc hdr_loc)
+{
+  TSReturnCode ret = TS_SUCCESS;
+  TSMLoc ce_loc;
 
   ce_loc = TSMimeHdrFieldFind(bufp, hdr_loc, TS_MIME_FIELD_ETAG, TS_MIME_LEN_ETAG);
 
@@ -172,18 +209,47 @@ gzip_transform_init(TSCont contp, GzipData * data)
         changetag = 0;
       }
       if (changetag) {
-        TSMimeHdrFieldValueAppend(bufp, hdr_loc, ce_loc, 0, "-df", 3);
+        ret = TSMimeHdrFieldValueAppend(bufp, hdr_loc, ce_loc, 0, "-df", 3);
       }
     }
     TSHandleMLocRelease(bufp, hdr_loc, ce_loc);
   }
 
-  TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
+  if (ret != TS_SUCCESS) {
+    error("cannot handle the %s header", TS_MIME_FIELD_ETAG);
+  }
 
-  downstream_conn = TSTransformOutputVConnGet(contp);
-  data->downstream_buffer = TSIOBufferCreate();
-  data->downstream_reader = TSIOBufferReaderAlloc(data->downstream_buffer);
-  data->downstream_vio = TSVConnWrite(downstream_conn, contp, data->downstream_reader, INT64_MAX);
+  return ret;
+}
+
+//FIXME: some things are potentially compressible. those responses
+static void
+gzip_transform_init(TSCont contp, GzipData * data)
+{
+  //update the vary, content-encoding, and etag response headers
+  //prepare the downstream for transforming
+
+  TSVConn downstream_conn;
+  TSMBuffer bufp;
+  TSMLoc hdr_loc;
+
+  data->state = transform_state_output;
+
+  if (TSHttpTxnTransformRespGet(data->txn, &bufp, &hdr_loc) != TS_SUCCESS) {
+    error("Error TSHttpTxnTransformRespGet");
+    return;
+  }
+
+  if (gzip_content_encoding_header(bufp, hdr_loc, data->compression_type) == TS_SUCCESS &&
+      gzip_vary_header(bufp, hdr_loc) == TS_SUCCESS &&
+      gzip_etag_header(bufp, hdr_loc) == TS_SUCCESS) {
+    downstream_conn = TSTransformOutputVConnGet(contp);
+    data->downstream_buffer = TSIOBufferCreate();
+    data->downstream_reader = TSIOBufferReaderAlloc(data->downstream_buffer);
+    data->downstream_vio = TSVConnWrite(downstream_conn, contp, data->downstream_reader, INT64_MAX);
+  }
+
+  TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
 }
 
 
