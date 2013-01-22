@@ -28,7 +28,6 @@ description	"Apache Traffic Server"
 start on virtual-filesystems
 stop on runlevel [06]
 
-expect fork
 respawn
 
 pre-start script
