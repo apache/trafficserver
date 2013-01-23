@@ -19,12 +19,13 @@
 #include <ts/ts.h>
 #include "lutil.h"
 #include "hook.h"
+#include "state.h"
 
 extern "C" void
 TSPluginInit(int argc, const char * argv[])
 {
-  LuaThreadInstance * lthread;
-  TSPluginRegistrationInfo info;
+  TSPluginRegistrationInfo  info;
+  instanceid_t              instanceid;
 
   info.plugin_name = (char *)"lua";
   info.vendor_name = (char *)"Apache Traffic Server";
@@ -34,21 +35,11 @@ TSPluginInit(int argc, const char * argv[])
       LuaLogError("Plugin registration failed");
   }
 
-  TSAssert(LuaPlugin == NULL);
-
   // Allocate a TSHttpTxn argument index for handling per-transaction hooks.
-  TSReleaseAssert(TSHttpArgIndexReserve(info.plugin_name, info.plugin_name, &LuaHttpArgIndex) == TS_SUCCESS);
+  TSReleaseAssert(TSHttpArgIndexReserve("lua", "lua", &LuaHttpArgIndex) == TS_SUCCESS);
 
-  // Create the initial global Lua state.
-  LuaPlugin = tsnew<LuaPluginState>();
-  LuaPlugin->init((unsigned)argc, (const char **)argv);
-
-  // Careful! We need to initialize the per-thread Lua state before we inject
-  // any user code. User code will probably call TSAPI functions, which will
-  // fetch or create the per-thread instance, which had better be available.
-  lthread = tsnew<LuaThreadInstance>();
-  lthread->lua = LuaPluginNewState();
-  LuaSetThreadInstance(lthread);
-  LuaPluginLoad(lthread->lua, LuaPlugin);
+  // Register a new Lua plugin instance, skipping the first argument (which is the plugin name).
+  instanceid = LuaPluginRegister((unsigned)argc - 1, (const char **)argv + 1);
+  TSReleaseAssert(instanceid == 0);
 }
 

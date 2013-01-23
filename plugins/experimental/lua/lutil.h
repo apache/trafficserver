@@ -25,12 +25,6 @@
 #include <memory>
 #include <pthread.h>
 
-
-struct LuaPluginState;
-struct LuaThreadInstance;
-
-extern LuaPluginState * LuaPlugin;
-
 // Global argument index for TSHttpSsnArgGet and TSHttpTxnArgGet.
 extern int LuaHttpArgIndex;
 
@@ -50,6 +44,9 @@ extern int LuaHttpArgIndex;
 #else
 #define LuaLogError(fmt, ...) TSError(fmt, ##__VA_ARGS__)
 #endif
+
+// Debug log the Lua stack.
+void LuaDebugStack(lua_State *);
 
 // Return the type name string for the given index.
 static inline const char *
@@ -83,65 +80,13 @@ void LuaRegisterLibrary(lua_State * lua, const char * name, lua_CFunction loader
 void LuaSetConstantField(lua_State * lua, const char * name, int value);
 void LuaSetConstantField(lua_State * lua, const char * name, const char * value);
 
-// Get and set the per-thread lua_State.
-LuaThreadInstance * LuaGetThreadInstance();
-void LuaSetThreadInstance(LuaThreadInstance * lua);
-
 // Allocate a new lua_State.
+lua_State * LuaNewState();
 lua_State * LuaPluginNewState(void);
-lua_State * LuaPluginNewState(LuaPluginState * plugin);
-bool LuaPluginLoad(lua_State * lua, LuaPluginState * plugin);
-
-// Global Lua plugin state. Used to reconstruct new lua_States.
-struct LuaPluginState
-{
-  typedef std::vector<std::string> pathlist;
-
-  void init(unsigned argc, const char ** argv) {
-    for (unsigned i = 0; i < argc; ++i) {
-      paths.push_back(argv[i]);
-    }
-  }
-
-  pathlist paths;
-};
-
-// Per-thread lua_State. Used to execute Lua-side code in ethreads.
-struct LuaThreadInstance
-{
-  lua_State * lua;
-  int         hooks[TS_HTTP_LAST_HOOK];
-
-  LuaThreadInstance();
-  ~LuaThreadInstance();
-};
 
 template <typename T, unsigned N> unsigned
 countof(const T (&)[N]) {
   return N;
 }
-
-template <typename T>
-struct thread_local_pointer
-{
-  thread_local_pointer() {
-    TSReleaseAssert(pthread_key_create(&key, NULL) != -1);
-  }
-
-  ~thread_local_pointer() {
-    pthread_key_delete(key);
-  }
-
-  T * get() const {
-    return (T *)pthread_getspecific(key);
-  }
-
-  void set(T * t) const {
-    pthread_setspecific(key, (void *)t);
-  }
-
-private:
-  pthread_key_t key;
-};
 
 #endif // LUA_LUTIL_H_

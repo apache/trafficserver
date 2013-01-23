@@ -23,22 +23,7 @@
 #include <pthread.h>
 #include <unistd.h>
 
-static thread_local_pointer<LuaThreadInstance> LuaThread;
-
-LuaPluginState * LuaPlugin;
 int LuaHttpArgIndex;
-
-LuaThreadInstance::LuaThreadInstance()
-  : lua(NULL)
-{
-  for (unsigned i = 0; i < countof(this->hooks); ++i) {
-    this->hooks[i] = LUA_NOREF;
-  }
-}
-
-LuaThreadInstance::~LuaThreadInstance()
-{
-}
 
 #if !defined(LUAJIT_VERSION)
 static void *
@@ -54,6 +39,12 @@ LuaAllocate(void * ud, void * ptr, size_t osize, size_t nsize)
   return TSrealloc(ptr, nsize);
 }
 #endif
+
+lua_State *
+LuaNewState()
+{
+  return LuaPluginNewState();
+}
 
 lua_State *
 LuaPluginNewState(void)
@@ -76,42 +67,6 @@ LuaPluginNewState(void)
   LuaRegisterLibrary(lua, "ts.hook", LuaHookApiInit);
 
   return lua;
-}
-
-lua_State *
-LuaPluginNewState(LuaPluginState * plugin)
-{
-  lua_State * lua;
-
-  lua = LuaPluginNewState();
-  if (lua == NULL) {
-    return NULL;
-  }
-
-  if (!LuaPluginLoad(lua, plugin)) {
-    lua_close(lua);
-    return NULL;
-  }
-
-  return lua;
-}
-
-bool
-LuaPluginLoad(lua_State * lua, LuaPluginState * plugin)
-{
-  for (LuaPluginState::pathlist::const_iterator p = plugin->paths.begin(); p < plugin->paths.end(); ++p) {
-    if (access(p->c_str(), F_OK) != 0) {
-      continue;
-    }
-
-    if (luaL_dofile(lua, p->c_str()) != 0) {
-      // If the load failed, it should have pushed an error message.
-      LuaLogError("failed to load Lua file %s: %s", p->c_str(), lua_tostring(lua, -1));
-      return false;
-    }
-  }
-
-  return true;
 }
 
 void
@@ -171,15 +126,12 @@ LuaSetConstantField(lua_State * lua, const char * name, const char * value)
   lua_setfield(lua, -2, name);
 }
 
-LuaThreadInstance *
-LuaGetThreadInstance()
-{
-  return LuaThread.get();
-}
-
 void
-LuaSetThreadInstance(LuaThreadInstance * lthread)
+LuaDebugStack(lua_State * lua)
 {
-  LuaThread.set(lthread);
-}
+  int top = lua_gettop(lua);
 
+  for (int i = 1; i <= top; i++) {
+    LuaLogDebug("stack[%d] %s", i, ltypeof(lua, i));
+  }
+}

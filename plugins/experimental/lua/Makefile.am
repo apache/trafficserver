@@ -30,7 +30,7 @@ lua_la_CPPFLAGS = \
 pkglib_LTLIBRARIES = lua.la
 
 lua_la_LIBADD = ${LUA_LIBS}
-lua_la_SOURCES = remap.cc plugin.cc lapi.cc lutil.cc lconfig.cc hook.cc
+lua_la_SOURCES = remap.cc plugin.cc lapi.cc lutil.cc lconfig.cc hook.cc state.cc
 lua_la_LDFLAGS = -module -avoid-version -shared
 
 endif

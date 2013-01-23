@@ -22,20 +22,10 @@
 #include "lapi.h"
 #include "lutil.h"
 #include "hook.h"
+#include "state.h"
 
 #include <memory> // placement new
 #include <ink_config.h>
-
-typedef TSCont HookDemuxTable[TS_HTTP_LAST_HOOK];
-
-// Continuation tables for global, txn and ssn hooks. These are all indexed by the TSHttpHookID and
-// are used to select which callback to invoke during event demuxing.
-static struct
-{
-  HookDemuxTable global;
-  HookDemuxTable txn;
-  HookDemuxTable ssn;
-} HttpHookDemuxTable;
 
 const char *
 HttpHookName(TSHttpHookID hookid)
@@ -104,31 +94,74 @@ LuaPushEventData(lua_State * lua, TSEvent event, void * edata)
   }
 }
 
-// The per-ssn and per-txn argument mechanism stores a pointer, so it's NULL when not set. Unfortunately, 0 is a
-// legitimate Lua reference value (all valies except LUA_NOREF are legitimate), so we can't distinguish NULL from a 0
-// reference. In 64-bit mode we have some extra bits and we can maintain the state, but in 32-bit mode, we need to
-// allocate the LuaHookReference to have enough space to store the state.
-
-union LuaHookReference
-{
-  struct ref {
-    bool  set;
-    int   value;
-  } ref;
-  void * storage;
-};
 
 // For 64-bit pointers, we can inline the LuaHookReference, otherwise we need an extra malloc.
+//
 #if SIZEOF_VOID_POINTER >= 8
 #define INLINE_LUA_HOOK_REFERENCE 1
 #else
 #undef INLINE_LUA_HOOK_REFERENCE
 #endif
 
-// Verify that LuaHookReference fits in sizeof(void *).
-#if INLINE_LUA_HOOK_REFERENCE
-extern char __LuaHookReferenceSizeCheck[sizeof(LuaHookReference) == SIZEOF_VOID_POINTER ? 0 : -1];
+template <typename t1, typename t2>
+struct inline_tuple
+{
+  typedef t1 first_type;
+  typedef t2 second_type;
+  typedef inline_tuple<first_type, second_type> this_type;
+
+  union {
+    struct {
+      first_type first;
+      second_type second;
+    } s;
+    void * ptr;
+  } storage;
+
+  first_type& first() { return storage.s.first; }
+  second_type& second() { return storage.s.second; }
+
+  static void * allocate(const first_type first, const second_type second) {
+#if defined(INLINE_LUA_HOOK_REFERENCE)
+    typedef char __size_check[sizeof(this_type) == sizeof(void *) ? 0 : -1];
+
+    this_type obj;
+    obj.first() = first;
+    obj.second() = second;
+    return obj.storage.ptr;
+#else
+    this_type * ptr = (this_type *)TSmalloc(sizeof(this_type));
+    ptr->first() = first;
+    ptr->second() = second;
+    return ptr;
 #endif
+  }
+
+  static void free(void * ptr) {
+#if defined(INLINE_LUA_HOOK_REFERENCE)
+    // Nothing to do, because we never allocated.
+#else
+    TSfree(ptr);
+#endif
+  }
+
+  static this_type get(void * ptr) {
+#if defined(INLINE_LUA_HOOK_REFERENCE)
+    this_type obj;
+    obj.storage.ptr = ptr;
+    return obj;
+#else
+    return ptr ? *(this_type *)ptr : this_type();
+#endif
+  }
+
+};
+
+// The per-ssn and per-txn argument mechanism stores a pointer, so it's NULL when not set. Unfortunately, 0 is a
+// legitimate Lua reference value (all values except LUA_NOREF are legitimate), so we can't distinguish NULL from a 0
+// reference. In 64-bit mode we have some extra bits and we can maintain the state, but in 32-bit mode, we need to
+// allocate the LuaHookReference to have enough space to store the state.
+typedef inline_tuple<int, bool> LuaHookReference;
 
 static void *
 LuaHttpObjectArgGet(TSHttpSsn ssn)
@@ -157,79 +190,28 @@ LuaHttpObjectArgSet(TSHttpTxn txn, void * ptr)
 template<typename T> static int
 LuaGetArgReference(T ptr)
 {
-  LuaHookReference href;
-
-  href.storage = LuaHttpObjectArgGet(ptr);
-
-#if !defined(INLINE_LUA_HOOK_REFERENCE)
-  if (href.storage) {
-    href  = *(LuaHookReference *)href.storage;
-  }
-#endif
-
-  return (href.ref.set) ? href.ref.value : LUA_NOREF;
+  LuaHookReference href(LuaHookReference::get(LuaHttpObjectArgGet(ptr)));
+  // Only return the Lua ref if it was previously set.
+  return href.second() ? href.first() : LUA_NOREF;
 }
 
 template <typename T> void
 LuaSetArgReference(T ptr, int ref)
 {
-  LuaHookReference href;
-
-  href.storage = NULL;
-  href.ref.value = ref;
-  href.ref.set = true;
-
-#if defined(INLINE_LUA_HOOK_REFERENCE)
-  LuaHttpObjectArgSet(ptr, href.storage);
-#else
-  LuaHookReference * tmp = (LuaHookReference *)LuaHttpObjectArgGet(ptr);
-  if (tmp) {
-    *tmp = href;
-  } else {
-    tmp = (LuaHookReference *)TSmalloc(sizeof(LuaHookReference));
-    *tmp = href;
-    LuaHttpObjectArgSet(ptr, tmp);
-  }
-#endif
+  LuaHookReference::free(LuaHttpObjectArgGet(ptr));
+  LuaHttpObjectArgSet(ptr, LuaHookReference::allocate(ref, true));
 }
 
 template <typename T> static void
 LuaClearArgReference(T ptr)
 {
-#if !defined(INLINE_LUA_HOOK_REFERENCE)
-  TSfree(LuaHttpObjectArgGet(ptr));
-#endif
+  LuaHookReference::free(LuaHttpObjectArgGet(ptr));
   LuaHttpObjectArgSet(ptr, NULL);
 }
 
 // Force template instantiation of LuaSetArgReference().
 template void LuaSetArgReference<TSHttpSsn>(TSHttpSsn ssn, int ref);
 template void LuaSetArgReference<TSHttpTxn>(TSHttpTxn txn, int ref);
-
-static LuaThreadInstance *
-LuaDemuxThreadInstance()
-{
-  LuaThreadInstance * lthread;
-
-  lthread = LuaGetThreadInstance();
-
-  if (lthread == NULL) {
-    lthread = tsnew<LuaThreadInstance>();
-    lthread->lua = LuaPluginNewState();
-    LuaSetThreadInstance(lthread);
-    LuaPluginLoad(lthread->lua, LuaPlugin);
-  }
-
-  return lthread;
-}
-
-static TSHttpHookID
-LuaDemuxHookID(TSCont cont)
-{
-  TSHttpHookID hookid = (TSHttpHookID)(intptr_t)TSContDataGet(cont);
-  TSAssert(HookIsValid(hookid));
-  return hookid;
-}
 
 static void
 LuaDemuxInvokeCallback(lua_State * lua, TSHttpHookID hookid, TSEvent event, void * edata, int ref)
@@ -262,9 +244,9 @@ LuaDemuxInvokeCallback(lua_State * lua, TSHttpHookID hookid, TSEvent event, void
       TSReleaseAssert(0);
   }
 
-  // The item on the top of the stack *ought* to be the callback function. However when we register a cleanup function
-  // to release the callback reference (because the ssn ot txn closes), then we won't have a function because there's
-  // nothing to do here.
+  // The item on the top of the stack *ought* to be the callback function. However when we register a
+  // cleanup function to release the callback reference (because the ssn or txn closes), then we won't
+  // have a function because there's nothing to do here.
   if (!lua_isnil(lua, -1)) {
 
     TSAssert(lua_isfunction(lua, -1));
@@ -282,61 +264,63 @@ LuaDemuxInvokeCallback(lua_State * lua, TSHttpHookID hookid, TSEvent event, void
   lua_pop(lua, lua_gettop(lua) - nitems);
 }
 
-static int
-LuaDemuxGlobalHook(TSCont cont, TSEvent event, void * edata)
+int
+LuaDemuxGlobalHook(TSHttpHookID hookid, TSCont cont, TSEvent event, void * edata)
 {
-  TSHttpHookID        hookid = LuaDemuxHookID(cont);
-  LuaThreadInstance * lthread = LuaDemuxThreadInstance();
-  int                 ref = lthread->hooks[hookid];
+  instanceid_t        instanceid = (uintptr_t)TSContDataGet(cont);
+  ScopedLuaState      lstate(instanceid);
+  int                 ref = lstate->hookrefs[hookid];
 
-  LuaLogDebug("%s lthread=%p event=%d edata=%p, ref=%d",
-      HttpHookName(hookid), lthread, event, edata, ref);
+  LuaLogDebug("%u/%p %s event=%d edata=%p, ref=%d",
+      instanceid, lstate->lua,
+      HttpHookName(hookid), event, edata, ref);
 
   if (ref == LUA_NOREF) {
     LuaLogError("no Lua callback for hook %s", HttpHookName(hookid));
     return TS_EVENT_ERROR;
   }
 
-  LuaDemuxInvokeCallback(lthread->lua, hookid, event, edata, ref);
+  LuaDemuxInvokeCallback(lstate->lua, hookid, event, edata, ref);
   return TS_EVENT_NONE;
 }
 
-static int
-LuaDemuxTxnHook(TSCont cont, TSEvent event, void * edata)
+int
+LuaDemuxTxnHook(TSHttpHookID hookid, TSCont cont, TSEvent event, void * edata)
 {
-  TSHttpHookID        hookid = LuaDemuxHookID(cont);
-  LuaThreadInstance * lthread = LuaDemuxThreadInstance();
   int                 ref = LuaGetArgReference((TSHttpTxn)edata);
+  instanceid_t        instanceid = (uintptr_t)TSContDataGet(cont);
+  ScopedLuaState      lstate(instanceid);
 
-  LuaLogDebug("%s(%s) lthread=%p event=%d edata=%p",
-      __func__, HttpHookName(hookid), lthread, event, edata);
+  LuaLogDebug("%s(%s) instanceid=%u event=%d edata=%p",
+      __func__, HttpHookName(hookid), instanceid, event, edata);
 
   if (ref == LUA_NOREF) {
     LuaLogError("no Lua callback for hook %s", HttpHookName(hookid));
     return TS_EVENT_ERROR;
   }
 
-  LuaDemuxInvokeCallback(lthread->lua, hookid, event, edata, ref);
+  LuaDemuxInvokeCallback(lstate->lua, hookid, event, edata, ref);
 
   if (event == TS_EVENT_HTTP_TXN_CLOSE) {
     LuaLogDebug("unref event handler %d", ref);
-    luaL_unref(lthread->lua, LUA_REGISTRYINDEX, ref);
+    luaL_unref(lstate->lua, LUA_REGISTRYINDEX, ref);
     LuaClearArgReference((TSHttpTxn)edata);
   }
 
   return TS_EVENT_NONE;
 }
 
-static int
-LuaDemuxSsnHook(TSCont cont, TSEvent event, void * edata)
+int
+LuaDemuxSsnHook(TSHttpHookID hookid, TSCont cont, TSEvent event, void * edata)
 {
-  TSHttpHookID        hookid = LuaDemuxHookID(cont);
-  LuaThreadInstance * lthread = LuaDemuxThreadInstance();
+  instanceid_t        instanceid = (uintptr_t)TSContDataGet(cont);
+  ScopedLuaState      lstate(instanceid);
   TSHttpSsn           ssn;
   int                 ref;
 
-  // The edata might be a Txn or a Ssn, depending on the event type. If we get here, it's because we registered a
-  // callback on the Ssn, so we need to get back to the Ssn object in order to the the callback table reference ...
+  // The edata might be a Txn or a Ssn, depending on the event type. If we get here, it's because we
+  // registered a callback on the Ssn, so we need to get back to the Ssn object in order to the the
+  // callback table reference ...
   switch (event) {
     case TS_EVENT_HTTP_SSN_START:
     case TS_EVENT_HTTP_SSN_CLOSE:
@@ -346,8 +330,8 @@ LuaDemuxSsnHook(TSCont cont, TSEvent event, void * edata)
       ssn = TSHttpTxnSsnGet((TSHttpTxn)edata);
   }
 
-  LuaLogDebug("%s(%s) lthread=%p event=%d edata=%p",
-      __func__, HttpHookName(hookid), lthread, event, edata);
+  LuaLogDebug("%s(%s) instanceid=%u event=%d edata=%p",
+      __func__, HttpHookName(hookid), instanceid, event, edata);
 
   ref = LuaGetArgReference(ssn);
   if (ref == LUA_NOREF) {
@@ -355,11 +339,11 @@ LuaDemuxSsnHook(TSCont cont, TSEvent event, void * edata)
     return TS_EVENT_ERROR;
   }
 
-  LuaDemuxInvokeCallback(lthread->lua, hookid, event, edata, ref);
+  LuaDemuxInvokeCallback(lstate->lua, hookid, event, edata, ref);
 
   if (event == TS_EVENT_HTTP_SSN_CLOSE) {
     LuaLogDebug("unref event handler %d", ref);
-    luaL_unref(lthread->lua, LUA_REGISTRYINDEX, ref);
+    luaL_unref(lstate->lua, LUA_REGISTRYINDEX, ref);
     LuaClearArgReference((TSHttpSsn)edata);
   }
 
@@ -369,8 +353,8 @@ LuaDemuxSsnHook(TSCont cont, TSEvent event, void * edata)
 bool
 LuaRegisterHttpHooks(lua_State * lua, void * obj, LuaHookAddFunction add, int hooks)
 {
-  bool hooked_close = false;
-  const TSHttpHookID closehook = (add == LuaHttpSsnHookAdd ? TS_HTTP_SSN_CLOSE_HOOK : TS_HTTP_TXN_CLOSE_HOOK);
+  bool                hooked_close = false;
+  const TSHttpHookID  closehook = (add == LuaHttpSsnHookAdd ? TS_HTTP_SSN_CLOSE_HOOK : TS_HTTP_TXN_CLOSE_HOOK);
 
   TSAssert(add == LuaHttpSsnHookAdd || add == LuaHttpTxnHookAdd);
 
@@ -380,6 +364,9 @@ LuaRegisterHttpHooks(lua_State * lua, void * obj, LuaHookAddFunction add, int ho
   // The value on the top of the stack (index -1) MUST be the callback table.
   TSAssert(lua_istable(lua, lua_gettop(lua)));
 
+  // Now we need our LuaThreadState to access the hook tables.
+  ScopedLuaState lstate(lua);
+
   // Walk the table and register the hook for each entry.
   lua_pushnil(lua);  // Push the first key, makes the callback table index -2.
   while (lua_next(lua, -2) != 0) {
@@ -388,8 +375,8 @@ LuaRegisterHttpHooks(lua_State * lua, void * obj, LuaHookAddFunction add, int ho
     // uses 'key' (at index -2) and 'value' (at index -1).
     // LuaLogDebug("key=%s value=%s\n", ltypeof(lua, -2), ltypeof(lua, -1));
 
-    // Now the key (index -2) and value (index -1) got pushed onto the stack. The key must be a hook ID and the value
-    // must be a callback function.
+    // Now the key (index -2) and value (index -1) got pushed onto the stack. The key must be a hook ID and
+    // the value must be a callback function.
     luaL_checktype(lua, -1, LUA_TFUNCTION);
     hookid = (TSHttpHookID)luaL_checkint(lua, -2);
 
@@ -403,7 +390,7 @@ LuaRegisterHttpHooks(lua_State * lua, void * obj, LuaHookAddFunction add, int ho
     }
 
     // At demux time, we need the hook ID and the table (or function) ref.
-    add(obj, hookid);
+    add(obj, lstate.instance(), hookid);
     LuaLogDebug("registered callback table %d for event %s on object %p",
         hooks, HttpHookName(hookid), obj);
 
@@ -412,34 +399,32 @@ next:
     lua_pop(lua, 1);
   }
 
-  // we always need to hook the close because we keep a reference to the callback table and we need to release that
-  // reference when the object's lifetime ends.
+  // we always need to hook the close because we keep a reference to the callback table and we need to
+  // release that reference when the object's lifetime ends.
   if (!hooked_close) {
-    add(obj, closehook);
+    add(obj, lstate.instance(), closehook);
   }
 
   return true;
 }
 
 void
-LuaHttpSsnHookAdd(void * ssn, TSHttpHookID hookid)
+LuaHttpSsnHookAdd(void * ssn, const LuaPluginInstance * instance, TSHttpHookID hookid)
 {
-  TSHttpSsnHookAdd((TSHttpSsn)ssn, hookid, HttpHookDemuxTable.ssn[hookid]);
+  TSHttpSsnHookAdd((TSHttpSsn)ssn, hookid, instance->demux.ssn[hookid]);
 }
 
 void
-LuaHttpTxnHookAdd(void * txn, TSHttpHookID hookid)
+LuaHttpTxnHookAdd(void * txn, const LuaPluginInstance * instance, TSHttpHookID hookid)
 {
-  TSHttpTxnHookAdd((TSHttpTxn)txn, hookid, HttpHookDemuxTable.txn[hookid]);
+  TSHttpTxnHookAdd((TSHttpTxn)txn, hookid, instance->demux.txn[hookid]);
 }
 
 static int
 TSLuaHttpHookRegister(lua_State * lua)
 {
-  TSHttpHookID hookid;
-  LuaThreadInstance * lthread;
+  TSHttpHookID      hookid;
 
-  LuaLogDebug("[1]=%s [2]=%s", ltypeof(lua, 1), ltypeof(lua, 2));
   hookid = (TSHttpHookID)luaL_checkint(lua, 1);
   luaL_checktype(lua, 2, LUA_TFUNCTION);
 
@@ -449,33 +434,38 @@ TSLuaHttpHookRegister(lua_State * lua)
     return -1;
   }
 
-  lthread = LuaGetThreadInstance();
-  if (lthread == NULL) {
-    lthread = tsnew<LuaThreadInstance>();
-    lthread->lua = LuaPluginNewState(LuaPlugin);
-    LuaSetThreadInstance(lthread);
-  }
+  ScopedLuaState lstate(lua);
+  TSReleaseAssert(lstate);
 
-  // Global hooks can only be registered once, but we load the Lua scripts in every thread. Check whether the hook has
-  // already been registered and ignore any double-registrations.
-  if (lthread->hooks[hookid] != LUA_NOREF) {
-    TSReleaseAssert(HttpHookDemuxTable.global[hookid] != NULL);
+  // The lstate must match the current Lua state or something is seriously wrong.
+  TSReleaseAssert(lstate->lua == lua);
+
+  // Global hooks can only be registered once, but we load the Lua scripts in every thread. Check whether
+  // the hook has already been registered and ignore any double-registrations.
+  if (lstate->hookrefs[hookid] != LUA_NOREF) {
+    LuaLogDebug("ignoring double registration for %s hook", HttpHookName(hookid));
     return 0;
   }
 
-  lthread->hooks[hookid] = luaL_ref(lua, LUA_REGISTRYINDEX);
+  // The callback function for the hook should be on the top of the stack now. Keep a reference
+  // to the callback function in the registry so we can pop it out later.
+  TSAssert(lua_type(lua, lua_gettop(lua)) == LUA_TFUNCTION);
+  lstate->hookrefs[hookid] = luaL_ref(lua, LUA_REGISTRYINDEX);
 
-  if (HttpHookDemuxTable.global[hookid] == NULL) {
-    TSCont cont;
+  LuaLogDebug("%u/%p added hook ref %d for %s",
+      lstate->instance->instanceid, lua, lstate->hookrefs[hookid], HttpHookName(hookid));
 
-    cont = TSContCreate(LuaDemuxGlobalHook, TSMutexCreate());
-    if (__sync_bool_compare_and_swap(&HttpHookDemuxTable.global[hookid], NULL, cont)) {
+  // We need to atomically install this global hook. We snaffle the high bit to mark whether or
+  // not it has been installed.
+  if (((uintptr_t)lstate->instance->demux.global[hookid] & 0x01u) == 0) {
+    TSCont cont = (TSCont)((uintptr_t)lstate->instance->demux.global[hookid] | 0x01u);
+
+    if (__sync_bool_compare_and_swap(&lstate->instance->demux.global[hookid],
+          lstate->instance->demux.global[hookid], cont)) {
       LuaLogDebug("installed continuation for %s", HttpHookName(hookid));
-      TSContDataSet(cont, (void *)hookid);
-      TSHttpHookAdd(hookid, cont);
+      TSHttpHookAdd(hookid, (TSCont)((uintptr_t)cont & ~0x01u));
     } else {
       LuaLogDebug("lost hook creation race for %s", HttpHookName(hookid));
-      TSContDestroy(cont);
     }
   }
 
@@ -499,21 +489,10 @@ LuaHookApiInit(lua_State * lua)
   luaL_register(lua, NULL, LUAEXPORTS);
 
   for (unsigned i = 0; i < TS_HTTP_LAST_HOOK; ++i) {
-    if (HttpHookName((TSHttpHookID)i) == NULL) {
-      // Unsupported hook, skip it.
-      continue;
+    if (HttpHookName((TSHttpHookID)i) != NULL) {
+      // Register named constants for each hook ID.
+      LuaSetConstantField(lua, HttpHookName((TSHttpHookID)i), i);
     }
-
-    // Register named constants for each hook ID.
-    LuaSetConstantField(lua, HttpHookName((TSHttpHookID)i), i);
-    // Allocate txn and ssn continuations.
-    HttpHookDemuxTable.txn[i] = TSContCreate(LuaDemuxTxnHook, NULL);
-    HttpHookDemuxTable.ssn[i] = TSContCreate(LuaDemuxSsnHook, NULL);
-    // And keep track of which hook each continuation was allocated for.
-    TSContDataSet(HttpHookDemuxTable.txn[i], (void *)(uintptr_t)i);
-    TSContDataSet(HttpHookDemuxTable.ssn[i], (void *)(uintptr_t)i);
-
-    // Note that we allocate the global continuation table lazily so that we know when to add the hook.
   }
 
   return 1;

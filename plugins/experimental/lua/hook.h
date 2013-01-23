@@ -19,15 +19,21 @@
 #ifndef LUA_HOOK_H_
 #define LUA_HOOK_H_
 
-// Pointer to LuaHttpSsnHookAdd() or LuaHttpTxnsnHookAdd().
-typedef void (*LuaHookAddFunction)(void *, TSHttpHookID);
+struct LuaPluginInstance;
 
-void LuaHttpSsnHookAdd(void *, TSHttpHookID);
-void LuaHttpTxnHookAdd(void *, TSHttpHookID);
+// Pointer to LuaHttpSsnHookAdd() or LuaHttpTxnsnHookAdd().
+typedef void (*LuaHookAddFunction)(void *, const LuaPluginInstance *, TSHttpHookID);
+
+void LuaHttpSsnHookAdd(void *, const LuaPluginInstance *, TSHttpHookID);
+void LuaHttpTxnHookAdd(void *, const LuaPluginInstance *, TSHttpHookID);
 
 // Set a LuaHookReference as the argument on the corresponding object. T can be either TSHttpSsn or TSHttpTxn.
 template <typename T> void LuaSetArgReference(T ptr, int ref);
 
 bool LuaRegisterHttpHooks(lua_State *, void *, LuaHookAddFunction, int);
+
+int LuaDemuxSsnHook(TSHttpHookID hookid, TSCont cont, TSEvent event, void * edata);
+int LuaDemuxTxnHook(TSHttpHookID hookid, TSCont cont, TSEvent event, void * edata);
+int LuaDemuxGlobalHook(TSHttpHookID hookid, TSCont cont, TSEvent event, void * edata);
 
 #endif // LUA_HOOK_H_

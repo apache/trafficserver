@@ -18,28 +18,13 @@
 
 #include <ts/ts.h>
 #include <ts/remap.h>
-#include <unistd.h>
-#include <string.h>
 #include "lapi.h"
 #include "lutil.h"
+#include "state.h"
+#include <unistd.h>
+#include <pthread.h>
 
-static TSReturnCode
-LuaPluginRelease(lua_State * lua)
-{
-  lua_getglobal(lua, "release");
-  if (lua_isnil(lua, -1)) {
-    // No "release" callback.
-    return TS_SUCCESS;
-  }
-
-  if (lua_pcall(lua, 0, 0, 0) != 0) {
-    LuaLogDebug("release failed: %s", lua_tostring(lua, -1));
-    lua_pop(lua, 1);
-  }
-
-  lua_close(lua);
-  return TS_SUCCESS;
-}
+static pthread_mutex_t PluginInstanceLock = PTHREAD_MUTEX_INITIALIZER;
 
 static TSRemapStatus
 LuaPluginRemap(lua_State * lua, TSHttpTxn txn, TSRemapRequestInfo * rri)
@@ -68,64 +53,47 @@ LuaPluginRemap(lua_State * lua, TSHttpTxn txn, TSRemapRequestInfo * rri)
   return rq->status;
 }
 
-void
-TSRemapDeleteInstance(void * ih)
-{
-  lua_State * lua = (lua_State *)ih;
-
-  if (lua) {
-    LuaPluginRelease(lua);
-    lua_close(lua);
-  }
-}
-
 TSReturnCode
 TSRemapInit(TSRemapInterface * api_info, char * errbuf, int errbuf_size)
 {
   LuaLogDebug("loading lua plugin");
+
+  // Allocate a TSHttpTxn argument index for handling per-transaction hooks.
+  TSReleaseAssert(TSHttpArgIndexReserve("lua", "lua", &LuaHttpArgIndex) == TS_SUCCESS);
+
   return TS_SUCCESS;
 }
 
 TSReturnCode
 TSRemapNewInstance(int argc, char * argv[], void ** ih, char * errbuf, int errsz)
 {
-  LuaPluginState * remap;
-  lua_State * lua;
+  instanceid_t instanceid;
 
-  // Copy the plugin arguments so that we can use them to allocate a per-thread Lua state. It would be cleaner
-  // to clone a Lua state, but there's no built-in way to do that, and to implement that ourselves would require
-  // locking the template state (we need to manipulate the stack to copy values out).
-  remap = tsnew<LuaPluginState>();
-  remap->init((unsigned)argc, (const char **)argv);
+  pthread_mutex_lock(&PluginInstanceLock);
 
-  // Test whether we can successfully load the Lua program.
-  lua = LuaPluginNewState(remap);
-  if (!lua) {
-    tsdelete(remap);
-    return TS_ERROR;
-  }
+  // Register a new Lua plugin instance, skipping the first two arguments (which are the remap URLs).
+  instanceid = LuaPluginRegister((unsigned)argc - 2, (const char **)argv + 2);
+  *ih = (void *)(intptr_t)instanceid;
 
-  *ih = remap;
+  pthread_mutex_unlock(&PluginInstanceLock);
   return TS_SUCCESS;
+}
+
+void
+TSRemapDeleteInstance(void * ih)
+{
+  instanceid_t instanceid = (intptr_t)ih;
+
+  pthread_mutex_lock(&PluginInstanceLock);
+  LuaPluginUnregister(instanceid);
+  pthread_mutex_unlock(&PluginInstanceLock);
 }
 
 TSRemapStatus
 TSRemapDoRemap(void * ih, TSHttpTxn txn, TSRemapRequestInfo * rri)
 {
-  LuaThreadInstance * lthread;
+  ScopedLuaState lstate((intptr_t)ih);
 
-  // Find or clone the per-thread Lua state.
-  lthread = LuaGetThreadInstance();
-  if (!lthread) {
-    LuaPluginState * lps;
-
-    lps = (LuaPluginState *)ih;
-    lthread = tsnew<LuaThreadInstance>();
-
-    LuaLogDebug("allocating new Lua state on thread 0x%llx", (unsigned long long)pthread_self());
-    lthread->lua = LuaPluginNewState(lps);
-    LuaSetThreadInstance(lthread);
-  }
-
-  return LuaPluginRemap(lthread->lua, txn, rri);
+  TSReleaseAssert(lstate);
+  return LuaPluginRemap(lstate->lua, txn, rri);
 }
