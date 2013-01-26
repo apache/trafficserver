@@ -1,0 +1,134 @@
+.\"  Licensed to the Apache Software Foundation (ASF) under one .\"
+.\"  or more contributor license agreements.  See the NOTICE file .\"
+.\"  distributed with this work for additional information .\"
+.\"  regarding copyright ownership.  The ASF licenses this file .\"
+.\"  to you under the Apache License, Version 2.0 (the .\"
+.\"  "License"); you may not use this file except in compliance .\"
+.\"  with the License.  You may obtain a copy of the License at .\"
+.\" .\"
+.\"      http://www.apache.org/licenses/LICENSE-2.0 .\"
+.\" .\"
+.\"  Unless required by applicable law or agreed to in writing, software .\"
+.\"  distributed under the License is distributed on an "AS IS" BASIS, .\"
+.\"  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. .\"
+.\"  See the License for the specific language governing permissions and .\"
+.Dd January 25, 2013
+.Dt TSIOBufferCreate 3ts TSAPI
+.Sh NAME
+.Nm TSIOBufferCreate,
+.Nm TSIOBufferSizedCreate,
+.Nm TSIOBufferDestroy,
+.Nm TSIOBufferWrite,
+.Nm TSIOBufferProduce,
+.Nm TSIOBufferWaterMarkGet,
+.Nm TSIOBufferWaterMarkSet
+.Nd Traffic Server IO Buffer API
+.Sh LIBRARY
+Apache Traffic Server plugin API
+.Sh SYNOPSIS
+.In ts/ts.h
+.Ft "TSIOBuffer"
+.Fo TSIOBufferCreate
+.Fa "void"
+.Fc
+.Ft "TSIOBuffer"
+.Fo TSIOBufferSizedCreate
+.Fa "TSIOBufferSizeIndex index"
+.Fc
+.Ft "void"
+.Fo TSIOBufferDestroy
+.Fa "TSIOBuffer bufp"
+.Fc
+.Ft "int64_t"
+.Fo TSIOBufferWrite
+.Fa "TSIOBuffer bufp"
+.Fa "const void* buf"
+.Fa "int64_t length"
+.Fc
+.Ft "void"
+.Fo TSIOBufferProduce
+.Fa "TSIOBuffer bufp"
+.Fa "int64_t nbytes"
+.Fc
+.Ft "int64_t"
+.Fo TSIOBufferWaterMarkGet
+.Fa "TSIOBuffer bufp"
+.Fc
+.Ft "void"
+.Fo TSIOBufferWaterMarkSet
+.Fa "TSIOBuffer bufp"
+.Fa "int64_t water_mark"
+.Fc
+.Sh DESCRIPTION
+.Pp
+The TSIOBuffer data structure is the building block of the TSVConn
+abstraction. An IO buffer is composed of a list of buffer blocks
+which are reference counted so that they can reside in multiple
+buffers at the same time. This makes it extremely efficient to copy
+data from one IO buffer to another using TSIOBufferCopy since Traffic
+Server only needs to copy pointers and adjust reference counts
+appropriately and not actually copy any data; however applications
+should still strive to ensure data blocks are a reasonable size.
+.Pp
+The IO buffer abstraction provides for a single writer and multiple
+readers. In order for the readers to have no knowledge of each
+other, they manipulate IO buffers through the TSIOBufferReader
+data structure. Since only a single writer is allowed, there is no
+corresponding TSIOBufferWriter data structure. The writer simply
+modifies the IO buffer directly.
+.Pp
+.Fn TSIOBufferCreate
+creates an empty TSIOBuffer.
+.Pp
+.Fn TSIOBufferSizedCreate
+creates an empty TSIOBuffer with an initial capacity of
+.Fa index
+bytes.
+.Pp
+.Fn TSIOBufferDestroy
+destroys the IO buffer
+.Fa bufp .
+Since multiple IO buffers can share data, this does not necessarily free
+all of the data associated with the IO buffer but simply decrements
+the appropriate reference counts.
+.Pp
+.Fn TSIOBufferWrite
+appends
+.Fa length
+bytes
+from the buffer
+.Fa buf
+to the IO buffer
+.Fa bufp
+and returns the number of bytes successfully written into the IO buffer.
+.Pp
+.Fn TSIOBufferProduce
+makes
+.Fa nbytes
+of data available for reading in the IO buffer
+.Fa bufp .
+A common pattern for writing to an IO buffer is to copy data into
+a buffer block and then call INKIOBufferProduce to make the new
+data visible to any readers.
+.Pp
+The watermark of an TSIOBuffer is the minimum number of bytes of
+data that have to be in the buffer before calling back any continuation
+that has initiated a read operation on this buffer.  As a writer
+feeds data into the TSIOBuffer, no readers are called back until
+the amount of data reaches the watermark. Setting a watermark can
+improve performance because it avoids frequent callbacks to read
+small amounts of data.
+.Pp
+.Fn TSIOBufferWaterMarkGet
+gets the current watermark for the IO buffer
+.Fa bufp .
+.Pp
+.Fn TSIOBufferWaterMarkSet
+gets the current watermark for the IO buffer
+.Fa bufp
+to
+.Fa water_mark
+bytes.
+.Sh SEE ALSO
+.Xr TSAPI 3ts ,
+.Xr TSIOBufferReaderAlloc 3ts
