@@ -429,13 +429,6 @@ extern "C"
 
   typedef enum
   {
-    TS_DATA_ALLOCATE,
-    TS_DATA_MALLOCED,
-    TS_DATA_CONSTANT
-  } TSIOBufferDataFlags;
-
-  typedef enum
-  {
     TS_VC_CLOSE_ABORT = -1,
     TS_VC_CLOSE_NORMAL = 1
   } TSVConnCloseFlags;
