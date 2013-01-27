@@ -260,8 +260,13 @@ struct HostDBInfo
 
   uint64_t md5_high;
 
-  bool failed() { return !ats_is_ip(ip()); }
-  void set_failed() { ats_ip_invalidate(ip());  }
+  bool failed() {
+    return !((reverse_dns && data.hostname_offset) || ats_is_ip(ip()));
+  }
+  void set_failed() {
+    reverse_dns = false;
+    ats_ip_invalidate(ip());
+  }
 
   void set_deleted() { deleted = 1; }
   bool is_deleted() const { return deleted; }

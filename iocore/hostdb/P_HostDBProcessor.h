@@ -373,11 +373,11 @@ struct HostDBContinuation: public Continuation
   void do_dns();
   bool is_byname()
   {
-    return *md5.host_name && md5.db_mark != HOSTDB_MARK_SRV;
+    return md5.db_mark == HOSTDB_MARK_IPV4 || md5.db_mark == HOSTDB_MARK_IPV6;
   }
   bool is_srv()
   {
-    return *md5.host_name && md5.db_mark == HOSTDB_MARK_SRV;
+    return md5.db_mark == HOSTDB_MARK_SRV;
   }
   HostDBInfo *lookup_done(IpAddr const& ip, char const* aname, bool round_robin, unsigned int attl, SRVHosts * s = NULL);
   bool do_get_response(Event * e);
