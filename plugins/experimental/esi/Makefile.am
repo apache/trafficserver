@@ -26,7 +26,7 @@ AM_CXXFLAGS = \
   -Wno-deprecated
 
 pkglib_LTLIBRARIES = esi.la
-lib_LTLIBRARIES = libesi.la
+lib_LTLIBRARIES = libesi.la libtest.la
 
 check_PROGRAMS = docnode_test parser_test processor_test utils_test vars_test
 
@@ -37,6 +37,18 @@ libesi_la_SOURCES = \
 	lib/Expression.cc \
 	lib/FailureInfo.cc \
 	lib/HandlerManager.cc \
+	lib/Stats.cc \
+	lib/Utils.cc \
+	lib/Variables.cc \
+	lib/gzip.cc
+
+libtest_la_SOURCES = \
+	lib/DocNode.cc \
+	lib/EsiParser.cc \
+	lib/EsiProcessor.cc \
+	lib/Expression.cc \
+	lib/FailureInfo.cc \
+	test/TestHandlerManager.cc \
 	lib/Stats.cc \
 	lib/Utils.cc \
 	lib/Variables.cc \
@@ -55,7 +67,7 @@ docnode_test_LDADD = libesi.la  -ldl -lz -lpthread
 parser_test_SOURCES = test/parser_test.cc test/print_funcs.cc
 parser_test_LDADD = libesi.la  -ldl -lz -lpthread
 processor_test_SOURCES = test/processor_test.cc test/HandlerMap.cc test/StubIncludeHandler.cc test/print_funcs.cc
-processor_test_LDADD = libesi.la  -ldl -lz -lpthread
+processor_test_LDADD = libtest.la  -ldl -lz -lpthread
 utils_test_SOURCES = test/utils_test.cc test/print_funcs.cc
 utils_test_LDADD = libesi.la  -ldl -lz -lpthread
 vars_test_SOURCES = test/vars_test.cc test/print_funcs.cc
