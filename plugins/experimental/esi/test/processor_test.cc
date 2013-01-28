@@ -56,7 +56,7 @@ int main()
                           handler_mgr);
     string input_data("");
     const char *output_data;
-    int output_data_len;
+    int output_data_len=0;
 
     cout << "Negative test - process()ing without completeParse()ing..." << endl;
     assert(esi_proc.addParseData(input_data.c_str(), input_data.size()) == true);
@@ -115,7 +115,7 @@ int main()
     assert(esi_proc.process(output_data, output_data_len) == EsiProcessor::FAILURE);
     assert(output_data_len == 10); // should remain unchanged
   }
-  
+
   {
     cout << endl << "===================== Test 3) comment tag" << endl;
     TestHttpDataFetcher data_fetcher;
@@ -124,7 +124,7 @@ int main()
     string input_data("foo<esi:comment text=\"bleh\"/>bar");
     
     const char *output_data;
-    int output_data_len;
+    int output_data_len=0;
 
     assert(esi_proc.addParseData(input_data.c_str(), input_data.size()) == true);
     assert(esi_proc.completeParse() == true);
@@ -141,7 +141,7 @@ int main()
     string input_data("<esi:comment text=\"bleh\"/>bar");
     
     const char *output_data;
-    int output_data_len;
+    int output_data_len=0;
 
     assert(esi_proc.addParseData(input_data.c_str(), input_data.size()) == true);
     assert(esi_proc.completeParse() == true);
@@ -158,7 +158,7 @@ int main()
     string input_data("foo<esi:comment text=\"bleh\"/>");
     
     const char *output_data;
-    int output_data_len;
+    int output_data_len=0;
 
     assert(esi_proc.addParseData(input_data.c_str(), input_data.size()) == true);
     assert(esi_proc.completeParse() == true);
@@ -175,7 +175,7 @@ int main()
     string input_data("foo\n<esi:comment text=\"\nbleh\"/>\nbar");
     
     const char *output_data;
-    int output_data_len;
+    int output_data_len=0;
 
     assert(esi_proc.addParseData(input_data.c_str(), input_data.size()) == true);
     assert(esi_proc.completeParse() == true);
@@ -192,7 +192,7 @@ int main()
     string input_data("foo\n<esi:remove><img src=\"http://www.example.com\"></esi:remove>\nbar");
     
     const char *output_data;
-    int output_data_len;
+    int output_data_len=0;
 
     assert(esi_proc.addParseData(input_data.c_str(), input_data.size()) == true);
     assert(esi_proc.completeParse() == true);
@@ -210,7 +210,7 @@ int main()
                       "foo2\n<esi:comment text=\"bleh\"/>\nbar2");
     
     const char *output_data;
-    int output_data_len;
+    int output_data_len=0;
 
     assert(esi_proc.addParseData(input_data.c_str(), input_data.size()) == true);
     assert(esi_proc.completeParse() == true);
@@ -231,7 +231,7 @@ int main()
                       "foo3<esi:remove><img src=\"http://www.example.com\"></esi:remove>bar3\n"
                       "foo3<esi:comment text=\"bleh\"/>bar3\n");
     const char *output_data;
-    int output_data_len;
+    int output_data_len=0;
 
     assert(esi_proc.addParseData(input_data.c_str(), input_data.size()) == true);
     assert(esi_proc.completeParse() == true);
@@ -249,7 +249,7 @@ int main()
     string input_data("foo <esi:include src=url1/> bar");
     
     const char *output_data;
-    int output_data_len;
+    int output_data_len=0;
 
     assert(esi_proc.addParseData(input_data.c_str(), input_data.size()) == true);
     assert(esi_proc.completeParse() == true);
@@ -286,7 +286,7 @@ int main()
                       "<esi:include src=\"blah bleh\"/>");
     
     const char *output_data;
-    int output_data_len;
+    int output_data_len=0;
 
     assert(esi_proc.addParseData(input_data.c_str(), input_data.size()) == true);
     assert(esi_proc.completeParse() == true);
@@ -311,7 +311,7 @@ int main()
                       "<esi:remove> <a href=> </esi:remove>");
     
     const char *output_data;
-    int output_data_len;
+    int output_data_len=0;
 
     assert(esi_proc.addParseData(input_data.c_str(), input_data.size()) == true);
     assert(esi_proc.completeParse() == true);
@@ -323,7 +323,7 @@ int main()
                    "foo2 >>>>> Content for URL [url2] <<<<< bar2\n"
                    ">>>>> Content for URL [blah bleh] <<<<<", output_data_len) == 0);
   }
-  
+
   {
     cout << endl << "===================== Test 15) multiple addParseData calls" << endl;
     TestHttpDataFetcher data_fetcher;
@@ -337,7 +337,7 @@ int main()
     char line6[] = "</esi:remove>";
     
     const char *output_data;
-    int output_data_len;
+    int output_data_len=0;
 
     assert(esi_proc.addParseData(line1, sizeof(line1) - 1) == true);
     assert(esi_proc.addParseData(line2, sizeof(line2) - 1) == true);
@@ -367,7 +367,7 @@ int main()
                       "<esi:remove> <a href=> </esi:remove>");
     
     const char *output_data;
-    int output_data_len;
+    int output_data_len=0;
 
     assert(esi_proc.completeParse(input_data.data(), input_data.size()) == true);
     assert(esi_proc.process(output_data, output_data_len) == EsiProcessor::SUCCESS);
@@ -378,7 +378,7 @@ int main()
                    "foo2 >>>>> Content for URL [url2] <<<<< bar2\n"
                    ">>>>> Content for URL [blah bleh] <<<<<", output_data_len) == 0);
   }
-  
+
   {
     cout << endl << "===================== Test 17) final chunk call" << endl;
     TestHttpDataFetcher data_fetcher;
@@ -392,7 +392,7 @@ int main()
     char line6[] = "</esi:remove>";
     
     const char *output_data;
-    int output_data_len;
+    int output_data_len=0;
 
     assert(esi_proc.addParseData(line1, sizeof(line1) - 1) == true);
     assert(esi_proc.addParseData(line2, sizeof(line2) - 1) == true);
@@ -417,7 +417,7 @@ int main()
     string input_data("foo <esi:include src=url1/> bar");
     
     const char *output_data;
-    int output_data_len;
+    int output_data_len=0;
 
     assert(esi_proc.addParseData(input_data.c_str()) == true);
     assert(esi_proc.completeParse() == true);
@@ -434,7 +434,7 @@ int main()
     string input_data("foo <esi:include src=url1/> bar");
     
     const char *output_data;
-    int output_data_len;
+    int output_data_len=0;
 
     assert(esi_proc.addParseData(input_data) == true);
     assert(esi_proc.completeParse() == true);
@@ -455,7 +455,7 @@ int main()
                       "<esi:remove> <a href=> </esi:remove>");
     
     const char *output_data;
-    int output_data_len;
+    int output_data_len=0;
 
     assert(esi_proc.completeParse(input_data) == true);
     assert(esi_proc.process(output_data, output_data_len) == EsiProcessor::SUCCESS);
@@ -466,7 +466,7 @@ int main()
                    "foo2 >>>>> Content for URL [url2] <<<<< bar2\n"
                    ">>>>> Content for URL [blah bleh] <<<<<", output_data_len) == 0);
   }
-  
+
   {
     cout << endl << "===================== Test 21) invalidly expanding url" << endl;
     TestHttpDataFetcher data_fetcher;
@@ -475,7 +475,7 @@ int main()
     string input_data("foo <esi:include src=$(HTTP_HOST) /> bar");
     
     const char *output_data;
-    int output_data_len;
+    int output_data_len=0;
 
     assert(esi_proc.addParseData(input_data) == true);
     assert(esi_proc.completeParse() == true);
@@ -491,7 +491,7 @@ int main()
     string input_data("foo <esi:vars>HTTP_HOST</esi:vars> bar");
     
     const char *output_data;
-    int output_data_len;
+    int output_data_len=0;
 
     assert(esi_proc.addParseData(input_data) == true);
     assert(esi_proc.completeParse() == true);
@@ -508,7 +508,7 @@ int main()
     string input_data("foo <esi:vars>$(HTTP_HOST)</esi:vars> bar");
     
     const char *output_data;
-    int output_data_len;
+    int output_data_len=0;
 
     assert(esi_proc.addParseData(input_data) == true);
     assert(esi_proc.completeParse() == true);
@@ -525,7 +525,7 @@ int main()
     string input_data("foo <esi:vars>$(HTTP_HOST</esi:vars> bar");
     
     const char *output_data;
-    int output_data_len;
+    int output_data_len=0;
 
     assert(esi_proc.addParseData(input_data) == true);
     assert(esi_proc.completeParse() == true);
@@ -551,7 +551,7 @@ int main()
                       "</esi:otherwise>"
                       "</esi:choose>");
     const char *output_data;
-    int output_data_len;
+    int output_data_len=0;
     
     assert(esi_proc.completeParse(input_data) == true);
     assert(esi_proc.process(output_data, output_data_len) == EsiProcessor::SUCCESS);
@@ -570,7 +570,7 @@ int main()
                       "</esi:otherwise>"
                       "</esi:choose>");
     const char *output_data;
-    int output_data_len;
+    int output_data_len=0;
     
     assert(esi_proc.completeParse(input_data) == true);
     assert(esi_proc.process(output_data, output_data_len) == EsiProcessor::SUCCESS);
@@ -593,7 +593,7 @@ int main()
                       "</esi:try>");
 
     const char *output_data;
-    int output_data_len;
+    int output_data_len=0;
     assert(esi_proc.completeParse(input_data) == true);
     assert(esi_proc.process(output_data, output_data_len) == EsiProcessor::SUCCESS);
     assert(output_data_len == FETCHER_STATIC_DATA_SIZE + 7);
@@ -615,7 +615,7 @@ int main()
                       "</esi:try>");
 
     const char *output_data;
-    int output_data_len;
+    int output_data_len=0;
     assert(esi_proc.completeParse(input_data) == true);
     data_fetcher.setReturnData(false);
     assert(esi_proc.process(output_data, output_data_len) == EsiProcessor::NEED_MORE_DATA);
@@ -639,7 +639,7 @@ int main()
                       "</esi:try>");
 
     const char *output_data;
-    int output_data_len;
+    int output_data_len=0;
     assert(esi_proc.completeParse(input_data) == true);
     data_fetcher.setReturnData(false);
     assert(esi_proc.process(output_data, output_data_len) == EsiProcessor::NEED_MORE_DATA);
@@ -664,7 +664,7 @@ int main()
                       "</esi:try>");
 
     const char *output_data;
-    int output_data_len;
+    int output_data_len=0;
     assert(esi_proc.completeParse(input_data) == true);
     data_fetcher.setReturnData(false);
     assert(esi_proc.process(output_data, output_data_len) == EsiProcessor::SUCCESS);
@@ -691,7 +691,7 @@ int main()
                       "bar");
 
     const char *output_data;
-    int output_data_len;
+    int output_data_len=0;
     assert(esi_proc.completeParse(input_data) == true);
     data_fetcher.setReturnData(false);
     assert(esi_proc.process(output_data, output_data_len) == EsiProcessor::NEED_MORE_DATA);
@@ -714,7 +714,7 @@ int main()
                       "bar");
 
     const char *output_data;
-    int output_data_len;
+    int output_data_len=0;
     assert(esi_proc.completeParse(input_data) == true);
     assert(esi_proc.process(output_data, output_data_len) == EsiProcessor::SUCCESS);
     assert(output_data_len == FETCHER_STATIC_DATA_SIZE + 10 + 3 + 4 + 3);
@@ -753,7 +753,7 @@ int main()
                       "</esi:otherwise>\n"
                       "</esi:choose>");
     const char *output_data;
-    int output_data_len;
+    int output_data_len=0;
     
     assert(esi_proc.completeParse(input_data) == true);
     assert(esi_proc.process(output_data, output_data_len) == EsiProcessor::SUCCESS);
@@ -777,7 +777,7 @@ int main()
     assert(handler->parseCompleteCalled == true);
 
     const char *output_data;
-    int output_data_len;
+    int output_data_len=0;
     assert(esi_proc.process(output_data, output_data_len) == EsiProcessor::SUCCESS);
     assert(output_data_len == StubIncludeHandler::DATA_PREFIX_SIZE + 1);
     assert(strncmp(output_data, "Special data for include id 1", output_data_len) == 0);
@@ -799,7 +799,7 @@ int main()
     assert(handler->parseCompleteCalled == true);
 
     const char *output_data;
-    int output_data_len;
+    int output_data_len=0;
     assert(esi_proc.process(output_data, output_data_len) == EsiProcessor::SUCCESS);
     assert(output_data_len == (4 + StubIncludeHandler::DATA_PREFIX_SIZE + 1 + 1 +
                                StubIncludeHandler::DATA_PREFIX_SIZE + 1 + 4));
@@ -827,7 +827,7 @@ int main()
     assert(udb_handler->parseCompleteCalled == true);
 
     const char *output_data;
-    int output_data_len;
+    int output_data_len=0;
     assert(esi_proc.process(output_data, output_data_len) == EsiProcessor::SUCCESS);
     assert(output_data_len == (4 + StubIncludeHandler::DATA_PREFIX_SIZE + 1 + 1 +
                                StubIncludeHandler::DATA_PREFIX_SIZE + 1 + 4));
@@ -864,7 +864,7 @@ int main()
                       "</esi:try>");
 
     const char *output_data;
-    int output_data_len;
+    int output_data_len=0;
     assert(esi_proc.completeParse(input_data) == true);
     assert(esi_proc.process(output_data, output_data_len) == EsiProcessor::SUCCESS);
     assert(output_data_len == StubIncludeHandler::DATA_PREFIX_SIZE + 1);
@@ -886,7 +886,7 @@ int main()
                       "</esi:try>");
 
     const char *output_data;
-    int output_data_len;
+    int output_data_len=0;
     assert(esi_proc.completeParse(input_data) == true);
     data_fetcher.setReturnData(false);
     assert(esi_proc.process(output_data, output_data_len) == EsiProcessor::NEED_MORE_DATA);
@@ -910,7 +910,7 @@ int main()
                       "</esi:try>");
 
     const char *output_data;
-    int output_data_len;
+    int output_data_len=0;
     assert(esi_proc.completeParse(input_data) == true);
     data_fetcher.setReturnData(false);
     assert(esi_proc.process(output_data, output_data_len) == EsiProcessor::NEED_MORE_DATA);
@@ -935,7 +935,7 @@ int main()
                       "</esi:try>");
 
     const char *output_data;
-    int output_data_len;
+    int output_data_len=0;
     assert(esi_proc.completeParse(input_data) == true);
 
      // this is to make the StubHandler return failure
@@ -958,7 +958,7 @@ int main()
     string input_data("<esi:comment text=\"bleh\"/>");
     
     const char *output_data;
-    int output_data_len;
+    int output_data_len=0;
 
     assert(esi_proc.addParseData(input_data.c_str(), input_data.size()) == true);
     assert(esi_proc.completeParse() == true);
@@ -986,10 +986,9 @@ int main()
     EsiProcessor esi_proc("processor", "parser", "expression", &Debug, &Error, data_fetcher, esi_vars,
                           handler_mgr);
 
-    assert(esi_proc.usePackedNodeList(packedNodeList) == true);
-
+    assert(esi_proc.usePackedNodeList(packedNodeList) == EsiProcessor::PROCESS_SUCCESS);
     const char *output_data;
-    int output_data_len;
+    int output_data_len=0;
     data_fetcher.setReturnData(false);
     assert(esi_proc.process(output_data, output_data_len) == EsiProcessor::NEED_MORE_DATA);
     data_fetcher.setReturnData(true);
@@ -1013,7 +1012,7 @@ int main()
       "</esi:choose>";
     assert(parser.parse(node_list, input_data) == true);
     packedNodeList = node_list.pack();
-    assert(esi_proc.usePackedNodeList(packedNodeList) == true);
+    assert(esi_proc.usePackedNodeList(packedNodeList) == EsiProcessor::PROCESS_SUCCESS);
     assert(esi_proc.process(output_data, output_data_len) == EsiProcessor::SUCCESS);
     assert(output_data_len == 1 + FETCHER_STATIC_DATA_SIZE + 3);
     assert(strncmp(output_data, "\t>>>>> Content for URL [foo] <<<<<", output_data_len) == 0);
@@ -1042,12 +1041,12 @@ int main()
 
     
     const char *output_data;
-    int output_data_len;
+    int output_data_len=0;
 
     assert(esi_proc.addParseData(input_data.c_str(), input_data.size()) == true);
-    assert(esi_proc.usePackedNodeList(packedNodeList) == false);
+    assert(esi_proc.usePackedNodeList(packedNodeList) == EsiProcessor::PROCESS_IN_PROGRESS);
     assert(esi_proc.completeParse() == true);
-    assert(esi_proc.usePackedNodeList(packedNodeList) == false);
+    assert(esi_proc.usePackedNodeList(packedNodeList) == EsiProcessor::PROCESS_IN_PROGRESS);
     assert(esi_proc.process(output_data, output_data_len) == EsiProcessor::SUCCESS);
     assert(output_data_len == 0);
   }
@@ -1067,7 +1066,7 @@ int main()
                       "</esi:try>");
 
     const char *output_data;
-    int output_data_len;
+    int output_data_len=0;
     StubIncludeHandler::FOOTER = "<!--footer-->";
     StubIncludeHandler::FOOTER_SIZE = strlen(StubIncludeHandler::FOOTER);
     assert(esi_proc.completeParse(input_data) == true);
@@ -1104,7 +1103,7 @@ int main()
     EsiProcessor esi_proc("processor", "parser", "expression", &Debug, &Error, data_fetcher, esi_vars,
                           handler_mgr);
 
-    assert(esi_proc.usePackedNodeList(0, packedNodeList.size()) == false);
+    assert(esi_proc.usePackedNodeList(0, packedNodeList.size()) == EsiProcessor::UNPACK_FAILURE);
   }
 
   {
@@ -1127,7 +1126,7 @@ int main()
     EsiProcessor esi_proc("processor", "parser", "expression", &Debug, &Error, data_fetcher, esi_vars,
                           handler_mgr);
 
-    assert(esi_proc.usePackedNodeList(packedNodeList.data(), 0) == false);
+    assert(esi_proc.usePackedNodeList(packedNodeList.data(), 0) == EsiProcessor::UNPACK_FAILURE);
   }
 
   cout << endl << "All tests passed!" << endl;
