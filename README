@@ -156,7 +156,7 @@ plugins to build large scale web applications.
 You can download the latest source code from the official Apache Traffic
 Server site:
 
-       http://trafficserver.apache.org/downloads.html
+       http://trafficserver.apache.org/downloads
 
 (or via the URL shortener: http://s.apache.org/uG). Once downloaded,
 follow the instructions:
