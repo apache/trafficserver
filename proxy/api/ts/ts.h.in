@@ -2269,6 +2269,8 @@ extern "C"
 
   tsapi TSReturnCode TSHttpTxnTransformRespGet(TSHttpTxn txnp, TSMBuffer* bufp, TSMLoc* offset);
 
+  tsapi void TSHttpTxnClientIncomingPortSet(TSHttpTxn txnp, int port);
+
   /** Get client address for transaction @a txnp.
       Retrieves the socket address of the remote client that has
       connected to Traffic Server for transaction @a txnp. The
