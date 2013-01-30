@@ -223,6 +223,7 @@ Connection::open(NetVCOptions const& opt)
   // address family for socket creation.
   ink_zero(local_addr);
 
+  bool is_any_address = false;
   if (NetVCOptions::FOREIGN_ADDR == opt.addr_binding ||
     NetVCOptions::INTF_ADDR == opt.addr_binding
   ) {
@@ -236,6 +237,7 @@ Connection::open(NetVCOptions const& opt)
     // No local address specified, so use family option if possible.
     family = ats_is_ip(opt.ip_family) ? opt.ip_family : AF_INET;
     local_addr.setToAnyAddr(family);
+    is_any_address = true;
     local_addr.port() = htons(opt.local_port);
   }
 
@@ -297,8 +299,10 @@ Connection::open(NetVCOptions const& opt)
   // apply dynamic options
   apply_options(opt);
 
-  if (-1 == socketManager.ink_bind(fd, &local_addr.sa, ats_ip_size(&local_addr.sa)))
-    return -errno;
+  if(local_addr.port() || !is_any_address) {
+    if (-1 == socketManager.ink_bind(fd, &local_addr.sa, ats_ip_size(&local_addr.sa)))
+      return -errno;
+  }
 
   cleanup.reset();
   is_bound = true;
