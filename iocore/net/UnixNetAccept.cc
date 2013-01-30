@@ -288,8 +288,10 @@ NetAccept::do_blocking_accept(EThread * t)
       check_throttle_warning();
       if (!unix_netProcessor.throttle_error_message) {
         safe_delay(NET_THROTTLE_DELAY);
-      } else if (send_throttle_message(this) < 0)
+      } else if (send_throttle_message(this) < 0) {
         goto Lerror;
+      }
+      now = ink_get_hrtime();
     }
 
     if ((res = server.accept(&vc->con)) < 0) {
