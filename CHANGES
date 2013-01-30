@@ -1,5 +1,7 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.3.1
+  *) [TS-1650] Inactivity cop should use TRY_LOCK instead of LOCK to avoid deadlock.
+
   *) [TS-1649] Don't use ink_bind if we're not specifying a local port
 
   *) [TS-1667] remove unused enum TSIOBufferDataFlags

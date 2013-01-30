@@ -55,7 +55,8 @@ enum Net_Stats
   socks_connections_successful_stat,
   socks_connections_unsuccessful_stat,
   socks_connections_currently_open_stat,
-  Net_Stat_Count
+  Net_Stat_Count,
+  inactivity_cop_lock_acquire_failure_stat
 };
 
 struct RecRawStatBlock;

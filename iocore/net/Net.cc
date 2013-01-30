@@ -125,6 +125,11 @@ register_net_stats()
   NET_CLEAR_DYN_STAT(socks_connections_currently_open_stat);
 #endif
 
+  RecRegisterRawStat(net_rsb, RECT_PROCESS,
+                     "proxy.process.net.inactivity_cop_lock_acquire_failure",
+                     RECD_INT, RECP_NULL, (int) inactivity_cop_lock_acquire_failure_stat,
+                     RecRawStatSyncSum);
+
 }
 
 void
