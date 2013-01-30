@@ -134,15 +134,12 @@ RecIncrRawStat(RecRawStatBlock * rsb, EThread * ethread, int id, int64_t incr)
   return REC_ERR_OKAY;
 }
 
-/* This does not seem to work as intended ... */
 inline int
 RecDecrRawStat(RecRawStatBlock * rsb, EThread * ethread, int id, int64_t decr)
 {
   RecRawStat *tlp = raw_stat_get_tlp(rsb, id, ethread);
-  if (decr <= tlp->sum) {       // Assure that we stay positive
-    tlp->sum -= decr;
-    tlp->count += 1;
-  }
+  tlp->sum -= decr;
+  tlp->count += 1;
   return REC_ERR_OKAY;
 }
 
