@@ -191,7 +191,11 @@ FetchSM::process_fetch_write(int event)
     req_finished = true;
     break;
   case TS_EVENT_VCONN_WRITE_READY:
-    break; //just ignore this event 
+    // data is processed in chunks of 32k; if there is more than 32k
+    // of input data, we have to continue reenabling until all data is
+    // read (we have already written all the data to the buffer)
+    ((PluginVC *) http_vc)->reenable(write_vio);
+    break;
   case TS_EVENT_ERROR:
     //InvokePlugin( TS_EVENT_ERROR, NULL);
       InvokePlugin( callback_events.failure_event_id, NULL);
