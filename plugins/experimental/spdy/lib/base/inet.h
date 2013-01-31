@@ -19,6 +19,7 @@
 #ifndef INET_H_9452AE2E_D6D2_4B26_AF98_7550DC033E54
 #define INET_H_9452AE2E_D6D2_4B26_AF98_7550DC033E54
 
+#include <stdlib.h> // abort
 #include <sys/types.h>
 #include <netinet/in.h>
 
