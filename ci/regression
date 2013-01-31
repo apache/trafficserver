@@ -75,6 +75,7 @@ configure() {
     cd $OBJROOT
     $SRCROOT/configure \
       --prefix=$DSTROOT \
+      --enable-debug \
       --enable-wccp \
       --enable-experimental-plugins \
       CC=$CC \
