@@ -169,7 +169,13 @@ public:
   */
   typedef detail::HttpAcceptOptions Options;
 
-  HttpAccept(Options const& opt = DEFAULT_OPTIONS)
+  /** Default constructor.
+    
+      @internal We don't use a static default options object because of
+      initialization order issues. It is important to pick up data that is read
+      from the config file and a static is initialized long before that point.
+  */
+  HttpAccept(Options const& opt = Options())
     : Continuation(NULL)
     , detail::HttpAcceptOptions(opt) // copy these.
   {
@@ -183,9 +189,6 @@ public:
   }
 
   int mainEvent(int event, void *netvc);
-
-  /// Container for default options.
-  static Options const DEFAULT_OPTIONS;
 
 private:
     HttpAccept(const HttpAccept &);

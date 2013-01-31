@@ -27,8 +27,6 @@
 #include "I_Machine.h"
 #include "Error.h"
 
-HttpAccept::Options const HttpAccept::DEFAULT_OPTIONS;
-
 int
 HttpAccept::mainEvent(int event, void *data)
 {
