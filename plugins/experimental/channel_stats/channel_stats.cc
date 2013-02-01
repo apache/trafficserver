@@ -1,9 +1,13 @@
 /*
-  Licensed under the Apache License, Version 2.0 (the "License");
-  you may not use this file except in compliance with the License.
-  You may obtain a copy of the License at
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
 
-  http://www.apache.org/licenses/LICENSE-2.0
+      http://www.apache.org/licenses/LICENSE-2.0
 
   Unless required by applicable law or agreed to in writing, software
   distributed under the License is distributed on an "AS IS" BASIS,
@@ -34,7 +38,7 @@
 #include "debug_macros.h"
 
 #define PLUGIN_NAME     "channel_stats"
-#define PLUGIN_VERSION  "0.1"
+#define PLUGIN_VERSION  "0.2"
 
 #define MAX_SPEED 999999999
 
@@ -46,37 +50,42 @@ static std::string api_path("_cstats");
 
 // global stats
 static uint64_t global_response_count_2xx_get = 0;  // 2XX GET response count
-static uint64_t global_response_bytes_content = 0;  // transferred bytes (2xx.get)
+static uint64_t global_response_bytes_content = 0;  // transferred bytes
 
 // channel stats
 struct channel_stat {
   channel_stat()
       : response_bytes_content(0),
         response_count_2xx(0),
+        response_count_5xx(0),
         speed_ua_bytes_per_sec_64k(0) {
   }
 
-  inline void increment(uint64_t rbc, uint64_t rc2, uint64_t sbps6) {
-    __sync_fetch_and_add(&response_bytes_content, rbc);
+  inline void increment(uint64_t rbc, uint64_t rc2,
+                        uint64_t rc5, uint64_t sbps6) {
+    if (rbc) __sync_fetch_and_add(&response_bytes_content, rbc);
     if (rc2) __sync_fetch_and_add(&response_count_2xx, rc2);
+    if (rc5) __sync_fetch_and_add(&response_count_5xx, rc5);
     if (sbps6) __sync_fetch_and_add(&speed_ua_bytes_per_sec_64k, sbps6);
   }
 
   inline void debug_channel() {
     debug("response.bytes.content: %" PRIu64 "", response_bytes_content);
     debug("response.count.2xx: %" PRIu64 "", response_count_2xx);
+    debug("response.count.5xx: %" PRIu64 "", response_count_5xx);
     debug("speed.ua.bytes_per_sec_64k: %" PRIu64 "", speed_ua_bytes_per_sec_64k);
   }
 
   uint64_t response_bytes_content;
   uint64_t response_count_2xx;
+  uint64_t response_count_5xx;
   uint64_t speed_ua_bytes_per_sec_64k;
 };
 
-typedef std::map<std::string, channel_stat *> stats_map_type;
-typedef stats_map_type::iterator smap_iterator;
+typedef std::map<std::string, channel_stat *> stats_map_t;
+typedef stats_map_t::iterator smap_iterator;
 
-static stats_map_type channel_stats;
+static stats_map_t channel_stats;
 static TSMutex stats_map_mutex;
 
 // api Intercept Data
@@ -115,9 +124,9 @@ static int num_private_segs = sizeof(private_segs) / sizeof(private_seg_t);
 
 // all parameters are in network byte order
 static int
-is_in_net (const struct in_addr *  addr,
-           const struct in_addr *  netaddr,
-           const struct in_addr *  netmask)
+is_in_net (const struct in_addr * addr,
+           const struct in_addr * netaddr,
+           const struct in_addr * netmask)
 {
    if ((addr->s_addr & netmask->s_addr) == (netaddr->s_addr & netmask->s_addr))
       return 1;
@@ -317,7 +326,8 @@ handle_read_req(TSCont contp, TSHttpTxn txnp)
       TSfree(client_ip);
     }
   } else {
-    debug_api("not IPv4, ignore IP auth"); // TODO check AF_INET6 private IP?
+    debug_api("not IPv4, request denied"); // TODO check AF_INET6's private IP?
+    api_state->deny = 1;
   }
 
   TSSkipRemappingSet(txnp, 1); //not strictly necessary
@@ -329,8 +339,7 @@ handle_read_req(TSCont contp, TSHttpTxn txnp)
   goto cleanup;
 
 not_api:
-
-  txn_contp = TSContCreate(handle_event, NULL); // reuse global hander
+  txn_contp = TSContCreate(handle_event, NULL); // reuse global handler
   TSHttpTxnHookAdd(txnp, TS_HTTP_TXN_CLOSE_HOOK, txn_contp);
 
 cleanup:
@@ -338,64 +347,89 @@ cleanup:
   if (hdr_loc) TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
 }
 
-static void
-handle_txn_close(TSCont contp, TSHttpTxn txnp)
+static bool
+get_pristine_host(TSHttpTxn txnp, TSMBuffer bufp, std::string &host)
 {
-  TSMBuffer bufp;
-  TSMLoc hdr_loc;
-  TSHttpStatus status;
   TSMLoc purl_loc;
   const char * pristine_host;
   int pristine_host_len = 0;
   int pristine_port;
-  uint64_t user_speed;
-  uint64_t body_bytes;
-  TSHRTime start_time = 0;
-  TSHRTime end_time = 0;
-  TSHRTime interval_time = 0;
-  smap_iterator stat_it;
-  channel_stat *stat;
-  std::pair<smap_iterator, bool> insert_ret;
-  std::string host;
-  std::stringstream ss;
-
-  if (TSHttpTxnClientRespGet(txnp, &bufp, &hdr_loc) != TS_SUCCESS) {
-    debug("couldn't retrieve final response");
-    return;
-  }
-
-  status = TSHttpHdrStatusGet(bufp, hdr_loc);
-  if (status != TS_HTTP_STATUS_OK && status != TS_HTTP_STATUS_PARTIAL_CONTENT) {
-    debug("only count 200/206 response");
-    goto cleanup;
-  }
 
   if (TSHttpTxnPristineUrlGet(txnp, &bufp, &purl_loc) != TS_SUCCESS) {
     debug("couldn't retrieve pristine url");
-    goto cleanup;
+    return false;
   }
 
   pristine_host = TSUrlHostGet(bufp, purl_loc, &pristine_host_len);
   if (pristine_host_len == 0) {
     debug("couldn't retrieve pristine host");
-    goto cleanup;
+    return false;
   }
+
   pristine_port = TSUrlPortGet(bufp, purl_loc);
   host = std::string(pristine_host, pristine_host_len);
   if (pristine_port != 80) {
-    ss << pristine_port;
-    host += ":" + ss.str();
+    char buf[12];
+    if (!sprintf(buf, ":%d", pristine_port))
+      return false;
+    host.append(buf);
   }
-
-  body_bytes = TSHttpTxnClientRespBodyBytesGet(txnp);
-  __sync_fetch_and_add(&global_response_count_2xx_get, 1);
-  __sync_fetch_and_add(&global_response_bytes_content, body_bytes);
 
   debug("pristine host: %.*s", pristine_host_len, pristine_host);
   debug("pristine port: %d", pristine_port);
   debug("host to lookup: %s", host.c_str());
-  debug("body bytes: %" PRIu64 "", body_bytes);
-  debug("2xx req count: %" PRIu64 "", global_response_count_2xx_get);
+
+  return true;
+}
+
+static bool
+get_channel_stat(const std::string &host,
+                 channel_stat *    &stat,
+                 int    status_code_type)
+{
+  smap_iterator stat_it;
+
+  stat_it = channel_stats.find(host);
+
+  if (stat_it != channel_stats.end()) {
+    stat = stat_it->second;
+  } else {
+    if (status_code_type != 2) {
+      // if request's host isn't in your remap.config, response code will be 404
+      // we should not count that channel in this situation
+      debug("not 2xx response, do not create stat for this channel now");
+      return false;
+    }
+    if (channel_stats.size() >= MAX_MAP_SIZE) {
+      warning("channel_stats map exceeds max size");
+      return false;
+    }
+
+    stat = new channel_stat();
+    std::pair<smap_iterator, bool> insert_ret;
+    TSMutexLock(stats_map_mutex);
+    insert_ret = channel_stats.insert(std::make_pair(host, stat));
+    TSMutexUnlock(stats_map_mutex);
+    if (insert_ret.second == true) {
+      // insert successfully
+      debug("******** new channel(#%zu) ********", channel_stats.size());
+    } else {
+      warning("stat of this channel already existed");
+      delete stat;
+      stat = insert_ret.first->second;
+    }
+  }
+
+  return true;
+}
+
+static uint64_t
+get_txn_user_speed(TSHttpTxn txnp, uint64_t body_bytes)
+{
+  uint64_t user_speed = 0;
+  TSHRTime start_time = 0;
+  TSHRTime end_time = 0;
+  TSHRTime interval_time = 0;
 
 #if (TS_VERSION_NUMBER < 3003001)
   TSHttpTxnStartTimeGet(txnp, &start_time);
@@ -408,14 +442,14 @@ handle_txn_close(TSCont contp, TSHttpTxn txnp)
   if (start_time != 0 && end_time != 0 && end_time >= start_time) {
     interval_time = end_time - start_time;
   } else {
-    warning("not valid time, start: %" PRId64", end: %" PRId64"", start_time, end_time);
-    goto cleanup;
+    warning("invalid time, start: %" PRId64", end: %" PRId64"", start_time, end_time);
+    return 0;
   }
 
   if (interval_time == 0 || body_bytes == 0)
     user_speed = MAX_SPEED;
   else
-    user_speed = (int)((float)body_bytes / interval_time * HRTIME_SECOND);
+    user_speed = (uint64_t)((float)body_bytes / interval_time * HRTIME_SECOND);
 
   debug("start time: %" PRId64 "", start_time);
   debug("end time: %" PRId64 "", end_time);
@@ -423,38 +457,50 @@ handle_txn_close(TSCont contp, TSHttpTxn txnp)
   debug("interval seconds: %.5f", interval_time / (float)HRTIME_SECOND);
   debug("speed bytes per second: %" PRIu64 "", user_speed);
 
-  /*
-  // test large number of channels
-  if (channel_stats.size() < MAX_MAP_SIZE)
-    ss << channel_stats.size() + 1;
-  else
-    ss << (rand() % MAX_MAP_SIZE + 1);
-  host = host + "--" + ss.str();
-  debug("%s", host.c_str()); 
-  */
+  return user_speed;
+}
 
-  stat_it = channel_stats.find(host);
-  if (stat_it == channel_stats.end()) {
-    if (channel_stats.size() >= MAX_MAP_SIZE) {
-      warning("channel_stats map exceeds max size");
-      goto cleanup;
-    }
-    stat = new channel_stat();
-    TSMutexLock(stats_map_mutex);
-    insert_ret = channel_stats.insert(std::make_pair(host, stat));
-    TSMutexUnlock(stats_map_mutex);
-    if (insert_ret.second == false) {
-      warning("stat of this channel already existed");
-      delete stat;
-      stat = insert_ret.first->second;
-    } else {
-      debug("********** new channel(%zu) **********", channel_stats.size());
-    }
-  } else { // found
-    stat = stat_it->second;
+static void
+handle_txn_close(TSCont contp, TSHttpTxn txnp)
+{
+  TSMBuffer bufp;
+  TSMLoc hdr_loc;
+  TSHttpStatus status_code;
+  int status_code_type;
+  uint64_t user_speed;
+  uint64_t body_bytes;
+  channel_stat *stat;
+  std::string host;
+
+  if (TSHttpTxnClientRespGet(txnp, &bufp, &hdr_loc) != TS_SUCCESS) {
+    debug("couldn't retrieve final response");
+    return;
   }
 
-  stat->increment(body_bytes, 1, user_speed < 64000 ? 1 : 0);
+  status_code = TSHttpHdrStatusGet(bufp, hdr_loc);
+  status_code_type = status_code / 100;
+  body_bytes = TSHttpTxnClientRespBodyBytesGet(txnp);
+
+  __sync_fetch_and_add(&global_response_bytes_content, body_bytes);
+  if (status_code_type == 2)
+    __sync_fetch_and_add(&global_response_count_2xx_get, 1);
+
+  debug("body bytes: %" PRIu64 "", body_bytes);
+  debug("2xx req count: %" PRIu64 "", global_response_count_2xx_get);
+
+  if (!get_pristine_host(txnp, bufp, host))
+    goto cleanup;
+
+  // get or create the stat
+  if (!get_channel_stat(host, stat, status_code_type))
+    goto cleanup;
+
+  user_speed = get_txn_user_speed(txnp, body_bytes);
+
+  stat->increment(body_bytes,
+                  status_code_type == 2 ? 1 : 0,
+                  status_code_type == 5 ? 1 : 0,
+                  (user_speed < 64000 && user_speed > 0) ? 1 : 0);
   stat->debug_channel();
 
 cleanup:
@@ -609,6 +655,7 @@ append_channel_stat(intercept_state * api_state,
   APPEND_DICT_NAME(channel.c_str());
   APPEND_STAT("response.bytes.content", "%" PRIu64, cs->response_bytes_content);
   APPEND_STAT("response.count.2xx.get", "%" PRIu64, cs->response_count_2xx);
+  APPEND_STAT("response.count.5xx.get", "%" PRIu64, cs->response_count_5xx);
   APPEND_END_STAT("speed.ua.bytes_per_sec_64k", "%" PRIu64, cs->speed_ua_bytes_per_sec_64k);
   if (is_last)
     APPEND("}\n");
@@ -804,3 +851,4 @@ TSPluginInit(int argc, const char *argv[])
   TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, cont);
 }
 
+/* vim: set sw=2 tw=79 ts=2 et ai : */
