@@ -2867,6 +2867,12 @@ HttpSM::tunnel_handler_server(int event, HttpTunnelProducer * p)
   if (close_connection) {
     p->vc->do_io_close();
     p->read_vio = NULL;
+    /* TS-1424: if we're outbound transparent and using the client
+       source port for the outbound connection we must effectively
+       propagate server closes back to the client.
+    */
+    if (ua_session && ua_session->f_outbound_transparent && t_state.http_config_param->use_client_source_port)
+      t_state.client_info.keep_alive = HTTP_NO_KEEPALIVE;
   } else {
     server_session->attach_hostname(t_state.current.server->name);
     server_session->server_trans_stat--;
