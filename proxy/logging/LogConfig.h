@@ -64,7 +64,7 @@ do { \
 #define LOG_DECREMENT_DYN_STAT(x) \
 	RecIncrRawStat(log_rsb, mutex->thread_holding, (int) x, -1);
 #define LOG_SUM_DYN_STAT(x, y) \
-	RecIncrRawStat(log_rsb, mutex->thread_holding, (int) x, (int) y);
+	RecIncrRawStat(log_rsb, mutex->thread_holding, (int) x, y);
 #define LOG_SUM_GLOBAL_DYN_STAT(x, y) \
 	RecIncrGlobalRawStatSum(log_rsb,x,y)
 #define LOG_CLEAR_DYN_STAT(x) \
