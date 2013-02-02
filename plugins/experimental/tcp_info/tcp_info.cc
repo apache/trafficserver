@@ -116,6 +116,7 @@ log_tcp_info(const char* event_name, const char* client_ip, const char* server_i
 
   int bytes = 0;
   if (config.log_level == 2) {
+#if !defined(freebsd)
     bytes = snprintf(buffer, sizeof(buffer), "%s %u %u %s %s %u %u %u %u %u %u %u %u %u %u %u %u\n",
                      event_name,
                      (uint32_t)now.tv_sec,
@@ -135,6 +136,27 @@ log_tcp_info(const char* event_name, const char* client_ip, const char* server_i
                      info.tcpi_retrans,
                      info.tcpi_fackets
       );
+#else
+        bytes = snprintf(buffer, sizeof(buffer), "%s %u %u %s %s %u %u %u %u %u %u %u %u %u %u %u %u\n",
+                     event_name,
+                     (uint32_t)now.tv_sec,
+                     (uint32_t)now.tv_usec,
+                     client_ip,
+                     server_ip,
+                     info.__tcpi_last_data_sent,
+                     info.tcpi_last_data_recv,
+                     info.tcpi_snd_cwnd,
+                     info.tcpi_snd_ssthresh,
+                     info.__tcpi_rcv_ssthresh,
+                     info.tcpi_rtt,
+                     info.tcpi_rttvar,
+                     info.__tcpi_unacked,
+                     info.__tcpi_sacked,
+                     info.__tcpi_lost,
+                     info.__tcpi_retrans,
+                     info.__tcpi_fackets
+      );
+#endif
   } else {
     bytes = snprintf(buffer, sizeof(buffer), "%s %u %s %s %u\n",
                      event_name,
