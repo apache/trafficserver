@@ -160,6 +160,13 @@ ink_atomic_increment(volatile Type * mem, Amount count) {
   return __sync_fetch_and_add(mem, (Type)count);
 }
 
+// ink_atomic_decrement(ptr, count)
+// Decrement @ptr by @count, returning the previous value.
+template <typename Type, typename Amount> static inline Type
+ink_atomic_decrement(volatile Type * mem, Amount count) {
+  return __sync_fetch_and_sub(mem, (Type)count);
+}
+
 // Special hacks for ARM 32-bit
 #if defined(__arm__) && (SIZEOF_VOIDP == 4)
 extern ProcessMutex __global_death;
@@ -213,6 +220,6 @@ ink_atomic_increment<int64_t>(pvint64 mem, int value) {
 
 #else /* not gcc > v4.1.2 */
 #error Need a compiler / libc that supports atomic operations, e.g. gcc v4.1.2 or later
-#endif 
+#endif
 
 #endif                          /* _ink_atomic_h_ */
