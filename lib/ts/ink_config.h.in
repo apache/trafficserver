@@ -119,6 +119,7 @@
 #define TS_HAS_IP_TOS                  @has_ip_tos@
 #define TS_USE_HWLOC                   @use_hwloc@
 #define TS_USE_FREELIST                @use_freelist@
+#define TS_USE_RECLAIMABLE_FREELIST    @use_reclaimable_freelist@
 #define TS_USE_TLS_NPN                 @use_tls_npn@
 #define TS_USE_TLS_SNI                 @use_tls_sni@
 

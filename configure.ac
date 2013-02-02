@@ -378,6 +378,27 @@ TS_ARG_ENABLE_VAR([use], [freelist])
 AC_SUBST(use_freelist)
 
 #
+# The original InkFreeList memory pool could not reclaim itself
+# automatically. We can use '--enable-reclaimable-freelist' option
+# to enable the reclaiming feature. This option is effective only
+# when freelist is enable.
+#
+if test "x${enable_freelist}" = "xyes"; then
+  AC_MSG_CHECKING([whether to enable reclaimable freelist])
+  AC_ARG_ENABLE([reclaimable_freelist],
+		[AS_HELP_STRING([--enable-reclaimable-freelist],
+				[turn on reclaimable freelist, this option is effective
+				 only when freelist is enable])],
+		[],
+		[enable_recalimable_freelist="yes"])
+  AC_MSG_RESULT([$enable_reclaimable_freelist])
+else
+  enable_reclaimable_freelist="no"
+fi
+TS_ARG_ENABLE_VAR([use], [reclaimable_freelist])
+AC_SUBST(use_reclaimable_freelist)
+
+#
 # Configure how many stats to allocate for plugins. Default is 512.
 #
 AC_ARG_WITH([max-api-stats],
