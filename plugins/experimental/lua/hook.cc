@@ -59,7 +59,7 @@ HttpHookName(TSHttpHookID hookid)
     "HTTP_POST_REMAP_HOOK",
   };
 
-  if (hookid >= 0 && hookid < countof(names)) {
+  if (hookid >= 0 && hookid < static_cast<TSHttpHookID>(countof(names))) {
     return names[hookid];
   }
 
