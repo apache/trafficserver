@@ -112,7 +112,7 @@ HttpDataFetcherImpl::_isFetchEvent(TSEvent event, int &base_event_id) const {
   base_event_id = _getBaseEventId(event);
   if ((base_event_id < 0) || (base_event_id >= static_cast<int>(_page_entry_lookup.size()))) {
     TSDebug(_debug_tag, "[%s] Event id %d not within fetch event id range [%d, %ld)",
-             __FUNCTION__, event, FETCH_EVENT_ID_BASE, FETCH_EVENT_ID_BASE + (_page_entry_lookup.size() * 3));
+             __FUNCTION__, event, FETCH_EVENT_ID_BASE, static_cast<long int>(FETCH_EVENT_ID_BASE + (_page_entry_lookup.size() * 3)));
     return false;
   }
   return true;
