@@ -24,6 +24,7 @@
     limitations under the License.
  */
 
+# include <string.h>
 # include <ts/TsBuffer.h>
 # include <tsconfig/NumericType.h>
 # include <tsconfig/IntrusivePtr.h>
