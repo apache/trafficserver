@@ -168,7 +168,7 @@ handleRead(SContData *cont_data, bool &read_complete) {
           }
           if (endptr - data) {
             TSDebug(DEBUG_TAG, "[%s] Appending %ld bytes to body", __FUNCTION__, endptr - data);
-            cont_data->body.append(data, endptr - data);
+            static_cast<long int>(cont_data->body.append(data, endptr - data));
           }
           cont_data->req_hdr_parsed = true;
         }
@@ -194,7 +194,7 @@ handleRead(SContData *cont_data, bool &read_complete) {
   } else {
     read_complete = false;
     TSDebug(DEBUG_TAG, "[%s] Reenabling input vio as %ld bytes still need to be read",
-             __FUNCTION__, cont_data->req_content_len - cont_data->body.size());
+             __FUNCTION__, static_cast<long int>(cont_data->req_content_len - cont_data->body.size()));
     TSVIOReenable(cont_data->input.vio);
   }
   return true;
