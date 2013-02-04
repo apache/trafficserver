@@ -167,8 +167,8 @@ handleRead(SContData *cont_data, bool &read_complete) {
             return false;
           }
           if (endptr - data) {
-            TSDebug(DEBUG_TAG, "[%s] Appending %ld bytes to body", __FUNCTION__, endptr - data);
-            static_cast<long int>(cont_data->body.append(data, endptr - data));
+            TSDebug(DEBUG_TAG, "[%s] Appending %ld bytes to body", __FUNCTION__, static_cast<long int>(endptr - data));
+            cont_data->body.append(data, endptr - data);
           }
           cont_data->req_hdr_parsed = true;
         }
