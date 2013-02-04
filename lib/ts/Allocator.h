@@ -163,7 +163,7 @@ public:
   ClassAllocator(const char *name, unsigned int chunk_size = 128,
                  unsigned int alignment = 16)
   {
-    ink_freelist_init(&this->fl, name, sizeof(C), chunk_size, RND16(alignment));
+    ink_freelist_init(&this->fl, name, RND16(sizeof(C)), chunk_size, RND16(alignment));
   }
 
   struct
