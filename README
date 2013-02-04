@@ -91,7 +91,7 @@ plugins to build large scale web applications.
     libcap-dev
 	flex (optional)
     libhwloc-dev (optional)
-    liblua5.1-dev (optional)
+    liblua5.1-dev or libluajit-5.1-dev (optional)
 
   Ubuntu EC2 9.10:
     NOTE: Alternately you may use the install scripts in 'contrib' which
@@ -114,20 +114,21 @@ plugins to build large scale web applications.
     libhwloc-dev (optional)
     liblua-dev (optional)
 
-  FreeBSD 7.2,8.0,9.0:
-    GCC 4.2.1 compiler suite or clang
-    gmake
-    autoconf
-    automake
-    pkgconf
-    libtool
-    tcl
-    expat
-    openssl
-    pcre
-	flex (optional)
-    hwloc (optional)
-    lua (optional)
+  FreeBSD 7.2,8.0,9.0,9.1
+    GCC 4.2.1 compiler suite or clang. You can install the following
+	packages either from ports or via pkg_add or pkgng:
+    devel/gmake
+    devel/autoconf
+    devel/automake
+    devel/pkgconf
+    devel/libtool
+    lang/tcl85
+    textproc/expat (or expat2)
+    security/openssl
+    devel/pcre
+    textproc/flex (optional, install newer version from ports, fix PATH)
+    devel/hwloc (optional)
+    lang/lua (optional, on x64 don't use LuaJIT!)
 
   OpenSolaris osol0906:
     GCC 4.3.2 compiler suite (dev collection)
