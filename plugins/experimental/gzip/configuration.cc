@@ -223,7 +223,7 @@ namespace Gzip {
             state = kParseDisallow;
           }
           else {
-            warning("failed to interpret \"%s\" at line %ld", token.c_str(), lineno);
+            warning("failed to interpret \"%s\" at line %zu", token.c_str(), lineno);
           }
           break;
         case kParseCompressibleContentType:
