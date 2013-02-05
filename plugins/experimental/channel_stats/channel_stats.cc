@@ -16,10 +16,11 @@
   limitations under the License.
 */
 
-# include "ts/ink_platform.h"
 
 // get INT64_MAX
 #define __STDC_LIMIT_MACROS
+
+#include "ts/ink_platform.h"
 
 #include <cstdio>
 #include <cstring>
