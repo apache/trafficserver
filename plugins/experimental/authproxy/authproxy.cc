@@ -328,9 +328,9 @@ AuthWriteRedirectedRequest(AuthRequestContext * auth, const sockaddr * saddr)
     hostport = SockaddrGetPort(saddr);
     inet_ntop(saddr->sa_family, SockaddrGetAddress(saddr), addrbuf, sizeof(addrbuf));
     if (saddr->sa_family == PF_INET6) {
-        std::snprintf(hostbuf, sizeof(hostbuf), "[%s]:%d", addrbuf, hostport);
+        snprintf(hostbuf, sizeof(hostbuf), "[%s]:%d", addrbuf, hostport);
     } else {
-        std::snprintf(hostbuf, sizeof(hostbuf), "%s:%d", addrbuf, hostport);
+        snprintf(hostbuf, sizeof(hostbuf), "%s:%d", addrbuf, hostport);
     }
 
     // Next, we need to rewrite the client request URL so that the request goes to
