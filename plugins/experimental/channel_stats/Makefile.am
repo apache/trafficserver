@@ -14,7 +14,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-AM_CPPFLAGS = -I$(top_builddir)/proxy/api -I$(top_srcdir)/proxy/api
+AM_CPPFLAGS = -I$(top_builddir)/proxy/api -I$(top_srcdir)/proxy/api -I$(top_srcdir)/lib
 
 pkglibdir = ${pkglibexecdir}
 pkglib_LTLIBRARIES = channel_stats.la

@@ -16,6 +16,8 @@
   limitations under the License.
 */
 
+# include "ts/ink_platform.h"
+
 // get INT64_MAX
 #define __STDC_LIMIT_MACROS
 
@@ -28,8 +30,8 @@
 #include <algorithm>
 #include <sstream>
 #include <arpa/inet.h>
-#if defined(TS_HAVE_NETINET_IN_H)
-#include <inet/in.h>
+#ifdef HAVE_NETINET_IN_H
+# include <netinet/in.h>
 #endif
 
 #include <ts/ts.h>
