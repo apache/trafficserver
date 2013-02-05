@@ -28,6 +28,9 @@
 #include <algorithm>
 #include <sstream>
 #include <arpa/inet.h>
+#if defined(TS_HAVE_NETINET_IN_H)
+#include <inet/in.h>
+#endif
 
 #include <ts/ts.h>
 #if (TS_VERSION_NUMBER < 3003001)
