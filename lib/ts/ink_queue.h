@@ -134,7 +134,7 @@ extern "C"
   {
     volatile head_p head;
     const char *name;
-    uint32_t type_size, chunk_size, count, allocated, offset, alignment;
+    uint32_t type_size, chunk_size, count, allocated, alignment;
     uint32_t allocated_base, count_base;
   };
 

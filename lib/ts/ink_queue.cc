@@ -200,7 +200,7 @@ ink_freelist_new(InkFreeList * f)
       ink_atomic_increment(&fastalloc_mem_in_use, (int64_t) f->chunk_size * f->type_size);
 
     } else {
-      SET_FREELIST_POINTER_VERSION(next, *ADDRESS_OF_NEXT(TO_PTR(FREELIST_POINTER(item)), f->offset),
+      SET_FREELIST_POINTER_VERSION(next, *ADDRESS_OF_NEXT(TO_PTR(FREELIST_POINTER(item)), 0),
                                    FREELIST_VERSION(item) + 1);
       result = ink_atomic_cas((int64_t *) & f->head.data, item.data, next.data);
 
@@ -244,7 +244,7 @@ ink_freelist_free(InkFreeList * f, void *item)
 #if TS_USE_RECLAIMABLE_FREELIST
   return reclaimable_freelist_free(f, item);
 #else
-  volatile_void_p *adr_of_next = (volatile_void_p *) ADDRESS_OF_NEXT(item, f->offset);
+  volatile_void_p *adr_of_next = (volatile_void_p *) ADDRESS_OF_NEXT(item, 0);
   head_p h;
   head_p item_pair;
   int result;
