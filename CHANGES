@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.3.1
 
+  *) [TS-1653] prevent the crash that retry dns lookup after timeout
+
   *) [TS-1006] memory management, cut down memory usage
      Author: Yunkai Zhang <qiushu.zyk@taobao.com>
 

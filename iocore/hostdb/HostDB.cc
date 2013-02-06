@@ -1560,16 +1560,17 @@ HostDBContinuation::dnsEvent(int event, HostEnt * e)
       do_put_response(m, r, NULL);
 #endif
 
-    // Check for IP family failover
-    if (failed && check_for_retry(md5.db_mark, host_res_style)) {
-      this->refresh_MD5();
-      SET_CONTINUATION_HANDLER(this, (HostDBContHandler) & HostDBContinuation::probeEvent);
-      thread->schedule_in(this, MUTEX_RETRY_DELAY);
-      return EVENT_CONT;
-    }
     // try to callback the user
     //
     if (action.continuation) {
+      // Check for IP family failover
+      if (failed && check_for_retry(md5.db_mark, host_res_style)) {
+        this->refresh_MD5();
+        SET_CONTINUATION_HANDLER(this, (HostDBContHandler) & HostDBContinuation::probeEvent);
+        thread->schedule_in(this, MUTEX_RETRY_DELAY);
+        return EVENT_CONT;
+      }
+
       MUTEX_TRY_LOCK_FOR(lock, action.mutex, thread, action.continuation);
       if (!lock) {
         remove_trigger_pending_dns();
