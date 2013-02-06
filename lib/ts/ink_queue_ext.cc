@@ -529,8 +529,8 @@ reclaimable_freelist_new(InkFreeList *f)
        * statement's sequence is important for us. */
       pCache->next = f->pThreadCache;
       pCache->prev = f->pThreadCache->prev;
-      f->pThreadCache->prev = pCache;
-      f->pThreadCache->prev->next = pCache;
+      pCache->next->prev = pCache;
+      pCache->prev->next = pCache;
     } else {
       pCache->next = pCache;
       pCache->prev = pCache;
