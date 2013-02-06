@@ -132,7 +132,7 @@ ink_thread_create(void *(*f) (void *), void *a, int detached = 0, size_t stacksi
 static inline void
 ink_thread_cancel(ink_thread who)
 {
-#if defined(freebsd)
+#if !defined(pthread_cancel)
   (void) who;
   ink_assert(!"not supported");
 #else
@@ -158,7 +158,7 @@ ink_thread_self()
 static inline int
 ink_thread_get_priority(ink_thread t, int *priority)
 {
-#if defined(freebsd)
+#if !defined(pthread_getschedparam)
   (void) t;
   (void) priority;
   ink_assert(!"not supported");
