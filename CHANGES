@@ -1,157 +1,159 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.3.1
 
-  *) [TS-1700] disable static libraries by default
+  *) [TS-1701] segv if header_rewrite is configured with the InkAPI and uses
+   PATH or QUERY conditions. Author: John Kew.
 
-  *) [TS-1653] prevent the crash that retry dns lookup after timeout
+  *) [TS-1700] disable static libraries by default.
 
-  *) [TS-1006] memory management, cut down memory usage
-     Author: Yunkai Zhang <qiushu.zyk@taobao.com>
+  *) [TS-1653] prevent the crash that retry dns lookup after timeout.
+
+  *) [TS-1006] memory management, cut down memory usage.
+   Author: Yunkai Zhang <qiushu.zyk@taobao.com>
 
   *) [TS-1678] Simplify register_record
-     Author: Yunkai Zhang <qiushu.zyk@taobao.com>
+   Author: Yunkai Zhang <qiushu.zyk@taobao.com>
 
   *) [TS-1252] stats summary in cluster not working
-     Author: Yunkai Zhang <qiushu.zyk@taobao.com>
+   Author: Yunkai Zhang <qiushu.zyk@taobao.com>
 
-  *) [TS-1679] channel_stats plugin: count 5xx response and clean up code
-     Author: Conan Wang
+  *) [TS-1679] channel_stats plugin: count 5xx response and clean up code.
+   Author: Conan Wang
 
   *) [TS-1676] FetchSM (TSFetchUrl) cannot handle POST bodies > 32kb.
 
-  *) [TS-1675] Adding API method TSHttpTxnClientIncomingPortSet
+  *) [TS-1675] Adding API method TSHttpTxnClientIncomingPortSet.
 
   *) [TS-1674] TSStatIntDecrement is broken: the logic is flawed.
 
-  *) [TS-1673] Remap with recv port is using the wrong port 
+  *) [TS-1673] Remap with recv port is using the wrong port.
 
   *) [TS-1672] Emergency throttling can continue forever.
 
   *) [TS-1650] Inactivity cop should use TRY_LOCK instead of LOCK to avoid deadlock.
 
-  *) [TS-1649] Don't use ink_bind if we're not specifying a local port
+  *) [TS-1649] Don't use ink_bind if we're not specifying a local port.
 
-  *) [TS-1667] remove unused enum TSIOBufferDataFlags
+  *) [TS-1667] remove unused enum TSIOBufferDataFlags.
 
-  *) [TS-1538] SSL accept performance regression
+  *) [TS-1538] SSL accept performance regression.
 
-  *) [TS-977] RecCore usage cleanup
+  *) [TS-977] RecCore usage cleanup.
 
   *) [TS-1574] [TS-1577] when read_from_writer, we should not do range acceleration.
    Range request can invalidate cached copy if the server reponse is 304.
 
-  *) [TS-1609] Traffic Cop doesn't wait() for its children
+  *) [TS-1609] Traffic Cop doesn't wait() for its children.
 
-  *) [TS-1601] HttpServerSession::release don't close ServerSession if ServerSessionPool locking contention
+  *) [TS-1601] HttpServerSession::release don't close ServerSession if
+   ServerSessionPool locking contention.
 
-  *) [TS-1643] Post requests with no Content-Length header sends default error response
+  *) [TS-1643] Post requests with no Content-Length header sends default error
+   response.
 
-  *) [TS-1640] SSL certificate reconfiguration only works once
+  *) [TS-1640] SSL certificate reconfiguration only works once.
 
-  *) [TS-1246] trafficserver script error message (in ubuntu)
+  *) [TS-1246] trafficserver script error message (in ubuntu).
 
-  *) [TS-1630] Add Lua API for TSHttpTxnCacheLookupStatusGet
+  *) [TS-1630] Add Lua API for TSHttpTxnCacheLookupStatusGet.
 
-  *) [TS-1423] Added option to do transparent passthrough on
-   connections that are not valid HTTP.
+  *) [TS-1423] Added option to do transparent passthrough on connections that
+   are not valid HTTP.
 
-  *) [TS-1599] set OpenSSL allocator with CRYPTO_set_mem_functions
+  *) [TS-1599] set OpenSSL allocator with CRYPTO_set_mem_functions.
 
   *) [TS-1624] Remove JEMALLOC_P use, it seems to have been deprecated.
 
   *) [TS-1500] let ssl_multicert.config specify sslcert per port
 
-  *) [TS-1621] Adopt ConfigUpdateHandler pattern
+  *) [TS-1621] Adopt ConfigUpdateHandler pattern.
      Author: Ethan Lai <yzlai@yahoo.com>
 
-  *) [TS-1619] simplify ConfigurationProcessor reconfiguration pattern
+  *) [TS-1619] simplify ConfigurationProcessor reconfiguration pattern.
 
-  *) [TS-1617] Build cacheurl when experimental plugins are enabled
-    Author: Aron Xu.
+  *) [TS-1617] Build cacheurl when experimental plugins are enabled.
+   Author: Aron Xu.
 
-  *) [TS-1307] [TS-1422] Changed HostDB handling of IPv4 and
-   IPv6. Address resolution preferences can be configured globally and
-   per HTTP proxy port. Transparent connections can now fail over even
-   if use_client_target_addr is set.
+  *) [TS-1307] [TS-1422] Changed HostDB handling of IPv4 and IPv6. Address
+   resolution preferences can be configured globally and per HTTP proxy
+   port. Transparent connections can now fail over even if
+   use_client_target_addr is set.
 
-  *) [TS-1616] authorization proxy plugin
+  *) [TS-1616] authorization proxy plugin.
 
-  *) [TS-1615] Some spelling errors in source code
-    Author: Aron Xu.
+  *) [TS-1615] Some spelling errors in source code. Author: Aron Xu.
 
-  *) [TS-1608] IpAllow should use standard config update
+  *) [TS-1608] IpAllow should use standard config update.
 
   *) [TS-1580] Mutex leak plugged.
 
-  *) [TS-1596] Added channel_stats plugin to experimental.
-     Author: Conan Wang.
+  *) [TS-1596] Added channel_stats plugin to experimental. Author: Conan Wang.
 
   *) [TS-1607] decouple SSL certificate lookup
 
   *) [TS-1506] %<cquuh> log symbol will crash TS when requesting a SSL url.
-     Author: Conan Wang.
+   Author: Conan Wang.
 
-  *) [TS-1594] ProxyMutexPtr and Ptr<ProxyMutex> are identical
+  *) [TS-1594] ProxyMutexPtr and Ptr<ProxyMutex> are identical.
 
-  *) [TS-1591] gzip plugin should load relative config file
+  *) [TS-1591] gzip plugin should load relative config file.
 
-  *) [TS-1582] C++11 requires space between strings and format specifiers
-     Author: Luca Rea
+  *) [TS-1582] C++11 requires space between strings and format specifiers.
+   Author: Luca Rea
 
   *) [TS-1491] Browser always prompts for authentication (NTLM).
-     Author: Yakov Kopel.
+   Author: Yakov Kopel.
 
-  *) [TS-1553] Detect and build C++11 dependencies
+  *) [TS-1553] Detect and build C++11 dependencies.
 
-  *) [TS-1576] reload splitdns.config at runtime
-     Author: Ethan Lai <yzlai@yahoo.com>
+  *) [TS-1576] reload splitdns.config at runtime.
+   Author: Ethan Lai <yzlai@yahoo.com>
 
   *) [TS-1551] reload ssl_multicert.config at runtime
-     Author: Ethan Lai <yzlai@yahoo.com>
+   Author: Ethan Lai <yzlai@yahoo.com>
 
   *) [TS-1572] Plugin response status change can trigger ATS assertion
-     Author: Uri Shachar
+   Author: Uri Shachar
 
   *) [TS-1433] to make read from writer work
 
   *) [TS-1564] fix the rolling of Logs created via the API in plugins
      Author: Craig Forbes <cforbes at qualys dot com>
 
-  *) [TS-1565] TSStringPercentEncode returns one character short in no-op
-   case (no encoding needed). Author: Thach Tran <tranngocthachs at gmail
-   dot com>.
+  *) [TS-1565] TSStringPercentEncode returns one character short in no-op case
+   (no encoding needed). Author: Thach Tran <tranngocthachs at gmail dot com>.
 
-  *) [TS-1561] Plugin esi - Enhancements on ESI plugin
+  *) [TS-1561] Plugin esi - Enhancements on ESI plugin.
      Author: Kit Chan <chanshukit at gmail dot com>
              Yu Qing <zhuangyuan at taobao dot com>
 
-  *) [TS-1560] plugins need memory barriers for ARM
+  *) [TS-1560] plugins need memory barriers for ARM.
 
   *) [TS-1558] use_client_addr breaks control over upstream HTTP protocol
    version.
 
-  *) [TS-207] Add raw disk support for FreeBSD
+  *) [TS-207] Add raw disk support for FreeBSD.
 
   *) [TS-1494] sslCa should be set NULL after parseConfigLine in
    SSLCertLookup.cc.
 
-  *) [TS-1382] make jtest 64bit nice
+  *) [TS-1382] make jtest 64bit nice.
 
-  *) [TS-1550] remove unnecessary USE_CONFIG_PROCESSOR define
+  *) [TS-1550] remove unnecessary USE_CONFIG_PROCESSOR define.
 
-  *) [TS-1549] Drop MakeErrorVA, enabling body_factory by default
+  *) [TS-1549] Drop MakeErrorVA, enabling body_factory by default.
 
-  *) [TS-1548] Update documentation for ip_allow.config
+  *) [TS-1548] Update documentation for ip_allow.config.
      Author: Nick Berry
 
-  *) [TS-1223] fix the crash in http_ui show network connections
+  *) [TS-1223] fix the crash in http_ui show network connections.
 
-  *) [TS-1543] Enable non-debug logging for rfc5861 plugin
+  *) [TS-1543] Enable non-debug logging for rfc5861 plugin.
 
-  *) [TS-1512] get volume & hosting work with cluster
+  *) [TS-1512] get volume & hosting work with cluster.
 
-  *) [TS-1542] Fix so that rfc5861 plugin will compile against older
-   versions of TS.
+  *) [TS-1542] Fix so that rfc5861 plugin will compile against older versions
+   of TS.
 
   *) [TS-1446] Make sure age header is enabled in rfc5861 plugin
 
@@ -160,7 +162,7 @@ Changes with Apache Traffic Server 3.3.1
   *) [TS-1535] FetchSM process_fetch_write should ignore event
    TS_EVENT_VCONN_WRITE_READY.
 
-  *) [TS-1534] implement the interim cache for ESI parser result
+  *) [TS-1534] implement the interim cache for ESI parser result.
 
   *) [TS-1501] vc`s inactivity_timeout event should be schedule in vc`s
    thread.
@@ -168,16 +170,16 @@ Changes with Apache Traffic Server 3.3.1
   *) [TS-1503] make Event::schedule simple and efficient
      Author: KuoTai
 
-  *) [TS-1532] make esi plugin support cookie sub keys
+  *) [TS-1532] make esi plugin support cookie sub keys.
 
-  *) [TS-1526] SNI support breaks IP-based lookup
+  *) [TS-1526] SNI support breaks IP-based lookup.
 
-  *) [TS-1513] SPDY plugin crashes on connection close
+  *) [TS-1513] SPDY plugin crashes on connection close.
 
   *) [TS-1516] use_client_addr breaks parent proxy configuration
      Author: Uri Shachar.
 
-  *) [TS-1518] detect header_rewrite plugin boost dependency
+  *) [TS-1518] detect header_rewrite plugin boost dependency.
 
   *) [TS-1003] make Prefetch config file reloadable
 
@@ -196,22 +198,22 @@ Changes with Apache Traffic Server 3.3.1
   *) [TS-1469] Manager uses hardcoded FD limit causing restarts forever on
    traffic_server. Reported By: Thomas Jackson
 
-  *) [TS-1466] disable ssl compression by default
+  *) [TS-1466] disable ssl compression by default.
 
-  *) [TS-1464] mark ink_assert with the noreturn attribute
+  *) [TS-1464] mark ink_assert with the noreturn attribute.
 
-  *) [TS-1458] fix LuaJIT include ordering
+  *) [TS-1458] fix LuaJIT include ordering.
 
-  *) [TS-1454] crash when ic_hostname is null in cluster mode
+  *) [TS-1454] crash when ic_hostname is null in cluster mode.
 
-  *) [TS-1270] add force local cache control in clustering mode
+  *) [TS-1270] add force local cache control in clustering mode.
 
   *) [TS-1386] thread hang in cluster type=1, which will trigger the
-     throttling
+     throttling.
 
-  *) [TS-1351] raw disk cache disabled when system start
+  *) [TS-1351] raw disk cache disabled when system start.
 
-  *) [TS-1452] gzip build failure with Apple/clang-421.0.57
+  *) [TS-1452] gzip build failure with Apple/clang-421.0.57.
 
   *) [TS-1339] Move fragment offset table from First Doc to Alt header so
      that fragment offsets are stored per alternate.
@@ -222,7 +224,7 @@ Changes with Apache Traffic Server 3.3.1
   *) [TS-1364] Rewrite reverse-proxy URL headers in all cases, not just
      a basic Redirect target.
 
-  *) [TS-1440] Lua transaction and session hook support
+  *) [TS-1440] Lua transaction and session hook support.
 
   *) [TS-1266] RAM cache stats are wrong with CLFUS.
 
@@ -233,19 +235,19 @@ Changes with Apache Traffic Server 3.3.1
   *) [TS-1418] Add automake file to Metalink plugin. Author: Jack Bates.
    Also reorganize the plugins/experimental Makefile.am stuff slightly.
 
-  *) [TS-1414] gzip plugin enhancements
+  *) [TS-1414] gzip plugin enhancements.
 
 
 Changes with Apache Traffic Server 3.3.0
 
   *) [TS-1427] PluginVCs now use a method similar to actual socket VCs
-   for firing inactivity timeout events
+   for firing inactivity timeout events.
 
   *) [TS-1426] protection from NULL deref when using 
-   TSHttpTxnOutgoingTransparencySet after a user agent has disconnected
+   TSHttpTxnOutgoingTransparencySet after a user agent has disconnected.
 
   *) [TS-1425] clean up the lingering read before deallocating its buffers
-   when an origin server terminates the connection during a POST request
+   when an origin server terminates the connection during a POST request.
 
   *) [TS-1249] Disable ESI packed nodes by default.
    Author: Shu Kit Chan <chanshukit@gmail.com>
@@ -269,16 +271,16 @@ Changes with Apache Traffic Server 3.3.0
     stale-if-error features of RFC5861
     Author: Phil Sorber <phil@omniti.com>
 
-  *) [TS-1406] add ESI to experimental plugins build
+  *) [TS-1406] add ESI to experimental plugins build.
 
   *) [TS-1387] Allow proxy.config.http.insert_age_in_response to be
    overridden. Author: Phil Sorber
 
-  *) [TS-1392] Fix SNI certificate fallback path
+  *) [TS-1392] Fix SNI certificate fallback path.
 
-  *) [TS-1385] generic atomic operations API
+  *) [TS-1385] generic atomic operations API.
 
-  *) [TS-1380] SSL wildcard lookup doesn't find the longest match
+  *) [TS-1380] SSL wildcard lookup doesn't find the longest match.
 
   *) [TS-1315] Fix URL parsing to handle non-HTTP schemes correctly.
 
@@ -291,7 +293,7 @@ Changes with Apache Traffic Server 3.3.0
   *) [TS-1340] Improve IPv6 port example in records.comfig
     Author: Jan-Frode Myklebust
 
-  *) [TS-1363] Cert path not working using intermdiate certificate
+  *) [TS-1363] Cert path not working using intermdiate certificate.
 
   *) [TS-895] Added version checks for bison and flex.
 
@@ -301,15 +303,15 @@ Changes with Apache Traffic Server 3.3.0
   *) [TS-1348] Remove the active timeout when releasing or 
   binding server_session.
 
-  *) [TS-1350] Detect and prefer LuaJIT
+  *) [TS-1350] Detect and prefer LuaJIT.
 
-  *) [TS-538] Remove deprecated INKStats API
+  *) [TS-538] Remove deprecated INKStats API.
 
-  *) [TS-1345] fix signed/unsigned compilation issues in Vec
+  *) [TS-1345] fix signed/unsigned compilation issues in Vec.
 
-  *) [TS-1343] Stat system doesn't check buffer sizes
+  *) [TS-1343] Stat system doesn't check buffer sizes.
 
-  *) [TS-1342] Lua plugin initial hook support
+  *) [TS-1342] Lua plugin initial hook support.
 
   *) [TS-1314] Remove TS_ARG_MAX usage so that platforms with
   unlimited ARG_MAX can build correctly.
