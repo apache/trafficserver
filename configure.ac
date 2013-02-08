@@ -47,8 +47,7 @@ AC_CONFIG_HEADERS([lib/ts/ink_autoconf.h])
 # http://www.gnu.org/software/automake/manual/html_node/Automake-silent_002drules-Option.html
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 
-# Not sure this is needed, and seems to break with some versions of automake
-#LT_INIT([dlopen])
+AC_DISABLE_STATIC
 
 # Libtool versioning uses different conventions on different
 # platforms.  At least on FreeBSD, libtool uses an overly complex
