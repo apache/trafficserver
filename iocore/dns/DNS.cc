@@ -1192,8 +1192,11 @@ dns_result(DNSHandler *h, DNSEntry *e, HostEnt *ent, bool retry) {
       }
       Debug("dns", "%s result for %s = %s retry %d", result, e->qname, ptr, retry);
     } else {
-      Debug("dns", "%s result for %s = %s af=%d retry %d",
-            ent ? "SUCCESS" : "FAIL", e->qname, (ent != NULL ? ent->ent.h_name : "<not found>"), ent->ent.h_addrtype, retry);
+      if (ent) {
+        Debug("dns", "SUCCESS result for %s = %s af=%d retry %d", e->qname, ent->ent.h_name, ent->ent.h_addrtype, retry);
+      } else {
+        Debug("dns", "FAIL result for %s = <not found> retry %d", e->qname, retry);
+      }
     }
   }
 

@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.3.1
 
+  *) [TS-1704] null pointer dereference in dns_result
+   Author: Li-Wen Hsu <lwhsu@lwhsu.org>
+
   *) [TS-1701] segv if header_rewrite is configured with the InkAPI and uses
    PATH or QUERY conditions. Author: John Kew.
 
