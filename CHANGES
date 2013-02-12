@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 3.3.1
 
+  *) [TS-1707] fix FreeBSD store blocks calculation
+   Thanks to Ben Aitchison <ben at meh dot net dot nz>
+
   *) [TS-1704] null pointer dereference in dns_result
    Author: Li-Wen Hsu <lwhsu@lwhsu.org>
 
