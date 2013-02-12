@@ -483,7 +483,9 @@ Span::init(char *an, int64_t size)
   disk_id = devnum;
 
   pathname = ats_strdup(an);
-  blocks = size / hw_sector_size;
+  // igalic: blocks = size / hw_sector_size; was wrong TS-1707
+  // This code needs refactoring to unify the code-paths which are equal across platforms.
+  blocks = size / STORE_BLOCK_SIZE;
   file_pathname = !((s.st_mode & S_IFMT) == S_IFDIR);
 
   // This is so FreeBSD admins don't worry about our malicious code creating boot sector viruses:
@@ -583,6 +585,7 @@ Span::init(char *filename, int64_t size)
 
   pathname = ats_strdup(filename);
   // is this right Seems like this should be size / hw_sector_size
+  // igalic: No. See TS-1707
   blocks = size / STORE_BLOCK_SIZE;
   file_pathname = !((s.st_mode & S_IFMT) == S_IFDIR);
 
@@ -715,6 +718,7 @@ Span::init(char *filename, int64_t size)
     /* I don't know why I'm redefining blocks to be something that is quite
      * possibly something other than the actual number of blocks, but the
      * code for other arches seems to.  Revisit this, perhaps. */
+    // igalic: No. See TS-1707
     blocks = size / STORE_BLOCK_SIZE;
 
     Debug("cache_init", "Span::init physical sectors %" PRId64 " total size %" PRId64 " geometry size %" PRId64 " store blocks %" PRId64 "",
