@@ -61,6 +61,11 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   Patch: 61496440b65ee28c93bf77fa036c0424b33dc10c
   +1: igalic (although cherry picking doesn't apply cleanly)
 
+  Fix FreeBSD block calculation (both RAW and directory)
+  Jira: https://issues.apache.org/jira/browse/TS-1707
+  Patch: 5566ac76d6c4e4f5154421f1ac1077487b02d332
+  +1: igalic
+
 RELEASE PROCESS
 
 The Traffic Server release process is documented at
