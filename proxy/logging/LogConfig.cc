@@ -317,7 +317,7 @@ LogConfig::read_configuration_variables()
   }
 
   // X-UID logging enabled.
-  val = (int) LOG_ConfigReadInteger("proxy.config.log.xuid_logging_enabledq");
+  val = (int) LOG_ConfigReadInteger("proxy.config.log.xuid_logging_enabled");
   if (val == 0 || val == 1) {
     xuid_logging_enabled = val;
   }
