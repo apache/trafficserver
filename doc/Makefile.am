@@ -83,6 +83,7 @@ man3_MANS = \
   sdk/TSAPI.3 \
   sdk/TSDebug.3 \
   sdk/TSHttpHookAdd.3 \
+  sdk/TSHttpParserCreate.3 \
   sdk/TSIOBufferCreate.3 \
   sdk/TSInstallDirGet.3 \
   sdk/TSMBufferCreate.3 \

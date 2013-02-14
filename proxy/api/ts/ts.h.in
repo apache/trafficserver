@@ -2022,6 +2022,39 @@ extern "C"
   tsapi void TSHttpParserClear(TSHttpParser parser);
   tsapi void TSHttpParserDestroy(TSHttpParser parser);
 
+  /**
+      Parses an HTTP request header. The HTTP header must have already
+      been created, and must reside inside the marshal buffer bufp.
+      The start argument points to the current position of the string
+      buffer being parsed. The end argument points to one byte after the
+      end of the buffer to be parsed. On return, TSHttpHdrParseReq()
+      modifies start to point past the last character parsed.
+
+      It is possible to parse an HTTP request header a single byte at
+      a time using repeated calls to TSHttpHdrParseReq(). As long as
+      an error does not occur, the TSHttpHdrParseReq() function will
+      consume that single byte and ask for more.
+
+      @param parser parses the HTTP header.
+      @param bufp marshal buffer containing the HTTP header to be parsed.
+      @param offset location of the HTTP header within bufp.
+      @param start both an input and output. On input, it points to the
+        current position of the string buffer being parsed. On return,
+        start is modified to point past the last character parsed.
+      @param end points to one byte after the end of the buffer to be parsed.
+      @return status of the parse:
+        - TS_PARSE_ERROR means there was a parsing error.
+        - TS_PARSE_DONE means that the end of the header was reached
+          (the parser encountered a "\r\n\r\n" pattern).
+        - TS_PARSE_CONT means that parsing of the header stopped because
+          the parser reached the end of the buffer (large headers can
+          span multiple buffers).
+
+   */
+  tsapi TSParseResult TSHttpHdrParseReq(TSHttpParser parser, TSMBuffer bufp, TSMLoc offset, const char** start, const char* end);
+
+  tsapi TSParseResult TSHttpHdrParseResp(TSHttpParser parser, TSMBuffer bufp, TSMLoc offset, const char** start, const char* end);
+
   tsapi TSMLoc TSHttpHdrCreate(TSMBuffer bufp);
 
   /**
@@ -2056,41 +2089,6 @@ extern "C"
                                    TSMLoc src_offset);
 
   tsapi void TSHttpHdrPrint(TSMBuffer bufp, TSMLoc offset, TSIOBuffer iobufp);
-
-  /**
-      Parses an HTTP request header. The HTTP header must have already
-      been created, and must reside inside the marshal buffer bufp.
-      The start argument points to the current position of the string
-      buffer being parsed. The end argument points to one byte after the
-      end of the buffer to be parsed. On return, TSHttpHdrParseReq()
-      modifies start to point past the last character parsed.
-
-      It is possible to parse an HTTP request header a single byte at
-      a time using repeated calls to TSHttpHdrParseReq(). As long as
-      an error does not occur, the TSHttpHdrParseReq() function will
-      consume that single byte and ask for more.
-
-      @param parser parses the HTTP header.
-      @param bufp marshal buffer containing the HTTP header to be parsed.
-      @param offset location of the HTTP header within bufp.
-      @param start both an input and output. On input, it points to the
-        current position of the string buffer being parsed. On return,
-        start is modified to point past the last character parsed.
-      @param end points to one byte after the end of the buffer to be parsed.
-      @return status of the parse:
-        - TS_PARSE_ERROR means there was a parsing error.
-        - TS_PARSE_DONE means that the end of the header was reached
-          (the parser encountered a "\r\n\r\n" pattern).
-        - TS_PARSE_CONT means that parsing of the header stopped because
-          the parser reached the end of the buffer (large headers can
-          span multiple buffers).
-
-   */
-  tsapi TSParseResult TSHttpHdrParseReq(TSHttpParser parser, TSMBuffer bufp, TSMLoc offset, const char** start,
-                                        const char* end);
-
-  tsapi TSParseResult TSHttpHdrParseResp(TSHttpParser parser, TSMBuffer bufp, TSMLoc offset, const char** start,
-                                         const char* end);
 
   tsapi int TSHttpHdrLengthGet(TSMBuffer bufp, TSMLoc offset);
 

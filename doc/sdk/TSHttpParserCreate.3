@@ -1,0 +1,128 @@
+.\"  Licensed to the Apache Software Foundation (ASF) under one .\"
+.\"  or more contributor license agreements.  See the NOTICE file .\"
+.\"  distributed with this work for additional information .\"
+.\"  regarding copyright ownership.  The ASF licenses this file .\"
+.\"  to you under the Apache License, Version 2.0 (the .\"
+.\"  "License"); you may not use this file except in compliance .\"
+.\"  with the License.  You may obtain a copy of the License at .\"
+.\" .\"
+.\"      http://www.apache.org/licenses/LICENSE-2.0 .\"
+.\" .\"
+.\"  Unless required by applicable law or agreed to in writing, software .\"
+.\"  distributed under the License is distributed on an "AS IS" BASIS, .\"
+.\"  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. .\"
+.\"  See the License for the specific language governing permissions and .\"
+.Dd February 14, 2013
+.Dt TSHttpParserCreate 3ts TSAPI
+.Sh NAME
+.Nm TSHttpParserCreate,
+.Nm TSHttpHdrParseReq,
+.Nm TSHttpHdrParseResp,
+.Nm TSHttpParserClear,
+.Nm TSHttpParserDestroy
+.Nd Parse HTTP headers from memory buffers
+.Sh LIBRARY
+Apache Traffic Server plugin API
+.Sh SYNOPSIS
+.In ts/ts.h
+.Ft "TSHttpParser"
+.Fo TSHttpParserCreate
+.Fa "void"
+.Fc
+.Ft "TSParseResult"
+.Fo TSHttpHdrParseReq
+.Fa "TSHttpParser parser"
+.Fa "TSMBuffer bufp"
+.Fa "TSMLoc offset"
+.Fa "const char** start"
+.Fa "const char* end"
+.Fc
+.Ft "TSParseResult"
+.Fo TSHttpHdrParseResp
+.Fa "TSHttpParser parser"
+.Fa "TSMBuffer bufp"
+.Fa "TSMLoc offset"
+.Fa "const char** start"
+.Fa "const char* end"
+.Fc
+.Ft "void"
+.Fo TSHttpParserClear
+.Fa "TSHttpParser parser"
+.Fc
+.Ft "void"
+.Fo TSHttpParserDestroy
+.Fa "TSHttpParser parser"
+.Fc
+.Sh DESCRIPTION
+.Fn TSHttpParserCreate
+creates an HTTP parser object. The parser's data structure contains
+information about the header being parsed. A single HTTP parser can
+be used multiple times, though not simultaneously. Before being
+used again, the parser must be cleared by calling
+.Fn TSHttpParserClear .
+
+.Pp
+.Fn TSHttpHdrParseReq
+parses an HTTP request header. The HTTP header
+.Fa offset
+must already be created, and must reside inside the marshal buffer
+.Fa bufp .
+The
+.Fa start
+argument points to the current position of the string
+buffer being parsed and the
+.Fa end
+argument points to one byte after the end of the buffer to be parsed.
+On return,
+.Fa start
+is modified to point past the last character parsed.
+.Pp
+It is possible to parse an HTTP request header a single byte at a
+time using repeated calls to TSHttpHdrParseReq. As long as an error
+does not occur, the TSHttpHdrParseReq function will consume that
+single byte and ask for more.
+.Fn TSHttpHdrParseReq
+should be called after
+.Fa TS_HTTP_READ_REQUEST_HDR_HOOK .
+
+.Pp
+.Fn TSHttpHdrParseResp
+operates in the same manner as
+.Fn TSHttpHdrParseReq
+except it parses an HTTP response header. It should be called after
+.Fa TS_HTTP_READ_RESPONSE_HDR_HOOK .
+
+.Pp
+.Fn TSHttpParserDestroy
+clears the specified HTTP parser so it may be used again.
+.Pp
+.Fn TSHttpParserDestroy
+destroys the TSHttpParser object pointed to by
+.Fa parser .
+The 
+.Fa parser
+pointer must not be NULL.
+.Fn 
+.Sh RETURN VALUES
+.Fn TSHttpHdrParseReq
+and
+.Fn TSHttpHdrParseResp
+both return a TSParseResult value.
+.Fa TS_PARSE_ERROR
+is returned on error,
+.Fa TS_PARSE_CONT 
+is returned if parsing of the header stopped because the end of the buffer was
+reached, and
+.Fa TS_PARSE_DONE
+or
+.Fa TS_PARSE_OK
+when a \\r\\n\\r\\n pattern is encountered, indicating the end of the header.
+.Sh BUGS
+The distinction between the
+.Fa TS_PARSE_DONE
+and
+.Fa TS_PARSE_OK
+is not well-defined. Plugins should expect both status codes and treat them
+equivalently.
+.Sh SEE ALSO
+.Xr TSAPI 3ts
