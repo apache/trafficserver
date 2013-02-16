@@ -29,8 +29,8 @@
 #include <vector>
 
 #include "ts/ts.h"
-#include "StringHash.h"
-#include "HttpHeader.h"
+#include "lib/StringHash.h"
+#include "lib/HttpHeader.h"
 #include "HttpDataFetcher.h"
 
 class HttpDataFetcherImpl : public HttpDataFetcher
@@ -99,11 +99,13 @@ private:
     std::string raw_response;
     const char *body;
     int body_len;
+    TSHttpStatus resp_status;
     CallbackObjectList callback_objects;
     bool complete;
     TSMBuffer bufp;
     TSMLoc hdr_loc;
-    RequestData() : body(0), body_len(0), complete(false), bufp(0), hdr_loc(0) { };
+
+    RequestData() : body(0), body_len(0), resp_status(TS_HTTP_STATUS_NONE), complete(false), bufp(0), hdr_loc(0) { }
   };
 
   typedef __gnu_cxx::hash_map<std::string, RequestData, EsiLib::StringHasher> UrlToContentMap;

@@ -59,7 +59,7 @@ void FailureInfo::registerSuccFail(bool isSuccess)
    if(isSuccess)
    {
        _statistics[_windowMarker].second++;
-   } 
+   }
    
    else
    {

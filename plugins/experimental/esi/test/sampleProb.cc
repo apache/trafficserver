@@ -123,7 +123,7 @@ void registerSuccFail(string URL,FailureData& data,bool isSuccess)
    if(isSuccess)
    {
        passFail[marker].second++;
-   } 
+   }
    
    else
    {

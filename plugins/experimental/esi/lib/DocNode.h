@@ -21,8 +21,8 @@
   limitations under the License.
  */
 
-#ifndef _ESI_DOC_NODE_H
-#define _ESI_DOC_NODE_H
+#ifndef _FETCHER_DOC_NODE_H
+#define _FETCHER_DOC_NODE_H
 
 #include <stdint.h>
 #include <list>
@@ -70,22 +70,22 @@ class DocNode
 {
   
 public:
-
-  typedef int32_t TYPE;
-  static const TYPE TYPE_UNKNOWN;
-  static const TYPE TYPE_PRE;
-  static const TYPE TYPE_INCLUDE;
-  static const TYPE TYPE_COMMENT;
-  static const TYPE TYPE_REMOVE;
-  static const TYPE TYPE_VARS;
-  static const TYPE TYPE_CHOOSE;
-  static const TYPE TYPE_WHEN;
-  static const TYPE TYPE_OTHERWISE;
-  static const TYPE TYPE_TRY;
-  static const TYPE TYPE_ATTEMPT;
-  static const TYPE TYPE_EXCEPT;
-  static const TYPE TYPE_HTML_COMMENT;
-  static const TYPE TYPE_SPECIAL_INCLUDE;
+  enum TYPE {
+    TYPE_UNKNOWN = 0,
+    TYPE_PRE = 1,
+    TYPE_INCLUDE = 2,
+    TYPE_COMMENT = 3,
+    TYPE_REMOVE = 4,
+    TYPE_VARS = 5,
+    TYPE_CHOOSE = 6,
+    TYPE_WHEN = 7,
+    TYPE_OTHERWISE = 8,
+    TYPE_TRY = 9,
+    TYPE_ATTEMPT = 10,
+    TYPE_EXCEPT = 11,
+    TYPE_HTML_COMMENT = 12,
+    TYPE_SPECIAL_INCLUDE = 13,
+  };
 
   // Use with care - only types defined above will have valid names 
   static const char *type_names_[];
@@ -113,4 +113,4 @@ private:
 
 };
 
-#endif // _ESI_DOC_NODE_H
+#endif // _FETCHER_DOC_NODE_H

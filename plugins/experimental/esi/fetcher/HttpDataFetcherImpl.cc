@@ -22,8 +22,8 @@
  */
 
 #include "HttpDataFetcherImpl.h"
-#include "Utils.h"
-#include "gzip.h"
+#include "lib/Utils.h"
+#include "lib/gzip.h"
 
 #include <arpa/inet.h>
 
@@ -112,7 +112,8 @@ HttpDataFetcherImpl::_isFetchEvent(TSEvent event, int &base_event_id) const {
   base_event_id = _getBaseEventId(event);
   if ((base_event_id < 0) || (base_event_id >= static_cast<int>(_page_entry_lookup.size()))) {
     TSDebug(_debug_tag, "[%s] Event id %d not within fetch event id range [%d, %ld)",
-             __FUNCTION__, event, FETCH_EVENT_ID_BASE, static_cast<long int>(FETCH_EVENT_ID_BASE + (_page_entry_lookup.size() * 3)));
+             __FUNCTION__, event, FETCH_EVENT_ID_BASE,
+             static_cast<long int>(FETCH_EVENT_ID_BASE + (_page_entry_lookup.size() * 3)));
     return false;
   }
   return true;
@@ -158,9 +159,9 @@ HttpDataFetcherImpl::handleFetchEvent(TSEvent event, void *edata) {
   TSHttpParserClear(_http_parser);
   
   if (TSHttpHdrParseResp(_http_parser, req_data.bufp, req_data.hdr_loc, &startptr, endptr) == TS_PARSE_DONE) {
-    TSHttpStatus resp_status = TSHttpHdrStatusGet(req_data.bufp, req_data.hdr_loc);
-    if (resp_status == TS_HTTP_STATUS_OK) {
-      valid_data_received = true;
+    req_data.resp_status = TSHttpHdrStatusGet(req_data.bufp, req_data.hdr_loc);
+    valid_data_received = true;
+    if (req_data.resp_status == TS_HTTP_STATUS_OK) {
       req_data.body_len = endptr - startptr;
       req_data.body = startptr;
       TSDebug(_debug_tag,
@@ -191,8 +192,8 @@ HttpDataFetcherImpl::handleFetchEvent(TSEvent event, void *edata) {
 
     } else {
       TSDebug(_debug_tag, "[%s] Received non-OK status %d for request [%s]",
-               __FUNCTION__, resp_status, req_str.data());
-    } 
+               __FUNCTION__, req_data.resp_status, req_str.data());
+    }
   } else {
     TSDebug(_debug_tag, "[%s] Could not parse response for request [%s]",
              __FUNCTION__, req_str.data());
@@ -289,12 +290,15 @@ HttpDataFetcherImpl::getRequestStatus(const string &url) const {
     TSError("Status being requested for unregistered URL [%s]", url.data());
     return STATUS_ERROR;
   }
+
   if (!(iter->second).complete) {
     return STATUS_DATA_PENDING;
   }
-  if ((iter->second).response.empty()) {
+
+  if ((iter->second).resp_status != TS_HTTP_STATUS_OK) {
     return STATUS_ERROR;
   }
+
   return STATUS_DATA_AVAILABLE;
 }
 
@@ -315,6 +319,12 @@ HttpDataFetcherImpl::useHeader(const HttpHeader &header) {
   // should not support keep-alive for async requests
   if (Utils::areEqual(header.name, header.name_len,
               TS_MIME_FIELD_CONNECTION, TS_MIME_LEN_CONNECTION)) {
+      return;
+  }
+
+  // should not support keep-alive for async requests
+  if (Utils::areEqual(header.name, header.name_len,
+              TS_MIME_FIELD_PROXY_CONNECTION, TS_MIME_LEN_PROXY_CONNECTION)) {
       return;
   }
 

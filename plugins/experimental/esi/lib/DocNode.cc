@@ -27,21 +27,6 @@
 using std::string;
 using namespace EsiLib;
 
-const DocNode::TYPE DocNode::TYPE_UNKNOWN = 0;
-const DocNode::TYPE DocNode::TYPE_PRE = 1;
-const DocNode::TYPE DocNode::TYPE_INCLUDE = 2;
-const DocNode::TYPE DocNode::TYPE_COMMENT = 3;
-const DocNode::TYPE DocNode::TYPE_REMOVE = 4;
-const DocNode::TYPE DocNode::TYPE_VARS = 5;
-const DocNode::TYPE DocNode::TYPE_CHOOSE = 6;
-const DocNode::TYPE DocNode::TYPE_WHEN = 7;
-const DocNode::TYPE DocNode::TYPE_OTHERWISE = 8;
-const DocNode::TYPE DocNode::TYPE_TRY = 9;
-const DocNode::TYPE DocNode::TYPE_ATTEMPT = 10;
-const DocNode::TYPE DocNode::TYPE_EXCEPT = 11;
-const DocNode::TYPE DocNode::TYPE_HTML_COMMENT = 12;
-const DocNode::TYPE DocNode::TYPE_SPECIAL_INCLUDE = 13;
-
 const char *DocNode::type_names_[] = { "UNKNOWN",
                                        "PRE",
                                        "INCLUDE",

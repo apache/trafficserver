@@ -38,13 +38,13 @@
 #include "ts/experimental.h"
 #include <ts/remap.h>
 
+#include "lib/Utils.h"
+#include "lib/gzip.h"
 #include "EsiProcessor.h"
 #include "HttpDataFetcher.h"
-#include "Utils.h"
 #include "HandlerManager.h"
 #include "serverIntercept.h"
 #include "Stats.h"
-#include "gzip.h"
 #include "HttpDataFetcherImpl.h"
 #include "FailureInfo.h"
 using std::string;
@@ -1553,6 +1553,7 @@ static int esiPluginInit(int argc, const char *argv[], struct OptionInfo *pOptio
     bKeySet = true;
     if ((result=pthread_key_create(&threadKey, NULL)) != 0) {
       TSError("[%s] Could not create key", __FUNCTION__);
+      TSDebug(DEBUG_TAG, "[%s] Could not create key", __FUNCTION__);
     }
   }
   else {
@@ -1600,12 +1601,14 @@ TSReturnCode
 TSRemapInit(TSRemapInterface* api_info, char *errbuf, int errbuf_size)
 {
   if (!api_info) {
-    TSstrlcpy(errbuf, "[TSRemapInit] - Invalid TSRemapInterface argument", errbuf_size);
+    snprintf(errbuf, errbuf_size, "[TSRemapInit] - Invalid TSRemapInterface argument");
+    TSError("[TSRemapInit] - Invalid TSRemapInterface argument");
     return TS_ERROR;
   }
 
   if (api_info->size < sizeof(TSRemapInterface)) {
-    TSstrlcpy(errbuf, "[TSRemapInit] - Incorrect size of TSRemapInterface structure", errbuf_size);
+    snprintf(errbuf, errbuf_size, "[TSRemapInit] - Incorrect size of TSRemapInterface structure");
+    TSError("[TSRemapInit] - Incorrect size of TSRemapInterface structure");
     return TS_ERROR;
   }
 
@@ -1616,8 +1619,10 @@ TSRemapInit(TSRemapInterface* api_info, char *errbuf, int errbuf_size)
 TSReturnCode
 TSRemapNewInstance(int argc, char* argv[], void** ih, char* errbuf, int errbuf_size)
 {
-  if (argc < 3) {
-    TSError("Unable to create remap instance, need configuration file");
+  if (argc < 2) {
+    snprintf(errbuf, errbuf_size, "Unable to create remap instance, " \
+        "argc: %d < 2", argc);
+    TSError("Unable to create remap instance! argc: %d < 2", argc);
     return TS_ERROR;
   }
 
@@ -1632,6 +1637,7 @@ TSRemapNewInstance(int argc, char* argv[], void** ih, char* errbuf, int errbuf_s
 
   struct OptionInfo *pOptionInfo = (struct OptionInfo *)TSmalloc(sizeof(struct OptionInfo));
   if (pOptionInfo == NULL) {
+    snprintf(errbuf, errbuf_size, "malloc %d bytes fail", (int)sizeof(struct OptionInfo));
     TSError("[%s] malloc %d bytes fail", __FUNCTION__, (int)sizeof(struct OptionInfo));
     return TS_ERROR;
   }

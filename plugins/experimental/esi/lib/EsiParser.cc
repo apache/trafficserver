@@ -175,8 +175,10 @@ EsiParser::_compareData(const string &data, size_t pos, const char *str, int str
       }
     }
     else {
+      /*
       _debugLog(_debug_tag, "[%s] string [%.*s] is not equal to data at position %d", 
                 __FUNCTION__, str_len, str, pos);
+      */
       return NO_MATCH;
     }
   }
@@ -337,43 +339,54 @@ EsiParser::_parse(const string &data, int &parse_start_pos,
       }
     }
 
-    parse_result = false;
-    
     // now we process only complete nodes
-    if (node_info->type == DocNode::TYPE_INCLUDE) {
-      _debugLog(_debug_tag, "[%s] Handling include tag...", __FUNCTION__);
-      parse_result = _processIncludeTag(data, curr_pos, end_pos, node_list);
-    } else if ((node_info->type == DocNode::TYPE_COMMENT) || (node_info->type == DocNode::TYPE_REMOVE)) {
-      _debugLog(_debug_tag, "[%s] Adding node [%s]", __FUNCTION__,
-                DocNode::type_names_[node_info->type]);
-      node_list.push_back(DocNode(node_info->type)); // no data required
-      parse_result = true;
-    } else if (node_info->type == DocNode::TYPE_WHEN) {
-      _debugLog(_debug_tag, "[%s] Handling when tag...", __FUNCTION__);
-      parse_result = _processWhenTag(data, curr_pos, end_pos, node_list);
-    } else if (node_info->type == DocNode::TYPE_TRY) {
-      _debugLog(_debug_tag, "[%s] Handling try tag...", __FUNCTION__);
-      parse_result = _processTryTag(data, curr_pos, end_pos, node_list);
-    } else if (node_info->type == DocNode::TYPE_CHOOSE) {
-      _debugLog(_debug_tag, "[%s] Handling choose tag...", __FUNCTION__);
-      parse_result = _processChooseTag(data, curr_pos, end_pos, node_list);
-    } else if ((node_info->type == DocNode::TYPE_OTHERWISE) ||
-               (node_info->type == DocNode::TYPE_ATTEMPT) ||
-               (node_info->type == DocNode::TYPE_EXCEPT)) {
-      _debugLog(_debug_tag, "[%s] Handling %s tag...", __FUNCTION__,
-                DocNode::type_names_[node_info->type]);
-      parse_result = _processSimpleContentTag(node_info->type, data.data() + curr_pos,
-                                              end_pos - curr_pos, node_list);
-    } else if ((node_info->type == DocNode::TYPE_VARS) || 
-               (node_info->type == DocNode::TYPE_HTML_COMMENT)) {
-      _debugLog(_debug_tag, "[%s] added string of size %d starting with [%.5s] for node %s",
-                __FUNCTION__, end_pos - curr_pos, data.data() + curr_pos,
-                DocNode::type_names_[node_info->type]);
-      node_list.push_back(DocNode(node_info->type, data.data() + curr_pos, end_pos - curr_pos));
-      parse_result = true;
-    } else if (node_info->type == DocNode::TYPE_SPECIAL_INCLUDE) {
-      _debugLog(_debug_tag, "[%s] Handling special include tag...", __FUNCTION__);
-      parse_result = _processSpecialIncludeTag(data, curr_pos, end_pos, node_list);
+    switch(node_info->type) {
+      case DocNode::TYPE_INCLUDE:
+        _debugLog(_debug_tag, "[%s] Handling include tag...", __FUNCTION__);
+        parse_result = _processIncludeTag(data, curr_pos, end_pos, node_list);
+        break;
+      case DocNode::TYPE_COMMENT:
+      case DocNode::TYPE_REMOVE:
+        _debugLog(_debug_tag, "[%s] Adding node [%s]", __FUNCTION__,
+            DocNode::type_names_[node_info->type]);
+        node_list.push_back(DocNode(node_info->type)); // no data required
+        parse_result = true;
+        break;
+      case DocNode::TYPE_WHEN:
+        _debugLog(_debug_tag, "[%s] Handling when tag...", __FUNCTION__);
+        parse_result = _processWhenTag(data, curr_pos, end_pos, node_list);
+        break;
+      case DocNode::TYPE_TRY:
+        _debugLog(_debug_tag, "[%s] Handling try tag...", __FUNCTION__);
+        parse_result = _processTryTag(data, curr_pos, end_pos, node_list);
+        break;
+      case DocNode::TYPE_CHOOSE:
+        _debugLog(_debug_tag, "[%s] Handling choose tag...", __FUNCTION__);
+        parse_result = _processChooseTag(data, curr_pos, end_pos, node_list);
+        break;
+      case DocNode::TYPE_OTHERWISE:
+      case DocNode::TYPE_ATTEMPT:
+      case DocNode::TYPE_EXCEPT:
+        _debugLog(_debug_tag, "[%s] Handling %s tag...", __FUNCTION__,
+            DocNode::type_names_[node_info->type]);
+        parse_result = _processSimpleContentTag(node_info->type, data.data() + curr_pos,
+            end_pos - curr_pos, node_list);
+        break;
+      case DocNode::TYPE_VARS:
+      case DocNode::TYPE_HTML_COMMENT:
+        _debugLog(_debug_tag, "[%s] added string of size %d starting with [%.5s] for node %s",
+            __FUNCTION__, end_pos - curr_pos, data.data() + curr_pos,
+            DocNode::type_names_[node_info->type]);
+        node_list.push_back(DocNode(node_info->type, data.data() + curr_pos, end_pos - curr_pos));
+        parse_result = true;
+        break;
+      case DocNode::TYPE_SPECIAL_INCLUDE:
+        _debugLog(_debug_tag, "[%s] Handling special include tag...", __FUNCTION__);
+        parse_result = _processSpecialIncludeTag(data, curr_pos, end_pos, node_list);
+        break;
+      default:
+        parse_result = false;
+        break;
     }
 
     if (!parse_result) {
