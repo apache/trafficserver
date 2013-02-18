@@ -2,6 +2,9 @@
   Changes with Apache Traffic Server 3.3.2
 
 
+  *) [TS-1753] Add remap support to the cacheurl plugin
+   Author: Mark Harrison <mark@mivok.net>
+
   *) [TS-1790] authproxy should accept 2xx as authorization success
 
   *) [TS-1780] Fix Debuntu build with hardening flags

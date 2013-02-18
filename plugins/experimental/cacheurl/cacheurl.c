@@ -23,6 +23,7 @@
  */
 
 #include <ts/ts.h>
+#include <ts/remap.h>
 #include <stdio.h>
 #include <pcre.h>
 #include <string.h>
@@ -41,10 +42,13 @@ typedef struct {
     int *tokenoffset; /* Array of $x token offsets */
 } regex_info;
 
-static regex_info *pr_list[PATTERNCOUNT]; /* Pattern/replacement list */
-static int patterncount;
+typedef struct {
+    regex_info *pr[PATTERNCOUNT]; /* Pattern/replacement list */
+    int patterncount; /* Number of patterns */
+    //pr_list *next; /* Link to next set of patterns, if any */
+} pr_list;
 
-static TSTextLogObject log;
+static TSTextLogObject log = NULL;
 
 static int regex_substitute(char **buf, char *str, regex_info *info) {
     int matchcount;
@@ -181,10 +185,12 @@ static int regex_compile(regex_info **buf, char *pattern, char *replacement) {
     return status;
 }
 
-static void load_config_file() {
+static pr_list* load_config_file(const char *config_file) {
     char buffer[1024];
-    char config_file[1024];
+    char default_config_file[1024];
     TSFile fh;
+    pr_list *prl = TSmalloc(sizeof(pr_list));
+    prl->patterncount = 0;
 
     /* locations in a config file line, end of line, split start, split end */
     char *eol, *spstart, *spend;
@@ -192,16 +198,18 @@ static void load_config_file() {
     int retval;
     regex_info *info = 0;
 
-    /* TODO - should this file be located in etc/ rather than the plugin dir?
-     * */
-    sprintf(config_file, "%s/cacheurl.config", TSPluginDirGet());
+    if (!config_file) {
+        /* Default config file of plugins/cacheurl.config */
+        sprintf(default_config_file, "%s/cacheurl.config", TSPluginDirGet());
+        config_file = (const char *)default_config_file;
+    }
     TSDebug(PLUGIN_NAME, "Opening config file: %s", config_file);
     fh = TSfopen(config_file, "r");
 
     if (!fh) {
         TSError("[%s] Unable to open %s. No patterns will be loaded\n",
                 PLUGIN_NAME, config_file);
-        return;
+        return prl;
     }
 
     while (TSfgets(fh, buffer, sizeof(buffer) - 1)) {
@@ -256,67 +264,83 @@ static void load_config_file() {
             TSError("[%s] Error precompiling regex/replacement. Skipping.\n",
                     PLUGIN_NAME);
         }
-        if (patterncount > PATTERNCOUNT) {
+        // TODO - remove patterncount and make pr_list infinite (linked list)
+        if (prl->patterncount >= PATTERNCOUNT) {
             TSError("[%s] Warning, too many patterns - skipping the rest"
                     "(max: %d)\n", PLUGIN_NAME, PATTERNCOUNT);
             TSfree(info);
             break;
         }
-        pr_list[patterncount] = info;
-        patterncount++;
+        prl->pr[prl->patterncount] = info;
+        prl->patterncount++;
     }
     TSfclose(fh);
+    // Make sure the last element is null
+    if (prl->patterncount < PATTERNCOUNT) {
+        prl->pr[prl->patterncount] = NULL;
+    }
+    return prl;
 }
 
-static int handle_hook(TSCont *contp, TSEvent event, void *edata) {
-    TSHttpTxn txnp = (TSHttpTxn) edata;
+static int rewrite_cacheurl(pr_list *prl, TSHttpTxn txnp) {
+    int ok = 1;
     char *newurl = 0;
     int retval;
 
     char *url;
     int url_length;
     int i;
+    if (ok) {
+        url = TSHttpTxnEffectiveUrlStringGet(txnp, &url_length);
+        if (!url) {
+            TSError("[%s] couldn't retrieve request url\n",
+                    PLUGIN_NAME);
+            ok = 0;
+        }
+    }
 
+    if (ok) {
+        i=0;
+        while (i < PATTERNCOUNT && prl->pr[i]) {
+            retval = regex_substitute(&newurl, url, prl->pr[i]);
+            if (retval) {
+                /* Successful match/substitution */
+                break;
+            }
+            i++;
+        }
+        if (newurl) {
+            if (log) {
+                TSTextLogObjectWrite(log,
+                        "Rewriting cache URL for %s to %s", url,
+                        newurl);
+            }
+            TSDebug(PLUGIN_NAME, "Rewriting cache URL for %s to %s\n",
+                    url, newurl);
+            if (TSCacheUrlSet(txnp, newurl, strlen(newurl))
+                    != TS_SUCCESS) {
+                TSError("[%s] Unable to modify cache url from "
+                        "%s to %s\n", PLUGIN_NAME, url, newurl);
+                ok = 0;
+            }
+        }
+    }
+    /* Clean up */
+    if (url) TSfree(url);
+    if (newurl) TSfree(newurl);
+    return ok;
+}
+
+static int handle_hook(TSCont contp, TSEvent event, void *edata) {
+    TSHttpTxn txnp = (TSHttpTxn) edata;
+    pr_list *prl;
     int ok = 1;
+
+    prl = (pr_list *)TSContDataGet(contp);
 
     switch (event) {
         case TS_EVENT_HTTP_READ_REQUEST_HDR:
-            if (ok) {
-                url = TSHttpTxnEffectiveUrlStringGet(txnp, &url_length);
-                if (!url) {
-                    TSError("[%s] couldn't retrieve request url\n",
-                            PLUGIN_NAME);
-                    ok = 0;
-                }
-            }
-
-            if (ok) {
-                for (i=0; i<patterncount; i++) {
-                    retval = regex_substitute(&newurl, url, pr_list[i]);
-                    if (retval) {
-                        /* Successful match/substitution */
-                        break;
-                    }
-                }
-                if (newurl) {
-                    if (log) {
-                        TSTextLogObjectWrite(log,
-                                "Rewriting cache URL for %s to %s", url,
-                                newurl);
-                    }
-                    TSDebug(PLUGIN_NAME, "Rewriting cache URL for %s to %s\n",
-                            url, newurl);
-                    if (TSCacheUrlSet(txnp, newurl, strlen(newurl))
-                            != TS_SUCCESS) {
-                        TSError("[%s] Unable to modify cache url from "
-                                "%s to %s\n", PLUGIN_NAME, url, newurl);
-                        ok = 0;
-                    }
-                }
-            }
-            /* Clean up */
-            if (url) TSfree(url);
-            if (newurl) TSfree(newurl);
+            ok = rewrite_cacheurl(prl, txnp);
             TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
             break;
         default:
@@ -360,9 +384,82 @@ static void initialization_error(char *msg) {
     TSError("[%s] Unable to initialize plugin (disabled).\n", PLUGIN_NAME);
 }
 
+TSReturnCode TSRemapInit(TSRemapInterface *api_info, char *errbuf,
+    int errbuf_size) {
+    TSReturnCode error;
+    if (!api_info) {
+        strncpy(errbuf, "[tsremap_init] Invalid TSRemapInterface argument",
+                errbuf_size - 1);
+        return TS_ERROR;
+    }
+
+    if (api_info->size < sizeof(TSRemapInterface)) {
+        strncpy(errbuf,
+                "[tsremap_init] Incorrect size of TSRemapInterface structure",
+                errbuf_size - 1);
+        return TS_ERROR;
+    }
+
+    if (api_info->tsremap_version < TSREMAP_VERSION) {
+        snprintf(errbuf, errbuf_size - 1,
+            "[tsremap_init] Incorrect API version %ld.%ld",
+            api_info->tsremap_version >> 16,
+            (api_info->tsremap_version & 0xffff));
+        return TS_ERROR;
+    }
+
+    if (!log) {
+        error = TSTextLogObjectCreate("cacheurl", TS_LOG_MODE_ADD_TIMESTAMP,
+                &log);
+        if (!log || error == TS_ERROR) {
+            snprintf(errbuf, errbuf_size - 1,
+                "[%s] Error creating log file\n", PLUGIN_NAME);
+            return TS_ERROR;
+        }
+    }
+
+    TSDebug(PLUGIN_NAME, "remap plugin is successfully initialized");
+    return TS_SUCCESS;
+}
+
+TSReturnCode TSRemapNewInstance(int argc, char* argv[], void** ih, char* errbuf,
+    int errbuf_size) {
+
+    *ih = load_config_file(argc > 2 ? argv[2] : NULL);
+    return TS_SUCCESS;
+}
+
+
+void TSRemapDeleteInstance(void *ih) {
+    // Clean up
+    TSDebug(PLUGIN_NAME, "Deleting remap instance");
+    pr_list *prl = (pr_list *)ih;
+    int i=0;
+    while (prl->pr[i]) {
+        if (prl->pr[i]->tokens) TSfree(prl->pr[i]->tokens);
+        if (prl->pr[i]->tokenoffset) TSfree(prl->pr[i]->tokenoffset);
+        if (prl->pr[i]->re) pcre_free(prl->pr[i]->re);
+        TSfree(prl->pr[i]);
+        i++;
+    }
+    TSfree(prl);
+}
+
+TSRemapStatus TSRemapDoRemap(void* ih, TSHttpTxn rh, TSRemapRequestInfo *rri) {
+    int ok;
+    ok = rewrite_cacheurl((pr_list *)ih, rh);
+    if (ok) {
+        return TSREMAP_NO_REMAP;
+    } else {
+        return TSREMAP_ERROR;
+    }
+}
+
 void TSPluginInit(int argc, const char *argv[]) {
     TSPluginRegistrationInfo info;
     TSReturnCode error;
+    TSCont contp;
+    pr_list *prl;
 
     info.plugin_name = PLUGIN_NAME;
     info.vendor_name = "OmniTI";
@@ -378,14 +475,18 @@ void TSPluginInit(int argc, const char *argv[]) {
         return;
     }
 
-    error = TSTextLogObjectCreate("cacheurl", TS_LOG_MODE_ADD_TIMESTAMP,
-            &log);
-    if (!log || error == TS_ERROR) {
-        TSError("[%s] Error creating log file\n", PLUGIN_NAME);
+    if (!log) {
+        error = TSTextLogObjectCreate("cacheurl", TS_LOG_MODE_ADD_TIMESTAMP,
+                &log);
+        if (!log || error == TS_ERROR) {
+            TSError("[%s] Error creating log file\n", PLUGIN_NAME);
+        }
     }
 
-    load_config_file();
+    prl = load_config_file(argc > 1 ? argv[1] : NULL);
 
-    TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK,
-            TSContCreate((TSEventFunc)handle_hook, NULL));
+    contp = TSContCreate((TSEventFunc)handle_hook, NULL);
+    /* Store the pattern replacement list in the continuation */
+    TSContDataSet(contp, prl);
+    TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, contp);
 }
