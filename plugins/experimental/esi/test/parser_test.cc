@@ -821,7 +821,7 @@ int main()
     assert(new_node_list.size() == 2);
     DocNodeList::iterator list_iter = new_node_list.begin();
     assert(list_iter->type == DocNode::TYPE_PRE);
-    assert(list_iter->data_len == strlen("foo"));
+    assert(list_iter->data_len == static_cast<int>(strlen("foo")));
     assert(strncmp(list_iter->data, "foo", list_iter->data_len) == 0);
     
     ++list_iter;
@@ -859,7 +859,7 @@ int main()
     assert(node_list.size() == 5);
     DocNodeList::iterator list_iter = node_list.begin();
     assert(list_iter->type == DocNode::TYPE_PRE);
-    assert(list_iter->data_len == strlen("foo "));
+    assert(list_iter->data_len == static_cast<int>(strlen("foo ")));
     assert(strncmp(list_iter->data, "foo ", list_iter->data_len) == 0);
     assert(list_iter->attr_list.size() == 0);
     ++list_iter;
@@ -868,7 +868,7 @@ int main()
     assert(list_iter->attr_list.size() == 0);
     ++list_iter;
     assert(list_iter->type == DocNode::TYPE_HTML_COMMENT);
-    assert(list_iter->data_len == strlen("<p><esi:vars>Hello, $(HTTP_COOKIE{name})!</esi:vars></p>"));
+    assert(list_iter->data_len == static_cast<int>(strlen("<p><esi:vars>Hello, $(HTTP_COOKIE{name})!</esi:vars></p>")));
     assert(strncmp(list_iter->data, "<p><esi:vars>Hello, $(HTTP_COOKIE{name})!</esi:vars></p>",
                    list_iter->data_len) == 0);
     assert(list_iter->attr_list.size() == 0);
@@ -879,7 +879,7 @@ int main()
     check_node_attr(list_iter->attr_list.front(), "src", "url");
     ++list_iter;
     assert(list_iter->type == DocNode::TYPE_PRE);
-    assert(list_iter->data_len == strlen(" bar"));
+    assert(list_iter->data_len == static_cast<int>(strlen(" bar")));
     assert(strncmp(list_iter->data, " bar", list_iter->data_len) == 0);
     assert(list_iter->attr_list.size() == 0);
   }
@@ -911,7 +911,7 @@ int main()
 
     DocNodeList::iterator list_iter = node_list.begin();
     assert(list_iter->type == DocNode::TYPE_PRE);
-    assert(list_iter->data_len == strlen("foo "));
+    assert(list_iter->data_len == static_cast<int>(strlen("foo ")));
     assert(strncmp(list_iter->data, "foo ", list_iter->data_len) == 0);
     assert(list_iter->attr_list.size() == 0);
     ++list_iter;
@@ -928,7 +928,7 @@ int main()
     ++list_iter;
 
     assert(list_iter->type == DocNode::TYPE_HTML_COMMENT);
-    assert(list_iter->data_len == strlen("<p><esi:vars>Hello, $(HTTP_COOKIE{name})!</esi:vars></p>"));
+    assert(list_iter->data_len == static_cast<int>(strlen("<p><esi:vars>Hello, $(HTTP_COOKIE{name})!</esi:vars></p>")));
     assert(strncmp(list_iter->data, "<p><esi:vars>Hello, $(HTTP_COOKIE{name})!</esi:vars></p>",
                    list_iter->data_len) == 0);
     assert(list_iter->attr_list.size() == 0);
@@ -941,19 +941,19 @@ int main()
     ++list_iter;
 
     assert(list_iter->type == DocNode::TYPE_HTML_COMMENT);
-    assert(list_iter->data_len == strlen("foo"));
+    assert(list_iter->data_len == static_cast<int>(strlen("foo")));
     assert(strncmp(list_iter->data, "foo", list_iter->data_len) == 0);
     assert(list_iter->attr_list.size() == 0);
     ++list_iter;
 
     assert(list_iter->type == DocNode::TYPE_HTML_COMMENT);
-    assert(list_iter->data_len == strlen("bar"));
+    assert(list_iter->data_len == static_cast<int>(strlen("bar")));
     assert(strncmp(list_iter->data, "bar", list_iter->data_len) == 0);
     assert(list_iter->attr_list.size() == 0);
     ++list_iter;
 
     assert(list_iter->type == DocNode::TYPE_HTML_COMMENT);
-    assert(list_iter->data_len == strlen("blah"));
+    assert(list_iter->data_len == static_cast<int>(strlen("blah")));
     assert(strncmp(list_iter->data, "blah", list_iter->data_len) == 0);
     assert(list_iter->attr_list.size() == 0);
     ++list_iter;
@@ -964,7 +964,7 @@ int main()
     ++list_iter;
 
     assert(list_iter->type == DocNode::TYPE_PRE);
-    assert(list_iter->data_len == strlen(" "));
+    assert(list_iter->data_len == static_cast<int>(strlen(" ")));
     assert(strncmp(list_iter->data, " ", list_iter->data_len) == 0);
     assert(list_iter->attr_list.size() == 0);
     ++list_iter;
@@ -975,13 +975,13 @@ int main()
     ++list_iter;
 
     assert(list_iter->type == DocNode::TYPE_HTML_COMMENT);
-    assert(list_iter->data_len == strlen("bleh "));
+    assert(list_iter->data_len == static_cast<int>(strlen("bleh ")));
     assert(strncmp(list_iter->data, "bleh ", list_iter->data_len) == 0);
     assert(list_iter->attr_list.size() == 0);
     ++list_iter;
 
     assert(list_iter->type == DocNode::TYPE_HTML_COMMENT);
-    assert(list_iter->data_len == strlen("blooh"));
+    assert(list_iter->data_len == static_cast<int>(strlen("blooh")));
     assert(strncmp(list_iter->data, "blooh", list_iter->data_len) == 0);
     assert(list_iter->attr_list.size() == 0);
     ++list_iter;
@@ -1019,7 +1019,7 @@ int main()
     assert(list_iter->data[0] == '<');
     ++list_iter;
     assert(list_iter->type == DocNode::TYPE_HTML_COMMENT);
-    assert(list_iter->data_len == strlen("<esi:comment text=blah/>"));
+    assert(list_iter->data_len == static_cast<int>(strlen("<esi:comment text=blah/>")));
     assert(strncmp(list_iter->data, "<esi:comment text=blah/>", list_iter->data_len) == 0);
 
     assert(parser.parse(node_list, "<!<esi:comment text=blah/>") == true);
@@ -1071,7 +1071,7 @@ int main()
     assert(node_list.size() == 1);
     DocNode &node = node_list.back();
     assert(node.type == DocNode::TYPE_SPECIAL_INCLUDE);
-    assert(node.data_len == strlen(" handler=ads pos=SKY "));
+    assert(node.data_len == static_cast<int>(strlen(" handler=ads pos=SKY ")));
     assert(strncmp(node.data, " handler=ads pos=SKY ", node.data_len) == 0);
     assert(node.attr_list.size() == 1);
     check_node_attr(node.attr_list.front(), "handler", "ads");
@@ -1339,7 +1339,7 @@ int main()
     assert(list_iter->type == DocNode::TYPE_PRE);
     assert(list_iter->child_nodes.size() == 0);
     assert(list_iter->attr_list.size() == 0);
-    assert(list_iter->data_len == strlen("foo"));
+    assert(list_iter->data_len == static_cast<int>(strlen("foo")));
     assert(strncmp(list_iter->data, "foo", list_iter->data_len) == 0);
 
     ++list_iter;
@@ -1358,7 +1358,7 @@ int main()
     assert(list_iter3->type == DocNode::TYPE_PRE);
     assert(list_iter3->child_nodes.size() == 0);
     assert(list_iter3->attr_list.size() == 0);
-    assert(list_iter3->data_len == strlen("bar"));
+    assert(list_iter3->data_len == static_cast<int>(strlen("bar")));
     assert(strncmp(list_iter3->data, "bar", list_iter3->data_len) == 0);
     
     ++list_iter3;
@@ -1385,7 +1385,7 @@ int main()
     assert(list_iter->type == DocNode::TYPE_PRE);
     assert(list_iter->child_nodes.size() == 0);
     assert(list_iter->attr_list.size() == 0);
-    assert(list_iter->data_len == strlen("bar"));
+    assert(list_iter->data_len == static_cast<int>(strlen("bar")));
     assert(strncmp(list_iter->data, "bar", list_iter->data_len) == 0);
   }
 

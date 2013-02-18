@@ -82,7 +82,7 @@ void checkNodeList2(const DocNodeList &node_list) {
   check_node_attr(list_iter3->attr_list.front(), "src", "foo1");
   ++list_iter3;
   assert(list_iter3->type == DocNode::TYPE_PRE);
-  assert(list_iter3->data_len == strlen("raw1"));
+  assert(list_iter3->data_len == static_cast<int>(strlen("raw1")));
   assert(strncmp(list_iter3->data, "raw1", list_iter3->data_len) == 0);
   ++list_iter2;
   assert(list_iter2->type == DocNode::TYPE_EXCEPT);
@@ -111,7 +111,7 @@ void checkNodeList2(const DocNodeList &node_list) {
   assert(list_iter2->child_nodes.size() == 2);
   list_iter3 = list_iter2->child_nodes.begin();
   assert(list_iter3->type == DocNode::TYPE_PRE);
-  assert(list_iter3->data_len == strlen("raw2"));
+  assert(list_iter3->data_len == static_cast<int>(strlen("raw2")));
   assert(strncmp(list_iter3->data, "raw2", list_iter3->data_len) == 0);
   ++list_iter3;
   assert(list_iter3->type == DocNode::TYPE_INCLUDE);

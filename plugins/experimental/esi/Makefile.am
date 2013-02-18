@@ -63,15 +63,15 @@ esi_la_LIBADD = libesi.la
 esi_la_LDFLAGS = -module -avoid-version -shared
 
 docnode_test_SOURCES = test/docnode_test.cc test/print_funcs.cc
-docnode_test_LDADD = libesi.la  -ldl -lz -lpthread
+docnode_test_LDADD = libesi.la  @LIBDL@ -lz -lpthread
 parser_test_SOURCES = test/parser_test.cc test/print_funcs.cc
-parser_test_LDADD = libesi.la  -ldl -lz -lpthread
+parser_test_LDADD = libesi.la  @LIBDL@ -lz -lpthread
 processor_test_SOURCES = test/processor_test.cc test/HandlerMap.cc test/StubIncludeHandler.cc test/print_funcs.cc
-processor_test_LDADD = libtest.la  -ldl -lz -lpthread
+processor_test_LDADD = libtest.la  @LIBDL@ -lz -lpthread
 utils_test_SOURCES = test/utils_test.cc test/print_funcs.cc
-utils_test_LDADD = libesi.la  -ldl -lz -lpthread
+utils_test_LDADD = libesi.la  @LIBDL@ -lz -lpthread
 vars_test_SOURCES = test/vars_test.cc test/print_funcs.cc
-vars_test_LDADD = libesi.la -ldl -lz -lpthread
+vars_test_LDADD = libesi.la @LIBDL@ -lz -lpthread
 
 TESTS = $(check_PROGRAMS)
 
