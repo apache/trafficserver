@@ -54,7 +54,7 @@ typedef cpuset_t ink_cpuset_t;
 #if HAVE_SYS_PSET_H
 #include <sys/pset.h>
 typedef psetid_t ink_cpuset_t;
-#define PTR_FMT PRIuPTR
+#define PTR_FMT "u"
 #endif
 
 #if HAVE_SYS_TYPES_H
@@ -79,7 +79,7 @@ set_cpu(ink_cpuset_t *cpuset, int cpu)
 
 
 static bool
-bind_cpu(ink_cpuset_t *cpuset, pthread_t tid)
+bind_cpu(ink_cpuset_t *cpuset, ink_thread tid)
 {
   if ( 0 != 
 #if !defined(solaris)
