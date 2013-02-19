@@ -1106,11 +1106,11 @@ Vol::init(char *s, off_t blocks, off_t dir_skip, bool clear)
     aio->aiocb.aio_buf = &(init_info->vol_h_f[i * STORE_BLOCK_SIZE]);
     aio->aiocb.aio_nbytes = footerlen;
     aio->action = this;
-    aio->thread = this_ethread();
+    aio->thread = AIO_CALLBACK_THREAD_ANY;
     aio->then = (i < 3) ? &(init_info->vol_aio[i + 1]) : 0;
   }
 
-  eventProcessor.schedule_imm(this, ET_CALL);
+  ink_assert(ink_aio_read(init_info->vol_aio));
   return 0;
 }
 
@@ -1474,11 +1474,6 @@ Vol::handle_header_read(int event, void *data)
   AIOCallback *op;
   VolHeaderFooter *hf[4];
   switch (event) {
-  case EVENT_IMMEDIATE:
-  case EVENT_INTERVAL:
-    ink_assert(ink_aio_read(init_info->vol_aio));
-    return EVENT_CONT;
-
   case AIO_EVENT_DONE:
     op = (AIOCallback *) data;
     for (int i = 0; i < 4; i++) {
@@ -1520,8 +1515,9 @@ Vol::handle_header_read(int event, void *data)
       delete init_info;
       init_info = 0;
     }
-
     return EVENT_DONE;
+  default:
+    ink_assert(!"not reach here");
   }
   return EVENT_DONE;
 }
