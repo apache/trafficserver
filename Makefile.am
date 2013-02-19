@@ -38,6 +38,9 @@ DISTCHECK_CONFIGURE_FLAGS=--with-user=${DIST_BUILD_USER} --with-group=${DIST_BUI
 
 EXTRA_DIST=CHANGES INSTALL STATUS NOTICE LAYOUT LICENSE example contrib README-EC2 REVIEWERS
 
+# igalic can't remember if this is make check or make test and neither should you.
+test: check
+
 installcheck-local:
 	$(DESTDIR)$(bindir)/traffic_server -R 1
 
