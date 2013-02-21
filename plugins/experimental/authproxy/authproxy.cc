@@ -773,6 +773,10 @@ TSPluginInit(int argc, const char *argv[])
         AuthLogError("plugin registration failed");
     }
 
+    TSReleaseAssert(
+        TSHttpArgIndexReserve("AuthProxy", "AuthProxy authorization tag", &AuthTaggedRequestArg) == TS_SUCCESS
+    );
+
     // We are in global mode. Authorize all requests.
     AuthTaggedRequestOnly = false;
 
